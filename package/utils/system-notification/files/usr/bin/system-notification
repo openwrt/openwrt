@@ -1,0 +1,105 @@
+#!/bin/sh
+# Copyright (C) 2021 TDT AG <development@tdt.de>
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See https://www.gnu.org/licenses/gpl-2.0.txt for more information.
+#
+
+. /usr/share/libubox/jshn.sh
+
+remove() {
+	local uuid="$1"
+
+	json_init
+	json_add_string "uuid" "$uuid"
+	ubus call system.notification remove "$(json_dump)"
+	json_cleanup
+}
+
+list() {
+	local title description uuid timestamp
+
+	json_init
+	json_load "$(ubus call system.notification list)"
+	json_select "messages" 1>/dev/null 2>&1
+	[ $? -eq 0 ] || {
+		echo "No notifications are available"
+		return
+	}
+
+	json_get_keys notifications
+	for notification in $notifications; do
+		json_select "$notification"
+		json_get_vars title description uuid timestamp
+
+		echo "$title"
+		echo ""
+		echo "$description"
+
+		json_select "actions" 1>/dev/null 2>&1
+		if [ $? -eq 0 ]; then
+			json_get_keys actions
+			for action in $actions; do
+				json_select "$action"
+				local action
+				json_get_var entry action
+				[ "$entry" = "link" ] && {
+					local url
+					json_get_var url url
+					echo "- Check $url for more information"
+				}
+
+				[ "$entry" = "opkg" ] && {
+					local package
+					json_get_var package package
+					echo "- To upgrade, execute \"opkg upgrade $package\""
+				}
+				json_select ..
+			done
+			json_select ..
+		fi
+
+		local dstring
+		echo ""
+		dstring="$(date +"%Y-%m-%d %H:%M:%S" -d "@${timestamp}")"
+		echo "date: $dstring"
+		echo "uuid: $uuid"
+		echo "---"
+		json_select ..
+	done
+	json_select ..
+}
+
+usage() {
+	local msg="$1"
+
+	if [ -n "$msg" ]; then
+		echo "$msg"
+		echo ""
+	fi
+
+	echo "Usage: $(basename "$0") <command>"
+	echo ""
+	echo "commmand:"
+	echo ""
+	echo "remove <uuid>: Remove notification"
+	echo "list         : Show notification"
+}
+
+main() {
+	cmd="$1"
+	uuid="$2"
+
+	case "$cmd" in
+		remove)
+			remove "$uuid"
+			;;
+		list)
+			list
+			;;
+		*)
+			usage "Command not supported"
+	esac
+}
+
+main "$@"
