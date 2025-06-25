@@ -862,7 +862,6 @@ hostapd_set_bss_options() {
 	append bss_conf "auth_algs=${auth_algs:-1}" "$N"
 	append bss_conf "wpa=$wpa" "$N"
 	[ -n "$wpa_pairwise" ] && append bss_conf "wpa_pairwise=$wpa_pairwise" "$N"
-	[ -n "$rsn_override_pairwise" ] && append bss_conf "rsn_override_pairwise=$rsn_override_pairwise" "$N"
 
 	set_default wps_pushbutton 0
 	set_default wps_label 0
@@ -975,7 +974,11 @@ hostapd_set_bss_options() {
 
 		hostapd_append_wpa_key_mgmt
 		[ -n "$wpa_key_mgmt" ] && append bss_conf "wpa_key_mgmt=$wpa_key_mgmt" "$N"
-		[ -n "$rsn_override_key_mgmt" ] && append bss_conf "rsn_override_key_mgmt=$rsn_override_key_mgmt" "$N"
+		[ -n "$rsn_override_key_mgmt" -o -n "$rsn_override_pairwise" ] && {
+			append bss_conf "rsn_override_key_mgmt=${rsn_override_key_mgmt:-$wpa_key_mgmt}" "$N"
+			append bss_conf "rsn_override_pairwise=${rsn_override_pairwise:-$wpa_pairwise}" "$N"
+			append bss_conf "rsn_override_mfp=$ieee80211w" "$N"
+		}
 	fi
 
 	if [ "$wpa" -ge "2" ]; then

@@ -173,8 +173,7 @@ function iface_auth_type(config) {
 		'eapol_version', 'dynamic_vlan', 'radius_request_cui', 'eap_reauth_period',
 		'radius_das_client', 'radius_das_port', 'own_ip_addr', 'dynamic_own_ip_addr',
 		'wpa_disable_eapol_key_retries', 'auth_algs', 'wpa', 'wpa_pairwise',
-		'erp_domain', 'fils_realm', 'erp_send_reauth_start', 'fils_cache_id',
-		'rsn_override_pairwise', 'rsn_override_mfp'
+		'erp_domain', 'fils_realm', 'erp_send_reauth_start', 'fils_cache_id'
 	]);
 }
 
@@ -479,8 +478,18 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 	iface.wpa_key_mgmt(config);
 	append_vars(config, [
 		'wpa_key_mgmt',
-		'rsn_override_key_mgmt'
 	]);
+
+	if (config.rsn_override_key_mgmt || config.rsn_override_pairwise) {
+		config.rsn_override_mfp ??= config.ieee80211w;
+		config.rsn_override_key_mgmt ??= config.wpa_key_mgmt;
+		config.rsn_override_pairwise ??= config.wpa_pairwise;
+		append_vars(config, [
+			'rsn_override_key_mgmt',
+			'rsn_override_pairwise',
+			'rsn_override_mfp'
+		]);
+	}
 
 	/* raw options */
 	for (let raw in config.hostapd_options)
