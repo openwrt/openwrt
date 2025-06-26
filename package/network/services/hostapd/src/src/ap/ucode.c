@@ -78,8 +78,6 @@ hostapd_ucode_update_interfaces(void)
 
 	ucv_object_add(ucv_prototype_get(global), "interfaces", ifs);
 	ucv_object_add(ucv_prototype_get(global), "bss", if_bss);
-
-	ucv_gc(vm);
 }
 
 static uc_value_t *
@@ -331,7 +329,6 @@ uc_hostapd_bss_delete(uc_vm_t *vm, size_t nargs)
 	os_free(hapd);
 
 	hostapd_ucode_update_interfaces();
-	ucv_gc(vm);
 
 	return NULL;
 }
@@ -780,7 +777,6 @@ int hostapd_ucode_sta_auth(struct hostapd_data *hapd, struct sta_info *sta)
 		ret = ucv_int64_get(cur);
 
 	ucv_put(val);
-	ucv_gc(vm);
 
 	return ret;
 }
@@ -906,7 +902,6 @@ int hostapd_ucode_init(struct hapd_interfaces *ifaces)
 
 	if (wpa_ucode_run(HOSTAPD_UC_PATH "hostapd.uc"))
 		goto free_vm;
-	ucv_gc(vm);
 
 	return 0;
 
@@ -940,7 +935,6 @@ void hostapd_ucode_bss_cb(struct hostapd_data *hapd, const char *type)
 	uc_value_push(ucv_get(val));
 	ucv_put(wpa_ucode_call(3));
 	ucv_put(val);
-	ucv_gc(vm);
 }
 
 void hostapd_ucode_free_bss(struct hostapd_data *hapd)
@@ -960,7 +954,6 @@ void hostapd_ucode_free_bss(struct hostapd_data *hapd)
 	ucv_put(wpa_ucode_call(2));
 
 	ucv_put(val);
-	ucv_gc(vm);
 }
 
 #ifdef CONFIG_APUP
@@ -977,6 +970,5 @@ void hostapd_ucode_apup_newpeer(struct hostapd_data *hapd, const char *ifname)
 	uc_value_push(ucv_string_new(ifname)); // APuP peer ifname
 	ucv_put(wpa_ucode_call(2));
 	ucv_put(val);
-	ucv_gc(vm);
 }
 #endif // def CONFIG_APUP
