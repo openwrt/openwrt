@@ -402,6 +402,17 @@ menu "Global build settings"
 		  Selecting this option results in about 0.5MiB of additional flash space
 		  usage accounting for increased kernel and rootfs size.
 
+	config TARGET_FS_QUOTAS
+		bool "Enable filesystem quotas"
+		select KERNEL_PRINT_QUOTA_WARNING
+		select KERNEL_QFMT_V1
+		select KERNEL_QFMT_V2
+		select KERNEL_QUOTA
+		select KERNEL_QUOTACTL
+		select KERNEL_QUOTA_TREE
+		help
+		  This option enables the usage of filesystem quotas
+
 	choice
 		prompt "default SELinux type"
 		depends on TARGET_ROOTFS_SECURITY_LABELS
