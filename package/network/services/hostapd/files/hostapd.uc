@@ -471,18 +471,26 @@ function bss_find_existing(config, prev_config, prev_hash)
 	return -1;
 }
 
-function get_config_bss(config, idx)
+function get_config_bss(name, config, idx)
 {
 	if (!config.bss[idx]) {
 		hostapd.printf(`Invalid bss index ${idx}`);
-		return null;
+		return;
 	}
 
 	let ifname = config.bss[idx].ifname;
-	if (!ifname)
+	if (!ifname) {
 		hostapd.printf(`Could not find bss ${config.bss[idx].ifname}`);
+		return;
+	}
 
-	return hostapd.bss[ifname];
+	let if_bss = hostapd.bss[name];
+	if (!if_bss) {
+		hostapd.printf(`Could not find interface ${name} bss list`);
+		return;
+	}
+
+	return if_bss[ifname];
 }
 
 function iface_reload_config(name, phydev, config, old_config)
@@ -508,7 +516,7 @@ function iface_reload_config(name, phydev, config, old_config)
 		return false;
 	}
 
-	let first_bss = hostapd.bss[iface_name];
+	let first_bss = get_config_bss(name, old_config, 0);
 	if (!first_bss) {
 		hostapd.printf(`Could not find bss of previous interface ${iface_name}`);
 		return false;
@@ -543,7 +551,7 @@ function iface_reload_config(name, phydev, config, old_config)
 		let cur_config = config.bss[i];
 		let prev_config = old_config.bss[prev];
 
-		let prev_bss = get_config_bss(old_config, prev);
+		let prev_bss = get_config_bss(name, old_config, prev);
 		if (!prev_bss)
 			return false;
 
@@ -576,7 +584,7 @@ function iface_reload_config(name, phydev, config, old_config)
 			config.bss[0].bssid = old_config.bss[0].bssid;
 		}
 
-		let prev_bss = get_config_bss(old_config, 0);
+		let prev_bss = get_config_bss(name, old_config, 0);
 		if (!prev_bss)
 			return false;
 
@@ -591,7 +599,7 @@ function iface_reload_config(name, phydev, config, old_config)
 		if (!prev_bss_hash[i])
 			continue;
 
-		let prev_bss = get_config_bss(old_config, i);
+		let prev_bss = get_config_bss(name, old_config, i);
 		if (!prev_bss)
 			return false;
 
@@ -612,7 +620,7 @@ function iface_reload_config(name, phydev, config, old_config)
 		if (old_ifname == new_ifname)
 			continue;
 
-		if (hostapd.bss[new_ifname]) {
+		if (hostapd.bss[name][new_ifname]) {
 			new_ifname = "tmp_" + substr(hostapd.sha1(new_ifname), 0, 8);
 			push(rename_list, i);
 		}

@@ -47,39 +47,37 @@ hostapd_ucode_iface_get_uval(struct hostapd_iface *hapd)
 }
 
 static void
-hostapd_ucode_update_bss_list(struct hostapd_iface *iface, uc_value_t *if_bss, uc_value_t *bss)
+hostapd_ucode_update_bss_list(struct hostapd_iface *iface, uc_value_t *bss)
 {
 	uc_value_t *list;
 	int i;
 
-	list = ucv_array_new(vm);
+	list = ucv_object_new(vm);
 	for (i = 0; iface->bss && i < iface->num_bss; i++) {
 		struct hostapd_data *hapd = iface->bss[i];
+		uc_value_t *uval = hostapd_ucode_bss_get_uval(hapd);
 
-		ucv_array_set(list, i, ucv_string_new(hapd->conf->iface));
-		ucv_object_add(bss, hapd->conf->iface, hostapd_ucode_bss_get_uval(hapd));
+		ucv_object_add(list, hapd->conf->iface, uval);
 	}
-	ucv_object_add(if_bss, iface->phy, list);
+	ucv_object_add(bss, iface->phy, list);
 }
 
 static void
 hostapd_ucode_update_interfaces(void)
 {
 	uc_value_t *ifs = ucv_object_new(vm);
-	uc_value_t *if_bss = ucv_array_new(vm);
-	uc_value_t *bss = ucv_object_new(vm);
+	uc_value_t *if_bss = ucv_object_new(vm);
 	int i;
 
 	for (i = 0; i < interfaces->count; i++) {
 		struct hostapd_iface *iface = interfaces->iface[i];
 
 		ucv_object_add(ifs, iface->phy, hostapd_ucode_iface_get_uval(iface));
-		hostapd_ucode_update_bss_list(iface, if_bss, bss);
+		hostapd_ucode_update_bss_list(iface, if_bss);
 	}
 
 	ucv_object_add(ucv_prototype_get(global), "interfaces", ifs);
-	ucv_object_add(ucv_prototype_get(global), "interface_bss", if_bss);
-	ucv_object_add(ucv_prototype_get(global), "bss", bss);
+	ucv_object_add(ucv_prototype_get(global), "bss", if_bss);
 
 	ucv_gc(vm);
 }
