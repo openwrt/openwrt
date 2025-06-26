@@ -285,7 +285,7 @@ function hwmodelist(name) {
 	const mode = { 'HT*': 'n', 'VHT*': 'ac', 'HE*': 'ax' };
 	let iface = ifaces[name];
 	let phy = board_data.wlan?.['phy' + iface.wiphy];
-	if (!phy)
+	if (!phy || !iface.radio.band)
 		return '';
 	let htmodes = phy.info.bands[uc(iface.radio.band)].modes;
 	let list = [];
@@ -446,7 +446,7 @@ export function info(name) {
 export function htmodelist(name) {
 	let iface = ifaces[name];
 	let phy = board_data.wlan?.['phy' + iface.wiphy];
-	if (!phy)
+	if (!phy || !iface.radio.band)
 		return [];
 
 	return filter(phy.info.bands[uc(iface.radio.band)].modes, (v) => v != 'NOHT');
