@@ -315,7 +315,7 @@
 +
 --- /dev/null
 +++ b/defenvs/zyxel_ex5601-t0_env
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,57 @@
 +ethaddr_factory=mtd read Factory 0x40080000 0x0 0x20000 && env readmem -b ethaddr 0x4008002A 0x6 ; setenv ethaddr_factory
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
@@ -336,14 +336,15 @@
 +bootmenu_0=Initialize environment.=run _firstboot
 +bootmenu_0d=Run default boot command.=run boot_default
 +bootmenu_1=Boot system via TFTP.=run boot_tftp ; run bootmenu_confirm_return
-+bootmenu_2=Boot production system from NAND.=run boot_production ; run bootmenu_confirm_return
-+bootmenu_3=Boot recovery system from NAND.=run boot_recovery ; run bootmenu_confirm_return
-+bootmenu_4=Load production system via TFTP then write to NAND.=setenv noboot 1 ; setenv replacevol 1 ; run boot_tftp_production ; setenv noboot ; setenv replacevol ; run bootmenu_confirm_return
-+bootmenu_5=Load recovery system via TFTP then write to NAND.=setenv noboot 1 ; setenv replacevol 1 ; run boot_tftp_recovery ; setenv noboot ; setenv replacevol ; run bootmenu_confirm_return
-+bootmenu_6=[31mLoad BL31+U-Boot FIP via TFTP then write to NAND.[0m=run boot_tftp_write_fip ; run bootmenu_confirm_return
-+bootmenu_7=[31mLoad BL2 preloader via TFTP then write to NAND.[0m=run boot_tftp_write_bl2 ; run bootmenu_confirm_return
-+bootmenu_8=Reboot.=reset
-+bootmenu_9=Reset all settings to factory defaults.=run reset_factory ; reset
++bootmenu_2=Boot system from USB.=run boot_usb ; run bootmenu_confirm_return
++bootmenu_3=Boot production system from NAND.=run boot_production ; run bootmenu_confirm_return
++bootmenu_4=Boot recovery system from NAND.=run boot_recovery ; run bootmenu_confirm_return
++bootmenu_5=Load production system via TFTP then write to NAND.=setenv noboot 1 ; setenv replacevol 1 ; run boot_tftp_production ; setenv noboot ; setenv replacevol ; run bootmenu_confirm_return
++bootmenu_6=Load recovery system via TFTP then write to NAND.=setenv noboot 1 ; setenv replacevol 1 ; run boot_tftp_recovery ; setenv noboot ; setenv replacevol ; run bootmenu_confirm_return
++bootmenu_7=[31mLoad BL31+U-Boot FIP via TFTP then write to NAND.[0m=run boot_tftp_write_fip ; run bootmenu_confirm_return
++bootmenu_8=[31mLoad BL2 preloader via TFTP then write to NAND.[0m=run boot_tftp_write_bl2 ; run bootmenu_confirm_return
++bootmenu_9=Reboot.=reset
++bootmenu_10=Reset all settings to factory defaults.=run reset_factory ; reset
 +boot_first=if button reset ; then run boot_tftp_recovery ; setenv flag_recover 1 ; run boot_default ; fi ; bootmenu
 +boot_default=if env exists flag_recover ; then else run bootcmd ; fi ; run boot_recovery ; setenv replacevol 1 ; run boot_tftp_forever
 +boot_production=run ubi_read_production && bootm $loadaddr#$bootconf
@@ -355,6 +356,7 @@
 +boot_tftp=tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
 +boot_tftp_write_fip=tftpboot $loadaddr $bootfile_fip && run mtd_write_fip && run reset_factory
 +boot_tftp_write_bl2=tftpboot $loadaddr $bootfile_bl2 && run mtd_write_bl2
++boot_usb=usb start && usbboot $loadaddr 0 && bootm $loadaddr#$bootconf
 +part_fit=fit
 +reset_factory=ubi part ubi ; mw $loadaddr 0x0 0x800 ; ubi write $loadaddr ubootenv 0x800 ; ubi write $loadaddr ubootenv2 0x800
 +mtd_write_fip=mtd erase fip && mtd write fip $loadaddr
