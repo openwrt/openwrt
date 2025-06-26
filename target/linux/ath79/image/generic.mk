@@ -264,7 +264,7 @@ define Device/alcatel_hh40v
 endef
 TARGET_DEVICES += alcatel_hh40v
 
-define Device/tcl_hh41v
+define Device/TCL_hh41v
   SOC := qca9531
   DEVICE_VENDOR := TCL
   DEVICE_MODEL := HH41V
