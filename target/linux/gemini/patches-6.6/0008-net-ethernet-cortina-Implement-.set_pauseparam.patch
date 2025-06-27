@@ -16,7 +16,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
 
 --- a/drivers/net/ethernet/cortina/gemini.c
 +++ b/drivers/net/ethernet/cortina/gemini.c
-@@ -2143,6 +2143,19 @@ static void gmac_get_pauseparam(struct n
+@@ -2147,6 +2147,19 @@ static void gmac_get_pauseparam(struct n
  	pparam->autoneg = true;
  }
  
@@ -36,7 +36,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  static void gmac_get_ringparam(struct net_device *netdev,
  			       struct ethtool_ringparam *rp,
  			       struct kernel_ethtool_ringparam *kernel_rp,
-@@ -2263,6 +2276,7 @@ static const struct ethtool_ops gmac_351
+@@ -2267,6 +2280,7 @@ static const struct ethtool_ops gmac_351
  	.set_link_ksettings = gmac_set_ksettings,
  	.nway_reset	= gmac_nway_reset,
  	.get_pauseparam	= gmac_get_pauseparam,
