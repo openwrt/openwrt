@@ -99,14 +99,15 @@ $(eval $(call KernelPackage,phy-ath79-usb))
 
 
 define KernelPackage/usb-gadget
+  SUBMENU:=$(USB_MENU)
   TITLE:=USB Gadget support
   KCONFIG:=CONFIG_USB_GADGET
   HIDDEN:=1
   FILES:=\
 	$(LINUX_DIR)/drivers/usb/gadget/udc/udc-core.ko
   AUTOLOAD:=$(call AutoLoad,21,udc-core,1)
-  DEPENDS:=@USB_GADGET_SUPPORT
-  $(call AddDepends/usb)
+  DEPENDS:=@USB_GADGET_SUPPORT +kmod-usb-common
+  $(call AddDepends/nls)
 endef
 
 define KernelPackage/usb-gadget/description
@@ -115,14 +116,20 @@ endef
 
 $(eval $(call KernelPackage,usb-gadget))
 
+
+define AddDepends/usbgadget
+  SUBMENU:=$(USB_MENU)
+  DEPENDS+=+kmod-usb-gadget $(1)
+endef
+
+
 define KernelPackage/usb-lib-composite
   TITLE:=USB lib composite
   KCONFIG:=CONFIG_USB_LIBCOMPOSITE
-  DEPENDS:=+kmod-usb-gadget +kmod-fs-configfs
   HIDDEN:=1
   FILES:=$(LINUX_DIR)/drivers/usb/gadget/libcomposite.ko
   AUTOLOAD:=$(call AutoLoad,50,libcomposite)
-  $(call AddDepends/usb)
+  $(call AddDepends/usbgadget,+kmod-fs-configfs)
 endef
 
 define KernelPackage/usb-lib-composite/description
@@ -134,12 +141,11 @@ $(eval $(call KernelPackage,usb-lib-composite))
 define KernelPackage/usb-gadget-hid
   TITLE:=USB HID Gadget Support
   KCONFIG:=CONFIG_USB_G_HID
-  DEPENDS:=+kmod-usb-gadget +kmod-usb-lib-composite
   FILES:= \
 	  $(LINUX_DIR)/drivers/usb/gadget/legacy/g_hid.ko \
 	  $(LINUX_DIR)/drivers/usb/gadget/function/usb_f_hid.ko
   AUTOLOAD:=$(call AutoLoad,52,usb_f_hid)
-  $(call AddDepends/usb)
+  $(call AddDepends/usbgadget,+kmod-usb-lib-composite)
 endef
 
 define KernelPackage/usb-gadget-hid/description
@@ -154,9 +160,8 @@ define KernelPackage/usb-gadget-ehci-debug
 	CONFIG_USB_G_DBGP \
 	CONFIG_USB_G_DBGP_SERIAL=y \
 	CONFIG_USB_G_DBGP_PRINTK=n
-  DEPENDS:=+kmod-usb-gadget +kmod-usb-lib-composite +kmod-usb-gadget-serial
   FILES:=$(LINUX_DIR)/drivers/usb/gadget/legacy/g_dbgp.ko
-  $(call AddDepends/usb)
+  $(call AddDepends/usbgadget,+kmod-usb-lib-composite +kmod-usb-gadget-serial)
 endef
 
 define KernelPackage/usb-gadget-ehci-debug/description
@@ -171,7 +176,6 @@ define KernelPackage/usb-gadget-eth
 	CONFIG_USB_ETH \
 	CONFIG_USB_ETH_RNDIS=y \
 	CONFIG_USB_ETH_EEM=n
-  DEPENDS:=+kmod-usb-gadget +kmod-usb-lib-composite
   FILES:= \
 	$(LINUX_DIR)/drivers/usb/gadget/function/u_ether.ko \
 	$(LINUX_DIR)/drivers/usb/gadget/function/usb_f_ecm.ko \
@@ -179,7 +183,7 @@ define KernelPackage/usb-gadget-eth
 	$(LINUX_DIR)/drivers/usb/gadget/function/usb_f_rndis.ko \
 	$(LINUX_DIR)/drivers/usb/gadget/legacy/g_ether.ko
   AUTOLOAD:=$(call AutoLoad,52,usb_f_ecm)
-  $(call AddDepends/usb)
+  $(call AddDepends/usbgadget,+kmod-usb-lib-composite)
 endef
 
 define KernelPackage/usb-gadget-eth/description
@@ -191,13 +195,11 @@ $(eval $(call KernelPackage,usb-gadget-eth))
 define KernelPackage/usb-gadget-ncm
   TITLE:=USB Network Control Model (NCM) Gadget support
   KCONFIG:=CONFIG_USB_G_NCM
-  DEPENDS:=+kmod-usb-gadget +kmod-usb-lib-composite \
-	+kmod-usb-gadget-eth
   FILES:= \
 	$(LINUX_DIR)/drivers/usb/gadget/function/usb_f_ncm.ko \
 	$(LINUX_DIR)/drivers/usb/gadget/legacy/g_ncm.ko
   AUTOLOAD:=$(call AutoLoad,52,usb_f_ncm)
-  $(call AddDepends/usb)
+  $(call AddDepends/usbgadget,+kmod-usb-lib-composite +kmod-usb-gadget-eth)
 endef
 
 define KernelPackage/usb-gadget-ncm/description
@@ -209,7 +211,6 @@ $(eval $(call KernelPackage,usb-gadget-ncm))
 define KernelPackage/usb-gadget-serial
   TITLE:=USB Serial Gadget support
   KCONFIG:=CONFIG_USB_G_SERIAL
-  DEPENDS:=+kmod-usb-gadget +kmod-usb-lib-composite
   FILES:= \
 	$(LINUX_DIR)/drivers/usb/gadget/function/u_serial.ko \
 	$(LINUX_DIR)/drivers/usb/gadget/function/usb_f_acm.ko \
@@ -217,7 +218,7 @@ define KernelPackage/usb-gadget-serial
 	$(LINUX_DIR)/drivers/usb/gadget/function/usb_f_serial.ko \
 	$(LINUX_DIR)/drivers/usb/gadget/legacy/g_serial.ko
   AUTOLOAD:=$(call AutoLoad,52,usb_f_acm)
-  $(call AddDepends/usb)
+  $(call AddDepends/usbgadget,+kmod-usb-lib-composite)
 endef
 
 define KernelPackage/usb-gadget-serial/description
@@ -229,12 +230,11 @@ $(eval $(call KernelPackage,usb-gadget-serial))
 define KernelPackage/usb-gadget-mass-storage
   TITLE:=USB Mass Storage support
   KCONFIG:=CONFIG_USB_MASS_STORAGE
-  DEPENDS:=+kmod-usb-gadget +kmod-usb-lib-composite
   FILES:= \
 	$(LINUX_DIR)/drivers/usb/gadget/function/usb_f_mass_storage.ko \
 	$(LINUX_DIR)/drivers/usb/gadget/legacy/g_mass_storage.ko
   AUTOLOAD:=$(call AutoLoad,52,usb_f_mass_storage)
-  $(call AddDepends/usb)
+  $(call AddDepends/usbgadget,+kmod-usb-lib-composite)
 endef
 
 define KernelPackage/usb-gadget-mass-storage/description
@@ -246,10 +246,11 @@ $(eval $(call KernelPackage,usb-gadget-mass-storage))
 define KernelPackage/usb-gadget-cdc-composite
   TITLE:= USB CDC Composite (Ethernet + ACM)
   KCONFIG:=CONFIG_USB_CDC_COMPOSITE
-  DEPENDS:=+kmod-usb-gadget +kmod-usb-lib-composite \
-	+kmod-usb-gadget-eth +kmod-usb-gadget-serial
   FILES:= $(LINUX_DIR)/drivers/usb/gadget/legacy/g_cdc.ko
-  $(call AddDepends/usb)
+  $(call AddDepends/usbgadget, \
+	  +kmod-usb-lib-composite \
+	  +kmod-usb-gadget-eth \
+	  +kmod-usb-gadget-serial)
 endef
 
 define KernelPackage/usb-gadget-cdc-composite/description
