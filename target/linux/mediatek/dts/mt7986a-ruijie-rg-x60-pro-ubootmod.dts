@@ -1,0 +1,28 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+/dts-v1/;
+#include "mt7986a-ruijie-rg-x60-pro.dtsi"
+
+/ {
+	compatible = "ruijie,rg-x60-pro-ubootmod", "mediatek,mt7986a";
+	model = "Ruijie RG-X60 Pro (OpenWrt U-Boot layout)";
+};
+
+&chosen {
+	rootdisk = <&ubi_rootdisk>;
+	bootargs = " root=/dev/fit0 rootwait";
+};
+
+&partitions {
+	partition@680000 {
+		compatible = "linux,ubi";
+		reg = <0x680000 0x7980000>;
+		label = "ubi";
+
+		volumes {
+			ubi_rootdisk: ubi-volume-fit {
+				volname = "fit";
+			};
+		};
+	};
+};
