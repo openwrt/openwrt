@@ -488,6 +488,12 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 	for (let raw in config.hostapd_options)
 		append_raw(raw);
 
+	if (config.mode == 'link') {
+		append_raw('mld_ap=1');
+		if (data.config.radio != null)
+			append_raw('mld_link_id=' + data.config.radio);
+	}
+
 	if (config.default_macaddr)
 		append_raw('#default_macaddr');
 };

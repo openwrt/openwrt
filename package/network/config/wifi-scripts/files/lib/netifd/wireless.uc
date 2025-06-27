@@ -108,6 +108,7 @@ function config_init(uci)
 		let mlo_vif = parse_bool(data.mlo);
 		let radios = map(dev_names, (v) => radio_idx[v]);
 		radios = filter(radios, (v) => v != null);
+		let radio_config = map(dev_names, (v) => devices[v].config);
 		if (mlo_vif)
 			dev_names = [ wdev.mlo_name, ...dev_names ];
 		for (let dev_name in dev_names) {
@@ -120,8 +121,11 @@ function config_init(uci)
 				continue;
 
 			let config = parse_attribute_list(data, handler.iface);
-			if (mlo_vif && dev_name != wdev.mlo_name)
-				config.mode = "link";
+			if (mlo_vif)
+				if (dev_name == wdev.mlo_name)
+					config.radio_config = radio_config;
+				else
+					config.mode = "link";
 			config.radios = radios;
 
 			let vif = {
