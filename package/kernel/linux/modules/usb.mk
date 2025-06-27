@@ -459,13 +459,15 @@ $(eval $(call KernelPackage,usb-dwc2-pci))
 
 
 define KernelPackage/usb-cdns
+  SUBMENU:=(USB_MENU)
   TITLE:=Cadence USB USB controller driver
-  DEPENDS:=+USB_GADGET_SUPPORT:kmod-usb-gadget +kmod-usb-roles
+  DEPENDS:=+USB_GADGET_SUPPORT:kmod-usb-gadget \
+	   +USB_SUPPORT:kmod-usb-core \
+	   +kmod-usb-roles
   KCONFIG:= \
 	CONFIG_USB_CDNS_SUPPORT
   FILES:= $(LINUX_DIR)/drivers/usb/cdns3/cdns-usb-common.ko
   AUTOLOAD:=$(call AutoLoad,50,cdns-usb-common,1)
-  $(call AddDepends/usb)
 endef
 
 define KernelPackage/usb-cdns/description
@@ -477,6 +479,7 @@ $(eval $(call KernelPackage,usb-cdns))
 
 
 define KernelPackage/usb-cdns3
+  SUBMENU:=(USB_MENU)
   TITLE:=Cadence USB3 USB controller driver
   DEPENDS:=+kmod-usb-cdns
   KCONFIG:= \
@@ -485,7 +488,6 @@ define KernelPackage/usb-cdns3
 	CONFIG_USB_CDNS3_HOST=y
   FILES:= $(LINUX_DIR)/drivers/usb/cdns3/cdns3.ko
   AUTOLOAD:=$(call AutoLoad,54,cdns3,1)
-  $(call AddDepends/usb)
 endef
 
 define KernelPackage/usb-cdns3/description
