@@ -24,7 +24,7 @@ Signed-off-by: Philipp Zabel <p.zabel@pengutronix.de>
 
 --- a/drivers/media/i2c/tc358743.c
 +++ b/drivers/media/i2c/tc358743.c
-@@ -1609,11 +1609,20 @@ static int tc358743_get_mbus_config(stru
+@@ -1613,11 +1613,20 @@ static int tc358743_get_mbus_config(stru
  				    struct v4l2_mbus_config *cfg)
  {
  	struct tc358743_state *state = to_state(sd);
@@ -47,7 +47,7 @@ Signed-off-by: Philipp Zabel <p.zabel@pengutronix.de>
  
  	switch (state->csi_lanes_in_use) {
  	case 1:
-@@ -2056,6 +2065,7 @@ static int tc358743_probe(struct i2c_cli
+@@ -2060,6 +2069,7 @@ static int tc358743_probe(struct i2c_cli
  	if (pdata) {
  		state->pdata = *pdata;
  		state->bus.flags = V4L2_MBUS_CSI2_CONTINUOUS_CLOCK;

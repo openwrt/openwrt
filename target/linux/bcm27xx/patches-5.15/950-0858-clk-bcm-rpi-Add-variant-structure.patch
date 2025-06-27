@@ -93,7 +93,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  
  	init.name = devm_kasprintf(rpi->dev, GFP_KERNEL,
  				   "fw-clk-%s",
-@@ -230,9 +269,9 @@ static struct clk_hw *raspberrypi_clk_re
+@@ -232,9 +271,9 @@ static struct clk_hw *raspberrypi_clk_re
  
  	clk_hw_set_rate_range(&data->hw, min_rate, max_rate);
  
@@ -105,7 +105,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  		if (ret) {
  			dev_err(rpi->dev, "Failed to initialize clkdev\n");
  			return ERR_PTR(ret);
-@@ -271,30 +310,27 @@ static int raspberrypi_discover_clocks(s
+@@ -273,30 +312,27 @@ static int raspberrypi_discover_clocks(s
  		return ret;
  
  	while (clks->id) {

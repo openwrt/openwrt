@@ -181,7 +181,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  
 --- a/include/linux/mm_types.h
 +++ b/include/linux/mm_types.h
-@@ -580,6 +580,22 @@ struct mm_struct {
+@@ -583,6 +583,22 @@ struct mm_struct {
  #ifdef CONFIG_IOMMU_SUPPORT
  		u32 pasid;
  #endif
@@ -204,7 +204,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	} __randomize_layout;
  
  	/*
-@@ -606,6 +622,66 @@ static inline cpumask_t *mm_cpumask(stru
+@@ -609,6 +625,66 @@ static inline cpumask_t *mm_cpumask(stru
  	return (struct cpumask *)&mm->cpu_bitmap;
  }
  
