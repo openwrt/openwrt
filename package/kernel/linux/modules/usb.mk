@@ -508,17 +508,28 @@ $(eval $(call KernelPackage,usb-cdns3))
 
 
 define KernelPackage/usb-dwc3
+  SUBMENU:=$(USB_MENU)
   TITLE:=DWC3 USB controller driver
+  DEPENDS:=+USB_GADGET_SUPPORT:kmod-usb-gadget \
+	   +USB_SUPPORT:kmod-usb-core \
+	   +kmod-usb-roles
   KCONFIG:= \
 	CONFIG_USB_DWC3 \
-	CONFIG_USB_DWC3_HOST=y \
-	CONFIG_USB_DWC3_GADGET=n \
-	CONFIG_USB_DWC3_DUAL_ROLE=n \
 	CONFIG_USB_DWC3_DEBUG=n \
 	CONFIG_USB_DWC3_VERBOSE=n
+ifeq ($(CONFIG_USB_SUPPORT)$(CONFIG_USB_GADGET_SUPPORT),yy)
+  KCONFIG+= \
+	CONFIG_USB_DWC3_HOST=n \
+	CONFIG_USB_DWC3_GADGET=n \
+	CONFIG_USB_DWC3_DUAL_ROLE=y
+else
+  KCONFIG+= \
+	CONFIG_USB_DWC3_HOST=$(if $(CONFIG_USB_SUPPORT),y,n) \
+	CONFIG_USB_DWC3_GADGET=$(if $(CONFIG_USB_GADGET_SUPPORT),y,n) \
+	CONFIG_USB_DWC3_DUAL_ROLE=n
+endif
   FILES:= $(LINUX_DIR)/drivers/usb/dwc3/dwc3.ko
   AUTOLOAD:=$(call AutoLoad,54,dwc3,1)
-  $(call AddDepends/usb)
 endef
 
 define KernelPackage/usb-dwc3/description
