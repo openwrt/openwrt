@@ -1868,11 +1868,12 @@ endef
 $(eval $(call KernelPackage,usb-net2280))
 
 define KernelPackage/usb-roles
+  SUBMENU:=$(USB_MENU)
   TITLE:=USB Role Switch Library Module
+  DEPENDS:=@USB_SUPPORT||USB_GADGET_SUPPORT
   KCONFIG:=CONFIG_USB_ROLE_SWITCH
   HIDDEN:=1
   FILES:=$(LINUX_DIR)/drivers/usb/roles/roles.ko
-  $(call AddDepends/usb)
 endef
 
 define KernelPackage/usb-roles/description
