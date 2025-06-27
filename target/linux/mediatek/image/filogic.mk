@@ -2782,12 +2782,42 @@ TARGET_DEVICES += routerich_be7200
 define Device/ruijie_rg-x60-pro
   DEVICE_VENDOR := Ruijie
   DEVICE_MODEL := RG-X60 Pro
-  DEVICE_DTS := mt7986a-ruijie-rg-x60-pro
+  DEVICE_VARIANT := (Stock Layout)
+  DEVICE_DTS := mt7986a-ruijie-rg-x60-pro-stock
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += ruijie_rg-x60-pro
+
+define Device/ruijie_rg-x60-pro-common
+  DEVICE_VENDOR := Ruijie
+  DEVICE_MODEL := RG-X60 Pro
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  IMAGES := sysupgrade.itb
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_IN_UBI := 1
+  UBOOTENV_IN_UBI := 1
+  KERNEL := kernel-bin | gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+        fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.itb := append-kernel | \
+        fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | append-metadata
+  ARTIFACTS := preloader.bin bl31-uboot.fip
+endef
+
+define Device/ruijie_rg-x60-pro-ubi
+  DEVICE_VARIANT := (UBI)
+  DEVICE_DTS := mt7986a-ruijie-rg-x60-pro-ubi
+  ARTIFACT/bl31-uboot.fip := mt7986-bl31-uboot ruijie_rg-x60-pro-ubi
+  ARTIFACT/preloader.bin := mt7986-bl2 spim-nand-ubi-ddr3
+  $(call Device/ruijie_rg-x60-pro-common)
+endef
+TARGET_DEVICES += ruijie_rg-x60-pro-ubi
 
 define Device/snr_snr-cpe-ax2
   DEVICE_VENDOR := SNR

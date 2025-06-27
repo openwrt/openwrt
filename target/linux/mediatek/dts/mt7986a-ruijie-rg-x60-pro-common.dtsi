@@ -9,9 +9,6 @@
 #include "mt7986a.dtsi"
 
 / {
-	compatible = "ruijie,rg-x60-pro", "mediatek,mt7986a";
-	model = "Ruijie RG-X60 Pro";
-
 	aliases {
 		serial0 = &uart0;
 		led-boot = &led_system;
@@ -20,8 +17,8 @@
 		led-upgrade = &led_alarm;
 	};
 
-	chosen {
-		bootargs = "console=ttyS0,115200n8 earlycon=uart8250,mmio32,0x11002000";
+	chosen: chosen {
+		stdout-path = "serial0:115200n8";
 	};
 
 	memory@40000000 {
@@ -69,6 +66,7 @@
 		compatible = "mediatek,eth-mac";
 		reg = <0>;
 		phy-mode = "2500base-x";
+
 		fixed-link {
 			speed = <2500>;
 			full-duplex;
@@ -151,7 +149,7 @@
 	pinctrl-0 = <&spi_flash_pins>;
 	status = "okay";
 
-	flash@0 {
+	spi_flash: flash@0 {
 		compatible = "spi-nand";
 		reg = <0>;
 
@@ -159,11 +157,7 @@
 		spi-tx-bus-width = <4>;
 		spi-rx-bus-width = <4>;
 
-		mediatek,nmbm;
-		mediatek,bmt-max-ratio = <1>;
-		mediatek,bmt-max-reserved-blocks = <64>;
-
-		partitions {
+		partitions: partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -172,51 +166,6 @@
 				label = "BL2";
 				reg = <0x000000 0x100000>;
 				read-only;
-			};
-
-			partition@100000 {
-				label = "u-boot-env";
-				reg = <0x100000 0x80000>;
-				read-only;
-			};
-
-			partition@180000 {
-				label = "Factory";
-				reg = <0x180000 0x200000>;
-				read-only;
-
-				nvmem-layout {
-					compatible = "fixed-layout";
-					#address-cells = <1>;
-					#size-cells = <1>;
-
-					eeprom_factory_0: eeprom@0 {
-						reg = <0x0 0x1000>;
-					};
-				};
-			};
-
-			partition@380000 {
-				label = "FIP";
-				reg = <0x380000 0x200000>;
-				read-only;
-			};
-
-			partition@580000 {
-				label = "product_info";
-				reg = <0x580000 0x80000>;
-				read-only;
-			};
-
-			partition@600000 {
-				label = "kdump";
-				reg = <0x600000 0x80000>;
-				read-only;
-			};
-
-			partition@680000 {
-				label = "ubi";
-				reg = <0x680000 0x3f00000>;
 			};
 		};
 	};
