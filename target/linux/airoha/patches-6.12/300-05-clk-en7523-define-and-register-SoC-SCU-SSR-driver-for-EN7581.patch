@@ -1,0 +1,267 @@
+From: Christian Marangi <ansuelsmth@gmail.com>
+To: Michael Turquette <mturquette@baylibre.com>,
+	Stephen Boyd <sboyd@kernel.org>,
+	Rob Herring <robh@kernel.org>,
+	Krzysztof Kozlowski <krzk+dt@kernel.org>,
+	Conor Dooley <conor+dt@kernel.org>,
+	Christian Marangi <ansuelsmth@gmail.com>,
+	Vinod Koul <vkoul@kernel.org>,
+	Kishon Vijay Abraham I <kishon@kernel.org>,
+	Matthias Brugger <matthias.bgg@gmail.com>,
+	AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>,
+	Lorenzo Bianconi <lorenzo@kernel.org>,
+	Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+	Daniel Danzberger <dd@embedd.com>,
+	Arnd Bergmann <arnd@arndb.de>,
+	Alexander Sverdlin <alexander.sverdlin@gmail.com>,
+	Nikita Shubin <nikita.shubin@maquefel.me>,
+	Linus Walleij <linus.walleij@linaro.org>,
+	Yangyu Chen <cyy@cyyself.name>,
+	Ben Hutchings <ben@decadent.org.uk>,
+	Felix Fietkau <nbd@nbd.name>,
+	linux-clk@vger.kernel.org,
+	devicetree@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	linux-arm-kernel@lists.infradead.org,
+	linux-phy@lists.infradead.org,
+	linux-mediatek@lists.infradead.org,
+	linux-usb@vger.kernel.org,
+	upstream@airoha.com
+Subject: [PATCH v2 05/11] clk: en7523: define and register SoC SCU SSR driver
+ for EN7581
+Date: Thu, 20 Mar 2025 14:00:28 +0100
+Message-ID: <20250320130054.4804-6-ansuelsmth@gmail.com>
+X-Mailer: git-send-email 2.48.1
+In-Reply-To: <20250320130054.4804-1-ansuelsmth@gmail.com>
+References: <20250320130054.4804-1-ansuelsmth@gmail.com>
+MIME-Version: 1.0
+X-CRM114-Version: 20100106-BlameMichelson ( TRE 0.8.0 (BSD) ) MR-646709E3 
+X-CRM114-CacheID: sfid-20250320_060141_314604_DFB63E83 
+X-CRM114-Status: GOOD (  24.37  )
+X-BeenThere: linux-mediatek@lists.infradead.org
+X-Mailman-Version: 2.1.34
+Precedence: list
+List-Id: <linux-mediatek.lists.infradead.org>
+List-Unsubscribe: <http://lists.infradead.org/mailman/options/linux-mediatek>,
+ <mailto:linux-mediatek-request@lists.infradead.org?subject=unsubscribe>
+List-Archive: <http://lists.infradead.org/pipermail/linux-mediatek/>
+List-Post: <mailto:linux-mediatek@lists.infradead.org>
+List-Help: <mailto:linux-mediatek-request@lists.infradead.org?subject=help>
+List-Subscribe: <http://lists.infradead.org/mailman/listinfo/linux-mediatek>,
+ <mailto:linux-mediatek-request@lists.infradead.org?subject=subscribe>
+Sender: "Linux-mediatek" <linux-mediatek-bounces@lists.infradead.org>
+Errors-To: 
+ linux-mediatek-bounces+linux-mediatek=archiver.kernel.org@lists.infradead.org
+
+Define all the possible interface modes and register the SoC SCU SSR
+platform driver for EN7581.
+
+Failing to register the SCU SSR driver is not a critical error (example
+the SoC driver is not enable) but will prevent PCIe or USB port to
+function correctly.
+
+Reference to the SSR pdev are stored in the new en7523 priv struct.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/clk/clk-en7523.c       | 99 ++++++++++++++++++++++++++++++++--
+ include/linux/clk/clk-en7523.h | 10 ++++
+ 2 files changed, 106 insertions(+), 3 deletions(-)
+ create mode 100644 include/linux/clk/clk-en7523.h
+
+diff --git a/drivers/clk/clk-en7523.c b/drivers/clk/clk-en7523.c
+index 2a74bc8fed24..1f11fa769090 100644
+--- a/drivers/clk/clk-en7523.c
++++ b/drivers/clk/clk-en7523.c
+@@ -3,14 +3,17 @@
+ #include <linux/bitfield.h>
+ #include <linux/delay.h>
+ #include <linux/clk-provider.h>
++#include <linux/clk/clk-en7523.h>
+ #include <linux/io.h>
+ #include <linux/mfd/syscon.h>
+ #include <linux/platform_device.h>
+ #include <linux/property.h>
+ #include <linux/regmap.h>
+ #include <linux/reset-controller.h>
++#include <linux/soc/airoha/airoha-scu-ssr.h>
+ #include <dt-bindings/clock/en7523-clk.h>
+ #include <dt-bindings/reset/airoha,en7581-reset.h>
++#include <dt-bindings/soc/airoha,scu-ssr.h>
+ 
+ #define RST_NR_PER_BANK			32
+ 
+@@ -81,6 +84,7 @@ struct en_clk_soc_data {
+ 	const struct en_clk_desc *base_clks;
+ 	const struct clk_ops pcie_ops;
+ 	int (*hw_init)(struct platform_device *pdev,
++		       struct en_clk_priv *priv,
+ 		       const struct en_clk_soc_data *soc_data,
+ 		       struct clk_hw_onecell_data *clk_data);
+ };
+@@ -361,6 +365,51 @@ static const u16 en7581_rst_map[] = {
+ 	[EN7581_XPON_MAC_RST]		= RST_NR_PER_BANK + 31,
+ };
+ 
++static unsigned int an7581_serdes_wifi1_possible_modes[] = {
++	AIROHA_SCU_SERDES_MODE_PCIE0_X1,
++	AIROHA_SCU_SERDES_MODE_PCIE0_X2,
++	AIROHA_SCU_SERDES_MODE_ETHERNET,
++};
++
++static unsigned int an7581_serdes_wifi2_possible_modes[] = {
++	AIROHA_SCU_SERDES_MODE_PCIE1_X1,
++	AIROHA_SCU_SERDES_MODE_PCIE0_X2,
++	AIROHA_SCU_SERDES_MODE_ETHERNET,
++};
++
++static unsigned int an7581_serdes_usb1_possible_modes[] = {
++	AIROHA_SCU_SERDES_MODE_USB3,
++	AIROHA_SCU_SERDES_MODE_ETHERNET,
++};
++
++static unsigned int an7581_serdes_usb2_possible_modes[] = {
++	AIROHA_SCU_SERDES_MODE_PCIE2_X1,
++	AIROHA_SCU_SERDES_MODE_ETHERNET,
++};
++
++static const struct airoha_scu_ssr_serdes_info an7581_ports_info[] = {
++	[AIROHA_SCU_SERDES_WIFI1] = {
++		.possible_modes = an7581_serdes_wifi1_possible_modes,
++		.num_modes = ARRAY_SIZE(an7581_serdes_wifi1_possible_modes),
++	},
++	[AIROHA_SCU_SERDES_WIFI2] = {
++		.possible_modes = an7581_serdes_wifi2_possible_modes,
++		.num_modes = ARRAY_SIZE(an7581_serdes_wifi2_possible_modes),
++	},
++	[AIROHA_SCU_SERDES_USB1] = {
++		.possible_modes = an7581_serdes_usb1_possible_modes,
++		.num_modes = ARRAY_SIZE(an7581_serdes_usb1_possible_modes),
++	},
++	[AIROHA_SCU_SERDES_USB2] = {
++		.possible_modes = an7581_serdes_usb2_possible_modes,
++		.num_modes = ARRAY_SIZE(an7581_serdes_usb2_possible_modes),
++	},
++};
++
++static const struct airoha_scu_ssr_data an7581_scu_ssr_data = {
++	.ports_info = an7581_ports_info,
++};
++
+ static u32 en7523_get_base_rate(const struct en_clk_desc *desc, u32 val)
+ {
+ 	if (!desc->base_bits)
+@@ -557,6 +606,7 @@ static const struct regmap_config en7523_clk_regmap_config = {
+ };
+ 
+ static int en7523_clk_hw_init(struct platform_device *pdev,
++			      struct en_clk_priv *priv,
+ 			      const struct en_clk_soc_data *soc_data,
+ 			      struct clk_hw_onecell_data *clk_data)
+ {
+@@ -661,12 +711,38 @@ static int en7581_reset_register(struct device *dev, struct regmap *map)
+ 	return devm_reset_controller_register(dev, &rst_data->rcdev);
+ }
+ 
++static void en7581_clk_register_ssr(struct platform_device *pdev,
++				    struct en_clk_priv *priv)
++{
++	struct platform_device_info pinfo = { };
++	struct platform_device *ssr_pdev;
++
++	pinfo.name = "airoha-scu-ssr";
++	pinfo.parent = &pdev->dev;
++	pinfo.id = PLATFORM_DEVID_AUTO;
++	pinfo.fwnode = of_fwnode_handle(pdev->dev.of_node);
++	pinfo.of_node_reused = true;
++	pinfo.data = &an7581_scu_ssr_data;
++	pinfo.size_data = sizeof(an7581_scu_ssr_data);
++
++	ssr_pdev = platform_device_register_data(&pdev->dev, "airoha-scu-ssr",
++						 PLATFORM_DEVID_AUTO,
++						 &an7581_scu_ssr_data,
++						 sizeof(an7581_scu_ssr_data));
++	if (IS_ERR(ssr_pdev))
++		dev_err_probe(&pdev->dev, PTR_ERR(ssr_pdev), "failed to register SCU SSR driver.\n");
++
++	priv->ssr_pdev = ssr_pdev;
++}
++
+ static int en7581_clk_hw_init(struct platform_device *pdev,
++			      struct en_clk_priv *priv,
+ 			      const struct en_clk_soc_data *soc_data,
+ 			      struct clk_hw_onecell_data *clk_data)
+ {
+ 	struct regmap *map, *clk_map;
+ 	void __iomem *base;
++	int ret;
+ 
+ 	map = syscon_regmap_lookup_by_compatible("airoha,en7581-chip-scu");
+ 	if (IS_ERR(map))
+@@ -687,7 +763,13 @@ static int en7581_clk_hw_init(struct platform_device *pdev,
+ 	regmap_update_bits(clk_map, REG_NP_SCU_PCIC, REG_PCIE_CTRL,
+ 			   FIELD_PREP(REG_PCIE_CTRL, 3));
+ 
+-	return en7581_reset_register(&pdev->dev, clk_map);
++	ret = en7581_reset_register(&pdev->dev, clk_map);
++	if (ret)
++		return ret;
++
++	en7581_clk_register_ssr(pdev, priv);
++
++	return 0;
+ }
+ 
+ static int en7523_clk_probe(struct platform_device *pdev)
+@@ -695,10 +777,15 @@ static int en7523_clk_probe(struct platform_device *pdev)
+ 	struct device_node *node = pdev->dev.of_node;
+ 	const struct en_clk_soc_data *soc_data;
+ 	struct clk_hw_onecell_data *clk_data;
++	struct en_clk_priv *priv;
+ 	int r;
+ 
+ 	soc_data = device_get_match_data(&pdev->dev);
+ 
++	priv = devm_kzalloc(&pdev->dev, sizeof(*priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++
+ 	clk_data = devm_kzalloc(&pdev->dev,
+ 				struct_size(clk_data, hws, soc_data->num_clocks),
+ 				GFP_KERNEL);
+@@ -706,11 +793,17 @@ static int en7523_clk_probe(struct platform_device *pdev)
+ 		return -ENOMEM;
+ 
+ 	clk_data->num = soc_data->num_clocks;
+-	r = soc_data->hw_init(pdev, soc_data, clk_data);
++	r = soc_data->hw_init(pdev, priv, soc_data, clk_data);
+ 	if (r)
+ 		return r;
+ 
+-	return of_clk_add_hw_provider(node, of_clk_hw_onecell_get, clk_data);
++	r = of_clk_add_hw_provider(node, of_clk_hw_onecell_get, clk_data);
++	if (r)
++		return r;
++
++	platform_set_drvdata(pdev, priv);
++
++	return 0;
+ }
+ 
+ static const struct en_clk_soc_data en7523_data = {
+diff --git a/include/linux/clk/clk-en7523.h b/include/linux/clk/clk-en7523.h
+new file mode 100644
+index 000000000000..fc3b320dc7e9
+--- /dev/null
++++ b/include/linux/clk/clk-en7523.h
+@@ -0,0 +1,10 @@
++/* SPDX-License-Identifier: GPL-2.0-or-later */
++
++#ifndef __LINUX_CLK_EN7523_H_
++#define __LINUX_CLK_EN7523_H_
++
++struct en_clk_priv {
++	struct platform_device *ssr_pdev;
++};
++
++#endif

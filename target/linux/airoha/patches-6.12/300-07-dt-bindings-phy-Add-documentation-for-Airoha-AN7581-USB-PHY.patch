@@ -1,0 +1,198 @@
+From: Christian Marangi <ansuelsmth@gmail.com>
+To: Michael Turquette <mturquette@baylibre.com>,
+	Stephen Boyd <sboyd@kernel.org>,
+	Rob Herring <robh@kernel.org>,
+	Krzysztof Kozlowski <krzk+dt@kernel.org>,
+	Conor Dooley <conor+dt@kernel.org>,
+	Christian Marangi <ansuelsmth@gmail.com>,
+	Vinod Koul <vkoul@kernel.org>,
+	Kishon Vijay Abraham I <kishon@kernel.org>,
+	Matthias Brugger <matthias.bgg@gmail.com>,
+	AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>,
+	Lorenzo Bianconi <lorenzo@kernel.org>,
+	Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+	Daniel Danzberger <dd@embedd.com>,
+	Arnd Bergmann <arnd@arndb.de>,
+	Alexander Sverdlin <alexander.sverdlin@gmail.com>,
+	Nikita Shubin <nikita.shubin@maquefel.me>,
+	Linus Walleij <linus.walleij@linaro.org>,
+	Yangyu Chen <cyy@cyyself.name>,
+	Ben Hutchings <ben@decadent.org.uk>,
+	Felix Fietkau <nbd@nbd.name>,
+	linux-clk@vger.kernel.org,
+	devicetree@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	linux-arm-kernel@lists.infradead.org,
+	linux-phy@lists.infradead.org,
+	linux-mediatek@lists.infradead.org,
+	linux-usb@vger.kernel.org,
+	upstream@airoha.com
+Subject: [PATCH v2 07/11] dt-bindings: phy: Add documentation for Airoha
+ AN7581 USB PHY
+Date: Thu, 20 Mar 2025 14:00:30 +0100
+Message-ID: <20250320130054.4804-8-ansuelsmth@gmail.com>
+X-Mailer: git-send-email 2.48.1
+In-Reply-To: <20250320130054.4804-1-ansuelsmth@gmail.com>
+References: <20250320130054.4804-1-ansuelsmth@gmail.com>
+MIME-Version: 1.0
+X-CRM114-Version: 20100106-BlameMichelson ( TRE 0.8.0 (BSD) ) MR-646709E3 
+X-CRM114-CacheID: sfid-20250320_060145_521585_04D2A319 
+X-CRM114-Status: GOOD (  19.80  )
+X-BeenThere: linux-mediatek@lists.infradead.org
+X-Mailman-Version: 2.1.34
+Precedence: list
+List-Id: <linux-mediatek.lists.infradead.org>
+List-Unsubscribe: <http://lists.infradead.org/mailman/options/linux-mediatek>,
+ <mailto:linux-mediatek-request@lists.infradead.org?subject=unsubscribe>
+List-Archive: <http://lists.infradead.org/pipermail/linux-mediatek/>
+List-Post: <mailto:linux-mediatek@lists.infradead.org>
+List-Help: <mailto:linux-mediatek-request@lists.infradead.org?subject=help>
+List-Subscribe: <http://lists.infradead.org/mailman/listinfo/linux-mediatek>,
+ <mailto:linux-mediatek-request@lists.infradead.org?subject=subscribe>
+Sender: "Linux-mediatek" <linux-mediatek-bounces@lists.infradead.org>
+Errors-To: 
+ linux-mediatek-bounces+linux-mediatek=archiver.kernel.org@lists.infradead.org
+
+Add documentation for Airoha AN7581 USB PHY that describe the USB PHY
+for the USB controller.
+
+Airoha AN7581 SoC support a maximum of 2 USB port. The USB 2.0 mode is
+always supported. The USB 3.0 mode is optional and depends on the Serdes
+mode currently configured on the system for the USB port.
+
+If the airoha,serdes-port property is not declared, it's assumed USB 3.0
+mode is not supported, as the Serdes mode can't be validated.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ .../bindings/phy/airoha,an7581-usb-phy.yaml   | 83 +++++++++++++++++++
+ MAINTAINERS                                   |  7 ++
+ .../dt-bindings/phy/airoha,an7581-usb-phy.h   | 11 +++
+ 3 files changed, 101 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/phy/airoha,an7581-usb-phy.yaml
+ create mode 100644 include/dt-bindings/phy/airoha,an7581-usb-phy.h
+
+diff --git a/Documentation/devicetree/bindings/phy/airoha,an7581-usb-phy.yaml b/Documentation/devicetree/bindings/phy/airoha,an7581-usb-phy.yaml
+new file mode 100644
+index 000000000000..39ceaded5d0e
+--- /dev/null
++++ b/Documentation/devicetree/bindings/phy/airoha,an7581-usb-phy.yaml
+@@ -0,0 +1,83 @@
++# SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/phy/airoha,an7581-usb-phy.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Airoha AN7581 SoC USB PHY
++
++maintainers:
++  - Christian Marangi <ansuelsmth@gmail.com>
++
++description: >
++  The Airoha AN7581 SoC USB PHY describes the USB PHY for the USB controller.
++
++  Airoha AN7581 SoC support a maximum of 2 USB port. The USB 2.0 mode is
++  always supported. The USB 3.0 mode is optional and depends on the Serdes
++  mode currently configured on the system for the USB port.
++
++  If the airoha,serdes-port property is not declared, it's assumed USB 3.0
++  mode is not supported, as the Serdes mode can't be validated.
++
++properties:
++  compatible:
++    const: airoha,an7581-usb-phy
++
++  reg:
++    maxItems: 1
++
++
++  airoha,usb2-monitor-clk-sel:
++    description: Describe what oscillator across the available 4
++      should be selected for USB 2.0 Slew Rate calibration.
++    $ref: /schemas/types.yaml#/definitions/uint32
++    enum: [0, 1, 2, 3]
++
++  airoha,serdes-port:
++    description: Describe what Serdes Port is attached to the USB 3.0 port.
++    $ref: /schemas/types.yaml#/definitions/uint32
++    enum: [0, 1, 2, 3]
++
++  airoha,scu:
++    description: Phandle to the SCU node for USB 3.0 Serdes mode validation.
++    $ref: /schemas/types.yaml#/definitions/phandle
++
++  '#phy-cells':
++    const: 1
++
++required:
++  - compatible
++  - reg
++  - airoha,usb2-monitor-clk-sel
++  - '#phy-cells'
++
++dependentRequired:
++  airoha,serdes-port: [ 'airoha,scu' ]
++
++additionalProperties: false
++
++examples:
++  - |
++    #include <dt-bindings/phy/airoha,an7581-usb-phy.h>
++    #include <dt-bindings/soc/airoha,scu-ssr.h>
++
++    phy@1fac0000 {
++        compatible = "airoha,an7581-usb-phy";
++        reg = <0x1fac0000 0x10000>;
++
++        airoha,usb2-monitor-clk-sel = <AIROHA_USB2_MONCLK_SEL1>;
++        airoha,scu = <&scu>;
++        airoha,serdes-port = <AIROHA_SCU_SERDES_USB1>;
++
++        #phy-cells = <1>;
++    };
++
++    phy@1fae0000 {
++        compatible = "airoha,an7581-usb-phy";
++        reg = <0x1fae0000 0x10000>;
++
++        airoha,usb2-monitor-clk-sel = <AIROHA_USB2_MONCLK_SEL2>;
++
++        #phy-cells = <1>;
++    };
++
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 7cd54c70aeed..c4a374da2b12 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -754,6 +754,13 @@ S:	Maintained
+ F:	Documentation/devicetree/bindings/spi/airoha,en7581-snand.yaml
+ F:	drivers/spi/spi-airoha-snfi.c
+ 
++AIROHA USB PHY DRIVER
++M:	Christian Marangi <ansuelsmth@gmail.com>
++L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
++S:	Maintained
++F:	Documentation/devicetree/bindings/phy/airoha,an7581-usb-phy.yaml
++F:	include/dt-bindings/phy/airoha,an7581-usb-phy.h
++
+ AIRSPY MEDIA DRIVER
+ L:	linux-media@vger.kernel.org
+ S:	Orphan
+diff --git a/include/dt-bindings/phy/airoha,an7581-usb-phy.h b/include/dt-bindings/phy/airoha,an7581-usb-phy.h
+new file mode 100644
+index 000000000000..efbb0ae75e3a
+--- /dev/null
++++ b/include/dt-bindings/phy/airoha,an7581-usb-phy.h
+@@ -0,0 +1,11 @@
++/* SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause */
++
++#ifndef _DT_BINDINGS_AIROHA_AN7581_USB_PHY_H_
++#define _DT_BINDINGS_AIROHA_AN7581_USB_PHY_H_
++
++#define AIROHA_USB2_MONCLK_SEL0                 0
++#define AIROHA_USB2_MONCLK_SEL1                 1
++#define AIROHA_USB2_MONCLK_SEL2                 2
++#define AIROHA_USB2_MONCLK_SEL3                 3
++
++#endif

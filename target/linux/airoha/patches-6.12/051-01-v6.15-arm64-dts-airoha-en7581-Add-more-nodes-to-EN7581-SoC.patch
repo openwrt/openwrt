@@ -1,0 +1,116 @@
+From 4fbfe81f92c1a9d7bed09cce0a5c508c341e5e97 Mon Sep 17 00:00:00 2001
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Fri, 21 Feb 2025 09:01:15 +0100
+Subject: [PATCH] arm64: dts: airoha: en7581: Add more nodes to EN7581 SoC
+ evaluation board
+
+Introduce the following nodes to EN7581 SoC and EN7581 evaluation board:
+- rng controller
+- pinctrl
+- i2c controllers
+
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Reviewed-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>
+Link: https://lore.kernel.org/r/20250221-en7581-dts-spi-pinctrl-v3-1-4719e2d01555@kernel.org
+Signed-off-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>
+---
+ arch/arm64/boot/dts/airoha/en7581-evb.dts |  4 ++
+ arch/arm64/boot/dts/airoha/en7581.dtsi    | 60 +++++++++++++++++++++++
+ 2 files changed, 64 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/airoha/en7581-evb.dts b/arch/arm64/boot/dts/airoha/en7581-evb.dts
+index a4cdcadd1ae547..d53b72d18242e3 100644
+--- a/arch/arm64/boot/dts/airoha/en7581-evb.dts
++++ b/arch/arm64/boot/dts/airoha/en7581-evb.dts
+@@ -64,3 +64,7 @@
+ 		};
+ 	};
+ };
++
++&i2c0 {
++	status = "okay";
++};
+diff --git a/arch/arm64/boot/dts/airoha/en7581.dtsi b/arch/arm64/boot/dts/airoha/en7581.dtsi
+index dbd296b049f997..9a419796594d3a 100644
+--- a/arch/arm64/boot/dts/airoha/en7581.dtsi
++++ b/arch/arm64/boot/dts/airoha/en7581.dtsi
+@@ -3,6 +3,7 @@
+ #include <dt-bindings/interrupt-controller/irq.h>
+ #include <dt-bindings/interrupt-controller/arm-gic.h>
+ #include <dt-bindings/clock/en7523-clk.h>
++#include <dt-bindings/reset/airoha,en7581-reset.h>
+ 
+ / {
+ 	interrupt-parent = <&gic>;
+@@ -123,6 +124,12 @@
+ 			     <GIC_PPI 10 IRQ_TYPE_LEVEL_LOW>;
+ 	};
+ 
++	clk20m: clock-20000000 {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <20000000>;
++	};
++
+ 	soc {
+ 		compatible = "simple-bus";
+ 		#address-cells = <2>;
+@@ -181,5 +188,58 @@
+ 			interrupts = <GIC_SPI 18 IRQ_TYPE_LEVEL_HIGH>;
+ 			clock-frequency = <1843200>;
+ 		};
++
++		rng@1faa1000 {
++			compatible = "airoha,en7581-trng";
++			reg = <0x0 0x1faa1000 0x0 0xc04>;
++			interrupts = <GIC_SPI 35 IRQ_TYPE_LEVEL_HIGH>;
++		};
++
++		system-controller@1fbf0200 {
++			compatible = "airoha,en7581-gpio-sysctl", "syscon",
++				     "simple-mfd";
++			reg = <0x0 0x1fbf0200 0x0 0xc0>;
++
++			en7581_pinctrl: pinctrl {
++				compatible = "airoha,en7581-pinctrl";
++
++				interrupt-parent = <&gic>;
++				interrupts = <GIC_SPI 26 IRQ_TYPE_LEVEL_HIGH>;
++
++				gpio-controller;
++				#gpio-cells = <2>;
++
++				interrupt-controller;
++				#interrupt-cells = <2>;
++			};
++		};
++
++		i2c0: i2c@1fbf8000 {
++			compatible = "mediatek,mt7621-i2c";
++			reg = <0x0 0x1fbf8000 0x0 0x100>;
++
++			resets = <&scuclk EN7581_I2C2_RST>;
++
++			clocks = <&clk20m>;
++			clock-frequency = <100000>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			status = "disabled";
++		};
++
++		i2c1: i2c@1fbf8100 {
++			compatible = "mediatek,mt7621-i2c";
++			reg = <0x0 0x1fbf8100 0x0 0x100>;
++
++			resets = <&scuclk EN7581_I2C_MASTER_RST>;
++
++			clocks = <&clk20m>;
++			clock-frequency = <100000>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			status = "disabled";
++		};
+ 	};
+ };

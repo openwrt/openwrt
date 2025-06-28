@@ -1,0 +1,42 @@
+From 7693017580e9be839fa5f27130bb6500f3597595 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Sun, 5 Jan 2025 16:03:02 +0100
+Subject: [PATCH] arm64: dts: airoha: en7581: Add Clock Controller node
+
+Add Clock Controller node for EN7581 SoC to correctly expose supported
+clock for any user in the SoC.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Reviewed-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>
+Link: https://lore.kernel.org/r/20250105150328.15172-1-ansuelsmth@gmail.com
+Signed-off-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>
+---
+ arch/arm64/boot/dts/airoha/en7581.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/airoha/en7581.dtsi b/arch/arm64/boot/dts/airoha/en7581.dtsi
+index 55eb1762fb1136..f584409e72cdb2 100644
+--- a/arch/arm64/boot/dts/airoha/en7581.dtsi
++++ b/arch/arm64/boot/dts/airoha/en7581.dtsi
+@@ -2,6 +2,7 @@
+ 
+ #include <dt-bindings/interrupt-controller/irq.h>
+ #include <dt-bindings/interrupt-controller/arm-gic.h>
++#include <dt-bindings/clock/en7523-clk.h>
+ 
+ / {
+ 	interrupt-parent = <&gic>;
+@@ -142,6 +143,13 @@
+ 			interrupts = <GIC_PPI 9 IRQ_TYPE_LEVEL_LOW>;
+ 		};
+ 
++		scuclk: clock-controller@1fa20000 {
++			compatible = "airoha,en7581-scu";
++			reg = <0x0 0x1fb00000 0x0 0x970>;
++			#clock-cells = <1>;
++			#reset-cells = <1>;
++		};
++
+ 		uart1: serial@1fbf0000 {
+ 			compatible = "ns16550";
+ 			reg = <0x0 0x1fbf0000 0x0 0x30>;
