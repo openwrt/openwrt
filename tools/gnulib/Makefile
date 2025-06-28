@@ -2,15 +2,20 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gnulib
 PKG_CPE_ID:=cpe:/a:gnu:$(PKG_NAME)
-PKG_VERSION:=7643cc1d0431bd303a5a5f70dd6637828d4468ce# # stable-202501 in 202506
+
+PKG_SOURCE_VERSION:=stable-202501
+PKG_MIRROR_SOURCE:=$(PKG_NAME)-20250303.bundle
+PKG_MIRROR_HASH:=9dae009ef9dd7cff17b74c0cda5d7a423e2ed98b4f5b7aa29a970565b0591c06
+PKG_VERSION:=3fbc2c7bb371916a6f3433ef28d84874909d1052
+PKG_HASH:=1202af3960a07b5e16a935107eed38d7b5022e833605149b8c0241a66230b2f7
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://gitweb.git.savannah.gnu.org/gitweb/?p=$(PKG_NAME).git;a=snapshot;h=$(word 1,$(PKG_VERSION));sf=tgz
-PKG_HASH:=4d56b57dddd5d3753e457830b19009e7c0ba2c9613d0062135eb599b8204f2c5
+PKG_SOURCE_URL:=@GNU/$(PKG_NAME)
+PKG_SOURCE_PROTO:=$(word 2, $(subst ., ,$(PKG_MIRROR_SOURCE)))
 
 include $(INCLUDE_DIR)/host-build.mk
 
-TAR_OPTIONS := -C $(HOST_BUILD_DIR) --strip-components=1 $(TAR_OPTIONS)
+TAR_OPTIONS := -C $(HOST_BUILD_DIR) $(TAR_OPTIONS)
 
 define Host/Configure
 endef
