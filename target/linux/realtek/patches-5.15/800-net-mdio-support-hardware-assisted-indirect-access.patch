@@ -65,19 +65,19 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   * __mdiobus_read - Unlocked version of the mdiobus_read function
   * @bus: the mii_bus struct
   * @addr: the phy address
-@@ -757,7 +783,10 @@ int __mdiobus_read(struct mii_bus *bus,
+@@ -761,7 +787,10 @@ int __mdiobus_read(struct mii_bus *bus,
+ 		return -ENXIO;
  
- 	lockdep_assert_held_once(&bus->mdio_lock);
+ 	if (bus->read)
+-		retval = bus->read(bus, addr, regnum);
++		if (bus->read_paged)
++			retval = bus->read_paged(bus, addr, bus->selected_page[addr], regnum);
++		else
++			retval = bus->read(bus, addr, regnum);
+ 	else
+ 		retval = -EOPNOTSUPP;
  
--	retval = bus->read(bus, addr, regnum);
-+	if (bus->read_paged)
-+		retval = bus->read_paged(bus, addr, bus->selected_page[addr], regnum);
-+	else
-+		retval = bus->read(bus, addr, regnum);
- 
- 	trace_mdio_access(bus, 1, addr, regnum, retval, retval);
- 	mdiobus_stats_acct(&bus->stats[addr], true, retval);
-@@ -767,6 +796,40 @@ int __mdiobus_read(struct mii_bus *bus,
+@@ -773,6 +802,40 @@ int __mdiobus_read(struct mii_bus *bus,
  EXPORT_SYMBOL(__mdiobus_read);
  
  /**
@@ -118,19 +118,19 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   * __mdiobus_write - Unlocked version of the mdiobus_write function
   * @bus: the mii_bus struct
   * @addr: the phy address
-@@ -783,7 +846,10 @@ int __mdiobus_write(struct mii_bus *bus,
+@@ -793,7 +856,10 @@ int __mdiobus_write(struct mii_bus *bus,
+ 		return -ENXIO;
  
- 	lockdep_assert_held_once(&bus->mdio_lock);
+ 	if (bus->write)
+-		err = bus->write(bus, addr, regnum, val);
++		if (bus->write_paged)
++			err = bus->write_paged(bus, addr, bus->selected_page[addr], regnum, val);
++		else
++			err = bus->write(bus, addr, regnum, val);
+ 	else
+ 		err = -EOPNOTSUPP;
  
--	err = bus->write(bus, addr, regnum, val);
-+	if (bus->write_paged)
-+		err = bus->write_paged(bus, addr, bus->selected_page[addr], regnum, val);
-+	else
-+		err = bus->write(bus, addr, regnum, val);
- 
- 	trace_mdio_access(bus, 0, addr, regnum, val, err);
- 	mdiobus_stats_acct(&bus->stats[addr], false, err);
-@@ -793,6 +859,39 @@ int __mdiobus_write(struct mii_bus *bus,
+@@ -805,6 +871,39 @@ int __mdiobus_write(struct mii_bus *bus,
  EXPORT_SYMBOL(__mdiobus_write);
  
  /**
@@ -170,7 +170,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   * __mdiobus_modify_changed - Unlocked version of the mdiobus_modify function
   * @bus: the mii_bus struct
   * @addr: the phy address
-@@ -825,6 +924,43 @@ int __mdiobus_modify_changed(struct mii_
+@@ -837,6 +936,43 @@ int __mdiobus_modify_changed(struct mii_
  EXPORT_SYMBOL_GPL(__mdiobus_modify_changed);
  
  /**
@@ -214,7 +214,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   * mdiobus_read_nested - Nested version of the mdiobus_read function
   * @bus: the mii_bus struct
   * @addr: the phy address
-@@ -850,6 +986,79 @@ int mdiobus_read_nested(struct mii_bus *
+@@ -862,6 +998,79 @@ int mdiobus_read_nested(struct mii_bus *
  EXPORT_SYMBOL(mdiobus_read_nested);
  
  /**
@@ -294,7 +294,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   * mdiobus_read - Convenience function for reading a given MII mgmt register
   * @bus: the mii_bus struct
   * @addr: the phy address
-@@ -872,6 +1081,29 @@ int mdiobus_read(struct mii_bus *bus, in
+@@ -884,6 +1093,29 @@ int mdiobus_read(struct mii_bus *bus, in
  EXPORT_SYMBOL(mdiobus_read);
  
  /**
@@ -324,7 +324,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   * mdiobus_write_nested - Nested version of the mdiobus_write function
   * @bus: the mii_bus struct
   * @addr: the phy address
-@@ -898,6 +1130,33 @@ int mdiobus_write_nested(struct mii_bus
+@@ -910,6 +1142,33 @@ int mdiobus_write_nested(struct mii_bus
  EXPORT_SYMBOL(mdiobus_write_nested);
  
  /**
@@ -358,7 +358,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   * mdiobus_write - Convenience function for writing a given MII mgmt register
   * @bus: the mii_bus struct
   * @addr: the phy address
-@@ -921,6 +1180,30 @@ int mdiobus_write(struct mii_bus *bus, i
+@@ -933,6 +1192,30 @@ int mdiobus_write(struct mii_bus *bus, i
  EXPORT_SYMBOL(mdiobus_write);
  
  /**
@@ -389,7 +389,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
   * mdiobus_modify - Convenience function for modifying a given mdio device
   *	register
   * @bus: the mii_bus struct
-@@ -942,6 +1225,51 @@ int mdiobus_modify(struct mii_bus *bus,
+@@ -954,6 +1237,51 @@ int mdiobus_modify(struct mii_bus *bus,
  EXPORT_SYMBOL_GPL(mdiobus_modify);
  
  /**
