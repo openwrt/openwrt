@@ -1412,6 +1412,15 @@ define Device/embeddedwireless_dorin
 endef
 TARGET_DEVICES += embeddedwireless_dorin
 
+ define Device/embeddedwireless_dorin-mobile-gw
+   SOC := ar9331
+   DEVICE_VENDOR := Embedded Wireless
+   DEVICE_MODEL := Dorin Mobile GW
+   DEVICE_PACKAGES := kmod-usb-chipidea2
+   IMAGE_SIZE := 16000k
+ endef
+ TARGET_DEVICES += embeddedwireless_dorin-mobile-gw
+
 define Device/engenius_eap1200h
   $(Device/senao_loader_okli)
   SOC := qca9557
