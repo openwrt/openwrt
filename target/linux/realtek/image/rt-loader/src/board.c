@@ -21,10 +21,8 @@
 #define RTL93XX_CHIP_INFO_EN		0xa0000
 
 /*
- * board_putchar() is the central function to write to serial console of the device. Some printf
- * libraries (e.g. https://github.com/mpaland/printf) need a fixed function name like _putchar.
- * To keep the original library as is, link the two functions with gcc compiler option
- * -D_putchar=board_putchar
+ * board_putchar() is the central function to write to serial console of the device. This is
+ * linked to printf() and the provider library via globals.h.
  */
 
 void board_putchar(int ch, void *ctx)
