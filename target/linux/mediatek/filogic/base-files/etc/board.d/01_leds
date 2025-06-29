@@ -84,6 +84,12 @@ mercusys,mr80x-v3)
 	ucidef_set_led_netdev "lan3" "lan-3" "green:lan-3" "lan3" "link tx rx"
 	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan" "link tx rx"
 	;;
+mercusys,mr85x)
+	ucidef_set_led_netdev "lan0" "lan-0" "green:lan-0" "eth0.1" "link tx rx"
+	ucidef_set_led_netdev "lan1" "lan-1" "green:lan-1" "eth0.2" "link tx rx"
+	ucidef_set_led_netdev "lan2" "lan-2" "green:lan-2" "eth0.3" "link tx rx"
+	ucidef_set_led_netdev "wan" "wan" "green:wan" "eth1" "link tx rx"
+	;;
 mercusys,mr90x-v1|\
 mercusys,mr90x-v1-ubi)
 	ucidef_set_led_netdev "lan-0" "lan-0" "green:lan-0" "lan0" "link tx rx"
