@@ -1,0 +1,66 @@
+name: Validate Target/Subtarget Identifier
+description: Validates the target and subtarget combination
+
+inputs:
+  identifier:
+    description: The target/subtarget combination to validate
+    required: true
+  working-directory:
+    description: Directory containing OpenWrt source
+    required: false
+    default: ${{ github.workspace }}
+
+outputs:
+  valid:
+    description: Whether the identifier is valid
+    value: ${{ steps.validate.outputs.valid }}
+  error:
+    description: Error message if validation failed
+    value: ${{ steps.validate.outputs.error }}
+  target:
+    description: Validated target name
+    value: ${{ steps.validate.outputs.target }}
+  subtarget:
+    description: Validated subtarget name
+    value: ${{ steps.validate.outputs.subtarget }}
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      id: validate
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        # Validate format
+        if [[ ! "${{ inputs.identifier }}" =~ ^[a-zA-Z0-9]+/[a-zA-Z0-9]+$ ]]; then
+          echo "::notice::Invalid target/subtarget format"
+          echo "valid=false" >> $GITHUB_OUTPUT
+          echo "error=Invalid target/subtarget format" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        # Split target/subtarget
+        target=$(echo "${{ inputs.identifier }}" | cut -d "/" -f 1)
+        subtarget=$(echo "${{ inputs.identifier }}" | cut -d "/" -f 2)
+
+        # Check target exists
+        if [[ ! -d "target/linux/$target" ]]; then
+          echo "::notice::Target '$target' not found"
+          echo "valid=false" >> $GITHUB_OUTPUT
+          echo "error=Target not found" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        # Check if subtarget is valid for target
+        subtargets="$(TOPDIR=$(pwd) make -C target/linux/$target --no-print-directory DUMP=1 TARGET_BUILD=1 val.SUBTARGETS V=s 2>/dev/null)"
+        if [[ -z "$(echo "$subtargets" | grep "$subtarget")" ]]; then
+          echo "::notice::Subtarget '$subtarget' not found for target '$target'"
+          echo "valid=false" >> $GITHUB_OUTPUT
+          echo "error=Subtarget not found for target" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        echo "target=$target" >> $GITHUB_OUTPUT
+        echo "subtarget=$subtarget" >> $GITHUB_OUTPUT
+        echo "::notice::Target/subtarget validated successfully"
+        echo "valid=true" >> $GITHUB_OUTPUT
