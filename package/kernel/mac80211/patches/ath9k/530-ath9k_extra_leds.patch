@@ -24,7 +24,7 @@
  struct ath_softc {
  	struct ieee80211_hw *hw;
  	struct device *dev;
-@@ -1034,9 +1044,8 @@ struct ath_softc {
+@@ -1036,9 +1046,8 @@ struct ath_softc {
  	spinlock_t chan_lock;
  
  #ifdef CPTCFG_MAC80211_LEDS
@@ -181,7 +181,7 @@
  
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -1089,7 +1089,7 @@ int ath9k_init_device(u16 devid, struct
+@@ -1041,7 +1041,7 @@ int ath9k_init_device(u16 devid, struct
  
  #ifdef CPTCFG_MAC80211_LEDS
  	/* must be initialized before ieee80211_register_hw */
@@ -254,7 +254,7 @@
  
  static ssize_t read_file_ani(struct file *file, char __user *user_buf,
  			     size_t count, loff_t *ppos)
-@@ -1390,6 +1445,10 @@ int ath9k_init_debug(struct ath_hw *ah)
+@@ -1391,6 +1446,10 @@ int ath9k_init_debug(struct ath_hw *ah)
  	ath9k_tx99_init_debug(sc);
  	ath9k_cmn_spectral_init_debug(&sc->spec_priv, sc->debug.debugfs_phy);
  
