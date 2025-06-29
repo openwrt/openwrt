@@ -1,0 +1,28 @@
+From: Antony Kolitsos <zeusomighty@hotmail.com>
+Date: Sat, 28 Jun 2025 9:12:05 -0800
+Subject: [PATCH] Include DS Parameters Set element in 5 GHz
+
+It's possible that the mlw8k driver or firmware is unexpectedly reliant on the presence of the DS Parameters Set element even in 5 GHz. This would be a non-standard behavior, as the IEEE 802.11 standard doesn't typically require it for 5 GHz.
+
+Fixes: https://github.com/openwrt/openwrt/issues/19088
+Signed-off-by: Antony Kolitsos <zeusomighty@hotmail.com>
+---
+ src/ap/beacon.c | 2 +++++
+ 1 file changed, 2 insertions(+)
+ 
+--- a/src/ap/beacon.c
++++ b/src/ap/beacon.c
+@@ -88,11 +88,13 @@ static u8 ieee802_11_erp_info(struct hos
+ 
+ static u8 * hostapd_eid_ds_params(struct hostapd_data *hapd, u8 *eid)
+ {
++#if defined(CONFIG_IEEE80211AC) || defined(CONFIG_IEEE80211AX) || defined(CONFIG_IEEE80211BE)
+ 	enum hostapd_hw_mode hw_mode = hapd->iconf->hw_mode;
+ 
+ 	if (hw_mode != HOSTAPD_MODE_IEEE80211G &&
+ 	    hw_mode != HOSTAPD_MODE_IEEE80211B)
+ 		return eid;
++#endif /* CONFIG_IEEE80211AC || CONFIG_IEEE80211AX || CONFIG_IEEE80211BE */
+ 
+ 	*eid++ = WLAN_EID_DS_PARAMS;
+ 	*eid++ = 1;
