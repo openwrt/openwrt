@@ -22,11 +22,15 @@ HOST_CONFIGURE_PARALLEL:=1
 
 include $(INCLUDE_DIR)/host-build.mk
 
+# XCode headers must come before staging dir headers
+HOST_CFLAGS := $(subst -I,-idirafter,$(HOST_CFLAGS))
+HOST_CPPFLAGS := $(subst -I,-idirafter,$(HOST_CPPFLAGS))
+HOST_CXXFLAGS := $(subst -I,-idirafter,$(HOST_CXXFLAGS))
+
 HOST_CONFIGURE_VARS += \
 	CC="$(HOSTCC_NOCACHE)" \
 	CXX="$(HOSTCXX_NOCACHE)" \
 	MAKEFLAGS="$(HOST_JOBS)" \
-	CXXFLAGS="$(HOST_CFLAGS)" \
 	MAKE="$(STAGING_DIR_HOST)/bin/ninja"
 
 HOST_CONFIGURE_ARGS := \
