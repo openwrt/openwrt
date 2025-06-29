@@ -63,7 +63,7 @@ endef
 define U-Boot/rb5009
   NAME:=MikroTik RB5009
   BUILD_SUBTARGET:=cortexa72
-  BUILD_DEVICES:=mikrotik_rb5009
+  BUILD_DEVICES:=mikrotik_rb5009ug mikrotik_rb5009upr
   UBOOT_CONFIG:=mvebu_rb5009
   UBOOT_IMAGE:=u-boot.elf
 endef
