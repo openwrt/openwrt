@@ -1,0 +1,39 @@
+From e2baeba1a9acabcf2c6d3059e3c54353e58f3162 Mon Sep 17 00:00:00 2001
+From: Gao Xiang <hsiangkao@linux.alibaba.com>
+Date: Fri, 27 Jun 2025 15:33:19 +0800
+Subject: [PATCH] erofs-utils: fix missing getrandom() on some macOS platforms
+
+It has <sys/random.h> but not getrandom().
+
+Fixes: 5de439566bc5 ("erofs-utils: Provide identical functionality without libuuid")
+Signed-off-by: Gao Xiang <hsiangkao@linux.alibaba.com>
+---
+ configure.ac | 1 +
+ lib/uuid.c   | 4 ++--
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+--- a/configure.ac
++++ b/configure.ac
+@@ -266,6 +266,7 @@ AC_CHECK_FUNCS(m4_flatten([
+ 	backtrace
+ 	copy_file_range
+ 	fallocate
++	getrandom
+ 	getrlimit
+ 	gettimeofday
+ 	lgetxattr
+--- a/lib/uuid.c
++++ b/lib/uuid.c
+@@ -41,9 +41,9 @@ static int s_getrandom(void *out, unsign
+ 		ssize_t r;
+ 		int err;
+ 
+-#ifdef HAVE_SYS_RANDOM_H
++#if defined(HAVE_SYS_RANDOM_H) && defined(HAVE_GETRANDOM)
+ 		r = getrandom(out, size, flags);
+-#elif defined(__NR_getrandom)
++#elif defined(__linux__) && defined(__NR_getrandom)
+ 		r = (ssize_t)syscall(__NR_getrandom, out, size, flags);
+ #else
+ 		r = -1;
+

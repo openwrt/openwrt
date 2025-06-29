@@ -1,0 +1,94 @@
+From df4dbd7b480c3b345dc3ecaf42db1e70b22a84db Mon Sep 17 00:00:00 2001
+From: Gao Xiang <xiang@kernel.org>
+Date: Fri, 27 Jun 2025 09:59:44 +0800
+Subject: [PATCH] libfstools: support erofs+overlay
+
+The EROFS support needs overlayfs too.
+
+Signed-off-by: Gao Xiang <xiang@kernel.org>
+---
+ libfstools/rootdisk.c | 45 +++++++++++++++++++++++++++++++++++++------
+ 1 file changed, 39 insertions(+), 6 deletions(-)
+
+diff --git a/libfstools/rootdisk.c b/libfstools/rootdisk.c
+index 910899a..b93cc80 100644
+--- a/libfstools/rootdisk.c
++++ b/libfstools/rootdisk.c
+@@ -23,6 +23,14 @@ struct squashfs_super_block {
+ 	uint64_t bytes_used;
+ };
+ 
++struct erofs_super_block {
++	uint32_t magic;
++	uint32_t pad0[2];
++	uint8_t blkszbits;
++	uint8_t pad1[23];
++	uint32_t blocks;
++};
++
+ struct rootdev_volume {
+ 	struct volume v;
+ 	uint64_t offset;
+@@ -92,10 +100,32 @@ static int get_squashfs(struct squashfs_super_block *sb)
+ 	return 0;
+ }
+ 
++static int64_t check_erofs(void)
++{
++	struct erofs_super_block sb;
++	FILE *f;
++	int len;
++
++	f = fopen(rootdev, "r");
++	if (!f)
++		return -1;
++	if (fseek(f, 1024, SEEK_SET))
++		return -1;
++
++	len = fread(&sb, sizeof(sb), 1, f);
++	fclose(f);
++
++	if (len != 1 || sb.magic != cpu_to_le32(0xE0F5E1E2))
++		return -1;
++
++	return (int64_t)le32_to_cpu(sb.blocks) << sb.blkszbits;
++}
++
+ static struct volume *rootdisk_volume_find(char *name)
+ {
+ 	struct squashfs_super_block sb;
+ 	struct rootdev_volume *p;
++	int64_t offset;
+ 
+ 	if (strcmp(name, "rootfs_data") != 0)
+ 		return NULL;
+@@ -107,17 +137,20 @@ static struct volume *rootdisk_volume_find(char *name)
+ 	if (!rootdev)
+ 		return NULL;
+ 
+-	if (get_squashfs(&sb))
+-		return NULL;
+-
+-	if (memcmp(&sb.s_magic, "hsqs", sizeof(sb.s_magic)) != 0)
+-		return NULL;
++	if (!get_squashfs(&sb) &&
++	    !memcmp(&sb.s_magic, "hsqs", sizeof(sb.s_magic))) {
++		offset = le64_to_cpu(sb.bytes_used);
++	} else {
++		offset = check_erofs();
++		if (offset <= 0)
++			return NULL;
++	}
+ 
+ 	p = calloc(1, sizeof(*p));
+ 	p->v.drv = &rootdisk_driver;
+ 	p->v.name = "rootfs_data";
+ 
+-	p->offset = le64_to_cpu(sb.bytes_used);
++	p->offset = offset;
+ 	p->offset = ((p->offset + (ROOTDEV_OVERLAY_ALIGN - 1)) &
+ 		     ~(ROOTDEV_OVERLAY_ALIGN - 1));
+ 
+-- 
+2.39.5
+
