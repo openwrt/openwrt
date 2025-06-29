@@ -2175,6 +2175,8 @@ TARGET_DEVICES += zyxel_ex5700-telenor
 define Device/zyxel_nwa50ax-pro
   DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := NWA50AX Pro
+  DEVICE_ALT0_VENDOR := Zyxel
+  DEVICE_ALT0_MODEL := NWA90AX Pro
   DEVICE_DTS := mt7981b-zyxel-nwa50ax-pro
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware zyxel-bootconfig
