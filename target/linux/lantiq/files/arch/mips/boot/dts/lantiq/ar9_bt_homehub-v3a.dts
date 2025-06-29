@@ -152,8 +152,13 @@
 				read-only;
 			};
 			partition@64000 {
+				compatible = "u-boot,env";
 				label = "u-boot-env";
 				reg = <0x64000 0x004000>;
+
+				ethaddr_uboot: ethaddr {
+					#nvmem-cell-cells = <1>;
+				};
 			};
 			ath9k_cal: partition@68000 {
 				label = "art-copy";
@@ -182,6 +187,8 @@
 	wifi@7000 {
 		reg = <0x7000 0 0 0 0>;
 		qca,no-eeprom; /* load from ath9k-eeprom-pci-0000:00:0e.0.bin */
+		nvmem-cells = <&ethaddr_uboot 2>;
+		nvmem-cell-names = "mac-address";
 	};
 };
 
