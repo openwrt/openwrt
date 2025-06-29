@@ -178,9 +178,19 @@ platform_do_upgrade() {
 	linksys,whw03)
 		platform_do_upgrade_linksys_emmc "$1"
 		;;
+	meraki,mr30h |\
 	meraki,mr33 |\
 	meraki,mr74)
 		CI_KERNPART="part.safe"
+		nand_do_upgrade "$1"
+		;;
+	meraki,gx20 |\
+	meraki,z3 |\
+	meraki,z3c)
+		# DO NOT set CI_KERNPART to part.safe,
+		# that is used for chain-loading an unlocked u-boot
+		# if part.safe is overwritten, then u-boot is lost!
+		CI_KERNPART="part.old"
 		nand_do_upgrade "$1"
 		;;
 	mikrotik,cap-ac|\

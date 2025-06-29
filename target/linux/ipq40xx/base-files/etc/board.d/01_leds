@@ -96,6 +96,30 @@ mobipromo,cm520-79f)
 	ucidef_set_led_netdev "lan1" "LAN1" "blue:lan1" "lan1"
 	ucidef_set_led_netdev "lan2" "LAN2" "blue:lan2" "lan2"
 	;;
+meraki,gx20 |\
+meraki,z3 |\
+meraki,z3c)
+	ucidef_set_led_netdev "wan_link" "WAN (link)" "green:wan-0" "wan" "link"
+	ucidef_set_led_netdev "wan_act" "WAN (txrx)" "green:wan-1" "wan" "tx rx"
+	ucidef_set_led_netdev "lan1_link" "LAN1 (link)" "green:lan-10" "lan1" "link"
+	ucidef_set_led_netdev "lan1_act" "LAN1 (txrx)" "green:lan-11" "lan1" "tx rx"
+	ucidef_set_led_netdev "lan2_link" "LAN2 (link)" "green:lan-20" "lan2" "link"
+	ucidef_set_led_netdev "lan2_act" "LAN2 (txrx)" "green:lan-21" "lan2" "tx rx"
+	ucidef_set_led_netdev "lan3_link" "LAN3 (link)" "green:lan-30" "lan3" "link"
+	ucidef_set_led_netdev "lan3_act" "LAN3 (txrx)" "green:lan-31" "lan3" "tx rx"
+	ucidef_set_led_netdev "lan4_link" "LAN4 (link)" "green:lan-40" "lan4" "link"
+	ucidef_set_led_netdev "lan4_act" "LAN4 (txrx)" "green:lan-41" "lan4" "tx rx"
+	;;
+meraki,mr30h)
+	ucidef_set_led_netdev "lan1_act" "LAN1 (txrx)" "amber:lan-0" "lan1" "tx rx"
+	ucidef_set_led_netdev "lan1_link" "LAN1 (link)" "green:lan-1" "lan1" "link"
+	ucidef_set_led_netdev "lan2_act" "LAN2 (txrx)" "amber:lan-10" "lan2" "tx rx"
+	ucidef_set_led_netdev "lan2_link" "LAN2 (link)" "green:lan-11" "lan2" "link"
+	ucidef_set_led_netdev "lan3_act" "LAN3 (txrx)" "amber:lan-20" "lan3" "tx rx"
+	ucidef_set_led_netdev "lan3_link" "LAN3 (link)" "green:lan-21" "lan3" "link"
+	ucidef_set_led_netdev "lan4_act" "LAN4 (txrx)" "amber:lan-30" "lan4" "tx rx"
+	ucidef_set_led_netdev "lan4_link" "LAN4 (link)" "green:lan-31" "lan4" "link"
+	;;
 netgear,ex6100v2 |\
 netgear,ex6150v2)
 	ucidef_set_led_wlan "wlan2g" "WLAN2G" "green:router" "phy0tpt"
