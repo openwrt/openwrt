@@ -367,7 +367,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	spin_lock_init(&bp->lock);
  	spin_lock_init(&bp->stats_lock);
  
-@@ -5118,6 +5237,21 @@ static int macb_probe(struct platform_de
+@@ -5122,6 +5241,21 @@ static int macb_probe(struct platform_de
  	else
  		bp->phy_interface = interface;
  
@@ -389,7 +389,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	/* IP specific init */
  	err = init(pdev);
  	if (err)
-@@ -5194,6 +5328,19 @@ static int macb_remove(struct platform_d
+@@ -5198,6 +5332,19 @@ static int macb_remove(struct platform_d
  	return 0;
  }
  
@@ -409,7 +409,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  static int __maybe_unused macb_suspend(struct device *dev)
  {
  	struct net_device *netdev = dev_get_drvdata(dev);
-@@ -5408,6 +5555,7 @@ static const struct dev_pm_ops macb_pm_o
+@@ -5412,6 +5559,7 @@ static const struct dev_pm_ops macb_pm_o
  static struct platform_driver macb_driver = {
  	.probe		= macb_probe,
  	.remove		= macb_remove,
