@@ -129,7 +129,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	bool			busy;
 --- a/drivers/mmc/core/sd.c
 +++ b/drivers/mmc/core/sd.c
-@@ -1104,6 +1104,14 @@ static int sd_parse_ext_reg_perf(struct
+@@ -1120,6 +1120,14 @@ static int sd_parse_ext_reg_perf(struct
  		pr_debug("%s: Command Queue supported depth %u\n",
  			 mmc_hostname(card->host),
  			 card->ext_csd.cmdq_depth);
@@ -146,7 +146,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	card->ext_perf.fno = fno;
 --- a/include/linux/mmc/card.h
 +++ b/include/linux/mmc/card.h
-@@ -344,6 +344,8 @@ struct mmc_card {
+@@ -345,6 +345,8 @@ struct mmc_card {
  	unsigned int    nr_parts;
  
  	struct workqueue_struct *complete_wq;	/* Private workqueue */

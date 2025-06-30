@@ -39,7 +39,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  			return BLK_STS_RESOURCE;
 --- a/drivers/mmc/core/sd.c
 +++ b/drivers/mmc/core/sd.c
-@@ -1105,13 +1105,14 @@ static int sd_parse_ext_reg_perf(struct
+@@ -1121,13 +1121,14 @@ static int sd_parse_ext_reg_perf(struct
  			 mmc_hostname(card->host),
  			 card->ext_csd.cmdq_depth);
  		/*
@@ -60,7 +60,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	}
  
  	card->ext_perf.fno = fno;
-@@ -1375,6 +1376,7 @@ retry:
+@@ -1391,6 +1392,7 @@ retry:
  
  		card->ocr = ocr;
  		card->type = MMC_TYPE_SD;
