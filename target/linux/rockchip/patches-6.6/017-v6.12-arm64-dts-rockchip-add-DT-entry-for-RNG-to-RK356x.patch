@@ -1,27 +1,27 @@
-From 756e7d3251ad8f6c72e7bf4c476537a89f673e38 Mon Sep 17 00:00:00 2001
+From afeccc4084963aaa932931b734c8def55613c483 Mon Sep 17 00:00:00 2001
 From: Aurelien Jarno <aurelien@aurel32.net>
-Date: Sun, 21 Jul 2024 01:48:38 +0100
-Subject: [PATCH 3/3] arm64: dts: rockchip: add DT entry for RNG to RK356x
+Date: Tue, 30 Jul 2024 17:11:44 +0100
+Subject: [PATCH] arm64: dts: rockchip: add DT entry for RNG to RK356x
 
-Enable the just added Rockchip RNG driver for RK356x SoCs.
+Include the just added Rockchip RNG driver for RK356x SoCs and
+enable it on RK3568.
 
 Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Link: https://lore.kernel.org/r/d2beb15377dc8b580ca5557b1a4a6f50b74055aa.1722355365.git.daniel@makrotopia.org
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
 ---
- arch/arm64/boot/dts/rockchip/rk3568.dtsi |  7 +++++++
+ arch/arm64/boot/dts/rockchip/rk3568.dtsi |  4 ++++
  arch/arm64/boot/dts/rockchip/rk356x.dtsi | 10 ++++++++++
- 2 files changed, 17 insertions(+)
+ 2 files changed, 14 insertions(+)
 
 --- a/arch/arm64/boot/dts/rockchip/rk3568.dtsi
 +++ b/arch/arm64/boot/dts/rockchip/rk3568.dtsi
-@@ -258,6 +258,13 @@
+@@ -257,6 +257,10 @@
  	};
  };
  
 +&rng {
-+	rockchip,sample-count = <1000>;
-+	quality = <900>;
-+
 +	status = "okay";
 +};
 +
