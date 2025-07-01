@@ -398,18 +398,11 @@ function iface_key_caching(config) {
 function iface_hs20(config) {
 	if (!config.hs20)
 		return;
-	
-	let uci = libuci.cursor();
-	let icons = uci.get_all('wireless');
-	for (let k, icon in icons)
-		if (icon['.type'] == 'hs20-icon')
-			append('hs20_icon', `${icon.width}:${icon.heigth}:${icon.lang}:${icon.type}:${k}:${icon.path}`);
 
 	append_vars(config, [
-		'hs20', 'disable_dgaf', 'osen', 'anqp_domain_id', 'hs20_deauth_req_timeout', 'osu_ssid', 
+		'hs20', 'disable_dgaf', 'anqp_domain_id', 'hs20_deauth_req_timeout',
 		'hs20_wan_metrics', 'hs20_operating_class', 'hs20_t_c_filename', 'hs20_t_c_timestamp',
-		'hs20_t_c_server_url', 'hs20_oper_friendly_name', 'hs20_conn_capab', 'osu_provider',
-		'operator_icon'
+		'hs20_t_c_server_url', 'hs20_conn_capab'
 	]);
 }
 

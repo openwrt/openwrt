@@ -308,12 +308,6 @@ wireless_vif_parse_encryption() {
 			esac
 		;;
 	esac
-
-	case "$encryption" in
-		*osen*)
-			auth_osen=1
-		;;
-	esac
 }
 
 _wireless_set_brsnoop_isolation() {
