@@ -403,9 +403,8 @@ define Device/tcl_hh500v
 	SOC := ipq8072
 	IMAGES += factory.bin
 	IMAGE/factory.bin := append-ubi | qsdk-ipq-factory-nand
-	DEVICE_PACKAGES := ipq-wifi-tcl_hh500v kmod-usb-serial-option \
-		kmod-pinctrl-aw9523 kmod-mhi-pci-generic kmod-mhi-wwan-ctrl \
-		kmod-mhi-wwan-mbim
+	DEVICE_PACKAGES := ipq-wifi-tcl_hh500v kmod-pinctrl-aw9523 \
+		kmod-mhi-pci-generic kmod-mhi-wwan-ctrl kmod-mhi-wwan-mbim
 endef
 TARGET_DEVICES += tcl_hh500v
 
