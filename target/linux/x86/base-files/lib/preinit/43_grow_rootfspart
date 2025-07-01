@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+get_squashfs_size() {
+	local low high
+	low=$(hexdump -s 40 -n 4 -e '1/4 "%08x" "\n"' "$1")
+	high=$(hexdump -s 44 -n 4 -e '1/4 "%08x" "\n"' "$1")
+	echo $((0x$high$low))
+}
+
+run_grow_root_part() {
+	[ "$FAILSAFE" = "true" ] && return
+
+	local diskdev squashfs_magic
+	local SQUASHFS_ALIGN=$((0x10000))
+
+	. /lib/upgrade/common.sh
+
+	if export_bootdevice && export_partdevice diskdev 0; then
+		diskdev=/dev/$diskdev
+		case "$diskdev" in
+			*[0-9]) part2dev=${diskdev}p2;;
+			*)      part2dev=${diskdev}2;;
+		esac
+		[ -e "$part2dev" ] || return
+		squashfs_magic=$(dd bs=4 count=1 if="$part2dev" 2>/dev/null)
+		[ "$squashfs_magic" = "hsqs" ] || return
+		squashfs_size=$(get_squashfs_size "$part2dev")
+		squashfs_size=$((squashfs_size + (SQUASHFS_ALIGN-1) & (~(SQUASHFS_ALIGN-1))))
+		[ "$squashfs_size" -gt 0 ] || return
+		rootfs_data_magic=$(hexdump -s $((squashfs_size+0x400)) -n 4 -e '1/4 "%08x" "\n"' "$part2dev")
+		[ "$rootfs_data_magic" = "f2f52010" ] && return # f2fs
+		rootfs_data_magic=$(hexdump -s $((squashfs_size+0x438)) -n 2 -e '1/2 "%04x" "\n"' "$part2dev")
+		[ "$rootfs_data_magic" = "ef53" ] && return # ext3
+		/usr/sbin/grow_rootfspart "${diskdev}"
+	fi
+}
+
+boot_hook_add preinit_main run_grow_root_part
