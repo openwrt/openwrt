@@ -1239,7 +1239,7 @@ config KERNEL_NF_CONNTRACK_TIMEOUT
 	   Increases the (uncompressed) size of nf_conntrack.ko by ~8kB.
 
 #
-# NFS related symbols
+# Filesystem related symbols
 #
 config KERNEL_IP_PNP
 	bool "Compile the kernel with rootfs on NFS"
@@ -1278,6 +1278,9 @@ config KERNEL_BTRFS_FS
 	  Say Y here if you want to make the kernel to be able to boot off a
 	  BTRFS partition.
 
+menu "Filesystem ACL and xattr support options"
+	config USE_FS_ACL_XATTR
+		bool "Use filesystem ACLs and xattr support by default"
 config KERNEL_EROFS_FS
 	bool "Compile the kernel with built-in EROFS support"
 	help
@@ -1303,70 +1306,89 @@ menu "Filesystem ACL and attr support options"
 		  Make using ACLs (e.g. POSIX ACL, NFSv4 ACL) the default
 		  for kernel and packages, except old NFS.
 		  Also enable userspace extended attribute support
-		  by default.  (OpenWrt already has an expection it will be
+		  by default.  (OpenWrt already has an expectation it will be
 		  present in the kernel).
 
 	config KERNEL_FS_POSIX_ACL
 		bool "Enable POSIX ACL support"
-		default y if USE_FS_ACL_ATTR
+		default y if USE_FS_ACL_XATTR
 
 	config KERNEL_BTRFS_FS_POSIX_ACL
-		bool "Enable POSIX ACL for BtrFS Filesystems"
+		bool "Enable POSIX ACL for BtrFS"
 		select KERNEL_FS_POSIX_ACL
-		default y if USE_FS_ACL_ATTR
+		default y if USE_FS_ACL_XATTR
 
 	config KERNEL_EROFS_FS_POSIX_ACL
 		bool "Enable POSIX ACL for EROFS Filesystems"
 		select KERNEL_FS_POSIX_ACL
-		default y if USE_FS_ACL_ATTR
+		default y if USE_FS_ACL_XATTR
 
 	config KERNEL_EXT4_FS_POSIX_ACL
-		bool "Enable POSIX ACL for Ext4 Filesystems"
+		bool "Enable POSIX ACLs for Ext4"
 		select KERNEL_FS_POSIX_ACL
-		default y if USE_FS_ACL_ATTR
+		default y if USE_FS_ACL_XATTR
 
 	config KERNEL_F2FS_FS_POSIX_ACL
-		bool "Enable POSIX ACL for F2FS Filesystems"
+		bool "Enable POSIX ACLs for F2FS"
 		select KERNEL_FS_POSIX_ACL
-		default y if USE_FS_ACL_ATTR
+		default y if USE_FS_ACL_XATTR
+
+    config KERNEL_F2FS_FS_XATTR
+    	bool "Enable XATTR for F2FS"
+    	default y if USE_FS_ACL_XATTR
 
 	config KERNEL_JFFS2_FS_POSIX_ACL
-		bool "Enable POSIX ACL for JFFS2 Filesystems"
+		bool "Enable POSIX ACLs for JFFS2"
 		select KERNEL_FS_POSIX_ACL
-		default y if USE_FS_ACL_ATTR
+		default y if USE_FS_ACL_XATTR
+
+    config KERNEL_JFFS2_FS_XATTR
+    	bool "Enable XATTR for JFFS2"
+        default y if USE_FS_ACL_XATTR
 
 	config KERNEL_TMPFS_POSIX_ACL
-		bool "Enable POSIX ACL for TMPFS Filesystems"
+		bool "Enable POSIX ACLs for TMPFS"
 		select KERNEL_FS_POSIX_ACL
-		default y if USE_FS_ACL_ATTR
+		default y if USE_FS_ACL_XATTR
 
 	config KERNEL_NFS_ACL_SUPPORT
-		bool "Enable ACLs for NFS"
-		default y if USE_FS_ACL_ATTR
+		bool "Enable POSIX ACLs for NFS"
+		select KERNEL_FS_POSIX_ACL
+		default y if USE_FS_ACL_XATTR
 
 	config KERNEL_NFS_V3_ACL
-		bool "Enable ACLs for NFSv3"
+		bool "Enable POSIX ACLs for NFSv3"
+		select KERNEL_FS_POSIX_ACL
+		default y if USE_FS_ACL_XATTR
 
 	config KERNEL_NFSD_V2_ACL
-		bool "Enable ACLs for NFSDv2"
+		bool "Enable POSIX ACLs for NFSDv2"
+		select KERNEL_FS_POSIX_ACL
+		default y if USE_FS_ACL_XATTR
 
 	config KERNEL_NFSD_V3_ACL
-		bool "Enable ACLs for NFSDv3"
+		bool "Enable POSIX ACLs for NFSDv3"
+		select KERNEL_FS_POSIX_ACL
+		default y if USE_FS_ACL_XATTR
 
 	config KERNEL_REISERFS_FS_POSIX_ACL
 		bool "Enable POSIX ACLs for ReiserFS"
 		select KERNEL_FS_POSIX_ACL
-		default y if USE_FS_ACL_ATTR
+		default y if USE_FS_ACL_XATTR
 
 	config KERNEL_XFS_POSIX_ACL
 		bool "Enable POSIX ACLs for XFS"
 		select KERNEL_FS_POSIX_ACL
-		default y if USE_FS_ACL_ATTR
+		default y if USE_FS_ACL_XATTR
 
 	config KERNEL_JFS_POSIX_ACL
 		bool "Enable POSIX ACLs for JFS"
 		select KERNEL_FS_POSIX_ACL
-		default y if USE_FS_ACL_ATTR
+		default y if USE_FS_ACL_XATTR
+
+    config KERNEL_SQUASHFS_XATTR
+        bool "Enable XATTR for Squashfs"
+	    default y if USE_FS_ACL_XATTR
 
 endmenu
 
@@ -1382,8 +1404,6 @@ config KERNEL_SQUASHFS_FRAGMENT_CACHE_SIZE
 	default 2 if (SMALL_FLASH && !LOW_MEMORY_FOOTPRINT)
 	default 3
 
-config KERNEL_SQUASHFS_XATTR
-	bool "Squashfs XATTR support"
 
 #
 # compile optimization setting
