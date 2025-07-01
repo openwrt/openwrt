@@ -81,6 +81,10 @@ static inline int rbytes(void)
 
 static inline void add_data(char *ptr, int len)
 {
+    if (ptr == NULL) {
+        fprintf(stderr, "Error: NULL pointer passed to add_data\\n");
+        return;
+    }
 	if (ofs + len > erasesize) {
 		pad(erasesize);
 		prep_eraseblock();
