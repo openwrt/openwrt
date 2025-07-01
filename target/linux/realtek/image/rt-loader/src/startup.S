@@ -14,6 +14,10 @@
 	add \reg, $t9
 .endm
 
+.macro  _EHB
+	sll     $zero, 3
+.endm
+
 	.section .text
 	.globl _start
 	.ent _start
@@ -28,6 +32,21 @@ _where_am_i:
 	move	$t9, $ra
 	subu	$t9, $t9, 0x8
 
+# This loader might be run in environments that are not properly initialized - e.g. ZyXEL
+# devices with BootBase loader. Be careful and setup the coprocessor registers.
+
+	mtc0	$zero, CP0_WATCHLO
+	mtc0	$zero, CP0_WATCHHI
+	mtc0	$zero, CP0_CAUSE
+	mfc0	$t0, CP0_STATUS
+	li	$t1, 0x1000001f
+	or	$t0, $t1
+	xori	$t0, 0x1f
+	mtc0	$t0, CP0_STATUS
+	_EHB
+	mtc0	$zero, CP0_COUNT
+	mtc0	$zero, CP0_COMPARE
+	_EHB
 
 # Check if this our first run (_kernel_load_addr = 0?)
 

@@ -69,7 +69,7 @@ void welcome(void)
 
 	board_get_system(system, sizeof(system));
 
-	printf("rt-loader\n");
+	printf("\nrt-loader\n");
 	printf("Running on %s with %dMB\n", system, board_get_memory() >> 20);
 }
 
