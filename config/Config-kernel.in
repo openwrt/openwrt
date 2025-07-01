@@ -1340,35 +1340,20 @@ menu "Filesystem ACL and attr support options"
 		select KERNEL_FS_POSIX_ACL
 		default y if USE_FS_ACL_ATTR
 
-	config KERNEL_CIFS_ACL
-		bool "Enable CIFS ACLs"
-		select KERNEL_FS_POSIX_ACL
-		default y if USE_FS_ACL_ATTR
-
-	config KERNEL_HFS_FS_POSIX_ACL
-		bool "Enable POSIX ACL for HFS Filesystems"
-		select KERNEL_FS_POSIX_ACL
-		default y if USE_FS_ACL_ATTR
-
-	config KERNEL_HFSPLUS_FS_POSIX_ACL
-		bool "Enable POSIX ACL for HFS+ Filesystems"
-		select KERNEL_FS_POSIX_ACL
-		default y if USE_FS_ACL_ATTR
-
 	config KERNEL_NFS_ACL_SUPPORT
 		bool "Enable ACLs for NFS"
 		default y if USE_FS_ACL_ATTR
 
-	config KERNEL_NFS_V3_ACL_SUPPORT
+	config KERNEL_NFS_V3_ACL
 		bool "Enable ACLs for NFSv3"
 
-	config KERNEL_NFSD_V2_ACL_SUPPORT
+	config KERNEL_NFSD_V2_ACL
 		bool "Enable ACLs for NFSDv2"
 
-	config KERNEL_NFSD_V3_ACL_SUPPORT
+	config KERNEL_NFSD_V3_ACL
 		bool "Enable ACLs for NFSDv3"
 
-	config KERNEL_REISER_FS_POSIX_ACL
+	config KERNEL_REISERFS_FS_POSIX_ACL
 		bool "Enable POSIX ACLs for ReiserFS"
 		select KERNEL_FS_POSIX_ACL
 		default y if USE_FS_ACL_ATTR
