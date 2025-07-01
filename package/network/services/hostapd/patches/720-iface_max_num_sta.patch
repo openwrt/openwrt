@@ -36,7 +36,7 @@ full device, e.g. in order to deal with hardware/driver limitations
  			  * ' ' (ascii 32): all environments
 --- a/src/ap/beacon.c
 +++ b/src/ap/beacon.c
-@@ -1654,7 +1654,7 @@ void handle_probe_req(struct hostapd_dat
+@@ -1655,7 +1655,7 @@ void handle_probe_req(struct hostapd_dat
  	if (hapd->conf->no_probe_resp_if_max_sta &&
  	    is_multicast_ether_addr(mgmt->da) &&
  	    is_multicast_ether_addr(mgmt->bssid) &&
