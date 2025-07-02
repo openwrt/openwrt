@@ -48,10 +48,7 @@
 			gpios = <&tlmm 30 GPIO_ACTIVE_HIGH>;
 		};
 
-		/*
-		 * output low 1s pulse = reset
-		 * sometimes crashes kernel if mhi_pci_generic is active
-		 */
+		/* output low 5s pulse = reset */
 		modem-reset {
 			gpio-export,name = "modem_reset";
 			gpio-export,output = <1>;
