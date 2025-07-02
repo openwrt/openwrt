@@ -1,0 +1,49 @@
+From 8e2e6908a8919a8608866626e5b3bcf242f90b38 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Sun, 5 Jan 2025 16:03:03 +0100
+Subject: [PATCH] arm64: dts: airoha: en7581: Add SNAND node
+
+Add SNAND node to enable support of attached SPI-NAND on the EN7581 SoC.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Reviewed-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>
+Link: https://lore.kernel.org/r/20250105150328.15172-2-ansuelsmth@gmail.com
+Signed-off-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>
+---
+ arch/arm64/boot/dts/airoha/en7581.dtsi | 23 +++++++++++++++++++++++
+ 1 file changed, 23 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/airoha/en7581.dtsi b/arch/arm64/boot/dts/airoha/en7581.dtsi
+index f584409e72cdb2..dbd296b049f997 100644
+--- a/arch/arm64/boot/dts/airoha/en7581.dtsi
++++ b/arch/arm64/boot/dts/airoha/en7581.dtsi
+@@ -143,6 +143,29 @@
+ 			interrupts = <GIC_PPI 9 IRQ_TYPE_LEVEL_LOW>;
+ 		};
+ 
++		spi@1fa10000 {
++			compatible = "airoha,en7581-snand";
++			reg = <0x0 0x1fa10000 0x0 0x140>,
++			      <0x0 0x1fa11000 0x0 0x160>;
++
++			clocks = <&scuclk EN7523_CLK_SPI>;
++			clock-names = "spi";
++
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			status = "disabled";
++
++			spi_nand: nand@0 {
++				compatible = "spi-nand";
++				reg = <0>;
++
++				spi-max-frequency = <50000000>;
++				spi-tx-bus-width = <1>;
++				spi-rx-bus-width = <2>;
++			};
++		};
++
+ 		scuclk: clock-controller@1fa20000 {
+ 			compatible = "airoha,en7581-scu";
+ 			reg = <0x0 0x1fb00000 0x0 0x970>;
