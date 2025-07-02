@@ -7,18 +7,20 @@
 #include "memory.h"
 #include "nanoprintf.h"
 
-#define DRAM_CONFIG_REG			0xb8001004
 #define UART_BUFFER_REG			0xb8002000
 #define UART_LINE_STATUS_REG		0xb8002014
 #define UART_TX_READY			(1 << 29)
 
+#define RTL83XX_DRAM_CONFIG_REG		0xb8001004
 #define RTL838X_ENABLE_RW_MASK		0x3
 #define RTL838X_INT_RW_CTRL_REG		0xbb000058
 #define RTL838X_MODEL_NAME_INFO_REG	0xbb0000d4
 #define RTL839X_MODEL_NAME_INFO_REG	0xbb000ff0
 #define RTL83XX_CHIP_INFO_EN		0xa0000000
+#define RTL931X_DRAM_CONFIG_REG		0xb814304c
 #define RTL93XX_MODEL_NAME_INFO_REG	0xbb000004
 #define RTL93XX_CHIP_INFO_EN		0xa0000
+
 
 /*
  * board_putchar() is the central function to write to serial console of the device. This is
@@ -41,14 +43,18 @@ void board_putchar(int ch, void *ctx)
 
 unsigned int board_get_memory(void)
 {
-	unsigned int dcr = ioread32(DRAM_CONFIG_REG);
-	char ROWCNTv[] = {11, 12, 13, 14, 15, 16};
-	char COLCNTv[] = {8, 9, 10, 11, 12};
-	char BNKCNTv[] = {1, 2, 3};
-	char BUSWIDv[] = {0, 1, 2};
+	unsigned int dcr, bits;
 
-	return 1 << (BNKCNTv[(dcr >> 28) & 0x3] + BUSWIDv[(dcr >> 24) & 0x3] +
-		     ROWCNTv[(dcr >> 20) & 0xf] + COLCNTv[(dcr >> 16) & 0xf]);
+	if ((ioread32(RTL93XX_MODEL_NAME_INFO_REG) & 0xfffc0000) == 0x93100000) {
+		dcr = ioread32(RTL931X_DRAM_CONFIG_REG);
+		bits = (dcr >> 12) + ((dcr >> 6) & 0x3f) + (dcr & 0x3f);
+	} else {
+		dcr = ioread32(RTL83XX_DRAM_CONFIG_REG);
+		bits = ((dcr >> 28) & 0x3) + ((dcr >> 24) & 0x3) +
+		       ((dcr >> 20) & 0xf) + ((dcr >> 16) & 0xf) + 20;
+	}
+
+	return 1 << bits;
 }
 
 /*
