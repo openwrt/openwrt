@@ -13,6 +13,7 @@ board=$(board_name)
 
 case "$board" in
 alcatel,hh40v|\
+alcatel,hh41v|\
 alfa-network,ap121f|\
 alfa-network,ap121fe|\
 alfa-network,n2q|\
@@ -171,7 +172,6 @@ sophos,ap100|\
 sophos,ap100c)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x10000"
 	;;
-TCL,hh41v|\
 wallys,dr531)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0xf800" "0x10000"
 	;;
