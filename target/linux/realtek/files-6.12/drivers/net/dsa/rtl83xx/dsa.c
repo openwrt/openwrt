@@ -653,9 +653,6 @@ static void rtl93xx_pcs_get_state(struct phylink_pcs *pcs,
 	if (priv->family_id == RTL9300_FAMILY_ID)
 		media = sw_r32(RTL930X_MAC_LINK_MEDIA_STS);
 
-	if (media & BIT_ULL(port))
-		state->link = 1;
-
 	pr_debug("%s: link state port %d: %llx, media %llx\n", __func__, port,
 		 link & BIT_ULL(port), media);
 
