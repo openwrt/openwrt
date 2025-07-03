@@ -1,0 +1,7 @@
+menu "Configuration"
+	depends on PACKAGE_ufp
+
+config UFP_INCLUDE_IEEE
+	bool "Include all oui entries from standards.ieee.org"
+	default n
+endmenu
