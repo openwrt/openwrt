@@ -64,6 +64,9 @@ cudy,wr3000h-v1)
 	ucidef_set_led_netdev "wan" "wan" "white:wan" "wan" "link tx rx"
 	ucidef_set_led_netdev "internet" "internet" "white:wan-online" "wan" "link"
 	;;
+elecom,wrc-x3000gs3)
+	ucidef_set_led_netdev "wan" "wan" "mdio-bus:00:green:wan" "wan" "link tx rx"
+	;;
 glinet,gl-x3000|\
 glinet,gl-xe3000)
 	ucidef_set_led_default "power" "POWER" "green:power" "1"
