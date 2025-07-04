@@ -1048,37 +1048,6 @@ define Device/glinet_gl-xe3000
 endef
 TARGET_DEVICES += glinet_gl-xe3000
 
-define Device/glinet_gl-x3000-xe3000-common
-  DEVICE_VENDOR := GL.iNet
-  DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware mkf2fs \
-    kmod-fs-f2fs kmod-hwmon-pwmfan kmod-usb3 kmod-usb-serial-option \
-    kmod-usb-storage kmod-usb-net-qmi-wwan uqmi
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-kernel | pad-to 32M | append-rootfs
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-  ARTIFACTS := preloader.bin bl31-uboot.fip
-  ARTIFACT/preloader.bin := mt7981-bl2 emmc-ddr4
-endef
-
-define Device/glinet_gl-x3000
-  DEVICE_MODEL := GL-X3000
-  DEVICE_DTS := mt7981a-glinet-gl-x3000
-  SUPPORTED_DEVICES := glinet,gl-x3000
-  $(call Device/glinet_gl-x3000-xe3000-common)
-  ARTIFACT/bl31-uboot.fip := mt7981-bl31-uboot glinet_gl-x3000
-endef
-TARGET_DEVICES += glinet_gl-x3000
-
-define Device/glinet_gl-xe3000
-  DEVICE_MODEL := GL-XE3000
-  DEVICE_DTS := mt7981a-glinet-gl-xe3000
-  SUPPORTED_DEVICES := glinet,gl-xe3000
-  $(call Device/glinet_gl-x3000-xe3000-common)
-  ARTIFACT/bl31-uboot.fip := mt7981-bl31-uboot glinet_gl-xe3000
-endef
-TARGET_DEVICES += glinet_gl-xe3000
-
 define Device/h3c_magic-nx30-pro-common
   DEVICE_VENDOR := H3C
   DEVICE_DTS_DIR := ../dts
