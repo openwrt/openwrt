@@ -7,15 +7,9 @@ touch /etc/config/ubootenv
 
 board=$(board_name)
 
-ubootenv_add_mmc() {
-	local mmcpart="$(find_mmc_part "${1}")"
-	[ -n "$mmcpart" ] && \
-		ubootenv_add_uci_config "$mmcpart" "${2}" "${3}" "${4}"
-}
-
 case "$board" in
 8devices,kiwi-dvk)
-	ubootenv_add_mmc "0:APPSBLENV" "0x0" "0x40000" "0x40000"
+	ubootenv_add_mmc "0:APPSBLENV" "" "0x0" "0x40000" "0x40000"
 	;;
 esac
 
