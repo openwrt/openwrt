@@ -62,7 +62,7 @@ define Package/dropbear
   CATEGORY:=Base system
   TITLE:=Small SSH2 client/server
   MENU:=1
-  DEPENDS:= +DROPBEAR_ZLIB:zlib
+  DEPENDS:= +USE_GLIBC:libcrypt-compat +DROPBEAR_ZLIB:zlib
   ALTERNATIVES:=100:/usr/bin/ssh-keygen:/usr/sbin/dropbear
   $(if $(CONFIG_DROPBEAR_SCP),ALTERNATIVES+= \
 	  100:/usr/bin/scp:/usr/sbin/dropbear,)
