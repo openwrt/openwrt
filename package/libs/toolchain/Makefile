@@ -555,7 +555,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 	$(CP) \
 		$(TOOLCHAIN_DIR)/lib/ld*.so.* \
 		$(1)/lib/
-	for file in libanl libc libcidn libcrypt libdl libm libnsl libnss_dns libnss_files libresolv libutil; do \
+	for file in libanl libc libcidn libdl libm libnsl libnss_dns libnss_files libresolv libutil; do \
 		for file in $(TOOLCHAIN_DIR)/lib/$$$$file.so.*; do \
 			if [ -e "$$$$file" ]; then \
 				$(CP) $$$$file $(1)/lib/; \
@@ -700,6 +700,12 @@ else
   define Package/libc/install
 	echo $(LIBC_VERSION)-r$(PKG_RELEASE) > $(TMP_DIR)/libc.version; \
 	for file in $(call qstrip,$(CONFIG_LIBC_FILE_SPEC)); do \
+		if [ '$(CONFIG_USE_GLIBC)' != '' ] ; then \
+			case "$${file}" in \
+			libcrypt.* | libcrypt-* | */libcrypt.* | */libcrypt-* ) \
+				continue ;; \
+			esac ; \
+		fi ; \
 		$(INSTALL_DIR) $(1)/lib ; \
 		$(CP) $(call qstrip,$(CONFIG_LIBC_ROOT_DIR))/$$$$file $(1)/lib/ ; \
 	done ; \
