@@ -151,6 +151,11 @@
 	};
 };
 
+&eth0 {
+	nvmem-cells = <&macaddr_caldata_110c 0>;
+	nvmem-cell-names = "mac-address";
+};
+
 &gswip {
 	pinctrl-0 = <&mdio_pins>;
 	pinctrl-names = "default";
@@ -210,6 +215,9 @@
 		tx-internal-delay-ps = <1500>;
 		rx-internal-delay-ps = <1500>;
 		phy-handle = <&phy5>;
+
+		nvmem-cells = <&macaddr_caldata_110c 1>;
+		nvmem-cell-names = "mac-address";
 	};
 };
 
@@ -248,8 +256,35 @@
 				reg = <0xc0000 0x40000>;
 			};
 			partition@100000 {
+				compatible = "linux,ubi";
 				label = "ubi";
 				reg = <0x100000 0x7e80000>;
+
+				volumes {
+					ubi-volume-caldata {
+						volname = "caldata";
+
+						nvmem-layout {
+							compatible = "fixed-layout";
+							#address-cells = <1>;
+							#size-cells = <1>;
+
+							cal_caldata_1000: calibration@1000 {
+								reg = <0x1000 0x3d8>;
+							};
+
+							macaddr_caldata_110c: macaddr@110c {
+								compatible = "mac-base";
+								reg = <0x110c 0x6>;
+								#nvmem-cell-cells = <1>;
+							};
+
+							cal_caldata_5000: calibration@5000 {
+								reg = <0x5000 0x844>;
+							};
+						};
+					};
+				};
 			};
 			/*
 			 * last 512 KiB are for the bad block table, not writable
@@ -262,11 +297,29 @@
 	status = "okay";
 	reset-gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 
-	wifi@168c,002d {
+	wifi@0,0 {
 		compatible = "pci168c,002d";
 		reg = <0x7000 0 0 0 0>;
-		qca,no-eeprom; /* load from ath9k-eeprom-pci-0000:00:0e.0.bin */
+		nvmem-cells = <&cal_caldata_1000>, <&macaddr_caldata_110c 2>;
+		nvmem-cell-names = "calibration", "mac-address";
 		ieee80211-freq-limit = <2402000 2482000>;
+	};
+};
+
+&pcie0 {
+	pcie@0 {
+		reg = <0x0000 0 0 0 0>;
+		#interrupt-cells = <1>;
+		#size-cells = <2>;
+		#address-cells = <3>;
+		device_type = "pci";
+
+		wifi@0,0 {
+			compatible = "qcom,ath10k";
+			reg = <0x0000 0 0 0 0>;
+			nvmem-cells = <&cal_caldata_5000>, <&macaddr_caldata_110c 3>;
+			nvmem-cell-names = "calibration", "mac-address";
+		};
 	};
 };
 
