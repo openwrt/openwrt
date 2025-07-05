@@ -38,7 +38,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static int rtl822xb_get_rate_matching(struct phy_device *phydev,
  				      phy_interface_t iface)
  {
-@@ -1842,7 +1858,7 @@ static struct phy_driver realtek_drvs[]
+@@ -1851,7 +1867,7 @@ static struct phy_driver realtek_drvs[]
  		.handle_interrupt = rtl8221b_handle_interrupt,
  		.soft_reset     = rtl822x_c45_soft_reset,
  		.probe		= rtl822x_probe,
@@ -47,7 +47,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		.get_rate_matching = rtl822xb_get_rate_matching,
  		.get_features   = rtl822x_c45_get_features,
  		.config_aneg    = rtl822x_c45_config_aneg,
-@@ -1872,7 +1888,7 @@ static struct phy_driver realtek_drvs[]
+@@ -1881,7 +1897,7 @@ static struct phy_driver realtek_drvs[]
  		.handle_interrupt = rtl8221b_handle_interrupt,
  		.soft_reset     = rtl822x_c45_soft_reset,
  		.probe		= rtl822x_probe,

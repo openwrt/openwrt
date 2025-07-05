@@ -557,6 +557,23 @@ endef
 $(eval $(call KernelPackage,phy-vitesse))
 
 
+define KernelPackage/phy-aeonsemi-as21xxx
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Aeonsemi AS21xxx 10G Ethernet PHY
+  DEPENDS:=+aeonsemi-as21xxx-firmware +kmod-libphy
+  KCONFIG:=CONFIG_AS21XXX_PHY
+  FILES:= \
+   $(LINUX_DIR)/drivers/net/phy/as21xxx.ko
+  AUTOLOAD:=$(call AutoLoad,18,as21xxx)
+endef
+
+define KernelPackage/phy-aeonsemi-as21x1x/description
+  Kernel modules for Aeonsemi AS21x1x 10G Ethernet PHY
+endef
+
+$(eval $(call KernelPackage,phy-aeonsemi-as21xxx))
+
+
 define KernelPackage/phy-airoha-en8811h
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Airoha EN8811H 2.5G Ethernet PHY
