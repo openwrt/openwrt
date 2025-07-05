@@ -150,6 +150,15 @@ define DownloadMethod/default
 	)
 endef
 
+define DownloadMethod/bundle
+	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(FILE)" "$(HASH)" "" $(foreach url,$(URL),"$(url)") || \
+	{ \
+		$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(MIRROR_FILE)" "$(MIRROR_HASH)" "" $(foreach url,$(URL),"$(url)"); \
+		( cd $(DL_DIR); git clone --no-checkout $(MIRROR_FILE) $(subst -,.,$(MIRROR_FILE)) || { cd $(subst -,.,$(MIRROR_FILE)) && git pull --all; }; ); \
+		git archive --remote=$(DL_DIR)/$(subst -,.,$(MIRROR_FILE)) --format=$(subst $(word 1,$(subst ., ,$(FILE))).,,$(FILE)) $(SOURCE_VERSION) --output=$(DL_DIR)/$(FILE) || rm -f $(DL_DIR)/$(FILE); \
+	}
+endef
+
 # $(1): "check"
 # $(2): "PKG_" if <name> as in Download/<name> is "default", otherwise "Download/<name>:"
 # $(3): shell command sequence to do the download
@@ -311,6 +320,7 @@ define Download/Defaults
   MD5SUM:=x
   SUBDIR:=
   MIRROR:=1
+  MIRROR_FILE:=
   MIRROR_HASH=$$(MIRROR_MD5SUM)
   MIRROR_MD5SUM:=x
   SOURCE_VERSION:=
@@ -326,6 +336,7 @@ define Download/default
   PROTO:=$(PKG_SOURCE_PROTO)
   SUBMODULES:=$(PKG_SOURCE_SUBMODULES)
   $(if $(PKG_SOURCE_MIRROR),MIRROR:=$(filter 1,$(PKG_MIRROR)))
+  $(if $(PKG_MIRROR_SOURCE),MIRROR_FILE:=$(PKG_MIRROR_SOURCE))
   $(if $(PKG_MIRROR_MD5SUM),MIRROR_MD5SUM:=$(PKG_MIRROR_MD5SUM))
   $(if $(PKG_MIRROR_HASH),MIRROR_HASH:=$(PKG_MIRROR_HASH))
   SOURCE_VERSION:=$(PKG_SOURCE_VERSION)
