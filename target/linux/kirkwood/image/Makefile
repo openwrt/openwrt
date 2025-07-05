@@ -189,6 +189,13 @@ define Device/dlink_dns320l
 endef
 TARGET_DEVICES += dlink_dns320l
 
+define Device/d-link_dgs-1210-10p-b1
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DGS-1210-10P-B1
+  IMAGE_SIZE := 15360k
+endef
+TARGET_DEVICES += d-link_dgs-1210-10p-b1
+
 define Device/endian_4i-edge-200
   DEVICE_VENDOR := Endian
   DEVICE_MODEL := 4i Edge 200
