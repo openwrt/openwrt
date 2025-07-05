@@ -1554,7 +1554,7 @@ static void rtl931x_set_distribution_algorithm(int group, int algoidx, u32 algom
 	sw_w32(newmask << l3shift, RTL931X_TRK_HASH_CTRL + (algoidx << 2));
 }
 
-static void rtl931x_led_init(struct rtl838x_switch_priv *priv)
+static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 {
 	u64 pm_copper = 0, pm_fiber = 0;
 	struct device_node *node;
@@ -1569,7 +1569,6 @@ static void rtl931x_led_init(struct rtl838x_switch_priv *priv)
 	for (int i = 0; i < priv->cpu_port; i++) {
 		int pos = (i << 1) % 32;
 		u32 set;
-		u32 v;
 
 		sw_w32_mask(0x3 << pos, 0, RTL931X_LED_PORT_FIB_SET_SEL_CTRL(i));
 		sw_w32_mask(0x3 << pos, 0, RTL931X_LED_PORT_COPR_SET_SEL_CTRL(i));
@@ -1577,8 +1576,9 @@ static void rtl931x_led_init(struct rtl838x_switch_priv *priv)
 		if (!priv->ports[i].phy)
 			continue;
 
-		v = 0x1; /* Found on the EdgeCore, but we do not have any HW description */
-		sw_w32_mask(0x3 << pos, v << pos, RTL931X_LED_PORT_NUM_CTRL(i));
+		/* 0x0 = 1 led, 0x1 = 2 leds, 0x2 = 3 leds, 0x3 = 4 leds per port */
+		sw_w32_mask(0x3 << pos, (priv->ports[i].leds_on_this_port - 1) << pos,
+			    RTL931X_LED_PORT_NUM_CTRL(i));
 
 		if (priv->ports[i].phy_is_integrated)
 			pm_fiber |= BIT_ULL(i);
@@ -1686,5 +1686,5 @@ const struct rtl838x_reg rtl931x_reg = {
 	.pie_rule_rm = rtl931x_pie_rule_rm,
 	.l2_learning_setup = rtl931x_l2_learning_setup,
 	.l3_setup = rtl931x_l3_setup,
-	.led_init = rtl931x_led_init,
+	.led_init = rtldsa_931x_led_init,
 };
