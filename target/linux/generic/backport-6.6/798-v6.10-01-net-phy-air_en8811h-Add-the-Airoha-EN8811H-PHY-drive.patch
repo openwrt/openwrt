@@ -28,8 +28,8 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
 @@ -68,6 +68,11 @@ config SFP
- 
- comment "MII PHY device drivers"
+ 	  AS21210PB1 that all register with the PHY ID 0x7500 0x7500
+ 	  before the firmware is loaded.
  
 +config AIR_EN8811H_PHY
 +	tristate "Airoha EN8811H 2.5 Gigabit PHY"
