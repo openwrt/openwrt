@@ -1,4 +1,5 @@
 #!/usr/bin/env perl
+
 use FindBin;
 use lib "$FindBin::Bin";
 use strict;
@@ -6,6 +7,7 @@ use metadata;
 use Getopt::Long;
 use Time::Piece;
 use JSON::PP;
+binmode STDOUT, ":encoding(UTF-8)";
 
 my %board;
 
@@ -36,11 +38,11 @@ sub version_filter_list(@) {
 			if ($symver > 0 && $cmpver > 0)
 			{
 				next unless (($op eq 'lt' && $cmpver <  $symver) ||
-				             ($op eq 'le' && $cmpver <= $symver) ||
-				             ($op eq 'gt' && $cmpver >  $symver) ||
-				             ($op eq 'ge' && $cmpver >= $symver) ||
-				             ($op eq 'eq' && $cmpver == $symver) ||
-				             ($op eq 'ne' && $cmpver != $symver));
+							 ($op eq 'le' && $cmpver <= $symver) ||
+							 ($op eq 'gt' && $cmpver >  $symver) ||
+							 ($op eq 'ge' && $cmpver >= $symver) ||
+							 ($op eq 'eq' && $cmpver == $symver) ||
+							 ($op eq 'ne' && $cmpver != $symver));
 			}
 		}
 
@@ -353,7 +355,7 @@ sub gen_package_config() {
 	print "menuconfig IMAGEOPT\n\tbool \"Image configuration\"\n\tdefault n\n";
 	print "source \"package/*/image-config.in\"\n";
 	if (scalar glob "package/feeds/*/*/image-config.in") {
-	    print "source \"package/feeds/*/*/image-config.in\"\n";
+		print "source \"package/feeds/*/*/image-config.in\"\n";
 	}
 	print_package_config_category 'Base system';
 	foreach my $cat (sort {uc($a) cmp uc($b)} keys %category) {
@@ -642,11 +644,11 @@ sub dump_cyclonedxsbom_json {
 	my (@components) = @_;
 
 	my $uuid = sprintf(
-	    "%04x%04x-%04x-%04x-%04x-%04x%04x%04x",
-	    rand(0xffff), rand(0xffff), rand(0xffff),
-	    rand(0x0fff) | 0x4000,
-	    rand(0x3fff) | 0x8000,
-	    rand(0xffff), rand(0xffff), rand(0xffff)
+		"%04x%04x-%04x-%04x-%04x-%04x%04x%04x",
+		rand(0xffff), rand(0xffff), rand(0xffff),
+		rand(0x0fff) | 0x4000,
+		rand(0x3fff) | 0x8000,
+		rand(0xffff), rand(0xffff), rand(0xffff)
 	);
 
 	my $cyclonedx = {
