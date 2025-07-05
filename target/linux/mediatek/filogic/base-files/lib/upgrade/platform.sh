@@ -78,6 +78,7 @@ platform_do_upgrade() {
 	cudy,tr3000-v1-ubootmod|\
 	gatonetworks,gdsp|\
 	h3c,magic-nx30-pro|\
+	h3c,magic-nx30-pro-114m-ubootmod|\
 	jcg,q30-pro|\
 	jdcloud,re-cp-03|\
 	mediatek,mt7981-rfb|\
