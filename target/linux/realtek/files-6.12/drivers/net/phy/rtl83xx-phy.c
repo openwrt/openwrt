@@ -81,6 +81,12 @@ extern int phy_port_read_paged(struct phy_device *phydev, int port, int page, u3
 #define RTL930X_SDS_OFF			0x1f
 #define RTL930X_SDS_MASK		0x1f
 
+#define RTSDS_930X_PLL_1000		0x1
+#define RTSDS_930X_PLL_10000		0x5
+#define RTSDS_930X_PLL_2500		0x3
+#define RTSDS_930X_PLL_LC		0x3
+#define RTSDS_930X_PLL_RING		0x1
+
 /* This lock protects the state of the SoC automatically polling the PHYs over the SMI
  * bus to detect e.g. link and media changes. For operations on the PHYs such as
  * patching or other configuration changes such as EEE, polling needs to be disabled
@@ -1610,167 +1616,258 @@ static void rtl930x_sds_rx_rst(int sds_num, phy_interface_t phy_if)
 	rtl9300_sds_field_w(sds_num, page, 0x15, 4, 4, 0x0);
 }
 
-/* Force PHY modes on 10GBit Serdes
- */
-static void rtl9300_force_sds_mode(int sds, phy_interface_t phy_if)
+static void rtsds_930x_get_pll_data(int sds, int *pll, int *speed)
 {
-	int lc_value;
-	int sds_mode;
-	bool lc_on;
-	int lane_0 = (sds % 2) ? sds - 1 : sds;
-	u32 v;
+	int sbit, pbit = sds & 1 ? 6 : 4;
+	int base_sds = sds & ~1;
 
-	pr_info("%s: SDS: %d, mode %d\n", __func__, sds, phy_if);
-	switch (phy_if) {
+	/*
+	 * PLL data is shared between adjacent SerDes in the even lane. Each SerDes defines
+	 * what PLL it needs (ring or LC) while the PLL itself stores the current speed.
+	 */
+
+	*pll = rtl9300_sds_field_r(base_sds, 0x20, 0x12, pbit + 1, pbit);
+	sbit = *pll == RTSDS_930X_PLL_LC ? 8 : 12;
+	*speed = rtl9300_sds_field_r(base_sds, 0x20, 0x12, sbit + 3, sbit);
+}
+
+static int rtsds_930x_set_pll_data(int sds, int pll, int speed)
+{
+	int sbit = pll == RTSDS_930X_PLL_LC ? 8 : 12;
+	int pbit = sds & 1 ? 6 : 4;
+	int base_sds = sds & ~1;
+
+	if ((speed != RTSDS_930X_PLL_1000) &&
+	    (speed != RTSDS_930X_PLL_2500) &&
+	    (speed != RTSDS_930X_PLL_10000))
+		return -EINVAL;
+
+	if ((pll != RTSDS_930X_PLL_RING) && (pll != RTSDS_930X_PLL_LC))
+		return -EINVAL;
+
+	if ((pll == RTSDS_930X_PLL_RING) && (speed == RTSDS_930X_PLL_10000))
+		return -EINVAL;
+
+	/*
+	 * A SerDes clock can either be taken from the low speed ring PLL or the high speed
+	 * LC PLL. As it is unclear if disabling PLLs has any positive or negative effect,
+	 * always activate both.
+	 */
+
+	rtl9300_sds_field_w(base_sds, 0x20, 0x12, 3, 0, 0xf);
+	rtl9300_sds_field_w(base_sds, 0x20, 0x12, pbit + 1, pbit, pll);
+	rtl9300_sds_field_w(base_sds, 0x20, 0x12, sbit + 3, sbit, speed);
+
+	return 0;
+}
+
+static void rtsds_930x_reset_cmu(int sds)
+{
+	int reset_sequence[4] = { 3, 2, 3, 1 };
+	int base_sds = sds & ~1;
+	int pll, speed, i, bit;
+
+	/*
+	 * After the PLL speed has changed, the CMU must take over the new values. The models
+	 * of the Otto platform have different reset sequences. Luckily it always boils down
+	 * to flipping two bits in a special sequence.
+	 */
+
+	rtsds_930x_get_pll_data(sds, &pll, &speed);
+	bit = pll == RTSDS_930X_PLL_LC ? 2 : 0;
+
+	for (i = 0; i < ARRAY_SIZE(reset_sequence); i++)
+		rtl9300_sds_field_w(base_sds, 0x21, 0x0b, bit + 1, bit, reset_sequence[i]);
+}
+
+static int rtsds_930x_wait_clock_ready(int sds)
+{
+	int i, base_sds = sds & ~1, ready, ready_cnt = 0, bit = (sds & 1) + 4;
+
+	/*
+	 * While reconfiguring a SerDes it might take some time until its clock is in sync with
+	 * the PLL. During that timespan the ready signal might toggle randomly. According to
+	 * GPL sources it is enough to verify that 3 consecutive clock ready checks say "ok".
+	 */
+
+	for (i = 0; i < 20; i++) {
+		usleep_range(10000, 15000);
+
+		rtl930x_write_sds_phy(base_sds, 0x1f, 0x02, 53);
+		ready = rtl9300_sds_field_r(base_sds, 0x1f, 0x14, bit, bit);
+
+		ready_cnt = ready ? ready_cnt + 1 : 0;
+		if (ready_cnt >= 3)
+			return 0;
+	}
+
+	return -EBUSY;
+}
+
+static void rtsds_930x_set_internal_mode(int sds, int mode)
+{
+	rtl9300_sds_field_w(sds, 0x1f, 0x09, 6, 6, 0x1); /* Force mode enable */
+	rtl9300_sds_field_w(sds, 0x1f, 0x09, 11, 7, mode);
+}
+
+static int rtsds_930x_get_internal_mode(int sds)
+{
+	return rtl9300_sds_field_r(sds, 0x1f, 0x09, 11, 7);
+}
+
+static void rtsds_930x_set_power(int sds, bool on)
+{
+	int power = on ? 0 : 3;
+
+	rtl9300_sds_field_w(sds, 0x20, 0x00, 7, 6, power);
+}
+
+static int rtsds_930x_config_pll(int sds, phy_interface_t interface)
+{
+	int neighbor_speed, neighbor_mode, neighbor_pll, neighbor = sds ^ 1;
+	bool speed_changed = true;
+	int pll, speed;
+
+	/*
+	 * A SerDes pair on the RTL930x is driven by two PLLs. A low speed ring PLL can generate
+	 * signals of 1.25G and 3.125G for link speeds of 1G/2.5G. A high speed LC PLL can
+	 * additionally generate a 10.3125G signal for 10G speeds. To drive the pair at different
+	 * speeds each SerDes must use its own PLL. But what if the SerDess attached to the ring
+	 * PLL suddenly needs 10G but the LC PLL is running at 1G? To avoid reconfiguring the
+	 * "partner" SerDes we must choose wisely what assignment serves the current needs. The
+	 * logic boils down to the following rules:
+	 *
+	 * - Use ring PLL for slow 1G speeds
+	 * - Use LC PLL for fast 10G speeds
+	 * - For 2.5G prefer ring over LC PLL
+	 */
+
+	neighbor_mode = rtsds_930x_get_internal_mode(neighbor);
+	rtsds_930x_get_pll_data(neighbor, &neighbor_pll, &neighbor_speed);
+
+	if ((interface == PHY_INTERFACE_MODE_1000BASEX) ||
+	    (interface == PHY_INTERFACE_MODE_SGMII))
+		speed = RTSDS_930X_PLL_1000;
+	else if ((interface == PHY_INTERFACE_MODE_2500BASEX) ||
+		 (interface == PHY_INTERFACE_MODE_HSGMII))
+		speed = RTSDS_930X_PLL_2500;
+	else if (interface == PHY_INTERFACE_MODE_10GBASER)
+		speed = RTSDS_930X_PLL_10000;
+	else
+		return -ENOTSUPP;
+
+	if (!neighbor_mode)
+		pll = speed == RTSDS_930X_PLL_10000 ? RTSDS_930X_PLL_LC : RTSDS_930X_PLL_RING;
+	else if (speed == neighbor_speed) {
+		speed_changed = false;
+		pll = neighbor_pll;
+	} else if (neighbor_pll == RTSDS_930X_PLL_RING)
+		pll = RTSDS_930X_PLL_LC;
+	else if (speed == RTSDS_930X_PLL_10000)
+		return -ENOTSUPP; /* caller wants 10G but only ring PLL available */
+	else
+		pll = RTSDS_930X_PLL_RING;
+
+	rtsds_930x_set_pll_data(sds, pll, speed);
+
+	if (speed_changed)
+		rtsds_930x_reset_cmu(sds);
+
+	pr_info("%s: SDS %d using %s PLL for %s\n", __func__, sds,
+		pll == RTSDS_930X_PLL_LC ? "LC" : "ring", phy_modes(interface));
+
+	return 0;
+}
+
+static void rtsds_930x_reset_state_machine(int sds)
+{
+	rtl9300_sds_field_w(sds, 0x06, 0x02, 12, 12, 0x01); /* SM_RESET bit */
+	usleep_range(10000, 20000);
+	rtl9300_sds_field_w(sds, 0x06, 0x02, 12, 12, 0x00);
+	usleep_range(10000, 20000);
+}
+
+static int rtsds_930x_init_state_machine(int sds, phy_interface_t interface)
+{
+	int loopback, link, cnt = 20, ret = -EBUSY;
+
+	if (interface != PHY_INTERFACE_MODE_10GBASER)
+		return 0;
+	/*
+	 * After a SerDes mode change it takes some time until the frontend state machine
+	 * works properly for 10G. To verify operation readyness run a connection check via
+	 * loopback.
+	 */
+	loopback = rtl9300_sds_field_r(sds, 0x06, 0x01, 2, 2); /* CFG_AFE_LPK bit */
+	rtl9300_sds_field_w(sds, 0x06, 0x01, 2, 2, 0x01);
+
+	while (cnt-- && ret) {
+		rtsds_930x_reset_state_machine(sds);
+		link = rtl9300_sds_field_r(sds, 0x05, 0x00, 12, 12); /* 10G link state (latched) */
+		link = rtl9300_sds_field_r(sds, 0x05, 0x00, 12, 12);
+		if (link)
+			ret = 0;
+	}
+
+	rtl9300_sds_field_w(sds, 0x06, 0x01, 2, 2, loopback);
+	rtsds_930x_reset_state_machine(sds);
+
+	return ret;
+}
+
+static void rtsds_930x_force_mode(int sds, phy_interface_t interface)
+{
+	int mode;
+
+	/*
+	 * TODO: Usually one would expect that it is enough to modify the SDS_MODE_SEL_*
+	 * registers (lets call it MAC setup). It seems as if this complex sequence is only
+	 * needed for modes that cannot be set by the SoC itself. Additionally it is unclear
+	 * if this sequence should quit early in case of errors.
+	 */
+
+	switch (interface) {
 	case PHY_INTERFACE_MODE_SGMII:
-		sds_mode = RTL930X_SDS_MODE_SGMII;
-		lc_on = false;
-		lc_value = 0x1;
+		mode = RTL930X_SDS_MODE_SGMII;
 		break;
-
 	case PHY_INTERFACE_MODE_HSGMII:
-		sds_mode = RTL930X_SDS_MODE_HSGMII;
-		lc_value = 0x3;
-		/* Configure LC */
+		mode = RTL930X_SDS_MODE_HSGMII;
 		break;
-
 	case PHY_INTERFACE_MODE_1000BASEX:
-		sds_mode = RTL930X_SDS_MODE_1000BASEX;
-		lc_on = false;
+		mode = RTL930X_SDS_MODE_1000BASEX;
 		break;
-
 	case PHY_INTERFACE_MODE_2500BASEX:
-		sds_mode = RTL930X_SDS_MODE_2500BASEX;
-		lc_value = 0x3;
-		/* Configure LC */
+		mode = RTL930X_SDS_MODE_2500BASEX;
 		break;
-
 	case PHY_INTERFACE_MODE_10GBASER:
-		sds_mode = RTL930X_SDS_MODE_10GBASER;
-		lc_on = true;
-		lc_value = 0x5;
+		mode = RTL930X_SDS_MODE_10GBASER;
 		break;
-
 	case PHY_INTERFACE_MODE_NA:
-		/* This will disable SerDes */
-		sds_mode = RTL930X_SDS_OFF;
+		mode = RTL930X_SDS_OFF;
 		break;
-
 	default:
-		pr_err("%s: unknown serdes mode: %s\n",
-		       __func__, phy_modes(phy_if));
+		pr_err("%s: SDS %d does not support %s\n", __func__, sds, phy_modes(interface));
 		return;
 	}
 
-	pr_info("%s --------------------- serdes %d forcing to %x ...\n", __func__, sds, sds_mode);
-	/* Power down SerDes */
-	rtl9300_sds_field_w(sds, 0x20, 0, 7, 6, 0x3);
-	if (sds == 5) pr_info("%s after %x\n", __func__, rtl930x_read_sds_phy(sds, 0x20, 0));
-
-	if (sds == 5) pr_info("%s a %x\n", __func__, rtl930x_read_sds_phy(sds, 0x1f, 9));
-	/* Force mode enable */
-	rtl9300_sds_field_w(sds, 0x1f, 9, 6, 6, 0x1);
-	if (sds == 5) pr_info("%s b %x\n", __func__, rtl930x_read_sds_phy(sds, 0x1f, 9));
-
-	/* SerDes off */
-	rtl9300_sds_field_w(sds, 0x1f, 9, 11, 7, RTL930X_SDS_OFF);
-
-	if (phy_if == PHY_INTERFACE_MODE_NA)
+	rtsds_930x_set_power(sds, false);
+	rtsds_930x_set_internal_mode(sds, RTL930X_SDS_OFF);
+	if (interface == PHY_INTERFACE_MODE_NA)
 		return;
 
-	if (sds == 5) pr_info("%s c %x\n", __func__, rtl930x_read_sds_phy(sds, 0x20, 18));
-	/* Enable LC and ring */
-	rtl9300_sds_field_w(lane_0, 0x20, 18, 3, 0, 0xf);
+	if (rtsds_930x_config_pll(sds, interface))
+		pr_err("%s: SDS %d could not configure PLL for %s\n", __func__,
+			sds, phy_modes(interface));
 
-	if (sds == lane_0)
-		rtl9300_sds_field_w(lane_0, 0x20, 18, 5, 4, 0x1);
-	else
-		rtl9300_sds_field_w(lane_0, 0x20, 18, 7, 6, 0x1);
+	rtsds_930x_set_internal_mode(sds, mode);
+	if (rtsds_930x_wait_clock_ready(sds))
+		pr_err("%s: SDS %d could not sync clock\n", __func__, sds);
 
-	rtl9300_sds_field_w(sds, 0x20, 0, 5, 4, 0x3);
+	if (rtsds_930x_init_state_machine(sds, interface))
+		pr_err("%s: SDS %d could not reset state machine\n", __func__, sds);
 
-	if (lc_on)
-		rtl9300_sds_field_w(lane_0, 0x20, 18, 11, 8, lc_value);
-	else
-		rtl9300_sds_field_w(lane_0, 0x20, 18, 15, 12, lc_value);
-
-	/* Force analog LC & ring on */
-	rtl9300_sds_field_w(lane_0, 0x21, 11, 3, 0, 0xf);
-
-	v = lc_on ? 0x3 : 0x1;
-
-	if (sds == lane_0)
-		rtl9300_sds_field_w(lane_0, 0x20, 18, 5, 4, v);
-	else
-		rtl9300_sds_field_w(lane_0, 0x20, 18, 7, 6, v);
-
-	/* Force SerDes mode */
-	rtl9300_sds_field_w(sds, 0x1f, 9, 6, 6, 1);
-	rtl9300_sds_field_w(sds, 0x1f, 9, 11, 7, sds_mode);
-
-	/* Toggle LC or Ring */
-	for (int i = 0; i < 20; i++) {
-		u32 cr_0, cr_1, cr_2;
-		u32 m_bit, l_bit;
-
-		mdelay(200);
-
-		rtl930x_write_sds_phy(lane_0, 0x1f, 2, 53);
-
-		m_bit = (lane_0 == sds) ? (4) : (5);
-		l_bit = (lane_0 == sds) ? (4) : (5);
-
-		cr_0 = rtl9300_sds_field_r(lane_0, 0x1f, 20, m_bit, l_bit);
-		mdelay(10);
-		cr_1 = rtl9300_sds_field_r(lane_0, 0x1f, 20, m_bit, l_bit);
-		mdelay(10);
-		cr_2 = rtl9300_sds_field_r(lane_0, 0x1f, 20, m_bit, l_bit);
-
-		if (cr_0 && cr_1 && cr_2) {
-			u32 t;
-
-			if (phy_if != PHY_INTERFACE_MODE_10GBASER)
-				break;
-
-			t = rtl9300_sds_field_r(sds, 0x6, 0x1, 2, 2);
-			rtl9300_sds_field_w(sds, 0x6, 0x1, 2, 2, 0x1);
-
-			/* Reset FSM */
-			rtl9300_sds_field_w(sds, 0x6, 0x2, 12, 12, 0x1);
-			mdelay(10);
-			rtl9300_sds_field_w(sds, 0x6, 0x2, 12, 12, 0x0);
-			mdelay(10);
-
-			/* Need to read this twice */
-			v = rtl9300_sds_field_r(sds, 0x5, 0, 12, 12);
-			v = rtl9300_sds_field_r(sds, 0x5, 0, 12, 12);
-
-			rtl9300_sds_field_w(sds, 0x6, 0x1, 2, 2, t);
-
-			/* Reset FSM again */
-			rtl9300_sds_field_w(sds, 0x6, 0x2, 12, 12, 0x1);
-			mdelay(10);
-			rtl9300_sds_field_w(sds, 0x6, 0x2, 12, 12, 0x0);
-			mdelay(10);
-
-			if (v == 1)
-				break;
-		}
-
-		m_bit = (phy_if == PHY_INTERFACE_MODE_10GBASER) ? 3 : 1;
-		l_bit = (phy_if == PHY_INTERFACE_MODE_10GBASER) ? 2 : 0;
-
-		rtl9300_sds_field_w(lane_0, 0x21, 11, m_bit, l_bit, 0x2);
-		mdelay(10);
-		rtl9300_sds_field_w(lane_0, 0x21, 11, m_bit, l_bit, 0x3);
-	}
-
-	rtl930x_sds_rx_rst(sds, phy_if);
-
-	/* Re-enable power */
-	rtl9300_sds_field_w(sds, 0x20, 0, 7, 6, 0);
-
-	pr_info("%s --------------------- serdes %d forced to %x DONE\n", __func__, sds, sds_mode);
+	rtsds_930x_set_power(sds, true);
+	rtl930x_sds_rx_rst(sds, interface);
 }
 
 static void rtl9300_sds_tx_config(int sds, phy_interface_t phy_if)
@@ -2770,7 +2867,7 @@ int rtl9300_serdes_setup(int port, int sds_num, phy_interface_t phy_mode)
 	sw_w32_mask(1, 0, RTL930X_MAC_FORCE_MODE_CTRL + 4 * port);
 
 	/* Enable SDS in desired mode */
-	rtl9300_force_sds_mode(sds_num, phy_mode);
+	rtsds_930x_force_mode(sds_num, phy_mode);
 
 	/* Enable Fiber RX */
 	rtl9300_sds_field_w(sds_num, 0x20, 2, 12, 12, 0);
