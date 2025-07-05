@@ -1,10 +1,8 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-2.0-or-later
 
+. /lib/functions/system.sh
 . /lib/functions/uci-defaults.sh
-
-KERNEL_MAJOR=$(uname -r | awk -F '.' '{print $1}')
-KERNEL_MINOR=$(uname -r | awk -F '.' '{print $2}')
 
 board_config_update
 
@@ -12,7 +10,7 @@ board=$(board_name)
 
 case "$board" in
 traverse,ten64)
-	if [ "${KERNEL_MAJOR}" -ge "6" ] && [ "${KERNEL_MINOR}" -ge "6" ]; then
+	if [ "$(get_linux_version)" -ge "606000" ]; then
 		I2C_GPIO_BASE=640
 	else
 		I2C_GPIO_BASE=368
