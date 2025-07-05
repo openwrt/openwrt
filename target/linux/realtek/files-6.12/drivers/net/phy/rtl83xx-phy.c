@@ -223,12 +223,14 @@ static int rtl821x_match_phy_device(struct phy_device *phydev)
 	return PHY_IS_RTL8214FB;
 }
 
-static int rtl8218b_ext_match_phy_device(struct phy_device *phydev)
+static int rtl8218b_ext_match_phy_device(struct phy_device *phydev,
+					 const struct phy_driver *phydrv)
 {
 	return rtl821x_match_phy_device(phydev) == PHY_IS_RTL8218B_E;
 }
 
-static int rtl8214fc_match_phy_device(struct phy_device *phydev)
+static int rtl8214fc_match_phy_device(struct phy_device *phydev,
+				      const struct phy_driver *phydrv)
 {
 	return rtl821x_match_phy_device(phydev) == PHY_IS_RTL8214FC;
 }
