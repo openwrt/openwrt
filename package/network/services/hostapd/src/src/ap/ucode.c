@@ -256,6 +256,7 @@ uc_hostapd_bss_set_config(uc_vm_t *vm, size_t nargs)
 	uc_value_t *files_only = uc_fn_arg(2);
 	unsigned int i, idx = 0;
 	int ret = -1;
+	bool started;
 
 	if (!hapd || ucv_type(file) != UC_STRING)
 		goto out;
@@ -287,6 +288,7 @@ uc_hostapd_bss_set_config(uc_vm_t *vm, size_t nargs)
 		goto free;
 	}
 
+	started = hapd->started;
 	__uc_hostapd_bss_stop(hapd);
 
 	old_bss = hapd->conf;
@@ -299,7 +301,10 @@ uc_hostapd_bss_set_config(uc_vm_t *vm, size_t nargs)
 	if (hapd == iface->bss[0])
 		memcpy(hapd->own_addr, hapd->conf->bssid, ETH_ALEN);
 
-	ret = __uc_hostapd_bss_start(hapd);
+	if (started)
+		ret = __uc_hostapd_bss_start(hapd);
+	else
+		ret = 0;
 	hostapd_ucode_update_interfaces();
 
 free:
