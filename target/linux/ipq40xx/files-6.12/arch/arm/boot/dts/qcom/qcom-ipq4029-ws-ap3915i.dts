@@ -1,0 +1,260 @@
+// SPDX-License-Identifier: GPL-2.0-only OR MIT
+
+#include "qcom-ipq4019.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/soc/qcom,tcsr.h>
+
+/ {
+	model = "Extreme Networks WS-AP3915i";
+	compatible = "extreme-networks,ws-ap3915i";
+
+	aliases {
+		// TODO: Verify if the ethernet0 alias is needed
+		ethernet0 = &gmac;
+		led-boot = &led_system_green;
+		led-failsafe = &led_system_amber;
+		led-running = &led_system_green;
+		led-upgrade = &led_system_amber;
+	};
+
+	soc {
+		tcsr@1949000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1949000 0x100>;
+			qcom,wifi_glb_cfg = <TCSR_WIFI_GLB_CFG>;
+		};
+
+		ess_tcsr@1953000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1953000 0x1000>;
+			qcom,ess-interface-select = <TCSR_ESS_PSGMII>;
+		};
+
+		tcsr@1957000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1957000 0x100>;
+			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_system_green: system_green {
+			label = "green:system";
+			gpios = <&tlmm 49 GPIO_ACTIVE_LOW>;
+		};
+
+		led_system_amber: system_amber {
+			label = "amber:system";
+			gpios = <&tlmm 50 GPIO_ACTIVE_LOW>;
+		};
+
+		led_wlan24_green: wlan24_green {
+			label = "green:wlan24";
+			gpios = <&tlmm 23 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		led_wlan24_amber: wlan24_amber {
+			label = "amber:wlan24";
+			gpios = <&tlmm 32 GPIO_ACTIVE_LOW>;
+		};
+
+		led_wlan5_green: wlan5_green {
+			label = "green:wlan5";
+			gpios = <&tlmm 22 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		led_wlan5_amber: wlan5_amber {
+			label = "amber:wlan5";
+			gpios = <&tlmm 26 GPIO_ACTIVE_LOW>;
+		};
+
+		iot {
+			label = "blue:iot";
+			gpios = <&tlmm 10 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&tlmm 18 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART >;
+		};
+	};
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&prng {
+	status = "okay";
+};
+
+&crypto {
+	status = "okay";
+};
+
+&blsp_dma {
+	status = "okay";
+};
+
+&blsp1_uart1 {
+	pinctrl-0 = <&serial_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&cryptobam {
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+};
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport5 {
+	status = "okay";
+
+	label = "lan";
+};
+
+&tlmm {
+	mdio_pins: mdio_pinmux {
+		mux_1 {
+			pins = "gpio6";
+			function = "mdio";
+			bias-pull-up;
+		};
+		mux_2 {
+			pins = "gpio7";
+			function = "mdc";
+			bias-pull-up;
+		};
+	};
+
+	spi_0_pins: spi_0_pinmux {
+		pin {
+			function = "blsp_spi0";
+			pins = "gpio13", "gpio14", "gpio15";
+			drive-strength = <12>;
+			bias-disable;
+		};
+		pin_cs {
+			function = "gpio";
+			pins = "gpio12";
+			drive-strength = <2>;
+			bias-disable;
+			output-high;
+		};
+	};
+
+	serial_pins: serial_0_pinmux {
+		mux {
+			pins = "gpio16", "gpio17";
+			function = "blsp_uart0";
+			bias-disable;
+		};
+	};
+};
+
+&wifi0 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "Extreme-Networks-WS-AP3915i";
+};
+
+&wifi1 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "Extreme-Networks-WS-AP3915i";
+};
+
+&blsp1_spi1 {
+	pinctrl-0 = <&spi_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+	cs-gpios = <&tlmm 12 GPIO_ACTIVE_HIGH>;
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <24000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* Layout for 0x0 - 0xe0000 unknown */
+
+			partition@e0000 {
+				label = "CFG1";
+				reg = <0xe0000 0x10000>;
+				read-only;
+			};
+
+			partition@f0000 {
+				label = "BootBAK";
+				reg = <0xf0000 0x70000>;
+				read-only;
+			};
+
+			partition@160000 {
+				label = "WINGCFG1";
+				reg = <0x160000 0x10000>;
+				read-only;
+			};
+
+			partition@170000 {
+				label = "ART";
+				reg = <0x170000 0x10000>;
+				read-only;
+			};
+
+			partition@180000 {
+				label = "BootPRI";
+				reg = <0x180000 0x70000>;
+				read-only;
+			};
+
+			partition@1f0000 {
+				label = "WINGCFG2";
+				reg = <0x1f0000 0x10000>;
+				read-only;
+			};
+
+			partition@200000 {
+				label = "FS";
+				reg = <0x200000 0x80000>;
+				read-only;
+			};
+
+			partition@280000 {
+				label = "firmware";
+				reg = <0x280000 0x1d60000>;
+			};
+
+			partition@1fe0000 {
+				label = "CFG2";
+				reg = <0x1fe0000 0x10000>;
+				read-only;
+			};
+		};
+	};
+};
