@@ -429,7 +429,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  	 * send_action - Transmit an Action frame
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
-@@ -8701,25 +8701,15 @@ int nl80211_has_ifidx(struct wpa_driver_
+@@ -8703,25 +8703,15 @@ static int have_ifidx(struct wpa_driver_
  
  
  static int i802_set_wds_sta(void *priv, const u8 *addr, int aid, int val,
