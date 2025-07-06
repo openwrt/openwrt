@@ -12,38 +12,30 @@ touch /etc/config/ubootenv
 board=$(board_name)
 
 ubootenv_add_mmc_default() {
-	local envdev="$(find_mmc_part "ubootenv" "${1:-mmcblk0}")"
-	ubootenv_add_uci_config "$envdev" "0x0" "0x40000" "0x40000" "1"
-	ubootenv_add_uci_config "$envdev" "0x40000" "0x40000" "0x40000" "1"
+	ubootenv_add_mmc "ubootenv" "${1:-mmcblk0}" "0x0" "0x40000" "0x40000" "1"
+	ubootenv_add_mmc "ubootenv" "${1:-mmcblk0}" "0x40000" "0x40000" "0x40000" "1"
 }
 
 ubootenv_add_nor_default() {
-	local envdev="/dev/mtd$(find_mtd_index "u-boot-env")"
-	ubootenv_add_uci_config "$envdev" "0x0" "0x20000" "0x20000" "1"
-	ubootenv_add_uci_config "$envdev" "0x20000" "0x20000" "0x20000" "1"
-}
-
-ubootenv_add_ubi_default() {
-	. /lib/upgrade/nand.sh
-	local envubi=$(nand_find_ubi ubi)
-	local envdev=/dev/$(nand_find_volume $envubi ubootenv)
-	local envdev2=/dev/$(nand_find_volume $envubi ubootenv2)
-	ubootenv_add_uci_config "$envdev" "0x0" "0x1f000" "0x1f000" "1"
-	ubootenv_add_uci_config "$envdev2" "0x0" "0x1f000" "0x1f000" "1"
+	ubootenv_add_mtd "u-boot-env" "0x0" "0x20000" "0x20000" "1"
+	ubootenv_add_mtd "u-boot-env" "0x20000" "0x20000" "0x20000" "1"
 }
 
 case "$board" in
 abt,asr3000|\
 asus,zenwifi-bt8-ubootmod|\
 cmcc,a10-ubootmod|\
+cudy,tr3000-v1-ubootmod|\
 h3c,magic-nx30-pro|\
 jcg,q30-pro|\
 mercusys,mr90x-v1-ubi|\
 netcore,n60|\
+netcore,n60-pro|\
 netis,nx31|\
 nokia,ea0326gmp|\
 qihoo,360t7|\
 routerich,ax3000-ubootmod|\
+snr,snr-cpe-ax2|\
 tplink,tl-xdr4288|\
 tplink,tl-xdr6086|\
 tplink,tl-xdr6088|\
@@ -63,8 +55,7 @@ glinet,gl-x3000|\
 glinet,gl-xe3000|\
 huasifei,wh3000|\
 nradio,c8-668gl)
-	local envdev=$(find_mmc_part "u-boot-env")
-	ubootenv_add_uci_config "$envdev" "0x0" "0x80000"
+	ubootenv_add_mmc "u-boot-env" "" "0x0" "0x80000"
 	;;
 asus,rt-ax59u)
 	ubootenv_add_uci_config "/dev/mtd0" "0x100000" "0x20000" "0x20000"
@@ -110,12 +101,13 @@ gatonetworks,gdsp)
 glinet,gl-mt3000)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x80000" "0x20000"
 	;;
+mercusys,mr80x-v3|\
 mercusys,mr90x-v1|\
 routerich,ax3000|\
+routerich,ax3000-v1|\
 tenbay,wr3000k|\
 tplink,re6000xd)
-	local envdev=/dev/mtd$(find_mtd_index "u-boot-env")
-	ubootenv_add_uci_config "$envdev" "0x0" "0x20000" "0x20000" "1"
+	ubootenv_add_mtd "u-boot-env" "0x0" "0x20000" "0x20000" "1"
 	;;
 openembed,som7981)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x80000" "0x80000"
@@ -127,8 +119,10 @@ openwrt,one)
 smartrg,sdg-8733|\
 smartrg,sdg-8733a|\
 smartrg,sdg-8734)
-	local envdev=$(find_mmc_part "u-boot-env" "mmcblk0")
-	ubootenv_add_uci_config "$envdev" "0x0" "0x8000" "0x8000"
+	ubootenv_add_mmc "u-boot-env" "mmcblk0" "0x0" "0x8000" "0x8000"
+	;;
+tplink,archer-ax80-v1)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000" "8"
 	;;
 ubnt,unifi-6-plus)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x80000" "0x10000"
@@ -140,8 +134,7 @@ xiaomi,redmi-router-ax6000-stock)
 	ubootenv_add_uci_sys_config "/dev/mtd2" "0x0" "0x10000" "0x20000"
 	;;
 zyxel,ex5601-t0)
-	local envdev=/dev/mtd$(find_mtd_index "u-boot-env")
-	ubootenv_add_uci_config "$envdev" "0x0" "0x20000" "0x40000" "2"
+	ubootenv_add_mtd "u-boot-env" "0x0" "0x20000" "0x40000" "2"
 	;;
 zyxel,ex5700-telenor)
 	ubootenv_add_uci_config "/dev/ubootenv" "0x0" "0x4000" "0x4000" "1"

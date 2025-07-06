@@ -272,7 +272,7 @@ function device_htmode_append(config) {
 			];
 
 			for (let k, v in eht_center_seg0_map)
-				if (v[0] <= config.channel) {
+				if (config.channel <= v[0]) {
 					config.eht_oper_centr_freq_seg0_idx = v[1];
 					break;
 				}
@@ -523,11 +523,11 @@ function generate(config) {
 }
 
 let iface_idx = 0;
-function setup_interface(interface, config, vlans, stas, phy_features, fixup) {
+function setup_interface(interface, data, config, vlans, stas, phy_features, fixup) {
 	config = { ...config, fixup };
 
 	config.idx = iface_idx++;
-	ap.generate(interface, config, vlans, stas, phy_features);
+	ap.generate(interface, data, config, vlans, stas, phy_features);
 }
 
 export function setup(data) {
@@ -556,9 +556,9 @@ export function setup(data) {
 
 		let owe = interface.config.encryption == 'owe' && interface.config.owe_transition;
 
-		setup_interface(k, interface.config, interface.vlans, interface.stas, phy_features, owe ? 'owe' : null );
+		setup_interface(k, data, interface.config, interface.vlans, interface.stas, phy_features, owe ? 'owe' : null );
 		if (owe)
-			setup_interface(k, interface.config, interface.vlans, interface.stas, phy_features, 'owe-transition');
+			setup_interface(k, data, interface.config, interface.vlans, interface.stas, phy_features, 'owe-transition');
 	}
 
 	let config = dump_config(file_name);

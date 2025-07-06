@@ -6,25 +6,41 @@
 	compatible = "hiwifi,hc5661a", "mediatek,mt7628an-soc";
 	model = "HiWiFi HC5661A";
 
+	aliases {
+		label-mac-device = &ethernet;
+		led-boot = &led_status;
+		led-failsafe = &led_status;
+		led-running = &led_status;
+		led-upgrade = &led_status;
+	};
+
 	leds {
 		compatible = "gpio-leds";
 
-		led_system: system {
-			label = "blue:system";
+		led_status: led-0 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 37 GPIO_ACTIVE_HIGH>;
 		};
 
-		internet {
-			label = "blue:internet";
+		led-1 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WAN;
 			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
 		};
 
-		wlan2g {
-			label = "blue:wlan2g";
+		led-2 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN;
 			gpios = <&gpio 44 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy0tpt";
 		};
 	};
+};
+
+&esw {
+	mediatek,portmap = <0x2f>;
+	mediatek,portdisable = <0x20>;
 };
 
 &pinctrl {
@@ -55,5 +71,9 @@
 };
 
 &ohci {
+	status = "disabled";
+};
+
+&usbphy {
 	status = "disabled";
 };

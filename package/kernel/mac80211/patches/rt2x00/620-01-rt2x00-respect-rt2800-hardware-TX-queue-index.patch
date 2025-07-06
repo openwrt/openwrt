@@ -114,7 +114,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  		queue = rt2x00queue_get_tx_queue(rt2x00dev, qid);
  
  		if (unlikely(rt2x00queue_empty(queue))) {
-@@ -12188,8 +12197,9 @@ int rt2800_conf_tx(struct ieee80211_hw *
+@@ -12182,8 +12191,9 @@ int rt2800_conf_tx(struct ieee80211_hw *
  	queue = rt2x00queue_get_tx_queue(rt2x00dev, queue_idx);
  
  	/* Update WMM TXOP register */
@@ -126,7 +126,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  	field.bit_mask = 0xffff << field.bit_offset;
  
  	reg = rt2800_register_read(rt2x00dev, offset);
-@@ -12197,7 +12207,7 @@ int rt2800_conf_tx(struct ieee80211_hw *
+@@ -12191,7 +12201,7 @@ int rt2800_conf_tx(struct ieee80211_hw *
  	rt2800_register_write(rt2x00dev, offset, reg);
  
  	/* Update WMM registers */
@@ -135,7 +135,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  	field.bit_mask = 0xf << field.bit_offset;
  
  	reg = rt2800_register_read(rt2x00dev, WMM_AIFSN_CFG);
-@@ -12213,7 +12223,7 @@ int rt2800_conf_tx(struct ieee80211_hw *
+@@ -12207,7 +12217,7 @@ int rt2800_conf_tx(struct ieee80211_hw *
  	rt2800_register_write(rt2x00dev, WMM_CWMAX_CFG, reg);
  
  	/* Update EDCA registers */

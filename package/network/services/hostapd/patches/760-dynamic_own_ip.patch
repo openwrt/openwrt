@@ -7,7 +7,7 @@ Some servers use the NAS-IP-Address attribute as a destination address
 
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -2863,6 +2863,8 @@ static int hostapd_config_fill(struct ho
+@@ -2632,6 +2632,8 @@ static int hostapd_config_fill(struct ho
  	} else if (os_strcmp(buf, "iapp_interface") == 0) {
  		wpa_printf(MSG_INFO, "DEPRECATED: iapp_interface not used");
  #endif /* CONFIG_IAPP */
@@ -18,7 +18,7 @@ Some servers use the NAS-IP-Address attribute as a destination address
  			wpa_printf(MSG_ERROR,
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -310,6 +310,7 @@ struct hostapd_bss_config {
+@@ -312,6 +312,7 @@ struct hostapd_bss_config {
  	unsigned int eap_sim_db_timeout;
  	int eap_server_erp; /* Whether ERP is enabled on internal EAP server */
  	struct hostapd_ip_addr own_ip_addr;
@@ -28,7 +28,7 @@ Some servers use the NAS-IP-Address attribute as a destination address
  	int radius_require_message_authenticator;
 --- a/src/ap/ieee802_1x.c
 +++ b/src/ap/ieee802_1x.c
-@@ -598,6 +598,10 @@ int add_common_radius_attr(struct hostap
+@@ -597,6 +597,10 @@ int add_common_radius_attr(struct hostap
  	struct hostapd_radius_attr *attr;
  	int len;
  
@@ -50,7 +50,7 @@ Some servers use the NAS-IP-Address attribute as a destination address
  	/**
  	 * conf - RADIUS client configuration (list of RADIUS servers to use)
  	 */
-@@ -819,6 +821,30 @@ static void radius_close_acct_socket(str
+@@ -822,6 +824,30 @@ static void radius_close_acct_socket(str
  
  
  /**
@@ -81,7 +81,7 @@ Some servers use the NAS-IP-Address attribute as a destination address
   * radius_client_send - Send a RADIUS request
   * @radius: RADIUS client context from radius_client_init()
   * @msg: RADIUS message to be sent
-@@ -1714,6 +1740,10 @@ radius_change_server(struct radius_clien
+@@ -1733,6 +1759,10 @@ radius_change_server(struct radius_clien
  			wpa_printf(MSG_DEBUG, "RADIUS local address: %s:%u",
  				   inet_ntoa(claddr.sin_addr),
  				   ntohs(claddr.sin_port));
@@ -92,7 +92,7 @@ Some servers use the NAS-IP-Address attribute as a destination address
  		}
  		break;
  #ifdef CONFIG_IPV6
-@@ -1725,6 +1755,10 @@ radius_change_server(struct radius_clien
+@@ -1744,6 +1774,10 @@ radius_change_server(struct radius_clien
  				   inet_ntop(AF_INET6, &claddr6.sin6_addr,
  					     abuf, sizeof(abuf)),
  				   ntohs(claddr6.sin6_port));

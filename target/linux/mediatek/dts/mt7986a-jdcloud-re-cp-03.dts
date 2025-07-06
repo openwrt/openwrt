@@ -150,6 +150,8 @@
 };
 
 &mmc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
 	bus-width = <8>;
 	cap-mmc-highspeed;
 	hs400-ds-delay = <0x14014>;

@@ -9,6 +9,7 @@ boot() {
 			echo -e "bootcount\nbootchanged\n" | /usr/sbin/fw_setenv -s -
 		;;
 	xiaomi,mi-router-4c|\
+	xiaomi,miwifi-3a|\
 	xiaomi,miwifi-nano)
 		fw_setenv flag_boot_success 1
 		;;

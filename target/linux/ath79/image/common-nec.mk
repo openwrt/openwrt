@@ -8,6 +8,7 @@ endef
 define Device/nec-netbsd-aterm
   DEVICE_VENDOR := NEC
   LOADER_TYPE := bin
+  LZMA_TEXT_START := 0x82800000
   KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | uImage none
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-kernel | uImage none
   ARTIFACTS := uboot.bin

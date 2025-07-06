@@ -43,6 +43,7 @@ ramips_setup_interfaces()
 	alfa-network,tube-e4g|\
 	ampedwireless,b1200ex|\
 	buffalo,wmr-300|\
+	devolo,rac|\
 	dlink,dch-m225|\
 	edimax,ew-7476rpc|\
 	edimax,ew-7478ac|\
@@ -381,10 +382,7 @@ ramips_setup_macs()
 	hiwifi,hc5661|\
 	hiwifi,hc5761|\
 	hiwifi,hc5861)
-		lan_mac=$(mtd_get_mac_ascii bdinfo "Vfac_mac ")
-		label_mac=$lan_mac
-		[ -n "$lan_mac" ] || lan_mac=$(cat /sys/class/net/eth0/address)
-		wan_mac=$(macaddr_add "$lan_mac" 1)
+		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth0/address)" 1)
 		;;
 	iodata,wn-ac1167gr|\
 	iodata,wn-ac733gr3)

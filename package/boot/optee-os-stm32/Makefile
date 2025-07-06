@@ -7,10 +7,10 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION:=4.4.0
+PKG_VERSION:=4.6.0
 PKG_RELEASE:=1
 
-PKG_HASH:=b13c65ff2abcd21a9200cb0131f34d61bde7c31eb0427fa761d27c3b87c7fec8
+PKG_HASH:=0c947c6972bf50c483cb993af01041d4094b1e03711c7246cdde6ba2ffc351fe
 PKG_MAINTAINER:=Thomas Richard <thomas.richard@bootlin.com>
 
 OPTEE_USE_INTREE_DTC:=1
@@ -34,7 +34,22 @@ define Optee-os/stm32mp135f-dk
   PLAT_FLAVOR:=135F_DK
 endef
 
-OPTEE_TARGETS := stm32mp135f-dk
+define Optee-os/stm32mp157c-dk2
+  $(call Optee-os/stm32mp1)
+  NAME:=STM32MP157C-DK2
+  PLAT_FLAVOR:=157C_DK2
+endef
+
+define Optee-os/stm32mp157c-dk2-scmi
+  $(call Optee-os/stm32mp1)
+  NAME:=STM32MP157C-DK2 (SCMI)
+  PLAT_FLAVOR:=157C_DK2_SCMI
+endef
+
+OPTEE_TARGETS := \
+		 stm32mp135f-dk \
+		 stm32mp157c-dk2 \
+		 stm32mp157c-dk2-scmi
 
 define Package/optee-os/install/default
 endef

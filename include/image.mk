@@ -86,6 +86,8 @@ SQUASHFS_BLOCKSIZE := $(CONFIG_TARGET_SQUASHFS_BLOCK_SIZE)k
 SQUASHFSOPT := -b $(SQUASHFS_BLOCKSIZE)
 SQUASHFSOPT += -p '/dev d 755 0 0' -p '/dev/console c 600 0 0 5 1'
 SQUASHFSOPT += $(if $(CONFIG_SELINUX),-xattrs,-no-xattrs)
+SQUASHFSOPT += -block-readers $(CONFIG_TARGET_SQUASHFS_BLOCK_READERS)
+SQUASHFSOPT += -small-readers $(CONFIG_TARGET_SQUASHFS_SMALL_READERS)
 SQUASHFSCOMP := gzip
 LZMA_XZ_OPTIONS := -Xpreset 9 -Xe -Xlc 0 -Xlp 2 -Xpb 2
 ifeq ($(CONFIG_SQUASHFS_XZ),y)
@@ -97,11 +99,22 @@ endif
 
 JFFS2_BLOCKSIZE ?= 64k 128k
 
+EROFS_PCLUSTERSIZE := $(shell echo $$(($(CONFIG_TARGET_EROFS_PCLUSTER_SIZE)*1024)))
+EROFSOPT := -C$(EROFS_PCLUSTERSIZE)
+EROFSOPT += -Efragments,dedupe,ztailpacking -Uclear --all-root
+EROFSOPT += $(if $(SOURCE_DATE_EPOCH),-T$(SOURCE_DATE_EPOCH) --ignore-mtime)
+EROFSOPT += $(if $(CONFIG_SELINUX),,-x-1)
+EROFSCOMP := lz4hc,12
+ifeq ($(CONFIG_EROFS_FS_ZIP_LZMA),y)
+EROFSCOMP := lzma,109
+endif
+
 fs-types-$(CONFIG_TARGET_ROOTFS_SQUASHFS) += squashfs
 fs-types-$(CONFIG_TARGET_ROOTFS_JFFS2) += $(addprefix jffs2-,$(JFFS2_BLOCKSIZE))
 fs-types-$(CONFIG_TARGET_ROOTFS_JFFS2_NAND) += $(addprefix jffs2-nand-,$(NAND_BLOCKSIZE))
 fs-types-$(CONFIG_TARGET_ROOTFS_EXT4FS) += ext4
 fs-types-$(CONFIG_TARGET_ROOTFS_UBIFS) += ubifs
+fs-types-$(CONFIG_TARGET_ROOTFS_EROFS) += erofs
 fs-subtypes-$(CONFIG_TARGET_ROOTFS_JFFS2) += $(addsuffix -raw,$(addprefix jffs2-,$(JFFS2_BLOCKSIZE)))
 
 TARGET_FILESYSTEMS := $(fs-types-y)
@@ -305,6 +318,12 @@ define Image/mkfs/ext4
 		$(if $(CONFIG_TARGET_EXT4_JOURNAL),,-J) \
 		$(if $(SOURCE_DATE_EPOCH),-T $(SOURCE_DATE_EPOCH)) \
 		$@ $(call mkfs_target_dir,$(1))/
+endef
+
+# Don't use the mkfs.erofs builtin $SOURCE_DATE_EPOCH behavior
+define Image/mkfs/erofs
+	env -u SOURCE_DATE_EPOCH $(STAGING_DIR_HOST)/bin/mkfs.erofs -z$(EROFSCOMP) $(EROFSOPT) \
+		$@ $(call mkfs_target_dir,$(1))
 endef
 
 define Image/Manifest
@@ -567,6 +586,15 @@ endef
 
 define Device/Check/Common
   _PROFILE_SET = $$(strip $$(foreach profile,$$(PROFILES) DEVICE_$(1),$$(call DEVICE_CHECK_PROFILE,$$(profile))))
+  # Check if device is disabled and if so do not mark to be installed when ImageBuilder is used
+  ifeq ($(IB),1)
+    ifeq ($$(DEFAULT),n)
+      _PROFILE_SET :=
+    endif
+    ifeq ($$(BROKEN),y)
+      _PROFILE_SET :=
+    endif
+  endif
   DEVICE_PACKAGES += $$(call extra_packages,$$(DEVICE_PACKAGES))
   ifdef TARGET_PER_DEVICE_ROOTFS
     $$(eval $$(call merge_packages,_PACKAGES,$$(DEVICE_PACKAGES) $$(call DEVICE_EXTRA_PACKAGES,$(1))))
@@ -647,6 +675,8 @@ define Device/Build/initramfs
 	VERSION_NUMBER="$(VERSION_NUMBER)" \
 	VERSION_CODE="$(VERSION_CODE)" \
 	SUPPORTED_DEVICES="$$(SUPPORTED_DEVICES)" \
+	KERNEL_SIZE="$$(KERNEL_SIZE)" \
+	IMAGE_SIZE="$$(IMAGE_SIZE)" \
 	$(TOPDIR)/scripts/json_add_image_info.py $$@
 endef
 endif
@@ -781,6 +811,8 @@ define Device/Build/image
 	VERSION_NUMBER="$(VERSION_NUMBER)" \
 	VERSION_CODE="$(VERSION_CODE)" \
 	SUPPORTED_DEVICES="$(SUPPORTED_DEVICES)" \
+	KERNEL_SIZE="$(KERNEL_SIZE)" \
+	IMAGE_SIZE="$(IMAGE_SIZE)" \
 	$(TOPDIR)/scripts/json_add_image_info.py $$@
 
 endef
@@ -835,6 +867,8 @@ define Device/Build/artifact
 	VERSION_NUMBER="$(VERSION_NUMBER)" \
 	VERSION_CODE="$(VERSION_CODE)" \
 	SUPPORTED_DEVICES="$(SUPPORTED_DEVICES)" \
+	KERNEL_SIZE="$(KERNEL_SIZE)" \
+	IMAGE_SIZE="$(IMAGE_SIZE)" \
 	$(TOPDIR)/scripts/json_add_image_info.py $$@
 
 endef

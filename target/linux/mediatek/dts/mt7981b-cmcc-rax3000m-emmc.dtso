@@ -32,6 +32,8 @@
 	fragment@3 {
 		target = <&mmc0>;
 		__overlay__ {
+			#address-cells = <1>;
+			#size-cells = <0>;
 			bus-width = <8>;
 			max-frequency = <26000000>;
 			no-sd;

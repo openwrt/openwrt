@@ -427,19 +427,19 @@
 +		factory {
 +			label = "reset";
 +			linux,code = <KEY_RESTART>;
-+			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
 +		};
 +
 +		wps {
 +			label = "wps";
 +			linux,code = <KEY_WPS_BUTTON>;
-+			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
 +		};
 +
 +		turbo {
 +			label = "turbo";
 +			linux,code = <BTN_1>;
-+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 11 GPIO_ACTIVE_LOW>;
 +		};
 +	};
 +
@@ -448,17 +448,17 @@
 +
 +		status_red {
 +			label = "red:status";
-+			gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
++			gpios = <&pio 7 GPIO_ACTIVE_HIGH>;
 +		};
 +
 +		status_green {
 +			label = "green:status";
-+			gpios = <&gpio 8 GPIO_ACTIVE_HIGH>;
++			gpios = <&pio 8 GPIO_ACTIVE_HIGH>;
 +		};
 +
 +		turbo {
 +			label = "green:turbo";
-+			gpios = <&gpio 12 GPIO_ACTIVE_HIGH>;
++			gpios = <&pio 12 GPIO_ACTIVE_HIGH>;
 +		};
 +	};
 +};
@@ -479,7 +479,7 @@
 +	mediatek,gmac-id = <0>;
 +	phy-mode = "2500base-x";
 +	mediatek,switch = "mt7531";
-+	reset-gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
++	reset-gpios = <&pio 5 GPIO_ACTIVE_HIGH>;
 +
 +	fixed-link {
 +		speed = <2500>;
@@ -487,7 +487,7 @@
 +	};
 +};
 +
-+&pinctrl {
++&pio {
 +	spi_flash_pins: spi0-pins-func-1 {
 +		mux {
 +			function = "flash";

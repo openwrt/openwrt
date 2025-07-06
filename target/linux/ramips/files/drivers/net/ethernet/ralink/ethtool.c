@@ -13,6 +13,7 @@
  */
 
 #include "mtk_eth_soc.h"
+#include "ethtool.h"
 
 static const char fe_gdma_str[][ETH_GSTRING_LEN] = {
 #define _FE(x...)	# x,
@@ -70,9 +71,9 @@ static void fe_get_drvinfo(struct net_device *dev,
 	struct fe_priv *priv = netdev_priv(dev);
 	struct fe_soc_data *soc = priv->soc;
 
-	strlcpy(info->driver, priv->dev->driver->name, sizeof(info->driver));
-	strlcpy(info->version, MTK_FE_DRV_VERSION, sizeof(info->version));
-	strlcpy(info->bus_info, dev_name(priv->dev), sizeof(info->bus_info));
+	strscpy(info->driver, priv->dev->driver->name, sizeof(info->driver));
+	strscpy(info->version, MTK_FE_DRV_VERSION, sizeof(info->version));
+	strscpy(info->bus_info, dev_name(priv->dev), sizeof(info->bus_info));
 
 	if (soc->reg_table[FE_REG_FE_COUNTER_BASE])
 		info->n_stats = ARRAY_SIZE(fe_gdma_str);

@@ -139,13 +139,13 @@
 +		button-reset {
 +			label = "reset";
 +			linux,code = <KEY_RESTART>;
-+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
 +		};
 +
 +		button-wps {
 +			label = "wps";
 +			linux,code = <KEY_WPS_BUTTON>;
-+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
 +		};
 +	};
 +
@@ -154,19 +154,19 @@
 +
 +		led-0 {
 +			label = "blue:status";
-+			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
 +			default-state = "off";
 +		};
 +
 +		running_led: led-1 {
 +			label = "green:status";
-+			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
 +			default-state = "off";
 +		};
 +
 +		boot_led: led-2 {
 +			label = "red:status";
-+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 11 GPIO_ACTIVE_LOW>;
 +			default-state = "on";
 +		};
 +	};
@@ -177,7 +177,7 @@
 +	mediatek,gmac-id = <0>;
 +	phy-mode = "2500base-x";
 +	mediatek,switch = "mt7531";
-+	reset-gpios = <&gpio 39 GPIO_ACTIVE_HIGH>;
++	reset-gpios = <&pio 39 GPIO_ACTIVE_HIGH>;
 +
 +	fixed-link {
 +		speed = <2500>;
@@ -185,7 +185,7 @@
 +	};
 +};
 +
-+&pinctrl {
++&pio {
 +	spi_flash_pins: spi0-pins-func-1 {
 +		mux {
 +			function = "flash";

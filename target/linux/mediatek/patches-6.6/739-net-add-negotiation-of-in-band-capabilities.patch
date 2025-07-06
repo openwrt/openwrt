@@ -826,7 +826,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
   *
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -800,6 +800,24 @@ struct phy_tdr_config {
+@@ -797,6 +797,24 @@ struct phy_tdr_config {
  #define PHY_PAIR_ALL -1
  
  /**
@@ -851,7 +851,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
   * struct phy_plca_cfg - Configuration of the PLCA (Physical Layer Collision
   * Avoidance) Reconciliation Sublayer.
   *
-@@ -939,6 +957,19 @@ struct phy_driver {
+@@ -936,6 +954,19 @@ struct phy_driver {
  	int (*get_features)(struct phy_device *phydev);
  
  	/**
@@ -871,7 +871,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  	 * @get_rate_matching: Get the supported type of rate matching for a
  	 * particular phy interface. This is used by phy consumers to determine
  	 * whether to advertise lower-speed modes for that interface. It is
-@@ -1774,6 +1805,9 @@ void phy_stop(struct phy_device *phydev)
+@@ -1771,6 +1802,9 @@ void phy_stop(struct phy_device *phydev)
  int phy_config_aneg(struct phy_device *phydev);
  int phy_start_aneg(struct phy_device *phydev);
  int phy_aneg_done(struct phy_device *phydev);

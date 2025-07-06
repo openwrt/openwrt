@@ -18,7 +18,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 
 --- a/drivers/nvmem/core.c
 +++ b/drivers/nvmem/core.c
-@@ -805,6 +805,11 @@ static int nvmem_add_cells_from_dt(struc
+@@ -819,6 +819,11 @@ static int nvmem_add_cells_from_dt(struc
  		if (addr && len == (2 * sizeof(u32))) {
  			info.bit_offset = be32_to_cpup(addr++);
  			info.nbits = be32_to_cpup(addr);

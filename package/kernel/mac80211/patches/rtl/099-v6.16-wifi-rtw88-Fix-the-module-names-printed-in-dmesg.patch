@@ -1,0 +1,230 @@
+From 581cf3a9cb61daae1009c2380b228f40177046d8 Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Wed, 2 Apr 2025 20:54:30 +0300
+Subject: [PATCH] wifi: rtw88: Fix the module names printed in dmesg
+
+The rtw88 module names all start with the "rtw88_" prefix, but the
+messages in dmesg mostly use the "rtw_" prefix. The messages from
+rtw88_8723cs don't even have the underscore.
+
+Use the KBUILD_MODNAME macro in every driver. This ensures that the
+messages in dmesg will always use the module name.
+
+Before:
+
+Mar 17 15:54:19 ideapad2 kernel: rtw_8814au 2-4:1.0: Firmware version 33.6.0, H2C version 6
+
+After:
+
+Mar 17 16:33:35 ideapad2 kernel: rtw88_8814au 2-4:1.0: Firmware version 33.6.0, H2C version 6
+
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/29cd29ba-bc51-4d5b-ad48-a43c6ce72d56@gmail.com
+---
+ drivers/net/wireless/realtek/rtw88/rtw8723cs.c | 2 +-
+ drivers/net/wireless/realtek/rtw88/rtw8723de.c | 2 +-
+ drivers/net/wireless/realtek/rtw88/rtw8723ds.c | 2 +-
+ drivers/net/wireless/realtek/rtw88/rtw8723du.c | 2 +-
+ drivers/net/wireless/realtek/rtw88/rtw8812au.c | 2 +-
+ drivers/net/wireless/realtek/rtw88/rtw8814ae.c | 2 +-
+ drivers/net/wireless/realtek/rtw88/rtw8814au.c | 2 +-
+ drivers/net/wireless/realtek/rtw88/rtw8821au.c | 2 +-
+ drivers/net/wireless/realtek/rtw88/rtw8821ce.c | 2 +-
+ drivers/net/wireless/realtek/rtw88/rtw8821cs.c | 2 +-
+ drivers/net/wireless/realtek/rtw88/rtw8821cu.c | 2 +-
+ drivers/net/wireless/realtek/rtw88/rtw8822be.c | 2 +-
+ drivers/net/wireless/realtek/rtw88/rtw8822bs.c | 2 +-
+ drivers/net/wireless/realtek/rtw88/rtw8822bu.c | 2 +-
+ drivers/net/wireless/realtek/rtw88/rtw8822ce.c | 2 +-
+ drivers/net/wireless/realtek/rtw88/rtw8822cs.c | 2 +-
+ drivers/net/wireless/realtek/rtw88/rtw8822cu.c | 2 +-
+ 17 files changed, 17 insertions(+), 17 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtw88/rtw8723cs.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8723cs.c
+@@ -19,7 +19,7 @@ static const struct sdio_device_id rtw_8
+ MODULE_DEVICE_TABLE(sdio, rtw_8723cs_id_table);
+ 
+ static struct sdio_driver rtw_8723cs_driver = {
+-	.name = "rtw8723cs",
++	.name = KBUILD_MODNAME,
+ 	.id_table = rtw_8723cs_id_table,
+ 	.probe = rtw_sdio_probe,
+ 	.remove = rtw_sdio_remove,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8723de.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8723de.c
+@@ -17,7 +17,7 @@ static const struct pci_device_id rtw_87
+ MODULE_DEVICE_TABLE(pci, rtw_8723de_id_table);
+ 
+ static struct pci_driver rtw_8723de_driver = {
+-	.name = "rtw_8723de",
++	.name = KBUILD_MODNAME,
+ 	.id_table = rtw_8723de_id_table,
+ 	.probe = rtw_pci_probe,
+ 	.remove = rtw_pci_remove,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8723ds.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8723ds.c
+@@ -25,7 +25,7 @@ static const struct sdio_device_id rtw_8
+ MODULE_DEVICE_TABLE(sdio, rtw_8723ds_id_table);
+ 
+ static struct sdio_driver rtw_8723ds_driver = {
+-	.name = "rtw_8723ds",
++	.name = KBUILD_MODNAME,
+ 	.probe = rtw_sdio_probe,
+ 	.remove = rtw_sdio_remove,
+ 	.id_table = rtw_8723ds_id_table,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8723du.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8723du.c
+@@ -24,7 +24,7 @@ static int rtw8723du_probe(struct usb_in
+ }
+ 
+ static struct usb_driver rtw_8723du_driver = {
+-	.name = "rtw_8723du",
++	.name = KBUILD_MODNAME,
+ 	.id_table = rtw_8723du_id_table,
+ 	.probe = rtw8723du_probe,
+ 	.disconnect = rtw_usb_disconnect,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8812au.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8812au.c
+@@ -82,7 +82,7 @@ static const struct usb_device_id rtw_88
+ MODULE_DEVICE_TABLE(usb, rtw_8812au_id_table);
+ 
+ static struct usb_driver rtw_8812au_driver = {
+-	.name = "rtw_8812au",
++	.name = KBUILD_MODNAME,
+ 	.id_table = rtw_8812au_id_table,
+ 	.probe = rtw_usb_probe,
+ 	.disconnect = rtw_usb_disconnect,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8814ae.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8814ae.c
+@@ -17,7 +17,7 @@ static const struct pci_device_id rtw_88
+ MODULE_DEVICE_TABLE(pci, rtw_8814ae_id_table);
+ 
+ static struct pci_driver rtw_8814ae_driver = {
+-	.name = "rtw_8814ae",
++	.name = KBUILD_MODNAME,
+ 	.id_table = rtw_8814ae_id_table,
+ 	.probe = rtw_pci_probe,
+ 	.remove = rtw_pci_remove,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8814au.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8814au.c
+@@ -42,7 +42,7 @@ static const struct usb_device_id rtw_88
+ MODULE_DEVICE_TABLE(usb, rtw_8814au_id_table);
+ 
+ static struct usb_driver rtw_8814au_driver = {
+-	.name = "rtw_8814au",
++	.name = KBUILD_MODNAME,
+ 	.id_table = rtw_8814au_id_table,
+ 	.probe = rtw_usb_probe,
+ 	.disconnect = rtw_usb_disconnect,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8821au.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8821au.c
+@@ -66,7 +66,7 @@ static const struct usb_device_id rtw_88
+ MODULE_DEVICE_TABLE(usb, rtw_8821au_id_table);
+ 
+ static struct usb_driver rtw_8821au_driver = {
+-	.name = "rtw_8821au",
++	.name = KBUILD_MODNAME,
+ 	.id_table = rtw_8821au_id_table,
+ 	.probe = rtw_usb_probe,
+ 	.disconnect = rtw_usb_disconnect,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8821ce.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8821ce.c
+@@ -21,7 +21,7 @@ static const struct pci_device_id rtw_88
+ MODULE_DEVICE_TABLE(pci, rtw_8821ce_id_table);
+ 
+ static struct pci_driver rtw_8821ce_driver = {
+-	.name = "rtw_8821ce",
++	.name = KBUILD_MODNAME,
+ 	.id_table = rtw_8821ce_id_table,
+ 	.probe = rtw_pci_probe,
+ 	.remove = rtw_pci_remove,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8821cs.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8821cs.c
+@@ -20,7 +20,7 @@ static const struct sdio_device_id rtw_8
+ MODULE_DEVICE_TABLE(sdio, rtw_8821cs_id_table);
+ 
+ static struct sdio_driver rtw_8821cs_driver = {
+-	.name = "rtw_8821cs",
++	.name = KBUILD_MODNAME,
+ 	.probe = rtw_sdio_probe,
+ 	.remove = rtw_sdio_remove,
+ 	.id_table = rtw_8821cs_id_table,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8821cu.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8821cu.c
+@@ -48,7 +48,7 @@ static int rtw_8821cu_probe(struct usb_i
+ }
+ 
+ static struct usb_driver rtw_8821cu_driver = {
+-	.name = "rtw_8821cu",
++	.name = KBUILD_MODNAME,
+ 	.id_table = rtw_8821cu_id_table,
+ 	.probe = rtw_8821cu_probe,
+ 	.disconnect = rtw_usb_disconnect,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8822be.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8822be.c
+@@ -17,7 +17,7 @@ static const struct pci_device_id rtw_88
+ MODULE_DEVICE_TABLE(pci, rtw_8822be_id_table);
+ 
+ static struct pci_driver rtw_8822be_driver = {
+-	.name = "rtw_8822be",
++	.name = KBUILD_MODNAME,
+ 	.id_table = rtw_8822be_id_table,
+ 	.probe = rtw_pci_probe,
+ 	.remove = rtw_pci_remove,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8822bs.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8822bs.c
+@@ -20,7 +20,7 @@ static const struct sdio_device_id rtw_8
+ MODULE_DEVICE_TABLE(sdio, rtw_8822bs_id_table);
+ 
+ static struct sdio_driver rtw_8822bs_driver = {
+-	.name = "rtw_8822bs",
++	.name = KBUILD_MODNAME,
+ 	.probe = rtw_sdio_probe,
+ 	.remove = rtw_sdio_remove,
+ 	.id_table = rtw_8822bs_id_table,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8822bu.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8822bu.c
+@@ -88,7 +88,7 @@ static int rtw8822bu_probe(struct usb_in
+ }
+ 
+ static struct usb_driver rtw_8822bu_driver = {
+-	.name = "rtw_8822bu",
++	.name = KBUILD_MODNAME,
+ 	.id_table = rtw_8822bu_id_table,
+ 	.probe = rtw8822bu_probe,
+ 	.disconnect = rtw_usb_disconnect,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8822ce.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8822ce.c
+@@ -21,7 +21,7 @@ static const struct pci_device_id rtw_88
+ MODULE_DEVICE_TABLE(pci, rtw_8822ce_id_table);
+ 
+ static struct pci_driver rtw_8822ce_driver = {
+-	.name = "rtw_8822ce",
++	.name = KBUILD_MODNAME,
+ 	.id_table = rtw_8822ce_id_table,
+ 	.probe = rtw_pci_probe,
+ 	.remove = rtw_pci_remove,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8822cs.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8822cs.c
+@@ -20,7 +20,7 @@ static const struct sdio_device_id rtw_8
+ MODULE_DEVICE_TABLE(sdio, rtw_8822cs_id_table);
+ 
+ static struct sdio_driver rtw_8822cs_driver = {
+-	.name = "rtw_8822cs",
++	.name = KBUILD_MODNAME,
+ 	.probe = rtw_sdio_probe,
+ 	.remove = rtw_sdio_remove,
+ 	.id_table = rtw_8822cs_id_table,
+--- a/drivers/net/wireless/realtek/rtw88/rtw8822cu.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8822cu.c
+@@ -32,7 +32,7 @@ static int rtw8822cu_probe(struct usb_in
+ }
+ 
+ static struct usb_driver rtw_8822cu_driver = {
+-	.name = "rtw_8822cu",
++	.name = KBUILD_MODNAME,
+ 	.id_table = rtw_8822cu_id_table,
+ 	.probe = rtw8822cu_probe,
+ 	.disconnect = rtw_usb_disconnect,

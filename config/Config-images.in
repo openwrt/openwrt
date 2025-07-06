@@ -87,6 +87,23 @@ menu "Target Images"
 
 	comment "Root filesystem images"
 
+	menuconfig TARGET_ROOTFS_EROFS
+		bool "erofs"
+		default y if USES_EROFS
+		select KERNEL_EROFS_FS
+		help
+		  Build a EROFS root filesystem.
+
+		config TARGET_EROFS_PCLUSTER_SIZE
+			int "physical cluster size (in KiB)"
+			depends on TARGET_ROOTFS_EROFS
+			default 64 if LOW_MEMORY_FOOTPRINT
+			default 1024 if (SMALL_FLASH && !LOW_MEMORY_FOOTPRINT)
+			default 256
+			help
+			  Specify the EROFS physical cluster size (must be equal
+			  to or a multiple of the filesystem block size).
+
 	menuconfig TARGET_ROOTFS_EXT4FS
 		bool "ext4"
 		default y if USES_EXT4
@@ -159,6 +176,22 @@ menu "Target Images"
 			help
 			  Select squashfs block size, must be one of:
 			    4, 8, 16, 32, 64, 128, 256, 512, 1024
+
+		config TARGET_SQUASHFS_BLOCK_READERS
+			int "mksquashfs tool parallel block reader threads"
+			depends on TARGET_ROOTFS_SQUASHFS
+			default 4
+			help
+			  Specify the number of parallel block reader threads
+			  (for files equal or larger than the squashfs block size).
+
+		config TARGET_SQUASHFS_SMALL_READERS
+			int "mksquashfs tool parallel small file reader threads"
+			depends on TARGET_ROOTFS_SQUASHFS
+			default 4
+			help
+			  Specify the number of parallel small file reader threads
+			  (for files less than the squashfs block size).
 
 	menuconfig TARGET_ROOTFS_UBIFS
 		bool "ubifs"

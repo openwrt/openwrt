@@ -155,13 +155,8 @@
 	status = "okay";
 	perst-gpio = <&tlmm 60 GPIO_ACTIVE_LOW>;
 
-	bridge@0,0 {
-		reg = <0x00000000 0 0 0 0>;
-		#address-cells = <3>;
-		#size-cells = <2>;
-		ranges;
-
-		wifi@1,0 {
+	pcie@0 {
+		wifi@0,0 {
 			status = "okay";
 
 			/* ath11k has no DT compatible for PCI cards */

@@ -31,7 +31,6 @@ define Device/fsl_ls1021a-twr
   DEVICE_VENDOR := NXP
   DEVICE_MODEL := TWR-LS1021A
   DEVICE_VARIANT := Default
-  DEVICE_PACKAGES += ~layerscape-rcw
   IMAGE/firmware.bin := \
     ls-clean | \
     ls-append $(1)-rcw.bin | pad-to 1M | \

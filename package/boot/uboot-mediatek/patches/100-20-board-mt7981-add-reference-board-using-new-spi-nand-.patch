@@ -18,9 +18,9 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
-@@ -1195,6 +1195,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
+@@ -1136,6 +1136,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
+ 	mt7622-bananapi-bpi-r64.dtb \
  	mt7623n-bananapi-bpi-r2.dtb \
- 	mt7629-rfb.dtb \
  	mt7981-rfb.dtb \
 +	mt7981-snfi-nand-rfb.dtb \
  	mt7981-emmc-rfb.dtb \
@@ -65,7 +65,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +	mediatek,gmac-id = <0>;
 +	phy-mode = "sgmii";
 +	mediatek,switch = "mt7531";
-+	reset-gpios = <&gpio 39 GPIO_ACTIVE_HIGH>;
++	reset-gpios = <&pio 39 GPIO_ACTIVE_HIGH>;
 +
 +	fixed-link {
 +		speed = <1000>;
@@ -73,7 +73,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +	};
 +};
 +
-+&pinctrl {
++&pio {
 +	snfi_pins: snfi-pins-func-1 {
 +		mux {
 +			function = "flash";

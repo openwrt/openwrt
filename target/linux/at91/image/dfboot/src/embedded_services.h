@@ -382,7 +382,7 @@ extern char const *AT91F_PipeGetError(AT91S_PipeStatus msgId);
 extern const unsigned char bit_rev[256];
 
 extern void CalculateCrc32(const unsigned char *,unsigned int, unsigned int *);
-extern void CalculateCrc16(const unsigned char *, unsigned int , unsigned short *); 
+extern void CalculateCrc16(const unsigned char *, unsigned int , unsigned short *);
 extern void CalculateCrcHdlc(const unsigned char *, unsigned int, unsigned short *);
 extern void CalculateCrc16ccitt(const unsigned char *, unsigned int , unsigned short *);
 
@@ -490,7 +490,7 @@ typedef struct _AT91S_RomBoot {
 	const AT91PF_SVC_CRCHDLC		CRCHDLC;
 	const AT91PF_SVC_CRC32			CRC32;
 	const AT91PS_SVC_CRC_BIT_REV	Bit_Reverse_Array;
-	const AT91PS_SINE_TAB			SineTab; 
+	const AT91PS_SINE_TAB			SineTab;
 	const AT91PF_Sinus              Sine;
 } AT91S_RomBoot, *AT91PS_RomBoot;
 

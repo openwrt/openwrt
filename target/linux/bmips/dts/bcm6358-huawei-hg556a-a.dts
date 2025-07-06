@@ -1,0 +1,73 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "bcm6358-huawei-hg556a.dtsi"
+
+/ {
+	model = "Huawei EchoLife HG556a (version A)";
+	compatible = "huawei,hg556a-a", "brcm,bcm6358";
+
+	ath9k-leds {
+		compatible = "gpio-leds";
+
+		led-2 {
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&ath9k 2 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0tpt";
+		};
+	};
+};
+
+&gpio_keys {
+	help {
+		label = "help";
+		gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+		linux,code = <KEY_HELP>;
+		debounce-interval = <60>;
+	};
+};
+
+&gpio_leds {
+	led-0 {
+		label = "red:message";
+		gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
+	};
+
+	led-1 {
+		label = "red:hspa";
+		gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
+	};
+
+	led-6 {
+		label = "all";
+		gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
+		default-state = "on";
+	};
+
+	led-12 {
+		label = "green:lan1";
+		gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+	};
+
+	led-15 {
+		label = "green:lan2";
+		gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&pci {
+	status = "okay";
+
+	ath9k: wifi@1,0 {
+		compatible = "pci168c,ff1d";
+		reg = <0x0800 0 0 0 0>;
+
+		qca,no-eeprom;
+
+		nvmem-cells = <&macaddr_cfe_6a0 1>;
+		nvmem-cell-names = "mac-address";
+
+		#gpio-cells = <2>;
+		gpio-controller;
+	};
+};

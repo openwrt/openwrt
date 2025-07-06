@@ -9,6 +9,7 @@ IIO_MENU:=Industrial I/O Modules
 define KernelPackage/iio-core
   SUBMENU:=$(IIO_MENU)
   TITLE:=Industrial IO core
+  DEPENDS:=+!LINUX_6_6:kmod-dma-buf
   KCONFIG:= \
 	CONFIG_IIO \
 	CONFIG_IIO_BUFFER=y \
@@ -44,6 +45,25 @@ define KernelPackage/iio-kfifo-buf/description
 endef
 
 $(eval $(call KernelPackage,iio-kfifo-buf))
+
+
+define KernelPackage/industrialio-backend
+  TITLE:=IIO Backend support
+  KCONFIG=CONFIG_IIO_BACKEND
+  FILES:=$(LINUX_DIR)/drivers/iio/industrialio-backend.ko
+  AUTOLOAD:=$(call AutoProbe,industrialio-backend)
+  $(call AddDepends/iio)
+endef
+
+define KernelPackage/industrialio-backend/description
+  Framework to handle complex IIO aggregate devices. The typical
+  architecture that can make use of this framework is to have one
+  device as the frontend device which can be "linked" against one or
+  multiple backend devices. The framework then makes it easy to get
+  and control such backend devices.
+endef
+
+$(eval $(call KernelPackage,industrialio-backend))
 
 
 define KernelPackage/industrialio-hw-consumer
@@ -252,7 +272,7 @@ $(eval $(call KernelPackage,iio-bme680-spi))
 
 define KernelPackage/iio-bmp280
   TITLE:=BMP180/BMP280/BME280 pressure/temperatur sensor
-  DEPENDS:=+kmod-regmap-core
+  DEPENDS:=+kmod-regmap-core +!LINUX_6_6:kmod-industrialio-triggered-buffer
   KCONFIG:=CONFIG_BMP280
   FILES:=$(LINUX_DIR)/drivers/iio/pressure/bmp280.ko
   $(call AddDepends/iio)

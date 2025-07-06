@@ -1,0 +1,27 @@
+From b7f0cc647e52296a3d4dd727b6479dcd6d7e364e Mon Sep 17 00:00:00 2001
+From: Yuuki NAGAO <wf.yn386@gmail.com>
+Date: Sat, 3 May 2025 09:32:27 +0900
+Subject: [PATCH] wifi: rtw88: rtw8822bu VID/PID for BUFFALO WI-U2-866DM
+
+Add VID/PID 0411/03d1 for recently released
+BUFFALO WI-U2-866DM USB WiFi adapter.
+
+Signed-off-by: Yuuki NAGAO <wf.yn386@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/20250503003227.6673-1-wf.yn386@gmail.com
+---
+ drivers/net/wireless/realtek/rtw88/rtw8822bu.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/net/wireless/realtek/rtw88/rtw8822bu.c
++++ b/drivers/net/wireless/realtek/rtw88/rtw8822bu.c
+@@ -77,6 +77,8 @@ static const struct usb_device_id rtw_88
+ 	  .driver_info = (kernel_ulong_t)&(rtw8822b_hw_spec) }, /* Mercusys MA30N */
+ 	{ USB_DEVICE_AND_INTERFACE_INFO(0x2001, 0x3322, 0xff, 0xff, 0xff),
+ 	  .driver_info = (kernel_ulong_t)&(rtw8822b_hw_spec) }, /* D-Link DWA-T185 rev. A1 */
++	{ USB_DEVICE_AND_INTERFACE_INFO(0x0411, 0x03d1, 0xff, 0xff, 0xff),
++	  .driver_info = (kernel_ulong_t)&(rtw8822b_hw_spec) }, /* BUFFALO WI-U2-866DM */
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(usb, rtw_8822bu_id_table);

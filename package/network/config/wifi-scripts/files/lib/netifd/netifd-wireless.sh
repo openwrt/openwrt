@@ -39,11 +39,10 @@ prepare_key_wep() {
 }
 
 _wdev_prepare_channel() {
-	json_get_vars channel band hwmode
+	json_get_vars channel band hwmode htmode
 
 	auto_channel=0
 	enable_ht=0
-	htmode=
 	hwmode="${hwmode##11}"
 
 	case "$channel" in
@@ -79,6 +78,11 @@ _wdev_prepare_channel() {
 				*b|*g) band=2g;;
 			esac
 		;;
+	esac
+
+	case "$htmode" in
+		HE*|EHT*) wpa3_cipher="GCMP-256 ";;
+		*) wpa3_cipher="";;
 	esac
 }
 
@@ -205,17 +209,29 @@ _wdev_wrapper \
 	wireless_set_retry \
 
 wireless_vif_parse_encryption() {
-	json_get_vars encryption
+	json_get_vars encryption rsn_override
 	set_default encryption none
 
+	set_default rsn_override 1
 	auth_mode_open=1
 	auth_mode_shared=0
 	auth_type=none
+	wpa_override_cipher=
+	rsn_override_pairwise=
 
 	if [ "$hwmode" = "ad" ]; then
 		wpa_cipher="GCMP"
 	else
 		wpa_cipher="CCMP"
+		case "$encryption" in
+			sae*|wpa3*|psk3*|owe)
+				if [ "$rsn_override" -gt 0 ]; then
+					wpa_override_cipher="${wpa3_cipher}$wpa_cipher"
+				else
+					wpa_cipher="${wpa3_cipher}$wpa_cipher"
+				fi
+			;;
+		esac
 	fi
 
 	case "$encryption" in
@@ -226,6 +242,7 @@ wireless_vif_parse_encryption() {
 		*gcmp256) wpa_cipher="GCMP-256";;
 		*gcmp) wpa_cipher="GCMP";;
 		wpa3-192*) wpa_cipher="GCMP-256";;
+		*) rsn_override_pairwise="$wpa_override_cipher";;
 	esac
 
 	# 802.11n requires CCMP for WPA
@@ -289,12 +306,6 @@ wireless_vif_parse_encryption() {
 					auth_mode_shared=1
 				;;
 			esac
-		;;
-	esac
-
-	case "$encryption" in
-		*osen*)
-			auth_osen=1
 		;;
 	esac
 }

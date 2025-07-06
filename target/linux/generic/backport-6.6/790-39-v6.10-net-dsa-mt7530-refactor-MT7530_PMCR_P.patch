@@ -53,7 +53,7 @@ Signed-off-by: Arınç ÜNAL <arinc.unal@arinc9.com>
  
  		/* Disable forwarding by default on all ports */
  		mt7530_rmw(priv, MT7530_PCR_P(i), PCR_MATRIX_MASK,
-@@ -2555,8 +2555,8 @@ mt7531_setup_common(struct dsa_switch *d
+@@ -2558,8 +2558,8 @@ mt7531_setup_common(struct dsa_switch *d
  		/* Clear link settings and enable force mode to force link down
  		 * on all ports until they're enabled later.
  		 */
@@ -64,7 +64,7 @@ Signed-off-by: Arınç ÜNAL <arinc.unal@arinc9.com>
  
  		/* Disable forwarding by default on all ports */
  		mt7530_rmw(priv, MT7530_PCR_P(i), PCR_MATRIX_MASK,
-@@ -2640,7 +2640,7 @@ mt7531_setup(struct dsa_switch *ds)
+@@ -2643,7 +2643,7 @@ mt7531_setup(struct dsa_switch *ds)
  
  	/* Force link down on all ports before internal reset */
  	for (i = 0; i < MT7530_NUM_PORTS; i++)

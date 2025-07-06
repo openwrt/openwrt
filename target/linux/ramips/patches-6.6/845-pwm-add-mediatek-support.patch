@@ -41,7 +41,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_PWM_MXS)		+= pwm-mxs.o
 --- /dev/null
 +++ b/drivers/pwm/pwm-mediatek-ramips.c
-@@ -0,0 +1,187 @@
+@@ -0,0 +1,185 @@
 +/*
 + * Mediatek Pulse Width Modulator driver
 + *
@@ -197,15 +197,13 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	return devm_pwmchip_add(&pdev->dev, &pc->chip);
 +}
 +
-+static int mtk_pwm_remove(struct platform_device *pdev)
++static void mtk_pwm_remove(struct platform_device *pdev)
 +{
 +	struct mtk_pwm_chip *pc = platform_get_drvdata(pdev);
 +	int i;
 +
 +	for (i = 0; i < NUM_PWM; i++)
 +		pwm_disable(&pc->chip.pwms[i]);
-+
-+	return 0;
 +}
 +
 +static const struct of_device_id mtk_pwm_of_match[] = {
@@ -221,7 +219,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		.of_match_table = mtk_pwm_of_match,
 +	},
 +	.probe = mtk_pwm_probe,
-+	.remove = mtk_pwm_remove,
++	.remove_new = mtk_pwm_remove,
 +};
 +
 +module_platform_driver(mtk_pwm_driver);

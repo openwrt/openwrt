@@ -33,7 +33,7 @@
   \brief 	ARC4 encryption DEU driver file
 */
 
-/*! 
+/*!
   \defgroup IFX_ARC4_FUNCTIONS IFX_ARC4_FUNCTIONS
   \ingroup IFX_DEU
   \brief IFX deu driver functions
@@ -59,7 +59,7 @@
 #ifdef CONFIG_VR9
 #include "ifxmips_deu_vr9.h"
 #endif
- 
+
 static spinlock_t lock;
 #define CRTCL_SECT_INIT        spin_lock_init(&lock)
 #define CRTCL_SECT_START       spin_lock_irqsave(&lock, flag)
@@ -78,7 +78,7 @@ extern char debug_level;
 #define DPRINTF(level, format, args...)
 #endif
 
-/* 
+/*
  * \brief arc4 private structure
 */
 struct arc4_ctx {
@@ -91,24 +91,24 @@ extern int disable_multiblock;
 
 /*! \fn static void _deu_arc4 (void *ctx_arg, u8 *out_arg, const u8 *in_arg, u8 *iv_arg, u32 nbytes, int encdec, int mode)
     \ingroup IFX_ARC4_FUNCTIONS
-    \brief main interface to ARC4 hardware   
-    \param ctx_arg crypto algo context  
-    \param out_arg output bytestream  
-    \param in_arg input bytestream   
-    \param iv_arg initialization vector  
-    \param nbytes length of bytestream  
-    \param encdec 1 for encrypt; 0 for decrypt  
-    \param mode operation mode such as ebc, cbc, ctr  
-*/                                 
+    \brief main interface to ARC4 hardware
+    \param ctx_arg crypto algo context
+    \param out_arg output bytestream
+    \param in_arg input bytestream
+    \param iv_arg initialization vector
+    \param nbytes length of bytestream
+    \param encdec 1 for encrypt; 0 for decrypt
+    \param mode operation mode such as ebc, cbc, ctr
+*/
 static void _deu_arc4 (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
             u8 *iv_arg, u32 nbytes, int encdec, int mode)
 {
         volatile struct arc4_t *arc4 = (struct arc4_t *) ARC4_START;
-        
+
         int i = 0;
         unsigned long flag;
-        
-#if 1 // need to handle nbytes not multiple of 16       
+
+#if 1 // need to handle nbytes not multiple of 16
         volatile u32 tmp_array32[4];
         volatile u8 *tmp_ptr8;
         int remaining_bytes, j;
@@ -121,18 +121,18 @@ static void _deu_arc4 (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
 #if 1
         while (i < nbytes) {
                 arc4->ID3R = *((u32 *) in_arg + (i>>2) + 0);
-                arc4->ID2R = *((u32 *) in_arg + (i>>2) + 1);    
+                arc4->ID2R = *((u32 *) in_arg + (i>>2) + 1);
                 arc4->ID1R = *((u32 *) in_arg + (i>>2) + 2);
-                arc4->ID0R = *((u32 *) in_arg + (i>>2) + 3);    
-                
-                arc4->controlr.GO = 1; 
-                
+                arc4->ID0R = *((u32 *) in_arg + (i>>2) + 3);
+
+                arc4->controlr.GO = 1;
+
                 while (arc4->controlr.BUS) {
                       // this will not take long
                 }
 
 #if 1
-                // need to handle nbytes not multiple of 16 
+                // need to handle nbytes not multiple of 16
                 tmp_array32[0] = arc4->OD3R;
                 tmp_array32[1] = arc4->OD2R;
                 tmp_array32[2] = arc4->OD1R;
@@ -141,11 +141,11 @@ static void _deu_arc4 (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
                 remaining_bytes = nbytes - i;
                 if (remaining_bytes > 16)
                      remaining_bytes = 16;
-                
+
                 tmp_ptr8 = (u8 *)&tmp_array32[0];
                 for (j = 0; j < remaining_bytes; j++)
                      *out_arg++ = *tmp_ptr8++;
-#else                                
+#else
                 *((u32 *) out_arg + (i>>2) + 0) = arc4->OD3R;
                 *((u32 *) out_arg + (i>>2) + 1) = arc4->OD2R;
                 *((u32 *) out_arg + (i>>2) + 2) = arc4->OD1R;
@@ -163,8 +163,8 @@ static void _deu_arc4 (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
 
 /*! \fn arc4_chip_init (void)
     \ingroup IFX_ARC4_FUNCTIONS
-    \brief initialize arc4 hardware   
-*/                                 
+    \brief initialize arc4 hardware
+*/
 static void arc4_chip_init (void)
 {
         //do nothing
@@ -172,18 +172,18 @@ static void arc4_chip_init (void)
 
 /*! \fn static int arc4_set_key(struct crypto_tfm *tfm, const u8 *in_key, unsigned int key_len)
     \ingroup IFX_ARC4_FUNCTIONS
-    \brief sets ARC4 key    
-    \param tfm linux crypto algo transform  
-    \param in_key input key  
-    \param key_len key lengths less than or equal to 16 bytes supported  
-*/    
+    \brief sets ARC4 key
+    \param tfm linux crypto algo transform
+    \param in_key input key
+    \param key_len key lengths less than or equal to 16 bytes supported
+*/
 static int arc4_set_key(struct crypto_tfm *tfm, const u8 *inkey,
                        unsigned int key_len)
 {
         //struct arc4_ctx *ctx = crypto_tfm_ctx(tfm);
         volatile struct arc4_t *arc4 = (struct arc4_t *) ARC4_START;
         u32 *in_key = (u32 *)inkey;
-                
+
         // must program all bits at one go?!!!
 //#if 1
         *IFX_ARC4_CON = ( (1<<31) | ((key_len - 1)<<27) | (1<<26) | (3<<16) );
@@ -194,7 +194,7 @@ static int arc4_set_key(struct crypto_tfm *tfm, const u8 *inkey,
         arc4->K1R = *((u32 *) in_key + 2);
         arc4->K0R = *((u32 *) in_key + 3);
 
-#if 0 // arc4 is a ugly state machine, KSAE can only be set once per session  
+#if 0 // arc4 is a ugly state machine, KSAE can only be set once per session
         ctx->key_length = key_len;
 
         memcpy ((u8 *) (ctx->buf), in_key, key_len);
@@ -218,15 +218,15 @@ static int arc4_set_key_skcipher(struct crypto_skcipher *tfm, const u8 *inkey,
 
 /*! \fn static void _deu_arc4_ecb(void *ctx, uint8_t *dst, const uint8_t *src, uint8_t *iv, size_t nbytes, int encdec, int inplace)
     \ingroup IFX_ARC4_FUNCTIONS
-    \brief sets ARC4 hardware to ECB mode   
-    \param ctx crypto algo context  
-    \param dst output bytestream  
-    \param src input bytestream  
-    \param iv initialization vector   
-    \param nbytes length of bytestream  
-    \param encdec 1 for encrypt; 0 for decrypt  
-    \param inplace not used  
-*/                               
+    \brief sets ARC4 hardware to ECB mode
+    \param ctx crypto algo context
+    \param dst output bytestream
+    \param src input bytestream
+    \param iv initialization vector
+    \param nbytes length of bytestream
+    \param encdec 1 for encrypt; 0 for decrypt
+    \param inplace not used
+*/
 static void _deu_arc4_ecb(void *ctx, uint8_t *dst, const uint8_t *src,
                 uint8_t *iv, size_t nbytes, int encdec, int inplace)
 {
@@ -235,11 +235,11 @@ static void _deu_arc4_ecb(void *ctx, uint8_t *dst, const uint8_t *src,
 
 /*! \fn static void arc4_crypt(struct crypto_tfm *tfm, u8 *out, const u8 *in)
     \ingroup IFX_ARC4_FUNCTIONS
-    \brief encrypt/decrypt ARC4_BLOCK_SIZE of data   
-    \param tfm linux crypto algo transform  
-    \param out output bytestream  
-    \param in input bytestream  
-*/     
+    \brief encrypt/decrypt ARC4_BLOCK_SIZE of data
+    \param tfm linux crypto algo transform
+    \param out output bytestream
+    \param in input bytestream
+*/
 static void arc4_crypt(struct crypto_tfm *tfm, u8 *out, const u8 *in)
 {
         struct arc4_ctx *ctx = crypto_tfm_ctx(tfm);
@@ -288,7 +288,7 @@ static int ecb_arc4_encrypt(struct skcipher_request *req)
         err = skcipher_walk_virt(&walk, req, false);
 
         while ((nbytes = walk.nbytes)) {
-                _deu_arc4_ecb(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
+                _deu_arc4_ecb(ctx, walk.dst.virt.addr, walk.src.virt.addr,
                                NULL, nbytes, CRYPTO_DIR_ENCRYPT, 0);
                 nbytes &= ARC4_BLOCK_SIZE - 1;
                 err = skcipher_walk_done(&walk, nbytes);
@@ -313,7 +313,7 @@ static int ecb_arc4_decrypt(struct skcipher_request *req)
         err = skcipher_walk_virt(&walk, req, false);
 
         while ((nbytes = walk.nbytes)) {
-                _deu_arc4_ecb(ctx, walk.dst.virt.addr, walk.src.virt.addr, 
+                _deu_arc4_ecb(ctx, walk.dst.virt.addr, walk.src.virt.addr,
                                NULL, nbytes, CRYPTO_DIR_DECRYPT, 0);
                 nbytes &= ARC4_BLOCK_SIZE - 1;
                 err = skcipher_walk_done(&walk, nbytes);
@@ -343,8 +343,8 @@ static struct skcipher_alg ifxdeu_ecb_arc4_alg = {
 
 /*! \fn int ifxdeu_init_arc4(void)
     \ingroup IFX_ARC4_FUNCTIONS
-    \brief initialize arc4 driver    
-*/                                 
+    \brief initialize arc4 driver
+*/
 int ifxdeu_init_arc4(void)
 {
     int ret = -ENOSYS;
@@ -376,8 +376,8 @@ ecb_arc4_err:
 
 /*! \fn void ifxdeu_fini_arc4(void)
     \ingroup IFX_ARC4_FUNCTIONS
-    \brief unregister arc4 driver   
-*/                                 
+    \brief unregister arc4 driver
+*/
 void ifxdeu_fini_arc4(void)
 {
         crypto_unregister_alg (&ifxdeu_arc4_alg);

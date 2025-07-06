@@ -18,6 +18,7 @@ sub target_config_features(@) {
 		/^dt$/ and $ret .= "\tselect USES_DEVICETREE\n";
 		/^dt-overlay$/ and $ret .= "\tselect HAS_DT_OVERLAY_SUPPORT\n";
 		/^emmc$/ and $ret .= "\tselect EMMC_SUPPORT\n";
+		/^erofs$/ and $ret .= "\tselect USES_EROFS\n";
 		/^ext4$/ and $ret .= "\tselect USES_EXT4\n";
 		/^fpu$/ and $ret .= "\tselect HAS_FPU\n";
 		/^gpio$/ and $ret .= "\tselect GPIO_SUPPORT\n";
@@ -441,7 +442,7 @@ sub gen_profile_mk() {
 	my @targets = parse_target_metadata($file);
 	foreach my $cur (@targets) {
 		next unless $cur->{id} eq $target;
-		my @profile_ids_unique =  do { my %seen; grep { !$seen{$_}++} map { $_->{id} } @{$cur->{profiles}}};
+		my @profile_ids_unique =  do { my %seen; grep { !$seen{$_}++} map { $_->{id} } grep { $_->{default} !~ /^n/ } @{$cur->{profiles}}};
 		print "PROFILE_NAMES = ".join(" ", @profile_ids_unique)."\n";
 		foreach my $profile (@{$cur->{profiles}}) {
 			print $profile->{id}.'_NAME:='.$profile->{name}."\n";

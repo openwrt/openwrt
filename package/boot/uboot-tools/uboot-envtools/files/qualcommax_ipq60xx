@@ -7,12 +7,6 @@ touch /etc/config/ubootenv
 
 board=$(board_name)
 
-ubootenv_add_mtd() {
-	local idx="$(find_mtd_index "${1}")"
-	[ -n "$idx" ] && \
-		ubootenv_add_uci_config "/dev/mtd$idx" "${2}" "${3}" "${4}"
-}
-
 case "$board" in
 8devices,mango-dvk|\
 8devices,mango-dvk-sfp|\
@@ -28,7 +22,9 @@ linksys,mr7500)
 netgear,wax214|\
 netgear,wax610|\
 netgear,wax610y|\
-tplink,eap610-outdoor)
+tplink,eap610-outdoor|\
+tplink,eap623od-hd-v1|\
+tplink,eap625-outdoor-hd-v1)
 	ubootenv_add_mtd "0:appsblenv" "0x0" "0x40000" "0x20000"
 	;;
 yuncore,fap650)

@@ -10,12 +10,14 @@ define KernelPackage/mmc-mtk
   DEPENDS:=@(TARGET_ramips_mt7620||TARGET_ramips_mt76x8||TARGET_ramips_mt7621) +kmod-mmc
   KCONFIG:= \
 	CONFIG_MMC \
-	CONFIG_MMC_MTK \
-	CONFIG_MMC_CQHCI
+	CONFIG_MMC_CQHCI \
+	CONFIG_MMC_HSQ \
+	CONFIG_MMC_MTK
   FILES:= \
 	$(LINUX_DIR)/drivers/mmc/host/cqhci.ko \
+	$(LINUX_DIR)/drivers/mmc/host/mmc_hsq.ko \
 	$(LINUX_DIR)/drivers/mmc/host/mtk-sd.ko
-  AUTOLOAD:=$(call AutoProbe,cqhci mtk-sd,1)
+  AUTOLOAD:=$(call AutoProbe,cqhci mmc_hsq mtk-sd,1)
 endef
 
 define KernelPackage/mmc-mtk/description
@@ -152,3 +154,21 @@ define KernelPackage/sound-mt7620/description
 endef
 
 $(eval $(call KernelPackage,sound-mt7620))
+
+
+define KernelPackage/keyboard-sx951x
+  SUBMENU:=Other modules
+  TITLE:=Semtech SX9512/SX9513
+  DEPENDS:=@TARGET_ramips_mt7621 +kmod-input-core
+  KCONFIG:= \
+	CONFIG_KEYBOARD_SX951X \
+	CONFIG_INPUT_KEYBOARD=y
+  FILES:=$(LINUX_DIR)/drivers/input/keyboard/sx951x.ko
+  AUTOLOAD:=$(call AutoProbe,sx951x)
+endef
+
+define KernelPackage/keyboard-sx951x/description
+ Enable support for SX9512/SX9513 capacitive touch controllers
+endef
+
+$(eval $(call KernelPackage,keyboard-sx951x))

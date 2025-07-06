@@ -412,12 +412,12 @@ static int sf_dpns_mib_open(struct inode *inode, struct file *file)
 					83 * (DPNS_MAX_PORT + 1));
 }
 
-static const struct file_operations sf_dpns_mib_fops = {		
-	.owner		= THIS_MODULE,	
-	.open		= sf_dpns_mib_open,	
-	.read		= seq_read,	
-	.llseek		= seq_lseek,	
-	.release	= single_release,	
+static const struct file_operations sf_dpns_mib_fops = {
+	.owner		= THIS_MODULE,
+	.open		= sf_dpns_mib_open,
+	.read		= seq_read,
+	.llseek		= seq_lseek,
+	.release	= single_release,
 };
 
 void sf_dpns_debugfs_init(struct dpns_priv *priv)

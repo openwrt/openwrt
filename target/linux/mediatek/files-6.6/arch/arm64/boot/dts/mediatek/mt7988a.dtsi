@@ -147,15 +147,6 @@
 		clock-output-names = "clkxtal";
 	};
 
-	fan: pwm-fan {
-		compatible = "pwm-fan";
-		/* cooling level (0, 1, 2, 3) : (0% duty, 30% duty, 50% duty, 100% duty) */
-		cooling-levels = <0 80 128 255>;
-		#cooling-cells = <2>;
-		#thermal-sensor-cells = <1>;
-		status = "disabled";
-	};
-
 	pmu {
 		compatible = "arm,cortex-a73-pmu";
 		interrupt-parent = <&gic>;
@@ -165,24 +156,6 @@
 	psci {
 		compatible = "arm,psci-0.2";
 		method = "smc";
-	};
-
-	reg_1p8v: regulator-1p8v {
-		compatible = "regulator-fixed";
-		regulator-name = "fixed-1.8V";
-		regulator-min-microvolt = <1800000>;
-		regulator-max-microvolt = <1800000>;
-		regulator-boot-on;
-		regulator-always-on;
-	};
-
-	reg_3p3v: regulator-3p3v {
-		compatible = "regulator-fixed";
-		regulator-name = "fixed-3.3V";
-		regulator-min-microvolt = <3300000>;
-		regulator-max-microvolt = <3300000>;
-		regulator-boot-on;
-		regulator-always-on;
 	};
 
 	reserved-memory {
@@ -296,263 +269,6 @@
 			interrupt-parent = <&gic>;
 			#interrupt-cells = <2>;
 
-			mdio0_pins: mdio0-pins {
-				mux {
-					function = "eth";
-					groups = "mdc_mdio0";
-				};
-
-				conf {
-					groups = "mdc_mdio0";
-					drive-strength = <MTK_DRIVE_8mA>;
-				};
-			};
-
-			i2c0_pins: i2c0-pins-g0 {
-				mux {
-					function = "i2c";
-					groups = "i2c0_1";
-				};
-			};
-
-			i2c1_pins: i2c1-pins-g0 {
-				mux {
-					function = "i2c";
-					groups = "i2c1_0";
-				};
-			};
-
-			i2c1_sfp_pins: i2c1-sfp-pins-g0 {
-				mux {
-					function = "i2c";
-					groups = "i2c1_sfp";
-				};
-			};
-
-			i2c2_pins: i2c2-pins {
-				mux {
-					function = "i2c";
-					groups = "i2c2";
-				};
-			};
-
-			i2c2_0_pins: i2c2-pins-g0 {
-				mux {
-					function = "i2c";
-					groups = "i2c2_0";
-				};
-			};
-
-			i2c2_1_pins: i2c2-pins-g1 {
-				mux {
-					function = "i2c";
-					groups = "i2c2_1";
-				};
-			};
-
-			gbe0_led0_pins: gbe0-led0-pins {
-				mux {
-					function = "led";
-					groups = "gbe0_led0";
-				};
-			};
-
-			gbe1_led0_pins: gbe1-led0-pins {
-				mux {
-					function = "led";
-					groups = "gbe1_led0";
-				};
-			};
-
-			gbe2_led0_pins: gbe2-led0-pins {
-				mux {
-					function = "led";
-					groups = "gbe2_led0";
-				};
-			};
-
-			gbe3_led0_pins: gbe3-led0-pins {
-				mux {
-					function = "led";
-					groups = "gbe3_led0";
-				};
-			};
-
-			gbe0_led1_pins: gbe0-led1-pins {
-				mux {
-					function = "led";
-					groups = "gbe0_led1";
-				};
-			};
-
-			gbe1_led1_pins: gbe1-led1-pins {
-				mux {
-					function = "led";
-					groups = "gbe1_led1";
-				};
-			};
-
-			gbe2_led1_pins: gbe2-led1-pins {
-				mux {
-					function = "led";
-					groups = "gbe2_led1";
-				};
-			};
-
-			gbe3_led1_pins: gbe3-led1-pins {
-				mux {
-					function = "led";
-					groups = "gbe3_led1";
-				};
-			};
-
-			i2p5gbe_led0_pins: 2p5gbe-led0-pins {
-				mux {
-					function = "led";
-					groups = "2p5gbe_led0";
-				};
-			};
-
-			i2p5gbe_led1_pins: 2p5gbe-led1-pins {
-				mux {
-					function = "led";
-					groups = "2p5gbe_led1";
-				};
-			};
-
-			mmc0_pins_emmc_45: mmc0-pins-emmc-45 {
-				mux {
-					function = "flash";
-					groups = "emmc_45";
-				};
-			};
-
-			mmc0_pins_emmc_51: mmc0-pins-emmc-51 {
-				mux {
-					function = "flash";
-					groups = "emmc_51";
-				};
-			};
-
-			mmc0_pins_sdcard: mmc0-pins-sdcard {
-				mux {
-					function = "flash";
-					groups = "sdcard";
-				};
-			};
-
-			uart0_pins: uart0-pins {
-				mux {
-					function = "uart";
-					groups =  "uart0";
-				};
-			};
-
-			uart1_0_pins: uart1-0-pins {
-				mux {
-					function = "uart";
-					groups =  "uart1_0";
-				};
-			};
-
-			uart1_1_pins: uart1-1-pins {
-				mux {
-					function = "uart";
-					groups =  "uart1_1";
-				};
-			};
-
-			uart1_2_pins: uart1-2-pins {
-				mux {
-					function = "uart";
-					groups =  "uart1_2";
-				};
-			};
-
-			uart1_2_lite_pins: uart1-2-lite-pins {
-				mux {
-					function = "uart";
-					groups =  "uart1_2_lite";
-				};
-			};
-
-			uart2_pins: uart2-pins {
-				mux {
-					function = "uart";
-					groups =  "uart2";
-				};
-			};
-
-			uart2_0_pins: uart2-0-pins {
-				mux {
-					function = "uart";
-					groups =  "uart2_0";
-				};
-			};
-
-			uart2_1_pins: uart2-1-pins {
-				mux {
-					function = "uart";
-					groups =  "uart2_1";
-				};
-			};
-
-			uart2_2_pins: uart2-2-pins {
-				mux {
-					function = "uart";
-					groups =  "uart2_2";
-				};
-			};
-
-			uart2_3_pins: uart2-3-pins {
-				mux {
-					function = "uart";
-					groups =  "uart2_3";
-				};
-			};
-
-			snfi_pins: snfi-pins {
-				mux {
-					function = "flash";
-					groups = "snfi";
-				};
-			};
-
-			spi0_pins: spi0-pins {
-				mux {
-					function = "spi";
-					groups = "spi0";
-				};
-			};
-
-			spi0_flash_pins: spi0-flash-pins {
-				mux {
-					function = "spi";
-					groups = "spi0", "spi0_wp_hold";
-				};
-			};
-
-			spi1_pins: spi1-pins {
-				mux {
-					function = "spi";
-					groups = "spi1";
-				};
-			};
-
-			spi2_pins: spi2-pins {
-				mux {
-					function = "spi";
-					groups = "spi2";
-				};
-			};
-
-			spi2_flash_pins: spi2-flash-pins {
-				mux {
-					function = "spi";
-					groups = "spi2", "spi2_wp_hold";
-				};
-			};
-
 			pcie0_pins: pcie0-pins {
 				mux {
 					function = "pcie";
@@ -582,6 +298,13 @@
 					function = "pcie";
 					groups = "pcie_1l_1_pereset", "pcie_clk_req_n3",
 						 "pcie_wake_n3_0";
+				};
+			};
+
+			snfi_pins: snfi-pins {
+				mux {
+					function = "flash";
+					groups = "snfi";
 				};
 			};
 		};
@@ -661,7 +384,7 @@
 			#clock-cells = <1>;
 		};
 
-		uart0: serial@11000000 {
+		serial0: serial@11000000 {
 			compatible = "mediatek,mt7986-uart",
 				     "mediatek,mt6577-uart";
 			reg = <0 0x11000000 0 0x100>;
@@ -678,12 +401,10 @@
 					  <&infracfg CLK_INFRA_MUX_UART0_SEL>;
 			assigned-clock-parents = <&topckgen CLK_TOP_XTAL>,
 						 <&topckgen CLK_TOP_UART_SEL>;
-			pinctrl-names = "default";
-			pinctrl-0 = <&uart0_pins>;
 			status = "disabled";
 		};
 
-		uart1: serial@11000100 {
+		serial1: serial@11000100 {
 			compatible = "mediatek,mt7986-uart",
 				     "mediatek,mt6577-uart";
 			reg = <0 0x11000100 0 0x100>;
@@ -703,7 +424,7 @@
 			status = "disabled";
 		};
 
-		uart2: serial@11000200 {
+		serial2: serial@11000200 {
 			compatible = "mediatek,mt7986-uart",
 				     "mediatek,mt6577-uart";
 			reg = <0 0x11000200 0 0x100>;
@@ -824,8 +545,6 @@
 				      "hclk";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			pinctrl-names = "default";
-			pinctrl-0 = <&spi1_pins>;
 			status = "disabled";
 		};
 
@@ -1154,7 +873,7 @@
 			#size-cells = <0>;
 		};
 
-		xphy: xphy@11e10000 {
+		xsphy: xphy@11e10000 {
 			compatible = "mediatek,mt7988",
 				     "mediatek,xsphy";
 			ranges;
@@ -1303,28 +1022,24 @@
 
 				gsw_port0: port@0 {
 					reg = <0>;
-					label = "lan0";
 					phy-mode = "internal";
 					phy-handle = <&gsw_phy0>;
 				};
 
 				gsw_port1: port@1 {
 					reg = <1>;
-					label = "lan1";
 					phy-mode = "internal";
 					phy-handle = <&gsw_phy1>;
 				};
 
 				gsw_port2: port@2 {
 					reg = <2>;
-					label = "lan2";
 					phy-mode = "internal";
 					phy-handle = <&gsw_phy2>;
 				};
 
 				gsw_port3: port@3 {
 					reg = <3>;
-					label = "lan3";
 					phy-mode = "internal";
 					phy-handle = <&gsw_phy3>;
 				};
@@ -1361,13 +1076,11 @@
 
 						gsw_phy0_led0: gsw-phy0-led0@0 {
 							reg = <0>;
-							function = LED_FUNCTION_LAN;
 							status = "disabled";
 						};
 
 						gsw_phy0_led1: gsw-phy0-led1@1 {
 							reg = <1>;
-							function = LED_FUNCTION_LAN;
 							status = "disabled";
 						};
 					};
@@ -1387,13 +1100,11 @@
 
 						gsw_phy1_led0: gsw-phy1-led0@0 {
 							reg = <0>;
-							function = LED_FUNCTION_LAN;
 							status = "disabled";
 						};
 
 						gsw_phy1_led1: gsw-phy1-led1@1 {
 							reg = <1>;
-							function = LED_FUNCTION_LAN;
 							status = "disabled";
 						};
 					};
@@ -1413,13 +1124,11 @@
 
 						gsw_phy2_led0: gsw-phy2-led0@0 {
 							reg = <0>;
-							function = LED_FUNCTION_LAN;
 							status = "disabled";
 						};
 
 						gsw_phy2_led1: gsw-phy2-led1@1 {
 							reg = <1>;
-							function = LED_FUNCTION_LAN;
 							status = "disabled";
 						};
 					};
@@ -1439,13 +1148,11 @@
 
 						gsw_phy3_led0: gsw-phy3-led0@0 {
 							reg = <0>;
-							function = LED_FUNCTION_LAN;
 							status = "disabled";
 						};
 
 						gsw_phy3_led1: gsw-phy3-led1@1 {
 							reg = <1>;
-							function = LED_FUNCTION_LAN;
 							status = "disabled";
 						};
 					};
@@ -1669,50 +1376,6 @@
 					temperature = <125000>;
 					hysteresis = <2000>;
 					type = "critical";
-				};
-
-				cpu_trip_hot: hot {
-					temperature = <120000>;
-					hysteresis = <2000>;
-					type = "hot";
-				};
-
-				cpu_trip_active_high: active-high {
-					temperature = <115000>;
-					hysteresis = <2000>;
-					type = "active";
-				};
-
-				cpu_trip_active_med: active-med {
-					temperature = <85000>;
-					hysteresis = <2000>;
-					type = "active";
-				};
-
-				cpu_trip_active_low: active-low {
-					temperature = <40000>;
-					hysteresis = <2000>;
-					type = "active";
-				};
-			};
-
-			cooling-maps {
-				cpu-active-high {
-				/* active: set fan to cooling level 2 */
-					cooling-device = <&fan 3 3>;
-					trip = <&cpu_trip_active_high>;
-				};
-
-				cpu-active-low {
-				/* active: set fan to cooling level 1 */
-					cooling-device = <&fan 2 2>;
-					trip = <&cpu_trip_active_med>;
-				};
-
-				cpu-passive {
-				/* passive: set fan to cooling level 0 */
-					cooling-device = <&fan 1 1>;
-					trip = <&cpu_trip_active_low>;
 				};
 			};
 		};

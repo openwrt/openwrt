@@ -32,7 +32,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
 
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -17716,6 +17716,13 @@ L:	netdev@vger.kernel.org
+@@ -17718,6 +17718,13 @@ L:	netdev@vger.kernel.org
  S:	Maintained
  F:	drivers/net/ethernet/qualcomm/emac/
  
@@ -88,7 +88,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
 +ipq_ess-objs := ipqess.o ipqess_ethtool.o
 --- /dev/null
 +++ b/drivers/net/ethernet/qualcomm/ipqess/ipqess.c
-@@ -0,0 +1,1251 @@
+@@ -0,0 +1,1249 @@
 +// SPDX-License-Identifier: GPL-2.0 OR ISC
 +/* Copyright (c) 2014 - 2017, The Linux Foundation. All rights reserved.
 + * Copyright (c) 2017 - 2018, John Crispin <john@phrozen.org>
@@ -1300,7 +1300,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
 +	return err;
 +}
 +
-+static int ipqess_axi_remove(struct platform_device *pdev)
++static void ipqess_axi_remove(struct platform_device *pdev)
 +{
 +	const struct net_device *netdev = platform_get_drvdata(pdev);
 +	struct ipqess *ess = netdev_priv(netdev);
@@ -1313,8 +1313,6 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
 +
 +	phylink_destroy(ess->phylink);
 +	clk_disable_unprepare(ess->ess_clk);
-+
-+	return 0;
 +}
 +
 +static const struct of_device_id ipqess_of_mtable[] = {
@@ -1329,7 +1327,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
 +		.of_match_table = ipqess_of_mtable,
 +	},
 +	.probe    = ipqess_axi_probe,
-+	.remove   = ipqess_axi_remove,
++	.remove_new   = ipqess_axi_remove,
 +};
 +
 +module_platform_driver(ipqess_axi_driver);

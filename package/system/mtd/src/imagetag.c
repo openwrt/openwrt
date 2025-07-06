@@ -139,7 +139,7 @@ static uint32_t strntoul(char *str, char **endptr, int base, size_t len) {
 
   newstr = calloc(len + 1, sizeof(char));
   if (newstr) {
-	strncpy(newstr, str, len); 
+	strncpy(newstr, str, len);
 	res = strtoul(newstr, endptr, base);
 	free(newstr);
   }
@@ -258,7 +258,7 @@ trx_check(int imagefd, const char *mtd, char *buf, int *len)
 	}
 	headerCRC = crc32buf(buf, offsetof(struct bcm_tag, header_crc));
 	if (*(uint32_t *)(&tag->header_crc) != headerCRC) {
-  
+
 	  if (quiet < 2) {
 		fprintf(stderr, "Bad header CRC got %08x, calculated %08x\n",
 				*(uint32_t *)(&tag->header_crc), headerCRC);
@@ -276,7 +276,7 @@ trx_check(int imagefd, const char *mtd, char *buf, int *len)
 	}
 
 	imageLen = strntoul(&tag->total_length[0], NULL, 10, IMAGE_LEN);
-	
+
 	if(mtdsize < imageLen) {
 		fprintf(stderr, "Image too big for partition: %s\n", mtd);
 		close(fd);
@@ -355,7 +355,7 @@ mtd_fixtrx(const char *mtd, size_t offset, size_t data_size)
 
 	rootfslen = strntoul(&tag->root_length[0], NULL, 10, IMAGE_LEN);
 	if (rootfslen == 0) {
-	  if (quiet < 2) 
+	  if (quiet < 2)
 		fprintf(stderr, "Header already fixed, exiting\n");
 	  close(fd);
 	  return 0;
@@ -390,9 +390,9 @@ mtd_fixtrx(const char *mtd, size_t offset, size_t data_size)
 	}
 
 	if (quiet < 2) {
-	  fprintf(stderr, "New image crc32: 0x%x, rewriting block\n", 
+	  fprintf(stderr, "New image crc32: 0x%x, rewriting block\n",
 			  *(uint32_t *)(&tag->image_crc));
-	  fprintf(stderr, "New header crc32: 0x%x, rewriting block\n", headercrc);  
+	  fprintf(stderr, "New header crc32: 0x%x, rewriting block\n", headercrc);
 	}
 
 	if (pwrite(fd, buf, erasesize, block_offset) != erasesize) {

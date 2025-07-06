@@ -2,12 +2,21 @@
 
 . /lib/functions/uci-defaults.sh
 
+KERNEL_MAJOR=$(uname -r | awk -F '.' '{print $1}')
+KERNEL_MINOR=$(uname -r | awk -F '.' '{print $2}')
+
 board_config_update
+
+if [ "${KERNEL_MAJOR}" -ge "6" ] && [ "${KERNEL_MINOR}" -ge "12" ]; then
+	GPIO_BASE=512
+else
+	GPIO_BASE=460
+fi
 
 case "$(board_name)" in
 sercomm,h500-s-lowi |\
 sercomm,h500-s-vfes)
-	ucidef_add_gpio_switch "qtn_power" "Quantenna Module Power" "480" "1"
+	ucidef_add_gpio_switch "qtn_power" "Quantenna Module Power" "$(($GPIO_BASE + 20))" "1"
 	;;
 esac
 

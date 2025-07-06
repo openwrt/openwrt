@@ -64,12 +64,13 @@ const types = {
 				return val;
 
 			let list = this.value;
+			if (type(list) == "object")
+				list = keys(list);
 			if (this.ignore_case) {
 				val = lc(val);
 				val = filter(list, (v) => val == lc(v))[0];
 			} else {
-				if (index(list, val) < 0)
-					val = null;
+				val = filter(list, (v) => val == v)[0];
 			}
 
 			if (val == null)

@@ -19,7 +19,6 @@
 
 	gpio_export {
 		compatible = "gpio-export";
-		#size-cells = <0>;
 
 		power_modem {
 			gpio-export,name = "power_modem";
@@ -90,20 +89,6 @@
 		};
 
 	};
-
-	reg_power_usb: regulator {
-		compatible = "regulator-fixed";
-		regulator-name = "power_usb";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-		regulator-boot-on;
-	};
-};
-
-&xhci {
-	vbus-supply = <&reg_power_usb>;
 };
 
 &nand {
@@ -204,14 +189,20 @@
 };
 
 &pcie0 {
-	status = "okay";
-	mt7615d@0,0 {
-		/* In reality  at hangs at pcie1, this is a driver bug */
-		compatible = "pci14c3,7615";
+	/* In reality  at hangs at pcie1, this is a driver bug */
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 		mediatek,firmware-eeprom = "mt7615e_eeprom.bin";
 		nvmem-cells = <&eeprom_factory_0>, <&macaddr_factory_fe6e 1>;
 		nvmem-cell-names = "eeprom", "mac-address";
 	};
 
+};
+
+&reg_vbus {
+	/delete-property/ regulator-always-on;
+	gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
+	enable-active-high;
+	regulator-boot-on;
 };

@@ -1,0 +1,60 @@
+--- a/boot/bootm.c
++++ b/boot/bootm.c
+@@ -1229,20 +1229,18 @@ static int bootm_host_load_image(const v
+ 
+ int bootm_host_load_images(const void *fit, int cfg_noffset)
+ {
+-	static uint8_t image_types[] = {
+-		IH_TYPE_KERNEL,
+-		IH_TYPE_FLATDT,
+-		IH_TYPE_RAMDISK,
+-	};
+ 	int err = 0;
+ 	int i;
+ 
+-	for (i = 0; i < ARRAY_SIZE(image_types); i++) {
++	for (i = 0; i < IH_TYPE_COUNT; i++) {
+ 		int ret;
+ 
+-		ret = bootm_host_load_image(fit, image_types[i], cfg_noffset);
++		ret = bootm_host_load_image(fit, i, cfg_noffset);
+ 		if (!err && ret && ret != -ENOENT)
+ 			err = ret;
++
++		if (err)
++			break;
+ 	}
+ 
+ 	/* Return the first error we found */
+--- a/boot/image-fit.c
++++ b/boot/image-fit.c
+@@ -2072,7 +2072,9 @@ int fit_image_load(struct bootm_headers
+ 	fit_uname_config = fit_uname_configp ? *fit_uname_configp : NULL;
+ 	fit_base_uname_config = NULL;
+ 	prop_name = fit_get_image_type_property(image_type);
++#ifndef USE_HOSTCC
+ 	printf("## Loading %s from FIT Image at %08lx ...\n", prop_name, addr);
++#endif
+ 
+ 	bootstage_mark(bootstage_id + BOOTSTAGE_SUB_FORMAT);
+ 	ret = fit_check_format(fit, IMAGE_SIZE_INVAL);
+@@ -2108,7 +2110,9 @@ int fit_image_load(struct bootm_headers
+ 		}
+ 
+ 		fit_base_uname_config = fdt_get_name(fit, cfg_noffset, NULL);
++#ifndef USE_HOSTCC
+ 		printf("   Using '%s' configuration\n", fit_base_uname_config);
++#endif
+ 		/* Remember this config */
+ 		if (image_type == IH_TYPE_KERNEL)
+ 			images->fit_uname_cfg = fit_base_uname_config;
+@@ -2131,7 +2135,9 @@ int fit_image_load(struct bootm_headers
+ 		fit_uname = fit_get_name(fit, noffset, NULL);
+ 	}
+ 	if (noffset < 0) {
++#ifndef USE_HOSTCC
+ 		printf("Could not find subimage node type '%s'\n", prop_name);
++#endif
+ 		bootstage_error(bootstage_id + BOOTSTAGE_SUB_SUBNODE);
+ 		return -ENOENT;
+ 	}

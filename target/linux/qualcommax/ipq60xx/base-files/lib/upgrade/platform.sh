@@ -106,6 +106,11 @@ EOF
 
 platform_do_upgrade() {
 	case "$(board_name)" in
+	alfa-network,ap120c-ax)
+		CI_UBIPART="rootfs_1"
+		alfa_bootconfig_rootfs_rotate "0:BOOTCONFIG" "148"
+		nand_do_upgrade "$1"
+		;;
 	cambiumnetworks,xe3-4)
 		fw_setenv bootcount 0
 		nand_do_upgrade "$1"
@@ -113,9 +118,13 @@ platform_do_upgrade() {
 	glinet,gl-ax1800|\
 	glinet,gl-axt1800|\
 	netgear,wax214|\
-	netgear,wax610|\
-	netgear,wax610y|\
 	qihoo,360v6)
+		nand_do_upgrade "$1"
+		;;
+	netgear,wax610|\
+	netgear,wax610y)
+		remove_oem_ubi_volume wifi_fw
+		remove_oem_ubi_volume ubi_rootfs
 		nand_do_upgrade "$1"
 		;;
 	linksys,mr7350|\
@@ -133,7 +142,9 @@ platform_do_upgrade() {
 		fw_setenv auto_recovery yes
 		nand_do_upgrade "$1"
 		;;
-	tplink,eap610-outdoor)
+	tplink,eap610-outdoor|\
+	tplink,eap623od-hd-v1|\
+	tplink,eap625-outdoor-hd-v1)
 		tplink_do_upgrade "$1"
 		;;
 	yuncore,fap650)

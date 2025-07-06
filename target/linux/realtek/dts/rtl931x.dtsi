@@ -2,6 +2,16 @@
 
 #include <dt-bindings/interrupt-controller/mips-gic.h>
 
+/dts-v1/;
+
+#define INTERNAL_PHY_SDS(n, s) \
+	phy##n: ethernet-phy@##n { \
+		reg = <##n>; \
+		compatible = "ethernet-phy-ieee802.3-c22"; \
+		phy-is-integrated; \
+		sds = <##s>; \
+	};
+
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
@@ -45,6 +55,11 @@
 		clock-frequency = <200000000>;
 	};
 
+	cpc: cpc@1bde0000 {
+		compatible = "mti,mips-cpc";
+		reg = <0x1bde0000 0x8000>;
+	};
+
 	cpuclock: cpuclock@0 {
 		#clock-cells = <0>;
 		compatible = "fixed-clock";
@@ -74,12 +89,6 @@
 		 * controller & should be probed first.
 		 */
 		interrupt-parent = <&cpuintc>;
-
-		timer {
-			compatible = "mti,gic-timer";
-			interrupts = <GIC_LOCAL 1 IRQ_TYPE_NONE>;
-			clocks = <&cpuclock>;
-		};
 	};
 
 	soc: soc {
@@ -126,6 +135,18 @@
 			interrupts = <GIC_SHARED 20 IRQ_TYPE_LEVEL_HIGH>;
 		};
 
+		timer0: timer@3200 {
+			compatible = "realtek,rtl931x-timer", "realtek,otto-timer";
+			reg = <0x3200 0x10>, <0x3210 0x10>, <0x3220 0x10>,
+			      <0x3230 0x10>, <0x3240 0x10>, <0x3250 0x10>;
+
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SHARED 0 IRQ_TYPE_LEVEL_HIGH>, <GIC_SHARED 1 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SHARED 2 IRQ_TYPE_LEVEL_HIGH>, <GIC_SHARED 3 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SHARED 4 IRQ_TYPE_LEVEL_HIGH>, <GIC_SHARED 5 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&lx_clk>;
+                };
+
 		uart0: uart@2000 {
 			compatible = "ns16550a";
 			reg = <0x2000 0x100>;
@@ -159,6 +180,11 @@
 
 			status = "disabled";
 		};
+	};
+
+	switchcore@1b000000 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0x1b000000 0x10000>;
 	};
 
 	pinmux: pinmux@1b001358 {

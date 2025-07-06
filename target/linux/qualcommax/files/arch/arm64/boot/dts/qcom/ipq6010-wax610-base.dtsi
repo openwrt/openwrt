@@ -80,6 +80,7 @@
 			function = LED_FUNCTION_WLAN;
 			function-enumerator = <0>;
 			gpios = <&tlmm 32 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy1radio";
 		};
 
 		led_2g_g {
@@ -87,7 +88,6 @@
 			function = LED_FUNCTION_WLAN;
 			function-enumerator = <1>;
 			gpios = <&tlmm 33 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "phy0radio";
 		};
 
 		led_5g_b {
@@ -95,6 +95,7 @@
 			function = LED_FUNCTION_WLAN;
 			function-enumerator = <2>;
 			gpios = <&tlmm 36 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0radio";
 		};
 
 		led_5g_g {
@@ -102,7 +103,6 @@
 			function = LED_FUNCTION_WLAN;
 			function-enumerator = <3>;
 			gpios = <&tlmm 37 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "phy1radio";
 		};
 	};
 };

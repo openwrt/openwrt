@@ -597,10 +597,20 @@ dhcp_add() {
 	nettag="${networkid:+set:${networkid},}"
 
 	# make sure the DHCP range is not empty
-	if [ "$dhcpv4" != "disabled" ] && ipcalc "$ipaddr/$prefix_or_netmask" "$start" "$limit" ; then
-		[ "$dynamicdhcpv4" = "0" ] && END="static"
+	if [ "$dhcpv4" != "disabled" ]; then
+		unset START
+		unset END
+		unset NETMASK
+		ipcalc "$ipaddr/$prefix_or_netmask" "$start" "$limit"
 
-		xappend "--dhcp-range=$tags$nettag$START,$END,$NETMASK,$leasetime${options:+ $options}"
+		if [ -z "$START" ] || [ -z "$END" ] || [ -z "$NETMASK" ]; then
+			logger -t dnsmasq \
+				"unable to set dhcp-range for dhcp uci config section '$cfg'" \
+				"on interface '$ifname', please check your config"
+		else
+			[ "$dynamicdhcpv4" = "0" ] && END="static"
+			xappend "--dhcp-range=$tags$nettag$START,$END,$NETMASK,$leasetime${options:+ $options}"
+		fi
 	fi
 
 	if [ "$dynamicdhcpv6" = "0" ] ; then

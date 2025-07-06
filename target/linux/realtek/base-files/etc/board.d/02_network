@@ -54,6 +54,10 @@ tplink,t1600g-28ts-v3)
 	label_mac=$(get_mac_label)
 	lan_mac="$label_mac"
 	;;
+tplink,tl-st1008f,v2)
+	lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
+	[ -z "$lan_mac" ] || [ "$lan_mac" = "00:e0:4c:00:00:00" ] && lan_mac=$(macaddr_random)
+	;;
 xikestor,sks8300-8x)
 	lan_mac=$(mtd_get_mac_binary board-info 0x1f1)
 	;;
@@ -91,7 +95,8 @@ d-link,dgs-1210-28p-f)
 	ucidef_set_poe 193 "lan8 lan7 lan6 lan5 lan4 lan3 lan2 lan1 lan16 lan15 lan14 lan13 lan12 lan11 lan10 lan9 lan24 lan23
 			lan22 lan21 lan20 lan19 lan18 lan17"
 	;;
-engenius,ews2910p)
+engenius,ews2910p-v1|\
+engenius,ews2910p-v3)
 	ucidef_set_poe 60 "$(filter_port_list "$lan_list" "lan9 lan10")"
 	;;
 hpe,1920-8g-poe-65w)

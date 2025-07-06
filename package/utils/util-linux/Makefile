@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=util-linux
-PKG_VERSION:=2.40.2
+PKG_VERSION:=2.41.1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.40
-PKG_HASH:=d78b37a66f5922d70edf3bdfb01a6b33d34ed3c3cafd6628203b2a2b67c8e8b3
+PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.41
+PKG_HASH:=be9ad9a276f4305ab7dd2f5225c8be1ff54352f565ff4dede9628c1aaa7dec57
 PKG_CPE_ID:=cpe:/a:kernel:util-linux
 
 PKG_LICENSE:=GPL-2.0-only
@@ -549,6 +549,21 @@ define Package/wall/description
  set to yes
 endef
 
+define Package/wdctl
+$(call Package/util-linux/Default)
+  TITLE:=show hardware watchdog status
+  DEPENDS:= +libsmartcols
+endef
+
+define Package/wdctl/description
+ Show hardware watchdog status. The default device is /dev/watchdog. If more
+ than one device is specified then the output is separated by one blank line.
+ If the device is already used or user has no permissions to read from the
+ device, then wdctl reads data from sysfs. In this case information about
+ supported features (flags) might be missing. Note that the number of supported
+ watchdog features is hardware specific.
+endef
+
 define Package/whereis
 $(call Package/util-linux/Default)
   TITLE:=locate the binary, source, and manual page files for a command
@@ -581,6 +596,7 @@ MESON_ARGS += \
 	-Dlibuser=disabled \
 	-Duse-tty-group=false \
 	-Duse-tls=false \
+	-Dtranslate-docs=disabled \
 	-Dbuild-python=disabled \
 	-Dbuild-zramctl=disabled \
 	-Dbuild-fsck=disabled \
@@ -593,8 +609,6 @@ MESON_ARGS += \
 	-Dbuild-minix=disabled \
 	-Dbuild-fdformat=disabled \
 	-Dbuild-lslogins=disabled \
-	-Dbuild-wdctl=disabled \
-	-Dbuild-cal=disabled \
 	-Dbuild-switch_root=disabled \
 	-Dbuild-pivot_root=disabled \
 	-Dbuild-lsmem=disabled \
@@ -879,17 +893,23 @@ endef
 
 define Package/uuidd/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin//uuidd $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/uuidd $(1)/usr/sbin/
 endef
 
 define Package/uuidgen/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin//uuidgen $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/uuidgen $(1)/usr/bin/
 endef
 
 define Package/wall/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/wall $(1)/usr/bin/
+endef
+
+# Install to /bin instead of /usr/bin to not conflict wdctl from wifidog
+define Package/wdctl/install
+	$(INSTALL_DIR) $(1)/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/wdctl $(1)/bin/
 endef
 
 define Package/whereis/install
@@ -950,5 +970,6 @@ $(eval $(call BuildPackage,unshare))
 $(eval $(call BuildPackage,uuidd))
 $(eval $(call BuildPackage,uuidgen))
 $(eval $(call BuildPackage,wall))
+$(eval $(call BuildPackage,wdctl))
 $(eval $(call BuildPackage,whereis))
 $(eval $(call BuildPackage,wipefs))

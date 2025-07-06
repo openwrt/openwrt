@@ -558,6 +558,17 @@ endef
 
 $(eval $(call KernelPackage,crypto-kpp))
 
+define KernelPackage/crypto-lib-aescfb
+  TITLE:=AES cipher operations feedback mode library
+  DEPENDS:=@!LINUX_6_6
+  KCONFIG:=CONFIG_CRYPTO_LIB_AESCFB
+  FILES:=$(LINUX_DIR)/lib/crypto/libaescfb.ko
+  AUTOLOAD:=$(call AutoLoad,09,libaescfb)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-lib-aescfb))
+
 define KernelPackage/crypto-lib-chacha20
   TITLE:=ChaCha library interface
   KCONFIG:=CONFIG_CRYPTO_LIB_CHACHA
@@ -566,10 +577,12 @@ define KernelPackage/crypto-lib-chacha20
   $(call AddDepends/crypto)
 endef
 
+ifndef CONFIG_TARGET_uml
 define KernelPackage/crypto-lib-chacha20/x86_64
   KCONFIG+=CONFIG_CRYPTO_CHACHA20_X86_64
   FILES+=$(LINUX_DIR)/arch/x86/crypto/chacha-x86_64.ko
 endef
+endif
 
 # Note that a non-neon fallback implementation is available on arm32 when
 # NEON is not supported, hence all arm targets can utilize lib-chacha20/arm
@@ -628,10 +641,12 @@ define KernelPackage/crypto-lib-curve25519/config
   imply PACKAGE_kmod-crypto-kpp
 endef
 
+ifndef CONFIG_TARGET_uml
 define KernelPackage/crypto-lib-curve25519/x86_64
   KCONFIG+=CONFIG_CRYPTO_CURVE25519_X86
   FILES+=$(LINUX_DIR)/arch/x86/crypto/curve25519-x86_64.ko
 endef
+endif
 
 define KernelPackage/crypto-lib-curve25519/arm-neon
   KCONFIG+=CONFIG_CRYPTO_CURVE25519_NEON
@@ -663,10 +678,12 @@ define KernelPackage/crypto-lib-poly1305/config
   imply PACKAGE_kmod-crypto-hash
 endef
 
+ifndef CONFIG_TARGET_uml
 define KernelPackage/crypto-lib-poly1305/x86_64
   KCONFIG+=CONFIG_CRYPTO_POLY1305_X86_64
   FILES+=$(LINUX_DIR)/arch/x86/crypto/poly1305-x86_64.ko
 endef
+endif
 
 define KernelPackage/crypto-lib-poly1305/arm
   KCONFIG+=CONFIG_CRYPTO_POLY1305_ARM
@@ -830,6 +847,7 @@ ifndef CONFIG_TARGET_x86_64
   endef
 endif
 
+ifndef CONFIG_TARGET_uml
 define KernelPackage/crypto-misc/x86_64
   FILES+= \
 	$(LINUX_DIR)/arch/x86/crypto/camellia-x86_64.ko \
@@ -849,6 +867,7 @@ define KernelPackage/crypto-misc/x86_64
 	cast6-avx-x86_64 twofish-x86_64 twofish-x86_64-3way \
 	twofish-avx-x86_64 blowfish-x86_64 serpent-avx-x86_64 serpent-avx2)
 endef
+endif
 
 ifdef KernelPackage/crypto-misc/$(ARCH)
   KernelPackage/crypto-misc/$(CRYPTO_TARGET)=\

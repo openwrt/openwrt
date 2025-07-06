@@ -273,12 +273,12 @@ create_backup_archive() {
 
 		if [ $ret -eq 0 ]; then
 			for service in /etc/init.d/*; do
-				if ! $service enabled; then
+				if ! $service enabled >/dev/null 2>&1; then
 				disabled="$disabled$service disable\n"
 				fi
 			done
 			disabled="$disabled\nexit 0"
-			tar_print_member "/etc/uci-defaults/10_disable_services" "$(echo -e $disabled)" || ret=1
+			tar_print_member "/etc/uci-defaults/10_disable_services" "$(echo -e $disabled)" "$(date -r /etc/rc.d "+%s")" || ret=1
 		fi
 
 		# Part of archive with installed packages info
@@ -384,8 +384,9 @@ json_load "$(/usr/libexec/validate_firmware_image "$IMAGE")" || {
 	exit 1
 }
 json_get_var valid "valid"
+json_get_var forceable "forceable"
 [ "$valid" -eq 0 ] && {
-	if [ $FORCE -eq 1 ]; then
+	if [ $FORCE -eq 1 ] && [ "$forceable" -eq 1 ]; then
 		echo "Image check failed but --force given - will update anyway!" >&2
 	else
 		echo "Image check failed." >&2

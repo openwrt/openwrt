@@ -55,6 +55,12 @@
 			default-state = "keep";
 		};
 
+		fon {
+			function = "fon";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 38 GPIO_ACTIVE_LOW>;
+		};
+
 		led_power_red: power_red {
 			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_RED>;
@@ -62,7 +68,8 @@
 		};
 
 		led_info_green: info_green {
-			label = "green:info";
+			function = "info";
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 47 GPIO_ACTIVE_LOW>;
 		};
 
@@ -73,12 +80,14 @@
 		};
 
 		info_red {
-			label = "red:info";
+			function = "info";
+			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 34 GPIO_ACTIVE_LOW>;
 		};
 
 		dect {
-			label = "green:dect";
+			function = "dect";
+			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 35 GPIO_ACTIVE_LOW>;
 		};
 	};

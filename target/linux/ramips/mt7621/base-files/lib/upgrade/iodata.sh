@@ -20,7 +20,7 @@ iodata_mstc_rw_byte() {
 	local mtd="$1"
 	local offset="$2"
 	local setval="$3"
-	local _val=$(hexdump -s $offset -n 1 -e '"%d"' $mtd)
+	local _val=$(hexdump -s $offset -n 1 -e '1/1 "%d"' $mtd)
 
 	if [ -z "$setval" ]; then
 		echo $_val

@@ -71,7 +71,7 @@
 
 #define AES_INIT 0
 #define DES_INIT 1
-#define SHA1_INIT 2 
+#define SHA1_INIT 2
 #define MD5_INIT 3
 
 #define WAIT_AES_DMA_READY()          \
@@ -94,7 +94,7 @@
             udelay(DELAY_PERIOD);     \
         while (dma->controlr.BSY) {}; \
         while (des->controlr.BUS) {}; \
-    } while (0)     
+    } while (0)
 
 #define SHA_HASH_INIT                  \
     do {                               \
@@ -167,12 +167,12 @@ struct aes_t {
 		u32 PNK:1;
 		u32 GO:1;
 		u32 STP:1;
-		
+
 		u32 reserved2:6;
 		u32 NDC:1;
-		u32 ENDI:1;		
+		u32 ENDI:1;
 		u32 reserved3:2;
-		
+
 		u32 F:3;	//fbs
 		u32 O:3;	//om
 		u32 BUS:1;	//bsy
@@ -209,14 +209,14 @@ struct aes_t {
 struct deu_hash_t {
 	struct hash_controlr {
 		u32 reserved1:5;
-		u32 KHS:1;		
+		u32 KHS:1;
 		u32 GO:1;
 		u32 INIT:1;
 		u32 reserved2:6;
 		u32 NDC:1;
 		u32 ENDI:1;
 		u32 reserved3:7;
-		u32 DGRY:1;		
+		u32 DGRY:1;
 		u32 BSY:1;
 		u32 reserved4:1;
 		u32 IRCL:1;
@@ -254,5 +254,7 @@ struct deu_dma_t {
 
 	} controlr;
 };
+
+u32 input_swap(u32 input);
 
 #endif  /* IFXMIPS_DEU_DANUBE_H */

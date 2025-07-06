@@ -258,7 +258,7 @@ static int lq_deu_des_core (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
 
     /* memory alignment issue */
     dword_mem_aligned_in = (u32 *) DEU_DWORD_REORDERING(in_arg, des_buff_in, BUFFER_IN, nbytes);
-    
+
     deu_priv->deu_rx_buf = (u32 *) out_arg;
     deu_priv->deu_rx_len = nbytes;
 
@@ -283,13 +283,13 @@ static int lq_deu_des_core (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
     outcopy = (u32 *) DEU_DWORD_REORDERING(out_arg, des_buff_out, BUFFER_OUT, nbytes);
     deu_priv->outcopy = outcopy;
     deu_priv->event_src = DES_ASYNC_EVENT;
-     
+
     if (mode > 0) {
         *(u32 *) iv_arg = DEU_ENDIAN_SWAP(des->IVHR);
         *((u32 *) iv_arg + 1) = DEU_ENDIAN_SWAP(des->IVLR);
     };
 
-    CRTCL_SECT_END; 
+    CRTCL_SECT_END;
 
     return -EINPROGRESS;
 
@@ -330,9 +330,9 @@ static inline struct des_container *des_container_cast(
 static void lq_sg_complete(struct des_container *des_con)
 {
     unsigned long queue_flag;
-  
+
     spin_lock_irqsave(&des_queue->lock, queue_flag);
-    kfree(des_con); 
+    kfree(des_con);
     spin_unlock_irqrestore(&des_queue->lock, queue_flag);
 }
 
@@ -367,7 +367,7 @@ static void lq_sg_init(struct des_container *des_con, struct scatterlist *src,
 */
 
 static int process_next_packet(struct des_container *des_con,  struct ablkcipher_request *areq,
-                               int state) 
+                               int state)
 {
     u8 *iv;
     int mode, encdec, err = -EINVAL;
@@ -401,7 +401,7 @@ static int process_next_packet(struct des_container *des_con,  struct ablkcipher
     remain = des_con->bytes_processed;
     chunk_size = src->length;
 
-    //printk("debug ln: %d, func: %s, reqsize: %d, scattersize: %d\n", 
+    //printk("debug ln: %d, func: %s, reqsize: %d, scattersize: %d\n",
 //		__LINE__, __func__, areq->nbytes, chunk_size);
 
     if (remain > DEU_MAX_PACKET_SIZE)
@@ -410,14 +410,14 @@ static int process_next_packet(struct des_container *des_con,  struct ablkcipher
         inc = chunk_size;
     else
         inc = remain;
- 
+
     remain -= inc;
     des_con->nbytes = inc;
-    
+
     if (state & PROCESS_SCATTER) {
         des_con->src_buf += des_con->nbytes;
         des_con->dst_buf += des_con->nbytes;
-    } 
+    }
 
     lq_sg_init(des_con, src, dst);
 
@@ -429,7 +429,7 @@ static int process_next_packet(struct des_container *des_con,  struct ablkcipher
     if (des_queue->hw_status == DES_IDLE) {
         des_queue->hw_status = DES_STARTED;
     }
-    
+
     des_con->bytes_processed -= des_con->nbytes;
     err = ablkcipher_enqueue_request(&des_queue->list, &des_con->arequest);
     if (err == -EBUSY) {
@@ -441,7 +441,7 @@ static int process_next_packet(struct des_container *des_con,  struct ablkcipher
 
     spin_unlock_irqrestore(&des_queue->lock, queue_flag);
     err = lq_deu_des_core(ctx, des_con->dst_buf, des_con->src_buf, iv, nbytes, encdec, mode);
- 
+
     return err;
 }
 
@@ -449,7 +449,7 @@ static int process_next_packet(struct des_container *des_con,  struct ablkcipher
  * \ingroup IFX_DES_FUNCTIONS
  * \brief Process next packet in queue
  * \param data not used
- * \return 
+ * \return
 */
 
 static void process_queue(unsigned long data)
@@ -474,17 +474,17 @@ static int des_crypto_thread(void *data)
     unsigned long queue_flag;
 
     daemonize("lq_des_thread");
-   
+
     while (1)
-    {  
-       DEU_WAIT_EVENT(deu_dma_priv.deu_thread_wait, DES_ASYNC_EVENT, 
+    {
+       DEU_WAIT_EVENT(deu_dma_priv.deu_thread_wait, DES_ASYNC_EVENT,
                        deu_dma_priv.des_event_flags);
        spin_lock_irqsave(&des_queue->lock, queue_flag);
 
-       /* wait to prevent starting a crypto session before 
+       /* wait to prevent starting a crypto session before
         * exiting the dma interrupt thread.
         */
-       
+
        if (des_queue->hw_status == DES_STARTED) {
             areq = ablkcipher_dequeue_request(&des_queue->list);
             des_con = des_container_cast(areq);
@@ -507,7 +507,7 @@ static int des_crypto_thread(void *data)
             return 0;
        }
        spin_unlock_irqrestore(&des_queue->lock, queue_flag);
-            
+
        if ((des_con->bytes_processed == 0)) {
             goto des_done;
        }
@@ -516,25 +516,25 @@ static int des_crypto_thread(void *data)
            goto des_done;
        }
 
-       if (des_con->flag & PROCESS_NEW_PACKET) { 
+       if (des_con->flag & PROCESS_NEW_PACKET) {
            des_con->flag = PROCESS_SCATTER;
-           err = process_next_packet(des_con, areq, PROCESS_NEW_PACKET);  
+           err = process_next_packet(des_con, areq, PROCESS_NEW_PACKET);
        }
        else
-           err = process_next_packet(des_con, areq, PROCESS_SCATTER);  
-       
+           err = process_next_packet(des_con, areq, PROCESS_SCATTER);
+
        if (err == -EINVAL) {
            areq->base.complete(&areq->base, err);
            lq_sg_complete(des_con);
            printk("src/dst returned -EINVAL in func: %s\n", __func__);
        }
-       else if (err > 0) { 
+       else if (err > 0) {
            printk("src/dst returned zero in func: %s\n", __func__);
            goto des_done;
        }
 
        continue;
-   
+
 des_done:
        //printk("debug line - %d, func: %s, qlen: %d\n", __LINE__, __func__, des_queue->list.qlen);
        areq->base.complete(&areq->base, 0);
@@ -544,13 +544,13 @@ des_done:
        if (des_queue->list.qlen > 0) {
            spin_unlock_irqrestore(&des_queue->lock, queue_flag);
            tasklet_schedule(&des_queue->des_task);
-       } 
+       }
        else {
            des_queue->hw_status = DES_IDLE;
            spin_unlock_irqrestore(&des_queue->lock, queue_flag);
        }
     } // while(1)
-    
+
     return 0;
 
 }
@@ -567,7 +567,7 @@ des_done:
  * \return 0 if success
 */
 
-static int lq_queue_mgr(struct des_ctx *ctx, struct ablkcipher_request *areq, 
+static int lq_queue_mgr(struct des_ctx *ctx, struct ablkcipher_request *areq,
                         u8 *iv, int encdec, int mode)
 {
     int err = -EINVAL;
@@ -577,8 +577,8 @@ static int lq_queue_mgr(struct des_ctx *ctx, struct ablkcipher_request *areq,
     struct des_container *des_con = NULL;
     u32 remain, inc, nbytes = areq->nbytes;
     u32 chunk_bytes = src->length;
-   
-    des_con = (struct des_container *)kmalloc(sizeof(struct des_container), 
+
+    des_con = (struct des_container *)kmalloc(sizeof(struct des_container),
                                        GFP_KERNEL);
 
     if (!(des_con)) {
@@ -586,7 +586,7 @@ static int lq_queue_mgr(struct des_ctx *ctx, struct ablkcipher_request *areq,
                 __func__, __LINE__);
         return -ENOMEM;
     }
-  
+
     /* DES encrypt/decrypt mode  */
     if (mode == 5) {
         nbytes = DES_BLOCK_SIZE;
@@ -598,26 +598,26 @@ static int lq_queue_mgr(struct des_ctx *ctx, struct ablkcipher_request *areq,
     des_con->arequest = (*areq);
     remain = nbytes;
 
-    //printk("debug - Line: %d, func: %s, reqsize: %d, scattersize: %d\n", 
+    //printk("debug - Line: %d, func: %s, reqsize: %d, scattersize: %d\n",
 	//	__LINE__, __func__, nbytes, chunk_bytes);
 
-    if (remain > DEU_MAX_PACKET_SIZE)  
+    if (remain > DEU_MAX_PACKET_SIZE)
         inc = DEU_MAX_PACKET_SIZE;
     else if(remain > chunk_bytes)
         inc = chunk_bytes;
-    else 
+    else
         inc = remain;
-    
+
     remain -= inc;
     lq_sg_init(des_con, src, dst);
-     
-    if (remain <= 0 ) { 
+
+    if (remain <= 0 ) {
         des_con->complete = 1;
     }
-    else 
+    else
         des_con->complete = 0;
-        
-    des_con->nbytes = inc; 
+
+    des_con->nbytes = inc;
     des_con->iv = iv;
     des_con->mode = mode;
     des_con->encdec = encdec;
@@ -630,20 +630,20 @@ static int lq_queue_mgr(struct des_ctx *ctx, struct ablkcipher_request *areq,
         des_con->flag = PROCESS_NEW_PACKET;
         err = ablkcipher_enqueue_request(&des_queue->list, &des_con->arequest);
         if (err == -EBUSY) {
-            spin_unlock_irqrestore(&des_queue->lock, queue_flag); 
+            spin_unlock_irqrestore(&des_queue->lock, queue_flag);
             printk("Fail to enqueue ablkcipher request ln: %d, err: %d\n",
                    __LINE__, err);
             return err;
         }
 
-        spin_unlock_irqrestore(&des_queue->lock, queue_flag); 
+        spin_unlock_irqrestore(&des_queue->lock, queue_flag);
         return -EINPROGRESS;
-              
+
     }
     else if (des_queue->hw_status == DES_IDLE) {
-        des_queue->hw_status = DES_STARTED;            
+        des_queue->hw_status = DES_STARTED;
     }
-   
+
     des_con->flag = PROCESS_SCATTER;
     des_con->bytes_processed -= des_con->nbytes;
 
@@ -655,8 +655,8 @@ static int lq_queue_mgr(struct des_ctx *ctx, struct ablkcipher_request *areq,
         spin_unlock_irqrestore(&des_queue->lock, queue_flag);
         return err;
      }
-                  
-     spin_unlock_irqrestore(&des_queue->lock, queue_flag); 
+
+     spin_unlock_irqrestore(&des_queue->lock, queue_flag);
      return lq_deu_des_core(ctx, des_con->dst_buf, des_con->src_buf, iv, inc, encdec, mode);
 
 }
@@ -667,7 +667,7 @@ static int lq_queue_mgr(struct des_ctx *ctx, struct ablkcipher_request *areq,
  * \param *areq Pointer to ablkcipher request in memory
  * \return 0 is success, -EINPROGRESS if encryting, EINVAL if failure
 */
-	
+
 static int lq_des_encrypt(struct ablkcipher_request *areq)
 {
     struct crypto_ablkcipher *cipher = crypto_ablkcipher_reqtfm(areq);
@@ -761,7 +761,7 @@ static struct lq_des_alg des_drivers_alg [] = {
         .alg = {
             .cra_name        = "des",
             .cra_driver_name = "lqdeu-des",
-            .cra_flags       = CRYPTO_ALG_TYPE_ABLKCIPHER | CRYPTO_ALG_KERN_DRIVER_ONLY | CRYPTO_ALG_ASYNC, 
+            .cra_flags       = CRYPTO_ALG_TYPE_ABLKCIPHER | CRYPTO_ALG_KERN_DRIVER_ONLY | CRYPTO_ALG_ASYNC,
             .cra_blocksize   = DES_BLOCK_SIZE,
             .cra_ctxsize     = sizeof(struct des_ctx),
             .cra_type        = &crypto_ablkcipher_type,
@@ -782,7 +782,7 @@ static struct lq_des_alg des_drivers_alg [] = {
         .alg = {
             .cra_name        = "ecb(des)",
             .cra_driver_name = "lqdeu-ecb(des)",
-            .cra_flags       = CRYPTO_ALG_TYPE_ABLKCIPHER | CRYPTO_ALG_KERN_DRIVER_ONLY | CRYPTO_ALG_ASYNC, 
+            .cra_flags       = CRYPTO_ALG_TYPE_ABLKCIPHER | CRYPTO_ALG_KERN_DRIVER_ONLY | CRYPTO_ALG_ASYNC,
             .cra_blocksize   = DES_BLOCK_SIZE,
             .cra_ctxsize     = sizeof(struct des_ctx),
             .cra_type        = &crypto_ablkcipher_type,
@@ -802,7 +802,7 @@ static struct lq_des_alg des_drivers_alg [] = {
         .alg = {
             .cra_name        = "cbc(des)",
             .cra_driver_name = "lqdeu-cbc(des)",
-            .cra_flags       = CRYPTO_ALG_TYPE_ABLKCIPHER | CRYPTO_ALG_KERN_DRIVER_ONLY | CRYPTO_ALG_ASYNC, 
+            .cra_flags       = CRYPTO_ALG_TYPE_ABLKCIPHER | CRYPTO_ALG_KERN_DRIVER_ONLY | CRYPTO_ALG_ASYNC,
             .cra_blocksize   = DES_BLOCK_SIZE,
             .cra_ctxsize     = sizeof(struct des_ctx),
             .cra_type        = &crypto_ablkcipher_type,
@@ -822,7 +822,7 @@ static struct lq_des_alg des_drivers_alg [] = {
         .alg = {
             .cra_name        = "des3_ede",
             .cra_driver_name = "lqdeu-des3_ede",
-            .cra_flags       = CRYPTO_ALG_TYPE_ABLKCIPHER | CRYPTO_ALG_KERN_DRIVER_ONLY | CRYPTO_ALG_ASYNC, 
+            .cra_flags       = CRYPTO_ALG_TYPE_ABLKCIPHER | CRYPTO_ALG_KERN_DRIVER_ONLY | CRYPTO_ALG_ASYNC,
             .cra_blocksize   = DES_BLOCK_SIZE,
             .cra_ctxsize     = sizeof(struct des_ctx),
             .cra_type        = &crypto_ablkcipher_type,
@@ -842,7 +842,7 @@ static struct lq_des_alg des_drivers_alg [] = {
         .alg = {
             .cra_name        = "ecb(des3_ede)",
             .cra_driver_name = "lqdeu-ecb(des3_ede)",
-            .cra_flags       = CRYPTO_ALG_TYPE_ABLKCIPHER | CRYPTO_ALG_KERN_DRIVER_ONLY | CRYPTO_ALG_ASYNC, 
+            .cra_flags       = CRYPTO_ALG_TYPE_ABLKCIPHER | CRYPTO_ALG_KERN_DRIVER_ONLY | CRYPTO_ALG_ASYNC,
             .cra_blocksize   = DES_BLOCK_SIZE,
             .cra_ctxsize     = sizeof(struct des_ctx),
             .cra_type        = &crypto_ablkcipher_type,
@@ -857,12 +857,12 @@ static struct lq_des_alg des_drivers_alg [] = {
                                 .max_keysize = DES3_EDE_KEY_SIZE,
                                 .ivsize = DES3_EDE_BLOCK_SIZE,
             }
-         } 
+         }
     },{
         .alg = {
             .cra_name        = "cbc(des3_ede)",
             .cra_driver_name = "lqdeu-cbc(des3_ede)",
-            .cra_flags       = CRYPTO_ALG_TYPE_ABLKCIPHER | CRYPTO_ALG_KERN_DRIVER_ONLY | CRYPTO_ALG_ASYNC, 
+            .cra_flags       = CRYPTO_ALG_TYPE_ABLKCIPHER | CRYPTO_ALG_KERN_DRIVER_ONLY | CRYPTO_ALG_ASYNC,
             .cra_blocksize   = DES_BLOCK_SIZE,
             .cra_ctxsize     = sizeof(struct des_ctx),
             .cra_type        = &crypto_ablkcipher_type,
@@ -878,7 +878,7 @@ static struct lq_des_alg des_drivers_alg [] = {
                                 .ivsize = DES3_EDE_BLOCK_SIZE,
             }
          }
-    } 
+    }
 };
 
 /*! \fn int __init lqdeu_async_des_init (void)
@@ -895,7 +895,7 @@ int __init lqdeu_async_des_init (void)
          if (ret)
              goto des_err;
      }
-            
+
      des_chip_init();
      CRTCL_SECT_INIT;
 
@@ -904,7 +904,7 @@ int __init lqdeu_async_des_init (void)
     return ret;
 
 des_err:
-     for (j = 0; j < i; j++) 
+     for (j = 0; j < i; j++)
         crypto_unregister_alg(&des_drivers_alg[i].alg);
 
      printk(KERN_ERR "Lantiq %s driver initialization failed!\n", (char *)&des_drivers_alg[i].alg.cra_driver_name);
@@ -914,7 +914,7 @@ cbc_des3_ede_err:
      for (i = 0; i < ARRAY_SIZE(des_drivers_alg); i++) {
          if (!strcmp((char *)&des_drivers_alg[i].alg.cra_name, "cbc(des3_ede)"))
              crypto_unregister_alg(&des_drivers_alg[i].alg);
-     }     
+     }
 
      printk(KERN_ERR "Lantiq %s driver initialization failed!\n", (char *)&des_drivers_alg[i].alg.cra_driver_name);
      return ret;
@@ -927,14 +927,14 @@ cbc_des3_ede_err:
 void __exit lqdeu_fini_async_des (void)
 {
     int i;
-    
+
     for (i = 0; i < ARRAY_SIZE(des_drivers_alg); i++)
         crypto_unregister_alg(&des_drivers_alg[i].alg);
 
     des_queue->hw_status = DES_COMPLETED;
     DEU_WAKEUP_EVENT(deu_dma_priv.deu_thread_wait, DES_ASYNC_EVENT,
-                                 deu_dma_priv.des_event_flags); 
-   
+                                 deu_dma_priv.des_event_flags);
+
     kfree(des_queue);
 }
 
