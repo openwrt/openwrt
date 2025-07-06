@@ -23,7 +23,7 @@ Link: https://patch.msgid.link/20250416081314.3929794-2-hongxing.zhu@nxp.com
 
 --- a/drivers/pci/controller/dwc/pci-imx6.c
 +++ b/drivers/pci/controller/dwc/pci-imx6.c
-@@ -74,7 +74,7 @@ enum imx_pcie_variants {
+@@ -76,7 +76,7 @@ enum imx_pcie_variants {
  };
  
  #define IMX_PCIE_FLAG_IMX_PHY			BIT(0)
@@ -32,7 +32,7 @@ Link: https://patch.msgid.link/20250416081314.3929794-2-hongxing.zhu@nxp.com
  #define IMX_PCIE_FLAG_SUPPORTS_SUSPEND		BIT(2)
  #define IMX_PCIE_FLAG_HAS_PHYDRV		BIT(3)
  #define IMX_PCIE_FLAG_HAS_APP_RESET		BIT(4)
-@@ -847,6 +847,12 @@ static int imx_pcie_start_link(struct dw
+@@ -862,6 +862,12 @@ static int imx_pcie_start_link(struct dw
  	u32 tmp;
  	int ret;
  
@@ -45,7 +45,7 @@ Link: https://patch.msgid.link/20250416081314.3929794-2-hongxing.zhu@nxp.com
  	/*
  	 * Force Gen1 operation when starting the link.  In case the link is
  	 * started in Gen2 mode, there is a possibility the devices on the
-@@ -883,22 +889,10 @@ static int imx_pcie_start_link(struct dw
+@@ -898,22 +904,10 @@ static int imx_pcie_start_link(struct dw
  		dw_pcie_writel_dbi(pci, PCIE_LINK_WIDTH_SPEED_CONTROL, tmp);
  		dw_pcie_dbi_ro_wr_dis(pci);
  
@@ -72,7 +72,7 @@ Link: https://patch.msgid.link/20250416081314.3929794-2-hongxing.zhu@nxp.com
  		}
  
  		/* Make sure link training is finished as well! */
-@@ -1520,7 +1514,7 @@ static const struct imx_pcie_drvdata drv
+@@ -1535,7 +1529,7 @@ static const struct imx_pcie_drvdata drv
  	[IMX6Q] = {
  		.variant = IMX6Q,
  		.flags = IMX_PCIE_FLAG_IMX_PHY |
@@ -81,7 +81,7 @@ Link: https://patch.msgid.link/20250416081314.3929794-2-hongxing.zhu@nxp.com
  			 IMX_PCIE_FLAG_BROKEN_SUSPEND |
  			 IMX_PCIE_FLAG_SUPPORTS_SUSPEND,
  		.dbi_length = 0x200,
-@@ -1538,7 +1532,7 @@ static const struct imx_pcie_drvdata drv
+@@ -1553,7 +1547,7 @@ static const struct imx_pcie_drvdata drv
  	[IMX6SX] = {
  		.variant = IMX6SX,
  		.flags = IMX_PCIE_FLAG_IMX_PHY |
@@ -90,7 +90,7 @@ Link: https://patch.msgid.link/20250416081314.3929794-2-hongxing.zhu@nxp.com
  			 IMX_PCIE_FLAG_SUPPORTS_SUSPEND,
  		.gpr = "fsl,imx6q-iomuxc-gpr",
  		.clk_names = imx6sx_clks,
-@@ -1554,7 +1548,7 @@ static const struct imx_pcie_drvdata drv
+@@ -1569,7 +1563,7 @@ static const struct imx_pcie_drvdata drv
  	[IMX6QP] = {
  		.variant = IMX6QP,
  		.flags = IMX_PCIE_FLAG_IMX_PHY |
