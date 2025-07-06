@@ -1,0 +1,29 @@
+From 5a821e2d69e26b51b7f3740b6b0c3462b8cacaff Mon Sep 17 00:00:00 2001
+From: Michal Suchanek <msuchanek@suse.de>
+Date: Mon, 31 Mar 2025 12:57:19 +0200
+Subject: [PATCH] powerpc/boot: Fix build with gcc 15
+
+Similar to x86 the ppc boot code does not build with GCC 15.
+
+Copy the fix from
+commit ee2ab467bddf ("x86/boot: Use '-std=gnu11' to fix build with GCC 15")
+
+Signed-off-by: Michal Suchanek <msuchanek@suse.de>
+Tested-by: Amit Machhiwal <amachhiw@linux.ibm.com>
+Tested-by: Venkat Rao Bagalkote <venkat88@linux.ibm.com>
+Signed-off-by: Madhavan Srinivasan <maddy@linux.ibm.com>
+Link: https://patch.msgid.link/20250331105722.19709-1-msuchanek@suse.de
+---
+ arch/powerpc/boot/Makefile | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/powerpc/boot/Makefile
++++ b/arch/powerpc/boot/Makefile
+@@ -70,6 +70,7 @@ BOOTCPPFLAGS	:= -nostdinc $(LINUXINCLUDE
+ BOOTCPPFLAGS	+= -isystem $(shell $(BOOTCC) -print-file-name=include)
+ 
+ BOOTCFLAGS	:= $(BOOTTARGETFLAGS) \
++		   -std=gnu11 \
+ 		   -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
+ 		   -fno-strict-aliasing -O2 \
+ 		   -msoft-float -mno-altivec -mno-vsx \
