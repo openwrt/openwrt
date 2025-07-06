@@ -99,9 +99,8 @@ endif
 
 JFFS2_BLOCKSIZE ?= 64k 128k
 
-EROFS_PCLUSTERSIZE := $(shell echo $$(($(CONFIG_TARGET_EROFS_PCLUSTER_SIZE)*1024)))
-EROFSOPT := -C$(EROFS_PCLUSTERSIZE)
-EROFSOPT += -Efragments,dedupe,ztailpacking -Uclear --all-root
+EROFS_PCLUSTERSIZE = $(shell echo $$(($(CONFIG_TARGET_EROFS_PCLUSTER_SIZE)*1024)))
+EROFSOPT := -Efragments,dedupe,ztailpacking -Uclear --all-root
 EROFSOPT += $(if $(SOURCE_DATE_EPOCH),-T$(SOURCE_DATE_EPOCH) --ignore-mtime)
 EROFSOPT += $(if $(CONFIG_SELINUX),,-x-1)
 EROFSCOMP := lz4hc,12
@@ -322,7 +321,8 @@ endef
 
 # Don't use the mkfs.erofs builtin $SOURCE_DATE_EPOCH behavior
 define Image/mkfs/erofs
-	env -u SOURCE_DATE_EPOCH $(STAGING_DIR_HOST)/bin/mkfs.erofs -z$(EROFSCOMP) $(EROFSOPT) \
+	env -u SOURCE_DATE_EPOCH $(STAGING_DIR_HOST)/bin/mkfs.erofs -z$(EROFSCOMP) \
+		-C$(EROFS_PCLUSTERSIZE) $(EROFSOPT) \
 		$@ $(call mkfs_target_dir,$(1))
 endef
 
