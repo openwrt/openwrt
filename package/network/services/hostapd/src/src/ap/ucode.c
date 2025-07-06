@@ -201,6 +201,49 @@ bss_reload_vlans(struct hostapd_data *hapd, struct hostapd_bss_config *bss)
 	return 0;
 }
 
+static void
+__uc_hostapd_bss_stop(struct hostapd_data *hapd)
+{
+	struct hostapd_iface *iface = hapd->iface;
+
+	if (!hapd->started)
+		return;
+
+	hostapd_bss_deinit_no_free(hapd);
+	hostapd_drv_stop_ap(hapd);
+	hostapd_bss_link_deinit(hapd);
+
+#ifdef CONFIG_IEEE80211BE
+	if (hapd == iface->bss[0])
+	        hostapd_if_link_remove(hapd, WPA_IF_AP_BSS, hapd->conf->iface,
+                       hapd->mld_link_id);
+#endif
+
+	hostapd_free_hapd_data(hapd);
+}
+
+static int
+__uc_hostapd_bss_start(struct hostapd_data *hapd)
+{
+	struct hostapd_iface *iface = hapd->iface;
+	bool first = hapd == iface->bss[0];
+	int ret;
+
+	if (hapd->started)
+		return 0;
+
+#ifdef CONFIG_IEEE80211BE
+	if (hapd->conf->mld_ap)
+		first = false;
+#endif
+
+	ret = hostapd_setup_bss(hapd, first, true);
+	hostapd_neighbor_set_own_report(hapd);
+	hostapd_owe_update_trans(iface);
+
+	return ret;
+}
+
 static uc_value_t *
 uc_hostapd_bss_set_config(uc_vm_t *vm, size_t nargs)
 {
@@ -241,12 +284,10 @@ uc_hostapd_bss_set_config(uc_vm_t *vm, size_t nargs)
 
 		swap_field(ssid.wpa_psk_file);
 		ret = bss_reload_vlans(hapd, bss);
-		goto done;
+		goto free;
 	}
 
-	hostapd_bss_deinit_no_free(hapd);
-	hostapd_drv_stop_ap(hapd);
-	hostapd_free_hapd_data(hapd);
+	__uc_hostapd_bss_stop(hapd);
 
 	old_bss = hapd->conf;
 	for (i = 0; i < iface->conf->num_bss; i++)
@@ -258,13 +299,9 @@ uc_hostapd_bss_set_config(uc_vm_t *vm, size_t nargs)
 	if (hapd == iface->bss[0])
 		memcpy(hapd->own_addr, hapd->conf->bssid, ETH_ALEN);
 
-	hostapd_setup_bss(hapd, hapd == iface->bss[0], true);
-	hostapd_neighbor_set_own_report(hapd);
+	ret = __uc_hostapd_bss_start(hapd);
 	hostapd_ucode_update_interfaces();
-	hostapd_owe_update_trans(iface);
 
-done:
-	ret = 0;
 free:
 	hostapd_config_free(conf);
 out:
@@ -326,8 +363,13 @@ uc_hostapd_bss_delete(uc_vm_t *vm, size_t nargs)
 	hostapd_bss_deinit(hapd);
 	hostapd_remove_iface_bss_conf(iface->conf, hapd->conf);
 	hostapd_config_free_bss(hapd->conf);
+#ifdef CONFIG_IEEE80211BE
+	if (hapd->mld)
+		hapd->mld->refcount--;
+#endif
 	os_free(hapd);
 
+	hostapd_cleanup_unused_mlds(iface->interfaces);
 	hostapd_ucode_update_interfaces();
 
 	return NULL;
@@ -365,7 +407,12 @@ uc_hostapd_iface_add_bss(uc_vm_t *vm, size_t nargs)
 #ifdef CONFIG_IEEE80211BE
 	os_strlcpy(hapd->ctrl_sock_iface, hapd->conf->iface,
 		   sizeof(hapd->ctrl_sock_iface));
+	if (hapd->conf->mld_ap) {
+		hostapd_bss_setup_multi_link(hapd, iface->interfaces);
+		hostapd_set_ctrl_sock_iface(hapd);
+	}
 #endif
+
 	if (interfaces->ctrl_iface_init &&
 	    interfaces->ctrl_iface_init(hapd) < 0)
 		goto free_hapd;
@@ -673,6 +720,7 @@ uc_hostapd_bss_rename(uc_vm_t *vm, size_t nargs)
 {
 	struct hostapd_data *hapd = uc_fn_thisval("hostapd.bss");
 	uc_value_t *ifname_arg = uc_fn_arg(0);
+	uc_value_t *skip_rename = uc_fn_arg(1);
 	char prev_ifname[IFNAMSIZ + 1];
 	struct sta_info *sta;
 	const char *ifname;
@@ -688,9 +736,11 @@ uc_hostapd_bss_rename(uc_vm_t *vm, size_t nargs)
 	if (interfaces->ctrl_iface_deinit)
 		interfaces->ctrl_iface_deinit(hapd);
 
-	ret = hostapd_drv_if_rename(hapd, WPA_IF_AP_BSS, NULL, ifname);
-	if (ret)
-		goto out;
+	if (!ucv_is_truish(skip_rename)) {
+		ret = hostapd_drv_if_rename(hapd, WPA_IF_AP_BSS, NULL, ifname);
+		if (ret)
+			goto out;
+	}
 
 	for (sta = hapd->sta_list; sta; sta = sta->next) {
 		char cur_name[IFNAMSIZ + 1], new_name[IFNAMSIZ + 1];

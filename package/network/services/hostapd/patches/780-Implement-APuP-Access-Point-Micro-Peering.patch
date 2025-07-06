@@ -53,7 +53,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -4974,6 +4974,15 @@ static int hostapd_config_fill(struct ho
+@@ -4976,6 +4976,15 @@ static int hostapd_config_fill(struct ho
  		bss->mld_indicate_disabled = atoi(pos);
  #endif /* CONFIG_TESTING_OPTIONS */
  #endif /* CONFIG_IEEE80211BE */
@@ -71,7 +71,7 @@ Hotfix-by: Sebastian Gottschall https://github.com/mirror/dd-wrt/commit/0c3001a6
  			   "Line %d: unknown configuration item '%s'",
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -982,6 +982,35 @@ struct hostapd_bss_config {
+@@ -984,6 +984,35 @@ struct hostapd_bss_config {
  	int mbssid_index;
  
  	bool spp_amsdu;
