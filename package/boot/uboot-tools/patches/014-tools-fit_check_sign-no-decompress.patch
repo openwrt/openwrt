@@ -1,6 +1,6 @@
 --- a/boot/bootm.c
 +++ b/boot/bootm.c
-@@ -1188,10 +1188,6 @@ static int bootm_host_load_image(const v
+@@ -1191,10 +1191,6 @@ static int bootm_host_load_image(const v
  	ulong data, len;
  	struct bootm_headers images;
  	int noffset;
@@ -11,7 +11,7 @@
  	int ret;
  
  	fit_uname_config = fdt_get_name(fit, cfg_noffset, NULL);
-@@ -1203,26 +1199,6 @@ static int bootm_host_load_image(const v
+@@ -1206,26 +1202,6 @@ static int bootm_host_load_image(const v
  		FIT_LOAD_IGNORED, &data, &len);
  	if (noffset < 0)
  		return noffset;
