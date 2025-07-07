@@ -1,0 +1,11 @@
+--- a/os_dep/linux/ioctl_cfg80211.c
++++ b/os_dep/linux/ioctl_cfg80211.c
+@@ -3183,7 +3183,7 @@ static int cfg80211_rtw_set_txpower(stru
+ 
+ static int cfg80211_rtw_get_txpower(struct wiphy *wiphy,
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,8,0))
+-                                    struct wireless_dev *wdev,
++                                    struct wireless_dev *wdev, unsigned int link_id,
+ #endif
+                                     int *dbm)
+ {

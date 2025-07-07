@@ -15,6 +15,14 @@
 		phy-is-integrated; \
 	};
 
+#define INTERNAL_PHY_SDS(n, s) \
+	phy##n: ethernet-phy@##n { \
+		reg = <##n>; \
+		compatible = "ethernet-phy-ieee802.3-c22"; \
+		phy-is-integrated; \
+		sds = <##s>; \
+	};
+
 #define EXTERNAL_PHY(n) \
 	phy##n: ethernet-phy@##n { \
 		reg = <##n>; \

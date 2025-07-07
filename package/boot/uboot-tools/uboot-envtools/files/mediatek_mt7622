@@ -10,18 +10,8 @@ touch /etc/config/ubootenv
 . /lib/functions.sh
 
 ubootenv_add_mmc_default() {
-	local envdev="$(find_mmc_part "ubootenv" "${1:-mmcblk0}")"
-	ubootenv_add_uci_config "$envdev" "0x0" "0x80000" "0x80000" "1"
-	ubootenv_add_uci_config "$envdev" "0x80000" "0x80000" "0x80000" "1"
-}
-
-ubootenv_add_ubi_default() {
-	. /lib/upgrade/nand.sh
-	local envubi=$(nand_find_ubi ubi)
-	local envdev=/dev/$(nand_find_volume $envubi ubootenv)
-	local envdev2=/dev/$(nand_find_volume $envubi ubootenv2)
-	ubootenv_add_uci_config "$envdev" "0x0" "0x1f000" "0x1f000" "1"
-	ubootenv_add_uci_config "$envdev2" "0x0" "0x1f000" "0x1f000" "1"
+	ubootenv_add_mmc "ubootenv" "${1:-mmcblk0}" "0x0" "0x80000" "0x80000" "1"
+	ubootenv_add_mmc "ubootenv" "${1:-mmcblk0}" "0x80000" "0x80000" "0x80000" "1"
 }
 
 board=$(board_name)
@@ -54,7 +44,7 @@ ruijie,rg-ew3200gx-pro)
 ubnt,unifi-6-lr-v1-ubootmod|\
 ubnt,unifi-6-lr-v2-ubootmod|\
 ubnt,unifi-6-lr-v3-ubootmod)
-	ubootenv_add_uci_config "/dev/mtd$(find_mtd_index "u-boot-env")" "0x0" "0x4000" "0x1000"
+	ubootenv_add_mtd "u-boot-env" "0x0" "0x4000" "0x1000"
 	;;
 ubnt,unifi-6-lr-v2|\
 ubnt,unifi-6-lr-v3)

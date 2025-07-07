@@ -19,6 +19,17 @@ DEVICE_VARS += \
 	LINKSYS_HEADER \
         ZYXEL_VERS
 
+define Build/rt-compress
+	$(STAGING_DIR_HOST)/bin/xz -9 --format=lzma --stdout "$@" > "$@.new"
+	mv "$@.new" "$@"
+endef
+
+define Build/rt-loader
+	$(MAKE) all clean -C rt-loader CROSS_COMPILE="$(TARGET_CROSS)" \
+		KERNEL_IMG_IN="$@" KERNEL_IMG_OUT="$@.new" BUILD_DIR="$@.build"
+	mv "$@.new" "$@"
+endef
+
 define Build/zyxel-vers
        ( echo VERS;\
        for hw in $(ZYXEL_VERS); do\
@@ -106,6 +117,12 @@ define Device/Default
 	pad-rootfs | \
 	check-size | \
 	append-metadata
+endef
+
+define Device/uimage-rt-loader
+	KERNEL/rt-loader := kernel-bin | append-dtb | rt-compress | rt-loader
+	KERNEL := $$(KERNEL/rt-loader) | uImage none
+	KERNEL_INITRAMFS := $$(KERNEL/rt-loader) | uImage none
 endef
 
 include $(SUBTARGET).mk

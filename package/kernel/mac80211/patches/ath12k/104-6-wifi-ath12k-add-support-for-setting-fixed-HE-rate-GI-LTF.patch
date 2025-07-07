@@ -1,83 +1,81 @@
-From patchwork Wed Sep 18 21:20:53 2024
+From patchwork Wed May 21 22:45:36 2025
 Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
 X-Patchwork-Submitter: Pradeep Kumar Chitrapu <quic_pradeepc@quicinc.com>
-X-Patchwork-Id: 13807217
+X-Patchwork-Id: 14096125
 X-Patchwork-Delegate: quic_jjohnson@quicinc.com
-Received: from mx0a-0031df01.pphosted.com (mx0a-0031df01.pphosted.com
- [205.220.168.131])
+Received: from mx0b-0031df01.pphosted.com (mx0b-0031df01.pphosted.com
+ [205.220.180.131])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 01CB41CB521
-	for <linux-wireless@vger.kernel.org>; Wed, 18 Sep 2024 21:21:15 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 9A17F1B0F20
+	for <linux-wireless@vger.kernel.org>; Wed, 21 May 2025 22:45:59 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
- arc=none smtp.client-ip=205.220.168.131
+ arc=none smtp.client-ip=205.220.180.131
 ARC-Seal: i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1726694478; cv=none;
- b=CCnmzPX7wAnXz6jkBGnfJkO3OTVTa1pEVXaY+i3jcRKLwLmYLBkbQB7d5qZASnEWRw4vJRXQbpKaSNlechv1fw+VqQci5hz7GrwDmSDWwFwNKynwUkaS+V6CUoPkxGmvijlkSH5/Sp7n4JBdH9MZdY9ACaPCGZlgpTeAiRpgqyQ=
+	t=1747867562; cv=none;
+ b=bEGfSmKJAIERqJyK0yJndcYM+a7cpfrIkMLoGUTFvAkrcwqnlh3F9AqLbcb8fKznhfaQKFVRUdpVGSjFaplFVSp20RuXvPC2NLb0eKZrz5qS/4geTMxY/BeWuVN+i3ouoQzfYz8Vq6sTqLE5d6b650cCVf8hpY+VZ3ZTNWxVvdA=
 ARC-Message-Signature: i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1726694478; c=relaxed/simple;
-	bh=mOCMplbDFdsxafoM0lh9GOTg8poXfVWSA2JaaPzd5gg=;
+	s=arc-20240116; t=1747867562; c=relaxed/simple;
+	bh=hBxlXRYYCPbv8+evEatym1UfdpOfENFUVDWgibN+XTg=;
 	h=From:To:CC:Subject:Date:Message-ID:In-Reply-To:References:
 	 MIME-Version:Content-Type;
- b=m9Y3ZEQjhVcT6ObjX34KItzxLUdCbzQDCo4za4qtMsxHQCEQSny2a/lTtWTbAB42n+JZkBRjC1xrrdmRnXSxy58EZpvKNutjY0YonbJ/hMfa97U5qRTD/50prvNqxkFINPijMCNMgKsnCBz6tfcB78j3qnEvZjNP4eV4rbTicUg=
+ b=U32JKi6TAoRF/9e1cv0vPGUM6BaRhoFXM0b36j5PBpvKQmRXKDF/UNScd5EJnrFOPlgjPD7GOc+TdHqsFGk/7pNucA1++GU00SZ0q/223zg5dCsYLmfLrRu3G22WZS2hWuNKuUPFJEFFLEJ8UQWKtFB0oWsQcx+Oj1mWPbBrDU8=
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org;
  dmarc=pass (p=none dis=none) header.from=quicinc.com;
  spf=pass smtp.mailfrom=quicinc.com;
  dkim=pass (2048-bit key) header.d=quicinc.com header.i=@quicinc.com
- header.b=lKsSrYSp; arc=none smtp.client-ip=205.220.168.131
+ header.b=bzVTzUcl; arc=none smtp.client-ip=205.220.180.131
 Authentication-Results: smtp.subspace.kernel.org;
  dmarc=pass (p=none dis=none) header.from=quicinc.com
 Authentication-Results: smtp.subspace.kernel.org;
  spf=pass smtp.mailfrom=quicinc.com
 Authentication-Results: smtp.subspace.kernel.org;
 	dkim=pass (2048-bit key) header.d=quicinc.com header.i=@quicinc.com
- header.b="lKsSrYSp"
-Received: from pps.filterd (m0279864.ppops.net [127.0.0.1])
+ header.b="bzVTzUcl"
+Received: from pps.filterd (m0279868.ppops.net [127.0.0.1])
 	by mx0a-0031df01.pphosted.com (8.18.1.2/8.18.1.2) with ESMTP id
- 48IINFa1032091;
-	Wed, 18 Sep 2024 21:21:09 GMT
+ 54LJiK6V032422;
+	Wed, 21 May 2025 22:45:55 GMT
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=quicinc.com; h=
 	cc:content-transfer-encoding:content-type:date:from:in-reply-to
 	:message-id:mime-version:references:subject:to; s=qcppdkim1; bh=
-	97aZlelAxnf1oZWK/vk3qg6OISdr4sArbqi18OQE/2Y=; b=lKsSrYSpewbykrq1
-	6WJRbLR0y481zo+GgIgfHUNcpF2NhItbbS8mgWYFPaMaoohciRsbAYdFFZrc9BG3
-	9IyAzZvpFzBox/oaJjDm/zLc2GVYMSGtwO3W0mMk2uVXU7ZB8dBDNimtsLmXTa1t
-	jyV6n0wj3jlGU1kDYu6zPgrcxWF1NnScnosftToVpHqM7TLfDaj8EJWuzsJnau2A
-	CUOS2o9wPZPAScyeL91kJOHtJddltuJrvLFxbi4gGZW7dWUus99UjFzGTAan/JVK
-	yb5Xr8iEzP2141KqZ9FMQqwqYOGc10t+yYXPMep/fo1mfziiB5kQ0tRtaWQ01Auw
-	uPa6OQ==
-Received: from nalasppmta04.qualcomm.com (Global_NAT1.qualcomm.com
+	cpcIGD4iPSOaZzDkHZpoGs5Kor0sF3EnocHYcBOazgM=; b=bzVTzUclt3RkLn9A
+	YI8+MC64RjF5llUqmQ0G53D8sAQZ+95fc92X/ZrZvnyr7X0FBI+gU05yKzNuv4M5
+	XcIWK7Y8gjr55i9w18cWHGW2Q/JGC8pJlx0A/SEAMIMXeeEmgJqdKowT2wMjzIIH
+	wb7JmE9d6z6ZKcgQYx9KICXaaEFQ9uxyRyjlJMMEJ3zb7MjxZPCCGtCI31Aqczpk
+	B3X+1UgRT+OJzV6vIF0kdn/sjU69iZNHoPAUDYqInWCs2lPLMUO5mckhOG3fH8s6
+	jmhgpwlpUYx18jawRUpklvujXfFiDV4daXLeUKzL5b08f5OcSRvd7+iOytudYgr0
+	U9VYkw==
+Received: from nalasppmta03.qualcomm.com (Global_NAT1.qualcomm.com
  [129.46.96.20])
-	by mx0a-0031df01.pphosted.com (PPS) with ESMTPS id 41n4geb5e1-1
+	by mx0a-0031df01.pphosted.com (PPS) with ESMTPS id 46rwfb4b3w-1
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 18 Sep 2024 21:21:09 +0000 (GMT)
+	Wed, 21 May 2025 22:45:55 +0000 (GMT)
 Received: from nalasex01a.na.qualcomm.com (nalasex01a.na.qualcomm.com
  [10.47.209.196])
-	by NALASPPMTA04.qualcomm.com (8.18.1.2/8.18.1.2) with ESMTPS id
- 48ILL8jN020567
+	by NALASPPMTA03.qualcomm.com (8.18.1.2/8.18.1.2) with ESMTPS id
+ 54LMjsC2027097
 	(version=TLSv1.2 cipher=ECDHE-RSA-AES256-GCM-SHA384 bits=256 verify=NOT);
-	Wed, 18 Sep 2024 21:21:08 GMT
-Received: from ath12k-linux1.qualcomm.com (10.80.80.8) by
+	Wed, 21 May 2025 22:45:54 GMT
+Received: from ath12k-linux2.qualcomm.com (10.80.80.8) by
  nalasex01a.na.qualcomm.com (10.47.209.196) with Microsoft SMTP Server
  (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
- 15.2.1544.9; Wed, 18 Sep 2024 14:21:08 -0700
+ 15.2.1544.9; Wed, 21 May 2025 15:45:53 -0700
 From: Pradeep Kumar Chitrapu <quic_pradeepc@quicinc.com>
 To: <ath12k@lists.infradead.org>
 CC: <linux-wireless@vger.kernel.org>,
         Pradeep Kumar Chitrapu
 	<quic_pradeepc@quicinc.com>,
-        Muna Sinada <quic_msinada@quicinc.com>,
-        "Jeff
- Johnson" <quic_jjohnson@quicinc.com>
-Subject: [PATCH V8 6/9] wifi: ath12k: add support for setting fixed HE
- rate/GI/LTF
-Date: Wed, 18 Sep 2024 14:20:53 -0700
-Message-ID: <20240918212056.4137076-7-quic_pradeepc@quicinc.com>
-X-Mailer: git-send-email 2.34.1
-In-Reply-To: <20240918212056.4137076-1-quic_pradeepc@quicinc.com>
-References: <20240918212056.4137076-1-quic_pradeepc@quicinc.com>
+        Muna Sinada <quic_msinada@quicinc.com>
+Subject: [PATCH ath-next V14 6/9] wifi: ath12k: add support for setting fixed
+ HE rate/GI/LTF
+Date: Wed, 21 May 2025 15:45:36 -0700
+Message-ID: <20250521224539.355985-7-quic_pradeepc@quicinc.com>
+X-Mailer: git-send-email 2.43.0
+In-Reply-To: <20250521224539.355985-1-quic_pradeepc@quicinc.com>
+References: <20250521224539.355985-1-quic_pradeepc@quicinc.com>
 Precedence: bulk
 X-Mailing-List: linux-wireless@vger.kernel.org
 List-Id: <linux-wireless.vger.kernel.org>
@@ -89,18 +87,28 @@ X-ClientProxiedBy: nasanex01a.na.qualcomm.com (10.52.223.231) To
 X-QCInternal: smtphost
 X-Proofpoint-Virus-Version: vendor=nai engine=6200 definitions=5800
  signatures=585085
-X-Proofpoint-GUID: GGIeqOgMFye5oFp39WDjK5DZ7YoCK3Ap
-X-Proofpoint-ORIG-GUID: GGIeqOgMFye5oFp39WDjK5DZ7YoCK3Ap
+X-Proofpoint-ORIG-GUID: 7uuxK_kl_b0JzKZoWIyq_ZYKeKL3it15
+X-Proofpoint-Spam-Details-Enc: AW1haW4tMjUwNTIxMDIyNiBTYWx0ZWRfX7sjoM15po0tB
+ FcR1nwzr8TocaDYnIXgl13rA+kjwsizlMt/N5cu8dCWo9YQKqFNy42Z2VEYmoDRw7dBnYnsMIL/
+ wwv4hQYQslnxilRJaX/MVQ50/xxhSry8NrKA2QXvIg3btmiW4gQfrn3+k1Rm3o/gAGv2Yz4R8lw
+ YBPHVdQkgGJXYgsiB/b+copbnU621GYiYrCW6yUQHHIiwzjMljzzsk+9Koc6yeVByyPj86P80y7
+ 2C8L1vuRAy8gCMSScMB9CyQ6+tLCKa1W2bhA0Oxz/+RGEXbujS4NDXCWz+EqIaYS5HXuD32pODy
+ O2wMURrbgE5PJIjjvpAdtqZL65QVaoVK1LWU6Co0NtHytEjuaZmr1hbb4hVDAtQio2Bw/K8yCM+
+ ikcJ1sGkE78mu/U7gQjG6g0Z71Q/w13jBOz+RIocPFi2FyEjy5KDFmUBzY+jDCIRLi06R8sP
+X-Proofpoint-GUID: 7uuxK_kl_b0JzKZoWIyq_ZYKeKL3it15
+X-Authority-Analysis: v=2.4 cv=dLCmmPZb c=1 sm=1 tr=0 ts=682e57a3 cx=c_pps
+ a=ouPCqIW2jiPt+lZRy3xVPw==:117 a=ouPCqIW2jiPt+lZRy3xVPw==:17
+ a=GEpy-HfZoHoA:10 a=dt9VzEwgFbYA:10 a=COk6AnOGAAAA:8 a=KygRlO7-s-l5tpycOzUA:9
+ a=TjNXssC_j7lpFel5tvFf:22
 X-Proofpoint-Virus-Version: vendor=baseguard
- engine=ICAP:2.0.293,Aquarius:18.0.1039,Hydra:6.0.680,FMLib:17.12.60.29
- definitions=2024-09-06_09,2024-09-06_01,2024-09-02_01
+ engine=ICAP:2.0.293,Aquarius:18.0.1099,Hydra:6.0.736,FMLib:17.12.80.40
+ definitions=2025-05-21_07,2025-05-20_03,2025-03-28_01
 X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
- malwarescore=0
- mlxlogscore=999 impostorscore=0 bulkscore=0 clxscore=1015
- lowpriorityscore=0 adultscore=0 phishscore=0 suspectscore=0
- priorityscore=1501 mlxscore=0 spamscore=0 classifier=spam adjust=0
- reason=mlx scancount=1 engine=8.19.0-2408220000
- definitions=main-2409180140
+ mlxscore=0 clxscore=1015 adultscore=0 bulkscore=0 phishscore=0 suspectscore=0
+ impostorscore=0 malwarescore=0 lowpriorityscore=0 mlxlogscore=999 spamscore=0
+ priorityscore=1501 classifier=spam authscore=0 authtc=n/a authcc=
+ route=outbound adjust=0 reason=mlx scancount=1 engine=8.19.0-2505160000
+ definitions=main-2505210226
 
 Add support to set fixed HE rate/GI/LTF values using nl80211.
 Reuse parts of the existing code path already used for HT/VHT
@@ -112,15 +120,14 @@ Tested-on: QCN9274 hw2.0 PCI WLAN.WBE.1.0.1-00029-QCAHKSWPL_SILICONZ-1
 Co-developed-by: Muna Sinada <quic_msinada@quicinc.com>
 Signed-off-by: Muna Sinada <quic_msinada@quicinc.com>
 Signed-off-by: Pradeep Kumar Chitrapu <quic_pradeepc@quicinc.com>
-Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 ---
- drivers/net/wireless/ath/ath12k/mac.c | 604 ++++++++++++++++++++++++--
- drivers/net/wireless/ath/ath12k/wmi.h |  18 +
- 2 files changed, 574 insertions(+), 48 deletions(-)
+ drivers/net/wireless/ath/ath12k/mac.c | 650 +++++++++++++++++++++++---
+ drivers/net/wireless/ath/ath12k/wmi.h |  27 ++
+ 2 files changed, 625 insertions(+), 52 deletions(-)
 
 --- a/drivers/net/wireless/ath/ath12k/mac.c
 +++ b/drivers/net/wireless/ath/ath12k/mac.c
-@@ -441,6 +441,18 @@ ath12k_mac_max_vht_nss(const u16 *vht_mc
+@@ -518,6 +518,18 @@ ath12k_mac_max_vht_nss(const u16 *vht_mc
  	return 1;
  }
  
@@ -139,23 +146,27 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  static u8 ath12k_parse_mpdudensity(u8 mpdudensity)
  {
  /*  From IEEE Std 802.11-2020 defined values for "Minimum MPDU Start Spacing":
-@@ -1916,6 +1928,14 @@ static void ath12k_peer_assoc_h_ht(struc
+@@ -2135,9 +2147,15 @@ static void ath12k_peer_assoc_h_ht(struc
  		arg->peer_rate_caps |= WMI_HOST_RC_CW40_FLAG;
  	}
  
+-	if (arvif->bitrate_mask.control[band].gi != NL80211_TXRATE_FORCE_LGI) {
+-		if (ht_cap->cap & (IEEE80211_HT_CAP_SGI_20 |
+-		    IEEE80211_HT_CAP_SGI_40))
 +	/* As firmware handles these two flags (IEEE80211_HT_CAP_SGI_20
 +	 * and IEEE80211_HT_CAP_SGI_40) for enabling SGI, reset both
-+	 * flags if guard interval is Default GI
++	 * flags if guard interval is to force Long GI
 +	 */
-+	if (arvif->bitrate_mask.control[band].gi == NL80211_TXRATE_DEFAULT_GI)
-+		arg->peer_ht_caps &= ~(IEEE80211_HT_CAP_SGI_20 |
-+				IEEE80211_HT_CAP_SGI_40);
-+
- 	if (arvif->bitrate_mask.control[band].gi != NL80211_TXRATE_FORCE_LGI) {
- 		if (ht_cap->cap & (IEEE80211_HT_CAP_SGI_20 |
- 		    IEEE80211_HT_CAP_SGI_40))
-@@ -2039,11 +2059,12 @@ static void ath12k_peer_assoc_h_vht(stru
- 	struct ath12k_vif *arvif = ath12k_vif_to_arvif(vif);
++	if (arvif->bitrate_mask.control[band].gi == NL80211_TXRATE_FORCE_LGI) {
++		arg->peer_ht_caps &= ~(IEEE80211_HT_CAP_SGI_20 | IEEE80211_HT_CAP_SGI_40);
++	} else {
++		/* Enable SGI flag if either SGI_20 or SGI_40 is supported */
++		if (ht_cap->cap & (IEEE80211_HT_CAP_SGI_20 | IEEE80211_HT_CAP_SGI_40))
+ 			arg->peer_rate_caps |= WMI_HOST_RC_SGI_FLAG;
+ 	}
+ 
+@@ -2260,11 +2278,12 @@ static void ath12k_peer_assoc_h_vht(stru
+ 	struct ieee80211_link_sta *link_sta;
  	struct cfg80211_chan_def def;
  	enum nl80211_band band;
 -	const u16 *vht_mcs_mask;
@@ -167,17 +178,17 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 +	int i, vht_nss, nss_idx;
 +	bool user_rate_valid = true;
  
- 	if (WARN_ON(ath12k_mac_vif_chan(vif, &def)))
- 		return;
-@@ -2086,6 +2107,25 @@ static void ath12k_peer_assoc_h_vht(stru
- 	if (sta->deflink.bandwidth == IEEE80211_STA_RX_BW_160)
+ 	lockdep_assert_wiphy(ath12k_ar_to_hw(ar)->wiphy);
+ 
+@@ -2317,6 +2336,25 @@ static void ath12k_peer_assoc_h_vht(stru
+ 	if (link_sta->bandwidth == IEEE80211_STA_RX_BW_160)
  		arg->bw_160 = true;
  
 +	vht_nss =  ath12k_mac_max_vht_nss(vht_mcs_mask);
 +
-+	if (vht_nss > sta->deflink.rx_nss) {
++	if (vht_nss > link_sta->rx_nss) {
 +		user_rate_valid = false;
-+		for (nss_idx = sta->deflink.rx_nss - 1; nss_idx >= 0; nss_idx--) {
++		for (nss_idx = link_sta->rx_nss - 1; nss_idx >= 0; nss_idx--) {
 +			if (vht_mcs_mask[nss_idx]) {
 +				user_rate_valid = true;
 +				break;
@@ -188,14 +199,14 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 +	if (!user_rate_valid) {
 +		ath12k_dbg(ar->ab, ATH12K_DBG_MAC,
 +			   "Setting vht range MCS value to peer supported nss:%d for peer %pM\n",
-+			   sta->deflink.rx_nss, sta->deflink.addr);
-+		vht_mcs_mask[sta->deflink.rx_nss - 1] = vht_mcs_mask[vht_nss - 1];
++			   link_sta->rx_nss, arsta->addr);
++		vht_mcs_mask[link_sta->rx_nss - 1] = vht_mcs_mask[vht_nss - 1];
 +	}
 +
  	/* Calculate peer NSS capability from VHT capabilities if STA
  	 * supports VHT.
  	 */
-@@ -2125,23 +2165,105 @@ static void ath12k_peer_assoc_h_vht(stru
+@@ -2356,6 +2394,72 @@ static void ath12k_peer_assoc_h_vht(stru
  	/* TODO: rxnss_override */
  }
  
@@ -266,18 +277,19 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 +}
 +
  static void ath12k_peer_assoc_h_he(struct ath12k *ar,
- 				   struct ieee80211_vif *vif,
- 				   struct ieee80211_sta *sta,
- 				   struct ath12k_wmi_peer_assoc_arg *arg)
- {
- 	const struct ieee80211_sta_he_cap *he_cap = &sta->deflink.he_cap;
-+	struct ath12k_vif *arvif = ath12k_vif_to_arvif(vif);
+ 				   struct ath12k_link_vif *arvif,
+ 				   struct ath12k_link_sta *arsta,
+@@ -2366,18 +2470,28 @@ static void ath12k_peer_assoc_h_he(struc
+ 	const struct ieee80211_sta_he_cap *he_cap;
+ 	struct ieee80211_bss_conf *link_conf;
+ 	struct ieee80211_link_sta *link_sta;
 +	struct cfg80211_chan_def def;
  	int i;
  	u8 ampdu_factor, max_nss;
  	u8 rx_mcs_80 = IEEE80211_HE_MCS_NOT_SUPPORTED;
  	u8 rx_mcs_160 = IEEE80211_HE_MCS_NOT_SUPPORTED;
  	u16 mcs_160_map, mcs_80_map;
++	u8 link_id = arvif->link_id;
  	bool support_160;
 -	u16 v;
 +	enum nl80211_band band;
@@ -287,9 +299,18 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 +	int he_nss, nss_idx;
 +	bool user_rate_valid = true;
 +
-+	if (WARN_ON(ath12k_mac_vif_chan(vif, &def)))
++	if (WARN_ON(ath12k_mac_vif_link_chan(vif, link_id, &def)))
 +		return;
  
+ 	link_conf = ath12k_mac_get_link_bss_conf(arvif);
+ 	if (!link_conf) {
+ 		ath12k_warn(ar->ab, "unable to access bss link conf in peer assoc he for vif %pM link %u",
+-			    vif->addr, arvif->link_id);
++			    vif->addr, link_id);
+ 		return;
+ 	}
+ 
+@@ -2392,6 +2506,12 @@ static void ath12k_peer_assoc_h_he(struc
  	if (!he_cap->has_he)
  		return;
  
@@ -302,15 +323,15 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  	arg->he_flag = true;
  
  	support_160 = !!(he_cap->he_cap_elem.phy_cap_info[0] &
-@@ -2247,25 +2369,47 @@ static void ath12k_peer_assoc_h_he(struc
+@@ -2497,25 +2617,47 @@ static void ath12k_peer_assoc_h_he(struc
  	if (he_cap->he_cap_elem.mac_cap_info[0] & IEEE80211_HE_MAC_CAP0_TWT_REQ)
  		arg->twt_requester = true;
  
 +	he_nss = ath12k_mac_max_he_nss(he_mcs_mask);
 +
-+	if (he_nss > sta->deflink.rx_nss) {
++	if (he_nss > link_sta->rx_nss) {
 +		user_rate_valid = false;
-+		for (nss_idx = sta->deflink.rx_nss - 1; nss_idx >= 0; nss_idx--) {
++		for (nss_idx = link_sta->rx_nss - 1; nss_idx >= 0; nss_idx--) {
 +			if (he_mcs_mask[nss_idx]) {
 +				user_rate_valid = true;
 +				break;
@@ -321,11 +342,11 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 +	if (!user_rate_valid) {
 +		ath12k_dbg(ar->ab, ATH12K_DBG_MAC,
 +			   "Setting he range MCS value to peer supported nss:%d for peer %pM\n",
-+			   sta->deflink.rx_nss, sta->deflink.addr);
-+		he_mcs_mask[sta->deflink.rx_nss - 1] = he_mcs_mask[he_nss - 1];
++			   link_sta->rx_nss, arsta->addr);
++		he_mcs_mask[link_sta->rx_nss - 1] = he_mcs_mask[he_nss - 1];
 +	}
 +
- 	switch (sta->deflink.bandwidth) {
+ 	switch (link_sta->bandwidth) {
  	case IEEE80211_STA_RX_BW_160:
  		if (he_cap->he_cap_elem.phy_cap_info[0] &
  		    IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_80PLUS80_MHZ_IN_5G) {
@@ -352,7 +373,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  		fallthrough;
  
  	default:
-@@ -2273,11 +2417,34 @@ static void ath12k_peer_assoc_h_he(struc
+@@ -2523,11 +2665,36 @@ static void ath12k_peer_assoc_h_he(struc
  		arg->peer_he_rx_mcs_set[WMI_HECAP_TXRX_MCS_NSS_IDX_80] = v;
  
  		v = le16_to_cpu(he_cap->he_mcs_nss_supp.tx_mcs_80);
@@ -379,51 +400,67 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 +		    he_mcs_mask[i])
 +			max_nss = i + 1;
 +	}
-+	arg->peer_nss = min(sta->deflink.rx_nss, max_nss);
++
++	max_nss = min(max_nss, ar->num_tx_chains);
++	arg->peer_nss = min(link_sta->rx_nss, max_nss);
 +
 +	ath12k_dbg(ar->ab, ATH12K_DBG_MAC,
 +		   "mac he peer %pM nss %d mcs cnt %d\n",
-+		   sta->deflink.addr, arg->peer_nss, arg->peer_he_mcs_count);
++		   arsta->addr, arg->peer_nss, arg->peer_he_mcs_count);
  }
  
  static void ath12k_peer_assoc_h_he_6ghz(struct ath12k *ar,
-@@ -2586,6 +2753,7 @@ static void ath12k_peer_assoc_h_phymode(
+@@ -2863,6 +3030,7 @@ static void ath12k_peer_assoc_h_phymode(
  	enum nl80211_band band;
  	const u8 *ht_mcs_mask;
  	const u16 *vht_mcs_mask;
 +	const u16 *he_mcs_mask;
  	enum wmi_phy_mode phymode = MODE_UNKNOWN;
  
- 	if (WARN_ON(ath12k_mac_vif_chan(vif, &def)))
-@@ -2594,6 +2762,7 @@ static void ath12k_peer_assoc_h_phymode(
+ 	lockdep_assert_wiphy(ath12k_ar_to_hw(ar)->wiphy);
+@@ -2876,6 +3044,7 @@ static void ath12k_peer_assoc_h_phymode(
  	band = def.chan->band;
  	ht_mcs_mask = arvif->bitrate_mask.control[band].ht_mcs;
  	vht_mcs_mask = arvif->bitrate_mask.control[band].vht_mcs;
 +	he_mcs_mask = arvif->bitrate_mask.control[band].he_mcs;
  
- 	switch (band) {
- 	case NL80211_BAND_2GHZ:
-@@ -2602,7 +2771,8 @@ static void ath12k_peer_assoc_h_phymode(
+ 	link_sta = ath12k_mac_get_link_sta(arsta);
+ 	if (!link_sta) {
+@@ -2891,7 +3060,8 @@ static void ath12k_peer_assoc_h_phymode(
  				phymode = MODE_11BE_EHT40_2G;
  			else
  				phymode = MODE_11BE_EHT20_2G;
--		} else if (sta->deflink.he_cap.has_he) {
-+		} else if (sta->deflink.he_cap.has_he &&
+-		} else if (link_sta->he_cap.has_he) {
++		} else if (link_sta->he_cap.has_he &&
 +			   !ath12k_peer_assoc_h_he_masked(he_mcs_mask)) {
- 			if (sta->deflink.bandwidth == IEEE80211_STA_RX_BW_80)
+ 			if (link_sta->bandwidth == IEEE80211_STA_RX_BW_80)
  				phymode = MODE_11AX_HE80_2G;
- 			else if (sta->deflink.bandwidth == IEEE80211_STA_RX_BW_40)
-@@ -2632,7 +2802,8 @@ static void ath12k_peer_assoc_h_phymode(
+ 			else if (link_sta->bandwidth == IEEE80211_STA_RX_BW_40)
+@@ -2921,7 +3091,8 @@ static void ath12k_peer_assoc_h_phymode(
  		/* Check EHT first */
- 		if (sta->deflink.eht_cap.has_eht) {
- 			phymode = ath12k_mac_get_phymode_eht(ar, sta);
--		} else if (sta->deflink.he_cap.has_he) {
-+		} else if (sta->deflink.he_cap.has_he &&
+ 		if (link_sta->eht_cap.has_eht) {
+ 			phymode = ath12k_mac_get_phymode_eht(ar, link_sta);
+-		} else if (link_sta->he_cap.has_he) {
++		} else if (link_sta->he_cap.has_he &&
 +			   !ath12k_peer_assoc_h_he_masked(he_mcs_mask)) {
- 			phymode = ath12k_mac_get_phymode_he(ar, sta);
- 		} else if (sta->deflink.vht_cap.vht_supported &&
+ 			phymode = ath12k_mac_get_phymode_he(ar, link_sta);
+ 		} else if (link_sta->vht_cap.vht_supported &&
  		    !ath12k_peer_assoc_h_vht_masked(vht_mcs_mask)) {
-@@ -4311,6 +4482,20 @@ ath12k_mac_bitrate_mask_num_vht_rates(st
+@@ -4190,10 +4361,13 @@ static struct ath12k_link_vif *ath12k_ma
+ 
+ 	for (i = 0; i < ARRAY_SIZE(arvif->bitrate_mask.control); i++) {
+ 		arvif->bitrate_mask.control[i].legacy = 0xffffffff;
++		arvif->bitrate_mask.control[i].gi = NL80211_TXRATE_DEFAULT_GI;
+ 		memset(arvif->bitrate_mask.control[i].ht_mcs, 0xff,
+ 		       sizeof(arvif->bitrate_mask.control[i].ht_mcs));
+ 		memset(arvif->bitrate_mask.control[i].vht_mcs, 0xff,
+ 		       sizeof(arvif->bitrate_mask.control[i].vht_mcs));
++		memset(arvif->bitrate_mask.control[i].he_mcs, 0xff,
++		       sizeof(arvif->bitrate_mask.control[i].he_mcs));
+ 	}
+ 
+ 	/* Allocate Default Queue now and reassign during actual vdev create */
+@@ -5083,6 +5257,20 @@ ath12k_mac_bitrate_mask_num_vht_rates(st
  }
  
  static int
@@ -441,16 +478,16 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 +}
 +
 +static int
- ath12k_mac_set_peer_vht_fixed_rate(struct ath12k_vif *arvif,
- 				   struct ieee80211_sta *sta,
+ ath12k_mac_set_peer_vht_fixed_rate(struct ath12k_link_vif *arvif,
+ 				   struct ath12k_link_sta *arsta,
  				   const struct cfg80211_bitrate_mask *mask,
-@@ -4356,6 +4541,57 @@ ath12k_mac_set_peer_vht_fixed_rate(struc
+@@ -5128,6 +5316,60 @@ ath12k_mac_set_peer_vht_fixed_rate(struc
  	return ret;
  }
  
 +static int
-+ath12k_mac_set_peer_he_fixed_rate(struct ath12k_vif *arvif,
-+				  struct ieee80211_sta *sta,
++ath12k_mac_set_peer_he_fixed_rate(struct ath12k_link_vif *arvif,
++				  struct ath12k_link_sta *arsta,
 +				  const struct cfg80211_bitrate_mask *mask,
 +				  enum nl80211_band band)
 +{
@@ -458,9 +495,12 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 +	u8 he_rate, nss;
 +	u32 rate_code;
 +	int ret, i;
++	struct ath12k_sta *ahsta = arsta->ahsta;
++	struct ieee80211_sta *sta;
 +
-+	lockdep_assert_held(&ar->conf_mutex);
++	lockdep_assert_wiphy(ath12k_ar_to_hw(ar)->wiphy);
 +
++	sta = ath12k_ahsta_to_sta(ahsta);
 +	nss = 0;
 +
 +	for (i = 0; i < ARRAY_SIZE(mask->control[band].he_mcs); i++) {
@@ -472,7 +512,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 +
 +	if (!nss) {
 +		ath12k_warn(ar->ab, "No single HE Fixed rate found to set for %pM",
-+			    sta->deflink.addr);
++			    arsta->addr);
 +		return -EINVAL;
 +	}
 +
@@ -482,36 +522,36 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 +
 +	ath12k_dbg(ar->ab, ATH12K_DBG_MAC,
 +		   "Setting Fixed HE Rate for peer %pM. Device will not switch to any other selected rates",
-+		   sta->deflink.addr);
++		   arsta->addr);
 +
 +	rate_code = ATH12K_HW_RATE_CODE(he_rate, nss - 1,
 +					WMI_RATE_PREAMBLE_HE);
 +
-+	ret = ath12k_wmi_set_peer_param(ar, sta->deflink.addr,
++	ret = ath12k_wmi_set_peer_param(ar, arsta->addr,
 +					arvif->vdev_id,
 +					WMI_PEER_PARAM_FIXED_RATE,
 +					rate_code);
 +	if (ret)
 +		ath12k_warn(ar->ab,
 +			    "failed to update STA %pM Fixed Rate %d: %d\n",
-+			    sta->deflink.addr, rate_code, ret);
++			    arsta->addr, rate_code, ret);
 +
 +	return ret;
 +}
 +
- static int ath12k_station_assoc(struct ath12k *ar,
- 				struct ieee80211_vif *vif,
- 				struct ieee80211_sta *sta,
-@@ -4367,7 +4603,7 @@ static int ath12k_station_assoc(struct a
+ static int ath12k_mac_station_assoc(struct ath12k *ar,
+ 				    struct ath12k_link_vif *arvif,
+ 				    struct ath12k_link_sta *arsta,
+@@ -5140,7 +5382,7 @@ static int ath12k_mac_station_assoc(stru
  	struct cfg80211_chan_def def;
  	enum nl80211_band band;
  	struct cfg80211_bitrate_mask *mask;
 -	u8 num_vht_rates;
 +	u8 num_vht_rates, num_he_rates;
+ 	u8 link_id = arvif->link_id;
  
- 	lockdep_assert_held(&ar->conf_mutex);
- 
-@@ -4398,15 +4634,19 @@ static int ath12k_station_assoc(struct a
+ 	lockdep_assert_wiphy(ath12k_ar_to_hw(ar)->wiphy);
+@@ -5180,9 +5422,10 @@ static int ath12k_mac_station_assoc(stru
  	}
  
  	num_vht_rates = ath12k_mac_bitrate_mask_num_vht_rates(ar, band, mask);
@@ -524,18 +564,19 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  	 * fixed param.
  	 * Note that all other rates and NSS will be disabled for this peer.
  	 */
- 	if (sta->deflink.vht_cap.vht_supported && num_vht_rates == 1) {
--		ret = ath12k_mac_set_peer_vht_fixed_rate(arvif, sta, mask,
+@@ -5193,8 +5436,9 @@ static int ath12k_mac_station_assoc(stru
+ 	}
+ 
+ 	if (link_sta->vht_cap.vht_supported && num_vht_rates == 1) {
+-		ret = ath12k_mac_set_peer_vht_fixed_rate(arvif, arsta, mask,
 -							 band);
-+		ret = ath12k_mac_set_peer_vht_fixed_rate(arvif, sta, mask, band);
-+		if (ret)
-+			return ret;
-+	} else if (sta->deflink.he_cap.has_he && num_he_rates == 1) {
-+		ret = ath12k_mac_set_peer_he_fixed_rate(arvif, sta, mask, band);
++		ret = ath12k_mac_set_peer_vht_fixed_rate(arvif, arsta, mask, band);
++	} else if (link_sta->he_cap.has_he && num_he_rates == 1) {
++		ret = ath12k_mac_set_peer_he_fixed_rate(arvif, arsta, mask, band);
  		if (ret)
  			return ret;
  	}
-@@ -4480,8 +4720,9 @@ static void ath12k_sta_rc_update_wk(stru
+@@ -5258,8 +5502,9 @@ static void ath12k_sta_rc_update_wk(stru
  	enum nl80211_band band;
  	const u8 *ht_mcs_mask;
  	const u16 *vht_mcs_mask;
@@ -545,9 +586,9 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 +	u32 changed, bw, nss, mac_nss, smps, bw_prev;
 +	int err, num_vht_rates, num_he_rates;
  	const struct cfg80211_bitrate_mask *mask;
- 	struct ath12k_wmi_peer_assoc_arg peer_arg;
  	enum wmi_phy_mode peer_phymode;
-@@ -4497,6 +4738,7 @@ static void ath12k_sta_rc_update_wk(stru
+ 	struct ath12k_link_sta *arsta;
+@@ -5279,6 +5524,7 @@ static void ath12k_sta_rc_update_wk(stru
  	band = def.chan->band;
  	ht_mcs_mask = arvif->bitrate_mask.control[band].ht_mcs;
  	vht_mcs_mask = arvif->bitrate_mask.control[band].vht_mcs;
@@ -555,8 +596,8 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  
  	spin_lock_bh(&ar->data_lock);
  
-@@ -4513,8 +4755,10 @@ static void ath12k_sta_rc_update_wk(stru
- 	mutex_lock(&ar->conf_mutex);
+@@ -5293,8 +5539,10 @@ static void ath12k_sta_rc_update_wk(stru
+ 	spin_unlock_bh(&ar->data_lock);
  
  	nss = max_t(u32, 1, nss);
 -	nss = min(nss, max(ath12k_mac_max_ht_nss(ht_mcs_mask),
@@ -566,9 +607,9 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 +		       ath12k_mac_max_he_nss(he_mcs_mask));
 +	nss = min(nss, mac_nss);
  
- 	if (changed & IEEE80211_RC_BW_CHANGED) {
- 		ath12k_peer_assoc_h_phymode(ar, arvif->vif, sta, &peer_arg);
-@@ -4592,6 +4836,8 @@ static void ath12k_sta_rc_update_wk(stru
+ 	struct ath12k_wmi_peer_assoc_arg *peer_arg __free(kfree) =
+ 					kzalloc(sizeof(*peer_arg), GFP_KERNEL);
+@@ -5377,6 +5625,8 @@ static void ath12k_sta_rc_update_wk(stru
  		mask = &arvif->bitrate_mask;
  		num_vht_rates = ath12k_mac_bitrate_mask_num_vht_rates(ar, band,
  								      mask);
@@ -577,12 +618,12 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  
  		/* Peer_assoc_prepare will reject vht rates in
  		 * bitrate_mask if its not available in range format and
-@@ -4607,11 +4853,24 @@ static void ath12k_sta_rc_update_wk(stru
- 		if (sta->deflink.vht_cap.vht_supported && num_vht_rates == 1) {
- 			ath12k_mac_set_peer_vht_fixed_rate(arvif, sta, mask,
+@@ -5399,11 +5649,24 @@ static void ath12k_sta_rc_update_wk(stru
+ 		if (link_sta->vht_cap.vht_supported && num_vht_rates == 1) {
+ 			ath12k_mac_set_peer_vht_fixed_rate(arvif, arsta, mask,
  							   band);
-+		} else if (sta->deflink.he_cap.has_he && num_he_rates == 1) {
-+			ath12k_mac_set_peer_he_fixed_rate(arvif, sta, mask, band);
++		} else if (link_sta->he_cap.has_he && num_he_rates == 1) {
++			ath12k_mac_set_peer_he_fixed_rate(arvif, arsta, mask, band);
  		} else {
 -			/* If the peer is non-VHT or no fixed VHT rate
 +			/* If the peer is non-VHT/HE or no fixed VHT/HE rate
@@ -592,33 +633,19 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 +			 * the peer fixed rate settings as it has higher proprity
 +			 * than peer assoc
  			 */
-+
-+			err = ath12k_wmi_set_peer_param(ar, sta->deflink.addr,
++			err = ath12k_wmi_set_peer_param(ar, arsta->addr,
 +							arvif->vdev_id,
 +							WMI_PEER_PARAM_FIXED_RATE,
 +							WMI_FIXED_RATE_NONE);
 +			if (err)
 +				ath12k_warn(ar->ab,
 +					    "failed to disable peer fixed rate for STA %pM ret %d\n",
-+					    sta->deflink.addr, err);
- 			ath12k_peer_assoc_prepare(ar, arvif->vif, sta,
- 						  &peer_arg, true);
++					    arsta->addr, err);
++
+ 			ath12k_peer_assoc_prepare(ar, arvif, arsta,
+ 						  peer_arg, true);
  
-@@ -7059,10 +7318,13 @@ static int ath12k_mac_op_add_interface(s
- 
- 	for (i = 0; i < ARRAY_SIZE(arvif->bitrate_mask.control); i++) {
- 		arvif->bitrate_mask.control[i].legacy = 0xffffffff;
-+		arvif->bitrate_mask.control[i].gi = NL80211_TXRATE_FORCE_SGI;
- 		memset(arvif->bitrate_mask.control[i].ht_mcs, 0xff,
- 		       sizeof(arvif->bitrate_mask.control[i].ht_mcs));
- 		memset(arvif->bitrate_mask.control[i].vht_mcs, 0xff,
- 		       sizeof(arvif->bitrate_mask.control[i].vht_mcs));
-+		memset(arvif->bitrate_mask.control[i].he_mcs, 0xff,
-+		       sizeof(arvif->bitrate_mask.control[i].he_mcs));
- 	}
- 
- 	/* Allocate Default Queue now and reassign during actual vdev create */
-@@ -8223,19 +8485,40 @@ ath12k_mac_has_single_legacy_rate(struct
+@@ -9903,19 +10166,40 @@ ath12k_mac_has_single_legacy_rate(struct
  	if (ath12k_mac_bitrate_mask_num_vht_rates(ar, band, mask))
  		return false;
  
@@ -659,7 +686,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  	int i;
  
  	/* No need to consider legacy here. Basic rates are always present
-@@ -8262,7 +8545,24 @@ ath12k_mac_bitrate_mask_get_single_nss(s
+@@ -9942,7 +10226,24 @@ ath12k_mac_bitrate_mask_get_single_nss(s
  			return false;
  	}
  
@@ -685,44 +712,49 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  		return false;
  
  	if (ht_nss_mask == 0)
-@@ -8309,54 +8609,158 @@ ath12k_mac_get_single_legacy_rate(struct
+@@ -9989,54 +10290,182 @@ ath12k_mac_get_single_legacy_rate(struct
  	return 0;
  }
  
--static int ath12k_mac_set_fixed_rate_params(struct ath12k_vif *arvif,
+-static int ath12k_mac_set_fixed_rate_params(struct ath12k_link_vif *arvif,
 -					    u32 rate, u8 nss, u8 sgi, u8 ldpc)
 +static int
-+ath12k_mac_set_fixed_rate_gi_ltf(struct ath12k_vif *arvif, u8 he_gi, u8 he_ltf)
++ath12k_mac_set_fixed_rate_gi_ltf(struct ath12k_link_vif *arvif, u8 he_gi, u8 he_ltf)
  {
  	struct ath12k *ar = arvif->ar;
 -	u32 vdev_param;
  	int ret;
  
--	lockdep_assert_held(&ar->conf_mutex);
+ 	lockdep_assert_wiphy(ath12k_ar_to_hw(ar)->wiphy);
+ 
+-	ath12k_dbg(ar->ab, ATH12K_DBG_MAC, "mac set fixed rate params vdev %i rate 0x%02x nss %u sgi %u\n",
+-		   arvif->vdev_id, rate, nss, sgi);
 +	/* 0.8 = 0, 1.6 = 2 and 3.2 = 3. */
 +	if (he_gi && he_gi != 0xFF)
 +		he_gi += 1;
  
--	ath12k_dbg(ar->ab, ATH12K_DBG_MAC, "mac set fixed rate params vdev %i rate 0x%02x nss %u sgi %u\n",
--		   arvif->vdev_id, rate, nss, sgi);
-+	ret = ath12k_wmi_vdev_set_param_cmd(ar, arvif->vdev_id,
+-	vdev_param = WMI_VDEV_PARAM_FIXED_RATE;
+ 	ret = ath12k_wmi_vdev_set_param_cmd(ar, arvif->vdev_id,
+-					    vdev_param, rate);
 +					    WMI_VDEV_PARAM_SGI, he_gi);
-+	if (ret) {
+ 	if (ret) {
+-		ath12k_warn(ar->ab, "failed to set fixed rate param 0x%02x: %d\n",
+-			    rate, ret);
 +		ath12k_warn(ar->ab, "failed to set HE GI:%d, error:%d\n",
 +			    he_gi, ret);
-+		return ret;
-+	}
+ 		return ret;
+ 	}
 +	/* start from 1 */
 +	if (he_ltf != 0xFF)
 +		he_ltf += 1;
  
--	vdev_param = WMI_VDEV_PARAM_FIXED_RATE;
+-	vdev_param = WMI_VDEV_PARAM_NSS;
  	ret = ath12k_wmi_vdev_set_param_cmd(ar, arvif->vdev_id,
--					    vdev_param, rate);
+-					    vdev_param, nss);
 +					    WMI_VDEV_PARAM_HE_LTF, he_ltf);
  	if (ret) {
--		ath12k_warn(ar->ab, "failed to set fixed rate param 0x%02x: %d\n",
--			    rate, ret);
+-		ath12k_warn(ar->ab, "failed to set nss param %d: %d\n",
+-			    nss, ret);
 +		ath12k_warn(ar->ab, "failed to set HE LTF:%d, error:%d\n",
 +			    he_ltf, ret);
  		return ret;
@@ -731,7 +763,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 +}
 +
 +static int
-+ath12k_mac_set_auto_rate_gi_ltf(struct ath12k_vif *arvif, u16 he_gi, u8 he_ltf)
++ath12k_mac_set_auto_rate_gi_ltf(struct ath12k_link_vif *arvif, u16 he_gi, u8 he_ltf)
 +{
 +	struct ath12k *ar = arvif->ar;
 +	int ret;
@@ -773,33 +805,54 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 +
 +	he_ar_gi_ltf = he_gi | he_ltf;
  
--	vdev_param = WMI_VDEV_PARAM_NSS;
+-	vdev_param = WMI_VDEV_PARAM_SGI;
  	ret = ath12k_wmi_vdev_set_param_cmd(ar, arvif->vdev_id,
--					    vdev_param, nss);
+-					    vdev_param, sgi);
 +					    WMI_VDEV_PARAM_AUTORATE_MISC_CFG,
 +					    he_ar_gi_ltf);
  	if (ret) {
--		ath12k_warn(ar->ab, "failed to set nss param %d: %d\n",
--			    nss, ret);
+-		ath12k_warn(ar->ab, "failed to set sgi param %d: %d\n",
+-			    sgi, ret);
 +		ath12k_warn(ar->ab,
 +			    "failed to set HE autorate GI:%u, LTF:%u params, error:%d\n",
 +			    he_gi, he_ltf, ret);
  		return ret;
  	}
  
--	vdev_param = WMI_VDEV_PARAM_SGI;
+-	vdev_param = WMI_VDEV_PARAM_LDPC;
 +	return 0;
 +}
 +
-+static int ath12k_mac_set_rate_params(struct ath12k_vif *arvif,
++static u32 ath12k_mac_nlgi_to_wmigi(enum nl80211_txrate_gi gi)
++{
++	switch (gi) {
++	case NL80211_TXRATE_DEFAULT_GI:
++		return WMI_GI_400_NS;
++	case NL80211_TXRATE_FORCE_LGI:
++		return WMI_GI_800_NS;
++	default:
++		return WMI_GI_400_NS;
++	}
++}
++
++static int ath12k_mac_set_rate_params(struct ath12k_link_vif *arvif,
 +				      u32 rate, u8 nss, u8 sgi, u8 ldpc,
 +				      u8 he_gi, u8 he_ltf, bool he_fixed_rate)
 +{
++	struct ieee80211_bss_conf *link_conf;
 +	struct ath12k *ar = arvif->ar;
 +	u32 vdev_param;
++	u32 param_value;
 +	int ret;
++	bool he_support;
 +
-+	lockdep_assert_held(&ar->conf_mutex);
++	lockdep_assert_wiphy(ath12k_ar_to_hw(ar)->wiphy);
++
++	link_conf = ath12k_mac_get_link_bss_conf(arvif);
++	if (!link_conf)
++		return -EINVAL;
++
++	he_support = link_conf->he_support;
 +
 +	ath12k_dbg(ar->ab, ATH12K_DBG_MAC,
 +		   "mac set rate params vdev %i rate 0x%02x nss 0x%02x sgi 0x%02x ldpc 0x%02x\n",
@@ -809,7 +862,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 +		   "he_gi 0x%02x he_ltf 0x%02x he_fixed_rate %d\n", he_gi,
 +		   he_ltf, he_fixed_rate);
 +
-+	if (!arvif->vif->bss_conf.he_support) {
++	if (!he_support) {
 +		vdev_param = WMI_VDEV_PARAM_FIXED_RATE;
 +		ret = ath12k_wmi_vdev_set_param_cmd(ar, arvif->vdev_id,
 +						    vdev_param, rate);
@@ -823,19 +876,15 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 +	vdev_param = WMI_VDEV_PARAM_NSS;
 +
  	ret = ath12k_wmi_vdev_set_param_cmd(ar, arvif->vdev_id,
--					    vdev_param, sgi);
+-					    vdev_param, ldpc);
 +					    vdev_param, nss);
- 	if (ret) {
--		ath12k_warn(ar->ab, "failed to set sgi param %d: %d\n",
--			    sgi, ret);
++	if (ret) {
 +		ath12k_warn(ar->ab, "failed to set nss param %d: %d\n",
 +			    nss, ret);
- 		return ret;
- 	}
- 
--	vdev_param = WMI_VDEV_PARAM_LDPC;
- 	ret = ath12k_wmi_vdev_set_param_cmd(ar, arvif->vdev_id,
--					    vdev_param, ldpc);
++		return ret;
++	}
++
++	ret = ath12k_wmi_vdev_set_param_cmd(ar, arvif->vdev_id,
 +					    WMI_VDEV_PARAM_LDPC, ldpc);
  	if (ret) {
  		ath12k_warn(ar->ab, "failed to set ldpc param %d: %d\n",
@@ -843,7 +892,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  		return ret;
  	}
  
-+	if (arvif->vif->bss_conf.he_support) {
++	if (he_support) {
 +		if (he_fixed_rate)
 +			ret = ath12k_mac_set_fixed_rate_gi_ltf(arvif, he_gi, he_ltf);
 +		else
@@ -852,8 +901,9 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 +			return ret;
 +	} else {
 +		vdev_param = WMI_VDEV_PARAM_SGI;
++		param_value = ath12k_mac_nlgi_to_wmigi(sgi);
 +		ret = ath12k_wmi_vdev_set_param_cmd(ar, arvif->vdev_id,
-+						    vdev_param, sgi);
++						    vdev_param, param_value);
 +		if (ret) {
 +			ath12k_warn(ar->ab, "failed to set sgi param %d: %d\n",
 +				    sgi, ret);
@@ -864,7 +914,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  	return 0;
  }
  
-@@ -8385,6 +8789,31 @@ ath12k_mac_vht_mcs_range_present(struct
+@@ -10065,6 +10494,31 @@ ath12k_mac_vht_mcs_range_present(struct
  	return true;
  }
  
@@ -896,18 +946,33 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  static void ath12k_mac_set_bitrate_mask_iter(void *data,
  					     struct ieee80211_sta *sta)
  {
-@@ -8424,6 +8853,54 @@ static void ath12k_mac_disable_peer_fixe
+@@ -10073,7 +10527,10 @@ static void ath12k_mac_set_bitrate_mask_
+ 	struct ath12k_link_sta *arsta;
+ 	struct ath12k *ar = arvif->ar;
+ 
+-	arsta = rcu_dereference(ahsta->link[arvif->link_id]);
++	lockdep_assert_wiphy(ath12k_ar_to_hw(ar)->wiphy);
++
++	arsta = wiphy_dereference(ath12k_ar_to_hw(ar)->wiphy,
++				  ahsta->link[arvif->link_id]);
+ 	if (!arsta || arsta->arvif != arvif)
+ 		return;
+ 
+@@ -10111,6 +10568,61 @@ static void ath12k_mac_disable_peer_fixe
+ 			    arsta->addr, ret);
  }
  
- static int
-+ath12k_mac_validate_vht_he_fixed_rate_settings(struct ath12k *ar, enum nl80211_band band,
-+					       const struct cfg80211_bitrate_mask *mask)
++static bool
++ath12k_mac_validate_fixed_rate_settings(struct ath12k *ar, enum nl80211_band band,
++					const struct cfg80211_bitrate_mask *mask,
++					unsigned int link_id)
 +{
 +	bool he_fixed_rate = false, vht_fixed_rate = false;
-+	struct ath12k_peer *peer;
 +	const u16 *vht_mcs_mask, *he_mcs_mask;
++	struct ieee80211_link_sta *link_sta;
++	struct ath12k_peer *peer, *tmp;
 +	u8 vht_nss, he_nss;
-+	int ret = 0;
++	int ret = true;
 +
 +	vht_mcs_mask = mask->control[band].vht_mcs;
 +	he_mcs_mask = mask->control[band].he_mcs;
@@ -919,24 +984,29 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 +		he_fixed_rate = true;
 +
 +	if (!vht_fixed_rate && !he_fixed_rate)
-+		return 0;
++		return true;
 +
 +	vht_nss = ath12k_mac_max_vht_nss(vht_mcs_mask);
 +	he_nss =  ath12k_mac_max_he_nss(he_mcs_mask);
 +
 +	rcu_read_lock();
 +	spin_lock_bh(&ar->ab->base_lock);
-+	list_for_each_entry(peer, &ar->ab->peers, list) {
++	list_for_each_entry_safe(peer, tmp, &ar->ab->peers, list) {
 +		if (peer->sta) {
-+			if (vht_fixed_rate &&
-+			    (!peer->sta->deflink.vht_cap.vht_supported ||
-+			    peer->sta->deflink.rx_nss < vht_nss)) {
-+				ret = -EINVAL;
++			link_sta = rcu_dereference(peer->sta->link[link_id]);
++			if (!link_sta) {
++				ret = false;
 +				goto exit;
 +			}
-+			if (he_fixed_rate && (!peer->sta->deflink.he_cap.has_he ||
-+					      peer->sta->deflink.rx_nss < he_nss)) {
-+				ret = -EINVAL;
++
++			if (vht_fixed_rate && (!link_sta->vht_cap.vht_supported ||
++					       link_sta->rx_nss < vht_nss)) {
++				ret = false;
++				goto exit;
++			}
++			if (he_fixed_rate && (!link_sta->he_cap.has_he ||
++					      link_sta->rx_nss < he_nss)) {
++				ret = false;
 +				goto exit;
 +			}
 +		}
@@ -947,11 +1017,10 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 +	return ret;
 +}
 +
-+static int
+ static int
  ath12k_mac_op_set_bitrate_mask(struct ieee80211_hw *hw,
  			       struct ieee80211_vif *vif,
- 			       const struct cfg80211_bitrate_mask *mask)
-@@ -8434,13 +8911,17 @@ ath12k_mac_op_set_bitrate_mask(struct ie
+@@ -10123,13 +10635,17 @@ ath12k_mac_op_set_bitrate_mask(struct ie
  	enum nl80211_band band;
  	const u8 *ht_mcs_mask;
  	const u16 *vht_mcs_mask;
@@ -968,9 +1037,9 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  	int num_rates;
 +	bool he_fixed_rate = false;
  
- 	if (ath12k_mac_vif_chan(vif, &def))
- 		return -EPERM;
-@@ -8448,6 +8929,7 @@ ath12k_mac_op_set_bitrate_mask(struct ie
+ 	lockdep_assert_wiphy(hw->wiphy);
+ 
+@@ -10144,14 +10660,18 @@ ath12k_mac_op_set_bitrate_mask(struct ie
  	band = def.chan->band;
  	ht_mcs_mask = mask->control[band].ht_mcs;
  	vht_mcs_mask = mask->control[band].vht_mcs;
@@ -978,7 +1047,9 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  	ldpc = !!(ar->ht_cap_info & WMI_HT_CAP_LDPC);
  
  	sgi = mask->control[band].gi;
-@@ -8456,6 +8938,9 @@ ath12k_mac_op_set_bitrate_mask(struct ie
+-	if (sgi == NL80211_TXRATE_FORCE_LGI) {
++	if (sgi == NL80211_TXRATE_FORCE_SGI) {
+ 		ret = -EINVAL;
  		goto out;
  	}
  
@@ -988,7 +1059,11 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  	/* mac80211 doesn't support sending a fixed HT/VHT MCS alone, rather it
  	 * requires passing at least one of used basic rates along with them.
  	 * Fixed rate setting across different preambles(legacy, HT, VHT) is
-@@ -8475,15 +8960,27 @@ ath12k_mac_op_set_bitrate_mask(struct ie
+@@ -10168,18 +10688,31 @@ ath12k_mac_op_set_bitrate_mask(struct ie
+ 				    arvif->vdev_id, ret);
+ 			goto out;
+ 		}
++
  		ieee80211_iterate_stations_mtx(hw,
  					       ath12k_mac_disable_peer_fixed_rate,
  					       arvif);
@@ -997,21 +1072,21 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  							  &single_nss)) {
  		rate = WMI_FIXED_RATE_NONE;
  		nss = single_nss;
-+		mutex_lock(&ar->conf_mutex);
 +		arvif->bitrate_mask = *mask;
-+		ieee80211_iterate_stations_mtx(hw,
-+					       ath12k_mac_set_bitrate_mask_iter,
-+					       arvif);
-+		mutex_unlock(&ar->conf_mutex);
++
++		ieee80211_iterate_stations_atomic(hw,
++						  ath12k_mac_set_bitrate_mask_iter,
++						  arvif);
  	} else {
  		rate = WMI_FIXED_RATE_NONE;
 -		nss = min_t(u32, ar->num_tx_chains,
 -			    max(ath12k_mac_max_ht_nss(ht_mcs_mask),
 -				ath12k_mac_max_vht_nss(vht_mcs_mask)));
 +
-+		if (!ath12k_mac_validate_vht_he_fixed_rate_settings(ar, band, mask))
++		if (!ath12k_mac_validate_fixed_rate_settings(ar, band,
++							     mask, arvif->link_id))
 +			ath12k_warn(ar->ab,
-+				    "could not update fixed rate settings to all peers due to mcs/nss incompatiblity\n");
++				    "failed to update fixed rate settings due to mcs/nss incompatibility\n");
 +
 +		mac_nss = max3(ath12k_mac_max_ht_nss(ht_mcs_mask),
 +			       ath12k_mac_max_vht_nss(vht_mcs_mask),
@@ -1020,8 +1095,13 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  
  		/* If multiple rates across different preambles are given
  		 * we can reconfigure this info with all peers using PEER_ASSOC
-@@ -8519,12 +9016,22 @@ ath12k_mac_op_set_bitrate_mask(struct ie
- 			goto out;
+@@ -10211,9 +10744,21 @@ ath12k_mac_op_set_bitrate_mask(struct ie
+ 			 */
+ 			ath12k_warn(ar->ab,
+ 				    "Setting more than one MCS Value in bitrate mask not supported\n");
+-			return -EINVAL;
++			ret = -EINVAL;
++			goto out;
  		}
  
 +		num_rates = ath12k_mac_bitrate_mask_num_he_rates(ar, band, mask);
@@ -1032,22 +1112,15 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 +		    num_rates > 1) {
 +			ath12k_warn(ar->ab,
 +				    "Setting more than one HE MCS Value in bitrate mask not supported\n");
-+			return -EINVAL;
++			ret = -EINVAL;
++			goto out;
 +		}
-+
-+		mutex_lock(&ar->conf_mutex);
  		ieee80211_iterate_stations_mtx(hw,
  					       ath12k_mac_disable_peer_fixed_rate,
  					       arvif);
- 
--		mutex_lock(&ar->conf_mutex);
--
- 		arvif->bitrate_mask = *mask;
- 		ieee80211_iterate_stations_mtx(hw,
- 					       ath12k_mac_set_bitrate_mask_iter,
-@@ -8535,9 +9042,10 @@ ath12k_mac_op_set_bitrate_mask(struct ie
- 
- 	mutex_lock(&ar->conf_mutex);
+@@ -10224,9 +10769,10 @@ ath12k_mac_op_set_bitrate_mask(struct ie
+ 					       arvif);
+ 	}
  
 -	ret = ath12k_mac_set_fixed_rate_params(arvif, rate, nss, sgi, ldpc);
 +	ret = ath12k_mac_set_rate_params(arvif, rate, nss, sgi, ldpc, he_gi,
@@ -1083,7 +1156,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  enum wmi_cmd_group {
  	/* 0 to 2 are reserved */
  	WMI_GRP_START = 0x3,
-@@ -1132,7 +1148,9 @@ enum wmi_tlv_vdev_param {
+@@ -1145,7 +1161,9 @@ enum wmi_tlv_vdev_param {
  	WMI_VDEV_PARAM_HE_RANGE_EXT,
  	WMI_VDEV_PARAM_ENABLE_BCAST_PROBE_RESPONSE,
  	WMI_VDEV_PARAM_FILS_MAX_CHANNEL_GUARD_TIME,
@@ -1093,3 +1166,19 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  	WMI_VDEV_PARAM_SET_HE_SOUNDING_MODE = 0x87,
  	WMI_VDEV_PARAM_6GHZ_PARAMS = 0x99,
  	WMI_VDEV_PARAM_PROTOTYPE = 0x8000,
+@@ -3579,6 +3597,15 @@ struct wmi_force_fw_hang_cmd {
+ 	__le32 delay_time_ms;
+ } __packed;
+ 
++/* Param values to be sent for WMI_VDEV_PARAM_SGI param_id
++ * which are used in 11n, 11ac systems
++ * @WMI_GI_800_NS - Always uses 0.8us (Long GI)
++ * @WMI_GI_400_NS - Firmware switches between 0.4us (Short GI)
++ *			and 0.8us (Long GI) based on packet error rate.
++ */
++#define WMI_GI_800_NS 0
++#define WMI_GI_400_NS 1
++
+ struct wmi_vdev_set_param_cmd {
+ 	__le32 tlv_header;
+ 	__le32 vdev_id;

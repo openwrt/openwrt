@@ -25,9 +25,9 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 
 --- a/drivers/net/wireless/ath/ath11k/core.c
 +++ b/drivers/net/wireless/ath/ath11k/core.c
-@@ -809,6 +809,67 @@ static struct ath11k_hw_params ath11k_hw
- 		.support_fw_mac_sequence = true,
+@@ -905,6 +905,67 @@ static struct ath11k_hw_params ath11k_hw
  		.support_dual_stations = true,
+ 		.pdev_suspend = false,
  	},
 +	{
 +		.hw_rev = ATH11K_HW_QCN6122_HW10,
@@ -95,10 +95,10 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  static inline struct ath11k_pdev *ath11k_core_get_single_pdev(struct ath11k_base *ab)
 --- a/drivers/net/wireless/ath/ath11k/core.h
 +++ b/drivers/net/wireless/ath/ath11k/core.h
-@@ -148,6 +148,7 @@ enum ath11k_hw_rev {
- 	ATH11K_HW_WCN6750_HW10,
+@@ -149,6 +149,7 @@ enum ath11k_hw_rev {
  	ATH11K_HW_IPQ5018_HW10,
  	ATH11K_HW_QCA2066_HW21,
+ 	ATH11K_HW_QCA6698AQ_HW21,
 +	ATH11K_HW_QCN6122_HW10,
  };
  

@@ -29,7 +29,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	b53_read16(dev, B53_CTRL_PAGE, B53_DIS_LEARNING, &reg);
  	if (learning)
  		reg &= ~BIT(port);
-@@ -2247,7 +2250,13 @@ int b53_br_flags_pre(struct dsa_switch *
+@@ -2243,7 +2246,13 @@ int b53_br_flags_pre(struct dsa_switch *
  		     struct switchdev_brport_flags flags,
  		     struct netlink_ext_ack *extack)
  {

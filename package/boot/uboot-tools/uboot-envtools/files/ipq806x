@@ -12,7 +12,7 @@ touch /etc/config/ubootenv
 board=$(board_name)
 
 ubootenv_mtdinfo () {
-	UBOOTENV_PART=$(cat /proc/mtd | grep APPSBLENV)
+	UBOOTENV_PART=$(cat /proc/mtd | grep -i APPSBLENV)
 	mtd_dev=$(echo $UBOOTENV_PART | awk '{print $1}' | sed 's/:$//')
 	mtd_size=$(echo $UBOOTENV_PART | awk '{print "0x"$2}')
 	mtd_erase=$(echo $UBOOTENV_PART | awk '{print "0x"$3}')
@@ -42,6 +42,11 @@ extreme,ap3935)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x10000"
 	ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x10000" "0x10000"
 	;;
+ignitenet,ss-w2-ac2600|\
+qcom,ipq8064-ap148|\
+qcom,ipq8064-db149)
+	ubootenv_add_uci_config $(ubootenv_mtdinfo)
+	;;
 linksys,ea7500-v1|\
 linksys,ea8500)
 	ubootenv_add_uci_config "/dev/mtd10" "0x0" "0x20000" "0x20000"
@@ -51,10 +56,6 @@ netgear,r7800)
 	;;
 nokia,ac400i)
 	ubootenv_add_uci_config "/dev/mtd20" "0x0" "0x040000" "0x20000"
-	;;
-qcom,ipq8064-ap148|\
-qcom,ipq8064-db149)
-	ubootenv_add_uci_config $(ubootenv_mtdinfo)
 	;;
 ubnt,unifi-ac-hd|\
 zyxel,nbg6817)

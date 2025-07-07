@@ -198,9 +198,9 @@ function setup_phy(phy, config, data) {
 	system(`iw phy ${phy} set txpower ${config.txpower}`);
 
 	if (config.frag)
-		system(`iw phy ${phy} set frag ${frag}`);
+		system(`iw phy ${phy} set frag ${config.frag}`);
 	if (config.rts)
-		system(`iw phy ${phy} set rts ${rts}`);
+		system(`iw phy ${phy} set rts ${config.rts}`);
 }
 
 function iw_htmode(config) {

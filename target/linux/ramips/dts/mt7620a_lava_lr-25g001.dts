@@ -165,7 +165,8 @@
 };
 
 &pcie0 {
-	mt76x0e@0,0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&eeprom_config_e08a>, <&macaddr_config_e07e 2>;
 		nvmem-cell-names = "eeprom", "mac-address";
