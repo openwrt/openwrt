@@ -1,0 +1,13 @@
+#!/bin/sh
+
+[ -e /etc/config/dnssec-check ] && exit 0
+cat <<EOF > /etc/config/dnssec-check
+config settings 'main'
+        option secure_domain 'nic.cz'
+        option broken_domain 'dnssec-failed.org'
+        option dig_time '3'
+        option dig_tries '2'
+        option debug '0'
+EOF
+exit 0
+
