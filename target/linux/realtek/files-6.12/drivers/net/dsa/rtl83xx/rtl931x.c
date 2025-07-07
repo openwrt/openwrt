@@ -184,6 +184,66 @@ inline static int rtl931x_trk_mbr_ctr(int group)
 	return RTL931X_TRK_MBR_CTRL + (group << 2);
 }
 
+static inline int rtl931x_mac_force_mode_ctrl(int p)
+{
+	return RTL931X_MAC_FORCE_MODE_CTRL + (p << 2);
+}
+
+static inline int rtl931x_mac_link_spd_sts(int p)
+{
+	return RTL931X_MAC_LINK_SPD_STS + (((p >> 3) << 2));
+}
+
+static inline int rtl931x_mac_port_ctrl(int p)
+{
+	return RTL931X_MAC_L2_PORT_CTRL + (p << 7);
+}
+
+static inline int rtl931x_l2_port_new_salrn(int p)
+{
+	return RTL931X_L2_PORT_NEW_SALRN(p);
+}
+
+static inline int rtl931x_l2_port_new_sa_fwd(int p)
+{
+	return RTL931X_L2_PORT_NEW_SA_FWD(p);
+}
+
+static void rtl931x_port_eee_set(struct rtl838x_switch_priv *priv, int port, bool enable)
+{
+	u32 v;
+
+	/* This works only for Ethernet ports, and on the RTL931X, ports from 48 are SFP */
+	if (port >= 48)
+		return;
+
+	pr_debug("In %s: setting port %d to %d\n", __func__, port, enable);
+	v = enable ? 0x3f : 0x0;
+
+	/* Set EEE/EEEP state for 100, 500, 1000MBit and 2.5, 5 and 10GBit */
+	sw_w32_mask(0, v << 18, rtl931x_mac_force_mode_ctrl(port));
+
+	v = enable ? BIT(port % 32) : 0;
+
+	/* Set TX/RX EEE state */
+	sw_w32_mask(BIT(port % 32), v, RTL931X_EEE_PORT_TX_EN(port));
+	sw_w32_mask(BIT(port % 32), v, RTL931X_EEE_PORT_RX_EN(port));
+
+	priv->ports[port].eee_enabled = enable;
+}
+
+static void rtl931x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
+{
+	pr_info("Setting up EEE, state: %d\n", enable);
+
+	for (int i = 0; i < priv->cpu_port; i++) {
+		if (priv->ports[i].phy)
+			rtl931x_port_eee_set(priv, i, enable);
+	}
+
+	priv->eee_enabled = enable;
+}
+
 static void rtl931x_vlan_tables_read(u32 vlan, struct rtl838x_vlan_info *info)
 {
 	u32 v, w, x, y;
@@ -261,31 +321,6 @@ static void rtl931x_vlan_set_untagged(u32 vlan, u64 portmask)
 	rtl839x_set_port_reg_be(portmask << 7, rtl_table_data(r, 0));
 	rtl_table_write(r, vlan);
 	rtl_table_release(r);
-}
-
-static inline int rtl931x_mac_force_mode_ctrl(int p)
-{
-	return RTL931X_MAC_FORCE_MODE_CTRL + (p << 2);
-}
-
-static inline int rtl931x_mac_link_spd_sts(int p)
-{
-	return RTL931X_MAC_LINK_SPD_STS + (((p >> 3) << 2));
-}
-
-static inline int rtl931x_mac_port_ctrl(int p)
-{
-	return RTL931X_MAC_L2_PORT_CTRL + (p << 7);
-}
-
-static inline int rtl931x_l2_port_new_salrn(int p)
-{
-	return RTL931X_L2_PORT_NEW_SALRN(p);
-}
-
-static inline int rtl931x_l2_port_new_sa_fwd(int p)
-{
-	return RTL931X_L2_PORT_NEW_SA_FWD(p);
 }
 
 irqreturn_t rtl931x_switch_irq(int irq, void *dev_id)
@@ -1654,6 +1689,8 @@ const struct rtl838x_reg rtl931x_reg = {
 	.vlan_profile_dump = rtl931x_vlan_profile_dump,
 	.vlan_profile_setup = rtl931x_vlan_profile_setup,
 	.vlan_fwd_on_inner = rtl931x_vlan_fwd_on_inner,
+	.set_vlan_igr_filter = rtl931x_set_igr_filter,
+	.set_vlan_egr_filter = rtl931x_set_egr_filter,
 	.stp_get = rtl931x_stp_get,
 	.stp_set = rtl931x_stp_set,
 	.mac_force_mode_ctrl = rtl931x_mac_force_mode_ctrl,
@@ -1676,8 +1713,11 @@ const struct rtl838x_reg rtl931x_reg = {
 	.vlan_port_pvidmode_set = rtl931x_vlan_port_pvidmode_set,
 	.vlan_port_pvid_set = rtl931x_vlan_port_pvid_set,
 	.trk_mbr_ctr = rtl931x_trk_mbr_ctr,
-	.set_vlan_igr_filter = rtl931x_set_igr_filter,
-	.set_vlan_egr_filter = rtl931x_set_egr_filter,
+
+	.rma_bpdu_fld_pmask = RTL931X_RMA_BPDU_FLD_PMSK,
+
+	.init_eee = rtl931x_init_eee,
+
 	.set_distribution_algorithm = rtl931x_set_distribution_algorithm,
 	.l2_hash_key = rtl931x_l2_hash_key,
 	.l2_hash_seed = rtldsa_931x_l2_hash_seed,
