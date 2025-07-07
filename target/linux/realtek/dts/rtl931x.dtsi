@@ -185,6 +185,15 @@
 	switchcore@1b000000 {
 		compatible = "syscon", "simple-mfd";
 		reg = <0x1b000000 0x10000>;
+		mdio_aux: mdio-aux {
+			compatible = "realtek,rtl9300-aux-mdio";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			pinctrl-0 = <&pinmux_gpio_mdio_en>;
+			pinctrl-names = "default";
+
+			status = "disabled";
+		};
 	};
 
 	pinmux: pinmux@1b001358 {
@@ -204,6 +213,10 @@
 		/* Controls GPIO0 */
 		pinmux_disable_sys_led: disable_sys_led {
 			pinctrl-single,bits = <0x0 0x0 0x100>;
+		};
+
+		pinmux_gpio_mdio_en: gpio-mdio-en {
+			pinctrl-single,bits = <0x0 0x100 0x100>;
 		};
 	};
 
