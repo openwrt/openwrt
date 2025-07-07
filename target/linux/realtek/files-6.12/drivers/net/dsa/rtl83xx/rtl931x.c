@@ -1385,11 +1385,6 @@ static void rtl931x_pie_init(struct rtl838x_switch_priv *priv)
 
 }
 
-static int rtl931x_l3_setup(struct rtl838x_switch_priv *priv)
-{
-	return 0;
-}
-
 static void rtl931x_vlan_port_keep_tag_set(int port, bool keep_outer, bool keep_inner)
 {
 	sw_w32(FIELD_PREP(RTL931X_VLAN_PORT_TAG_EGR_OTAG_STS_MASK,
@@ -1648,7 +1643,6 @@ const struct rtl838x_reg rtl931x_reg = {
 	.pie_rule_add = rtl931x_pie_rule_add,
 	.pie_rule_rm = rtl931x_pie_rule_rm,
 	.l2_learning_setup = rtl931x_l2_learning_setup,
-	.l3_setup = rtl931x_l3_setup,
 	.led_init = rtldsa_931x_led_init,
 	.enable_learning = rtldsa_931x_enable_learning,
 	.enable_flood = rtldsa_931x_enable_flood,
