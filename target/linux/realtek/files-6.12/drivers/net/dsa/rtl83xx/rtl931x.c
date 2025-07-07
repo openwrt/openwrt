@@ -612,6 +612,17 @@ static u64 rtldsa_931x_l2_hash_seed(u64 mac, u32 vid)
 	return (u64)vid << 48 | mac;
 }
 
+static u64 rtl931x_l2_hash_seed(u64 mac, u32 vid)
+{
+	u64 v = vid;
+
+	v <<= 48;
+	v |= mac;
+
+	return v;
+}
+
+
 /* Calculate both the block 0 and the block 1 hash by applyingthe same hash
  * algorithm as the one used currently by the ASIC to the seed, and return
  * both hashes in the lower and higher word of the return value since only 12 bit of
@@ -1674,7 +1685,7 @@ const struct rtl838x_reg rtl931x_reg = {
 	.l2_ctrl_1 = RTL931X_L2_AGE_CTRL,
 	.l2_port_aging_out = RTL931X_L2_PORT_AGE_CTRL,
 	.set_ageing_time = rtl931x_set_ageing_time,
-	/* .smi_poll_ctrl does not exist */
+	.smi_poll_ctrl = RTL931X_SMI_PORT_POLLING_CTRL,
 	.l2_tbl_flush_ctrl = RTL931X_L2_TBL_FLUSH_CTRL,
 	.exec_tbl0_cmd = rtl931x_exec_tbl0_cmd,
 	.exec_tbl1_cmd = rtl931x_exec_tbl1_cmd,
@@ -1727,6 +1738,7 @@ const struct rtl838x_reg rtl931x_reg = {
 	.pie_rule_write = rtl931x_pie_rule_write,
 	.pie_rule_add = rtl931x_pie_rule_add,
 	.pie_rule_rm = rtl931x_pie_rule_rm,
+	.l2_hash_seed = rtl931x_l2_hash_seed,
 	.l2_learning_setup = rtl931x_l2_learning_setup,
 	.l3_setup = rtl931x_l3_setup,
 	.led_init = rtl931x_led_init,
