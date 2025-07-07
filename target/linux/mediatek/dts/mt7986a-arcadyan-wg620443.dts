@@ -48,7 +48,6 @@
 		regulator-always-on;
 	};
 
-
 	keys {
 		compatible = "gpio-keys";
 		poll-interval = <20>;
@@ -138,7 +137,7 @@
 			label = "wan";
 			phy-handle = <&swphy0>;
 		};
-		
+
 		port@1 {
 			reg = <1>;
 			label = "lan1";
@@ -355,7 +354,7 @@
 				reg = <0x5180000 0x200000>;
 			};
 
-		 	partition@5380000 {
+			partition@5380000 {
 				label = "board_data";
 				reg = <0x5380000 0x200000>;
 			};
@@ -369,11 +368,10 @@
 				label = "User_data";
 				reg = <0x5780000 0x1000000>;
 			};
-			
+
 		};
 	};
 };
-
 
 &trng {
 	status = "okay";
@@ -382,4 +380,3 @@
 &uart0 {
 	status = "okay";
 };
-
