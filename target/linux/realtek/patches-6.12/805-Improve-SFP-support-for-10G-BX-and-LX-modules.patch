@@ -1,0 +1,84 @@
+From 1858741d984722c9e6ed63f000ceb99eee17c13d Mon Sep 17 00:00:00 2001
+From: Sharadanand Karanjkar <sk@simonwunderlich.de>
+Date: Mon, 7 Jul 2025 15:00:28 +0000
+Subject: [PATCH] Improve SFP support for 10G-BX and LX modules.
+
+Signed-off-by: Sharadanand Karanjkar <sk@simonwunderlich.de>
+---
+ drivers/net/phy/sfp.c | 53 +++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 53 insertions(+)
+
+diff --git a/drivers/net/phy/sfp.c b/drivers/net/phy/sfp.c
+index c8f92c258..59714a4f0 100644
+--- a/drivers/net/phy/sfp.c
++++ b/drivers/net/phy/sfp.c
+@@ -458,6 +458,55 @@ static void sfp_quirk_ubnt_uf_instant(const struct sfp_eeprom_id *id,
+ 	linkmode_set_bit(ETHTOOL_LINK_MODE_1000baseX_Full_BIT, modes);
+ }
+ 
++static void sfp_quirk_10gbase_lr(const struct sfp_eeprom_id *id,
++		unsigned long *modes,
++		unsigned long *interfaces)
++{
++	pr_err("%s: %d 10gbase_lr module is being detected just fine.. before: modes:%*pb\n", __func__, __LINE__, __ETHTOOL_LINK_MODE_MASK_NBITS, modes);
++	// linkmode_zero(modes);
++	// linkmode_set_bit(ETHTOOL_LINK_MODE_10000baseLR_Full_BIT, modes);
++	// linkmode_set_bit(ETHTOOL_LINK_MODE_100baseT_Full_BIT, modes);
++	// linkmode_set_bit(ETHTOOL_LINK_MODE_1000baseT_Full_BIT, modes);
++	// linkmode_set_bit(ETHTOOL_LINK_MODE_AUI_BIT, modes);
++	// linkmode_set_bit(ETHTOOL_LINK_MODE_BNC_BIT, modes);
++	// linkmode_set_bit(ETHTOOL_LINK_MODE_FIBRE_BIT, modes);
++	// linkmode_set_bit(ETHTOOL_LINK_MODE_Autoneg_BIT, modes);
++	// linkmode_set_bit(ETHTOOL_LINK_MODE_Pause_BIT, modes);
++	// linkmode_set_bit(ETHTOOL_LINK_MODE_Asym_Pause_BIT, modes);
++	// linkmode_set_bit(ETHTOOL_LINK_MODE_10000baseT_Full_BIT, modes);
++	pr_err("%s: %d after: modes:%*pb\n", __func__, __LINE__, __ETHTOOL_LINK_MODE_MASK_NBITS, modes);
++}
++
++static void sfp_fixup_1000base_lx(struct sfp *sfp)
++{
++	pr_err("%s: %d fixing up 1000base_lx sfp\n", __func__, __LINE__);
++	sfp->id.base.e1000_base_t = false;
++	sfp->id.base.e1000_base_sx = false;
++	sfp->id.base.e1000_base_lx = true;
++	sfp->id.base.e1000_base_cx = false;
++
++	sfp->id.base.e10g_base_sr = false;
++	sfp->id.base.e10g_base_lr = false;
++	sfp->id.base.e10g_base_lrm = false;
++	sfp->id.base.e10g_base_er = false;
++
++}
++
++static void sfp_fixup_10gbase_lr(struct sfp *sfp)
++{
++	pr_err("%s: %d fixing up 10gbase-lr sfp\n", __func__, __LINE__);
++	sfp->id.base.e1000_base_t = false;
++	sfp->id.base.e1000_base_sx = false;
++	sfp->id.base.e1000_base_lx = false;
++	sfp->id.base.e1000_base_cx = false;
++
++	sfp->id.base.e10g_base_sr = false;
++	sfp->id.base.e10g_base_lr = true;
++	sfp->id.base.e10g_base_lrm = false;
++	sfp->id.base.e10g_base_er = false;
++}
++
++
+ #define SFP_QUIRK(_v, _p, _m, _f) \
+ 	{ .vendor = _v, .part = _p, .modes = _m, .fixup = _f, }
+ #define SFP_QUIRK_M(_v, _p, _m) SFP_QUIRK(_v, _p, _m, NULL)
+@@ -523,6 +572,10 @@ static const struct sfp_quirk sfp_quirks[] = {
+ 	SFP_QUIRK_F("Turris", "RTSFP-2.5G", sfp_fixup_rollball),
+ 	SFP_QUIRK_F("Turris", "RTSFP-10", sfp_fixup_rollball),
+ 	SFP_QUIRK_F("Turris", "RTSFP-10G", sfp_fixup_rollball),
++	SFP_QUIRK_F("Mikrotik", "S-RJ01", sfp_fixup_1000base_lx),
++	SFP_QUIRK_F("CISCO-PROLABS", "WAVS+BX32-10CCN2", sfp_fixup_10gbase_lr),
++	SFP_QUIRK_F("CISCO-PROLABS", "WAVS+BX23-10CCN2", sfp_fixup_10gbase_lr),
++	SFP_QUIRK("DUMMY", "DUMMY", sfp_quirk_10gbase_lr, sfp_fixup_10gbase_lr),
+ };
+ 
+ static size_t sfp_strlen(const char *str, size_t maxlen)
+-- 
+2.39.2
+
