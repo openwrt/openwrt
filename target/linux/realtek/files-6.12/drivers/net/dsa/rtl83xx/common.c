@@ -1302,7 +1302,9 @@ static void rtl83xx_net_event_work_do(struct work_struct *work)
 		container_of(work, struct net_event_work, work);
 	struct rtl838x_switch_priv *priv = net_work->priv;
 
-	rtl83xx_l3_nexthop_update(priv, net_work->gw_addr, net_work->mac);
+	/* perform L3 updates when L3 offloading implementation exist for this HW */
+	if (priv->r->l3_setup)
+		rtl83xx_l3_nexthop_update(priv, net_work->gw_addr, net_work->mac);
 
 	kfree(net_work);
 }
@@ -1415,6 +1417,10 @@ static int rtl83xx_fib_event(struct notifier_block *this, unsigned long event, v
 	if ((info->family != AF_INET && info->family != AF_INET6 &&
 	     info->family != RTNL_FAMILY_IPMR &&
 	     info->family != RTNL_FAMILY_IP6MR))
+		return NOTIFY_DONE;
+
+	/* ignore FIB events for HW with missing L3 offloading implementation */
+	if (!priv->r->l3_setup)
 		return NOTIFY_DONE;
 
 	priv = container_of(this, struct rtl838x_switch_priv, fib_nb);
@@ -1693,7 +1699,8 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 
 	rtl83xx_setup_qos(priv);
 
-	priv->r->l3_setup(priv);
+	if (priv->r->l3_setup)
+		priv->r->l3_setup(priv);
 
 	/* Clear all destination ports for mirror groups */
 	for (int i = 0; i < 4; i++)
