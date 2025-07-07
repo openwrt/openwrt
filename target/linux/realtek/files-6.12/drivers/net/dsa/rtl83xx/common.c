@@ -1074,6 +1074,11 @@ static int rtl83xx_fib4_del(struct rtl838x_switch_priv *priv,
 	struct rtl83xx_route *r;
 	struct rhlist_head *tmp, *list;
 
+	if (priv->family_id == RTL9310_FAMILY_ID) {
+		nh->fib_nh_flags &= ~RTNH_F_OFFLOAD;
+		return 0;
+	}
+
 	pr_debug("In %s, ip %pI4, len %d\n", __func__, &info->dst, info->dst_len);
 	rcu_read_lock();
 	list = rhltable_lookup(&priv->routes, &nh->fib_nh_gw4, route_ht_params);
@@ -1199,6 +1204,10 @@ static int rtl83xx_fib4_add(struct rtl838x_switch_priv *priv,
 	bool to_localhost;
 	int vlan = is_vlan_dev(dev) ? vlan_dev_vlan_id(dev) : 0;
 
+	if (priv->family_id == RTL9310_FAMILY_ID) {
+		return 0;
+	}
+
 	pr_debug("In %s, ip %pI4, len %d\n", __func__, &info->dst, info->dst_len);
 	if (!info->dst) {
 		pr_info("Not offloading default route for now\n");
@@ -1307,7 +1316,9 @@ static void rtl83xx_net_event_work_do(struct work_struct *work)
 		container_of(work, struct net_event_work, work);
 	struct rtl838x_switch_priv *priv = net_work->priv;
 
-	rtl83xx_l3_nexthop_update(priv, net_work->gw_addr, net_work->mac);
+	if (priv->family_id != RTL9310_FAMILY_ID) {
+		rtl83xx_l3_nexthop_update(priv, net_work->gw_addr, net_work->mac);
+	}
 
 	kfree(net_work);
 }
