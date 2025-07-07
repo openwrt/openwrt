@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=fman-ucode
-PKG_VERSION:=6.6.3.1.0.0
+PKG_VERSION:=6.12.3.1.0.0
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/nxp-qoriq/qoriq-fm-ucode
-PKG_SOURCE_VERSION:=lf-6.6.3-1.0.0
-PKG_MIRROR_HASH:=6bb9dd8ae0ac7b2ba0e5bc5e0590732167844a1b2c9316fbdcdd04e600785b0c
+PKG_SOURCE_VERSION:=lf-6.12.3-1.0.0
+PKG_MIRROR_HASH:=2b5c1c33c7ebc4dbb163acb147ae67207adefa3e84df733c446cdd6d191c022a
 
 PKG_FLAGS:=nonshared
 
