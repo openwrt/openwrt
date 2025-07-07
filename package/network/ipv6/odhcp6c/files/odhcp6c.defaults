@@ -1,0 +1,23 @@
+. /lib/functions.sh
+
+migrate_ifaceid() {
+	local config="$1"
+	local proto
+	local ifaceid
+
+	config_get proto "$config" proto
+	config_get ifaceid "$config" ifaceid
+
+	[ "$proto" = "dhcpv6" ] && [ -n "$ifaceid" ] && {
+		ip6ifaceid="$ifaceid"
+		uci_set network "$config" ip6ifaceid "$ifaceid"
+		uci_remove network "$config" ifaceid
+	}
+
+}
+
+config_load network
+config_foreach migrate_ifaceid interface
+commit network
+
+exit 0
