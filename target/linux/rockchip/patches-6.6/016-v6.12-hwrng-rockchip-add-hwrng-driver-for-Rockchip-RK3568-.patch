@@ -1,7 +1,7 @@
-From cea47ad1fbd46d3096fcf5c6905db3d12b5da960 Mon Sep 17 00:00:00 2001
+From dcf4fef6631c302f9bdd188979fe3172e47a29c7 Mon Sep 17 00:00:00 2001
 From: Aurelien Jarno <aurelien@aurel32.net>
-Date: Sun, 21 Jul 2024 01:48:04 +0100
-Subject: [PATCH 2/3] hwrng: add hwrng driver for Rockchip RK3568 SoC
+Date: Tue, 30 Jul 2024 17:11:04 +0100
+Subject: [PATCH] hwrng: rockchip - add hwrng driver for Rockchip RK3568 SoC
 
 Rockchip SoCs used to have a random number generator as part of their
 crypto device, and support for it has to be added to the corresponding
@@ -11,17 +11,21 @@ greatly inspired from the downstream driver.
 
 The TRNG device does not seem to have a signal conditionner and the FIPS
 140-2 test returns a lot of failures. They can be reduced by increasing
-rockchip,sample-count in DT, in a tradeoff between quality and speed.
+RK_RNG_SAMPLE_CNT, in a tradeoff between quality and speed. This value
+has been adjusted to get ~90% of successes and the quality value has
+been set accordingly.
 
 Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
-[daniel@makrotpia.org: code style fixes, add DT properties]
+[daniel@makrotpia.org: code style fixes]
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
 ---
+ MAINTAINERS                           |   1 +
  drivers/char/hw_random/Kconfig        |  14 ++
  drivers/char/hw_random/Makefile       |   1 +
- drivers/char/hw_random/rockchip-rng.c | 230 ++++++++++++++++++++++++++
- 4 files changed, 246 insertions(+)
+ drivers/char/hw_random/rockchip-rng.c | 227 ++++++++++++++++++++++++++
+ 4 files changed, 243 insertions(+)
  create mode 100644 drivers/char/hw_random/rockchip-rng.c
 
 --- a/drivers/char/hw_random/Kconfig
@@ -57,7 +61,7 @@ Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
  obj-$(CONFIG_HW_RANDOM_JH7110) += jh7110-trng.o
 --- /dev/null
 +++ b/drivers/char/hw_random/rockchip-rng.c
-@@ -0,0 +1,230 @@
+@@ -0,0 +1,227 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * rockchip-rng.c True Random Number Generator driver for Rockchip RK3568 SoC
@@ -85,6 +89,13 @@ Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
 +#define RK_RNG_POLL_PERIOD_US		100
 +#define RK_RNG_POLL_TIMEOUT_US		10000
 +
++/*
++ * TRNG collects osc ring output bit every RK_RNG_SAMPLE_CNT time. The value is
++ * a tradeoff between speed and quality and has been adjusted to get a quality
++ * of ~900 (~87.5% of FIPS 140-2 successes).
++ */
++#define RK_RNG_SAMPLE_CNT		1000
++
 +/* TRNG registers from RK3568 TRM-Part2, section 5.4.1 */
 +#define TRNG_RST_CTL			0x0004
 +#define TRNG_RNG_CTL			0x0400
@@ -108,7 +119,6 @@ Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
 +	struct reset_control *rst;
 +	int clk_num;
 +	struct clk_bulk_data *clk_bulks;
-+	u32 sample_cnt;
 +};
 +
 +/* The mask in the upper 16 bits determines the bits that are updated */
@@ -131,7 +141,7 @@ Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
 +	}
 +
 +	/* set the sample period */
-+	writel(rk_rng->sample_cnt, rk_rng->base + TRNG_RNG_SAMPLE_CNT);
++	writel(RK_RNG_SAMPLE_CNT, rk_rng->base + TRNG_RNG_SAMPLE_CNT);
 +
 +	/* set osc ring speed and enable it */
 +	rk_rng_write_ctl(rk_rng, TRNG_RNG_CTL_LEN_256_BIT |
@@ -187,7 +197,6 @@ Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
 +{
 +	struct device *dev = &pdev->dev;
 +	struct rk_rng *rk_rng;
-+	u32 quality;
 +	int ret;
 +
 +	rk_rng = devm_kzalloc(dev, sizeof(*rk_rng), GFP_KERNEL);
@@ -208,14 +217,6 @@ Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
 +		return dev_err_probe(dev, PTR_ERR(rk_rng->rst),
 +				     "Failed to get reset property\n");
 +
-+	ret = of_property_read_u32(dev->of_node, "rockchip,sample-count", &rk_rng->sample_cnt);
-+	if (ret)
-+		return dev_err_probe(dev, ret, "Failed to get sample-count property\n");
-+
-+	ret = of_property_read_u32(dev->of_node, "quality", &quality);
-+	if (ret || quality > 1024)
-+		return dev_err_probe(dev, ret, "Failed to get quality property\n");
-+
 +	reset_control_assert(rk_rng->rst);
 +	udelay(2);
 +	reset_control_deassert(rk_rng->rst);
@@ -229,7 +230,7 @@ Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
 +	}
 +	rk_rng->rng.read = rk_rng_read;
 +	rk_rng->rng.priv = (unsigned long) dev;
-+	rk_rng->rng.quality = quality;
++	rk_rng->rng.quality = 900;
 +
 +	pm_runtime_set_autosuspend_delay(dev, RK_RNG_AUTOSUSPEND_DELAY);
 +	pm_runtime_use_autosuspend(dev);

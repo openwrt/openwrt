@@ -1,0 +1,28 @@
+From ec532f3591ce6e6ed5ec6c35773a66aae118e1f0 Mon Sep 17 00:00:00 2001
+From: Heiko Stuebner <heiko@sntech.de>
+Date: Thu, 15 Aug 2024 18:25:19 +0200
+Subject: [PATCH] arm64: dts: rockchip: drop obsolete reset-names from rk356x
+ rng node
+
+The reset-names property is not part of the binding, so drop it.
+It is also not used by the driver, so that property was likely
+a leftover from some vendor-kernel node.
+
+Fixes: afeccc408496 ("arm64: dts: rockchip: add DT entry for RNG to RK356x")
+Reported-by: Rob Herring <robh@kernel.org>
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+Link: https://lore.kernel.org/r/20240815162519.751193-1-heiko@sntech.de
+---
+ arch/arm64/boot/dts/rockchip/rk356x.dtsi | 1 -
+ 1 file changed, 1 deletion(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk356x.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk356x.dtsi
+@@ -1112,7 +1112,6 @@
+ 		clocks = <&cru CLK_TRNG_NS>, <&cru HCLK_TRNG_NS>;
+ 		clock-names = "core", "ahb";
+ 		resets = <&cru SRST_TRNG_NS>;
+-		reset-names = "reset";
+ 		status = "disabled";
+ 	};
+ 

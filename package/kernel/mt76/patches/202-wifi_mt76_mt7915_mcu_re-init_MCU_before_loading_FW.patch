@@ -1,0 +1,56 @@
+From 79dd14f2e8161b656341b6653261779199aedbe4 Mon Sep 17 00:00:00 2001
+From: David Bauer <mail@david-bauer.net>
+Date: Wed, 2 Apr 2025 02:45:27 +0200
+Subject: [PATCH] wifi: mt76: mt7915: mcu: re-init MCU before loading FW patch
+
+Restart the MCU and release the patch semaphore before loading the MCU
+patch firmware from the host.
+
+This fixes failures upon error recovery in case the semaphore was
+previously taken and never released by the host.
+
+This happens from time to time upon triggering a full-chip error
+recovery. Under this circumstance, the hardware restart fails and the
+radio is rendered inoperational.
+
+Signed-off-by: David Bauer <mail@david-bauer.net>
+Link: https://patch.msgid.link/20250402004528.1036715-3-mail@david-bauer.net
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ mt7915/mcu.c | 25 +++++++++++++++----------
+ 1 file changed, 15 insertions(+), 10 deletions(-)
+
+--- a/mt7915/mcu.c
++++ b/mt7915/mcu.c
+@@ -2097,16 +2097,21 @@ static int mt7915_load_firmware(struct m
+ {
+ 	int ret;
+ 
+-	/* make sure fw is download state */
+-	if (mt7915_firmware_state(dev, false)) {
+-		/* restart firmware once */
+-		mt76_connac_mcu_restart(&dev->mt76);
+-		ret = mt7915_firmware_state(dev, false);
+-		if (ret) {
+-			dev_err(dev->mt76.dev,
+-				"Firmware is not ready for download\n");
+-			return ret;
+-		}
++	/* Release Semaphore if taken by previous failed attempt */
++	ret = mt76_connac_mcu_patch_sem_ctrl(&dev->mt76, false);
++	if (ret != PATCH_REL_SEM_SUCCESS) {
++		dev_err(dev->mt76.dev, "Could not release semaphore\n");
++		/* Continue anyways */
++	}
++
++	/* Always restart MCU firmware */
++	mt76_connac_mcu_restart(&dev->mt76);
++
++	/* Check if MCU is ready */
++	ret = mt7915_firmware_state(dev, false);
++	if (ret) {
++		dev_err(dev->mt76.dev, "Firmware did not enter download state\n");
++		return ret;
+ 	}
+ 
+ 	ret = mt76_connac2_load_patch(&dev->mt76, fw_name_var(dev, ROM_PATCH));

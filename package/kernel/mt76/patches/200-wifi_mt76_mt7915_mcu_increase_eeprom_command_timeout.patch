@@ -1,0 +1,29 @@
+From ee6dac9b6b765e8aab5727688463880c52f6193d Mon Sep 17 00:00:00 2001
+From: David Bauer <mail@david-bauer.net>
+Date: Wed, 2 Apr 2025 02:45:26 +0200
+Subject: [PATCH] wifi: mt76: mt7915: mcu: increase eeprom command timeout
+
+Increase the timeout for MCU_EXT_CMD_EFUSE_BUFFER_MODE command.
+
+Regular retries upon hardware-recovery have been observed. Increasing
+the timeout slightly remedies this problem.
+
+Signed-off-by: David Bauer <mail@david-bauer.net>
+Link: https://patch.msgid.link/20250402004528.1036715-2-mail@david-bauer.net
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ mt7915/mcu.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/mt7915/mcu.c
++++ b/mt7915/mcu.c
+@@ -208,6 +208,9 @@ mt7915_mcu_set_timeout(struct mt76_dev *
+ 	case MCU_EXT_CMD_BSS_INFO_UPDATE:
+ 		mdev->mcu.timeout = 2 * HZ;
+ 		return;
++	case MCU_EXT_CMD_EFUSE_BUFFER_MODE:
++		mdev->mcu.timeout = 10 * HZ;
++		return;
+ 	default:
+ 		break;
+ 	}
