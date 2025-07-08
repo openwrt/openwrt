@@ -273,7 +273,8 @@ TARGET_DEVICES += radxa_zero-3w
 
 define Device/seeed_linkstar-h68k-1432v1
   DEVICE_VENDOR := Seeed
-  DEVICE_MODEL := Linkstar-h68k-1432v2
+  DEVICE_MODEL := Linkstar-h68k-1432v1
+  BOOT_SCRIPT := linkstar-h68k
   SOC := rk3568
   UBOOT_DEVICE_NAME := linkstar-h68k-1432v1-rk3568
   SUPPORTED_DEVICES := seeed, linkstar,rk3568-linkstar-h68k-1432v1
