@@ -9,7 +9,7 @@
 
 / {
 	model = "GL.iNet GL-B3000";
-	compatible ="glinet,gl-b3000", "qcom,ipq5018";
+	compatible = "glinet,gl-b3000", "qcom,ipq5018";
 
 	aliases {
 		ethernet1 = &dp2;
@@ -31,7 +31,7 @@
 		pinctrl-0 = <&button_pins>;
 		pinctrl-names = "default";
 
-		button_reset {
+		button-reset {
 			label = "reset";
 			gpios = <&tlmm 27 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
@@ -43,23 +43,20 @@
 		pinctrl-0 = <&leds_pins>;
 		pinctrl-names = "default";
 
-		led_system_blue: led_system_blue {
+		led_system_blue: system-blue {
 			color = <LED_COLOR_ID_BLUE>;
-			function = LED_FUNCTION_POWER;
+			function = LED_FUNCTION_STATUS;
 			gpio = <&tlmm 24 GPIO_ACTIVE_HIGH>;
-			default-state = "on";
 		};
 
-		led_status_white: led_status_white {
+		led_status_white: status-white {
 			color = <LED_COLOR_ID_WHITE>;
-			function = LED_FUNCTION_POWER;
+			function = LED_FUNCTION_STATUS;
 			gpio = <&tlmm 23 GPIO_ACTIVE_HIGH>;
-			default-state = "off";
 		};
 	};
 
 	reserved-memory {
-
 		q6_mem_regions: q6_mem_regions@4b000000 {
 			no-map;
 			reg = <0x0 0x4b000000 0x0 0x3000000>;
@@ -72,7 +69,6 @@
 	switch_mac_mode = <MAC_MODE_SGMII_CHANNEL0>;
 
 	qcom,port_phyinfo {
-
 		// MAC0 -> GE Phy -> QCA8337 Phy2
 		port@0 {
 			port_id = <1>;
@@ -189,9 +185,9 @@
 };
 
 &blsp1_uart1 {
-	status = "okay";
 	pinctrl-0 = <&serial_0_pins>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &crypto {
@@ -256,7 +252,6 @@
 
 &tlmm {
 	mdio1_pins: mdio-state {
-
 		mdc-pins {
 			pins = "gpio36";
 			function = "mdc";
@@ -287,7 +282,6 @@
 	};
 
 	qpic_pins: qpic-state {
-
 		clock-pins {
 			pins = "gpio9";
 			function = "qspi_clk";
@@ -311,9 +305,7 @@
 	};
 
 	serial_0_pins: uart0-state {
-		pins =
-			"gpio20", // RX
-			"gpio21"; // TX
+		pins = "gpio20", "gpio21";
 		function = "blsp0_uart0";
 		drive-strength = <8>;
 		bias-disable;
@@ -321,7 +313,7 @@
 };
 
 &tsens {
-	status = "okay ";
+	status = "okay";
 };
 
 &q6v5_wcss {
