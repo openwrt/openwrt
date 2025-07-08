@@ -635,7 +635,7 @@
 +	status = "okay";
 +};
 +
-+&sata0 { /* conflicts with WiFi, so disabled */
++&sata0 { /* sata0 muxed with USB3-OTG  */
 +	status = "disabled";
 +};
 +
@@ -644,7 +644,7 @@
 +};
 +
 +&sata2 { /* sata 2 muxed with pcie2.0 and QSGMII_M1 M2 Wifi */
-+	 status = "disabled";
++	 status = "okay";
 +};
 +
 +&sdhci {
