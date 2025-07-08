@@ -155,7 +155,7 @@ ifeq ($(TARGET_BUILD),1)
   endif
 endif
 
-GENERIC_PLATFORM_DIR := $(TOPDIR)/target/linux/generic
+GENERIC_PLATFORM_DIR := $(firstword $(wildcard $(TOPDIR)/target/linux/feeds/$(BOARD)/../linux/generic $(TOPDIR)/target/linux/generic))
 
 ifneq ($(TARGET_BUILD)$(if $(DUMP),,1),)
   include $(INCLUDE_DIR)/kernel-version.mk
@@ -165,6 +165,7 @@ GENERIC_BACKPORT_DIR := $(GENERIC_PLATFORM_DIR)/backport$(if $(wildcard $(GENERI
 GENERIC_PATCH_DIR := $(GENERIC_PLATFORM_DIR)/pending$(if $(wildcard $(GENERIC_PLATFORM_DIR)/pending-$(KERNEL_PATCHVER)),-$(KERNEL_PATCHVER))
 GENERIC_HACK_DIR := $(GENERIC_PLATFORM_DIR)/hack$(if $(wildcard $(GENERIC_PLATFORM_DIR)/hack-$(KERNEL_PATCHVER)),-$(KERNEL_PATCHVER))
 GENERIC_FILES_DIR := $(foreach dir,$(wildcard $(GENERIC_PLATFORM_DIR)/files $(GENERIC_PLATFORM_DIR)/files-$(KERNEL_PATCHVER)),"$(dir)")
+GENERIC_OTHER_FILES_DIR := $(TOPDIR)/target/linux/generic/other-files
 
 __config_name_list = $(1)/config-$(KERNEL_PATCHVER) $(1)/config-default
 __config_list = $(firstword $(wildcard $(call __config_name_list,$(1))))
