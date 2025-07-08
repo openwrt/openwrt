@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm64/boot/dts/rockchip/rk3568-linkstar-h68k-1432v1.dts
-@@ -0,0 +1,732 @@
+@@ -0,0 +1,727 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +// Draft 8 July 2025
 +// Device Tree Info
@@ -219,14 +219,15 @@
 +
 +&combphy0 {
 +	status = "okay";
++ /* data-lanes =? */
 +};
 +
 +&combphy1 {
-+	status = "okay";
++	status = "disable";
 +};
 +
 +&combphy2 {
-+	status = "okay";
++	status = "disable";
 +};
 +
 +&cpu0 {
@@ -618,12 +619,6 @@
 +	vref-supply = <&vcca_1v8>;
 +	status = "okay";
 +};
-+
-+&sata0 {
-+	status = "ok";
-+};
-+
-+ /* yes this is weird */
 +
 +&sata0 { /* conflicts with WiFi, so disabled */
 +	status = "disabled";
