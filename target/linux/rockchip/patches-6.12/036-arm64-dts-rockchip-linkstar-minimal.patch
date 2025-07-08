@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm64/boot/dts/rockchip/rk3568-linkstar-h68k-1432v1.dts
-@@ -0,0 +1,741 @@
+@@ -0,0 +1,728 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +// Draft 8 July 2025
 +// Device Tree Info
@@ -22,7 +22,6 @@
 +#include "rk3568.dtsi"
 +
 +
-+
 +/ {
 +	model = "Seeed LinkStar H68K-1432V1 (RK3568) DDR4 Board";
 +	compatible = "seeed,rk3568-linkstar-h68k-1432v1",
@@ -36,8 +35,8 @@
 +		/* sdmmc:= removable uSD card */
 +
 +		/* mmc0:= &sdhci:= @fe310000:= eMMC */
-+		mmc0 = &sdhci;  /*  sdhci:= @fe310000 */
-+		mmc1 = &sdmmc0; /* sdmmc0:= @fe2b0000 */
++		mmc0 = &sdhci;  /*  sdhci:= @fe310000 */ /* mmcblk1* */
++		mmc1 = &sdmmc0; /* sdmmc0:= @fe2b0000 */ /* mmcblk0* */
 +
 +		led-boot = &led_work;
 +		led-failsafe = &led_work;
@@ -174,9 +173,7 @@
 +		};
 +	};
 +
-+
 +};
-+
 +
 +&gmac0 {
 +	assigned-clocks = <&cru SCLK_GMAC0_RX_TX>, <&cru SCLK_GMAC0>;
@@ -518,11 +515,9 @@
 +	};
 +};
 +
-+
 +&i2s0_8ch {
 +	status = "okay";
 +};
-+
 +
 +&i2s1_8ch {
 +	rockchip,trcm-sync-tx-only;
@@ -543,6 +538,15 @@
 +	};
 +};
 +
++&pcie30phy {
++	 data-lanes = <1 2>;   
++ 	 status	= "okay";
++};
++
++&pcie2x1 {
++	  bus-range = <0x00 0x0f>; /* wrong in rk356x.dtsi */
++	  status = "okay";
++};
 +
 +&pcie3x1 {
 +	 num-lanes= <1>;
@@ -559,9 +563,6 @@
 +    	 reset-gpios = <&gpio2 RK_PD0 GPIO_ACTIVE_HIGH>;
 +	 vpcie3v3-supply = <&vcc3v3_pcie>;
 +	 status = "okay";
-+
-+
-+
 +};
 +
 +&pinctrl {
@@ -620,10 +621,9 @@
 +	status = "okay";
 +};
 +
-+&sata0 {
-+	status = "okay";
++&sata0 { /* conflicts with WiFi, so disabled */
++	status = "disabled";
 +};
-+
 +
 +&sata1 { /* sata1 muxed with QSGMII and USB3-A 5G LTE Host1 */
 +	 status = "disabled";
@@ -712,7 +712,6 @@
 +	status = "okay";
 +};
 +
-+
 +&vop {
 +	assigned-clocks = <&cru DCLK_VOP0>, <&cru DCLK_VOP1>;
 +	assigned-clock-parents = <&pmucru PLL_HPLL>, <&cru PLL_VPLL>;
@@ -730,18 +729,7 @@
 +	};
 +};
 +
-+&pcie30phy {
-+	 data-lanes = <1 2>;   
-+ 	 status	= "okay";
-+};
-+
-+
-+&pcie2x1 {
-+	  bus-range = <0x00 0x0f>; /* wrong in rk356x.dtsi? */
-+	  status = "okay";
-+};
-+
-+
+
 
 
 
