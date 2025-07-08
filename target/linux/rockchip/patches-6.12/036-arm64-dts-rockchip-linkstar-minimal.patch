@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm64/boot/dts/rockchip/rk3568-linkstar-h68k-1432v1.dts
-@@ -0,0 +1,767 @@
+@@ -0,0 +1,774 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +// Draft 8 July 2025
 +// Device Tree Info
@@ -543,6 +543,10 @@
 +	};
 +};
 +
++
++  /* move pcie material here */
++
++
 +&pinctrl {
 +	button {
 +		reset_button_pin: reset-button-pin {
@@ -601,6 +605,18 @@
 +
 +&sata0 {
 +	status = "okay";
++};
++
++&sata0 { /* sata0 muxed with USB3 OTG0 */
++	 status = "disabled";
++};
++
++&sata1 { /* sata1 muxed with QSGMII and USB3-A 5G LTE Host1 */
++	 status = "disabled";
++};
++
++&sata2 { /* sata 2 muxed with pcie2.0 and QSGMII_M1 M2 Wifi */
++	 status = "disabled";
 +};
 +
 +&sdhci {
@@ -716,9 +732,10 @@
 +&pcie3x1 {
 +	 num-lanes= <1>;
 +	 bus-range = <0x10 0x1f>;
-+	 status = "okay";
++
 +	 reset-gpios = <&gpio3 RK_PA4 GPIO_ACTIVE_HIGH>;
 +	 vpcie3v3-supply = <&vcc3v3_pcie>;
++	 status = "okay";
 +
 + /*
 +	 pcie@10 {
@@ -743,31 +760,22 @@
 +	 vpcie3v3-supply = <&vcc3v3_pcie>;
 +	 status = "okay";
 +
++ /*
++
 +	 pcie@20 {
 +		reg = <0x00200000 0 0 0 0>;
 +		#address-cells = <3>;
 +		#size-cells = <2>;
-+         /*
++         
 +		rtl8125_2: pcie-eth@20,0 {
 +			compatible = "pci10ec,8125";
 +			reg = <0x000000 0 0 0 0>;
-+		}; */
++		}; 
 +	};
-+
++*/
 +};
 +
-+&sata0 { /* sata0 muxed with USB3 OTG0 */
-+	 status = "disabled";
-+};
-+
-+&sata1 { /* sata1 muxed with QSGMII and USB3-A 5G LTE Host1 */
-+	 status = "disabled";
-+};
-+
-+&sata2 { /* sata 2 muxed with pcie2.0 and QSGMII_M1 M2 Wifi */
-+	 status = "disabled";
-+};
-+
+
 
 
 
