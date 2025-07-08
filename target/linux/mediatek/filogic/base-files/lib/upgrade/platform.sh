@@ -141,6 +141,7 @@ platform_do_upgrade() {
 		emmc_do_upgrade "$1"
 		;;
 	asus,rt-ax52|\
+	asus,rt-ax57m|\
 	asus,rt-ax59u|\
 	asus,tuf-ax4200|\
 	asus,tuf-ax4200q|\
@@ -369,6 +370,7 @@ platform_pre_upgrade() {
 
 	case "$board" in
 	asus,rt-ax52|\
+	asus,rt-ax57m|\
 	asus,rt-ax59u|\
 	asus,tuf-ax4200|\
 	asus,tuf-ax4200q|\
