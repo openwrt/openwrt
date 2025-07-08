@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm64/boot/dts/rockchip/rk3568-linkstar-h68k-1432v1.dts
-@@ -0,0 +1,727 @@
+@@ -0,0 +1,743 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +// Draft 8 July 2025
 +// Device Tree Info
@@ -217,17 +217,32 @@
 +	status = "okay";
 +};
 +
++ /* combphy0/multi-phy0 supports one of: usb3.0 otg, sata0 */
++
 +&combphy0 {
 +	status = "okay";
 + /* data-lanes =? */
++
 +};
++
++ /* combphy1/multi-phy1 supports one of:
++     			 - usb3.0 host
++			 - sata1
++			 - qsgmii/sgmii
++ */
 +
 +&combphy1 {
-+	status = "disable";
++	status = "okay";
 +};
 +
++ /* combphy2/multi-phy2 supports one of:
++     			 - pcie2.1
++			 - sata2
++			 - qsgmii/sgmii
++ */
++
 +&combphy2 {
-+	status = "disable";
++	status = "okay";
 +};
 +
 +&cpu0 {
@@ -680,8 +695,9 @@
 +};
 +
 +&usb_host0_xhci {
-+ /* Doesn't exist on this board */
-+	status = "disabled";
++	phys = <&combphy0 PHY_TYPE_USB3>;
++	phy-names = "usb3-phy";
++	status = "ok";
 +};
 +
 +&usb_host1_xhci {
