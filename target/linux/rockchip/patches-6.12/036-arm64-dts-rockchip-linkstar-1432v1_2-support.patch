@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm64/boot/dts/rockchip/rk3568-linkstar-h68k-1432v1.dts
-@@ -0,0 +1,743 @@
+@@ -0,0 +1,745 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +// Draft 8 July 2025
 +// Device Tree Info
@@ -558,8 +558,10 @@
 +};
 +
 +&pcie2x1 {
-+	/*  bus-range = <0x00 0x0f>;  ?wrong? in rk356x.dtsi */
-+	  status = "okay";
++	 /*  bus-range = <0x00 0x0f>;  ?wrong? in rk356x.dtsi */
++	 reset-gpios = <&gpio2 RK_PD6 GPIO_ACTIVE_HIGH>;
++	 vpcie3v3-supply = <&vcc3v3_pcie>;
++	 status = "okay";
 +};
 +
 +&pcie3x1 {
@@ -644,7 +646,7 @@
 +};
 +
 +&sata2 { /* sata 2 muxed with pcie2.0 and QSGMII_M1 M2 Wifi */
-+	 status = "okay";
++	 status = "disabled";
 +};
 +
 +&sdhci {
