@@ -185,7 +185,7 @@
 +		     &gmac0_rx_bus2
 +		     &gmac0_rgmii_clk
 +		     &gmac0_rgmii_bus>;
-+	rockchip,bugged_tx_coe;
++	/* rockchip,bugged_tx_coe; */
 +	snps,reset-gpio = <&gpio2 RK_PD3 GPIO_ACTIVE_LOW>;
 +	snps,reset-active-low;
 +	snps,reset-delays-us = <0 20000 100000>;
@@ -207,7 +207,7 @@
 +		     &gmac1m1_rx_bus2
 +		     &gmac1m1_rgmii_clk
 +		     &gmac1m1_rgmii_bus>;
-+	rockchip,bugged_tx_coe;
++	/* rockchip,bugged_tx_coe; */
 +	snps,reset-gpio = <&gpio1 RK_PB0 GPIO_ACTIVE_LOW>;
 +	snps,reset-active-low;
 +	snps,reset-delays-us = <0 20000 100000>;
@@ -338,7 +338,7 @@
 +			vdd_logic: DCDC_REG1 {
 +				regulator-always-on;
 +				regulator-boot-on;
-+				regulator-init-microvolt = <900000>;
++			/*	regulator-init-microvolt = <900000>; */
 +				regulator-initial-mode = <0x2>;
 +				regulator-min-microvolt = <500000>;
 +				regulator-max-microvolt = <1350000>;
@@ -352,7 +352,7 @@
 +
 +			vdd_gpu: DCDC_REG2 {
 +				regulator-always-on;
-+				regulator-init-microvolt = <900000>;
++			/*	regulator-init-microvolt = <900000>; */
 +				regulator-initial-mode = <0x2>;
 +				regulator-min-microvolt = <500000>;
 +				regulator-max-microvolt = <1350000>;
@@ -376,7 +376,7 @@
 +			};
 +
 +			vdd_npu: DCDC_REG4 {
-+				regulator-init-microvolt = <900000>;
++			/*	regulator-init-microvolt = <900000>; */
 +				regulator-initial-mode = <0x2>;
 +				regulator-min-microvolt = <500000>;
 +				regulator-max-microvolt = <1350000>;
@@ -523,9 +523,9 @@
 +			};
 +		};
 +
-+		codec {
++		/* codec {
 +			mic-in-differential;
-+		};
++		}; */
 +	};
 +};
 +
@@ -697,7 +697,7 @@
 +&usb_host0_xhci {
 +	phys = <&combphy0 PHY_TYPE_USB3>;
 +	phy-names = "usb3-phy";
-+	status = "ok";
++	status = "okay";
 +};
 +
 +&usb_host1_xhci {
