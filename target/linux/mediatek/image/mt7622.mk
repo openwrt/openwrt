@@ -260,6 +260,9 @@ define Device/mediatek_mt7622-rfb1
   DEVICE_MODEL := MTK7622 rfb1 AP
   DEVICE_DTS := mt7622-rfb1
   DEVICE_PACKAGES := kmod-ata-ahci-mtk kmod-btmtkuart kmod-usb3
+  UBOOT_PATH := $(STAGING_DIR_IMAGE)/mt7622_rfb1-u-boot-mtk.bin
+  ARTIFACTS := u-boot.bin
+  ARTIFACT/u-boot.bin := append-uboot
 endef
 TARGET_DEVICES += mediatek_mt7622-rfb1
 
@@ -279,6 +282,9 @@ define Device/mediatek_mt7622-rfb1-ubi
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
                 check-size $$$$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  UBOOT_PATH := $(STAGING_DIR_IMAGE)/mt7622_rfb1-u-boot-mtk.bin
+  ARTIFACTS := u-boot.bin
+  ARTIFACT/u-boot.bin := append-uboot
 endef
 TARGET_DEVICES += mediatek_mt7622-rfb1-ubi
 
