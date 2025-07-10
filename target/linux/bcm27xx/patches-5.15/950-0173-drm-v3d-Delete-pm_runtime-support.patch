@@ -14,7 +14,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
 
 --- a/drivers/gpu/drm/v3d/v3d_gem.c
 +++ b/drivers/gpu/drm/v3d/v3d_gem.c
-@@ -485,10 +485,6 @@ v3d_job_init(struct v3d_dev *v3d, struct
+@@ -487,10 +487,6 @@ v3d_job_init(struct v3d_dev *v3d, struct
  	job->v3d = v3d;
  	job->free = free;
  
@@ -25,7 +25,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  	xa_init_flags(&job->deps, XA_FLAGS_ALLOC);
  
  	ret = drm_syncobj_find_fence(file_priv, in_sync, 0, 0, &in_fence);
-@@ -505,7 +501,6 @@ v3d_job_init(struct v3d_dev *v3d, struct
+@@ -507,7 +503,6 @@ v3d_job_init(struct v3d_dev *v3d, struct
  	return 0;
  fail:
  	xa_destroy(&job->deps);

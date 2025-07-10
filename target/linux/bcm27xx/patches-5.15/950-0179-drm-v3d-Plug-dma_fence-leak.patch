@@ -16,7 +16,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
 
 --- a/drivers/gpu/drm/v3d/v3d_gem.c
 +++ b/drivers/gpu/drm/v3d/v3d_gem.c
-@@ -414,6 +414,9 @@ v3d_job_free(struct kref *ref)
+@@ -416,6 +416,9 @@ v3d_job_free(struct kref *ref)
  	}
  	xa_destroy(&job->deps);
  
