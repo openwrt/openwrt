@@ -89,7 +89,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  	struct msdc_save_para save_para; /* used when gate HCLK */
  	struct msdc_tune_para def_tune_para; /* default tune setting */
  	struct msdc_tune_para saved_tune_para; /* tune result of CMD21/CMD19 */
-@@ -1165,7 +1167,9 @@ static void msdc_track_cmd_data(struct m
+@@ -1171,7 +1173,9 @@ static void msdc_track_cmd_data(struct m
  
  static void msdc_request_done(struct msdc_host *host, struct mmc_request *mrq)
  {
@@ -99,7 +99,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  
  	/*
  	 * No need check the return value of cancel_delayed_work, as only ONE
-@@ -1173,6 +1177,27 @@ static void msdc_request_done(struct msd
+@@ -1179,6 +1183,27 @@ static void msdc_request_done(struct msd
  	 */
  	cancel_delayed_work(&host->req_timeout);
  
@@ -127,7 +127,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  	spin_lock_irqsave(&host->lock, flags);
  	host->mrq = NULL;
  	spin_unlock_irqrestore(&host->lock, flags);
-@@ -1182,7 +1207,7 @@ static void msdc_request_done(struct msd
+@@ -1188,7 +1213,7 @@ static void msdc_request_done(struct msd
  		msdc_unprepare_data(host, mrq->data);
  	if (host->error)
  		msdc_reset_hw(host);
@@ -136,7 +136,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  	if (host->dev_comp->recheck_sdio_irq)
  		msdc_recheck_sdio_irq(host);
  }
-@@ -1342,7 +1367,7 @@ static void msdc_ops_request(struct mmc_
+@@ -1348,7 +1373,7 @@ static void msdc_ops_request(struct mmc_
  	struct msdc_host *host = mmc_priv(mmc);
  
  	host->error = 0;
@@ -144,8 +144,8 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
 +	WARN_ON(!host->hsq_en && host->mrq);
  	host->mrq = mrq;
  
- 	if (mrq->data)
-@@ -2908,6 +2933,19 @@ static int msdc_drv_probe(struct platfor
+ 	if (mrq->data) {
+@@ -2925,6 +2950,19 @@ static int msdc_drv_probe(struct platfor
  		mmc->max_seg_size = 64 * 1024;
  		/* Reduce CIT to 0x40 that corresponds to 2.35us */
  		msdc_cqe_cit_cal(host, 2350);
@@ -165,7 +165,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  	}
  
  	ret = devm_request_irq(&pdev->dev, host->irq, msdc_irq,
-@@ -3033,6 +3071,9 @@ static int __maybe_unused msdc_runtime_s
+@@ -3050,6 +3088,9 @@ static int __maybe_unused msdc_runtime_s
  	struct mmc_host *mmc = dev_get_drvdata(dev);
  	struct msdc_host *host = mmc_priv(mmc);
  
@@ -175,7 +175,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  	msdc_save_reg(host);
  
  	if (sdio_irq_claimed(mmc)) {
-@@ -3063,6 +3104,10 @@ static int __maybe_unused msdc_runtime_r
+@@ -3080,6 +3121,10 @@ static int __maybe_unused msdc_runtime_r
  		pinctrl_select_state(host->pinctrl, host->pins_uhs);
  		enable_irq(host->irq);
  	}

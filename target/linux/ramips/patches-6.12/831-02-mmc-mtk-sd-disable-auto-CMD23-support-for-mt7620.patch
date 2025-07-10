@@ -124,7 +124,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  };
  
  static const struct of_device_id msdc_of_ids[] = {
-@@ -2896,7 +2908,9 @@ static int msdc_drv_probe(struct platfor
+@@ -2913,7 +2925,9 @@ static int msdc_drv_probe(struct platfor
  	if (mmc->caps & MMC_CAP_SDIO_IRQ)
  		mmc->caps2 |= MMC_CAP2_SDIO_IRQ_NOTHREAD;
  
