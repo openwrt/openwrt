@@ -1,0 +1,36 @@
+From b2effcdc237979dcc533d446a792fc54fd0e1213 Mon Sep 17 00:00:00 2001
+From: Zhen XIN <zhen.xin@nokia-sbell.com>
+Date: Thu, 10 Apr 2025 15:42:17 +0000
+Subject: [PATCH] wifi: rtw88: sdio: map mgmt frames to queue TX_DESC_QSEL_MGMT
+
+The rtw88-sdio do not work in AP mode due to the lack of TX status report
+for management frames.
+
+Map the management frames to queue TX_DESC_QSEL_MGMT, which enables the
+chip to generate TX reports for these frames
+
+Tested-on: rtl8723ds
+
+Fixes: 65371a3f14e7 ("wifi: rtw88: sdio: Add HCI implementation for SDIO based chipsets")
+Signed-off-by: Zhen XIN <zhen.xin@nokia-sbell.com>
+Reviewed-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/20250410154217.1849977-3-zhen.xin@nokia-sbell.com
+---
+ drivers/net/wireless/realtek/rtw88/sdio.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+--- a/drivers/net/wireless/realtek/rtw88/sdio.c
++++ b/drivers/net/wireless/realtek/rtw88/sdio.c
+@@ -718,10 +718,7 @@ static u8 rtw_sdio_get_tx_qsel(struct rt
+ 	case RTW_TX_QUEUE_H2C:
+ 		return TX_DESC_QSEL_H2C;
+ 	case RTW_TX_QUEUE_MGMT:
+-		if (rtw_chip_wcpu_11n(rtwdev))
+-			return TX_DESC_QSEL_HIGH;
+-		else
+-			return TX_DESC_QSEL_MGMT;
++		return TX_DESC_QSEL_MGMT;
+ 	case RTW_TX_QUEUE_HI0:
+ 		return TX_DESC_QSEL_HIGH;
+ 	default:

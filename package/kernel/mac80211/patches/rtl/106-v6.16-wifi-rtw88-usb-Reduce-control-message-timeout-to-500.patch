@@ -1,0 +1,52 @@
+From 490340faddea461319652ce36dbc7c1b4482c35e Mon Sep 17 00:00:00 2001
+From: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Date: Sat, 10 May 2025 15:21:25 +0300
+Subject: [PATCH] wifi: rtw88: usb: Reduce control message timeout to 500 ms
+
+RTL8811AU stops responding during the firmware download on some systems:
+
+[  809.256440] rtw_8821au 5-2.1:1.0: Firmware version 42.4.0, H2C version 0
+[  812.759142] rtw_8821au 5-2.1:1.0 wlp48s0f4u2u1: renamed from wlan0
+[  837.315388] rtw_8821au 1-4:1.0: write register 0x1ef4 failed with -110
+[  867.524259] rtw_8821au 1-4:1.0: write register 0x1ef8 failed with -110
+[  868.930976] rtw_8821au 5-2.1:1.0 wlp48s0f4u2u1: entered promiscuous mode
+[  897.730952] rtw_8821au 1-4:1.0: write register 0x1efc failed with -110
+
+Each write takes 30 seconds to fail because that's the timeout currently
+used for control messages in rtw_usb_write().
+
+In this scenario the firmware download takes at least 2000 seconds.
+Because this is done from the USB probe function, the long delay makes
+other things in the system hang.
+
+Reduce the timeout to 500 ms. This is the value used by the official USB
+wifi drivers from Realtek.
+
+Of course this only makes things hang for ~30 seconds instead of ~30
+minutes. It doesn't fix the firmware download.
+
+Tested with RTL8822CU, RTL8812BU, RTL8811CU, RTL8814AU, RTL8811AU,
+RTL8812AU, RTL8821AU, RTL8723DU.
+
+Cc: stable@vger.kernel.org
+Fixes: a82dfd33d123 ("wifi: rtw88: Add common USB chip support")
+Link: https://github.com/lwfinger/rtw88/issues/344
+Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
+Acked-by: Ping-Ke Shih <pkshih@realtek.com>
+Signed-off-by: Ping-Ke Shih <pkshih@realtek.com>
+Link: https://patch.msgid.link/1e35dd26-3f10-40b1-b2b4-f72184a26611@gmail.com
+---
+ drivers/net/wireless/realtek/rtw88/usb.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/realtek/rtw88/usb.c
++++ b/drivers/net/wireless/realtek/rtw88/usb.c
+@@ -139,7 +139,7 @@ static void rtw_usb_write(struct rtw_dev
+ 
+ 	ret = usb_control_msg(udev, usb_sndctrlpipe(udev, 0),
+ 			      RTW_USB_CMD_REQ, RTW_USB_CMD_WRITE,
+-			      addr, 0, data, len, 30000);
++			      addr, 0, data, len, 500);
+ 	if (ret < 0 && ret != -ENODEV && count++ < 4)
+ 		rtw_err(rtwdev, "write register 0x%x failed with %d\n",
+ 			addr, ret);
