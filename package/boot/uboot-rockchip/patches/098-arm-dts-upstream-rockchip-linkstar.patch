@@ -1,8 +1,8 @@
 --- /dev/null
 +++ b/dts/upstream/src/arm64/rockchip/rk3568-linkstar-h68k-1432v1.dts
-@@ -0,0 +1,766 @@
+@@ -0,0 +1,745 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
-+// Draft 3 June 2025
++// Draft 9 July 2025
 +// Device Tree Info
 +// DTS for Rockchip 3568-based
 +// Seeed Studios LinkStar H68k-1432-V1
@@ -22,7 +22,6 @@
 +#include "rk3568.dtsi"
 +
 +
-+
 +/ {
 +	model = "Seeed LinkStar H68K-1432V1 (RK3568) DDR4 Board";
 +	compatible = "seeed,rk3568-linkstar-h68k-1432v1",
@@ -36,8 +35,8 @@
 +		/* sdmmc:= removable uSD card */
 +
 +		/* mmc0:= &sdhci:= @fe310000:= eMMC */
-+		mmc0 = &sdhci;  /*  sdhci:= @fe310000 */
-+		mmc1 = &sdmmc0; /* sdmmc0:= @fe2b0000 */
++		mmc0 = &sdhci;  /*  sdhci:= @fe310000 */ /* mmcblk1* */
++		mmc1 = &sdmmc0; /* sdmmc0:= @fe2b0000 */ /* mmcblk0* */
 +
 +		led-boot = &led_work;
 +		led-failsafe = &led_work;
@@ -46,7 +45,6 @@
 +
 +		rtc0 = &rk809;
 +	};
-+
 +
 +	chosen {
 +		stdout-path = "serial2:1500000n8";
@@ -63,7 +61,6 @@
 +			};
 +		};
 +	};
-+
 +
 +	keys {
 +		compatible = "gpio-keys";
@@ -174,9 +171,7 @@
 +		};
 +	};
 +
-+
 +};
-+
 +
 +&gmac0 {
 +	assigned-clocks = <&cru SCLK_GMAC0_RX_TX>, <&cru SCLK_GMAC0>;
@@ -190,7 +185,7 @@
 +		     &gmac0_rx_bus2
 +		     &gmac0_rgmii_clk
 +		     &gmac0_rgmii_bus>;
-+	rockchip,bugged_tx_coe;
++	/* rockchip,bugged_tx_coe; */
 +	snps,reset-gpio = <&gpio2 RK_PD3 GPIO_ACTIVE_LOW>;
 +	snps,reset-active-low;
 +	snps,reset-delays-us = <0 20000 100000>;
@@ -212,7 +207,7 @@
 +		     &gmac1m1_rx_bus2
 +		     &gmac1m1_rgmii_clk
 +		     &gmac1m1_rgmii_bus>;
-+	rockchip,bugged_tx_coe;
++	/* rockchip,bugged_tx_coe; */
 +	snps,reset-gpio = <&gpio1 RK_PB0 GPIO_ACTIVE_LOW>;
 +	snps,reset-active-low;
 +	snps,reset-delays-us = <0 20000 100000>;
@@ -222,13 +217,29 @@
 +	status = "okay";
 +};
 +
++ /* combphy0/multi-phy0 supports one of: usb3.0 otg, sata0 */
++
 +&combphy0 {
 +	status = "okay";
++ /* data-lanes =? */
++
 +};
++
++ /* combphy1/multi-phy1 supports one of:
++     			 - usb3.0 host
++			 - sata1
++			 - qsgmii/sgmii
++ */
 +
 +&combphy1 {
 +	status = "okay";
 +};
++
++ /* combphy2/multi-phy2 supports one of:
++     			 - pcie2.1
++			 - sata2
++			 - qsgmii/sgmii
++ */
 +
 +&combphy2 {
 +	status = "okay";
@@ -327,7 +338,7 @@
 +			vdd_logic: DCDC_REG1 {
 +				regulator-always-on;
 +				regulator-boot-on;
-+				regulator-init-microvolt = <900000>;
++			/*	regulator-init-microvolt = <900000>; */
 +				regulator-initial-mode = <0x2>;
 +				regulator-min-microvolt = <500000>;
 +				regulator-max-microvolt = <1350000>;
@@ -341,7 +352,7 @@
 +
 +			vdd_gpu: DCDC_REG2 {
 +				regulator-always-on;
-+				regulator-init-microvolt = <900000>;
++			/*	regulator-init-microvolt = <900000>; */
 +				regulator-initial-mode = <0x2>;
 +				regulator-min-microvolt = <500000>;
 +				regulator-max-microvolt = <1350000>;
@@ -365,7 +376,7 @@
 +			};
 +
 +			vdd_npu: DCDC_REG4 {
-+				regulator-init-microvolt = <900000>;
++			/*	regulator-init-microvolt = <900000>; */
 +				regulator-initial-mode = <0x2>;
 +				regulator-min-microvolt = <500000>;
 +				regulator-max-microvolt = <1350000>;
@@ -512,17 +523,15 @@
 +			};
 +		};
 +
-+		codec {
++		/* codec {
 +			mic-in-differential;
-+		};
++		}; */
 +	};
 +};
-+
 +
 +&i2s0_8ch {
 +	status = "okay";
 +};
-+
 +
 +&i2s1_8ch {
 +	rockchip,trcm-sync-tx-only;
@@ -541,6 +550,35 @@
 +		compatible = "ethernet-phy-ieee802.3-c22";
 +		reg = <0x0>;
 +	};
++};
++
++&pcie30phy {
++	 data-lanes = <1 2>;   
++ 	 status	= "okay";
++};
++
++&pcie2x1 {
++	 /*  bus-range = <0x00 0x0f>;  ?wrong? in rk356x.dtsi */
++	 reset-gpios = <&gpio2 RK_PD6 GPIO_ACTIVE_HIGH>;
++	 vpcie3v3-supply = <&vcc3v3_pcie>;
++	 status = "okay";
++};
++
++&pcie3x1 {
++	 num-lanes= <1>;
++	 bus-range = <0x10 0x1f>;
++	 reset-gpios = <&gpio3 RK_PA4 GPIO_ACTIVE_HIGH>;
++	 vpcie3v3-supply = <&vcc3v3_pcie>;
++	 status = "okay";
++
++};
++
++&pcie3x2 {
++	 num-lanes= <1>;
++	 bus-range = <0x20 0x2f>;
++    	 reset-gpios = <&gpio2 RK_PD0 GPIO_ACTIVE_HIGH>;
++	 vpcie3v3-supply = <&vcc3v3_pcie>;
++	 status = "okay";
 +};
 +
 +&pinctrl {
@@ -599,8 +637,16 @@
 +	status = "okay";
 +};
 +
-+&sata0 {
-+	status = "okay";
++&sata0 { /* sata0 muxed with USB3-OTG  */
++	status = "disabled";
++};
++
++&sata1 { /* sata1 muxed with QSGMII and USB3-A 5G LTE Host1 */
++	 status = "disabled";
++};
++
++&sata2 { /* sata 2 muxed with pcie2.0 and QSGMII_M1 M2 Wifi */
++	 status = "disabled";
 +};
 +
 +&sdhci {
@@ -638,7 +684,6 @@
 +	status = "okay";
 +};
 +
-+
 +&usb_host1_ehci {
 +	status = "okay";
 +};
@@ -652,8 +697,9 @@
 +};
 +
 +&usb_host0_xhci {
-+ /* Doesn't exist on this board */
-+	status = "disabled";
++	phys = <&combphy0 PHY_TYPE_USB3>;
++	phy-names = "usb3-phy";
++	status = "okay";
 +};
 +
 +&usb_host1_xhci {
@@ -683,7 +729,6 @@
 +	status = "okay";
 +};
 +
-+
 +&vop {
 +	assigned-clocks = <&cru DCLK_VOP0>, <&cru DCLK_VOP1>;
 +	assigned-clock-parents = <&pmucru PLL_HPLL>, <&cru PLL_VPLL>;
@@ -701,72 +746,10 @@
 +	};
 +};
 +
-+&pcie30phy {
-+	 data-lanes = <1 2>;   
-+ 	 status	= "okay";
-+};
-+
-+
-+&pcie2x1 {
-+	  bus-range = <0x00 0x0f>; /* wrong in rk356x.dtsi? */
-+	  status = "okay";
-+};
-+
-+
-+&pcie3x1 {
-+	 num-lanes= <1>;
-+	 bus-range = <0x10 0x1f>;
-+	 status = "okay";
-+	 reset-gpios = <&gpio3 RK_PA4 GPIO_ACTIVE_HIGH>;
-+	 vpcie3v3-supply = <&vcc3v3_pcie>;
-+
-+	 pcie@10 {
-+		reg = <0x00100000 0 0 0 0>;
-+		#address-cells = <3>;
-+		#size-cells = <2>;
-+
-+		rtl8125_1: pcie-eth@10,0 {
-+			compatible = "pci10ec,8125";
-+			reg = <0x000000 0 0 0 0>;
-+		};
-+	};
-+
-+
-+};
-+
-+
-+&pcie3x2 {
-+	 num-lanes= <1>;
-+	 bus-range = <0x20 0x2f>;
-+    	 reset-gpios = <&gpio2 RK_PD0 GPIO_ACTIVE_HIGH>;
-+	 vpcie3v3-supply = <&vcc3v3_pcie>;
-+	 status = "okay";
-+
-+	 pcie@20 {
-+		reg = <0x00200000 0 0 0 0>;
-+		#address-cells = <3>;
-+		#size-cells = <2>;
-+
-+		rtl8125_2: pcie-eth@20,0 {
-+			compatible = "pci10ec,8125";
-+			reg = <0x000000 0 0 0 0>;
-+		};
-+	};
-+
-+};
-+
-+&sata0 { /* sata0 muxed with USB3 OTG0 */
-+	 status = "disabled";
-+};
-+
-+&sata1 { /* sata1 muxed with QSGMII and USB3-A 5G LTE Host1 */
-+	 status = "disabled";
-+};
-+
-+&sata2 { /* sata 2 muxed with pcie2.0 and QSGMII_M1 M2 Wifi */
-+	 status = "disabled";
-+};
-+
+
+
+
+
 
 
 
