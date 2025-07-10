@@ -13,7 +13,6 @@ define Device/alphanetworks_asl56026
   DEVICE_ALT0_MODEL := ECI VDSL Modem V-2FUb/I
   IMAGE_SIZE := 7488k
   DEVICE_PACKAGES := xrx200-rev1.1-phy22f-firmware xrx200-rev1.2-phy22f-firmware
-  DEFAULT := n
 endef
 TARGET_DEVICES += alphanetworks_asl56026
 
@@ -24,7 +23,6 @@ define Device/arcadyan_vg3503j
   IMAGE_SIZE := 8000k
   SUPPORTED_DEVICES += VG3503J
   DEVICE_PACKAGES := xrx200-rev1.1-phy11g-firmware xrx200-rev1.2-phy11g-firmware
-  DEFAULT := n
 endef
 TARGET_DEVICES += arcadyan_vg3503j
 

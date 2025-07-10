@@ -1,0 +1,27 @@
+From 9dec40b4f01a2aa92311b077ef45ecaa335d45a2 Mon Sep 17 00:00:00 2001
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Fri, 9 May 2025 20:16:49 +0800
+Subject: [PATCH 15/16] pinctrl: falcon: mark pinctrl_falcon_init() as static
+
+Fix the following missing-prototypes build warning:
+
+drivers/pinctrl/pinctrl-falcon.c:508:12: error: no previous prototype for 'pinctrl_falcon_init' [-Werror=missing-prototypes]
+  508 | int __init pinctrl_falcon_init(void)
+      |            ^~~~~~~~~~~~~~~~~~~
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ drivers/pinctrl/pinctrl-falcon.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/pinctrl/pinctrl-falcon.c
++++ b/drivers/pinctrl/pinctrl-falcon.c
+@@ -505,7 +505,7 @@ static struct platform_driver pinctrl_fa
+ 	},
+ };
+ 
+-int __init pinctrl_falcon_init(void)
++static int __init pinctrl_falcon_init(void)
+ {
+ 	return platform_driver_register(&pinctrl_falcon_driver);
+ }
