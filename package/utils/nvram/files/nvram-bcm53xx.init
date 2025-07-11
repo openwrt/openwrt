@@ -19,15 +19,22 @@ clear_partialboots() {
 
 set_wireless_led_behaviour() {
 	# set Broadcom wireless LED behaviour for both radios
-	# 0:ledbh9 -> Behaviour of 2.4GHz LED
-	# 1:ledbh9 -> Behaviour of 5GHz LED
+	# 0:ledbh9 -> Behaviour of 2.4GHz LED of Broadcom BCM4366
+	# 1:ledbh9 -> Behaviour of 5GHz LED of Broadcom BCM4366
+	# 0:ledbh10 -> Behaviour of 2.4GHz LED of Broadcom BCM43602
+	# 1:ledbh10 -> Behaviour of 5GHz LED of Broadcom BCM43602
 	# 0x7 makes the wireless LEDs on, when radios are enabled, and blink when there's activity
 
 	case $(board_name) in
 		asus,rt-ac3100|\
+		asus,rt-ac5300|\
 		asus,rt-ac88u)
 			COMMIT=1
 			nvram set 0:ledbh9=0x7 set 1:ledbh9=0x7
+			;;
+		asus,rt-ac3200)
+			COMMIT=1
+			nvram set 0:ledbh10=0x7 set 1:ledbh10=0x7
 			;;
 	esac
 }
