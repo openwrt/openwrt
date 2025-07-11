@@ -38,6 +38,12 @@ define Device/plasmacloud_psx8
 endef
 TARGET_DEVICES += plasmacloud_psx8
 
+define Device/plasmacloud_psx10
+  $(Device/plasmacloud-common)
+  DEVICE_MODEL := PSX10
+endef
+TARGET_DEVICES += plasmacloud_psx10
+
 define Device/tplink_tl-st1008f_v2
   SOC := rtl9303
   UIMAGE_MAGIC := 0x93030000
