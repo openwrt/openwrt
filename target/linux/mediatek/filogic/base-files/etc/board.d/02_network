@@ -43,6 +43,8 @@ mediatek_setup_interfaces()
 	jcg,q30-pro|\
 	keenetic,kn-3811|\
 	qihoo,360t7|\
+        newland,nl-wr8103|\
+        newland,nl-wr9103|\
 	routerich,ax3000|\
 	routerich,ax3000-ubootmod|\
 	tenbay,wr3000k)
@@ -202,6 +204,16 @@ mediatek_setup_macs()
 		label_mac=$lan_mac
 		;;
 	qihoo,360t7)
+		lan_mac=$(mtd_get_mac_ascii factory lanMac)
+		wan_mac=$(macaddr_add "$lan_mac" 1)
+		label_mac=$wan_mac
+		;;
+        newland,nl-wr8103)
+		lan_mac=$(mtd_get_mac_ascii factory lanMac)
+		wan_mac=$(macaddr_add "$lan_mac" 1)
+		label_mac=$wan_mac
+		;;
+        newland,nl-wr9103)
 		lan_mac=$(mtd_get_mac_ascii factory lanMac)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		label_mac=$wan_mac
