@@ -30,6 +30,14 @@ define Build/mt7988-bl31-uboot
 	cat $(STAGING_DIR_IMAGE)/mt7988_$1-u-boot.fip >> $@
 endef
 
+define Build/simplefit
+	cp $@ $@.tmp 2>/dev/null || true
+	ptgen -g -o $@.tmp -a 1 -l 1024 \
+	-t 0x2e -N FIT		-p $(CONFIG_TARGET_ROOTFS_PARTSIZE)M@17k
+	cat $@.tmp >> $@
+	rm $@.tmp
+endef
+
 define Build/mt798x-gpt
 	cp $@ $@.tmp 2>/dev/null || true
 	ptgen -g -o $@.tmp -a 1 -l 1024 \
@@ -948,15 +956,23 @@ define Device/gatonetworks_gdsp
   DEVICE_VENDOR := GatoNetworks
   DEVICE_MODEL := gdsp
   DEVICE_DTS := mt7981b-gatonetworks-gdsp
+  DEVICE_DTS_OVERLAY := \
+  mt7981b-gatonetworks-gdsp-gps \
+  mt7981b-gatonetworks-gdsp-sd \
+  mt7981b-gatonetworks-gdsp-sd-boot
   DEVICE_DTS_DIR := ../dts
+  DEVICE_DTC_FLAGS := --pad 4096
   IMAGES := sysupgrade.itb
   IMAGE_SIZE := 32768k
-  DEVICE_PACKAGES := fitblk kmod-mt7915e kmod-mt7981-firmware \
+  DEVICE_PACKAGES := e2fsprogs f2fsck mkf2fs fitblk \
+    kmod-mt7915e kmod-mt7981-firmware \
     kmod-usb-net-qmi-wwan kmod-usb-serial-option kmod-usb3 \
     mt7981-wo-firmware -kmod-phy-aquantia
-  ARTIFACTS := preloader.bin bl31-uboot.fip
+  ARTIFACTS := preloader.bin bl31-uboot.fip sdcard.img.gz
   ARTIFACT/preloader.bin := mt7981-bl2 nor-ddr3
   ARTIFACT/bl31-uboot.fip := mt7981-bl31-uboot gatonetworks_gdsp
+  ARTIFACT/sdcard.img.gz := simplefit |\
+  append-image squashfs-sysupgrade.itb | check-size | gzip
   KERNEL := kernel-bin | gzip
   KERNEL_INITRAMFS := kernel-bin | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k

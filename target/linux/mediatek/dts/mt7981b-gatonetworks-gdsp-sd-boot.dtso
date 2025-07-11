@@ -1,0 +1,30 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "gatonetworks,gdsp", "mediatek,mt7981";
+
+	fragment@1 {
+		target = <&mmc0>;
+		__overlay__ {
+			card@0 {
+				compatible = "mmc-card";
+				reg = <0>;
+
+				partitions {
+					compatible = "gpt-partitions";
+
+					sdmmc_fit: block-partition-fit {
+						partname = "FIT";
+					};
+				};
+			};
+		};
+	};
+};
+
+&{/chosen} {
+	rootdisk = <&sdmmc_fit>;
+};
