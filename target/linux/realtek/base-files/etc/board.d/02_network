@@ -54,6 +54,13 @@ plasmacloud,psx8)
 	lan_mac_start=$(macaddr_add $lan_mac 1)
 	lan_mac_end=$(macaddr_add $lan_mac_start 8)
 	;;
+plasmacloud,psx10)
+	label_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
+	lan_mac="$label_mac"
+	# every port is assigned its own MAC
+	lan_mac_start=$(macaddr_add $lan_mac 1)
+	lan_mac_end=$(macaddr_add $lan_mac_start 10)
+	;;
 tplink,sg2008p-v1|\
 tplink,sg2210p-v3|\
 tplink,sg2452p-v4|\
