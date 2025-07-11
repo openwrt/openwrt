@@ -1787,6 +1787,7 @@ extern void ifx_usb_enable_afe_oc(void);
  */
 static irqreturn_t IFX_MEI_IrqHandle (int int1, void *void0)
 {
+	u32 stat;
 	u32 scratch;
 	DSL_DEV_Device_t *pDev = (DSL_DEV_Device_t *) void0;
 #if defined(CONFIG_LTQ_MEI_FW_LOOPBACK) && defined(DFE_PING_TEST)
@@ -1820,6 +1821,12 @@ static irqreturn_t IFX_MEI_IrqHandle (int int1, void *void0)
                 if (dsl_bsp_event_callback[event].function)
                         (*dsl_bsp_event_callback[event].function)(pDev, event, dsl_bsp_event_callback[event].pData);
         } else { // normal message
+                IFX_MEI_LongWordReadOffset (pDev, (u32) ME_ARC2ME_STAT, &stat);
+                if (!(stat & ARC_TO_MEI_MSGAV)) {
+                        // status register indicates there is no message
+                        return IRQ_NONE;
+                }
+
                 IFX_MEI_MailboxRead (pDev, DSL_DEV_PRIVATE(pDev)->CMV_RxMsg, MSG_LENGTH);
                 if (DSL_DEV_PRIVATE(pDev)-> cmv_waiting == 1) {
                         DSL_DEV_PRIVATE(pDev)-> arcmsgav = 1;
