@@ -2245,6 +2245,7 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 {
 	struct device_node *node;
 	struct device *dev = priv->dev;
+	bool is_pm_auto_detected;
 	u32 pm = 0;
 
 	node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
@@ -2292,6 +2293,8 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 		}
 	}
 
+	is_pm_auto_detected = of_property_read_u32(node, "realtek,forced-port-mask", &pm);
+
 	for (int i = 0; i < priv->cpu_port; i++) {
 		int pos = (i << 1) % 32;
 		u32 set;
@@ -2299,13 +2302,24 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 		sw_w32_mask(0x3 << pos, 0, RTL930X_LED_PORT_FIB_SET_SEL_CTRL(i));
 		sw_w32_mask(0x3 << pos, 0, RTL930X_LED_PORT_COPR_SET_SEL_CTRL(i));
 
-		if (!priv->ports[i].phy)
+		if (is_pm_auto_detected) {
+			/* Rely on port presence when portmask is not forced */
+			if (!priv->ports[i].phy)
+				continue;
+
+			pm |= BIT(i);
+		} else if (!(pm & BIT(i))) {
+			/* If port masked is forced and it is not part of it,
+			 * do not run further
+			 */
 			continue;
+		}
+
+		if (priv->ports[i].leds_on_this_port == 0)
+			priv->ports[i].leds_on_this_port = 1;
 
 		/* 0x0 = 1 led, 0x1 = 2 leds, 0x2 = 3 leds, 0x3 = 4 leds per port */
 		sw_w32_mask(0x3 << pos, (priv->ports[i].leds_on_this_port -1) << pos, RTL930X_LED_PORT_NUM_CTRL(i));
-
-		pm |= BIT(i);
 
 		set = priv->ports[i].led_set;
 		sw_w32_mask(0, set << pos, RTL930X_LED_PORT_COPR_SET_SEL_CTRL(i));
