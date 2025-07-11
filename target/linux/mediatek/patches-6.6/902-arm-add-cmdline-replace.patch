@@ -1,0 +1,96 @@
+--- a/arch/arm64/Kconfig
++++ b/arch/arm64/Kconfig
+@@ -2317,6 +2317,15 @@ config CMDLINE_OVERRIDE
+ 	  devices. This setting enables using "chosen/cmdline-override" as the
+ 	  cmdline if it exists in the device tree.
+ 
++config CMDLINE_REPLACE
++       bool "Replace specific cmdline from bootloader"
++	default n
++       help
++         Some bootloaders pass specific bootargs to the linux kernel that need
++         to additional behaviors for proper operation. This setting enables
++         replacing bootargs from "chosen/cmdline-replace" at early boot if it
++         exists in the device tree.
++
+ config EFI_STUB
+ 	bool
+ 
+--- a/drivers/of/fdt.c
++++ b/drivers/of/fdt.c
+@@ -1151,6 +1151,30 @@ int __init early_init_dt_scan_memory(voi
+ 	return found_memory;
+ }
+ 
++#ifdef CONFIG_CMDLINE_REPLACE
++static char *string_replace(char *str, const char *old, const char *new, size_t strlenmax) {
++	const size_t olen = strlen(old), nlen = strlen(new);
++	char *p = strstr(str, old);
++	char *op, *np;
++
++	if (p == NULL)
++		return str;
++
++	op = p + olen;
++	np = p + nlen;
++
++	if (olen != nlen) {
++		if(np + strlen(op) - str > strlenmax)
++			return str;
++		memmove(np, op, strlen(op) + 1);
++	}
++
++	if(np - str <= strlenmax)
++		memcpy(p, new, nlen);
++	return str;
++}
++#endif
++
+ int __init early_init_dt_scan_chosen(char *cmdline)
+ {
+ 	int l, node;
+@@ -1158,6 +1182,14 @@ int __init early_init_dt_scan_chosen(cha
+ 	const void *rng_seed;
+ 	const void *fdt = initial_boot_params;
+ 
++#ifdef CONFIG_CMDLINE_REPLACE
++
++#define REPLACE_CMDLINE_SIZE (COMMAND_LINE_SIZE / 2)
++	char *old;
++	char *new;
++	char replace[REPLACE_CMDLINE_SIZE];
++#endif
++
+ 	node = fdt_path_offset(fdt, "/chosen");
+ 	if (node < 0)
+ 		node = fdt_path_offset(fdt, "/chosen@0");
+@@ -1201,6 +1233,29 @@ int __init early_init_dt_scan_chosen(cha
+ 		strlcpy(cmdline, p, min((int)l, COMMAND_LINE_SIZE));
+ #endif
+ 
++	/* CONFIG_CMDLINE_REPLACE is used to replace a kernel argument at early-
++	 * boot with a different device tree option in chosen/bootargs-replace.
++	 * This is helpful for boards where u-boot sets bootargs, and is need
++	 * to be identified and replaced.
++	 */
++#ifdef CONFIG_CMDLINE_REPLACE
++	p = of_get_flat_dt_prop(node, "bootargs-replace", &l);
++	if (p != NULL && l > 0) {
++		strscpy(replace, p, min(l, REPLACE_CMDLINE_SIZE));
++
++		/* check delimiter and parse string */
++		if ((new = strchr(replace, '|')) != NULL) {
++			old = replace;
++			*new++ = '\0';
++
++			/* bound check */
++			if (strlen(old) && old + l > new)
++				/* replace a string with new one */
++				string_replace(cmdline, old, new, REPLACE_CMDLINE_SIZE);
++		}
++	}
++#endif
++
+ handle_cmdline:
+ 	/*
+ 	 * CONFIG_CMDLINE is meant to be a default in case nothing else
