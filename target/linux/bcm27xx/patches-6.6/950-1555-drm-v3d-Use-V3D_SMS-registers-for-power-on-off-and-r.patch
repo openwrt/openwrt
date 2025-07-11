@@ -98,7 +98,7 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  
 --- a/drivers/gpu/drm/v3d/v3d_drv.h
 +++ b/drivers/gpu/drm/v3d/v3d_drv.h
-@@ -135,6 +135,7 @@ struct v3d_dev {
+@@ -143,6 +143,7 @@ struct v3d_dev {
  	void __iomem *core_regs[3];
  	void __iomem *bridge_regs;
  	void __iomem *gca_regs;
@@ -106,7 +106,7 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  	struct clk *clk;
  	struct delayed_work clk_down_work;
  	unsigned long clk_up_rate, clk_down_rate;
-@@ -277,6 +278,15 @@ to_v3d_fence(struct dma_fence *fence)
+@@ -285,6 +286,15 @@ to_v3d_fence(struct dma_fence *fence)
  #define V3D_GCA_READ(offset) readl(v3d->gca_regs + offset)
  #define V3D_GCA_WRITE(offset, val) writel(val, v3d->gca_regs + offset)
  
@@ -122,7 +122,7 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  #define V3D_CORE_READ(core, offset) readl(v3d->core_regs[core] + offset)
  #define V3D_CORE_WRITE(core, offset, val) writel(val, v3d->core_regs[core] + offset)
  
-@@ -455,6 +465,7 @@ int v3d_wait_bo_ioctl(struct drm_device
+@@ -463,6 +473,7 @@ int v3d_wait_bo_ioctl(struct drm_device
  		      struct drm_file *file_priv);
  void v3d_job_cleanup(struct v3d_job *job);
  void v3d_job_put(struct v3d_job *job);
@@ -155,8 +155,8 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  v3d_reset(struct v3d_dev *v3d)
  {
  	struct drm_device *dev = &v3d->drm;
-@@ -166,6 +182,7 @@ v3d_reset(struct v3d_dev *v3d)
- 		v3d_idle_axi(v3d, 0);
+@@ -168,6 +184,7 @@ v3d_reset(struct v3d_dev *v3d)
+ 	v3d_irq_disable(v3d);
  
  	v3d_idle_gca(v3d);
 +	v3d_reset_sms(v3d);

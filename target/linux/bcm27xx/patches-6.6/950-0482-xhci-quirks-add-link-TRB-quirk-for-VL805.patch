@@ -24,7 +24,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
 
 --- a/drivers/usb/host/xhci-pci.c
 +++ b/drivers/usb/host/xhci-pci.c
-@@ -486,6 +486,7 @@ static void xhci_pci_quirks(struct devic
+@@ -511,6 +511,7 @@ static void xhci_pci_quirks(struct devic
  		xhci->quirks |= XHCI_LPM_SUPPORT;
  		xhci->quirks |= XHCI_TRB_OVERFETCH;
  		xhci->quirks |= XHCI_EP_CTX_BROKEN_DCS;
@@ -52,9 +52,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	addr = xhci_trb_virt_to_dma(new_seg, new_deq);
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -1660,6 +1660,9 @@ struct xhci_hcd {
- #define XHCI_CDNS_SCTX_QUIRK	BIT_ULL(48)
+@@ -1661,6 +1661,9 @@ struct xhci_hcd {
  #define XHCI_ETRON_HOST	BIT_ULL(49)
+ #define XHCI_LIMIT_ENDPOINT_INTERVAL_9 BIT_ULL(50)
  
 +/* Downstream VLI fixes */
 +#define XHCI_AVOID_DQ_ON_LINK	BIT_ULL(56)
