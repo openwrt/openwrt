@@ -303,10 +303,12 @@ function iface_stations(config, stas) {
 	let file = fs.open(path, 'w');
 	for (let k, sta in stas)
 		if (sta.config.mac && sta.config.key) {
-			let station = `${sta.config.mac} ${sta.config.key}\n`;
-			if (sta.config.vid)
-				station = `vlanid=${sta.config.vid} ` + station;
-			file.write(station);
+			for (let mac in sta.config.mac) {
+				let station = `${mac} ${sta.config.key}\n`;
+				if (sta.config.vid)
+					station = `vlanid=${sta.config.vid} ` + station;
+				file.write(station);
+			}
 		}
 	file.close();
 
