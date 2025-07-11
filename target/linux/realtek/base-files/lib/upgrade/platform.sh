@@ -35,5 +35,14 @@ platform_do_upgrade() {
 	*)
 		default_do_upgrade "$1"
 		;;
+	plasmacloud,psx8|\
+	plasmacloud,psx10)
+		PART_NAME="inactive"
+		platform_do_upgrade_dualboot_datachk "$1"
+		;;
+	*)
+		default_do_upgrade "$1"
+		;;
+
 	esac
 }
