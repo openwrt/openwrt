@@ -49,7 +49,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  irq_disable:
 --- a/drivers/gpu/drm/v3d/v3d_drv.h
 +++ b/drivers/gpu/drm/v3d/v3d_drv.h
-@@ -85,6 +85,12 @@ struct v3d_dev {
+@@ -93,6 +93,12 @@ struct v3d_dev {
  	void __iomem *bridge_regs;
  	void __iomem *gca_regs;
  	struct clk *clk;
@@ -120,7 +120,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  v3d_init_core(struct v3d_dev *v3d, int core)
  {
  	/* Set OVRTMUOUT, which means that the texture sampler uniform
-@@ -358,6 +400,7 @@ v3d_job_free(struct kref *ref)
+@@ -360,6 +402,7 @@ v3d_job_free(struct kref *ref)
  	struct v3d_job *job = container_of(ref, struct v3d_job, refcount);
  	unsigned long index;
  	struct dma_fence *fence;
@@ -128,7 +128,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  	int i;
  
  	for (i = 0; i < job->bo_count; i++) {
-@@ -371,11 +414,7 @@ v3d_job_free(struct kref *ref)
+@@ -373,11 +416,7 @@ v3d_job_free(struct kref *ref)
  	}
  	xa_destroy(&job->deps);
  
@@ -141,7 +141,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  
  	if (job->perfmon)
  		v3d_perfmon_put(job->perfmon);
-@@ -460,6 +499,7 @@ v3d_job_init(struct v3d_dev *v3d, struct
+@@ -462,6 +501,7 @@ v3d_job_init(struct v3d_dev *v3d, struct
  	if (ret)
  		goto fail;
  
@@ -149,7 +149,7 @@ Signed-off-by: Eric Anholt <eric@anholt.net>
  	kref_init(&job->refcount);
  
  	return 0;
-@@ -914,6 +954,9 @@ v3d_gem_init(struct drm_device *dev)
+@@ -916,6 +956,9 @@ v3d_gem_init(struct drm_device *dev)
  	mutex_init(&v3d->sched_lock);
  	mutex_init(&v3d->cache_clean_lock);
  

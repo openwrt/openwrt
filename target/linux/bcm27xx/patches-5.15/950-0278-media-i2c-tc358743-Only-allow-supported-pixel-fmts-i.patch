@@ -15,7 +15,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 
 --- a/drivers/media/i2c/tc358743.c
 +++ b/drivers/media/i2c/tc358743.c
-@@ -1731,8 +1731,10 @@ static int tc358743_set_fmt(struct v4l2_
+@@ -1735,8 +1735,10 @@ static int tc358743_set_fmt(struct v4l2_
  	u32 code = format->format.code; /* is overwritten by get_fmt */
  	int ret = tc358743_get_fmt(sd, sd_state, format);
  
