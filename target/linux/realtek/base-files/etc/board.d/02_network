@@ -67,6 +67,15 @@ xikestor,sks8300-8x)
 	label_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 	[ -z "$lan_mac" ] && lan_mac=$label_mac
 	;;
+plasmacloud,psx8)
+	label_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
+	lan_mac="$label_mac"
+	# every port is assigned its own MAC
+	lan_mac_start=$(macaddr_add $lan_mac 1)
+	lan_mac_end=$(macaddr_add $lan_mac_start 8)
+	;;
+*)
+
 esac
 
 ucidef_set_interface_macaddr "lan" $lan_mac
