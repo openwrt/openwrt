@@ -5,6 +5,30 @@ define Build/xikestor-nosimg
   mv $@.new $@
 endef
 
+define Device/plasmacloud-common
+  SOC := rtl9302
+  UIMAGE_MAGIC := 0x93000000
+  DEVICE_VENDOR := Plasma Cloud
+  DEVICE_PACKAGES := poemgr
+  IMAGE_SIZE := 15872k
+  BLOCKSIZE := 64k
+  KERNEL_INITRAMFS := \
+    kernel-bin | \
+    append-dtb | \
+    lzma | \
+    uImage lzma
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma | pad-to $$(BLOCKSIZE)
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | append-rootfs | pad-rootfs | check-size
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
+endef
+
+define Device/plasmacloud_psx8
+  $(Device/plasmacloud-common)
+  DEVICE_MODEL := PSX8
+endef
+TARGET_DEVICES += plasmacloud_psx8
+
 define Device/tplink_tl-st1008f_v2
   SOC := rtl9303
   UIMAGE_MAGIC := 0x93030000

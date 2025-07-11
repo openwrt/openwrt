@@ -1,0 +1,17 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+/dts-v1/;
+
+#include "rtl9302_plasmacloud_psx8.dtsi"
+
+/ {
+	compatible = "plasmacloud,psx8", "realtek,rtl838x-soc";
+	model = "Plasma Cloud PSX8";
+
+	led_set: led_set@0 {
+		compatible = "realtek,rtl9300-leds";
+		active-low;
+
+		led_set0 = <0x0bff>;
+		forced_port_mask = <0x0c000f0f>;
+	};
+};
