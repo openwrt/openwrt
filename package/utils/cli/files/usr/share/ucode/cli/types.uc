@@ -58,6 +58,18 @@ const types = {
 			return;
 		}
 	},
+	json: {
+		parse: function(ctx, name, val) {
+			try {
+				val = json(val);
+			} catch (e) {
+				return ctx.invalid_argument('Invalid JSON data');
+			}
+			if (this.data_type != null && type(val) != this.data_type)
+				ctx.invalid_argument(`Invalid data type: %s, expected: %s`, type(val), this.data_type);
+			return val;
+		}
+	},
 	enum: {
 		parse: function(ctx, name, val) {
 			if (this.no_validate)
