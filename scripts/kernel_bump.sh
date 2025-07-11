@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
 # Copyright (C) 2024 Olliver Schinagl <oliver@schinagl.nl>
+#
+# This script was implemented from scratch -- inspired by ideas shared
+# with the OpenWrt project by Elliott Mitchell <ehem+openwrt@m5p.com>
 
 set -eu
 if [ -n "${DEBUG_TRACE_SH:-}" ] && \
