@@ -1,0 +1,110 @@
+// SPDX-License-Identifier: GPL-2.0-only
+// Device Tree Source for Meraki Z3C (Heart of Gold)
+
+#include "qcom-ipq4029-wired-qca-common.dtsi"
+
+/ {
+	model = "Meraki Z3C LTE Router";
+	compatible = "meraki,z3c";
+	leds {
+		compatible = "gpio-leds";
+
+		power_orange: power {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_POWER;
+			label = "orange:power";
+			gpios = <&tlmm 49 GPIO_ACTIVE_LOW>;
+			panic-indicator;
+		};
+
+		led-1 {
+			/* WAN left */
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN;
+			function-enumerator = <0>;
+			gpios = <&tlmm 46 GPIO_ACTIVE_LOW>;
+		};
+
+		led-2 {
+			/* WAN right */
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN;
+			function-enumerator = <1>;
+			gpios = <&tlmm 30 GPIO_ACTIVE_LOW>;
+		};
+
+		led-3 {
+			/* port 1 left */
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <10>;
+			gpios = <&tlmm 23 GPIO_ACTIVE_LOW>;
+		};
+
+		led-4 {
+			/* port 1 right */
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <11>;
+			gpios = <&tlmm 22 GPIO_ACTIVE_LOW>;
+		};
+
+		led-5 {
+			/* port 2 left */
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <20>;
+			gpios = <&tlmm 25 GPIO_ACTIVE_LOW>;
+		};
+
+		led-6 {
+			/* port 2 right */
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <21>;
+			gpios = <&tlmm 24 GPIO_ACTIVE_LOW>;
+		};
+
+		led-7 {
+			/* port 3 left */
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <30>;
+			gpios = <&tlmm 29 GPIO_ACTIVE_LOW>;
+		};
+
+		led-8 {
+			/* port 3 right */
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <31>;
+			gpios = <&tlmm 26 GPIO_ACTIVE_LOW>;
+		};
+
+		led-9 {
+			/* port 4 left */
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <40>;
+			gpios = <&tlmm 33 GPIO_ACTIVE_LOW>;
+		};
+
+		led-10 {
+			/* port 4 right */
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <41>;
+			gpios = <&tlmm 32 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&wifi0 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "Meraki-Z3C";
+};
+
+&wifi1 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "Meraki-Z3C";
+};
