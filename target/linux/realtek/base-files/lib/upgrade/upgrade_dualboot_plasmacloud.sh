@@ -4,7 +4,8 @@ set_boot_part() {
 	local board=$(board_name)
 
 	case "$board" in
-	plasmacloud,psx8)
+	plasmacloud,psx8|\
+	plasmacloud,psx10)
 		if [ "$part_num" = "1" ]; then
 			echo "bootargs mtdparts=spi0.0:896k(u-boot),64k(u-boot-env),64k(u-boot-env2),15872k(firmware1),15872k(inactive)" > $setenv_script
 			echo "bootcmd rtk init; bootm 0xb4100000" >> $setenv_script
@@ -56,7 +57,8 @@ platform_do_upgrade_dualboot_plasmacloud() {
 	# identify "inactive" slot id based on the expected partition id
 	# of the primary ("firmware1") slot
 	case "$(board_name)" in
-	plasmacloud,psx8)
+	plasmacloud,psx8|\
+	plasmacloud,psx10)
 		primary_firmware_mtd=3
 		;;
 	*)

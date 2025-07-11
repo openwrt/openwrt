@@ -27,7 +27,8 @@ platform_do_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
-	plasmacloud,psx8)
+	plasmacloud,psx8|\
+	plasmacloud,psx10)
 		PART_NAME="inactive"
 		platform_do_upgrade_dualboot_plasmacloud "$1"
 		;;
