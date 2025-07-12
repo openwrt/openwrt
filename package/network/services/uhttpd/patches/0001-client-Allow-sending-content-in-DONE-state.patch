@@ -1,0 +1,40 @@
+From 7e64e8bad2415cec0a6d9770ec379db54273c7a7 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sun, 6 Jul 2025 20:52:17 +0200
+Subject: [PATCH] client: Allow sending content in DONE state
+
+Allow sending content even when the connection is in done state. When we
+run into an error we will be in CLIENT_STATE_DONE state and have to
+write some content to the client. Allow writing in normal DATA and in
+DONE state.
+
+This fixes http error 403 in LuCI.
+
+Fixes: b3e3c05d6781 ("client: don't send stray EOF chunk on connection timeout")
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ utils.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+--- a/utils.c
++++ b/utils.c
+@@ -56,7 +56,8 @@ void uh_chunk_vprintf(struct client *cl,
+ 	va_list arg2;
+ 	int len;
+ 
+-	if (cl->state != CLIENT_STATE_DATA)
++	if (cl->state != CLIENT_STATE_DATA &&
++	    cl->state != CLIENT_STATE_DONE)
+ 		return;
+ 
+ 	uloop_timeout_set(&cl->timeout, conf.network_timeout * 1000);
+@@ -91,7 +92,8 @@ void uh_chunk_eof(struct client *cl)
+ 	if (!uh_use_chunked(cl))
+ 		return;
+ 
+-	if (cl->state != CLIENT_STATE_DATA)
++	if (cl->state != CLIENT_STATE_DATA &&
++	    cl->state != CLIENT_STATE_DONE)
+ 		return;
+ 
+ 	ustream_printf(cl->us, "0\r\n\r\n");
