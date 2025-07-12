@@ -153,6 +153,12 @@ platform_do_upgrade() {
 		CI_UBIPART="ubi0"
 		nand_do_upgrade "$1"
 		;;
+	tplink,fr365-v1)
+		CI_UBIPART="ubi"
+		CI_KERNPART="kernel"
+		CI_ROOTPART="rootfs"
+		nand_do_upgrade "$1"
+		;;
 	nradio,c8-668gl)
 		CI_DATAPART="rootfs_data"
 		CI_KERNPART="kernel_2nd"
