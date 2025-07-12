@@ -1,14 +1,14 @@
-From e60939acbebd07161f3978d1c6f13123fdd2ebf2 Mon Sep 17 00:00:00 2001
+From 36d2aafec10998735f93b47a96a0f66c52484af7 Mon Sep 17 00:00:00 2001
 From: Weijie Gao <weijie.gao@mediatek.com>
 Date: Mon, 25 Jul 2022 11:27:02 +0800
-Subject: [PATCH 50/71] cmd: sf: add support to read flash unique ID
+Subject: [PATCH 13/30] cmd: sf: add support to read flash unique ID
 
 This patch adds support to display unique ID from spi-nor flashes
 
 Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 ---
- cmd/sf.c | 13 ++++++++++++-
- 1 file changed, 12 insertions(+), 1 deletion(-)
+ cmd/sf.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
 --- a/cmd/sf.c
 +++ b/cmd/sf.c

@@ -1,7 +1,7 @@
-From d5841f8707dcb7a1f73607de67ab45dba93a56a4 Mon Sep 17 00:00:00 2001
+From 124ef4a79d8054f84c22a60d79ccd82646b6402a Mon Sep 17 00:00:00 2001
 From: Weijie Gao <weijie.gao@mediatek.com>
 Date: Fri, 29 Jul 2022 17:04:12 +0800
-Subject: [PATCH 55/71] board: mt7981: add reference board using new spi-nand
+Subject: [PATCH 17/30] board: mt7981: add reference board using new spi-nand
  driver
 
 Add a new reference board using new spi-nand driver for SPI-NAND flash on
@@ -165,6 +165,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +++ b/configs/mt7981_snfi_nand_rfb_defconfig
 @@ -0,0 +1,57 @@
 +CONFIG_ARM=y
++CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
 +CONFIG_TEXT_BASE=0x41e00000
@@ -172,6 +173,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +CONFIG_NR_DRAM_BANKS=1
 +CONFIG_ENV_SIZE=0x20000
 +CONFIG_DEFAULT_DEVICE_TREE="mt7981-snfi-nand-rfb"
++CONFIG_SYS_PROMPT="MT7981> "
 +CONFIG_TARGET_MT7981=y
 +CONFIG_DEBUG_UART_BASE=0x11002000
 +CONFIG_DEBUG_UART_CLOCK=40000000
@@ -181,7 +183,6 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +CONFIG_DEFAULT_FDT_FILE="mt7981-snfi-nand-rfb"
 +CONFIG_LOGLEVEL=7
 +CONFIG_LOG=y
-+CONFIG_SYS_PROMPT="MT7981> "
 +CONFIG_SYS_CBSIZE=512
 +CONFIG_SYS_PBSIZE=1049
 +# CONFIG_BOOTM_NETBSD is not set
@@ -211,7 +212,6 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +CONFIG_MTK_SPI_NAND=y
 +CONFIG_MTK_SPI_NAND_MTD=y
 +CONFIG_PHY_FIXED=y
-+CONFIG_DM_ETH=y
 +CONFIG_MEDIATEK_ETH=y
 +CONFIG_PINCTRL=y
 +CONFIG_PINCONF=y

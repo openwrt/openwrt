@@ -1,0 +1,44 @@
+From 6e15d3f91aa698798578d39a6d9e292fcc5c577f Mon Sep 17 00:00:00 2001
+From: Weijie Gao <weijie.gao@mediatek.com>
+Date: Fri, 23 May 2025 17:25:55 +0800
+Subject: [PATCH] serial: mediatek: fix register names and offsets
+
+Fix UART register names and offsets according to the programming
+guide to allow implementing some enhanced features.
+
+Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
+---
+ drivers/serial/serial_mtk.c | 17 ++++++++++++-----
+ 1 file changed, 12 insertions(+), 5 deletions(-)
+
+--- a/drivers/serial/serial_mtk.c
++++ b/drivers/serial/serial_mtk.c
+@@ -30,16 +30,23 @@ struct mtk_serial_regs {
+ 	u32 mcr;
+ 	u32 lsr;
+ 	u32 msr;
+-	u32 spr;
+-	u32 mdr1;
++	u32 scr;
++	u32 autobaud_en;
+ 	u32 highspeed;
+ 	u32 sample_count;
+ 	u32 sample_point;
++	u32 autobaud_reg;
++	u32 ratefix_ad;
++	u32 autobaud_sample;
++	u32 guard;
++	u32 escape_dat;
++	u32 escape_en;
++	u32 sleep_en;
++	u32 dma_en;
++	u32 rxtri_ad;
+ 	u32 fracdiv_l;
+ 	u32 fracdiv_m;
+-	u32 escape_en;
+-	u32 guard;
+-	u32 rx_sel;
++	u32 fcr_rd;
+ };
+ 
+ #define thr rbr
