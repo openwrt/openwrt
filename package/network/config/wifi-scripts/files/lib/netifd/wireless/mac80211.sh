@@ -582,77 +582,15 @@ mac80211_generate_mac() {
 	wdev_tool "$phy$phy_suffix" get_macaddr id=$id num_global=$num_global_macaddr mbssid=${multiple_bssid:-0} macaddr_base=${macaddr_base}
 }
 
-get_board_phy_name() (
-	local path="$1"
-	local fallback_phy=""
-
-	__check_phy() {
-		local val="$1"
-		local key="$2"
-		local ref_path="$3"
-
-		json_select "$key"
-		json_get_vars path
-		json_select ..
-
-		[ "${ref_path%+*}" = "$path" ] && fallback_phy=$key
-		[ "$ref_path" = "$path" ] || return 0
-
-		echo "$key"
-		exit
-	}
-
-	json_load_file /etc/board.json
-	json_for_each_item __check_phy wlan "$path"
-	[ -n "$fallback_phy" ] && echo "${fallback_phy}.${path##*+}"
-)
-
-rename_board_phy_by_path() {
-	local path="$1"
-
-	local new_phy="$(get_board_phy_name "$path")"
-	[ -z "$new_phy" -o "$new_phy" = "$phy" ] && return
-
-	iw "$phy" set name "$new_phy" && phy="$new_phy"
-}
-
-rename_board_phy_by_name() (
-	local phy="$1"
-	local suffix="${phy##*.}"
-	[ "$suffix" = "$phy" ] && suffix=
-
-	json_load_file /etc/board.json
-	json_select wlan
-	json_select "${phy%.*}" || return 0
-	json_get_vars path
-
-	prev_phy="$(iwinfo nl80211 phyname "path=$path${suffix:++$suffix}")"
-	[ -n "$prev_phy" ] || return 0
-
-	[ "$prev_phy" = "$phy" ] && return 0
-
-	iw "$prev_phy" set name "$phy"
-)
-
 find_phy() {
-	[ -n "$phy" ] && {
-		rename_board_phy_by_name "$phy"
-		[ -d /sys/class/ieee80211/$phy ] && return 0
-	}
+	[ -n "$phy" ] && [ -d /sys/class/ieee80211/$phy ] && return 0
 	[ -n "$path" ] && {
 		phy="$(iwinfo nl80211 phyname "path=$path")"
-		[ -n "$phy" ] && {
-			rename_board_phy_by_path "$path"
-			return 0
-		}
+		[ -n "$phy" ] && return 0
 	}
 	[ -n "$macaddr" ] && {
 		for phy in $(ls /sys/class/ieee80211 2>/dev/null); do
-			grep -i -q "$macaddr" "/sys/class/ieee80211/${phy}/macaddress" && {
-				path="$(iwinfo nl80211 path "$phy")"
-				rename_board_phy_by_path "$path"
-				return 0
-			}
+			grep -i -q "$macaddr" "/sys/class/ieee80211/${phy}/macaddress" && return 0
 		done
 	}
 	return 1
