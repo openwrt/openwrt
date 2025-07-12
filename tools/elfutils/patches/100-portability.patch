@@ -23,7 +23,7 @@
  # Only available since automake 1.12
  m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
  AC_CHECK_TOOL([READELF], [readelf])
-@@ -635,6 +639,8 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([])],
+@@ -646,6 +650,8 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([])],
  CFLAGS="$old_CFLAGS"])
  AS_IF([test "x$ac_cv_fno_addrsig" = "xyes"], CFLAGS="$CFLAGS -fno-addrsig")
  
@@ -34,9 +34,9 @@
  LIBS="$saved_LIBS"
 --- a/lib/eu-config.h
 +++ b/lib/eu-config.h
-@@ -59,14 +59,19 @@
- # define once(once_control, init_routine)	init_routine()
- #endif	/* USE_LOCKS */
+@@ -31,14 +31,19 @@
+ 
+ #include "locks.h"
  
 -#include <libintl.h>
 +#include <gettext.h>
@@ -55,7 +55,7 @@
  
  #ifdef __i386__
  # define internal_function __attribute__ ((regparm (3), stdcall))
-@@ -77,7 +82,7 @@
+@@ -49,7 +54,7 @@
  #define internal_strong_alias(name, aliasname) \
    extern __typeof (name) aliasname __attribute__ ((alias (#name))) internal_function;
  
@@ -64,7 +64,7 @@
  #define attribute_hidden \
    __attribute__ ((visibility ("hidden")))
  #else
-@@ -166,7 +171,7 @@ asm (".section predict_data, \"aw\"; .pr
+@@ -138,7 +143,7 @@ asm (".section predict_data, \"aw\"; .pr
  #endif
  
  /* Avoid PLT entries.  */
@@ -203,7 +203,7 @@
 +#include <libeu.h>
  #include <libdw.h>
  #include <dwarf.h>
- 
+ #include "eu-search.h"
 --- a/config/libdebuginfod.pc.in
 +++ b/config/libdebuginfod.pc.in
 @@ -8,5 +8,5 @@ Description: elfutils library to query d
@@ -235,19 +235,9 @@
  Cflags: -I${includedir}
  
  Requires.private: zlib @LIBZSTD@
---- a/lib/next_prime.c
-+++ b/lib/next_prime.c
-@@ -27,6 +27,7 @@
-    the GNU Lesser General Public License along with this program.  If
-    not, see <http://www.gnu.org/licenses/>.  */
- 
-+#include <config.h>
- #include <stddef.h>
- 
- 
 --- a/libebl/eblopenbackend.c
 +++ b/libebl/eblopenbackend.c
-@@ -200,8 +200,6 @@ static bool default_object_note (const c
+@@ -202,8 +202,6 @@ static bool default_object_note (const c
  				 uint32_t descsz, const char *desc);
  static bool default_debugscn_p (const char *name);
  static bool default_copy_reloc_p (int reloc);
@@ -256,7 +246,7 @@
  static bool default_check_special_symbol (Elf *elf,
  					  const GElf_Sym *sym,
  					  const char *name,
-@@ -253,8 +251,8 @@ fill_defaults (Ebl *result)
+@@ -255,8 +253,8 @@ fill_defaults (Ebl *result)
    result->object_note = default_object_note;
    result->debugscn_p = default_debugscn_p;
    result->copy_reloc_p = default_copy_reloc_p;
@@ -267,7 +257,7 @@
    result->check_special_symbol = default_check_special_symbol;
    result->data_marker_symbol = default_data_marker_symbol;
    result->check_st_other_bits = default_check_st_other_bits;
-@@ -636,8 +634,6 @@ default_copy_reloc_p (int reloc __attrib
+@@ -638,8 +636,6 @@ default_copy_reloc_p (int reloc __attrib
  {
    return false;
  }
@@ -276,25 +266,3 @@
  
  static bool
  default_check_special_symbol (Elf *elf __attribute__ ((unused)),
---- a/src/srcfiles.cxx
-+++ b/src/srcfiles.cxx
-@@ -78,7 +78,9 @@ ARGP_PROGRAM_VERSION_HOOK_DEF = print_ve
- /* Bug report address.  */
- ARGP_PROGRAM_BUG_ADDRESS_DEF = PACKAGE_BUGREPORT;
- 
-+#ifdef HAVE_LIBARCHIVE
- constexpr size_t BUFFER_SIZE = 8192;
-+#endif
- 
- /* Definitions of arguments for argp functions.  */
- static const struct argp_option options[] =
---- a/src/Makefile.am
-+++ b/src/Makefile.am
-@@ -92,6 +92,7 @@ strings_LDADD = $(libelf) $(libeu) $(arg
- ar_LDADD = libar.a $(libelf) $(libeu) $(argp_LDADD) $(obstack_LIBS)
- unstrip_LDADD = $(libebl) $(libelf) $(libdw) $(libeu) $(argp_LDADD)
- stack_LDADD = $(libebl) $(libelf) $(libdw) $(libeu) $(argp_LDADD) $(demanglelib)
-+EXTRA_stack_DEPENDENCIES = $(if $(findstring srcfiles,$(bin_PROGRAMS)),$(srcfiles_OBJECTS))
- elfcompress_LDADD = $(libebl) $(libelf) $(libdw) $(libeu) $(argp_LDADD)
- elfclassify_LDADD = $(libelf) $(libdw) $(libeu) $(argp_LDADD)
- srcfiles_SOURCES = srcfiles.cxx
