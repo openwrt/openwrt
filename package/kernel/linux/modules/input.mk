@@ -37,6 +37,23 @@ endef
 
 $(eval $(call KernelPackage,hid-generic))
 
+
+define KernelPackage/hid-alps
+  SUBMENU:=$(INPUT_MODULES_MENU)
+  TITLE:=Alps HID device support
+  DEPENDS:=+kmod-hid
+  KCONFIG:=CONFIG_HID_ALPS
+  FILES:=$(LINUX_DIR)/drivers/hid/hid-alps.ko
+  AUTOLOAD:=$(call AutoProbe,hid-alps)
+endef
+
+define KernelPackage/hid-alps/description
+ Support for Alps I2C HID touchpads and StickPointer.
+endef
+
+$(eval $(call KernelPackage,hid-alps))
+
+
 define KernelPackage/input-core
   SUBMENU:=$(INPUT_MODULES_MENU)
   TITLE:=Input device core
