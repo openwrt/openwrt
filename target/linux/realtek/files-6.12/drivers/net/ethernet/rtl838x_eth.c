@@ -456,17 +456,14 @@ static irqreturn_t rtl83xx_net_irq(int irq, void *dev_id)
 	netdev_dbg(ndev, "RX IRQ received: %08x\n", status);
 
 	if ((status & RTL83XX_DMA_IF_INTR_STS_RX_RUN_OUT_MASK) && net_ratelimit())
-		netdev_warn(ndev, "RX buffer overrun: status 0x%x, mask: 0x%x\n",
+		netdev_warn(ndev, "rx ring overrun, status 0x%x, mask 0x%x\n",
 			   status, sw_r32(priv->r->dma_if_intr_msk));
 
-	if (status & RTL83XX_DMA_IF_INTR_STS_RX_DONE_MASK) {
-		/* Disable rx interrupts */
-		sw_w32_mask(0xff00 & status, 0, priv->r->dma_if_intr_msk);
-		for (int i = 0; i < priv->rxrings; i++) {
-			if (status & BIT(i + 8)) {
-				pr_debug("Scheduling queue: %d\n", i);
-				napi_schedule(&priv->rx_qs[i].napi);
-			}
+	for (int ring = 0; ring < priv->rxrings; ring++) {
+		if ((status & BIT(ring + 8)) && napi_schedule_prep(&priv->rx_qs[ring].napi)) {
+			pr_debug("schedule rx ring %d\n", ring);
+			sw_w32_mask(BIT(ring) | BIT(ring + 8), 0, priv->r->dma_if_intr_msk);
+			__napi_schedule(&priv->rx_qs[ring].napi);
 		}
 	}
 
@@ -1353,25 +1350,23 @@ static int rtl838x_poll_rx(struct napi_struct *napi, int budget)
 {
 	struct rtl838x_rx_q *rx_q = container_of(napi, struct rtl838x_rx_q, napi);
 	struct rtl838x_eth_priv *priv = rx_q->priv;
+	int ring = rx_q->id;
 	int work_done = 0;
-	int r = rx_q->id;
 	int work;
 
 	while (work_done < budget) {
-		work = rtl838x_hw_receive(priv->netdev, r, budget - work_done);
+		work = rtl838x_hw_receive(priv->netdev, ring, budget - work_done);
 		if (!work)
 			break;
 		work_done += work;
 	}
 
-	if (work_done < budget) {
-		napi_complete_done(napi, work_done);
-
-		/* Enable RX interrupt */
+	if (work_done < budget && napi_complete_done(napi, work_done)) {
+		/* Reenable RX interrupt */
 		if (priv->family_id == RTL9300_FAMILY_ID || priv->family_id == RTL9310_FAMILY_ID)
 			sw_w32(0xffffffff, priv->r->dma_if_intr_rx_done_msk);
 		else
-			sw_w32_mask(0, 0xf00ff | BIT(r + 8), priv->r->dma_if_intr_msk);
+			sw_w32_mask(0, BIT(ring) | BIT(ring + 8), priv->r->dma_if_intr_msk);
 	}
 
 	return work_done;
