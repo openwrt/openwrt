@@ -75,6 +75,7 @@ platform_do_upgrade() {
 	bananapi,bpi-r4-poe|\
 	cmcc,a10-ubootmod|\
 	cmcc,rax3000m|\
+	cmcc,rax3000me|\
 	cudy,tr3000-v1-ubootmod|\
 	gatonetworks,gdsp|\
 	h3c,magic-nx30-pro|\
@@ -216,7 +217,6 @@ platform_check_image() {
 	bananapi,bpi-r4-2g5|\
 	bananapi,bpi-r4-poe|\
 	cmcc,a10-ubootmod|\
-	cmcc,rax3000m|\
 	cudy,tr3000-v1-ubootmod|\
 	gatonetworks,gdsp|\
 	h3c,magic-nx30-pro|\
@@ -240,6 +240,13 @@ platform_check_image() {
 	zyxel,ex5601-t0-ubootmod)
 		fit_check_image "$1"
 		return $?
+	cmcc,rax3000m|\
+	cmcc,rax3000me)
+		[ "$magic" != "d00dfeed" ] && {
+			echo "Invalid image type."
+			return 1
+		}
+		return 0
 		;;
 	nradio,c8-668gl)
 		# tar magic `ustar`
@@ -295,6 +302,16 @@ platform_copy_config() {
 	smartrg,sdg-8734|\
 	ubnt,unifi-6-plus)
 		emmc_copy_config
+		;;
+	bananapi,bpi-r3|\
+	bananapi,bpi-r3-mini|\
+	bananapi,bpi-r4|\
+	bananapi,bpi-r4-poe|\
+	cmcc,rax3000m|\
+	cmcc,rax3000me)
+		if [ "$CI_METHOD" = "emmc" ]; then
+			emmc_copy_config
+		fi
 		;;
 	esac
 }
