@@ -121,7 +121,10 @@ static u64 disable_polling(int port)
 		sw_w32_mask(BIT(port), 0, RTL930X_SMI_POLL_CTRL);
 		break;
 	case RTL9310_FAMILY_ID:
-		pr_warn("%s not implemented for RTL931X\n", __func__);
+		saved_state = sw_r32(RTL931X_SMI_PORT_POLLING_CTRL + 4);
+		saved_state <<= 32;
+		saved_state |= sw_r32(RTL931X_SMI_PORT_POLLING_CTRL);
+		sw_w32_mask(BIT(port % 32), 0, RTL931X_SMI_PORT_POLLING_CTRL + ((port >> 5) << 2));
 		break;
 	}
 
@@ -146,7 +149,8 @@ static int resume_polling(u64 saved_state)
 		sw_w32(saved_state, RTL930X_SMI_POLL_CTRL);
 		break;
 	case RTL9310_FAMILY_ID:
-		pr_warn("%s not implemented for RTL931X\n", __func__);
+		sw_w32(saved_state >> 32, RTL931X_SMI_PORT_POLLING_CTRL + 4);
+		sw_w32(saved_state, RTL931X_SMI_PORT_POLLING_CTRL);
 		break;
 	}
 
@@ -1547,6 +1551,81 @@ static u32 rtl9300_sds_field_r(int sds, u32 page, u32 reg, int end_bit, int star
 	return (v >> start_bit) & (BIT(l) - 1);
 }
 
+static u32 rtl931x_get_analog_sds(u32 sds)
+{
+	u32 sds_map[] = { 0, 1, 2, 3, 6, 7, 10, 11, 14, 15, 18, 19, 22, 23 };
+
+	if (sds < 14)
+		return sds_map[sds];
+
+	return sds;
+}
+
+static void rtl9310_sds_field_w(int sds, u32 page, u32 reg, int end_bit, int start_bit, u32 v)
+{
+	int l = end_bit - start_bit + 1;
+	u32 data = v;
+
+	if (l < 32) {
+		u32 mask = BIT(l) - 1;
+
+		data = rtl931x_read_sds_phy(sds, page, reg);
+		data &= ~(mask << start_bit);
+		data |= (v & mask) << start_bit;
+	}
+
+	rtl931x_write_sds_phy(sds, page, reg, data);
+}
+
+static u32 rtl9310_sds_field_r(int sds, u32 page, u32 reg, int end_bit, int start_bit)
+{
+	int l = end_bit - start_bit + 1;
+	u32 v = rtl931x_read_sds_phy(sds, page, reg);
+
+	if (l >= 32)
+		return v;
+
+	return (v >> start_bit) & (BIT(l) - 1);
+}
+
+static int rtl9310_read_status(struct phy_device *phydev)
+{
+	struct device *dev = &phydev->mdio.dev;
+	int phy_addr = phydev->mdio.addr;
+	struct device_node *dn;
+	u32 sds_num = 0;
+	int asds, dSds;
+
+	if (dev->of_node) {
+		dn = dev->of_node;
+
+		if (of_property_read_u32(dn, "sds", &sds_num))
+			sds_num = -1;
+		pr_debug("%s: Port %d, Serdes is %d\n", __func__, phy_addr, sds_num);
+	} else {
+		dev_err(dev, "No DT node.\n");
+		return -EINVAL;
+	}
+
+	if (sds_num < 0)
+		return 0;
+
+
+	pr_debug("%s: sds: %u, asds: %d, dSds: %d has link: %d\n", __func__, sds_num, asds, dSds, phydev->link?1:0);
+
+	switch(rtl9310_sds_field_r(asds, 0x1f, 0x9, 11, 6)) {
+		case 0x9: /* PHY_INTERFACE_MODE_1000BASEX */
+			phydev->speed = 1000;
+			break;
+		case 0x35: /* PHY_INTERFACE_MODE_10GKR/10GBASER */
+			phydev->speed = 10000;
+			break;
+	}
+	phydev->duplex = DUPLEX_FULL;
+
+	return 0;
+}
+
 /* Read the link and speed status of the internal SerDes of the RTL9300
  */
 static int rtl9300_read_status(struct phy_device *phydev)
@@ -1555,6 +1634,9 @@ static int rtl9300_read_status(struct phy_device *phydev)
 	int phy_addr = phydev->mdio.addr;
 	struct device_node *dn;
 	u32 sds_num = 0, status, latch_status, mode;
+
+	if (soc_info.family == RTL9310_FAMILY_ID)
+		return rtl9310_read_status(phydev);
 
 	if (dev->of_node) {
 		dn = dev->of_node;
@@ -3050,33 +3132,6 @@ int rtl9300_sds_cmu_band_get(int sds)
 	return cmu_band;
 }
 
-static void rtl9310_sds_field_w(int sds, u32 page, u32 reg, int end_bit, int start_bit, u32 v)
-{
-	int l = end_bit - start_bit + 1;
-	u32 data = v;
-
-	if (l < 32) {
-		u32 mask = BIT(l) - 1;
-
-		data = rtl930x_read_sds_phy(sds, page, reg);
-		data &= ~(mask << start_bit);
-		data |= (v & mask) << start_bit;
-	}
-
-	rtl931x_write_sds_phy(sds, page, reg, data);
-}
-
-static u32 rtl9310_sds_field_r(int sds, u32 page, u32 reg, int end_bit, int start_bit)
-{
-	int l = end_bit - start_bit + 1;
-	u32 v = rtl931x_read_sds_phy(sds, page, reg);
-
-	if (l >= 32)
-		return v;
-
-	return (v >> start_bit) & (BIT(l) - 1);
-}
-
 static void rtl931x_sds_rst(u32 sds)
 {
 	u32 o, v, o_mode;
@@ -3133,16 +3188,6 @@ static void rtl931x_symerr_clear(u32 sds, phy_interface_t mode)
 	}
 
 	return;
-}
-
-static u32 rtl931x_get_analog_sds(u32 sds)
-{
-	u32 sds_map[] = { 0, 1, 2, 3, 6, 7, 10, 11, 14, 15, 18, 19, 22, 23 };
-
-	if (sds < 14)
-		return sds_map[sds];
-
-	return sds;
 }
 
 void rtl931x_sds_fiber_disable(u32 sds)
@@ -3411,7 +3456,7 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 		0x0dc0, 0x01c0, 0x0200, 0x0180, 0x0160, 0x0123,
 		0x0123, 0x0163, 0x01a3, 0x01a0, 0x01c3, 0x09c3,
 	};
-	u32 asds, dSds, ori, model_info, val;
+	u32 asds, dSds, ori, model_info, val, evenSds;
 	int chiptype = 0;
 
 	asds = rtl931x_get_analog_sds(sds);
@@ -3448,6 +3493,8 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 	else
 		dSds = (sds - 1) * 2;
 
+	evenSds = asds - (asds % 2);
+
 	pr_info("%s: 2.5gbit %08X dsds %d", __func__,
 	        rtl931x_read_sds_phy(dSds, 0x1, 0x14), dSds);
 
@@ -3479,8 +3526,7 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 		break;
 
 	case PHY_INTERFACE_MODE_USXGMII: /* MII_USXGMII_10GSXGMII/10GDXGMII/10GQXGMII: */
-		u32 op_code = 0x6003;
-		u32 evenSds;
+		u32 op_code = 0xaa;
 
 		if (chiptype) {
 			rtl9310_sds_field_w(asds, 0x6, 0x2, 12, 12, 1);
@@ -3523,17 +3569,18 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 	                                  /* configure 10GR fiber mode=1 */
 		rtl9310_sds_field_w(asds, 0x1f, 0xb, 1, 1, 1);
 
-		/* init fiber_1g */
-		rtl9310_sds_field_w(dSds, 0x3, 0x13, 15, 14, 0);
+		rtl931x_sds_rx_rst(sds);
 
-		rtl9310_sds_field_w(dSds, 0x2, 0x0, 12, 12, 1);
-		rtl9310_sds_field_w(dSds, 0x2, 0x0, 6, 6, 1);
-		rtl9310_sds_field_w(dSds, 0x2, 0x0, 13, 13, 0);
 
-		/* init auto */
-		rtl9310_sds_field_w(asds, 0x1f, 13, 15, 0, 0x109e);
-		rtl9310_sds_field_w(asds, 0x1f, 0x6, 14, 10, 0x8);
-		rtl9310_sds_field_w(asds, 0x1f, 0x7, 10, 4, 0x7f);
+		rtl9310_sds_field_w(asds, 0x20, 0x0, 11, 10, 0x0);
+		rtl9310_sds_field_w(asds, 0x2a, 0x7, 15, 15, 0x1);
+		rtl9310_sds_field_w(asds, 0x20, 0x0, 11, 10, 0x3);
+		rtl9310_sds_field_w(asds, 0x2e, 0xf, 5, 0, 0x2);
+		rtl9310_sds_field_w(asds, 0x6, 13, 6, 6, 1);
+
+		rtl931x_sds_fiber_disable(sds);
+		rtl931x_sds_fiber_mode_set(sds, PHY_INTERFACE_MODE_10GBASER);
+		rtl9310_sds_field_w(asds, 31, 1, 0, 0, 0x0);
 		break;
 
 	case PHY_INTERFACE_MODE_HSGMII:
@@ -3541,11 +3588,16 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 		break;
 
 	case PHY_INTERFACE_MODE_1000BASEX: /* MII_1000BX_FIBER */
-		rtl9310_sds_field_w(dSds, 0x3, 0x13, 15, 14, 0);
+		rtl931x_sds_rx_rst(sds);
 
-		rtl9310_sds_field_w(dSds, 0x2, 0x0, 12, 12, 1);
-		rtl9310_sds_field_w(dSds, 0x2, 0x0, 6, 6, 1);
-		rtl9310_sds_field_w(dSds, 0x2, 0x0, 13, 13, 0);
+		rtl9310_sds_field_w(asds, 0x20, 0x0, 11, 10, 0x0);
+		rtl9310_sds_field_w(asds, 0x2A, 0x7, 15, 15, 0x0);
+		rtl9310_sds_field_w(asds, 0x20, 0x0, 11, 10, 0x3);
+		rtl9310_sds_field_w(asds, 0x6, 13, 6, 6, 1);
+
+		rtl931x_sds_fiber_disable(sds);
+		rtl931x_sds_fiber_mode_set(sds, PHY_INTERFACE_MODE_1000BASEX);
+		rtl9310_sds_field_w(dSds, 31, 1, 0, 0, 0x0);
 		break;
 
 	case PHY_INTERFACE_MODE_SGMII:
@@ -3746,6 +3798,14 @@ static int rtl8214c_phy_probe(struct phy_device *phydev)
 	return 0;
 }
 
+static int rtl8224_phy_probe(struct phy_device *phydev)
+{
+	int value;
+	value = phy_read_mmd(phydev, MDIO_MMD_PMAPMD, MDIO_CTRL1);
+	value &= (~BMCR_PDOWN);
+	return phy_write_mmd(phydev, MDIO_MMD_PMAPMD, MDIO_CTRL1, value);
+}
+
 static int rtl8218b_ext_phy_probe(struct phy_device *phydev)
 {
 	struct device *dev = &phydev->mdio.dev;
@@ -3870,12 +3930,15 @@ static int rtl8390_serdes_probe(struct phy_device *phydev)
 
 static int rtl9300_serdes_probe(struct phy_device *phydev)
 {
-	if (soc_info.family != RTL9300_FAMILY_ID)
-		return -ENODEV;
-
-	phydev_info(phydev, "Detected internal RTL9300 Serdes\n");
-
-	return 0;
+	if (soc_info.family == RTL9300_FAMILY_ID) {
+		phydev_info(phydev, "Detected internal RTL9300 Serdes\n");
+		return 0;
+	}
+	if (soc_info.family == RTL9310_FAMILY_ID) {
+		phydev_info(phydev, "Detected internal RTL9300 Serdes\n");
+		return 0;
+	}
+	return -ENODEV;
 }
 
 static struct phy_driver rtl83xx_phy_driver[] = {
@@ -4014,6 +4077,21 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.resume		= genphy_resume,
 		.read_status	= rtl9300_read_status,
 	},
+	{
+		PHY_ID_MATCH_MODEL(PHY_ID_RTL8224),
+		.name		= "REALTEK RTL8224",
+		.features	= PHY_10GBIT_FEATURES,
+		.flags		= PHY_POLL_CABLE_TEST,
+		.suspend	= genphy_suspend,
+		.resume		= genphy_resume,
+		.set_loopback	= genphy_loopback,
+		.read_status = rtl8226_read_status,
+		.config_aneg = rtl8226_config_aneg,
+		.set_eee = rtl8226_set_eee,
+		.get_eee = rtl8226_get_eee,
+		.probe		= rtl8224_phy_probe,
+	},
+
 };
 
 module_phy_driver(rtl83xx_phy_driver);
