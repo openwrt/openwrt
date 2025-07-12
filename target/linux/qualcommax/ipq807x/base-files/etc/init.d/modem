@@ -1,0 +1,22 @@
+#!/bin/sh /etc/rc.common
+
+START=15
+
+boot() {
+	case $(board_name) in
+		tcl,hh500v)
+			PCIPATH="/sys/bus/pci/devices/0000:01:00.0"
+
+			for i in $(seq 0 10); do
+				[ -d "${PCIPATH}" ] && break
+				echo 1 > /sys/bus/pci/rescan
+				sleep 2
+			done
+
+			if [ ! -d "${PCIPATH}" ]; then
+				echo "No modem PCIe device found"
+				exit 1
+			fi
+			;;
+	esac
+}
