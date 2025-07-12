@@ -1,7 +1,7 @@
-From f7704275957852cd4c4632d6da126979ef24b83a Mon Sep 17 00:00:00 2001
+From 86d7d787e6d9802176cc563a95ac5c1919fbad66 Mon Sep 17 00:00:00 2001
 From: Weijie Gao <weijie.gao@mediatek.com>
 Date: Tue, 2 Mar 2021 16:58:01 +0800
-Subject: [PATCH 36/71] drivers: mtd: add support for MediaTek SPI-NAND flash
+Subject: [PATCH 01/30] drivers: mtd: add support for MediaTek SPI-NAND flash
  controller
 
 Add mtd driver for MediaTek SPI-NAND flash controller
@@ -19,12 +19,12 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  drivers/mtd/mtk-snand/mtk-snand-def.h |  271 ++++
  drivers/mtd/mtk-snand/mtk-snand-ecc.c |  411 ++++++
  drivers/mtd/mtk-snand/mtk-snand-ids.c |  515 +++++++
- drivers/mtd/mtk-snand/mtk-snand-mtd.c |  535 +++++++
+ drivers/mtd/mtk-snand/mtk-snand-mtd.c |  534 +++++++
  drivers/mtd/mtk-snand/mtk-snand-os.c  |   39 +
- drivers/mtd/mtk-snand/mtk-snand-os.h  |  120 ++
+ drivers/mtd/mtk-snand/mtk-snand-os.h  |  119 ++
  drivers/mtd/mtk-snand/mtk-snand.c     | 1933 +++++++++++++++++++++++++
  drivers/mtd/mtk-snand/mtk-snand.h     |   77 +
- 12 files changed, 3937 insertions(+)
+ 12 files changed, 3935 insertions(+)
  create mode 100644 drivers/mtd/mtk-snand/Kconfig
  create mode 100644 drivers/mtd/mtk-snand/Makefile
  create mode 100644 drivers/mtd/mtk-snand/mtk-snand-def.h
@@ -514,8 +514,8 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +int mtk_ecc_setup(struct mtk_snand *snf, void *fmdaddr, uint32_t max_ecc_bytes,
 +		  uint32_t msg_size)
 +{
-+	uint32_t i, val, ecc_msg_bits, ecc_strength;
-+	int ret;
++	uint32_t val, ecc_msg_bits, ecc_strength;
++	int i, ret;
 +
 +	snf->ecc_soc = &mtk_ecc_socs[snf->soc];
 +
@@ -783,7 +783,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +}
 --- /dev/null
 +++ b/drivers/mtd/mtk-snand/mtk-snand-ids.c
-@@ -0,0 +1,519 @@
+@@ -0,0 +1,515 @@
 +// SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause
 +/*
 + * Copyright (C) 2020 MediaTek Inc. All Rights Reserved.
@@ -900,10 +900,6 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +	SNAND_INFO("GD5F1GQ4xAYIG", SNAND_ID(SNAND_ID_ADDR, 0xc8, 0xf1),
 +		   SNAND_MEMORG_1G_2K_64,
 +		   &snand_cap_read_from_cache_quad_q2d,
-+		   &snand_cap_program_load_x4),
-+	SNAND_INFO("GD5F1GQ5UExxG", SNAND_ID(SNAND_ID_ADDR, 0xc8, 0x51),
-+		   SNAND_MEMORG_1G_2K_128,
-+		   &snand_cap_read_from_cache_quad,
 +		   &snand_cap_program_load_x4),
 +	SNAND_INFO("GD5F2GQ4UExIG", SNAND_ID(SNAND_ID_ADDR, 0xc8, 0xd2),
 +		   SNAND_MEMORG_2G_2K_128,
@@ -1217,7 +1213,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +
 +	SNAND_INFO("FM35Q1GA", SNAND_ID(SNAND_ID_DYMMY, 0xe5, 0x71),
 +		   SNAND_MEMORG_1G_2K_64,
-+		   &snand_cap_read_from_cache_x4_only,
++		   &snand_cap_read_from_cache_x4,
 +		   &snand_cap_program_load_x4),
 +
 +	SNAND_INFO("PN26G01A", SNAND_ID(SNAND_ID_DYMMY, 0xa1, 0xe1),
@@ -1305,7 +1301,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +}
 --- /dev/null
 +++ b/drivers/mtd/mtk-snand/mtk-snand-mtd.c
-@@ -0,0 +1,535 @@
+@@ -0,0 +1,534 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (C) 2020 MediaTek Inc. All Rights Reserved.
@@ -1313,7 +1309,6 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 + * Author: Weijie Gao <weijie.gao@mediatek.com>
 + */
 +
-+#include <config.h>
 +#include <dm.h>
 +#include <malloc.h>
 +#include <mapmem.h>
@@ -1885,7 +1880,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +}
 --- /dev/null
 +++ b/drivers/mtd/mtk-snand/mtk-snand-os.h
-@@ -0,0 +1,120 @@
+@@ -0,0 +1,119 @@
 +/* SPDX-License-Identifier: GPL-2.0 */
 +/*
 + * Copyright (C) 2020 MediaTek Inc. All Rights Reserved.
@@ -1896,7 +1891,6 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +#ifndef _MTK_SNAND_OS_H_
 +#define _MTK_SNAND_OS_H_
 +
-+#include <config.h>
 +#include <cpu_func.h>
 +#include <errno.h>
 +#include <div64.h>

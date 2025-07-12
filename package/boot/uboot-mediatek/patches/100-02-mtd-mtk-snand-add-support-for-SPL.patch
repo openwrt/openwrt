@@ -1,7 +1,7 @@
-From a347e374cb338213632c6dde88dd226d64bd8b27 Mon Sep 17 00:00:00 2001
+From 219aa55e830fe7f5b56dc097f544990a032a0bfe Mon Sep 17 00:00:00 2001
 From: Weijie Gao <weijie.gao@mediatek.com>
 Date: Wed, 3 Mar 2021 08:57:29 +0800
-Subject: [PATCH 37/71] mtd: mtk-snand: add support for SPL
+Subject: [PATCH 02/30] mtd: mtk-snand: add support for SPL
 
 Add support to initialize SPI-NAND in SPL.
 Add implementation for SPL NAND loader.
@@ -47,7 +47,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 + * Author: Weijie Gao <weijie.gao@mediatek.com>
 + */
 +
-+#include <config.h>
++#include <common.h>
 +#include <dm.h>
 +#include <dm/uclass.h>
 +#include <malloc.h>

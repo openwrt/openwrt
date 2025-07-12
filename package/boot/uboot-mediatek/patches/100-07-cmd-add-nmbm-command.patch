@@ -1,7 +1,7 @@
-From 0af8d0aac77f4df4bc7dadbcdea5d9a16f5f3e45 Mon Sep 17 00:00:00 2001
+From db0424519d3cc24ae94c15de26af12c075a95e6a Mon Sep 17 00:00:00 2001
 From: Weijie Gao <weijie.gao@mediatek.com>
 Date: Mon, 25 Jul 2022 10:44:57 +0800
-Subject: [PATCH 43/71] cmd: add nmbm command
+Subject: [PATCH 07/30] cmd: add nmbm command
 
 Add nmbm command for debugging, data operations and image-booting support
 
@@ -9,8 +9,8 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 ---
  cmd/Kconfig  |   6 +
  cmd/Makefile |   1 +
- cmd/nmbm.c   | 327 +++++++++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 334 insertions(+)
+ cmd/nmbm.c   | 328 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 335 insertions(+)
  create mode 100644 cmd/nmbm.c
 
 --- a/cmd/Kconfig
@@ -40,7 +40,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  else ifdef CONFIG_NET_LWIP
 --- /dev/null
 +++ b/cmd/nmbm.c
-@@ -0,0 +1,327 @@
+@@ -0,0 +1,328 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (C) 2020 MediaTek Inc. All Rights Reserved.
@@ -49,6 +49,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 + */
 +
 +#include <command.h>
++#include <env.h>
 +#include <image.h>
 +#include <stdbool.h>
 +#include <linux/types.h>
