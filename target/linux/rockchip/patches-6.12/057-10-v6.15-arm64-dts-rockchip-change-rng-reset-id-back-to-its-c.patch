@@ -1,0 +1,25 @@
+From 55a43c346d24434e46ef7fcc09a9df8179c346e4 Mon Sep 17 00:00:00 2001
+From: Heiko Stuebner <heiko@sntech.de>
+Date: Sun, 16 Feb 2025 16:27:42 +0100
+Subject: [PATCH] arm64: dts: rockchip: change rng reset id back to its
+ constant value
+
+With the binding header now providing the SCMI_SRST_H_TRNG_NS constant,
+switch back to it from the temporary numeric value.
+
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3588-base.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi
+@@ -1883,7 +1883,7 @@
+ 		reg = <0x0 0xfe378000 0x0 0x200>;
+ 		interrupts = <GIC_SPI 400 IRQ_TYPE_LEVEL_HIGH 0>;
+ 		clocks = <&scmi_clk SCMI_HCLK_SECURE_NS>;
+-		resets = <&scmi_reset 48>;
++		resets = <&scmi_reset SCMI_SRST_H_TRNG_NS>;
+ 	};
+ 
+ 	i2s0_8ch: i2s@fe470000 {
