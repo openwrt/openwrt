@@ -55,6 +55,8 @@ define Package/odhcp6c/install
 	$(INSTALL_BIN) ./files/dhcpv6.script $(1)/lib/netifd/
 	$(INSTALL_DIR) $(1)/etc/odhcp6c.user.d/
 	$(INSTALL_CONF) ./files/odhcp6c.user $(1)/etc/
+	$(INSTALL_DIR) $(1)/etc/uci-defaults
+	$(INSTALL_DATA) ./files/odhcp6c.defaults $(1)/etc/uci-defaults/16_migrate-odhcp6c-ifaceid
 endef
 
 $(eval $(call BuildPackage,odhcp6c))
