@@ -1,0 +1,26 @@
+From dc495442ba610b190775122a31f958ad74229262 Mon Sep 17 00:00:00 2001
+From: Weijie Gao <weijie.gao@mediatek.com>
+Date: Tue, 8 Jul 2025 17:53:48 +0800
+Subject: [PATCH] net: mediatek: correct the AN8855 TPID value in port
+ isolation settings
+
+The TPID value should be 0x9100 instead of 0x8100 according to the
+datasheet.
+
+Fixes: cedafee9ff3 (net: mediatek: add support for Airoha AN8855 ethernet switch)
+Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
+---
+ drivers/net/mtk_eth/an8855.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/mtk_eth/an8855.c
++++ b/drivers/net/mtk_eth/an8855.c
+@@ -909,7 +909,7 @@ static void an8855_port_isolation(struct
+ 
+ 		/* Set port mode to user port */
+ 		an8855_reg_write(priv, AN8855_PVC(i),
+-				 (0x8100 << AN8855_STAG_VPID_S) |
++				 (0x9100 << AN8855_STAG_VPID_S) |
+ 				 (VLAN_ATTR_USER << AN8855_VLAN_ATTR_S));
+ 	}
+ }

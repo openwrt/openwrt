@@ -1,7 +1,7 @@
-From 88271cb3ae9c68dc200d627653df96fc557c2a64 Mon Sep 17 00:00:00 2001
+From e33ed7c216b6fc7416e205fffccfedf32e26ff8b Mon Sep 17 00:00:00 2001
 From: Weijie Gao <weijie.gao@mediatek.com>
 Date: Mon, 25 Jul 2022 10:55:35 +0800
-Subject: [PATCH 47/71] cmd: add a new command for NAND flash debugging
+Subject: [PATCH 10/30] cmd: add a new command for NAND flash debugging
 
 Add a command 'nand-ext' for NAND flash debugging:
 - Dump a page with oob, with optional raw read support
@@ -26,7 +26,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 
 --- a/cmd/Kconfig
 +++ b/cmd/Kconfig
-@@ -1525,6 +1525,14 @@ config CMD_NAND_WATCH
+@@ -1535,6 +1535,14 @@ config CMD_NAND_WATCH
  
  endif # CMD_NAND
  

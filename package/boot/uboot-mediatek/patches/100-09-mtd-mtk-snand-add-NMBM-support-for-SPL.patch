@@ -1,18 +1,38 @@
-From 9e8ac4fc7125795ac5e8834aaf454fd45b99c580 Mon Sep 17 00:00:00 2001
+From 1c5d96f544cfe2140834cc79dc1335b0e6fc5ce5 Mon Sep 17 00:00:00 2001
 From: Weijie Gao <weijie.gao@mediatek.com>
 Date: Mon, 25 Jul 2022 10:53:03 +0800
-Subject: [PATCH 46/71] mtd: mtk-snand: add NMBM support for SPL
+Subject: [PATCH 09/30] mtd: mtk-snand: add NMBM support for SPL
 
 Add NMBM support for mtk-snand SPL loader
 
 Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 ---
- drivers/mtd/mtk-snand/mtk-snand-spl.c | 127 ++++++++++++++++++++++++++
- 1 file changed, 127 insertions(+)
+ drivers/mtd/mtk-snand/Makefile        |   2 +-
+ drivers/mtd/mtk-snand/mtk-snand-spl.c | 133 +++++++++++++++++++++++++-
+ 2 files changed, 133 insertions(+), 2 deletions(-)
 
+--- a/drivers/mtd/mtk-snand/Makefile
++++ b/drivers/mtd/mtk-snand/Makefile
+@@ -8,7 +8,7 @@
+ obj-y += mtk-snand.o mtk-snand-ecc.o mtk-snand-ids.o mtk-snand-os.o
+ obj-$(CONFIG_MTK_SPI_NAND_MTD) += mtk-snand-mtd.o
+ 
+-ifdef CONFIG_SPL_BUILD
++ifdef CONFIG_XPL_BUILD
+ obj-$(CONFIG_SPL_MTK_SPI_NAND) += mtk-snand-spl.o
+ endif
+ 
 --- a/drivers/mtd/mtk-snand/mtk-snand-spl.c
 +++ b/drivers/mtd/mtk-snand/mtk-snand-spl.c
-@@ -13,12 +13,134 @@
+@@ -5,7 +5,6 @@
+  * Author: Weijie Gao <weijie.gao@mediatek.com>
+  */
+ 
+-#include <common.h>
+ #include <dm.h>
+ #include <dm/uclass.h>
+ #include <malloc.h>
+@@ -13,12 +12,134 @@
  #include <mtd.h>
  #include <watchdog.h>
  
@@ -147,7 +167,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  static u8 *page_cache;
  
  int nand_spl_load_image(uint32_t offs, unsigned int size, void *dst)
-@@ -60,6 +182,7 @@ int nand_spl_load_image(uint32_t offs, u
+@@ -60,6 +181,7 @@ int nand_spl_load_image(uint32_t offs, u
  
  	return ret;
  }
@@ -155,7 +175,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  
  void nand_init(void)
  {
-@@ -105,11 +228,15 @@ void nand_init(void)
+@@ -105,11 +227,20 @@ void nand_init(void)
  	printf("SPI-NAND: %s (%uMB)\n", cinfo.model,
  	       (u32)(cinfo.chipsize >> 20));
  
@@ -168,6 +188,11 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  		printf("mtk-snand-spl: failed to allocate page cache\n");
  	}
 +#endif
++}
++
++unsigned int nand_page_size(void)
++{
++	return cinfo.pagesize;
  }
  
  void nand_deselect(void)
