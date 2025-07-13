@@ -57,6 +57,10 @@ huasifei,wh3000|\
 nradio,c8-668gl)
 	ubootenv_add_mmc "u-boot-env" "" "0x0" "0x80000"
 	;;
+arcadyan,wg620443)
+	local envdev=/dev/mtd$(find_mtd_index "u-boot-env")
+	ubootenv_add_uci_config "$envdev" "0x0" "0x20000" "0x20000" "1"
+	;;
 asus,rt-ax59u)
 	ubootenv_add_uci_config "/dev/mtd0" "0x100000" "0x20000" "0x20000"
 	;;
@@ -138,6 +142,10 @@ zyxel,ex5601-t0)
 	;;
 zyxel,ex5700-telenor)
 	ubootenv_add_uci_config "/dev/ubootenv" "0x0" "0x4000" "0x4000" "1"
+	;;
+arcadyan,wg620443)
+	local envdev=/dev/mtd$(find_mtd_index "u-boot-env")
+	ubootenv_add_uci_config "$envdev" "0x0" "0x20000" "0x20000" "1"
 	;;
 esac
 

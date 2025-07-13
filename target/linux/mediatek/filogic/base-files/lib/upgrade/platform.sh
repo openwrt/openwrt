@@ -122,6 +122,10 @@ platform_do_upgrade() {
 		CI_ROOTPART="rootfs"
 		emmc_do_upgrade "$1"
 		;;
+	arcadyan,wg620443)
+		fw_setenv boot_select 0
+		nand_do_upgrade $1
+		;;
 	asus,rt-ax52|\
 	asus,rt-ax59u|\
 	asus,tuf-ax4200|\
@@ -303,6 +307,13 @@ platform_pre_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
+	arcadyan,wg620443)
+		if [ "$(rootfs_type)" = "tmpfs" ]; then
+			fw_setenv bootargs console=ttyS0,115200n1 ubi.mtd=4 init=/sbin/init loglevel=8 earlycon=uart8250,mmio32,0x11002000
+			ubidetach -m 4 | true
+			ubiformat /dev/mtd4
+		fi
+		;;
 	asus,rt-ax52|\
 	asus,rt-ax59u|\
 	asus,tuf-ax4200|\
