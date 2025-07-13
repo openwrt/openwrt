@@ -1,0 +1,66 @@
+#!/bin/ash
+
+set_uhttpd() {
+	if [ "$1" = "index" ] ;then
+		uci del_list uhttpd.main.index_page='cgi-bin/first.lua'
+		uci del_list uhttpd.main.index_page='index.htm'
+		uci set uhttpd.main.error_page='/index.htm'
+		uci add_list uhttpd.main.index_page='index.htm'
+		uci commit uhttpd
+		/etc/init.d/uhttpd restart
+	elif [ "$1" = "test" ] ;then
+		uci del_list uhttpd.main.index_page='cgi-bin/first.lua'
+		uci del_list uhttpd.main.index_page='index.htm'
+		uci set uhttpd.main.error_page='/cgi-bin/first.lua'
+		uci add_list uhttpd.main.index_page='cgi-bin/first.lua'
+		uci commit uhttpd
+		/etc/init.d/uhttpd restart
+	else
+		echo "set_uhttpd param error" > /dev/ttyS0
+	fi
+	#echo "$0 set_uhttpd end" > /dev/ttyS0
+}
+# return to web before kick_sta , need '&'
+if [ "$1" = "repeater" ]; then
+    sleep 2
+    # set channel
+    chan=$2
+    # judge channel is 5G or 2.4G
+    if [ $chan -lt 20 ]; then
+        uci set wireless.radio0.channel="$chan"
+    else
+        uci set wireless.radio1.htmode='VHT80'
+        if [ $chan -eq 165 ]; then
+            uci set wireless.radio1.htmode='VHT20'
+        fi
+        uci set wireless.radio1.channel="$chan"
+    fi
+    uci commit wireless
+
+    set_uhttpd "index"
+
+    wifi reload
+    ubus call lepton.network kick_sta
+elif [ "$1" = "ap" ]; then
+    sleep 2
+
+    # restart relayd
+    killall relayd
+    /etc/init.d/relayd restart
+
+    set_uhttpd "index"
+    wifi reload
+    ubus call lepton.network kick_sta
+elif [ "$1" = "reset_rep_mode" ]; then
+    sleep 2
+
+    set_uhttpd "test"
+    # restart relayd
+    killall relayd
+    /etc/init.d/relayd restart
+
+    wifi reload
+    ubus call lepton.network kick_sta
+else
+    echo "$0 param error" > /dev/ttyS0
+fi

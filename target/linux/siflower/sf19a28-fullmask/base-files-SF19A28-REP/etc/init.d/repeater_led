@@ -1,0 +1,19 @@
+#!/bin/sh /etc/rc.common
+# Copyright (c) 2011-2012 OpenWrt.org
+
+START=98
+
+USE_PROCD=1
+PROG=/usr/sbin/repeater-led
+
+start_service() {
+	procd_open_instance
+	procd_set_param command "$PROG"
+	procd_set_param respawn
+	procd_close_instance
+}
+
+stop_service() {
+	/bin/led-button -l 20
+	echo "repeater led control stopped!"
+}

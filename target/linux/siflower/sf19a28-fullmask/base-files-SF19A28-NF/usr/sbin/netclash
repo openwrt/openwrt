@@ -1,0 +1,141 @@
+#!/bin/sh
+
+UCI=$(which uci)
+#RELOAD_PROG="network dnsmasq odhcpd firewall"
+UCIG="$UCI -q get"
+UCIS="$UCI set"
+LAN="network.lan"
+GUEST="network.guest"
+
+wan_ip=$1
+wan_mask=$2
+
+netclash=$($UCIG $LAN.netclash 2>/dev/null)
+[ "x$netclash" = "x1" ] && exit
+lan_ip=$($UCIG $LAN.ipaddr)
+lan_mask=$($UCIG $LAN.netmask)
+guest=$($UCIG $GUEST.ifname 2>/dev/null)
+subnet="192 172 10"
+
+[ "$wan_mask" \> "$lan_mask" ] && mask=$lan_mask || mask=$wan_mask
+eval $(echo $mask | awk -F '.' '{print "mask1=" $1 ";mask2=" $2 ";mask3=" $3 ";mask4=" $4}')
+eval $(echo $lan_ip | awk -F '.' '{print "lan_ip1=" $1 ";lan_ip2=" $2 ";lan_ip3=" $3 ";lan_ip4=" $4}')
+eval $(echo $wan_ip | awk -F '.' '{print "wan_ip1=" $1 ";wan_ip2=" $2 ";wan_ip3=" $3 ";wan_ip4=" $4}')
+
+get_sub(){
+	for i in 1 2 3 4
+	do
+		eval "sub$1$i=\$((\$${1}_ip$i & \$mask$i))"
+	done
+}
+
+#subnet_mask(){
+#	case $1 in
+#		10)
+#			new_lan=10.0.0.1
+#			new_mask=255.0.0.0
+#			;;
+#		172)
+#			new_lan=172.16.0.1
+#			new_mask=255.255.0.0
+#			;;
+#		192)
+#			new_lan=192.168.4.1
+#			new_mask=255.255.255.0
+#			;;
+#	esac
+#}
+
+get_sub lan
+get_sub wan
+
+if [ "$sublan1$sublan2$sublan3$sublan4" = "$subwan1$subwan2$subwan3$subwan4" ];then
+
+	if [ "x$sublan1" = "x192" ]; then
+		[ "x$wan_mask" != "x255.255.255.0" ] && exit 0
+		if [ "x$sublan3" = "x254" ];then
+			new_lan="$sublan1.$sublan2.4.1"
+		else
+			new_lan="$sublan1.$sublan2.$(($sublan3+1)).1"
+		fi
+		new_mask=255.255.255.0
+	else
+#		ssub=${subnet/$sublan1/}
+#
+#		if [ "x$guest" != "x" ]; then
+#			g_ip=$($UCIG $GUEST.ipaddr)
+#			eval $(echo $g_ip | awk -F '.' '{print "g_ip1=" $1 ";g_ip2=" $2 ";g_ip3=" $3 ";g_ip4=" $4}')
+#			sssub=$(echo ${ssub/$g_ip1/})
+#		else
+#			for i in $ssub
+#			do
+#				sssub=$i
+#			done
+#		fi
+#
+#		subnet_mask $sssub
+
+		new_lan=192.168.4.1
+		new_mask=255.255.255.0
+#		if [ "x$guest" != "x" ]; then
+#			g_ip=$($UCIG $GUEST.ipaddr)
+#			if [ "x$g_ip" = "x$new_lan" ];
+#				new_lan="192.168.5.1"
+#			fi
+#		fi
+	fi
+	$UCIS $LAN.ipaddr=$new_lan
+	$UCIS $LAN.netmask=$new_mask
+	$UCI commit
+
+	ifconfig eth0 down #down eth0 for the clients have enough time to detect link down
+	sleep 1
+	/etc/init.d/network restart >/dev/null 2>&1
+	exit 0
+fi
+
+#if [ "x$guest" != "x" ]; then
+#	g_ip=$($UCIG $GUEST.ipaddr)
+#	g_mask=$($UCIG $GUEST.netmask)
+#	[ "$wan_mask" \> "$g_mask" ] && mask=$g_mask || mask=$wan_mask
+#	eval $(echo $mask | awk -F '.' '{print "mask1=" $1 ";mask2=" $2 ";mask3=" $3 ";mask4=" $4}')
+#	eval $(echo $g_ip | awk -F '.' '{print "g_ip1=" $1 ";g_ip2=" $2 ";g_ip3=" $3 ";g_ip4=" $4}')
+#	get_sub g
+#	get_sub wan
+#	if [ "$subg1$subg2$subg3$subg4" = "$subwan1$subwan2$subwan3$subwan4" ];then
+#
+#		if [ "x$subg1" = "x192" ]; then
+#			[ "x$wan_mask" != "x255.255.255.0" ] && exit 0
+#			if [ "x$subg3" = "x254" ];then
+#				new_lan="$subg1.$subg2.$(($subg3-1)).1"
+#					if [ "x$lan_ip" = "x$new_lan" ];
+#						new_lan="$subg1.$subg2.$(($subg3-2)).1"
+#					fi
+#			else
+#				new_lan="$subg1.$subg2.$(($subg3+1)).1"
+#					if [ "x$lan_ip" = "x$new_lan" ];
+#						if [ "x$subg3" = "x253" ];then
+#							new_lan="$subg1.$subg2.$(($subg3-1)).1"
+#						else
+#							new_lan="$subg1.$subg2.$(($subg3+2)).1"
+#						fi
+#					fi
+#			fi
+#			new_mask=255.255.255.0
+#		else
+#			new_lan=192.168.4.1
+#			new_mask=255.255.255.0
+#				if [ "x$lan_ip" = "x$new_lan" ];
+#					new_lan="192.168.5.1"
+#				fi
+#		fi
+#		ssub=${subnet/$subg1/}
+#		sssub=$(echo ${ssub/$g_ip1/})
+#		subnet_mask $sssub
+#		$UCIS $GUEST.ipaddr=$new_lan
+#		$UCIS $GUEST.netmask=$new_mask
+#		$UCI commit
+#
+#		/etc/init.d/network restart >/dev/null 2>&1
+#	fi
+#fi

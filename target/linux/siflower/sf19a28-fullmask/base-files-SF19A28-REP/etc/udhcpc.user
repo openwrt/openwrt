@@ -1,0 +1,10 @@
+dns_status=`ps|grep dnsmasq|grep -vc grep`
+#/etc/init.d/dnsmasq restart
+
+while [ "$dns_status" != "0" -a "$dns_status" != "2" ]
+	do
+	sleep 1
+	dns_status=`ps|grep dnsmasq|grep -vc grep`
+done
+
+ubus call lepton.network net_restart

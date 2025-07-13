@@ -1,0 +1,25 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+START=99
+
+start() {
+	speed=`uci get network.wan.speed`
+	wan_ifname=`uci get network.wan.ifname`
+	wan_dev=`echo $wan_ifname | cut -d "." -f 1`
+	if [ -n "$speed" ]; then
+		if [ "$speed" == "auto" ]; then
+			ethtool -s $wan_dev autoneg on
+		elif [ "$speed" == "10mhalf" ]; then
+			ethtool -s $wan_dev speed 10 duplex half
+		elif [ "$speed" == "10mfull" ]; then
+			ethtool -s $wan_dev speed 10 duplex full
+		elif [ "$speed" == "100mhalf" ]; then
+			ethtool -s $wan_dev speed 100 duplex half
+		elif [ "$speed" == "100mfull" ]; then
+			ethtool -s $wan_dev speed 100 duplex full
+		elif [ "$speed" == "1000mfull" ]; then
+			ethtool -s $wan_dev speed 1000 duplex full
+		fi
+	fi
+}
