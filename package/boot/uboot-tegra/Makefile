@@ -34,6 +34,8 @@ endef
 
 UBOOT_TARGETS := trimslice
 
+UBOOT_CUSTOMIZE_CONFIG := --disable TOOLS_MKEFICAPSULE
+
 define Build/bct-image
 	$(CP) $(PKG_BUILD_DIR)/u-boot-dtb-tegra.bin $(PKG_BUILD_DIR)/u-boot.bin
 	$(foreach bct,$(basename $(UBOOT_IMAGE)), \
