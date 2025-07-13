@@ -1,0 +1,34 @@
+# @btn_code: Must be exactly the same as "linux,code" in kernel dts
+#            The format must be as follows:
+#                1. Must be 0x at the beginning('x' must be lowercase)
+#                2. Linux dts follow the same rules
+# @btn_action: Action should follow the content in the table below
+#              ---------------------------------
+#              |       Action        | Number  |
+#              | Long Press          |    1    |
+#              | Short Press         |    2    |
+#              | Extra Long press    |    3    |
+#              | High Level Trigger  |    4    |
+#              | Low Level Trigger   |    5    |
+#              | Edge Level Trigger  |    6    |
+#              ---------------------------------
+# @btn_cmd: Command that needs to be executed. You should try to put your
+#            own functions in a script and then execute the script.
+
+# factory reset when button long prees
+config btn_config
+	option btn_code '0x198'
+	option btn_action '1'
+	option btn_cmd 'sh /bin/sf_reset.sh'
+
+# factory reset when button extra long prees
+config btn_config
+	option btn_code '0x198'
+	option btn_action '3'
+	option btn_cmd 'sh /bin/sf_reset.sh'
+# wps function when button short press
+config btn_config
+	option btn_code '0x211'
+	option btn_action '2'
+	option btn_cmd 'sh /usr/share/led-button/wps.sh'
+

@@ -1,0 +1,18 @@
+config 'global'
+        option  anon_swap       '0'
+        option  anon_mount      '1'
+        option  auto_swap       '1'
+        option  auto_mount      '1'
+        option  delay_root      '5'
+        option  check_fs        '0'
+
+
+config 'mount'
+		option enabled '1'
+		option target '/mnt/sda1'
+		option options 'rw,codepage=936,iocharset=utf8'
+
+config 'mount'
+		option enabled '1'
+		option target '/mnt/mmcblk0p1'
+		option options 'rw,codepage=936,iocharset=utf8'
