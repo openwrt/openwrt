@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm64/boot/dts/rockchip/rk3568-linkstar-h68k-1432v1.dts
-@@ -0,0 +1,788 @@
+@@ -0,0 +1,790 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +// Draft 11 July 2025
 +// Device Tree Info
@@ -742,11 +742,13 @@
 +&usb_host0_xhci {
 +	phys = <&combphy0 PHY_TYPE_USB3>;
 +	phy-names = "usb3-phy";
++	dr_mode = "host";
 +	status = "okay";
 +};
 +
 +&usb_host1_xhci {
 +	status = "okay";
++	dr_mode = "otg";
 +};
 +
 +&usb2phy0 {
