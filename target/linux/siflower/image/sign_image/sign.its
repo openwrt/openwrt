@@ -1,0 +1,30 @@
+/dts-v1/;
+
+/ {
+	description = "Sample kernel config";
+	#address-cells = <1>;
+
+	images {
+		kernel@1 {
+			data = /incbin/("IMG_PATH");
+			type = "kernel";
+			arch = "mips";
+			os = "linux";
+			compression = "COMPRESS_TYPE";
+			load = <0x80100000>;
+			entry = <KERNEL_ENTRY>;
+			signature@1 {
+				algo = "sha1,rsa1024";
+				key-name-hint = "dev";
+				sign-images = "kernel";
+			};
+		};
+	};
+
+	configurations {
+		default = "conf@1";
+		conf@1 {
+			kernel = "kernel@1";
+		};
+	};
+};
