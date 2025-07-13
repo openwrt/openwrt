@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm64/boot/dts/rockchip/rk3568-linkstar-h68k-1432v1.dts
-@@ -0,0 +1,790 @@
+@@ -0,0 +1,783 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +// Draft 11 July 2025
 +// Device Tree Info
@@ -52,7 +52,6 @@
 +		stdout-path = "serial2:1500000n8";
 +	};
 +
-+
 +	hdmi-con {
 +		compatible = "hdmi-connector";
 +		type = "a";
@@ -79,14 +78,11 @@
 +			debounce-interval = <50>;
 +		};
 +
-+
-+
 +		/* recessed key behavior 11 July 2025:
 +		  Left most (sd card side): nothing
 +		  center: sends OS a reboot signal, which shows on console
 +		  right (power barrel side): immediate reboot, no console info
 +		*/
-+
 +	};
 +
 + /* gpio chip 0, line 24 responds to console key press */
@@ -223,7 +219,6 @@
 +		     &gmac0_rx_bus2
 +		     &gmac0_rgmii_clk
 +		     &gmac0_rgmii_bus>;
-+	/* rockchip,bugged_tx_coe; */
 +	snps,reset-gpio = <&gpio2 RK_PD3 GPIO_ACTIVE_LOW>;
 +	snps,reset-active-low;
 +	snps,reset-delays-us = <0 20000 100000>;
@@ -245,7 +240,6 @@
 +		     &gmac1m1_rx_bus2
 +		     &gmac1m1_rgmii_clk
 +		     &gmac1m1_rgmii_bus>;
-+	/* rockchip,bugged_tx_coe; */
 +	snps,reset-gpio = <&gpio1 RK_PB0 GPIO_ACTIVE_LOW>;
 +	snps,reset-active-low;
 +	snps,reset-delays-us = <0 20000 100000>;
@@ -259,7 +253,6 @@
 +
 +&combphy0 {
 +	status = "okay";
-+ /* data-lanes =? */
 +
 +};
 +
@@ -561,9 +554,9 @@
 +			};
 +		};
 +
-+		/* codec {
-+			mic-in-differential;
-+		}; */
++		codec {
++			rockchip,mic-in-differential;
++		}; 
 +	};
 +};
 +
