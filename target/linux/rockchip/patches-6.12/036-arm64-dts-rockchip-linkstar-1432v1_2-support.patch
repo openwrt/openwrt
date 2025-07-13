@@ -1,16 +1,18 @@
 --- /dev/null
-+++ b/arch/arm64/boot/dts/rockchip/rk3568-linkstar-h68k-1432v1.dts
-@@ -0,0 +1,745 @@
++++ b/arch/arm64/boot/dts/rockchip/rk3568-linkstar-h68kv1.dts
+@@ -0,0 +1,788 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
-+// Draft 9 July 2025
++// Draft 11 July 2025
 +// Device Tree Info
 +// DTS for Rockchip 3568-based
 +// Seeed Studios LinkStar H68k-1432-V1
 +//
 +// May also work with LinkStar H68k-1432-V2
-+// Filename rk3568-seeed-h68k-1432-v1.dts
++// Filename rk3568-seeed-h68kv1.dts
++// Need to keep device descriptor name to a triplet.
 +//
 +// Copyright 2025 TahomaSoft bacon@tahomasoft.com
++// NB: Hinlink H68K is very similar under different trade name
 +
 +
 +/dts-v1/;
@@ -24,26 +26,26 @@
 +
 +/ {
 +	model = "Seeed LinkStar H68K-1432V1 (RK3568) DDR4 Board";
-+	compatible = "seeed,rk3568-linkstar-h68k-1432v1",
++  	compatible = "seeed,rk3568-linkstar-h68k-1432v1",
 +		   "linkstar","rockchip,rk3568";
 +
 +	aliases {
 +		ethernet0 = &gmac0;
 +		ethernet1 = &gmac1;
 +
-+		/* counter intuitive: sdhci:=non-removable eMMC */
-+		/* sdmmc:= removable uSD card */
++		/* fixed eMMC */
++		mmc0 = &sdhci;  /* sdhci:= @fe310000 */ /* mmcblk0... */
 +
-+		/* mmc0:= &sdhci:= @fe310000:= eMMC */
-+		mmc0 = &sdhci;  /*  sdhci:= @fe310000 */ /* mmcblk1* */
-+		mmc1 = &sdmmc0; /* sdmmc0:= @fe2b0000 */ /* mmcblk0* */
-+
-+		led-boot = &led_work;
-+		led-failsafe = &led_work;
-+		led-running = &led_work;
-+		led-upgrade = &led_work;
++		/* removable uSD/TF Card */
++		mmc1 = &sdmmc0; /* sdmmc0:= @fe2b0000 */ /* mmcblk1... */ 
 +
 +		rtc0 = &rk809;
++
++		led-boot = &led_one; /* status LED, green */
++               led-failsafe = &led_three; /* heartbeat LED */
++               led-running = &led_one; /* status LED, green */
++               led-upgrade = &led_two; /* function LED, amber */
++
 +	};
 +
 +	chosen {
@@ -62,37 +64,73 @@
 +		};
 +	};
 +
-+	keys {
++	gpio-keys {
 +		compatible = "gpio-keys";
 +		pinctrl-0 = <&reset_button_pin>;
 +		pinctrl-names = "default";
 +
-+		reset {
-+			label = "reset";
++	/* Middle inset/recessed button,
++	   	  marked by clockwise arrow/circle */
++
++		button-reset { /* gpiochip=0, line=0 */
++			label = "button:system:reset";
 +			gpios = <&gpio0 RK_PA0 GPIO_ACTIVE_LOW>;
 +			linux,code = <KEY_RESTART>;
 +			debounce-interval = <50>;
 +		};
++
++
++
++		/* recessed key behavior 11 July 2025:
++		  Left most (sd card side): nothing
++		  center: sends OS a reboot signal, which shows on console
++		  right (power barrel side): immediate reboot, no console info
++		*/
++
 +	};
 +
-+	leds {
++ /* gpio chip 0, line 24 responds to console key press */
++
++	gpio-leds {
 +		compatible = "gpio-leds";
 +		pinctrl-names = "default";
-+		pinctrl-0 = <&led_net_en>, <&led_sata_en>, <&led_work_en>;
++		pinctrl-0 = <&led_white_pin>, <&led_green_pin>,
++			 <&led_amber_pin>, <&led_blue_pin>;
 +
-+		net {
-+			label = "blue:net";
-+			gpios = <&gpio3 RK_PA5 GPIO_ACTIVE_HIGH>;
++		/* White LED inset in power button */
++
++		led_zero: led_white   { /* gpiochip=0, line=14 */
++		 	color = <LED_COLOR_ID_WHITE>;
++			default-state = "on";
++			function = LED_FUNCTION_POWER;
++			gpios = <&gpio0 RK_PB6 GPIO_ACTIVE_HIGH>;
++			label = "power_button_led:white_led";
++			linux,default-trigger = "default-on";
++	
 +		};
 +
-+		sata {
-+			label = "amber:sata";
-+			gpios = <&gpio3 RK_PA7 GPIO_ACTIVE_HIGH>;
-+		};
-+
-+		led_work: work {
-+			label = "green:work";
++		led_one: led_green { /* gpiochip=3, line=8 */
++			default-state = "off";
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_STATUS;
 +			gpios = <&gpio3 RK_PB0 GPIO_ACTIVE_HIGH>;
++			label = "status_led:green_led";
++		};
++
++		led_two: led_amber {   /* gpiochip=3, line=7 */
++			default-state = "off";
++			color = <LED_COLOR_ID_AMBER>;
++			function = LED_FUNCTION_INDICATOR;
++			gpios = <&gpio3 RK_PA7 GPIO_ACTIVE_HIGH>;
++			label = "function_led:amber_led";
++		};
++
++		led_three: led_blue { /* gpiochip=3, line=5 */
++		 	color = <LED_COLOR_ID_BLUE>; 
++			gpios = <&gpio3 RK_PA5 GPIO_ACTIVE_HIGH>;
++			default-state = "off";
++			function = LED_FUNCTION_HEARTBEAT;
++			label = "heartbeat_led:blue_led";
 +		};
 +	};
 +
@@ -588,18 +626,23 @@
 +		};
 +	};
 +
-+	leds {
-+		led_net_en: led_net_en {
-+			rockchip,pins = <3 RK_PA5 RK_FUNC_GPIO &pcfg_pull_none>;
-+		};
++	gpio-leds {
++	     led_white_pin: led-white-pin  {
++ 	     	    rockchip,pins = <0 RK_PB6 RK_FUNC_GPIO &pcfg_pull_none>;
++	     };
 +
-+		led_sata_en: led_sata_en {
-+			rockchip,pins = <3 RK_PA7 RK_FUNC_GPIO &pcfg_pull_none>;
-+		};
++	     led_green_pin: led-green-pin {
++ 	     	    rockchip,pins = <3 RK_PB0 RK_FUNC_GPIO &pcfg_pull_none>;
++	     };
 +
-+		led_work_en: led_work_en {
-+			rockchip,pins = <3 RK_PB0 RK_FUNC_GPIO &pcfg_pull_none>;
-+		};
++	     led_amber_pin: led-amber-pin {
++ 	     	    rockchip,pins = <3 RK_PA7 RK_FUNC_GPIO &pcfg_pull_none>;
++	     };
++
++	     led_blue_pin: led-blue-pin {
++ 	     	    rockchip,pins = <3 RK_PA5 RK_FUNC_GPIO &pcfg_pull_none>;
++	     };
++		
 +	};
 +
 +	pmic {
