@@ -300,8 +300,17 @@ static int rtl9300_i2c_smbus_xfer(struct i2c_adapter * adap, u16 addr,
 		break;
 
 	case I2C_SMBUS_BLOCK_DATA:
-		pr_debug("I2C_SMBUS_BLOCK_DATA %02x, read %d, len %d\n",
-			addr, read_write, data->block[0]);
+		pr_debug("I2C_SMBUS_BLOCK_DATA %02x, read %d, len %d data->block: %*ph\n",
+				addr, read_write, data->block[0], data->block[0]+1, &data->block[0]);
+		drv_data->reg_addr_set(i2c, command, 1);
+		drv_data->config_xfer(i2c, addr, data->block[0]);
+		if (read_write == I2C_SMBUS_WRITE)
+			drv_data->write(i2c, &data->block[1], data->block[0]);
+		len = data->block[0];
+		break;
+	case I2C_SMBUS_I2C_BLOCK_DATA:
+		pr_debug("I2C_SMBUS_I2C_BLOCK_DATA %02x, read %d, len %d data->block: %*ph\n", addr, read_write, data->block[0], data->block[0]+1, &data->block[0]);
+
 		drv_data->reg_addr_set(i2c, command, 1);
 		drv_data->config_xfer(i2c, addr, data->block[0]);
 		if (read_write == I2C_SMBUS_WRITE)
@@ -325,7 +334,8 @@ static u32 rtl9300_i2c_func(struct i2c_adapter *a)
 {
 	return I2C_FUNC_SMBUS_QUICK | I2C_FUNC_SMBUS_BYTE |
 	       I2C_FUNC_SMBUS_BYTE_DATA | I2C_FUNC_SMBUS_WORD_DATA |
-	       I2C_FUNC_SMBUS_BLOCK_DATA;
+	       I2C_FUNC_SMBUS_BLOCK_DATA | I2C_FUNC_SMBUS_READ_I2C_BLOCK |
+	       I2C_FUNC_SMBUS_WRITE_I2C_BLOCK;
 }
 
 static const struct i2c_algorithm rtl9300_i2c_algo = {
@@ -341,6 +351,7 @@ struct i2c_adapter_quirks rtl9300_i2c_quirks = {
 
 static int rtl9300_i2c_probe(struct platform_device *pdev)
 {
+	struct resource *res;
 	struct rtl9300_i2c *i2c;
 	struct i2c_adapter *adap;
 	struct i2c_drv_data *drv_data;
@@ -354,6 +365,8 @@ static int rtl9300_i2c_probe(struct platform_device *pdev)
 		dev_err(i2c->dev, "No DT found\n");
 		return -EINVAL;
 	}
+
+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 
 	drv_data = (struct i2c_drv_data *) device_get_match_data(&pdev->dev);
 
