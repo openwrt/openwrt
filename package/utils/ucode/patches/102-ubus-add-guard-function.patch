@@ -1,6 +1,6 @@
 From: Felix Fietkau <nbd@nbd.name>
 Date: Wed, 11 Jun 2025 18:40:10 +0200
-Subject: [PATCH] ubus: add exception_handler_set function
+Subject: [PATCH] ubus: add guard() function
 
 This allows calling the provided handler on exceptions, avoiding the
 existing behavior of calling uloop_end().
@@ -10,7 +10,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/lib/ubus.c
 +++ b/lib/ubus.c
-@@ -573,6 +573,40 @@ uc_ubus_call_cb(struct ubus_request *req
+@@ -575,6 +575,40 @@ uc_ubus_call_cb(struct ubus_request *req
  }
  
  static void
@@ -22,9 +22,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	if (!ucv_is_callable(exh))
 +		goto error;
 +
-+	val = uc_vm_exception_value(vm);
++	val = uc_vm_exception_object(vm);
 +	uc_vm_stack_push(vm, ucv_get(exh));
-+	uc_vm_stack_push(vm, ucv_get(val));
++	uc_vm_stack_push(vm, val);
 +
 +	if (uc_vm_call(vm, false, 1) != EXCEPTION_NONE)
 +		goto error;
@@ -51,7 +51,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  uc_ubus_call_user_cb(uc_ubus_deferred_t *defer, int ret, uc_value_t *reply)
  {
  	uc_value_t *this = ucv_get(defer->res);
-@@ -623,10 +657,8 @@ uc_ubus_call_data_user_cb(struct ubus_re
+@@ -625,10 +659,8 @@ uc_ubus_call_data_user_cb(struct ubus_re
  		uc_vm_stack_push(vm, ucv_get(func));
  		uc_vm_stack_push(vm, ucv_get(reply));
  
@@ -63,7 +63,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  }
  
-@@ -645,10 +677,8 @@ uc_ubus_call_fd_cb(struct ubus_request *
+@@ -647,10 +679,8 @@ uc_ubus_call_fd_cb(struct ubus_request *
  		uc_vm_stack_push(vm, ucv_get(func));
  		uc_vm_stack_push(vm, ucv_int64_new(fd));
  
@@ -75,7 +75,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  }
  
-@@ -927,10 +957,8 @@ uc_ubus_defer_common(uc_vm_t *vm, uc_ubu
+@@ -929,10 +959,8 @@ uc_ubus_defer_common(uc_vm_t *vm, uc_ubu
  		uc_vm_stack_push(vm, ucv_get(replycb));
  		uc_vm_stack_push(vm, ucv_int64_new(rv));
  
@@ -87,7 +87,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  		ucv_put(res->res);
  	}
-@@ -1199,10 +1227,8 @@ uc_ubus_object_notify_data_cb(struct ubu
+@@ -1201,10 +1229,8 @@ uc_ubus_object_notify_data_cb(struct ubu
  		uc_vm_stack_push(vm, ucv_int64_new(type));
  		uc_vm_stack_push(vm, blob_array_to_ucv(vm, blob_data(msg), blob_len(msg), true));
  
@@ -99,7 +99,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  }
  
-@@ -1222,10 +1248,8 @@ uc_ubus_object_notify_status_cb(struct u
+@@ -1224,10 +1250,8 @@ uc_ubus_object_notify_status_cb(struct u
  		uc_vm_stack_push(vm, ucv_int64_new(idx));
  		uc_vm_stack_push(vm, ucv_int64_new(ret));
  
@@ -111,7 +111,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  }
  
-@@ -1245,10 +1269,8 @@ uc_ubus_object_notify_complete_cb(struct
+@@ -1247,10 +1271,8 @@ uc_ubus_object_notify_complete_cb(struct
  		uc_vm_stack_push(vm, ucv_int64_new(idx));
  		uc_vm_stack_push(vm, ucv_int64_new(ret));
  
@@ -123,7 +123,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  
  	notifyctx->complete = true;
-@@ -1579,7 +1601,7 @@ uc_ubus_handle_reply_common(struct ubus_
+@@ -1581,7 +1603,7 @@ uc_ubus_handle_reply_common(struct ubus_
  	/* treat other exceptions as fatal and halt uloop */
  	default:
  		uc_ubus_request_finish_common(callctx, UBUS_STATUS_UNKNOWN_ERROR);
@@ -132,7 +132,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		break;
  	}
  
-@@ -1638,10 +1660,8 @@ uc_ubus_object_subscribe_cb(struct ubus_
+@@ -1640,10 +1662,8 @@ uc_ubus_object_subscribe_cb(struct ubus_
  	uc_vm_stack_push(uuobj->vm, ucv_get(uuobj->res));
  	uc_vm_stack_push(uuobj->vm, ucv_get(func));
  
@@ -144,7 +144,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  static bool
-@@ -1917,10 +1937,8 @@ uc_ubus_listener_cb(struct ubus_context
+@@ -1919,10 +1939,8 @@ uc_ubus_listener_cb(struct ubus_context
  	uc_vm_stack_push(vm, ucv_string_new(type));
  	uc_vm_stack_push(vm, blob_array_to_ucv(vm, blob_data(msg), blob_len(msg), true));
  
@@ -156,7 +156,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  static uc_value_t *
-@@ -2040,10 +2058,8 @@ uc_ubus_subscriber_remove_cb(struct ubus
+@@ -2042,10 +2060,8 @@ uc_ubus_subscriber_remove_cb(struct ubus
  	uc_vm_stack_push(vm, ucv_get(func));
  	uc_vm_stack_push(vm, ucv_uint64_new(id));
  
@@ -168,7 +168,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
  
  static uc_value_t *
-@@ -2334,10 +2350,8 @@ uc_ubus_channel_disconnect_cb(struct ubu
+@@ -2370,10 +2386,8 @@ uc_ubus_channel_disconnect_cb(struct ubu
  		uc_vm_stack_push(c->vm, ucv_get(c->res));
  		uc_vm_stack_push(c->vm, ucv_get(func));
  
@@ -180,14 +180,17 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  
  	blob_buf_free(&c->buf);
-@@ -2438,10 +2452,25 @@ uc_ubus_channel_connect(uc_vm_t *vm, siz
+@@ -2474,10 +2488,28 @@ uc_ubus_channel_connect(uc_vm_t *vm, siz
  }
  
  
 +static uc_value_t *
-+uc_ubus_exception_handler_set(uc_vm_t *vm, size_t nargs)
++uc_ubus_guard(uc_vm_t *vm, size_t nargs)
 +{
 +	uc_value_t *arg = uc_fn_arg(0);
++
++	if (!nargs)
++		return ucv_get(uc_vm_registry_get(vm, "ubus.ex_handler"));
 +
 +	if (arg && !ucv_is_callable(arg))
 +		return NULL;
@@ -202,7 +205,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	{ "error",			uc_ubus_error },
  	{ "connect",		uc_ubus_connect },
  	{ "open_channel",	uc_ubus_channel_connect },
-+	{ "exception_handler_set", uc_ubus_exception_handler_set },
++	{ "guard",			uc_ubus_guard },
  };
  
  static const uc_function_list_t conn_fns[] = {
