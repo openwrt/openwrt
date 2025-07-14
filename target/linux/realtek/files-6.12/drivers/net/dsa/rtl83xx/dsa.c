@@ -621,8 +621,8 @@ static void rtldsa_83xx_pcs_get_state(struct phylink_pcs *pcs, struct phylink_li
 		state->pause |= MLO_PAUSE_TX;
 }
 
-static void rtl93xx_pcs_get_state(struct phylink_pcs *pcs,
-				  struct phylink_link_state *state)
+static void rtldsa_93xx_pcs_get_state(struct phylink_pcs *pcs,
+				      struct phylink_link_state *state)
 {
 	struct rtl838x_pcs *rtpcs = container_of(pcs, struct rtl838x_pcs, pcs);
 	struct rtl838x_switch_priv *priv = rtpcs->priv;
@@ -631,21 +631,25 @@ static void rtl93xx_pcs_get_state(struct phylink_pcs *pcs,
 	u64 link;
 	u64 media;
 
-	if (port < 0 || port > priv->cpu_port) {
-		state->link = false;
+	state->link = 0;
+	state->speed = SPEED_UNKNOWN;
+	state->duplex = DUPLEX_UNKNOWN;
+	state->pause &= ~(MLO_PAUSE_RX | MLO_PAUSE_TX);
+
+	if (port < 0 || port > priv->cpu_port)
 		return;
-	}
 
 	/* On the RTL9300 for at least the RTL8226B PHY, the MAC-side link
 	 * state needs to be read twice in order to read a correct result.
 	 * This would not be necessary for ports connected e.g. to RTL8218D
 	 * PHYs.
 	 */
-	state->link = 0;
 	link = priv->r->get_port_reg_le(priv->r->mac_link_sts);
 	link = priv->r->get_port_reg_le(priv->r->mac_link_sts);
-	if (link & BIT_ULL(port))
-		state->link = 1;
+	if (!(link & BIT_ULL(port)))
+		return;
+
+	state->link = 1;
 
 	if (priv->family_id == RTL9310_FAMILY_ID)
 		media = priv->r->get_port_reg_le(RTL931X_MAC_LINK_MEDIA_STS);
@@ -656,46 +660,37 @@ static void rtl93xx_pcs_get_state(struct phylink_pcs *pcs,
 	pr_debug("%s: link state port %d: %llx, media %llx\n", __func__, port,
 		 link & BIT_ULL(port), media);
 
-	state->duplex = 0;
 	if (priv->r->get_port_reg_le(priv->r->mac_link_dup_sts) & BIT_ULL(port))
-		state->duplex = 1;
+		state->duplex = DUPLEX_FULL;
+	else
+		state->duplex = DUPLEX_HALF;
 
 	speed = priv->r->get_port_reg_le(priv->r->mac_link_spd_sts(port));
-	speed >>= (port % 8) << 2;
-	switch (speed & 0xf) {
-	case 0:
+	speed = (speed >> ((port % 8) << 2)) & 0xf;
+	switch (speed) {
+	case RTL_SPEED_10:
 		state->speed = SPEED_10;
 		break;
-	case 1:
+	case RTL_SPEED_100:
 		state->speed = SPEED_100;
 		break;
-	case 2:
-	case 7:
+	case RTL_SPEED_1000:
 		state->speed = SPEED_1000;
 		break;
-	case 4:
+	case RTL_SPEED_10000:
 		state->speed = SPEED_10000;
 		break;
-	case 5:
-	case 8:
+	case RTL_SPEED_2500:
 		state->speed = SPEED_2500;
 		break;
-	case 6:
+	case RTL_SPEED_5000:
 		state->speed = SPEED_5000;
 		break;
 	default:
 		pr_err("%s: unknown speed: %d\n", __func__, (u32)speed & 0xf);
 	}
 
-	if (priv->family_id == RTL9310_FAMILY_ID
-		&& (port >= 52 && port <= 55)) { /* Internal serdes */
-			state->speed = SPEED_10000;
-			state->link = 1;
-			state->duplex = 1;
-	}
-
 	pr_debug("%s: speed is: %d %d\n", __func__, (u32)speed & 0xf, state->speed);
-	state->pause &= (MLO_PAUSE_RX | MLO_PAUSE_TX);
 	if (priv->r->get_port_reg_le(priv->r->mac_rx_pause_sts) & BIT_ULL(port))
 		state->pause |= MLO_PAUSE_RX;
 	if (priv->r->get_port_reg_le(priv->r->mac_tx_pause_sts) & BIT_ULL(port))
@@ -2750,7 +2745,7 @@ const struct dsa_switch_ops rtl83xx_switch_ops = {
 
 const struct phylink_pcs_ops rtl93xx_pcs_ops = {
 	.pcs_an_restart		= rtl83xx_pcs_an_restart,
-	.pcs_get_state		= rtl93xx_pcs_get_state,
+	.pcs_get_state		= rtldsa_93xx_pcs_get_state,
 	.pcs_config		= rtl83xx_pcs_config,
 };
 
