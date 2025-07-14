@@ -7,6 +7,7 @@ boot() {
 	# for more information, please read https://www.kernel.org/doc/Documentation/hwmon/sysfs-interface
 
 	case $(board_name) in
+	plasmacloud,esx28|\
 	plasmacloud,psx28)
 		path_to_hwmon="$(find /sys/devices/platform/1b000000.switchcore/1b000000.switchcore:i2c@100c/i2c-4/4-002e/hwmon/ -type d -maxdepth 1 -mindepth 1 -name 'hwmon*')"
 

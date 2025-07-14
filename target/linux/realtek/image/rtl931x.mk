@@ -18,6 +18,12 @@ define Device/plasmacloud-common
   IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
 endef
 
+define Device/plasmacloud_esx28
+  $(Device/plasmacloud-common)
+  DEVICE_MODEL := ESX28
+endef
+TARGET_DEVICES += plasmacloud_esx28
+
 define Device/plasmacloud_psx28
   $(Device/plasmacloud-common)
   DEVICE_MODEL := PSX28
