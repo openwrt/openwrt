@@ -2312,26 +2312,6 @@
 		compatible = "srd";
 	};
 
-	firmware {
-
-		qfprom_sec {
-			fuse-blow-size-required = <0x01>;
-			img-size = <0x400000>;
-			compatible = "qcom,qfprom-sec";
-			img-addr = <0x4a800000>;
-		};
-
-		scm {
-			compatible = "qcom,scm-ipq5018";
-		};
-	};
-
-	psci {
-		method = "smc";
-		status = "ok";
-		compatible = "arm,psci-1.0";
-	};
-
 	clocks {
 
 		xo {
