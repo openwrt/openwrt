@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/dts/upstream/src/arm64/rockchip/rk3568-linkstar-h68k-1432v1.dts
-@@ -0,0 +1,788 @@
+@@ -0,0 +1,796 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +// Draft 11 July 2025
 +// Device Tree Info
@@ -27,7 +27,10 @@
 +/ {
 +	model = "Seeed LinkStar H68K-1432V1 (RK3568) DDR4 Board";
 +  	compatible = "seeed,rk3568-linkstar-h68k-1432v1",
-+		   "linkstar","rockchip,rk3568";
++		   "seeed,linkstar-h68k",
++		   "hinlink,hinlink-h68k",
++		   "rockchip,rk3568b2",
++		   "rockchip,rk3568";
 +
 +	aliases {
 +		ethernet0 = &gmac0;
@@ -51,7 +54,6 @@
 +	chosen {
 +		stdout-path = "serial2:1500000n8";
 +	};
-+
 +
 +	hdmi-con {
 +		compatible = "hdmi-connector";
@@ -79,14 +81,11 @@
 +			debounce-interval = <50>;
 +		};
 +
-+
-+
 +		/* recessed key behavior 11 July 2025:
 +		  Left most (sd card side): nothing
 +		  center: sends OS a reboot signal, which shows on console
 +		  right (power barrel side): immediate reboot, no console info
 +		*/
-+
 +	};
 +
 + /* gpio chip 0, line 24 responds to console key press */
@@ -223,7 +222,6 @@
 +		     &gmac0_rx_bus2
 +		     &gmac0_rgmii_clk
 +		     &gmac0_rgmii_bus>;
-+	/* rockchip,bugged_tx_coe; */
 +	snps,reset-gpio = <&gpio2 RK_PD3 GPIO_ACTIVE_LOW>;
 +	snps,reset-active-low;
 +	snps,reset-delays-us = <0 20000 100000>;
@@ -245,7 +243,6 @@
 +		     &gmac1m1_rx_bus2
 +		     &gmac1m1_rgmii_clk
 +		     &gmac1m1_rgmii_bus>;
-+	/* rockchip,bugged_tx_coe; */
 +	snps,reset-gpio = <&gpio1 RK_PB0 GPIO_ACTIVE_LOW>;
 +	snps,reset-active-low;
 +	snps,reset-delays-us = <0 20000 100000>;
@@ -259,7 +256,6 @@
 +
 +&combphy0 {
 +	status = "okay";
-+ /* data-lanes =? */
 +
 +};
 +
@@ -561,9 +557,9 @@
 +			};
 +		};
 +
-+		/* codec {
-+			mic-in-differential;
-+		}; */
++		codec {
++			rockchip,mic-in-differential;
++		}; 
 +	};
 +};
 +
@@ -623,6 +619,16 @@
 +	button {
 +		reset_button_pin: reset-button-pin {
 +			rockchip,pins = <0 RK_PA0 RK_FUNC_GPIO &pcfg_pull_up>;
++		};
++	};
++
++	bluetooth {
++		bt_wake_host_h: bt-wake-host-h {
++			rockchip,pins = <3 RK_PA1 RK_FUNC_GPIO &pcfg_pull_down>;
++		};
++
++		host_wake_bt_h: host-wake-bt-h {
++			rockchip,pins = <3 RK_PA2 RK_FUNC_GPIO &pcfg_pull_none>;
 +		};
 +	};
 +
@@ -742,11 +748,13 @@
 +&usb_host0_xhci {
 +	phys = <&combphy0 PHY_TYPE_USB3>;
 +	phy-names = "usb3-phy";
++	dr_mode = "host";
 +	status = "okay";
 +};
 +
 +&usb_host1_xhci {
 +	status = "okay";
++	dr_mode = "otg";
 +};
 +
 +&usb2phy0 {
