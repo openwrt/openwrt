@@ -8,24 +8,111 @@
 
 #include "ipq5018.dtsi"
 #include "ipq5018-ess.dtsi"
+#include "ipq5018-nss.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/leds/common.h>
 
 / {
+	model = "Wallys DR5018";
+	compatible = "wallys,dr5018", "qcom,ipq5018", "qcom,ipq5018-mp03.5-c1";
+
 	soc_version_major = <0x1000000>;
 	tz_version = [43 52 4d 2d 54 5a 2e 57 4e 53 2e 34 2e 30 2d 30 30 31 30 37 0a];
 	#size-cells = <0x02>;
-	compatible = "qcom,ipq5018-mp03.5-c1\0qcom,ipq5018";
 	interrupt-parent = <0x01>;
 	soc_version_minor = <0x1000000>;
 	#address-cells = <0x02>;
 	flash_type = <0x7000000>;
-	model = "Qualcomm Technologies, Inc. IPQ5018/AP-MP03.5-C1";
 	cpu_type = <0xbf010000>;
 	boot_version = [43 52 4d 2d 42 4f 4f 54 2e 42 46 2e 33 2e 33 2e 31 2e 31 2d 30 30 30 36 37 0a];
 	machid = <0x4000408>;
+
+        aliases {
+                ethernet1 = "/soc/dp2";
+                sdhc1 = "/soc/sdhci@7804000";
+                i2c0 = "/soc/i2c@78b7000";
+                ethernet0 = "/soc/dp1";
+                serial0 = "/soc/serial@78af000";
+                serial1 = "/soc/serial@78b0000";
+        };
+
+        chosen {
+                bootargs = "console=ttyMSM0,115200n8 cnss2.bdf_integrated=0x24 cnss2.bdf_pci0=0x60 cnss2.bdf_pci1=0x60 cnss2.skip_radio_bmap=4 ubi.mtd=rootfs root=mtd:ubi_rootfs rootfstype=squashfs rootwait";
+                stdout-path = "serial0";
+                bootargs-append = " swiotlb=1 coherent_pool=2M";
+        };
+
+        gpio_keys {
+                compatible = "gpio-keys";
+                pinctrl-0 = <0x4e>;
+                pinctrl-names = "default";
+
+                button@1 {
+                        gpios = <0x07 0x26 0x01>;
+                        label = "wps";
+                        linux,input-type = <0x01>;
+                        linux,code = <0x211>;
+                        debounce-interval = <0x3c>;
+                };
+
+                button@2 {
+                        gpios = <0x07 0x16 0x01>;
+                        label = "reset";
+                        linux,input-type = <0x01>;
+                        linux,code = <0x100>;
+                        debounce-interval = <0x3c>;
+                };
+        };
+
+        leds {
+                compatible = "gpio-leds";
+                pinctrl-0 = <0x4f>;
+                pinctrl-names = "default";
+
+                led@32 {
+                        gpios = <0x07 0x20 0x00>;
+                        linux,default-trigger = "timer";
+                        label = "GPIO32";
+                        default-state = "on";
+                };
+
+                led@26 {
+                        gpios = <0x07 0x1a 0x00>;
+                        linux,default-trigger = "timer";
+                        label = "GPIO26";
+                        default-state = "on";
+                };
+
+                led@28 {
+                        gpios = <0x07 0x1c 0x00>;
+                        linux,default-trigger = "timer";
+                        label = "GPIO28";
+                        default-state = "on";
+                };
+
+                led@30 {
+                       linux,default-trigger = "timer";
+                       gpio = <0x07 0x1e 0x00>;
+                       label = "GPIO30";
+                       default-state = "on";
+                };
+
+                led@27 {
+                        linux,default-trigger = "timer";
+                        gpio = <0x07 0x1b 0x00>;
+                        label = "GPIO27";
+                        default-state = "on";
+                };
+
+                        led@25 {
+                        gpios = <0x07 0x19 0x00>;
+                        linux,default-trigger = "timer";
+                        label = "GPIO25";
+                        default-state = "on";
+                };
+        };
 
 	soc {
 		#size-cells = <0x01>;
@@ -186,12 +273,6 @@
 					phandle = <0x2f>;
 				};
 			};
-		};
-
-		nss-macsec1 {
-			mdiobus = <0x08>;
-			phy_addr = <0x1c>;
-			compatible = "qcom,nss-macsec";
 		};
 
 		qti,qgic2m-msi_0 {
@@ -418,28 +499,6 @@
 			clock-names = "core_clk\0core_a_clk";
 			clocks = <0x02 0x61 0x02 0x5e>;
 			compatible = "arm,coresight-cti";
-		};
-
-		gpio_keys {
-			compatible = "gpio-keys";
-			pinctrl-0 = <0x4e>;
-			pinctrl-names = "default";
-
-			button@1 {
-				gpios = <0x07 0x26 0x01>;
-				label = "wps";
-				linux,input-type = <0x01>;
-				linux,code = <0x211>;
-				debounce-interval = <0x3c>;
-			};
-
-			button@2 {
-				gpios = <0x07 0x16 0x01>;
-				label = "reset";
-				linux,input-type = <0x01>;
-				linux,code = <0x100>;
-				debounce-interval = <0x3c>;
-			};
 		};
 
 		serial@78af000 {
@@ -967,12 +1026,6 @@
 			};
 		};
 
-		nss-common {
-			reg-names = "nss-misc-reset";
-			reg = <0x1868010 0x01>;
-			compatible = "qcom,nss-common";
-		};
-
 		etm@619c000 {
 			cpu = <0x42>;
 			reg = <0x619c000 0x1000>;
@@ -1383,54 +1436,6 @@
 			};
 		};
 
-		leds {
-			compatible = "gpio-leds";
-			pinctrl-0 = <0x4f>;
-			pinctrl-names = "default";
-
-			led@32 {
-				gpios = <0x07 0x20 0x00>;
-				linux,default-trigger = "timer";
-				label = "GPIO32";
-				default-state = "on";
-			};
-
-			led@26 {
-				gpios = <0x07 0x1a 0x00>;
-				linux,default-trigger = "timer";
-				label = "GPIO26";
-				default-state = "on";
-			};
-
-			led@28 {
-				gpios = <0x07 0x1c 0x00>;
-				linux,default-trigger = "timer";
-				label = "GPIO28";
-				default-state = "on";
-			};
-
-			led@30 {
-				linux,default-trigger = "timer";
-				gpio = <0x07 0x1e 0x00>;
-				label = "GPIO30";
-				default-state = "on";
-			};
-
-			led@27 {
-				linux,default-trigger = "timer";
-				gpio = <0x07 0x1b 0x00>;
-				label = "GPIO27";
-				default-state = "on";
-			};
-
-			led@25 {
-				gpios = <0x07 0x19 0x00>;
-				linux,default-trigger = "timer";
-				label = "GPIO25";
-				default-state = "on";
-			};
-		};
-
 		cti@6015000 {
 			reg-names = "cti-base";
 			reg = <0x6015000 0x1000>;
@@ -1772,48 +1777,6 @@
 			qcom,id = <0x02>;
 		};
 
-		qcom,nss_crypto {
-			#size-cells = <0x01>;
-			qcom,max-contexts = <0x40>;
-			qcom,max-context-size = <0x90>;
-			compatible = "qcom,nss-crypto";
-			#address-cells = <0x01>;
-			ranges;
-
-			ce5_node {
-				reg-names = "crypto_pbase\0bam_base";
-				qcom,aes256-cbc-sha256-hmac;
-				qcom,aes128-cbc;
-				qcom,transform-enabled;
-				qcom,3des-cbc-sha160-hmac;
-				qcom,aes128-ctr-sha256-hmac;
-				qcom,sha160-hmac;
-				qcom,aes256-ctr-sha256-hmac;
-				qcom,aes256-ctr-sha160-hmac;
-				reg = <0x73a000 0x6000 0x704000 0x20000>;
-				qcom,sha256-hash;
-				qcom,dma-mask = <0x0c>;
-				qcom,aes256-ctr;
-				qcom,aes256-cbc-sha160-hmac;
-				qcom,sha256-hmac;
-				qcom,sha160-hash;
-				qcom,aes128-cbc-sha160-hmac;
-				compatible = "qcom,ce5";
-				qcom,aes256-cbc;
-				qcom,aes128-ecb;
-				qcom,aes256-ecb;
-				qcom,aes128-ctr;
-				qcom,aes128-cbc-sha256-hmac;
-				qcom,3des-cbc;
-				qcom,3des-cbc-sha256-hmac;
-				qcom,aes128-ctr-sha160-hmac;
-
-				engine0 {
-					qcom,ee = <0x02 0x03>;
-				};
-			};
-		};
-
 		etm@619d000 {
 			cpu = <0x44>;
 			reg = <0x619d000 0x1000>;
@@ -1908,11 +1871,6 @@
 			};
 		};
 
-		nss-dp-common {
-			compatible = "qcom,nss-dp-common";
-			qcom,tcsr-base = <0x1937000>;
-		};
-
 		mailbox@b111000 {
 			#mbox-cells = <0x01>;
 			qcom,ipc = <0x0d 0x08 0x08>;
@@ -1978,49 +1936,6 @@
 					};
 				};
 			};
-		};
-
-		nss@40000000 {
-			reg-names = "nphys\0qgic-phys";
-			qcom,match-enabled;
-			interrupts = <0x00 0x192 0x01 0x00 0x191 0x01 0x00 0x190 0x01 0x00 0x18f 0x01 0x00 0x18e 0x01 0x00 0x18d 0x01 0x00 0x18c 0x01 0x00 0x18b 0x01>;
-			qcom,map-t-enabled;
-			qcom,pppoe-enabled;
-			qcom,pptp-enabled;
-			qcom,rmnet_rx-enabled;
-			qcom,ipv6-enabled;
-			qcom,num-pri = <0x04>;
-			qcom,wlanredirect-enabled;
-			qcom,low-frequency = <0x32a9f880>;
-			qcom,vxlan-enabled;
-			qcom,num-irq = <0x08>;
-			qcom,ipv4-enabled;
-			qcom,num-queue = <0x04>;
-			reg = <0x7a00000 0x100 0xb111000 0x1000>;
-			qcom,ipv6-reasm-enabled;
-			qcom,mid-frequency = <0x32a9f880>;
-			qcom,crypto-enabled;
-			qcom,ipv4-reasm-enabled;
-			qcom,tunipip6-enabled;
-			qcom,shaping-enabled;
-			clock-names = "nss-cfg-clk\0nss-dbg-clk\0nss-core-clk\0nss-utcm-clk\0nss-axi-clk\0nss-snoc-axi-clk\0nss-nc-axi-clk";
-			clocks = <0x02 0x81 0x02 0x83 0x02 0x82 0x02 0x85 0x02 0x80 0x02 0x76 0x02 0x84>;
-			qcom,ipsec-enabled;
-			qcom,gre-redir-mark-enabled;
-			qcom,udp-st-enabled;
-			qcom,clmap-enabled;
-			qcom,wlan-dataplane-offload-enabled;
-			qcom,gre-redir-enabled;
-			compatible = "qcom,nss";
-			qcom,portid-enabled;
-			qcom,gre-enabled;
-			qcom,mirror-enabled;
-			qcom,load-addr = <0x40000000>;
-			qcom,pvxlan-enabled;
-			qcom,id = <0x00>;
-			qcom,max-frequency = <0x3b9aca00>;
-			qcom,l2tpv2-enabled;
-			qcom,tun6rd-enabled;
 		};
 
 		cti@601c000 {
@@ -2389,15 +2304,6 @@
 		reset-names = "gcc_apc0_voltage_droop_detector_bcr\0gcc_blsp1_bcr\0gcc_blsp1_qup1_bcr\0gcc_blsp1_qup2_bcr\0gcc_blsp1_qup3_bcr\0gcc_blsp1_uart1_bcr\0gcc_blsp1_uart2_bcr\0gcc_boot_rom_bcr\0gcc_btss_bcr\0gcc_cmn_blk_bcr\0gcc_cmn_ldo_bcr\0gcc_ce_bcr\0gcc_crypto_bcr\0gcc_dcc_bcr\0gcc_dcd_bcr\0gcc_ddrss_bcr\0gcc_edpd_bcr\0gcc_gephy_bcr\0gcc_gephy_mdc_sw_ares\0gcc_gephy_dsp_hw_ares\0gcc_gephy_rx_ares\0gcc_gephy_tx_ares\0gcc_gmac0_bcr\0gcc_gmac0_cfg_ares\0gcc_gmac0_sys_ares\0gcc_gmac1_bcr\0gcc_gmac1_cfg_ares\0gcc_gmac1_sys_ares\0gcc_imem_bcr\0gcc_lpass_bcr\0gcc_mdio0_bcr\0gcc_mdio1_bcr\0gcc_mpm_bcr\0gcc_pcie0_bcr\0gcc_pcie0_link_down_bcr\0gcc_pcie0_phy_bcr\0gcc_pcie0phy_phy_bcr\0gcc_pcie0_pipe_ares\0gcc_pcie0_sleep_ares\0gcc_pcie0_core_sticky_ares\0gcc_pcie0_axi_master_ares\0gcc_pcie0_axi_slave_ares\0gcc_pcie0_ahb_ares\0gcc_pcie0_axi_master_sticky_ares\0gcc_pcie0_axi_slave_sticky_ares\0gcc_pcie1_bcr\0gcc_pcie1_link_down_bcr\0gcc_pcie1_phy_bcr\0gcc_pcie1phy_phy_bcr\0gcc_pcie1_pipe_ares\0gcc_pcie1_sleep_ares\0gcc_pcie1_core_sticky_ares\0gcc_pcie1_axi_master_ares\0gcc_pcie1_axi_slave_ares\0gcc_pcie1_ahb_ares\0gcc_pcie1_axi_master_sticky_ares\0gcc_pcie1_axi_slave_sticky_ares\0gcc_pcnoc_bcr\0gcc_pcnoc_bus_timeout0_bcr\0gcc_pcnoc_bus_timeout1_bcr\0gcc_pcnoc_bus_timeout2_bcr\0gcc_pcnoc_bus_timeout3_bcr\0gcc_pcnoc_bus_timeout4_bcr\0gcc_pcnoc_bus_timeout5_bcr\0gcc_pcnoc_bus_timeout6_bcr\0gcc_pcnoc_bus_timeout7_bcr\0gcc_pcnoc_bus_timeout8_bcr\0gcc_pcnoc_bus_timeout9_bcr\0gcc_pcnoc_bus_timeout10_bcr\0gcc_pcnoc_bus_timeout11_bcr\0gcc_prng_bcr\0gcc_q6ss_dbg_ares\0gcc_q6_ahb_s_ares\0gcc_q6_ahb_ares\0gcc_q6_axim2_ares\0gcc_q6_axim_ares\0gcc_q6_axis_ares\0gcc_qdss_bcr\0gcc_qpic_bcr\0gcc_qusb2_0_phy_bcr\0gcc_sdcc1_bcr\0gcc_sec_ctrl_bcr\0gcc_spdm_bcr\0gcc_system_noc_bcr\0gcc_tcsr_bcr\0gcc_tlmm_bcr\0gcc_ubi0_axi_ares\0gcc_ubi0_ahb_ares\0gcc_ubi0_nc_axi_ares\0gcc_ubi0_dbg_ares\0gcc_ubi0_utcm_ares\0gcc_ubi0_core_ares\0gcc_ubi32_bcr\0gcc_uniphy_bcr\0gcc_uniphy_ahb_ares\0gcc_uniphy_sys_ares\0gcc_uniphy_rx_ares\0gcc_uniphy_tx_ares\0gcc_uniphy_soft_reset\0gcc_usb0_bcr\0gcc_usb0_phy_bcr\0gcc_wcss_bcr\0gcc_wcss_dbg_ares\0gcc_wcss_ecahb_ares\0gcc_wcss_acmt_ares\0gcc_wcss_dbg_bdg_ares\0gcc_wcss_ahb_s_ares\0gcc_wcss_axi_m_ares\0gcc_wcss_axi_s_ares\0gcc_wcss_q6_bcr\0gcc_wcssaon_reset";
 	};
 
-	aliases {
-		ethernet1 = "/soc/dp2";
-		sdhc1 = "/soc/sdhci@7804000";
-		i2c0 = "/soc/i2c@78b7000";
-		ethernet0 = "/soc/dp1";
-		serial0 = "/soc/serial@78af000";
-		serial1 = "/soc/serial@78b0000";
-	};
-
 	srd_trace {
 		compatible = "srd";
 	};
@@ -2437,12 +2343,6 @@
 			linux,phandle = <0x0c>;
 			phandle = <0x0c>;
 		};
-	};
-
-	chosen {
-		bootargs = "console=ttyMSM0,115200n8 cnss2.bdf_integrated=0x24 cnss2.bdf_pci0=0x60 cnss2.bdf_pci1=0x60 cnss2.skip_radio_bmap=4 ubi.mtd=rootfs root=mtd:ubi_rootfs rootfstype=squashfs rootwait";
-		stdout-path = "serial0";
-		bootargs-append = " swiotlb=1 coherent_pool=2M";
 	};
 
 	cpus {

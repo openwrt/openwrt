@@ -1,0 +1,233 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Copyright (c) 2025, Qualcomm
+ * Christian <kimocoder> Bremvaag <christian@aircrack-ng.org>
+ *
+ */
+
+
+&soc {
+
+        nss-common {
+                reg-names = "nss-misc-reset";
+                reg = <0x1868010 0x01>;
+                compatible = "qcom,nss-common";
+        };
+
+        nss-macsec1 {
+                mdiobus = <0x08>;
+                phy_addr = <0x1c>;
+                compatible = "qcom,nss-macsec";
+        };
+
+        qcom,nss_crypto {
+                #size-cells = <0x01>;
+                qcom,max-contexts = <0x40>;
+                qcom,max-context-size = <0x90>;
+                compatible = "qcom,nss-crypto";
+                #address-cells = <0x01>;
+                ranges;
+
+                ce5_node {
+                        reg-names = "crypto_pbase\0bam_base";
+                        qcom,aes256-cbc-sha256-hmac;
+                        qcom,aes128-cbc;
+                        qcom,transform-enabled;
+                        qcom,3des-cbc-sha160-hmac;
+                        qcom,aes128-ctr-sha256-hmac;
+                        qcom,sha160-hmac;
+                        qcom,aes256-ctr-sha256-hmac;
+                        qcom,aes256-ctr-sha160-hmac;
+                        reg = <0x73a000 0x6000 0x704000 0x20000>;
+                        qcom,sha256-hash;
+                        qcom,dma-mask = <0x0c>;
+                        qcom,aes256-ctr;
+                        qcom,aes256-cbc-sha160-hmac;
+                        qcom,sha256-hmac;
+                        qcom,sha160-hash;
+                        qcom,aes128-cbc-sha160-hmac;
+                        compatible = "qcom,ce5";
+                        qcom,aes256-cbc;
+                        qcom,aes128-ecb;
+                        qcom,aes256-ecb;
+                        qcom,aes128-ctr;
+                        qcom,aes128-cbc-sha256-hmac;
+                        qcom,3des-cbc;
+                        qcom,3des-cbc-sha256-hmac;
+                        qcom,aes128-ctr-sha160-hmac;
+
+                        engine0 {
+                                qcom,ee = <0x02 0x03>;
+                        };
+                };
+        };
+
+        nss-dp-common {
+                compatible = "qcom,nss-dp-common";
+                qcom,tcsr-base = <0x1937000>;
+        };
+
+        /* nss@40000000 {
+                reg-names = "nphys\0qgic-phys";
+                qcom,match-enabled;
+                interrupts = <0x00 0x192 0x01 0x00 0x191 0x01 0x00 0x190 0x01 0x00 0x18f 0x01 0x00 0x18e 0x01 0x00 0x18d 0x01 0x00 0x18c 0x01 0x00 0x18b 0x01>;
+                qcom,map-t-enabled;
+                qcom,pppoe-enabled;
+                qcom,pptp-enabled;
+                qcom,rmnet_rx-enabled;
+                qcom,ipv6-enabled;
+                qcom,num-pri = <0x04>;
+                qcom,wlanredirect-enabled;
+                qcom,low-frequency = <0x32a9f880>;
+                qcom,vxlan-enabled;
+                qcom,num-irq = <0x08>;
+                qcom,ipv4-enabled;
+                qcom,num-queue = <0x04>;
+                reg = <0x7a00000 0x100 0xb111000 0x1000>;
+                qcom,ipv6-reasm-enabled;
+                qcom,mid-frequency = <0x32a9f880>;
+                qcom,crypto-enabled;
+                qcom,ipv4-reasm-enabled;
+                qcom,tunipip6-enabled;
+                qcom,shaping-enabled;
+                clock-names = "nss-cfg-clk\0nss-dbg-clk\0nss-core-clk\0nss-utcm-clk\0nss-axi-clk\0nss-snoc-axi-clk\0nss-nc-axi-clk";
+                clocks = <0x02 0x81 0x02 0x83 0x02 0x82 0x02 0x85 0x02 0x80 0x02 0x76 0x02 0x84>;
+                qcom,ipsec-enabled;
+                qcom,gre-redir-mark-enabled;
+                qcom,udp-st-enabled;
+                qcom,clmap-enabled;
+                qcom,wlan-dataplane-offload-enabled;
+                qcom,gre-redir-enabled;
+                compatible = "qcom,nss";
+                qcom,portid-enabled;
+                qcom,gre-enabled;
+                qcom,mirror-enabled;
+                qcom,load-addr = <0x40000000>;
+                qcom,pvxlan-enabled;
+                qcom,id = <0x00>;
+                qcom,max-frequency = <0x3b9aca00>;
+                qcom,l2tpv2-enabled;
+                qcom,tun6rd-enabled;
+        }; */
+
+	nss0: nss@40000000 {
+		compatible = "qcom,nss";
+		interrupts = <GIC_SPI 402 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 401 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 400 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 399 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 398 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 397 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 396 IRQ_TYPE_EDGE_RISING>,
+			     <GIC_SPI 395 IRQ_TYPE_EDGE_RISING>;
+		reg = <0x07a00000 0x100>,
+		      <0x0b111000 0x1000>;
+		reg-names = "nphys",
+		            "qgic-phys";
+		clocks = <&gcc GCC_UBI0_CFG_CLK>,
+			 <&gcc GCC_UBI0_DBG_CLK>,
+			 <&gcc GCC_UBI0_CORE_CLK>,
+			 <&gcc GCC_UBI0_UTCM_CLK>,
+			 <&gcc GCC_UBI0_AXI_CLK>,
+			 <&gcc GCC_SNOC_UBI0_AXI_CLK>,
+			 <&gcc GCC_UBI0_NC_AXI_CLK>;
+		clock-names = "nss-cfg-clk",
+			      "nss-dbg-clk",
+			      "nss-core-clk",
+			      "nss-utcm-clk",
+			      "nss-axi-clk",
+			      "nss-snoc-axi-clk",
+			      "nss-nc-axi-clk";
+		qcom,id = <0>;
+		qcom,num-queue = <4>;
+		qcom,num-irq = <8>;
+		qcom,num-pri = <4>;
+		qcom,load-addr = <0x40000000>;
+		qcom,low-frequency = <850000000>;
+		qcom,mid-frequency = <850000000>;
+		qcom,max-frequency = <1000000000>;
+		qcom,ipv4-enabled;
+		qcom,ipv4-reasm-enabled;
+		qcom,ipv6-enabled;
+		qcom,ipv6-reasm-enabled;
+		qcom,tun6rd-enabled;
+		qcom,l2tpv2-enabled;
+		qcom,gre-enabled;
+		qcom,map-t-enabled;
+		qcom,pppoe-enabled;
+		qcom,pptp-enabled;
+		qcom,tunipip6-enabled;
+		qcom,shaping-enabled;
+		qcom,clmap-enabled;
+		qcom,vxlan-enabled;
+		qcom,match-enabled;
+		qcom,mirror-enabled;
+		qcom,crypto-enabled;
+		qcom,ipsec-enabled;
+		qcom,wlanredirect-enabled;
+		qcom,gre-redir-enabled;
+		qcom,gre-redir-mark-enabled;
+		qcom,portid-enabled;
+		qcom,wlan-dataplane-offload-enabled;
+		qcom,pvxlan-enabled;
+		qcom,rmnet_rx-enabled;
+		qcom,udp-st-enabled;
+	};
+
+	nss_crypto: qcom,nss_crypto {
+		compatible = "qcom,nss-crypto";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		qcom,max-contexts = <64>;
+		qcom,max-context-size = <144>;
+		ranges;
+		ce5_node {
+			compatible = "qcom,ce5";
+			reg-names = "crypto_pbase",
+				    "bam_base";
+			reg = <0x0073a000 0x6000>,
+			      <0x00704000 0x20000>;
+			qcom,dma-mask = <0x0c>;
+			qcom,transform-enabled;
+			qcom,aes128-cbc;
+			qcom,aes256-cbc;
+			qcom,aes128-ctr;
+			qcom,aes256-ctr;
+			qcom,aes128-ecb;
+			qcom,aes256-ecb;
+			qcom,3des-cbc;
+			qcom,sha160-hash;
+			qcom,sha256-hash;
+			qcom,sha160-hmac;
+			qcom,sha256-hmac;
+			qcom,aes128-cbc-sha160-hmac;
+			qcom,aes256-cbc-sha160-hmac;
+			qcom,aes128-ctr-sha160-hmac;
+			qcom,aes256-ctr-sha160-hmac;
+			qcom,3des-cbc-sha160-hmac;
+			qcom,3des-cbc-sha256-hmac;
+			qcom,aes128-cbc-sha256-hmac;
+			qcom,aes256-cbc-sha256-hmac;
+			qcom,aes128-ctr-sha256-hmac;
+			qcom,aes256-ctr-sha256-hmac;
+			engine0 {
+				qcom,ee = <2 3>;
+			};
+		};
+	};
+};
+
+&wifi0 {
+	// IPQ5018
+	nss-radio-priority = <0>;
+};
+
+&wifi1 {
+	// QCN6102 5G
+	nss-radio-priority = <1>;
+};
+
+&wifi2 {
+	// QCN6122 5G/6G
+	nss-radio-priority = <1>;
+};
