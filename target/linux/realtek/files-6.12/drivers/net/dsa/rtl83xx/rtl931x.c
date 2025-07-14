@@ -1696,6 +1696,7 @@ const struct rtl838x_reg rtl931x_reg = {
 	.vlan_port_pvidmode_set = rtl931x_vlan_port_pvidmode_set,
 	.vlan_port_pvid_set = rtl931x_vlan_port_pvid_set,
 	.trk_mbr_ctr = rtldsa_931x_trk_mbr_ctr,
+	.rma_bpdu_fld_pmask = RTL931X_RMA_BPDU_FLD_PMSK,
 	.set_vlan_igr_filter = rtl931x_set_igr_filter,
 	.set_vlan_egr_filter = rtl931x_set_egr_filter,
 	.set_distribution_algorithm = rtl931x_set_distribution_algorithm,
