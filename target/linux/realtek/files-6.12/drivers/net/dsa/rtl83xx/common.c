@@ -1691,8 +1691,9 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		goto err_register_fib_nb;
 
 	/* TODO: put this into l2_setup() */
-	/* Flood BPDUs to all ports including cpu-port */
-	if (soc_info.family != RTL9300_FAMILY_ID) {
+	switch (soc_info.family) {
+	default:
+		/* Flood BPDUs to all ports including cpu-port */
 		bpdu_mask = soc_info.family == RTL8380_FAMILY_ID ? 0x1FFFFFFF : 0x1FFFFFFFFFFFFF;
 		priv->r->set_port_reg_be(bpdu_mask, priv->r->rma_bpdu_fld_pmask);
 
@@ -1700,8 +1701,11 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		sw_w32(7, priv->r->spcl_trap_eapol_ctrl);
 
 		rtl838x_dbgfs_init(priv);
-	} else {
+		break;
+	case RTL9300_FAMILY_ID:
+	case RTL9310_FAMILY_ID:
 		rtl930x_dbgfs_init(priv);
+		break;
 	}
 
 	return 0;
