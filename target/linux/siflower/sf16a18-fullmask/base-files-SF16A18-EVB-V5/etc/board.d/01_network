@@ -1,0 +1,33 @@
+#!/bin/sh
+
+. /lib/functions.sh
+. /lib/functions/uci-defaults-new.sh
+. /lib/functions/system.sh
+
+
+siflower_setup_interfaces()
+{
+	local board="$1"
+	ucidef_set_interface_loopback
+	ucidef_set_interfaces_lan_wan "eth0" "eth1" "0"
+	ucidef_set_interface_guest guest
+	ucidef_set_interface_lease lease
+}
+
+siflower_setup_macs()
+{
+	local board="$1"
+	local lan_mac=$(cat /sys/class/net/eth0/address)
+	local wan_mac=$(cat /sys/class/net/eth1/address)
+
+	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr lan $lan_mac
+	[ -n "$wan_mac" ] && ucidef_set_interface_macaddr wan $wan_mac
+}
+
+board_config_update
+board=siflower
+siflower_setup_interfaces $board
+siflower_setup_macs $board
+board_config_flush
+
+exit 0

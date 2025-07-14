@@ -1,0 +1,161 @@
+#!/bin/sh
+# Copyright (C) 2006 OpenWrt.org
+
+#save rf trx path config
+for _dev in /sys/class/ieee80211/*; do
+	[ -e "$_dev"  ] || continue
+	dev="${_dev##*/}"
+	ate_stats=$(cat /sys/kernel/debug/ieee80211/$dev/siwifi/ate_stats)
+	if [ $ate_stats = 'Y'  ];then
+		ate_tx_stats=$(cat /sys/kernel/debug/ieee80211/$dev/siwifi/ate_tx_stats)
+		ate_tx_macbypass=$(cat /sys/kernel/debug/ieee80211/$dev/siwifi/ate_macbyp_tx_stats)
+		echo $ate_tx_stats
+		echo $ate_tx_macbypass
+		if [ $ate_tx_stats = 'Y'  ] || [ $ate_tx_macbypass = 'Y'  ];then
+			echo "you should stop tx first!!!!!!"
+			exit
+		fi
+	fi
+done
+
+cp /lib/firmware/rf_trx_path.ini /tmp/rf_trx_path.ini
+
+sfwifi_ate remove
+sleep 1
+
+modify=0
+if [ $1 == "lb1" ]
+then
+modify=1
+sed -i "/TRX*/d" /tmp/rf_trx_path.ini
+echo "TRX_PATH_CFG=0xF3" > /tmp/rf_trx_path.ini
+fi
+
+if [ $1 == "lb2" ]
+then
+modify=1
+sed -i "/TRX*/d" /tmp/rf_trx_path.ini
+echo "TRX_PATH_CFG=0xFC" > /tmp/rf_trx_path.ini
+fi
+
+if [ $1 == "hb1" ]
+then
+modify=1
+sed -i "/TRX*/d" /tmp/rf_trx_path.ini
+echo "TRX_PATH_CFG=0x3F" > /tmp/rf_trx_path.ini
+fi
+
+if [ $1 == "hb2" ]
+then
+modify=1
+sed -i "/TRX*/d" /tmp/rf_trx_path.ini
+echo "TRX_PATH_CFG=0xCF" > /tmp/rf_trx_path.ini
+fi
+
+if [ $1 == "hb2lb1" ]
+then
+modify=1
+sed -i "/TRX*/d" /tmp/rf_trx_path.ini
+echo "TRX_PATH_CFG=0xC3" > /tmp/rf_trx_path.ini
+fi
+
+if [ $1 == "hb2lb2" ]
+then
+modify=1
+sed -i "/TRX*/d" /tmp/rf_trx_path.ini
+echo "TRX_PATH_CFG=0xCC" > /tmp/rf_trx_path.ini
+fi
+
+if [ $1 == "hb1lb1" ]
+then
+modify=1
+sed -i "/TRX*/d" /tmp/rf_trx_path.ini
+echo "TRX_PATH_CFG=0x33" > /tmp/rf_trx_path.ini
+fi
+
+if [ $1 == "hb1lb2" ]
+then
+modify=1
+sed -i "/TRX*/d" /tmp/rf_trx_path.ini
+echo "TRX_PATH_CFG=0x3C" > /tmp/rf_trx_path.ini
+fi
+
+
+
+if [ "$modify" == "0" ]
+then
+sed -i "/TRX*/d" /tmp/rf_trx_path.ini
+echo "TRX_PATH_CFG=0xFF" > /tmp/rf_trx_path.ini
+fi
+
+if [ $1 == "lb" ]
+then
+sfwifi_ate reload $1 $2
+sleep 2
+
+ifconfig wlan0 up
+ate_cmd wlan0 set ATE = ATESTART
+ate_cmd
+if [ $3 == "server" ]
+then
+ate_server
+fi
+fi
+
+if [ $1 == "hb" ]
+then
+sfwifi_ate reload $1 $2
+sleep 2
+
+ifconfig wlan0 up
+ate_cmd wlan0 set ATE = ATESTART
+ate_cmd
+if [ $3 == "server" ]
+then
+ate_server
+fi
+fi
+
+if [ $1 == "hp" ]
+then
+sfwifi_ate reload
+sleep 2
+
+ifconfig wlan0 up
+ifconfig wlan1 up
+ate_cmd wlan0 set ATE = ATESTART
+ate_cmd wlan1 set ATE = ATESTART
+cmd="ate_cmd"
+echo $cmd
+eval $cmd
+devmem 0x1150b100 32 0x007F7F7F
+devmem 0x1110b100 32 0x007F7F7F
+
+devmem 0x11c00cfe 16 0x0800
+devmem 0x11c01cfe 16 0x0800
+fi
+
+sfwifi_ate reload fmac
+sleep 2
+
+ifconfig wlan0 up
+ifconfig wlan1 up
+
+if [ $1 == "lb1" ]
+then
+devmem 0x1110b500 32 0x41010
+fi
+
+if [ $1 == "lb2" ]
+then
+devmem 0x1110b500 32 0x41030
+fi
+
+ate_cmd wlan0 set ATE = ATESTART
+ate_cmd wlan1 set ATE = ATESTART
+
+rm   /tmp/rf_trx_path.ini
+
+cmd="ate_cmd"
+echo $cmd
+eval $cmd

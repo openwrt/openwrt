@@ -1,0 +1,12 @@
+#echo 4 > /sys/devices/platform/10800000.gmac/net/eth0/queues/rx-0/rps_cpus
+#devmem 0x19e01444 32 0x2
+#devmem 0x19e016a4 32 0x1
+#echo 1000000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
+#echo 1000000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
+#[ ! -f "/etc/spl" ] && {
+#    touch /etc/spl
+#    mtd -r write /lib/667.img spl-loader
+#}
+#devmem 0x1790b3b0 32 0xAAAA0007
+#devmem 0x1790b3d4 32 0x1B0B50FF
+#devmem 0x1790b3d8 32 0x1B0B50FF

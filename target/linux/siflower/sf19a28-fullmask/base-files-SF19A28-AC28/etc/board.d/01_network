@@ -1,0 +1,34 @@
+#!/bin/sh
+
+. /lib/functions.sh
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+
+siflower_setup_interfaces()
+{
+    local board="$1"
+    ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+	ucidef_set_interface_guest guest
+    ucidef_add_switch "switch0" \
+        "1:lan:1" "2:lan:1" "3:lan:1" "0:wan:2" "5t@eth0:2"
+	ucidef_add_switch_port "switch0" "port:5" "pvid:2"
+}
+
+siflower_setup_macs()
+{
+	local board="$1"
+	local lan_mac=$(cat /sys/class/net/eth0/address)
+	local wan_mac=$(macaddr_add "$lan_mac" 1)
+
+	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr lan $lan_mac
+	[ -n "$wan_mac" ] && ucidef_set_interface_macaddr wan $wan_mac
+}
+
+board_config_update
+board=siflower
+siflower_setup_interfaces $board
+siflower_setup_macs $board
+board_config_flush
+
+exit 0

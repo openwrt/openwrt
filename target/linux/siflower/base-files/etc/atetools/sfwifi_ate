@@ -1,0 +1,144 @@
+#!/bin/sh
+# Copyright (C) 2006 OpenWrt.org
+
+. /lib/sfwifi.sh
+. /usr/share/libubox/jshn.sh
+
+usage() {
+	cat <<EOF
+Usage: $0 [reset|remove|reload] [lb/hb]
+reset wifi firmware.
+EOF
+	exit 1
+}
+
+firmware_remove(){
+	#stop wifi first
+	/sbin/wifi down
+	sleep 1
+	#unregister softmac if have
+	unload_smac
+    #unregister fullmac if have
+    unload_fmac
+	#unregister emb firmware
+	unload_firmware
+	#unregist rf
+	unload_rf
+	rm /tmp/run/hostapd-phy*.conf
+	rm /tmp/run/wifi-phy*.pid
+}
+
+
+band_reload_smac(){
+    modprobe mac80211
+	local band="$1"
+	[ lb = "$band" ] && {
+        insmod_smac_lb
+	}
+	[ hb = "$band" ] && {
+        insmod_smac_hb
+	}
+	[ all = "$band" ] && {
+		insmod_smac
+	}
+	[ -z "$band" ] && {
+		insmod_smac
+	}
+}
+
+band_reload_fmac(){
+	local band="$1"
+	[ lb = "$band" ] && {
+        insmod_fmac_lb
+	}
+	[ hb = "$band" ] && {
+        insmod_fmac_hb
+	}
+	[ all = "$band" ] && {
+		insmod_fmac
+	}
+	[ -z "$band" ] && {
+		insmod_fmac
+	}
+}
+
+firmware_reload(){
+	#reload firmware
+	load_firmware
+	#reload rf
+	insmod_rf
+    if [ fmac = "$2" ]; then
+        band_reload_fmac $1
+	elif [ fmac = "$1" ]; then
+		band_reload_fmac
+	elif [ smac = "$1" ]; then
+		band_reload_smac
+    else
+	    band_reload_smac $1
+    fi
+}
+
+firmware_reset(){
+	firmware_remove
+	firmware_reload $1 $2
+}
+
+band_remove_smac(){
+	local band="$1"
+	call_wifi_cmd down $band
+	sleep 1
+	[ lb = "$band" ] && {
+        unload_smac_lb
+	}
+	[ hb = "$band" ] && {
+        unload_smac_hb
+	}
+	[ all = "$band" ] && {
+		unload_smac
+	}
+	[ -z "$band" ] && {
+		unload_smac
+	}
+}
+
+band_remove_fmac(){
+	local band="$1"
+	call_wifi_cmd down $band
+	sleep 1
+	[ lb = "$band" ] && {
+        unload_fmac_lb
+	}
+	[ hb = "$band" ] && {
+        unload_fmac_hb
+	}
+	[ all = "$band" ] && {
+		unload_fmac
+	}
+	[ -z "$band" ] && {
+		unload_fmac
+	}
+}
+
+
+case "$1" in
+	reset) firmware_reset $2 $3;;
+	remove) firmware_remove;;
+	reload) firmware_reload $2 $3;;
+	reload_band)
+        if [ $3 = "fmac"]; then
+            band_reload_fmac $2
+        else
+            band_reload_smac $2
+        fi
+        ;;
+	remove_band)
+        if [ $3 = "fmac" ]; then
+            band_remove_fmac $2
+        else
+            band_remove_smac $2
+        fi
+        ;;
+	test) call_wifi_cmd $2 $3;;
+	--help|help) usage;;
+	*) firmware_reset;;
+esac

@@ -1,0 +1,141 @@
+#!/usr/bin/lua
+
+local json = require "json"
+require("uci")
+local uci = uci.cursor()
+
+local image_tmp   = "/tmp/firmware.img"
+local status = 0
+
+local function write_info(status, msg)
+	local info = {}
+	info["status"] = status
+	info["msg"] = msg
+
+	syslog("crit", "ota upgrade "..msg)
+
+	local json_info = json.encode(info)
+	local f = io.open("/tmp/upgrade_status", "w")
+	f:write(json_info)
+	f:close()
+end
+
+function exec(cmd)
+	local file = io.popen(cmd)
+	if nil == file then
+		return nil
+	end
+	local content = file:read("*a")
+	file:close()
+	return content
+end
+
+function syslog(cmd, rcmd)
+	exec(" logger -t "..cmd.." "..rcmd)
+end
+
+function get_server_addr()
+	local serverip = uci:get("sicloud","addr","ip")
+	local serverport = uci:get("sicloud","addr","port")
+	local serverversion = uci:get("sicloud","addr","version")
+	local serveraddr = serverip..(":")..serverport..("/")..serverversion
+	return serveraddr
+end
+
+function get_software_version()
+	return exec("cat  /etc/openwrt_version" )
+end
+
+function getImgtype()
+	local version = get_software_version()
+
+	if string.find(version,"master") then
+		return 1
+	else
+		return 0
+	end
+
+end
+
+function getRepOTAInfo()
+	local xcloud_info = {}
+	local xcloud_info_json = ""
+	local cloud_code_url = ""
+	local serveraddr = get_server_addr()
+		-- todo should get from uci
+	cloud_code_url = "https://"..serveraddr.."/lookImgVersion"
+
+	local data = {}
+	-- data["\"romtype\""] = 7 --ap
+	-- data["\"chip\""]="\"fullmask\""
+	-- data["\"version\""] = "\""..string.sub(get_software_version(),1,-2).."\""
+	-- data["\"sn\""] = "\"0\""
+	-- data["\"imagetype\""] = 0
+	-- data["\"env\""] = getImgtype()
+	data["romtype"] = 7 --ap
+	data["chip"]="fullmask"
+	data["version"] = string.sub(get_software_version(),1,-2)
+	data["sn"] = "0"
+	data["imagetype"] = 0
+	data["env"] = getImgtype()
+	local json_data = json.encode(data)
+	syslog("crit","jsondata: "..json_data.." url : "..cloud_code_url)
+	xcloud_info_json = exec("curl -X POST -k -H \"Content-Type: application/json\" -d \'"..json_data.."\' \""..cloud_code_url.."\"")
+	syslog("crit","server reply: "..xcloud_info_json)
+	xcloud_info_table = json.decode(xcloud_info_json)
+	if(xcloud_info_table) then
+		xcloud_info = xcloud_info_table["data"]
+	else
+		return nil
+	end
+	if xcloud_info == nil then
+		return nil
+	end
+	updateToVersion = xcloud_info.updateToVersion
+	currentVersion = xcloud_info.currentVersion
+
+	syslog("crit"," version info here"..currentVersion.version)
+	syslog("crit"," version info here"..updateToVersion.version)
+
+	local result = {}
+	if currentVersion.version  ~= updateToVersion.version  then
+		result.romversion = currentVersion.version
+		result.otaversion = updateToVersion.version
+		result.otatime    = updateToVersion.updateAt
+		result.checksum   = updateToVersion.checksum
+		result.size       = updateToVersion.size
+		result["type"]    = updateToVersion["romtype"]
+		result.url        = updateToVersion.path
+		result.log        = updateToVersion.releaseNote
+		result.force      = currentVersion.force
+	else
+		write_info(0, "already the newest version")
+		return nil
+	end
+	return result
+end
+
+
+local remote_info = getRepOTAInfo()
+
+if remote_info == nil or remote_info.force == false then
+	write_info(0, "ota get info fail or not force version")
+	return
+end
+
+local url  = remote_info["url"]
+local ota_checksum = remote_info["checksum"]
+
+write_info(1, "ota upgrade is downloading now")
+exec(" curl -k -m 120 -o "..image_tmp.." "..url)
+local checksum_info = exec("md5sum "..image_tmp)
+local checksum = string.match(checksum_info,"([^%s]+).*")
+
+if (ota_checksum == checksum) then
+	write_info(12,"ota upgrade is flashing operation now")
+	syslog("crit", "kill process and update device here")
+	exec("killall dropbear uhttpd;  /sbin/sysupgrade "..image_tmp)
+else
+	write_info(13, "ota image downloaded is incorrect")
+	exec("rm /tmp/firmware.img")
+end

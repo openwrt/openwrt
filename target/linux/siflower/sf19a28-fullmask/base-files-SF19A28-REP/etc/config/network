@@ -1,0 +1,41 @@
+
+config interface 'loopback'
+	option ifname 'lo'
+	option proto 'static'
+	option ipaddr '127.0.0.1'
+	option netmask '255.0.0.0'
+
+config interface 'lan'
+	option type 'bridge'
+	option ifname 'eth0'
+	option force_link '1'
+	option proto 'static'
+	option ipaddr '192.168.5.251'
+	option netmask '255.255.255.0'
+	option ip6assign '60'
+	option group '1'
+	option rps_cpus '2'
+	option xps_cpus '2'
+
+config device 'lan_dev'
+	option name 'eth0'
+
+config interface 'wwan'
+	option ifname 'sfi0'
+	option proto 'dhcp'
+
+config interface 'wwwan'
+	option ifname 'sfi1'
+	option proto 'dhcp'
+
+config interface 'stabridge'
+	option proto 'relay'
+	option network 'lan wwan'
+	option disable_dhcp_parse '1'
+	option disabled '1'
+
+config alias
+	option interface 'lan'
+	option proto 'static'
+	option ipaddr '192.168.5.5'
+	option netmask '255.255.255.0'

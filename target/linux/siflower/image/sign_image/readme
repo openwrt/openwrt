@@ -1,0 +1,8 @@
+The executable program(mkimage) is a bak from uboot, you can compile the
+uboot code to access it. It located in UBOOT_DIR/tools/mkimage.
+This program is used to add signartue for kernel image or other image.
+
+Attention: To make the verified boot compatible for sfax8 boards, I changed
+the mkimage source code, and these changes are embeded by CONFIG_SFAX8_SECURITY_BOOT
+marco. SO if you want to get the compeltely same mkimage as this, you should select the
+CONFIG_SFAX8_SECURITY_BOOT config first and then compile.

@@ -1,0 +1,12 @@
+#!/bin/ash
+
+# eth0 link event, change wifi led
+if [ "$(uci -q get wireless.@wifi-iface[0].netisolate)" = "0" ]; then
+	#is ap mode
+	if [ "$1" = "1" ]; then
+		#eth0 link is up
+		echo default-on > /sys/class/leds/wifi-status/trigger
+	else
+		echo none > /sys/class/leds/wifi-status/trigger
+	fi
+fi

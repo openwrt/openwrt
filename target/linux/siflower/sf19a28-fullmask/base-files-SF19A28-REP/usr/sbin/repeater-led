@@ -1,0 +1,44 @@
+#!/bin/sh
+. /lib/functions.sh
+
+wds_enabled=0
+wds_if=""
+path_led="/sys/class/leds/"
+check_wds_connection () {
+	local cfg="$1"
+
+	config_get ifname "$cfg" ifname
+
+	if [[ "$ifname" == "sfi0" || "$ifname" == "sfi1" ]]; then
+		signal=`iwinfo $ifname info | grep Signal | awk -F "Noise" '{print $1}' | awk -F "-|dBm" '{printf "%d", $2}'`
+		if [[ "$signal" -gt "0" ]]; then
+			wds_enabled="1"
+			wds_if="$ifname"
+		fi
+	fi
+	return 0
+}
+
+local ret=""
+if [ ! -d "$path_led""wifi-status" ]; then
+	exit 0
+fi
+while [ "$ret" == "" ]
+do
+	ret=`sleep 10`
+#	echo !!!$ret > /dev/ttyS0
+	wds_enabled="0"
+	config_load wireless
+	config_foreach check_wds_connection wifi-iface
+	if [[ "$wds_enabled" == "1" ]]; then
+		signal=`iwinfo $wds_if info | grep Signal | awk -F "-|dBm" '{printf "%d", $2}'`
+		if [ $signal -lt 70 ]; then
+#			echo "signal -$signal > -70!" > /dev/ttyS0
+			/bin/led-button -l  20
+
+		else
+#			echo "signal -$signal <= -70!" > /dev/ttyS0
+			/bin/led-button -l  19
+		fi
+	fi
+done
