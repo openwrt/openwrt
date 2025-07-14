@@ -23,14 +23,14 @@
 	compatible = "wallys,dr5018", "qcom,ipq5018", "qcom,ipq5018-mp03.5-c1";
 
 	soc_version_major = <0x1000000>;
-	tz_version = [43 52 4d 2d 54 5a 2e 57 4e 53 2e 34 2e 30 2d 30 30 31 30 37 0a];
+	tz_version = "CRM-TZ.WNS.4.0-00107\n";
 	#size-cells = <0x02>;
 	interrupt-parent = <0x01>;
 	soc_version_minor = <0x1000000>;
 	#address-cells = <0x02>;
 	flash_type = <0x7000000>;
 	cpu_type = <0xbf010000>;
-	boot_version = [43 52 4d 2d 42 4f 4f 54 2e 42 46 2e 33 2e 33 2e 31 2e 31 2d 30 30 30 36 37 0a];
+	boot_version = "CRM-BOOT.BF.3.3.1.1-00067\n";
 	machid = <0x4000408>;
 
         aliases {
@@ -2383,140 +2383,56 @@
 	};
 
 	thermal-zones {
-		status = "ok";
+	status = "ok";
 
-		tsens_tz_sensor2 {
-			thermal-sensors = <0x54 0x02>;
-			polling-delay = <0x00>;
-			polling-delay-passive = <0x00>;
-
-			trips {
-
-				cpu-config-hi {
-					hysteresis = <0x02>;
-					temperature = <0x50>;
-					type = "configurable_hi";
-				};
-
-				cpu-config-lo {
-					hysteresis = <0x02>;
-					temperature = <0x46>;
-					type = "configurable_lo";
-				};
-
-				cpu-critical-low {
-					hysteresis = <0x02>;
-					temperature = <0x00>;
-					type = "critical_low";
-				};
-
-				cpu-critical-hi {
-					hysteresis = <0x02>;
-					temperature = <0x64>;
-					type = "critical_high";
-				};
-			};
-		};
-
-		tsens_tz_sensor4 {
-			thermal-sensors = <0x54 0x04>;
-			polling-delay = <0x00>;
-			polling-delay-passive = <0x00>;
-
-			trips {
-
-				cpu-config-hi {
-					hysteresis = <0x02>;
-					temperature = <0x50>;
-					type = "configurable_hi";
-				};
-
-				cpu-config-lo {
-					hysteresis = <0x02>;
-					temperature = <0x46>;
-					type = "configurable_lo";
-				};
-
-				cpu-critical-low {
-					hysteresis = <0x02>;
-					temperature = <0x00>;
-					type = "critical_low";
-				};
-
-				cpu-critical-hi {
-					hysteresis = <0x02>;
-					temperature = <0x64>;
-					type = "critical_high";
-				};
-			};
-		};
-
-		tsens_tz_sensor1 {
-			thermal-sensors = <0x54 0x01>;
-			polling-delay = <0x00>;
-			polling-delay-passive = <0x00>;
-
-			trips {
-
-				cpu-config-hi {
-					hysteresis = <0x02>;
-					temperature = <0x50>;
-					type = "configurable_hi";
-				};
-
-				cpu-config-lo {
-					hysteresis = <0x02>;
-					temperature = <0x46>;
-					type = "configurable_lo";
-				};
-
-				cpu-critical-low {
-					hysteresis = <0x02>;
-					temperature = <0x00>;
-					type = "critical_low";
-				};
-
-				cpu-critical-hi {
-					hysteresis = <0x02>;
-					temperature = <0x64>;
-					type = "critical_high";
-				};
-			};
-		};
-
-		tsens_tz_sensor3 {
-			thermal-sensors = <0x54 0x03>;
-			polling-delay = <0x00>;
-			polling-delay-passive = <0x00>;
-
-			trips {
-
-				cpu-config-hi {
-					hysteresis = <0x02>;
-					temperature = <0x50>;
-					type = "configurable_hi";
-				};
-
-				cpu-config-lo {
-					hysteresis = <0x02>;
-					temperature = <0x46>;
-					type = "configurable_lo";
-				};
-
-				cpu-critical-low {
-					hysteresis = <0x02>;
-					temperature = <0x00>;
-					type = "critical_low";
-				};
-
-				cpu-critical-hi {
-					hysteresis = <0x02>;
-					temperature = <0x64>;
-					type = "critical_high";
-				};
-			};
+	tsens_tz_sensor1 {
+		thermal-sensors = <&tsens 1>;
+		polling-delay = <0>;
+		polling-delay-passive = <0>;
+		trips {
+			cpu-config-hi { hysteresis = <2>; temperature = <80>; type = "configurable_hi"; };
+			cpu-config-lo { hysteresis = <2>; temperature = <70>; type = "configurable_lo"; };
+			cpu-critical-low { hysteresis = <2>; temperature = <0>; type = "critical_low"; };
+			cpu-critical-hi { hysteresis = <2>; temperature = <100>; type = "critical_high"; };
 		};
 	};
+
+	tsens_tz_sensor2 {
+		thermal-sensors = <&tsens 2>;
+		polling-delay = <0>;
+		polling-delay-passive = <0>;
+		trips {
+			cpu-config-hi { hysteresis = <2>; temperature = <80>; type = "configurable_hi"; };
+			cpu-config-lo { hysteresis = <2>; temperature = <70>; type = "configurable_lo"; };
+			cpu-critical-low { hysteresis = <2>; temperature = <0>; type = "critical_low"; };
+			cpu-critical-hi { hysteresis = <2>; temperature = <100>; type = "critical_high"; };
+		};
+	};
+
+	tsens_tz_sensor3 {
+		thermal-sensors = <&tsens 3>;
+		polling-delay = <0>;
+		polling-delay-passive = <0>;
+		trips {
+			cpu-config-hi { hysteresis = <2>; temperature = <80>; type = "configurable_hi"; };
+			cpu-config-lo { hysteresis = <2>; temperature = <70>; type = "configurable_lo"; };
+			cpu-critical-low { hysteresis = <2>; temperature = <0>; type = "critical_low"; };
+			cpu-critical-hi { hysteresis = <2>; temperature = <100>; type = "critical_high"; };
+		};
+	};
+
+	tsens_tz_sensor4 {
+		thermal-sensors = <&tsens 4>;
+		polling-delay = <0>;
+		polling-delay-passive = <0>;
+		trips {
+			cpu-config-hi { hysteresis = <2>; temperature = <80>; type = "configurable_hi"; };
+			cpu-config-lo { hysteresis = <2>; temperature = <70>; type = "configurable_lo"; };
+			cpu-critical-low { hysteresis = <2>; temperature = <0>; type = "critical_low"; };
+			cpu-critical-hi { hysteresis = <2>; temperature = <100>; type = "critical_high"; };
+		};
+	};
+};
 
 	reserved-memory {
 		#size-cells = <0x02>;
