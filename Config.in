@@ -38,3 +38,7 @@ source "target/sdk/Config.in"
 source "target/toolchain/Config.in"
 
 source "tmp/.config-package.in"
+
+if TARGET_qualcommax
+source "config/Config-ipq.in"
+endif
