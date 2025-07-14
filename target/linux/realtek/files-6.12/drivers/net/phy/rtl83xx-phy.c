@@ -1815,8 +1815,9 @@ static int rtsds_930x_init_state_machine(int sds, phy_interface_t interface)
 	return ret;
 }
 
-static void rtsds_930x_force_mode(int sds, phy_interface_t interface)
+void rtsds_930x_force_mode(int sds, phy_interface_t interface)
 {
+	const char *modename = interface == PHY_INTERFACE_MODE_NA ? "off" : phy_modes(interface);
 	int mode;
 
 	/*
@@ -1825,6 +1826,8 @@ static void rtsds_930x_force_mode(int sds, phy_interface_t interface)
 	 * needed for modes that cannot be set by the SoC itself. Additionally it is unclear
 	 * if this sequence should quit early in case of errors.
 	 */
+
+	pr_info("%s: switch SDS %d to %s\n", __func__, sds, modename);
 
 	switch (interface) {
 	case PHY_INTERFACE_MODE_SGMII:

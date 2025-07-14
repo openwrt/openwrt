@@ -320,6 +320,40 @@ static int rtl93xx_setup(struct dsa_switch *ds)
 	return 0;
 }
 
+static void rtldsa_switch_sds_mode(struct dsa_switch *ds, int port, int sds,
+				   phy_interface_t interface_old, phy_interface_t interface_new)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+
+	/*
+	 * As soon as a MAC link goes up or down for a multi-gig standalone interface the SerDes
+	 * must be reconfigured for the mode. Currently there is no better detection but to check
+	 * for the old/new interface mode. So exclude known multi package modes (like QSGMII).
+	 */
+
+	if (interface_new == interface_old)
+		return;
+
+	if (interface_new != PHY_INTERFACE_MODE_1000BASEX &&
+	    interface_new != PHY_INTERFACE_MODE_10GBASER &&
+	    interface_new != PHY_INTERFACE_MODE_2500BASEX &&
+	    interface_new != PHY_INTERFACE_MODE_HSGMII &&
+	    interface_new != PHY_INTERFACE_MODE_SGMII &&
+	    interface_new != PHY_INTERFACE_MODE_NA)
+	    return;
+
+	if (interface_old != PHY_INTERFACE_MODE_1000BASEX &&
+	    interface_old != PHY_INTERFACE_MODE_10GBASER &&
+	    interface_old != PHY_INTERFACE_MODE_2500BASEX &&
+	    interface_old != PHY_INTERFACE_MODE_HSGMII &&
+	    interface_old != PHY_INTERFACE_MODE_SGMII &&
+	    interface_old != PHY_INTERFACE_MODE_NA)
+	    return;
+
+	if (priv->family_id == RTL9300_FAMILY_ID)
+		rtsds_930x_force_mode(sds, interface_new);
+}
+
 static int rtl93xx_get_sds(struct phy_device *phydev)
 {
 	struct device *dev = &phydev->mdio.dev;
@@ -859,6 +893,9 @@ static void rtl93xx_phylink_mac_link_down(struct dsa_switch *ds, int port,
 	else if (priv->family_id == RTL9310_FAMILY_ID)
 		v = RTL931X_FORCE_EN | RTL931X_FORCE_LINK_EN;
 	sw_w32_mask(v, 0, priv->r->mac_force_mode_ctrl(port));
+
+	rtldsa_switch_sds_mode(ds, port, priv->ports[port].sds_num,
+			       interface, PHY_INTERFACE_MODE_NA);
 }
 
 static void rtl83xx_phylink_mac_link_up(struct dsa_switch *ds, int port,
@@ -974,6 +1011,9 @@ static void rtl93xx_phylink_mac_link_up(struct dsa_switch *ds, int port,
 
 	/* Restart TX/RX to port */
 	sw_w32_mask(0, 0x3, priv->r->mac_port_ctrl(port));
+
+	rtldsa_switch_sds_mode(ds, port, priv->ports[port].sds_num,
+			       PHY_INTERFACE_MODE_NA, interface);
 }
 
 static void rtl83xx_get_strings(struct dsa_switch *ds,
