@@ -1,0 +1,41 @@
+#!/bin/sh
+
+# Only act on interface usb0
+[ "$INTERFACE" = "usb0" ] || exit 0
+
+MWAN3_CONFIG="/etc/config/mwan3"
+
+case "$ACTION" in
+    ifup)
+        # Check if usb0 already exists in mwan3 config
+        if ! uci show mwan3 | grep -q "^mwan3.interface.usb0="; then
+            # Add usb0 as a WAN interface, using default config (DHCP)
+            uci batch <<EOF
+add mwan3 interface
+set mwan3.@interface[-1].enabled='1'
+set mwan3.@interface[-1].interface='usb0'
+set mwan3.@interface[-1].family='ipv4'
+set mwan3.@interface[-1].track_method='ping'
+set mwan3.@interface[-1].reliability='1'
+set mwan3.@interface[-1].count='1'
+set mwan3.@interface[-1].timeout='2'
+set mwan3.@interface[-1].interval='5'
+set mwan3.@interface[-1].down='3'
+set mwan3.@interface[-1].up='3'
+set mwan3.@interface[-1].flush_conntrack='always'
+EOF
+            uci commit mwan3
+        fi
+        # Restart mwan3 to pick up the new interface
+        /etc/init.d/mwan3 restart
+        ;;
+    ifdown)
+        # Remove usb0 from mwan3 config if present
+        usb0_section=$(uci show mwan3 | grep "^mwan3.interface.*usb0" | cut -d. -f3 | cut -d= -f1)
+        if [ -n "$usb0_section" ]; then
+            uci delete mwan3.$usb0_section
+            uci commit mwan3
+            /etc/init.d/mwan3 restart
+        fi
+        ;;
+esac
