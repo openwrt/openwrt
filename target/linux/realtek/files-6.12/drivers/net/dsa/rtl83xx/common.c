@@ -1536,6 +1536,9 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->r = &rtl930x_reg;
 		priv->ds->num_ports = 29;
 		priv->fib_entries = 16384;
+		/* TODO A version based on CHIP_INFO and MODEL_NAME_INFO should
+		 * be constructed. For now, just set it to a static 'A'
+		 */
 		priv->version = RTL8390_VERSION_A;
 		priv->n_lags = 16;
 		sw_w32(1, RTL930X_ST_CTRL);
@@ -1553,9 +1556,16 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->r = &rtl931x_reg;
 		priv->ds->num_ports = 57;
 		priv->fib_entries = 16384;
+		/* TODO A version based on CHIP_INFO and MODEL_NAME_INFO should
+		 * be constructed. For now, just set it to a static 'A'
+		 */
 		priv->version = RTL8390_VERSION_A;
 		priv->n_lags = 16;
+		sw_w32(1, RTL931x_ST_CTRL);
 		priv->l2_bucket_size = 8;
+		priv->n_pie_blocks = 16;
+		priv->port_ignore = 0x3f;
+		priv->n_counters = 2048;
 		break;
 	}
 	pr_debug("Chip version %c\n", priv->version);
