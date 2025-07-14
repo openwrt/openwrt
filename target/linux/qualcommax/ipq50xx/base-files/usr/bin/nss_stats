@@ -1,0 +1,89 @@
+#!/bin/sh
+# shellcheck disable=2046,3037,3010
+###############################################################################
+# QCA NSS Driver Debug Script
+# version 20240622
+#
+# Requires: NSS Driver 12.1+
+# Usage: /lib/debug/qca-nss-drv (no arguments)
+# Description: Display non-zero NSS statistics with color highlighting
+#             (requires a terminal that supports ANSI escape codes)
+#
+# Maintainer: Sean Khan (https://forum.openwrt.org/u/qosmio)
+# NSS Packages Repository: https://github.com/qosmio/nss-packages (branch: NSS-12.5-K6.x)
+#
+color() {
+  awk '
+function color(c, s) {
+    if ($3 > 0) {
+        if ($3 ~ /^[0-9]+/ && $3 > 0 && $0 ~ /%/ ) c = 3
+        if ($2 ~ /Avg/ ) c = 4
+        if ($1 ~ /\#/ ) c = 7
+        if ($3 ~ /^[0-9]+$/ && $3 > 0 && $0 ~ /\=/ ) c = 3
+        if ($0 ~ /<</)               c = 4
+        if ($4 == "error")           c = 1
+        else if ($4 == "special")    c = 6
+        else if ($4 ~ /drop|common/) c = 3
+        else if ($4 == "port")       c = 0
+        else if ($4 == "exception")  c = 5
+        printf("\033[%d;%d;40m%s\033[0m\n", 1, 30 + c, s)
+        next
+    }
+    print
+}
+{
+    color(0, $0)
+}' $*
+
+}
+
+current=$(sysctl -q -n dev.nss.stats.non_zero_stats)
+
+sysctl -q dev.nss.stats.non_zero_stats=1
+
+if [ -n "$1" ] && [[ $1 =~ help ]]; then
+  avail=$(ls /sys/kernel/debug/qca-nss-drv/stats | grep -Ev "ppe|project")
+  if [ -n "$avail" ]; then
+    echo "Available stats objects:"
+    for obj in $avail; do
+      echo -e "\t$obj"
+    done
+    echo ""
+    echo "Usage: nss_stats obj1 obj2 ..."
+    echo ""
+    echo "Default with no parameters shows all"
+  fi
+  exit 0
+fi
+
+if [ $# -gt 0 ]; then
+  for i in "$@"; do
+    [[ $i =~ "cpu" ]] && i=cpu_load_ubi
+    [[ $i =~ "mesh" ]] && i=wifi_mesh
+    [ "$i" = "wifi" ] && i=wifili
+    if [ -f /sys/kernel/debug/qca-nss-drv/stats/$i ]; then
+      search_string="$search_string /sys/kernel/debug/qca-nss-drv/stats/$i"
+    elif subdir=$(find /sys/kernel/debug/qca-nss-drv/stats -name $i -type d | head -1 | grep "."); then
+      search_string="$search_string $(find "$subdir" -type f)"
+    else
+      echo "Unknown stats object $i"
+      exit 1
+    fi
+  done
+  search_string=$(grep -lrE "= [1-9]+|CPU" $search_string)
+  if [ -n "$search_string" ]; then
+    color $search_string
+  else
+    echo "Stats are empty for $@"
+  fi
+else
+  search_string="$(grep -lrE "= [1-9]+" /sys/kernel/debug/qca-nss-drv/stats)"
+  color $search_string
+  echo ""
+  echo "________________________________________________________________________________"
+  echo ""
+  color /sys/kernel/debug/qca-nss-drv/stats/cpu_load_ubi
+  echo "________________________________________________________________________________"
+fi
+
+sysctl -q dev.nss.stats.non_zero_stats="$current"
