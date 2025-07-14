@@ -1,6 +1,6 @@
 From: Felix Fietkau <nbd@nbd.name>
 Date: Wed, 11 Jun 2025 18:31:39 +0200
-Subject: [PATCH] uloop: add exception_handler_set function
+Subject: [PATCH] uloop: add guard() function
 
 This allows calling the provided handler on exceptions, avoiding the
 existing behavior of calling uloop_end().
@@ -25,9 +25,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	if (!ucv_is_callable(exh))
 +		goto error;
 +
-+	val = uc_vm_exception_value(vm);
++	val = uc_vm_exception_object(vm);
 +	uc_vm_stack_push(vm, ucv_get(exh));
-+	uc_vm_stack_push(vm, ucv_get(val));
++	uc_vm_stack_push(vm, val);
 +
 +	if (uc_vm_call(vm, false, 1) != EXCEPTION_NONE)
 +		goto error;
@@ -109,14 +109,17 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			res = uc_vm_stack_pop(vm);
  			uc_uloop_pipe_send_common(vm, res, tpipe->output);
  			ucv_put(res);
-@@ -2167,6 +2181,19 @@ uc_uloop_signal(uc_vm_t *vm, size_t narg
+@@ -2167,6 +2181,22 @@ uc_uloop_signal(uc_vm_t *vm, size_t narg
  }
  #endif
  
 +static uc_value_t *
-+uc_uloop_exception_handler_set(uc_vm_t *vm, size_t nargs)
++uc_uloop_guard(uc_vm_t *vm, size_t nargs)
 +{
 +	uc_value_t *arg = uc_fn_arg(0);
++
++	if (!nargs)
++		return ucv_get(uc_vm_registry_get(vm, "uloop.ex_handler"));
 +
 +	if (arg && !ucv_is_callable(arg))
 +		return NULL;
@@ -129,11 +132,11 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  static const uc_function_list_t timer_fns[] = {
  	{ "set",		uc_uloop_timer_set },
-@@ -2233,6 +2260,7 @@ static const uc_function_list_t global_f
+@@ -2233,6 +2263,7 @@ static const uc_function_list_t global_f
  #ifdef HAVE_ULOOP_SIGNAL
  	{ "signal",		uc_uloop_signal },
  #endif
-+	{ "exception_handler_set", uc_uloop_exception_handler_set },
++	{ "guard",		uc_uloop_guard },
  };
  
  
