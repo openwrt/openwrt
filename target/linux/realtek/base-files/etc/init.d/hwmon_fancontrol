@@ -37,6 +37,7 @@ plasmacloud_common() {
 
 boot() {
 	case $(board_name) in
+	plasmacloud,esx28|\
 	plasmacloud,psx28)
 		plasmacloud_common
 		;;
