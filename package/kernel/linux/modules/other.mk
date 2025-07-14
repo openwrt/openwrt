@@ -566,8 +566,6 @@ define KernelPackage/serial-8250
   DEPENDS:=@!TARGET_uml
   KCONFIG:= CONFIG_SERIAL_8250 \
 	CONFIG_SERIAL_8250_PCI \
-	CONFIG_SERIAL_8250_NR_UARTS=16 \
-	CONFIG_SERIAL_8250_RUNTIME_UARTS=16 \
 	CONFIG_SERIAL_8250_EXTENDED=y \
 	CONFIG_SERIAL_8250_MANY_PORTS=y \
 	CONFIG_SERIAL_8250_SHARE_IRQ=y \
@@ -583,6 +581,31 @@ endef
 
 define KernelPackage/serial-8250/description
  Kernel module for 8250 UART based serial ports
+endef
+
+define KernelPackage/serial-8250/config
+menu "Configuration"
+	depends on PACKAGE_kmod-serial-8250
+
+config KERNEL_SERIAL_8250_NR_UARTS
+	int "Maximum number of 8250/16550 serial ports"
+	default "16"
+	help
+	  Set this to the number of serial ports you want the driver
+	  to support.  This includes any ports discovered via ACPI or
+	  PCI enumeration and any ports that may be added at run-time
+	  via hot-plug, or any ISA multi-port serial cards.
+
+config KERNEL_SERIAL_8250_RUNTIME_UARTS
+	int "Number of 8250/16550 serial ports to register at runtime"
+	range 0 KERNEL_SERIAL_8250_NR_UARTS
+	default "16"
+	help
+	  Set this to the maximum number of serial ports you want
+	  the kernel to register at boot time.  This can be overridden
+	  with the module parameter "nr_uarts", or boot-time parameter
+	  8250.nr_uarts
+endmenu
 endef
 
 $(eval $(call KernelPackage,serial-8250))
@@ -1063,3 +1086,20 @@ define KernelPackage/mhi-pci-generic/description
 endef
 
 $(eval $(call KernelPackage,mhi-pci-generic))
+
+
+define KernelPackage/regulator-userspace-consumer
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Userspace regulator consumer support
+  KCONFIG:=CONFIG_REGULATOR_USERSPACE_CONSUMER
+  FILES:=$(LINUX_DIR)/drivers/regulator/userspace-consumer.ko
+  AUTOLOAD:=$(call AutoLoad,10,userspace-consumer,1)
+endef
+
+define KernelPackage/regulator-userspace-consumer/description
+  There are some classes of devices that are controlled entirely
+  from user space. Userspace consumer driver provides ability to
+  control power supplies for such devices.
+endef
+
+$(eval $(call KernelPackage,regulator-userspace-consumer))

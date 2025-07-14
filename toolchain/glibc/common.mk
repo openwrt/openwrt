@@ -7,13 +7,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=glibc
-PKG_VERSION:=2.38
-PKG_RELEASE:=3
+PKG_VERSION:=2.41
+PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=ca41fe44a552a78e78b1b5de6116c67ef712eb74
-PKG_MIRROR_HASH:=1671a22ad65e725689bb27708e8b555a81a4cd055a134e58f160ed5540b63bc5
+PKG_SOURCE_VERSION:=6e489c17f827317bcf8544efefa65f13b5a079dc
+PKG_MIRROR_HASH:=37527af9a3cbc41201b8a8bead3e6ec973e922e11639ff1762de50c46cf4913e
 PKG_SOURCE_URL:=https://sourceware.org/git/glibc.git
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.zst
 PKG_CPE_ID:=cpe:/a:gnu:glibc
@@ -61,7 +61,6 @@ GLIBC_CONFIGURE:= \
 		--without-gd \
 		--without-cvs \
 		--enable-add-ons \
-		--enable-crypt \
 		--$(if $(CONFIG_SOFT_FLOAT),without,with)-fp \
 		  $(if $(CONFIG_PKG_CC_STACKPROTECTOR_REGULAR),--enable-stack-protector=yes) \
 		  $(if $(CONFIG_PKG_CC_STACKPROTECTOR_STRONG),--enable-stack-protector=strong) \

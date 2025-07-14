@@ -78,6 +78,9 @@ glinet,gl-xe3000)
 huasifei,wh3000)
 	ucidef_set_led_netdev "wan" "WAN" "red:wan" "eth1" "link tx rx"
 	;;
+iptime,ax3000sm)
+	ucidef_set_led_netdev "wan" "wan" "amber:wan" "eth1" "link tx rx"
+	;;
 mercusys,mr80x-v3)
 	ucidef_set_led_netdev "lan1" "lan-1" "green:lan-1" "lan1" "link tx rx"
 	ucidef_set_led_netdev "lan2" "lan-2" "green:lan-2" "lan2" "link tx rx"
@@ -183,6 +186,11 @@ smartrg,sdg-8733a)
 	ucidef_set_led_netdev "wan-green" "WAN" "mdio-bus:08:green:wan" "wan" "link_2500 link_5000"
 	ucidef_set_led_netdev "wan-orange" "WAN" "mdio-bus:08:orange:wan" "wan" "link_100 link_1000"
 	ucidef_set_led_netdev "wan-white" "WAN" "mdio-bus:08:white:wan" "wan" "link_10000"
+	;;
+tplink,fr365-v1)
+	ucidef_set_led_netdev "port2-green-act" "port-2" "green:port2_act" "port2" "link tx rx"
+	ucidef_set_led_netdev "port1-green-act" "port-1" "green:sfp" "port1" "link tx rx"
+	ucidef_set_led_netdev "wlan" "wlan" "green:wlan" "phy1-ap0"
 	;;
 tplink,re6000xd)
 	ucidef_set_led_netdev "lan-1" "lan-1" "blue:lan-0" "lan1" "link tx rx"

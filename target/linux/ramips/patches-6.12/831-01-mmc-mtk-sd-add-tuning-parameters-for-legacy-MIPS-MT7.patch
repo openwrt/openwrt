@@ -46,7 +46,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  };
  
  static const struct mtk_mmc_compatible mt7622_compat = {
-@@ -969,7 +976,12 @@ static void msdc_set_mclk(struct msdc_ho
+@@ -975,7 +982,12 @@ static void msdc_set_mclk(struct msdc_ho
  	 * mmc_select_hs400() will drop to 50Mhz and High speed mode,
  	 * tune result of hs200/200Mhz is not suitable for 50Mhz
  	 */
@@ -60,7 +60,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  		writel(host->def_tune_para.iocon, host->base + MSDC_IOCON);
  		if (host->top_base) {
  			writel(host->def_tune_para.emmc_top_control,
-@@ -1839,6 +1851,18 @@ static void msdc_init_hw(struct msdc_hos
+@@ -1856,6 +1868,18 @@ static void msdc_init_hw(struct msdc_hos
  				     MSDC_PAD_TUNE_RXDLYSEL);
  	}
  

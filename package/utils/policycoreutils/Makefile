@@ -75,11 +75,11 @@ ALTS_setfiles:=300:/sbin/restorecon:/sbin/policycoreutils-setfiles 300:/sbin/set
 
 DEPENDS_genhomedircon:=+libsemanage $(INTL_DEPENDS)
 DEPENDS_load_policy:=+libselinux $(INTL_DEPENDS)
-DEPENDS_newrole:=+libselinux +libaudit +BUSYBOX_CONFIG_PAM:libpam $(INTL_DEPENDS)
+DEPENDS_newrole:= +USE_GLIBC:libcrypt-compat +libselinux +libaudit +BUSYBOX_CONFIG_PAM:libpam $(INTL_DEPENDS)
 DEPENDS_open_init_pty:=$(INTL_DEPENDS)
 DEPENDS_pp:=+libsepol $(INTL_DEPENDS)
 DEPENDS_restorecon_xattr:=+libselinux +libsepol +libaudit $(INTL_DEPENDS)
-DEPENDS_run_init:=+libselinux +libaudit +BUSYBOX_CONFIG_PAM:libpam $(INTL_DEPENDS)
+DEPENDS_run_init:= +USE_GLIBC:libcrypt-compat +libselinux +libaudit +BUSYBOX_CONFIG_PAM:libpam $(INTL_DEPENDS)
 DEPENDS_secon:=+libselinux $(INTL_DEPENDS)
 DEPENDS_semanage:=+libsemanage
 DEPENDS_semodule:=+libsemanage $(INTL_DEPENDS)

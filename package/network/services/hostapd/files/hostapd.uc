@@ -412,7 +412,11 @@ function bss_reload_rxkhs(bss, config, old_config)
 
 function remove_file_fields(config)
 {
-	return filter(config, (line) => !hostapd.data.file_fields[split(line, "=")[0]]);
+	return filter(config, (line) =>
+		!match(line, /^\s*$/) &&
+		!match(line, /^\s*#/) &&
+		!hostapd.data.file_fields[split(line, "=")[0]]
+	);
 }
 
 function bss_remove_file_fields(config)

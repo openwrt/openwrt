@@ -24,7 +24,7 @@ Signed-off-by: Richard Zhu <hongxing.zhu@nxp.com>
 
 --- a/drivers/pci/controller/dwc/pci-imx6.c
 +++ b/drivers/pci/controller/dwc/pci-imx6.c
-@@ -763,7 +763,6 @@ static int imx7d_pcie_core_reset(struct
+@@ -778,7 +778,6 @@ static int imx7d_pcie_core_reset(struct
  static void imx_pcie_assert_core_reset(struct imx_pcie *imx_pcie)
  {
  	reset_control_assert(imx_pcie->pciephy_reset);
@@ -32,7 +32,7 @@ Signed-off-by: Richard Zhu <hongxing.zhu@nxp.com>
  
  	if (imx_pcie->drvdata->core_reset)
  		imx_pcie->drvdata->core_reset(imx_pcie, true);
-@@ -775,7 +774,6 @@ static void imx_pcie_assert_core_reset(s
+@@ -790,7 +789,6 @@ static void imx_pcie_assert_core_reset(s
  static int imx_pcie_deassert_core_reset(struct imx_pcie *imx_pcie)
  {
  	reset_control_deassert(imx_pcie->pciephy_reset);
@@ -40,7 +40,7 @@ Signed-off-by: Richard Zhu <hongxing.zhu@nxp.com>
  
  	if (imx_pcie->drvdata->core_reset)
  		imx_pcie->drvdata->core_reset(imx_pcie, false);
-@@ -976,6 +974,9 @@ static int imx_pcie_host_init(struct dw_
+@@ -991,6 +989,9 @@ static int imx_pcie_host_init(struct dw_
  		}
  	}
  
