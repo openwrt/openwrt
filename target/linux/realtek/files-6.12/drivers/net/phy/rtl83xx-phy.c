@@ -3883,12 +3883,16 @@ static int rtl8390_serdes_probe(struct phy_device *phydev)
 
 static int rtl9300_serdes_probe(struct phy_device *phydev)
 {
-	if (soc_info.family != RTL9300_FAMILY_ID)
+	switch (soc_info.family) {
+	case RTL9300_FAMILY_ID:
+		phydev_info(phydev, "Detected internal RTL9300 Serdes\n");
+		return 0;
+	case RTL9310_FAMILY_ID:
+		phydev_info(phydev, "Detected internal RTL9310 Serdes\n");
+		return 0;
+	default:
 		return -ENODEV;
-
-	phydev_info(phydev, "Detected internal RTL9300 Serdes\n");
-
-	return 0;
+	}
 }
 
 static struct phy_driver rtl83xx_phy_driver[] = {
