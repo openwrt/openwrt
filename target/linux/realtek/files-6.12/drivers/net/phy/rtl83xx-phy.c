@@ -3048,7 +3048,7 @@ static void rtl9310_sds_field_w(int sds, u32 page, u32 reg, int end_bit, int sta
 	if (l < 32) {
 		u32 mask = BIT(l) - 1;
 
-		data = rtl930x_read_sds_phy(sds, page, reg);
+		data = rtl931x_read_sds_phy(sds, page, reg);
 		data &= ~(mask << start_bit);
 		data |= (v & mask) << start_bit;
 	}
