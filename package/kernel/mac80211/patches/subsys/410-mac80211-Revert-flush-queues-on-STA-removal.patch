@@ -1,0 +1,57 @@
+From: Krists Krilovs <krists.krilovs@gmail.com>
+Date: Mon, 14 Jul 2025 00:00:00 +0100
+Subject: [PATCH] wifi: mac80211: Revert: flush queues on STA removal
+
+Linux commit 0b75a1b ("wifi: mac80211: flush queues on STA removal")
+introduced regression with ath10k and ath11k. This manifested as
+"failed to flush transmit queue" errors and instability.
+
+Further development:
+commit d00800a ("wifi: mac80211: add flush_sta method")
+commit 06d6af4 ("wifi: mac80211: flush STA queues on unauthorization")
+
+Still the dreaded "failed to flush transmit queue" errors persist with
+ath11k.
+Revert the TX queue flush code to workaround this bug.
+
+Related:
+https://git.codelinaro.org/clo/qsdk/oss/system/feeds/wlan-open/-/blob/win.wlan_host_opensource.3.0.r25/patches/subsys/827-mac80211-fix-compilation-and-crash-issue.patch
+
+Signed-off-by: Krists Krilovs <krists.krilovs@gmail.com>
+---
+
+--- a/net/mac80211/sta_info.c
++++ b/net/mac80211/sta_info.c
+@@ -1281,8 +1281,6 @@
+ 				enum ieee80211_sta_state new_state,
+ 				bool recalc)
+ {
+-	struct ieee80211_local *local = sta->local;
+-
+ 	might_sleep();
+ 
+ 	if (sta->sta_state == new_state)
+@@ -1359,23 +1357,6 @@
+ 			ieee80211_vif_dec_num_mcast(sta->sdata);
+ 			clear_bit(WLAN_STA_AUTHORIZED, &sta->_flags);
+ 
+-			/*
+-			 * If we have encryption offload, flush (station) queues
+-			 * (after ensuring concurrent TX completed) so we won't
+-			 * transmit anything later unencrypted if/when keys are
+-			 * also removed, which might otherwise happen depending
+-			 * on how the hardware offload works.
+-			 */
+-			if (local->ops->set_key) {
+-				synchronize_net();
+-				if (local->ops->flush_sta)
+-					drv_flush_sta(local, sta->sdata, sta);
+-				else
+-					ieee80211_flush_queues(local,
+-							       sta->sdata,
+-							       false);
+-			}
+-
+ 			ieee80211_clear_fast_xmit(sta);
+ 			ieee80211_clear_fast_rx(sta);
+ 		}
