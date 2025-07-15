@@ -1494,6 +1494,45 @@ static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 		return;
 	}
 
+	for (int set = 0; set < 4; set++) {
+		char set_name[16] = {0};
+		u32 set_config[4];
+		int leds_in_this_set = 0;
+
+		/* Reset LED set configuration */
+		sw_w32(0, RTL931X_LED_SETX_0_CTRL(set));
+		sw_w32(0, RTL931X_LED_SETX_1_CTRL(set));
+
+		/* Each LED set has (up to) 4 LEDs, and each LED is configured
+		 * with 16 bits. So each 32 bit register holds configuration for
+		 * 2 LEDs. Therefore, each set requires 2 registers for
+		 * configuring all 4 LEDs.
+		 */
+		snprintf(set_name, sizeof(set_name), "led_set%d", set);
+		leds_in_this_set = of_property_count_u32_elems(node, set_name);
+
+		if (leds_in_this_set <= 0 || leds_in_this_set > ARRAY_SIZE(set_config)) {
+			if (leds_in_this_set != -EINVAL) {
+				dev_err(dev, "%s invalid, skipping this set, leds_in_this_set=%d, should be (0, %d]\n",
+					set_name, leds_in_this_set, ARRAY_SIZE(set_config));
+			}
+
+			continue;
+		}
+
+		dev_info(dev, "%s has %d LEDs configured\n", set_name, leds_in_this_set);
+
+		if (of_property_read_u32_array(node, set_name, set_config, leds_in_this_set))
+			break;
+
+		/* Write configuration for selected LEDs */
+		for (int i = 0, led = leds_in_this_set - 1; led >= 0; led--, i++) {
+			sw_w32_mask(0xffff << RTL931X_LED_SET_LEDX_SHIFT(led),
+				    (0xffff & set_config[i]) << RTL931X_LED_SET_LEDX_SHIFT(led),
+				    RTL931X_LED_SETX_LEDY(set, led));
+		}
+	}
+
 	for (int i = 0; i < priv->cpu_port; i++) {
 		int pos = (i << 1) % 32;
 		u32 set;
@@ -1516,23 +1555,6 @@ static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 		set = priv->ports[i].led_set;
 		sw_w32_mask(0, set << pos, RTL931X_LED_PORT_COPR_SET_SEL_CTRL(i));
 		sw_w32_mask(0, set << pos, RTL931X_LED_PORT_FIB_SET_SEL_CTRL(i));
-	}
-
-	for (int i = 0; i < 4; i++) {
-		const __be32 *led_set;
-		char set_name[9];
-		u32 setlen;
-		u32 v;
-
-		sprintf(set_name, "led_set%d", i);
-		dev_dbg(dev, ">%s<\n", set_name);
-		led_set = of_get_property(node, set_name, &setlen);
-		if (!led_set || setlen != 16)
-			break;
-		v = be32_to_cpup(led_set) << 16 | be32_to_cpup(led_set + 1);
-		sw_w32(v, RTL931X_LED_SET0_0_CTRL - 4 - i * 8);
-		v = be32_to_cpup(led_set + 2) << 16 | be32_to_cpup(led_set + 3);
-		sw_w32(v, RTL931X_LED_SET0_0_CTRL - i * 8);
 	}
 
 	/* Set LED mode to serial (0x1) */
