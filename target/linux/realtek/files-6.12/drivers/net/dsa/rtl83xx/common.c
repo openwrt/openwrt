@@ -828,7 +828,8 @@ static int rtl83xx_l3_nexthop_update(struct rtl838x_switch_priv *priv,  __be32 i
 			__func__, &ip_addr, mac);
 
 		/* Reads the ROUTING table entry associated with the route */
-		priv->r->route_read(r->id, r);
+		if (priv->r->route_read)
+			priv->r->route_read(r->id, r);
 		pr_debug("Route with id %d to %pI4 / %d\n", r->id, &r->dst_ip, r->prefix_len);
 
 		r->nh.mac = r->nh.gw = mac;
@@ -851,12 +852,13 @@ static int rtl83xx_l3_nexthop_update(struct rtl838x_switch_priv *priv,  __be32 i
 		r->pr.dip = r->dst_ip;
 		r->pr.dip_m = inet_make_mask(r->prefix_len);
 
-		if (r->is_host_route) {
+		if (r->is_host_route && priv->r->find_l3_slot &&
+			priv->r->host_route_write) {
 			int slot = priv->r->find_l3_slot(r, false);
 
 			pr_info("%s: Got slot for route: %d\n", __func__, slot);
 			priv->r->host_route_write(slot, r);
-		} else {
+		} else if (priv->r->route_write){
 			priv->r->route_write(r->id, r);
 			r->pr.fwd_sel = true;
 			r->pr.fwd_data = r->nh.l2_id;
@@ -873,8 +875,9 @@ static int rtl83xx_l3_nexthop_update(struct rtl838x_switch_priv *priv,  __be32 i
 				r->pr.log_sel = true;
 				r->pr.log_data = r->pr.packet_cntr;
 			}
+
 			priv->r->pie_rule_add(priv, &r->pr);
-		} else {
+		} else if (priv->r->packet_cntr_read) {
 			int pkts = priv->r->packet_cntr_read(r->pr.packet_cntr);
 			pr_debug("%s: total packets: %d\n", __func__, pkts);
 
@@ -1047,7 +1050,8 @@ static void rtl83xx_route_rm(struct rtl838x_switch_priv *priv, struct rtl83xx_ro
 	if (rhltable_remove(&priv->routes, &r->linkage, route_ht_params))
 		dev_warn(priv->dev, "Could not remove route\n");
 
-	if (r->is_host_route) {
+	if (r->is_host_route && priv->r->find_l3_slot &&
+	    priv->r->host_route_write) {
 		id = priv->r->find_l3_slot(r, false);
 		pr_debug("%s: Got id for host route: %d\n", __func__, id);
 		r->attr.valid = false;
@@ -1059,7 +1063,8 @@ static void rtl83xx_route_rm(struct rtl838x_switch_priv *priv, struct rtl83xx_ro
 			id = priv->r->route_lookup_hw(r);
 			pr_info("%s: Got id for prefix route: %d\n", __func__, id);
 			r->attr.valid = false;
-			priv->r->route_write(id, r);
+			if (priv->r->route_write)
+				priv->r->route_write(id, r);
 		}
 		clear_bit(r->id, priv->route_use_bm);
 	}
@@ -1119,14 +1124,16 @@ static int rtl83xx_alloc_router_mac(struct rtl838x_switch_priv *priv, u64 mac)
 
 	mutex_lock(&priv->reg_mutex);
 	for (int i = 0; i < MAX_ROUTER_MACS; i++) {
-		priv->r->get_l3_router_mac(i, &m);
-		if (free_mac < 0 && !m.valid) {
-			free_mac = i;
-			continue;
-		}
-		if (m.valid && m.mac == mac) {
-			free_mac = i;
-			break;
+		if (priv->r->get_l3_router_mac) {
+			priv->r->get_l3_router_mac(i, &m);
+			if (free_mac < 0 && !m.valid) {
+				free_mac = i;
+				continue;
+			}
+			if (m.valid && m.mac == mac) {
+				free_mac = i;
+				break;
+			}
 		}
 	}
 
@@ -1145,7 +1152,8 @@ static int rtl83xx_alloc_router_mac(struct rtl838x_switch_priv *priv, u64 mac)
 	m.vid_mask = 0; 		/* ... so mask needs to be 0 */
 	m.mac_mask = 0xffffffffffffULL;	/* We want an exact match of the interface MAC */
 	m.action = L3_FORWARD;		/* Route the packet */
-	priv->r->set_l3_router_mac(free_mac, &m);
+	if (priv->r->set_l3_router_mac)
+		priv->r->set_l3_router_mac(free_mac, &m);
 
 	mutex_unlock(&priv->reg_mutex);
 
@@ -1160,14 +1168,16 @@ static int rtl83xx_alloc_egress_intf(struct rtl838x_switch_priv *priv, u64 mac, 
 
 	mutex_lock(&priv->reg_mutex);
 	for (int i = 0; i < MAX_SMACS; i++) {
-		m = priv->r->get_l3_egress_mac(L3_EGRESS_DMACS + i);
-		if (free_mac < 0 && !m) {
-			free_mac = i;
-			continue;
-		}
-		if (m == mac) {
-			mutex_unlock(&priv->reg_mutex);
-			return i;
+		if (priv->r->get_l3_egress_mac) {
+			m = priv->r->get_l3_egress_mac(L3_EGRESS_DMACS + i);
+			if (free_mac < 0 && !m) {
+				free_mac = i;
+				continue;
+			}
+			if (m == mac) {
+				mutex_unlock(&priv->reg_mutex);
+				return i;
+			}
 		}
 	}
 
@@ -1185,9 +1195,11 @@ static int rtl83xx_alloc_egress_intf(struct rtl838x_switch_priv *priv, u64 mac, 
 	intf.hl_scope = 1;  /* Hop Limit */
 	intf.ip4_icmp_redirect = intf.ip6_icmp_redirect = 2;  /* FORWARD */
 	intf.ip4_pbr_icmp_redirect = intf.ip6_pbr_icmp_redirect = 2; /* FORWARD; */
-	priv->r->set_l3_egress_intf(free_mac, &intf);
+	if (priv->r->set_l3_egress_intf)
+		priv->r->set_l3_egress_intf(free_mac, &intf);
 
-	priv->r->set_l3_egress_mac(L3_EGRESS_DMACS + free_mac, mac);
+	if (priv->r->set_l3_egress_mac)
+		priv->r->set_l3_egress_mac(L3_EGRESS_DMACS + free_mac, mac);
 
 	mutex_unlock(&priv->reg_mutex);
 
@@ -1275,9 +1287,13 @@ static int rtl83xx_fib4_add(struct rtl838x_switch_priv *priv,
 			r->attr.action = ROUTE_ACT_TRAP2CPU;
 			r->attr.type = 0;
 
-			slot = priv->r->find_l3_slot(r, false);
+			if (priv->r->find_l3_slot)
+				slot = priv->r->find_l3_slot(r, false);
+
 			pr_debug("%s: Got slot for route: %d\n", __func__, slot);
-			priv->r->host_route_write(slot, r);
+
+			if (priv->r->host_route_write)
+				priv->r->host_route_write(slot, r);
 		}
 	}
 
