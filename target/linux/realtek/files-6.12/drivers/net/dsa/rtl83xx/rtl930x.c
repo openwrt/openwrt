@@ -166,6 +166,30 @@ static inline int rtl930x_l2_port_new_sa_fwd(int p)
 	return RTL930X_L2_PORT_NEW_SA_FWD(p);
 }
 
+static int rtldsa_930x_get_mirror_config(struct rtldsa_mirror_config *config,
+					 int group, int port)
+{
+	config->ctrl = RTL930X_MIR_CTRL + group * 4;
+	config->spm = RTL930X_MIR_SPM_CTRL + group * 4;
+	config->dpm = RTL930X_MIR_DPM_CTRL + group * 4;
+
+	/* Enable mirroring to destination port */
+	config->val = BIT(0);
+	config->val |= port << 9;
+
+	/* mirror mode: let mirrored packets follow TX settings of
+	 * mirroring port
+	 */
+	config->val |= BIT(5);
+
+	/* direction of traffic to be mirrored when a packet
+	 * hits both SPM and DPM ports: prefer egress
+	 */
+	config->val |= BIT(4);
+
+	return 0;
+}
+
 inline static int rtl930x_trk_mbr_ctr(int group)
 {
 	return RTL930X_TRK_MBR_CTRL + (group << 2);
@@ -2446,6 +2470,7 @@ const struct rtl838x_reg rtl930x_reg = {
 	.mac_port_ctrl = rtl930x_mac_port_ctrl,
 	.l2_port_new_salrn = rtl930x_l2_port_new_salrn,
 	.l2_port_new_sa_fwd = rtl930x_l2_port_new_sa_fwd,
+	.get_mirror_config = rtldsa_930x_get_mirror_config,
 	.read_l2_entry_using_hash = rtl930x_read_l2_entry_using_hash,
 	.write_l2_entry_using_hash = rtl930x_write_l2_entry_using_hash,
 	.read_cam = rtl930x_read_cam,
