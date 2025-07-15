@@ -31,13 +31,13 @@
 	 *	-+-[0000:40]---00.0-[41-7f]----00.0
 	 */
 
-	bridge@64,0 {
+	bridge@0,0 {
 		reg = <0x00400000 0 0 0 0>;
 		#address-cells = <3>;
 		#size-cells = <2>;
 		ranges;
 
-		wifi0: wifi@65,0 {
+		wifi0: wifi@0,0 {
 			/* Atheros AR9380 5GHz */
 			compatible = "pci168c,0030";
 			reg = <0x00410000 0 0 0 0>;
