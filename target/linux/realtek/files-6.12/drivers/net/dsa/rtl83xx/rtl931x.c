@@ -1453,9 +1453,10 @@ static void rtl931x_set_distribution_algorithm(int group, int algoidx, u32 algom
 
 static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 {
-	u64 pm_copper = 0, pm_fiber = 0;
+	u64 pm_copper = 0, pm_fiber = 0, pm_forced = 0;
 	struct device *dev = priv->dev;
 	struct device_node *node;
+	bool is_pm_auto_detected;
 
 	node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
 	if (!node) {
@@ -1502,6 +1503,8 @@ static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 		}
 	}
 
+	is_pm_auto_detected = of_property_read_u64(node, "realtek,forced-port-mask", &pm_forced);
+
 	for (int i = 0; i < priv->cpu_port; i++) {
 		int pos = (i << 1) % 32;
 		u32 set;
@@ -1509,17 +1512,29 @@ static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 		sw_w32_mask(0x3 << pos, 0, RTL931X_LED_PORT_FIB_SET_SEL_CTRL(i));
 		sw_w32_mask(0x3 << pos, 0, RTL931X_LED_PORT_COPR_SET_SEL_CTRL(i));
 
-		if (!priv->ports[i].phy)
+		/* Skip port if not present (auto-detect) or not in forced mask */
+		if ((is_pm_auto_detected && !priv->ports[i].phy) ||
+		    (!is_pm_auto_detected && !(pm_forced & BIT(i))))
 			continue;
+
+		if (priv->ports[i].leds_on_this_port == 0)
+			priv->ports[i].leds_on_this_port = 1;
 
 		/* 0x0 = 1 led, 0x1 = 2 leds, 0x2 = 3 leds, 0x3 = 4 leds per port */
 		sw_w32_mask(0x3 << pos, (priv->ports[i].leds_on_this_port - 1) << pos,
 			    RTL931X_LED_PORT_NUM_CTRL(i));
 
-		if (priv->ports[i].phy_is_integrated)
-			pm_fiber |= BIT_ULL(i);
-		else
+		if (!is_pm_auto_detected && !priv->ports[i].phy) {
+			/* when using forced_port_mask and the phy doesn't
+			 * exist, we just select copper as placeholder to
+			 * get the relative LEDs configured correctly
+			 */
 			pm_copper |= BIT_ULL(i);
+		} else if (priv->ports[i].phy_is_integrated) {
+			pm_fiber |= BIT_ULL(i);
+		} else {
+			pm_copper |= BIT_ULL(i);
+		}
 
 		set = priv->ports[i].led_set;
 		sw_w32_mask(0, set << pos, RTL931X_LED_PORT_COPR_SET_SEL_CTRL(i));
