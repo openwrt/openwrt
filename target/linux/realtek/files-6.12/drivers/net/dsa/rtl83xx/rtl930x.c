@@ -2392,10 +2392,10 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 		sprintf(set_name, "led_set%d", set);
 		leds_in_this_set = of_property_count_u32_elems(node, set_name);
 
-		if (leds_in_this_set <= 0 || leds_in_this_set > sizeof(set_config)) {
+		if (leds_in_this_set <= 0 || leds_in_this_set > ARRAY_SIZE(set_config)) {
 			if (leds_in_this_set != -EINVAL) {
 				dev_err(dev, "%s invalid, skipping this set, leds_in_this_set=%d, should be (0, %d]\n",
-					set_name, leds_in_this_set, sizeof(set_config));
+					set_name, leds_in_this_set, ARRAY_SIZE(set_config));
 			}
 			continue;
 		}
