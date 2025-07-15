@@ -1485,12 +1485,12 @@ static void rtl931x_set_distribution_algorithm(int group, int algoidx, u32 algom
 static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 {
 	u64 pm_copper = 0, pm_fiber = 0;
+	struct device *dev = priv->dev;
 	struct device_node *node;
 
-	pr_debug("%s called\n", __func__);
 	node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
 	if (!node) {
-		pr_debug("%s No compatible LED node found\n", __func__);
+		dev_dbg(dev, "No compatible LED node found\n");
 		return;
 	}
 
@@ -1525,7 +1525,7 @@ static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 		u32 v;
 
 		sprintf(set_name, "led_set%d", i);
-		pr_debug(">%s<\n", set_name);
+		dev_dbg(dev, ">%s<\n", set_name);
 		led_set = of_get_property(node, set_name, &setlen);
 		if (!led_set || setlen != 16)
 			break;
@@ -1543,7 +1543,7 @@ static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 	rtl839x_set_port_reg_le(pm_copper | pm_fiber, RTL931X_LED_PORT_COMBO_MASK_CTRL);
 
 	for (int i = 0; i < 32; i++)
-		pr_debug("%s %08x: %08x\n",__func__, 0xbb000600 + i * 4, sw_r32(0x0600 + i * 4));
+		dev_dbg(dev, "%08x: %08x\n", 0xbb000600 + i * 4, sw_r32(0x0600 + i * 4));
 }
 
 const struct rtl838x_reg rtl931x_reg = {
