@@ -2647,6 +2647,9 @@ const struct dsa_switch_ops rtl930x_switch_ops = {
 	.port_mdb_add		= rtl83xx_port_mdb_add,
 	.port_mdb_del		= rtl83xx_port_mdb_del,
 
+	.port_mirror_add	= rtldsa_port_mirror_add,
+	.port_mirror_del	= rtldsa_port_mirror_del,
+
 	.port_lag_change	= rtl83xx_port_lag_change,
 	.port_lag_join		= rtl83xx_port_lag_join,
 	.port_lag_leave		= rtl83xx_port_lag_leave,

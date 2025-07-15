@@ -280,6 +280,30 @@ static inline int rtl931x_l2_port_new_sa_fwd(int p)
 	return RTL931X_L2_PORT_NEW_SA_FWD(p);
 }
 
+static int rtldsa_931x_get_mirror_config(struct rtldsa_mirror_config *config,
+					 int group, int port)
+{
+	config->ctrl = RTL931X_MIR_CTRL + group * 4;
+	config->spm = RTL931X_MIR_SPM_CTRL + group * 8;
+	config->dpm = RTL931X_MIR_DPM_CTRL + group * 8;
+
+	/* Enable mirroring to destination port */
+	config->val = BIT(0);
+	config->val |= port << 9;
+
+	/* mirror mode: let mirrored packets follow TX settings of
+	 * mirroring port
+	 */
+	config->val |= BIT(5);
+
+	/* direction of traffic to be mirrored when a packet
+	 * hits both SPM and DPM ports: prefer egress
+	 */
+	config->val |= BIT(4);
+
+	return 0;
+}
+
 irqreturn_t rtl931x_switch_irq(int irq, void *dev_id)
 {
 	struct dsa_switch *ds = dev_id;
@@ -1561,6 +1585,7 @@ const struct rtl838x_reg rtl931x_reg = {
 	.mac_port_ctrl = rtl931x_mac_port_ctrl,
 	.l2_port_new_salrn = rtl931x_l2_port_new_salrn,
 	.l2_port_new_sa_fwd = rtl931x_l2_port_new_sa_fwd,
+	.get_mirror_config = rtldsa_931x_get_mirror_config,
 	.read_l2_entry_using_hash = rtl931x_read_l2_entry_using_hash,
 	.write_l2_entry_using_hash = rtl931x_write_l2_entry_using_hash,
 	.read_cam = rtl931x_read_cam,
