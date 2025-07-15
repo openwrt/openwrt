@@ -1,0 +1,518 @@
+--- /dev/null
++++ b/arch/arm/dts/mt7981-netcore-pb7583.dts
+@@ -0,0 +1,288 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (c) 2022 MediaTek Inc.
++ * Author: Sam Shih <sam.shih@mediatek.com>
++ */
++
++/dts-v1/;
++#include "mt7981.dtsi"
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
++
++/ {
++	#address-cells = <1>;
++	#size-cells = <1>;
++	model = "Netcore PB7583";
++	compatible = "mediatek,mt7981", "mediatek,mt7981-rfb";
++	chosen {
++		stdout-path = &uart0;
++		tick-timer = &timer0;
++	};
++
++	memory@40000000 {
++		device_type = "memory";
++		reg = <0x40000000 0x10000000>;
++	};
++
++	gpio-keys {
++		compatible = "gpio-keys";
++
++		reset {
++			label = "reset";
++			linux,code = <KEY_RESTART>;
++			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
++		};
++
++		wps {
++			label = "wps";
++			linux,code = <KEY_WPS_BUTTON>;
++			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
++		};
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		internet {
++			label = "internet";
++			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
++		};
++
++		power {
++			label = "power";
++			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
++		};
++
++		wifi {
++			label = "wifi";
++			gpios = <&gpio 34 GPIO_ACTIVE_LOW>;
++		};
++
++		wps {
++			label = "wps";
++			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
++		};
++
++		wan {
++			label = "wan";
++			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
++		};
++
++	};
++
++};
++
++&uart0 {
++	status = "okay";
++};
++
++&uart1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart1_pins>;
++	status = "disabled";
++};
++
++&eth {
++	status = "okay";
++	mediatek,gmac-id = <0>;
++	phy-mode = "2500base-x";
++	mediatek,switch = "mt7531";
++	reset-gpios = <&gpio 39 GPIO_ACTIVE_HIGH>;
++
++	fixed-link {
++		speed = <2500>;
++		full-duplex;
++	};
++};
++
++&pinctrl {
++	spi_flash_pins: spi0-pins-func-1 {
++		mux {
++			function = "flash";
++			groups = "spi0", "spi0_wp_hold";
++		};
++
++		conf-pu {
++			pins = "SPI0_CS", "SPI0_HOLD", "SPI0_WP";
++			drive-strength = <MTK_DRIVE_8mA>;
++			bias-pull-up = <MTK_PUPD_SET_R1R0_11>;
++		};
++
++		conf-pd {
++			pins = "SPI0_CLK", "SPI0_MOSI", "SPI0_MISO";
++			drive-strength = <MTK_DRIVE_8mA>;
++			bias-pull-down = <MTK_PUPD_SET_R1R0_11>;
++		};
++	};
++
++	spi2_flash_pins: spi2-spi2-pins {
++		mux {
++			function = "spi";
++			groups = "spi2", "spi2_wp_hold";
++		};
++
++		conf-pu {
++			pins = "SPI2_CS", "SPI2_HOLD", "SPI2_WP";
++			drive-strength = <MTK_DRIVE_8mA>;
++			bias-pull-down = <MTK_PUPD_SET_R1R0_00>;
++		};
++
++		conf-pd {
++			pins = "SPI2_CLK", "SPI2_MOSI", "SPI2_MISO";
++			drive-strength = <MTK_DRIVE_8mA>;
++			bias-pull-down = <MTK_PUPD_SET_R1R0_00>;
++		};
++	};
++
++	spic_pins: spi1-pins-func-1 {
++		mux {
++			function = "spi";
++			groups = "spi1_1";
++		};
++	};
++
++	uart1_pins: spi1-pins-func-3 {
++		mux {
++			function = "uart";
++			groups = "uart1_2";
++		};
++	};
++
++	/* pin15 as pwm0 */
++	one_pwm_pins: one-pwm-pins {
++		mux {
++			function = "pwm";
++			groups = "pwm0_1";
++		};
++	};
++
++	/* pin15 as pwm0 and pin14 as pwm1 */
++	two_pwm_pins: two-pwm-pins {
++		mux {
++			function = "pwm";
++			groups = "pwm0_1", "pwm1_0";
++		};
++	};
++
++	/* pin15 as pwm0, pin14 as pwm1, pin7 as pwm2 */
++	three_pwm_pins: three-pwm-pins {
++		mux {
++			function = "pwm";
++			groups = "pwm0_1", "pwm1_0", "pwm2";
++		};
++	};
++};
++
++&spi0 {
++	#address-cells = <1>;
++	#size-cells = <0>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi_flash_pins>;
++	status = "okay";
++	must_tx;
++	enhance_timing;
++	dma_ext;
++	ipm_design;
++	support_quad;
++	tick_dly = <2>;
++	sample_sel = <0>;
++
++	spi_nand@0 {
++		compatible = "spi-nand";
++		reg = <0>;
++		spi-max-frequency = <52000000>;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			partition@0 {
++				label = "BL2";
++				reg = <0x00000 0x0100000>;
++			};
++
++			partition@100000 {
++				label = "u-boot-env";
++				reg = <0x0100000 0x0080000>;
++			};
++
++			factory: partition@180000 {
++				label = "Factory";
++				reg = <0x180000 0x0200000>;
++			};
++
++			partition@380000 {
++				label = "FIP";
++				reg = <0x380000 0x0200000>;
++			};
++
++			partition@580000 {
++				label = "ubi";
++				reg = <0x580000 0x7280000>;
++			};
++		};
++	};
++};
++
++&spi2 {
++	#address-cells = <1>;
++	#size-cells = <0>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi2_flash_pins>;
++	status = "okay";
++	must_tx;
++	enhance_timing;
++	dma_ext;
++	ipm_design;
++	support_quad;
++	tick_dly = <2>;
++	sample_sel = <0>;
++
++	spi_nor@0 {
++		compatible = "jedec,spi-nor";
++		reg = <0>;
++		spi-max-frequency = <52000000>;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			partition@00000 {
++				label = "BL2";
++				reg = <0x00000 0x0040000>;
++			};
++
++			partition@40000 {
++				label = "u-boot-env";
++				reg = <0x40000 0x0010000>;
++			};
++
++			partition@50000 {
++				label = "Factory";
++				reg = <0x50000 0x00B0000>;
++			};
++
++			partition@100000 {
++				label = "FIP";
++				reg = <0x100000 0x0080000>;
++			};
++
++			partition@180000 {
++				label = "firmware";
++				reg = <0x180000 0xE00000>;
++			};
++		};
++	};
++};
++
++&pwm {
++	pinctrl-names = "default";
++	pinctrl-0 = <&two_pwm_pins>;
++	status = "okay";
++};
++
++&watchdog {
++	status = "disabled";
++};
+--- /dev/null
++++ b/configs/mt7981_netcore_pb7583_defconfig
+@@ -0,0 +1,157 @@
++CONFIG_ARM=y
++CONFIG_SYS_HAS_NONCACHED_MEMORY=y
++CONFIG_POSITION_INDEPENDENT=y
++CONFIG_ARCH_MEDIATEK=y
++CONFIG_TEXT_BASE=0x41e00000
++CONFIG_SYS_MALLOC_F_LEN=0x4000
++CONFIG_NR_DRAM_BANKS=1
++CONFIG_DEFAULT_DEVICE_TREE="mt7981-netcore-pb7583"
++CONFIG_TARGET_MT7981=y
++CONFIG_DEBUG_UART_BASE=0x11002000
++CONFIG_DEBUG_UART_CLOCK=40000000
++CONFIG_SYS_LOAD_ADDR=0x46000000
++CONFIG_DEBUG_UART=y
++CONFIG_OF_LIBFDT_OVERLAY=y
++CONFIG_SMBIOS_PRODUCT_NAME=""
++CONFIG_CFB_CONSOLE_ANSI=y
++CONFIG_BOARD_LATE_INIT=y
++CONFIG_BUTTON_CMD=y
++CONFIG_BUTTON=y
++CONFIG_BUTTON_GPIO=y
++CONFIG_GPIO_HOG=y
++CONFIG_CMD_ENV_FLAGS=y
++CONFIG_FIT=y
++CONFIG_FIT_ENABLE_SHA256_SUPPORT=y
++CONFIG_LED=y
++CONFIG_LED_BLINK=y
++CONFIG_LED_SW_BLINK=y
++CONFIG_LED_GPIO=y
++CONFIG_SPI_BOOT=y
++CONFIG_BOOTSTD_DEFAULTS=y
++CONFIG_BOOTSTD_FULL=y
++CONFIG_USE_PREBOOT=y
++CONFIG_DEFAULT_FDT_FILE="mt7981-netcore-pb7583"
++CONFIG_SYS_CBSIZE=512
++CONFIG_SYS_PBSIZE=1049
++CONFIG_AUTOBOOT_MENU_SHOW=y
++CONFIG_LOGLEVEL=7
++CONFIG_LOG=y
++CONFIG_SYS_PROMPT="MT7981> "
++# CONFIG_BOOTM_NETBSD is not set
++# CONFIG_BOOTM_PLAN9 is not set
++# CONFIG_BOOTM_RTEMS is not set
++# CONFIG_BOOTM_VXWORKS is not set
++# CONFIG_CMD_UNLZ4 is not set
++# CONFIG_CMD_UNZIP is not set
++CONFIG_CMD_BOOTMENU=y
++CONFIG_CMD_BOOTP=y
++CONFIG_CMD_BUTTON=y
++CONFIG_CMD_CACHE=y
++CONFIG_CMD_CDP=y
++CONFIG_CMD_CPU=y
++CONFIG_CMD_DHCP=y
++CONFIG_CMD_DFU=y
++CONFIG_CMD_DM=y
++CONFIG_CMD_ELF=y
++CONFIG_CMD_DNS=y
++CONFIG_CMD_ECHO=y
++CONFIG_CMD_ENV_READMEM=y
++CONFIG_CMD_ERASEENV=y
++CONFIG_CMD_FDT=y
++CONFIG_CMD_FS_GENERIC=y
++CONFIG_CMD_FS_UUID=y
++CONFIG_CMD_GPIO=y
++CONFIG_CMD_MTD=y
++CONFIG_CMD_HASH=y
++CONFIG_CMD_ITEST=y
++CONFIG_CMD_LED=y
++CONFIG_CMD_LICENSE=y
++CONFIG_CMD_LINK_LOCAL=y
++CONFIG_CMD_MTD=y
++CONFIG_CMD_NAND=y
++# CONFIG_MTD_RAW_NAND is not set
++CONFIG_CMD_NAND_TRIMFFS=y
++CONFIG_CMD_PCI=y
++CONFIG_CMD_PSTORE=y
++CONFIG_CMD_PSTORE_MEM_ADDR=0x42ff0000
++CONFIG_CMD_PING=y
++CONFIG_CMD_PXE=y
++CONFIG_CMD_SF=y
++CONFIG_CMD_SF_TEST=y
++CONFIG_CMD_SMC=y
++CONFIG_CMD_UBI=y
++CONFIG_CMD_UBI_RENAME=y
++CONFIG_CMD_UBIFS=y
++CONFIG_CMD_TFTPBOOT=y
++CONFIG_CMD_TFTPPUT=y
++CONFIG_CMD_TFTPSRV=y
++CONFIG_CMD_ASKENV=y
++CONFIG_CMD_RARP=y
++CONFIG_CMD_SETEXPR=y
++CONFIG_CMD_SLEEP=y
++CONFIG_CMD_SNTP=y
++CONFIG_CMD_SOURCE=y
++CONFIG_CMD_STRINGS=y
++CONFIG_CMD_UUID=y
++CONFIG_ENV_OVERWRITE=y
++CONFIG_ENV_IS_IN_UBI=y
++CONFIG_SYS_REDUNDAND_ENVIRONMENT=y
++CONFIG_ENV_UBI_PART="ubi"
++CONFIG_ENV_SIZE=0x1f000
++CONFIG_ENV_SIZE_REDUND=0x1f000
++CONFIG_ENV_UBI_VOLUME="ubootenv"
++CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
++CONFIG_ENV_UBI_VOLUME_CREATE=y
++CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
++CONFIG_USE_DEFAULT_ENV_FILE=y
++CONFIG_DEFAULT_ENV_FILE="environments/netcore_pb7583.env"
++CONFIG_NET_RANDOM_ETHADDR=y
++CONFIG_NETCONSOLE=y
++CONFIG_USE_IPADDR=y
++CONFIG_IPADDR="192.168.1.1"
++CONFIG_USE_SERVERIP=y
++CONFIG_SERVERIP="192.168.1.3"
++CONFIG_REGEX=y
++CONFIG_REGMAP=y
++CONFIG_SYSCON=y
++CONFIG_CLK=y
++# CONFIG_MMC is not set
++CONFIG_HUSH_PARSER=y
++CONFIG_SYS_REDUNDAND_ENVIRONMENT=y
++CONFIG_SYS_RELOC_GD_ENV_ADDR=y
++CONFIG_MTD=y
++CONFIG_DM_MTD=y
++CONFIG_MTD_SPI_NAND=y
++CONFIG_DM_SPI_FLASH=y
++CONFIG_SPI_FLASH_SFDP_SUPPORT=y
++CONFIG_SPI_FLASH_EON=y
++CONFIG_SPI_FLASH_GIGADEVICE=y
++CONFIG_SPI_FLASH_ISSI=y
++CONFIG_SPI_FLASH_MACRONIX=y
++CONFIG_SPI_FLASH_SPANSION=y
++CONFIG_SPI_FLASH_STMICRO=y
++CONFIG_SPI_FLASH_WINBOND=y
++CONFIG_SPI_FLASH_XMC=y
++CONFIG_SPI_FLASH_XTX=y
++CONFIG_SPI_FLASH_MTD=y
++CONFIG_PHY_FIXED=y
++CONFIG_MEDIATEK_ETH=y
++CONFIG_PINCTRL=y
++CONFIG_PINCONF=y
++CONFIG_PINCTRL_MT7981=y
++CONFIG_POWER_DOMAIN=y
++CONFIG_MTK_POWER_DOMAIN=y
++CONFIG_DM_SERIAL=y
++CONFIG_SERIAL_RX_BUFFER=y
++CONFIG_SERIAL_RX_BUFFER_SIZE=256
++CONFIG_MTK_SERIAL=y
++CONFIG_SPI=y
++CONFIG_DM_SPI=y
++CONFIG_MTK_SPIM=y
++CONFIG_HEXDUMP=y
++# CONFIG_EFI_LOADER is not set
++CONFIG_LMB_MAX_REGIONS=64
++CONFIG_OF_SYSTEM_SETUP=y
++CONFIG_UPDATE_COMMON=y
++CONFIG_UPDATE_FIT=y
++CONFIG_CONSOLE_MUX=y
+--- /dev/null
++++ b/environments/netcore_pb7583.env
+@@ -0,0 +1,64 @@
++#misc settings
++serverip=192.168.1.86
++ipaddr=192.168.1.1
++ncip=192.168.1.86
++loadaddr=0x46000000
++return_bootmenu=askenv - Press ENTER to return to menu ; bootmenu 60
++
++#file name defines
++bootfile_bl2=openwrt-mediatek-filogic-netcore_nx30v2_n30pro_w7_gw3001-spim-nand-preloader.bin
++bootfile_fip=openwrt-mediatek-filogic-netcore_nx30v2_n30pro_w7_gw3001-spim-nand-bl31-uboot.fip
++bootfile_rec=openwrt-mediatek-filogic-netcore_nx30v2_n30pro_w7_gw3001-initramfs.itb
++bootfile_fw=openwrt-mediatek-filogic-netcore_nx30v2_n30pro_w7_gw3001-squashfs-sysupgrade.itb
++
++#boot commands
++bootconf=config-1#mt7981b-netcore-common#mt7981b-netcore-pb7583
++boot_recovery=tftpboot $bootfile_rec && iminfo && bootm $loadaddr#$bootconf
++boot_nand=ubi read $loadaddr fit;bootm $loadaddr#$bootconf
++bootcmd=run boot_nand; while true; do run boot_recovery; done
++
++#bootmenu
++bootmenu_default=0
++bootmenu_0=Startup system (Default)=run bootcmd
++bootmenu_1=Upgrade firmware via TFTP=run upgrade_fw ; run return_bootmenu
++bootmenu_2=Startup recovery image via TFTP=run boot_recovery ; run return_bootmenu
++bootmenu_3=Upgrade BL2 preloader via TFTP=run upgrade_bl2 ; run return_bootmenu
++bootmenu_4=Upgrade BL31+U-Boot FIP via TFTP=run upgrade_fip ; run return_bootmenu
++bootmenu_5=Reset all settings to factory default.=run reset_all; reset
++bootmenu_6=Reboot.=reset
++
++#upgrade commands
++upgrade_bl2=run led_blink_downloading && tftpboot $bootfile_bl2 && run led_blink_writing && nand erase BL2 && nand write $loadaddr BL2; run led_on
++upgrade_fip=run led_blink_downloading && tftpboot $bootfile_fip && run led_blink_writing && nand erase FIP && nand write $loadaddr FIP; run led_on
++upgrade_fw=run led_blink_downloading && tftpboot $bootfile_fw && iminfo && run led_blink_writing && if ubi check fit; then ubi remove fit; else true; fi && ubi create fit $filesize && ubi write $loadaddr fit $filesize; run led_on
++
++#restore offical bootloader
++offical_download=run led_blink_downloading; setenv failed 1; while test $failed -eq 1; do setenv bl2addr 0x46000000 && tftpboot $bl2addr bl2.img && setenv fipaddr 0x46380000 && tftpboot $fipaddr fip.bin && setenv failed 0; done; setenv customer 0; setenv customeraddr 0x46580000 && tftpboot $customeraddr customer && setenv customer 1; test $failed -eq 0
++offical_write=run led_blink_writing; nand erase BL2 && nand write $bl2addr BL2 && nand erase FIP && nand write $fipaddr FIP; ubi detach; mtd erase ubi; ubi part ubi; if test $customer -eq 1; then ubi create customer $filesize; ubi write $customeraddr customer $filesize; fi; true
++offical_upgrade=run offical_download offical_write led_on; echo upgrade offical bootloader done; while true; do sleep 10; done
++
++#factory default
++reset_env=env default -a && saveenv
++reset_usr=ubi check rootfs_data && ubi remove rootfs_data; run create_rootfs_data
++reset_all=run reset_env reset_usr
++
++#prepare ethaddr and rootfs_data at preload
++rootfs_data_max=0x5300000
++create_rootfs_data=if env exists rootfs_data_max; then ubi create rootfs_data $rootfs_data_max; else ubi create rootfs_data -; fi
++set_ethaddr=mtd read Factory $loadaddr 0x1fe000 0x1000 && setexpr tmpaddr $loadaddr + 0xf20 && mw.b $loadaddr 0 6 && cmp.b $loadaddr $tmpaddr 6 || readmem -b ethaddr $tmpaddr 0x6
++preboot=run set_ethaddr; if ubi part; then else mtd erase ubi; ubi part ubi; fi; ubi check rootfs_data || run create_rootfs_data
++
++#led
++led_blink_downloading=led internet blink 100; led wifi blink 100; led wps blink 100
++led_blink_writing=led internet blink 1000; led wifi blink 1000; led wps blink 1000
++led_on=led internet on; led wifi on; led wps on
++
++#netconsole
++netconsole=setenv stdout serial,nc;setenv stdin serial,nc
++nonetconcole=setenv stdout serial;setenv stdin serial
++
++# button commands
++button_cmd_0=run netconsole led_on; sleep 5; if button wps; then run nonetconcole offical_upgrade; fi
++button_cmd_0_name=wps
++button_cmd_1=run netconsole led_on reset_all; sleep 5; if button reset; then run nonetconcole; while true; do run upgrade_fw && run boot_nand; done; fi
++button_cmd_1_name=reset
