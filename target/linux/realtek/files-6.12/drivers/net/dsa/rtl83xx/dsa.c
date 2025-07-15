@@ -2269,16 +2269,24 @@ out:
 	return err;
 }
 
-static int rtl83xx_port_mirror_add(struct dsa_switch *ds, int port,
-				   struct dsa_mall_mirror_tc_entry *mirror,
-				   bool ingress, struct netlink_ext_ack *extack)
+static int rtldsa_port_mirror_add(struct dsa_switch *ds, int port,
+				  struct dsa_mall_mirror_tc_entry *mirror,
+				  bool ingress, struct netlink_ext_ack *extack)
 {
 	/* We support 4 mirror groups, one destination port per group */
-	int group;
 	struct rtl838x_switch_priv *priv = ds->priv;
-	int ctrl_reg, dpm_reg, spm_reg;
+	struct rtldsa_mirror_config config;
+	int err = 0;
+	int pm_reg;
+	int group;
+	int r;
+
+	if (!priv->r->get_mirror_config)
+		return -EOPNOTSUPP;
 
 	pr_debug("In %s\n", __func__);
+
+	mutex_lock(&priv->reg_mutex);
 
 	for (group = 0; group < 4; group++) {
 		if (priv->mirror_group_ports[group] == mirror->to_local_port)
@@ -2291,77 +2299,80 @@ static int rtl83xx_port_mirror_add(struct dsa_switch *ds, int port,
 		}
 	}
 
-	if (group >= 4)
-		return -ENOSPC;
-
-	ctrl_reg = priv->r->mir_ctrl + group * 4;
-	dpm_reg = priv->r->mir_dpm + group * 4 * priv->port_width;
-	spm_reg = priv->r->mir_spm + group * 4 * priv->port_width;
+	if (group >= 4) {
+		err = -ENOSPC;
+		goto out_unlock;
+	}
 
 	pr_debug("Using group %d\n", group);
-	mutex_lock(&priv->reg_mutex);
 
-	if (priv->family_id == RTL8380_FAMILY_ID) {
-		/* Enable mirroring to port across VLANs (bit 11) */
-		sw_w32(1 << 11 | (mirror->to_local_port << 4) | 1, ctrl_reg);
-	} else {
-		/* Enable mirroring to destination port */
-		sw_w32((mirror->to_local_port << 4) | 1, ctrl_reg);
-	}
-
-	if (ingress && (priv->r->get_port_reg_be(spm_reg) & (1ULL << port))) {
-		mutex_unlock(&priv->reg_mutex);
-		return -EEXIST;
-	}
-	if ((!ingress) && (priv->r->get_port_reg_be(dpm_reg) & (1ULL << port))) {
-		mutex_unlock(&priv->reg_mutex);
-		return -EEXIST;
+	r = priv->r->get_mirror_config(&config, group, mirror->to_local_port);
+	if (r < 0) {
+		err = r;
+		goto out_unlock;
 	}
 
 	if (ingress)
-		priv->r->mask_port_reg_be(0, 1ULL << port, spm_reg);
+		pm_reg = config.spm;
 	else
-		priv->r->mask_port_reg_be(0, 1ULL << port, dpm_reg);
+		pm_reg = config.dpm;
 
+	sw_w32(config.val, config.ctrl);
+
+	if (priv->r->get_port_reg_be(pm_reg) & (1ULL << port)) {
+		err = -EEXIST;
+		goto out_unlock;
+	}
+
+	priv->r->mask_port_reg_be(0, 1ULL << port, pm_reg);
 	priv->mirror_group_ports[group] = mirror->to_local_port;
+
+out_unlock:
 	mutex_unlock(&priv->reg_mutex);
 
-	return 0;
+	return err;
 }
 
-static void rtl83xx_port_mirror_del(struct dsa_switch *ds, int port,
-				    struct dsa_mall_mirror_tc_entry *mirror)
+static void rtldsa_port_mirror_del(struct dsa_switch *ds, int port,
+				   struct dsa_mall_mirror_tc_entry *mirror)
 {
-	int group = 0;
 	struct rtl838x_switch_priv *priv = ds->priv;
-	int ctrl_reg, dpm_reg, spm_reg;
+	struct rtldsa_mirror_config config;
+	int group = 0;
+	int r;
+
+	if (!priv->r->get_mirror_config)
+		return;
 
 	pr_debug("In %s\n", __func__);
+
+	mutex_lock(&priv->reg_mutex);
+
 	for (group = 0; group < 4; group++) {
 		if (priv->mirror_group_ports[group] == mirror->to_local_port)
 			break;
 	}
 	if (group >= 4)
-		return;
+		goto out_unlock;
 
-	ctrl_reg = priv->r->mir_ctrl + group * 4;
-	dpm_reg = priv->r->mir_dpm + group * 4 * priv->port_width;
-	spm_reg = priv->r->mir_spm + group * 4 * priv->port_width;
+	r = priv->r->get_mirror_config(&config, group, mirror->to_local_port);
+	if (r < 0)
+		goto out_unlock;
 
-	mutex_lock(&priv->reg_mutex);
 	if (mirror->ingress) {
 		/* Ingress, clear source port matrix */
-		priv->r->mask_port_reg_be(1ULL << port, 0, spm_reg);
+		priv->r->mask_port_reg_be(1ULL << port, 0, config.spm);
 	} else {
 		/* Egress, clear destination port matrix */
-		priv->r->mask_port_reg_be(1ULL << port, 0, dpm_reg);
+		priv->r->mask_port_reg_be(1ULL << port, 0, config.dpm);
 	}
 
-	if (!(sw_r32(spm_reg) || sw_r32(dpm_reg))) {
+	if (!(sw_r32(config.spm) || sw_r32(config.dpm))) {
 		priv->mirror_group_ports[group] = -1;
-		sw_w32(0, ctrl_reg);
+		sw_w32(0, config.ctrl);
 	}
 
+out_unlock:
 	mutex_unlock(&priv->reg_mutex);
 }
 
@@ -2579,8 +2590,8 @@ const struct dsa_switch_ops rtl83xx_switch_ops = {
 	.port_mdb_add		= rtl83xx_port_mdb_add,
 	.port_mdb_del		= rtl83xx_port_mdb_del,
 
-	.port_mirror_add	= rtl83xx_port_mirror_add,
-	.port_mirror_del	= rtl83xx_port_mirror_del,
+	.port_mirror_add	= rtldsa_port_mirror_add,
+	.port_mirror_del	= rtldsa_port_mirror_del,
 
 	.port_lag_change	= rtl83xx_port_lag_change,
 	.port_lag_join		= rtl83xx_port_lag_join,

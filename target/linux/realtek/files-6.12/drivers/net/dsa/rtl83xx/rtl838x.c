@@ -261,6 +261,23 @@ static inline int rtl838x_l2_port_new_sa_fwd(int p)
 	return RTL838X_L2_PORT_NEW_SA_FWD(p);
 }
 
+static int rtldsa_838x_get_mirror_config(struct rtldsa_mirror_config *config,
+					 int group, int port)
+{
+	config->ctrl = RTL838X_MIR_CTRL + group * 4;
+	config->spm = RTL838X_MIR_SPM_CTRL + group * 4;
+	config->dpm = RTL838X_MIR_DPM_CTRL + group * 4;
+
+	/* Enable mirroring to destination port */
+	config->val = BIT(0);
+	config->val |= port << 4;
+
+	/* Enable mirroring to port across VLANs */
+	config->val |= BIT(11);
+
+	return 0;
+}
+
 inline static int rtl838x_trk_mbr_ctr(int group)
 {
 	return RTL838X_TRK_MBR_CTR + (group << 2);
@@ -1698,9 +1715,7 @@ const struct rtl838x_reg rtl838x_reg = {
 	.mac_port_ctrl = rtl838x_mac_port_ctrl,
 	.l2_port_new_salrn = rtl838x_l2_port_new_salrn,
 	.l2_port_new_sa_fwd = rtl838x_l2_port_new_sa_fwd,
-	.mir_ctrl = RTL838X_MIR_CTRL,
-	.mir_dpm = RTL838X_MIR_DPM_CTRL,
-	.mir_spm = RTL838X_MIR_SPM_CTRL,
+	.get_mirror_config = rtldsa_838x_get_mirror_config,
 	.read_l2_entry_using_hash = rtl838x_read_l2_entry_using_hash,
 	.write_l2_entry_using_hash = rtl838x_write_l2_entry_using_hash,
 	.read_cam = rtl838x_read_cam,
