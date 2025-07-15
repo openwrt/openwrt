@@ -1628,9 +1628,8 @@ static void rtldsa_port_bridge_leave(struct dsa_switch *ds, int port, struct dsa
 	mutex_unlock(&priv->reg_mutex);
 }
 
-void rtl83xx_port_stp_state_set(struct dsa_switch *ds, int port, u8 state)
+static void rtldsa_port_xstp_state_set(struct dsa_switch *ds, int port, u8 state, u32 msti)
 {
-	u32 msti = 0;
 	u32 port_state[4];
 	int index, bit;
 	int pos = port;
@@ -1681,6 +1680,11 @@ void rtl83xx_port_stp_state_set(struct dsa_switch *ds, int port, u8 state)
 	priv->r->stp_set(priv, msti, port_state);
 
 	mutex_unlock(&priv->reg_mutex);
+}
+
+void rtl83xx_port_stp_state_set(struct dsa_switch *ds, int port, u8 state)
+{
+	rtldsa_port_xstp_state_set(ds, port, state, 0);
 }
 
 void rtl83xx_fast_age(struct dsa_switch *ds, int port)
@@ -1739,6 +1743,14 @@ static void rtl930x_fast_age(struct dsa_switch *ds, int port)
 	do { } while (sw_r32(priv->r->l2_tbl_flush_ctrl) & BIT(30));
 
 	mutex_unlock(&priv->reg_mutex);
+}
+
+static int rtldsa_port_mst_state_set(struct dsa_switch *ds, int port,
+				     const struct switchdev_mst_state *st)
+{
+	rtldsa_port_xstp_state_set(ds, port, st->state, st->msti);
+
+	return 0;
 }
 
 static int rtl83xx_vlan_filtering(struct dsa_switch *ds, int port,
@@ -1935,6 +1947,22 @@ static int rtldsa_port_vlan_fast_age(struct dsa_switch *ds, int port, u16 vid)
 	mutex_unlock(&priv->reg_mutex);
 
 	return ret;
+}
+
+static int rtldsa_vlan_msti_set(struct dsa_switch *ds, struct dsa_bridge bridge,
+				const struct switchdev_vlan_msti *msti)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	struct rtl838x_vlan_info info;
+
+	if (msti->msti > 127)
+		return -EINVAL;
+
+	priv->r->vlan_tables_read(msti->vid, &info);
+	info.fid = msti->msti;
+	priv->r->vlan_set_tagged(msti->vid, &info);
+
+	return 0;
 }
 
 static void rtl83xx_setup_l2_uc_entry(struct rtl838x_l2_entry *e, int port, int vid, u64 mac)
@@ -2623,10 +2651,12 @@ const struct dsa_switch_ops rtl83xx_switch_ops = {
 	.port_bridge_leave	= rtldsa_port_bridge_leave,
 	.port_stp_state_set	= rtl83xx_port_stp_state_set,
 	.port_fast_age		= rtl83xx_fast_age,
+	.port_mst_state_set	= rtldsa_port_mst_state_set,
 
 	.port_vlan_filtering	= rtl83xx_vlan_filtering,
 	.port_vlan_add		= rtl83xx_vlan_add,
 	.port_vlan_del		= rtl83xx_vlan_del,
+	.vlan_msti_set		= rtldsa_vlan_msti_set,
 
 	.port_fdb_add		= rtl83xx_port_fdb_add,
 	.port_fdb_del		= rtl83xx_port_fdb_del,
@@ -2680,11 +2710,13 @@ const struct dsa_switch_ops rtl93xx_switch_ops = {
 	.port_bridge_leave	= rtldsa_port_bridge_leave,
 	.port_stp_state_set	= rtl83xx_port_stp_state_set,
 	.port_fast_age		= rtl930x_fast_age,
+	.port_mst_state_set	= rtldsa_port_mst_state_set,
 
 	.port_vlan_filtering	= rtl83xx_vlan_filtering,
 	.port_vlan_add		= rtl83xx_vlan_add,
 	.port_vlan_del		= rtl83xx_vlan_del,
 	.port_vlan_fast_age	= rtldsa_port_vlan_fast_age,
+	.vlan_msti_set		= rtldsa_vlan_msti_set,
 
 	.port_fdb_add		= rtl83xx_port_fdb_add,
 	.port_fdb_del		= rtl83xx_port_fdb_del,
