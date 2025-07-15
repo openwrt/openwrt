@@ -1114,6 +1114,7 @@ struct rtl838x_switch_priv {
 	struct rtl838x_l3_intf *interfaces[MAX_INTERFACES];
 	u16 intf_mtus[MAX_INTF_MTUS];
 	int intf_mtu_count[MAX_INTF_MTUS];
+	u64 isolated_ports;
 };
 
 void rtl838x_dbgfs_init(struct rtl838x_switch_priv *priv);

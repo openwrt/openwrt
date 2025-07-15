@@ -2013,11 +2013,41 @@ static int rtl83xx_port_pre_bridge_flags(struct dsa_switch *ds, int port, struct
 		features |= BR_MCAST_FLOOD;
 	if (priv->r->enable_bcast_flood)
 		features |= BR_BCAST_FLOOD;
+	if (priv->family_id == RTL9300_FAMILY_ID ||
+			priv->family_id == RTL9310_FAMILY_ID)
+		features |= BR_ISOLATED;
+
 	if (flags.mask & ~(features))
 		return -EINVAL;
 
 	return 0;
 }
+
+static void rtl93xx_port_isolation(struct rtl838x_switch_priv *priv, int port, bool isolate)
+{
+	unsigned int i;
+
+	for (i = 0; i < priv->ds->num_ports; i++) {
+		if (i == port)
+			continue;
+
+		if (BIT_ULL(i) & priv->isolated_ports) {
+			if (isolate) {
+				priv->r->traffic_disable(port, i);
+				priv->r->traffic_disable(i, port);
+			} else {
+				priv->r->traffic_enable(port, i);
+				priv->r->traffic_enable(i, port);
+			}
+		}
+	}
+
+	if (isolate)
+		priv->isolated_ports |= BIT_ULL(port);
+	else
+		priv->isolated_ports &= ~BIT_ULL(port);
+}
+
 
 static int rtl83xx_port_bridge_flags(struct dsa_switch *ds, int port, struct switchdev_brport_flags flags, struct netlink_ext_ack *extack)
 {
@@ -2035,6 +2065,10 @@ static int rtl83xx_port_bridge_flags(struct dsa_switch *ds, int port, struct swi
 
 	if (priv->r->enable_bcast_flood && (flags.mask & BR_BCAST_FLOOD))
 		priv->r->enable_bcast_flood(port, !!(flags.val & BR_BCAST_FLOOD));
+
+	if ((priv->family_id == RTL9300_FAMILY_ID || priv->family_id == RTL9310_FAMILY_ID)
+			&& (flags.mask & BR_ISOLATED))
+		rtl93xx_port_isolation(priv, port, !!(flags.val & BR_ISOLATED));
 
 	return 0;
 }
