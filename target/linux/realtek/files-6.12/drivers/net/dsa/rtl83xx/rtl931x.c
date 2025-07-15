@@ -1538,6 +1538,11 @@ static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 	/* Set LED mode to serial (0x1) */
 	sw_w32_mask(0x3, 0x1, RTL931X_LED_GLB_CTRL);
 
+	if (of_property_read_bool(node, "active-low"))
+		sw_w32_mask(RTL931X_LED_GLB_ACTIVE_LOW, 0, RTL931X_LED_GLB_CTRL);
+	else
+		sw_w32_mask(0, RTL931X_LED_GLB_ACTIVE_LOW, RTL931X_LED_GLB_CTRL);
+
 	rtl839x_set_port_reg_le(pm_copper, RTL931X_LED_PORT_COPR_MASK_CTRL);
 	rtl839x_set_port_reg_le(pm_fiber, RTL931X_LED_PORT_FIB_MASK_CTRL);
 	rtl839x_set_port_reg_le(pm_copper | pm_fiber, RTL931X_LED_PORT_COMBO_MASK_CTRL);
