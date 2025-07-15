@@ -10,6 +10,7 @@ on:
       - 'target/linux/generic/**'
       - 'toolchain/**'
       - '!package/base-files/files/**'
+      - '!package/boot/uboot-tools/uboot-envtools/files/**'
   push:
     paths:
       - '.github/workflows/packages.yml'
@@ -19,6 +20,7 @@ on:
       - 'target/linux/generic/**'
       - 'toolchain/**'
       - '!package/base-files/files/**'
+      - '!package/boot/uboot-tools/uboot-envtools/files/**'
     branches-ignore:
       - master
 
