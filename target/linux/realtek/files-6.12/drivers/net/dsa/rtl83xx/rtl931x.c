@@ -1471,6 +1471,24 @@ static void rtl931x_vlan_port_pvid_set(int port, enum pbvlan_type type, int pvid
 		sw_w32_mask(0xfff << 14, pvid << 14, RTL931X_VLAN_PORT_IGR_CTRL + (port << 2));
 }
 
+static int rtldsa_931x_vlan_port_fast_age(struct rtl838x_switch_priv *priv, int port, u16 vid)
+{
+	u32 val;
+
+	sw_w32(vid << 20, RTL931X_L2_TBL_FLUSH_CTRL + 4);
+
+	val = 0;
+	val |= port << 11;
+	val |= BIT(24); /* compare port id */
+	val |= BIT(26); /* compare VID */
+	val |= BIT(28); /* status - trigger flush */
+	sw_w32(val, RTL931X_L2_TBL_FLUSH_CTRL);
+
+	do { } while (sw_r32(RTL931X_L2_TBL_FLUSH_CTRL) & BIT (28));
+
+	return 0;
+}
+
 static void rtl931x_set_igr_filter(int port, enum igr_filter state)
 {
 	sw_w32_mask(0x3 << ((port & 0xf)<<1), state << ((port & 0xf)<<1),
@@ -1765,6 +1783,7 @@ const struct rtl838x_reg rtl931x_reg = {
 	.vlan_port_keep_tag_set = rtl931x_vlan_port_keep_tag_set,
 	.vlan_port_pvidmode_set = rtl931x_vlan_port_pvidmode_set,
 	.vlan_port_pvid_set = rtl931x_vlan_port_pvid_set,
+	.vlan_port_fast_age = rtldsa_931x_vlan_port_fast_age,
 	.trk_mbr_ctr = rtldsa_931x_trk_mbr_ctr,
 	.rma_bpdu_fld_pmask = RTL931X_RMA_BPDU_FLD_PMSK,
 	.set_vlan_igr_filter = rtl931x_set_igr_filter,

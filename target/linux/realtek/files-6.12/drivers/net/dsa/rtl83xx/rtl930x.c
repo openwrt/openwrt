@@ -2329,6 +2329,24 @@ static void rtl930x_vlan_port_pvid_set(int port, enum pbvlan_type type, int pvid
 		sw_w32_mask(0xfff << 16, pvid << 16, RTL930X_VLAN_PORT_PB_VLAN + (port << 2));
 }
 
+static int rtldsa_930x_vlan_port_fast_age(struct rtl838x_switch_priv *priv, int port, u16 vid)
+{
+	u32 val;
+
+	sw_w32(port << 11, RTL930X_L2_TBL_FLUSH_CTRL + 4);
+
+	val = 0;
+	val |= vid << 12;
+	val |= BIT(26); /* compare port id */
+	val |= BIT(28); /* compare VID */
+	val |= BIT(30); /* status - trigger flush */
+	sw_w32(val, RTL930X_L2_TBL_FLUSH_CTRL);
+
+	do { } while (sw_r32(priv->r->l2_tbl_flush_ctrl) & BIT(30));
+
+	return 0;
+}
+
 static int rtl930x_set_ageing_time(unsigned long msec)
 {
 	int t = sw_r32(RTL930X_L2_AGE_CTRL);
@@ -2638,6 +2656,7 @@ const struct rtl838x_reg rtl930x_reg = {
 	.vlan_port_keep_tag_set = rtl930x_vlan_port_keep_tag_set,
 	.vlan_port_pvidmode_set = rtl930x_vlan_port_pvidmode_set,
 	.vlan_port_pvid_set = rtl930x_vlan_port_pvid_set,
+	.vlan_port_fast_age = rtldsa_930x_vlan_port_fast_age,
 	.trk_mbr_ctr = rtl930x_trk_mbr_ctr,
 	.rma_bpdu_fld_pmask = RTL930X_RMA_BPDU_FLD_PMSK,
 	.init_eee = rtl930x_init_eee,

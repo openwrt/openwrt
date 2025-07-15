@@ -1830,6 +1830,21 @@ static int rtl83xx_vlan_del(struct dsa_switch *ds, int port,
 	return 0;
 }
 
+static int rtldsa_port_vlan_fast_age(struct dsa_switch *ds, int port, u16 vid)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	int ret;
+
+	if (!priv->r->vlan_port_fast_age)
+		return -EOPNOTSUPP;
+
+	mutex_lock(&priv->reg_mutex);
+	ret = priv->r->vlan_port_fast_age(priv, port, vid);
+	mutex_unlock(&priv->reg_mutex);
+
+	return ret;
+}
+
 static void rtl83xx_setup_l2_uc_entry(struct rtl838x_l2_entry *e, int port, int vid, u64 mac)
 {
 	memset(e, 0, sizeof(*e));
@@ -2680,6 +2695,7 @@ const struct dsa_switch_ops rtl93xx_switch_ops = {
 	.port_vlan_filtering	= rtl83xx_vlan_filtering,
 	.port_vlan_add		= rtl83xx_vlan_add,
 	.port_vlan_del		= rtl83xx_vlan_del,
+	.port_vlan_fast_age	= rtldsa_port_vlan_fast_age,
 
 	.port_fdb_add		= rtl83xx_port_fdb_add,
 	.port_fdb_del		= rtl83xx_port_fdb_del,
