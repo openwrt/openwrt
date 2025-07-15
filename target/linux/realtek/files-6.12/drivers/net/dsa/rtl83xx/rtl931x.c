@@ -866,6 +866,25 @@ static void rtl931x_l2_learning_setup(void)
 	sw_w32((0xffff << 3) | FORWARD, RTL931X_L2_LRN_CONSTRT_CTRL);
 }
 
+static void rtl931x_enable_learning(int port, bool enable)
+{
+	/* Limit learning to maximum: 64k entries */
+
+	sw_w32_mask(0xffff << 3, enable ? (0xfffe << 3) : 0,
+		    RTL931X_L2_LRN_PORT_CONSTRT_CTRL + (port << 2));
+}
+
+static void rtl931x_enable_flood(int port, bool enable)
+{
+	/* 0: Forward
+	 * 1: Disable
+	 * 2: to CPU
+	 * 3: Copy to CPU
+	 */
+	sw_w32_mask(0x7, enable ? 0 : 1,
+		    RTL931X_L2_LRN_PORT_CONSTRT_CTRL + (port << 2));
+}
+
 static u64 rtl931x_read_mcast_pmask(int idx)
 {
 	u64 portmask;
@@ -1687,4 +1706,6 @@ const struct rtl838x_reg rtl931x_reg = {
 	.l2_learning_setup = rtl931x_l2_learning_setup,
 	.l3_setup = rtl931x_l3_setup,
 	.led_init = rtldsa_931x_led_init,
+	.enable_learning = rtl931x_enable_learning,
+	.enable_flood = rtl931x_enable_flood,
 };
