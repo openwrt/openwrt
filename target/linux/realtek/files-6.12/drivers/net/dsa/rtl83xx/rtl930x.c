@@ -296,6 +296,26 @@ static void rtl930x_l2_learning_setup(void)
 	sw_w32((0x7fff << 2) | 0, RTL930X_L2_LRN_CONSTRT_CTRL);
 }
 
+static void rtldsa_930x_enable_learning(int port, bool enable)
+{
+	/* Limit learning to maximum: 32k entries */
+	sw_w32_mask(GENMASK(17, 3), enable ? (0x7ffe << 3) : 0,
+		    RTL930X_L2_LRN_PORT_CONSTRT_CTRL + port * 4);
+}
+
+static void rtldsa_930x_enable_flood(int port, bool enable)
+{
+	/* 0: forward
+	 * 1: drop
+	 * 2: trap to local CPU
+	 * 3: copy to local CPU
+	 * 4: trap to master CPU
+	 * 5: copy to master CPU
+	 */
+	sw_w32_mask(GENMASK(2, 0), enable ? 0 : 1,
+		    RTL930X_L2_LRN_PORT_CONSTRT_CTRL + port * 4);
+}
+
 static void rtl930x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
 {
 	u32 cmd = 1 << 17 | /* Execute cmd */
@@ -2513,4 +2533,6 @@ const struct rtl838x_reg rtl930x_reg = {
 	.set_l3_egress_intf = rtl930x_set_l3_egress_intf,
 	.set_distribution_algorithm = rtl930x_set_distribution_algorithm,
 	.led_init = rtl930x_led_init,
+	.enable_learning = rtldsa_930x_enable_learning,
+	.enable_flood = rtldsa_930x_enable_flood,
 };
