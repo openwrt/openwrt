@@ -10,6 +10,9 @@ on:
       - 'target/linux/generic/**'
       - 'toolchain/**'
       - '!package/base-files/files/**'
+      - '!package/boot/arm-trusted-firmware-**'
+      - '!package/boot/uboot-**'
+      - 'package/boot/uboot-tools/**'
       - '!package/boot/uboot-tools/uboot-envtools/files/**'
   push:
     paths:
@@ -20,6 +23,9 @@ on:
       - 'target/linux/generic/**'
       - 'toolchain/**'
       - '!package/base-files/files/**'
+      - '!package/boot/arm-trusted-firmware-**'
+      - '!package/boot/uboot-**'
+      - 'package/boot/uboot-tools/**'
       - '!package/boot/uboot-tools/uboot-envtools/files/**'
     branches-ignore:
       - master
