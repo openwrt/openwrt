@@ -190,6 +190,68 @@ static int rtldsa_930x_get_mirror_config(struct rtldsa_mirror_config *config,
 	return 0;
 }
 
+static int rtldsa_930x_port_rate_police_add(struct dsa_switch *ds, int port,
+					    const struct flow_action_entry *act,
+					    bool ingress)
+{
+	u32 burst;
+	u64 rate;
+	u32 addr;
+
+	/* rate has unit 16000 bit */
+	rate = div_u64(act->police.rate_bytes_ps, 2000);
+	rate = min_t(u64, rate, RTL93XX_BANDWIDTH_CTRL_RATE_MAX);
+	rate |= RTL93XX_BANDWIDTH_CTRL_ENABLE;
+
+	if (ingress)
+		addr = RTL930X_BANDWIDTH_CTRL_INGRESS(port);
+	else
+		addr = RTL930X_BANDWIDTH_CTRL_EGRESS(port);
+
+	if (ingress) {
+		burst = min_t(u32, act->police.burst, RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_MAX);
+
+		/* set burst high on/off the same to avoid TCP oscillation */
+		sw_w32(burst, RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_HIGH_ON(port));
+		sw_w32(burst, RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_HIGH_OFF(port));
+
+		/* Enable ingress bandwidth flow control to improve TCP throughput and avoid
+		 * the drops behavior of the RTL930x ingress rate limiter which seem to not
+		 * play well with any congestion control algorithm
+		 */
+		sw_w32_mask(0, RTL930X_INGRESS_FC_CTRL_EN(port),
+			    RTL930X_INGRESS_FC_CTRL(port));
+	} else {
+		burst = min_t(u32, act->police.burst, RTL930X_BANDWIDTH_CTRL_MAX_BURST);
+
+		sw_w32(burst, addr + 4);
+	}
+
+	sw_w32(rate, addr);
+
+	return 0;
+}
+
+static int rtldsa_930x_port_rate_police_del(struct dsa_switch *ds, int port,
+					    struct flow_cls_offload *cls,
+					    bool ingress)
+{
+	u32 addr;
+
+	if (ingress)
+		addr = RTL930X_BANDWIDTH_CTRL_INGRESS(port);
+	else
+		addr = RTL930X_BANDWIDTH_CTRL_EGRESS(port);
+
+	sw_w32_mask(RTL93XX_BANDWIDTH_CTRL_ENABLE, 0, addr);
+
+	if (ingress)
+		sw_w32_mask(RTL930X_INGRESS_FC_CTRL_EN(port), 0,
+			    RTL930X_INGRESS_FC_CTRL(port));
+
+	return 0;
+}
+
 inline static int rtl930x_trk_mbr_ctr(int group)
 {
 	return RTL930X_TRK_MBR_CTRL + (group << 2);
@@ -2495,6 +2557,8 @@ const struct rtl838x_reg rtl930x_reg = {
 	.l2_port_new_salrn = rtl930x_l2_port_new_salrn,
 	.l2_port_new_sa_fwd = rtl930x_l2_port_new_sa_fwd,
 	.get_mirror_config = rtldsa_930x_get_mirror_config,
+	.port_rate_police_add = rtldsa_930x_port_rate_police_add,
+	.port_rate_police_del = rtldsa_930x_port_rate_police_del,
 	.read_l2_entry_using_hash = rtl930x_read_l2_entry_using_hash,
 	.write_l2_entry_using_hash = rtl930x_write_l2_entry_using_hash,
 	.read_cam = rtl930x_read_cam,

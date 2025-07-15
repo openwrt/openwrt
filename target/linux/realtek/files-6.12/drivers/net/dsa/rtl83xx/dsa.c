@@ -2495,6 +2495,118 @@ static int rtldsa_phy_write(struct dsa_switch *ds, int addr, int regnum, u16 val
 	return mdiobus_write_nested(priv->parent_bus, addr, regnum, val);
 }
 
+static const struct flow_action_entry *rtldsa_rate_policy_extract(struct flow_cls_offload *cls)
+{
+	struct flow_rule *rule;
+
+	/* only simple rules with a single action are supported */
+	rule = flow_cls_offload_flow_rule(cls);
+
+	if (!flow_action_basic_hw_stats_check(&cls->rule->action,
+					      cls->common.extack))
+		return NULL;
+
+	if (!flow_offload_has_one_action(&rule->action))
+		return NULL;
+
+	return &rule->action.entries[0];
+}
+
+static bool rtldsa_port_rate_police_validate(const struct flow_action_entry *act)
+{
+	if (!act)
+		return false;
+
+	/* only allow action which just limit rate with by dropping packets */
+	if (act->id != FLOW_ACTION_POLICE)
+		return false;
+
+	if (act->police.rate_pkt_ps > 0)
+		return false;
+
+	if (act->police.exceed.act_id != FLOW_ACTION_DROP)
+		return false;
+
+	if (act->police.notexceed.act_id != FLOW_ACTION_ACCEPT)
+		return false;
+
+	return true;
+}
+
+static int rtldsa_cls_flower_add(struct dsa_switch *ds, int port,
+				 struct flow_cls_offload *cls,
+				 bool ingress)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	struct rtl838x_port *p = &priv->ports[port];
+	const struct flow_action_entry *act;
+	int ret;
+
+	if (!priv->r->port_rate_police_add)
+		return -EOPNOTSUPP;
+
+	/* the single action must be a rate/bandwidth limiter */
+	act = rtldsa_rate_policy_extract(cls);
+
+	if (!rtldsa_port_rate_police_validate(act))
+		return -EOPNOTSUPP;
+
+	mutex_lock(&priv->reg_mutex);
+
+	/* only allow one offloaded police for ingress/egress */
+	if (ingress && p->rate_police_ingress) {
+		ret = -EOPNOTSUPP;
+		goto unlock;
+	}
+
+	if (!ingress && p->rate_police_egress) {
+		ret = -EOPNOTSUPP;
+		goto unlock;
+	}
+
+	ret = priv->r->port_rate_police_add(ds, port, act, ingress);
+	if (ret < 0)
+		goto unlock;
+
+	if (ingress)
+		p->rate_police_ingress = true;
+	else
+		p->rate_police_egress = true;
+
+unlock:
+	mutex_unlock(&priv->reg_mutex);
+
+	return ret;
+}
+
+static int rtldsa_cls_flower_del(struct dsa_switch *ds, int port,
+				 struct flow_cls_offload *cls,
+				 bool ingress)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	struct rtl838x_port *p = &priv->ports[port];
+	int ret;
+
+	if (!priv->r->port_rate_police_del)
+		return -EOPNOTSUPP;
+
+	mutex_lock(&priv->reg_mutex);
+
+	ret = priv->r->port_rate_police_del(ds, port, cls, ingress);
+	if (ret < 0)
+		goto unlock;
+
+	if (ingress)
+		p->rate_police_ingress = false;
+	else
+		p->rate_police_egress = false;
+
+unlock:
+	mutex_unlock(&priv->reg_mutex);
+
+	return ret;
+}
+
 const struct dsa_switch_ops rtl83xx_switch_ops = {
 	.get_tag_protocol	= rtl83xx_get_tag_protocol,
 	.setup			= rtl83xx_setup,
@@ -2607,4 +2719,7 @@ const struct dsa_switch_ops rtl93xx_switch_ops = {
 
 	.port_pre_bridge_flags	= rtldsa_port_pre_bridge_flags,
 	.port_bridge_flags	= rtl83xx_port_bridge_flags,
+
+	.cls_flower_add		= rtldsa_cls_flower_add,
+	.cls_flower_del		= rtldsa_cls_flower_del,
 };

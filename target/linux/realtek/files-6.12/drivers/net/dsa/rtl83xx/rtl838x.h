@@ -406,6 +406,27 @@
 #define RTL839X_SPCL_TRAP_SWITCH_MAC_CTRL	(0x1068)
 #define RTL839X_SPCL_TRAP_SWITCH_IPV4_ADDR_CTRL	(0x106C)
 #define RTL839X_SPCL_TRAP_CRC_CTRL		(0x1070)
+
+#define RTL930X_BANDWIDTH_CTRL_EGRESS(port)	(0x7660 + (port * 16))
+#define RTL930X_BANDWIDTH_CTRL_INGRESS(port)	(0x8068 + (port * 4))
+#define RTL930X_BANDWIDTH_CTRL_MAX_BURST	(64 * 1000)
+#define RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_HIGH_ON(port) \
+						(0x80DC + (port * 8))
+#define RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_HIGH_OFF(port) \
+						(0x80E0 + (port * 8))
+#define RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_MAX \
+						GENMASK(30, 0)
+
+#define RTL931X_BANDWIDTH_CTRL_EGRESS(port)	(0x2164 + (port * 8))
+#define RTL931X_BANDWIDTH_CTRL_INGRESS(port)	(0xe008 + (port * 8))
+
+#define RTL93XX_BANDWIDTH_CTRL_RATE_MAX		GENMASK(19, 0)
+#define RTL93XX_BANDWIDTH_CTRL_ENABLE		BIT(20)
+#define RTL931X_BANDWIDTH_CTRL_MAX_BURST	GENMASK(15, 0)
+
+#define RTL930X_INGRESS_FC_CTRL(port)		(0x81CC + ((port / 29) * 4))
+#define RTL930X_INGRESS_FC_CTRL_EN(port)	BIT(port % 29)
+
 /* special port action controls */
 /* values:
  *      0 = FORWARD (default)
@@ -684,6 +705,8 @@ struct rtl838x_port {
 	bool is10G:1;
 	bool is2G5:1;
 	bool isolated:1;
+	bool rate_police_egress:1;
+	bool rate_police_ingress:1;
 	u64 pm;
 	u16 pvid;
 	bool eee_enabled;
@@ -1074,6 +1097,10 @@ struct rtl838x_reg {
 	int  (*l2_port_new_sa_fwd)(int port);
 	int (*set_ageing_time)(unsigned long msec);
 	int (*get_mirror_config)(struct rtldsa_mirror_config *config, int group, int port);
+	int (*port_rate_police_add)(struct dsa_switch *ds, int port,
+				    const struct flow_action_entry *act, bool ingress);
+	int (*port_rate_police_del)(struct dsa_switch *ds, int port, struct flow_cls_offload *cls,
+				    bool ingress);
 	u64 (*read_l2_entry_using_hash)(u32 hash, u32 position, struct rtl838x_l2_entry *e);
 	void (*write_l2_entry_using_hash)(u32 hash, u32 pos, struct rtl838x_l2_entry *e);
 	u64 (*read_cam)(int idx, struct rtl838x_l2_entry *e);

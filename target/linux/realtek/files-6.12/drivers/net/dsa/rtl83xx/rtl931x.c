@@ -304,6 +304,48 @@ static int rtldsa_931x_get_mirror_config(struct rtldsa_mirror_config *config,
 	return 0;
 }
 
+static int rtldsa_931x_port_rate_police_add(struct dsa_switch *ds, int port,
+					    const struct flow_action_entry *act,
+					    bool ingress)
+{
+	u32 burst;
+	u64 rate;
+	u32 addr;
+
+	/* rate has unit 16000 bit */
+	rate = div_u64(act->police.rate_bytes_ps, 2000);
+	rate = min_t(u64, rate, RTL93XX_BANDWIDTH_CTRL_RATE_MAX);
+	rate |= RTL93XX_BANDWIDTH_CTRL_ENABLE;
+
+	burst = min_t(u32, act->police.burst, RTL931X_BANDWIDTH_CTRL_MAX_BURST);
+
+	if (ingress)
+		addr = RTL931X_BANDWIDTH_CTRL_INGRESS(port);
+	else
+		addr = RTL931X_BANDWIDTH_CTRL_EGRESS(port);
+
+	sw_w32(burst, addr + 4);
+	sw_w32(rate, addr);
+
+	return 0;
+}
+
+static int rtldsa_931x_port_rate_police_del(struct dsa_switch *ds, int port,
+					    struct flow_cls_offload *cls,
+					    bool ingress)
+{
+	u32 addr;
+
+	if (ingress)
+		addr = RTL931X_BANDWIDTH_CTRL_INGRESS(port);
+	else
+		addr = RTL931X_BANDWIDTH_CTRL_EGRESS(port);
+
+	sw_w32_mask(RTL93XX_BANDWIDTH_CTRL_ENABLE, 0, addr);
+
+	return 0;
+}
+
 irqreturn_t rtl931x_switch_irq(int irq, void *dev_id)
 {
 	struct dsa_switch *ds = dev_id;
@@ -1618,6 +1660,8 @@ const struct rtl838x_reg rtl931x_reg = {
 	.l2_port_new_salrn = rtl931x_l2_port_new_salrn,
 	.l2_port_new_sa_fwd = rtl931x_l2_port_new_sa_fwd,
 	.get_mirror_config = rtldsa_931x_get_mirror_config,
+	.port_rate_police_add = rtldsa_931x_port_rate_police_add,
+	.port_rate_police_del = rtldsa_931x_port_rate_police_del,
 	.read_l2_entry_using_hash = rtl931x_read_l2_entry_using_hash,
 	.write_l2_entry_using_hash = rtl931x_write_l2_entry_using_hash,
 	.read_cam = rtl931x_read_cam,
