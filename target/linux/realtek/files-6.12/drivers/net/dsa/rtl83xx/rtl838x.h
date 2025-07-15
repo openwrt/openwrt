@@ -510,6 +510,55 @@ typedef enum {
 #define RTL838X_SCHED_LB_CTRL(p)		(0xC004 + (((p) << 7)))
 #define RTL838X_FC_P_EGR_DROP_CTRL(p)		(0x6B1C + (((p) << 2)))
 
+#define RTL930X_REMAP_DSCP(p)			(0x9B04 + (((p) / 10) * 4))
+#define RTL931X_REMAP_DSCP(p)			(0x9034 + (((p) / 10) * 4))
+#define RTL93XX_REMAP_DSCP_INTPRI_DSCP_OFFSET(p) \
+						(((p) % 10) * 3)
+#define RTL93XX_REMAP_DSCP_INTPRI_DSCP_MASK(index) \
+						(0x7 << RTL93XX_REMAP_DSCP_INTPRI_DSCP_OFFSET(index))
+
+#define RTL930X_PORT_TBL_IDX_CTRL(port)		(0x9B20 + (((port) / 16) * 4))
+#define RTL931X_PORT_TBL_IDX_CTRL(port)		(0x9064 + (((port) / 16) * 4))
+#define RTL93XX_PORT_TBL_IDX_CTRL_IDX_OFFSET(port) \
+						(((port) & 0xF) << 1)
+#define RTL93XX_PORT_TBL_IDX_CTRL_IDX_MASK(port) \
+						(0x3 << RTL93XX_PORT_TBL_IDX_CTRL_IDX_OFFSET(port))
+
+#define RTL93XX_PRI_SEL_GROUP_0			(0)
+#define RTL93XX_PRI_SEL_GROUP_1			(1)
+
+#define RTL930X_PRI_SEL_TBL_CTRL(group)		(0x9B28 + ((group) * 4))
+#define RTL931X_PRI_SEL_TBL_CTRL(group)		(0x9074 + ((group) * 8))
+#define RTL931X_PRI_SEL_TBL_CTRL_1BR_MASK	GENMASK(15, 12)
+#define RTL931X_PRI_SEL_TBL_CTRL_MPLS_MASK	GENMASK(11, 8)
+#define RTL931X_PRI_SEL_TBL_CTRL_11E_MASK	GENMASK(7, 4)
+#define RTL931X_PRI_SEL_TBL_CTRL_TUNNEL_MASK	GENMASK(3, 0)
+
+#define RTL93XX_PRI_SEL_TBL_CTRL_ROUT_MASK	GENMASK(31, 28)
+#define RTL93XX_PRI_SEL_TBL_CTRL_PROT_VLAN_MASK	GENMASK(27, 24)
+#define RTL93XX_PRI_SEL_TBL_CTRL_MAC_VLAN_MASK	GENMASK(23, 20)
+#define RTL93XX_PRI_SEL_TBL_CTRL_OTAG_MASK	GENMASK(19, 16)
+#define RTL93XX_PRI_SEL_TBL_CTRL_ITAG_MASK	GENMASK(15, 12)
+#define RTL93XX_PRI_SEL_TBL_CTRL_DSCP_MASK	GENMASK(11, 8)
+#define RTL93XX_PRI_SEL_TBL_CTRL_VACL_MASK	GENMASK(7, 4)
+#define RTL93XX_PRI_SEL_TBL_CTRL_PORT_MASK	GENMASK(3, 0)
+
+/* port: 0-23, index: 0-7 */
+#define RTL930X_SCHED_PORT_Q_CTRL_SET0(port, index) \
+						(0x3D48 + ((port) * 384) + ((index) * 4))
+/* port: 24-27, index: 0-11 */
+#define RTL930X_SCHED_PORT_Q_CTRL_SET1(port, index) \
+						((0xE860 + ((port) - 24) * 48) + ((index) * 4))
+/* port: 0-51, index: 0-7 */
+#define RTL931X_SCHED_PORT_Q_CTRL_SET0(port, index) \
+						(0x2888 + ((port) << 5) + ((index) * 4))
+/* port: 52-55, index: 0-11 */
+#define RTL931X_SCHED_PORT_Q_CTRL_SET1(port, index) \
+						((0x2F08 + ((port) - 52) * 48) + ((index) * 4))
+
+#define RTL930X_QM_INTPRI2QID_CTRL		(0xA320)
+#define RTL931X_QM_INTPRI2QID_CTRL		(0xA9D0)
+
 /* Debug features */
 #define RTL930X_STAT_PRVTE_DROP_COUNTER0	(0xB5B8)
 
@@ -633,6 +682,7 @@ typedef enum {
 #define MAX_ROUTER_MACS 64
 #define L3_EGRESS_DMACS 2048
 #define MAX_SMACS 64
+#define DSCP_MAP_MAX 64
 
 enum phy_type {
 	PHY_NONE = 0,
@@ -1139,6 +1189,7 @@ struct rtl838x_reg {
 	void (*set_distribution_algorithm)(int group, int algoidx, u32 algomask);
 	void (*set_receive_management_action)(int port, rma_ctrl_t type, action_type_t action);
 	void (*led_init)(struct rtl838x_switch_priv *priv);
+	void (*qos_init)(struct rtl838x_switch_priv *priv);
 };
 
 struct rtl838x_switch_priv {
@@ -1203,5 +1254,8 @@ struct rtl838x_switch_priv {
 
 void rtl838x_dbgfs_init(struct rtl838x_switch_priv *priv);
 void rtl930x_dbgfs_init(struct rtl838x_switch_priv *priv);
+
+extern int rtldsa_max_available_queue[];
+extern int rtldsa_default_queue_weights[];
 
 #endif /* _RTL838X_H */

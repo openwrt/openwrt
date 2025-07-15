@@ -14,8 +14,8 @@ enum scheduler_type {
 	WEIGHTED_ROUND_ROBIN,
 };
 
-int max_available_queue[] = {0, 1, 2, 3, 4, 5, 6, 7};
-int default_queue_weights[] = {1, 1, 1, 1, 1, 1, 1, 1};
+int rtldsa_max_available_queue[] = {0, 1, 2, 3, 4, 5, 6, 7};
+int rtldsa_default_queue_weights[] = {1, 1, 1, 1, 1, 1, 1, 1};
 int dot1p_priority_remapping[] = {0, 1, 2, 3, 4, 5, 6, 7};
 
 static void rtl839x_read_scheduling_table(int port)
@@ -324,11 +324,11 @@ static void rtl83xx_setup_prio2queue_cpu_matrix(int *max_queues)
 static void rtl83xx_setup_default_prio2queue(void)
 {
 	if (soc_info.family == RTL8380_FAMILY_ID) {
-		rtl838x_setup_prio2queue_matrix(max_available_queue);
+		rtl838x_setup_prio2queue_matrix(rtldsa_max_available_queue);
 	} else {
-		rtl839x_setup_prio2queue_matrix(max_available_queue);
+		rtl839x_setup_prio2queue_matrix(rtldsa_max_available_queue);
 	}
-	rtl83xx_setup_prio2queue_cpu_matrix(max_available_queue);
+	rtl83xx_setup_prio2queue_cpu_matrix(rtldsa_max_available_queue);
 }
 
 /* Sets the output queue assigned to a port, the port can be the CPU-port */
@@ -508,7 +508,7 @@ static void rtl839x_config_qos(void)
 	for (int port = 0; port <= soc_info.cpu_port; port++) {
 		rtl83xx_set_ingress_priority(port, 0);
 		rtl839x_set_scheduling_algorithm(priv, port, WEIGHTED_FAIR_QUEUE);
-		rtl839x_set_scheduling_queue_weights(priv, port, default_queue_weights);
+		rtl839x_set_scheduling_queue_weights(priv, port, rtldsa_default_queue_weights);
 		/* Do re-marking based on outer tag */
 		sw_w32_mask(0, BIT(port % 32), RTL839X_RMK_PORT_DEI_TAG_CTRL(port));
 	}
@@ -561,6 +561,10 @@ void __init rtl83xx_setup_qos(struct rtl838x_switch_priv *priv)
 	case RTL8390_FAMILY_ID:
 		rtl839x_config_qos();
 		rtl839x_rate_control_init(priv);
+		break;
+	default:
+		if (priv->r->qos_init)
+			priv->r->qos_init(priv);
 		break;
 	}
 }
