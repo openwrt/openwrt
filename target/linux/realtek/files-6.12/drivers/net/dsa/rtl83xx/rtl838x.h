@@ -997,6 +997,23 @@ struct rtl83xx_route {
 	struct rtl93xx_route_attr attr;
 };
 
+/**
+ * struct rtldsa_mirror_config - Mirror configuration for specific group and port
+ */
+struct rtldsa_mirror_config {
+	/** @ctrl: control register for mirroring group */
+	int ctrl;
+
+	/** @spm: register for the destination port members */
+	int spm;
+
+	/** @dpm: register for the source port members */
+	int dpm;
+
+	/** @val: @ctrl register settings to enable mirroring */
+	u32 val;
+};
+
 struct rtl838x_reg {
 	void (*mask_port_reg_be)(u64 clear, u64 set, int reg);
 	void (*set_port_reg_be)(u64 set, int reg);
@@ -1047,9 +1064,7 @@ struct rtl838x_reg {
 	int  (*l2_port_new_salrn)(int port);
 	int  (*l2_port_new_sa_fwd)(int port);
 	int (*set_ageing_time)(unsigned long msec);
-	int mir_ctrl;
-	int mir_dpm;
-	int mir_spm;
+	int (*get_mirror_config)(struct rtldsa_mirror_config *config, int group, int port);
 	u64 (*read_l2_entry_using_hash)(u32 hash, u32 position, struct rtl838x_l2_entry *e);
 	void (*write_l2_entry_using_hash)(u32 hash, u32 pos, struct rtl838x_l2_entry *e);
 	u64 (*read_cam)(int idx, struct rtl838x_l2_entry *e);
