@@ -464,12 +464,14 @@ int rtl931x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
 
 void rtl931x_print_matrix(void)
 {
-	volatile u64 *ptr = RTL838X_SW_BASE + RTL839X_PORT_ISO_CTRL(0);
+	struct table_reg *r = rtl_table_get(RTL9310_TBL_2, 1);
 
-	for (int i = 0; i < 52; i += 4)
-		pr_debug("> %16llx %16llx %16llx %16llx\n",
-			ptr[i + 0], ptr[i + 1], ptr[i + 2], ptr[i + 3]);
-	pr_debug("CPU_PORT> %16llx\n", ptr[52]);
+	for (int i = 0; i < 64; i++) {
+		rtl_table_read(r, i);
+		pr_info("> %08x %08x\n", sw_r32(rtl_table_data(r, 0)),
+			sw_r32(rtl_table_data(r, 1)));
+	}
+	rtl_table_release(r);
 }
 
 void rtl931x_set_receive_management_action(int port, rma_ctrl_t type, action_type_t action)
