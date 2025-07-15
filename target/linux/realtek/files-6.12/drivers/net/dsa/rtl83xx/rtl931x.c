@@ -1482,11 +1482,34 @@ static void rtl931x_set_distribution_algorithm(int group, int algoidx, u32 algom
 	sw_w32(newmask << l3shift, RTL931X_TRK_HASH_CTRL + (algoidx << 2));
 }
 
+static void rtldsa_931x_led_get_forced(const struct device_node *node,
+				       const u8 leds_in_set[4],
+				       u8 forced_leds_per_port[RTL931X_CPU_PORT])
+{
+	DECLARE_BITMAP(mask, RTL931X_CPU_PORT);
+	unsigned int port;
+	char set_str[36];
+	u64 pm;
+
+	for (u8 set = 0; set < 4; set++) {
+		snprintf(set_str, sizeof(set_str), "realtek,led-set%d-force-port-mask", set);
+		if (of_property_read_u64(node, set_str, &pm))
+			continue;
+
+		bitmap_from_arr64(mask, &pm, RTL931X_CPU_PORT);
+
+		for_each_set_bit(port, mask, RTL931X_CPU_PORT)
+			forced_leds_per_port[port] = leds_in_set[set];
+	}
+}
+
 static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 {
+	u8 forced_leds_per_port[RTL931X_CPU_PORT] = {};
 	u64 pm_copper = 0, pm_fiber = 0;
 	struct device *dev = priv->dev;
 	struct device_node *node;
+	u8 leds_in_set[4] = {};
 
 	node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
 	if (!node) {
@@ -1521,6 +1544,7 @@ static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 		}
 
 		dev_info(dev, "%s has %d LEDs configured\n", set_name, leds_in_this_set);
+		leds_in_set[set] = leds_in_this_set;
 
 		if (of_property_read_u32_array(node, set_name, set_config, leds_in_this_set))
 			break;
@@ -1533,6 +1557,8 @@ static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 		}
 	}
 
+	rtldsa_931x_led_get_forced(node, leds_in_set, forced_leds_per_port);
+
 	for (int i = 0; i < priv->cpu_port; i++) {
 		int pos = (i << 1) % 32;
 		u32 set;
@@ -1540,8 +1566,12 @@ static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 		sw_w32_mask(0x3 << pos, 0, RTL931X_LED_PORT_FIB_SET_SEL_CTRL(i));
 		sw_w32_mask(0x3 << pos, 0, RTL931X_LED_PORT_COPR_SET_SEL_CTRL(i));
 
-		if (!priv->ports[i].phy)
+		/* Skip port if not present (auto-detect) or not in forced mask */
+		if (!priv->ports[i].phy && !(forced_leds_per_port[i]))
 			continue;
+
+		if (forced_leds_per_port[i] > 0)
+			priv->ports[i].leds_on_this_port = forced_leds_per_port[i];
 
 		/* 0x0 = 1 led, 0x1 = 2 leds, 0x2 = 3 leds, 0x3 = 4 leds per port */
 		sw_w32_mask(0x3 << pos, (priv->ports[i].leds_on_this_port - 1) << pos,
