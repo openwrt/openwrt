@@ -9,6 +9,7 @@ on:
       - 'package/**'
       - 'target/linux/generic/**'
       - 'toolchain/**'
+      - '!package/base-files/files/**'
   push:
     paths:
       - '.github/workflows/packages.yml'
@@ -17,6 +18,7 @@ on:
       - 'package/**'
       - 'target/linux/generic/**'
       - 'toolchain/**'
+      - '!package/base-files/files/**'
     branches-ignore:
       - master
 
