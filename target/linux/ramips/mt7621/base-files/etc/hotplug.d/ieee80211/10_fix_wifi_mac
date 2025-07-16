@@ -105,7 +105,8 @@ case "$board" in
 		;;
 	haier,har-20s2u1|\
 	jcg,y2|\
-	sim,simax1800t)
+	sim,simax1800t|\
+	sim,simax1800u)
 		[ "$PHYNBR" = "1" ] && \
 			macaddr_setbit_la "$(mtd_get_mac_binary factory 0x4)" > /sys${DEVPATH}/macaddress
 		;;
