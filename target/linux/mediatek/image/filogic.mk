@@ -707,7 +707,8 @@ endef
 
 define Device/creatlentem_clt-r30b1-112m
   DEVICE_VARIANT := 112M
-  DEVICE_ALT0_VARIANT := OpenWrt
+  DEVICE_ALT0_VARIANT := 112M
+  DEVICE_ALT1_VARIANT := 112M
   DEVICE_DTS := mt7981b-creatlentem-clt-r30b1-112m
   SUPPORTED_DEVICES += clt,r30b1 clt,r30b1-112m
   IMAGE_SIZE := 114688k
