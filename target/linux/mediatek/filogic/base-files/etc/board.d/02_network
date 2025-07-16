@@ -152,7 +152,8 @@ mediatek_setup_interfaces()
 	wavlink,wl-wn586x3b)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" eth1
 		;;
-	tplink,archer-ax80-v1)
+	tplink,archer-ax80-v1|\
+	tplink,archer-ax80-v1-ubi)
 		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2 lan3" eth1
 		;;
 	tplink,re6000xd)
