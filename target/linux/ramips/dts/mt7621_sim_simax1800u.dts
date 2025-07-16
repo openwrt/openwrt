@@ -3,26 +3,26 @@
 #include "mt7621_haier-sim_wr1800k.dtsi"
 
 / {
-	compatible = "haier,har-20s2u1", "mediatek,mt7621-soc";
-	model = "Haier HAR-20S2U1";
+	compatible = "sim,simax1800u", "mediatek,mt7621-soc";
+	model = "SIM SIMAX1800U";
 };
 
-&ethphy4 {
+&ethphy0 {
 	/delete-property/ interrupts;
 };
 
 &gmac1 {
-	phy-handle = <&ethphy4>;
+	phy-handle = <&ethphy0>;
 };
 
 &switch0 {
 	ports {
 		port@1 {
-			label = "lan3";
+			label = "lan1";
 		};
 
 		port@3 {
-			label = "lan1";
+			label = "lan3";
 		};
 	};
 };

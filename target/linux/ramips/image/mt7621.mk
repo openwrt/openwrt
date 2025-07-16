@@ -2615,6 +2615,13 @@ define Device/sim_simax1800t
 endef
 TARGET_DEVICES += sim_simax1800t
 
+define Device/sim_simax1800u
+  $(Device/haier-sim_wr1800k)
+  DEVICE_VENDOR := SIM
+  DEVICE_MODEL := SIMAX1800U
+endef
+TARGET_DEVICES += sim_simax1800u
+
 define Device/snr_snr-cpe-me1
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
