@@ -1,19 +1,14 @@
 --- /dev/null
 +++ b/arch/arm64/boot/dts/rockchip/rk3568-linkstar-h68k-1432v1.dts
-@@ -0,0 +1,796 @@
+@@ -0,0 +1,781 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
-+// Draft 11 July 2025
-+// Device Tree Info
-+// DTS for Rockchip 3568-based
-+// Seeed Studios LinkStar H68k-1432-V1
++// Copyright (c) 2022 AmadeusGhost <amadeus@jmu.edu.cn>
 +//
-+// May also work with LinkStar H68k-1432-V2
-+// Filename rk3568-seeed-h68kv1.dts
-+// Need to keep device descriptor name to a triplet.
++// Copyright (c) 2025 TahomaSoft bacon@tahomasoft.com
 +//
-+// Copyright 2025 TahomaSoft bacon@tahomasoft.com
-+// NB: Hinlink H68K is very similar under different trade name
-+
++// Support for Seeed LinkStar H68K-1432v1
++// Also likely supports LinkStar H68K-1432v2
++// NB: Hinlink H68K is same or very similar under different trade name
 +
 +/dts-v1/;
 +#include <dt-bindings/gpio/gpio.h>
@@ -81,11 +76,6 @@
 +			debounce-interval = <50>;
 +		};
 +
-+		/* recessed key behavior 11 July 2025:
-+		  Left most (sd card side): nothing
-+		  center: sends OS a reboot signal, which shows on console
-+		  right (power barrel side): immediate reboot, no console info
-+		*/
 +	};
 +
 + /* gpio chip 0, line 24 responds to console key press */
@@ -372,7 +362,6 @@
 +			vdd_logic: DCDC_REG1 {
 +				regulator-always-on;
 +				regulator-boot-on;
-+			/*	regulator-init-microvolt = <900000>; */
 +				regulator-initial-mode = <0x2>;
 +				regulator-min-microvolt = <500000>;
 +				regulator-max-microvolt = <1350000>;
@@ -386,7 +375,6 @@
 +
 +			vdd_gpu: DCDC_REG2 {
 +				regulator-always-on;
-+			/*	regulator-init-microvolt = <900000>; */
 +				regulator-initial-mode = <0x2>;
 +				regulator-min-microvolt = <500000>;
 +				regulator-max-microvolt = <1350000>;
@@ -410,7 +398,6 @@
 +			};
 +
 +			vdd_npu: DCDC_REG4 {
-+			/*	regulator-init-microvolt = <900000>; */
 +				regulator-initial-mode = <0x2>;
 +				regulator-min-microvolt = <500000>;
 +				regulator-max-microvolt = <1350000>;
@@ -748,13 +735,11 @@
 +&usb_host0_xhci {
 +	phys = <&combphy0 PHY_TYPE_USB3>;
 +	phy-names = "usb3-phy";
-+	dr_mode = "host";
 +	status = "okay";
 +};
 +
 +&usb_host1_xhci {
 +	status = "okay";
-+	dr_mode = "otg";
 +};
 +
 +&usb2phy0 {
