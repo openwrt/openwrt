@@ -241,6 +241,8 @@ platform_check_image() {
 		fit_check_image "$1"
 		return $?
 		;;
+	creatlentem,clt-r30b1|\
+	creatlentem,clt-r30b1-112m|\
 	nradio,c8-668gl)
 		# tar magic `ustar`
 		magic="$(dd if="$1" bs=1 skip=257 count=5 2>/dev/null)"
