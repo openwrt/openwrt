@@ -653,6 +653,18 @@ define U-Boot/mt7986_netcore_n60-pro
   DEPENDS:=+trusted-firmware-a-mt7986-spim-nand-ddr4
 endef
 
+define U-Boot/mt7986_tplink_archer-ax80-v1-ubi
+  NAME:=TP-Link Archer AX80 v1
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=tplink_archer-ax80-v1-ubi
+  UBOOT_CONFIG:=mt7986_tplink_archer-ax80-v1-ubi
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand-ubi
+  BL2_SOC:=mt7986
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7986-spim-nand-ubi-ddr3
+endef
+
 define U-Boot/mt7986_tplink_tl-xdr4288
   NAME:=TP-LINK TL-XDR4288
   BUILD_SUBTARGET:=filogic
@@ -937,6 +949,7 @@ UBOOT_TARGETS := \
 	mt7986_mercusys_mr90x-v1 \
 	mt7986_netcore_n60 \
 	mt7986_netcore_n60-pro \
+	mt7986_tplink_archer-ax80-v1-ubi \
 	mt7986_tplink_tl-xdr4288 \
 	mt7986_tplink_tl-xdr6086 \
 	mt7986_tplink_tl-xdr6088 \
