@@ -64,8 +64,8 @@ case "$FIRMWARE" in
 		ath11k_remove_regdomain
 		ath11k_set_macflag
 		;;
-        yuncore,ax830)
-		caldata_extract "0:ART" 0x26800 0x20000
+	yuncore,ax830)
+		caldata_extract "0:ART" 0x4c000 0x20000
 		label_mac=$(mtd_get_mac_binary 0:ART 0)
 		ath11k_patch_mac $(macaddr_add $label_mac 3) 0
 		ath11k_remove_regdomain
