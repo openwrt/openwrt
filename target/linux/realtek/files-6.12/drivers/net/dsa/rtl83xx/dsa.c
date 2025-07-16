@@ -340,152 +340,6 @@ static int rtl93xx_get_sds(struct phy_device *phydev)
 	return sds_num;
 }
 
-static int rtl83xx_pcs_validate(struct phylink_pcs *pcs,
-				unsigned long *supported,
-				const struct phylink_link_state *state)
-{
-	struct rtl838x_pcs *rtpcs = container_of(pcs, struct rtl838x_pcs, pcs);
-	struct rtl838x_switch_priv *priv = rtpcs->priv;
-	int port = rtpcs->port;
-	__ETHTOOL_DECLARE_LINK_MODE_MASK(mask) = { 0, };
-
-	pr_debug("In %s port %d, state is %d", __func__, port, state->interface);
-
-	if (!phy_interface_mode_is_rgmii(state->interface) &&
-	    state->interface != PHY_INTERFACE_MODE_NA &&
-	    state->interface != PHY_INTERFACE_MODE_1000BASEX &&
-	    state->interface != PHY_INTERFACE_MODE_MII &&
-	    state->interface != PHY_INTERFACE_MODE_REVMII &&
-	    state->interface != PHY_INTERFACE_MODE_GMII &&
-	    state->interface != PHY_INTERFACE_MODE_QSGMII &&
-	    state->interface != PHY_INTERFACE_MODE_INTERNAL &&
-	    state->interface != PHY_INTERFACE_MODE_SGMII) {
-		bitmap_zero(supported, __ETHTOOL_LINK_MODE_MASK_NBITS);
-		dev_err(priv->ds->dev,
-			"Unsupported interface: %d for port %d\n",
-			state->interface, port);
-		return -EINVAL;
-	}
-
-	/* Allow all the expected bits */
-	phylink_set(mask, Autoneg);
-	phylink_set_port_modes(mask);
-	phylink_set(mask, Pause);
-	phylink_set(mask, Asym_Pause);
-
-	/* With the exclusion of MII and Reverse MII, we support Gigabit,
-	 * including Half duplex
-	 */
-	if (state->interface != PHY_INTERFACE_MODE_MII &&
-	    state->interface != PHY_INTERFACE_MODE_REVMII) {
-		phylink_set(mask, 1000baseT_Full);
-		phylink_set(mask, 1000baseT_Half);
-	}
-
-	/* On both the 8380 and 8382, ports 24-27 are SFP ports */
-	if (port >= 24 && port <= 27 && priv->family_id == RTL8380_FAMILY_ID)
-		phylink_set(mask, 1000baseX_Full);
-
-	/* On the RTL839x family of SoCs, ports 48 to 51 are SFP ports */
-	if (port >= 48 && port <= 51 && priv->family_id == RTL8390_FAMILY_ID)
-		phylink_set(mask, 1000baseX_Full);
-
-	phylink_set(mask, 10baseT_Half);
-	phylink_set(mask, 10baseT_Full);
-	phylink_set(mask, 100baseT_Half);
-	phylink_set(mask, 100baseT_Full);
-
-	bitmap_and(supported, supported, mask,
-		   __ETHTOOL_LINK_MODE_MASK_NBITS);
-
-	return 0;
-}
-
-static int rtl93xx_pcs_validate(struct phylink_pcs *pcs,
-				unsigned long *supported,
-				const struct phylink_link_state *state)
-{
-	struct rtl838x_pcs *rtpcs = container_of(pcs, struct rtl838x_pcs, pcs);
-	struct rtl838x_switch_priv *priv = rtpcs->priv;
-	int port = rtpcs->port;
-	__ETHTOOL_DECLARE_LINK_MODE_MASK(mask) = { 0, };
-
-	pr_debug("In %s port %d, state is %d (%s)", __func__, port, state->interface,
-		 phy_modes(state->interface));
-
-	if (!phy_interface_mode_is_rgmii(state->interface) &&
-	    state->interface != PHY_INTERFACE_MODE_NA &&
-	    state->interface != PHY_INTERFACE_MODE_1000BASEX &&
-	    state->interface != PHY_INTERFACE_MODE_MII &&
-	    state->interface != PHY_INTERFACE_MODE_REVMII &&
-	    state->interface != PHY_INTERFACE_MODE_GMII &&
-	    state->interface != PHY_INTERFACE_MODE_QSGMII &&
-	    state->interface != PHY_INTERFACE_MODE_XGMII &&
-	    state->interface != PHY_INTERFACE_MODE_HSGMII &&
-	    state->interface != PHY_INTERFACE_MODE_10GBASER &&
-	    state->interface != PHY_INTERFACE_MODE_10GKR &&
-	    state->interface != PHY_INTERFACE_MODE_USXGMII &&
-	    state->interface != PHY_INTERFACE_MODE_INTERNAL &&
-	    state->interface != PHY_INTERFACE_MODE_SGMII) {
-		bitmap_zero(supported, __ETHTOOL_LINK_MODE_MASK_NBITS);
-		dev_err(priv->ds->dev,
-			"Unsupported interface: %d for port %d\n",
-			state->interface, port);
-		return -EINVAL;
-	}
-
-	/* Allow all the expected bits */
-	phylink_set(mask, Autoneg);
-	phylink_set_port_modes(mask);
-	phylink_set(mask, Pause);
-	phylink_set(mask, Asym_Pause);
-
-	/* With the exclusion of MII and Reverse MII, we support Gigabit,
-	 * including Half duplex
-	 */
-	if (state->interface != PHY_INTERFACE_MODE_MII &&
-	    state->interface != PHY_INTERFACE_MODE_REVMII) {
-		phylink_set(mask, 1000baseT_Full);
-		phylink_set(mask, 1000baseT_Half);
-	}
-
-	/* Internal phys of the RTL93xx family provide 10G */
-	if (priv->ports[port].phy_is_integrated &&
-	    state->interface == PHY_INTERFACE_MODE_1000BASEX) {
-		phylink_set(mask, 1000baseX_Full);
-	} else if (priv->ports[port].phy_is_integrated) {
-		phylink_set(mask, 1000baseX_Full);
-		phylink_set(mask, 10000baseKR_Full);
-		phylink_set(mask, 10000baseSR_Full);
-		phylink_set(mask, 10000baseCR_Full);
-	}
-	if (state->interface == PHY_INTERFACE_MODE_INTERNAL) {
-		phylink_set(mask, 1000baseX_Full);
-		phylink_set(mask, 1000baseT_Full);
-		phylink_set(mask, 10000baseKR_Full);
-		phylink_set(mask, 10000baseT_Full);
-		phylink_set(mask, 10000baseSR_Full);
-		phylink_set(mask, 10000baseCR_Full);
-	}
-
-	if (state->interface == PHY_INTERFACE_MODE_USXGMII) {
-		phylink_set(mask, 2500baseT_Full);
-		phylink_set(mask, 5000baseT_Full);
-		phylink_set(mask, 10000baseT_Full);
-	}
-
-	phylink_set(mask, 10baseT_Half);
-	phylink_set(mask, 10baseT_Full);
-	phylink_set(mask, 100baseT_Half);
-	phylink_set(mask, 100baseT_Full);
-
-	bitmap_and(supported, supported, mask,
-		   __ETHTOOL_LINK_MODE_MASK_NBITS);
-	pr_debug("%s leaving supported: %*pb", __func__, __ETHTOOL_LINK_MODE_MASK_NBITS, supported);
-
-	return 0;
-}
-
 static void rtl83xx_pcs_get_state(struct phylink_pcs *pcs,
 				  struct phylink_link_state *state)
 {
@@ -680,8 +534,8 @@ static void rtl83xx_config_interface(int port, phy_interface_t interface)
 	pr_debug("configured port %d for interface %s\n", port, phy_modes(interface));
 }
 
-static void rtl83xx_phylink_get_caps(struct dsa_switch *ds, int port,
-				     struct phylink_config *config)
+static void rtldsa_phylink_get_caps(struct dsa_switch *ds, int port,
+				    struct phylink_config *config)
 {
 	/*
 	 * TODO: This capability check will need some love. Depending on the model and the
@@ -692,14 +546,14 @@ static void rtl83xx_phylink_get_caps(struct dsa_switch *ds, int port,
 	config->mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE | MAC_10 | MAC_100 |
 				   MAC_1000FD | MAC_2500FD | MAC_5000FD | MAC_10000FD;
 
+	__set_bit(PHY_INTERFACE_MODE_1000BASEX, config->supported_interfaces);
+	__set_bit(PHY_INTERFACE_MODE_10GBASER, config->supported_interfaces);
+	__set_bit(PHY_INTERFACE_MODE_2500BASEX, config->supported_interfaces);
 	__set_bit(PHY_INTERFACE_MODE_GMII, config->supported_interfaces);
 	__set_bit(PHY_INTERFACE_MODE_INTERNAL, config->supported_interfaces);
 	__set_bit(PHY_INTERFACE_MODE_QSGMII, config->supported_interfaces);
 	__set_bit(PHY_INTERFACE_MODE_SGMII, config->supported_interfaces);
 	__set_bit(PHY_INTERFACE_MODE_USXGMII, config->supported_interfaces);
-	__set_bit(PHY_INTERFACE_MODE_XGMII, config->supported_interfaces);
-	__set_bit(PHY_INTERFACE_MODE_1000BASEX, config->supported_interfaces);
-	__set_bit(PHY_INTERFACE_MODE_10GBASER, config->supported_interfaces);
 }
 
 static void rtl83xx_phylink_mac_config(struct dsa_switch *ds, int port,
@@ -2191,7 +2045,6 @@ static int rtl83xx_dsa_phy_write(struct dsa_switch *ds, int phy_addr, int phy_re
 
 const struct phylink_pcs_ops rtl83xx_pcs_ops = {
 	.pcs_an_restart		= rtl83xx_pcs_an_restart,
-	.pcs_validate		= rtl83xx_pcs_validate,
 	.pcs_get_state		= rtl83xx_pcs_get_state,
 	.pcs_config		= rtl83xx_pcs_config,
 };
@@ -2203,7 +2056,7 @@ const struct dsa_switch_ops rtl83xx_switch_ops = {
 	.phy_read		= rtl83xx_dsa_phy_read,
 	.phy_write		= rtl83xx_dsa_phy_write,
 
-	.phylink_get_caps	= rtl83xx_phylink_get_caps,
+	.phylink_get_caps	= rtldsa_phylink_get_caps,
 	.phylink_mac_config	= rtl83xx_phylink_mac_config,
 	.phylink_mac_link_down	= rtl83xx_phylink_mac_link_down,
 	.phylink_mac_link_up	= rtl83xx_phylink_mac_link_up,
@@ -2249,7 +2102,6 @@ const struct dsa_switch_ops rtl83xx_switch_ops = {
 
 const struct phylink_pcs_ops rtl93xx_pcs_ops = {
 	.pcs_an_restart		= rtl83xx_pcs_an_restart,
-	.pcs_validate		= rtl93xx_pcs_validate,
 	.pcs_get_state		= rtl93xx_pcs_get_state,
 	.pcs_config		= rtl83xx_pcs_config,
 };
@@ -2261,7 +2113,7 @@ const struct dsa_switch_ops rtl930x_switch_ops = {
 	.phy_read		= rtl83xx_dsa_phy_read,
 	.phy_write		= rtl83xx_dsa_phy_write,
 
-	.phylink_get_caps	= rtl83xx_phylink_get_caps,
+	.phylink_get_caps	= rtldsa_phylink_get_caps,
 	.phylink_mac_config	= rtl93xx_phylink_mac_config,
 	.phylink_mac_link_down	= rtl93xx_phylink_mac_link_down,
 	.phylink_mac_link_up	= rtl93xx_phylink_mac_link_up,
