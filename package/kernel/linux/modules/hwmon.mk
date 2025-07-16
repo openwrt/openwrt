@@ -755,3 +755,17 @@ define KernelPackage/polynomial
 endef
 
 $(eval $(call KernelPackage,polynomial))
+
+define KernelPackage/hwmon-corsair-cpro
+  TITLE:=Corsair Commander Pro support
+  KCONFIG:=CONFIG_SENSORS_CORSAIR_CPRO CONFIG_HIDRAW=y
+  FILES:=$(LINUX_DIR)/drivers/hwmon/corsair-cpro.ko
+  AUTOLOAD:=$(call AutoLoad,60,corsair-cpro)
+  $(call AddDepends/hwmon,+kmod-usb-hid)
+endef
+
+define KernelPackage/hwmon-corsair-cpro/description
+  Kernel module for Corsair Commander Pro support
+endef
+
+$(eval $(call KernelPackage,hwmon-corsair-cpro))
