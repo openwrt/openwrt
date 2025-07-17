@@ -104,7 +104,7 @@ define KernelPackage/intel-lpss
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Intel LPSS common
   DEPENDS:=@TARGET_x86
-  KCONFIG:=CONFIG_INTEL_LPSS
+  KCONFIG:=CONFIG_MFD_INTEL_LPSS
   FILES:=$(LINUX_DIR)/drivers/mfd/intel-lpss.ko
   HIDDEN:=1
   AUTOLOAD:=$(call AutoProbe,intel-lpss)
@@ -117,7 +117,7 @@ define KernelPackage/intel-lpss-acpi
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Intel LPSS ACPI
   DEPENDS:=+kmod-intel-lpss
-  KCONFIG:=CONFIG_INTEL_LPSS_ACPI
+  KCONFIG:=CONFIG_MFD_INTEL_LPSS_ACPI
   FILES:=$(LINUX_DIR)/drivers/mfd/intel-lpss-acpi.ko
   AUTOLOAD:=$(call AutoProbe,intel-lpss-acpi)
 endef
@@ -137,8 +137,8 @@ $(eval $(call KernelPackage,intel-lpss-acpi))
 define KernelPackage/intel-lpss-pci
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Intel LPSS PCI
-  DEPENDS:=+kmod-intel-lpss
-  KCONFIG:=CONFIG_INTEL_LPSS_PCI
+  DEPENDS:=+kmod-intel-lpss @PCI_SUPPORT
+  KCONFIG:=CONFIG_MFD_INTEL_LPSS_PCI
   FILES:=$(LINUX_DIR)/drivers/mfd/intel-lpss-pci.ko
   AUTOLOAD:=$(call AutoProbe,intel-lpss-pci)
 endef
