@@ -1,0 +1,418 @@
+From: Rob Nelson <robnelsonch@proton.me>
+Date: Fri, 09 May 2025 12:00:00 -0500
+Subject: [PATCH] rockchip: rk3328: add support for FriendlyARM NanoPi NEO3
+
+Add Device Tree support for the FriendlyARM NanoPi NEO3, based on the
+Rockchip RK3328 SoC, for kernel 6.6. Includes support for:
+- Gigabit Ethernet (RTL8211E) with 125MHz clock
+- LEDs (red: power, green: status)
+- User button
+- USB 3.0/2.0 ports with dedicated regulator
+- MicroSD card with UHS support (1.8V/3.3V)
+- RK805 PMIC with enhanced power management
+- USB Ethernet regulator (RTL8153)
+- Thermal monitoring (tsadc, 95°C shutdown)
+
+Based on OpenWrt PR #3730, Volumio DTS, and NanoPi NEO3 schematics:
+https://github.com/openwrt/openwrt/pull/3730
+https://github.com/volumio/platform-nanopi
+
+Patch numbered 131 to avoid conflicts with existing patches.
+
+Signed-off-by: Rob Nelson <robnelsonch@proton.me>
+---
+ arch/arm64/boot/dts/rockchip/Makefile         |   1 +
+ .../boot/dts/rockchip/rk3328-nanopi-neo3.dts  | 429 ++++++++++++++++++
+ 2 files changed, 430 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/rockchip/rk3328-nanopi-neo3.dts
+
+diff --git a/arch/arm64/boot/dts/rockchip/Makefile b/arch/arm64/boot/dts/rockchip/Makefile
+index 65f6b8d..a3b1d2e 100644
+--- a/arch/arm64/boot/dts/rockchip/Makefile
++++ b/arch/arm64/boot/dts/rockchip/Makefile
+@@ -19,6 +19,7 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-evb.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-nanopi-r2s.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-orangepi-r1-plus.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-orangepi-r1-plus-lts.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-nanopi-neo3.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-rock64.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3328-rock-pi-e.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3368-evb-act8846.dtb
+diff --git a/arch/arm64/boot/dts/rockchip/rk3328-nanopi-neo3.dts b/arch/arm64/boot/dts/rockchip/rk3328-nanopi-neo3.dts
+new file mode 100644
+index 0000000..e3f9c1a
+--- /dev/null
++++ b/arch/arm64/boot/dts/rockchip/rk3328-nanopi-neo3.dts
+@@ -0,0 +1,429 @@
++// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
++/*
++ * Copyright (c) 2020 FriendlyElec
++ * Copyright (c) 2024 Rob Nelson <robnelsonch@proton.me>
++ * Based on NanoPi NEO3 schematics (2020)
++ */
++
++/dts-v1/;
++
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
++#include <dt-bindings/input/linux-event-codes.h>
++#include <dt-bindings/pinctrl/rockchip.h>
++#include "rk3328.dtsi"
++
++/ {
++       model = "FriendlyARM NanoPi NEO3";
++       compatible = "friendlyarm,nanopi-neo3", "rockchip,rk3328";
++
++       aliases {
++               serial0 = &uart2;
++               mmc0 = &sdmmc;
++               ethernet0 = &gmac2io;
++       };
++
++       chosen {
++               stdout-path = "serial0:1500000n8";
++       };
++
++       gmac_ref_clk: gmac-ref-clock {
++               compatible = "fixed-clock";
++               clock-frequency = <125000000>;
++               clock-output-names = "gmac_ref_clk_125m";
++               #clock-cells = <0>;
++       };
++
++       keys {
++               compatible = "gpio-keys";
++               pinctrl-names = "default";
++               pinctrl-0 = <&user_button_pin>;
++               button_user: button-user {
++                       gpios = <&gpio0 RK_PA0 GPIO_ACTIVE_LOW>;
++                       label = "User Button";
++                       linux,code = <KEY_PROG1>;
++                       linux,input-type = <1>;
++                       gpio-key,wakeup = <1>;
++                       debounce-interval = <100>;
++               };
++       };
++
++       leds {
++               compatible = "gpio-leds";
++               pinctrl-names = "default";
++               pinctrl-0 = <&power_led_pin>, <&system_led_pin>;
++               led-0 {
++                       label = "nanopi-neo3:red:power";
++                       gpios = <&gpio0 RK_PA2 GPIO_ACTIVE_HIGH>;
++                       default-state = "on";
++               };
++               led-1 {
++                       label = "nanopi-neo3:green:status";
++                       gpios = <&gpio0 RK_PA0 GPIO_ACTIVE_HIGH>;
++                       linux,default-trigger = "heartbeat";
++               };
++       };
++
++       vcc_sys: vcc-sys {
++               compatible = "regulator-fixed";
++               regulator-name = "vcc_sys";
++               regulator-min-microvolt = <5000000>;
++               regulator-max-microvolt = <5000000>;
++               regulator-always-on;
++               regulator-boot-on;
++       };
++
++       vcc_io_sd_reg: sdcard-power-regulator {
++               compatible = "regulator-gpio";
++               regulator-name = "vcc_io_sd_switched";
++               regulator-min-microvolt = <1800000>;
++               regulator-max-microvolt = <3300000>;
++               vin-supply = <&vcc_io_33>;
++               gpios = <&gpio1 RK_PD4 GPIO_ACTIVE_HIGH>;
++               enable-active-high;
++               regulator-always-on;
++               regulator-boot-on;
++       };
++
++       vcc_usb30_host: vcc-usb30-host-regulator {
++               compatible = "regulator-fixed";
++               gpio = <&gpio2 RK_PC6 GPIO_ACTIVE_HIGH>;
++               pinctrl-names = "default";
++               pinctrl-0 = <&usb30_en_drv_pin>;
++               regulator-name = "vcc_usb30_host";
++               regulator-min-microvolt = <5000000>;
++               regulator-max-microvolt = <5000000>;
++               enable-active-high;
++               vin-supply = <&vcc_sys>;
++               regulator-boot-on;
++       };
++};
++
++&cpu0 {
++       cpu-supply = <&vdd_arm>;
++};
++
++&cpu1 {
++       cpu-supply = <&vdd_arm>;
++};
++
++&cpu2 {
++       cpu-supply = <&vdd_arm>;
++};
++
++&cpu3 {
++       cpu-supply = <&vdd_arm>;
++};
++
++&display_subsystem {
++       status = "disabled";
++};
++
++&emmc {
++       status = "disabled";
++};
++
++&gmac2io {
++       assigned-clocks = <&cru SCLK_MAC2IO_REF>;
++       assigned-clock-parents = <&gmac_ref_clk>;
++       clock_in_out = "input";
++       phy-supply = <&vcc_io_33>;
++       phy-mode = "rgmii-txid";
++       pinctrl-names = "default";
++       pinctrl-0 = <&rgmiim1_pins>;
++       snps,reset-gpio = <&gpio1 RK_PB1 GPIO_ACTIVE_LOW>;
++       snps,reset-active-low;
++       snps,reset-delays-us = <0 10000 50000>;
++       status = "okay";
++};
++
++&i2c1 {
++       status = "okay";
++
++       rk805: rk805@18 {
++               compatible = "rockchip,rk805";
++               reg = <0x18>;
++               interrupt-parent = <&gpio1>;
++               interrupts = <RK_PD0 IRQ_TYPE_LEVEL_LOW>;
++               #clock-cells = <1>;
++               clock-output-names = "xin32k", "rk805-clkout2";
++               gpio-controller;
++               #gpio-cells = <2>;
++               pinctrl-names = "default";
++               pinctrl-0 = <&pmic_int_l_pin>;
++               rockchip,system-power-controller;
++               wakeup-source;
++
++               vcc1-supply = <&vcc_sys>;
++               vcc2-supply = <&vcc_sys>;
++               vcc3-supply = <&vcc_sys>;
++               vcc4-supply = <&vcc_sys>;
++
++               regulators {
++                       vdd_log: DCDC_REG1 {
++                               regulator-name = "vdd_log";
++                               regulator-min-microvolt = <712500>;
++                               regulator-max-microvolt = <1450000>;
++                               regulator-ramp-delay = <12500>;
++                               regulator-boot-on;
++                               regulator-always-on;
++                               regulator-state-mem {
++                                       regulator-off-in-suspend;
++                                       /* Gemini suggests: regulator-on-in-suspend; regulator-suspend-microvolt = <1000000>; */
++                               };
++                       };
++
++                       vdd_arm: DCDC_REG2 {
++                               regulator-name = "vdd_arm";
++                               regulator-min-microvolt = <712500>;
++                               regulator-max-microvolt = <1450000>;
++                               regulator-ramp-delay = <12500>;
++                               regulator-boot-on;
++                               regulator-always-on;
++                               regulator-state-mem {
++                                       regulator-off-in-suspend;
++                                       /* Gemini suggests: regulator-on-in-suspend; regulator-suspend-microvolt = <950000>; */
++                               };
++                       };
++
++                       vcc_ddr: DCDC_REG3 {
++                               regulator-name = "vcc_ddr";
++                               regulator-boot-on;
++                               regulator-always-on;
++                               regulator-state-mem {
++                                       regulator-on-in-suspend;
++                               };
++                       };
++
++                       vcc_io_33: DCDC_REG4 {
++                               regulator-name = "vcc_io_33";
++                               regulator-min-microvolt = <3300000>;
++                               regulator-max-microvolt = <3300000>;
++                               regulator-boot-on;
++                               regulator-always-on;
++                               regulator-state-mem {
++                                       regulator-on-in-suspend;
++                                       regulator-suspend-microvolt = <3300000>;
++                               };
++                       };
++
++                       vcc_1v8_ldo1: LDO_REG1 {
++                               regulator-name = "vcc_1v8_ldo1";
++                               regulator-min-microvolt = <1800000>;
++                               regulator-max-microvolt = <1800000>;
++                               regulator-boot-on;
++                               regulator-always-on;
++                               regulator-state-mem {
++                                       regulator-on-in-suspend;
++                                       regulator-suspend-microvolt = <1800000>;
++                               };
++                       };
++
++                       vcc18_emmc_ldo2: LDO_REG2 {
++                               regulator-name = "vcc18_emmc_ldo2";
++                               regulator-min-microvolt = <1800000>;
++                               regulator-max-microvolt = <1800000>;
++                               regulator-boot-on;
++                               regulator-always-on;
++                               regulator-state-mem {
++                                       regulator-on-in-suspend;
++                                       regulator-suspend-microvolt = <1800000>;
++                               };
++                       };
++
++                       vdd_10_ldo3: LDO_REG3 {
++                               regulator-name = "vdd_10_ldo3";
++                               regulator-min-microvolt = <1000000>;
++                               regulator-max-microvolt = <1000000>;
++                               regulator-boot-on;
++                               regulator-always-on;
++                               regulator-state-mem {
++                                       regulator-on-in-suspend;
++                                       regulator-suspend-microvolt = <1000000>;
++                               };
++                       };
++               };
++       };
++};
++
++&io_domains {
++       vccio3-supply = <&vcc_io_sd_reg>;
++       status = "okay";
++};
++
++&pinctrl {
++       buttons {
++               user_button_pin: user-button-pin {
++                       rockchip,pins = <0 RK_PA0 RK_FUNC_GPIO &pcfg_pull_up>;
++               };
++       };
++
++       leds {
++               power_led_pin: power-led-pin {
++                       rockchip,pins = <0 RK_PA2 RK_FUNC_GPIO &pcfg_output_low>;
++               };
++               system_led_pin: system-led-pin {
++                       rockchip,pins = <0 RK_PA0 RK_FUNC_GPIO &pcfg_output_low>;
++               };
++       };
++
++       pmic {
++               pmic_int_l_pin: pmic-int-l-pin {
++                       rockchip,pins = <1 RK_PD0 RK_FUNC_GPIO &pcfg_pull_up>;
++               };
++       };
++
++       sdcard_io_power {
++               sdio_pwr_en_pin: sdio-pwr-en-pin {
++                       rockchip,pins = <1 RK_PD4 RK_FUNC_GPIO &pcfg_output_high>;
++               };
++       };
++
++       usb {
++               usb30_en_drv_pin: usb30-en-drv-pin {
++                       rockchip,pins = <2 RK_PC6 RK_FUNC_GPIO &pcfg_output_low>;
++               };
++       };
++};
++
++&sdmmc {
++       bus-width = <4>;
++       cap-sd-highspeed;
++       disable-wp;
++       pinctrl-names = "default";
++       pinctrl-0 = <&sdmmc0_clk>, <&sdmmc0_cmd>, <&sdmmc0_dectn>, <&sdmmc0_bus4>;
++       max-frequency = <150000000>;
++       sd-uhs-sdr50;
++       sd-uhs-sdr104;
++       vmmc-supply = <&vcc_io_sd_reg>;
++       vqmmc-supply = <&vcc_io_sd_reg>;
++       status = "okay";
++};
++
++&tsadc {
++       rockchip,hw-tshut-temp = <95000>;
++       status = "okay";
++};
++
++&u2phy {
++       status = "okay";
++       u2phy_otg: otg-port {
++               status = "okay";
++       };
++       u2phy_host: host-port {
++               status = "okay";
++       };
++};
++
++&u3phy_utmi {
++       status = "okay";
++};
++
++&u3phy_pipe {
++       status = "okay";
++};
++
++&uart2 {
++       status = "okay";
++       pinctrl-names = "default";
++       pinctrl-0 = <&uart2m1_xfer>;
++};
++
++&usb20_otg {
++       dr_mode = "host";
++       phys = <&u2phy_otg 0>;
++       phy-names = "usb2-phy";
++       status = "okay";
++};
++
++&usbdrd3 {
++       status = "okay";
++};
++
++&usbdrd_dwc3 {
++       dr_mode = "host";
++       phys = <&u2phy_otg 0>, <&u3phy_pipe 0>;
++       phy-names = "usb2-phy", "usb3-phy";
++       phy-supply = <&vcc_usb30_host>;
++       status = "okay";
++};
++
++&usb_host0_ehci {
++       phys = <&u2phy_host 0>;
++       phy-names = "usb";
++       status = "okay";
++};
++
++&usb_host0_ohci {
++       phys = <&u2phy_host 0>;
++       phy-names = "usb";
++       status = "okay";
++};
++
++&vop {
++       status = "disabled";
++};
++
++&vop_mmu {
++       status = "disabled";
++};
++
++--
++2.39.2
