@@ -1,0 +1,62 @@
+--- a/drivers/net/phy/realtek/realtek_main.c
++++ b/drivers/net/phy/realtek/realtek_main.c
+@@ -163,6 +163,7 @@
+ #define RTL8224_SRAM_RTCT_LEN(pair)		(0x8028 + (pair) * 4)
+ 
+ #define RTL8224_VND1_MDI_REVERSE		0xa90
++#define RTL8224_VND1_MDI_POLARITY_SWAP		0xa94
+ 
+ #define RTL8221B_PHYCR1				0xa430
+ #define RTL8221B_PHYCR1_ALDPS_EN		BIT(2)
+@@ -217,6 +218,8 @@ struct rtl821x_priv {
+ struct rtl8224_priv {
+ 	bool set_reverse;
+ 	bool mdi_reverse;
++	bool set_polarity;
++	u32 mdi_polarity;
+ };
+ 
+ static int rtl821x_read_page(struct phy_device *phydev)
+@@ -1772,6 +1775,20 @@ static void rtl8224_mdi_reverse(struct p
+ 			      RTL8224_VND1_MDI_REVERSE, val);
+ }
+ 
++static void rtl8224_mdi_polarity(struct phy_device *phydev, u32 swap)
++{
++	u32 val;
++	u8 offset;
++
++	offset = (phydev->mdio.addr & 3) * 4;
++	val = phy_package_read_mmd(phydev, 0, MDIO_MMD_VEND1,
++				   RTL8224_VND1_MDI_POLARITY_SWAP);
++	val &= ~(0xf << offset);
++	val |= (swap & 0xf) << offset;
++	phy_package_write_mmd(phydev, 0, MDIO_MMD_VEND1,
++			      RTL8224_VND1_MDI_POLARITY_SWAP, val);
++}
++
+ static int rtl8224_config_init(struct phy_device *phydev)
+ {
+ 	struct rtl8224_priv *priv = phydev->priv;
+@@ -1779,6 +1796,10 @@ static int rtl8224_config_init(struct ph
+ 	if (priv->set_reverse) {
+ 		rtl8224_mdi_reverse(phydev, priv->mdi_reverse);
+ 	}
++	if (priv->set_polarity) {
++		rtl8224_mdi_polarity(phydev, priv->mdi_polarity);
++	}
++
+ 	return 0;
+ }
+ 
+@@ -1797,6 +1818,10 @@ static int rtl8224_probe(struct phy_devi
+ 		priv->set_reverse = true;
+ 		priv->mdi_reverse = (val != 0);
+ 	}
++	if (!of_property_read_u32(dev->of_node, "mdi-polarity", &val)) {
++		priv->set_polarity = true;
++		priv->mdi_polarity = val;
++	}
+ 
+ 	/* Device has 4 ports */
+ 	devm_phy_package_join(dev, phydev, phydev->mdio.addr & (~3), 0);

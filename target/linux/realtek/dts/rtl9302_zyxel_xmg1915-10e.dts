@@ -154,21 +154,29 @@
 		reg = <0>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		realtek,smi-address = <0 0>;
+		mdi-reverse = <0>;
+		mdi-polarity = <0>;
 	};
 	phy1: ethernet-phy@1 {
 		reg = <1>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		realtek,smi-address = <0 1>;
+		mdi-reverse = <0>;
+		mdi-polarity = <0>;
 	};
 	phy2: ethernet-phy@2 {
 		reg = <2>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		realtek,smi-address = <0 2>;
+		mdi-reverse = <1>;
+		mdi-polarity = <0>;
 	};
 	phy3: ethernet-phy@3 {
 		reg = <3>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		realtek,smi-address = <0 3>;
+		mdi-reverse = <1>;
+		mdi-polarity = <0>;
 	};
 
 	/* External RTL8224 PHY */
@@ -176,21 +184,29 @@
 		reg = <8>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		realtek,smi-address = <1 4>;
+		mdi-reverse = <0>;
+		mdi-polarity = <0>;
 	};
 	phy9: ethernet-phy@9 {
 		reg = <9>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		realtek,smi-address = <1 5>;
+		mdi-reverse = <0>;
+		mdi-polarity = <0>;
 	};
 	phy10: ethernet-phy@10 {
 		reg = <10>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		realtek,smi-address = <1 6>;
+		mdi-reverse = <1>;
+		mdi-polarity = <0>;
 	};
 	phy11: ethernet-phy@11 {
 		reg = <11>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		realtek,smi-address = <1 7>;
+		mdi-reverse = <1>;
+		mdi-polarity = <0>;
 	};
 };
 
