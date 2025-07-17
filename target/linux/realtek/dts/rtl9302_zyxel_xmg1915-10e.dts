@@ -164,11 +164,13 @@
 		reg = <2>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		rtl9300,smi-address = <0 2>;
+		mdi-pin-swap;
 	};
 	phy3: ethernet-phy@3 {
 		reg = <3>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		rtl9300,smi-address = <0 3>;
+		mdi-pin-swap;
 	};
 
 	/* External RTL8224 PHY */
@@ -186,11 +188,13 @@
 		reg = <10>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		rtl9300,smi-address = <1 6>;
+		mdi-pin-swap;
 	};
 	phy11: ethernet-phy@11 {
 		reg = <11>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		rtl9300,smi-address = <1 7>;
+		mdi-pin-swap;
 	};
 
 	/* SFP+ Ports */
