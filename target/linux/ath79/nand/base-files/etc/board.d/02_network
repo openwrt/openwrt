@@ -13,7 +13,7 @@ ath79_setup_interfaces()
 		;;
 	domywifi,dw33d)
 		ucidef_add_switch "switch0" \
-			"0@eth0" "1:wan" "2:lan" "3:lan" "4:lan" "5:lan" "6@eth1"
+			"0u@eth0" "1:wan" "2:lan" "3:lan" "4:lan" "5:lan" "6u@eth1"
 		;;
 	dongwon,dw02-412h-64m|\
 	dongwon,dw02-412h-128m)
@@ -42,7 +42,7 @@ ath79_setup_interfaces()
 		;;
 	linksys,ea4500-v3)
 		ucidef_add_switch "switch0" \
-			"6@eth1" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "0@eth0"
+			"6u@eth1" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "0u@eth0"
 		;;
 	netgear,pgzng1)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
@@ -80,7 +80,7 @@ ath79_setup_interfaces()
 	zyxel,emg2926-q10a|\
 	zyxel,nbg6716)
 		ucidef_add_switch "switch0" \
-			"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "6@eth1"
+			"0u@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "6u@eth1"
 		;;
 	*)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
