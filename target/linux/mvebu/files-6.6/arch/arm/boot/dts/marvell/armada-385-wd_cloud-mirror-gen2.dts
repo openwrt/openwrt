@@ -145,24 +145,24 @@
 						#address-cells = <1>;
 						#size-cells = <1>;
 
-						partition@00000000 {
+						partition@0 {
 							label = "U-Boot";
 							reg = <0x00000000 0x00500000>;    /*   5 MB */
 							read-only;
 						};
 
-						partition@00500000 {
+						partition@500000 {
 							label = "kernel";
 							reg = <0x00500000 0x00500000>;    /*   5 MB */
 						};
 
-						partition@00a00000 {
+						partition@a00000 {
 							label = "uRamdisk";
 							reg = <0x00a00000 0x00500000>;    /*   5 MB */
 							read-only;
 						};
 
-						partition@00f00000 {
+						partition@f00000 {
 							label = "ubi";
 							reg = <0x00f00000 0x0b900000>;    /* 185 MB */
 						};

@@ -181,9 +181,11 @@
 			#size-cells = <1>;
 
 			partition@0 {
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
 				label = "uboot";
 				reg = <0x00000000 0x00180000>;
-				compatible = "fixed-partitions";
 				read-only;
 
 				partition@40000 {
