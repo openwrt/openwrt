@@ -660,6 +660,27 @@ endef
 $(eval $(call KernelPackage,drm-panel-simple))
 
 
+define KernelPackage/drm-panel-tc358762
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=TC358762 DSI/DPI bridge
+  DEPENDS:=+kmod-drm-kms-helper
+  KCONFIG:=CONFIG_DRM_TOSHIBA_TC358762 \
+	CONFIG_DRM_BRIDGE=y \
+	CONFIG_DRM_MIPI_DSI=y \
+	CONFIG_DRM_PANEL=y
+	CONFIG_DRM_PANEL_BRIDGE=y
+  FILES:= \
+	$(LINUX_DIR)/drivers/gpu/drm/bridge/tc358762.ko
+  AUTOLOAD:=$(call AutoProbe,tc358762)
+endef
+
+define KernelPackage/drm-panel-tc358762/description
+ Toshiba TC358762 DSI/DPI bridge driver
+endef
+
+$(eval $(call KernelPackage,drm-panel-tc358762))
+
+
 define KernelPackage/drm-radeon
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Radeon DRM support
