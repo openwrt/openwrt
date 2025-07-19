@@ -1,0 +1,146 @@
+From: Markus Stockhausen <markus.stockhausen@gmx.de>
+Date: Sat, 19 Jul 2025 18:22:21 +0200
+Subject: [PATCH] realtek: fix stall after restart of otto timer
+
+With kernel 6.9 the kernel scheduler has been redesigned. This uncovered
+a bug in the realtek timer hardware and a misconception in the driver. 
+
+Regarding the driver: Software cannot set the current counter value to
+zero directly. This is automatically done when writing a new target value. 
+Drop function rttm_set_counter(). Additionally do not use stop timer
+during normal operation because it acknowledges interrupts. This should
+only be done from the interrupt handler. Replace this with disable_timer().
+
+Regarding the hardware: There is a minimal chance that a timer dies if it
+is reprogrammed within the 5us before its expiration time. Let's call this
+the "critical time window". Work around this issue by introducing a
+bounce() function. It restarts the timer directly before the normal
+restart functions as follows:
+
+- Stop timer
+- Restart timer with a slow frequency.
+- Target time will be >5us 
+- The subsequent normal restart will be outside the critical window
+
+While we are here clarify documentation and double the timer frequency to 
+6.25 Mhz. This allows for more detailed timestamps.
+
+Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
+---
+
+--- a/drivers/clocksource/timer-rtl-otto.c
++++ b/drivers/clocksource/timer-rtl-otto.c
+@@ -20,12 +20,11 @@
+ 
+ /*
+  * The Otto platform provides multiple 28 bit timers/counters with the following
+- * operating logic. If enabled the timer counts up. Per timer one can set a
+- * maximum counter value as an end marker. If end marker is reached the timer
+- * fires an interrupt. If the timer "overflows" by reaching the end marker or
+- * by adding 1 to 0x0fffffff the counter is reset to 0. When this happens and
+- * the timer is in operating mode COUNTER it stops. In mode TIMER it will
+- * continue to count up.
++ * operating logic. If enabled the timer counts up. Per timer a counter target
++ * value can be set with the minimum being 0x2 and the maximumu being 0xfffffff.
++ * If the the target value is reached the timer is reset to 0. Depending on its
++ * configuration the timer will then fire an interrupt. In case the timer is in
++ * operating mode COUNTER it stops. In mode TIMER it will continue to count up.
+  */
+ #define RTTM_CTRL_COUNTER	0
+ #define RTTM_CTRL_TIMER		BIT(24)
+@@ -33,16 +32,15 @@
+ #define RTTM_BIT_COUNT		28
+ #define RTTM_MIN_DELTA		8
+ #define RTTM_MAX_DELTA		CLOCKSOURCE_MASK(28)
++#define RTTM_MAX_DIVISOR	GENMASK(15, 0)
+ 
+ /*
+- * Timers are derived from the LXB clock frequency. Usually this is a fixed
+- * multiple of the 25 MHz oscillator. The 930X SOC is an exception from that.
+- * Its LXB clock has only dividers and uses the switch PLL of 2.45 GHz as its
+- * base. The only meaningful frequencies we can achieve from that are 175.000
+- * MHz and 153.125 MHz. The greatest common divisor of all explained possible
+- * speeds is 3125000. Pin the timers to this 3.125 MHz reference frequency.
++ * Timers are derived from the lexra bus (LXB) clock frequency. This is 175 MHz
++ * on RTL930x and 200 MHz on the other platforms. With 6.25 MHz choose a common
++ * divisor to have enough range and detail. This even allows to compare the
++ * different platforms more easily.
+  */
+-#define RTTM_TICKS_PER_SEC	3125000
++#define RTTM_TICKS_PER_SEC	6250000
+ 
+ struct rttm_cs {
+ 	struct timer_of		to;
+@@ -50,11 +48,6 @@ struct rttm_cs {
+ };
+ 
+ /* Simple internal register functions */
+-static inline void rttm_set_counter(void __iomem *base, unsigned int counter)
+-{
+-	iowrite32(counter, base + RTTM_CNT);
+-}
+-
+ static inline unsigned int rttm_get_counter(void __iomem *base)
+ {
+ 	return ioread32(base + RTTM_CNT);
+@@ -107,6 +100,22 @@ static irqreturn_t rttm_timer_interrupt(
+ 	return IRQ_HANDLED;
+ }
+ 
++static void rttm_bounce_timer(void __iomem *base, u32 mode)
++{
++	/*
++	 * When a running timer has less than ~5us left, a stop/start sequence
++	 * might fail. While the details are unknown the most evident effect is 
++	 * that the subsequent interrupt will not be fired.
++	 *
++	 * As a workaround issue an intermediate restart with a very slow
++	 * frequency of ~3kHz keeping the target value. So the actual follow
++	 * up restart will always be issued outside the critical window.
++	 */
++
++	rttm_disable_timer(base);
++	rttm_enable_timer(base, mode, RTTM_MAX_DIVISOR);
++}
++
+ static void rttm_stop_timer(void __iomem *base)
+ {
+ 	rttm_disable_timer(base);
+@@ -115,7 +124,6 @@ static void rttm_stop_timer(void __iomem
+ 
+ static void rttm_start_timer(struct timer_of *to, u32 mode)
+ {
+-	rttm_set_counter(to->of_base.base, 0);
+ 	rttm_enable_timer(to->of_base.base, mode, to->of_clk.rate / RTTM_TICKS_PER_SEC);
+ }
+ 
+@@ -124,7 +132,8 @@ static int rttm_next_event(unsigned long
+ 	struct timer_of *to = to_timer_of(clkevt);
+ 
+ 	RTTM_DEBUG(to->of_base.base);
+-	rttm_stop_timer(to->of_base.base);
++	rttm_bounce_timer(to->of_base.base, RTTM_CTRL_COUNTER);
++	rttm_disable_timer(to->of_base.base);
+ 	rttm_set_period(to->of_base.base, delta);
+ 	rttm_start_timer(to, RTTM_CTRL_COUNTER);
+ 
+@@ -136,7 +145,8 @@ static int rttm_state_oneshot(struct clo
+ 	struct timer_of *to = to_timer_of(clkevt);
+ 
+ 	RTTM_DEBUG(to->of_base.base);
+-	rttm_stop_timer(to->of_base.base);
++	rttm_bounce_timer(to->of_base.base, RTTM_CTRL_COUNTER);
++	rttm_disable_timer(to->of_base.base);
+ 	rttm_set_period(to->of_base.base, RTTM_TICKS_PER_SEC / HZ);
+ 	rttm_start_timer(to, RTTM_CTRL_COUNTER);
+ 
+@@ -148,7 +158,8 @@ static int rttm_state_periodic(struct cl
+ 	struct timer_of *to = to_timer_of(clkevt);
+ 
+ 	RTTM_DEBUG(to->of_base.base);
+-	rttm_stop_timer(to->of_base.base);
++	rttm_bounce_timer(to->of_base.base, RTTM_CTRL_TIMER);
++	rttm_disable_timer(to->of_base.base);
+ 	rttm_set_period(to->of_base.base, RTTM_TICKS_PER_SEC / HZ);
+ 	rttm_start_timer(to, RTTM_CTRL_TIMER);
+ 
