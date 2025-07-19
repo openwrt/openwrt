@@ -169,7 +169,7 @@ define KernelPackage/i2c-hid
   $(call i2c_defaults,$(I2C_HID_MODULES),60)
   TITLE:=I2C HID support
   KCONFIG+= CONFIG_I2C_HID
-  DEPENDS:=+kmod-hid
+  DEPENDS:=+kmod-drm +kmod-hid
   HIDDEN:=1
 endef
 
