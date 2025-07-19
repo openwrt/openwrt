@@ -18,7 +18,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 
 --- a/drivers/net/phy/smsc.c
 +++ b/drivers/net/phy/smsc.c
-@@ -213,6 +213,8 @@ static int lan87xx_read_status(struct ph
+@@ -233,6 +233,8 @@ static int lan87xx_read_status(struct ph
  		return err;
  
  	if (!phydev->link && priv->energy_enable && phydev->irq == PHY_POLL) {
@@ -27,7 +27,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  		/* Disable EDPD to wake up PHY */
  		int rc = phy_read(phydev, MII_LAN83C185_CTRL_STATUS);
  		if (rc < 0)
-@@ -228,7 +230,7 @@ static int lan87xx_read_status(struct ph
+@@ -248,7 +250,7 @@ static int lan87xx_read_status(struct ph
  		 */
  		read_poll_timeout(phy_read, rc,
  				  rc & MII_LAN83C185_ENERGYON || rc < 0,
@@ -36,7 +36,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  				  MII_LAN83C185_CTRL_STATUS);
  		if (rc < 0)
  			return rc;
-@@ -238,10 +240,16 @@ static int lan87xx_read_status(struct ph
+@@ -258,10 +260,16 @@ static int lan87xx_read_status(struct ph
  		if (rc < 0)
  			return rc;
  
