@@ -6,3 +6,23 @@
 	compatible = "sim,simax1800t", "mediatek,mt7621-soc";
 	model = "SIM SIMAX1800T";
 };
+
+&ethphy4 {
+	/delete-property/ interrupts;
+};
+
+&gmac1 {
+	phy-handle = <&ethphy4>;
+};
+
+&switch0 {
+	ports {
+		port@1 {
+			label = "lan3";
+		};
+
+		port@3 {
+			label = "lan1";
+		};
+	};
+};
