@@ -126,6 +126,7 @@ irqreturn_t rtl839x_switch_irq(int irq, void *dev_id);
 void rtl930x_vlan_profile_dump(int index);
 int rtl9300_sds_power(int mac, int val);
 extern int rtl9300_serdes_setup(int port, int sds_num, phy_interface_t phy_mode);
+extern void rtsds_930x_force_mode(int sds, phy_interface_t interface);
 void rtl930x_print_matrix(void);
 
 /* RTL931x-specific */
