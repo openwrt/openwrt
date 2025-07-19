@@ -1,0 +1,171 @@
+#!/bin/sh  /etc/rc.common
+# shellcheck disable=3043,3060,2086,2034
+#
+# Copyright (c) 2014, 2019-2020 The Linux Foundation. All rights reserved.
+#
+# Permission to use, copy, modify, and/or distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+# The shebang above has an extra space intentionally to avoid having
+# openwrt build scripts automatically enable this package starting
+# at boot.
+
+START=26
+
+sysctl_update() {
+  local name value file
+
+  name=${1//\//\\/}
+  value=${2//\//\\/}
+  file=${3:-/etc/sysctl.d/qca-nss-ecm.conf}
+
+  sed -i -e '/^#\?\(\s*'"${name}"'\s*=\s*\).*/{s//\1'"${value}"'/;:a;n;ba;q}' \
+    -e '$a'"${name}"'='"${value}" "${file}"
+  sysctl -w ${name}=${value}
+}
+
+get_front_end_mode() {
+  config_load "ecm"
+
+  config_get front_end global acceleration_engine "auto"
+
+  # shellcheck disable=2154
+  case $front_end in
+    auto)
+      echo '0'
+      ;;
+    nss)
+      echo '1'
+      ;;
+    sfe)
+      echo '2'
+      ;;
+    both)
+      echo '4'
+      ;;
+    *)
+      echo '0'
+      ;;
+  esac
+}
+
+disable_bridge_filtering() {
+  sysctl_update net.bridge.bridge-nf-call-arptables 0
+  sysctl_update net.bridge.bridge-nf-call-iptables 0
+  sysctl_update net.bridge.bridge-nf-call-ip6tables 0
+}
+
+enable_bridge_filtering() {
+
+  # If bridge filtering is enabled, apply and persist the sysctl flags
+  config_load ecm
+  config_get enable_bridge_filtering general enable_bridge_filtering 0
+
+  # shellcheck disable=2154
+  if [ "$enable_bridge_filtering" -eq 1 ]; then
+    sysctl_update net.bridge.bridge-nf-call-arptables 1
+    sysctl_update net.bridge.bridge-nf-call-iptables 1
+    sysctl_update net.bridge.bridge-nf-call-ip6tables 1
+  else
+    disable_bridge_filtering
+  fi
+}
+
+load_ecm() {
+  [ -d /sys/module/ecm ] || {
+    local get_front_end_mode
+    get_front_end_mode="$(get_front_end_mode)"
+    modinfo ecm | awk '/depends/{gsub(",","\n",$NF);print $NF}' | xargs -r -n 1 modprobe
+    touch /etc/modules.conf
+    grep -q "options ecm" /etc/modules.conf || echo "options ecm front_end_selection=$get_front_end_mode" >> /etc/modules.conf
+    modprobe ecm
+    echo 1 > /sys/kernel/debug/ecm/ecm_classifier_default/accel_delay_pkts
+  }
+
+  # shellcheck disable=1091
+  . /lib/netifd/offload/disable_offloads.sh
+
+  disable_offload
+
+  #Flushout stale accelerated connections if any
+  echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all
+  echo f > /proc/net/nf_conntrack
+
+  # Set conntrack event mode to 1 for 6.1 kernel to get the conntrack events from ECM
+  local kernel_major
+  kernel_major=$(uname -r | cut -d. -f1)
+  if [ "$kernel_major" -eq 6 ]; then
+    echo 1 > /proc/sys/net/netfilter/nf_conntrack_events
+  fi
+}
+
+unload_ecm() {
+  disable_bridge_filtering
+
+  # Change it back to 6.1 linux's default setting
+  local kernel_major
+  kernel_major="$(uname -r | cut -d. -f1)"
+  if [ "$kernel_major" -eq 6 ]; then
+    echo 2 > /proc/sys/net/netfilter/nf_conntrack_events
+  fi
+
+  if [ -d /sys/module/ecm ]; then
+    #
+    # Stop ECM frontends
+    #
+    echo 1 > /sys/kernel/debug/ecm/front_end_ipv4_stop
+    echo 1 > /sys/kernel/debug/ecm/front_end_ipv6_stop
+
+    #
+    # Defunct the connections
+    #
+    echo 1 > /sys/kernel/debug/ecm/ecm_db/defunct_all
+    echo f > /proc/net/nf_conntrack
+
+    sleep 1
+    rmmod ecm
+  fi
+}
+
+start() {
+  load_ecm
+
+  # Only enable bridge filtering if using deprecated fw3
+  if [ ! -r /sbin/fw4 ]; then
+    enable_bridge_filtering
+  else
+    disable_bridge_filtering
+  fi
+
+  # If the acceleration engine is NSS, enable wifi redirect
+  [ -d /sys/kernel/debug/ecm/ecm_nss_ipv4 ] && sysctl -w dev.nss.general.redirect=1
+
+  if [ -d /sys/module/qca_ovsmgr ]; then
+    insmod ecm_ovs
+  fi
+}
+
+stop() {
+  # If ECM is already not loaded, just return
+  if [ ! -d /sys/module/ecm ]; then
+    return
+  fi
+
+  # If the acceleration engine is NSS, disable wifi redirect
+  [ -d /sys/kernel/debug/ecm/ecm_nss_ipv4 ] && sysctl -w dev.nss.general.redirect=0
+
+  if [ -d /sys/module/ecm_ovs ]; then
+    rmmod ecm_ovs
+  fi
+
+  unload_ecm
+}
