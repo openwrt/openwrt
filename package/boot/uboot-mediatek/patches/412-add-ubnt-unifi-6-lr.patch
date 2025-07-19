@@ -742,7 +742,7 @@
 +};
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
-@@ -1135,6 +1135,8 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
+@@ -1118,6 +1118,8 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
  	mt7623a-unielec-u7623-02-emmc.dtb \
  	mt7622-bananapi-bpi-r64.dtb \
  	mt7622-linksys-e8450-ubi.dtb \
@@ -920,7 +920,7 @@
  
  DECLARE_GLOBAL_DATA_PTR;
  
-@@ -402,6 +403,20 @@ static int initr_onenand(void)
+@@ -423,6 +424,20 @@ static int initr_onenand(void)
  }
  #endif
  
@@ -941,13 +941,13 @@
  #ifdef CONFIG_MMC
  static int initr_mmc(void)
  {
-@@ -710,6 +725,9 @@ static init_fnc_t init_sequence_r[] = {
- #ifdef CONFIG_NMBM_MTD
- 	initr_nmbm,
+@@ -735,6 +750,9 @@ static void initcall_run_r(void)
+ #if CONFIG_IS_ENABLED(NMBM_MTD)
+ 	INITCALL(initr_nmbm);
  #endif
-+#ifdef CONFIG_SPI_FLASH
-+	initr_spiflash,
++#if CONFIG_IS_ENABLED(SPI_FLASH)
++	INITCALL(initr_spiflash);
 +#endif
- #ifdef CONFIG_MMC
- 	initr_mmc,
+ #if CONFIG_IS_ENABLED(MMC)
+ 	INITCALL(initr_mmc);
  #endif

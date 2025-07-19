@@ -15,7 +15,7 @@ Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
 
 --- /dev/null
 +++ b/arch/arm/dts/mt7981-gatonetworks_gdsp.dts
-@@ -0,0 +1,200 @@
+@@ -0,0 +1,235 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +
 +/dts-v1/;
@@ -99,6 +99,15 @@ Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
 +		always-running;
 +		u-boot,autostart;
 +	};
++
++	reg_3p3v: regulator-3p3v {
++		  compatible = "regulator-fixed";
++		  regulator-name = "fixed-3.3V";
++		  regulator-min-microvolt = <3300000>;
++		  regulator-max-microvolt = <3300000>;
++		  regulator-boot-on;
++		  regulator-always-on;
++	};
 +};
 +
 +&eth {
@@ -167,10 +176,28 @@ Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
 +};
 +
 +&pio {
-+	uart1_pins: uart1-pins {
++	mmc0_pins_default: mmc0default {
 +		mux {
-+			function = "uart";
-+			groups = "uart1_0";
++			function = "flash";
++			groups =  "emmc_45";
++		};
++		conf-cmd-dat {
++			pins = "SPI0_CLK", "SPI0_MOSI", "SPI0_MISO",
++				"SPI0_CS",  "SPI0_HOLD", "SPI0_WP",
++				"SPI1_CLK", "SPI1_MOSI", "SPI1_MISO";
++			input-enable;
++			drive-strength = <MTK_DRIVE_4mA>;
++			bias-pull-up = <MTK_PUPD_SET_R1R0_01>;
++		};
++		conf-clk {
++			pins = "SPI1_CS";
++			drive-strength = <MTK_DRIVE_8mA>;
++			bias-pull-down = <MTK_PUPD_SET_R1R0_10>;
++		};
++		conf-rst {
++			pins = "PWM0";
++			drive-strength = <MTK_DRIVE_4mA>;
++			bias-pull-up = <MTK_PUPD_SET_R1R0_01>;
 +		};
 +	};
 +
@@ -205,9 +232,17 @@ Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
 +	status = "okay";
 +};
 +
-+&uart1 {
++&mmc0 {
++	assigned-clock-parents = <&topckgen CLK_TOP_CB_NET2_D4>,
++				 <&topckgen CLK_TOP_CB_NET2_D2>;
 +	pinctrl-names = "default";
-+	pinctrl-0 = <&uart1_pins>;
++	pinctrl-0 = <&mmc0_pins_default>;
++	bus-width = <4>;
++	max-frequency = <50000000>;
++	cap-sd-highspeed;
++	r_smpl = <0>;
++	vmmc-supply = <&reg_3p3v>;
++	vqmmc-supply = <&reg_3p3v>;
 +	status = "okay";
 +};
 +
@@ -218,7 +253,7 @@ Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
 +};
 --- /dev/null
 +++ b/configs/mt7981_gatonetworks_gdsp_defconfig
-@@ -0,0 +1,142 @@
+@@ -0,0 +1,146 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -275,8 +310,10 @@ Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
 +CONFIG_CMD_GPIO=y
 +CONFIG_CMD_GPIO_READ=y
 +CONFIG_CMD_PWM=y
++CONFIG_CMD_MMC=y
 +CONFIG_CMD_MTD=y
 +# CONFIG_CMD_NAND_EXT is not set
++CONFIG_CMD_PART=y
 +CONFIG_CMD_SF_TEST=y
 +CONFIG_CMD_CAT=y
 +CONFIG_CMD_SETEXPR_FMT=y
@@ -301,6 +338,7 @@ Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
 +CONFIG_CMD_FAT=y
 +CONFIG_CMD_FS_GENERIC=y
 +CONFIG_CMD_FS_UUID=y
++CONFIG_EFI_PARTITION=y
 +CONFIG_ENV_OVERWRITE=y
 +CONFIG_ENV_IS_IN_MTD=y
 +CONFIG_ENV_MTD_NAME="u-boot-env"
@@ -319,7 +357,8 @@ Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
 +CONFIG_LED=y
 +CONFIG_LED_BLINK=y
 +CONFIG_LED_GPIO=y
-+# CONFIG_MMC is not set
++# CONFIG_MMC_HW_PARTITIONING is not set
++CONFIG_MMC_MTK=y
 +CONFIG_MTD=y
 +CONFIG_DM_MTD=y
 +CONFIG_MTD_SPI_NAND=y
@@ -363,7 +402,7 @@ Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/defenvs/gatonetworks_gdsp_env
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,48 @@
 +load_factory_data=if env exists factory_data_present ; then else mtd read Factory $loadaddr 0x0 0x1000 ; setenv factory_data_present 1 ; fi
 +lan_mac_factory=run load_factory_data ; setexpr macoffs $loadaddr + 0x2a ; env readmem -b lan_mac $macoffs 0x6 ; setenv lan_mac_factory ; setenv macoffs
 +wan_mac_factory=run load_factory_data ; setexpr macoffs $loadaddr + 0x24 ; env readmem -b wan_mac $macoffs 0x6 ; setenv wan_mac_factory ; setenv macoffs
@@ -374,10 +413,13 @@ Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
 +ipaddr=192.168.1.1
 +serverip=192.168.1.10
 +loadaddr=0x46000000
-+bootcmd=run boot_nor
++bootargs=root=/dev/fit0 rootwait
++console=earlycon=uart8250,mmio32,0x11002000 console=ttyS0
++bootcmd=run validate_bootmedia; if test $bootmedia = "nor"; then run boot_nor; else if test $bootmedia = "sd"; then run boot_sd_firmware; fi; fi
++bootconf=config-1#mt7981b-gatonetworks-gdsp-gps
 +bootdelay=0
 +bootfile=openwrt-mediatek-filogic-gatonetworks_gdsp-initramfs-kernel.bin
-+bootfile_upg=openwrt-mediatek-filogic-gatonetworks_gdsp-squashfs-sysupgrade.bin
++bootfile_upg=openwrt-mediatek-filogic-gatonetworks_gdsp-squashfs-sysupgrade.itb
 +bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 60
 +bootmenu_default=0
 +bootmenu_delay=0
@@ -385,20 +427,27 @@ Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
 +bootmenu_0=Initialize environment.=run _firstboot
 +bootmenu_0d=Run default boot command.=run boot_default
 +bootmenu_1=Boot system via TFTP.=run boot_tftp ; run bootmenu_confirm_return
-+bootmenu_2=Boot system from flash.=run boot_nor ; run bootmenu_confirm_return
-+bootmenu_3=Load system via TFTP then write to flash.=run boot_tftp_sysupgrade ; run bootmenu_confirm_return
++bootmenu_2=Boot system from selected boot media.=run bootcmd ; run bootmenu_confirm_return
++bootmenu_3=Load system via TFTP then write to selected boot media.=run load_tftp_sysupgrade ; run bootmenu_confirm_return
 +bootmenu_4=Reset all settings to factory defaults.=run reset_factory ; reset
 +bootmenu_5=Reboot.=reset
 +boot_first=if button reset ; then run boot_tftp ; setenv flag_recover 1 ; run boot_default ; fi ; bootmenu
 +boot_default=if env exists flag_recover ; then else run bootcmd ; fi ; run boot_tftp_forever
-+boot_nor=mtd read firmware ${loadaddr} ; bootm $loadaddr
-+boot_tftp=tftpboot $loadaddr $bootfile && bootm $loadaddr
++boot_nor=mtd read firmware ${loadaddr} ; bootm $loadaddr#$bootconf
++boot_sd_firmware=setenv bootconf "config-1#mt7981b-gatonetworks-gdsp-sd#mt7981b-gatonetworks-gdsp-sd-boot"; run sdmmc_read_firmware && bootm $loadaddr#$bootconf
++boot_tftp=tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
 +boot_tftp_forever=while true ; do run boot_tftp ; sleep 1 ; done
-+boot_tftp_sysupgrade=tftpboot $loadaddr $bootfile_upg && iminfo $loadaddr && run nor_write_production
++mmc_read_vol=mmc read $loadaddr $part_addr 0x100 && imszb $loadaddr image_size && test 0x$image_size -le 0x$part_size && mmc read $loadaddr 0x$part_addr 0x$image_size && setexpr filesize $image_size * 0x200
++mmc_write_vol=imszb $loadaddr image_size && test 0x$image_size -le 0x$part_size && mmc erase 0x$part_addr 0x$image_size && mmc write $loadaddr 0x$part_addr 0x$image_size
++sd_part_default=FIT
++sdmmc_read_firmware=part start mmc 0 $sd_part_default part_addr && part size mmc 0 $sd_part_default part_size && run mmc_read_vol
++sdmmc_write_firmware=part start mmc 0 $sd_part_default part_addr && part size mmc 0 $sd_part_default part_size && run mmc_write_vol
++load_tftp_sysupgrade=run validate_bootmedia; tftpboot $loadaddr $bootfile_upg && iminfo $loadaddr && if test $bootmedia = "nor"; then run nor_write_firmware; else if test $bootmedia = "sd"; then run sdmmc_write_firmware; fi; fi
 +reset_factory=env default -a && saveenv && reset
 +nor_pad_size=setexpr image_eb $filesize / 0x1000 ; setexpr tmp1 image_size % 0x1000 ; test 0x$tmp1 -gt 0 && setexpr image_eb $image_eb + 1 ; setexpr image_eb $image_eb * 0x1000
-+nor_write_production=run nor_pad_size ; test 0x$image_eb -le 0x1e80000 && mtd erase firmware 0x0 0x$image_eb && mtd write firmware $loadaddr 0x0 $filesize
++nor_write_firmware=run nor_pad_size ; test 0x$image_eb -le 0x1e80000 && mtd erase firmware 0x0 0x$image_eb && mtd write firmware $loadaddr 0x0 $filesize
 +_init_env=setenv _init_env ; saveenv
 +_firstboot=setenv _firstboot ; run _switch_to_menu ; run lan_mac_factory ; run wan_mac_factory ; run label_mac_factory ; run env_cleanup ; run ethaddr_factory ; run wifi_mac_factory ; run _init_env ; run boot_first
 +_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
++validate_bootmedia=test $bootmedia != "nor" -a $bootmedia != "sd" && setenv bootmedia "nor"

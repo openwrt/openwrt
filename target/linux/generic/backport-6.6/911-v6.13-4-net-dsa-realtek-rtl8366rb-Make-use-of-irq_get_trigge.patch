@@ -1,0 +1,32 @@
+From 36a5faec5658736e8d3d9047c1387a69ffda3354 Mon Sep 17 00:00:00 2001
+From: Vasileios Amoiridis <vassilisamir@gmail.com>
+Date: Wed, 4 Sep 2024 17:10:17 +0200
+Subject: [PATCH 04/12] net: dsa: realtek: rtl8366rb: Make use of
+ irq_get_trigger_type()
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Convert irqd_get_trigger_type(irq_get_irq_data(irq)) cases to the more
+simple irq_get_trigger_type(irq).
+
+Reviewed-by: Alvin Šipraga <alsi@bang-olufsen.dk>
+Signed-off-by: Vasileios Amoiridis <vassilisamir@gmail.com>
+Link: https://patch.msgid.link/20240904151018.71967-3-vassilisamir@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+Signed-off-by: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+---
+ drivers/net/dsa/realtek/rtl8366rb.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/realtek/rtl8366rb.c
++++ b/drivers/net/dsa/realtek/rtl8366rb.c
+@@ -603,7 +603,7 @@ static int rtl8366rb_setup_cascaded_irq(
+ 	}
+ 
+ 	/* Fetch IRQ edge information from the descriptor */
+-	irq_trig = irqd_get_trigger_type(irq_get_irq_data(irq));
++	irq_trig = irq_get_trigger_type(irq);
+ 	switch (irq_trig) {
+ 	case IRQF_TRIGGER_RISING:
+ 	case IRQF_TRIGGER_HIGH:

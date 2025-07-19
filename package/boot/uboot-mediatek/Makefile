@@ -1,8 +1,8 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_VERSION:=2025.04
-PKG_HASH:=439d3bef296effd54130be6a731c5b118be7fddd7fcc663ccbc5fb18294d8718
+PKG_VERSION:=2025.07
+PKG_HASH:=0f933f6c5a426895bf306e93e6ac53c60870e4b54cda56d95211bec99e63bec7
 PKG_BUILD_DEPENDS:=!(TARGET_ramips||TARGET_mediatek_mt7623):arm-trusted-firmware-tools/host
 
 UBOOT_USE_INTREE_DTC:=1
@@ -276,6 +276,18 @@ define U-Boot/mt7981_cudy_tr3000-v1
   BL2_BOOTDEV:=cudy-tr3000-v1
   BL2_SOC:=mt7981
   DEPENDS:=+trusted-firmware-a-mt7981-cudy-tr3000-v1
+endef
+
+define U-Boot/mt7981_glinet_gl-mt2500
+  NAME:=GL.iNet GL-MT2500
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=glinet_gl-mt2500
+  UBOOT_CONFIG:=mt7981_glinet_gl-mt2500
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=emmc
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr4
+  DEPENDS:=+trusted-firmware-a-mt7981-emmc-ddr4
 endef
 
 define U-Boot/mt7981_glinet_gl-x3000
@@ -908,6 +920,7 @@ UBOOT_TARGETS := \
 	mt7981_cmcc_rax3000m-nand \
 	mt7981_cudy_tr3000-v1 \
 	mt7981_gatonetworks_gdsp \
+	mt7981_glinet_gl-mt2500 \
 	mt7981_glinet_gl-x3000 \
 	mt7981_glinet_gl-xe3000 \
 	mt7981_h3c_magic-nx30-pro \

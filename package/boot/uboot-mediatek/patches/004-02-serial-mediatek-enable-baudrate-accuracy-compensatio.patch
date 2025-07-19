@@ -1,0 +1,81 @@
+From 6952209ef220138189dd261d06441e1b2d50e994 Mon Sep 17 00:00:00 2001
+From: Weijie Gao <weijie.gao@mediatek.com>
+Date: Fri, 23 May 2025 17:26:02 +0800
+Subject: [PATCH] serial: mediatek: enable baudrate accuracy compensation
+
+The high-speed UART from MediaTek supports baudrate accuracy
+compensation when using high-speed mode 3.
+
+This is done by calculating the first digit of the fraction part of
+sample count value. The fraction value will be then used as the
+reference to insert 0 to 10 sample cycle(s) to one frame (assume
+that frame format is 8n1, i.e. 10 bits per frame).
+
+The fracdiv_[l/m] registers are used to determine whether a bit in one frame
+should be inserted with one sample cycle.
+
+With typical 40MHz source clock, the actual baudrates with/without
+accuracy compensation are:
+
+Ideal    w/o compensation w/ compensation
+======== ================ ===============
+9600     9603             9600
+115200   114942           115207
+921600   930232           921659
+3000000  3076923          3007519
+
+Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
+---
+ drivers/serial/serial_mtk.c | 24 +++++++++++++++++++++---
+ 1 file changed, 21 insertions(+), 3 deletions(-)
+
+--- a/drivers/serial/serial_mtk.c
++++ b/drivers/serial/serial_mtk.c
+@@ -99,10 +99,18 @@ struct mtk_serial_priv {
+ 	bool upstream_highspeed_logic;
+ };
+ 
++static const unsigned short fraction_l_mapping[] = {
++	0, 1, 0x5, 0x15, 0x55, 0x57, 0x57, 0x77, 0x7F, 0xFF, 0xFF
++};
++
++static const unsigned short fraction_m_mapping[] = {
++	0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 3
++};
++
+ static void _mtk_serial_setbrg(struct mtk_serial_priv *priv, int baud,
+ 			       uint clk_rate)
+ {
+-	u32 quot, realbaud, samplecount = 1;
++	u32 quot, realbaud, samplecount = 1, fraction, frac_l = 0, frac_m = 0;
+ 
+ 	/* Special case for low baud clock */
+ 	if (baud <= 115200 && clk_rate == 12000000) {
+@@ -147,7 +155,13 @@ use_hs3:
+ 		writel(3, &priv->regs->highspeed);
+ 
+ 		quot = DIV_ROUND_UP(clk_rate, 256 * baud);
+-		samplecount = DIV_ROUND_CLOSEST(clk_rate, quot * baud);
++		samplecount = clk_rate / (quot * baud);
++
++		fraction = ((clk_rate * 100) / quot / baud) % 100;
++		fraction = DIV_ROUND_CLOSEST(fraction, 10);
++
++		frac_l = fraction_l_mapping[fraction];
++		frac_m = fraction_m_mapping[fraction];
+ 	}
+ 
+ set_baud:
+@@ -159,7 +173,11 @@ set_baud:
+ 
+ 	/* set highspeed mode sample count & point */
+ 	writel(samplecount - 1, &priv->regs->sample_count);
+-	writel((samplecount - 2) >> 1, &priv->regs->sample_point);
++	writel((samplecount >> 1) - 1, &priv->regs->sample_point);
++
++	/* set baudrate fraction compensation */
++	writel(frac_l, &priv->regs->fracdiv_l);
++	writel(frac_m, &priv->regs->fracdiv_m);
+ }
+ 
+ static int _mtk_serial_putc(struct mtk_serial_priv *priv, const char ch)

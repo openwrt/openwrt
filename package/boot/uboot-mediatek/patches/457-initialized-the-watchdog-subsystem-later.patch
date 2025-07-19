@@ -13,42 +13,42 @@ Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
 
 --- a/common/board_r.c
 +++ b/common/board_r.c
-@@ -681,19 +681,13 @@ static init_fnc_t init_sequence_r[] = {
- 	serial_initialize,
- 	initr_announce,
- 	dm_announce,
+@@ -706,19 +706,13 @@ static void initcall_run_r(void)
+ 	INITCALL(serial_initialize);
+ 	INITCALL(initr_announce);
+ 	INITCALL(dm_announce);
 -#if CONFIG_IS_ENABLED(WDT)
--	initr_watchdog,
+-	INITCALL(initr_watchdog);
 -#endif
--	INIT_FUNC_WATCHDOG_RESET
- 	arch_initr_trap,
- #if defined(CONFIG_BOARD_EARLY_INIT_R)
- 	board_early_init_r,
+-	WATCHDOG_RESET();
+ 	INITCALL(arch_initr_trap);
+ #if CONFIG_IS_ENABLED(BOARD_EARLY_INIT_R)
+ 	INITCALL(board_early_init_r);
  #endif
--	INIT_FUNC_WATCHDOG_RESET
- #ifdef CONFIG_POST
- 	post_output_backlog,
+-	WATCHDOG_RESET();
+ #if CONFIG_IS_ENABLED(POST)
+ 	INITCALL(post_output_backlog);
  #endif
--	INIT_FUNC_WATCHDOG_RESET
- #if defined(CONFIG_PCI_INIT_R) && defined(CONFIG_SYS_EARLY_PCI_INIT)
+-	WATCHDOG_RESET();
+ #if CONFIG_IS_ENABLED(PCI_INIT_R) && CONFIG_IS_ENABLED(SYS_EARLY_PCI_INIT)
  	/*
  	 * Do early PCI configuration _before_ the flash gets initialised,
-@@ -708,7 +702,6 @@ static init_fnc_t init_sequence_r[] = {
- #ifdef CONFIG_MTD_NOR_FLASH
- 	initr_flash,
+@@ -733,7 +727,6 @@ static void initcall_run_r(void)
+ #if CONFIG_IS_ENABLED(MTD_NOR_FLASH)
+ 	INITCALL(initr_flash);
  #endif
--	INIT_FUNC_WATCHDOG_RESET
- #if defined(CONFIG_PPC) || defined(CONFIG_M68K) || defined(CONFIG_X86)
+-	WATCHDOG_RESET();
+ #if CONFIG_IS_ENABLED(PPC) || CONFIG_IS_ENABLED(M68K) || CONFIG_IS_ENABLED(X86)
  	/* initialize higher level parts of CPU like time base and timers */
- 	cpu_init_r,
-@@ -737,6 +730,10 @@ static init_fnc_t init_sequence_r[] = {
- #ifdef CONFIG_PVBLOCK
- 	initr_pvblock,
+ 	INITCALL(cpu_init_r);
+@@ -762,6 +755,10 @@ static void initcall_run_r(void)
+ #if CONFIG_IS_ENABLED(PVBLOCK)
+ 	INITCALL(initr_pvblock);
  #endif
 +#if CONFIG_IS_ENABLED(WDT)
-+	initr_watchdog,
++	INITCALL(initr_watchdog);
 +#endif
-+	INIT_FUNC_WATCHDOG_RESET
- 	initr_env,
- #ifdef CONFIG_SYS_MALLOC_BOOTPARAMS
- 	initr_malloc_bootparams,
++	WATCHDOG_RESET();
+ 	INITCALL(initr_env);
+ #if CONFIG_IS_ENABLED(SYS_MALLOC_BOOTPARAMS)
+ 	INITCALL(initr_malloc_bootparams);

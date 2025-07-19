@@ -74,7 +74,7 @@ MAKE_FLAGS = \
 	O=$(PKG_BUILD_DIR) \
 	prefix=/usr
 
-ifeq ($(LINUX_KARCH),powerpc)
+ifneq ($(filter $(LINUX_KARCH),powerpc mips),)
 	MAKE_FLAGS += NO_AUXTRACE=1
 endif
 

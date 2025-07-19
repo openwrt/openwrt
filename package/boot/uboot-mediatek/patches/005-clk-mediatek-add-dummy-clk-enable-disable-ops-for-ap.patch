@@ -1,0 +1,114 @@
+From 1bf212129768d65a47145209c65bf37b6082d718 Mon Sep 17 00:00:00 2001
+From: Weijie Gao <weijie.gao@mediatek.com>
+Date: Tue, 6 May 2025 16:12:20 +0800
+Subject: [PATCH] clk: mediatek: add dummy clk enable/disable ops for
+ apmixedsys clocks
+
+Starting from commit ac30d90f336 (clk: Ensure the parent clocks are enabled
+while reparenting), MediaTek filogic platforms will crash on booting when
+initializing mmc devices.
+
+The root cause is that to simplify the code, we reused the topckgen ops for
+apmixedsys clocks as they share the get_rate with topckgen clocks while the
+clk enable/disable ops are not available for apmixedsys clocks.
+
+Now that a clock will be enabled first before reparenting, we have to add
+dummy enable/disable ops for apmixedsys to avoid unexpected behavior when
+apmixedsys clocks are the parent clock of the to-be-reparenting clocks.
+
+Fixes: 40746bf429d (clk: mediatek: add clock driver support for MediaTek MT7981 SoC)
+Fixes: 37d5a9a29dc (clk: mediatek: add clock driver support for MediaTek MT7986 SoC)
+Fixes: ece4e5804f5 (clk: mediatek: add clock driver support for MediaTek MT7987 SoC)
+Fixes: 421436981a2 (clk: mediatek: add clock driver support for MediaTek MT7988 SoC)
+Signed-off-by: Sam Shih <sam.shih@mediatek.com>
+Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
+---
+ drivers/clk/mediatek/clk-mt7981.c |  2 +-
+ drivers/clk/mediatek/clk-mt7986.c |  2 +-
+ drivers/clk/mediatek/clk-mt7987.c |  2 +-
+ drivers/clk/mediatek/clk-mt7988.c |  2 +-
+ drivers/clk/mediatek/clk-mtk.c    | 11 +++++++++++
+ drivers/clk/mediatek/clk-mtk.h    |  1 +
+ 6 files changed, 16 insertions(+), 4 deletions(-)
+
+--- a/drivers/clk/mediatek/clk-mt7981.c
++++ b/drivers/clk/mediatek/clk-mt7981.c
+@@ -566,7 +566,7 @@ U_BOOT_DRIVER(mtk_clk_apmixedsys) = {
+ 	.of_match = mt7981_fixed_pll_compat,
+ 	.probe = mt7981_fixed_pll_probe,
+ 	.priv_auto = sizeof(struct mtk_clk_priv),
+-	.ops = &mtk_clk_topckgen_ops,
++	.ops = &mtk_clk_fixed_pll_ops,
+ 	.flags = DM_FLAG_PRE_RELOC,
+ };
+ 
+--- a/drivers/clk/mediatek/clk-mt7986.c
++++ b/drivers/clk/mediatek/clk-mt7986.c
+@@ -573,7 +573,7 @@ U_BOOT_DRIVER(mtk_clk_apmixedsys) = {
+ 	.of_match = mt7986_fixed_pll_compat,
+ 	.probe = mt7986_fixed_pll_probe,
+ 	.priv_auto = sizeof(struct mtk_clk_priv),
+-	.ops = &mtk_clk_topckgen_ops,
++	.ops = &mtk_clk_fixed_pll_ops,
+ 	.flags = DM_FLAG_PRE_RELOC,
+ };
+ 
+--- a/drivers/clk/mediatek/clk-mt7987.c
++++ b/drivers/clk/mediatek/clk-mt7987.c
+@@ -67,7 +67,7 @@ U_BOOT_DRIVER(mtk_clk_apmixedsys) = {
+ 	.of_match = mt7987_fixed_pll_compat,
+ 	.probe = mt7987_fixed_pll_probe,
+ 	.priv_auto = sizeof(struct mtk_clk_priv),
+-	.ops = &mtk_clk_topckgen_ops,
++	.ops = &mtk_clk_fixed_pll_ops,
+ 	.flags = DM_FLAG_PRE_RELOC,
+ };
+ 
+--- a/drivers/clk/mediatek/clk-mt7988.c
++++ b/drivers/clk/mediatek/clk-mt7988.c
+@@ -830,7 +830,7 @@ U_BOOT_DRIVER(mtk_clk_apmixedsys) = {
+ 	.of_match = mt7988_fixed_pll_compat,
+ 	.probe = mt7988_fixed_pll_probe,
+ 	.priv_auto = sizeof(struct mtk_clk_priv),
+-	.ops = &mtk_clk_topckgen_ops,
++	.ops = &mtk_clk_fixed_pll_ops,
+ 	.flags = DM_FLAG_PRE_RELOC,
+ };
+ 
+--- a/drivers/clk/mediatek/clk-mtk.c
++++ b/drivers/clk/mediatek/clk-mtk.c
+@@ -47,6 +47,11 @@ static int mtk_clk_get_id(struct clk *cl
+ 	return id;
+ }
+ 
++static int mtk_dummy_enable(struct clk *clk)
++{
++	return 0;
++}
++
+ static int mtk_gate_enable(void __iomem *base, const struct mtk_gate *gate)
+ {
+ 	u32 bit = BIT(gate->shift);
+@@ -752,6 +757,12 @@ const struct clk_ops mtk_clk_apmixedsys_
+ 	.get_rate = mtk_apmixedsys_get_rate,
+ };
+ 
++const struct clk_ops mtk_clk_fixed_pll_ops = {
++	.enable = mtk_dummy_enable,
++	.disable = mtk_dummy_enable,
++	.get_rate = mtk_topckgen_get_rate,
++};
++
+ const struct clk_ops mtk_clk_topckgen_ops = {
+ 	.enable = mtk_clk_mux_enable,
+ 	.disable = mtk_clk_mux_disable,
+--- a/drivers/clk/mediatek/clk-mtk.h
++++ b/drivers/clk/mediatek/clk-mtk.h
+@@ -283,6 +283,7 @@ struct mtk_cg_priv {
+ };
+ 
+ extern const struct clk_ops mtk_clk_apmixedsys_ops;
++extern const struct clk_ops mtk_clk_fixed_pll_ops;
+ extern const struct clk_ops mtk_clk_topckgen_ops;
+ extern const struct clk_ops mtk_clk_infrasys_ops;
+ extern const struct clk_ops mtk_clk_gate_ops;
