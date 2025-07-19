@@ -193,6 +193,7 @@ define Device/rpi-4
 	kmod-spi-bcm2835-aux \
 	kmod-i2c-brcmstb \
 	kmod-usb-net-lan78xx \
+	kmod-usb-net-rtl8152 \
 	kmod-r8169
   IMAGE/sysupgrade.img.gz := boot-common | boot-2711 | sdcard-img | gzip | append-metadata
   IMAGE/factory.img.gz := boot-common | boot-2711 | sdcard-img | gzip
@@ -222,7 +223,10 @@ define Device/rpi-5
 	kmod-i2c-bcm2835 kmod-spi-bcm2835 \
 	kmod-i2c-brcmstb \
 	kmod-i2c-designware-platform kmod-spi-dw-mmio \
-	kmod-hwmon-pwmfan kmod-thermal
+	kmod-hwmon-pwmfan kmod-thermal \
+	kmod-usb-net-lan78xx \
+	kmod-usb-net-rtl8152 \
+	kmod-r8169
   IMAGE/sysupgrade.img.gz := boot-common | sdcard-img | gzip | append-metadata
   IMAGE/factory.img.gz := boot-common | sdcard-img | gzip
 endef
