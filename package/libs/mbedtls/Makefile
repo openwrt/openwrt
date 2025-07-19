@@ -137,14 +137,12 @@ CMAKE_OPTIONS += \
 	-DENABLE_TESTING:Bool=OFF \
 	-DENABLE_PROGRAMS:Bool=ON
 
-define Build/Prepare
-       $(call Build/Prepare/Default)
-
-       $(if $(strip $(foreach opt,$(MBEDTLS_BUILD_OPTS),$($(opt)))),
-	 $(foreach opt,$(MBEDTLS_BUILD_OPTS),
-	 $(PKG_BUILD_DIR)/scripts/config.py \
-	 -f $(PKG_BUILD_DIR)/include/mbedtls/mbedtls_config.h \
-	 $(if $($(opt)),set,unset) $(patsubst CONFIG_%,%,$(opt))),)
+define Build/Configure
+	$(call Build/Configure/Default,)
+	$(foreach opt,$(MBEDTLS_BUILD_OPTS),
+	$(PKG_BUILD_DIR)/scripts/config.py \
+		-f $(PKG_BUILD_DIR)/include/mbedtls/mbedtls_config.h \
+		$(if $($(opt)),set,unset) $(patsubst CONFIG_%,%,$(opt)))
 endef
 
 define Build/InstallDev
