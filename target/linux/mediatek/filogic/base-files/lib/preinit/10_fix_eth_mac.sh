@@ -43,6 +43,13 @@ preinit_set_mac_address() {
 		ip link set dev port5 address "$lan_mac"
 		ip link set dev port6 address "$lan_mac"
 		;;
+        nradio,c8-668gl)
+		lan_mac=$(mmc_get_mac_ascii bdinfo "fac_mac ")
+		test -n "$lan_mac" || lan_mac=$(mtd_get_mac_ascii bdinfo "fac_mac ")
+		wan_mac=$(macaddr_add "$lan_mac" -1)
+		ip link set dev eth0 address "$lan_mac"
+		ip link set dev eth1 address "$wan_mac"
+		;;
 	*)
 		;;
 	esac
