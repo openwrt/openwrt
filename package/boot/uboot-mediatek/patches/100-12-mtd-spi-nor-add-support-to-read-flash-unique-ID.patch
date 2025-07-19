@@ -1,7 +1,7 @@
-From c4172a95df8a57a66c70a8b9948b9600a01c4cb7 Mon Sep 17 00:00:00 2001
+From b4c97d64ab00d74359112b8fc6e329d2fef792e3 Mon Sep 17 00:00:00 2001
 From: Weijie Gao <weijie.gao@mediatek.com>
 Date: Mon, 25 Jul 2022 11:32:08 +0800
-Subject: [PATCH 49/71] mtd: spi-nor: add support to read flash unique ID
+Subject: [PATCH 12/30] mtd: spi-nor: add support to read flash unique ID
 
 This patch adds support to read unique ID from spi-nor flashes.
 
@@ -13,7 +13,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 
 --- a/drivers/mtd/spi/spi-nor-core.c
 +++ b/drivers/mtd/spi/spi-nor-core.c
-@@ -3248,6 +3248,100 @@ static int spi_nor_init_params(struct sp
+@@ -3262,6 +3262,100 @@ static int spi_nor_init_params(struct sp
  	return 0;
  }
  
@@ -114,7 +114,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  static int spi_nor_hwcaps2cmd(u32 hwcaps, const int table[][2], size_t size)
  {
  	size_t i;
-@@ -4450,6 +4544,7 @@ int spi_nor_scan(struct spi_nor *nor)
+@@ -4486,6 +4580,7 @@ int spi_nor_scan(struct spi_nor *nor)
  	nor->write = spi_nor_write_data;
  	nor->read_reg = spi_nor_read_reg;
  	nor->write_reg = spi_nor_write_reg;

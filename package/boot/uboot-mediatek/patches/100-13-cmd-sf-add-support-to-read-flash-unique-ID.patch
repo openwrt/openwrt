@@ -1,14 +1,14 @@
-From e60939acbebd07161f3978d1c6f13123fdd2ebf2 Mon Sep 17 00:00:00 2001
+From 36d2aafec10998735f93b47a96a0f66c52484af7 Mon Sep 17 00:00:00 2001
 From: Weijie Gao <weijie.gao@mediatek.com>
 Date: Mon, 25 Jul 2022 11:27:02 +0800
-Subject: [PATCH 50/71] cmd: sf: add support to read flash unique ID
+Subject: [PATCH 13/30] cmd: sf: add support to read flash unique ID
 
 This patch adds support to display unique ID from spi-nor flashes
 
 Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 ---
- cmd/sf.c | 13 ++++++++++++-
- 1 file changed, 12 insertions(+), 1 deletion(-)
+ cmd/sf.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
 --- a/cmd/sf.c
 +++ b/cmd/sf.c
@@ -36,14 +36,11 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  	else if (IS_ENABLED(CONFIG_CMD_SF_TEST) && !strcmp(cmd, "test"))
  		ret = do_spi_flash_test(argc, argv);
  	else
-@@ -643,8 +653,9 @@ U_BOOT_LONGHELP(sf,
+@@ -638,6 +648,7 @@ U_BOOT_LONGHELP(sf,
+ 	"sf update addr offset|partition len	- erase and write `len' bytes from memory\n"
+ 	"					  at `addr' to flash at `offset'\n"
+ 	"					  or to start of mtd `partition'\n"
++	"sf uuid				- read uuid from flash\n"
+ #ifdef CONFIG_SPI_FLASH_LOCK
+ 	"sf protect lock/unlock sector len	- protect/unprotect 'len' bytes starting\n"
  	"					  at address 'sector'"
- #endif
- #ifdef CONFIG_CMD_SF_TEST
--	"\nsf test offset len		- run a very basic destructive test"
-+	"\nsf test offset len			- run a very basic destructive test"
- #endif
-+	"\nsf uuid					- read uuid from flash"
- 	);
- 
- U_BOOT_CMD(
