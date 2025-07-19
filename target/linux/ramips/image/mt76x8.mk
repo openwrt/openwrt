@@ -1385,3 +1385,11 @@ define Device/teltonika_rut241
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-metadata
 endef
 TARGET_DEVICES += teltonika_rut241
+define Device/tplink_tl-mr6400-v5-fibocom
+  $(Device/tplink-8mlzma)
+  IMAGE_SIZE := 7872k
+  DEVICE_MODEL := TL-MR6400
+  DEVICE_VARIANT := v5 Fibocom Edition
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-net-qmi-wwan uqmi
+endef
+TARGET_DEVICES += tplink_tl-mr6400-v5-fibocom
