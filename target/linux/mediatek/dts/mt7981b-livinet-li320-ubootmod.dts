@@ -1,0 +1,17 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+#include "mt7981b-livinet-li320.dts"
+
+/ {
+	model = "Livinet Li320 (custom U-Boot layout)";
+	compatible = "livinet,li320-ubootmod", "mediatek,mt7981";
+};
+
+&partitions {
+	/delete-node/ partition@4580000;
+};
+
+&ubi {
+	reg = <0x580000 0x6000000>;
+};

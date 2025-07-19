@@ -96,6 +96,16 @@ case "$board" in
 		# addresses on multiple VIFs with the other radio. Use label mac to set LA bit.
 		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $(get_mac_label) > /sys${DEVPATH}/macaddress
 		;;
+	livinet,li320|\
+	livinet,li320-ubootmod|\
+	livinet,li323|\
+	livinet,li323-ubootmod|\
+	livinet,Li327|\
+	livinet,Li327-ubootmod)
+		addr=$(mtd_get_mac_binary "Factory" 0x4)
+		[ "$PHYNBR" = "0" ] && macaddr_add $addr 2 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_add $addr 3 > /sys${DEVPATH}/macaddress
+		;;
 	jdcloud,re-cp-03)
 		[ "$PHYNBR" = "1" ] && mmc_get_mac_binary factory 0xa > /sys${DEVPATH}/macaddress
 		;;

@@ -20,8 +20,16 @@ mediatek_setup_interfaces()
 	cudy,wr3000-v1|\
 	jcg,q30-pro|\
 	qihoo,360t7|\
+	livinet,li320|\
+	livinet,li320-ubootmod|\
+	livinet,li327|\
+	livinet,li327-ubootmod|\
 	routerich,ax3000)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" wan
+		;;
+	livinet,li323|\
+	livinet,li323-ubootmod)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "eth1"
 		;;
 	asus,tuf-ax4200|\
 	jdcloud,re-cp-03|\
@@ -120,6 +128,16 @@ mediatek_setup_macs()
 		;;
 	bananapi,bpi-r3)
 		wan_mac=$(macaddr_add $(cat /sys/class/net/eth0/address) 1)
+		;;
+	livinet,li320|\
+	livinet,li320-ubootmod|\
+	livinet,li323|\
+	livinet,li323-ubootmod|\
+	livinet,li327|\
+	livinet,li327-ubootmod)
+		wan_mac=$(mtd_get_mac_binary "Factory" 0x24)
+		lan_mac=$(mtd_get_mac_binary "Factory" 0x2a)
+		label_mac=$wan_mac
 		;;
 	cetron,ct3003)
 		lan_mac=$(mtd_get_mac_binary "art" 0)
