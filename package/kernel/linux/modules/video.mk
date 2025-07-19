@@ -600,13 +600,12 @@ endef
 
 $(eval $(call KernelPackage,drm-imx-hdmi))
 
+
 define KernelPackage/drm-imx-ldb
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Freescale i.MX LVDS DRM support
-  DEPENDS:=@(TARGET_imx&&TARGET_imx_cortexa9) +kmod-backlight kmod-drm-imx
+  DEPENDS:=@(TARGET_imx&&TARGET_imx_cortexa9) +kmod-backlight +kmod-drm-panel-simple kmod-drm-imx
   KCONFIG:=CONFIG_DRM_IMX_LDB \
-	CONFIG_DRM_PANEL_SIMPLE \
-	CONFIG_DRM_PANEL=y \
 	CONFIG_DRM_PANEL_SAMSUNG_LD9040=n \
 	CONFIG_DRM_PANEL_SAMSUNG_S6E8AA0=n \
 	CONFIG_DRM_PANEL_LG_LG4573=n \
@@ -615,8 +614,7 @@ define KernelPackage/drm-imx-ldb
 	CONFIG_DRM_PANEL_S6E8AA0=n \
 	CONFIG_DRM_PANEL_SITRONIX_ST7789V=n
   FILES:= \
-	$(LINUX_DIR)/drivers/gpu/drm/imx/ipuv3/imx-ldb.ko \
-	$(LINUX_DIR)/drivers/gpu/drm/panel/panel-simple.ko
+	$(LINUX_DIR)/drivers/gpu/drm/imx/ipuv3/imx-ldb.ko
   AUTOLOAD:=$(call AutoLoad,08,imx-ldb)
 endef
 
@@ -643,6 +641,45 @@ define KernelPackage/drm-panel-mipi-dbi/description
 endef
 
 $(eval $(call KernelPackage,drm-panel-mipi-dbi))
+
+
+define KernelPackage/drm-panel-simple
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Simple (non-eDP) TFT panels
+  DEPENDS:=@USES_DEVICETREE @USES_PM +kmod-drm +kmod-backlight
+  KCONFIG:=CONFIG_DRM_PANEL_SIMPLE \
+	CONFIG_DRM_PANEL=y
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/panel/panel-simple.ko
+  AUTOLOAD:=$(call AutoProbe,panel-simple)
+endef
+
+define KernelPackage/drm-panel-simple/description
+  Generic driver for simple raw (ie. non-eDP) TFT panels.
+endef
+
+$(eval $(call KernelPackage,drm-panel-simple))
+
+
+define KernelPackage/drm-panel-tc358762
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=TC358762 DSI/DPI bridge
+  DEPENDS:=+kmod-drm-kms-helper
+  KCONFIG:=CONFIG_DRM_TOSHIBA_TC358762 \
+	CONFIG_DRM_BRIDGE=y \
+	CONFIG_DRM_MIPI_DSI=y \
+	CONFIG_DRM_PANEL=y
+	CONFIG_DRM_PANEL_BRIDGE=y
+  FILES:= \
+	$(LINUX_DIR)/drivers/gpu/drm/bridge/tc358762.ko
+  AUTOLOAD:=$(call AutoProbe,tc358762)
+endef
+
+define KernelPackage/drm-panel-tc358762/description
+ Toshiba TC358762 DSI/DPI bridge driver
+endef
+
+$(eval $(call KernelPackage,drm-panel-tc358762))
+
 
 define KernelPackage/drm-radeon
   SUBMENU:=$(VIDEO_MENU)
