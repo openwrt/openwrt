@@ -1,0 +1,144 @@
+name: Build on Comment
+
+on:
+  issue_comment:
+    types: [created, edited]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+concurrency:
+  group: build-on-comment-${{ github.event.issue.number || github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  check-and-build:
+    if: github.event.issue.pull_request != null
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+
+    steps:
+      - name: Check if user is authorized
+        id: check-reviewer
+        run: |
+          # Simplified permission check
+          if [[ "${{ github.event.comment.author_association }}" =~ ^(MEMBER|COLLABORATOR|OWNER)$ ]]; then
+            echo "authorized=true" >> $GITHUB_OUTPUT
+          else
+            echo "authorized=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Parse build command
+        if: steps.check-reviewer.outputs.authorized == 'true'
+        id: parse-command
+        run: |
+          COMMENT="${{ github.event.comment.body }}"
+          if [[ "$COMMENT" =~ build\ ([^/]+)/([^/]+)/([^/]+) ]]; then
+            echo "build_requested=true" >> $GITHUB_OUTPUT
+            echo "target=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+            echo "subtarget=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
+            echo "profile=${BASH_REMATCH[3]}" >> $GITHUB_OUTPUT
+            echo "build_path=${BASH_REMATCH[1]}/${BASH_REMATCH[2]}/${BASH_REMATCH[3]}" >> $GITHUB_OUTPUT
+          else
+            echo "build_requested=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create build status comment
+        if: steps.parse-command.outputs.build_requested == 'true'
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            🚀 **Build Started for** `${{ steps.parse-command.outputs.build_path }}`
+            
+            **Details:**
+            - Target: `${{ steps.parse-command.outputs.target }}`
+            - Subtarget: `${{ steps.parse-command.outputs.subtarget }}`
+            - Profile: `${{ steps.parse-command.outputs.profile }}`
+            
+            [View Build Progress](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            
+            *Triggered by @${{ github.event.comment.user.login }}*
+
+      - name: Checkout code
+        if: steps.parse-command.outputs.build_requested == 'true'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: refs/pull/${{ github.event.issue.number }}/head
+
+      - name: Setup build environment
+        if: steps.parse-command.outputs.build_requested == 'true'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y \
+            build-essential \
+            ccache \
+            ecj \
+            file \
+            gawk \
+            gettext \
+            git \
+            libncurses-dev \
+            libssl-dev \
+            python3 \
+            python3-pip \
+            subversion \
+            unzip \
+            wget \
+            zlib1g-dev
+          python3 -m pip install --upgrade pip wheel
+
+      - name: Build configuration
+        if: steps.parse-command.outputs.build_requested == 'true'
+        run: |
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+          
+          cat > .config <<EOF
+          CONFIG_TARGET_${{ steps.parse-command.outputs.target }}=y
+          CONFIG_TARGET_${{ steps.parse-command.outputs.target }}_${{ steps.parse-command.outputs.subtarget }}=y
+          CONFIG_TARGET_${{ steps.parse-command.outputs.target }}_${{ steps.parse-command.outputs.subtarget }}_DEVICE_${{ steps.parse-command.outputs.profile }}=y
+          CONFIG_PACKAGE_luci=y
+          CONFIG_PACKAGE_uqmi=y
+          CONFIG_PACKAGE_kmod-usb-net-qmi-wwan=y
+          EOF
+          
+          make defconfig
+
+      - name: Build firmware
+        if: steps.parse-command.outputs.build_requested == 'true'
+        run: |
+          make -j$(($(nproc) + 1)) V=s 2>&1 | tee build.log
+          echo "build_success=$?" >> $GITHUB_OUTPUT
+
+      - name: Upload build artifacts
+        if: steps.parse-command.outputs.build_requested == 'true' && steps.build.outputs.build_success == '0'
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ steps.parse-command.outputs.target }}-${{ steps.parse-command.outputs.subtarget }}-${{ steps.parse-command.outputs.profile }}
+          path: |
+            bin/targets/${{ steps.parse-command.outputs.target }}/${{ steps.parse-command.outputs.subtarget }}/*
+            build.log
+
+      - name: Update comment with results
+        if: steps.parse-command.outputs.build_requested == 'true'
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          comment-id: ${{ steps.start-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            ## Build Results for `${{ steps.parse-command.outputs.build_path }}`
+            
+            ${{ steps.build.outputs.build_success == '0' && '✅ **Build Successful!**' || '❌ **Build Failed!**' }}
+            
+            **Details:**
+            - Target: `${{ steps.parse-command.outputs.target }}`
+            - Subtarget: `${{ steps.parse-command.outputs.subtarget }}`
+            - Profile: `${{ steps.parse-command.outputs.profile }}`
+            - Duration: ${{ job.status }} (${{ steps.build.outputs.duration }})
+            
+            ${{ steps.build.outputs.build_success == '0' && '📦 [Download Artifacts](https://github.com/' + github.repository + '/actions/runs/' + github.run_id + ')' || '📄 [View Error Logs](https://github.com/' + github.repository + '/actions/runs/' + github.run_id + ')' }}
+            
+            *Triggered by @${{ github.event.comment.user.login }}*
