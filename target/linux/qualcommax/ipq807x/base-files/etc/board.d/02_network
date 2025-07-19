@@ -90,17 +90,6 @@ ipq807x_setup_macs()
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		label_mac="$wan_mac"
 		;;
-	linksys,mx4200v2|\
-	linksys,mx4300)
-		label_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
-		[ "$(mtd_get_mac_ascii u_env eth1addr)" != "$label_mac" ] && wan_mac=$label_mac
-		[ "$(mtd_get_mac_ascii u_env eth2addr)" != "$label_mac" ] && lan_mac=$label_mac
-		;;
-	linksys,mx8500)
-		label_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
-		lan_mac=$(macaddr_add $label_mac 1)
-		wan_mac=$label_mac
-		;;
 	tplink,deco-x80-5g)
 		label_mac=$(get_mac_binary /tmp/factory_data/default-mac 0)
 		lan_mac=$(macaddr_add $label_mac 1)
