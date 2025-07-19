@@ -145,7 +145,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	if (ret)
  		return -ENOMEM;
  
-@@ -1822,7 +1826,7 @@ int xhci_alloc_erst(struct xhci_hcd *xhc
+@@ -1826,7 +1830,7 @@ int xhci_alloc_erst(struct xhci_hcd *xhc
  	for (val = 0; val < evt_ring->num_segs; val++) {
  		entry = &erst->entries[val];
  		entry->seg_addr = cpu_to_le64(seg->dma);
