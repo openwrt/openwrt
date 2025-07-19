@@ -3,12 +3,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=elfutils
-PKG_VERSION:=0.191
-PKG_RELEASE:=2
+PKG_VERSION:=0.192
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=https://sourceware.org/$(PKG_NAME)/ftp/$(PKG_VERSION)
-PKG_HASH:=df76db71366d1d708365fc7a6c60ca48398f14367eb2b8954efc8897147ad871
+PKG_HASH:=616099beae24aba11f9b63d86ca6cc8d566d968b802391334c91df54eab416b4
 
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_LICENSE_FILES:=COPYING COPYING-GPLV2 COPYING-LGPLV3
@@ -43,24 +43,49 @@ PKG_GNULIB_MODS = \
 	fallocate-posix \
 	fnmatch-gnu \
 	fts \
-	obstack \
+	obstack-printf-posix \
 	progname \
 	strchrnul \
 	tsearch
 
+HOST_BUILD_PARALLEL:=1
+
 include $(INCLUDE_DIR)/host-build.mk
 
 export $(PKG_GNULIB_BASE)=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/.libs/$(PKG_GNULIB_BASE).a
+
+export $(PKG_GNULIB_BASE)_exitfail=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-exitfail.o
 export $(PKG_GNULIB_BASE)_fallocate-posix=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-posix_fallocate.o
+export $(PKG_GNULIB_BASE)_mbszero=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-mbszero.o
+export $(PKG_GNULIB_BASE)_obstack=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-obstack.o
+export $(PKG_GNULIB_BASE)_obstack-printf=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-obstack_printf.o
+export $(PKG_GNULIB_BASE)_printf-args=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-printf-args.o
+export $(PKG_GNULIB_BASE)_printf-frexp=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-printf-frexp.o
+export $(PKG_GNULIB_BASE)_printf-frexpl=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-printf-frexpl.o
+export $(PKG_GNULIB_BASE)_printf-parse=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-printf-parse.o
 export $(PKG_GNULIB_BASE)_tsearch=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-tsearch.o
+export $(PKG_GNULIB_BASE)_vasnprintf=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-vasnprintf.o
+export $(PKG_GNULIB_BASE)_xsize=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-xsize.o
 
 HOST_MAKE_FLAGS += \
-	DEFAULT_INCLUDES='-I. -I$$$$(top_builddir) -I$$$$(top_srcdir)/$(PKG_GNULIB_BASE)' \
+	am__CONFIG_DISTCLEAN_FILES= \
+	DEFAULT_INCLUDES='-iquote . -I$$$$(top_builddir) -I$$$$(top_srcdir)/$(PKG_GNULIB_BASE)' \
 	AM_LDFLAGS='$$$$(STACK_USAGE_NO_ERROR)' \
 	LIBS+='$$$$(if $$$$(findstring $(lastword $(PKG_SUBDIRS)),$$$$(subdir)), $$$$($(PKG_GNULIB_BASE)))' \
+	LIBS+='$$$$(wildcard $$$$($(PKG_GNULIB_BASE)_exitfail))' \
 	LIBS+='$$$$(wildcard $$$$($(PKG_GNULIB_BASE)_fallocate-posix))' \
+	LIBS+='$$$$(wildcard $$$$($(PKG_GNULIB_BASE)_mbszero))' \
+	LIBS+='$$$$(wildcard $$$$($(PKG_GNULIB_BASE)_obstack))' \
+	LIBS+='$$$$(wildcard $$$$($(PKG_GNULIB_BASE)_obstack-printf))' \
+	LIBS+='$$$$(wildcard $$$$($(PKG_GNULIB_BASE)_printf-args))' \
+	LIBS+='$$$$(wildcard $$$$($(PKG_GNULIB_BASE)_printf-frexp))' \
+	LIBS+='$$$$(wildcard $$$$($(PKG_GNULIB_BASE)_printf-frexpl))' \
+	LIBS+='$$$$(wildcard $$$$($(PKG_GNULIB_BASE)_printf-parse))' \
 	LIBS+='$$$$(wildcard $$$$($(PKG_GNULIB_BASE)_tsearch))' \
+	LIBS+='$$$$(wildcard $$$$($(PKG_GNULIB_BASE)_vasnprintf))' \
+	LIBS+='$$$$(wildcard $$$$($(PKG_GNULIB_BASE)_xsize))' \
 	REPLACE_FCNTL=0 REPLACE_FREE=0 REPLACE_FSTAT=0 REPLACE_OPEN=0 \
+	REPLACE_OBSTACK=0 REPLACE_OBSTACK_PRINTF=0 \
 	bin_PROGRAMS='$(PKG_PROGRAMS)' EXEEXT=
 
 HOST_CPPFLAGS += "'-I$$$$(top_srcdir)/lib'"
@@ -72,6 +97,7 @@ endif
 HOST_CFLAGS += -Wno-error -fPIC -std=gnu17
 
 HOST_CONFIGURE_ARGS += \
+	--enable-maintainer-mode \
 	--without-libintl-prefix \
 	--without-libiconv-prefix \
 	--disable-debuginfod \
@@ -96,8 +122,14 @@ HOST_CONFIGURE_VARS += \
 Hooks/HostConfigure/Pre := Host/Gnulib/Prepare $(Hooks/HostConfigure/Pre)
 Hooks/HostCompile/Pre := Host/Gnulib/Compile $(Hooks/HostCompile/Pre)
 
+define Host/Configure
+	$(call Host/Configure/Default)
+	$(call Host/Uninstall)
+endef
+
 define Host/Uninstall
 	-$(call Host/Compile/Default,uninstall)
+	-$(call Host/Compile/Default,maintainer-clean) # Clean bootstrap files from the release
 endef
 
 $(eval $(call HostBuild))
