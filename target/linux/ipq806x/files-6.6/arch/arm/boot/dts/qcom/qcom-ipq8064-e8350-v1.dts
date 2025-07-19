@@ -78,6 +78,9 @@
 &nand {
 	status = "okay";
 
+	#address-cells = <1>;
+	#size-cells = <1>;
+
 	nand@0 {
 		reg = <0>;
 
@@ -86,8 +89,6 @@
 
 		partitions {
 			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
 
 			partition@0 {
 				label = "ubi";
