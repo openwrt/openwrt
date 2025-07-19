@@ -1,0 +1,54 @@
+diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+index dc89dbc..1ff42e1 100644
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -4456,6 +4456,41 @@ static u16 mtk_select_queue(struct net_device *dev, struct sk_buff *skb,
+ 	return queue;
+ }
+ 
++#define MTK_HDR_LEN	4
++
++static netdev_features_t mtk_features_check(struct sk_buff *skb,
++					   struct net_device *dev,
++					   netdev_features_t features)
++{
++	/* No point in doing any of this if neither checksum nor GSO are
++	 * being requested for this frame. We can rule out both by just
++	 * checking for CHECKSUM_PARTIAL
++	 */
++	if (skb->ip_summed != CHECKSUM_PARTIAL)
++		return features;
++
++#if IS_ENABLED(CONFIG_NET_DSA)
++	/* DSA tag might break existing offload checks as offload feature flags
++	 * are copied to slave ports and this driver does not use csum_start. */
++	if (netdev_uses_dsa(dev)) {
++		const struct dsa_device_ops *tag_ops = dev->dsa_ptr->tag_ops;
++
++		/* If tag is Mediatek, checksum should work */
++		if (tag_ops->proto == DSA_TAG_PROTO_MTK)
++			/* However, make sure that it is not stacking another
++			 * L2 protocol, possibly a second incompatible DSA tag
++			 * 802.1Q does not increase the mac header size because
++			 * it is embeded inside mediatek tag */
++			if (skb_mac_header_len(skb) <= ETH_HLEN+MTK_HDR_LEN)
++				return features;
++
++		features &= ~(NETIF_F_CSUM_MASK | NETIF_F_GSO_MASK);
++	}
++#endif
++
++	return features;
++}
++
+ static const struct ethtool_ops mtk_ethtool_ops = {
+ 	.get_link_ksettings	= mtk_get_link_ksettings,
+ 	.set_link_ksettings	= mtk_set_link_ksettings,
+@@ -4491,6 +4526,7 @@ static const struct net_device_ops mtk_netdev_ops = {
+ 	.ndo_bpf		= mtk_xdp,
+ 	.ndo_xdp_xmit		= mtk_xdp_xmit,
+ 	.ndo_select_queue	= mtk_select_queue,
++	.ndo_features_check	= mtk_features_check,
+ };
+ 
+ static int mtk_add_mac(struct mtk_eth *eth, struct device_node *np)
