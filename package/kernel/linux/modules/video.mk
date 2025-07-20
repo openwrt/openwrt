@@ -775,6 +775,7 @@ $(eval $(call KernelPackage,video-async))
 
 define KernelPackage/video-fwnode
   TITLE:=V4L2 FWNODE support
+  HIDDEN:=1
   KCONFIG:=CONFIG_V4L2_FWNODE
   FILES:=$(LINUX_DIR)/drivers/media/$(V4L2_DIR)/v4l2-fwnode.ko
   $(call AddDepends/video,+kmod-video-async)
