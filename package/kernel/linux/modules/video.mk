@@ -321,6 +321,7 @@ define KernelPackage/drm-display-helper
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=DRM helpers for display adapters drivers
   DEPENDS:=@DISPLAY_SUPPORT +kmod-drm-kms-helper
+  HIDDEN:=1
   KCONFIG:=CONFIG_DRM_DISPLAY_HELPER
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/display/drm_display_helper.ko
   AUTOLOAD:=$(call AutoProbe,drm_display_helper)
