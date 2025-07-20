@@ -359,6 +359,7 @@ $(eval $(call KernelPackage,oid-registry))
 define KernelPackage/lib-objagg
   SUBMENU:=$(LIB_MENU)
   TITLE:=objagg support
+  HIDDEN:=1
   FILES:=$(LINUX_DIR)/lib/objagg.ko
   KCONFIG:= \
   CONFIG_OBJAGG \
