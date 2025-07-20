@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/configs/mt7622_ubnt_unifi-6-lr-v1_defconfig
-@@ -0,0 +1,114 @@
+@@ -0,0 +1,113 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -56,9 +56,8 @@
 +CONFIG_CMD_MTDPARTS=y
 +CONFIG_MTDPARTS_DEFAULT="mtdparts=nor0:128k(bl2),640k(fip),64k(u-boot-env),256k(factory),64k(eeprom),15232k(recovery),-(firmware)"
 +CONFIG_ENV_IS_IN_MTD=y
-+CONFIG_ENV_MTD_NAME="nor0"
-+CONFIG_ENV_SIZE_REDUND=0x4000
 +CONFIG_SYS_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_MTD_DEV="nor0"
 +CONFIG_USE_DEFAULT_ENV_FILE=y
 +CONFIG_DEFAULT_ENV_FILE="defenvs/ubnt_unifi-6-lr_env"
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
@@ -117,7 +116,7 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/configs/mt7622_ubnt_unifi-6-lr-v2_defconfig
-@@ -0,0 +1,114 @@
+@@ -0,0 +1,113 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -173,9 +172,8 @@
 +CONFIG_CMD_MTDPARTS=y
 +CONFIG_MTDPARTS_DEFAULT="mtdparts=nor0:128k(bl2),640k(fip),64k(u-boot-env),256k(factory),64k(eeprom),15232k(recovery),-(firmware)"
 +CONFIG_ENV_IS_IN_MTD=y
-+CONFIG_ENV_MTD_NAME="nor0"
-+CONFIG_ENV_SIZE_REDUND=0x4000
 +CONFIG_SYS_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_MTD_DEV="nor0"
 +CONFIG_USE_DEFAULT_ENV_FILE=y
 +CONFIG_DEFAULT_ENV_FILE="defenvs/ubnt_unifi-6-lr-v2_env"
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
@@ -234,7 +232,7 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/configs/mt7622_ubnt_unifi-6-lr-v3_defconfig
-@@ -0,0 +1,113 @@
+@@ -0,0 +1,112 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -290,9 +288,8 @@
 +CONFIG_CMD_MTDPARTS=y
 +CONFIG_MTDPARTS_DEFAULT="mtdparts=nor0:128k(bl2),640k(fip),64k(u-boot-env),256k(factory),64k(eeprom),15232k(recovery),-(firmware)"
 +CONFIG_ENV_IS_IN_MTD=y
-+CONFIG_ENV_MTD_NAME="nor0"
-+CONFIG_ENV_SIZE_REDUND=0x4000
 +CONFIG_SYS_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_MTD_DEV="nor0"
 +CONFIG_USE_DEFAULT_ENV_FILE=y
 +CONFIG_DEFAULT_ENV_FILE="defenvs/ubnt_unifi-6-lr_env"
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
