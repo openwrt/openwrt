@@ -36,7 +36,7 @@ $(eval $(call KernelPackage,skge))
 define KernelPackage/ag71xx
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Atheros AR7XXX/AR9XXX ethernet mac support
-  DEPENDS:=@PCI_SUPPORT||TARGET_ath79 +kmod-phylink +kmod-mdio-devres +kmod-net-selftests
+  DEPENDS:=@TARGET_ath79 +kmod-phylink +kmod-mdio-devres +kmod-net-selftests
   KCONFIG:=CONFIG_AG71XX
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/atheros/ag71xx.ko
   AUTOLOAD:=$(call AutoLoad,50,ag71xx,1)
