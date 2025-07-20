@@ -15,7 +15,7 @@ $(eval $(call KernelPackage,acpi-mdio))
 
 define KernelPackage/bcmgenet
   SUBMENU=$(NETWORK_DEVICES_MENU)
-  DEPENDS:=@TARGET_armsr +kmod-mdio-bcm-unimac
+  DEPENDS:=@TARGET_armsr +kmod-mdio-bcm-unimac +kmod-phy-bcm7xxx
   TITLE:=Broadcom GENET internal MAC (Raspberry Pi 4)
   KCONFIG:=CONFIG_BCMGENET
   FILES=$(LINUX_DIR)/drivers/net/ethernet/broadcom/genet/genet.ko
