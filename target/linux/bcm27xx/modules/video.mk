@@ -45,7 +45,7 @@ define KernelPackage/rpi-panel-attiny-regulator
   KCONFIG:=CONFIG_REGULATOR_RASPBERRYPI_TOUCHSCREEN_ATTINY
   FILES:=$(LINUX_DIR)/drivers/regulator/rpi-panel-attiny-regulator.ko
   AUTOLOAD:=$(call AutoLoad,67,rpi-panel-attiny-regulator)
-  DEPENDS:=+kmod-regmap-i2c +kmod-backlight
+  DEPENDS:=@TARGET_bcm27xx +kmod-regmap-i2c +kmod-backlight
 endef
 
 define KernelPackage/rpi-panel-attiny-regulator/description
@@ -64,8 +64,8 @@ define KernelPackage/rpi-panel-7inch-touchscreen
     CONFIG_DRM_PANEL_RASPBERRYPI_TOUCHSCREEN
     CONFIG_DRM_MIPI_DSI=y
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/panel/panel-raspberrypi-touchscreen.ko
-  AUTOLOAD:=$(call AutoProbe,/panel-raspberrypi-touchscreen)
-  DEPENDS:=+kmod-drm
+  AUTOLOAD:=$(call AutoProbe,panel-raspberrypi-touchscreen)
+  DEPENDS:=@TARGET_bcm27xx +kmod-drm
 endef
 
 define KernelPackage/rpi-panel-7inch-touchscreen/description
