@@ -58,6 +58,7 @@ $(eval $(call KernelPackage,ledtrig-activity))
 define KernelPackage/ledtrig-audio
   SUBMENU:=$(LEDS_MENU)
   TITLE:=LED Audio Mute Trigger
+  DEPENDS:=@LINUX_6_6
   KCONFIG:=CONFIG_LEDS_TRIGGER_AUDIO
   FILES:=$(LED_TRIGGER_DIR)/ledtrig-audio.ko
   AUTOLOAD:=$(call AutoLoad,50,ledtrig-audio)
