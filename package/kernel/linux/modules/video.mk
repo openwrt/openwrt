@@ -86,7 +86,7 @@ $(eval $(call KernelPackage,backlight))
 define KernelPackage/backlight-pwm
 	SUBMENU:=$(VIDEO_MENU)
 	TITLE:=PWM Backlight support
-	DEPENDS:=+kmod-backlight
+	DEPENDS:=@PWM_SUPPORT +kmod-backlight
 	KCONFIG:=CONFIG_BACKLIGHT_PWM
 	FILES:=$(LINUX_DIR)/drivers/video/backlight/pwm_bl.ko
 	AUTOLOAD:=$(call AutoProbe,video pwm_bl)

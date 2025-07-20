@@ -529,7 +529,7 @@ define KernelPackage/hwmon-pwmfan
   KCONFIG:=CONFIG_SENSORS_PWM_FAN
   FILES:=$(LINUX_DIR)/drivers/hwmon/pwm-fan.ko
   AUTOLOAD:=$(call AutoLoad,60,pwm-fan)
-  $(call AddDepends/hwmon, +PACKAGE_kmod-thermal:kmod-thermal)
+  $(call AddDepends/hwmon,@PWM_SUPPORT +PACKAGE_kmod-thermal:kmod-thermal)
 endef
 
 define KernelPackage/hwmon-pwmfan/description
