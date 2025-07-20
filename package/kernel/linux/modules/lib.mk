@@ -373,6 +373,7 @@ $(eval $(call KernelPackage,lib-objagg))
 define KernelPackage/lib-parman
   SUBMENU:=$(LIB_MENU)
   TITLE:=parman support
+  HIDDEN:=1
   FILES:=$(LINUX_DIR)/lib/parman.ko
   KCONFIG:= \
   CONFIG_PARMAN \
