@@ -765,6 +765,7 @@ $(eval $(call KernelPackage,video-videobuf2))
 
 define KernelPackage/video-async
   TITLE:=V4L2 ASYNC support
+  HIDDEN:=1
   KCONFIG:=CONFIG_V4L2_ASYNC
   FILES:=$(LINUX_DIR)/drivers/media/$(V4L2_DIR)/v4l2-async.ko
   $(call AddDepends/video)
