@@ -197,6 +197,13 @@ tplink,re6000xd)
 	ucidef_set_led_netdev "lan-2" "lan-2" "blue:lan-1" "lan2" "link tx rx"
 	ucidef_set_led_netdev "eth1" "lan-3" "blue:lan-2" "eth1" "link tx rx"
 	;;
+tplink,tl-7dr7230-v1)
+	ucidef_set_led_netdev "lan1" "LAN1" "mt7530-0:03:green:lan" "lan1"
+	ucidef_set_led_netdev "lan2" "LAN2" "mt7530-0:02:green:lan" "lan2"
+	ucidef_set_led_netdev "lan3" "LAN3" "mt7530-0:01:green:lan" "lan3"
+	ucidef_set_led_netdev "lan4" "LAN4" "mt7530-0:00:green:lan" "lan4"
+	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:0f:green:wan" "wan"
+	;;
 wavlink,wl-wn586x3)
 	ucidef_set_led_netdev "lan-1" "lan-1" "blue:lan-1" "lan1" "link tx rx"
 	ucidef_set_led_netdev "lan-2" "lan-2" "blue:lan-2" "lan2" "link tx rx"

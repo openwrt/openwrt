@@ -665,6 +665,18 @@ define U-Boot/mt7986_netcore_n60-pro
   DEPENDS:=+trusted-firmware-a-mt7986-spim-nand-ddr4
 endef
 
+define U-Boot/mt7988_tplink_tl-7dr7230-v1
+  NAME:=TP-Link TL-7DR7230 v1
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=tplink_tl-7dr7230-v1
+  UBOOT_CONFIG:=mt7988d_tplink_tl-7dr7230-v1
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7988
+  BL2_DDRTYPE:=ddr4
+  DEPENDS:=+trusted-firmware-a-mt7988-spim-nand-ddr4
+endef
+
 define U-Boot/mt7986_tplink_tl-xdr4288
   NAME:=TP-LINK TL-XDR4288
   BUILD_SUBTARGET:=filogic
@@ -950,6 +962,7 @@ UBOOT_TARGETS := \
 	mt7986_mercusys_mr90x-v1 \
 	mt7986_netcore_n60 \
 	mt7986_netcore_n60-pro \
+	mt7988_tplink_tl-7dr7230-v1 \
 	mt7986_tplink_tl-xdr4288 \
 	mt7986_tplink_tl-xdr6086 \
 	mt7986_tplink_tl-xdr6088 \

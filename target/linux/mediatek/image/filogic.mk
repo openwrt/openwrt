@@ -1817,6 +1817,33 @@ define Device/tplink_fr365-v1
 endef
 TARGET_DEVICES += tplink_fr365-v1
 
+define Device/tplink_tl-7dr7230-v1
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := TL-7DR7230
+  DEVICE_VARIANT := v1
+  DEVICE_DTS := mt7988d-tplink-tl-7dr7230-v1
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTS_LOADADDR := 0x45f00000
+  DEVICE_PACKAGES := mt7988-2p5g-phy-firmware kmod-mt7992-firmware mt7988-wo-firmware
+  KERNEL_LOADADDR := 0x46000000
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_IN_UBI := 1
+  UBOOTENV_IN_UBI := 1
+  IMAGES := sysupgrade.itb
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  KERNEL := kernel-bin | gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.itb := append-kernel | \
+	fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-with-rootfs | append-metadata
+  ARTIFACTS := preloader.bin bl31-uboot.fip
+  ARTIFACT/preloader.bin := mt7988-bl2 spim-nand-ddr4
+  ARTIFACT/bl31-uboot.fip := mt7988-bl31-uboot tplink_tl-7dr7230-v1
+endef
+TARGET_DEVICES += tplink_tl-7dr7230-v1
+
 define Device/tplink_tl-xdr-common
   DEVICE_VENDOR := TP-Link
   DEVICE_DTS_DIR := ../dts
