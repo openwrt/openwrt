@@ -251,6 +251,7 @@ $(eval $(call KernelPackage,crypto-echainiv))
 
 define KernelPackage/crypto-engine
   TITLE:=Crypto engine
+  HIDDEN:=1
   KCONFIG:=CONFIG_CRYPTO_ENGINE
   FILES:=$(LINUX_DIR)/crypto/crypto_engine.ko
   AUTOLOAD:=$(call AutoLoad,09,crypto_engine)
