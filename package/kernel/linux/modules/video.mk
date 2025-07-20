@@ -783,21 +783,6 @@ endef
 
 $(eval $(call KernelPackage,video-fwnode))
 
-define KernelPackage/video-cpia2
-  TITLE:=CPIA2 video driver
-  DEPENDS:=@USB_SUPPORT
-  KCONFIG:=CONFIG_VIDEO_CPIA2
-  FILES:=$(LINUX_DIR)/drivers/media/$(V4L2_USB_DIR)/cpia2/cpia2.ko
-  AUTOLOAD:=$(call AutoProbe,cpia2)
-  $(call AddDepends/camera)
-endef
-
-define KernelPackage/video-cpia2/description
- Kernel modules for supporting CPIA2 USB based cameras
-endef
-
-$(eval $(call KernelPackage,video-cpia2))
-
 
 define KernelPackage/video-pwc
   TITLE:=Philips USB webcam support
