@@ -29,6 +29,9 @@ extern const struct dsa_switch_ops rtl930x_switch_ops;
 extern const struct phylink_pcs_ops rtl83xx_pcs_ops;
 extern const struct phylink_pcs_ops rtl93xx_pcs_ops;
 
+extern int rtmdio_838x_read_phy(u32 port, u32 page, u32 reg, u32 *val);
+extern int rtmdio_838x_write_phy(u32 port, u32 page, u32 reg, u32 val);
+
 DEFINE_MUTEX(smi_lock);
 
 int rtl83xx_port_get_stp_state(struct rtl838x_switch_priv *priv, int port)
@@ -244,7 +247,7 @@ int read_phy(u32 port, u32 page, u32 reg, u32 *val)
 {
 	switch (soc_info.family) {
 	case RTL8380_FAMILY_ID:
-		return rtl838x_read_phy(port, page, reg, val);
+		return rtmdio_838x_read_phy(port, page, reg, val);
 	case RTL8390_FAMILY_ID:
 		return rtl839x_read_phy(port, page, reg, val);
 	case RTL9300_FAMILY_ID:
@@ -260,7 +263,7 @@ int write_phy(u32 port, u32 page, u32 reg, u32 val)
 {
 	switch (soc_info.family) {
 	case RTL8380_FAMILY_ID:
-		return rtl838x_write_phy(port, page, reg, val);
+		return rtmdio_838x_write_phy(port, page, reg, val);
 	case RTL8390_FAMILY_ID:
 		return rtl839x_write_phy(port, page, reg, val);
 	case RTL9300_FAMILY_ID:

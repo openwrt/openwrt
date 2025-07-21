@@ -27,11 +27,6 @@ extern struct rtl83xx_soc_info soc_info;
 
 extern int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type_data);
 
-extern int rtl838x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val);
-extern int rtl838x_read_phy(u32 port, u32 page, u32 reg, u32 *val);
-extern int rtl838x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val);
-extern int rtl838x_write_phy(u32 port, u32 page, u32 reg, u32 val);
-
 extern int rtl839x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val);
 extern int rtl839x_read_phy(u32 port, u32 page, u32 reg, u32 *val);
 extern int rtl839x_read_sds_phy(int phy_addr, int phy_reg);
@@ -1640,6 +1635,8 @@ static int rtl838x_set_link_ksettings(struct net_device *ndev,
  * reimplemented. For now it should be sufficient.
  */
 
+DEFINE_MUTEX(rtmdio_lock);
+
 struct rtmdio_bus_priv {
 	u16 id;
 	u16 family_id;
@@ -1767,6 +1764,171 @@ static int rtmdio_838x_write_sds(int addr, int regnum, u16 val)
 	sw_w32(val, RTL838X_SDS4_FIB_REG0 + offset + (regnum << 2));
 
 	return 0;
+}
+
+/* RTL838x specific MDIO functions */
+
+static int rtmdio_838x_smi_wait_op(int timeout)
+{
+	int ret = 0;
+	u32 val;
+
+	ret = readx_poll_timeout(sw_r32, RTL838X_SMI_ACCESS_PHY_CTRL_1,
+				 val, !(val & 0x1), 20, timeout);
+	if (ret)
+		pr_err("%s: timeout\n", __func__);
+
+	return ret;
+}
+
+/* Reads a register in a page from the PHY */
+int rtmdio_838x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
+{
+	u32 v, park_page = 0x1f << 15;
+	int err;
+
+	if (port > 31) {
+		*val = 0xffff;
+		return 0;
+	}
+
+	if (page > 4095 || reg > 31)
+		return -ENOTSUPP;
+
+	mutex_lock(&rtmdio_lock);
+
+	err = rtmdio_838x_smi_wait_op(100000);
+	if (err)
+		goto errout;
+
+	sw_w32_mask(0xffff0000, port << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
+
+	v = reg << 20 | page << 3;
+	sw_w32(v | park_page, RTL838X_SMI_ACCESS_PHY_CTRL_1);
+	sw_w32_mask(0, 1, RTL838X_SMI_ACCESS_PHY_CTRL_1);
+
+	err = rtmdio_838x_smi_wait_op(100000);
+	if (err)
+		goto errout;
+
+	*val = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_2) & 0xffff;
+
+	err = 0;
+
+errout:
+	mutex_unlock(&rtmdio_lock);
+
+	return err;
+}
+
+/* Write to a register in a page of the PHY */
+int rtmdio_838x_write_phy(u32 port, u32 page, u32 reg, u32 val)
+{
+	u32 v, park_page = 0x1f << 15;
+	int err;
+
+	val &= 0xffff;
+	if (port > 31 || page > 4095 || reg > 31)
+		return -ENOTSUPP;
+
+	mutex_lock(&rtmdio_lock);
+	err = rtmdio_838x_smi_wait_op(100000);
+	if (err)
+		goto errout;
+
+	sw_w32(BIT(port), RTL838X_SMI_ACCESS_PHY_CTRL_0);
+	mdelay(10);
+
+	sw_w32_mask(0xffff0000, val << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
+
+	v = reg << 20 | page << 3 | 0x4;
+	sw_w32(v | park_page, RTL838X_SMI_ACCESS_PHY_CTRL_1);
+	sw_w32_mask(0, 1, RTL838X_SMI_ACCESS_PHY_CTRL_1);
+
+	err = rtmdio_838x_smi_wait_op(100000);
+	if (err)
+		goto errout;
+
+	err = 0;
+
+errout:
+	mutex_unlock(&rtmdio_lock);
+
+	return err;
+}
+
+/* Read an mmd register of a PHY */
+static int rtmdio_838x_read_mmd_phy(u32 port, u32 addr, u32 reg, u32 *val)
+{
+	int err;
+	u32 v;
+
+	mutex_lock(&rtmdio_lock);
+
+	err = rtmdio_838x_smi_wait_op(100000);
+	if (err)
+		goto errout;
+
+	sw_w32(1 << port, RTL838X_SMI_ACCESS_PHY_CTRL_0);
+	mdelay(10);
+
+	sw_w32_mask(0xffff0000, port << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
+
+	v = addr << 16 | reg;
+	sw_w32(v, RTL838X_SMI_ACCESS_PHY_CTRL_3);
+
+	/* mmd-access | read | cmd-start */
+	v = 1 << 1 | 0 << 2 | 1;
+	sw_w32(v, RTL838X_SMI_ACCESS_PHY_CTRL_1);
+
+	err = rtmdio_838x_smi_wait_op(100000);
+	if (err)
+		goto errout;
+
+	*val = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_2) & 0xffff;
+
+	err = 0;
+
+errout:
+	mutex_unlock(&rtmdio_lock);
+
+	return err;
+}
+
+/* Write to an mmd register of a PHY */
+static int rtmdio_838x_write_mmd_phy(u32 port, u32 addr, u32 reg, u32 val)
+{
+	int err;
+	u32 v;
+
+	pr_debug("MMD write: port %d, dev %d, reg %d, val %x\n", port, addr, reg, val);
+	val &= 0xffff;
+	mutex_lock(&rtmdio_lock);
+
+	err = rtmdio_838x_smi_wait_op(100000);
+	if (err)
+		goto errout;
+
+	sw_w32(1 << port, RTL838X_SMI_ACCESS_PHY_CTRL_0);
+	mdelay(10);
+
+	sw_w32_mask(0xffff0000, val << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
+
+	sw_w32_mask(0x1f << 16, addr << 16, RTL838X_SMI_ACCESS_PHY_CTRL_3);
+	sw_w32_mask(0xffff, reg, RTL838X_SMI_ACCESS_PHY_CTRL_3);
+	/* mmd-access | write | cmd-start */
+	v = 1 << 1 | 1 << 2 | 1;
+	sw_w32(v, RTL838X_SMI_ACCESS_PHY_CTRL_1);
+
+	err = rtmdio_838x_smi_wait_op(100000);
+	if (err)
+		goto errout;
+
+	err = 0;
+
+errout:
+	mutex_unlock(&rtmdio_lock);
+	return err;
 }
 
 /* These are the core functions of our new Realtek SoC MDIO bus. */
@@ -2215,10 +2377,10 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 		priv->mii_bus->read = rtmdio_83xx_read;
 		priv->mii_bus->write = rtmdio_83xx_write;
 		priv->mii_bus->reset = rtmdio_838x_reset;
-		bus_priv->read_mmd_phy = rtl838x_read_mmd_phy;
-		bus_priv->write_mmd_phy = rtl838x_write_mmd_phy;
-		bus_priv->read_phy = rtl838x_read_phy;
-		bus_priv->write_phy = rtl838x_write_phy;
+		bus_priv->read_mmd_phy = rtmdio_838x_read_mmd_phy;
+		bus_priv->write_mmd_phy = rtmdio_838x_write_mmd_phy;
+		bus_priv->read_phy = rtmdio_838x_read_phy;
+		bus_priv->write_phy = rtmdio_838x_write_phy;
 		bus_priv->cpu_port = RTL838X_CPU_PORT;
 		bus_priv->rawpage = 0xfff;
 		break;
