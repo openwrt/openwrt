@@ -44,7 +44,7 @@
 
 	leds {
 		compatible = "gpio-leds";
-		pinctrl-0 = <&led_pins>;
+		pinctrl-0 = <&leds_pins>;
 		pinctrl-names = "default";
 
 		ledctrl1: ledctrl1 {
@@ -75,7 +75,7 @@
 		};
 	};
 
-	led_pins: led_pins {
+	leds_pins: leds_pins {
 		mux {
 			pins = "gpio22", "gpio23", "gpio24";
 			function = "gpio";

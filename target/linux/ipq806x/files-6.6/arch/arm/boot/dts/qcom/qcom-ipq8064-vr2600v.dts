@@ -69,7 +69,7 @@
 
 	leds {
 		compatible = "gpio-leds";
-		pinctrl-0 = <&led_pins>;
+		pinctrl-0 = <&leds_pins>;
 		pinctrl-names = "default";
 
 		dsl {
@@ -125,7 +125,7 @@
 };
 
 &qcom_pinmux {
-	led_pins: led_pins {
+	leds_pins: leds_pins {
 		mux {
 			pins = "gpio7", "gpio8", "gpio9", "gpio16", "gpio17",
 				"gpio26", "gpio53", "gpio56", "gpio66";

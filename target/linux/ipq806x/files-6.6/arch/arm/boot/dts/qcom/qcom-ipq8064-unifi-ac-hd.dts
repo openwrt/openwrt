@@ -22,7 +22,7 @@
 
 	leds {
 		compatible = "gpio-leds";
-		pinctrl-0 = <&led_pins>;
+		pinctrl-0 = <&leds_pins>;
 		pinctrl-names = "default";
 
 		led_dome_blue: dome_blue {
@@ -61,7 +61,7 @@
 		};
 	};
 
-	led_pins: led_pins {
+	leds_pins: leds_pins {
 		mux {
 			pins = "gpio9", "gpio53";
 			function = "gpio";
