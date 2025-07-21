@@ -82,6 +82,22 @@ define Build/append-openwrt-one-eeprom
 	dd if=$(STAGING_DIR_IMAGE)/mt7981_eeprom_mt7976_dbdc.bin >> $@
 endef
 
+define Build/mstc-header
+  $(eval version=$(word 1,$(1)))
+  $(eval magic=$(word 2,$(1)))
+  gzip -c $@ | tail -c8 > $@.crclen
+  ( \
+    printf "$(magic)"; \
+    tail -c+5 $@.crclen; head -c4 $@.crclen; \
+    dd if=/dev/zero bs=4 count=2; \
+    printf "$(version)" | dd bs=56 count=1 conv=sync 2>/dev/null; \
+    dd if=/dev/zero bs=$$((0x20000 - 0x84)) count=1 conv=sync 2>/dev/null | \
+      tr "\0" "\377"; \
+    cat $@; \
+  ) > $@.new
+  mv $@.new $@
+endef
+
 define Build/zyxel-nwa-fit-filogic
 	$(TOPDIR)/scripts/mkits-zyxel-fit-filogic.sh \
 		$@.its $@ "80 e1 ff ff ff ff ff ff ff ff"
@@ -989,6 +1005,19 @@ define Device/edgecore_eap111
 endef
 TARGET_DEVICES += edgecore_eap111
 
+define Device/elecom_wrc-x3000gs3
+  DEVICE_VENDOR := ELECOM
+  DEVICE_MODEL := WRC-X3000GS3
+  DEVICE_DTS := mt7981b-elecom-wrc-x3000gs3
+  DEVICE_DTS_DIR := ../dts
+  IMAGES += factory.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/factory.bin := sysupgrade-tar | mstc-header 5.04(XZQ.0)b90 COMD | \
+	elecom-product-header WRC-X3000GS3
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+endef
+TARGET_DEVICES += elecom_wrc-x3000gs3
+
 define Device/gatonetworks_gdsp
   DEVICE_VENDOR := GatoNetworks
   DEVICE_MODEL := gdsp
@@ -1163,6 +1192,25 @@ define Device/huasifei_wh3000-pro
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += huasifei_wh3000-pro
+
+define Device/iptime_ax3000q
+  DEVICE_VENDOR := ipTIME
+  DEVICE_MODEL := AX3000Q
+  DEVICE_DTS := mt7981b-iptime-ax3000q
+  DEVICE_DTS_DIR := ../dts
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 32768k
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGES := factory.bin sysupgrade.bin
+  IMAGE/factory.bin := sysupgrade-tar | append-metadata | check-size | iptime-crc32 ax3000q
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  SUPPORTED_DEVICES += mediatek,mt7981-spim-snand-rfb
+endef
+TARGET_DEVICES += iptime_ax3000q
 
 define Device/iptime_ax3000sm
   DEVICE_VENDOR := ipTIME

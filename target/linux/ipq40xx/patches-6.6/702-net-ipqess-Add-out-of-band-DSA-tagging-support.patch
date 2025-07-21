@@ -142,7 +142,7 @@ Signed-off-by: Matthias Schiffer <mschiffer@universe-factory.net>
  static void ipqess_hw_stop(struct ipqess *ess)
  {
  	int i;
-@@ -1189,12 +1247,19 @@ static int ipqess_axi_probe(struct platf
+@@ -1188,12 +1246,19 @@ static int ipqess_axi_probe(struct platf
  		netif_napi_add(netdev, &ess->rx_ring[i].napi_rx, ipqess_rx_napi);
  	}
  

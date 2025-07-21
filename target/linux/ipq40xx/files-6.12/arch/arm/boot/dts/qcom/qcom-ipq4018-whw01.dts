@@ -1,0 +1,340 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qcom-ipq4019.dtsi"
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	model = "Linksys WHW01";
+	compatible = "linksys,whw01";
+
+	aliases {
+		// TODO: Verify if the ethernet0 alias is needed
+		ethernet0 = &gmac;
+		serial0 = &blsp1_uart1;
+		led-boot = &led_system_blue;
+		led-running = &led_system_blue;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs-append = " root=/dev/ubiblock0_0";
+	};
+
+	soc {
+		keys {
+			compatible = "gpio-keys";
+
+			reset {
+				label = "reset";
+				gpios = <&tlmm 63 GPIO_ACTIVE_LOW>;
+				linux,code = <KEY_RESTART>;
+			};
+		};
+
+		ess_tcsr@1953000 {
+			status = "okay";
+		};
+	};
+};
+
+&blsp_dma {
+	status = "okay";
+};
+
+&blsp1_i2c3 {
+	status = "okay";
+	pinctrl-0 = <&i2c_0_pins>;
+	pinctrl-1 = <&i2c_0_pins>;
+	pinctrl-names = "i2c_active", "i2c_sleep";
+
+	leds@62 {
+		compatible = "nxp,pca9633";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x62>;
+
+		/* RGB? */
+		led@0 {
+			reg = <0>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
+		};
+
+		led@1 {
+			reg = <1>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+		};
+
+		led_system_blue: led@2 {
+			reg = <2>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_POWER;
+			linux,default-trigger = "default-on";
+		};
+	};
+};
+
+&blsp1_spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi_0_pins>;
+	pinctrl-names = "default";
+	cs-gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>, <&tlmm 4 GPIO_ACTIVE_HIGH>;
+
+	nor@0 {
+		reg = <0>;
+		compatible = "jedec,spi-nor";
+		spi-max-frequency = <24000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "0:SBL1";
+				reg = <0x0 0x40000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "0:MIBIB";
+				reg = <0x40000 0x20000>;
+				read-only;
+			};
+
+			partition@60000 {
+				label = "0:QSEE";
+				reg = <0x60000 0x60000>;
+				read-only;
+			};
+
+			partition@c0000 {
+				label = "0:CDT";
+				reg = <0xc0000 0x10000>;
+				read-only;
+			};
+
+			partition@d0000 {
+				label = "APPSBL";
+				reg = <0xd0000 0xa0000>;
+				read-only;
+			};
+
+			partition@170000 {
+				label = "0:ART";
+				reg = <0x170000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					precal_art_1000: precal@1000 {
+						reg = <0x1000 0x2f20>;
+					};
+
+					precal_art_5000: precal@5000 {
+						reg = <0x5000 0x2f20>;
+					};
+				};
+			};
+
+			partition@180000 {
+				label = "u_env";
+				reg = <0x180000 0x40000>;
+			};
+
+			partition@1c0000 {
+				label = "s_env";
+				reg = <0x1c0000 0x20000>;
+			};
+
+			partition@1e0000 {
+				label = "devinfo";
+				reg = <0x1e0000 0x20000>;
+				read-only;
+			};
+		};
+	};
+
+	nand@1 {
+		reg = <1>;
+		compatible = "spi-nand";
+		spi-max-frequency = <24000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "kernel";
+				reg = <0x0000000 0x5000000>;
+			};
+
+			partition@600000 {
+				label = "rootfs";
+				reg = <0x0600000 0x4a00000>;
+			};
+
+			partition@5000000 {
+				label = "alt_kernel";
+				reg = <0x5000000 0x5000000>;
+			};
+
+			partition@5600000 {
+				label = "alt_rootfs";
+				reg = <0x5600000 0x4a00000>;
+			};
+
+			partition@a000000 {
+				label = "sysdiag";
+				reg = <0xa000000 0x0200000>;
+				read-only;
+			};
+
+			partition@a200000 {
+				label = "syscfg";
+				reg = <0xa200000 0x5e00000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&blsp1_uart1 {
+	pinctrl-0 = <&serial_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	phy-reset-gpio = <&tlmm 62 GPIO_ACTIVE_HIGH>;
+};
+
+&tlmm {
+	mdio_pins: mdio_pinmux {
+		mux_mdio {
+			pins = "gpio53";
+			function = "mdio";
+			bias-pull-up;
+		};
+
+		mux_mdc {
+			pins = "gpio52";
+			function = "mdc";
+			bias-pull-up;
+		};
+	};
+
+	serial_pins: serial_pinmux {
+		mux {
+			pins = "gpio60", "gpio61";
+			function = "blsp_uart0";
+			bias-disable;
+		};
+	};
+
+	spi_0_pins: spi_0_pinmux {
+		pinmux {
+			function = "blsp_spi0";
+			pins = "gpio55", "gpio56", "gpio57";
+		};
+
+		pinmux_cs {
+			function = "gpio";
+			pins = "gpio54", "gpio4";
+		};
+
+		pinconf {
+			pins = "gpio55", "gpio56", "gpio57";
+			drive-strength = <12>;
+			bias-disable;
+		};
+
+		pinconf_cs {
+			pins = "gpio54", "gpio4";
+			drive-strength = <2>;
+			bias-disable;
+			output-high;
+		};
+	};
+
+	i2c_0_pins: i2c_0_pinmux {
+		mux {
+			function = "blsp_i2c0";
+			pins = "gpio58", "gpio59";
+			bias-disable;
+		};
+	};
+
+	reset_pinmux {
+		mux {
+			pins = "gpio63";
+			bias-pull-up;
+		};
+	};
+};
+
+&usb2 {
+	status = "okay";
+};
+
+&usb2_hs_phy {
+	status = "okay";
+};
+
+&usb3 {
+	status = "okay";
+};
+
+&usb3_hs_phy {
+	status = "okay";
+};
+
+&usb3_ss_phy {
+	status = "okay";
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&wifi0 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "linksys-whw01-v1";
+	nvmem-cell-names = "pre-calibration";
+	nvmem-cells = <&precal_art_1000>;
+};
+
+&wifi1 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "linksys-whw01-v1";
+	nvmem-cell-names = "pre-calibration";
+	nvmem-cells = <&precal_art_5000>;
+};
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport4 {
+	status = "okay";
+	label = "eth1";
+};
+
+&swport5 {
+	status = "okay";
+	label = "eth2";
+};

@@ -78,7 +78,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  		if (dsa_is_cpu_port(priv->ds, i))
 --- /dev/null
 +++ b/drivers/net/dsa/qca/qca8k-ipq4019.c
-@@ -0,0 +1,948 @@
+@@ -0,0 +1,949 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (C) 2009 Felix Fietkau <nbd@nbd.name>
@@ -97,6 +97,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 +#include <linux/of_net.h>
 +#include <linux/of_mdio.h>
 +#include <linux/of_platform.h>
++#include <linux/platform_device.h>
 +#include <linux/mdio.h>
 +#include <linux/phylink.h>
 +
