@@ -1,0 +1,55 @@
+From 0ffd456516b5f0c126c9705d6b2368a45ee2353f Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Sun, 29 Jun 2025 15:21:18 +0200
+Subject: [PATCH] env: Fix possible out-of-bound access in env_do_env_set
+
+It was discovered that env_do_env_set() currently suffer from a long
+time of a possible out-of-bound access for the argv array handling.
+
+The BUG is present in the function env_do_env_set() line:
+
+name = argv[1];
+
+where the function at this point assume the argv at index 1 is always
+present and can't be NULL. Aside from the fact that it's always
+better to validate argv entry with the argc variable, situation where
+the argv[1] is NULL is actually possible and not an error condition.
+
+A example of where an out-of-bound access is triggered is with the
+command "askenv - Press ENTER to ...".
+This is a common pattern for bootmenu entry to ask the user input after
+a bootmenu command succeeded.
+
+In the context of such command, the while loop before "name = argv[1];"
+parse the "-" char as an option arg and increment the argv pointer by
+one (to make the rest of the logic code ignore the option argv) and
+decrement argc value.
+
+The while loop logic is correct but at the "name = argv[1];" line, the
+argv have only one element left (the "-" char) and accessing argv[1]
+(aka the secong element from argv pointer) cause an out-of-bound access
+(making the bootloader eventually crash with strchr searching in invalid
+data)
+
+To better handle this and prevent the out-of-bound access, actually
+check the argv entry left (with the use of the argc variable) and exit
+early before doing any kind of array access.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ env/common.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/env/common.c
++++ b/env/common.c
+@@ -82,6 +82,10 @@ int env_do_env_set(int flag, int argc, c
+ 		}
+ 	}
+ 	debug("Final value for argc=%d\n", argc);
++	/* Exit early if we don't have an env to apply */
++	if (argc < 2)
++		return 0;
++
+ 	name = argv[1];
+ 
+ 	if (strchr(name, '=')) {
