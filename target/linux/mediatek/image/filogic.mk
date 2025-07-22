@@ -742,7 +742,7 @@ TARGET_DEVICES += creatlentem_clt-r30b1-112m
 
 define Device/creatlentem_clt-r30b1
   DEVICE_DTS := mt7981b-creatlentem-clt-r30b1
-  SUPPORTED_DEVICES += mediatek,mt7981-rfb
+  SUPPORTED_DEVICES += mediatek,mt7981-spim-snand-rfb
   IMAGE_SIZE := 65536k
   $(call Device/creatlentem_clt-r30b1-common)
 endef
