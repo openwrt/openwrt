@@ -13,6 +13,7 @@
 #include <asm/mips-cps.h>
 #include <asm/prom.h>
 #include <asm/smp-ops.h>
+#include <linux/smp.h>
 
 #include <mach-rtl83xx.h>
 
@@ -41,13 +42,13 @@ static void rtlsmp_finish(void)
 {
 	/* These devices are low on resources. There might be the chance that CEVT_R4K is
 	 * not enabled in kernel build. Nevertheless the timer and interrupt 7 might be
-	 * active by default after startup of secondary VPE. With no registered handler
-	 * that leads to continuous unhandeled interrupts. In this case disable counting
-	 * (DC) in the core and confirm a pending interrupt.
+	 * active by default after startup of secondary VPEs. With no registered handler
+	 * that leads to continuous unhandeled interrupts. Disable it but keep the counter
+	 * running so it can still be used as an entropy source.
 	 */
 	if (!IS_ENABLED(CONFIG_CEVT_R4K)) {
-		write_c0_cause(read_c0_cause() | CAUSEF_DC);
-		write_c0_compare(0);
+		write_c0_status(read_c0_status() & ~CAUSEF_IP7);
+		write_c0_compare(read_c0_count() - 1);
 	}
 
 	local_irq_enable();
