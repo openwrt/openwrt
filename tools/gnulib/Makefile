@@ -2,11 +2,12 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gnulib
 PKG_CPE_ID:=cpe:/a:gnu:$(PKG_NAME)
-PKG_VERSION:=c99c8d491850dc3a6e0b8604a2729d8bc5c0eff1# # stable-202401
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://git.savannah.gnu.org/cgit/$(PKG_NAME).git/snapshot
-PKG_HASH:=8e6f4a907d9677b55fd452e1340a3e030a6f530b138d420c11975da33f086b1e
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_DATE:=2024-02-13
+PKG_SOURCE_URL:=https://git.savannah.gnu.org/git/gnulib
+PKG_SOURCE_VERSION:=c99c8d491850dc3a6e0b8604a2729d8bc5c0eff1
+PKG_MIRROR_HASH:=9a5db113df68ccc6c6752d3c9557af00d090683ae0e1fbb399d5c933a532c5b2
 
 include $(INCLUDE_DIR)/host-build.mk
 
