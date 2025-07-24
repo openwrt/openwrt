@@ -1638,6 +1638,19 @@ define Device/openembed_som7981
 endef
 TARGET_DEVICES += openembed_som7981
 
+define Device/openfi_6c
+  DEVICE_VENDOR := OpenFi
+  DEVICE_MODEL := 6C
+  DEVICE_DTS := mt7981b-openfi-6c
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-usb3
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+        fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += openfi_6c
+
 define Device/openwrt_one
   DEVICE_VENDOR := OpenWrt
   DEVICE_MODEL := One
