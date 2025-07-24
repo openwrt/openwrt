@@ -1,0 +1,63 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+/dts-v1/;
+
+#include "mt7981b-wavlink-wl-3port-128nand-common.dtsi"
+
+/ {
+	model = "WAVLINK WL-WN551X3";
+	compatible = "wavlink,wl-wn551x3", "mediatek,mt7981b";
+
+	aliases {
+		label-mac-device = &wifi;
+		led-boot = &led_status_blue;
+		led-failsafe = &led_status_blue;
+		led-running = &led_status_blue;
+		led-upgrade = &led_status_blue;
+		serial0 = &uart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_status_blue: led-0 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&pio 7 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-1 {
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&pio 8 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "none";
+		};
+
+		led-2 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
+		};
+
+		led-3 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
+			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
+		};
+
+		led-4 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&pio 25 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&usb_phy {
+        status = "okay";
+};
+
+&xhci {
+        status = "okay";
+};
