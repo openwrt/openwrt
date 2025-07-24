@@ -52,6 +52,22 @@
 
 #define RTPCS_93XX_MAC_LINK_SPD_BITS		4
 
+struct rtpcs_ctrl {
+	struct device *dev;
+	struct regmap *map;
+	struct mii_bus *bus;
+	const struct rtpcs_config *cfg;
+	struct rtpcs_link *link[RTPCS_PORT_CNT];
+	struct mutex lock;
+};
+
+struct rtpcs_link {
+	struct rtpcs_ctrl *ctrl;
+	struct phylink_pcs pcs;
+	int sds;
+	int port;
+};
+
 struct rtpcs_config {
 	int cpu_port;
 	int mac_link_dup_sts;
@@ -61,21 +77,7 @@ struct rtpcs_config {
 	int mac_rx_pause_sts;
 	int mac_tx_pause_sts;
 	const struct phylink_pcs_ops *pcs_ops;
-};
-
-struct rtpcs_ctrl {
-	struct device *dev;
-	struct regmap *map;
-	struct mii_bus *bus;
-	const struct rtpcs_config *cfg;
-	struct rtpcs_link *link[RTPCS_PORT_CNT];
-};
-
-struct rtpcs_link {
-	struct rtpcs_ctrl *ctrl;
-	struct phylink_pcs pcs;
-	int sds;
-	int port;
+	int (*set_autoneg)(struct rtpcs_ctrl *ctrl, int sds, unsigned int neg_mode);
 };
 
 static int rtpcs_sds_to_mmd(int sds_page, int sds_regnum)
@@ -100,6 +102,15 @@ static int rtpcs_sds_read(struct rtpcs_ctrl *ctrl, int sds, int page, int regnum
  *	return mdiobus_c45_write(ctrl->bus, sds, MDIO_MMD_VEND1, mmd_regnum, value);
  * }
  */
+
+static int rtpcs_sds_modify(struct rtpcs_ctrl *ctrl, int sds, int page, int regnum,
+			    u16 mask, u16 set)
+{
+	int mmd_regnum = rtpcs_sds_to_mmd(page, regnum);
+
+	return mdiobus_c45_modify(ctrl->bus, sds, MDIO_MMD_VEND1, mmd_regnum,
+				  mask, set);
+}
 
 static int rtpcs_regmap_read_bits(struct rtpcs_ctrl *ctrl, int base, int bithigh, int bitlow)
 {
@@ -195,6 +206,10 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 {
 	struct rtpcs_link *link = rtpcs_phylink_pcs_to_link(pcs);
 	struct rtpcs_ctrl *ctrl = link->ctrl;
+	int ret = 0;
+
+	if (link->sds < 0)
+		return 0;
 
 	/*
 	 * TODO: This (or copies of this) will be the central function for configuring the
@@ -202,10 +217,21 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 	 * all the other Realtek drivers. Maybe some day this will live up to the expectations.
 	 */
 
-	dev_warn(ctrl->dev, "pcs_config(%s) for port %d and sds %d not yet implemented\n",
+	dev_warn(ctrl->dev, "pcs_config(%s) for port %d and sds %d not yet fully implemented\n",
 		 phy_modes(interface), link->port, link->sds);
 
-	return 0;
+	mutex_lock(&ctrl->lock);
+
+	if (ctrl->cfg->set_autoneg) {
+		ret = ctrl->cfg->set_autoneg(ctrl, link->sds, neg_mode);
+		if (ret < 0)
+			goto out;
+	}
+
+out:
+	mutex_unlock(&ctrl->lock);
+
+	return ret;
 }
 
 struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int port);
@@ -318,6 +344,8 @@ static int rtpcs_probe(struct platform_device *pdev)
 	if (!ctrl)
 		return -ENOMEM;
 
+	mutex_init(&ctrl->lock);
+
 	ctrl->dev = dev;
 	ctrl->cfg = (const struct rtpcs_config *)device_get_match_data(ctrl->dev);
 	ctrl->map = syscon_node_to_regmap(np->parent);
@@ -336,6 +364,14 @@ static int rtpcs_probe(struct platform_device *pdev)
 	dev_info(dev, "Realtek PCS driver initialized\n");
 
 	return 0;
+}
+
+static int rtpcs_93xx_set_autoneg(struct rtpcs_ctrl *ctrl, int sds,
+				  unsigned int neg_mode)
+{
+	u16 bmcr = neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED ? BMCR_ANENABLE : 0;
+
+	return rtpcs_sds_modify(ctrl, sds, 2, MII_BMCR, BMCR_ANENABLE, bmcr);
 }
 
 static const struct phylink_pcs_ops rtpcs_838x_pcs_ops = {
@@ -387,6 +423,7 @@ static const struct rtpcs_config rtpcs_930x_cfg = {
 	.mac_rx_pause_sts	= RTPCS_930X_MAC_RX_PAUSE_STS,
 	.mac_tx_pause_sts	= RTPCS_930X_MAC_TX_PAUSE_STS,
 	.pcs_ops		= &rtpcs_930x_pcs_ops,
+	.set_autoneg		= rtpcs_93xx_set_autoneg,
 };
 
 static const struct phylink_pcs_ops rtpcs_931x_pcs_ops = {
@@ -404,6 +441,7 @@ static const struct rtpcs_config rtpcs_931x_cfg = {
 	.mac_rx_pause_sts	= RTPCS_931X_MAC_RX_PAUSE_STS,
 	.mac_tx_pause_sts	= RTPCS_931X_MAC_TX_PAUSE_STS,
 	.pcs_ops		= &rtpcs_931x_pcs_ops,
+	.set_autoneg		= rtpcs_93xx_set_autoneg,
 };
 
 static const struct of_device_id rtpcs_of_match[] = {
