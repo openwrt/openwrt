@@ -33,8 +33,8 @@
 
 		wps {
 			label = "wps";
-			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
 			debounce-interval = <60>;
 		};
 	};
@@ -43,15 +43,15 @@
 		compatible = "gpio-leds";
 
 		led_status_green: green {
-			gpios = <&pio 11 GPIO_ACTIVE_LOW>;
-			function = LED_FUNCTION_STATUS;
 			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&pio 11 GPIO_ACTIVE_LOW>;
 		};
 
 		led_status_red: red {
-			gpios = <&pio 12 GPIO_ACTIVE_LOW>;
-			function = LED_FUNCTION_STATUS;
 			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&pio 12 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -85,7 +85,7 @@
 		phy-handle = <&int_gbe_phy>;
 
 		nvmem-cell-names = "mac-address";
-		nvmem-cells = <&macaddr_factory_2A 0>;
+		nvmem-cells = <&macaddr_factory_2a 0>;
 	};
 
 };
@@ -170,9 +170,9 @@
 						#nvmem-cell-cells = <1>;
 					};
 
-					macaddr_factory_2A: macaddr@2A {
+					macaddr_factory_2a: macaddr@2a {
 						compatible = "mac-base";
-						reg = <0x2A 0x6>;
+						reg = <0x2a 0x6>;
 						#nvmem-cell-cells = <1>;
 					};
 				};
@@ -266,7 +266,7 @@
 
 	band@1 {
 		reg = <1>;
-		nvmem-cells = <&macaddr_factory_4 7>;
+		nvmem-cells = <&macaddr_factory_4 1>;
 		nvmem-cell-names = "mac-address";
 	};
 };
