@@ -340,51 +340,56 @@ static int rtl93xx_get_sds(struct phy_device *phydev)
 	return sds_num;
 }
 
-static void rtl83xx_pcs_get_state(struct phylink_pcs *pcs,
-				  struct phylink_link_state *state)
+static void rtldsa_83xx_pcs_get_state(struct phylink_pcs *pcs, struct phylink_link_state *state)
 {
 	struct rtl838x_pcs *rtpcs = container_of(pcs, struct rtl838x_pcs, pcs);
 	struct rtl838x_switch_priv *priv = rtpcs->priv;
 	int port = rtpcs->port;
 	u64 speed;
-	u64 link;
-
-	if (port < 0 || port > priv->cpu_port) {
-		state->link = false;
-		return;
-	}
 
 	state->link = 0;
-	link = priv->r->get_port_reg_le(priv->r->mac_link_sts);
-	if (link & BIT_ULL(port))
-		state->link = 1;
-	pr_debug("%s: link state port %d: %llx\n", __func__, port, link & BIT_ULL(port));
+	state->speed = SPEED_UNKNOWN;
+	state->duplex = DUPLEX_UNKNOWN;
+	state->pause &= ~(MLO_PAUSE_RX | MLO_PAUSE_TX);
 
-	state->duplex = 0;
+	if (port < 0 || port > priv->cpu_port)
+		return;
+
+	if (!(priv->r->get_port_reg_le(priv->r->mac_link_sts) & BIT_ULL(port)))
+		return;
+
+	state->link = 1;
+
 	if (priv->r->get_port_reg_le(priv->r->mac_link_dup_sts) & BIT_ULL(port))
-		state->duplex = 1;
+		state->duplex = DUPLEX_FULL;
+	else
+		state->duplex = DUPLEX_HALF;
 
 	speed = priv->r->get_port_reg_le(priv->r->mac_link_spd_sts(port));
-	speed >>= (port % 16) << 1;
-	switch (speed & 0x3) {
-	case 0:
+	speed = (speed >> ((port % 16) << 1)) & 0x3;
+
+	switch (speed) {
+	case RTL_SPEED_10:
 		state->speed = SPEED_10;
 		break;
-	case 1:
+	case RTL_SPEED_100:
 		state->speed = SPEED_100;
 		break;
-	case 2:
+	case RTL_SPEED_1000:
 		state->speed = SPEED_1000;
 		break;
 	case 3:
-		if (priv->family_id == RTL9300_FAMILY_ID
-			&& (port == 24 || port == 26)) /* Internal serdes */
-			state->speed = SPEED_2500;
-		else
-			state->speed = SPEED_100; /* Is in fact 500Mbit */
+		/*
+		 * This is ok so far but with minor inconsistencies. On RTL838x this setting is
+		 * for either 500M or 2G. It might be that MAC_GLITE_STS register tells more. On
+		 * RTL839x these vendor specifics are derived from MAC_LINK_500M_STS and mode 3
+		 * is 10G. This is of interest so resolve to it. Sadly it is off by one for the
+		 * current RTL_SPEED_10000 (=4) definition for RTL93xx.
+		 */
+		state->speed = SPEED_10000;
+		break;
 	}
 
-	state->pause &= (MLO_PAUSE_RX | MLO_PAUSE_TX);
 	if (priv->r->get_port_reg_le(priv->r->mac_rx_pause_sts) & BIT_ULL(port))
 		state->pause |= MLO_PAUSE_RX;
 	if (priv->r->get_port_reg_le(priv->r->mac_tx_pause_sts) & BIT_ULL(port))
@@ -2046,7 +2051,7 @@ static int rtl83xx_dsa_phy_write(struct dsa_switch *ds, int phy_addr, int phy_re
 
 const struct phylink_pcs_ops rtl83xx_pcs_ops = {
 	.pcs_an_restart		= rtl83xx_pcs_an_restart,
-	.pcs_get_state		= rtl83xx_pcs_get_state,
+	.pcs_get_state		= rtldsa_83xx_pcs_get_state,
 	.pcs_config		= rtl83xx_pcs_config,
 };
 
