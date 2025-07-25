@@ -1,0 +1,56 @@
+From d3fdc7ae2ca9cb93d634e84a2b90ebf340d6e622 Mon Sep 17 00:00:00 2001
+From: Frank Li <Frank.Li@nxp.com>
+Date: Fri, 18 Oct 2024 14:28:23 -0400
+Subject: [PATCH] arm64: dts: imx8mm-venice-gw73xx: remove compatible in
+ overlay file
+
+Remove compatible string in overlay file to fix below warning:
+'gw,imx8mm-gw73xx-0x' is not one of ['fsl,ls1043a-rdb', 'fsl,ls1043a-qds']
+
+Signed-off-by: Frank Li <Frank.Li@nxp.com>
+Signed-off-by: Shawn Guo <shawnguo@kernel.org>
+---
+ .../boot/dts/freescale/imx8mm-venice-gw73xx-0x-rs232-rts.dtso | 4 ----
+ .../boot/dts/freescale/imx8mm-venice-gw73xx-0x-rs422.dtso     | 4 ----
+ .../boot/dts/freescale/imx8mm-venice-gw73xx-0x-rs485.dtso     | 4 ----
+ 3 files changed, 12 deletions(-)
+
+--- a/arch/arm64/boot/dts/freescale/imx8mm-venice-gw73xx-0x-rs232-rts.dtso
++++ b/arch/arm64/boot/dts/freescale/imx8mm-venice-gw73xx-0x-rs232-rts.dtso
+@@ -15,10 +15,6 @@
+ /dts-v1/;
+ /plugin/;
+ 
+-&{/} {
+-	compatible = "gw,imx8mm-gw73xx-0x";
+-};
+-
+ &gpio4 {
+ 	rs485_en {
+ 		gpio-hog;
+--- a/arch/arm64/boot/dts/freescale/imx8mm-venice-gw73xx-0x-rs422.dtso
++++ b/arch/arm64/boot/dts/freescale/imx8mm-venice-gw73xx-0x-rs422.dtso
+@@ -18,10 +18,6 @@
+ /dts-v1/;
+ /plugin/;
+ 
+-&{/} {
+-	compatible = "gw,imx8mm-gw73xx-0x";
+-};
+-
+ &gpio4 {
+ 	rs485_en {
+ 		gpio-hog;
+--- a/arch/arm64/boot/dts/freescale/imx8mm-venice-gw73xx-0x-rs485.dtso
++++ b/arch/arm64/boot/dts/freescale/imx8mm-venice-gw73xx-0x-rs485.dtso
+@@ -18,10 +18,6 @@
+ /dts-v1/;
+ /plugin/;
+ 
+-&{/} {
+-	compatible = "gw,imx8mm-gw73xx-0x";
+-};
+-
+ &gpio4 {
+ 	rs485_en {
+ 		gpio-hog;

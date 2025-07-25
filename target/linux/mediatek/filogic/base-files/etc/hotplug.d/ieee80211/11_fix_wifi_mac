@@ -78,7 +78,9 @@ case "$board" in
 	cudy,ap3000-v1|\
 	cudy,m3000-v1|\
 	cudy,re3000-v1|\
+	cudy,tr3000-256mb-v1|\
 	cudy,tr3000-v1|\
+	cudy,tr3000-v1-ubootmod|\
 	cudy,wr3000e-v1|\
 	cudy,wr3000s-v1|\
 	cudy,wr3000h-v1|\
@@ -105,6 +107,11 @@ case "$board" in
 		addr=$(mtd_get_mac_ascii pdt_data_1 ethaddr)
 		[ "$PHYNBR" = "0" ] && macaddr_add $addr 2 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr 3 > /sys${DEVPATH}/macaddress
+		;;
+	iptime,ax3000sm)
+		addr=$(mtd_get_mac_binary "Factory" 0x4)
+		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $(macaddr_unsetbit $(macaddr_unsetbit $(macaddr_unsetbit $(macaddr_setbit $addr 26) 25) 27) 28) > \
+			/sys${DEVPATH}/macaddress
 		;;
 	jcg,q30-pro|\
 	netcore,n60)
@@ -177,6 +184,7 @@ case "$board" in
 	routerich,ax3000|\
 	routerich,ax3000-ubootmod|\
 	zbtlink,zbt-z8102ax|\
+	zbtlink,zbt-z8102ax-v2|\
 	zbtlink,zbt-z8103ax|\
 	zyxel,ex5601-t0-stock|\
 	zyxel,ex5601-t0-ubootmod)
