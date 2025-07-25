@@ -158,6 +158,18 @@ static void __init rtl93xx_read_details(uint32_t model)
 		soc_info.testchip = true;
 }
 
+static void __init rtl96xx_read_details(uint32_t model)
+{
+	uint32_t chip_info;
+
+	sw_w32(0xa << 28, RTL96XX_CHIP_INFO);
+
+	chip_info = sw_r32(RTL96XX_CHIP_INFO);
+	soc_info.cpu = chip_info & 0xffff;
+
+	soc_info.revision = model & 0xf;
+}
+
 static uint32_t __init read_model(void)
 {
 	uint32_t model, id;
@@ -191,6 +203,15 @@ static uint32_t __init read_model(void)
 		soc_info.id = id;
 		soc_info.family = RTL9310_FAMILY_ID;
 		rtl93xx_read_details(model);
+		return model;
+	}
+
+	model = sw_r32(RTL96XX_MODEL_NAME_INFO);
+	id = model >> 16 & 0xffff;
+	if (id == 0x9607) {
+		soc_info.id = id;
+		soc_info.family = RTL9607_FAMILY_ID;
+		rtl96xx_read_details(model);
 		return model;
 	}
 
