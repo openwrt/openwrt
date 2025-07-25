@@ -23,6 +23,31 @@ define AddDepends/crypto
 endef
 
 
+define KernelPackage/async_tx
+  TITLE:=Async core
+  HIDDEN:=1
+  KCONFIG:=CONFIG_ASYNC_CORE
+  FILES:=$(LINUX_DIR)/crypto/async_tx/async_tx.ko
+  AUTOLOAD:=$(call AutoLoad,async_tx)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,async_tx))
+
+
+define KernelPackage/async_xor
+  TITLE:=Async XOR
+  HIDDEN:=1
+  DEPENDS:=+kmod-lib-xor +kmod-async_tx
+  KCONFIG:=CONFIG_ASYNC_XOR
+  FILES:=$(LINUX_DIR)/crypto/async_tx/async_xor.ko
+  AUTOLOAD:=$(call AutoLoad,async_xor)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,async_xor))
+
+
 define KernelPackage/crypto-acompress
   TITLE:=Asynchronous Compression operations
   HIDDEN:=1
