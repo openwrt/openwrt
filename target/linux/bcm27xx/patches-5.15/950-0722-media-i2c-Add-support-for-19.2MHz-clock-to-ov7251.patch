@@ -78,7 +78,7 @@ Signed-off-by: Daniel Scally <djrscally@gmail.com>
  	[OV7251_24_MHZ] = 24000000,
  };
  
-@@ -1424,6 +1448,7 @@ static int ov7251_probe(struct i2c_clien
+@@ -1426,6 +1450,7 @@ static int ov7251_probe(struct i2c_clien
  	struct device *dev = &client->dev;
  	struct ov7251 *ov7251;
  	u8 chip_id_high, chip_id_low, chip_rev;
@@ -86,7 +86,7 @@ Signed-off-by: Daniel Scally <djrscally@gmail.com>
  	int ret;
  	int i;
  
-@@ -1439,35 +1464,39 @@ static int ov7251_probe(struct i2c_clien
+@@ -1441,35 +1466,39 @@ static int ov7251_probe(struct i2c_clien
  		return ret;
  
  	/* get system clock (xclk) */

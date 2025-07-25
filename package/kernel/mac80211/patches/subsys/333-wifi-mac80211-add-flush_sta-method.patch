@@ -12,7 +12,7 @@ Reviewed-by: Greenman, Gregory <gregory.greenman@intel.com>
 
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -3927,6 +3927,10 @@ struct ieee80211_prep_tx_info {
+@@ -3941,6 +3941,10 @@ struct ieee80211_prep_tx_info {
   *	Note that vif can be NULL.
   *	The callback can sleep.
   *
@@ -23,7 +23,7 @@ Reviewed-by: Greenman, Gregory <gregory.greenman@intel.com>
   * @channel_switch: Drivers that need (or want) to offload the channel
   *	switch operation for CSAs received from the AP may implement this
   *	callback. They must then call ieee80211_chswitch_done() to indicate
-@@ -4381,6 +4385,8 @@ struct ieee80211_ops {
+@@ -4395,6 +4399,8 @@ struct ieee80211_ops {
  #endif
  	void (*flush)(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
  		      u32 queues, bool drop);

@@ -13,7 +13,7 @@ Signed-off-by: Daniel Scally <djrscally@gmail.com>
 
 --- a/drivers/media/i2c/ov7251.c
 +++ b/drivers/media/i2c/ov7251.c
-@@ -1442,12 +1442,44 @@ out_free_bus_cfg:
+@@ -1444,12 +1444,44 @@ out_free_bus_cfg:
  	return ret;
  }
  
@@ -59,7 +59,7 @@ Signed-off-by: Daniel Scally <djrscally@gmail.com>
  	unsigned int rate = 0;
  	int ret;
  	int i;
-@@ -1589,34 +1621,10 @@ static int ov7251_probe(struct i2c_clien
+@@ -1591,34 +1623,10 @@ static int ov7251_probe(struct i2c_clien
  		goto free_entity;
  	}
  

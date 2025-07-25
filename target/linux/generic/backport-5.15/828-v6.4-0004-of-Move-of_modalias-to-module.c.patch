@@ -43,7 +43,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  #include <linux/kernel.h>
  #include <linux/of.h>
  #include <linux/of_device.h>
-@@ -241,42 +240,6 @@ const void *of_device_get_match_data(con
+@@ -241,43 +240,6 @@ const void *of_device_get_match_data(con
  }
  EXPORT_SYMBOL(of_device_get_match_data);
  
@@ -60,14 +60,15 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 -	csize = snprintf(str, len, "of:N%pOFn%c%s", np, 'T',
 -			 of_node_get_device_type(np));
 -	tsize = csize;
+-	if (csize >= len)
+-		csize = len > 0 ? len - 1 : 0;
 -	len -= csize;
--	if (str)
--		str += csize;
+-	str += csize;
 -
 -	of_property_for_each_string(np, "compatible", p, compat) {
 -		csize = strlen(compat) + 1;
 -		tsize += csize;
--		if (csize > len)
+-		if (csize >= len)
 -			continue;
 -
 -		csize = snprintf(str, len, "C%s", compat);
@@ -88,7 +89,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	char *str;
 --- /dev/null
 +++ b/drivers/of/module.c
-@@ -0,0 +1,44 @@
+@@ -0,0 +1,45 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Linux kernel module helpers.
@@ -111,14 +112,15 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 +	csize = snprintf(str, len, "of:N%pOFn%c%s", np, 'T',
 +			 of_node_get_device_type(np));
 +	tsize = csize;
++	if (csize >= len)
++		csize = len > 0 ? len - 1 : 0;
 +	len -= csize;
-+	if (str)
-+		str += csize;
++	str += csize;
 +
 +	of_property_for_each_string(np, "compatible", p, compat) {
 +		csize = strlen(compat) + 1;
 +		tsize += csize;
-+		if (csize > len)
++		if (csize >= len)
 +			continue;
 +
 +		csize = snprintf(str, len, "C%s", compat);

@@ -1,0 +1,63 @@
+From: Sergei Trofimovich <slyich@gmail.com>
+Date: Wed, 17 Jul 2024 22:03:34 +0000 (+0100)
+Subject: backends: allocate enough stace for null terminator
+X-Git-Tag: elfutils-0.192~64
+X-Git-Url: https://sourceware.org/git/?p=elfutils.git;a=commitdiff_plain;h=7508696d107ca01b65ce8273c881462a8658f90f
+
+backends: allocate enough stace for null terminator
+
+`gcc-15` added a new warning in https://gcc.gnu.org/PR115185:
+
+    i386_regs.c:88:11: error: initializer-string for array of 'char' is too long [-Werror=unterminated-string-initialization]
+       88 |           "ax", "cx", "dx", "bx", "sp", "bp", "si", "di", "ip"
+          |           ^~~~
+
+`elfutils` does not need to store '\0'. We could either initialize the
+arrays with individual bytes or allocate extra byte for null.
+
+This change initializes the array bytewise.
+
+	* backends/i386_regs.c (i386_register_info): Initialize the
+	array bytewise to fix gcc-15 warning.
+	* backends/x86_64_regs.c (x86_64_register_info): Ditto.
+
+Signed-off-by: Sergei Trofimovich <slyich@gmail.com>
+---
+
+--- a/backends/i386_regs.c
++++ b/backends/i386_regs.c
+@@ -85,7 +85,15 @@ i386_register_info (Ebl *ebl __attribute
+     {
+       static const char baseregs[][2] =
+ 	{
+-	  "ax", "cx", "dx", "bx", "sp", "bp", "si", "di", "ip"
++	  {'a', 'x'},
++	  {'c', 'x'},
++	  {'d', 'x'},
++	  {'b', 'x'},
++	  {'s', 'p'},
++	  {'b', 'p'},
++	  {'s', 'i'},
++	  {'d', 'i'},
++	  {'i', 'p'},
+ 	};
+ 
+     case 4:
+--- a/backends/x86_64_regs.c
++++ b/backends/x86_64_regs.c
+@@ -82,7 +82,14 @@ x86_64_register_info (Ebl *ebl __attribu
+     {
+       static const char baseregs[][2] =
+ 	{
+-	  "ax", "dx", "cx", "bx", "si", "di", "bp", "sp"
++	  {'a', 'x'},
++	  {'d', 'x'},
++	  {'c', 'x'},
++	  {'b', 'x'},
++	  {'s', 'i'},
++	  {'d', 'i'},
++	  {'b', 'p'},
++	  {'s', 'p'},
+ 	};
+ 
+     case 6 ... 7:

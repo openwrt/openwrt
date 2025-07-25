@@ -17,8 +17,8 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/backport-include/net/genetlink.h
 +++ b/backport-include/net/genetlink.h
-@@ -172,4 +172,15 @@ static inline int genlmsg_parse(const st
- }
+@@ -192,4 +192,15 @@ int backport_genlmsg_multicast_allns(con
+ #define genlmsg_multicast_allns LINUX_BACKPORT(genlmsg_multicast_allns)
  #endif /* LINUX_VERSION_IS_LESS(5,2,0) */
  
 +#if LINUX_VERSION_IN_RANGE(5,15,0,5,15,169) || \

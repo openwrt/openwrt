@@ -22,7 +22,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
 
 --- a/drivers/usb/host/xhci-mem.c
 +++ b/drivers/usb/host/xhci-mem.c
-@@ -2278,6 +2278,7 @@ xhci_alloc_interrupter(struct xhci_hcd *
+@@ -2282,6 +2282,7 @@ xhci_alloc_interrupter(struct xhci_hcd *
  {
  	struct device *dev = xhci_to_hcd(xhci)->self.sysdev;
  	struct xhci_interrupter *ir;
@@ -30,7 +30,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	u64 erst_base;
  	u32 erst_size;
  	int ret;
-@@ -2298,7 +2299,11 @@ xhci_alloc_interrupter(struct xhci_hcd *
+@@ -2302,7 +2303,11 @@ xhci_alloc_interrupter(struct xhci_hcd *
  		return NULL;
  
  	ir->ir_set = &xhci->run_regs->ir_set[intr_num];
@@ -43,7 +43,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  					0, flags);
  	if (!ir->event_ring) {
  		xhci_warn(xhci, "Failed to allocate interrupter %d event ring\n", intr_num);
-@@ -2314,7 +2319,7 @@ xhci_alloc_interrupter(struct xhci_hcd *
+@@ -2318,7 +2323,7 @@ xhci_alloc_interrupter(struct xhci_hcd *
  	/* set ERST count with the number of entries in the segment table */
  	erst_size = readl(&ir->ir_set->erst_size);
  	erst_size &= ERST_SIZE_MASK;

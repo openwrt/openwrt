@@ -303,7 +303,7 @@ bcm2835-mmc: uninitialized_var is no more
  }
 --- a/drivers/mmc/core/quirks.h
 +++ b/drivers/mmc/core/quirks.h
-@@ -119,6 +119,14 @@ static const struct mmc_fixup __maybe_un
+@@ -21,6 +21,14 @@ static const struct mmc_fixup __maybe_un
  	MMC_FIXUP(CID_NAME_ANY, CID_MANFID_SANDISK_SD, 0x5344, add_quirk_sd,
  		  MMC_QUIRK_BROKEN_SD_DISCARD),
  
@@ -317,7 +317,7 @@ bcm2835-mmc: uninitialized_var is no more
 +
  	END_FIXUP
  };
- 
+ static const struct mmc_fixup __maybe_unused mmc_blk_fixups[] = {
 --- a/drivers/mmc/host/Kconfig
 +++ b/drivers/mmc/host/Kconfig
 @@ -5,6 +5,35 @@

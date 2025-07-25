@@ -232,7 +232,7 @@ Signed-off-by: Daniel Scally <djrscally@gmail.com>
  static int ov7251_set_exposure(struct ov7251 *ov7251, s32 exposure)
  {
  	u16 reg;
-@@ -1143,6 +1237,11 @@ static int ov7251_s_stream(struct v4l2_s
+@@ -1145,6 +1239,11 @@ static int ov7251_s_stream(struct v4l2_s
  	mutex_lock(&ov7251->lock);
  
  	if (enable) {
@@ -244,7 +244,7 @@ Signed-off-by: Daniel Scally <djrscally@gmail.com>
  		ret = ov7251_set_register_array(ov7251,
  					ov7251->current_mode->data,
  					ov7251->current_mode->data_size);
-@@ -1326,6 +1425,7 @@ static int ov7251_probe(struct i2c_clien
+@@ -1328,6 +1427,7 @@ static int ov7251_probe(struct i2c_clien
  	struct ov7251 *ov7251;
  	u8 chip_id_high, chip_id_low, chip_rev;
  	int ret;
@@ -252,7 +252,7 @@ Signed-off-by: Daniel Scally <djrscally@gmail.com>
  
  	ov7251 = devm_kzalloc(dev, sizeof(struct ov7251), GFP_KERNEL);
  	if (!ov7251)
-@@ -1364,6 +1464,11 @@ static int ov7251_probe(struct i2c_clien
+@@ -1366,6 +1466,11 @@ static int ov7251_probe(struct i2c_clien
  		dev_err(dev, "could not set xclk frequency\n");
  		return ret;
  	}

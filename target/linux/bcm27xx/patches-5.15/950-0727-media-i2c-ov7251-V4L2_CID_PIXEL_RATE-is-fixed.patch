@@ -64,7 +64,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  		.link_freq = 0, /* an index in link_freq[] */
  		.exposure_max = 552,
  		.exposure_def = 504,
-@@ -1155,11 +1152,6 @@ static int ov7251_set_format(struct v4l2
+@@ -1157,11 +1154,6 @@ static int ov7251_set_format(struct v4l2
  	__crop->height = new_mode->height;
  
  	if (format->which == V4L2_SUBDEV_FORMAT_ACTIVE) {
@@ -76,7 +76,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  		ret = __v4l2_ctrl_s_ctrl(ov7251->link_freq,
  					 new_mode->link_freq);
  		if (ret < 0)
-@@ -1319,11 +1311,6 @@ static int ov7251_set_frame_interval(str
+@@ -1321,11 +1313,6 @@ static int ov7251_set_frame_interval(str
  	new_mode = ov7251_find_mode_by_ival(ov7251, &fi->interval);
  
  	if (new_mode != ov7251->current_mode) {
@@ -88,7 +88,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  		ret = __v4l2_ctrl_s_ctrl(ov7251->link_freq,
  					 new_mode->link_freq);
  		if (ret < 0)
-@@ -1571,10 +1558,9 @@ static int ov7251_probe(struct i2c_clien
+@@ -1573,10 +1560,9 @@ static int ov7251_probe(struct i2c_clien
  				     V4L2_CID_TEST_PATTERN,
  				     ARRAY_SIZE(ov7251_test_pattern_menu) - 1,
  				     0, 0, ov7251_test_pattern_menu);

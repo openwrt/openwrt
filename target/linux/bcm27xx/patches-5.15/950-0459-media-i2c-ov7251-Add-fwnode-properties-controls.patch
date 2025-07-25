@@ -13,7 +13,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 
 --- a/drivers/media/i2c/ov7251.c
 +++ b/drivers/media/i2c/ov7251.c
-@@ -1256,6 +1256,7 @@ static const struct v4l2_subdev_ops ov72
+@@ -1258,6 +1258,7 @@ static const struct v4l2_subdev_ops ov72
  
  static int ov7251_probe(struct i2c_client *client)
  {
@@ -21,7 +21,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	struct device *dev = &client->dev;
  	struct fwnode_handle *endpoint;
  	struct ov7251 *ov7251;
-@@ -1341,7 +1342,7 @@ static int ov7251_probe(struct i2c_clien
+@@ -1343,7 +1344,7 @@ static int ov7251_probe(struct i2c_clien
  
  	mutex_init(&ov7251->lock);
  
@@ -30,7 +30,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	ov7251->ctrls.lock = &ov7251->lock;
  
  	v4l2_ctrl_new_std(&ov7251->ctrls, &ov7251_ctrl_ops,
-@@ -1377,6 +1378,15 @@ static int ov7251_probe(struct i2c_clien
+@@ -1379,6 +1380,15 @@ static int ov7251_probe(struct i2c_clien
  		goto free_ctrl;
  	}
  

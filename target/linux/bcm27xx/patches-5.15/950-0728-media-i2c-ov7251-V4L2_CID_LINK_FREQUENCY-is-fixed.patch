@@ -53,7 +53,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  		.exposure_max = 552,
  		.exposure_def = 504,
  		.timeperframe = {
-@@ -1152,11 +1147,6 @@ static int ov7251_set_format(struct v4l2
+@@ -1154,11 +1149,6 @@ static int ov7251_set_format(struct v4l2
  	__crop->height = new_mode->height;
  
  	if (format->which == V4L2_SUBDEV_FORMAT_ACTIVE) {
@@ -65,7 +65,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  		ret = __v4l2_ctrl_modify_range(ov7251->exposure,
  					       1, new_mode->exposure_max,
  					       1, new_mode->exposure_def);
-@@ -1311,11 +1301,6 @@ static int ov7251_set_frame_interval(str
+@@ -1313,11 +1303,6 @@ static int ov7251_set_frame_interval(str
  	new_mode = ov7251_find_mode_by_ival(ov7251, &fi->interval);
  
  	if (new_mode != ov7251->current_mode) {
@@ -77,7 +77,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  		ret = __v4l2_ctrl_modify_range(ov7251->exposure,
  					       1, new_mode->exposure_max,
  					       1, new_mode->exposure_def);
-@@ -1464,6 +1449,7 @@ static int ov7251_probe(struct i2c_clien
+@@ -1466,6 +1451,7 @@ static int ov7251_probe(struct i2c_clien
  {
  	struct v4l2_fwnode_device_properties props;
  	struct device *dev = &client->dev;
@@ -85,7 +85,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	struct ov7251 *ov7251;
  	unsigned int rate = 0;
  	int ret;
-@@ -1561,13 +1547,12 @@ static int ov7251_probe(struct i2c_clien
+@@ -1563,13 +1549,12 @@ static int ov7251_probe(struct i2c_clien
  	v4l2_ctrl_new_std(&ov7251->ctrls, &ov7251_ctrl_ops,
  			  V4L2_CID_PIXEL_RATE, OV7251_PIXEL_CLOCK,
  			  OV7251_PIXEL_CLOCK, 1, OV7251_PIXEL_CLOCK);

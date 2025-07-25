@@ -22,7 +22,7 @@ Link: https://lore.kernel.org/r/20230830060226.18664-1-quic_wgong@quicinc.com
 
 --- a/drivers/net/wireless/ath/ath11k/core.c
 +++ b/drivers/net/wireless/ath/ath11k/core.c
-@@ -985,9 +985,15 @@ int ath11k_core_check_dt(struct ath11k_b
+@@ -986,9 +986,15 @@ int ath11k_core_check_dt(struct ath11k_b
  	return 0;
  }
  
@@ -39,7 +39,7 @@ Link: https://lore.kernel.org/r/20230830060226.18664-1-quic_wgong@quicinc.com
  {
  	/* strlen(',variant=') + strlen(ab->qmi.target.bdf_ext) */
  	char variant[9 + ATH11K_QMI_BDF_EXT_STR_LENGTH] = { 0 };
-@@ -998,11 +1004,8 @@ static int __ath11k_core_create_board_na
+@@ -999,11 +1005,8 @@ static int __ath11k_core_create_board_na
  
  	switch (ab->id.bdf_search) {
  	case ATH11K_BDF_SEARCH_BUS_AND_BOARD:
@@ -53,7 +53,7 @@ Link: https://lore.kernel.org/r/20230830060226.18664-1-quic_wgong@quicinc.com
  			scnprintf(name, name_len,
  				  "bus=%s,vendor=%04x,device=%04x,subsystem-vendor=%04x,subsystem-device=%04x,qmi-chip-id=%d,qmi-board-id=%d%s",
  				  ath11k_bus_str(ab->hif.bus),
-@@ -1012,6 +1015,19 @@ static int __ath11k_core_create_board_na
+@@ -1013,6 +1016,19 @@ static int __ath11k_core_create_board_na
  				  ab->qmi.target.chip_id,
  				  ab->qmi.target.board_id,
  				  variant);
@@ -73,7 +73,7 @@ Link: https://lore.kernel.org/r/20230830060226.18664-1-quic_wgong@quicinc.com
  		break;
  	default:
  		scnprintf(name, name_len,
-@@ -1030,19 +1046,29 @@ static int __ath11k_core_create_board_na
+@@ -1031,19 +1047,29 @@ static int __ath11k_core_create_board_na
  static int ath11k_core_create_board_name(struct ath11k_base *ab, char *name,
  					 size_t name_len)
  {
@@ -106,7 +106,7 @@ Link: https://lore.kernel.org/r/20230830060226.18664-1-quic_wgong@quicinc.com
  }
  
  const struct firmware *ath11k_core_firmware_request(struct ath11k_base *ab,
-@@ -1289,16 +1315,21 @@ int ath11k_core_fetch_board_data_api_1(s
+@@ -1290,16 +1316,21 @@ int ath11k_core_fetch_board_data_api_1(s
  #define BOARD_NAME_SIZE 200
  int ath11k_core_fetch_bdf(struct ath11k_base *ab, struct ath11k_board_data *bd)
  {
@@ -132,7 +132,7 @@ Link: https://lore.kernel.org/r/20230830060226.18664-1-quic_wgong@quicinc.com
  	}
  
  	ab->bd_api = 2;
-@@ -1307,13 +1338,19 @@ int ath11k_core_fetch_bdf(struct ath11k_
+@@ -1308,13 +1339,19 @@ int ath11k_core_fetch_bdf(struct ath11k_
  						 ATH11K_BD_IE_BOARD_NAME,
  						 ATH11K_BD_IE_BOARD_DATA);
  	if (!ret)
@@ -155,7 +155,7 @@ Link: https://lore.kernel.org/r/20230830060226.18664-1-quic_wgong@quicinc.com
  	}
  
  	ret = ath11k_core_fetch_board_data_api_n(ab, bd, fallback_boardname,
-@@ -1321,7 +1358,28 @@ int ath11k_core_fetch_bdf(struct ath11k_
+@@ -1322,7 +1359,28 @@ int ath11k_core_fetch_bdf(struct ath11k_
  						 ATH11K_BD_IE_BOARD_NAME,
  						 ATH11K_BD_IE_BOARD_DATA);
  	if (!ret)
@@ -185,7 +185,7 @@ Link: https://lore.kernel.org/r/20230830060226.18664-1-quic_wgong@quicinc.com
  
  	ab->bd_api = 1;
  	ret = ath11k_core_fetch_board_data_api_1(ab, bd, ATH11K_DEFAULT_BOARD_FILE);
-@@ -1334,14 +1392,22 @@ int ath11k_core_fetch_bdf(struct ath11k_
+@@ -1335,14 +1393,22 @@ int ath11k_core_fetch_bdf(struct ath11k_
  			ath11k_err(ab, "failed to fetch board data for %s from %s\n",
  				   fallback_boardname, filepath);
  

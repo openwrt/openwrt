@@ -14,7 +14,7 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 
 --- a/drivers/gpu/drm/v3d/v3d_gem.c
 +++ b/drivers/gpu/drm/v3d/v3d_gem.c
-@@ -955,6 +955,10 @@ v3d_gem_init(struct drm_device *dev)
+@@ -957,6 +957,10 @@ v3d_gem_init(struct drm_device *dev)
  	mutex_init(&v3d->clk_lock);
  	INIT_DELAYED_WORK(&v3d->clk_down_work, v3d_clock_down_work);
  

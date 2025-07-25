@@ -23,7 +23,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	struct v4l2_ctrl *hblank;
  
  	/* Cached register values */
-@@ -1167,10 +1166,6 @@ static int ov7251_set_format(struct v4l2
+@@ -1169,10 +1168,6 @@ static int ov7251_set_format(struct v4l2
  		if (ret < 0)
  			goto exit;
  
@@ -34,7 +34,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  		ov7251->current_mode = new_mode;
  	}
  
-@@ -1321,10 +1316,6 @@ static int ov7251_set_frame_interval(str
+@@ -1323,10 +1318,6 @@ static int ov7251_set_frame_interval(str
  		if (ret < 0)
  			goto exit;
  
@@ -45,7 +45,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  		ov7251->current_mode = new_mode;
  	}
  
-@@ -1550,8 +1541,8 @@ static int ov7251_probe(struct i2c_clien
+@@ -1552,8 +1543,8 @@ static int ov7251_probe(struct i2c_clien
  			  V4L2_CID_VFLIP, 0, 1, 1, 0);
  	ov7251->exposure = v4l2_ctrl_new_std(&ov7251->ctrls, &ov7251_ctrl_ops,
  					     V4L2_CID_EXPOSURE, 1, 32, 1, 32);

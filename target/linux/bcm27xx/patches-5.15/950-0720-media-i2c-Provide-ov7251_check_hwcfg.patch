@@ -16,7 +16,7 @@ Signed-off-by: Daniel Scally <djrscally@gmail.com>
 
 --- a/drivers/media/i2c/ov7251.c
 +++ b/drivers/media/i2c/ov7251.c
-@@ -1255,11 +1255,74 @@ static const struct v4l2_subdev_ops ov72
+@@ -1257,11 +1257,74 @@ static const struct v4l2_subdev_ops ov72
  	.pad = &ov7251_subdev_pad_ops,
  };
  
@@ -92,7 +92,7 @@ Signed-off-by: Daniel Scally <djrscally@gmail.com>
  	struct ov7251 *ov7251;
  	u8 chip_id_high, chip_id_low, chip_rev;
  	int ret;
-@@ -1271,24 +1334,9 @@ static int ov7251_probe(struct i2c_clien
+@@ -1273,24 +1336,9 @@ static int ov7251_probe(struct i2c_clien
  	ov7251->i2c_client = client;
  	ov7251->dev = dev;
  

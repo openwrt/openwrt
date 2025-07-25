@@ -73,6 +73,8 @@ endef
 
 HOST_BUILD_PREFIX := $(STAGING_DIR_HOST)
 
+HOST_CFLAGS +=-std=gnu17
+
 CONFIGURE_VARS += \
 	grub_build_mkfont_excuse="don't want fonts"
 

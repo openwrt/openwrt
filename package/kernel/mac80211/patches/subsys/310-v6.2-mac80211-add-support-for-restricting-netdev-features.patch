@@ -59,7 +59,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		flow = fq_find_fattest_flow(fq);
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -1816,6 +1816,10 @@ struct ieee80211_vif_cfg {
+@@ -1817,6 +1817,10 @@ struct ieee80211_vif_cfg {
   * @addr: address of this interface
   * @p2p: indicates whether this AP or STA interface is a p2p
   *	interface, i.e. a GO or p2p-sta respectively
@@ -70,7 +70,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   * @driver_flags: flags/capabilities the driver has for this interface,
   *	these need to be set (or cleared) when the interface is added
   *	or, if supported by the driver, the interface type is changed
-@@ -1855,6 +1859,7 @@ struct ieee80211_vif {
+@@ -1856,6 +1860,7 @@ struct ieee80211_vif {
  
  	struct ieee80211_txq *txq;
  
@@ -80,7 +80,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
-@@ -2218,6 +2218,7 @@ int ieee80211_if_add(struct ieee80211_lo
+@@ -2236,6 +2236,7 @@ int ieee80211_if_add(struct ieee80211_lo
  		ndev->priv_flags |= IFF_LIVE_ADDR_CHANGE;
  		ndev->hw_features |= ndev->features &
  					MAC80211_SUPPORTED_FEATURES_TX;

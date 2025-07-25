@@ -15,7 +15,7 @@ Reported-by: kernel test robot <lkp@intel.com>
 
 --- a/drivers/media/i2c/ov7251.c
 +++ b/drivers/media/i2c/ov7251.c
-@@ -903,43 +903,6 @@ static int __maybe_unused ov7251_sensor_
+@@ -905,43 +905,6 @@ static int __maybe_unused ov7251_sensor_
  	return ov7251_set_power_on(ov7251);
  }
  
@@ -59,7 +59,7 @@ Reported-by: kernel test robot <lkp@intel.com>
  static int ov7251_set_hflip(struct ov7251 *ov7251, s32 value)
  {
  	u8 val = ov7251->timing_format2;
-@@ -1384,10 +1347,6 @@ exit:
+@@ -1386,10 +1349,6 @@ exit:
  	return ret;
  }
  
@@ -70,7 +70,7 @@ Reported-by: kernel test robot <lkp@intel.com>
  static const struct v4l2_subdev_video_ops ov7251_video_ops = {
  	.s_stream = ov7251_s_stream,
  	.g_frame_interval = ov7251_get_frame_interval,
-@@ -1405,7 +1364,6 @@ static const struct v4l2_subdev_pad_ops
+@@ -1407,7 +1366,6 @@ static const struct v4l2_subdev_pad_ops
  };
  
  static const struct v4l2_subdev_ops ov7251_subdev_ops = {
@@ -78,7 +78,7 @@ Reported-by: kernel test robot <lkp@intel.com>
  	.video = &ov7251_video_ops,
  	.pad = &ov7251_subdev_pad_ops,
  };
-@@ -1701,7 +1659,7 @@ err_pm_runtime:
+@@ -1703,7 +1661,7 @@ err_pm_runtime:
  	pm_runtime_disable(ov7251->dev);
  	pm_runtime_put_noidle(ov7251->dev);
  power_down:

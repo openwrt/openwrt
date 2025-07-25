@@ -33,7 +33,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  
  	/* Cached register values */
  	u8 aec_pk_manual;
-@@ -1131,6 +1134,7 @@ static int ov7251_set_format(struct v4l2
+@@ -1133,6 +1136,7 @@ static int ov7251_set_format(struct v4l2
  	struct v4l2_mbus_framefmt *__format;
  	struct v4l2_rect *__crop;
  	const struct ov7251_mode_info *new_mode;
@@ -41,7 +41,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	int ret = 0;
  
  	mutex_lock(&ov7251->lock);
-@@ -1147,6 +1151,11 @@ static int ov7251_set_format(struct v4l2
+@@ -1149,6 +1153,11 @@ static int ov7251_set_format(struct v4l2
  	__crop->height = new_mode->height;
  
  	if (format->which == V4L2_SUBDEV_FORMAT_ACTIVE) {
@@ -53,7 +53,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  		ret = __v4l2_ctrl_modify_range(ov7251->exposure,
  					       1, new_mode->exposure_max,
  					       1, new_mode->exposure_def);
-@@ -1452,6 +1461,7 @@ static int ov7251_probe(struct i2c_clien
+@@ -1454,6 +1463,7 @@ static int ov7251_probe(struct i2c_clien
  	struct v4l2_ctrl *ctrl;
  	struct ov7251 *ov7251;
  	unsigned int rate = 0;
@@ -61,7 +61,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	int ret;
  	int i;
  
-@@ -1531,7 +1541,7 @@ static int ov7251_probe(struct i2c_clien
+@@ -1533,7 +1543,7 @@ static int ov7251_probe(struct i2c_clien
  
  	ov7251->current_mode = &ov7251_mode_info_data[0];
  
@@ -70,7 +70,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	ov7251->ctrls.lock = &ov7251->lock;
  
  	v4l2_ctrl_new_std(&ov7251->ctrls, &ov7251_ctrl_ops,
-@@ -1555,6 +1565,12 @@ static int ov7251_probe(struct i2c_clien
+@@ -1557,6 +1567,12 @@ static int ov7251_probe(struct i2c_clien
  				      0, link_freq);
  	if (ctrl)
  		ctrl->flags |= V4L2_CTRL_FLAG_READ_ONLY;
