@@ -781,7 +781,7 @@ $(eval $(call KernelPackage,sched-act-sample))
 define KernelPackage/sched-act-ipt
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IPtables targets
-  DEPENDS:=+kmod-ipt-core +kmod-sched-core
+  DEPENDS:=@LINUX_6_6 +kmod-ipt-core +kmod-sched-core
   KCONFIG:=CONFIG_NET_ACT_IPT
   FILES:=$(LINUX_DIR)/net/sched/act_ipt.ko
   AUTOLOAD:=$(call AutoProbe, act_ipt)

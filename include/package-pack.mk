@@ -18,10 +18,20 @@ define gen_package_wildcard
   $(1)$$(if $$(filter -%,$$(ABIV_$(1))),,[^a-z$(if $(CONFIG_USE_APK),,-)])*
 endef
 
+# 1: command and initial arguments
+# 2: arguments list
+# 3: tmp filename
+define maybe_use_xargs
+  $(if $(word 512,$(2)), \
+    $(file >$(3),$(2)) $(XARGS) $(1) < "$(3)"; rm "$(3)", \
+    $(1) $(2))
+endef
+
 # 1: package name
 # 2: candidate ipk files
 define remove_ipkg_files
-  $(if $(strip $(2)),$(SCRIPT_DIR)/ipkg-remove $(1) $(2))
+  $(if $(strip $(2)), \
+    $(call maybe_use_xargs,$(SCRIPT_DIR)/ipkg-remove $(1),$(2),$(TMP_DIR)/$(1).in))
 endef
 
 # 1: package name

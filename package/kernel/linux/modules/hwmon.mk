@@ -407,7 +407,7 @@ define KernelPackage/hwmon-max6642
   KCONFIG:=CONFIG_SENSORS_MAX6642
   FILES:=$(LINUX_DIR)/drivers/hwmon/max6642.ko
   AUTOLOAD:=$(call AutoLoad,60,max6642 max6642)
-  $(call AddDepends/hwmon,+kmod-i2c-core)
+  $(call AddDepends/hwmon,@LINUX_6_6 +kmod-i2c-core)
 endef
 
 define KernelPackage/hwmon-max6642/description
@@ -529,7 +529,7 @@ define KernelPackage/hwmon-pwmfan
   KCONFIG:=CONFIG_SENSORS_PWM_FAN
   FILES:=$(LINUX_DIR)/drivers/hwmon/pwm-fan.ko
   AUTOLOAD:=$(call AutoLoad,60,pwm-fan)
-  $(call AddDepends/hwmon, +PACKAGE_kmod-thermal:kmod-thermal)
+  $(call AddDepends/hwmon,@PWM_SUPPORT +PACKAGE_kmod-thermal:kmod-thermal)
 endef
 
 define KernelPackage/hwmon-pwmfan/description

@@ -678,6 +678,7 @@ static void rtl93xx_phylink_mac_config(struct dsa_switch *ds, int port,
 	if (sds_num >= 0 &&
 	    (state->interface == PHY_INTERFACE_MODE_1000BASEX ||
 	     state->interface == PHY_INTERFACE_MODE_SGMII ||
+	     state->interface == PHY_INTERFACE_MODE_2500BASEX ||
 	     state->interface == PHY_INTERFACE_MODE_10GBASER))
 		rtl9300_serdes_setup(port, sds_num, state->interface);
 }

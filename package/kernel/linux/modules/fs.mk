@@ -536,7 +536,9 @@ define KernelPackage/fs-nfs-v4
   KCONFIG:= \
 	CONFIG_NFS_V4=y
   FILES:= \
-	$(LINUX_DIR)/fs/nfs/nfsv4.ko
+	$(LINUX_DIR)/fs/nfs/nfsv4.ko \
+	$(LINUX_DIR)/fs/nfs/flexfilelayout/nfs_layout_flexfiles.ko \
+	$(LINUX_DIR)/fs/nfs/filelayout/nfs_layout_nfsv41_files.ko
   AUTOLOAD:=$(call AutoLoad,41,nfsv4)
 endef
 

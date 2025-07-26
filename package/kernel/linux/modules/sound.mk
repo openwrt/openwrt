@@ -361,7 +361,7 @@ $(eval $(call KernelPackage,sound-dummy))
 define KernelPackage/sound-hda-core
   SUBMENU:=$(SOUND_MENU)
   TITLE:=HD Audio Sound Core Support
-  DEPENDS:=+kmod-ledtrig-audio
+  DEPENDS:=+LINUX_6_6:kmod-ledtrig-audio
   KCONFIG:= \
 	CONFIG_SND_HDA_CORE \
 	CONFIG_SND_HDA_HWDEP=y \

@@ -220,7 +220,7 @@ define KernelPackage/pinctrl-mcp23s08
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Microchip MCP23xxx I/O expander
   HIDDEN:=1
-  DEPENDS:=@GPIO_SUPPORT +kmod-regmap-core
+  DEPENDS:=@GPIO_SUPPORT @PINCTRL_SUPPORT +kmod-regmap-core
   KCONFIG:=CONFIG_PINCTRL_MCP23S08
   FILES:=$(LINUX_DIR)/drivers/pinctrl/pinctrl-mcp23s08.ko
   AUTOLOAD:=$(call AutoLoad,40,pinctrl-mcp23s08)

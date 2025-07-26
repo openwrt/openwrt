@@ -49,6 +49,7 @@ $(eval $(call KernelPackage,iio-kfifo-buf))
 
 define KernelPackage/industrialio-backend
   TITLE:=IIO Backend support
+  HIDDEN:=1
   KCONFIG=CONFIG_IIO_BACKEND
   FILES:=$(LINUX_DIR)/drivers/iio/industrialio-backend.ko
   AUTOLOAD:=$(call AutoProbe,industrialio-backend)

@@ -251,6 +251,7 @@ $(eval $(call KernelPackage,crypto-echainiv))
 
 define KernelPackage/crypto-engine
   TITLE:=Crypto engine
+  HIDDEN:=1
   KCONFIG:=CONFIG_CRYPTO_ENGINE
   FILES:=$(LINUX_DIR)/crypto/crypto_engine.ko
   AUTOLOAD:=$(call AutoLoad,09,crypto_engine)
@@ -561,6 +562,7 @@ $(eval $(call KernelPackage,crypto-kpp))
 define KernelPackage/crypto-lib-aescfb
   TITLE:=AES cipher operations feedback mode library
   DEPENDS:=@!LINUX_6_6
+  HIDDEN:=1
   KCONFIG:=CONFIG_CRYPTO_LIB_AESCFB
   FILES:=$(LINUX_DIR)/lib/crypto/libaescfb.ko
   AUTOLOAD:=$(call AutoLoad,09,libaescfb)
