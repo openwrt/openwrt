@@ -585,7 +585,7 @@ $(eval $(call KernelPackage,drm-imx))
 define KernelPackage/drm-imx-hdmi
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Freescale i.MX HDMI DRM support
-  DEPENDS:=+kmod-sound-core kmod-drm-imx kmod-drm-display-helper
+  DEPENDS:=+kmod-sound-core kmod-drm-imx +kmod-drm-display-helper
   KCONFIG:=CONFIG_DRM_IMX_HDMI \
 	CONFIG_DRM_DW_HDMI_AHB_AUDIO \
 	CONFIG_DRM_DW_HDMI_I2S_AUDIO
