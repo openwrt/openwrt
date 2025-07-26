@@ -559,18 +559,6 @@ endef
 
 $(eval $(call KernelPackage,crypto-kpp))
 
-define KernelPackage/crypto-lib-aescfb
-  TITLE:=AES cipher operations feedback mode library
-  DEPENDS:=@!LINUX_6_6
-  HIDDEN:=1
-  KCONFIG:=CONFIG_CRYPTO_LIB_AESCFB
-  FILES:=$(LINUX_DIR)/lib/crypto/libaescfb.ko
-  AUTOLOAD:=$(call AutoLoad,09,libaescfb)
-  $(call AddDepends/crypto)
-endef
-
-$(eval $(call KernelPackage,crypto-lib-aescfb))
-
 define KernelPackage/crypto-lib-chacha20
   TITLE:=ChaCha library interface
   KCONFIG:=CONFIG_CRYPTO_LIB_CHACHA
