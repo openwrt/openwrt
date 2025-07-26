@@ -135,7 +135,7 @@ endef
 # A reasonable set of default packages handling the NAS type
 # of devices out of the box (former NAS42x0 IcyBox defaults)
 GEMINI_NAS_PACKAGES := $(DEFAULT_PACKAGES.nas) \
-		kmod-md-mod kmod-md-linear kmod-md-multipath \
+		kmod-md-mod kmod-md-linear \
 		kmod-md-raid0 kmod-md-raid1 kmod-md-raid10 kmod-md-raid456 \
 		kmod-fs-btrfs kmod-fs-cifs kmod-fs-nfs \
 		kmod-fs-nfsd kmod-fs-ntfs3 kmod-fs-reiserfs kmod-fs-vfat \
