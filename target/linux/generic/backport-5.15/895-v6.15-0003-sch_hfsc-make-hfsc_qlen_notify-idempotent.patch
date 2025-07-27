@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Cong Wang <xiyou.wangcong@gmail.com>
+Date: Thu, 3 Apr 2025 14:10:25 -0700
+Subject: sch_hfsc: make hfsc_qlen_notify() idempotent
+
+hfsc_qlen_notify() is not idempotent either and not friendly
+to its callers, like fq_codel_dequeue(). Let's make it idempotent
+to ease qdisc_tree_reduce_backlog() callers' life:
+
+1. update_vf() decreases cl->cl_nactive, so we can check whether it is
+non-zero before calling it.
+
+2. eltree_remove() always removes RB node cl->el_node, but we can use
+   RB_EMPTY_NODE() + RB_CLEAR_NODE() to make it safe.
+
+Reported-by: Gerrard Tai <gerrard.tai@starlabs.sg>
+Signed-off-by: Cong Wang <xiyou.wangcong@gmail.com>
+Reviewed-by: Simon Horman <horms@kernel.org>
+Link: https://patch.msgid.link/20250403211033.166059-4-xiyou.wangcong@gmail.com
+Acked-by: Jamal Hadi Salim <jhs@mojatatu.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+(cherry picked from commit 51eb3b65544c9efd6a1026889ee5fb5aa62da3bb)
+---
+ net/sched/sch_hfsc.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+--- a/net/sched/sch_hfsc.c
++++ b/net/sched/sch_hfsc.c
+@@ -209,7 +209,10 @@ eltree_insert(struct hfsc_class *cl)
+ static inline void
+ eltree_remove(struct hfsc_class *cl)
+ {
+-	rb_erase(&cl->el_node, &cl->sched->eligible);
++	if (!RB_EMPTY_NODE(&cl->el_node)) {
++		rb_erase(&cl->el_node, &cl->sched->eligible);
++		RB_CLEAR_NODE(&cl->el_node);
++	}
+ }
+ 
+ static inline void
+@@ -1231,7 +1234,8 @@ hfsc_qlen_notify(struct Qdisc *sch, unsi
+ 	/* vttree is now handled in update_vf() so that update_vf(cl, 0, 0)
+ 	 * needs to be called explicitly to remove a class from vttree.
+ 	 */
+-	update_vf(cl, 0, 0);
++	if (cl->cl_nactive)
++		update_vf(cl, 0, 0);
+ 	if (cl->cl_flags & HFSC_RSC)
+ 		eltree_remove(cl);
+ }

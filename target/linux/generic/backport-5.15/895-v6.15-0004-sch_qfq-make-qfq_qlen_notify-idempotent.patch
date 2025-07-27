@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Cong Wang <xiyou.wangcong@gmail.com>
+Date: Thu, 3 Apr 2025 14:10:26 -0700
+Subject: sch_qfq: make qfq_qlen_notify() idempotent
+
+qfq_qlen_notify() always deletes its class from its active list
+with list_del_init() _and_ calls qfq_deactivate_agg() when the whole list
+becomes empty.
+
+To make it idempotent, just skip everything when it is not in the active
+list.
+
+Also change other list_del()'s to list_del_init() just to be extra safe.
+
+Reported-by: Gerrard Tai <gerrard.tai@starlabs.sg>
+Signed-off-by: Cong Wang <xiyou.wangcong@gmail.com>
+Reviewed-by: Simon Horman <horms@kernel.org>
+Link: https://patch.msgid.link/20250403211033.166059-5-xiyou.wangcong@gmail.com
+Acked-by: Jamal Hadi Salim <jhs@mojatatu.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+(cherry picked from commit 55f9eca4bfe30a15d8656f915922e8c98b7f0728)
+---
+ net/sched/sch_qfq.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+--- a/net/sched/sch_qfq.c
++++ b/net/sched/sch_qfq.c
+@@ -354,7 +354,7 @@ static void qfq_deactivate_class(struct
+ 	struct qfq_aggregate *agg = cl->agg;
+ 
+ 
+-	list_del(&cl->alist); /* remove from RR queue of the aggregate */
++	list_del_init(&cl->alist); /* remove from RR queue of the aggregate */
+ 	if (list_empty(&agg->active)) /* agg is now inactive */
+ 		qfq_deactivate_agg(q, agg);
+ }
+@@ -482,6 +482,7 @@ static int qfq_change_class(struct Qdisc
+ 
+ 	cl->common.classid = classid;
+ 	cl->deficit = lmax;
++	INIT_LIST_HEAD(&cl->alist);
+ 
+ 	cl->qdisc = qdisc_create_dflt(sch->dev_queue, &pfifo_qdisc_ops,
+ 				      classid, NULL);
+@@ -996,7 +997,7 @@ static struct sk_buff *agg_dequeue(struc
+ 	cl->deficit -= (int) len;
+ 
+ 	if (cl->qdisc->q.qlen == 0) /* no more packets, remove from list */
+-		list_del(&cl->alist);
++		list_del_init(&cl->alist);
+ 	else if (cl->deficit < qdisc_pkt_len(cl->qdisc->ops->peek(cl->qdisc))) {
+ 		cl->deficit += agg->lmax;
+ 		list_move_tail(&cl->alist, &agg->active);
+@@ -1428,6 +1429,8 @@ static void qfq_qlen_notify(struct Qdisc
+ 	struct qfq_sched *q = qdisc_priv(sch);
+ 	struct qfq_class *cl = (struct qfq_class *)arg;
+ 
++	if (list_empty(&cl->alist))
++		return;
+ 	qfq_deactivate_class(q, cl);
+ }
+ 

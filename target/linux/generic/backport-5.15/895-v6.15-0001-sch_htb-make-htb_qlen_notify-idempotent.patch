@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Cong Wang <xiyou.wangcong@gmail.com>
+Date: Thu, 3 Apr 2025 14:10:23 -0700
+Subject: sch_htb: make htb_qlen_notify() idempotent
+
+htb_qlen_notify() always deactivates the HTB class and in fact could
+trigger a warning if it is already deactivated. Therefore, it is not
+idempotent and not friendly to its callers, like fq_codel_dequeue().
+
+Let's make it idempotent to ease qdisc_tree_reduce_backlog() callers'
+life.
+
+Reported-by: Gerrard Tai <gerrard.tai@starlabs.sg>
+Signed-off-by: Cong Wang <xiyou.wangcong@gmail.com>
+Reviewed-by: Simon Horman <horms@kernel.org>
+Link: https://patch.msgid.link/20250403211033.166059-2-xiyou.wangcong@gmail.com
+Acked-by: Jamal Hadi Salim <jhs@mojatatu.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+(cherry picked from commit 5ba8b837b522d7051ef81bacf3d95383ff8edce5)
+---
+ net/sched/sch_htb.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/net/sched/sch_htb.c
++++ b/net/sched/sch_htb.c
+@@ -1504,6 +1504,8 @@ static void htb_qlen_notify(struct Qdisc
+ {
+ 	struct htb_class *cl = (struct htb_class *)arg;
+ 
++	if (!cl->prio_activity)
++		return;
+ 	htb_deactivate(qdisc_priv(sch), cl);
+ }
+ 

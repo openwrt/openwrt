@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Cong Wang <xiyou.wangcong@gmail.com>
+Date: Thu, 3 Apr 2025 14:10:24 -0700
+Subject: sch_drr: make drr_qlen_notify() idempotent
+
+drr_qlen_notify() always deletes the DRR class from its active list
+with list_del(), therefore, it is not idempotent and not friendly
+to its callers, like fq_codel_dequeue().
+
+Let's make it idempotent to ease qdisc_tree_reduce_backlog() callers'
+life. Also change other list_del()'s to list_del_init() just to be
+extra safe.
+
+Reported-by: Gerrard Tai <gerrard.tai@starlabs.sg>
+Signed-off-by: Cong Wang <xiyou.wangcong@gmail.com>
+Reviewed-by: Simon Horman <horms@kernel.org>
+Link: https://patch.msgid.link/20250403211033.166059-3-xiyou.wangcong@gmail.com
+Acked-by: Jamal Hadi Salim <jhs@mojatatu.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+(cherry picked from commit df008598b3a00be02a8051fde89ca0fbc416bd55)
+---
+ net/sched/sch_drr.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+--- a/net/sched/sch_drr.c
++++ b/net/sched/sch_drr.c
+@@ -111,6 +111,7 @@ static int drr_change_class(struct Qdisc
+ 	if (cl == NULL)
+ 		return -ENOBUFS;
+ 
++	INIT_LIST_HEAD(&cl->alist);
+ 	cl->common.classid = classid;
+ 	cl->quantum	   = quantum;
+ 	cl->qdisc	   = qdisc_create_dflt(sch->dev_queue,
+@@ -235,7 +236,7 @@ static void drr_qlen_notify(struct Qdisc
+ {
+ 	struct drr_class *cl = (struct drr_class *)arg;
+ 
+-	list_del(&cl->alist);
++	list_del_init(&cl->alist);
+ }
+ 
+ static int drr_dump_class(struct Qdisc *sch, unsigned long arg,
+@@ -402,7 +403,7 @@ static struct sk_buff *drr_dequeue(struc
+ 			if (unlikely(skb == NULL))
+ 				goto out;
+ 			if (cl->qdisc->q.qlen == 0)
+-				list_del(&cl->alist);
++				list_del_init(&cl->alist);
+ 
+ 			bstats_update(&cl->bstats, skb);
+ 			qdisc_bstats_update(sch, skb);
+@@ -443,7 +444,7 @@ static void drr_reset_qdisc(struct Qdisc
+ 	for (i = 0; i < q->clhash.hashsize; i++) {
+ 		hlist_for_each_entry(cl, &q->clhash.hash[i], common.hnode) {
+ 			if (cl->qdisc->q.qlen)
+-				list_del(&cl->alist);
++				list_del_init(&cl->alist);
+ 			qdisc_reset(cl->qdisc);
+ 		}
+ 	}
