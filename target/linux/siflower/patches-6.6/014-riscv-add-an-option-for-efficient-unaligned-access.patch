@@ -1,0 +1,46 @@
+From: Qingfang Deng <qingfang.deng@siflower.com.cn>
+Date: Sat, 14 Sep 2024 12:00:59 +0800
+Subject: [PATCH 14/20] riscv: add an option for efficient unaligned access
+
+Some riscv cpus like T-Head C908 allows unaligned memory access,
+and we don't need to force an alignment on compiler level.
+Add an option for that.
+
+Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
+---
+ arch/riscv/Kconfig  | 11 +++++++++++
+ arch/riscv/Makefile |  2 ++
+ 2 files changed, 13 insertions(+)
+
+--- a/arch/riscv/Kconfig
++++ b/arch/riscv/Kconfig
+@@ -639,6 +639,17 @@ config THREAD_SIZE_ORDER
+ 	  Specify the Pages of thread stack size (from 4KB to 64KB), which also
+ 	  affects irq stack size, which is equal to thread stack size.
+ 
++config RISCV_EFFICIENT_UNALIGNED_ACCESS
++	bool "Assume the system supports fast unaligned memory accesses"
++	depends on NONPORTABLE
++	select HAVE_EFFICIENT_UNALIGNED_ACCESS
++	help
++	  Assume that the system supports fast unaligned memory accesses. When
++	  enabled, this option improves the performance of the kernel on such
++	  systems. However, the kernel and userspace programs will run much more
++	  slowly, or will not be able to run at all, on systems that do not
++	  support efficient unaligned memory accesses.
++
+ endmenu # "Platform type"
+ 
+ menu "Kernel features"
+--- a/arch/riscv/Makefile
++++ b/arch/riscv/Makefile
+@@ -104,7 +104,9 @@ KBUILD_AFLAGS_MODULE += $(call as-option
+ # unaligned accesses.  While unaligned accesses are explicitly allowed in the
+ # RISC-V ISA, they're emulated by machine mode traps on all extant
+ # architectures.  It's faster to have GCC emit only aligned accesses.
++ifneq ($(CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS),y)
+ KBUILD_CFLAGS += $(call cc-option,-mstrict-align)
++endif
+ 
+ ifeq ($(CONFIG_STACKPROTECTOR_PER_TASK),y)
+ prepare: stack_protector_prepare
