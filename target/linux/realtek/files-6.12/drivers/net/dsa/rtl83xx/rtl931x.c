@@ -25,6 +25,8 @@
 #define RTL931X_VLAN_PORT_TAG_ITPID_IDX_MASK			GENMASK(2,1)
 #define RTL931X_VLAN_PORT_TAG_ITPID_KEEP_MASK			GENMASK(0,0)
 
+#define RTL930X_GPIO_SEL_GPIO31_LEDSYNC_SEL 			BIT(16)
+
 extern struct mutex smi_lock;
 extern struct rtl83xx_soc_info soc_info;
 
@@ -1650,6 +1652,12 @@ static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 
 	/* Set LED mode to serial (0x1) */
 	sw_w32_mask(0x3, 0x1, RTL931X_LED_GLB_CTRL);
+
+	/* Enable GPIO31_LEDSYNC if utilised */
+	if (of_property_read_bool(node, "led-sync"))
+		sw_w32_mask(0, RTL930X_GPIO_SEL_GPIO31_LEDSYNC_SEL, RTL931X_MAC_L2_GLOBAL_CTRL2);
+	else
+		sw_w32_mask(RTL930X_GPIO_SEL_GPIO31_LEDSYNC_SEL, 0, RTL931X_MAC_L2_GLOBAL_CTRL2);
 
 	rtl839x_set_port_reg_le(pm_copper, RTL931X_LED_PORT_COPR_MASK_CTRL);
 	rtl839x_set_port_reg_le(pm_fiber, RTL931X_LED_PORT_FIB_MASK_CTRL);
