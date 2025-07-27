@@ -115,6 +115,7 @@ platform_do_upgrade() {
 	linksys,ea7500-v2|\
 	linksys,ea8100-v1|\
 	linksys,ea8100-v2|\
+	mercury,km08-708h|\
 	mts,wg430223|\
 	netgear,eax12|\
 	netgear,r6220|\
