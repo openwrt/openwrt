@@ -1995,10 +1995,10 @@ static int rtmdio_93xx_read(struct mii_bus *bus, int addr, int regnum)
 	if (priv->phy_is_internal[addr]) {
 		if (priv->family_id == RTL9300_FAMILY_ID)
 			return rtl930x_read_sds_phy(priv->sds_id[addr],
-						    priv->page[addr], regnum);
+						    priv->page[addr] + 2, regnum);
 		else
 			return rtl931x_read_sds_phy(priv->sds_id[addr],
-						    priv->page[addr], regnum);
+						    priv->page[addr] + 2, regnum);
 	}
 
 	err = (*priv->read_phy)(addr, priv->page[addr], regnum, &val);
@@ -2089,10 +2089,10 @@ static int rtmdio_93xx_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 		if (priv->phy_is_internal[addr]) {
 			if (priv->family_id == RTL9300_FAMILY_ID)
 				return rtl930x_write_sds_phy(priv->sds_id[addr],
-							     page, regnum, val);
+							     page + 2, regnum, val);
 			else
 				return rtl931x_write_sds_phy(priv->sds_id[addr],
-							     page, regnum, val);
+							     page + 2, regnum, val);
 		}
 
 		err = (*priv->write_phy)(addr, page, regnum, val);
