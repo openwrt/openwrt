@@ -2674,39 +2674,18 @@ out:
 	return 0;
 }
 
-static int rtl83xx_dsa_phy_read(struct dsa_switch *ds, int phy_addr, int phy_reg)
+static int rtldsa_phy_read(struct dsa_switch *ds, int addr, int regnum)
 {
-	u32 val;
-	u32 offset = 0;
 	struct rtl838x_switch_priv *priv = ds->priv;
 
-	if ((phy_addr >= 24) &&
-	    (phy_addr <= 27) &&
-	    (priv->ports[24].phy == PHY_RTL838X_SDS)) {
-		if (phy_addr == 26)
-			offset = 0x100;
-		val = sw_r32(RTL838X_SDS4_FIB_REG0 + offset + (phy_reg << 2)) & 0xffff;
-		return val;
-	}
-
-	read_phy(phy_addr, 0, phy_reg, &val);
-	return val;
+	return mdiobus_read_nested(priv->parent_bus, addr, regnum);
 }
 
-static int rtl83xx_dsa_phy_write(struct dsa_switch *ds, int phy_addr, int phy_reg, u16 val)
+static int rtldsa_phy_write(struct dsa_switch *ds, int addr, int regnum, u16 val)
 {
-	u32 offset = 0;
 	struct rtl838x_switch_priv *priv = ds->priv;
 
-	if ((phy_addr >= 24) &&
-	    (phy_addr <= 27) &&
-	    (priv->ports[24].phy == PHY_RTL838X_SDS)) {
-		if (phy_addr == 26)
-			offset = 0x100;
-		sw_w32(val, RTL838X_SDS4_FIB_REG0 + offset + (phy_reg << 2));
-		return 0;
-	}
-	return write_phy(phy_addr, 0, phy_reg, val);
+	return mdiobus_write_nested(priv->parent_bus, addr, regnum, val);
 }
 
 const struct phylink_pcs_ops rtl83xx_pcs_ops = {
@@ -2719,8 +2698,8 @@ const struct dsa_switch_ops rtl83xx_switch_ops = {
 	.get_tag_protocol	= rtl83xx_get_tag_protocol,
 	.setup			= rtl83xx_setup,
 
-	.phy_read		= rtl83xx_dsa_phy_read,
-	.phy_write		= rtl83xx_dsa_phy_write,
+	.phy_read		= rtldsa_phy_read,
+	.phy_write		= rtldsa_phy_write,
 
 	.phylink_get_caps	= rtldsa_phylink_get_caps,
 	.phylink_mac_config	= rtl83xx_phylink_mac_config,
@@ -2782,8 +2761,8 @@ const struct dsa_switch_ops rtl930x_switch_ops = {
 	.get_tag_protocol	= rtl83xx_get_tag_protocol,
 	.setup			= rtl93xx_setup,
 
-	.phy_read		= rtl83xx_dsa_phy_read,
-	.phy_write		= rtl83xx_dsa_phy_write,
+	.phy_read		= rtldsa_phy_read,
+	.phy_write		= rtldsa_phy_write,
 
 	.phylink_get_caps	= rtldsa_phylink_get_caps,
 	.phylink_mac_config	= rtl93xx_phylink_mac_config,

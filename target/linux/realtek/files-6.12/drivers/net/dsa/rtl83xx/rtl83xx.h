@@ -139,9 +139,6 @@ int rtl83xx_port_is_under(const struct net_device * dev, struct rtl838x_switch_p
 void rtl83xx_port_stp_state_set(struct dsa_switch *ds, int port, u8 state);
 int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type_data);
 
-int read_phy(u32 port, u32 page, u32 reg, u32 *val);
-int write_phy(u32 port, u32 page, u32 reg, u32 val);
-
 /* Port register accessor functions for the RTL839x and RTL931X SoCs */
 void rtl839x_mask_port_reg_be(u64 clear, u64 set, int reg);
 u32 rtl839x_get_egress_rate(struct rtl838x_switch_priv *priv, int port);
@@ -196,9 +193,6 @@ int rtl83xx_lag_add(struct dsa_switch *ds, int group, int port, struct netdev_la
 int rtl83xx_lag_del(struct dsa_switch *ds, int group, int port);
 
 /* phy functions that will need to be moved to the future mdio driver */
-
-int rtl838x_read_mmd_phy(u32 port, u32 addr, u32 reg, u32 *val);
-int rtl838x_write_mmd_phy(u32 port, u32 addr, u32 reg, u32 val);
 
 int rtl839x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val);
 int rtl839x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val);
