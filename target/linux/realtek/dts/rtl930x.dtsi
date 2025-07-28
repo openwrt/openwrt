@@ -59,7 +59,7 @@
 		compatible = "simple-bus";
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x18000000 0x10000>;
+		ranges = <0x0 0x18000000 0x20000>;
 
 		intc: interrupt-controller@3000 {
 			compatible = "realtek,rtl9300-intc", "realtek,rtl-intc";
@@ -69,6 +69,18 @@
 
 			interrupt-parent = <&cpuintc>;
 			interrupts = <2>, <3>, <4>, <5>, <6>, <7>;
+		};
+
+		snand: spi@1a400 {
+			compatible = "realtek,rtl9301-snand";
+			reg = <0x1a400 0x44>;
+			interrupt-parent = <&intc>;
+			interrupts = <19 2>;
+			clocks = <&lx_clk>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
 		};
 
 		spi0: spi@1200 {

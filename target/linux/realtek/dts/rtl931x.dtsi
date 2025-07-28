@@ -95,7 +95,7 @@
 		compatible = "simple-bus";
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x18000000 0x10000>;
+		ranges = <0x0 0x18000000 0x20000>;
 
 		spi0: spi@1200 {
 			status = "okay";
@@ -105,6 +105,18 @@
 
 			#address-cells = <1>;
 			#size-cells = <0>;
+		};
+
+		snand: spi@1a400 {
+			compatible = "realtek,rtl9301-snand";
+			reg = <0x1a400 0x44>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SHARED 37 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&lx_clk>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
 		};
 
 		watchdog0: watchdog@3260 {
