@@ -468,6 +468,31 @@ define Device/glinet_gl-mt3000
 endef
 TARGET_DEVICES += glinet_gl-mt3000
 
+
+define Device/comfast_cf-wr632ax                                                                                                                                                                                                                                                  
+  DEVICE_VENDOR := Comfast
+  DEVICE_MODEL := CF-wr632ax
+  DEVICE_DTS := mt7981a-comfast-cf-wr632ax
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTC_FLAGS := --pad 4096
+  DEVICE_DTS_LOADADDR := 0x43f00000
+  DEVICE_PACKAGES := kmod-mt7981-firmware mt7981-wo-firmware kmod-hwmon-pwmfan kmod-usb3
+  KERNEL_LOADADDR := 0x44000000
+  KERNEL = kernel-bin | lzma | \
+       fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL_INITRAMFS = kernel-bin | lzma | \
+       fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 65536k
+  KERNEL_IN_UBI := 1
+  IMAGES := sysupgrade.bin factory.bin
+  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += comfast_cf-wr632ax
+
 define Device/glinet_gl-mt6000
   DEVICE_VENDOR := GL.iNet
   DEVICE_MODEL := GL-MT6000
