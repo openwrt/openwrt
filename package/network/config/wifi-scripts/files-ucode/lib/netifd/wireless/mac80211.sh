@@ -208,6 +208,9 @@ function setup() {
 		case 'mesh':
 			if (mode != "ap")
 				data.config.noscan = true;
+			for (let _, sta in v.stas) {
+				validate('station', sta.config);
+			}
 			validate('iface', v.config);
 			iface.prepare(v.config, data.phy + data.phy_suffix, data.config.num_global_macaddr, data.config.macaddr_base);
 			netifd.set_vif(k, v.config.ifname);
