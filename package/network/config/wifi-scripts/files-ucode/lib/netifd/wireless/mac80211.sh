@@ -233,6 +233,8 @@ function setup() {
 		case 'link':
 		case 'ap':
 			has_ap = true;
+			for (let _, sta in v.stas)
+				validate('station', sta.config);
 			// fallthrough
 		case 'sta':
 		case 'adhoc':
