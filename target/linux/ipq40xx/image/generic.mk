@@ -801,6 +801,13 @@ define Device/meraki_common
 	DEVICE_PACKAGES := ath10k-firmware-qca9887-ct
 endef
 
+define Device/meraki_mr30h
+	$(call Device/meraki_common)
+	DEVICE_MODEL := MR30H
+	DEVICE_DTS_CONFIG := config@2
+endef
+TARGET_DEVICES += meraki_mr30h
+
 define Device/meraki_mr33
 	$(call Device/meraki_common)
 	DEVICE_MODEL := MR33
