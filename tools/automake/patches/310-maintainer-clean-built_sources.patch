@@ -21,7 +21,7 @@
 +      if (! grep { $_ eq '$(BUILT_SOURCES)' } $mcleanvar->value_as_list ($rcond)) {
 +	Automake::Variable::define ($mcleanvar->name, VAR_MAKEFILE, '+', $rcond,
 +				    '$(BUILT_SOURCES)', '', INTERNAL, VAR_ASIS)
-+	  if vardef ('BUILT_SOURCES', $rcond);
++	  if var ('BUILT_SOURCES');
 +      }
 +    }
 +    my $bsources = var ('BUILT_SOURCES');
@@ -30,9 +30,9 @@
 +      {
 +	Automake::Variable::define ($mcleanvar->name, VAR_MAKEFILE, '', $rcond,
 +				    '$(BUILT_SOURCES)', '', INTERNAL, VAR_ASIS)
-+	  if ! vardef ($mcleanvar, $rcond);
++	  if ! ($mcleanvar->def ($rcond) || $mcleanvar->def (TRUE));
 +      }
-+      if (! vardef ($mcleanvar, TRUE)) {
++      if (! $mcleanvar->def (TRUE)) {
 +	Automake::Variable::define ($mcleanvar->name, VAR_MAKEFILE, '', TRUE,
 +				    '$(BUILT_SOURCES)', '', INTERNAL, VAR_ASIS);
 +      }
