@@ -1623,12 +1623,13 @@ hostapd_bss_get_sta_ies(struct ubus_context *ctx, struct ubus_object *obj,
 		return UBUS_STATUS_INVALID_ARGUMENT;
 
 	sta = ap_get_sta(hapd, addr);
-	if (!sta || (!sta->probe_ie_taxonomy && !sta->assoc_ie_taxonomy))
+	if (!sta || (!sta->probe_ie_taxonomy && !sta->assoc_ie_taxonomy && !sta->assoc_frame_taxonomy))
 		return UBUS_STATUS_NOT_FOUND;
 
 	blob_buf_init(&b, 0);
 	hostapd_add_b64_data("probe_ie", sta->probe_ie_taxonomy);
 	hostapd_add_b64_data("assoc_ie", sta->assoc_ie_taxonomy);
+	hostapd_add_b64_data("assoc_frame", sta->assoc_frame_taxonomy);
 	ubus_send_reply(ctx, req, b.head);
 
 	return 0;
