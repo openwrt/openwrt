@@ -1562,11 +1562,6 @@ static int rtmdio_probe(struct platform_device *pdev)
 			priv->interfaces[pn] = PHY_INTERFACE_MODE_NA;
 		dev_dbg(dev, "phy mode of port %d is %s\n", pn, phy_modes(priv->interfaces[pn]));
 
-		if (priv->interfaces[pn] == PHY_INTERFACE_MODE_10G_QXGMII) {
-			priv->interfaces[pn] = PHY_INTERFACE_MODE_USXGMII;
-			dev_warn(dev, "handle mode 10g-qsxgmii internally as usxgmii for now\n");
-		}
-
 		/*
 		 * TODO: The MDIO driver does not need any info about the SerDes. As long as
 		 * the PCS driver cannot completely control the SerDes, look up the information
