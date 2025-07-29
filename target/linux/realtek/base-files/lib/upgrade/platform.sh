@@ -32,8 +32,13 @@ platform_do_upgrade() {
 		tplink_sg2xxx_fix_mtdparts
 		default_do_upgrade "$1"
 		;;
+	plasmacloud,psx8)
+		PART_NAME="inactive"
+		platform_do_upgrade_dualboot_psx "$1"
+		;;
 	*)
 		default_do_upgrade "$1"
 		;;
+
 	esac
 }
