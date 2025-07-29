@@ -250,6 +250,10 @@ tplink,ec220-g5-v2)
 	ucidef_set_led_switch "lan" "lan" "green:lan" "switch1" "0x17"
 	ucidef_set_led_switch "wan" "wan" "orange:wan" "switch1" "0x08"
 	;;
+tplink,ec220-g5-v2-dsa)
+	ucidef_set_led_netdev "lan" "lan" "green:lan" "br-lan"
+	ucidef_set_led_netdev "wan" "wan" "orange:wan" "wan"
+	;;
 tplink,re200-v1)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0"
 	;;
