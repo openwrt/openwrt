@@ -1,0 +1,26 @@
+From e9c54637e971995d06ac8fd7c6d3b57d62848249 Mon Sep 17 00:00:00 2001
+From: Chen Liang <cl@rock-chips.com>
+Date: Fri, 7 Apr 2017 17:25:45 +0800
+Subject: [PATCH] ARM64: dts: rockchip: add cpuinfo support for rk3328
+
+Change-Id: Iaaa400c09c2fb7c0d5e96fa4217065fa14066fc1
+Signed-off-by: Chen Liang <cl@rock-chips.com>
+---
+ arch/arm64/boot/dts/rockchip/rk3328.dtsi | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3328.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3328.dtsi
+@@ -198,6 +198,12 @@
+ 		interrupt-affinity = <&cpu0>, <&cpu1>, <&cpu2>, <&cpu3>;
+ 	};
+ 
++	cpuinfo {
++		compatible = "rockchip,cpuinfo";
++		nvmem-cells = <&efuse_id>, <&efuse_cpu_version>;
++		nvmem-cell-names = "id", "cpu-version";
++	};
++
+ 	display_subsystem: display-subsystem {
+ 		compatible = "rockchip,display-subsystem";
+ 		ports = <&vop_out>;

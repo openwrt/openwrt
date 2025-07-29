@@ -1,0 +1,89 @@
+From 1847729a77175ba5cd64adb419d15dca0f19eb48 Mon Sep 17 00:00:00 2001
+From: David Wu <david.wu@rock-chips.com>
+Date: Thu, 31 Dec 2020 18:34:12 +0800
+Subject: [PATCH] arm64: dts: rockchip: rk3568: Add xpcs support
+
+Change-Id: I431393b2346f5f7fd6b0d74f79e643df9a586479
+Signed-off-by: David Wu <david.wu@rock-chips.com>
+---
+ arch/arm64/boot/dts/rockchip/rk3566.dtsi |  1 +
+ arch/arm64/boot/dts/rockchip/rk3568.dtsi | 32 +++++++++++++++++++++---
+ 2 files changed, 29 insertions(+), 4 deletions(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk356x.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk356x.dtsi
+@@ -269,6 +269,13 @@
+ 		arm,no-tick-in-suspend;
+ 	};
+ 
++	gmac1_xpcsclk: xpcs-gmac1-clock {
++		compatible = "fixed-clock";
++		clock-frequency = <125000000>;
++		clock-output-names = "clk_gmac1_xpcs_mii";
++		#clock-cells = <0>;
++	};
++
+ 	xin24m: xin24m {
+ 		compatible = "fixed-clock";
+ 		clock-frequency = <24000000>;
+@@ -428,6 +435,12 @@
+ 		status = "disabled";
+ 	};
+ 
++	xpcs: syscon@fda00000 {
++		compatible = "rockchip,rk3568-xpcs", "syscon";
++		reg = <0x0 0xfda00000 0x0 0x200000>;
++		status = "disabled";
++	};
++
+ 	pmugrf: syscon@fdc20000 {
+ 		compatible = "rockchip,rk3568-pmugrf", "syscon", "simple-mfd";
+ 		reg = <0x0 0xfdc20000 0x0 0x10000>;
+@@ -727,11 +740,13 @@
+ 		clocks = <&cru SCLK_GMAC1>, <&cru SCLK_GMAC1_RX_TX>,
+ 			 <&cru SCLK_GMAC1_RX_TX>, <&cru CLK_MAC1_REFOUT>,
+ 			 <&cru ACLK_GMAC1>, <&cru PCLK_GMAC1>,
+-			 <&cru SCLK_GMAC1_RX_TX>, <&cru CLK_GMAC1_PTP_REF>;
++			 <&cru SCLK_GMAC1_RX_TX>, <&cru CLK_GMAC1_PTP_REF>,
++			 <&cru PCLK_XPCS>, <&cru CLK_XPCS_EEE>;
+ 		clock-names = "stmmaceth", "mac_clk_rx",
+ 			      "mac_clk_tx", "clk_mac_refout",
+ 			      "aclk_mac", "pclk_mac",
+-			      "clk_mac_speed", "ptp_ref";
++			      "clk_mac_speed", "ptp_ref",
++			      "pclk_xpcs", "clk_xpcs_eee";
+ 		resets = <&cru SRST_A_GMAC1>;
+ 		reset-names = "stmmaceth";
+ 		rockchip,grf = <&grf>;
+--- a/arch/arm64/boot/dts/rockchip/rk3568.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3568.dtsi
+@@ -8,6 +8,13 @@
+ / {
+ 	compatible = "rockchip,rk3568";
+ 
++	gmac0_xpcsclk: xpcs-gmac0-clock {
++		compatible = "fixed-clock";
++		clock-frequency = <125000000>;
++		clock-output-names = "clk_gmac0_xpcs_mii";
++		#clock-cells = <0>;
++	};
++
+ 	sata0: sata@fc000000 {
+ 		compatible = "rockchip,rk3568-dwc-ahci", "snps,dwc-ahci";
+ 		reg = <0 0xfc000000 0 0x1000>;
+@@ -175,11 +182,13 @@
+ 		clocks = <&cru SCLK_GMAC0>, <&cru SCLK_GMAC0_RX_TX>,
+ 			 <&cru SCLK_GMAC0_RX_TX>, <&cru CLK_MAC0_REFOUT>,
+ 			 <&cru ACLK_GMAC0>, <&cru PCLK_GMAC0>,
+-			 <&cru SCLK_GMAC0_RX_TX>, <&cru CLK_GMAC0_PTP_REF>;
++			 <&cru SCLK_GMAC0_RX_TX>, <&cru CLK_GMAC0_PTP_REF>,
++			 <&cru PCLK_XPCS>;
+ 		clock-names = "stmmaceth", "mac_clk_rx",
+ 			      "mac_clk_tx", "clk_mac_refout",
+ 			      "aclk_mac", "pclk_mac",
+-			      "clk_mac_speed", "ptp_ref";
++			      "clk_mac_speed", "ptp_ref",
++			      "pclk_xpcs";
+ 		resets = <&cru SRST_A_GMAC0>;
+ 		reset-names = "stmmaceth";
+ 		rockchip,grf = <&grf>;

@@ -1,0 +1,17 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+
+boot() {
+	case "$(board_name)" in
+	ariaboard,photonicat)
+		( sleep 15s; wifi; ) &
+		;;
+	armsom,sige3)
+		( sleep 50s; wifi; ) &
+		;;
+	armsom,sige7)
+		( sleep 100s; wifi; ) &
+		;;
+	esac
+}

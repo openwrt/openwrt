@@ -1,0 +1,87 @@
+--- a/arch/arm64/boot/dts/rockchip/rk3588-armsom-sige7.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3588-armsom-sige7.dts
+@@ -273,6 +273,24 @@
+ &pcie2x1l1 {
+ 	reset-gpios = <&gpio3 RK_PD4 GPIO_ACTIVE_HIGH>;
+ 	status = "okay";
++
++	pcie@0,0 {
++		reg = <0x00300000 0 0 0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++
++		wifi: wifi@30,0 {
++			compatible = "brcm,bcm4329-fmac", "pci14e4,449d";
++			reg = <0x310000 0 0 0 0>;
++			clocks = <&hym8563>;
++			clock-names = "lpo";
++			interrupt-parent = <&gpio0>;
++			interrupts = <RK_PB2 IRQ_TYPE_LEVEL_LOW>;
++			interrupt-names = "host-wake";
++			pinctrl-names = "default";
++			pinctrl-0 = <&wifi_reg_on_h>;
++		};
++	};
+ };
+ 
+ /* phy0 - left ethernet port */
+@@ -292,12 +310,32 @@
+ };
+ 
+ &pinctrl {
++	bt {
++		bt_reg_on_h: bt-reg-on-h {
++			rockchip,pins = <3 RK_PA6 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++
++		bt_host_wake_h: bt-host-wake-h {
++			rockchip,pins = <0 RK_PC5 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++
++		bt_wake_h: bt-wake-h {
++			rockchip,pins = <3 RK_PD5 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
++
+ 	hym8563 {
+ 		hym8563_int: hym8563-int {
+ 			rockchip,pins = <0 RK_PB0 RK_FUNC_GPIO &pcfg_pull_none>;
+ 		};
+ 	};
+ 
++	pcie {
++		wifi_reg_on_h: wifi-reg-on-h {
++			rockchip,pins = <0 RK_PC4 RK_FUNC_GPIO &pcfg_pull_down>;
++		};
++	};
++
+ 	leds {
+ 		led_rgb_g: led-rgb-g {
+ 			rockchip,pins = <0 RK_PB7 RK_FUNC_GPIO &pcfg_pull_none>;
+@@ -712,6 +750,26 @@
+ 	status = "okay";
+ };
+ 
++&uart6 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart6m1_xfer &uart6m1_ctsn &uart6m1_rtsn>;
++	uart-has-rtscts;
++	status = "okay";
++
++	bluetooth {
++		compatible = "brcm,bcm43438-bt";
++		clocks = <&hym8563>;
++		clock-names = "lpo";
++		device-wakeup-gpios = <&gpio3 RK_PD5 GPIO_ACTIVE_HIGH>;
++		host-wakeup-gpios = <&gpio0 RK_PC5 GPIO_ACTIVE_HIGH>;
++		shutdown-gpios = <&gpio3 RK_PA6 GPIO_ACTIVE_HIGH>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&bt_host_wake_h &bt_wake_h &bt_reg_on_h>;
++		vbat-supply = <&vcc_3v3_s3>;
++		vddio-supply = <&vcc_1v8_s3>;
++	};
++};
++
+ &usbdp_phy1 {
+ 	status = "okay";
+ };

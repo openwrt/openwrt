@@ -1,0 +1,26 @@
+From cc9529c8ba206aaed6bdd3674572a7eb7126d851 Mon Sep 17 00:00:00 2001
+From: Liang Chen <cl@rock-chips.com>
+Date: Tue, 29 Dec 2020 15:22:03 +0800
+Subject: [PATCH] arm64: dts: rockchip: add cpuinfo node for rk3568
+
+Change-Id: Ia98489355ca992d19f8c215978dd25699603c6ce
+Signed-off-by: Liang Chen <cl@rock-chips.com>
+---
+ arch/arm64/boot/dts/rockchip/rk3568.dtsi | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk356x.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk356x.dtsi
+@@ -170,6 +170,12 @@
+ 		};
+ 	};
+ 
++	cpuinfo {
++		compatible = "rockchip,cpuinfo";
++		nvmem-cells = <&otp_id>, <&otp_cpu_version>, <&cpu_code>;
++		nvmem-cell-names = "id", "cpu-version", "cpu-code";
++	};
++
+ 	display_subsystem: display-subsystem {
+ 		compatible = "rockchip,display-subsystem";
+ 		ports = <&vop_out>;

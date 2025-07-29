@@ -1,0 +1,17 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "rk356x-u-boot.dtsi"
+
+/ {
+	chosen {
+		u-boot,spl-boot-order = "same-as-spl", &sdmmc0;
+	};
+};
+
+&pcie3x1 {
+	/delete-property/ vpcie3v3-supply;
+};
+
+&pcie3x2 {
+	/delete-property/ vpcie3v3-supply;
+};

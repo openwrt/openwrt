@@ -1,0 +1,121 @@
+From: Chris Morgan <macroalpha82@gmail.com>
+To: u-boot@lists.denx.de
+Cc: andre.przywara@arm.com, kever.yang@rock-chips.com,
+	philipp.tomsich@vrull.eu, sjg@chromium.org, jagan@edgeble.ai,
+	jonas@kwiboo.se, Chris Morgan <macromorgan@hotmail.com>
+Subject: [PATCH V4 3/7] rockchip: boot_mode: Allow rockchip_dnl_key_pressed() in SPL
+Date: Tue,  2 Jan 2024 09:46:50 -0600	[thread overview]
+Message-ID: <20240102154654.191055-4-macroalpha82@gmail.com> (raw)
+In-Reply-To: <20240102154654.191055-1-macroalpha82@gmail.com>
+
+From: Chris Morgan <macromorgan@hotmail.com>
+
+Update the rockchip_dnl_key_pressed() so that it can run in
+SPL. Also change the ADC channel to a define that can be
+overridden by a board specific option.
+
+Signed-off-by: Chris Morgan <macromorgan@hotmail.com>
+---
+ arch/arm/mach-rockchip/Makefile    |  4 ++--
+ arch/arm/mach-rockchip/boot_mode.c | 11 ++++++++++-
+ 2 files changed, 12 insertions(+), 3 deletions(-)
+
+--- a/arch/arm/mach-rockchip/Makefile
++++ b/arch/arm/mach-rockchip/Makefile
+@@ -15,13 +15,13 @@ obj-tpl-$(CONFIG_ROCKCHIP_PX30) += px30-
+ 
+ obj-spl-$(CONFIG_ROCKCHIP_RK3036) += rk3036-board-spl.o
+ 
+-ifeq ($(CONFIG_XPL_BUILD)$(CONFIG_TPL_BUILD),)
+-
+ # Always include boot_mode.o, as we bypass it (i.e. turn it off)
+ # inside of boot_mode.c when CONFIG_ROCKCHIP_BOOT_MODE_REG is 0.  This way,
+ # we can have the preprocessor correctly recognise both 0x0 and 0
+ # meaning "turn it off".
+ obj-y += boot_mode.o
++
++ifeq ($(CONFIG_SPL_BUILD)$(CONFIG_TPL_BUILD),)
+ obj-$(CONFIG_ROCKCHIP_COMMON_BOARD) += board.o
+ endif
+ 
+--- a/arch/arm/mach-rockchip/boot_mode.c
++++ b/arch/arm/mach-rockchip/boot_mode.c
+@@ -37,6 +37,10 @@ void set_back_to_bootrom_dnl_flag(void)
+ #define KEY_DOWN_MIN_VAL	0
+ #define KEY_DOWN_MAX_VAL	30
+ 
++#ifndef RK_DNL_ADC_CHAN
++#define RK_DNL_ADC_CHAN		0
++#endif
++
+ __weak int rockchip_dnl_key_pressed(void)
+ {
+ #if CONFIG_IS_ENABLED(ADC)
+@@ -52,7 +56,8 @@ __weak int rockchip_dnl_key_pressed(void
+ 	ret = -ENODEV;
+ 	uclass_foreach_dev(dev, uc) {
+ 		if (!strncmp(dev->name, "saradc", 6)) {
+-			ret = adc_channel_single_shot(dev->name, 1, &val);
++			ret = adc_channel_single_shot(dev->name,
++						      RK_DNL_ADC_CHAN, &val);
+ 			break;
+ 		}
+ 	}
+@@ -76,11 +81,13 @@ __weak int rockchip_dnl_key_pressed(void
+ 
+ void rockchip_dnl_mode_check(void)
+ {
++#if CONFIG_IS_ENABLED(ADC)
+ 	if (rockchip_dnl_key_pressed()) {
+ 		printf("download key pressed, entering download mode...");
+ 		set_back_to_bootrom_dnl_flag();
+ 		do_reset(NULL, 0, 0, NULL);
+ 	}
++#endif
+ }
+ 
+ int setup_boot_mode(void)
+@@ -93,6 +100,7 @@ int setup_boot_mode(void)
+ 	boot_mode = readl(reg);
+ 	debug("%s: boot mode 0x%08x\n", __func__, boot_mode);
+ 
++#if !defined(CONFIG_SPL_BUILD) && !defined(CONFIG_TPL_BUILD)
+ 	/* Clear boot mode */
+ 	writel(BOOT_NORMAL, reg);
+ 
+@@ -106,6 +114,7 @@ int setup_boot_mode(void)
+ 		env_set("preboot", "setenv preboot; ums mmc 0");
+ 		break;
+ 	}
++#endif
+ 
+ 	return 0;
+ }
+--- a/arch/arm/mach-rockchip/rk3568/rk3568.c
++++ b/arch/arm/mach-rockchip/rk3568/rk3568.c
+@@ -9,6 +9,7 @@
+ #include <misc.h>
+ #include <asm/armv8/mmu.h>
+ #include <asm/arch-rockchip/bootrom.h>
++#include <asm/arch-rockchip/boot_mode.h>
+ #include <asm/arch-rockchip/grf_rk3568.h>
+ #include <asm/arch-rockchip/hardware.h>
+ #include <dt-bindings/clock/rk3568-cru.h>
+@@ -200,3 +201,17 @@ int checkboard(void)
+ 
+ 	return 0;
+ }
++
++#ifdef CONFIG_SPL_BUILD
++
++void __weak led_setup(void)
++{
++}
++
++void spl_board_init(void)
++{
++	led_setup();
++
++	setup_boot_mode();
++}
++#endif

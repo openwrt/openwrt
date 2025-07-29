@@ -1,0 +1,16 @@
+--- a/arch/arm64/boot/dts/rockchip/rk3566.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3566.dtsi
+@@ -6,6 +6,13 @@
+ 	compatible = "rockchip,rk3566";
+ };
+ 
++&cpu0_opp_table {
++	opp-1992000000 {
++		opp-hz = /bits/ 64 <1992000000>;
++		opp-microvolt = <1150000 1150000 1150000>;
++	};
++};
++
+ &pipegrf {
+ 	compatible = "rockchip,rk3566-pipe-grf", "syscon";
+ };

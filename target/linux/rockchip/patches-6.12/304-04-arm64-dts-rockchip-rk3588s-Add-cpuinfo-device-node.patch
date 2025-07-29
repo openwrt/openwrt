@@ -1,0 +1,26 @@
+From 16b5587b5f6c975c7b546805939dbd563bbc2099 Mon Sep 17 00:00:00 2001
+From: Finley Xiao <finley.xiao@rock-chips.com>
+Date: Wed, 22 Dec 2021 17:37:31 +0800
+Subject: [PATCH] arm64: dts: rockchip: rk3588s: Add cpuinfo device node
+
+Signed-off-by: Finley Xiao <finley.xiao@rock-chips.com>
+Change-Id: I050cc7f6398500e705b27c588948201e571817ea
+---
+ arch/arm64/boot/dts/rockchip/rk3588s.dtsi | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi
+@@ -352,6 +352,12 @@
+ 		cache-unified;
+ 	};
+ 
++	cpuinfo {
++		compatible = "rockchip,cpuinfo";
++		nvmem-cells = <&otp_id>, <&otp_cpu_version>, <&cpu_code>;
++		nvmem-cell-names = "id", "cpu-version", "cpu-code";
++	};
++
+ 	display_subsystem: display-subsystem {
+ 		compatible = "rockchip,display-subsystem";
+ 		ports = <&vop_out>;

@@ -1,0 +1,12 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "rk356x-u-boot.dtsi"
+
+&sdhci {
+	mmc-ddr-1_8v;
+};
+
+&vcc5v0_usb_host {
+	/delete-property/ regulator-always-on;
+	/delete-property/ regulator-boot-on;
+};

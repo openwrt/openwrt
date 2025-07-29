@@ -1,0 +1,97 @@
+--- a/arch/arm64/boot/dts/rockchip/rk3568-roc-pc.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3568-roc-pc.dts
+@@ -69,6 +69,17 @@
+ 		};
+ 	};
+ 
++	sdio_pwrseq: sdio-pwrseq {
++		compatible = "mmc-pwrseq-simple";
++		clocks = <&rk809 1>;
++		clock-names = "ext_clock";
++		pinctrl-names = "default";
++		pinctrl-0 = <&wifi_enable_h>;
++		post-power-on-delay-ms = <100>;
++		power-off-delay-us = <5000000>;
++		reset-gpios = <&gpio3 RK_PD4 GPIO_ACTIVE_LOW>;
++	};
++
+ 	hdmi-con {
+ 		compatible = "hdmi-connector";
+ 		type = "a";
+@@ -503,6 +514,26 @@
+ 		};
+ 	};
+ 
++	bt {
++		bt_enable: bt-enable {
++			rockchip,pins = <3 RK_PA0 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++
++		bt_host_wake: bt-host-wake {
++			rockchip,pins = <3 RK_PA2 RK_FUNC_GPIO &pcfg_pull_down>;
++		};
++
++		bt_wake: bt-wake {
++			rockchip,pins = <3 RK_PA1 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
++
++	sdio-pwrseq {
++		wifi_enable_h: wifi-enable-h {
++			rockchip,pins = <3 RK_PD5 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
++
+ 	usb {
+ 		vcc5v0_host_en: vcc5v0-host-en {
+ 			rockchip,pins = <0 RK_PA6 RK_FUNC_GPIO &pcfg_pull_none>;
+@@ -574,6 +605,22 @@
+ 	status = "okay";
+ };
+ 
++&sdmmc2 {
++	bus-width = <4>;
++	cap-sd-highspeed;
++	cap-sdio-irq;
++	disable-wp;
++	keep-power-in-suspend;
++	mmc-pwrseq = <&sdio_pwrseq>;
++	non-removable;
++	pinctrl-names = "default";
++	pinctrl-0 = <&sdmmc2m0_bus4 &sdmmc2m0_cmd &sdmmc2m0_clk>;
++	sd-uhs-sdr104;
++	vmmc-supply = <&vcc3v3_sys>;
++	vqmmc-supply = <&vcca1v8_pmu>;
++	status = "okay";
++};
++
+ &tsadc {
+ 	status = "okay";
+ };
+@@ -582,6 +629,26 @@
+ 	status = "okay";
+ };
+ 
++&uart8 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart8m0_xfer &uart8m0_ctsn &uart8m0_rtsn>;
++	uart-has-rtscts;
++	status = "okay";
++
++	bluetooth {
++		compatible = "brcm,bcm43438-bt";
++		clocks = <&rk809 1>;
++		clock-names = "lpo";
++		device-wakeup-gpios = <&gpio3 RK_PA1 GPIO_ACTIVE_HIGH>;
++		host-wakeup-gpios = <&gpio3 RK_PA2 GPIO_ACTIVE_HIGH>;
++		shutdown-gpios = <&gpio3 RK_PA0 GPIO_ACTIVE_HIGH>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&bt_host_wake &bt_wake &bt_enable>;
++		vbat-supply = <&vcc3v3_sys>;
++		vddio-supply = <&vcca1v8_pmu>;
++	};
++};
++
+ &usb2phy0_host {
+ 	phy-supply = <&vcc5v0_host>;
+ 	status = "okay";

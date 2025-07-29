@@ -1,0 +1,15 @@
+. /lib/functions.sh
+. /lib/functions/uci-defaults.sh
+
+board="$(board_name)"
+board_config_update
+
+case "$board" in
+lunzn,fastrhino-r68s)
+	ucidef_set_compat_version "1.1"
+	;;
+esac
+
+board_config_flush
+
+exit 0

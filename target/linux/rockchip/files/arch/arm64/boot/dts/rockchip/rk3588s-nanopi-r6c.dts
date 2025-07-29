@@ -1,0 +1,28 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+#include "rk3588s-nanopi-r6s.dts"
+
+/ {
+	model = "FriendlyElec NanoPi R6C";
+	compatible = "friendlyarm,nanopi-r6c", "rockchip,rk3588";
+
+	gpio-leds {
+		led-lan1 {
+			/delete-property/ function-enumerator;
+		};
+
+		led-lan2 {
+			/delete-property/ function-enumerator;
+			function = LED_FUNCTION_PROGRAMMING;
+		};
+	};
+};
+
+&pcie2x1l2 {
+	/delete-node/ pcie@0,0;
+};
+
+&rtl8125_1 {
+	/delete-property/ label;
+};

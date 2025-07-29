@@ -1,0 +1,31 @@
+From 2b80fe5ba53f83c568072a7cdd7478d0b2b7c0fc Mon Sep 17 00:00:00 2001
+From: Lin Jinhan <troy.lin@rock-chips.com>
+Date: Sat, 12 Oct 2019 14:57:42 +0800
+Subject: [PATCH] arm64: dts: rockchip: add rng node for rk3399
+
+use rng of crypto1
+
+Change-Id: Ic8cd339d43012a356d981284726ac4d8158a2316
+Signed-off-by: Lin Jinhan <troy.lin@rock-chips.com>
+---
+ arch/arm64/boot/dts/rockchip/rk3399.dtsi | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3399-base.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3399-base.dtsi
+@@ -2189,6 +2189,15 @@
+ 		};
+ 	};
+ 
++	rng: rng@ff8b8000 {
++		compatible = "rockchip,cryptov1-rng";
++		reg = <0x0 0xff8b8000 0x0 0x1000>;
++		clocks = <&cru SCLK_CRYPTO1>, <&cru HCLK_S_CRYPTO1>;
++		clock-names = "clk_crypto", "hclk_crypto";
++		assigned-clocks = <&cru SCLK_CRYPTO1>, <&cru HCLK_S_CRYPTO1>;
++		assigned-clock-rates = <150000000>, <100000000>;
++	};
++
+ 	gpu: gpu@ff9a0000 {
+ 		compatible = "rockchip,rk3399-mali", "arm,mali-t860";
+ 		reg = <0x0 0xff9a0000 0x0 0x10000>;

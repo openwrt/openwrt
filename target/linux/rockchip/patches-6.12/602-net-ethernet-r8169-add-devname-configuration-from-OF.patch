@@ -1,0 +1,28 @@
+--- a/drivers/net/ethernet/realtek/r8169_main.c
++++ b/drivers/net/ethernet/realtek/r8169_main.c
+@@ -21,6 +21,7 @@
+ #include <linux/in.h>
+ #include <linux/io.h>
+ #include <linux/ip.h>
++#include <linux/of.h>
+ #include <linux/tcp.h>
+ #include <linux/interrupt.h>
+ #include <linux/dma-mapping.h>
+@@ -5384,6 +5385,7 @@ static int rtl_init_one(struct pci_dev *
+ 	struct rtl8169_private *tp;
+ 	int jumbo_max, region, rc;
+ 	struct net_device *dev;
++	const char *devname = of_get_property(pdev->dev.of_node, "label", NULL);
+ 	u32 txconfig;
+ 	u16 xid;
+ 
+@@ -5391,6 +5393,9 @@ static int rtl_init_one(struct pci_dev *
+ 	if (!dev)
+ 		return -ENOMEM;
+ 
++	if (devname)
++		strscpy(dev->name, devname, IFNAMSIZ);
++
+ 	SET_NETDEV_DEV(dev, &pdev->dev);
+ 	dev->netdev_ops = &rtl_netdev_ops;
+ 	tp = netdev_priv(dev);

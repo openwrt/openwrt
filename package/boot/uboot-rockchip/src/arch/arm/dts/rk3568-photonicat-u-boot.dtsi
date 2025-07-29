@@ -1,0 +1,19 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "rk356x-u-boot.dtsi"
+
+/ {
+	pcat-wdt {
+		compatible = "linux,wdt-pcat";
+		port = <&uart4>;
+		status = "okay";
+	};
+};
+
+&gpio0 {
+	bootph-pre-ram;
+};
+
+&vcc3v3_sd {
+	bootph-pre-ram;
+};

@@ -1,0 +1,26 @@
+From 7d56fae4afef7a73e4973c491e324c7fde60203c Mon Sep 17 00:00:00 2001
+From: Lin Jinhan <troy.lin@rock-chips.com>
+Date: Mon, 30 Nov 2020 19:26:29 +0800
+Subject: [PATCH] arm64: dts: rockchip: rk3568: add rng node
+
+Change-Id: I2654c935554ef278c5805bbc4b5c712a65834925
+Signed-off-by: Lin Jinhan <troy.lin@rock-chips.com>
+---
+ arch/arm64/boot/dts/rockchip/rk3568.dtsi | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk356x.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk356x.dtsi
+@@ -1188,10 +1188,10 @@
+ 	};
+ 
+ 	rng: rng@fe388000 {
+-		compatible = "rockchip,rk3568-rng";
++		compatible = "rockchip,cryptov2-rng";
+ 		reg = <0x0 0xfe388000 0x0 0x4000>;
+ 		clocks = <&cru CLK_TRNG_NS>, <&cru HCLK_TRNG_NS>;
+-		clock-names = "core", "ahb";
++		clock-names = "clk_trng", "hclk_trng";
+ 		resets = <&cru SRST_TRNG_NS>;
+ 		status = "disabled";
+ 	};

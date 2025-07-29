@@ -1,0 +1,213 @@
+From f9ae6e992d3d9e80357fee7d65ba0fe2dd37ae1f Mon Sep 17 00:00:00 2001
+From: hmz007 <hmz007@gmail.com>
+Date: Tue, 19 Nov 2019 14:21:51 +0800
+Subject: [PATCH] arm64: dts: nanopi-r2: add rk3328-dmc relate node
+
+Signed-off-by: hmz007 <hmz007@gmail.com>
+---
+ .../rockchip/rk3328-dram-default-timing.dtsi  | 311 ++++++++++++++++++
+ .../dts/rockchip/rk3328-nanopi-r2-common.dtsi |  85 ++++-
+ include/dt-bindings/clock/rockchip-ddr.h      |  63 ++++
+ include/dt-bindings/memory/rk3328-dram.h      | 159 +++++++++
+ 4 files changed, 617 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm64/boot/dts/rockchip/rk3328-dram-default-timing.dtsi
+ create mode 100644 include/dt-bindings/clock/rockchip-ddr.h
+ create mode 100644 include/dt-bindings/memory/rk3328-dram.h
+
+--- a/arch/arm64/boot/dts/rockchip/rk3328-nanopi-r2s.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3328-nanopi-r2s.dts
+@@ -146,6 +146,11 @@
+ 	status = "disabled";
+ };
+ 
++&dmc {
++	center-supply = <&vdd_log>;
++	status = "okay";
++};
++
+ &gmac2io {
+ 	assigned-clocks = <&cru SCLK_MAC2IO>, <&cru SCLK_MAC2IO_EXT>;
+ 	assigned-clock-parents = <&gmac_clk>, <&gmac_clk>;
+@@ -211,6 +216,7 @@
+ 				regulator-name = "vdd_log";
+ 				regulator-always-on;
+ 				regulator-boot-on;
++				regulator-init-microvolt = <1075000>;
+ 				regulator-min-microvolt = <712500>;
+ 				regulator-max-microvolt = <1450000>;
+ 				regulator-ramp-delay = <12500>;
+@@ -225,6 +231,7 @@
+ 				regulator-name = "vdd_arm";
+ 				regulator-always-on;
+ 				regulator-boot-on;
++				regulator-init-microvolt = <1225000>;
+ 				regulator-min-microvolt = <712500>;
+ 				regulator-max-microvolt = <1450000>;
+ 				regulator-ramp-delay = <12500>;
+--- a/arch/arm64/boot/dts/rockchip/rk3328-orangepi-r1-plus.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3328-orangepi-r1-plus.dts
+@@ -112,6 +112,11 @@
+ 	status = "disabled";
+ };
+ 
++&dmc {
++	center-supply = <&vdd_log>;
++	status = "okay";
++};
++
+ &gmac2io {
+ 	assigned-clocks = <&cru SCLK_MAC2IO>, <&cru SCLK_MAC2IO_EXT>;
+ 	assigned-clock-parents = <&gmac_clk>, <&gmac_clk>;
+@@ -171,6 +176,7 @@
+ 				regulator-name = "vdd_log";
+ 				regulator-always-on;
+ 				regulator-boot-on;
++				regulator-init-microvolt = <1075000>;
+ 				regulator-min-microvolt = <712500>;
+ 				regulator-max-microvolt = <1450000>;
+ 				regulator-ramp-delay = <12500>;
+@@ -185,6 +191,7 @@
+ 				regulator-name = "vdd_arm";
+ 				regulator-always-on;
+ 				regulator-boot-on;
++				regulator-init-microvolt = <1225000>;
+ 				regulator-min-microvolt = <712500>;
+ 				regulator-max-microvolt = <1450000>;
+ 				regulator-ramp-delay = <12500>;
+--- a/arch/arm64/boot/dts/rockchip/rk3328-orangepi-r1-plus-lts.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3328-orangepi-r1-plus-lts.dts
+@@ -14,6 +14,21 @@
+ 	compatible = "xunlong,orangepi-r1-plus-lts", "rockchip,rk3328";
+ };
+ 
++&dmc_opp_table {
++	opp-798000000 {
++		status = "disabled";
++	};
++	opp-840000000 {
++		status = "disabled";
++	};
++	opp-924000000 {
++		status = "disabled";
++	};
++	opp-1056000000 {
++		status = "disabled";
++	};
++};
++
+ &gmac2io {
+ 	/delete-property/ tx_delay;
+ 	/delete-property/ rx_delay;
+--- a/arch/arm64/boot/dts/rockchip/rk3328-roc-cc.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3328-roc-cc.dts
+@@ -135,6 +135,64 @@
+ 	cpu-supply = <&vdd_arm>;
+ };
+ 
++&ddr_timing {
++	ddr3a1_ddr4a9_de-skew = <0>;
++	ddr3a0_ddr4a10_de-skew = <0>;
++	ddr3a3_ddr4a6_de-skew = <1>;
++	ddr3a2_ddr4a4_de-skew = <1>;
++	ddr3a5_ddr4a8_de-skew = <0>;
++	ddr3a4_ddr4a5_de-skew = <2>;
++	ddr3a7_ddr4a11_de-skew = <0>;
++	ddr3a6_ddr4a7_de-skew = <2>;
++	ddr3a9_ddr4a0_de-skew = <1>;
++	ddr3a8_ddr4a13_de-skew = <0>;
++	ddr3a11_ddr4a3_de-skew = <2>;
++	ddr3a10_ddr4cs0_de-skew = <0>;
++	ddr3a13_ddr4a2_de-skew = <1>;
++	ddr3a12_ddr4ba1_de-skew = <0>;
++	ddr3a15_ddr4odt0_de-skew = <0>;
++	ddr3a14_ddr4a1_de-skew = <1>;
++	ddr3ba1_ddr4a15_de-skew = <0>;
++	ddr3ba0_ddr4bg0_de-skew = <0>;
++	ddr3ras_ddr4cke_de-skew = <0>;
++	ddr3ba2_ddr4ba0_de-skew = <1>;
++	ddr3we_ddr4bg1_de-skew = <1>;
++	ddr3cas_ddr4a12_de-skew = <0>;
++	ddr3ckn_ddr4ckn_de-skew = <5>;
++	ddr3ckp_ddr4ckp_de-skew = <5>;
++	ddr3cke_ddr4a16_de-skew = <1>;
++	ddr3odt0_ddr4a14_de-skew = <0>;
++	ddr3cs0_ddr4act_de-skew = <1>;
++	ddr3reset_ddr4reset_de-skew = <0>;
++	ddr3cs1_ddr4cs1_de-skew = <0>;
++	ddr3odt1_ddr4odt1_de-skew = <0>;
++};
++
++&dmc {
++	center-supply = <&vdd_logic>;
++	status = "okay";
++};
++
++&dmc_opp_table {
++	/delete-node/ opp-1056000000;
++
++	opp-798000000 {
++		opp-microvolt-L1 = <12000000>;
++	};
++	opp-840000000 {
++		opp-microvolt-L1 = <12000000>;
++	};
++	opp-924000000 {
++		opp-microvolt-L1 = <12000000>;
++	};
++	opp-1068000000 {
++		opp-hz = /bits/ 64 <1068000000>;
++		opp-microvolt = <1175000>;
++		opp-microvolt-L0 = <1175000>;
++		opp-microvolt-L1 = <12000000>;
++	};
++};
++
+ &emmc {
+ 	bus-width = <8>;
+ 	cap-mmc-highspeed;
+@@ -207,6 +265,7 @@
+ 		regulators {
+ 			vdd_logic: DCDC_REG1 {
+ 				regulator-name = "vdd_logic";
++				regulator-init-microvolt = <1075000>;
+ 				regulator-min-microvolt = <712500>;
+ 				regulator-max-microvolt = <1450000>;
+ 				regulator-always-on;
+@@ -219,6 +278,7 @@
+ 
+ 			vdd_arm: DCDC_REG2 {
+ 				regulator-name = "vdd_arm";
++				regulator-init-microvolt = <1225000>;
+ 				regulator-min-microvolt = <712500>;
+ 				regulator-max-microvolt = <1450000>;
+ 				regulator-always-on;
+--- a/arch/arm64/boot/dts/rockchip/rk3328-rock-pi-e.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3328-rock-pi-e.dts
+@@ -135,6 +135,11 @@
+ 	cpu-supply = <&vdd_arm>;
+ };
+ 
++&dmc {
++	center-supply = <&vdd_log>;
++	status = "okay";
++};
++
+ &emmc {
+ 	bus-width = <8>;
+ 	cap-mmc-highspeed;
+@@ -268,6 +273,7 @@
+ 				regulator-name = "vdd_log";
+ 				regulator-always-on;
+ 				regulator-boot-on;
++				regulator-init-microvolt = <1075000>;
+ 				regulator-min-microvolt = <712500>;
+ 				regulator-max-microvolt = <1450000>;
+ 				regulator-ramp-delay = <12500>;
+@@ -282,6 +288,7 @@
+ 				regulator-name = "vdd_arm";
+ 				regulator-always-on;
+ 				regulator-boot-on;
++				regulator-init-microvolt = <1225000>;
+ 				regulator-min-microvolt = <712500>;
+ 				regulator-max-microvolt = <1450000>;
+ 				regulator-ramp-delay = <12500>;

@@ -1,0 +1,48 @@
+From c336f64cf9a9c1bbeb0027f26c94ecfb29367ee1 Mon Sep 17 00:00:00 2001
+From: "Huang, Tao" <huangtao@rock-chips.com>
+Date: Thu, 6 Apr 2017 20:27:14 +0800
+Subject: [PATCH] soc: rockchip: add cpuinfo support
+
+Set system_serial_low/high from eFuse ID.
+Serial can read from /proc/cpuinfo.
+
+Change-Id: If412fc5a89a5e5092b510452fc5a126fdd374ac2
+Signed-off-by: Huang, Tao <huangtao@rock-chips.com>
+---
+ .../soc/rockchip/rockchip-cpuinfo.txt         | 16 ++++
+ drivers/soc/rockchip/Kconfig                  | 10 +++
+ drivers/soc/rockchip/Makefile                 |  1 +
+ drivers/soc/rockchip/rockchip-cpuinfo.c       | 75 +++++++++++++++++++
+ 4 files changed, 102 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/soc/rockchip/rockchip-cpuinfo.txt
+ create mode 100644 drivers/soc/rockchip/rockchip-cpuinfo.c
+
+--- a/drivers/soc/rockchip/Kconfig
++++ b/drivers/soc/rockchip/Kconfig
+@@ -5,6 +5,16 @@ if ARCH_ROCKCHIP || COMPILE_TEST
+ # Rockchip Soc drivers
+ #
+ 
++config ROCKCHIP_CPUINFO
++	tristate "Rockchip cpuinfo support"
++	depends on (NVMEM_ROCKCHIP_EFUSE || NVMEM_ROCKCHIP_OTP) && (ARM64 || ARM)
++	help
++	  Say y here to enable Rockchip cpuinfo support.
++	  Set system_serial_low/high from eFuse ID.
++	  Serial can read from /proc/cpuinfo.
++
++	  If unsure, say N.
++
+ config ROCKCHIP_GRF
+ 	bool "Rockchip General Register Files support" if COMPILE_TEST
+ 	default y if ARCH_ROCKCHIP
+--- a/drivers/soc/rockchip/Makefile
++++ b/drivers/soc/rockchip/Makefile
+@@ -2,6 +2,7 @@
+ #
+ # Rockchip Soc drivers
+ #
++obj-$(CONFIG_ROCKCHIP_CPUINFO) += cpuinfo.o
+ obj-$(CONFIG_ROCKCHIP_GRF) += grf.o
+ obj-$(CONFIG_ROCKCHIP_IODOMAIN) += io-domain.o
+ obj-$(CONFIG_ROCKCHIP_DTPM) += dtpm.o

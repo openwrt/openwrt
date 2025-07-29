@@ -1,0 +1,57 @@
+From 8d4209ee0613dfea700bcfc2ecb6052dc9dc9956 Mon Sep 17 00:00:00 2001
+From: CanYang He <hcy@rock-chips.com>
+Date: Tue, 26 Dec 2017 10:19:46 +0800
+Subject: [PATCH] PM / devfreq: event: add support for rk3328 dfi
+
+This adds the necessary data for handling dfi on the rk3328.
+
+Change-Id: Id870f78dad3ddd6cb5771674a4e8905322f9e8ef
+Signed-off-by: CanYang He <hcy@rock-chips.com>
+---
+ .../bindings/devfreq/event/rockchip-dfi.txt   |  1 +
+ drivers/devfreq/event/rockchip-dfi.c          | 40 ++++++++++++++++++-
+ 2 files changed, 39 insertions(+), 2 deletions(-)
+
+--- a/drivers/devfreq/event/rockchip-dfi.c
++++ b/drivers/devfreq/event/rockchip-dfi.c
+@@ -44,6 +44,9 @@
+ 					 DDRMON_CTRL_LPDDR4 | \
+ 					 DDRMON_CTRL_LPDDR23)
+ 
++#define READ_DRAMTYPE_INFO(n)		(((n) >> 13) & 0x7)
++#define RK3328_GRF_OS_REG2		0x5d0
++
+ #define DDRMON_CH0_WR_NUM		0x20
+ #define DDRMON_CH0_RD_NUM		0x24
+ #define DDRMON_CH0_COUNT_NUM		0x28
+@@ -669,6 +672,22 @@ static int rockchip_ddr_perf_init(struct
+ }
+ #endif
+ 
++static int rk3328_dfi_init(struct rockchip_dfi *dfi)
++{
++	struct regmap *regmap_pmu = dfi->regmap_pmu;
++	u32 val;
++
++	regmap_read(regmap_pmu, RK3328_GRF_OS_REG2, &val);
++	dfi->ddr_type = READ_DRAMTYPE_INFO(val);
++	dfi->channel_mask = BIT(0);
++	dfi->max_channels = 1;
++
++	dfi->ddrmon_stride = 0x0;
++	dfi->ddrmon_ctrl_single = true;
++
++	return 0;
++}
++
+ static int rk3399_dfi_init(struct rockchip_dfi *dfi)
+ {
+ 	struct regmap *regmap_pmu = dfi->regmap_pmu;
+@@ -757,6 +776,7 @@ static int rk3588_dfi_init(struct rockch
+ };
+ 
+ static const struct of_device_id rockchip_dfi_id_match[] = {
++	{ .compatible = "rockchip,rk3328-dfi", .data = rk3328_dfi_init },
+ 	{ .compatible = "rockchip,rk3399-dfi", .data = rk3399_dfi_init },
+ 	{ .compatible = "rockchip,rk3568-dfi", .data = rk3568_dfi_init },
+ 	{ .compatible = "rockchip,rk3588-dfi", .data = rk3588_dfi_init },

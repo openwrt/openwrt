@@ -1,0 +1,36 @@
+From a21e820a5ae04e1b6619f601430b9602c597db33 Mon Sep 17 00:00:00 2001
+From: Tao Huang <huangtao@rock-chips.com>
+Date: Thu, 27 Oct 2016 19:41:45 +0800
+Subject: [PATCH] arm64: cpuinfo: add system serial support
+
+Change-Id: I4542f07226e47e67be1f2792cffaa71fd6401442
+Signed-off-by: Tao Huang <huangtao@rock-chips.com>
+---
+ arch/arm64/kernel/cpuinfo.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/arch/arm64/kernel/cpuinfo.c
++++ b/arch/arm64/kernel/cpuinfo.c
+@@ -25,6 +25,12 @@
+ #include <linux/smp.h>
+ #include <linux/delay.h>
+ 
++unsigned int system_serial_low;
++EXPORT_SYMBOL(system_serial_low);
++
++unsigned int system_serial_high;
++EXPORT_SYMBOL(system_serial_high);
++
+ /*
+  * In case the boot CPU is hotpluggable, we record its initial state and
+  * current state separately. Certain system registers may contain different
+@@ -255,6 +261,9 @@ static int c_show(struct seq_file *m, vo
+ 		seq_printf(m, "CPU revision\t: %d\n\n", MIDR_REVISION(midr));
+ 	}
+ 
++	seq_printf(m, "Serial\t\t: %08x%08x\n",
++		   system_serial_high, system_serial_low);
++
+ 	return 0;
+ }
+ 

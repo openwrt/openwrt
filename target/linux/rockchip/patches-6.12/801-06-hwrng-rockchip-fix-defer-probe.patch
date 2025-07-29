@@ -1,0 +1,27 @@
+From 9c44338fcafc666150d2b931decb2239b14cad53 Mon Sep 17 00:00:00 2001
+From: jjm2473 <jjm2473@gmail.com>
+Date: Mon, 24 Mar 2025 18:57:58 +0800
+Subject: [PATCH] drivers/rockchip-rng: fix -EPROBE_DEFER not propagating
+ upwards
+
+kernel should retry probe later
+---
+ drivers/char/hw_random/rockchip-rng.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
+
+--- a/drivers/char/hw_random/rockchip-rng.c
++++ b/drivers/char/hw_random/rockchip-rng.c
+@@ -499,10 +499,9 @@ static int rk_rng_probe(struct platform_
+ 		rk_rng->mem += rk_rng->soc_data->default_offset;
+ 
+ 	rk_rng->clk_num = devm_clk_bulk_get_all(&pdev->dev, &rk_rng->clk_bulks);
+-	if (rk_rng->clk_num < 0) {
+-		dev_err(&pdev->dev, "failed to get clks property\n");
+-		return -ENODEV;
+-	}
++	if (rk_rng->clk_num < 0)
++		return dev_err_probe(&pdev->dev, rk_rng->clk_num,
++				     "Failed to get clks property\n");
+ 
+ 	platform_set_drvdata(pdev, rk_rng);
+ 

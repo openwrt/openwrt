@@ -1,0 +1,61 @@
+From e8c0448b695911c5a0cc37cadaacaf71d16b04d2 Mon Sep 17 00:00:00 2001
+From: Finley Xiao <finley.xiao@rock-chips.com>
+Date: Thu, 12 Nov 2020 15:43:28 +0800
+Subject: [PATCH] arm64: dts: rockchip: rk3568: Add otp device node
+
+Signed-off-by: Finley Xiao <finley.xiao@rock-chips.com>
+Change-Id: I4ec51ba8d4e1381f787c0137cb475a21e546789d
+---
+ arch/arm64/boot/dts/rockchip/rk3568.dtsi | 29 ++++++++++++++++++++++++
+ 1 file changed, 29 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk356x.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk356x.dtsi
+@@ -894,6 +894,47 @@
+ 		};
+ 	};
+ 
++	otp: otp@fe38c000 {
++		compatible = "rockchip,rk3568-otp";
++		reg = <0x0 0xfe38c000 0x0 0x4000>;
++		clocks = <&cru CLK_OTPC_NS_USR>, <&cru CLK_OTPC_NS_SBPI>,
++			 <&cru PCLK_OTPC_NS>, <&cru PCLK_OTPPHY>;
++		clock-names = "usr", "sbpi", "apb", "phy";
++		resets = <&cru SRST_OTPPHY>;
++		reset-names = "otp_phy";
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		cpu_code: cpu-code@2 {
++			reg = <0x02 0x2>;
++		};
++
++		otp_cpu_version: cpu-version@8 {
++			reg = <0x08 0x1>;
++			bits = <3 3>;
++		};
++
++		otp_id: id@a {
++			reg = <0x0a 0x10>;
++		};
++
++		cpu_leakage: cpu-leakage@1a {
++			reg = <0x1a 0x1>;
++		};
++
++		log_leakage: log-leakage@1b {
++			reg = <0x1b 0x1>;
++		};
++
++		npu_leakage: npu-leakage@1c {
++			reg = <0x1c 0x1>;
++		};
++
++		gpu_leakage: gpu-leakage@1d {
++			reg = <0x1d 0x1>;
++		};
++	};
++
+ 	qos_gpu: qos@fe128000 {
+ 		compatible = "rockchip,rk3568-qos", "syscon";
+ 		reg = <0x0 0xfe128000 0x0 0x20>;

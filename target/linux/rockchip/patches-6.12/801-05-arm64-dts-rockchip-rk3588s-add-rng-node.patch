@@ -1,0 +1,30 @@
+From b56b10f0075e78c72b0ab5bfe9ce64714be48151 Mon Sep 17 00:00:00 2001
+From: Lin Jinhan <troy.lin@rock-chips.com>
+Date: Sat, 18 Sep 2021 16:24:23 +0800
+Subject: [PATCH] arm64: dts: rockchip: rk3588s: add rng node
+
+Signed-off-by: Lin Jinhan <troy.lin@rock-chips.com>
+Change-Id: Ifb8964053daa6b593dd2c2c6a3b8caab8526e56d
+---
+ arch/arm64/boot/dts/rockchip/rk3588s.dtsi | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi
+@@ -1885,6 +1885,16 @@
+ 		status = "disabled";
+ 	};
+ 
++	rng: rng@fe378000 {
++		compatible = "rockchip,trngv1";
++		reg = <0x0 0xfe378000 0x0 0x200>;
++		interrupts = <GIC_SPI 400 IRQ_TYPE_LEVEL_HIGH 0>;
++		clocks = <&scmi_clk SCMI_HCLK_SECURE_NS>;
++		clock-names = "hclk_trng";
++		resets = <&scmi_reset SRST_H_TRNG_NS>;
++		reset-names = "reset";
++	};
++
+ 	i2s0_8ch: i2s@fe470000 {
+ 		compatible = "rockchip,rk3588-i2s-tdm";
+ 		reg = <0x0 0xfe470000 0x0 0x1000>;

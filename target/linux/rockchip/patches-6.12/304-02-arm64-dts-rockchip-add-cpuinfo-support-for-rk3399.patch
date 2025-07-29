@@ -1,0 +1,27 @@
+From f63140be2575c8ae35fdc29a23a9f4a819ec3cd5 Mon Sep 17 00:00:00 2001
+From: "Huang, Tao" <huangtao@rock-chips.com>
+Date: Thu, 6 Apr 2017 20:30:11 +0800
+Subject: [PATCH] arm64: dts: rockchip: add cpuinfo support for rk3399-android
+
+Change-Id: I0eba0017a88added1a84f9c3add1705d8079cd00
+Signed-off-by: Huang, Tao <huangtao@rock-chips.com>
+---
+ arch/arm64/boot/dts/rockchip/rk3399-android.dtsi | 6 ++++++
+ arch/arm64/boot/dts/rockchip/rk3399.dtsi         | 3 +++
+ 2 files changed, 9 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3399-base.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3399-base.dtsi
+@@ -243,6 +243,12 @@
+ 		};
+ 	};
+ 
++	cpuinfo {
++		compatible = "rockchip,cpuinfo";
++		nvmem-cells = <&cpu_id>;
++		nvmem-cell-names = "id";
++	};
++
+ 	display-subsystem {
+ 		compatible = "rockchip,display-subsystem";
+ 		ports = <&vopl_out>, <&vopb_out>;

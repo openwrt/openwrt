@@ -1,0 +1,502 @@
+From 2795c8b31a686bdb8338f9404d18ef7a154f0d75 Mon Sep 17 00:00:00 2001
+From: David Bauer <mail@david-bauer.net>
+Date: Sun, 26 Jul 2020 13:32:59 +0200
+Subject: [PATCH] arm64: rockchip: add OF node for USB eth on NanoPi R2S
+
+This adds the OF node for the USB3 ethernet adapter on the FriendlyARM
+NanoPi R2S. Add the correct value for the RTL8153 LED configuration
+register to match the blink behavior of the other port on the device.
+
+Signed-off-by: David Bauer <mail@david-bauer.net>
+---
+ arch/arm64/boot/dts/rockchip/rk3328-nanopi-r2s.dts | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3328-nanopi-r2c.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3328-nanopi-r2c.dts
+@@ -29,6 +29,7 @@
+ 			motorcomm,clk-out-frequency-hz = <125000000>;
+ 			motorcomm,keep-pll-enabled;
+ 			motorcomm,auto-sleep-disabled;
++			motorcomm,led-data = <0xe004 0x0 0x2600 0x0070 0x000a>;
+ 
+ 			pinctrl-0 = <&eth_phy_reset_pin>;
+ 			pinctrl-names = "default";
+@@ -38,3 +39,7 @@
+ 		};
+ 	};
+ };
++
++&rtl8153 {
++	realtek,led-data = <0x78>;
++};
+--- a/arch/arm64/boot/dts/rockchip/rk3328-nanopi-r2s.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3328-nanopi-r2s.dts
+@@ -410,9 +410,11 @@
+ 	#size-cells = <0>;
+ 
+ 	/* Second port is for USB 3.0 */
+-	rtl8153: device@2 {
+-		compatible = "usbbda,8153";
++	rtl8153: usb-eth@2 {
++		compatible = "realtek,rtl8153";
+ 		reg = <2>;
++
++		realtek,led-data = <0x87>;
+ 	};
+ };
+ 
+--- a/arch/arm64/boot/dts/rockchip/rk3328-orangepi-r1-plus.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3328-orangepi-r1-plus.dts
+@@ -363,9 +363,11 @@
+ 	#size-cells = <0>;
+ 
+ 	/* Second port is for USB 3.0 */
+-	rtl8153: device@2 {
+-		compatible = "usbbda,8153";
++	rtl8153: usb-eth@2 {
++		compatible = "realtek,rtl8153";
+ 		reg = <2>;
++
++		realtek,led-data = <0x87>;
+ 	};
+ };
+ 
+--- a/arch/arm64/boot/dts/rockchip/rk3328-orangepi-r1-plus-lts.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3328-orangepi-r1-plus-lts.dts
+@@ -33,6 +33,7 @@
+ 			motorcomm,keep-pll-enabled;
+ 			motorcomm,rx-clk-drv-microamp = <5020>;
+ 			motorcomm,rx-data-drv-microamp = <5020>;
++			motorcomm,led-data = <0xe004 0x0 0x2600 0x0070 0x000a>;
+ 
+ 			pinctrl-0 = <&eth_phy_reset_pin>;
+ 			pinctrl-names = "default";
+@@ -42,3 +43,7 @@
+ 		};
+ 	};
+ };
++
++&rtl8153 {
++	realtek,led-data = <0x78>;
++};
+--- a/arch/arm64/boot/dts/rockchip/rk3399-nanopi-r4s.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3399-nanopi-r4s.dts
+@@ -83,6 +83,19 @@
+ 	max-link-speed = <1>;
+ 	num-lanes = <1>;
+ 	vpcie3v3-supply = <&vcc3v3_sys>;
++
++	pcie@0 {
++		reg = <0x00000000 0 0 0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++
++		pcie-eth@0,0 {
++			compatible = "pci10ec,8168";
++			reg = <0x000000 0 0 0 0>;
++
++			realtek,led-data = <0x870>;
++		};
++	};
+ };
+ 
+ &pinctrl {
+--- a/arch/arm64/boot/dts/rockchip/rk3566-nanopi-r3s.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3566-nanopi-r3s.dts
+@@ -417,6 +417,25 @@
+ 		reset-assert-us = <20000>;
+ 		reset-deassert-us = <100000>;
+ 		reset-gpios = <&gpio4 RK_PC2 GPIO_ACTIVE_LOW>;
++
++		leds {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			led@1 {
++				reg = <1>;
++				color = <LED_COLOR_ID_AMBER>;
++				function = LED_FUNCTION_WAN;
++				default-state = "keep";
++			};
++
++			led@2 {
++				reg = <2>;
++				color = <LED_COLOR_ID_GREEN>;
++				function = LED_FUNCTION_WAN;
++				default-state = "keep";
++			};
++		};
+ 	};
+ };
+ 
+@@ -425,6 +444,18 @@
+ 	pinctrl-0 = <&pcie_reset_h>;
+ 	reset-gpios = <&gpio4 RK_PC6 GPIO_ACTIVE_HIGH>;
+ 	status = "okay";
++
++	pcie@0,0 {
++		reg = <0x00000000 0 0 0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++
++		rtl8168: pcie@1,0 {
++			compatible = "pci10ec,8168";
++			reg = <0x000000 0 0 0 0>;
++			realtek,led-data = <0x870>;
++		};
++	};
+ };
+ 
+ &pinctrl {
+--- a/arch/arm64/boot/dts/rockchip/rk3568-fastrhino-r66s.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3568-fastrhino-r66s.dtsi
+@@ -369,6 +369,19 @@
+ 	reset-gpios = <&gpio0 RK_PC3 GPIO_ACTIVE_HIGH>;
+ 	vpcie3v3-supply = <&vcc3v3_pcie>;
+ 	status = "okay";
++
++	pcie@0,0 {
++		reg = <0x00100000 0 0 0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++
++		rtl8125_1: pcie-eth@10,0 {
++			compatible = "pci10ec,8125";
++			reg = <0x000000 0 0 0 0>;
++
++			realtek,led-data = <0x200 0x2b 0x0 0x0>;
++		};
++	};
+ };
+ 
+ &pcie3x2 {
+@@ -376,6 +389,19 @@
+ 	reset-gpios = <&gpio0 RK_PC6 GPIO_ACTIVE_HIGH>;
+ 	vpcie3v3-supply = <&vcc3v3_pcie>;
+ 	status = "okay";
++
++	pcie@0,0 {
++		reg = <0x00200000 0 0 0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++
++		rtl8125_2: pcie-eth@20,0 {
++			compatible = "pci10ec,8125";
++			reg = <0x000000 0 0 0 0>;
++
++			realtek,led-data = <0x200 0x2b 0x0 0x0>;
++		};
++ 	};
+ };
+ 
+ &pinctrl {
+--- a/arch/arm64/boot/dts/rockchip/rk3568-fastrhino-r68s.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3568-fastrhino-r68s.dts
+@@ -31,6 +31,7 @@
+ 	assigned-clock-parents = <&cru SCLK_GMAC0_RGMII_SPEED>;
+ 	assigned-clock-rates = <0>, <125000000>;
+ 	clock_in_out = "output";
++	label = "eth0";
+ 	phy-handle = <&rgmii_phy0>;
+ 	phy-mode = "rgmii-id";
+ 	pinctrl-names = "default";
+@@ -47,6 +48,7 @@
+ 	assigned-clock-parents = <&cru SCLK_GMAC1_RGMII_SPEED>;
+ 	assigned-clock-rates = <0>, <125000000>;
+ 	clock_in_out = "output";
++	label = "eth1";
+ 	phy-handle = <&rgmii_phy1>;
+ 	phy-mode = "rgmii-id";
+ 	pinctrl-names = "default";
+@@ -67,6 +69,25 @@
+ 		reset-assert-us = <20000>;
+ 		reset-deassert-us = <100000>;
+ 		reset-gpios = <&gpio1 RK_PB0 GPIO_ACTIVE_LOW>;
++
++		leds {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			led@1 {
++				reg = <1>;
++				color = <LED_COLOR_ID_GREEN>;
++				function = LED_FUNCTION_LAN;
++				default-state = "keep";
++			};
++
++			led@2 {
++				reg = <2>;
++				color = <LED_COLOR_ID_AMBER>;
++				function = LED_FUNCTION_LAN;
++				default-state = "keep";
++			};
++		};
+ 	};
+ };
+ 
+@@ -79,6 +100,25 @@
+ 		reset-assert-us = <20000>;
+ 		reset-deassert-us = <100000>;
+ 		reset-gpios = <&gpio1 RK_PB1 GPIO_ACTIVE_LOW>;
++
++		leds {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			led@1 {
++				reg = <1>;
++				color = <LED_COLOR_ID_GREEN>;
++				function = LED_FUNCTION_LAN;
++				default-state = "keep";
++			};
++
++			led@2 {
++				reg = <2>;
++				color = <LED_COLOR_ID_AMBER>;
++				function = LED_FUNCTION_LAN;
++				default-state = "keep";
++			};
++		};
+ 	};
+ };
+ 
+@@ -100,6 +140,14 @@
+ 	vccio3-supply = <&vcc_3v3>;
+ };
+ 
++&rtl8125_1 {
++	label = "eth3";
++};
++
++&rtl8125_2 {
++	label = "eth2";
++};
++
+ &sdhci {
+ 	bus-width = <8>;
+ 	max-frequency = <200000000>;
+--- a/arch/arm64/boot/dts/rockchip/rk3568-nanopi-r5c.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3568-nanopi-r5c.dts
+@@ -69,6 +69,19 @@
+ 	reset-gpios = <&gpio0 RK_PA0 GPIO_ACTIVE_HIGH>;
+ 	vpcie3v3-supply = <&vcc3v3_pcie>;
+ 	status = "okay";
++
++	pcie@0,0 {
++		reg = <0x00100000 0 0 0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++
++		rtl8125_1: pcie-eth@10,0 {
++			compatible = "pci10ec,8125";
++			reg = <0x000000 0 0 0 0>;
++
++			realtek,led-data = <0x0 0x0 0x2b 0x200>;
++		};
++ 	};
+ };
+ 
+ &pcie3x2 {
+@@ -76,6 +89,19 @@
+ 	reset-gpios = <&gpio0 RK_PB6 GPIO_ACTIVE_HIGH>;
+ 	vpcie3v3-supply = <&vcc3v3_pcie>;
+ 	status = "okay";
++
++	pcie@0,0 {
++		reg = <0x00200000 0 0 0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++
++		rtl8125_2: pcie-eth@20,0 {
++			compatible = "pci10ec,8125";
++			reg = <0x000000 0 0 0 0>;
++
++			realtek,led-data = <0x0 0x0 0x2b 0x200>;
++		};
++ 	};
+ };
+ 
+ &pinctrl {
+--- a/arch/arm64/boot/dts/rockchip/rk3568-nanopi-r5s.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3568-nanopi-r5s.dts
+@@ -78,6 +78,25 @@
+ 		reg = <1>;
+ 		pinctrl-0 = <&eth_phy0_reset_pin>;
+ 		pinctrl-names = "default";
++
++		leds {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			led@1 {
++				reg = <1>;
++				color = <LED_COLOR_ID_AMBER>;
++				function = LED_FUNCTION_LAN;
++				default-state = "keep";
++			};
++
++			led@2 {
++				reg = <2>;
++				color = <LED_COLOR_ID_GREEN>;
++				function = LED_FUNCTION_LAN;
++				default-state = "keep";
++			};
++		};
+ 	};
+ };
+ 
+@@ -85,6 +104,19 @@
+ 	num-lanes = <1>;
+ 	reset-gpios = <&gpio0 RK_PB6 GPIO_ACTIVE_HIGH>;
+ 	status = "okay";
++
++	pcie@0,0 {
++		reg = <0x00000000 0 0 0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++
++		rtl8125_1: pcie@1,0 {
++			compatible = "pci10ec,8125";
++			reg = <0x000000 0 0 0 0>;
++
++			realtek,led-data = <0x0 0x0 0x2b 0x200>;
++		};
++	};
+ };
+ 
+ &pcie30phy {
+@@ -97,6 +129,19 @@
+ 	reset-gpios = <&gpio0 RK_PA0 GPIO_ACTIVE_HIGH>;
+ 	vpcie3v3-supply = <&vcc3v3_pcie>;
+ 	status = "okay";
++
++	pcie@0,0 {
++		reg = <0x00100000 0 0 0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++
++		rtl8125_2: pcie@10,0 {
++			compatible = "pci10ec,8125";
++			reg = <0x000000 0 0 0 0>;
++
++			realtek,led-data = <0x0 0x0 0x2b 0x200>;
++		};
++	};
+ };
+ 
+ &pcie3x2 {
+--- a/arch/arm64/boot/dts/rockchip/rk3568-rock-3a.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3568-rock-3a.dts
+@@ -591,6 +591,25 @@
+ 		reset-assert-us = <20000>;
+ 		reset-deassert-us = <100000>;
+ 		reset-gpios = <&gpio3 RK_PB0 GPIO_ACTIVE_LOW>;
++
++		leds {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			led@1 {
++				reg = <1>;
++				color = <LED_COLOR_ID_AMBER>;
++				function = LED_FUNCTION_LAN;
++				default-state = "keep";
++			};
++
++			led@2 {
++				reg = <2>;
++				color = <LED_COLOR_ID_GREEN>;
++				function = LED_FUNCTION_LAN;
++				default-state = "keep";
++			};
++		};
+ 	};
+ };
+ 
+--- a/arch/arm64/boot/dts/rockchip/rk3588-armsom-sige7.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3588-armsom-sige7.dts
+@@ -267,6 +267,19 @@
+ &pcie2x1l0 {
+ 	reset-gpios = <&gpio4 RK_PA5 GPIO_ACTIVE_HIGH>;
+ 	status = "okay";
++
++	pcie@0,0 {
++		reg = <0x00200000 0 0 0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++
++		rtl8125_1: pcie@20,0 {
++			compatible = "pci10ec,8125";
++			reg = <0x000000 0 0 0 0>;
++
++			realtek,led-data = <0x0 0x2b 0x200 0x0>;
++		};
++	};
+ };
+ 
+ /* phy2 - WiFi */
+@@ -297,6 +310,19 @@
+ &pcie2x1l2 {
+ 	reset-gpios = <&gpio3 RK_PB0 GPIO_ACTIVE_HIGH>;
+ 	status = "okay";
++
++	pcie@0,0 {
++		reg = <0x00400000 0 0 0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++
++		rtl8125_2: pcie@40,0 {
++			compatible = "pci10ec,8125";
++			reg = <0x000000 0 0 0 0>;
++
++			realtek,led-data = <0x0 0x2b 0x200 0x0>;
++		};
++	};
+ };
+ 
+ &pcie30phy {
+--- a/arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6.dtsi
+@@ -508,6 +508,20 @@
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pcie2_0_rst>;
+ 	status = "okay";
++
++	pcie@0,0 {
++		reg = <0x00200000 0 0 0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++
++		rtl8125_1: pcie@20,0 {
++			compatible = "pci10ec,8125";
++			reg = <0x000000 0 0 0 0>;
++
++			realtek,led-data = <0x0 0x0 0x2b 0x200>;
++			label = "eth2";
++		};
++	};
+ };
+ 
+ &pcie2x1l1 {
+@@ -524,6 +538,20 @@
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pcie2_2_rst>;
+ 	status = "okay";
++
++	pcie@0,0 {
++		reg = <0x00400000 0 0 0 0>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++
++		rtl8125_2: pcie@40,0 {
++			compatible = "pci10ec,8125";
++			reg = <0x000000 0 0 0 0>;
++
++			realtek,led-data = <0x0 0x0 0x2b 0x200>;
++			label = "eth1";
++		};
++	};
+ };
+ 
+ &pcie30phy {
