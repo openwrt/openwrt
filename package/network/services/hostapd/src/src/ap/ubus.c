@@ -1162,17 +1162,21 @@ enum {
 	BEACON_REQ_DURATION,
 	BEACON_REQ_BSSID,
 	BEACON_REQ_SSID,
+	BEACON_REQ_REPORTING_DETAIL,
+	BEACON_REQ_CHANNEL_REPORTS,
 	__BEACON_REQ_MAX,
 };
 
 static const struct blobmsg_policy beacon_req_policy[__BEACON_REQ_MAX] = {
 	[BEACON_REQ_ADDR] = { "addr", BLOBMSG_TYPE_STRING },
-	[BEACON_REQ_OP_CLASS] { "op_class", BLOBMSG_TYPE_INT32 },
-	[BEACON_REQ_CHANNEL] { "channel", BLOBMSG_TYPE_INT32 },
-	[BEACON_REQ_DURATION] { "duration", BLOBMSG_TYPE_INT32 },
-	[BEACON_REQ_MODE] { "mode", BLOBMSG_TYPE_INT32 },
-	[BEACON_REQ_BSSID] { "bssid", BLOBMSG_TYPE_STRING },
-	[BEACON_REQ_SSID] { "ssid", BLOBMSG_TYPE_STRING },
+	[BEACON_REQ_OP_CLASS] = { "op_class", BLOBMSG_TYPE_INT32 },
+	[BEACON_REQ_CHANNEL] = { "channel", BLOBMSG_TYPE_INT32 },
+	[BEACON_REQ_DURATION] = { "duration", BLOBMSG_TYPE_INT32 },
+	[BEACON_REQ_MODE] = { "mode", BLOBMSG_TYPE_INT32 },
+	[BEACON_REQ_BSSID] = { "bssid", BLOBMSG_TYPE_STRING },
+	[BEACON_REQ_SSID] = { "ssid", BLOBMSG_TYPE_STRING },
+	[BEACON_REQ_REPORTING_DETAIL] = { "reporting_detail", BLOBMSG_TYPE_INT32 },
+	[BEACON_REQ_CHANNEL_REPORTS] = { "channel_reports", BLOBMSG_TYPE_ARRAY },
 };
 
 static int
@@ -1188,6 +1192,7 @@ hostapd_rrm_beacon_req(struct ubus_context *ctx, struct ubus_object *obj,
 	u8 addr[ETH_ALEN];
 	int mode, rem, ret;
 	int buf_len = 13;
+	int reporting_detail = 255;
 
 	blobmsg_parse(beacon_req_policy, __BEACON_REQ_MAX, tb, blob_data(msg), blob_len(msg));
 
@@ -1205,6 +1210,9 @@ hostapd_rrm_beacon_req(struct ubus_context *ctx, struct ubus_object *obj,
 	if (tb[BEACON_REQ_BSSID] &&
 	    hwaddr_aton(blobmsg_data(tb[BEACON_REQ_BSSID]), bssid))
 		return UBUS_STATUS_INVALID_ARGUMENT;
+
+	if (tb[BEACON_REQ_REPORTING_DETAIL])
+		reporting_detail = blobmsg_get_u32(tb[BEACON_REQ_REPORTING_DETAIL]);
 
 	req = wpabuf_alloc(buf_len);
 	if (!req)
@@ -1232,6 +1240,14 @@ hostapd_rrm_beacon_req(struct ubus_context *ctx, struct ubus_object *obj,
 		wpabuf_put_u8(req, WLAN_EID_SSID);
 		wpabuf_put_u8(req, blobmsg_data_len(cur) - 1);
 		wpabuf_put_data(req, blobmsg_data(cur), blobmsg_data_len(cur) - 1);
+	}
+
+	/* as per 9-106 */
+	if (reporting_detail >= 0 && reporting_detail < 3) {
+		/* as per 9-104 */
+		wpabuf_put_u8(req, 2);
+		wpabuf_put_u8(req, 1);
+		wpabuf_put_le16(req, reporting_detail);
 	}
 
 	ret = hostapd_send_beacon_req(hapd, addr, 0, req);
