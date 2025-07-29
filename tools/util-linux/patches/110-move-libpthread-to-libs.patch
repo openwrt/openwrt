@@ -1,0 +1,28 @@
+From 15bc69131a1e08019096251ea848104e57d99a12 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sun, 27 Jul 2025 11:55:56 -0700
+Subject: [PATCH] move libpthread to Libs
+
+OpewWrt uses static host libraries and as such dependant libraries must
+be moved to public Libs. meson handles this automatically but Autotools
+does not.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ libuuid/uuid.pc.in | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/libuuid/uuid.pc.in b/libuuid/uuid.pc.in
+index 51929fe80d72..9fe908b61f12 100644
+--- a/libuuid/uuid.pc.in
++++ b/libuuid/uuid.pc.in
+@@ -7,5 +7,4 @@ Name: uuid
+ Description: Universally unique id library
+ Version: @LIBUUID_VERSION@
+ Cflags: -I${includedir}/uuid
+-Libs.private: @SOCKET_LIBS@ -lpthread
+-Libs: -L${libdir} -luuid
++Libs: -L${libdir} -luuid @SOCKET_LIBS@ -lpthread
+-- 
+2.50.1
+
