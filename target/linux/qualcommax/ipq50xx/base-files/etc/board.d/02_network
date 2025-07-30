@@ -21,7 +21,8 @@ ipq50xx_setup_interfaces()
 	xiaomi,ax6000)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
-	yuncore,ax830)
+	yuncore,ax830|\
+	yuncore,ax850)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
 	esac
