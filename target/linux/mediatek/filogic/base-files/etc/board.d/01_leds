@@ -18,6 +18,23 @@ cudy,re3000-v1)
 cudy,wr3000-v1)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan"
 	;;
+livinet,li320|\
+livinet,li323|\
+livinet,li323-ubootmod|\
+livinet,li320-ubootmod)
+	ucidef_set_led_netdev "internet" "INTERNET" "blue:wan" "wan"
+	ucidef_set_led_netdev "wlan2g" "WLAN2G" "blue:wlan-24" "phy0-ap0"
+	ucidef_set_led_netdev "wlan5g" "WLAN5G" "blue:mesh" "phy1-ap0"
+	ucidef_set_led_netdev "lan-1" "lan-1" "blue:lan-1" "lan1" "link tx rx"
+	ucidef_set_led_netdev "lan-2" "lan-2" "blue:lan-2" "lan2" "link tx rx"
+	ucidef_set_led_netdev "lan-3" "lan-3" "blue:lan-3" "lan3" "link tx rx"
+	ucidef_set_led_netdev "wan-off" "wan-off" "red:wan" "eth1" "link"
+	ucidef_set_led_netdev "wan" "wan" "blue:wan" "eth1" "link"
+	;;
+livinet,li327|\
+livinet,li327-ubootmod)
+	ucidef_set_led_netdev "wan_led" "WAN Status" "green:wan" "wan"
+	;;
 mercusys,mr90x-v1)
 	ucidef_set_led_netdev "lan0" "lan0" "green:lan0" "lan0" "link tx rx"
 	ucidef_set_led_netdev "lan1" "lan2" "green:lan1" "lan1" "link tx rx"
