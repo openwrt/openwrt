@@ -12,8 +12,6 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
  libuuid/uuid.pc.in | 3 +--
  1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/libuuid/uuid.pc.in b/libuuid/uuid.pc.in
-index 51929fe80d72..9fe908b61f12 100644
 --- a/libuuid/uuid.pc.in
 +++ b/libuuid/uuid.pc.in
 @@ -7,5 +7,4 @@ Name: uuid
@@ -23,6 +21,3 @@ index 51929fe80d72..9fe908b61f12 100644
 -Libs.private: @SOCKET_LIBS@ -lpthread
 -Libs: -L${libdir} -luuid
 +Libs: -L${libdir} -luuid @SOCKET_LIBS@ -lpthread
--- 
-2.50.1
-
