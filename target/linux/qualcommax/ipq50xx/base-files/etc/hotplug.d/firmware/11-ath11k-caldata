@@ -34,7 +34,8 @@ case "$FIRMWARE" in
 	xiaomi,ax6000)
 		caldata_extract "0:art" 0x1000 0x20000
 		;;
-	yuncore,ax830)
+	yuncore,ax830|\
+	yuncore,ax850)
 		caldata_extract "0:ART" 0x1000 0x20000
 		label_mac=$(mtd_get_mac_binary 0:ART 0)
 		ath11k_patch_mac $(macaddr_add $label_mac 2) 0
@@ -86,6 +87,13 @@ case "$FIRMWARE" in
 		;;
 	xiaomi,ax6000)
 		caldata_extract "0:art" 0x26800 0x20000
+		;;
+	yuncore,ax850)
+		caldata_extract "0:ART" 0x26800 0x20000
+		label_mac=$(mtd_get_mac_binary 0:ART 0)
+		ath11k_patch_mac $(macaddr_add $label_mac 3) 0
+		ath11k_remove_regdomain
+		ath11k_set_macflag
 		;;
 	esac
 	;;
