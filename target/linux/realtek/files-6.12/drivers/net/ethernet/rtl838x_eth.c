@@ -83,6 +83,8 @@ extern int rtl931x_write_sds_phy(int phy_addr, int page, int phy_reg, u16 v);
 #define RTMDIO_ABS		BIT(2)
 #define RTMDIO_PKG		BIT(3)
 
+#define RTMDIO_838X_BASE	(0xe780)
+
 struct p_hdr {
 	uint8_t		*buf;
 	uint16_t	reserved;
@@ -1647,7 +1649,7 @@ struct rtmdio_bus_priv {
 	bool raw[RTMDIO_MAX_PORT];
 	int smi_bus[RTMDIO_MAX_PORT];
 	u8 smi_addr[RTMDIO_MAX_PORT];
-	u32 sds_id[RTMDIO_MAX_PORT];
+	int sds_id[RTMDIO_MAX_PORT];
 	bool smi_bus_isc45[RTMDIO_MAX_SMI_BUS];
 	bool phy_is_internal[RTMDIO_MAX_PORT];
 	phy_interface_t interfaces[RTMDIO_MAX_PORT];
@@ -1655,6 +1657,8 @@ struct rtmdio_bus_priv {
 	int (*write_mmd_phy)(u32 port, u32 addr, u32 reg, u32 val);
 	int (*read_phy)(u32 port, u32 page, u32 reg, u32 *val);
 	int (*write_phy)(u32 port, u32 page, u32 reg, u32 val);
+	int (*read_sds_phy)(int sds, int page, int regnum);
+	int (*write_sds_phy)(int sds, int page, int regnum, u16 val);
 };
 
 /*
@@ -1750,18 +1754,43 @@ int phy_port_read_paged(struct phy_device *phydev, int port, int page, u32 regnu
 
 /* SerDes reader/writer functions for the ports without external phy. */
 
-static int rtmdio_838x_read_sds(int addr, int regnum)
-{
-	int offset = addr == 26 ? 0x100 : 0x0;
+/*
+ * The RTL838x has 6 SerDes. The 16 bit registers start at 0xbb00e780 and are mapped directly into
+ * 32 bit memory addresses. High 16 bits are always empty. A "lower" memory block serves pages 0/3
+ * a "higher" memory block pages 1/2.
+ */
 
-	return sw_r32(RTL838X_SDS4_FIB_REG0 + offset + (regnum << 2)) & 0xffff;
+static int rtmdio_838x_reg_offset(int sds, int page, int regnum)
+{
+	if (sds < 0 || sds > 5)
+		return -EINVAL;
+
+	if (page == 0 || page == 3)
+		return (sds << 9) + (page << 7) + (regnum << 2);
+	else if (page == 1 || page == 2)
+		return 0xb80 + (sds << 8) + (page << 7) + (regnum << 2);
+
+	return -EINVAL;
 }
 
-static int rtmdio_838x_write_sds(int addr, int regnum, u16 val)
+static int rtmdio_838x_read_sds_phy(int sds, int page, int regnum)
 {
-	int offset = addr == 26 ? 0x100 : 0x0;
+	int offset = rtmdio_838x_reg_offset(sds, page, regnum);
 
-	sw_w32(val, RTL838X_SDS4_FIB_REG0 + offset + (regnum << 2));
+	if (offset < 0)
+		return offset;
+
+	return sw_r32(RTMDIO_838X_BASE + offset) & GENMASK(15, 0);
+}
+
+static int rtmdio_838x_write_sds_phy(int sds, int page, int regnum, u16 val)
+{
+	int offset = rtmdio_838x_reg_offset(sds, page, regnum);
+
+	if (offset < 0)
+		return offset;
+
+	sw_w32(val, RTMDIO_838X_BASE + offset);
 
 	return 0;
 }
@@ -1950,6 +1979,58 @@ static int rtmdio_read_c45(struct mii_bus *bus, int addr, int devnum, int regnum
 	return err ? err : val;
 }
 
+static int rtmdio_map_sds_register(int page, int regnum, int *sds_page, int *sds_regnum)
+{
+	/*
+	 * For the SerDes PHY simulate a register mapping like common RealTek PHYs do. Always
+	 * keep the common registers 0x00-0x0f in place and map the SerDes registers into the
+	 * upper vendor specific registers 0x10-0x17 according to the page select register
+	 * (0x1f). That gives a register mapping as follows:
+	 *
+	 * +-----------------------+-----------------------+---------------+-----------------+
+	 * | reg 0x00-0x0f         | reg 0x10-0x17         | reg 0x18-0x1e | reg 0x1f        |
+	 * +-----------------------+-----------------------+---------------+-----------------+
+	 * | SerDes fiber page (2) | real SerDes registers | zero          | SerDes page     |
+	 * | registers 0x00-0x0f   | in packages of 8      |               | select register |
+	 * +-----------------------+-----------------------+---------------+-----------------+
+	 */
+
+	if (regnum < 16) {
+		*sds_page = 2;
+		*sds_regnum = regnum;
+	} else if (regnum < 24) {
+		*sds_page = page / 4;
+		*sds_regnum = 8 * (page % 4) + (regnum - 16);
+	} else
+		return 0;
+
+	return 1;
+}
+
+static int rtmdio_read_sds_phy(struct rtmdio_bus_priv *priv, int sds, int page, int regnum)
+{
+	int ret, sds_page, sds_regnum;
+
+	ret = rtmdio_map_sds_register(page, regnum, &sds_page, &sds_regnum);
+	if (ret)
+		ret = priv->read_sds_phy(sds, sds_page, sds_regnum);
+	pr_debug("rd_SDS(sds=%d, pag=%d, reg=%d) = %d\n", sds, page, regnum, ret);
+
+	return ret;
+}
+
+static int rtmdio_write_sds_phy(struct rtmdio_bus_priv *priv, int sds, int page, int regnum, u16 val)
+{
+	int ret, sds_page, sds_regnum;
+
+	ret = rtmdio_map_sds_register(page, regnum, &sds_page, &sds_regnum);
+	if (ret)
+		ret = priv->write_sds_phy(sds, sds_page, sds_regnum, val);
+	pr_debug("wr_SDS(sds=%d, pag=%d, reg=%d, val=%d) err = %d\n", sds, page, regnum, val, ret);
+
+	return ret;
+}
+
 static int rtmdio_83xx_read(struct mii_bus *bus, int addr, int regnum)
 {
 	struct rtmdio_bus_priv *priv = bus->priv;
@@ -1961,16 +2042,18 @@ static int rtmdio_83xx_read(struct mii_bus *bus, int addr, int regnum)
 	if (addr >= priv->cpu_port)
 		return -ENODEV;
 
-	if (addr >= 24 && addr <= 27 && priv->id == 0x8380)
-		return rtmdio_838x_read_sds(addr, regnum);
-
-	if (priv->family_id == RTL8390_FAMILY_ID && priv->phy_is_internal[addr])
-		return rtl839x_read_sds_phy(addr, regnum);
-
 	if (regnum == RTMDIO_PAGE_SELECT && priv->page[addr] != priv->rawpage)
 		return priv->page[addr];
 
 	priv->raw[addr] = (priv->page[addr] == priv->rawpage);
+	if ((priv->phy_is_internal[addr]) && (priv->sds_id[addr] >=0)) {
+		if (priv->family_id == RTL8380_FAMILY_ID)
+			return rtmdio_read_sds_phy(priv, priv->sds_id[addr],
+						   priv->page[addr], regnum);
+		else
+			return rtl839x_read_sds_phy(addr, regnum);
+	}
+
 	err = (*priv->read_phy)(addr, priv->page[addr], regnum, &val);
 	pr_debug("rd_PHY(adr=%d, pag=%d, reg=%d) = %d, err = %d\n",
 		 addr, priv->page[addr], regnum, val, err);
@@ -2042,17 +2125,19 @@ static int rtmdio_83xx_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 
 	page = priv->page[addr];
 
-	if (addr >= 24 && addr <= 27 && priv->id == 0x8380)
-		return rtmdio_838x_write_sds(addr, regnum, val);
-
-	if (priv->family_id == RTL8390_FAMILY_ID && priv->phy_is_internal[addr])
-		return rtl839x_write_sds_phy(addr, regnum, val);
-
 	if (regnum == RTMDIO_PAGE_SELECT)
 		priv->page[addr] = val;
 
 	if (!priv->raw[addr] && (regnum != RTMDIO_PAGE_SELECT || page == priv->rawpage)) {
 		priv->raw[addr] = (page == priv->rawpage);
+		if (priv->phy_is_internal[addr] && priv->sds_id[addr] >=0 ) {
+			if (priv->family_id == RTL8380_FAMILY_ID)
+				return rtmdio_write_sds_phy(priv, priv->sds_id[addr],
+							    priv->page[addr], regnum, val);
+			else
+				return rtl839x_write_sds_phy(addr, regnum, val);
+		}
+
 		err = (*priv->write_phy)(addr, page, regnum, val);
 		pr_debug("wr_PHY(adr=%d, pag=%d, reg=%d, val=%d) err = %d\n",
 			 addr, page, regnum, val, err);
@@ -2377,6 +2462,8 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 		priv->mii_bus->read = rtmdio_83xx_read;
 		priv->mii_bus->write = rtmdio_83xx_write;
 		priv->mii_bus->reset = rtmdio_838x_reset;
+		bus_priv->read_sds_phy = rtmdio_838x_read_sds_phy;
+		bus_priv->write_sds_phy = rtmdio_838x_write_sds_phy;
 		bus_priv->read_mmd_phy = rtmdio_838x_read_mmd_phy;
 		bus_priv->write_mmd_phy = rtmdio_838x_write_mmd_phy;
 		bus_priv->read_phy = rtmdio_838x_read_phy;
