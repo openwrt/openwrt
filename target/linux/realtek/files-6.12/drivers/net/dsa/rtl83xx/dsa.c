@@ -104,6 +104,128 @@ const struct rtl83xx_mib_desc rtl83xx_mib[] = {
 	MIB_DESC(1, 0x40, "rxMacDiscards")
 };
 
+const struct rtl83xx_mib_desc rtl930x_mib[] = {
+	MIB_DESC(2, 0xf8, "ifInOctets"),
+	MIB_DESC(2, 0xf0, "ifOutOctets"),
+
+	MIB_DESC(2, 0xe8, "ifInUcastPkts"),
+	MIB_DESC(2, 0xe0, "ifInMulticastPkts"),
+	MIB_DESC(2, 0xd8, "ifInBroadcastPkts"),
+
+	MIB_DESC(2, 0xd0, "ifOutUcastPkts"),
+	MIB_DESC(2, 0xc8, "ifOutMulticastPkts"),
+	MIB_DESC(2, 0xc0, "ifOutBroadcastPkts"),
+
+	MIB_DESC(1, 0xbc, "ifOutDiscards"),
+	MIB_DESC(1, 0xb8, "dot1dTpPortInDiscards"),
+	MIB_DESC(1, 0xb4, ".3SingleCollisionFrames"),
+	MIB_DESC(1, 0xb0, ".3MultipleCollisionFrames"),
+	MIB_DESC(1, 0xac, ".3DeferredTransmissions"),
+	MIB_DESC(1, 0xa8, ".3LateCollisions"),
+	MIB_DESC(1, 0xa4, ".3ExcessiveCollisions"),
+	MIB_DESC(1, 0xa0, ".3SymbolErrors"),
+	MIB_DESC(1, 0x9c, ".3ControlInUnknownOpcodes"),
+	MIB_DESC(1, 0x98, ".3InPauseFrames"),
+	MIB_DESC(1, 0x94, ".3OutPauseFrames"),
+
+	MIB_DESC(1, 0x90, "DropEvents"),
+
+	MIB_DESC(1, 0x8c, "tx_BroadcastPkts"),
+	MIB_DESC(1, 0x88, "tx_MulticastPkts"),
+	MIB_DESC(1, 0x84, "tx_CRCAlignErrors"),
+	MIB_DESC(1, 0x80, "rx_CRCAlignErrors"),
+	MIB_DESC(1, 0x7c, "tx_UndersizePkts"),
+	MIB_DESC(1, 0x78, "rx_UndersizePkts"),
+	MIB_DESC(1, 0x74, "tx_OversizePkts"),
+	MIB_DESC(1, 0x70, "rx_OversizePkts"),
+	MIB_DESC(1, 0x6c, "tx_Fragments"),
+	MIB_DESC(1, 0x68, "rx_Fragments"),
+	MIB_DESC(1, 0x64, "tx_Jabbers"),
+	MIB_DESC(1, 0x60, "rx_Jabbers"),
+
+	MIB_DESC(1, 0x5c, "Collisions"),
+
+	MIB_DESC(1, 0x58, "tx_Pkts64Octets"),
+	MIB_DESC(1, 0x54, "rx_Pkts64Octets"),
+	MIB_DESC(1, 0x50, "tx_Pkts65to127Octets"),
+	MIB_DESC(1, 0x4c, "rx_Pkts65to127Octets"),
+	MIB_DESC(1, 0x48, "tx_Pkts128to255Octets"),
+	MIB_DESC(1, 0x44, "rx_Pkts128to255Octets"),
+	MIB_DESC(1, 0x40, "tx_Pkts256to511Octets"),
+	MIB_DESC(1, 0x3c, "rx_Pkts256to511Octets"),
+	MIB_DESC(1, 0x38, "tx_Pkts512to1023Octets"),
+	MIB_DESC(1, 0x34, "rx_Pkts512to1023Octets"),
+	MIB_DESC(1, 0x30, "tx_Pkts1024to1518Octets"),
+	MIB_DESC(1, 0x2c, "rx_Pkts1024to1518Octets")
+};
+
+/**
+ * Offsets are simplified for reading from table
+ */
+const struct rtl83xx_mib_desc rtl931x_mib[] = {
+	MIB_DESC(2, 51, "ifInOctets"),
+	MIB_DESC(2, 49, "ifOutOctets"),
+
+	MIB_DESC(2, 47, "ifInUcastPkts"),
+	MIB_DESC(2, 45, "ifInMulticastPkts"),
+	MIB_DESC(2, 43, "ifInBroadcastPkts"),
+
+	MIB_DESC(2, 41, "ifOutUcastPkts"),
+	MIB_DESC(2, 39, "ifOutMulticastPkts"),
+	MIB_DESC(2, 37, "ifOutBroadcastPkts"),
+
+	MIB_DESC(1, 36, "ifOutDiscards"),
+
+	MIB_DESC(1, 35, "dot1dTpPortInDiscards"),
+
+	/* dot3 */
+	MIB_DESC(1, 34, ".3SingleCollisionFrames"),
+	MIB_DESC(1, 33, ".3MultipleCollisionFrames"),
+	MIB_DESC(1, 32, ".3DeferredTransmissions"),
+	MIB_DESC(1, 31, ".3LateCollisions"),
+	MIB_DESC(1, 30, ".3ExcessiveCollisions"),
+
+	MIB_DESC(1, 29, ".3SymbolErrors"),
+
+	MIB_DESC(1, 28, ".3ControlInUnknownOpcodes"),
+
+	MIB_DESC(1, 27, ".3InPauseFrames"),
+	MIB_DESC(1, 26, ".3OutPauseFrames"),
+
+	MIB_DESC(1, 25, "DropEvents"),
+	MIB_DESC(1, 24, "tx_BroadcastPkts"),
+	MIB_DESC(1, 23, "tx_MulticastPkts"),
+
+	MIB_DESC(1, 22, "tx_CRCAlignErrors"),
+	MIB_DESC(1, 21, "rx_CRCAlignErrors"),
+
+	MIB_DESC(1, 20, "tx_UndersizePkts"),
+	MIB_DESC(1, 19, "rx_UndersizePkts"),
+
+	MIB_DESC(1, 18, "tx_OversizePkts"),
+	MIB_DESC(1, 17, "rx_OversizePkts"),
+
+	MIB_DESC(1, 16, "tx_Fragments"),
+	MIB_DESC(1, 15, "rx_Fragments"),
+
+	MIB_DESC(1, 14, "tx_Jabbers"),
+	MIB_DESC(1, 13, "rx_Jabbers"),
+
+	MIB_DESC(1, 12, "Collisions"),
+
+	MIB_DESC(1, 11, "tx_Pkts64Octets"),
+	MIB_DESC(1, 10, "rx_Pkts64Octets"),
+	MIB_DESC(1, 9, "tx_Pkts65to127Octets"),
+	MIB_DESC(1, 8, "rx_Pkts65to127Octets"),
+	MIB_DESC(1, 7, "tx_Pkts128to255Octets"),
+	MIB_DESC(1, 6, "rx_Pkts128to255Octets"),
+	MIB_DESC(1, 5, "tx_Pkts256to511Octets"),
+	MIB_DESC(1, 4, "rx_Pkts256to511Octets"),
+	MIB_DESC(1, 3, "tx_Pkts512to1023Octets"),
+	MIB_DESC(1, 2, "rx_Pkts512to1023Octets"),
+	MIB_DESC(1, 1, "tx_Pkts1024to1518Octets"),
+	MIB_DESC(1, 0, "rx_Pkts1024to1518Octets")
+};
 
 /* DSA callbacks */
 
@@ -979,11 +1101,45 @@ static void rtl93xx_phylink_mac_link_up(struct dsa_switch *ds, int port,
 static void rtl83xx_get_strings(struct dsa_switch *ds,
 				int port, u32 stringset, u8 *data)
 {
+	struct rtl838x_switch_priv *priv = ds->priv;
+	const struct rtl83xx_mib_desc *mib;
+	size_t mib_size;
+
 	if (stringset != ETH_SS_STATS)
 		return;
 
-	for (int i = 0; i < ARRAY_SIZE(rtl83xx_mib); i++)
-		ethtool_puts(&data, rtl83xx_mib[i].name);
+	switch(priv->family_id) {
+	case RTL9300_FAMILY_ID:
+		mib = rtl930x_mib;
+		mib_size = ARRAY_SIZE(rtl930x_mib);
+		break;
+	case RTL9310_FAMILY_ID:
+		mib = rtl931x_mib;
+		mib_size = ARRAY_SIZE(rtl931x_mib);
+		break;
+	default:
+		mib = rtl83xx_mib;
+		mib_size = ARRAY_SIZE(rtl83xx_mib);
+		break;
+	}
+
+	for (size_t i = 0; i < mib_size; i++)
+		ethtool_puts(&data, mib[i].name);
+}
+
+static uint64_t mib_read_common(struct rtl838x_switch_priv *priv, int port,
+				unsigned int mib_size, unsigned int mib_offset)
+{
+	uint64_t ret = 0;
+
+	if (mib_size == 2) {
+		ret = sw_r32(priv->r->stat_port_std_mib + (port << 8) + 248 - mib_offset);
+		ret <<= 32;
+	}
+
+	ret |= sw_r32(priv->r->stat_port_std_mib + (port << 8) + 252 - mib_offset);
+
+	return ret;
 }
 
 static void rtl83xx_get_ethtool_stats(struct dsa_switch *ds, int port,
@@ -991,25 +1147,48 @@ static void rtl83xx_get_ethtool_stats(struct dsa_switch *ds, int port,
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	const struct rtl83xx_mib_desc *mib;
-	u64 h;
+	size_t mib_size;
 
-	for (int i = 0; i < ARRAY_SIZE(rtl83xx_mib); i++) {
-		mib = &rtl83xx_mib[i];
+	switch (priv->family_id) {
+	case RTL9300_FAMILY_ID:
+		mib = rtl930x_mib;
+		mib_size = ARRAY_SIZE(rtl930x_mib);
+		break;
+	case RTL9310_FAMILY_ID:
+		mib = rtl931x_mib;
+		mib_size = ARRAY_SIZE(rtl931x_mib);
+		break;
+	default:
+		mib = rtl83xx_mib;
+		mib_size = ARRAY_SIZE(rtl83xx_mib);
+		break;
+	}
 
-		data[i] = sw_r32(priv->r->stat_port_std_mib + (port << 8) + 252 - mib->offset);
-		if (mib->size == 2) {
-			h = sw_r32(priv->r->stat_port_std_mib + (port << 8) + 248 - mib->offset);
-			data[i] |= h << 32;
+	if (priv->r->mib_read) {
+		for (size_t i = 0; i < mib_size; i++)
+			data[i] = priv->r->mib_read(port, mib[i].size, mib[i].offset);
+	} else {
+		for (size_t i = 0; i < mib_size; i++) {
+			data[i] = mib_read_common(priv, port, mib[i].size, mib[i].offset);
 		}
 	}
 }
 
 static int rtl83xx_get_sset_count(struct dsa_switch *ds, int port, int sset)
 {
+	struct rtl838x_switch_priv *priv = ds->priv;
+
 	if (sset != ETH_SS_STATS)
 		return 0;
 
-	return ARRAY_SIZE(rtl83xx_mib);
+	switch (priv->family_id) {
+	case RTL9300_FAMILY_ID:
+		return ARRAY_SIZE(rtl930x_mib);
+	case RTL9310_FAMILY_ID:
+		return ARRAY_SIZE(rtl931x_mib);
+	default:
+		return ARRAY_SIZE(rtl83xx_mib);
+	}
 }
 
 static int rtl83xx_mc_group_alloc(struct rtl838x_switch_priv *priv, int port)

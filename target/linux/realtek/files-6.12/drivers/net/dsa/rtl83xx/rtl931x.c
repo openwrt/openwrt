@@ -1618,6 +1618,25 @@ static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 		pr_debug("%s %08x: %08x\n",__func__, 0xbb000600 + i * 4, sw_r32(0x0600 + i * 4));
 }
 
+static uint64_t rtl931x_mib_table_read(int port, unsigned int mib_size, unsigned int mib_offset)
+{
+	struct table_reg *r = rtl_table_get(RTL9310_TBL_5, 0);
+	u64 ret = 0;
+
+	rtl_table_read(r, port);
+
+	if (mib_size == 2) {
+		ret = sw_r32(rtl_table_data(r, 52 - (mib_offset + 1)));
+		ret <<= 32;
+	}
+
+	ret |= sw_r32(rtl_table_data(r, 52 - mib_offset));
+
+	rtl_table_release(r);
+
+	return ret;
+}
+
 const struct rtl838x_reg rtl931x_reg = {
 	.mask_port_reg_be = rtl839x_mask_port_reg_be,
 	.set_port_reg_be = rtl839x_set_port_reg_be,
@@ -1645,6 +1664,7 @@ const struct rtl838x_reg rtl931x_reg = {
 	.isr_port_link_sts_chg = RTL931X_ISR_PORT_LINK_STS_CHG,
 	.imr_port_link_sts_chg = RTL931X_IMR_PORT_LINK_STS_CHG,
 	/* imr_glb does not exist on RTL931X */
+	.mib_read = rtl931x_mib_table_read,
 	.vlan_tables_read = rtl931x_vlan_tables_read,
 	.vlan_set_tagged = rtl931x_vlan_set_tagged,
 	.vlan_set_untagged = rtl931x_vlan_set_untagged,
