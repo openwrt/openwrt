@@ -163,8 +163,8 @@ define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/lib/libintl-full/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libintl.{a,so*} $(1)/usr/lib/libintl-full/lib/
 
-	$(INSTALL_DIR) $(1)/usr/share/aclocal
-	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/share/aclocal/* $(1)/usr/share/aclocal/
+	$(INSTALL_DIR) $(1)/usr/share/gettext/m4
+	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/share/gettext/m4/* $(1)/usr/share/gettext/m4/
 
 	$(SED) '/read dummy/d' $(STAGING_DIR_HOSTPKG)/bin/gettextize
 endef
