@@ -134,6 +134,7 @@
 		reset-deassert-us = <100000>;
 		reset-gpios = <&pio 13 GPIO_ACTIVE_LOW>;
 		realtek,aldps-enable;
+		realtek,led-link-select = <0xa7 0x0 0x0>;
 	};
 
 	phy7: ethernet-phy@7 {
@@ -143,6 +144,7 @@
 		reset-deassert-us = <100000>;
 		reset-gpios = <&pio 17 GPIO_ACTIVE_LOW>;
 		realtek,aldps-enable;
+		realtek,led-link-select = <0xa7 0x0 0x0>;
 	};
 
 	switch: switch@1f {
