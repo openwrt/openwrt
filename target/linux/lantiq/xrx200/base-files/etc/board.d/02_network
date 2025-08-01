@@ -89,13 +89,6 @@ lantiq_setup_macs()
 	arcadyan,arv7519rw22)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary boardconfig 0x16)" 1)
 		;;
-	lantiq,easy80920-nand|\
-	lantiq,easy80920-nor|\
-	zyxel,p-2812hnu-f1|\
-	zyxel,p-2812hnu-f3)
-		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
-		wan_mac=$(macaddr_add "$lan_mac" 1)
-		;;
 	arcadyan,vgv7519-brn|\
 	arcadyan,vgv7519-nor|\
 	arcadyan,vrv9510kwac23)
@@ -126,14 +119,6 @@ lantiq_setup_macs()
 		lan_mac=$(/usr/bin/fritz_tffs_nand -d $tffsdev -n maca -o)
 		wan_mac=$(/usr/bin/fritz_tffs_nand -d $tffsdev -n macdsl -o)
 		label_mac=$lan_mac
-		;;
-	bt,homehub-v5a)
-		lan_mac=$(mtd_get_mac_binary_ubi caldata 0x110c)
-		wan_mac=$(macaddr_add "$lan_mac" 1)
-		;;
-	buffalo,wbmr-300hpd)
-		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
-		wan_mac="$lan_mac"
 		;;
 	tplink,vr200|\
 	tplink,vr200v)
