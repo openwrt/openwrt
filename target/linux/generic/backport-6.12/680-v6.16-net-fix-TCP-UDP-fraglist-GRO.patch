@@ -1,6 +1,7 @@
+From 9f735b6f8a77d7be7f8b0765dc93587774832cb1 Mon Sep 17 00:00:00 2001
 From: Felix Fietkau <nbd@nbd.name>
-Date: Sat, 5 Jul 2025 13:44:10 +0200
-Subject: [PATCH] net: fix TCP/UDP fraglist GRO
+Date: Sat, 5 Jul 2025 17:06:21 +0200
+Subject: net: fix segmentation after TCP/UDP fraglist GRO
 
 Since "net: gro: use cb instead of skb->network_header", the skb network
 header is no longer set in the GRO path.
@@ -11,7 +12,13 @@ segment skbs.
 
 Fixes: 186b1ea73ad8 ("net: gro: use cb instead of skb->network_header")
 Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Reviewed-by: Willem de Bruijn <willemb@google.com>
+Link: https://patch.msgid.link/20250705150622.10699-1-nbd@nbd.name
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 ---
+ net/ipv4/tcp_offload.c | 1 +
+ net/ipv4/udp_offload.c | 1 +
+ 2 files changed, 2 insertions(+)
 
 --- a/net/ipv4/tcp_offload.c
 +++ b/net/ipv4/tcp_offload.c
