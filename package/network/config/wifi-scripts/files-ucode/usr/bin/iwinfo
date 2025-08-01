@@ -44,7 +44,7 @@ function print_info(list) {
 	let padding = '         ';
 
 	for (let bss in list) {
-		printf(`${bss.iface} ESSID: "${bss.ssid}"\n`);
+		printf(`${bss.iface} ESSID: ${bss.ssid === null ? 'unknown' : '"' + bss.ssid + '"'}\n`);
 		printf(`${padding}Access Point: ${bss.mac}\n`);
 		printf(`${padding}Mode: ${bss.mode}  Channel: ${bss.channel} (${bss.freq} GHz)  HT Mode: ${bss.htmode}\n`);
 		printf(`${padding}Center Channel 1: ${bss.center_freq1} 2: ${bss.center_freq2}\n`);
