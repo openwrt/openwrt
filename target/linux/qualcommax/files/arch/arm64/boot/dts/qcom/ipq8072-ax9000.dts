@@ -9,6 +9,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/leds/common.h>
+#include <dt-bindings/pwm/pwm.h>
 
 / {
 	model = "Xiaomi AX9000";
@@ -121,6 +122,17 @@
 
 	pinctrl-0 = <&i2c_pins>;
 	pinctrl-names = "default";
+
+	emc2305@2f {
+		compatible = "microchip,emc2305";
+		reg = <0x2f>;
+		#address-cells = <0x01>;
+		#size-cells = <0x00>;
+
+		fan@0 {
+			reg = <0>;
+		};
+	};
 };
 
 &prng {
