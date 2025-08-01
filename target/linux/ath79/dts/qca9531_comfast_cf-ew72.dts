@@ -145,8 +145,12 @@
 };
 
 &eth1 {
+	phy-handle = <&swphy0>;
+
 	nvmem-cells = <&macaddr_art_0 0>;
 	nvmem-cell-names = "mac-address";
+
+	/delete-node/ fixed-link;
 };
 
 &wdt {
