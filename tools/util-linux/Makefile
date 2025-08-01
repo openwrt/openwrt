@@ -18,6 +18,7 @@ include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/meson.mk
 
 MESON_HOST_ARGS += \
+	$(if $(findstring y,$(YEAR_2038)),,-Dallow-32bit-time=true) \
 	-Dauto_features=disabled \
 	-Dbuild-hexdump=enabled \
 	-Dbuild-libuuid=enabled \
