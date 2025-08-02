@@ -204,9 +204,8 @@ static void rtl931x_vlan_tables_read(u32 vlan, struct rtl838x_vlan_info *info)
 	info->hash_uc_fid = !!(x & BIT(31));
 	info->hash_mc_fid = !!(x & BIT(30));
 	info->if_id = (x >> 20) & 0x3ff;
-	info->profile_id = (x >> 16) & 0xf;
 	info->multicast_grp_mask = x & 0xffff;
-	if (x & BIT(31))
+	if (y & BIT(31))
 		info->l2_tunnel_list_id = y >> 18;
 	else
 		info->l2_tunnel_list_id = -1;
@@ -217,21 +216,19 @@ static void rtl931x_vlan_tables_read(u32 vlan, struct rtl838x_vlan_info *info)
 	/* Read UNTAG table via table register 3 */
 	r = rtl_table_get(RTL9310_TBL_3, 0);
 	rtl_table_read(r, vlan);
-	v = ((u64)sw_r32(rtl_table_data(r, 0))) << 25;
-	v |= sw_r32(rtl_table_data(r, 1)) >> 7;
-	rtl_table_release(r);
+	info->untagged_ports = ((u64)sw_r32(rtl_table_data(r, 0))) << 25;
+	info->untagged_ports |= sw_r32(rtl_table_data(r, 1)) >> 7;
 
-	info->untagged_ports = v;
+	rtl_table_release(r);
 }
 
 static void rtl931x_vlan_set_tagged(u32 vlan, struct rtl838x_vlan_info *info)
 {
+	struct table_reg *r;
 	u32 v, w, x, y;
-	/* Access VLAN table (1) via register 0 */
-	struct table_reg *r = rtl_table_get(RTL9310_TBL_0, 3);
 
 	v = info->tagged_ports >> 25;
-	w = (info->tagged_ports & 0x1fffff) << 7;
+	w = (info->tagged_ports & GENMASK(24, 0)) << 7;
 	w |= info->fid & 0x7f;
 	x = info->hash_uc_fid ? BIT(31) : 0;
 	x |= info->hash_mc_fid ? BIT(30) : 0;
@@ -245,6 +242,7 @@ static void rtl931x_vlan_set_tagged(u32 vlan, struct rtl838x_vlan_info *info)
 		y = 0;
 	}
 
+	r = rtl_table_get(RTL9310_TBL_0, 3);
 	sw_w32(v, rtl_table_data(r, 0));
 	sw_w32(w, rtl_table_data(r, 1));
 	sw_w32(x, rtl_table_data(r, 2));
