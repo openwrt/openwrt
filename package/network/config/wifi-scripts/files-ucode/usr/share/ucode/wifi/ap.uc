@@ -4,7 +4,7 @@ import * as libuci from 'uci';
 import { md5 } from 'digest';
 import * as fs from 'fs';
 
-import { append, append_raw, append_value, append_vars, comment, push_config, set_default, touch_file } from 'wifi.common';
+import { append, append_raw, append_value, append_vars, append_string_vars, comment, push_config, set_default, touch_file } from 'wifi.common';
 import * as netifd from 'wifi.netifd';
 import * as iface from 'wifi.iface';
 
@@ -44,17 +44,19 @@ function iface_setup(config) {
 		config.ap_isolate = 1;
 
 	append('bssid', config.macaddr);
+	config.ssid2 = config.ssid;
+	append_string_vars(config, [ 'ssid2' ]);
 
-append_vars(config, [
+	append_vars(config, [
 		'ctrl_interface', 'ap_isolate', 'max_num_sta', 'ap_max_inactivity', 'airtime_bss_weight',
 		'airtime_bss_limit', 'airtime_sta_weight', 'bss_load_update_period', 'chan_util_avg_period',
 		'disassoc_low_ack', 'skip_inactivity_poll', 'ignore_broadcast_ssid', 'uapsd_advertisement_enabled',
-		'utf8_ssid', 'multi_ap', 'ssid', 'tdls_prohibit', 'bridge', 'wds_sta', 'wds_bridge',
+		'utf8_ssid', 'multi_ap', 'tdls_prohibit', 'bridge', 'wds_sta', 'wds_bridge',
 		'snoop_iface', 'vendor_elements', 'nas_identifier', 'radius_acct_interim_interval',
 		'ocv', 'multicast_to_unicast', 'preamble', 'wmm_enabled', 'proxy_arp', 'per_sta_vif', 'mbo',
 		'bss_transition', 'wnm_sleep_mode', 'wnm_sleep_mode_no_keys', 'qos_map_set', 'max_listen_int',
 		'dtim_period',
-	 ]);
+	]);
 }
 
 function iface_authentication_server(config) {
@@ -102,11 +104,9 @@ function iface_auth_type(config) {
 		config.wps_possible = 1;
 		config.wps_state = 1;
 
-		if (config.owe_transition_ssid)
-			config.owe_transition_ssid = `"${config.owe_transition_ssid}"`;
-
+		append_string_vars(config, [ 'owe_transition_ssid' ]);
 		append_vars(config, [
-			'owe_transition_ssid', 'owe_transition_bssid', 'owe_transition_ifname',
+			'owe_transition_bssid', 'owe_transition_ifname',
 		]);
 		break;
 
@@ -200,7 +200,7 @@ function iface_wps(config) {
 			set_default(config, 'upnp_iface', config.network_bridge);
 
 		if (config.multi_ap && config.multi_ap_backhaul_ssid) {
-			append_vars(config, [ 'multi_ap_backhaul_ssid' ]);
+			append_string_vars(config, [ 'multi_ap_backhaul_ssid' ]);
 			if (length(config.multi_ap_backhaul_key) == 64)
 				append('multi_ap_backhaul_wpa_psk', config.multi_ap_backhaul_key);
 			else if (length(config.multi_ap_backhaul_key) > 8)
@@ -487,6 +487,12 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 	/* raw options */
 	for (let raw in config.hostapd_options)
 		append_raw(raw);
+
+	if (config.mode == 'link') {
+		append_raw('mld_ap=1');
+		if (data.config.radio != null)
+			append_raw('mld_link_id=' + data.config.radio);
+	}
 
 	if (config.default_macaddr)
 		append_raw('#default_macaddr');

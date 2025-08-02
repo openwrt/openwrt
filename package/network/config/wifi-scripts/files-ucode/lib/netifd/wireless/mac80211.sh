@@ -157,8 +157,38 @@ function config_add_mesh_params(config, data) {
 		config_add(config, param, data[param]);
 }
 
+function setup_mlo(data) {
+	let config = {};
+	let idx = 0;
+
+	for (let k, v in data.interfaces) {
+		let ifname = v.config.ifname;
+		if (!ifname)
+			ifname = 'ap-mld' + idx++;
+
+		delete v.config.ifname;
+		config[ifname] = v.config;
+		netifd.set_vif(k, ifname);
+
+		v.config.phy = find_phy(v.config.radio_config[0], true);
+		delete v.config.radio_config;
+	}
+
+	let ret = ubus.call('hostapd', 'mld_set', { config });
+	if (type(ret) != "object")
+		return netifd.setup_failed('HOSTAPD_START_FAILED');
+
+	netifd.add_process('/usr/sbin/hostapd', ret.pid, true, true);
+	netifd.set_up();
+
+	return 0;
+}
+
 function setup() {
 	let data = json(ARGV[3]);
+
+	if (ARGV[2] == "#mlo")
+		return setup_mlo(data);
 
 	data.phy = find_phy(data.config, true);
 	if (!data.phy) {
@@ -200,6 +230,7 @@ function setup() {
 		}
 
 		switch (mode) {
+		case 'link':
 		case 'ap':
 			has_ap = true;
 			// fallthrough
@@ -210,7 +241,8 @@ function setup() {
 				data.config.noscan = true;
 			validate('iface', v.config);
 			iface.prepare(v.config, data.phy + data.phy_suffix, data.config.num_global_macaddr, data.config.macaddr_base);
-			netifd.set_vif(k, v.config.ifname);
+			if (mode != "link")
+				netifd.set_vif(k, v.config.ifname);
 			break;
 		}
 
@@ -276,6 +308,9 @@ function setup() {
 
 function teardown() {
 	let data = json(ARGV[3]);
+
+	if (ARGV[2] == "#mlo")
+		return 0;
 
 	if (!data.data?.phy) {
 		log('Bug: PHY is undefined for device');

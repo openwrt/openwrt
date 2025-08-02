@@ -113,6 +113,15 @@ as adding/removing interfaces.
  	hostapd_ubus_free_bss(hapd);
  	accounting_deinit(hapd);
  	hostapd_deinit_wpa(hapd);
+@@ -625,7 +628,7 @@ void hostapd_free_hapd_data(struct hosta
+  * If the BSS being removed is the first link, the next link becomes the first
+  * link.
+  */
+-static void hostapd_bss_link_deinit(struct hostapd_data *hapd)
++void hostapd_bss_link_deinit(struct hostapd_data *hapd)
+ {
+ #ifdef CONFIG_IEEE80211BE
+ 	int i;
 @@ -737,6 +740,7 @@ void hostapd_cleanup_iface_partial(struc
  static void hostapd_cleanup_iface(struct hostapd_iface *iface)
  {
@@ -139,7 +148,47 @@ as adding/removing interfaces.
  {
  	struct hostapd_bss_config *conf = hapd->conf;
  	u8 ssid[SSID_MAX_LEN + 1];
-@@ -1518,6 +1522,8 @@ setup_mld:
+@@ -1434,7 +1438,13 @@ static int hostapd_setup_bss(struct host
+ 
+ 	if (!first || first == -1) {
+ 		u8 *addr = hapd->own_addr;
++		bool use_existing = first == -1;
+ 
++#ifdef CONFIG_IEEE80211BE
++		if (hapd->conf->mld_ap) {
++			addr = NULL;
++		} else
++#endif /* CONFIG_IEEE80211BE */
+ 		if (!is_zero_ether_addr(conf->bssid)) {
+ 			/* Allocate the configured BSSID. */
+ 			os_memcpy(hapd->own_addr, conf->bssid, ETH_ALEN);
+@@ -1469,6 +1479,7 @@ static int hostapd_setup_bss(struct host
+ 					   hapd->mld_link_id, hapd->conf->iface);
+ 				goto setup_mld;
+ 			}
++			use_existing = true;
+ 		}
+ #endif /* CONFIG_IEEE80211BE */
+ 
+@@ -1477,7 +1488,7 @@ static int hostapd_setup_bss(struct host
+ 				   conf->iface, addr, hapd,
+ 				   &hapd->drv_priv, force_ifname, if_addr,
+ 				   conf->bridge[0] ? conf->bridge : NULL,
+-				   first == -1)) {
++				   use_existing)) {
+ 			wpa_printf(MSG_ERROR, "Failed to add BSS (BSSID="
+ 				   MACSTR ")", MAC2STR(hapd->own_addr));
+ 			hapd->interface_added = 0;
+@@ -1500,7 +1511,7 @@ static int hostapd_setup_bss(struct host
+ 
+ #ifdef CONFIG_IEEE80211BE
+ setup_mld:
+-	if (hapd->conf->mld_ap && !first) {
++	if (hapd->conf->mld_ap && first != 1) {
+ 		wpa_printf(MSG_DEBUG,
+ 			   "MLD: Set link_id=%u, mld_addr=" MACSTR
+ 			   ", own_addr=" MACSTR,
+@@ -1518,6 +1529,8 @@ setup_mld:
  	}
  #endif /* CONFIG_IEEE80211BE */
  
@@ -148,7 +197,16 @@ as adding/removing interfaces.
  	if (conf->wmm_enabled < 0)
  		conf->wmm_enabled = hapd->iconf->ieee80211n |
  			hapd->iconf->ieee80211ax;
-@@ -2516,7 +2522,7 @@ static int hostapd_owe_iface_iter2(struc
+@@ -1843,7 +1856,7 @@ int hostapd_set_acl(struct hostapd_data
+ }
+ 
+ 
+-static int hostapd_set_ctrl_sock_iface(struct hostapd_data *hapd)
++int hostapd_set_ctrl_sock_iface(struct hostapd_data *hapd)
+ {
+ #ifdef CONFIG_IEEE80211BE
+ 	int ret;
+@@ -2516,7 +2529,7 @@ static int hostapd_owe_iface_iter2(struc
  #endif /* CONFIG_OWE */
  
  
@@ -157,7 +215,7 @@ as adding/removing interfaces.
  {
  #ifdef CONFIG_OWE
  	/* Check whether the enabled BSS can complete OWE transition mode
-@@ -2986,7 +2992,7 @@ hostapd_alloc_bss_data(struct hostapd_if
+@@ -2986,7 +2999,7 @@ hostapd_alloc_bss_data(struct hostapd_if
  }
  
  
@@ -166,7 +224,16 @@ as adding/removing interfaces.
  {
  	if (!hapd)
  		return;
-@@ -4070,7 +4076,8 @@ int hostapd_remove_iface(struct hapd_int
+@@ -3194,7 +3207,7 @@ fail:
+ }
+ 
+ 
+-static void hostapd_cleanup_unused_mlds(struct hapd_interfaces *interfaces)
++void hostapd_cleanup_unused_mlds(struct hapd_interfaces *interfaces)
+ {
+ #ifdef CONFIG_IEEE80211BE
+ 	struct hostapd_mld *mld, **all_mld;
+@@ -4074,7 +4087,8 @@ int hostapd_remove_iface(struct hapd_int
  		hapd_iface = interfaces->iface[i];
  		if (hapd_iface == NULL)
  			return -1;
@@ -213,16 +280,24 @@ as adding/removing interfaces.
  	void *owner;
  	char *config_fname;
  	struct hostapd_config *conf;
-@@ -787,6 +794,8 @@ struct hostapd_iface * hostapd_init(stru
+@@ -787,11 +794,16 @@ struct hostapd_iface * hostapd_init(stru
  struct hostapd_iface *
  hostapd_interface_init_bss(struct hapd_interfaces *interfaces, const char *phy,
  			   const char *config_fname, int debug);
++int hostapd_set_ctrl_sock_iface(struct hostapd_data *hapd);
 +int hostapd_setup_bss(struct hostapd_data *hapd, int first, bool start_beacon);
++void hostapd_bss_link_deinit(struct hostapd_data *hapd);
 +void hostapd_bss_deinit(struct hostapd_data *hapd);
  void hostapd_bss_setup_multi_link(struct hostapd_data *hapd,
  				  struct hapd_interfaces *interfaces);
  void hostapd_new_assoc_sta(struct hostapd_data *hapd, struct sta_info *sta,
-@@ -817,6 +826,7 @@ hostapd_switch_channel_fallback(struct h
+ 			   int reassoc);
+ void hostapd_interface_deinit_free(struct hostapd_iface *iface);
++void hostapd_cleanup_unused_mlds(struct hapd_interfaces *interfaces);
+ int hostapd_enable_iface(struct hostapd_iface *hapd_iface);
+ int hostapd_reload_iface(struct hostapd_iface *hapd_iface);
+ int hostapd_reload_bss_only(struct hostapd_data *bss);
+@@ -817,6 +829,7 @@ hostapd_switch_channel_fallback(struct h
  void hostapd_cleanup_cs_params(struct hostapd_data *hapd);
  void hostapd_periodic_iface(struct hostapd_iface *iface);
  int hostapd_owe_trans_get_info(struct hostapd_data *hapd);
