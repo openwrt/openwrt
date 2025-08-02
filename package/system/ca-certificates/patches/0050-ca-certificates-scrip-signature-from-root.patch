@@ -1,0 +1,40 @@
+From b6309a034c2f43f2a1486e6d18ffdbf902b6f0d2 Mon Sep 17 00:00:00 2001
+From: Seo Suchan <tjtncks@gmail.com>
+Date: Wed, 23 Jul 2025 17:17:41 +0900
+Subject: [PATCH] strip sign from root cert
+
+Signed-off-by: Seo Suchan <tjtncks@gmail.com>
+---
+ mozilla/certdata2pem.py | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/mozilla/certdata2pem.py b/mozilla/certdata2pem.py
+index 4df86a2..5aef1c1 100644
+--- a/mozilla/certdata2pem.py
++++ b/mozilla/certdata2pem.py
+@@ -28,7 +28,11 @@ import textwrap
+ import textwrap
+ import io
+ 
+ from cryptography import x509
++from pyasn1.type import univ
++from pyasn1_modules import rfc5280
++import pyasn1.codec.der.encoder as asn1ce
++import pyasn1.codec.der.decoder as asn1cd
+ 
+ 
+ objects = []
+@@ -158,7 +162,12 @@ for obj in objects:
+             fname = bname + b'_2.crt'
+         f = open(fname, 'w')
+         f.write("-----BEGIN CERTIFICATE-----\n")
+-        encoded = base64.b64encode(obj['CKA_VALUE']).decode('utf-8')
++        # striping signeture to reduce size
++        # openssl and mbedtls doesn't check actual self-signness
++        asn1cert, _= asn1cd.decode(bytes(obj['CKA_VALUE']), rfc5280.Certificate())
++        asn1cert[2] = univ.BitString("")
++        outder = asn1ce.encode(asn1cert)
++        encoded = base64.b64encode(outder).decode('utf-8')
+         f.write("\n".join(textwrap.wrap(encoded, 64)))
+         f.write("\n-----END CERTIFICATE-----\n")
+ 
