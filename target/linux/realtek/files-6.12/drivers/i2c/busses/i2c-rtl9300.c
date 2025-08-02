@@ -210,12 +210,20 @@ static int rtl9300_execute_xfer(struct rtl9300_i2c *i2c, char read_write,
 		return -EIO;
 
 	if (read_write == I2C_SMBUS_READ) {
-		if (size == I2C_SMBUS_BYTE || size == I2C_SMBUS_BYTE_DATA){
+		switch (size) {
+		case I2C_SMBUS_BYTE:
+		case I2C_SMBUS_BYTE_DATA:
 			data->byte = readl(REG(i2c, RTL9300_I2C_DATA_WORD0));
-		} else if (size == I2C_SMBUS_WORD_DATA) {
+			break;
+		case I2C_SMBUS_WORD_DATA:
 			data->word = readl(REG(i2c, RTL9300_I2C_DATA_WORD0));
-		} else if (len > 0) {
+			break;
+		case I2C_SMBUS_I2C_BLOCK_DATA:
+			rtl9300_i2c_read(i2c, &data->block[1], len);
+			break;
+		default:
 			rtl9300_i2c_read(i2c, &data->block[0], len);
+			break;
 		}
 	}
 
@@ -241,12 +249,20 @@ static int rtl9310_execute_xfer(struct rtl9300_i2c *i2c, char read_write,
 		return -EIO;
 
 	if (read_write == I2C_SMBUS_READ) {
-		if (size == I2C_SMBUS_BYTE || size == I2C_SMBUS_BYTE_DATA){
+		switch (size) {
+		case I2C_SMBUS_BYTE:
+		case I2C_SMBUS_BYTE_DATA:
 			data->byte = readl(REG(i2c, RTL9310_I2C_DATA));
-		} else if (size == I2C_SMBUS_WORD_DATA) {
+			break;
+		case I2C_SMBUS_WORD_DATA:
 			data->word = readl(REG(i2c, RTL9310_I2C_DATA));
-		} else if (len > 0) {
+			break;
+		case I2C_SMBUS_I2C_BLOCK_DATA:
+			rtl9310_i2c_read(i2c, &data->block[1], len);
+			break;
+		default:
 			rtl9310_i2c_read(i2c, &data->block[0], len);
+			break;
 		}
 	}
 
@@ -311,6 +327,20 @@ static int rtl9300_i2c_smbus_xfer(struct i2c_adapter * adap, u16 addr,
 		len = data->block[0] + 1;
 		break;
 
+	case I2C_SMBUS_I2C_BLOCK_DATA:
+		pr_debug("I2C_SMBUS_I2C_BLOCK_DATA %02x, read %d, len %d\n",
+			addr, read_write, data->block[0]);
+		drv_data->reg_addr_set(i2c, command, 1);
+		if (data->block[0] < 1 || data->block[0] > I2C_SMBUS_BLOCK_MAX) {
+			ret = -EINVAL;
+			goto out_unlock;
+		}
+		drv_data->config_xfer(i2c, addr, data->block[0]);
+		if (read_write == I2C_SMBUS_WRITE)
+			drv_data->write(i2c, &data->block[1], data->block[0]);
+		len = data->block[0];
+		break;
+
 	default:
 		dev_warn(&adap->dev, "Unsupported transaction %d\n", size);
 		return -EOPNOTSUPP;
@@ -328,6 +358,7 @@ static u32 rtl9300_i2c_func(struct i2c_adapter *a)
 {
 	return I2C_FUNC_SMBUS_QUICK | I2C_FUNC_SMBUS_BYTE |
 	       I2C_FUNC_SMBUS_BYTE_DATA | I2C_FUNC_SMBUS_WORD_DATA |
+	       I2C_FUNC_SMBUS_READ_I2C_BLOCK | I2C_FUNC_SMBUS_WRITE_I2C_BLOCK |
 	       I2C_FUNC_SMBUS_BLOCK_DATA;
 }
 
