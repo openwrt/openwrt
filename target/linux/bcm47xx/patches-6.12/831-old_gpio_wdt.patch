@@ -4,7 +4,7 @@ Signed-off-by: Mathias Adam <m.adam--openwrt@adamis.de>
 
 --- a/drivers/watchdog/Kconfig
 +++ b/drivers/watchdog/Kconfig
-@@ -1755,6 +1755,15 @@ config WDT_MTX1
+@@ -1803,6 +1803,15 @@ config WDT_MTX1
  	  Hardware driver for the MTX-1 boards. This is a watchdog timer that
  	  will reboot the machine after a 100 seconds timer expired.
  
@@ -22,17 +22,17 @@ Signed-off-by: Mathias Adam <m.adam--openwrt@adamis.de>
  	depends on CPU_SB1
 --- a/drivers/watchdog/Makefile
 +++ b/drivers/watchdog/Makefile
-@@ -167,6 +167,7 @@ obj-$(CONFIG_RC32434_WDT) += rc32434_wdt
+@@ -169,6 +169,7 @@ obj-$(CONFIG_RC32434_WDT) += rc32434_wdt
  obj-$(CONFIG_INDYDOG) += indydog.o
  obj-$(CONFIG_JZ4740_WDT) += jz4740_wdt.o
  obj-$(CONFIG_WDT_MTX1) += mtx-1_wdt.o
 +obj-$(CONFIG_GPIO_WDT) += old_gpio_wdt.o
  obj-$(CONFIG_SIBYTE_WDOG) += sb_wdog.o
- obj-$(CONFIG_AR7_WDT) += ar7_wdt.o
  obj-$(CONFIG_TXX9_WDT) += txx9wdt.o
+ obj-$(CONFIG_OCTEON_WDT) += octeon-wdt.o
 --- /dev/null
 +++ b/drivers/watchdog/old_gpio_wdt.c
-@@ -0,0 +1,299 @@
+@@ -0,0 +1,298 @@
 +/*
 + *      Driver for GPIO-controlled Hardware Watchdogs.
 + *
@@ -231,7 +231,6 @@ Signed-off-by: Mathias Adam <m.adam--openwrt@adamis.de>
 +
 +static const struct file_operations gpio_wdt_fops = {
 +	.owner		= THIS_MODULE,
-+	.llseek		= no_llseek,
 +	.unlocked_ioctl	= gpio_wdt_ioctl,
 +	.open		= gpio_wdt_open,
 +	.write		= gpio_wdt_write,
