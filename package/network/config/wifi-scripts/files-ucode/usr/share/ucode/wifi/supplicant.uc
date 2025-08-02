@@ -1,7 +1,7 @@
 'use strict';
 
 import { append, append_raw, append_vars, network_append, network_append_raw, network_append_vars,
-	 set_default, dump_network, flush_network } from 'wifi.common';
+	 network_append_string_vars, set_default, dump_network, flush_network } from 'wifi.common';
 import * as netifd from 'wifi.netifd';
 import * as iface from 'wifi.iface';
 import * as fs from 'fs';
@@ -157,14 +157,14 @@ function setup_sta(data, config) {
 
 	config.basic_rate = ratelist(config.basic_rate);
 	config.mcast_rate = ratestr(config.mcast_rate);
-	config.ssid = `"${config.ssid}"`;
 
+	network_append_string_vars(config, [ 'ssid' ]);
 	network_append_vars(config, [
 		'scan_ssid', 'noscan', 'disabled', 'multi_ap_backhaul_sta',
 		'ocv', 'key_mgmt', 'psk', 'sae_password', 'pairwise', 'group', 'bssid',
 		'proto', 'mesh_fwding', 'mesh_rssi_threshold', 'frequency', 'fixed_freq',
 		'disable_ht', 'disable_ht40', 'disable_vht', 'vht', 'max_oper_chwidth',
-		'ht40', 'ssid', 'beacon_int', 'ieee80211w', 'basic_rate', 'mcast_rate',
+		'ht40', 'beacon_int', 'ieee80211w', 'basic_rate', 'mcast_rate',
 		'bssid_blacklist', 'bssid_whitelist', 'erp', 'ca_cert', 'identity',
 		'anonymous_identity', 'client_cert', 'private_key', 'private_key_passwd',
 		'subject_match', 'altsubject_match', 'domain_match', 'domain_suffix_match',
