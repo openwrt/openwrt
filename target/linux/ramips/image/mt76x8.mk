@@ -1228,6 +1228,15 @@ define Device/wiznet_wizfi630s
 endef
 TARGET_DEVICES += wiznet_wizfi630s
 
+define Device/wodesys_wd-r1208u
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := Wodesys
+  DEVICE_MODEL := WD-R1208U
+  DEVICE_PACKAGES := kmod-mt76x2
+  SUPPORTED_DEVICES += mtk-apsoc-demo
+endef
+TARGET_DEVICES += wodesys_wd-r1208u
+
 define Device/wrtnode_wrtnode2p
   IMAGE_SIZE := 32448k
   DEVICE_VENDOR := WRTnode
