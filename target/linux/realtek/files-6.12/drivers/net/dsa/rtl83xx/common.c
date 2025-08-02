@@ -29,6 +29,8 @@ extern const struct dsa_switch_ops rtl930x_switch_ops;
 extern const struct phylink_pcs_ops rtl83xx_pcs_ops;
 extern const struct phylink_pcs_ops rtl93xx_pcs_ops;
 
+struct workqueue_struct *rtl83xx_wq;
+
 DEFINE_MUTEX(smi_lock);
 
 int rtl83xx_port_get_stp_state(struct rtl838x_switch_priv *priv, int port)
@@ -1346,7 +1348,7 @@ static int rtl83xx_netevent_event(struct notifier_block *this,
 
 		pr_debug("%s: updating neighbour on port %d, mac %016llx\n",
 			__func__, port, net_work->mac);
-		schedule_work(&net_work->work);
+		queue_work(rtl83xx_wq, &net_work->work);
 		if (err)
 			netdev_warn(dev, "failed to handle neigh update (err %d)\n", err);
 		break;
@@ -1468,7 +1470,7 @@ static int rtl83xx_fib_event(struct notifier_block *this, unsigned long event, v
 		break;
 	}
 
-	schedule_work(&fib_work->work);
+	queue_work(rtl83xx_wq, &fib_work->work);
 
 	return NOTIFY_DONE;
 }
@@ -1502,6 +1504,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 	priv->ds->ops = &rtl83xx_switch_ops;
 	priv->ds->needs_standalone_vlan_filtering = true;
 	priv->dev = dev;
+	dev_set_drvdata(dev, priv);
 
 	err = devm_mutex_init(dev, &priv->reg_mutex);
 	if (err)
@@ -1707,6 +1710,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 
 err_register_fib_nb:
 	unregister_netevent_notifier(&priv->ne_nb);
+	flush_workqueue(rtl83xx_wq);
 err_register_ne_nb:
 	unregister_netdevice_notifier(&priv->nb);
 err_register_nb:
@@ -1715,8 +1719,24 @@ err_register_nb:
 
 static void rtl83xx_sw_remove(struct platform_device *pdev)
 {
+	struct rtl838x_switch_priv *priv = platform_get_drvdata(pdev);
+
+	if (!priv)
+		return;
+
 	/* TODO: */
 	pr_debug("Removing platform driver for rtl83xx-sw\n");
+
+	/* unregister notifiers which will create workqueue entries with
+	 * references to the switch structures
+	 */
+	unregister_fib_notifier(&init_net, &priv->fib_nb);
+	unregister_netevent_notifier(&priv->ne_nb);
+	flush_workqueue(rtl83xx_wq);
+
+	dsa_switch_shutdown(priv->ds);
+
+	dev_set_drvdata(&pdev->dev, NULL);
 }
 
 static const struct of_device_id rtl83xx_switch_of_ids[] = {
@@ -1736,6 +1756,23 @@ static struct platform_driver rtl83xx_switch_driver = {
 		.of_match_table = rtl83xx_switch_of_ids,
 	},
 };
+
+static int __init rtl83xx_init(void)
+{
+	rtl83xx_wq = create_singlethread_workqueue("rtl83xx");
+	if (!rtl83xx_wq)
+		return -ENOMEM;
+
+	return 0;
+}
+
+static void __exit rtl83xx_exit(void)
+{
+	destroy_workqueue(rtl83xx_wq);
+}
+
+module_init(rtl83xx_init);
+module_exit(rtl83xx_exit);
 
 module_platform_driver(rtl83xx_switch_driver);
 
