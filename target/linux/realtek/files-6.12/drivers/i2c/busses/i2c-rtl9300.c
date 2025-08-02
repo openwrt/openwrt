@@ -141,19 +141,21 @@ static int i2c_read(void __iomem *r0, u8 *buf, int len)
 
 static int i2c_write(void __iomem *r0, u8 *buf, int len)
 {
+	u32 vals[4] = {};
+	int i;
+
 	if (len > 16)
 		return -EIO;
 
-	for (int i = 0; i < len; i++) {
-		u32 v;
+	for (i = 0; i < len; i++) {
+		unsigned int shift = (i % 4) * 8;
+		unsigned int reg = i / 4;
 
-		if (! (i % 4))
-			v = 0;
-		v <<= 8;
-		v |= buf[i];
-		if (i % 4 == 3 || i == len - 1)
-			writel(v, r0 + (i / 4) * 4);
+		vals[reg] |= buf[i] << shift;
 	}
+
+	for (i = 0; i < ARRAY_SIZE(vals); i++)
+		writel(vals[i], r0 + i * 4);
 
 	return len;
 }
