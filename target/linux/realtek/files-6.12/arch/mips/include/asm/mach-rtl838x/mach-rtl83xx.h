@@ -7,6 +7,8 @@
 #define _MACH_RTL838X_H_
 
 #include <asm/types.h>
+#include <linux/types.h>
+
 /*
  * Register access macros
  */
@@ -393,6 +395,9 @@ struct rtl83xx_soc_info {
 	unsigned char *name;
 	unsigned int id;
 	unsigned int family;
+	unsigned int revision;
+	unsigned int cpu;
+	bool testchip;
 	unsigned char *compatible;
 	volatile void *sw_base;
 	volatile void *icu_base;
