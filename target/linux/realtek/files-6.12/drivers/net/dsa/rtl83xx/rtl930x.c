@@ -638,6 +638,62 @@ static void rtl930x_write_mcast_pmask(int idx, u64 portmask)
 	rtl_table_release(q);
 }
 
+void rtl930x_set_receive_management_action(int port, rma_ctrl_t type, action_type_t action)
+{
+	u32 value = 0;
+
+	/* hack for value mapping */
+	if (type == GRATARP && action == COPY2CPU)
+		action = TRAP2MASTERCPU;
+
+	switch(action) {
+	case FORWARD:
+		value = 0;
+		break;
+	case DROP:
+		value = 1;
+		break;
+	case TRAP2CPU:
+		value = 2;
+		break;
+	case TRAP2MASTERCPU:
+		value = 3;
+		break;
+	case FLOODALL:
+		value = 4;
+		break;
+	default:
+		break;
+	}
+
+	switch(type) {
+	case BPDU:
+		sw_w32_mask(7 << ((port % 10) * 3), value << ((port % 10) * 3), RTL930X_RMA_BPDU_CTRL + ((port / 10) << 2));
+	break;
+	case PTP:
+		/* udp */
+		sw_w32_mask(3 << 2, value << 2, RTL930X_RMA_PTP_CTRL + (port << 2));
+		/* eth2 */
+		sw_w32_mask(3, value, RTL930X_RMA_PTP_CTRL + (port << 2));
+	break;
+	case PTP_UDP:
+		sw_w32_mask(3 << 2, value << 2, RTL930X_RMA_PTP_CTRL + (port << 2));
+	break;
+	case PTP_ETH2:
+		sw_w32_mask(3, value, RTL930X_RMA_PTP_CTRL + (port << 2));
+	break;
+	case LLDP:
+		sw_w32_mask(7 << ((port % 10) * 3), value << ((port % 10) * 3), RTL930X_RMA_LLDP_CTRL + ((port / 10) << 2));
+	break;
+	case EAPOL:
+		sw_w32_mask(7 << ((port % 10) * 3), value << ((port % 10) * 3), RTL930X_RMA_EAPOL_CTRL + ((port / 10) << 2));
+	break;
+	case GRATARP:
+		/* NOSUPPORT */
+	break;
+	}
+}
+
 static u64 rtl930x_traffic_get(int source)
 {
 	u32 v;
@@ -2516,4 +2572,5 @@ const struct rtl838x_reg rtl930x_reg = {
 	.set_l3_egress_intf = rtl930x_set_l3_egress_intf,
 	.set_distribution_algorithm = rtl930x_set_distribution_algorithm,
 	.led_init = rtl930x_led_init,
+	.set_receive_management_action = rtl930x_set_receive_management_action,
 };

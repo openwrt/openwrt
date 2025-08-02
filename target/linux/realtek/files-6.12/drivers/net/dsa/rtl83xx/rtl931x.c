@@ -1692,4 +1692,5 @@ const struct rtl838x_reg rtl931x_reg = {
 	.l2_learning_setup = rtl931x_l2_learning_setup,
 	.l3_setup = rtl931x_l3_setup,
 	.led_init = rtldsa_931x_led_init,
+	.set_receive_management_action = rtl931x_set_receive_management_action,
 };
