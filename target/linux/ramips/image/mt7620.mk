@@ -318,7 +318,7 @@ define Device/dlink_dwr-921-c1
   DLINK_ROM_ID := DLK6E2414001
   DLINK_FAMILY_MEMBER := 0x6E24
   DLINK_FIRMWARE_SIZE := 0xFE0000
-  DEVICE_PACKAGES += kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
+  DEVICE_PACKAGES += kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi 464xlat
 endef
 TARGET_DEVICES += dlink_dwr-921-c1
 
