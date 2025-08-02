@@ -1,0 +1,419 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+/* Bootloader installs ATF here */
+/memreserve/ 0x80000000 0x200000;
+
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include "an7581.dtsi"
+
+/ {
+	model = "Gemtek W1700K";
+	compatible = "gemtek,w1700k", "airoha,an7581", "airoha,en7581";
+
+	aliases {
+		serial0 = &uart1;
+		led-boot = &led_status_red;
+		led-failsafe = &led_status_blue;
+		led-upgrade = &led_status_blue;
+		led-running = &led_status_green;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200 earlycon";
+		stdout-path = "serial0:115200n8";
+		linux,usable-memory-range = <0x0 0x80200000 0x0 0x7fe00000>;
+	};
+
+	memory@80000000 {
+		device_type = "memory";
+		reg = < 0x0 0x80000000 0x0 0x80000000>;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		key-restart {
+			label = "Reset";
+			gpios = <&en7581_pinctrl 0 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_status_green: led-0 {
+			label = "green:run";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&en7581_pinctrl 17 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_blue: led-1 {
+			label = "blue:upgrade";
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&en7581_pinctrl 19 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_red: led-2 {
+			label = "red:boot";
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&en7581_pinctrl 29 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_white: led-3 {
+			label = "white:system";
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&en7581_pinctrl 20 GPIO_ACTIVE_LOW>;
+		};
+
+		led_lan1_green: led-4 {
+			label = "green:lan1";
+			color = <LED_COLOR_ID_YELLOW>;
+			function = LED_FUNCTION_LAN;
+			gpios = <&en7581_pinctrl 9 GPIO_ACTIVE_LOW>;
+		};
+
+		led_lan1_yellow: led-5 {
+			label = "yellow:lan1";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			gpios = <&en7581_pinctrl 10 GPIO_ACTIVE_LOW>;
+		};
+
+		led_lan2_green: led-6 {
+			label = "green:lan2";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			gpios = <&en7581_pinctrl 27 GPIO_ACTIVE_LOW>;
+		};
+
+		led_lan2_yellow: led-7 {
+			label = "yellow:lan2";
+			color = <LED_COLOR_ID_YELLOW>;
+			funciton = LED_FUNCTION_LAN;
+			gpios = <&en7581_pinctrl 28 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	/*
+	fan: pwm-fan {
+		compatible = "pwm-fan";
+		cooling-levels = <0 25 95 145 195 255>;
+		fan-supply = <&vmmc_3v3>
+		pinctrl-names = "default";
+		pinctrl-0 = <&pwm_gpio17_idx10_pins>;
+		interrupt-parent = <&gic>;
+		interrupts = <???? IRQ_TYPE_EDGE_FALLING>;
+		pwms = <&en7581_pwm 9 4000000 0>;
+		#cooling-cells = <2>;
+	};
+	*/
+};
+
+/*
+&trips {
+	package_active1: trip-active1 {
+		temperature = <45000>;
+		hysteresis = <5000>;
+		type = "active";
+	};
+
+	package_active2: trip-active2 {
+		temperature = <50000>;
+		hysteresis = <5000>;
+		type = "active";
+	};
+
+	package_active3: trip-active3 {
+		temperature = <60000>;
+		hysteresis = <5000>;
+		type = "active";
+	};
+
+	package_active4: trip-active4 {
+		temperature = <70000>;
+		hysteresis = <5000>;
+		type = "active";
+	};
+
+	package_active5: trip-active5 {
+		temperature = <80000>;
+		hysteresis = <5000>;
+		type = "active";
+	};
+
+	package_hot: trip-hot {
+		temperature = <95000>;
+		hysteresis = <5000>;
+		type = "hot";
+	};
+
+	package_critical: trip-critical {
+		temperature = <110000>;
+		hysteresis = <5000>;
+		type = "critical";
+	};
+};
+
+&cooling-maps {
+	map1 {
+		trip = <&package_acive1>;
+		cooling-device = <&fan 1 1>;
+	};
+
+	map2 {
+		trip = <&package_acive2>;
+		cooling-device = <&fan 2 2>;
+	};
+
+	map3 {
+		trip = <&package_acive3>;
+		cooling-device = <&fan 3 3>;
+	};
+
+	map4 {
+		trip = <&package_acive4>;
+		cooling-device = <&fan 4 4>;
+	};
+
+	map5 {
+		trip = <&package_acive5>;
+		cooling-device = <&fan 5 5>;
+	};
+};
+*/
+
+&en7581_pinctrl {
+	//gpio-ranges = <&en7581_pinctrl 0 0 64>;
+	gpio-ranges = <&en7581_pinctrl 0 13 47>;
+
+	mdio_pins: mdio-pins {
+		mux {
+			function = "mdio";
+			groups = "mdio";
+		};
+
+		conf {
+			pins = "gpio2";
+			output-high;
+		};
+	};
+
+	pcie0_rst_pins: pcie0-rst-pins {
+		conf {
+			pins = "pcie_reset0";
+			drive-open-drain = <1>;
+		};
+	};
+
+	pcie1_rst_pins: pcie1-rst-pins {
+		conf {
+			pins = "pcie_reset1";
+			drive-open-drain = <1>;
+		};
+	};
+
+	pwm_gpio17_idx9_pins: pwm-gpio17-idx9-pins {
+		function = "pwm";
+		pins = "gpio17";
+		output-enable;
+	};
+};
+
+&snfi {
+	status = "okay";
+};
+
+&spi_nand {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "bootloader";
+			reg = <0x00000000 0x00200000>;
+			read-only;
+		};
+
+		partition@200000 {
+			label = "uenv";
+			reg = <0x00200000 0x00200000>;
+		};
+
+		partition@400000 {
+			label = "dsd";
+			reg = <0x00400000 0x00200000>;
+			read-only;
+
+			nvmem-layout@0 {
+				compatible = "ascii-eq-delim-env";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				lan_mac: lan_mac {
+					compatible = "mac-base";
+					#nvmem-cell-cells = <1>;
+				};
+
+				wan_mac: wan_mac {
+					compatible = "mac-base";
+					#nvmem-cell-cells = <1>;
+				};
+			};
+
+			nvmem-layout@1000 {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom_factory_5000: eeprom@5000 {
+					reg = <0x5000 0x1e00>;
+				};
+			};
+		};
+
+		partition@600000 {
+			label = "kernel";
+			reg = <0x00600000 0x01000000>;
+		};
+
+		partition@1600000 {
+			label = "rootfs";
+			reg = <0x01600000 0x1e800000>;
+			compatible = "linux,ubi";
+		};
+
+		reserved_bmt@1fe00000 {
+			label = "reserved_bmt";
+			reg = <0x1fe00000 0x00200000>;
+			read-only;
+		};
+	};
+};
+
+&i2c0 {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie0_rst_pins>;
+
+	pcie@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		wifi@0,0 {
+			compatible = "mediatek,mt76";
+			reg = <0x0000 0 0 0 0>;
+			airoha,eth = <&eth>;
+		};
+	};
+};
+
+&pcie1 {
+	status = "okay";
+	
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie1_rst_pins>;
+
+	pcie@1,0 {
+		reg = <0x0000 0 0 0 0>;
+		wifi@1,0 {
+			compatible = "mediatek,mt76";
+			regs = <0x0000 0 0 0 0>;
+			airoha,eth = <&eth>;
+		};
+	};
+};
+
+&eth {
+	status = "okay";
+};
+
+&gdm1 {
+	status = "okay";
+
+	nvmem-cells = <&lan_mac 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+/* TODO: re-enable once PCS driver is available.
+&gdm2 {
+	status = "okay";
+
+	phy-handle = <&phy5>;
+	phy-mode = "usxgmii";
+	label = "wan";
+
+	nvmem-cells = <&wan_mac 0>;
+	nvmem-cell-names = "mac-address";
+
+	fixed-link {
+		speed = <10000>;
+		full-duplex;
+	};
+};
+
+&gdm4 {
+	status = "okay";
+
+	phy-handle = <&phy8>;
+	phy-mode = "usxgmii";
+	label = "10g-lan";
+
+	nvmem-cells = <&lan_mac 0>;
+	nvmem-cell-names = "mac-address";
+
+	fixed-link {
+		speed = <10000>;
+		full-duplex;
+	};
+};
+*/
+
+&switch {
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&mdio_pins>;
+
+	mdio {
+		phy5: ethernet-phy@5 {
+			compatible = "ethernet-phy-ieee802.3-c45";
+			reg = <5>;
+			reset-gpios = <&en7581_pinctrl 14 GPIO_ACTIVE_LOW>;
+		};
+
+		phy8: ethernet-phy@8 {
+			compatible = "ethernet-phy-ieee802.3-c45";
+			reg = <8>;
+			reset-gpios = <&en7581_pinctrl 31 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&gsw_phy1 {
+	status = "okay";
+};
+
+&gsw_phy2 {
+	status = "okay";
+};
+
+&gsw_port3 {
+	status = "disabled";
+};
+
+&gsw_port4 {
+	status = "disabled";
+};
