@@ -373,12 +373,8 @@
 #define RTL931X_ISR_PORT_LINK_STS_CHG	(0x12B8)
 
 /* Definition of family IDs */
-#define RTL8389_FAMILY_ID   (0x8389)
-#define RTL8328_FAMILY_ID   (0x8328)
-#define RTL8390_FAMILY_ID   (0x8390)
-#define RTL8350_FAMILY_ID   (0x8350)
 #define RTL8380_FAMILY_ID   (0x8380)
-#define RTL8330_FAMILY_ID   (0x8330)
+#define RTL8390_FAMILY_ID   (0x8390)
 #define RTL9300_FAMILY_ID   (0x9300)
 #define RTL9310_FAMILY_ID   (0x9310)
 

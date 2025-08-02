@@ -20,6 +20,9 @@
 struct rtl83xx_soc_info soc_info;
 const void *fdt;
 
+static char soc_name[16];
+static char rtl83xx_system_type[32];
+
 #ifdef CONFIG_MIPS_MT_SMP
 
 extern const struct plat_smp_ops vsmp_smp_ops;
@@ -96,124 +99,69 @@ void __init device_tree_init(void)
 
 const char *get_system_type(void)
 {
-	return soc_info.name;
+	return rtl83xx_system_type;
 }
 
-static void __init identify_rtl9302(void)
+static uint32_t __init read_model(void)
 {
-	switch (sw_r32(RTL93XX_MODEL_NAME_INFO) & 0xfffffff0) {
-	case 0x93020810:
-		soc_info.name = "RTL9302A 12x2.5G";
-		break;
-	case 0x93021010:
-		soc_info.name = "RTL9302B 8x2.5G";
-		break;
-	case 0x93021810:
-		soc_info.name = "RTL9302C 16x2.5G";
-		break;
-	case 0x93022010:
-		soc_info.name = "RTL9302D 24x2.5G";
-		break;
-	case 0x93020800:
-		soc_info.name = "RTL9302A";
-		break;
-	case 0x93021000:
-		soc_info.name = "RTL9302B";
-		break;
-	case 0x93021800:
-		soc_info.name = "RTL9302C";
-		break;
-	case 0x93022000:
-		soc_info.name = "RTL9302D";
-		break;
-	case 0x93023001:
-		soc_info.name = "RTL9302F";
-		break;
-	default:
-		soc_info.name = "RTL9302";
+	uint32_t model, id;
+
+	model = sw_r32(RTL838X_MODEL_NAME_INFO);
+	id = model >> 16 & 0xffff;
+	if ((id >= 0x8380 && id <= 0x8382) || id == 0x8330 || id == 0x8332) {
+		soc_info.id = id;
+		soc_info.family = RTL8380_FAMILY_ID;
+		return model;
 	}
+
+	model = sw_r32(RTL839X_MODEL_NAME_INFO);
+	id = model >> 16 & 0xffff;
+	if ((id >= 0x8391 && id <= 0x8396) || (id >= 0x8351 && id <= 0x8353)) {
+		soc_info.id = id;
+		soc_info.family = RTL8390_FAMILY_ID;
+		return model;
+	}
+
+	model = sw_r32(RTL93XX_MODEL_NAME_INFO);
+	id = model >> 16 & 0xffff;
+	if (id >= 0x9301 && id <= 0x9303) {
+		soc_info.id = id;
+		soc_info.family = RTL9300_FAMILY_ID;
+		return model;
+	} else if (id >= 0x9311 && id <= 0x9313) {
+		soc_info.id = id;
+		soc_info.family = RTL9310_FAMILY_ID;
+		return model;
+	}
+
+	return 0;
+}
+
+static void __init parse_model(uint32_t model)
+{
+	int val;
+	char suffix = 0;
+
+	val = (model >> 11) & 0x1f;
+	if (val > 0 && val <= 26)
+		suffix = 'A' + (val - 1);
+
+	snprintf(soc_name, sizeof(soc_name), "RTL%04X%c",
+		 soc_info.id, suffix);
+
+	soc_info.name = soc_name;
+}
+
+static void __init rtl83xx_set_system_type(void) {
+	snprintf(rtl83xx_system_type, sizeof(rtl83xx_system_type),
+		 "Realtek %s", soc_info.name);
 }
 
 void __init prom_init(void)
 {
-	uint32_t model;
-
-	model = sw_r32(RTL838X_MODEL_NAME_INFO);
-	pr_info("RTL838X model is %x\n", model);
-	model = model >> 16 & 0xFFFF;
-
-	if ((model != 0x8328) && (model != 0x8330) && (model != 0x8332)
-	    && (model != 0x8380) && (model != 0x8382)) {
-		model = sw_r32(RTL839X_MODEL_NAME_INFO);
-		pr_info("RTL839X model is %x\n", model);
-		model = model >> 16 & 0xFFFF;
-	}
-
-	if ((model & 0x8390) != 0x8380 && (model & 0x8390) != 0x8390) {
-		model = sw_r32(RTL93XX_MODEL_NAME_INFO);
-		pr_info("RTL93XX model is %x\n", model);
-		model = model >> 16 & 0xFFFF;
-	}
-
-	soc_info.id = model;
-
-	switch (model) {
-	case 0x8328:
-		soc_info.name = "RTL8328";
-		soc_info.family = RTL8328_FAMILY_ID;
-		break;
-	case 0x8332:
-		soc_info.name = "RTL8332";
-		soc_info.family = RTL8380_FAMILY_ID;
-		break;
-	case 0x8380:
-		soc_info.name = "RTL8380";
-		soc_info.family = RTL8380_FAMILY_ID;
-		break;
-	case 0x8382:
-		soc_info.name = "RTL8382";
-		soc_info.family = RTL8380_FAMILY_ID;
-		break;
-	case 0x8390:
-		soc_info.name = "RTL8390";
-		soc_info.family = RTL8390_FAMILY_ID;
-		break;
-	case 0x8391:
-		soc_info.name = "RTL8391";
-		soc_info.family = RTL8390_FAMILY_ID;
-		break;
-	case 0x8392:
-		soc_info.name = "RTL8392";
-		soc_info.family = RTL8390_FAMILY_ID;
-		break;
-	case 0x8393:
-		soc_info.name = "RTL8393";
-		soc_info.family = RTL8390_FAMILY_ID;
-		break;
-	case 0x9301:
-		soc_info.name = "RTL9301";
-		soc_info.family = RTL9300_FAMILY_ID;
-		break;
-	case 0x9302:
-		identify_rtl9302();
-		soc_info.family = RTL9300_FAMILY_ID;
-		break;
-	case 0x9303:
-		soc_info.name = "RTL9303";
-		soc_info.family = RTL9300_FAMILY_ID;
-		break;
-	case 0x9311:
-		soc_info.name = "RTL9311";
-		soc_info.family = RTL9310_FAMILY_ID;
-		break;
-	case 0x9313:
-		soc_info.name = "RTL9313";
-		soc_info.family = RTL9310_FAMILY_ID;
-		break;
-	default:
-		soc_info.name = "DEFAULT";
-		soc_info.family = 0;
-	}
+	uint32_t model = read_model();
+	parse_model(model);
+	rtl83xx_set_system_type();
 
 	pr_info("SoC Type: %s\n", get_system_type());
 
