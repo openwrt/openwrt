@@ -68,9 +68,6 @@ struct __attribute__ ((__packed__)) fw_header {
 #define RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR	(0x13F4)
 #define RTL931X_MAC_SERDES_MODE_CTRL(sds)	(0x136C + (((sds) << 2)))
 
-int rtl839x_read_sds_phy(int phy_addr, int phy_reg);
-int rtl839x_write_sds_phy(int phy_addr, int phy_reg, u16 v);
-
 int rtl9300_serdes_setup(int port, int sds_num, phy_interface_t phy_mode);
 int rtl930x_read_sds_phy(int phy_addr, int page, int phy_reg);
 int rtl930x_write_sds_phy(int phy_addr, int page, int phy_reg, u16 v);

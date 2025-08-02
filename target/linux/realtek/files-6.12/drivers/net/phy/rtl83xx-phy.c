@@ -292,44 +292,6 @@ static u32 rtl9300_sds_mode_get(int sds_num)
 	return v & RTL930X_SDS_MASK;
 }
 
-/* On the RTL839x family of SoCs with inbuilt SerDes, these SerDes are accessed through
- * a 2048 bit register that holds the contents of the PHY being simulated by the SoC.
- */
-int rtl839x_read_sds_phy(int phy_addr, int phy_reg)
-{
-	int offset = 0;
-	int reg;
-	u32 val;
-
-	if (phy_addr == 49)
-		offset = 0x100;
-
-	/* For the RTL8393 internal SerDes, we simulate a PHY ID in registers 2/3
-	 * which would otherwise read as 0.
-	 */
-	if (soc_info.id == 0x8393) {
-		if (phy_reg == MII_PHYSID1)
-			return 0x1c;
-		if (phy_reg == MII_PHYSID2)
-			return 0x8393;
-	}
-
-	/* Register RTL839X_SDS12_13_XSG0 is 2048 bit broad, the MSB (bit 15) of the
-	 * 0th PHY register is bit 1023 (in byte 0x80). Because PHY-registers are 16
-	 * bit broad, we offset by reg << 1. In the SoC 2 registers are stored in
-	 * one 32 bit register.
-	 */
-	reg = (phy_reg << 1) & 0xfc;
-	val = sw_r32(RTL839X_SDS12_13_XSG0 + offset + 0x80 + reg);
-
-	if (phy_reg & 1)
-		val = (val >> 16) & 0xffff;
-	else
-		val &= 0xffff;
-
-	return val;
-}
-
 /* On the RTL930x family of SoCs, the internal SerDes are accessed through an IO
  * register which simulates commands to an internal MDIO bus.
  */
@@ -420,29 +382,6 @@ int rtl931x_write_sds_phy(int phy_addr, int page, int phy_reg, u16 v)
 
 	if (i >= 100)
 		return -EIO;
-
-	return 0;
-}
-
-int rtl839x_write_sds_phy(int phy_addr, int phy_reg, u16 v)
-{
-	int offset = 0;
-	int reg;
-	u32 val;
-
-	if (phy_addr == 49)
-		offset = 0x100;
-
-	reg = (phy_reg << 1) & 0xfc;
-	val = v;
-	if (phy_reg & 1) {
-		val = val << 16;
-		sw_w32_mask(0xffff0000, val,
-			    RTL839X_SDS12_13_XSG0 + offset + 0x80 + reg);
-	} else {
-		sw_w32_mask(0xffff, val,
-			    RTL839X_SDS12_13_XSG0 + offset + 0x80 + reg);
-	}
 
 	return 0;
 }
