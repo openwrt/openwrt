@@ -443,7 +443,7 @@ $(eval $(call KernelPackage,fs-netfs))
 define KernelPackage/fs-nfs
   SUBMENU:=$(FS_MENU)
   TITLE:=NFS filesystem client support
-  DEPENDS:=+kmod-fs-nfs-common +kmod-dnsresolver
+  DEPENDS:=+kmod-fs-nfs-common +kmod-dnsresolver +kmod-fs-netfs +LINUX_6_6:kmod-fs-fscache
   KCONFIG:= \
 	CONFIG_NFS_FS \
 	CONFIG_NFS_USE_LEGACY_DNS=n \
@@ -473,12 +473,23 @@ define KernelPackage/fs-nfs-common
 	CONFIG_NFS_V4_1_IMPLEMENTATION_ID_DOMAIN="kernel.org" \
 	CONFIG_NFS_V4_1_MIGRATION=n \
 	CONFIG_NFS_V4_2=y \
-	CONFIG_NFS_V4_2_READ_PLUS=n
+	CONFIG_NFS_V4_2_READ_PLUS=n \
+	CONFIG_NFS_V4_SECURITY_LABEL=y \
+	CONFIG_NFS_FSCACHE=y \
+	CONFIG_FSCACHE_STATS=y \
+	CONFIG_NFS_USE_KERNEL_DNS=y \
+	CONFIG_NFS_DEBUG=y \
+	CONFIG_NFS_COMMON_LOCALIO_SUPPORT=y@ge6.12 \
+	CONFIG_NFS_LOCALIO=y@ge6.12 \
+	CONFIG_NFS_V4_2_SSC_HELPER=y
+	CONFIG_PNFS_BLOCK=n
+
   FILES:= \
 	$(LINUX_DIR)/fs/lockd/lockd.ko \
 	$(LINUX_DIR)/net/sunrpc/sunrpc.ko \
-	$(LINUX_DIR)/fs/nfs_common/grace.ko
-  AUTOLOAD:=$(call AutoLoad,30,grace sunrpc lockd)
+	$(LINUX_DIR)/fs/nfs_common/grace.ko \
+	$(LINUX_DIR)/fs/nfs_common/nfs_localio.ko@ge6.12
+  AUTOLOAD:=$(call AutoLoad,30,grace sunrpc lockd $(if $(CONFIG_LINUX_6_12),nfs_localio))
 endef
 
 $(eval $(call KernelPackage,fs-nfs-common))
@@ -556,12 +567,13 @@ define KernelPackage/fs-nfsd
   KCONFIG:= \
 	CONFIG_NFSD \
 	CONFIG_NFSD_V4=y \
-	CONFIG_NFSD_V4_SECURITY_LABEL=n \
+	CONFIG_NFSD_PNFS=y \
 	CONFIG_NFSD_BLOCKLAYOUT=n \
-	CONFIG_NFSD_SCSILAYOUT=n \
 	CONFIG_NFSD_FLEXFILELAYOUT=n \
-	CONFIG_NFSD_FAULT_INJECTION=n \
-	CONFIG_NFSD_V4_2_INTER_SSC=n
+	CONFIG_NFSD_SCSILAYOUT=y \
+	CONFIG_NFSD_V4_2_INTER_SSC=y \
+	CONFIG_NFSD_V4_SECURITY_LABEL=y
+
   FILES:=$(LINUX_DIR)/fs/nfsd/nfsd.ko
   AUTOLOAD:=$(call AutoLoad,40,nfsd)
 endef
