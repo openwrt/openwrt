@@ -319,6 +319,11 @@ ramips_setup_macs()
 		wan_mac=$(macaddr_add "$lan_mac" 8)
 		label_mac=$lan_mac
 		;;
+	mercury,km08-708h)
+		label_mac=$(mtd_get_mac_binary factory 0x4)
+		wan_mac=$label_mac
+		lan_mac=$(macaddr_add $label_mac 1)
+		;;
 	mts,wg430223)
 		wan_mac=$(mtd_get_mac_encrypted_arcadyan "board_data")
 		label_mac=$wan_mac
