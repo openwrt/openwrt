@@ -305,10 +305,10 @@ static int rtl9300_i2c_smbus_xfer(struct i2c_adapter * adap, u16 addr,
 			ret = -EINVAL;
 			goto out_unlock;
 		}
-		drv_data->config_xfer(i2c, addr, data->block[0]);
+		drv_data->config_xfer(i2c, addr, data->block[0] + 1);
 		if (read_write == I2C_SMBUS_WRITE)
-			drv_data->write(i2c, &data->block[1], data->block[0]);
-		len = data->block[0];
+			drv_data->write(i2c, &data->block[0], data->block[0] + 1);
+		len = data->block[0] + 1;
 		break;
 
 	default:
