@@ -698,28 +698,25 @@ void rtl9300_dump_debug(void)
 	);
 }
 
-irqreturn_t rtl930x_switch_irq(int irq, void *dev_id)
+irqreturn_t rtldsa_930x_switch_irq(int irq, void *dev_id)
 {
 	struct dsa_switch *ds = dev_id;
-	u32 ports = sw_r32(RTL930X_ISR_PORT_LINK_STS_CHG);
+	struct rtl838x_switch_priv *priv = ds->priv;
+	unsigned long ports = sw_r32(RTL930X_ISR_PORT_LINK_STS_CHG);
+	unsigned int i;
 	u32 link;
 
 	/* Clear status */
 	sw_w32(ports, RTL930X_ISR_PORT_LINK_STS_CHG);
 
-	for (int i = 0; i < 28; i++) {
-		if (ports & BIT(i)) {
-			/* Read the register twice because of issues with latency at least
-			 * with the external RTL8226 PHY on the XGS1210
-			 */
-			link = sw_r32(RTL930X_MAC_LINK_STS);
-			link = sw_r32(RTL930X_MAC_LINK_STS);
-			if (link & BIT(i))
-				dsa_port_phylink_mac_change(ds, i, true);
-			else
-				dsa_port_phylink_mac_change(ds, i, false);
-		}
-	}
+	/* Read the register twice because of issues with latency at least
+	 * with the external RTL8226 PHY on the XGS1210
+	 */
+	link = sw_r32(RTL930X_MAC_LINK_STS);
+	link = sw_r32(RTL930X_MAC_LINK_STS);
+
+	for_each_set_bit(i, &ports, priv->cpu_port)
+		dsa_port_phylink_mac_change(ds, i, link & BIT(i));
 
 	return IRQ_HANDLED;
 }
