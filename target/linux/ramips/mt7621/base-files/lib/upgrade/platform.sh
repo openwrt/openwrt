@@ -138,6 +138,7 @@ platform_do_upgrade() {
 	sercomm,na502|\
 	sercomm,na502s|\
 	sim,simax1800t|\
+	sim,simax1800u|\
 	tplink,ec330-g5u-v1|\
 	wifire,s1500-nbn|\
 	xiaomi,mi-router-3g|\
