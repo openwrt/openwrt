@@ -693,6 +693,7 @@ struct rtl838x_port {
 	bool phy_is_integrated;
 	bool is10G;
 	bool is2G5;
+	bool isSFP;
 	int sds_num;
 	int led_set;
 	int leds_on_this_port;

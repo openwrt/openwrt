@@ -690,11 +690,12 @@ static void rtl93xx_pcs_get_state(struct phylink_pcs *pcs,
 		pr_err("%s: unknown speed: %d\n", __func__, (u32)speed & 0xf);
 	}
 
-	if (priv->family_id == RTL9310_FAMILY_ID
-		&& (port >= 52 && port <= 55)) { /* Internal serdes */
+	if (priv->family_id == RTL9310_FAMILY_ID) {
+		if (priv->ports[port].isSFP) {
 			state->speed = SPEED_10000;
 			state->link = 1;
 			state->duplex = 1;
+		}
 	}
 
 	pr_debug("%s: speed is: %d %d\n", __func__, (u32)speed & 0xf, state->speed);
