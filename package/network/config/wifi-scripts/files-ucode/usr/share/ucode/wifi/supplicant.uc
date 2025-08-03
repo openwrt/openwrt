@@ -64,7 +64,6 @@ function setup_sta(data, config) {
 	set_default(config, 'multi_ap', 0);
 	set_default(config, 'default_disabled', 0);
 
-//multiap_flag_file="${_config}.is_multiap"
 	config.scan_ssid = 1;
 
 	switch(config.mode) {
