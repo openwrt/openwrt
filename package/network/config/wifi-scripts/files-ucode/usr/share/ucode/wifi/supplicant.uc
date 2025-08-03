@@ -56,9 +56,9 @@ function setup_sta(data, config) {
 	iface.parse_encryption(config);
 
 	if (config.auth_type in [ 'sae', 'owe', 'eap2', 'eap192' ])
-		set_default(config, 'ieee80211w', 2);
+		config.ieee80211w = 2;
 	else if (config.auth_type in [ 'psk-sae' ])
-		set_default(config, 'ieee80211w', 1);
+		config.ieee80211w = 1;
 
 	set_default(config, 'ieee80211r', 0);
 	set_default(config, 'multi_ap', 0);
