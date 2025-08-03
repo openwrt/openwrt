@@ -73,6 +73,7 @@ mediatek_setup_interfaces()
 	bananapi,bpi-r3)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 sfp2" "sfp1 wan"
 		;;
+	airpi,ap3000m|\
 	bananapi,bpi-r3-mini|\
 	edgecore,eap111|\
 	huasifei,wh3000|\
@@ -174,6 +175,10 @@ mediatek_setup_macs()
 	acer,vero-w6m)
 		wan_mac=$(mmc_get_mac_ascii u-boot-env WANMAC)
 		lan_mac=$(mmc_get_mac_ascii u-boot-env LANMAC)
+		;;
+	airpi,ap3000m)
+		lan_mac=$(macaddr_generate_from_mmc_cid mmcblk0)
+		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
 	bananapi,bpi-r3|\
 	bananapi,bpi-r3-mini|\
