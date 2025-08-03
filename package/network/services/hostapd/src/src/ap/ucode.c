@@ -214,7 +214,7 @@ __uc_hostapd_bss_stop(struct hostapd_data *hapd)
 	hostapd_bss_link_deinit(hapd);
 
 #ifdef CONFIG_IEEE80211BE
-	if (hapd == iface->bss[0])
+	if (hapd == iface->bss[0] && hapd->conf->mld_ap)
 	        hostapd_if_link_remove(hapd, WPA_IF_AP_BSS, hapd->conf->iface,
                        hapd->mld_link_id);
 #endif
