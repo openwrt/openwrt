@@ -13,10 +13,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800soc.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800soc.c
-@@ -230,10 +230,17 @@ static int rt2800soc_probe(struct platfo
- 	return rt2x00soc_probe(pdev, &rt2800soc_ops);
+@@ -237,10 +237,18 @@ static int bp_rt2x00soc_remove(struct pl
+ 	return 0;
  }
- 
+ #endif
++
 +static const struct of_device_id rt2880_wmac_match[] = {
 +	{ .compatible = "ralink,rt2880-wmac" },
 +	{},
@@ -30,4 +31,4 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		.of_match_table	= rt2880_wmac_match,
  	},
  	.probe		= rt2800soc_probe,
- 	.remove		= rt2x00soc_remove,
+ #if LINUX_VERSION_IS_GEQ(6,11,0)
