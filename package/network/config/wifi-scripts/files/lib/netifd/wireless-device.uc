@@ -36,6 +36,8 @@ function handle_link(dev, data, up)
 		     (data.type == "vif" && config.mode == "ap");
 
 	let dev_data = {
+		external: 2,
+		check_vlan: false,
 		isolate: !!config.bridge_isolate,
 		wireless: true,
 		wireless_ap: ap,
