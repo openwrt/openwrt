@@ -27,7 +27,7 @@ Subject: [PATCH] UGW_SW-29163: ATM oam support
  
  /*
   * Disconnect a channel from the generic layer.
-@@ -3624,6 +3640,7 @@ EXPORT_SYMBOL(ppp_unregister_channel);
+@@ -3628,6 +3644,7 @@ EXPORT_SYMBOL(ppp_unregister_channel);
  EXPORT_SYMBOL(ppp_channel_index);
  EXPORT_SYMBOL(ppp_unit_number);
  EXPORT_SYMBOL(ppp_dev_name);
@@ -37,7 +37,7 @@ Subject: [PATCH] UGW_SW-29163: ATM oam support
  EXPORT_SYMBOL(ppp_output_wakeup);
 --- a/include/linux/ppp_channel.h
 +++ b/include/linux/ppp_channel.h
-@@ -76,6 +76,9 @@ extern int ppp_unit_number(struct ppp_ch
+@@ -75,6 +75,9 @@ extern int ppp_unit_number(struct ppp_ch
  /* Get the device name associated with a channel, or NULL if none */
  extern char *ppp_dev_name(struct ppp_channel *);
  
