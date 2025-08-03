@@ -8,6 +8,6 @@ ARCH:=aarch64
 BOARDNAME:=Marvell Armada 3700LP (ARM64)
 CPU_TYPE:=cortex-a53
 FEATURES+=ext4
-DEFAULT_PACKAGES+=e2fsprogs ethtool mkf2fs partx-utils
+DEFAULT_PACKAGES+=e2fsprogs ethtool mkf2fs partx-utils kmod-crypto-hw-safexcel
 
 KERNELNAME:=Image dtbs
