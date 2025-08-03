@@ -241,11 +241,11 @@ function check_interfaces()
 			dev.check();
 }
 
-function hotplug(name, add)
+function hotplug(ifname, add)
 {
 	for (let name, dev in wireless.devices)
 		if (dev.autostart)
-			dev.hotplug(name, add);
+			dev.hotplug(ifname, add);
 }
 
 const network_config_attr = {

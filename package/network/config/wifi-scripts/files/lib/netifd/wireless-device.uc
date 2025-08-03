@@ -532,7 +532,7 @@ function hotplug(name, add)
 		    data.type != "vif" && data.type != "vlan")
 			continue;
 
-		handle_link(dev, data, up);
+		handle_link(dev, data, add);
 	}
 }
 
