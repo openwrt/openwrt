@@ -42,7 +42,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +ath11k-$(CPTCFG_ATH11K_THERMAL) += thermal.o
  ath11k-$(CPTCFG_ATH11K_SPECTRAL) += spectral.o
  ath11k-$(CONFIG_PM) += wow.o
- 
+ ath11k-$(CONFIG_DEV_COREDUMP) += coredump.o
 --- a/drivers/net/wireless/ath/ath11k/thermal.h
 +++ b/drivers/net/wireless/ath/ath11k/thermal.h
 @@ -26,7 +26,7 @@ struct ath11k_thermal {
@@ -62,5 +62,5 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  ATH11K_SPECTRAL=
 +ATH11K_THERMAL=
  ATH12K=
+ ATH12K_AHB=
  ATH12K_DEBUG=
- ATH12K_DEBUGFS=

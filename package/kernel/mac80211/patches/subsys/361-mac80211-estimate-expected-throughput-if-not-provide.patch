@@ -12,9 +12,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/sta_info.c
 +++ b/net/mac80211/sta_info.c
-@@ -2621,6 +2621,29 @@ static inline u64 sta_get_stats_bytes(st
- 	return value;
+@@ -2648,6 +2648,29 @@ static void sta_set_mesh_sinfo(struct st
  }
+ #endif
  
 +static u32 sta_estimate_expected_throughput(struct sta_info *sta,
 +					    struct station_info *sinfo)
@@ -42,7 +42,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  void sta_set_sinfo(struct sta_info *sta, struct station_info *sinfo,
  		   bool tidstats)
  {
-@@ -2865,6 +2888,8 @@ void sta_set_sinfo(struct sta_info *sta,
+@@ -2871,6 +2894,8 @@ void sta_set_sinfo(struct sta_info *sta,
  		sinfo->sta_flags.set |= BIT(NL80211_STA_FLAG_TDLS_PEER);
  
  	thr = sta_get_expected_throughput(sta);

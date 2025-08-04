@@ -52,7 +52,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/wireless/chan.c
 +++ b/net/wireless/chan.c
-@@ -648,6 +648,8 @@ void cfg80211_set_dfs_state(struct wiphy
+@@ -643,6 +643,8 @@ void cfg80211_set_dfs_state(struct wiphy
  
  		c->dfs_state = dfs_state;
  		c->dfs_state_entered = jiffies;
@@ -61,7 +61,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  }
  
-@@ -995,6 +997,53 @@ bool cfg80211_any_wiphy_oper_chan(struct
+@@ -990,6 +992,53 @@ bool cfg80211_any_wiphy_oper_chan(struct
  	return false;
  }
  
@@ -117,7 +117,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  {
 --- a/net/wireless/core.h
 +++ b/net/wireless/core.h
-@@ -475,6 +475,8 @@ void cfg80211_set_dfs_state(struct wiphy
+@@ -474,6 +474,8 @@ void cfg80211_set_dfs_state(struct wiphy
  			    enum nl80211_dfs_state dfs_state);
  
  void cfg80211_dfs_channels_update_work(struct work_struct *work);

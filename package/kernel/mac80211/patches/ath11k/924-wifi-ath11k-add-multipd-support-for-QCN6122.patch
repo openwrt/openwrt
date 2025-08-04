@@ -79,7 +79,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  
 --- a/drivers/net/wireless/ath/ath11k/core.h
 +++ b/drivers/net/wireless/ath/ath11k/core.h
-@@ -45,6 +45,9 @@
+@@ -47,6 +47,9 @@
  #define ATH11K_INVALID_HW_MAC_ID	0xFF
  #define ATH11K_CONNECTION_LOSS_HZ	(3 * HZ)
  
@@ -89,7 +89,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  /* SMBIOS type containing Board Data File Name Extension */
  #define ATH11K_SMBIOS_BDF_EXT_TYPE 0xF8
  
-@@ -952,6 +955,7 @@ struct ath11k_base {
+@@ -966,6 +969,7 @@ struct ath11k_base {
  	struct list_head peers;
  	wait_queue_head_t peer_mapping_wq;
  	u8 mac_addr[ETH_ALEN];
@@ -99,7 +99,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  	struct ath11k_targ_cap target_caps;
 --- a/drivers/net/wireless/ath/ath11k/pci.c
 +++ b/drivers/net/wireless/ath/ath11k/pci.c
-@@ -389,6 +389,8 @@ static void ath11k_pci_init_qmi_ce_confi
+@@ -391,6 +391,8 @@ static void ath11k_pci_init_qmi_ce_confi
  	} else
  		ab->qmi.service_ins_id = ab->hw_params.qmi_service_ins_id;
  

@@ -23,7 +23,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -4116,7 +4116,9 @@ void __ieee80211_schedule_txq(struct iee
+@@ -4099,7 +4099,9 @@ void __ieee80211_schedule_txq(struct iee
  
  	spin_lock_bh(&local->active_txq_lock[txq->ac]);
  

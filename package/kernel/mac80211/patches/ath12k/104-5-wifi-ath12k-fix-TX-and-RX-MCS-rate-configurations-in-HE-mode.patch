@@ -127,7 +127,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 
 --- a/drivers/net/wireless/ath/ath12k/wmi.c
 +++ b/drivers/net/wireless/ath/ath12k/wmi.c
-@@ -2266,8 +2266,8 @@ int ath12k_wmi_send_peer_assoc_cmd(struc
+@@ -2333,8 +2333,8 @@ int ath12k_wmi_send_peer_assoc_cmd(struc
  		he_mcs->tlv_header = ath12k_wmi_tlv_cmd_hdr(WMI_TAG_HE_RATE_SET,
  							    sizeof(*he_mcs));
  
@@ -140,7 +140,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  
 --- a/drivers/net/wireless/ath/ath12k/wmi.h
 +++ b/drivers/net/wireless/ath/ath12k/wmi.h
-@@ -4083,7 +4083,9 @@ struct ath12k_wmi_vht_rate_set_params {
+@@ -4157,7 +4157,9 @@ struct ath12k_wmi_vht_rate_set_params {
  
  struct ath12k_wmi_he_rate_set_params {
  	__le32 tlv_header;

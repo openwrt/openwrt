@@ -14,7 +14,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -1444,7 +1444,7 @@ static void ieee80211_txq_enqueue(struct
+@@ -1428,7 +1428,7 @@ static void ieee80211_txq_enqueue(struct
  {
  	struct fq *fq = &local->fq;
  	struct fq_tin *tin = &txqi->tin;
@@ -23,7 +23,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	ieee80211_set_skb_enqueue_time(skb);
  
-@@ -1460,6 +1460,7 @@ static void ieee80211_txq_enqueue(struct
+@@ -1444,6 +1444,7 @@ static void ieee80211_txq_enqueue(struct
  			IEEE80211_TX_INTCFL_NEED_TXPROCESSING;
  		__skb_queue_tail(&txqi->frags, skb);
  	} else {
