@@ -26,6 +26,7 @@ define Device/tplink_tl-st1008f_v2
   DEVICE_VARIANT := v2.0
   DEVICE_PACKAGES := kmod-gpio-pca953x
   IMAGE_SIZE := 31808k
+  $(Device/kernel-lzma)
 endef
 TARGET_DEVICES += tplink_tl-st1008f_v2
 
