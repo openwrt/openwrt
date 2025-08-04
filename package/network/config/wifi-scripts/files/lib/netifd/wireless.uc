@@ -186,6 +186,41 @@ function config_init(uci)
 		object: "service",
 		method: "get_data",
 		data: {
+			type: "wifi-device"
+		},
+	});
+	for (let svcname, svc in udata) {
+		for (let typename, data in svc) {
+			for (let radio, config in data) {
+				if (type(config) != "object")
+					continue;
+
+				let dev = devices[radio];
+				if (dev) {
+					dev.config = { ...dev.config, ...config };
+					continue;
+				}
+
+				let handler = wireless.handlers[config.type];
+				if (!handler)
+					continue;
+
+				dev = devices[radio] = {
+					name,
+					config,
+
+					vif: [],
+				};
+				handlers[radio] = handler;
+			}
+		}
+	}
+
+
+	udata = ubus.call({
+		object: "service",
+		method: "get_data",
+		data: {
 			type: "wifi-iface"
 		},
 	});
@@ -193,6 +228,9 @@ function config_init(uci)
 	for (let svcname, svc in udata) {
 		for (let typename, data in svc) {
 			for (let radio, vifs in data) {
+				if (type(vifs) != "object")
+					continue;
+
 				for (let name, vif in vifs) {
 					let devs = vif.device;
 					if (type(devs) != "array")
