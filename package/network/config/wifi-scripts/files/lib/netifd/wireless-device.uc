@@ -391,11 +391,14 @@ function update(data)
 
 function start()
 {
-	if (this.delete || this.data.config.disabled)
+	if (this.delete)
 		return;
 
 	this.dbg("start, state=" + this.state);
 	this.autostart = true;
+	if (this.data.config.disabled)
+		return;
+
 	wdev_reset(this);
 
 	if (this.state != "down")
@@ -427,7 +430,10 @@ function check()
 		return;
 
 	wdev_config_init(this);
-	this.setup();
+	if (this.data.config.disabled)
+		this.teardown();
+	else
+		this.setup();
 }
 
 function wdev_mark_up(wdev)
