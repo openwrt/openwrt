@@ -1578,6 +1578,8 @@ static int fe_probe(struct platform_device *pdev)
 
 	if (IS_ENABLED(CONFIG_SOC_MT7621))
 		netdev->max_mtu = 2048;
+	if (IS_ENABLED(CONFIG_SOC_MT7620) && IS_ENABLED(CONFIG_NET_RALINK_ESW_RT3050))
+		netdev->max_mtu = 1508;
 
 	/* fake rx vlan filter func. to support tx vlan offload func */
 	if (fe_reg_table[FE_REG_FE_DMA_VID_BASE])
