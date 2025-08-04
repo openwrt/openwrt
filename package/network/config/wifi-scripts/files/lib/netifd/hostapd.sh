@@ -1316,13 +1316,15 @@ wpa_supplicant_add_network() {
 	wireless_vif_parse_encryption
 
 	json_get_vars \
-		ssid bssid key \
+		ssid bssid key rsn_override \
 		mcast_rate \
 		ieee80211w ieee80211r fils ocv \
 		multi_ap \
 		default_disabled
 
 	json_get_values basic_rate_list basic_rate
+
+	set_default rsn_override 1
 
 	case "$auth_type" in
 		sae|owe|eap2|eap192)
@@ -1373,6 +1375,12 @@ wpa_supplicant_add_network() {
 	}
 
 	[ -n "$ocv" ] && append network_data "ocv=$ocv" "$N$T"
+
+	rsn_overriding=0
+	case "$htmode" in
+	EHT*|HE*) [ "$rsn_override" -gt 0 ] && rsn_overriding=1;;
+	esac
+	append network_data "rsn_overriding=$rsn_overriding" "$N$T"
 
 	case "$auth_type" in
 		none) ;;

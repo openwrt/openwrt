@@ -59,6 +59,11 @@ function setup_sta(data, config) {
 		config.ieee80211w = 2;
 	else if (config.auth_type in [ 'psk-sae' ])
 		config.ieee80211w = 1;
+	if ((wildcard(data.htmode, 'EHT*') || wildcard(data.htmode, 'HE*')) &&
+		config.rsn_override)
+		config.rsn_overriding = 1;
+	else
+		config.rsn_overriding = 0;
 
 	set_default(config, 'ieee80211r', 0);
 	set_default(config, 'multi_ap', 0);
@@ -159,7 +164,7 @@ function setup_sta(data, config) {
 
 	network_append_string_vars(config, [ 'ssid' ]);
 	network_append_vars(config, [
-		'scan_ssid', 'noscan', 'disabled', 'multi_ap_backhaul_sta',
+		'rsn_overriding', 'scan_ssid', 'noscan', 'disabled', 'multi_ap_backhaul_sta',
 		'ocv', 'key_mgmt', 'psk', 'sae_password', 'pairwise', 'group', 'bssid',
 		'proto', 'mesh_fwding', 'mesh_rssi_threshold', 'frequency', 'fixed_freq',
 		'disable_ht', 'disable_ht40', 'disable_vht', 'vht', 'max_oper_chwidth',
