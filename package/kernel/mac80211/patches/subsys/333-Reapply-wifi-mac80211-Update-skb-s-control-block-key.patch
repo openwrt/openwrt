@@ -1,0 +1,27 @@
+From: Remi Pommarel <repk@triplefau.lt>
+Date: Thu, 17 Jul 2025 17:45:29 +0200
+Subject: [PATCH] Reapply "wifi: mac80211: Update skb's control block key in
+ ieee80211_tx_dequeue()"
+
+This reverts commit 0937cb5f345c ("Revert "wifi: mac80211: Update
+skb's control block key in ieee80211_tx_dequeue()"").
+
+This commit broke TX with 802.11 encapsulation HW offloading, now that
+this is fixed, reapply it.
+
+Fixes: bb42f2d13ffc ("mac80211: Move reorder-sensitive TX handlers to after TXQ dequeue")
+Signed-off-by: Remi Pommarel <repk@triplefau.lt>
+Link: https://patch.msgid.link/66b8fc39fb0194fa06c9ca7eeb6ffe0118dcb3ec.1752765971.git.repk@triplefau.lt
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -3900,6 +3900,7 @@ begin:
+ 	 * The key can be removed while the packet was queued, so need to call
+ 	 * this here to get the current key.
+ 	 */
++	info->control.hw_key = NULL;
+ 	r = ieee80211_tx_h_select_key(&tx);
+ 	if (r != TX_CONTINUE) {
+ 		ieee80211_free_txskb(&local->hw, skb);
