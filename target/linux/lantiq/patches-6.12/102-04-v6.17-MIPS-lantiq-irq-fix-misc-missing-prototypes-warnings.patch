@@ -1,7 +1,7 @@
-From 9729233d2ef318cdb6954c8b5cb032d7d0f03473 Mon Sep 17 00:00:00 2001
+From d97394bf381eda85d04bec68b72dbc397744fcc3 Mon Sep 17 00:00:00 2001
 From: Shiji Yang <yangshiji66@outlook.com>
-Date: Thu, 8 May 2025 19:53:12 +0800
-Subject: [PATCH 04/16] MIPS: lantiq: irq: fix misc missing-prototypes warnings
+Date: Wed, 18 Jun 2025 22:53:17 +0800
+Subject: [PATCH 04/11] MIPS: lantiq: irq: fix misc missing-prototypes warnings
 
 Fix the following build warnings:
 
@@ -16,6 +16,7 @@ arch/mips/lantiq/irq.c:424:14: error: no previous prototype for 'get_c0_compare_
       |              ^~~~~~~~~~~~~~~~~~
 
 Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
 ---
  arch/mips/lantiq/irq.c | 4 +++-
  1 file changed, 3 insertions(+), 1 deletion(-)

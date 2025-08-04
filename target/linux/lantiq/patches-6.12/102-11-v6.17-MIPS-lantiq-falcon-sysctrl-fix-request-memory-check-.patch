@@ -1,7 +1,7 @@
-From ccdf5d58c4f3330a83393641d4e4334994fc91af Mon Sep 17 00:00:00 2001
+From 9c9a7ff9882fc6ba7d2f4050697e8bb80383e8dc Mon Sep 17 00:00:00 2001
 From: Shiji Yang <yangshiji66@outlook.com>
-Date: Fri, 9 May 2025 20:53:58 +0800
-Subject: [PATCH 10/16] MIPS: lantiq: falcon: sysctrl: fix request memory check
+Date: Wed, 18 Jun 2025 22:53:23 +0800
+Subject: [PATCH 11/11] MIPS: lantiq: falcon: sysctrl: fix request memory check
  logic
 
 request_mem_region() will return NULL instead of error code
@@ -26,6 +26,7 @@ arch/mips/lantiq/falcon/sysctrl.c:225:50: error: ordered comparison of pointer w
       |
 
 Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
 ---
  arch/mips/lantiq/falcon/sysctrl.c | 23 ++++++++++-------------
  1 file changed, 10 insertions(+), 13 deletions(-)

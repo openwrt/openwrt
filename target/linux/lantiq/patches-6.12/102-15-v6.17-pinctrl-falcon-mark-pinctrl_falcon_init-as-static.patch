@@ -1,7 +1,7 @@
-From 9dec40b4f01a2aa92311b077ef45ecaa335d45a2 Mon Sep 17 00:00:00 2001
+From 4b443bbcd113cad6ec041a4f9f09179e2342ad60 Mon Sep 17 00:00:00 2001
 From: Shiji Yang <yangshiji66@outlook.com>
-Date: Fri, 9 May 2025 20:16:49 +0800
-Subject: [PATCH 15/16] pinctrl: falcon: mark pinctrl_falcon_init() as static
+Date: Wed, 18 Jun 2025 22:53:28 +0800
+Subject: [PATCH] pinctrl: falcon: mark pinctrl_falcon_init() as static
 
 Fix the following missing-prototypes build warning:
 
@@ -10,6 +10,8 @@ drivers/pinctrl/pinctrl-falcon.c:508:12: error: no previous prototype for 'pinct
       |            ^~~~~~~~~~~~~~~~~~~
 
 Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+Link: https://lore.kernel.org/OSBPR01MB167014AF54EF9818CB98C83BBC72A@OSBPR01MB1670.jpnprd01.prod.outlook.com
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
 ---
  drivers/pinctrl/pinctrl-falcon.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)

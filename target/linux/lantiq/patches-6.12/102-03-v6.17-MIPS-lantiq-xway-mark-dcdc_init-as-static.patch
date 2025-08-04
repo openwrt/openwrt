@@ -1,7 +1,7 @@
-From d27f9ab0f53886152b717e44eeca0217519ad323 Mon Sep 17 00:00:00 2001
+From c714186debb45fc88098b666d46cb29ff728e06d Mon Sep 17 00:00:00 2001
 From: Shiji Yang <yangshiji66@outlook.com>
-Date: Thu, 8 May 2025 18:18:26 +0800
-Subject: [PATCH 03/16] MIPS: lantiq: xway: mark dcdc_init() as static
+Date: Wed, 18 Jun 2025 22:53:16 +0800
+Subject: [PATCH 03/11] MIPS: lantiq: xway: mark dcdc_init() as static
 
 Fix the following missing-prototypes build warning:
 
@@ -10,6 +10,7 @@ arch/mips/lantiq/xway/dcdc.c:49:12: error: no previous prototype for 'dcdc_init'
       |            ^~~~~~~~~
 
 Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
 ---
  arch/mips/lantiq/xway/dcdc.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)

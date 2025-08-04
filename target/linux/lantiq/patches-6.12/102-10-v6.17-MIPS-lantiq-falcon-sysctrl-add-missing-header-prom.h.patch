@@ -1,7 +1,7 @@
-From cc7803436c2419009aaf702d96fc1d717ca52279 Mon Sep 17 00:00:00 2001
+From 8a6156bd26240177e710fd8623bc2eb0ef0092cf Mon Sep 17 00:00:00 2001
 From: Shiji Yang <yangshiji66@outlook.com>
-Date: Fri, 9 May 2025 20:15:36 +0800
-Subject: [PATCH 09/16] MIPS: lantiq: falcon: sysctrl: add missing header
+Date: Wed, 18 Jun 2025 22:53:22 +0800
+Subject: [PATCH 10/11] MIPS: lantiq: falcon: sysctrl: add missing header
  prom.h
 
 "prom.h" includes the prototype of ltq_soc_init(). Fix warning:
@@ -11,6 +11,7 @@ arch/mips/lantiq/falcon/sysctrl.c:185:13: error: no previous prototype for 'ltq_
       |             ^~~~~~~~~~~~
 
 Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
 ---
  arch/mips/lantiq/falcon/sysctrl.c | 1 +
  1 file changed, 1 insertion(+)

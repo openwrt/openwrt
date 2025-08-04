@@ -1,7 +1,7 @@
-From b145074ce653a895201bf8a2ba70719a107ad580 Mon Sep 17 00:00:00 2001
+From 01432b513638b0ffb080aa211b5b7f7ecf316f24 Mon Sep 17 00:00:00 2001
 From: Shiji Yang <yangshiji66@outlook.com>
-Date: Fri, 9 May 2025 20:15:36 +0800
-Subject: [PATCH 08/16] MIPS: lantiq: falcon: sysctrl: remove unused
+Date: Wed, 18 Jun 2025 22:53:21 +0800
+Subject: [PATCH 09/11] MIPS: lantiq: falcon: sysctrl: remove unused
  falcon_trigger_hrst()
 
 This is a defined but unused function. Fix warning:
@@ -11,6 +11,7 @@ arch/mips/lantiq/falcon/sysctrl.c:75:6: error: no previous prototype for 'falcon
       |      ^~~~~~~~~~~~~~~~~~~
 
 Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
 ---
  arch/mips/lantiq/falcon/sysctrl.c | 5 -----
  1 file changed, 5 deletions(-)
