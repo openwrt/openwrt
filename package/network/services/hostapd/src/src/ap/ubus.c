@@ -24,6 +24,7 @@
 #include "taxonomy.h"
 #include "airtime_policy.h"
 #include "hw_features.h"
+#include "base64.h"
 
 static struct ubus_context *ctx;
 static struct blob_buf b;
@@ -2005,6 +2006,8 @@ void hostapd_ubus_notify_beacon_report(
 	struct hostapd_data *hapd, const u8 *addr, u8 token, u8 rep_mode,
 	struct rrm_measurement_beacon_report *rep, size_t len)
 {
+	char *encoded;
+
 	if (!hapd->ubus.obj.has_subscribers)
 		return;
 
@@ -2024,7 +2027,11 @@ void hostapd_ubus_notify_beacon_report(
 	blobmsg_add_u16(&b, "antenna-id", rep->antenna_id);
 	blobmsg_add_u16(&b, "parent-tsf", rep->parent_tsf);
 	blobmsg_add_u16(&b, "rep-mode", rep_mode);
-
+	encoded = base64_encode(rep, len, NULL);
+	if (encoded) {
+		blobmsg_add_string(&b, "report", encoded);
+		os_free(encoded);
+	}
 	ubus_notify(ctx, &hapd->ubus.obj, "beacon-report", b.head, -1);
 }
 
