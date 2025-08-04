@@ -456,4 +456,7 @@ int phy_port_write_paged(struct phy_device *phydev, int port, int page, u32 regn
 int rtmdio_838x_read_phy(u32 port, u32 page, u32 reg, u32 *val);
 int rtmdio_838x_write_phy(u32 port, u32 page, u32 reg, u32 val);
 
+int rtmdio_930x_read_sds_phy(int sds, int page, int regnum);
+int rtmdio_930x_write_sds_phy(int sds, int page, int regnum, u16 val);
+
 #endif /* _RTL838X_ETH_H */

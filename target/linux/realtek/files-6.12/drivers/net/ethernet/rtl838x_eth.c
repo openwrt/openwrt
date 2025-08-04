@@ -29,10 +29,8 @@ extern int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, voi
 
 extern int rtl930x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val);
 extern int rtl930x_read_phy(u32 port, u32 page, u32 reg, u32 *val);
-extern int rtl930x_read_sds_phy(int phy_addr, int page, int phy_reg);
 extern int rtl930x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val);
 extern int rtl930x_write_phy(u32 port, u32 page, u32 reg, u32 val);
-extern int rtl930x_write_sds_phy(int phy_addr, int page, int phy_reg, u16 v);
 
 extern int rtl931x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val);
 extern int rtl931x_read_phy(u32 port, u32 page, u32 reg, u32 *val);
@@ -76,8 +74,10 @@ extern int rtl931x_write_sds_phy(int phy_addr, int page, int phy_reg, u16 v);
 #define RTMDIO_ABS		BIT(2)
 #define RTMDIO_PKG		BIT(3)
 
-#define RTMDIO_838X_BASE	(0xe780)
-#define RTMDIO_839X_BASE	(0xa000)
+#define RTMDIO_838X_BASE		(0xe780)
+#define RTMDIO_839X_BASE		(0xa000)
+#define RTMDIO_930X_SDS_INDACS_CMD	(0x03B0)
+#define RTMDIO_930X_SDS_INDACS_DATA	(0x03B4)
 
 struct p_hdr {
 	uint8_t		*buf;
@@ -1632,6 +1632,7 @@ static int rtl838x_set_link_ksettings(struct net_device *ndev,
  */
 
 DEFINE_MUTEX(rtmdio_lock);
+DEFINE_MUTEX(rtmdio_lock_sds);
 
 struct rtmdio_bus_priv {
 	u16 id;
@@ -2211,6 +2212,70 @@ errout:
 	return err;
 }
 
+/*
+ * The RTL930x family has 12 SerDes of three types. They are accessed through two IO registers at
+ * 0xbb0003b0 which simulate commands to an internal MDIO bus:
+ *
+ * - SerDes 0-1 exist on the RTL9301 and 9302B and are QSGMII capable
+ * - SerDes 2-9 are USXGMII capabable with either quad or single configuration
+ * - SerDes 10-11 are 10GBase-R capable
+ */
+
+int rtmdio_930x_read_sds_phy(int sds, int page, int regnum)
+{
+        int i, ret = -EIO;
+        u32 cmd;
+
+	if (sds < 0 || sds > 11 || page < 0 || page > 63 || regnum < 0 || regnum > 31)
+		return -EIO;
+
+	mutex_lock(&rtmdio_lock_sds);
+
+	cmd = sds << 2 | page << 7 | regnum << 13 | 1;
+	sw_w32(cmd, RTMDIO_930X_SDS_INDACS_CMD);
+
+	for (i = 0; i < 100; i++) {
+		if (!(sw_r32(RTMDIO_930X_SDS_INDACS_CMD) & 0x1))
+			break;
+		mdelay(1);
+	}
+
+        if (i < 100)
+		ret = sw_r32(RTMDIO_930X_SDS_INDACS_DATA) & 0xffff;
+
+	mutex_unlock(&rtmdio_lock_sds);
+
+	return ret;
+}
+
+int rtmdio_930x_write_sds_phy(int sds, int page, int regnum, u16 val)
+{
+	int i, ret = -EIO;
+	u32 cmd;
+
+	if (sds < 0 || sds > 11 || page < 0 || page > 63 || regnum < 0 || regnum > 31)
+		return -EIO;
+
+	mutex_lock(&rtmdio_lock_sds);
+
+	cmd = sds << 2 | page << 7 | regnum << 13 | 0x3;
+	sw_w32(val, RTMDIO_930X_SDS_INDACS_DATA);
+	sw_w32(cmd, RTMDIO_930X_SDS_INDACS_CMD);
+
+	for (i = 0; i < 100; i++) {
+		if (!(sw_r32(RTMDIO_930X_SDS_INDACS_CMD) & 0x1))
+			break;
+		mdelay(1);
+	}
+
+	mutex_unlock(&rtmdio_lock_sds);
+
+	if (i < 100)
+		ret = 0;
+
+	return ret;
+}
+
 /* These are the core functions of our new Realtek SoC MDIO bus. */
 
 static int rtmdio_read_c45(struct mii_bus *bus, int addr, int devnum, int regnum)
@@ -2324,8 +2389,8 @@ static int rtmdio_93xx_read(struct mii_bus *bus, int addr, int regnum)
 	priv->raw[addr] = (priv->page[addr] == priv->rawpage);
 	if (priv->phy_is_internal[addr]) {
 		if (priv->family_id == RTL9300_FAMILY_ID)
-			return rtl930x_read_sds_phy(priv->sds_id[addr],
-						    priv->page[addr], regnum);
+			return rtmdio_930x_read_sds_phy(priv->sds_id[addr],
+							priv->page[addr], regnum);
 		else
 			return rtl931x_read_sds_phy(priv->sds_id[addr],
 						    priv->page[addr], regnum);
@@ -2416,8 +2481,8 @@ static int rtmdio_93xx_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 		priv->raw[addr] = (page == priv->rawpage);
 		if (priv->phy_is_internal[addr]) {
 			if (priv->family_id == RTL9300_FAMILY_ID)
-				return rtl930x_write_sds_phy(priv->sds_id[addr],
-							     page, regnum, val);
+				return rtmdio_930x_write_sds_phy(priv->sds_id[addr],
+								 page, regnum, val);
 			else
 				return rtl931x_write_sds_phy(priv->sds_id[addr],
 							     page, regnum, val);
