@@ -368,7 +368,7 @@ static void rtl83xx_vlan_setup(struct rtl838x_switch_priv *priv)
 	info.hash_uc_fid = false;	/* Do not build the L2 lookup hash with FID, but VID */
 	info.hash_mc_fid = false;	/* Do the same for Multicast packets */
 	info.profile_id = 0;		/* Use default Vlan Profile 0 */
-	info.tagged_ports = 0;		/* Initially no port members */
+	info.member_ports = 0;		/* Initially no port members */
 	if (priv->family_id == RTL9310_FAMILY_ID) {
 		info.if_id = 0;
 		info.multicast_grp_mask = 0;
@@ -388,7 +388,7 @@ static void rtl83xx_vlan_setup(struct rtl838x_switch_priv *priv)
 	 */
 	for (int i = 0; i <= priv->cpu_port; i++) {
 		rtl83xx_vlan_set_pvid(priv, i, 0);
-		info.tagged_ports |= BIT_ULL(i);
+		info.member_ports |= BIT_ULL(i);
 	}
 	priv->r->vlan_set_tagged(0, &info);
 
@@ -1922,19 +1922,19 @@ static int rtl83xx_vlan_prepare(struct dsa_switch *ds, int port,
 
 	priv->r->vlan_tables_read(0, &info);
 
-	pr_debug("VLAN 0: Tagged ports %llx, untag %llx, profile %d, MC# %d, UC# %d, FID %x\n",
-		info.tagged_ports, info.untagged_ports, info.profile_id,
+	pr_debug("VLAN 0: Member ports %llx, untag %llx, profile %d, MC# %d, UC# %d, FID %x\n",
+		info.member_ports, info.untagged_ports, info.profile_id,
 		info.hash_mc_fid, info.hash_uc_fid, info.fid);
 
 	priv->r->vlan_tables_read(1, &info);
-	pr_debug("VLAN 1: Tagged ports %llx, untag %llx, profile %d, MC# %d, UC# %d, FID %x\n",
-		info.tagged_ports, info.untagged_ports, info.profile_id,
+	pr_debug("VLAN 1: Member ports %llx, untag %llx, profile %d, MC# %d, UC# %d, FID %x\n",
+		info.member_ports, info.untagged_ports, info.profile_id,
 		info.hash_mc_fid, info.hash_uc_fid, info.fid);
 	priv->r->vlan_set_untagged(1, info.untagged_ports);
 	pr_debug("SET: Untagged ports, VLAN %d: %llx\n", 1, info.untagged_ports);
 
 	priv->r->vlan_set_tagged(1, &info);
-	pr_debug("SET: Tagged ports, VLAN %d: %llx\n", 1, info.tagged_ports);
+	pr_debug("SET: Member ports, VLAN %d: %llx\n", 1, info.member_ports);
 
 	return 0;
 }
@@ -1983,7 +1983,7 @@ static int rtl83xx_vlan_add(struct dsa_switch *ds, int port,
 	priv->r->vlan_tables_read(vlan->vid, &info);
 
 	/* new VLAN? */
-	if (!info.tagged_ports) {
+	if (!info.member_ports) {
 		info.fid = 0;
 		info.hash_mc_fid = false;
 		info.hash_uc_fid = false;
@@ -1991,10 +1991,10 @@ static int rtl83xx_vlan_add(struct dsa_switch *ds, int port,
 	}
 
 	/* sanitize untagged_ports - must be a subset */
-	if (info.untagged_ports & ~info.tagged_ports)
+	if (info.untagged_ports & ~info.member_ports)
 		info.untagged_ports = 0;
 
-	info.tagged_ports |= BIT_ULL(port);
+	info.member_ports |= BIT_ULL(port);
 	if (vlan->flags & BRIDGE_VLAN_INFO_UNTAGGED)
 		info.untagged_ports |= BIT_ULL(port);
 	else
@@ -2004,7 +2004,7 @@ static int rtl83xx_vlan_add(struct dsa_switch *ds, int port,
 	pr_debug("Untagged ports, VLAN %d: %llx\n", vlan->vid, info.untagged_ports);
 
 	priv->r->vlan_set_tagged(vlan->vid, &info);
-	pr_debug("Tagged ports, VLAN %d: %llx\n", vlan->vid, info.tagged_ports);
+	pr_debug("Member ports, VLAN %d: %llx\n", vlan->vid, info.member_ports);
 
 	mutex_unlock(&priv->reg_mutex);
 
@@ -2041,13 +2041,13 @@ static int rtl83xx_vlan_del(struct dsa_switch *ds, int port,
 
 	/* remove port from both tables */
 	info.untagged_ports &= (~BIT_ULL(port));
-	info.tagged_ports &= (~BIT_ULL(port));
+	info.member_ports &= (~BIT_ULL(port));
 
 	priv->r->vlan_set_untagged(vlan->vid, info.untagged_ports);
 	pr_debug("Untagged ports, VLAN %d: %llx\n", vlan->vid, info.untagged_ports);
 
 	priv->r->vlan_set_tagged(vlan->vid, &info);
-	pr_debug("Tagged ports, VLAN %d: %llx\n", vlan->vid, info.tagged_ports);
+	pr_debug("Member ports, VLAN %d: %llx\n", vlan->vid, info.member_ports);
 
 	mutex_unlock(&priv->reg_mutex);
 

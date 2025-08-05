@@ -155,9 +155,9 @@ static void rtl838x_vlan_tables_read(u32 vlan, struct rtl838x_vlan_info *info)
 	struct table_reg *r = rtl_table_get(RTL8380_TBL_0, 0);
 
 	rtl_table_read(r, vlan);
-	info->tagged_ports = sw_r32(rtl_table_data(r, 0));
+	info->member_ports = sw_r32(rtl_table_data(r, 0));
 	v = sw_r32(rtl_table_data(r, 1));
-	pr_debug("VLAN_READ %d: %016llx %08x\n", vlan, info->tagged_ports, v);
+	pr_debug("VLAN_READ %d: %016llx %08x\n", vlan, info->member_ports, v);
 	rtl_table_release(r);
 
 	info->profile_id = v & 0x7;
@@ -178,7 +178,7 @@ static void rtl838x_vlan_set_tagged(u32 vlan, struct rtl838x_vlan_info *info)
 	/* Access VLAN table (0) via register 0 */
 	struct table_reg *r = rtl_table_get(RTL8380_TBL_0, 0);
 
-	sw_w32(info->tagged_ports, rtl_table_data(r, 0));
+	sw_w32(info->member_ports, rtl_table_data(r, 0));
 
 	v = info->profile_id;
 	v |= info->hash_mc_fid ? 0x8 : 0;

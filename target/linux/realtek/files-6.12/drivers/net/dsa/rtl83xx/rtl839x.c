@@ -172,8 +172,8 @@ static void rtl839x_vlan_tables_read(u32 vlan, struct rtl838x_vlan_info *info)
 	w = sw_r32(rtl_table_data(r, 2));
 	rtl_table_release(r);
 
-	info->tagged_ports = u;
-	info->tagged_ports = (info->tagged_ports << 21) | ((v >> 11) & 0x1fffff);
+	info->member_ports = u;
+	info->member_ports = (info->member_ports << 21) | ((v >> 11) & 0x1fffff);
 	info->profile_id = w >> 30 | ((v & 1) << 2);
 	info->hash_mc_fid = !!(w & BIT(2));
 	info->hash_uc_fid = !!(w & BIT(3));
@@ -196,8 +196,8 @@ static void rtl839x_vlan_set_tagged(u32 vlan, struct rtl838x_vlan_info *info)
 	/* Access VLAN table (0) via register 0 */
 	struct table_reg *r = rtl_table_get(RTL8390_TBL_0, 0);
 
-	u = info->tagged_ports >> 21;
-	v = info->tagged_ports << 11;
+	u = info->member_ports >> 21;
+	v = info->member_ports << 11;
 	v |= ((u32)info->fid) << 3;
 	v |= info->hash_uc_fid ? BIT(2) : 0;
 	v |= info->hash_mc_fid ? BIT(1) : 0;

@@ -709,7 +709,7 @@ struct rtl838x_pcs {
 
 struct rtl838x_vlan_info {
 	u64 untagged_ports;
-	u64 tagged_ports;
+	u64 member_ports;
 	u8 profile_id;
 	bool hash_mc_fid;
 	bool hash_uc_fid;
