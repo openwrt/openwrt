@@ -60,6 +60,13 @@ gowin-solution-co-ltd-gw-mb-u01)
 
 	ucidef_set_interfaces_lan_wan "eth1 eth2 eth3 eth4 poe" "sfp1 sfp2"
 	;;
+micro-computer-hk-tech-limited-ms-a2)
+	ucidef_set_network_device_path "lan1" "pci0000:00/0000:00:03.2/0000:04:00.0"
+	ucidef_set_network_device_path "lan2" "pci0000:00/0000:00:03.1/0000:03:00.0"
+	ucidef_set_network_device_path "sfp1" "pci0000:00/0000:00:02.1/0000:05:00.0"
+	ucidef_set_network_device_path "sfp2" "pci0000:00/0000:00:02.1/0000:05:00.1"
+	ucidef_set_interface_lan "lan1 lan2 sfp1 sfp2"
+	;;
 pc-engines-apu1|pc-engines-apu2|pc-engines-apu3)
 	ucidef_set_interfaces_lan_wan "eth1 eth2" "eth0"
 	;;
