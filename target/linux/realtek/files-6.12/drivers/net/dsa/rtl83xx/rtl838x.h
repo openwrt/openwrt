@@ -25,8 +25,6 @@
 #define RTL838X_SDS_MODE_SEL			(0x0028)
 #define RTL838X_SDS_CFG_REG			(0x0034)
 #define RTL838X_INT_MODE_CTRL			(0x005c)
-#define RTL838X_CHIP_INFO			(0x00d8)
-#define RTL839X_CHIP_INFO			(0x0ff4)
 #define RTL838X_PORT_ISO_CTRL(port)		(0x4100 + ((port) << 2))
 #define RTL839X_PORT_ISO_CTRL(port)		(0x1400 + ((port) << 3))
 

@@ -3461,8 +3461,8 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 			rtl931x_write_sds_phy(asds, 0x2E, 0x1, board_sds_tx_type1[sds - 2]);
 		else {
 			val = 0xa0000;
-			sw_w32(val, RTL931X_CHIP_INFO_ADDR);
-			val = sw_r32(RTL931X_CHIP_INFO_ADDR);
+			sw_w32(val, RTL93XX_CHIP_INFO);
+			val = sw_r32(RTL93XX_CHIP_INFO);
 			if (val & BIT(28)) /* consider 9311 etc. RTL9313_CHIP_ID == HWP_CHIP_ID(unit)) */
 			{
 				rtl931x_write_sds_phy(asds, 0x2E, 0x1, board_sds_tx2[sds - 2]);
@@ -3470,7 +3470,7 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 				rtl931x_write_sds_phy(asds, 0x2E, 0x1, board_sds_tx[sds - 2]);
 			}
 			val = 0;
-			sw_w32(val, RTL931X_CHIP_INFO_ADDR);
+			sw_w32(val, RTL93XX_CHIP_INFO);
 		}
 	}
 

@@ -94,7 +94,6 @@
 #define RTL838X_SDS_MODE_SEL			(0x0028)
 #define RTL838X_SDS_CFG_REG			(0x0034)
 #define RTL838X_INT_MODE_CTRL			(0x005c)
-#define RTL838X_CHIP_INFO			(0x00d8)
 #define RTL838X_SDS4_REG28			(0xef80)
 #define RTL838X_SDS4_DUMMY0			(0xef8c)
 #define RTL838X_SDS5_EXT_REG6			(0xf18c)
