@@ -947,14 +947,16 @@ static void rtl838x_hw_stop(struct rtl838x_eth_priv *priv)
 
 	/* Flush L2 address cache */
 	if (priv->family_id == RTL8380_FAMILY_ID) {
+		/* Disable FAST_AGE_OUT otherwise flush will hang */
+		sw_w32_mask(BIT(23), 0, RTL838X_L2_CTRL_1);
 		for (int i = 0; i <= priv->cpu_port; i++) {
-			sw_w32(1 << 26 | 1 << 23 | i << 5, priv->r->l2_tbl_flush_ctrl);
-			do { } while (sw_r32(priv->r->l2_tbl_flush_ctrl) & (1 << 26));
+			sw_w32(BIT(26) | BIT(23) | i << 5, priv->r->l2_tbl_flush_ctrl);
+			do { } while (sw_r32(priv->r->l2_tbl_flush_ctrl) & BIT(26));
 		}
 	} else if (priv->family_id == RTL8390_FAMILY_ID) {
 		for (int i = 0; i <= priv->cpu_port; i++) {
-			sw_w32(1 << 28 | 1 << 25 | i << 5, priv->r->l2_tbl_flush_ctrl);
-			do { } while (sw_r32(priv->r->l2_tbl_flush_ctrl) & (1 << 28));
+			sw_w32(BIT(28) | BIT(25) | i << 5, priv->r->l2_tbl_flush_ctrl);
+			do { } while (sw_r32(priv->r->l2_tbl_flush_ctrl) & BIT(28));
 		}
 	}
 	/* TODO: L2 flush register is 64 bit on RTL931X and 930X */
