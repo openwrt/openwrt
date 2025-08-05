@@ -11,15 +11,24 @@ USBNET_DIR:=net/usb
 USBHID_DIR?=hid/usbhid
 USBINPUT_DIR?=input/misc
 
+define KernelPackage/usb-common
+  TITLE:=USB common
+  HIDDEN:=1
+  DEPENDS:=@(USB_SUPPORT||USB_GADGET_SUPPORT)
+  KCONFIG:=CONFIG_USB_COMMON
+  FILES:=$(LINUX_DIR)/drivers/usb/common/usb-common.ko
+  AUTOLOAD:=$(call AutoLoad,20,usb-common,1)
+endef
+
+$(eval $(call KernelPackage,usb-common))
+
 define KernelPackage/usb-core
   SUBMENU:=$(USB_MENU)
   TITLE:=Support for USB
-  DEPENDS:=@USB_SUPPORT
+  DEPENDS:=@USB_SUPPORT +USB_SUPPORT:kmod-usb-common
   KCONFIG:=CONFIG_USB CONFIG_XPS_USB_HCD_XILINX=n CONFIG_USB_FHCI_HCD=n
-  FILES:= \
-	$(LINUX_DIR)/drivers/usb/core/usbcore.ko \
-	$(LINUX_DIR)/drivers/usb/common/usb-common.ko
-  AUTOLOAD:=$(call AutoLoad,20,usb-common usbcore,1)
+  FILES:=$(LINUX_DIR)/drivers/usb/core/usbcore.ko
+  AUTOLOAD:=$(call AutoLoad,20,usbcore,1)
   $(call AddDepends/nls)
 endef
 
