@@ -39,7 +39,6 @@
 # procd_send_signal(service, [instance], [signal])
 #   Send a signal to a service instance (or all instances)
 #
-
 . "$IPKG_INSTROOT/usr/share/libubox/jshn.sh"
 
 PROCD_RELOAD_DELAY=1000
@@ -49,13 +48,10 @@ procd_lock() {
 	local basescript=$(readlink "$initscript")
 	local service_name="$(basename ${basescript:-$initscript})"
 
-	flock -n 1000 &> /dev/null
+	exec 1000>"$IPKG_INSTROOT/var/lock/procd_${service_name}.lock"
+	flock -n 1000
 	if [ "$?" != "0" ]; then
-		exec 1000>"$IPKG_INSTROOT/var/lock/procd_${service_name}.lock"
-		flock 1000
-		if [ "$?" != "0" ]; then
-			logger "warning: procd flock for $service_name failed"
-		fi
+		logger "warning: procd flock for $service_name failed"
 	fi
 }
 
