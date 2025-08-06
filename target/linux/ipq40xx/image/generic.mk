@@ -2,6 +2,8 @@
 DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
 DEVICE_VARS += RAS_BOARD RAS_ROOTFS_SIZE RAS_VERSION
 DEVICE_VARS += WRGG_DEVNAME WRGG_SIGNATURE
+DEVICE_VARS += SUPPORTED_TELTONIKA_DEVICES
+DEVICE_VARS += SUPPORTED_TELTONIKA_HW_MODS
 
 define Build/netgear-fit-padding
 	./netgear-fit-padding.py $@ $@.new
@@ -50,17 +52,6 @@ define Build/append-rootfshdr
 		-n root.squashfs -d $(IMAGE_ROOTFS) $@.new
 	cat $(IMAGE_KERNEL) > $@.$1
 	dd if=$@.new bs=64 count=1 >> $@.$1
-endef
-
-define Build/append-rutx-metadata
-	echo \
-		'{ \
-			"device_code": [".*"], \
-			"hwver": [".*"], \
-			"batch": [".*"], \
-			"serial": [".*"], \
-			"supported_devices":["teltonika,rutx"] \
-		}' | fwtool -I - $@
 endef
 
 define Build/copy-file
@@ -1122,13 +1113,15 @@ define Device/teltonika_rutx10
 	$(call Device/UbiFit)
 	DEVICE_VENDOR := Teltonika
 	DEVICE_MODEL := RUTX10
+	SUPPORTED_TELTONIKA_DEVICES := teltonika,rutx
+	SUPPORTED_TELTONIKA_HW_MODS := W25N02KV NAND_GD5F2GXX EG060K RUTX_V12
 	SOC := qcom-ipq4018
 	DEVICE_DTS_CONFIG := config@5
 	KERNEL_INSTALL := 1
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	FILESYSTEMS := squashfs
-	IMAGE/factory.ubi := append-ubi | qsdk-ipq-factory-nand | append-rutx-metadata
+	IMAGE/factory.ubi := append-ubi | qsdk-ipq-factory-nand | append-teltonika-metadata
 	DEVICE_PACKAGES := kmod-btusb
 endef
 # Missing DSA Setup
