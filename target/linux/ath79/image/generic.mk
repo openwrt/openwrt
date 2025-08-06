@@ -153,35 +153,6 @@ define Build/teltonika-v1-header
 	@mv $@.new $@
 endef
 
-metadata_json_teltonika = \
-	'{ $(if $(IMAGE_METADATA),$(IMAGE_METADATA)$(comma)) \
-		"metadata_version": "1.1", \
-		"compat_version": "$(call json_quote,$(compat_version))", \
-		"version":"$(call json_quote,$(VERSION_DIST))-$(call json_quote,$(VERSION_NUMBER))-$(call json_quote,$(REVISION))", \
-		"device_code": [".*"], \
-		"hwver": [".*"], \
-		"batch": [".*"], \
-		"serial": [".*"], \
-		$(if $(DEVICE_COMPAT_MESSAGE),"compat_message": "$(call json_quote,$(DEVICE_COMPAT_MESSAGE))"$(comma)) \
-		$(if $(filter-out 1.0,$(compat_version)),"new_supported_devices": \
-			[$(call metadata_devices,$(SUPPORTED_TELTONIKA_DEVICES))]$(comma) \
-			"supported_devices": ["$(call json_quote,$(legacy_supported_message))"]$(comma)) \
-		$(if $(filter 1.0,$(compat_version)),"supported_devices":[$(call metadata_devices,$(SUPPORTED_TELTONIKA_DEVICES))]$(comma)) \
-		"version_wrt": { \
-			"dist": "$(call json_quote,$(VERSION_DIST))", \
-			"version": "$(call json_quote,$(VERSION_NUMBER))", \
-			"revision": "$(call json_quote,$(REVISION))", \
-			"target": "$(call json_quote,$(TARGETID))", \
-			"board": "$(call json_quote,$(if $(BOARD_NAME),$(BOARD_NAME),$(DEVICE_NAME)))" \
-		}, \
-		"hw_support": {}, \
-		"hw_mods": {} \
-	}'
-
-define Build/append-metadata-teltonika
-	echo $(call metadata_json_teltonika) | fwtool -I - $@
-endef
-
 define Build/wrgg-pad-rootfs
 	$(STAGING_DIR_HOST)/bin/padjffs2 $(IMAGE_ROOTFS) -c 64 >>$@
 endef
@@ -3152,7 +3123,7 @@ define Device/teltonika_rut300
   IMAGE_SIZE := 15552k
   IMAGES += factory.bin
   IMAGE/factory.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | \
-			 append-rootfs | pad-rootfs | append-metadata-teltonika | \
+			 append-rootfs | pad-rootfs | append-teltonika-metadata | \
 			 check-size $$$$(IMAGE_SIZE)
   IMAGE/sysupgrade.bin = append-kernel | pad-to $$$$(BLOCKSIZE) | \
 			 append-rootfs | pad-rootfs | append-metadata | \
