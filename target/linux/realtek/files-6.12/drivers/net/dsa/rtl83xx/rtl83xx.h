@@ -194,9 +194,6 @@ int rtl83xx_lag_del(struct dsa_switch *ds, int group, int port);
 
 /* phy functions that will need to be moved to the future mdio driver */
 
-int rtl930x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val);
-int rtl930x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val);
-
 int rtl931x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val);
 int rtl931x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val);
 
