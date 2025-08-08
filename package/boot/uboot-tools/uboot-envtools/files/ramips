@@ -112,6 +112,11 @@ snr,snr-cpe-me2-sfp|\
 snr,cpe-w4n-mt)
 	ubootenv_add_mtd "uboot-env" "0x0" "0x1000" "0x1000"
 	;;
+tplink,deco-x20-v3)
+	idx="$(find_mtd_index ubootenv)"
+	[ -n "$idx" ] && \
+		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x1000" "0x20000"
+	;;
 xiaomi,miwifi-mini)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x10000"
 	ubootenv_add_uci_sys_config "/dev/mtd9" "0x0" "0x4000" "0x10000"
