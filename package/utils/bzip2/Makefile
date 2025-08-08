@@ -62,6 +62,7 @@ CONFIGURE_ARGS += --prefix=/usr
 
 MAKE_FLAGS += \
 	-f Makefile-libbz2_so \
+	$(TARGET_CONFIGURE_OPTS) \
 	CFLAGS="$(TARGET_CFLAGS)" \
 	LDFLAGS="$(TARGET_LDFLAGS)" \
 	all
