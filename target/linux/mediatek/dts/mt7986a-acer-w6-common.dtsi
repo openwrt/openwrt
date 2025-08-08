@@ -3,6 +3,7 @@
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/leds/common.h>
+#include <dt-bindings/pinctrl/mt65xx.h>
 
 #include "mt7986a.dtsi"
 
@@ -78,24 +79,24 @@
 			       "EMMC_DATA_6", "EMMC_DATA_7", "EMMC_CMD";
 			input-enable;
 			drive-strength = <4>;
-			mediatek,pull-up-adv = <1>;	/* pull-up 10K */
+			bias-pull-up = <MTK_PUPD_SET_R1R0_01>;	/* pull-up 10K */
 		};
 
 		conf-clk {
 			pins = "EMMC_CK";
 			drive-strength = <6>;
-			mediatek,pull-down-adv = <2>;	/* pull-down 50K */
+			bias-pull-down = <MTK_PUPD_SET_R1R0_10>;	/* pull-down 50K */
 		};
 
 		conf-ds {
 			pins = "EMMC_DSL";
-			mediatek,pull-down-adv = <2>;	/* pull-down 50K */
+			bias-pull-down = <MTK_PUPD_SET_R1R0_10>;	/* pull-down 50K */
 		};
 
 		conf-rst {
 			pins = "EMMC_RSTB";
 			drive-strength = <4>;
-			mediatek,pull-up-adv = <1>;	/* pull-up 10K */
+			bias-pull-up = <MTK_PUPD_SET_R1R0_01>;	/* pull-up 10K */
 		};
 	};
 
@@ -111,24 +112,24 @@
 			       "EMMC_DATA_6", "EMMC_DATA_7", "EMMC_CMD";
 			input-enable;
 			drive-strength = <4>;
-			mediatek,pull-up-adv = <1>;	/* pull-up 10K */
+			bias-pull-up = <MTK_PUPD_SET_R1R0_01>;	/* pull-up 10K */
 		};
 
 		conf-clk {
 			pins = "EMMC_CK";
 			drive-strength = <6>;
-			mediatek,pull-down-adv = <2>;	/* pull-down 50K */
+			bias-pull-down = <MTK_PUPD_SET_R1R0_10>;	/* pull-down 50K */
 		};
 
 		conf-ds {
 			pins = "EMMC_DSL";
-			mediatek,pull-down-adv = <2>;	/* pull-down 50K */
+			bias-pull-down = <MTK_PUPD_SET_R1R0_10>;	/* pull-down 50K */
 		};
 
 		conf-rst {
 			pins = "EMMC_RSTB";
 			drive-strength = <4>;
-			mediatek,pull-up-adv = <1>;	/* pull-up 10K */
+			bias-pull-up = <MTK_PUPD_SET_R1R0_01>;	/* pull-up 10K */
 		};
 	};
 
