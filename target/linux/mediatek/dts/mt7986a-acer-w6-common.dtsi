@@ -12,8 +12,9 @@
 		bootargs = "dm-mod.create=\"acer,,,ro,0 1 zero 1 0 0 0\" rootfstype=squashfs,ext4 rootwait root=/dev/mmcblk0p6 fstools_ignore_partname=1";
 	};
 
-	memory@0 {
+	memory@40000000 {
 		reg = <0 0x40000000 0 0x20000000>;
+		device_type = "memory";
 	};
 
 	reg_1p8v: regulator-1p8v {
