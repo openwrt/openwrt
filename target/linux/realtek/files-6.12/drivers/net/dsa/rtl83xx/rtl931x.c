@@ -328,7 +328,7 @@ void rtl931x_print_matrix(void)
 	rtl_table_release(r);
 }
 
-void rtl931x_set_receive_management_action(int port, rma_ctrl_t type, action_type_t action)
+void rtldsa_931x_set_receive_management_action(int port, rma_ctrl_t type, action_type_t action)
 {
 	u32 value = 0;
 
@@ -1587,4 +1587,5 @@ const struct rtl838x_reg rtl931x_reg = {
 	.led_init = rtldsa_931x_led_init,
 	.enable_learning = rtldsa_931x_enable_learning,
 	.enable_flood = rtldsa_931x_enable_flood,
+	.set_receive_management_action = rtldsa_931x_set_receive_management_action,
 };
