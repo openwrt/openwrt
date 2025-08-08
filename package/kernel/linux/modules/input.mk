@@ -143,6 +143,23 @@ endef
 $(eval $(call KernelPackage,input-gpio-encoder))
 
 
+define KernelPackage/input-matrix-keypad
+  SUBMENU:=$(INPUT_MODULES_MENU)
+  TITLE:=GPIO matrix keypad support
+  DEPENDS:= @GPIO_SUPPORT +kmod-input-core +kmod-input-matrixkmap
+  KCONFIG:= \
+	CONFIG_KEYBOARD_MATRIX \
+	CONFIG_INPUT_KEYBOARD=y
+  FILES:=$(LINUX_DIR)/drivers/input/keyboard/matrix_keypad.ko
+  AUTOLOAD:=$(call AutoProbe,matrix_keypad,1)
+endef
+
+define KernelPackage/input-matrix-keypad/description
+ Enable support for GPIO driven matrix keypad.
+endef
+
+$(eval $(call KernelPackage,input-matrix-keypad))
+
 define KernelPackage/input-joydev
   SUBMENU:=$(INPUT_MODULES_MENU)
   TITLE:=Joystick device support
