@@ -10,9 +10,7 @@
 	compatible = "unielec,u7981-01-emmc", "mediatek,mt7981";
 
 	chosen {
-		bootargs = "console=ttyS0,115200n1 loglevel=8  \
-				earlycon=uart8250,mmio32,0x11002000 \
-				";
+		bootargs = "console=ttyS0,115200n1 earlycon=uart8250,mmio32,0x11002000";
 	};
 
 	gpio-keys {
