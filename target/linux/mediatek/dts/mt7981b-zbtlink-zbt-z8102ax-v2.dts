@@ -3,6 +3,7 @@
 /dts-v1/;
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/pinctrl/mt65xx.h>
 
 #include "mt7981b.dtsi"
 
@@ -287,13 +288,13 @@
 		conf-pu {
 			pins = "SPI0_CS", "SPI0_HOLD", "SPI0_WP";
 			drive-strength = <8>;
-			mediatek,pull-up-adv = <0>; /* bias-disable */
+			bias-disable; /* bias-disable */
 		};
 
 		conf-pd {
 			pins = "SPI0_CLK", "SPI0_MOSI", "SPI0_MISO";
 			drive-strength = <8>;
-			mediatek,pull-up-adv = <0>; /* bias-disable */
+			bias-disable; /* bias-disable */
 		};
 	};
 };
