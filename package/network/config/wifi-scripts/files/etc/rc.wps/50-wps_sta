@@ -1,4 +1,6 @@
 #!/bin/sh
+[ "$SEEN" -lt 3 ] && exit 1
+[ "$ACTION" = "released" ] || exit 1
 
 wps_catch_credentials() {
 	local iface ifaces ifc ifname ssid encryption key radio radios
@@ -38,32 +40,18 @@ wps_catch_credentials() {
 	done
 }
 
-if [ "$ACTION" = "released" ] && [ "$BUTTON" = "wps" ]; then
-	# If the button was pressed for 3 seconds or more, trigger WPS on
-	# wpa_supplicant only, no matter if hostapd is running or not.  If
-	# was pressed for less than 3 seconds, try triggering on
-	# hostapd. If there is no hostapd instance to trigger it on or WPS
-	# is not enabled on them, trigger it on wpa_supplicant.
-	if [ "$SEEN" -lt 3 ] ; then
-		wps_done=0
-		ubusobjs="$( ubus -S list hostapd.* )"
-		for ubusobj in $ubusobjs; do
-			ubus -S call $ubusobj wps_start && wps_done=1
-		done
-		[ $wps_done = 0 ] || return 0
+wps_done=0
+ubusobjs="$( ubus -S list wpa_supplicant.* )"
+for ubusobj in $ubusobjs; do
+	ifname="$(echo $ubusobj | cut -d'.' -f2 )"
+	multi_ap=""
+	if [ -e "/var/run/wpa_supplicant-${ifname}.conf.is_multiap" ]; then
+		ubus -S call $ubusobj wps_start '{ "multi_ap": true }' && wps_done=1
+	else
+		ubus -S call $ubusobj wps_start && wps_done=1
 	fi
-	wps_done=0
-	ubusobjs="$( ubus -S list wpa_supplicant.* )"
-	for ubusobj in $ubusobjs; do
-		ifname="$(echo $ubusobj | cut -d'.' -f2 )"
-		multi_ap=""
-		if [ -e "/var/run/wpa_supplicant-${ifname}.conf.is_multiap" ]; then
-			ubus -S call $ubusobj wps_start '{ "multi_ap": true }' && wps_done=1
-		else
-			ubus -S call $ubusobj wps_start && wps_done=1
-		fi
-	done
-	[ $wps_done = 0 ] || wps_catch_credentials &
-fi
+done
+[ $wps_done = 0 ] && exit 1
 
-return 0
+wps_catch_credentials &
+exit 0
