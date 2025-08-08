@@ -27,8 +27,9 @@
 		bootargs = "console=ttyS0,115200n1 pci=pcie_bus_perf root=PARTLABEL=rootfs";
 	};
 
-	memory {
+	memory@40000000 {
 		reg = <0x0 0x40000000 0x0 0x40000000>;
+		device_type = "memory";
 	};
 
 	reserved-memory {
