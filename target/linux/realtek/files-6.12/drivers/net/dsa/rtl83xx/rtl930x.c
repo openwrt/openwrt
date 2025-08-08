@@ -657,6 +657,85 @@ static void rtl930x_write_mcast_pmask(int idx, u64 portmask)
 	rtl_table_release(q);
 }
 
+void rtldsa_930x_set_receive_management_action(int port, rma_ctrl_t type,
+					       action_type_t action)
+{
+	u32 shift;
+	u32 value;
+	u32 reg;
+
+	/* hack for value mapping */
+	if (type == GRATARP && action == COPY2CPU)
+		action = TRAP2MASTERCPU;
+
+	/* PTP doesn't allow to flood to all ports */
+	if (action == FLOODALL &&
+	    (type == PTP || type == PTP_UDP || type == PTP_ETH2)) {
+		pr_warn("%s: Port flooding not supported for PTP\n", __func__);
+		return;
+	}
+
+	switch(action) {
+	case FORWARD:
+		value = 0;
+		break;
+	case DROP:
+		value = 1;
+		break;
+	case TRAP2CPU:
+		value = 2;
+		break;
+	case TRAP2MASTERCPU:
+		value = 3;
+		break;
+	case FLOODALL:
+		value = 4;
+		break;
+	default:
+		return;
+	}
+
+	switch(type) {
+	case BPDU:
+		reg = RTL930X_RMA_BPDU_CTRL + (port / 10) * 4;
+		shift = (port % 10) * 3;
+		sw_w32_mask(GENMASK(shift + 2, shift), value << shift, reg);
+		break;
+	case PTP:
+		reg = RTL930X_RMA_PTP_CTRL + port * 4;
+
+		/* udp */
+		sw_w32_mask(GENMASK(3, 2), value << 2, reg);
+
+		/* eth2 */
+		sw_w32_mask(GENMASK(1, 0), value, reg);
+		break;
+	case PTP_UDP:
+		reg = RTL930X_RMA_PTP_CTRL + port * 4;
+		sw_w32_mask(GENMASK(3, 2), value << 2, reg);
+		break;
+	case PTP_ETH2:
+		reg = RTL930X_RMA_PTP_CTRL + port * 4;
+		sw_w32_mask(GENMASK(1, 0), value, reg);
+		break;
+	case LLDP:
+		reg = RTL930X_RMA_LLDP_CTRL + (port / 10) * 4;
+		shift = (port % 10) * 3;
+		sw_w32_mask(GENMASK(shift + 2, shift), value << shift, reg);
+		break;
+	case EAPOL:
+		reg = RTL930X_RMA_EAPOL_CTRL + (port / 10) * 4;
+		shift = (port % 10) * 3;
+		sw_w32_mask(GENMASK(shift + 2, shift), value << shift, reg);
+		break;
+	case GRATARP:
+		reg = RTL930X_SPCL_TRAP_PORT_CTRL + (port / 16) * 4;
+		shift = (port % 16) * 2;
+		sw_w32_mask(GENMASK(shift + 1, shift), value << shift, reg);
+		break;
+	}
+}
+
 static u64 rtl930x_traffic_get(int source)
 {
 	u32 v;
@@ -2419,4 +2498,5 @@ const struct rtl838x_reg rtl930x_reg = {
 	.led_init = rtl930x_led_init,
 	.enable_learning = rtldsa_930x_enable_learning,
 	.enable_flood = rtldsa_930x_enable_flood,
+	.set_receive_management_action = rtldsa_930x_set_receive_management_action,
 };
