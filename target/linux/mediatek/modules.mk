@@ -37,3 +37,15 @@ define KernelPackage/iio-mt6577-auxadc
   $(call AddDepends/iio)
 endef
 $(eval $(call KernelPackage,iio-mt6577-auxadc))
+
+define KernelPackage/switch-rtl8367s
+  SUBMENU:=Network Devices
+  TITLE:=Realtek RTL8367S switch support
+  KCONFIG:=CONFIG_RTL8367S_GSW
+  DEPENDS:=+kmod-swconfig
+  FILES:= \
+	$(LINUX_DIR)/drivers/net/phy/rtk/rtl8367s_gsw.ko
+  AUTOLOAD:=$(call AutoProbe,rtl8367s_gsw,1)
+endef
+
+$(eval $(call KernelPackage,switch-rtl8367s))
