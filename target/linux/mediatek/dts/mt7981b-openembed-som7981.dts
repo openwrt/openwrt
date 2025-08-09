@@ -224,13 +224,13 @@
 
 		conf-pu {
 			pins = "SPI0_CS", "SPI0_HOLD", "SPI0_WP";
-			drive-strength = <8>;
+			drive-strength = <MTK_DRIVE_8mA>;
 			bias-disable;
 		};
 
 		conf-pd {
 			pins = "SPI0_CLK", "SPI0_MOSI", "SPI0_MISO";
-			drive-strength = <8>;
+			drive-strength = <MTK_DRIVE_8mA>;
 			bias-disable;
 		};
 	};
@@ -251,7 +251,7 @@
 
 	wwan_rst_h: wwan-rst-h {
 		pins = "GPIO_WPS";
-		drive-strength = <8>;
+		drive-strength = <MTK_DRIVE_8mA>;
 		bias-disable;
 		output-low;
 	};

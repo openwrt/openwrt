@@ -313,12 +313,12 @@
 		};
 		conf-pu {
 			pins = "SPI2_CS", "SPI2_HOLD", "SPI2_WP";
-			drive-strength = <8>;
+			drive-strength = <MTK_DRIVE_8mA>;
 			bias-disable; /* bias-disable */
 		};
 		conf-pd {
 			pins = "SPI2_CLK", "SPI2_MOSI", "SPI2_MISO";
-			drive-strength = <8>;
+			drive-strength = <MTK_DRIVE_8mA>;
 			bias-disable; /* bias-disable */
 		};
 	};
@@ -332,7 +332,7 @@
 			pins = "WF1_HB1", "WF1_HB2", "WF1_HB3", "WF1_HB4",
 			       "WF1_HB0", "WF1_HB5", "WF1_HB6", "WF1_HB7",
 			       "WF1_HB8", "WF1_TOP_CLK", "WF1_TOP_DATA";
-			drive-strength = <4>;
+			drive-strength = <MTK_DRIVE_4mA>;
 		};
 	};
 
