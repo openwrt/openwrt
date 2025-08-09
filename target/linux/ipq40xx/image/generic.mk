@@ -1284,6 +1284,13 @@ define Device/zte_mf287pro
 endef
 TARGET_DEVICES += zte_mf287pro
 
+define Device/zte_mf289d
+	$(call Device/zte_mf28x_common)
+	DEVICE_MODEL := MF289D
+	DEVICE_PACKAGES += ipq-wifi-zte_mf289d ath10k-firmware-qca9984-ct
+endef
+TARGET_DEVICES += zte_mf289d
+
 define Device/zte_mf289f
 	$(call Device/zte_mf28x_common)
 	DEVICE_MODEL := MF289F
