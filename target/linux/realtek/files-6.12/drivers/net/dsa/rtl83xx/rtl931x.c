@@ -657,8 +657,7 @@ static void rtl931x_fill_l2_entry(u32 r[], struct rtl838x_l2_entry *e)
 		/* Check for trunk port */
 		if (r[2] & BIT(29)) {
 			e->is_trunk = true;
-			e->stack_dev = (e->port >> 9) & 1;
-			e->trunk = e->port & 0x3f;
+			e->trunk = e->port & 0xff;
 		} else {
 			e->is_trunk = false;
 			e->stack_dev = (e->port >> 6) & 0xf;
@@ -668,16 +667,11 @@ static void rtl931x_fill_l2_entry(u32 r[], struct rtl838x_l2_entry *e)
 		e->block_da = !!(r[2] & BIT(14));
 		e->block_sa = !!(r[2] & BIT(15));
 		e->suspended = !!(r[2] & BIT(12));
-		e->age = (r[2] >> 16) & 3;
+		e->age = (r[2] >> 16) & 7;
 
-		/* the UC_VID field in hardware is used for the VID or for the route id */
-		if (e->next_hop) {
-			e->nh_route_id = r[2] & 0x7ff;
-			e->vid = 0;
-		} else {
-			e->vid = r[2] & 0xfff;
-			e->nh_route_id = 0;
-		}
+		/* HW doesn't use VID but FID for as key */
+		e->vid = (r[0] >> 16) & 0xfff;
+
 		if (e->is_l2_tunnel)
 			e->l2_tunnel_id = ((r[2] & 0xff) << 4) | (r[3] >> 28);
 		/* TODO: Implement VLAN conversion */
@@ -696,45 +690,49 @@ static void rtl931x_fill_l2_row(u32 r[], struct rtl838x_l2_entry *e)
 	u32 port;
 
 	if (!e->valid) {
-		r[0] = r[1] = r[2] = 0;
+		r[0] = r[1] = r[2] = r[3] = 0;
 		return;
 	}
 
-	r[2] = BIT(31);	/* Set valid bit */
+	r[3] = 0;
 
-	r[0] = ((u32)e->mac[0]) << 24 |
-	       ((u32)e->mac[1]) << 16 |
-	       ((u32)e->mac[2]) << 8 |
-	       ((u32)e->mac[3]);
-	r[1] = ((u32)e->mac[4]) << 24 |
-	       ((u32)e->mac[5]) << 16;
+	r[0] = BIT(31); /* Set valid bit */
 
-	r[2] |= e->next_hop ? BIT(12) : 0;
+	r[0] |= ((u32)e->mac[0]) << 8 |
+	       ((u32)e->mac[1]);
+	r[1] = ((u32)e->mac[2]) << 24 |
+	       ((u32)e->mac[3]) << 16 |
+		   ((u32)e->mac[4]) << 8 |
+		   ((u32)e->mac[5]);
+
+	r[0] |= e->is_open_flow ? BIT(30) : 0;
+	r[0] |= e->is_pe_forward ? BIT(29) : 0;
+	r[2] = e->next_hop ? BIT(30) : 0;
+	r[0] |= (e->rvid & 0xfff) << 16;
 
 	if (e->type == L2_UNICAST) {
-		r[2] |= e->is_static ? BIT(14) : 0;
-		r[1] |= e->rvid & 0xfff;
-		r[2] |= (e->port & 0x3ff) << 20;
+		r[2] |= e->is_l2_tunnel ? BIT(31) : 0;
+		r[2] |= e->is_static ? BIT(13) : 0;
+
 		if (e->is_trunk) {
-			r[2] |= BIT(30);
-			port = e->stack_dev << 9 | (e->port & 0x3f);
+			r[2] |= BIT(29);
+			port = e->trunk & 0xff;
 		} else {
-			port = (e->stack_dev & 0xf) << 6;
-			port |= e->port & 0x3f;
+			port = e->port & 0x3f;
+			port |= (e->stack_dev & 0xf) << 6;
 		}
-		r[2] |= port << 20;
-		r[2] |= e->block_da ? BIT(15) : 0;
-		r[2] |= e->block_sa ? BIT(17) : 0;
-		r[2] |= e->suspended ? BIT(13) : 0;
-		r[2] |= (e->age & 0x3) << 17;
-		/* the UC_VID field in hardware is used for the VID or for the route id */
-		if (e->next_hop)
-			r[2] |= e->nh_route_id & 0x7ff;
-		else
-			r[2] |= e->vid & 0xfff;
+
+		r[2] |= (port & 0x3ff) << 19;
+		r[2] |= e->block_da ? BIT(14) : 0;
+		r[2] |= e->block_sa ? BIT(15) : 0;
+		r[2] |= e->suspended ? BIT(12) : 0;
+		r[2] |= (e->age & 0x7) << 16;
+		if (e->is_l2_tunnel) {
+			r[2] |= (e->l2_tunnel_id >> 4) & 0xff;
+			r[3] |= (e->l2_tunnel_id & 0xf) << 28;
+		}
 	} else { /* L2_MULTICAST */
-		r[2] |= (e->mc_portmask_index & 0x3ff) << 16;
-		r[2] |= e->mc_mac_index & 0x7ff;
+		r[2] |= (e->mc_portmask_index & 0xfff) << 18;
 	}
 }
 
@@ -794,11 +792,31 @@ static u64 rtl931x_read_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2
 
 static u64 rtl931x_read_cam(int idx, struct rtl838x_l2_entry *e)
 {
-	return 0;
+	u32 r[4];
+	struct table_reg *q = rtl_table_get(RTL9310_TBL_0, 1);
+	rtl_table_read(q, idx);
+	for ( int i = 0; i < 4; i++)
+		r[i] = sw_r32(rtl_table_data(q, i));
+
+	rtl_table_release(q);
+	rtl931x_fill_l2_entry(r, e);
+	if (!e->valid)
+		return 0;
+
+	/* return mac with concatenated fid as unique id */
+	return ((((u64)(r[0] & 0xffff) << 32) | (u64)r[1]) << 12) | e->vid;
 }
 
 static void rtl931x_write_cam(int idx, struct rtl838x_l2_entry *e)
 {
+	u32 r[4];
+	struct table_reg *q = rtl_table_get(RTL9310_TBL_0, 1);
+	rtl931x_fill_l2_row(r, e);
+
+	for (int i = 0; i < 4; i++)
+		sw_w32(r[i], rtl_table_data(q, i));
+	rtl_table_write(q, idx);
+	rtl_table_release(q);
 }
 
 static void rtl931x_write_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2_entry *e)
