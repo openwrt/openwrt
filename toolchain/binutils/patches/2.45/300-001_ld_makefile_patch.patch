@@ -1,6 +1,6 @@
 --- a/ld/Makefile.am
 +++ b/ld/Makefile.am
-@@ -50,7 +50,7 @@ AM_CFLAGS = $(WARN_CFLAGS) $(ELF_CLFAGS)
+@@ -50,7 +50,7 @@ AM_CFLAGS = $(WARN_CFLAGS) $(ELF_CFLAGS)
  # We put the scripts in the directory $(scriptdir)/ldscripts.
  # We can't put the scripts in $(datadir) because the SEARCH_DIR
  # directives need to be different for native and cross linkers.
@@ -11,7 +11,7 @@
  EMULATION_OFILES = @EMULATION_OFILES@
 --- a/ld/Makefile.in
 +++ b/ld/Makefile.in
-@@ -573,7 +573,7 @@ AM_CFLAGS = $(WARN_CFLAGS) $(ELF_CLFAGS)
+@@ -583,7 +583,7 @@ AM_CFLAGS = $(WARN_CFLAGS) $(ELF_CFLAGS)
  # We put the scripts in the directory $(scriptdir)/ldscripts.
  # We can't put the scripts in $(datadir) because the SEARCH_DIR
  # directives need to be different for native and cross linkers.
