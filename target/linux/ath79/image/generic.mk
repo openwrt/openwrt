@@ -3326,7 +3326,7 @@ define Device/xiaomi_aiot-ac2350
   SOC := qca9563
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := AIoT AC2350
-  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9984-ct
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9984-ct ipq-wifi-xiaomi_aiot-ac2350
   IMAGE_SIZE := 14336k
 endef
 TARGET_DEVICES += xiaomi_aiot-ac2350
