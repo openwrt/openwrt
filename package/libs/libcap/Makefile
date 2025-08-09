@@ -63,10 +63,8 @@ define Package/libcap-bin/config
 endef
 
 MAKE_FLAGS += \
-    BUILD_CC="$(CC)" \
-    BUILD_CFLAGS="$(FPIC) -I$(PKG_BUILD_DIR)/libcap/include" \
+    BUILD_CC="$(HOSTCC)" \
     CFLAGS="$(TARGET_CFLAGS)" \
-    LD="$(TARGET_CC) -Wl,-x -shared" \
     LDFLAGS="$(TARGET_LDFLAGS)" \
     INDENT="| true" \
     GOLANG="no" \
@@ -82,6 +80,9 @@ TARGET_CFLAGS += -DSHELL='\"$(CONFIG_PACKAGE_libcap-bin-capsh-shell)\"'
 endif
 
 TARGET_CFLAGS += $(if $(CONFIG_USE_MUSL),-Dpthread_yield=sched_yield)
+
+define Build/Configure
+endef
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include/sys
