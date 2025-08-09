@@ -12,7 +12,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/mac80211/sta_info.c
 +++ b/net/mac80211/sta_info.c
-@@ -2621,6 +2621,27 @@ static inline u64 sta_get_stats_bytes(st
+@@ -2621,6 +2621,29 @@ static inline u64 sta_get_stats_bytes(st
  	return value;
  }
  
@@ -33,6 +33,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +	duration = ieee80211_rate_expected_tx_airtime(hw, NULL, ri, band, true, 1024);
 +	duration += duration >> 4; /* add assumed packet error rate of ~6% */
++	if (!duration)
++		return 0;
 +
 +	return ((1024 * USEC_PER_SEC) / duration) * 8;
 +}
@@ -40,7 +42,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  void sta_set_sinfo(struct sta_info *sta, struct station_info *sinfo,
  		   bool tidstats)
  {
-@@ -2865,6 +2886,8 @@ void sta_set_sinfo(struct sta_info *sta,
+@@ -2865,6 +2888,8 @@ void sta_set_sinfo(struct sta_info *sta,
  		sinfo->sta_flags.set |= BIT(NL80211_STA_FLAG_TDLS_PEER);
  
  	thr = sta_get_expected_throughput(sta);
