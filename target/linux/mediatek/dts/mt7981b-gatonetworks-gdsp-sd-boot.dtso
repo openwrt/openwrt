@@ -9,6 +9,8 @@
 	fragment@1 {
 		target = <&mmc0>;
 		__overlay__ {
+			#address-cells = <1>;
+			#size-cells = <0>;
 			card@0 {
 				compatible = "mmc-card";
 				reg = <0>;
