@@ -5,7 +5,8 @@
 
 boot="$(get_dt_led boot)"
 failsafe="$(get_dt_led failsafe)"
-running="$(get_dt_led running)"
+blue="$(get_dt_led running)"
+yellow=$boot
 upgrade="$(get_dt_led upgrade)"
 
 set_led_state() {
@@ -17,8 +18,9 @@ set_led_state() {
 		;;
 	failsafe)
 		status_led_off
-		[ -n "$running" ] && {
-			status_led="$running"
+		[ -n "$blue" ] && {
+			status_led="$blue"
+			status_led2="$yellow"
 			status_led_off
 		}
 		status_led="$failsafe"
@@ -28,8 +30,9 @@ set_led_state() {
 		status_led_blink_preinit_regular
 		;;
 	upgrade)
-		[ -n "$running" ] && {
-			status_led="$running"
+		[ -n "$blue" ] && {
+			status_led="$blue"
+			status_led2="$yellow"
 			status_led_off
 		}
 		status_led="$upgrade"
@@ -37,10 +40,10 @@ set_led_state() {
 		;;
 	done)
 		status_led_off
-		[ "$status_led" != "$running" ] && \
+		[ "$status_led" != "$blue" ] && \
 			status_led_restore_trigger "boot"
-		[ -n "$running" ] && {
-			status_led="$running"
+		[ -n "$blue" ] && {
+			status_led="$yellow"
 			status_led_on
 		}
 		;;
@@ -48,5 +51,5 @@ set_led_state() {
 }
 
 set_state() {
-	[ -n "$boot" -o -n "$failsafe" -o -n "$running" -o -n "$upgrade" ] && set_led_state "$1"
+	[ -n "$boot" -o -n "$failsafe" -o -n "$blue" -o -n "$upgrade" ] && set_led_state "$1"
 }
