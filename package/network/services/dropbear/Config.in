@@ -105,101 +105,108 @@ config DROPBEAR_SVR_PUBKEY_OPTIONS
 
 		Default: enabled.
 
-config DROPBEAR_LASTLOG
-	bool "Write lastlog"
-	help
-		/var/log/lastlog is a record of the last login of each user.
-		To view the last login, use "lastlog" command (OpenWrt package shadow-lastlog).
+## ---
+## Nowadays, utmp/wtmp is not supported by musl libc.
+## Ref: https://wiki.musl-libc.org/faq.html#Q:_Why_is_the_utmp/wtmp_functionality_only_implemented_as_stubs?
 
-		If enabled, Drobear will update it with SSH logins.
-		If disabled, SSH logins will not be recorded.
-
-		Warning: The lastlog record is considered a security and privacy risk by some.
-
-		Default: disabled.
-
-config DROPBEAR_LASTLOG_PATH
-	string "lastlog path:"
-	default "/var/log/lastlog"
-	depends on DROPBEAR_LASTLOG
-	help
-		Default: /var/log/lastlog
-
-config DROPBEAR_WTMP
-	bool "Write wtmp"
-	help
-		/var/log/wtmp is a record of all previous logins.
-		The file needs to be manually created - Dropbear will update it only if it already exists.
-		To view login history, use "last" command, available in Busybox but not included by default.
-
-		If enabled, Dropbear will add SSH logins to the record.
-		If disabled, SSH logins will not be recorded.
-
-		Warning: The wtmp record is considered a security and privacy risk by some.
-
-		Default: disabled.
-
-config DROPBEAR_WTMP_PATH
-	string "wtmp path:"
-	default "/var/log/wtmp"
-	depends on DROPBEAR_WTMP
-	help
-		Default: /var/log/wtmp
-
-# ---- MUSL UTMP ----
-# In musl, pututline() and related functions are all stubs, and login(), logout() and ttyslot() don't exist.
-# In Dropbear there is an option to write to utmp directly, but it uses ttyslot().
-# So, there is currently no way to make utmp work with musl.
-# Revisit this if/when Dropbear implements ttyslot() or an independent utmp direct write.
-comment "* note: utmp is unavailable with musl libc"
+## utmp-specific notes:
+## In musl, pututline() and related functions are all stubs, and login(), logout() and ttyslot() don't exist.
+## In Dropbear there is an option to write to utmp directly, but it uses ttyslot().
+## So, there is currently no way to make utmp work with musl.
+## Revisit this if/when Dropbear implements ttyslot() or an independent utmp direct write.
+## ---
+comment "* note: lastlog/login()/utmp/wtmp are unavailable with musl libc"
 	depends on USE_MUSL
 
-config DROPBEAR_UTMP
-	bool "Write utmp"
-	depends on !USE_MUSL
-	help
-		/var/run/utmp is a record of currently logged-in users.
-		To view logged-in users, use "w", "who" or "users" commands.
+if !USE_MUSL
 
-		If enabled, Dropbear will keep it updated with users that log in via SSH.
-		If disabled, SSH logins will not be recorded.
+	config DROPBEAR_LASTLOG
+		bool "Write lastlog"
+		help
+			/var/log/lastlog is a record of the last login of each user.
+			To view the last login, use "lastlog" command (OpenWrt package shadow-lastlog).
 
-		Warning: The utmp record is considered a security and privacy risk by some.
+			If enabled, Drobear will update it with SSH logins.
+			If disabled, SSH logins will not be recorded.
 
-		Default: disabled.
+			Warning: The lastlog record is considered a security and privacy risk by some.
 
-config DROPBEAR_UTMP_PATH
-	string "utmp path:"
-	default "/var/run/utmp"
-	depends on DROPBEAR_UTMP
-	help
-		Default: /var/run/utmp
+			Default: disabled.
 
-# musl pututline() and related functions are all stubs.
-config DROPBEAR_PUTUTLINE
-	bool "Use pututline() to write to utmp"
-	default y if !DROPBEAR_LOGINFUNC
-	depends on !USE_MUSL && !DROPBEAR_LOGINFUNC && DROPBEAR_UTMP
-	help
-		If enabled, Dropbear will use pututline() to write into the utmp file.
-		If disabled, Dropbear will write to utmp file directly.
+	config DROPBEAR_LASTLOG_PATH
+		string "lastlog path:"
+		default "/var/log/lastlog"
+		depends on DROPBEAR_LASTLOG
+		help
+			Default: /var/log/lastlog
 
-		Consider using login() and logout() functions via DROPBEAR_LOGINFUNC option if available.
+	config DROPBEAR_LOGINFUNC
+		bool "Use login() and logout() functions"
+		help
+			If enabled, Dropbear will use login() and logout() functions to record logins in utmp and wtmp files.
 
-		Default: enabled if DROPBEAR_UTMP is enabled.
+			If disabled, see DROPBEAR_UTMP and DROPBEAR_WTMP options.
 
-# musl doesn't have login() and logout()
-config DROPBEAR_LOGINFUNC
-	bool "Use login() and logout() functions"
-	depends on !USE_MUSL
-	select DROPBEAR_UTMP
-	select DROPBEAR_WTMP
-	help
-		If enabled, Dropbear will use login() and logout() functions to record logins in utmp and wtmp files.
-		If disabled, see DROPBEAR_UTMP and DROPBEAR_WTMP options.
+			Default: disabled.
 
-		Default: disabled.
+	comment "* note: utmp/wtmp are handled by libc implementation rather than Dropbear"
+		depends on DROPBEAR_LOGINFUNC
 
+	config DROPBEAR_WTMP
+		bool "Write wtmp"
+		depends on !DROPBEAR_LOGINFUNC
+		help
+			/var/log/wtmp is a record of all previous logins.
+			The file needs to be manually created - Dropbear will update it only if it already exists.
+			To view login history, use "last" command, available in Busybox but not included by default.
+
+			If enabled, Dropbear will add SSH logins to the record.
+			If disabled, SSH logins will not be recorded.
+
+			Warning: The wtmp record is considered a security and privacy risk by some.
+
+			Default: disabled.
+
+	config DROPBEAR_WTMP_PATH
+		string "wtmp path:"
+		default "/var/log/wtmp"
+		depends on DROPBEAR_WTMP
+		help
+			Default: /var/log/wtmp
+
+	config DROPBEAR_UTMP
+		bool "Write utmp"
+		depends on !DROPBEAR_LOGINFUNC
+		help
+			/var/run/utmp is a record of currently logged-in users.
+			To view logged-in users, use "w", "who" or "users" commands.
+
+			If enabled, Dropbear will keep it updated with users that log in via SSH.
+			If disabled, SSH logins will not be recorded.
+
+			Warning: The utmp record is considered a security and privacy risk by some.
+
+			Default: disabled.
+
+	config DROPBEAR_UTMP_PATH
+		string "utmp path:"
+		default "/var/run/utmp"
+		depends on DROPBEAR_UTMP
+		help
+			Default: /var/run/utmp
+
+	config DROPBEAR_PUTUTLINE
+		bool "Use pututline() to write to utmp"
+		depends on DROPBEAR_UTMP
+		help
+			If enabled, Dropbear will use pututline() to write into the utmp file.
+			If disabled, Dropbear will write to utmp file directly.
+
+			PS: DROPBEAR_UTMP_PATH value is likely to be ignored if DROPBEAR_PUTUTLINE is enabled.
+
+			Default: disabled.
+
+endif
 ## </LOGIN OPTIONS>
 
 ## <FEATURES>
