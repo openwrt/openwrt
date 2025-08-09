@@ -93,6 +93,9 @@ CONFIGURE_ARGS += \
 	--with-libxml2-prefix=$(STAGING_DIR) \
 	--without-emacs
 
+CONFIGURE_VARS += \
+	ac_cv_header_stdalign_h=yes
+
 HOST_CONFIGURE_ARGS += \
 	--disable-shared \
 	--enable-static \
