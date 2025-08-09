@@ -415,13 +415,6 @@ struct rtl83xx_soc_info {
 };
 
 /* rtl83xx-related functions used across subsystems */
-int rtl838x_smi_wait_op(int timeout);
-int rtl838x_read_phy(u32 port, u32 page, u32 reg, u32 *val);
-int rtl838x_write_phy(u32 port, u32 page, u32 reg, u32 val);
-int rtl839x_read_phy(u32 port, u32 page, u32 reg, u32 *val);
-int rtl839x_write_phy(u32 port, u32 page, u32 reg, u32 val);
-int rtl930x_read_phy(u32 port, u32 page, u32 reg, u32 *val);
-int rtl930x_write_phy(u32 port, u32 page, u32 reg, u32 val);
 int rtl931x_read_phy(u32 port, u32 page, u32 reg, u32 *val);
 int rtl931x_write_phy(u32 port, u32 page, u32 reg, u32 val);
 
