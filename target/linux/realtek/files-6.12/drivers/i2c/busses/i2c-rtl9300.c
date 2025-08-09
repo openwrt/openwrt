@@ -141,19 +141,21 @@ static int i2c_read(void __iomem *r0, u8 *buf, int len)
 
 static int i2c_write(void __iomem *r0, u8 *buf, int len)
 {
+	u32 vals[4] = {};
+	int i;
+
 	if (len > 16)
 		return -EIO;
 
-	for (int i = 0; i < len; i++) {
-		u32 v;
+	for (i = 0; i < len; i++) {
+		unsigned int shift = (i % 4) * 8;
+		unsigned int reg = i / 4;
 
-		if (! (i % 4))
-			v = 0;
-		v <<= 8;
-		v |= buf[i];
-		if (i % 4 == 3 || i == len - 1)
-			writel(v, r0 + (i / 4) * 4);
+		vals[reg] |= buf[i] << shift;
 	}
+
+	for (i = 0; i < ARRAY_SIZE(vals); i++)
+		writel(vals[i], r0 + i * 4);
 
 	return len;
 }
@@ -208,12 +210,20 @@ static int rtl9300_execute_xfer(struct rtl9300_i2c *i2c, char read_write,
 		return -EIO;
 
 	if (read_write == I2C_SMBUS_READ) {
-		if (size == I2C_SMBUS_BYTE || size == I2C_SMBUS_BYTE_DATA){
+		switch (size) {
+		case I2C_SMBUS_BYTE:
+		case I2C_SMBUS_BYTE_DATA:
 			data->byte = readl(REG(i2c, RTL9300_I2C_DATA_WORD0));
-		} else if (size == I2C_SMBUS_WORD_DATA) {
+			break;
+		case I2C_SMBUS_WORD_DATA:
 			data->word = readl(REG(i2c, RTL9300_I2C_DATA_WORD0));
-		} else if (len > 0) {
+			break;
+		case I2C_SMBUS_I2C_BLOCK_DATA:
+			rtl9300_i2c_read(i2c, &data->block[1], len);
+			break;
+		default:
 			rtl9300_i2c_read(i2c, &data->block[0], len);
+			break;
 		}
 	}
 
@@ -239,12 +249,20 @@ static int rtl9310_execute_xfer(struct rtl9300_i2c *i2c, char read_write,
 		return -EIO;
 
 	if (read_write == I2C_SMBUS_READ) {
-		if (size == I2C_SMBUS_BYTE || size == I2C_SMBUS_BYTE_DATA){
+		switch (size) {
+		case I2C_SMBUS_BYTE:
+		case I2C_SMBUS_BYTE_DATA:
 			data->byte = readl(REG(i2c, RTL9310_I2C_DATA));
-		} else if (size == I2C_SMBUS_WORD_DATA) {
+			break;
+		case I2C_SMBUS_WORD_DATA:
 			data->word = readl(REG(i2c, RTL9310_I2C_DATA));
-		} else if (len > 0) {
+			break;
+		case I2C_SMBUS_I2C_BLOCK_DATA:
+			rtl9310_i2c_read(i2c, &data->block[1], len);
+			break;
+		default:
 			rtl9310_i2c_read(i2c, &data->block[0], len);
+			break;
 		}
 	}
 
@@ -299,6 +317,24 @@ static int rtl9300_i2c_smbus_xfer(struct i2c_adapter * adap, u16 addr,
 		pr_debug("I2C_SMBUS_BLOCK_DATA %02x, read %d, len %d\n",
 			addr, read_write, data->block[0]);
 		drv_data->reg_addr_set(i2c, command, 1);
+		if (data->block[0] < 1 || data->block[0] > I2C_SMBUS_BLOCK_MAX) {
+			ret = -EINVAL;
+			goto out_unlock;
+		}
+		drv_data->config_xfer(i2c, addr, data->block[0] + 1);
+		if (read_write == I2C_SMBUS_WRITE)
+			drv_data->write(i2c, &data->block[0], data->block[0] + 1);
+		len = data->block[0] + 1;
+		break;
+
+	case I2C_SMBUS_I2C_BLOCK_DATA:
+		pr_debug("I2C_SMBUS_I2C_BLOCK_DATA %02x, read %d, len %d\n",
+			addr, read_write, data->block[0]);
+		drv_data->reg_addr_set(i2c, command, 1);
+		if (data->block[0] < 1 || data->block[0] > I2C_SMBUS_BLOCK_MAX) {
+			ret = -EINVAL;
+			goto out_unlock;
+		}
 		drv_data->config_xfer(i2c, addr, data->block[0]);
 		if (read_write == I2C_SMBUS_WRITE)
 			drv_data->write(i2c, &data->block[1], data->block[0]);
@@ -312,6 +348,7 @@ static int rtl9300_i2c_smbus_xfer(struct i2c_adapter * adap, u16 addr,
 
 	ret = drv_data->execute_xfer(i2c, read_write, size, data, len);
 
+out_unlock:
 	mutex_unlock(&i2c_lock);
 
 	return ret;
@@ -321,6 +358,7 @@ static u32 rtl9300_i2c_func(struct i2c_adapter *a)
 {
 	return I2C_FUNC_SMBUS_QUICK | I2C_FUNC_SMBUS_BYTE |
 	       I2C_FUNC_SMBUS_BYTE_DATA | I2C_FUNC_SMBUS_WORD_DATA |
+	       I2C_FUNC_SMBUS_READ_I2C_BLOCK | I2C_FUNC_SMBUS_WRITE_I2C_BLOCK |
 	       I2C_FUNC_SMBUS_BLOCK_DATA;
 }
 
