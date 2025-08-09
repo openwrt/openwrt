@@ -711,12 +711,12 @@
 	sfp_i2c_pins: sfp-i2c-pins {
 		conf-scl {
 			pins = "LED_A";
-			drive-strength =  <8>;
+			drive-strength = <MTK_DRIVE_8mA>;
 			bias-pull-up = <MTK_PUPD_SET_R1R0_01>;
 		};
 		conf-sda {
 			pins = "LED_E";
-			drive-strength =  <8>;
+			drive-strength = <MTK_DRIVE_8mA>;
 			bias-disable;
 		};
 	};
