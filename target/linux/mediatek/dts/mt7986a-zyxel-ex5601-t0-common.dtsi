@@ -158,21 +158,21 @@
 };
 
 &spi0 {
-        pinctrl-names = "default";
-        pinctrl-0 = <&spi_flash_pins>;
-        cs-gpios = <0>, <0>;
-        #address-cells = <1>;
-        #size-cells = <0>;
-        status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi_flash_pins>;
+	cs-gpios = <0>, <0>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
 
-        spi_nand: spi_nand@1 {
-                #address-cells = <1>;
-                #size-cells = <1>;
-                compatible = "spi-nand";
-                reg = <1>;
-                spi-max-frequency = <52000000>;
-                spi-tx-bus-width = <4>;
-                spi-rx-bus-width = <4>;
+	spi_nand: spi_nand@1 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "spi-nand";
+		reg = <1>;
+		spi-max-frequency = <52000000>;
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
 
 		nand_partitions: partitions {
 			compatible = "fixed-partitions";
@@ -340,11 +340,11 @@
 	};
 
 	uart0_pins: uart0-pins {
-                mux {
-                        function = "uart";
-                        groups = "uart0";
-                };
-        };
+		mux {
+			function = "uart";
+			groups = "uart0";
+		};
+	};
 
 	uart1_pins: uart1-pins {
 		mux {
@@ -394,12 +394,12 @@
 		};
 	};
 
-        usb-oc-hog {
-                gpio-hog;
-                gpios = <7 GPIO_ACTIVE_LOW>;
-                input;
-                line-name = "usb-oc";
-        };
+	usb-oc-hog {
+		gpio-hog;
+		gpios = <7 GPIO_ACTIVE_LOW>;
+		input;
+		line-name = "usb-oc";
+	};
 };
 
 &spi1 {

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0-or-later OR MIT 
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
 /dts-v1/;
 #include <dt-bindings/gpio/gpio.h>
@@ -263,7 +263,7 @@
 };
 
 &pio {
-	gpio-line-names = 
+	gpio-line-names =
 			"wps",
 			"reset",
 			"watchdog",
@@ -317,8 +317,8 @@
 
 &wifi {
 	status = "okay";
-        nvmem-cells = <&eeprom_factory>;
-        nvmem-cell-names = "eeprom";
+	nvmem-cells = <&eeprom_factory>;
+	nvmem-cell-names = "eeprom";
 };
 
 &factory {
@@ -332,7 +332,7 @@
 	macaddr_factory_02a: macaddr@2a {
 		reg = <0x2a 0x6>;
 	};
-        eeprom_factory: eeprom@0 {
+	eeprom_factory: eeprom@0 {
 		reg = <0x0 0x1000>;
 	};
 };
