@@ -911,6 +911,7 @@ define Device/netgear_rbx50
 	KERNEL_SIZE := 3932160
 	ROOTFS_SIZE := 32243712
 	IMAGE_SIZE := 36175872
+	DEVICE_PACKAGES := -kmod-usb3 kmod-usb2
 endef
 
 define Device/netgear_rbr50
