@@ -136,9 +136,26 @@
 				read-only;
 			};
 
+			/* The boot log of the stock kernel suggests the radio partition is at
+			 * 0xfe0000, but this is wrong. The U-Boot log lists it at 0xff0000. The
+			 * WiFi driver's log output indicates the calibration data is read from a
+			 * hardcoded 0xff0000, ignoring mtd partitions:
+			 *
+			 * 0x000000fe0000-0x000000ff0000 : "radio" <- WRONG
+			 * ...
+			 * MT7603E--> ####  read 2.4G cal from flash !! ####
+			 * spiflash_ioctl_read, Read from 0x00ff0000 length 0x10000, ...
+			 *
+			 * Manual inspection shows 0xfe0000 is empty (0xff) bytes. 0xff0000 contains
+			 * the data we want. */
 			partition@fe0000 {
-				label = "radio";
+				label = "filler";
 				reg = <0xfe0000 0x10000>;
+			};
+
+			partition@ff0000 {
+				label = "radio";
+				reg = <0xff0000 0x10000>;
 				read-only;
 
 				nvmem-layout {
