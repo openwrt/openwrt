@@ -114,6 +114,15 @@
 	};
 };
 
+&swphy1 {
+	status = "okay";
+};
+
+&eth1 {
+	phy-handle = <&swphy1>;
+	/delete-node/ fixed-link;
+};
+
 &usb0 {
 	status = "okay";
 };
