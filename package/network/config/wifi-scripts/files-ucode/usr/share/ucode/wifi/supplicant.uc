@@ -159,6 +159,8 @@ function setup_sta(data, config) {
 		config.group = 'GCMP';
 	}
 
+	config.key_mgmt ??= 'NONE';
+
 	config.basic_rate = ratelist(config.basic_rate);
 	config.mcast_rate = ratestr(config.mcast_rate);
 
