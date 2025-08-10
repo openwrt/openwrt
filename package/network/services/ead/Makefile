@@ -39,6 +39,7 @@ TARGET_CFLAGS += \
 	-I$(PKG_BUILD_DIR) \
 	-I$(PKG_BUILD_DIR)/tinysrp \
 	$(TARGET_CPPFLAGS) \
+	-I$(STAGING_DIR)/usr/include \
 	-Wno-error=implicit-function-declaration
 
 MAKE_FLAGS += \
