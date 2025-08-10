@@ -17,6 +17,29 @@
 		#cooling-cells = <2>;
 	};
 
+        keys {
+                compatible = "gpio-keys";
+ 
+                mode_button {
+                        function = "copper_led_mode";
+                        linux,code = <BTN_0>;
+                        gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+                };
+        };
+ 
+        leds {
+                compatible = "gpio-leds";
+ 
+                mode_led {
+                        function = "copper_led_mode";
+                        color = <LED_COLOR_ID_GREEN>;
+                        gpios = <&gpio1 8 GPIO_ACTIVE_HIGH>;
+                        default-state = "on";
+                        linux,default-trigger = "none";
+                        led-pattern = <0 500 0 0 255 500 255 0>;
+                };
+        };
+
         i2c0: i2c-gpio-0 {
                 compatible = "i2c-gpio";
                 sda-gpios = <&gpio1 13 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
