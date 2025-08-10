@@ -35,6 +35,7 @@ endef
 CONFIGURE_PATH = tinysrp
 
 TARGET_CFLAGS += \
+	-std=gnu17 \
 	-I$(PKG_BUILD_DIR) \
 	-I$(PKG_BUILD_DIR)/tinysrp \
 	$(TARGET_CPPFLAGS) \
