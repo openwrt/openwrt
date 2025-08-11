@@ -206,7 +206,7 @@
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
-		spi-max-frequency = <50000000>;
+		spi-max-frequency = <24000000>;
 		reg = <0>;
 
 		partitions {
@@ -298,7 +298,7 @@
 	nand@1 {
 		compatible = "spi-nand";
 		reg = <1>;
-		spi-max-frequency = <48000000>;
+		spi-max-frequency = <24000000>;
 
 		partitions {
 			compatible = "fixed-partitions";
