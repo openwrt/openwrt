@@ -69,10 +69,13 @@ extern int rtl931x_write_sds_phy(int phy_addr, int page, int phy_reg, u16 v);
 #define RTMDIO_ABS		BIT(2)
 #define RTMDIO_PKG		BIT(3)
 
-#define RTMDIO_838X_BASE		(0xe780)
-#define RTMDIO_839X_BASE		(0xa000)
-#define RTMDIO_930X_SDS_INDACS_CMD	(0x03B0)
-#define RTMDIO_930X_SDS_INDACS_DATA	(0x03B4)
+/* MDIO SerDes registers */
+#define RTMDIO_838X_BASE			(0xe780)
+#define RTMDIO_839X_BASE			(0xa000)
+#define RTMDIO_930X_SDS_INDACS_CMD		(0x03B0)
+#define RTMDIO_930X_SDS_INDACS_DATA		(0x03B4)
+#define RTMDIO_931X_SERDES_INDRT_ACCESS_CTRL	(0x5638)
+#define RTMDIO_931X_SERDES_INDRT_DATA_CTRL	(0x563C)
 
 struct p_hdr {
 	uint8_t		*buf;
@@ -2394,6 +2397,228 @@ static int rtmdio_930x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
 	return err;
 }
 
+/*
+ * The RTL931x family has 14 "frontend" SerDes that are cascaded. All operations (e.g. reset) work
+ * on this frontend view while their registers are distributed over a total of least 26 background
+ * SerDes. Two types of SerDes exist:
+ *
+ * An "even" SerDes with numbers 0, 1, 2, 4, 6, 8, 10, 12 works on one background SerDes.
+ *
+ * The "odd" SerDes with numbers 3, 5, 7, 9, 11 & 13 SerDes consist of a total of 3 background
+ * SerDes (one analog and two XSGMII) each with its own page/register set. So it gives this
+ * mapping:
+
+ * Frontend SerDes  |  0  1  2  3  4  5  6  7  8  9 10 11 12 13
+ * -----------------+------------------------------------------
+ * Backend SerDes 1 |  0  1  2  3  6  7 10 11 14 15 18 19 22 23
+ * Backend SerDes 2 |  0  1  2  4  6  8 10 12 14 16 18 20 22 24
+ * Backend SerDes 3 |  0  1  2  5  6  9 10 13 14 17 18 21 22 25
+ *
+ * Align this for readability by simulating a total of 576 pages and mix them as follows.
+ *
+ * frontend page		"even" frontend SerDes		"odd" frontend SerDes
+ * page 0x000-0x03f (analog):	page 0x000-0x03f back SDS	page 0x000-0x03f back SDS
+ * page 0x100-0x13f (XSGMII1):	page 0x000-0x03f back SDS	page 0x000-0x03f back SDS+1
+ * page 0x200-0x23f (XSGMII2):	page 0x000-0x03f back SDS	page 0x000-0x03f back SDS+2
+ */ 
+
+int rtmdio_931x_read_sds_phy(int sds, int page, int regnum)
+{
+	u32 cmd = sds << 2 | page << 7 | regnum << 13 | 1;
+	int i, ret = -EIO;
+
+	pr_debug("%s: phy_addr(SDS-ID) %d, phy_reg: %d\n", __func__, sds, regnum);
+
+	mutex_lock(&rtmdio_lock_sds);
+	sw_w32(cmd, RTMDIO_931X_SERDES_INDRT_ACCESS_CTRL);
+
+	for (i = 0; i < 100; i++) {
+		if (!(sw_r32(RTMDIO_931X_SERDES_INDRT_ACCESS_CTRL) & 0x1))
+			break;
+		mdelay(1);
+	}
+
+	if (i < 100)
+		ret = sw_r32(RTMDIO_931X_SERDES_INDRT_DATA_CTRL) & 0xffff;
+
+	mutex_unlock(&rtmdio_lock_sds);
+
+	pr_debug("%s: returning %08x\n", __func__, ret);
+
+	return ret;
+}
+
+int rtmdio_931x_write_sds_phy(int sds, int page, int regnum, u16 val)
+{
+	u32 cmd = sds << 2 | page << 7 | regnum << 13;;
+	int i, ret = -EIO;
+
+	mutex_lock(&rtmdio_lock_sds);
+	sw_w32(cmd, RTMDIO_931X_SERDES_INDRT_ACCESS_CTRL);
+	sw_w32(val, RTMDIO_931X_SERDES_INDRT_DATA_CTRL);
+
+	cmd = sw_r32(RTMDIO_931X_SERDES_INDRT_ACCESS_CTRL) | 0x3;
+	sw_w32(cmd, RTMDIO_931X_SERDES_INDRT_ACCESS_CTRL);
+
+	for (i = 0; i < 100; i++) {
+		if (!(sw_r32(RTMDIO_931X_SERDES_INDRT_ACCESS_CTRL) & 0x1))
+			break;
+		mdelay(1);
+	}
+
+	mutex_unlock(&rtmdio_lock_sds);
+
+	if (i < 100)
+		ret = 0;
+
+	return ret;
+}
+
+/* RTL931x specific MDIO functions */
+
+static int rtmdio_931x_write_phy(u32 port, u32 page, u32 reg, u32 val)
+{
+	u32 v;
+	int err = 0;
+
+	val &= 0xffff;
+	if (port > 63 || page > 4095 || reg > 31)
+		return -ENOTSUPP;
+
+	mutex_lock(&rtmdio_lock);
+	pr_debug("%s: writing to phy %d %d %d %d\n", __func__, port, page, reg, val);
+	/* Clear both port registers */
+	sw_w32(0, RTL931X_SMI_INDRT_ACCESS_CTRL_2);
+	sw_w32(0, RTL931X_SMI_INDRT_ACCESS_CTRL_2 + 4);
+	sw_w32_mask(0, BIT(port % 32), RTL931X_SMI_INDRT_ACCESS_CTRL_2 + (port / 32) * 4);
+
+	sw_w32_mask(0xffff, val, RTL931X_SMI_INDRT_ACCESS_CTRL_3);
+
+	v = reg << 6 | page << 11 ;
+	sw_w32(v, RTL931X_SMI_INDRT_ACCESS_CTRL_0);
+
+	sw_w32(0x1ff, RTL931X_SMI_INDRT_ACCESS_CTRL_1);
+
+	v |= BIT(4) | 1; /* Write operation and execute */
+	sw_w32(v, RTL931X_SMI_INDRT_ACCESS_CTRL_0);
+
+	do {
+	} while (sw_r32(RTL931X_SMI_INDRT_ACCESS_CTRL_0) & 0x1);
+
+	if (sw_r32(RTL931X_SMI_INDRT_ACCESS_CTRL_0) & 0x2)
+		err = -EIO;
+
+	mutex_unlock(&rtmdio_lock);
+
+	return err;
+}
+
+static int rtmdio_931x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
+{
+	u32 v;
+
+	if (port > 63 || page > 4095 || reg > 31)
+		return -ENOTSUPP;
+
+	mutex_lock(&rtmdio_lock);
+
+	sw_w32(port << 5, RTL931X_SMI_INDRT_ACCESS_BC_PHYID_CTRL);
+
+	v = reg << 6 | page << 11 | 1;
+	sw_w32(v, RTL931X_SMI_INDRT_ACCESS_CTRL_0);
+
+	do {
+	} while (sw_r32(RTL931X_SMI_INDRT_ACCESS_CTRL_0) & 0x1);
+
+	v = sw_r32(RTL931X_SMI_INDRT_ACCESS_CTRL_0);
+	*val = sw_r32(RTL931X_SMI_INDRT_ACCESS_CTRL_3);
+	*val = (*val & 0xffff0000) >> 16;
+
+	pr_debug("%s: port %d, page: %d, reg: %x, val: %x, v: %08x\n",
+		__func__, port, page, reg, *val, v);
+
+	mutex_unlock(&rtmdio_lock);
+
+	return 0;
+}
+
+/* Read an mmd register of the PHY */
+static int rtmdio_931x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
+{
+	int err = 0;
+	u32 v;
+	/* Select PHY register type
+	 * If select 1G/10G MMD register type, registers EXT_PAGE, MAIN_PAGE and REG settings are don’t care.
+	 * 0x0  Normal register (Clause 22)
+	 * 0x1: 1G MMD register (MMD via Clause 22 registers 13 and 14)
+	 * 0x2: 10G MMD register (MMD via Clause 45)
+	 */
+	int type = 2;
+
+	mutex_lock(&rtmdio_lock);
+
+	/* Set PHY to access via port-number */
+	sw_w32(port << 5, RTL931X_SMI_INDRT_ACCESS_BC_PHYID_CTRL);
+
+	/* Set MMD device number and register to write to */
+	sw_w32(devnum << 16 | regnum, RTL931X_SMI_INDRT_ACCESS_MMD_CTRL);
+
+	v = type << 2 | BIT(0); /* MMD-access-type | EXEC */
+	sw_w32(v, RTL931X_SMI_INDRT_ACCESS_CTRL_0);
+
+	do {
+		v = sw_r32(RTL931X_SMI_INDRT_ACCESS_CTRL_0);
+	} while (v & BIT(0));
+
+	/* Check for error condition */
+	if (v & BIT(1))
+		err = -EIO;
+
+	*val = sw_r32(RTL931X_SMI_INDRT_ACCESS_CTRL_3) >> 16;
+
+	pr_debug("%s: port %d, dev: %x, regnum: %x, val: %x (err %d)\n", __func__,
+		 port, devnum, regnum, *val, err);
+
+	mutex_unlock(&rtmdio_lock);
+
+	return err;
+}
+
+/* Write to an mmd register of the PHY */
+static int rtmdio_931x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
+{
+	int err = 0;
+	u32 v;
+	int type = 2;
+	u64 pm;
+
+	mutex_lock(&rtmdio_lock);
+
+	/* Set PHY to access via port-mask */
+	pm = (u64)1 << port;
+	sw_w32((u32)pm, RTL931X_SMI_INDRT_ACCESS_CTRL_2);
+	sw_w32((u32)(pm >> 32), RTL931X_SMI_INDRT_ACCESS_CTRL_2 + 4);
+
+	/* Set data to write */
+	sw_w32_mask(0xffff, val, RTL931X_SMI_INDRT_ACCESS_CTRL_3);
+
+	/* Set MMD device number and register to write to */
+	sw_w32(devnum << 16 | regnum, RTL931X_SMI_INDRT_ACCESS_MMD_CTRL);
+
+	v = BIT(4) | type << 2 | BIT(0); /* WRITE | MMD-access-type | EXEC */
+	sw_w32(v, RTL931X_SMI_INDRT_ACCESS_CTRL_0);
+
+	do {
+		v = sw_r32(RTL931X_SMI_INDRT_ACCESS_CTRL_0);
+	} while (v & BIT(0));
+
+	pr_debug("%s: port %d, dev: %x, regnum: %x, val: %x (err %d)\n", __func__,
+		 port, devnum, regnum, val, err);
+	mutex_unlock(&rtmdio_lock);
+
+	return err;
+}
+
 /* These are the core functions of our new Realtek SoC MDIO bus. */
 
 static int rtmdio_read_c45(struct mii_bus *bus, int addr, int devnum, int regnum)
@@ -2506,8 +2731,8 @@ static int rtmdio_93xx_read(struct mii_bus *bus, int addr, int regnum)
 
 	priv->raw[addr] = (priv->page[addr] == priv->rawpage);
 	if (priv->phy_is_internal[addr]) {
-		return rtl931x_read_sds_phy(priv->sds_id[addr],
-					    priv->page[addr], regnum);
+		return rtmdio_931x_read_sds_phy(priv->sds_id[addr],
+						priv->page[addr], regnum);
 	}
 
 	err = (*priv->read_phy)(addr, priv->page[addr], regnum, &val);
@@ -2594,8 +2819,8 @@ static int rtmdio_93xx_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 	if (!priv->raw[addr] && (regnum != RTMDIO_PAGE_SELECT || page == priv->rawpage)) {
 		priv->raw[addr] = (page == priv->rawpage);
 		if (priv->phy_is_internal[addr]) {
-			return rtl931x_write_sds_phy(priv->sds_id[addr],
-						     page, regnum, val);
+			return rtmdio_931x_write_sds_phy(priv->sds_id[addr],
+							 page, regnum, val);
 		}
 
 		err = (*priv->write_phy)(addr, page, regnum, val);
@@ -2922,10 +3147,10 @@ static int rtl838x_mdio_init(struct rtl838x_eth_priv *priv)
 		priv->mii_bus->read = rtmdio_93xx_read;
 		priv->mii_bus->write = rtmdio_93xx_write;
 		priv->mii_bus->reset = rtmdio_931x_reset;
-		bus_priv->read_mmd_phy = rtl931x_read_mmd_phy;
-		bus_priv->write_mmd_phy = rtl931x_write_mmd_phy;
-		bus_priv->read_phy = rtl931x_read_phy;
-		bus_priv->write_phy = rtl931x_write_phy;
+		bus_priv->read_mmd_phy = rtmdio_931x_read_mmd_phy;
+		bus_priv->write_mmd_phy = rtmdio_931x_write_mmd_phy;
+		bus_priv->read_phy = rtmdio_931x_read_phy;
+		bus_priv->write_phy = rtmdio_931x_write_phy;
 		bus_priv->cpu_port = RTL931X_CPU_PORT;
 		bus_priv->rawpage = 0x1fff;
 		break;

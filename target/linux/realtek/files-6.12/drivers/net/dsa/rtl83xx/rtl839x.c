@@ -20,7 +20,6 @@
 #define RTL839X_VLAN_PORT_TAG_STS_CTRL_IGR_P_OTAG_KEEP_MASK	GENMASK(1,1)
 #define RTL839X_VLAN_PORT_TAG_STS_CTRL_IGR_P_ITAG_KEEP_MASK	GENMASK(0,0)
 
-extern struct mutex smi_lock;
 extern struct rtl83xx_soc_info soc_info;
 
 /* Definition of the RTL839X-specific template field IDs as used in the PIE */
