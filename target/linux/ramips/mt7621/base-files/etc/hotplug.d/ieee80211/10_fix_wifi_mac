@@ -225,6 +225,10 @@ case "$board" in
 		hw_mac_addr="$(mtd_get_mac_binary factory 0x4)"
 		[ "$PHYNBR" = "1" ] &&  macaddr_add $hw_mac_addr 4 > /sys${DEVPATH}/macaddress
 		;;
+	tplink,deco-x20-v3)
+		hw_mac_addr="$(get_mac_binary /tmp/ubi_factory_data/default-mac 0x0)"
+		macaddr_add "$hw_mac_addr" 2 > "/sys${DEVPATH}/macaddress"
+		;;
 	tplink,eap613-v1|\
 	tplink,eap615-wall-v1)
 		hw_mac_addr="$(mtd_get_mac_binary product-info 0x8)"
