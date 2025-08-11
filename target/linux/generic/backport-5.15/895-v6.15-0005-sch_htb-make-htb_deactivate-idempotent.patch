@@ -1,0 +1,96 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Cong Wang <xiyou.wangcong@gmail.com>
+Date: Mon, 28 Apr 2025 16:29:54 -0700
+Subject: sch_htb: make htb_deactivate() idempotent
+
+Alan reported a NULL pointer dereference in htb_next_rb_node()
+after we made htb_qlen_notify() idempotent.
+
+It turns out in the following case it introduced some regression:
+
+htb_dequeue_tree():
+  |-> fq_codel_dequeue()
+    |-> qdisc_tree_reduce_backlog()
+      |-> htb_qlen_notify()
+        |-> htb_deactivate()
+  |-> htb_next_rb_node()
+  |-> htb_deactivate()
+
+For htb_next_rb_node(), after calling the 1st htb_deactivate(), the
+clprio[prio]->ptr could be already set to  NULL, which means
+htb_next_rb_node() is vulnerable here.
+
+For htb_deactivate(), although we checked qlen before calling it, in
+case of qlen==0 after qdisc_tree_reduce_backlog(), we may call it again
+which triggers the warning inside.
+
+To fix the issues here, we need to:
+
+1) Make htb_deactivate() idempotent, that is, simply return if we
+   already call it before.
+2) Make htb_next_rb_node() safe against ptr==NULL.
+
+Many thanks to Alan for testing and for the reproducer.
+
+Fixes: 5ba8b837b522 ("sch_htb: make htb_qlen_notify() idempotent")
+Reported-by: Alan J. Wylie <alan@wylie.me.uk>
+Signed-off-by: Cong Wang <xiyou.wangcong@gmail.com>
+Link: https://patch.msgid.link/20250428232955.1740419-2-xiyou.wangcong@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+(cherry picked from commit 3769478610135e82b262640252d90f6efb05be71)
+---
+ net/sched/sch_htb.c | 15 ++++++---------
+ 1 file changed, 6 insertions(+), 9 deletions(-)
+
+--- a/net/sched/sch_htb.c
++++ b/net/sched/sch_htb.c
+@@ -345,7 +345,8 @@ static void htb_add_to_wait_tree(struct
+  */
+ static inline void htb_next_rb_node(struct rb_node **n)
+ {
+-	*n = rb_next(*n);
++	if (*n)
++		*n = rb_next(*n);
+ }
+ 
+ /**
+@@ -606,8 +607,8 @@ static inline void htb_activate(struct h
+  */
+ static inline void htb_deactivate(struct htb_sched *q, struct htb_class *cl)
+ {
+-	WARN_ON(!cl->prio_activity);
+-
++	if (!cl->prio_activity)
++		return;
+ 	htb_deactivate_prios(q, cl);
+ 	cl->prio_activity = 0;
+ }
+@@ -1504,8 +1505,6 @@ static void htb_qlen_notify(struct Qdisc
+ {
+ 	struct htb_class *cl = (struct htb_class *)arg;
+ 
+-	if (!cl->prio_activity)
+-		return;
+ 	htb_deactivate(qdisc_priv(sch), cl);
+ }
+ 
+@@ -1760,8 +1759,7 @@ static int htb_delete(struct Qdisc *sch,
+ 	if (cl->parent)
+ 		cl->parent->children--;
+ 
+-	if (cl->prio_activity)
+-		htb_deactivate(q, cl);
++	htb_deactivate(q, cl);
+ 
+ 	if (cl->cmode != HTB_CAN_SEND)
+ 		htb_safe_rb_erase(&cl->pq_node,
+@@ -1973,8 +1971,7 @@ static int htb_change_class(struct Qdisc
+ 			/* turn parent into inner node */
+ 			qdisc_purge_queue(parent->leaf.q);
+ 			parent_qdisc = parent->leaf.q;
+-			if (parent->prio_activity)
+-				htb_deactivate(q, parent);
++			htb_deactivate(q, parent);
+ 
+ 			/* remove from evt list because of level change */
+ 			if (parent->cmode != HTB_CAN_SEND) {
