@@ -44,6 +44,7 @@ TARGET_CFLAGS += \
 	-Wno-error=implicit-function-declaration
 
 MAKE_FLAGS += \
+	$(TARGET_CONFIGURE_OPTS) \
 	CONFIGURE_ARGS="$(CONFIGURE_ARGS)" \
 	LIBS_EADCLIENT="$(PKG_BUILD_DIR)/tinysrp/libtinysrp.a" \
 	LIBS_EAD="$(PKG_BUILD_DIR)/tinysrp/libtinysrp.a $(STAGING_DIR)/usr/lib/libpcap.a -lbsd -lmd" \
