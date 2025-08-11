@@ -1,0 +1,275 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+#include "mt7986a-acer-w6-common.dtsi"
+
+/ {
+	model = "Acer Predator Connect W6x";
+	compatible = "acer,predator-w6x", "mediatek,mt7986a";
+
+	aliases {
+		serial0 = &uart0;
+	};
+	chosen {
+		bootargs-override = "";
+	};
+};
+
+&eth {
+	gmac1: mac@1 {
+		compatible = "mediatek,eth-mac";
+		reg = <1>;
+		phy-mode = "2500base-x";
+		phy-handle = <&phy6>;
+	};
+};
+
+&mdio {
+	phy6: phy@6 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <6>;
+		reset-gpios = <&pio 6 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <10000>;
+		reset-deassert-us = <10000>;
+		/* LED0: nc ; LED1: nc ; LED2: amber ; LED3: green */
+		mxl,led-config = <0x0 0x0 0x370 0x380>;
+	};
+};
+
+/delete-node/&mmc0;
+
+&pio {
+	/delete-node/mmc0_pins_default;
+	/delete-node/mmc0_pins_uhs;
+	spi_flash_pins: spi-flash-pins-33-to-38 {
+		mux {
+			function = "spi";
+			groups = "spi0", "spi0_wp_hold";
+		};
+		conf-pu {
+			pins = "SPI2_CS", "SPI2_HOLD", "SPI2_WP";
+			drive-strength = <8>;
+			mediatek,pull-up-adv = <0>; /* bias-disable */
+		};
+		conf-pd {
+			pins = "SPI2_CLK", "SPI2_MOSI", "SPI2_MISO";
+			drive-strength = <8>;
+			mediatek,pull-down-adv = <0>; /* bias-disable */
+		};
+	};
+
+	spi_led_pins: spic-pins-29-to-32 {
+		mux {
+			function = "spi";
+			groups = "spi1_2";
+		};
+	};
+
+};
+
+&slot0 {
+	radio0: mt7915@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_0>;
+		nvmem-cell-names = "eeprom";
+	};
+};
+
+&spi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi_flash_pins>;
+	status = "okay";
+
+	spi_nand_flash: spi_nand@0 {
+		compatible = "spi-nand";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0>;
+
+		spi-max-frequency = <52000000>;
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
+
+		partitions: partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "bl2";
+				reg = <0x0 0x100000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "u-boot-env";
+				reg = <0x100000 0x80000>;
+			};
+
+			partition@180000 {
+				label = "factory";
+				reg = <0x180000 0x200000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x1000>;
+					};
+				};
+			};
+			factory: partition@380000 {
+				label = "fip";
+				reg = <0x380000 0x200000>;
+				read-only;
+			};
+
+			partition@580000 {
+				label = "prod";
+				reg = <0x580000 0x20000>;
+				read-only;
+			};
+			partition@600000 {
+				label = "dual";
+				reg = <0x600000 0x100000>;
+				read-only;
+			};
+			partition@700000 {
+				label = "pot";
+				reg = <0x700000 0x100000>;
+				read-only;
+			};
+			partition@800000 {
+				label = "ubi";
+				reg = <0x800000 0x6400000>;
+			};
+			partition@6C00000 {
+				label = "ubi1";
+				reg = <0x6C00000 0x6400000>;
+			};
+			partition@D000000 {
+				label = "storage";
+				reg = <0xD000000 0x800000>;
+			};
+		};
+	};
+};
+
+&ssusb {
+	vusb33-supply = <&reg_3p3v>;
+	vbus-supply = <&reg_5v>;
+	status = "okay";
+};
+
+&switch {
+	/delete-node/ports;
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		swport0: port@1 {
+			reg = <1>;
+			label = "lan1";
+			phy-handle = <&swphy1>;
+		};
+
+		port@2 {
+			reg = <2>;
+			label = "lan2";
+			phy-handle = <&swphy2>;
+		};
+
+		port@3 {
+			reg = <3>;
+			label = "lan3";
+			phy-handle = <&swphy3>;
+		};
+
+		port@4 {
+			reg = <4>;
+			label = "lan4";
+			phy-handle = <&swphy4>;
+		};
+
+		port@6 {
+			reg = <6>;
+			label = "cpu";
+			ethernet = <&gmac0>;
+			phy-mode = "2500base-x";
+
+			fixed-link {
+				speed = <2500>;
+				full-duplex;
+				pause;
+			};
+		};
+	};
+	/delete-node/mdio;
+	mdio {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		swphy1: phy@1 {
+			reg = <1>;
+
+			mediatek,led-config = <
+				0x21 0x8008 /* BASIC_CTRL */
+				0x22 0x0c00 /* ON_DURATION */
+				0x23 0x1400 /* BLINK_DURATION */
+				0x24 0xc001 /* LED0_ON_CTRL */
+				0x25 0x0003 /* LED0_BLINK_CTRL */
+				0x26 0xc006 /* LED1_ON_CTRL */
+				0x27 0x003c /* LED1_BLINK_CTRL */
+			>;
+		};
+
+		swphy2: phy@2 {
+			reg = <2>;
+
+			mediatek,led-config = <
+				0x21 0x8008 /* BASIC_CTRL */
+				0x22 0x0c00 /* ON_DURATION */
+				0x23 0x1400 /* BLINK_DURATION */
+				0x24 0xc001 /* LED0_ON_CTRL */
+				0x25 0x0003 /* LED0_BLINK_CTRL */
+				0x26 0xc006 /* LED1_ON_CTRL */
+				0x27 0x003c /* LED1_BLINK_CTRL */
+			>;
+		};
+
+		swphy3: phy@3 {
+			reg = <3>;
+
+			mediatek,led-config = <
+				0x21 0x8008 /* BASIC_CTRL */
+				0x22 0x0c00 /* ON_DURATION */
+				0x23 0x1400 /* BLINK_DURATION */
+				0x24 0xc001 /* LED0_ON_CTRL */
+				0x25 0x0003 /* LED0_BLINK_CTRL */
+				0x26 0xc006 /* LED1_ON_CTRL */
+				0x27 0x003c /* LED1_BLINK_CTRL */
+			>;
+		};
+
+		swphy4: phy@4 {
+			reg = <4>;
+
+			mediatek,led-config = <
+				0x21 0x8008 /* BASIC_CTRL */
+				0x22 0x0c00 /* ON_DURATION */
+				0x23 0x1400 /* BLINK_DURATION */
+				0x24 0xc001 /* LED0_ON_CTRL */
+				0x25 0x0003 /* LED0_BLINK_CTRL */
+				0x26 0xc006 /* LED1_ON_CTRL */
+				0x27 0x003c /* LED1_BLINK_CTRL */
+			>;
+		};
+	};
+};
+
+&usb_phy {
+	status = "okay";
+};
