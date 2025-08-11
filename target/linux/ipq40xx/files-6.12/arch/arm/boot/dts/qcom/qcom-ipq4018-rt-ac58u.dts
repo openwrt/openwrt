@@ -182,7 +182,7 @@
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		linux,modalias = "m25p80", "mx25l1606e", "n25q128a11";
-		spi-max-frequency = <30000000>;
+		spi-max-frequency = <24000000>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -236,7 +236,7 @@
 	spi-nand@1 {
 		compatible = "spi-nand";
 		reg = <1>;
-		spi-max-frequency = <30000000>;
+		spi-max-frequency = <24000000>;
 
 		/*
 		 * U-boot looks for "spinand,mt29f" node,
