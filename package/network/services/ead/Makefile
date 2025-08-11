@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=ead
 PKG_RELEASE:=1
 
-PKG_BUILD_DEPENDS:=libbsd libpcap
+PKG_BUILD_DEPENDS:=libbsd libmd libpcap
 PKG_BUILD_DIR:=$(BUILD_DIR)/ead
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
@@ -46,7 +46,7 @@ TARGET_CFLAGS += \
 MAKE_FLAGS += \
 	CONFIGURE_ARGS="$(CONFIGURE_ARGS)" \
 	LIBS_EADCLIENT="$(PKG_BUILD_DIR)/tinysrp/libtinysrp.a" \
-	LIBS_EAD="$(PKG_BUILD_DIR)/tinysrp/libtinysrp.a $(STAGING_DIR)/usr/lib/libpcap.a -lbsd" \
+	LIBS_EAD="$(PKG_BUILD_DIR)/tinysrp/libtinysrp.a $(STAGING_DIR)/usr/lib/libpcap.a -lbsd -lmd" \
 	CFLAGS="$(TARGET_CFLAGS)" \
 	LDFLAGS="-L$(STAGING_DIR)/usr/lib"
 
