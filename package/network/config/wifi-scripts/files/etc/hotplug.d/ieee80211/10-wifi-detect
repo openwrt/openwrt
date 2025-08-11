@@ -1,5 +1,5 @@
 #!/bin/sh
 
 [ "${ACTION}" = "add" ] && {
-	/sbin/wifi config
+	[ -f /etc/board.json ] && /sbin/wifi config
 }
