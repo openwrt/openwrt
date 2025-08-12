@@ -190,28 +190,30 @@ function config_init(uci)
 		},
 	});
 	for (let svcname, svc in udata) {
-		for (let typename, data in svc) {
-			for (let radio, config in data) {
-				if (type(config) != "object")
-					continue;
+		for (let insname, ins in svc) {
+			for (let typename, data in ins) {
+				for (let radio, config in data) {
+					if (type(config) != "object")
+						continue;
 
-				let dev = devices[radio];
-				if (dev) {
-					dev.config = { ...dev.config, ...config };
-					continue;
+					let dev = devices[radio];
+					if (dev) {
+						dev.config = { ...dev.config, ...config };
+						continue;
+					}
+
+					let handler = wireless.handlers[config.type];
+					if (!handler)
+						continue;
+
+					dev = devices[radio] = {
+						name,
+						config,
+
+						vif: [],
+					};
+					handlers[radio] = handler;
 				}
-
-				let handler = wireless.handlers[config.type];
-				if (!handler)
-					continue;
-
-				dev = devices[radio] = {
-					name,
-					config,
-
-					vif: [],
-				};
-				handlers[radio] = handler;
 			}
 		}
 	}
@@ -226,35 +228,37 @@ function config_init(uci)
 	});
 
 	for (let svcname, svc in udata) {
-		for (let typename, data in svc) {
-			for (let radio, vifs in data) {
-				if (type(vifs) != "object")
-					continue;
-
-				for (let name, vif in vifs) {
-					let devs = vif.device;
-					if (type(devs) != "array")
-						devs = [ devs ];
-					let config = vif.config;
-					if (!config)
+		for (let insname, ins in svc) {
+			for (let typename, data in ins) {
+				for (let radio, vifs in data) {
+					if (type(vifs) != "object")
 						continue;
-					for (let device in devs) {
-						let dev = devices[device];
-						if (!dev)
-							continue;
 
-						let vif_data = {
-							name, device, config,
-							vlan: [],
-							sta: []
-						};
-						if (vif.vlans)
-							vif_data.vlans = vif.vlans;
-						if (vif.stations)
-							vif_data.sta = vif.stations;
-						vifs[name] ??= [];
-						push(vifs[name], vif_data);
-						push(dev.vif, vif_data);
+					for (let name, vif in vifs) {
+						let devs = vif.device;
+						if (type(devs) != "array")
+							devs = [ devs ];
+						let config = vif.config;
+						if (!config)
+							continue;
+						for (let device in devs) {
+							let dev = devices[device];
+							if (!dev)
+								continue;
+
+							let vif_data = {
+								name, device, config,
+								vlan: [],
+								sta: []
+							};
+							if (vif.vlans)
+								vif_data.vlans = vif.vlans;
+							if (vif.stations)
+								vif_data.sta = vif.stations;
+							vifs[name] ??= [];
+							push(vifs[name], vif_data);
+							push(dev.vif, vif_data);
+						}
 					}
 				}
 			}
