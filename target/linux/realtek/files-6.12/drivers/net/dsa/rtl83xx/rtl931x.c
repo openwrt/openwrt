@@ -1662,6 +1662,35 @@ static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 		dev_dbg(dev, "%08x: %08x\n", 0xbb000600 + i * 4, sw_r32(0x0600 + i * 4));
 }
 
+static u64 rtldsa_931x_stat_port_table_read(int port, unsigned int mib_size,
+					    unsigned int mib_offset, bool is_pvt)
+{
+	struct table_reg *r;
+	int field_offset;
+	u64 ret = 0;
+
+	if (is_pvt) {
+		r = rtl_table_get(RTL9310_TBL_5, 1);
+		field_offset = 27;
+	} else {
+		r = rtl_table_get(RTL9310_TBL_5, 0);
+		field_offset = 52;
+	}
+
+	rtl_table_read(r, port);
+
+	if (mib_size == 2) {
+		ret = sw_r32(rtl_table_data(r, field_offset - (mib_offset + 1)));
+		ret <<= 32;
+	}
+
+	ret |= sw_r32(rtl_table_data(r, field_offset - mib_offset));
+
+	rtl_table_release(r);
+
+	return ret;
+}
+
 static void rtldsa_931x_qos_set_group_selector(int port, int group)
 {
 	sw_w32_mask(RTL93XX_PORT_TBL_IDX_CTRL_IDX_MASK(port),
@@ -1745,6 +1774,7 @@ const struct rtl838x_reg rtl931x_reg = {
 	.stat_port_rst = RTL931X_STAT_PORT_RST,
 	.stat_rst = RTL931X_STAT_RST,
 	.stat_port_std_mib = 0,  /* Not defined */
+	.stat_port_table_read = rtldsa_931x_stat_port_table_read,
 	.traffic_enable = rtl931x_traffic_enable,
 	.traffic_disable = rtl931x_traffic_disable,
 	.traffic_set = rtl931x_traffic_set,
