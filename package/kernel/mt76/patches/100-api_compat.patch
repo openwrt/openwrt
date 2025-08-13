@@ -1,0 +1,84 @@
+--- a/mt7915/main.c
++++ b/mt7915/main.c
+@@ -1224,10 +1224,9 @@ static void mt7915_sta_rc_work(void *dat
+ 
+ static void mt7915_sta_rc_update(struct ieee80211_hw *hw,
+ 				 struct ieee80211_vif *vif,
+-				 struct ieee80211_link_sta *link_sta,
++				 struct ieee80211_sta *sta,
+ 				 u32 changed)
+ {
+-	struct ieee80211_sta *sta = link_sta->sta;
+ 	struct mt7915_phy *phy = mt7915_hw_phy(hw);
+ 	struct mt7915_dev *dev = phy->dev;
+ 	struct mt7915_sta *msta = (struct mt7915_sta *)sta->drv_priv;
+@@ -1771,7 +1770,7 @@ const struct ieee80211_ops mt7915_ops =
+ 	.stop_ap = mt7915_stop_ap,
+ 	.sta_state = mt76_sta_state,
+ 	.sta_pre_rcu_remove = mt76_sta_pre_rcu_remove,
+-	.link_sta_rc_update = mt7915_sta_rc_update,
++	.sta_rc_update = mt7915_sta_rc_update,
+ 	.set_key = mt7915_set_key,
+ 	.ampdu_action = mt7915_ampdu_action,
+ 	.set_rts_threshold = mt7915_set_rts_threshold,
+--- a/mt7996/main.c
++++ b/mt7996/main.c
+@@ -715,8 +715,7 @@ static void mt7996_configure_filter(stru
+ }
+ 
+ static int
+-mt7996_get_txpower(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+-		   unsigned int link_id, int *dbm)
++mt7996_get_txpower(struct ieee80211_hw *hw, struct ieee80211_vif *vif, int *dbm)
+ {
+ 	struct mt7996_vif *mvif = (struct mt7996_vif *)vif->drv_priv;
+ 	struct mt7996_phy *phy = mt7996_vif_link_phy(&mvif->deflink);
+@@ -1714,13 +1713,12 @@ out:
+ 	rcu_read_unlock();
+ }
+ 
+-static void mt7996_link_sta_rc_update(struct ieee80211_hw *hw,
+-				      struct ieee80211_vif *vif,
+-				      struct ieee80211_link_sta *link_sta,
+-				      u32 changed)
++static void mt7996_sta_rc_update(struct ieee80211_hw *hw,
++				 struct ieee80211_vif *vif,
++				 struct ieee80211_sta *sta,
++				 u32 changed)
+ {
+ 	struct mt7996_dev *dev = mt7996_hw_dev(hw);
+-	struct ieee80211_sta *sta = link_sta->sta;
+ 
+ 	mt7996_link_rate_ctrl_update(&changed, sta);
+ 	ieee80211_queue_work(hw, &dev->rc_work);
+@@ -2213,7 +2211,7 @@ const struct ieee80211_ops mt7996_ops =
+ 	.link_info_changed = mt7996_link_info_changed,
+ 	.sta_state = mt7996_sta_state,
+ 	.sta_pre_rcu_remove = mt76_sta_pre_rcu_remove,
+-	.link_sta_rc_update = mt7996_link_sta_rc_update,
++	.sta_rc_update = mt7996_sta_rc_update,
+ 	.set_key = mt7996_set_key,
+ 	.ampdu_action = mt7996_ampdu_action,
+ 	.set_rts_threshold = mt7996_set_rts_threshold,
+--- a/mac80211.c
++++ b/mac80211.c
+@@ -1704,7 +1704,7 @@ s8 mt76_get_power_bound(struct mt76_phy
+ EXPORT_SYMBOL_GPL(mt76_get_power_bound);
+ 
+ int mt76_get_txpower(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+-		     unsigned int link_id, int *dbm)
++		     int *dbm)
+ {
+ 	struct mt76_phy *phy = mt76_vif_phy(hw, vif);
+ 	int n_chains, delta;
+--- a/mt76.h
++++ b/mt76.h
+@@ -1520,7 +1520,7 @@ int mt76_get_min_avg_rssi(struct mt76_de
+ s8 mt76_get_power_bound(struct mt76_phy *phy, s8 txpower);
+ 
+ int mt76_get_txpower(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+-		     unsigned int link_id, int *dbm);
++		     int *dbm);
+ int mt76_init_sar_power(struct ieee80211_hw *hw,
+ 			const struct cfg80211_sar_specs *sar);
+ int mt76_get_sar_power(struct mt76_phy *phy,
