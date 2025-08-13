@@ -11,6 +11,7 @@ import * as fs from 'fs';
 const NL80211_EXT_FEATURE_ENABLE_FTM_RESPONDER = 33;
 const NL80211_EXT_FEATURE_RADAR_BACKGROUND = 61;
 
+const nl80211_bands = [ '2g', '5g', '60g', '6g' ];
 let phy_features = {};
 let phy_capabilities = {};
 
@@ -436,23 +437,28 @@ function device_extended_features(data, flag) {
 	return !!(data[flag / 8] | (1 << (flag % 8)));
 }
 
-function device_capabilities(phy) {
+function device_capabilities(config) {
+	let phy = config.phy;
 	let idx = +fs.readfile(`/sys/class/ieee80211/${phy}/index`);
 	phy = nl80211.request(nl80211.const.NL80211_CMD_GET_WIPHY, nl80211.const.NLM_F_DUMP, { wiphy: idx, split_wiphy_dump: true });
 	if (!phy)
 		return;
-	for (let band in phy.wiphy_bands) {
-		if (!band)
+
+	let band_idx = index(nl80211_bands, config.band);
+	if (band_idx < 0)
+		return;
+
+	let band = phy.wiphy_bands[band_idx];
+	if (!band)
+		return;
+
+	phy_capabilities.ht_capa = band.ht_capa ?? 0;
+	phy_capabilities.vht_capa = band.vht_capa ?? 0;
+	for (let iftype in band.iftype_data) {
+		if (!iftype.iftypes.ap)
 			continue;
-		phy_capabilities.ht_capa = band.ht_capa ?? 0;
-		phy_capabilities.vht_capa = band.vht_capa ?? 0;
-		for (let iftype in band.iftype_data) {
-			if (!iftype.iftypes.ap)
-				continue;
-			phy_capabilities.he_mac_cap = iftype.he_cap_mac;
-			phy_capabilities.he_phy_cap = iftype.he_cap_phy;
-		}
-		break;
+		phy_capabilities.he_mac_cap = iftype.he_cap_mac;
+		phy_capabilities.he_phy_cap = iftype.he_cap_phy;
 	}
 
 	phy_features.ftm_responder = device_extended_features(phy.extended_features, NL80211_EXT_FEATURE_ENABLE_FTM_RESPONDER);
@@ -460,10 +466,10 @@ function device_capabilities(phy) {
 }
 
 function generate(config) {
-	if (!config.phy)
+	if (!config)
 		die(`${config.path} is an unknown phy`);
 
-	device_capabilities(config.phy);
+	device_capabilities(config);
 
 	append('driver', 'nl80211');
 
