@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uboot-layerscape
-PKG_VERSION:=6.6.23.2.0.0
+PKG_VERSION:=6.12.20.2.0.0
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/nxp-qoriq/u-boot
-PKG_SOURCE_VERSION:=lf-6.6.23-2.0.0
-PKG_MIRROR_HASH:=41e089fde1d0b3b0998e6af33d5f4c2b62860bda6cd1e6a0e8d47dfd5749005d
+PKG_SOURCE_VERSION:=lf-6.12.20-2.0.0
+PKG_MIRROR_HASH:=13594333aa3ee131d5832b4da88f73cf0744d98c28e90ad3e03594788c486e37
 
 include $(INCLUDE_DIR)/u-boot.mk
 include $(INCLUDE_DIR)/package.mk
