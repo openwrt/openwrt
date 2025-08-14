@@ -880,6 +880,15 @@ static bool rtldsa_read_mib_item(struct rtl838x_switch_priv *priv, int port,
 		reg = priv->r->stat_port_prv_mib;
 		reg_offset = 128;
 		break;
+	case MIB_TBL_STD:
+	case MIB_TBL_PRV:
+		if (!priv->r->stat_port_table_read)
+			return false;
+
+		*data = priv->r->stat_port_table_read(port, mib_item->size, mib_item->offset,
+						      mib_item->reg == MIB_TBL_PRV);
+
+		return true;
 	default:
 		return false;
 	}

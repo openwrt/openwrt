@@ -1121,6 +1121,7 @@ struct rtl838x_reg {
 	int stat_rst;
 	int stat_port_std_mib;
 	int stat_port_prv_mib;
+	u64 (*stat_port_table_read)(int port, unsigned int mib_size, unsigned int offset, bool is_pvt);
 	int (*port_iso_ctrl)(int p);
 	void (*traffic_enable)(int source, int dest);
 	void (*traffic_disable)(int source, int dest);

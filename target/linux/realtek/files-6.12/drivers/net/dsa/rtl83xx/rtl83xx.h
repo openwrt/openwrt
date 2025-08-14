@@ -20,7 +20,9 @@ struct fdb_update_work {
 enum mib_reg {
 	MIB_REG_INVALID = 0,
 	MIB_REG_STD,
-	MIB_REG_PRV
+	MIB_REG_PRV,
+	MIB_TBL_STD,
+	MIB_TBL_PRV,
 };
 
 #define MIB_ITEM(_reg, _offset, _size) \
