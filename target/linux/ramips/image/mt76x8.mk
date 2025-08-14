@@ -5,6 +5,8 @@
 include ./common-tp-link.mk
 
 DEFAULT_SOC := mt7628an
+DEVICE_VARS += SUPPORTED_TELTONIKA_DEVICES
+DEVICE_VARS += SUPPORTED_TELTONIKA_HW_MODS
 
 define Build/elecom-header
 	$(eval model_id=$(1))
@@ -26,25 +28,6 @@ define Build/ravpower-wd009-factory
 		-n "OpenWrt Bootloader" -d $(UBOOT_PATH) $@.new
 	cat $@ >> $@.new
 	@mv $@.new $@
-endef
-
-define Build/append-teltonika-metadata
-  $(eval model_id=$(word 1,$(1)))
-  $(eval hw_mods=$(subst $(space),$(comma),$(wordlist 2,$(words $(1)),$(1))))
-
-	echo \
-		'{ \
-			"metadata_version": "1.1", \
-			"compat_version": "1.0", \
-			"version": "OpenWrt", \
-			"device_code": [".*"], \
-			"hwver": [".*"], \
-			"batch": [".*"], \
-			"serial": [".*"], \
-			"supported_devices":["teltonika,$(model_id)"], \
-			"hw_support": { }, \
-			"hw_mods": { $(hw_mods) } \
-		}' | fwtool -I - $@
 endef
 
 define Device/7links_wlr-12xx
@@ -675,6 +658,8 @@ define Device/teltonika_rut9x1
   DEVICE_MODEL := RUT951
   DEVICE_ALT0_VENDOR := Teltonika
   DEVICE_ALT0_MODEL := RUT901
+  SUPPORTED_TELTONIKA_DEVICES := teltonika,rut9m
+  SUPPORTED_TELTONIKA_HW_MODS := 2c7c_6005 TLA2021 CH343 esim ala440
   IMAGE_SIZE := 15424k
   BLOCKSIZE := 64k
   DEVICE_PACKAGES := uqmi kmod-mt76x2 kmod-usb2 kmod-usb-ohci \
@@ -682,8 +667,7 @@ define Device/teltonika_rut9x1
 	kmod-i2c-mt7628 kmod-usb-net-cdc-ether
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
-	append-rootfs | pad-rootfs | check-size | append-teltonika-metadata rut9m \
-	"mod1":"2c7c_6005" "mod2":"TLA2021" "mod3":"CH343" "mod4":"esim" "mod5":"ala440"
+	append-rootfs | pad-rootfs | check-size | append-teltonika-metadata
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-metadata
 endef
 TARGET_DEVICES += teltonika_rut9x1
@@ -693,6 +677,8 @@ define Device/teltonika_rut9x6
   DEVICE_MODEL := RUT956
   DEVICE_ALT0_VENDOR := Teltonika
   DEVICE_ALT0_MODEL := RUT906
+  SUPPORTED_TELTONIKA_DEVICES := teltonika,rut9m
+  SUPPORTED_TELTONIKA_HW_MODS := 2c7c_6005 TLA2021 CH343 esim ala440
   IMAGE_SIZE := 15424k
   BLOCKSIZE := 64k
   DEVICE_PACKAGES := uqmi kmod-mt76x2 kmod-usb2 kmod-usb-ohci \
@@ -700,8 +686,7 @@ define Device/teltonika_rut9x6
 	kmod-hwmon-mcp3021 kmod-scsi-core kmod-usb-storage kmod-usb-acm kmod-usb-net-cdc-ether
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
-	append-rootfs | pad-rootfs | check-size | append-teltonika-metadata rut9m \
-	"mod1":"2c7c_6005" "mod2":"TLA2021" "mod3":"CH343" "mod4":"esim" "mod5":"ala440"
+	append-rootfs | pad-rootfs | check-size | append-teltonika-metadata
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-metadata
 endef
 TARGET_DEVICES += teltonika_rut9x6
@@ -1382,11 +1367,12 @@ define Device/teltonika_rut200
   DEVICE_VENDOR := Teltonika
   DEVICE_MODEL := RUT200
   DEVICE_VARIANT := v1-v4
+  SUPPORTED_TELTONIKA_DEVICES := teltonika,rut2m
   IMAGE_SIZE := 15424k
   BLOCKSIZE := 64k
   DEVICE_PACKAGES +=kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-usb-serial-option kmod-usb-net-cdc-ether
   IMAGES += factory.bin
-  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-teltonika-metadata rut2m
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-teltonika-metadata
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-metadata
 endef
 TARGET_DEVICES += teltonika_rut200
@@ -1395,11 +1381,12 @@ define Device/teltonika_rut241
   DEVICE_VENDOR := Teltonika
   DEVICE_MODEL := RUT241
   DEVICE_VARIANT := v1-v4
+  SUPPORTED_TELTONIKA_DEVICES := teltonika,rut2m
   IMAGE_SIZE := 15424k
   BLOCKSIZE := 64k
   DEVICE_PACKAGES += uqmi kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-usb-serial-option
   IMAGES += factory.bin
-  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-teltonika-metadata rut2m
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-teltonika-metadata
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-metadata
 endef
 TARGET_DEVICES += teltonika_rut241
