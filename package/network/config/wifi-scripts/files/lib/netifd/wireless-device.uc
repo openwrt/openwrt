@@ -221,7 +221,7 @@ function __run_next_handler()
 	wdev.dbg("run " + op);
 	if (name != mlo_name)
 		wdev_mlo_fixup(wdev.handler_config);
-	wdev.handler_config.data = wdev.handler_data[wdev.name];
+	wdev.handler_config.data = wdev.handler_data[wdev.name] ?? {};
 	wdev_script_task = netifd.process({
 		cb: () => run_handler_cb(wdev, cb),
 		dir: netifd.wireless.path,
