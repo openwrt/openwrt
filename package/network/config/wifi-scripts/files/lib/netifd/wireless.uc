@@ -143,22 +143,24 @@ function config_init(uci)
 	}
 
 	for (let name, data in sections.vlan) {
-		if (!data.iface || !vifs[data.iface])
-			continue;
-
-		for (let vif in vifs[data.iface]) {
-			let dev = devices[vif.device];
-			let handler = handlers[vif.device];
-			if (!dev || !handler)
+		for (let iface, iface_vifs in vifs) {
+			if (data.iface && data.iface != iface)
 				continue;
 
-			let config = parse_attribute_list(data, handler.vlan);
+			for (let vif in iface_vifs) {
+				let dev = devices[vif.device];
+				let handler = handlers[vif.device];
+				if (!dev || !handler)
+					continue;
 
-			let vlan = {
-				name,
-				config
-			};
-			push(vif.vlan, vlan);
+				let config = parse_attribute_list(data, handler.vlan);
+
+				let vlan = {
+					name,
+					config
+				};
+				push(vif.vlan, vlan);
+			}
 		}
 	}
 
