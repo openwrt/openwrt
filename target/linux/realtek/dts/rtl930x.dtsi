@@ -1,14 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
-/dts-v1/;
+#include "macros.dtsi"
 
-#define INTERNAL_PHY_SDS(n, s) \
-	phy##n: ethernet-phy@##n { \
-		reg = <##n>; \
-		compatible = "ethernet-phy-ieee802.3-c22"; \
-		phy-is-integrated; \
-		sds = <##s>; \
-	};
+/dts-v1/;
 
 / {
 	#address-cells = <1>;
