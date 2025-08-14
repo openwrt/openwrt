@@ -161,9 +161,24 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&eeprom_radio_0>, <&macaddr_config_8 0>;
-		nvmem-cell-names = "eeprom", "mac-address";
+		nvmem-cells = <&eeprom_radio_0>;
+		nvmem-cell-names = "eeprom";
 		mediatek,disable-radar-background;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		band@0 {
+			reg = <0>;
+			nvmem-cells = <&macaddr_config_8 0>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		band@1 {
+			reg = <1>;
+			nvmem-cells = <&macaddr_config_8 (-1)>;
+			nvmem-cell-names = "mac-address";
+		};
 	};
 };
 
