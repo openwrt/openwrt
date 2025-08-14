@@ -41,6 +41,7 @@
 		led-failsafe = &user;
 		led-running = &user;
 		led-upgrade = &user;
+		label-mac-device = &gmac;
 	};
 
 	soc {
@@ -195,6 +196,14 @@
 				hard_config {
 					read-only;
 					size = <0x2000>;
+
+					nvmem-layout {
+						compatible = "mikrotik,routerboot-nvmem";
+
+						macaddr_hard: base-mac-address {
+							#nvmem-cell-cells = <1>;
+						};
+					};
 				};
 
 				dtb_config {
@@ -281,6 +290,9 @@
 
 &gmac {
 	status = "okay";
+
+	nvmem-cells = <&macaddr_hard 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &switch {
