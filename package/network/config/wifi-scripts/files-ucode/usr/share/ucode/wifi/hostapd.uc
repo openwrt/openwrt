@@ -86,50 +86,50 @@ function device_cell_density_append(config) {
 	switch (config.hw_mode) {
 	case 'b':
 		if (config.cell_density == 1) {
-			config.supported_rates = [ 5500, 11000 ];
-			config.basic_rates = [ 5500, 11000 ];
+			config.supported_rates ??= [ 5500, 11000 ];
+			config.basic_rates ??= [ 5500, 11000 ];
 		} else if (config.cell_density > 2) {
-			config.supported_rates = [ 11000 ];
-			config.basic_rates = [ 11000 ];
+			config.supported_rates ??= [ 11000 ];
+			config.basic_rates ??= [ 11000 ];
 		}
 		;;
 	case 'g':
 		if (config.cell_density in [ 0, 1 ]) {
 			if (!config.legacy_rates) {
-				config.supported_rates = [ 6000, 9000, 12000, 18000, 24000, 36000, 48000, 54000 ];
-				config.basic_rates = [ 6000, 12000, 24000 ];
+				config.supported_rates ??= [ 6000, 9000, 12000, 18000, 24000, 36000, 48000, 54000 ];
+				config.basic_rates ??= [ 6000, 12000, 24000 ];
 			} else if (config.cell_density == 1) {
-				config.supported_rates = [ 5500, 6000, 9000, 11000, 12000, 18000, 24000, 36000, 48000, 54000 ];
-				config.basic_rates = [ 5500, 11000 ];
+				config.supported_rates ??= [ 5500, 6000, 9000, 11000, 12000, 18000, 24000, 36000, 48000, 54000 ];
+				config.basic_rates ??= [ 5500, 11000 ];
 			}
 		} else if (config.cell_density == 2 || (config.cell_density > 3 && config.legacy_rates)) {
 			if (!config.legacy_rates) {
-				config.supported_rates = [ 12000, 18000, 24000, 36000, 48000, 54000 ];
-				config.basic_rates = [ 12000, 24000 ];
+				config.supported_rates ??= [ 12000, 18000, 24000, 36000, 48000, 54000 ];
+				config.basic_rates ??= [ 12000, 24000 ];
 			} else {
-				config.supported_rates = [ 11000, 12000, 18000, 24000, 36000, 48000, 54000 ];
-				config.basic_rates = [ 11000 ];
+				config.supported_rates ??= [ 11000, 12000, 18000, 24000, 36000, 48000, 54000 ];
+				config.basic_rates ??= [ 11000 ];
 			}
 		} else if (config.cell_density > 2) {
-			 config.supported_rates = [ 24000, 36000, 48000, 54000 ];
-			 config.basic_rates = [ 24000 ];
+			 config.supported_rates ??= [ 24000, 36000, 48000, 54000 ];
+			 config.basic_rates ??= [ 24000 ];
 		}
 		;;
 	case 'a':
 		switch (config.cell_density) {
 		case 1:
-			config.supported_rates = [ 6000, 9000, 12000, 18000, 24000, 36000, 48000, 54000 ];
-			config.basic_rates = [ 6000, 12000, 24000 ];
+			config.supported_rates ??= [ 6000, 9000, 12000, 18000, 24000, 36000, 48000, 54000 ];
+			config.basic_rates ??= [ 6000, 12000, 24000 ];
 			break;
 
 		case 2:
-			config.supported_rates = [ 12000, 18000, 24000, 36000, 48000, 54000 ];
-			config.basic_rates = [ 12000, 24000 ];
+			config.supported_rates ??= [ 12000, 18000, 24000, 36000, 48000, 54000 ];
+			config.basic_rates ??= [ 12000, 24000 ];
 			break;
 
 		case 3:
-			config.supported_rates = [ 24000, 36000, 48000, 54000 ];
-			config.basic_rates = [ 24000 ];
+			config.supported_rates ??= [ 24000, 36000, 48000, 54000 ];
+			config.basic_rates ??= [ 24000 ];
 			break;
 		}
 	}
