@@ -51,6 +51,16 @@ define Device/xikestor_sks8300-8x
 endef
 TARGET_DEVICES += xikestor_sks8300-8x
 
+define Device/xikestor_sks8310-8x
+  SOC := rtl9303
+  UIMAGE_MAGIC := 0x93000000  
+  DEVICE_VENDOR := xikestor
+  DEVICE_MODEL := SKS8310-8X
+  IMAGE_SIZE := 20480k
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += xikestor_sks8310-8x
+
 define Device/zyxel_xgs1210-12
   SOC := rtl9302
   UIMAGE_MAGIC := 0x93001210
