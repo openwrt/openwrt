@@ -1,0 +1,222 @@
+From 35fb26f94dfa1b291086b84b2421f957214824d1 Mon Sep 17 00:00:00 2001
+From: Caleb James DeLisle <cjd@cjdns.fr>
+Date: Wed, 7 May 2025 13:44:57 +0000
+Subject: [PATCH] mips: Add EcoNet MIPS platform support
+
+Add platform support for EcoNet MIPS SoCs.
+
+Signed-off-by: Caleb James DeLisle <cjd@cjdns.fr>
+Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
+---
+ arch/mips/Kbuild.platforms             |  1 +
+ arch/mips/Kconfig                      | 25 +++++++++
+ arch/mips/boot/compressed/uart-16550.c |  5 ++
+ arch/mips/econet/Kconfig               | 37 ++++++++++++
+ arch/mips/econet/Makefile              |  2 +
+ arch/mips/econet/Platform              |  5 ++
+ arch/mips/econet/init.c                | 78 ++++++++++++++++++++++++++
+ 7 files changed, 153 insertions(+)
+ create mode 100644 arch/mips/econet/Kconfig
+ create mode 100644 arch/mips/econet/Makefile
+ create mode 100644 arch/mips/econet/Platform
+ create mode 100644 arch/mips/econet/init.c
+
+--- a/arch/mips/Kbuild.platforms
++++ b/arch/mips/Kbuild.platforms
+@@ -11,6 +11,7 @@ platform-$(CONFIG_CAVIUM_OCTEON_SOC)	+=
+ platform-$(CONFIG_EYEQ)			+= mobileye/
+ platform-$(CONFIG_MIPS_COBALT)		+= cobalt/
+ platform-$(CONFIG_MACH_DECSTATION)	+= dec/
++platform-$(CONFIG_ECONET)		+= econet/
+ platform-$(CONFIG_MIPS_GENERIC)		+= generic/
+ platform-$(CONFIG_MACH_JAZZ)		+= jazz/
+ platform-$(CONFIG_LANTIQ)		+= lantiq/
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -388,6 +388,30 @@ config MACH_DECSTATION
+ 
+ 	  otherwise choose R3000.
+ 
++config ECONET
++	bool "EcoNet MIPS family"
++	select BOOT_RAW
++	select CPU_BIG_ENDIAN
++	select DEBUG_ZBOOT
++	select EARLY_PRINTK_8250
++	select ECONET_EN751221_TIMER
++	select SERIAL_OF_PLATFORM
++	select SYS_SUPPORTS_BIG_ENDIAN
++	select SYS_HAS_CPU_MIPS32_R1
++	select SYS_HAS_CPU_MIPS32_R2
++	select SYS_HAS_EARLY_PRINTK
++	select SYS_SUPPORTS_32BIT_KERNEL
++	select SYS_SUPPORTS_MIPS16
++	select SYS_SUPPORTS_ZBOOT_UART16550
++	select USE_GENERIC_EARLY_PRINTK_8250
++	select USE_OF
++	help
++	  EcoNet EN75xx MIPS devices are big endian MIPS machines used
++	  in XPON (fiber) and DSL applications. They have SPI, PCI, USB,
++	  GPIO, and Ethernet, with optional XPON, DSL, and VoIP DSP cores.
++	  Don't confuse these with the Airoha ARM devices sometimes referred
++	  to as "EcoNet", this family is for MIPS based devices only.
++
+ config MACH_JAZZ
+ 	bool "Jazz family of machines"
+ 	select ARC_MEMORY
+@@ -1017,6 +1041,7 @@ source "arch/mips/ath79/Kconfig"
+ source "arch/mips/bcm47xx/Kconfig"
+ source "arch/mips/bcm63xx/Kconfig"
+ source "arch/mips/bmips/Kconfig"
++source "arch/mips/econet/Kconfig"
+ source "arch/mips/generic/Kconfig"
+ source "arch/mips/ingenic/Kconfig"
+ source "arch/mips/jazz/Kconfig"
+--- a/arch/mips/boot/compressed/uart-16550.c
++++ b/arch/mips/boot/compressed/uart-16550.c
+@@ -20,6 +20,11 @@
+ #define PORT(offset) (CKSEG1ADDR(INGENIC_UART_BASE_ADDR) + (4 * offset))
+ #endif
+ 
++#ifdef CONFIG_ECONET
++#define EN75_UART_BASE	0x1fbf0003
++#define PORT(offset)	(CKSEG1ADDR(EN75_UART_BASE) + (4 * (offset)))
++#endif
++
+ #ifndef IOTYPE
+ #define IOTYPE char
+ #endif
+--- /dev/null
++++ b/arch/mips/econet/Kconfig
+@@ -0,0 +1,37 @@
++# SPDX-License-Identifier: GPL-2.0
++if ECONET
++
++choice
++	prompt "EcoNet SoC selection"
++	default SOC_ECONET_EN751221
++	help
++	  Select EcoNet MIPS SoC type. Individual SoCs within a family are
++	  very similar, so is it enough to select the right family, and
++	  then customize to the specific SoC using the device tree only.
++
++	config SOC_ECONET_EN751221
++		bool "EN751221 family"
++		select COMMON_CLK
++		select ECONET_EN751221_INTC
++		select IRQ_MIPS_CPU
++		select SMP
++		select SMP_UP
++		select SYS_SUPPORTS_SMP
++		help
++		  The EN751221 family includes EN7512, RN7513, EN7521, EN7526.
++		  They are based on single core MIPS 34Kc processors. To boot
++		  this kernel, you will need a device tree such as
++		  MIPS_RAW_APPENDED_DTB=y, and a root filesystem.
++endchoice
++
++choice
++	prompt "Devicetree selection"
++	default DTB_ECONET_NONE
++	help
++	  Select the devicetree.
++
++	config DTB_ECONET_NONE
++		bool "None"
++endchoice
++
++endif
+--- /dev/null
++++ b/arch/mips/econet/Makefile
+@@ -0,0 +1,2 @@
++
++obj-y := init.o
+--- /dev/null
++++ b/arch/mips/econet/Platform
+@@ -0,0 +1,5 @@
++# To address a 7.2MB kernel size limit in the EcoNet SDK bootloader,
++# we put the load address well above where the bootloader loads and then use
++# zboot. So please set CONFIG_ZBOOT_LOAD_ADDRESS to the address where your
++# bootloader actually places the kernel.
++load-$(CONFIG_ECONET)	+= 0xffffffff81000000
+--- /dev/null
++++ b/arch/mips/econet/init.c
+@@ -0,0 +1,78 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * EcoNet setup code
++ *
++ * Copyright (C) 2025 Caleb James DeLisle <cjd@cjdns.fr>
++ */
++
++#include <linux/init.h>
++#include <linux/of_clk.h>
++#include <linux/irqchip.h>
++
++#include <asm/addrspace.h>
++#include <asm/io.h>
++#include <asm/bootinfo.h>
++#include <asm/time.h>
++#include <asm/prom.h>
++#include <asm/smp-ops.h>
++#include <asm/reboot.h>
++
++#define CR_AHB_RSTCR		((void __iomem *)CKSEG1ADDR(0x1fb00040))
++#define RESET			BIT(31)
++
++#define UART_BASE		CKSEG1ADDR(0x1fbf0003)
++#define UART_REG_SHIFT		2
++
++static void hw_reset(char *command)
++{
++	iowrite32(RESET, CR_AHB_RSTCR);
++}
++
++/* 1. Bring up early printk. */
++void __init prom_init(void)
++{
++	setup_8250_early_printk_port(UART_BASE, UART_REG_SHIFT, 0);
++	_machine_restart = hw_reset;
++}
++
++/* 2. Parse the DT and find memory */
++void __init plat_mem_setup(void)
++{
++	void *dtb;
++
++	set_io_port_base(KSEG1);
++
++	dtb = get_fdt();
++	if (!dtb)
++		panic("no dtb found");
++
++	__dt_setup_arch(dtb);
++
++	early_init_dt_scan_memory();
++}
++
++/* 3. Overload __weak device_tree_init(), add SMP_UP ops */
++void __init device_tree_init(void)
++{
++	unflatten_and_copy_device_tree();
++
++	register_up_smp_ops();
++}
++
++const char *get_system_type(void)
++{
++	return "EcoNet-EN75xx";
++}
++
++/* 4. Initialize the IRQ subsystem */
++void __init arch_init_irq(void)
++{
++	irqchip_init();
++}
++
++/* 5. Timers */
++void __init plat_time_init(void)
++{
++	of_clk_init(NULL);
++	timer_probe();
++}
