@@ -14,5 +14,5 @@ lantiq_setup_dsl_helper() {
 		ucidef_add_adsl_modem "$annex" "/lib/firmware/adsl.bin"
 	fi
 
-	ucidef_set_interface_wan "dsl0" "pppoe"
+	ucidef_set_interface "wan" device "dsl0" protocol "pppoe" auto "0"
 }
