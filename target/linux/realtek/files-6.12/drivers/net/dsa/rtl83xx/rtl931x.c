@@ -1731,4 +1731,5 @@ const struct rtl838x_reg rtl931x_reg = {
 	.led_init = rtldsa_931x_led_init,
 	.enable_learning = rtldsa_931x_enable_learning,
 	.enable_flood = rtldsa_931x_enable_flood,
+	.set_receive_management_action = rtl931x_set_receive_management_action,
 };
