@@ -3277,10 +3277,6 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	if (err)
 		return err;
 
-	err = devm_register_netdev(&pdev->dev, dev);
-	if (err)
-		return err;
-
 	for (int i = 0; i < priv->rxrings; i++) {
 		priv->rx_qs[i].id = i;
 		priv->rx_qs[i].priv = priv;
@@ -3288,6 +3284,10 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	}
 
 	platform_set_drvdata(pdev, dev);
+
+	err = devm_register_netdev(&pdev->dev, dev);
+	if (err)
+		return err;
 
 	phy_mode = PHY_INTERFACE_MODE_NA;
 	err = of_get_phy_mode(dn, &phy_mode);
