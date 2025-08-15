@@ -1,0 +1,343 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+#include "qca955x.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "mikrotik,routerboard-960pgs", "qca,qca9557";
+	model = "MikroTik RouterBOARD 960PGS (hEX PoE/PowerBox Pro)";
+
+	aliases {
+		led-boot = &led_user;
+		led-failsafe = &led_user;
+		led-running = &led_user;
+		led-upgrade = &led_user;
+	};
+
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		buzzer {
+			/* Beeper requires PWM for frequency selection */
+			gpio-export,name = "buzzer";
+			gpio-export,output = <0>;
+			gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	i2c: i2c {
+		compatible = "i2c-gpio";
+
+		i2c-gpio,delay-us = <5>;
+		i2c-gpio,timeout-ms = <1>;
+		sda-gpios = <&gpio 18 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio 19 (GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN)>;
+
+		sfp_eeprom@50 {
+			compatible = "at,24c04";
+			reg = <0x50>;
+		};
+
+		sfp_eeprom@51 {
+			compatible = "at,24c04";
+			reg = <0x51>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			debounce-interval = <60>;
+			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_user: user {
+			label = "green:user";
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+		};
+
+		led_sfp: sfp {
+			label = "green:sfp";
+			gpios = <&gpio 2 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	sfp1: sfp {
+		compatible = "sff,sfp";
+
+		i2c-bus = <&i2c>;
+		maximum-power-milliwatt = <1000>;
+		los-gpios = <&gpio 21 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+		tx-disable-gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
+	};
+
+	reg_usb_vbus {
+		compatible = "regulator-fixed";
+		regulator-always-on;
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		regulator-name = "usb_vbus";
+		gpio = <&gpio 13 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	switch@0 {
+		compatible = "qca,qca8337";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		reg = <0>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "cpu";
+				ethernet = <&eth0>;
+				phy-mode = "rgmii-id";
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan1";
+				phy-mode = "internal";
+				phy-handle = <&phy_port1>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						default-state = "keep";
+					};
+				};
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan2";
+				phy-mode = "internal";
+				phy-handle = <&phy_port2>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						default-state = "keep";
+					};
+				};
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan3";
+				phy-mode = "internal";
+				phy-handle = <&phy_port3>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						default-state = "keep";
+					};
+				};
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "lan4";
+				phy-mode = "internal";
+				phy-handle = <&phy_port4>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						default-state = "keep";
+					};
+				};
+			};
+
+			port@5 {
+				reg = <5>;
+				label = "lan5";
+				phy-mode = "internal";
+				phy-handle = <&phy_port5>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led@0 {
+						reg = <0>;
+						color = <LED_COLOR_ID_GREEN>;
+						function = LED_FUNCTION_LAN;
+						default-state = "keep";
+					};
+				};
+			};
+		};
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			phy_port1: phy@0 {
+				reg = <0>;
+			};
+
+			phy_port2: phy@1 {
+				reg = <1>;
+			};
+
+			phy_port3: phy@2 {
+				reg = <2>;
+			};
+
+			phy_port4: phy@3 {
+				reg = <3>;
+			};
+
+			phy_port5: phy@4 {
+				reg = <4>;
+			};
+		};
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	pll-data = <0x8f000000 0xa0000101 0xa0001313>;
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&mdio1 {
+	status = "okay";
+
+	phy_sfp: ethernet-phy@0 {
+		reg = <0>;
+		phy-mode = "sgmii";
+		sfp = <&sfp1>;
+	};
+};
+
+&eth1 {
+	status = "okay";
+	openwrt,netdev-name = "sfp";
+
+	phy-handle = <&phy_sfp>;
+	pll-data = <0x03000000 0x00000101 0x00001616>;
+	qca955x-sgmii-fixup;
+
+	gmac-config {
+		device = <&gmac>;
+	};
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <40000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				compatible = "mikrotik,routerboot-partitions";
+				label = "RouterBoot";
+				reg = <0x0 0x20000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					label = "bootloader1";
+					reg = <0x0 0x0>;
+					read-only;
+				};
+
+				hard_config {
+					read-only;
+				};
+
+				bios {
+					size = <0x1000>;
+					read-only;
+				};
+
+				partition@10000 {
+					label = "bootloader2";
+					reg = <0x10000 0x0>;
+					read-only;
+				};
+
+				soft_config {
+				};
+			};
+
+			partition@20000 {
+				compatible = "mikrotik,minor";
+				label = "firmware";
+				reg = <0x020000 0xfe0000>;
+			};
+		};
+	};
+};
+
+&usb0 {
+	status = "okay";
+};
+
+&usb_phy0 {
+	status = "okay";
+};
