@@ -8,7 +8,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 ---
 --- a/arch/arm64/boot/dts/qcom/ipq5018.dtsi
 +++ b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
-@@ -254,6 +254,14 @@
+@@ -257,6 +257,14 @@
  			};
  		};
  
@@ -21,5 +21,5 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 +		};
 +
  		tsens: thermal-sensor@4a9000 {
- 			compatible = "qcom,ipq5018-tsens";
- 			reg = <0x004a9000 0x1000>, /* TM */
+ 			compatible = "qcom,ipq5018-tsens", "qcom,tsens-v1";
+ 			reg = <0x004a9000 0x1000>,

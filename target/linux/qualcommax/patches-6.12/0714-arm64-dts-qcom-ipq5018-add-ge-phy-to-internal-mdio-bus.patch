@@ -26,7 +26,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 
 --- a/arch/arm64/boot/dts/qcom/ipq5018.dtsi
 +++ b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
-@@ -22,6 +22,18 @@
+@@ -23,6 +23,18 @@
  			#clock-cells = <0>;
  		};
  
@@ -45,7 +45,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  		sleep_clk: sleep-clk {
  			compatible = "fixed-clock";
  			#clock-cells = <0>;
-@@ -190,7 +202,8 @@
+@@ -193,7 +205,8 @@
  
  		mdio0: mdio@88000 {
  			compatible = "qcom,ipq5018-mdio";
@@ -55,7 +55,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  			#address-cells = <1>;
  			#size-cells = <0>;
  
-@@ -198,6 +211,13 @@
+@@ -201,6 +214,13 @@
  			clock-names = "gcc_mdio_ahb_clk";
  
  			status = "disabled";
@@ -69,7 +69,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  		};
  
  		mdio1: mdio@90000 {
-@@ -392,8 +412,8 @@
+@@ -395,8 +415,8 @@
  				 <&pcie0_phy>,
  				 <&pcie1_phy>,
  				 <0>,
