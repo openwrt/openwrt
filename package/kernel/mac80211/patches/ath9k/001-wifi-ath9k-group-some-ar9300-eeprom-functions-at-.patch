@@ -1,0 +1,134 @@
+From dc8557b809c897703f3c441c2ef79bc9d026b324 Mon Sep 17 00:00:00 2001
+From: Wenli Looi <wlooi@ucalgary.ca>
+Date: Mon, 18 Apr 2022 05:17:02 +0000
+Subject: [PATCH v3 01/11] wifi: ath9k: group some ar9300 eeprom functions at
+ the top
+
+These functions will be part of an abstraction layer that works with
+both AR9300 and QCN5502 EEPROM formats.
+
+This change does not appear to affect the final binary.
+
+Signed-off-by: Wenli Looi <wlooi@ucalgary.ca>
+---
+ .../net/wireless/ath/ath9k/ar9003_eeprom.c    | 90 +++++++++----------
+ 1 file changed, 45 insertions(+), 45 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c b/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
+index 944f46cdf3..58dce556b0 100644
+--- a/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
++++ b/drivers/net/wireless/ath/ath9k/ar9003_eeprom.c
+@@ -2970,6 +2970,51 @@ static int interpolate(int x, int xa, int xb, int ya, int yb)
+ 	return ya + factor + plus;
+ }
+ 
++/* XXX: review hardware docs */
++static int ath9k_hw_ar9300_get_eeprom_ver(struct ath_hw *ah)
++{
++	return ah->eeprom.ar9300_eep.eepromVersion;
++}
++
++/* XXX: could be read from the eepromVersion, not sure yet */
++static int ath9k_hw_ar9300_get_eeprom_rev(struct ath_hw *ah)
++{
++	return 0;
++}
++
++static struct ar9300_modal_eep_header *ar9003_modal_header(struct ath_hw *ah,
++							   bool is2ghz)
++{
++	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
++
++	if (is2ghz)
++		return &eep->modalHeader2G;
++	else
++		return &eep->modalHeader5G;
++}
++
++static u16 ar9003_hw_ant_ctrl_chain_get(struct ath_hw *ah, int chain,
++					bool is2ghz)
++{
++	__le16 val = ar9003_modal_header(ah, is2ghz)->antCtrlChain[chain];
++	return le16_to_cpu(val);
++}
++
++u32 ar9003_hw_ant_ctrl_common_get(struct ath_hw *ah, bool is2ghz)
++{
++	return le32_to_cpu(ar9003_modal_header(ah, is2ghz)->antCtrlCommon);
++}
++
++u32 ar9003_hw_ant_ctrl_common_2_get(struct ath_hw *ah, bool is2ghz)
++{
++	return le32_to_cpu(ar9003_modal_header(ah, is2ghz)->antCtrlCommon2);
++}
++
++static u16 ar9003_switch_com_spdt_get(struct ath_hw *ah, bool is2ghz)
++{
++	return le16_to_cpu(ar9003_modal_header(ah, is2ghz)->switchcomspdt);
++}
++
+ static u32 ath9k_hw_ar9300_get_eeprom(struct ath_hw *ah,
+ 				      enum eeprom_param param)
+ {
+@@ -3578,29 +3623,6 @@ static u32 ath9k_hw_ar9003_dump_eeprom(struct ath_hw *ah, bool dump_base_hdr,
+ }
+ #endif
+ 
+-/* XXX: review hardware docs */
+-static int ath9k_hw_ar9300_get_eeprom_ver(struct ath_hw *ah)
+-{
+-	return ah->eeprom.ar9300_eep.eepromVersion;
+-}
+-
+-/* XXX: could be read from the eepromVersion, not sure yet */
+-static int ath9k_hw_ar9300_get_eeprom_rev(struct ath_hw *ah)
+-{
+-	return 0;
+-}
+-
+-static struct ar9300_modal_eep_header *ar9003_modal_header(struct ath_hw *ah,
+-							   bool is2ghz)
+-{
+-	struct ar9300_eeprom *eep = &ah->eeprom.ar9300_eep;
+-
+-	if (is2ghz)
+-		return &eep->modalHeader2G;
+-	else
+-		return &eep->modalHeader5G;
+-}
+-
+ static void ar9003_hw_xpa_bias_level_apply(struct ath_hw *ah, bool is2ghz)
+ {
+ 	int bias = ar9003_modal_header(ah, is2ghz)->xpaBiasLvl;
+@@ -3620,28 +3642,6 @@ static void ar9003_hw_xpa_bias_level_apply(struct ath_hw *ah, bool is2ghz)
+ 	}
+ }
+ 
+-static u16 ar9003_switch_com_spdt_get(struct ath_hw *ah, bool is2ghz)
+-{
+-	return le16_to_cpu(ar9003_modal_header(ah, is2ghz)->switchcomspdt);
+-}
+-
+-u32 ar9003_hw_ant_ctrl_common_get(struct ath_hw *ah, bool is2ghz)
+-{
+-	return le32_to_cpu(ar9003_modal_header(ah, is2ghz)->antCtrlCommon);
+-}
+-
+-u32 ar9003_hw_ant_ctrl_common_2_get(struct ath_hw *ah, bool is2ghz)
+-{
+-	return le32_to_cpu(ar9003_modal_header(ah, is2ghz)->antCtrlCommon2);
+-}
+-
+-static u16 ar9003_hw_ant_ctrl_chain_get(struct ath_hw *ah, int chain,
+-					bool is2ghz)
+-{
+-	__le16 val = ar9003_modal_header(ah, is2ghz)->antCtrlChain[chain];
+-	return le16_to_cpu(val);
+-}
+-
+ static void ar9003_hw_ant_ctrl_apply(struct ath_hw *ah, bool is2ghz)
+ {
+ 	struct ath_common *common = ath9k_hw_common(ah);
+-- 
+2.34.1
+
