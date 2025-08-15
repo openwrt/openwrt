@@ -1,16 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include "macros.dtsi"
 #include <dt-bindings/interrupt-controller/mips-gic.h>
 
 /dts-v1/;
-
-#define INTERNAL_PHY_SDS(n, s) \
-	phy##n: ethernet-phy@##n { \
-		reg = <##n>; \
-		compatible = "ethernet-phy-ieee802.3-c22"; \
-		phy-is-integrated; \
-		sds = <##s>; \
-	};
 
 / {
 	#address-cells = <1>;
