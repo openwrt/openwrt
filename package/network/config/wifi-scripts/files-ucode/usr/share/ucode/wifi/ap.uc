@@ -482,6 +482,18 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 			'rsn_override_pairwise',
 			'rsn_override_mfp'
 		]);
+
+		if (config.mode == 'link') {
+			config.rsn_override_mfp_2 ??= config.rsn_override_mfp;
+			config.rsn_override_key_mgmt_2 ??= config.rsn_override_key_mgmt;
+			config.rsn_override_pairwise_2 ??= config.rsn_override_pairwise;
+
+			append_vars(config, [
+				'rsn_override_key_mgmt_2',
+				'rsn_override_pairwise_2',
+				'rsn_override_mfp_2'
+			]);
+		}
 	}
 
 	/* raw options */

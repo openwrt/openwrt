@@ -174,6 +174,11 @@ export function wpa_key_mgmt(config) {
 		if (config.ieee80211r)
 			append_value(config, 'wpa_key_mgmt', 'FT-SAE');
 		config.rsn_override_key_mgmt = config.wpa_key_mgmt;
+
+		append_value(config, 'rsn_override_key_mgmt_2', 'SAE-EXT-KEY');
+		if (config.ieee80211r)
+			append_value(config, 'rsn_override_key_mgmt_2', 'FT-SAE-EXT-KEY');
+
 		if (config.rsn_override > 1)
 			delete config.wpa_key_mgmt;
 
