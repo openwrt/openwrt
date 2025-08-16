@@ -50,13 +50,13 @@
 };
 
 &mdio {
-	INTERNAL_PHY(24)
-	INTERNAL_PHY(26)
+	INTERNAL_PHY_SDS(24, 4)
+	INTERNAL_PHY_SDS(26, 5)
 };
 
 &switch0 {
 	ports {
-		SWITCH_SFP_PORT(24, 9, rgmii-id)
-		SWITCH_SFP_PORT(26, 10, rgmii-id)
+		SWITCH_SFP_PORT(24, 9, 1000base-x)
+		SWITCH_SFP_PORT(26, 10, 1000base-x)
 	};
 };

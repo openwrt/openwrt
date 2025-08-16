@@ -46,6 +46,10 @@ fortinet,fap-421e)
 	ucidef_set_led_wlan "wlan5g" "5G" "yellow:5g" "phy0tpt"
 	ucidef_set_led_usbport "usb" "USB" "amber:power" "usb1-port1" "usb2-port1"
 	;;
+ignitenet,ss-w2-ac2600)
+	ucidef_set_led_wlan "wlan2g" "WLAN2G" "green:wlan2g" "phy1tpt"
+	ucidef_set_led_wlan "wlan5g" "WLAN5G" "green:wlan5g" "phy0tpt"
+	;;
 linksys,e8350-v1)
 	ucidef_set_led_wlan "wlan" "WLAN" "green:wifi" "phy0tpt"
 	;;

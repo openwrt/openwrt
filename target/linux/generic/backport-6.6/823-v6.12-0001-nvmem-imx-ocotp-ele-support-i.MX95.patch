@@ -16,8 +16,8 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 
 --- a/drivers/nvmem/imx-ocotp-ele.c
 +++ b/drivers/nvmem/imx-ocotp-ele.c
-@@ -14,8 +14,9 @@
- #include <linux/slab.h>
+@@ -15,8 +15,9 @@
+ #include <linux/if_ether.h>	/* ETH_ALEN */
  
  enum fuse_type {
 -	FUSE_FSB = 1,
@@ -28,7 +28,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	FUSE_INVALID = -1
  };
  
-@@ -95,7 +96,10 @@ static int imx_ocotp_reg_read(void *cont
+@@ -96,7 +97,10 @@ static int imx_ocotp_reg_read(void *cont
  			continue;
  		}
  
@@ -40,7 +40,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	}
  
  	memcpy(val, ((u8 *)p) + skipbytes, bytes);
-@@ -179,8 +183,30 @@ static const struct ocotp_devtype_data i
+@@ -182,8 +186,30 @@ static const struct ocotp_devtype_data i
  	},
  };
  

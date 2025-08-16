@@ -1,0 +1,25 @@
+From 0ef932f509fd9f9215af2ea4ca2919d3285ddf60 Mon Sep 17 00:00:00 2001
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Thu, 24 Jul 2025 07:50:40 +0800
+Subject: [PATCH 2/2] env: mtd: initialize saved_buf pointer
+
+When sect_size is greater than CONFIG_ENV_SIZE, this wild
+pointer will cause CPU halt or system crash.
+
+Fixes: 03fb08d4aef8 ("env: Introduce support for MTD")
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ env/mtd.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/env/mtd.c
++++ b/env/mtd.c
+@@ -201,7 +201,7 @@ static int env_mtd_erase(void)
+ {
+ 	struct mtd_info *mtd_env;
+ 	u32 sect_size, sect_num;
+-	char *saved_buf, *tmp;
++	char *saved_buf = NULL, *tmp;
+ 	struct erase_info ei;
+ 	size_t ret_len;
+ 	int remaining;

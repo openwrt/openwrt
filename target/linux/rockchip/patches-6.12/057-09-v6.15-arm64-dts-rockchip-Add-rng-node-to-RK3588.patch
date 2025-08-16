@@ -1,0 +1,34 @@
+From 6ee0b9ad3995ee5fa229035c69013b7dd0d3634b Mon Sep 17 00:00:00 2001
+From: Nicolas Frattaroli <nicolas.frattaroli@collabora.com>
+Date: Tue, 4 Feb 2025 16:35:51 +0100
+Subject: [PATCH] arm64: dts: rockchip: Add rng node to RK3588
+
+Add the RK3588's standalone hardware random number generator node to its
+device tree, and enable it.
+
+Signed-off-by: Nicolas Frattaroli <nicolas.frattaroli@collabora.com>
+Link: https://lore.kernel.org/r/20250204-rk3588-trng-submission-v2-6-608172b6fd91@collabora.com
+[changed reset-id to its numeric value while the constant makes its
+ way through the crypto tree]
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3588-base.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi
+@@ -1878,6 +1878,14 @@
+ 		status = "disabled";
+ 	};
+ 
++	rng@fe378000 {
++		compatible = "rockchip,rk3588-rng";
++		reg = <0x0 0xfe378000 0x0 0x200>;
++		interrupts = <GIC_SPI 400 IRQ_TYPE_LEVEL_HIGH 0>;
++		clocks = <&scmi_clk SCMI_HCLK_SECURE_NS>;
++		resets = <&scmi_reset 48>;
++	};
++
+ 	i2s0_8ch: i2s@fe470000 {
+ 		compatible = "rockchip,rk3588-i2s-tdm";
+ 		reg = <0x0 0xfe470000 0x0 0x1000>;

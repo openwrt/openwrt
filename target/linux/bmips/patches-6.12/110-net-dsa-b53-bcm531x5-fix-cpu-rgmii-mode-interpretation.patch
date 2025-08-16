@@ -1,0 +1,111 @@
+From d9fa3835bb8913757c74af96fa8db0d621e2e980 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jonas.gorski@gmail.com>
+Date: Mon, 9 Jun 2025 11:18:24 +0200
+Subject: [PATCH] net: dsa: b53: bcm531x5: fix cpu rgmii mode interpretation
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+b53_adjust_531x5_rgmii() incorrectly enable delays in rgmii mode, but
+disables them in rgmii-id mode. Only rgmii-txid is correctly handled.
+
+Fix this by correctly enabling rx delay in rgmii-rxid and rgmii-id
+modes, and tx delay in rgmii-txid and rgmii-id modes.
+
+Since b53_adjust_531x5_rgmii() is only called for fixed-link ports,
+these are usually used as the CPU port, connected to a MAC. This means
+the chip is assuming the role of the PHY and enabling delays is
+expected.
+
+Since this has the potential to break existing setups, add a config
+options to treat rgmii as rgmii-id, and enable it by default.
+
+I only made the quirk fixup rgmii to rgmii-id, but not rgmii-id to
+rgmii, or no delays for rgmii-rxid. My reasoning is that
+
+a) Boards not requiring internal delays are probably rather seldom, so I
+   considered the likelyhood requiring/wrongly specifying rgmii-id when
+   they need rgmii as very unlikely.
+   And if they understand the difference enough to know to use the
+   "wrong" mode, they would have hopefully noticed the discrepancy and
+   reported the issue by now.
+b) I don't want to require new users to wrongly use rgmii to get
+   rgmii-id behavior with the quirk enabled.
+
+Fixes: 967dd82ffc52 ("net: dsa: b53: Add support for Broadcom RoboSwitch")
+Reported-by: Álvaro Fernández Rojas <noltari@gmail.com>
+Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
+---
+ drivers/net/dsa/b53/Kconfig      | 10 ++++++++++
+ drivers/net/dsa/b53/b53_common.c | 33 +++++++++++++++++++++++---------
+ 2 files changed, 34 insertions(+), 9 deletions(-)
+
+--- a/drivers/net/dsa/b53/Kconfig
++++ b/drivers/net/dsa/b53/Kconfig
+@@ -47,3 +47,13 @@ config B53_SERDES
+ 	default ARCH_BCM_NSP
+ 	help
+ 	  Select to enable support for SerDes on e.g: Northstar Plus SoCs.
++
++config B53_QUIRK_IMP_RGMII_IMPLIES_DELAYS
++	bool "Treat RGMII as RGMII-ID for CPU port"
++	depends on B53
++	default y
++	help
++	  Select to enable RGMII delays also in RGMII (no ID) mode for the CPU
++	  port to mirror old driver behavior.
++	  Enable this if your board wrongly uses RGMII instead of RGMII-ID as
++	  the phy interface, but actually requires internal delays enabled.
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -1426,6 +1426,16 @@ static void b53_adjust_531x5_rgmii(struc
+ 	else
+ 		off = B53_RGMII_CTRL_P(port);
+ 
++	if (IS_ENABLED(CONFIG_B53_QUIRK_IMP_RGMII_IMPLIES_DELAYS) &&
++	    interface == PHY_INTERFACE_MODE_RGMII) {
++		/* Older driver versions incorrectly applied delays in
++		 * PHY_INTERFACE_MODE_RGMII mode.
++		 *
++		 * So fixup the interface to match the old behavior.
++		 */
++		interface = PHY_INTERFACE_MODE_RGMII_ID;
++	}
++
+ 	/* Configure the port RGMII clock delay by DLL disabled and
+ 	 * tx_clk aligned timing (restoring to reset defaults)
+ 	 */
+@@ -1437,19 +1447,24 @@ static void b53_adjust_531x5_rgmii(struc
+ 	 * account for this internal delay that is inserted, otherwise
+ 	 * the switch won't be able to receive correctly.
+ 	 *
++	 * PHY_INTERFACE_MODE_RGMII_RXID means RX internal delay, make
++	 * sure that we enable the port RX clock internal sampling delay
++	 * to account for this internal delay that is inserted, otherwise
++	 * the switch won't be able to send correctly.
++	 *
++	 * PHY_INTERFACE_MODE_RGMII_ID means both RX and TX internal delay,
++	 * make sure that we enable delays for both.
++	 *
+ 	 * PHY_INTERFACE_MODE_RGMII means that we are not introducing
+ 	 * any delay neither on transmission nor reception, so the
+-	 * BCM53125 must also be configured accordingly to account for
+-	 * the lack of delay and introduce
+-	 *
+-	 * The BCM53125 switch has its RX clock and TX clock control
+-	 * swapped, hence the reason why we modify the TX clock path in
+-	 * the "RGMII" case
++	 * BCM53125 must also be configured accordingly.
+ 	 */
+-	if (interface == PHY_INTERFACE_MODE_RGMII_TXID)
++	if (interface == PHY_INTERFACE_MODE_RGMII_TXID ||
++	    interface == PHY_INTERFACE_MODE_RGMII_ID)
+ 		rgmii_ctrl |= RGMII_CTRL_DLL_TXC;
+-	if (interface == PHY_INTERFACE_MODE_RGMII)
+-		rgmii_ctrl |= RGMII_CTRL_DLL_TXC | RGMII_CTRL_DLL_RXC;
++	if (interface == PHY_INTERFACE_MODE_RGMII_RXID ||
++	    interface == PHY_INTERFACE_MODE_RGMII_ID)
++		rgmii_ctrl |= RGMII_CTRL_DLL_RXC;
+ 
+ 	if (dev->chip_id != BCM53115_DEVICE_ID)
+ 		rgmii_ctrl |= RGMII_CTRL_TIMING_SEL;

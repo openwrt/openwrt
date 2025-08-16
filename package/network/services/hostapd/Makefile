@@ -5,13 +5,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=hostapd
-PKG_RELEASE:=2
+PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=https://w1.fi/hostap.git
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE:=2025-05-23
-PKG_SOURCE_VERSION:=4b8ac10cb77c3d4dbf7ccefbe697dc0578da374c
-PKG_MIRROR_HASH:=25a77ae4b26adef9c0d71c3b175445f246a4530e63563e81b8e19c2436934100
+PKG_SOURCE_DATE:=2025-06-27
+PKG_SOURCE_VERSION:=ea08700a762f13c415e319993720bed83ad9aa2c
+PKG_MIRROR_HASH:=8bfd23188058611a7efb3b0064a7601f8073ceedbf1538a99f93abc743608d46
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=BSD-3-Clause
@@ -80,8 +80,10 @@ ifneq ($(CONFIG_DRIVER_11AX_SUPPORT),)
   HOSTAPD_IEEE80211AX:=y
 endif
 
-ifneq ($(CONFIG_DRIVER_11BE_SUPPORT),)
-  HOSTAPD_IEEE80211BE:=y
+ifneq ($(LOCAL_VARIANT),mini)
+  ifneq ($(CONFIG_DRIVER_11BE_SUPPORT),)
+    HOSTAPD_IEEE80211BE:=y
+  endif
 endif
 
 
@@ -97,7 +99,9 @@ DRIVER_MAKEOPTS= \
 	CONFIG_IEEE80211AX=$(HOSTAPD_IEEE80211AX) \
 	CONFIG_IEEE80211BE=$(HOSTAPD_IEEE80211BE) \
 	CONFIG_MBO=$(CONFIG_WPA_MBO_SUPPORT) \
-	CONFIG_UCODE=y CONFIG_APUP=y
+	CONFIG_UCODE=y CONFIG_APUP=y \
+	$(if $(HOSTAPD_IEEE80211BE),CONFIG_OCV=y)
+
 
 ifeq ($(SSL_VARIANT),openssl)
   DRIVER_MAKEOPTS += CONFIG_TLS=openssl CONFIG_SAE=y
@@ -722,14 +726,12 @@ endef
 define Package/hostapd-common/install
 	$(INSTALL_DIR) \
 	  $(1)/etc/capabilities \
-	  $(1)/etc/rc.button \
 	  $(1)/etc/hotplug.d/ieee80211 \
 	  $(1)/etc/init.d $(1)/lib/netifd \
 	  $(1)/usr/share/acl.d \
 	  $(1)/usr/share/hostap
 	$(INSTALL_BIN) ./files/dhcp-get-server.sh $(1)/lib/netifd/dhcp-get-server.sh
 	$(INSTALL_BIN) ./files/wpad.init $(1)/etc/init.d/wpad
-	$(INSTALL_BIN) ./files/wps-hotplug.sh $(1)/etc/rc.button/wps
 	$(INSTALL_DATA) ./files/wpad_acl.json $(1)/usr/share/acl.d
 	$(INSTALL_DATA) ./files/wpad.json $(1)/etc/capabilities
 endef

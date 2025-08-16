@@ -1,0 +1,47 @@
+From 51c884291a94fd6598427d7d6c211f1f20780d57 Mon Sep 17 00:00:00 2001
+From: Jinjie Ruan <ruanjinjie@huawei.com>
+Date: Fri, 30 Aug 2024 11:13:19 +0800
+Subject: [PATCH 02/12] net: dsa: realtek: Use for_each_child_of_node_scoped()
+
+Avoid need to manually handle of_node_put() by using
+for_each_child_of_node_scoped(), which can simplfy code.
+
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Reviewed-by: Jonathan Cameron <Jonathan.Cameron@huawei.com>
+Signed-off-by: Jinjie Ruan <ruanjinjie@huawei.com>
+Reviewed-by: Linus Walleij <linus.walleij@linaro.org>
+Reviewed-by: Florian Fainelli <florian.fainelli@broadcom.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+Signed-off-by: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+---
+ drivers/net/dsa/realtek/rtl8366rb.c | 8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
+
+--- a/drivers/net/dsa/realtek/rtl8366rb.c
++++ b/drivers/net/dsa/realtek/rtl8366rb.c
+@@ -1013,8 +1013,8 @@ static int rtl8366rb_setup_all_leds_off(
+ 
+ static int rtl8366rb_setup_leds(struct realtek_priv *priv)
+ {
+-	struct device_node *leds_np, *led_np;
+ 	struct dsa_switch *ds = &priv->ds;
++	struct device_node *leds_np;
+ 	struct dsa_port *dp;
+ 	int ret = 0;
+ 
+@@ -1029,13 +1029,11 @@ static int rtl8366rb_setup_leds(struct r
+ 			continue;
+ 		}
+ 
+-		for_each_child_of_node(leds_np, led_np) {
++		for_each_child_of_node_scoped(leds_np, led_np) {
+ 			ret = rtl8366rb_setup_led(priv, dp,
+ 						  of_fwnode_handle(led_np));
+-			if (ret) {
+-				of_node_put(led_np);
++			if (ret)
+ 				break;
+-			}
+ 		}
+ 
+ 		of_node_put(leds_np);

@@ -168,7 +168,8 @@ _call_manifest: FORCE
 ifeq ($(CONFIG_USE_APK),)
 	$(OPKG) list-installed $(if $(STRIP_ABI),--strip-abi)
 else
-	$(APK) list --quiet --manifest --no-network
+	$(APK) query --format json --fields name,version,$(if $(STRIP_ABI),tags) --installed '*' | \
+		$(SCRIPT_DIR)/make-index-json.py -a $(ARCH_PACKAGES) -f apk --manifest -
 endif
 
 package_index: FORCE

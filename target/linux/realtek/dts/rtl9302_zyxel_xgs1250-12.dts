@@ -29,17 +29,6 @@
 		};
 	};
 
-	/* i2c of the SFP cage: port 12 */
-	i2c0: i2c-rtl9300@1b00036c {
-		compatible = "realtek,rtl9300-i2c";
-		reg = <0x1b00036c 0x3c>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-		sda-pin = <10>;
-		scl-pin = <8>;
-		clock-frequency = <100000>;
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -174,6 +163,15 @@
 	};
 };
 
+&i2c_mst1 {
+	status = "okay";
+
+	/* i2c of the SFP+ cage; port 12 */
+	i2c0: i2c@1 {
+		reg = <1>;
+	};
+};
+
 &spi0 {
 	status = "okay";
 	flash@0 {
@@ -305,14 +303,7 @@
 			#thermal-sensor-cells = <0>;
 		};
 
-		/* SFP Ports */
-		phy27: ethernet-phy@27 {
-			compatible = "ethernet-phy-ieee802.3-c22";
-			phy-is-integrated;
-			reg = <27>;
-			sds = < 9 >;
-		};
-
+		INTERNAL_PHY_SDS(27, 9)
 	};
 };
 
@@ -404,7 +395,7 @@
 			reg = <27>;
 			label = "lan12";
 			phy-mode = "1000base-x";
-			pseudo-phy-handle = <&phy27>;
+			phy-handle = <&phy27>;
 			sfp = <&sfp0>;
 			led-set = <2>;
 			managed = "in-band-status";

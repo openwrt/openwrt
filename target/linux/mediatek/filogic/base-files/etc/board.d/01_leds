@@ -64,6 +64,9 @@ cudy,wr3000h-v1)
 	ucidef_set_led_netdev "wan" "wan" "white:wan" "wan" "link tx rx"
 	ucidef_set_led_netdev "internet" "internet" "white:wan-online" "wan" "link"
 	;;
+elecom,wrc-x3000gs3)
+	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan"
+	;;
 glinet,gl-x3000|\
 glinet,gl-xe3000)
 	ucidef_set_led_default "power" "POWER" "green:power" "1"
@@ -77,6 +80,12 @@ glinet,gl-xe3000)
 	;;
 huasifei,wh3000)
 	ucidef_set_led_netdev "wan" "WAN" "red:wan" "eth1" "link tx rx"
+	;;
+iptime,ax3000q)
+	ucidef_set_led_netdev "wan" "WAN" "amber:wan" "wan" "link tx rx"
+	;;
+iptime,ax3000sm)
+	ucidef_set_led_netdev "wan" "wan" "amber:wan" "eth1" "link tx rx"
 	;;
 mercusys,mr80x-v3)
 	ucidef_set_led_netdev "lan1" "lan-1" "green:lan-1" "lan1" "link tx rx"
@@ -117,6 +126,9 @@ nradio,c8-668gl)
 openembed,som7981)
 	ucidef_set_led_netdev "lanact" "LANACT" "amber:lan" "eth1" "rx tx"
 	ucidef_set_led_netdev "lanlink" "LANLINK" "green:lan" "eth1" "link"
+	;;
+openfi,6c)
+	ucidef_set_led_netdev "lan" "LAN" "green:lan" "eth0" "link tx rx"
 	;;
 openwrt,one)
 	ucidef_set_led_netdev "wanact" "WANACT" "mdio-bus:0f:green:wan" "eth0" "rx tx"
@@ -184,11 +196,21 @@ smartrg,sdg-8733a)
 	ucidef_set_led_netdev "wan-orange" "WAN" "mdio-bus:08:orange:wan" "wan" "link_100 link_1000"
 	ucidef_set_led_netdev "wan-white" "WAN" "mdio-bus:08:white:wan" "wan" "link_10000"
 	;;
+tplink,fr365-v1)
+	ucidef_set_led_netdev "port2-green-act" "port-2" "green:port2_act" "port2" "link tx rx"
+	ucidef_set_led_netdev "port1-green-act" "port-1" "green:sfp" "port1" "link tx rx"
+	ucidef_set_led_netdev "wlan" "wlan" "green:wlan" "phy1-ap0"
+	;;
 tplink,re6000xd)
 	ucidef_set_led_netdev "lan-1" "lan-1" "blue:lan-0" "lan1" "link tx rx"
 	ucidef_set_led_netdev "lan-2" "lan-2" "blue:lan-1" "lan2" "link tx rx"
 	ucidef_set_led_netdev "eth1" "lan-3" "blue:lan-2" "eth1" "link tx rx"
 	;;
+wavlink,wl-wn551x3)
+        ucidef_set_led_netdev "lan-1" "lan-1" "green:lan-1" "lan1" "link tx rx"
+        ucidef_set_led_netdev "lan-2" "lan-2" "green:lan-2" "lan2" "link tx rx"
+        ucidef_set_led_netdev "wan" "wan" "green:wan" "eth1" "link tx rx"
+        ;;
 wavlink,wl-wn586x3)
 	ucidef_set_led_netdev "lan-1" "lan-1" "blue:lan-1" "lan1" "link tx rx"
 	ucidef_set_led_netdev "lan-2" "lan-2" "blue:lan-2" "lan2" "link tx rx"

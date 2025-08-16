@@ -19,7 +19,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/dsa/b53/b53_common.c
 +++ b/drivers/net/dsa/b53/b53_common.c
-@@ -2358,13 +2358,16 @@ int b53_eee_init(struct dsa_switch *ds,
+@@ -2343,13 +2343,16 @@ int b53_eee_init(struct dsa_switch *ds,
  }
  EXPORT_SYMBOL(b53_eee_init);
  
@@ -39,7 +39,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	return 0;
  }
  EXPORT_SYMBOL(b53_get_mac_eee);
-@@ -2374,9 +2377,6 @@ int b53_set_mac_eee(struct dsa_switch *d
+@@ -2359,9 +2362,6 @@ int b53_set_mac_eee(struct dsa_switch *d
  	struct b53_device *dev = ds->priv;
  	struct ethtool_keee *p = &dev->ports[port].eee;
  
@@ -49,7 +49,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	p->eee_enabled = e->eee_enabled;
  	b53_eee_enable_set(ds, port, e->eee_enabled);
  
-@@ -2433,6 +2433,7 @@ static const struct dsa_switch_ops b53_s
+@@ -2418,6 +2418,7 @@ static const struct dsa_switch_ops b53_s
  	.port_setup		= b53_setup_port,
  	.port_enable		= b53_enable_port,
  	.port_disable		= b53_disable_port,

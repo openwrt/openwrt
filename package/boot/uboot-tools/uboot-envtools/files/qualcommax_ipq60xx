@@ -7,12 +7,6 @@ touch /etc/config/ubootenv
 
 board=$(board_name)
 
-ubootenv_add_mtd() {
-	local idx="$(find_mtd_index "${1}")"
-	[ -n "$idx" ] && \
-		ubootenv_add_uci_config "/dev/mtd$idx" "${2}" "${3}" "${4}"
-}
-
 case "$board" in
 8devices,mango-dvk|\
 8devices,mango-dvk-sfp|\

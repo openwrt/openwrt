@@ -58,6 +58,8 @@ hiwifi,hc5661a|\
 hiwifi,hc5761a)
 	ucidef_set_led_switch "wan" "WAN" "blue:wan" "switch0" "0x10"
 	;;
+keenetic,kn-1112|\
+keenetic,kn-1212|\
 keenetic,kn-1221|\
 keenetic,kn-1613|\
 keenetic,kn-1711|\
@@ -174,6 +176,13 @@ wavlink,wl-wn570ha1)
 	ucidef_set_led_rssi "wifi-med" "wifi-med" "green:wifi-med" "wlan0" "50" "84"
 	ucidef_set_led_rssi "wifi-high" "wifi-high" "green:wifi-high" "wlan0" "85" "100"
 	ucidef_set_led_netdev "wifi_led" "wifi" "green:wifi" "wlan0"
+	;;
+wavlink,wl-wn570ha2)
+	ucidef_set_led_switch "lan" "lan" "blue:lan" "switch0" "0x01"
+	ucidef_set_rssimon "phy1-ap0" "200000" "1"
+	ucidef_set_led_rssi "wifi-low" "wifi-low" "blue:wifi-low" "phy1-ap0" "1" "100"
+	ucidef_set_led_rssi "wifi-med" "wifi-med" "blue:wifi-med" "phy1-ap0" "50" "100"
+	ucidef_set_led_rssi "wifi-high" "wifi-high" "blue:wifi-high" "phy1-ap0" "85" "100"
 	;;
 wavlink,wl-wn575a3)
 	ucidef_set_rssimon "wlan1" "200000" "1"

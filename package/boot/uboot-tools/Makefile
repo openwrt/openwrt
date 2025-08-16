@@ -1,15 +1,16 @@
 include $(TOPDIR)/rules.mk
 
 PKG_DISTNAME:=u-boot
-PKG_VERSION:=2025.01
-PKG_RELEASE:=3
+PKG_VERSION:=2025.07
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_DISTNAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	https://ftp.denx.de/pub/u-boot \
 	https://mirror.cyberbits.eu/u-boot \
 	ftp://ftp.denx.de/pub/u-boot
-PKG_HASH:=cdef7d507c93f1bbd9f015ea9bc21fa074268481405501945abc6f854d5b686f
+PKG_URL:=http://www.denx.de/wiki/U-Boot
+PKG_HASH:=0f933f6c5a426895bf306e93e6ac53c60870e4b54cda56d95211bec99e63bec7
 PKG_SOURCE_SUBDIR:=$(PKG_DISTNAME)-$(PKG_VERSION)
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_DISTNAME)-$(PKG_VERSION)
 
@@ -19,6 +20,7 @@ PKG_LICENSE:=GPL-2.0 GPL-2.0+
 PKG_LICENSE_FILES:=Licenses/README
 
 PKG_BUILD_PARALLEL:=1
+#PKG_FLAGS:=nonshared # Use PKGFLAGS instead of PKG_FLAGS for per-binary flags
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -27,7 +29,6 @@ define Package/dumpimage
 	CATEGORY:=Utilities
 	SUBMENU:=Boot Loaders
 	TITLE:=dumpimage lists and extracts data from U-Boot images.
-	URL:=http://www.denx.de/wiki/U-Boot
 endef
 
 define Package/dumpimage/description
@@ -42,7 +43,6 @@ define Package/fit-check-sign
 	CATEGORY:=Utilities
 	SUBMENU:=Boot Loaders
 	TITLE:=verify uImage.FIT
-	URL:=http://www.denx.de/wiki/U-Boot
 endef
 
 define Package/fit-check-sign/description
@@ -53,9 +53,8 @@ define Package/uboot-envtools
 	SECTION:=utils
 	CATEGORY:=Utilities
 	SUBMENU:=Boot Loaders
-	PKG_FLAGS+=nonshared
+	PKGFLAGS+=nonshared
 	TITLE:=read/modify U-Boot bootloader environment
-	URL:=http://www.denx.de/wiki/U-Boot
 endef
 
 define Package/uboot-envtools/description

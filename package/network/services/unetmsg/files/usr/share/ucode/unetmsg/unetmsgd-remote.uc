@@ -15,6 +15,7 @@ let ev_listener, sub;
 let networks = {};
 
 const USYNC_PORT = 51818;
+const TCP_TIMEOUT = 5 * 1000;
 
 const pubsub_proto = {
 	get_channel: function() {
@@ -300,7 +301,7 @@ function network_open_channel(net, name, peer)
 		return;
 
 	core.dbg(`Try to connect to ${name}\n`);
-	sock.setopt(socket.SOL_TCP, socket.TCP_USER_TIMEOUT, 30 * 1000);
+	sock.setopt(socket.SOL_TCP, socket.TCP_USER_TIMEOUT, TCP_TIMEOUT);
 	sock.connect(addr);
 	let auth_data_cb = (msg) => {
 		if (!network_auth_valid(sock_data.name, sock_data.id, msg.token))
@@ -409,7 +410,7 @@ function network_open(name, info)
 	net.rx_channels = {};
 	net.tx_channels = {};
 
-	net.socket.setopt(socket.SOL_TCP, socket.TCP_USER_TIMEOUT, 30 * 1000);
+	net.socket.setopt(socket.SOL_TCP, socket.TCP_USER_TIMEOUT, TCP_TIMEOUT);
 
 	let cb = () => {
 		let addr = {};

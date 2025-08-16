@@ -8,22 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=util-linux
-PKG_VERSION:=2.41
-PKG_RELEASE:=1
+PKG_VERSION:=2.41.1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.41
-PKG_HASH:=81ee93b3cfdfeb7d7c4090cedeba1d7bbce9141fd0b501b686b3fe475ddca4c6
+PKG_HASH:=be9ad9a276f4305ab7dd2f5225c8be1ff54352f565ff4dede9628c1aaa7dec57
 PKG_CPE_ID:=cpe:/a:kernel:util-linux
 
-PKG_LICENSE:=GPL-2.0-only
-PKG_LICENSE_FILES:=	COPYING					\
-			libblkid/COPYING			\
-			libmount/COPYING			\
-			Documentation/licenses/COPYING.GPLv2	\
-			Documentation/licenses/COPYING.LGPLv2.1	\
-			libuuid/COPYING				\
-			Documentation/licenses/COPYING.BSD-3
 
 PKG_INSTALL:=1
 
@@ -44,6 +36,8 @@ $(call Package/util-linux/Default)
   SECTION:=libs
   CATEGORY:=Libraries
   ABI_VERSION:=1
+  LICENSE:=LGPL-2.1-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.LGPL-2.1-or-later
 endef
 
 define Package/libblkid/description
@@ -60,6 +54,8 @@ $(call Package/util-linux/Default)
   SECTION:=libs
   CATEGORY:=Libraries
   ABI_VERSION:=1
+  LICENSE:=LGPL-2.1-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.LGPL-2.1-or-later
 endef
 
 define Package/libfdisk/description
@@ -73,6 +69,8 @@ $(call Package/util-linux/Default)
   SECTION:=libs
   CATEGORY:=Libraries
   ABI_VERSION:=1
+  LICENSE:=LGPL-2.1-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.LGPL-2.1-or-later
 endef
 
 define Package/libmount/description
@@ -86,6 +84,8 @@ $(call Package/util-linux/Default)
   SECTION:=libs
   CATEGORY:=Libraries
   ABI_VERSION:=1
+  LICENSE:=BSD-3-Clause
+  LICENSE_FILES:=Documentation/licenses/COPYING.BSD-3-Clause
 endef
 
 define Package/libuuid/description
@@ -101,6 +101,8 @@ $(call Package/util-linux/Default)
   SECTION:=libs
   CATEGORY:=Libraries
   ABI_VERSION:=1
+  LICENSE:=LGPL-2.1-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.LGPL-2.1-or-later
 endef
 
 define Package/libsmartcols/description
@@ -111,6 +113,7 @@ define Package/agetty
 $(call Package/util-linux/Default)
   TITLE:=alternative Linux getty
   SUBMENU=Terminal
+  LICENSE:=Public-Domain
 endef
 
 define Package/agetty/description
@@ -123,6 +126,8 @@ $(call Package/util-linux/Default)
   TITLE:=discard sectors on a device
   SUBMENU=Disc
   DEPENDS:=libblkid
+  LICENSE:=GPL-2.0-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.GPL-2.0-or-later
 endef
 
 define Package/blkdiscard/description
@@ -136,6 +141,8 @@ $(call Package/util-linux/Default)
   TITLE:=locate and print block device attributes
   DEPENDS:= +libblkid +libuuid
   SUBMENU=Disc
+  LICENSE:=LGPL-2.1-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.LGPL-2.1-or-later
 endef
 
 define Package/blkid/description
@@ -147,6 +154,8 @@ define Package/blockdev
 $(call Package/util-linux/Default)
   TITLE:=call block device ioctls from the command line
   SUBMENU=Disc
+  LICENSE:=GPL-2.0-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.GPL-2.0-or-later
 endef
 
 define Package/blockdev/description
@@ -157,6 +166,8 @@ define Package/cal
 $(call Package/util-linux/Default)
   TITLE:=display a calendar
   DEPENDS:= +libncurses
+  LICENSE=BSD-4-Clause-UC
+  LICENSE_FILES:=Documentation/licenses/COPYING.BSD-4-Clause-UC
 endef
 
 define Package/cal/description
@@ -168,6 +179,8 @@ $(call Package/util-linux/Default)
   TITLE:=display or manipulate disk partition table
   DEPENDS:= +libblkid +libncurses +libsmartcols +libfdisk +libmount
   SUBMENU:=Disc
+  LICENSE:=GPL-2.0-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.GPL-2.0-or-later
 endef
 
 define Package/cfdisk/description
@@ -178,6 +191,8 @@ define Package/colrm
 $(call Package/util-linux/Default)
   TITLE:=colrm removes selected columns from a file
   DEPENDS:=
+  LICENSE=BSD-4-Clause-UC
+  LICENSE_FILES:=Documentation/licenses/COPYING.BSD-4-Clause-UC
 endef
 
 define Package/colrm/description
@@ -189,6 +204,8 @@ define Package/dmesg
 $(call Package/util-linux/Default)
   TITLE:=print or control the kernel ring buffer
   DEPENDS:= +libncursesw
+  LICENSE:=GPL-2.0-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.GPL-2.0-or-later
 endef
 
 define Package/dmesg/description
@@ -200,6 +217,8 @@ $(call Package/util-linux/Default)
   TITLE:=eject removable media
   DEPENDS:= +libblkid +libmount +libuuid
   SUBMENU=Disc
+  LICENSE:=GPL-2.0-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.GPL-2.0-or-later
 endef
 
 define Package/eject/description
@@ -212,6 +231,8 @@ $(call Package/util-linux/Default)
   TITLE:=manipulate disk partition table
   DEPENDS:= +libblkid +libsmartcols +libfdisk +libncursesw
   SUBMENU=Disc
+  LICENSE:=GPL-1.0-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.GPL-1.0-or-later
 endef
 
 define Package/fdisk/description
@@ -223,6 +244,8 @@ $(call Package/util-linux/Default)
   TITLE:=find a filesystem by label or UUID
   DEPENDS:= +libblkid
   SUBMENU=Disc
+  LICENSE:=GPL-1.0-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.GPL-1.0-or-later
 endef
 
 define Package/findfs/description
@@ -234,6 +257,8 @@ define Package/flock
 $(call Package/util-linux/Default)
   TITLE:=manage locks from shell scripts
   ALTERNATIVES:=200:/usr/bin/flock:/usr/bin/util-linux-flock
+  LICENSE:=MIT
+  LICENSE_FILES:=Documentation/licenses/COPYING.MIT
 endef
 
 define Package/flock/description
@@ -245,6 +270,8 @@ $(call Package/util-linux/Default)
   TITLE:=discard unused blocks on a mounted filesystem
   DEPENDS:= +libblkid +libuuid +libsmartcols +libmount
   SUBMENU=Filesystem
+  LICENSE:=GPL-2.0-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.GPL-2.0-or-later
 endef
 
 define Package/fstrim/description
@@ -256,6 +283,8 @@ endef
 define Package/getopt
 $(call Package/util-linux/Default)
   TITLE:=parse command options (enhanced)
+  LICENSE:=GPL-2.0-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.GPL-2.0-or-later
 endef
 
 define Package/getopt/description
@@ -266,6 +295,8 @@ endef
 define Package/hwclock
 $(call Package/util-linux/Default)
   TITLE:=query or set the hardware clock
+  LICENSE:=GPL-3.0-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.GPL-3.0-or-later
 endef
 
 define Package/hwclock/description
@@ -275,6 +306,8 @@ endef
 define Package/ipcs
 $(call Package/util-linux/Default)
   TITLE:=show information on IPC facilities
+  LICENSE:=GPL-2.0-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.GPL-2.0-or-later
 endef
 
 define Package/ipcs/description
@@ -284,10 +317,24 @@ define Package/ipcs/description
   semaphore arrays.
 endef
 
+define Package/last
+$(call Package/util-linux/Default)
+  TITLE:=display history of user logins and logout sessions
+  LICENSE=BSD-4-Clause-UC
+  LICENSE_FILES:=Documentation/licenses/COPYING.BSD-4-Clause-UC
+endef
+
+define Package/last/description
+ last utility displays a history of user login and logout sessions, system reboots,
+ and other events recorded in /var/log/wtmp (or a specified file)
+endef
+
 define Package/logger
 $(call Package/util-linux/Default)
   TITLE:=a shell command interface to the syslog system log module
   ALTERNATIVES:=200:/usr/bin/logger:/usr/bin/util-linux-logger
+  LICENSE=BSD-4-Clause-UC
+  LICENSE_FILES:=Documentation/licenses/COPYING.BSD-4-Clause-UC
 endef
 
 define Package/logger/description
@@ -298,6 +345,8 @@ endef
 define Package/look
 $(call Package/util-linux/Default)
   TITLE:=display lines beginning with a given string
+  LICENSE=BSD-4-Clause-UC
+  LICENSE_FILES:=Documentation/licenses/COPYING.BSD-4-Clause-UC
 endef
 
 define Package/look/description
@@ -308,6 +357,8 @@ define Package/losetup
 $(call Package/util-linux/Default)
   TITLE:=set up and control loop devices
   DEPENDS:= +libsmartcols
+  LICENSE:=GPL-2.0-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.GPL-2.0-or-later
 endef
 
 define Package/losetup/description
@@ -320,6 +371,8 @@ $(call Package/util-linux/Default)
   TITLE:=list block devices
   DEPENDS:= +libblkid +libmount +libsmartcols +libncurses
   SUBMENU=Disc
+  LICENSE:=GPL-2.0-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.GPL-2.0-or-later
 endef
 
 define Package/lsblk/description
@@ -330,6 +383,8 @@ define Package/lscpu
 $(call Package/util-linux/Default)
   TITLE:=display information about the CPU architecture
   DEPENDS:= +libsmartcols
+  LICENSE:=GPL-2.0-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.GPL-2.0-or-later
 endef
 
 define Package/lscpu/description
@@ -340,6 +395,8 @@ define Package/lslocks
 $(call Package/util-linux/Default)
   TITLE:=list local system locks
   DEPENDS:= +libmount +libsmartcols
+  LICENSE:=GPL-2.0-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.GPL-2.0-or-later
 endef
 
 define Package/lslocks/description
@@ -350,6 +407,8 @@ define Package/lsns
 $(call Package/util-linux/Default)
   TITLE:=list system namespaces
   DEPENDS:= +libblkid +libmount +libsmartcols
+  LICENSE:=GPL-2.0-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.GPL-2.0-or-later
 endef
 
 define Package/lsns/description
@@ -360,6 +419,7 @@ define Package/more
 $(call Package/util-linux/Default)
   TITLE:=filter for paging through text one screenful at a time
   DEPENDS:= +libncurses
+  LICENSE:=BSD-4.3TAHOE
 endef
 
 define Package/more/description
@@ -369,6 +429,7 @@ endef
 define Package/mcookie
 $(call Package/util-linux/Default)
   TITLE:=generate magic cookies for xauth
+  LICENSE:=Public-Domain
 endef
 
 define Package/mcookie/description
@@ -380,6 +441,8 @@ define Package/mount-utils
 $(call Package/util-linux/Default)
   TITLE:=related (u)mount utilities
   DEPENDS+= +libmount +libsmartcols
+  LICENSE:=GPL-2.0-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.GPL-2.0-or-later
 endef
 
 define Package/mount-utils/description
@@ -389,6 +452,8 @@ endef
 define Package/namei
 $(call Package/util-linux/Default)
   TITLE:=follow a pathname until a terminal point is found
+  LICENSE:=GPL-2.0-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.GPL-2.0-or-later
 endef
 
 define Package/namei/description
@@ -399,6 +464,8 @@ endef
 define Package/nsenter
 $(call Package/util-linux/Default)
   TITLE:=enter a namespace
+  LICENSE:=GPL-2.0-only
+  LICENSE_FILES:=Documentation/licenses/COPYING.GPL-2.0-only
 endef
 
 define Package/nsenter/description
@@ -409,6 +476,8 @@ define Package/prlimit
 $(call Package/util-linux/Default)
   TITLE:=get and set process resource limits
   DEPENDS:= +libsmartcols
+  LICENSE:=GPL-2.0-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.GPL-2.0-or-later
 endef
 
 define Package/prlimit/description
@@ -419,6 +488,8 @@ endef
 define Package/rename
 $(call Package/util-linux/Default)
   TITLE:=rename files
+  LICENSE:=GPL-2.0-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.GPL-2.0-or-later
 endef
 
 define Package/rename/description
@@ -429,6 +500,8 @@ endef
 define Package/rev
 $(call Package/util-linux/Default)
   TITLE:=Reverse lines characterwise
+  LICENSE=BSD-4-Clause-UC
+  LICENSE_FILES:=Documentation/licenses/COPYING.BSD-4-Clause-UC
 endef
 
 define Package/rev/description
@@ -442,6 +515,8 @@ $(call Package/util-linux/Default)
   TITLE:=inform kernel about the presence and numbering of on-disk partitions
   DEPENDS:= +libblkid +libsmartcols
   SUBMENU=Disc
+  LICENSE:=GPL-2.0-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.GPL-2.0-or-later
 endef
 
 define Package/partx-utils/description
@@ -452,6 +527,8 @@ define Package/script-utils
 $(call Package/util-linux/Default)
   TITLE:=make and replay typescript of terminal session
   SUBMENU=Terminal
+  LICENSE=BSD-4-Clause-UC
+  LICENSE_FILES:=Documentation/licenses/COPYING.BSD-4-Clause-UC
 endef
 
 define Package/script-utils/description
@@ -463,6 +540,8 @@ $(call Package/util-linux/Default)
   TITLE:=set terminal attributes
   DEPENDS:= +libncurses
   SUBMENU:=Terminal
+  LICENSE:=GPL-2.0-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.GPL-2.0-or-later
 endef
 
 define Package/setterm/description
@@ -475,6 +554,8 @@ $(call Package/util-linux/Default)
   TITLE:=partition table manipulator for Linux
   SUBMENU=Disc
   DEPENDS:= +libblkid +libfdisk +libsmartcols +libncursesw
+  LICENSE:=GPL-1.0-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.GPL-1.0-or-later
 endef
 
 define Package/sfdisk/description
@@ -487,6 +568,8 @@ $(call Package/util-linux/Default)
   TITLE:=swap space management utilities
   DEPENDS+= +libblkid
   SUBMENU:=Filesystem
+  LICENSE:=GPL-2.0-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.GPL-2.0-or-later
 endef
 
 define Package/swap-utils/description
@@ -497,6 +580,8 @@ define Package/taskset
 $(call Package/util-linux/Default)
   TITLE:=set or retrieve a process's CPU affinity
   ALTERNATIVES:=200:/usr/bin/taskset:/usr/bin/util-linux-taskset
+  LICENSE:=GPL-2.0-only
+  LICENSE_FILES:=Documentation/licenses/COPYING.GPL-2.0-only
 endef
 
 define Package/taskset/description
@@ -506,6 +591,8 @@ endef
 define Package/unshare
 $(call Package/util-linux/Default)
   TITLE:=unshare userspace tool
+  LICENSE:=GPL-2.0-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.GPL-2.0-or-later
 endef
 
 define Package/unshare/description
@@ -516,6 +603,8 @@ define Package/uuidd
 $(call Package/util-linux/Default)
   TITLE:=UUID generation daemon
   DEPENDS:= +libuuid
+  LICENSE:=GPL-1.0-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.GPL-1.0-or-later
 endef
 
 define Package/uuidd/description
@@ -529,6 +618,8 @@ define Package/uuidgen
 $(call Package/util-linux/Default)
   TITLE:=create a new UUID value
   DEPENDS:= +libuuid
+  LICENSE:=GPL-1.0-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.GPL-1.0-or-later
 endef
 
 define Package/uuidgen/description
@@ -542,6 +633,8 @@ define Package/wall
 $(call Package/util-linux/Default)
   TITLE:=send a message to everybody's terminal
   SUBMENU=Terminal
+  LICENSE=BSD-4-Clause-UC
+  LICENSE_FILES:=Documentation/licenses/COPYING.BSD-4-Clause-UC
 endef
 
 define Package/wall/description
@@ -549,9 +642,28 @@ define Package/wall/description
  set to yes
 endef
 
+define Package/wdctl
+$(call Package/util-linux/Default)
+  TITLE:=show hardware watchdog status
+  DEPENDS:= +libsmartcols
+  LICENSE:=GPL-2.0-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.GPL-2.0-or-later
+endef
+
+define Package/wdctl/description
+ Show hardware watchdog status. The default device is /dev/watchdog. If more
+ than one device is specified then the output is separated by one blank line.
+ If the device is already used or user has no permissions to read from the
+ device, then wdctl reads data from sysfs. In this case information about
+ supported features (flags) might be missing. Note that the number of supported
+ watchdog features is hardware specific.
+endef
+
 define Package/whereis
 $(call Package/util-linux/Default)
   TITLE:=locate the binary, source, and manual page files for a command
+  LICENSE=BSD-4-Clause-UC
+  LICENSE_FILES:=Documentation/licenses/COPYING.BSD-4-Clause-UC
 endef
 
 define Package/whereis/description
@@ -563,6 +675,8 @@ $(call Package/util-linux/Default)
   TITLE:=wipe a signature from a device
   DEPENDS:= +libblkid +libsmartcols
   SUBMENU:=Disc
+  LICENSE:=GPL-2.0-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.GPL-2.0-or-later
 endef
 
 define Package/wipefs/description
@@ -594,7 +708,6 @@ MESON_ARGS += \
 	-Dbuild-minix=disabled \
 	-Dbuild-fdformat=disabled \
 	-Dbuild-lslogins=disabled \
-	-Dbuild-wdctl=disabled \
 	-Dbuild-switch_root=disabled \
 	-Dbuild-pivot_root=disabled \
 	-Dbuild-lsmem=disabled \
@@ -605,7 +718,6 @@ MESON_ARGS += \
 	-Dbuild-rfkill=disabled \
 	-Dbuild-tunelp=disabled \
 	-Dbuild-kill=disabled \
-	-Dbuild-last=disabled \
 	-Dbuild-utmpdump=disabled \
 	-Dbuild-line=disabled \
 	-Dbuild-mesg=disabled \
@@ -761,6 +873,11 @@ define Package/ipcs/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/ipcs $(1)/usr/bin/
 endef
 
+define Package/last/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/last $(1)/usr/bin/
+endef
+
 define Package/logger/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/logger $(1)/usr/bin/util-linux-logger
@@ -879,17 +996,23 @@ endef
 
 define Package/uuidd/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin//uuidd $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/uuidd $(1)/usr/sbin/
 endef
 
 define Package/uuidgen/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin//uuidgen $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/uuidgen $(1)/usr/bin/
 endef
 
 define Package/wall/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/wall $(1)/usr/bin/
+endef
+
+# Install to /bin instead of /usr/bin to not conflict wdctl from wifidog
+define Package/wdctl/install
+	$(INSTALL_DIR) $(1)/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/wdctl $(1)/bin/
 endef
 
 define Package/whereis/install
@@ -925,6 +1048,7 @@ $(eval $(call BuildPackage,fstrim))
 $(eval $(call BuildPackage,getopt))
 $(eval $(call BuildPackage,hwclock))
 $(eval $(call BuildPackage,ipcs))
+$(eval $(call BuildPackage,last))
 $(eval $(call BuildPackage,logger))
 $(eval $(call BuildPackage,look))
 $(eval $(call BuildPackage,losetup))
@@ -950,5 +1074,6 @@ $(eval $(call BuildPackage,unshare))
 $(eval $(call BuildPackage,uuidd))
 $(eval $(call BuildPackage,uuidgen))
 $(eval $(call BuildPackage,wall))
+$(eval $(call BuildPackage,wdctl))
 $(eval $(call BuildPackage,whereis))
 $(eval $(call BuildPackage,wipefs))

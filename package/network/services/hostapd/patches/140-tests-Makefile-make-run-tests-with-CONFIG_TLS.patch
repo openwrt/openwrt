@@ -527,17 +527,17 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  # glibc < 2.17 needs -lrt for clock_gettime()
  LLIBS += -lrt
  
- test-aes: $(call BUILDOBJ,test-aes.o) $(LIBS)
- 	$(LDO) $(LDFLAGS) -o $@ $^ $(LLIBS)
+ TEST=test-aes
+ include test.mk
  
-+test-crypto_module: $(call BUILDOBJ,test-crypto_module.o) $(LIBS)
-+	$(LDO) $(LDFLAGS) -o $@ $< $(LLIBS)
++TEST=test-crypto_module
++include test.mk
 +
- test-base64: $(call BUILDOBJ,test-base64.o) $(LIBS)
- 	$(LDO) $(LDFLAGS) -o $@ $^ $(LLIBS)
+ TEST=test-base64
+ include test.mk
  
-@@ -141,18 +188,11 @@ test-bss: $(call BUILDOBJ,test-bss.o) $(
- 	$(LDO) $(LDFLAGS) -o $@ $< $(LLIBS) $(WPA_CFLAGS) $(WPA_OBJS) $(LIBS)
+@@ -143,18 +190,11 @@ OBJS_test-bss=$(WPA_OBJS)
+ include test.mk
  
  run-tests: $(ALL)
 -	./test-aes

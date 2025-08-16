@@ -20,6 +20,7 @@ HOST_BUILD_PARALLEL:=1
 include $(INCLUDE_DIR)/host-build.mk
 
 HOSTCC := $(HOSTCC_NOCACHE)
+HOSTCXX := $(HOSTCXX_NOCACHE)
 
 HOST_CONFIGURE_ARGS += \
 	--disable-shared \

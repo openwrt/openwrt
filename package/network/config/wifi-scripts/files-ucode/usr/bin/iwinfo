@@ -2,6 +2,8 @@
 
 'use strict';
 
+import { find_phy } from 'wifi.utils';
+import * as uci from 'uci';
 import * as iwinfo from 'iwinfo';
 
 function print_assoclist(stations) {
@@ -123,6 +125,24 @@ const commands = {
 	txpowerlist: [ iwinfo.txpowerlist, print_txpowerlist ],
 };
 
+if (ARGV[0] == 'nl80211' && ARGV[1] == 'phyname') {
+	let sec_name = ARGV[2];
+	let sec = uci.cursor(null, null, null, { strict: false }).get_all('wireless', sec_name);
+	if (!sec || sec['.type'] != 'wifi-device') {
+		warn(`Config section ${sec_name} not found\n`);
+		return 1;
+	}
+
+	let name = find_phy(sec);
+	if (!name) {
+		warn('Phy not found\n');
+		return 1;
+	}
+
+	print(name + '\n');
+	return 0;
+}
+
 if (length(ARGV) == 2 && iwinfo.ifaces[ARGV[0]])
 	for (let cmd, cb in commands)
 		if (substr(cmd, 0, length(ARGV[1])) == ARGV[1]) {
@@ -145,7 +165,7 @@ case 'iface':
 	return 0;
 }
 
-printf('Usage:\n' +
+warn('Usage:\n' +
 	'\tiwinfo <device> info\n' +
 	'\tiwinfo <device> scan\n' +
 	'\tiwinfo <device> txpowerlist\n' +
@@ -153,4 +173,5 @@ printf('Usage:\n' +
 	'\tiwinfo <device> assoclist\n' +
 	'\tiwinfo <device> countrylist\n' +
 	'\tiwinfo <device> htmodelist\n' +
-	'\tiwinfo <backend> phyname <section>\n');
+	'\tiwinfo nl80211 phyname <section>\n');
+return 1;

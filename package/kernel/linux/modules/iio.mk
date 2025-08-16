@@ -47,6 +47,26 @@ endef
 $(eval $(call KernelPackage,iio-kfifo-buf))
 
 
+define KernelPackage/industrialio-backend
+  TITLE:=IIO Backend support
+  HIDDEN:=1
+  KCONFIG=CONFIG_IIO_BACKEND
+  FILES:=$(LINUX_DIR)/drivers/iio/industrialio-backend.ko
+  AUTOLOAD:=$(call AutoProbe,industrialio-backend)
+  $(call AddDepends/iio)
+endef
+
+define KernelPackage/industrialio-backend/description
+  Framework to handle complex IIO aggregate devices. The typical
+  architecture that can make use of this framework is to have one
+  device as the frontend device which can be "linked" against one or
+  multiple backend devices. The framework then makes it easy to get
+  and control such backend devices.
+endef
+
+$(eval $(call KernelPackage,industrialio-backend))
+
+
 define KernelPackage/industrialio-hw-consumer
   TITLE:=Provides a bonding way to an other device in hardware
   KCONFIG:=CONFIG_IIO_BUFFER_HW_CONSUMER
@@ -128,6 +148,20 @@ define KernelPackage/iio-ads1015/description
 endef
 
 $(eval $(call KernelPackage,iio-ads1015))
+
+define KernelPackage/iio-mcp3422
+  TITLE:=Microchip MCP342x ADC driver
+  KCONFIG:=CONFIG_MCP3422
+  FILES:=$(LINUX_DIR)/drivers/iio/adc/mcp3422.ko
+  AUTOLOAD:=$(call AutoProbe,mcp3422)
+  $(call AddDepends/iio, +kmod-i2c-core)
+endef
+
+define KernelPackage/iio-mcp3422/description
+  Kernel module for the Microchip MCP342x I2C ADCs.
+endef
+
+$(eval $(call KernelPackage,iio-mcp3422))
 
 define KernelPackage/iio-hmc5843
   DEPENDS:=+kmod-i2c-core +kmod-regmap-i2c +kmod-industrialio-triggered-buffer

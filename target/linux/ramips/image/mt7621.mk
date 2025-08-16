@@ -1857,6 +1857,16 @@ define Device/jdcloud_re-cp-02
 endef
 TARGET_DEVICES += jdcloud_re-cp-02
 
+define Device/jdcloud_re-sp-01b
+  $(Device/dsa-migration)
+  IMAGE_SIZE := 27328k
+  DEVICE_VENDOR := JDCloud
+  DEVICE_MODEL := RE-SP-01B
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware \
+	kmod-mmc-mtk kmod-usb3
+endef
+TARGET_DEVICES += jdcloud_re-sp-01b
+
 define Device/keenetic_kn-1910
   $(Device/nand)
   $(Device/uimage-lzma-loader)
@@ -2605,6 +2615,13 @@ define Device/sim_simax1800t
 endef
 TARGET_DEVICES += sim_simax1800t
 
+define Device/sim_simax1800u
+  $(Device/haier-sim_wr1800k)
+  DEVICE_VENDOR := SIM
+  DEVICE_MODEL := SIMAX1800U
+endef
+TARGET_DEVICES += sim_simax1800u
+
 define Device/snr_snr-cpe-me1
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
@@ -2814,8 +2831,8 @@ define Device/tplink_eap615-wall-v1
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
   TPLINK_BOARD_ID := EAP615-WALL-V1
-  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | pad-to 64k
-  KERNEL_INITRAMFS := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd
+  KERNEL := kernel-bin | lzma -d22 | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | pad-to 64k
+  KERNEL_INITRAMFS := kernel-bin | lzma -d22 | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd
   IMAGE_SIZE := 13248k
 endef
 TARGET_DEVICES += tplink_eap615-wall-v1
@@ -2874,6 +2891,20 @@ define Device/tplink_ex220-v1
   IMAGE_SIZE := 15744k
 endef
 TARGET_DEVICES += tplink_ex220-v1
+
+define Device/tplink_ex220-v2
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := EX220
+  DEVICE_VARIANT := v2
+  DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
+  TPLINK_BOARD_ID := EX220-V2
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGE_SIZE := 15744k
+endef
+TARGET_DEVICES += tplink_ex220-v2
 
 define Device/tplink_mr600-v2-eu
   $(Device/dsa-migration)

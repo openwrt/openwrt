@@ -24,7 +24,7 @@
 
 	chosen {
 		stdout-path = &serial0;
-		bootargs = "console=ttyS0,115200n1 loglevel=8 pci=pcie_bus_perf root=PARTLABEL=rootfs";
+		bootargs = "console=ttyS0,115200n1 pci=pcie_bus_perf root=PARTLABEL=rootfs";
 	};
 
 	memory {
@@ -152,8 +152,6 @@
 		interrupt-parent = <&pio>;
 		interrupts = <21 IRQ_TYPE_EDGE_FALLING>;
 		pulses-per-revolution = <2>;
-
-		status = "okay";
 	};
 };
 
@@ -735,8 +733,6 @@
 			groups = "uart2";
 		};
 	};
-
-
 };
 
 &pwm {
@@ -754,10 +750,9 @@
 		compatible = "spi-nand";
 		reg = <0>;
 		spi-max-frequency = <52000000>;
-		spi-tx-buswidth = <4>;
-		spi-rx-buswidth = <4>;
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
 	};
-
 };
 
 &ssusb0 {

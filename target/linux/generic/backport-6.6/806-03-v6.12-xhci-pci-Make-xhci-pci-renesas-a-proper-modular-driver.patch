@@ -134,7 +134,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  MODULE_LICENSE("GPL v2");
 --- a/drivers/usb/host/xhci-pci.c
 +++ b/drivers/usb/host/xhci-pci.c
-@@ -300,15 +300,6 @@ static int xhci_pci_reinit(struct xhci_h
+@@ -310,15 +310,6 @@ static int xhci_pci_reinit(struct xhci_h
  static void xhci_pci_quirks(struct device *dev, struct xhci_hcd *xhci)
  {
  	struct pci_dev                  *pdev = to_pci_dev(dev);
@@ -150,7 +150,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  
  	/* Look for vendor-specific quirks */
  	if (pdev->vendor == PCI_VENDOR_ID_FRESCO_LOGIC &&
-@@ -643,21 +634,13 @@ static int xhci_pci_update_hub_device(st
+@@ -668,21 +659,13 @@ static int xhci_pci_update_hub_device(st
   * We need to register our own PCI probe function (instead of the USB core's
   * function) in order to create a second roothub under xHCI.
   */
@@ -173,7 +173,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	reset = devm_reset_control_get_optional_exclusive(&dev->dev, NULL);
  	if (IS_ERR(reset))
  		return PTR_ERR(reset);
-@@ -722,8 +705,24 @@ put_runtime_pm:
+@@ -747,8 +730,24 @@ put_runtime_pm:
  	pm_runtime_put_noidle(&dev->dev);
  	return retval;
  }
@@ -199,7 +199,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  {
  	struct xhci_hcd *xhci;
  	bool set_power_d3;
-@@ -750,6 +749,7 @@ static void xhci_pci_remove(struct pci_d
+@@ -775,6 +774,7 @@ static void xhci_pci_remove(struct pci_d
  	if (set_power_d3)
  		pci_set_power_state(dev, PCI_D3hot);
  }
@@ -207,7 +207,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  
  /*
   * In some Intel xHCI controllers, in order to get D3 working,
-@@ -959,19 +959,8 @@ static void xhci_pci_shutdown(struct usb
+@@ -984,19 +984,8 @@ static void xhci_pci_shutdown(struct usb
  
  /*-------------------------------------------------------------------------*/
  
@@ -227,7 +227,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	/* handle any USB 3.0 xHCI controller */
  	{ PCI_DEVICE_CLASS(PCI_CLASS_SERIAL_USB_XHCI, ~0),
  	},
-@@ -979,14 +968,6 @@ static const struct pci_device_id pci_id
+@@ -1004,14 +993,6 @@ static const struct pci_device_id pci_id
  };
  MODULE_DEVICE_TABLE(pci, pci_ids);
  

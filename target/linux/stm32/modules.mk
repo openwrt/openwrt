@@ -190,6 +190,21 @@ endef
 $(eval $(call KernelPackage,stm32-dcmi))
 
 
+define KernelPackage/stm32-dcmipp
+  TITLE:=STM32 Digital Camera Memory Interface Pixel Processor (DCMIPP) support
+  KCONFIG:=CONFIG_VIDEO_STM32_DCMIPP
+  FILES:=$(LINUX_DIR)/drivers/media/platform/st/stm32/stm32-dcmipp/stm32-dcmipp.ko
+  AUTOLOAD:=$(call AutoProbe,stm32-dcmipp)
+  $(call AddDepends/video,@TARGET_stm32 \
+	  @!LINUX_6_6 \
+	  +kmod-video-videobuf2 \
+	  +kmod-video-dma-contig \
+	  +kmod-video-fwnode)
+endef
+
+$(eval $(call KernelPackage,stm32-dcmipp))
+
+
 define KernelPackage/stm32-dfsdm-adc
   TITLE:=STM32 DFSDM ADC
   KCONFIG:=CONFIG_STM32_DFSDM_CORE \
@@ -197,7 +212,11 @@ define KernelPackage/stm32-dfsdm-adc
   FILES:=$(LINUX_DIR)/drivers/iio/adc/stm32-dfsdm-core.ko \
 	 $(LINUX_DIR)/drivers/iio/adc/stm32-dfsdm-adc.ko
   AUTOLOAD:=$(call AutoProbe,stm32-dfsdm-core stm32-dfsdm-adc)
-  $(call AddDepends/iio,@TARGET_stm32 +kmod-stm32-timer-trigger +kmod-industrialio-triggered-buffer +kmod-industrialio-hw-consumer)
+  $(call AddDepends/iio,@TARGET_stm32 \
+	  +kmod-stm32-timer-trigger \
+	  +kmod-industrialio-triggered-buffer \
+	  +kmod-industrialio-hw-consumer \
+	  +!LINUX_6_6:kmod-industrialio-backend)
 endef
 
 $(eval $(call KernelPackage,stm32-dfsdm-adc))

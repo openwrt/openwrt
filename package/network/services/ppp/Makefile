@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ppp
 PKG_VERSION:=2.5.2
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/ppp-project/ppp
@@ -55,14 +55,14 @@ endef
 
 define Package/ppp
 $(call Package/ppp/Default)
-  DEPENDS:=+kmod-ppp
+  DEPENDS:= +USE_GLIBC:libcrypt-compat +kmod-ppp
   TITLE:=PPP daemon
   VARIANT:=default
 endef
 
 define Package/ppp-multilink
 $(call Package/ppp/Default)
-  DEPENDS:=+kmod-ppp
+  DEPENDS:= +USE_GLIBC:libcrypt-compat +kmod-ppp
   TITLE:=PPP daemon (with multilink support)
   VARIANT:=multilink
 endef

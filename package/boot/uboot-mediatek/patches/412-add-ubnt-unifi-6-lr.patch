@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/configs/mt7622_ubnt_unifi-6-lr-v1_defconfig
-@@ -0,0 +1,114 @@
+@@ -0,0 +1,113 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -56,9 +56,8 @@
 +CONFIG_CMD_MTDPARTS=y
 +CONFIG_MTDPARTS_DEFAULT="mtdparts=nor0:128k(bl2),640k(fip),64k(u-boot-env),256k(factory),64k(eeprom),15232k(recovery),-(firmware)"
 +CONFIG_ENV_IS_IN_MTD=y
-+CONFIG_ENV_MTD_NAME="nor0"
-+CONFIG_ENV_SIZE_REDUND=0x4000
 +CONFIG_SYS_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_MTD_DEV="nor0"
 +CONFIG_USE_DEFAULT_ENV_FILE=y
 +CONFIG_DEFAULT_ENV_FILE="defenvs/ubnt_unifi-6-lr_env"
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
@@ -117,7 +116,7 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/configs/mt7622_ubnt_unifi-6-lr-v2_defconfig
-@@ -0,0 +1,114 @@
+@@ -0,0 +1,113 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -173,9 +172,8 @@
 +CONFIG_CMD_MTDPARTS=y
 +CONFIG_MTDPARTS_DEFAULT="mtdparts=nor0:128k(bl2),640k(fip),64k(u-boot-env),256k(factory),64k(eeprom),15232k(recovery),-(firmware)"
 +CONFIG_ENV_IS_IN_MTD=y
-+CONFIG_ENV_MTD_NAME="nor0"
-+CONFIG_ENV_SIZE_REDUND=0x4000
 +CONFIG_SYS_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_MTD_DEV="nor0"
 +CONFIG_USE_DEFAULT_ENV_FILE=y
 +CONFIG_DEFAULT_ENV_FILE="defenvs/ubnt_unifi-6-lr-v2_env"
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
@@ -234,7 +232,7 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/configs/mt7622_ubnt_unifi-6-lr-v3_defconfig
-@@ -0,0 +1,113 @@
+@@ -0,0 +1,112 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -290,9 +288,8 @@
 +CONFIG_CMD_MTDPARTS=y
 +CONFIG_MTDPARTS_DEFAULT="mtdparts=nor0:128k(bl2),640k(fip),64k(u-boot-env),256k(factory),64k(eeprom),15232k(recovery),-(firmware)"
 +CONFIG_ENV_IS_IN_MTD=y
-+CONFIG_ENV_MTD_NAME="nor0"
-+CONFIG_ENV_SIZE_REDUND=0x4000
 +CONFIG_SYS_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_MTD_DEV="nor0"
 +CONFIG_USE_DEFAULT_ENV_FILE=y
 +CONFIG_DEFAULT_ENV_FILE="defenvs/ubnt_unifi-6-lr_env"
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
@@ -742,7 +739,7 @@
 +};
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
-@@ -1135,6 +1135,8 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
+@@ -1118,6 +1118,8 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
  	mt7623a-unielec-u7623-02-emmc.dtb \
  	mt7622-bananapi-bpi-r64.dtb \
  	mt7622-linksys-e8450-ubi.dtb \
@@ -920,7 +917,7 @@
  
  DECLARE_GLOBAL_DATA_PTR;
  
-@@ -402,6 +403,20 @@ static int initr_onenand(void)
+@@ -423,6 +424,20 @@ static int initr_onenand(void)
  }
  #endif
  
@@ -941,13 +938,13 @@
  #ifdef CONFIG_MMC
  static int initr_mmc(void)
  {
-@@ -710,6 +725,9 @@ static init_fnc_t init_sequence_r[] = {
- #ifdef CONFIG_NMBM_MTD
- 	initr_nmbm,
+@@ -735,6 +750,9 @@ static void initcall_run_r(void)
+ #if CONFIG_IS_ENABLED(NMBM_MTD)
+ 	INITCALL(initr_nmbm);
  #endif
-+#ifdef CONFIG_SPI_FLASH
-+	initr_spiflash,
++#if CONFIG_IS_ENABLED(SPI_FLASH)
++	INITCALL(initr_spiflash);
 +#endif
- #ifdef CONFIG_MMC
- 	initr_mmc,
+ #if CONFIG_IS_ENABLED(MMC)
+ 	INITCALL(initr_mmc);
  #endif

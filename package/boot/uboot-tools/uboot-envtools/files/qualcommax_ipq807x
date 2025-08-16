@@ -7,24 +7,6 @@ touch /etc/config/ubootenv
 
 board=$(board_name)
 
-ubootenv_add_mtd() {
-	local idx="$(find_mtd_index "${1}")"
-	[ -n "$idx" ] && \
-		ubootenv_add_uci_config "/dev/mtd$idx" "${2}" "${3}" "${4}"
-}
-
-ubootenv_add_sys_mtd() {
-	local idx="$(find_mtd_index "${1}")"
-	[ -n "$idx" ] && \
-		ubootenv_add_uci_sys_config "/dev/mtd$idx" "${2}" "${3}" "${4}"
-}
-
-ubootenv_add_mmc() {
-	local mmcpart="$(find_mmc_part "${1}")"
-	[ -n "$mmcpart" ] && \
-		ubootenv_add_uci_config "$mmcpart" "${2}" "${3}" "${4}" "${5}"
-}
-
 case "$board" in
 aliyun,ap8220|\
 compex,wpq873|\
@@ -66,14 +48,14 @@ xiaomi,ax9000)
 	ubootenv_add_sys_mtd "bdata" "0x0" "0x10000" "0x20000"
 	;;
 prpl,haze)
-	ubootenv_add_mmc "0:APPSBLENV" "0x0" "0x40000" "0x400" "0x100"
+	ubootenv_add_mmc "0:APPSBLENV" "" "0x0" "0x40000" "0x400" "0x100"
 	;;
 asus,rt-ax89x|\
 qnap,301w)
 	ubootenv_add_mtd "0:appsblenv" "0x0" "0x20000" "0x20000"
 	;;
 spectrum,sax1v1k)
-	ubootenv_add_mmc "0:APPSBLENV" "0x0" "0x40000" "0x40000" "1"
+	ubootenv_add_mmc "0:APPSBLENV" "" "0x0" "0x40000" "0x40000" "1"
 	;;
 esac
 

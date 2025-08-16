@@ -33,13 +33,13 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  {
  	struct b53_device *dev = ds->priv;
 -	u8 rgmii_ctrl = 0, off;
-+	u8 rgmii_ctrl = 0;
- 
+-
 -	if (port == dev->imp_port)
 -		off = B53_RGMII_CTRL_IMP;
 -	else
 -		off = B53_RGMII_CTRL_P(port);
--
++	u8 rgmii_ctrl = 0;
+ 
 -	b53_read8(dev, B53_CTRL_PAGE, off, &rgmii_ctrl);
 +	b53_read8(dev, B53_CTRL_PAGE, B53_RGMII_CTRL_P(port), &rgmii_ctrl);
  	rgmii_ctrl &= ~(RGMII_CTRL_DLL_RXC | RGMII_CTRL_DLL_TXC);
@@ -59,7 +59,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	dev_dbg(ds->dev, "Configured port %d for %s\n", port,
  		phy_modes(interface));
-@@ -1484,7 +1478,7 @@ static void b53_phylink_mac_config(struc
+@@ -1490,7 +1484,7 @@ static void b53_phylink_mac_config(struc
  	struct b53_device *dev = ds->priv;
  	int port = dp->index;
  

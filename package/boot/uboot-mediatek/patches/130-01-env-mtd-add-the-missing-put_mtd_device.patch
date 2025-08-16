@@ -1,0 +1,47 @@
+From 0508c8e120d275d994e6099eb9c60bfaec0c3f5f Mon Sep 17 00:00:00 2001
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Mon, 21 Jul 2025 21:32:16 +0800
+Subject: [PATCH 1/2] env: mtd: add the missing put_mtd_device()
+
+The mtd device is got in setup_mtd_device(), we must put the mtd
+device before exiting the function to update the mtd use count. This
+patch fixes the following env error:
+
+> Removing MTD device #2 (u-boot-env) with use count 1
+> Error when deleting partition "u-boot-env" (-16)
+
+Fixes: 03fb08d4aef8 ("env: Introduce support for MTD")
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ env/mtd.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/env/mtd.c
++++ b/env/mtd.c
+@@ -131,6 +131,8 @@ static int env_mtd_save(void)
+ 	puts("done\n");
+ 
+ done:
++	put_mtd_device(mtd_env);
++
+ 	if (saved_buf)
+ 		free(saved_buf);
+ 
+@@ -188,6 +190,8 @@ static int env_mtd_load(void)
+ 		gd->env_valid = ENV_VALID;
+ 
+ out:
++	put_mtd_device(mtd_env);
++
+ 	free(buf);
+ 
+ 	return ret;
+@@ -280,6 +284,8 @@ static int env_mtd_erase(void)
+ 	ret = 0;
+ 
+ done:
++	put_mtd_device(mtd_env);
++
+ 	if (saved_buf)
+ 		free(saved_buf);
+ 

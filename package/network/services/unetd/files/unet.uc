@@ -1024,6 +1024,13 @@ const host_editor = {
 					return keys(groups);
 				}
 			}
+		},
+		meta: {
+			help: "Metadata",
+			args: {
+				type: "json",
+				data_type: "object",
+			},
 		}
 	},
 };

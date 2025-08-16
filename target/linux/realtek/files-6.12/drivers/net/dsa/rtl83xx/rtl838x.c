@@ -155,9 +155,9 @@ static void rtl838x_vlan_tables_read(u32 vlan, struct rtl838x_vlan_info *info)
 	struct table_reg *r = rtl_table_get(RTL8380_TBL_0, 0);
 
 	rtl_table_read(r, vlan);
-	info->tagged_ports = sw_r32(rtl_table_data(r, 0));
+	info->member_ports = sw_r32(rtl_table_data(r, 0));
 	v = sw_r32(rtl_table_data(r, 1));
-	pr_debug("VLAN_READ %d: %016llx %08x\n", vlan, info->tagged_ports, v);
+	pr_debug("VLAN_READ %d: %016llx %08x\n", vlan, info->member_ports, v);
 	rtl_table_release(r);
 
 	info->profile_id = v & 0x7;
@@ -178,7 +178,7 @@ static void rtl838x_vlan_set_tagged(u32 vlan, struct rtl838x_vlan_info *info)
 	/* Access VLAN table (0) via register 0 */
 	struct table_reg *r = rtl_table_get(RTL8380_TBL_0, 0);
 
-	sw_w32(info->tagged_ports, rtl_table_data(r, 0));
+	sw_w32(info->member_ports, rtl_table_data(r, 0));
 
 	v = info->profile_id;
 	v |= info->hash_mc_fid ? 0x8 : 0;
@@ -1766,169 +1766,6 @@ irqreturn_t rtl838x_switch_irq(int irq, void *dev_id)
 	}
 
 	return IRQ_HANDLED;
-}
-
-int rtl838x_smi_wait_op(int timeout)
-{
-	int ret = 0;
-	u32 val;
-
-	ret = readx_poll_timeout(sw_r32, RTL838X_SMI_ACCESS_PHY_CTRL_1,
-				 val, !(val & 0x1), 20, timeout);
-	if (ret)
-		pr_err("%s: timeout\n", __func__);
-
-	return ret;
-}
-
-/* Reads a register in a page from the PHY */
-int rtl838x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
-{
-	u32 v, park_page = 0x1f << 15;
-	int err;
-
-	if (port > 31) {
-		*val = 0xffff;
-		return 0;
-	}
-
-	if (page > 4095 || reg > 31)
-		return -ENOTSUPP;
-
-	mutex_lock(&smi_lock);
-
-	err = rtl838x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	sw_w32_mask(0xffff0000, port << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
-
-	v = reg << 20 | page << 3;
-	sw_w32(v | park_page, RTL838X_SMI_ACCESS_PHY_CTRL_1);
-	sw_w32_mask(0, 1, RTL838X_SMI_ACCESS_PHY_CTRL_1);
-
-	err = rtl838x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	*val = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_2) & 0xffff;
-
-	err = 0;
-
-errout:
-	mutex_unlock(&smi_lock);
-
-	return err;
-}
-
-/* Write to a register in a page of the PHY */
-int rtl838x_write_phy(u32 port, u32 page, u32 reg, u32 val)
-{
-	u32 v, park_page = 0x1f << 15;
-	int err;
-
-	val &= 0xffff;
-	if (port > 31 || page > 4095 || reg > 31)
-		return -ENOTSUPP;
-
-	mutex_lock(&smi_lock);
-	err = rtl838x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	sw_w32(BIT(port), RTL838X_SMI_ACCESS_PHY_CTRL_0);
-	mdelay(10);
-
-	sw_w32_mask(0xffff0000, val << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
-
-	v = reg << 20 | page << 3 | 0x4;
-	sw_w32(v | park_page, RTL838X_SMI_ACCESS_PHY_CTRL_1);
-	sw_w32_mask(0, 1, RTL838X_SMI_ACCESS_PHY_CTRL_1);
-
-	err = rtl838x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	err = 0;
-
-errout:
-	mutex_unlock(&smi_lock);
-
-	return err;
-}
-
-/* Read an mmd register of a PHY */
-int rtl838x_read_mmd_phy(u32 port, u32 addr, u32 reg, u32 *val)
-{
-	int err;
-	u32 v;
-
-	mutex_lock(&smi_lock);
-
-	err = rtl838x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	sw_w32(1 << port, RTL838X_SMI_ACCESS_PHY_CTRL_0);
-	mdelay(10);
-
-	sw_w32_mask(0xffff0000, port << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
-
-	v = addr << 16 | reg;
-	sw_w32(v, RTL838X_SMI_ACCESS_PHY_CTRL_3);
-
-	/* mmd-access | read | cmd-start */
-	v = 1 << 1 | 0 << 2 | 1;
-	sw_w32(v, RTL838X_SMI_ACCESS_PHY_CTRL_1);
-
-	err = rtl838x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	*val = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_2) & 0xffff;
-
-	err = 0;
-
-errout:
-	mutex_unlock(&smi_lock);
-
-	return err;
-}
-
-/* Write to an mmd register of a PHY */
-int rtl838x_write_mmd_phy(u32 port, u32 addr, u32 reg, u32 val)
-{
-	int err;
-	u32 v;
-
-	pr_debug("MMD write: port %d, dev %d, reg %d, val %x\n", port, addr, reg, val);
-	val &= 0xffff;
-	mutex_lock(&smi_lock);
-
-	err = rtl838x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	sw_w32(1 << port, RTL838X_SMI_ACCESS_PHY_CTRL_0);
-	mdelay(10);
-
-	sw_w32_mask(0xffff0000, val << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
-
-	sw_w32_mask(0x1f << 16, addr << 16, RTL838X_SMI_ACCESS_PHY_CTRL_3);
-	sw_w32_mask(0xffff, reg, RTL838X_SMI_ACCESS_PHY_CTRL_3);
-	/* mmd-access | write | cmd-start */
-	v = 1 << 1 | 1 << 2 | 1;
-	sw_w32(v, RTL838X_SMI_ACCESS_PHY_CTRL_1);
-
-	err = rtl838x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	err = 0;
-
-errout:
-	mutex_unlock(&smi_lock);
-	return err;
 }
 
 void rtl8380_get_version(struct rtl838x_switch_priv *priv)

@@ -419,7 +419,7 @@ $(eval $(call KernelPackage,md-raid456))
 
 
 define KernelPackage/md-multipath
-$(call KernelPackage/md/Depends,)
+$(call KernelPackage/md/Depends,@LINUX_6_6)
   TITLE:=MD Multipath Module
   KCONFIG:=CONFIG_MD_MULTIPATH
   FILES:=$(LINUX_DIR)/drivers/md/multipath.ko

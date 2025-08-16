@@ -315,6 +315,12 @@ ifeq ($(DUMP),1)
     ifneq ($(CONFIG_PCIEPORTBUS),)
       FEATURES += pcie
     endif
+    ifneq ($(CONFIG_PINCTRL),)
+      FEATURES += pinctrl
+    endif
+    ifneq ($(CONFIG_PM),)
+      FEATURES += pm
+    endif
     ifneq ($(CONFIG_PWM),)
       FEATURES += pwm
     endif
@@ -383,7 +389,7 @@ define BuildTargets/DumpCurrent
 	 echo 'Default-Packages: $(DEFAULT_PACKAGES) $(call extra_packages,$(DEFAULT_PACKAGES))'; \
 	 $(DUMPINFO)
 	$(if $(CUR_SUBTARGET),$(SUBMAKE) -r --no-print-directory -C image -s DUMP=1 SUBTARGET=$(CUR_SUBTARGET))
-	$(if $(SUBTARGET),,@$(foreach SUBTARGET,$(SUBTARGETS),$(SUBMAKE) -s DUMP=1 SUBTARGET=$(SUBTARGET); ))
+	$(if $(SUBTARGET),,@$(foreach SUBTARGET,$(SUBTARGETS),$(SUBMAKE) --no-print-directory -s DUMP=1 SUBTARGET=$(SUBTARGET); ))
 endef
 
 include $(INCLUDE_DIR)/kernel.mk

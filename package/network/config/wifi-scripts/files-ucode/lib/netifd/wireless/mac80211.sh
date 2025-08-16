@@ -8,6 +8,7 @@ import * as supplicant from 'wifi.supplicant';
 import * as hostapd from 'wifi.hostapd';
 import * as netifd from 'wifi.netifd';
 import * as iface from 'wifi.iface';
+import { find_phy } from 'wifi.utils';
 import * as nl80211 from 'nl80211';
 import * as fs from 'fs';
 
@@ -39,101 +40,6 @@ function reset_config(phy, radio) {
 
 	name = phy + phy_suffix(radio, ":");
 	system(`ucode /usr/share/hostap/wdev.uc ${name} set_config '{}'`);
-}
-
-function phy_filename(phy, name) {
-	return `/sys/class/ieee80211/${phy}/${name}`;
-}
-
-function phy_file(phy, name) {
-	return fs.readfile(phy_filename(phy, name));
-}
-
-function phy_index(phy) {
-	return +phy_file(phy, "index");
-}
-
-function phy_path_match(phy, path) {
-	let phy_path = fs.realpath(phy_filename(phy, "device"));
-	return substr(phy_path, -length(path)) == path;
-}
-
-function __find_phy_by_path(phys, path) {
-	if (!path)
-		return null;
-
-	path = split(path, "+");
-	phys = filter(phys, (phy) => phy_path_match(phy, path[0]));
-	phys = sort(phys, (a, b) => phy_index(a) - phy_index(b));
-
-	return phys[+path[1]];
-}
-
-function find_phy_by_macaddr(phys, macaddr) {
-	macaddr = lc(macaddr);
-	return filter(phys, (phy) => phy_file(phy, "macaddr") == macaddr)[0];
-}
-
-function rename_phy_by_name(phys, name) {
-	let data = json(fs.readfile("/etc/board.json")).wlan;
-	if (!data)
-		return;
-
-	data = data[name];
-	if (!data)
-		return;
-
-	let prev_name = __find_phy_by_path(phys, data.path);
-	if (!prev_name)
-		return;
-
-	let idx = phy_index(prev_name);
-	nl80211.request(nl80211.const.NL80211_CMD_SET_WIPHY, 0, {
-		wiphy: idx,
-		wiphy_name: name
-	});
-	return true;
-}
-
-function find_phy_by_path(phys, path) {
-	let name = __find_phy_by_path(phys, path);
-	if (!name)
-		return;
-
-	let data = json(fs.readfile("/etc/board.json")).wlan;
-	if (!data || data[name])
-		return name;
-
-	for (let cur_name, cur_data in data) {
-		if (!phy_path_match(name, cur_data.path))
-			continue;
-
-		let idx = phy_index(name);
-		nl80211.request(nl80211.const.NL80211_CMD_SET_WIPHY, 0, {
-			wiphy: idx,
-			wiphy_name: cur_name
-		});
-
-		return cur_name;
-	}
-
-	return name;
-}
-
-function find_phy_by_name(phys, name) {
-	if (index(phys, name) >= 0)
-		return name;
-
-	rename_phy_by_name(phys, name);
-	return index(phys, name) < 0 ? null : name;
-}
-
-function find_phy(config) {
-	let phys = fs.lsdir("/sys/class/ieee80211");
-
-	return find_phy_by_path(phys, config.path) ??
-	       find_phy_by_macaddr(phys, config.macaddr) ??
-	       find_phy_by_name(phys, config.phy);
 }
 
 function get_channel_frequency(band, channel) {
@@ -198,9 +104,9 @@ function setup_phy(phy, config, data) {
 	system(`iw phy ${phy} set txpower ${config.txpower}`);
 
 	if (config.frag)
-		system(`iw phy ${phy} set frag ${frag}`);
+		system(`iw phy ${phy} set frag ${config.frag}`);
 	if (config.rts)
-		system(`iw phy ${phy} set rts ${rts}`);
+		system(`iw phy ${phy} set rts ${config.rts}`);
 }
 
 function iw_htmode(config) {
@@ -251,10 +157,40 @@ function config_add_mesh_params(config, data) {
 		config_add(config, param, data[param]);
 }
 
+function setup_mlo(data) {
+	let config = {};
+	let idx = 0;
+
+	for (let k, v in data.interfaces) {
+		let ifname = v.config.ifname;
+		if (!ifname)
+			ifname = 'ap-mld' + idx++;
+
+		delete v.config.ifname;
+		config[ifname] = v.config;
+		netifd.set_vif(k, ifname);
+
+		v.config.phy = find_phy(v.config.radio_config[0], true);
+		delete v.config.radio_config;
+	}
+
+	let ret = ubus.call('hostapd', 'mld_set', { config });
+	if (type(ret) != "object")
+		return netifd.setup_failed('HOSTAPD_START_FAILED');
+
+	netifd.add_process('/usr/sbin/hostapd', ret.pid, true, true);
+	netifd.set_up();
+
+	return 0;
+}
+
 function setup() {
 	let data = json(ARGV[3]);
 
-	data.phy = find_phy(data.config);
+	if (ARGV[2] == "#mlo")
+		return setup_mlo(data);
+
+	data.phy = find_phy(data.config, true);
 	if (!data.phy) {
 		log('Bug: PHY is undefined for device');
 		netifd.set_retry(false);
@@ -294,6 +230,7 @@ function setup() {
 		}
 
 		switch (mode) {
+		case 'link':
 		case 'ap':
 			has_ap = true;
 			// fallthrough
@@ -304,7 +241,8 @@ function setup() {
 				data.config.noscan = true;
 			validate('iface', v.config);
 			iface.prepare(v.config, data.phy + data.phy_suffix, data.config.num_global_macaddr, data.config.macaddr_base);
-			netifd.set_vif(k, v.config.ifname);
+			if (mode != "link")
+				netifd.set_vif(k, v.config.ifname);
 			break;
 		}
 
@@ -370,6 +308,9 @@ function setup() {
 
 function teardown() {
 	let data = json(ARGV[3]);
+
+	if (ARGV[2] == "#mlo")
+		return 0;
 
 	if (!data.data?.phy) {
 		log('Bug: PHY is undefined for device');

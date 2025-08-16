@@ -216,6 +216,10 @@ default_prerm() {
 	local filelist="${root}/usr/lib/opkg/info/${pkgname}.list"
 	[ -f "$root/lib/apk/packages/${pkgname}.list" ] && filelist="$root/lib/apk/packages/${pkgname}.list"
 
+	if [ -e "$root/lib/apk/packages/${pkgname}.alternatives" ]; then
+		update_alternatives remove "${pkgname}"
+	fi
+
 	if [ -f "$root/usr/lib/opkg/info/${pkgname}.prerm-pkg" ]; then
 		( . "$root/usr/lib/opkg/info/${pkgname}.prerm-pkg" )
 		ret=$?
@@ -352,8 +356,7 @@ default_postinst() {
 		add_group_and_user "${pkgname}"
 	fi
 
-	if [ -e "${root}/lib/apk/packages/${pkgname}.list" ]; then
-		filelist="${root}/lib/apk/packages/${pkgname}.list"
+	if [ -e "${root}/lib/apk/packages/${pkgname}.alternatives" ]; then
 		update_alternatives install "${pkgname}"
 	fi
 
@@ -444,7 +447,7 @@ find_mmc_part() {
 	fi
 
 	for DEVNAME in /sys/block/$ROOTDEV/mmcblk*p*; do
-		PARTNAME="$(grep PARTNAME ${DEVNAME}/uevent | cut -f2 -d'=')"
+		PARTNAME="$(grep PARTNAME ${DEVNAME}/uevent | cut -f2 -d'=' 2>/dev/null)"
 		[ "$PARTNAME" = "$1" ] && echo "/dev/$(basename $DEVNAME)" && return 0
 	done
 }

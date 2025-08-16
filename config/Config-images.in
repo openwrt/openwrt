@@ -87,6 +87,23 @@ menu "Target Images"
 
 	comment "Root filesystem images"
 
+	menuconfig TARGET_ROOTFS_EROFS
+		bool "erofs"
+		default y if USES_EROFS
+		select KERNEL_EROFS_FS
+		help
+		  Build a EROFS root filesystem.
+
+		config TARGET_EROFS_PCLUSTER_SIZE
+			int "physical cluster size (in KiB)"
+			depends on TARGET_ROOTFS_EROFS
+			default 64 if LOW_MEMORY_FOOTPRINT
+			default 1024 if (SMALL_FLASH && !LOW_MEMORY_FOOTPRINT)
+			default 256
+			help
+			  Specify the EROFS physical cluster size (must be equal
+			  to or a multiple of the filesystem block size).
+
 	menuconfig TARGET_ROOTFS_EXT4FS
 		bool "ext4"
 		default y if USES_EXT4
@@ -214,7 +231,7 @@ menu "Target Images"
 	config GRUB_IMAGES
 		bool "Build GRUB images (Linux x86 or x86_64 host only)"
 		depends on TARGET_x86
-		depends on TARGET_ROOTFS_EXT4FS || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS
+		depends on TARGET_ROOTFS_EXT4FS || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS || TARGET_ROOTFS_EROFS
 		select PACKAGE_grub2
 		select PACKAGE_grub2-bios-setup
 		default y
@@ -222,7 +239,7 @@ menu "Target Images"
 	config GRUB_EFI_IMAGES
 		bool "Build GRUB EFI images"
 		depends on TARGET_x86 || TARGET_armsr || TARGET_loongarch64
-		depends on TARGET_ROOTFS_EXT4FS || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS
+		depends on TARGET_ROOTFS_EXT4FS || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS || TARGET_ROOTFS_EROFS
 		select PACKAGE_grub2 if TARGET_x86
 		select PACKAGE_grub2-efi if TARGET_x86
 		select PACKAGE_grub2-bios-setup if TARGET_x86

@@ -17,11 +17,68 @@ struct fdb_update_work {
 	u64 macs[];
 };
 
-#define MIB_DESC(_size, _offset, _name) {.size = _size, .offset = _offset, .name = _name}
-struct rtl83xx_mib_desc {
-	unsigned int size;
+enum mib_reg {
+	MIB_REG_INVALID = 0,
+	MIB_REG_STD,
+	MIB_REG_PRV
+};
+
+#define MIB_ITEM(_reg, _offset, _size) \
+		{.reg = _reg, .offset = _offset, .size = _size}
+
+#define MIB_LIST_ITEM(_name, _item) \
+		{.name = _name, .item = _item}
+
+struct rtldsa_mib_item {
+	enum mib_reg reg;
 	unsigned int offset;
+	unsigned int size;
+};
+
+struct rtldsa_mib_list_item {
 	const char *name;
+	struct rtldsa_mib_item item;
+};
+
+struct rtldsa_mib_desc {
+	struct rtldsa_mib_item symbol_errors;
+
+	struct rtldsa_mib_item if_in_octets;
+	struct rtldsa_mib_item if_out_octets;
+	struct rtldsa_mib_item if_in_ucast_pkts;
+	struct rtldsa_mib_item if_in_mcast_pkts;
+	struct rtldsa_mib_item if_in_bcast_pkts;
+	struct rtldsa_mib_item if_out_ucast_pkts;
+	struct rtldsa_mib_item if_out_mcast_pkts;
+	struct rtldsa_mib_item if_out_bcast_pkts;
+	struct rtldsa_mib_item if_out_discards;
+	struct rtldsa_mib_item single_collisions;
+	struct rtldsa_mib_item multiple_collisions;
+	struct rtldsa_mib_item deferred_transmissions;
+	struct rtldsa_mib_item late_collisions;
+	struct rtldsa_mib_item excessive_collisions;
+	struct rtldsa_mib_item crc_align_errors;
+	struct rtldsa_mib_item rx_pkts_over_max_octets;
+
+	struct rtldsa_mib_item unsupported_opcodes;
+
+	struct rtldsa_mib_item rx_undersize_pkts;
+	struct rtldsa_mib_item rx_oversize_pkts;
+	struct rtldsa_mib_item rx_fragments;
+	struct rtldsa_mib_item rx_jabbers;
+
+	struct rtldsa_mib_item tx_pkts[ETHTOOL_RMON_HIST_MAX];
+	struct rtldsa_mib_item rx_pkts[ETHTOOL_RMON_HIST_MAX];
+	struct ethtool_rmon_hist_range rmon_ranges[ETHTOOL_RMON_HIST_MAX];
+
+	struct rtldsa_mib_item drop_events;
+	struct rtldsa_mib_item collisions;
+
+	struct rtldsa_mib_item rx_pause_frames;
+	struct rtldsa_mib_item tx_pause_frames;
+
+	size_t list_count;
+	const struct rtldsa_mib_list_item *list;
 };
 
 /* API for switch table access */
@@ -82,9 +139,6 @@ int rtl83xx_port_is_under(const struct net_device * dev, struct rtl838x_switch_p
 void rtl83xx_port_stp_state_set(struct dsa_switch *ds, int port, u8 state);
 int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type_data);
 
-int read_phy(u32 port, u32 page, u32 reg, u32 *val);
-int write_phy(u32 port, u32 page, u32 reg, u32 val);
-
 /* Port register accessor functions for the RTL839x and RTL931X SoCs */
 void rtl839x_mask_port_reg_be(u64 clear, u64 set, int reg);
 u32 rtl839x_get_egress_rate(struct rtl838x_switch_priv *priv, int port);
@@ -121,7 +175,7 @@ void rtl839x_print_matrix(void);
 
 /* RTL930x-specific */
 u32 rtl930x_hash(struct rtl838x_switch_priv *priv, u64 seed);
-irqreturn_t rtl930x_switch_irq(int irq, void *dev_id);
+irqreturn_t rtldsa_930x_switch_irq(int irq, void *dev_id);
 irqreturn_t rtl839x_switch_irq(int irq, void *dev_id);
 void rtl930x_vlan_profile_dump(int index);
 int rtl9300_sds_power(int mac, int val);
@@ -133,20 +187,12 @@ irqreturn_t rtl931x_switch_irq(int irq, void *dev_id);
 int rtl931x_sds_cmu_band_get(int sds, phy_interface_t mode);
 int rtl931x_sds_cmu_band_set(int sds, bool enable, u32 band, phy_interface_t mode);
 extern void rtl931x_sds_init(u32 sds, phy_interface_t mode);
+void rtl931x_print_matrix(void);
 
 int rtl83xx_lag_add(struct dsa_switch *ds, int group, int port, struct netdev_lag_upper_info *info);
 int rtl83xx_lag_del(struct dsa_switch *ds, int group, int port);
 
 /* phy functions that will need to be moved to the future mdio driver */
-
-int rtl838x_read_mmd_phy(u32 port, u32 addr, u32 reg, u32 *val);
-int rtl838x_write_mmd_phy(u32 port, u32 addr, u32 reg, u32 val);
-
-int rtl839x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val);
-int rtl839x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val);
-
-int rtl930x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val);
-int rtl930x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val);
 
 int rtl931x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val);
 int rtl931x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val);

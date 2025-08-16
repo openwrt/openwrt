@@ -339,6 +339,15 @@ define Device/hiwifi_hc5861b
 endef
 TARGET_DEVICES += hiwifi_hc5861b
 
+define Device/hongdian_h7920-v40
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := Hongdian
+  DEVICE_MODEL := H7920
+  DEVICE_VARIANT := v40
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
+endef
+TARGET_DEVICES += hongdian_h7920-v40
+
 define Device/iptime_a3
   IMAGE_SIZE := 7936k
   UIMAGE_NAME := a3
@@ -383,6 +392,29 @@ define Device/jotale_js76x8-32m
   DEVICE_VARIANT := 32M
 endef
 TARGET_DEVICES += jotale_js76x8-32m
+
+define Device/keenetic_kn-1112
+  BLOCKSIZE := 64k
+  IMAGE_SIZE := 16121856
+  DEVICE_VENDOR := Keenetic
+  DEVICE_MODEL := KN-1112
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to $$$$(BLOCKSIZE) | \
+	check-size | zyimage -d 0x801112 -v "KN-1112"
+endef
+TARGET_DEVICES += keenetic_kn-1112
+
+define Device/keenetic_kn-1212
+  BLOCKSIZE := 64k
+  IMAGE_SIZE := 15073280
+  DEVICE_VENDOR := Keenetic
+  DEVICE_MODEL := KN-1212
+  DEVICE_PACKAGES := kmod-usb2
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to $$$$(BLOCKSIZE) | \
+	check-size | zyimage -d 0x801212 -v "KN-1212"
+endef
+TARGET_DEVICES += keenetic_kn-1212
 
 define Device/keenetic_kn-1221
   BLOCKSIZE := 64k
@@ -1131,6 +1163,14 @@ define Device/wavlink_wl-wn570ha1
 endef
 TARGET_DEVICES += wavlink_wl-wn570ha1
 
+define Device/wavlink_wl-wn570ha2
+  IMAGE_SIZE := 15488k
+  DEVICE_VENDOR := Wavlink
+  DEVICE_MODEL := WL-WN570HA2
+  DEVICE_PACKAGES := kmod-mt7615e kmod-mt7663-firmware-ap kmod-mt7603
+endef
+TARGET_DEVICES += wavlink_wl-wn570ha2
+
 define Device/wavlink_wl-wn575a3
   IMAGE_SIZE := 7872k
   DEVICE_VENDOR := Wavlink
@@ -1196,6 +1236,15 @@ define Device/wiznet_wizfi630s
   SUPPORTED_DEVICES += wizfi630s
 endef
 TARGET_DEVICES += wiznet_wizfi630s
+
+define Device/wodesys_wd-r1208u
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := Wodesys
+  DEVICE_MODEL := WD-R1208U
+  DEVICE_PACKAGES := kmod-mt76x2
+  SUPPORTED_DEVICES += mtk-apsoc-demo
+endef
+TARGET_DEVICES += wodesys_wd-r1208u
 
 define Device/wrtnode_wrtnode2p
   IMAGE_SIZE := 32448k

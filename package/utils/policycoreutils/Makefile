@@ -7,7 +7,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=policycoreutils
 PKG_VERSION:=3.8.1
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/SELinuxProject/selinux/releases/download/$(PKG_VERSION)
@@ -75,11 +75,11 @@ ALTS_setfiles:=300:/sbin/restorecon:/sbin/policycoreutils-setfiles 300:/sbin/set
 
 DEPENDS_genhomedircon:=+libsemanage $(INTL_DEPENDS)
 DEPENDS_load_policy:=+libselinux $(INTL_DEPENDS)
-DEPENDS_newrole:=+libselinux +libaudit +BUSYBOX_CONFIG_PAM:libpam $(INTL_DEPENDS)
+DEPENDS_newrole:= +USE_GLIBC:libcrypt-compat +libselinux +libaudit +BUSYBOX_CONFIG_PAM:libpam $(INTL_DEPENDS)
 DEPENDS_open_init_pty:=$(INTL_DEPENDS)
 DEPENDS_pp:=+libsepol $(INTL_DEPENDS)
 DEPENDS_restorecon_xattr:=+libselinux +libsepol +libaudit $(INTL_DEPENDS)
-DEPENDS_run_init:=+libselinux +libaudit +BUSYBOX_CONFIG_PAM:libpam $(INTL_DEPENDS)
+DEPENDS_run_init:= +USE_GLIBC:libcrypt-compat +libselinux +libaudit +BUSYBOX_CONFIG_PAM:libpam $(INTL_DEPENDS)
 DEPENDS_secon:=+libselinux $(INTL_DEPENDS)
 DEPENDS_semanage:=+libsemanage
 DEPENDS_semodule:=+libsemanage $(INTL_DEPENDS)

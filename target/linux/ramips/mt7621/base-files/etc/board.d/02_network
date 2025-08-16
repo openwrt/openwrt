@@ -22,6 +22,7 @@ ramips_setup_interfaces()
 	mercusys,mr70x-v1|\
 	netgear,wax202|\
 	sim,simax1800t|\
+	sim,simax1800u|\
 	tplink,mr600-v2-eu|\
 	xiaomi,mi-router-3-pro|\
 	xiaomi,mi-router-ac2100|\
@@ -97,6 +98,7 @@ ramips_setup_interfaces()
 	iodata,wn-deax1800gr|\
 	iptime,a3002mesh|\
 	jcg,q20|\
+	jdcloud,re-sp-01b|\
 	lenovo,newifi-d1|\
 	mikrotik,routerboard-m33g|\
 	mts,wg430223|\
@@ -279,6 +281,11 @@ ramips_setup_macs()
 	iptime,t5004)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
+		;;
+	jdcloud,re-sp-01b)
+		lan_mac=$(mtd_get_mac_ascii config mac)
+		wan_mac=$lan_mac
+		label_mac=$lan_mac
 		;;
 	linksys,e5600|\
 	linksys,ea6350-v4|\

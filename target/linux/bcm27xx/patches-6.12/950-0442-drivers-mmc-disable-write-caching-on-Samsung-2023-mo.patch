@@ -26,13 +26,13 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  #define CID_MANFID_SAMSUNG      0x15
 +#define CID_MANFID_SAMSUNG_SD	0x1b
  #define CID_MANFID_APACER       0x27
+ #define CID_MANFID_SWISSBIT     0x5D
  #define CID_MANFID_KINGSTON     0x70
- #define CID_MANFID_HYNIX	0x90
 --- a/drivers/mmc/core/quirks.h
 +++ b/drivers/mmc/core/quirks.h
-@@ -34,6 +34,14 @@ static const struct mmc_fixup __maybe_un
- 		   MMC_QUIRK_BROKEN_SD_CACHE | MMC_QUIRK_BROKEN_SD_POWEROFF_NOTIFY,
- 		   EXT_CSD_REV_ANY),
+@@ -58,6 +58,14 @@ static const struct mmc_fixup __maybe_un
+ 	MMC_FIXUP("SD32G", 0x41, 0x3432, add_quirk, MMC_QUIRK_ERASE_BROKEN),
+ 	MMC_FIXUP("SD64G", 0x41, 0x3432, add_quirk, MMC_QUIRK_ERASE_BROKEN),
  
 +	/*
 +	 * Samsung Pro Plus/EVO Plus/Pro Ultimate SD cards (2023) claim to cache

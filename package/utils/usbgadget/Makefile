@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=usbgadget
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_LICENSE:=BSD-2-Clause
 

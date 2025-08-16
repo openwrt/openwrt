@@ -172,8 +172,8 @@ static void rtl839x_vlan_tables_read(u32 vlan, struct rtl838x_vlan_info *info)
 	w = sw_r32(rtl_table_data(r, 2));
 	rtl_table_release(r);
 
-	info->tagged_ports = u;
-	info->tagged_ports = (info->tagged_ports << 21) | ((v >> 11) & 0x1fffff);
+	info->member_ports = u;
+	info->member_ports = (info->member_ports << 21) | ((v >> 11) & 0x1fffff);
 	info->profile_id = w >> 30 | ((v & 1) << 2);
 	info->hash_mc_fid = !!(w & BIT(2));
 	info->hash_uc_fid = !!(w & BIT(3));
@@ -196,8 +196,8 @@ static void rtl839x_vlan_set_tagged(u32 vlan, struct rtl838x_vlan_info *info)
 	/* Access VLAN table (0) via register 0 */
 	struct table_reg *r = rtl_table_get(RTL8390_TBL_0, 0);
 
-	u = info->tagged_ports >> 21;
-	v = info->tagged_ports << 11;
+	u = info->member_ports >> 21;
+	v = info->member_ports << 11;
 	v |= ((u32)info->fid) << 3;
 	v |= info->hash_uc_fid ? BIT(2) : 0;
 	v |= info->hash_mc_fid ? BIT(1) : 0;
@@ -642,166 +642,6 @@ int rtl8390_sds_power(int mac, int val)
 	sw_w32_mask(BIT(11), mode << 11, RTL839X_SDS12_13_PWR0 + offset);
 
 	return 0;
-}
-
-static int rtl839x_smi_wait_op(int timeout)
-{
-	int ret = 0;
-	u32 val;
-
-	ret = readx_poll_timeout(sw_r32, RTL839X_PHYREG_ACCESS_CTRL,
-				 val, !(val & 0x1), 20, timeout);
-	if (ret)
-		pr_err("%s: timeout\n", __func__);
-
-	return ret;
-}
-
-int rtl839x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
-{
-	u32 v;
-	int err = 0;
-
-	if (port > 63 || page > 8191 || reg > 31)
-		return -ENOTSUPP;
-
-	/* Take bug on RTL839x Rev <= C into account */
-	if (port >= RTL839X_CPU_PORT)
-		return -EIO;
-
-	mutex_lock(&smi_lock);
-
-	sw_w32_mask(0xffff0000, port << 16, RTL839X_PHYREG_DATA_CTRL);
-	v = reg << 5 | page << 10 | ((page == 0x1fff) ? 0x1f : 0) << 23;
-	sw_w32(v, RTL839X_PHYREG_ACCESS_CTRL);
-
-	sw_w32(0x1ff, RTL839X_PHYREG_CTRL);
-
-	v |= 1;
-	sw_w32(v, RTL839X_PHYREG_ACCESS_CTRL);
-
-	err = rtl839x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	*val = sw_r32(RTL839X_PHYREG_DATA_CTRL) & 0xffff;
-
-errout:
-	mutex_unlock(&smi_lock);
-
-	return err;
-}
-
-int rtl839x_write_phy(u32 port, u32 page, u32 reg, u32 val)
-{
-	u32 v;
-	int err = 0;
-
-	val &= 0xffff;
-	if (port > 63 || page > 8191 || reg > 31)
-		return -ENOTSUPP;
-
-	/* Take bug on RTL839x Rev <= C into account */
-	if (port >= RTL839X_CPU_PORT)
-		return -EIO;
-
-	mutex_lock(&smi_lock);
-
-	/* Set PHY to access */
-	rtl839x_set_port_reg_le(BIT_ULL(port), RTL839X_PHYREG_PORT_CTRL);
-
-	sw_w32_mask(0xffff0000, val << 16, RTL839X_PHYREG_DATA_CTRL);
-
-	v = reg << 5 | page << 10 | ((page == 0x1fff) ? 0x1f : 0) << 23;
-	sw_w32(v, RTL839X_PHYREG_ACCESS_CTRL);
-
-	sw_w32(0x1ff, RTL839X_PHYREG_CTRL);
-
-	v |= BIT(3) | 1; /* Write operation and execute */
-	sw_w32(v, RTL839X_PHYREG_ACCESS_CTRL);
-
-	err = rtl839x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	if (sw_r32(RTL839X_PHYREG_ACCESS_CTRL) & 0x2)
-		err = -EIO;
-
-errout:
-	mutex_unlock(&smi_lock);
-
-	return err;
-}
-
-/* Read an mmd register of the PHY */
-int rtl839x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
-{
-	int err = 0;
-	u32 v;
-
-	/* Take bug on RTL839x Rev <= C into account */
-	if (port >= RTL839X_CPU_PORT)
-		return -EIO;
-
-	mutex_lock(&smi_lock);
-
-	/* Set PHY to access */
-	sw_w32_mask(0xffff << 16, port << 16, RTL839X_PHYREG_DATA_CTRL);
-
-	/* Set MMD device number and register to write to */
-	sw_w32(devnum << 16 | (regnum & 0xffff), RTL839X_PHYREG_MMD_CTRL);
-
-	v = BIT(2) | BIT(0); /* MMD-access | EXEC */
-	sw_w32(v, RTL839X_PHYREG_ACCESS_CTRL);
-
-	err = rtl839x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	/* There is no error-checking via BIT 1 of v, as it does not seem to be set correctly */
-	*val = (sw_r32(RTL839X_PHYREG_DATA_CTRL) & 0xffff);
-	pr_debug("%s: port %d, regnum: %x, val: %x (err %d)\n", __func__, port, regnum, *val, err);
-
-errout:
-	mutex_unlock(&smi_lock);
-
-	return err;
-}
-
-/* Write to an mmd register of the PHY */
-int rtl839x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
-{
-	int err = 0;
-	u32 v;
-
-	/* Take bug on RTL839x Rev <= C into account */
-	if (port >= RTL839X_CPU_PORT)
-		return -EIO;
-
-	mutex_lock(&smi_lock);
-
-	/* Set PHY to access */
-	rtl839x_set_port_reg_le(BIT_ULL(port), RTL839X_PHYREG_PORT_CTRL);
-
-	/* Set data to write */
-	sw_w32_mask(0xffff << 16, val << 16, RTL839X_PHYREG_DATA_CTRL);
-
-	/* Set MMD device number and register to write to */
-	sw_w32(devnum << 16 | (regnum & 0xffff), RTL839X_PHYREG_MMD_CTRL);
-
-	v = BIT(3) | BIT(2) | BIT(0); /* WRITE | MMD-access | EXEC */
-	sw_w32(v, RTL839X_PHYREG_ACCESS_CTRL);
-
-	err = rtl839x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	pr_debug("%s: port %d, regnum: %x, val: %x (err %d)\n", __func__, port, regnum, val, err);
-
-errout:
-	mutex_unlock(&smi_lock);
-
-	return err;
 }
 
 void rtl8390_get_version(struct rtl838x_switch_priv *priv)

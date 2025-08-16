@@ -154,7 +154,17 @@ endef
 # $(2): "PKG_" if <name> as in Download/<name> is "default", otherwise "Download/<name>:"
 # $(3): shell command sequence to do the download
 define wrap_mirror
-$(if $(if $(MIRROR),$(filter-out x,$(MIRROR_HASH))),$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(FILE)" "$(MIRROR_HASH)" "" || ( $(3) ),$(3)) \
+$(if $(if $(MIRROR), \
+	$(filter-out x,$(MIRROR_HASH))),$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(FILE)" "$(MIRROR_HASH)" "" || \
+		( $(3) ) \
+		$(if $(filter-out x,$(MIRROR_HASH)), && ( \
+			file_hash="$$$$($(MKHASH) sha256 "$(DL_DIR)/$(FILE)")"; \
+			[ "$$$$file_hash" = "$(MIRROR_HASH)" ] || { \
+				echo "Hash mismatch for file $(FILE): expected $(MIRROR_HASH), got $$$$file_hash"; \
+				false; \
+			}; \
+		)),
+	$(3)) \
 $(if $(filter check,$(1)), \
 	$(call check_hash,$(FILE),$(MIRROR_HASH),$(2)MIRROR_$(call hash_var,$(MIRROR_MD5SUM))) \
 	$(call check_md5,$(MIRROR_MD5SUM),$(2)MIRROR_MD5SUM,$(2)MIRROR_HASH) \
@@ -232,7 +242,9 @@ define DownloadMethod/rawgit
 	echo "Generating formal git archive (apply .gitattributes rules)" && \
 	(cd $(SUBDIR) && git config core.abbrev 8 && \
 	git archive --format=tar HEAD --output=../$(SUBDIR).tar.git) && \
-	$(if $(filter skip,$(SUBMODULES)),true,$(TAR) --ignore-failed-read -C $(SUBDIR) -f $(SUBDIR).tar.git -r .git .gitmodules 2>/dev/null) && \
+	$(if $(filter skip,$(SUBMODULES)),true, \
+		$(TAR) --numeric-owner --owner=0 --group=0 --ignore-failed-read -C $(SUBDIR) -f $(SUBDIR).tar.git -r .git .gitmodules 2>/dev/null \
+	) && \
 	rm -rf $(SUBDIR) && mkdir $(SUBDIR) && \
 	$(TAR) -C $(SUBDIR) -xf $(SUBDIR).tar.git && \
 	(cd $(SUBDIR) && $(if $(filter skip,$(SUBMODULES)),true,git submodule update --init --recursive -- $(SUBMODULES) && \

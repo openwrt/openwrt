@@ -240,7 +240,7 @@ define Device/iom_ix4-200d
   $(Device/kernel-size-migration-iomega)
   DEVICE_VENDOR := Iomega
   DEVICE_MODEL := StorCenter ix4-200d
-  DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-fs-ext4 \
+  DEVICE_PACKAGES := kmod-ata-ahci kmod-ata-marvell-sata kmod-fs-ext4 \
 	kmod-gpio-button-hotplug kmod-gpio-nxp-74hc164 \
 	kmod-hwmon-adt7475 kmod-mvsdio kmod-spi-gpio kmod-rtc-mv
   PAGESIZE := 512

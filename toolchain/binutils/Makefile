@@ -16,10 +16,6 @@ PKG_CPE_ID:=cpe:/a:gnu:binutils
 
 TAR_OPTIONS += --exclude='*.rej'
 
-ifeq ($(PKG_VERSION),2.40)
-  PKG_HASH:=0f8a4c272d7f17f369ded10a4aca28b8e304828e95526da482b0ccc4dfc9d8e1
-endif
-
 ifeq ($(PKG_VERSION),2.42)
   PKG_HASH:=f6e4d41fd5fc778b06b7891457b3620da5ecea1006c6a4a41ae998109f85a800
 endif
@@ -30,6 +26,10 @@ endif
 
 ifeq ($(PKG_VERSION),2.44)
   PKG_HASH:=ce2017e059d63e67ddb9240e9d4ec49c2893605035cd60e92ad53177f4377237
+endif
+
+ifeq ($(PKG_VERSION),2.45)
+  PKG_HASH:=c50c0e7f9cb188980e2cc97e4537626b1672441815587f1eab69d2a1bfbef5d2
 endif
 
 HOST_BUILD_PARALLEL:=1

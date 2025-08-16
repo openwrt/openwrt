@@ -52,9 +52,7 @@ rostelecom,rt-sf-1)
 beeline,smartbox-pro|\
 tplink,ec330-g5u-v1|\
 wifire,s1500-nbn)
-	idx="$(find_mtd_index u-boot-env)"
-	[ -n "$idx" ] && \
-		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x1000" "0x20000"
+	ubootenv_add_mtd "u-boot-env" "0x0" "0x1000" "0x20000"
 	;;
 buffalo,wsr-1166dhp|\
 buffalo,wsr-600dhp|\
@@ -87,15 +85,14 @@ zyxel,wsm20)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
 	;;
 haier,har-20s2u1|\
-sim,simax1800t)
+sim,simax1800t|\
+sim,simax1800u)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
 	ubootenv_add_uci_sys_config "/dev/mtd1" "0x40000" "0x40000" "0x20000"
 	;;
 hootoo,ht-tm05|\
 ravpower,rp-wd03)
-	idx="$(find_mtd_index u-boot-env)"
-	[ -n "$idx" ] && \
-		ubootenv_add_uci_config "/dev/mtd$idx" "0x4000" "0x1000" "0x1000"
+	ubootenv_add_mtd "u-boot-env" "0x4000" "0x1000" "0x1000"
 	;;
 beeline,smartbox-flash|\
 iptime,t5004|\
@@ -113,9 +110,7 @@ ubnt,edgerouter-x-sfp)
 snr,snr-cpe-me1|\
 snr,snr-cpe-me2-sfp|\
 snr,cpe-w4n-mt)
-	idx="$(find_mtd_index uboot-env)"
-	[ -n "$idx" ] && \
-		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x1000" "0x1000"
+	ubootenv_add_mtd "uboot-env" "0x0" "0x1000" "0x1000"
 	;;
 xiaomi,miwifi-mini)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x1000" "0x10000"
@@ -141,9 +136,7 @@ zyxel,lte3301-plus)
 zyxel,lte5398-m904|\
 zyxel,lte7490-m904|\
 zyxel,nr7101)
-	idx="$(find_mtd_index Config)"
-	[ -n "$idx" ] && \
-		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x1000" "0x80000"
+	ubootenv_add_mtd "Config" "0x0" "0x1000" "0x80000"
 	;;
 bolt,arion|\
 xiaomi,mi-router-cr6606|\

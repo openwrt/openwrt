@@ -1,0 +1,34 @@
+From 05a895b3f996d1ac157d95b04980f5f047e7dbf7 Mon Sep 17 00:00:00 2001
+From: Ross Burton <ross.burton@arm.com>
+Date: Fri, 6 Jun 2025 15:23:07 +0100
+Subject: [PATCH] print_pager: add missing includes
+
+When building with musl:
+
+  print_pager.h:33:25: error: unknown type name 'pid_t'
+     33 | extern void wait_to_die(pid_t process);
+        |                         ^~~~~
+  print_pager.h:34:25: error: unknown type name 'pid_t'
+     34 | extern FILE *exec_pager(pid_t *process);
+        |                         ^~~~~
+
+print_pager.h uses pid_t and FILE, so add the required #includes to
+ensure that these are defined.
+
+Signed-off-by: Ross Burton <ross.burton@arm.com>
+---
+ squashfs-tools/print_pager.h | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/squashfs-tools/print_pager.h
++++ b/squashfs-tools/print_pager.h
+@@ -30,6 +30,9 @@
+ #define MORE_PAGER 2
+ #define UNKNOWN_PAGER 3
+ 
++#include <stdio.h>
++#include <sys/types.h>
++
+ extern void wait_to_die(pid_t process);
+ extern FILE *exec_pager(pid_t *process);
+ extern int get_column_width();

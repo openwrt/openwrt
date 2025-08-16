@@ -16,7 +16,17 @@ static const u8 ipv6_all_hosts_mcast_addr_base[ETH_ALEN] =
 static const u8 ipv6_all_hosts_mcast_addr_mask[ETH_ALEN] =
 { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
+/* This interval needs to be short enough to prevent an undetected counter
+ * overflow. The octet counters don't need to be considered for this, because
+ * they are 64 bits on all platforms. Based on the possible packets per second
+ * at the highest supported speeds, an interval of a minute is probably a safe
+ * choice for the other counters.
+ */
+#define RTLDSA_COUNTERS_POLL_INTERVAL	(60 * HZ)
+
 extern struct rtl83xx_soc_info soc_info;
+
+static void rtldsa_init_counters(struct rtl838x_switch_priv *priv);
 
 static void rtl83xx_init_stats(struct rtl838x_switch_priv *priv)
 {
@@ -55,53 +65,263 @@ static void rtl83xx_enable_phy_polling(struct rtl838x_switch_priv *priv)
 		sw_w32_mask(0, 0x8000, RTL838X_SMI_GLB_CTRL);
 }
 
-const struct rtl83xx_mib_desc rtl83xx_mib[] = {
-	MIB_DESC(2, 0xf8, "ifInOctets"),
-	MIB_DESC(2, 0xf0, "ifOutOctets"),
-	MIB_DESC(1, 0xec, "dot1dTpPortInDiscards"),
-	MIB_DESC(1, 0xe8, "ifInUcastPkts"),
-	MIB_DESC(1, 0xe4, "ifInMulticastPkts"),
-	MIB_DESC(1, 0xe0, "ifInBroadcastPkts"),
-	MIB_DESC(1, 0xdc, "ifOutUcastPkts"),
-	MIB_DESC(1, 0xd8, "ifOutMulticastPkts"),
-	MIB_DESC(1, 0xd4, "ifOutBroadcastPkts"),
-	MIB_DESC(1, 0xd0, "ifOutDiscards"),
-	MIB_DESC(1, 0xcc, ".3SingleCollisionFrames"),
-	MIB_DESC(1, 0xc8, ".3MultipleCollisionFrames"),
-	MIB_DESC(1, 0xc4, ".3DeferredTransmissions"),
-	MIB_DESC(1, 0xc0, ".3LateCollisions"),
-	MIB_DESC(1, 0xbc, ".3ExcessiveCollisions"),
-	MIB_DESC(1, 0xb8, ".3SymbolErrors"),
-	MIB_DESC(1, 0xb4, ".3ControlInUnknownOpcodes"),
-	MIB_DESC(1, 0xb0, ".3InPauseFrames"),
-	MIB_DESC(1, 0xac, ".3OutPauseFrames"),
-	MIB_DESC(1, 0xa8, "DropEvents"),
-	MIB_DESC(1, 0xa4, "tx_BroadcastPkts"),
-	MIB_DESC(1, 0xa0, "tx_MulticastPkts"),
-	MIB_DESC(1, 0x9c, "CRCAlignErrors"),
-	MIB_DESC(1, 0x98, "tx_UndersizePkts"),
-	MIB_DESC(1, 0x94, "rx_UndersizePkts"),
-	MIB_DESC(1, 0x90, "rx_UndersizedropPkts"),
-	MIB_DESC(1, 0x8c, "tx_OversizePkts"),
-	MIB_DESC(1, 0x88, "rx_OversizePkts"),
-	MIB_DESC(1, 0x84, "Fragments"),
-	MIB_DESC(1, 0x80, "Jabbers"),
-	MIB_DESC(1, 0x7c, "Collisions"),
-	MIB_DESC(1, 0x78, "tx_Pkts64Octets"),
-	MIB_DESC(1, 0x74, "rx_Pkts64Octets"),
-	MIB_DESC(1, 0x70, "tx_Pkts65to127Octets"),
-	MIB_DESC(1, 0x6c, "rx_Pkts65to127Octets"),
-	MIB_DESC(1, 0x68, "tx_Pkts128to255Octets"),
-	MIB_DESC(1, 0x64, "rx_Pkts128to255Octets"),
-	MIB_DESC(1, 0x60, "tx_Pkts256to511Octets"),
-	MIB_DESC(1, 0x5c, "rx_Pkts256to511Octets"),
-	MIB_DESC(1, 0x58, "tx_Pkts512to1023Octets"),
-	MIB_DESC(1, 0x54, "rx_Pkts512to1023Octets"),
-	MIB_DESC(1, 0x50, "tx_Pkts1024to1518Octets"),
-	MIB_DESC(1, 0x4c, "rx_StatsPkts1024to1518Octets"),
-	MIB_DESC(1, 0x48, "tx_Pkts1519toMaxOctets"),
-	MIB_DESC(1, 0x44, "rx_Pkts1519toMaxOctets"),
-	MIB_DESC(1, 0x40, "rxMacDiscards")
+const struct rtldsa_mib_list_item rtldsa_838x_mib_list[] = {
+	MIB_LIST_ITEM("dot1dTpPortInDiscards", MIB_ITEM(MIB_REG_STD, 0xec, 1)),
+	MIB_LIST_ITEM("ifOutDiscards", MIB_ITEM(MIB_REG_STD, 0xd0, 1)),
+	MIB_LIST_ITEM("DropEvents", MIB_ITEM(MIB_REG_STD, 0xa8, 1)),
+	MIB_LIST_ITEM("tx_BroadcastPkts", MIB_ITEM(MIB_REG_STD, 0xa4, 1)),
+	MIB_LIST_ITEM("tx_MulticastPkts", MIB_ITEM(MIB_REG_STD, 0xa0, 1)),
+	MIB_LIST_ITEM("tx_UndersizePkts", MIB_ITEM(MIB_REG_STD, 0x98, 1)),
+	MIB_LIST_ITEM("rx_UndersizeDropPkts", MIB_ITEM(MIB_REG_STD, 0x90, 1)),
+	MIB_LIST_ITEM("tx_OversizePkts", MIB_ITEM(MIB_REG_STD, 0x8c, 1)),
+	MIB_LIST_ITEM("Collisions", MIB_ITEM(MIB_REG_STD, 0x7c, 1)),
+	MIB_LIST_ITEM("rx_MacDiscards", MIB_ITEM(MIB_REG_STD, 0x40, 1))
+};
+
+const struct rtldsa_mib_desc rtldsa_838x_mib = {
+	.symbol_errors = MIB_ITEM(MIB_REG_STD, 0xb8, 1),
+
+	.if_in_octets = MIB_ITEM(MIB_REG_STD, 0xf8, 2),
+	.if_out_octets = MIB_ITEM(MIB_REG_STD, 0xf0, 2),
+	.if_in_ucast_pkts = MIB_ITEM(MIB_REG_STD, 0xe8, 1),
+	.if_in_mcast_pkts = MIB_ITEM(MIB_REG_STD, 0xe4, 1),
+	.if_in_bcast_pkts = MIB_ITEM(MIB_REG_STD, 0xe0, 1),
+	.if_out_ucast_pkts = MIB_ITEM(MIB_REG_STD, 0xdc, 1),
+	.if_out_mcast_pkts = MIB_ITEM(MIB_REG_STD, 0xd8, 1),
+	.if_out_bcast_pkts = MIB_ITEM(MIB_REG_STD, 0xd4, 1),
+	.if_out_discards = MIB_ITEM(MIB_REG_STD, 0xd0, 1),
+	.single_collisions = MIB_ITEM(MIB_REG_STD, 0xcc, 1),
+	.multiple_collisions = MIB_ITEM(MIB_REG_STD, 0xc8, 1),
+	.deferred_transmissions = MIB_ITEM(MIB_REG_STD, 0xc4, 1),
+	.late_collisions = MIB_ITEM(MIB_REG_STD, 0xc0, 1),
+	.excessive_collisions = MIB_ITEM(MIB_REG_STD, 0xbc, 1),
+	.crc_align_errors = MIB_ITEM(MIB_REG_STD, 0x9c, 1),
+
+	.unsupported_opcodes = MIB_ITEM(MIB_REG_STD, 0xb4, 1),
+
+	.rx_undersize_pkts = MIB_ITEM(MIB_REG_STD, 0x94, 1),
+	.rx_oversize_pkts = MIB_ITEM(MIB_REG_STD, 0x88, 1),
+	.rx_fragments = MIB_ITEM(MIB_REG_STD, 0x84, 1),
+	.rx_jabbers = MIB_ITEM(MIB_REG_STD, 0x80, 1),
+
+	.tx_pkts = {
+		MIB_ITEM(MIB_REG_STD, 0x78, 1),
+		MIB_ITEM(MIB_REG_STD, 0x70, 1),
+		MIB_ITEM(MIB_REG_STD, 0x68, 1),
+		MIB_ITEM(MIB_REG_STD, 0x60, 1),
+		MIB_ITEM(MIB_REG_STD, 0x58, 1),
+		MIB_ITEM(MIB_REG_STD, 0x50, 1),
+		MIB_ITEM(MIB_REG_STD, 0x48, 1)
+	},
+	.rx_pkts = {
+		MIB_ITEM(MIB_REG_STD, 0x74, 1),
+		MIB_ITEM(MIB_REG_STD, 0x6c, 1),
+		MIB_ITEM(MIB_REG_STD, 0x64, 1),
+		MIB_ITEM(MIB_REG_STD, 0x5c, 1),
+		MIB_ITEM(MIB_REG_STD, 0x54, 1),
+		MIB_ITEM(MIB_REG_STD, 0x4c, 1),
+		MIB_ITEM(MIB_REG_STD, 0x44, 1)
+	},
+	.rmon_ranges = {
+		{ 0, 64 },
+		{ 65, 127 },
+		{ 128, 255 },
+		{ 256, 511 },
+		{ 512, 1023 },
+		{ 1024, 1518 },
+		{ 1519, 10000 }
+	},
+
+	.drop_events = MIB_ITEM(MIB_REG_STD, 0xa8, 1),
+	.collisions = MIB_ITEM(MIB_REG_STD, 0x7c, 1),
+
+	.rx_pause_frames = MIB_ITEM(MIB_REG_STD, 0xb0, 1),
+	.tx_pause_frames = MIB_ITEM(MIB_REG_STD, 0xac, 1),
+
+	.list_count = ARRAY_SIZE(rtldsa_838x_mib_list),
+	.list = rtldsa_838x_mib_list
+};
+
+const struct rtldsa_mib_list_item rtldsa_839x_mib_list[] = {
+	MIB_LIST_ITEM("ifOutDiscards", MIB_ITEM(MIB_REG_STD, 0xd4, 1)),
+	MIB_LIST_ITEM("dot1dTpPortInDiscards", MIB_ITEM(MIB_REG_STD, 0xd0, 1)),
+	MIB_LIST_ITEM("DropEvents", MIB_ITEM(MIB_REG_STD, 0xa8, 1)),
+	MIB_LIST_ITEM("tx_BroadcastPkts", MIB_ITEM(MIB_REG_STD, 0xa4, 1)),
+	MIB_LIST_ITEM("tx_MulticastPkts", MIB_ITEM(MIB_REG_STD, 0xa0, 1)),
+	MIB_LIST_ITEM("tx_UndersizePkts", MIB_ITEM(MIB_REG_STD, 0x98, 1)),
+	MIB_LIST_ITEM("rx_UndersizeDropPkts", MIB_ITEM(MIB_REG_STD, 0x90, 1)),
+	MIB_LIST_ITEM("tx_OversizePkts", MIB_ITEM(MIB_REG_STD, 0x8c, 1)),
+	MIB_LIST_ITEM("Collisions", MIB_ITEM(MIB_REG_STD, 0x7c, 1)),
+	MIB_LIST_ITEM("rx_LengthFieldError", MIB_ITEM(MIB_REG_STD, 0x40, 1)),
+	MIB_LIST_ITEM("rx_FalseCarrierTimes", MIB_ITEM(MIB_REG_STD, 0x3c, 1)),
+	MIB_LIST_ITEM("rx_UnderSizeOctets", MIB_ITEM(MIB_REG_STD, 0x38, 1)),
+	MIB_LIST_ITEM("tx_Fragments", MIB_ITEM(MIB_REG_STD, 0x34, 1)),
+	MIB_LIST_ITEM("tx_Jabbers", MIB_ITEM(MIB_REG_STD, 0x30, 1)),
+	MIB_LIST_ITEM("tx_CRCAlignErrors", MIB_ITEM(MIB_REG_STD, 0x2c, 1)),
+	MIB_LIST_ITEM("rx_FramingErrors", MIB_ITEM(MIB_REG_STD, 0x28, 1)),
+	MIB_LIST_ITEM("rx_MacDiscards", MIB_ITEM(MIB_REG_STD, 0x24, 1))
+};
+
+const struct rtldsa_mib_desc rtldsa_839x_mib = {
+	.symbol_errors = MIB_ITEM(MIB_REG_STD, 0xb8, 1),
+
+	.if_in_octets = MIB_ITEM(MIB_REG_STD, 0xf8, 2),
+	.if_out_octets = MIB_ITEM(MIB_REG_STD, 0xf0, 2),
+	.if_in_ucast_pkts = MIB_ITEM(MIB_REG_STD, 0xec, 1),
+	.if_in_mcast_pkts = MIB_ITEM(MIB_REG_STD, 0xe8, 1),
+	.if_in_bcast_pkts = MIB_ITEM(MIB_REG_STD, 0xe4, 1),
+	.if_out_ucast_pkts = MIB_ITEM(MIB_REG_STD, 0xe0, 1),
+	.if_out_mcast_pkts = MIB_ITEM(MIB_REG_STD, 0xdc, 1),
+	.if_out_bcast_pkts = MIB_ITEM(MIB_REG_STD, 0xd8, 1),
+	.if_out_discards = MIB_ITEM(MIB_REG_STD, 0xd4, 1),
+	.single_collisions = MIB_ITEM(MIB_REG_STD, 0xcc, 1),
+	.multiple_collisions = MIB_ITEM(MIB_REG_STD, 0xc8, 1),
+	.deferred_transmissions = MIB_ITEM(MIB_REG_STD, 0xc4, 1),
+	.late_collisions = MIB_ITEM(MIB_REG_STD, 0xc0, 1),
+	.excessive_collisions = MIB_ITEM(MIB_REG_STD, 0xbc, 1),
+	.crc_align_errors = MIB_ITEM(MIB_REG_STD, 0x9c, 1),
+
+	.unsupported_opcodes = MIB_ITEM(MIB_REG_STD, 0xb4, 1),
+
+	.rx_undersize_pkts = MIB_ITEM(MIB_REG_STD, 0x94, 1),
+	.rx_oversize_pkts = MIB_ITEM(MIB_REG_STD, 0x88, 1),
+	.rx_fragments = MIB_ITEM(MIB_REG_STD, 0x84, 1),
+	.rx_jabbers = MIB_ITEM(MIB_REG_STD, 0x80, 1),
+
+	.tx_pkts = {
+		MIB_ITEM(MIB_REG_STD, 0x78, 1),
+		MIB_ITEM(MIB_REG_STD, 0x70, 1),
+		MIB_ITEM(MIB_REG_STD, 0x68, 1),
+		MIB_ITEM(MIB_REG_STD, 0x60, 1),
+		MIB_ITEM(MIB_REG_STD, 0x58, 1),
+		MIB_ITEM(MIB_REG_STD, 0x50, 1),
+		MIB_ITEM(MIB_REG_STD, 0x48, 1)
+	},
+	.rx_pkts = {
+		MIB_ITEM(MIB_REG_STD, 0x74, 1),
+		MIB_ITEM(MIB_REG_STD, 0x6c, 1),
+		MIB_ITEM(MIB_REG_STD, 0x64, 1),
+		MIB_ITEM(MIB_REG_STD, 0x5c, 1),
+		MIB_ITEM(MIB_REG_STD, 0x54, 1),
+		MIB_ITEM(MIB_REG_STD, 0x4c, 1),
+		MIB_ITEM(MIB_REG_STD, 0x44, 1)
+	},
+	.rmon_ranges = {
+		{ 0, 64 },
+		{ 65, 127 },
+		{ 128, 255 },
+		{ 256, 511 },
+		{ 512, 1023 },
+		{ 1024, 1518 },
+		{ 1519, 12288 }
+	},
+
+	.drop_events = MIB_ITEM(MIB_REG_STD, 0xa8, 1),
+	.collisions = MIB_ITEM(MIB_REG_STD, 0x7c, 1),
+
+	.rx_pause_frames = MIB_ITEM(MIB_REG_STD, 0xb0, 1),
+	.tx_pause_frames = MIB_ITEM(MIB_REG_STD, 0xac, 1),
+
+	.list_count = ARRAY_SIZE(rtldsa_839x_mib_list),
+	.list = rtldsa_839x_mib_list
+};
+
+const struct rtldsa_mib_list_item rtldsa_930x_mib_list[] = {
+	MIB_LIST_ITEM("ifOutDiscards", MIB_ITEM(MIB_REG_STD, 0xbc, 1)),
+	MIB_LIST_ITEM("dot1dTpPortInDiscards", MIB_ITEM(MIB_REG_STD, 0xb8, 1)),
+	MIB_LIST_ITEM("DropEvents", MIB_ITEM(MIB_REG_STD, 0x90, 1)),
+	MIB_LIST_ITEM("tx_BroadcastPkts", MIB_ITEM(MIB_REG_STD, 0x8c, 1)),
+	MIB_LIST_ITEM("tx_MulticastPkts", MIB_ITEM(MIB_REG_STD, 0x88, 1)),
+	MIB_LIST_ITEM("tx_CRCAlignErrors", MIB_ITEM(MIB_REG_STD, 0x84, 1)),
+	MIB_LIST_ITEM("tx_UndersizePkts", MIB_ITEM(MIB_REG_STD, 0x7c, 1)),
+	MIB_LIST_ITEM("tx_OversizePkts", MIB_ITEM(MIB_REG_STD, 0x74, 1)),
+	MIB_LIST_ITEM("tx_Fragments", MIB_ITEM(MIB_REG_STD, 0x6c, 1)),
+	MIB_LIST_ITEM("tx_Jabbers", MIB_ITEM(MIB_REG_STD, 0x64, 1)),
+	MIB_LIST_ITEM("tx_Collisions", MIB_ITEM(MIB_REG_STD, 0x5c, 1)),
+	MIB_LIST_ITEM("rx_UndersizeDropPkts", MIB_ITEM(MIB_REG_PRV, 0x7c, 1)),
+	MIB_LIST_ITEM("tx_PktsFlexibleOctetsSet1", MIB_ITEM(MIB_REG_PRV, 0x68, 1)),
+	MIB_LIST_ITEM("rx_PktsFlexibleOctetsSet1", MIB_ITEM(MIB_REG_PRV, 0x64, 1)),
+	MIB_LIST_ITEM("tx_PktsFlexibleOctetsCRCSet1", MIB_ITEM(MIB_REG_PRV, 0x60, 1)),
+	MIB_LIST_ITEM("rx_PktsFlexibleOctetsCRCSet1", MIB_ITEM(MIB_REG_PRV, 0x5c, 1)),
+	MIB_LIST_ITEM("tx_PktsFlexibleOctetsSet0", MIB_ITEM(MIB_REG_PRV, 0x58, 1)),
+	MIB_LIST_ITEM("rx_PktsFlexibleOctetsSet0", MIB_ITEM(MIB_REG_PRV, 0x54, 1)),
+	MIB_LIST_ITEM("tx_PktsFlexibleOctetsCRCSet0", MIB_ITEM(MIB_REG_PRV, 0x50, 1)),
+	MIB_LIST_ITEM("rx_PktsFlexibleOctetsCRCSet0", MIB_ITEM(MIB_REG_PRV, 0x4c, 1)),
+	MIB_LIST_ITEM("LengthFieldError", MIB_ITEM(MIB_REG_PRV, 0x48, 1)),
+	MIB_LIST_ITEM("FalseCarrierTimes", MIB_ITEM(MIB_REG_PRV, 0x44, 1)),
+	MIB_LIST_ITEM("UndersizeOctets", MIB_ITEM(MIB_REG_PRV, 0x40, 1)),
+	MIB_LIST_ITEM("FramingErrors", MIB_ITEM(MIB_REG_PRV, 0x3c, 1)),
+	MIB_LIST_ITEM("ParserErrors", MIB_ITEM(MIB_REG_PRV, 0x38, 1)),
+	MIB_LIST_ITEM("rx_MacDiscards", MIB_ITEM(MIB_REG_PRV, 0x34, 1)),
+	MIB_LIST_ITEM("rx_MacIPGShortDrop", MIB_ITEM(MIB_REG_PRV, 0x30, 1))
+};
+
+const struct rtldsa_mib_desc rtldsa_930x_mib = {
+	.symbol_errors = MIB_ITEM(MIB_REG_STD, 0xa0, 1),
+
+	.if_in_octets = MIB_ITEM(MIB_REG_STD, 0xf8, 2),
+	.if_out_octets = MIB_ITEM(MIB_REG_STD, 0xf0, 2),
+	.if_in_ucast_pkts = MIB_ITEM(MIB_REG_STD, 0xe8, 2),
+	.if_in_mcast_pkts = MIB_ITEM(MIB_REG_STD, 0xe0, 2),
+	.if_in_bcast_pkts = MIB_ITEM(MIB_REG_STD, 0xd8, 2),
+	.if_out_ucast_pkts = MIB_ITEM(MIB_REG_STD, 0xd0, 2),
+	.if_out_mcast_pkts = MIB_ITEM(MIB_REG_STD, 0xc8, 2),
+	.if_out_bcast_pkts = MIB_ITEM(MIB_REG_STD, 0xc0, 2),
+	.if_out_discards = MIB_ITEM(MIB_REG_STD, 0xbc, 1),
+	.single_collisions = MIB_ITEM(MIB_REG_STD, 0xb4, 1),
+	.multiple_collisions = MIB_ITEM(MIB_REG_STD, 0xb0, 1),
+	.deferred_transmissions = MIB_ITEM(MIB_REG_STD, 0xac, 1),
+	.late_collisions = MIB_ITEM(MIB_REG_STD, 0xa8, 1),
+	.excessive_collisions = MIB_ITEM(MIB_REG_STD, 0xa4, 1),
+	.crc_align_errors = MIB_ITEM(MIB_REG_STD, 0x80, 1),
+	.rx_pkts_over_max_octets = MIB_ITEM(MIB_REG_PRV, 0x6c, 1),
+
+	.unsupported_opcodes = MIB_ITEM(MIB_REG_STD, 0x9c, 1),
+
+	.rx_undersize_pkts = MIB_ITEM(MIB_REG_STD, 0x78, 1),
+	.rx_oversize_pkts = MIB_ITEM(MIB_REG_STD, 0x70, 1),
+	.rx_fragments = MIB_ITEM(MIB_REG_STD, 0x68, 1),
+	.rx_jabbers = MIB_ITEM(MIB_REG_STD, 0x60, 1),
+
+	.tx_pkts = {
+		MIB_ITEM(MIB_REG_STD, 0x58, 1),
+		MIB_ITEM(MIB_REG_STD, 0x50, 1),
+		MIB_ITEM(MIB_REG_STD, 0x48, 1),
+		MIB_ITEM(MIB_REG_STD, 0x40, 1),
+		MIB_ITEM(MIB_REG_STD, 0x38, 1),
+		MIB_ITEM(MIB_REG_STD, 0x30, 1),
+		MIB_ITEM(MIB_REG_PRV, 0x78, 1),
+		MIB_ITEM(MIB_REG_PRV, 0x70, 1)
+	},
+	.rx_pkts = {
+		MIB_ITEM(MIB_REG_STD, 0x54, 1),
+		MIB_ITEM(MIB_REG_STD, 0x4c, 1),
+		MIB_ITEM(MIB_REG_STD, 0x44, 1),
+		MIB_ITEM(MIB_REG_STD, 0x3c, 1),
+		MIB_ITEM(MIB_REG_STD, 0x34, 1),
+		MIB_ITEM(MIB_REG_STD, 0x2c, 1),
+		MIB_ITEM(MIB_REG_PRV, 0x74, 1),
+		MIB_ITEM(MIB_REG_PRV, 0x6c, 1),
+	},
+	.rmon_ranges = {
+		{ 0, 64 },
+		{ 65, 127 },
+		{ 128, 255 },
+		{ 256, 511 },
+		{ 512, 1023 },
+		{ 1024, 1518 },
+		{ 1519, 12288 },
+		{ 12289, 65535 }
+	},
+
+	.drop_events = MIB_ITEM(MIB_REG_STD, 0x90, 1),
+	.collisions = MIB_ITEM(MIB_REG_STD, 0x5c, 1),
+
+	.rx_pause_frames = MIB_ITEM(MIB_REG_STD, 0x98, 1),
+	.tx_pause_frames = MIB_ITEM(MIB_REG_STD, 0x94, 1),
+
+	.list_count = ARRAY_SIZE(rtldsa_930x_mib_list),
+	.list = rtldsa_930x_mib_list
 };
 
 
@@ -148,7 +368,7 @@ static void rtl83xx_vlan_setup(struct rtl838x_switch_priv *priv)
 	info.hash_uc_fid = false;	/* Do not build the L2 lookup hash with FID, but VID */
 	info.hash_mc_fid = false;	/* Do the same for Multicast packets */
 	info.profile_id = 0;		/* Use default Vlan Profile 0 */
-	info.tagged_ports = 0;		/* Initially no port members */
+	info.member_ports = 0;		/* Initially no port members */
 	if (priv->family_id == RTL9310_FAMILY_ID) {
 		info.if_id = 0;
 		info.multicast_grp_mask = 0;
@@ -168,7 +388,7 @@ static void rtl83xx_vlan_setup(struct rtl838x_switch_priv *priv)
 	 */
 	for (int i = 0; i <= priv->cpu_port; i++) {
 		rtl83xx_vlan_set_pvid(priv, i, 0);
-		info.tagged_ports |= BIT_ULL(i);
+		info.member_ports |= BIT_ULL(i);
 	}
 	priv->r->vlan_set_tagged(0, &info);
 
@@ -237,6 +457,7 @@ static int rtl83xx_setup(struct dsa_switch *ds)
 		rtl839x_print_matrix();
 
 	rtl83xx_init_stats(priv);
+	rtldsa_init_counters(priv);
 
 	rtl83xx_vlan_setup(priv);
 
@@ -298,9 +519,13 @@ static int rtl93xx_setup(struct dsa_switch *ds)
 	}
 	priv->r->traffic_set(priv->cpu_port, BIT_ULL(priv->cpu_port));
 
-	rtl930x_print_matrix();
+	if (priv->family_id == RTL9300_FAMILY_ID)
+		rtl930x_print_matrix();
+	else if (priv->family_id == RTL9310_FAMILY_ID)
+		rtl931x_print_matrix();
 
 	/* TODO: Initialize statistics */
+	rtldsa_init_counters(priv);
 
 	rtl83xx_vlan_setup(priv);
 
@@ -340,205 +565,64 @@ static int rtl93xx_get_sds(struct phy_device *phydev)
 	return sds_num;
 }
 
-static int rtl83xx_pcs_validate(struct phylink_pcs *pcs,
-				unsigned long *supported,
-				const struct phylink_link_state *state)
-{
-	struct rtl838x_pcs *rtpcs = container_of(pcs, struct rtl838x_pcs, pcs);
-	struct rtl838x_switch_priv *priv = rtpcs->priv;
-	int port = rtpcs->port;
-	__ETHTOOL_DECLARE_LINK_MODE_MASK(mask) = { 0, };
-
-	pr_debug("In %s port %d, state is %d", __func__, port, state->interface);
-
-	if (!phy_interface_mode_is_rgmii(state->interface) &&
-	    state->interface != PHY_INTERFACE_MODE_NA &&
-	    state->interface != PHY_INTERFACE_MODE_1000BASEX &&
-	    state->interface != PHY_INTERFACE_MODE_MII &&
-	    state->interface != PHY_INTERFACE_MODE_REVMII &&
-	    state->interface != PHY_INTERFACE_MODE_GMII &&
-	    state->interface != PHY_INTERFACE_MODE_QSGMII &&
-	    state->interface != PHY_INTERFACE_MODE_INTERNAL &&
-	    state->interface != PHY_INTERFACE_MODE_SGMII) {
-		bitmap_zero(supported, __ETHTOOL_LINK_MODE_MASK_NBITS);
-		dev_err(priv->ds->dev,
-			"Unsupported interface: %d for port %d\n",
-			state->interface, port);
-		return -EINVAL;
-	}
-
-	/* Allow all the expected bits */
-	phylink_set(mask, Autoneg);
-	phylink_set_port_modes(mask);
-	phylink_set(mask, Pause);
-	phylink_set(mask, Asym_Pause);
-
-	/* With the exclusion of MII and Reverse MII, we support Gigabit,
-	 * including Half duplex
-	 */
-	if (state->interface != PHY_INTERFACE_MODE_MII &&
-	    state->interface != PHY_INTERFACE_MODE_REVMII) {
-		phylink_set(mask, 1000baseT_Full);
-		phylink_set(mask, 1000baseT_Half);
-	}
-
-	/* On both the 8380 and 8382, ports 24-27 are SFP ports */
-	if (port >= 24 && port <= 27 && priv->family_id == RTL8380_FAMILY_ID)
-		phylink_set(mask, 1000baseX_Full);
-
-	/* On the RTL839x family of SoCs, ports 48 to 51 are SFP ports */
-	if (port >= 48 && port <= 51 && priv->family_id == RTL8390_FAMILY_ID)
-		phylink_set(mask, 1000baseX_Full);
-
-	phylink_set(mask, 10baseT_Half);
-	phylink_set(mask, 10baseT_Full);
-	phylink_set(mask, 100baseT_Half);
-	phylink_set(mask, 100baseT_Full);
-
-	bitmap_and(supported, supported, mask,
-		   __ETHTOOL_LINK_MODE_MASK_NBITS);
-
-	return 0;
-}
-
-static int rtl93xx_pcs_validate(struct phylink_pcs *pcs,
-				unsigned long *supported,
-				const struct phylink_link_state *state)
-{
-	struct rtl838x_pcs *rtpcs = container_of(pcs, struct rtl838x_pcs, pcs);
-	struct rtl838x_switch_priv *priv = rtpcs->priv;
-	int port = rtpcs->port;
-	__ETHTOOL_DECLARE_LINK_MODE_MASK(mask) = { 0, };
-
-	pr_debug("In %s port %d, state is %d (%s)", __func__, port, state->interface,
-		 phy_modes(state->interface));
-
-	if (!phy_interface_mode_is_rgmii(state->interface) &&
-	    state->interface != PHY_INTERFACE_MODE_NA &&
-	    state->interface != PHY_INTERFACE_MODE_1000BASEX &&
-	    state->interface != PHY_INTERFACE_MODE_MII &&
-	    state->interface != PHY_INTERFACE_MODE_REVMII &&
-	    state->interface != PHY_INTERFACE_MODE_GMII &&
-	    state->interface != PHY_INTERFACE_MODE_QSGMII &&
-	    state->interface != PHY_INTERFACE_MODE_XGMII &&
-	    state->interface != PHY_INTERFACE_MODE_HSGMII &&
-	    state->interface != PHY_INTERFACE_MODE_10GBASER &&
-	    state->interface != PHY_INTERFACE_MODE_10GKR &&
-	    state->interface != PHY_INTERFACE_MODE_USXGMII &&
-	    state->interface != PHY_INTERFACE_MODE_INTERNAL &&
-	    state->interface != PHY_INTERFACE_MODE_SGMII) {
-		bitmap_zero(supported, __ETHTOOL_LINK_MODE_MASK_NBITS);
-		dev_err(priv->ds->dev,
-			"Unsupported interface: %d for port %d\n",
-			state->interface, port);
-		return -EINVAL;
-	}
-
-	/* Allow all the expected bits */
-	phylink_set(mask, Autoneg);
-	phylink_set_port_modes(mask);
-	phylink_set(mask, Pause);
-	phylink_set(mask, Asym_Pause);
-
-	/* With the exclusion of MII and Reverse MII, we support Gigabit,
-	 * including Half duplex
-	 */
-	if (state->interface != PHY_INTERFACE_MODE_MII &&
-	    state->interface != PHY_INTERFACE_MODE_REVMII) {
-		phylink_set(mask, 1000baseT_Full);
-		phylink_set(mask, 1000baseT_Half);
-	}
-
-	/* Internal phys of the RTL93xx family provide 10G */
-	if (priv->ports[port].phy_is_integrated &&
-	    state->interface == PHY_INTERFACE_MODE_1000BASEX) {
-		phylink_set(mask, 1000baseX_Full);
-	} else if (priv->ports[port].phy_is_integrated) {
-		phylink_set(mask, 1000baseX_Full);
-		phylink_set(mask, 10000baseKR_Full);
-		phylink_set(mask, 10000baseSR_Full);
-		phylink_set(mask, 10000baseCR_Full);
-	}
-	if (state->interface == PHY_INTERFACE_MODE_INTERNAL) {
-		phylink_set(mask, 1000baseX_Full);
-		phylink_set(mask, 1000baseT_Full);
-		phylink_set(mask, 10000baseKR_Full);
-		phylink_set(mask, 10000baseT_Full);
-		phylink_set(mask, 10000baseSR_Full);
-		phylink_set(mask, 10000baseCR_Full);
-	}
-
-	if (state->interface == PHY_INTERFACE_MODE_USXGMII) {
-		phylink_set(mask, 2500baseT_Full);
-		phylink_set(mask, 5000baseT_Full);
-		phylink_set(mask, 10000baseT_Full);
-	}
-
-	phylink_set(mask, 10baseT_Half);
-	phylink_set(mask, 10baseT_Full);
-	phylink_set(mask, 100baseT_Half);
-	phylink_set(mask, 100baseT_Full);
-
-	bitmap_and(supported, supported, mask,
-		   __ETHTOOL_LINK_MODE_MASK_NBITS);
-	pr_debug("%s leaving supported: %*pb", __func__, __ETHTOOL_LINK_MODE_MASK_NBITS, supported);
-
-	return 0;
-}
-
-static void rtl83xx_pcs_get_state(struct phylink_pcs *pcs,
-				  struct phylink_link_state *state)
+static void rtldsa_83xx_pcs_get_state(struct phylink_pcs *pcs, struct phylink_link_state *state)
 {
 	struct rtl838x_pcs *rtpcs = container_of(pcs, struct rtl838x_pcs, pcs);
 	struct rtl838x_switch_priv *priv = rtpcs->priv;
 	int port = rtpcs->port;
 	u64 speed;
-	u64 link;
-
-	if (port < 0 || port > priv->cpu_port) {
-		state->link = false;
-		return;
-	}
 
 	state->link = 0;
-	link = priv->r->get_port_reg_le(priv->r->mac_link_sts);
-	if (link & BIT_ULL(port))
-		state->link = 1;
-	pr_debug("%s: link state port %d: %llx\n", __func__, port, link & BIT_ULL(port));
+	state->speed = SPEED_UNKNOWN;
+	state->duplex = DUPLEX_UNKNOWN;
+	state->pause &= ~(MLO_PAUSE_RX | MLO_PAUSE_TX);
 
-	state->duplex = 0;
+	if (port < 0 || port > priv->cpu_port)
+		return;
+
+	if (!(priv->r->get_port_reg_le(priv->r->mac_link_sts) & BIT_ULL(port)))
+		return;
+
+	state->link = 1;
+
 	if (priv->r->get_port_reg_le(priv->r->mac_link_dup_sts) & BIT_ULL(port))
-		state->duplex = 1;
+		state->duplex = DUPLEX_FULL;
+	else
+		state->duplex = DUPLEX_HALF;
 
 	speed = priv->r->get_port_reg_le(priv->r->mac_link_spd_sts(port));
-	speed >>= (port % 16) << 1;
-	switch (speed & 0x3) {
-	case 0:
+	speed = (speed >> ((port % 16) << 1)) & 0x3;
+
+	switch (speed) {
+	case RTL_SPEED_10:
 		state->speed = SPEED_10;
 		break;
-	case 1:
+	case RTL_SPEED_100:
 		state->speed = SPEED_100;
 		break;
-	case 2:
+	case RTL_SPEED_1000:
 		state->speed = SPEED_1000;
 		break;
 	case 3:
-		if (priv->family_id == RTL9300_FAMILY_ID
-			&& (port == 24 || port == 26)) /* Internal serdes */
-			state->speed = SPEED_2500;
-		else
-			state->speed = SPEED_100; /* Is in fact 500Mbit */
+		/*
+		 * This is ok so far but with minor inconsistencies. On RTL838x this setting is
+		 * for either 500M or 2G. It might be that MAC_GLITE_STS register tells more. On
+		 * RTL839x these vendor specifics are derived from MAC_LINK_500M_STS and mode 3
+		 * is 10G. This is of interest so resolve to it. Sadly it is off by one for the
+		 * current RTL_SPEED_10000 (=4) definition for RTL93xx.
+		 */
+		state->speed = SPEED_10000;
+		break;
 	}
 
-	state->pause &= (MLO_PAUSE_RX | MLO_PAUSE_TX);
 	if (priv->r->get_port_reg_le(priv->r->mac_rx_pause_sts) & BIT_ULL(port))
 		state->pause |= MLO_PAUSE_RX;
 	if (priv->r->get_port_reg_le(priv->r->mac_tx_pause_sts) & BIT_ULL(port))
 		state->pause |= MLO_PAUSE_TX;
 }
 
-static void rtl93xx_pcs_get_state(struct phylink_pcs *pcs,
-				  struct phylink_link_state *state)
+static void rtldsa_93xx_pcs_get_state(struct phylink_pcs *pcs,
+				      struct phylink_link_state *state)
 {
 	struct rtl838x_pcs *rtpcs = container_of(pcs, struct rtl838x_pcs, pcs);
 	struct rtl838x_switch_priv *priv = rtpcs->priv;
@@ -547,21 +631,25 @@ static void rtl93xx_pcs_get_state(struct phylink_pcs *pcs,
 	u64 link;
 	u64 media;
 
-	if (port < 0 || port > priv->cpu_port) {
-		state->link = false;
+	state->link = 0;
+	state->speed = SPEED_UNKNOWN;
+	state->duplex = DUPLEX_UNKNOWN;
+	state->pause &= ~(MLO_PAUSE_RX | MLO_PAUSE_TX);
+
+	if (port < 0 || port > priv->cpu_port)
 		return;
-	}
 
 	/* On the RTL9300 for at least the RTL8226B PHY, the MAC-side link
 	 * state needs to be read twice in order to read a correct result.
 	 * This would not be necessary for ports connected e.g. to RTL8218D
 	 * PHYs.
 	 */
-	state->link = 0;
 	link = priv->r->get_port_reg_le(priv->r->mac_link_sts);
 	link = priv->r->get_port_reg_le(priv->r->mac_link_sts);
-	if (link & BIT_ULL(port))
-		state->link = 1;
+	if (!(link & BIT_ULL(port)))
+		return;
+
+	state->link = 1;
 
 	if (priv->family_id == RTL9310_FAMILY_ID)
 		media = priv->r->get_port_reg_le(RTL931X_MAC_LINK_MEDIA_STS);
@@ -569,52 +657,40 @@ static void rtl93xx_pcs_get_state(struct phylink_pcs *pcs,
 	if (priv->family_id == RTL9300_FAMILY_ID)
 		media = sw_r32(RTL930X_MAC_LINK_MEDIA_STS);
 
-	if (media & BIT_ULL(port))
-		state->link = 1;
-
 	pr_debug("%s: link state port %d: %llx, media %llx\n", __func__, port,
 		 link & BIT_ULL(port), media);
 
-	state->duplex = 0;
 	if (priv->r->get_port_reg_le(priv->r->mac_link_dup_sts) & BIT_ULL(port))
-		state->duplex = 1;
+		state->duplex = DUPLEX_FULL;
+	else
+		state->duplex = DUPLEX_HALF;
 
 	speed = priv->r->get_port_reg_le(priv->r->mac_link_spd_sts(port));
-	speed >>= (port % 8) << 2;
-	switch (speed & 0xf) {
-	case 0:
+	speed = (speed >> ((port % 8) << 2)) & 0xf;
+	switch (speed) {
+	case RTL_SPEED_10:
 		state->speed = SPEED_10;
 		break;
-	case 1:
+	case RTL_SPEED_100:
 		state->speed = SPEED_100;
 		break;
-	case 2:
-	case 7:
+	case RTL_SPEED_1000:
 		state->speed = SPEED_1000;
 		break;
-	case 4:
+	case RTL_SPEED_10000:
 		state->speed = SPEED_10000;
 		break;
-	case 5:
-	case 8:
+	case RTL_SPEED_2500:
 		state->speed = SPEED_2500;
 		break;
-	case 6:
+	case RTL_SPEED_5000:
 		state->speed = SPEED_5000;
 		break;
 	default:
 		pr_err("%s: unknown speed: %d\n", __func__, (u32)speed & 0xf);
 	}
 
-	if (priv->family_id == RTL9310_FAMILY_ID
-		&& (port >= 52 && port <= 55)) { /* Internal serdes */
-			state->speed = SPEED_10000;
-			state->link = 1;
-			state->duplex = 1;
-	}
-
 	pr_debug("%s: speed is: %d %d\n", __func__, (u32)speed & 0xf, state->speed);
-	state->pause &= (MLO_PAUSE_RX | MLO_PAUSE_TX);
 	if (priv->r->get_port_reg_le(priv->r->mac_rx_pause_sts) & BIT_ULL(port))
 		state->pause |= MLO_PAUSE_RX;
 	if (priv->r->get_port_reg_le(priv->r->mac_tx_pause_sts) & BIT_ULL(port))
@@ -680,8 +756,8 @@ static void rtl83xx_config_interface(int port, phy_interface_t interface)
 	pr_debug("configured port %d for interface %s\n", port, phy_modes(interface));
 }
 
-static void rtl83xx_phylink_get_caps(struct dsa_switch *ds, int port,
-				     struct phylink_config *config)
+static void rtldsa_phylink_get_caps(struct dsa_switch *ds, int port,
+				    struct phylink_config *config)
 {
 	/*
 	 * TODO: This capability check will need some love. Depending on the model and the
@@ -692,14 +768,14 @@ static void rtl83xx_phylink_get_caps(struct dsa_switch *ds, int port,
 	config->mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE | MAC_10 | MAC_100 |
 				   MAC_1000FD | MAC_2500FD | MAC_5000FD | MAC_10000FD;
 
+	__set_bit(PHY_INTERFACE_MODE_1000BASEX, config->supported_interfaces);
+	__set_bit(PHY_INTERFACE_MODE_10GBASER, config->supported_interfaces);
+	__set_bit(PHY_INTERFACE_MODE_2500BASEX, config->supported_interfaces);
 	__set_bit(PHY_INTERFACE_MODE_GMII, config->supported_interfaces);
 	__set_bit(PHY_INTERFACE_MODE_INTERNAL, config->supported_interfaces);
 	__set_bit(PHY_INTERFACE_MODE_QSGMII, config->supported_interfaces);
 	__set_bit(PHY_INTERFACE_MODE_SGMII, config->supported_interfaces);
 	__set_bit(PHY_INTERFACE_MODE_USXGMII, config->supported_interfaces);
-	__set_bit(PHY_INTERFACE_MODE_XGMII, config->supported_interfaces);
-	__set_bit(PHY_INTERFACE_MODE_1000BASEX, config->supported_interfaces);
-	__set_bit(PHY_INTERFACE_MODE_10GBASER, config->supported_interfaces);
 }
 
 static void rtl83xx_phylink_mac_config(struct dsa_switch *ds, int port,
@@ -824,6 +900,7 @@ static void rtl93xx_phylink_mac_config(struct dsa_switch *ds, int port,
 	if (sds_num >= 0 &&
 	    (state->interface == PHY_INTERFACE_MODE_1000BASEX ||
 	     state->interface == PHY_INTERFACE_MODE_SGMII ||
+	     state->interface == PHY_INTERFACE_MODE_2500BASEX ||
 	     state->interface == PHY_INTERFACE_MODE_10GBASER))
 		rtl9300_serdes_setup(port, sds_num, state->interface);
 }
@@ -976,40 +1053,477 @@ static void rtl93xx_phylink_mac_link_up(struct dsa_switch *ds, int port,
 	sw_w32_mask(0, 0x3, priv->r->mac_port_ctrl(port));
 }
 
-static void rtl83xx_get_strings(struct dsa_switch *ds,
-				int port, u32 stringset, u8 *data)
+static const struct rtldsa_mib_desc *rtldsa_get_mib_desc(struct rtl838x_switch_priv *priv)
 {
-	if (stringset != ETH_SS_STATS)
-		return;
-
-	for (int i = 0; i < ARRAY_SIZE(rtl83xx_mib); i++)
-		ethtool_puts(&data, rtl83xx_mib[i].name);
-}
-
-static void rtl83xx_get_ethtool_stats(struct dsa_switch *ds, int port,
-				      uint64_t *data)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-	const struct rtl83xx_mib_desc *mib;
-	u64 h;
-
-	for (int i = 0; i < ARRAY_SIZE(rtl83xx_mib); i++) {
-		mib = &rtl83xx_mib[i];
-
-		data[i] = sw_r32(priv->r->stat_port_std_mib + (port << 8) + 252 - mib->offset);
-		if (mib->size == 2) {
-			h = sw_r32(priv->r->stat_port_std_mib + (port << 8) + 248 - mib->offset);
-			data[i] |= h << 32;
-		}
+	switch (priv->family_id) {
+	case RTL8380_FAMILY_ID:
+		return &rtldsa_838x_mib;
+	case RTL8390_FAMILY_ID:
+		return &rtldsa_839x_mib;
+	case RTL9300_FAMILY_ID:
+		return &rtldsa_930x_mib;
+	default:
+		return NULL;
 	}
 }
 
-static int rtl83xx_get_sset_count(struct dsa_switch *ds, int port, int sset)
+static bool rtldsa_read_mib_item(struct rtl838x_switch_priv *priv, int port,
+				 const struct rtldsa_mib_item *mib_item,
+				 uint64_t *data)
 {
+	uint32_t high1, high2;
+	int reg, reg_offset, addr_low;
+
+	switch (mib_item->reg) {
+	case MIB_REG_STD:
+		reg = priv->r->stat_port_std_mib;
+		reg_offset = 256;
+		break;
+	case MIB_REG_PRV:
+		reg = priv->r->stat_port_prv_mib;
+		reg_offset = 128;
+		break;
+	default:
+		return false;
+	}
+
+	addr_low = reg + (port + 1) * reg_offset - 4 - mib_item->offset;
+
+	if (mib_item->size == 2) {
+		high1 = sw_r32(addr_low - 4);
+		*data = sw_r32(addr_low);
+		high2 = sw_r32(addr_low - 4);
+		if (high1 != high2) {
+			/* Low must have wrapped and overflowed into high, read again */
+			*data = sw_r32(addr_low);
+		}
+		*data |= (uint64_t)high2 << 32;
+	} else {
+		*data = sw_r32(addr_low);
+	}
+
+	return true;
+}
+
+static void rtldsa_update_counter(struct rtl838x_switch_priv *priv, int port,
+				  struct rtldsa_counter *counter,
+				  const struct rtldsa_mib_item *mib_item)
+{
+	uint64_t val;
+	uint32_t val32, diff;
+
+	if (!rtldsa_read_mib_item(priv, port, mib_item, &val))
+		return;
+
+	if (mib_item->size == 2) {
+		counter->val = val;
+	} else {
+		val32 = (uint32_t)val;
+		diff = val32 - counter->last;
+		counter->val += diff;
+		counter->last = val32;
+	}
+}
+
+static void rtldsa_update_port_counters(struct rtl838x_switch_priv *priv, int port)
+{
+	struct rtldsa_counter_state *counters = &priv->ports[port].counters;
+	const struct rtldsa_mib_desc *mib_desc;
+	ktime_t now;
+
+	mib_desc = rtldsa_get_mib_desc(priv);
+	if (!mib_desc)
+		return;
+
+	/* Prevent unnecessary updates when the user accesses different stats quickly.
+	 * This compensates a bit for always updating all stats, even when just a
+	 * subset is actually requested.
+	 */
+	now = ktime_get();
+	if (ktime_before(now, ktime_add_ms(counters->last_update, 100)))
+		return;
+	counters->last_update = now;
+
+	rtldsa_update_counter(priv, port, &counters->symbol_errors,
+			      &mib_desc->symbol_errors);
+
+	rtldsa_update_counter(priv, port, &counters->if_in_octets,
+			      &mib_desc->if_in_octets);
+	rtldsa_update_counter(priv, port, &counters->if_out_octets,
+			      &mib_desc->if_out_octets);
+	rtldsa_update_counter(priv, port, &counters->if_in_ucast_pkts,
+			      &mib_desc->if_in_ucast_pkts);
+	rtldsa_update_counter(priv, port, &counters->if_in_mcast_pkts,
+			      &mib_desc->if_in_mcast_pkts);
+	rtldsa_update_counter(priv, port, &counters->if_in_bcast_pkts,
+			      &mib_desc->if_in_bcast_pkts);
+	rtldsa_update_counter(priv, port, &counters->if_out_ucast_pkts,
+			      &mib_desc->if_out_ucast_pkts);
+	rtldsa_update_counter(priv, port, &counters->if_out_mcast_pkts,
+			      &mib_desc->if_out_mcast_pkts);
+	rtldsa_update_counter(priv, port, &counters->if_out_bcast_pkts,
+			      &mib_desc->if_out_bcast_pkts);
+	rtldsa_update_counter(priv, port, &counters->if_out_discards,
+			      &mib_desc->if_out_discards);
+	rtldsa_update_counter(priv, port, &counters->single_collisions,
+			      &mib_desc->single_collisions);
+	rtldsa_update_counter(priv, port, &counters->multiple_collisions,
+			      &mib_desc->multiple_collisions);
+	rtldsa_update_counter(priv, port, &counters->deferred_transmissions,
+			      &mib_desc->deferred_transmissions);
+	rtldsa_update_counter(priv, port, &counters->late_collisions,
+			      &mib_desc->late_collisions);
+	rtldsa_update_counter(priv, port, &counters->excessive_collisions,
+			      &mib_desc->excessive_collisions);
+	rtldsa_update_counter(priv, port, &counters->crc_align_errors,
+			      &mib_desc->crc_align_errors);
+	rtldsa_update_counter(priv, port, &counters->rx_pkts_over_max_octets,
+			      &mib_desc->rx_pkts_over_max_octets);
+
+	rtldsa_update_counter(priv, port, &counters->unsupported_opcodes,
+			      &mib_desc->unsupported_opcodes);
+
+	rtldsa_update_counter(priv, port, &counters->rx_undersize_pkts,
+			      &mib_desc->rx_undersize_pkts);
+	rtldsa_update_counter(priv, port, &counters->rx_oversize_pkts,
+			      &mib_desc->rx_oversize_pkts);
+	rtldsa_update_counter(priv, port, &counters->rx_fragments,
+			      &mib_desc->rx_fragments);
+	rtldsa_update_counter(priv, port, &counters->rx_jabbers,
+			      &mib_desc->rx_jabbers);
+
+	for (int i = 0; i < ARRAY_SIZE(mib_desc->tx_pkts); i++) {
+		if (mib_desc->tx_pkts[i].reg == MIB_REG_INVALID)
+			break;
+
+		rtldsa_update_counter(priv, port, &counters->tx_pkts[i],
+				      &mib_desc->tx_pkts[i]);
+	}
+	for (int i = 0; i < ARRAY_SIZE(mib_desc->rx_pkts); i++) {
+		if (mib_desc->rx_pkts[i].reg == MIB_REG_INVALID)
+			break;
+
+		rtldsa_update_counter(priv, port, &counters->rx_pkts[i],
+				      &mib_desc->rx_pkts[i]);
+	}
+
+	rtldsa_update_counter(priv, port, &counters->drop_events,
+			      &mib_desc->drop_events);
+	rtldsa_update_counter(priv, port, &counters->collisions,
+			      &mib_desc->collisions);
+
+	rtldsa_update_counter(priv, port, &counters->rx_pause_frames,
+			      &mib_desc->rx_pause_frames);
+	rtldsa_update_counter(priv, port, &counters->tx_pause_frames,
+			      &mib_desc->tx_pause_frames);
+}
+
+static void rtldsa_poll_counters(struct work_struct *work)
+{
+	struct rtl838x_switch_priv *priv = container_of(to_delayed_work(work),
+							struct rtl838x_switch_priv,
+							counters_work);
+	struct rtldsa_counter_state *counters;
+
+	for (int i = 0; i < priv->cpu_port; i++) {
+		if (!priv->ports[i].phy)
+			continue;
+
+		counters = &priv->ports[i].counters;
+
+		spin_lock(&counters->lock);
+		rtldsa_update_port_counters(priv, i);
+		spin_unlock(&counters->lock);
+	}
+
+	queue_delayed_work(priv->wq, &priv->counters_work,
+			   RTLDSA_COUNTERS_POLL_INTERVAL);
+}
+
+static void rtldsa_init_counters(struct rtl838x_switch_priv *priv)
+{
+	struct rtldsa_counter_state *counters;
+
+	for (int i = 0; i < priv->cpu_port; i++) {
+		if (!priv->ports[i].phy)
+			continue;
+
+		counters = &priv->ports[i].counters;
+
+		memset(counters, 0, sizeof(*counters));
+		spin_lock_init(&counters->lock);
+	}
+
+	INIT_DELAYED_WORK(&priv->counters_work, rtldsa_poll_counters);
+	queue_delayed_work(priv->wq, &priv->counters_work,
+			   RTLDSA_COUNTERS_POLL_INTERVAL);
+}
+
+static void rtldsa_get_strings(struct dsa_switch *ds,
+			       int port, u32 stringset, u8 *data)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	const struct rtldsa_mib_desc *mib_desc;
+
+	if (stringset != ETH_SS_STATS)
+		return;
+
+	if (port < 0 || port >= priv->cpu_port)
+		return;
+
+	mib_desc = rtldsa_get_mib_desc(priv);
+	if (!mib_desc)
+		return;
+
+	for (int i = 0; i < mib_desc->list_count; i++)
+		ethtool_puts(&data, mib_desc->list[i].name);
+}
+
+static void rtldsa_get_ethtool_stats(struct dsa_switch *ds, int port,
+				     uint64_t *data)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	const struct rtldsa_mib_desc *mib_desc;
+	const struct rtldsa_mib_item *mib_item;
+
+	if (port < 0 || port >= priv->cpu_port)
+		return;
+
+	mib_desc = rtldsa_get_mib_desc(priv);
+	if (!mib_desc)
+		return;
+
+	for (int i = 0; i < mib_desc->list_count; i++) {
+		mib_item = &mib_desc->list[i].item;
+		rtldsa_read_mib_item(priv, port, mib_item, &data[i]);
+	}
+}
+
+static int rtldsa_get_sset_count(struct dsa_switch *ds, int port, int sset)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	const struct rtldsa_mib_desc *mib_desc;
+
 	if (sset != ETH_SS_STATS)
 		return 0;
 
-	return ARRAY_SIZE(rtl83xx_mib);
+	if (port < 0 || port >= priv->cpu_port)
+		return 0;
+
+	mib_desc = rtldsa_get_mib_desc(priv);
+	if (!mib_desc)
+		return 0;
+
+	return mib_desc->list_count;
+}
+
+
+static void rtldsa_get_eth_phy_stats(struct dsa_switch *ds, int port,
+				     struct ethtool_eth_phy_stats *phy_stats)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	struct rtldsa_counter_state *counters = &priv->ports[port].counters;
+
+	if (port < 0 || port >= priv->cpu_port)
+		return;
+
+	if (!rtldsa_get_mib_desc(priv))
+		return;
+
+	spin_lock(&counters->lock);
+
+	rtldsa_update_port_counters(priv, port);
+
+	phy_stats->SymbolErrorDuringCarrier = counters->symbol_errors.val;
+
+	spin_unlock(&counters->lock);
+}
+
+static void rtldsa_get_eth_mac_stats(struct dsa_switch *ds, int port,
+				     struct ethtool_eth_mac_stats *mac_stats)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	struct rtldsa_counter_state *counters = &priv->ports[port].counters;
+
+	if (port < 0 || port >= priv->cpu_port)
+		return;
+
+	if (!rtldsa_get_mib_desc(priv))
+		return;
+
+	spin_lock(&counters->lock);
+
+	rtldsa_update_port_counters(priv, port);
+
+	/* Frame and octet counters are calculated based on RFC3635, while also
+	 * taking into account that the behaviour of the hardware counters differs
+	 * in some places.
+	 */
+
+	mac_stats->FramesReceivedOK = counters->if_in_ucast_pkts.val +
+				      counters->if_in_mcast_pkts.val +
+				      counters->if_in_bcast_pkts.val +
+				      counters->rx_pause_frames.val +
+				      counters->rx_pkts_over_max_octets.val;
+
+	mac_stats->FramesTransmittedOK = counters->if_out_ucast_pkts.val +
+					 counters->if_out_mcast_pkts.val +
+					 counters->if_out_bcast_pkts.val +
+					 counters->tx_pause_frames.val -
+					 counters->if_out_discards.val;
+
+	mac_stats->OctetsReceivedOK = counters->if_in_octets.val -
+				      18 * mac_stats->FramesReceivedOK;
+	mac_stats->OctetsTransmittedOK = counters->if_out_octets.val -
+				         18 * mac_stats->FramesTransmittedOK;
+
+	mac_stats->SingleCollisionFrames = counters->single_collisions.val;
+	mac_stats->MultipleCollisionFrames = counters->multiple_collisions.val;
+	mac_stats->FramesWithDeferredXmissions = counters->deferred_transmissions.val;
+	mac_stats->LateCollisions = counters->late_collisions.val;
+	mac_stats->FramesAbortedDueToXSColls = counters->excessive_collisions.val;
+
+	mac_stats->FrameCheckSequenceErrors = counters->crc_align_errors.val;
+
+	spin_unlock(&counters->lock);
+}
+
+static void rtldsa_get_eth_ctrl_stats(struct dsa_switch *ds, int port,
+				      struct ethtool_eth_ctrl_stats *ctrl_stats)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	struct rtldsa_counter_state *counters = &priv->ports[port].counters;
+
+	if (port < 0 || port >= priv->cpu_port)
+		return;
+
+	if (!rtldsa_get_mib_desc(priv))
+		return;
+
+	spin_lock(&counters->lock);
+
+	rtldsa_update_port_counters(priv, port);
+
+	ctrl_stats->UnsupportedOpcodesReceived = counters->unsupported_opcodes.val;
+
+	spin_unlock(&counters->lock);
+}
+
+static void rtldsa_get_rmon_stats(struct dsa_switch *ds, int port,
+				  struct ethtool_rmon_stats *rmon_stats,
+				  const struct ethtool_rmon_hist_range **ranges)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	const struct rtldsa_mib_desc *mib_desc;
+	struct rtldsa_counter_state *counters = &priv->ports[port].counters;
+
+	if (port < 0 || port >= priv->cpu_port)
+		return;
+
+	mib_desc = rtldsa_get_mib_desc(priv);
+	if (!mib_desc)
+		return;
+
+	spin_lock(&counters->lock);
+
+	rtldsa_update_port_counters(priv, port);
+
+	rmon_stats->undersize_pkts = counters->rx_undersize_pkts.val;
+	rmon_stats->oversize_pkts = counters->rx_oversize_pkts.val;
+	rmon_stats->fragments = counters->rx_fragments.val;
+	rmon_stats->jabbers = counters->rx_jabbers.val;
+
+	for (int i = 0; i < ARRAY_SIZE(mib_desc->rx_pkts); i++) {
+		if (mib_desc->rx_pkts[i].reg == MIB_REG_INVALID)
+			break;
+
+		rmon_stats->hist[i] = counters->rx_pkts[i].val;
+	}
+
+
+	for (int i = 0; i < ARRAY_SIZE(mib_desc->tx_pkts); i++) {
+		if (mib_desc->tx_pkts[i].reg == MIB_REG_INVALID)
+			break;
+
+		rmon_stats->hist_tx[i] = counters->tx_pkts[i].val;
+	}
+
+	*ranges = mib_desc->rmon_ranges;
+
+	spin_unlock(&counters->lock);
+}
+
+static void rtldsa_get_stats64(struct dsa_switch *ds, int port,
+			       struct rtnl_link_stats64 *s)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	struct rtldsa_counter_state *counters = &priv->ports[port].counters;
+
+	if (port < 0 || port >= priv->cpu_port)
+		return;
+
+	if (!rtldsa_get_mib_desc(priv)) {
+		dev_get_tstats64(dsa_to_port(ds, port)->user, s);
+		return;
+	}
+
+	spin_lock(&counters->lock);
+
+	rtldsa_update_port_counters(priv, port);
+
+	s->rx_packets = counters->if_in_ucast_pkts.val +
+			counters->if_in_mcast_pkts.val +
+			counters->if_in_bcast_pkts.val +
+			counters->rx_pkts_over_max_octets.val;
+
+	s->tx_packets = counters->if_out_ucast_pkts.val +
+			counters->if_out_mcast_pkts.val +
+			counters->if_out_bcast_pkts.val -
+			counters->if_out_discards.val;
+
+	/* Subtract FCS for each packet, and pause frames */
+	s->rx_bytes = counters->if_in_octets.val -
+		      4 * s->rx_packets -
+		      64 * counters->rx_pause_frames.val;
+	s->tx_bytes = counters->if_out_octets.val -
+		      4 * s->tx_packets -
+		      64 * counters->tx_pause_frames.val;
+
+	s->collisions = counters->collisions.val;
+
+	s->rx_dropped = counters->drop_events.val;
+	s->tx_dropped = counters->if_out_discards.val;
+
+	s->rx_crc_errors = counters->crc_align_errors.val;
+	s->rx_errors = s->rx_crc_errors;
+
+	s->tx_aborted_errors = counters->excessive_collisions.val;
+	s->tx_window_errors = counters->late_collisions.val;
+	s->tx_errors = s->tx_aborted_errors + s->tx_window_errors;
+
+	spin_unlock(&counters->lock);
+}
+
+static void rtldsa_get_pause_stats(struct dsa_switch *ds, int port,
+				   struct ethtool_pause_stats *pause_stats)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	struct rtldsa_counter_state *counters = &priv->ports[port].counters;
+
+	if (port < 0 || port >= priv->cpu_port)
+		return;
+
+	if (!rtldsa_get_mib_desc(priv))
+		return;
+
+	spin_lock(&counters->lock);
+
+	rtldsa_update_port_counters(priv, port);
+
+	pause_stats->tx_pause_frames = counters->tx_pause_frames.val;
+	pause_stats->rx_pause_frames = counters->rx_pause_frames.val;
+
+	spin_unlock(&counters->lock);
 }
 
 static int rtl83xx_mc_group_alloc(struct rtl838x_switch_priv *priv, int port)
@@ -1408,19 +1922,19 @@ static int rtl83xx_vlan_prepare(struct dsa_switch *ds, int port,
 
 	priv->r->vlan_tables_read(0, &info);
 
-	pr_debug("VLAN 0: Tagged ports %llx, untag %llx, profile %d, MC# %d, UC# %d, FID %x\n",
-		info.tagged_ports, info.untagged_ports, info.profile_id,
+	pr_debug("VLAN 0: Member ports %llx, untag %llx, profile %d, MC# %d, UC# %d, FID %x\n",
+		info.member_ports, info.untagged_ports, info.profile_id,
 		info.hash_mc_fid, info.hash_uc_fid, info.fid);
 
 	priv->r->vlan_tables_read(1, &info);
-	pr_debug("VLAN 1: Tagged ports %llx, untag %llx, profile %d, MC# %d, UC# %d, FID %x\n",
-		info.tagged_ports, info.untagged_ports, info.profile_id,
+	pr_debug("VLAN 1: Member ports %llx, untag %llx, profile %d, MC# %d, UC# %d, FID %x\n",
+		info.member_ports, info.untagged_ports, info.profile_id,
 		info.hash_mc_fid, info.hash_uc_fid, info.fid);
 	priv->r->vlan_set_untagged(1, info.untagged_ports);
 	pr_debug("SET: Untagged ports, VLAN %d: %llx\n", 1, info.untagged_ports);
 
 	priv->r->vlan_set_tagged(1, &info);
-	pr_debug("SET: Tagged ports, VLAN %d: %llx\n", 1, info.tagged_ports);
+	pr_debug("SET: Member ports, VLAN %d: %llx\n", 1, info.member_ports);
 
 	return 0;
 }
@@ -1469,7 +1983,7 @@ static int rtl83xx_vlan_add(struct dsa_switch *ds, int port,
 	priv->r->vlan_tables_read(vlan->vid, &info);
 
 	/* new VLAN? */
-	if (!info.tagged_ports) {
+	if (!info.member_ports) {
 		info.fid = 0;
 		info.hash_mc_fid = false;
 		info.hash_uc_fid = false;
@@ -1477,10 +1991,10 @@ static int rtl83xx_vlan_add(struct dsa_switch *ds, int port,
 	}
 
 	/* sanitize untagged_ports - must be a subset */
-	if (info.untagged_ports & ~info.tagged_ports)
+	if (info.untagged_ports & ~info.member_ports)
 		info.untagged_ports = 0;
 
-	info.tagged_ports |= BIT_ULL(port);
+	info.member_ports |= BIT_ULL(port);
 	if (vlan->flags & BRIDGE_VLAN_INFO_UNTAGGED)
 		info.untagged_ports |= BIT_ULL(port);
 	else
@@ -1490,7 +2004,7 @@ static int rtl83xx_vlan_add(struct dsa_switch *ds, int port,
 	pr_debug("Untagged ports, VLAN %d: %llx\n", vlan->vid, info.untagged_ports);
 
 	priv->r->vlan_set_tagged(vlan->vid, &info);
-	pr_debug("Tagged ports, VLAN %d: %llx\n", vlan->vid, info.tagged_ports);
+	pr_debug("Member ports, VLAN %d: %llx\n", vlan->vid, info.member_ports);
 
 	mutex_unlock(&priv->reg_mutex);
 
@@ -1527,13 +2041,13 @@ static int rtl83xx_vlan_del(struct dsa_switch *ds, int port,
 
 	/* remove port from both tables */
 	info.untagged_ports &= (~BIT_ULL(port));
-	info.tagged_ports &= (~BIT_ULL(port));
+	info.member_ports &= (~BIT_ULL(port));
 
 	priv->r->vlan_set_untagged(vlan->vid, info.untagged_ports);
 	pr_debug("Untagged ports, VLAN %d: %llx\n", vlan->vid, info.untagged_ports);
 
 	priv->r->vlan_set_tagged(vlan->vid, &info);
-	pr_debug("Tagged ports, VLAN %d: %llx\n", vlan->vid, info.tagged_ports);
+	pr_debug("Member ports, VLAN %d: %llx\n", vlan->vid, info.member_ports);
 
 	mutex_unlock(&priv->reg_mutex);
 
@@ -2154,45 +2668,23 @@ out:
 	return 0;
 }
 
-static int rtl83xx_dsa_phy_read(struct dsa_switch *ds, int phy_addr, int phy_reg)
+static int rtldsa_phy_read(struct dsa_switch *ds, int addr, int regnum)
 {
-	u32 val;
-	u32 offset = 0;
 	struct rtl838x_switch_priv *priv = ds->priv;
 
-	if ((phy_addr >= 24) &&
-	    (phy_addr <= 27) &&
-	    (priv->ports[24].phy == PHY_RTL838X_SDS)) {
-		if (phy_addr == 26)
-			offset = 0x100;
-		val = sw_r32(RTL838X_SDS4_FIB_REG0 + offset + (phy_reg << 2)) & 0xffff;
-		return val;
-	}
-
-	read_phy(phy_addr, 0, phy_reg, &val);
-	return val;
+	return mdiobus_read_nested(priv->parent_bus, addr, regnum);
 }
 
-static int rtl83xx_dsa_phy_write(struct dsa_switch *ds, int phy_addr, int phy_reg, u16 val)
+static int rtldsa_phy_write(struct dsa_switch *ds, int addr, int regnum, u16 val)
 {
-	u32 offset = 0;
 	struct rtl838x_switch_priv *priv = ds->priv;
 
-	if ((phy_addr >= 24) &&
-	    (phy_addr <= 27) &&
-	    (priv->ports[24].phy == PHY_RTL838X_SDS)) {
-		if (phy_addr == 26)
-			offset = 0x100;
-		sw_w32(val, RTL838X_SDS4_FIB_REG0 + offset + (phy_reg << 2));
-		return 0;
-	}
-	return write_phy(phy_addr, 0, phy_reg, val);
+	return mdiobus_write_nested(priv->parent_bus, addr, regnum, val);
 }
 
 const struct phylink_pcs_ops rtl83xx_pcs_ops = {
 	.pcs_an_restart		= rtl83xx_pcs_an_restart,
-	.pcs_validate		= rtl83xx_pcs_validate,
-	.pcs_get_state		= rtl83xx_pcs_get_state,
+	.pcs_get_state		= rtldsa_83xx_pcs_get_state,
 	.pcs_config		= rtl83xx_pcs_config,
 };
 
@@ -2200,18 +2692,24 @@ const struct dsa_switch_ops rtl83xx_switch_ops = {
 	.get_tag_protocol	= rtl83xx_get_tag_protocol,
 	.setup			= rtl83xx_setup,
 
-	.phy_read		= rtl83xx_dsa_phy_read,
-	.phy_write		= rtl83xx_dsa_phy_write,
+	.phy_read		= rtldsa_phy_read,
+	.phy_write		= rtldsa_phy_write,
 
-	.phylink_get_caps	= rtl83xx_phylink_get_caps,
+	.phylink_get_caps	= rtldsa_phylink_get_caps,
 	.phylink_mac_config	= rtl83xx_phylink_mac_config,
 	.phylink_mac_link_down	= rtl83xx_phylink_mac_link_down,
 	.phylink_mac_link_up	= rtl83xx_phylink_mac_link_up,
 	.phylink_mac_select_pcs	= rtl83xx_phylink_mac_select_pcs,
 
-	.get_strings		= rtl83xx_get_strings,
-	.get_ethtool_stats	= rtl83xx_get_ethtool_stats,
-	.get_sset_count		= rtl83xx_get_sset_count,
+	.get_strings		= rtldsa_get_strings,
+	.get_ethtool_stats	= rtldsa_get_ethtool_stats,
+	.get_sset_count		= rtldsa_get_sset_count,
+	.get_eth_phy_stats	= rtldsa_get_eth_phy_stats,
+	.get_eth_mac_stats	= rtldsa_get_eth_mac_stats,
+	.get_eth_ctrl_stats	= rtldsa_get_eth_ctrl_stats,
+	.get_rmon_stats		= rtldsa_get_rmon_stats,
+	.get_stats64		= rtldsa_get_stats64,
+	.get_pause_stats	= rtldsa_get_pause_stats,
 
 	.port_enable		= rtl83xx_port_enable,
 	.port_disable		= rtl83xx_port_disable,
@@ -2249,8 +2747,7 @@ const struct dsa_switch_ops rtl83xx_switch_ops = {
 
 const struct phylink_pcs_ops rtl93xx_pcs_ops = {
 	.pcs_an_restart		= rtl83xx_pcs_an_restart,
-	.pcs_validate		= rtl93xx_pcs_validate,
-	.pcs_get_state		= rtl93xx_pcs_get_state,
+	.pcs_get_state		= rtldsa_93xx_pcs_get_state,
 	.pcs_config		= rtl83xx_pcs_config,
 };
 
@@ -2258,18 +2755,24 @@ const struct dsa_switch_ops rtl930x_switch_ops = {
 	.get_tag_protocol	= rtl83xx_get_tag_protocol,
 	.setup			= rtl93xx_setup,
 
-	.phy_read		= rtl83xx_dsa_phy_read,
-	.phy_write		= rtl83xx_dsa_phy_write,
+	.phy_read		= rtldsa_phy_read,
+	.phy_write		= rtldsa_phy_write,
 
-	.phylink_get_caps	= rtl83xx_phylink_get_caps,
+	.phylink_get_caps	= rtldsa_phylink_get_caps,
 	.phylink_mac_config	= rtl93xx_phylink_mac_config,
 	.phylink_mac_link_down	= rtl93xx_phylink_mac_link_down,
 	.phylink_mac_link_up	= rtl93xx_phylink_mac_link_up,
 	.phylink_mac_select_pcs	= rtl83xx_phylink_mac_select_pcs,
 
-	.get_strings		= rtl83xx_get_strings,
-	.get_ethtool_stats	= rtl83xx_get_ethtool_stats,
-	.get_sset_count		= rtl83xx_get_sset_count,
+	.get_strings		= rtldsa_get_strings,
+	.get_ethtool_stats	= rtldsa_get_ethtool_stats,
+	.get_sset_count		= rtldsa_get_sset_count,
+	.get_eth_phy_stats	= rtldsa_get_eth_phy_stats,
+	.get_eth_mac_stats	= rtldsa_get_eth_mac_stats,
+	.get_eth_ctrl_stats	= rtldsa_get_eth_ctrl_stats,
+	.get_rmon_stats		= rtldsa_get_rmon_stats,
+	.get_stats64		= rtldsa_get_stats64,
+	.get_pause_stats	= rtldsa_get_pause_stats,
 
 	.port_enable		= rtl83xx_port_enable,
 	.port_disable		= rtl83xx_port_disable,
