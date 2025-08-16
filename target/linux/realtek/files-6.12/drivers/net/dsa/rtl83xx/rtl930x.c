@@ -22,6 +22,8 @@
 #define RTL930X_VLAN_PORT_TAG_STS_CTRL_IGR_P_OTAG_KEEP_MASK	GENMASK(1,1)
 #define RTL930X_VLAN_PORT_TAG_STS_CTRL_IGR_P_ITAG_KEEP_MASK	GENMASK(0,0)
 
+#define RTL930X_GPIO_SEL_GPIO19_LEDSYNC_SEL		BIT(11)
+
 #define RTL930X_LED_GLB_ACTIVE_LOW				BIT(22)
 
 #define RTL930X_LED_SETX_0_CTRL(x) (RTL930X_LED_SET0_0_CTRL - (x * 8))
@@ -2272,9 +2274,18 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 		sprintf(set_name, "led_set%d", set);
 		leds_in_this_set = of_property_count_u32_elems(node, set_name);
 
-		if (leds_in_this_set == 0 || leds_in_this_set > sizeof(set_config)) {
-			pr_err("%s led_set configuration invalid skipping over this set\n", __func__);
+		if (leds_in_this_set == -EINVAL) {
+			// if this led_setX property is not present, skip it silently
 			continue;
+		}
+
+		if (leds_in_this_set <= 0 || leds_in_this_set > sizeof(set_config)) {
+			pr_err("%s: %s configuration invalid skipping over this set, leds_in_this_set=%d (should be >0 and <=%d\n",
+				__func__, set_name, leds_in_this_set, sizeof(set_config));
+			continue;
+		}
+		else {
+			pr_info("%s: %s has %d LEDs configured\n", __func__, set_name, leds_in_this_set);
 		}
 
 		if (of_property_read_u32_array(node, set_name, set_config, leds_in_this_set)) {
@@ -2311,6 +2322,12 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 
 	/* Set LED mode to serial (0x1) */
 	sw_w32_mask(0x3, 0x1, RTL930X_LED_GLB_CTRL);
+
+	/* Enable GPIO19_LEDSYNC if utilised */
+	if (of_property_read_bool(node, "led-sync"))
+		sw_w32_mask(0,RTL930X_GPIO_SEL_GPIO19_LEDSYNC_SEL,RTL930X_GPIO_SEL_CTRL);
+	else
+		sw_w32_mask(RTL930X_GPIO_SEL_GPIO19_LEDSYNC_SEL, 0, RTL930X_GPIO_SEL_CTRL);
 
 	/* Set LED active state */
 	if (of_property_read_bool(node, "active-low"))
