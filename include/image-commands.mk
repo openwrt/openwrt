@@ -3,6 +3,9 @@
 IMAGE_KERNEL = $(word 1,$^)
 IMAGE_ROOTFS = $(word 2,$^)
 
+# check for pigz in STAGING_DIR_HOST and set GZIPCMD
+GZIPCMD:= $(shell [ -x "$(STAGING_DIR_HOST)/bin/pigz" ] && echo pigz || echo gzip)
+
 define ModelNameLimit16
 $(shell printf %.16s "$(word 2, $(subst _, ,$(1)))")
 endef
@@ -433,7 +436,7 @@ define Build/libdeflate-gzip
 endef
 
 define Build/gzip
-	$(STAGING_DIR_HOST)/bin/gzip -f -9n -c $@ $(1) > $@.new
+	$(STAGING_DIR_HOST)/bin/$(GZIPCMD) -f -9n -c $@ $(1) > $@.new
 	@mv $@.new $@
 endef
 
@@ -441,7 +444,7 @@ define Build/gzip-filename
 	@mkdir -p $@.tmp
 	@cp $@ $@.tmp/$(word 1,$(1))
 	$(if $(SOURCE_DATE_EPOCH),touch -hcd "@$(SOURCE_DATE_EPOCH)" $@.tmp/$(word 1,$(1)) $(word 2,$(1)))
-	$(STAGING_DIR_HOST)/bin/gzip -f -9 -N -c $@.tmp/$(word 1,$(1)) $(word 2,$(1)) > $@.new
+	$(STAGING_DIR_HOST)/bin/$(GZIPCMD) -f -9 -N -c $@.tmp/$(word 1,$(1)) $(word 2,$(1)) > $@.new
 	@mv $@.new $@
 	@rm -rf $@.tmp
 endef
