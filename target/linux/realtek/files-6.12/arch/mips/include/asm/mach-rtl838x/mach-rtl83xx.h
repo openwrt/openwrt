@@ -414,8 +414,4 @@ struct rtl83xx_soc_info {
 	int cpu_port;
 };
 
-/* rtl83xx-related functions used across subsystems */
-int rtl931x_read_phy(u32 port, u32 page, u32 reg, u32 *val);
-int rtl931x_write_phy(u32 port, u32 page, u32 reg, u32 val);
-
 #endif   /* _MACH_RTL838X_H_ */
