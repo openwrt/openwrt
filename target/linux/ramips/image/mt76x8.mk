@@ -6,6 +6,20 @@ include ./common-tp-link.mk
 
 DEFAULT_SOC := mt7628an
 
+define Build/creality_wb-01-factory
+	mv $@ $(dir $@)factory.bin
+	$(eval kernel_size=851968)
+	( \
+		echo '#!/bin/sh'; \
+		echo '[ -z "$$2" ] && file="factory.bin" || file="$$2/factory.bin"'; \
+		echo 'file_size=$$(wc -c < $$file)'; \
+		echo 'rootfs_size=$$((file_size - $(kernel_size)))'; \
+		echo 'mtd_write -o 0 -l $(kernel_size) write $$file Kernel'; \
+		echo 'mtd_write -r -o $(kernel_size) -l $$rootfs_size write $$file RootFS'; \
+	) > $(dir $@)install.sh
+	tar cjf $@ -C $(dir $@) factory.bin install.sh
+endef
+
 define Build/elecom-header
 	$(eval model_id=$(1))
 	( \
@@ -184,6 +198,17 @@ define Device/comfast_cf-wr758ac-v2
   SUPPORTED_DEVICES += joowin,jw-wr758ac-v2
 endef
 TARGET_DEVICES += comfast_cf-wr758ac-v2
+
+define Device/creality_wb-01
+  IMAGE_SIZE := 16064k
+  IMAGES += cxsw_update.tar.bz2
+  IMAGE/cxsw_update.tar.bz2 := $$(sysupgrade_bin) | creality_wb-01-factory
+  DEVICE_VENDOR := Creality
+  DEVICE_MODEL := WB-01
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-sdhci-mt7620
+  SUPPORTED_DEVICES += creality_wb-01
+endef
+TARGET_DEVICES += creality_wb-01
 
 define Device/cudy_m1200-v1
   IMAGE_SIZE := 15872k
