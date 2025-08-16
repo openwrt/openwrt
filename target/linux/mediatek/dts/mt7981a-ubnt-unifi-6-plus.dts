@@ -64,13 +64,13 @@
 
 		conf-pu {
 			pins = "SPI2_CS", "SPI2_HOLD", "SPI2_WP";
-			drive-strength = <8>;
+			drive-strength = <MTK_DRIVE_8mA>;
 			bias-pull-up = <103>;
 		};
 
 		conf-pd {
 			pins = "SPI2_CLK", "SPI2_MOSI", "SPI2_MISO";
-			drive-strength = <8>;
+			drive-strength = <MTK_DRIVE_8mA>;
 			bias-pull-down = <103>;
 		};
 	};

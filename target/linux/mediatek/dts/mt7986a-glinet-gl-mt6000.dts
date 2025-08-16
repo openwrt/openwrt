@@ -200,7 +200,7 @@
 			       "WF1_HB2", "WF1_HB3", "WF1_HB4", "WF1_HB0",
 			       "WF1_HB5", "WF1_HB6", "WF1_HB7", "WF1_HB8",
 			       "WF1_TOP_CLK", "WF1_TOP_DATA";
-			drive-strength = <4>;
+			drive-strength = <MTK_DRIVE_4mA>;
 		};
 	};
 
@@ -214,22 +214,22 @@
 			       "EMMC_DATA_3", "EMMC_DATA_4", "EMMC_DATA_5",
 			       "EMMC_DATA_6", "EMMC_DATA_7", "EMMC_CMD";
 			input-enable;
-			drive-strength = <4>;
-			mediatek,pull-up-adv = <1>;	/* pull-up 10K */
+			drive-strength = <MTK_DRIVE_4mA>;
+			bias-pull-up = <MTK_PUPD_SET_R1R0_01>;	/* pull-up 10K */
 		};
 		conf-clk {
 			pins = "EMMC_CK";
-			drive-strength = <6>;
-			mediatek,pull-down-adv = <2>;	/* pull-down 50K */
+			drive-strength = <MTK_DRIVE_6mA>;
+			bias-pull-down = <MTK_PUPD_SET_R1R0_10>;	/* pull-down 50K */
 		};
 		conf-ds {
 			pins = "EMMC_DSL";
-			mediatek,pull-down-adv = <2>;	/* pull-down 50K */
+			bias-pull-down = <MTK_PUPD_SET_R1R0_10>;	/* pull-down 50K */
 		};
 		conf-rst {
 			pins = "EMMC_RSTB";
-			drive-strength = <4>;
-			mediatek,pull-up-adv = <1>;	/* pull-up 10K */
+			drive-strength = <MTK_DRIVE_4mA>;
+			bias-pull-up = <MTK_PUPD_SET_R1R0_01>;	/* pull-up 10K */
 		};
 	};
 
@@ -243,22 +243,22 @@
 			       "EMMC_DATA_3", "EMMC_DATA_4", "EMMC_DATA_5",
 			       "EMMC_DATA_6", "EMMC_DATA_7", "EMMC_CMD";
 			input-enable;
-			drive-strength = <4>;
-			mediatek,pull-up-adv = <1>;	/* pull-up 10K */
+			drive-strength = <MTK_DRIVE_4mA>;
+			bias-pull-up = <MTK_PUPD_SET_R1R0_01>;	/* pull-up 10K */
 		};
 		conf-clk {
 			pins = "EMMC_CK";
-			drive-strength = <6>;
-			mediatek,pull-down-adv = <2>;	/* pull-down 50K */
+			drive-strength = <MTK_DRIVE_6mA>;
+			bias-pull-down = <MTK_PUPD_SET_R1R0_10>;	/* pull-down 50K */
 		};
 		conf-ds {
 			pins = "EMMC_DSL";
-			mediatek,pull-down-adv = <2>;	/* pull-down 50K */
+			bias-pull-down = <MTK_PUPD_SET_R1R0_10>;	/* pull-down 50K */
 		};
 		conf-rst {
 			pins = "EMMC_RSTB";
-			drive-strength = <4>;
-			mediatek,pull-up-adv = <1>;	/* pull-up 10K */
+			drive-strength = <MTK_DRIVE_4mA>;
+			bias-pull-up = <MTK_PUPD_SET_R1R0_01>;	/* pull-up 10K */
 		};
 	};
 };
