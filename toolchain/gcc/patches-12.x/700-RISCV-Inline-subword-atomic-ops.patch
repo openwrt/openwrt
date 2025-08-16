@@ -81,8 +81,8 @@ Signed-off-by: Palmer Dabbelt <palmer@rivosinc.com>
  void riscv_cpu_cpp_builtins (cpp_reader *);
 --- a/gcc/config/riscv/riscv.cc
 +++ b/gcc/config/riscv/riscv.cc
-@@ -5605,6 +5605,55 @@ riscv_asan_shadow_offset (void)
-   return TARGET_64BIT ? (HOST_WIDE_INT_1 << 29) : 0;
+@@ -5604,6 +5604,55 @@ riscv_asan_shadow_offset (void)
+   return TARGET_64BIT ? HOST_WIDE_INT_UC (0xd55550000) : 0;
  }
  
 +/* Given memory reference MEM, expand code to compute the aligned
@@ -357,7 +357,7 @@ Signed-off-by: Palmer Dabbelt <palmer@rivosinc.com>
  (define_insn "atomic_cas_value_strong<mode>"
    [(set (match_operand:GPR 0 "register_operand" "=&r")
  	(match_operand:GPR 1 "memory_operand" "+A"))
-@@ -152,6 +334,125 @@
+@@ -161,6 +343,125 @@
    DONE;
  })
  
@@ -495,7 +495,7 @@ Signed-off-by: Palmer Dabbelt <palmer@rivosinc.com>
  
  @emph{Adapteva Epiphany Options}
  @gccoptlist{-mhalf-reg-file  -mprefer-short-insn-regs @gol
-@@ -28035,6 +28036,13 @@ Do or don't use smaller but slower prolo
+@@ -28070,6 +28071,13 @@ Do or don't use smaller but slower prolo
  library function calls.  The default is to use fast inline prologues and
  epilogues.
  
