@@ -80,10 +80,10 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #include <linux/usb.h>
  #include <linux/clk.h>
 +#include <linux/pinctrl/consumer.h>
- #include <linux/rt2x00_platform.h>
  
  #include <net/mac80211.h>
-@@ -1017,6 +1018,11 @@ struct rt2x00_dev {
+ 
+@@ -1015,6 +1016,11 @@ struct rt2x00_dev {
  
  	/* Clock for System On Chip devices. */
  	struct clk *clk;

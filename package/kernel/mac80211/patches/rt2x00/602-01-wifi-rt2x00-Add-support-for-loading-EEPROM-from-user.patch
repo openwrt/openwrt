@@ -100,7 +100,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	.drv_init_registers	= rt2800mmio_init_registers,
 --- a/drivers/net/wireless/ralink/rt2x00/rt2x00.h
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2x00.h
-@@ -693,6 +693,7 @@ enum rt2x00_capability_flags {
+@@ -692,6 +692,7 @@ enum rt2x00_capability_flags {
  	REQUIRE_HT_TX_DESC,
  	REQUIRE_PS_AUTOWAKE,
  	REQUIRE_DELAYED_RFKILL,
@@ -108,7 +108,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  	/*
  	 * Capabilities
-@@ -1505,4 +1506,13 @@ void rt2x00lib_remove_dev(struct rt2x00_
+@@ -1504,4 +1505,13 @@ void rt2x00lib_remove_dev(struct rt2x00_
  int rt2x00lib_suspend(struct rt2x00_dev *rt2x00dev);
  int rt2x00lib_resume(struct rt2x00_dev *rt2x00dev);
  
@@ -124,7 +124,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  #endif /* RT2X00_H */
 --- /dev/null
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2x00eeprom.c
-@@ -0,0 +1,77 @@
+@@ -0,0 +1,79 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later
 +/*	Copyright (C) 2004 - 2009 Ivo van Doorn <IvDoorn@gmail.com>
 + *	Copyright (C) 2004 - 2009 Gertjan van Wingerde <gwingerde@gmail.com>
@@ -137,6 +137,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +
 +#include <linux/kernel.h>
 +#include <linux/module.h>
++#include <linux/of.h>
 +
 +#include "rt2x00.h"
 +#include "rt2x00soc.h"
@@ -144,10 +145,11 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +static const char *
 +rt2x00lib_get_eeprom_file_name(struct rt2x00_dev *rt2x00dev)
 +{
-+	struct rt2x00_platform_data *pdata = rt2x00dev->dev->platform_data;
++	struct device_node *np = rt2x00dev->dev->of_node;
++	const char *eep;
 +
-+	if (pdata && pdata->eeprom_file_name)
-+		return pdata->eeprom_file_name;
++	if (np && !of_property_read_string(np, "ralink,eeprom", &eep))
++		return eep;
 +
 +	return NULL;
 +}
