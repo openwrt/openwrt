@@ -1,0 +1,179 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621_teltonika_rutm-common.dtsi"
+
+/ {
+	compatible = "teltonika,rutm30", "mediatek,mt7621-soc";
+	model = "Teltonika RUTM30/RUTM31";
+
+	gpio_spi {
+		compatible = "spi-gpio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		sck-gpios = <&gpio 9 GPIO_ACTIVE_HIGH>;
+		mosi-gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
+		cs-gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
+		num-chipselects = <1>;
+
+		gpio_hc595: gpio_hc595@0 {
+			compatible = "fairchild,74hc595";
+			reg = <0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			registers-number = <2>;
+			spi-max-frequency = <10000000>;
+			enable-gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		gpio_modem_reset {
+			gpio-export,name = "modem_reset";
+			gpio-export,output = <0>;
+			gpios = <&gpio 13 GPIO_ACTIVE_HIGH>;
+		};
+
+		gpio_modem_power {
+			gpio-export,name = "modem_power";
+			gpio-export,output = <0>;
+			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
+		};
+
+		gpio_esim_select {
+			gpio-export,name = "esim_select";
+			gpio-export,output = <0>;
+			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
+		};
+
+		gpio_tpm_enable {
+			gpio-export,name = "tpm_enable";
+			gpio-export,output = <1>;
+			gpios = <&gpio 6 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		gsm_red {
+			function = LED_FUNCTION_MOBILE;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+		};
+
+		gsm_green {
+			function = LED_FUNCTION_MOBILE;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+		};
+
+		gsm_blue {
+			function = LED_FUNCTION_MOBILE;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
+		};
+
+		rssi_red {
+			label = "red:rssi";
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
+		};
+
+		rssi_green {
+			label = "green:rssi";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 48 GPIO_ACTIVE_LOW>;
+		};
+
+		rssi_blue {
+			label = "blue:rssi";
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 47 GPIO_ACTIVE_LOW>;
+		};
+
+		lan-g {
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 43 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "mt7530-0:01:1Gbps";
+		};
+
+		lan-y {
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_AMBER>;
+			gpios = <&gpio 42 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "mt7530-0:01:100Mbps";
+		};
+
+		wan-g {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 41 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "mt7530-0:00:1Gbps";
+		};
+
+		wan-y {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_AMBER>;
+			gpios = <&gpio 45 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "mt7530-0:00:100Mbps";
+		};
+	};
+};
+
+&switch0 {
+	ports {
+		port@1 {
+			status = "okay";
+			label = "lan";
+		};
+	};
+};
+
+&i2c {
+	status = "okay";
+
+	tpm: tpm@2e {
+		compatible = "infineon,slb9673";
+		reg = <0x2e>;
+		status = "okay";
+	};
+};
+
+&gmac1 {
+	phy-handle = <&ethphy0>;
+};
+
+&ethphy0 {
+	/delete-property/ interrupts;
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_0>;
+		nvmem-cell-names = "eeprom";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		band@0 {
+			reg = <0>;
+			nvmem-cells = <&macaddr_config_0 2>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		band@1 {
+			reg = <1>;
+			nvmem-cells = <&macaddr_config_0 3>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
+};

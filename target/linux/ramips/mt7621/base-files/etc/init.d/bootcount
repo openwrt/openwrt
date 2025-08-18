@@ -49,6 +49,7 @@ boot() {
 		[ $(printf %d $(fw_printenv -n Image1Stable)) -gt 0 ] || fw_setenv Image1Stable 1
 		[ $(printf %d $(fw_printenv -n Image1Try)) -gt 0 ] && fw_setenv Image1Try 0
 		;;
+	teltonika,rutm30|\
 	teltonika,rutm50)
 		#Bootloader expect successfull startup value after update, we need to write success value to bootconfig partition
 		#otherwise bootloader will fallback to previous root partition
