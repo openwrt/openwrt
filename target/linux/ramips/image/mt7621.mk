@@ -2856,6 +2856,15 @@ define Device/teltonika_rutm50
 endef
 TARGET_DEVICES += teltonika_rutm50
 
+define Device/teltonika_rutm30
+  $(Device/teltonika_rutm_common)
+  DEVICE_MODEL := RUTM30
+  DEVICE_ALT0_VENDOR := Teltonika
+  DEVICE_ALT0_MODEL := RUTM31
+  DEVICE_PACKAGES += kmod-usb-net-qmi-wwan kmod-usb-net-cdc-ncm
+endef
+TARGET_DEVICES += teltonika_rutm30
+
 define Device/thunder_timecloud
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
