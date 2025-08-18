@@ -2865,6 +2865,13 @@ define Device/teltonika_rutm30
 endef
 TARGET_DEVICES += teltonika_rutm30
 
+define Device/teltonika_rutm11
+  $(Device/teltonika_rutm_common)
+  DEVICE_MODEL := RUTM11
+  DEVICE_PACKAGES += kmod-usb-net-qmi-wwan kmod-usb-net-cdc-mbim
+endef
+TARGET_DEVICES += teltonika_rutm11
+
 define Device/thunder_timecloud
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
