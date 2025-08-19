@@ -20,10 +20,10 @@ Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
 +			#clock-cells = <0>;
 +		};
 +
- 		sleep_clk: sleep-clk {
+ 		gephy_rx_clk: gephy-rx-clk {
  			compatible = "fixed-clock";
- 			#clock-cells = <0>;
-@@ -185,6 +191,17 @@
+ 			clock-frequency = <125000000>;
+@@ -229,6 +235,17 @@
  			status = "disabled";
  		};
  
