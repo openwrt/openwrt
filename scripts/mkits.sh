@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 #
 # Licensed under the terms of the GNU GPL License version 2 or later.
 #
@@ -16,7 +16,7 @@
 
 usage() {
 	printf "Usage: %s -A arch -C comp -a addr -e entry" "$(basename "$0")"
-	printf " -v version -k kernel [-D name -n address -d dtb] -o its_file"
+	printf " -v version -k kernel [-D name -n address -d dtb] -o its_file -c config_name"
 
 	printf "\n\t-A ==> set architecture to 'arch'"
 	printf "\n\t-C ==> set compression type 'comp'"
@@ -75,12 +75,38 @@ do
 	esac
 done
 
-# Make sure user entered all required parameters
-if [ -z "${ARCH}" ] || [ -z "${COMPRESS}" ] || [ -z "${LOAD_ADDR}" ] || \
-	[ -z "${ENTRY_ADDR}" ] || [ -z "${VERSION}" ] || [ -z "${KERNEL}" ] || \
-	[ -z "${OUTPUT}" ] || [ -z "${CONFIG}" ]; then
+check_required_params()  {
+	local missing=""
+
+	# Array of required parameters in format "variable:flag:description"
+	local required_params=(
+		"ARCH:A:architecture"
+		"COMPRESS:C:compression type"
+		"LOAD_ADDR:a:load address"
+		"ENTRY_ADDR:e:entry point"
+		"VERSION:v:kernel version"
+		"KERNEL:k:kernel image"
+		"OUTPUT:o:output file"
+		"CONFIG:c:config name"
+	)
+
+	for param in "${required_params[@]}"; do
+		local var_name="${param%%:*}"
+		local flag="${param#*:}"
+		local desc="${param##*:}"
+
+		flag="${flag%%:*}"
+
+		[ -z "${!var_name}" ] && missing="${missing}\n  ${var_name} (-${flag}): ${desc}"
+	done
+
+	[ -z "${missing}" ] && return
+
+	echo -e "Error: Missing required parameters:${missing}"
 	usage
-fi
+}
+
+check_required_params
 
 ARCH_UPPER=$(echo "$ARCH" | tr '[:lower:]' '[:upper:]')
 
