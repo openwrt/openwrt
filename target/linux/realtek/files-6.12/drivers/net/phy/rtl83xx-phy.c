@@ -844,24 +844,18 @@ static int rtl8380_configure_ext_rtl8218b(struct phy_device *phydev)
 
 static bool __rtl8214fc_media_is_fibre(struct phy_device *phydev)
 {
-	struct mii_bus *bus = phydev->mdio.bus;
+	struct phy_device *basephy = get_base_phy(phydev);
 	static int regs[] = {16, 19, 20, 21};
-	int addr = phydev->mdio.addr & ~3;
 	int reg = regs[phydev->mdio.addr & 3];
 	int oldpage, val;
 
-	/*
-	 * The fiber status cannot be read directly from the phy. It is a package "global"
-	 * attribute and therefore located in the first phy. To avoid state handling assume
-	 * an aligment to addresses divisible by 4.
-	 */
-
-	oldpage = __mdiobus_read(bus, addr, RTL8XXX_PAGE_SELECT);
-	__mdiobus_write(bus, addr, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
-	__mdiobus_write(bus, addr, RTL8XXX_PAGE_SELECT, RTL821X_PAGE_PORT);
-	val = __mdiobus_read(bus, addr, reg);
-	__mdiobus_write(bus, addr, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
-	__mdiobus_write(bus, addr, RTL8XXX_PAGE_SELECT, oldpage);
+	/* The fiber status is a package "global" in the first phy. */
+	oldpage = __phy_read(basephy, RTL8XXX_PAGE_SELECT);
+	__phy_write(basephy, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
+	__phy_write(basephy, RTL8XXX_PAGE_SELECT, RTL821X_PAGE_PORT);
+	val = __phy_read(basephy, reg);
+	__phy_write(basephy, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
+	__phy_write(basephy, RTL8XXX_PAGE_SELECT, oldpage);
 
 	return !(val & BMCR_PDOWN);
 }
@@ -883,10 +877,8 @@ static void rtl8214fc_power_set(struct phy_device *phydev, int port, bool on)
 	int page = port == PORT_FIBRE ? RTL821X_MEDIA_PAGE_FIBRE : RTL821X_MEDIA_PAGE_COPPER;
 	int pdown = on ? 0 : BMCR_PDOWN;
 
-	pr_info("%s: Powering %s %s (port %d)\n", __func__,
-		on ? "on" : "off",
-		port == PORT_FIBRE ? "FIBRE" : "COPPER",
-		phydev->mdio.addr);
+	phydev_info(phydev, "power %s %s\n", on ? "on" : "off",
+		    port == PORT_FIBRE ? "fibre" : "copper");
 
 	phy_write(phydev, RTL821XINT_MEDIA_PAGE_SELECT, page);
 	phy_modify_paged(phydev, RTL821X_PAGE_POWER, 0x10, BMCR_PDOWN, pdown);
@@ -903,47 +895,29 @@ static int rtl8214fc_suspend(struct phy_device *phydev)
 
 static int rtl8214fc_resume(struct phy_device *phydev)
 {
-	if (rtl8214fc_media_is_fibre(phydev)) {
-		rtl8214fc_power_set(phydev, PORT_MII, false);
-		rtl8214fc_power_set(phydev, PORT_FIBRE, true);
-	} else {
-		rtl8214fc_power_set(phydev, PORT_FIBRE, false);
-		rtl8214fc_power_set(phydev, PORT_MII, true);
-	}
+	bool set_fibre = rtl8214fc_media_is_fibre(phydev);
+
+	rtl8214fc_power_set(phydev, PORT_MII, !set_fibre);
+	rtl8214fc_power_set(phydev, PORT_FIBRE, set_fibre);
 
 	return 0;
 }
 
 static void rtl8214fc_media_set(struct phy_device *phydev, bool set_fibre)
 {
-	int mac = phydev->mdio.addr;
+	struct phy_device *basephy = get_base_phy(phydev);
+	int pdown = set_fibre ? 0 : BMCR_PDOWN;
+	static int regs[] = {16, 19, 20, 21};
+	int reg = regs[phydev->mdio.addr & 3];
 
-	static int reg[] = {16, 19, 20, 21};
-	int val;
-
-	pr_info("%s: port %d, set_fibre: %d\n", __func__, mac, set_fibre);
-	phy_package_write_paged(phydev, RTL838X_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
-	val = phy_package_read_paged(phydev, RTL821X_PAGE_PORT, reg[mac % 4]);
-
-	val |= BIT(10);
-	if (set_fibre) {
-		val &= ~BMCR_PDOWN;
-	} else {
-		val |= BMCR_PDOWN;
-	}
-
-	phy_package_write_paged(phydev, RTL838X_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
-	phy_package_write_paged(phydev, RTL821X_PAGE_PORT, reg[mac % 4], val);
-	phy_package_write_paged(phydev, RTL838X_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
+	phydev_info(phydev, "switch to %s\n", set_fibre ? "fibre" : "copper");
+	phy_write_paged(basephy, RTL838X_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
+	phy_modify_paged(basephy, RTL821X_PAGE_PORT, reg, BMCR_PDOWN, pdown);
+	phy_write_paged(basephy, RTL838X_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 
 	if (!phydev->suspended) {
-		if (set_fibre) {
-			rtl8214fc_power_set(phydev, PORT_MII, false);
-			rtl8214fc_power_set(phydev, PORT_FIBRE, true);
-		} else {
-			rtl8214fc_power_set(phydev, PORT_FIBRE, false);
-			rtl8214fc_power_set(phydev, PORT_MII, true);
-		}
+		rtl8214fc_power_set(phydev, PORT_MII, !set_fibre);
+		rtl8214fc_power_set(phydev, PORT_FIBRE, set_fibre);
 	}
 }
 
@@ -3558,7 +3532,7 @@ static int rtl8214fc_sfp_insert(void *upstream, const struct sfp_eeprom_id *id)
 	sfp_parse_support(phydev->sfp_bus, id, support, interfaces);
 	iface = sfp_select_interface(phydev->sfp_bus, support);
 
-	dev_info(&phydev->mdio.dev, "%s SFP module inserted\n", phy_modes(iface));
+	phydev_info(phydev, "%s SFP module inserted\n", phy_modes(iface));
 
 	rtl8214fc_media_set(phydev, true);
 
