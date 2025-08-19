@@ -1,0 +1,34 @@
+From 3a92ee5a97f030bdb1e88272a5d277ecb76836d6 Mon Sep 17 00:00:00 2001
+From: Zoltan HERPAI <wigyori@uid0.hu>
+Date: Sun, 1 Jun 2025 14:03:30 +0000
+Subject: [PATCH 7/8] riscv: dts: starfive: visionfive2: add SYSLED support
+
+A SYS LED is available at aongpio-3. Add standard heartbeat
+support for it.
+
+Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
+---
+ .../dts/starfive/jh7110-starfive-visionfive-2.dtsi   | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+--- a/arch/riscv/boot/dts/starfive/jh7110-starfive-visionfive-2.dtsi
++++ b/arch/riscv/boot/dts/starfive/jh7110-starfive-visionfive-2.dtsi
+@@ -21,6 +21,18 @@
+ 			reg = <0x0 0x6ce00000 0x0 0x1600000>;
+ 		};
+ 	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		led-ack {
++			gpios = <&aongpio 3 GPIO_ACTIVE_HIGH>;
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_HEARTBEAT;
++			linux,default-trigger = "heartbeat";
++			label = "ack";
++		};
++	};
+ };
+ 
+ &gmac1 {
