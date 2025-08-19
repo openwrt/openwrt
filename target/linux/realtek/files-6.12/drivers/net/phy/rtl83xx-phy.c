@@ -106,6 +106,11 @@ static const struct firmware rtl838x_8380_fw;
 static const struct firmware rtl838x_8214fc_fw;
 static const struct firmware rtl838x_8218b_fw;
 
+static inline struct phy_device *get_base_phy(struct phy_device *phydev)
+{
+	return mdiobus_get_phy(phydev->mdio.bus, phydev->shared->base_addr);
+}
+
 static u64 disable_polling(int port)
 {
 	u64 saved_state;
@@ -3576,20 +3581,13 @@ static const struct sfp_upstream_ops rtl8214fc_sfp_ops = {
 
 static int rtl8214fc_phy_probe(struct phy_device *phydev)
 {
-	struct device *dev = &phydev->mdio.dev;
-	int addr = phydev->mdio.addr;
+	int base_addr = phydev->mdio.addr & ~3;
 	int ret = 0;
 
-	/* All base addresses of the PHYs start at multiples of 8 */
-	devm_phy_package_join(dev, phydev, addr & (~7),
-				sizeof(struct rtl83xx_shared_private));
-
-	if (!(addr % 8)) {
-		struct rtl83xx_shared_private *shared = phydev->shared->priv;
-		shared->name = "RTL8214FC";
-		/* Configuration must be done while patching still possible */
+	devm_phy_package_join(&phydev->mdio.dev, phydev, base_addr, 0);
+	if (phydev->mdio.addr == base_addr + 3) {
 		if (soc_info.family == RTL8380_FAMILY_ID)
-			ret = rtl8380_configure_rtl8214fc(phydev);
+			ret = rtl8380_configure_rtl8214fc(get_base_phy(phydev));
 		if (ret)
 			return ret;
 	}
@@ -3599,39 +3597,23 @@ static int rtl8214fc_phy_probe(struct phy_device *phydev)
 
 static int rtl8214c_phy_probe(struct phy_device *phydev)
 {
-	struct device *dev = &phydev->mdio.dev;
-	int addr = phydev->mdio.addr;
+	int base_addr = phydev->mdio.addr & ~3;
 
-	/* All base addresses of the PHYs start at multiples of 8 */
-	devm_phy_package_join(dev, phydev, addr & (~7),
-				sizeof(struct rtl83xx_shared_private));
-
-	if (!(addr % 8)) {
-		struct rtl83xx_shared_private *shared = phydev->shared->priv;
-		shared->name = "RTL8214C";
-		/* Configuration must be done whil patching still possible */
-		return rtl8380_configure_rtl8214c(phydev);
-	}
+	devm_phy_package_join(&phydev->mdio.dev, phydev, base_addr, 0);
+	if (phydev->mdio.addr == base_addr + 3)
+		return rtl8380_configure_rtl8214c(get_base_phy(phydev));
 
 	return 0;
 }
 
 static int rtl8218b_ext_phy_probe(struct phy_device *phydev)
 {
-	struct device *dev = &phydev->mdio.dev;
-	int addr = phydev->mdio.addr;
+	int base_addr = phydev->mdio.addr & ~7;
 
-	/* All base addresses of the PHYs start at multiples of 8 */
-	devm_phy_package_join(dev, phydev, addr & (~7),
-				sizeof(struct rtl83xx_shared_private));
-
-	if (!(addr % 8)) {
-		struct rtl83xx_shared_private *shared = phydev->shared->priv;
-		shared->name = "RTL8218B (external)";
-		if (soc_info.family == RTL8380_FAMILY_ID) {
-			/* Configuration must be done while patching still possible */
-			return rtl8380_configure_ext_rtl8218b(phydev);
-		}
+	devm_phy_package_join(&phydev->mdio.dev, phydev, base_addr, 0);
+	if (phydev->mdio.addr == base_addr + 7) {
+		if (soc_info.family == RTL8380_FAMILY_ID)
+			return rtl8380_configure_ext_rtl8218b(get_base_phy(phydev));
 	}
 
 	return 0;
@@ -3639,46 +3621,25 @@ static int rtl8218b_ext_phy_probe(struct phy_device *phydev)
 
 static int rtl8218b_int_phy_probe(struct phy_device *phydev)
 {
-	struct device *dev = &phydev->mdio.dev;
-	int addr = phydev->mdio.addr;
+	int base_addr = phydev->mdio.addr & ~7;
 
 	if (soc_info.family != RTL8380_FAMILY_ID)
 		return -ENODEV;
-	if (addr >= 24)
+	if (base_addr >= 24)
 		return -ENODEV;
 
-	pr_debug("%s: id: %d\n", __func__, addr);
-	/* All base addresses of the PHYs start at multiples of 8 */
-	devm_phy_package_join(dev, phydev, addr & (~7),
-			      sizeof(struct rtl83xx_shared_private));
-
-	if (!(addr % 8)) {
-		struct rtl83xx_shared_private *shared = phydev->shared->priv;
-		shared->name = "RTL8218B (internal)";
-		/* Configuration must be done while patching still possible */
-		return rtl8380_configure_int_rtl8218b(phydev);
-	}
+	devm_phy_package_join(&phydev->mdio.dev, phydev, base_addr, 0);
+	if (phydev->mdio.addr == base_addr + 7)
+		return rtl8380_configure_int_rtl8218b(get_base_phy(phydev));
 
 	return 0;
 }
 
 static int rtl8218d_phy_probe(struct phy_device *phydev)
 {
-	struct device *dev = &phydev->mdio.dev;
-	int addr = phydev->mdio.addr;
+	int base_addr = phydev->mdio.addr & ~7;
 
-	pr_debug("%s: id: %d\n", __func__, addr);
-	/* All base addresses of the PHYs start at multiples of 8 */
-	devm_phy_package_join(dev, phydev, addr & (~7),
-			      sizeof(struct rtl83xx_shared_private));
-
-	/* All base addresses of the PHYs start at multiples of 8 */
-	if (!(addr % 8)) {
-		struct rtl83xx_shared_private *shared = phydev->shared->priv;
-		shared->name = "RTL8218D";
-		/* Configuration must be done while patching still possible */
-/* TODO:		return configure_rtl8218d(phydev); */
-	}
+	devm_phy_package_join(&phydev->mdio.dev, phydev, base_addr, 0);
 
 	return 0;
 }
