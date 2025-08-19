@@ -253,6 +253,19 @@ menu "Target Images"
 		depends on GRUB_IMAGES || GRUB_EFI_IMAGES
 		default y
 
+	config ALIGN_SIZE
+		int "Partition Aignment Size (in kB)"
+		depends on GRUB_IMAGES || GRUB_EFI_IMAGES
+		default 256
+		help
+		  Define the partition alignment value to pass to ptgen at image creation.
+		  Many SSD devices and Advanced Format drives are known to suffer performance
+		  problems if partitions are not aligned properly for their internal data
+		  structures.
+		    256 kB will start the partitions at block 512
+		    1024 kB will start the partitions at block 2048
+		    and so on.
+
 	config GRUB_BAUDRATE
 		int "Serial port baud rate"
 		depends on GRUB_IMAGES || GRUB_EFI_IMAGES
