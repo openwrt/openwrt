@@ -187,6 +187,7 @@ $(eval $(call SetupHostCommand,perl,Please install Perl 5.x, \
 	perl --version | grep "perl.*v5"))
 
 $(eval $(call SetupHostCommand,python,Please install Python >= 3.7, \
+	python3.13 -V 2>&1 | grep 'Python 3', \
 	python3.12 -V 2>&1 | grep 'Python 3', \
 	python3.11 -V 2>&1 | grep 'Python 3', \
 	python3.10 -V 2>&1 | grep 'Python 3', \
@@ -196,6 +197,7 @@ $(eval $(call SetupHostCommand,python,Please install Python >= 3.7, \
 	python3 -V 2>&1 | grep -E 'Python 3\.([7-9]|[0-9][0-9])\.?'))
 
 $(eval $(call SetupHostCommand,python3,Please install Python >= 3.7, \
+	python3.13 -V 2>&1 | grep 'Python 3', \
 	python3.12 -V 2>&1 | grep 'Python 3', \
 	python3.11 -V 2>&1 | grep 'Python 3', \
 	python3.10 -V 2>&1 | grep 'Python 3', \
