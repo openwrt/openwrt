@@ -88,5 +88,16 @@ define Package/nand-utils/install
 	$(PKG_INSTALL_DIR)/usr/lib/mtd-utils/nandbiterrs $(1)/usr/sbin/
 endef
 
+define Build/InstallDev
+	$(INSTALL_DIR) $(1)/usr/include
+	$(INSTALL_DIR) $(1)/usr/include/mtd
+	$(CP) $(PKG_BUILD_DIR)/include/libmtd.h $(1)/usr/include
+	$(CP) $(PKG_BUILD_DIR)/include/libubi.h $(1)/usr/include
+	$(CP) $(PKG_BUILD_DIR)/include/mtd/* $(1)/usr/include/mtd
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(CP) $(PKG_BUILD_DIR)/libmtd.a $(1)/usr/lib
+	$(CP) $(PKG_BUILD_DIR)/libubi.a $(1)/usr/lib
+endef
+
 $(eval $(call BuildPackage,ubi-utils))
 $(eval $(call BuildPackage,nand-utils))
