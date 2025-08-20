@@ -2682,7 +2682,7 @@ static void rtl9300_phy_enable_10g_1g(int sds_num)
 }
 
 static int rtl9300_sds_10g_idle(int sds_num);
-static void rtl9300_serdes_patch(int sds_num);
+static void rtl9300_serdes_patch(int sds_num, phy_interface_t phy_mode);
 
 #define RTL930X_MAC_FORCE_MODE_CTRL		(0xCA1C)
 int rtl9300_serdes_setup(int port, int sds_num, phy_interface_t phy_mode)
@@ -2693,7 +2693,7 @@ int rtl9300_serdes_setup(int port, int sds_num, phy_interface_t phy_mode)
 	rtl9300_sds_rst(sds_num, RTL930X_SDS_OFF);
 
 	/* Apply serdes patches */
-	rtl9300_serdes_patch(sds_num);
+	rtl9300_serdes_patch(sds_num, phy_mode);
 
 	/* Maybe use dal_longan_sds_init */
 
@@ -2764,7 +2764,7 @@ typedef struct {
 	u16 data;
 } sds_config;
 
-sds_config rtl9300_a_sds_10gr_lane0[] =
+static const sds_config rtl9300_a_sds_10gr_lane0[] =
 {
 	/* 1G */
 	{0x00, 0x0E, 0x3053}, {0x01, 0x14, 0x0100}, {0x21, 0x03, 0x8206},
@@ -2812,7 +2812,7 @@ sds_config rtl9300_a_sds_10gr_lane0[] =
 	{0x2F, 0x19, 0x4902}, {0x2F, 0x1D, 0x76E1},
 };
 
-sds_config rtl9300_a_sds_10gr_lane1[] =
+static const sds_config rtl9300_a_sds_10gr_lane1[] =
 {
 	/* 1G */
 	{0x00, 0x0E, 0x3053}, {0x01, 0x14, 0x0100}, {0x21, 0x03, 0x8206},
@@ -2855,19 +2855,43 @@ sds_config rtl9300_a_sds_10gr_lane1[] =
 	{0x2B, 0x14, 0x3108}, {0x2D, 0x13, 0x3C87}, {0x2D, 0x14, 0x1808},
 };
 
-static void rtl9300_serdes_patch(int sds_num)
+static void rtl9300_serdes_patch(int sds_num, phy_interface_t phy_mode)
 {
+	const sds_config *cfg_lane0, *cfg_lane1;
+	size_t cnt_lane0, cnt_lane1;
+
+	/* Select the appropriate patch list according to phy_mode. The selection
+	 * comes from dal_longan_construct_serdesConfig_init provided by
+	 * dal_longan_construct.c. */
+	switch (phy_mode) {
+	case PHY_INTERFACE_MODE_1000BASEX:
+	case PHY_INTERFACE_MODE_SGMII:
+	case PHY_INTERFACE_MODE_10GBASER:
+		cfg_lane0 = rtl9300_a_sds_10gr_lane0;
+		cnt_lane0 = ARRAY_SIZE(rtl9300_a_sds_10gr_lane0);
+		cfg_lane1 = rtl9300_a_sds_10gr_lane1;
+		cnt_lane1 = ARRAY_SIZE(rtl9300_a_sds_10gr_lane1);
+		break;
+
+	default:
+		pr_warn("%s: unsupported mode %s on serdes %d\n", __func__, phy_modes(phy_mode), sds_num);
+		return;
+	}
+
+	/* Apply the patch list using lane0 or lane1 depending on the serdes
+	 * parity. The patch operation comes from _rtl9300_mac_serdes_patch_set
+	 * in dal_longan_construct.c. */
 	if (sds_num % 2) {
-		for (int i = 0; i < sizeof(rtl9300_a_sds_10gr_lane1) / sizeof(sds_config); ++i) {
-			rtmdio_930x_write_sds_phy(sds_num, rtl9300_a_sds_10gr_lane1[i].page,
-						  rtl9300_a_sds_10gr_lane1[i].reg,
-						  rtl9300_a_sds_10gr_lane1[i].data);
+		for (size_t i = 0; i < cnt_lane1; ++i) {
+			rtmdio_930x_write_sds_phy(sds_num, cfg_lane1[i].page,
+						  cfg_lane1[i].reg,
+						  cfg_lane1[i].data);
 		}
 	} else {
-		for (int i = 0; i < sizeof(rtl9300_a_sds_10gr_lane0) / sizeof(sds_config); ++i) {
-			rtmdio_930x_write_sds_phy(sds_num, rtl9300_a_sds_10gr_lane0[i].page,
-						  rtl9300_a_sds_10gr_lane0[i].reg,
-						   rtl9300_a_sds_10gr_lane0[i].data);
+		for (size_t i = 0; i < cnt_lane0; ++i) {
+			rtmdio_930x_write_sds_phy(sds_num, cfg_lane0[i].page,
+						  cfg_lane0[i].reg,
+						  cfg_lane0[i].data);
 		}
 	}
 }
