@@ -8,6 +8,7 @@
 
 / {
 	aliases {
+		label-mac-device = &gmac1;
 		led-boot = &led_status_amber;
 		led-failsafe = &led_status_green;
 		led-running = &led_status_green;
@@ -52,10 +53,18 @@
 	};
 };
 
+&gmac0 {
+	nvmem-cells = <&macaddr_uboot_ethaddr 1>;
+	nvmem-cell-names = "mac-address";
+};
+
 &gmac1 {
 	status = "okay";
 	label = "wan";
 	phy-handle = <&ethphy4>;
+
+	nvmem-cells = <&macaddr_uboot_ethaddr 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &ethphy4 {
@@ -84,6 +93,24 @@
 		partition@80000 {
 			label = "u-boot-env";
 			reg = <0x0080000 0x0080000>;
+
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				reg = <0x0 0x20000>;
+
+				nvmem-layout {
+					compatible = "u-boot,env";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_uboot_ethaddr: ethaddr {
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
 		};
 
 		partition@100000 {
