@@ -2615,7 +2615,7 @@ static void rtl9300_phy_enable_10g_1g(int sds_num)
 }
 
 static int rtl9300_sds_10g_idle(int sds_num);
-static void rtl9300_serdes_patch(int sds_num);
+static void rtsds_930x_patch_serdes(int sds, phy_interface_t mode);
 
 #define RTL930X_MAC_FORCE_MODE_CTRL		(0xCA1C)
 int rtl9300_serdes_setup(int port, int sds_num, phy_interface_t phy_mode)
@@ -2626,7 +2626,7 @@ int rtl9300_serdes_setup(int port, int sds_num, phy_interface_t phy_mode)
 	rtl9300_sds_rst(sds_num, RTL930X_SDS_OFF);
 
 	/* Apply serdes patches */
-	rtl9300_serdes_patch(sds_num);
+	rtsds_930x_patch_serdes(sds_num, phy_mode);
 
 	/* Maybe use dal_longan_sds_init */
 
@@ -2697,7 +2697,7 @@ typedef struct {
 	u16 data;
 } sds_config;
 
-sds_config rtl9300_a_sds_10gr_lane0[] =
+static const sds_config rtsds_930x_cfg_10gr_even[] =
 {
 	/* 1G */
 	{0x00, 0x0E, 0x3053}, {0x01, 0x14, 0x0100}, {0x21, 0x03, 0x8206},
@@ -2745,7 +2745,7 @@ sds_config rtl9300_a_sds_10gr_lane0[] =
 	{0x2F, 0x19, 0x4902}, {0x2F, 0x1D, 0x76E1},
 };
 
-sds_config rtl9300_a_sds_10gr_lane1[] =
+static const sds_config rtsds_930x_cfg_10gr_odd[] =
 {
 	/* 1G */
 	{0x00, 0x0E, 0x3053}, {0x01, 0x14, 0x0100}, {0x21, 0x03, 0x8206},
@@ -2788,20 +2788,34 @@ sds_config rtl9300_a_sds_10gr_lane1[] =
 	{0x2B, 0x14, 0x3108}, {0x2D, 0x13, 0x3C87}, {0x2D, 0x14, 0x1808},
 };
 
-static void rtl9300_serdes_patch(int sds_num)
+static void rtsds_930x_patch_serdes(int sds, phy_interface_t mode)
 {
-	if (sds_num % 2) {
-		for (int i = 0; i < sizeof(rtl9300_a_sds_10gr_lane1) / sizeof(sds_config); ++i) {
-			rtmdio_930x_write_sds_phy(sds_num, rtl9300_a_sds_10gr_lane1[i].page,
-						  rtl9300_a_sds_10gr_lane1[i].reg,
-						  rtl9300_a_sds_10gr_lane1[i].data);
+	const bool even_sds = ((sds & 1) == 0);
+	const sds_config *config;
+	size_t count;
+
+	switch (mode) {
+	case PHY_INTERFACE_MODE_1000BASEX:
+	case PHY_INTERFACE_MODE_SGMII:
+	case PHY_INTERFACE_MODE_10GBASER:
+		if (even_sds) {
+			config = rtsds_930x_cfg_10gr_even;
+			count = ARRAY_SIZE(rtsds_930x_cfg_10gr_even);
+		} else {
+			config = rtsds_930x_cfg_10gr_odd;
+			count = ARRAY_SIZE(rtsds_930x_cfg_10gr_odd);
 		}
-	} else {
-		for (int i = 0; i < sizeof(rtl9300_a_sds_10gr_lane0) / sizeof(sds_config); ++i) {
-			rtmdio_930x_write_sds_phy(sds_num, rtl9300_a_sds_10gr_lane0[i].page,
-						  rtl9300_a_sds_10gr_lane0[i].reg,
-						   rtl9300_a_sds_10gr_lane0[i].data);
-		}
+		break;
+
+	default:
+		pr_warn("%s: unsupported mode %s on serdes %d\n", __func__, phy_modes(mode), sds);
+		return;
+	}
+
+	for (size_t i = 0; i < count; ++i) {
+		rtmdio_930x_write_sds_phy(sds, config[i].page,
+					  config[i].reg,
+					  config[i].data);
 	}
 }
 
