@@ -108,6 +108,11 @@ static inline struct phy_device *get_base_phy(struct phy_device *phydev)
 	return get_package_phy(phydev, 0);
 }
 
+static inline int get_phys_in_package(struct phy_device *phydev)
+{
+	return refcount_read(&phydev->shared->refcnt);
+}
+
 static u64 disable_polling(int port)
 {
 	u64 saved_state;
@@ -632,20 +637,41 @@ static int rtl8390_configure_generic(struct phy_device *phydev)
 	return 0;
 }
 
+static int rtl821x_prepare_patch(struct phy_device *phydev)
+{
+	int maxport = get_phys_in_package(phydev);
+	struct phy_device *patchphy;
+	int i, port, val;
+
+	for (port = 0; port < maxport; port++) {
+		patchphy = get_package_phy(phydev, port);
+		phy_write_paged(patchphy, RTL821X_PAGE_PATCH, 0x10, 0x10);
+	}
+	msleep(500);
+	for (port = 0; port < maxport; port++) {
+		patchphy = get_package_phy(phydev, port);
+		for (i = 0; i < 100 ; i++) {
+			val = phy_read_paged(patchphy, RTL821X_PAGE_STATE, 0x10);
+			if (val & 0x40)
+				break;
+		}
+		if (i >= 100) {
+			phydev_err(patchphy, "not ready for patch.\n");
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
 static int rtl8380_configure_int_rtl8218b(struct phy_device *phydev)
 {
-	u32 val, phy_id;
-	int mac = phydev->mdio.addr;
-	struct fw_header *h;
 	u32 *rtl838x_6275B_intPhy_perport;
 	u32 *rtl8218b_6276B_hwEsd_perport;
 	struct phy_device *patchphy;
-
-	val = phy_read(phydev, 2);
-	phy_id = val << 16;
-	val = phy_read(phydev, 3);
-	phy_id |= val;
-	pr_debug("Phy on MAC %d: %x\n", mac, phy_id);
+	struct fw_header *h;
+	int ret;
+	u32 val;
 
 	/* Read internal PHY ID */
 	phy_write_paged(phydev, 31, 27, 0x0002);
@@ -654,9 +680,6 @@ static int rtl8380_configure_int_rtl8218b(struct phy_device *phydev)
 		phydev_err(phydev, "Expected internal RTL8218B, found PHY-ID %x\n", val);
 		return -1;
 	}
-
-	/* Internal RTL8218B, version 2 */
-	phydev_info(phydev, "Detected internal RTL8218B\n");
 
 	h = rtl838x_request_fw(phydev, &rtl838x_8380_fw, FIRMWARE_838X_8380_1);
 	if (!h)
@@ -670,10 +693,7 @@ static int rtl8380_configure_int_rtl8218b(struct phy_device *phydev)
 	rtl838x_6275B_intPhy_perport = (void *)h + sizeof(struct fw_header) + h->parts[8].start;
 	rtl8218b_6276B_hwEsd_perport = (void *)h + sizeof(struct fw_header) + h->parts[9].start;
 
-	// Currently not used
-	// if (sw_r32(RTL838X_DMY_REG31) == 0x1) {
-	// 	int ipd_flag = 1;
-	// }
+	phydev_info(phydev, "patch\n");
 
 	val = phy_read(phydev, MII_BMCR);
 	if (val & BMCR_PDOWN)
@@ -682,27 +702,10 @@ static int rtl8380_configure_int_rtl8218b(struct phy_device *phydev)
 		rtl8380_phy_reset(phydev);
 	msleep(100);
 
-	/* Ready PHY for patch */
-	for (int port = 0; port < 8; port++) {
-		patchphy = get_package_phy(phydev, port);
-		phy_write_paged(patchphy, RTL838X_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL821X_PAGE_PATCH);
-		phy_write_paged(patchphy, RTL838X_PAGE_RAW, 0x10, 0x0010);
-	}
-	msleep(500);
-	for (int port = 0; port < 8; port++) {
-		int i;
+	ret = rtl821x_prepare_patch(phydev);
+	if (ret)
+		return ret;
 
-		patchphy = get_package_phy(phydev, port);
-		for (i = 0; i < 100 ; i++) {
-			val = phy_read_paged(patchphy, RTL821X_PAGE_STATE, 0x10);
-			if (val & 0x40)
-				break;
-		}
-		if (i >= 100) {
-			phydev_err(patchphy, "not ready for patch.\n");
-			return -1;
-		}
-	}
 	for (int port = 0; port < 8; port++) {
 		int i;
 
@@ -729,23 +732,13 @@ static int rtl8380_configure_int_rtl8218b(struct phy_device *phydev)
 
 static int rtl8380_configure_ext_rtl8218b(struct phy_device *phydev)
 {
-	u32 val, ipd, phy_id;
-	int mac = phydev->mdio.addr;
-	struct fw_header *h;
-	u32 *rtl8380_rtl8218b_perchip;
 	u32 *rtl8218B_6276B_rtl8380_perport;
+	u32 *rtl8380_rtl8218b_perchip;
 	u32 *rtl8380_rtl8218b_perport;
 	struct phy_device *patchphy;
-
-	if (soc_info.family == RTL8380_FAMILY_ID && mac != 0 && mac != 16) {
-		phydev_err(phydev, "External RTL8218B must have PHY-IDs 0 or 16!\n");
-		return -1;
-	}
-	val = phy_read(phydev, 2);
-	phy_id = val << 16;
-	val = phy_read(phydev, 3);
-	phy_id |= val;
-	pr_info("Phy on MAC %d: %x\n", mac, phy_id);
+	struct fw_header *h;
+	u32 val, ipd;
+	int ret;
 
 	/* Read internal PHY ID */
 	phy_write_paged(phydev, 31, 27, 0x0002);
@@ -754,7 +747,6 @@ static int rtl8380_configure_ext_rtl8218b(struct phy_device *phydev)
 		phydev_err(phydev, "Expected external RTL8218B, found PHY-ID %x\n", val);
 		return -1;
 	}
-	phydev_info(phydev, "Detected external RTL8218B\n");
 
 	h = rtl838x_request_fw(phydev, &rtl838x_8218b_fw, FIRMWARE_838X_8218b_1);
 	if (!h)
@@ -782,7 +774,7 @@ static int rtl8380_configure_ext_rtl8218b(struct phy_device *phydev)
 	phy_write_paged(phydev, RTL838X_PAGE_RAW, 0x1b, 0x4);
 	val = phy_read_paged(phydev, RTL838X_PAGE_RAW, 0x1c);
 
-	phydev_info(phydev, "Detected chip revision %04x\n", val);
+	phydev_info(phydev, "patch chip revision %d\n", val);
 
 	for (int i = 0; rtl8380_rtl8218b_perchip[i * 3] &&
 	                rtl8380_rtl8218b_perchip[i * 3 + 1]; i++) {
@@ -800,30 +792,9 @@ static int rtl8380_configure_ext_rtl8218b(struct phy_device *phydev)
 	}
 	mdelay(100);
 
-	/* Request patch */
-	for (int port = 0; port < 8; port++) {
-		patchphy = get_package_phy(phydev, port);
-		phy_write_paged(patchphy, RTL838X_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL821X_PAGE_PATCH);
-		phy_write_paged(patchphy, RTL838X_PAGE_RAW, 0x10, 0x0010);
-	}
-
-	mdelay(300);
-
-	/* Verify patch readiness */
-	for (int port = 0; port < 8; port++) {
-		int i;
-
-		patchphy = get_package_phy(phydev, port);
-		for (i = 0; i < 100; i++) {
-			val = phy_read_paged(patchphy, RTL821X_PAGE_STATE, 0x10);
-			if (val & 0x40)
-				break;
-		}
-		if (i >= 100) {
-			phydev_err(patchphy, "not ready for patch.\n");
-			return -1;
-		}
-	}
+	ret = rtl821x_prepare_patch(phydev);
+	if (ret)
+		return ret;
 
 	/* Use Broadcast ID method for patching */
 	rtl821x_phy_setup_package_broadcast(phydev, true);
@@ -1078,19 +1049,12 @@ static int rtl8380_configure_rtl8214c(struct phy_device *phydev)
 
 static int rtl8380_configure_rtl8214fc(struct phy_device *phydev)
 {
-	int mac = phydev->mdio.addr;
-	struct fw_header *h;
 	u32 *rtl8380_rtl8214fc_perchip;
 	u32 *rtl8380_rtl8214fc_perport;
 	struct phy_device *patchphy;
-	u32 phy_id;
+	struct fw_header *h;
 	u32 val;
-
-	val = phy_read(phydev, 2);
-	phy_id = val << 16;
-	val = phy_read(phydev, 3);
-	phy_id |= val;
-	pr_debug("Phy on MAC %d: %x\n", mac, phy_id);
+	int ret;
 
 	/* Read internal PHY id */
 	phy_write_paged(phydev, 0, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
@@ -1100,7 +1064,6 @@ static int rtl8380_configure_rtl8214fc(struct phy_device *phydev)
 		phydev_err(phydev, "Expected external RTL8214FC, found PHY-ID %x\n", val);
 		return -1;
 	}
-	phydev_info(phydev, "Detected external RTL8214FC\n");
 
 	h = rtl838x_request_fw(phydev, &rtl838x_8214fc_fw, FIRMWARE_838X_8214FC_1);
 	if (!h)
@@ -1111,8 +1074,9 @@ static int rtl8380_configure_rtl8214fc(struct phy_device *phydev)
 		return -1;
 	}
 
-	rtl8380_rtl8214fc_perchip = (void *)h + sizeof(struct fw_header) + h->parts[0].start;
+	phydev_info(phydev, "patch\n");
 
+	rtl8380_rtl8214fc_perchip = (void *)h + sizeof(struct fw_header) + h->parts[0].start;
 	rtl8380_rtl8214fc_perport = (void *)h + sizeof(struct fw_header) + h->parts[1].start;
 
 	/* detect phy version */
@@ -1178,29 +1142,10 @@ static int rtl8380_configure_rtl8214fc(struct phy_device *phydev)
 		}
 	}
 
-	/* Request patch */
-	for (int port = 0; port < 4; port++) {
-		patchphy = get_package_phy(phydev, port);
-		phy_write_paged(patchphy, RTL838X_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL821X_PAGE_PATCH);
-		phy_write_paged(patchphy, RTL838X_PAGE_RAW, 0x10, 0x0010);
-	}
-	mdelay(300);
+	ret = rtl821x_prepare_patch(phydev);
+	if (ret)
+		return ret;
 
-	/* Verify patch readiness */
-	for (int port = 0; port < 4; port++) {
-		int i;
-
-		patchphy = get_package_phy(phydev, port);
-		for (i = 0; i < 100; i++) {
-			val = phy_read_paged(patchphy, RTL821X_PAGE_STATE, 0x10);
-			if (val & 0x40)
-				break;
-		}
-		if (i >= 100) {
-			phydev_err(patchphy, "Could not patch PHY\n");
-			return -1;
-		}
-	}
 	/* Use Broadcast ID method for patching */
 	rtl821x_phy_setup_package_broadcast(phydev, true);
 
