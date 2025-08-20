@@ -913,9 +913,6 @@ static int rtl838x_eth_open(struct net_device *ndev)
 		/* Trap MLD and IGMP messages to CPU_PORT */
 		sw_w32((0x2 << 3) | 0x2,  RTL931X_VLAN_APP_PKT_CTRL);
 
-		/* Disable External CPU access to switch, clear EXT_CPU_EN */
-		sw_w32_mask(BIT(2), 0, RTL931X_MAC_L2_GLOBAL_CTRL2);
-
 		/* Set PCIE_PWR_DOWN */
 		sw_w32_mask(0, BIT(1), RTL931X_PS_SOC_CTRL);
 		break;
@@ -2972,7 +2969,6 @@ static int rtmdio_930x_reset(struct mii_bus *bus)
 static int rtmdio_931x_reset(struct mii_bus *bus)
 {
 	struct rtmdio_bus_priv *priv = bus->priv;
-	bool mdc_on[RTMDIO_MAX_SMI_BUS] = { 0 };
 	u32 poll_sel[4] = { 0 };
 	u32 poll_ctrl = 0;
 	u32 c45_mask = 0;
@@ -2995,7 +2991,6 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 		pos = (i * 2) % 32;
 		poll_sel[i / 16] |= priv->smi_bus[i] << pos;
 		poll_ctrl |= BIT(20 + priv->smi_bus[i]);
-		mdc_on[priv->smi_bus[i]] = true;
 	}
 
 	/* Configure which SMI bus is behind which port number */
@@ -3005,18 +3000,13 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 	}
 
 	/* Configure which SMI busses */
-	pr_info("%s: WAS RTL931X_MAC_L2_GLOBAL_CTRL2 %08x\n", __func__, sw_r32(RTL931X_MAC_L2_GLOBAL_CTRL2));
 	pr_info("c45_mask: %08x, RTL931X_SMI_GLB_CTRL0 was %X", c45_mask, sw_r32(RTL931X_SMI_GLB_CTRL0));
 	for (int i = 0; i < RTMDIO_MAX_SMI_BUS; i++) {
 		/* bus is polled in c45 */
 		if (priv->smi_bus_isc45[i])
 			c45_mask |= 0x2 << (i * 2);  /* Std. C45, non-standard is 0x3 */
-		/* Enable bus access via MDC */
-		if (mdc_on[i])
-			sw_w32_mask(0, BIT(9 + i), RTL931X_MAC_L2_GLOBAL_CTRL2);
 	}
 
-	pr_info("%s: RTL931X_MAC_L2_GLOBAL_CTRL2 %08x\n", __func__, sw_r32(RTL931X_MAC_L2_GLOBAL_CTRL2));
 	pr_info("c45_mask: %08x, RTL931X_SMI_GLB_CTRL0 was %X", c45_mask, sw_r32(RTL931X_SMI_GLB_CTRL0));
 
 	/* We have a 10G PHY enable polling
