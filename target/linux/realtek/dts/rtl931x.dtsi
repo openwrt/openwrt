@@ -231,6 +231,15 @@
 		pinctrl-single,function-mask = <0x1>;
 		#pinctrl-cells = <2>;
 
+		/* Enable GPIO 31 */
+		pinmux_disable_led_sync: disable-led-sync {
+			pinctrl-single,bits = <0x0 0x0 0x10000>;
+		};
+
+		pinmux_enable_led_sync: enable-led-sync {
+			pinctrl-single,bits = <0x0 0x10000 0x10000>;
+		};
+
 		/* Enable GPIO6 and GPIO7, possibly unknown others */
 		pinmux_disable_jtag: disable_jtag {
 			pinctrl-single,bits = <0x0 0x0 0x8000>;
