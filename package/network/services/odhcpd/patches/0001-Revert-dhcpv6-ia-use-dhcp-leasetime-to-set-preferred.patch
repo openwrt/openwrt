@@ -1,0 +1,116 @@
+From ca189f99d9eca39c1484d33eaa4b5ffaefba3134 Mon Sep 17 00:00:00 2001
+Date: Mon, 22 Jan 2024 04:33:57 +0000
+Subject: [PATCH 1/2] Revert "dhcpv6-ia: use dhcp leasetime to set
+ preferred/valid statefull lifetimes"
+
+There will be an individual option for valid lifetime.
+
+This reverts commit 6db312a698e920ff61505ef1f42469880829774d.
+---
+ src/config.c    | 16 +++++++---------
+ src/dhcpv4.c    |  2 +-
+ src/dhcpv6-ia.c |  2 +-
+ src/odhcpd.h    |  4 +---
+ src/router.c    |  4 ++--
+ 5 files changed, 12 insertions(+), 16 deletions(-)
+
+--- a/src/config.c
++++ b/src/config.c
+@@ -214,8 +214,8 @@ static void set_interface_defaults(struc
+ 	iface->ra = MODE_DISABLED;
+ 	iface->ndp = MODE_DISABLED;
+ 	iface->learn_routes = 1;
+-	iface->dhcp_leasetime = 43200;
+ 	iface->preferred_lifetime = 43200;
++	iface->dhcpv4_leasetime = 43200;
+ 	iface->dhcpv4_start.s_addr = htonl(START_DEFAULT);
+ 	iface->dhcpv4_end.s_addr = htonl(START_DEFAULT + LIMIT_DEFAULT - 1);
+ 	iface->dhcpv6_assignall = true;
+@@ -636,26 +636,24 @@ int config_parse_interface(void *data, s
+ 	if ((c = tb[IFACE_ATTR_DYNAMICDHCP]))
+ 		iface->no_dynamic_dhcp = !blobmsg_get_bool(c);
+ 
+-	if ((c = tb[IFACE_ATTR_LEASETIME])) {
++	if ((c = tb[IFACE_ATTR_PREFERRED_LIFETIME])) {
+ 		double time = parse_leasetime(c);
+ 
+ 		if (time >= 0)
+-			iface->dhcp_leasetime = time;
++			iface->preferred_lifetime = time;
+ 		else
+ 			syslog(LOG_ERR, "Invalid %s value configured for interface '%s'",
+-			       iface_attrs[IFACE_ATTR_LEASETIME].name, iface->name);
+-
++			       iface_attrs[IFACE_ATTR_PREFERRED_LIFETIME].name, iface->name);
+ 	}
+ 
+-	if ((c = tb[IFACE_ATTR_PREFERRED_LIFETIME])) {
++	if ((c = tb[IFACE_ATTR_LEASETIME])) {
+ 		double time = parse_leasetime(c);
+ 
+ 		if (time >= 0)
+-			iface->preferred_lifetime = time;
++			iface->dhcpv4_leasetime = time;
+ 		else
+ 			syslog(LOG_ERR, "Invalid %s value configured for interface '%s'",
+-			       iface_attrs[IFACE_ATTR_PREFERRED_LIFETIME].name, iface->name);
+-
++			       iface_attrs[IFACE_ATTR_LEASETIME].name, iface->name);
+ 	}
+ 
+ 	if ((c = tb[IFACE_ATTR_START])) {
+--- a/src/dhcpv4.c
++++ b/src/dhcpv4.c
+@@ -1102,7 +1102,7 @@ dhcpv4_lease(struct interface *iface, en
+ 			if (a->leasetime)
+ 				my_leasetime = a->leasetime;
+ 			else
+-				my_leasetime = iface->dhcp_leasetime;
++				my_leasetime = iface->dhcpv4_leasetime;
+ 
+ 			if ((*leasetime == 0) || (my_leasetime < *leasetime))
+ 				*leasetime = my_leasetime;
+--- a/src/dhcpv6-ia.c
++++ b/src/dhcpv6-ia.c
+@@ -1043,7 +1043,7 @@ static size_t build_ia(uint8_t *buf, siz
+ 			leasetime = a->leasetime;
+ 			pref = a->leasetime;
+ 		} else {
+-			leasetime = iface->dhcp_leasetime;
++			leasetime = iface->dhcpv4_leasetime; // fallback
+ 			pref = iface->preferred_lifetime;
+ 		}
+ 
+--- a/src/odhcpd.h
++++ b/src/odhcpd.h
+@@ -321,9 +321,6 @@ struct interface {
+ 	int ra_mtu;
+ 	uint32_t preferred_lifetime;
+ 
+-	// DHCP
+-	uint32_t dhcp_leasetime;
+-
+ 	// DHCPv4
+ 	struct in_addr dhcpv4_start;
+ 	struct in_addr dhcpv4_end;
+@@ -336,6 +333,7 @@ struct interface {
+ 	size_t dhcpv4_router_cnt;
+ 	struct in_addr *dhcpv4_dns;
+ 	size_t dhcpv4_dns_cnt;
++	uint32_t dhcpv4_leasetime;
+ 	bool dhcpv4_forcereconf;
+ 
+ 	// DNS
+--- a/src/router.c
++++ b/src/router.c
+@@ -598,8 +598,8 @@ static int send_router_advert(struct int
+ 		if (addr->valid > (uint32_t)now) {
+ 			valid = TIME_LEFT(addr->valid, now);
+ 
+-			if (iface->ra_useleasetime && valid > iface->dhcp_leasetime)
+-				valid = iface->dhcp_leasetime;
++			if (iface->ra_useleasetime && valid > iface->dhcpv4_leasetime)
++				valid = iface->dhcpv4_leasetime;
+ 		}
+ 
+ 		if (minvalid > valid)
