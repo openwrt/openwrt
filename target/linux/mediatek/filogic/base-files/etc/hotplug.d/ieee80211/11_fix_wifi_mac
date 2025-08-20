@@ -27,6 +27,11 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && mmc_get_mac_ascii u-boot-env 2gMAC > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && mmc_get_mac_ascii u-boot-env 5gMAC > /sys${DEVPATH}/macaddress
 		;;
+	arcadyan,wg620443)
+		hw_mac_addr=$(mtd_get_mac_encrypted_arcadyan_mt7986 "pricfg" "89c72f31eb3243e8b0a781fe46a51c56" "87d81103921f4c17cbfd078b056f397a")
+		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 1 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
+		;;
 	asus,rt-ax59u)
 		CI_UBIPART="UBI_DEV"
 		addr=$(mtd_get_mac_binary_ubi "Factory" 0x4)
