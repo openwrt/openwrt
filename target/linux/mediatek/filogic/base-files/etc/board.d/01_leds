@@ -214,7 +214,8 @@ wavlink,wl-wn551x3)
         ucidef_set_led_netdev "lan-2" "lan-2" "green:lan-2" "lan2" "link tx rx"
         ucidef_set_led_netdev "wan" "wan" "green:wan" "eth1" "link tx rx"
         ;;
-wavlink,wl-wn586x3)
+wavlink,wl-wn586x3|\
+wavlink,wl-wn586x3b)
 	ucidef_set_led_netdev "lan-1" "lan-1" "blue:lan-1" "lan1" "link tx rx"
 	ucidef_set_led_netdev "lan-2" "lan-2" "blue:lan-2" "lan2" "link tx rx"
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "eth1" "link tx rx"
