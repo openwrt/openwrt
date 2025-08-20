@@ -31,6 +31,9 @@ extern int rtmdio_930x_write_sds_phy(int sds, int page, int regnum, u16 val);
 extern int rtmdio_931x_read_sds_phy(int sds, int page, int regnum);
 extern int rtmdio_931x_write_sds_phy(int sds, int page, int regnum, u16 val);
 
+extern int rtmdio_931x_read_sds_phy_new(int sds, int page, int regnum);
+extern int rtmdio_931x_write_sds_phy_new(int sds, int page, int regnum, u16 val);
+
 #define PHY_PAGE_2	2
 #define PHY_PAGE_4	4
 
@@ -2924,6 +2927,33 @@ static u32 rtl9310_sds_field_r(int sds, u32 page, u32 reg, int end_bit, int star
 	return (v >> start_bit) & (BIT(l) - 1);
 }
 
+static void rtl9310_sds_field_w_new(int sds, u32 page, u32 reg, int end_bit, int start_bit, u32 v)
+{
+	int l = end_bit - start_bit + 1;
+	u32 data = v;
+
+	if (l < 32) {
+		u32 mask = BIT(l) - 1;
+
+		data = rtmdio_931x_read_sds_phy_new(sds, page, reg);
+		data &= ~(mask << start_bit);
+		data |= (v & mask) << start_bit;
+	}
+
+	rtmdio_931x_write_sds_phy_new(sds, page, reg, data);
+}
+
+static u32 rtl9310_sds_field_r_new(int sds, u32 page, u32 reg, int end_bit, int start_bit)
+{
+	int l = end_bit - start_bit + 1;
+	u32 v = rtmdio_931x_read_sds_phy_new(sds, page, reg);
+
+	if (l >= 32)
+		return v;
+
+	return (v >> start_bit) & (BIT(l) - 1);
+}
+
 static void rtl931x_sds_rst(u32 sds)
 {
 	u32 o, v, o_mode;
@@ -2995,14 +3025,13 @@ static u32 rtl931x_get_analog_sds(u32 sds)
 void rtl931x_sds_fiber_disable(u32 sds)
 {
 	u32 v = 0x3F;
-	u32 asds = rtl931x_get_analog_sds(sds);
 
-	rtl9310_sds_field_w(asds, 0x1F, 0x9, 11, 6, v);
+	rtl9310_sds_field_w_new(sds, 0x1F, 0x9, 11, 6, v);
 }
 
 static void rtl931x_sds_fiber_mode_set(u32 sds, phy_interface_t mode)
 {
-	u32 val, asds = rtl931x_get_analog_sds(sds);
+	u32 val;
 
 	/* clear symbol error count before changing mode */
 	rtl931x_symerr_clear(sds, mode);
@@ -3037,7 +3066,7 @@ static void rtl931x_sds_fiber_mode_set(u32 sds, phy_interface_t mode)
 	}
 
 	pr_info("%s writing analog SerDes Mode value %02x\n", __func__, val);
-	rtl9310_sds_field_w(asds, 0x1F, 0x9, 11, 6, val);
+	rtl9310_sds_field_w_new(sds, 0x1F, 0x9, 11, 6, val);
 
 	return;
 }
@@ -3163,20 +3192,18 @@ static void rtl931x_cmu_type_set(u32 asds, phy_interface_t mode, int chiptype)
 
 static void rtl931x_sds_rx_rst(u32 sds)
 {
-	u32 asds = rtl931x_get_analog_sds(sds);
-
 	if (sds < 2)
 		return;
 
-	rtmdio_931x_write_sds_phy(asds, 0x2e, 0x12, 0x2740);
-	rtmdio_931x_write_sds_phy(asds, 0x2f, 0x0, 0x0);
-	rtmdio_931x_write_sds_phy(asds, 0x2f, 0x2, 0x2010);
-	rtmdio_931x_write_sds_phy(asds, 0x20, 0x0, 0xc10);
+	rtmdio_931x_write_sds_phy_new(sds, 0x2e, 0x12, 0x2740);
+	rtmdio_931x_write_sds_phy_new(sds, 0x2f, 0x0, 0x0);
+	rtmdio_931x_write_sds_phy_new(sds, 0x2f, 0x2, 0x2010);
+	rtmdio_931x_write_sds_phy_new(sds, 0x20, 0x0, 0xc10);
 
-	rtmdio_931x_write_sds_phy(asds, 0x2e, 0x12, 0x27c0);
-	rtmdio_931x_write_sds_phy(asds, 0x2f, 0x0, 0xc000);
-	rtmdio_931x_write_sds_phy(asds, 0x2f, 0x2, 0x6010);
-	rtmdio_931x_write_sds_phy(asds, 0x20, 0x0, 0xc30);
+	rtmdio_931x_write_sds_phy_new(sds, 0x2e, 0x12, 0x27c0);
+	rtmdio_931x_write_sds_phy_new(sds, 0x2f, 0x0, 0xc000);
+	rtmdio_931x_write_sds_phy_new(sds, 0x2f, 0x2, 0x6010);
+	rtmdio_931x_write_sds_phy_new(sds, 0x20, 0x0, 0xc30);
 
 	mdelay(50);
 }
@@ -3267,18 +3294,18 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 		return;
 
 	pr_info("%s: set sds %d to mode %d\n", __func__, sds, mode);
-	val = rtl9310_sds_field_r(asds, 0x1F, 0x9, 11, 6);
+	val = rtl9310_sds_field_r_new(sds, 0x1F, 0x9, 11, 6);
 
 	pr_info("%s: fibermode %08X stored mode 0x%x analog SDS %d", __func__,
-			rtmdio_931x_read_sds_phy(asds, 0x1f, 0x9), val, asds);
+			rtmdio_931x_read_sds_phy_new(sds, 0x1f, 0x9), val, asds);
 	pr_info("%s: SGMII mode %08X in 0x24 0x9 analog SDS %d", __func__,
-			rtmdio_931x_read_sds_phy(asds, 0x24, 0x9), asds);
+			rtmdio_931x_read_sds_phy_new(sds, 0x24, 0x9), asds);
 	pr_info("%s: CMU mode %08X stored even SDS %d", __func__,
 			rtmdio_931x_read_sds_phy(asds & ~1, 0x20, 0x12), asds & ~1);
 	pr_info("%s: serdes_mode_ctrl %08X", __func__,  RTL931X_SERDES_MODE_CTRL + 4 * (sds >> 2));
-	pr_info("%s CMU page 0x24 0x7 %08x\n", __func__, rtmdio_931x_read_sds_phy(asds, 0x24, 0x7));
-	pr_info("%s CMU page 0x26 0x7 %08x\n", __func__, rtmdio_931x_read_sds_phy(asds, 0x26, 0x7));
-	pr_info("%s CMU page 0x28 0x7 %08x\n", __func__, rtmdio_931x_read_sds_phy(asds, 0x28, 0x7));
+	pr_info("%s CMU page 0x24 0x7 %08x\n", __func__, rtmdio_931x_read_sds_phy_new(sds, 0x24, 0x7));
+	pr_info("%s CMU page 0x26 0x7 %08x\n", __func__, rtmdio_931x_read_sds_phy_new(sds, 0x26, 0x7));
+	pr_info("%s CMU page 0x28 0x7 %08x\n", __func__, rtmdio_931x_read_sds_phy_new(sds, 0x28, 0x7));
 	pr_info("%s XSG page 0x0 0xe %08x\n", __func__, rtmdio_931x_read_sds_phy(dSds, 0x0, 0xe));
 	pr_info("%s XSG2 page 0x0 0xe %08x\n", __func__, rtmdio_931x_read_sds_phy(dSds + 1, 0x0, 0xe));
 
@@ -3330,10 +3357,10 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 		u32 evenSds;
 
 		if (chiptype) {
-			rtl9310_sds_field_w(asds, 0x6, 0x2, 12, 12, 1);
+			rtl9310_sds_field_w_new(sds, 0x6, 0x2, 12, 12, 1);
 
 			for (int i = 0; i < sizeof(sds_config_10p3125g_type1) / sizeof(sds_config); ++i) {
-				rtmdio_931x_write_sds_phy(asds, sds_config_10p3125g_type1[i].page - 0x4, sds_config_10p3125g_type1[i].reg, sds_config_10p3125g_type1[i].data);
+				rtmdio_931x_write_sds_phy_new(sds, sds_config_10p3125g_type1[i].page - 0x4, sds_config_10p3125g_type1[i].reg, sds_config_10p3125g_type1[i].data);
 			}
 
 			evenSds = asds - (asds % 2);
@@ -3343,32 +3370,32 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 				                      sds_config_10p3125g_cmu_type1[i].page - 0x4, sds_config_10p3125g_cmu_type1[i].reg, sds_config_10p3125g_cmu_type1[i].data);
 			}
 
-			rtl9310_sds_field_w(asds, 0x6, 0x2, 12, 12, 0);
+			rtl9310_sds_field_w_new(sds, 0x6, 0x2, 12, 12, 0);
 		} else {
 
-			rtl9310_sds_field_w(asds, 0x2e, 0xd, 6, 0, 0x0);
-			rtl9310_sds_field_w(asds, 0x2e, 0xd, 7, 7, 0x1);
+			rtl9310_sds_field_w_new(sds, 0x2e, 0xd, 6, 0, 0x0);
+			rtl9310_sds_field_w_new(sds, 0x2e, 0xd, 7, 7, 0x1);
 
-			rtl9310_sds_field_w(asds, 0x2e, 0x1c, 5, 0, 0x1E);
-			rtl9310_sds_field_w(asds, 0x2e, 0x1d, 11, 0, 0x00);
-			rtl9310_sds_field_w(asds, 0x2e, 0x1f, 11, 0, 0x00);
-			rtl9310_sds_field_w(asds, 0x2f, 0x0, 11, 0, 0x00);
-			rtl9310_sds_field_w(asds, 0x2f, 0x1, 11, 0, 0x00);
+			rtl9310_sds_field_w_new(sds, 0x2e, 0x1c, 5, 0, 0x1E);
+			rtl9310_sds_field_w_new(sds, 0x2e, 0x1d, 11, 0, 0x00);
+			rtl9310_sds_field_w_new(sds, 0x2e, 0x1f, 11, 0, 0x00);
+			rtl9310_sds_field_w_new(sds, 0x2f, 0x0, 11, 0, 0x00);
+			rtl9310_sds_field_w_new(sds, 0x2f, 0x1, 11, 0, 0x00);
 
-			rtl9310_sds_field_w(asds, 0x2e, 0xf, 12, 6, 0x7F);
-			rtmdio_931x_write_sds_phy(asds, 0x2f, 0x12, 0xaaa);
+			rtl9310_sds_field_w_new(sds, 0x2e, 0xf, 12, 6, 0x7F);
+			rtmdio_931x_write_sds_phy_new(sds, 0x2f, 0x12, 0xaaa);
 
 			rtl931x_sds_rx_rst(sds);
 
-			rtmdio_931x_write_sds_phy(asds, 0x7, 0x10, op_code);
-			rtmdio_931x_write_sds_phy(asds, 0x6, 0x1d, 0x0480);
-			rtmdio_931x_write_sds_phy(asds, 0x6, 0xe, 0x0400);
+			rtmdio_931x_write_sds_phy_new(sds, 0x7, 0x10, op_code);
+			rtmdio_931x_write_sds_phy_new(sds, 0x6, 0x1d, 0x0480);
+			rtmdio_931x_write_sds_phy_new(sds, 0x6, 0xe, 0x0400);
 		}
 		break;
 
 	case PHY_INTERFACE_MODE_10GBASER: /* MII_10GR / MII_10GR1000BX_AUTO: */
 	                                  /* configure 10GR fiber mode=1 */
-		rtl9310_sds_field_w(asds, 0x1f, 0xb, 1, 1, 1);
+		rtl9310_sds_field_w_new(sds, 0x1f, 0xb, 1, 1, 1);
 
 		/* init fiber_1g */
 		rtl9310_sds_field_w(dSds, 0x3, 0x13, 15, 14, 0);
@@ -3378,9 +3405,9 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 		rtl9310_sds_field_w(dSds, 0x2, 0x0, 13, 13, 0);
 
 		/* init auto */
-		rtl9310_sds_field_w(asds, 0x1f, 13, 15, 0, 0x109e);
-		rtl9310_sds_field_w(asds, 0x1f, 0x6, 14, 10, 0x8);
-		rtl9310_sds_field_w(asds, 0x1f, 0x7, 10, 4, 0x7f);
+		rtl9310_sds_field_w_new(sds, 0x1f, 13, 15, 0, 0x109e);
+		rtl9310_sds_field_w_new(sds, 0x1f, 0x6, 14, 10, 0x8);
+		rtl9310_sds_field_w_new(sds, 0x1f, 0x7, 10, 4, 0x7f);
 		break;
 
 	case PHY_INTERFACE_MODE_HSGMII:
@@ -3396,7 +3423,7 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 		break;
 
 	case PHY_INTERFACE_MODE_SGMII:
-		rtl9310_sds_field_w(asds, 0x24, 0x9, 15, 15, 0);
+		rtl9310_sds_field_w_new(sds, 0x24, 0x9, 15, 15, 0);
 		break;
 
 	case PHY_INTERFACE_MODE_2500BASEX:
@@ -3414,16 +3441,16 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 
 	if (sds >= 2 && sds <= 13) {
 		if (chiptype)
-			rtmdio_931x_write_sds_phy(asds, 0x2E, 0x1, board_sds_tx_type1[sds - 2]);
+			rtmdio_931x_write_sds_phy_new(sds, 0x2E, 0x1, board_sds_tx_type1[sds - 2]);
 		else {
 			val = 0xa0000;
 			sw_w32(val, RTL93XX_CHIP_INFO);
 			val = sw_r32(RTL93XX_CHIP_INFO);
 			if (val & BIT(28)) /* consider 9311 etc. RTL9313_CHIP_ID == HWP_CHIP_ID(unit)) */
 			{
-				rtmdio_931x_write_sds_phy(asds, 0x2E, 0x1, board_sds_tx2[sds - 2]);
+				rtmdio_931x_write_sds_phy_new(sds, 0x2E, 0x1, board_sds_tx2[sds - 2]);
 			} else {
-				rtmdio_931x_write_sds_phy(asds, 0x2E, 0x1, board_sds_tx[sds - 2]);
+				rtmdio_931x_write_sds_phy_new(sds, 0x2E, 0x1, board_sds_tx[sds - 2]);
 			}
 			val = 0;
 			sw_w32(val, RTL93XX_CHIP_INFO);
@@ -3448,23 +3475,21 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 
 int rtl931x_sds_cmu_band_set(int sds, bool enable, u32 band, phy_interface_t mode)
 {
-	u32 asds;
 	int page = rtl931x_sds_cmu_page_get(mode);
 
 	sds -= (sds % 2);
 	sds = sds & ~1;
-	asds = rtl931x_get_analog_sds(sds);
 	page += 1;
 
 	if (enable) {
-		rtl9310_sds_field_w(asds, page, 0x7, 13, 13, 0);
-		rtl9310_sds_field_w(asds, page, 0x7, 11, 11, 0);
+		rtl9310_sds_field_w_new(sds, page, 0x7, 13, 13, 0);
+		rtl9310_sds_field_w_new(sds, page, 0x7, 11, 11, 0);
 	} else {
-		rtl9310_sds_field_w(asds, page, 0x7, 13, 13, 0);
-		rtl9310_sds_field_w(asds, page, 0x7, 11, 11, 0);
+		rtl9310_sds_field_w_new(sds, page, 0x7, 13, 13, 0);
+		rtl9310_sds_field_w_new(sds, page, 0x7, 11, 11, 0);
 	}
 
-	rtl9310_sds_field_w(asds, page, 0x7, 4, 0, band);
+	rtl9310_sds_field_w_new(sds, page, 0x7, 4, 0, band);
 
 	rtl931x_sds_rst(sds);
 
@@ -3474,15 +3499,14 @@ int rtl931x_sds_cmu_band_set(int sds, bool enable, u32 band, phy_interface_t mod
 int rtl931x_sds_cmu_band_get(int sds, phy_interface_t mode)
 {
 	int page = rtl931x_sds_cmu_page_get(mode);
-	u32 asds, band;
+	u32 band;
 
 	sds -= (sds % 2);
-	asds = rtl931x_get_analog_sds(sds);
 	page += 1;
-	rtmdio_931x_write_sds_phy(asds, 0x1f, 0x02, 73);
+	rtmdio_931x_write_sds_phy_new(sds, 0x1f, 0x02, 73);
 
-	rtl9310_sds_field_w(asds, page, 0x5, 15, 15, 1);
-	band = rtl9310_sds_field_r(asds, 0x1f, 0x15, 8, 3);
+	rtl9310_sds_field_w_new(sds, page, 0x5, 15, 15, 1);
+	band = rtl9310_sds_field_r_new(sds, 0x1f, 0x15, 8, 3);
 	pr_info("%s band is: %d\n", __func__, band);
 
 	return band;
@@ -3503,11 +3527,10 @@ int rtl931x_link_sts_get(u32 sds)
 		latch_sts = rtl9310_sds_field_r(xsg_sdsid_0, 0x1, 30, 8, 0);
 		latch_sts1 = rtl9310_sds_field_r(xsg_sdsid_1, 0x1, 30, 8, 0);
 	} else {
-		u32  asds, dsds;
+		u32 dsds;
 
-		asds = rtl931x_get_analog_sds(sds);
-		sts = rtl9310_sds_field_r(asds, 0x5, 0, 12, 12);
-		latch_sts = rtl9310_sds_field_r(asds, 0x4, 1, 2, 2);
+		sts = rtl9310_sds_field_r_new(sds, 0x5, 0, 12, 12);
+		latch_sts = rtl9310_sds_field_r_new(sds, 0x4, 1, 2, 2);
 
 		dsds = sds < 2 ? sds : (sds - 1) * 2;
 		latch_sts1 = rtl9310_sds_field_r(dsds, 0x2, 1, 2, 2);

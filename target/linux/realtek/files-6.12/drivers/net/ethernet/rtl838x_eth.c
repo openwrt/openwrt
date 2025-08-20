@@ -2424,6 +2424,20 @@ static int rtmdio_930x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
  * page 0x200-0x23f (XSGMII2):	page 0x000-0x03f back SDS	page 0x000-0x03f back SDS+2
  */ 
 
+static int rtmdio_931x_get_backing_sds(u32 sds, u32 page)
+{
+	int map[] = {0, 1, 2, 3, 6, 7, 10, 11, 14, 15, 18, 19, 22, 23};
+	int back = map[sds];
+
+	if (page & 0xc0)
+		return -EINVAL; /* hole */
+
+	if ((sds & 1) && (sds != 1))
+		back += (page >> 8); /* distribute "odd" to 3 background SerDes */
+
+	return back;
+}
+
 int rtmdio_931x_read_sds_phy(int sds, int page, int regnum)
 {
 	u32 cmd = sds << 2 | page << 7 | regnum << 13 | 1;
@@ -2450,6 +2464,13 @@ int rtmdio_931x_read_sds_phy(int sds, int page, int regnum)
 	return ret;
 }
 
+int rtmdio_931x_read_sds_phy_new(int sds, int page, int regnum)
+{
+	int backsds = rtmdio_931x_get_backing_sds(sds, page);
+
+	return backsds < 0 ? 0 : rtmdio_931x_read_sds_phy(backsds, page & 0x3f, regnum);
+}
+
 int rtmdio_931x_write_sds_phy(int sds, int page, int regnum, u16 val)
 {
 	u32 cmd = sds << 2 | page << 7 | regnum << 13;;
@@ -2474,6 +2495,13 @@ int rtmdio_931x_write_sds_phy(int sds, int page, int regnum, u16 val)
 		ret = 0;
 
 	return ret;
+}
+
+int rtmdio_931x_write_sds_phy_new(int sds, int page, int regnum, u16 val)
+{
+	int backsds = rtmdio_931x_get_backing_sds(sds, page);
+
+	return backsds < 0 ? 0 : rtmdio_931x_write_sds_phy(backsds, page & 0x3f, regnum, val);
 }
 
 /* RTL931x specific MDIO functions */
