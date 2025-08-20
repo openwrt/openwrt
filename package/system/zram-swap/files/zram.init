@@ -58,10 +58,15 @@ zram_comp_algo()
 {
 	local dev="$1"
 	local zram_comp_algo="$( uci -q get system.@system[0].zram_comp_algo )"
+	local zram_algo_params="$( uci -q get system.@system[0].zram_algo_params )"
 
 	if [ -z "$zram_comp_algo" ]; then
 		# default to lzo, which is always available
 		zram_comp_algo="lzo"
+	fi
+
+	if [ -e "/sys/block/$( basename "$dev" )/algorithm_params" ] && [ -n "$zram_algo_params" ]; then
+		echo "$zram_algo_params" > "/sys/block/$( basename "$dev" )/algorithm_params"
 	fi
 
 	if [ $(grep -c "$zram_comp_algo" /sys/block/$( basename $dev )/comp_algorithm) -ne 0 ]; then
