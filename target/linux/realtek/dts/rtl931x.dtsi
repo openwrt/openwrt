@@ -240,6 +240,22 @@
 			pinctrl-single,bits = <0x0 0x10000 0x10000>;
 		};
 
+		pinmux_enable_mdc_mdio_3: enable-mdc-mdio-3 {
+			pinctrl-single,bits = <0x0 0x1000 0x1000>;
+		};
+
+		pinmux_enable_mdc_mdio_2: enable-mdc-mdio-2 {
+			pinctrl-single,bits = <0x0 0x800 0x800>;
+		};
+
+		pinmux_enable_mdc_mdio_1: enable-mdc-mdio-1 {
+			pinctrl-single,bits = <0x0 0x400 0x400>;
+		};
+
+		pinmux_enable_mdc_mdio_0: enable-mdc-mdio-0 {
+			pinctrl-single,bits = <0x0 0x200 0x200>;
+		};
+
 		/* Enable GPIO6 and GPIO7, possibly unknown others */
 		pinmux_disable_jtag: disable_jtag {
 			pinctrl-single,bits = <0x0 0x0 0x8000>;
@@ -248,6 +264,10 @@
 		/* Controls GPIO0 */
 		pinmux_disable_sys_led: disable_sys_led {
 			pinctrl-single,bits = <0x0 0x0 0x100>;
+		};
+
+		pinmux_disable_ext_cpu: disable-ext-cpu {
+			pinctrl-single,bits = <0x0 0x0 0x4>;
 		};
 	};
 
@@ -273,6 +293,10 @@
 		#interrupt-cells = <3>;
 		interrupts = <GIC_SHARED 16 IRQ_TYPE_LEVEL_HIGH>;
 		phy-mode = "internal";
+
+		pinctrl-0 = <&pinmux_disable_ext_cpu>;
+		pinctrl-names = "default";
+
 		fixed-link {
 			speed = <1000>;
 			full-duplex;
