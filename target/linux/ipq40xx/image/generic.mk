@@ -463,6 +463,7 @@ define Device/engenius_eap1300
 	KERNEL_SIZE := 5120k
 	IMAGE_SIZE := 25344k
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+	DEFAULT := n
 endef
 TARGET_DEVICES += engenius_eap1300
 
@@ -532,6 +533,7 @@ define Device/engenius_ens620ext
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size | append-metadata
 	IMAGE/factory_30.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | check-size | SenaoFW $$$$(PRODUCT_ID) $$$$(FW_VER)
 	IMAGE/factory_35.bin := qsdk-ipq-factory-nor | check-size | SenaoFW $$$$(PRODUCT_ID_NEW) $$$$(FW_VER_NEW)
+	DEFAULT := n
 endef
 # Missing DSA Setup
 #TARGET_DEVICES += engenius_ens620ext
