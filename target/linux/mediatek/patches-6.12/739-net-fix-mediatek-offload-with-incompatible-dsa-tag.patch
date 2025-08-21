@@ -1,0 +1,90 @@
+From: Schneider Azima <Schneider-Azima12@protonmail.com>
+Date: Sun, 20 Jul 2025 05:34:02 -0700
+Subject: [PATCH] mediatek: ethernet: fix offload with incompatible dsa tag
+
+DSA copies the driver features to slave device, including offload
+capabilites. Once a packet is sent though a DSA slave interface,
+according to its features, the kernel does not calculate checksums,
+expecting that the HW will fill the gaps. DSA adds the defined DSA
+tag and sends the tagged packet through the master device.
+
+Ethertype DSA tags expect the driver to calculate checksum based on the
+csum_start/csum_offset. However, mtk_eth_soc does not use that info.
+mtk_eth_soc checks the network header and decides if the HW can manage
+that packet, unaware that mac layer now contains an extra DSA tag. When
+that tag is the Mediatek CPU tag, offload will work as expected.
+When it is an incompatible DSA tag (all but Mediatek) or if DSA is
+stacking two incompatible DSA tags, the driver will still count on the
+HW offload. In this case, packets goes to the network with an incorrect
+checksum.
+
+This patch adds an extra check and disables offloading when DSA tag is
+in use and it is not Mediatek. Offloading is also disabled even when DSA
+tag is Mediatek but there is something else increasing the mac layer
+region (possibly another stacked tag). Mediatek tag can encode 802.1Q info and
+using vlan tags will still use offloading. Other mac layer protocols
+that are not supported by Mediatek will disable HW offloading. PPPoE was
+not tested but it is expected that it will disable offloading.
+
+This code is heuristically trying to keep HW offload enable with DSA tags.
+Anyway, in the worse case, offloading is disable and there is an increase
+in overhead, which is better than packet with wrong checksum.
+
+Signed-off-by: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+Signed-off-by: Schneider Azima <Schneider-Azima12@protonmail.com>
+---
+ drivers/net/ethernet/mediatek/mtk_eth_soc.c | 36 +++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -4833,6 +4833,41 @@ static u16 mtk_select_queue(struct net_d
+ 	return queue;
+ }
+ 
++#define MTK_HDR_LEN	4
++
++static netdev_features_t mtk_features_check(struct sk_buff *skb,
++					   struct net_device *dev,
++					   netdev_features_t features)
++{
++	/* No point in doing any of this if neither checksum nor GSO are
++	 * being requested for this frame. We can rule out both by just
++	 * checking for CHECKSUM_PARTIAL
++	 */
++	if (skb->ip_summed != CHECKSUM_PARTIAL)
++		return features;
++
++#if IS_ENABLED(CONFIG_NET_DSA)
++	/* DSA tag might break existing offload checks as offload feature flags
++	 * are copied to slave ports and this driver does not use csum_start. */
++	if (netdev_uses_dsa(dev)) {
++		const struct dsa_device_ops *tag_ops = dev->dsa_ptr->tag_ops;
++
++		/* If tag is Mediatek, checksum should work */
++		if (tag_ops->proto == DSA_TAG_PROTO_MTK)
++			/* However, make sure that it is not stacking another
++			 * L2 protocol, possibly a second incompatible DSA tag
++			 * 802.1Q does not increase the mac header size because
++			 * it is embeded inside mediatek tag */
++			if (skb_mac_header_len(skb) <= ETH_HLEN+MTK_HDR_LEN)
++				return features;
++
++		features &= ~(NETIF_F_CSUM_MASK | NETIF_F_GSO_MASK);
++	}
++#endif
++
++	return features;
++}
++
+ static const struct ethtool_ops mtk_ethtool_ops = {
+ 	.get_link_ksettings	= mtk_get_link_ksettings,
+ 	.set_link_ksettings	= mtk_set_link_ksettings,
+@@ -4872,6 +4907,7 @@ static const struct net_device_ops mtk_n
+ 	.ndo_bpf		= mtk_xdp,
+ 	.ndo_xdp_xmit		= mtk_xdp_xmit,
+ 	.ndo_select_queue	= mtk_select_queue,
++	.ndo_features_check	= mtk_features_check,
+ };
+ 
+ static int mtk_add_mac(struct mtk_eth *eth, struct device_node *np)
