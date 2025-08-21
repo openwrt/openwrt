@@ -10,7 +10,8 @@ case "$FIRMWARE" in
 "mediatek/mt7981_eeprom_mt7976_dbdc.bin")
 	case "$board" in
 	mercusys,mr80x-v3|\
-	mercusys,mr85x)
+	mercusys,mr85x|\
+	mercusys,mr85x-dsa)
 		ln -sf /tmp/tp_data/MT7981_EEPROM.bin \
 			/lib/firmware/$FIRMWARE
 		;;

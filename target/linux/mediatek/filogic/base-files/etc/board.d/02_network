@@ -195,6 +195,7 @@ mediatek_setup_interfaces()
 		ucidef_add_switch "switch0" "0:lan0" "1:lan1" "2:lan2" "6@eth0"
 		ucidef_set_interfaces_lan_wan "eth0.1 eth0.2 eth0.3" eth1
 		;;
+	mercusys,mr85x-dsa|\
 	mercusys,mr90x-v1|\
 	mercusys,mr90x-v1-ubi)
 		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2" eth1

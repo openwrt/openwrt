@@ -2426,6 +2426,20 @@ define Device/mercusys_mr85x
 endef
 TARGET_DEVICES += mercusys_mr85x
 
+define Device/mercusys_mr85x_dsa
+  DEVICE_VENDOR := MERCUSYS
+  DEVICE_MODEL := MR85X DSA
+  DEVICE_DTS := mt7981b-mercusys-mr85x-dsa
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-phy-airoha-en8811h \
+	kmod-dsa-rtl8365mb
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += mercusys_mr85x_dsa
+
 define Device/mercusys_mr90x-v1
   DEVICE_VENDOR := MERCUSYS
   DEVICE_MODEL := MR90X v1
