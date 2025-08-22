@@ -151,6 +151,9 @@ UBOOT_TARGETS := \
   fsl_ls1021a-twr-sdboot \
   fsl_ls1021a-iot-sdboot
 
+UBOOT_CUSTOMIZE_CONFIG := \
+	--disable TOOLS_MKEFICAPSULE
+
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(UBOOT_IMAGE) \
