@@ -394,7 +394,7 @@ err_mutex_destroy:
 	return ret;
 }
 
-static int leds_virtualcolor_remove(struct platform_device *pdev)
+static void leds_virtualcolor_remove(struct platform_device *pdev)
 {
 	struct leds_virtualcolor *vc_data = platform_get_drvdata(pdev);
 	int i;
@@ -416,8 +416,6 @@ static int leds_virtualcolor_remove(struct platform_device *pdev)
 	}
 
 	mutex_destroy(&vc_data->lock);
-
-	return 0;
 }
 
 static const struct of_device_id leds_virtualcolor_of_match[] = {
