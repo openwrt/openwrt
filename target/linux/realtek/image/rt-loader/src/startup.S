@@ -4,9 +4,9 @@
 #include "globals.h"
 
 # This start code allows to run a position independent code (PIC) on bare metal. In that case
-# all addresses are looked up via the global offset table (GOT). But that must be filled during
-# this initialization sequence. Without a proper GOT using standard "la" instruction in the code
-# will not work. Provide a macro that avoids the dependency.
+# all addresses are looked up via the global offset table (GOT). That must be filled during
+# this initialization sequence. Without a proper GOT using standard "la" instruction in the
+# code will not work. Provide a macro that avoids the dependency.
 
 .macro _LA reg, symbol
 	lui \reg, %hi(\symbol)
@@ -48,15 +48,18 @@ _where_am_i:
 	mtc0	$zero, CP0_COMPARE
 	_EHB
 
-# Check if this our first run (_kernel_load_addr = 0?)
+# Increase run counter and check if this is the first run
 
-	_LA	$t6, _kernel_load_addr
+	_LA	$t6, _my_run_count
 	lw	$t7, 0($t6)
+	addi	$t8, $t7, 1
+	sw	$t8, 0($t6)
 	bne	$zero, $t7, _init_done
 	nop
 
 # During first run store the current load address as the target kernel load address.
 
+	_LA     $t6, _kernel_load_addr
 	sw	$t9, 0($t6)
 
 # Same for the global variables in the BSS section. Clear them only during the first run. This
@@ -179,6 +182,10 @@ _heap_addr:
 	.globl _heap_addr_max
 _heap_addr_max:
 	.word 0
+# number of loads
+	.globl _my_run_count
+_my_run_count:
+	.word 0
 # current program load address
 	.globl _my_load_addr
 _my_load_addr:
@@ -199,3 +206,7 @@ _kernel_data_addr:
 	.globl _kernel_data_size
 _kernel_data_size:
 	.word 0
+# compression method of attached kernel (usually LZMA)
+	.globl _kernel_comp_type
+_kernel_comp_type:
+	.word UIMAGE_COMP_LZMA
