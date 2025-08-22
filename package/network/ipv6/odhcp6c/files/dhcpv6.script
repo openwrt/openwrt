@@ -196,8 +196,8 @@ setup_interface () {
 		[ -n "$IFACE_DSLITE_DELEGATE" ] && json_add_boolean delegate "$IFACE_DSLITE_DELEGATE"
 		json_close_object
 		ubus call network add_dynamic "$(json_dump)"
-	elif [ "$IFACE_464XLAT" != 0 ] && [ -f /lib/netifd/proto/464xlat.sh ]; then
-		[ -z "$IFACE_464XLAT" -o "$IFACE_464XLAT" = 1 ] && IFACE_464XLAT=${INTERFACE}_4
+	elif [ -n "$IFACE_464XLAT" ] && [ "$IFACE_464XLAT" != 0 ] && [ -f /lib/netifd/proto/464xlat.sh ]; then
+		[ "$IFACE_464XLAT" = 1 ] && IFACE_464XLAT=${INTERFACE}_4
 		json_init
 		json_add_string name "$IFACE_464XLAT"
 		json_add_string ifname "@$INTERFACE"
