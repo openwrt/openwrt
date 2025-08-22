@@ -6,6 +6,11 @@
 #ifndef _GLOBALS_H_
 #define _GLOBALS_H_
 
+#define UIMAGE_HDR_SIZE		64
+#define UIMAGE_OS_LINUX		5
+#define UIMAGE_COMP_NONE	0
+#define UIMAGE_COMP_LZMA	3
+
 #define KSEG0			0x80000000
 #define STACK_SIZE		0x10000
 #define HEAP_SIZE		0x40000
