@@ -2797,6 +2797,28 @@ define Device/tplink_deco-m4r-v4
 endef
 TARGET_DEVICES += tplink_deco-m4r-v4
 
+define Device/tplink_deco-x20-v3
+  $(Device/dsa-migration)
+  $(Device/tplink-safeloader)
+  DEVICE_MODEL := DECO-X20
+  DEVICE_VARIANT := v3
+  DEVICE_PACKAGES := kmod-mt7915-firmware uboot-envtools
+  TPLINK_BOARD_ID := DECO-X20-V3
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 8388608
+  IMAGE_SIZE := 44040192
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | \
+	tplink-jffs2-kernel $$(KERNEL_SIZE) | pad-to $$(KERNEL_SIZE)
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-kernel | \
+	uImage none
+  IMAGES += jffs2.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata | check-size
+  IMAGE/jffs2.bin := append-kernel | pad-to $$(KERNEL_SIZE) | \
+	append-ubi
+endef   
+TARGET_DEVICES += tplink_deco-x20-v3 
+
 define Device/tplink_eap235-wall-v1
   $(Device/dsa-migration)
   $(Device/tplink-safeloader)
