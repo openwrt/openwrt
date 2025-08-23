@@ -1,0 +1,885 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/*
+ * Copyright (c) 2025, Christian <kimocoder> Bremvaag <christian@aircrack-ng.org>
+ *
+ * The 'ipq5018-rdp432-c2.dts' bindings is already implemented in this dtsi.
+ * rdp432-c2 ipq5018 contains '&usb', '&usb_dwc', '&usbphy0' and '&xo_board_clk'
+ *
+ * Also contains nss bindings, so instead of messing up this tree,
+ * it's separated and should be included (as import) instead. enjoy.
+ *
+ */
+
+/dts-v1/;
+
+#include "ipq5018.dtsi"
+#include "ipq5018-ess.dtsi"
+#include "ipq5018-nss.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "Wallys DR5018";
+	compatible = "wallys,dr5018", "qcom,ipq5018-mp03.5", "qcom,ipq5018";
+	interrupt-parent = <&intc>;
+
+	aliases {
+		sdhc1 = &sdhc_1; /* SDC1 eMMC slot */
+		serial0 = &blsp1_uart1;
+		serial1 = &blsp1_uart2;
+		ethernet0 = "/soc/dp1";
+		ethernet1 = "/soc/dp2";
+
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+	};
+
+	chosen {
+		bootargs = "console=ttyMSM0,115200,n8 rw init=/init";
+		bootargs-append = " swiotlb=1 coherent_pool=2M";
+		stdout-path = "serial0";
+	};
+
+	reserved-memory {
+	#ifdef __IPQ_MEM_PROFILE_256_MB__
+	/*		   256 MB Profile
+	 * +==========+==============+=========================+
+	 * |	  |	      |			 |
+	 * |  Region  | Start Offset |	  Size	   |
+	 * |	  |	      |			 |
+	 * +----------+--------------+-------------------------+
+	 * |    NSS   |  0x40000000  |	   8MB	   |
+	 * +----------+--------------+-------------------------+
+	 * |   Linux  |  0x40800000  | Depends on total memory |
+	 * +----------+--------------+-------------------------+
+	 * |   uboot  |  0x4A600000  |	   4MB	   |
+	 * +----------+--------------+-------------------------+
+	 * |    SBL   |  0x4AA00000  |	   1MB	   |
+	 * +----------+--------------+-------------------------+
+	 * |   smem   |  0x4AB00000  |	   1MB	   |
+	 * +----------+--------------+-------------------------+
+	 * |    TZ    |  0x4AC00000  |	   4MB	   |
+	 * +----------+--------------+-------------------------+
+	 * |    Q6    |	      |			 |
+	 * |   code/  |  0x4B000000  |	  20MB	   |
+	 * |   data   |	      |			 |
+	 * +----------+--------------+-------------------------+
+	 * |  IPQ5018 |	      |			 |
+	 * |   data   |  0x4C400000  |	  13MB	   |
+	 * +----------+--------------+-------------------------+
+	 * |  IPQ5018 |	      |			 |
+	 * |  M3 Dump |  0x4D100000  |	   1MB	   |
+	 * +----------+--------------+-------------------------+
+	 * |  IPQ5018 |	      |			 |
+	 * |   QDSS   |  0x4D200000  |	   1MB	   |
+	 * +----------+--------------+-------------------------+
+	 * | QCN6122_1|	      |			 |
+	 * |   data   |  0x4D300000  |	  13MB	   |
+	 * +----------+--------------+-------------------------+
+	 * | QCN6122_1|	      |			 |
+	 * |  M3 Dump |  0x4E000000  |	   1MB	   |
+	 * +----------+--------------+-------------------------+
+	 * | QCN6122_1|	      |			 |
+	 * |   QDSS   |  0x4E100000  |	   1MB	   |
+	 * +----------+--------------+-------------------------+
+	 * | QCN6122_2|	      |			 |
+	 * |   data   |  0x4E200000  |	  13MB	   |
+	 * +----------+--------------+-------------------------+
+	 * | QCN6122_2|	      |			 |
+	 * |  M3 Dump |  0x4EF00000  |	   1MB	   |
+	 * +----------+--------------+-------------------------+
+	 * | QCN6122_2|	      |			 |
+	 * |   QDSS   |  0x4F000000  |	   1MB	   |
+	 * +----------+--------------+-------------------------+
+	 * |						   |
+	 * |	    Rest of the memory for Linux	   |
+	 * |						   |
+	 * +===================================================+
+	 */
+		q6_mem_regions: q6_mem_regions@4B000000 {
+			no-map;
+			reg = <0x0 0x4B000000 0x0 0x4100000>;
+		};
+
+		q6_code_data: q6_code_data@4B000000 {
+			no-map;
+			reg = <0x0 0x4B000000 0x0 0x1400000>;
+		};
+
+		q6_ipq5018_data: q6_ipq5018_data@4C400000 {
+			no-map;
+			reg = <0x0 0x4C400000 0x0 0xD00000>;
+		};
+
+		m3_dump: m3_dump@4D100000 {
+			no-map;
+			reg = <0x0 0x4D100000 0x0 0x100000>;
+		};
+
+		q6_etr_region: q6_etr_dump@4D200000 {
+			no-map;
+			reg = <0x0 0x4D200000 0x0 0x100000>;
+		};
+
+		q6_qcn6122_data1: q6_qcn6122_data1@4D300000 {
+			no-map;
+			reg = <0x0 0x4D300000 0x0 0xD00000>;
+		};
+
+		m3_dump_qcn6122_1: m3_dump_qcn6122_1@4E000000 {
+			no-map;
+			reg = <0x0 0x4E000000 0x0 0x100000>;
+		};
+
+		q6_qcn6122_etr_1: q6_qcn6122_etr_1@4E100000 {
+			no-map;
+			reg = <0x0 0x4E100000 0x0 0x100000>;
+		};
+
+		q6_qcn6122_data2: q6_qcn6122_data2@4E200000 {
+			no-map;
+			reg = <0x0 0x4E200000 0x0 0xD00000>;
+		};
+
+		m3_dump_qcn6122_2: m3_dump_qcn6122_2@4EF00000 {
+			no-map;
+			reg = <0x0 0x4EF00000 0x0 0x100000>;
+		};
+
+		q6_qcn6122_etr_2: q6_qcn6122_etr_2@4F000000 {
+			no-map;
+			reg = <0x0 0x4F000000 0x0 0x100000>;
+		};
+	#else
+	/*		 512MB/1GB Profiles
+	 * +==========+==============+=========================+
+	 * |	  |	      |			 |
+	 * |  Region  | Start Offset |	  Size	   |
+	 * |	  |	      |			 |
+	 * +----------+--------------+-------------------------+
+	 * |    NSS   |  0x40000000  |	  16MB	   |
+	 * +----------+--------------+-------------------------+
+	 * |   Linux  |  0x41000000  | Depends on total memory |
+	 * +----------+--------------+-------------------------+
+	 * |   uboot  |  0x4A600000  |	   4MB	   |
+	 * +----------+--------------+-------------------------+
+	 * |    SBL   |  0x4AA00000  |	   1MB	   |
+	 * +----------+--------------+-------------------------+
+	 * |   smem   |  0x4AB00000  |	   1MB	   |
+	 * +----------+--------------+-------------------------+
+	 * |    TZ    |  0x4AC00000  |	   4MB	   |
+	 * +----------+--------------+-------------------------+
+	 * |    Q6    |	      |			 |
+	 * |   code/  |  0x4B000000  |	  20MB	   |
+	 * |   data   |	      |			 |
+	 * +----------+--------------+-------------------------+
+	 * |  IPQ5018 |	      |			 |
+	 * |   data   |  0x4C400000  |	  13MB	   |
+	 * +----------+--------------+-------------------------+
+	 * |  IPQ5018 |	      |			 |
+	 * |  M3 Dump |  0x4D100000  |	   1MB	   |
+	 * +----------+--------------+-------------------------+
+	 * |  IPQ5018 |	      |			 |
+	 * |   QDSS   |  0x4D200000  |	   1MB	   |
+	 * +----------+--------------+-------------------------+
+	 * |  IPQ5018 |	      |			 |
+	 * |  Caldb   |  0x4D300000  |	   2MB	   |
+	 * +----------+--------------+-------------------------+
+	 * | QCN6122_1|	      |			 |
+	 * |   data   |  0x4D500000  |	  13MB	   |
+	 * +----------+--------------+-------------------------+
+	 * | QCN6122_1|	      |			 |
+	 * |  M3 Dump |  0x4E200000  |	   1MB	   |
+	 * +----------+--------------+-------------------------+
+	 * | QCN6122_1|	      |			 |
+	 * |   QDSS   |  0x4E300000  |	   1MB	   |
+	 * +----------+--------------+-------------------------+
+	 * | QCN6122_1|	      |			 |
+	 * |  Caldb   |  0x4E400000  |	   5MB	   |
+	 * +----------+--------------+-------------------------+
+	 * | QCN6122_2|	      |			 |
+	 * |   data   |  0x4E900000  |	  13MB	   |
+	 * +----------+--------------+-------------------------+
+	 * | QCN6122_2|	      |			 |
+	 * |  M3 Dump |  0x4F600000  |	   1MB	   |
+	 * +----------+--------------+-------------------------+
+	 * | QCN6122_2|	      |			 |
+	 * |   QDSS   |  0x4F700000  |	   1MB	   |
+	 * +----------+--------------+-------------------------+
+	 * | QCN6122_2|	      |			 |
+	 * |  Caldb   |  0x4F800000  |	   5MB	   |
+	 * +----------+--------------+-------------------------+
+	 * |						   |
+	 * |	    Rest of the memory for Linux	   |
+	 * |						   |
+	 * +===================================================+
+	 */
+		q6_mem_regions: q6_mem_regions@4B000000 {
+			no-map;
+			reg = <0x0 0x4B000000 0x0 0x4D00000>;
+		};
+
+		q6_code_data: q6_code_data@4B000000 {
+			no-map;
+			reg = <0x0 0x4B000000 0x0 01400000>;
+		};
+
+		q6_ipq5018_data: q6_ipq5018_data@4C400000 {
+			no-map;
+			reg = <0x0 0x4C400000 0x0 0xD00000>;
+		};
+
+		m3_dump: m3_dump@4D100000 {
+			no-map;
+			reg = <0x0 0x4D100000 0x0 0x100000>;
+		};
+
+		q6_etr_region: q6_etr_dump@4D200000 {
+			no-map;
+			reg = <0x0 0x4D200000 0x0 0x100000>;
+		};
+
+		q6_caldb_region: q6_caldb_region@4D300000 {
+			no-map;
+			reg = <0x0 0x4D300000 0x0 0x200000>;
+		};
+
+		q6_qcn6122_data1: q6_qcn6122_data1@4D500000 {
+			no-map;
+			reg = <0x0 0x4D500000 0x0 0xD00000>;
+		};
+
+		m3_dump_qcn6122_1: m3_dump_qcn6122_1@4E200000 {
+			no-map;
+			reg = <0x0 0x4E200000 0x0 0x100000>;
+		};
+
+		q6_qcn6122_etr_1: q6_qcn6122_etr_1@4E300000 {
+			no-map;
+			reg = <0x0 0x4E300000 0x0 0x100000>;
+		};
+
+		q6_qcn6122_caldb_1: q6_qcn6122_caldb_1@4E400000 {
+			no-map;
+			reg = <0x0 0x4E400000 0x0 0x500000>;
+		};
+
+		q6_qcn6122_data2: q6_qcn6122_data2@4E900000 {
+			no-map;
+			reg = <0x0 0x4E900000 0x0 0xD00000>;
+		};
+
+		m3_dump_qcn6122_2: m3_dump_qcn6122_2@4F600000 {
+			no-map;
+			reg = <0x0 0x4F600000 0x0 0x100000>;
+		};
+
+		q6_qcn6122_etr_2: q6_qcn6122_etr_2@4F700000 {
+			no-map;
+			reg = <0x0 0x4F700000 0x0 0x100000>;
+		};
+
+		q6_qcn6122_caldb_2: q6_qcn6122_caldb_2@4F800000 {
+			no-map;
+			reg = <0x0 0x4F800000 0x0 0x500000>;
+		};
+
+	#endif
+	};
+
+	soc {
+		serial@78af000 {
+			status = "ok";
+		};
+
+		nand: qpic-nand@79b0000 {
+			pinctrl-0 = <&qspi_nand_pins>;
+			pinctrl-names = "default";
+			status = "ok";
+		};
+
+		spi_0: spi@78b5000 { /* BLSP1 QUP0 */
+			pinctrl-0 = <&blsp0_spi_pins>;
+			pinctrl-names = "default";
+			cs-select = <0>;
+			status = "ok";
+
+			m25p80@0 {
+				reg = <0x0 0x0 0x1000000>;
+				compatible = "n25q128a11";
+				linux,modalias = "m25p80", "n25q128a11";
+				spi-max-frequency = <50000000>;
+				use-default-sizes;
+			};
+		};
+
+		ess-instance {
+			num_devices = <0x2>;
+			ess-switch@39c00000 {
+				compatible = "qcom,ess-switch-ipq50xx";
+				device_id = <0>;
+				switch_mac_mode = <0xf>; /* mac mode for uniphy instance*/
+				cmnblk_clk = "internal_96MHz"; /* cmnblk clk*/
+				qcom,port_phyinfo {
+					port@0 {
+						port_id = <1>;
+						phy_address = <7>;
+					};
+					port@1 {
+						port_id = <2>;
+						forced-speed = <1000>;
+						forced-duplex = <1>;
+					};
+				};
+				led_source@0 {
+					source = <0>;
+					mode = "normal";
+					speed = "all";
+					blink_en = "enable";
+					active = "high";
+				};
+			};
+			ess-switch1@1 {
+				compatible = "qcom,ess-switch-qca83xx";
+				device_id = <1>;
+				switch_access_mode = "mdio";
+				mdio-bus = <&mdio1>;
+				reset_gpio = <&tlmm 0x27 0>;
+				switch_cpu_bmp = <0x40>;  /* cpu port bitmap */
+				switch_lan_bmp = <0x1e>; /* lan port bitmap */
+				switch_wan_bmp = <0x0>;  /* wan port bitmap */
+				qca,ar8327-initvals = <
+						0x00004 0x7600000   /* PAD0_MODE */
+						0x00008 0x1000000   /* PAD5_MODE */
+						0x0000c 0x80	/* PAD6_MODE */
+						0x00010 0x2613a0    /* PORT6 FORCE MODE*/
+						0x000e4 0xaa545     /* MAC_POWER_SEL */
+						0x000e0 0xc74164de  /* SGMII_CTRL */
+						0x0007c 0x4e	/* PORT0_STATUS */
+						0x00094 0x4e	/* PORT6_STATUS */
+				>;
+				qcom,port_phyinfo {
+					port@0 {
+						port_id = <1>;
+						phy_address = <0>;
+					};
+					port@1 {
+						port_id = <2>;
+						phy_address = <1>;
+					};
+					port@2 {
+						port_id = <3>;
+						phy_address = <2>;
+					};
+					port@3 {
+						port_id = <4>;
+						phy_address = <3>;
+					};
+				};
+			};
+		};
+
+                dp1 {
+                        device_type = "network";
+                        compatible = "qcom,nss-dp";
+                        clocks = <&gcc GCC_SNOC_GMAC0_AXI_CLK>;
+                        clock-names = "nss-snoc-gmac-axi-clk";
+                        qcom,id = <1>;
+                        reg = <0x00000000 0x39C00000 0x00010000>;
+                        interrupts = <GIC_SPI 101 IRQ_TYPE_LEVEL_HIGH>;
+                        qcom,mactype = <2>;
+                        qcom,link-poll = <1>;
+                        qcom,phy-mdio-addr = <7>;
+                        mdio-bus = <&mdio0>;
+                        local-mac-address = [00 00 00 00 00 00];
+                        phy-mode = "sgmii";
+                        qcom,rx-page-mode = <0>;
+                };
+
+                dp2 {
+                        device_type = "network";
+                        compatible = "qcom,nss-dp";
+                        clocks = <&gcc GCC_SNOC_GMAC1_AXI_CLK>;
+                        clock-names = "nss-snoc-gmac-axi-clk";
+                        qcom,id = <2>;
+                        reg = <0x00000000 0x39D00000 0x00010000>;
+                        interrupts = <GIC_SPI 109 IRQ_TYPE_LEVEL_HIGH>;
+                        qcom,mactype = <2>;
+                        qcom,link-poll = <1>;
+                        qcom,phy-mdio-addr = <28>;
+                        mdio-bus = <&mdio1>;
+                        local-mac-address = [00 00 00 00 00 00];
+                        phy-mode = "sgmii";
+                        qcom,rx-page-mode = <0>;
+                };
+
+		nss-macsec1 {
+			compatible = "qcom,nss-macsec";
+			phy_addr = <0x1c>;
+			mdiobus = <&mdio1>;
+		};
+	};
+
+	qcom,test@0 {
+		status = "ok";
+	};
+
+	thermal-zones {
+		status = "ok";
+	};
+};
+
+&tlmm {
+	pinctrl-0 = <&blsp0_uart_pins &mcu_pins>;
+	pinctrl-names = "default";
+
+	mcu_pins: mcu_pins {
+		mcu_rst {
+			pins = "gpio31";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-disable;
+			output-low;
+		};
+
+		mcu_sbl {
+			pins = "gpio35";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-disable;
+			output-low;
+		};
+	};
+
+	blsp0_uart_pins: uart_pins {
+		blsp0_uart_rx_tx {
+			pins = "gpio20", "gpio21";
+			function = "blsp0_uart0";
+			bias-disable;
+		};
+	};
+
+	blsp1_uart_pins: blsp1_uart_pins {
+		blsp1_uart_rx_tx {
+			pins = "gpio23", "gpio25", "gpio24", "gpio26";
+			function = "blsp1_uart2";
+			bias-disable;
+		};
+	};
+
+	blsp0_spi_pins: blsp0_spi_pins {
+		mux {
+			pins = "gpio10", "gpio11", "gpio12", "gpio13";
+			function = "blsp0_spi";
+			drive-strength = <2>;
+			bias-disable;
+		};
+	};
+
+	qspi_nand_pins: qspi_nand_pins {
+		qspi_clock {
+			pins = "gpio9";
+			function = "qspi_clk";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		qspi_cs {
+			pins = "gpio8";
+			function = "qspi_cs";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		qspi_data {
+			pins = "gpio4", "gpio5", "gpio6", "gpio7";
+			function = "qspi_data";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+
+	mdio1_pins: mdio_pinmux {
+		mux_0 {
+			pins = "gpio36";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mux_1 {
+			pins = "gpio37";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	leds_pins: leds_pins {
+		led_power {
+			pins = "gpio30";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-down;
+		};
+		led_uplink {
+			pins = "gpio46";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-down;
+		};
+	};
+
+	i2c_pins: i2c_pins {
+		i2c_scl {
+			pins = "gpio33";
+			function = "blsp2_i2c0";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		i2c_sda {
+			pins = "gpio34";
+			function = "blsp2_i2c0";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	button_pins: button_pins {
+		wps_button {
+			pins = "gpio38";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+};
+
+&soc {
+	gpio-export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		mcu-bootloader {
+			gpio-export,name = "mcu-bootloader";
+			gpio-export,output = <0>;
+			gpios = <&tlmm 35 GPIO_ACTIVE_LOW>;
+		};
+
+		mcu-enable {
+			gpio-export,name = "mcu-enable";
+			gpio-export,output = <0>;
+			gpios = <&tlmm 31 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		wps {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&tlmm 32 GPIO_ACTIVE_LOW>;
+			linux,input-type = <1>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&leds_pins>;
+		pinctrl-names = "default";
+
+		led_power: led@30 {
+			label = "green:power";
+			gpios = <&tlmm 30 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+		led@46 {
+			label = "green:uplink";
+			gpios = <&tlmm 46 GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+		};
+	};
+};
+
+&q6v5_wcss {
+	compatible = "qcom,ipq5018-q6-mpd";
+	#address-cells = <1>;
+	#size-cells = <1>;
+	ranges;
+	firmware = "IPQ5018/q6_fw.mdt";
+	reg = <0x0cd00000 0x4040>,
+		<0x1938000 0x8>,
+		<0x193d204 0x4>;
+	reg-names = "qdsp6",
+			"tcsr-msip",
+			"tcsr-q6";
+	resets = <&gcc GCC_WCSSAON_RESET>,
+			<&gcc GCC_WCSS_Q6_BCR>;
+
+	reset-names = "wcss_aon_reset",
+			"wcss_q6_reset";
+
+	clocks = <&gcc GCC_Q6_AXIS_CLK>,
+		<&gcc GCC_WCSS_ECAHB_CLK>,
+		<&gcc GCC_Q6_AXIM_CLK>,
+		<&gcc GCC_Q6_AXIM2_CLK>,
+		<&gcc GCC_Q6_AHB_CLK>,
+		<&gcc GCC_Q6_AHB_S_CLK>,
+		<&gcc GCC_WCSS_AXI_S_CLK>;
+	clock-names = "gcc_q6_axis_clk",
+		"gcc_wcss_ecahb_clk",
+		"gcc_q6_axim_clk",
+		"gcc_q6_axim2_clk",
+		"gcc_q6_ahb_clk",
+		"gcc_q6_ahb_s_clk",
+		"gcc_wcss_axi_s_clk";
+
+	#ifdef __IPQ_MEM_PROFILE_256_MB__
+		memory-region = <&q6_mem_regions>, <&q6_etr_region>;
+	#else
+		memory-region = <&q6_mem_regions>, <&q6_etr_region>,
+				<&q6_caldb_region>;
+	#endif
+
+	qcom,rproc = <&q6v5_wcss>;
+	qcom,bootargs_smem = <507>;
+	boot-args = <0x1 0x4 0x3 0x0F 0x0 0x0>,
+			<0x2 0x4 0x2 0x12 0x0 0x0>;
+	status = "ok";
+	q6_wcss_pd1: remoteproc_pd1@4ab000 {
+		compatible = "qcom,ipq5018-wcss-ahb-mpd";
+		reg = <0x4ab000 0x20>;
+		reg-names = "rmb";
+		firmware = "IPQ5018/q6_fw.mdt";
+		m3_firmware = "IPQ5018/m3_fw.mdt";
+		interrupts-extended = <&wcss_smp2p_in 8 0>,
+					<&wcss_smp2p_in 9 0>,
+					<&wcss_smp2p_in 12 0>,
+					<&wcss_smp2p_in 11 0>;
+		interrupt-names = "fatal",
+					"ready",
+					"spawn-ack",
+					"stop-ack";
+
+		resets = <&gcc GCC_WCSSAON_RESET>,
+				<&gcc GCC_WCSS_BCR>,
+				<&gcc GCC_CE_BCR>;
+		reset-names = "wcss_aon_reset",
+				"wcss_reset",
+				"ce_reset";
+
+		clocks = <&gcc GCC_WCSS_AHB_S_CLK>,
+				<&gcc GCC_WCSS_ACMT_CLK>,
+				<&gcc GCC_WCSS_AXI_M_CLK>;
+		clock-names = "gcc_wcss_ahb_s_clk",
+					"gcc_wcss_acmt_clk",
+					"gcc_wcss_axi_m_clk";
+
+		qcom,smem-states = <&wcss_smp2p_out 8>,
+					<&wcss_smp2p_out 9>,
+					<&wcss_smp2p_out 10>;
+		qcom,smem-state-names = "shutdown",
+					"stop",
+					"spawn";
+	#ifdef __IPQ_MEM_PROFILE_256_MB__
+		memory-region = <&q6_ipq5018_data>, <&m3_dump>,
+				<&q6_etr_region>;
+	#else
+		memory-region = <&q6_ipq5018_data>, <&m3_dump>,
+				<&q6_etr_region>, <&q6_caldb_region>;
+	#endif
+
+	};
+
+	q6_wcss_pd2: remoteproc_pd2 {
+		compatible = "qcom,ipq5018-wcss-pcie-mpd";
+		firmware = "IPQ5018/q6_fw.mdt";
+		m3_firmware = "qcn6122/m3_fw.mdt";
+		interrupts-extended = <&wcss_smp2p_in 16 0>,
+					<&wcss_smp2p_in 17 0>,
+					<&wcss_smp2p_in 20 0>,
+					<&wcss_smp2p_in 19 0>;
+		interrupt-names = "fatal",
+					"ready",
+					"spawn-ack",
+					"stop-ack";
+
+		qcom,smem-states = <&wcss_smp2p_out 16>,
+					<&wcss_smp2p_out 17>,
+					<&wcss_smp2p_out 18>;
+		qcom,smem-state-names = "shutdown",
+					"stop",
+					"spawn";
+	#ifdef __IPQ_MEM_PROFILE_256_MB__
+		memory-region = <&q6_qcn6122_data1>, <&m3_dump_qcn6122_1>,
+				<&q6_qcn6122_etr_1>;
+	#else
+		memory-region = <&q6_qcn6122_data1>, <&m3_dump_qcn6122_1>,
+				<&q6_qcn6122_etr_1>, <&q6_qcn6122_caldb_1>;
+	#endif
+
+	};
+
+	q6_wcss_pd3: remoteproc_pd3 {
+		compatible = "qcom,ipq5018-wcss-pcie-mpd";
+		firmware = "IPQ5018/q6_fw.mdt";
+		interrupts-extended = <&wcss_smp2p_in 24 0>,
+					<&wcss_smp2p_in 25 0>,
+					<&wcss_smp2p_in 28 0>,
+					<&wcss_smp2p_in 27 0>;
+		interrupt-names = "fatal",
+					"ready",
+					"spawn-ack",
+					"stop-ack";
+
+		qcom,smem-states = <&wcss_smp2p_out 24>,
+					<&wcss_smp2p_out 25>,
+					<&wcss_smp2p_out 26>;
+		qcom,smem-state-names = "shutdown",
+					"stop",
+					"spawn";
+	#ifdef	__IPQ_MEM_PROFILE_256_MB__
+		memory-region = <&q6_qcn6122_data2>, <&m3_dump_qcn6122_2>,
+				<&q6_qcn6122_etr_2>;
+	#else
+		memory-region = <&q6_qcn6122_data2>, <&m3_dump_qcn6122_2>,
+				<&q6_qcn6122_etr_2>, <&q6_qcn6122_caldb_2>;
+	#endif
+	};
+};
+
+&wifi0 {
+	/* IPQ5018 */
+	qcom,multipd_arch;
+	qcom,rproc = <&q6_wcss_pd1>;
+	qcom,userpd-subsys-name = "q6v5_wcss_userpd1";
+#ifdef __IPQ_MEM_PROFILE_256_MB__
+	qcom,tgt-mem-mode = <2>;
+#else
+	qcom,tgt-mem-mode = <1>;
+#endif
+	qcom,board_id = <0x23>;
+#ifdef __CNSS2__
+	qcom,bdf-addr = <0x4C400000 0x4C400000 0x4C400000 0x0 0x0 0x0>;
+	qcom,caldb-addr = <0x4D300000 0x4D300000 0 0 0 0>;
+	qcom,caldb-size = <0x200000>;
+	mem-region = <&q6_ipq5018_data>;
+#else
+	memory-region = <&q6_ipq5018_data>;
+#endif
+	status = "ok";
+};
+
+&wifi1 {
+	/* QCN6122 5G */
+	qcom,multipd_arch;
+	qcom,userpd-subsys-name = "q6v5_wcss_userpd2";
+	qcom,rproc = <&q6_wcss_pd2>;
+#ifdef __IPQ_MEM_PROFILE_256_MB__
+	qcom,tgt-mem-mode = <2>;
+#else
+	qcom,tgt-mem-mode = <1>;
+#endif
+	qcom,board_id = <0x60>;
+#ifdef __CNSS2__
+	qcom,bdf-addr = <0x4D500000 0x4D500000 0x4D300000 0x0 0x0 0x0>;
+	qcom,caldb-addr = <0x4E400000 0x4E400000 0 0 0 0>;
+	qcom,caldb-size = <0x500000>;
+	mem-region = <&q6_qcn6122_data1>;
+#else
+	memory-region = <&q6_qcn6122_data1>;
+#endif
+	status = "ok";
+};
+
+&wifi2 {
+	/* QCN6122 6G */
+	qcom,multipd_arch;
+	qcom,userpd-subsys-name = "q6v5_wcss_userpd3";
+	qcom,rproc = <&q6_wcss_pd3>;
+#ifdef __IPQ_MEM_PROFILE_256_MB__
+	qcom,tgt-mem-mode = <2>;
+#else
+	qcom,tgt-mem-mode = <1>;
+#endif
+	qcom,board_id = <0xb0>;
+#ifdef __CNSS2__
+	qcom,bdf-addr = <0x4E900000 0x4E900000 0x4E200000 0x0 0x0 0x0>;
+	qcom,caldb-addr = <0x4F800000 0x4F800000 0 0 0 0>;
+	qcom,caldb-size = <0x500000>;
+	mem-region = <&q6_qcn6122_data2>;
+#else
+	memory-region = <&q6_qcn6122_data2>;
+#endif
+	status = "ok";
+};
+
+&blsp1_uart1 {
+        pinctrl-0 = <&uart1_pins>;
+        pinctrl-names = "default";
+        status = "okay";
+};
+
+&sdhc_1 {
+        pinctrl-0 = <&sdc_default_state>;
+        pinctrl-names = "default";
+        mmc-ddr-1_8v;
+        mmc-hs200-1_8v;
+        max-frequency = <192000000>;
+        bus-width = <4>;
+        status = "okay";
+};
+
+&sleep_clk {
+        clock-frequency = <32000>;
+};
+
+&tlmm {
+        sdc_default_state: sdc-default-state {
+                clk-pins {
+                        pins = "gpio9";
+                        function = "sdc1_clk";
+                        drive-strength = <8>;
+                        bias-disable;
+                };
+
+                cmd-pins {
+                        pins = "gpio8";
+                        function = "sdc1_cmd";
+                        drive-strength = <8>;
+                        bias-pull-up;
+                };
+
+                data-pins {
+                        pins = "gpio4", "gpio5", "gpio6", "gpio7";
+                        function = "sdc1_data";
+                        drive-strength = <8>;
+                        bias-disable;
+                };
+        };
+};
+
+&usb {
+        status = "okay";
+};
+
+&usb_dwc {
+        dr_mode = "host";
+};
+
+&usbphy0 {
+        status = "okay";
+};
+
+&xo_board_clk {
+        clock-frequency = <24000000>;
+};
