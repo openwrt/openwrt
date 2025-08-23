@@ -1,0 +1,98 @@
+From 6da3548de0d0643718ea3314790dd9e718bb9089 Mon Sep 17 00:00:00 2001
+From: Rhnn Hur <hurrhnn@icmp.kr>
+Date: Sun, 3 Aug 2025 17:12:57 +0900
+Subject: [PATCH] Subject: mediatek: add kernel cmdline replacement hack
+
+Add kernel command line replacement hack to mediatek. Now we can
+find and replace arguments in the kernel command line by setting
+array bootargs-find, bootargs-replace under the chosen node in
+the device tree. if bootargs-exact-match is set, then the
+replacement happens only if the kernel command line is identical
+to bootargs-find.
+
+Signed-off-by: Qiyuan Zhang <zhang.github@outlook.com>
+Link: #16643
+Signed-off-by: Rhnn Hur <hurrhnn@icmp.kr>
+---
+ drivers/of/fdt.c | 63 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 63 insertions(+)
+
+--- a/drivers/of/fdt.c
++++ b/drivers/of/fdt.c
+@@ -1021,6 +1021,14 @@ int __init early_init_dt_scan_chosen(cha
+ 	const void *rng_seed;
+ 	const void *fdt = initial_boot_params;
+ 
++	#define MAX_REPLACEMENTS 2
++
++	struct device_node *node_dev;
++	const char *find_array[MAX_REPLACEMENTS];
++	const char *replace_array[MAX_REPLACEMENTS];
++	int find_count, replace_count, i;
++	bool exact_match;
++
+ 	node = fdt_path_offset(fdt, "/chosen");
+ 	if (node < 0)
+ 		node = fdt_path_offset(fdt, "/chosen@0");
+@@ -1064,6 +1072,61 @@ int __init early_init_dt_scan_chosen(cha
+ 		strscpy(cmdline, p, min((int)l, COMMAND_LINE_SIZE));
+ #endif
+ 
++	/* Find and replace command line */
++	node_dev = of_find_node_by_path("/chosen");
++	if (!node_dev) 
++		node_dev = of_find_node_by_path("/chosen@0");
++	if (!node_dev) 
++		/* Handle the cmdline config options even if no /chosen node */
++		goto handle_cmdline;	
++
++	find_count = of_property_read_string_array(node_dev, "bootargs-find", find_array,
++						   MAX_REPLACEMENTS);
++	replace_count = of_property_read_string_array(node_dev, "bootargs-replace", replace_array,
++						      MAX_REPLACEMENTS);
++	if (find_count != replace_count)
++		pr_warn("bootargs find and replace have different number of strings (%d != %d)\n",
++			find_count, replace_count);
++
++	exact_match = of_property_read_bool(node_dev, "bootargs-exact-match");
++
++	for (i = 0; i < find_count; i++) {
++		const char *find_str = find_array[i];
++		const char *replace_str = replace_array[i];
++		size_t find_len = strlen(find_str);
++		size_t replace_len = strlen(replace_str);
++		size_t cmd_len = strlen(cmdline);
++		char *match_ptr;
++
++		if (find_len == 0)
++			continue;
++
++		if (exact_match) {
++			match_ptr = (strcmp(cmdline, find_str) == 0) ? cmdline : NULL;
++		} else {
++			for (match_ptr = cmdline;
++			     (match_ptr = strstr(match_ptr, find_str));
++			     match_ptr++) {
++				if ((match_ptr == cmdline || *(match_ptr - 1) == ' ') &&
++				    (*(match_ptr + find_len) == '\0' || *(match_ptr + find_len) == ' '))
++					break;
++			}
++		}
++
++		if (!match_ptr)
++			continue;
++
++		if (cmd_len - find_len + replace_len >= COMMAND_LINE_SIZE) {
++			pr_err("Replace kernel command line with %s failed\n", replace_str);
++			continue;
++		}
++
++		memmove(match_ptr + replace_len, match_ptr + find_len, cmd_len - (match_ptr - cmdline) - find_len + 1);
++		memcpy(match_ptr, replace_str, replace_len);
++	}
++	if (i)
++		pr_info("Kernel command line after replacement: %s\n", cmdline);
++
+ handle_cmdline:
+ 	/*
+ 	 * CONFIG_CMDLINE is meant to be a default in case nothing else
