@@ -20,14 +20,16 @@
 	init_proto "$@"
 }
 
+FW4=$(command -v fw4)
+
 proto_map_setup() {
 	local cfg="$1"
 	local iface="$2"
 	local link="map-$cfg"
 
-	local maptype type legacymap mtu ttl tunlink zone encaplimit
+	local maptype type legacymap snat_fix dont_snat_to mtu ttl tunlink zone encaplimit
 	local rule ipaddr ip4prefixlen ip6prefix ip6prefixlen peeraddr ealen psidlen psid offset
-	json_get_vars maptype type legacymap mtu ttl tunlink zone encaplimit
+	json_get_vars maptype type legacymap snat_fix dont_snat_to mtu ttl tunlink zone encaplimit
 	json_get_vars rule ipaddr ip4prefixlen ip6prefix ip6prefixlen peeraddr ealen psidlen psid offset
 
 	[ "$zone" = "-" ] && zone=""
@@ -101,7 +103,6 @@ proto_map_setup() {
 			fi
 		json_close_object
 
-
 		proto_close_tunnel
 	elif [ "$maptype" = "map-t" -a -f "/proc/net/nat46/control" ]; then
 		proto_init_update "$link" 1
@@ -140,19 +141,72 @@ proto_map_setup() {
 	      json_add_string snat_ip $(eval "echo \$RULE_${k}_IPV4ADDR")
 	    json_close_object
 	  else
-	    for portset in $(eval "echo \$RULE_${k}_PORTSETS"); do
-              for proto in icmp tcp udp; do
-	        json_add_object ""
-	          json_add_string type nat
-	          json_add_string target SNAT
-	          json_add_string family inet
-	          json_add_string proto "$proto"
-                  json_add_boolean connlimit_ports 1
-                  json_add_string snat_ip $(eval "echo \$RULE_${k}_IPV4ADDR")
-                  json_add_string snat_port "$portset"
-	        json_close_object
-              done
-	    done
+	    if [ "$snat_fix" = "1" ]; then
+			# SNAT Fix: Get all ports and full port count, excluding DONT_SNAT_TO ports
+			DONT_SNAT_TO=" ${dont_snat_to:-0} "
+			local portcount=0
+			local allports_fw4=""
+			local allports_fw3=""
+			for portset in $(eval "echo \$RULE_${k}_PORTSETS"); do
+				local startport=${portset%-*}
+				local endport=${portset#*-}
+				for x in $(seq $startport $endport); do
+					case " $DONT_SNAT_TO " in *" $x "*) ;; *)
+						allports_fw4="$allports_fw4 $portcount : $x , "
+						allports_fw3="$allports_fw3 $x"
+						portcount=$((portcount + 1))
+					;; esac
+				done
+			done
+			allports_fw4=${allports_fw4%??}
+			if [ -n "$FW4" ]; then
+				# SNAT Fix: Create mape table
+				nft delete table inet mape 2>/dev/null
+				nft add table inet mape
+				nft add chain inet mape srcnat { type nat hook postrouting priority 0\; policy accept\; }
+				# SNAT Fix: Create the rules to SNAT to all the ports
+				for proto in icmp tcp udp; do
+					nft add rule inet mape srcnat ip protocol $proto oifname "map-$cfg" snat ip to $(eval "echo \$RULE_${k}_IPV4ADDR") : numgen inc mod $portcount map { $allports_fw4 }
+				done
+			else
+				# SNAT Fix: fw3 (Untested)
+                iptables -t nat -N MAPE_SNAT 2>/dev/null
+                iptables -t nat -F MAPE_SNAT
+                iptables -t nat -D POSTROUTING -o "map-$cfg" -j MAPE_SNAT 2>/dev/null
+                iptables -t nat -A POSTROUTING -o "map-$cfg" -j MAPE_SNAT
+
+                local total_ports=$(echo $allports_fw3 | wc -w)
+                local index=0
+                for proto in icmp tcp udp; do
+                    iptables -t nat -A MAPE_SNAT -p $proto -m connmark --mark 0x0 -j CONNMARK --set-mark 0x1
+                    iptables -t nat -A MAPE_SNAT -p $proto -m connmark --mark 0x1 -j MAPE_SNAT_LOOP
+                done
+
+                iptables -t nat -N MAPE_SNAT_LOOP 2>/dev/null
+                iptables -t nat -F MAPE_SNAT_LOOP
+
+                for port in $allports_fw3; do
+                    iptables -t nat -A MAPE_SNAT_LOOP -j CONNMARK --save-mark
+                    iptables -t nat -A MAPE_SNAT_LOOP -j SNAT --to-source $(eval "echo \$RULE_${k}_IPV4ADDR"):$port
+                    iptables -t nat -A MAPE_SNAT_LOOP -j RETURN
+                done
+			fi
+	    else
+			# Original SNAT implementation
+			for portset in $(eval "echo \$RULE_${k}_PORTSETS"); do
+			  for proto in icmp tcp udp; do
+				json_add_object ""
+				  json_add_string type nat
+				  json_add_string target SNAT
+				  json_add_string family inet
+				  json_add_string proto "$proto"
+				  json_add_boolean connlimit_ports 1
+				  json_add_string snat_ip $(eval "echo \$RULE_${k}_IPV4ADDR")
+				  json_add_string snat_port "$portset"
+				json_close_object
+			  done
+			done
+	    fi
 	  fi
 	  if [ "$maptype" = "map-t" ]; then
 		[ -z "$zone" ] && zone=$(fw3 -q network $iface 2>/dev/null)
@@ -182,6 +236,8 @@ proto_map_setup() {
 		proto_add_ipv6_route $(eval "echo \$RULE_${k}_IPV6ADDR") 128
 	  fi
 	json_close_array
+	json_add_string "ipv6addr" "$(eval "echo \$RULE_${k}_IPV6ADDR")"
+	json_add_string "portsets" "$(eval "echo \$RULE_${k}_PORTSETS")"
 	proto_close_data
 
 	proto_send_update "$cfg"
@@ -204,6 +260,7 @@ proto_map_teardown() {
 	local link="map-$cfg"
 
 	json_get_var type type
+	json_get_var snat_fix snat_fix
 
 	[ -z "$maptype" ] && maptype="$type"
 	[ -z "$maptype" ] && maptype="map-e"
@@ -212,6 +269,18 @@ proto_map_teardown() {
 		"map-e"|"lw4o6") ifdown "${cfg}_" ;;
 		"map-t") [ -f "/proc/net/nat46/control" ] && echo del $link > /proc/net/nat46/control ;;
 	esac
+
+	if [ "$snat_fix" = "1" ]; then
+		if [ -n "$FW4" ]; then
+			nft delete table inet mape 2>/dev/null
+		else
+			iptables -t nat -D POSTROUTING -o "map-$cfg" -j MAPE_SNAT 2>/dev/null
+			iptables -t nat -F MAPE_SNAT 2>/dev/null
+			iptables -t nat -X MAPE_SNAT 2>/dev/null
+			iptables -t nat -F MAPE_SNAT_LOOP 2>/dev/null
+			iptables -t nat -X MAPE_SNAT_LOOP 2>/dev/null
+		fi
+	fi
 
 	rm -f /tmp/map-$cfg.rules
 }
@@ -232,6 +301,8 @@ proto_map_init_config() {
 	proto_config_add_int "psid"
 	proto_config_add_int "offset"
 	proto_config_add_boolean "legacymap"
+	proto_config_add_boolean "snat_fix"
+	proto_config_add_string "dont_snat_to"
 
 	proto_config_add_string "tunlink"
 	proto_config_add_int "mtu"
@@ -241,5 +312,5 @@ proto_map_init_config() {
 }
 
 [ -n "$INCLUDE_ONLY" ] || {
-        add_protocol map
+	add_protocol map
 }
