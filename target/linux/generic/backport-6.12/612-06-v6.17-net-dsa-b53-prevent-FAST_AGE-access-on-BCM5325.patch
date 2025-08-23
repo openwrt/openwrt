@@ -19,7 +19,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/dsa/b53/b53_common.c
 +++ b/drivers/net/dsa/b53/b53_common.c
-@@ -487,6 +487,9 @@ static int b53_flush_arl(struct b53_devi
+@@ -492,6 +492,9 @@ static int b53_flush_arl(struct b53_devi
  {
  	unsigned int i;
  
@@ -29,7 +29,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	b53_write8(dev, B53_CTRL_PAGE, B53_FAST_AGE_CTRL,
  		   FAST_AGE_DONE | FAST_AGE_DYNAMIC | mask);
  
-@@ -511,6 +514,9 @@ out:
+@@ -516,6 +519,9 @@ out:
  
  static int b53_fast_age_port(struct b53_device *dev, int port)
  {
@@ -39,7 +39,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	b53_write8(dev, B53_CTRL_PAGE, B53_FAST_AGE_PORT_CTRL, port);
  
  	return b53_flush_arl(dev, FAST_AGE_PORT);
-@@ -518,6 +524,9 @@ static int b53_fast_age_port(struct b53_
+@@ -523,6 +529,9 @@ static int b53_fast_age_port(struct b53_
  
  static int b53_fast_age_vlan(struct b53_device *dev, u16 vid)
  {
