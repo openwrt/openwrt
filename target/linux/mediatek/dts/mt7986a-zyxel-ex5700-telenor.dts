@@ -341,18 +341,11 @@
 &spi0 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&spi_flash_pins>;
-	cs-gpios = <0>, <0>;
 	status = "okay";
 
 	flash@0 {
-		compatible = "jedec,spi-nor";
-		reg = <0>;
-		spi-max-frequency = <20000000>;
-	};
-
-	flash@1 {
 		compatible = "spi-nand";
-		reg = <1>;
+		reg = <0>;
 
 		mediatek,nmbm;
 		mediatek,bmt-max-ratio = <1>;
