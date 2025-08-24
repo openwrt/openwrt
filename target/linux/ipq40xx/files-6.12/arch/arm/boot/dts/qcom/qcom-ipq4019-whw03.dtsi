@@ -188,7 +188,7 @@
 	pinctrl-0 = <&spi_1_pins>;
 	pinctrl-names = "default";
 
-	cs-gpios = <&tlmm 45 GPIO_ACTIVE_HIGH>;
+	cs-gpios = <&tlmm 45 GPIO_ACTIVE_LOW>;
 
 	zigbee@0 {
 		compatible = "silabs,em3581";
