@@ -396,7 +396,7 @@
 	pinctrl-0 = <&spi_0_pins>;
 	pinctrl-names = "default";
 	status = "okay";
-	cs-gpios = <&tlmm 12 GPIO_ACTIVE_HIGH>;
+	cs-gpios = <&tlmm 12 GPIO_ACTIVE_LOW>;
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
@@ -409,7 +409,7 @@
 	pinctrl-0 = <&spi_1_pins>;
 	pinctrl-names = "default";
 	status = "okay";
-	cs-gpios = <&tlmm 45 GPIO_ACTIVE_HIGH>;
+	cs-gpios = <&tlmm 45 GPIO_ACTIVE_LOW>;
 
 	/*
 	 * This "spidev" was included in the manufacturer device tree. I

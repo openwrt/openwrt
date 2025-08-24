@@ -109,7 +109,7 @@
 
 	pinctrl-0 = <&spi0_pins>;
 	pinctrl-names = "default";
-	cs-gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>, <&tlmm 5 GPIO_ACTIVE_HIGH>;
+	cs-gpios = <&tlmm 54 GPIO_ACTIVE_LOW>, <&tlmm 5 GPIO_ACTIVE_LOW>;
 
 	flash@0 {
 		status = "okay";
