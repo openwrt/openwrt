@@ -4,22 +4,21 @@
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/leds/common.h>
+#include <dt-bindings/pinctrl/mt65xx.h>
 
 #include "mt7986a.dtsi"
 
 / {
-	model = "Acer Predator Connect W6x";
-	compatible = "acer,predator-w6x", "mediatek,mt7986a";
-
 	aliases {
 		serial0 = &uart0;
 	};
 
-    chosen {
+	chosen: chosen {
 		stdout-path = "serial0:115200n8";
 	};
 
-	memory@0 {
+	memory@40000000 {
+		device_type = "memory";
 		reg = <0 0x40000000 0 0x20000000>;
 	};
 
@@ -54,15 +53,14 @@
 		compatible = "gpio-keys";
 
 		factory {
-			label = "factory";
+			label = "reset";
 			linux,code = <KEY_RESTART>;
-			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
+			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
 		};
-
 		wps {
 			label = "wps";
 			linux,code = <KEY_WPS_BUTTON>;
-			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
+			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
 		};
 	};
 };
@@ -100,8 +98,6 @@
 			compatible = "mediatek,mt7531";
 			reg = <31>;
 			reset-gpios = <&pio 5 GPIO_ACTIVE_HIGH>;
-			reset-assert-us = <10000>;
-			reset-deassert-us = <10000>;
 
 			ports {
 				#address-cells = <1>;
@@ -158,13 +154,13 @@
 		};
 		conf-pu {
 			pins = "SPI2_CS", "SPI2_HOLD", "SPI2_WP";
-			drive-strength = <8>;
-			mediatek,pull-up-adv = <0>; /* bias-disable */
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-pull-down = <MTK_PUPD_SET_R1R0_11>;
 		};
 		conf-pd {
 			pins = "SPI2_CLK", "SPI2_MOSI", "SPI2_MISO";
-			drive-strength = <8>;
-			mediatek,pull-down-adv = <0>; /* bias-disable */
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-pull-down = <MTK_PUPD_SET_R1R0_11>;
 		};
 	};
 
@@ -188,7 +184,7 @@
 				   "WF1_HB2", "WF1_HB3", "WF1_HB4", "WF1_HB0",
 				   "WF1_HB5", "WF1_HB6", "WF1_HB7", "WF1_HB8",
 				   "WF1_TOP_CLK", "WF1_TOP_DATA";
-			drive-strength = <4>;
+			drive-strength = <MTK_DRIVE_4mA>;
 		};
 	};
 
@@ -205,7 +201,7 @@
 				"WF1_HB2", "WF1_HB3", "WF1_HB4", "WF1_HB0",
 				"WF1_HB5", "WF1_HB6", "WF1_HB7", "WF1_HB8",
 				"WF1_TOP_CLK", "WF1_TOP_DATA";
-			drive-strength = <4>;
+			drive-strength = <MTK_DRIVE_4mA>;
 		};
 	};
 };
@@ -225,7 +221,7 @@
 		spi-tx-bus-width = <4>;
 		spi-rx-bus-width = <4>;
 
-		partitions {
+		partitions: partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -267,33 +263,6 @@
 				label = "prod";
 				reg = <0x580000 0x20000>;
 				read-only;
-			};
-
-			partition@600000 {
-				label = "dual";
-				reg = <0x600000 0x100000>;
-				read-only;
-			};
-
-			partition@700000 {
-				label = "pot";
-				reg = <0x700000 0x100000>;
-				read-only;
-			};
-
-			partition@800000 {
-				label = "ubi";
-				reg = <0x800000 0x6400000>;
-			};
-
-			partition@6C00000 {
-				label = "ubi1";
-				reg = <0x6C00000 0x6400000>;
-			};
-
-			partition@D000000 {
-				label = "storage";
-				reg = <0xD000000 0x800000>;
 			};
 		};
 	};
