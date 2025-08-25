@@ -268,6 +268,13 @@ define U-Boot/rk358x/Default
   TPL:=rk3588_ddr_lp4_2112MHz_lp5_2400MHz_v1.16.bin
 endef
 
+define U-Boot/generic-rk3588
+  $(U-Boot/rk358x/Default)
+  NAME:=Generic RK358x board
+  BUILD_DEVICES:= \
+    radxa_rock-5b-plus
+endef
+
 # RK3588 boards
 
 define U-Boot/nanopc-t6-rk3588
@@ -342,6 +349,7 @@ UBOOT_TARGETS := \
   radxa-e25-rk3568 \
   rock-3a-rk3568 \
   rock-3b-rk3568 \
+  generic-rk3588 \
   nanopc-t6-rk3588 \
   rock5b-rk3588 \
   sige7-rk3588 \
