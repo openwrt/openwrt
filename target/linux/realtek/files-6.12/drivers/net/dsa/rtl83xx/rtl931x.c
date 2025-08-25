@@ -1453,15 +1453,57 @@ static void rtl931x_set_distribution_algorithm(int group, int algoidx, u32 algom
 
 static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 {
-	u64 pm_copper = 0, pm_fiber = 0;
+	u64 pm_copper = 0, pm_fiber = 0, pm_forced = 0;
+	struct device *dev = priv->dev;
 	struct device_node *node;
+	bool is_pm_auto_detected;
 
-	pr_debug("%s called\n", __func__);
 	node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
 	if (!node) {
-		pr_debug("%s No compatible LED node found\n", __func__);
+		dev_dbg(dev, "No compatible LED node found\n");
 		return;
 	}
+
+	for (int set = 0; set < 4; set++) {
+		char set_name[16] = {0};
+		u32 set_config[4];
+		int leds_in_this_set = 0;
+
+		/* Reset LED set configuration */
+		sw_w32(0, RTL931X_LED_SETX_0_CTRL(set));
+		sw_w32(0, RTL931X_LED_SETX_1_CTRL(set));
+
+		/* Each LED set has (up to) 4 LEDs, and each LED is configured
+		 * with 16 bits. So each 32 bit register holds configuration for
+		 * 2 LEDs. Therefore, each set requires 2 registers for
+		 * configuring all 4 LEDs.
+		 */
+		snprintf(set_name, sizeof(set_name), "led_set%d", set);
+		leds_in_this_set = of_property_count_u32_elems(node, set_name);
+
+		if (leds_in_this_set <= 0 || leds_in_this_set > ARRAY_SIZE(set_config)) {
+			if (leds_in_this_set != -EINVAL) {
+				dev_err(dev, "%s invalid, skipping this set, leds_in_this_set=%d, should be (0, %d]\n",
+					set_name, leds_in_this_set, ARRAY_SIZE(set_config));
+			}
+
+			continue;
+		}
+
+		dev_info(dev, "%s has %d LEDs configured\n", set_name, leds_in_this_set);
+
+		if (of_property_read_u32_array(node, set_name, set_config, leds_in_this_set))
+			break;
+
+		/* Write configuration for selected LEDs */
+		for (int i = 0, led = leds_in_this_set - 1; led >= 0; led--, i++) {
+			sw_w32_mask(0xffff << RTL931X_LED_SET_LEDX_SHIFT(led),
+				    (0xffff & set_config[i]) << RTL931X_LED_SET_LEDX_SHIFT(led),
+				    RTL931X_LED_SETX_LEDY(set, led));
+		}
+	}
+
+	is_pm_auto_detected = of_property_read_u64(node, "realtek,forced-port-mask", &pm_forced);
 
 	for (int i = 0; i < priv->cpu_port; i++) {
 		int pos = (i << 1) % 32;
@@ -1470,49 +1512,49 @@ static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 		sw_w32_mask(0x3 << pos, 0, RTL931X_LED_PORT_FIB_SET_SEL_CTRL(i));
 		sw_w32_mask(0x3 << pos, 0, RTL931X_LED_PORT_COPR_SET_SEL_CTRL(i));
 
-		if (!priv->ports[i].phy)
+		/* Skip port if not present (auto-detect) or not in forced mask */
+		if ((is_pm_auto_detected && !priv->ports[i].phy) ||
+		    (!is_pm_auto_detected && !(pm_forced & BIT(i))))
 			continue;
+
+		if (priv->ports[i].leds_on_this_port == 0)
+			priv->ports[i].leds_on_this_port = 1;
 
 		/* 0x0 = 1 led, 0x1 = 2 leds, 0x2 = 3 leds, 0x3 = 4 leds per port */
 		sw_w32_mask(0x3 << pos, (priv->ports[i].leds_on_this_port - 1) << pos,
 			    RTL931X_LED_PORT_NUM_CTRL(i));
 
-		if (priv->ports[i].phy_is_integrated)
-			pm_fiber |= BIT_ULL(i);
-		else
+		if (!is_pm_auto_detected && !priv->ports[i].phy) {
+			/* when using forced_port_mask and the phy doesn't
+			 * exist, we just select copper as placeholder to
+			 * get the relative LEDs configured correctly
+			 */
 			pm_copper |= BIT_ULL(i);
+		} else if (priv->ports[i].phy_is_integrated) {
+			pm_fiber |= BIT_ULL(i);
+		} else {
+			pm_copper |= BIT_ULL(i);
+		}
 
 		set = priv->ports[i].led_set;
 		sw_w32_mask(0, set << pos, RTL931X_LED_PORT_COPR_SET_SEL_CTRL(i));
 		sw_w32_mask(0, set << pos, RTL931X_LED_PORT_FIB_SET_SEL_CTRL(i));
 	}
 
-	for (int i = 0; i < 4; i++) {
-		const __be32 *led_set;
-		char set_name[9];
-		u32 setlen;
-		u32 v;
-
-		sprintf(set_name, "led_set%d", i);
-		pr_debug(">%s<\n", set_name);
-		led_set = of_get_property(node, set_name, &setlen);
-		if (!led_set || setlen != 16)
-			break;
-		v = be32_to_cpup(led_set) << 16 | be32_to_cpup(led_set + 1);
-		sw_w32(v, RTL931X_LED_SET0_0_CTRL - 4 - i * 8);
-		v = be32_to_cpup(led_set + 2) << 16 | be32_to_cpup(led_set + 3);
-		sw_w32(v, RTL931X_LED_SET0_0_CTRL - i * 8);
-	}
-
 	/* Set LED mode to serial (0x1) */
 	sw_w32_mask(0x3, 0x1, RTL931X_LED_GLB_CTRL);
+
+	if (of_property_read_bool(node, "active-low"))
+		sw_w32_mask(RTL931X_LED_GLB_ACTIVE_LOW, 0, RTL931X_LED_GLB_CTRL);
+	else
+		sw_w32_mask(0, RTL931X_LED_GLB_ACTIVE_LOW, RTL931X_LED_GLB_CTRL);
 
 	rtl839x_set_port_reg_le(pm_copper, RTL931X_LED_PORT_COPR_MASK_CTRL);
 	rtl839x_set_port_reg_le(pm_fiber, RTL931X_LED_PORT_FIB_MASK_CTRL);
 	rtl839x_set_port_reg_le(pm_copper | pm_fiber, RTL931X_LED_PORT_COMBO_MASK_CTRL);
 
 	for (int i = 0; i < 32; i++)
-		pr_debug("%s %08x: %08x\n",__func__, 0xbb000600 + i * 4, sw_r32(0x0600 + i * 4));
+		dev_dbg(dev, "%08x: %08x\n", 0xbb000600 + i * 4, sw_r32(0x0600 + i * 4));
 }
 
 const struct rtl838x_reg rtl931x_reg = {
