@@ -223,19 +223,6 @@ ipq40xx_setup_macs()
 		wan_mac=$(mmc_get_mac_ascii devinfo hw_mac_addr)
 		lan_mac="$wan_mac"
 		;;
-	mikrotik,cap-ac |\
-	mikrotik,hap-ac2|\
-	mikrotik,hap-ac3|\
-	mikrotik,hap-ac3-lte6-kit)
-		wan_mac=$(cat /sys/firmware/mikrotik/hard_config/mac_base)
-		lan_mac=$(macaddr_add $wan_mac 1)
-		label_mac="$wan_mac"
-		;;
-	mikrotik,lhgg-60ad|\
-	mikrotik,sxtsq-5-ac)
-		lan_mac=$(cat /sys/firmware/mikrotik/hard_config/mac_base)
-		label_mac="$lan_mac"
-		;;
 	netgear,rbr50|\
 	netgear,rbs50|\
 	netgear,srr60|\
