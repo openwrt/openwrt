@@ -223,7 +223,7 @@ export function wpa_key_mgmt(config) {
 };
 
 function macaddr_random() {
-	let f = open("/dev/urandom", "r");
+	let f = fs.open("/dev/urandom", "r");
 	let addr = f.read(6);
 
 	addr = map(split(addr, ""), (v) => ord(v));
