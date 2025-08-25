@@ -1,0 +1,113 @@
+From 1c2ffcd5e622031fa1c05335d0db839de14bf0e9 Mon Sep 17 00:00:00 2001
+From: Jonas Karlman <jonas@kwiboo.se>
+Date: Sun, 10 Nov 2024 00:56:16 +0000
+Subject: [PATCH] rockchip: rk3588: Implement checkboard() to print SoC variant
+
+Implement checkboard() to print current SoC model used by a board,
+e.g. one of:
+
+  SoC:   RK3582
+  SoC:   RK3588
+  SoC:   RK3588J
+  SoC:   RK3588S
+  SoC:   RK3588S2
+
+when U-Boot proper is running.
+
+  U-Boot 2025.01-rc1 (Nov 10 2024 - 00:31:29 +0000)
+
+  Model: Generic RK3588S/RK3588
+  SoC:   RK3588S2
+  DRAM:  8 GiB
+
+Information about the SoC model and variant is read from OTP.
+
+Also update rk3588s-u-boot.dtsi to include OTP in U-Boot pre-reloc phase,
+where checkboard() is called.
+
+Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Tested-by: FUKAUMI Naoki <naoki@radxa.com>
+Reviewed-by: Kever Yang <kever.yang@rock-chips.com>
+---
+ arch/arm/dts/rk3588s-u-boot.dtsi       |  4 ++
+ arch/arm/mach-rockchip/rk3588/rk3588.c | 52 ++++++++++++++++++++++++++
+ 2 files changed, 56 insertions(+)
+
+--- a/arch/arm/dts/rk3588s-u-boot.dtsi
++++ b/arch/arm/dts/rk3588s-u-boot.dtsi
+@@ -69,6 +69,10 @@
+ 	bootph-all;
+ };
+ 
++&otp {
++	bootph-some-ram;
++};
++
+ &pcfg_pull_down {
+ 	bootph-all;
+ };
+--- a/arch/arm/mach-rockchip/rk3588/rk3588.c
++++ b/arch/arm/mach-rockchip/rk3588/rk3588.c
+@@ -4,6 +4,10 @@
+  * Copyright (c) 2022 Edgeble AI Technologies Pvt. Ltd.
+  */
+ 
++#define LOG_CATEGORY LOGC_ARCH
++
++#include <dm.h>
++#include <misc.h>
+ #include <spl.h>
+ #include <asm/armv8/mmu.h>
+ #include <asm/arch-rockchip/bootrom.h>
+@@ -178,3 +182,51 @@ int arch_cpu_init(void)
+ 	return 0;
+ }
+ #endif
++
++#define RK3588_OTP_CPU_CODE_OFFSET		0x02
++#define RK3588_OTP_SPECIFICATION_OFFSET		0x06
++
++int checkboard(void)
++{
++	u8 cpu_code[2], specification, package;
++	struct udevice *dev;
++	char suffix[3];
++	int ret;
++
++	if (!IS_ENABLED(CONFIG_ROCKCHIP_OTP) || !CONFIG_IS_ENABLED(MISC))
++		return 0;
++
++	ret = uclass_get_device_by_driver(UCLASS_MISC,
++					  DM_DRIVER_GET(rockchip_otp), &dev);
++	if (ret) {
++		log_debug("Could not find otp device, ret=%d\n", ret);
++		return 0;
++	}
++
++	/* cpu-code: SoC model, e.g. 0x35 0x82 or 0x35 0x88 */
++	ret = misc_read(dev, RK3588_OTP_CPU_CODE_OFFSET, cpu_code, 2);
++	if (ret < 0) {
++		log_debug("Could not read cpu-code, ret=%d\n", ret);
++		return 0;
++	}
++
++	/* specification: SoC variant, e.g. 0xA for RK3588J and 0x13 for RK3588S */
++	ret = misc_read(dev, RK3588_OTP_SPECIFICATION_OFFSET, &specification, 1);
++	if (ret < 0) {
++		log_debug("Could not read specification, ret=%d\n", ret);
++		return 0;
++	}
++	/* package: likely SoC variant revision, 0x2 for RK3588S2 */
++	package = specification >> 5;
++	specification &= 0x1f;
++
++	/* for RK3588J i.e. '@' + 0xA = 'J' */
++	suffix[0] = specification > 1 ? '@' + specification : '\0';
++	/* for RK3588S2 i.e. '0' + 0x2 = '2' */
++	suffix[1] = package > 1 ? '0' + package : '\0';
++	suffix[2] = '\0';
++
++	printf("SoC:   RK%02x%02x%s\n", cpu_code[0], cpu_code[1], suffix);
++
++	return 0;
++}
