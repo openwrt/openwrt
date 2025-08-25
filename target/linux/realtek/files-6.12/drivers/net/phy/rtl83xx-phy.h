@@ -1,9 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-struct rtl83xx_shared_private {
-	char *name;
-};
-
 struct __attribute__ ((__packed__)) part {
 	uint16_t start;
 	uint8_t wordsize;
