@@ -814,6 +814,14 @@ define Device/meraki_mr74
 endef
 TARGET_DEVICES += meraki_mr74
 
+define Device/meraki_z3
+	$(call Device/meraki_common)
+	DEVICE_MODEL := Z3
+	DEVICE_DTS_CONFIG := config@1
+	DEVICE_PACKAGES := -ath10k-firmware-qca9887-ct
+endef
+TARGET_DEVICES += meraki_z3
+
 define Device/mobipromo_cm520-79f
 	$(call Device/FitzImage)
 	$(call Device/UbiFit)
