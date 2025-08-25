@@ -1,4 +1,6 @@
 DTS_DIR := $(DTS_DIR)/mediatek
+DEVICE_VARS += SUPPORTED_TELTONIKA_DEVICES
+DEVICE_VARS += SUPPORTED_TELTONIKA_HW_MODS
 
 define Image/Prepare
 	# For UBI we want only one extra block
@@ -190,6 +192,23 @@ define Device/acer_predator-w6d
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += acer_predator-w6d
+
+define Device/acer_predator-w6x
+  DEVICE_VENDOR := Acer
+  DEVICE_MODEL := Predator Connect W6x
+  DEVICE_DTS := mt7986a-acer-predator-w6x
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTS_LOADADDR := 0x47000000
+  KERNEL_IN_UBI := 1
+  UBOOTENV_IN_UBI := 1
+  DEVICE_PACKAGES := kmod-usb3 kmod-leds-ws2812b kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
+  IMAGES := sysupgrade.bin
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += acer_predator-w6x
 
 define Device/acer_vero-w6m
   DEVICE_VENDOR := Acer
@@ -1031,7 +1050,7 @@ define Device/gatonetworks_gdsp
   DEVICE_PACKAGES := e2fsprogs f2fsck mkf2fs fitblk \
     kmod-mt7915e kmod-mt7981-firmware \
     kmod-usb-net-qmi-wwan kmod-usb-serial-option kmod-usb3 \
-    mt7981-wo-firmware -kmod-phy-aquantia
+    mt7981-wo-firmware
   ARTIFACTS := preloader.bin bl31-uboot.fip sdcard.img.gz
   ARTIFACT/preloader.bin := mt7981-bl2 nor-ddr3
   ARTIFACT/bl31-uboot.fip := mt7981-bl31-uboot gatonetworks_gdsp
@@ -1435,7 +1454,7 @@ define Device/mediatek_mt7988a-rfb
   DEVICE_DTS_DIR := $(DTS_DIR)/
   DEVICE_DTC_FLAGS := --pad 4096
   DEVICE_DTS_LOADADDR := 0x45f00000
-  DEVICE_PACKAGES := mt7988-2p5g-phy-firmware kmod-sfp
+  DEVICE_PACKAGES := mt7988-2p5g-phy-firmware kmod-sfp kmod-phy-aquantia
   KERNEL_LOADADDR := 0x46000000
   KERNEL := kernel-bin | gzip
   KERNEL_INITRAMFS := kernel-bin | lzma | \
@@ -1852,6 +1871,24 @@ define Device/snr_snr-cpe-ax2
 endef
 TARGET_DEVICES += snr_snr-cpe-ax2
 
+define Device/teltonika_rutc50
+  DEVICE_VENDOR := Teltonika
+  DEVICE_MODEL := RUTC50
+  SUPPORTED_TELTONIKA_DEVICES := teltonika,rutc
+  DEVICE_DTS := mt7981a-teltonika-rutc50
+  DEVICE_DTS_DIR := ../dts
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_IN_UBI := 1
+  UBINIZE_OPTS := -E 5
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-usb3 kmod-usb-net-qmi-wwan \
+  kmod-usb-serial-option kmod-gpio-nxp-74hc164
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-ubi | append-teltonika-metadata
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += teltonika_rutc50
+
 define Device/tenbay_wr3000k
   DEVICE_VENDOR := Tenbay
   DEVICE_MODEL := WR3000K
@@ -2035,6 +2072,25 @@ define Device/wavlink_wl-wn586x3
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
 endef
 TARGET_DEVICES += wavlink_wl-wn586x3
+
+define Device/wavlink_wl-wn586x3b
+  DEVICE_VENDOR := WAVLINK
+  DEVICE_MODEL := WL-WN586X3B
+  DEVICE_DTS := mt7981b-wavlink-wl-wn586x3b
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTS_LOADADDR := 0x47000000
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 65536k
+  KERNEL_INITRAMFS_SUFFIX := .itb
+  KERNEL_IN_UBI := 1
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  IMAGES := factory.bin initramfs-kernel.bin sysupgrade.bin
+  IMAGE/factory.bin := append-ubi | check-size $$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += wavlink_wl-wn586x3b
 
 define Device/wavlink_wl-wn573hx3
   DEVICE_VENDOR := WAVLINK

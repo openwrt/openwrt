@@ -38,6 +38,9 @@ PATCH_DIR:=./patches/$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/toolchain-build.mk
 
+export ZSTD_CFLAGS=-I$(STAGING_DIR_HOST)/include -pthread
+export ZSTD_LIBS=-L$(STAGING_DIR_HOST)/lib -lzstd -lpthread
+
 ifdef CONFIG_GCC_USE_GRAPHITE
   GRAPHITE_CONFIGURE:= --with-isl=$(STAGING_DIR_HOST)
 else

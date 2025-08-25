@@ -2244,12 +2244,12 @@ static void rtl930x_set_distribution_algorithm(int group, int algoidx, u32 algom
 static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 {
 	struct device_node *node;
+	struct device *dev = priv->dev;
 	u32 pm = 0;
 
-	pr_debug("%s called\n", __func__);
 	node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
 	if (!node) {
-		pr_debug("%s No compatible LED node found\n", __func__);
+		dev_dbg(dev, "No compatible LED node found\n");
 		return;
 	}
 
@@ -2271,10 +2271,14 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 		sprintf(set_name, "led_set%d", set);
 		leds_in_this_set = of_property_count_u32_elems(node, set_name);
 
-		if (leds_in_this_set == 0 || leds_in_this_set > sizeof(set_config)) {
-			pr_err("%s led_set configuration invalid skipping over this set\n", __func__);
+		if (leds_in_this_set <= 0 || leds_in_this_set > sizeof(set_config)) {
+			if (leds_in_this_set != -EINVAL) {
+				dev_err(dev, "%s invalid, skipping this set, leds_in_this_set=%d, should be (0, %d]\n",
+					set_name, leds_in_this_set, sizeof(set_config));
+			}
 			continue;
 		}
+		dev_info(dev, "%s has %d LEDs configured\n", set_name, leds_in_this_set);
 
 		if (of_property_read_u32_array(node, set_name, set_config, leds_in_this_set)) {
 			break;
@@ -2323,7 +2327,7 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 	sw_w32(pm, RTL930X_LED_PORT_COMBO_MASK_CTRL);
 
 	for (int i = 0; i < 24; i++)
-		pr_debug("%s %08x: %08x\n",__func__, 0xbb00cc00 + i * 4, sw_r32(0xcc00 + i * 4));
+		dev_dbg(dev, "%08x: %08x\n", 0xbb00cc00 + i * 4, sw_r32(0xcc00 + i * 4));
 }
 
 const struct rtl838x_reg rtl930x_reg = {

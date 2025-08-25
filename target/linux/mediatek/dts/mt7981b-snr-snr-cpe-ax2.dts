@@ -51,7 +51,7 @@
 
 		led-0 {
 			color = <LED_COLOR_ID_RED>;
-			function = LED_FUNCTION_STATUS; // Second WAN led defined below. 
+			function = LED_FUNCTION_STATUS; // Second WAN led defined below.
 			gpios = <&pio 4 GPIO_ACTIVE_LOW>;
 		};
 
@@ -323,6 +323,8 @@
 
 &wifi {
 	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
 	nvmem-cell-names = "eeprom";
 	nvmem-cells = <&eeprom_factory_0>;
 

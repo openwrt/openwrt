@@ -61,6 +61,10 @@ tplink,tl-st1008f,v2)
 xikestor,sks8300-8x)
 	lan_mac=$(mtd_get_mac_binary board-info 0x1f1)
 	;;
+xikestor,sks8310-8x)
+	lan_mac=$(mtd_get_mac_binary factory 0x80)
+	label_mac="$lan_mac"
+	;;
 *)
 	lan_mac=$(mtd_get_mac_ascii u-boot-env2 mac_start)
 	lan_mac_end=$(mtd_get_mac_ascii u-boot-env2 mac_end)
