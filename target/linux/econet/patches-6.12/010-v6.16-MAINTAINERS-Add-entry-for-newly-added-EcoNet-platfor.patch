@@ -1,0 +1,38 @@
+From faefb0a59c5914b7b8f737e2ec5c82822e5bc4c7 Mon Sep 17 00:00:00 2001
+From: Caleb James DeLisle <cjd@cjdns.fr>
+Date: Wed, 7 May 2025 13:45:00 +0000
+Subject: [PATCH] MAINTAINERS: Add entry for newly added EcoNet platform.
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Add a MAINTAINERS entry as part of integration of the EcoNet MIPS platform.
+
+Signed-off-by: Caleb James DeLisle <cjd@cjdns.fr>
+Reviewed-by: Philippe Mathieu-Daudé <philmd@linaro.org>
+Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
+---
+ MAINTAINERS | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -8019,6 +8019,18 @@ W:	https://linuxtv.org
+ Q:	http://patchwork.linuxtv.org/project/linux-media/list/
+ F:	drivers/media/dvb-frontends/ec100*
+ 
++ECONET MIPS PLATFORM
++M:	Caleb James DeLisle <cjd@cjdns.fr>
++L:	linux-mips@vger.kernel.org
++S:	Maintained
++F:	Documentation/devicetree/bindings/interrupt-controller/econet,en751221-intc.yaml
++F:	Documentation/devicetree/bindings/mips/econet.yaml
++F:	Documentation/devicetree/bindings/timer/econet,en751221-timer.yaml
++F:	arch/mips/boot/dts/econet/
++F:	arch/mips/econet/
++F:	drivers/clocksource/timer-econet-en751221.c
++F:	drivers/irqchip/irq-econet-en751221.c
++
+ ECRYPT FILE SYSTEM
+ M:	Tyler Hicks <code@tyhicks.com>
+ L:	ecryptfs@vger.kernel.org
