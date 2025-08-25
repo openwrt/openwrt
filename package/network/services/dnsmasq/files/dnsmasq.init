@@ -161,6 +161,14 @@ append_parm() {
 	xappend "$switch=$_loctmp"
 }
 
+append_conf_file(){
+	if [ -r "$1" ]
+	then
+		xappend "--conf-file=$1"
+		append_extramount "$1"
+	fi
+}
+
 append_server() {
 	xappend "--server=$1"
 }
