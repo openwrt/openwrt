@@ -243,8 +243,10 @@ export function prepare(data, phy, num_global_macaddr, macaddr_base) {
 
 		data.default_macaddr = true;
 		mac_idx++;
-	} else if (data.macaddr == 'random')
+	} else if (data.macaddr == 'random') {
 		data.macaddr = macaddr_random();
+		data.random_macaddr = true;
+	}
 
 	log(`Preparing interface: ${data.ifname} with MAC: ${data.macaddr}`);
 };

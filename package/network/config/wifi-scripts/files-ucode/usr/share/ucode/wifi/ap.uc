@@ -508,4 +508,6 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 
 	if (config.default_macaddr)
 		append_raw('#default_macaddr');
+	else if (config.random_macaddr)
+		append_raw('#random_macaddr');
 };

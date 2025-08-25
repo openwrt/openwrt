@@ -574,7 +574,9 @@ function iface_reload_config(name, phydev, config, old_config)
 
 		// try to preserve MAC address of this BSS by reassigning another
 		// BSS if necessary
-		if (cur_config.default_macaddr &&
+		if ((cur_config.default_macaddr || cur_config.random_macaddr) &&
+		    cur_config.random_macaddr == prev_config.random_macaddr &&
+		    cur_config.default_macaddr == prev_config.default_macaddr &&
 		    !macaddr_list[prev_config.bssid]) {
 			macaddr_list[prev_config.bssid] = i;
 			cur_config.bssid = prev_config.bssid;
@@ -918,6 +920,8 @@ function iface_load_config(phy, radio, filename)
 	while ((line = rtrim(f.read("line"), "\n")) != null) {
 		if (line == "#default_macaddr")
 			bss.default_macaddr = true;
+		if (line == "#random_macaddr")
+			bss.random_macaddr = true;
 
 		let val = split(line, "=", 2);
 		if (!val[0])
