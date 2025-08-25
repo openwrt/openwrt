@@ -257,9 +257,9 @@ define U-Boot/rock-3b-rk3568
 endef
 
 
-# RK3588 boards
+# RK358x boards
 
-define U-Boot/rk3588/Default
+define U-Boot/rk358x/Default
   BUILD_SUBTARGET:=armv8
   DEPENDS:= \
 	+PACKAGE_u-boot-$(1):trusted-firmware-a-rk3588 \
@@ -268,22 +268,24 @@ define U-Boot/rk3588/Default
   TPL:=rk3588_ddr_lp4_2112MHz_lp5_2400MHz_v1.16.bin
 endef
 
+# RK3588 boards
+
 define U-Boot/nanopc-t6-rk3588
-  $(U-Boot/rk3588/Default)
+  $(U-Boot/rk358x/Default)
   NAME:=NanoPC T6
   BUILD_DEVICES:= \
     friendlyarm_nanopc-t6
 endef
 
 define U-Boot/rock5b-rk3588
-  $(U-Boot/rk3588/Default)
+  $(U-Boot/rk358x/Default)
   NAME:=ROCK 5B
   BUILD_DEVICES:= \
     radxa_rock-5b
 endef
 
 define U-Boot/sige7-rk3588
-  $(U-Boot/rk3588/Default)
+  $(U-Boot/rk358x/Default)
   NAME:=Sige7
   BUILD_DEVICES:= \
     armsom_sige7
@@ -293,21 +295,21 @@ endef
 # RK3588S boards
 
 define U-Boot/nanopi-r6c-rk3588s
-  $(U-Boot/rk3588/Default)
+  $(U-Boot/rk358x/Default)
   NAME:=NanoPi R6C
   BUILD_DEVICES:= \
     friendlyarm_nanopi-r6c
 endef
 
 define U-Boot/nanopi-r6s-rk3588s
-  $(U-Boot/rk3588/Default)
+  $(U-Boot/rk358x/Default)
   NAME:=NanoPi R6S
   BUILD_DEVICES:= \
     friendlyarm_nanopi-r6s
 endef
 
 define U-Boot/rock5a-rk3588s
-  $(U-Boot/rk3588/Default)
+  $(U-Boot/rk358x/Default)
   NAME:=ROCK 5A
   BUILD_DEVICES:= \
     radxa_rock-5a
