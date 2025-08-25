@@ -949,6 +949,8 @@ define Device
 
 endef
 
+IB_DEVICE_CHECK_PROFILE = $(if $(CONFIG_IB_BUILD_SELECTED_PROFILES_ONLY),$(CONFIG_TARGET_$(if $(CONFIG_TARGET_MULTI_PROFILE),DEVICE_)$(BOARD)_$(SUBTARGET)_DEVICE_$(1)),$(1))
+
 define BuildImage
 
   ifneq ($(DUMP),)
@@ -991,7 +993,7 @@ define BuildImage
 	$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),$(if $(IB),,$(call Image/BuildKernel/Initramfs)))
 	$(call Image/InstallKernel)
 
-  $(foreach device,$(TARGET_DEVICES),$(call Device,$(device)))
+  $(foreach device,$(TARGET_DEVICES),$(if $(call IB_DEVICE_CHECK_PROFILE,$(device)),$(call Device,$(device))))
 
   install-images: kernel_prepare $(foreach fs,$(filter-out $(if $(UBIFS_OPTS),,ubifs),$(TARGET_FILESYSTEMS) $(fs-subtypes-y)),$(KDIR)/root.$(fs))
 	$(foreach fs,$(TARGET_FILESYSTEMS),
