@@ -330,6 +330,13 @@ define U-Boot/rock5a-rk3588s
     radxa_rock-5a
 endef
 
+define U-Boot/rock-5c-rk3588s
+  $(U-Boot/rk358x/Default)
+  NAME:=ROCK 5C/5C Lite
+  BUILD_DEVICES:= \
+    radxa_rock-5c
+endef
+
 UBOOT_TARGETS := \
   nanopc-t4-rk3399 \
   nanopi-r4s-rk3399 \
@@ -364,7 +371,8 @@ UBOOT_TARGETS := \
   sige7-rk3588 \
   nanopi-r6c-rk3588s \
   nanopi-r6s-rk3588s \
-  rock5a-rk3588s
+  rock5a-rk3588s \
+  rock-5c-rk3588s
 
 UBOOT_CONFIGURE_VARS += USE_PRIVATE_LIBGCC=yes
 
