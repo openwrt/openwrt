@@ -183,6 +183,7 @@ platform_do_upgrade() {
 		CI_KERNPART="part.safe"
 		nand_do_upgrade "$1"
 		;;
+	meraki,gx20|\
 	meraki,z3)
 		# DO NOT set CI_KERNPART to part.safe,
 		# that is used for chain-loading an unlocked u-boot
