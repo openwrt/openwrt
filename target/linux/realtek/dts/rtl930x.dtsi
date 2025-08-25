@@ -195,6 +195,44 @@
 		};
 	};
 
+	pinmux@1b000200 {
+		compatible = "pinctrl-single";
+		reg = <0x1b000200 0x4>;
+
+		pinctrl-single,bit-per-mux;
+		pinctrl-single,register-width = <32>;
+		pinctrl-single,function-mask = <0x1>;
+		#pinctrl-cells = <2>;
+
+		/* Enable GPIO 19 */
+		pinmux_disable_led_sync: disable-led-sync {
+			pinctrl-single,bits = <0x0 0x0 0x800>;
+		};
+
+		pinmux_enable_led_sync: enable-led-sync {
+			pinctrl-single,bits = <0x0 0x800 0x800>;
+		};
+
+		/* Enable GPIO 18 */
+		pinmux_disable_usb_led: disable-usb-led {
+			pinctrl-single,bits = <0x0 0x0 0x400>;
+		};
+
+		pinmux_enable_usb_led: enable-usb-led {
+			pinctrl-single,bits = <0x0 0x400 0x400>;
+		};
+
+		/* Disable SLV SPI CS - freeing any associated GPIOs */
+		pinmux_disable_slv_spi_cs: disable-slv-spi-cs {
+			pinctrl-single,bits = <0x0 0x0 0x3E0>;
+		};
+
+		/* Disable SLV SPI SDO - freeing any associated GPIOs */
+		pinmux_disable_slv_spi_sdo: disable-slv-spi-sdo {
+			pinctrl-single,bits = <0x0 0x0 0x1F>;
+		};
+	};
+
 	pinmux@1b00c600 {
 		compatible = "pinctrl-single";
 		reg = <0x1b00c600 0x4>;
