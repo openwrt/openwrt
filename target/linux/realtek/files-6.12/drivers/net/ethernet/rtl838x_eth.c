@@ -2362,26 +2362,33 @@ static int rtmdio_930x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
 /*
  * The RTL931x family has 14 "frontend" SerDes that are cascaded. All operations (e.g. reset) work
  * on this frontend view while their registers are distributed over a total of least 26 background
- * SerDes. Two types of SerDes exist:
+ * SerDes with 64 pages and 32 registers. Three types of SerDes exist:
  *
- * An "even" SerDes with numbers 0, 1, 2, 4, 6, 8, 10, 12 works on one background SerDes.
+ * - Serdes 0,1 are "simple" and work on one background serdes.
+ * - "Even" SerDes with numbers 2, 4, 6, 8, 10, 12 work on two background SerDes. One analog and
+ *   one digital.
+ * - "Odd" SerDes with numbers 3, 5, 7, 9, 11, 13 work on a total of 3 background SerDes (one analog
+ *   and two digital)
  *
- * The "odd" SerDes with numbers 3, 5, 7, 9, 11 & 13 SerDes consist of a total of 3 background
- * SerDes (one analog and two XSGMII) each with its own page/register set. So it gives this
- * mapping:
-
+ * This maps to:
+ *
  * Frontend SerDes  |  0  1  2  3  4  5  6  7  8  9 10 11 12 13
  * -----------------+------------------------------------------
  * Backend SerDes 1 |  0  1  2  3  6  7 10 11 14 15 18 19 22 23
  * Backend SerDes 2 |  0  1  2  4  6  8 10 12 14 16 18 20 22 24
- * Backend SerDes 3 |  0  1  2  5  6  9 10 13 14 17 18 21 22 25
+ * Backend SerDes 3 |  0  1  3  5  7  9 11 13 15 17 19 21 23 25
+ *
+ * Note: In Realtek proprietary XSGMII mode (10G pumped SGMII) the frontend SerDes works on the
+ * two digital SerDes while in all other modes it works on the analog and the first digital SerDes.
+ * Overlapping (e.g. backend SerDes 7 can be analog or digital 2) is avoided by the existing
+ * hardware designs.
  *
  * Align this for readability by simulating a total of 576 pages and mix them as follows.
  *
  * frontend page		"even" frontend SerDes		"odd" frontend SerDes
  * page 0x000-0x03f (analog):	page 0x000-0x03f back SDS	page 0x000-0x03f back SDS
- * page 0x100-0x13f (XSGMII1):	page 0x000-0x03f back SDS	page 0x000-0x03f back SDS+1
- * page 0x200-0x23f (XSGMII2):	page 0x000-0x03f back SDS	page 0x000-0x03f back SDS+2
+ * page 0x100-0x13f (digi 1):	page 0x000-0x03f back SDS	page 0x000-0x03f back SDS+1
+ * page 0x200-0x23f (digi 2):	page 0x000-0x03f back SDS+1	page 0x000-0x03f back SDS+2
  */ 
 
 static int rtmdio_931x_get_backing_sds(u32 sds, u32 page)
@@ -2392,8 +2399,12 @@ static int rtmdio_931x_get_backing_sds(u32 sds, u32 page)
 	if (page & 0xc0)
 		return -EINVAL; /* hole */
 
-	if ((sds & 1) && (sds != 1))
-		back += (page >> 8); /* distribute "odd" to 3 background SerDes */
+	if (sds >= 2) {
+		if (sds & 1)
+			back += (page >> 8); /* distribute "odd" to 3 background SerDes */
+		else
+			back += (page >> 9); /* distribute "even" to 2 background SerDes */
+	}
 
 	return back;
 }
