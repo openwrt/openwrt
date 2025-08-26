@@ -223,6 +223,13 @@
 			"type": "alias",
 			"default": "disabled"
 		},
+		"device": {
+			"description": "Devices to enable this interface on (wifi-device section names)",
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
 		"device_name": {
 			"description": "Primary Device Name used by WPS",
 			"type": "string",
@@ -837,6 +844,12 @@
 		},
 		"r1kh": {
 			"description": "List of R1KHs in the same Mobility Domain",
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
+		"radios": {
 			"type": "array",
 			"items": {
 				"type": "string"

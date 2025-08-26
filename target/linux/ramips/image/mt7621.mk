@@ -3144,6 +3144,21 @@ define Device/wavlink_ws-wn572hp3-4g
 endef
 TARGET_DEVICES += wavlink_ws-wn572hp3-4g
 
+define Device/wavlink_ws-wn572hp3-a-v1-4
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Wavlink
+  DEVICE_MODEL := WS-WN572HP3
+  IMAGE_SIZE := 15040k
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | check-size | append-metadata
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
+	-uboot-envtools
+endef
+TARGET_DEVICES += wavlink_ws-wn572hp3-a-v1-4
+
 define Device/wavlink_wl-wn573hx1
   $(Device/uimage-lzma-loader)
   IMAGE_SIZE := 15808k
