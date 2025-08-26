@@ -1,9 +1,25 @@
-From: Tom Brautaset <tbrautaset@gmail.com>
-Subject: [PATCH] ARM: BCM5301X: Add DT for Asus RT-AC5300
+From: "Arınç ÜNAL" <arinc.unal@arinc9.com>
+Subject: [PATCH v3 4/5] ARM: dts: BCM5301X: Add DT for ASUS RT-AC5300
 
+Add the device tree for ASUS RT-AC5300 which is an AC5300 router featuring
+5 Ethernet ports over the integrated Broadcom switch.
+
+Hardware info:
+* Processor: Broadcom BCM4709C0 dual-core @ 1.4 GHz
+* Switch: BCM53012 in BCM4709C0
+* DDR3 RAM: 512 MB
+* Flash: 128 MB
+* 2.4GHz: BCM4366 4x4 single chip 802.11b/g/n SoC
+* 5GHz: BCM4366 4x4 two chips 802.11a/n/ac SoC
+* Ports: 4 LAN Ports, 1 WAN Port
+
+Co-developed-by: Tom Brautaset <tbrautaset@gmail.com>
 Signed-off-by: Tom Brautaset <tbrautaset@gmail.com>
-Co-developed-by: Arınç ÜNAL <arinc.unal@arinc9.com>
+Signed-off-by: Arınç ÜNAL <arinc.unal@arinc9.com>
 ---
+ arch/arm/boot/dts/broadcom/Makefile                |   1 +
+ .../boot/dts/broadcom/bcm47094-asus-rt-ac5300.dts  | 156 +++++++++++++++++++++
+ 2 files changed, 157 insertions(+)
 
 --- a/arch/arm/boot/dts/broadcom/Makefile
 +++ b/arch/arm/boot/dts/broadcom/Makefile
