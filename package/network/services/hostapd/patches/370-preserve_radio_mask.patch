@@ -105,7 +105,7 @@
  	}
  
  	if (ret >= 0 && is_p2p_net_interface(iftype)) {
-@@ -8685,8 +8707,8 @@ static int i802_set_wds_sta(void *priv,
+@@ -8688,8 +8710,8 @@ static int i802_set_wds_sta(void *priv,
  		if (!if_nametoindex(name)) {
  			if (nl80211_create_iface(drv, name,
  						 NL80211_IFTYPE_AP_VLAN,
@@ -116,7 +116,7 @@
  				return -1;
  
  			if (bridge_ifname)
-@@ -9057,7 +9079,8 @@ static int wpa_driver_nl80211_if_add(voi
+@@ -9060,7 +9082,8 @@ static int wpa_driver_nl80211_if_add(voi
  
  		os_memset(&p2pdev_info, 0, sizeof(p2pdev_info));
  		ifidx = nl80211_create_iface(drv, ifname, nlmode, addr,
@@ -126,7 +126,7 @@
  					     &p2pdev_info, use_existing);
  		if (!p2pdev_info.wdev_id_set || ifidx != 0) {
  			wpa_printf(MSG_ERROR, "nl80211: Failed to create a P2P Device interface %s",
-@@ -9074,7 +9097,8 @@ static int wpa_driver_nl80211_if_add(voi
+@@ -9077,7 +9100,8 @@ static int wpa_driver_nl80211_if_add(voi
  			   (long long unsigned int) p2pdev_info.wdev_id);
  	} else {
  		ifidx = nl80211_create_iface(drv, ifname, nlmode, addr,
@@ -136,7 +136,7 @@
  		if (use_existing && ifidx == -ENFILE) {
  			added = 0;
  			ifidx = if_nametoindex(ifname);
-@@ -9144,6 +9168,8 @@ static int wpa_driver_nl80211_if_add(voi
+@@ -9147,6 +9171,8 @@ static int wpa_driver_nl80211_if_add(voi
  		new_bss->ctx = bss_ctx;
  		new_bss->added_if = added;
  
