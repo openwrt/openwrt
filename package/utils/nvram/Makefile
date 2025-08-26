@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=nvram
-PKG_RELEASE:=12
+PKG_RELEASE:=13
 
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 
@@ -49,6 +49,10 @@ endif
 ifneq ($(CONFIG_TARGET_bcm53xx),)
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/nvram-bcm53xx.init $(1)/etc/init.d/nvram
+endif
+ifneq ($(CONFIG_TARGET_bcm53xx),)
+	$(INSTALL_DIR) $(1)/etc/uci-defaults
+	$(INSTALL_BIN) ./files/04-nvram-firstboot $(1)/etc/uci-defaults/04-nvram-firstboot
 endif
 endef
 
