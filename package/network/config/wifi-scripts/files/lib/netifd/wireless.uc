@@ -128,6 +128,17 @@ function config_init(uci)
 					config.mode = "link";
 			config.radios = radios;
 
+			if (dev_name != dev_names[0])
+				delete config.macaddr;
+			if (dev_name != wdev.mlo_name && config.radio_macaddr) {
+				let idx = index(dev_names, dev_name);
+				if (mlo_vif)
+					idx--;
+				let macaddr = idx >= 0 ? config.radio_macaddr[idx] : null;
+				if (macaddr)
+					config.macaddr = macaddr;
+			}
+
 			let vif = {
 				name, config,
 				device: dev_name,
@@ -310,6 +321,7 @@ const default_config_attr = {
 		...network_config_attr,
 		device: TYPE_STRING,
 		mode: TYPE_STRING,
+		radio_macaddr: TYPE_ARRAY,
 	},
 	station: {
 		iface: TYPE_STRING,

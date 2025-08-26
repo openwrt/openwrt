@@ -1,0 +1,22 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 26 Aug 2025 22:04:57 +0200
+Subject: [PATCH] nl80211: fix reporting spurious frame events
+
+When the nl80211 driver is shared across multiple interfaces (on the same
+wiphy), nl80211_spurious_frame can send the event to the wrong interface by
+using drv->ctx. Fix this by using bss->ctx instead.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/drivers/driver_nl80211_event.c
++++ b/src/drivers/driver_nl80211_event.c
+@@ -2789,7 +2789,7 @@ static void nl80211_spurious_frame(struc
+ 	event.rx_from_unknown.addr = nla_data(tb[NL80211_ATTR_MAC]);
+ 	event.rx_from_unknown.wds = wds;
+ 
+-	wpa_supplicant_event(drv->ctx, EVENT_RX_FROM_UNKNOWN, &event);
++	wpa_supplicant_event(bss->ctx, EVENT_RX_FROM_UNKNOWN, &event);
+ }
+ 
+ 

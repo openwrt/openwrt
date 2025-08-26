@@ -20,11 +20,6 @@
 
 extern struct rtl83xx_soc_info soc_info;
 
-extern int phy_package_port_write_paged(struct phy_device *phydev, int port, int page, u32 regnum, u16 val);
-extern int phy_package_write_paged(struct phy_device *phydev, int page, u32 regnum, u16 val);
-extern int phy_package_port_read_paged(struct phy_device *phydev, int port, int page, u32 regnum);
-extern int phy_package_read_paged(struct phy_device *phydev, int page, u32 regnum);
-
 extern int rtmdio_930x_read_sds_phy(int sds, int page, int regnum);
 extern int rtmdio_930x_write_sds_phy(int sds, int page, int regnum, u16 val);
 
@@ -105,6 +100,16 @@ DEFINE_MUTEX(poll_lock);
 static const struct firmware rtl838x_8380_fw;
 static const struct firmware rtl838x_8214fc_fw;
 static const struct firmware rtl838x_8218b_fw;
+
+static inline struct phy_device *get_package_phy(struct phy_device *phydev, int port)
+{
+	return mdiobus_get_phy(phydev->mdio.bus, phydev->shared->base_addr + port);
+}
+
+static inline struct phy_device *get_base_phy(struct phy_device *phydev)
+{
+	return get_package_phy(phydev, 0);
+}
 
 static u64 disable_polling(int port)
 {
@@ -630,19 +635,38 @@ static int rtl8390_configure_generic(struct phy_device *phydev)
 	return 0;
 }
 
+static int rtl821x_prepare_patch(struct phy_device *phydev, int ports)
+{
+	struct phy_device *patchphy;
+	int tries = 50;
+
+	for (int port = 0; port < ports; port++) {
+		patchphy = get_package_phy(phydev, port);
+		phy_write_paged(patchphy, RTL821X_PAGE_PATCH, 0x10, 0x10);
+	}
+
+	for (int port = 0; port < ports; port++) {
+		patchphy = get_package_phy(phydev, port);
+		while (tries && !(phy_read_paged(patchphy, RTL821X_PAGE_STATE, 0x10) & 0x40)) {
+			tries--;
+			usleep_range(10000, 25000);
+		};
+	}
+
+	if (!tries)
+		phydev_err(get_package_phy(phydev, 0), "package not ready for patch.\n");
+
+	return tries ? 0 : -EIO;
+}
+
 static int rtl8380_configure_int_rtl8218b(struct phy_device *phydev)
 {
-	u32 val, phy_id;
-	int mac = phydev->mdio.addr;
-	struct fw_header *h;
 	u32 *rtl838x_6275B_intPhy_perport;
 	u32 *rtl8218b_6276B_hwEsd_perport;
-
-	val = phy_read(phydev, 2);
-	phy_id = val << 16;
-	val = phy_read(phydev, 3);
-	phy_id |= val;
-	pr_debug("Phy on MAC %d: %x\n", mac, phy_id);
+	struct phy_device *patchphy;
+	struct fw_header *h;
+	int ret;
+	u32 val;
 
 	/* Read internal PHY ID */
 	phy_write_paged(phydev, 31, 27, 0x0002);
@@ -651,9 +675,6 @@ static int rtl8380_configure_int_rtl8218b(struct phy_device *phydev)
 		phydev_err(phydev, "Expected internal RTL8218B, found PHY-ID %x\n", val);
 		return -1;
 	}
-
-	/* Internal RTL8218B, version 2 */
-	phydev_info(phydev, "Detected internal RTL8218B\n");
 
 	h = rtl838x_request_fw(phydev, &rtl838x_8380_fw, FIRMWARE_838X_8380_1);
 	if (!h)
@@ -667,10 +688,7 @@ static int rtl8380_configure_int_rtl8218b(struct phy_device *phydev)
 	rtl838x_6275B_intPhy_perport = (void *)h + sizeof(struct fw_header) + h->parts[8].start;
 	rtl8218b_6276B_hwEsd_perport = (void *)h + sizeof(struct fw_header) + h->parts[9].start;
 
-	// Currently not used
-	// if (sw_r32(RTL838X_DMY_REG31) == 0x1) {
-	// 	int ipd_flag = 1;
-	// }
+	phydev_info(phydev, "patch\n");
 
 	val = phy_read(phydev, MII_BMCR);
 	if (val & BMCR_PDOWN)
@@ -679,42 +697,27 @@ static int rtl8380_configure_int_rtl8218b(struct phy_device *phydev)
 		rtl8380_phy_reset(phydev);
 	msleep(100);
 
-	/* Ready PHY for patch */
-	for (int p = 0; p < 8; p++) {
-		phy_package_port_write_paged(phydev, p, RTL838X_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL821X_PAGE_PATCH);
-		phy_package_port_write_paged(phydev, p, RTL838X_PAGE_RAW, 0x10, 0x0010);
-	}
-	msleep(500);
-	for (int p = 0; p < 8; p++) {
+	ret = rtl821x_prepare_patch(phydev, 8);
+	if (ret)
+		return ret;
+
+	for (int port = 0; port < 8; port++) {
 		int i;
 
-		for (i = 0; i < 100 ; i++) {
-			val = phy_package_port_read_paged(phydev, p, RTL821X_PAGE_STATE, 0x10);
-			if (val & 0x40)
-				break;
-		}
-		if (i >= 100) {
-			phydev_err(phydev,
-			           "ERROR: Port %d not ready for patch.\n",
-			           mac + p);
-			return -1;
-		}
-	}
-	for (int p = 0; p < 8; p++) {
-		int i;
+		patchphy = get_package_phy(phydev, port);
 
 		i = 0;
 		while (rtl838x_6275B_intPhy_perport[i * 2]) {
-			phy_package_port_write_paged(phydev, p, RTL838X_PAGE_RAW,
-			                             rtl838x_6275B_intPhy_perport[i * 2],
-			                             rtl838x_6275B_intPhy_perport[i * 2 + 1]);
+			phy_write_paged(patchphy, RTL838X_PAGE_RAW,
+					rtl838x_6275B_intPhy_perport[i * 2],
+					rtl838x_6275B_intPhy_perport[i * 2 + 1]);
 			i++;
 		}
 		i = 0;
 		while (rtl8218b_6276B_hwEsd_perport[i * 2]) {
-			phy_package_port_write_paged(phydev, p, RTL838X_PAGE_RAW,
-			                             rtl8218b_6276B_hwEsd_perport[i * 2],
-			                             rtl8218b_6276B_hwEsd_perport[i * 2 + 1]);
+			phy_write_paged(patchphy, RTL838X_PAGE_RAW,
+					rtl8218b_6276B_hwEsd_perport[i * 2],
+					rtl8218b_6276B_hwEsd_perport[i * 2 + 1]);
 			i++;
 		}
 	}
@@ -724,22 +727,13 @@ static int rtl8380_configure_int_rtl8218b(struct phy_device *phydev)
 
 static int rtl8380_configure_ext_rtl8218b(struct phy_device *phydev)
 {
-	u32 val, ipd, phy_id;
-	int mac = phydev->mdio.addr;
-	struct fw_header *h;
-	u32 *rtl8380_rtl8218b_perchip;
 	u32 *rtl8218B_6276B_rtl8380_perport;
+	u32 *rtl8380_rtl8218b_perchip;
 	u32 *rtl8380_rtl8218b_perport;
-
-	if (soc_info.family == RTL8380_FAMILY_ID && mac != 0 && mac != 16) {
-		phydev_err(phydev, "External RTL8218B must have PHY-IDs 0 or 16!\n");
-		return -1;
-	}
-	val = phy_read(phydev, 2);
-	phy_id = val << 16;
-	val = phy_read(phydev, 3);
-	phy_id |= val;
-	pr_info("Phy on MAC %d: %x\n", mac, phy_id);
+	struct phy_device *patchphy;
+	struct fw_header *h;
+	u32 val, ipd;
+	int ret;
 
 	/* Read internal PHY ID */
 	phy_write_paged(phydev, 31, 27, 0x0002);
@@ -748,7 +742,6 @@ static int rtl8380_configure_ext_rtl8218b(struct phy_device *phydev)
 		phydev_err(phydev, "Expected external RTL8218B, found PHY-ID %x\n", val);
 		return -1;
 	}
-	phydev_info(phydev, "Detected external RTL8218B\n");
 
 	h = rtl838x_request_fw(phydev, &rtl838x_8218b_fw, FIRMWARE_838X_8218b_1);
 	if (!h)
@@ -776,44 +769,27 @@ static int rtl8380_configure_ext_rtl8218b(struct phy_device *phydev)
 	phy_write_paged(phydev, RTL838X_PAGE_RAW, 0x1b, 0x4);
 	val = phy_read_paged(phydev, RTL838X_PAGE_RAW, 0x1c);
 
-	phydev_info(phydev, "Detected chip revision %04x\n", val);
+	phydev_info(phydev, "patch chip revision %d\n", val);
 
 	for (int i = 0; rtl8380_rtl8218b_perchip[i * 3] &&
 	                rtl8380_rtl8218b_perchip[i * 3 + 1]; i++) {
-		phy_package_port_write_paged(phydev, rtl8380_rtl8218b_perchip[i * 3],
-					     RTL838X_PAGE_RAW, rtl8380_rtl8218b_perchip[i * 3 + 1],
-					     rtl8380_rtl8218b_perchip[i * 3 + 2]);
+		patchphy = get_package_phy(phydev, rtl8380_rtl8218b_perchip[i * 3]);
+		phy_write_paged(patchphy, RTL838X_PAGE_RAW,
+				rtl8380_rtl8218b_perchip[i * 3 + 1],
+				rtl8380_rtl8218b_perchip[i * 3 + 2]);
 	}
 
 	/* Enable PHY */
-	for (int i = 0; i < 8; i++) {
-		phy_package_port_write_paged(phydev, i, RTL838X_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL8XXX_PAGE_MAIN);
-		phy_package_port_write_paged(phydev, i, RTL838X_PAGE_RAW, 0x00, 0x1140);
+	for (int port = 0; port < 8; port++) {
+		patchphy = get_package_phy(phydev, port);
+		phy_write_paged(patchphy, RTL838X_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL8XXX_PAGE_MAIN);
+		phy_write_paged(patchphy, RTL838X_PAGE_RAW, 0x00, 0x1140);
 	}
 	mdelay(100);
 
-	/* Request patch */
-	for (int i = 0; i < 8; i++) {
-		phy_package_port_write_paged(phydev, i, RTL838X_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL821X_PAGE_PATCH);
-		phy_package_port_write_paged(phydev, i, RTL838X_PAGE_RAW, 0x10, 0x0010);
-	}
-
-	mdelay(300);
-
-	/* Verify patch readiness */
-	for (int i = 0; i < 8; i++) {
-		int l;
-
-		for (l = 0; l < 100; l++) {
-			val = phy_package_port_read_paged(phydev, i, RTL821X_PAGE_STATE, 0x10);
-			if (val & 0x40)
-				break;
-		}
-		if (l >= 100) {
-			phydev_err(phydev, "Could not patch PHY\n");
-			return -1;
-		}
-	}
+	ret = rtl821x_prepare_patch(phydev, 8);
+	if (ret)
+		return ret;
 
 	/* Use Broadcast ID method for patching */
 	rtl821x_phy_setup_package_broadcast(phydev, true);
@@ -839,24 +815,18 @@ static int rtl8380_configure_ext_rtl8218b(struct phy_device *phydev)
 
 static bool __rtl8214fc_media_is_fibre(struct phy_device *phydev)
 {
-	struct mii_bus *bus = phydev->mdio.bus;
+	struct phy_device *basephy = get_base_phy(phydev);
 	static int regs[] = {16, 19, 20, 21};
-	int addr = phydev->mdio.addr & ~3;
 	int reg = regs[phydev->mdio.addr & 3];
 	int oldpage, val;
 
-	/*
-	 * The fiber status cannot be read directly from the phy. It is a package "global"
-	 * attribute and therefore located in the first phy. To avoid state handling assume
-	 * an aligment to addresses divisible by 4.
-	 */
-
-	oldpage = __mdiobus_read(bus, addr, RTL8XXX_PAGE_SELECT);
-	__mdiobus_write(bus, addr, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
-	__mdiobus_write(bus, addr, RTL8XXX_PAGE_SELECT, RTL821X_PAGE_PORT);
-	val = __mdiobus_read(bus, addr, reg);
-	__mdiobus_write(bus, addr, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
-	__mdiobus_write(bus, addr, RTL8XXX_PAGE_SELECT, oldpage);
+	/* The fiber status is a package "global" in the first phy. */
+	oldpage = __phy_read(basephy, RTL8XXX_PAGE_SELECT);
+	__phy_write(basephy, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
+	__phy_write(basephy, RTL8XXX_PAGE_SELECT, RTL821X_PAGE_PORT);
+	val = __phy_read(basephy, reg);
+	__phy_write(basephy, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
+	__phy_write(basephy, RTL8XXX_PAGE_SELECT, oldpage);
 
 	return !(val & BMCR_PDOWN);
 }
@@ -878,10 +848,8 @@ static void rtl8214fc_power_set(struct phy_device *phydev, int port, bool on)
 	int page = port == PORT_FIBRE ? RTL821X_MEDIA_PAGE_FIBRE : RTL821X_MEDIA_PAGE_COPPER;
 	int pdown = on ? 0 : BMCR_PDOWN;
 
-	pr_info("%s: Powering %s %s (port %d)\n", __func__,
-		on ? "on" : "off",
-		port == PORT_FIBRE ? "FIBRE" : "COPPER",
-		phydev->mdio.addr);
+	phydev_info(phydev, "power %s %s\n", on ? "on" : "off",
+		    port == PORT_FIBRE ? "fibre" : "copper");
 
 	phy_write(phydev, RTL821XINT_MEDIA_PAGE_SELECT, page);
 	phy_modify_paged(phydev, RTL821X_PAGE_POWER, 0x10, BMCR_PDOWN, pdown);
@@ -898,47 +866,29 @@ static int rtl8214fc_suspend(struct phy_device *phydev)
 
 static int rtl8214fc_resume(struct phy_device *phydev)
 {
-	if (rtl8214fc_media_is_fibre(phydev)) {
-		rtl8214fc_power_set(phydev, PORT_MII, false);
-		rtl8214fc_power_set(phydev, PORT_FIBRE, true);
-	} else {
-		rtl8214fc_power_set(phydev, PORT_FIBRE, false);
-		rtl8214fc_power_set(phydev, PORT_MII, true);
-	}
+	bool set_fibre = rtl8214fc_media_is_fibre(phydev);
+
+	rtl8214fc_power_set(phydev, PORT_MII, !set_fibre);
+	rtl8214fc_power_set(phydev, PORT_FIBRE, set_fibre);
 
 	return 0;
 }
 
 static void rtl8214fc_media_set(struct phy_device *phydev, bool set_fibre)
 {
-	int mac = phydev->mdio.addr;
+	struct phy_device *basephy = get_base_phy(phydev);
+	int pdown = set_fibre ? 0 : BMCR_PDOWN;
+	static int regs[] = {16, 19, 20, 21};
+	int reg = regs[phydev->mdio.addr & 3];
 
-	static int reg[] = {16, 19, 20, 21};
-	int val;
-
-	pr_info("%s: port %d, set_fibre: %d\n", __func__, mac, set_fibre);
-	phy_package_write_paged(phydev, RTL838X_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
-	val = phy_package_read_paged(phydev, RTL821X_PAGE_PORT, reg[mac % 4]);
-
-	val |= BIT(10);
-	if (set_fibre) {
-		val &= ~BMCR_PDOWN;
-	} else {
-		val |= BMCR_PDOWN;
-	}
-
-	phy_package_write_paged(phydev, RTL838X_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
-	phy_package_write_paged(phydev, RTL821X_PAGE_PORT, reg[mac % 4], val);
-	phy_package_write_paged(phydev, RTL838X_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
+	phydev_info(phydev, "switch to %s\n", set_fibre ? "fibre" : "copper");
+	phy_write_paged(basephy, RTL838X_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
+	phy_modify_paged(basephy, RTL821X_PAGE_PORT, reg, BMCR_PDOWN, pdown);
+	phy_write_paged(basephy, RTL838X_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 
 	if (!phydev->suspended) {
-		if (set_fibre) {
-			rtl8214fc_power_set(phydev, PORT_MII, false);
-			rtl8214fc_power_set(phydev, PORT_FIBRE, true);
-		} else {
-			rtl8214fc_power_set(phydev, PORT_FIBRE, false);
-			rtl8214fc_power_set(phydev, PORT_MII, true);
-		}
+		rtl8214fc_power_set(phydev, PORT_MII, !set_fibre);
+		rtl8214fc_power_set(phydev, PORT_FIBRE, set_fibre);
 	}
 }
 
@@ -1094,18 +1044,12 @@ static int rtl8380_configure_rtl8214c(struct phy_device *phydev)
 
 static int rtl8380_configure_rtl8214fc(struct phy_device *phydev)
 {
-	int mac = phydev->mdio.addr;
-	struct fw_header *h;
 	u32 *rtl8380_rtl8214fc_perchip;
 	u32 *rtl8380_rtl8214fc_perport;
-	u32 phy_id;
+	struct phy_device *patchphy;
+	struct fw_header *h;
 	u32 val;
-
-	val = phy_read(phydev, 2);
-	phy_id = val << 16;
-	val = phy_read(phydev, 3);
-	phy_id |= val;
-	pr_debug("Phy on MAC %d: %x\n", mac, phy_id);
+	int ret;
 
 	/* Read internal PHY id */
 	phy_write_paged(phydev, 0, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
@@ -1115,7 +1059,6 @@ static int rtl8380_configure_rtl8214fc(struct phy_device *phydev)
 		phydev_err(phydev, "Expected external RTL8214FC, found PHY-ID %x\n", val);
 		return -1;
 	}
-	phydev_info(phydev, "Detected external RTL8214FC\n");
 
 	h = rtl838x_request_fw(phydev, &rtl838x_8214fc_fw, FIRMWARE_838X_8214FC_1);
 	if (!h)
@@ -1126,8 +1069,9 @@ static int rtl8380_configure_rtl8214fc(struct phy_device *phydev)
 		return -1;
 	}
 
-	rtl8380_rtl8214fc_perchip = (void *)h + sizeof(struct fw_header) + h->parts[0].start;
+	phydev_info(phydev, "patch\n");
 
+	rtl8380_rtl8214fc_perchip = (void *)h + sizeof(struct fw_header) + h->parts[0].start;
 	rtl8380_rtl8214fc_perport = (void *)h + sizeof(struct fw_header) + h->parts[1].start;
 
 	/* detect phy version */
@@ -1163,54 +1107,40 @@ static int rtl8380_configure_rtl8214fc(struct phy_device *phydev)
 	}
 
 	/* Force copper medium */
-	for (int i = 0; i < 4; i++) {
-		phy_package_port_write_paged(phydev, i, RTL838X_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL8XXX_PAGE_MAIN);
-		phy_package_port_write_paged(phydev, i, RTL838X_PAGE_RAW, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
+	for (int port = 0; port < 4; port++) {
+		patchphy = get_package_phy(phydev, port);
+		phy_write_paged(patchphy, RTL838X_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL8XXX_PAGE_MAIN);
+		phy_write_paged(patchphy, RTL838X_PAGE_RAW, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
 	}
 
 	/* Enable PHY */
-	for (int i = 0; i < 4; i++) {
-		phy_package_port_write_paged(phydev, i, RTL838X_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL8XXX_PAGE_MAIN);
-		phy_package_port_write_paged(phydev, i, RTL838X_PAGE_RAW, 0x00, 0x1140);
+	for (int port = 0; port < 4; port++) {
+		patchphy = get_package_phy(phydev, port);
+		phy_write_paged(patchphy, RTL838X_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL8XXX_PAGE_MAIN);
+		phy_write_paged(patchphy, RTL838X_PAGE_RAW, 0x00, 0x1140);
 	}
 	mdelay(100);
 
 	/* Disable Autosensing */
-	for (int i = 0; i < 4; i++) {
-		int l;
+	for (int port = 0; port < 4; port++) {
+		int i;
 
-		for (l = 0; l < 100; l++) {
-			val = phy_package_port_read_paged(phydev, i, RTL821X_PAGE_GPHY, 0x10);
+		patchphy = get_package_phy(phydev, port);
+		for (i = 0; i < 100; i++) {
+			val = phy_read_paged(patchphy, RTL821X_PAGE_GPHY, 0x10);
 			if ((val & 0x7) >= 3)
 				break;
 		}
-		if (l >= 100) {
+		if (i >= 100) {
 			phydev_err(phydev, "Could not disable autosensing\n");
 			return -1;
 		}
 	}
 
-	/* Request patch */
-	for (int i = 0; i < 4; i++) {
-		phy_package_port_write_paged(phydev, i, RTL838X_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL821X_PAGE_PATCH);
-		phy_package_port_write_paged(phydev, i, RTL838X_PAGE_RAW, 0x10, 0x0010);
-	}
-	mdelay(300);
+	ret = rtl821x_prepare_patch(phydev, 4);
+	if (ret)
+		return ret;
 
-	/* Verify patch readiness */
-	for (int i = 0; i < 4; i++) {
-		int l;
-
-		for (l = 0; l < 100; l++) {
-			val = phy_package_port_read_paged(phydev, i, RTL821X_PAGE_STATE, 0x10);
-			if (val & 0x40)
-				break;
-		}
-		if (l >= 100) {
-			phydev_err(phydev, "Could not patch PHY\n");
-			return -1;
-		}
-	}
 	/* Use Broadcast ID method for patching */
 	rtl821x_phy_setup_package_broadcast(phydev, true);
 
@@ -2685,7 +2615,7 @@ static void rtl9300_phy_enable_10g_1g(int sds_num)
 }
 
 static int rtl9300_sds_10g_idle(int sds_num);
-static void rtl9300_serdes_patch(int sds_num);
+static void rtsds_930x_patch_serdes(int sds, phy_interface_t mode);
 
 #define RTL930X_MAC_FORCE_MODE_CTRL		(0xCA1C)
 int rtl9300_serdes_setup(int port, int sds_num, phy_interface_t phy_mode)
@@ -2696,7 +2626,7 @@ int rtl9300_serdes_setup(int port, int sds_num, phy_interface_t phy_mode)
 	rtl9300_sds_rst(sds_num, RTL930X_SDS_OFF);
 
 	/* Apply serdes patches */
-	rtl9300_serdes_patch(sds_num);
+	rtsds_930x_patch_serdes(sds_num, phy_mode);
 
 	/* Maybe use dal_longan_sds_init */
 
@@ -2767,7 +2697,7 @@ typedef struct {
 	u16 data;
 } sds_config;
 
-sds_config rtl9300_a_sds_10gr_lane0[] =
+static const sds_config rtsds_930x_cfg_10gr_even[] =
 {
 	/* 1G */
 	{0x00, 0x0E, 0x3053}, {0x01, 0x14, 0x0100}, {0x21, 0x03, 0x8206},
@@ -2815,7 +2745,7 @@ sds_config rtl9300_a_sds_10gr_lane0[] =
 	{0x2F, 0x19, 0x4902}, {0x2F, 0x1D, 0x76E1},
 };
 
-sds_config rtl9300_a_sds_10gr_lane1[] =
+static const sds_config rtsds_930x_cfg_10gr_odd[] =
 {
 	/* 1G */
 	{0x00, 0x0E, 0x3053}, {0x01, 0x14, 0x0100}, {0x21, 0x03, 0x8206},
@@ -2858,20 +2788,90 @@ sds_config rtl9300_a_sds_10gr_lane1[] =
 	{0x2B, 0x14, 0x3108}, {0x2D, 0x13, 0x3C87}, {0x2D, 0x14, 0x1808},
 };
 
-static void rtl9300_serdes_patch(int sds_num)
+static const sds_config rtsds_930x_cfg_10g_2500bx_even[] =
 {
-	if (sds_num % 2) {
-		for (int i = 0; i < sizeof(rtl9300_a_sds_10gr_lane1) / sizeof(sds_config); ++i) {
-			rtmdio_930x_write_sds_phy(sds_num, rtl9300_a_sds_10gr_lane1[i].page,
-						  rtl9300_a_sds_10gr_lane1[i].reg,
-						  rtl9300_a_sds_10gr_lane1[i].data);
+	{0x00, 0x0E, 0x3053}, {0x01, 0x14, 0x0100},
+	{0x21, 0x03, 0x8206}, {0x21, 0x05, 0x40B0}, {0x21, 0x06, 0x0010}, {0x21, 0x07, 0xF09F},
+	{0x21, 0x0C, 0x0007}, {0x21, 0x0D, 0x6009}, {0x21, 0x0E, 0x0000}, {0x21, 0x0F, 0x0008},
+	{0x24, 0x00, 0x0668}, {0x24, 0x02, 0xD020}, {0x24, 0x06, 0xC000}, {0x24, 0x0B, 0x1892},
+	{0x24, 0x0F, 0xFFDF}, {0x24, 0x12, 0x03C4}, {0x24, 0x13, 0x027F}, {0x24, 0x14, 0x1311},
+	{0x24, 0x16, 0x00C9}, {0x24, 0x17, 0xA100}, {0x24, 0x1A, 0x0001}, {0x24, 0x1C, 0x0400},
+	{0x25, 0x01, 0x0300}, {0x25, 0x02, 0x1017}, {0x25, 0x03, 0xFFDF}, {0x25, 0x05, 0x7F7C},
+	{0x25, 0x07, 0x8100}, {0x25, 0x08, 0x0001}, {0x25, 0x09, 0xFFD4}, {0x25, 0x0A, 0x7C2F},
+	{0x25, 0x0E, 0x003F}, {0x25, 0x0F, 0x0121}, {0x25, 0x10, 0x0020}, {0x25, 0x11, 0x8840},
+	{0x28, 0x00, 0x0668}, {0x28, 0x02, 0xD020}, {0x28, 0x06, 0xC000}, {0x28, 0x0B, 0x1892},
+	{0x28, 0x0F, 0xFFDF}, {0x28, 0x12, 0x01C4}, {0x28, 0x13, 0x027F}, {0x28, 0x14, 0x1311},
+	{0x28, 0x16, 0x00C9}, {0x28, 0x17, 0xA100}, {0x28, 0x1A, 0x0001}, {0x28, 0x1C, 0x0400},
+	{0x29, 0x01, 0x0300}, {0x29, 0x02, 0x1017}, {0x29, 0x03, 0xFFDF}, {0x29, 0x05, 0x7F7C},
+	{0x29, 0x07, 0x8100}, {0x29, 0x08, 0x0001}, {0x29, 0x09, 0xFFD4}, {0x29, 0x0A, 0x7C2F},
+	{0x29, 0x0E, 0x003F}, {0x29, 0x0F, 0x0121}, {0x29, 0x10, 0x0020}, {0x29, 0x11, 0x8840},
+	{0x2B, 0x13, 0x0050}, {0x2B, 0x18, 0x8E88}, {0x2B, 0x19, 0x4902}, {0x2B, 0x1D, 0x2501},
+	{0x2D, 0x13, 0x0050}, {0x2D, 0x18, 0x8E88}, {0x2D, 0x17, 0x4109}, {0x2D, 0x19, 0x4902},
+	{0x2D, 0x1C, 0x1109}, {0x2D, 0x1D, 0x2641},
+	{0x2F, 0x13, 0x0050}, {0x2F, 0x18, 0x8E88}, {0x2F, 0x19, 0x4902}, {0x2F, 0x1D, 0x66E1},
+};
+
+static const sds_config rtsds_930x_cfg_10g_2500bx_odd[] =
+{
+	{0x00, 0x0E, 0x3053}, {0x01, 0x14, 0x0100},
+	{0x21, 0x03, 0x8206}, {0x21, 0x06, 0x0010}, {0x21, 0x07, 0xF09F}, {0x21, 0x0A, 0x0003},
+	{0x21, 0x0B, 0x0005}, {0x21, 0x0C, 0x0007}, {0x21, 0x0D, 0x6009}, {0x21, 0x0E, 0x0000},
+	{0x21, 0x0F, 0x0008},
+	{0x24, 0x00, 0x0668}, {0x24, 0x02, 0xD020}, {0x24, 0x06, 0xC000}, {0x24, 0x0B, 0x1892},
+	{0x24, 0x0F, 0xFFDF}, {0x24, 0x12, 0x03C4}, {0x24, 0x13, 0x027F}, {0x24, 0x14, 0x1311},
+	{0x24, 0x16, 0x00C9}, {0x24, 0x17, 0xA100}, {0x24, 0x1A, 0x0001}, {0x24, 0x1C, 0x0400},
+	{0x25, 0x00, 0x820F}, {0x25, 0x01, 0x0300}, {0x25, 0x02, 0x1017}, {0x25, 0x03, 0xFFDF},
+	{0x25, 0x05, 0x7F7C}, {0x25, 0x07, 0x8100}, {0x25, 0x08, 0x0001}, {0x25, 0x09, 0xFFD4},
+	{0x25, 0x0A, 0x7C2F}, {0x25, 0x0E, 0x003F}, {0x25, 0x0F, 0x0121}, {0x25, 0x10, 0x0020},
+	{0x25, 0x11, 0x8840},
+	{0x28, 0x00, 0x0668}, {0x28, 0x02, 0xD020}, {0x28, 0x06, 0xC000}, {0x28, 0x0B, 0x1892},
+	{0x28, 0x0F, 0xFFDF}, {0x28, 0x12, 0x01C4}, {0x28, 0x13, 0x027F}, {0x28, 0x14, 0x1311},
+	{0x28, 0x16, 0x00C9}, {0x28, 0x17, 0xA100}, {0x28, 0x1A, 0x0001}, {0x28, 0x1C, 0x0400},
+	{0x29, 0x00, 0x820F}, {0x29, 0x01, 0x0300}, {0x29, 0x02, 0x1017}, {0x29, 0x03, 0xFFDF},
+	{0x29, 0x05, 0x7F7C}, {0x29, 0x07, 0x8100}, {0x29, 0x08, 0x0001}, {0x29, 0x0A, 0x7C2F},
+	{0x29, 0x0E, 0x003F}, {0x29, 0x0F, 0x0121}, {0x29, 0x10, 0x0020}, {0x29, 0x11, 0x8840},
+	{0x2B, 0x13, 0x3D87}, {0x2B, 0x14, 0x3108},
+	{0x2D, 0x13, 0x3C87}, {0x2D, 0x14, 0x1808},
+};
+
+static void rtsds_930x_patch_serdes(int sds, phy_interface_t mode)
+{
+	const bool even_sds = ((sds & 1) == 0);
+	const sds_config *config;
+	size_t count;
+
+	switch (mode) {
+	case PHY_INTERFACE_MODE_1000BASEX:
+	case PHY_INTERFACE_MODE_SGMII:
+	case PHY_INTERFACE_MODE_10GBASER:
+		if (even_sds) {
+			config = rtsds_930x_cfg_10gr_even;
+			count = ARRAY_SIZE(rtsds_930x_cfg_10gr_even);
+		} else {
+			config = rtsds_930x_cfg_10gr_odd;
+			count = ARRAY_SIZE(rtsds_930x_cfg_10gr_odd);
 		}
-	} else {
-		for (int i = 0; i < sizeof(rtl9300_a_sds_10gr_lane0) / sizeof(sds_config); ++i) {
-			rtmdio_930x_write_sds_phy(sds_num, rtl9300_a_sds_10gr_lane0[i].page,
-						  rtl9300_a_sds_10gr_lane0[i].reg,
-						   rtl9300_a_sds_10gr_lane0[i].data);
+		break;
+
+	case PHY_INTERFACE_MODE_2500BASEX:
+		if (even_sds) {
+			config = rtsds_930x_cfg_10g_2500bx_even;
+			count = ARRAY_SIZE(rtsds_930x_cfg_10g_2500bx_even);
+		} else {
+			config = rtsds_930x_cfg_10g_2500bx_odd;
+			count = ARRAY_SIZE(rtsds_930x_cfg_10g_2500bx_odd);
 		}
+		break;
+
+	default:
+		pr_warn("%s: unsupported mode %s on serdes %d\n", __func__, phy_modes(mode), sds);
+		return;
+	}
+
+	for (size_t i = 0; i < count; ++i) {
+		rtmdio_930x_write_sds_phy(sds, config[i].page,
+					  config[i].reg,
+					  config[i].data);
 	}
 }
 
@@ -3553,7 +3553,7 @@ static int rtl8214fc_sfp_insert(void *upstream, const struct sfp_eeprom_id *id)
 	sfp_parse_support(phydev->sfp_bus, id, support, interfaces);
 	iface = sfp_select_interface(phydev->sfp_bus, support);
 
-	dev_info(&phydev->mdio.dev, "%s SFP module inserted\n", phy_modes(iface));
+	phydev_info(phydev, "%s SFP module inserted\n", phy_modes(iface));
 
 	rtl8214fc_media_set(phydev, true);
 
@@ -3576,20 +3576,13 @@ static const struct sfp_upstream_ops rtl8214fc_sfp_ops = {
 
 static int rtl8214fc_phy_probe(struct phy_device *phydev)
 {
-	struct device *dev = &phydev->mdio.dev;
-	int addr = phydev->mdio.addr;
+	int base_addr = phydev->mdio.addr & ~3;
 	int ret = 0;
 
-	/* All base addresses of the PHYs start at multiples of 8 */
-	devm_phy_package_join(dev, phydev, addr & (~7),
-				sizeof(struct rtl83xx_shared_private));
-
-	if (!(addr % 8)) {
-		struct rtl83xx_shared_private *shared = phydev->shared->priv;
-		shared->name = "RTL8214FC";
-		/* Configuration must be done while patching still possible */
+	devm_phy_package_join(&phydev->mdio.dev, phydev, base_addr, 0);
+	if (phydev->mdio.addr == base_addr + 3) {
 		if (soc_info.family == RTL8380_FAMILY_ID)
-			ret = rtl8380_configure_rtl8214fc(phydev);
+			ret = rtl8380_configure_rtl8214fc(get_base_phy(phydev));
 		if (ret)
 			return ret;
 	}
@@ -3599,39 +3592,23 @@ static int rtl8214fc_phy_probe(struct phy_device *phydev)
 
 static int rtl8214c_phy_probe(struct phy_device *phydev)
 {
-	struct device *dev = &phydev->mdio.dev;
-	int addr = phydev->mdio.addr;
+	int base_addr = phydev->mdio.addr & ~3;
 
-	/* All base addresses of the PHYs start at multiples of 8 */
-	devm_phy_package_join(dev, phydev, addr & (~7),
-				sizeof(struct rtl83xx_shared_private));
-
-	if (!(addr % 8)) {
-		struct rtl83xx_shared_private *shared = phydev->shared->priv;
-		shared->name = "RTL8214C";
-		/* Configuration must be done whil patching still possible */
-		return rtl8380_configure_rtl8214c(phydev);
-	}
+	devm_phy_package_join(&phydev->mdio.dev, phydev, base_addr, 0);
+	if (phydev->mdio.addr == base_addr + 3)
+		return rtl8380_configure_rtl8214c(get_base_phy(phydev));
 
 	return 0;
 }
 
 static int rtl8218b_ext_phy_probe(struct phy_device *phydev)
 {
-	struct device *dev = &phydev->mdio.dev;
-	int addr = phydev->mdio.addr;
+	int base_addr = phydev->mdio.addr & ~7;
 
-	/* All base addresses of the PHYs start at multiples of 8 */
-	devm_phy_package_join(dev, phydev, addr & (~7),
-				sizeof(struct rtl83xx_shared_private));
-
-	if (!(addr % 8)) {
-		struct rtl83xx_shared_private *shared = phydev->shared->priv;
-		shared->name = "RTL8218B (external)";
-		if (soc_info.family == RTL8380_FAMILY_ID) {
-			/* Configuration must be done while patching still possible */
-			return rtl8380_configure_ext_rtl8218b(phydev);
-		}
+	devm_phy_package_join(&phydev->mdio.dev, phydev, base_addr, 0);
+	if (phydev->mdio.addr == base_addr + 7) {
+		if (soc_info.family == RTL8380_FAMILY_ID)
+			return rtl8380_configure_ext_rtl8218b(get_base_phy(phydev));
 	}
 
 	return 0;
@@ -3639,46 +3616,25 @@ static int rtl8218b_ext_phy_probe(struct phy_device *phydev)
 
 static int rtl8218b_int_phy_probe(struct phy_device *phydev)
 {
-	struct device *dev = &phydev->mdio.dev;
-	int addr = phydev->mdio.addr;
+	int base_addr = phydev->mdio.addr & ~7;
 
 	if (soc_info.family != RTL8380_FAMILY_ID)
 		return -ENODEV;
-	if (addr >= 24)
+	if (base_addr >= 24)
 		return -ENODEV;
 
-	pr_debug("%s: id: %d\n", __func__, addr);
-	/* All base addresses of the PHYs start at multiples of 8 */
-	devm_phy_package_join(dev, phydev, addr & (~7),
-			      sizeof(struct rtl83xx_shared_private));
-
-	if (!(addr % 8)) {
-		struct rtl83xx_shared_private *shared = phydev->shared->priv;
-		shared->name = "RTL8218B (internal)";
-		/* Configuration must be done while patching still possible */
-		return rtl8380_configure_int_rtl8218b(phydev);
-	}
+	devm_phy_package_join(&phydev->mdio.dev, phydev, base_addr, 0);
+	if (phydev->mdio.addr == base_addr + 7)
+		return rtl8380_configure_int_rtl8218b(get_base_phy(phydev));
 
 	return 0;
 }
 
 static int rtl8218d_phy_probe(struct phy_device *phydev)
 {
-	struct device *dev = &phydev->mdio.dev;
-	int addr = phydev->mdio.addr;
+	int base_addr = phydev->mdio.addr & ~7;
 
-	pr_debug("%s: id: %d\n", __func__, addr);
-	/* All base addresses of the PHYs start at multiples of 8 */
-	devm_phy_package_join(dev, phydev, addr & (~7),
-			      sizeof(struct rtl83xx_shared_private));
-
-	/* All base addresses of the PHYs start at multiples of 8 */
-	if (!(addr % 8)) {
-		struct rtl83xx_shared_private *shared = phydev->shared->priv;
-		shared->name = "RTL8218D";
-		/* Configuration must be done while patching still possible */
-/* TODO:		return configure_rtl8218d(phydev); */
-	}
+	devm_phy_package_join(&phydev->mdio.dev, phydev, base_addr, 0);
 
 	return 0;
 }

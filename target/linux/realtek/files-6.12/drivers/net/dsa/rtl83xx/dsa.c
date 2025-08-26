@@ -397,13 +397,13 @@ static void rtl83xx_vlan_setup(struct rtl838x_switch_priv *priv)
 		priv->r->vlan_fwd_on_inner(i, true);
 }
 
-static void rtl83xx_setup_bpdu_traps(struct rtl838x_switch_priv *priv)
+static void rtldsa_setup_bpdu_traps(struct rtl838x_switch_priv *priv)
 {
 	for (int i = 0; i < priv->cpu_port; i++)
 		priv->r->set_receive_management_action(i, BPDU, TRAP2CPU);
 }
 
-static void rtl83xx_setup_lldp_traps(struct rtl838x_switch_priv *priv)
+static void rtldsa_setup_lldp_traps(struct rtl838x_switch_priv *priv)
 {
 	for (int i = 0; i < priv->cpu_port; i++)
 		priv->r->set_receive_management_action(i, LLDP, TRAP2CPU);
@@ -461,8 +461,8 @@ static int rtl83xx_setup(struct dsa_switch *ds)
 
 	rtl83xx_vlan_setup(priv);
 
-	rtl83xx_setup_bpdu_traps(priv);
-	rtl83xx_setup_lldp_traps(priv);
+	rtldsa_setup_bpdu_traps(priv);
+	rtldsa_setup_lldp_traps(priv);
 
 	ds->configure_vlan_while_not_filtering = true;
 
@@ -528,6 +528,8 @@ static int rtl93xx_setup(struct dsa_switch *ds)
 	rtldsa_init_counters(priv);
 
 	rtl83xx_vlan_setup(priv);
+
+	rtldsa_setup_lldp_traps(priv);
 
 	ds->configure_vlan_while_not_filtering = true;
 
