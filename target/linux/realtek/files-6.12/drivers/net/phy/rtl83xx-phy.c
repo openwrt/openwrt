@@ -3306,7 +3306,7 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 	pr_info("%s CMU page 0x24 0x7 %08x\n", __func__, rtmdio_931x_read_sds_phy_new(sds, 0x24, 0x7));
 	pr_info("%s CMU page 0x26 0x7 %08x\n", __func__, rtmdio_931x_read_sds_phy_new(sds, 0x26, 0x7));
 	pr_info("%s CMU page 0x28 0x7 %08x\n", __func__, rtmdio_931x_read_sds_phy_new(sds, 0x28, 0x7));
-	pr_info("%s XSG page 0x0 0xe %08x\n", __func__, rtmdio_931x_read_sds_phy(dSds, 0x0, 0xe));
+	pr_info("%s XSG page 0x0 0xe %08x\n", __func__, rtmdio_931x_read_sds_phy_new(sds, 0x100, 0xe));
 	pr_info("%s XSG2 page 0x0 0xe %08x\n", __func__, rtmdio_931x_read_sds_phy(dSds + 1, 0x0, 0xe));
 
 	model_info = sw_r32(RTL93XX_MODEL_NAME_INFO);
@@ -3322,8 +3322,8 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 	else
 		dSds = (sds - 1) * 2;
 
-	pr_info("%s: 2.5gbit %08X dsds %d", __func__,
-	        rtmdio_931x_read_sds_phy(dSds, 0x1, 0x14), dSds);
+	pr_info("%s: 2.5gbit %08X", __func__,
+	        rtmdio_931x_read_sds_phy_new(sds, 0x101, 0x14));
 
 	pr_info("%s: RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR 0x%08X\n", __func__, sw_r32(RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR));
 	ori = sw_r32(RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
@@ -3340,15 +3340,15 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 			u32 xsg_sdsid_1;
 			xsg_sdsid_1 = dSds + 1;
 			/* fifo inv clk */
-			rtl9310_sds_field_w(dSds, 0x1, 0x1, 7, 4, 0xf);
-			rtl9310_sds_field_w(dSds, 0x1, 0x1, 3, 0, 0xf);
+			rtl9310_sds_field_w_new(sds, 0x101, 0x1, 7, 4, 0xf);
+			rtl9310_sds_field_w_new(sds, 0x101, 0x1, 3, 0, 0xf);
 
 			rtl9310_sds_field_w(xsg_sdsid_1, 0x1, 0x1, 7, 4, 0xf);
 			rtl9310_sds_field_w(xsg_sdsid_1, 0x1, 0x1, 3, 0, 0xf);
 
 		}
 
-		rtl9310_sds_field_w(dSds, 0x0, 0xE, 12, 12, 1);
+		rtl9310_sds_field_w_new(sds, 0x100, 0xE, 12, 12, 1);
 		rtl9310_sds_field_w(dSds + 1, 0x0, 0xE, 12, 12, 1);
 		break;
 
@@ -3398,11 +3398,11 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 		rtl9310_sds_field_w_new(sds, 0x1f, 0xb, 1, 1, 1);
 
 		/* init fiber_1g */
-		rtl9310_sds_field_w(dSds, 0x3, 0x13, 15, 14, 0);
+		rtl9310_sds_field_w_new(sds, 0x103, 0x13, 15, 14, 0);
 
-		rtl9310_sds_field_w(dSds, 0x2, 0x0, 12, 12, 1);
-		rtl9310_sds_field_w(dSds, 0x2, 0x0, 6, 6, 1);
-		rtl9310_sds_field_w(dSds, 0x2, 0x0, 13, 13, 0);
+		rtl9310_sds_field_w_new(sds, 0x102, 0x0, 12, 12, 1);
+		rtl9310_sds_field_w_new(sds, 0x102, 0x0, 6, 6, 1);
+		rtl9310_sds_field_w_new(sds, 0x102, 0x0, 13, 13, 0);
 
 		/* init auto */
 		rtl9310_sds_field_w_new(sds, 0x1f, 13, 15, 0, 0x109e);
@@ -3411,15 +3411,15 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 		break;
 
 	case PHY_INTERFACE_MODE_HSGMII:
-		rtl9310_sds_field_w(dSds, 0x1, 0x14, 8, 8, 1);
+		rtl9310_sds_field_w_new(sds, 0x101, 0x14, 8, 8, 1);
 		break;
 
 	case PHY_INTERFACE_MODE_1000BASEX: /* MII_1000BX_FIBER */
-		rtl9310_sds_field_w(dSds, 0x3, 0x13, 15, 14, 0);
+		rtl9310_sds_field_w_new(sds, 0x103, 0x13, 15, 14, 0);
 
-		rtl9310_sds_field_w(dSds, 0x2, 0x0, 12, 12, 1);
-		rtl9310_sds_field_w(dSds, 0x2, 0x0, 6, 6, 1);
-		rtl9310_sds_field_w(dSds, 0x2, 0x0, 13, 13, 0);
+		rtl9310_sds_field_w_new(sds, 0x102, 0x0, 12, 12, 1);
+		rtl9310_sds_field_w_new(sds, 0x102, 0x0, 6, 6, 1);
+		rtl9310_sds_field_w_new(sds, 0x102, 0x0, 13, 13, 0);
 		break;
 
 	case PHY_INTERFACE_MODE_SGMII:
@@ -3427,7 +3427,7 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 		break;
 
 	case PHY_INTERFACE_MODE_2500BASEX:
-		rtl9310_sds_field_w(dSds, 0x1, 0x14, 8, 8, 1);
+		rtl9310_sds_field_w_new(sds, 0x101, 0x14, 8, 8, 1);
 		break;
 
 	case PHY_INTERFACE_MODE_QSGMII:
@@ -3527,14 +3527,10 @@ int rtl931x_link_sts_get(u32 sds)
 		latch_sts = rtl9310_sds_field_r(xsg_sdsid_0, 0x1, 30, 8, 0);
 		latch_sts1 = rtl9310_sds_field_r(xsg_sdsid_1, 0x1, 30, 8, 0);
 	} else {
-		u32 dsds;
-
 		sts = rtl9310_sds_field_r_new(sds, 0x5, 0, 12, 12);
 		latch_sts = rtl9310_sds_field_r_new(sds, 0x4, 1, 2, 2);
-
-		dsds = sds < 2 ? sds : (sds - 1) * 2;
-		latch_sts1 = rtl9310_sds_field_r(dsds, 0x2, 1, 2, 2);
-		sts1 = rtl9310_sds_field_r(dsds, 0x2, 1, 2, 2);
+		latch_sts1 = rtl9310_sds_field_r_new(sds, 0x102, 1, 2, 2);
+		sts1 = rtl9310_sds_field_r_new(sds, 0x102, 1, 2, 2);
 	}
 
 	pr_info("%s: serdes %d sts %d, sts1 %d, latch_sts %d, latch_sts1 %d\n", __func__,
