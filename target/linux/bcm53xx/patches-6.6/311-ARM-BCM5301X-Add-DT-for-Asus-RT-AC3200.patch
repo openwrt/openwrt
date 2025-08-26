@@ -1,9 +1,25 @@
-From: Tom Brautaset <tbrautaset@gmail.com>
-Subject: [PATCH] ARM: BCM5301X: Add DT for Asus RT-AC3200
+From: "Arınç ÜNAL" <arinc.unal@arinc9.com>
+Subject: [PATCH v3 3/5] ARM: dts: BCM5301X: Add DT for ASUS RT-AC3200
 
+Add the device tree for ASUS RT-AC3200 which is an AC3200 router featuring
+5 Ethernet ports over the integrated Broadcom switch.
+
+Hardware info:
+* Processor: Broadcom BCM4709A0 dual-core @ 1.0 GHz
+* Switch: BCM53012 in BCM4709A0
+* DDR3 RAM: 256 MB
+* Flash: 128 MB
+* 2.4GHz: BCM43602 3x3 single chip 802.11b/g/n SoC
+* 5GHz: BCM43602 3x3 two chips 802.11a/n/ac SoC
+* Ports: 4 LAN Ports, 1 WAN Port
+
+Co-developed-by: Tom Brautaset <tbrautaset@gmail.com>
 Signed-off-by: Tom Brautaset <tbrautaset@gmail.com>
-Co-developed-by: Arınç ÜNAL <arinc.unal@arinc9.com>
+Signed-off-by: Arınç ÜNAL <arinc.unal@arinc9.com>
 ---
+ arch/arm/boot/dts/broadcom/Makefile                |   1 +
+ .../boot/dts/broadcom/bcm4709-asus-rt-ac3200.dts   | 150 +++++++++++++++++++++
+ 2 files changed, 151 insertions(+)
 
 --- a/arch/arm/boot/dts/broadcom/Makefile
 +++ b/arch/arm/boot/dts/broadcom/Makefile
