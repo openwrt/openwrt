@@ -2409,7 +2409,7 @@ static int rtmdio_931x_get_backing_sds(u32 sds, u32 page)
 	return back;
 }
 
-int rtmdio_931x_read_sds_phy(int sds, int page, int regnum)
+static int rtmdio_931x_read_sds_phy(int sds, int page, int regnum)
 {
 	u32 cmd = sds << 2 | page << 7 | regnum << 13 | 1;
 	int i, ret = -EIO;
@@ -2442,7 +2442,7 @@ int rtmdio_931x_read_sds_phy_new(int sds, int page, int regnum)
 	return backsds < 0 ? 0 : rtmdio_931x_read_sds_phy(backsds, page & 0x3f, regnum);
 }
 
-int rtmdio_931x_write_sds_phy(int sds, int page, int regnum, u16 val)
+static int rtmdio_931x_write_sds_phy(int sds, int page, int regnum, u16 val)
 {
 	u32 cmd = sds << 2 | page << 7 | regnum << 13;;
 	int i, ret = -EIO;
