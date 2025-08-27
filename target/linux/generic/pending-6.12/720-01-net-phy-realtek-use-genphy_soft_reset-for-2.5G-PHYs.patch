@@ -51,7 +51,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	}, {
  		.match_phy_device = rtl8221b_vb_cg_c45_match_phy_device,
  		.name           = "RTL8221B-VB-CG 2.5Gbps PHY (C45)",
-+		.soft_reset     = genphy_soft_reset,
++		.soft_reset     = rtl822x_c45_soft_reset,
  		.probe		= rtl822x_probe,
  		.config_init    = rtl822xb_config_init,
  		.get_rate_matching = rtl822xb_get_rate_matching,
@@ -67,7 +67,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	}, {
  		.match_phy_device = rtl8221b_vn_cg_c45_match_phy_device,
  		.name           = "RTL8221B-VN-CG 2.5Gbps PHY (C45)",
-+		.soft_reset     = genphy_soft_reset,
++		.soft_reset     = rtl822x_c45_soft_reset,
  		.probe		= rtl822x_probe,
  		.config_init    = rtl822xb_config_init,
  		.get_rate_matching = rtl822xb_get_rate_matching,
