@@ -40,7 +40,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  {
 @@ -1842,7 +1858,7 @@ static struct phy_driver realtek_drvs[]
  		.handle_interrupt = rtl8221b_handle_interrupt,
- 		.soft_reset     = genphy_soft_reset,
+ 		.soft_reset     = rtl822x_c45_soft_reset,
  		.probe		= rtl822x_probe,
 -		.config_init    = rtl822xb_config_init,
 +		.config_init    = rtl822xb_config_init_war,
@@ -49,7 +49,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		.config_aneg    = rtl822x_c45_config_aneg,
 @@ -1872,7 +1888,7 @@ static struct phy_driver realtek_drvs[]
  		.handle_interrupt = rtl8221b_handle_interrupt,
- 		.soft_reset     = genphy_soft_reset,
+ 		.soft_reset     = rtl822x_c45_soft_reset,
  		.probe		= rtl822x_probe,
 -		.config_init    = rtl822xb_config_init,
 +		.config_init    = rtl822xb_config_init_war,
