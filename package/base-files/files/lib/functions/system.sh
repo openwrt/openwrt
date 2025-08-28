@@ -88,7 +88,10 @@ mtd_get_mac_ascii() {
 
 mtd_get_mac_encrypted_arcadyan() {
 	local iv="00000000000000000000000000000000"
-	local key="2A4B303D7644395C3B2B7053553C5200"
+	local key="$2"
+	if [ -z "$key" ]; then
+		key="2A4B303D7644395C3B2B7053553C5200"
+	fi
 	local mac_dirty
 	local mtdname="$1"
 	local part
