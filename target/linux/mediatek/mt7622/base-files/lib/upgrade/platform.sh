@@ -19,6 +19,7 @@ platform_do_upgrade() {
 		buffalo_do_upgrade "$1"
 		;;
 	dlink,eagle-pro-ai-m32-a1|\
+	dlink,eagle-pro-ai-m32-a1-large|\
 	dlink,eagle-pro-ai-r32-a1|\
 	elecom,wrc-x3200gst3|\
 	mediatek,mt7622-rfb1-ubi|\
@@ -59,6 +60,7 @@ platform_check_image() {
 		buffalo_check_image "$board" "$magic" "$1" || return 1
 		;;
 	dlink,eagle-pro-ai-m32-a1|\
+	dlink,eagle-pro-ai-m32-a1-large|\
 	dlink,eagle-pro-ai-r32-a1|\
 	elecom,wrc-x3200gst3|\
 	mediatek,mt7622-rfb1-ubi|\
