@@ -1,0 +1,30 @@
+From a8b56cb27d47ecba7b26041c05fe423130ee7a24 Mon Sep 17 00:00:00 2001
+From: Manikanta Mylavarapu <quic_mmanikan@quicinc.com>
+Date: Tue, 10 Dec 2024 12:11:09 +0530
+Subject: [PATCH] dt-bindings: clock: qcom: gcc-ipq5424: add gcc_xo_clk macro
+
+The GCC_XO_CLK is required for the functionality of the WiFi
+copy engine block. Therefore, add the GCC_XO_CLK macro.
+
+Signed-off-by: Manikanta Mylavarapu <quic_mmanikan@quicinc.com>
+Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Link: https://lore.kernel.org/r/20241210064110.130466-2-quic_mmanikan@quicinc.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+---
+ include/dt-bindings/clock/qcom,ipq5424-gcc.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/include/dt-bindings/clock/qcom,ipq5424-gcc.h b/include/dt-bindings/clock/qcom,ipq5424-gcc.h
+index 9f14680052a0..c15ad16923bd 100644
+--- a/include/dt-bindings/clock/qcom,ipq5424-gcc.h
++++ b/include/dt-bindings/clock/qcom,ipq5424-gcc.h
+@@ -151,5 +151,6 @@
+ #define GCC_PCIE3_RCHNG_CLK_SRC			142
+ #define GCC_PCIE3_RCHNG_CLK			143
+ #define GCC_IM_SLEEP_CLK			144
++#define GCC_XO_CLK				145
+ 
+ #endif
+-- 
+2.34.1
+
