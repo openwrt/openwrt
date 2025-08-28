@@ -1,14 +1,19 @@
 #!/bin/sh
 
-CFG=$1
+CFG="${1:-/etc/board.json}"
 
-[ -n "$CFG" ] || CFG=/etc/board.json
-
-[ -d "/etc/board.d/" -a ! -s "$CFG" ] && {
-	for a in $(ls /etc/board.d/*); do
-		[ -s $a ] || continue;
-		$(. $a)
+if [ ! -s "${CFG}" ]; then
+	for _script in '/etc/board.d/'*; do
+		if [ ! -s "${_script}" ]; then
+			continue
+		fi
+		# shellcheck source=/dev/null disable=SC2091  # Can't use eval
+		$(. "${_script}")
 	done
-}
+fi
 
-[ -s "$CFG" ] || return 1
+if [ ! -s "${CFG}" ]; then
+	return 1
+fi
+
+return 0
