@@ -12,12 +12,9 @@ case "$FIRMWARE" in
 	meraki,mr18)
 		. /lib/upgrade/nand.sh
 
-		if [ -n "$(nand_find_volume ubi0 caldata)" ]; then
-			caldata_extract_ubi "caldata" 0x1000 0x440
-		else
+		if [ -z "$(nand_find_volume ubi0 caldata)" ]; then
 			caldata_extract "odm-caldata" 0x1000 0x440
 		fi
-		ath9k_patch_mac $(macaddr_add $(mtd_get_mac_binary_ubi board-config 102) 1)
 		;;
 	*)
 		caldata_die "board $board is not supported yet"
@@ -29,12 +26,9 @@ case "$FIRMWARE" in
 	meraki,mr18)
 		. /lib/upgrade/nand.sh
 
-		if [ -n "$(nand_find_volume ubi0 caldata)" ]; then
-			caldata_extract_ubi "caldata" 0x5000 0x440
-		else
+		if [ -z "$(nand_find_volume ubi0 caldata)" ]; then
 			caldata_extract "odm-caldata" 0x5000 0x440
 		fi
-		ath9k_patch_mac $(macaddr_add $(mtd_get_mac_binary_ubi board-config 102) 2)
 		;;
 	*)
 		caldata_die "board $board is not supported yet"
@@ -46,12 +40,9 @@ case "$FIRMWARE" in
 	meraki,mr18)
 		. /lib/upgrade/nand.sh
 
-		if [ -n "$(nand_find_volume ubi0 caldata)" ]; then
-			caldata_extract_ubi "caldata" 0x9000 0x440
-		else
+		if [ -z "$(nand_find_volume ubi0 caldata)" ]; then
 			caldata_extract "odm-caldata" 0x9000 0x440
 		fi
-		ath9k_patch_mac $(macaddr_add $(mtd_get_mac_binary_ubi board-config 102) 3)
 		;;
 	*)
 		caldata_die "board $board is not supported yet"
