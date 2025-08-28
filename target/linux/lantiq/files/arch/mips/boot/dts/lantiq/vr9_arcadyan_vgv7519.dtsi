@@ -136,6 +136,11 @@
 	nvmem-cell-names = "mac-address";
 };
 
+&ppe {
+	nvmem-cells = <&macaddr_boardconfig_16 0>;
+	nvmem-cell-names = "mac-address";
+};
+
 &gphy0 {
 	lantiq,gphy-mode = <GPHY_MODE_GE>;
 };

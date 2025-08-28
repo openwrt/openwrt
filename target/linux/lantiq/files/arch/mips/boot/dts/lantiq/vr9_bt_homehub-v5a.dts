@@ -156,6 +156,11 @@
 	nvmem-cell-names = "mac-address";
 };
 
+&ppe {
+	nvmem-cells = <&macaddr_caldata_110c 4>;
+	nvmem-cell-names = "mac-address";
+};
+
 &gswip {
 	pinctrl-0 = <&mdio_pins>;
 	pinctrl-names = "default";
