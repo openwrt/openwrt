@@ -1,0 +1,25 @@
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Tue, 26 Aug 2025 13:54:31 +0200
+Subject: [PATCH] wifi: mac80211: Make CONNECTION_MONITOR optional for MLO sta
+
+Since commit '1bc892d76a6f ("wifi: mac80211: extend connection
+monitoring for MLO")' mac80211 supports connection monitor for MLO
+client interfaces. Remove the CONNECTION_MONITOR requirement in
+ieee80211_register_hw routine.
+
+Fixes: 1bc892d76a6f ("wifi: mac80211: extend connection monitoring for MLO")
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+---
+
+--- a/net/mac80211/main.c
++++ b/net/mac80211/main.c
+@@ -1174,9 +1174,6 @@ int ieee80211_register_hw(struct ieee802
+ 		if (WARN_ON(!ieee80211_hw_check(hw, MFP_CAPABLE)))
+ 			return -EINVAL;
+ 
+-		if (WARN_ON(!ieee80211_hw_check(hw, CONNECTION_MONITOR)))
+-			return -EINVAL;
+-
+ 		if (WARN_ON(ieee80211_hw_check(hw, NEED_DTIM_BEFORE_ASSOC)))
+ 			return -EINVAL;
+ 

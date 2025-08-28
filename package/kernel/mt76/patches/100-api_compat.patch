@@ -33,7 +33,7 @@
  {
  	struct mt7996_vif *mvif = (struct mt7996_vif *)vif->drv_priv;
  	struct mt7996_phy *phy = mt7996_vif_link_phy(&mvif->deflink);
-@@ -1714,13 +1713,12 @@ out:
+@@ -1687,13 +1686,12 @@ out:
  	rcu_read_unlock();
  }
  
@@ -51,7 +51,7 @@
  
  	mt7996_link_rate_ctrl_update(&changed, sta);
  	ieee80211_queue_work(hw, &dev->rc_work);
-@@ -2213,7 +2211,7 @@ const struct ieee80211_ops mt7996_ops =
+@@ -2186,7 +2184,7 @@ const struct ieee80211_ops mt7996_ops =
  	.link_info_changed = mt7996_link_info_changed,
  	.sta_state = mt7996_sta_state,
  	.sta_pre_rcu_remove = mt76_sta_pre_rcu_remove,
@@ -62,7 +62,7 @@
  	.set_rts_threshold = mt7996_set_rts_threshold,
 --- a/mac80211.c
 +++ b/mac80211.c
-@@ -1704,7 +1704,7 @@ s8 mt76_get_power_bound(struct mt76_phy
+@@ -1745,7 +1745,7 @@ s8 mt76_get_power_bound(struct mt76_phy
  EXPORT_SYMBOL_GPL(mt76_get_power_bound);
  
  int mt76_get_txpower(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
@@ -73,7 +73,7 @@
  	int n_chains, delta;
 --- a/mt76.h
 +++ b/mt76.h
-@@ -1520,7 +1520,7 @@ int mt76_get_min_avg_rssi(struct mt76_de
+@@ -1521,7 +1521,7 @@ int mt76_get_min_avg_rssi(struct mt76_de
  s8 mt76_get_power_bound(struct mt76_phy *phy, s8 txpower);
  
  int mt76_get_txpower(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
