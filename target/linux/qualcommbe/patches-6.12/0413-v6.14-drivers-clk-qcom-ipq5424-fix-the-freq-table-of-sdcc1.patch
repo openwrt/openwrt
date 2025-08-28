@@ -1,0 +1,49 @@
+From e9ed0ac3ccba65c17ed0d59c77a340a75abc317b Mon Sep 17 00:00:00 2001
+From: Manikanta Mylavarapu <quic_mmanikan@quicinc.com>
+Date: Thu, 6 Mar 2025 16:59:00 +0530
+Subject: [PATCH] drivers: clk: qcom: ipq5424: fix the freq table of sdcc1_apps
+ clock
+
+The divider values in the sdcc1_apps frequency table were incorrectly
+updated, assuming the frequency of gpll2_out_main to be 1152MHz.
+However, the frequency of the gpll2_out_main clock is actually 576MHz
+(gpll2/2).
+
+Due to these incorrect divider values, the sdcc1_apps clock is running
+at half of the expected frequency.
+
+Fixing the frequency table of sdcc1_apps allows the sdcc1_apps clock to
+run according to the frequency plan.
+
+Fixes: 21b5d5a4a311 ("clk: qcom: add Global Clock controller (GCC) driver for IPQ5424 SoC")
+Signed-off-by: Manikanta Mylavarapu <quic_mmanikan@quicinc.com>
+Reviewed-by: Kathiravan Thirumoorthy <kathiravan.thirumoorthy@oss.qualcomm.com>
+Link: https://lore.kernel.org/r/20250306112900.3319330-1-quic_mmanikan@quicinc.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+---
+ drivers/clk/qcom/gcc-ipq5424.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/clk/qcom/gcc-ipq5424.c b/drivers/clk/qcom/gcc-ipq5424.c
+index 37b1a3ff8f4e..3d42f3d85c7a 100644
+--- a/drivers/clk/qcom/gcc-ipq5424.c
++++ b/drivers/clk/qcom/gcc-ipq5424.c
+@@ -640,11 +640,11 @@ static struct clk_rcg2 gcc_qupv3_uart1_clk_src = {
+ static const struct freq_tbl ftbl_gcc_sdcc1_apps_clk_src[] = {
+ 	F(144000, P_XO, 16, 12, 125),
+ 	F(400000, P_XO, 12, 1, 5),
+-	F(24000000, P_XO, 1, 0, 0),
+-	F(48000000, P_GPLL2_OUT_MAIN, 12, 1, 2),
+-	F(96000000, P_GPLL2_OUT_MAIN, 6, 1, 2),
++	F(24000000, P_GPLL2_OUT_MAIN, 12, 1, 2),
++	F(48000000, P_GPLL2_OUT_MAIN, 12, 0, 0),
++	F(96000000, P_GPLL2_OUT_MAIN, 6, 0, 0),
+ 	F(177777778, P_GPLL0_OUT_MAIN, 4.5, 0, 0),
+-	F(192000000, P_GPLL2_OUT_MAIN, 6, 0, 0),
++	F(192000000, P_GPLL2_OUT_MAIN, 3, 0, 0),
+ 	F(200000000, P_GPLL0_OUT_MAIN, 4, 0, 0),
+ 	{ }
+ };
+-- 
+2.34.1
+
