@@ -60,7 +60,7 @@ define Package/libe2p
   CATEGORY:=Libraries
   TITLE:=ext2fs userspace programs utility library
   URL:=http://e2fsprogs.sourceforge.net/
-  DEPENDS:=+libuuid
+  DEPENDS:=+libuuid +libcomerr
   ABI_VERSION:=2
 endef
 
@@ -190,7 +190,7 @@ define Build/Compile
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		BUILDCC="$(HOSTCC)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
-		ELF_OTHER_LIBS="$(TARGET_LDFLAGS) -luuid" \
+		ELF_OTHER_LIBS="$(TARGET_LDFLAGS) -luuid -lcom_err" \
 		SYSLIBS="$(TARGET_LDFLAGS) -ldl -L$(PKG_BUILD_DIR)/lib/ -l:libcom_err.so.0.0" \
 		V=$(if $(findstring c,$(OPENWRT_VERBOSE)),1,) \
 		all
