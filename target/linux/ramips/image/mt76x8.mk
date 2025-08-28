@@ -889,10 +889,16 @@ TARGET_DEVICES += tplink_re220-v2
 
 define Device/tplink_re305-v1
   $(Device/tplink-safeloader)
-  IMAGE_SIZE := 6016k
+  IMAGE_SIZE := 7680k
+  KERNEL_SIZE := 6016k
   DEVICE_MODEL := RE305
   DEVICE_VARIANT := v1
   DEVICE_PACKAGES := kmod-mt76x2
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE := Partition design has changed compared to older versions due to size restrictions and unsused flash. \
+	Upgrade via sysupgrade mechanism is not possible, so new installation via TFTP is required.
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size | append-metadata
   TPLINK_BOARD_ID := RE305-V1
 endef
 TARGET_DEVICES += tplink_re305-v1
