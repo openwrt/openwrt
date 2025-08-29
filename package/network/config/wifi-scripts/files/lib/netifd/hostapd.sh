@@ -1337,6 +1337,7 @@ wpa_supplicant_add_network() {
 
 	set_default ieee80211r 0
 	set_default multi_ap 0
+	set_default sae_pwe 2
 	set_default default_disabled 0
 
 	local key_mgmt='NONE'
@@ -1623,6 +1624,7 @@ network={
 	$scan_ssid
 	ssid="$ssid"
 	key_mgmt=$key_mgmt
+	sae_pwe=$sae_pwe
 	$network_data
 }
 EOF
