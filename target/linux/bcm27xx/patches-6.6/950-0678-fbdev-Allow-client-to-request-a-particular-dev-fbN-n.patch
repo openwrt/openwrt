@@ -37,9 +37,9 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 +		fb_info->node = i;
 +	}
  
- 	if (!fb_info->modelist.prev || !fb_info->modelist.next)
- 		INIT_LIST_HEAD(&fb_info->modelist);
-@@ -951,7 +955,6 @@ static int do_register_framebuffer(struc
+ 	if (i >= FB_MAX)
+ 		return -ENXIO;
+@@ -954,7 +958,6 @@ static int do_register_framebuffer(struc
  	if (err < 0)
  		return err;
  
@@ -47,7 +47,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  	refcount_set(&fb_info->count, 1);
  	mutex_init(&fb_info->lock);
  	mutex_init(&fb_info->mm_lock);
-@@ -982,7 +985,7 @@ static int do_register_framebuffer(struc
+@@ -985,7 +988,7 @@ static int do_register_framebuffer(struc
  		pm_vt_switch_required(fb_info->device, true);
  
  	num_registered_fb++;
@@ -56,7 +56,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  
  #ifdef CONFIG_GUMSTIX_AM200EPD
  	{
-@@ -1043,6 +1046,12 @@ static void do_unregister_framebuffer(st
+@@ -1046,6 +1049,12 @@ static void do_unregister_framebuffer(st
  	put_fb_info(fb_info);
  }
  

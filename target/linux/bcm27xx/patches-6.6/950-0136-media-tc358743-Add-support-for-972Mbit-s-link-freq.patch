@@ -14,7 +14,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
 
 --- a/drivers/media/i2c/tc358743.c
 +++ b/drivers/media/i2c/tc358743.c
-@@ -1953,6 +1953,7 @@ static int tc358743_probe_of(struct tc35
+@@ -1971,6 +1971,7 @@ static int tc358743_probe_of(struct tc35
  	/*
  	 * The CSI bps per lane must be between 62.5 Mbps and 1 Gbps.
  	 * The default is 594 Mbps for 4-lane 1080p60 or 2-lane 720p60.
@@ -22,7 +22,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.org>
  	 */
  	bps_pr_lane = 2 * endpoint.link_frequencies[0];
  	if (bps_pr_lane < 62500000U || bps_pr_lane > 1000000000U) {
-@@ -1966,23 +1967,41 @@ static int tc358743_probe_of(struct tc35
+@@ -1984,23 +1985,41 @@ static int tc358743_probe_of(struct tc35
  			       state->pdata.refclk_hz * state->pdata.pll_prd;
  
  	/*
