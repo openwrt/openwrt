@@ -1,0 +1,51 @@
+From 2e1c78bf674024375de6eea33e113acc3473d2e2 Mon Sep 17 00:00:00 2001
+From: Varadarajan Narayanan <quic_varada@quicinc.com>
+Date: Fri, 13 Dec 2024 16:28:07 +0530
+Subject: [PATCH] dt-bindings: interconnect: Add Qualcomm IPQ5424 support
+
+Add master/slave ids for Qualcomm IPQ5424 Network-On-Chip
+interfaces. This will be used by the gcc-ipq5424 driver
+for providing interconnect services using the icc-clk framework.
+
+Signed-off-by: Varadarajan Narayanan <quic_varada@quicinc.com>
+Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Link: https://lore.kernel.org/r/20241213105808.674620-1-quic_varada@quicinc.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+---
+ .../dt-bindings/interconnect/qcom,ipq5424.h   | 24 +++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+ create mode 100644 include/dt-bindings/interconnect/qcom,ipq5424.h
+
+diff --git a/include/dt-bindings/interconnect/qcom,ipq5424.h b/include/dt-bindings/interconnect/qcom,ipq5424.h
+new file mode 100644
+index 000000000000..a770356112ee
+--- /dev/null
++++ b/include/dt-bindings/interconnect/qcom,ipq5424.h
+@@ -0,0 +1,24 @@
++/* SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) */
++#ifndef INTERCONNECT_QCOM_IPQ5424_H
++#define INTERCONNECT_QCOM_IPQ5424_H
++
++#define MASTER_ANOC_PCIE0		0
++#define SLAVE_ANOC_PCIE0		1
++#define MASTER_CNOC_PCIE0		2
++#define SLAVE_CNOC_PCIE0		3
++#define MASTER_ANOC_PCIE1		4
++#define SLAVE_ANOC_PCIE1		5
++#define MASTER_CNOC_PCIE1		6
++#define SLAVE_CNOC_PCIE1		7
++#define MASTER_ANOC_PCIE2		8
++#define SLAVE_ANOC_PCIE2		9
++#define MASTER_CNOC_PCIE2		10
++#define SLAVE_CNOC_PCIE2		11
++#define MASTER_ANOC_PCIE3		12
++#define SLAVE_ANOC_PCIE3		13
++#define MASTER_CNOC_PCIE3		14
++#define SLAVE_CNOC_PCIE3		15
++#define MASTER_CNOC_USB			16
++#define SLAVE_CNOC_USB			17
++
++#endif /* INTERCONNECT_QCOM_IPQ5424_H */
+-- 
+2.34.1
+
