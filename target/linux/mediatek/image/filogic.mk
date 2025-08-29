@@ -658,6 +658,8 @@ TARGET_DEVICES += cmcc_a10-ubootmod
 define Device/cmcc_rax3000m
   DEVICE_VENDOR := CMCC
   DEVICE_MODEL := RAX3000M
+  DEVICE_ALT0_VENDOR := CMCC
+  DEVICE_ALT0_MODEL := RAX3000Me
   DEVICE_DTS := mt7981b-cmcc-rax3000m
   DEVICE_DTS_OVERLAY := mt7981b-cmcc-rax3000m-emmc mt7981b-cmcc-rax3000m-nand
   DEVICE_DTS_DIR := ../dts
