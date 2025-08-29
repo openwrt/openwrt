@@ -6,3 +6,11 @@
 	model = "TP-Link TL-WA801ND v1";
 	compatible = "tplink,tl-wa801nd-v1", "qca,ar7240";
 };
+
+&ath9k {
+	compatible = "pci168c,002a";
+};
+
+&calibration_art_1000 {
+	reg = <0x1000 0xeb8>;
+};
