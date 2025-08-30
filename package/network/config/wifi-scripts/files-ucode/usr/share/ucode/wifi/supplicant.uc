@@ -235,7 +235,7 @@ export function setup(config, data) {
 
 	if (ret)
 		netifd.add_process('/usr/sbin/wpa_supplicant', ret.pid, true, true);
-	else
+	else if (fs.access('/usr/sbin/wpa_supplicant', 'x'))
 		netifd.setup_failed('SUPPLICANT_START_FAILED');
 };
 
