@@ -9,9 +9,6 @@
 #include <dt-bindings/thermal/thermal.h>
 
 / {
-	compatible = "zyxel,xgs1210-12", "realtek,rtl838x-soc";
-	model = "Zyxel XGS1210-12 Switch";
-
 	aliases {
 		led-boot = &led_pwr_sys;
 		led-failsafe = &led_pwr_sys;
@@ -201,25 +198,6 @@
 			rtl9300,smi-address = <0 7>;
 		};
 
-		/* External RTL8226 PHYs */
-		phy24: ethernet-phy@24 {
-			reg = <24>;
-			compatible = "ethernet-phy-ieee802.3-c45";
-			rtl9300,smi-address = <1 8>;
-			sds = < 6 >;
-			// Disabled because we do not know how to bring up again
-			// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
-		};
-
-		phy25: ethernet-phy@25 {
-			reg = <25>;
-			compatible = "ethernet-phy-ieee802.3-c45";
-			rtl9300,smi-address = <2 9>;
-			sds = < 7 >;
-			// Disabled because we do not know how to bring up again
-			// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
-		};
-
 		INTERNAL_PHY_SDS(26, 8)
 		INTERNAL_PHY_SDS(27, 9)
 	};
@@ -285,21 +263,6 @@
 			phy-handle = <&phy7>;
 			phy-mode = "usxgmii";
 			led-set = <0>;
-		};
-
-		port@24 {
-			reg = <24>;
-			label = "lan9";
-			phy-mode = "2500base-x";
-			phy-handle = <&phy24>;
-			led-set = <1>;
-		};
-		port@25 {
-			reg = <25>;
-			label = "lan10";
-			phy-mode = "2500base-x";
-			phy-handle = <&phy25>;
-			led-set = <1>;
 		};
 
 		port@26 {

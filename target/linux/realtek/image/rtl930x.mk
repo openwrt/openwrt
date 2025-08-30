@@ -95,12 +95,13 @@ define Device/xikestor_sks8310-8x
 endef
 TARGET_DEVICES += xikestor_sks8310-8x
 
-define Device/zyxel_xgs1210-12
+define Device/zyxel_xgs1210-12-v1
   SOC := rtl9302
   UIMAGE_MAGIC := 0x93001210
   ZYXEL_VERS := ABTY
   DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := XGS1210-12
+  DEVICE_VARIANT := v1
   IMAGE_SIZE := 13312k
   KERNEL_INITRAMFS := \
         kernel-bin | \
@@ -109,7 +110,7 @@ define Device/zyxel_xgs1210-12
         zyxel-vers | \
         uImage gzip
 endef
-TARGET_DEVICES += zyxel_xgs1210-12
+TARGET_DEVICES += zyxel_xgs1210-12-v1
 
 define Device/zyxel_xgs1250-12
   SOC := rtl9302
