@@ -1,0 +1,30 @@
+From 422916a61b8fccbb57d80df1cae1237dd82d5bbd6 Mon Aug 17 00:00:00 2025
+From: Markus Stockhausen <markus.stockhausen@gmx.de>
+Subject: [PATCH] Add Realtek ECC controller
+ 
+Add a driver for the ECC controller on the RTL93xx devices
+---
+--- a/drivers/mtd/nand/Kconfig
++++ b/drivers/mtd/nand/Kconfig
+@@ -65,6 +65,14 @@ config MTD_NAND_ECC_MEDIATEK
+ 	help
+ 	  This enables support for the hardware ECC engine from Mediatek.
+ 
++config MTD_NAND_ECC_REALTEK
++        tristate "Realtek RTL93xx hardware ECC engine"
++        depends on HAS_IOMEM
++        depends on MACH_REALTEK_RTL || COMPILE_TEST
++        select MTD_NAND_ECC
++        help
++          This enables support for the hardware ECC engine from Realtek.
++
+ endmenu
+ 
+ endmenu
+--- a/drivers/mtd/nand/Makefile
++++ b/drivers/mtd/nand/Makefile
+@@ -17,3 +17,4 @@ nandcore-$(CONFIG_MTD_NAND_ECC) += ecc.o
+ nandcore-$(CONFIG_MTD_NAND_ECC_SW_HAMMING) += ecc-sw-hamming.o
+ nandcore-$(CONFIG_MTD_NAND_ECC_SW_BCH) += ecc-sw-bch.o
+ nandcore-$(CONFIG_MTD_NAND_ECC_MXIC) += ecc-mxic.o
++nandcore-$(CONFIG_MTD_NAND_ECC_REALTEK) += ecc-realtek.o
