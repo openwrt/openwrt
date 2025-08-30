@@ -411,6 +411,15 @@ define Device/zyxel_gs1900-24-v1
 endef
 TARGET_DEVICES += zyxel_gs1900-24-v1
 
+define Device/zyxel_gs1900-24-v2
+  $(Device/zyxel_gs1900)
+  SOC := rtl8382
+  DEVICE_MODEL := GS1900-24
+  DEVICE_VARIANT := v2
+  ZYXEL_VERS := AAHL
+endef
+TARGET_DEVICES += zyxel_gs1900-24-v2
+
 define Device/zyxel_gs1900-24e
   $(Device/zyxel_gs1900)
   SOC := rtl8382
