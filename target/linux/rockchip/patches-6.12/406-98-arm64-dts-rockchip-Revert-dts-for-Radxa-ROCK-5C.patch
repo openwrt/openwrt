@@ -1,0 +1,67 @@
+--- a/arch/arm64/boot/dts/rockchip/rk3588s-rock-5c.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3588s-rock-5c.dts
+@@ -40,17 +40,6 @@
+ 			  "Headphone", "Headphones";
+ 	};
+ 
+-	hdmi0-con {
+-		compatible = "hdmi-connector";
+-		type = "a";
+-
+-		port {
+-			hdmi0_con_in: endpoint {
+-				remote-endpoint = <&hdmi0_out_con>;
+-			};
+-		};
+-	};
+-
+ 	leds {
+ 		compatible = "gpio-leds";
+ 		pinctrl-names = "default";
+@@ -259,27 +248,6 @@
+ 	status = "okay";
+ };
+ 
+-&hdmi0 {
+-	pinctrl-names = "default";
+-	pinctrl-0 = <&hdmim0_tx0_cec
+-		     &hdmim1_tx0_hpd
+-		     &hdmim0_tx0_scl
+-		     &hdmim0_tx0_sda>;
+-	status = "okay";
+-};
+-
+-&hdmi0_in {
+-	hdmi0_in_vp0: endpoint {
+-		remote-endpoint = <&vp0_out_hdmi0>;
+-	};
+-};
+-
+-&hdmi0_out {
+-	hdmi0_out_con: endpoint {
+-		remote-endpoint = <&hdmi0_con_in>;
+-	};
+-};
+-
+ &hdptxphy_hdmi0 {
+ 	status = "okay";
+ };
+@@ -937,18 +905,3 @@
+ &usb_host2_xhci {
+ 	status = "okay";
+ };
+-
+-&vop_mmu {
+-	status = "okay";
+-};
+-
+-&vop {
+-	status = "okay";
+-};
+-
+-&vp0 {
+-	vp0_out_hdmi0: endpoint@ROCKCHIP_VOP2_EP_HDMI0 {
+-		reg = <ROCKCHIP_VOP2_EP_HDMI0>;
+-		remote-endpoint = <&hdmi0_in_vp0>;
+-	};
+-};
