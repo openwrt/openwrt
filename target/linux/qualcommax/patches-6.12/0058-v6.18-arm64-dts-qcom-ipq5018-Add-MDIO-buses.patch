@@ -1,11 +1,7 @@
-From 97a159dd7747724619e54cb3460d9b8d4ed08be7 Mon Sep 17 00:00:00 2001
+From 1e2261a669a9596ba435c6fe524e026bac0f0e2f Mon Sep 17 00:00:00 2001
 From: George Moussalem <george.moussalem@outlook.com>
-Date: Mon, 02 Jun 2025 12:50:40 +0400
-Subject: [PATCH v3 4/5] arm64: dts: qcom: ipq5018: Add MDIO buses
-MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 7bit
-Message-Id: <20250602-ipq5018-ge-phy-v3-4-0d8f39f402a6@outlook.com>
+Date: Mon, 30 Jun 2025 16:35:01 +0400
+Subject: arm64: dts: qcom: ipq5018: Add MDIO buses
 
 IPQ5018 contains two mdio buses of which one bus is used to control the
 SoC's internal GE PHY, while the other bus is connected to external PHYs
@@ -16,13 +12,17 @@ simply add the mdio nodes for them.
 
 Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
 Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+Link: https://lore.kernel.org/r/20250630-ipq5018-ge-phy-v6-2-01be06378c15@outlook.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
 ---
  arch/arm64/boot/dts/qcom/ipq5018.dtsi | 24 ++++++++++++++++++++++++
  1 file changed, 24 insertions(+)
 
+(limited to 'arch/arm64/boot/dts/qcom/ipq5018.dtsi')
+
 --- a/arch/arm64/boot/dts/qcom/ipq5018.dtsi
 +++ b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
-@@ -188,6 +188,30 @@
+@@ -185,6 +185,30 @@
  			status = "disabled";
  		};
  
@@ -50,6 +50,6 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 +			status = "disabled";
 +		};
 +
- 		cmn_pll: clock-controller@9b000 {
- 			compatible = "qcom,ipq9574-cmn-pll";
- 			reg = <0x0009b000 0x800>;
+ 		qfprom: qfprom@a0000 {
+ 			compatible = "qcom,ipq5018-qfprom", "qcom,qfprom";
+ 			reg = <0x000a0000 0x1000>;

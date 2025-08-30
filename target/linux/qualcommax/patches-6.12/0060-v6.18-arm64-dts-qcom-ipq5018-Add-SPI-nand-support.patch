@@ -1,0 +1,64 @@
+From 8d2a8e8dc448f218b36b3b9f3790c9c0dfaa2b74 Mon Sep 17 00:00:00 2001
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Thu, 1 May 2025 13:20:52 +0400
+Subject: arm64: dts: qcom: ipq5018: Add SPI nand support
+
+Add QPIC SPI NAND support for IPQ5018 SoC.
+
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Link: https://lore.kernel.org/r/20250501-ipq5018-spi-qpic-snand-v1-2-31e01fbb606f@outlook.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+---
+ arch/arm64/boot/dts/qcom/ipq5018.dtsi | 38 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 38 insertions(+)
+
+(limited to 'arch/arm64/boot/dts/qcom/ipq5018.dtsi')
+
+--- a/arch/arm64/boot/dts/qcom/ipq5018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
+@@ -436,6 +436,44 @@
+ 			status = "disabled";
+ 		};
+ 
++		qpic_bam: dma-controller@7984000 {
++			compatible = "qcom,bam-v1.7.4", "qcom,bam-v1.7.0";
++			reg = <0x07984000 0x1c000>;
++
++			interrupts = <GIC_SPI 146 IRQ_TYPE_LEVEL_HIGH>;
++
++			clocks = <&gcc GCC_QPIC_AHB_CLK>;
++			clock-names = "bam_clk";
++
++			#dma-cells = <1>;
++			qcom,ee = <0>;
++
++			status = "disabled";
++		};
++
++		qpic_nand: spi@79b0000 {
++			compatible = "qcom,ipq5018-snand", "qcom,ipq9574-snand";
++			reg = <0x079b0000 0x10000>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			clocks = <&gcc GCC_QPIC_CLK>,
++				 <&gcc GCC_QPIC_AHB_CLK>,
++				 <&gcc GCC_QPIC_IO_MACRO_CLK>;
++			clock-names = "core",
++				      "aon",
++				      "iom";
++
++			dmas = <&qpic_bam 0>,
++			       <&qpic_bam 1>,
++			       <&qpic_bam 2>;
++			dma-names = "tx",
++				    "rx",
++				    "cmd";
++
++			status = "disabled";
++		};
++
+ 		usb: usb@8af8800 {
+ 			compatible = "qcom,ipq5018-dwc3", "qcom,dwc3";
+ 			reg = <0x08af8800 0x400>;
