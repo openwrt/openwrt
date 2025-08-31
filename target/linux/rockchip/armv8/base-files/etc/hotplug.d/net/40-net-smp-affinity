@@ -32,6 +32,7 @@ case "$(board_name)" in
 armsom,sige7|\
 friendlyarm,nanopi-r3s|\
 friendlyarm,nanopi-r5c|\
+hinlink,h66k|\
 linkease,easepi-r1|\
 lunzn,fastrhino-r66s|\
 radxa,e25|\
@@ -71,6 +72,11 @@ friendlyarm,nanopi-r6s)
 hinlink,h28k|\
 radxa,e20c)
 	set_interface_core 2 "eth0"
+	;;
+hinlink,h68k)
+	set_interface_core 2 "eth1"
+	set_interface_core 4 "eth2"
+	set_interface_core 8 "eth3"
 	;;
 radxa,rock-5a|\
 radxa,rock-5c)
