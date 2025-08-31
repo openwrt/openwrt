@@ -34,6 +34,7 @@ friendlyarm,nanopi-r3s|\
 friendlyarm,nanopi-r5c|\
 linkease,easepi-r1|\
 lunzn,fastrhino-r66s|\
+hinlink,h66k|\
 radxa,e20c|\
 radxa,e25|\
 sinovoip,rk3568-bpi-r2pro)
@@ -68,6 +69,11 @@ friendlyarm,nanopi-r6s)
 	set_interface_core 10 "eth0"
 	set_interface_core 20 "eth1"
 	set_interface_core 40 "eth2"
+	;;
+hinlink,h68k)
+	set_interface_core 2 "eth1"
+	set_interface_core 4 "eth2"
+	set_interface_core 8 "eth3"
 	;;
 radxa,rock-5a|\
 radxa,rock-5c)
