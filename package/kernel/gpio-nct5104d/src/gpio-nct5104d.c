@@ -145,7 +145,7 @@ static void nct5104d_gpio_set(struct gpio_chip *chip, unsigned offset, int value
 #define gpio_dir(base) (base + 0)
 #define gpio_data(base) (base + 1)
 
-static struct nct5104d_gpio_bank nct5104d_gpio_bank[] = {
+static const struct nct5104d_gpio_bank nct5104d_gpio_bank[] = {
 	NCT5104D_GPIO_BANK(0 , 8, 0xE0),
 	NCT5104D_GPIO_BANK(10, 8, 0xE4)
 };
