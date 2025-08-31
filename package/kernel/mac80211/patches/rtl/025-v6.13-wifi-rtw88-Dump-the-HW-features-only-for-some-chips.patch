@@ -21,7 +21,7 @@ Link: https://patch.msgid.link/8becd851-8760-4480-8e8c-c4869ce72507@gmail.com
 
 --- a/drivers/net/wireless/realtek/rtw88/main.c
 +++ b/drivers/net/wireless/realtek/rtw88/main.c
-@@ -1917,6 +1917,9 @@ static int rtw_dump_hw_feature(struct rt
+@@ -1907,6 +1907,9 @@ static int rtw_dump_hw_feature(struct rt
  	u8 bw;
  	int i;
  
@@ -73,7 +73,7 @@ Link: https://patch.msgid.link/8becd851-8760-4480-8e8c-c4869ce72507@gmail.com
  	.lps_deep_mode_supported = BIT(LPS_DEEP_MODE_LCLK),
 --- a/drivers/net/wireless/realtek/rtw88/rtw8822b.c
 +++ b/drivers/net/wireless/realtek/rtw88/rtw8822b.c
-@@ -2509,6 +2509,7 @@ const struct rtw_chip_info rtw8822b_hw_s
+@@ -2511,6 +2511,7 @@ const struct rtw_chip_info rtw8822b_hw_s
  	.page_size = TX_PAGE_SIZE,
  	.dig_min = 0x1c,
  	.usb_tx_agg_desc_num = 3,
@@ -83,7 +83,7 @@ Link: https://patch.msgid.link/8becd851-8760-4480-8e8c-c4869ce72507@gmail.com
  	.lps_deep_mode_supported = BIT(LPS_DEEP_MODE_LCLK),
 --- a/drivers/net/wireless/realtek/rtw88/rtw8822c.c
 +++ b/drivers/net/wireless/realtek/rtw88/rtw8822c.c
-@@ -5329,6 +5329,7 @@ const struct rtw_chip_info rtw8822c_hw_s
+@@ -5330,6 +5330,7 @@ const struct rtw_chip_info rtw8822c_hw_s
  	.page_size = TX_PAGE_SIZE,
  	.dig_min = 0x20,
  	.usb_tx_agg_desc_num = 3,

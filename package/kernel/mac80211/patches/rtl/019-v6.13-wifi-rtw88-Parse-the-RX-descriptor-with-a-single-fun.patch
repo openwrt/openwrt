@@ -48,7 +48,7 @@ Link: https://patch.msgid.link/913f1747-38fc-4409-85a4-57bb9cee506b@gmail.com
  	bool (*write_rf)(struct rtw_dev *rtwdev, enum rtw_rf_path rf_path,
 --- a/drivers/net/wireless/realtek/rtw88/pci.c
 +++ b/drivers/net/wireless/realtek/rtw88/pci.c
-@@ -1065,7 +1065,7 @@ static u32 rtw_pci_rx_napi(struct rtw_de
+@@ -1066,7 +1066,7 @@ static u32 rtw_pci_rx_napi(struct rtw_de
  		dma_sync_single_for_cpu(rtwdev->dev, dma, RTK_PCI_RX_BUF_SIZE,
  					DMA_FROM_DEVICE);
  		rx_desc = skb->data;
@@ -302,9 +302,9 @@ Link: https://patch.msgid.link/913f1747-38fc-4409-85a4-57bb9cee506b@gmail.com
 -}
 -
  static void
- rtw8822b_set_tx_power_index_by_rate(struct rtw_dev *rtwdev, u8 path, u8 rs)
- {
-@@ -2175,7 +2134,7 @@ static const struct rtw_prioq_addrs prio
+ rtw8822b_set_tx_power_index_by_rate(struct rtw_dev *rtwdev, u8 path,
+ 				    u8 rs, u32 *phy_pwr_idx)
+@@ -2177,7 +2136,7 @@ static const struct rtw_prioq_addrs prio
  static const struct rtw_chip_ops rtw8822b_ops = {
  	.phy_set_param		= rtw8822b_phy_set_param,
  	.read_efuse		= rtw8822b_read_efuse,
@@ -364,7 +364,7 @@ Link: https://patch.msgid.link/913f1747-38fc-4409-85a4-57bb9cee506b@gmail.com
  static void
  rtw8822c_set_write_tx_power_ref(struct rtw_dev *rtwdev, u8 *tx_pwr_ref_cck,
  				u8 *tx_pwr_ref_ofdm)
-@@ -4991,7 +4949,7 @@ static const struct rtw_prioq_addrs prio
+@@ -4992,7 +4950,7 @@ static const struct rtw_prioq_addrs prio
  static const struct rtw_chip_ops rtw8822c_ops = {
  	.phy_set_param		= rtw8822c_phy_set_param,
  	.read_efuse		= rtw8822c_read_efuse,
@@ -535,7 +535,7 @@ Link: https://patch.msgid.link/913f1747-38fc-4409-85a4-57bb9cee506b@gmail.com
  				struct rtw_rx_pkt_stat *pkt_stat);
 --- a/drivers/net/wireless/realtek/rtw88/sdio.c
 +++ b/drivers/net/wireless/realtek/rtw88/sdio.c
-@@ -981,8 +981,7 @@ static void rtw_sdio_rxfifo_recv(struct
+@@ -979,8 +979,7 @@ static void rtw_sdio_rxfifo_recv(struct
  
  	while (true) {
  		rx_desc = skb->data;
@@ -547,7 +547,7 @@ Link: https://patch.msgid.link/913f1747-38fc-4409-85a4-57bb9cee506b@gmail.com
  
 --- a/drivers/net/wireless/realtek/rtw88/usb.c
 +++ b/drivers/net/wireless/realtek/rtw88/usb.c
-@@ -571,8 +571,8 @@ static void rtw_usb_rx_handler(struct wo
+@@ -625,8 +625,8 @@ static void rtw_usb_rx_handler(struct wo
  
  		do {
  			rx_desc = skb->data;

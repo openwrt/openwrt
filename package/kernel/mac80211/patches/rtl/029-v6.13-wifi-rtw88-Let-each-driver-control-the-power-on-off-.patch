@@ -67,7 +67,7 @@ Link: https://patch.msgid.link/98ab839f-9100-44ae-9551-9af743a4aa3a@gmail.com
  
  static int rtw_mac_power_switch(struct rtw_dev *rtwdev, bool pwr_on)
  {
-@@ -994,6 +995,7 @@ int rtw_download_firmware(struct rtw_dev
+@@ -999,6 +1000,7 @@ int rtw_download_firmware(struct rtw_dev
  
  	return 0;
  }
@@ -75,7 +75,7 @@ Link: https://patch.msgid.link/98ab839f-9100-44ae-9551-9af743a4aa3a@gmail.com
  
  static u32 get_priority_queues(struct rtw_dev *rtwdev, u32 queues)
  {
-@@ -1127,7 +1129,7 @@ static int txdma_queue_mapping(struct rt
+@@ -1132,7 +1134,7 @@ static int txdma_queue_mapping(struct rt
  	return 0;
  }
  
@@ -84,7 +84,7 @@ Link: https://patch.msgid.link/98ab839f-9100-44ae-9551-9af743a4aa3a@gmail.com
  {
  	const struct rtw_chip_info *chip = rtwdev->chip;
  	struct rtw_fifo_conf *fifo = &rtwdev->fifo;
-@@ -1179,6 +1181,7 @@ static int set_trx_fifo_info(struct rtw_
+@@ -1184,6 +1186,7 @@ static int set_trx_fifo_info(struct rtw_
  
  	return 0;
  }
@@ -92,7 +92,7 @@ Link: https://patch.msgid.link/98ab839f-9100-44ae-9551-9af743a4aa3a@gmail.com
  
  static int __priority_queue_cfg(struct rtw_dev *rtwdev,
  				const struct rtw_page_table *pg_tbl,
-@@ -1256,7 +1259,7 @@ static int priority_queue_cfg(struct rtw
+@@ -1261,7 +1264,7 @@ static int priority_queue_cfg(struct rtw
  	u16 pubq_num;
  	int ret;
  
@@ -103,7 +103,7 @@ Link: https://patch.msgid.link/98ab839f-9100-44ae-9551-9af743a4aa3a@gmail.com
  
 --- a/drivers/net/wireless/realtek/rtw88/mac.h
 +++ b/drivers/net/wireless/realtek/rtw88/mac.h
-@@ -30,11 +30,14 @@
+@@ -30,6 +30,8 @@
  
  void rtw_set_channel_mac(struct rtw_dev *rtwdev, u8 channel, u8 bw,
  			 u8 primary_ch_idx);
@@ -111,6 +111,8 @@ Link: https://patch.msgid.link/98ab839f-9100-44ae-9551-9af743a4aa3a@gmail.com
 +		       const struct rtw_pwr_seq_cmd * const *cmd_seq);
  int rtw_mac_power_on(struct rtw_dev *rtwdev);
  void rtw_mac_power_off(struct rtw_dev *rtwdev);
+ void rtw_write_firmware_page(struct rtw_dev *rtwdev, u32 page,
+@@ -37,6 +39,7 @@ void rtw_write_firmware_page(struct rtw_
  int rtw_download_firmware(struct rtw_dev *rtwdev, struct rtw_fw_state *fw);
  int rtw_mac_init(struct rtw_dev *rtwdev);
  void rtw_mac_flush_queues(struct rtw_dev *rtwdev, u32 queues, bool drop);
@@ -250,7 +252,7 @@ Link: https://patch.msgid.link/98ab839f-9100-44ae-9551-9af743a4aa3a@gmail.com
  	.query_phy_status	= query_phy_status,
 --- a/drivers/net/wireless/realtek/rtw88/rtw8822b.c
 +++ b/drivers/net/wireless/realtek/rtw88/rtw8822b.c
-@@ -2132,6 +2132,8 @@ static const struct rtw_prioq_addrs prio
+@@ -2134,6 +2134,8 @@ static const struct rtw_prioq_addrs prio
  };
  
  static const struct rtw_chip_ops rtw8822b_ops = {
@@ -261,7 +263,7 @@ Link: https://patch.msgid.link/98ab839f-9100-44ae-9551-9af743a4aa3a@gmail.com
  	.query_phy_status	= query_phy_status,
 --- a/drivers/net/wireless/realtek/rtw88/rtw8822c.c
 +++ b/drivers/net/wireless/realtek/rtw88/rtw8822c.c
-@@ -4947,6 +4947,8 @@ static const struct rtw_prioq_addrs prio
+@@ -4948,6 +4948,8 @@ static const struct rtw_prioq_addrs prio
  };
  
  static const struct rtw_chip_ops rtw8822c_ops = {

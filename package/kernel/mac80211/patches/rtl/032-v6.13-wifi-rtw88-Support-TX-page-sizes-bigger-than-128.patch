@@ -93,7 +93,7 @@ Link: https://patch.msgid.link/acdefbb1-3daf-4349-9e03-9472754d5f1e@gmail.com
  	if (rtw_fw_feature_ext_check(&rtwdev->fw, FW_FEATURE_EXT_OLD_PAGE_NUM))
 --- a/drivers/net/wireless/realtek/rtw88/mac.c
 +++ b/drivers/net/wireless/realtek/rtw88/mac.c
-@@ -1138,7 +1138,7 @@ int rtw_set_trx_fifo_info(struct rtw_dev
+@@ -1143,7 +1143,7 @@ int rtw_set_trx_fifo_info(struct rtw_dev
  
  	/* config rsvd page num */
  	fifo->rsvd_drv_pg_num = chip->rsvd_drv_pg_num;

@@ -23,7 +23,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 
 --- a/net/mac80211/mlme.c
 +++ b/net/mac80211/mlme.c
-@@ -2159,6 +2159,21 @@ static void ieee80211_csa_switch_work(st
+@@ -2167,6 +2167,21 @@ static void ieee80211_csa_switch_work(st
  		}
  	}
  
@@ -45,7 +45,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	ieee80211_sta_reset_beacon_monitor(sdata);
  	ieee80211_sta_reset_conn_monitor(sdata);
  }
-@@ -7863,6 +7878,29 @@ void ieee80211_sta_work(struct ieee80211
+@@ -7892,6 +7907,29 @@ void ieee80211_sta_work(struct ieee80211
  	}
  }
  

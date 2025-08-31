@@ -12,7 +12,7 @@ Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
 
 --- a/drivers/net/wireless/realtek/rtw88/usb.c
 +++ b/drivers/net/wireless/realtek/rtw88/usb.c
-@@ -930,6 +930,32 @@ static void rtw_usb_intf_deinit(struct r
+@@ -985,6 +985,32 @@ static void rtw_usb_intf_deinit(struct r
  	usb_set_intfdata(intf, NULL);
  }
  
@@ -45,7 +45,7 @@ Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
  static int rtw_usb_switch_mode_new(struct rtw_dev *rtwdev)
  {
  	enum usb_device_speed cur_speed;
-@@ -983,7 +1009,8 @@ static int rtw_usb_switch_mode(struct rt
+@@ -1038,7 +1064,8 @@ static int rtw_usb_switch_mode(struct rt
  {
  	u8 id = rtwdev->chip->id;
  
@@ -55,7 +55,7 @@ Signed-off-by: Bitterblue Smith <rtl8821cerfe2@gmail.com>
  		return 0;
  
  	if (!rtwdev->efuse.usb_mode_switch) {
-@@ -998,7 +1025,10 @@ static int rtw_usb_switch_mode(struct rt
+@@ -1053,7 +1080,10 @@ static int rtw_usb_switch_mode(struct rt
  		return 0;
  	}
  

@@ -60,7 +60,7 @@ Link: https://patch.msgid.link/2b3e3e6f-541b-4a3b-8ca3-65b267e6a95a@gmail.com
  
 --- a/drivers/net/wireless/realtek/rtw88/pci.c
 +++ b/drivers/net/wireless/realtek/rtw88/pci.c
-@@ -824,7 +824,7 @@ static int rtw_pci_tx_write_data(struct
+@@ -825,7 +825,7 @@ static int rtw_pci_tx_write_data(struct
  	pkt_desc = skb_push(skb, chip->tx_pkt_desc_sz);
  	memset(pkt_desc, 0, tx_pkt_desc_sz);
  	pkt_info->qsel = rtw_pci_get_tx_qsel(skb, queue);
@@ -101,7 +101,7 @@ Link: https://patch.msgid.link/2b3e3e6f-541b-4a3b-8ca3-65b267e6a95a@gmail.com
  	.lps_deep_mode_supported = BIT(LPS_DEEP_MODE_LCLK),
 --- a/drivers/net/wireless/realtek/rtw88/rtw8822b.c
 +++ b/drivers/net/wireless/realtek/rtw88/rtw8822b.c
-@@ -2513,6 +2513,7 @@ const struct rtw_chip_info rtw8822b_hw_s
+@@ -2515,6 +2515,7 @@ const struct rtw_chip_info rtw8822b_hw_s
  	.usb_tx_agg_desc_num = 3,
  	.hw_feature_report = true,
  	.c2h_ra_report_size = 7,
@@ -111,7 +111,7 @@ Link: https://patch.msgid.link/2b3e3e6f-541b-4a3b-8ca3-65b267e6a95a@gmail.com
  	.lps_deep_mode_supported = BIT(LPS_DEEP_MODE_LCLK),
 --- a/drivers/net/wireless/realtek/rtw88/rtw8822c.c
 +++ b/drivers/net/wireless/realtek/rtw88/rtw8822c.c
-@@ -5333,6 +5333,7 @@ const struct rtw_chip_info rtw8822c_hw_s
+@@ -5334,6 +5334,7 @@ const struct rtw_chip_info rtw8822c_hw_s
  	.usb_tx_agg_desc_num = 3,
  	.hw_feature_report = true,
  	.c2h_ra_report_size = 7,
@@ -121,7 +121,7 @@ Link: https://patch.msgid.link/2b3e3e6f-541b-4a3b-8ca3-65b267e6a95a@gmail.com
  	.ht_supported = true,
 --- a/drivers/net/wireless/realtek/rtw88/sdio.c
 +++ b/drivers/net/wireless/realtek/rtw88/sdio.c
-@@ -864,7 +864,7 @@ static void rtw_sdio_tx_skb_prepare(stru
+@@ -862,7 +862,7 @@ static void rtw_sdio_tx_skb_prepare(stru
  
  	pkt_info->qsel = rtw_sdio_get_tx_qsel(rtwdev, skb, queue);
  
@@ -174,7 +174,7 @@ Link: https://patch.msgid.link/2b3e3e6f-541b-4a3b-8ca3-65b267e6a95a@gmail.com
  void rtw_tx_rsvd_page_pkt_info_update(struct rtw_dev *rtwdev,
 --- a/drivers/net/wireless/realtek/rtw88/usb.c
 +++ b/drivers/net/wireless/realtek/rtw88/usb.c
-@@ -458,7 +458,7 @@ static int rtw_usb_write_data(struct rtw
+@@ -512,7 +512,7 @@ static int rtw_usb_write_data(struct rtw
  	skb_put_data(skb, buf, size);
  	skb_push(skb, chip->tx_pkt_desc_sz);
  	memset(skb->data, 0, chip->tx_pkt_desc_sz);
@@ -183,7 +183,7 @@ Link: https://patch.msgid.link/2b3e3e6f-541b-4a3b-8ca3-65b267e6a95a@gmail.com
  	rtw_tx_fill_txdesc_checksum(rtwdev, pkt_info, skb->data);
  
  	ret = rtw_usb_write_port(rtwdev, qsel, skb,
-@@ -525,7 +525,7 @@ static int rtw_usb_tx_write(struct rtw_d
+@@ -579,7 +579,7 @@ static int rtw_usb_tx_write(struct rtw_d
  	pkt_desc = skb_push(skb, chip->tx_pkt_desc_sz);
  	memset(pkt_desc, 0, chip->tx_pkt_desc_sz);
  	ep = qsel_to_ep(rtwusb, pkt_info->qsel);

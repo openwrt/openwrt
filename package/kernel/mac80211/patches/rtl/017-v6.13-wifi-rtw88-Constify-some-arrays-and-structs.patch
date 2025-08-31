@@ -284,7 +284,7 @@ Link: https://patch.msgid.link/dae7994f-3491-40de-b537-ebf68df084bb@gmail.com
  	.query_rx_desc		= rtw8821c_query_rx_desc,
 --- a/drivers/net/wireless/realtek/rtw88/rtw8822b.c
 +++ b/drivers/net/wireless/realtek/rtw88/rtw8822b.c
-@@ -1978,13 +1978,13 @@ static const struct rtw_pwr_seq_cmd tran
+@@ -1980,13 +1980,13 @@ static const struct rtw_pwr_seq_cmd tran
  	 RTW_PWR_CMD_END, 0, 0},
  };
  
@@ -300,7 +300,7 @@ Link: https://patch.msgid.link/dae7994f-3491-40de-b537-ebf68df084bb@gmail.com
  	trans_act_to_cardemu_8822b,
  	trans_cardemu_to_carddis_8822b,
  	NULL
-@@ -2156,7 +2156,7 @@ static const struct rtw_rqpn rqpn_table_
+@@ -2158,7 +2158,7 @@ static const struct rtw_rqpn rqpn_table_
  	 RTW_DMA_MAPPING_EXTRA, RTW_DMA_MAPPING_HIGH},
  };
  
@@ -309,7 +309,7 @@ Link: https://patch.msgid.link/dae7994f-3491-40de-b537-ebf68df084bb@gmail.com
  	.prio[RTW_DMA_MAPPING_EXTRA] = {
  		.rsvd = REG_FIFOPAGE_INFO_4, .avail = REG_FIFOPAGE_INFO_4 + 2,
  	},
-@@ -2172,7 +2172,7 @@ static struct rtw_prioq_addrs prioq_addr
+@@ -2174,7 +2174,7 @@ static struct rtw_prioq_addrs prioq_addr
  	.wsize = true,
  };
  
@@ -318,7 +318,7 @@ Link: https://patch.msgid.link/dae7994f-3491-40de-b537-ebf68df084bb@gmail.com
  	.phy_set_param		= rtw8822b_phy_set_param,
  	.read_efuse		= rtw8822b_read_efuse,
  	.query_rx_desc		= rtw8822b_query_rx_desc,
-@@ -2521,7 +2521,7 @@ static const struct rtw_reg_domain coex_
+@@ -2523,7 +2523,7 @@ static const struct rtw_reg_domain coex_
  	{0xc50,  MASKBYTE0, RTW_REG_DOMAIN_MAC8},
  };
  
@@ -329,7 +329,7 @@ Link: https://patch.msgid.link/dae7994f-3491-40de-b537-ebf68df084bb@gmail.com
  };
 --- a/drivers/net/wireless/realtek/rtw88/rtw8822c.c
 +++ b/drivers/net/wireless/realtek/rtw88/rtw8822c.c
-@@ -4874,13 +4874,13 @@ static const struct rtw_pwr_seq_cmd tran
+@@ -4875,13 +4875,13 @@ static const struct rtw_pwr_seq_cmd tran
  	 RTW_PWR_CMD_END, 0, 0},
  };
  
@@ -345,7 +345,7 @@ Link: https://patch.msgid.link/dae7994f-3491-40de-b537-ebf68df084bb@gmail.com
  	trans_act_to_cardemu_8822c,
  	trans_cardemu_to_carddis_8822c,
  	NULL
-@@ -4972,7 +4972,7 @@ static const struct rtw_rqpn rqpn_table_
+@@ -4973,7 +4973,7 @@ static const struct rtw_rqpn rqpn_table_
  	 RTW_DMA_MAPPING_EXTRA, RTW_DMA_MAPPING_HIGH},
  };
  
@@ -354,7 +354,7 @@ Link: https://patch.msgid.link/dae7994f-3491-40de-b537-ebf68df084bb@gmail.com
  	.prio[RTW_DMA_MAPPING_EXTRA] = {
  		.rsvd = REG_FIFOPAGE_INFO_4, .avail = REG_FIFOPAGE_INFO_4 + 2,
  	},
-@@ -4988,7 +4988,7 @@ static struct rtw_prioq_addrs prioq_addr
+@@ -4989,7 +4989,7 @@ static struct rtw_prioq_addrs prioq_addr
  	.wsize = true,
  };
  
@@ -363,7 +363,7 @@ Link: https://patch.msgid.link/dae7994f-3491-40de-b537-ebf68df084bb@gmail.com
  	.phy_set_param		= rtw8822c_phy_set_param,
  	.read_efuse		= rtw8822c_read_efuse,
  	.query_rx_desc		= rtw8822c_query_rx_desc,
-@@ -5301,7 +5301,7 @@ static const struct rtw_pwr_track_tbl rt
+@@ -5302,7 +5302,7 @@ static const struct rtw_pwr_track_tbl rt
  	.pwrtrk_2g_ccka_p = rtw8822c_pwrtrk_2g_cck_a_p,
  };
  

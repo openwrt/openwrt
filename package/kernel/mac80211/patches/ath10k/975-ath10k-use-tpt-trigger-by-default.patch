@@ -16,7 +16,7 @@ Signed-off-by: Mathias Kresin <dev@kresin.me>
 
 --- a/drivers/net/wireless/ath/ath10k/core.h
 +++ b/drivers/net/wireless/ath/ath10k/core.h
-@@ -1315,6 +1315,10 @@ struct ath10k {
+@@ -1320,6 +1320,10 @@ struct ath10k {
  	s32 tx_power_2g_limit;
  	s32 tx_power_5g_limit;
  
@@ -40,7 +40,7 @@ Signed-off-by: Mathias Kresin <dev@kresin.me>
  	if (ret)
 --- a/drivers/net/wireless/ath/ath10k/mac.c
 +++ b/drivers/net/wireless/ath/ath10k/mac.c
-@@ -10297,7 +10297,7 @@ int ath10k_mac_register(struct ath10k *a
+@@ -10302,7 +10302,7 @@ int ath10k_mac_register(struct ath10k *a
  	ar->hw->weight_multiplier = ATH10K_AIRTIME_WEIGHT_MULTIPLIER;
  
  #ifdef CPTCFG_MAC80211_LEDS

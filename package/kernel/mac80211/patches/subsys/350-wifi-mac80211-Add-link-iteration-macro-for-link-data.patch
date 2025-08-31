@@ -1,7 +1,8 @@
+From 4e1916dec9850cd49dd5792200ab649061cbedc1 Mon Sep 17 00:00:00 2001
 From: Maharaja Kennadyrajan <maharaja.kennadyrajan@oss.qualcomm.com>
 Date: Fri, 18 Jul 2025 11:38:35 +0530
-Subject: [PATCH] wifi: mac80211: Add link iteration macro for link data
- with rcu_dereference
+Subject: [PATCH] wifi: mac80211: Add link iteration macro for link data with
+ rcu_dereference
 
 Currently, the existing macro for_each_link_data() uses sdata_dereference()
 which requires the wiphy lock. This lock cannot be used in atomic or RCU
@@ -19,24 +20,15 @@ Signed-off-by: Maharaja Kennadyrajan <maharaja.kennadyrajan@oss.qualcomm.com>
 Link: https://patch.msgid.link/20250718060837.59371-3-maharaja.kennadyrajan@oss.qualcomm.com
 Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 ---
+ net/mac80211/ieee80211_i.h | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
 
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -1211,6 +1211,30 @@ struct ieee80211_sub_if_data *vif_to_sda
- 	if ((_link = wiphy_dereference((local)->hw.wiphy,		\
- 				       ___sdata->link[___link_id])))
+@@ -1220,6 +1220,19 @@ struct ieee80211_sub_if_data *vif_to_sda
+ 		    ((__link) = sdata_dereference((__sdata)->link[__link_id],	\
+ 						  (__sdata))))
  
-+#define for_each_link_data(sdata, __link)					\
-+	/* outer loop just to define the variable ... */			\
-+	for (struct ieee80211_sub_if_data *__sdata = (sdata); __sdata;		\
-+		__sdata = NULL /* always stop */)				\
-+	for (int __link_id = 0;							\
-+	     __link_id < ARRAY_SIZE((__sdata)->link); __link_id++)		\
-+		if ((!(__sdata)->vif.valid_links ||				\
-+		     (__sdata)->vif.valid_links & BIT(__link_id)) &&		\
-+		    ((__link) = sdata_dereference((__sdata)->link[__link_id],	\
-+						  (__sdata))))
-+
 +/*
 + * for_each_link_data_rcu should be used under RCU read lock.
 + */

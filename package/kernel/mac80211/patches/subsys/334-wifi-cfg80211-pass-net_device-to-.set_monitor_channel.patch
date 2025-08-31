@@ -49,7 +49,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -4700,6 +4700,7 @@ struct cfg80211_ops {
+@@ -4703,6 +4703,7 @@ struct cfg80211_ops {
  					     struct ieee80211_channel *chan);
  
  	int	(*set_monitor_channel)(struct wiphy *wiphy,
@@ -69,7 +69,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	struct ieee80211_local *local = wiphy_priv(wiphy);
 --- a/net/wireless/chan.c
 +++ b/net/wireless/chan.c
-@@ -1673,6 +1673,7 @@ bool cfg80211_reg_check_beaconing(struct
+@@ -1679,6 +1679,7 @@ bool cfg80211_reg_check_beaconing(struct
  EXPORT_SYMBOL(cfg80211_reg_check_beaconing);
  
  int cfg80211_set_monitor_channel(struct cfg80211_registered_device *rdev,
@@ -77,7 +77,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  				 struct cfg80211_chan_def *chandef)
  {
  	if (!rdev->ops->set_monitor_channel)
-@@ -1680,7 +1681,7 @@ int cfg80211_set_monitor_channel(struct
+@@ -1686,7 +1687,7 @@ int cfg80211_set_monitor_channel(struct
  	if (!cfg80211_has_monitors_only(rdev))
  		return -EBUSY;
  
@@ -98,7 +98,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  int ieee80211_get_ratemask(struct ieee80211_supported_band *sband,
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -3562,7 +3562,7 @@ static int __nl80211_set_channel(struct
+@@ -3569,7 +3569,7 @@ static int __nl80211_set_channel(struct
  	case NL80211_IFTYPE_MESH_POINT:
  		return cfg80211_set_mesh_channel(rdev, wdev, &chandef);
  	case NL80211_IFTYPE_MONITOR:
