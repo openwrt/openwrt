@@ -1,58 +1,57 @@
 #!/bin/sh /etc/rc.common
-# Copyright (C) 2006-2011 OpenWrt.org
+# Copyright (C) 2006-2024 OpenWrt.org
 
 START=10
 STOP=90
 
 uci_apply_defaults() {
 	. /lib/functions/system.sh
-
-	cd /etc/uci-defaults || return 0
-	files="$(ls)"
-	[ -z "$files" ] && return 0
-	for file in $files; do
-		( . "./$(basename $file)" ) && rm -f "$file"
+	local IFS=$'\n'
+	for f in /etc/uci-defaults/* ; do
+		( . "$f" ) && rm -f "$f"
 	done
-	uci commit
+	[ $(uci changes|wc -l) -eq 0 ] || uci commit
 }
 
 boot() {
 	[ -f /proc/mounts ] || /sbin/mount_root
-	[ -f /proc/jffs2_bbc ] && echo "S" > /proc/jffs2_bbc
+	[ -f /proc/jffs2_bbc ] && echo S > /proc/jffs2_bbc
 
-	mkdir -p /var/lock
-	chmod 1777 /var/lock
+	mkdir -p -m 1777 /var/lock
 	mkdir -p /var/log
+	touch /var/log/lastlog
+	touch /var/log/wtmp
 	mkdir -p /var/run
 	ln -s /var/run /run
 	ln -s /var/lock /run/lock
 	mkdir -p /var/state
 	mkdir -p /var/tmp
-	mkdir -p /tmp/.uci
-	chmod 0700 /tmp/.uci
-	touch /var/log/wtmp
-	touch /var/log/lastlog
+	mkdir -p -m 0700 /tmp/.uci
 	mkdir -p /tmp/resolv.conf.d
 	touch /tmp/resolv.conf.d/resolv.conf.auto
-	ln -sf /tmp/resolv.conf.d/resolv.conf.auto /tmp/resolv.conf
-	grep -q debugfs /proc/filesystems && /bin/mount -o nosuid,nodev,noexec,noatime -t debugfs debugfs /sys/kernel/debug
-	grep -q bpf /proc/filesystems && /bin/mount -o nosuid,nodev,noexec,noatime,mode=0700 -t bpf bpffs /sys/fs/bpf
-	grep -q pstore /proc/filesystems && /bin/mount -o nosuid,nodev,noexec,noatime -t pstore pstore /sys/fs/pstore
+	ln -s /tmp/resolv.conf.d/resolv.conf.auto /tmp/resolv.conf
+
+	local common=nosuid,nodev,noexec,noatime
+	[ -d /sys/kernel/debug ] \
+		&& mount -t debugfs -o $common debugfs /sys/kernel/debug
+	[ -d /sys/fs/bpf ] \
+		&& mount -t bpf -o $common,mode=0700 bpffs /sys/fs/bpf
+	[ -d /sys/fs/pstore ] \
+		&& mount -t pstore -o $common pstore /sys/fs/pstore
+
 	[ "$FAILSAFE" = "true" ] && touch /tmp/.failsafe
 
 	touch /tmp/.config_pending
 	/sbin/kmodloader
-
-	[ ! -f /etc/config/wireless ] && {
-		# compat for bcm47xx and mvebu
-		sleep 1
-	}
-
-	mkdir -p /tmp/.uci
-	[ -f /etc/uci-defaults/30_uboot-envtools ] && (. /etc/uci-defaults/30_uboot-envtools)
+	# compat for bcm47xx and mvebu
+	[ -f /etc/config/wireless ] || sleep 1
+	# allows /etc/board.d/* scripts to use values from uboot environment
+	[ -f /etc/uci-defaults/30_uboot-envtools ] \
+		&& (. /etc/uci-defaults/30_uboot-envtools) 
 	/bin/config_generate
 	rm -f /tmp/.config_pending
-	/sbin/wifi config
+
+	[ -x /sbin/wifi ] && /sbin/wifi config
 	uci_apply_defaults
 	sync
 	
