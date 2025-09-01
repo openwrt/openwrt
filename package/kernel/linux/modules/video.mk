@@ -1371,6 +1371,24 @@ endef
 
 $(eval $(call KernelPackage,video-gspca-konica))
 
+
+define KernelPackage/video-sun6i-csi
+  SUBMENU:=$(VIDEO_MENU)
+  DEPENDS:=@TARGET_sunxi +kmod-video-fwnode +kmod-video-async +kmod-video-videobuf2 +kmod-video-dma-contig
+  TITLE:=sun6i-csi
+  KCONFIG:=CONFIG_VIDEO_SUN6I_CSI
+  FILES:=$(LINUX_DIR)/drivers/media/platform/sunxi/sun6i-csi/sun6i-csi.ko
+  AUTOLOAD:=$(call AutoProbe,sun6i-csi)
+  $(call AddDepends/video)
+endef
+
+define KernelPackage/video-sun6i-csi/description
+ The Allwinner CSI kernel module
+endef
+
+$(eval $(call KernelPackage,video-sun6i-csi))
+
+
 #
 # Video Processing
 #
