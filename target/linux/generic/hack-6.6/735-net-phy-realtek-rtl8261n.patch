@@ -1,6 +1,6 @@
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -418,6 +418,8 @@ config QSEMI_PHY
+@@ -403,6 +403,8 @@ config QSEMI_PHY
  
  source "drivers/net/phy/realtek/Kconfig"
  
@@ -11,7 +11,7 @@
  	help
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -101,6 +101,7 @@ obj-$(CONFIG_NXP_TJA11XX_PHY)	+= nxp-tja
+@@ -100,6 +100,7 @@ obj-$(CONFIG_NXP_TJA11XX_PHY)	+= nxp-tja
  obj-y				+= qcom/
  obj-$(CONFIG_QSEMI_PHY)		+= qsemi.o
  obj-$(CONFIG_REALTEK_PHY)	+= realtek/
