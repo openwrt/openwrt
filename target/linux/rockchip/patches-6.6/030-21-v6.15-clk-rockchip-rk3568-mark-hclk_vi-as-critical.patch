@@ -1,0 +1,31 @@
+From 83dbeca33f7422f4a30c8a91a79d6c0dba4fb6af Mon Sep 17 00:00:00 2001
+From: Michael Riesch <michael.riesch@wolfvision.net>
+Date: Mon, 10 Feb 2025 09:29:02 +0100
+Subject: [PATCH] clk: rockchip: rk3568: mark hclk_vi as critical
+
+The clock 'pclk_vi_niu' has a dependency on 'hclk_vi_niu' according
+to the Technical Reference Manual section '2.8.6 NIU Clock gating
+reliance'. However, this kind of dependency cannot be addressed
+properly at the moment (until the support for linked clocks is
+implemented for the RK3568).
+As an intermediate solution, mark the hclk_vi as critical on the
+Rockchip RK3568.
+
+Suggested-by: Nicolas Frattaroli <frattaroli.nicolas@gmail.com>
+Signed-off-by: Michael Riesch <michael.riesch@wolfvision.net>
+Link: https://lore.kernel.org/r/20250210-rk3568-hclk-vi-v1-1-9ade2626f638@wolfvision.net
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ drivers/clk/rockchip/clk-rk3568.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/clk/rockchip/clk-rk3568.c
++++ b/drivers/clk/rockchip/clk-rk3568.c
+@@ -1593,6 +1593,7 @@ static const char *const rk3568_cru_crit
+ 	"hclk_php",
+ 	"pclk_php",
+ 	"hclk_usb",
++	"hclk_vi",
+ 	"hclk_vo",
+ };
+ 
