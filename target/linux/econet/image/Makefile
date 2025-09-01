@@ -5,6 +5,29 @@ define Target/Description
 	Build firmware images for EcoNet MIPS based boards.
 endef
 
-# Devices will come in a later commit.
+# tclinux-trx is the default format used in the SDK
+define Build/tclinux-trx
+  ./tclinux-trx.sh $@ $(IMAGE_ROOTFS) $(VERSION_DIST)-$(REVISION) > $@.new
+	mv $@.new $@
+endef
+
+# tclinux bootloader requires LZMA, BUT only provides 7.5MB of space
+# to decompress into. So we use vmlinuz and decompress twice.
+define Device/Default
+  DEVICE_DTS_DIR := ../dts
+  KERNEL_SIZE := 7480k
+  KERNEL_NAME := vmlinuz.bin
+  KERNEL_LOADADDR := 0x80020000
+  KERNEL := kernel-bin | append-dtb
+endef
+
+define Device/smartfiber_xp8421-b
+  DEVICE_VENDOR := SmartFiber
+  DEVICE_MODEL := XP8421-B
+  DEVICE_DTS := en751221_smartfiber_xp8421-b
+  IMAGES := tclinux.trx
+  IMAGE/tclinux.trx := append-kernel | lzma | tclinux-trx
+endef
+TARGET_DEVICES += smartfiber_xp8421-b
 
 $(eval $(call BuildImage))
