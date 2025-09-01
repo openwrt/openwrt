@@ -119,7 +119,7 @@
 
 			gpio-sck = <&tlmm 1 GPIO_ACTIVE_HIGH>;
 			gpio-mosi = <&tlmm 3 GPIO_ACTIVE_HIGH>;
-			cs-gpios = <&tlmm 2 GPIO_ACTIVE_HIGH>;
+			cs-gpios = <&tlmm 2 GPIO_ACTIVE_LOW>;
 			num-chipselects = <1>;
 
 			shift_io: shift_io@0 {
