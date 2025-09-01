@@ -1,3 +1,42 @@
+From 50decd493c8394c52d04561fe4ede34df27a46ba Mon Sep 17 00:00:00 2001
+From: Tianling Shen <cnsztl@gmail.com>
+Date: Mon, 21 Oct 2024 01:39:46 +0800
+Subject: [PATCH] arm64: dts: rockchip: Add FriendlyARM NanoPi R3S board
+
+The NanoPi R3S(as "R3S") is an open source platform with dual-Gbps
+Ethernet ports designed and developed by FriendlyElec for IoT
+applications.
+
+Specification:
+- Rockchip RK3566
+- 2GB LPDDR4X RAM
+- optional 32GB eMMC module
+- SD card slot
+- 2x 1000 Base-T
+- 3x LEDs (POWER, LAN, WAN)
+- 2x Buttons (Reset, MaskROM)
+- 1x USB 3.0 Port
+- Type-C 5V 2A Power
+
+Signed-off-by: Tianling Shen <cnsztl@gmail.com>
+Link: https://lore.kernel.org/r/20241020173946.225960-2-cnsztl@gmail.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/Makefile         |   1 +
+ .../boot/dts/rockchip/rk3566-nanopi-r3s.dts   | 554 ++++++++++++++++++
+ 2 files changed, 555 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/rockchip/rk3566-nanopi-r3s.dts
+
+--- a/arch/arm64/boot/dts/rockchip/Makefile
++++ b/arch/arm64/boot/dts/rockchip/Makefile
+@@ -83,6 +83,7 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-an
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-anbernic-rg353v.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-anbernic-rg353vs.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-anbernic-rg503.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-nanopi-r3s.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-odroid-m1s.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-orangepi-3b-v1.1.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-orangepi-3b-v2.1.dtb
 --- /dev/null
 +++ b/arch/arm64/boot/dts/rockchip/rk3566-nanopi-r3s.dts
 @@ -0,0 +1,554 @@
@@ -6,7 +45,7 @@
 + * Copyright (c) 2020 Rockchip Electronics Co., Ltd.
 + *
 + * Copyright (c) 2024 FriendlyElec Computer Tech. Co., Ltd.
-+ * (http://www.friendlyelec.com)
++ * (http://www.friendlyarm.com)
 + *
 + * Copyright (c) 2024 Tianling Shen <cnsztl@gmail.com>
 + */
@@ -20,13 +59,13 @@
 +#include "rk3566.dtsi"
 +
 +/ {
-+	model = "FriendlyElec NanoPi R3S";
++	model = "FriendlyARM NanoPi R3S";
 +	compatible = "friendlyarm,nanopi-r3s", "rockchip,rk3566";
 +
 +	aliases {
 +		ethernet0 = &gmac1;
-+		mmc0 = &sdhci;
-+		mmc1 = &sdmmc0;
++		mmc0 = &sdmmc0;
++		mmc1 = &sdhci;
 +	};
 +
 +	chosen: chosen {
@@ -152,6 +191,10 @@
 +		     &gmac1m0_rx_bus2
 +		     &gmac1m0_rgmii_clk_level2
 +		     &gmac1m0_rgmii_bus_level3>;
++	snps,reset-gpio = <&gpio4 RK_PC2 GPIO_ACTIVE_LOW>;
++	snps,reset-active-low;
++	/* Reset time is 20ms, 100ms for rtl8211f */
++	snps,reset-delays-us = <0 20000 100000>;
 +	status = "okay";
 +};
 +
@@ -413,9 +456,6 @@
 +		interrupts = <RK_PC3 IRQ_TYPE_LEVEL_LOW>;
 +		pinctrl-names = "default";
 +		pinctrl-0 = <&eth_phy_reset_pin>;
-+		reset-assert-us = <20000>;
-+		reset-deassert-us = <100000>;
-+		reset-gpios = <&gpio4 RK_PC2 GPIO_ACTIVE_LOW>;
 +	};
 +};
 +
@@ -479,6 +519,7 @@
 +};
 +
 +&pmu_io_domains {
++	status = "okay";
 +	pmuio1-supply = <&vcc3v3_pmu>;
 +	pmuio2-supply = <&vcc3v3_pmu>;
 +	vccio1-supply = <&vccio_acodec>;
@@ -488,13 +529,11 @@
 +	vccio5-supply = <&vcc_1v8>;
 +	vccio6-supply = <&vcc_3v3>;
 +	vccio7-supply = <&vcc_3v3>;
-+	status = "okay";
 +};
 +
 +&sdhci {
 +	bus-width = <8>;
 +	max-frequency = <200000000>;
-+	mmc-hs200-1_8v;
 +	non-removable;
 +	pinctrl-names = "default";
 +	pinctrl-0 = <&emmc_bus8 &emmc_clk &emmc_cmd &emmc_datastrobe>;
@@ -555,13 +594,3 @@
 +&vop_mmu {
 +	status = "okay";
 +};
---- a/arch/arm64/boot/dts/rockchip/Makefile
-+++ b/arch/arm64/boot/dts/rockchip/Makefile
-@@ -83,6 +83,7 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-an
- dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-anbernic-rg353v.dtb
- dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-anbernic-rg353vs.dtb
- dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-anbernic-rg503.dtb
-+dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-nanopi-r3s.dtb
- dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-odroid-m1s.dtb
- dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-orangepi-3b-v1.1.dtb
- dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-orangepi-3b-v2.1.dtb
