@@ -1,6 +1,6 @@
 PKG_DRIVERS += iwlwifi
 
-config-$(call config_package,iwlwifi) += IWLWIFI IWLDVM IWLMVM
+config-$(call config_package,iwlwifi) += IWLWIFI IWLDVM IWLMVM IWLMLD
 config-$(CONFIG_PACKAGE_IWLWIFI_DEBUG)+= IWLWIFI_DEBUG
 config-$(CONFIG_PACKAGE_IWLWIFI_DEBUGFS)+= IWLWIFI_DEBUGFS
 
@@ -11,8 +11,9 @@ define KernelPackage/iwlwifi
   FILES:= \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/intel/iwlwifi/iwlwifi.ko \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/intel/iwlwifi/dvm/iwldvm.ko \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/intel/iwlwifi/mvm/iwlmvm.ko
-  AUTOLOAD:=$(call AutoProbe,iwlwifi iwldvm iwlmvm)
+	$(PKG_BUILD_DIR)/drivers/net/wireless/intel/iwlwifi/mvm/iwlmvm.ko \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/intel/iwlwifi/mld/iwlmld.ko
+  AUTOLOAD:=$(call AutoProbe,iwlwifi iwldvm iwlmvm iwlmld)
   MENU:=1
 endef
 
