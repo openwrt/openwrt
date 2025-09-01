@@ -1,0 +1,82 @@
+// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+/dts-v1/;
+
+#include "en751221.dtsi"
+
+/ {
+	model = "SmartFiber XP8421-B";
+	compatible = "smartfiber,xp8421-b", "econet,en751221";
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x1c000000>;
+	};
+
+	chosen {
+		stdout-path = "/serial@1fbf0000:115200";
+		linux,usable-memory-range = <0x00020000 0x1bfe0000>;
+	};
+};
+
+&nand {
+	status = "okay";
+	econet,bmt;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "bootloader";
+			reg = <0x0 0x40000>;
+			read-only;
+		};
+
+		partition@40000 {
+			label = "romfile";
+			reg = <0x40000 0x40000>;
+			read-only;
+		};
+
+		partition@80000 {
+			label = "tclinux";
+			reg = <0x80000 0x1400000>;
+			read-only;
+			econet,enable-remap;
+		};
+
+		/* Nested inside of tclinux */
+		partition@480000 {
+			label = "rootfs";
+			reg = <0x480000 0xf80000>;
+			linux,rootfs;
+			read-only;
+		};
+
+		partition@1480000 {
+			label = "tclinux_alt";
+			reg = <0x1480000 0x1400000>;
+		};
+
+		partition@2880000 {
+			label = "openjdk";
+			reg = <0x2880000 0x2000000>;
+		};
+
+		partition@4880000 {
+			label = "ubifs";
+			reg = <0x4880000 0x9100000>;
+		};
+
+		partition@d980000 {
+			label = "unknown";
+			reg = <0xd980000 0x4c0000>;
+		};
+
+		partition@de40000 {
+			label = "reservearea";
+			reg = <0xde40000 0x1c0000>;
+		};
+	};
+};
