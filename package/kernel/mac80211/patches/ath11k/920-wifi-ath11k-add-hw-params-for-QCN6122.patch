@@ -92,10 +92,10 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 +	},
  };
  
- static inline struct ath11k_pdev *ath11k_core_get_single_pdev(struct ath11k_base *ab)
+ static const struct dmi_system_id ath11k_pm_quirk_table[] = {
 --- a/drivers/net/wireless/ath/ath11k/core.h
 +++ b/drivers/net/wireless/ath/ath11k/core.h
-@@ -149,6 +149,7 @@ enum ath11k_hw_rev {
+@@ -151,6 +151,7 @@ enum ath11k_hw_rev {
  	ATH11K_HW_IPQ5018_HW10,
  	ATH11K_HW_QCA2066_HW21,
  	ATH11K_HW_QCA6698AQ_HW21,

@@ -1,14 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
-/dts-v1/;
+#include "macros.dtsi"
 
-#define INTERNAL_PHY_SDS(n, s) \
-	phy##n: ethernet-phy@##n { \
-		reg = <##n>; \
-		compatible = "ethernet-phy-ieee802.3-c22"; \
-		phy-is-integrated; \
-		sds = <##s>; \
-	};
+/dts-v1/;
 
 / {
 	#address-cells = <1>;
@@ -59,7 +53,7 @@
 		compatible = "simple-bus";
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x18000000 0x10000>;
+		ranges = <0x0 0x18000000 0x20000>;
 
 		intc: interrupt-controller@3000 {
 			compatible = "realtek,rtl9300-intc", "realtek,rtl-intc";
@@ -69,6 +63,18 @@
 
 			interrupt-parent = <&cpuintc>;
 			interrupts = <2>, <3>, <4>, <5>, <6>, <7>;
+		};
+
+		snand: spi@1a400 {
+			compatible = "realtek,rtl9301-snand";
+			reg = <0x1a400 0x44>;
+			interrupt-parent = <&intc>;
+			interrupts = <19 2>;
+			clocks = <&lx_clk>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
 		};
 
 		spi0: spi@1200 {
@@ -154,6 +160,24 @@
 	switchcore@1b000000 {
 		compatible = "syscon", "simple-mfd";
 		reg = <0x1b000000 0x10000>;
+
+		i2c_mst1: i2c@36c {
+			compatible = "realtek,rtl9301-i2c";
+			reg = <0x36c 0x18>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
+		};
+
+		i2c_mst2: i2c@388 {
+			compatible = "realtek,rtl9301-i2c";
+			reg = <0x388 0x18>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
+		};
 
 		mdio_aux: mdio-aux {
 			compatible = "realtek,rtl9300-aux-mdio";

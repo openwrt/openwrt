@@ -1,7 +1,7 @@
 'use strict';
 
 import { append, append_raw, append_vars, network_append, network_append_raw, network_append_vars,
-	 set_default, dump_network, flush_network } from 'wifi.common';
+	 network_append_string_vars, set_default, dump_network, flush_network } from 'wifi.common';
 import * as netifd from 'wifi.netifd';
 import * as iface from 'wifi.iface';
 import * as fs from 'fs';
@@ -56,15 +56,20 @@ function setup_sta(data, config) {
 	iface.parse_encryption(config);
 
 	if (config.auth_type in [ 'sae', 'owe', 'eap2', 'eap192' ])
-		set_default(config, 'ieee80211w', 2);
+		config.ieee80211w = 2;
 	else if (config.auth_type in [ 'psk-sae' ])
-		set_default(config, 'ieee80211w', 1);
+		config.ieee80211w = 1;
+	if ((wildcard(data.htmode, 'EHT*') || wildcard(data.htmode, 'HE*')) &&
+		config.rsn_override)
+		config.rsn_overriding = 1;
+	else
+		config.rsn_overriding = 0;
 
 	set_default(config, 'ieee80211r', 0);
+	set_default(config, 'sae_pwe', 2);
 	set_default(config, 'multi_ap', 0);
 	set_default(config, 'default_disabled', 0);
 
-//multiap_flag_file="${_config}.is_multiap"
 	config.scan_ssid = 1;
 
 	switch(config.mode) {
@@ -155,16 +160,18 @@ function setup_sta(data, config) {
 		config.group = 'GCMP';
 	}
 
+	config.key_mgmt ??= 'NONE';
+
 	config.basic_rate = ratelist(config.basic_rate);
 	config.mcast_rate = ratestr(config.mcast_rate);
-	config.ssid = `"${config.ssid}"`;
 
+	network_append_string_vars(config, [ 'ssid' ]);
 	network_append_vars(config, [
-		'scan_ssid', 'noscan', 'disabled', 'multi_ap_backhaul_sta',
-		'ocv', 'key_mgmt', 'psk', 'sae_password', 'pairwise', 'group', 'bssid',
+		'rsn_overriding', 'scan_ssid', 'noscan', 'disabled', 'multi_ap_backhaul_sta',
+		'ocv', 'key_mgmt', 'sae_pwe', 'psk', 'sae_password', 'pairwise', 'group', 'bssid',
 		'proto', 'mesh_fwding', 'mesh_rssi_threshold', 'frequency', 'fixed_freq',
 		'disable_ht', 'disable_ht40', 'disable_vht', 'vht', 'max_oper_chwidth',
-		'ht40', 'ssid', 'beacon_int', 'ieee80211w', 'basic_rate', 'mcast_rate',
+		'ht40', 'beacon_int', 'ieee80211w', 'basic_rate', 'mcast_rate',
 		'bssid_blacklist', 'bssid_whitelist', 'erp', 'ca_cert', 'identity',
 		'anonymous_identity', 'client_cert', 'private_key', 'private_key_passwd',
 		'subject_match', 'altsubject_match', 'domain_match', 'domain_suffix_match',
@@ -184,8 +191,10 @@ export function generate(config_list, data, interface) {
 
 	interface.config.country = data.config.country_code;
 	interface.config.beacon_int = data.config.beacon_int;
+	if (data.config.scan_list)
+		interface.config.scan_list = join(" ", data.config.scan_list);
 
-	append_vars(interface.config, [ 'country', 'beacon_int' ]);
+	append_vars(interface.config, [ 'country', 'beacon_int', 'scan_list' ]);
 
 	setup_sta(data.config, interface.config);
 
@@ -226,7 +235,7 @@ export function setup(config, data) {
 
 	if (ret)
 		netifd.add_process('/usr/sbin/wpa_supplicant', ret.pid, true, true);
-	else
+	else if (fs.access('/usr/sbin/wpa_supplicant', 'x'))
 		netifd.setup_failed('SUPPLICANT_START_FAILED');
 };
 

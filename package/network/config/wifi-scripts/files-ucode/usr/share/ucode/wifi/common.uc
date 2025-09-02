@@ -32,9 +32,29 @@ export function append(key, value) {
 	append_raw(key + '=' + value);
 };
 
+function escape_string(value) {
+	let chars = map(split(value, ''), (v) => ord(v));
+	if (length(filter(chars, (v) => (v < 32 || v >= 128))) > 0)
+		return hexenc(value);
+
+	return `"${value}"`;
+}
+
+export function append_string(key, value) {
+	if (value == null)
+		return;
+
+	append(key, escape_string(value));
+};
+
 export function append_vars(dict, keys) {
 	for (let key in keys)
 		append(key, dict[key]);
+};
+
+export function append_string_vars(dict, keys) {
+	for (let key in keys)
+		append_string(key, dict[key]);
 };
 
 export function network_append_raw(value) {
@@ -57,9 +77,21 @@ export function network_append(key, value) {
 	network_append_raw('\t' + key + '=' + value);
 };
 
+export function network_append_string(key, value) {
+	if (value == null)
+		return;
+
+	network_append_raw('\t' + key + '=' + escape_string(value));
+};
+
 export function network_append_vars(dict, keys) {
 	for (let key in keys)
 		network_append(key, dict[key]);
+};
+
+export function network_append_string_vars(dict, keys) {
+	for (let key in keys)
+		network_append_string(key, dict[key]);
 };
 
 export function set_default(dict, key, value) {

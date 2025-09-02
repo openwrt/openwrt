@@ -620,7 +620,7 @@ uc_bpf_map_pin(uc_vm_t *vm, size_t nargs)
 
 static uc_value_t *
 uc_bpf_set_tc_hook(uc_value_t *ifname, uc_value_t *type, uc_value_t *prio,
-		   int fd)
+		   uc_value_t *classid, int fd)
 {
 	DECLARE_LIBBPF_OPTS(bpf_tc_hook, hook);
 	DECLARE_LIBBPF_OPTS(bpf_tc_opts, attach_tc,
@@ -657,6 +657,7 @@ uc_bpf_set_tc_hook(uc_value_t *ifname, uc_value_t *type, uc_value_t *prio,
 		goto out;
 
 	attach_tc.prog_fd = fd;
+	attach_tc.classid = ucv_int64_get(classid);
 	if (bpf_tc_attach(&hook, &attach_tc) < 0)
 		goto error;
 
@@ -676,11 +677,12 @@ uc_bpf_program_tc_attach(uc_vm_t *vm, size_t nargs)
 	uc_value_t *ifname = uc_fn_arg(0);
 	uc_value_t *type = uc_fn_arg(1);
 	uc_value_t *prio = uc_fn_arg(2);
+	uc_value_t *classid = uc_fn_arg(3);
 
 	if (!f)
 		err_return(EINVAL, NULL);
 
-	return uc_bpf_set_tc_hook(ifname, type, prio, f->fd);
+	return uc_bpf_set_tc_hook(ifname, type, prio, classid, f->fd);
 }
 
 static uc_value_t *
@@ -690,7 +692,7 @@ uc_bpf_tc_detach(uc_vm_t *vm, size_t nargs)
 	uc_value_t *type = uc_fn_arg(1);
 	uc_value_t *prio = uc_fn_arg(2);
 
-	return uc_bpf_set_tc_hook(ifname, type, prio, -1);
+	return uc_bpf_set_tc_hook(ifname, type, prio, NULL, -1);
 }
 
 static int

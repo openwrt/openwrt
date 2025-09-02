@@ -3,12 +3,12 @@
 # Copyright (C) 2013-2016 OpenWrt.org
 # Copyright (C) 2016 Yousong Zhou
 
-KERNEL_LOADADDR:=0x40008000
+KERNEL_LOADADDR:=0x40080000
 
 define Device/sun50i
+  $(call Device/FitImageLzma)
   SUNXI_DTS_DIR := allwinner/
   KERNEL_NAME := Image
-  KERNEL := kernel-bin
 endef
 
 define Device/sun50i-a64

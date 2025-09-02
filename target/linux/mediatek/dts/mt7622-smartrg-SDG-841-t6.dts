@@ -11,6 +11,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/leds/common.h>
+#include <dt-bindings/pinctrl/mt65xx.h>
 
 #include "mt7622.dtsi"
 #include "mt6380.dtsi"
@@ -90,8 +91,9 @@
 		};
 	};
 
-	memory {
+	memory@40000000 {
 		reg = <0x0 0x40000000 0x0 0x40000000>;
+		device_type = "memory";
 	};
 
 	reserved-memory {
@@ -406,13 +408,13 @@
 			       "NDL3", "NDL4", "NDL5",
 			       "NDL6", "NDL7", "NRB";
 			input-enable;
-			drive-strength = <4>;
+			drive-strength = <MTK_DRIVE_4mA>;
 			bias-pull-up;
 		};
 
 		conf-clk {
 			pins = "NCLE";
-			drive-strength = <4>;
+			drive-strength = <MTK_DRIVE_4mA>;
 			bias-pull-down;
 		};
 	};

@@ -139,7 +139,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 
 --- a/drivers/net/wireless/ath/ath12k/core.h
 +++ b/drivers/net/wireless/ath/ath12k/core.h
-@@ -789,6 +789,8 @@ struct ath12k_pdev_cap {
+@@ -879,6 +879,8 @@ struct ath12k_pdev_cap {
  	struct ath12k_band_cap band[NUM_NL80211_BANDS];
  	u32 eml_cap;
  	u32 mld_cap;
@@ -150,7 +150,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  struct mlo_timestamp {
 --- a/drivers/net/wireless/ath/ath12k/mac.c
 +++ b/drivers/net/wireless/ath/ath12k/mac.c
-@@ -2267,6 +2267,34 @@ ath12k_peer_assoc_h_vht_limit(u16 tx_mcs
+@@ -2185,6 +2185,34 @@ ath12k_peer_assoc_h_vht_limit(u16 tx_mcs
  	return tx_mcs_set;
  }
  
@@ -185,7 +185,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  static void ath12k_peer_assoc_h_vht(struct ath12k *ar,
  				    struct ath12k_link_vif *arvif,
  				    struct ath12k_link_sta *arsta,
-@@ -2284,6 +2312,7 @@ static void ath12k_peer_assoc_h_vht(stru
+@@ -2202,6 +2230,7 @@ static void ath12k_peer_assoc_h_vht(stru
  	u8 max_nss, vht_mcs;
  	int i, vht_nss, nss_idx;
  	bool user_rate_valid = true;
@@ -193,7 +193,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  
  	lockdep_assert_wiphy(ath12k_ar_to_hw(ar)->wiphy);
  
-@@ -2388,10 +2417,24 @@ static void ath12k_peer_assoc_h_vht(stru
+@@ -2306,10 +2335,24 @@ static void ath12k_peer_assoc_h_vht(stru
  	/* TODO:  Check */
  	arg->tx_max_mcs_nss = 0xFF;
  
@@ -221,7 +221,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  }
  
  static int ath12k_mac_get_max_he_mcs_map(u16 mcs_map, int nss)
-@@ -2484,6 +2527,7 @@ static void ath12k_peer_assoc_h_he(struc
+@@ -2402,6 +2445,7 @@ static void ath12k_peer_assoc_h_he(struc
  	u16 he_tx_mcs = 0, v = 0;
  	int he_nss, nss_idx;
  	bool user_rate_valid = true;
@@ -229,7 +229,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  
  	if (WARN_ON(ath12k_mac_vif_link_chan(vif, link_id, &def)))
  		return;
-@@ -2681,9 +2725,25 @@ static void ath12k_peer_assoc_h_he(struc
+@@ -2599,9 +2643,25 @@ static void ath12k_peer_assoc_h_he(struc
  	max_nss = min(max_nss, ar->num_tx_chains);
  	arg->peer_nss = min(link_sta->rx_nss, max_nss);
  
@@ -257,7 +257,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  }
  
  static void ath12k_peer_assoc_h_he_6ghz(struct ath12k *ar,
-@@ -2924,10 +2984,13 @@ static enum wmi_phy_mode ath12k_mac_get_
+@@ -2842,10 +2902,13 @@ static enum wmi_phy_mode ath12k_mac_get_
  						    struct ieee80211_link_sta *link_sta)
  {
  	if (link_sta->bandwidth == IEEE80211_STA_RX_BW_160) {
@@ -273,7 +273,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  		return MODE_11AC_VHT160;
  	}
  
-@@ -6826,10 +6889,8 @@ ath12k_create_vht_cap(struct ath12k *ar,
+@@ -7379,10 +7442,8 @@ ath12k_create_vht_cap(struct ath12k *ar,
  
  	ath12k_set_vht_txbf_cap(ar, &vht_cap.cap);
  
@@ -286,19 +286,19 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  
  	rxmcs_map = 0;
  	txmcs_map = 0;
-@@ -11437,7 +11498,8 @@ ath12k_mac_setup_radio_iface_comb(struct
- 	comb[0].radar_detect_widths = BIT(NL80211_CHAN_WIDTH_20_NOHT) |
- 					BIT(NL80211_CHAN_WIDTH_20) |
- 					BIT(NL80211_CHAN_WIDTH_40) |
--					BIT(NL80211_CHAN_WIDTH_80);
-+					BIT(NL80211_CHAN_WIDTH_80) |
-+					BIT(NL80211_CHAN_WIDTH_160);
+@@ -12654,7 +12715,8 @@ ath12k_mac_setup_radio_iface_comb(struct
+ 		comb[0].radar_detect_widths = BIT(NL80211_CHAN_WIDTH_20_NOHT) |
+ 						BIT(NL80211_CHAN_WIDTH_20) |
+ 						BIT(NL80211_CHAN_WIDTH_40) |
+-						BIT(NL80211_CHAN_WIDTH_80);
++						BIT(NL80211_CHAN_WIDTH_80) |
++						BIT(NL80211_CHAN_WIDTH_160);
+ 	}
  
  	return 0;
- }
-@@ -11811,6 +11873,9 @@ static int ath12k_mac_hw_register(struct
- 	ieee80211_hw_set(hw, SUPPORTS_TX_FRAG);
+@@ -13031,6 +13093,9 @@ static int ath12k_mac_hw_register(struct
  	ieee80211_hw_set(hw, REPORTS_LOW_ACK);
+ 	ieee80211_hw_set(hw, NO_VIRTUAL_MONITOR);
  
 +	if (cap->nss_ratio_enabled)
 +		ieee80211_hw_set(hw, SUPPORTS_VHT_EXT_NSS_BW);
@@ -308,7 +308,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  		ieee80211_hw_set(hw, TX_AMPDU_SETUP_IN_HW);
 --- a/drivers/net/wireless/ath/ath12k/mac.h
 +++ b/drivers/net/wireless/ath/ath12k/mac.h
-@@ -38,6 +38,8 @@ struct ath12k_generic_iter {
+@@ -41,6 +41,8 @@ struct ath12k_generic_iter {
  #define IEEE80211_DISABLE_VHT_MCS_SUPPORT_0_11	BIT(24)
  
  #define ATH12K_CHAN_WIDTH_NUM			14
@@ -319,7 +319,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  #define ATH12K_TX_POWER_MIN_VAL	0
 --- a/drivers/net/wireless/ath/ath12k/wmi.c
 +++ b/drivers/net/wireless/ath/ath12k/wmi.c
-@@ -525,6 +525,10 @@ ath12k_pull_mac_phy_cap_svc_ready_ext(st
+@@ -537,6 +537,10 @@ ath12k_pull_mac_phy_cap_svc_ready_ext(st
  		pdev_cap->he_mcs = le32_to_cpu(mac_caps->he_supp_mcs_5g);
  		pdev_cap->tx_chain_mask = le32_to_cpu(mac_caps->tx_chain_mask_5g);
  		pdev_cap->rx_chain_mask = le32_to_cpu(mac_caps->rx_chain_mask_5g);
@@ -330,7 +330,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  	} else {
  		return -EINVAL;
  	}
-@@ -1014,7 +1018,8 @@ static void ath12k_wmi_put_wmi_channel(s
+@@ -1059,7 +1063,8 @@ static void ath12k_wmi_put_wmi_channel(s
  
  		chan->band_center_freq2 = cpu_to_le32(center_freq1);
  
@@ -342,7 +342,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  		else
 --- a/drivers/net/wireless/ath/ath12k/wmi.h
 +++ b/drivers/net/wireless/ath/ath12k/wmi.h
-@@ -2290,6 +2290,21 @@ enum wmi_direct_buffer_module {
+@@ -2328,6 +2328,21 @@ enum wmi_direct_buffer_module {
  	WMI_DIRECT_BUF_MAX
  };
  
@@ -364,7 +364,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  struct ath12k_wmi_pdev_band_arg {
  	u32 pdev_id;
  	u32 start_freq;
-@@ -2606,6 +2621,12 @@ struct ath12k_wmi_hw_mode_cap_params {
+@@ -2647,6 +2662,12 @@ struct ath12k_wmi_hw_mode_cap_params {
  } __packed;
  
  #define WMI_MAX_HECAP_PHY_SIZE                 (3)
@@ -377,17 +377,3 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  
  /* pdev_id is present in lower 16 bits of pdev_and_hw_link_ids in
   * ath12k_wmi_mac_phy_caps_params & ath12k_wmi_caps_ext_params.
-@@ -2647,6 +2668,13 @@ struct ath12k_wmi_mac_phy_caps_params {
- 	__le32 he_cap_info_2g_ext;
- 	__le32 he_cap_info_5g_ext;
- 	__le32 he_cap_info_internal;
-+	__le32 wireless_modes;
-+	__le32 low_2ghz_chan_freq;
-+	__le32 high_2ghz_chan_freq;
-+	__le32 low_5ghz_chan_freq;
-+	__le32 high_5ghz_chan_freq;
-+	__le32 nss_ratio;
-+
- } __packed;
- 
- struct ath12k_wmi_hal_reg_caps_ext_params {

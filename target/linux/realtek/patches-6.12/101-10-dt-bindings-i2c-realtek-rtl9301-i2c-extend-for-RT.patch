@@ -1,0 +1,93 @@
+From f891af341e32c8a2f2d2d25dd3c424ff47147a31 Mon Sep 17 00:00:00 2001
+From: Jonas Jelonek <jelonek.jonas@gmail.com>
+Date: Mon, 4 Aug 2025 10:39:39 +0000
+Subject: [PATCH v5 10/11] dt-bindings: i2c: realtek,rtl9301-i2c: extend for
+ RTL9310 support
+
+Adjust the regex for child-node address to account for the fact that
+RTL9310 supports 12 instead of only 8 SDA lines. Also, narrow this per
+variant.
+
+Add a vendor-specific property to explicitly specify the
+Realtek-internal ID of the defined I2C controller/master. This is
+required, in particular for RTL9310, to describe the correct I2C
+master. Require this property for RTL9310.
+
+Add compatibles for known SoC variants RTL9311, RTL9312 and RTL9313.
+
+Signed-off-by: Jonas Jelonek <jelonek.jonas@gmail.com>
+Link: https://lore.kernel.org/linux-i2c/20250809220713.1038947-11-jelonek.jonas@gmail.com/
+---
+ .../bindings/i2c/realtek,rtl9301-i2c.yaml     | 39 ++++++++++++++++++-
+ 1 file changed, 37 insertions(+), 2 deletions(-)
+
+--- a/Documentation/devicetree/bindings/i2c/realtek,rtl9301-i2c.yaml
++++ b/Documentation/devicetree/bindings/i2c/realtek,rtl9301-i2c.yaml
+@@ -13,6 +13,8 @@ description:
+   RTL9300 SoCs have two I2C controllers. Each of these has an SCL line (which
+   if not-used for SCL can be a GPIO). There are 8 common SDA lines that can be
+   assigned to either I2C controller.
++  RTL9310 SoCs have equal capabilities but support 12 common SDA lines which
++  can be assigned to either I2C controller.
+ 
+ properties:
+   compatible:
+@@ -23,7 +25,15 @@ properties:
+               - realtek,rtl9302c-i2c
+               - realtek,rtl9303-i2c
+           - const: realtek,rtl9301-i2c
+-      - const: realtek,rtl9301-i2c
++      - items:
++          - enum:
++              - realtek,rtl9311-i2c
++              - realtek,rtl9312-i2c
++              - realtek,rtl9313-i2c
++          - const: realtek,rtl9310-i2c
++      - enum:
++          - realtek,rtl9301-i2c
++          - realtek,rtl9310-i2c
+ 
+   reg:
+     items:
+@@ -35,8 +45,14 @@ properties:
+   "#size-cells":
+     const: 0
+ 
++  realtek,scl:
++    $ref: /schemas/types.yaml#/definitions/uint32
++    description:
++      The SCL line number of this I2C controller.
++    enum: [ 0, 1 ]
++
+ patternProperties:
+-  '^i2c@[0-7]$':
++  '^i2c@[0-9ab]$':
+     $ref: /schemas/i2c/i2c-controller.yaml
+     unevaluatedProperties: false
+ 
+@@ -48,6 +64,25 @@ patternProperties:
+     required:
+       - reg
+ 
++
++allOf:
++  - if:
++      properties:
++        compatible:
++          contains:
++            const: realtek,rtl9310-i2c
++    then:
++      required:
++        - realtek,scl
++  - if:
++      properties:
++        compatible:
++          contains:
++            const: realtek,rtl9301-i2c
++    then:
++      patternProperties:
++        '^i2c@[89ab]$': false
++
+ required:
+   - compatible
+   - reg

@@ -1,0 +1,65 @@
+From a8610f7b98ad4b33ab723602863d60d462fa5af2 Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Sun, 10 Aug 2025 19:46:01 +0800
+Subject: Don't limit channel window to 500MB
+
+Previously the channel window and increments were limited to 500MB.
+That is incorrect and causes stuck connections if peers advertise
+a large window, then don't send an increment within the first 500MB.
+
+That's seen with SSH.NET https://github.com/sshnet/SSH.NET/issues/1671
+---
+ src/common-channel.c | 17 ++++++++++-------
+ src/sysoptions.h     |  3 ---
+ 2 files changed, 10 insertions(+), 10 deletions(-)
+
+--- a/src/common-channel.c
++++ b/src/common-channel.c
+@@ -858,17 +858,21 @@ void common_recv_msg_channel_data(struct Channel *channel, int fd,
+ void recv_msg_channel_window_adjust() {
+ 
+ 	struct Channel * channel;
+-	unsigned int incr;
++	unsigned int incr, newwin;
+ 	
+ 	channel = getchannel();
+ 	
+ 	incr = buf_getint(ses.payload);
+-	TRACE(("received window increment %d", incr))
+-	incr = MIN(incr, TRANS_MAX_WIN_INCR);
++	TRACE(("received window increment %u", incr))
+ 	
+-	channel->transwindow += incr;
+-	channel->transwindow = MIN(channel->transwindow, TRANS_MAX_WINDOW);
+-
++	newwin = channel->transwindow + incr;
++	if (newwin < channel->transwindow) {
++		/* Integer overflow, clamp it at maximum.
++		 * Behaviour may be unexpected, senders MUST NOT overflow per rfc4254. */
++		TRACE(("overflow window, prev %u", channel->transwindow));
++		newwin = 0xffffffff;
++	}
++	channel->transwindow = newwin;
+ }
+ 
+ /* Increment the incoming data window for a channel, and let the remote
+@@ -906,7 +910,6 @@ void recv_msg_channel_open() {
+ 
+ 	remotechan = buf_getint(ses.payload);
+ 	transwindow = buf_getint(ses.payload);
+-	transwindow = MIN(transwindow, TRANS_MAX_WINDOW);
+ 	transmaxpacket = buf_getint(ses.payload);
+ 	transmaxpacket = MIN(transmaxpacket, TRANS_MAX_PAYLOAD_LEN);
+ 
+--- a/src/sysoptions.h
++++ b/src/sysoptions.h
+@@ -243,9 +243,6 @@
+ #define RECV_MAX_PACKET_LEN (MAX(35000, ((RECV_MAX_PAYLOAD_LEN)+100)))
+ 
+ /* for channel code */
+-#define TRANS_MAX_WINDOW 500000000 /* 500MB is sufficient, stopping overflow */
+-#define TRANS_MAX_WIN_INCR 500000000 /* overflow prevention */
+-
+ #define RECV_WINDOWEXTEND (opts.recv_window / 3) /* We send a "window extend" every
+ 								RECV_WINDOWEXTEND bytes */
+ #define MAX_RECV_WINDOW (10*1024*1024) /* 10 MB should be enough */

@@ -1,15 +1,16 @@
-Author: Konstantin Demin <rockdrilla@gmail.com>
+From 5cc0127000db5f7567b54d0495fb91a8e452fe09 Mon Sep 17 00:00:00 2001
+From: Konstantin Demin <rockdrilla@gmail.com>
+Date: Fri, 9 May 2025 22:39:35 +0300
 Subject: Fix proxycmd without netcat
 
-Fixes commit e5a0ef27c227 "Execute multihop commands directly, no shell"
+fixes e5a0ef27c2 "Execute multihop commands directly, no shell"
 
+Signed-off-by: Konstantin Demin <rockdrilla@gmail.com>
 Forwarded: https://github.com/mkj/dropbear/pull/363
-
+---
  src/cli-main.c | 12 +++++++++++-
  1 file changed, 11 insertions(+), 1 deletion(-)
 
-diff --git a/src/cli-main.c b/src/cli-main.c
-index 2fafa88900..0a052a3512 100644
 --- a/src/cli-main.c
 +++ b/src/cli-main.c
 @@ -77,7 +77,11 @@ int main(int argc, char ** argv) {
@@ -25,7 +26,7 @@ index 2fafa88900..0a052a3512 100644
  		cli_proxy_cmd(&sock_in, &sock_out, &proxy_cmd_pid);
  		if (signal(SIGINT, kill_proxy_sighandler) == SIG_ERR ||
  			signal(SIGTERM, kill_proxy_sighandler) == SIG_ERR ||
-@@ -110,11 +114,13 @@ static void shell_proxy_cmd(const void *user_data_cmd) {
+@@ -110,11 +114,13 @@ static void shell_proxy_cmd(const void *
  	dropbear_exit("Failed to run '%s'\n", cmd);
  }
  
@@ -39,7 +40,7 @@ index 2fafa88900..0a052a3512 100644
  
  static void cli_proxy_cmd(int *sock_in, int *sock_out, pid_t *pid_out) {
  	char * cmd_arg = NULL;
-@@ -145,9 +151,11 @@ static void cli_proxy_cmd(int *sock_in, int *sock_out, pid_t *pid_out) {
+@@ -145,9 +151,11 @@ static void cli_proxy_cmd(int *sock_in,
  		cmd_arg = m_malloc(shell_cmdlen);
  		snprintf(cmd_arg, shell_cmdlen, "exec %s", cli_opts.proxycmd);
  		exec_fn = shell_proxy_cmd;
@@ -51,7 +52,7 @@ index 2fafa88900..0a052a3512 100644
  	}
  
  	ret = spawn_command(exec_fn, cmd_arg, sock_out, sock_in, NULL, pid_out);
-@@ -159,6 +167,7 @@ static void cli_proxy_cmd(int *sock_in, int *sock_out, pid_t *pid_out) {
+@@ -159,6 +167,7 @@ static void cli_proxy_cmd(int *sock_in,
  cleanup:
  	m_free(cli_opts.proxycmd);
  	m_free(cmd_arg);

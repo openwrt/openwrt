@@ -4,6 +4,7 @@
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/leds/common.h>
+#include <dt-bindings/pinctrl/mt65xx.h>
 
 #include "mt7986a.dtsi"
 
@@ -25,8 +26,9 @@
 		bootargs-override = "";
 	};
 
-	memory {
+	memory@40000000 {
 		reg = <0 0x40000000 0 0x20000000>;
+		device_type = "memory";
 	};
 
 	keys {
@@ -178,10 +180,7 @@
 	switch: switch@1f {
 		compatible = "mediatek,mt7531";
 		reg = <31>;
-
 		reset-gpios = <&pio 5 GPIO_ACTIVE_HIGH>;
-		reset-assert-us = <10000>;
-		reset-deassert-us = <10000>;
 	};
 };
 
@@ -193,13 +192,13 @@
 		};
 		conf-pu {
 			pins = "SPI2_CS", "SPI2_HOLD", "SPI2_WP";
-			drive-strength = <8>;
-			mediatek,pull-up-adv = <0>; /* bias-disable */
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-disable; /* bias-disable */
 		};
 		conf-pd {
 			pins = "SPI2_CLK", "SPI2_MOSI", "SPI2_MISO";
-			drive-strength = <8>;
-			mediatek,pull-down-adv = <0>; /* bias-disable */
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-disable; /* bias-disable */
 		};
 	};
 
@@ -216,7 +215,7 @@
 			       "WF1_HB2", "WF1_HB3", "WF1_HB4", "WF1_HB0",
 			       "WF1_HB5", "WF1_HB6", "WF1_HB7", "WF1_HB8",
 			       "WF1_TOP_CLK", "WF1_TOP_DATA";
-			drive-strength = <4>;
+			drive-strength = <MTK_DRIVE_4mA>;
 		};
 	};
 
@@ -233,7 +232,7 @@
 				"WF1_HB2", "WF1_HB3", "WF1_HB4", "WF1_HB0",
 				"WF1_HB5", "WF1_HB6", "WF1_HB7", "WF1_HB8",
 				"WF1_TOP_CLK", "WF1_TOP_DATA";
-			drive-strength = <4>;
+			drive-strength = <MTK_DRIVE_4mA>;
 		};
 	};
 };

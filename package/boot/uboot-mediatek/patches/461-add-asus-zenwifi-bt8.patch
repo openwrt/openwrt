@@ -80,7 +80,7 @@
 +CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
 +CONFIG_SYS_RELOC_GD_ENV_ADDR=y
 +CONFIG_USE_DEFAULT_ENV_FILE=y
-+CONFIG_DEFAULT_ENV_FILE="asus_zenwifi-bt8_env"
++CONFIG_DEFAULT_ENV_FILE="defenvs/asus_zenwifi-bt8_env"
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
 +CONFIG_VERSION_VARIABLE=y
 +CONFIG_NETCONSOLE=y
@@ -132,7 +132,7 @@
 +CONFIG_ZSTD=y
 +CONFIG_HEXDUMP=y
 --- /dev/null
-+++ b/asus_zenwifi-bt8_env
++++ b/defenvs/asus_zenwifi-bt8_env
 @@ -0,0 +1,56 @@
 +ethaddr_factory=ubi read 0x46000000 factory && env readmem -b ethaddr 0x46000004 0x6 ; setenv ethaddr_factory
 +ipaddr=192.168.1.1

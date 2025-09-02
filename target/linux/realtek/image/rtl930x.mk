@@ -5,6 +5,41 @@ define Build/xikestor-nosimg
   mv $@.new $@
 endef
 
+define Device/hasivo_s1100w-8xgt-se
+  SOC := rtl9303
+  DEVICE_VENDOR := Hasivo
+  DEVICE_MODEL := S1100W-8XGT-SE
+  IMAGE_SIZE := 12288k
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += hasivo_s1100w-8xgt-se
+
+define Device/plasmacloud-common
+  SOC := rtl9302
+  UIMAGE_MAGIC := 0x93000000
+  DEVICE_VENDOR := Plasma Cloud
+  DEVICE_PACKAGES := poemgr
+  IMAGE_SIZE := 15872k
+  BLOCKSIZE := 64k
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma | pad-to $$(BLOCKSIZE)
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | append-rootfs | pad-rootfs | check-size
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
+endef
+
+define Device/plasmacloud_psx8
+  $(Device/plasmacloud-common)
+  DEVICE_MODEL := PSX8
+endef
+TARGET_DEVICES += plasmacloud_psx8
+
+define Device/plasmacloud_psx10
+  $(Device/plasmacloud-common)
+  DEVICE_MODEL := PSX10
+endef
+TARGET_DEVICES += plasmacloud_psx10
+
 define Device/tplink_tl-st1008f_v2
   SOC := rtl9303
   UIMAGE_MAGIC := 0x93030000
@@ -13,8 +48,19 @@ define Device/tplink_tl-st1008f_v2
   DEVICE_VARIANT := v2.0
   DEVICE_PACKAGES := kmod-gpio-pca953x
   IMAGE_SIZE := 31808k
+  $(Device/kernel-lzma)
 endef
 TARGET_DEVICES += tplink_tl-st1008f_v2
+
+define Device/vimin_vm-s100-0800ms
+  SOC := rtl9303
+  UIMAGE_MAGIC := 0x93000000
+  DEVICE_VENDOR := Vimin
+  DEVICE_MODEL := VM-S100-0800MS
+  IMAGE_SIZE := 13312k
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += vimin_vm-s100-0800ms
 
 define Device/xikestor_sks8300-8x
   SOC := rtl9303
@@ -30,6 +76,24 @@ define Device/xikestor_sks8300-8x
 	append-rootfs | pad-rootfs | append-metadata | check-size
 endef
 TARGET_DEVICES += xikestor_sks8300-8x
+
+define Device/xikestor_sks8310-8x
+  SOC := rtl9303
+  UIMAGE_MAGIC := 0x93000000
+  DEVICE_VENDOR := XikeStor
+  DEVICE_MODEL := SKS8310-8X
+  IMAGE_SIZE := 20480k
+  $(Device/kernel-lzma)
+  IMAGE/sysupgrade.bin := \
+    pad-extra 16 | \
+    append-kernel | \
+    pad-to 64k | \
+    append-rootfs | \
+    pad-rootfs | \
+    check-size | \
+    append-metadata
+endef
+TARGET_DEVICES += xikestor_sks8310-8x
 
 define Device/zyxel_xgs1210-12
   SOC := rtl9302

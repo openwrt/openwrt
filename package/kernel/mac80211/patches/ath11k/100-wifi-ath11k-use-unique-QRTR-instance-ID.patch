@@ -136,11 +136,11 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +#define QRTR_INSTANCE_MASK			GENMASK(7, 0)
 +
  int ath11k_mhi_start(struct ath11k_pci *ar_pci);
- void ath11k_mhi_stop(struct ath11k_pci *ar_pci);
+ void ath11k_mhi_stop(struct ath11k_pci *ar_pci, bool is_suspend);
  int ath11k_mhi_register(struct ath11k_pci *ar_pci);
 --- a/drivers/net/wireless/ath/ath11k/pci.c
 +++ b/drivers/net/wireless/ath/ath11k/pci.c
-@@ -374,13 +374,20 @@ static void ath11k_pci_sw_reset(struct a
+@@ -376,13 +376,20 @@ static void ath11k_pci_sw_reset(struct a
  static void ath11k_pci_init_qmi_ce_config(struct ath11k_base *ab)
  {
  	struct ath11k_qmi_ce_cfg *cfg = &ab->qmi.ce_cfg;

@@ -1,0 +1,46 @@
+From c14e53ea013415a29e9c493e9dacafb6dc5b31ee Mon Sep 17 00:00:00 2001
+From: Michael-CY Lee <michael-cy.lee@mediatek.com>
+Date: Fri, 8 Nov 2024 10:20:03 +0800
+Subject: [PATCH] hostapd: Fix hostapd crash if setup a iface with a link bss failed
+
+The crash occurs while some link bsses is traversing all the links by using
+for_each_mld_link(), and hostapd access to the link bss which is already
+been freed.
+
+If hostapd setup a link bss failed, the link should be removed from
+its hostapd_mld. However, the function hostapd_bss_link_deinit
+doesn't remove the link bss correctly if it is the first bss and
+hapd->drv_priv is null. Therefore we should refator the remove iface flow
+as hostapd_remove_iface (used in wifi down cmd).
+
+There are some cases that setup a bss may fail (e.g. afc query failed) or
+trigger channel switch while hostapd is setting up other links.
+The failed link would be add into hostapd_mld while driver_init().
+
+Signed-off-by: Allen Ye <allen.ye@mediatek.com>
+Signed-off-by: Michael-CY Lee <michael-cy.lee@mediatek.com>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ src/ap/hostapd.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -3878,6 +3878,7 @@ int hostapd_add_iface(struct hapd_interf
+ 			}
+ 
+ 			if (hostapd_setup_interface(hapd_iface)) {
++				hostapd_bss_link_deinit(hapd_iface->bss[0]);
+ 				hostapd_deinit_driver(
+ 					hapd_iface->bss[0]->driver,
+ 					hapd_iface->bss[0]->drv_priv,
+@@ -5135,6 +5136,9 @@ int hostapd_mld_remove_link(struct hosta
+ 	if (!mld)
+ 		return -1;
+ 
++	if (!hapd->link.next)
++		return 0;
++
+ 	dl_list_del(&hapd->link);
+ 	mld->num_links--;
+ 

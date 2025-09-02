@@ -108,6 +108,8 @@
 	pinctrl-0 = <&mdio_pins>;
 	pinctrl-names = "default";
 	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
 
 	gmac0: mac@0 {
 		compatible = "mediatek,eth-mac";
@@ -367,6 +369,8 @@
 	nvmem-cells = <&eeprom_factory_0>;
 	nvmem-cell-names = "eeprom";
 	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
 
 	band@0 {
 		reg = <0>;

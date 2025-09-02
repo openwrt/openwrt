@@ -9,6 +9,10 @@ board_config_update
 board=$(board_name)
 
 case "$board" in
+hongdian,h7920-v40)
+	ucidef_add_gpio_switch "modem_enable" "Modem power" "modem_power" "1"
+	ucidef_add_gpio_switch "switch_serial_mode" "Switch RS232 to RS485" "serial_rs485_mode" "0"
+	;;
 teltonika,rut200|\
 teltonika,rut241)
 	ucidef_add_gpio_switch "digital_output" "Digital output" "digital_output" "0"

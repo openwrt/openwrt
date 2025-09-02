@@ -36,7 +36,7 @@ $(eval $(call KernelPackage,skge))
 define KernelPackage/ag71xx
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Atheros AR7XXX/AR9XXX ethernet mac support
-  DEPENDS:=@PCI_SUPPORT||TARGET_ath79 +kmod-phylink +kmod-mdio-devres +kmod-net-selftests
+  DEPENDS:=@TARGET_ath79 +kmod-phylink +kmod-mdio-devres +kmod-net-selftests
   KCONFIG:=CONFIG_AG71XX
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/atheros/ag71xx.ko
   AUTOLOAD:=$(call AutoLoad,50,ag71xx,1)
@@ -374,6 +374,23 @@ endef
 $(eval $(call KernelPackage,phy-broadcom))
 
 
+define KernelPackage/phy-bcm7xxx
+   SUBMENU:=$(NETWORK_DEVICES_MENU)
+   TITLE:=Broadcom 7xxx SOCs internal PHYs
+   KCONFIG:=CONFIG_BCM7XXX_PHY
+   DEPENDS:=+kmod-libphy +kmod-phylib-broadcom
+   FILES:=$(LINUX_DIR)/drivers/net/phy/bcm7xxx.ko
+   AUTOLOAD:=$(call AutoLoad,18,bcm7xxx,1)
+endef
+
+define KernelPackage/phy-bcm7xxx/description
+   Currently supports the BCM7366, BCM7439, BCM7445, and
+   40nm and 65nm generation of BCM7xxx Set Top Box SoCs.
+endef
+
+$(eval $(call KernelPackage,phy-bcm7xxx))
+
+
 define KernelPackage/phy-bcm84881
    SUBMENU:=$(NETWORK_DEVICES_MENU)
    TITLE:=Broadcom BCM84881 PHY driver
@@ -587,10 +604,25 @@ endef
 $(eval $(call KernelPackage,dsa))
 
 
+define KernelPackage/dsa-notag
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=DSA No-op tag driver
+  DEPENDS:=+kmod-dsa
+  KCONFIG:=CONFIG_NET_DSA_TAG_NONE
+  FILES:=$(LINUX_DIR)/net/dsa/tag_none.ko
+endef
+
+define KernelPackage/dsa-notag/description
+  Kernel module support for switches which don't tag frames over the CPU port.
+endef
+
+$(eval $(call KernelPackage,dsa-notag))
+
+
 define KernelPackage/dsa-b53
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Broadcom BCM53xx managed switch DSA support
-  DEPENDS:=+kmod-dsa
+  DEPENDS:=+kmod-dsa +kmod-dsa-notag
   KCONFIG:=CONFIG_B53 \
   CONFIG_NET_DSA_TAG_BRCM \
   CONFIG_NET_DSA_TAG_BRCM_LEGACY \
@@ -2037,6 +2069,27 @@ define KernelPackage/sfc-falcon/description
 endef
 
 $(eval $(call KernelPackage,sfc-falcon))
+
+
+define KernelPackage/sfc-siena
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Solarflare SFN5000/6000 'Siena' based card support
+  DEPENDS:=@PCI_SUPPORT +kmod-mdio +kmod-lib-crc32c +kmod-i2c-algo-bit +kmod-ptp +kmod-hwmon-core
+  KCONFIG:= \
+	CONFIG_SFC_SIENA \
+	CONFIG_SFC_SIENA_MTD=y \
+	CONFIG_SFC_SIENA_MCDI_MON=y \
+	CONFIG_SFC_SIENA_MCDI_LOGGING=y \
+	CONFIG_SFC_SIENA_SRIOV=y
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/sfc/siena/sfc-siena.ko
+  AUTOLOAD:=$(call AutoProbe,sfc-siena)
+endef
+
+define KernelPackage/sfc-siena/description
+  Solarflare SFN5000/6000 'Siena' based card support
+endef
+
+$(eval $(call KernelPackage,sfc-siena))
 
 
 define KernelPackage/wwan

@@ -51,11 +51,11 @@ Signed-off-by: Stefan Koch <stefan.koch10@gmail.com>
  #define read_vpe_c0_status()		mftc0($12, 0)
 --- a/arch/mips/include/asm/vpe.h
 +++ b/arch/mips/include/asm/vpe.h
-@@ -119,4 +119,13 @@ void cleanup_tc(struct tc *tc);
- 
- int __init vpe_module_init(void);
- void __exit vpe_module_exit(void);
-+
+@@ -126,5 +126,13 @@ int vpe_start(void *vpe, unsigned long s
+ int vpe_stop(void *vpe);
+ int vpe_free(void *vpe);
+ #endif /* CONFIG_MIPS_VPE_LOADER_MT */
++ 
 +/* For the explanation of the APIs please refer the section "MT APRP Kernel
 + * Programming" in AR9 SW Architecture Specification
 + */
@@ -63,11 +63,11 @@ Signed-off-by: Stefan Koch <stefan.koch10@gmail.com>
 +int32_t vpe1_sw_stop(uint32_t flags);
 +uint32_t vpe1_get_load_addr(uint32_t flags);
 +uint32_t vpe1_get_max_mem(uint32_t flags);
-+
+ 
  #endif /* _ASM_VPE_H */
 --- a/arch/mips/kernel/vpe-mt.c
 +++ b/arch/mips/kernel/vpe-mt.c
-@@ -383,6 +383,8 @@ int __init vpe_module_init(void)
+@@ -414,6 +414,8 @@ int __init vpe_module_init(void)
  			}
  
  			v->ntcs = hw_tcs - aprp_cpu_index();
@@ -76,7 +76,7 @@ Signed-off-by: Stefan Koch <stefan.koch10@gmail.com>
  
  			/* add the tc to the list of this vpe's tc's. */
  			list_add(&t->tc, &v->tc);
-@@ -486,3 +488,47 @@ void __exit vpe_module_exit(void)
+@@ -517,3 +519,47 @@ void __exit vpe_module_exit(void)
  			release_vpe(v);
  	}
  }

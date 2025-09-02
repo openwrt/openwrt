@@ -22,6 +22,16 @@
 		gpio = <&gpio 37 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
+
+	m2keyb_pwren: regulator@1 {
+		compatible = "regulator-fixed";
+		regulator-name = "m2keyb_pwren";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		gpio = <&gpio 38 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-always-on;
+	};
 };
 
 &spi0_pins {
@@ -184,6 +194,7 @@
 };
 
 &usb {
+	vbus-supply = <&usb_vbus>;
 	status = "okay";
 };
 

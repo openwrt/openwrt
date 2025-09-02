@@ -1124,7 +1124,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
      heavy_groups = [14, 15, 16]
      suitable_groups = [15, 16, 17, 18, 19, 20, 21]
      groups = [str(g) for g in sae_groups]
-@@ -2285,6 +2290,8 @@ def run_sae_pwe_group(dev, apdev, group)
+@@ -2387,6 +2392,8 @@ def run_sae_pwe_group(dev, apdev, group)
              logger.info("Add Brainpool EC groups since OpenSSL is new enough")
          elif tls.startswith("wolfSSL"):
              logger.info("Make sure Brainpool EC groups were enabled when compiling wolfSSL")

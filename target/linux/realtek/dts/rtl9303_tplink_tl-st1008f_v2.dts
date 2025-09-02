@@ -71,71 +71,6 @@
 		};
 	};
 
-	i2c_main: i2c@1b00036c {
-		compatible = "realtek,rtl9300-i2c";
-		reg = <0x1b00036c 0x3c>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-		scl-pin = <8>;
-		sda-pin = <9>;
-		clock-frequency = <100000>;
-	};
-
-	i2c-mux {
-		compatible = "realtek,i2c-mux-rtl9300";
-		i2c-parent = <&i2c_main>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		i2c0: i2c@0 {
-			reg = <0>;
-			scl-pin = <8>;
-			sda-pin = <9>;
-		};
-
-		i2c1: i2c@1 {
-			reg = <1>;
-			scl-pin = <8>;
-			sda-pin = <10>;
-		};
-
-		i2c2: i2c@2 {
-			reg = <2>;
-			scl-pin = <8>;
-			sda-pin = <11>;
-		};
-
-		i2c3: i2c@3 {
-			reg = <3>;
-			scl-pin = <8>;
-			sda-pin = <12>;
-		};
-
-		i2c4: i2c@4 {
-			reg = <4>;
-			scl-pin = <8>;
-			sda-pin = <13>;
-		};
-
-		i2c5: i2c@5 {
-			reg = <5>;
-			scl-pin = <8>;
-			sda-pin = <14>;
-		};
-
-		i2c6: i2c@6 {
-			reg = <6>;
-			scl-pin = <8>;
-			sda-pin = <15>;
-		};
-
-		i2c7: i2c@7 {
-			reg = <7>;
-			scl-pin = <8>;
-			sda-pin = <16>;
-		};
-	};
-
 	sfp0: sfp-p1 {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c0>;
@@ -217,6 +152,36 @@
 	};
 };
 
+&i2c_mst1 {
+	status = "okay";
+
+	/* SDA0-7 correspond to GPIO9-16 */
+	i2c0: i2c@0 {
+		reg = <0>;
+	};
+	i2c1: i2c@1 {
+		reg = <1>;
+	};
+	i2c2: i2c@2 {
+		reg = <2>;
+	};
+	i2c3: i2c@3 {
+		reg = <3>;
+	};
+	i2c4: i2c@4 {
+		reg = <4>;
+	};
+	i2c5: i2c@5 {
+		reg = <5>;
+	};
+	i2c6: i2c@6 {
+		reg = <6>;
+	};
+	i2c7: i2c@7 {
+		reg = <7>;
+	};
+};
+
 &spi0 {
 	status = "okay";
 
@@ -293,8 +258,8 @@
 		port@0 {
 			reg = <0>;
 			label = "lan1";
-			phy-mode = "10gbase-r";
-			pseudo-phy-handle = <&phy0>;
+			phy-mode = "1000base-x";
+			phy-handle = <&phy0>;
 			sfp = <&sfp0>;
 			managed = "in-band-status";
 			led-set = <0>;
@@ -303,8 +268,8 @@
 		port@8 {
 			reg = <8>;
 			label = "lan2";
-			phy-mode = "10gbase-r";
-			pseudo-phy-handle = <&phy8>;
+			phy-mode = "1000base-x";
+			phy-handle = <&phy8>;
 			sfp = <&sfp1>;
 			managed = "in-band-status";
 			led-set = <0>;
@@ -313,8 +278,8 @@
 		port@10 {
 			reg = <16>;
 			label = "lan3";
-			phy-mode = "10gbase-r";
-			pseudo-phy-handle = <&phy16>;
+			phy-mode = "1000base-x";
+			phy-handle = <&phy16>;
 			sfp = <&sfp2>;
 			managed = "in-band-status";
 			led-set = <0>;
@@ -323,8 +288,8 @@
 		port@14 {
 			reg = <20>;
 			label = "lan4";
-			phy-mode = "10gbase-r";
-			pseudo-phy-handle = <&phy20>;
+			phy-mode = "1000base-x";
+			phy-handle = <&phy20>;
 			sfp = <&sfp3>;
 			managed = "in-band-status";
 			led-set = <0>;
@@ -333,8 +298,8 @@
 		port@18 {
 			reg = <24>;
 			label = "lan5";
-			phy-mode = "10gbase-r";
-			pseudo-phy-handle = <&phy24>;
+			phy-mode = "1000base-x";
+			phy-handle = <&phy24>;
 			sfp = <&sfp4>;
 			managed = "in-band-status";
 			led-set = <0>;
@@ -343,8 +308,8 @@
 		port@19 {
 			reg = <25>;
 			label = "lan6";
-			phy-mode = "10gbase-r";
-			pseudo-phy-handle = <&phy25>;
+			phy-mode = "1000base-x";
+			phy-handle = <&phy25>;
 			sfp = <&sfp5>;
 			managed = "in-band-status";
 			led-set = <0>;
@@ -353,8 +318,8 @@
 		port@1a {
 			reg = <26>;
 			label = "lan7";
-			phy-mode = "10gbase-r";
-			pseudo-phy-handle = <&phy26>;
+			phy-mode = "1000base-x";
+			phy-handle = <&phy26>;
 			sfp = <&sfp6>;
 			managed = "in-band-status";
 			led-set = <0>;
@@ -363,8 +328,8 @@
 		port@1b {
 			reg = <27>;
 			label = "lan8";
-			phy-mode = "10gbase-r";
-			pseudo-phy-handle = <&phy27>;
+			phy-mode = "1000base-x";
+			phy-handle = <&phy27>;
 			sfp = <&sfp7>;
 			managed = "in-band-status";
 			led-set = <0>;

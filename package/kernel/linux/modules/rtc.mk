@@ -7,6 +7,24 @@
 
 RTC_MENU:=RTC Real-Time Clock Support
 
+define KernelPackage/rtc-bq32k
+  SUBMENU:=$(RTC_MENU)
+  TITLE:=Texas Instruments BQ32000 RTC support
+  DEFAULT:=m if ALL_KMODS && RTC_SUPPORT
+  DEPENDS:=+kmod-i2c-core
+  KCONFIG:=CONFIG_RTC_DRV_BQ32K \
+	CONFIG_RTC_CLASS=y
+  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-bq32k.ko
+  AUTOLOAD:=$(call AutoProbe,rtc-bq32k)
+endef
+
+define KernelPackage/rtc-bq32k/description
+ Kernel module for Texas Instruments BQ32000 I2C RTC.
+endef
+
+$(eval $(call KernelPackage,rtc-bq32k))
+
+
 define KernelPackage/rtc-ds1307
   SUBMENU:=$(RTC_MENU)
   TITLE:=Dallas/Maxim DS1307 (and compatible) RTC support

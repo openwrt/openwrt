@@ -217,16 +217,7 @@ TARGET_DEVICES += linksys_lgs310c
 
 # "NGE" refers to the uImage magic
 define Device/netgear_nge
-  KERNEL := \
-	kernel-bin | \
-	append-dtb | \
-	lzma | \
-	uImage lzma
-  KERNEL_INITRAMFS := \
-	kernel-bin | \
-	append-dtb | \
-	lzma | \
-	uImage lzma
+  $(Device/uimage-rt-loader)
   SOC := rtl8380
   IMAGE_SIZE := 14848k
   UIMAGE_MAGIC := 0x4e474520

@@ -22,8 +22,9 @@
 		rootdisk = <&ubi_fit_volume>;
 	};
 
-	memory {
+	memory@40000000 {
 		reg = <0 0x40000000 0 0x40000000>;
+		device_type = "memory";
 	};
 
 	reg_3p3v: regulator-3p3v {

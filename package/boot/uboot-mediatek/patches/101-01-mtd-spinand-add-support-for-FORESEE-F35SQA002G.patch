@@ -40,7 +40,7 @@ Link: https://lore.kernel.org/linux-mtd/20231002140458.147605-1-mmkurbanov@salut
  
 --- /dev/null
 +++ b/drivers/mtd/nand/spi/foresee.c
-@@ -0,0 +1,97 @@
+@@ -0,0 +1,95 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +/*
 + * Copyright (c) 2023, SberDevices. All Rights Reserved.
@@ -96,8 +96,6 @@ Link: https://lore.kernel.org/linux-mtd/20231002140458.147605-1-mmkurbanov@salut
 +
 +static int f35sqa002g_ecc_get_status(struct spinand_device *spinand, u8 status)
 +{
-+	struct nand_device *nand = spinand_to_nand(spinand);
-+
 +	switch (status & STATUS_ECC_MASK) {
 +	case STATUS_ECC_NO_BITFLIPS:
 +		return 0;

@@ -33,7 +33,6 @@
 /* get shift for given led in any set */
 #define RTL930X_LED_SET_LEDX_SHIFT(x) (16 * (x % 2))
 
-extern struct mutex smi_lock;
 extern struct rtl83xx_soc_info soc_info;
 
 /* Definition of the RTL930X-specific template field IDs as used in the PIE */
@@ -184,7 +183,7 @@ static void rtl930x_vlan_tables_read(u32 vlan, struct rtl838x_vlan_info *info)
 	pr_debug("VLAN_READ %d: %08x %08x\n", vlan, v, w);
 	rtl_table_release(r);
 
-	info->tagged_ports = v >> 3;
+	info->member_ports = v >> 3;
 	info->profile_id = (w >> 24) & 7;
 	info->hash_mc_fid = !!(w & BIT(27));
 	info->hash_uc_fid = !!(w & BIT(28));
@@ -205,7 +204,7 @@ static void rtl930x_vlan_set_tagged(u32 vlan, struct rtl838x_vlan_info *info)
 	/* Access VLAN table (1) via register 0 */
 	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 1);
 
-	v = info->tagged_ports << 3;
+	v = info->member_ports << 3;
 	v |= ((u32)info->fid) >> 3;
 
 	w = ((u32)info->fid) << 29;
@@ -294,6 +293,26 @@ static void rtl930x_l2_learning_setup(void)
 
 	/* Limit learning to maximum: 32k entries, after that just flood (bits 0-1) */
 	sw_w32((0x7fff << 2) | 0, RTL930X_L2_LRN_CONSTRT_CTRL);
+}
+
+static void rtldsa_930x_enable_learning(int port, bool enable)
+{
+	/* Limit learning to maximum: 32k entries */
+	sw_w32_mask(GENMASK(17, 3), enable ? (0x7ffe << 3) : 0,
+		    RTL930X_L2_LRN_PORT_CONSTRT_CTRL + port * 4);
+}
+
+static void rtldsa_930x_enable_flood(int port, bool enable)
+{
+	/* 0: forward
+	 * 1: drop
+	 * 2: trap to local CPU
+	 * 3: copy to local CPU
+	 * 4: trap to master CPU
+	 * 5: copy to master CPU
+	 */
+	sw_w32_mask(GENMASK(2, 0), enable ? 0 : 1,
+		    RTL930X_L2_LRN_PORT_CONSTRT_CTRL + port * 4);
 }
 
 static void rtl930x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
@@ -638,6 +657,85 @@ static void rtl930x_write_mcast_pmask(int idx, u64 portmask)
 	rtl_table_release(q);
 }
 
+void rtldsa_930x_set_receive_management_action(int port, rma_ctrl_t type,
+					       action_type_t action)
+{
+	u32 shift;
+	u32 value;
+	u32 reg;
+
+	/* hack for value mapping */
+	if (type == GRATARP && action == COPY2CPU)
+		action = TRAP2MASTERCPU;
+
+	/* PTP doesn't allow to flood to all ports */
+	if (action == FLOODALL &&
+	    (type == PTP || type == PTP_UDP || type == PTP_ETH2)) {
+		pr_warn("%s: Port flooding not supported for PTP\n", __func__);
+		return;
+	}
+
+	switch(action) {
+	case FORWARD:
+		value = 0;
+		break;
+	case DROP:
+		value = 1;
+		break;
+	case TRAP2CPU:
+		value = 2;
+		break;
+	case TRAP2MASTERCPU:
+		value = 3;
+		break;
+	case FLOODALL:
+		value = 4;
+		break;
+	default:
+		return;
+	}
+
+	switch(type) {
+	case BPDU:
+		reg = RTL930X_RMA_BPDU_CTRL + (port / 10) * 4;
+		shift = (port % 10) * 3;
+		sw_w32_mask(GENMASK(shift + 2, shift), value << shift, reg);
+		break;
+	case PTP:
+		reg = RTL930X_RMA_PTP_CTRL + port * 4;
+
+		/* udp */
+		sw_w32_mask(GENMASK(3, 2), value << 2, reg);
+
+		/* eth2 */
+		sw_w32_mask(GENMASK(1, 0), value, reg);
+		break;
+	case PTP_UDP:
+		reg = RTL930X_RMA_PTP_CTRL + port * 4;
+		sw_w32_mask(GENMASK(3, 2), value << 2, reg);
+		break;
+	case PTP_ETH2:
+		reg = RTL930X_RMA_PTP_CTRL + port * 4;
+		sw_w32_mask(GENMASK(1, 0), value, reg);
+		break;
+	case LLDP:
+		reg = RTL930X_RMA_LLDP_CTRL + (port / 10) * 4;
+		shift = (port % 10) * 3;
+		sw_w32_mask(GENMASK(shift + 2, shift), value << shift, reg);
+		break;
+	case EAPOL:
+		reg = RTL930X_RMA_EAPOL_CTRL + (port / 10) * 4;
+		shift = (port % 10) * 3;
+		sw_w32_mask(GENMASK(shift + 2, shift), value << shift, reg);
+		break;
+	case GRATARP:
+		reg = RTL930X_SPCL_TRAP_PORT_CTRL + (port / 16) * 4;
+		shift = (port % 16) * 2;
+		sw_w32_mask(GENMASK(shift + 1, shift), value << shift, reg);
+		break;
+	}
+}
+
 static u64 rtl930x_traffic_get(int source)
 {
 	u32 v;
@@ -698,149 +796,27 @@ void rtl9300_dump_debug(void)
 	);
 }
 
-irqreturn_t rtl930x_switch_irq(int irq, void *dev_id)
+irqreturn_t rtldsa_930x_switch_irq(int irq, void *dev_id)
 {
 	struct dsa_switch *ds = dev_id;
-	u32 ports = sw_r32(RTL930X_ISR_PORT_LINK_STS_CHG);
+	struct rtl838x_switch_priv *priv = ds->priv;
+	unsigned long ports = sw_r32(RTL930X_ISR_PORT_LINK_STS_CHG);
+	unsigned int i;
 	u32 link;
 
 	/* Clear status */
 	sw_w32(ports, RTL930X_ISR_PORT_LINK_STS_CHG);
 
-	for (int i = 0; i < 28; i++) {
-		if (ports & BIT(i)) {
-			/* Read the register twice because of issues with latency at least
-			 * with the external RTL8226 PHY on the XGS1210
-			 */
-			link = sw_r32(RTL930X_MAC_LINK_STS);
-			link = sw_r32(RTL930X_MAC_LINK_STS);
-			if (link & BIT(i))
-				dsa_port_phylink_mac_change(ds, i, true);
-			else
-				dsa_port_phylink_mac_change(ds, i, false);
-		}
-	}
+	/* Read the register twice because of issues with latency at least
+	 * with the external RTL8226 PHY on the XGS1210
+	 */
+	link = sw_r32(RTL930X_MAC_LINK_STS);
+	link = sw_r32(RTL930X_MAC_LINK_STS);
+
+	for_each_set_bit(i, &ports, priv->cpu_port)
+		dsa_port_phylink_mac_change(ds, i, link & BIT(i));
 
 	return IRQ_HANDLED;
-}
-
-int rtl930x_write_phy(u32 port, u32 page, u32 reg, u32 val)
-{
-	u32 v;
-	int err = 0;
-
-	pr_debug("%s: port %d, page: %d, reg: %x, val: %x\n", __func__, port, page, reg, val);
-
-	if (port > 63 || page > 4095 || reg > 31)
-		return -ENOTSUPP;
-
-	val &= 0xffff;
-	mutex_lock(&smi_lock);
-
-	sw_w32(BIT(port), RTL930X_SMI_ACCESS_PHY_CTRL_0);
-	sw_w32_mask(0xffff << 16, val << 16, RTL930X_SMI_ACCESS_PHY_CTRL_2);
-	v = reg << 20 | page << 3 | 0x1f << 15 | BIT(2) | BIT(0);
-	sw_w32(v, RTL930X_SMI_ACCESS_PHY_CTRL_1);
-
-	do {
-		v = sw_r32(RTL930X_SMI_ACCESS_PHY_CTRL_1);
-	} while (v & 0x1);
-
-	if (v & 0x2)
-		err = -EIO;
-
-	mutex_unlock(&smi_lock);
-
-	return err;
-}
-
-int rtl930x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
-{
-	u32 v;
-	int err = 0;
-
-	if (port > 63 || page > 4095 || reg > 31)
-		return -ENOTSUPP;
-
-	mutex_lock(&smi_lock);
-
-	sw_w32_mask(0xffff << 16, port << 16, RTL930X_SMI_ACCESS_PHY_CTRL_2);
-	v = reg << 20 | page << 3 | 0x1f << 15 | 1;
-	sw_w32(v, RTL930X_SMI_ACCESS_PHY_CTRL_1);
-
-	do {
-		v = sw_r32(RTL930X_SMI_ACCESS_PHY_CTRL_1);
-	} while ( v & 0x1);
-
-	if (v & BIT(25)) {
-		pr_debug("Error reading phy %d, register %d\n", port, reg);
-		err = -EIO;
-	}
-	*val = (sw_r32(RTL930X_SMI_ACCESS_PHY_CTRL_2) & 0xffff);
-
-	pr_debug("%s: port %d, page: %d, reg: %x, val: %x\n", __func__, port, page, reg, *val);
-
-	mutex_unlock(&smi_lock);
-
-	return err;
-}
-
-/* Write to an mmd register of the PHY */
-int rtl930x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
-{
-	int err = 0;
-	u32 v;
-
-	mutex_lock(&smi_lock);
-
-	/* Set PHY to access */
-	sw_w32(BIT(port), RTL930X_SMI_ACCESS_PHY_CTRL_0);
-
-	/* Set data to write */
-	sw_w32_mask(0xffff << 16, val << 16, RTL930X_SMI_ACCESS_PHY_CTRL_2);
-
-	/* Set MMD device number and register to write to */
-	sw_w32(devnum << 16 | (regnum & 0xffff), RTL930X_SMI_ACCESS_PHY_CTRL_3);
-
-	v = BIT(2) | BIT(1) | BIT(0); /* WRITE | MMD-access | EXEC */
-	sw_w32(v, RTL930X_SMI_ACCESS_PHY_CTRL_1);
-
-	do {
-		v = sw_r32(RTL930X_SMI_ACCESS_PHY_CTRL_1);
-	} while (v & BIT(0));
-
-	pr_debug("%s: port %d, regnum: %x, val: %x (err %d)\n", __func__, port, regnum, val, err);
-	mutex_unlock(&smi_lock);
-	return err;
-}
-
-/* Read an mmd register of the PHY */
-int rtl930x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
-{
-	int err = 0;
-	u32 v;
-
-	mutex_lock(&smi_lock);
-
-	/* Set PHY to access */
-	sw_w32_mask(0xffff << 16, port << 16, RTL930X_SMI_ACCESS_PHY_CTRL_2);
-
-	/* Set MMD device number and register to write to */
-	sw_w32(devnum << 16 | (regnum & 0xffff), RTL930X_SMI_ACCESS_PHY_CTRL_3);
-
-	v = BIT(1) | BIT(0); /* MMD-access | EXEC */
-	sw_w32(v, RTL930X_SMI_ACCESS_PHY_CTRL_1);
-
-	do {
-		v = sw_r32(RTL930X_SMI_ACCESS_PHY_CTRL_1);
-	} while (v & BIT(0));
-	/* There is no error-checking via BIT 25 of v, as it does not seem to be set correctly */
-	*val = (sw_r32(RTL930X_SMI_ACCESS_PHY_CTRL_2) & 0xffff);
-	pr_debug("%s: port %d, regnum: %x, val: %x (err %d)\n", __func__, port, regnum, *val, err);
-
-	mutex_unlock(&smi_lock);
-
-	return err;
 }
 
 /* Calculate both the block 0 and the block 1 hash, and return in
@@ -2347,12 +2323,12 @@ static void rtl930x_set_distribution_algorithm(int group, int algoidx, u32 algom
 static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 {
 	struct device_node *node;
+	struct device *dev = priv->dev;
 	u32 pm = 0;
 
-	pr_debug("%s called\n", __func__);
 	node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
 	if (!node) {
-		pr_debug("%s No compatible LED node found\n", __func__);
+		dev_dbg(dev, "No compatible LED node found\n");
 		return;
 	}
 
@@ -2374,10 +2350,14 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 		sprintf(set_name, "led_set%d", set);
 		leds_in_this_set = of_property_count_u32_elems(node, set_name);
 
-		if (leds_in_this_set == 0 || leds_in_this_set > sizeof(set_config)) {
-			pr_err("%s led_set configuration invalid skipping over this set\n", __func__);
+		if (leds_in_this_set <= 0 || leds_in_this_set > sizeof(set_config)) {
+			if (leds_in_this_set != -EINVAL) {
+				dev_err(dev, "%s invalid, skipping this set, leds_in_this_set=%d, should be (0, %d]\n",
+					set_name, leds_in_this_set, sizeof(set_config));
+			}
 			continue;
 		}
+		dev_info(dev, "%s has %d LEDs configured\n", set_name, leds_in_this_set);
 
 		if (of_property_read_u32_array(node, set_name, set_config, leds_in_this_set)) {
 			break;
@@ -2426,7 +2406,7 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 	sw_w32(pm, RTL930X_LED_PORT_COMBO_MASK_CTRL);
 
 	for (int i = 0; i < 24; i++)
-		pr_debug("%s %08x: %08x\n",__func__, 0xbb00cc00 + i * 4, sw_r32(0xcc00 + i * 4));
+		dev_dbg(dev, "%08x: %08x\n", 0xbb00cc00 + i * 4, sw_r32(0xcc00 + i * 4));
 }
 
 const struct rtl838x_reg rtl930x_reg = {
@@ -2439,6 +2419,7 @@ const struct rtl838x_reg rtl930x_reg = {
 	.stat_port_rst = RTL930X_STAT_PORT_RST,
 	.stat_rst = RTL930X_STAT_RST,
 	.stat_port_std_mib = RTL930X_STAT_PORT_MIB_CNTR,
+	.stat_port_prv_mib = RTL930X_STAT_PORT_PRVTE_CNTR,
 	.traffic_enable = rtl930x_traffic_enable,
 	.traffic_disable = rtl930x_traffic_disable,
 	.traffic_get = rtl930x_traffic_get,
@@ -2515,4 +2496,7 @@ const struct rtl838x_reg rtl930x_reg = {
 	.set_l3_egress_intf = rtl930x_set_l3_egress_intf,
 	.set_distribution_algorithm = rtl930x_set_distribution_algorithm,
 	.led_init = rtl930x_led_init,
+	.enable_learning = rtldsa_930x_enable_learning,
+	.enable_flood = rtldsa_930x_enable_flood,
+	.set_receive_management_action = rtldsa_930x_set_receive_management_action,
 };

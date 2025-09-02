@@ -86,8 +86,9 @@ define Device/zyxel_gs1900
   KERNEL_INITRAMFS := \
 	kernel-bin | \
 	append-dtb | \
-	libdeflate-gzip | \
+	rt-compress | \
 	zyxel-vers | \
-	uImage gzip | \
+	rt-loader | \
+	uImage none | \
 	check-size 6976k
 endef

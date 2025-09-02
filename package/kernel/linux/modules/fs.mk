@@ -440,6 +440,22 @@ endef
 $(eval $(call KernelPackage,fs-netfs))
 
 
+define KernelPackage/fs-nilfs2
+  SUBMENU:=$(FS_MENU)
+  TITLE:=NILFS2 filesystem support
+  KCONFIG:=CONFIG_NILFS2_FS
+  FILES:=$(LINUX_DIR)/fs/nilfs2/nilfs2.ko
+  AUTOLOAD:=$(call AutoLoad,30,nilfs2)
+  $(call AddDepends/nls)
+endef
+
+define KernelPackage/fs-nilfs2/description
+ Kernel module for NILFS2 filesystem support
+endef
+
+$(eval $(call KernelPackage,fs-nilfs2))
+
+
 define KernelPackage/fs-nfs
   SUBMENU:=$(FS_MENU)
   TITLE:=NFS filesystem client support
@@ -536,7 +552,9 @@ define KernelPackage/fs-nfs-v4
   KCONFIG:= \
 	CONFIG_NFS_V4=y
   FILES:= \
-	$(LINUX_DIR)/fs/nfs/nfsv4.ko
+	$(LINUX_DIR)/fs/nfs/nfsv4.ko \
+	$(LINUX_DIR)/fs/nfs/flexfilelayout/nfs_layout_flexfiles.ko \
+	$(LINUX_DIR)/fs/nfs/filelayout/nfs_layout_nfsv41_files.ko
   AUTOLOAD:=$(call AutoLoad,41,nfsv4)
 endef
 

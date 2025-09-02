@@ -127,7 +127,7 @@
 			"type": "string"
 		},
 		"country_code": {
-			"description": "Specifies the country code, affects the available channels and transmission powers. For types mac80211 and broadcom a two letter country code is used (EN or DE). The madwifi driver expects a numeric code",
+			"description": "Specifies the two-letter country code (e.g. EN or DE), affects the available channels and transmission powers",
 			"type": "string"
 		},
 		"country_ie": {
@@ -618,6 +618,13 @@
 			"type": "boolean",
 			"default": true
 		},
+		"scan_list": {
+			"description": "List of frequencies (in MHz) to scan when looking for networks in client mode",
+			"type": "array",
+			"items": {
+				"type": "number"
+			}
+		},
 		"short_gi_160": {
 			"description": "Short GI for 160 MHz",
 			"type": "boolean",
@@ -695,6 +702,10 @@
 		"txpower": {
 			"description": "Specifies the maximum desired transmission power in dBm. The actual txpower used depends on regulatory requirements",
 			"type": "number"
+		},
+		"type": {
+			"description": "Device type (only mac80211 supported)",
+			"type": "string"
 		},
 		"vht160": {
 			"description": "Supported channel widths. 0 == 160MHz and 80+80 MHz not supported, 1 == 160 MHz supported, 2 == 160MHz and 80+80 MHz supported",
