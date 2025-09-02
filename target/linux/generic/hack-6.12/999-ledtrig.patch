@@ -1,0 +1,351 @@
+--- a/drivers/leds/trigger/Kconfig
++++ b/drivers/leds/trigger/Kconfig
+@@ -129,6 +129,20 @@ config LEDS_TRIGGER_NETDEV
+ 	  This allows LEDs to be controlled by network device activity.
+ 	  If unsure, say Y.
+ 
++config LEDS_TRIGGER_NETLAN
++	tristate "LED Network LAN Trigger"
++	depends on NET
++	help
++	  This allows LEDs to be controlled by network LAN device activity.
++	  If unsure, say Y.
++
++config LEDS_TRIGGER_NETWLAN
++	tristate "LED Network WLAN Trigger"
++	depends on NET
++	help
++	  This allows LEDs to be controlled by network WLAN device activity.
++	  If unsure, say Y.
++
+ config LEDS_TRIGGER_PATTERN
+ 	tristate "LED Pattern Trigger"
+ 	help
+--- /dev/null
++++ b/drivers/leds/trigger/ledtrig-netlan.c
+@@ -0,0 +1,145 @@
++// SPDX-License-Identifier: GPL-2.0
++// LED trigger monitoring up to 16 lan* interfaces using RX/TX summation and OR logic
++
++#include <linux/atomic.h>
++#include <linux/jiffies.h>
++#include <linux/leds.h>
++#include <linux/module.h>
++#include <linux/mutex.h>
++#include <linux/netdevice.h>
++#include <linux/rtnetlink.h>
++#include <linux/workqueue.h>
++#include "../leds.h"
++
++#define MAX_IFACES 16       /* Support up to 16 LAN interfaces */
++#define DEFAULT_INTERVAL 50 /* Blink interval in ms */
++
++struct led_netlan {
++    struct mutex lock;
++    struct delayed_work work;
++    struct led_classdev *led_cdev;
++    struct net_device *netdevs[MAX_IFACES];
++    int iface_count;
++    atomic_t interval;   /* in jiffies */
++    unsigned long last_rx_sum;
++    unsigned long last_tx_sum;
++};
++
++/* Periodic work function */
++static void lan_work_fn(struct work_struct *work)
++{
++    struct led_netlan *d =
++        container_of(work, struct led_netlan, work.work);
++    unsigned long rx_sum = 0, tx_sum = 0;
++    unsigned long interval;
++    bool any_up = false;
++    struct rtnl_link_stats64 *dev_stats;
++    struct rtnl_link_stats64 temp;
++    struct net_device *dev;
++    int count = 0;
++
++    mutex_lock(&d->lock);
++
++    /* Dynamic detect all interfaces with names starting with "lan" */
++    /* Release previously held references */
++    for (int i = 0; i < d->iface_count; i++) {
++        if (d->netdevs[i]) {
++            dev_put(d->netdevs[i]);
++            d->netdevs[i] = NULL;
++        }
++    }
++    /* Hold references */
++    rtnl_lock();
++    for_each_netdev(&init_net, dev) {
++        if (count >= MAX_IFACES)
++            break;
++        if (!strncmp(dev->name, "lan", 3)) {
++            dev_hold(dev);
++            d->netdevs[count++] = dev;
++        }
++    }
++    rtnl_unlock();
++    d->iface_count = count;
++
++    for (int i = 0; i < d->iface_count; i++) {
++        struct net_device *dev = d->netdevs[i];
++        if (!dev)
++            continue;
++        /* Check if the interface is online */
++        if (netif_running(dev) && netif_carrier_ok(dev))
++            any_up = true;
++        dev_stats = dev_get_stats(dev, &temp);
++        rx_sum += dev_stats->rx_packets;
++        tx_sum += dev_stats->tx_packets;
++    }
++
++    if (!any_up) {
++        /* No active link on any interface — turn LED off */
++        led_set_brightness(d->led_cdev, LED_OFF);
++    } else if ((rx_sum + tx_sum) != (d->last_rx_sum + d->last_tx_sum)) {
++        interval = jiffies_to_msecs(atomic_read(&d->interval));
++        /* Detected RX/TX activity — blink LED */
++        led_stop_software_blink(d->led_cdev);
++        led_blink_set_oneshot(d->led_cdev,
++                              &interval,
++                              &interval,
++                              true);
++    } else {
++        /* Link up but no traffic — LED stays on */
++        led_set_brightness(d->led_cdev, LED_FULL);
++    }
++
++    d->last_rx_sum = rx_sum;
++    d->last_tx_sum = tx_sum;
++    mutex_unlock(&d->lock);
++
++    schedule_delayed_work(&d->work, atomic_read(&d->interval) * 2);
++}
++
++static int lan_activate(struct led_classdev *led_cdev)
++{
++    struct led_netlan *d;
++
++    d = kzalloc(sizeof(*d), GFP_KERNEL);
++    if (!d)
++        return -ENOMEM;
++
++    mutex_init(&d->lock);
++    INIT_DELAYED_WORK(&d->work, lan_work_fn);
++    d->led_cdev = led_cdev;
++    atomic_set(&d->interval, msecs_to_jiffies(DEFAULT_INTERVAL));
++    d->last_rx_sum = 0;
++    d->last_tx_sum = 0;
++
++    /* Initial detection will happen during first work run */
++    d->iface_count = 0;
++
++    schedule_delayed_work(&d->work, 0);
++    led_cdev->trigger_data = d;
++    return 0;
++}
++
++static void lan_deactivate(struct led_classdev *led_cdev)
++{
++    struct led_netlan *d = led_cdev->trigger_data;
++    int i;
++
++    cancel_delayed_work_sync(&d->work);
++    for (i = 0; i < d->iface_count; i++)
++        dev_put(d->netdevs[i]);
++
++    led_set_brightness(led_cdev, LED_OFF);
++    kfree(d);
++}
++
++static struct led_trigger netlan_trigger = {
++    .name = "netlan",
++    .activate = lan_activate,
++    .deactivate = lan_deactivate,
++};
++
++module_led_trigger(netlan_trigger);
++
++MODULE_AUTHOR("Mieczyslaw Nalewaj namiltd@yahoo.com");
++MODULE_DESCRIPTION("LED trigger for up to 16 lan* interfaces with RX/TX sumation and OR logic");
++MODULE_LICENSE("GPL v2");
+--- /dev/null
++++ b/drivers/leds/trigger/ledtrig-netwlan.c
+@@ -0,0 +1,169 @@
++// SPDX-License-Identifier: GPL-2.0
++// LED trigger: emulate mac80211 tpt logic with blink at all traffic levels, but solid ON only when no traffic.
++
++#include <linux/atomic.h>
++#include <linux/jiffies.h>
++#include <linux/leds.h>
++#include <linux/module.h>
++#include <linux/mutex.h>
++#include <linux/netdevice.h>
++#include <linux/rtnetlink.h>
++#include <linux/workqueue.h>
++#include "../leds.h"
++
++#define MAX_IFACES 16
++#define FIXED_INTERVAL_MS 100
++
++/* Blink timing table (kbps thresholds, on/off ms) */
++static const struct {
++    u32 throughput;
++    long unsigned int on_ms;
++    long unsigned int off_ms;
++} tpt_table[] = {
++    {  64,   200, 800 },
++    { 512,   200, 300 },
++    {2048,   200, 150 },
++    {10000,  200,  50 },
++    {54000,  100,  50 }, /* now blink instead of solid ON */
++};
++
++struct led_netwlan {
++    struct mutex lock;
++    struct delayed_work work;
++    struct led_classdev *led_cdev;
++    struct net_device *netdevs[MAX_IFACES];
++    int iface_count;
++
++    u64 last_rx_bytes_sum;
++    u64 last_tx_bytes_sum;
++};
++
++/* Periodic work function */
++static void wlan_work_fn(struct work_struct *work)
++{
++    struct led_netwlan *d = container_of(work, struct led_netwlan, work.work);
++    u64 rx_bytes_sum = 0, tx_bytes_sum = 0, bytes_delta, bits_per_sec, kbps;
++    bool any_up = false;
++    struct rtnl_link_stats64 temp, *stats;
++    unsigned int interval_ms = FIXED_INTERVAL_MS;
++    int idx = -1, i;
++    long unsigned int on_ms, off_ms;
++    struct net_device *dev;
++    int count = 0;
++
++    mutex_lock(&d->lock);
++
++    /* Dynamic detect all interfaces with names starting with "phy" or "wl" */
++    /* Release previously held references */
++    for (int i = 0; i < d->iface_count; i++) {
++        if (d->netdevs[i]) {
++            dev_put(d->netdevs[i]);
++            d->netdevs[i] = NULL;
++        }
++    }
++    /* Hold references */
++    rtnl_lock();
++    for_each_netdev(&init_net, dev) {
++        if (count >= MAX_IFACES)
++            break;
++        if (!strncmp(dev->name, "phy", 3) || !strncmp(dev->name, "wl", 2)) {
++            dev_hold(dev);
++            d->netdevs[count++] = dev;
++        }
++    }
++    rtnl_unlock();
++    d->iface_count = count;
++
++    for (i = 0; i < d->iface_count; i++) {
++        struct net_device *dev = d->netdevs[i];
++        if (!dev)
++            continue;
++        if (netif_running(dev) && netif_carrier_ok(dev))
++            any_up = true;
++        stats = dev_get_stats(dev, &temp);
++        rx_bytes_sum += stats->rx_bytes;
++        tx_bytes_sum += stats->tx_bytes;
++    }
++
++    if (!any_up) {
++        led_stop_software_blink(d->led_cdev);
++        led_set_brightness(d->led_cdev, LED_OFF);
++        goto resched;
++    }
++
++    bytes_delta = (rx_bytes_sum - d->last_rx_bytes_sum) +
++                  (tx_bytes_sum - d->last_tx_bytes_sum);
++    bits_per_sec = div64_u64(bytes_delta * 8ULL * 1000ULL, interval_ms);
++    kbps = div64_u64(bits_per_sec, 1000ULL);
++
++    if (kbps == 0) {
++        /* Solid ON when no traffic */
++        led_stop_software_blink(d->led_cdev);
++        led_set_brightness(d->led_cdev, LED_FULL);
++    } else {
++        /* Find the highest matching threshold */
++        for (i = 0; i < ARRAY_SIZE(tpt_table); i++) {
++            if (kbps >= tpt_table[i].throughput)
++                idx = i;
++            else
++                break;
++        }
++        if (idx < 0)
++            idx = 0;
++
++        on_ms = tpt_table[idx].on_ms;
++        off_ms = tpt_table[idx].off_ms;
++        led_blink_set(d->led_cdev, &on_ms, &off_ms);
++    }
++
++    d->last_rx_bytes_sum = rx_bytes_sum;
++    d->last_tx_bytes_sum = tx_bytes_sum;
++
++resched:
++    mutex_unlock(&d->lock);
++    schedule_delayed_work(&d->work, msecs_to_jiffies(FIXED_INTERVAL_MS));
++}
++
++static int wlan_activate(struct led_classdev *led_cdev)
++{
++    struct led_netwlan *d = kzalloc(sizeof(*d), GFP_KERNEL);
++    if (!d)
++        return -ENOMEM;
++
++    mutex_init(&d->lock);
++    INIT_DELAYED_WORK(&d->work, wlan_work_fn);
++    d->led_cdev = led_cdev;
++
++    /* Initial detection will happen during first work run */
++    d->iface_count = 0;
++
++    schedule_delayed_work(&d->work, 0);
++    led_cdev->trigger_data = d;
++    return 0;
++}
++
++static void wlan_deactivate(struct led_classdev *led_cdev)
++{
++    struct led_netwlan *d = led_cdev->trigger_data;
++    int i;
++
++    cancel_delayed_work_sync(&d->work);
++    for (i = 0; i < d->iface_count; i++)
++        if (d->netdevs[i])
++            dev_put(d->netdevs[i]);
++
++    led_set_brightness(led_cdev, LED_OFF);
++    kfree(d);
++}
++
++static struct led_trigger netwlan_trigger = {
++    .name = "netwlan",
++    .activate = wlan_activate,
++    .deactivate = wlan_deactivate,
++};
++
++module_led_trigger(netwlan_trigger);
++
++MODULE_AUTHOR("Mieczyslaw Nalewaj <namiltd@yahoo.com>");
++MODULE_DESCRIPTION("LED trigger for up to 16 phy* or wl* interfaces with consistent blink and solid idle state");
++MODULE_LICENSE("GPL v2");
+--- a/drivers/leds/trigger/Makefile
++++ b/drivers/leds/trigger/Makefile
+@@ -16,3 +16,5 @@ obj-$(CONFIG_LEDS_TRIGGER_NETDEV)	+= led
+ obj-$(CONFIG_LEDS_TRIGGER_PATTERN)	+= ledtrig-pattern.o
+ obj-$(CONFIG_LEDS_TRIGGER_TTY)		+= ledtrig-tty.o
+ obj-$(CONFIG_LEDS_TRIGGER_INPUT_EVENTS)	+= ledtrig-input-events.o
++obj-$(CONFIG_LEDS_TRIGGER_NETLAN)	+= ledtrig-netlan.o
++obj-$(CONFIG_LEDS_TRIGGER_NETWLAN)	+= ledtrig-netwlan.o
