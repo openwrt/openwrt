@@ -203,7 +203,7 @@ define Device/radxa_rock-5a
   DEVICE_MODEL := ROCK 5A
   SOC := rk3588s
   UBOOT_DEVICE_NAME := rock5a-rk3588s
-  DEVICE_PACKAGES := kmod-hwmon-pwmfan
+  DEVICE_PACKAGES := blkdiscard block-mount kmod-ata-ahci kmod-hwmon-pwmfan kmod-nvme kmod-r8169 kmod-rtw89-8852be wpad-basic-mbedtls
 endef
 TARGET_DEVICES += radxa_rock-5a
 
