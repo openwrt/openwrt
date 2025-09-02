@@ -10,7 +10,7 @@ BOARD_CFG=/etc/board.json
 [ "$(rootfs_type)" = "tmpfs" ] && exit 0
 
 case "$(board_name)" in
-tplink,tl-st1008f,v2)
+tplink,tl-st1008f-v2)
 	env_ethaddr=$(macaddr_canonicalize "$(fw_printenv -n ethaddr 2>/dev/null)")
 
 	# This device ships with a dummy ethaddr because it's an unmanaged switch.
