@@ -1,0 +1,39 @@
+From 5c8f9a05336cf5cadbd57ad461621b386aadb762 Mon Sep 17 00:00:00 2001
+From: Alexander Shiyan <eagle.alexander923@gmail.com>
+Date: Thu, 30 Jan 2025 08:38:49 +0300
+Subject: [PATCH] arm64: dts: rockchip: Fix broken tsadc pinctrl names for
+ rk3588
+
+The tsadc driver does not handle pinctrl "gpio" and "otpout".
+Let's use the correct pinctrl names "default" and "sleep".
+Additionally, Alexey Charkov's testing [1] has established that
+it is necessary for pinctrl state to reference the &tsadc_shut_org
+configuration rather than &tsadc_shut for the driver to function correctly.
+
+[1] https://lkml.org/lkml/2025/1/24/966
+
+Fixes: 32641b8ab1a5 ("arm64: dts: rockchip: add rk3588 thermal sensor")
+Cc: stable@vger.kernel.org
+Reviewed-by: Dragan Simic <dsimic@manjaro.org>
+Signed-off-by: Alexander Shiyan <eagle.alexander923@gmail.com>
+Link: https://lore.kernel.org/r/20250130053849.4902-1-eagle.alexander923@gmail.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3588-base.dtsi | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi
+@@ -2555,9 +2555,9 @@
+ 		rockchip,hw-tshut-temp = <120000>;
+ 		rockchip,hw-tshut-mode = <0>; /* tshut mode 0:CRU 1:GPIO */
+ 		rockchip,hw-tshut-polarity = <0>; /* tshut polarity 0:LOW 1:HIGH */
+-		pinctrl-0 = <&tsadc_gpio_func>;
+-		pinctrl-1 = <&tsadc_shut>;
+-		pinctrl-names = "gpio", "otpout";
++		pinctrl-0 = <&tsadc_shut_org>;
++		pinctrl-1 = <&tsadc_gpio_func>;
++		pinctrl-names = "default", "sleep";
+ 		#thermal-sensor-cells = <1>;
+ 		status = "disabled";
+ 	};
