@@ -56,7 +56,7 @@ tplink,t1600g-28ts-v3)
 	label_mac=$(get_mac_label)
 	lan_mac="$label_mac"
 	;;
-tplink,tl-st1008f,v2)
+tplink,tl-st1008f-v2)
 	lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 	[ -z "$lan_mac" ] || [ "$lan_mac" = "00:e0:4c:00:00:00" ] && lan_mac=$(macaddr_random)
 	;;
