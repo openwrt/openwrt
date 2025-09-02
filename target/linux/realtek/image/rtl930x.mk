@@ -40,17 +40,18 @@ define Device/plasmacloud_psx10
 endef
 TARGET_DEVICES += plasmacloud_psx10
 
-define Device/tplink_tl-st1008f_v2
+define Device/tplink_tl-st1008f-v2
   SOC := rtl9303
   UIMAGE_MAGIC := 0x93030000
   DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := TL-ST1008F
   DEVICE_VARIANT := v2.0
   DEVICE_PACKAGES := kmod-gpio-pca953x
+  SUPPORTED_DEVICES += tplink,tl-st1008f,v2
   IMAGE_SIZE := 31808k
   $(Device/kernel-lzma)
 endef
-TARGET_DEVICES += tplink_tl-st1008f_v2
+TARGET_DEVICES += tplink_tl-st1008f-v2
 
 define Device/vimin_vm-s100-0800ms
   SOC := rtl9303
