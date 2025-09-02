@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nicolas Frattaroli <nicolas.frattaroli@collabora.com>
+Date: Mon, 25 Aug 2025 09:27:08 +0200
+Subject: arm64: dts: rockchip: fix USB on RADXA ROCK 5T
+
+The RADXA ROCK 5T board uses the same GPIO pin for controlling the USB
+host port regulator. This control pin was mistakenly left out of the
+ROCK 5T device tree.
+
+Reported-by: FUKAUMI Naoki <naoki@radxa.com>
+Closes: https://libera.catirclogs.org/linux-rockchip/2025-08-25#38609886;
+Fixes: 0ea651de9b79 ("arm64: dts: rockchip: add ROCK 5T device tree")
+Signed-off-by: Nicolas Frattaroli <nicolas.frattaroli@collabora.com>
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588-rock-5t.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3588-rock-5t.dts
+@@ -95,6 +95,12 @@
+ 			rockchip,pins = <4 RK_PC3 RK_FUNC_GPIO &pcfg_pull_none>;
+ 		};
+ 	};
++
++	usb {
++		vcc5v0_host_en: vcc5v0-host-en {
++			rockchip,pins = <1 RK_PA1 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
+ };
+ 
+ &vcc3v3_pcie2x1l0 {
+@@ -103,3 +109,10 @@
+ 	pinctrl-0 = <&pcie2_0_vcc3v3_en>;
+ 	status = "okay";
+ };
++
++&vcc5v0_host {
++	enable-active-high;
++	gpio = <&gpio1 RK_PA1 GPIO_ACTIVE_HIGH>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&vcc5v0_host_en>;
++};
