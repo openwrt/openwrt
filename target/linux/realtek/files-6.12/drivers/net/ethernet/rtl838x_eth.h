@@ -165,6 +165,7 @@
 #define RTL839X_L2_NOTIFICATION_CTRL		(0x7808)
 #define RTL931X_L2_NTFY_CTRL			(0xCDC8)
 #define RTL838X_L2_CTRL_0			(0x3200)
+#define RTL838X_L2_CTRL_1			(0x3204)
 #define RTL839X_L2_CTRL_0			(0x3800)
 #define RTL930X_L2_CTRL				(0x8FD8)
 #define RTL931X_L2_CTRL				(0xC800)
@@ -464,5 +465,8 @@ int rtmdio_838x_write_phy(u32 port, u32 page, u32 reg, u32 val);
 
 int rtmdio_930x_read_sds_phy(int sds, int page, int regnum);
 int rtmdio_930x_write_sds_phy(int sds, int page, int regnum, u16 val);
+
+int rtmdio_931x_read_sds_phy_new(int sds, int page, int regnum);
+int rtmdio_931x_write_sds_phy_new(int sds, int page, int regnum, u16 val);
 
 #endif /* _RTL838X_ETH_H */

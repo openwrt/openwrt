@@ -9,7 +9,7 @@ Used for AP+STA support in OpenWrt - preserve AP mode keys across STA reconnect
 
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -1677,12 +1677,6 @@ static int ieee80211_stop_ap(struct wiph
+@@ -1691,12 +1691,6 @@ static int ieee80211_stop_ap(struct wiph
  
  	__sta_info_flush(sdata, true, link_id, NULL);
  
@@ -19,6 +19,6 @@ Used for AP+STA support in OpenWrt - preserve AP mode keys across STA reconnect
 -		ieee80211_free_key_list(local, &keys);
 -	}
 -
- 	link_conf->enable_beacon = false;
- 	sdata->beacon_rate_set = false;
- 	sdata->vif.cfg.ssid_len = 0;
+ 	ieee80211_stop_mbssid(sdata);
+ 	RCU_INIT_POINTER(link_conf->tx_bss_conf, NULL);
+ 

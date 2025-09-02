@@ -130,6 +130,33 @@ define Build/append-gl-metadata
 	}
 endef
 
+define Build/append-teltonika-metadata
+	echo \
+		'{$(if $(IMAGE_METADATA),$(IMAGE_METADATA)$(comma)) \
+			"metadata_version": "1.1", \
+			"compat_version": "$(call json_quote,$(compat_version))", \
+			"version":"$(call json_quote,$(VERSION_DIST))-$(call json_quote,$(VERSION_NUMBER))-$(call json_quote,$(REVISION))", \
+			"device_code": [".*"], \
+			"hwver": [".*"], \
+			"batch": [".*"], \
+			"serial": [".*"], \
+			$(if $(DEVICE_COMPAT_MESSAGE),"compat_message": "$(call json_quote,$(DEVICE_COMPAT_MESSAGE))"$(comma)) \
+			$(if $(filter-out 1.0,$(compat_version)),"new_supported_devices": \
+				[$(call metadata_devices,$(SUPPORTED_TELTONIKA_DEVICES))]$(comma) \
+				"supported_devices": ["$(call json_quote,$(legacy_supported_message))"]$(comma)) \
+			$(if $(filter 1.0,$(compat_version)),"supported_devices":[$(call metadata_devices,$(SUPPORTED_TELTONIKA_DEVICES))]$(comma)) \
+			"version_wrt": { \
+			"dist": "$(call json_quote,$(VERSION_DIST))", \
+			"version": "$(call json_quote,$(VERSION_NUMBER))", \
+			"revision": "$(call json_quote,$(REVISION))", \
+			"target": "$(call json_quote,$(TARGETID))", \
+			"board": "$(call json_quote,$(if $(BOARD_NAME),$(BOARD_NAME),$(DEVICE_NAME)))" \
+		}, \
+			"hw_support": {}, \
+			"hw_mods": {$(shell i=1; for mod in $(SUPPORTED_TELTONIKA_HW_MODS); do [ $$i -gt 1 ] && echo -n ,; echo -n "\"mod$$i\": \"$$mod\""; i=$$((i+1)); done)} \
+		}' | fwtool -I - $@
+endef
+
 define Build/append-rootfs
 	dd if=$(IMAGE_ROOTFS) >> $@
 endef

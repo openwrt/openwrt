@@ -128,6 +128,17 @@ function config_init(uci)
 					config.mode = "link";
 			config.radios = radios;
 
+			if (dev_name != dev_names[0])
+				delete config.macaddr;
+			if (dev_name != wdev.mlo_name && config.radio_macaddr) {
+				let idx = index(dev_names, dev_name);
+				if (mlo_vif)
+					idx--;
+				let macaddr = idx >= 0 ? config.radio_macaddr[idx] : null;
+				if (macaddr)
+					config.macaddr = macaddr;
+			}
+
 			let vif = {
 				name, config,
 				device: dev_name,
@@ -143,22 +154,24 @@ function config_init(uci)
 	}
 
 	for (let name, data in sections.vlan) {
-		if (!data.iface || !vifs[data.iface])
-			continue;
-
-		for (let vif in vifs[data.iface]) {
-			let dev = devices[vif.device];
-			let handler = handlers[vif.device];
-			if (!dev || !handler)
+		for (let iface, iface_vifs in vifs) {
+			if (data.iface && data.iface != iface)
 				continue;
 
-			let config = parse_attribute_list(data, handler.vlan);
+			for (let vif in iface_vifs) {
+				let dev = devices[vif.device];
+				let handler = handlers[vif.device];
+				if (!dev || !handler)
+					continue;
 
-			let vlan = {
-				name,
-				config
-			};
-			push(vif.vlan, vlan);
+				let config = parse_attribute_list(data, handler.vlan);
+
+				let vlan = {
+					name,
+					config
+				};
+				push(vif.vlan, vlan);
+			}
 		}
 	}
 
@@ -190,28 +203,30 @@ function config_init(uci)
 		},
 	});
 	for (let svcname, svc in udata) {
-		for (let typename, data in svc) {
-			for (let radio, config in data) {
-				if (type(config) != "object")
-					continue;
+		for (let insname, ins in svc) {
+			for (let typename, data in ins) {
+				for (let radio, config in data) {
+					if (type(config) != "object")
+						continue;
 
-				let dev = devices[radio];
-				if (dev) {
-					dev.config = { ...dev.config, ...config };
-					continue;
+					let dev = devices[radio];
+					if (dev) {
+						dev.config = { ...dev.config, ...config };
+						continue;
+					}
+
+					let handler = wireless.handlers[config.type];
+					if (!handler)
+						continue;
+
+					dev = devices[radio] = {
+						name,
+						config,
+
+						vif: [],
+					};
+					handlers[radio] = handler;
 				}
-
-				let handler = wireless.handlers[config.type];
-				if (!handler)
-					continue;
-
-				dev = devices[radio] = {
-					name,
-					config,
-
-					vif: [],
-				};
-				handlers[radio] = handler;
 			}
 		}
 	}
@@ -226,35 +241,37 @@ function config_init(uci)
 	});
 
 	for (let svcname, svc in udata) {
-		for (let typename, data in svc) {
-			for (let radio, vifs in data) {
-				if (type(vifs) != "object")
-					continue;
-
-				for (let name, vif in vifs) {
-					let devs = vif.device;
-					if (type(devs) != "array")
-						devs = [ devs ];
-					let config = vif.config;
-					if (!config)
+		for (let insname, ins in svc) {
+			for (let typename, data in ins) {
+				for (let radio, vifs in data) {
+					if (type(vifs) != "object")
 						continue;
-					for (let device in devs) {
-						let dev = devices[device];
-						if (!dev)
-							continue;
 
-						let vif_data = {
-							name, device, config,
-							vlan: [],
-							sta: []
-						};
-						if (vif.vlans)
-							vif_data.vlans = vif.vlans;
-						if (vif.stations)
-							vif_data.sta = vif.stations;
-						vifs[name] ??= [];
-						push(vifs[name], vif_data);
-						push(dev.vif, vif_data);
+					for (let name, vif in vifs) {
+						let devs = vif.device;
+						if (type(devs) != "array")
+							devs = [ devs ];
+						let config = vif.config;
+						if (!config)
+							continue;
+						for (let device in devs) {
+							let dev = devices[device];
+							if (!dev)
+								continue;
+
+							let vif_data = {
+								name, device, config,
+								vlan: [],
+								sta: []
+							};
+							if (vif.vlans)
+								vif_data.vlans = vif.vlans;
+							if (vif.stations)
+								vif_data.sta = vif.stations;
+							vifs[name] ??= [];
+							push(vifs[name], vif_data);
+							push(dev.vif, vif_data);
+						}
 					}
 				}
 			}
@@ -304,6 +321,7 @@ const default_config_attr = {
 		...network_config_attr,
 		device: TYPE_STRING,
 		mode: TYPE_STRING,
+		radio_macaddr: TYPE_ARRAY,
 	},
 	station: {
 		iface: TYPE_STRING,

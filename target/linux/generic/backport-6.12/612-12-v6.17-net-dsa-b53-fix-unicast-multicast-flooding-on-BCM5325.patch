@@ -21,7 +21,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/dsa/b53/b53_common.c
 +++ b/drivers/net/dsa/b53/b53_common.c
-@@ -560,12 +560,24 @@ static void b53_port_set_ucast_flood(str
+@@ -564,12 +564,24 @@ static void b53_port_set_ucast_flood(str
  {
  	u16 uc;
  
@@ -52,7 +52,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  }
  
  static void b53_port_set_mcast_flood(struct b53_device *dev, int port,
-@@ -573,19 +585,31 @@ static void b53_port_set_mcast_flood(str
+@@ -577,19 +589,31 @@ static void b53_port_set_mcast_flood(str
  {
  	u16 mc;
  
@@ -107,7 +107,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  /* PHY Registers */
  #define B53_PORT_MII_PAGE(i)		(0x10 + (i)) /* Port i MII Registers */
-@@ -369,6 +370,18 @@
+@@ -372,6 +373,18 @@
  #define B53_ARL_SRCH_RSTL(x)		(B53_ARL_SRCH_RSTL_0 + ((x) * 0x10))
  
  /*************************************************************************

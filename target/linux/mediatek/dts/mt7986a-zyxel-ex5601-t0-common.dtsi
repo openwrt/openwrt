@@ -8,6 +8,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/leds/common.h>
+#include <dt-bindings/pinctrl/mt65xx.h>
 
 / {
 	aliases {
@@ -23,8 +24,9 @@
 		stdout-path = "serial0:115200n8";
 	};
 
-	memory {
+	memory@40000000 {
 		reg = <0 0x40000000 0 0x40000000>;
+		device_type = "memory";
 	};
 
 	reg_1p8v: regulator-1p8v {
@@ -156,21 +158,21 @@
 };
 
 &spi0 {
-        pinctrl-names = "default";
-        pinctrl-0 = <&spi_flash_pins>;
-        cs-gpios = <0>, <0>;
-        #address-cells = <1>;
-        #size-cells = <0>;
-        status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi_flash_pins>;
+	cs-gpios = <0>, <0>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
 
-        spi_nand: spi_nand@1 {
-                #address-cells = <1>;
-                #size-cells = <1>;
-                compatible = "spi-nand";
-                reg = <1>;
-                spi-max-frequency = <52000000>;
-                spi-tx-bus-width = <4>;
-                spi-rx-bus-width = <4>;
+	spi_nand: spi_nand@1 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "spi-nand";
+		reg = <1>;
+		spi-max-frequency = <52000000>;
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
 
 		nand_partitions: partitions {
 			compatible = "fixed-partitions";
@@ -327,22 +329,22 @@
 		};
 		conf-pu {
 			pins = "SPI2_CS", "SPI2_HOLD", "SPI2_WP";
-			drive-strength = <4>;
-			mediatek,pull-up-adv = <0>;	/* bias-disable */
+			drive-strength = <MTK_DRIVE_4mA>;
+			bias-disable;	/* bias-disable */
 		};
 		conf-pd {
 			pins = "SPI2_CLK", "SPI2_MOSI", "SPI2_MISO";
-			drive-strength = <4>;
-			mediatek,pull-down-adv = <0>;	/* bias-disable */
+			drive-strength = <MTK_DRIVE_4mA>;
+			bias-disable;	/* bias-disable */
 		};
 	};
 
 	uart0_pins: uart0-pins {
-                mux {
-                        function = "uart";
-                        groups = "uart0";
-                };
-        };
+		mux {
+			function = "uart";
+			groups = "uart0";
+		};
+	};
 
 	uart1_pins: uart1-pins {
 		mux {
@@ -371,7 +373,7 @@
 			       "WF1_HB2", "WF1_HB3", "WF1_HB4", "WF1_HB0",
 			       "WF1_HB5", "WF1_HB6", "WF1_HB7", "WF1_HB8",
 			       "WF1_TOP_CLK", "WF1_TOP_DATA";
-			drive-strength = <4>;
+			drive-strength = <MTK_DRIVE_4mA>;
 		};
 	};
 
@@ -388,16 +390,16 @@
 			       "WF1_HB2", "WF1_HB3", "WF1_HB4", "WF1_HB0",
 			       "WF1_HB5", "WF1_HB6", "WF1_HB7", "WF1_HB8",
 			       "WF1_TOP_CLK", "WF1_TOP_DATA";
-			drive-strength = <4>;
+			drive-strength = <MTK_DRIVE_4mA>;
 		};
 	};
 
-        usb-oc-hog {
-                gpio-hog;
-                gpios = <7 GPIO_ACTIVE_LOW>;
-                input;
-                line-name = "usb-oc";
-        };
+	usb-oc-hog {
+		gpio-hog;
+		gpios = <7 GPIO_ACTIVE_LOW>;
+		input;
+		line-name = "usb-oc";
+	};
 };
 
 &spi1 {

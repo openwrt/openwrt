@@ -117,7 +117,9 @@
 				#size-cells = <1>;
 
 				macaddr_mrd_1fff8: macaddr@1fff8 {
+					compatible = "mac-base";
 					reg = <0x1fff8 0x6>;
+					#nvmem-cell-cells = <1>;
 				};
 			};
 		};
@@ -134,12 +136,26 @@
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&eeprom_factory_0>, <&precal_factory_e10>;
 		nvmem-cell-names = "eeprom", "precal";
-		/* MAC-Address set in userspace */
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		band@0 {
+			reg = <0>;
+			nvmem-cells = <&macaddr_mrd_1fff8 0>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		band@1 {
+			reg = <1>;
+			nvmem-cells = <&macaddr_mrd_1fff8 1>;
+			nvmem-cell-names = "mac-address";
+		};
 	};
 };
 
 &gmac0 {
-	nvmem-cells = <&macaddr_mrd_1fff8>;
+	nvmem-cells = <&macaddr_mrd_1fff8 0>;
 	nvmem-cell-names = "mac-address";
 };
 

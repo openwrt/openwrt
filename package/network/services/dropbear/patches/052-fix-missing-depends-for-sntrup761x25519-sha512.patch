@@ -1,0 +1,24 @@
+From 4bc1e18948d0918bcb1338a5f1e7856478abf985 Mon Sep 17 00:00:00 2001
+From: Konstantin Demin <rockdrilla@gmail.com>
+Date: Fri, 8 Aug 2025 10:02:44 +0300
+Subject: fix missing depends for sntrup761x25519-sha512
+
+fixes 440b7b5c4f "Add sntrup761x25519-sha512 post-quantum key exchange"
+
+Signed-off-by: Konstantin Demin <rockdrilla@gmail.com>
+Forwarded: https://github.com/mkj/dropbear/pull/375
+---
+ src/sysoptions.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/src/sysoptions.h
++++ b/src/sysoptions.h
+@@ -207,7 +207,7 @@
+ /* LTC SHA384 depends on SHA512 */
+ #define DROPBEAR_SHA512 ((DROPBEAR_SHA2_512_HMAC) || (DROPBEAR_ECC_521) \
+ 			|| (DROPBEAR_SHA384) || (DROPBEAR_DH_GROUP16) \
+-			|| (DROPBEAR_ED25519))
++			|| (DROPBEAR_ED25519) || (DROPBEAR_SNTRUP761))
+ 
+ #define DROPBEAR_DH_GROUP14 ((DROPBEAR_DH_GROUP14_SHA256) || (DROPBEAR_DH_GROUP14_SHA1))
+ 

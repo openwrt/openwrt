@@ -4,6 +4,7 @@
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/leds/common.h>
+#include <dt-bindings/pinctrl/mt65xx.h>
 
 #include "mt7622.dtsi"
 #include "mt6380.dtsi"
@@ -25,8 +26,9 @@
 		bootargs = "earlycon=uart8250,mmio32,0x11002000 console=ttyS0,115200n8 swiotlb=512";
 	};
 
-	memory {
+	memory@40000000 {
 		reg = <0 0x40000000 0 0x1f000000>;
+		device_type = "memory";
 	};
 
 	leds {
@@ -158,13 +160,13 @@
 		conf-cmd-data {
 			pins = "SPI_WP", "SPI_HOLD", "SPI_MOSI",
 			       "SPI_MISO", "SPI_CS";
-			drive-strength = <16>;
+			drive-strength = <MTK_DRIVE_16mA>;
 			bias-pull-up;
 		};
 
 		conf-clk {
 			pins = "SPI_CLK";
-			drive-strength = <16>;
+			drive-strength = <MTK_DRIVE_16mA>;
 			bias-pull-down;
 		};
 	};

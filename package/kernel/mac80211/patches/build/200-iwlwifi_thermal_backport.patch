@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/intel/iwlwifi/mvm/tt.c
 +++ b/drivers/net/wireless/intel/iwlwifi/mvm/tt.c
-@@ -638,8 +638,13 @@ static int iwl_mvm_tzone_get_temp(struct
+@@ -626,8 +626,13 @@ static int iwl_mvm_tzone_get_temp(struct
  	return 0;
  }
  
@@ -14,7 +14,7 @@
  {
  	struct iwl_mvm *mvm = thermal_zone_device_priv(device);
  
-@@ -682,13 +687,23 @@ static void iwl_mvm_thermal_zone_registe
+@@ -670,13 +675,23 @@ static void iwl_mvm_thermal_zone_registe
  	for (i = 0 ; i < IWL_MAX_DTS_TRIPS; i++) {
  		mvm->tz_device.trips[i].temperature = THERMAL_TEMP_INVALID;
  		mvm->tz_device.trips[i].type = THERMAL_TRIP_PASSIVE;

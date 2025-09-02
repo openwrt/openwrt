@@ -174,6 +174,11 @@ export function wpa_key_mgmt(config) {
 		if (config.ieee80211r)
 			append_value(config, 'wpa_key_mgmt', 'FT-SAE');
 		config.rsn_override_key_mgmt = config.wpa_key_mgmt;
+
+		append_value(config, 'rsn_override_key_mgmt_2', 'SAE-EXT-KEY');
+		if (config.ieee80211r)
+			append_value(config, 'rsn_override_key_mgmt_2', 'FT-SAE-EXT-KEY');
+
 		if (config.rsn_override > 1)
 			delete config.wpa_key_mgmt;
 
@@ -218,7 +223,7 @@ export function wpa_key_mgmt(config) {
 };
 
 function macaddr_random() {
-	let f = open("/dev/urandom", "r");
+	let f = fs.open("/dev/urandom", "r");
 	let addr = f.read(6);
 
 	addr = map(split(addr, ""), (v) => ord(v));
@@ -238,8 +243,10 @@ export function prepare(data, phy, num_global_macaddr, macaddr_base) {
 
 		data.default_macaddr = true;
 		mac_idx++;
-	} else if (data.macaddr == 'random')
+	} else if (data.macaddr == 'random') {
 		data.macaddr = macaddr_random();
+		data.random_macaddr = true;
+	}
 
 	log(`Preparing interface: ${data.ifname} with MAC: ${data.macaddr}`);
 };

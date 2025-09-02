@@ -63,16 +63,16 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	  firmware. Make sure you have the firmware for the device and
 --- a/drivers/usb/host/xhci-pci-renesas.c
 +++ b/drivers/usb/host/xhci-pci-renesas.c
-@@ -50,6 +50,8 @@
- #define RENESAS_RETRY	10000
- #define RENESAS_DELAY	10
+@@ -51,6 +51,8 @@
+ #define RENESAS_CHIP_ERASE_RETRY	500000	/* 500000 * RENESAS_DELAY ~= 5s */
+ #define RENESAS_DELAY			10
  
 +#define RENESAS_FW_NAME	"renesas_usb_fw.mem"
 +
  static int renesas_fw_download_image(struct pci_dev *dev,
  				     const u32 *fw, size_t step, bool rom)
  {
-@@ -573,12 +575,10 @@ exit:
+@@ -574,12 +576,10 @@ exit:
  	return err;
  }
  
@@ -88,7 +88,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  	const struct firmware *fw;
  	bool has_rom;
  	int err;
-@@ -625,7 +625,41 @@ exit:
+@@ -626,7 +626,41 @@ exit:
  	release_firmware(fw);
  	return err;
  }

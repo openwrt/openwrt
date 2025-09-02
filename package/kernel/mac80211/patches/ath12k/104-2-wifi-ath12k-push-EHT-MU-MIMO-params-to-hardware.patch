@@ -131,7 +131,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 
 --- a/drivers/net/wireless/ath/ath12k/mac.c
 +++ b/drivers/net/wireless/ath/ath12k/mac.c
-@@ -3334,6 +3334,58 @@ static int ath12k_mac_vif_recalc_sta_he_
+@@ -3292,6 +3292,58 @@ static int ath12k_mac_vif_recalc_sta_he_
  	return 0;
  }
  
@@ -190,7 +190,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  static void ath12k_bss_assoc(struct ath12k *ar,
  			     struct ath12k_link_vif *arvif,
  			     struct ieee80211_bss_conf *bss_conf)
-@@ -3821,6 +3873,12 @@ static void ath12k_mac_bss_info_changed(
+@@ -3994,6 +4046,12 @@ static void ath12k_mac_bss_info_changed(
  				ath12k_warn(ar->ab,
  					    "failed to set HE TXBF config for vdev: %d\n",
  					    arvif->vdev_id);
@@ -205,7 +205,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  
 --- a/drivers/net/wireless/ath/ath12k/wmi.h
 +++ b/drivers/net/wireless/ath/ath12k/wmi.h
-@@ -1152,6 +1152,7 @@ enum wmi_tlv_vdev_param {
+@@ -1176,6 +1176,7 @@ enum wmi_tlv_vdev_param {
  	WMI_VDEV_PARAM_BSS_COLOR,
  	WMI_VDEV_PARAM_SET_HEMU_MODE,
  	WMI_VDEV_PARAM_HEOPS_0_31 = 0x8003,
@@ -213,7 +213,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  };
  
  enum wmi_tlv_peer_flags {
-@@ -3096,6 +3097,26 @@ struct ath12k_wmi_rx_reorder_queue_remov
+@@ -3148,6 +3149,26 @@ struct ath12k_wmi_rx_reorder_queue_remov
  #define HE_MU_BFER_ENABLE	1
  #define HE_SU_BFER_ENABLE	1
  

@@ -284,7 +284,7 @@ working:
 +					       "WF_HB7", "WF_HB8", "WF_HB9", "WF_HB10",
 +					       "WF_TOP_CLK", "WF_TOP_DATA", "WF_XO_REQ",
 +					       "WF_CBA_RESETB", "WF_DIG_RESETB";
-+					drive-strength = <4>;
++					drive-strength = <MTK_DRIVE_4mA>;
 +				};
 +			};
 +
@@ -304,7 +304,7 @@ working:
  		};
  
  		efuse@11f20000 {
-@@ -211,17 +387,316 @@
+@@ -211,17 +387,318 @@
  			reg = <0 0x11f20000 0 0x1000>;
  			#address-cells = <1>;
  			#size-cells = <1>;
@@ -360,6 +360,8 @@ working:
 +		eth: ethernet@15100000 {
 +			compatible = "mediatek,mt7981-eth";
 +			reg = <0 0x15100000 0 0x80000>;
++			#address-cells = <1>;
++			#size-cells = <0>;
 +			interrupts = <GIC_SPI 196 IRQ_TYPE_LEVEL_HIGH>,
 +				     <GIC_SPI 197 IRQ_TYPE_LEVEL_HIGH>,
 +				     <GIC_SPI 198 IRQ_TYPE_LEVEL_HIGH>,
@@ -623,7 +625,7 @@ working:
  			reg = <0 0x18000000 0 0x1000000>,
  			      <0 0x10003000 0 0x1000>,
  			      <0 0x11d10000 0 0x1000>;
-@@ -234,6 +709,67 @@
+@@ -234,6 +711,67 @@
  			clock-names = "mcu", "ap2conn";
  			resets = <&watchdog MT7986_TOPRGU_CONSYS_SW_RST>;
  			reset-names = "consys";
@@ -691,7 +693,7 @@ working:
  		};
  	};
  
-@@ -245,4 +781,8 @@
+@@ -245,4 +783,8 @@
  			     <GIC_PPI 11 IRQ_TYPE_LEVEL_LOW>,
  			     <GIC_PPI 10 IRQ_TYPE_LEVEL_LOW>;
  	};

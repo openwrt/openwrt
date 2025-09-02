@@ -33,7 +33,6 @@
 /* get shift for given led in any set */
 #define RTL930X_LED_SET_LEDX_SHIFT(x) (16 * (x % 2))
 
-extern struct mutex smi_lock;
 extern struct rtl83xx_soc_info soc_info;
 
 /* Definition of the RTL930X-specific template field IDs as used in the PIE */
@@ -656,6 +655,85 @@ static void rtl930x_write_mcast_pmask(int idx, u64 portmask)
 	sw_w32(pm, rtl_table_data(q, 0));
 	rtl_table_write(q, idx);
 	rtl_table_release(q);
+}
+
+void rtldsa_930x_set_receive_management_action(int port, rma_ctrl_t type,
+					       action_type_t action)
+{
+	u32 shift;
+	u32 value;
+	u32 reg;
+
+	/* hack for value mapping */
+	if (type == GRATARP && action == COPY2CPU)
+		action = TRAP2MASTERCPU;
+
+	/* PTP doesn't allow to flood to all ports */
+	if (action == FLOODALL &&
+	    (type == PTP || type == PTP_UDP || type == PTP_ETH2)) {
+		pr_warn("%s: Port flooding not supported for PTP\n", __func__);
+		return;
+	}
+
+	switch(action) {
+	case FORWARD:
+		value = 0;
+		break;
+	case DROP:
+		value = 1;
+		break;
+	case TRAP2CPU:
+		value = 2;
+		break;
+	case TRAP2MASTERCPU:
+		value = 3;
+		break;
+	case FLOODALL:
+		value = 4;
+		break;
+	default:
+		return;
+	}
+
+	switch(type) {
+	case BPDU:
+		reg = RTL930X_RMA_BPDU_CTRL + (port / 10) * 4;
+		shift = (port % 10) * 3;
+		sw_w32_mask(GENMASK(shift + 2, shift), value << shift, reg);
+		break;
+	case PTP:
+		reg = RTL930X_RMA_PTP_CTRL + port * 4;
+
+		/* udp */
+		sw_w32_mask(GENMASK(3, 2), value << 2, reg);
+
+		/* eth2 */
+		sw_w32_mask(GENMASK(1, 0), value, reg);
+		break;
+	case PTP_UDP:
+		reg = RTL930X_RMA_PTP_CTRL + port * 4;
+		sw_w32_mask(GENMASK(3, 2), value << 2, reg);
+		break;
+	case PTP_ETH2:
+		reg = RTL930X_RMA_PTP_CTRL + port * 4;
+		sw_w32_mask(GENMASK(1, 0), value, reg);
+		break;
+	case LLDP:
+		reg = RTL930X_RMA_LLDP_CTRL + (port / 10) * 4;
+		shift = (port % 10) * 3;
+		sw_w32_mask(GENMASK(shift + 2, shift), value << shift, reg);
+		break;
+	case EAPOL:
+		reg = RTL930X_RMA_EAPOL_CTRL + (port / 10) * 4;
+		shift = (port % 10) * 3;
+		sw_w32_mask(GENMASK(shift + 2, shift), value << shift, reg);
+		break;
+	case GRATARP:
+		reg = RTL930X_SPCL_TRAP_PORT_CTRL + (port / 16) * 4;
+		shift = (port % 16) * 2;
+		sw_w32_mask(GENMASK(shift + 1, shift), value << shift, reg);
+		break;
+	}
 }
 
 static u64 rtl930x_traffic_get(int source)
@@ -2245,12 +2323,12 @@ static void rtl930x_set_distribution_algorithm(int group, int algoidx, u32 algom
 static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 {
 	struct device_node *node;
+	struct device *dev = priv->dev;
 	u32 pm = 0;
 
-	pr_debug("%s called\n", __func__);
 	node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
 	if (!node) {
-		pr_debug("%s No compatible LED node found\n", __func__);
+		dev_dbg(dev, "No compatible LED node found\n");
 		return;
 	}
 
@@ -2272,10 +2350,14 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 		sprintf(set_name, "led_set%d", set);
 		leds_in_this_set = of_property_count_u32_elems(node, set_name);
 
-		if (leds_in_this_set == 0 || leds_in_this_set > sizeof(set_config)) {
-			pr_err("%s led_set configuration invalid skipping over this set\n", __func__);
+		if (leds_in_this_set <= 0 || leds_in_this_set > sizeof(set_config)) {
+			if (leds_in_this_set != -EINVAL) {
+				dev_err(dev, "%s invalid, skipping this set, leds_in_this_set=%d, should be (0, %d]\n",
+					set_name, leds_in_this_set, sizeof(set_config));
+			}
 			continue;
 		}
+		dev_info(dev, "%s has %d LEDs configured\n", set_name, leds_in_this_set);
 
 		if (of_property_read_u32_array(node, set_name, set_config, leds_in_this_set)) {
 			break;
@@ -2324,7 +2406,7 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 	sw_w32(pm, RTL930X_LED_PORT_COMBO_MASK_CTRL);
 
 	for (int i = 0; i < 24; i++)
-		pr_debug("%s %08x: %08x\n",__func__, 0xbb00cc00 + i * 4, sw_r32(0xcc00 + i * 4));
+		dev_dbg(dev, "%08x: %08x\n", 0xbb00cc00 + i * 4, sw_r32(0xcc00 + i * 4));
 }
 
 const struct rtl838x_reg rtl930x_reg = {
@@ -2416,4 +2498,5 @@ const struct rtl838x_reg rtl930x_reg = {
 	.led_init = rtl930x_led_init,
 	.enable_learning = rtldsa_930x_enable_learning,
 	.enable_flood = rtldsa_930x_enable_flood,
+	.set_receive_management_action = rtldsa_930x_set_receive_management_action,
 };

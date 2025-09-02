@@ -1,16 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include "macros.dtsi"
 #include <dt-bindings/interrupt-controller/mips-gic.h>
 
 /dts-v1/;
-
-#define INTERNAL_PHY_SDS(n, s) \
-	phy##n: ethernet-phy@##n { \
-		reg = <##n>; \
-		compatible = "ethernet-phy-ieee802.3-c22"; \
-		phy-is-integrated; \
-		sds = <##s>; \
-	};
 
 / {
 	#address-cells = <1>;
@@ -197,25 +190,49 @@
 	switchcore@1b000000 {
 		compatible = "syscon", "simple-mfd";
 		reg = <0x1b000000 0x10000>;
+
+		i2c_mst1: i2c@100c {
+			compatible = "realtek,rtl9310-i2c";
+			reg = <0x100c 0x18>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			realtek,scl = <0>;
+
+			status = "disabled";
+		};
+
+		i2c_mst2: i2c@1024 {
+			compatible = "realtek,rtl9310-i2c";
+			reg = <0x1024 0x18>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			realtek,scl = <1>;
+
+			status = "disabled";
+		};
+
+		mdio_aux: mdio-aux {
+			compatible = "realtek,rtl9310-aux-mdio";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			pinctrl-0 = <&pinmux_gpio_mdio_en>;
+			pinctrl-names = "default";
+
+			status = "disabled";
+		};
 	};
 
-	pinmux: pinmux@1b001358 {
+	pinmux@1b0007d4 {
 		compatible = "pinctrl-single";
-		reg = <0x1b001358 0x4>;
+		reg = <0x1b0007d4 0x4>;
 
 		pinctrl-single,bit-per-mux;
 		pinctrl-single,register-width = <32>;
 		pinctrl-single,function-mask = <0x1>;
 		#pinctrl-cells = <2>;
 
-		/* Enable GPIO6 and GPIO7, possibly unknown others */
-		pinmux_disable_jtag: disable_jtag {
-			pinctrl-single,bits = <0x0 0x0 0x8000>;
-		};
-
-		/* Controls GPIO0 */
-		pinmux_disable_sys_led: disable_sys_led {
-			pinctrl-single,bits = <0x0 0x0 0x100>;
+		pinmux_gpio_mdio_en: gpio-mdio-en {
+			pinctrl-single,bits = <0x0 0x100 0x100>;
 		};
 	};
 

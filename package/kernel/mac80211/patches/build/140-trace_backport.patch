@@ -634,7 +634,7 @@
  	TP_printk("%s", __get_str(msg))
 --- a/drivers/net/wireless/intel/iwlwifi/iwl-devtrace.h
 +++ b/drivers/net/wireless/intel/iwlwifi/iwl-devtrace.h
-@@ -87,7 +87,11 @@ static inline void trace_ ## name(proto)
+@@ -88,7 +88,11 @@ static inline void trace_ ## name(proto)
  #endif
  
  #define DEV_ENTRY	__string(dev, dev_name(dev))

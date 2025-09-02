@@ -27,8 +27,9 @@
 		bootargs = "console=ttyS0,115200n1 pci=pcie_bus_perf root=PARTLABEL=rootfs";
 	};
 
-	memory {
+	memory@40000000 {
 		reg = <0x0 0x40000000 0x0 0x40000000>;
+		device_type = "memory";
 	};
 
 	reserved-memory {
@@ -608,7 +609,7 @@
 &pio {
 	button_pins: button-pins {
 		pins = "GPIO_RESET", "GPIO_WPS";
-		mediatek,pull-down-adv = <0>; /* bias-disable */
+		bias-disable; /* bias-disable */
 	};
 
 	gbe1_led0_pins: gbe1-led0-pins {
@@ -710,13 +711,13 @@
 	sfp_i2c_pins: sfp-i2c-pins {
 		conf-scl {
 			pins = "LED_A";
-			drive-strength =  <8>;
-			mediatek,pull-up-adv = <1>;
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-pull-up = <MTK_PUPD_SET_R1R0_01>;
 		};
 		conf-sda {
 			pins = "LED_E";
-			drive-strength =  <8>;
-			mediatek,pull-up-adv = <0>;
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-disable;
 		};
 	};
 

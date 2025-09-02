@@ -8,6 +8,7 @@
 /dts-v1/;
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/pinctrl/mt65xx.h>
 
 #include "mt7622.dtsi"
 #include "mt6380.dtsi"
@@ -134,8 +135,9 @@
 		enable-active-high;
 	};
 
-	memory {
-		reg = <0 0x40000000 0 0x3F000000>;
+	memory@40000000 {
+		reg = <0 0x40000000 0 0x3f000000>;
+		device_type = "memory";
 	};
 
 	reg_1p8v: regulator-1p8v {
@@ -214,13 +216,13 @@
 			       "NDL3", "NDL4", "NDL5",
 			       "NDL6", "NDL7", "NRB";
 			input-enable;
-			drive-strength = <4>;
+			drive-strength = <MTK_DRIVE_4mA>;
 			bias-pull-up;
 		};
 
 		conf-clk {
 			pins = "NCLE";
-			drive-strength = <4>;
+			drive-strength = <MTK_DRIVE_4mA>;
 			bias-pull-down;
 		};
 	};
@@ -257,7 +259,7 @@
 		conf {
 			pins = "I2S1_IN", "I2S1_OUT", "I2S_BCLK",
 			       "I2S_WS", "I2S_MCLK";
-			drive-strength = <12>;
+			drive-strength = <MTK_DRIVE_12mA>;
 			bias-pull-down;
 		};
 	};
@@ -337,12 +339,12 @@
 			pins = "I2S2_OUT", "I2S4_IN", "I2S3_IN",
 			       "I2S2_IN","I2S4_OUT";
 			input-enable;
-			drive-strength = <8>;
+			drive-strength = <MTK_DRIVE_8mA>;
 			bias-pull-up;
 		};
 		conf-clk {
 			pins = "I2S3_OUT";
-			drive-strength = <12>;
+			drive-strength = <MTK_DRIVE_12mA>;
 			bias-pull-down;
 		};
 		conf-cd {

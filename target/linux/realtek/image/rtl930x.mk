@@ -14,6 +14,32 @@ define Device/hasivo_s1100w-8xgt-se
 endef
 TARGET_DEVICES += hasivo_s1100w-8xgt-se
 
+define Device/plasmacloud-common
+  SOC := rtl9302
+  UIMAGE_MAGIC := 0x93000000
+  DEVICE_VENDOR := Plasma Cloud
+  DEVICE_PACKAGES := poemgr
+  IMAGE_SIZE := 15872k
+  BLOCKSIZE := 64k
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma | pad-to $$(BLOCKSIZE)
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | append-rootfs | pad-rootfs | check-size
+  IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | sysupgrade-tar rootfs=$$$$@ | append-metadata
+endef
+
+define Device/plasmacloud_psx8
+  $(Device/plasmacloud-common)
+  DEVICE_MODEL := PSX8
+endef
+TARGET_DEVICES += plasmacloud_psx8
+
+define Device/plasmacloud_psx10
+  $(Device/plasmacloud-common)
+  DEVICE_MODEL := PSX10
+endef
+TARGET_DEVICES += plasmacloud_psx10
+
 define Device/tplink_tl-st1008f_v2
   SOC := rtl9303
   UIMAGE_MAGIC := 0x93030000
@@ -50,6 +76,24 @@ define Device/xikestor_sks8300-8x
 	append-rootfs | pad-rootfs | append-metadata | check-size
 endef
 TARGET_DEVICES += xikestor_sks8300-8x
+
+define Device/xikestor_sks8310-8x
+  SOC := rtl9303
+  UIMAGE_MAGIC := 0x93000000
+  DEVICE_VENDOR := XikeStor
+  DEVICE_MODEL := SKS8310-8X
+  IMAGE_SIZE := 20480k
+  $(Device/kernel-lzma)
+  IMAGE/sysupgrade.bin := \
+    pad-extra 16 | \
+    append-kernel | \
+    pad-to 64k | \
+    append-rootfs | \
+    pad-rootfs | \
+    check-size | \
+    append-metadata
+endef
+TARGET_DEVICES += xikestor_sks8310-8x
 
 define Device/zyxel_xgs1210-12
   SOC := rtl9302

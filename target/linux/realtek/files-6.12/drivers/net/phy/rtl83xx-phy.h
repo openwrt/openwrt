@@ -1,9 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-struct rtl83xx_shared_private {
-	char *name;
-};
-
 struct __attribute__ ((__packed__)) part {
 	uint16_t start;
 	uint8_t wordsize;
@@ -60,16 +56,12 @@ struct __attribute__ ((__packed__)) fw_header {
 #define RTL930X_MAC_FORCE_MODE_CTRL		(0xCA1C)
 
 /* Registers of the internal SerDes of the 9310 */
-#define RTL931X_SERDES_INDRT_ACCESS_CTRL	(0x5638)
-#define RTL931X_SERDES_INDRT_DATA_CTRL		(0x563C)
 #define RTL931X_SERDES_MODE_CTRL		(0x13cc)
 #define RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR	(0x13F4)
 #define RTL931X_MAC_SERDES_MODE_CTRL(sds)	(0x136C + (((sds) << 2)))
 
 int rtl9300_serdes_setup(int port, int sds_num, phy_interface_t phy_mode);
 
-int rtl931x_read_sds_phy(int phy_addr, int page, int phy_reg);
-int rtl931x_write_sds_phy(int phy_addr, int page, int phy_reg, u16 v);
 int rtl931x_sds_cmu_band_get(int sds, phy_interface_t mode);
 void rtl931x_sds_init(u32 sds, phy_interface_t mode);
 

@@ -86,8 +86,9 @@
 		led-upgrade = &led_status_blue;
 	};
 
-	memory {
+	memory@40000000 {
 		reg = <0x0 0x40000000 0x0 0x40000000>;
+		device_type = "memory";
 	};
 
 	cpus {
@@ -299,7 +300,7 @@
 &pio {
 	button_pins: button-pins {
 		pins = "GPIO_RESET", "GPIO_WPS";
-		mediatek,pull-down-adv = <0>; /* bias-disable */
+		bias-disable; /* bias-disable */
 	};
 
 	mdio0_pins: mdio0-pins {

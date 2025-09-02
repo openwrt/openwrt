@@ -1,14 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
-/dts-v1/;
+#include "macros.dtsi"
 
-#define INTERNAL_PHY_SDS(n, s) \
-	phy##n: ethernet-phy@##n { \
-		reg = <##n>; \
-		compatible = "ethernet-phy-ieee802.3-c22"; \
-		phy-is-integrated; \
-		sds = <##s>; \
-	};
+/dts-v1/;
 
 / {
 	#address-cells = <1>;
@@ -166,6 +160,24 @@
 	switchcore@1b000000 {
 		compatible = "syscon", "simple-mfd";
 		reg = <0x1b000000 0x10000>;
+
+		i2c_mst1: i2c@36c {
+			compatible = "realtek,rtl9301-i2c";
+			reg = <0x36c 0x18>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
+		};
+
+		i2c_mst2: i2c@388 {
+			compatible = "realtek,rtl9301-i2c";
+			reg = <0x388 0x18>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
+		};
 
 		mdio_aux: mdio-aux {
 			compatible = "realtek,rtl9300-aux-mdio";

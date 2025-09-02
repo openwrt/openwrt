@@ -131,8 +131,8 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 
 --- a/drivers/net/wireless/ath/ath12k/mac.c
 +++ b/drivers/net/wireless/ath/ath12k/mac.c
-@@ -3215,6 +3215,125 @@ static int ath12k_setup_peer_smps(struct
- 					 ath12k_smps_map[smps]);
+@@ -3173,6 +3173,125 @@ static u32 ath12k_mac_ieee80211_sta_bw_t
+ 	return bw;
  }
  
 +static int ath12k_mac_set_he_txbf_conf(struct ath12k_link_vif *arvif)
@@ -257,7 +257,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  static void ath12k_bss_assoc(struct ath12k *ar,
  			     struct ath12k_link_vif *arvif,
  			     struct ieee80211_bss_conf *bss_conf)
-@@ -3229,6 +3348,7 @@ static void ath12k_bss_assoc(struct ath1
+@@ -3187,6 +3306,7 @@ static void ath12k_bss_assoc(struct ath1
  	struct ath12k_sta *ahsta;
  	struct ath12k_peer *peer;
  	bool is_auth = false;
@@ -265,7 +265,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  	int ret;
  
  	lockdep_assert_wiphy(ath12k_ar_to_hw(ar)->wiphy);
-@@ -3272,8 +3392,26 @@ static void ath12k_bss_assoc(struct ath1
+@@ -3230,8 +3350,26 @@ static void ath12k_bss_assoc(struct ath1
  
  	ath12k_peer_assoc_prepare(ar, arvif, arsta, peer_arg, false);
  
@@ -292,7 +292,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  	ret = ath12k_wmi_send_peer_assoc_cmd(ar, peer_arg);
  	if (ret) {
  		ath12k_warn(ar->ab, "failed to run peer assoc for %pM vdev %i: %d\n",
-@@ -3677,6 +3815,13 @@ static void ath12k_mac_bss_info_changed(
+@@ -3850,6 +3988,13 @@ static void ath12k_mac_bss_info_changed(
  		ether_addr_copy(arvif->bssid, info->bssid);
  
  	if (changed & BSS_CHANGED_BEACON_ENABLED) {
@@ -306,7 +306,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  		ath12k_control_beaconing(arvif, info);
  
  		if (arvif->is_up && info->he_support &&
-@@ -6598,11 +6743,14 @@ static void ath12k_mac_copy_he_cap(struc
+@@ -7151,11 +7296,14 @@ static void ath12k_mac_copy_he_cap(struc
  
  	he_cap_elem->mac_cap_info[1] &=
  		IEEE80211_HE_MAC_CAP1_TF_MAC_PAD_DUR_MASK;
@@ -324,7 +324,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  	he_cap_elem->phy_cap_info[5] |= num_tx_chains - 1;
  
  	switch (iftype) {
-@@ -7734,72 +7882,6 @@ static int ath12k_mac_setup_vdev_create_
+@@ -8454,72 +8602,6 @@ static int ath12k_mac_setup_vdev_create_
  	return 0;
  }
  
@@ -336,7 +336,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
 -	u32 *hecap_phy_ptr = NULL;
 -	u32 hemode;
 -
--	if (pdev->cap.supported_bands & WMI_HOST_WLAN_2G_CAP)
+-	if (pdev->cap.supported_bands & WMI_HOST_WLAN_2GHZ_CAP)
 -		cap_band = &pdev_cap->band[NL80211_BAND_2GHZ];
 -	else
 -		cap_band = &pdev_cap->band[NL80211_BAND_5GHZ];
@@ -397,7 +397,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  static void ath12k_mac_update_vif_offload(struct ath12k_link_vif *arvif)
  {
  	struct ath12k_vif *ahvif = arvif->ahvif;
-@@ -8978,14 +9060,6 @@ ath12k_mac_vdev_start_restart(struct ath
+@@ -9706,14 +9788,6 @@ ath12k_mac_vdev_start_restart(struct ath
  		spin_unlock_bh(&ab->base_lock);
  
  		/* TODO: Notify if secondary 80Mhz also needs radar detection */
@@ -414,9 +414,9 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  	arg.passive |= !!(chandef->chan->flags & IEEE80211_CHAN_NO_IR);
 --- a/drivers/net/wireless/ath/ath12k/mac.h
 +++ b/drivers/net/wireless/ath/ath12k/mac.h
-@@ -51,6 +51,21 @@ struct ath12k_generic_iter {
- #define ATH12K_DEFAULT_SCAN_LINK	IEEE80211_MLD_MAX_NUM_LINKS
- #define ATH12K_NUM_MAX_LINKS		(IEEE80211_MLD_MAX_NUM_LINKS + 1)
+@@ -56,6 +56,21 @@ struct ath12k_generic_iter {
+ 
+ #define ATH12K_NUM_MAX_ACTIVE_LINKS_PER_DEVICE	2
  
 +#define HECAP_PHY_SUBFMR_GET(hecap_phy) \
 +	u8_get_bits(hecap_phy[3], IEEE80211_HE_PHY_CAP3_SU_BEAMFORMER)
@@ -438,7 +438,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  	ATH12K_BW_40    = 1,
 --- a/drivers/net/wireless/ath/ath12k/wmi.h
 +++ b/drivers/net/wireless/ath/ath12k/wmi.h
-@@ -3079,31 +3079,6 @@ struct ath12k_wmi_rx_reorder_queue_remov
+@@ -3131,31 +3131,6 @@ struct ath12k_wmi_rx_reorder_queue_remov
  #define WMI_VDEV_PARAM_TXBF_SU_TX_BFER BIT(2)
  #define WMI_VDEV_PARAM_TXBF_MU_TX_BFER BIT(3)
  
@@ -470,7 +470,7 @@ Acked-by: Jeff Johnson <quic_jjohnson@quicinc.com>
  #define HE_MODE_SU_TX_BFEE	BIT(0)
  #define HE_MODE_SU_TX_BFER	BIT(1)
  #define HE_MODE_MU_TX_BFEE	BIT(2)
-@@ -3115,8 +3090,11 @@ struct ath12k_wmi_rx_reorder_queue_remov
+@@ -3167,8 +3142,11 @@ struct ath12k_wmi_rx_reorder_queue_remov
  #define HE_DL_MUOFDMA_ENABLE	1
  #define HE_UL_MUOFDMA_ENABLE	1
  #define HE_DL_MUMIMO_ENABLE	1

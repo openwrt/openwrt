@@ -174,6 +174,10 @@ platform_do_upgrade() {
 		CI_ROOTPART="rootfs"
 		nand_do_upgrade "$1"
 		;;
+	teltonika,rutc50)
+		CI_UBIPART="$(cmdline_get_var ubi.mtd)"
+		nand_do_upgrade "$1"
+		;;
 	nradio,c8-668gl)
 		CI_DATAPART="rootfs_data"
 		CI_KERNPART="kernel_2nd"

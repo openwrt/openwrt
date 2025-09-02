@@ -192,11 +192,6 @@ void rtl931x_print_matrix(void);
 int rtl83xx_lag_add(struct dsa_switch *ds, int group, int port, struct netdev_lag_upper_info *info);
 int rtl83xx_lag_del(struct dsa_switch *ds, int group, int port);
 
-/* phy functions that will need to be moved to the future mdio driver */
-
-int rtl931x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val);
-int rtl931x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val);
-
 /*
  * TODO: The following functions are currently not in use. So compiler will complain if
  * they are static and not made available externally. To preserve them for future use
@@ -214,7 +209,10 @@ void rtl9300_dump_debug(void);
 void rtl930x_pie_rule_dump_raw(u32 r[]);
 
 void rtl931x_print_matrix(void);
-void rtl931x_set_receive_management_action(int port, rma_ctrl_t type, action_type_t action);
+
+void rtldsa_930x_set_receive_management_action(int port, rma_ctrl_t type, action_type_t action);
+void rtldsa_931x_set_receive_management_action(int port, rma_ctrl_t type, action_type_t action);
+
 void rtl931x_sw_init(struct rtl838x_switch_priv *priv);
 
 #endif /* _NET_DSA_RTL83XX_H */
