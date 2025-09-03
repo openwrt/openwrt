@@ -166,6 +166,15 @@ define Device/friendlyarm_nanopi-r6s
 endef
 TARGET_DEVICES += friendlyarm_nanopi-r6s
 
+define Device/friendlyarm_nanopi-r76s
+  $(Device/rk3576)
+  DEVICE_VENDOR := FriendlyARM
+  DEVICE_MODEL := NanoPi R76S
+  UBOOT_DEVICE_NAME := generic-rk3576
+  DEVICE_PACKAGES := kmod-r8169 kmod-rtw88-8822cs wpad-basic-mbedtls
+endef
+TARGET_DEVICES += friendlyarm_nanopi-r76s
+
 define Device/lunzn_fastrhino-r66s
   $(Device/rk3568)
   DEVICE_VENDOR := Lunzn
