@@ -234,6 +234,14 @@ define Device/radxa_rock-5b-plus
 endef
 TARGET_DEVICES += radxa_rock-5b-plus
 
+define Device/radxa_rock-5c
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := ROCK 5C/5C Lite
+  SOC := rk3588s
+  DEVICE_PACKAGES := blkdiscard block-mount kmod-ata-ahci kmod-hwmon-pwmfan kmod-nvme kmod-r8169
+endef
+TARGET_DEVICES += radxa_rock-5c
+
 define Device/radxa_rock-5t
   DEVICE_VENDOR := Radxa
   DEVICE_MODEL := ROCK 5T
