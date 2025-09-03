@@ -454,20 +454,4 @@ struct rtl838x_eth_reg {
 	bool (*decode_tag)(struct p_hdr *h, struct dsa_tag *tag);
 };
 
-int phy_package_port_read_paged(struct phy_device *phydev, int port, int page, u32 regnum);
-int phy_package_port_write_paged(struct phy_device *phydev, int port, int page, u32 regnum, u16 val);
-int phy_package_read_paged(struct phy_device *phydev, int page, u32 regnum);
-int phy_package_write_paged(struct phy_device *phydev, int page, u32 regnum, u16 val);
-int phy_port_read_paged(struct phy_device *phydev, int port, int page, u32 regnum);
-int phy_port_write_paged(struct phy_device *phydev, int port, int page, u32 regnum, u16 val);
-
-int rtmdio_838x_read_phy(u32 port, u32 page, u32 reg, u32 *val);
-int rtmdio_838x_write_phy(u32 port, u32 page, u32 reg, u32 val);
-
-int rtmdio_930x_read_sds_phy(int sds, int page, int regnum);
-int rtmdio_930x_write_sds_phy(int sds, int page, int regnum, u16 val);
-
-int rtmdio_931x_read_sds_phy_new(int sds, int page, int regnum);
-int rtmdio_931x_write_sds_phy_new(int sds, int page, int regnum, u16 val);
-
 #endif /* _RTL838X_ETH_H */
