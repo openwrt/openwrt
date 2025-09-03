@@ -737,6 +737,7 @@ struct rtl838x_l2_entry {
 	bool is_local_forward:1;
 	bool is_remote_forward:1;
 	bool is_l2_tunnel:1;
+	bool hash_msb:1;
 	int l2_tunnel_id;
 	int l2_tunnel_list_id;
 };
