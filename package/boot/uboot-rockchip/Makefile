@@ -285,6 +285,13 @@ define U-Boot/nanopc-t6-rk3588
     friendlyarm_nanopc-t6
 endef
 
+define U-Boot/rock-5-itx-rk3588
+  $(U-Boot/rk358x/Default)
+  NAME:=ROCK 5 ITX/ITX+
+  BUILD_DEVICES:= \
+    radxa_rock-5-itx
+endef
+
 define U-Boot/rock5b-rk3588
   $(U-Boot/rk358x/Default)
   NAME:=ROCK 5B
@@ -352,6 +359,7 @@ UBOOT_TARGETS := \
   rock-3b-rk3568 \
   generic-rk3588 \
   nanopc-t6-rk3588 \
+  rock-5-itx-rk3588 \
   rock5b-rk3588 \
   sige7-rk3588 \
   nanopi-r6c-rk3588s \
