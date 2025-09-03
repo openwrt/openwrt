@@ -226,6 +226,16 @@ define Device/radxa_rock-5b-plus
 endef
 TARGET_DEVICES += radxa_rock-5b-plus
 
+define Device/radxa_rock-5t
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := ROCK 5T
+  SOC := rk3588
+  UBOOT_DEVICE_NAME := generic-rk3588
+  DEVICE_DTS := rockchip/rk3588-rock-5t
+  DEVICE_PACKAGES := blkdiscard block-mount iwlwifi-firmware-ax210 kmod-hwmon-pwmfan kmod-iwlwifi kmod-nvme kmod-r8169 wpad-basic-mbedtls
+endef
+TARGET_DEVICES += radxa_rock-5t
+
 define Device/radxa_rock-pi-4a
   DEVICE_VENDOR := Radxa
   DEVICE_MODEL := ROCK Pi 4A
