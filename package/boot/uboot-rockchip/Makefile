@@ -284,7 +284,8 @@ define U-Boot/generic-rk3588
   $(U-Boot/rk358x/Default)
   NAME:=Generic RK358x board
   BUILD_DEVICES:= \
-    radxa_rock-5b-plus
+    radxa_rock-5b-plus \
+    radxa_rock-5t
 endef
 
 # RK3588 boards
