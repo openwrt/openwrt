@@ -159,6 +159,16 @@ define Device/radxa_e25
 endef
 TARGET_DEVICES += radxa_e25
 
+define Device/radxa_e52c
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := E52C
+  SOC := rk3582
+  UBOOT_DEVICE_NAME := generic-rk3588
+  DEVICE_DTS := rockchip/rk3582-radxa-e52c
+  DEVICE_PACKAGES := blkdiscard kmod-r8169
+endef
+TARGET_DEVICES += radxa_e52c
+
 define Device/radxa_rock-3a
   DEVICE_VENDOR := Radxa
   DEVICE_MODEL := ROCK 3A
