@@ -30,7 +30,7 @@
  obj-$(CONFIG_CORENET_GENERIC)   += corenet_generic.o
 --- a/arch/powerpc/boot/Makefile
 +++ b/arch/powerpc/boot/Makefile
-@@ -185,6 +185,7 @@ src-plat-$(CONFIG_MVME7100) += motload-h
+@@ -186,6 +186,7 @@ src-plat-$(CONFIG_MVME7100) += motload-h
  src-plat-$(CONFIG_HIVEAP_330) += simpleboot.c fixed-head.S
  src-plat-$(CONFIG_TL_WDR4900_V1) += simpleboot.c fixed-head.S
  src-plat-$(CONFIG_WS_AP3710I) += simpleboot.c fixed-head.S
@@ -38,7 +38,7 @@
  src-plat-$(CONFIG_WS_AP3825I) += simpleboot.c fixed-head.S
  
  src-plat-$(CONFIG_PPC_MICROWATT) += fixed-head.S microwatt.c
-@@ -360,6 +361,7 @@ image-$(CONFIG_KSI8560)			+= cuImage.ksi
+@@ -361,6 +362,7 @@ image-$(CONFIG_KSI8560)			+= cuImage.ksi
  image-$(CONFIG_HIVEAP_330)		+= simpleImage.hiveap-330
  image-$(CONFIG_TL_WDR4900_V1)		+= simpleImage.tl-wdr4900-v1
  image-$(CONFIG_WS_AP3710I)		+= simpleImage.ws-ap3710i

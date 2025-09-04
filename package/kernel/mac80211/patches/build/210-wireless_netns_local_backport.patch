@@ -32,7 +32,7 @@
  		}
  
  		return err;
-@@ -1518,7 +1526,9 @@ static int cfg80211_netdev_notifier_call
+@@ -1525,7 +1533,9 @@ static int cfg80211_netdev_notifier_call
  		SET_NETDEV_DEVTYPE(dev, &wiphy_type);
  		wdev->netdev = dev;
  		/* can only change netns with wiphy */

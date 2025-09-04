@@ -1,0 +1,26 @@
+Switch rt2800soc from .remove to .remove_new callback
+
+The rt2x00soc_remove() function was converted to the new .remove API.
+Kernel 6.6 still uses the old .remove API, switch to .remove_new.
+
+rt2800soc was switched in upstream commit:
+https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/commit/?h=linux-6.12.y&id=06c566371f8afd582b9080f2d076509a4c78ae60
+
+This fixes the following build problem:
+```
+/drivers/net/wireless/ralink/rt2x00/rt2800soc.c:276:27: error: initialization of 'int (*)(struct platform_device *)' from incompatible pointer type 'void (*)(struct platform_device *)' [-Werror=incompatible-pointer-types]
+  276 |         .remove         = rt2x00soc_remove,
+      |                           ^~~~~~~~~~~~~~~~
+```
+
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800soc.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800soc.c
+@@ -273,7 +273,7 @@ static struct platform_driver rt2800soc_
+ 		.of_match_table	= rt2880_wmac_match,
+ 	},
+ 	.probe		= rt2800soc_probe,
+-	.remove		= rt2x00soc_remove,
++	.remove_new	= rt2x00soc_remove,
+ 	.suspend	= rt2x00soc_suspend,
+ 	.resume		= rt2x00soc_resume,
+ };

@@ -17546,7 +17546,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 +#endif  /* _TAS5713_H */
 --- a/sound/soc/soc-core.c
 +++ b/sound/soc/soc-core.c
-@@ -1316,7 +1316,15 @@ int snd_soc_runtime_set_dai_fmt(struct s
+@@ -1319,7 +1319,15 @@ int snd_soc_runtime_set_dai_fmt(struct s
  		return 0;
  
  	for_each_rtd_codec_dais(rtd, i, codec_dai) {

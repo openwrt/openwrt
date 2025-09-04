@@ -199,7 +199,7 @@ Link: https://patch.msgid.link/904d0ab1-c046-40cd-a3a3-d4fdcf663c9d@gmail.com
  	.bfer_mu_max_num = 1,
 --- a/drivers/net/wireless/realtek/rtw88/rtw8822b.c
 +++ b/drivers/net/wireless/realtek/rtw88/rtw8822b.c
-@@ -2072,12 +2072,6 @@ static const struct rtw_intf_phy_para_ta
+@@ -2074,12 +2074,6 @@ static const struct rtw_intf_phy_para_ta
  	.n_gen2_para	= ARRAY_SIZE(pcie_gen2_param_8822b),
  };
  
@@ -212,7 +212,7 @@ Link: https://patch.msgid.link/904d0ab1-c046-40cd-a3a3-d4fdcf663c9d@gmail.com
  static const struct rtw_hw_reg rtw8822b_dig[] = {
  	[0] = { .addr = 0xc50, .mask = 0x7f },
  	[1] = { .addr = 0xe50, .mask = 0x7f },
-@@ -2432,7 +2426,7 @@ static const u8 rtw8822b_pwrtrk_2g_cck_a
+@@ -2434,7 +2428,7 @@ static const u8 rtw8822b_pwrtrk_2g_cck_a
  	10, 11, 11, 12, 12, 13, 13, 14, 14, 15
  };
  
@@ -221,7 +221,7 @@ Link: https://patch.msgid.link/904d0ab1-c046-40cd-a3a3-d4fdcf663c9d@gmail.com
  	.pwrtrk_5gb_n[RTW_PWR_TRK_5G_1] = rtw8822b_pwrtrk_5gb_n[RTW_PWR_TRK_5G_1],
  	.pwrtrk_5gb_n[RTW_PWR_TRK_5G_2] = rtw8822b_pwrtrk_5gb_n[RTW_PWR_TRK_5G_2],
  	.pwrtrk_5gb_n[RTW_PWR_TRK_5G_3] = rtw8822b_pwrtrk_5gb_n[RTW_PWR_TRK_5G_3],
-@@ -2455,6 +2449,12 @@ static const struct rtw_pwr_track_tbl rt
+@@ -2457,6 +2451,12 @@ static const struct rtw_pwr_track_tbl rt
  	.pwrtrk_2g_ccka_p = rtw8822b_pwrtrk_2g_cck_a_p,
  };
  
@@ -234,7 +234,7 @@ Link: https://patch.msgid.link/904d0ab1-c046-40cd-a3a3-d4fdcf663c9d@gmail.com
  static const struct rtw_reg_domain coex_info_hw_regs_8822b[] = {
  	{0xcb0, MASKDWORD, RTW_REG_DOMAIN_MAC32},
  	{0xcb4, MASKDWORD, RTW_REG_DOMAIN_MAC32},
-@@ -2535,7 +2535,6 @@ const struct rtw_chip_info rtw8822b_hw_s
+@@ -2537,7 +2537,6 @@ const struct rtw_chip_info rtw8822b_hw_s
  	.rf_tbl = {&rtw8822b_rf_a_tbl, &rtw8822b_rf_b_tbl},
  	.rfe_defs = rtw8822b_rfe_defs,
  	.rfe_defs_size = ARRAY_SIZE(rtw8822b_rfe_defs),
@@ -244,7 +244,7 @@ Link: https://patch.msgid.link/904d0ab1-c046-40cd-a3a3-d4fdcf663c9d@gmail.com
  	.bfer_mu_max_num = 1,
 --- a/drivers/net/wireless/realtek/rtw88/rtw8822c.c
 +++ b/drivers/net/wireless/realtek/rtw88/rtw8822c.c
-@@ -4883,16 +4883,6 @@ static const struct rtw_intf_phy_para_ta
+@@ -4884,16 +4884,6 @@ static const struct rtw_intf_phy_para_ta
  	.n_gen2_para	= ARRAY_SIZE(pcie_gen2_param_8822c),
  };
  
@@ -261,7 +261,7 @@ Link: https://patch.msgid.link/904d0ab1-c046-40cd-a3a3-d4fdcf663c9d@gmail.com
  static const struct rtw_hw_reg rtw8822c_dig[] = {
  	[0] = { .addr = 0x1d70, .mask = 0x7f },
  	[1] = { .addr = 0x1d70, .mask = 0x7f00 },
-@@ -5238,7 +5228,7 @@ static const u8 rtw8822c_pwrtrk_2g_cck_a
+@@ -5239,7 +5229,7 @@ static const u8 rtw8822c_pwrtrk_2g_cck_a
  	18, 18, 19, 20, 21, 22, 23, 24, 24, 25
  };
  
@@ -270,7 +270,7 @@ Link: https://patch.msgid.link/904d0ab1-c046-40cd-a3a3-d4fdcf663c9d@gmail.com
  	.pwrtrk_5gb_n[RTW_PWR_TRK_5G_1] = rtw8822c_pwrtrk_5gb_n[RTW_PWR_TRK_5G_1],
  	.pwrtrk_5gb_n[RTW_PWR_TRK_5G_2] = rtw8822c_pwrtrk_5gb_n[RTW_PWR_TRK_5G_2],
  	.pwrtrk_5gb_n[RTW_PWR_TRK_5G_3] = rtw8822c_pwrtrk_5gb_n[RTW_PWR_TRK_5G_3],
-@@ -5261,6 +5251,16 @@ static const struct rtw_pwr_track_tbl rt
+@@ -5262,6 +5252,16 @@ static const struct rtw_pwr_track_tbl rt
  	.pwrtrk_2g_ccka_p = rtw8822c_pwrtrk_2g_cck_a_p,
  };
  
@@ -287,7 +287,7 @@ Link: https://patch.msgid.link/904d0ab1-c046-40cd-a3a3-d4fdcf663c9d@gmail.com
  static const struct rtw_hw_reg_offset rtw8822c_edcca_th[] = {
  	[EDCCA_TH_L2H_IDX] = {
  		{.addr = 0x84c, .mask = MASKBYTE2}, .offset = 0x80
-@@ -5360,7 +5360,6 @@ const struct rtw_chip_info rtw8822c_hw_s
+@@ -5361,7 +5361,6 @@ const struct rtw_chip_info rtw8822c_hw_s
  	.rfe_defs_size = ARRAY_SIZE(rtw8822c_rfe_defs),
  	.en_dis_dpd = true,
  	.dpd_ratemask = DIS_DPD_RATEALL,

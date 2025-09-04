@@ -11,7 +11,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -5443,6 +5443,8 @@ struct wiphy_radio_freq_range {
+@@ -5446,6 +5446,8 @@ struct wiphy_radio_freq_range {
   * @iface_combinations: Valid interface combinations array, should not
   *	list single interface types.
   * @n_iface_combinations: number of entries in @iface_combinations array.
@@ -20,7 +20,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   */
  struct wiphy_radio {
  	const struct wiphy_radio_freq_range *freq_range;
-@@ -5450,6 +5452,8 @@ struct wiphy_radio {
+@@ -5453,6 +5455,8 @@ struct wiphy_radio {
  
  	const struct ieee80211_iface_combination *iface_combinations;
  	int n_iface_combinations;
@@ -31,7 +31,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #define CFG80211_HW_TIMESTAMP_ALL_PEERS	0xffff
 --- a/include/uapi/linux/nl80211.h
 +++ b/include/uapi/linux/nl80211.h
-@@ -8038,6 +8038,8 @@ enum nl80211_ap_settings_flags {
+@@ -8044,6 +8044,8 @@ enum nl80211_ap_settings_flags {
   * @NL80211_WIPHY_RADIO_ATTR_INTERFACE_COMBINATION: Supported interface
   *	combination for this radio. Attribute may be present multiple times
   *	and contains attributes defined in &enum nl80211_if_combination_attrs.
@@ -40,7 +40,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   *
   * @__NL80211_WIPHY_RADIO_ATTR_LAST: Internal
   * @NL80211_WIPHY_RADIO_ATTR_MAX: Highest attribute
-@@ -8048,6 +8050,7 @@ enum nl80211_wiphy_radio_attrs {
+@@ -8054,6 +8056,7 @@ enum nl80211_wiphy_radio_attrs {
  	NL80211_WIPHY_RADIO_ATTR_INDEX,
  	NL80211_WIPHY_RADIO_ATTR_FREQ_RANGE,
  	NL80211_WIPHY_RADIO_ATTR_INTERFACE_COMBINATION,
@@ -50,7 +50,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	__NL80211_WIPHY_RADIO_ATTR_LAST,
 --- a/net/wireless/nl80211.c
 +++ b/net/wireless/nl80211.c
-@@ -2431,6 +2431,11 @@ static int nl80211_put_radio(struct wiph
+@@ -2438,6 +2438,11 @@ static int nl80211_put_radio(struct wiph
  	if (nla_put_u32(msg, NL80211_WIPHY_RADIO_ATTR_INDEX, idx))
  		goto nla_put_failure;
  
