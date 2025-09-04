@@ -23,7 +23,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +	size_t len = rt2x00dev->ops->eeprom_size;
 +	int i;
 +
-+	if (!of_find_property(np, "ralink,eeprom-swap", NULL))
++	if (!of_property_present(np, "ralink,eeprom-swap"))
 +		return;
 +
 +	for (i = 0; i < len / sizeof(u16); i++)
