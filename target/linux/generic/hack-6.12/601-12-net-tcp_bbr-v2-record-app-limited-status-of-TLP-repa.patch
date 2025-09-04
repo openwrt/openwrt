@@ -1,0 +1,51 @@
+From 94de084dfd7ac5b67fc815729f28d3ef748c5934 Mon Sep 17 00:00:00 2001
+From: Jianfeng Wang <jfwang@google.com>
+Date: Fri, 19 Jun 2020 17:33:45 +0000
+Subject: [PATCH 12/19] net-tcp_bbr: v2: record app-limited status of
+ TLP-repaired flight
+
+When sending a TLP retransmit, record whether the outstanding flight
+of data is application limited. This is important for congestion
+control modules that want to respond to losses repaired by TLP
+retransmits. This is important because the following scenarios convey
+very different information:
+ (1) a packet loss with a small number of packets in flight;
+ (2) a packet loss with the maximum amount of data in flight allowed
+     by the CC module;
+
+Effort: net-tcp_bbr
+Change-Id: Ic8ae567caa4e4bfd5fd82c3d4be12a5d9171655e
+---
+ include/linux/tcp.h   | 3 ++-
+ net/ipv4/tcp_output.c | 1 +
+ 2 files changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/include/linux/tcp.h b/include/linux/tcp.h
+index 9b914533bbb0..46adc3cde54d 100644
+--- a/include/linux/tcp.h
++++ b/include/linux/tcp.h
+@@ -302,7 +302,8 @@ struct tcp_sock {
+  */
+ 	struct tcp_options_received rx_opt;
+ 	u8	nonagle     : 4,/* Disable Nagle algorithm?             */
+-		rate_app_limited:1;  /* rate_{delivered,interval_us} limited? */
++		rate_app_limited:1,  /* rate_{delivered,interval_us} limited? */
++		tlp_orig_data_app_limited:1; /* app-limited before TLP rtx? */
+ 	__cacheline_group_end(tcp_sock_write_txrx);
+ 
+ 	/* RX read-write hotpath cache lines */
+diff --git a/net/ipv4/tcp_output.c b/net/ipv4/tcp_output.c
+index 2383a34d4d60..e087b80796e6 100644
+--- a/net/ipv4/tcp_output.c
++++ b/net/ipv4/tcp_output.c
+@@ -3008,6 +3008,7 @@ void tcp_send_loss_probe(struct sock *sk)
+ 	if (WARN_ON(!skb || !tcp_skb_pcount(skb)))
+ 		goto rearm_timer;
+ 
++	tp->tlp_orig_data_app_limited = TCP_SKB_CB(skb)->tx.is_app_limited;
+ 	if (__tcp_retransmit_skb(sk, skb, 1))
+ 		goto rearm_timer;
+ 
+-- 
+2.43.0
+
