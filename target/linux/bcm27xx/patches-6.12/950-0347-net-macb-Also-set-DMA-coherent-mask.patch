@@ -389,7 +389,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	/* IP specific init */
  	err = init(pdev);
  	if (err)
-@@ -5243,6 +5377,19 @@ static void macb_remove(struct platform_
+@@ -5240,6 +5374,19 @@ static void macb_remove(struct platform_
  	}
  }
  
@@ -409,7 +409,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  static int __maybe_unused macb_suspend(struct device *dev)
  {
  	struct net_device *netdev = dev_get_drvdata(dev);
-@@ -5496,6 +5643,7 @@ static const struct dev_pm_ops macb_pm_o
+@@ -5493,6 +5640,7 @@ static const struct dev_pm_ops macb_pm_o
  static struct platform_driver macb_driver = {
  	.probe		= macb_probe,
  	.remove_new	= macb_remove,
