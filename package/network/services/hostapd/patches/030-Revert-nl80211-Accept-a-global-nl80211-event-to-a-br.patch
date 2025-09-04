@@ -37,7 +37,7 @@ This reverts commit 1c994da117ad795766270cf04bc923971e27412f.
  			return drv;
  	}
  	return NULL;
-@@ -8583,7 +8585,7 @@ static void add_ifidx(struct wpa_driver_
+@@ -8586,7 +8588,7 @@ static void add_ifidx(struct wpa_driver_
  	wpa_printf(MSG_DEBUG,
  		   "nl80211: Add own interface ifindex %d (ifidx_reason %d)",
  		   ifidx, ifidx_reason);
@@ -46,7 +46,7 @@ This reverts commit 1c994da117ad795766270cf04bc923971e27412f.
  		wpa_printf(MSG_DEBUG, "nl80211: ifindex %d already in the list",
  			   ifidx);
  		return;
-@@ -8643,7 +8645,7 @@ static void del_ifidx(struct wpa_driver_
+@@ -8646,7 +8648,7 @@ static void del_ifidx(struct wpa_driver_
  }
  
  
@@ -55,7 +55,7 @@ This reverts commit 1c994da117ad795766270cf04bc923971e27412f.
  		      int ifidx_reason)
  {
  	int i;
-@@ -8750,7 +8752,7 @@ static void handle_eapol(int sock, void
+@@ -8753,7 +8755,7 @@ static void handle_eapol(int sock, void
  		return;
  	}
  

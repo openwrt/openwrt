@@ -223,6 +223,13 @@
 			"type": "alias",
 			"default": "disabled"
 		},
+		"device": {
+			"description": "Devices to enable this interface on (wifi-device section names)",
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
 		"device_name": {
 			"description": "Primary Device Name used by WPS",
 			"type": "string",
@@ -286,8 +293,10 @@
 			"type": "boolean"
 		},
 		"dynamic_vlan": {
-			"description": "Allow RADIUS authentication server to decide which VLAN is used for the stations",
-			"type": "boolean"
+			"description": "Allow RADIUS authentication server to decide which VLAN is used for the stations (0 = disabled, 1 = optional, 2 = required)",
+			"type": "number",
+			"enum": [ 0, 1, 2 ],
+			"default": 0
 		},
 		"eap_reauth_period": {
 			"description": "EAP reauthentication period in seconds",
@@ -837,6 +846,12 @@
 		},
 		"r1kh": {
 			"description": "List of R1KHs in the same Mobility Domain",
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
+		"radios": {
 			"type": "array",
 			"items": {
 				"type": "string"

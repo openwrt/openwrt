@@ -21,7 +21,7 @@
 	:					\
 	: "i" (op), "R" (*(unsigned char *)(addr)))
 
-void flush_cache(void *start_addr, unsigned long size)
+void flush_cache(void *start_addr, size_t count)
 {
 	/*
 	 * MIPS cores may have different cache lines. Most common are 16 and 32 bytes. Avoid
@@ -31,7 +31,7 @@ void flush_cache(void *start_addr, unsigned long size)
 
 	unsigned long lsize = 16;
 	unsigned long addr = (unsigned long)start_addr & ~(lsize - 1);
-	unsigned long aend = ((unsigned long)start_addr + size - 1) & ~(lsize - 1);
+	unsigned long aend = ((unsigned long)start_addr + count - 1) & ~(lsize - 1);
 
 	while (1) {
 		CACHE_OP(CACHE_HIT_INVALIDATE_I, addr);
@@ -96,27 +96,44 @@ void *memset(void *dst, int c, size_t count)
 	return (void *)d;
 }
 
-void *malloc(size_t size)
+void *malloc(size_t count)
 {
 	void *start;
 
 	start = (void *)(((unsigned int)_heap_addr + MEMORY_ALIGNMENT - 1) & ~(MEMORY_ALIGNMENT - 1));
-	if ((start + size) > _heap_addr_max) {
+	if ((start + count) > _heap_addr_max) {
 		printf("malloc(%d) failed. Only %dkB of %dkB heap left.\n",
-		       size, (_heap_addr_max - start) >> 10, HEAP_SIZE >> 10);
+		       count, (_heap_addr_max - start) >> 10, HEAP_SIZE >> 10);
 		board_panic();
 	}
 
-	_heap_addr += size;
+	_heap_addr += count;
 
 	return start;
 }
 
 size_t strlen(const char *s)
 {
-	const char *p = s;
+	size_t len = 0;
 
-	while (*p) ++p;
+	while (s[len]) len++;
 
-	return (size_t)(p - s);
+	return len;
+}
+
+unsigned int crc32(void *m, size_t count)
+{
+	unsigned int crc = 0xffffffff;
+	unsigned char *data = m;
+
+	for (size_t i = 0; i < count; i++) {
+		crc ^= data[i];
+		for (int j = 0; j < 8; j++)
+			if (crc & 1)
+				crc = (crc >> 1) ^ 0xEDB88320;
+			else
+				crc >>= 1;
+	}
+
+	return ~crc;
 }

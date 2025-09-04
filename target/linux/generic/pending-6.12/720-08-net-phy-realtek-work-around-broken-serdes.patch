@@ -15,8 +15,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 ---
 --- a/drivers/net/phy/realtek/realtek_main.c
 +++ b/drivers/net/phy/realtek/realtek_main.c
-@@ -1124,6 +1124,22 @@ static int rtl822xb_config_init(struct p
- 	return 0;
+@@ -1139,6 +1139,22 @@ static int rtl822xb_config_init(struct p
+ 	return rtl822x_set_serdes_option_mode(phydev, false);
  }
  
 +static int rtl822xb_config_init_war(struct phy_device *phydev)
@@ -38,18 +38,18 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static int rtl822xb_get_rate_matching(struct phy_device *phydev,
  				      phy_interface_t iface)
  {
-@@ -1813,7 +1829,7 @@ static struct phy_driver realtek_drvs[]
+@@ -1851,7 +1867,7 @@ static struct phy_driver realtek_drvs[]
  		.handle_interrupt = rtl8221b_handle_interrupt,
- 		.soft_reset     = genphy_soft_reset,
+ 		.soft_reset     = rtl822x_c45_soft_reset,
  		.probe		= rtl822x_probe,
 -		.config_init    = rtl822xb_config_init,
 +		.config_init    = rtl822xb_config_init_war,
  		.get_rate_matching = rtl822xb_get_rate_matching,
  		.get_features   = rtl822x_c45_get_features,
  		.config_aneg    = rtl822x_c45_config_aneg,
-@@ -1843,7 +1859,7 @@ static struct phy_driver realtek_drvs[]
+@@ -1881,7 +1897,7 @@ static struct phy_driver realtek_drvs[]
  		.handle_interrupt = rtl8221b_handle_interrupt,
- 		.soft_reset     = genphy_soft_reset,
+ 		.soft_reset     = rtl822x_c45_soft_reset,
  		.probe		= rtl822x_probe,
 -		.config_init    = rtl822xb_config_init,
 +		.config_init    = rtl822xb_config_init_war,

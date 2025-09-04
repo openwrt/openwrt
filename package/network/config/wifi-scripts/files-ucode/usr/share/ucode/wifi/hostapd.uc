@@ -579,6 +579,6 @@ export function setup(data) {
 
 	if (ret)
 		netifd.add_process('/usr/sbin/hostapd', ret.pid, true, true);
-	else
+	else if (fs.access('/usr/sbin/hostapd', 'x'))
 		netifd.setup_failed('HOSTAPD_START_FAILED');
 };

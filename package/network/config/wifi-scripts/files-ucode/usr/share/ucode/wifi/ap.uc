@@ -131,7 +131,6 @@ function iface_auth_type(config) {
 
 		set_default(config, 'wpa_psk_file', `/var/run/hostapd-${config.ifname}.psk`);
 		touch_file(config.wpa_psk_file);
-		set_default(config, 'dynamic_vlan', 0);
 		break;
 
 	case 'eap':

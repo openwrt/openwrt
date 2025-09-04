@@ -233,6 +233,8 @@ function setup() {
 		case 'link':
 		case 'ap':
 			has_ap = true;
+			for (let _, sta in v.stas)
+				validate('station', sta.config);
 			// fallthrough
 		case 'sta':
 		case 'adhoc':
@@ -290,11 +292,8 @@ function setup() {
 		wdev_data[v.config.ifname] = config;
 	}
 
-	if (length(supplicant_data) > 0)
-		supplicant.setup(supplicant_data, data);
-
-	if (has_ap)
-		hostapd.setup(data);
+	supplicant.setup(supplicant_data, data);
+	hostapd.setup(data);
 
 	system(`ucode /usr/share/hostap/wdev.uc ${data.phy}${data.phy_suffix} set_config '${printf("%J", wdev_data)}' ${join(' ', active_ifnames)}`);
 

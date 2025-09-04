@@ -7,11 +7,11 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION:=2.12.1
+PKG_VERSION:=2.12.6
 PKG_RELEASE:=1
 PKG_LTS:=1
 
-PKG_HASH:=c0d432a851da452d927561feaf45f569c1cde57985782beadfe29e616e260440
+PKG_HASH:=50059d35eccd0dcd1bb638f05efad739d9251afdbc734810da9dd13ea2e219c7
 
 PKG_MAINTAINER:=Sarah Maedel <openwrt@tbspace.de>
 
@@ -45,8 +45,8 @@ TFA_TARGETS:= \
 	rk3588
 
 ifeq ($(BUILD_VARIANT),rk3399)
-  M0_GCC_NAME:=gcc-arm
-  M0_GCC_RELEASE:=11.2-2022.02
+  M0_GCC_NAME:=arm-gnu-toolchain
+  M0_GCC_RELEASE:=12.3.rel1
   M0_GCC_VERSION:=$(HOST_ARCH)-arm-none-eabi
   M0_GCC_SOURCE:=$(M0_GCC_NAME)-$(M0_GCC_RELEASE)-$(M0_GCC_VERSION).tar.xz
 
@@ -54,9 +54,9 @@ ifeq ($(BUILD_VARIANT),rk3399)
     FILE:=$(M0_GCC_SOURCE)
     URL:=https://developer.arm.com/-/media/Files/downloads/gnu/$(M0_GCC_RELEASE)/binrel
   ifeq ($(HOST_ARCH),aarch64)
-    HASH:=ef1d82e5894e3908cb7ed49c5485b5b95deefa32872f79c2b5f6f5447cabf55f
+    HASH:=14c0487d5753f6071d24e568881f7c7e67f80dd83165dec5164b3731394af431
   else
-    HASH:=8c5acd5ae567c0100245b0556941c237369f210bceb196edfe5a2e7532c60326
+    HASH:=12a2815644318ebcceaf84beabb665d0924b6e79e21048452c5331a56332b309
   endif
   endef
 

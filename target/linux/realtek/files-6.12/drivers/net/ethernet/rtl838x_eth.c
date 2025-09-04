@@ -913,9 +913,6 @@ static int rtl838x_eth_open(struct net_device *ndev)
 		/* Trap MLD and IGMP messages to CPU_PORT */
 		sw_w32((0x2 << 3) | 0x2,  RTL931X_VLAN_APP_PKT_CTRL);
 
-		/* Disable External CPU access to switch, clear EXT_CPU_EN */
-		sw_w32_mask(BIT(2), 0, RTL931X_MAC_L2_GLOBAL_CTRL2);
-
 		/* Set PCIE_PWR_DOWN */
 		sw_w32_mask(0, BIT(1), RTL931X_PS_SOC_CTRL);
 		break;
@@ -1823,12 +1820,7 @@ int rtmdio_838x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 
 	mutex_lock(&rtmdio_lock);
 
-	err = rtmdio_838x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
 	sw_w32_mask(0xffff0000, port << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
-
 	v = reg << 20 | page << 3;
 	sw_w32(v | park_page, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 	sw_w32_mask(0, 1, RTL838X_SMI_ACCESS_PHY_CTRL_1);
@@ -1838,9 +1830,6 @@ int rtmdio_838x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 		goto errout;
 
 	*val = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_2) & 0xffff;
-
-	err = 0;
-
 errout:
 	mutex_unlock(&rtmdio_lock);
 
@@ -1858,13 +1847,8 @@ int rtmdio_838x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 		return -ENOTSUPP;
 
 	mutex_lock(&rtmdio_lock);
-	err = rtmdio_838x_smi_wait_op(100000);
-	if (err)
-		goto errout;
 
 	sw_w32(BIT(port), RTL838X_SMI_ACCESS_PHY_CTRL_0);
-	mdelay(10);
-
 	sw_w32_mask(0xffff0000, val << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
 
 	v = reg << 20 | page << 3 | 0x4;
@@ -1872,12 +1856,6 @@ int rtmdio_838x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 	sw_w32_mask(0, 1, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 
 	err = rtmdio_838x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	err = 0;
-
-errout:
 	mutex_unlock(&rtmdio_lock);
 
 	return err;
@@ -1891,13 +1869,7 @@ static int rtmdio_838x_read_mmd_phy(u32 port, u32 addr, u32 reg, u32 *val)
 
 	mutex_lock(&rtmdio_lock);
 
-	err = rtmdio_838x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
 	sw_w32(1 << port, RTL838X_SMI_ACCESS_PHY_CTRL_0);
-	mdelay(10);
-
 	sw_w32_mask(0xffff0000, port << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
 
 	v = addr << 16 | reg;
@@ -1912,9 +1884,6 @@ static int rtmdio_838x_read_mmd_phy(u32 port, u32 addr, u32 reg, u32 *val)
 		goto errout;
 
 	*val = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_2) & 0xffff;
-
-	err = 0;
-
 errout:
 	mutex_unlock(&rtmdio_lock);
 
@@ -1931,15 +1900,8 @@ static int rtmdio_838x_write_mmd_phy(u32 port, u32 addr, u32 reg, u32 val)
 	val &= 0xffff;
 	mutex_lock(&rtmdio_lock);
 
-	err = rtmdio_838x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
 	sw_w32(1 << port, RTL838X_SMI_ACCESS_PHY_CTRL_0);
-	mdelay(10);
-
 	sw_w32_mask(0xffff0000, val << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
-
 	sw_w32_mask(0x1f << 16, addr << 16, RTL838X_SMI_ACCESS_PHY_CTRL_3);
 	sw_w32_mask(0xffff, reg, RTL838X_SMI_ACCESS_PHY_CTRL_3);
 	/* mmd-access | write | cmd-start */
@@ -1947,13 +1909,8 @@ static int rtmdio_838x_write_mmd_phy(u32 port, u32 addr, u32 reg, u32 val)
 	sw_w32(v, RTL838X_SMI_ACCESS_PHY_CTRL_1);
 
 	err = rtmdio_838x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	err = 0;
-
-errout:
 	mutex_unlock(&rtmdio_lock);
+
 	return err;
 }
 
@@ -2402,26 +2359,33 @@ static int rtmdio_930x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
 /*
  * The RTL931x family has 14 "frontend" SerDes that are cascaded. All operations (e.g. reset) work
  * on this frontend view while their registers are distributed over a total of least 26 background
- * SerDes. Two types of SerDes exist:
+ * SerDes with 64 pages and 32 registers. Three types of SerDes exist:
  *
- * An "even" SerDes with numbers 0, 1, 2, 4, 6, 8, 10, 12 works on one background SerDes.
+ * - Serdes 0,1 are "simple" and work on one background serdes.
+ * - "Even" SerDes with numbers 2, 4, 6, 8, 10, 12 work on two background SerDes. One analog and
+ *   one digital.
+ * - "Odd" SerDes with numbers 3, 5, 7, 9, 11, 13 work on a total of 3 background SerDes (one analog
+ *   and two digital)
  *
- * The "odd" SerDes with numbers 3, 5, 7, 9, 11 & 13 SerDes consist of a total of 3 background
- * SerDes (one analog and two XSGMII) each with its own page/register set. So it gives this
- * mapping:
-
+ * This maps to:
+ *
  * Frontend SerDes  |  0  1  2  3  4  5  6  7  8  9 10 11 12 13
  * -----------------+------------------------------------------
  * Backend SerDes 1 |  0  1  2  3  6  7 10 11 14 15 18 19 22 23
  * Backend SerDes 2 |  0  1  2  4  6  8 10 12 14 16 18 20 22 24
- * Backend SerDes 3 |  0  1  2  5  6  9 10 13 14 17 18 21 22 25
+ * Backend SerDes 3 |  0  1  3  5  7  9 11 13 15 17 19 21 23 25
+ *
+ * Note: In Realtek proprietary XSGMII mode (10G pumped SGMII) the frontend SerDes works on the
+ * two digital SerDes while in all other modes it works on the analog and the first digital SerDes.
+ * Overlapping (e.g. backend SerDes 7 can be analog or digital 2) is avoided by the existing
+ * hardware designs.
  *
  * Align this for readability by simulating a total of 576 pages and mix them as follows.
  *
  * frontend page		"even" frontend SerDes		"odd" frontend SerDes
  * page 0x000-0x03f (analog):	page 0x000-0x03f back SDS	page 0x000-0x03f back SDS
- * page 0x100-0x13f (XSGMII1):	page 0x000-0x03f back SDS	page 0x000-0x03f back SDS+1
- * page 0x200-0x23f (XSGMII2):	page 0x000-0x03f back SDS	page 0x000-0x03f back SDS+2
+ * page 0x100-0x13f (digi 1):	page 0x000-0x03f back SDS	page 0x000-0x03f back SDS+1
+ * page 0x200-0x23f (digi 2):	page 0x000-0x03f back SDS+1	page 0x000-0x03f back SDS+2
  */ 
 
 static int rtmdio_931x_get_backing_sds(u32 sds, u32 page)
@@ -2432,13 +2396,17 @@ static int rtmdio_931x_get_backing_sds(u32 sds, u32 page)
 	if (page & 0xc0)
 		return -EINVAL; /* hole */
 
-	if ((sds & 1) && (sds != 1))
-		back += (page >> 8); /* distribute "odd" to 3 background SerDes */
+	if (sds >= 2) {
+		if (sds & 1)
+			back += (page >> 8); /* distribute "odd" to 3 background SerDes */
+		else
+			back += (page >> 9); /* distribute "even" to 2 background SerDes */
+	}
 
 	return back;
 }
 
-int rtmdio_931x_read_sds_phy(int sds, int page, int regnum)
+static int rtmdio_931x_read_sds_phy(int sds, int page, int regnum)
 {
 	u32 cmd = sds << 2 | page << 7 | regnum << 13 | 1;
 	int i, ret = -EIO;
@@ -2471,7 +2439,7 @@ int rtmdio_931x_read_sds_phy_new(int sds, int page, int regnum)
 	return backsds < 0 ? 0 : rtmdio_931x_read_sds_phy(backsds, page & 0x3f, regnum);
 }
 
-int rtmdio_931x_write_sds_phy(int sds, int page, int regnum, u16 val)
+static int rtmdio_931x_write_sds_phy(int sds, int page, int regnum, u16 val)
 {
 	u32 cmd = sds << 2 | page << 7 | regnum << 13;;
 	int i, ret = -EIO;
@@ -3001,7 +2969,6 @@ static int rtmdio_930x_reset(struct mii_bus *bus)
 static int rtmdio_931x_reset(struct mii_bus *bus)
 {
 	struct rtmdio_bus_priv *priv = bus->priv;
-	bool mdc_on[RTMDIO_MAX_SMI_BUS] = { 0 };
 	u32 poll_sel[4] = { 0 };
 	u32 poll_ctrl = 0;
 	u32 c45_mask = 0;
@@ -3024,7 +2991,6 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 		pos = (i * 2) % 32;
 		poll_sel[i / 16] |= priv->smi_bus[i] << pos;
 		poll_ctrl |= BIT(20 + priv->smi_bus[i]);
-		mdc_on[priv->smi_bus[i]] = true;
 	}
 
 	/* Configure which SMI bus is behind which port number */
@@ -3034,18 +3000,13 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 	}
 
 	/* Configure which SMI busses */
-	pr_info("%s: WAS RTL931X_MAC_L2_GLOBAL_CTRL2 %08x\n", __func__, sw_r32(RTL931X_MAC_L2_GLOBAL_CTRL2));
 	pr_info("c45_mask: %08x, RTL931X_SMI_GLB_CTRL0 was %X", c45_mask, sw_r32(RTL931X_SMI_GLB_CTRL0));
 	for (int i = 0; i < RTMDIO_MAX_SMI_BUS; i++) {
 		/* bus is polled in c45 */
 		if (priv->smi_bus_isc45[i])
 			c45_mask |= 0x2 << (i * 2);  /* Std. C45, non-standard is 0x3 */
-		/* Enable bus access via MDC */
-		if (mdc_on[i])
-			sw_w32_mask(0, BIT(9 + i), RTL931X_MAC_L2_GLOBAL_CTRL2);
 	}
 
-	pr_info("%s: RTL931X_MAC_L2_GLOBAL_CTRL2 %08x\n", __func__, sw_r32(RTL931X_MAC_L2_GLOBAL_CTRL2));
 	pr_info("c45_mask: %08x, RTL931X_SMI_GLB_CTRL0 was %X", c45_mask, sw_r32(RTL931X_SMI_GLB_CTRL0));
 
 	/* We have a 10G PHY enable polling
@@ -3500,7 +3461,10 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	 * 1) from device tree data
 	 * 2) from internal registers set by bootloader
 	 */
-	of_get_mac_address(pdev->dev.of_node, mac_addr);
+	err = of_get_mac_address(pdev->dev.of_node, mac_addr);
+	if (err == -EPROBE_DEFER)
+		return err;
+
 	if (is_valid_ether_addr(mac_addr)) {
 		rtl838x_set_mac_hw(dev, mac_addr);
 	} else {
