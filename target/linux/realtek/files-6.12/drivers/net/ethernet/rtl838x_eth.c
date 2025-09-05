@@ -331,39 +331,6 @@ static bool rtl931x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 	return t->l2_offloaded;
 }
 
-/* Discard the RX ring-buffers, called as part of the net-ISR
- * when the buffer runs over
- */
-static void rtl838x_rb_cleanup(struct rtl838x_eth_priv *priv, int status)
-{
-	for (int r = 0; r < priv->rxrings; r++) {
-		struct ring_b *ring = priv->membase;
-		struct p_hdr *h;
-		u32 *last;
-
-		pr_debug("In %s working on r: %d\n", __func__, r);
-		last = (u32 *)KSEG1ADDR(sw_r32(priv->r->dma_if_rx_cur + r * 4));
-		do {
-			if ((ring->rx_r[r][ring->c_rx[r]] & 0x1))
-				break;
-			pr_debug("Got something: %d\n", ring->c_rx[r]);
-			h = &ring->rx_header[r][ring->c_rx[r]];
-			memset(h, 0, sizeof(struct p_hdr));
-			h->buf = (u8 *)KSEG1ADDR(ring->rx_space +
-			                         r * priv->rxringlen * RING_BUFFER +
-			                         ring->c_rx[r] * RING_BUFFER);
-			h->size = RING_BUFFER;
-			/* make sure the header is visible to the ASIC */
-			mb();
-
-			ring->rx_r[r][ring->c_rx[r]] = KSEG1ADDR(h) | 0x1 | (ring->c_rx[r] == (priv->rxringlen - 1) ?
-			                               WRAP :
-			                               0x1);
-			ring->c_rx[r] = (ring->c_rx[r] + 1) % priv->rxringlen;
-		} while (&ring->rx_r[r][ring->c_rx[r]] != last);
-	}
-}
-
 struct fdb_update_work {
 	struct work_struct work;
 	struct net_device *ndev;
@@ -497,7 +464,6 @@ static irqreturn_t rtl93xx_net_irq(int irq, void *dev_id)
 		pr_debug("RX buffer overrun: status %x, mask: %x\n",
 		         status_rx_r, sw_r32(priv->r->dma_if_intr_rx_runout_msk));
 		sw_w32(status_rx_r, priv->r->dma_if_intr_rx_runout_sts);
-		rtl838x_rb_cleanup(priv, status_rx_r);
 	}
 
 	return IRQ_HANDLED;
