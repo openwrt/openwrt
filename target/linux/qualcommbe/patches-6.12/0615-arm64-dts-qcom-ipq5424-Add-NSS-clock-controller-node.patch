@@ -1,0 +1,69 @@
+From e7def8ca929991a0e3dd4ba14dcaa62d51c84af0 Mon Sep 17 00:00:00 2001
+From: Luo Jie <quic_luoj@quicinc.com>
+Date: Wed, 12 Feb 2025 13:31:45 +0800
+Subject: [PATCH 615/636] arm64: dts: qcom: ipq5424: Add NSS clock controller
+ node
+
+NSS clock controller provides the clocks and resets to the networking
+hardware blocks on the IPQ5424, such as PPE (Packet Process Engine) and
+UNIPHY (PCS) blocks.
+
+Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
+---
+ arch/arm64/boot/dts/qcom/ipq5424.dtsi | 32 ++++++++++++++++++++++++++-
+ 1 file changed, 31 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/ipq5424.dtsi b/arch/arm64/boot/dts/qcom/ipq5424.dtsi
+index 9e5120933b7e..9d7fb5fcc12d 100644
+--- a/arch/arm64/boot/dts/qcom/ipq5424.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5424.dtsi
+@@ -3,7 +3,7 @@
+  * IPQ5424 device tree source
+  *
+  * Copyright (c) 2020-2021 The Linux Foundation. All rights reserved.
+- * Copyright (c) 2022-2025 Qualcomm Innovation Center, Inc. All rights reserved.
++ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+  */
+ 
+ #include <dt-bindings/interrupt-controller/arm-gic.h>
+@@ -636,6 +636,36 @@
+ 			};
+ 		};
+ 
++		clock-controller@39b00000 {
++			compatible = "qcom,ipq5424-nsscc";
++			reg = <0 0x39b00000 0 0x100000>;
++			clocks = <&cmn_pll IPQ5424_XO_24MHZ_CLK>,
++				 <&cmn_pll IPQ5424_NSS_300MHZ_CLK>,
++				 <&cmn_pll IPQ5424_PPE_375MHZ_CLK>,
++				 <&gcc GPLL0_OUT_AUX>,
++				 <0>,
++				 <0>,
++				 <0>,
++				 <0>,
++				 <0>,
++				 <0>,
++				 <&gcc GCC_NSSCC_CLK>;
++			clock-names = "xo",
++				      "nss",
++				      "ppe",
++				      "gpll0_out",
++				      "uniphy0_rx",
++				      "uniphy0_tx",
++				      "uniphy1_rx",
++				      "uniphy1_tx",
++				      "uniphy2_rx",
++				      "uniphy2_tx",
++				      "bus";
++			#clock-cells = <1>;
++			#reset-cells = <1>;
++			#interconnect-cells = <1>;
++		};
++
+ 		pcie3: pcie@40000000 {
+ 			compatible = "qcom,pcie-ipq5424", "qcom,pcie-ipq9574";
+ 			reg = <0x0 0x40000000 0x0 0xf1c>,
+-- 
+2.34.1
+
