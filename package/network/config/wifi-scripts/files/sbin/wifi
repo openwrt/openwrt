@@ -62,7 +62,6 @@ wifi_detect_notice() {
 }
 
 wifi_config() {
-	[ -e /tmp/.config_pending ] && return
 	ucode /usr/share/hostap/wifi-detect.uc
 	[ ! -f /etc/config/wireless ] && touch /etc/config/wireless
 	ucode /lib/wifi/mac80211.uc | uci -q batch
