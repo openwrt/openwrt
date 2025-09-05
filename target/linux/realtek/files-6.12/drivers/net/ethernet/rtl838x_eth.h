@@ -52,6 +52,7 @@
 #define RTL83XX_DMA_IF_INTR_RX_DONE_MASK	GENMASK(15, 8)
 #define RTL83XX_DMA_IF_INTR_RX_RUN_OUT_MASK	GENMASK(7, 0)
 #define RTL83XX_DMA_IF_INTR_RX_MASK(ring)	(BIT(ring) | BIT(ring + 8))
+#define RTL93XX_DMA_IF_INTR_RX_MASK(ring)	(BIT(ring))
 
 /* MAC address settings */
 #define RTL838X_MAC				(0xa9ec)
