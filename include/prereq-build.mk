@@ -9,11 +9,11 @@ SHELL:=sh
 PKG_NAME:=Build dependency
 
 $(eval $(call TestHostCommand,true, \
-	Please install GNU 'coreutils', \
+	Please install 'coreutils', \
 	$(TRUE)))
 
 $(eval $(call TestHostCommand,false, \
-	Please install GNU 'coreutils', \
+	Please install 'coreutils', \
 	$(FALSE); [ $$$$$$$$? = 1 ] && $(TRUE)))
 
 # Required for the toolchain
@@ -178,9 +178,9 @@ $(eval $(call SetupHostCommand,bzip2,Please install 'bzip2', \
 $(eval $(call SetupHostCommand,wget,Please install GNU 'wget', \
 	wget --version | grep GNU))
 
-$(eval $(call SetupHostCommand,install,Please install GNU 'install', \
+$(eval $(call SetupHostCommand,install,Please install 'install', \
 	$(TOPDIR)/staging_dir/host/bin/ginstall --version | grep GNU, \
-	install --version | grep GNU, \
+	install --version | grep 'GNU\|uutils', \
 	ginstall --version | grep GNU))
 
 $(eval $(call SetupHostCommand,perl,Please install Perl 5.x, \
