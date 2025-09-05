@@ -154,7 +154,7 @@
 	status = "okay";
 	/delete-property/ dmas;
 	/delete-property/ dma-names;
-	cs-gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>;
+	cs-gpios = <&tlmm 54 GPIO_ACTIVE_LOW>;
 
 	flash@0 {
 		compatible = "jedec,spi-nor";

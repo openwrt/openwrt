@@ -405,7 +405,7 @@
 		pinctrl-0 = <&spi_pins>;
 		pinctrl-names = "default";
 
-		cs-gpios = <&qcom_pinmux 20 0>;
+		cs-gpios = <&qcom_pinmux 20 GPIO_ACTIVE_LOW>;
 
 		flash: flash@0 {
 			compatible = "jedec,spi-nor";
@@ -427,7 +427,7 @@
 	pinctrl-0 = <&spi6_pins>;
 	pinctrl-names = "default";
 
-	cs-gpios = <&qcom_pinmux 57 GPIO_ACTIVE_HIGH>;
+	cs-gpios = <&qcom_pinmux 57 GPIO_ACTIVE_LOW>;
 
 	dmas = <&adm_dma 8 0xb>,
 	       <&adm_dma 7 0x14>;
