@@ -155,6 +155,14 @@
 					#address-cells = <1>;
 					#size-cells = <1>;
 
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x1000>;
+					};
+
+					precal_factory_1010: precal@1010 {
+						reg = <0x1010 0x6f010>;
+					};
+
 					macaddr: macaddr@a {
 						reg = <0xa 0x6>;
 					};
@@ -237,7 +245,7 @@
 };
 
 &wifi {
+	nvmem-cells = <&eeprom_factory_0>, <&precal_factory_1010>;
+	nvmem-cell-names = "eeprom", "precal";
 	status = "okay";
-
-	mediatek,mtd-eeprom = <&factory 0x0>;
 };
