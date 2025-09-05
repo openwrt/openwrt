@@ -1,0 +1,39 @@
+From 314b903c30040632db7edd187cd33003b2aee512 Mon Sep 17 00:00:00 2001
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Fri, 16 May 2025 16:36:09 +0400
+Subject: dt-bindings: clock: qcom: Add CMN PLL support for IPQ5018 SoC
+
+The CMN PLL block in the IPQ5018 SoC takes 96 MHZ as the reference
+input clock. Its output clocks are the XO (24Mhz), sleep (32Khz), and
+ethernet (50Mhz) clocks.
+
+Reviewed-by: Rob Herring (Arm) <robh@kernel.org>
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+Link: https://lore.kernel.org/r/20250516-ipq5018-cmn-pll-v4-2-389a6b30e504@outlook.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+---
+ include/dt-bindings/clock/qcom,ipq5018-cmn-pll.h | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+ create mode 100644 include/dt-bindings/clock/qcom,ipq5018-cmn-pll.h
+
+(limited to 'include/dt-bindings/clock/qcom,ipq5018-cmn-pll.h')
+
+--- /dev/null
++++ b/include/dt-bindings/clock/qcom,ipq5018-cmn-pll.h
+@@ -0,0 +1,16 @@
++/* SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) */
++/*
++ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
++ */
++
++#ifndef _DT_BINDINGS_CLK_QCOM_IPQ5018_CMN_PLL_H
++#define _DT_BINDINGS_CLK_QCOM_IPQ5018_CMN_PLL_H
++
++/* CMN PLL core clock. */
++#define IPQ5018_CMN_PLL_CLK			0
++
++/* The output clocks from CMN PLL of IPQ5018. */
++#define IPQ5018_XO_24MHZ_CLK			1
++#define IPQ5018_SLEEP_32KHZ_CLK			2
++#define IPQ5018_ETH_50MHZ_CLK			3
++#endif
