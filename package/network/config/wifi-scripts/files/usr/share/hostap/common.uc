@@ -174,6 +174,19 @@ function macaddr_join(addr)
 	return join(":", map(addr, (val) => sprintf("%02x", val)));
 }
 
+function macaddr_add(addr, offset)
+{
+	for (let i = 5; i > 0; i--) {
+		let sum = addr[i] + offset;
+		addr[i] = sum % 256;
+		offset = int(sum / 256);
+		if (offset == 0) {
+			break;
+		}
+	}
+	return addr;
+}
+
 function wdev_macaddr(wdev)
 {
 	return trim(readfile(`/sys/class/net/${wdev}/address`));
@@ -266,12 +279,7 @@ const phy_proto = {
 			addr[5] ^= idx;
 			break;
 		default:
-			for (let i = 5; i > 0; i--) {
-				addr[i] += idx;
-				if (addr[i] < 256)
-					break;
-				addr[i] %= 256;
-			}
+			addr = macaddr_add(addr, idx);
 			break;
 		}
 
