@@ -658,6 +658,8 @@ TARGET_DEVICES += cmcc_a10-ubootmod
 define Device/cmcc_rax3000m
   DEVICE_VENDOR := CMCC
   DEVICE_MODEL := RAX3000M
+  DEVICE_ALT0_VENDOR := CMCC
+  DEVICE_ALT0_MODEL := RAX3000Me
   DEVICE_DTS := mt7981b-cmcc-rax3000m
   DEVICE_DTS_OVERLAY := mt7981b-cmcc-rax3000m-emmc mt7981b-cmcc-rax3000m-nand
   DEVICE_DTS_DIR := ../dts
@@ -677,14 +679,20 @@ define Device/cmcc_rax3000m
   IMAGE/sysupgrade.itb := append-kernel | \
 	 fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | \
 	 pad-rootfs | append-metadata
-  ARTIFACTS := \
-	emmc-gpt.bin emmc-preloader.bin emmc-bl31-uboot.fip \
-	nand-preloader.bin nand-bl31-uboot.fip
+  ARTIFACTS := emmc-gpt.bin \
+	emmc-ddr3-bl31-uboot.fip emmc-ddr3-preloader.bin \
+	emmc-ddr4-bl31-uboot.fip emmc-ddr4-preloader.bin \
+	nand-ddr3-bl31-uboot.fip nand-ddr3-preloader.bin \
+	nand-ddr4-bl31-uboot.fip nand-ddr4-preloader.bin
   ARTIFACT/emmc-gpt.bin := mt798x-gpt emmc
-  ARTIFACT/emmc-preloader.bin := mt7981-bl2 emmc-ddr4
-  ARTIFACT/emmc-bl31-uboot.fip := mt7981-bl31-uboot cmcc_rax3000m-emmc
-  ARTIFACT/nand-preloader.bin := mt7981-bl2 spim-nand-ddr4
-  ARTIFACT/nand-bl31-uboot.fip := mt7981-bl31-uboot cmcc_rax3000m-nand
+  ARTIFACT/emmc-ddr3-bl31-uboot.fip := mt7981-bl31-uboot cmcc_rax3000m-emmc-ddr3
+  ARTIFACT/emmc-ddr3-preloader.bin  := mt7981-bl2 emmc-ddr3
+  ARTIFACT/emmc-ddr4-bl31-uboot.fip := mt7981-bl31-uboot cmcc_rax3000m-emmc-ddr4
+  ARTIFACT/emmc-ddr4-preloader.bin  := mt7981-bl2 emmc-ddr4
+  ARTIFACT/nand-ddr3-bl31-uboot.fip := mt7981-bl31-uboot cmcc_rax3000m-nand-ddr3
+  ARTIFACT/nand-ddr3-preloader.bin  := mt7981-bl2 spim-nand-ddr3
+  ARTIFACT/nand-ddr4-bl31-uboot.fip := mt7981-bl31-uboot cmcc_rax3000m-nand-ddr4
+  ARTIFACT/nand-ddr4-preloader.bin  := mt7981-bl2 spim-nand-ddr4
 endef
 TARGET_DEVICES += cmcc_rax3000m
 
