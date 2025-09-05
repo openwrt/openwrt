@@ -1,0 +1,38 @@
+From eb4262203d7d85eb7b6f2696816db272e41f5464 Mon Sep 17 00:00:00 2001
+From: Cristian Ciocaltea <cristian.ciocaltea@collabora.com>
+Date: Tue, 4 Feb 2025 14:40:08 +0200
+Subject: arm64: dts: rockchip: Add HDMI0 PHY PLL clock source to VOP2 on
+ RK3588
+
+VOP2 on RK3588 is able to use the HDMI PHY PLL as an alternative and
+more accurate pixel clock source to improve handling of display modes up
+to 4K@60Hz on video ports 0, 1 and 2.
+
+For now only HDMI0 output is supported, hence add the related PLL clock.
+
+Tested-by: FUKAUMI Naoki <naoki@radxa.com>
+Signed-off-by: Cristian Ciocaltea <cristian.ciocaltea@collabora.com>
+Link: https://lore.kernel.org/r/20250204-vop2-hdmi0-disp-modes-v3-5-d71c6a196e58@collabora.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi
+@@ -1261,14 +1261,16 @@
+ 			 <&cru DCLK_VOP1>,
+ 			 <&cru DCLK_VOP2>,
+ 			 <&cru DCLK_VOP3>,
+-			 <&cru PCLK_VOP_ROOT>;
++			 <&cru PCLK_VOP_ROOT>,
++			 <&hdptxphy_hdmi0>;
+ 		clock-names = "aclk",
+ 			      "hclk",
+ 			      "dclk_vp0",
+ 			      "dclk_vp1",
+ 			      "dclk_vp2",
+ 			      "dclk_vp3",
+-			      "pclk_vop";
++			      "pclk_vop",
++			      "pll_hdmiphy0";
+ 		iommus = <&vop_mmu>;
+ 		power-domains = <&power RK3588_PD_VOP>;
+ 		rockchip,grf = <&sys_grf>;

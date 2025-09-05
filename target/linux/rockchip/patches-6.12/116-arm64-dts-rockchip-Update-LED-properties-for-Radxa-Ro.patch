@@ -11,28 +11,48 @@ Signed-off-by: Tianling Shen <cnsztl@gmail.com>
 
 --- a/arch/arm64/boot/dts/rockchip/rk3588s-rock-5a.dts
 +++ b/arch/arm64/boot/dts/rockchip/rk3588s-rock-5a.dts
-@@ -15,6 +15,11 @@
+@@ -16,6 +16,10 @@
  		ethernet0 = &gmac1;
  		mmc0 = &sdhci;
  		mmc1 = &sdmmc;
-+
-+		led-boot = &status_led;
-+		led-failsafe = &status_led;
-+		led-running = &status_led;
-+		led-upgrade = &status_led;
++		led-boot = &led_green;
++		led-failsafe = &led_green;
++		led-running = &led_green;
++		led-upgrade = &led_green;
  	};
  
  	analog-sound {
-@@ -40,11 +45,10 @@
+@@ -50,13 +54,19 @@
+ 	leds {
+ 		compatible = "gpio-leds";
  		pinctrl-names = "default";
- 		pinctrl-0 = <&io_led>;
+-		pinctrl-0 = <&io_led>;
++		pinctrl-0 = <&leds>;
++
++		led_green: led-0 {
++			color = <LED_COLOR_ID_GREEN>;
++			default-state = "on";
++			function = LED_FUNCTION_POWER;
++			gpios = <&gpio3 RK_PC4 GPIO_ACTIVE_HIGH>;
++		};
  
--		io-led {
-+		status_led: io-led {
+ 		io-led {
  			color = <LED_COLOR_ID_BLUE>;
  			function = LED_FUNCTION_STATUS;
  			gpios = <&gpio3 RK_PD5 GPIO_ACTIVE_HIGH>;
 -			linux,default-trigger = "heartbeat";
+ 		};
+ 	};
+ 
+@@ -365,8 +375,9 @@
+ 
+ &pinctrl {
+ 	leds {
+-		io_led: io-led {
+-			rockchip,pins = <3 RK_PD5 RK_FUNC_GPIO &pcfg_pull_none>;
++		leds: leds {
++			rockchip,pins = <3 RK_PC4 RK_FUNC_GPIO &pcfg_pull_none>,
++					<3 RK_PD5 RK_FUNC_GPIO &pcfg_pull_none>;
  		};
  	};
  
