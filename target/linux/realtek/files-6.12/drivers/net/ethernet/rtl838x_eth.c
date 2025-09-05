@@ -240,25 +240,18 @@ static void rtl839x_update_cntr(int r, int released)
 
 static void rtl930x_update_cntr(int r, int released)
 {
+	u32 reg = rtl930x_dma_if_rx_ring_cntr(r);
 	int pos = (r % 3) * 10;
-	u32 reg = RTL930X_DMA_IF_RX_RING_CNTR + ((r / 3) << 2);
-	u32 v = sw_r32(reg);
 
-	v = (v >> pos) & 0x3ff;
-	pr_debug("RX: Work done %d, old value: %d, pos %d, reg %04x\n", released, v, pos, reg);
-	sw_w32_mask(0x3ff << pos, released << pos, reg);
-	sw_w32(v, reg);
+	sw_w32(released << pos, reg);
 }
 
 static void rtl931x_update_cntr(int r, int released)
 {
+	u32 reg = rtl931x_dma_if_rx_ring_cntr(r);
 	int pos = (r % 3) * 10;
-	u32 reg = RTL931X_DMA_IF_RX_RING_CNTR + ((r / 3) << 2);
-	u32 v = sw_r32(reg);
 
-	v = (v >> pos) & 0x3ff;
-	sw_w32_mask(0x3ff << pos, released << pos, reg);
-	sw_w32(v, reg);
+	sw_w32(released << pos, reg);
 }
 
 struct dsa_tag {
@@ -766,10 +759,11 @@ static void rtl93xx_hw_en_rxtx(struct rtl838x_eth_priv *priv)
 	sw_w32((DEFAULT_MTU << 16) | RX_TRUNCATE_EN_93XX, priv->r->dma_if_ctrl);
 
 	for (int i = 0; i < priv->rxrings; i++) {
+		int cnt = min(priv->rxringlen - 2, 0x3ff);
 		int pos = (i % 3) * 10;
 		u32 v;
 
-		sw_w32_mask(0x3ff << pos, priv->rxringlen << pos, priv->r->dma_if_rx_ring_size(i));
+		sw_w32_mask(0x3ff << pos, cnt << pos, priv->r->dma_if_rx_ring_size(i));
 
 		/* Some SoCs have issues with missing underflow protection */
 		v = (sw_r32(priv->r->dma_if_rx_ring_cntr(i)) >> pos) & 0x3ff;
@@ -1329,7 +1323,7 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 	netif_receive_skb_list(&rx_list);
 
 	/* Update counters */
-	priv->r->update_cntr(r, 0);
+	priv->r->update_cntr(r, work_done);
 
 	spin_unlock_irqrestore(&priv->lock, flags);
 
