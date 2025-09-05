@@ -240,25 +240,18 @@ static void rtl839x_update_cntr(int r, int released)
 
 static void rtl930x_update_cntr(int r, int released)
 {
+	u32 reg = rtl930x_dma_if_rx_ring_cntr(r);
 	int pos = (r % 3) * 10;
-	u32 reg = RTL930X_DMA_IF_RX_RING_CNTR + ((r / 3) << 2);
-	u32 v = sw_r32(reg);
 
-	v = (v >> pos) & 0x3ff;
-	pr_debug("RX: Work done %d, old value: %d, pos %d, reg %04x\n", released, v, pos, reg);
-	sw_w32_mask(0x3ff << pos, released << pos, reg);
-	sw_w32(v, reg);
+	sw_w32(released << pos, reg);
 }
 
 static void rtl931x_update_cntr(int r, int released)
 {
+	u32 reg = rtl931x_dma_if_rx_ring_cntr(r);
 	int pos = (r % 3) * 10;
-	u32 reg = RTL931X_DMA_IF_RX_RING_CNTR + ((r / 3) << 2);
-	u32 v = sw_r32(reg);
 
-	v = (v >> pos) & 0x3ff;
-	sw_w32_mask(0x3ff << pos, released << pos, reg);
-	sw_w32(v, reg);
+	sw_w32(released << pos, reg);
 }
 
 struct dsa_tag {
@@ -336,39 +329,6 @@ static bool rtl931x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 		t->l2_offloaded = 1;
 
 	return t->l2_offloaded;
-}
-
-/* Discard the RX ring-buffers, called as part of the net-ISR
- * when the buffer runs over
- */
-static void rtl838x_rb_cleanup(struct rtl838x_eth_priv *priv, int status)
-{
-	for (int r = 0; r < priv->rxrings; r++) {
-		struct ring_b *ring = priv->membase;
-		struct p_hdr *h;
-		u32 *last;
-
-		pr_debug("In %s working on r: %d\n", __func__, r);
-		last = (u32 *)KSEG1ADDR(sw_r32(priv->r->dma_if_rx_cur + r * 4));
-		do {
-			if ((ring->rx_r[r][ring->c_rx[r]] & 0x1))
-				break;
-			pr_debug("Got something: %d\n", ring->c_rx[r]);
-			h = &ring->rx_header[r][ring->c_rx[r]];
-			memset(h, 0, sizeof(struct p_hdr));
-			h->buf = (u8 *)KSEG1ADDR(ring->rx_space +
-			                         r * priv->rxringlen * RING_BUFFER +
-			                         ring->c_rx[r] * RING_BUFFER);
-			h->size = RING_BUFFER;
-			/* make sure the header is visible to the ASIC */
-			mb();
-
-			ring->rx_r[r][ring->c_rx[r]] = KSEG1ADDR(h) | 0x1 | (ring->c_rx[r] == (priv->rxringlen - 1) ?
-			                               WRAP :
-			                               0x1);
-			ring->c_rx[r] = (ring->c_rx[r] + 1) % priv->rxringlen;
-		} while (&ring->rx_r[r][ring->c_rx[r]] != last);
-	}
 }
 
 struct fdb_update_work {
@@ -504,7 +464,6 @@ static irqreturn_t rtl93xx_net_irq(int irq, void *dev_id)
 		pr_debug("RX buffer overrun: status %x, mask: %x\n",
 		         status_rx_r, sw_r32(priv->r->dma_if_intr_rx_runout_msk));
 		sw_w32(status_rx_r, priv->r->dma_if_intr_rx_runout_sts);
-		rtl838x_rb_cleanup(priv, status_rx_r);
 	}
 
 	return IRQ_HANDLED;
@@ -766,10 +725,11 @@ static void rtl93xx_hw_en_rxtx(struct rtl838x_eth_priv *priv)
 	sw_w32((DEFAULT_MTU << 16) | RX_TRUNCATE_EN_93XX, priv->r->dma_if_ctrl);
 
 	for (int i = 0; i < priv->rxrings; i++) {
+		int cnt = min(priv->rxringlen - 2, 0x3ff);
 		int pos = (i % 3) * 10;
 		u32 v;
 
-		sw_w32_mask(0x3ff << pos, priv->rxringlen << pos, priv->r->dma_if_rx_ring_size(i));
+		sw_w32_mask(0x3ff << pos, cnt << pos, priv->r->dma_if_rx_ring_size(i));
 
 		/* Some SoCs have issues with missing underflow protection */
 		v = (sw_r32(priv->r->dma_if_rx_ring_cntr(i)) >> pos) & 0x3ff;
@@ -1329,7 +1289,7 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 	netif_receive_skb_list(&rx_list);
 
 	/* Update counters */
-	priv->r->update_cntr(r, 0);
+	priv->r->update_cntr(r, work_done);
 
 	spin_unlock_irqrestore(&priv->lock, flags);
 
@@ -1340,6 +1300,7 @@ static int rtl838x_poll_rx(struct napi_struct *napi, int budget)
 {
 	struct rtl838x_rx_q *rx_q = container_of(napi, struct rtl838x_rx_q, napi);
 	struct rtl838x_eth_priv *priv = rx_q->priv;
+	unsigned long flags;
 	int ring = rx_q->id;
 	int work_done = 0;
 
@@ -1352,10 +1313,12 @@ static int rtl838x_poll_rx(struct napi_struct *napi, int budget)
 
 	if (work_done < budget && napi_complete_done(napi, work_done)) {
 		/* Re-enable rx interrupts */
+		spin_lock_irqsave(&priv->lock, flags);
 		if (priv->family_id == RTL9300_FAMILY_ID || priv->family_id == RTL9310_FAMILY_ID)
-			sw_w32(0xffffffff, priv->r->dma_if_intr_rx_done_msk);
+			sw_w32_mask(0, RTL93XX_DMA_IF_INTR_RX_MASK(ring), priv->r->dma_if_intr_rx_done_msk);
 		else
 			sw_w32_mask(0, RTL83XX_DMA_IF_INTR_RX_MASK(ring), priv->r->dma_if_intr_msk);
+		spin_unlock_irqrestore(&priv->lock, flags);
 	}
 
 	return work_done;
