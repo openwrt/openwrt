@@ -366,6 +366,17 @@ define Device/asiarf_ap7621-001
 endef
 TARGET_DEVICES += asiarf_ap7621-001
 
+define Device/asiarf_ap7621-004-v3
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  DEVICE_VENDOR := AsiaRF
+  DEVICE_MODEL := AP7621-004
+  DEVICE_VARIANT := v3
+  IMAGE_SIZE := 16000k
+  DEVICE_PACKAGES := kmod-mmc-mtk kmod-usb3
+endef
+TARGET_DEVICES += asiarf_ap7621-004-v3
+
 define Device/asiarf_ap7621-nv1
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
