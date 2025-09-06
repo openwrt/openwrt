@@ -153,6 +153,9 @@ ramips_setup_interfaces()
 	tplink,deco-m4r-v4)
 		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
+	tplink,deco-x20-v3)
+		ucidef_set_interfaces_lan_wan "lan" "wan"
+		;;
 	tplink,eap235-wall-v1|\
 	tplink,eap615-wall-v1)
 		ucidef_set_interface_lan "lan0 lan1 lan2 lan3"
@@ -303,6 +306,11 @@ ramips_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii Config lan_hwaddr)
 		wan_mac=$(mtd_get_mac_ascii Config wan_hwaddr)
 		label_mac=$lan_mac
+		;;
+	tplink,deco-x20-v3)
+		label_mac=$(get_mac_binary /tmp/ubi_factory_data/default-mac 0x0)
+		lan_mac=$label_mac
+		wan_mac=$(macaddr_add "$label_mac" 1)
 		;;
 	tplink,er605-v2)
 		CI_UBIPART="firmware"

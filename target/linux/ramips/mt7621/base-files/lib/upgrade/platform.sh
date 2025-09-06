@@ -84,7 +84,7 @@ platform_do_upgrade() {
 	dlink,covr-x1860-a1|\
 	dlink,dap-x1860-a1|\
 	dlink,dir-1960-a1|\
-        dlink,dir-2055-a1|\
+	dlink,dir-2055-a1|\
 	dlink,dir-2150-a1|\
 	dlink,dir-2150-r1|\
 	dlink,dir-2640-a1|\
@@ -183,6 +183,10 @@ platform_do_upgrade() {
 	iodata,wn-dx1200gr)
 		iodata_mstc_set_flag "debugflag" "factory" "0x1fe75" "0,1" "1"
 		iodata_mstc_set_flag "bootnum" "persist" "0x4" "1,2" "1"
+		nand_do_upgrade "$1"
+		;;
+	tplink,deco-x20-v3)
+		fw_setenv tp_boot_idx 0
 		nand_do_upgrade "$1"
 		;;
 	tplink,er605-v2)
