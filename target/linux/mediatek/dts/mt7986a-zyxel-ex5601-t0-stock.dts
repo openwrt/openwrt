@@ -5,19 +5,11 @@
  */
 
 /dts-v1/;
-#include "mt7986a.dtsi"
 #include "mt7986a-zyxel-ex5601-t0-common.dtsi"
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/input/input.h>
 
 / {
 	model = "Zyxel EX5601-T0 (stock layout)";
 	compatible = "zyxel,ex5601-t0-stock", "mediatek,mt7986a";
-
-	memory@40000000 {
-		device_type = "memory";
-		reg = <0 0x40000000 0 0x20000000>;
-	};
 };
 
 &spi_nand {
@@ -30,18 +22,18 @@
 
 	partition@0 {
 		label = "BL2";
-		reg = <0x00000 0x0100000>;
+		reg = <0x0 0x100000>;
 		read-only;
 	};
 
 	partition@100000 {
 		label = "u-boot-env";
-		reg = <0x0100000 0x0080000>;
+		reg = <0x100000 0x80000>;
 	};
 
 	factory: partition@180000 {
 		label = "Factory";
-		reg = <0x180000 0x0200000>;
+		reg = <0x180000 0x200000>;
 		read-only;
 
 		nvmem-layout {
@@ -54,21 +46,21 @@
 				reg = <0x0 0x1000>;
 			};
 
-			macaddr_factory_0004: macaddr@4 {
+			macaddr_factory_4: macaddr@4 {
 				compatible = "mac-base";
-				reg = <0x0004 0x6>;
+				reg = <0x4 0x6>;
 				#nvmem-cell-cells = <1>;
 			};
 
-			macaddr_factory_0024: macaddr@24 {
+			macaddr_factory_24: macaddr@24 {
 				compatible = "mac-base";
-				reg = <0x0024 0x6>;
+				reg = <0x24 0x6>;
 				#nvmem-cell-cells = <1>;
 			};
 
-			macaddr_factory_002a: macaddr@2a {
+			macaddr_factory_2a: macaddr@2a {
 				compatible = "mac-base";
-				reg = <0x002a 0x6>;
+				reg = <0x2a 0x6>;
 				#nvmem-cell-cells = <1>;
 			};
 		};
@@ -76,13 +68,13 @@
 
 	partition@380000 {
 		label = "FIP";
-		reg = <0x380000 0x01C0000>;
+		reg = <0x380000 0x1c0000>;
 		read-only;
 	};
 
 	partition@540000 {
 		label = "zloader";
-		reg = <0x540000 0x0040000>;
+		reg = <0x540000 0x40000>;
 		read-only;
 	};
 
@@ -99,21 +91,6 @@
 
 	partition@8580000 {
 		label = "zyubi";
-		reg = <0x8580000 0x15A80000>;
+		reg = <0x8580000 0x15a80000>;
 	};
-};
-
-&gmac0 {
-	nvmem-cells = <&macaddr_factory_002a 0>;
-	nvmem-cell-names = "mac-address";
-};
-
-&gmac1 {
-	nvmem-cells = <&macaddr_factory_0024 0>;
-	nvmem-cell-names = "mac-address";
-};
-
-&wifi {
-	nvmem-cells = <&eeprom_factory>;
-	nvmem-cell-names = "eeprom";
 };
