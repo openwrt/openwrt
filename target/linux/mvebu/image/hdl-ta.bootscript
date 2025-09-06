@@ -1,0 +1,47 @@
+# Bootscript for I-O DATA HDL-TA Series NAS
+setenv ow_root "@ROOT@"
+
+# try USB storage
+part uuid usb 0:2 uuid
+if test -n "${uuid}" -a "${uuid}" = "${ow_root}-02"; then
+	setenv devtype usb
+	setenv ow_root "${ow_root}-02"
+fi
+
+set uuid
+# try SATA storage
+test -z "${devtype}" && part uuid scsi 0:2 uuid
+if test -n "${uuid}" -a "${uuid}" = "${ow_root}"; then
+	setenv devtype scsi
+fi
+
+if test -z "${devtype}"; then
+	echo "Cannot find any boot device for UUID ${ow_root}(-02)!"
+	led green off
+	led red on
+
+	# enable poweroff by power button
+	set valid_power_button true
+fi
+
+setenv bootargs "root=PARTUUID=${ow_root} rw rootwait"
+
+# The U-Boot on HDL-TA behaves unexpectedly when the extracted kernel
+# data is larger than 0x1000000 (16MiB). In this case, the extracted
+# kernel data from 16MiB onwards will be copied to ${fdt_addr} and the
+# loaded dtb data will be overwritten (but kernel data on ${kernel_addr}
+# + 16M still exists).
+# This behavior breaks booting, so use ${ramfs_addr} for fdt instead
+# of ${fdt_addr}.
+#
+# $*_addr variables on HDL-TA:
+#   - $fdt_addr      : 0x1000000
+#   - $kernel_gz_addr: 0x1800000
+#   - $kernel_addr   : 0x2000000
+#   - $initrd_addr   : 0x3000000
+#   - $ramfs_addr    : 0x5000000
+#
+load ${devtype} 0:1 ${kernel_addr} Image
+load ${devtype} 0:1 ${ramfs_addr} @DTB@.dtb
+
+booti ${kernel_addr} - ${ramfs_addr}

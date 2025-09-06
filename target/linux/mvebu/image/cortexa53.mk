@@ -1,3 +1,18 @@
+define Build/gpt-image
+	rm -fR $@.boot
+	mkdir -p $@.boot
+	$(foreach dts,$(DEVICE_DTS), $(CP) $(KDIR)/image-$(dts).dtb $@.boot/$(dts).dtb;)
+	$(CP) $(IMAGE_KERNEL) $@.boot/$(KERNEL_NAME)
+	-$(CP) $@-boot.scr $@.boot/boot.scr
+
+	PADDING=1 GUID="$(IMG_PART_DISKGUID)" \
+		$(SCRIPT_DIR)/gen_image_generic.sh \
+		$@ \
+		$(CONFIG_TARGET_KERNEL_PARTSIZE) $@.boot \
+		$(CONFIG_TARGET_ROOTFS_PARTSIZE) $(IMAGE_ROOTFS) \
+		1024
+endef
+
 define Device/glinet_gl-mv1000
   $(call Device/Default-arm64)
   DEVICE_VENDOR := GL.iNet
@@ -74,6 +89,26 @@ define Device/globalscale_espressobin-v7-emmc
   BOOT_SCRIPT := espressobin
 endef
 TARGET_DEVICES += globalscale_espressobin-v7-emmc
+
+define Device/iodata_hdl-ta
+  $(call Device/Default-arm64)
+  DEVICE_VENDOR := I-O DATA
+  DEVICE_MODEL := HDL-TA Series NAS
+  SOC := armada-3720
+  IMAGES := hdd.img.gz usb.img.gz
+  IMAGE/hdd.img.gz := boot-scr $(subst 00#,02,$(IMG_PART_DISKGUID)#) | \
+	gpt-image | gzip | append-metadata
+  IMAGE/usb.img.gz := boot-scr | \
+	boot-img | sdcard-img | gzip | append-metadata
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+  ARTIFACTS := initramfs.dtb
+  ARTIFACT/initramfs.dtb := append-dtb
+endif
+  DEVICE_PACKAGES := kmod-eeprom-at24 kmod-fs-vfat kmod-hwmon-drivetemp \
+	kmod-i2c-pxa kmod-rtc-ds1307
+  BOOT_SCRIPT := hdl-ta
+endef
+TARGET_DEVICES += iodata_hdl-ta
 
 define Device/marvell_armada-3720-db
   $(call Device/Default-arm64)
