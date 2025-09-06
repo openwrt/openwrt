@@ -322,7 +322,7 @@ hostapd_common_add_bss_config() {
 
 	config_add_string 'key1:wepkey' 'key2:wepkey' 'key3:wepkey' 'key4:wepkey' 'password:wpakey'
 
-	config_add_string wpa_psk_file
+	config_add_string wpa_psk_file sae_password_file
 
 	config_add_int multi_ap
 
