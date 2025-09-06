@@ -137,6 +137,7 @@ platform_do_upgrade() {
 		;;
 	cudy,re3000-v1|\
 	cudy,wr3000-v1|\
+	totolink,x6000r|\
 	yuncore,ax835|\
 	wavlink,wl-wn573hx3)
 		default_do_upgrade "$1"
