@@ -141,6 +141,7 @@ case "$board" in
 	jdcloud,re-cp-03)
 		[ "$PHYNBR" = "1" ] && mmc_get_mac_binary factory 0xa > /sys${DEVPATH}/macaddress
 		;;
+	keenetic,kn-3711|\
 	keenetic,kn-3811|\
 	keenetic,kn-3911)
 		[ "$PHYNBR" = "1" ] && \
