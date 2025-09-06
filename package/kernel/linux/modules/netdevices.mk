@@ -794,6 +794,24 @@ endef
 $(eval $(call KernelPackage,dsa-rtl8365mb))
 
 
+define KernelPackage/dsa-ks8995
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Micrel/Kendin KS8995 Ethernet DSA Switch
+  DEPENDS:=@!LINUX_6_6 +kmod-dsa +kmod-dsa-notag
+  FILES:= $(LINUX_DIR)/drivers/net/dsa/ks8995.ko
+  KCONFIG:= CONFIG_NET_DSA_KS8995 \
+	CONFIG_SPI=y \
+	CONFIG_SPI_MASTER=y
+  AUTOLOAD:=$(call AutoLoad,42,ks8995)
+endef
+
+define KernelPackage/dsa-ks8995/description
+  Kernel module for Micrel/Kendin KS8995 DSA switch
+endef
+
+$(eval $(call KernelPackage,dsa-ks8995))
+
+
 define KernelPackage/swconfig
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=switch configuration API
@@ -1641,6 +1659,7 @@ $(eval $(call KernelPackage,vmxnet3))
 define KernelPackage/spi-ks8995
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Micrel/Kendin KS8995 Ethernet switch control
+  DEPENDS:=@LINUX_6_6
   FILES:=$(LINUX_DIR)/drivers/net/phy/spi_ks8995.ko
   KCONFIG:=CONFIG_MICREL_KS8995MA \
 	CONFIG_SPI=y \
