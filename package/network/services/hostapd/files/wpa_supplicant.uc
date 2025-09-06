@@ -4,6 +4,15 @@ import { wdev_create, wdev_set_mesh_params, wdev_remove, is_equal, wdev_set_up, 
 
 let ubus = libubus.connect();
 
+function ex_handler(e)
+{
+	e = split(`${e}\n${e.stacktrace[0].context}`, '\n');
+	for (let line in e)
+		wpas.printf(line);
+	return libubus.STATUS_UNKNOWN_ERROR;
+}
+libubus.guard(ex_handler);
+
 wpas.data.config = {};
 wpas.data.iface_phy = {};
 wpas.data.macaddr_list = {};
@@ -143,17 +152,13 @@ let main_obj = {
 			if (!phy)
 				return libubus.STATUS_NOT_FOUND;
 
-			try {
-				if (req.args.stop) {
-					for (let ifname in phy.data)
-						iface_stop(phy.data[ifname]);
-				} else {
-					start_pending(name);
-				}
-			} catch (e) {
-				wpas.printf(`Error chaging state: ${e}\n${e.stacktrace[0].context}`);
-				return libubus.STATUS_INVALID_ARGUMENT;
+			if (req.args.stop) {
+				for (let ifname in phy.data)
+					iface_stop(phy.data[ifname]);
+			} else {
+				start_pending(name);
 			}
+
 			return 0;
 		}
 	},
@@ -224,16 +229,11 @@ let main_obj = {
 				return libubus.STATUS_INVALID_ARGUMENT;
 
 			wpas.printf(`Set new config for phy ${phy}`);
-			try {
-				if (req.args.config)
-					set_config(phy, req.args.phy, req.args.radio, req.args.num_global_macaddr, req.args.macaddr_base, req.args.config);
+			if (req.args.config)
+				set_config(phy, req.args.phy, req.args.radio, req.args.num_global_macaddr, req.args.macaddr_base, req.args.config);
 
-				if (!req.args.defer)
-					start_pending(phy);
-			} catch (e) {
-				wpas.printf(`Error loading config: ${e}\n${e.stacktrace[0].context}`);
-				return libubus.STATUS_INVALID_ARGUMENT;
-			}
+			if (!req.args.defer)
+				start_pending(phy);
 
 			return {
 				pid: wpas.getpid()
