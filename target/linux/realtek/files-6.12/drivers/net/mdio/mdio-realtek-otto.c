@@ -845,70 +845,65 @@ static int rtmdio_931x_get_backing_sds(u32 sds, u32 page)
 	return back;
 }
 
-static int rtmdio_931x_read_sds_phy(int sds, int page, int regnum)
-{
-	u32 cmd = sds << 2 | page << 7 | regnum << 13 | 1;
-	int i, ret = -EIO;
-
-	pr_debug("%s: phy_addr(SDS-ID) %d, phy_reg: %d\n", __func__, sds, regnum);
-
-	mutex_lock(&rtmdio_lock_sds);
-	sw_w32(cmd, RTMDIO_931X_SERDES_INDRT_ACCESS_CTRL);
-
-	for (i = 0; i < 100; i++) {
-		if (!(sw_r32(RTMDIO_931X_SERDES_INDRT_ACCESS_CTRL) & 0x1))
-			break;
-		mdelay(1);
-	}
-
-	if (i < 100)
-		ret = sw_r32(RTMDIO_931X_SERDES_INDRT_DATA_CTRL) & 0xffff;
-
-	mutex_unlock(&rtmdio_lock_sds);
-
-	pr_debug("%s: returning %08x\n", __func__, ret);
-
-	return ret;
-}
-
 int rtmdio_931x_read_sds_phy_new(int sds, int page, int regnum)
 {
-	int backsds = rtmdio_931x_get_backing_sds(sds, page);
+	int backsds, i, cmd, ret = -EIO;
+	int backpage = page & 0x3f;
 
-	return backsds < 0 ? 0 : rtmdio_931x_read_sds_phy(backsds, page & 0x3f, regnum);
-}
+	if (sds < 0 || sds > 13 || page < 0 || page > 575 || regnum < 0 || regnum > 31)
+		return -EIO;
 
-static int rtmdio_931x_write_sds_phy(int sds, int page, int regnum, u16 val)
-{
-	u32 cmd = sds << 2 | page << 7 | regnum << 13;;
-	int i, ret = -EIO;
+	backsds = rtmdio_931x_get_backing_sds(sds, page);
+	if (backsds == -EINVAL)
+		return 0;
 
 	mutex_lock(&rtmdio_lock_sds);
-	sw_w32(cmd, RTMDIO_931X_SERDES_INDRT_ACCESS_CTRL);
-	sw_w32(val, RTMDIO_931X_SERDES_INDRT_DATA_CTRL);
 
-	cmd = sw_r32(RTMDIO_931X_SERDES_INDRT_ACCESS_CTRL) | 0x3;
+	cmd = backsds << 2 | backpage << 7 | regnum << 13 | 0x1;
 	sw_w32(cmd, RTMDIO_931X_SERDES_INDRT_ACCESS_CTRL);
 
 	for (i = 0; i < 100; i++) {
-		if (!(sw_r32(RTMDIO_931X_SERDES_INDRT_ACCESS_CTRL) & 0x1))
+		if (!(sw_r32(RTMDIO_931X_SERDES_INDRT_ACCESS_CTRL) & 0x1)) {
+			ret = sw_r32(RTMDIO_931X_SERDES_INDRT_DATA_CTRL) & 0xffff;
 			break;
+		}
 		mdelay(1);
 	}
 
 	mutex_unlock(&rtmdio_lock_sds);
-
-	if (i < 100)
-		ret = 0;
 
 	return ret;
 }
 
 int rtmdio_931x_write_sds_phy_new(int sds, int page, int regnum, u16 val)
 {
-	int backsds = rtmdio_931x_get_backing_sds(sds, page);
+	int backsds, i, cmd, ret = -EIO;
+	int backpage = page & 0x3f;
 
-	return backsds < 0 ? 0 : rtmdio_931x_write_sds_phy(backsds, page & 0x3f, regnum, val);
+	if (sds < 0 || sds > 13 || page < 0 || page > 575 || regnum < 0 || regnum > 31)
+		return -EIO;
+
+	backsds = rtmdio_931x_get_backing_sds(sds, page);
+	if (backsds == -EINVAL)
+		return 0;
+
+	mutex_lock(&rtmdio_lock_sds);
+
+	cmd = backsds << 2 | backpage << 7 | regnum << 13 | 0x3;
+	sw_w32(val, RTMDIO_931X_SERDES_INDRT_DATA_CTRL);
+	sw_w32(cmd, RTMDIO_931X_SERDES_INDRT_ACCESS_CTRL);
+
+	for (i = 0; i < 100; i++) {
+		if (!(sw_r32(RTMDIO_931X_SERDES_INDRT_ACCESS_CTRL) & 0x1)) {
+			ret = 0;
+			break;
+		}
+		mdelay(1);
+	}
+
+	mutex_unlock(&rtmdio_lock_sds);
+
+	return ret;
 }
 
 /* RTL931x specific MDIO functions */
@@ -1146,29 +1141,6 @@ static int rtmdio_read(struct mii_bus *bus, int addr, int regnum)
 	return err ? err : val;
 }
 
-static int rtmdio_93xx_read(struct mii_bus *bus, int addr, int regnum)
-{
-	struct rtmdio_bus_priv *priv = bus->priv;
-	int err, val;
-
-	if (addr >= priv->cpu_port)
-		return -ENODEV;
-
-	if (regnum == RTMDIO_PAGE_SELECT && priv->page[addr] != priv->rawpage)
-		return priv->page[addr];
-
-	priv->raw[addr] = (priv->page[addr] == priv->rawpage);
-	if (priv->phy_is_internal[addr]) {
-		return rtmdio_931x_read_sds_phy(priv->sds_id[addr],
-						priv->page[addr], regnum);
-	}
-
-	err = (*priv->read_phy)(addr, priv->page[addr], regnum, &val);
-	pr_debug("rd_PHY(adr=%d, pag=%d, reg=%d) = %d, err = %d\n",
-		 addr, priv->page[addr], regnum, val, err);
-	return err ? err : val;
-}
-
 static int rtmdio_write_c45(struct mii_bus *bus, int addr, int devnum, int regnum, u16 val)
 {
 	struct rtmdio_bus_priv *priv = bus->priv;
@@ -1206,35 +1178,6 @@ static int rtmdio_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 		pr_debug("wr_PHY(adr=%d, pag=%d, reg=%d, val=%d) err = %d\n",
 			 addr, page, regnum, val, err);
 		return err;
-	}
-
-	priv->raw[addr] = false;
-	return 0;
-}
-
-static int rtmdio_93xx_write(struct mii_bus *bus, int addr, int regnum, u16 val)
-{
-	struct rtmdio_bus_priv *priv = bus->priv;
-	int err, page;
-
-	if (addr >= priv->cpu_port)
-		return -ENODEV;
-
-	page = priv->page[addr];
-
-	if (regnum == RTMDIO_PAGE_SELECT)
-		priv->page[addr] = val;
-
-	if (!priv->raw[addr] && (regnum != RTMDIO_PAGE_SELECT || page == priv->rawpage)) {
-		priv->raw[addr] = (page == priv->rawpage);
-		if (priv->phy_is_internal[addr]) {
-			return rtmdio_931x_write_sds_phy(priv->sds_id[addr],
-							 page, regnum, val);
-		}
-
-		err = (*priv->write_phy)(addr, page, regnum, val);
-		pr_debug("wr_PHY(adr=%d, pag=%d, reg=%d, val=%d) err = %d\n",
-			 addr, page, regnum, val, err);
 	}
 
 	priv->raw[addr] = false;
@@ -1519,9 +1462,11 @@ static int rtmdio_probe(struct platform_device *pdev)
 		break;
 	case RTMDIO_931X_FAMILY_ID:
 		bus->name = "rtl931x-eth-mdio";
-		bus->read = rtmdio_93xx_read;
-		bus->write = rtmdio_93xx_write;
+		bus->read = rtmdio_read;
+		bus->write = rtmdio_write;
 		bus->reset = rtmdio_931x_reset;
+		priv->read_sds_phy = rtmdio_931x_read_sds_phy_new;
+		priv->write_sds_phy = rtmdio_931x_write_sds_phy_new;
 		priv->read_mmd_phy = rtmdio_931x_read_mmd_phy;
 		priv->write_mmd_phy = rtmdio_931x_write_mmd_phy;
 		priv->read_phy = rtmdio_931x_read_phy;
