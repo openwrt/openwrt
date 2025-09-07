@@ -304,12 +304,21 @@
 };
 
 &wifi {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
 	status = "okay";
 	pinctrl-names = "default", "dbdc";
 	pinctrl-0 = <&wf_2g_5g_pins>;
 	pinctrl-1 = <&wf_dbdc_pins>;
 	nvmem-cells = <&eeprom_factory>;
 	nvmem-cell-names = "eeprom";
+
+	band@1 {
+		reg = <1>;
+		nvmem-cells = <&macaddr_factory_4 1>;
+		nvmem-cell-names = "mac-address";
+	};
 };
 
 &crypto {

@@ -209,11 +209,6 @@ case "$board" in
 	zbtlink,zbt-z8102ax|\
 	zbtlink,zbt-z8102ax-v2|\
 	zbtlink,zbt-z8103ax|\
-	zyxel,ex5601-t0-stock|\
-	zyxel,ex5601-t0-ubootmod)
-		addr=$(mtd_get_mac_binary "Factory" 0x4)
-		[ "$PHYNBR" = "1" ] && macaddr_add $addr 1 > /sys${DEVPATH}/macaddress
-		;;
 	wavlink,wl-wn573hx3)
 		addr=$(mtd_get_mac_binary factory 0x04)
 		[ "$PHYNBR" = "1" ] && macaddr_setbit_la $(macaddr_add $addr -0x300000) > /sys${DEVPATH}/macaddress
