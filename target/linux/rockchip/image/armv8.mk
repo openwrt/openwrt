@@ -124,6 +124,14 @@ define Device/friendlyarm_nanopi-r6s
 endef
 TARGET_DEVICES += friendlyarm_nanopi-r6s
 
+define Device/lunzn_fastrhino-r66s
+  DEVICE_VENDOR := Lunzn
+  DEVICE_MODEL := FastRhino R66S
+  SOC := rk3568
+  DEVICE_PACKAGES := kmod-r8169
+endef
+TARGET_DEVICES += lunzn_fastrhino-r66s
+
 define Device/pine64_rock64
   DEVICE_VENDOR := Pine64
   DEVICE_MODEL := Rock64
