@@ -165,7 +165,7 @@
 					label = "lan4";
 				};
 				
-				wan: port@4 {
+				port@4 {
 					reg = <4>;
 					label = "wan";
 					nvmem-cells = <&macaddr_factory_7fffa>;
@@ -212,7 +212,7 @@
 	
 	#address-cells = <1>;
 	#size-cells = <0>;
-	mm6108_sdio: mm6108_sdio@0 {
+	mm6108_sdio@0 {
 		compatible = "morse,mm610x";
 		reset-gpios = <&pio 97 GPIO_ACTIVE_HIGH>;
 		power-gpios = <&pio 98 GPIO_ACTIVE_HIGH>,
@@ -377,7 +377,7 @@
 	pinctrl-0 = <&serial_nand_pins>;
 	status = "okay";
 	
-	snand: flash@0 {
+	flash@0 {
 		compatible = "spi-nand";
 		mediatek,bmt-table-size = <0x1000>;
 		mediatek,bmt-v2;
@@ -417,7 +417,6 @@
 			factory: partition@1c0000 {
 				label = "Factory";
 				reg = <0x1c0000 0x0100000>;
-				// do not set read-only if you want to write mac to factory.
 				read-only;
 				
 				nvmem-layout {
