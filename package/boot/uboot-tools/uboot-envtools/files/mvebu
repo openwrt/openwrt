@@ -47,6 +47,10 @@ globalscale,mochabin)
 		ubootenv_add_uci_config "/dev/mtd0" "0x3f0000" "0x10000" "0x10000" "1"
 	fi
 	;;
+iodata,hdl-ta|\
+synology,ds213j)
+	ubootenv_add_mtd "u-boot-env" "0x0" "0x10000" "0x10000"
+	;;
 marvell,armada8040-mcbin-doubleshot|\
 marvell,armada8040-mcbin-singleshot)
 	ubootenv_add_uci_config "/dev/mtd0" "0x3f0000" "0x10000" "0x10000" "1"
@@ -71,9 +75,6 @@ methode,edpu)
 	else
 	ubootenv_add_uci_config "/dev/mtd0" "0x180000" "0x10000" "0x10000"
 	fi
-	;;
-synology,ds213j)
-	ubootenv_add_mtd "u-boot-env" "0x0" "0x10000" "0x10000"
 	;;
 esac
 
