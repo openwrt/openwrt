@@ -268,24 +268,27 @@ static int rtldsa_bus_c45_write(struct mii_bus *bus, int addr, int devad, int re
 
 static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 {
+	struct device_node *dn, *phy_node, *led_node, *np, *mii_np;
 	struct device *dev = priv->dev;
-	struct device_node *dn, *phy_node, *led_node, *mii_np = dev->of_node;
 	struct mii_bus *bus;
 	int ret;
 	u32 pn;
 
-	pr_debug("In %s\n", __func__);
-	mii_np = of_find_compatible_node(NULL, NULL, "realtek,rtl838x-mdio");
-	if (mii_np) {
-		pr_debug("Found compatible MDIO node!\n");
-	} else {
-		dev_err(priv->dev, "no %s child node found", "mdio-bus");
+	np = of_find_compatible_node(NULL, NULL, "realtek,rtl838x-eth");
+	if (!np) {
+		dev_err(priv->dev, "ethernet node not found");
+		return -ENODEV;
+	}
+
+	mii_np = of_get_child_by_name(np, "mdio-bus");
+	if (!mii_np) {
+		dev_err(priv->dev, "mdio-bus subnode not found");
 		return -ENODEV;
 	}
 
 	priv->parent_bus = of_mdio_find_bus(mii_np);
 	if (!priv->parent_bus) {
-		pr_debug("Deferring probe of mdio bus\n");
+		dev_dbg(priv->dev, "Deferring probe of mdio bus\n");
 		return -EPROBE_DEFER;
 	}
 	if (!of_device_is_available(mii_np))
@@ -418,8 +421,6 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 		rtl8380_sds_power(24, 1);
 		rtl8380_sds_power(26, 1);
 	}
-
-	pr_debug("%s done\n", __func__);
 
 	return 0;
 }
