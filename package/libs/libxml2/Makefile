@@ -3,6 +3,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=libxml2
 PKG_VERSION:=2.14.5
 PKG_RELEASE:=1
+ABI_VERSION:=16
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNOME/libxml2/$(basename $(PKG_VERSION))
