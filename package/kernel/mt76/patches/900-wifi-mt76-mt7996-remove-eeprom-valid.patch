@@ -1,0 +1,19 @@
+--- a/mt7996/eeprom.c
++++ b/mt7996/eeprom.c
+@@ -104,16 +104,6 @@ static bool mt7996_eeprom_variant_valid(struct mt7996_dev *dev, const u8 *def)
+ 		fem[i] = u8_get_bits(eeprom[MT_EE_WIFI_CONF + 6 + i],
+ 				     MT_EE_WIFI_PA_LNA_CONFIG);
+ 
+-	if (dev->var.fem == MT7996_FEM_EXT &&
+-	    !(fem[0] == FEM_EXT && fem[1] == FEM_EXT))
+-		return false;
+-	else if (dev->var.fem == MT7996_FEM_INT &&
+-		 !(fem[0] == FEM_INT && fem[1] == FEM_INT))
+-		return false;
+-	else if (dev->var.fem == MT7996_FEM_MIX &&
+-		 !(fem[0] == FEM_INT && fem[1] == FEM_EXT))
+-		return false;
+-
+ 	for (i = 0; i < __MT_MAX_BAND; i++) {
+ 		u8 path, rx_path, nss;
+ 		u8 def_path, def_rx_path, def_nss;
