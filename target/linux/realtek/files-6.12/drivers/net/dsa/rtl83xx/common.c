@@ -274,9 +274,9 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 	int ret;
 	u32 pn;
 
-	np = of_find_compatible_node(NULL, NULL, "realtek,rtl838x-eth");
+	np = of_find_compatible_node(NULL, NULL, "realtek,otto-mdio");
 	if (!np) {
-		dev_err(priv->dev, "ethernet node not found");
+		dev_err(priv->dev, "mdio controller node not found");
 		return -ENODEV;
 	}
 

@@ -220,91 +220,84 @@
 	};
 };
 
-&ethernet0 {
-	mdio: mdio-bus {
-		compatible = "realtek,rtl838x-mdio";
-		regmap = <&ethernet0>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		/* External RTL8218D PHY */
-		phy0: ethernet-phy@0 {
-			reg = <0>;
-			compatible = "ethernet-phy-ieee802.3-c22";
-			rtl9300,smi-address = <0 0>;
-			sds = < 2 >;
-			// Disabled because we do not know how to bring up again
-			// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
-		};
-		phy1: ethernet-phy@1 {
-			reg = <1>;
-			compatible = "ethernet-phy-ieee802.3-c22";
-			rtl9300,smi-address = <0 1>;
-		};
-		phy2: ethernet-phy@2 {
-			reg = <2>;
-			compatible = "ethernet-phy-ieee802.3-c22";
-			rtl9300,smi-address = <0 2>;
-		};
-		phy3: ethernet-phy@3 {
-			reg = <3>;
-			compatible = "ethernet-phy-ieee802.3-c22";
-			rtl9300,smi-address = <0 3>;
-		};
-		phy4: ethernet-phy@4 {
-			reg = <4>;
-			compatible = "ethernet-phy-ieee802.3-c22";
-			rtl9300,smi-address = <0 4>;
-		};
-		phy5: ethernet-phy@5 {
-			reg = <5>;
-			compatible = "ethernet-phy-ieee802.3-c22";
-			rtl9300,smi-address = <0 5>;
-		};
-		phy6: ethernet-phy@6 {
-			reg = <6>;
-			compatible = "ethernet-phy-ieee802.3-c22";
-			rtl9300,smi-address = <0 6>;
-		};
-		phy7: ethernet-phy@7 {
-			reg = <7>;
-			compatible = "ethernet-phy-ieee802.3-c22";
-			rtl9300,smi-address = <0 7>;
-		};
-
-		/* External Aquantia 113C PHYs */
-		phy24: ethernet-phy@24 {
-			reg = <24>;
-			compatible = "ethernet-phy-ieee802.3-c45";
-			rtl9300,smi-address = <1 8>;
-			sds = < 6 >;
-			// Disabled because we do not know how to bring up again
-			// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
-			#thermal-sensor-cells = <0>;
-		};
-
-		phy25: ethernet-phy@25 {
-			reg = <25>;
-			compatible = "ethernet-phy-ieee802.3-c45";
-			rtl9300,smi-address = <2 8>;
-			sds = < 7 >;
-			// Disabled because we do not know how to bring up again
-			// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
-			#thermal-sensor-cells = <0>;
-		};
-
-		phy26: ethernet-phy@26 {
-			reg = <26>;
-			compatible = "ethernet-phy-ieee802.3-c45";
-			rtl9300,smi-address = <3 8>;
-			sds = < 8 >;
-			// Disabled because we do not know how to bring up again
-			// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
-			#thermal-sensor-cells = <0>;
-		};
-
-		INTERNAL_PHY_SDS(27, 9)
+&mdio_bus0 {
+	/* External RTL8218D PHY */
+	phy0: ethernet-phy@0 {
+		reg = <0>;
+		compatible = "ethernet-phy-ieee802.3-c22";
+		rtl9300,smi-address = <0 0>;
+		sds = < 2 >;
+		// Disabled because we do not know how to bring up again
+		// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 	};
+	phy1: ethernet-phy@1 {
+		reg = <1>;
+		compatible = "ethernet-phy-ieee802.3-c22";
+		rtl9300,smi-address = <0 1>;
+	};
+	phy2: ethernet-phy@2 {
+		reg = <2>;
+		compatible = "ethernet-phy-ieee802.3-c22";
+		rtl9300,smi-address = <0 2>;
+	};
+	phy3: ethernet-phy@3 {
+		reg = <3>;
+		compatible = "ethernet-phy-ieee802.3-c22";
+		rtl9300,smi-address = <0 3>;
+	};
+	phy4: ethernet-phy@4 {
+		reg = <4>;
+		compatible = "ethernet-phy-ieee802.3-c22";
+		rtl9300,smi-address = <0 4>;
+	};
+	phy5: ethernet-phy@5 {
+		reg = <5>;
+		compatible = "ethernet-phy-ieee802.3-c22";
+		rtl9300,smi-address = <0 5>;
+	};
+	phy6: ethernet-phy@6 {
+		reg = <6>;
+		compatible = "ethernet-phy-ieee802.3-c22";
+		rtl9300,smi-address = <0 6>;
+	};
+	phy7: ethernet-phy@7 {
+		reg = <7>;
+		compatible = "ethernet-phy-ieee802.3-c22";
+		rtl9300,smi-address = <0 7>;
+	};
+
+	/* External Aquantia 113C PHYs */
+	phy24: ethernet-phy@24 {
+		reg = <24>;
+		compatible = "ethernet-phy-ieee802.3-c45";
+		rtl9300,smi-address = <1 8>;
+		sds = < 6 >;
+		// Disabled because we do not know how to bring up again
+		// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+		#thermal-sensor-cells = <0>;
+	};
+
+	phy25: ethernet-phy@25 {
+		reg = <25>;
+		compatible = "ethernet-phy-ieee802.3-c45";
+		rtl9300,smi-address = <2 8>;
+		sds = < 7 >;
+		// Disabled because we do not know how to bring up again
+		// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+		#thermal-sensor-cells = <0>;
+	};
+
+	phy26: ethernet-phy@26 {
+		reg = <26>;
+		compatible = "ethernet-phy-ieee802.3-c45";
+		rtl9300,smi-address = <3 8>;
+		sds = < 8 >;
+		// Disabled because we do not know how to bring up again
+		// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+		#thermal-sensor-cells = <0>;
+	};
+
+	INTERNAL_PHY_SDS(27, 9)
 };
 
 &switch0 {
