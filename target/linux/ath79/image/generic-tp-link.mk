@@ -129,7 +129,7 @@ define Device/tplink_archer-c60-v1
   DEVICE_MODEL := Archer C60
   DEVICE_VARIANT := v1
   TPLINK_BOARD_ID := ARCHER-C60-V1
-  DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers ath10k-firmware-qca9888-ct
+  DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers ath10k-firmware-qca9888-ct ipq-wifi-tplink_archer-c60-v1
   SUPPORTED_DEVICES += archer-c60-v1
 endef
 TARGET_DEVICES += tplink_archer-c60-v1
