@@ -1397,15 +1397,28 @@ static int rtmdio_get_family(void)
 
 static int rtmdio_probe(struct platform_device *pdev)
 {
+	struct device_node *dn, *np, *mii_np;
 	struct device *dev = &pdev->dev;
 	struct rtmdio_bus_priv *priv;
-	struct device_node *dn;
 	struct mii_bus *bus;
-	int i, ret, family;
+	int i, family;
 	u32 pn;
 
 	family = rtmdio_get_family();
 	dev_info(dev, "probing RTL%04x family mdio bus\n", family);
+
+	np = of_find_compatible_node(NULL, NULL, "realtek,rtl838x-eth");
+	if (!np)
+		return -ENODEV;
+
+	mii_np = of_get_child_by_name(np, "mdio-bus");
+	if (!mii_np)
+		return -ENODEV;
+
+	if (!of_device_is_available(mii_np)) {
+		of_node_put(mii_np);
+		return -ENODEV;
+	}
 
 	bus = devm_mdiobus_alloc_size(dev, sizeof(*priv));
 	if (!bus)
@@ -1536,14 +1549,15 @@ static int rtmdio_probe(struct platform_device *pdev)
 	}
 
 	snprintf(bus->id, MII_BUS_ID_SIZE, "%s-mii", dev_name(dev));
-	ret = devm_of_mdiobus_register(dev, bus, dev->of_node);
 
-	return ret;
+	return devm_of_mdiobus_register(dev, bus, mii_np);
 }
 
-
 static const struct of_device_id rtmdio_ids[] = {
-	{ .compatible = "realtek,rtl838x-mdio" },
+	{ .compatible = "realtek,rtl8380-mdio" },
+	{ .compatible = "realtek,rtl8392-mdio" },
+	{ .compatible = "realtek,rtl9301-mdio" },
+	{ .compatible = "realtek,rtl9311-mdio" },
 	{}
 };
 MODULE_DEVICE_TABLE(of, rtmdio_ids);
@@ -1557,30 +1571,6 @@ static struct platform_driver rtmdio_driver = {
 };
 
 module_platform_driver(rtmdio_driver);
-
-/*
- * TODO: The below initialization function is only needed because the mdio bus
- * is a subnode of the ethernet node. That means detection via platform driver
- * will not work out of the box. Until this is solved, populate the platform
- * data manually.
- */
-static int __init rtmdio_init(void)
-{
-	struct device_node *np;
-
-	np = of_find_compatible_node(NULL, NULL, "realtek,rtl838x-eth");
-	if (!np) {
-		pr_err("realtek,rtl838x-eth compatible device not found\n");
-		return -ENODEV;
-	}
-
-	pr_info("populating rtl838x-mdio device manually\n");
-	of_platform_populate(np, NULL, NULL, NULL);
-	of_node_put(np);
-
-	return 0;
-}
-module_init(rtmdio_init);
 
 MODULE_DESCRIPTION("RTL83xx/RTL93xx MDIO driver");
 MODULE_LICENSE("GPL");
