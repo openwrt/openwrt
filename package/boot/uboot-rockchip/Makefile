@@ -219,6 +219,13 @@ define U-Boot/bpi-r2-pro-rk3568
     sinovoip_bpi-r2-pro
 endef
 
+define U-Boot/fastrhino-r66s-rk3568
+  $(U-Boot/rk3568/Default)
+  NAME:=FastRhino R66S
+  BUILD_DEVICES:= \
+    lunzn_fastrhino-r66s
+endef
+
 define U-Boot/nanopi-r5c-rk3568
   $(U-Boot/rk3568/Default)
   NAME:=NanoPi R5C
@@ -360,6 +367,7 @@ UBOOT_TARGETS := \
   radxa-zero-3-rk3566 \
   rock-3c-rk3566 \
   bpi-r2-pro-rk3568 \
+  fastrhino-r66s-rk3568 \
   nanopi-r5c-rk3568 \
   nanopi-r5s-rk3568 \
   radxa-e25-rk3568 \
