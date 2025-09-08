@@ -1397,7 +1397,7 @@ static int rtmdio_get_family(void)
 
 static int rtmdio_probe(struct platform_device *pdev)
 {
-	struct device_node *dn, *np, *mii_np;
+	struct device_node *dn, *mii_np;
 	struct device *dev = &pdev->dev;
 	struct rtmdio_bus_priv *priv;
 	struct mii_bus *bus;
@@ -1407,11 +1407,7 @@ static int rtmdio_probe(struct platform_device *pdev)
 	family = rtmdio_get_family();
 	dev_info(dev, "probing RTL%04x family mdio bus\n", family);
 
-	np = of_find_compatible_node(NULL, NULL, "realtek,rtl838x-eth");
-	if (!np)
-		return -ENODEV;
-
-	mii_np = of_get_child_by_name(np, "mdio-bus");
+	mii_np = of_get_child_by_name(dev->of_node, "mdio-bus");
 	if (!mii_np)
 		return -ENODEV;
 
