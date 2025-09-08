@@ -24,6 +24,7 @@ define Package/libxml2
   TITLE:=Gnome XML library
   URL:=http://xmlsoft.org/
   DEPENDS:=+libpthread +zlib $(ICONV_DEPENDS)
+  ABI_VERSION:=16
 endef
 
 define Package/libxml2/description
