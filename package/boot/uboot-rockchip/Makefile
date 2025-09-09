@@ -29,14 +29,14 @@ endef
 define U-Boot/rk3308/Default
   BUILD_SUBTARGET:=armv8
   DEPENDS:=+PACKAGE_u-boot-$(1):trusted-firmware-a-rk3308
-  ATF:=rk3308_bl31_v2.26.elf
-  TPL:=rk3308_ddr_589MHz_uart2_m1_v2.07.bin
+  ATF:=rk3308_bl31_v2.27.elf
+  TPL:=rk3308_ddr_589MHz_uart2_m1_v2.10.bin
 endef
 
 define U-Boot/rock-pi-s-rk3308
   $(U-Boot/rk3308/Default)
   DEPENDS:=+PACKAGE_u-boot-$(1):trusted-firmware-a-rk3308-rock-pi-s
-  TPL:=rk3308_ddr_589MHz_uart0_m0_v2.07.bin
+  TPL:=rk3308_ddr_589MHz_uart0_m0_v2.10.bin
   NAME:=ROCK Pi S
   BUILD_DEVICES:= \
     radxa_rock-pi-s
@@ -170,8 +170,8 @@ endef
 define U-Boot/rk3566/Default
   BUILD_SUBTARGET:=armv8
   DEPENDS:=+PACKAGE_u-boot-$(1):trusted-firmware-a-rk3566
-  ATF:=rk3568_bl31_v1.44.elf
-  TPL:=rk3566_ddr_1056MHz_v1.21.bin
+  ATF:=rk3568_bl31_v1.45.elf
+  TPL:=rk3566_ddr_1056MHz_v1.23.bin
 endef
 
 define U-Boot/nanopi-r3s-rk3566
@@ -208,8 +208,8 @@ endef
 define U-Boot/rk3568/Default
   BUILD_SUBTARGET:=armv8
   DEPENDS:=+PACKAGE_u-boot-$(1):trusted-firmware-a-rk3568
-  ATF:=rk3568_bl31_v1.44.elf
-  TPL:=rk3568_ddr_1560MHz_v1.21.bin
+  ATF:=rk3568_bl31_v1.45.elf
+  TPL:=rk3568_ddr_1560MHz_v1.23.bin
 endef
 
 define U-Boot/bpi-r2-pro-rk3568
@@ -236,7 +236,7 @@ endef
 define U-Boot/radxa-e25-rk3568
   $(U-Boot/rk3568/Default)
   DEPENDS:=+PACKAGE_u-boot-$(1):trusted-firmware-a-rk3568-e25
-  TPL:=rk3568_ddr_1560MHz_uart2_m0_115200_v1.21.bin
+  TPL:=rk3568_ddr_1560MHz_uart2_m0_115200_v1.23.bin
   NAME:=E25
   BUILD_DEVICES:= \
     radxa_e25
@@ -265,7 +265,7 @@ define U-Boot/rk358x/Default
 	+PACKAGE_u-boot-$(1):trusted-firmware-a-rk3588 \
 	+PACKAGE_u-boot-$(1):trusted-firmware-a-rk3588-tpl
   ATF:=rk3588_bl31.elf
-  TPL:=rk3588_ddr_lp4_2112MHz_lp5_2400MHz_v1.16.bin
+  TPL:=rk3588_ddr_lp4_2112MHz_lp5_2400MHz_v1.19.bin
 endef
 
 define U-Boot/generic-rk3588
