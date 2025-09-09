@@ -165,3 +165,18 @@ define Device/yuncore_ax830
 		ipq-wifi-yuncore_ax830
 endef
 TARGET_DEVICES += yuncore_ax830
+
+define Device/wallys_dr5018
+        $(call Device/FitImage)
+        $(call Device/UbiFit)
+        DEVICE_VENDOR := Wallys
+        DEVICE_MODEL := DR5018
+        BLOCKSIZE := 128k
+        PAGESIZE := 2048
+        SOC := ipq5018
+        DEVICE_DTS_CONFIG := config@mp03.5-c1
+        DEVICE_PACKAGES := ath11k-firmware-ipq5018 \
+                ath11k-firmware-qcn6122 \
+                ipq-wifi-wallys_dr5018
+endef
+TARGET_DEVICES += wallys_dr5018

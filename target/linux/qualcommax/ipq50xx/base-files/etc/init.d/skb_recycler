@@ -1,0 +1,92 @@
+#!/bin/sh /etc/rc.common
+# shellcheck disable=3043
+
+START=40
+USE_PROCD=1
+NAME=skb_recycler
+
+ucidef_set_skb_recycler() {
+  uci import << EOF
+package $NAME
+config $NAME 'opt'
+EOF
+
+}
+
+skb_recycler_config() {
+
+  . /lib/config/uci.sh
+
+  local CFG
+  local max_skbs
+  local max_spare_skbs
+  local enable
+  local memtotal
+  CFG="$1"
+
+  config_get max_skbs "${CFG}" max_skbs
+  config_get max_spare_skbs "${CFG}" max_spare_skbs
+  config_get enable "${CFG}" enable
+
+  memtotal=$(awk '/MemTotal/{print $2}' /proc/meminfo)
+
+  [ -z "$max_skbs" ] && {
+    [ $memtotal -le 512000 ] && max_skbs=512 || max_skbs=1024
+    uci_set $NAME "${CFG}" max_skbs "$max_skbs"
+    uci_commit "$NAME"
+  }
+
+  [ -z "$max_spare_skbs" ] && {
+    [ $memtotal -le 512000 ] && max_spare_skbs=128 || max_spare_skbs=256
+    uci_set $NAME "${CFG}" max_spare_skbs "$max_spare_skbs"
+    uci_commit "$NAME"
+  }
+
+  [ -z "$enable" ] && {
+    [ $memtotal -le 256000 ] && enable=0 || enable=1
+    uci_set $NAME "${CFG}" enable "$enable"
+    uci_commit "$NAME"
+  }
+
+  [ "$enable" -eq 0 ] && enable_disable="Disabling" || enable_disable="Enabling"
+
+  if [ -r "/proc/net/$NAME/skb_recycler_enable" ]; then
+    logger -t "$NAME" -p user.notice "$enable_disable $NAME"
+    echo "$enable" > /proc/net/$NAME/skb_recycler_enable
+  else
+    if [ "$enable" -eq 0 ]; then
+      logger -t "$NAME" -p user.warn "$NAME kernel feature 'skb_recycler_enable' not available"
+      logger -t "$NAME" -p user.notice "$enable_disable $NAME"
+      echo 1 > /proc/net/$NAME/max_skbs
+      echo 1 > /proc/net/$NAME/max_spare_skbs
+      echo 1 > /proc/net/$NAME/flush
+    fi
+  fi
+
+  logger -t "$NAME" -p user.notice "Setting max_skbs to $max_skbs"
+  echo "$max_skbs" > /proc/net/$NAME/max_skbs
+
+  logger -t "$NAME" -p user.notice "Setting max_spare_skbs to $max_spare_skbs"
+  echo "$max_spare_skbs" > /proc/net/$NAME/max_spare_skbs
+
+  [ "$enable" -eq 0 ] && echo 1 > /proc/net/$NAME/flush
+}
+
+check_config() {
+  config_load "$NAME" || {
+    touch /etc/config/$NAME
+    ucidef_set_skb_recycler
+  }
+}
+
+reload_service() {
+  [ ! -r /proc/net/$NAME ] && logger -t "$NAME" -p user.warn "skb_recycler feature not available" && return
+
+  check_config
+  config_load $NAME
+  config_foreach skb_recycler_config $NAME
+}
+
+start_service() {
+  reload_service
+}
