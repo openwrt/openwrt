@@ -18,6 +18,7 @@ board=$(board_name)
 
 case "$board" in
 dlink,eagle-pro-ai-m32-a1|\
+dlink,eagle-pro-ai-m32-a1-large|\
 dlink,eagle-pro-ai-r32-a1)
 	ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x2000" "0x2000"
 	;;
