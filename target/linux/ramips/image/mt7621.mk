@@ -374,7 +374,7 @@ define Device/asiarf_ap7621-004-v3
   DEVICE_VARIANT := v3
   IMAGE_SIZE := 16000k
   DEVICE_PACKAGES := kmod-mmc-mtk kmod-usb3 -uboot-envtools
-  SUPPORTED_DEVICES := asiarf,ap7621-004
+  SUPPORTED_DEVICES := asiarf,ap7621-004-v3
 endef
 TARGET_DEVICES += asiarf_ap7621-004-v3
 
