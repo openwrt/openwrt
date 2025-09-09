@@ -35,7 +35,7 @@ endef
 
 define U-Boot/rock-pi-s-rk3308
   $(U-Boot/rk3308/Default)
-  DEPENDS:=+PACKAGE_u-boot-$(1):trusted-firmware-a-rk3308-rock-pi-s
+  DEPENDS+=+PACKAGE_u-boot-$(1):trusted-firmware-a-rk3308-tpl-rock-pi-s
   TPL:=rk3308_ddr_589MHz_uart0_m0_v2.10.bin
   NAME:=ROCK Pi S
   BUILD_DEVICES:= \
@@ -235,7 +235,7 @@ endef
 
 define U-Boot/radxa-e25-rk3568
   $(U-Boot/rk3568/Default)
-  DEPENDS:=+PACKAGE_u-boot-$(1):trusted-firmware-a-rk3568-e25
+  DEPENDS+=+PACKAGE_u-boot-$(1):trusted-firmware-a-rk3568-tpl-e25
   TPL:=rk3568_ddr_1560MHz_uart2_m0_115200_v1.23.bin
   NAME:=E25
   BUILD_DEVICES:= \
