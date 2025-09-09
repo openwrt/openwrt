@@ -30,7 +30,6 @@ define Device/airoha_an7583-evb
   DEVICE_MODEL := AN7583 Evaluation Board (SNAND)
   DEVICE_PACKAGES := kmod-leds-pwm kmod-input-gpio-keys-polled
   DEVICE_DTS := an7583-evb
-  DEVICE_DTS_DIR := ../dts
   DEVICE_DTS_CONFIG := config@1
   KERNEL_LOADADDR := 0x80088000
   IMAGE/sysupgrade.bin := append-kernel | pad-to 128k | append-rootfs | pad-rootfs | append-metadata
@@ -45,7 +44,6 @@ define Device/airoha_an7583-evb-emmc
   DEVICE_VENDOR := Airoha
   DEVICE_MODEL := AN7583 Evaluation Board (EMMC)
   DEVICE_DTS := an7583-evb-emmc
-  DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-i2c-an7581
   ARTIFACT/preloader.bin := an7583-preloader rfb
   ARTIFACT/bl31-uboot.fip := an7583-bl31-uboot rfb
