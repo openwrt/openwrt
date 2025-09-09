@@ -79,18 +79,20 @@ ppp_generic_init_config() {
 	proto_config_add_int mtu
 	proto_config_add_string pppname
 	proto_config_add_string unnumbered
+	proto_config_add_string reqprefix
 	proto_config_add_boolean persist
 	proto_config_add_int maxfail
 	proto_config_add_int holdoff
 	proto_config_add_boolean sourcefilter
 	proto_config_add_boolean delegate
+	proto_config_add_boolean norelease
 }
 
 ppp_generic_setup() {
 	local config="$1"; shift
 	local localip
 
-	json_get_vars ip6table demand keepalive keepalive_adaptive username password pppd_options pppname unnumbered persist maxfail holdoff peerdns sourcefilter delegate
+	json_get_vars ip6table demand keepalive keepalive_adaptive username password pppd_options pppname unnumbered reqprefix persist maxfail holdoff peerdns sourcefilter delegate norelease
 
 	[ ! -e /proc/sys/net/ipv6 ] && ipv6=0 || json_get_var ipv6 ipv6
 
@@ -99,6 +101,11 @@ ppp_generic_setup() {
 	elif [ -z "$ipv6" -o "$ipv6" = auto ]; then
 		ipv6=1
 		autoipv6=1
+	fi
+
+	if [ "$autoipv6" != 1 ]; then
+		reqprefix=""
+		norelease=""
 	fi
 
 	if [ "${demand:-0}" -gt 0 ]; then
@@ -137,6 +144,7 @@ ppp_generic_setup() {
 	[ -n "$disconnect" ] || json_get_var disconnect disconnect
 	[ "$sourcefilter" = "0" ] || sourcefilter=""
 	[ "$delegate" != "0" ] && delegate=""
+	[ "$norelease" = "1" ] || norelease=""
 
 	proto_run_command "$config" /usr/sbin/pppd \
 		nodetach ipparam "$config" \
@@ -145,6 +153,8 @@ ppp_generic_setup() {
 		${lcp_failure:+lcp-echo-interval $lcp_interval lcp-echo-failure $lcp_failure $lcp_adaptive} \
 		${ipv6:++ipv6} \
 		${autoipv6:+set AUTOIPV6=1} \
+		${reqprefix:+set REQPREFIX=$reqprefix} \
+		${norelease:+set NORELEASE=1} \
 		${ip6table:+set IP6TABLE=$ip6table} \
 		${peerdns:+set PEERDNS=$peerdns} \
 		${sourcefilter:+set NOSOURCEFILTER=1} \
@@ -215,6 +225,7 @@ proto_pppoe_init_config() {
 	ppp_generic_init_config
 	proto_config_add_string "ac"
 	proto_config_add_string "service"
+	proto_config_add_string "ac_mac"
 	proto_config_add_string "host_uniq"
 	proto_config_add_int "padi_attempts"
 	proto_config_add_int "padi_timeout"
@@ -233,6 +244,7 @@ proto_pppoe_setup() {
 
 	json_get_var ac ac
 	json_get_var service service
+	json_get_var ac_mac ac_mac
 	json_get_var host_uniq host_uniq
 	json_get_var padi_attempts padi_attempts
 	json_get_var padi_timeout padi_timeout
@@ -241,6 +253,7 @@ proto_pppoe_setup() {
 		plugin pppoe.so \
 		${ac:+rp_pppoe_ac "$ac"} \
 		${service:+rp_pppoe_service "$service"} \
+		${ac_mac:+pppoe-mac "$ac_mac"} \
 		${host_uniq:+host-uniq "$host_uniq"} \
 		${padi_attempts:+pppoe-padi-attempts $padi_attempts} \
 		${padi_timeout:+pppoe-padi-timeout $padi_timeout} \
