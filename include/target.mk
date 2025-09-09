@@ -158,6 +158,12 @@ endif
 GENERIC_PLATFORM_DIR := $(firstword $(wildcard $(TOPDIR)/target/linux/feeds/$(BOARD)/../linux/generic $(TOPDIR)/target/linux/generic))
 
 ifneq ($(TARGET_BUILD)$(if $(DUMP),,1),)
+  # On generating the index for an external feed, use the SCAN_DIR path as
+  # the target still needs to be installed (with scripts/feeds install ...)
+  # and the link in target/linux/feeds created.
+  ifneq ($(filter feeds/%,$(SCAN_DIR)),)
+    GENERIC_PLATFORM_DIR := $(firstword $(wildcard $(TOPDIR)/$(SCAN_DIR)/linux/generic $(TOPDIR)/target/linux/generic))
+  endif
   include $(INCLUDE_DIR)/kernel-version.mk
 endif
 
