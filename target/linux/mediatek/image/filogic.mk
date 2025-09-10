@@ -1916,12 +1916,7 @@ define Device/totolink_x6000r
   DEVICE_DTS := mt7981b-totolink-x6000r
   DEVICE_DTS_DIR := ../dts
   IMAGES := sysupgrade.bin
-  IMAGE_SIZE := 16064k
-  KERNEL := kernel-bin | lzma | \
-	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
-  KERNEL_INITRAMFS := kernel-bin | lzma | \
-	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
-  IMAGE/sysupgrade.bin := append-kernel | pad-to 128k | append-rootfs | pad-rootfs | check-size | append-metadata
+  IMAGE_SIZE := 14336k
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
 endef
 TARGET_DEVICES += totolink_x6000r
