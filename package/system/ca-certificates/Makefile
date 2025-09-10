@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ca-certificates
 PKG_VERSION:=20250419
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_MAINTAINER:=
 
 PKG_LICENSE:=GPL-2.0-or-later MPL-2.0
@@ -40,6 +40,12 @@ define Package/ca-bundle
   PROVIDES:=ca-certs
 endef
 
+define Package/ca-certificates/config
+	config PACKAGE_ca-certificates_strip_sig
+		bool "strip signitures to reduce size"
+		default n
+endef
+
 define Build/Install
 	mkdir -p \
 		$(PKG_INSTALL_DIR)/usr/sbin \
@@ -53,6 +59,9 @@ define Package/ca-certificates/install
 
 	for CERTFILE in `ls -1 $(1)/etc/ssl/certs`; do \
 		HASH=`openssl x509 -hash -noout -in $(1)/etc/ssl/certs/$$$$CERTFILE` ; \
+		if [ -n $(PACKAGE_ca-certificates_strip_sig)]; then \
+			files/minifycert.py $(1)/etc/ssl/certs/$$$$CERTFILE ; \
+		fi ; \
 		SUFFIX=0 ; \
 		while [ -h "$(1)/etc/ssl/certs/$$$$HASH.$$$$SUFFIX" ]; do \
 			let "SUFFIX += 1" ; \
@@ -64,6 +73,9 @@ endef
 define Package/ca-bundle/install
 	$(INSTALL_DIR) $(1)/etc/ssl/certs
 	cat $(PKG_INSTALL_DIR)/usr/share/ca-certificates/*/*.crt >$(1)/etc/ssl/certs/ca-certificates.crt
+	if [ -n $(PACKAGE_ca-certificates_strip_sig)]; then \
+			files/minifycert.py $(1)/etc/ssl/certs/ca-certificates.crt ; \
+	fi ;
 	$(LN) /etc/ssl/certs/ca-certificates.crt $(1)/etc/ssl/cert.pem
 endef
 $(eval $(call BuildPackage,ca-bundle))
