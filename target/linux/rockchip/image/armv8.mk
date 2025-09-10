@@ -317,6 +317,18 @@ define Device/radxa_zero-3w
 endef
 TARGET_DEVICES += radxa_zero-3w
 
+define Device/seeed_linkstar-h68k-1432v1
+  DEVICE_VENDOR := Seeed
+  DEVICE_MODEL := Linkstar-h68k-1432v1
+  BOOT_SCRIPT := linkstar-h68k
+  SOC := rk3568
+  UBOOT_DEVICE_NAME := linkstar-h68k-1432v1-rk3568
+  SUPPORTED_DEVICES := seeed, linkstar,rk3568-linkstar-h68k-1432v1
+  DEVICE_PACKAGES := kmod-ata-ahci-dwc kmod-mt7921e kmod-r8125
+endef
+TARGET_DEVICES += seeed_linkstar-h68k-1432v1
+
+
 define Device/sinovoip_bpi-r2-pro
   DEVICE_VENDOR := Sinovoip
   DEVICE_MODEL := Bananapi-R2 Pro
