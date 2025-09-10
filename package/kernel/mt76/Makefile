@@ -252,10 +252,22 @@ define KernelPackage/mt7981-firmware
   TITLE:=MediaTek MT7981 firmware
 endef
 
+define KernelPackage/mt7981-wo-firmware
+  $(KernelPackage/mt76-default)
+  DEPENDS:=@TARGET_mediatek_filogic
+  TITLE:=MT7981 offload firmware
+endef
+
 define KernelPackage/mt7986-firmware
   $(KernelPackage/mt76-default)
   DEPENDS:=@TARGET_mediatek_filogic
   TITLE:=MediaTek MT7986 firmware
+endef
+
+define KernelPackage/mt7986-wo-firmware
+  $(KernelPackage/mt76-default)
+  DEPENDS:=@TARGET_mediatek_filogic
+  TITLE:=MT7986 offload firmware
 endef
 
 define KernelPackage/mt7921-firmware
@@ -621,6 +633,13 @@ define KernelPackage/mt7981-firmware/install
 		$(1)/lib/firmware/mediatek
 endef
 
+define KernelPackage/mt7981-wo-firmware/install
+	$(INSTALL_DIR) $(1)/lib/firmware/mediatek
+	cp \
+		$(PKG_BUILD_DIR)/firmware/mt7981_wo.bin \
+		$(1)/lib/firmware/mediatek
+endef
+
 define KernelPackage/mt7986-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/mediatek
 	cp \
@@ -629,6 +648,14 @@ define KernelPackage/mt7986-firmware/install
 		$(PKG_BUILD_DIR)/firmware/mt7986_wm.bin \
 		$(PKG_BUILD_DIR)/firmware/mt7986_rom_patch_mt7975.bin \
 		$(PKG_BUILD_DIR)/firmware/mt7986_rom_patch.bin \
+		$(1)/lib/firmware/mediatek
+endef
+
+define KernelPackage/mt7986-wo-firmware/install
+	$(INSTALL_DIR) $(1)/lib/firmware/mediatek
+	cp \
+		$(PKG_BUILD_DIR)/firmware/mt7986_wo_0.bin \
+		$(PKG_BUILD_DIR)/firmware/mt7986_wo_1.bin \
 		$(1)/lib/firmware/mediatek
 endef
 
@@ -746,7 +773,9 @@ $(eval $(call KernelPackage,mt7915-firmware))
 $(eval $(call KernelPackage,mt7915e))
 $(eval $(call KernelPackage,mt7916-firmware))
 $(eval $(call KernelPackage,mt7981-firmware))
+$(eval $(call KernelPackage,mt7981-wo-firmware))
 $(eval $(call KernelPackage,mt7986-firmware))
+$(eval $(call KernelPackage,mt7986-wo-firmware))
 $(eval $(call KernelPackage,mt7921-firmware))
 $(eval $(call KernelPackage,mt7922-firmware))
 $(eval $(call KernelPackage,mt7925-firmware))
