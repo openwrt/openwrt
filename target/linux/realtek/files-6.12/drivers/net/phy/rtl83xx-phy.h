@@ -24,8 +24,6 @@ struct __attribute__ ((__packed__)) fw_header {
 #define PHY_ID_RTL8214_OR_8218			0x001cc981
 #define PHY_ID_RTL8218D				0x001cc983
 #define PHY_ID_RTL8218B_I			0x001cca40
-#define PHY_ID_RTL8221B				0x001cc849
-#define PHY_ID_RTL8226				0x001cc838
 #define PHY_ID_RTL8390_GENERIC			0x001ccab0
 #define PHY_ID_RTL8393_I			0x001c8393
 #define PHY_ID_RTL9300_I			0x338002a0

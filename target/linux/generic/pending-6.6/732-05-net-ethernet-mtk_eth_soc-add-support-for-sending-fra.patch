@@ -13,7 +13,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -1409,29 +1409,70 @@ static void mtk_tx_set_dma_desc(struct n
+@@ -1403,29 +1403,70 @@ static void mtk_tx_set_dma_desc(struct n
  		mtk_tx_set_dma_desc_v1(dev, txd, info);
  }
  
@@ -93,7 +93,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	txq = netdev_get_tx_queue(dev, queue);
  	itxd = ring->next_free;
-@@ -1442,86 +1483,81 @@ static int mtk_tx_map(struct sk_buff *sk
+@@ -1436,86 +1477,81 @@ static int mtk_tx_map(struct sk_buff *sk
  	itx_buf = mtk_desc_to_tx_buf(ring, itxd, soc->tx.desc_shift);
  	memset(itx_buf, 0, sizeof(*itx_buf));
  
@@ -233,7 +233,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	/* make sure that all changes to the dma ring are flushed before we
  	 * continue
-@@ -1530,11 +1566,11 @@ static int mtk_tx_map(struct sk_buff *sk
+@@ -1524,11 +1560,11 @@ static int mtk_tx_map(struct sk_buff *sk
  
  	if (MTK_HAS_CAPS(soc->caps, MTK_QDMA)) {
  		if (netif_xmit_stopped(txq) || !netdev_xmit_more())
@@ -247,7 +247,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  					 ring->dma_size);
  		mtk_w32(eth, next_idx, MT7628_TX_CTX_IDX0);
  	}
-@@ -1543,10 +1579,10 @@ static int mtk_tx_map(struct sk_buff *sk
+@@ -1537,10 +1573,10 @@ static int mtk_tx_map(struct sk_buff *sk
  
  err_dma:
  	do {
@@ -260,7 +260,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  		itxd->txd3 = TX_DMA_LS0 | TX_DMA_OWNER_CPU;
  		if (!MTK_HAS_CAPS(soc->caps, MTK_QDMA))
-@@ -1554,7 +1590,7 @@ err_dma:
+@@ -1548,7 +1584,7 @@ err_dma:
  
  		itxd = mtk_qdma_phys_to_virt(ring, itxd->txd2);
  		itxd_pdma = qdma_to_pdma(ring, itxd);
@@ -269,7 +269,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	return -ENOMEM;
  }
-@@ -1574,6 +1610,9 @@ static int mtk_cal_txd_req(struct mtk_et
+@@ -1568,6 +1604,9 @@ static int mtk_cal_txd_req(struct mtk_et
  		nfrags += skb_shinfo(skb)->nr_frags;
  	}
  
@@ -279,7 +279,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	return nfrags;
  }
  
-@@ -1614,6 +1653,10 @@ static bool mtk_skb_has_small_frag(struc
+@@ -1608,6 +1647,10 @@ static bool mtk_skb_has_small_frag(struc
  		if (skb_frag_size(&skb_shinfo(skb)->frags[i]) < min_size)
  			return true;
  

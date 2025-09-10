@@ -18,7 +18,8 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/gettext-$(PKG_VERSION)
 HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/gettext-$(PKG_VERSION)
 
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
-PKG_LICENSE:=GPL-3.0-or-later
+PKG_LICENSE:=LGPL-2.1-or-later
+PKG_LICENSE_FILES:=gettext-runtime/intl/COPYING.LIB
 PKG_CPE_ID:=cpe:/a:gnu:gettext
 
 PKG_INSTALL:=1
