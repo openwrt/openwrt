@@ -75,7 +75,6 @@ extern int rtmdio_931x_write_sds_phy_new(int sds, int page, int regnum, u16 val)
 #define RTL930X_SDS_MODE_1000BASEX	0x04
 #define RTL930X_SDS_MODE_USXGMII	0x0d
 #define RTL930X_SDS_MODE_XGMII		0x10
-#define RTL930X_SDS_MODE_HSGMII		0x12
 #define RTL930X_SDS_MODE_2500BASEX	0x16
 #define RTL930X_SDS_MODE_10GBASER	0x1a
 #define RTL930X_SDS_OFF			0x1f
@@ -1268,8 +1267,7 @@ static int rtsds_930x_config_pll(int sds, phy_interface_t interface)
 	if ((interface == PHY_INTERFACE_MODE_1000BASEX) ||
 	    (interface == PHY_INTERFACE_MODE_SGMII))
 		speed = RTSDS_930X_PLL_1000;
-	else if ((interface == PHY_INTERFACE_MODE_2500BASEX) ||
-		 (interface == PHY_INTERFACE_MODE_HSGMII))
+	else if (interface == PHY_INTERFACE_MODE_2500BASEX)
 		speed = RTSDS_930X_PLL_2500;
 	else if (interface == PHY_INTERFACE_MODE_10GBASER)
 		speed = RTSDS_930X_PLL_10000;
@@ -1350,9 +1348,6 @@ static void rtsds_930x_force_mode(int sds, phy_interface_t interface)
 	case PHY_INTERFACE_MODE_SGMII:
 		mode = RTL930X_SDS_MODE_SGMII;
 		break;
-	case PHY_INTERFACE_MODE_HSGMII:
-		mode = RTL930X_SDS_MODE_HSGMII;
-		break;
 	case PHY_INTERFACE_MODE_1000BASEX:
 		mode = RTL930X_SDS_MODE_1000BASEX;
 		break;
@@ -1409,7 +1404,6 @@ static void rtl9300_sds_tx_config(int sds, phy_interface_t phy_if)
 		post_amp = 0x1;
 		page = 0x25;
 		break;
-	case PHY_INTERFACE_MODE_HSGMII:
 	case PHY_INTERFACE_MODE_2500BASEX:
 		pre_amp = 0;
 		post_amp = 0x8;
@@ -2772,7 +2766,6 @@ static int rtl931x_sds_cmu_page_get(phy_interface_t mode)
 	case PHY_INTERFACE_MODE_SGMII:
 	case PHY_INTERFACE_MODE_1000BASEX:	/* MII_1000BX_FIBER / 100BX_FIBER / 1000BX100BX_AUTO */
 		return 0x24;
-	case PHY_INTERFACE_MODE_HSGMII:
 	case PHY_INTERFACE_MODE_2500BASEX:	/* MII_2500Base_X: */
 		return 0x28;
 /*	case MII_HISGMII_5G: */
@@ -2816,11 +2809,6 @@ static void rtl931x_cmu_type_set(u32 sds, phy_interface_t mode, int chiptype)
 	case PHY_INTERFACE_MODE_QSGMII:
 		cmu_type = 1;
 		frc_cmu_spd = 0;
-		break;
-
-	case PHY_INTERFACE_MODE_HSGMII:
-		cmu_type = 1;
-		frc_cmu_spd = 1;
 		break;
 
 	case PHY_INTERFACE_MODE_1000BASEX:
@@ -2926,9 +2914,6 @@ static void rtl931x_sds_mii_mode_set(u32 sds, phy_interface_t mode)
 	case PHY_INTERFACE_MODE_USXGMII:
 	case PHY_INTERFACE_MODE_2500BASEX:
 		val = 0xD;
-		break;
-	case PHY_INTERFACE_MODE_HSGMII:
-		val = 0x12;
 		break;
 	case PHY_INTERFACE_MODE_SGMII:
 		val = 0x2;
@@ -3096,10 +3081,6 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 		rtl9310_sds_field_w_new(sds, 0x1f, 0x7, 10, 4, 0x7f);
 		break;
 
-	case PHY_INTERFACE_MODE_HSGMII:
-		rtl9310_sds_field_w_new(sds, 0x101, 0x14, 8, 8, 1);
-		break;
-
 	case PHY_INTERFACE_MODE_1000BASEX: /* MII_1000BX_FIBER */
 		rtl9310_sds_field_w_new(sds, 0x103, 0x13, 15, 14, 0);
 
@@ -3149,7 +3130,6 @@ void rtl931x_sds_init(u32 sds, phy_interface_t mode)
 
 	if (mode == PHY_INTERFACE_MODE_XGMII ||
 	    mode == PHY_INTERFACE_MODE_QSGMII ||
-	    mode == PHY_INTERFACE_MODE_HSGMII ||
 	    mode == PHY_INTERFACE_MODE_SGMII ||
 	    mode == PHY_INTERFACE_MODE_USXGMII) {
 		if (mode == PHY_INTERFACE_MODE_XGMII)
