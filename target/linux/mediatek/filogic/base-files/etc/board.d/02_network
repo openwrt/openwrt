@@ -136,6 +136,7 @@ mediatek_setup_interfaces()
 	mediatek,mt7988a-rfb)
 		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2 lan3 eth2" eth1
 		;;
+	mercusys,mr85x|\
 	mercusys,mr90x-v1|\
 	mercusys,mr90x-v1-ubi)
 		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2" eth1
@@ -198,7 +199,8 @@ mediatek_setup_macs()
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		label_mac=$wan_mac
 		;;
-	mercusys,mr80x-v3)
+	mercusys,mr80x-v3|\
+	mercusys,mr85x)
 		mac_dirty=$(cat "/tmp/tp_data/default-mac" | sed -n 's/^'"MAC"'://p')
 		label_mac=$(macaddr_canonicalize "$mac_dirty")
 		lan_mac=$label_mac
