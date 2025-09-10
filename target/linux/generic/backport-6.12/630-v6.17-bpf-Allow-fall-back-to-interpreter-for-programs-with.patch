@@ -46,7 +46,7 @@ Signed-off-by: Alexei Starovoitov <ast@kernel.org>
  	 */
  	WARN_ON_ONCE(1);
  	return 0;
-@@ -2385,8 +2384,9 @@ out:
+@@ -2401,8 +2400,9 @@ out:
  	return ret;
  }
  
@@ -57,7 +57,7 @@ Signed-off-by: Alexei Starovoitov <ast@kernel.org>
  #ifndef CONFIG_BPF_JIT_ALWAYS_ON
  	u32 stack_depth = max_t(u32, fp->aux->stack_depth, 1);
  	u32 idx = (round_up(stack_depth, 32) / 32) - 1;
-@@ -2395,15 +2395,16 @@ static void bpf_prog_select_func(struct
+@@ -2411,15 +2411,16 @@ static void bpf_prog_select_func(struct
  	 * But for non-JITed programs, we don't need bpf_func, so no bounds
  	 * check needed.
  	 */
@@ -76,7 +76,7 @@ Signed-off-by: Alexei Starovoitov <ast@kernel.org>
  }
  
  /**
-@@ -2422,7 +2423,7 @@ struct bpf_prog *bpf_prog_select_runtime
+@@ -2438,7 +2439,7 @@ struct bpf_prog *bpf_prog_select_runtime
  	/* In case of BPF to BPF calls, verifier did all the prep
  	 * work with regards to JITing, etc.
  	 */
@@ -85,7 +85,7 @@ Signed-off-by: Alexei Starovoitov <ast@kernel.org>
  
  	if (fp->bpf_func)
  		goto finalize;
-@@ -2431,7 +2432,8 @@ struct bpf_prog *bpf_prog_select_runtime
+@@ -2447,7 +2448,8 @@ struct bpf_prog *bpf_prog_select_runtime
  	    bpf_prog_has_kfunc_call(fp))
  		jit_needed = true;
  

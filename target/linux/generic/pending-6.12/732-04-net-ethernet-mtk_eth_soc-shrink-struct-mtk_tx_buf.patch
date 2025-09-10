@@ -80,7 +80,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			tx_buf->mac_id = mac->id;
  
  			setup_tx_buf(eth, tx_buf, txd_pdma, txd_info.addr,
-@@ -1831,8 +1815,6 @@ static int mtk_xdp_frame_map(struct mtk_
+@@ -1839,8 +1823,6 @@ static int mtk_xdp_frame_map(struct mtk_
  						txd_info->size, DMA_TO_DEVICE);
  		if (unlikely(dma_mapping_error(eth->dma_dev, txd_info->addr)))
  			return -ENOMEM;
