@@ -1265,9 +1265,6 @@ static int rtmdio_930x_reset(struct mii_bus *bus)
 		switch (priv->interfaces[i]) {
 		case PHY_INTERFACE_MODE_10GBASER:
 			break;			/* Serdes: Value = 0 */
-		case PHY_INTERFACE_MODE_HSGMII:
-			private_poll_mask |= BIT(i);
-			fallthrough;
 		case PHY_INTERFACE_MODE_USXGMII:
 			v |= BIT(mac_type_bit[i]);
 			uses_usxgmii = true;
