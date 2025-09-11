@@ -12,6 +12,20 @@ asus_initial_setup()
 	ubimkvol /dev/ubi0 -N jffs2 -s 0x3e000
 }
 
+dlink_initial_setup()
+{
+	# setup uboot-env if it's running on initramfs
+	[ "$(rootfs_type)" = "tmpfs" ] || return 0
+
+	local board=$(board_name)
+	case "$board" in
+	dlink,aquila-pro-ai-m30-a1-ubootmod)
+		fw_setenv mtdparts "nmbm0:1024k(bl2),512k(u-boot-env),2048k(factory),2048k(fip),102400k(ubi),256k(Odm),512k(Config1),512k(Config2),5120k(Storage)"
+		fw_setenv mupgrade_en 0
+		;;
+	esac
+}
+
 xiaomi_initial_setup()
 {
 	# initialize UBI and setup uboot-env if it's running on initramfs
@@ -143,6 +157,7 @@ platform_do_upgrade() {
 		default_do_upgrade "$1"
 		;;
 	dlink,aquila-pro-ai-m30-a1|\
+	dlink,aquila-pro-ai-m30-a1-ubootmod|\
 	dlink,aquila-pro-ai-m60-a1)
 		fw_setenv sw_tryactive 0
 		nand_do_upgrade "$1"
@@ -332,6 +347,9 @@ platform_pre_upgrade() {
 	asus,tuf-ax6000|\
 	asus,zenwifi-bt8)
 		asus_initial_setup
+		;;
+	dlink,aquila-pro-ai-m30-a1-ubootmod)
+		dlink_initial_setup
 		;;
 	xiaomi,mi-router-ax3000t|\
 	xiaomi,mi-router-wr30u-stock|\
