@@ -13,6 +13,9 @@ cznic,turris-mox)
 glinet,gl-mv1000)
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
 	;;
+ripe,atlas-v5)
+	ucidef_set_led_heartbeat "lan" "LAN" "red:activity"
+	;;
 esac
 
 board_config_flush
