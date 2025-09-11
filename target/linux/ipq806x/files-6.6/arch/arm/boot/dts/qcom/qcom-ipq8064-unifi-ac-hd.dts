@@ -100,7 +100,7 @@
 
 		pinctrl-0 = <&spi_pins>;
 		pinctrl-names = "default";
-		cs-gpios = <&qcom_pinmux 20 0>;
+		cs-gpios = <&qcom_pinmux 20 GPIO_ACTIVE_LOW>;
 
 		flash@0 {
 			compatible = "mx25u25635f", "jedec,spi-nor";
