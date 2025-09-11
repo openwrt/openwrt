@@ -50,22 +50,7 @@
 
 			partition@30000 {
 				label = "u-boot-env";
-				reg = <0x30000 0x2000>;
-			};
-
-			partition@32000 {
-				label = "2860";
-				reg = <0x32000 0x4000>;
-			};
-
-			partition@36000 {
-				label = "rtdev";
-				reg = <0x36000 0x2000>;
-			};
-
-			partition@38000 {
-				label = "Reserve";
-				reg = <0x38000 0x8000>;
+				reg = <0x30000 0x10000>;
 			};
 
 			partition@40000 {
@@ -90,14 +75,8 @@
 
 			partition@50000 {
 				label = "firmware";
-				reg = <0x50000 0xfa0000>;
+				reg = <0x50000 0xfb0000>;
 				compatible = "denx,uimage";
-			};
-
-			partition@ff0000 {
-				label = "nvram";
-				reg = <0xff0000 0x10000>;
-				read-only;
 			};
 		};
 	};
