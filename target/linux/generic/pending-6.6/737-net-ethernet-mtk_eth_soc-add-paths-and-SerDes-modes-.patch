@@ -490,7 +490,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	.mac_finish = mtk_mac_finish,
  	.mac_link_down = mtk_mac_link_down,
  	.mac_link_up = mtk_mac_link_up,
-@@ -3459,6 +3600,9 @@ static int mtk_open(struct net_device *d
+@@ -3467,6 +3608,9 @@ static int mtk_open(struct net_device *d
  
  	ppe_num = eth->soc->ppe_num;
  
@@ -500,7 +500,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	err = phylink_of_phy_connect(mac->phylink, mac->of_node, 0);
  	if (err) {
  		netdev_err(dev, "%s: could not attach PHY: %d\n", __func__,
-@@ -3609,6 +3753,9 @@ static int mtk_stop(struct net_device *d
+@@ -3617,6 +3761,9 @@ static int mtk_stop(struct net_device *d
  	for (i = 0; i < ARRAY_SIZE(eth->ppe); i++)
  		mtk_ppe_stop(eth->ppe[i]);
  
@@ -510,7 +510,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	return 0;
  }
  
-@@ -4695,6 +4842,7 @@ static const struct net_device_ops mtk_n
+@@ -4703,6 +4850,7 @@ static const struct net_device_ops mtk_n
  static int mtk_add_mac(struct mtk_eth *eth, struct device_node *np)
  {
  	const __be32 *_id = of_get_property(np, "reg", NULL);
@@ -518,7 +518,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	phy_interface_t phy_mode;
  	struct phylink *phylink;
  	struct mtk_mac *mac;
-@@ -4733,16 +4881,41 @@ static int mtk_add_mac(struct mtk_eth *e
+@@ -4741,16 +4889,41 @@ static int mtk_add_mac(struct mtk_eth *e
  	mac->id = id;
  	mac->hw = eth;
  	mac->of_node = np;
@@ -568,7 +568,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	}
  
  	memset(mac->hwlro_ip, 0, sizeof(mac->hwlro_ip));
-@@ -4825,8 +4998,21 @@ static int mtk_add_mac(struct mtk_eth *e
+@@ -4833,8 +5006,21 @@ static int mtk_add_mac(struct mtk_eth *e
  		phy_interface_zero(mac->phylink_config.supported_interfaces);
  		__set_bit(PHY_INTERFACE_MODE_INTERNAL,
  			  mac->phylink_config.supported_interfaces);
@@ -590,7 +590,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	phylink = phylink_create(&mac->phylink_config,
  				 of_fwnode_handle(mac->of_node),
  				 phy_mode, &mtk_phylink_ops);
-@@ -4877,6 +5063,26 @@ free_netdev:
+@@ -4885,6 +5071,26 @@ free_netdev:
  	return err;
  }
  
@@ -617,7 +617,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  void mtk_eth_set_dma_device(struct mtk_eth *eth, struct device *dma_dev)
  {
  	struct net_device *dev, *tmp;
-@@ -5023,7 +5229,8 @@ static int mtk_probe(struct platform_dev
+@@ -5031,7 +5237,8 @@ static int mtk_probe(struct platform_dev
  			regmap_write(cci, 0, 3);
  	}
  
@@ -627,7 +627,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  		err = mtk_sgmii_init(eth);
  
  		if (err)
-@@ -5134,6 +5341,24 @@ static int mtk_probe(struct platform_dev
+@@ -5142,6 +5349,24 @@ static int mtk_probe(struct platform_dev
  		}
  	}
  
@@ -652,7 +652,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (MTK_HAS_CAPS(eth->soc->caps, MTK_SHARED_INT)) {
  		err = devm_request_irq(eth->dev, eth->irq[0],
  				       mtk_handle_irq, 0,
-@@ -5237,6 +5462,11 @@ static int mtk_remove(struct platform_de
+@@ -5245,6 +5470,11 @@ static int mtk_remove(struct platform_de
  		mtk_stop(eth->netdev[i]);
  		mac = netdev_priv(eth->netdev[i]);
  		phylink_disconnect_phy(mac->phylink);
