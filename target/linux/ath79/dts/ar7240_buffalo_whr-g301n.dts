@@ -156,6 +156,10 @@
 					#address-cells = <1>;
 					#size-cells = <1>;
 
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0xeb8>;
+					};
+
 					macaddr_art_120c: macaddr@120c {
 						compatible = "mac-base";
 						reg = <0x120c 0x6>;
@@ -185,9 +189,8 @@
 	ath9k: wifi@0,0 {
 		compatible = "pci168c,002a";
 		reg = <0x0000 0 0 0 0>;
-		qca,no-eeprom;
-		nvmem-cells = <&macaddr_art_120c 0>;
-		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&cal_art_1000>, <&macaddr_art_120c 0>;
+		nvmem-cell-names = "calibration", "mac-address";
 		#gpio-cells = <2>;
 		gpio-controller;
 	};
