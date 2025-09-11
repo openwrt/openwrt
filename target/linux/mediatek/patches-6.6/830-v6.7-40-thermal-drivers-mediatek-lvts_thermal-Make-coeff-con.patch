@@ -25,7 +25,7 @@ Link: https://lore.kernel.org/r/20230922055020.6436-4-linux@fw-web.de
 
 --- a/drivers/thermal/mediatek/lvts_thermal.c
 +++ b/drivers/thermal/mediatek/lvts_thermal.c
-@@ -80,8 +80,8 @@
+@@ -84,8 +84,8 @@
  #define LVTS_SENSOR_MAX				4
  #define LVTS_GOLDEN_TEMP_MAX		62
  #define LVTS_GOLDEN_TEMP_DEFAULT	50
@@ -36,7 +36,7 @@ Link: https://lore.kernel.org/r/20230922055020.6436-4-linux@fw-web.de
  
  #define LVTS_MSR_IMMEDIATE_MODE		0
  #define LVTS_MSR_FILTERED_MODE		1
-@@ -94,7 +94,7 @@
+@@ -98,7 +98,7 @@
  #define LVTS_MINIMUM_THRESHOLD		20000
  
  static int golden_temp = LVTS_GOLDEN_TEMP_DEFAULT;
@@ -45,7 +45,7 @@ Link: https://lore.kernel.org/r/20230922055020.6436-4-linux@fw-web.de
  
  struct lvts_sensor_data {
  	int dt_id;
-@@ -112,6 +112,8 @@ struct lvts_ctrl_data {
+@@ -116,6 +116,8 @@ struct lvts_ctrl_data {
  struct lvts_data {
  	const struct lvts_ctrl_data *lvts_ctrl;
  	int num_lvts_ctrl;
@@ -54,7 +54,7 @@ Link: https://lore.kernel.org/r/20230922055020.6436-4-linux@fw-web.de
  };
  
  struct lvts_sensor {
-@@ -126,6 +128,7 @@ struct lvts_sensor {
+@@ -130,6 +132,7 @@ struct lvts_sensor {
  
  struct lvts_ctrl {
  	struct lvts_sensor sensors[LVTS_SENSOR_MAX];
@@ -62,7 +62,7 @@ Link: https://lore.kernel.org/r/20230922055020.6436-4-linux@fw-web.de
  	u32 calibration[LVTS_SENSOR_MAX];
  	u32 hw_tshut_raw_temp;
  	int num_lvts_sensor;
-@@ -247,21 +250,21 @@ static void lvts_debugfs_exit(struct lvt
+@@ -251,21 +254,21 @@ static void lvts_debugfs_exit(struct lvt
  
  #endif
  
@@ -90,7 +90,7 @@ Link: https://lore.kernel.org/r/20230922055020.6436-4-linux@fw-web.de
  
  	return raw_temp;
  }
-@@ -269,6 +272,9 @@ static u32 lvts_temp_to_raw(int temperat
+@@ -273,6 +276,9 @@ static u32 lvts_temp_to_raw(int temperat
  static int lvts_get_temp(struct thermal_zone_device *tz, int *temp)
  {
  	struct lvts_sensor *lvts_sensor = thermal_zone_device_priv(tz);
@@ -100,7 +100,7 @@ Link: https://lore.kernel.org/r/20230922055020.6436-4-linux@fw-web.de
  	void __iomem *msr = lvts_sensor->msr;
  	u32 value;
  	int rc;
-@@ -301,7 +307,7 @@ static int lvts_get_temp(struct thermal_
+@@ -305,7 +311,7 @@ static int lvts_get_temp(struct thermal_
  	if (rc)
  		return -EAGAIN;
  
@@ -109,7 +109,7 @@ Link: https://lore.kernel.org/r/20230922055020.6436-4-linux@fw-web.de
  
  	return 0;
  }
-@@ -348,10 +354,13 @@ static bool lvts_should_update_thresh(st
+@@ -370,10 +376,13 @@ static bool lvts_should_update_thresh(st
  static int lvts_set_trips(struct thermal_zone_device *tz, int low, int high)
  {
  	struct lvts_sensor *lvts_sensor = thermal_zone_device_priv(tz);
@@ -126,7 +126,7 @@ Link: https://lore.kernel.org/r/20230922055020.6436-4-linux@fw-web.de
  	bool should_update_thresh;
  
  	lvts_sensor->low_thresh = low;
-@@ -694,7 +703,7 @@ static int lvts_calibration_read(struct
+@@ -716,7 +725,7 @@ static int lvts_calibration_read(struct
  	return 0;
  }
  
@@ -135,7 +135,7 @@ Link: https://lore.kernel.org/r/20230922055020.6436-4-linux@fw-web.de
  {
  	u32 gt;
  
-@@ -707,7 +716,7 @@ static int lvts_golden_temp_init(struct
+@@ -729,7 +738,7 @@ static int lvts_golden_temp_init(struct
  	if (gt < LVTS_GOLDEN_TEMP_MAX)
  		golden_temp = gt;
  
@@ -144,7 +144,7 @@ Link: https://lore.kernel.org/r/20230922055020.6436-4-linux@fw-web.de
  
  	return 0;
  }
-@@ -730,7 +739,7 @@ static int lvts_ctrl_init(struct device
+@@ -752,7 +761,7 @@ static int lvts_ctrl_init(struct device
  	 * The golden temp information is contained in the first chunk
  	 * of efuse data.
  	 */
@@ -153,7 +153,7 @@ Link: https://lore.kernel.org/r/20230922055020.6436-4-linux@fw-web.de
  	if (ret)
  		return ret;
  
-@@ -741,6 +750,7 @@ static int lvts_ctrl_init(struct device
+@@ -763,6 +772,7 @@ static int lvts_ctrl_init(struct device
  	for (i = 0; i < lvts_data->num_lvts_ctrl; i++) {
  
  		lvts_ctrl[i].base = lvts_td->base + lvts_data->lvts_ctrl[i].offset;
@@ -161,7 +161,7 @@ Link: https://lore.kernel.org/r/20230922055020.6436-4-linux@fw-web.de
  
  		ret = lvts_sensor_init(dev, &lvts_ctrl[i],
  				       &lvts_data->lvts_ctrl[i]);
-@@ -764,7 +774,8 @@ static int lvts_ctrl_init(struct device
+@@ -786,7 +796,8 @@ static int lvts_ctrl_init(struct device
  		 * after initializing the calibration.
  		 */
  		lvts_ctrl[i].hw_tshut_raw_temp =
@@ -171,7 +171,7 @@ Link: https://lore.kernel.org/r/20230922055020.6436-4-linux@fw-web.de
  
  		lvts_ctrl[i].low_thresh = INT_MIN;
  		lvts_ctrl[i].high_thresh = INT_MIN;
-@@ -1231,6 +1242,8 @@ static int lvts_probe(struct platform_de
+@@ -1253,6 +1264,8 @@ static int lvts_probe(struct platform_de
  	if (irq < 0)
  		return irq;
  
@@ -180,7 +180,7 @@ Link: https://lore.kernel.org/r/20230922055020.6436-4-linux@fw-web.de
  	ret = lvts_domain_init(dev, lvts_td, lvts_data);
  	if (ret)
  		return dev_err_probe(dev, ret, "Failed to initialize the lvts domain\n");
-@@ -1344,11 +1357,15 @@ static const struct lvts_ctrl_data mt819
+@@ -1366,11 +1379,15 @@ static const struct lvts_ctrl_data mt819
  static const struct lvts_data mt8195_lvts_mcu_data = {
  	.lvts_ctrl	= mt8195_lvts_mcu_data_ctrl,
  	.num_lvts_ctrl	= ARRAY_SIZE(mt8195_lvts_mcu_data_ctrl),

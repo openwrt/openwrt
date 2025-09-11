@@ -23,7 +23,7 @@ Link: https://lore.kernel.org/r/20231017190545.157282-6-bero@baylibre.com
 
 --- a/drivers/thermal/mediatek/lvts_thermal.c
 +++ b/drivers/thermal/mediatek/lvts_thermal.c
-@@ -616,7 +616,34 @@ static int lvts_sensor_init(struct devic
+@@ -638,7 +638,34 @@ static int lvts_sensor_init(struct devic
   * The efuse blob values follows the sensor enumeration per thermal
   * controller. The decoding of the stream is as follow:
   *
@@ -59,7 +59,7 @@ Link: https://lore.kernel.org/r/20231017190545.157282-6-bero@baylibre.com
   *
   * <-----mcu-tc#0-----> <-----sensor#0-----> <-----sensor#1----->
   *  0x01 | 0x02 | 0x03 | 0x04 | 0x05 | 0x06 | 0x07 | 0x08 | 0x09
-@@ -627,7 +654,7 @@ static int lvts_sensor_init(struct devic
+@@ -649,7 +676,7 @@ static int lvts_sensor_init(struct devic
   * <-----mcu-tc#2-----> <-----sensor#4-----> <-----sensor#5-----> <-----sensor#6-----> <-----sensor#7----->
   *  0x13 | 0x14 | 0x15 | 0x16 | 0x17 | 0x18 | 0x19 | 0x1A | 0x1B | 0x1C | 0x1D | 0x1E | 0x1F | 0x20 | 0x21
   *
