@@ -19,7 +19,7 @@ Link: https://lore.kernel.org/r/20230921091057.3812-1-duminjie@vivo.com
 
 --- a/drivers/thermal/mediatek/lvts_thermal.c
 +++ b/drivers/thermal/mediatek/lvts_thermal.c
-@@ -219,7 +219,7 @@ static int lvts_debugfs_init(struct devi
+@@ -223,7 +223,7 @@ static int lvts_debugfs_init(struct devi
  
  		sprintf(name, "controller%d", i);
  		dentry = debugfs_create_dir(name, lvts_td->dom_dentry);
