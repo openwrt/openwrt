@@ -89,7 +89,8 @@
 		status = "okay";
 		
 		led_power: power {
-			label = "blue:power";
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&pio 101 GPIO_ACTIVE_HIGH>;
 		};
 		
