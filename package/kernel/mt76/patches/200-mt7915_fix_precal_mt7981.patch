@@ -1,0 +1,120 @@
+From 0d6eaa4174412f9ca7a9e04437d0be74a8a895fa Mon Sep 17 00:00:00 2001
+From: Zhi-Jun You <hujy652@gmail.com>
+Date: Tue, 9 Sep 2025 14:48:24 +0800
+Subject: [PATCH] wifi: mt76: mt7915: fix mt7981 pre-calibration
+
+In vendor driver, size of group cal and dpd cal for mt7981 includes 6G
+although the chip doesn't support it.
+
+mt76 doesn't take this into account which results in reading from the
+incorrect offset.
+
+For devices with precal, this would lead to lower bitrate.
+
+Fix this by aligning groupcal size with vendor driver and switch to
+freq_list_v2 in mt7915_dpd_freq_idx in order to get the correct offset.
+
+Below are iwinfo of the test device with two clients connected
+(iPhone 16, Intel AX210).
+Before :
+	Mode: Master  Channel: 36 (5.180 GHz)  HT Mode: HE80
+	Center Channel 1: 42 2: unknown
+	Tx-Power: 23 dBm  Link Quality: 43/70
+	Signal: -67 dBm  Noise: -92 dBm
+	Bit Rate: 612.4 MBit/s
+	Encryption: WPA3 SAE (CCMP)
+	Type: nl80211  HW Mode(s): 802.11ac/ax/n
+	Hardware: embedded [MediaTek MT7981]
+
+After:
+	Mode: Master  Channel: 36 (5.180 GHz)  HT Mode: HE80
+	Center Channel 1: 42 2: unknown
+	Tx-Power: 23 dBm  Link Quality: 43/70
+	Signal: -67 dBm  Noise: -92 dBm
+	Bit Rate: 900.6 MBit/s
+	Encryption: WPA3 SAE (CCMP)
+	Type: nl80211  HW Mode(s): 802.11ac/ax/n
+	Hardware: embedded [MediaTek MT7981]
+
+Tested-on: mt7981 20240823
+
+Fixes: 19a954edec63 ("wifi: mt76: mt7915: add mt7986, mt7916 and mt7981 pre-calibration")
+Signed-off-by: Zhi-Jun You <hujy652@gmail.com>
+Link: https://patch.msgid.link/20250909064824.16847-1-hujy652@gmail.com
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ mt7915/eeprom.h |  6 +++---
+ mt7915/mcu.c    | 29 +++++++----------------------
+ 2 files changed, 10 insertions(+), 25 deletions(-)
+
+--- a/mt7915/eeprom.h
++++ b/mt7915/eeprom.h
+@@ -50,9 +50,9 @@ enum mt7915_eeprom_field {
+ #define MT_EE_CAL_GROUP_SIZE_7975		(54 * MT_EE_CAL_UNIT + 16)
+ #define MT_EE_CAL_GROUP_SIZE_7976		(94 * MT_EE_CAL_UNIT + 16)
+ #define MT_EE_CAL_GROUP_SIZE_7916_6G		(94 * MT_EE_CAL_UNIT + 16)
++#define MT_EE_CAL_GROUP_SIZE_7981		(144 * MT_EE_CAL_UNIT + 16)
+ #define MT_EE_CAL_DPD_SIZE_V1			(54 * MT_EE_CAL_UNIT)
+ #define MT_EE_CAL_DPD_SIZE_V2			(300 * MT_EE_CAL_UNIT)
+-#define MT_EE_CAL_DPD_SIZE_V2_7981		(102 * MT_EE_CAL_UNIT)	/* no 6g dpd data */
+ 
+ #define MT_EE_WIFI_CONF0_TX_PATH		GENMASK(2, 0)
+ #define MT_EE_WIFI_CONF0_RX_PATH		GENMASK(5, 3)
+@@ -180,6 +180,8 @@ mt7915_get_cal_group_size(struct mt7915_
+ 		val = FIELD_GET(MT_EE_WIFI_CONF0_BAND_SEL, val);
+ 		return (val == MT_EE_V2_BAND_SEL_6GHZ) ? MT_EE_CAL_GROUP_SIZE_7916_6G :
+ 							 MT_EE_CAL_GROUP_SIZE_7916;
++	} else if (is_mt7981(&dev->mt76)) {
++		return MT_EE_CAL_GROUP_SIZE_7981;
+ 	} else if (mt7915_check_adie(dev, false)) {
+ 		return MT_EE_CAL_GROUP_SIZE_7976;
+ 	} else {
+@@ -192,8 +194,6 @@ mt7915_get_cal_dpd_size(struct mt7915_de
+ {
+ 	if (is_mt7915(&dev->mt76))
+ 		return MT_EE_CAL_DPD_SIZE_V1;
+-	else if (is_mt7981(&dev->mt76))
+-		return MT_EE_CAL_DPD_SIZE_V2_7981;
+ 	else
+ 		return MT_EE_CAL_DPD_SIZE_V2;
+ }
+--- a/mt7915/mcu.c
++++ b/mt7915/mcu.c
+@@ -3052,30 +3052,15 @@ static int mt7915_dpd_freq_idx(struct mt
+ 		/* 5G BW160 */
+ 		5250, 5570, 5815
+ 	};
+-	static const u16 freq_list_v2_7981[] = {
+-		/* 5G BW20 */
+-		5180, 5200, 5220, 5240,
+-		5260, 5280, 5300, 5320,
+-		5500, 5520, 5540, 5560,
+-		5580, 5600, 5620, 5640,
+-		5660, 5680, 5700, 5720,
+-		5745, 5765, 5785, 5805,
+-		5825, 5845, 5865, 5885,
+-		/* 5G BW160 */
+-		5250, 5570, 5815
+-	};
+-	const u16 *freq_list = freq_list_v1;
+-	int n_freqs = ARRAY_SIZE(freq_list_v1);
+-	int idx;
++	const u16 *freq_list;
++	int idx, n_freqs;
+ 
+ 	if (!is_mt7915(&dev->mt76)) {
+-		if (is_mt7981(&dev->mt76)) {
+-			freq_list = freq_list_v2_7981;
+-			n_freqs = ARRAY_SIZE(freq_list_v2_7981);
+-		} else {
+-			freq_list = freq_list_v2;
+-			n_freqs = ARRAY_SIZE(freq_list_v2);
+-		}
++		freq_list = freq_list_v2;
++		n_freqs = ARRAY_SIZE(freq_list_v2);
++	} else {
++		freq_list = freq_list_v1;
++		n_freqs = ARRAY_SIZE(freq_list_v1);
+ 	}
+ 
+ 	if (freq < 4000) {
