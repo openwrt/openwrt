@@ -27,7 +27,8 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && mmc_get_mac_ascii u-boot-env 2gMAC > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && mmc_get_mac_ascii u-boot-env 5gMAC > /sys${DEVPATH}/macaddress
 		;;
-	acer,predator-w6x)
+	acer,predator-w6x-stock|\
+	acer,predator-w6x-ubootmod)
 		hw_mac_addr="$(mtd_get_mac_ascii u-boot-env ethaddr)"
 		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 3 > /sys${DEVPATH}/macaddress
