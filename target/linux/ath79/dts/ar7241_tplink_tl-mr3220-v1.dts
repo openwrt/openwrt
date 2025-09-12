@@ -7,15 +7,30 @@
 / {
 	compatible = "tplink,tl-mr3220-v1", "qca,ar7241";
 	model = "TP-Link TL-MR3220 v1";
+};
 
-	ath9k-leds {
-		compatible = "gpio-leds";
+&art_part {
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
 
-		wlan {
-			function = LED_FUNCTION_WLAN;
-			color = <LED_COLOR_ID_GREEN>;
-			gpios = <&ath9k 1 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
+		cal_art_1000: calibration@1000 {
+			reg = <0x1000 0x200>;
+		};
+	};
+};
+
+&pcie {
+	ath9k: wifi@0,0 {
+		compatible = "pci168c,002b";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&cal_art_1000>, <&macaddr_uboot_1fc00 0>;
+		nvmem-cell-names = "calibration", "mac-address";
+
+		led {
+			led-sources = <1>;
+			led-active-low;
 		};
 	};
 };
