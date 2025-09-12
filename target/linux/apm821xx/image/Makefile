@@ -3,6 +3,12 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+ifeq ($(CONFIG_TARGET_IMAGES_PIGZ),y)
+  GZIPCMD:=pigz
+else
+  GZIPCMD:=gzip
+endif
+
 define Build/boot-img
 	$(RM) -rf $@.bootdir
 	mkdir -p $@.bootdir/boot
@@ -66,7 +72,7 @@ define Build/prepend-dtb
 endef
 
 define Image/cpiogz
-	( cd $(TARGET_DIR); find . | cpio -o -H newc | gzip -9n >$(KDIR_TMP)/$(IMG_PREFIX)-rootfs.cpio.gz )
+	( cd $(TARGET_DIR); find . | cpio -o -H newc | $(GZIPCMD) -9n >$(KDIR_TMP)/$(IMG_PREFIX)-rootfs.cpio.gz )
 endef
 
 define Device/Default
