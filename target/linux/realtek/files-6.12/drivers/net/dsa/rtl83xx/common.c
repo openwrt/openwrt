@@ -1019,8 +1019,6 @@ out_free:
 	return NULL;
 }
 
-
-
 static void rtl83xx_route_rm(struct rtl838x_switch_priv *priv, struct rtl83xx_route *r)
 {
 	int id;
@@ -1048,37 +1046,63 @@ static void rtl83xx_route_rm(struct rtl838x_switch_priv *priv, struct rtl83xx_ro
 	kfree(r);
 }
 
-static int rtl83xx_fib4_del(struct rtl838x_switch_priv *priv,
-			    struct fib_entry_notifier_info *info)
+static int rtldsa_fib4_check(struct rtl838x_switch_priv *priv,
+			     struct fib_entry_notifier_info *info,
+			     enum fib_event_type event)
+{
+	struct net_device *ndev = fib_info_nh(info->fi, 0)->fib_nh_dev;
+	int vlan = is_vlan_dev(ndev) ? vlan_dev_vlan_id(ndev) : 0;
+	struct fib_nh *nh = fib_info_nh(info->fi, 0);
+	char gw_message[32] = "";
+
+	if (nh->fib_nh_gw4)
+		snprintf(gw_message, sizeof(gw_message), "via %pI4 ", &nh->fib_nh_gw4);
+
+	dev_info(priv->dev, "%s IPv4 route %pI4/%d %s(VLAN %d, MAC %pM)\n",
+		 event == FIB_EVENT_ENTRY_ADD ? "add" : "delete",
+		 &info->dst, info->dst_len, gw_message, vlan, ndev->dev_addr);
+		 
+	if ((info->type == RTN_BROADCAST) || ipv4_is_loopback(info->dst) || !info->dst) {
+		dev_warn(priv->dev, "skip loopback/broadcast addresses and default routes\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int rtldsa_fib4_del(struct rtl838x_switch_priv *priv,
+			   struct fib_entry_notifier_info *info)
 {
 	struct fib_nh *nh = fib_info_nh(info->fi, 0);
-	struct rtl83xx_route *r;
 	struct rhlist_head *tmp, *list;
+	struct rtl83xx_route *route;
 
-	pr_debug("In %s, ip %pI4, len %d\n", __func__, &info->dst, info->dst_len);
+	if (rtldsa_fib4_check(priv, info, FIB_EVENT_ENTRY_DEL))
+		return 0;
+
 	rcu_read_lock();
 	list = rhltable_lookup(&priv->routes, &nh->fib_nh_gw4, route_ht_params);
 	if (!list) {
 		rcu_read_unlock();
-		pr_err("%s: no such gateway: %pI4\n", __func__, &nh->fib_nh_gw4);
+		dev_err(priv->dev, "no such gateway: %pI4\n", &nh->fib_nh_gw4);
 		return -ENOENT;
 	}
-	rhl_for_each_entry_rcu(r, tmp, list, linkage) {
-		if (r->dst_ip == info->dst && r->prefix_len == info->dst_len) {
-			pr_info("%s: found a route with id %d, nh-id %d\n",
-				__func__, r->id, r->nh.id);
+	rhl_for_each_entry_rcu(route, tmp, list, linkage) {
+		if (route->dst_ip == info->dst && route->prefix_len == info->dst_len) {
+			dev_info(priv->dev, "found a route with id %d, nh-id %d\n",
+				 route->id, route->nh.id);
 			break;
 		}
 	}
 	rcu_read_unlock();
 
-	rtl83xx_l2_nexthop_rm(priv, &r->nh);
+	rtl83xx_l2_nexthop_rm(priv, &route->nh);
 
-	pr_debug("%s: Releasing packet counter %d\n", __func__, r->pr.packet_cntr);
-	set_bit(r->pr.packet_cntr, priv->packet_cntr_use_bm);
-	priv->r->pie_rule_rm(priv, &r->pr);
+	dev_info(priv->dev, "releasing packet counter %d\n", route->pr.packet_cntr);
+	set_bit(route->pr.packet_cntr, priv->packet_cntr_use_bm);
+	priv->r->pie_rule_rm(priv, &route->pr);
 
-	rtl83xx_route_rm(priv, r);
+	rtl83xx_route_rm(priv, route);
 
 	nh->fib_nh_flags &= ~RTNH_F_OFFLOAD;
 
@@ -1170,92 +1194,71 @@ static int rtl83xx_alloc_egress_intf(struct rtl838x_switch_priv *priv, u64 mac, 
 	return free_mac;
 }
 
-static int rtl83xx_fib4_add(struct rtl838x_switch_priv *priv,
+static int rtldsa_fib4_add(struct rtl838x_switch_priv *priv,
 			    struct fib_entry_notifier_info *info)
 {
+	struct net_device *ndev = fib_info_nh(info->fi, 0)->fib_nh_dev;
+	int vlan = is_vlan_dev(ndev) ? vlan_dev_vlan_id(ndev) : 0;
 	struct fib_nh *nh = fib_info_nh(info->fi, 0);
-	struct net_device *dev = fib_info_nh(info->fi, 0)->fib_nh_dev;
+	struct rtl83xx_route *route;
 	int port;
-	struct rtl83xx_route *r;
-	bool to_localhost;
-	int vlan = is_vlan_dev(dev) ? vlan_dev_vlan_id(dev) : 0;
 
-	pr_debug("In %s, ip %pI4, len %d\n", __func__, &info->dst, info->dst_len);
-	if (!info->dst) {
-		pr_info("Not offloading default route for now\n");
+	if (rtldsa_fib4_check(priv, info, FIB_EVENT_ENTRY_ADD))
 		return 0;
+
+	port = rtl83xx_port_dev_lower_find(ndev, priv);
+	if (port < 0) {
+		dev_err(priv->dev, "lower interface %s not found\n", ndev->name);
+		return -ENODEV;
 	}
 
-	pr_debug("GW: %pI4, interface name %s, mac %016llx, vlan %d\n", &nh->fib_nh_gw4, dev->name,
-		ether_addr_to_u64(dev->dev_addr), vlan
-	);
-
-	port = rtl83xx_port_dev_lower_find(dev, priv);
-	if (port < 0)
-		return -1;
-
-	/* For now we only work with routes that have a gateway and are not ourself */
-/*	if ((!nh->fib_nh_gw4) && (info->dst_len != 32)) */
-/*		return 0; */
-
-	if ((info->dst & 0xff) == 0xff)
-		return 0;
-
-	/* Do not offload routes to 192.168.100.x */
-	if ((info->dst & 0xffffff00) == 0xc0a86400)
-		return 0;
-
-	/* Do not offload routes to 127.x.x.x */
-	if ((info->dst & 0xff000000) == 0x7f000000)
-		return 0;
-
-	/* Allocate route or host-route (entry if hardware supports this) */
+	/* Allocate route or host-route entry (if hardware supports this) */
 	if (info->dst_len == 32 && priv->r->host_route_write)
-		r = rtl83xx_host_route_alloc(priv, nh->fib_nh_gw4);
+		route = rtl83xx_host_route_alloc(priv, nh->fib_nh_gw4);
 	else
-		r = rtl83xx_route_alloc(priv, nh->fib_nh_gw4);
+		route = rtl83xx_route_alloc(priv, nh->fib_nh_gw4);
 
-	if (!r) {
-		pr_err("%s: No more free route entries\n", __func__);
-		return -1;
+	if (route)
+		dev_info(priv->dev, "route hashtable extended for gw %pI4\n", &nh->fib_nh_gw4);
+	else {
+		dev_err(priv->dev, "could not extend route hashtable for gw %pI4\n", &nh->fib_nh_gw4);
+		return -ENOSPC;
 	}
 
-	r->dst_ip = info->dst;
-	r->prefix_len = info->dst_len;
-	r->nh.rvid = vlan;
-	to_localhost = !nh->fib_nh_gw4;
+	route->dst_ip = info->dst;
+	route->prefix_len = info->dst_len;
+	route->nh.rvid = vlan;
 
 	if (priv->r->set_l3_router_mac) {
-		u64 mac = ether_addr_to_u64(dev->dev_addr);
+		u64 mac = ether_addr_to_u64(ndev->dev_addr);
 
-		pr_debug("Local route and router mac %016llx\n", mac);
-
+		pr_debug("Local route and router MAC %pM\n", ndev->dev_addr);
 		if (rtl83xx_alloc_router_mac(priv, mac))
 			goto out_free_rt;
 
 		/* vid = 0: Do not care about VID */
-		r->nh.if_id = rtl83xx_alloc_egress_intf(priv, mac, vlan);
-		if (r->nh.if_id < 0)
+		route->nh.if_id = rtl83xx_alloc_egress_intf(priv, mac, vlan);
+		if (route->nh.if_id < 0)
 			goto out_free_rmac;
 
-		if (to_localhost) {
+		if (!nh->fib_nh_gw4) {
 			int slot;
 
-			r->nh.mac = mac;
-			r->nh.port = priv->port_ignore;
-			r->attr.valid = true;
-			r->attr.action = ROUTE_ACT_TRAP2CPU;
-			r->attr.type = 0;
+			route->nh.mac = mac;
+			route->nh.port = priv->port_ignore;
+			route->attr.valid = true;
+			route->attr.action = ROUTE_ACT_TRAP2CPU;
+			route->attr.type = 0;
 
-			slot = priv->r->find_l3_slot(r, false);
+			slot = priv->r->find_l3_slot(route, false);
 			pr_debug("%s: Got slot for route: %d\n", __func__, slot);
-			priv->r->host_route_write(slot, r);
+			priv->r->host_route_write(slot, route);
 		}
 	}
 
 	/* We need to resolve the mac address of the GW */
-	if (!to_localhost)
-		rtl83xx_port_ipv4_resolve(priv, dev, nh->fib_nh_gw4);
+	if (nh->fib_nh_gw4)
+		rtl83xx_port_ipv4_resolve(priv, ndev, nh->fib_nh_gw4);
 
 	nh->fib_nh_flags |= RTNH_F_OFFLOAD;
 
@@ -1363,17 +1366,20 @@ static void rtl83xx_fib_event_work_do(struct work_struct *work)
 	case FIB_EVENT_ENTRY_ADD:
 	case FIB_EVENT_ENTRY_REPLACE:
 	case FIB_EVENT_ENTRY_APPEND:
-		if (fib_work->is_fib6) {
+		if (fib_work->is_fib6)
 			err = rtl83xx_fib6_add(priv, &fib_work->fen6_info);
-		} else {
-			err = rtl83xx_fib4_add(priv, &fib_work->fen_info);
-			fib_info_put(fib_work->fen_info.fi);
-		}
+		else
+			err = rtldsa_fib4_add(priv, &fib_work->fen_info);
 		if (err)
-			pr_err("%s: FIB4 failed\n", __func__);
+			dev_err(priv->dev, "fib_add() failed\n");
+
+		fib_info_put(fib_work->fen_info.fi);
 		break;
 	case FIB_EVENT_ENTRY_DEL:
-		rtl83xx_fib4_del(priv, &fib_work->fen_info);
+		err = rtldsa_fib4_del(priv, &fib_work->fen_info);
+		if (err)
+			dev_err(priv->dev, "fib_del() failed\n");
+
 		fib_info_put(fib_work->fen_info.fi);
 		break;
 	case FIB_EVENT_RULE_ADD:
