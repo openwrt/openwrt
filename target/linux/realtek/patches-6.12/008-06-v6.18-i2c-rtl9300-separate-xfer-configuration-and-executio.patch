@@ -1,8 +1,7 @@
-From 9665c6a9812d9e2fa2b86be1fa1fc2b381e6f34e Mon Sep 17 00:00:00 2001
+From 447dd46f95014eb4ea94f6164963bf23ce05b927 Mon Sep 17 00:00:00 2001
 From: Jonas Jelonek <jelonek.jonas@gmail.com>
-Date: Mon, 4 Aug 2025 11:31:11 +0000
-Subject: [PATCH v5 09/11] i2c: rtl9300: separate xfer configuration and
- execution
+Date: Sat, 27 Sep 2025 10:19:28 +0000
+Subject: [PATCH] i2c: rtl9300: separate xfer configuration and execution
 
 So far, the rtl9300_i2c_smbus_xfer code is quite a mess with function
 calls distributed over the whole function setting different values in
@@ -35,11 +34,15 @@ xfer to the corresponding register, and 'rtl9300_i2c_do_xfer' which
 actually executes the xfer and does post-processing if needed.
 
 Signed-off-by: Jonas Jelonek <jelonek.jonas@gmail.com>
-Link: https://lore.kernel.org/linux-i2c/20250809220713.1038947-10-jelonek.jonas@gmail.com/
----
- drivers/i2c/busses/i2c-rtl9300.c | 234 +++++++++++++++----------------
- 1 file changed, 114 insertions(+), 120 deletions(-)
+Tested-by: Sven Eckelmann <sven@narfation.org>
+Reviewed-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
+Tested-by: Chris Packham <chris.packham@alliedtelesis.co.nz> # On RTL9302C based board
+Tested-by: Markus Stockhausen <markus.stockhausen@gmx.de>
+Signed-off-by: Andi Shyti <andi.shyti@kernel.org>
+Link: https://lore.kernel.org/r/20250927101931.71575-7-jelonek.jonas@gmail.com
 
+diff --git a/drivers/i2c/busses/i2c-rtl9300.c b/drivers/i2c/busses/i2c-rtl9300.c
+index 9e3517b09b3d..fb3ebbd46a18 100644
 --- a/drivers/i2c/busses/i2c-rtl9300.c
 +++ b/drivers/i2c/busses/i2c-rtl9300.c
 @@ -8,6 +8,7 @@
@@ -73,7 +76,7 @@ Link: https://lore.kernel.org/linux-i2c/20250809220713.1038947-10-jelonek.jonas@
  #define RTL9300_I2C_MST_CTRL1				0x0
  #define RTL9300_I2C_MST_CTRL2				0x4
  #define RTL9300_I2C_MST_DATA_WORD0			0x8
-@@ -95,45 +112,37 @@ static int rtl9300_i2c_select_scl(struct
+@@ -95,45 +112,37 @@ static int rtl9300_i2c_select_scl(struct rtl9300_i2c *i2c, u8 scl)
  	return regmap_field_write(i2c->fields[F_SCL_SEL], 1);
  }
  
@@ -131,7 +134,7 @@ Link: https://lore.kernel.org/linux-i2c/20250809220713.1038947-10-jelonek.jonas@
  {
  	u32 vals[4] = {};
  	int i, ret;
-@@ -153,7 +162,7 @@ static int rtl9300_i2c_read(struct rtl93
+@@ -153,7 +162,7 @@ static int rtl9300_i2c_read(struct rtl9300_i2c *i2c, u8 *buf, int len)
  	return 0;
  }
  
@@ -140,7 +143,7 @@ Link: https://lore.kernel.org/linux-i2c/20250809220713.1038947-10-jelonek.jonas@
  {
  	u32 vals[4] = {};
  	int i;
-@@ -176,16 +185,51 @@ static int rtl9300_i2c_writel(struct rtl
+@@ -176,16 +185,51 @@ static int rtl9300_i2c_writel(struct rtl9300_i2c *i2c, u32 data)
  	return regmap_write(i2c->regmap, i2c->data_reg, data);
  }
  
@@ -156,9 +159,9 @@ Link: https://lore.kernel.org/linux-i2c/20250809220713.1038947-10-jelonek.jonas@
 +		return -EINVAL;
 +
 +	ret = regmap_field_write(i2c->fields[F_DEV_ADDR], xfer->dev_addr);
- 	if (ret)
- 		return ret;
- 
++	if (ret)
++		return ret;
++
 +	ret = rtl9300_i2c_reg_addr_set(i2c, xfer->reg_addr, xfer->reg_addr_len);
 +	if (ret)
 +		return ret;
@@ -168,9 +171,9 @@ Link: https://lore.kernel.org/linux-i2c/20250809220713.1038947-10-jelonek.jonas@
 +		return ret;
 +
 +	ret = regmap_field_write(i2c->fields[F_DATA_WIDTH], (xfer->data_len - 1) & 0xf);
-+	if (ret)
-+		return ret;
-+
+ 	if (ret)
+ 		return ret;
+ 
 +	if (xfer->write) {
 +		switch (xfer->type) {
 +		case RTL9300_I2C_XFER_BYTE:
@@ -196,7 +199,7 @@ Link: https://lore.kernel.org/linux-i2c/20250809220713.1038947-10-jelonek.jonas@
  	ret = regmap_field_write(i2c->fields[F_I2C_TRIG], 1);
  	if (ret)
  		return ret;
-@@ -200,28 +244,24 @@ static int rtl9300_i2c_execute_xfer(stru
+@@ -200,28 +244,24 @@ static int rtl9300_i2c_execute_xfer(struct rtl9300_i2c *i2c, char read_write,
  	if (val)
  		return -EIO;
  
@@ -234,7 +237,7 @@ Link: https://lore.kernel.org/linux-i2c/20250809220713.1038947-10-jelonek.jonas@
  			if (ret)
  				return ret;
  			break;
-@@ -237,108 +277,62 @@ static int rtl9300_i2c_smbus_xfer(struct
+@@ -237,108 +277,62 @@ static int rtl9300_i2c_smbus_xfer(struct i2c_adapter *adap, u16 addr, unsigned s
  {
  	struct rtl9300_i2c_chan *chan = i2c_get_adapdata(adap);
  	struct rtl9300_i2c *i2c = chan->i2c;
@@ -379,3 +382,6 @@ Link: https://lore.kernel.org/linux-i2c/20250809220713.1038947-10-jelonek.jonas@
  
  out_unlock:
  	mutex_unlock(&i2c->lock);
+-- 
+2.48.1
+

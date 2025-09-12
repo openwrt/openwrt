@@ -1,7 +1,7 @@
-From 1bd7526db1cf9d5c6a700c37b8bf915f8ff72c44 Mon Sep 17 00:00:00 2001
+From 415216ae3196e67bdb9515519f219d553bd38d3a Mon Sep 17 00:00:00 2001
 From: Harshal Gohel <hg@simonwunderlich.de>
-Date: Sat, 9 Aug 2025 08:40:58 +0200
-Subject: [PATCH 5/5] i2c: rtl9300: Implement I2C block read and write
+Date: Sat, 27 Sep 2025 11:52:17 +0200
+Subject: [PATCH] i2c: rtl9300: Implement I2C block read and write
 
 It was noticed that the original implementation of SMBus Block Write in the
 driver was actually an I2C Block Write. Both differ only in the Count byte
@@ -40,11 +40,14 @@ Co-developed-by: Sven Eckelmann <sven@narfation.org>
 Signed-off-by: Sven Eckelmann <sven@narfation.org>
 Reviewed-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
 Tested-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
-Link: https://lore.kernel.org/linux-i2c/20250809-i2c-rtl9300-multi-byte-v4-5-d71dd5eb6121@narfation.org/
+Reviewed-by: Jonas Jelonek <jelonek.jonas@gmail.com>
+Tested-by: Jonas Jelonek <jelonek.jonas@gmail.com>
 
+diff --git a/drivers/i2c/busses/i2c-rtl9300.c b/drivers/i2c/busses/i2c-rtl9300.c
+index af991b28e4f8..9e6232075137 100644
 --- a/drivers/i2c/busses/i2c-rtl9300.c
 +++ b/drivers/i2c/busses/i2c-rtl9300.c
-@@ -183,22 +183,32 @@ static int rtl9300_i2c_execute_xfer(stru
+@@ -186,22 +186,32 @@ static int rtl9300_i2c_execute_xfer(struct rtl9300_i2c *i2c, char read_write,
  		return -EIO;
  
  	if (read_write == I2C_SMBUS_READ) {
@@ -80,7 +83,7 @@ Link: https://lore.kernel.org/linux-i2c/20250809-i2c-rtl9300-multi-byte-v4-5-d71
  		}
  	}
  
-@@ -296,6 +306,25 @@ static int rtl9300_i2c_smbus_xfer(struct
+@@ -290,6 +300,25 @@ static int rtl9300_i2c_smbus_xfer(struct i2c_adapter *adap, u16 addr, unsigned s
  		len = data->block[0] + 1;
  		break;
  
@@ -106,11 +109,16 @@ Link: https://lore.kernel.org/linux-i2c/20250809-i2c-rtl9300-multi-byte-v4-5-d71
  	default:
  		dev_err(&adap->dev, "Unsupported transaction %d\n", size);
  		ret = -EOPNOTSUPP;
-@@ -314,6 +343,7 @@ static u32 rtl9300_i2c_func(struct i2c_a
+@@ -307,7 +336,8 @@ static int rtl9300_i2c_smbus_xfer(struct i2c_adapter *adap, u16 addr, unsigned s
+ static u32 rtl9300_i2c_func(struct i2c_adapter *a)
  {
- 	return I2C_FUNC_SMBUS_QUICK | I2C_FUNC_SMBUS_BYTE |
- 	       I2C_FUNC_SMBUS_BYTE_DATA | I2C_FUNC_SMBUS_WORD_DATA |
-+	       I2C_FUNC_SMBUS_READ_I2C_BLOCK | I2C_FUNC_SMBUS_WRITE_I2C_BLOCK |
- 	       I2C_FUNC_SMBUS_BLOCK_DATA;
+ 	return I2C_FUNC_SMBUS_BYTE | I2C_FUNC_SMBUS_BYTE_DATA |
+-	       I2C_FUNC_SMBUS_WORD_DATA | I2C_FUNC_SMBUS_BLOCK_DATA;
++	       I2C_FUNC_SMBUS_WORD_DATA | I2C_FUNC_SMBUS_BLOCK_DATA |
++	       I2C_FUNC_SMBUS_I2C_BLOCK;
  }
  
+ static const struct i2c_algorithm rtl9300_i2c_algo = {
+-- 
+2.48.1
+

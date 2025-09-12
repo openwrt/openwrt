@@ -1,8 +1,7 @@
-From 055c2659011812c1abbd879ce80b2342e4d93576 Mon Sep 17 00:00:00 2001
+From 5a6ecb27435ef7a67d7bec4543f0c6303f34e8a6 Mon Sep 17 00:00:00 2001
 From: Jonas Jelonek <jelonek.jonas@gmail.com>
-Date: Mon, 30 Jun 2025 15:37:06 +0000
-Subject: [PATCH v5 01/11] i2c: rtl9300: use regmap fields and API for
- registers
+Date: Sat, 27 Sep 2025 10:19:23 +0000
+Subject: [PATCH] i2c: rtl9300: use regmap fields and API for registers
 
 Adapt the RTL9300 I2C controller driver to use more of the regmap
 API, especially make use of reg_field and regmap_field instead of macros
@@ -19,17 +18,19 @@ differences between specific revisions within a series. Just by
 defining a separate driver data structure with the corresponding
 register field definitions and linking it to a new compatible.
 
-Reviewed-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
-Tested-by: Chris Packham <chris.packham@alliedtelesis.co.nz> # On RTL9302c
 Signed-off-by: Jonas Jelonek <jelonek.jonas@gmail.com>
-Link: https://lore.kernel.org/linux-i2c/20250809220713.1038947-2-jelonek.jonas@gmail.com/
----
- drivers/i2c/busses/i2c-rtl9300.c | 192 ++++++++++++++++++++-----------
- 1 file changed, 124 insertions(+), 68 deletions(-)
+Tested-by: Sven Eckelmann <sven@narfation.org>
+Reviewed-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
+Tested-by: Chris Packham <chris.packham@alliedtelesis.co.nz> # On RTL9302C based board
+Tested-by: Markus Stockhausen <markus.stockhausen@gmx.de>
+Signed-off-by: Andi Shyti <andi.shyti@kernel.org>
+Link: https://lore.kernel.org/r/20250927101931.71575-2-jelonek.jonas@gmail.com
 
+diff --git a/drivers/i2c/busses/i2c-rtl9300.c b/drivers/i2c/busses/i2c-rtl9300.c
+index 9e6232075137..8483bab72146 100644
 --- a/drivers/i2c/busses/i2c-rtl9300.c
 +++ b/drivers/i2c/busses/i2c-rtl9300.c
-@@ -23,94 +23,114 @@ struct rtl9300_i2c_chan {
+@@ -23,97 +23,117 @@ struct rtl9300_i2c_chan {
  	u8 sda_pin;
  };
  
@@ -159,11 +160,14 @@ Link: https://lore.kernel.org/linux-i2c/20250809220713.1038947-2-jelonek.jonas@g
  				   u16 addr, u16 len)
  {
 -	u32 val, mask;
--
--	val = chan->bus_freq << RTL9300_I2C_MST_CTRL2_SCL_FREQ_OFS;
--	mask = RTL9300_I2C_MST_CTRL2_SCL_FREQ_MASK;
 +	int ret;
  
+ 	if (len < 1 || len > 16)
+ 		return -EINVAL;
+ 
+-	val = chan->bus_freq << RTL9300_I2C_MST_CTRL2_SCL_FREQ_OFS;
+-	mask = RTL9300_I2C_MST_CTRL2_SCL_FREQ_MASK;
+-
 -	val |= addr << RTL9300_I2C_MST_CTRL2_DEV_ADDR_OFS;
 -	mask |= RTL9300_I2C_MST_CTRL2_DEV_ADDR_MASK;
 +	ret = regmap_field_write(i2c->fields[F_SCL_FREQ], chan->bus_freq);
@@ -186,7 +190,7 @@ Link: https://lore.kernel.org/linux-i2c/20250809220713.1038947-2-jelonek.jonas@g
  }
  
  static int rtl9300_i2c_read(struct rtl9300_i2c *i2c, u8 *buf, int len)
-@@ -121,8 +141,7 @@ static int rtl9300_i2c_read(struct rtl93
+@@ -124,8 +144,7 @@ static int rtl9300_i2c_read(struct rtl9300_i2c *i2c, u8 *buf, int len)
  	if (len > 16)
  		return -EIO;
  
@@ -196,7 +200,7 @@ Link: https://lore.kernel.org/linux-i2c/20250809220713.1038947-2-jelonek.jonas@g
  	if (ret)
  		return ret;
  
-@@ -149,52 +168,49 @@ static int rtl9300_i2c_write(struct rtl9
+@@ -152,52 +171,49 @@ static int rtl9300_i2c_write(struct rtl9300_i2c *i2c, u8 *buf, int len)
  		vals[reg] |= buf[i] << shift;
  	}
  
@@ -263,7 +267,7 @@ Link: https://lore.kernel.org/linux-i2c/20250809220713.1038947-2-jelonek.jonas@g
  			if (ret)
  				return ret;
  			data->word = val & 0xffff;
-@@ -362,9 +378,11 @@ static int rtl9300_i2c_probe(struct plat
+@@ -355,9 +371,11 @@ static int rtl9300_i2c_probe(struct platform_device *pdev)
  {
  	struct device *dev = &pdev->dev;
  	struct rtl9300_i2c *i2c;
@@ -276,13 +280,13 @@ Link: https://lore.kernel.org/linux-i2c/20250809220713.1038947-2-jelonek.jonas@g
  
  	i2c = devm_kzalloc(dev, sizeof(*i2c), GFP_KERNEL);
  	if (!i2c)
-@@ -383,9 +401,22 @@ static int rtl9300_i2c_probe(struct plat
+@@ -376,9 +394,22 @@ static int rtl9300_i2c_probe(struct platform_device *pdev)
  
  	platform_set_drvdata(pdev, i2c);
  
--	if (device_get_child_node_count(dev) >= RTL9300_I2C_MUX_NCHAN)
+-	if (device_get_child_node_count(dev) > RTL9300_I2C_MUX_NCHAN)
 +	drv_data = (struct rtl9300_i2c_drv_data *)device_get_match_data(i2c->dev);
-+	if (device_get_child_node_count(dev) >= drv_data->max_nchan)
++	if (device_get_child_node_count(dev) > drv_data->max_nchan)
  		return dev_err_probe(dev, -EINVAL, "Too many channels\n");
  
 +	i2c->data_reg = i2c->reg_base + drv_data->data_reg;
@@ -300,7 +304,7 @@ Link: https://lore.kernel.org/linux-i2c/20250809220713.1038947-2-jelonek.jonas@g
  	device_for_each_child_node(dev, child) {
  		struct rtl9300_i2c_chan *chan = &i2c->chans[i];
  		struct i2c_adapter *adap = &chan->adap;
-@@ -402,7 +433,6 @@ static int rtl9300_i2c_probe(struct plat
+@@ -395,7 +426,6 @@ static int rtl9300_i2c_probe(struct platform_device *pdev)
  		case I2C_MAX_STANDARD_MODE_FREQ:
  			chan->bus_freq = RTL9300_I2C_STD_FREQ;
  			break;
@@ -308,7 +312,7 @@ Link: https://lore.kernel.org/linux-i2c/20250809220713.1038947-2-jelonek.jonas@g
  		case I2C_MAX_FAST_MODE_FREQ:
  			chan->bus_freq = RTL9300_I2C_FAST_FREQ;
  			break;
-@@ -434,11 +464,37 @@ static int rtl9300_i2c_probe(struct plat
+@@ -427,11 +457,37 @@ static int rtl9300_i2c_probe(struct platform_device *pdev)
  	return 0;
  }
  
@@ -350,3 +354,6 @@ Link: https://lore.kernel.org/linux-i2c/20250809220713.1038947-2-jelonek.jonas@g
  	{}
  };
  MODULE_DEVICE_TABLE(of, i2c_rtl9300_dt_ids);
+-- 
+2.48.1
+

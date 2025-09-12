@@ -1,7 +1,7 @@
-From ebc6d39a075f89ab3a7bb3cf011c5fbd555ab82b Mon Sep 17 00:00:00 2001
+From 82b350dd8185ce790e61555c436f90b6501af23c Mon Sep 17 00:00:00 2001
 From: Sven Eckelmann <sven@narfation.org>
-Date: Sat, 9 Aug 2025 08:40:57 +0200
-Subject: [PATCH 4/5] i2c: rtl9300: Add missing count byte for SMBus Block Ops
+Date: Sun, 10 Aug 2025 20:05:16 +0200
+Subject: [PATCH] i2c: rtl9300: Add missing count byte for SMBus Block Ops
 
 The expected on-wire format of an SMBus Block Write is
 
@@ -22,16 +22,19 @@ I2C controller is enough to fix the transmission.
 This also affects read because the I2C controller must receive the count
 byte + $count * data bytes.
 
-Cc: <stable@vger.kernel.org>
 Fixes: c366be720235 ("i2c: Add driver for the RTL9300 I2C controller")
 Signed-off-by: Sven Eckelmann <sven@narfation.org>
+Cc: <stable@vger.kernel.org> # v6.13+
 Reviewed-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
 Tested-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
-Link: https://lore.kernel.org/linux-i2c/20250809-i2c-rtl9300-multi-byte-v4-4-d71dd5eb6121@narfation.org/
+Signed-off-by: Andi Shyti <andi.shyti@kernel.org>
+Link: https://lore.kernel.org/r/20250810-i2c-rtl9300-multi-byte-v5-4-cd9dca0db722@narfation.org
 
+diff --git a/drivers/i2c/busses/i2c-rtl9300.c b/drivers/i2c/busses/i2c-rtl9300.c
+index 4a282d57e2c1..cfafe089102a 100644
 --- a/drivers/i2c/busses/i2c-rtl9300.c
 +++ b/drivers/i2c/busses/i2c-rtl9300.c
-@@ -285,15 +285,15 @@ static int rtl9300_i2c_smbus_xfer(struct
+@@ -285,15 +285,15 @@ static int rtl9300_i2c_smbus_xfer(struct i2c_adapter *adap, u16 addr, unsigned s
  			ret = -EINVAL;
  			goto out_unlock;
  		}
@@ -50,3 +53,6 @@ Link: https://lore.kernel.org/linux-i2c/20250809-i2c-rtl9300-multi-byte-v4-4-d71
  		break;
  
  	default:
+-- 
+2.48.1
+
