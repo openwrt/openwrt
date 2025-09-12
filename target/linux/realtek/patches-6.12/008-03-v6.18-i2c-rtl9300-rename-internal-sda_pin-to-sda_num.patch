@@ -1,7 +1,7 @@
-From bccfb0e2a337529d07134e52ca3e2ec1c156bd7d Mon Sep 17 00:00:00 2001
+From 8ff3819d7edcd56e4c533b9391a156cd607048fa Mon Sep 17 00:00:00 2001
 From: Jonas Jelonek <jelonek.jonas@gmail.com>
-Date: Mon, 4 Aug 2025 11:27:57 +0000
-Subject: [PATCH v5 04/11] i2c: rtl9300: rename internal sda_pin to sda_num
+Date: Sat, 27 Sep 2025 10:19:25 +0000
+Subject: [PATCH] i2c: rtl9300: rename internal sda_pin to sda_num
 
 Rename the internally used 'sda_pin' to 'sda_num' to make it clear that
 this is NOT the actual pin number of the GPIO pin but rather the logical
@@ -12,11 +12,15 @@ confusion or misconfiguration by giving the variable the correct name.
 This follows the description change in the devicetree bindings.
 
 Signed-off-by: Jonas Jelonek <jelonek.jonas@gmail.com>
-Link: https://lore.kernel.org/linux-i2c/20250809220713.1038947-5-jelonek.jonas@gmail.com/
----
- drivers/i2c/busses/i2c-rtl9300.c | 24 ++++++++++++------------
- 1 file changed, 12 insertions(+), 12 deletions(-)
+Tested-by: Sven Eckelmann <sven@narfation.org>
+Reviewed-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
+Tested-by: Chris Packham <chris.packham@alliedtelesis.co.nz> # On RTL9302C based board
+Tested-by: Markus Stockhausen <markus.stockhausen@gmx.de>
+Signed-off-by: Andi Shyti <andi.shyti@kernel.org>
+Link: https://lore.kernel.org/r/20250927101931.71575-4-jelonek.jonas@gmail.com
 
+diff --git a/drivers/i2c/busses/i2c-rtl9300.c b/drivers/i2c/busses/i2c-rtl9300.c
+index 8483bab72146..f9b5ac7670c2 100644
 --- a/drivers/i2c/busses/i2c-rtl9300.c
 +++ b/drivers/i2c/busses/i2c-rtl9300.c
 @@ -20,7 +20,7 @@ struct rtl9300_i2c_chan {
@@ -37,7 +41,7 @@ Link: https://lore.kernel.org/linux-i2c/20250809220713.1038947-5-jelonek.jonas@g
  	struct mutex lock;
  };
  
-@@ -102,11 +102,11 @@ static int rtl9300_i2c_config_io(struct
+@@ -102,11 +102,11 @@ static int rtl9300_i2c_config_io(struct rtl9300_i2c *i2c, u8 sda_pin)
  
  	drv_data = (struct rtl9300_i2c_drv_data *)device_get_match_data(i2c->dev);
  
@@ -51,7 +55,7 @@ Link: https://lore.kernel.org/linux-i2c/20250809220713.1038947-5-jelonek.jonas@g
  	if (ret)
  		return ret;
  
-@@ -240,11 +240,11 @@ static int rtl9300_i2c_smbus_xfer(struct
+@@ -243,11 +243,11 @@ static int rtl9300_i2c_smbus_xfer(struct i2c_adapter *adap, u16 addr, unsigned s
  	int len = 0, ret;
  
  	mutex_lock(&i2c->lock);
@@ -65,7 +69,7 @@ Link: https://lore.kernel.org/linux-i2c/20250809220713.1038947-5-jelonek.jonas@g
  	}
  
  	switch (size) {
-@@ -381,7 +381,7 @@ static int rtl9300_i2c_probe(struct plat
+@@ -374,7 +374,7 @@ static int rtl9300_i2c_probe(struct platform_device *pdev)
  	struct fwnode_handle *child;
  	struct rtl9300_i2c_drv_data *drv_data;
  	struct reg_field fields[F_NUM_FIELDS];
@@ -74,7 +78,7 @@ Link: https://lore.kernel.org/linux-i2c/20250809220713.1038947-5-jelonek.jonas@g
  	int ret, i = 0;
  
  	i2c = devm_kzalloc(dev, sizeof(*i2c), GFP_KERNEL);
-@@ -421,7 +421,7 @@ static int rtl9300_i2c_probe(struct plat
+@@ -414,7 +414,7 @@ static int rtl9300_i2c_probe(struct platform_device *pdev)
  		struct rtl9300_i2c_chan *chan = &i2c->chans[i];
  		struct i2c_adapter *adap = &chan->adap;
  
@@ -83,7 +87,7 @@ Link: https://lore.kernel.org/linux-i2c/20250809220713.1038947-5-jelonek.jonas@g
  		if (ret)
  			return ret;
  
-@@ -438,11 +438,11 @@ static int rtl9300_i2c_probe(struct plat
+@@ -431,11 +431,11 @@ static int rtl9300_i2c_probe(struct platform_device *pdev)
  			break;
  		default:
  			dev_warn(i2c->dev, "SDA%d clock-frequency %d not supported using default\n",
@@ -97,7 +101,7 @@ Link: https://lore.kernel.org/linux-i2c/20250809220713.1038947-5-jelonek.jonas@g
  		chan->i2c = i2c;
  		adap = &i2c->chans[i].adap;
  		adap->owner = THIS_MODULE;
-@@ -452,14 +452,14 @@ static int rtl9300_i2c_probe(struct plat
+@@ -445,14 +445,14 @@ static int rtl9300_i2c_probe(struct platform_device *pdev)
  		adap->dev.parent = dev;
  		i2c_set_adapdata(adap, chan);
  		adap->dev.of_node = to_of_node(child);
@@ -114,3 +118,6 @@ Link: https://lore.kernel.org/linux-i2c/20250809220713.1038947-5-jelonek.jonas@g
  
  	return 0;
  }
+-- 
+2.48.1
+

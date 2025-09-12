@@ -1,26 +1,29 @@
-From f891af341e32c8a2f2d2d25dd3c424ff47147a31 Mon Sep 17 00:00:00 2001
+From 17689aafb793599a862617a127429dd3d6f675c9 Mon Sep 17 00:00:00 2001
 From: Jonas Jelonek <jelonek.jonas@gmail.com>
-Date: Mon, 4 Aug 2025 10:39:39 +0000
-Subject: [PATCH v5 10/11] dt-bindings: i2c: realtek,rtl9301-i2c: extend for
- RTL9310 support
+Date: Sat, 27 Sep 2025 10:19:30 +0000
+Subject: [PATCH] dt-bindings: i2c: realtek,rtl9301-i2c: extend for RTL9310
+ support
 
 Adjust the regex for child-node address to account for the fact that
 RTL9310 supports 12 instead of only 8 SDA lines. Also, narrow this per
 variant.
 
-Add a vendor-specific property to explicitly specify the
-Realtek-internal ID of the defined I2C controller/master. This is
-required, in particular for RTL9310, to describe the correct I2C
-master. Require this property for RTL9310.
+Add a vendor-specific property to explicitly specify the SCL line number
+of the defined I2C controller/master. This is required, in particular
+for RTL9310, to operate on the correct SCL for each controller. Require
+this property to be specified for RTL9310.
 
 Add compatibles for known SoC variants RTL9311, RTL9312 and RTL9313.
 
 Signed-off-by: Jonas Jelonek <jelonek.jonas@gmail.com>
-Link: https://lore.kernel.org/linux-i2c/20250809220713.1038947-11-jelonek.jonas@gmail.com/
----
- .../bindings/i2c/realtek,rtl9301-i2c.yaml     | 39 ++++++++++++++++++-
- 1 file changed, 37 insertions(+), 2 deletions(-)
+Reviewed-by: Rob Herring (Arm) <robh@kernel.org>
+Reviewed-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
+Tested-by: Markus Stockhausen <markus.stockhausen@gmx.de>
+Signed-off-by: Andi Shyti <andi.shyti@kernel.org>
+Link: https://lore.kernel.org/r/20250927101931.71575-9-jelonek.jonas@gmail.com
 
+diff --git a/Documentation/devicetree/bindings/i2c/realtek,rtl9301-i2c.yaml b/Documentation/devicetree/bindings/i2c/realtek,rtl9301-i2c.yaml
+index 274e2ab8b612..17ce39c19ab1 100644
 --- a/Documentation/devicetree/bindings/i2c/realtek,rtl9301-i2c.yaml
 +++ b/Documentation/devicetree/bindings/i2c/realtek,rtl9301-i2c.yaml
 @@ -13,6 +13,8 @@ description:
@@ -91,3 +94,6 @@ Link: https://lore.kernel.org/linux-i2c/20250809220713.1038947-11-jelonek.jonas@
  required:
    - compatible
    - reg
+-- 
+2.48.1
+

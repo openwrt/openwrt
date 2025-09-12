@@ -1,7 +1,7 @@
-From 0190fed3eed28be78717a0b45d7038c855e83b18 Mon Sep 17 00:00:00 2001
+From d67b740b9edfa46310355e2b68050f79ebf05a4c Mon Sep 17 00:00:00 2001
 From: Harshal Gohel <hg@simonwunderlich.de>
-Date: Sat, 9 Aug 2025 08:40:55 +0200
-Subject: [PATCH 2/5] i2c: rtl9300: Fix multi-byte I2C write
+Date: Sun, 10 Aug 2025 20:05:14 +0200
+Subject: [PATCH] i2c: rtl9300: Fix multi-byte I2C write
 
 The RTL93xx I2C controller has 4 32 bit registers to store the bytes for
 the upcoming I2C transmission. The first byte is stored in the
@@ -46,18 +46,21 @@ The second initialization (to 0) of vals was also be dropped because this
 array is initialized to 0 on the stack by using `= {};`. This makes the
 fix a lot more readable.
 
-Cc: <stable@vger.kernel.org>
 Fixes: c366be720235 ("i2c: Add driver for the RTL9300 I2C controller")
 Signed-off-by: Harshal Gohel <hg@simonwunderlich.de>
+Cc: <stable@vger.kernel.org> # v6.13+
 Co-developed-by: Sven Eckelmann <sven@narfation.org>
 Signed-off-by: Sven Eckelmann <sven@narfation.org>
 Reviewed-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
 Tested-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
-Link: https://lore.kernel.org/linux-i2c/20250809-i2c-rtl9300-multi-byte-v4-2-d71dd5eb6121@narfation.org/
+Signed-off-by: Andi Shyti <andi.shyti@kernel.org>
+Link: https://lore.kernel.org/r/20250810-i2c-rtl9300-multi-byte-v5-2-cd9dca0db722@narfation.org
 
+diff --git a/drivers/i2c/busses/i2c-rtl9300.c b/drivers/i2c/busses/i2c-rtl9300.c
+index 568495720810..4a538b266080 100644
 --- a/drivers/i2c/busses/i2c-rtl9300.c
 +++ b/drivers/i2c/busses/i2c-rtl9300.c
-@@ -143,10 +143,10 @@ static int rtl9300_i2c_write(struct rtl9
+@@ -143,10 +143,10 @@ static int rtl9300_i2c_write(struct rtl9300_i2c *i2c, u8 *buf, int len)
  		return -EIO;
  
  	for (i = 0; i < len; i++) {
@@ -72,3 +75,6 @@ Link: https://lore.kernel.org/linux-i2c/20250809-i2c-rtl9300-multi-byte-v4-2-d71
  	}
  
  	return regmap_bulk_write(i2c->regmap, i2c->reg_base + RTL9300_I2C_MST_DATA_WORD0,
+-- 
+2.48.1
+
