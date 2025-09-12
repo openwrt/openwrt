@@ -1159,7 +1159,6 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 {
 	struct rtl838x_eth_priv *priv = netdev_priv(dev);
 	struct ring_b *ring = priv->membase;
-	LIST_HEAD(rx_list);
 	unsigned long flags;
 	int work_done = 0;
 	u32	*last;
@@ -1173,7 +1172,6 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 		struct sk_buff *skb;
 		struct dsa_tag tag;
 		struct p_hdr *h;
-		u8 *skb_data;
 		u8 *data;
 		int len;
 
@@ -1197,9 +1195,7 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 		if (dsa)
 			len += 4;
 
-		skb = netdev_alloc_skb(dev, len + 4);
-		skb_reserve(skb, NET_IP_ALIGN);
-
+		skb = netdev_alloc_skb_ip_align(dev, len);
 		if (likely(skb)) {
 			/* BUG: Prevent bug on RTL838x SoCs */
 			if (priv->family_id == RTL8380_FAMILY_ID) {
@@ -1213,10 +1209,9 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 				}
 			}
 
-			skb_data = skb_put(skb, len);
 			/* Make sure data is visible */
 			mb();
-			memcpy(skb->data, (u8 *)KSEG1ADDR(data), len);
+			skb_put_data(skb, (u8 *)KSEG1ADDR(data), len);
 			/* Overwrite CRC with cpu_tag */
 			if (dsa) {
 				priv->r->decode_tag(h, &tag);
@@ -1242,7 +1237,7 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 			dev->stats.rx_packets++;
 			dev->stats.rx_bytes += len;
 
-			list_add_tail(&skb->list, &rx_list);
+			napi_gro_receive(&priv->rx_qs[r].napi, skb);
 		} else {
 			if (net_ratelimit())
 				dev_warn(&dev->dev, "low on memory - packet dropped\n");
@@ -1260,8 +1255,6 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 		ring->c_rx[r] = (ring->c_rx[r] + 1) % priv->rxringlen;
 		last = (u32 *)KSEG1ADDR(sw_r32(priv->r->dma_if_rx_cur + r * 4));
 	} while (&ring->rx_r[r][ring->c_rx[r]] != last && work_done < budget);
-
-	netif_receive_skb_list(&rx_list);
 
 	/* Update counters */
 	priv->r->update_cntr(r, work_done);
