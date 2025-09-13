@@ -1,0 +1,149 @@
+From a98e9f0a2343c2aea33b3384b8dcf7320b814e8d Mon Sep 17 00:00:00 2001
+From: Neal Cardwell <ncardwell@google.com>
+Date: Fri, 27 Sep 2019 17:10:26 -0400
+Subject: [PATCH 10/19] net-tcp: re-generalize TSO sizing in TCP CC module API
+
+Reorganize the API for CC modules so that the CC module once again
+gets complete control of the TSO sizing decision. This is how the API
+was set up around 2016 and the initial BBRv1 upstreaming. Later Eric
+Dumazet simplified it. But with wider testing it now seems that to
+avoid CPU regressions BBR needs to have a different TSO sizing
+function.
+
+This is necessary to handle cases where there are many flows
+bottlenecked on the sender host's NIC, in which case BBR's pacing rate
+is much lower than CUBIC/Reno/DCTCP's. Why does this happen? Because
+BBR's pacing rate adapts to the low bandwidth share each flow sees. By
+contrast, CUBIC/Reno/DCTCP see no loss or ECN, so they grow a very
+large cwnd, and thus large pacing rate and large TSO burst size.
+
+Change-Id: Ic8ccfdbe4010ee8d4bf6a6334c48a2fceb2171ea
+---
+ include/net/tcp.h     |  4 ++--
+ net/ipv4/bpf_tcp_ca.c |  4 ++--
+ net/ipv4/tcp_bbr.c    | 37 ++++++++++++++++++++++++++-----------
+ net/ipv4/tcp_output.c | 11 +++++------
+ 4 files changed, 35 insertions(+), 21 deletions(-)
+
+diff --git a/include/net/tcp.h b/include/net/tcp.h
+index 0cd5476bfe1e..aa8ed3b9a353 100644
+--- a/include/net/tcp.h
++++ b/include/net/tcp.h
+@@ -1203,8 +1203,8 @@ struct tcp_congestion_ops {
+ 	/* hook for packet ack accounting (optional) */
+ 	void (*pkts_acked)(struct sock *sk, const struct ack_sample *sample);
+ 
+-	/* override sysctl_tcp_min_tso_segs */
+-	u32 (*min_tso_segs)(struct sock *sk);
++	/* pick target number of segments per TSO/GSO skb (optional): */
++	u32 (*tso_segs)(struct sock *sk, unsigned int mss_now);
+ 
+ 	/* react to a specific lost skb (optional) */
+ 	void (*skb_marked_lost)(struct sock *sk, const struct sk_buff *skb);
+diff --git a/net/ipv4/bpf_tcp_ca.c b/net/ipv4/bpf_tcp_ca.c
+index 554804774628..fb6ab6ca8440 100644
+--- a/net/ipv4/bpf_tcp_ca.c
++++ b/net/ipv4/bpf_tcp_ca.c
+@@ -280,7 +280,7 @@ static void bpf_tcp_ca_pkts_acked(struct sock *sk, const struct ack_sample *samp
+ {
+ }
+ 
+-static u32 bpf_tcp_ca_min_tso_segs(struct sock *sk)
++static u32 bpf_tcp_ca_tso_segs(struct sock *sk, unsigned int mss_now)
+ {
+ 	return 0;
+ }
+@@ -315,7 +315,7 @@ static struct tcp_congestion_ops __bpf_ops_tcp_congestion_ops = {
+ 	.cwnd_event = bpf_tcp_ca_cwnd_event,
+ 	.in_ack_event = bpf_tcp_ca_in_ack_event,
+ 	.pkts_acked = bpf_tcp_ca_pkts_acked,
+-	.min_tso_segs = bpf_tcp_ca_min_tso_segs,
++	.tso_segs = bpf_tcp_ca_tso_segs,
+ 	.cong_control = bpf_tcp_ca_cong_control,
+ 	.undo_cwnd = bpf_tcp_ca_undo_cwnd,
+ 	.sndbuf_expand = bpf_tcp_ca_sndbuf_expand,
+diff --git a/net/ipv4/tcp_bbr.c b/net/ipv4/tcp_bbr.c
+index 760941e55153..cb96435873ca 100644
+--- a/net/ipv4/tcp_bbr.c
++++ b/net/ipv4/tcp_bbr.c
+@@ -301,20 +301,35 @@ __bpf_kfunc static u32 bbr_min_tso_segs(struct sock *sk)
+ 	return READ_ONCE(sk->sk_pacing_rate) < (bbr_min_tso_rate >> 3) ? 1 : 2;
+ }
+ 
++/* Return the number of segments BBR would like in a TSO/GSO skb, given
++ * a particular max gso size as a constraint.
++ */
++static u32 bbr_tso_segs_generic(struct sock *sk, unsigned int mss_now,
++				u32 gso_max_size)
++{
++	u32 segs;
++	u64 bytes;
++
++	/* Budget a TSO/GSO burst size allowance based on bw (pacing_rate). */
++	bytes = READ_ONCE(sk->sk_pacing_rate) >> READ_ONCE(sk->sk_pacing_shift);
++
++	bytes = min_t(u32, bytes, gso_max_size - 1 - MAX_TCP_HEADER);
++	segs = max_t(u32, bytes / mss_now, bbr_min_tso_segs(sk));
++	return segs;
++}
++
++/* Custom tcp_tso_autosize() for BBR, used at transmit time to cap skb size. */
++static u32  bbr_tso_segs(struct sock *sk, unsigned int mss_now)
++{
++	return bbr_tso_segs_generic(sk, mss_now, sk->sk_gso_max_size);
++}
++
++/* Like bbr_tso_segs(), using mss_cache, ignoring driver's sk_gso_max_size. */
+ static u32 bbr_tso_segs_goal(struct sock *sk)
+ {
+ 	struct tcp_sock *tp = tcp_sk(sk);
+-	u32 segs, bytes;
+-
+-	/* Sort of tcp_tso_autosize() but ignoring
+-	 * driver provided sk_gso_max_size.
+-	 */
+-	bytes = min_t(unsigned long,
+-		      READ_ONCE(sk->sk_pacing_rate) >> READ_ONCE(sk->sk_pacing_shift),
+-		      GSO_LEGACY_MAX_SIZE - 1 - MAX_TCP_HEADER);
+-	segs = max_t(u32, bytes / tp->mss_cache, bbr_min_tso_segs(sk));
+ 
+-	return min(segs, 0x7FU);
++	return  bbr_tso_segs_generic(sk, tp->mss_cache, GSO_MAX_SIZE);
+ }
+ 
+ /* Save "last known good" cwnd so we can restore it after losses or PROBE_RTT */
+@@ -1150,7 +1165,7 @@ static struct tcp_congestion_ops tcp_bbr_cong_ops __read_mostly = {
+ 	.undo_cwnd	= bbr_undo_cwnd,
+ 	.cwnd_event	= bbr_cwnd_event,
+ 	.ssthresh	= bbr_ssthresh,
+-	.min_tso_segs	= bbr_min_tso_segs,
++	.tso_segs	= bbr_tso_segs,
+ 	.get_info	= bbr_get_info,
+ 	.set_state	= bbr_set_state,
+ };
+diff --git a/net/ipv4/tcp_output.c b/net/ipv4/tcp_output.c
+index c08a09bb3409..2383a34d4d60 100644
+--- a/net/ipv4/tcp_output.c
++++ b/net/ipv4/tcp_output.c
+@@ -2062,13 +2062,12 @@ static u32 tcp_tso_autosize(const struct sock *sk, unsigned int mss_now,
+ static u32 tcp_tso_segs(struct sock *sk, unsigned int mss_now)
+ {
+ 	const struct tcp_congestion_ops *ca_ops = inet_csk(sk)->icsk_ca_ops;
+-	u32 min_tso, tso_segs;
++	u32 tso_segs;
+ 
+-	min_tso = ca_ops->min_tso_segs ?
+-			ca_ops->min_tso_segs(sk) :
+-			READ_ONCE(sock_net(sk)->ipv4.sysctl_tcp_min_tso_segs);
+-
+-	tso_segs = tcp_tso_autosize(sk, mss_now, min_tso);
++	tso_segs = ca_ops->tso_segs ?
++		ca_ops->tso_segs(sk, mss_now) :
++		tcp_tso_autosize(sk, mss_now,
++				 sock_net(sk)->ipv4.sysctl_tcp_min_tso_segs);
+ 	return min_t(u32, tso_segs, sk->sk_gso_max_segs);
+ }
+ 
+-- 
+2.43.0
+

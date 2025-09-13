@@ -1,0 +1,103 @@
+From 9fe8efbc20b723d3b87bd720613fd68e28e29b80 Mon Sep 17 00:00:00 2001
+From: Neal Cardwell <ncardwell@google.com>
+Date: Wed, 1 May 2019 20:16:25 -0400
+Subject: [PATCH 08/19] net-tcp_bbr: v2: adjust skb tx.in_flight upon split in
+ tcp_fragment()
+
+When we fragment an skb that has already been sent, we need to update
+the tx.in_flight for the first skb in the resulting pair ("buff").
+
+Because we were not updating the tx.in_flight, the tx.in_flight value
+was inconsistent with the pcount of the "buff" skb (tx.in_flight would
+be too high). That meant that if the "buff" skb was lost, then
+bbr2_inflight_hi_from_lost_skb() would calculate an inflight_hi value
+that is too high. This could result in longer queues and higher packet
+loss.
+
+Packetdrill testing verified that without this commit, when the second
+half of an skb is SACKed and then later the first half of that skb is
+marked lost, the calculated inflight_hi was incorrect.
+
+Effort: net-tcp_bbr
+Origin-9xx-SHA1: 385f1ddc610798fab2837f9f372857438b25f874
+Origin-9xx-SHA1: a0eb099690af net-tcp_bbr: v2: fix tcp_fragment() tx.in_flight recomputation [prod feb 8 2021; use as a fixup]
+Origin-9xx-SHA1: 885503228153ff0c9114e net-tcp_bbr: v2: introduce tcp_skb_tx_in_flight_is_suspicious() helper for warnings
+Change-Id: I617f8cab4e9be7a0b8e8d30b047bf8645393354d
+---
+ include/net/tcp.h     | 15 +++++++++++++++
+ net/ipv4/tcp_output.c | 26 +++++++++++++++++++++++++-
+ 2 files changed, 40 insertions(+), 1 deletion(-)
+
+diff --git a/include/net/tcp.h b/include/net/tcp.h
+index 8b8356707cc7..12c7d2f433fd 100644
+--- a/include/net/tcp.h
++++ b/include/net/tcp.h
+@@ -1301,6 +1301,21 @@ static inline bool tcp_skb_sent_after(u64 t1, u64 t2, u32 seq1, u32 seq2)
+ 	return t1 > t2 || (t1 == t2 && after(seq1, seq2));
+ }
+ 
++/* If a retransmit failed due to local qdisc congestion or other local issues,
++ * then we may have called tcp_set_skb_tso_segs() to increase the number of
++ * segments in the skb without increasing the tx.in_flight. In all other cases,
++ * the tx.in_flight should be at least as big as the pcount of the sk_buff.  We
++ * do not have the state to know whether a retransmit failed due to local qdisc
++ * congestion or other local issues, so to avoid spurious warnings we consider
++ * that any skb marked lost may have suffered that fate.
++ */
++static inline bool tcp_skb_tx_in_flight_is_suspicious(u32 skb_pcount,
++						      u32 skb_sacked_flags,
++						      u32 tx_in_flight)
++{
++	return (skb_pcount > tx_in_flight) && !(skb_sacked_flags & TCPCB_LOST);
++}
++
+ /* These functions determine how the current flow behaves in respect of SACK
+  * handling. SACK is negotiated with the peer, and therefore it can vary
+  * between different flows.
+diff --git a/net/ipv4/tcp_output.c b/net/ipv4/tcp_output.c
+index 1a1aecca78f4..c08a09bb3409 100644
+--- a/net/ipv4/tcp_output.c
++++ b/net/ipv4/tcp_output.c
+@@ -1606,7 +1606,7 @@ int tcp_fragment(struct sock *sk, enum tcp_queue tcp_queue,
+ {
+ 	struct tcp_sock *tp = tcp_sk(sk);
+ 	struct sk_buff *buff;
+-	int old_factor;
++	int old_factor, inflight_prev;
+ 	long limit;
+ 	int nlen;
+ 	u8 flags;
+@@ -1681,6 +1681,30 @@ int tcp_fragment(struct sock *sk, enum tcp_queue tcp_queue,
+ 
+ 		if (diff)
+ 			tcp_adjust_pcount(sk, skb, diff);
++
++		inflight_prev = TCP_SKB_CB(skb)->tx.in_flight - old_factor;
++		if (inflight_prev < 0) {
++			WARN_ONCE(tcp_skb_tx_in_flight_is_suspicious(
++					  old_factor,
++					  TCP_SKB_CB(skb)->sacked,
++					  TCP_SKB_CB(skb)->tx.in_flight),
++				  "inconsistent: tx.in_flight: %u "
++				  "old_factor: %d mss: %u sacked: %u "
++				  "1st pcount: %d 2nd pcount: %d "
++				  "1st len: %u 2nd len: %u ",
++				  TCP_SKB_CB(skb)->tx.in_flight, old_factor,
++				  mss_now, TCP_SKB_CB(skb)->sacked,
++				  tcp_skb_pcount(skb), tcp_skb_pcount(buff),
++				  skb->len, buff->len);
++			inflight_prev = 0;
++		}
++		/* Set 1st tx.in_flight as if 1st were sent by itself: */
++		TCP_SKB_CB(skb)->tx.in_flight = inflight_prev +
++						 tcp_skb_pcount(skb);
++		/* Set 2nd tx.in_flight with new 1st and 2nd pcounts: */
++		TCP_SKB_CB(buff)->tx.in_flight = inflight_prev +
++						 tcp_skb_pcount(skb) +
++						 tcp_skb_pcount(buff);
+ 	}
+ 
+ 	/* Link BUFF into the send queue. */
+-- 
+2.43.0
+
