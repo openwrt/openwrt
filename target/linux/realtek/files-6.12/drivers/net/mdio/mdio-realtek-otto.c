@@ -92,8 +92,11 @@
 int rtmdio_930x_read_sds_phy(int sds, int page, int regnum);
 int rtmdio_930x_write_sds_phy(int sds, int page, int regnum, u16 val);
 
-int rtmdio_931x_read_sds_phy_new(int sds, int page, int regnum);
-int rtmdio_931x_write_sds_phy_new(int sds, int page, int regnum, u16 val);
+int rtsds_931x_read(int sds, int page, int regnum);
+int rtsds_931x_read_field(int sds, int page, int regnum, int end_bit, int start_bit);
+
+int rtsds_931x_write(int sds, int page, int regnum, u16 val);
+int rtsds_931x_write_field(int sds, int page, int regnum, int end_bit, int start_bit, u16 val);
 
 /*
  * On all Realtek switch platforms the hardware periodically reads the link status of all
@@ -827,7 +830,7 @@ static int rtmdio_930x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
  * page 0x200-0x23f (digi 2):	page 0x000-0x03f back SDS+1	page 0x000-0x03f back SDS+2
  */
 
-static int rtmdio_931x_get_backing_sds(u32 sds, u32 page)
+static int rtsds_931x_get_backing_sds(int sds, int page)
 {
 	int map[] = {0, 1, 2, 3, 6, 7, 10, 11, 14, 15, 18, 19, 22, 23};
 	int back = map[sds];
@@ -845,7 +848,7 @@ static int rtmdio_931x_get_backing_sds(u32 sds, u32 page)
 	return back;
 }
 
-int rtmdio_931x_read_sds_phy_new(int sds, int page, int regnum)
+int rtsds_931x_read(int sds, int page, int regnum)
 {
 	int backsds, i, cmd, ret = -EIO;
 	int backpage = page & 0x3f;
@@ -853,7 +856,7 @@ int rtmdio_931x_read_sds_phy_new(int sds, int page, int regnum)
 	if (sds < 0 || sds > 13 || page < 0 || page > 575 || regnum < 0 || regnum > 31)
 		return -EIO;
 
-	backsds = rtmdio_931x_get_backing_sds(sds, page);
+	backsds = rtsds_931x_get_backing_sds(sds, page);
 	if (backsds == -EINVAL)
 		return 0;
 
@@ -875,7 +878,7 @@ int rtmdio_931x_read_sds_phy_new(int sds, int page, int regnum)
 	return ret;
 }
 
-int rtmdio_931x_write_sds_phy_new(int sds, int page, int regnum, u16 val)
+int rtsds_931x_write(int sds, int page, int regnum, u16 val)
 {
 	int backsds, i, cmd, ret = -EIO;
 	int backpage = page & 0x3f;
@@ -883,7 +886,7 @@ int rtmdio_931x_write_sds_phy_new(int sds, int page, int regnum, u16 val)
 	if (sds < 0 || sds > 13 || page < 0 || page > 575 || regnum < 0 || regnum > 31)
 		return -EIO;
 
-	backsds = rtmdio_931x_get_backing_sds(sds, page);
+	backsds = rtsds_931x_get_backing_sds(sds, page);
 	if (backsds == -EINVAL)
 		return 0;
 
@@ -904,6 +907,33 @@ int rtmdio_931x_write_sds_phy_new(int sds, int page, int regnum, u16 val)
 	mutex_unlock(&rtmdio_lock_sds);
 
 	return ret;
+}
+
+int rtsds_931x_write_field(int sds, int page, int reg, int end_bit, int start_bit, u16 val)
+{
+	int l = end_bit - start_bit + 1;
+	u32 data = val;
+
+	if (l < 32) {
+		u32 mask = BIT(l) - 1;
+
+		data = rtsds_931x_read(sds, page, reg);
+		data &= ~(mask << start_bit);
+		data |= (val & mask) << start_bit;
+	}
+
+	return rtsds_931x_write(sds, page, reg, data);
+}
+
+int rtsds_931x_read_field(int sds, int page, int reg, int end_bit, int start_bit)
+{
+	int l = end_bit - start_bit + 1;
+	u32 v = rtsds_931x_read(sds, page, reg);
+
+	if (l >= 32)
+		return v;
+
+	return (v >> start_bit) & (BIT(l) - 1);
 }
 
 /* RTL931x specific MDIO functions */
@@ -1471,8 +1501,8 @@ static int rtmdio_probe(struct platform_device *pdev)
 		bus->read = rtmdio_read;
 		bus->write = rtmdio_write;
 		bus->reset = rtmdio_931x_reset;
-		priv->read_sds_phy = rtmdio_931x_read_sds_phy_new;
-		priv->write_sds_phy = rtmdio_931x_write_sds_phy_new;
+		priv->read_sds_phy = rtsds_931x_read;
+		priv->write_sds_phy = rtsds_931x_write;
 		priv->read_mmd_phy = rtmdio_931x_read_mmd_phy;
 		priv->write_mmd_phy = rtmdio_931x_write_mmd_phy;
 		priv->read_phy = rtmdio_931x_read_phy;
