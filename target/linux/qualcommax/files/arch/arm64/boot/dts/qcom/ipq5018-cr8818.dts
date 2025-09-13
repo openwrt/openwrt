@@ -1,0 +1,297 @@
+/dts-v1/;
+
+#include "ipq5018.dtsi"
+#include "ipq5018-xiaomi-base.dtsi"
+
+/ {
+	model = "Xiaomi CR8818";
+	compatible = "xiaomi,cr8818", "qcom,ipq5018";
+
+	aliases {
+		label-mac-device = &dp1;
+		led-boot = &led_system_blue;
+		led-failsafe = &led_system_red;
+		led-running = &led_system_blue;
+		led-upgrade = &led_system_red;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		reset-button {
+			label = "reset";
+			gpios = <&tlmm 38 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		mesh-button {
+			label = "mesh";
+			gpios = <&tlmm 28 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_0>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		pinctrl-0 = <&leds_pins>;
+		pinctrl-names = "default";
+
+		led_system_blue: system-blue {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_POWER;
+			gpio = <&tlmm 24 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_system_red: system-red {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
+			gpio = <&tlmm 25 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_internet_blue: internet-blue {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WAN;
+			gpio = <&tlmm 26 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_internet_red: internet-red {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_WAN;
+			gpio = <&tlmm 27 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+/*
+* ===============================================================
+*     _______________________             _____________________
+*    |        IPQ5018        |           |        YT9215       |
+*    | +------+   +--------+ |           | +------+   +------+ |
+*    | | MAC0 |---| GE Phy |-+--- MDI ---+ | Phy4 |---| Phy0 | |
+*    | +------+   +--------+ |           | +------+   | Phy1 | |
+*    | +------+   +--------+ |           | +------+   | Phy2 | |
+*    | | MAC1 |---| Uniphy |-+-- SGMII+--+ | Phy8 |---| Phy3 | |
+*    | +------+   +--------+ |           | +------+   +------+ |
+*    |_______________________|           |_____________________|
+*
+* ===============================================================
+*/
+
+&switch {
+	status = "okay";
+
+	// TODO: YT9215 supports 2500base-x
+	switch_mac_mode = <MAC_MODE_SGMII_CHANNEL0>;
+
+	qcom,port_phyinfo {
+		// MAC0 -> GE Phy --- YT9215 Phy4
+		port@0 {
+			port_id = <1>;
+			mdiobus = <&mdio0>;
+			phy_address = <7>;
+			phy_dac = <0x10 0x10>;
+		};
+
+		// MAC1 -> Uniphy --- SGMII --- YT9215 Phy8
+		port@1 {
+			port_id = <2>;
+			forced-speed = <1000>;
+			forced-duplex = <1>;
+		};
+	};
+};
+
+// MAC0 -> GE Phy
+&dp1 {
+	status = "okay";
+
+	nvmem-cells = <&mac_addr_dp1 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&mdio0 {
+	status = "okay";
+};
+
+// IPQ5018 GE Phy -> YT9215 Phy4
+&ge_phy {
+	qcom,dac-preset-short-cable;
+};
+
+// MAC1 ---SGMII---> YT9215 Phy8
+&dp2 {
+	status = "okay";
+
+	nvmem-cells = <&mac_addr_dp2 0>;
+	nvmem-cell-names = "mac-address";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+		pause;
+		asym-pause;
+	};
+};
+
+&mdio1 {
+	status = "okay";
+
+	pinctrl-0 = <&mdio1_pins>;
+	pinctrl-names = "default";
+
+	// YT9215 switch
+	ethernet-switch@1d {
+		compatible = "motorcomm,yt9215";
+		reg = <0x1d>;
+
+		reset-gpios = <&tlmm 39 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <10000>;
+		reset-deassert-us = <50000>;
+
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			sw_phy0: phy@0 {
+				reg = <0x0>;
+			};
+
+			sw_phy1: phy@1 {
+				reg = <0x1>;
+			};
+
+			sw_phy2: phy@2 {
+				reg = <0x2>;
+			};
+
+			sw_phy3: phy@3 {
+				reg = <0x3>;
+			};
+
+			sw_phy4: phy@4 {
+				reg = <0x4>;
+			};
+		};
+
+		ports {
+			port@0 {
+				reg = <0>;
+				label = "lan1";
+				phy-mode = "internal";
+				phy-handle = <&sw_phy0>;
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan2";
+				phy-mode = "internal";
+				phy-handle = <&sw_phy1>;
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan3";
+				phy-mode = "internal";
+				phy-handle = <&sw_phy2>;
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "wan";
+				phy-mode = "internal";
+				phy-handle = <&sw_phy3>;
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "cpu";
+				phy-mode = "internal";
+				phy-handle = <&sw_phy4>;
+			};
+
+			port@8 {
+				reg = <8>;
+				phy-mode = "sgmii";
+				ethernet = <&dp2>;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+					pause;
+					asym-pause;
+				};
+			};
+		};
+	};
+};
+
+&tlmm {
+	button_pins: button-state {
+		pins = "gpio38", "gpio28";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-up;
+	};
+
+	leds_pins: leds-state {
+		pins = "gpio24", "gpio25", "gpio26", "gpio27";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-down;
+	};
+};
+
+&q6v5_wcss {
+	firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt",
+			"ath11k/IPQ5018/hw1.0/m3_fw.mdt",
+			"ath11k/QCN6122/hw1.0/m3_fw.mdt";
+
+	// QCN6122 5G
+	q6_wcss_pd2: pd-2 {
+		firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt";
+
+		interrupts-extended =
+			<&wcss_smp2p_in 16 IRQ_TYPE_NONE>,
+			<&wcss_smp2p_in 17 IRQ_TYPE_NONE>,
+			<&wcss_smp2p_in 20 IRQ_TYPE_NONE>,
+			<&wcss_smp2p_in 19 IRQ_TYPE_NONE>;
+		interrupt-names =
+			"fatal",
+			"ready",
+			"spawn-ack",
+			"stop-ack";
+
+		qcom,smem-states =
+			<&wcss_smp2p_out 16>,
+			<&wcss_smp2p_out 17>,
+			<&wcss_smp2p_out 18>;
+		qcom,smem-state-names =
+			"shutdown",
+			"stop",
+			"spawn";
+	};
+};
+
+&wifi0 {
+	status = "okay";
+
+	qcom,rproc = <&q6_wcss_pd1>;
+	qcom,ath11k-calibration-variant = "Xiaomi-CR8818";
+	qcom,ath11k-fw-memory-mode = <1>;
+	qcom,bdf-addr = <0x4c400000>;
+};
+
+&wifi1 {
+	status = "okay";
+
+	qcom,rproc = <&q6_wcss_pd2>;
+	qcom,userpd-subsys-name = "q6v5_wcss_userpd2";
+	qcom,ath11k-calibration-variant = "Xiaomi-CR8818";
+	qcom,ath11k-fw-memory-mode = <1>;
+	qcom,bdf-addr = <0x4d100000>;
+	qcom,m3-dump-addr = <0x4df00000>;
+};
