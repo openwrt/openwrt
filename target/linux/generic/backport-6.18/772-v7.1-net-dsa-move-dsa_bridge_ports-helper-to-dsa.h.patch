@@ -13,12 +13,35 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 Link: https://patch.msgid.link/4f8bbfce3e4e3a02064fc4dc366263136c6e0383.1775049897.git.daniel@makrotopia.org
 Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 ---
+ drivers/net/dsa/yt921x.c | 13 -------------
  include/net/dsa.h        | 13 +++++++++++++
  2 files changed, 13 insertions(+), 13 deletions(-)
 
+--- a/drivers/net/dsa/yt921x.c
++++ b/drivers/net/dsa/yt921x.c
+@@ -1965,19 +1965,6 @@ yt921x_bridge_join(struct yt921x_priv *p
+ 	return 0;
+ }
+ 
+-static u32
+-dsa_bridge_ports(struct dsa_switch *ds, const struct net_device *bdev)
+-{
+-	struct dsa_port *dp;
+-	u32 mask = 0;
+-
+-	dsa_switch_for_each_user_port(dp, ds)
+-		if (dsa_port_offloads_bridge_dev(dp, bdev))
+-			mask |= BIT(dp->index);
+-
+-	return mask;
+-}
+-
+ static int
+ yt921x_bridge_flags(struct yt921x_priv *priv, int port,
+ 		    struct switchdev_brport_flags flags)
 --- a/include/net/dsa.h
 +++ b/include/net/dsa.h
-@@ -833,6 +833,19 @@ dsa_tree_offloads_bridge_dev(struct dsa_
+@@ -835,6 +835,19 @@ dsa_tree_offloads_bridge_dev(struct dsa_
  	return false;
  }
  
