@@ -1,0 +1,435 @@
+From 457d9772e8a5cdae64f66b5f7d5b0247365191ec Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Tue, 1 Apr 2025 15:50:21 +0200
+Subject: [PATCH] pinctrl: airoha: fix wrong PHY LED mapping and PHY2 LED
+ defines
+
+The current PHY2 LED define are wrong and actually set BITs outside the
+related mask. Fix it and set the correct value. While at it, also use
+FIELD_PREP_CONST macro to make it simple to understand what values are
+actually applied for the mask.
+
+Also fix wrong PHY LED mapping. The SoC Switch supports up to 4 port but
+the register define mapping for 5 PHY port, starting from 0. The mapping
+was wrongly defined starting from PHY1. Reorder the function group to
+start from PHY0. PHY4 is actually never supported as we don't have a
+GPIO pin to assign.
+
+Cc: stable@vger.kernel.org
+Fixes: 1c8ace2d0725 ("pinctrl: airoha: Add support for EN7581 SoC")
+Reviewed-by: Benjamin Larsson <benjamin.larsson@genexis.eu>
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Acked-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Link: https://lore.kernel.org/20250401135026.18018-1-ansuelsmth@gmail.com
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ drivers/pinctrl/mediatek/pinctrl-airoha.c | 159 ++++++++++------------
+ 1 file changed, 70 insertions(+), 89 deletions(-)
+
+--- a/drivers/pinctrl/mediatek/pinctrl-airoha.c
++++ b/drivers/pinctrl/mediatek/pinctrl-airoha.c
+@@ -6,6 +6,7 @@
+  */
+ 
+ #include <dt-bindings/pinctrl/mt65xx.h>
++#include <linux/bitfield.h>
+ #include <linux/bits.h>
+ #include <linux/cleanup.h>
+ #include <linux/gpio/driver.h>
+@@ -106,39 +107,19 @@
+ #define REG_LAN_LED1_MAPPING			0x0280
+ 
+ #define LAN4_LED_MAPPING_MASK			GENMASK(18, 16)
+-#define LAN4_PHY4_LED_MAP			BIT(18)
+-#define LAN4_PHY2_LED_MAP			BIT(17)
+-#define LAN4_PHY1_LED_MAP			BIT(16)
+-#define LAN4_PHY0_LED_MAP			0
+-#define LAN4_PHY3_LED_MAP			GENMASK(17, 16)
++#define LAN4_PHY_LED_MAP(_n)			FIELD_PREP_CONST(LAN4_LED_MAPPING_MASK, (_n))
+ 
+ #define LAN3_LED_MAPPING_MASK			GENMASK(14, 12)
+-#define LAN3_PHY4_LED_MAP			BIT(14)
+-#define LAN3_PHY2_LED_MAP			BIT(13)
+-#define LAN3_PHY1_LED_MAP			BIT(12)
+-#define LAN3_PHY0_LED_MAP			0
+-#define LAN3_PHY3_LED_MAP			GENMASK(13, 12)
++#define LAN3_PHY_LED_MAP(_n)			FIELD_PREP_CONST(LAN3_LED_MAPPING_MASK, (_n))
+ 
+ #define LAN2_LED_MAPPING_MASK			GENMASK(10, 8)
+-#define LAN2_PHY4_LED_MAP			BIT(12)
+-#define LAN2_PHY2_LED_MAP			BIT(11)
+-#define LAN2_PHY1_LED_MAP			BIT(10)
+-#define LAN2_PHY0_LED_MAP			0
+-#define LAN2_PHY3_LED_MAP			GENMASK(11, 10)
++#define LAN2_PHY_LED_MAP(_n)			FIELD_PREP_CONST(LAN2_LED_MAPPING_MASK, (_n))
+ 
+ #define LAN1_LED_MAPPING_MASK			GENMASK(6, 4)
+-#define LAN1_PHY4_LED_MAP			BIT(6)
+-#define LAN1_PHY2_LED_MAP			BIT(5)
+-#define LAN1_PHY1_LED_MAP			BIT(4)
+-#define LAN1_PHY0_LED_MAP			0
+-#define LAN1_PHY3_LED_MAP			GENMASK(5, 4)
++#define LAN1_PHY_LED_MAP(_n)			FIELD_PREP_CONST(LAN1_LED_MAPPING_MASK, (_n))
+ 
+ #define LAN0_LED_MAPPING_MASK			GENMASK(2, 0)
+-#define LAN0_PHY4_LED_MAP			BIT(3)
+-#define LAN0_PHY2_LED_MAP			BIT(2)
+-#define LAN0_PHY1_LED_MAP			BIT(1)
+-#define LAN0_PHY0_LED_MAP			0
+-#define LAN0_PHY3_LED_MAP			GENMASK(2, 1)
++#define LAN0_PHY_LED_MAP(_n)			FIELD_PREP_CONST(LAN0_LED_MAPPING_MASK, (_n))
+ 
+ /* CONF */
+ #define REG_I2C_SDA_E2				0x001c
+@@ -1470,8 +1451,8 @@ static const struct airoha_pinctrl_func_
+ 		.regmap[1] = {
+ 			AIROHA_FUNC_MUX,
+ 			REG_LAN_LED0_MAPPING,
+-			LAN1_LED_MAPPING_MASK,
+-			LAN1_PHY1_LED_MAP
++			LAN0_LED_MAPPING_MASK,
++			LAN0_PHY_LED_MAP(0)
+ 		},
+ 		.regmap_size = 2,
+ 	}, {
+@@ -1485,8 +1466,8 @@ static const struct airoha_pinctrl_func_
+ 		.regmap[1] = {
+ 			AIROHA_FUNC_MUX,
+ 			REG_LAN_LED0_MAPPING,
+-			LAN2_LED_MAPPING_MASK,
+-			LAN2_PHY1_LED_MAP
++			LAN1_LED_MAPPING_MASK,
++			LAN1_PHY_LED_MAP(0)
+ 		},
+ 		.regmap_size = 2,
+ 	}, {
+@@ -1500,8 +1481,8 @@ static const struct airoha_pinctrl_func_
+ 		.regmap[1] = {
+ 			AIROHA_FUNC_MUX,
+ 			REG_LAN_LED0_MAPPING,
+-			LAN3_LED_MAPPING_MASK,
+-			LAN3_PHY1_LED_MAP
++			LAN2_LED_MAPPING_MASK,
++			LAN2_PHY_LED_MAP(0)
+ 		},
+ 		.regmap_size = 2,
+ 	}, {
+@@ -1515,8 +1496,8 @@ static const struct airoha_pinctrl_func_
+ 		.regmap[1] = {
+ 			AIROHA_FUNC_MUX,
+ 			REG_LAN_LED0_MAPPING,
+-			LAN4_LED_MAPPING_MASK,
+-			LAN4_PHY1_LED_MAP
++			LAN3_LED_MAPPING_MASK,
++			LAN3_PHY_LED_MAP(0)
+ 		},
+ 		.regmap_size = 2,
+ 	},
+@@ -1534,8 +1515,8 @@ static const struct airoha_pinctrl_func_
+ 		.regmap[1] = {
+ 			AIROHA_FUNC_MUX,
+ 			REG_LAN_LED0_MAPPING,
+-			LAN1_LED_MAPPING_MASK,
+-			LAN1_PHY2_LED_MAP
++			LAN0_LED_MAPPING_MASK,
++			LAN0_PHY_LED_MAP(1)
+ 		},
+ 		.regmap_size = 2,
+ 	}, {
+@@ -1549,8 +1530,8 @@ static const struct airoha_pinctrl_func_
+ 		.regmap[1] = {
+ 			AIROHA_FUNC_MUX,
+ 			REG_LAN_LED0_MAPPING,
+-			LAN2_LED_MAPPING_MASK,
+-			LAN2_PHY2_LED_MAP
++			LAN1_LED_MAPPING_MASK,
++			LAN1_PHY_LED_MAP(1)
+ 		},
+ 		.regmap_size = 2,
+ 	}, {
+@@ -1564,8 +1545,8 @@ static const struct airoha_pinctrl_func_
+ 		.regmap[1] = {
+ 			AIROHA_FUNC_MUX,
+ 			REG_LAN_LED0_MAPPING,
+-			LAN3_LED_MAPPING_MASK,
+-			LAN3_PHY2_LED_MAP
++			LAN2_LED_MAPPING_MASK,
++			LAN2_PHY_LED_MAP(1)
+ 		},
+ 		.regmap_size = 2,
+ 	}, {
+@@ -1579,8 +1560,8 @@ static const struct airoha_pinctrl_func_
+ 		.regmap[1] = {
+ 			AIROHA_FUNC_MUX,
+ 			REG_LAN_LED0_MAPPING,
+-			LAN4_LED_MAPPING_MASK,
+-			LAN4_PHY2_LED_MAP
++			LAN3_LED_MAPPING_MASK,
++			LAN3_PHY_LED_MAP(1)
+ 		},
+ 		.regmap_size = 2,
+ 	},
+@@ -1598,8 +1579,8 @@ static const struct airoha_pinctrl_func_
+ 		.regmap[1] = {
+ 			AIROHA_FUNC_MUX,
+ 			REG_LAN_LED0_MAPPING,
+-			LAN1_LED_MAPPING_MASK,
+-			LAN1_PHY3_LED_MAP
++			LAN0_LED_MAPPING_MASK,
++			LAN0_PHY_LED_MAP(2)
+ 		},
+ 		.regmap_size = 2,
+ 	}, {
+@@ -1613,8 +1594,8 @@ static const struct airoha_pinctrl_func_
+ 		.regmap[1] = {
+ 			AIROHA_FUNC_MUX,
+ 			REG_LAN_LED0_MAPPING,
+-			LAN2_LED_MAPPING_MASK,
+-			LAN2_PHY3_LED_MAP
++			LAN1_LED_MAPPING_MASK,
++			LAN1_PHY_LED_MAP(2)
+ 		},
+ 		.regmap_size = 2,
+ 	}, {
+@@ -1628,8 +1609,8 @@ static const struct airoha_pinctrl_func_
+ 		.regmap[1] = {
+ 			AIROHA_FUNC_MUX,
+ 			REG_LAN_LED0_MAPPING,
+-			LAN3_LED_MAPPING_MASK,
+-			LAN3_PHY3_LED_MAP
++			LAN2_LED_MAPPING_MASK,
++			LAN2_PHY_LED_MAP(2)
+ 		},
+ 		.regmap_size = 2,
+ 	}, {
+@@ -1643,8 +1624,8 @@ static const struct airoha_pinctrl_func_
+ 		.regmap[1] = {
+ 			AIROHA_FUNC_MUX,
+ 			REG_LAN_LED0_MAPPING,
+-			LAN4_LED_MAPPING_MASK,
+-			LAN4_PHY3_LED_MAP
++			LAN3_LED_MAPPING_MASK,
++			LAN3_PHY_LED_MAP(2)
+ 		},
+ 		.regmap_size = 2,
+ 	},
+@@ -1662,8 +1643,8 @@ static const struct airoha_pinctrl_func_
+ 		.regmap[1] = {
+ 			AIROHA_FUNC_MUX,
+ 			REG_LAN_LED0_MAPPING,
+-			LAN1_LED_MAPPING_MASK,
+-			LAN1_PHY4_LED_MAP
++			LAN0_LED_MAPPING_MASK,
++			LAN0_PHY_LED_MAP(3)
+ 		},
+ 		.regmap_size = 2,
+ 	}, {
+@@ -1677,8 +1658,8 @@ static const struct airoha_pinctrl_func_
+ 		.regmap[1] = {
+ 			AIROHA_FUNC_MUX,
+ 			REG_LAN_LED0_MAPPING,
+-			LAN2_LED_MAPPING_MASK,
+-			LAN2_PHY4_LED_MAP
++			LAN1_LED_MAPPING_MASK,
++			LAN1_PHY_LED_MAP(3)
+ 		},
+ 		.regmap_size = 2,
+ 	}, {
+@@ -1692,8 +1673,8 @@ static const struct airoha_pinctrl_func_
+ 		.regmap[1] = {
+ 			AIROHA_FUNC_MUX,
+ 			REG_LAN_LED0_MAPPING,
+-			LAN3_LED_MAPPING_MASK,
+-			LAN3_PHY4_LED_MAP
++			LAN2_LED_MAPPING_MASK,
++			LAN2_PHY_LED_MAP(3)
+ 		},
+ 		.regmap_size = 2,
+ 	}, {
+@@ -1707,8 +1688,8 @@ static const struct airoha_pinctrl_func_
+ 		.regmap[1] = {
+ 			AIROHA_FUNC_MUX,
+ 			REG_LAN_LED0_MAPPING,
+-			LAN4_LED_MAPPING_MASK,
+-			LAN4_PHY4_LED_MAP
++			LAN3_LED_MAPPING_MASK,
++			LAN3_PHY_LED_MAP(3)
+ 		},
+ 		.regmap_size = 2,
+ 	},
+@@ -1726,8 +1707,8 @@ static const struct airoha_pinctrl_func_
+ 		.regmap[1] = {
+ 			AIROHA_FUNC_MUX,
+ 			REG_LAN_LED1_MAPPING,
+-			LAN1_LED_MAPPING_MASK,
+-			LAN1_PHY1_LED_MAP
++			LAN0_LED_MAPPING_MASK,
++			LAN0_PHY_LED_MAP(0)
+ 		},
+ 		.regmap_size = 2,
+ 	}, {
+@@ -1741,8 +1722,8 @@ static const struct airoha_pinctrl_func_
+ 		.regmap[1] = {
+ 			AIROHA_FUNC_MUX,
+ 			REG_LAN_LED1_MAPPING,
+-			LAN2_LED_MAPPING_MASK,
+-			LAN2_PHY1_LED_MAP
++			LAN1_LED_MAPPING_MASK,
++			LAN1_PHY_LED_MAP(0)
+ 		},
+ 		.regmap_size = 2,
+ 	}, {
+@@ -1756,8 +1737,8 @@ static const struct airoha_pinctrl_func_
+ 		.regmap[1] = {
+ 			AIROHA_FUNC_MUX,
+ 			REG_LAN_LED1_MAPPING,
+-			LAN3_LED_MAPPING_MASK,
+-			LAN3_PHY1_LED_MAP
++			LAN2_LED_MAPPING_MASK,
++			LAN2_PHY_LED_MAP(0)
+ 		},
+ 		.regmap_size = 2,
+ 	}, {
+@@ -1771,8 +1752,8 @@ static const struct airoha_pinctrl_func_
+ 		.regmap[1] = {
+ 			AIROHA_FUNC_MUX,
+ 			REG_LAN_LED1_MAPPING,
+-			LAN4_LED_MAPPING_MASK,
+-			LAN4_PHY1_LED_MAP
++			LAN3_LED_MAPPING_MASK,
++			LAN3_PHY_LED_MAP(0)
+ 		},
+ 		.regmap_size = 2,
+ 	},
+@@ -1790,8 +1771,8 @@ static const struct airoha_pinctrl_func_
+ 		.regmap[1] = {
+ 			AIROHA_FUNC_MUX,
+ 			REG_LAN_LED1_MAPPING,
+-			LAN1_LED_MAPPING_MASK,
+-			LAN1_PHY2_LED_MAP
++			LAN0_LED_MAPPING_MASK,
++			LAN0_PHY_LED_MAP(1)
+ 		},
+ 		.regmap_size = 2,
+ 	}, {
+@@ -1805,8 +1786,8 @@ static const struct airoha_pinctrl_func_
+ 		.regmap[1] = {
+ 			AIROHA_FUNC_MUX,
+ 			REG_LAN_LED1_MAPPING,
+-			LAN2_LED_MAPPING_MASK,
+-			LAN2_PHY2_LED_MAP
++			LAN1_LED_MAPPING_MASK,
++			LAN1_PHY_LED_MAP(1)
+ 		},
+ 		.regmap_size = 2,
+ 	}, {
+@@ -1820,8 +1801,8 @@ static const struct airoha_pinctrl_func_
+ 		.regmap[1] = {
+ 			AIROHA_FUNC_MUX,
+ 			REG_LAN_LED1_MAPPING,
+-			LAN3_LED_MAPPING_MASK,
+-			LAN3_PHY2_LED_MAP
++			LAN2_LED_MAPPING_MASK,
++			LAN2_PHY_LED_MAP(1)
+ 		},
+ 		.regmap_size = 2,
+ 	}, {
+@@ -1835,8 +1816,8 @@ static const struct airoha_pinctrl_func_
+ 		.regmap[1] = {
+ 			AIROHA_FUNC_MUX,
+ 			REG_LAN_LED1_MAPPING,
+-			LAN4_LED_MAPPING_MASK,
+-			LAN4_PHY2_LED_MAP
++			LAN3_LED_MAPPING_MASK,
++			LAN3_PHY_LED_MAP(1)
+ 		},
+ 		.regmap_size = 2,
+ 	},
+@@ -1854,8 +1835,8 @@ static const struct airoha_pinctrl_func_
+ 		.regmap[1] = {
+ 			AIROHA_FUNC_MUX,
+ 			REG_LAN_LED1_MAPPING,
+-			LAN1_LED_MAPPING_MASK,
+-			LAN1_PHY3_LED_MAP
++			LAN0_LED_MAPPING_MASK,
++			LAN0_PHY_LED_MAP(2)
+ 		},
+ 		.regmap_size = 2,
+ 	}, {
+@@ -1869,8 +1850,8 @@ static const struct airoha_pinctrl_func_
+ 		.regmap[1] = {
+ 			AIROHA_FUNC_MUX,
+ 			REG_LAN_LED1_MAPPING,
+-			LAN2_LED_MAPPING_MASK,
+-			LAN2_PHY3_LED_MAP
++			LAN1_LED_MAPPING_MASK,
++			LAN1_PHY_LED_MAP(2)
+ 		},
+ 		.regmap_size = 2,
+ 	}, {
+@@ -1884,8 +1865,8 @@ static const struct airoha_pinctrl_func_
+ 		.regmap[1] = {
+ 			AIROHA_FUNC_MUX,
+ 			REG_LAN_LED1_MAPPING,
+-			LAN3_LED_MAPPING_MASK,
+-			LAN3_PHY3_LED_MAP
++			LAN2_LED_MAPPING_MASK,
++			LAN2_PHY_LED_MAP(2)
+ 		},
+ 		.regmap_size = 2,
+ 	}, {
+@@ -1899,8 +1880,8 @@ static const struct airoha_pinctrl_func_
+ 		.regmap[1] = {
+ 			AIROHA_FUNC_MUX,
+ 			REG_LAN_LED1_MAPPING,
+-			LAN4_LED_MAPPING_MASK,
+-			LAN4_PHY3_LED_MAP
++			LAN3_LED_MAPPING_MASK,
++			LAN3_PHY_LED_MAP(2)
+ 		},
+ 		.regmap_size = 2,
+ 	},
+@@ -1918,8 +1899,8 @@ static const struct airoha_pinctrl_func_
+ 		.regmap[1] = {
+ 			AIROHA_FUNC_MUX,
+ 			REG_LAN_LED1_MAPPING,
+-			LAN1_LED_MAPPING_MASK,
+-			LAN1_PHY4_LED_MAP
++			LAN0_LED_MAPPING_MASK,
++			LAN0_PHY_LED_MAP(3)
+ 		},
+ 		.regmap_size = 2,
+ 	}, {
+@@ -1933,8 +1914,8 @@ static const struct airoha_pinctrl_func_
+ 		.regmap[1] = {
+ 			AIROHA_FUNC_MUX,
+ 			REG_LAN_LED1_MAPPING,
+-			LAN2_LED_MAPPING_MASK,
+-			LAN2_PHY4_LED_MAP
++			LAN1_LED_MAPPING_MASK,
++			LAN1_PHY_LED_MAP(3)
+ 		},
+ 		.regmap_size = 2,
+ 	}, {
+@@ -1948,8 +1929,8 @@ static const struct airoha_pinctrl_func_
+ 		.regmap[1] = {
+ 			AIROHA_FUNC_MUX,
+ 			REG_LAN_LED1_MAPPING,
+-			LAN3_LED_MAPPING_MASK,
+-			LAN3_PHY4_LED_MAP
++			LAN2_LED_MAPPING_MASK,
++			LAN2_PHY_LED_MAP(3)
+ 		},
+ 		.regmap_size = 2,
+ 	}, {
+@@ -1963,8 +1944,8 @@ static const struct airoha_pinctrl_func_
+ 		.regmap[1] = {
+ 			AIROHA_FUNC_MUX,
+ 			REG_LAN_LED1_MAPPING,
+-			LAN4_LED_MAPPING_MASK,
+-			LAN4_PHY4_LED_MAP
++			LAN3_LED_MAPPING_MASK,
++			LAN3_PHY_LED_MAP(3)
+ 		},
+ 		.regmap_size = 2,
+ 	},
