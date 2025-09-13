@@ -1,0 +1,94 @@
+From 787595b423d855bfcbf724822fd1e663ad368d08 Mon Sep 17 00:00:00 2001
+From: Nicolas Frattaroli <nicolas.frattaroli@collabora.com>
+Date: Mon, 30 Jun 2025 17:36:34 +0200
+Subject: [PATCH] arm64: dts: rockchip: complete USB nodes on ROCK 4D
+
+The ROCK 4D uses both USB controllers, and both of which in host mode.
+However, it still names one of the supplies for them "OTG" in the
+schematic.
+
+Fix the "host" supply's input, and add the "otg" supply. Enable the
+remaining USB PHY nodes, and the first controller node as well.
+
+Signed-off-by: Nicolas Frattaroli <nicolas.frattaroli@collabora.com>
+Link: https://lore.kernel.org/r/20250630-rock4d-reg-usb-wifi-v1-2-1057f412d98c@collabora.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ .../boot/dts/rockchip/rk3576-rock-4d.dts      | 41 ++++++++++++++++++-
+ 1 file changed, 39 insertions(+), 2 deletions(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3576-rock-4d.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3576-rock-4d.dts
+@@ -180,7 +180,21 @@
+ 		regulator-min-microvolt = <5000000>;
+ 		regulator-max-microvolt = <5000000>;
+ 		regulator-name = "vcc5v0_host";
+-		vin-supply = <&vcc_5v0_device>;
++		vin-supply = <&vcc_5v0_sys>;
++	};
++
++	vcc_5v0_otg: regulator-vcc-5v0-otg {
++		compatible = "regulator-fixed";
++		enable-active-high;
++		gpios = <&gpio2 RK_PD2 GPIO_ACTIVE_HIGH>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&usb_otg_pwren>;
++		regulator-always-on;
++		regulator-boot-on;
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-name = "vcc5v0_otg";
++		vin-supply = <&vcc_5v0_sys>;
+ 	};
+ 
+ 	vcc_5v0_sys: regulator-vcc-5v0-sys {
+@@ -699,7 +713,11 @@
+ 
+ 	usb {
+ 		usb_host_pwren: usb-host-pwren {
+-			rockchip,pins = <0 RK_PD3 RK_FUNC_GPIO &pcfg_pull_none>;
++			rockchip,pins = <0 RK_PD3 RK_FUNC_GPIO &pcfg_pull_down>;
++		};
++		usb_otg_pwren: usb-otg-pwren {
++			rockchip,pins = <2 RK_PD2 RK_FUNC_GPIO &pcfg_pull_down>;
++
+ 		};
+ 	};
+ };
+@@ -738,10 +756,20 @@
+ 	status = "okay";
+ };
+ 
++&u2phy0_otg {
++	phy-supply = <&vcc_5v0_otg>;
++	status = "okay";
++};
++
+ &u2phy1 {
+ 	status = "okay";
+ };
+ 
++&u2phy1_otg {
++	phy-supply = <&vcc_5v0_host>;
++	status = "okay";
++};
++
+ &uart0 {
+ 	pinctrl-0 = <&uart0m0_xfer>;
+ 	status = "okay";
+@@ -751,6 +779,15 @@
+ 	status = "okay";
+ };
+ 
++&usbdp_phy {
++	status = "okay";
++};
++
++&usb_drd0_dwc3 {
++	dr_mode = "host";
++	status = "okay";
++};
++
+ &usb_drd1_dwc3 {
+ 	dr_mode = "host";
+ 	status = "okay";
