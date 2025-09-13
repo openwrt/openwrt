@@ -9,6 +9,7 @@ platform_check_image() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
+	alta,route10\
 	8devices,kiwi-dvk)
 		CI_KERNPART="0:HLOS"
 		CI_ROOTPART="rootfs"
