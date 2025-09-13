@@ -596,6 +596,36 @@ endef
 
 $(eval $(call KernelPackage,scsi-tape))
 
+
+define KernelPackage/scsi-ufs-core
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Kernel support for Universal Flash Storage Controller
+  DEPENDS:=+kmod-scsi-core +kmod-hwmon-core +kmod-nls-base
+  KCONFIG:=\
+	CONFIG_SCSI_UFSHCD \
+	CONFIG_SCSI_UFS_BSG=n \
+	CONFIG_SCSI_UFS_CRYPTO=n \
+	CONFIG_SCSI_UFS_FAULT_INJECTION=n \
+	CONFIG_SCSI_UFS_HWMON=y
+  FILES:=$(LINUX_DIR)/drivers/ufs/core/ufshcd-core.ko
+  AUTOLOAD:=$(call AutoLoad,45,ufshcd-core,1)
+endef
+
+$(eval $(call KernelPackage,scsi-ufs-core))
+
+
+define KernelPackage/scsi-ufs-platform
+  SUBMENU:=$(BLOCK_MENU)
+  TITLE:=Kernel support for platform bus based UFS Controller
+  DEPENDS:=+kmod-scsi-ufs-core
+  KCONFIG:=CONFIG_SCSI_UFSHCD_PLATFORM
+  FILES:=$(LINUX_DIR)/drivers/ufs/host/ufshcd-pltfrm.ko
+  AUTOLOAD:=$(call AutoLoad,45,ufshcd-pltfrm,1)
+endef
+
+$(eval $(call KernelPackage,scsi-ufs-platform))
+
+
 define KernelPackage/iosched-bfq
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Kernel support for BFQ I/O scheduler
