@@ -1,0 +1,66 @@
+From 6b070711b702638622f4b7072e36328a47356576 Mon Sep 17 00:00:00 2001
+From: Shawn Lin <shawn.lin@rock-chips.com>
+Date: Wed, 5 Feb 2025 14:15:54 +0800
+Subject: [PATCH] scsi: ufs: core: Export ufshcd_dme_reset() and
+ ufshcd_dme_enable()
+
+These two APIs will be used by glue driver if they need a different HCE
+process.
+
+Reviewed-by: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
+Signed-off-by: Shawn Lin <shawn.lin@rock-chips.com>
+Link: https://lore.kernel.org/r/1738736156-119203-6-git-send-email-shawn.lin@rock-chips.com
+Reviewed-by: Bart Van Assche <bvanassche@acm.org>
+Signed-off-by: Martin K. Petersen <martin.petersen@oracle.com>
+---
+ drivers/ufs/core/ufshcd.c | 6 ++++--
+ include/ufs/ufshcd.h      | 2 ++
+ 2 files changed, 6 insertions(+), 2 deletions(-)
+
+--- a/drivers/ufs/core/ufshcd.c
++++ b/drivers/ufs/core/ufshcd.c
+@@ -4043,7 +4043,7 @@ static int ufshcd_dme_link_startup(struc
+  *
+  * Return: 0 on success, non-zero value on failure.
+  */
+-static int ufshcd_dme_reset(struct ufs_hba *hba)
++int ufshcd_dme_reset(struct ufs_hba *hba)
+ {
+ 	struct uic_command uic_cmd = {
+ 		.command = UIC_CMD_DME_RESET,
+@@ -4057,6 +4057,7 @@ static int ufshcd_dme_reset(struct ufs_h
+ 
+ 	return ret;
+ }
++EXPORT_SYMBOL_GPL(ufshcd_dme_reset);
+ 
+ int ufshcd_dme_configure_adapt(struct ufs_hba *hba,
+ 			       int agreed_gear,
+@@ -4082,7 +4083,7 @@ EXPORT_SYMBOL_GPL(ufshcd_dme_configure_a
+  *
+  * Return: 0 on success, non-zero value on failure.
+  */
+-static int ufshcd_dme_enable(struct ufs_hba *hba)
++int ufshcd_dme_enable(struct ufs_hba *hba)
+ {
+ 	struct uic_command uic_cmd = {
+ 		.command = UIC_CMD_DME_ENABLE,
+@@ -4096,6 +4097,7 @@ static int ufshcd_dme_enable(struct ufs_
+ 
+ 	return ret;
+ }
++EXPORT_SYMBOL_GPL(ufshcd_dme_enable);
+ 
+ static inline void ufshcd_add_delay_before_dme_cmd(struct ufs_hba *hba)
+ {
+--- a/include/ufs/ufshcd.h
++++ b/include/ufs/ufshcd.h
+@@ -1361,6 +1361,8 @@ extern int ufshcd_system_thaw(struct dev
+ extern int ufshcd_system_restore(struct device *dev);
+ #endif
+ 
++extern int ufshcd_dme_reset(struct ufs_hba *hba);
++extern int ufshcd_dme_enable(struct ufs_hba *hba);
+ extern int ufshcd_dme_configure_adapt(struct ufs_hba *hba,
+ 				      int agreed_gear,
+ 				      int adapt_val);
