@@ -1,0 +1,31 @@
+From 595ad7a336bf21f9d111a033820cd95d70343bd1 Mon Sep 17 00:00:00 2001
+From: Dragan Simic <dsimic@manjaro.org>
+Date: Thu, 5 Sep 2024 10:28:23 +0200
+Subject: [PATCH] phy: phy-rockchip-inno-usb2: Handle failed extcon allocation
+ better
+
+Return the actual error code upon failure to allocate extcon device, instead
+of hardcoding -ENOMEM.  Use dev_err_probe() to also log appropriate messages,
+which is fine because the containing function is used in the probe path.
+
+Helped-by: Heiko Stubner <heiko@sntech.de>
+Reviewed-by: Heiko Stuebner <heiko@sntech.de>
+Signed-off-by: Dragan Simic <dsimic@manjaro.org>
+Link: https://lore.kernel.org/r/cc4995aa3e569be6bc23ca126b41fba82d50eeee.1725524802.git.dsimic@manjaro.org
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
+---
+ drivers/phy/rockchip/phy-rockchip-inno-usb2.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
++++ b/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
+@@ -435,7 +435,8 @@ static int rockchip_usb2phy_extcon_regis
+ 						rockchip_usb2phy_extcon_cable);
+ 
+ 		if (IS_ERR(edev))
+-			return -ENOMEM;
++			return dev_err_probe(rphy->dev, PTR_ERR(edev),
++					     "failed to allocate extcon device\n");
+ 
+ 		ret = devm_extcon_dev_register(rphy->dev, edev);
+ 		if (ret) {
