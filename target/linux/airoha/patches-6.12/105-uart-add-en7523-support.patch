@@ -137,14 +137,14 @@
  	 * is written without DLAB set, this mode will be disabled.
 --- a/drivers/tty/serial/8250/Makefile
 +++ b/drivers/tty/serial/8250/Makefile
-@@ -46,6 +46,7 @@ obj-$(CONFIG_SERIAL_8250_PERICOM)	+= 825
- obj-$(CONFIG_SERIAL_8250_PXA)		+= 8250_pxa.o
- obj-$(CONFIG_SERIAL_8250_TEGRA)		+= 8250_tegra.o
- obj-$(CONFIG_SERIAL_8250_BCM7271)	+= 8250_bcm7271.o
-+obj-$(CONFIG_SERIAL_8250_AIROHA)	+= 8250_en7523.o
- obj-$(CONFIG_SERIAL_OF_PLATFORM)	+= 8250_of.o
+@@ -20,6 +20,7 @@
  
- CFLAGS_8250_ingenic.o += -I$(srctree)/scripts/dtc/libfdt
+ obj-$(CONFIG_SERIAL_8250_ACCENT)	+= 8250_accent.o
+ obj-$(CONFIG_SERIAL_8250_ACORN)		+= 8250_acorn.o
++obj-$(CONFIG_SERIAL_8250_AIROHA) 	+= 8250_en7523.o
+ obj-$(CONFIG_SERIAL_8250_ASPEED_VUART)	+= 8250_aspeed_vuart.o
+ obj-$(CONFIG_SERIAL_8250_BCM2835AUX)	+= 8250_bcm2835aux.o
+ obj-$(CONFIG_SERIAL_8250_BCM7271)	+= 8250_bcm7271.o
 --- a/include/uapi/linux/serial_reg.h
 +++ b/include/uapi/linux/serial_reg.h
 @@ -382,5 +382,17 @@

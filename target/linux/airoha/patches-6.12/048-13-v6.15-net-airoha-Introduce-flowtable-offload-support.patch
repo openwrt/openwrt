@@ -640,7 +640,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 +	if (IS_ERR(dp))
 +		return -ENODEV;
 +
-+	*dev = dsa_port_to_master(dp);
++	*dev = dsa_port_to_conduit(dp);
 +	return dp->index;
 +#else
 +	return -ENODEV;
