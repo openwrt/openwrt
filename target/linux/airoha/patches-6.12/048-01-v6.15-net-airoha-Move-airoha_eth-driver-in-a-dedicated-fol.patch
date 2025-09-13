@@ -101,7 +101,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 -obj-$(CONFIG_NET_AIROHA) += airoha_eth.o
 --- /dev/null
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -0,0 +1,3359 @@
+@@ -0,0 +1,3358 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * Copyright (c) 2024 AIROHA Inc
@@ -1751,8 +1751,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 +	const struct page_pool_params pp_params = {
 +		.order = 0,
 +		.pool_size = 256,
-+		.flags = PP_FLAG_DMA_MAP | PP_FLAG_DMA_SYNC_DEV |
-+			 PP_FLAG_PAGE_FRAG,
++		.flags = PP_FLAG_DMA_MAP | PP_FLAG_DMA_SYNC_DEV,
 +		.dma_dir = DMA_FROM_DEVICE,
 +		.max_len = PAGE_SIZE,
 +		.nid = NUMA_NO_NODE,
@@ -3463,7 +3462,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 +MODULE_DESCRIPTION("Ethernet driver for Airoha SoC");
 --- a/drivers/net/ethernet/mediatek/airoha_eth.c
 +++ /dev/null
-@@ -1,3359 +0,0 @@
+@@ -1,3358 +0,0 @@
 -// SPDX-License-Identifier: GPL-2.0-only
 -/*
 - * Copyright (c) 2024 AIROHA Inc
@@ -5113,8 +5112,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 -	const struct page_pool_params pp_params = {
 -		.order = 0,
 -		.pool_size = 256,
--		.flags = PP_FLAG_DMA_MAP | PP_FLAG_DMA_SYNC_DEV |
--			 PP_FLAG_PAGE_FRAG,
+-		.flags = PP_FLAG_DMA_MAP | PP_FLAG_DMA_SYNC_DEV,
 -		.dma_dir = DMA_FROM_DEVICE,
 -		.max_len = PAGE_SIZE,
 -		.nid = NUMA_NO_NODE,
