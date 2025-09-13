@@ -264,6 +264,25 @@ define U-Boot/rock-3b-rk3568
 endef
 
 
+# RK3576 boards
+
+define U-Boot/rk3576/Default
+  BUILD_SUBTARGET:=armv8
+  DEPENDS:= \
+	+PACKAGE_u-boot-$(1):trusted-firmware-a-rk3576 \
+	+PACKAGE_u-boot-$(1):trusted-firmware-a-rk3576-tpl
+  ATF:=rk3576_bl31.elf
+  TPL:=rk3576_ddr_lp4_2112MHz_lp5_2736MHz_v1.09.bin
+endef
+
+define U-Boot/rock-4d-rk3576
+  $(U-Boot/rk3576/Default)
+  NAME:=ROCK 4D
+  BUILD_DEVICES:= \
+    radxa_rock-4d
+endef
+
+
 # RK358x boards
 
 define U-Boot/rk358x/Default
@@ -373,6 +392,7 @@ UBOOT_TARGETS := \
   radxa-e25-rk3568 \
   rock-3a-rk3568 \
   rock-3b-rk3568 \
+  rock-4d-rk3576 \
   generic-rk3588 \
   nanopc-t6-rk3588 \
   rock-5-itx-rk3588 \
