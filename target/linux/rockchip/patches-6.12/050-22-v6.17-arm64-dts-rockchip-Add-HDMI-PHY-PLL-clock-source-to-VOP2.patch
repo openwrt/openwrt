@@ -1,0 +1,53 @@
+From 4ab8b8ac952fb08d03655e1da0cfee07589e428f Mon Sep 17 00:00:00 2001
+From: Cristian Ciocaltea <cristian.ciocaltea@collabora.com>
+Date: Thu, 12 Jun 2025 00:47:49 +0300
+Subject: [PATCH] arm64: dts: rockchip: Add HDMI PHY PLL clock source to VOP2
+ on rk3576
+
+Since commit c871a311edf0 ("phy: rockchip: samsung-hdptx: Setup TMDS
+char rate via phy_configure_opts_hdmi"), the workaround of passing the
+rate from DW HDMI QP bridge driver via phy_set_bus_width() became
+partially broken, as it cannot reliably handle mode switches anymore.
+
+Attempting to fix this up at PHY level would not only introduce
+additional hacks, but it would also fail to adequately resolve the
+display issues that are a consequence of the system CRU limitations.
+
+Instead, proceed with the solution already implemented for RK3588: make
+use of the HDMI PHY PLL as a better suited DCLK source for VOP2. This
+will not only address the aforementioned problem, but it should also
+facilitate the proper operation of display modes up to 4K@60Hz.
+
+It's worth noting that anything above 4K@30Hz still requires high TMDS
+clock ratio and scrambling support, which hasn't been mainlined yet.
+
+Fixes: d74b842cab08 ("arm64: dts: rockchip: Add vop for rk3576")
+Cc: stable@vger.kernel.org
+Signed-off-by: Cristian Ciocaltea <cristian.ciocaltea@collabora.com>
+Tested-By: Detlev Casanova <detlev.casanova@collabora.com>
+Tested-by: Nicolas Frattaroli <nicolas.frattaroli@collabora.com>
+Link: https://lore.kernel.org/r/20250612-rk3576-hdmitx-fix-v1-3-4b11007d8675@collabora.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3576.dtsi | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3576.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3576.dtsi
+@@ -1155,12 +1155,14 @@
+ 				 <&cru HCLK_VOP>,
+ 				 <&cru DCLK_VP0>,
+ 				 <&cru DCLK_VP1>,
+-				 <&cru DCLK_VP2>;
++				 <&cru DCLK_VP2>,
++				 <&hdptxphy>;
+ 			clock-names = "aclk",
+ 				      "hclk",
+ 				      "dclk_vp0",
+ 				      "dclk_vp1",
+-				      "dclk_vp2";
++				      "dclk_vp2",
++				      "pll_hdmiphy0";
+ 			iommus = <&vop_mmu>;
+ 			power-domains = <&power RK3576_PD_VOP>;
+ 			rockchip,grf = <&sys_grf>;
