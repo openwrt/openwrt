@@ -1,0 +1,35 @@
+From bdcda6be27b69a6e7ced1d59f5d6ceb07c5414ac Mon Sep 17 00:00:00 2001
+From: Jonas Karlman <jonas@kwiboo.se>
+Date: Fri, 1 Aug 2025 20:32:41 +0000
+Subject: [PATCH] arm: dts: rockchip: Include OTP in U-Boot pre-reloc phase for
+ RK3576
+
+Update rk3576-u-boot.dtsi to include OTP in U-Boot pre-reloc phase for
+checkboard() to be able to read information about the running SoC model
+and variant from OTP and print it during boot:
+
+  U-Boot 2025.04 (Apr 22 2025 - 20:43:17 +0000)
+
+  Model: Generic RK3576
+  SoC:   RK3576
+  DRAM:  8 GiB
+
+Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Reviewed-by: Kever Yang <kever.yang@rock-chips.com>
+---
+ arch/arm/dts/rk3576-u-boot.dtsi | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/arch/arm/dts/rk3576-u-boot.dtsi
++++ b/arch/arm/dts/rk3576-u-boot.dtsi
+@@ -49,6 +49,10 @@
+ 	bootph-all;
+ };
+ 
++&otp {
++	bootph-some-ram;
++};
++
+ &pcfg_pull_none {
+ 	bootph-all;
+ };

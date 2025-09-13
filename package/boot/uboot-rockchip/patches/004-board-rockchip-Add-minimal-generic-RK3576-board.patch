@@ -1,0 +1,1029 @@
+From 108d9f11ea928a80976db80b5ff723ce8170ebe1 Mon Sep 17 00:00:00 2001
+From: Jonas Karlman <jonas@kwiboo.se>
+Date: Fri, 1 Aug 2025 20:32:39 +0000
+Subject: [PATCH] board: rockchip: Add minimal generic RK3576 board
+
+Add a minimal generic RK3576 board that only have eMMC, SDMMC and USB
+OTG enabled. This defconfig can be used to boot from eMMC or SD-card on
+most RK3576 boards that follow reference board design.
+
+eMMC and SD-card boot tested on:
+- ArmSoM CM5
+- ArmSoM Sige5
+- FriendlyElec NanoPi M5
+- Luckfox Omni3576
+- Toybrick TB-RK3576D
+
+Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Reviewed-by: Kever Yang <kever.yang@rock-chips.com>
+---
+ arch/arm/dts/rk3576-generic-u-boot.dtsi   |  3 ++
+ arch/arm/dts/rk3576-generic.dts           | 63 +++++++++++++++++++++++
+ arch/arm/mach-rockchip/rk3576/MAINTAINERS |  5 ++
+ configs/generic-rk3576_defconfig          | 50 ++++++++++++++++++
+ doc/board/rockchip/rockchip.rst           |  1 +
+ 5 files changed, 122 insertions(+)
+ create mode 100644 arch/arm/dts/rk3576-generic-u-boot.dtsi
+ create mode 100644 arch/arm/dts/rk3576-generic.dts
+ create mode 100644 arch/arm/mach-rockchip/rk3576/MAINTAINERS
+ create mode 100644 configs/generic-rk3576_defconfig
+
+--- a/dts/upstream/include/dt-bindings/clock/rockchip,rk3576-cru.h
++++ b/dts/upstream/include/dt-bindings/clock/rockchip,rk3576-cru.h
+@@ -589,4 +589,19 @@
+ #define PCLK_EDP_S			569
+ #define ACLK_KLAD			570
+ 
++/* SCMI clocks, use these when changing clocks through SCMI */
++#define SCMI_ARMCLK_L			10
++#define SCMI_ARMCLK_B			11
++#define SCMI_CLK_GPU			456
++
++/* IOC-controlled output clocks */
++#define CLK_SAI0_MCLKOUT_TO_IO		571
++#define CLK_SAI1_MCLKOUT_TO_IO		572
++#define CLK_SAI2_MCLKOUT_TO_IO		573
++#define CLK_SAI3_MCLKOUT_TO_IO		574
++#define CLK_SAI4_MCLKOUT_TO_IO		575
++#define CLK_SAI4_MCLKOUT_TO_IO		575
++#define CLK_FSPI0_TO_IO			576
++#define CLK_FSPI1_TO_IO			577
++
+ #endif
+--- a/dts/upstream/src/arm64/rockchip/rk3576.dtsi
++++ b/dts/upstream/src/arm64/rockchip/rk3576.dtsi
+@@ -111,7 +111,7 @@
+ 			reg = <0x0>;
+ 			enable-method = "psci";
+ 			capacity-dmips-mhz = <485>;
+-			clocks = <&scmi_clk ARMCLK_L>;
++			clocks = <&scmi_clk SCMI_ARMCLK_L>;
+ 			operating-points-v2 = <&cluster0_opp_table>;
+ 			#cooling-cells = <2>;
+ 			dynamic-power-coefficient = <120>;
+@@ -124,7 +124,7 @@
+ 			reg = <0x1>;
+ 			enable-method = "psci";
+ 			capacity-dmips-mhz = <485>;
+-			clocks = <&scmi_clk ARMCLK_L>;
++			clocks = <&scmi_clk SCMI_ARMCLK_L>;
+ 			operating-points-v2 = <&cluster0_opp_table>;
+ 			cpu-idle-states = <&CPU_SLEEP>;
+ 		};
+@@ -135,7 +135,7 @@
+ 			reg = <0x2>;
+ 			enable-method = "psci";
+ 			capacity-dmips-mhz = <485>;
+-			clocks = <&scmi_clk ARMCLK_L>;
++			clocks = <&scmi_clk SCMI_ARMCLK_L>;
+ 			operating-points-v2 = <&cluster0_opp_table>;
+ 			cpu-idle-states = <&CPU_SLEEP>;
+ 		};
+@@ -146,7 +146,7 @@
+ 			reg = <0x3>;
+ 			enable-method = "psci";
+ 			capacity-dmips-mhz = <485>;
+-			clocks = <&scmi_clk ARMCLK_L>;
++			clocks = <&scmi_clk SCMI_ARMCLK_L>;
+ 			operating-points-v2 = <&cluster0_opp_table>;
+ 			cpu-idle-states = <&CPU_SLEEP>;
+ 		};
+@@ -157,7 +157,7 @@
+ 			reg = <0x100>;
+ 			enable-method = "psci";
+ 			capacity-dmips-mhz = <1024>;
+-			clocks = <&scmi_clk ARMCLK_B>;
++			clocks = <&scmi_clk SCMI_ARMCLK_B>;
+ 			operating-points-v2 = <&cluster1_opp_table>;
+ 			#cooling-cells = <2>;
+ 			dynamic-power-coefficient = <320>;
+@@ -170,7 +170,7 @@
+ 			reg = <0x101>;
+ 			enable-method = "psci";
+ 			capacity-dmips-mhz = <1024>;
+-			clocks = <&scmi_clk ARMCLK_B>;
++			clocks = <&scmi_clk SCMI_ARMCLK_B>;
+ 			operating-points-v2 = <&cluster1_opp_table>;
+ 			cpu-idle-states = <&CPU_SLEEP>;
+ 		};
+@@ -181,7 +181,7 @@
+ 			reg = <0x102>;
+ 			enable-method = "psci";
+ 			capacity-dmips-mhz = <1024>;
+-			clocks = <&scmi_clk ARMCLK_B>;
++			clocks = <&scmi_clk SCMI_ARMCLK_B>;
+ 			operating-points-v2 = <&cluster1_opp_table>;
+ 			cpu-idle-states = <&CPU_SLEEP>;
+ 		};
+@@ -192,7 +192,7 @@
+ 			reg = <0x103>;
+ 			enable-method = "psci";
+ 			capacity-dmips-mhz = <1024>;
+-			clocks = <&scmi_clk ARMCLK_B>;
++			clocks = <&scmi_clk SCMI_ARMCLK_B>;
+ 			operating-points-v2 = <&cluster1_opp_table>;
+ 			cpu-idle-states = <&CPU_SLEEP>;
+ 		};
+@@ -393,6 +393,11 @@
+ 		};
+ 	};
+ 
++	display_subsystem: display-subsystem {
++		compatible = "rockchip,display-subsystem";
++		ports = <&vop_out>;
++	};
++
+ 	firmware {
+ 		scmi: scmi {
+ 			compatible = "arm,scmi-smc";
+@@ -408,6 +413,90 @@
+ 		};
+ 	};
+ 
++	hdmi_sound: hdmi-sound {
++		compatible = "simple-audio-card";
++		simple-audio-card,name = "HDMI";
++		simple-audio-card,format = "i2s";
++		simple-audio-card,mclk-fs = <256>;
++		status = "disabled";
++
++		simple-audio-card,codec {
++			sound-dai = <&hdmi>;
++		};
++
++		simple-audio-card,cpu {
++			sound-dai = <&sai6>;
++		};
++	};
++
++	pinctrl: pinctrl {
++		compatible = "rockchip,rk3576-pinctrl";
++		rockchip,grf = <&ioc_grf>;
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++
++		gpio0: gpio@27320000 {
++			compatible = "rockchip,gpio-bank";
++			reg = <0x0 0x27320000 0x0 0x200>;
++			clocks = <&cru PCLK_GPIO0>, <&cru DBCLK_GPIO0>;
++			gpio-controller;
++			gpio-ranges = <&pinctrl 0 0 32>;
++			interrupts = <GIC_SPI 153 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-controller;
++			#gpio-cells = <2>;
++			#interrupt-cells = <2>;
++		};
++
++		gpio1: gpio@2ae10000 {
++			compatible = "rockchip,gpio-bank";
++			reg = <0x0 0x2ae10000 0x0 0x200>;
++			clocks = <&cru PCLK_GPIO1>, <&cru DBCLK_GPIO1>;
++			gpio-controller;
++			gpio-ranges = <&pinctrl 0 32 32>;
++			interrupts = <GIC_SPI 157 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-controller;
++			#gpio-cells = <2>;
++			#interrupt-cells = <2>;
++		};
++
++		gpio2: gpio@2ae20000 {
++			compatible = "rockchip,gpio-bank";
++			reg = <0x0 0x2ae20000 0x0 0x200>;
++			clocks = <&cru PCLK_GPIO2>, <&cru DBCLK_GPIO2>;
++			gpio-controller;
++			gpio-ranges = <&pinctrl 0 64 32>;
++			interrupts = <GIC_SPI 161 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-controller;
++			#gpio-cells = <2>;
++			#interrupt-cells = <2>;
++		};
++
++		gpio3: gpio@2ae30000 {
++			compatible = "rockchip,gpio-bank";
++			reg = <0x0 0x2ae30000 0x0 0x200>;
++			clocks = <&cru PCLK_GPIO3>, <&cru DBCLK_GPIO3>;
++			gpio-controller;
++			gpio-ranges = <&pinctrl 0 96 32>;
++			interrupts = <GIC_SPI 165 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-controller;
++			#gpio-cells = <2>;
++			#interrupt-cells = <2>;
++		};
++
++		gpio4: gpio@2ae40000 {
++			compatible = "rockchip,gpio-bank";
++			reg = <0x0 0x2ae40000 0x0 0x200>;
++			clocks = <&cru PCLK_GPIO4>, <&cru DBCLK_GPIO4>;
++			gpio-controller;
++			gpio-ranges = <&pinctrl 0 128 32>;
++			interrupts = <GIC_SPI 169 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-controller;
++			#gpio-cells = <2>;
++			#interrupt-cells = <2>;
++		};
++	};
++
+ 	pmu_a53: pmu-a53 {
+ 		compatible = "arm,cortex-a53-pmu";
+ 		interrupts = <GIC_SPI 0 IRQ_TYPE_LEVEL_HIGH>,
+@@ -445,6 +534,114 @@
+ 		#size-cells = <2>;
+ 		ranges;
+ 
++		pcie0: pcie@22000000 {
++			compatible = "rockchip,rk3576-pcie", "rockchip,rk3568-pcie";
++			reg = <0x0 0x22000000 0x0 0x00400000>,
++			      <0x0 0x2a200000 0x0 0x00010000>,
++			      <0x0 0x20000000 0x0 0x00100000>;
++			reg-names = "dbi", "apb", "config";
++			bus-range = <0x0 0xf>;
++			clocks = <&cru ACLK_PCIE0_MST>, <&cru ACLK_PCIE0_SLV>,
++				 <&cru ACLK_PCIE0_DBI>, <&cru PCLK_PCIE0>,
++				 <&cru CLK_PCIE0_AUX>;
++			clock-names = "aclk_mst", "aclk_slv",
++				      "aclk_dbi", "pclk",
++				      "aux";
++			device_type = "pci";
++			interrupts = <GIC_SPI 281 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 282 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 279 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 280 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 278 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 283 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "sys", "pmc", "msg", "legacy", "err", "msi";
++			#interrupt-cells = <1>;
++			interrupt-map-mask = <0 0 0 7>;
++			interrupt-map = <0 0 0 1 &pcie0_intc 0>,
++					<0 0 0 2 &pcie0_intc 1>,
++					<0 0 0 3 &pcie0_intc 2>,
++					<0 0 0 4 &pcie0_intc 3>;
++			linux,pci-domain = <0>;
++			max-link-speed = <2>;
++			num-ib-windows = <8>;
++			num-viewport = <8>;
++			num-ob-windows = <2>;
++			num-lanes = <1>;
++			phys = <&combphy0_ps PHY_TYPE_PCIE>;
++			phy-names = "pcie-phy";
++			power-domains = <&power RK3576_PD_PHP>;
++			ranges = <0x01000000 0x0 0x20100000 0x0 0x20100000 0x0 0x00100000
++				  0x02000000 0x0 0x20200000 0x0 0x20200000 0x0 0x00e00000
++				  0x03000000 0x9 0x00000000 0x9 0x00000000 0x0 0x80000000>;
++			resets = <&cru SRST_PCIE0_POWER_UP>, <&cru SRST_P_PCIE0>;
++			reset-names = "pwr", "pipe";
++			#address-cells = <3>;
++			#size-cells = <2>;
++			status = "disabled";
++
++			pcie0_intc: legacy-interrupt-controller {
++				interrupt-controller;
++				#address-cells = <0>;
++				#interrupt-cells = <1>;
++				interrupt-parent = <&gic>;
++				interrupts = <GIC_SPI 280 IRQ_TYPE_EDGE_RISING>;
++			};
++		};
++
++		pcie1: pcie@22400000 {
++			compatible = "rockchip,rk3576-pcie", "rockchip,rk3568-pcie";
++			reg = <0x0 0x22400000 0x0 0x00400000>,
++			      <0x0 0x2a210000 0x0 0x00010000>,
++			      <0x0 0x21000000 0x0 0x00100000>;
++			reg-names = "dbi", "apb", "config";
++			bus-range = <0x20 0x2f>;
++			clocks = <&cru ACLK_PCIE1_MST>, <&cru ACLK_PCIE1_SLV>,
++				 <&cru ACLK_PCIE1_DBI>, <&cru PCLK_PCIE1>,
++				 <&cru CLK_PCIE1_AUX>;
++			clock-names = "aclk_mst", "aclk_slv",
++				      "aclk_dbi", "pclk",
++				      "aux";
++			device_type = "pci";
++			interrupts = <GIC_SPI 267 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 268 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 265 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 266 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 264 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 269 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "sys", "pmc", "msg", "legacy", "err", "msi";
++			#interrupt-cells = <1>;
++			interrupt-map-mask = <0 0 0 7>;
++			interrupt-map = <0 0 0 1 &pcie1_intc 0>,
++					<0 0 0 2 &pcie1_intc 1>,
++					<0 0 0 3 &pcie1_intc 2>,
++					<0 0 0 4 &pcie1_intc 3>;
++			linux,pci-domain = <1>;
++			max-link-speed = <2>;
++			num-ib-windows = <8>;
++			num-viewport = <8>;
++			num-ob-windows = <2>;
++			num-lanes = <1>;
++			phys = <&combphy1_psu PHY_TYPE_PCIE>;
++			phy-names = "pcie-phy";
++			power-domains = <&power RK3576_PD_SUBPHP>;
++			ranges = <0x01000000 0x0 0x21100000 0x0 0x21100000 0x0 0x00100000
++				  0x02000000 0x0 0x21200000 0x0 0x21200000 0x0 0x00e00000
++				  0x03000000 0x9 0x80000000 0x9 0x80000000 0x0 0x80000000>;
++			resets = <&cru SRST_PCIE1_POWER_UP>, <&cru SRST_P_PCIE1>;
++			reset-names = "pwr", "pipe";
++			#address-cells = <3>;
++			#size-cells = <2>;
++			status = "disabled";
++
++			pcie1_intc: legacy-interrupt-controller {
++				interrupt-controller;
++				#address-cells = <0>;
++				#interrupt-cells = <1>;
++				interrupt-parent = <&gic>;
++				interrupts = <GIC_SPI 266 IRQ_TYPE_EDGE_RISING>;
++			};
++		};
++
+ 		usb_drd0_dwc3: usb@23000000 {
+ 			compatible = "rockchip,rk3576-dwc3", "snps,dwc3";
+ 			reg = <0x0 0x23000000 0x0 0x400000>;
+@@ -620,6 +817,11 @@
+ 			};
+ 		};
+ 
++		hdptxphy_grf: syscon@26032000 {
++			compatible = "rockchip,rk3576-hdptxphy-grf", "syscon";
++			reg = <0x0 0x26032000 0x0 0x100>;
++		};
++
+ 		vo1_grf: syscon@26036000 {
+ 			compatible = "rockchip,rk3576-vo1-grf", "syscon";
+ 			reg = <0x0 0x26036000 0x0 0x100>;
+@@ -922,7 +1124,7 @@
+ 		gpu: gpu@27800000 {
+ 			compatible = "rockchip,rk3576-mali", "arm,mali-bifrost";
+ 			reg = <0x0 0x27800000 0x0 0x200000>;
+-			assigned-clocks = <&scmi_clk CLK_GPU>;
++			assigned-clocks = <&scmi_clk SCMI_CLK_GPU>;
+ 			assigned-clock-rates = <198000000>;
+ 			clocks = <&cru CLK_GPU>;
+ 			clock-names = "core";
+@@ -937,6 +1139,196 @@
+ 			status = "disabled";
+ 		};
+ 
++		vop: vop@27d00000 {
++			compatible = "rockchip,rk3576-vop";
++			reg = <0x0 0x27d00000 0x0 0x3000>, <0x0 0x27d05000 0x0 0x1000>;
++			reg-names = "vop", "gamma-lut";
++			interrupts = <GIC_SPI 342 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 379 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 380 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 381 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "sys",
++					  "vp0",
++					  "vp1",
++					  "vp2";
++			clocks = <&cru ACLK_VOP>,
++				 <&cru HCLK_VOP>,
++				 <&cru DCLK_VP0>,
++				 <&cru DCLK_VP1>,
++				 <&cru DCLK_VP2>;
++			clock-names = "aclk",
++				      "hclk",
++				      "dclk_vp0",
++				      "dclk_vp1",
++				      "dclk_vp2";
++			iommus = <&vop_mmu>;
++			power-domains = <&power RK3576_PD_VOP>;
++			rockchip,grf = <&sys_grf>;
++			rockchip,pmu = <&pmu>;
++			status = "disabled";
++
++			vop_out: ports {
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				vp0: port@0 {
++					#address-cells = <1>;
++					#size-cells = <0>;
++					reg = <0>;
++				};
++
++				vp1: port@1 {
++					#address-cells = <1>;
++					#size-cells = <0>;
++					reg = <1>;
++				};
++
++				vp2: port@2 {
++					#address-cells = <1>;
++					#size-cells = <0>;
++					reg = <2>;
++				};
++			};
++		};
++
++		vop_mmu: iommu@27d07e00 {
++			compatible = "rockchip,rk3576-iommu", "rockchip,rk3568-iommu";
++			reg = <0x0 0x27d07e00 0x0 0x100>, <0x0 0x27d07f00 0x0 0x100>;
++			interrupts = <GIC_SPI 342 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cru ACLK_VOP>, <&cru HCLK_VOP>;
++			clock-names = "aclk", "iface";
++			#iommu-cells = <0>;
++			power-domains = <&power RK3576_PD_VOP>;
++			status = "disabled";
++		};
++
++		sai5: sai@27d40000 {
++			compatible = "rockchip,rk3576-sai";
++			reg = <0x0 0x27d40000 0x0 0x1000>;
++			interrupts = <GIC_SPI 192 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cru MCLK_SAI5_8CH>, <&cru HCLK_SAI5_8CH>;
++			clock-names = "mclk", "hclk";
++			dmas = <&dmac2 3>;
++			dma-names = "rx";
++			power-domains = <&power RK3576_PD_VO0>;
++			resets = <&cru SRST_M_SAI5_8CH>, <&cru SRST_H_SAI5_8CH>;
++			reset-names = "m", "h";
++			rockchip,sai-rx-route = <0 1 2 3>;
++			#sound-dai-cells = <0>;
++			sound-name-prefix = "SAI5";
++			status = "disabled";
++		};
++
++		sai6: sai@27d50000 {
++			compatible = "rockchip,rk3576-sai";
++			reg = <0x0 0x27d50000 0x0 0x1000>;
++			interrupts = <GIC_SPI 193 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cru MCLK_SAI6_8CH>, <&cru HCLK_SAI6_8CH>;
++			clock-names = "mclk", "hclk";
++			dmas = <&dmac2 4>, <&dmac2 5>;
++			dma-names = "tx", "rx";
++			power-domains = <&power RK3576_PD_VO0>;
++			resets = <&cru SRST_M_SAI6_8CH>, <&cru SRST_H_SAI6_8CH>;
++			reset-names = "m", "h";
++			rockchip,sai-rx-route = <0 1 2 3>;
++			rockchip,sai-tx-route = <0 1 2 3>;
++			#sound-dai-cells = <0>;
++			sound-name-prefix = "SAI6";
++			status = "disabled";
++		};
++
++		hdmi: hdmi@27da0000 {
++			compatible = "rockchip,rk3576-dw-hdmi-qp";
++			reg = <0x0 0x27da0000 0x0 0x20000>;
++			clocks = <&cru PCLK_HDMITX0>,
++				 <&cru CLK_HDMITX0_EARC>,
++				 <&cru CLK_HDMITX0_REF>,
++				 <&cru MCLK_SAI6_8CH>,
++				 <&cru CLK_HDMITXHDP>,
++				 <&cru HCLK_VO0_ROOT>;
++			clock-names = "pclk", "earc", "ref", "aud", "hdp", "hclk_vo1";
++			interrupts = <GIC_SPI 338 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 339 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 340 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 341 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 367 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "avp", "cec", "earc", "main", "hpd";
++			phys = <&hdptxphy>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&hdmi_txm0_pins &hdmi_tx_scl &hdmi_tx_sda>;
++			power-domains = <&power RK3576_PD_VO0>;
++			resets = <&cru SRST_HDMITX0_REF>, <&cru SRST_HDMITXHDP>;
++			reset-names = "ref", "hdp";
++			rockchip,grf = <&ioc_grf>;
++			rockchip,vo-grf = <&vo0_grf>;
++			#sound-dai-cells = <0>;
++			status = "disabled";
++
++			ports {
++				#address-cells = <1>;
++				#size-cells = <0>;
++
++				hdmi_in: port@0 {
++					reg = <0>;
++				};
++
++				hdmi_out: port@1 {
++					reg = <1>;
++				};
++			};
++		};
++
++		sai7: sai@27ed0000 {
++			compatible = "rockchip,rk3576-sai";
++			reg = <0x0 0x27ed0000 0x0 0x1000>;
++			interrupts = <GIC_SPI 194 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cru MCLK_SAI7_8CH>, <&cru HCLK_SAI7_8CH>;
++			clock-names = "mclk", "hclk";
++			dmas = <&dmac2 19>;
++			dma-names = "tx";
++			power-domains = <&power RK3576_PD_VO1>;
++			resets = <&cru SRST_M_SAI7_8CH>, <&cru SRST_H_SAI7_8CH>;
++			reset-names = "m", "h";
++			rockchip,sai-tx-route = <0 1 2 3>;
++			#sound-dai-cells = <0>;
++			sound-name-prefix = "SAI7";
++			status = "disabled";
++		};
++
++		sai8: sai@27ee0000 {
++			compatible = "rockchip,rk3576-sai";
++			reg = <0x0 0x27ee0000 0x0 0x1000>;
++			interrupts = <GIC_SPI 372 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cru MCLK_SAI8_8CH>, <&cru HCLK_SAI8_8CH>;
++			clock-names = "mclk", "hclk";
++			dmas = <&dmac1 7>;
++			dma-names = "tx";
++			power-domains = <&power RK3576_PD_VO1>;
++			resets = <&cru SRST_M_SAI8_8CH>, <&cru SRST_H_SAI8_8CH>;
++			reset-names = "m", "h";
++			rockchip,sai-tx-route = <0 1 2 3>;
++			#sound-dai-cells = <0>;
++			sound-name-prefix = "SAI8";
++			status = "disabled";
++		};
++
++		sai9: sai@27ef0000 {
++			compatible = "rockchip,rk3576-sai";
++			reg = <0x0 0x27ef0000 0x0 0x1000>;
++			interrupts = <GIC_SPI 373 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cru MCLK_SAI9_8CH>, <&cru HCLK_SAI9_8CH>;
++			clock-names = "mclk", "hclk";
++			dmas = <&dmac0 26>;
++			dma-names = "tx";
++			power-domains = <&power RK3576_PD_VO1>;
++			resets = <&cru SRST_M_SAI9_8CH>, <&cru SRST_H_SAI9_8CH>;
++			reset-names = "m", "h";
++			rockchip,sai-tx-route = <0 1 2 3>;
++			#sound-dai-cells = <0>;
++			sound-name-prefix = "SAI9";
++			status = "disabled";
++		};
++
+ 		qos_hdcp1: qos@27f02000 {
+ 			compatible = "rockchip,rk3576-qos", "syscon";
+ 			reg = <0x0 0x27f02000 0x0 0x20>;
+@@ -1221,6 +1613,72 @@
+ 			};
+ 		};
+ 
++		sata0: sata@2a240000 {
++			compatible = "rockchip,rk3576-dwc-ahci", "snps,dwc-ahci";
++			reg = <0x0 0x2a240000 0x0 0x1000>;
++			clocks = <&cru ACLK_SATA0>, <&cru CLK_PMALIVE0>,
++				 <&cru CLK_RXOOB0>;
++			clock-names = "sata", "pmalive", "rxoob";
++			interrupts = <GIC_SPI 262 IRQ_TYPE_LEVEL_HIGH>;
++			power-domains = <&power RK3576_PD_SUBPHP>;
++			phys = <&combphy0_ps PHY_TYPE_SATA>;
++			phy-names = "sata-phy";
++			ports-implemented = <0x1>;
++			dma-coherent;
++			status = "disabled";
++		};
++
++		sata1: sata@2a250000 {
++			compatible = "rockchip,rk3576-dwc-ahci", "snps,dwc-ahci";
++			reg = <0x0 0x2a250000 0x0 0x1000>;
++			clocks = <&cru ACLK_SATA1>, <&cru CLK_PMALIVE1>,
++				 <&cru CLK_RXOOB1>;
++			clock-names = "sata", "pmalive", "rxoob";
++			interrupts = <GIC_SPI 263 IRQ_TYPE_LEVEL_HIGH>;
++			power-domains = <&power RK3576_PD_SUBPHP>;
++			phys = <&combphy1_psu PHY_TYPE_SATA>;
++			phy-names = "sata-phy";
++			ports-implemented = <0x1>;
++			dma-coherent;
++			status = "disabled";
++		};
++
++		ufshc: ufshc@2a2d0000 {
++			compatible = "rockchip,rk3576-ufshc";
++			reg = <0x0 0x2a2d0000 0x0 0x10000>,
++			      <0x0 0x2b040000 0x0 0x10000>,
++			      <0x0 0x2601f000 0x0 0x1000>,
++			      <0x0 0x2603c000 0x0 0x1000>,
++			      <0x0 0x2a2e0000 0x0 0x10000>;
++			reg-names = "hci", "mphy", "hci_grf", "mphy_grf", "hci_apb";
++			clocks = <&cru ACLK_UFS_SYS>, <&cru PCLK_USB_ROOT>, <&cru PCLK_MPHY>,
++				 <&cru CLK_REF_UFS_CLKOUT>;
++			clock-names = "core", "pclk", "pclk_mphy", "ref_out";
++			assigned-clocks = <&cru CLK_REF_OSC_MPHY>;
++			assigned-clock-parents = <&cru CLK_REF_MPHY_26M>;
++			interrupts = <GIC_SPI 361 IRQ_TYPE_LEVEL_HIGH>;
++			power-domains = <&power RK3576_PD_USB>;
++			pinctrl-0 = <&ufs_refclk>;
++			pinctrl-names = "default";
++			resets = <&cru SRST_A_UFS_BIU>, <&cru SRST_A_UFS_SYS>,
++				 <&cru SRST_A_UFS>, <&cru SRST_P_UFS_GRF>;
++			reset-names = "biu", "sys", "ufs", "grf";
++			reset-gpios = <&gpio4 RK_PD0 GPIO_ACTIVE_LOW>;
++			status = "disabled";
++		};
++
++		sfc1: spi@2a300000 {
++			compatible = "rockchip,sfc";
++			reg = <0x0 0x2a300000 0x0 0x4000>;
++			interrupts = <GIC_SPI 255 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cru SCLK_FSPI1_X2>, <&cru HCLK_FSPI1>;
++			clock-names = "clk_sfc", "hclk_sfc";
++			power-domains = <&power RK3576_PD_SDGMAC>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "disabled";
++		};
++
+ 		sdmmc: mmc@2a310000 {
+ 			compatible = "rockchip,rk3576-dw-mshc";
+ 			reg = <0x0 0x2a310000 0x0 0x4000>;
+@@ -1260,6 +1718,26 @@
+ 			status = "disabled";
+ 		};
+ 
++		sfc0: spi@2a340000 {
++			compatible = "rockchip,sfc";
++			reg = <0x0 0x2a340000 0x0 0x4000>;
++			interrupts = <GIC_SPI 254 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cru SCLK_FSPI_X2>, <&cru HCLK_FSPI>;
++			clock-names = "clk_sfc", "hclk_sfc";
++			power-domains = <&power RK3576_PD_NVM>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "disabled";
++		};
++
++		rng: rng@2a410000 {
++			compatible = "rockchip,rk3576-rng";
++			reg = <0x0 0x2a410000 0x0 0x200>;
++			clocks = <&cru HCLK_TRNG_NS>;
++			interrupts = <GIC_SPI 181 IRQ_TYPE_LEVEL_HIGH>;
++			resets = <&cru SRST_H_TRNG_NS>;
++		};
++
+ 		otp: otp@2a580000 {
+ 			compatible = "rockchip,rk3576-otp";
+ 			reg = <0x0 0x2a580000 0x0 0x400>;
+@@ -1299,6 +1777,120 @@
+ 			};
+ 		};
+ 
++		sai0: sai@2a600000 {
++			compatible = "rockchip,rk3576-sai";
++			reg = <0x0 0x2a600000 0x0 0x1000>;
++			interrupts = <GIC_SPI 187 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cru MCLK_SAI0_8CH>, <&cru HCLK_SAI0_8CH>;
++			clock-names = "mclk", "hclk";
++			dmas = <&dmac0 0>, <&dmac0 1>;
++			dma-names = "tx", "rx";
++			power-domains = <&power RK3576_PD_AUDIO>;
++			resets = <&cru SRST_M_SAI0_8CH>, <&cru SRST_H_SAI0_8CH>;
++			reset-names = "m", "h";
++			pinctrl-names = "default";
++			pinctrl-0 = <&sai0m0_lrck
++				&sai0m0_sclk
++				&sai0m0_sdi0
++				&sai0m0_sdi1
++				&sai0m0_sdi2
++				&sai0m0_sdi3
++				&sai0m0_sdo0
++				&sai0m0_sdo1
++				&sai0m0_sdo2
++				&sai0m0_sdo3>;
++			#sound-dai-cells = <0>;
++			sound-name-prefix = "SAI0";
++			status = "disabled";
++		};
++
++		sai1: sai@2a610000 {
++			compatible = "rockchip,rk3576-sai";
++			reg = <0x0 0x2a610000 0x0 0x1000>;
++			interrupts = <GIC_SPI 188 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cru MCLK_SAI1_8CH>, <&cru HCLK_SAI1_8CH>;
++			clock-names = "mclk", "hclk";
++			dmas = <&dmac0 2>, <&dmac0 3>;
++			dma-names = "tx", "rx";
++			power-domains = <&power RK3576_PD_AUDIO>;
++			resets = <&cru SRST_M_SAI1_8CH>, <&cru SRST_H_SAI1_8CH>;
++			reset-names = "m", "h";
++			pinctrl-names = "default";
++			pinctrl-0 = <&sai1m0_lrck
++				&sai1m0_sclk
++				&sai1m0_sdi0
++				&sai1m0_sdo0
++				&sai1m0_sdo1
++				&sai1m0_sdo2
++				&sai1m0_sdo3>;
++			#sound-dai-cells = <0>;
++			sound-name-prefix = "SAI1";
++			status = "disabled";
++		};
++
++		sai2: sai@2a620000 {
++			compatible = "rockchip,rk3576-sai";
++			reg = <0x0 0x2a620000 0x0 0x1000>;
++			interrupts = <GIC_SPI 189 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cru MCLK_SAI2_2CH>, <&cru HCLK_SAI2_2CH>;
++			clock-names = "mclk", "hclk";
++			dmas = <&dmac1 0>, <&dmac1 1>;
++			dma-names = "tx", "rx";
++			power-domains = <&power RK3576_PD_AUDIO>;
++			resets = <&cru SRST_M_SAI2_2CH>, <&cru SRST_H_SAI2_2CH>;
++			reset-names = "m", "h";
++			pinctrl-names = "default";
++			pinctrl-0 = <&sai2m0_lrck
++				&sai2m0_sclk
++				&sai2m0_sdi
++				&sai2m0_sdo>;
++			#sound-dai-cells = <0>;
++			sound-name-prefix = "SAI2";
++			status = "disabled";
++		};
++
++		sai3: sai@2a630000 {
++			compatible = "rockchip,rk3576-sai";
++			reg = <0x0 0x2a630000 0x0 0x1000>;
++			interrupts = <GIC_SPI 190 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cru MCLK_SAI3_2CH>, <&cru HCLK_SAI3_2CH>;
++			clock-names = "mclk", "hclk";
++			dmas = <&dmac1 2>, <&dmac1 3>;
++			dma-names = "tx", "rx";
++			power-domains = <&power RK3576_PD_AUDIO>;
++			resets = <&cru SRST_M_SAI3_2CH>, <&cru SRST_H_SAI3_2CH>;
++			reset-names = "m", "h";
++			pinctrl-names = "default";
++			pinctrl-0 = <&sai3m0_lrck
++				&sai3m0_sclk
++				&sai3m0_sdi
++				&sai3m0_sdo>;
++			#sound-dai-cells = <0>;
++			sound-name-prefix = "SAI3";
++			status = "disabled";
++		};
++
++		sai4: sai@2a640000 {
++			compatible = "rockchip,rk3576-sai";
++			reg = <0x0 0x2a640000 0x0 0x1000>;
++			interrupts = <GIC_SPI 191 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cru MCLK_SAI4_2CH>, <&cru HCLK_SAI4_2CH>;
++			clock-names = "mclk", "hclk";
++			dmas = <&dmac2 0>, <&dmac2 1>;
++			dma-names = "tx", "rx";
++			power-domains = <&power RK3576_PD_AUDIO>;
++			resets = <&cru SRST_M_SAI4_2CH>, <&cru SRST_H_SAI4_2CH>;
++			reset-names = "m", "h";
++			pinctrl-names = "default";
++			pinctrl-0 = <&sai4m0_lrck
++				&sai4m0_sclk
++				&sai4m0_sdi
++				&sai4m0_sdo>;
++			#sound-dai-cells = <0>;
++			sound-name-prefix = "SAI4";
++			status = "disabled";
++		};
++
+ 		gic: interrupt-controller@2a701000 {
+ 			compatible = "arm,gic-400";
+ 			reg = <0x0 0x2a701000 0 0x10000>,
+@@ -1410,7 +2002,6 @@
+ 			status = "disabled";
+ 		};
+ 
+-
+ 		i2c6: i2c@2ac90000 {
+ 			compatible = "rockchip,rk3576-i2c", "rockchip,rk3399-i2c";
+ 			reg = <0x0 0x2ac90000 0x0 0x1000>;
+@@ -1795,6 +2386,19 @@
+ 			status = "disabled";
+ 		};
+ 
++		hdptxphy: hdmiphy@2b000000 {
++			compatible = "rockchip,rk3576-hdptx-phy", "rockchip,rk3588-hdptx-phy";
++			reg = <0x0 0x2b000000 0x0 0x2000>;
++			clocks = <&cru CLK_PHY_REF_SRC>, <&cru PCLK_HDPTX_APB>;
++			clock-names = "ref", "apb";
++			resets = <&cru SRST_P_HDPTX_APB>, <&cru SRST_HDPTX_INIT>,
++				 <&cru SRST_HDPTX_CMN>, <&cru SRST_HDPTX_LANE>;
++			reset-names = "apb", "init", "cmn", "lane";
++			rockchip,grf = <&hdptxphy_grf>;
++			#phy-cells = <0>;
++			status = "disabled";
++		};
++
+ 		sram: sram@3ff88000 {
+ 			compatible = "mmio-sram";
+ 			reg = <0x0 0x3ff88000 0x0 0x78000>;
+@@ -1812,74 +2416,6 @@
+ 			compatible = "arm,scmi-shmem";
+ 			reg = <0x0 0x4010f000 0x0 0x100>;
+ 		};
+-
+-		pinctrl: pinctrl {
+-			compatible = "rockchip,rk3576-pinctrl";
+-			rockchip,grf = <&ioc_grf>;
+-			#address-cells = <2>;
+-			#size-cells = <2>;
+-			ranges;
+-
+-			gpio0: gpio@27320000 {
+-				compatible = "rockchip,gpio-bank";
+-				reg = <0x0 0x27320000 0x0 0x200>;
+-				clocks = <&cru PCLK_GPIO0>, <&cru DBCLK_GPIO0>;
+-				gpio-controller;
+-				gpio-ranges = <&pinctrl 0 0 32>;
+-				interrupts = <GIC_SPI 153 IRQ_TYPE_LEVEL_HIGH>;
+-				interrupt-controller;
+-				#gpio-cells = <2>;
+-				#interrupt-cells = <2>;
+-			};
+-
+-			gpio1: gpio@2ae10000 {
+-				compatible = "rockchip,gpio-bank";
+-				reg = <0x0 0x2ae10000 0x0 0x200>;
+-				clocks = <&cru PCLK_GPIO1>, <&cru DBCLK_GPIO1>;
+-				gpio-controller;
+-				gpio-ranges = <&pinctrl 0 32 32>;
+-				interrupts = <GIC_SPI 157 IRQ_TYPE_LEVEL_HIGH>;
+-				interrupt-controller;
+-				#gpio-cells = <2>;
+-				#interrupt-cells = <2>;
+-			};
+-
+-			gpio2: gpio@2ae20000 {
+-				compatible = "rockchip,gpio-bank";
+-				reg = <0x0 0x2ae20000 0x0 0x200>;
+-				clocks = <&cru PCLK_GPIO2>, <&cru DBCLK_GPIO2>;
+-				gpio-controller;
+-				gpio-ranges = <&pinctrl 0 64 32>;
+-				interrupts = <GIC_SPI 161 IRQ_TYPE_LEVEL_HIGH>;
+-				interrupt-controller;
+-				#gpio-cells = <2>;
+-				#interrupt-cells = <2>;
+-			};
+-
+-			gpio3: gpio@2ae30000 {
+-				compatible = "rockchip,gpio-bank";
+-				reg = <0x0 0x2ae30000 0x0 0x200>;
+-				clocks = <&cru PCLK_GPIO3>, <&cru DBCLK_GPIO3>;
+-				gpio-controller;
+-				gpio-ranges = <&pinctrl 0 96 32>;
+-				interrupts = <GIC_SPI 165 IRQ_TYPE_LEVEL_HIGH>;
+-				interrupt-controller;
+-				#gpio-cells = <2>;
+-				#interrupt-cells = <2>;
+-			};
+-
+-			gpio4: gpio@2ae40000 {
+-				compatible = "rockchip,gpio-bank";
+-				reg = <0x0 0x2ae40000 0x0 0x200>;
+-				clocks = <&cru PCLK_GPIO4>, <&cru DBCLK_GPIO4>;
+-				gpio-controller;
+-				gpio-ranges = <&pinctrl 0 128 32>;
+-				interrupts = <GIC_SPI 169 IRQ_TYPE_LEVEL_HIGH>;
+-				interrupt-controller;
+-				#gpio-cells = <2>;
+-				#interrupt-cells = <2>;
+-			};
+-		};
+ 	};
+ };
+ 
+--- /dev/null
++++ b/arch/arm/dts/rk3576-generic-u-boot.dtsi
+@@ -0,0 +1,3 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++
++#include "rk3576-u-boot.dtsi"
+--- /dev/null
++++ b/arch/arm/dts/rk3576-generic.dts
+@@ -0,0 +1,63 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++/*
++ * Minimal generic DT for RK3576 with eMMC, SD-card and USB OTG enabled
++ */
++
++/dts-v1/;
++
++#include <dt-bindings/gpio/gpio.h>
++#include "rk3576.dtsi"
++
++/ {
++	model = "Generic RK3576";
++	compatible = "rockchip,rk3576";
++
++	aliases {
++		mmc0 = &sdhci;
++		mmc1 = &sdmmc;
++	};
++
++	chosen {
++		stdout-path = "serial0:1500000n8";
++	};
++};
++
++&sdhci {
++	bus-width = <8>;
++	cap-mmc-highspeed;
++	mmc-hs200-1_8v;
++	no-sd;
++	no-sdio;
++	non-removable;
++	status = "okay";
++};
++
++&sdmmc {
++	bus-width = <4>;
++	cap-sd-highspeed;
++	disable-wp;
++	no-mmc;
++	no-sdio;
++	status = "okay";
++};
++
++&u2phy0 {
++	status = "okay";
++};
++
++&u2phy0_otg {
++	status = "okay";
++};
++
++&uart0 {
++	pinctrl-0 = <&uart0m0_xfer>;
++	status = "okay";
++};
++
++&usb_drd0_dwc3 {
++	dr_mode = "peripheral";
++	maximum-speed = "high-speed";
++	phys = <&u2phy0_otg>;
++	phy-names = "usb2-phy";
++	status = "okay";
++};
+--- /dev/null
++++ b/arch/arm/mach-rockchip/rk3576/MAINTAINERS
+@@ -0,0 +1,5 @@
++GENERIC-RK3576
++M:	Jonas Karlman <jonas@kwiboo.se>
++S:	Maintained
++F:	arch/arm/dts/rk3576-generic*
++F:	configs/generic-rk3576_defconfig
+--- /dev/null
++++ b/configs/generic-rk3576_defconfig
+@@ -0,0 +1,50 @@
++CONFIG_ARM=y
++CONFIG_SKIP_LOWLEVEL_INIT=y
++CONFIG_COUNTER_FREQUENCY=24000000
++CONFIG_ARCH_ROCKCHIP=y
++CONFIG_DEFAULT_DEVICE_TREE="rk3576-generic"
++CONFIG_ROCKCHIP_RK3576=y
++CONFIG_SYS_LOAD_ADDR=0x40c00800
++CONFIG_DEBUG_UART_BASE=0x2AD40000
++CONFIG_DEBUG_UART_CLOCK=24000000
++CONFIG_DEBUG_UART=y
++# CONFIG_BOOTMETH_VBE is not set
++CONFIG_DEFAULT_FDT_FILE="rockchip/rk3576-generic.dtb"
++# CONFIG_DISPLAY_CPUINFO is not set
++CONFIG_SPL_MAX_SIZE=0x40000
++# CONFIG_SPL_RAW_IMAGE_SUPPORT is not set
++CONFIG_CMD_MEMINFO=y
++CONFIG_CMD_MEMINFO_MAP=y
++CONFIG_CMD_GPIO=y
++CONFIG_CMD_GPT=y
++CONFIG_CMD_MISC=y
++CONFIG_CMD_MMC=y
++CONFIG_CMD_ROCKUSB=y
++CONFIG_CMD_USB_MASS_STORAGE=y
++# CONFIG_CMD_SETEXPR is not set
++CONFIG_CMD_RNG=y
++# CONFIG_SPL_DOS_PARTITION is not set
++# CONFIG_OF_UPSTREAM is not set
++CONFIG_OF_SPL_REMOVE_PROPS="clock-names interrupt-parent assigned-clocks assigned-clock-rates assigned-clock-parents"
++CONFIG_NO_NET=y
++# CONFIG_ADC is not set
++# CONFIG_USB_FUNCTION_FASTBOOT is not set
++CONFIG_ROCKCHIP_GPIO=y
++CONFIG_SUPPORT_EMMC_RPMB=y
++CONFIG_MMC_DW=y
++CONFIG_MMC_DW_ROCKCHIP=y
++CONFIG_MMC_SDHCI=y
++CONFIG_MMC_SDHCI_SDMA=y
++CONFIG_MMC_SDHCI_ROCKCHIP=y
++CONFIG_PHY_ROCKCHIP_INNO_USB2=y
++CONFIG_BAUDRATE=1500000
++CONFIG_DEBUG_UART_SHIFT=2
++CONFIG_SYS_NS16550_MEM32=y
++CONFIG_SYSRESET_PSCI=y
++CONFIG_USB=y
++CONFIG_USB_DWC3=y
++CONFIG_USB_DWC3_GENERIC=y
++CONFIG_USB_GADGET=y
++CONFIG_USB_GADGET_DOWNLOAD=y
++CONFIG_USB_FUNCTION_ROCKUSB=y
++CONFIG_ERRNO_STR=y
+--- a/doc/board/rockchip/rockchip.rst
++++ b/doc/board/rockchip/rockchip.rst
+@@ -135,6 +135,7 @@ List of mainline supported Rockchip boar
+ 
+ * rk3576
+      - Firefly ROC-RK3576-PC (roc-pc-rk3576)
++     - Generic RK3576 (generic-rk3576)
+ 
+ * rk3588
+      - ArmSoM Sige7 (sige7-rk3588)

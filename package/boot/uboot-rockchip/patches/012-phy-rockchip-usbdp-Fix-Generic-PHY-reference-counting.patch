@@ -1,0 +1,67 @@
+From 0336e97b1187f7f54e11c6cb9f3fa938cc11204e Mon Sep 17 00:00:00 2001
+From: Jonas Karlman <jonas@kwiboo.se>
+Date: Mon, 21 Jul 2025 22:07:10 +0000
+Subject: [PATCH] phy: rockchip: usbdp: Fix Generic PHY reference counting
+
+Generic PHY reference counting helps ensure driver ops for init/exit and
+power on/off are called at correct state. For this to work the PHY
+driver must initialize PHY-id to a persistent value in of_xlate ops.
+
+The Rockchip USBDP PHY driver does not initialize the PHY-id field, this
+typically lead to use of unshared reference counting among different
+struct phy instances.
+
+Initialize the PHY-id in of_xlate ops to ensure use of shared reference
+counting among all struct phy instances.
+
+E.g. on a ROCK 5B following could be observed:
+
+  => usb start
+  starting USB...
+  [...]
+  Bus usb@fc400000: 2 USB Device(s) found
+         scanning usb for storage devices... 1 Storage Device(s) found
+
+  => usb reset
+  resetting USB...
+  [...]
+  rockchip_udphy phy@fed90000: cmn ana lcpll lock timeout
+  rockchip_udphy phy@fed90000: failed to init usbdp combophy
+  rockchip_udphy phy@fed90000: PHY: Failed to init phy@fed90000: -110.
+  Can't init PHY1
+  Bus usb@fc400000: probe failed, error -110
+         scanning usb for storage devices... 0 Storage Device(s) found
+
+With shared reference counting this is fixed:
+
+  => usb reset
+  resetting USB...
+  [...]
+  Bus usb@fc400000: 2 USB Device(s) found
+         scanning usb for storage devices... 1 Storage Device(s) found
+
+Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Reviewed-by: Kever Yang <kever.yang@rock-chips.com>
+---
+ drivers/phy/rockchip/phy-rockchip-usbdp.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/drivers/phy/rockchip/phy-rockchip-usbdp.c
++++ b/drivers/phy/rockchip/phy-rockchip-usbdp.c
+@@ -587,12 +587,16 @@ static int udphy_power_off(struct rockch
+ static int rockchip_u3phy_of_xlate(struct phy *phy,
+ 				   struct ofnode_phandle_args *args)
+ {
++	struct rockchip_udphy *udphy = dev_get_priv(phy->dev);
++
+ 	if (args->args_count == 0)
+ 		return -EINVAL;
+ 
+ 	if (args->args[0] != PHY_TYPE_USB3)
+ 		return -EINVAL;
+ 
++	phy->id = udphy->id;
++
+ 	return 0;
+ }
+ 
