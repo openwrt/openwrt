@@ -37,6 +37,10 @@ ipq50xx_setup_interfaces()
 		ucidef_set_network_device_conduit "lan3" "eth1"
 		ucidef_set_network_device_conduit "wan" "eth0"
 		;;
+	xiaomi,cr8818)
+		ucidef_set_interface "wan_sw" device "sw-cpu sw-wan" protocol none ipv6 0
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+		;;
 	esac
 }
 
