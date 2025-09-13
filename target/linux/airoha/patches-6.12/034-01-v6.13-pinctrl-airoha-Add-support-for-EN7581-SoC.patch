@@ -27,9 +27,11 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  4 files changed, 2994 insertions(+), 1 deletion(-)
  create mode 100644 drivers/pinctrl/mediatek/pinctrl-airoha.c
 
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 67634f0ea30e13..38ccb620cc2497 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -16872,6 +16872,13 @@ F:	drivers/pinctrl/
+@@ -18232,6 +18232,13 @@ F:	drivers/pinctrl/
  F:	include/dt-bindings/pinctrl/
  F:	include/linux/pinctrl/
  
@@ -43,6 +45,8 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  PIN CONTROLLER - AMD
  M:	Basavaraj Natikar <Basavaraj.Natikar@amd.com>
  M:	Shyam Sundar S K <Shyam-sundar.S-k@amd.com>
+diff --git a/drivers/pinctrl/mediatek/Kconfig b/drivers/pinctrl/mediatek/Kconfig
+index 7af287252834a4..a417a031659c65 100644
 --- a/drivers/pinctrl/mediatek/Kconfig
 +++ b/drivers/pinctrl/mediatek/Kconfig
 @@ -1,6 +1,6 @@
@@ -75,9 +79,11 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  config PINCTRL_MT2712
  	bool "MediaTek MT2712 pin control"
  	depends on OF
+diff --git a/drivers/pinctrl/mediatek/Makefile b/drivers/pinctrl/mediatek/Makefile
+index 680f7e8526e00a..1405d434218ea1 100644
 --- a/drivers/pinctrl/mediatek/Makefile
 +++ b/drivers/pinctrl/mediatek/Makefile
-@@ -8,6 +8,7 @@ obj-$(CONFIG_PINCTRL_MTK_MOORE)		+= pinc
+@@ -8,6 +8,7 @@ obj-$(CONFIG_PINCTRL_MTK_MOORE)		+= pinctrl-moore.o
  obj-$(CONFIG_PINCTRL_MTK_PARIS)		+= pinctrl-paris.o
  
  # SoC Drivers
@@ -85,6 +91,9 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  obj-$(CONFIG_PINCTRL_MT7620)		+= pinctrl-mt7620.o
  obj-$(CONFIG_PINCTRL_MT7621)		+= pinctrl-mt7621.o
  obj-$(CONFIG_PINCTRL_MT76X8)		+= pinctrl-mt76x8.o
+diff --git a/drivers/pinctrl/mediatek/pinctrl-airoha.c b/drivers/pinctrl/mediatek/pinctrl-airoha.c
+new file mode 100644
+index 00000000000000..7692e6d9b87105
 --- /dev/null
 +++ b/drivers/pinctrl/mediatek/pinctrl-airoha.c
 @@ -0,0 +1,2970 @@
@@ -124,7 +133,13 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
 +
 +#define PINCTRL_FUNC_DESC(id)						\
 +	{								\
-+		.desc = { #id, id##_groups, ARRAY_SIZE(id##_groups) },	\
++		.desc = {						\
++			.func = {					\
++				.name = #id,				\
++				.groups = id##_groups,			\
++				.ngroups = ARRAY_SIZE(id##_groups),	\
++			}						\
++		},							\
 +		.groups = id##_func_group,				\
 +		.group_size = ARRAY_SIZE(id##_func_group),		\
 +	}
@@ -2379,7 +2394,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
 +{
 +	int err;
 +
-+	err = pinctrl_gpio_direction_output(chip->base + gpio);
++	err = pinctrl_gpio_direction_output(chip, gpio);
 +	if (err)
 +		return err;
 +
@@ -2499,12 +2514,6 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
 +	.flags = IRQCHIP_SET_TYPE_MASKED | IRQCHIP_IMMUTABLE,
 +};
 +
-+static int airoha_pinctrl_gpio_direction_input(struct gpio_chip *chip,
-+					       unsigned int gpio)
-+{
-+	return pinctrl_gpio_direction_input(chip->base + gpio);
-+}
-+
 +static int airoha_pinctrl_add_gpiochip(struct airoha_pinctrl *pinctrl,
 +				       struct platform_device *pdev)
 +{
@@ -2525,7 +2534,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
 +	gc->label = dev_name(dev);
 +	gc->request = gpiochip_generic_request;
 +	gc->free = gpiochip_generic_free;
-+	gc->direction_input = airoha_pinctrl_gpio_direction_input;
++	gc->direction_input = pinctrl_gpio_direction_input;
 +	gc->direction_output = airoha_gpio_direction_output;
 +	gc->set = airoha_gpio_set;
 +	gc->get = airoha_gpio_get;
@@ -2570,7 +2579,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
 +		return -EINVAL;
 +
 +	dev_dbg(pctrl_dev->dev, "enable function %s group %s\n",
-+		desc->name, grp->name);
++		desc->func.name, grp->grp.name);
 +
 +	func = desc->data;
 +	for (i = 0; i < func->group_size; i++) {
@@ -2578,7 +2587,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
 +		int j;
 +
 +		group = &func->groups[i];
-+		if (strcmp(group->name, grp->name))
++		if (strcmp(group->name, grp->grp.name))
 +			continue;
 +
 +		for (j = 0; j < group->regmap_size; j++) {
@@ -3004,7 +3013,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
 +		const struct pingroup *grp = &airoha_pinctrl_groups[i];
 +
 +		err = pinctrl_generic_add_group(pinctrl->ctrl, grp->name,
-+						(int *)grp->pins, grp->npins,
++						grp->pins, grp->npins,
 +						(void *)grp);
 +		if (err < 0) {
 +			dev_err(&pdev->dev, "Failed to register group %s\n",
@@ -3019,13 +3028,13 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
 +
 +		func = &airoha_pinctrl_funcs[i];
 +		err = pinmux_generic_add_function(pinctrl->ctrl,
-+						  func->desc.name,
-+						  func->desc.group_names,
-+						  func->desc.num_group_names,
++						  func->desc.func.name,
++						  func->desc.func.groups,
++						  func->desc.func.ngroups,
 +						  (void *)func);
 +		if (err < 0) {
 +			dev_err(dev, "Failed to register function %s\n",
-+				func->desc.name);
++				func->desc.func.name);
 +			return err;
 +		}
 +	}
