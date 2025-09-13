@@ -1,0 +1,30 @@
+From fca01a8792e6ed48a00e08124d55f4f74e47b11d Mon Sep 17 00:00:00 2001
+From: Jonas Karlman <jonas@kwiboo.se>
+Date: Mon, 21 Jul 2025 22:07:16 +0000
+Subject: [PATCH] phy: rockchip: typec: Fix improper use of UCLASS_PHY
+
+The Rockchip TypeC glue driver improperly present itself as a UCLASS_PHY
+driver, without ever implementing the required phy_ops.
+
+This is something that in special circumstances can lead to a NULL
+pointer dereference followed by a SError crash.
+
+Change the glue driver to use UCLASS_NOP to fix this.
+
+Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Reviewed-by: Kever Yang <kever.yang@rock-chips.com>
+---
+ drivers/phy/rockchip/phy-rockchip-typec.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/phy/rockchip/phy-rockchip-typec.c
++++ b/drivers/phy/rockchip/phy-rockchip-typec.c
+@@ -788,7 +788,7 @@ U_BOOT_DRIVER(rockchip_tcphy_usb3_port)
+ 
+ U_BOOT_DRIVER(rockchip_typec_phy) = {
+ 	.name	= "rockchip_typec_phy",
+-	.id	= UCLASS_PHY,
++	.id	= UCLASS_NOP,
+ 	.of_match = rockchip_typec_phy_ids,
+ 	.probe = rockchip_tcphy_probe,
+ 	.bind = rockchip_tcphy_bind,

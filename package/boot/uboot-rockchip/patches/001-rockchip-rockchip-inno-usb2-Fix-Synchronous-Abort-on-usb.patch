@@ -1,0 +1,73 @@
+From 1848a504379531eb726d29b355f9038d194e8430 Mon Sep 17 00:00:00 2001
+From: Alex Shumsky <alexthreed@gmail.com>
+Date: Thu, 3 Jul 2025 09:04:48 +0300
+Subject: [PATCH] rockchip: rockchip-inno-usb2: Fix Synchronous Abort on usb
+ start
+
+Fix NULL pointer dereference that happen when rockchip-inno-usb2 clock
+enabled before device probe. This early clock enable call happen in process
+of parent clock activation added in ac30d90f3367.
+
+Fixes: 229218373c22 ("phy: rockchip-inno-usb2: Add support for clkout_ctl_phy").
+Fixes: ac30d90f3367 ("clk: Ensure the parent clocks are enabled while reparenting")
+Co-authored-by: Jonas Karlman <jonas@kwiboo.se>
+Signed-off-by: Alex Shumsky <alexthreed@gmail.com>
+Reviewed-by: Jonas Karlman <jonas@kwiboo.se>
+Reviewed-by: Kever Yang <kever.yang@rock-chips.com>
+---
+ drivers/phy/rockchip/phy-rockchip-inno-usb2.c | 19 ++++++++++++++-----
+ 1 file changed, 14 insertions(+), 5 deletions(-)
+
+--- a/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
++++ b/drivers/phy/rockchip/phy-rockchip-inno-usb2.c
+@@ -167,20 +167,27 @@ static struct phy_ops rockchip_usb2phy_o
+ 	.of_xlate = rockchip_usb2phy_of_xlate,
+ };
+ 
+-static void rockchip_usb2phy_clkout_ctl(struct clk *clk, struct regmap **base,
+-					const struct usb2phy_reg **clkout_ctl)
++static int rockchip_usb2phy_clkout_ctl(struct clk *clk, struct regmap **base,
++				       const struct usb2phy_reg **clkout_ctl)
+ {
+ 	struct udevice *parent = dev_get_parent(clk->dev);
+ 	struct rockchip_usb2phy *priv = dev_get_priv(parent);
+ 	const struct rockchip_usb2phy_cfg *phy_cfg = priv->phy_cfg;
+ 
+-	if (priv->phy_cfg->clkout_ctl_phy.enable) {
++	// phy_cfg can be NULL if this function called before probe (when parent
++	// clocks are enabled)
++	if (!phy_cfg)
++		return -EINVAL;
++
++	if (phy_cfg->clkout_ctl_phy.enable) {
+ 		*base = priv->phy_base;
+ 		*clkout_ctl = &phy_cfg->clkout_ctl_phy;
+ 	} else {
+ 		*base = priv->reg_base;
+ 		*clkout_ctl = &phy_cfg->clkout_ctl;
+ 	}
++
++	return 0;
+ }
+ 
+ /**
+@@ -206,7 +213,8 @@ int rockchip_usb2phy_clk_enable(struct c
+ 	const struct usb2phy_reg *clkout_ctl;
+ 	struct regmap *base;
+ 
+-	rockchip_usb2phy_clkout_ctl(clk, &base, &clkout_ctl);
++	if (rockchip_usb2phy_clkout_ctl(clk, &base, &clkout_ctl))
++		return -ENOSYS;
+ 
+ 	/* turn on 480m clk output if it is off */
+ 	if (!property_enabled(base, clkout_ctl)) {
+@@ -230,7 +238,8 @@ int rockchip_usb2phy_clk_disable(struct
+ 	const struct usb2phy_reg *clkout_ctl;
+ 	struct regmap *base;
+ 
+-	rockchip_usb2phy_clkout_ctl(clk, &base, &clkout_ctl);
++	if (rockchip_usb2phy_clkout_ctl(clk, &base, &clkout_ctl))
++		return -ENOSYS;
+ 
+ 	/* turn off 480m clk output */
+ 	property_enable(base, clkout_ctl, false);

@@ -1,0 +1,53 @@
+From cd803da7c033e376a66793a43ee98e136bc6cc25 Mon Sep 17 00:00:00 2001
+From: Sebastian Reichel <sebastian.reichel@collabora.com>
+Date: Fri, 4 Jul 2025 19:31:59 +0200
+Subject: [PATCH] arm64: dts: rockchip: fix PHY handling for ROCK 4D
+
+Old revisions of the ROCK 4D board have a dedicated crystal to
+supply the RTL8211F PHY's 25MHz clock input. At least some newer
+revisions instead use REFCLKO25M_GMAC0_OUT. The DT already has
+this half-prepared, but there are some issues:
+
+1. The DT relies on auto-selecting the right PHY driver, which
+   requires that it works good enough to read the ID registers.
+   This does not work without the clock, which is handled by
+   the PHY driver. By updating the compatible to contain the
+   RTL8211F IDs, so that the operating system can choose the
+   right PHY driver without relying on a pre-powered PHY.
+
+2. Despite the name REFCLKO25M_GMAC0_OUT could also provide a
+   different frequency, so ensure it is explicitly set to 25
+   MHz as expected by the PHY.
+
+3. While at it switch from deprecated "enable-gpio" to standard
+   "enable-gpios".
+
+Fixes: a0fb7eca9c09 ("arm64: dts: rockchip: Add Radxa ROCK 4D device tree")
+Signed-off-by: Sebastian Reichel <sebastian.reichel@collabora.com>
+Link: https://lore.kernel.org/r/20250704-rk3576-rock4d-phy-handling-fixes-v1-1-1d64130c4139@kernel.org
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3576-rock-4d.dts | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3576-rock-4d.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3576-rock-4d.dts
+@@ -645,14 +645,16 @@
+ 
+ &mdio0 {
+ 	rgmii_phy0: ethernet-phy@1 {
+-		compatible = "ethernet-phy-ieee802.3-c22";
++		compatible = "ethernet-phy-id001c.c916";
+ 		reg = <0x1>;
+ 		clocks = <&cru REFCLKO25M_GMAC0_OUT>;
++		assigned-clocks = <&cru REFCLKO25M_GMAC0_OUT>;
++		assigned-clock-rates = <25000000>;
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&rtl8211f_rst>;
+ 		reset-assert-us = <20000>;
+ 		reset-deassert-us = <100000>;
+-		reset-gpio = <&gpio2 RK_PB5 GPIO_ACTIVE_LOW>;
++		reset-gpios = <&gpio2 RK_PB5 GPIO_ACTIVE_LOW>;
+ 	};
+ };
+ 

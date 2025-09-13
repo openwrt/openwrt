@@ -1,0 +1,83 @@
+From a72e8feaca46ed41a8d6bb4e8c5961a29fe7a39e Mon Sep 17 00:00:00 2001
+From: Jonas Karlman <jonas@kwiboo.se>
+Date: Fri, 1 Aug 2025 20:32:40 +0000
+Subject: [PATCH] rockchip: rk3576: Implement checkboard() to print SoC variant
+
+Implement checkboard() to print current SoC model used by a board when
+U-Boot proper is running.
+
+  U-Boot 2025.04 (Apr 22 2025 - 20:43:17 +0000)
+
+  Model: Generic RK3576
+  SoC:   RK3576
+  DRAM:  8 GiB
+
+Information about the SoC model and variant is read from OTP.
+
+Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Reviewed-by: Kever Yang <kever.yang@rock-chips.com>
+---
+ arch/arm/mach-rockchip/rk3576/rk3576.c | 48 ++++++++++++++++++++++++++
+ 1 file changed, 48 insertions(+)
+
+--- a/arch/arm/mach-rockchip/rk3576/rk3576.c
++++ b/arch/arm/mach-rockchip/rk3576/rk3576.c
+@@ -3,6 +3,10 @@
+  * Copyright (c) 2024 Rockchip Electronics Co., Ltd
+  */
+ 
++#define LOG_CATEGORY LOGC_ARCH
++
++#include <dm.h>
++#include <misc.h>
+ #include <asm/armv8/mmu.h>
+ #include <asm/arch-rockchip/bootrom.h>
+ #include <asm/arch-rockchip/hardware.h>
+@@ -153,3 +157,47 @@ int arch_cpu_init(void)
+ 
+ 	return 0;
+ }
++
++#define RK3576_OTP_CPU_CODE_OFFSET		0x02
++#define RK3576_OTP_SPECIFICATION_OFFSET		0x08
++
++int checkboard(void)
++{
++	u8 cpu_code[2], specification;
++	struct udevice *dev;
++	char suffix[2];
++	int ret;
++
++	if (!IS_ENABLED(CONFIG_ROCKCHIP_OTP) || !CONFIG_IS_ENABLED(MISC))
++		return 0;
++
++	ret = uclass_get_device_by_driver(UCLASS_MISC,
++					  DM_DRIVER_GET(rockchip_otp), &dev);
++	if (ret) {
++		log_debug("Could not find otp device, ret=%d\n", ret);
++		return 0;
++	}
++
++	/* cpu-code: SoC model, e.g. 0x35 0x76 */
++	ret = misc_read(dev, RK3576_OTP_CPU_CODE_OFFSET, cpu_code, 2);
++	if (ret < 0) {
++		log_debug("Could not read cpu-code, ret=%d\n", ret);
++		return 0;
++	}
++
++	/* specification: SoC variant, e.g. 0xA for RK3576J */
++	ret = misc_read(dev, RK3576_OTP_SPECIFICATION_OFFSET, &specification, 1);
++	if (ret < 0) {
++		log_debug("Could not read specification, ret=%d\n", ret);
++		return 0;
++	}
++	specification &= 0x1f;
++
++	/* for RK3576J i.e. '@' + 0xA = 'J' */
++	suffix[0] = specification > 1 ? '@' + specification : '\0';
++	suffix[1] = '\0';
++
++	printf("SoC:   RK%02x%02x%s\n", cpu_code[0], cpu_code[1], suffix);
++
++	return 0;
++}
