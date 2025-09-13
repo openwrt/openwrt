@@ -1,0 +1,25 @@
+From dd2c7df419ae8a5cc5f7ee0480218b0ae28d4926 Mon Sep 17 00:00:00 2001
+From: Jonas Karlman <jonas@kwiboo.se>
+Date: Fri, 1 Aug 2025 20:32:38 +0000
+Subject: [PATCH] rockchip: Add default USB_GADGET_PRODUCT_NUM for RK3576
+
+Use 0x350e as the default USB Product ID for Rockchip RK3576, same PID
+being used by the BootROM when the device is in MASKROM mode.
+
+Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Reviewed-by: Mattijs Korpershoek <mkorpershoek@kernel.org>
+Reviewed-by: Kever Yang <kever.yang@rock-chips.com>
+---
+ drivers/usb/gadget/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/usb/gadget/Kconfig
++++ b/drivers/usb/gadget/Kconfig
+@@ -86,6 +86,7 @@ config USB_GADGET_PRODUCT_NUM
+ 	default 0x350a if ROCKCHIP_RK3568
+ 	default 0x350b if ROCKCHIP_RK3588
+ 	default 0x350c if ROCKCHIP_RK3528
++	default 0x350e if ROCKCHIP_RK3576
+ 	default 0x0
+ 	help
+ 	  Product ID of the USB device emulated, reported to the host device.
