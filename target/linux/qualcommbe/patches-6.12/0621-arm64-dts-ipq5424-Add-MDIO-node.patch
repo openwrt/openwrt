@@ -1,0 +1,97 @@
+From 521098e7a8d6a5fcb4c1432ef07866f62efe37b4 Mon Sep 17 00:00:00 2001
+From: Luo Jie <quic_luoj@quicinc.com>
+Date: Fri, 14 Feb 2025 17:33:36 +0800
+Subject: [PATCH 621/636] arm64: dts: ipq5424: Add MDIO node
+
+There are QCA8386 switch and two QCA8111 PHYs connected on
+RDP466 devices.
+
+Change-Id: Ia2fabc8b8f0fc8e4dcfee5d3f281a73ff3ce2977
+Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
+---
+ arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts | 22 ++++++++++++++++
+ arch/arm64/boot/dts/qcom/ipq5424.dtsi       | 28 +++++++++++++++++++++
+ 2 files changed, 50 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts b/arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts
+index 00ea225f6f5e..21e8c7b04ce7 100644
+--- a/arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts
++++ b/arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts
+@@ -45,6 +45,28 @@
+ 	};
+ };
+ 
++&mdio {
++	clock-frequency = <6250000>;
++	status = "okay";
++
++	phy0: ethernet-phy@8 {
++		compatible ="ethernet-phy-ieee802.3-c45";
++		reg = <8>;
++		reset-gpios = <&tlmm 40 GPIO_ACTIVE_LOW>;
++		reset-assert-us = <100000>;
++		reset-deassert-us = <100000>;
++	};
++
++	phy1: ethernet-phy@c {
++		compatible ="ethernet-phy-ieee802.3-c45";
++		reg = <0xc>;
++		reset-gpios = <&tlmm 28 GPIO_ACTIVE_LOW>;
++		reset-assert-us = <100000>;
++		reset-deassert-us = <100000>;
++	};
++
++};
++
+ &dwc_0 {
+ 	dr_mode = "host";
+ };
+diff --git a/arch/arm64/boot/dts/qcom/ipq5424.dtsi b/arch/arm64/boot/dts/qcom/ipq5424.dtsi
+index 199bdb81f69d..aff0a4b7664f 100644
+--- a/arch/arm64/boot/dts/qcom/ipq5424.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5424.dtsi
+@@ -285,6 +285,18 @@
+ 			status = "disabled";
+ 		};
+ 
++		mdio: mdio@90000 {
++			compatible = "qcom,ipq4019-mdio", "qcom,ipq5424-mdio";
++			reg = <0 0x00090000 0 0x64>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			pinctrl-0 = <&mdio_pins>;
++			pinctrl-names = "default";
++			clocks = <&gcc GCC_MDIO_AHB_CLK>;
++			clock-names = "gcc_mdio_ahb_clk";
++			status = "disabled";
++		};
++
+ 		rng: rng@4c3000 {
+ 			compatible = "qcom,ipq5424-trng", "qcom,trng";
+ 			reg = <0 0x004c3000 0 0x1000>;
+@@ -315,6 +327,22 @@
+ 				drive-strength = <8>;
+ 				bias-pull-up;
+ 			};
++
++			mdio_pins: mdio-pins {
++				mdc-state {
++					pins = "gpio22";
++					function = "mdc_mst";
++					drive-strength = <8>;
++					bias-pull-up;
++				};
++
++				mdio-state {
++					pins = "gpio23";
++					function = "mdio_mst";
++					drive-strength = <8>;
++					bias-pull-up;
++				};
++			};
+ 		};
+ 
+ 		gcc: clock-controller@1800000 {
+-- 
+2.34.1
+
