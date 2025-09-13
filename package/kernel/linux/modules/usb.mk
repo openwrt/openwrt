@@ -1846,6 +1846,7 @@ define KernelPackage/usb3
 	+TARGET_bcm53xx:kmod-phy-bcm-ns-usb3 \
 	+TARGET_ramips_mt7621:kmod-usb-xhci-mtk \
 	+TARGET_econet_en751221:kmod-usb-xhci-mtk \
+	+TARGET_airoha_en7523:kmod-usb-xhci-mtk \
 	+TARGET_mediatek:kmod-usb-xhci-mtk
   KCONFIG:= \
 	CONFIG_USB_PCI=y \
@@ -1964,4 +1965,3 @@ define KernelPackage/chaoskey/description
 endef
 
 $(eval $(call KernelPackage,chaoskey))
-

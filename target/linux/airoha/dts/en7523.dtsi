@@ -4,6 +4,8 @@
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/clock/en7523-clk.h>
+#include <dt-bindings/reset/airoha,en7523-reset.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	interrupt-parent = <&gic>;
@@ -15,7 +17,7 @@
 		#size-cells = <1>;
 		ranges;
 
-		npu_binary@84000000 {
+		npu_binary: npu_binary@84000000 {
 			no-map;
 			reg = <0x84000000 0xA00000>;
 		};
@@ -25,19 +27,29 @@
 			reg = <0x84B00000 0x100000>;
 		};
 
-		npu_pkt@85000000 {
+		npu_pkt: npu_pkt@85000000 {
 			no-map;
 			reg = <0x85000000 0x1A00000>;
 		};
 
-		npu_phyaddr@86B00000 {
+		qdma0_buf: qdma0_buf@86B00000 {
 			no-map;
 			reg = <0x86B00000 0x100000>;
 		};
 
-		npu_rxdesc@86D00000 {
+		qdma1_buf: qdma1_buf@86a00000 {
+			no-map;
+			reg = <0x86a00000 0x100000>;
+		};
+
+		npu_txpkt: npu_rxdesc@86D00000 {
 			no-map;
 			reg = <0x86D00000 0x100000>;
+		};
+
+		npu_txbufid: npu-txbufid@90c00000 {
+			no-map;
+			reg = <0x8c620000 0x6800>;
 		};
 	};
 
@@ -89,6 +101,7 @@
 		reg = <0x1fa20000 0x400>,
 		      <0x1fb00000 0x1000>;
 		#clock-cells = <1>;
+		#reset-cells = <1>;
 	};
 
 	gic: interrupt-controller@9000000 {
@@ -103,6 +116,13 @@
 		      <0x09500000 0x2000>,
 		      <0x09600000 0x20000>;
 		interrupts = <GIC_PPI 9 IRQ_TYPE_LEVEL_LOW>;
+	};
+
+	watchdog@1fbf0100 {
+		compatible = "airoha,en7581-wdt";
+		reg = <0x1fbf0100 0x38>;
+		clocks = <&scu EN7523_CLK_BUS>;
+		clock-names = "bus";
 	};
 
 	timer {
@@ -214,6 +234,277 @@
 			compatible = "spi-nand";
 			reg = <0>;
 			nand-ecc-engine = <&nand>;
+		};
+	};
+
+	reg_3p3v: regulator-3p3v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-3.3V";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	reg_5v: regulator-5v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-5V";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	// Fix to use irq 111 not 51
+	// scsi not detect in new kernel, require fix port enable:
+	//   scsi 0:0:0:0: Direct-Access     Sony     Flash Disk       8.07 PQ: 0 ANSI: 4
+	xhci: xhci@1fb90000 {
+		compatible = "mediatek,mt8173-xhci", "mediatek,mtk-xhci";
+		reg = <0x1fab0000 0x3e00>,
+					<0x1fab3e00 0x100>;
+		reg-names = "mac", "ippc";
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		vusb33-supply = <&reg_3p3v>;
+		vbus-supply = <&reg_5v>;
+
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 33 IRQ_TYPE_LEVEL_HIGH>;
+		usb3-lpm-capable;
+	};
+
+	npu: npu@1e800000 {
+		compatible = "airoha,en7523-npu";
+		reg = <0x1e900000 0x313000>,
+					<0x1e800000 0x60000>;
+		interrupts = <GIC_SPI 125 IRQ_TYPE_LEVEL_HIGH>,
+								 <GIC_SPI 103 IRQ_TYPE_LEVEL_HIGH>,
+								 <GIC_SPI 109 IRQ_TYPE_LEVEL_HIGH>,
+								 <GIC_SPI 113 IRQ_TYPE_LEVEL_HIGH>,
+								 <GIC_SPI 117 IRQ_TYPE_LEVEL_HIGH>,
+								 <GIC_SPI 118 IRQ_TYPE_LEVEL_HIGH>,
+								 <GIC_SPI 119 IRQ_TYPE_LEVEL_HIGH>,
+								 <GIC_SPI 120 IRQ_TYPE_LEVEL_HIGH>,
+								 <GIC_SPI 121 IRQ_TYPE_LEVEL_HIGH>,
+								 <GIC_SPI 122 IRQ_TYPE_LEVEL_HIGH>,
+								 <GIC_SPI 123 IRQ_TYPE_LEVEL_HIGH>;
+
+		memory-region = <&npu_binary>, <&npu_pkt>, <&npu_txpkt>, <&npu_txbufid>;
+		memory-region-names = "binary", "pkt", "tx-pkt", "tx-bufid";
+
+		status = "disabled";
+	};
+
+	eth: ethernet@1fb50000 {
+		compatible = "airoha,en7581-eth";
+		reg-names = "fe", "qdma0", "qdma1";
+		reg = <0x1fb50000 0x2600>,
+					<0x1fb54000 0x2000>,
+					<0x1fb56000 0x2000>;
+
+		reset-names = "fe", "pdma", "qdma", "xsi-mac", "hsi0-mac", "hsi1-mac", "hsi-mac", "xfp-mac";
+		resets = <&scu EN7523_RST_FE>,
+             <&scu EN7523_RST_FE_PDMA>,
+             <&scu EN7523_RST_FE_QDMA>,
+             <&scu EN7523_RST_XSI_MAC>,
+             <&scu EN7523_RST_DUAL_HSI0_MAC>,
+             <&scu EN7523_RST_DUAL_HSI1_MAC>,
+             <&scu EN7523_RST_HSI_MAC>,
+             <&scu EN7523_RST_XFP_MAC>;
+
+		interrupts = <GIC_SPI 37 IRQ_TYPE_LEVEL_HIGH>,
+                 <GIC_SPI 55 IRQ_TYPE_LEVEL_HIGH>,
+                 <GIC_SPI 56 IRQ_TYPE_LEVEL_HIGH>,
+                 <GIC_SPI 57 IRQ_TYPE_LEVEL_HIGH>,
+                 <GIC_SPI 38 IRQ_TYPE_LEVEL_HIGH>,
+                 <GIC_SPI 58 IRQ_TYPE_LEVEL_HIGH>,
+                 <GIC_SPI 59 IRQ_TYPE_LEVEL_HIGH>,
+                 <GIC_SPI 60 IRQ_TYPE_LEVEL_HIGH>,
+                 <GIC_SPI 49 IRQ_TYPE_LEVEL_HIGH>,
+                 <GIC_SPI 64 IRQ_TYPE_LEVEL_HIGH>;
+
+		memory-region = <&qdma0_buf>, <&qdma1_buf>;
+		memory-region-names = "qdma0-buf", "qdma1-buf";
+
+		airoha,npu = <&npu>;
+
+		status = "disabled";
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		gdm1: ethernet@1 {
+			compatible = "airoha,eth-mac";
+			reg = <1>;
+			phy-mode = "internal";
+			status = "disabled";
+
+			fixed-link {
+				speed = <10000>;
+				full-duplex;
+				pause;
+			};
+		};
+	};
+
+	switch: switch@1fb58000 {
+		compatible = "airoha,en7581-switch";
+		reg = <0x1fb58000 0x8000>;
+		resets = <&scu EN7523_RST_GSW>;
+
+		interrupt-controller;
+		#interrupt-cells = <1>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 209 IRQ_TYPE_LEVEL_HIGH>;
+
+		status = "disabled";
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			gsw_port1: port@1 {
+				reg = <1>;
+				label = "lan1";
+				phy-mode = "internal";
+				phy-handle = <&gsw_phy1>;
+			};
+
+			gsw_port2: port@2 {
+				reg = <2>;
+				label = "lan2";
+				phy-mode = "internal";
+				phy-handle = <&gsw_phy2>;
+			};
+
+			gsw_port3: port@3 {
+				reg = <3>;
+				label = "lan3";
+				phy-mode = "internal";
+				phy-handle = <&gsw_phy3>;
+			};
+
+			gsw_port4: port@4 {
+				reg = <4>;
+				label = "lan4";
+				phy-mode = "internal";
+				phy-handle = <&gsw_phy4>;
+			};
+
+			port@6 {
+				reg = <6>;
+				label = "cpu";
+				ethernet = <&gdm1>;
+				phy-mode = "internal";
+
+				fixed-link {
+					speed = <10000>;
+					full-duplex;
+					pause;
+				};
+			};
+		};
+
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			gsw_phy1: ethernet-phy@1 {
+				compatible = "ethernet-phy-ieee802.3-c22";
+				reg = <9>;
+				phy-mode = "internal";
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					gsw_phy1_led0: gsw-phy1-led0@0 {
+						reg = <0>;
+						function = "phy1_led0";
+						status = "disabled";
+					};
+
+					gsw_phy1_led1: gsw-phy1-led1@1 {
+						reg = <1>;
+						function = "phy1_led1";
+						status = "disabled";
+					};
+				};
+			};
+
+			gsw_phy2: ethernet-phy@2 {
+				compatible = "ethernet-phy-ieee802.3-c22";
+				reg = <10>;
+				phy-mode = "internal";
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					gsw_phy2_led0: gsw-phy2-led0@0 {
+						reg = <0>;
+						function = "phy2_led0";
+						status = "disabled";
+					};
+
+					gsw_phy2_led1: gsw-phy2-led1@1 {
+						reg = <1>;
+						function = "phy2_led1";
+						status = "disabled";
+					};
+				};
+			};
+
+			gsw_phy3: ethernet-phy@3 {
+				compatible = "ethernet-phy-ieee802.3-c22";
+				reg = <11>;
+				phy-mode = "internal";
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					gsw_phy3_led0: gsw-phy3-led0@0 {
+						reg = <0>;
+						function = LED_FUNCTION_LAN;
+						status = "disabled";
+					};
+
+					gsw_phy3_led1: gsw-phy3-led1@1 {
+						reg = <1>;
+						function = LED_FUNCTION_LAN;
+						status = "disabled";
+					};
+				};
+			};
+
+			gsw_phy4: ethernet-phy@4 {
+				compatible = "ethernet-phy-ieee802.3-c22";
+				reg = <12>;
+				phy-mode = "internal";
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					gsw_phy4_led0: gsw-phy4-led0@0 {
+						reg = <0>;
+						function = LED_FUNCTION_LAN;
+						status = "disabled";
+					};
+
+					gsw_phy4_led1: gsw-phy4-led1@1 {
+						reg = <1>;
+						function = LED_FUNCTION_LAN;
+						status = "disabled";
+					};
+				};
+			};
 		};
 	};
 };

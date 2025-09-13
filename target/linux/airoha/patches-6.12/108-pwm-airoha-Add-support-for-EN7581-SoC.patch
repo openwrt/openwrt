@@ -145,7 +145,7 @@ Changes in v2:
 @@ -54,6 +54,17 @@ config PWM_ADP5585
  	  This option enables support for the PWM function found in the Analog
  	  Devices ADP5585.
- 
+
 +config PWM_AIROHA
 +	tristate "Airoha PWM support"
 +	depends on ARCH_AIROHA || COMPILE_TEST
@@ -619,7 +619,7 @@ Changes in v2:
 +	 * Period goes at 4ns step, normalize it to check if we can
 +	 * share a generator.
 +	 */
-+	period_ns = rounddown(period_ns, AIROHA_PWM_PERIOD_TICK_NS);
++	period_ns = div_u64(period_ns, AIROHA_PWM_PERIOD_TICK_NS) * AIROHA_PWM_PERIOD_TICK_NS;
 +
 +	/* Clamp period to MAX supported value */
 +	if (period_ns > AIROHA_PWM_PERIOD_MAX_NS) {

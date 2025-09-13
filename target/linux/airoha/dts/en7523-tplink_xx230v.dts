@@ -1,0 +1,236 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+/* Bootloader installs ATF here */
+/memreserve/ 0x80000000 0x200000;
+
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include "en7523.dtsi"
+
+/ {
+	model = "TP-Link xx230v";
+	compatible = "tplink,xx230v", "airoha,en7523";
+
+	chosen {
+		bootargs = "console=ttyS0,115200 earlycon";
+		stdout-path = "serial0:115200n8";
+	};
+	aliases {
+		serial0 = &uart1;
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-upgrade = &led_power;
+		led-running = &led_power;
+	};
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+		};
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
+		};
+	};
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: power {
+			label = "green:power";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
+		};
+		xpon {
+			label = "green:xpon";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+		};
+		los {
+			label = "red:los";
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+		};
+		internet {
+			label = "green:internet";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+		};
+		wifi {
+			label = "green:wifi";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+		};
+		phone1 {
+			label = "green:fxs1";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+		};
+		lan1 {
+			label = "green:lan1";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+		};
+		lan2 {
+			label = "green:lan2";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+		};
+		lan3 {
+			label = "green:lan3";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
+		};
+		lan4 {
+			label = "green:lan4";
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&nand {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		partition@0 {
+			label = "bootloader";
+			reg = <0x000000000000 0x000000080000>;
+			read-only;
+		};
+
+		partition@80000 {// filled with 0xff
+			label = "romfile";
+			reg = <0x000000080000 0x0000000a0000>;
+			read-only;
+		};
+
+		partition@a0000 {
+			label = "misc";
+			reg = <0x0000000a0000 0x0000001a0000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				lan_mac: macaddr@51810 {
+					compatible = "mac-base";
+					reg = <0x51810 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+				macaddr_config_1: macaddr@4f1e0 {
+					compatible = "mac-base";
+					reg = <0x4f1e0 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+
+				// 42mrtmp_nv_init(): EEPROM Size[3584], flash_read(): read from address:0x120000, len:0xe00!
+				eeprom_misc_8000: eeprom@8000 {
+					reg = <0x8000 0xe00>;
+				};
+			};
+		};
+
+		partition@1a0000 {
+			label = "firmware";
+			reg = <0x0000001a0000 0x000002000000>;
+			compatible = "tplink,firmware";
+		};
+
+		partition@200000 {
+			label = "firmware_slave";
+			reg = <0x000002000000 0x000003e60000>;
+			compatible = "tplink,firmware";
+		};
+
+		partition@3fe0000 {
+			label = "reserve";
+			reg = <0x000003fe0000 0x000004000000>;
+		};
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+};
+
+&pcie1 {
+	status = "okay";
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		nvmem-cells = <&eeprom_misc_8000>;
+		nvmem-cell-names = "eeprom";
+		airoha,npu = <&npu>;
+		airoha,eth = <&eth>;
+		ieee80211-freq-limit = <2400000 2500000>, <5170000 5835000>, <5945000 7125000>;
+
+		band@0 {
+			reg = <0>;
+			nvmem-cells = <&macaddr_config_1 1>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		band@1 {
+			reg = <1>;
+			nvmem-cells = <&macaddr_config_1 2>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
+};
+
+&eth {
+	status = "okay";
+};
+
+&gdm1 {
+	status = "okay";
+
+	nvmem-cells = <&lan_mac 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch {
+	status = "okay";
+
+	mdio {
+		phy5: ethernet-phy@5 {
+			compatible = "ethernet-phy-ieee802.3-c45";
+			reg = <5>;
+			reset-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+		};
+
+		phy8: ethernet-phy@8 {
+			compatible = "ethernet-phy-ieee802.3-c45";
+			reg = <8>;
+			reset-gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&gsw_phy1 {
+	status = "okay";
+};
+&gsw_phy2 {
+	status = "okay";
+};
+&gsw_phy3 {
+	status = "okay";
+};
+&gsw_phy4 {
+	status = "okay";
+};
