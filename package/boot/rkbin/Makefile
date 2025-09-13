@@ -55,6 +55,12 @@ define Trusted-Firmware-A/rk3568-tpl-e25
   TPL:=rk35/rk3568_ddr_1560MHz_uart2_m0_115200_v1.23.bin
 endef
 
+define Trusted-Firmware-A/rk3576-tpl
+  NAME:=Rockchip RK3576 SoCs
+  BUILD_SUBTARGET:=armv8
+  TPL:=rk35/rk3576_ddr_lp4_2112MHz_lp5_2736MHz_v1.09.bin
+endef
+
 define Trusted-Firmware-A/rk3588-tpl
   NAME:=Rockchip RK3588 SoCs
   BUILD_SUBTARGET:=armv8
@@ -67,6 +73,7 @@ TFA_TARGETS:= \
 	rk3566 \
 	rk3568 \
 	rk3568-tpl-e25 \
+	rk3576-tpl \
 	rk3588-tpl
 
 ifeq ($(BUILD_VARIANT),rk3308-tpl-rock-pi-s)
