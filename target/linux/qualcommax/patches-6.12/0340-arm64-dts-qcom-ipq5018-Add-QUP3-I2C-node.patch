@@ -8,7 +8,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 ---
 --- a/arch/arm64/boot/dts/qcom/ipq5018.dtsi
 +++ b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
-@@ -441,6 +441,21 @@
+@@ -524,6 +524,21 @@
  			status = "disabled";
  		};
  
@@ -27,6 +27,6 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 +			status = "disabled";
 +		};
 +
- 		usb: usb@8af8800 {
- 			compatible = "qcom,ipq5018-dwc3", "qcom,dwc3";
- 			reg = <0x08af8800 0x400>;
+ 		qpic_bam: dma-controller@7984000 {
+ 			compatible = "qcom,bam-v1.7.4", "qcom,bam-v1.7.0";
+ 			reg = <0x07984000 0x1c000>;
