@@ -217,6 +217,10 @@
 					#address-cells = <1>;
 					#size-cells = <1>;
 
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x1000>;
+					};
+
 					macaddr_factory_4: macaddr@4 {
 						compatible = "mac-base";
 						reg = <0x4 0x6>;
@@ -249,6 +253,8 @@
 
 &wifi {
 	status = "okay";
+	nvmem-cell-names = "eeprom";
+	nvmem-cells = <&eeprom_factory_0>;
 
 	band@0 {
 		reg = <0>;
