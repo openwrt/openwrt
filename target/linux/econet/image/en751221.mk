@@ -4,6 +4,7 @@ define Device/smartfiber_xp8421-b
   DEVICE_DTS := en751221_smartfiber_xp8421-b
   IMAGES := tclinux.trx
   IMAGE/tclinux.trx := append-kernel | lzma | tclinux-trx
+  DEVICE_PACKAGES := kmod-usb3
 endef
 TARGET_DEVICES += smartfiber_xp8421-b
 
