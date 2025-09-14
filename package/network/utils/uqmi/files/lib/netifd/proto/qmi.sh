@@ -232,9 +232,10 @@ proto_qmi_setup() {
 	# Set IP format
 	uqmi -s -d "$device" -t 1000 --set-data-format 802.3 > /dev/null 2>&1
 	uqmi -s -d "$device" -t 1000 --wda-set-data-format 802.3 > /dev/null 2>&1
-	dataformat="$(uqmi -s -d "$device" -t 1000 --wda-get-data-format)"
+	json_load "$(uqmi -s -d "$device" -t 1000 --wda-get-data-format)"
+	json_get_var dataformat link-layer-protocol
 
-	if [ "$dataformat" = '"raw-ip"' ]; then
+	if [ "$dataformat" = "raw-ip" ]; then
 
 		[ -f /sys/class/net/$ifname/qmi/raw_ip ] || {
 			echo "Device only supports raw-ip mode but is missing this required driver attribute: /sys/class/net/$ifname/qmi/raw_ip"
