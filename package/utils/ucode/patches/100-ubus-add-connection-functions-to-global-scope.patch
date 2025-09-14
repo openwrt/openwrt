@@ -1,0 +1,67 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 26 Aug 2025 10:17:22 +0200
+Subject: [PATCH] ubus: add connection functions to global scope
+
+Allows reusing a common global connection across modules
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/lib/ubus.c
++++ b/lib/ubus.c
+@@ -511,16 +511,40 @@ uc_ubus_objects_cb(struct ubus_context *
+ static bool
+ _conn_get(uc_vm_t *vm, uc_ubus_connection_t **conn)
+ {
+-	uc_ubus_connection_t *c = uc_fn_thisval("ubus.connection");
++	uc_ubus_connection_t *c;
++	uc_value_t *res;
+ 
+-	if (!c)
+-		c = uc_fn_thisval("ubus.channel");
+-	if (!c)
+-		err_return(UBUS_STATUS_INVALID_ARGUMENT, "Invalid connection context");
++	if (ucv_type(_uc_fn_this_res(vm)) == UC_OBJECT) {
++		res = uc_vm_registry_get(vm, "ubus.connection");
++		c = ucv_resource_data(res, "ubus.connection");
++
++		if (c && c->ctx.sock.fd >= 0)
++			goto out;
++
++		c = uc_ubus_conn_alloc(vm, NULL, "ubus.connection");
++		if (!c)
++			return NULL;
++
++		if (ubus_connect_ctx(&c->ctx, NULL)) {
++			ucv_put(c->res);
++			err_return(UBUS_STATUS_UNKNOWN_ERROR, "Unable to connect to ubus socket");
++		}
+ 
+-	if (c->ctx.sock.fd < 0)
+-		err_return(UBUS_STATUS_CONNECTION_FAILED, "Connection is closed");
++		uc_vm_registry_set(vm, "ubus.connection", ucv_get(c->res));
++	}
++	else {
++		c = uc_fn_thisval("ubus.connection");
++		if (!c)
++			c = uc_fn_thisval("ubus.channel");
++
++		if (!c)
++			err_return(UBUS_STATUS_INVALID_ARGUMENT, "Invalid connection context");
+ 
++		if (c->ctx.sock.fd < 0)
++			err_return(UBUS_STATUS_CONNECTION_FAILED, "Connection is closed");
++	}
++
++out:
+ 	*conn = c;
+ 
+ 	ok_return(true);
+@@ -2606,6 +2630,7 @@ static void free_request(void *ud) {
+ void uc_module_init(uc_vm_t *vm, uc_value_t *scope)
+ {
+ 	uc_function_list_register(scope, global_fns);
++	uc_function_list_register(scope, conn_fns);
+ 
+ #define ADD_CONST(x) ucv_object_add(scope, #x, ucv_int64_new(UBUS_##x))
+ 	ADD_CONST(STATUS_OK);
