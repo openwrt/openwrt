@@ -232,6 +232,11 @@
 
 			status = "disabled";
 		};
+
+		mdio_serdes: mdio-serdes {
+			compatible = "realtek,rtl9311-serdes-mdio", "realtek,otto-serdes-mdio";
+		};
+
 	};
 
 	pinmux@1b001358 {

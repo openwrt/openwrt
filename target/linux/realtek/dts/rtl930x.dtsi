@@ -201,6 +201,10 @@
 			status = "disabled";
 		};
 
+		mdio_serdes: mdio-serdes {
+			compatible = "realtek,rtl9301-serdes-mdio", "realtek,otto-serdes-mdio";
+		};
+
 		soc_thermal: thermal {
 			compatible = "realtek,rtl9300-thermal";
 			#thermal-sensor-cells = <0>;

@@ -234,6 +234,10 @@
 			pinctrl-0 = <&mdio_aux_mdx>;
 		};
 
+		mdio_serdes: mdio-serdes {
+			compatible = "realtek,rtl8392-serdes-mdio", "realtek,otto-serdes-mdio";
+		};
+
 		soc_thermal: thermal {
 			compatible = "realtek,rtl8390-thermal";
 			#thermal-sensor-cells = <0>;
