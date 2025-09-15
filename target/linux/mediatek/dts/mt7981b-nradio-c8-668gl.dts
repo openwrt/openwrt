@@ -15,6 +15,7 @@
 		led-running = &led_power;
 		led-upgrade = &led_power;
 		serial0 = &uart0;
+		cpe0 = &uart1; /* 新增蜂窝模块 UART1 */
 	};
 
 	chosen {
@@ -41,7 +42,6 @@
 
 	gpio-export {
 		compatible = "gpio-export";
-		#size-cells = <0>;
 
 		cpepower {
 			gpio-export,name = "cpe-pwr";
@@ -53,6 +53,13 @@
 			gpio-export,name = "cpe-sel0";
 			gpio-export,output = <1>;
 			gpios = <&pio 30 GPIO_ACTIVE_HIGH>;
+		};
+
+		/* 新增蜂窝模块专用 GPIO */
+		cpesim1 {
+			gpio-export,name = "cpe-sim1";
+			gpio-export,output = <1>;
+			gpios = <&pio 32 GPIO_ACTIVE_HIGH>; /* 确认可用 GPIO */
 		};
 	};
 
@@ -91,11 +98,17 @@
 	status = "okay";
 };
 
+&uart1 {
+	status = "okay"; /* 蜂窝模块 UART1 */
+};
+
 &watchdog {
 	status = "okay";
 };
 
 &mmc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
 	pinctrl-names = "default", "state_uhs";
 	pinctrl-0 = <&mmc0_pins_default>;
 	pinctrl-1 = <&mmc0_pins_uhs>;
@@ -210,52 +223,18 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 
-				port@1 {
-					reg = <1>;
-					label = "lan1";
-				};
-
-				port@2 {
-					reg = <2>;
-					label = "lan2";
-				};
-
-				port@3 {
-					reg = <3>;
-					label = "lan3";
-				};
-
-				port@5 {
-					reg = <5>;
-					label = "lan4";
-					phy-mode = "2500base-x";
-					phy-handle = <&phy5>;
-				};
-
-				port@6 {
-					reg = <6>;
-					label = "cpu";
-					ethernet = <&gmac0>;
-					phy-mode = "2500base-x";
-
-					fixed-link {
-						speed = <2500>;
-						full-duplex;
-						pause;
-					};
-				};
+				port@1 { reg = <1>; label = "lan1"; };
+				port@2 { reg = <2>; label = "lan2"; };
+				port@3 { reg = <3>; label = "lan3"; };
+				port@5 { reg = <5>; label = "lan4"; phy-mode = "2500base-x"; phy-handle = <&phy5>; };
+				port@6 { reg = <6>; label = "cpu"; ethernet = <&gmac0>; phy-mode = "2500base-x"; fixed-link { speed = <2500>; full-duplex; pause; }; };
 			};
 		};
 	};
 };
 
-&usb_phy {
-	status = "okay";
-};
-
-&xhci {
-	status = "okay";
-};
+&usb_phy { status = "okay"; };
+&xhci { status = "okay"; };
 
 &wifi {
 	nvmem-cells = <&eeprom_factory_0>;
