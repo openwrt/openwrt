@@ -1,0 +1,205 @@
+<%+header%>
+<style>
+    g {color: grey; font-size: 75%; vertical-align: super;}
+    .energy-bar {
+        width: 100%;
+        height: 20px;
+        background-color: #eee;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    .energy-bar-fill {
+        height: 100%;
+        transition: width 0.5s ease-in-out;
+    }
+    .energy-bar-text {
+        font-size: 10px;
+        font-weight: bold;
+        margin-left: 5px;
+    }
+
+    .energy-bar-fill {
+        position: relative;
+    }
+    .energy-bar-text {
+        position: absolute;
+        top: 0;
+        right: 5px;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+    }
+    .temperature-bar {
+        width: 100%;
+        height: 20px;
+        background-color: #eee;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    .temperature-bar-fill {
+        height: 100%;
+        transition: width 0.5s ease-in-out;
+    }
+    .temperature-bar-text {
+        font-size: 10px;
+        font-weight: bold;
+        margin-left: 5px;
+    }
+    .temperature-bar-fill {
+        position: relative;
+    }
+    .temperature-bar-text {
+        position: absolute;
+        top: 0;
+        right: 5px;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+    }
+</style>
+<script type="text/javascript" src="<%=resource%>/xhr.js?v=1.4"></script>
+<script type="text/javascript">//<![CDATA[
+    XHR.poll(30 , '<%=luci.dispatcher.build_url("admin", "modem", "get_csq")%>', null,
+        function(x, rv)
+        {
+            document.getElementById('modem').innerHTML=rv.modem;
+            document.getElementById('conntype').innerHTML=rv.conntype;
+            document.getElementById('firmware').innerHTML=rv.firmware;
+            document.getElementById('temper').innerHTML=rv.temper;
+            document.getElementById('date').innerHTML=rv.date;
+            document.getElementById('simsel').innerHTML=rv.simsel;
+            document.getElementById('cops').innerHTML=rv.cops;
+            document.getElementById('imei').innerHTML=rv.imei;
+            document.getElementById('imsi').innerHTML=rv.imsi;
+            document.getElementById('iccid').innerHTML=rv.iccid;
+            document.getElementById('mode').innerHTML=rv.mode;
+            document.getElementById('per').innerHTML=rv.per;
+            document.getElementById('rssi').innerHTML=rv.rssi;
+            document.getElementById('rsrq').innerHTML=rv.rsrq;
+            document.getElementById('rscp').innerHTML=rv.rscp;
+            document.getElementById('sinr').innerHTML=rv.sinr;
+            document.getElementById('mcc').innerHTML=rv.mcc;
+            document.getElementById('lac').innerHTML=rv.lac;
+            document.getElementById('cid').innerHTML=rv.cid;
+            document.getElementById('band').innerHTML=rv.band;
+            document.getElementById('rfcn').innerHTML=rv.rfcn;
+            document.getElementById('pci').innerHTML=rv.pci;
+            var phoneElement = document.getElementById('phone');
+            var phone = rv.phone;
+            var isHidden = false;
+            if (phone.length === 14) {
+                var newPhone = phone;
+                phoneElement.innerHTML = newPhone;
+                    if (isHidden) {
+                         phoneElement.innerHTML = newPhone;
+                    } else {
+                         phoneElement.innerHTML = "**** **** **** ****"; // 隐藏号码，这里显示为14位星号
+                    }
+                phoneElement.addEventListener('dblclick', function() {
+                    if (isHidden) {
+                        phoneElement.innerHTML = newPhone;
+                        isHidden = false;
+                    } else {
+                        phoneElement.innerHTML = "**** **** **** ****"; // 隐藏号码，这里显示为14位星号
+                        isHidden = true;
+                    }
+                });
+            } else {
+                phoneElement.innerHTML = "未检测到卡号...";
+            }
+            var perElement = document.getElementById('per');
+            var perValue = parseFloat(rv.per);
+            var energyBar = document.createElement('div');
+            energyBar.className = 'energy-bar';
+
+            var energyBarFill = document.createElement('div');
+            energyBarFill.className = 'energy-bar-fill';
+            energyBarFill.style.width = (perValue / 100) * 100 + '%'; 
+
+            if (perValue >= 70) {
+                energyBarFill.style.backgroundColor = '#00ff00';
+            } else if (perValue < 70 && perValue >= 40) {
+                energyBarFill.style.backgroundColor = '#ffff00';
+            } else {
+                energyBarFill.style.backgroundColor = '#ff0000';
+            }
+            var energyBarText = document.createElement('span');
+            energyBarText.className = 'energy-bar-text';
+            energyBarText.innerHTML = perValue + '%';
+            energyBarFill.appendChild(energyBarText);
+            energyBar.appendChild(energyBarFill);
+            perElement.innerHTML = '';
+            perElement.appendChild(energyBar);
+            var temperElement = document.getElementById('temper');
+            var temperValue = parseFloat(rv.temper);
+            var temperatureBar = document.createElement('div');
+            temperatureBar.className = 'temperature-bar';
+            var temperatureBarFill = document.createElement('div');
+            temperatureBarFill.className = 'temperature-bar-fill';
+            temperatureBarFill.style.width = (temperValue / 100) * 100 + '%'; 
+            if (temperValue >= 75) {
+                temperatureBarFill.style.backgroundColor = '#ff0000'; 
+            } else if (temperValue < 75 && temperValue >= 50) {
+                temperatureBarFill.style.backgroundColor = '#ffff00'; 
+            } else {
+                temperatureBarFill.style.backgroundColor = '#00ff00'; 
+            }
+            var temperatureBarText = document.createElement('span');
+            temperatureBarText.className = 'temperature-bar-text';
+            temperatureBarText.innerHTML = temperValue + '°C';
+            temperatureBarFill.appendChild(temperatureBarText);
+            temperatureBar.appendChild(temperatureBarFill);
+            temperElement.innerHTML = '';
+            temperElement.appendChild(temperatureBar);
+        }
+    );
+//]]></script>
+<div class="cbi-map" id="cbi-modem">
+    <h2 style="background-color: rgb(255, 94, 0); color: white;"><a id="content" name="content" style="text-decoration: none; color: inherit;">Quectel-RM500U</a></h2>
+    <fieldset class="cbi-section" id="cbi-mod">
+        <legend><%:综合信息%></legend>
+        <table width="100%" cellspacing="10">
+            <tr><td width="20%"><%:模块厂家 :%></td><td id="modem">-</td><td></td></tr>
+            <tr><td width="20%"><%:模块版本 :%></td><td id="conntype"></td><td></td></tr>
+            <tr><td width="20%"><%:固件版本 :%></td><td id="firmware"></td><td></td></tr>
+            <tr><td width="20%"><%:设备温度 :%></td><td id="temper"></td><td></td></tr>
+            <tr><td width="20%"><%:更新时间 : %></td><td id="date"></td><td></td></tr>
+        </table>
+    </fieldset>
+    <fieldset class="cbi-section" id="cbi-msinfo">
+        <legend><%:通信模块/SIM卡信息%></legend>
+        <table width="100%" cellspacing="10">
+            <tr><td width="20%"><%:卡槽 : %></td><td id="simsel"></td><td></td></tr>
+            <tr><td width="20%"><%:运营商 : %></td><td id="cops"></td><td></td></tr>
+            <tr><td width="20%"><%:IMEI :%></td><td id="imei"></td><td></td></tr>
+            <tr><td width="20%"><%:IMSI : %></td><td id="imsi"></td><td></td></tr>
+            <tr><td width="20%"><%:ICCID : %></td><td id="iccid"></td><td></td></tr>
+            <tr><td width="20%"><%:SIM卡号码(双击显示\隐藏) : %></td><td id="phone"></td><td></td></tr>
+        </table>
+    </fieldset>
+    <fieldset class="cbi-section" id="cbi-sig">
+        <legend><%:信号状态%></legend>
+        <table width="100%" cellspacing="10">
+            <tr><td width="20%"><%:网络类型 :%></td><td id="mode"></td><td></td></tr>
+            <tr><td width="20%"><%:信号质量 : %></td><td id="per"></td><td></td></tr>
+            <tr><td width="20%"><%:信号强度 RSSI : %></td><td id="rssi"></td><td></td></tr>
+            <tr><td width="20%"><%:接收质量 RSRQ : %></td><td id="rsrq"></td><td></td></tr>
+            <tr><td width="20%"><%:接收功率 RSCP : %></td><td id="rscp"></td><td></td></tr>
+            <tr><td width="20%"><%:信噪比 SINR : %></td><td id="sinr"></td><td></td></tr>
+        </table>
+    </fieldset>
+    <fieldset class="cbi-section" id="cbi-sig">
+        <legend><%:基站信息%></legend>
+        <table width="100%" cellspacing="10">
+            <tr><td width="20%"><%:MCC/MNC :%></td><td id="mcc"></td><td></td></tr>
+            <tr><td width="20%"><%:位置ID LAC : %></td><td id="lac"></td><td></td></tr>
+            <tr><td width="20%"><%:小区ID Cell ID : %></td><td id="cid"></td><td></td></tr>
+            <tr><td width="20%"><%:频段 Band : %></td><td id="band"></td><td></td></tr>
+            <tr><td width="20%"><%:频点 EARFCN : %></td><td id="rfcn"></td><td></td></tr>
+            <tr><td width="20%"><%:物理小区标识 PCI : %></td><td id="pci"></td><td></td></tr>
+        </table>
+    </fieldset>
+</div>
+<%+footer%>

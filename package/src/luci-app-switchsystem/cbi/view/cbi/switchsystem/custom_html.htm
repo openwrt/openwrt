@@ -1,0 +1,37 @@
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Switch System</title>
+<style>
+body { background: linear-gradient(to bottom, #333, #000); display:flex; justify-content:center; align-items:center; height:100vh; margin:0; color:white; font-family:Arial,sans-serif; position:relative;}
+div{text-align:center; padding:20px;}
+.close-button{position:absolute; top:10px; right:10px; background-color:#d32f2f; color:white; padding:5px 10px; border:none; border-radius:5px; cursor:pointer;}
+.close-button:hover{background-color:#f44336;}
+.large-button{font-size:25px; text-align:center; padding:10px 20px; margin-top:20px; background-color:#ff9900; color:black; border:none; border-radius:5px; cursor:pointer;}
+.large-button:hover{background-color:#d32f2f;}
+h3,h4{margin:0;}
+.hidden{display:none;}
+</style>
+</head>
+<body>
+<div>
+<button onclick="goBack()" class="close-button">返回系统页面</button>
+<h3 style="color: grey;">按键切换到官方系统方式：断电-按住WPS互联键(C5800顶住reset键)-接通电源-等待系统电源灯亮起后，马上松开WPS按键-切换成功</h3>
+<h3 style="color: grey;">正在使用第二OP系统,请选择操作:</h3>
+<h4 style="color: rgb(185, 59, 59);">注意:点击按钮时会立即执行，请确认操作！</h4>
+<form id="switchForm" method="post" action="<%= luci.dispatcher.build_url('admin','system','switchsystem','switch') %>">
+<input type="hidden" name="confirm" value="yes">
+<input type="submit" value="切换到官方系统" class="large-button" onclick="return confirm('你确定需要切回到官方系统吗？')">
+</form>
+<form id="rebootForm" method="post" action="<%= luci.dispatcher.build_url('admin','system','switchsystem','reboot') %>">
+<input type="hidden" name="confirm" value="yes">
+<input type="submit" value="重启系统" class="large-button" onclick="return confirm('你确定需要重启系统吗？')">
+</form>
+<div id="countdown" class="hidden">正在切换到官方系统，请看到电源灯常亮后刷新此页面，请等待5S...</div>
+<div id="rebootCountdown" class="hidden">正在重启C8-668，请看到电源灯常亮后刷新此页面，请等待5S...</div>
+</div>
+</body>
+<script>
+function goBack(){window.history.back();}
+</script>

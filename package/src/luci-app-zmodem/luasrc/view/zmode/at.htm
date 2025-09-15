@@ -1,0 +1,72 @@
+<%+header%>
+<script type="text/javascript" src="<%=resource%>/xhr.js"></script>
+<script type="text/javascript">//<![CDATA[
+	function sendcmd(event)
+	{
+		var v = document.getElementById("drop1").value;
+		var s = document.getElementById("atcmd").value;
+		var r =document.getElementById("attxt").value;
+		if ( s.length == 0 )
+		{
+
+			document.getElementById("attxt").value= '<%:请输入AT命令!%>\r' + r;
+			return false;
+		}
+		XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "send_atcmd")%>',
+				{ set: s , p: v},
+				function(x, rv)
+				{
+					 var pd = rv.result;
+					 document.getElementById("attxt").value=pd  + r;
+				}
+			);
+	}
+	function sendclean(event)
+	{
+		document.getElementById("attxt").value='';
+	}
+//]]></script>
+<div class="cbi-map" id="cbi-misc">
+<h2><a id="content" name="content"><%:AT命令工具%></a></h2>
+<div class="cbi-map-descr"><%:AT命令工具%></div>
+<head>
+	<style>
+		input {
+			vertical-align: bottom;
+		}
+
+		textarea {
+			background: #373737;
+			border: none;
+			color: #FFF;
+		}
+	</style>
+</head>
+
+<fieldset class="cbi-section" id="cbi-term">
+	<legend><%:AT命令终端%></legend>
+	<table width="700" border="0" id="droptxt">
+	<tr>
+		<td width="10%"><div align="right"><%:模块端口 : %></div></td>
+		<td width="15%">
+			<select style="width:200px" name="atdrop" id="drop1">
+				<option value="2" selected>ttyUSB2</option>
+			</select>
+		</td>
+		<td width="10%"><div align="right"><%:AT命令 : %></div></td>
+		<td width="15%">
+			<input style="visibility:visible; width: 500px;" maxlength="100" type="text" name="atcmdlck" id="atcmd" class="cbi-input-text"></input>
+		</td>
+		<td width="10%">
+			<input style="visibility:visible" type="submit" id="sendat" class="cbi-button cbi-button-apply" value="<%:发送%>" onclick="return sendcmd()" />
+			<input style="visibility:visible" type="submit" id="sendclean" class="cbi-button cbi-button-reset" value="<%:清除%>" onclick="return sendclean()" />
+		</td>
+		<td width="47%">&nbsp;</td>
+	</tr>
+	</table>
+	<textarea readonly="readonly"  name="attxt" id="attxt" rows="40" style="width: 100%;" maxlength="160"></textarea>
+</div>
+</fieldset>
+</div>
+
+<%+footer%>

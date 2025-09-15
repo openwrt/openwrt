@@ -1,0 +1,13 @@
+{
+	"luci-app-sms-tool": {
+		"description": "Grant UCI and file access for luci-app-sms-tool",
+		"read": {
+			"file": {"/usr/bin/sms_tool *": [ "exec" ]},
+			"uci": [ "sms_tool" ]
+		},
+		"write": {
+			"file": {"/usr/bin/sms_tool *": [ "exec" ]},
+			"uci": [ "sms_tool" ]
+		}
+	}
+}

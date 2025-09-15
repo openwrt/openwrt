@@ -1,0 +1,257 @@
+<%
+	local util = require "luci.util"
+	local sys = require "luci.sys"
+	local uci = require "luci.model.uci".cursor()
+
+	local pon = tostring(uci:get("sms_tool", "general", "prefix"))
+	local pnumber = tostring(uci:get("sms_tool", "general", "pnumber"))
+	local info = tostring(uci:get("sms_tool", "general", "information"))
+
+-%>
+
+<%+header%>
+
+<!--
+-- Copyright 2020-2022 Rafał Wabik (IceG) - From eko.one.pl forum
+-- Licensed to the GNU General Public License v3.0.
+-->
+
+<style>
+
+textarea {
+   height:120px;
+   max-height:120px;
+   min-height:120px;
+   min-width:100%;
+   resize:vertical;
+   }
+
+/* } */
+
+</style>
+
+<script type="text/javascript">//<![CDATA[
+
+
+window.onload = function prefiksSMS() {
+
+		var phk = document.getElementById("numer").value;
+		var on = <%=pon%>;
+
+		var msg = <%=info%>;
+
+		var pfixnum = document.getElementById("numer");
+		if ( on == "1" ) {
+		var phn2 = <%=pnumber%>;
+		pfixnum.value = phn2;
+		}
+
+		if ( msg == "1" ) {
+		alert("<%:The phone number should be preceded by the country prefix (for Poland it is 48, without +). If the number is 5, 4 or 3 characters, it is treated as.. short and should not be preceded by a country prefix.%>");
+		}
+
+
+
+// XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "sms", "user_phonebook")%>', null,
+// 			function(x, json)
+// 			{
+// 				select = document.getElementById('pb');
+// 				var opt = document.createElement('option');
+// 				opt.text = phn2;
+// 				opt.value = phn2;
+//     			opt.innerHTML = ">";
+//     			select.appendChild(opt);
+    			    	
+// 				var countpb = Object.keys(json).length;
+
+
+// 					for(var d=0;d<=countpb;d++)
+// 						{
+// 							var opt = document.createElement('option');
+// 							var s = json[d].phb;
+// 							var fields = s.split(/;/);
+// 							var name = fields[0];
+// 							var number = fields[1];
+// 							opt.text = name;
+// 							opt.value = number.trim();
+//     							opt.innerHTML = name;
+//     							select.appendChild(opt);
+// 						}
+
+// 			}
+// 			);
+
+}
+
+
+function copyFunction2() {
+
+ 	var x = document.getElementById("pb").value;
+     	document.getElementById("numer").value = x;
+     	document.getElementById("odp").innerHTML = "";
+
+
+}
+
+
+function count_replace(obj) {
+
+        document.getElementById('counter').innerHTML = (160 - document.getElementById('smstxt').value.length);
+
+	obj.value = obj.value.replace(/ą/g, 'a').replace(/Ą/g, 'A');
+        obj.value = obj.value.replace(/ć/g, 'c').replace(/Ć/g, 'C')
+        obj.value = obj.value.replace(/ę/g, 'e').replace(/Ę/g, 'E')
+        obj.value = obj.value.replace(/ł/g, 'l').replace(/Ł/g, 'L')
+        obj.value = obj.value.replace(/ń/g, 'n').replace(/Ń/g, 'N')
+        obj.value = obj.value.replace(/ó/g, 'o').replace(/Ó/g, 'O')
+        obj.value = obj.value.replace(/ś/g, 's').replace(/Ś/g, 'S')
+        obj.value = obj.value.replace(/ż/g, 'z').replace(/Ż/g, 'Z')
+        obj.value = obj.value.replace(/ź/g, 'z').replace(/Ź/g, 'Z');
+	document.getElementById("odp").innerHTML = "";
+
+}
+
+function codsp() {
+
+		document.getElementById("odp").innerHTML = "";
+
+}
+
+
+
+function postcmd(cmd) {
+    (new XHR()).post("<%=luci.dispatcher.build_url("admin", "modem", "run_sms")%>", {"scode":cmd}, function(x) {
+        console.log(x.response)
+        console.log(x)
+	 	var cut = x.response;
+		// cut = cut.substr(0, 20);
+		// if ( cut == "send is ok" ) {
+		if (cut.indexOf("+CMGS") !== -1) {
+			document.getElementById("odp").innerHTML = "<%:SMS sent sucessfully%>";
+		} else {
+			document.getElementById("odp").innerHTML = "<%:短信发送成功。(如不准确请查看日志)%>";
+		}
+
+    });
+    return false;
+}
+
+
+document.addEventListener('DOMContentLoaded', function (ev) {var button = document.getElementById("sendsms");
+        button.addEventListener("click", function () {
+
+
+		var ph = document.getElementById("numer").value;
+		if ( ph.length < 2 || ph.length == 0 )
+		{
+  			document.getElementById("odp").innerHTML = "";
+			alert("<%:Please enter phone number%>");
+			return false;
+		}
+
+		ph = ph.trim();
+
+		if ( isNaN(ph) )
+		{
+			alert("<%:Please correct phone number%>");
+			return false;
+		}
+
+		var num = ph.concat("                    ");
+		num = num.substr(0, 20);
+
+		var tm = document.getElementById("smstxt").value;
+		if ( tm.length == 0 )
+		{
+			alert("<%:Please enter a message text%>");
+			return false;
+		}
+		num = num.concat(tm);
+        	postcmd(num);
+	 	    var delsms = document.getElementById("smstxt");
+		    var delnum = document.getElementById("numer");
+			document.getElementById('counter').innerHTML = "160";
+		    delsms.value = "";
+		    delnum.value = "";
+
+		var on = <%=pon%>;
+		var pfixnum = document.getElementById("numer");
+		if ( on == "1" ) {
+		var phn2 = <%=pnumber%>;
+		pfixnum.value = phn2;
+		}
+
+        	return true;
+        });
+    }, true);
+
+
+//]]></script>
+
+
+	<h2>
+		<%:Send Message%>
+	</h2>
+	<div class="cbi-map-descr">
+		<%:Web UI for sending messages via sms_tool%> 
+	</div>
+	<p></p>
+	
+	<!-- <h4>
+		<%:Send Messages%>
+	</h4> -->
+	
+	<div class="table">
+	
+		<!-- <div class="tr">
+			<div class="td left">
+				<%:User Phonebook%>:
+			</div>
+			<div class="td left">
+	
+				<select name="ussd" id="pb" onchange="copyFunction2()">
+	
+				</select>
+			</div>
+			<div class="td left"></div>
+		</div> -->
+	
+		<div class="tr">
+			<div class="td left">
+				<%:Send to%>:
+			</div>
+			<div class="td left"><input type="text" id="numer" onKeyUp="codsp()" placeholder="<%:PHONE_NUMBER%>" required
+					minlength="3" maxlength="24" size="11"></div>
+			<!-- <div class="td left"></div> -->
+		</div>
+		<div class="tr">
+			<div class="td left">
+				<%:Message text%>:
+			</div>
+			<div class="td left"><textarea id="smstxt" onKeyUp="count_replace(this)" required></textarea>
+				<div id="counter">160</div>
+			</div>
+			<div class="td left"></div>
+		</div>
+	
+		<div class="tr">
+			<div class="td left">
+				<%:Status%>:
+			</div>
+			<div class="td left" id="odp"></div>
+	
+		</div>
+	
+	</div>
+	<div class="table">
+	
+		<div class="tr cbi-rowstyle-2">
+			<div class="td right"><input type="button" style="margin-right: 5%" ; id="sendsms"
+					class="btn cbi-button cbi-button-save" value="<%:Send Message%>" /></div>
+		</div>
+	
+	</div>
+
+
+
+<%+footer%>

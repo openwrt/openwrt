@@ -1,0 +1,104 @@
+#!/bin/sh /etc/rc.common
+START=99
+
+restart(){                                                                                                       
+  modem_init
+}
+
+start(){
+  modem_init  
+}
+
+printMsg() {
+    local msg="$1"
+    logger -t "${PROGRAM}" "${msg}"
+} #日志输出调用API
+
+ModuleCheck(){
+  local count=0
+  while [ $count -lt 10 ]; do
+    echo 1 >/sys/class/gpio/cpe-pwr/value
+    Readmodule=$(sendat 2 'ATI' | sed -n '3p')
+    if echo "$Readmodule" | grep -q 'RM520' || echo "$Readmodule" | grep -q 'RM500' ; then
+        echo "The module is working properly"
+        return 0
+    fi
+    sleep 2
+    count=$((count + 1)) 
+  done
+  echo "Failed to confirm the module status after 10 attempts."
+  return 1
+}
+
+
+modem_init(){
+  ipcheckLOCKFILE="/tmp/ipcheck.lock"
+  # Check if lockfile exists
+  if [ -f $ipcheckLOCKFILE ]; then
+      OLD_PID=$(cat $ipcheckLOCKFILE)
+      echo "$(date): Kill $OLD_PID" 
+      kill $OLD_PID
+  fi
+    lock_file="/tmp/moduleInit.lock"
+
+    if [ -e "$lock_file" ]; then
+    # 锁文件存在，获取锁定的进程 ID，并终止它
+    locked_pid=$(cat "$lock_file")
+        if [ -n "$locked_pid" ]; then
+            echo "Terminating existing moduleInit process (PID: $locked_pid)..." >>/tmp/moduleInit
+            kill "$locked_pid"
+            sleep 2  # 等待一段时间确保进程终止
+        fi
+    fi
+     
+      Modem_Enable=`uci -q get modem.@ndis[0].enable` || Modem_Enable=1
+      # 模块启动
+      # 模块开关
+      if [ "$Modem_Enable" == 0 ]; then
+          echo 0 >/sys/class/gpio/cpe-pwr/value
+          printMsg "禁用模块，退出"
+          rm $lock_file
+          exit 0
+      else
+          printMsg "模块启用"
+          # 检测模块是否开机了！
+          ModuleCheck
+          sleep 1
+          check_and_update_simsel
+          echo 1 > /sys/class/leds/hc:blue:wifi/brightness
+          BLUE4WAN.sh
+          # 判断第三行文本并执行相应操作
+          third_line=$(sendat 2 'ATI' | sed -n '3p')
+          if [ -n "$third_line" ]; then
+              if echo "$third_line" | grep -q 'RM520'; then
+                  echo "$third_line" > /tmp/modconf.conf
+                  echo "set" > "/tmp/CPEstartupSettings"
+                  sendat 2  'AT+QMAP="connect",0,0'
+                  sleep 1
+                  /usr/share/modem/rm520n.sh &
+                  sleep 1
+                  /usr/share/modem/netmodeled.sh &
+              elif echo "$third_line" | grep -q 'RM500'; then
+                  echo "$third_line" > /tmp/modconf.conf
+                  /usr/share/modem/500U.sh &
+                  /usr/share/modem/netmodeled.sh &
+              fi
+          else
+              echo "第三行文本为空或不包含指定内容"
+          fi
+          echo "已尝试开启短信转发服务。"
+          python3 /usr/bin/smstrun.py &
+      fi
+}
+
+check_and_update_simsel() {
+  local sim_slot=$(sendat 2 "AT+QUIMSLOT?" | grep '+QUIMSLOT:' | awk '{print $2}')
+  local sim_sel_file="/etc/simsel"
+
+  # 如果 sim_sel_file 不存在，则创建并写入外置卡 SIM 卡槽值，仅用于修正刷机和ui显示问题
+  if [ ! -e "$sim_sel_file" ]; then
+    echo 1 > "$sim_sel_file"
+    sendat 2 "AT+QUIMSLOT=1"
+  fi
+}
+

@@ -1,0 +1,347 @@
+<%
+	local util = require "luci.util"
+	local fs = require "nixio.fs"
+	local sys = require "luci.sys"
+	local http = require "luci.http"
+	local dispatcher = require "luci.dispatcher"
+	local uci = require "luci.model.uci".cursor()
+
+	local devv = tostring(uci:get("sms_tool", "general", "readport"))
+	local smsmem = tostring(uci:get("sms_tool", "general", "storage"))
+	local sms = tostring(luci.sys.exec("sms_tool -s" .. smsmem .. " -d " .. devv .. " -f '%Y-%m-%d %H:%M' -j recv 2>/dev/null"))
+	local smsmer = tostring(uci:get("sms_tool", "general", "mergesms"))
+	local directx = tostring(uci:get("sms_tool", "general", "direction"))
+	local algox = tostring(uci:get("sms_tool", "general", "algorithm"))
+	local smscuta = string.sub (sms, 8)
+	local smscut = smscuta:sub(1, #smscuta - 2)
+	local statusb = luci.util.exec("sms_tool -s" .. smsmem .. " -d ".. devv .. " status")
+	local all = statusb:match('[^: ]+$')
+	local location = ""
+
+	local l = string.sub (statusb, 15, 16)
+	if l == "SM" then
+      		location = translate("SIM card")
+ 	end
+	if l == "ME" then
+      		location = translate("Modem memory")
+ 	end
+-%>
+	
+<%+header%>
+
+<!--
+-- Copyright 2020-2023 Rafał Wabik (IceG) - From eko.one.pl forum
+-- Licensed to the GNU General Public License v3.0.
+-->
+
+<style>
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th, td {
+  border-bottom: 1px solid var(--border-color-medium);
+  font-size: 12px;
+  padding: 10px;
+  text-align: justify;
+  display: table-cell;
+  vertical-align: top;
+}
+
+td input[type="checkbox"] {
+    float: left;
+    margin: 0 auto;
+    width: 40%;
+}
+
+tr:nth-child(odd) {background-color: var(--background-color-medium)}
+
+</style>
+
+<script type="text/javascript">//<![CDATA[
+
+	window.onload = function readSMS() {
+
+			XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "readsim")%>', null,
+			function(x, sim)
+			{
+			var vn = parseInt(sim.use) || 0;
+			var mn = parseInt(sim.all) || 100;
+			var pc = Math.floor((100 / mn) * vn);
+			document.getElementById('usse').innerHTML=sim.use  + " / " + sim.all + " " + '('+ pc + '%)';
+			}
+			);
+
+			var msgm = <%=smsmer%>;
+			var algo = "<%=algox%>";
+			var direct = "<%=directx%>";
+
+			if ( msgm == "0" ) {
+
+			var array = <%=smscut%>;
+			var sortedData = array .sort((function (a, b) { return new Date(b.timestamp) - new Date(a.timestamp) }));
+			var table = document.getElementById("smsTable");
+			var data = JSON.stringify(sortedData);
+			var json = JSON.parse(data);
+
+			var x = <%=all%>;
+        		for (var d = 0; d < json.length; d++) {
+
+            			row = table.insertRow(-1);
+						row.className = "tr cbi-rowstyle-2";
+  						var cell1 = row.insertCell(0);
+  						var cell2 = row.insertCell(0);
+  						var cell3 = row.insertCell(0);
+  						var cell4 = row.insertCell(0);
+						cell4.innerHTML = "<input type='checkbox' name='smsn' id="+"btn"+json[d].index+" />"
+						cell4.className = "td left";
+ 				 		cell3.innerHTML = json[d].sender;
+  						cell2.innerHTML = json[d].timestamp;
+    					cell1.innerHTML = json[d].content;	
+				}
+			}
+
+			if ( msgm == "1" ) {
+
+				if (algo == 'Simple') {
+
+					var array = <%=smscut%>;
+					var sortedData = array .sort((function (a, b) { return new Date(b.timestamp) - new Date(a.timestamp) }));
+					var table = document.getElementById("smsTable");
+
+					var MergeMySMS = sortedData;
+    					result = [];
+
+					MergeMySMS.forEach(function (o) {
+    					if (!this[o.sender]) {
+        				this[o.sender] = { index: o.index, sender: o.sender, timestamp: o.timestamp, part: o.part, total: o.total, content: o.content };
+        				result.push(this[o.sender]);
+        				return;
+    					}
+					if (this[o.sender].total == o.total && this[o.sender].part > 0) {
+    					this[o.sender].content += o.content;
+    					this[o.sender].index += '-' + o.index;}
+					else {
+					this[o.sender] = { index: o.index, sender: o.sender, timestamp: o.timestamp, part: o.part, total: o.total, content: o.content };
+        				result.push(this[o.sender]);
+        				return;
+					}
+					}, Object.create(null));
+
+					var data = JSON.stringify(result);
+					var json = JSON.parse(data);
+
+				}
+
+				if (algo == 'Advanced') {
+
+					var array = <%=smscut%>;
+					var table = document.getElementById("smsTable");
+
+    					result = [];
+
+												switch (direct) {
+  														case 'Start':
+    															var Data = array.sort((a, b) => {
+  																if (a.timestamp === b.timestamp && a.sender === b.sender) {
+    																	return a.part - b.part;
+  																} else if (a.timestamp === b.timestamp) {
+    																	return a.sender - b.sender;
+  																} else {
+    																	return a.timestamp.localeCompare(b.timestamp);
+  																}
+															});
+    															break;
+  														case 'End':
+    															var Data = array.sort((a, b) => {
+  																if (a.timestamp === b.timestamp && a.sender === b.sender) {
+    																	return b.part - a.part;
+  																} else if (a.timestamp === b.timestamp) {
+    																	return a.sender - b.sender;
+  																} else {
+    																	return a.timestamp.localeCompare(b.timestamp);
+  																}
+															});
+    															break;
+  														default:
+												}
+
+												var SortedSMS = Data.sort((function (a, b) { return new Date(b.timestamp) - new Date(a.timestamp) }));
+
+												var combinedjson = {};
+
+												for (const parts of SortedSMS) {
+  													const { sender, timestamp, total, content, index } = parts;
+  													const key = `${sender}-${timestamp}-${total}`;
+  														if (combinedjson[key]) {
+  															combinedjson[key].content += content;
+  															combinedjson[key].index += '-'+index;
+  														} else {
+    															combinedjson[key] = { sender, timestamp, total, content, index };
+  															}
+														}
+												var result = Object.values(combinedjson);
+
+					var data = JSON.stringify(result);
+					var json = JSON.parse(data);
+
+				}
+
+			var x = <%=all%>;
+        		for (var d = 0; d < json.length; d++) {
+
+            			row = table.insertRow(-1);
+						row.className = "tr cbi-rowstyle-2";
+  						var cell1 = row.insertCell(0);
+  						var cell2 = row.insertCell(0);
+  						var cell3 = row.insertCell(0);
+  						var cell4 = row.insertCell(0);
+						cell4.innerHTML = "<input type='checkbox' name='smsn' id="+"btn"+json[d].index+" />"
+						cell4.className = "td left";
+ 				 		cell3.innerHTML = json[d].sender;
+  						cell2.innerHTML = json[d].timestamp;
+    					cell1.innerHTML = json[d].content;
+				}
+
+
+			}
+
+	
+	}
+
+
+function refreshSMS() {
+window.location.reload();
+}
+
+function toggle(source) {
+    var checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    for (var i = 0; i < checkboxes.length; i++) {
+        if (checkboxes[i] != source)
+            checkboxes[i].checked = source.checked;
+    }
+}
+
+
+function delete_new()
+{
+if (document.querySelectorAll('input[name="smsn"]:checked').length === document.querySelectorAll('input[name="smsn"]').length) {
+
+            	if (confirm("<%:Delete all the messages?%>")) {
+		var rowCount = smsTable.rows.length;
+		document.getElementById('usse').innerHTML = "0"  + " / " + <%=all%>;
+		for (var i = rowCount - 1; i > 0; i--) {
+            		smsTable.deleteRow(i);}
+
+		XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "delete_all")%>/' , null,
+
+			function()
+			{
+			document.getElementById('usse').innerHTML = "0"  + " / " + <%=all%> + " " + '(0%)';
+			}
+		);
+
+		// XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "countsms")%>/' , null,
+
+		// 	function()
+		// 	{
+		// 	}
+		// );
+		return false;
+		}
+
+
+        } else {
+
+		if (document.querySelectorAll('input[name="smsn"]:checked').length == 0){
+    		alert('<%:Please select the message(s) to be deleted%>');   
+		} else {
+
+                var items = document.getElementsByName("smsn");
+                var selectedItems = "";
+                for (var i = 0; i < items.length; i++) {
+                    if (items[i].type == "checkbox" && items[i].checked == true) selectedItems += items[i].id + "\n";
+                }
+		  smsindex = selectedItems.replace(/\s/g, '');
+
+	if (confirm("<%:Delete selected message(s)?%>")) {
+
+		XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "delete_one")%>/' + smsindex, null,
+
+			function()
+			{
+       			var table = document.getElementById("smsTable");
+  			var index = 1;
+  			while (index < table.rows.length) {
+
+    			var input = table.rows[index].cells[0].children[0];
+      			if (input && input.checked) {
+      			table.deleteRow(index);
+    			}
+    			else {
+      			index++;
+  			}
+        		}
+
+		XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "readsim")%>', null,
+			function(x, sim)
+			{
+			var vn = parseInt(sim.use) || 0;
+			var mn = parseInt(sim.all) || 100;
+			var pc = Math.floor((100 / mn) * vn);
+			document.getElementById('usse').innerHTML=sim.use  + " / " + sim.all + " " + '('+ pc + '%)';
+
+			}
+			);
+			}
+
+		);
+
+		// XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "countsms")%>/' , null,
+
+		// 	function()
+		// 	{
+		// 	}
+		// );
+		return false;
+		}
+        }
+	}
+}
+
+//]]></script>
+
+<h2><%:SMS Recv Messages%></h2>
+	<div class="cbi-map-descr"><%:Web UI for receiveling messages via sms_tool%></a>.</div>
+	<p></p>
+	<h4><%:Received Messages%></h4>
+	<div class="table" width="100%">
+	<!-- <div class="tr"><div class="td left" width="33%"><%:Messages store in%>:</div><div class="td left"><%=location%></div></div> -->
+	<div class="tr"><div class="td left" width="33%"><%:Messages (Inbox / Maximum)%>:</div><div class="td left" id="usse"></div></div>
+	</div>
+
+	<table id="smsTable" width="100%" class="table">
+  	<tr class="tr cbi-rowstyle-2">
+
+    	<td class="td left" width="7%"><input type='checkbox' id='allcheck' onclick='toggle(this);'/></td>
+    	<td class="td left" width="11%"><strong><%:From%></strong></td>
+    	<td class="td left" width="15%"><strong><%:Received%></strong></td>
+    	<td class="td center" width="66%" ><strong><%:Message%></strong></td>
+
+ 	</tr>
+	</table>
+
+	<div class="table" width="100%" >
+    	<div class="tr cbi-rowstyle-2">
+	
+	<div class="td right" style="width:100%;">
+	<div style="float: left;"></div>
+	<input type="button" id="delbtn" class="btn cbi-button cbi-button-save" value="<%:Refresh SMS%>" onclick="refreshSMS()" />&nbsp;&nbsp;&nbsp;<input type="button" id="delabtn" class="btn cbi-button cbi-button-reset" value="<%:Delete message(s)%>" onclick="delete_new()" />
+
+	</div>
+	</div>
+
+<%+footer%>
+
