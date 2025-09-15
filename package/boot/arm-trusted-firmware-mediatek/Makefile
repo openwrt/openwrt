@@ -29,6 +29,7 @@ define Trusted-Firmware-A/Default
   HIDDEN:=y
   BOOT_DEVICE:=
   DDR3_FLYBY:=
+  DDR3_FREQ_1866:=
   DDR_TYPE:=
   NAND_TYPE:=
   BOARD_QFN:=
@@ -178,6 +179,7 @@ define Trusted-Firmware-A/mt7981-ram-ddr3
   BUILD_SUBTARGET:=filogic
   PLAT:=mt7981
   DDR_TYPE:=ddr3
+  DDR3_FREQ_1866:=1
   RAM_BOOT_UART_DL:=1
   HIDDEN:=
   DEFAULT:=TARGET_mediatek_filogic
@@ -611,6 +613,7 @@ TFA_MAKE_FLAGS += \
 	$(if $(NAND_TYPE),NAND_TYPE=$(NAND_TYPE)) \
 	HAVE_DRAM_OBJ_FILE=yes \
 	$(if $(DDR3_FLYBY),DDR3_FLYBY=1) \
+	$(if $(DDR3_FREQ_1866),DDR3_FREQ_1866=1) \
 	$(if $(DRAM_USE_COMB),DRAM_USE_COMB=1) \
 	$(if $(RAM_BOOT_UART_DL),RAM_BOOT_UART_DL=1) \
 	$(if $(USE_UBI),UBI=1 $(if $(findstring mt7622,$(PLAT)),OVERRIDE_UBI_START_ADDR=0x80000)) \
