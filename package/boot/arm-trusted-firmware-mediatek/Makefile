@@ -201,6 +201,15 @@ define Trusted-Firmware-A/mt7981-emmc-ddr3
   DDR_TYPE:=ddr3
 endef
 
+define Trusted-Firmware-A/mt7981-emmc-ddr3-1866mhz
+  NAME:=MediaTek MT7981 (eMMC, DDR3 1866 MHz)
+  BOOT_DEVICE:=emmc
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7981
+  DDR_TYPE:=ddr3
+  DDR3_FREQ_1866:=1
+endef
+
 define Trusted-Firmware-A/mt7981-sdmmc-ddr3
   NAME:=MediaTek MT7981 (SD card, DDR3)
   BOOT_DEVICE:=sdmmc
@@ -223,6 +232,15 @@ define Trusted-Firmware-A/mt7981-spim-nand-ddr3
   BUILD_SUBTARGET:=filogic
   PLAT:=mt7981
   DDR_TYPE:=ddr3
+endef
+
+define Trusted-Firmware-A/mt7981-spim-nand-ddr3-1866mhz
+  NAME:=MediaTek MT7981 (SPI-NAND via SPIM, DDR3 1866 MHz)
+  BOOT_DEVICE:=spim-nand
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7981
+  DDR_TYPE:=ddr3
+  DDR3_FREQ_1866:=1
 endef
 
 define Trusted-Firmware-A/mt7981-cudy-tr3000-v1
@@ -559,11 +577,13 @@ TFA_TARGETS:= \
 	mt7622-sdmmc-2ddr \
 	mt7981-ram-ddr3 \
 	mt7981-emmc-ddr3 \
+	mt7981-emmc-ddr3-1866mhz \
 	mt7981-nor-ddr3 \
 	mt7981-nor-ddr4 \
 	mt7981-sdmmc-ddr3 \
 	mt7981-snand-ddr3 \
 	mt7981-spim-nand-ddr3 \
+	mt7981-spim-nand-ddr3-1866mhz \
 	mt7981-spim-nand-ubi-ddr4 \
 	mt7981-ram-ddr4 \
 	mt7981-emmc-ddr4 \
