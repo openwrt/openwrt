@@ -92,8 +92,8 @@
 &blsp1_spi1 {
 	status = "okay";
 
-	cs-gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>,
-		   <&tlmm 59 GPIO_ACTIVE_HIGH>;
+	cs-gpios = <&tlmm 54 GPIO_ACTIVE_LOW>,
+		   <&tlmm 59 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&spi0_pins>;
 	pinctrl-names = "default";
 
