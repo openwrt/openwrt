@@ -46,6 +46,34 @@ define Device/Default
 	BLOCKSIZE := 128k
 endef
 
+define Device/actiontec_mi424wr_ac
+	DEVICE_VENDOR := Actiontec
+	DEVICE_MODEL := MI424WR rev A/C
+	# Only 8 MB of Flash so not building by default
+	DEFAULT := n
+	DEVICE_PACKAGES := ixp4xx-microcode-ethernet kmod-dsa-ks8995
+	DEVICE_DTS := intel-ixp42x-actiontec-mi424wr-ac
+	KERNEL := kernel-bin | append-dtb
+	IMAGES := kernel.bin rootfs.bin
+	IMAGE/kernel.bin := append-kernel
+	IMAGE/rootfs.bin := append-rootfs | pad-rootfs | pad-to 128k
+endef
+TARGET_DEVICES += actiontec_mi424wr_ac
+
+define Device/actiontec_mi424wr_d
+	DEVICE_VENDOR := Actiontec
+	DEVICE_MODEL := MI424WR rev D
+	# Only 8 MB of Flash so not building by default
+	DEFAULT := n
+	DEVICE_PACKAGES := ixp4xx-microcode-ethernet kmod-dsa-ks8995
+	DEVICE_DTS := intel-ixp42x-actiontec-mi424wr-d
+	KERNEL := kernel-bin | append-dtb
+	IMAGES := kernel.bin rootfs.bin
+	IMAGE/kernel.bin := append-kernel
+	IMAGE/rootfs.bin := append-rootfs | pad-rootfs | pad-to 128k
+endef
+TARGET_DEVICES += actiontec_mi424wr_d
+
 define Device/dlink_dsm_g600_a
 	DEVICE_VENDOR := D-Link
 	DEVICE_MODEL := DSM G600 A
