@@ -44,3 +44,8 @@ config interface 'wan1'
 	option password ''
 	option ipv6 'auto'
 	option ip6assign '64'
+	
+# WAN16 (DHCPv6, 独立接口)
+config interface 'wan16'
+	option device 'lan4'
+	option proto 'dhcpv6'	
