@@ -5,8 +5,10 @@ config interface 'loopback'
 	option netmask '255.0.0.0'
 
 config globals 'globals'
-	option ula_prefix 'fdxx:xxxx:xxxx::/48'
+	option ula_prefix 'fd5a:75a8:22c2::/48'
+	option packet_steering '1'
 
+# LAN 网口桥接
 config device
 	option name 'br-lan'
 	option type 'bridge'
@@ -19,20 +21,26 @@ config interface 'lan'
 	option proto 'static'
 	option ipaddr '192.168.66.1'
 	option netmask '255.255.255.0'
-	option ip6assign '60'
+	option ip6assign '64'
+
+# WAN 口 (DHCP)
+config device
+	option name 'eth1'
+	option macaddr ':'
 
 config interface 'wan'
-	option device 'wan'
+	option device 'eth1'
 	option proto 'dhcp'
 
 config interface 'wan6'
-	option device 'wan'
+	option device 'eth1'
 	option proto 'dhcpv6'
 
-config interface 'wan2'
-	option device 'wan2'
-	option proto 'dhcp'
-
-config interface 'wan2_6'
-	option device 'wan2'
-	option proto 'dhcpv6'
+# WAN1 / PPPoE 拨号口
+config interface 'wan1'
+	option proto 'pppoe'
+	option device 'lan4'
+	option username ''
+	option password ''
+	option ipv6 'auto'
+	option ip6assign '64'
