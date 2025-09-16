@@ -1,0 +1,26 @@
+From 38623d532c99ebd926f4eebb7c7de19cb7e5aef4 Mon Sep 17 00:00:00 2001
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Fri, 22 Aug 2025 17:46:28 +0200
+Subject: [PATCH] gpio: mmio: Add compatible for the ixp4xx eb MMIO
+
+The IXP4xx expansion bus can have simple memory-mapped GPIO
+on it. Using the proper device tree bindings, support probing
+this directly from the device tree.
+
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+Link: https://lore.kernel.org/r/20250822-ixp4xx-eb-mmio-gpio-v2-3-bd2edd4a9c74@linaro.org
+Signed-off-by: Bartosz Golaszewski <bartosz.golaszewski@linaro.org>
+---
+ drivers/gpio/gpio-mmio.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/gpio/gpio-mmio.c
++++ b/drivers/gpio/gpio-mmio.c
+@@ -687,6 +687,7 @@ static const struct of_device_id bgpio_o
+ 	{ .compatible = "brcm,bcm6345-gpio" },
+ 	{ .compatible = "wd,mbl-gpio" },
+ 	{ .compatible = "ni,169445-nand-gpio" },
++	{ .compatible = "intel,ixp4xx-expansion-bus-mmio-gpio" },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(of, bgpio_of_match);
