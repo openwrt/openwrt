@@ -1,0 +1,27 @@
+From 866ff78da10178cf98600f59ea353fb1b2b7976e Mon Sep 17 00:00:00 2001
+From: Martin Kaiser <martin@kaiser.cx>
+Date: Wed, 21 Aug 2024 20:12:35 +0200
+Subject: [PATCH] hwrng: rockchip - handle devm_pm_runtime_enable errors
+
+It's unlikely that devm_pm_runtime_enable ever fails. Still, it makes
+sense to read the return value and handle errors.
+
+Signed-off-by: Martin Kaiser <martin@kaiser.cx>
+Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+---
+ drivers/char/hw_random/rockchip-rng.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/drivers/char/hw_random/rockchip-rng.c
++++ b/drivers/char/hw_random/rockchip-rng.c
+@@ -169,7 +169,9 @@ static int rk_rng_probe(struct platform_
+ 
+ 	pm_runtime_set_autosuspend_delay(dev, RK_RNG_AUTOSUSPEND_DELAY);
+ 	pm_runtime_use_autosuspend(dev);
+-	devm_pm_runtime_enable(dev);
++	ret = devm_pm_runtime_enable(dev);
++	if (ret)
++		return dev_err_probe(&pdev->dev, ret, "Runtime pm activation failed.\n");
+ 
+ 	ret = devm_hwrng_register(dev, &rk_rng->rng);
+ 	if (ret)

@@ -183,6 +183,20 @@ define Device/radxa_rock-3c
 endef
 TARGET_DEVICES += radxa_rock-3c
 
+define Device/radxa_rock-4c-plus
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := ROCK 4C+
+  SOC := rk3399
+endef
+TARGET_DEVICES += radxa_rock-4c-plus
+
+define Device/radxa_rock-4se
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := ROCK 4SE
+  SOC := rk3399
+endef
+TARGET_DEVICES += radxa_rock-4se
+
 define Device/radxa_rock-5a
   DEVICE_VENDOR := Radxa
   DEVICE_MODEL := ROCK 5A
@@ -222,7 +236,7 @@ define Device/radxa_rock-pi-e-v3
   DEVICE_MODEL := ROCK Pi E v3.0
   SOC := rk3328
   DEVICE_DTS := rockchip/rk3328-rock-pi-e
-  DEVICE_PACKAGES := kmod-rtw88-8723du kmod-usb-net-cdc-ncm kmod-usb-net-rndis wpad-basic-mbedtls
+  DEVICE_PACKAGES := kmod-rtw88-8723du kmod-rtw88-8821cu kmod-usb-net-cdc-ncm kmod-usb-net-rndis wpad-basic-mbedtls
 endef
 TARGET_DEVICES += radxa_rock-pi-e-v3
 
