@@ -207,6 +207,49 @@
 			compatible = "realtek,rtl9301-serdes-mdio", "realtek,otto-serdes-mdio";
 		};
 
+		pcs {
+			compatible = "realtek,rtl9301-pcs", "realtek,otto-pcs";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			serdes0: serdes@0 {
+				reg = <0>;
+			};
+			serdes1: serdes@1 {
+				reg = <1>;
+			};
+			serdes2: serdes@2 {
+				reg = <2>;
+			};
+			serdes3: serdes@3 {
+				reg = <3>;
+			};
+			serdes4: serdes@4 {
+				reg = <4>;
+			};
+			serdes5: serdes@5 {
+				reg = <5>;
+			};
+			serdes6: serdes@6 {
+				reg = <6>;
+			};
+			serdes7: serdes@7 {
+				reg = <7>;
+			};
+			serdes8: serdes@8 {
+				reg = <8>;
+			};
+			serdes9: serdes@9 {
+				reg = <9>;
+			};
+			serdes10: serdes@10 {
+				reg = <10>;
+			};
+			serdes11: serdes@11 {
+				reg = <11>;
+			};
+		};
+
 		soc_thermal: thermal {
 			compatible = "realtek,rtl9300-thermal";
 			#thermal-sensor-cells = <0>;
