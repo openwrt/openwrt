@@ -9,7 +9,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/lib/ubus.c
 +++ b/lib/ubus.c
-@@ -511,16 +511,40 @@ uc_ubus_objects_cb(struct ubus_context *
+@@ -511,16 +511,42 @@ uc_ubus_objects_cb(struct ubus_context *
  static bool
  _conn_get(uc_vm_t *vm, uc_ubus_connection_t **conn)
  {
@@ -36,6 +36,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +			ucv_put(c->res);
 +			err_return(UBUS_STATUS_UNKNOWN_ERROR, "Unable to connect to ubus socket");
 +		}
++
++		ubus_add_uloop(&c->ctx);
  
 -	if (c->ctx.sock.fd < 0)
 -		err_return(UBUS_STATUS_CONNECTION_FAILED, "Connection is closed");
@@ -57,7 +59,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	*conn = c;
  
  	ok_return(true);
-@@ -2606,6 +2630,7 @@ static void free_request(void *ud) {
+@@ -2606,6 +2632,7 @@ static void free_request(void *ud) {
  void uc_module_init(uc_vm_t *vm, uc_value_t *scope)
  {
  	uc_function_list_register(scope, global_fns);
