@@ -1,0 +1,64 @@
+From: Samuel Holland <samuel@sholland.org>
+Subject: riscv: dts: allwinner: d1: Add LED controller node
+Date: Sun, 29 Oct 2023 16:26:58 -0500
+
+Allwinner D1 contains an LED controller. Add its devicetree node, as
+well as the pinmux used by the reference board design.
+
+Acked-by: Guo Ren <guoren@kernel.org>
+Reviewed-by: Jernej Skrabec <jernej.skrabec@gmail.com>
+Tested-by: Trevor Woerner <twoerner@gmail.com>
+Signed-off-by: Samuel Holland <samuel@sholland.org>
+---
+(no changes since v5)
+
+Changes in v5:
+ - New patch for v5
+
+ arch/riscv/boot/dts/allwinner/sun20i-d1.dtsi      |  6 ++++++
+ arch/riscv/boot/dts/allwinner/sunxi-d1s-t113.dtsi | 15 +++++++++++++++
+ 2 files changed, 21 insertions(+)
+
+diff --git a/arch/riscv/boot/dts/allwinner/sun20i-d1.dtsi b/arch/riscv/boot/dts/allwinner/sun20i-d1.dtsi
+index b18f368e06e0..b0fb0ea377bc 100644
+--- a/arch/riscv/boot/dts/allwinner/sun20i-d1.dtsi
++++ b/arch/riscv/boot/dts/allwinner/sun20i-d1.dtsi
+@@ -58,6 +58,12 @@ i2c2_pb0_pins: i2c2-pb0-pins {
+ 		function = "i2c2";
+ 	};
+ 
++	/omit-if-no-ref/
++	ledc_pc0_pin: ledc-pc0-pin {
++		pins = "PC0";
++		function = "ledc";
++	};
++
+ 	/omit-if-no-ref/
+ 	uart0_pb8_pins: uart0-pb8-pins {
+ 		pins = "PB8", "PB9";
+diff --git a/arch/riscv/boot/dts/allwinner/sunxi-d1s-t113.dtsi b/arch/riscv/boot/dts/allwinner/sunxi-d1s-t113.dtsi
+index 5a9d7f5a75b4..a476b59ba306 100644
+--- a/arch/riscv/boot/dts/allwinner/sunxi-d1s-t113.dtsi
++++ b/arch/riscv/boot/dts/allwinner/sunxi-d1s-t113.dtsi
+@@ -156,6 +156,21 @@ ccu: clock-controller@2001000 {
+ 			#reset-cells = <1>;
+ 		};
+ 
++		ledc: led-controller@2008000 {
++			compatible = "allwinner,sun20i-d1-ledc",
++				     "allwinner,sun50i-a100-ledc";
++			reg = <0x2008000 0x400>;
++			interrupts = <SOC_PERIPHERAL_IRQ(20) IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&ccu CLK_BUS_LEDC>, <&ccu CLK_LEDC>;
++			clock-names = "bus", "mod";
++			resets = <&ccu RST_BUS_LEDC>;
++			dmas = <&dma 42>;
++			dma-names = "tx";
++			status = "disabled";
++			#address-cells = <1>;
++			#size-cells = <0>;
++		};
++
+ 		gpadc: adc@2009000 {
+ 			compatible = "allwinner,sun20i-d1-gpadc";
+ 			reg = <0x2009000 0x400>;
