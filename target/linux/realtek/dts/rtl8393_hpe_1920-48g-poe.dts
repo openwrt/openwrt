@@ -90,15 +90,12 @@
 	};
 };
 
-&ethernet0 {
-	mdio: mdio-bus {
-		EXTERNAL_SFP_PHY_FULL(48, 0)
-		EXTERNAL_SFP_PHY_FULL(49, 1)
-		EXTERNAL_SFP_PHY_FULL(50, 2)
-		EXTERNAL_SFP_PHY_FULL(51, 3)
-	};
+&mdio_bus0 {
+	EXTERNAL_SFP_PHY_FULL(48, 0)
+	EXTERNAL_SFP_PHY_FULL(49, 1)
+	EXTERNAL_SFP_PHY_FULL(50, 2)
+	EXTERNAL_SFP_PHY_FULL(51, 3)
 };
-
 
 &switch0 {
 	ports {

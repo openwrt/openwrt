@@ -127,7 +127,8 @@
 };
 
 &xo_board_clk {
-	clock-frequency = <24000000>;
+	clock-div = <4>;
+	clock-mult = <1>;
 };
 
 &blsp1_uart1 {
@@ -394,10 +395,6 @@
 		drive-strength = <8>;
 		bias-pull-down;
 	};
-};
-
-&tsens {
-	status = "okay";
 };
 
 &q6v5_wcss {

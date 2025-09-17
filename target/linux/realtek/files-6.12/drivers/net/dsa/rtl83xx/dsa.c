@@ -823,12 +823,6 @@ static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
 	pr_info("%s: speed %d sds_num %d\n", __func__, state->speed, sds_num);
 
 	switch (state->interface) {
-	case PHY_INTERFACE_MODE_HSGMII:
-		pr_info("%s setting mode PHY_INTERFACE_MODE_HSGMII\n", __func__);
-		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_HSGMII);
-		rtl931x_sds_init(sds_num, PHY_INTERFACE_MODE_HSGMII);
-		band = rtl931x_sds_cmu_band_set(sds_num, true, 62, PHY_INTERFACE_MODE_HSGMII);
-		break;
 	case PHY_INTERFACE_MODE_1000BASEX:
 		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_1000BASEX);
 		rtl931x_sds_init(sds_num, PHY_INTERFACE_MODE_1000BASEX);

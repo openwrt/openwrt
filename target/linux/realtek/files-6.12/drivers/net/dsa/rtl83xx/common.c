@@ -268,24 +268,27 @@ static int rtldsa_bus_c45_write(struct mii_bus *bus, int addr, int devad, int re
 
 static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 {
+	struct device_node *dn, *phy_node, *led_node, *np, *mii_np;
 	struct device *dev = priv->dev;
-	struct device_node *dn, *phy_node, *led_node, *mii_np = dev->of_node;
 	struct mii_bus *bus;
 	int ret;
 	u32 pn;
 
-	pr_debug("In %s\n", __func__);
-	mii_np = of_find_compatible_node(NULL, NULL, "realtek,rtl838x-mdio");
-	if (mii_np) {
-		pr_debug("Found compatible MDIO node!\n");
-	} else {
-		dev_err(priv->dev, "no %s child node found", "mdio-bus");
+	np = of_find_compatible_node(NULL, NULL, "realtek,otto-mdio");
+	if (!np) {
+		dev_err(priv->dev, "mdio controller node not found");
+		return -ENODEV;
+	}
+
+	mii_np = of_get_child_by_name(np, "mdio-bus");
+	if (!mii_np) {
+		dev_err(priv->dev, "mdio-bus subnode not found");
 		return -ENODEV;
 	}
 
 	priv->parent_bus = of_mdio_find_bus(mii_np);
 	if (!priv->parent_bus) {
-		pr_debug("Deferring probe of mdio bus\n");
+		dev_dbg(priv->dev, "Deferring probe of mdio bus\n");
 		return -EPROBE_DEFER;
 	}
 	if (!of_device_is_available(mii_np))
@@ -345,8 +348,6 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 
 		if (of_get_phy_mode(dn, &interface))
 			interface = PHY_INTERFACE_MODE_NA;
-		if (interface == PHY_INTERFACE_MODE_HSGMII)
-			priv->ports[pn].is2G5 = true;
 		if (interface == PHY_INTERFACE_MODE_USXGMII)
 			priv->ports[pn].is2G5 = priv->ports[pn].is10G = true;
 		if (interface == PHY_INTERFACE_MODE_10GBASER)
@@ -418,8 +419,6 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 		rtl8380_sds_power(24, 1);
 		rtl8380_sds_power(26, 1);
 	}
-
-	pr_debug("%s done\n", __func__);
 
 	return 0;
 }
@@ -1455,6 +1454,45 @@ static int rtl83xx_fib_event(struct notifier_block *this, unsigned long event, v
 	return NOTIFY_DONE;
 }
 
+/*
+ * TODO: This check is usually built into the DSA initialization functions. After carving
+ * out the mdio driver from the ethernet driver, there are two drivers that must be loaded
+ * before the DSA setup can start. This driver has severe issues with handling of deferred
+ * probing. For now provide this function for early dependency checks.
+ */
+static int rtldsa_ethernet_loaded(struct platform_device *pdev)
+{
+	struct device_node *dn = pdev->dev.of_node;
+	struct device_node *ports, *port;
+	int ret = -EPROBE_DEFER;
+
+	ports = of_get_child_by_name(dn, "ports");
+	if (!ports)
+		return -ENODEV;
+
+	for_each_child_of_node(ports, port) {
+		struct device_node *eth_np;
+		struct platform_device *eth_pdev;
+
+		eth_np = of_parse_phandle(port, "ethernet", 0);
+		if (!eth_np)
+			continue;
+
+		eth_pdev = of_find_device_by_node(eth_np);
+		of_node_put(eth_np);
+
+		if (!eth_pdev)
+			continue;
+
+		if (eth_pdev->dev.driver)
+			ret = 0;
+	}
+
+	of_node_put(ports);
+
+	return ret;	
+}
+
 static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 {
 	int i, err = 0;
@@ -1467,6 +1505,10 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		dev_err(dev, "No DT found\n");
 		return -EINVAL;
 	}
+	
+	err = rtldsa_ethernet_loaded(pdev);
+	if (err)
+		return err;
 
 	/* Initialize access to RTL switch tables */
 	rtl_table_init();

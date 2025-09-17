@@ -240,22 +240,15 @@
 	};
 };
 
-&ethernet0 {
-	mdio: mdio-bus {
-		compatible = "realtek,rtl838x-mdio";
-		regmap = <&ethernet0>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		INTERNAL_PHY_SDS(0, 2)
-		INTERNAL_PHY_SDS(8, 3)
-		INTERNAL_PHY_SDS(16, 4)
-		INTERNAL_PHY_SDS(20, 5)
-		INTERNAL_PHY_SDS(24, 6)
-		INTERNAL_PHY_SDS(25, 7)
-		INTERNAL_PHY_SDS(26, 8)
-		INTERNAL_PHY_SDS(27, 9)
-	};
+&mdio_bus0 {
+	INTERNAL_PHY_SDS(0, 2)
+	INTERNAL_PHY_SDS(8, 3)
+	INTERNAL_PHY_SDS(16, 4)
+	INTERNAL_PHY_SDS(20, 5)
+	INTERNAL_PHY_SDS(24, 6)
+	INTERNAL_PHY_SDS(25, 7)
+	INTERNAL_PHY_SDS(26, 8)
+	INTERNAL_PHY_SDS(27, 9)
 };
 
 &switch0 {

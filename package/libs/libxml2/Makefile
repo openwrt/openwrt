@@ -2,14 +2,14 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libxml2
 PKG_VERSION:=2.14.5
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNOME/libxml2/$(basename $(PKG_VERSION))
 PKG_HASH:=03d006f3537616833c16c53addcdc32a0eb20e55443cba4038307e3fa7d8d44b
 
 PKG_LICENSE:=MIT
-PKG_LICENSE_FILES:=COPYING
+PKG_LICENSE_FILES:=Copyright
 PKG_CPE_ID:=cpe:/a:xmlsoft:libxml2
 HOST_BUILD_DEPENDS := libiconv-full/host
 
@@ -24,6 +24,7 @@ define Package/libxml2
   TITLE:=Gnome XML library
   URL:=http://xmlsoft.org/
   DEPENDS:=+libpthread +zlib $(ICONV_DEPENDS)
+  ABI_VERSION:=16
 endef
 
 define Package/libxml2/description

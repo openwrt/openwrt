@@ -59,7 +59,8 @@ wavlink,wl-wn573hx3)
 cudy,wr3000-v1)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan"
 	;;
-cudy,wr3000h-v1)
+cudy,wr3000h-v1|\
+cudy,wr3000p-v1)
 	ucidef_set_led_netdev "lan1" "lan1" "white:lan-1" "lan1" "link tx rx"
 	ucidef_set_led_netdev "lan2" "lan2" "white:lan-2" "lan2" "link tx rx"
 	ucidef_set_led_netdev "lan3" "lan3" "white:lan-3" "lan3" "link tx rx"
@@ -89,6 +90,9 @@ iptime,ax3000q)
 	;;
 iptime,ax3000sm)
 	ucidef_set_led_netdev "wan" "wan" "amber:wan" "eth1" "link tx rx"
+	;;
+iptime,ax7800m-6e)
+	ucidef_set_led_netdev "wan" "wan" "mdio-bus:06:blue:wan" "eth1" "link tx rx"
 	;;
 mercusys,mr80x-v3)
 	ucidef_set_led_netdev "lan1" "lan-1" "green:lan-1" "lan1" "link tx rx"

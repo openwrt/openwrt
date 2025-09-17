@@ -3,13 +3,6 @@
 
 #include "ipq8174-mx4x00.dtsi"
 
-/ {
-	aliases {
-		ethernet3 = &dp4;
-		ethernet4 = &dp5;
-	};
-};
-
 &tlmm {
 	iot_pins: iot-state {
 		recovery-pins {
@@ -184,6 +177,15 @@
 				label = "devinfo";
 				reg = <0x1060000 0x20000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "ascii-eq-delim-env";
+
+					hw_mac_addr: hw_mac_addr {
+						compatible = "mac-base";
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@1080000 {
