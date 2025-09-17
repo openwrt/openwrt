@@ -1,9 +1,0 @@
-#!/bin/sh
-[ "$ACTION" = "ifup" ] || exit 0
-for iface in $(uci show network | grep "proto='pppoe'" | cut -d. -f2); do
-    zone=$(uci show firewall | grep "=zone" | grep "'wan'" | cut -d. -f2 | head -n1)
-    uci add_list firewall.$zone.network="$iface" 2>/dev/null
-done
-uci commit firewall
-/etc/init.d/firewall reload
-
