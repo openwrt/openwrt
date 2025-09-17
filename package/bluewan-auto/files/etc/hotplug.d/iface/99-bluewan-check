@@ -1,0 +1,14 @@
+#!/bin/sh
+[ "$ACTION" = ifup ] || exit 0
+WAN_IDX=$(uci show firewall | grep "=zone" | grep "'wan'" | cut -d'.' -f2 | head -n1)
+if [ -n "$WAN_IDX" ]; then
+    for iface in BLUE4WAN BLUE4WAN6; do
+        if ! uci get firewall.$WAN_IDX.network | grep -q "$iface"; then
+            uci add_list firewall.$WAN_IDX.network="$iface"
+            echo "[bluewan-check] 已将 $iface 加入 wan 防火墙区"
+        fi
+    done
+    uci commit firewall
+    /etc/init.d/firewall reload
+fi
+exit 0

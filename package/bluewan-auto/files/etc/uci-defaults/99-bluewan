@@ -1,0 +1,20 @@
+#!/bin/sh
+uci -q delete network.BLUE4WAN
+uci set network.BLUE4WAN="interface"
+uci set network.BLUE4WAN.proto="pppoe"
+uci set network.BLUE4WAN.device="lan4"
+uci set network.BLUE4WAN.username="your_pppoe_username"
+uci set network.BLUE4WAN.password="your_pppoe_password"
+uci set network.BLUE4WAN.ipv6="auto"
+
+uci -q delete network.BLUE4WAN6
+uci set network.BLUE4WAN6="interface"
+uci set network.BLUE4WAN6.proto="dhcpv6"
+uci set network.BLUE4WAN6.device="lan4"
+
+uci add_list firewall.@zone[1].network="BLUE4WAN"
+uci add_list firewall.@zone[1].network="BLUE4WAN6"
+
+uci commit network
+uci commit firewall
+exit 0
