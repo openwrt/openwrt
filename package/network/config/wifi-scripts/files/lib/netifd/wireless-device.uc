@@ -12,9 +12,6 @@ const NOTIFY_CMD_SET_RETRY = 4;
 const DEFAULT_RETRY = 3;
 const DEFAULT_SCRIPT_TIMEOUT = 30 * 1000;
 
-export const mlo_name = "#mlo";
-
-let mlo_wdev;
 let wdev_cur;
 let wdev_handler = {};
 let wdev_script_task, wdev_script_timeout;
@@ -62,23 +59,6 @@ function handle_link(dev, data, up)
 			link_ext: true,
 			up,
 		});
-}
-
-function wdev_mlo_fixup(config)
-{
-	if (!mlo_wdev)
-		return;
-
-	for (let name, iface in config.interfaces) {
-		let config = iface.config;
-
-		if (config.mode != "link")
-			continue;
-
-		let mlo_config = mlo_wdev.handler_data[iface.name];
-		if (mlo_config && mlo_config.ifname)
-			config.ifname = mlo_config.ifname;
-	}
 }
 
 function wdev_config_init(wdev)
@@ -199,9 +179,6 @@ function handler_sort_fn(a, b)
 
 function __run_next_handler_name()
 {
-	if (wdev_handler[mlo_name])
-		return mlo_name;
-
 	return sort(keys(wdev_handler), handler_sort_fn)[0];
 }
 
@@ -219,8 +196,6 @@ function __run_next_handler()
 	let cb = wdev_cur.cb;
 
 	wdev.dbg("run " + op);
-	if (name != mlo_name)
-		wdev_mlo_fixup(wdev.handler_config);
 	wdev.handler_config.data = wdev.handler_data[wdev.name] ?? {};
 	wdev_script_task = netifd.process({
 		cb: () => run_handler_cb(wdev, cb),
@@ -441,9 +416,6 @@ function wdev_mark_up(wdev)
 	wdev.dbg("mark up, state=" + wdev.state);
 	if (wdev.state != "setup")
 		return;
-
-	if (wdev.name == mlo_name)
-		mlo_wdev = wdev;
 
 	if (wdev.config_change) {
 		wdev.setup();

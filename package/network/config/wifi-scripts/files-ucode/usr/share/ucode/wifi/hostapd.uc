@@ -554,7 +554,7 @@ export function setup(data) {
 		append('\n#macaddr_base', data.config.macaddr_base);
 
 	for (let k, interface in data.interfaces) {
-		if (interface.config.mode != 'ap' && interface.config.mode != 'link')
+		if (interface.config.mode != 'ap')
 			continue;
 
 		interface.config.network_bridge = interface.bridge;
