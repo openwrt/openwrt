@@ -4,8 +4,6 @@ PKG_NAME:=bluewan-auto
 PKG_VERSION:=1.0
 PKG_RELEASE:=1
 
-PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/bluewan-auto
@@ -27,7 +25,8 @@ define Build/Compile
 endef
 
 define Package/bluewan-auto/install
-	$(CP) ./files/* $(1)/
+	$(CP) -r ./files/* $(1)/
 endef
 
 $(eval $(call BuildPackage,bluewan-auto))
+
