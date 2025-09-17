@@ -24,7 +24,7 @@ Signed-off-by: Krzysztof Wilczyński <kwilczynski@kernel.org>
 
 --- a/drivers/pci/controller/pcie-mediatek-gen3.c
 +++ b/drivers/pci/controller/pcie-mediatek-gen3.c
-@@ -902,7 +902,6 @@ static int mtk_pcie_en7581_power_up(stru
+@@ -895,7 +895,6 @@ static int mtk_pcie_en7581_power_up(stru
  	 */
  	reset_control_bulk_assert(pcie->soc->phy_resets.num_resets,
  				  pcie->phy_resets);

@@ -29,7 +29,7 @@ Signed-off-by: Rob Herring (Arm) <robh@kernel.org>
  #include <linux/libfdt.h>
  #include <linux/of.h>
  #include <linux/of_fdt.h>
-@@ -514,3 +515,82 @@ struct reserved_mem *of_reserved_mem_loo
+@@ -694,3 +695,82 @@ struct reserved_mem *of_reserved_mem_loo
  	return NULL;
  }
  EXPORT_SYMBOL_GPL(of_reserved_mem_lookup);
@@ -122,7 +122,7 @@ Signed-off-by: Rob Herring (Arm) <robh@kernel.org>
  
  struct reserved_mem {
  	const char			*name;
-@@ -40,6 +41,12 @@ int of_reserved_mem_device_init_by_name(
+@@ -39,6 +40,12 @@ int of_reserved_mem_device_init_by_name(
  void of_reserved_mem_device_release(struct device *dev);
  
  struct reserved_mem *of_reserved_mem_lookup(struct device_node *np);
@@ -135,7 +135,7 @@ Signed-off-by: Rob Herring (Arm) <robh@kernel.org>
  #else
  
  #define RESERVEDMEM_OF_DECLARE(name, compat, init)			\
-@@ -64,6 +71,25 @@ static inline struct reserved_mem *of_re
+@@ -63,6 +70,25 @@ static inline struct reserved_mem *of_re
  {
  	return NULL;
  }
