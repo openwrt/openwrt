@@ -1,6 +1,6 @@
 import * as uci from "uci";
 import * as uloop from "uloop";
-import * as libubus from "ubus";
+import * as ubus from "ubus";
 import { access, dirname } from "fs";
 
 function ex_handler(e)
@@ -9,9 +9,8 @@ function ex_handler(e)
 }
 
 uloop.guard(ex_handler);
-libubus.guard(ex_handler);
+ubus.guard(ex_handler);
 
-let ubus = netifd.ubus = libubus.connect();
 let wireless;
 
 function uci_ctx()

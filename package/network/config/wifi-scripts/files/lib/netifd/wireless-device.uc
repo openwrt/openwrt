@@ -1,5 +1,5 @@
 'use strict';
-import * as libubus from "ubus";
+import * as ubus from "ubus";
 import * as uloop from "uloop";
 import { is_equal } from "./utils.uc";
 import { access } from "fs";
@@ -465,22 +465,22 @@ function wdev_set_data(wdev, vif, vlan, data)
 	let cur = wdev;
 	let cur_type = "device";
 	if (!config)
-		return libubus.STATUS_INVALID_ARGUMENT;
+		return ubus.STATUS_INVALID_ARGUMENT;
 
 	if (vif) {
 		cur = vif = config.interfaces[vif];
 		if (!vif)
-			return libubus.STATUS_NOT_FOUND;
+			return ubus.STATUS_NOT_FOUND;
 		cur_type = "vif";
 	}
 
 	if (vlan) {
 		if (!vif)
-			return libubus.STATUS_INVALID_ARGUMENT;
+			return ubus.STATUS_INVALID_ARGUMENT;
 
 		cur = vlan = vif.vlans[vlan];
 		if (!vlan)
-			return libubus.STATUS_NOT_FOUND;
+			return ubus.STATUS_NOT_FOUND;
 
 		cur_type = "vlan";
 	}
@@ -504,7 +504,7 @@ function notify(req)
 	switch (req.args.command) {
 	case NOTIFY_CMD_UP:
 		if (vif || vlan || this.state != "setup")
-			return libubus.STATUS_INVALID_ARGUMENT;
+			return ubus.STATUS_INVALID_ARGUMENT;
 
 		return wdev_mark_up(this);
 	case NOTIFY_CMD_SET_DATA:
@@ -522,7 +522,7 @@ function notify(req)
 			this.retry = DEFAULT_RETRY;
 		return 0;
 	default:
-		return libubus.STATUS_INVALID_ARGUMENT;
+		return ubus.STATUS_INVALID_ARGUMENT;
 	}
 }
 
