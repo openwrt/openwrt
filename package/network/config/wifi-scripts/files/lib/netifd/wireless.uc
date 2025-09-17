@@ -1,6 +1,6 @@
 'use strict';
 
-import * as libubus from "ubus";
+import * as ubus from "ubus";
 import { realpath } from "fs";
 import {
 	handler_load, handler_attributes,
@@ -9,7 +9,6 @@ import {
 } from "./utils.uc";
 import * as wdev from "./wireless-device.uc";
 
-let ubus = netifd.ubus;
 let wireless = netifd.wireless = {
 	handlers: {},
 	devices: {},
@@ -348,7 +347,7 @@ function wdev_call(req, cb)
 	if (dev) {
 		dev = wireless.devices[dev];
 		if (!dev)
-			return libubus.STATUS_NOT_FOUND;
+			return ubus.STATUS_NOT_FOUND;
 
 		return cb(dev);
 	}
@@ -459,11 +458,11 @@ const ubus_obj = {
 		call: function(req) {
 			let dev = req.args.device;
 			if (!dev)
-				return libubus.STATUS_INVALID_ARGUMENT;
+				return ubus.STATUS_INVALID_ARGUMENT;
 
 			dev = wireless.devices[dev];
 			if (!dev)
-				return libubus.STATUS_NOT_FOUND;
+				return ubus.STATUS_NOT_FOUND;
 
 			return dev.notify(req);
 		}
