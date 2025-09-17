@@ -21,7 +21,7 @@ Reviewed-by: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
 
 --- a/drivers/pci/controller/pcie-mediatek-gen3.c
 +++ b/drivers/pci/controller/pcie-mediatek-gen3.c
-@@ -885,7 +885,7 @@ static int mtk_pcie_en7581_power_up(stru
+@@ -878,7 +878,7 @@ static int mtk_pcie_en7581_power_up(stru
  	reset_control_assert(pcie->mac_reset);
  
  	/* Wait for the time needed to complete the reset lines assert. */
@@ -30,7 +30,7 @@ Reviewed-by: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
  
  	/*
  	 * Unlike the other MediaTek Gen3 controllers, the Airoha EN7581
-@@ -913,7 +913,7 @@ static int mtk_pcie_en7581_power_up(stru
+@@ -906,7 +906,7 @@ static int mtk_pcie_en7581_power_up(stru
  	 * Wait for the time needed to complete the bulk de-assert above.
  	 * This time is specific for EN7581 SoC.
  	 */

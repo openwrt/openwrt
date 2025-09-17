@@ -36,11 +36,9 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  drivers/pinctrl/mediatek/pinctrl-airoha.c | 9 +++++----
  1 file changed, 5 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/pinctrl/mediatek/pinctrl-airoha.c b/drivers/pinctrl/mediatek/pinctrl-airoha.c
-index 7692e6d9b87105..547a798b71c8ae 100644
 --- a/drivers/pinctrl/mediatek/pinctrl-airoha.c
 +++ b/drivers/pinctrl/mediatek/pinctrl-airoha.c
-@@ -2384,15 +2384,16 @@ static irqreturn_t airoha_irq_handler(int irq, void *data)
+@@ -2384,15 +2384,16 @@ static irqreturn_t airoha_irq_handler(in
  
  	for (i = 0; i < ARRAY_SIZE(irq_status_regs); i++) {
  		struct gpio_irq_chip *girq = &pinctrl->gpiochip.chip.irq;

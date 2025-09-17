@@ -31,7 +31,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  };
  
  struct airoha_hw_stats {
-@@ -1656,25 +1654,31 @@ static int airoha_qdma_init_rx(struct ai
+@@ -1655,25 +1653,31 @@ static int airoha_qdma_init_rx(struct ai
  static int airoha_qdma_tx_napi_poll(struct napi_struct *napi, int budget)
  {
  	struct airoha_tx_irq_queue *irq_q;
@@ -69,7 +69,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		done++;
  
  		last = FIELD_GET(IRQ_DESC_IDX_MASK, val);
-@@ -2026,20 +2030,11 @@ static irqreturn_t airoha_irq_handler(in
+@@ -2025,20 +2029,11 @@ static irqreturn_t airoha_irq_handler(in
  
  	if (intr[0] & INT_TX_MASK) {
  		for (i = 0; i < ARRAY_SIZE(qdma->q_tx_irq); i++) {

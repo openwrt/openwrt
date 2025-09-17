@@ -27,11 +27,9 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  4 files changed, 2994 insertions(+), 1 deletion(-)
  create mode 100644 drivers/pinctrl/mediatek/pinctrl-airoha.c
 
-diff --git a/MAINTAINERS b/MAINTAINERS
-index 67634f0ea30e13..38ccb620cc2497 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -18232,6 +18232,13 @@ F:	drivers/pinctrl/
+@@ -18191,6 +18191,13 @@ F:	drivers/pinctrl/
  F:	include/dt-bindings/pinctrl/
  F:	include/linux/pinctrl/
  
@@ -45,8 +43,6 @@ index 67634f0ea30e13..38ccb620cc2497 100644
  PIN CONTROLLER - AMD
  M:	Basavaraj Natikar <Basavaraj.Natikar@amd.com>
  M:	Shyam Sundar S K <Shyam-sundar.S-k@amd.com>
-diff --git a/drivers/pinctrl/mediatek/Kconfig b/drivers/pinctrl/mediatek/Kconfig
-index 7af287252834a4..a417a031659c65 100644
 --- a/drivers/pinctrl/mediatek/Kconfig
 +++ b/drivers/pinctrl/mediatek/Kconfig
 @@ -1,6 +1,6 @@
@@ -79,11 +75,9 @@ index 7af287252834a4..a417a031659c65 100644
  config PINCTRL_MT2712
  	bool "MediaTek MT2712 pin control"
  	depends on OF
-diff --git a/drivers/pinctrl/mediatek/Makefile b/drivers/pinctrl/mediatek/Makefile
-index 680f7e8526e00a..1405d434218ea1 100644
 --- a/drivers/pinctrl/mediatek/Makefile
 +++ b/drivers/pinctrl/mediatek/Makefile
-@@ -8,6 +8,7 @@ obj-$(CONFIG_PINCTRL_MTK_MOORE)		+= pinctrl-moore.o
+@@ -8,6 +8,7 @@ obj-$(CONFIG_PINCTRL_MTK_MOORE)		+= pinc
  obj-$(CONFIG_PINCTRL_MTK_PARIS)		+= pinctrl-paris.o
  
  # SoC Drivers
@@ -91,9 +85,6 @@ index 680f7e8526e00a..1405d434218ea1 100644
  obj-$(CONFIG_PINCTRL_MT7620)		+= pinctrl-mt7620.o
  obj-$(CONFIG_PINCTRL_MT7621)		+= pinctrl-mt7621.o
  obj-$(CONFIG_PINCTRL_MT76X8)		+= pinctrl-mt76x8.o
-diff --git a/drivers/pinctrl/mediatek/pinctrl-airoha.c b/drivers/pinctrl/mediatek/pinctrl-airoha.c
-new file mode 100644
-index 00000000000000..7692e6d9b87105
 --- /dev/null
 +++ b/drivers/pinctrl/mediatek/pinctrl-airoha.c
 @@ -0,0 +1,2970 @@

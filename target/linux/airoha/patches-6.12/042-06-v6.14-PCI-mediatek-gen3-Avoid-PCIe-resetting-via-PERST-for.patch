@@ -101,7 +101,7 @@ Signed-off-by: Krzysztof Wilczyński <kwilczynski@kernel.org>
  
  	/* Check if the link is up or not */
  	err = readl_poll_timeout(pcie->base + PCIE_LINK_STATUS_REG, val,
-@@ -1178,10 +1198,12 @@ static int mtk_pcie_suspend_noirq(struct
+@@ -1171,10 +1191,12 @@ static int mtk_pcie_suspend_noirq(struct
  		return err;
  	}
  
@@ -118,7 +118,7 @@ Signed-off-by: Krzysztof Wilczyński <kwilczynski@kernel.org>
  
  	dev_dbg(pcie->dev, "entered L2 states successfully");
  
-@@ -1232,6 +1254,7 @@ static const struct mtk_gen3_pcie_pdata
+@@ -1225,6 +1247,7 @@ static const struct mtk_gen3_pcie_pdata
  		.id[2] = "phy-lane2",
  		.num_resets = 3,
  	},

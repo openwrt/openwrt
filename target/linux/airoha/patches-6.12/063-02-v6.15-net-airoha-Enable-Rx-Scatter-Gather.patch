@@ -124,7 +124,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	}
  	airoha_qdma_fill_rx_queue(q);
  
-@@ -763,6 +779,7 @@ static int airoha_qdma_init_rx_queue(str
+@@ -762,6 +778,7 @@ static int airoha_qdma_init_rx_queue(str
  			FIELD_PREP(RX_RING_THR_MASK, thr));
  	airoha_qdma_rmw(qdma, REG_RX_DMA_IDX(qid), RX_RING_DMA_IDX_MASK,
  			FIELD_PREP(RX_RING_DMA_IDX_MASK, q->head));
@@ -132,7 +132,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	airoha_qdma_fill_rx_queue(q);
  
-@@ -1162,7 +1179,6 @@ static int airoha_qdma_hw_init(struct ai
+@@ -1161,7 +1178,6 @@ static int airoha_qdma_hw_init(struct ai
  	}
  
  	airoha_qdma_wr(qdma, REG_QDMA_GLOBAL_CFG,
