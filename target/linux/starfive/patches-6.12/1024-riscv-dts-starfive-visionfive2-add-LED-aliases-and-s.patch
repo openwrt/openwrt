@@ -1,0 +1,43 @@
+From d930d3d22dcca6946dbdc822d7b8681f0d6372e5 Mon Sep 17 00:00:00 2001
+From: Zoltan HERPAI <wigyori@uid0.hu>
+Date: Sun, 1 Jun 2025 14:06:04 +0000
+Subject: [PATCH 8/8] riscv: dts: starfive: visionfive2: add LED aliases and
+ stop heartbeat
+
+Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
+---
+ .../boot/dts/starfive/jh7110-starfive-visionfive-2.dtsi   | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+--- a/arch/riscv/boot/dts/starfive/jh7110-starfive-visionfive-2.dtsi
++++ b/arch/riscv/boot/dts/starfive/jh7110-starfive-visionfive-2.dtsi
+@@ -6,10 +6,15 @@
+ 
+ /dts-v1/;
+ #include "jh7110-common.dtsi"
++#include <dt-bindings/leds/common.h>
+ 
+ / {
+ 	aliases {
+ 		ethernet1 = &gmac1;
++		led-boot = &led_ack;
++		led-failsafe = &led_ack;
++		led-running = &led_ack;
++		led-upgrade = &led_ack;
+ 	};
+ 
+ 	reserved-memory {
+@@ -25,11 +30,11 @@
+ 	leds {
+ 		compatible = "gpio-leds";
+ 
+-		led-ack {
++		led_ack: led-ack {
+ 			gpios = <&aongpio 3 GPIO_ACTIVE_HIGH>;
+ 			color = <LED_COLOR_ID_GREEN>;
+ 			function = LED_FUNCTION_HEARTBEAT;
+-			linux,default-trigger = "heartbeat";
++			default-state = "on";
+ 			label = "ack";
+ 		};
+ 	};
