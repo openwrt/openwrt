@@ -32,7 +32,7 @@ Reviewed-by: Jonathan Cameron <Jonathan.Cameron@huawei.com>
 
 --- a/include/linux/ioport.h
 +++ b/include/linux/ioport.h
-@@ -216,6 +216,38 @@ struct resource *lookup_resource(struct
+@@ -249,6 +249,38 @@ struct resource *lookup_resource(struct
  int adjust_resource(struct resource *res, resource_size_t start,
  		    resource_size_t size);
  resource_size_t resource_alignment(struct resource *res);

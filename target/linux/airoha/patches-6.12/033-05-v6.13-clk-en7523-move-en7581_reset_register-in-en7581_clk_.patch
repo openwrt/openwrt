@@ -29,7 +29,7 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  	int (*hw_init)(struct platform_device *pdev,
  		       struct clk_hw_onecell_data *clk_data);
  };
-@@ -595,32 +590,6 @@ static void en7581_register_clocks(struc
+@@ -596,32 +591,6 @@ static void en7581_register_clocks(struc
  	clk_data->num = EN7523_NUM_CLOCKS;
  }
  
@@ -62,7 +62,7 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  static int en7523_reset_update(struct reset_controller_dev *rcdev,
  			       unsigned long id, bool assert)
  {
-@@ -670,23 +639,18 @@ static int en7523_reset_xlate(struct res
+@@ -671,23 +640,18 @@ static int en7523_reset_xlate(struct res
  	return rst_data->idx_map[reset_spec->args[0]];
  }
  
@@ -88,7 +88,7 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  	base = devm_platform_ioremap_resource(pdev, 1);
  	if (IS_ERR(base))
  		return PTR_ERR(base);
-@@ -695,13 +659,13 @@ static int en7523_reset_register(struct
+@@ -696,13 +660,13 @@ static int en7523_reset_register(struct
  	if (!rst_data)
  		return -ENOMEM;
  
@@ -106,7 +106,7 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  	rst_data->rcdev.of_node = dev->of_node;
  	rst_data->rcdev.of_reset_n_cells = 1;
  	rst_data->rcdev.owner = THIS_MODULE;
-@@ -710,6 +674,32 @@ static int en7523_reset_register(struct
+@@ -711,6 +675,32 @@ static int en7523_reset_register(struct
  	return devm_reset_controller_register(dev, &rst_data->rcdev);
  }
  
@@ -139,7 +139,7 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  static int en7523_clk_probe(struct platform_device *pdev)
  {
  	struct device_node *node = pdev->dev.of_node;
-@@ -728,19 +718,7 @@ static int en7523_clk_probe(struct platf
+@@ -729,19 +719,7 @@ static int en7523_clk_probe(struct platf
  	if (r)
  		return r;
  
@@ -160,7 +160,7 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  }
  
  static const struct en_clk_soc_data en7523_data = {
-@@ -758,11 +736,6 @@ static const struct en_clk_soc_data en75
+@@ -759,11 +737,6 @@ static const struct en_clk_soc_data en75
  		.enable = en7581_pci_enable,
  		.disable = en7581_pci_disable,
  	},

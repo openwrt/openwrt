@@ -37,7 +37,7 @@ Signed-off-by: Krzysztof Wilczyński <kwilczynski@kernel.org>
  #include <linux/reset.h>
  
  #include "../pci.h"
-@@ -892,9 +894,13 @@ static int mtk_pcie_parse_port(struct mt
+@@ -885,9 +887,13 @@ static int mtk_pcie_parse_port(struct mt
  
  static int mtk_pcie_en7581_power_up(struct mtk_gen3_pcie *pcie)
  {
@@ -52,7 +52,7 @@ Signed-off-by: Krzysztof Wilczyński <kwilczynski@kernel.org>
  
  	/*
  	 * The controller may have been left out of reset by the bootloader
-@@ -907,6 +913,26 @@ static int mtk_pcie_en7581_power_up(stru
+@@ -900,6 +906,26 @@ static int mtk_pcie_en7581_power_up(stru
  	msleep(PCIE_EN7581_RESET_TIME_MS);
  
  	/*

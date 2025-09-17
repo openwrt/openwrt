@@ -27,7 +27,7 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  
  struct en_clk_desc {
  	int id;
-@@ -645,15 +645,9 @@ static const struct reset_control_ops en
+@@ -646,15 +646,9 @@ static const struct reset_control_ops en
  	.status = en7523_reset_status,
  };
  
@@ -44,7 +44,7 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  
  	rst_data = devm_kzalloc(dev, sizeof(*rst_data), GFP_KERNEL);
  	if (!rst_data)
-@@ -677,27 +671,27 @@ static int en7581_reset_register(struct
+@@ -678,27 +672,27 @@ static int en7581_reset_register(struct
  static int en7581_clk_hw_init(struct platform_device *pdev,
  			      struct clk_hw_onecell_data *clk_data)
  {
