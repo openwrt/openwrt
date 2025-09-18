@@ -160,6 +160,11 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && echo "$addr" > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr -1 > /sys${DEVPATH}/macaddress
 		;;
+	netgear,eax17)
+		hw_mac_addr=$(grep -aoE '([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}' /dev/ubi0_0 | head -n1)
+		macaddr_add $hw_mac_addr 2 > /sys/class/ieee80211/phy0/macaddress
+		macaddr_add $hw_mac_addr 3 > /sys/class/ieee80211/phy1/macaddress
+		;;
 	netgear,wax220)
 		hw_mac_addr=$(mtd_get_mac_ascii u-boot-env mac)
 		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
