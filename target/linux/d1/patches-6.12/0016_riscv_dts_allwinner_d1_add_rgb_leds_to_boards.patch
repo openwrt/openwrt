@@ -18,11 +18,9 @@ Changes in v5:
  arch/riscv/boot/dts/allwinner/sun20i-d1-nezha.dts   | 13 +++++++++++++
  2 files changed, 25 insertions(+)
 
-diff --git a/arch/riscv/boot/dts/allwinner/sun20i-d1-lichee-rv-dock.dts b/arch/riscv/boot/dts/allwinner/sun20i-d1-lichee-rv-dock.dts
-index 08cf716328a0..feaa75d5aead 100644
 --- a/arch/riscv/boot/dts/allwinner/sun20i-d1-lichee-rv-dock.dts
 +++ b/arch/riscv/boot/dts/allwinner/sun20i-d1-lichee-rv-dock.dts
-@@ -59,6 +59,18 @@ &ehci1 {
+@@ -59,6 +59,18 @@
  	status = "okay";
  };
  
@@ -41,8 +39,6 @@ index 08cf716328a0..feaa75d5aead 100644
  &mmc1 {
  	bus-width = <4>;
  	mmc-pwrseq = <&wifi_pwrseq>;
-diff --git a/arch/riscv/boot/dts/allwinner/sun20i-d1-nezha.dts b/arch/riscv/boot/dts/allwinner/sun20i-d1-nezha.dts
-index 8dbe717c79ce..73840ea300f0 100644
 --- a/arch/riscv/boot/dts/allwinner/sun20i-d1-nezha.dts
 +++ b/arch/riscv/boot/dts/allwinner/sun20i-d1-nezha.dts
 @@ -22,6 +22,7 @@
@@ -53,7 +49,7 @@ index 8dbe717c79ce..73840ea300f0 100644
  
  /dts-v1/;
  
-@@ -121,6 +122,18 @@ pcf8574a: gpio@38 {
+@@ -121,6 +122,18 @@
  	};
  };
  
