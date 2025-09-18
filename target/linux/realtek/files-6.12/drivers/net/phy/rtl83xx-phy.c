@@ -3263,7 +3263,7 @@ static int rtl8218b_int_phy_probe(struct phy_device *phydev)
 	return 0;
 }
 
-static int rtl8218d_phy_probe(struct phy_device *phydev)
+static int rtl8218x_phy_probe(struct phy_device *phydev)
 {
 	int base_addr = phydev->mdio.addr & ~7;
 
@@ -3445,7 +3445,20 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.name		= "REALTEK RTL8218D",
 		.config_init	= rtl821x_config_init,
 		.features	= PHY_GBIT_FEATURES,
-		.probe		= rtl8218d_phy_probe,
+		.probe		= rtl8218x_phy_probe,
+		.read_mmd	= rtl821x_read_mmd,
+		.read_page	= rtl821x_read_page,
+		.resume		= genphy_resume,
+		.suspend	= genphy_suspend,
+		.write_mmd	= rtl821x_write_mmd,
+		.write_page	= rtl821x_write_page,
+	},
+	{
+		PHY_ID_MATCH_EXACT(PHY_ID_RTL8218E),
+		.name		= "REALTEK RTL8218E",
+		.config_init	= rtl821x_config_init,
+		.features	= PHY_GBIT_FEATURES,
+		.probe		= rtl8218x_phy_probe,
 		.read_mmd	= rtl821x_read_mmd,
 		.read_page	= rtl821x_read_page,
 		.resume		= genphy_resume,
