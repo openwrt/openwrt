@@ -11,7 +11,7 @@ define Device/armsom_sige7
   DEVICE_ALT0_VENDOR := Bananapi
   DEVICE_ALT0_MODEL := BPi-M7
   SOC := rk3588
-  DEVICE_DTS := rockchip/rk3588-armsom-sige7
+  DEVICE_DTS := rk3588-armsom-sige7
   DEVICE_PACKAGES := kmod-r8169
 endef
 TARGET_DEVICES += armsom_sige7
@@ -20,7 +20,7 @@ define Device/firefly_roc-rk3328-cc
   DEVICE_VENDOR := Firefly
   DEVICE_MODEL := ROC-RK3328-CC
   SOC := rk3328
-  DEVICE_DTS := rockchip/rk3328-roc-cc
+  DEVICE_DTS := rk3328-roc-cc
   UBOOT_DEVICE_NAME := roc-cc-rk3328
 endef
 TARGET_DEVICES += firefly_roc-rk3328-cc
@@ -151,7 +151,7 @@ define Device/radxa_cm3-io
   DEVICE_VENDOR := Radxa
   DEVICE_MODEL := CM3 IO
   SOC := rk3566
-  DEVICE_DTS := rockchip/rk3566-radxa-cm3-io
+  DEVICE_DTS := rk3566-radxa-cm3-io
   UBOOT_DEVICE_NAME := radxa-cm3-io-rk3566
 endef
 TARGET_DEVICES += radxa_cm3-io
@@ -160,7 +160,7 @@ define Device/radxa_e25
   DEVICE_VENDOR := Radxa
   DEVICE_MODEL := E25
   SOC := rk3568
-  DEVICE_DTS := rockchip/rk3568-radxa-e25
+  DEVICE_DTS := rk3568-radxa-e25
   BOOT_SCRIPT := radxa-e25
   UBOOT_DEVICE_NAME := radxa-e25-rk3568
   DEVICE_PACKAGES := kmod-r8169 kmod-ata-ahci-dwc
@@ -172,7 +172,7 @@ define Device/radxa_e52c
   DEVICE_MODEL := E52C
   SOC := rk3582
   UBOOT_DEVICE_NAME := generic-rk3588
-  DEVICE_DTS := rockchip/rk3582-radxa-e52c
+  DEVICE_DTS := rk3582-radxa-e52c
   DEVICE_PACKAGES := blkdiscard kmod-r8169
 endef
 TARGET_DEVICES += radxa_e52c
@@ -247,7 +247,7 @@ define Device/radxa_rock-5b-plus
   DEVICE_MODEL := ROCK 5B+
   SOC := rk3588
   UBOOT_DEVICE_NAME := generic-rk3588
-  DEVICE_DTS := rockchip/rk3588-rock-5b-plus
+  DEVICE_DTS := rk3588-rock-5b-plus
   DEVICE_PACKAGES := blkdiscard block-mount kmod-hwmon-pwmfan kmod-nvme kmod-r8169 kmod-rtw89-8852be wpad-basic-mbedtls
 endef
 TARGET_DEVICES += radxa_rock-5b-plus
@@ -265,7 +265,7 @@ define Device/radxa_rock-5t
   DEVICE_MODEL := ROCK 5T
   SOC := rk3588
   UBOOT_DEVICE_NAME := generic-rk3588
-  DEVICE_DTS := rockchip/rk3588-rock-5t
+  DEVICE_DTS := rk3588-rock-5t
   DEVICE_PACKAGES := blkdiscard block-mount iwlwifi-firmware-ax210 kmod-hwmon-pwmfan kmod-iwlwifi kmod-nvme kmod-r8169 wpad-basic-mbedtls
 endef
 TARGET_DEVICES += radxa_rock-5t
@@ -290,7 +290,7 @@ define Device/radxa_rock-pi-e-v3
   DEVICE_VENDOR := Radxa
   DEVICE_MODEL := ROCK Pi E v3.0
   SOC := rk3328
-  DEVICE_DTS := rockchip/rk3328-rock-pi-e
+  DEVICE_DTS := rk3328-rock-pi-e
   DEVICE_PACKAGES := kmod-rtw88-8723du kmod-rtw88-8821cu kmod-usb-net-cdc-ncm kmod-usb-net-rndis wpad-basic-mbedtls
 endef
 TARGET_DEVICES += radxa_rock-pi-e-v3
@@ -309,7 +309,7 @@ define Device/radxa_zero-3e
   DEVICE_VENDOR := Radxa
   DEVICE_MODEL := ZERO 3E
   SOC := rk3566
-  DEVICE_DTS := rockchip/rk3566-radxa-zero-3e
+  DEVICE_DTS := rk3566-radxa-zero-3e
   UBOOT_DEVICE_NAME := radxa-zero-3-rk3566
   DEVICE_PACKAGES := kmod-usb-net-cdc-ncm kmod-usb-net-rndis
 endef
@@ -319,7 +319,7 @@ define Device/radxa_zero-3w
   DEVICE_VENDOR := Radxa
   DEVICE_MODEL := ZERO 3W
   SOC := rk3566
-  DEVICE_DTS := rockchip/rk3566-radxa-zero-3w
+  DEVICE_DTS := rk3566-radxa-zero-3w
   UBOOT_DEVICE_NAME := radxa-zero-3-rk3566
   DEVICE_PACKAGES := kmod-usb-net-cdc-ncm kmod-usb-net-rndis
 endef
