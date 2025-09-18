@@ -14,24 +14,13 @@ config zone
 # wan 默认区
 config zone
 	option name 'wan'
+	option input 'REJECT'
+	option output 'ACCEPT'
+	option forward 'REJECT'
+	option masq '1'
+	option mtu_fix '1'
 	list network 'wan'
-	list network 'wan6'
-	option input 'REJECT'
-	option output 'ACCEPT'
-	option forward 'REJECT'
-	option masq '1'
-	option mtu_fix '1'
-
-# BLUE4WAN 专用区
-config zone
-	option name 'BLUE4WAN'
 	list network 'BLUE4WAN'
-	list network 'BLUE4WAN6'
-	option input 'REJECT'
-	option output 'ACCEPT'
-	option forward 'REJECT'
-	option masq '1'
-	option mtu_fix '1'
 
 # 转发：LAN → WAN
 config forwarding

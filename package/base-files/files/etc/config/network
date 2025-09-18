@@ -36,12 +36,7 @@ config interface 'wan6'
 
 config interface 'BLUE4WAN'
 	option proto 'pppoe'
-	option device 'lan4'
 	option username ''
 	option password ''
-	option ipv6 'auto'
-	option ip6assign '64'
-	
-config interface 'BLUE4WAN6'
 	option device 'lan4'
-	option proto 'dhcpv6'	
+	option ipv6 '1'   # 开启 IPv6 支持

@@ -1,8 +1,10 @@
 #!/bin/sh
 [ "$ACTION" = ifup ] || exit 0
+
+# 维持防火墙绑定
 WAN_IDX=$(uci show firewall | grep "=zone" | grep "'wan'" | cut -d'.' -f2 | head -n1)
 if [ -n "$WAN_IDX" ]; then
-    for iface in BLUE4WAN BLUE4WAN6; do
+    for iface in BLUE4WAN; do
         if ! uci get firewall.$WAN_IDX.network | grep -q "$iface"; then
             uci add_list firewall.$WAN_IDX.network="$iface"
             echo "[bluewan-check] 已将 $iface 加入 wan 防火墙区"
@@ -11,4 +13,9 @@ if [ -n "$WAN_IDX" ]; then
     uci commit firewall
     /etc/init.d/firewall reload
 fi
+
+# 调用 IPv6 自动配置脚本
+/usr/bin/bluewan-ipv6-setup.sh &
+
 exit 0
+
