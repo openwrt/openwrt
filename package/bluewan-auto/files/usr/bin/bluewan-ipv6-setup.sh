@@ -13,11 +13,11 @@ if ! uci show network.$PPPOE_IF >/dev/null 2>&1; then
     exit 1
 fi
 
-# 1. 开启 IPv6 支持
-uci set network.$PPPOE_IF.ipv6='1'
+# 1. 开启 PPPoE IPv6 支持
+uci set network.$PPPOE_IF.ipv6='auto'
 
 # 2. 删除多余的 DHCPv6 客户端接口 (BLUE4WAN6)
-if uci show network | grep -q "network.BLUE4WAN6"; then
+if uci -q get network.BLUE4WAN6 >/dev/null; then
     uci delete network.BLUE4WAN6
     echo "[bluewan-ipv6] 已删除多余接口 BLUE4WAN6"
 fi
@@ -26,9 +26,10 @@ fi
 uci set network.$LAN_IF.ipv6='1'
 uci set network.$LAN_IF.delegate='1'
 
-# 4. 提交并重启网络
+# 4. 提交修改并平滑应用
 uci commit network
-/etc/init.d/network restart
+/etc/init.d/network reload
 
 echo "[bluewan-ipv6] 已完成 PPPoE IPv6 配置"
 exit 0
+
