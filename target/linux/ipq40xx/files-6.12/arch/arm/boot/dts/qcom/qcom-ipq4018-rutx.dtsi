@@ -300,7 +300,7 @@
 	status = "okay";
 	pinctrl-0 = <&mdio_pins>;
 	pinctrl-names = "default";
-	phy-reset-gpio = <&tlmm 62 0>;
+	phy-reset-gpios = <&tlmm 62 GPIO_ACTIVE_HIGH>;
 };
 
 &usb3_ss_phy {
