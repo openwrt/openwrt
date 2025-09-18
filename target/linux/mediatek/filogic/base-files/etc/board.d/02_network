@@ -99,6 +99,13 @@ mediatek_setup_interfaces()
 	cudy,ap3000outdoor-v1|\
 	cudy,ap3000-v1|\
 	cudy,re3000-v1|\
+	netgear,eax17|\
+	netgear,eax11v3|\
+	netgear,eax15v3|\
+	netgear,eax14v3|\
+	netgear,eax12v2|\
+	netgear,eax16|\
+	netgear,eax19|\
 	netgear,wax220|\
 	openfi,6c|\
 	ubnt,unifi-6-plus|\
@@ -212,6 +219,13 @@ mediatek_setup_macs()
 		label_mac=$(get_mac_binary "/tmp/tp_data/default-mac" 0)
 		lan_mac=$label_mac
 		;;
+	netgear,eax17|\
+	netgear,eax11v3|\
+	netgear,eax15v3|\
+	netgear,eax14v3|\
+	netgear,eax12v2|\
+	netgear,eax16|\
+	netgear,eax19|\
 	netgear,wax220)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env mac)
 		label_mac=$lan_mac
