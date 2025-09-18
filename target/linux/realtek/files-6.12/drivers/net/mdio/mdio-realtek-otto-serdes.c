@@ -442,7 +442,7 @@ static int rtsds_probe(struct platform_device *pdev)
 	bus->write_c45 = rtsds_write;
 	bus->phy_mask = ~0ULL;
 
-	ret = devm_mdiobus_register(dev, bus);
+	ret = devm_of_mdiobus_register(dev, bus, dev->of_node);
 	if (ret)
 		return ret;
 
@@ -451,7 +451,7 @@ static int rtsds_probe(struct platform_device *pdev)
 		rtsds_debug_init(ctrl, sds);
 #endif
 
-	dev_info(dev, "Realtek SerDes mdio bus initialized. %d SerDes, %d pages, %d registers.",
+	dev_info(dev, "Realtek SerDes mdio bus initialized, %d SerDes, %d pages, %d registers\n",
 		 ctrl->cfg->sds_cnt, ctrl->cfg->page_cnt, RTSDS_REG_CNT);
 
 	return 0;
