@@ -27,11 +27,6 @@ config forwarding
 	option src 'lan'
 	option dest 'wan'
 
-# 转发：LAN → BLUE4WAN
-config forwarding
-	option src 'lan'
-	option dest 'BLUE4WAN'
-
 # 一些基础规则（DHCP, Ping, IPv6 等）
 config rule
 	option name 'Allow-DHCP-Renew'
