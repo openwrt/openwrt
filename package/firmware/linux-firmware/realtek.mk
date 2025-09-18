@@ -147,6 +147,13 @@ define Package/rtl8812a-firmware/install
 endef
 $(eval $(call BuildPackage,rtl8812a-firmware))
 
+Package/rtl8814a-firmware = $(call Package/firmware-default,RealTek RTL8814AU firmware)
+define Package/rtl8814a-firmware/install
+	$(INSTALL_DIR) $(1)/lib/firmware/rtw88
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/rtw88/rtw8814a_fw.bin $(1)/lib/firmware/rtw88
+endef
+$(eval $(call BuildPackage,rtl8814a-firmware))
+
 Package/rtl8821a-firmware = $(call Package/firmware-default,RealTek RTL8821AU firmware)
 define Package/rtl8821a-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/rtw88
