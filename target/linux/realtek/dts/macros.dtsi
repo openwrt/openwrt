@@ -42,11 +42,20 @@
 		reg = <##n>; \
 	};
 
-#define SWITCH_PORT(n, s, m) \
-	port##n: port@##n { \
-		reg = <##n>; \
-		label = SWITCH_PORT_LABEL(s) ; \
-		phy-handle = <&phy##n>; \
+#define SWITCH_PORT(p, l, m) \
+	port##p: port@##p { \
+		reg = <##p>; \
+		label = SWITCH_PORT_LABEL(l) ; \
+		phy-handle = <&phy##p>; \
+		phy-mode = #m ; \
+	};
+
+#define SWITCH_PORT_SDS(p, l, s, m) \
+	port##p: port@##p { \
+		reg = <##p>; \
+		label = SWITCH_PORT_LABEL(l) ; \
+		pcs-handle = <&serdes##s>; \
+		phy-handle = <&phy##p>; \
 		phy-mode = #m ; \
 	};
 
