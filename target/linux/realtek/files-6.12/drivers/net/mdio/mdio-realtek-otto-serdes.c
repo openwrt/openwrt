@@ -69,12 +69,6 @@ static bool rtsds_mmd_to_sds(struct rtsds_ctrl *ctrl, int addr, int devad, int m
 		 devad != MDIO_MMD_VEND1);
 }
 
-static int rtsds_sds_to_mmd(int sds_page, int sds_regnum)
-{
-	return FIELD_PREP(RTSDS_MMD_PAGE_MASK, sds_page) |
-	       FIELD_PREP(RTSDS_MMD_REG_MASK, sds_regnum);
-}
-
 static int rtsds_get_backing_sds(int sds, int page)
 {
 	/* non RTL931x devices have 1:1 frontend/backend mapping */
@@ -113,6 +107,12 @@ static const char * const rtsds_page_name[RTSDS_DBG_PAGE_NAMES] = {
 	[44] = "ANA_6G",	[45] = "ANA_6G_EXT",
 	[46] = "ANA_10G",	[47] = "ANA_10G_EXT",
 };
+
+static int rtsds_sds_to_mmd(int sds_page, int sds_regnum)
+{
+	return FIELD_PREP(RTSDS_MMD_PAGE_MASK, sds_page) |
+	       FIELD_PREP(RTSDS_MMD_REG_MASK, sds_regnum);
+}
 
 static int rtsds_dbg_registers_show(struct seq_file *seqf, void *unused)
 {
