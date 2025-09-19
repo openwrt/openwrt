@@ -190,6 +190,8 @@
 	switchcore@1b000000 {
 		compatible = "syscon", "simple-mfd";
 		reg = <0x1b000000 0x10000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		i2c_mst1: i2c@100c {
 			compatible = "realtek,rtl9310-i2c";
