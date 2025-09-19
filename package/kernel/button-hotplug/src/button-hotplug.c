@@ -72,7 +72,7 @@ extern u64 uevent_next_seqnum(void);
 		.name = (_name),	\
 	}
 
-static struct bh_map button_map[] = {
+static const struct bh_map button_map[] = {
 	BH_MAP(BTN_0,		"BTN_0"),
 	BH_MAP(BTN_1,		"BTN_1"),
 	BH_MAP(BTN_2,		"BTN_2"),
