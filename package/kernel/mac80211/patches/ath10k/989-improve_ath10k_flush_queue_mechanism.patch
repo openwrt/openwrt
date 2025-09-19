@@ -1,0 +1,369 @@
+From: Remi Pommarel <repk@triplefau.lt>
+Subject: [RESEND PATCH v3 1/2] wifi: ath10k: Implement ieee80211 flush_sta
+ callback
+Date: Fri, 22 Nov 2024 17:48:01 +0100
+
+When a STA reassociates, mac80211's _sta_info_move_state() waits for all
+pending frame to be flushed before removing the key (so that no frame
+get sent unencrypted after key removable [0]). When a driver does not
+implement the flush_sta callback, ieee80211_flush_queues() is called
+instead which effectively stops the whole queue until it is completely
+drained.
+
+The ath10k driver configure all STAs of one vdev to share the same
+queue. So when flushing one STA this is the whole vdev queue that is
+blocked until completely drained causing Tx to other STA to also stall
+this whole time.
+
+One easy way to reproduce the issue is to connect two STAs (STA0 and
+STA1) to an ath10k AP. While Generating a bunch of traffic from AP to
+STA0 (e.g. fping -l -p 20 <STA0-IP>) disconnect STA0 from AP without
+clean disassociation (e.g. remove power, reboot -f). Then as soon as
+STA0 is effectively disconnected from AP (either after inactivity
+timeout or forced with iw dev AP station del STA0), its queues get
+flushed using ieee80211_flush_queues(). This causes STA1 to suffer a
+connectivity stall for about 5 seconds (see ATH10K_FLUSH_TIMEOUT_HZ).
+
+Implement a flush_sta callback in ath10k to wait only for a specific
+STA pending frames to be drained (without stopping the whole HW queue)
+to fix that.
+
+[0]: commit 0b75a1b1e42e ("wifi: mac80211: flush queues on STA removal")
+
+Reported-by: Cedric Veilleux <veilleux.cedric@gmail.com>
+Closes: https://lore.kernel.org/all/CA+Xfe4FjUmzM5mvPxGbpJsF3SvSdE5_wgxvgFJ0bsdrKODVXCQ@mail.gmail.com/
+Signed-off-by: Remi Pommarel <repk@triplefau.lt>
+---
+ drivers/net/wireless/ath/ath10k/core.h   |  2 ++
+ drivers/net/wireless/ath/ath10k/htt.h    |  4 +++
+ drivers/net/wireless/ath/ath10k/htt_tx.c | 31 ++++++++++++++++++
+ drivers/net/wireless/ath/ath10k/mac.c    | 40 +++++++++++++++++++++++-
+ drivers/net/wireless/ath/ath10k/txrx.c   |  9 ++++--
+ 5 files changed, 82 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/wireless/ath/ath10k/core.h
++++ b/drivers/net/wireless/ath/ath10k/core.h
+@@ -558,6 +558,8 @@ struct ath10k_sta {
+ 	u8 rate_ctrl[ATH10K_TID_MAX];
+ 	u32 rate_code[ATH10K_TID_MAX];
+ 	int rtscts[ATH10K_TID_MAX];
++	wait_queue_head_t empty_tx_wq;
++	atomic_t num_fw_queued;
+ };
+ 
+ #define ATH10K_VDEV_SETUP_TIMEOUT_HZ	(5 * HZ)
+--- a/drivers/net/wireless/ath/ath10k/htt.h
++++ b/drivers/net/wireless/ath/ath10k/htt.h
+@@ -1870,6 +1870,7 @@ struct ath10k_htt {
+ 	spinlock_t tx_lock;
+ 	int max_num_pending_tx;
+ 	int num_pending_tx;
++	int num_pending_per_queue[IEEE80211_MAX_QUEUES];
+ 	int num_pending_mgmt_tx;
+ 	struct idr pending_tx;
+ 	wait_queue_head_t empty_tx_wq;
+@@ -2447,11 +2448,17 @@ void ath10k_htt_tx_txq_update(struct iee
+ void ath10k_htt_tx_txq_recalc(struct ieee80211_hw *hw,
+ 			      struct ieee80211_txq *txq);
+ void ath10k_htt_tx_txq_sync(struct ath10k *ar);
+-void ath10k_htt_tx_dec_pending(struct ath10k_htt *htt);
+-int ath10k_htt_tx_inc_pending(struct ath10k_htt *htt);
++void ath10k_htt_tx_dec_pending(struct ath10k_htt *htt,
++			       struct ieee80211_txq *txq);
++int ath10k_htt_tx_inc_pending(struct ath10k_htt *htt,
++			      struct ieee80211_txq *txq);
+ void ath10k_htt_tx_mgmt_dec_pending(struct ath10k_htt *htt);
+ int ath10k_htt_tx_mgmt_inc_pending(struct ath10k_htt *htt, bool is_mgmt,
+ 				   bool is_presp);
++void ath10k_htt_tx_sta_inc_pending(struct ath10k_htt *htt,
++				   struct ieee80211_sta *sta);
++void ath10k_htt_tx_sta_dec_pending(struct ath10k_htt *htt,
++				   struct ieee80211_sta *sta);
+ 
+ int ath10k_htt_tx_alloc_msdu_id(struct ath10k_htt *htt, struct sk_buff *skb);
+ void ath10k_htt_tx_free_msdu_id(struct ath10k_htt *htt, u16 msdu_id);
+--- a/drivers/net/wireless/ath/ath10k/htt_tx.c
++++ b/drivers/net/wireless/ath/ath10k/htt_tx.c
+@@ -140,19 +140,26 @@ void ath10k_htt_tx_txq_update(struct iee
+ 	spin_unlock_bh(&ar->htt.tx_lock);
+ }
+ 
+-void ath10k_htt_tx_dec_pending(struct ath10k_htt *htt)
++void ath10k_htt_tx_dec_pending(struct ath10k_htt *htt,
++			       struct ieee80211_txq *txq)
+ {
++	int qnr = -1;
++
+ 	lockdep_assert_held(&htt->tx_lock);
+ 
+ 	htt->num_pending_tx--;
+ 	if (htt->num_pending_tx == htt->max_num_pending_tx - 1)
+ 		ath10k_mac_tx_unlock(htt->ar, ATH10K_TX_PAUSE_Q_FULL);
+ 
+-	if (htt->num_pending_tx == 0)
++	if (txq)
++		qnr = --htt->num_pending_per_queue[txq->vif->hw_queue[txq->ac]];
++
++	if (htt->num_pending_tx == 0 || qnr == 0)
+ 		wake_up(&htt->empty_tx_wq);
+ }
+ 
+-int ath10k_htt_tx_inc_pending(struct ath10k_htt *htt)
++int ath10k_htt_tx_inc_pending(struct ath10k_htt *htt,
++			      struct ieee80211_txq *txq)
+ {
+ 	lockdep_assert_held(&htt->tx_lock);
+ 
+@@ -163,6 +170,11 @@ int ath10k_htt_tx_inc_pending(struct ath
+ 	if (htt->num_pending_tx == htt->max_num_pending_tx)
+ 		ath10k_mac_tx_lock(htt->ar, ATH10K_TX_PAUSE_Q_FULL);
+ 
++	if (!txq)
++		return 0;
++
++	htt->num_pending_per_queue[txq->vif->hw_queue[txq->ac]]++;
++
+ 	return 0;
+ }
+ 
+@@ -195,6 +207,37 @@ void ath10k_htt_tx_mgmt_dec_pending(stru
+ 	htt->num_pending_mgmt_tx--;
+ }
+ 
++void ath10k_htt_tx_sta_inc_pending(struct ath10k_htt *htt,
++				   struct ieee80211_sta *sta)
++{
++	struct ath10k_sta *arsta;
++
++	if (!sta)
++		return;
++
++	arsta = (struct ath10k_sta *)sta->drv_priv;
++
++	atomic_inc(&arsta->num_fw_queued);
++}
++
++void ath10k_htt_tx_sta_dec_pending(struct ath10k_htt *htt,
++				   struct ieee80211_sta *sta)
++{
++	struct ath10k_sta *arsta;
++	int v;
++
++	if (!sta)
++		return;
++
++	arsta = (struct ath10k_sta *)sta->drv_priv;
++
++	v = atomic_dec_if_positive(&arsta->num_fw_queued);
++	if (v < 0)
++		WARN_ON_ONCE(1);
++	if (v == 0)
++		wake_up(&arsta->empty_tx_wq);
++}
++
+ int ath10k_htt_tx_alloc_msdu_id(struct ath10k_htt *htt, struct sk_buff *skb)
+ {
+ 	struct ath10k *ar = htt->ar;
+--- a/drivers/net/wireless/ath/ath10k/mac.c
++++ b/drivers/net/wireless/ath/ath10k/mac.c
+@@ -4422,7 +4422,7 @@ int ath10k_mac_tx_push_txq(struct ieee80
+ 	u16 airtime;
+ 
+ 	spin_lock_bh(&ar->htt.tx_lock);
+-	ret = ath10k_htt_tx_inc_pending(htt);
++	ret = ath10k_htt_tx_inc_pending(htt, txq);
+ 	spin_unlock_bh(&ar->htt.tx_lock);
+ 
+ 	if (ret)
+@@ -4431,7 +4431,7 @@ int ath10k_mac_tx_push_txq(struct ieee80
+ 	skb = ieee80211_tx_dequeue_ni(hw, txq);
+ 	if (!skb) {
+ 		spin_lock_bh(&ar->htt.tx_lock);
+-		ath10k_htt_tx_dec_pending(htt);
++		ath10k_htt_tx_dec_pending(htt, txq);
+ 		spin_unlock_bh(&ar->htt.tx_lock);
+ 
+ 		return -ENOENT;
+@@ -4453,22 +4453,25 @@ int ath10k_mac_tx_push_txq(struct ieee80
+ 		ret = ath10k_htt_tx_mgmt_inc_pending(htt, is_mgmt, is_presp);
+ 
+ 		if (ret) {
+-			ath10k_htt_tx_dec_pending(htt);
++			ath10k_htt_tx_dec_pending(htt, txq);
+ 			spin_unlock_bh(&ar->htt.tx_lock);
+ 			return ret;
+ 		}
+ 		spin_unlock_bh(&ar->htt.tx_lock);
+ 	}
+ 
++	ath10k_htt_tx_sta_inc_pending(&ar->htt, sta);
++
+ 	ret = ath10k_mac_tx(ar, vif, txmode, txpath, skb, false);
+ 	if (unlikely(ret)) {
+ 		ath10k_warn(ar, "failed to push frame: %d\n", ret);
+ 
+ 		spin_lock_bh(&ar->htt.tx_lock);
+-		ath10k_htt_tx_dec_pending(htt);
++		ath10k_htt_tx_dec_pending(htt, txq);
+ 		if (is_mgmt)
+ 			ath10k_htt_tx_mgmt_dec_pending(htt);
+ 		spin_unlock_bh(&ar->htt.tx_lock);
++		ath10k_htt_tx_sta_dec_pending(&ar->htt, sta);
+ 
+ 		return ret;
+ 	}
+@@ -4727,7 +4730,7 @@ static void ath10k_mac_op_tx(struct ieee
+ 			is_presp = ieee80211_is_probe_resp(hdr->frame_control);
+ 		}
+ 
+-		ret = ath10k_htt_tx_inc_pending(htt);
++		ret = ath10k_htt_tx_inc_pending(htt, txq);
+ 		if (ret) {
+ 			ath10k_warn(ar, "failed to increase tx pending count: %d, dropping\n",
+ 				    ret);
+@@ -4740,7 +4743,7 @@ static void ath10k_mac_op_tx(struct ieee
+ 		if (ret) {
+ 			ath10k_dbg(ar, ATH10K_DBG_MAC, "failed to increase tx mgmt pending count: %d, dropping\n",
+ 				   ret);
+-			ath10k_htt_tx_dec_pending(htt);
++			ath10k_htt_tx_dec_pending(htt, txq);
+ 			spin_unlock_bh(&ar->htt.tx_lock);
+ 			ieee80211_free_txskb(ar->hw, skb);
+ 			return;
+@@ -4753,7 +4756,7 @@ static void ath10k_mac_op_tx(struct ieee
+ 		ath10k_warn(ar, "failed to transmit frame: %d\n", ret);
+ 		if (is_htt) {
+ 			spin_lock_bh(&ar->htt.tx_lock);
+-			ath10k_htt_tx_dec_pending(htt);
++			ath10k_htt_tx_dec_pending(htt, txq);
+ 			if (is_mgmt)
+ 				ath10k_htt_tx_mgmt_dec_pending(htt);
+ 			spin_unlock_bh(&ar->htt.tx_lock);
+@@ -7518,7 +7521,7 @@ static int ath10k_sta_state(struct ieee8
+ 		arsta->peer_ps_state = WMI_PEER_PS_STATE_DISABLED;
+ 		INIT_WORK(&arsta->update_wk, ath10k_sta_rc_update_wk);
+ 		INIT_WORK(&arsta->tid_config_wk, ath10k_sta_tid_cfg_wk);
+-
++		init_waitqueue_head(&arsta->empty_tx_wq);
+ 		for (i = 0; i < ARRAY_SIZE(sta->txq); i++)
+ 			ath10k_mac_txq_init(sta->txq[i]);
+ 	}
+@@ -8093,10 +8096,12 @@ static int ath10k_mac_op_set_frag_thresh
+ 	return -EOPNOTSUPP;
+ }
+ 
+-void ath10k_mac_wait_tx_complete(struct ath10k *ar)
++static void _ath10k_mac_wait_tx_complete(struct ath10k *ar,
++					 unsigned long queues)
+ {
+ 	bool skip;
+ 	long time_left;
++	unsigned int q;
+ 
+ 	/* mac80211 doesn't care if we really xmit queued frames or not
+ 	 * we'll collect those frames either way if we stop/delete vdevs
+@@ -8106,10 +8111,14 @@ void ath10k_mac_wait_tx_complete(struct
+ 		return;
+ 
+ 	time_left = wait_event_timeout(ar->htt.empty_tx_wq, ({
+-			bool empty;
++			bool empty = true;
+ 
+ 			spin_lock_bh(&ar->htt.tx_lock);
+-			empty = (ar->htt.num_pending_tx == 0);
++			for_each_set_bit(q, &queues, ar->hw->queues) {
++				empty = (ar->htt.num_pending_per_queue[q] == 0);
++				if (!empty)
++					break;
++			}
+ 			spin_unlock_bh(&ar->htt.tx_lock);
+ 
+ 			skip = (ar->state == ATH10K_STATE_WEDGED) ||
+@@ -8124,6 +8133,13 @@ void ath10k_mac_wait_tx_complete(struct
+ 			    skip, ar->state, time_left);
+ }
+ 
++void ath10k_mac_wait_tx_complete(struct ath10k *ar)
++{
++	unsigned int queues = GENMASK(ar->hw->queues - 1, 0);
++
++	_ath10k_mac_wait_tx_complete(ar, queues);
++}
++
+ static void ath10k_flush(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+ 			 u32 queues, bool drop)
+ {
+@@ -8145,7 +8161,41 @@ static void ath10k_flush(struct ieee8021
+ 	}
+ 
+ 	mutex_lock(&ar->conf_mutex);
+-	ath10k_mac_wait_tx_complete(ar);
++	_ath10k_mac_wait_tx_complete(ar, queues);
++	mutex_unlock(&ar->conf_mutex);
++}
++
++static void ath10k_flush_sta(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
++			     struct ieee80211_sta *sta)
++{
++	struct ath10k_sta *arsta = (struct ath10k_sta *)sta->drv_priv;
++	struct ath10k *ar = hw->priv;
++	bool skip;
++	long time_left;
++
++	/* TODO do we need drop implemented here ? */
++
++	mutex_lock(&ar->conf_mutex);
++
++	if (ar->state == ATH10K_STATE_WEDGED)
++		goto out;
++
++	time_left = wait_event_timeout(arsta->empty_tx_wq, ({
++			bool empty;
++
++			empty = atomic_read(&arsta->num_fw_queued) == 0;
++
++			skip = (ar->state == ATH10K_STATE_WEDGED) ||
++			       test_bit(ATH10K_FLAG_CRASH_FLUSH,
++					&ar->dev_flags);
++
++			(empty || skip);
++		}), ATH10K_FLUSH_TIMEOUT_HZ);
++
++	if (time_left == 0 || skip)
++		ath10k_warn(ar, "failed to flush sta txq (sta %pM skip %i ar-state %i): %ld\n",
++			    sta->addr, skip, ar->state, time_left);
++out:
+ 	mutex_unlock(&ar->conf_mutex);
+ }
+ 
+@@ -9496,6 +9546,7 @@ static const struct ieee80211_ops ath10k
+ 	.set_rts_threshold		= ath10k_set_rts_threshold,
+ 	.set_frag_threshold		= ath10k_mac_op_set_frag_threshold,
+ 	.flush				= ath10k_flush,
++	.flush_sta			= ath10k_flush_sta,
+ 	.tx_last_beacon			= ath10k_tx_last_beacon,
+ 	.set_antenna			= ath10k_set_antenna,
+ 	.get_antenna			= ath10k_get_antenna,
+--- a/drivers/net/wireless/ath/ath10k/txrx.c
++++ b/drivers/net/wireless/ath/ath10k/txrx.c
+@@ -82,13 +82,16 @@ int ath10k_txrx_tx_unref(struct ath10k_h
+ 
+ 	flags = skb_cb->flags;
+ 	ath10k_htt_tx_free_msdu_id(htt, tx_done->msdu_id);
+-	ath10k_htt_tx_dec_pending(htt);
++	ath10k_htt_tx_dec_pending(htt, txq);
+ 	spin_unlock_bh(&htt->tx_lock);
+ 
+ 	rcu_read_lock();
+-	if (txq && txq->sta && skb_cb->airtime_est)
+-		ieee80211_sta_register_airtime(txq->sta, txq->tid,
+-					       skb_cb->airtime_est, 0);
++	if (txq && txq->sta) {
++		if (skb_cb->airtime_est)
++			ieee80211_sta_register_airtime(txq->sta, txq->tid,
++						       skb_cb->airtime_est, 0);
++		ath10k_htt_tx_sta_dec_pending(htt, txq->sta);
++	}
+ 	rcu_read_unlock();
+ 
+ 	if (ar->bus_param.dev_type != ATH10K_DEV_TYPE_HL)
