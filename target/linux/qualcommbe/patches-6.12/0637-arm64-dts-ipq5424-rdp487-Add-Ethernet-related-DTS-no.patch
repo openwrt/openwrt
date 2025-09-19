@@ -1,0 +1,378 @@
+From 36f9fc7a5f355f17777f2ea3cb0ce6f7c1e106b0 Mon Sep 17 00:00:00 2001
+From: Luo Jie <jie.luo@oss.qualcomm.com>
+Date: Tue, 2 Sep 2025 17:17:33 +0800
+Subject: [PATCH] arm64: dts: ipq5424-rdp487: Add Ethernet related DTS nodes
+
+RDP487 is connected with QCA8386 switch via PPE port 3 and connected with
+QCA8111 PHY via PPE port 2.
+
+Signed-off-by: Luo Jie <jie.luo@oss.qualcomm.com>
+---
+ arch/arm64/boot/dts/qcom/ipq5424-rdp487.dts | 331 +++++++++++++++++++-
+ 1 file changed, 330 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/ipq5424-rdp487.dts b/arch/arm64/boot/dts/qcom/ipq5424-rdp487.dts
+index d76c53d22b50..60a29bf95c52 100644
+--- a/arch/arm64/boot/dts/qcom/ipq5424-rdp487.dts
++++ b/arch/arm64/boot/dts/qcom/ipq5424-rdp487.dts
+@@ -8,6 +8,9 @@
+ /dts-v1/;
+ 
+ #include "ipq5424.dtsi"
++#include <dt-bindings/clock/qcom,qca8k-nsscc.h>
++#include <dt-bindings/net/qcom,qca808x.h>
++#include <dt-bindings/reset/qcom,qca8k-nsscc.h>
+ 
+ / {
+ 	model = "Qualcomm Technologies, Inc. IPQ5424 RDP487";
+@@ -17,6 +20,18 @@
+ 		serial0 = &uart1;
+ 	};
+ 
++	qca8k_uniphy1_rx312p5m: qca8k-uniphy1-rx312p5m {
++		compatible = "fixed-clock";
++		clock-frequency = <312500000>;
++		#clock-cells = <0>;
++	};
++
++	qca8k_uniphy1_tx312p5m: qca8k-uniphy1-tx312p5m {
++		compatible = "fixed-clock";
++		clock-frequency = <312500000>;
++		#clock-cells = <0>;
++	};
++
+ 	vreg_misc_3p3: regulator-usb-3p3 {
+ 		compatible = "regulator-fixed";
+ 		regulator-min-microvolt = <3300000>;
+@@ -45,6 +60,300 @@
+ 	};
+ };
+ 
++&mdio {
++	clock-frequency = <6250000>;
++	status = "okay";
++
++	ethernet-phy-package@1 {
++		compatible = "qcom,qca8084-package";
++		reg = <1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		clocks = <&qca8k_nsscc NSS_CC_APB_BRIDGE_CLK>,
++			 <&qca8k_nsscc NSS_CC_AHB_CLK>,
++			 <&qca8k_nsscc NSS_CC_SEC_CTRL_AHB_CLK>,
++			 <&qca8k_nsscc NSS_CC_TLMM_CLK>,
++			 <&qca8k_nsscc NSS_CC_TLMM_AHB_CLK>,
++			 <&qca8k_nsscc NSS_CC_CNOC_AHB_CLK>,
++			 <&qca8k_nsscc NSS_CC_MDIO_AHB_CLK>,
++			 <&qca8k_nsscc NSS_CC_MDIO_MASTER_AHB_CLK>,
++			 <&qca8k_nsscc NSS_CC_SWITCH_CORE_CLK>;
++		clock-names = "apb_bridge",
++			      "ahb",
++			      "sec_ctrl_ahb",
++			      "tlmm",
++			      "tlmm_ahb",
++			      "cnoc_ahb",
++			      "mdio_ahb",
++			      "mdio_master_ahb",
++			      "switch_core";
++		resets = <&qca8k_nsscc NSS_CC_GEPHY_FULL_ARES>;
++		qcom,package-mode = <QCA808X_PCS1_SGMII_MAC_PCS0_SGMII_MAC>;
++		qcom,phy-addr-fixup = <1 2 3 4 5 6 7>;
++
++		dsa_phy0: ethernet-phy@1 {
++			compatible = "ethernet-phy-id004d.d180";
++			reg = <1>;
++			clocks = <&qca8k_nsscc NSS_CC_GEPHY0_SYS_CLK>;
++			resets = <&qca8k_nsscc NSS_CC_GEPHY0_SYS_ARES>;
++		};
++
++		dsa_phy1: ethernet-phy@2 {
++			compatible = "ethernet-phy-id004d.d180";
++			reg = <2>;
++			clocks = <&qca8k_nsscc NSS_CC_GEPHY1_SYS_CLK>;
++			resets = <&qca8k_nsscc NSS_CC_GEPHY1_SYS_ARES>;
++		};
++
++		dsa_phy2: ethernet-phy@3 {
++			compatible = "ethernet-phy-id004d.d180";
++			reg = <3>;
++			clocks = <&qca8k_nsscc NSS_CC_GEPHY2_SYS_CLK>;
++			resets = <&qca8k_nsscc NSS_CC_GEPHY2_SYS_ARES>;
++		};
++
++		dsa_phy3: ethernet-phy@4 {
++			compatible = "ethernet-phy-id004d.d180";
++			reg = <4>;
++			clocks = <&qca8k_nsscc NSS_CC_GEPHY3_SYS_CLK>;
++			resets = <&qca8k_nsscc NSS_CC_GEPHY3_SYS_ARES>;
++		};
++	};
++
++	pcsphy1: pcsphy@6 {
++		      compatible = "qcom,qca8k_pcs";
++		      reg = <6>;
++		      #clock-cells = <0x1>;
++
++		      clocks = <&qca8k_nsscc NSS_CC_SRDS1_SYS_CLK>,
++			       <&qca8k_nsscc NSS_CC_MAC0_RX_SRDS1_CLK>,
++			       <&qca8k_nsscc NSS_CC_MAC0_TX_SRDS1_CLK>;
++		      clock-names = "sys",
++				    "rx",
++				    "tx";
++		      resets = <&qca8k_nsscc NSS_CC_SRDS1_SYS_ARES>,
++			       <&qca8k_nsscc NSS_CC_MAC0_RX_SRDS1_ARES>,
++			       <&qca8k_nsscc NSS_CC_MAC0_TX_SRDS1_ARES>;
++		      reset-names = "sys",
++				    "rx",
++				    "tx";
++		      clock-output-names = "qca8k_uniphy_rx",
++					   "qca8k_uniphy_tx";
++	      };
++
++	switch@10 {
++		compatible = "qca,qca8386";
++		reg = <0x10>;
++		clocks = <&qca8k_uniphy1_tx312p5m>;
++		clock-names = "uniphy1_tx_312p5m_clk";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			qca8k_cpu_port: port@0 {
++				reg = <0>;
++				phy-mode = "2500base-x";
++				pcsphy-handle = <&pcsphy1>;
++				ethernet = <&ppe_port3>;
++
++				clocks = <&qca8k_nsscc NSS_CC_MAC0_RX_CLK>,
++					 <&qca8k_nsscc NSS_CC_MAC0_TX_CLK>;
++				clock-names = "port_rx_clk", "port_tx_clk";
++				fixed-link {
++					speed = <2500>;
++					full-duplex;
++					pause;
++				};
++
++			};
++
++			port@1 {
++				reg = <1>;
++				label = "lan1";
++				phy-mode = "sgmii";
++				phy-handle = <&dsa_phy0>;
++
++				clocks = <&qca8k_nsscc NSS_CC_MAC1_RX_CLK>,
++					 <&qca8k_nsscc NSS_CC_MAC1_TX_CLK>,
++					 <&qca8k_nsscc NSS_CC_MAC1_RX_CLK_SRC>,
++					 <&qca8k_nsscc NSS_CC_MAC1_TX_CLK_SRC>,
++					 <&qca8k_nsscc NSS_CC_MAC1_GEPHY0_RX_CLK>,
++					 <&qca8k_nsscc NSS_CC_MAC1_GEPHY0_TX_CLK>;
++				clock-names = "port_rx_clk", "port_tx_clk",
++					      "port_rx_src_clk", "port_tx_src_clk",
++					      "ephy_rx_clk", "ephy_tx_clk";
++
++				resets = <&qca8k_nsscc NSS_CC_MAC1_GEPHY0_RX_ARES>,
++					 <&qca8k_nsscc NSS_CC_MAC1_GEPHY0_TX_ARES>;
++				reset-names = "ephy_rx_reset", "ephy_tx_reset";
++
++			};
++
++			port@2 {
++				reg = <2>;
++				label = "lan2";
++				phy-mode = "sgmii";
++				phy-handle = <&dsa_phy1>;
++
++				clocks = <&qca8k_nsscc NSS_CC_MAC2_RX_CLK>,
++					 <&qca8k_nsscc NSS_CC_MAC2_TX_CLK>,
++					 <&qca8k_nsscc NSS_CC_MAC2_RX_CLK_SRC>,
++					 <&qca8k_nsscc NSS_CC_MAC2_TX_CLK_SRC>,
++					 <&qca8k_nsscc NSS_CC_MAC2_GEPHY1_RX_CLK>,
++					 <&qca8k_nsscc NSS_CC_MAC2_GEPHY1_TX_CLK>;
++				clock-names = "port_rx_clk", "port_tx_clk",
++					      "port_rx_src_clk", "port_tx_src_clk",
++					      "ephy_rx_clk", "ephy_tx_clk";
++
++				resets = <&qca8k_nsscc NSS_CC_MAC2_GEPHY1_RX_ARES>,
++					 <&qca8k_nsscc NSS_CC_MAC2_GEPHY1_TX_ARES>;
++				reset-names = "ephy_rx_reset", "ephy_tx_reset";
++			};
++
++			port@3 {
++				reg = <3>;
++				label = "lan3";
++				phy-mode = "sgmii";
++				phy-handle = <&dsa_phy2>;
++
++				clocks = <&qca8k_nsscc NSS_CC_MAC3_RX_CLK>,
++					 <&qca8k_nsscc NSS_CC_MAC3_TX_CLK>,
++					 <&qca8k_nsscc NSS_CC_MAC3_RX_CLK_SRC>,
++					 <&qca8k_nsscc NSS_CC_MAC3_TX_CLK_SRC>,
++					 <&qca8k_nsscc NSS_CC_MAC3_GEPHY2_RX_CLK>,
++					 <&qca8k_nsscc NSS_CC_MAC3_GEPHY2_TX_CLK>;
++				clock-names = "port_rx_clk", "port_tx_clk",
++					      "port_rx_src_clk", "port_tx_src_clk",
++					      "ephy_rx_clk", "ephy_tx_clk";
++
++				resets = <&qca8k_nsscc NSS_CC_MAC3_GEPHY2_RX_ARES>,
++					 <&qca8k_nsscc NSS_CC_MAC3_GEPHY2_TX_ARES>;
++				reset-names = "ephy_rx_reset", "ephy_tx_reset";
++			};
++
++			port@4 {
++				reg = <4>;
++				label = "lan4";
++				phy-mode = "sgmii";
++				phy-handle = <&dsa_phy3>;
++
++				clocks = <&qca8k_nsscc NSS_CC_MAC4_RX_CLK>,
++					 <&qca8k_nsscc NSS_CC_MAC4_TX_CLK>,
++					 <&qca8k_nsscc NSS_CC_MAC4_RX_CLK_SRC>,
++					 <&qca8k_nsscc NSS_CC_MAC4_TX_CLK_SRC>,
++					 <&qca8k_nsscc NSS_CC_MAC4_GEPHY3_RX_CLK>,
++					 <&qca8k_nsscc NSS_CC_MAC4_GEPHY3_TX_CLK>;
++				clock-names = "port_rx_clk", "port_tx_clk",
++					      "port_rx_src_clk", "port_tx_src_clk",
++					      "ephy_rx_clk", "ephy_tx_clk";
++
++				resets = <&qca8k_nsscc NSS_CC_MAC4_GEPHY3_RX_ARES>,
++					 <&qca8k_nsscc NSS_CC_MAC4_GEPHY3_TX_ARES>;
++				reset-names = "ephy_rx_reset", "ephy_tx_reset";
++			};
++		};
++	};
++
++	qca8k_nsscc: qca8k-nsscc@18 {
++		compatible = "qcom,qca8084-nsscc";
++		reg = <0x18>;
++		#clock-cells = <1>;
++		#reset-cells = <1>;
++		reset-gpios = <&tlmm 18 GPIO_ACTIVE_LOW>;
++		clocks = <&cmn_pll IPQ5424_ETH2_50MHZ_CLK>,
++			 <0>,
++			 <0>,
++			 <&pcsphy1 0>,
++			 <&pcsphy1 1>,
++			 <&qca8k_uniphy1_rx312p5m>,
++			 <&qca8k_uniphy1_tx312p5m>;
++	};
++
++	phy1: ethernet-phy@c {
++		compatible ="ethernet-phy-ieee802.3-c45";
++		reg = <0xc>;
++		reset-gpios = <&tlmm 28 GPIO_ACTIVE_LOW>;
++		reset-assert-us = <100000>;
++		reset-deassert-us = <100000>;
++	};
++};
++
++&pcs1 {
++	status = "okay";
++};
++
++&pcs1_mii0 {
++	clocks = <&nsscc NSS_CC_UNIPHY_PORT2_RX_CLK>,
++		 <&nsscc NSS_CC_UNIPHY_PORT2_TX_CLK>;
++	clock-names = "rx",
++		      "tx";
++	status = "okay";
++};
++
++&pcs2 {
++	status = "okay";
++};
++
++&pcs2_mii0 {
++	clocks = <&nsscc NSS_CC_UNIPHY_PORT3_RX_CLK>,
++		 <&nsscc NSS_CC_UNIPHY_PORT3_TX_CLK>;
++	clock-names = "rx",
++		      "tx";
++	status = "okay";
++};
++
++&qcom_ppe {
++	ethernet-ports {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		port@2 {
++			reg = <2>;
++			phy-mode = "usxgmii";
++			managed = "in-band-status";
++			label = "wan";
++			phy-handle = <&phy1>;
++			pcs-handle = <&pcs1_mii0>;
++			clocks = <&nsscc NSS_CC_PORT2_MAC_CLK>,
++				 <&nsscc NSS_CC_PORT2_RX_CLK>,
++				 <&nsscc NSS_CC_PORT2_TX_CLK>;
++			clock-names = "mac",
++				      "rx",
++				      "tx";
++			resets = <&nsscc NSS_CC_PORT2_MAC_CLK_ARES>,
++				 <&nsscc NSS_CC_PORT2_RX_CLK_ARES>,
++				 <&nsscc NSS_CC_PORT2_TX_CLK_ARES>;
++			reset-names = "mac",
++				      "rx",
++				      "tx";
++		};
++
++		ppe_port3: port@3 {
++			reg = <3>;
++			phy-mode = "2500base-x";
++			pcs-handle = <&pcs2_mii0>;
++			clocks = <&nsscc NSS_CC_PORT3_MAC_CLK>,
++				 <&nsscc NSS_CC_PORT3_RX_CLK>,
++				 <&nsscc NSS_CC_PORT3_TX_CLK>;
++			clock-names = "mac",
++				      "rx",
++				      "tx";
++			resets = <&nsscc NSS_CC_PORT3_MAC_CLK_ARES>,
++				 <&nsscc NSS_CC_PORT3_RX_CLK_ARES>,
++				 <&nsscc NSS_CC_PORT3_TX_CLK_ARES>;
++			reset-names = "mac",
++				      "rx",
++				      "tx";
++			fixed-link {
++				speed = <2500>;
++				full-duplex;
++				pause;
++			};
++		};
++	};
++};
++
+ &dwc_0 {
+ 	dr_mode = "host";
+ };
+@@ -140,6 +449,26 @@
+ 	status = "okay";
+ };
+ 
++/*
++ * The bootstrap pins for the board select the XO clock frequency that
++ * supports 48 MHZ, 96 MHZ or 192 MHZ. This setting automatically
++ * enables the right dividers, to ensure the reference clock output
++ * from WiFi to the CMN PLL is 48 MHZ.
++ */
++&ref_48mhz_clk {
++	clock-div = <1>;
++	clock-mult = <1>;
++};
++
++/*
++ * The frequency of xo_board is fixed to 24 MHZ, which is routed
++ * from WiFi output clock 48 MHZ divided by 2.
++ */
+ &xo_board {
+-	clock-frequency = <24000000>;
++	clock-div = <2>;
++	clock-mult = <1>;
++};
++
++&xo_clk {
++	clock-frequency = <48000000>;
+ };
+-- 
+2.34.1
+
