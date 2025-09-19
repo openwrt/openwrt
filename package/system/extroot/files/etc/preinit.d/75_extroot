@@ -1,0 +1,28 @@
+# If we're using an external root device (e.g. USB) we may
+# need to create the device node for it because procd has
+# not started yet and we need it for 80_mount_root.
+do_extroot_mknod() {
+    for blk in /sys/class/block/*/*/uevent; do
+        if ! grep -q 'PARTNAME=rootfs_data' "$blk"; then
+            continue
+        fi
+		local devname="$(basename "$(dirname "$blk")")"
+        if [ -b "/dev/$devname" ]; then
+			continue
+        fi
+		local devpath="/sys/class/block/$devname/dev"
+		if [ -f "$devpath" ]; then
+			local major=$(cut -d: -f1 "$devpath")
+			local minor=$(cut -d: -f2 "$devpath")
+			mknod "/dev/$devname" b "$major" "$minor"
+		fi
+		if [ -x /usr/sbin/fsck.ext4 ]; then
+			if ! /usr/sbin/fsck.ext4 -p "/dev/${devname}"; then
+				echo "$devname has errors, not mounting, please run fsck.ext4 manually"
+				rm "/dev/$devname"
+			fi
+		fi
+    done
+}
+
+[ "$INITRAMFS" = "1" ] || boot_hook_add preinit_main do_extroot_mknod

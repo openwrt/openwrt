@@ -1,0 +1,47 @@
+#!/bin/sh
+# /etc/hotplug.d/block/10-extroot
+# Handle "factory reset" disk and rootfs_data partition provisioning
+
+[ "$ACTION" = "add" ] || exit 0
+[ "$SUBSYSTEM" = "block" ] || exit 0
+
+log() {
+    echo "extroot: $*" >/dev/kmsg
+}
+
+# This script only runs if we do not yet have a persistent disk
+grep -q ' /overlay ' /proc/mounts && exit 0
+
+# Case 1: A rootfs partitioned disk appears, this means it was late plugged
+#         and mount_root did not catch it, reboot to give mount_root another chance.
+if [ "$DEVTYPE" = "partition" ] && [ "$PARTNAME" = "rootfs_data" ]; then
+    log "Extroot found on newly connected /dev/$DEVNAME - rebooting to begin using it"
+    reboot -f
+    exit 0;
+fi
+
+# Case 2: A disk appears
+[ "$DEVTYPE" = "disk" ] || exit 0
+
+# Check if it is an ISO9660 (MBR or GPT will have data in the first 32k)
+cmp -s -n 32768 "/dev/$DEVNAME" /dev/zero || exit 0
+
+# Check if it has the OPENWRT_ROOTFS as the volume label
+label=$(dd if="/dev/$DEVNAME" of=/dev/stdout bs=1 skip=32808 count=14 2>/dev/null)
+[ "$label" = 'OPENWRT_ROOTFS' ] || exit 0
+
+log "Extroot volume found on /dev/$DEVNAME, wiping and creating rootfs_data"
+(
+    # Create new GPT with single partition
+    echo ',,L' | sfdisk --wipe always --label gpt "/dev/$DEVNAME"
+
+    # mkfs the new partition
+    mkfs.ext4 -F "/dev/${DEVNAME}1"
+
+    # Label the partition, but only after we have made the FS
+    # to avoid a race with mount_root done
+    sfdisk --part-label "/dev/$DEVNAME" 1 rootfs_data
+
+    log "Rebooting to begin using extroot on /dev/${DEVNAME}1"
+    reboot -f
+) 2>&1 | while read line; do log "$line"; done
