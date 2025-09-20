@@ -1,0 +1,58 @@
+From ce6c41d7d229359a253a1ddd7ffd52dc606c3e26 Mon Sep 17 00:00:00 2001
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Thu, 25 Sep 2025 00:53:57 +0000
+Subject: [PATCH] PCI: mediatek-gen3: require SCU SSR for airoha
+
+For the airoha platform, defer probe until SCU SSR has finished initializing.
+This resolves a race condition where mediatek-gen3 starts the PCIe lanes
+before SerDes configuration completes.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+ drivers/pci/controller/pcie-mediatek-gen3.c      | 28 ++++++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+), 0 deletions(-)
+
+--- a/drivers/pci/controller/pcie-mediatek-gen3.c
++++ b/drivers/pci/controller/pcie-mediatek-gen3.c
+@@ -1110,6 +1110,10 @@ static int mtk_pcie_probe(struct platfor
+ 	struct mtk_gen3_pcie *pcie;
+ 	struct pci_host_bridge *host;
+ 	int err;
++#ifdef CONFIG_AIROHA_SCU_SSR
++	struct device *ssr_dev;
++	struct device_link *link;
++#endif
+ 
+ 	host = devm_pci_alloc_host_bridge(dev, sizeof(*pcie));
+ 	if (!host)
+@@ -1121,6 +1125,30 @@ static int mtk_pcie_probe(struct platfor
+ 	pcie->soc = device_get_match_data(dev);
+ 	platform_set_drvdata(pdev, pcie);
+ 
++#ifdef CONFIG_AIROHA_SCU_SSR
++	/* Ensure SCU SSR driver is initialized before PCIe */
++	ssr_dev = bus_find_device_by_name(&platform_bus_type, NULL, "airoha-scu-ssr.0.auto");
++	if (!ssr_dev) {
++		dev_info(dev, "SCU SSR device not found, deferring probe\n");
++		return -EPROBE_DEFER;
++	}
++
++	/* Check if the SSR driver has finished its probe */
++	if (!dev_get_drvdata(ssr_dev)) {
++		dev_info(dev, "SCU SSR driver not ready, deferring probe\n");
++		put_device(ssr_dev); /* Clean up before deferring */
++		return -EPROBE_DEFER;
++	}
++
++	/* Link to the device now that we know it's ready */
++	link = device_link_add(dev, ssr_dev, DL_FLAG_STATELESS | DL_FLAG_PM_RUNTIME);
++	put_device(ssr_dev); /* Clean up our reference */
++	if (!link) {
++		dev_err(dev, "failed to create device link to SCU SSR\n");
++		return -ENOMEM;
++	}
++#endif
++
+ 	err = mtk_pcie_setup(pcie);
+ 	if (err)
+ 		return err;
