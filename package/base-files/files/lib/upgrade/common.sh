@@ -226,13 +226,13 @@ export_bootdevice() {
 
 export_partdevice() {
 	local var="$1" offset="$2"
-	local uevent line MAJOR MINOR DEVNAME DEVTYPE
+	local uevent line MAJOR MINOR DEVNAME DEVTYPE PARTN
 
 	for uevent in /sys/class/block/*/uevent; do
 		while read line; do
 			export -n "$line"
 		done < "$uevent"
-		if [ "$BOOTDEV_MAJOR" = "$MAJOR" -a $(($BOOTDEV_MINOR + $offset)) = "$MINOR" -a -b "/dev/$DEVNAME" ]; then
+		if [ "$BOOTDEV_MAJOR" = "$MAJOR" ] && [ "$PARTN" = "$offset" ] && [ -b "/dev/$DEVNAME" ]; then
 			export "$var=$DEVNAME"
 			return 0
 		fi
