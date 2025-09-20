@@ -1,0 +1,27 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7986a-acer-predator-w6x.dtsi"
+
+/ {
+	model = "Acer Predator Connect W6x (OpenWrt U-Boot Layout)";
+	compatible = "acer,predator-w6x-ubootmod", "mediatek,mt7986a";
+};
+
+&chosen {
+	rootdisk = <&ubi_rootdisk>;
+	bootargs-append = " root=/dev/fit0 rootwait";
+};
+
+&partitions {
+	partition@600000 {
+		label = "ubi";
+		reg = <0x600000 0xD200000>;
+		compatible = "linux,ubi";
+
+		volumes {
+			ubi_rootdisk: ubi-volume-fit {
+				volname = "fit";
+			};
+		};
+	};
+};
