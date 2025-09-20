@@ -1,0 +1,571 @@
+--- a/drivers/pinctrl/mediatek/Kconfig
++++ b/drivers/pinctrl/mediatek/Kconfig
+@@ -129,7 +129,7 @@ config PINCTRL_MT8127
+ config PINCTRL_AIROHA
+-	tristate "Airoha EN7581 pin control"
++	tristate "Airoha pin control"
+ 	depends on OF
+-	depends on ARM64 || COMPILE_TEST
++	depends on ARCH_AIROHA || COMPILE_TEST
+ 	select PINMUX
+ 	select GENERIC_PINCONF
+ 	select GENERIC_PINCTRL_GROUPS
+--- a/drivers/phy/mediatek/Kconfig
++++ b/drivers/phy/mediatek/Kconfig
+@@ -26,7 +26,7 @@ config PHY_MTK_XFI_TPHY
+
+ config PHY_MTK_TPHY
+ 	tristate "MediaTek T-PHY Driver"
+-	depends on ARCH_MEDIATEK || COMPILE_TEST
++	depends on ARCH_MEDIATEK || ARCH_AIROHA || COMPILE_TEST
+ 	depends on OF && OF_ADDRESS
+ 	depends on HAS_IOMEM
+ 	select GENERIC_PHY
+--- a/drivers/usb/host/Kconfig
++++ b/drivers/usb/host/Kconfig
+@@ -71,7 +71,7 @@ config USB_XHCI_HISTB
+ config USB_XHCI_MTK
+ 	tristate "xHCI support for MediaTek SoCs"
+ 	select MFD_SYSCON
+-	depends on (MIPS && SOC_MT7621) || ARCH_MEDIATEK || COMPILE_TEST
++	depends on (MIPS && SOC_MT7621) || ARCH_AIROHA || ARCH_MEDIATEK || COMPILE_TEST
+ 	help
+ 	  Say 'Y' to enable the support for the xHCI host controller
+ 	  found in MediaTek SoCs.diff --git a/drivers/clk/clk-en7523.c b/drivers/clk/clk-en7523.c
+index 15bbdeb60..2d80bce13 100644
+--- a/drivers/clk/clk-en7523.c
++++ b/drivers/clk/clk-en7523.c
+@@ -10,6 +10,7 @@
+ #include <linux/reset-controller.h>
+ #include <dt-bindings/clock/en7523-clk.h>
+ #include <dt-bindings/reset/airoha,en7581-reset.h>
++#include <dt-bindings/reset/airoha,en7523-reset.h>
+ 
+ #define RST_NR_PER_BANK			32
+ 
+@@ -357,6 +358,69 @@ static const u16 en7581_rst_map[] = {
+ 	[EN7581_XPON_MAC_RST]		= RST_NR_PER_BANK + 31,
+ };
+ 
++static const u16 en7523_rst_ofs[] = {
++	REG_RST_CTRL2,
++	REG_RST_CTRL1,
++};
++
++static const u16 en7523_rst_map[] = {
++	/* RST_CTRL2 */
++	[EN7523_RST_XPON_PHY]		= 0,
++	[EN7523_RST_CPU_TIMER2]		= 2,
++	[EN7523_RST_HSUART]		= 3,
++	[EN7523_RST_UART4]		= 4,
++	[EN7523_RST_UART5]		= 5,
++	[EN7523_RST_I2C2]		= 6,
++	[EN7523_RST_XSI_MAC]		= 7,
++	[EN7523_RST_XSI_PHY]		= 8,
++	[EN7523_RST_NPU]		= 9,
++	[EN7523_RST_I2S]		= 10,
++	[EN7523_RST_TRNG]		= 11,
++	[EN7523_RST_TRNG_MSTART]	= 12,
++	[EN7523_RST_DUAL_HSI0]		= 13,
++	[EN7523_RST_DUAL_HSI1]		= 14,
++	[EN7523_RST_HSI]		= 15,
++	[EN7523_RST_DUAL_HSI0_MAC]	= 16,
++	[EN7523_RST_DUAL_HSI1_MAC]	= 17,
++	[EN7523_RST_HSI_MAC]		= 18,
++	[EN7523_RST_WDMA]		= 19,
++	[EN7523_RST_WOE0]		= 20,
++	[EN7523_RST_WOE1]		= 21,
++	[EN7523_RST_HSDMA]		= 22,
++	[EN7523_RST_TDMA]		= 24,
++	[EN7523_RST_EMMC]		= 25,
++	[EN7523_RST_SOE]		= 26,
++	[EN7523_RST_PCIE2]		= 27,
++	[EN7523_RST_XFP_MAC]		= 28,
++	[EN7523_RST_USB_HOST_P1]	= 29,
++	[EN7523_RST_USB_HOST_P1_U3_PHY]	= 30,
++	/* RST_CTRL1 */
++	[EN7523_RST_PCM1_ZSI_ISI]	= RST_NR_PER_BANK + 0,
++	[EN7523_RST_FE_PDMA]		= RST_NR_PER_BANK + 1,
++	[EN7523_RST_FE_QDMA]		= RST_NR_PER_BANK + 2,
++	[EN7523_RST_PCM_SPIWP]		= RST_NR_PER_BANK + 4,
++	[EN7523_RST_CRYPTO]		= RST_NR_PER_BANK + 6,
++	[EN7523_RST_TIMER]		= RST_NR_PER_BANK + 8,
++	[EN7523_RST_PCM1]		= RST_NR_PER_BANK + 11,
++	[EN7523_RST_UART]		= RST_NR_PER_BANK + 12,
++	[EN7523_RST_GPIO]		= RST_NR_PER_BANK + 13,
++	[EN7523_RST_GDMA]		= RST_NR_PER_BANK + 14,
++	[EN7523_RST_I2C_MASTER]		= RST_NR_PER_BANK + 16,
++	[EN7523_RST_PCM2_ZSI_ISI]	= RST_NR_PER_BANK + 17,
++	[EN7523_RST_SFC]		= RST_NR_PER_BANK + 18,
++	[EN7523_RST_UART2]		= RST_NR_PER_BANK + 19,
++	[EN7523_RST_GDMP]		= RST_NR_PER_BANK + 20,
++	[EN7523_RST_FE]			= RST_NR_PER_BANK + 21,
++	[EN7523_RST_USB_HOST_P0]	= RST_NR_PER_BANK + 22,
++	[EN7523_RST_GSW]		= RST_NR_PER_BANK + 23,
++	[EN7523_RST_SFC2_PCM]		= RST_NR_PER_BANK + 25,
++	[EN7523_RST_PCIE0]		= RST_NR_PER_BANK + 26,
++	[EN7523_RST_PCIE1]		= RST_NR_PER_BANK + 27,
++	[EN7523_RST_CPU_TIMER]		= RST_NR_PER_BANK + 28,
++	[EN7523_RST_PCIE_HB]		= RST_NR_PER_BANK + 29,
++	[EN7523_RST_XPON_MAC]		= RST_NR_PER_BANK + 31,
++};
++
+ static u32 en7523_get_base_rate(const struct en_clk_desc *desc, u32 val)
+ {
+ 	if (!desc->base_bits)
+@@ -537,24 +601,6 @@ static void en7523_register_clocks(struct device *dev, struct clk_hw_onecell_dat
+ 	clk_data->hws[EN7523_CLK_PCIE] = hw;
+ }
+ 
+-static int en7523_clk_hw_init(struct platform_device *pdev,
+-			      struct clk_hw_onecell_data *clk_data)
+-{
+-	void __iomem *base, *np_base;
+-
+-	base = devm_platform_ioremap_resource(pdev, 0);
+-	if (IS_ERR(base))
+-		return PTR_ERR(base);
+-
+-	np_base = devm_platform_ioremap_resource(pdev, 1);
+-	if (IS_ERR(np_base))
+-		return PTR_ERR(np_base);
+-
+-	en7523_register_clocks(&pdev->dev, clk_data, base, np_base);
+-
+-	return 0;
+-}
+-
+ static void en7581_register_clocks(struct device *dev, struct clk_hw_onecell_data *clk_data,
+ 				   struct regmap *map, void __iomem *base)
+ {
+@@ -675,6 +721,47 @@ static int en7581_reset_register(struct device *dev, void __iomem *base)
+ 	return devm_reset_controller_register(dev, &rst_data->rcdev);
+ }
+ 
++static int en7523_reset_register(struct device *dev, void __iomem *base)
++{
++	struct en_rst_data *rst_data;
++
++	rst_data = devm_kzalloc(dev, sizeof(*rst_data), GFP_KERNEL);
++	if (!rst_data)
++		return -ENOMEM;
++
++	rst_data->bank_ofs = en7523_rst_ofs;
++	rst_data->idx_map = en7523_rst_map;
++	rst_data->base = base;
++
++	rst_data->rcdev.nr_resets = ARRAY_SIZE(en7523_rst_map);
++	rst_data->rcdev.of_xlate = en7523_reset_xlate;
++	rst_data->rcdev.ops = &en7581_reset_ops;
++	rst_data->rcdev.of_node = dev->of_node;
++	rst_data->rcdev.of_reset_n_cells = 1;
++	rst_data->rcdev.owner = THIS_MODULE;
++	rst_data->rcdev.dev = dev;
++
++	return devm_reset_controller_register(dev, &rst_data->rcdev);
++}
++
++static int en7523_clk_hw_init(struct platform_device *pdev,
++			      struct clk_hw_onecell_data *clk_data)
++{
++	void __iomem *base, *np_base;
++
++	base = devm_platform_ioremap_resource(pdev, 0);
++	if (IS_ERR(base))
++		return PTR_ERR(base);
++
++	np_base = devm_platform_ioremap_resource(pdev, 1);
++	if (IS_ERR(np_base))
++		return PTR_ERR(np_base);
++
++	en7523_register_clocks(&pdev->dev, clk_data, base, np_base);
++
++	return en7523_reset_register(&pdev->dev, np_base);
++}
++
+ static int en7581_clk_hw_init(struct platform_device *pdev,
+ 			      struct clk_hw_onecell_data *clk_data)
+ {
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index 73f127b5b..95516f420 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -2924,16 +2924,16 @@ static int airoha_probe(struct platform_device *pdev)
+ 	}
+ 
+ 	eth->fe_regs = devm_platform_ioremap_resource_byname(pdev, "fe");
+-	if (IS_ERR(eth->fe_regs))
+-		return dev_err_probe(eth->dev, PTR_ERR(eth->fe_regs),
+-				     "failed to iomap fe regs\n");
++	if (IS_ERR(eth->fe_regs)) {
++		err = PTR_ERR(eth->fe_regs);
++		printk(KERN_ERR "failed to map FE+PPE registers: %d\n", err);
++		return err;
++	}
+ 
+ 	eth->rsts[0].id = "fe";
+ 	eth->rsts[1].id = "pdma";
+ 	eth->rsts[2].id = "qdma";
+-	err = devm_reset_control_bulk_get_exclusive(eth->dev,
+-						    ARRAY_SIZE(eth->rsts),
+-						    eth->rsts);
++	err = devm_reset_control_bulk_get_exclusive(eth->dev, ARRAY_SIZE(eth->rsts), eth->rsts);
+ 	if (err) {
+ 		dev_err(eth->dev, "failed to get bulk reset lines\n");
+ 		return err;
+@@ -2944,9 +2944,7 @@ static int airoha_probe(struct platform_device *pdev)
+ 	eth->xsi_rsts[2].id = "hsi1-mac";
+ 	eth->xsi_rsts[3].id = "hsi-mac";
+ 	eth->xsi_rsts[4].id = "xfp-mac";
+-	err = devm_reset_control_bulk_get_exclusive(eth->dev,
+-						    ARRAY_SIZE(eth->xsi_rsts),
+-						    eth->xsi_rsts);
++	err = devm_reset_control_bulk_get_exclusive(eth->dev, ARRAY_SIZE(eth->xsi_rsts), eth->xsi_rsts);
+ 	if (err) {
+ 		dev_err(eth->dev, "failed to get bulk xsi reset lines\n");
+ 		return err;
+@@ -3034,6 +3032,7 @@ static void airoha_remove(struct platform_device *pdev)
+ 
+ static const struct of_device_id of_airoha_match[] = {
+ 	{ .compatible = "airoha,en7581-eth" },
++	{ .compatible = "airoha,en7523-eth" },
+ 	{ /* sentinel */ }
+ };
+ MODULE_DEVICE_TABLE(of, of_airoha_match);
+diff --git a/drivers/net/ethernet/airoha/airoha_npu.c b/drivers/net/ethernet/airoha/airoha_npu.c
+index 94c64ddc9..64f7666f6 100644
+--- a/drivers/net/ethernet/airoha/airoha_npu.c
++++ b/drivers/net/ethernet/airoha/airoha_npu.c
+@@ -11,13 +11,17 @@
+ #include <linux/of_platform.h>
+ #include <linux/of_reserved_mem.h>
+ #include <linux/regmap.h>
++#include <linux/bitfield.h>
+ 
+ #include "airoha_eth.h"
+ 
+ #define NPU_EN7581_FIRMWARE_DATA		"airoha/en7581_npu_data.bin"
+ #define NPU_EN7581_FIRMWARE_RV32		"airoha/en7581_npu_rv32.bin"
+-#define NPU_EN7581_FIRMWARE_RV32_MAX_SIZE	0x200000
+-#define NPU_EN7581_FIRMWARE_DATA_MAX_SIZE	0x10000
++#define NPU_EN7523_FIRMWARE_DATA		"airoha/en7523_npu_data.bin"
++#define NPU_EN7523_FIRMWARE_RV32		"airoha/en7523_npu_rv32.bin"
++
++#define NPU_FIRMWARE_RV32_MAX_SIZE	0x200000
++#define NPU_FIRMWARE_DATA_MAX_SIZE	0x10000
+ #define NPU_DUMP_SIZE				512
+ 
+ #define REG_NPU_LOCAL_SRAM		0x0
+@@ -103,6 +107,11 @@ enum {
+ 	QDMA_WAN_PON_XDSL,
+ };
+ 
++enum airoha_npu_type {
++	AIROHA_NPU_EN7581,
++	AIROHA_NPU_EN7523,
++};
++
+ #define MBOX_MSG_FUNC_ID	GENMASK(14, 11)
+ #define MBOX_MSG_STATIC_BUF	BIT(5)
+ #define MBOX_MSG_STATUS		GENMASK(4, 2)
+@@ -183,44 +192,51 @@ static int airoha_npu_send_msg(struct airoha_npu *npu, int func_id,
+ }
+ 
+ static int airoha_npu_run_firmware(struct device *dev, void __iomem *base,
+-				   struct reserved_mem *rmem)
++				   struct reserved_mem *rmem, enum airoha_npu_type npu_type)
+ {
+ 	const struct firmware *fw;
+ 	void __iomem *addr;
+ 	int ret;
+ 
+-	ret = request_firmware(&fw, NPU_EN7581_FIRMWARE_RV32, dev);
++	const char* fw_rv32 = (npu_type == AIROHA_NPU_EN7581 ? NPU_EN7581_FIRMWARE_RV32 : NPU_EN7523_FIRMWARE_RV32);
++	const char* fw_data = (npu_type == AIROHA_NPU_EN7581 ? NPU_EN7581_FIRMWARE_DATA : NPU_EN7523_FIRMWARE_DATA);
++
++	ret = request_firmware(&fw, fw_rv32, dev);
+ 	if (ret)
+ 		return ret == -ENOENT ? -EPROBE_DEFER : ret;
+ 
+-	if (fw->size > NPU_EN7581_FIRMWARE_RV32_MAX_SIZE) {
+-		dev_err(dev, "%s: fw size too overlimit (%zu)\n",
+-			NPU_EN7581_FIRMWARE_RV32, fw->size);
++	if (fw->size > NPU_FIRMWARE_RV32_MAX_SIZE) {
++		dev_err(dev, "%s: fw size too overlimit (%zu)\n", fw_rv32, fw->size);
+ 		ret = -E2BIG;
+ 		goto out;
+ 	}
++	printk("airoha_npu: loading %s to NPU instruction memory...\n", fw_rv32);
+ 
+-	addr = devm_ioremap(dev, rmem->base, rmem->size);
+-	if (!addr) {
+-		ret = -ENOMEM;
++	addr = devm_memremap(dev, rmem->base, rmem->size, MEMREMAP_WB);
++	if (IS_ERR(addr)) {
++		ret = PTR_ERR(addr);
+ 		goto out;
+ 	}
++	printk("airoha_npu: rmem->base=0x%lx, rmem->size=0x%lx\n", (unsigned long)rmem->base, (unsigned long)rmem->size);
+ 
+ 	memcpy_toio(addr, fw->data, fw->size);
+ 	release_firmware(fw);
++	printk("airoha_npu: loaded %s to NPU instruction memory\n", fw_rv32);
+ 
+-	ret = request_firmware(&fw, NPU_EN7581_FIRMWARE_DATA, dev);
++	ret = request_firmware(&fw, fw_data, dev);
+ 	if (ret)
+ 		return ret == -ENOENT ? -EPROBE_DEFER : ret;
+ 
+-	if (fw->size > NPU_EN7581_FIRMWARE_DATA_MAX_SIZE) {
+-		dev_err(dev, "%s: fw size too overlimit (%zu)\n",
+-			NPU_EN7581_FIRMWARE_DATA, fw->size);
++	printk("airoha_npu: loading %s to NPU data memory...\n", fw_data);
++	if (fw->size > NPU_FIRMWARE_DATA_MAX_SIZE) {
++		dev_err(dev, "%s: fw size too overlimit (%zu)\n", fw_data, fw->size);
+ 		ret = -E2BIG;
+ 		goto out;
+ 	}
+ 
++	printk("airoha_npu: base=0x%lx\n", (unsigned long)base);
+ 	memcpy_toio(base + REG_NPU_LOCAL_SRAM, fw->data, fw->size);
++	printk("airoha_npu: loaded %s to NPU data memory\n", fw_data);
+ out:
+ 	release_firmware(fw);
+ 
+@@ -609,12 +625,6 @@ void airoha_npu_put(struct airoha_npu *npu)
+ }
+ EXPORT_SYMBOL_GPL(airoha_npu_put);
+ 
+-static const struct of_device_id of_airoha_npu_match[] = {
+-	{ .compatible = "airoha,en7581-npu" },
+-	{ /* sentinel */ }
+-};
+-MODULE_DEVICE_TABLE(of, of_airoha_npu_match);
+-
+ static const struct regmap_config regmap_config = {
+ 	.name			= "npu",
+ 	.reg_bits		= 32,
+@@ -625,6 +635,12 @@ static const struct regmap_config regmap_config = {
+ 
+ static int airoha_npu_probe(struct platform_device *pdev)
+ {
++	enum airoha_npu_type npu_type = AIROHA_NPU_EN7581;
++	if (of_device_is_compatible(pdev->dev.of_node, "airoha,en7523-npu")) {
++		printk(KERN_INFO "airoha_npu: Detected EN7523 NPU\n");
++		npu_type = AIROHA_NPU_EN7523;
++	}
++
+ 	struct device *dev = &pdev->dev;
+ 	struct reserved_mem *rmem;
+ 	struct airoha_npu *npu;
+@@ -668,55 +684,79 @@ static int airoha_npu_probe(struct platform_device *pdev)
+ 	if (!rmem)
+ 		return -ENODEV;
+ 
++	printk(KERN_INFO "airoha_npu: Reserved memory region found at 0x%lx, size 0x%lx\n",
++	       (unsigned long)rmem->base, (unsigned long)rmem->size);
++
+ 	irq = platform_get_irq(pdev, 0);
+ 	if (irq < 0)
+ 		return irq;
+ 
++	printk(KERN_INFO "airoha_npu: Requesting IRQ %d for MBOX\n", irq);
++
+ 	err = devm_request_irq(dev, irq, airoha_npu_mbox_handler,
+ 			       IRQF_SHARED, "airoha-npu-mbox", npu);
+ 	if (err)
+ 		return err;
+ 
+ 	for (i = 0; i < ARRAY_SIZE(npu->cores); i++) {
++		printk(KERN_INFO "airoha_npu: Requesting IRQ %d for WDT core %d\n", irq, i);
+ 		struct airoha_npu_core *core = &npu->cores[i];
+ 
+ 		spin_lock_init(&core->lock);
+ 		core->npu = npu;
+ 
+ 		irq = platform_get_irq(pdev, i + 1);
+-		if (irq < 0)
++		if (irq < 0) {
++			printk(KERN_ERR "airoha_npu: Failed to get WDT IRQ for core %d\n", i);
+ 			return irq;
++		}
+ 
+ 		err = devm_request_irq(dev, irq, airoha_npu_wdt_handler,
+ 				       IRQF_SHARED, "airoha-npu-wdt", core);
+-		if (err)
++		if (err) {
++			printk(KERN_ERR "airoha_npu: Failed to request WDT IRQ %d for core %d\n", irq, i);
+ 			return err;
++		}
+ 
+ 		INIT_WORK(&core->wdt_work, airoha_npu_wdt_work);
+ 	}
+ 
+ 	/* wlan IRQ lines */
+ 	for (i = 0; i < ARRAY_SIZE(npu->irqs); i++) {
++		printk(KERN_INFO "airoha_npu: Requesting IRQ for WLAN %d\n", i);
+ 		irq = platform_get_irq(pdev, i + ARRAY_SIZE(npu->cores) + 1);
+-		if (irq < 0)
++		if (irq < 0) {
++			printk(KERN_ERR "airoha_npu: Failed to get WLAN IRQ %d: %d\n", i, irq);
+ 			return irq;
++		}
++		printk(KERN_INFO "airoha_npu: Requesting IRQ %d for WLAN %d\n", irq, i);
+ 
+ 		npu->irqs[i] = irq;
+ 	}
+ 
+ 	err = dma_set_coherent_mask(dev, DMA_BIT_MASK(32));
+-	if (err)
++	if (err) {
++		printk(KERN_ERR "airoha_npu: Failed to set DMA mask: %d\n", err);
+ 		return err;
++	}
++	printk(KERN_INFO "airoha_npu: DMA mask set\n");
+ 
+-	err = airoha_npu_run_firmware(dev, base, rmem);
+-	if (err)
++	err = airoha_npu_run_firmware(dev, base, rmem, npu_type);
++	if (err) {
++		printk(KERN_ERR "airoha_npu: Failed to run firmware: %d\n", err);
+ 		return dev_err_probe(dev, err, "failed to run npu firmware\n");
++	}
+ 
+ 	regmap_write(npu->regmap, REG_CR_NPU_MIB(10),
+-		     rmem->base + NPU_EN7581_FIRMWARE_RV32_MAX_SIZE);
+-	regmap_write(npu->regmap, REG_CR_NPU_MIB(11), 0x40000); /* SRAM 256K */
++		     rmem->base + NPU_FIRMWARE_RV32_MAX_SIZE);
++	if (npu_type == AIROHA_NPU_EN7581)
++		regmap_write(npu->regmap, REG_CR_NPU_MIB(11), 0x40000); /* SRAM 256K */
++	else
++		regmap_write(npu->regmap, REG_CR_NPU_MIB(11), 0x60000); /* SRAM 384K */
++
+ 	regmap_write(npu->regmap, REG_CR_NPU_MIB(12), 0);
+-	regmap_write(npu->regmap, REG_CR_NPU_MIB(21), 1);
++	if (npu_type == AIROHA_NPU_EN7581)
++		regmap_write(npu->regmap, REG_CR_NPU_MIB(21), 1);
+ 	msleep(100);
+ 
+ 	/* setting booting address */
+@@ -730,6 +770,7 @@ static int airoha_npu_probe(struct platform_device *pdev)
+ 	msleep(100);
+ 
+ 	platform_set_drvdata(pdev, npu);
++	printk(KERN_INFO "airoha_npu: NPU initialized successfully\n");
+ 
+ 	return 0;
+ }
+@@ -743,6 +784,13 @@ static void airoha_npu_remove(struct platform_device *pdev)
+ 		cancel_work_sync(&npu->cores[i].wdt_work);
+ }
+ 
++static const struct of_device_id of_airoha_npu_match[] = {
++	{ .compatible = "airoha,en7581-npu" },
++	{ .compatible = "airoha,en7523-npu" },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, of_airoha_npu_match);
++
+ static struct platform_driver airoha_npu_driver = {
+ 	.probe = airoha_npu_probe,
+ 	.remove_new = airoha_npu_remove,
+@@ -753,6 +801,10 @@ static struct platform_driver airoha_npu_driver = {
+ };
+ module_platform_driver(airoha_npu_driver);
+ 
++MODULE_FIRMWARE(NPU_EN7581_FIRMWARE_DATA);
++MODULE_FIRMWARE(NPU_EN7581_FIRMWARE_RV32);
++MODULE_FIRMWARE(NPU_EN7523_FIRMWARE_DATA);
++MODULE_FIRMWARE(NPU_EN7523_FIRMWARE_RV32);
+ MODULE_LICENSE("GPL");
+ MODULE_AUTHOR("Lorenzo Bianconi <lorenzo@kernel.org>");
+ MODULE_DESCRIPTION("Airoha Network Processor Unit driver");
+diff --git a/include/dt-bindings/reset/airoha,en7523-reset.h b/include/dt-bindings/reset/airoha,en7523-reset.h
+new file mode 100644
+index 000000000..0952d33c4
+--- /dev/null
++++ b/include/dt-bindings/reset/airoha,en7523-reset.h
+@@ -0,0 +1,62 @@
++// SPDX-License-Identifier: GPL-2.0-only
++
++#ifndef __DT_BINDINGS_RESET_CONTROLLER_AIROHA_EN7523_H_
++#define __DT_BINDINGS_RESET_CONTROLLER_AIROHA_EN7523_H_
++
++/* RST_CTRL2 */
++#define EN7523_RST_XPON_PHY		 0
++#define EN7523_RST_CPU_TIMER2		 1
++#define EN7523_RST_HSUART		 2
++#define EN7523_RST_UART4		 3
++#define EN7523_RST_UART5		 4
++#define EN7523_RST_I2C2			 5
++#define EN7523_RST_XSI_MAC		 6
++#define EN7523_RST_XSI_PHY		 7
++#define EN7523_RST_NPU			 8
++#define EN7523_RST_I2S			 9
++#define EN7523_RST_TRNG			10
++#define EN7523_RST_TRNG_MSTART		11
++#define EN7523_RST_DUAL_HSI0		12
++#define EN7523_RST_DUAL_HSI1		13
++#define EN7523_RST_HSI			14
++#define EN7523_RST_DUAL_HSI0_MAC	15
++#define EN7523_RST_DUAL_HSI1_MAC	16
++#define EN7523_RST_HSI_MAC		17
++#define EN7523_RST_WDMA			18
++#define EN7523_RST_WOE0			19
++#define EN7523_RST_WOE1			20
++#define EN7523_RST_HSDMA		21
++#define EN7523_RST_TDMA			22
++#define EN7523_RST_EMMC			23
++#define EN7523_RST_SOE			24
++#define EN7523_RST_PCIE2		25
++#define EN7523_RST_XFP_MAC		26
++#define EN7523_RST_USB_HOST_P1		27
++#define EN7523_RST_USB_HOST_P1_U3_PHY	28
++/* RST_CTRL1 */
++#define EN7523_RST_PCM1_ZSI_ISI		29
++#define EN7523_RST_FE_PDMA		30
++#define EN7523_RST_FE_QDMA		31
++#define EN7523_RST_PCM_SPIWP		32
++#define EN7523_RST_CRYPTO		33
++#define EN7523_RST_TIMER		34
++#define EN7523_RST_PCM1			35
++#define EN7523_RST_UART			36
++#define EN7523_RST_GPIO			37
++#define EN7523_RST_GDMA			38
++#define EN7523_RST_I2C_MASTER		39
++#define EN7523_RST_PCM2_ZSI_ISI		40
++#define EN7523_RST_SFC			41
++#define EN7523_RST_UART2		42
++#define EN7523_RST_GDMP			43
++#define EN7523_RST_FE			44
++#define EN7523_RST_USB_HOST_P0		45
++#define EN7523_RST_GSW			46
++#define EN7523_RST_SFC2_PCM		47
++#define EN7523_RST_PCIE0		48
++#define EN7523_RST_PCIE1		49
++#define EN7523_RST_CPU_TIMER		50
++#define EN7523_RST_PCIE_HB		51
++#define EN7523_RST_XPON_MAC		52
++
++#endif /* __DT_BINDINGS_RESET_CONTROLLER_AIROHA_EN7523_H_ */
+\ No newline at end of file
+diff --git a/include/linux/soc/airoha/airoha_offload.h b/include/linux/soc/airoha/airoha_offload.h
+index 1dc5b4e35..31b406851 100644
+--- a/include/linux/soc/airoha/airoha_offload.h
++++ b/include/linux/soc/airoha/airoha_offload.h
+@@ -64,8 +64,13 @@ static inline void airoha_ppe_dev_check_skb(struct airoha_ppe_dev *dev,
+ }
+ #endif
+ 
+-#define NPU_NUM_CORES		8
+-#define NPU_NUM_IRQ		6
++#if (IS_BUILTIN(CONFIG_ARM) || IS_MODULE(CONFIG_ARM))
++#define NPU_NUM_CORES	4
++#else
++#define NPU_NUM_CORES	8
++#endif
++
++#define NPU_NUM_IRQ	6
+ #define NPU_RX0_DESC_NUM	512
+ #define NPU_RX1_DESC_NUM	512
+ 
