@@ -1,0 +1,23 @@
+--- a/log/logread.c
++++ b/log/logread.c
+@@ -250,10 +250,19 @@ static int usage(const char *prog)
+ 		int len, cur_len;
+ 
+ 		a = (void*) ustream_get_read_buf(s, &len);
+-		if (len < sizeof(*a))
++		if (len < (int)sizeof(*a))
+ 			break;
+ 
+ 		cur_len = blob_len(a) + sizeof(*a);
++
++		if (cur_len <= sizeof(*a) || cur_len > 4096) {
++			fprintf(stderr,
++				"logread: dropping invalid blob (cur_len=%d, buf=%d)\n",
++				cur_len, len);
++			ustream_consume(s, sizeof(*a));
++			continue;
++		}
++
+ 		if (len < cur_len)
+ 			break;
+ 
