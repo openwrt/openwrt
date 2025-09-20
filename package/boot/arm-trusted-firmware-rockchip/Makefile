@@ -7,11 +7,10 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION:=2.12.6
+PKG_VERSION:=2.13
 PKG_RELEASE:=1
-PKG_LTS:=1
 
-PKG_HASH:=50059d35eccd0dcd1bb638f05efad739d9251afdbc734810da9dd13ea2e219c7
+PKG_HASH:=afb5c408392fcec840bd30de9b02a236b0108142024f9853b542b596b0d894e3
 
 PKG_MAINTAINER:=Sarah Maedel <openwrt@tbspace.de>
 
@@ -34,6 +33,11 @@ define Trusted-Firmware-A/rk3399
   PLAT:=rk3399
 endef
 
+define Trusted-Firmware-A/rk3576
+  BUILD_SUBTARGET:=armv8
+  PLAT:=rk3576
+endef
+
 define Trusted-Firmware-A/rk3588
   BUILD_SUBTARGET:=armv8
   PLAT:=rk3588
@@ -42,6 +46,7 @@ endef
 TFA_TARGETS:= \
 	rk3328 \
 	rk3399 \
+	rk3576 \
 	rk3588
 
 ifeq ($(BUILD_VARIANT),rk3399)
