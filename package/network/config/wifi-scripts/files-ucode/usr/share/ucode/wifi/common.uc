@@ -1,12 +1,32 @@
 'use strict';
 
 import * as libubus from 'ubus';
+import * as nl80211 from 'nl80211';
 import * as fs from 'fs';
 
 global.ubus = libubus.connect();
 
 let config_data = '';
 let network_data = '';
+
+const nl80211_bands = [ '2g', '5g', '60g', '6g' ];
+
+export function wiphy_info(phy) {
+	let idx = +fs.readfile(`/sys/class/ieee80211/${phy}/index`);
+
+	return nl80211.request(nl80211.const.NL80211_CMD_GET_WIPHY, nl80211.const.NLM_F_DUMP, {
+		wiphy: idx,
+		split_wiphy_dump: true
+	});
+};
+
+export function wiphy_band(info, band) {
+	let band_idx = index(nl80211_bands, band);
+	if (band_idx < 0 || !info)
+		return;
+
+	return info.wiphy_bands[band_idx];
+};
 
 export function log(msg) {
 	printf(`wifi-scripts: ${msg}\n`);
