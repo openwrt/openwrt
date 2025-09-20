@@ -171,6 +171,7 @@ append_rev_server() {
 
 append_address() {
 	xappend "--address=$1"
+	xappend "--local=${1%/*}/"
 }
 
 append_connmark_allowlist() {
