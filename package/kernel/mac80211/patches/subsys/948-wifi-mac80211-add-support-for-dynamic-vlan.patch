@@ -1,0 +1,55 @@
+Subject: [PATCH] ath11k: add support for dynamic vlan (ap/vlan)
+
+ath11k currently lacks support for dynamic vlan (AP/VLAN), so make
+'__ath11k_mac_register' in dp_tx to register 'NL80211_IFTYPE_AP_VLAN'
+as available interface mode.
+
+Make 'ath11k_dp_tx' in dp_tx to add metadata info to notify firmware
+that the multicast/broadcast packets are encrypted in software.
+
+Make '__ieee80211_subif_start_xmit' in tx to offload encapsulation
+for VLAN unicast packets using 8023 xmit path instead of current
+80211 xmit path.
+
+Tested, long-term in production environment using OpenWrt platform
+installed on multiple AX3600 with FT:
+ Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.9.0.1-01385-QCAHKSWPL_SILICONZ-1
+ Tested-on: IPQ8074 hw2.0 AHB WLAN.HK.2.9.0.1-01977-QCAHKSWPL_SILICONZ-1
+
+Co-developed-by: Seevalamuthu Mariappan <seevalam@codeaurora.org>
+Signed-off-by: Seevalamuthu Mariappan <seevalam@codeaurora.org>
+Signed-off-by: David Rapan <david@rapan.cz>
+---
+ net/mac80211/tx.c                          |  15 +++
+ 1 files changed, 15 insertions(+)
+
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -39,6 +39,10 @@
+ 
+ /* misc utils */
+ 
++static void ieee80211_8023_xmit(struct ieee80211_sub_if_data *sdata,
++				struct net_device *dev, struct sta_info *sta,
++				struct ieee80211_key *key, struct sk_buff *skb);
++
+ static __le16 ieee80211_duration(struct ieee80211_tx_data *tx,
+ 				 struct sk_buff *skb, int group_addr,
+ 				 int next_frag_len)
+@@ -4301,5 +4305,16 @@ void __ieee80211_subif_start_xmit(struct
+ 	if (IS_ERR(sta))
+ 		sta = NULL;
+ 
++	if (sta && sdata->vif.type == NL80211_IFTYPE_AP_VLAN &&
++	    get_bss_sdata(sdata)->vif.offload_flags & IEEE80211_OFFLOAD_ENCAP_ENABLED &&
++	    !is_multicast_ether_addr(skb->data)) {
++		struct ieee80211_key *key = rcu_dereference(sta->ptk[sta->ptk_idx]);
++		if (!key)
++			key = rcu_dereference(get_bss_sdata(sdata)->default_unicast_key);
++		ieee80211_8023_xmit(sdata, dev, sta, key, skb);
++		rcu_read_unlock();
++		return;
++	}
++
+ 	skb_set_queue_mapping(skb, ieee80211_select_queue(sdata, sta, skb));
+ 	ieee80211_aggr_check(sdata, sta, skb);
