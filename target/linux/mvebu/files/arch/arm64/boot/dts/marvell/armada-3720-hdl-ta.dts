@@ -1,0 +1,351 @@
+// SPDX-License-Identifier: (GPL-2.0-or-later OR MIT)
+
+/dts-v1/;
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/leds/common.h>
+#include "armada-372x.dtsi"
+
+/ {
+	model = "I-O DATA HDL-TA Series NAS";
+	compatible = "iodata,hdl-ta", "marvell,armada3720";
+
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_orange;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+		label-mac-device = &eth0;
+	};
+
+	chosen {
+		bootargs-append = " earlycon init=/sbin/init";
+		stdout-path = "serial0:115200n8";
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x00000000 0x00000000 0x20000000>;
+	};
+
+	firmware {
+		armada-3700-rwtm {
+			status = "disabled";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&nb_button_pins &sb_button_pins>;
+		pinctrl-names = "default";
+
+		button-power {
+			label = "power";
+			linux,code = <KEY_POWER>;
+			gpios = <&gpionb 17 GPIO_ACTIVE_LOW>;
+		};
+
+		button-reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpiosb 2 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&nb_led_pins>;
+		pinctrl-names = "default";
+
+		led_power_orange: led-0 {
+			color = <LED_COLOR_ID_ORANGE>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&gpionb 11 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_green: led-1 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&gpionb 12 GPIO_ACTIVE_LOW>;
+		};
+
+		led-2 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&gpionb 13 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio-poweroff {
+		compatible = "gpio-poweroff";
+		gpios = <&gpiosb 4 GPIO_ACTIVE_HIGH>;
+		pinctrl-0 = <&sb_poweroff_pins>;
+		pinctrl-names = "default";
+	};
+
+	regulators-sata {
+		compatible = "simple-bus";
+
+		reg_sata_en: regulator-sata-en {
+			compatible = "regulator-fixed";
+			gpios = <&gpiosb 15 GPIO_ACTIVE_HIGH>;
+			pinctrl-0 = <&sb_regulator_sata_pins>;
+			pinctrl-names = "default";
+			regulator-name = "sata-en";
+			regulator-min-microvolt = <12000000>;
+			regulator-max-microvolt = <12000000>;
+			regulator-always-on;
+			regulator-boot-on;
+			enable-active-high;
+		};
+
+		reg_sata_12v: regulator-sata-12v {
+			compatible = "regulator-fixed";
+			regulator-name = "sata-12.0v";
+			regulator-min-microvolt = <12000000>;
+			regulator-max-microvolt = <12000000>;
+			regulator-always-on;
+			vin-supply = <&reg_sata_en>;
+		};
+
+		regulator-sata-5v {
+			compatible = "regulator-fixed";
+			regulator-name = "sata-5.0v";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			regulator-always-on;
+			vin-supply = <&reg_sata_en>;
+		};
+	};
+
+	thermal-zones {
+		hdd-thermal {
+			polling-delay = <20000>;
+			polling-delay-passive = <2000>;
+
+			thermal-sensors = <&sata>;
+
+			trips {
+				passive {
+					temperature = <45000>;
+					hysteresis = <2000>;
+					type = "passive";
+				};
+
+				hot {
+					temperature = <50000>;
+					hysteresis = <2000>;
+					type = "hot";
+				};
+
+				critical {
+					temperature = <60000>;
+					hysteresis = <6000>;
+					type = "critical";
+				};
+			};
+		};
+	};
+};
+
+&mdio {
+	/* Marvell 88E1512 */
+	ethphy0: ethernet-phy@0 {
+		compatible = "ethernet-phy-id0141,0dd1",
+			     "ethernet-phy-ieee802.3-c22";
+		reg = <0>;
+		/*
+		 * enabling IRQ breaks WoL support, disable ATM
+		 *
+		 * interrupt-parent = <&gpiosb>;
+		 * interrupts = <0 IRQ_TYPE_EDGE_FALLING>;
+		*/
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_ubootenv_ethaddr>;
+	nvmem-cell-names = "mac-address";
+	phy-handle = <&ethphy0>;
+	phy-mode = "sgmii";
+	phys = <&comphy1 0>;
+};
+
+&pinctrl_nb {
+	nb_button_pins: button-pins {
+		groups = "spi_cs1";
+		function = "gpio";
+	};
+
+	nb_i2c1_recovery_pins: i2c-recovery-pins {
+		groups = "i2c1";
+		function = "gpio";
+	};
+
+	nb_led_pins: led-pins {
+		groups = "pwm0", "pwm1", "pwm2";
+		function = "gpio";
+	};
+};
+
+&pinctrl_sb {
+	pinctrl-0 = <&sb_board_model_pins>;
+	pinctrl-names = "default";
+
+	sb_board_model_pins: board-model-pins {
+		groups = "ptp", "ptp_clk", "ptp_trig";
+		function = "gpio";
+	};
+
+	sb_button_pins: button-pins {
+		groups = "gpio2_2";
+		function = "gpio";
+	};
+
+	sb_poweroff_pins: poweroff-pins {
+		groups = "pcie1_clkreq";
+		function = "gpio";
+	};
+
+	sb_regulator_sata_pins: regulator-sata-pins {
+		groups = "rgmii";
+		function = "gpio";
+	};
+};
+
+&gpiosb {
+	board-model {
+		gpio-hog;
+		gpios = <22 GPIO_ACTIVE_LOW>,
+			<21 GPIO_ACTIVE_LOW>,
+			<20 GPIO_ACTIVE_LOW>;
+		input;
+		line-name = "board-model";
+	};
+};
+
+&i2c0 {
+	status = "okay";
+
+	pinctrl-0 = <&i2c1_pins>;
+	pinctrl-1 = <&nb_i2c1_recovery_pins>;
+	pinctrl-names = "default", "recovery";
+	scl-gpios = <&gpionb 0 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+	sda-gpios = <&gpionb 1 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+
+	eeprom@50 {
+		compatible = "st,24c02", "atmel,24c02";
+		reg = <0x50>;
+		pagesize = <32>;
+
+		nvmem-layout {
+			compatible = "fixed-layout";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			device-uptime@4 {
+				reg = <0x4 0x4>;
+			};
+
+			fan-uptime@8 {
+				reg = <0x8 0x4>;
+			};
+
+			power-uptime@c {
+				reg = <0xc 0x4>;
+			};
+
+			power-cycle@10 {
+				reg = <0x10 0x4>;
+			};
+
+			fan-fail@14 {
+				reg = <0x14 0x4>;
+			};
+
+			temperature-fail@18 {
+				reg = <0x18 0x4>;
+			};
+
+			no-warranty@1c {
+				reg = <0x1c 0x1>;
+			};
+
+			auto-power-on@1d {
+				reg = <0x1d 0x1>;
+			};
+
+			wake-on-lan@1e {
+				reg = <0x1e 0x1>;
+			};
+		};
+	};
+
+	rtc@6f {
+		compatible = "microchip,mcp7940x";
+		reg = <0x6f>;
+		wakeup-source;
+	};
+};
+
+&sata {
+	status = "okay";
+
+	target-supply = <&reg_sata_en>;
+	#thermal-sensor-cells = <0>;
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		reg = <0>;
+		compatible = "jedec,spi-nor";
+		spi-max-frequency = <104000000>;
+		m25p,fast-read;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0 0xf0000>;
+				read-only;
+			};
+
+			partition@f0000 {
+				label = "u-boot-env";
+				reg = <0xf0000 0x10000>;
+
+				nvmem-layout {
+					compatible = "u-boot,env";
+
+					macaddr_ubootenv_ethaddr: ethaddr {
+					};
+				};
+			};
+
+			partition@100000 {
+				label = "jffs2";
+				reg = <0x100000 0x100000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+
+	pinctrl-0 = <&uart1_pins>;
+	pinctrl-names = "default";
+};
+
+&usb2 {
+	status = "okay";
+};
