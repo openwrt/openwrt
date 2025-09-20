@@ -19,17 +19,23 @@
 
 #define ROOTFS_SPLIT_NAME	"rootfs_data"
 
+#define EROFS_MAGIC		0xE0F5E1E2
+
 enum mtdsplit_part_type {
 	MTDSPLIT_PART_TYPE_UNK = 0,
 	MTDSPLIT_PART_TYPE_SQUASHFS,
 	MTDSPLIT_PART_TYPE_JFFS2,
 	MTDSPLIT_PART_TYPE_UBI,
+	MTDSPLIT_PART_TYPE_EROFS,
 };
 
 #ifdef CONFIG_MTD_SPLIT
 int mtd_get_squashfs_len(struct mtd_info *master,
 			 size_t offset,
 			 size_t *squashfs_len);
+
+int mtd_get_erofs_len(struct mtd_info *master, size_t offset,
+		      size_t *erofs_len);
 
 int mtd_check_rootfs_magic(struct mtd_info *mtd, size_t offset,
 			   enum mtdsplit_part_type *type);
@@ -44,6 +50,12 @@ int mtd_find_rootfs_from(struct mtd_info *mtd,
 static inline int mtd_get_squashfs_len(struct mtd_info *master,
 				       size_t offset,
 				       size_t *squashfs_len)
+{
+	return -ENODEV;
+}
+
+static inline int mtd_get_erofs_len(struct mtd_info *master,
+				    size_t offset, size_t *erofs_len)
 {
 	return -ENODEV;
 }
