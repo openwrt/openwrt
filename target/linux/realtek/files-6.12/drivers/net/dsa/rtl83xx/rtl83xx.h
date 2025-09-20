@@ -181,6 +181,8 @@ void rtl930x_vlan_profile_dump(int index);
 int rtl9300_sds_power(int mac, int val);
 extern int rtl9300_serdes_setup(int port, int sds_num, phy_interface_t phy_mode);
 void rtl930x_print_matrix(void);
+extern int rtmdio_930x_read_sds_phy(int phy_addr, int page, int phy_reg);
+extern int rtmdio_930x_write_sds_phy(int phy_addr, int page, int phy_reg, u16 v);
 
 /* RTL931x-specific */
 irqreturn_t rtl931x_switch_irq(int irq, void *dev_id);
