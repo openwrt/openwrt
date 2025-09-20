@@ -8,6 +8,7 @@
 
 / {
 	aliases {
+		label-mac-device = &eth0;
 		led-boot = &led_power;
 		led-failsafe = &led_status;
 		led-running = &led_power;
@@ -106,6 +107,24 @@
 				label = "mp";
 				reg = <0x20000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_mp_1: macaddr@1 {
+						compatible = "mac-base";
+						reg = <0x1 0x11>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					macaddr_mp_13: macaddr@13 {
+						compatible = "mac-base";
+						reg = <0x13 0x11>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@30000 {
@@ -125,11 +144,14 @@
 
 &eth0 {
 	status = "okay";
+
+	nvmem-cells = <&macaddr_mp_1 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &wmac {
 	status = "okay";
 
-	nvmem-cells = <&cal_art_1000>;
-	nvmem-cell-names = "calibration";
+	nvmem-cells = <&cal_art_1000>, <&macaddr_mp_13 0>;
+	nvmem-cell-names = "calibration", "mac-address";
 };
