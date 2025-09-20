@@ -112,6 +112,7 @@
 		port@24 {
 			reg = <24>;
 			label = "lan25";
+			pcs-handle = <&serdes4>;
 			phy-mode = "1000base-x";
 			managed = "in-band-status";
 			sfp = <&sfp0>;
@@ -120,6 +121,7 @@
 		port@26 {
 			reg = <26>;
 			label = "lan26";
+			pcs-handle = <&serdes5>;
 			phy-mode = "1000base-x";
 			managed = "in-band-status";
 			sfp = <&sfp1>;
