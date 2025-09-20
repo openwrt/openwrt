@@ -1,0 +1,11 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+board_config_update
+
+ucidef_set_interface_wan "eth0"
+
+board_config_flush
