@@ -1,0 +1,27 @@
+From 9efd5d5bff0e69dd7ffa9b10a7e89c5a086704fe Mon Sep 17 00:00:00 2001
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Thu, 25 Sep 2025 01:43:31 +0000
+Subject: [PATCH] soc: airoha: airoha-scu-ssr: fix serdes mode validation
+
+The modes in the array `airoha_scu_serdes_mode_to_str` will be converted
+by `airoha_scu_serdes_str_to_mode` to an `int` value, however all non-zero
+values are treated as invalid.
+
+Revise program logic to reject invalid modes (less than 0).
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+ drivers/soc/airoha/airoha-scu-ssr.c       | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/soc/airoha/airoha-scu-ssr.c
++++ b/drivers/soc/airoha/airoha-scu-ssr.c
+@@ -140,7 +140,7 @@ static int airoha_scu_ssr_parse_mode(str
+ 	}
+ 
+ 	mode = airoha_scu_serdes_str_to_mode(serdes_mode);
+-	if (mode) {
++	if (mode < 0) {
+ 		dev_err(dev, "invalid mode %s for %s\n", serdes_mode, property_name);
+ 		return mode;
+ 	}

@@ -1,0 +1,28 @@
+From 014c83c7200b2d7deb5e4de4ba6a0a310a386a95 Mon Sep 17 00:00:00 2001
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Thu, 25 Sep 2025 00:04:38 +0000
+Subject: [PATCH] airoha: an7581: pass SCU OF handle to SCU SSR driver
+
+Use `platform_device_register_full` instead of `platform_device_register_data`
+in `drivers/clk/clk-en7523.c` to properly pass the SCU OF handle to the child
+driver (airoha-scu-ssr).
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+ drivers/clk/clk-en7523.c    | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+--- a/drivers/clk/clk-en7523.c
++++ b/drivers/clk/clk-en7523.c
+@@ -1103,10 +1103,7 @@ static void en7581_clk_register_ssr(stru
+ 	pinfo.data = &an7581_scu_ssr_data;
+ 	pinfo.size_data = sizeof(an7581_scu_ssr_data);
+ 
+-	ssr_pdev = platform_device_register_data(&pdev->dev, "airoha-scu-ssr",
+-						 PLATFORM_DEVID_AUTO,
+-						 &an7581_scu_ssr_data,
+-						 sizeof(an7581_scu_ssr_data));
++	ssr_pdev = platform_device_register_full(&pinfo);
+ 	if (IS_ERR(ssr_pdev))
+ 		dev_err_probe(&pdev->dev, PTR_ERR(ssr_pdev), "failed to register SCU SSR driver.\n");
+ 
