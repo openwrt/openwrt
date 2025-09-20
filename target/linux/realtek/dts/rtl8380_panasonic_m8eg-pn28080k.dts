@@ -104,8 +104,9 @@
 		port@24 {
 			reg = <24>;
 			label = "lan9";
-			phy-mode = "1000base-x";
+			pcs-handle = <&serdes4>;
 			phy-handle = <&phy24>;
+			phy-mode = "1000base-x";
 			managed = "in-band-status";
 			sfp = <&sfp0>;
 		};

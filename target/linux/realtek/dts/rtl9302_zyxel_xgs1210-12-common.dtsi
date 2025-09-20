@@ -204,6 +204,7 @@
 		port@0 {
 			reg = <0>;
 			label = "lan1";
+			pcs-handle = <&serdes2>;
 			phy-handle = <&phy0>;
 			phy-mode = "usxgmii";
 			led-set = <0>;
@@ -211,6 +212,7 @@
 		port@1 {
 			reg = <1>;
 			label = "lan2";
+			pcs-handle = <&serdes2>;
 			phy-handle = <&phy1>;
 			phy-mode = "usxgmii";
 			led-set = <0>;
@@ -218,6 +220,7 @@
 		port@2 {
 			reg = <2>;
 			label = "lan3";
+			pcs-handle = <&serdes2>;
 			phy-handle = <&phy2>;
 			phy-mode = "usxgmii";
 			led-set = <0>;
@@ -225,6 +228,7 @@
 		port@3 {
 			reg = <3>;
 			label = "lan4";
+			pcs-handle = <&serdes2>;
 			phy-handle = <&phy3>;
 			phy-mode = "usxgmii";
 			led-set = <0>;
@@ -232,6 +236,7 @@
 		port@4 {
 			reg = <4>;
 			label = "lan5";
+			pcs-handle = <&serdes2>;
 			phy-handle = <&phy4>;
 			phy-mode = "usxgmii";
 			led-set = <0>;
@@ -239,6 +244,7 @@
 		port@5 {
 			reg = <5>;
 			label = "lan6";
+			pcs-handle = <&serdes2>;
 			phy-handle = <&phy5>;
 			phy-mode = "usxgmii";
 			led-set = <0>;
@@ -246,6 +252,7 @@
 		port@6 {
 			reg = <6>;
 			label = "lan7";
+			pcs-handle = <&serdes2>;
 			phy-handle = <&phy6>;
 			phy-mode = "usxgmii";
 			led-set = <0>;
@@ -253,6 +260,7 @@
 		port@7 {
 			reg = <7>;
 			label = "lan8";
+			pcs-handle = <&serdes2>;
 			phy-handle = <&phy7>;
 			phy-mode = "usxgmii";
 			led-set = <0>;
@@ -261,8 +269,9 @@
 		port@26 {
 			reg = <26>;
 			label = "lan11";
-			phy-mode = "1000base-x";
+			pcs-handle = <&serdes8>;
 			phy-handle = <&phy26>;
+			phy-mode = "1000base-x";
 			sfp = <&sfp0>;
 			led-set = <2>;
 			managed = "in-band-status";
@@ -271,8 +280,9 @@
 		port@27 {
 			reg = <27>;
 			label = "lan12";
-			phy-mode = "1000base-x";
+			pcs-handle = <&serdes9>;
 			phy-handle = <&phy27>;
+			phy-mode = "1000base-x";
 			sfp = <&sfp1>;
 			led-set = <2>;
 			managed = "in-band-status";
