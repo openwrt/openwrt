@@ -232,9 +232,12 @@ export_partdevice() {
 		while read line; do
 			export -n "$line"
 		done < "$uevent"
-		if [ "$BOOTDEV_MAJOR" = "$MAJOR" -a $(($BOOTDEV_MINOR + $offset)) = "$MINOR" -a -b "/dev/$DEVNAME" ]; then
-			export "$var=$DEVNAME"
-			return 0
+		if [ "$BOOTDEV_MAJOR" = "$MAJOR" ] && [ -f "/sys/class/block/$DEVNAME/partition" ]; then
+			local part_num="$(cat "/sys/class/block/$DEVNAME/partition" 2>/dev/null)"
+			if [ "$part_num" = "$offset" ] && [ -b "/dev/$DEVNAME" ]; then
+				export "$var=$DEVNAME"
+				return 0
+			fi
 		fi
 	done
 
