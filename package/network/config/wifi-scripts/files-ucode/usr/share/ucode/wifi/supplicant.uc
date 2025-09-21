@@ -248,6 +248,8 @@ export function generate(config_list, data, interface) {
 		iface: interface.config.ifname,
 		config: file_name,
 		'4addr': !!interface.config.wds,
+		mlo: !!interface.config.mlo,
+		freq_list: data.config.scan_list,
 		powersave: false
 	};
 

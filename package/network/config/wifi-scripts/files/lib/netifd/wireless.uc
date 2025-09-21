@@ -17,12 +17,12 @@ let wireless = netifd.wireless = {
 	path: realpath(netifd.main_path + "/wireless"),
 };
 
-function hostapd_update_mlo()
+function wpad_update_mlo(service, mode)
 {
 	let config = {};
 
 	for (let ifname, data in wireless.mlo) {
-		if (data.mode != "ap")
+		if (data.mode != mode)
 			continue;
 
 		data.phy = find_phy(data.radio_config[0], true);
@@ -33,17 +33,28 @@ function hostapd_update_mlo()
 	}
 
 	ubus.call({
-		object: "hostapd",
+		object: service,
 		method: "mld_set",
 		return: "ignore",
 		data: { config },
 	});
 }
 
+function hostapd_update_mlo()
+{
+	wpad_update_mlo("hostapd", "ap");
+}
+
+function supplicant_update_mlo()
+{
+	wpad_update_mlo("wpa_supplicant", "sta");
+}
+
 function update_config(new_devices, mlo_vifs)
 {
 	wireless.mlo = mlo_vifs;
 	hostapd_update_mlo();
+	supplicant_update_mlo();
 
 	for (let name, dev in wireless.devices)
 		if (!new_devices[name])
@@ -516,6 +527,8 @@ wireless.obj = ubus.publish("network.wireless", ubus_obj);
 wireless.listener = ubus.listener("ubus.object.add", (event, msg) => {
 	if (msg.path == "hostapd")
 		hostapd_update_mlo();
+	else if (msg.path == "wpa_supplicant")
+		supplicant_update_mlo();
 });
 
 return {
