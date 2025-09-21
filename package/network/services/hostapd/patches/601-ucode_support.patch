@@ -702,7 +702,28 @@ as adding/removing interfaces.
  CFLAGS += -DEAP_SERVER -DEAP_SERVER_IDENTITY
 --- a/wpa_supplicant/events.c
 +++ b/wpa_supplicant/events.c
-@@ -6293,6 +6293,7 @@ void supplicant_event(void *ctx, enum wp
+@@ -53,6 +53,7 @@
+ #include "wmm_ac.h"
+ #include "nan_usd.h"
+ #include "dpp_supplicant.h"
++#include "ucode.h"
+ 
+ 
+ #define MAX_OWE_TRANSITION_BSS_SELECT_COUNT 5
+@@ -1706,6 +1707,12 @@ struct wpa_ssid * wpa_scan_res_match(str
+ 		return NULL;
+ 	}
+ 
++	if (!wpas_ucode_bss_allowed(wpa_s, bss)) {
++		if (debug_print)
++			wpa_dbg(wpa_s, MSG_DEBUG, "   skip - denied by ucode handler");
++		return NULL;
++	}
++
+ 	for (ssid = group; ssid; ssid = only_first_ssid ? NULL : ssid->pnext) {
+ 		if (wpa_scan_res_ok(wpa_s, ssid, match_ssid, match_ssid_len,
+ 				    bss, bssid_ignore_count, debug_print, link))
+@@ -6293,6 +6300,7 @@ void supplicant_event(void *ctx, enum wp
  		event_to_string(event), event);
  #endif /* CONFIG_NO_STDOUT_DEBUG */
  

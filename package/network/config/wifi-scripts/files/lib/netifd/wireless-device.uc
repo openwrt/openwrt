@@ -17,6 +17,16 @@ let wdev_handler = {};
 let wdev_script_task, wdev_script_timeout;
 let handler_timer;
 
+function supplicant_start_mlo()
+{
+	ubus.call({
+		object: "wpa_supplicant",
+		method: "mld_start",
+		return: "ignore",
+		data: { },
+	});
+}
+
 function delete_wdev(name)
 {
 	delete netifd.wireless.devices[name];
@@ -216,6 +226,9 @@ function run_next_handler()
 {
 	while (!wdev_cur && length(wdev_handler) > 0)
 		__run_next_handler();
+
+	if (!wdev_cur && !length(wdev_handler))
+		supplicant_start_mlo();
 }
 
 function run_handler(wdev, op, cb)
