@@ -305,6 +305,8 @@ int wpas_ucode_init(struct wpa_global *gl)
 	if (wpa_ucode_run(HOSTAPD_UC_PATH "wpa_supplicant.uc"))
 		goto free_vm;
 
+	wpas_ucode_update_interfaces();
+
 	return 0;
 
 free_vm:
