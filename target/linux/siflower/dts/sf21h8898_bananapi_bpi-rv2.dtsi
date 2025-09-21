@@ -19,7 +19,7 @@
 		regulator-name = "usb_vbus";
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
-		gpio = <&gpio 37 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 37 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
 
@@ -28,7 +28,7 @@
 		regulator-name = "m2keyb_pwren";
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
-		gpio = <&gpio 38 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 38 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 		regulator-always-on;
 	};
