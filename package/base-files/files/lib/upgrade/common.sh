@@ -225,20 +225,47 @@ export_bootdevice() {
 }
 
 export_partdevice() {
-	local var="$1" offset="$2"
-	local uevent line MAJOR MINOR DEVNAME DEVTYPE PARTN
+  local var="$1" offset="$2"
+  local uevent line MAJOR MINOR DEVNAME DEVTYPE
+  local bootdev_name=""
 
-	for uevent in /sys/class/block/*/uevent; do
-		while read line; do
-			export -n "$line"
-		done < "$uevent"
-		if [ "$BOOTDEV_MAJOR" = "$MAJOR" ] && [ "$PARTN" = "$offset" ] && [ -b "/dev/$DEVNAME" ]; then
-			export "$var=$DEVNAME"
-			return 0
-		fi
-	done
+  # first pass: find the boot device name
+  for uevent in /sys/class/block/*/uevent; do
+    unset MAJOR MINOR DEVNAME DEVTYPE
+    while read line; do
+      export -n "$line"
+    done < "$uevent"
+    if [ "$BOOTDEV_MAJOR" = "$MAJOR" ] && [ "$BOOTDEV_MINOR" = "$MINOR" ]; then
+      bootdev_name="$DEVNAME"
+      break
+    fi
+  done
 
-	return 1
+  [ -z "$bootdev_name" ] && return 1
+
+  # second pass: find partition belonging to boot device
+  for uevent in /sys/class/block/*/uevent; do
+    unset MAJOR MINOR DEVNAME DEVTYPE
+    while read line; do
+      export -n "$line"
+    done < "$uevent"
+
+    # check if this is a partition with correct number
+    if [ "$BOOTDEV_MAJOR" = "$MAJOR" ] && [ -f "/sys/class/block/$DEVNAME/partition" ]; then
+      local part_num="$(cat "/sys/class/block/$DEVNAME/partition" 2>/dev/null)"
+      if [ "$part_num" = "$offset" ] && [ -b "/dev/$DEVNAME" ]; then
+        # verify partition belongs to our specific boot device
+        case "$DEVNAME" in
+          "${bootdev_name}p"[0-9]*|"${bootdev_name}"[0-9]*)
+            export "$var=$DEVNAME"
+            return 0
+            ;;
+        esac
+      fi
+    fi
+  done
+
+  return 1
 }
 
 hex_le32_to_cpu() {
