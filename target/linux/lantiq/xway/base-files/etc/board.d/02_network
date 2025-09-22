@@ -77,42 +77,10 @@ lantiq_setup_dsl()
 	lantiq_setup_dsl_helper "$annex"
 }
 
-lantiq_setup_macs()
-{
-	local board="$1"
-	local lan_mac=""
-	local wan_mac=""
-
-	case "$board" in
-	arcadyan,arv4510pw|\
-	bt,homehub-v2b|\
-	bt,homehub-v3a|\
-	netgear,dgn3500|\
-	netgear,dgn3500b)
-		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
-		wan_mac=$(macaddr_add "$lan_mac" 1)
-		;;
-	arcadyan,arv7506pw11)
-		wan_mac=$(macaddr_add "$(mtd_get_mac_binary board_config 0x16)" 2)
-		;;
-	arcadyan,arv7519pw)
-		wan_mac=$(macaddr_add "$(mtd_get_mac_binary board_config 0x16)" 1)
-		;;
-	avm,fritz7312|\
-	avm,fritz7320)
-		wan_mac=$(macaddr_add "$(mtd_get_mac_binary urlader 0xa91)" 1)
-		;;
-	esac
-
-	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" "$lan_mac"
-	[ -n "$wan_mac" ] && ucidef_set_interface_macaddr "wan" "$wan_mac"
-}
-
 board_config_update
 board=$(board_name)
 lantiq_setup_interfaces $board
 lantiq_setup_dsl $board
-lantiq_setup_macs $board
 board_config_flush
 
 exit 0

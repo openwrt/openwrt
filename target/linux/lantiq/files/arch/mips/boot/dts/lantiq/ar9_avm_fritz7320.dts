@@ -102,6 +102,7 @@
 &gsw {
 	phy-mode = "mii";
 	phy-handle = <&phy0>;
+
 	nvmem-cells = <&macaddr_ath9k_cal_a91 (-2)>;
 	nvmem-cell-names = "mac-address";
 
@@ -114,6 +115,11 @@
 			reset-gpios = <&gpio 36 GPIO_ACTIVE_LOW>;
 		};
 	};
+};
+
+&ppe {
+	nvmem-cells = <&macaddr_ath9k_cal_a91 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &gpio {

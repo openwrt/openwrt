@@ -154,6 +154,14 @@
 
 &gsw {
 	phy-mode = "rmii";
+
+	nvmem-cells = <&ethaddr_uboot 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&ppe {
+	nvmem-cells = <&ethaddr_uboot 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &localbus {
@@ -176,9 +184,14 @@
 			};
 
 			partition@40000 {
+				compatible = "u-boot,env";
 				label = "u-boot-env";
 				reg = <0x40000 0x20000>;
 				read-only;
+
+				ethaddr_uboot: ethaddr {
+					#nvmem-cell-cells = <1>;
+				};
 			};
 
 			partition@60000 {
