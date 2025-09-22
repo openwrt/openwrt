@@ -140,8 +140,6 @@ Changes in v2:
  3 files changed, 548 insertions(+)
  create mode 100644 drivers/pwm/pwm-airoha.c
 
-diff --git a/drivers/pwm/Kconfig b/drivers/pwm/Kconfig
-index c866ed388da9..113ca01f319f 100644
 --- a/drivers/pwm/Kconfig
 +++ b/drivers/pwm/Kconfig
 @@ -54,6 +54,17 @@ config PWM_ADP5585
@@ -162,8 +160,6 @@ index c866ed388da9..113ca01f319f 100644
  config PWM_APPLE
  	tristate "Apple SoC PWM support"
  	depends on ARCH_APPLE || COMPILE_TEST
-diff --git a/drivers/pwm/Makefile b/drivers/pwm/Makefile
-index 5c782af8f49b..cd3e6de2e44a 100644
 --- a/drivers/pwm/Makefile
 +++ b/drivers/pwm/Makefile
 @@ -2,6 +2,7 @@
@@ -174,9 +170,6 @@ index 5c782af8f49b..cd3e6de2e44a 100644
  obj-$(CONFIG_PWM_APPLE)		+= pwm-apple.o
  obj-$(CONFIG_PWM_ATMEL)		+= pwm-atmel.o
  obj-$(CONFIG_PWM_ATMEL_HLCDC_PWM)	+= pwm-atmel-hlcdc.o
-diff --git a/drivers/pwm/pwm-airoha.c b/drivers/pwm/pwm-airoha.c
-new file mode 100644
-index 000000000000..eaf946a53c81
 --- /dev/null
 +++ b/drivers/pwm/pwm-airoha.c
 @@ -0,0 +1,536 @@

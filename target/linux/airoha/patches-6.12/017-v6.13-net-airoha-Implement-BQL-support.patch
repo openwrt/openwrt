@@ -16,7 +16,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/ethernet/mediatek/airoha_eth.c
 +++ b/drivers/net/ethernet/mediatek/airoha_eth.c
-@@ -1710,9 +1710,11 @@ static int airoha_qdma_tx_napi_poll(stru
+@@ -1709,9 +1709,11 @@ static int airoha_qdma_tx_napi_poll(stru
  			WRITE_ONCE(desc->msg1, 0);
  
  			if (skb) {
@@ -29,7 +29,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  				if (netif_tx_queue_stopped(txq) &&
  				    q->ndesc - q->queued >= q->free_thr)
  					netif_tx_wake_queue(txq);
-@@ -2488,7 +2490,9 @@ static netdev_tx_t airoha_dev_xmit(struc
+@@ -2499,7 +2501,9 @@ static netdev_tx_t airoha_dev_xmit(struc
  	q->queued += i;
  
  	skb_tx_timestamp(skb);

@@ -259,6 +259,7 @@
 		port@0 {
 			reg = <0>;
 			label = "lan1";
+			pcs-handle = <&serdes2>;
 			phy-handle = <&phy0>;
 			phy-mode = "1000base-x";
 			sfp = <&sfp0>;
@@ -269,6 +270,7 @@
 		port@8 {
 			reg = <8>;
 			label = "lan2";
+			pcs-handle = <&serdes3>;
 			phy-handle = <&phy8>;
 			phy-mode = "1000base-x";
 			sfp = <&sfp1>;
@@ -279,6 +281,7 @@
 		port@10 {
 			reg = <16>;
 			label = "lan3";
+			pcs-handle = <&serdes4>;
 			phy-handle = <&phy16>;
 			phy-mode = "1000base-x";
 			sfp = <&sfp2>;
@@ -289,6 +292,7 @@
 		port@14 {
 			reg = <20>;
 			label = "lan4";
+			pcs-handle = <&serdes5>;
 			phy-handle = <&phy20>;
 			phy-mode = "1000base-x";
 			sfp = <&sfp3>;
@@ -299,6 +303,7 @@
 		port@18 {
 			reg = <24>;
 			label = "lan5";
+			pcs-handle = <&serdes6>;
 			phy-handle = <&phy24>;
 			phy-mode = "1000base-x";
 			sfp = <&sfp4>;
@@ -309,6 +314,7 @@
 		port@19 {
 			reg = <25>;
 			label = "lan6";
+			pcs-handle = <&serdes7>;
 			phy-handle = <&phy25>;
 			phy-mode = "1000base-x";
 			sfp = <&sfp5>;
@@ -319,6 +325,7 @@
 		port@1a {
 			reg = <26>;
 			label = "lan7";
+			pcs-handle = <&serdes8>;
 			phy-handle = <&phy26>;
 			phy-mode = "1000base-x";
 			sfp = <&sfp6>;
@@ -329,6 +336,7 @@
 		port@1b {
 			reg = <27>;
 			label = "lan8";
+			pcs-handle = <&serdes9>;
 			phy-handle = <&phy27>;
 			phy-mode = "1000base-x";
 			sfp = <&sfp7>;

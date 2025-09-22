@@ -30,7 +30,7 @@ Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
 
 --- a/drivers/thermal/Kconfig
 +++ b/drivers/thermal/Kconfig
-@@ -317,6 +317,15 @@ config QORIQ_THERMAL
+@@ -318,6 +318,15 @@ config QORIQ_THERMAL
  	  cpufreq is used as the cooling device to throttle CPUs when the
  	  passive trip is crossed.
  
@@ -48,7 +48,7 @@ Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
  	depends on PLAT_SPEAR || COMPILE_TEST
 --- a/drivers/thermal/Makefile
 +++ b/drivers/thermal/Makefile
-@@ -34,6 +34,7 @@ obj-$(CONFIG_K3_THERMAL)	+= k3_bandgap.o
+@@ -35,6 +35,7 @@ obj-$(CONFIG_K3_THERMAL)	+= k3_bandgap.o
  # platform thermal drivers
  obj-y				+= broadcom/
  obj-$(CONFIG_THERMAL_MMIO)		+= thermal_mmio.o

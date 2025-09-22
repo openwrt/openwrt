@@ -36,7 +36,7 @@ Reviewed-by: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
  /* Time in ms needed to complete PCIe reset on EN7581 SoC */
  #define PCIE_EN7581_RESET_TIME_MS	100
  
-@@ -875,9 +877,14 @@ static int mtk_pcie_en7581_power_up(stru
+@@ -868,9 +870,14 @@ static int mtk_pcie_en7581_power_up(stru
  	u32 val;
  
  	/*
@@ -53,7 +53,7 @@ Reviewed-by: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
  	mdelay(PCIE_EN7581_RESET_TIME_MS);
  
  	err = phy_init(pcie->phy);
-@@ -944,6 +951,15 @@ static int mtk_pcie_power_up(struct mtk_
+@@ -937,6 +944,15 @@ static int mtk_pcie_power_up(struct mtk_
  	struct device *dev = pcie->dev;
  	int err;
  
@@ -69,7 +69,7 @@ Reviewed-by: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
  	/* PHY power on and enable pipe clock */
  	err = reset_control_bulk_deassert(pcie->soc->phy_resets.num_resets, pcie->phy_resets);
  	if (err) {
-@@ -1016,14 +1032,6 @@ static int mtk_pcie_setup(struct mtk_gen
+@@ -1009,14 +1025,6 @@ static int mtk_pcie_setup(struct mtk_gen
  	 * counter since the bulk is shared.
  	 */
  	reset_control_bulk_deassert(pcie->soc->phy_resets.num_resets, pcie->phy_resets);

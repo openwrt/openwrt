@@ -25,7 +25,7 @@ Signed-off-by: Viresh Kumar <viresh.kumar@linaro.org>
 
 --- a/drivers/cpufreq/Kconfig.arm
 +++ b/drivers/cpufreq/Kconfig.arm
-@@ -41,6 +41,14 @@ config ARM_ALLWINNER_SUN50I_CPUFREQ_NVME
+@@ -15,6 +15,14 @@ config ARM_ALLWINNER_SUN50I_CPUFREQ_NVME
  	  To compile this driver as a module, choose M here: the
  	  module will be called sun50i-cpufreq-nvmem.
  
@@ -228,5 +228,5 @@ Signed-off-by: Viresh Kumar <viresh.kumar@linaro.org>
 +	{ .compatible = "airoha,en7581", },
 +
  	{ .compatible = "allwinner,sun50i-h6", },
- 
- 	{ .compatible = "apple,arm-platform", },
+ 	{ .compatible = "allwinner,sun50i-h616", },
+ 	{ .compatible = "allwinner,sun50i-h618", },

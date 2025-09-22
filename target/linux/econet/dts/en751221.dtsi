@@ -56,6 +56,20 @@
 		econet,shadow-interrupts = <7 2>, <8 3>, <13 12>, <30 29>;
 	};
 
+    usb: usb@1fb90000 {
+            compatible = "mediatek,mt8173-xhci", "mediatek,mtk-xhci";
+            reg = <0x1fb90000 0x4000>,
+                  <0x1fa80700 0x100>;
+            reg-names = "mac", "ippc";
+
+            #address-cells = <1>;
+            #size-cells = <0>;
+
+            interrupt-parent = <&intc>;
+            interrupts = <17>;
+            usb3-lpm-capable;
+    };
+
 	uart: serial@1fbf0000 {
 		compatible = "ns16550";
 		reg = <0x1fbf0000 0x30>;

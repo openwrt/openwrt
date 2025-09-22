@@ -202,11 +202,13 @@
 		SWITCH_PORT(14, 7, internal)
 		SWITCH_PORT(15, 8, internal)
 
+		/* TODO: fixed link SFP is not right */
 		SWITCH_SFP_PORT(24, 9, 1000base-x)
 
 		port@26 {
 			reg = <26>;
 			label = "lan10";
+			pcs-handle = <&serdes5>;
 			phy-mode = "1000base-x";
 			phy-handle = <&phy26>;
 			managed = "in-band-status";

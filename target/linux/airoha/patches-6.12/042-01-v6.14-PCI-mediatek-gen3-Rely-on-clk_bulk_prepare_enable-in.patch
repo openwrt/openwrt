@@ -21,7 +21,7 @@ Reviewed-by: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
 
 --- a/drivers/pci/controller/pcie-mediatek-gen3.c
 +++ b/drivers/pci/controller/pcie-mediatek-gen3.c
-@@ -907,12 +907,6 @@ static int mtk_pcie_en7581_power_up(stru
+@@ -900,12 +900,6 @@ static int mtk_pcie_en7581_power_up(stru
  	pm_runtime_enable(dev);
  	pm_runtime_get_sync(dev);
  
@@ -34,7 +34,7 @@ Reviewed-by: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
  	val = FIELD_PREP(PCIE_VAL_LN0_DOWNSTREAM, 0x47) |
  	      FIELD_PREP(PCIE_VAL_LN1_DOWNSTREAM, 0x47) |
  	      FIELD_PREP(PCIE_VAL_LN0_UPSTREAM, 0x41) |
-@@ -925,17 +919,15 @@ static int mtk_pcie_en7581_power_up(stru
+@@ -918,17 +912,15 @@ static int mtk_pcie_en7581_power_up(stru
  	      FIELD_PREP(PCIE_K_FINETUNE_MAX, 0xf);
  	writel_relaxed(val, pcie->base + PCIE_PIPE4_PIE8_REG);
  
