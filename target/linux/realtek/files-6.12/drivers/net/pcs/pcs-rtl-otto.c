@@ -272,6 +272,7 @@ struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int
 	link->port = port;
 	link->sds = sds;
 	link->pcs.ops = ctrl->cfg->pcs_ops;
+	link->pcs.neg_mode = true;
 
 	ctrl->link[port] = link;
 

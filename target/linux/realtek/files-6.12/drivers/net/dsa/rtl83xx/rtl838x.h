@@ -123,24 +123,6 @@
 #define RTL839X_MAC_LINK_STS			(0x0390)
 #define RTL930X_MAC_LINK_STS			(0xCB10)
 #define RTL931X_MAC_LINK_STS			(0x0EC0)
-#define RTL838X_MAC_LINK_SPD_STS(p)		(0xa190 + (((p >> 4) << 2)))
-#define RTL839X_MAC_LINK_SPD_STS(p)		(0x03a0 + (((p >> 4) << 2)))
-#define RTL930X_MAC_LINK_SPD_STS(p)		(0xCB18 + (((p >> 3) << 2)))
-#define RTL931X_MAC_LINK_SPD_STS		(0x0ED0)
-#define RTL838X_MAC_LINK_DUP_STS		(0xa19c)
-#define RTL839X_MAC_LINK_DUP_STS		(0x03b0)
-#define RTL930X_MAC_LINK_DUP_STS		(0xCB28)
-#define RTL931X_MAC_LINK_DUP_STS		(0x0EF0)
-#define RTL838X_MAC_TX_PAUSE_STS		(0xa1a0)
-#define RTL839X_MAC_TX_PAUSE_STS		(0x03b8)
-#define RTL930X_MAC_TX_PAUSE_STS		(0xCB2C)
-#define RTL931X_MAC_TX_PAUSE_STS		(0x0EF8)
-#define RTL838X_MAC_RX_PAUSE_STS		(0xa1a4)
-#define RTL839X_MAC_RX_PAUSE_STS		(0x03c0)
-#define RTL930X_MAC_RX_PAUSE_STS		(0xCB30)
-#define RTL931X_MAC_RX_PAUSE_STS		(0x0F00)
-#define RTL930X_MAC_LINK_MEDIA_STS		(0xCB14)
-#define RTL931X_MAC_LINK_MEDIA_STS		(0x0EC8)
 
 /* MAC link state bits */
 #define RTL_SPEED_10				0
@@ -702,12 +684,6 @@ struct rtl838x_port {
 	const struct dsa_port *dp;
 };
 
-struct rtl838x_pcs {
-	struct phylink_pcs pcs;
-	struct rtl838x_switch_priv *priv;
-	int port;
-};
-
 struct rtl838x_vlan_info {
 	u64 untagged_ports;
 	u64 member_ports;
@@ -1073,11 +1049,6 @@ struct rtl838x_reg {
 	int mir_ctrl;
 	int mir_dpm;
 	int mir_spm;
-	int mac_link_sts;
-	int mac_link_dup_sts;
-	int  (*mac_link_spd_sts)(int port);
-	int mac_rx_pause_sts;
-	int mac_tx_pause_sts;
 	u64 (*read_l2_entry_using_hash)(u32 hash, u32 position, struct rtl838x_l2_entry *e);
 	void (*write_l2_entry_using_hash)(u32 hash, u32 pos, struct rtl838x_l2_entry *e);
 	u64 (*read_cam)(int idx, struct rtl838x_l2_entry *e);
@@ -1126,7 +1097,7 @@ struct rtl838x_switch_priv {
 	u16 family_id;
 	char version;
 	struct rtl838x_port ports[57];
-	struct rtl838x_pcs pcs[57];
+	struct phylink_pcs *pcs[57];
 	struct mutex reg_mutex;		/* Mutex for individual register manipulations */
 	struct mutex pie_mutex;		/* Mutex for Packet Inspection Engine */
 	int link_state_irq;

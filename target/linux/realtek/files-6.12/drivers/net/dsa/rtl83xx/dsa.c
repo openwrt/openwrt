@@ -567,158 +567,13 @@ static int rtl93xx_get_sds(struct phy_device *phydev)
 	return sds_num;
 }
 
-static void rtldsa_83xx_pcs_get_state(struct phylink_pcs *pcs, struct phylink_link_state *state)
-{
-	struct rtl838x_pcs *rtpcs = container_of(pcs, struct rtl838x_pcs, pcs);
-	struct rtl838x_switch_priv *priv = rtpcs->priv;
-	int port = rtpcs->port;
-	u64 speed;
-
-	state->link = 0;
-	state->speed = SPEED_UNKNOWN;
-	state->duplex = DUPLEX_UNKNOWN;
-	state->pause &= ~(MLO_PAUSE_RX | MLO_PAUSE_TX);
-
-	if (port < 0 || port > priv->cpu_port)
-		return;
-
-	if (!(priv->r->get_port_reg_le(priv->r->mac_link_sts) & BIT_ULL(port)))
-		return;
-
-	state->link = 1;
-
-	if (priv->r->get_port_reg_le(priv->r->mac_link_dup_sts) & BIT_ULL(port))
-		state->duplex = DUPLEX_FULL;
-	else
-		state->duplex = DUPLEX_HALF;
-
-	speed = priv->r->get_port_reg_le(priv->r->mac_link_spd_sts(port));
-	speed = (speed >> ((port % 16) << 1)) & 0x3;
-
-	switch (speed) {
-	case RTL_SPEED_10:
-		state->speed = SPEED_10;
-		break;
-	case RTL_SPEED_100:
-		state->speed = SPEED_100;
-		break;
-	case RTL_SPEED_1000:
-		state->speed = SPEED_1000;
-		break;
-	case 3:
-		/*
-		 * This is ok so far but with minor inconsistencies. On RTL838x this setting is
-		 * for either 500M or 2G. It might be that MAC_GLITE_STS register tells more. On
-		 * RTL839x these vendor specifics are derived from MAC_LINK_500M_STS and mode 3
-		 * is 10G. This is of interest so resolve to it. Sadly it is off by one for the
-		 * current RTL_SPEED_10000 (=4) definition for RTL93xx.
-		 */
-		state->speed = SPEED_10000;
-		break;
-	}
-
-	if (priv->r->get_port_reg_le(priv->r->mac_rx_pause_sts) & BIT_ULL(port))
-		state->pause |= MLO_PAUSE_RX;
-	if (priv->r->get_port_reg_le(priv->r->mac_tx_pause_sts) & BIT_ULL(port))
-		state->pause |= MLO_PAUSE_TX;
-}
-
-static void rtldsa_93xx_pcs_get_state(struct phylink_pcs *pcs,
-				      struct phylink_link_state *state)
-{
-	struct rtl838x_pcs *rtpcs = container_of(pcs, struct rtl838x_pcs, pcs);
-	struct rtl838x_switch_priv *priv = rtpcs->priv;
-	int port = rtpcs->port;
-	u64 speed;
-	u64 link;
-	u64 media;
-
-	state->link = 0;
-	state->speed = SPEED_UNKNOWN;
-	state->duplex = DUPLEX_UNKNOWN;
-	state->pause &= ~(MLO_PAUSE_RX | MLO_PAUSE_TX);
-
-	if (port < 0 || port > priv->cpu_port)
-		return;
-
-	/* On the RTL9300 for at least the RTL8226B PHY, the MAC-side link
-	 * state needs to be read twice in order to read a correct result.
-	 * This would not be necessary for ports connected e.g. to RTL8218D
-	 * PHYs.
-	 */
-	link = priv->r->get_port_reg_le(priv->r->mac_link_sts);
-	link = priv->r->get_port_reg_le(priv->r->mac_link_sts);
-	if (!(link & BIT_ULL(port)))
-		return;
-
-	state->link = 1;
-
-	if (priv->family_id == RTL9310_FAMILY_ID)
-		media = priv->r->get_port_reg_le(RTL931X_MAC_LINK_MEDIA_STS);
-
-	if (priv->family_id == RTL9300_FAMILY_ID)
-		media = sw_r32(RTL930X_MAC_LINK_MEDIA_STS);
-
-	pr_debug("%s: link state port %d: %llx, media %llx\n", __func__, port,
-		 link & BIT_ULL(port), media);
-
-	if (priv->r->get_port_reg_le(priv->r->mac_link_dup_sts) & BIT_ULL(port))
-		state->duplex = DUPLEX_FULL;
-	else
-		state->duplex = DUPLEX_HALF;
-
-	speed = priv->r->get_port_reg_le(priv->r->mac_link_spd_sts(port));
-	speed = (speed >> ((port % 8) << 2)) & 0xf;
-	switch (speed) {
-	case RTL_SPEED_10:
-		state->speed = SPEED_10;
-		break;
-	case RTL_SPEED_100:
-		state->speed = SPEED_100;
-		break;
-	case RTL_SPEED_1000:
-		state->speed = SPEED_1000;
-		break;
-	case RTL_SPEED_10000:
-		state->speed = SPEED_10000;
-		break;
-	case RTL_SPEED_2500:
-		state->speed = SPEED_2500;
-		break;
-	case RTL_SPEED_5000:
-		state->speed = SPEED_5000;
-		break;
-	default:
-		pr_err("%s: unknown speed: %d\n", __func__, (u32)speed & 0xf);
-	}
-
-	pr_debug("%s: speed is: %d %d\n", __func__, (u32)speed & 0xf, state->speed);
-	if (priv->r->get_port_reg_le(priv->r->mac_rx_pause_sts) & BIT_ULL(port))
-		state->pause |= MLO_PAUSE_RX;
-	if (priv->r->get_port_reg_le(priv->r->mac_tx_pause_sts) & BIT_ULL(port))
-		state->pause |= MLO_PAUSE_TX;
-}
-
-static int rtl83xx_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
-			      phy_interface_t interface,
-			      const unsigned long *advertising,
-			      bool permit_pause_to_mac)
-{
-	return 0;
-}
-
-static void rtl83xx_pcs_an_restart(struct phylink_pcs *pcs)
-{
-/* No restart functionality existed before we migrated to pcs */
-}
-
-static struct phylink_pcs *rtl83xx_phylink_mac_select_pcs(struct dsa_switch *ds,
-							  int port,
-							  phy_interface_t interface)
+static struct phylink_pcs *rtldsa_phylink_mac_select_pcs(struct dsa_switch *ds,
+							 int port,
+							 phy_interface_t interface)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
-	return &priv->pcs[port].pcs;
+	return priv->pcs[port];
 }
 
 static void rtl83xx_config_interface(int port, phy_interface_t interface)
@@ -2678,12 +2533,6 @@ static int rtldsa_phy_write(struct dsa_switch *ds, int addr, int regnum, u16 val
 	return mdiobus_write_nested(priv->parent_bus, addr, regnum, val);
 }
 
-const struct phylink_pcs_ops rtl83xx_pcs_ops = {
-	.pcs_an_restart		= rtl83xx_pcs_an_restart,
-	.pcs_get_state		= rtldsa_83xx_pcs_get_state,
-	.pcs_config		= rtl83xx_pcs_config,
-};
-
 const struct dsa_switch_ops rtl83xx_switch_ops = {
 	.get_tag_protocol	= rtl83xx_get_tag_protocol,
 	.setup			= rtl83xx_setup,
@@ -2695,7 +2544,7 @@ const struct dsa_switch_ops rtl83xx_switch_ops = {
 	.phylink_mac_config	= rtl83xx_phylink_mac_config,
 	.phylink_mac_link_down	= rtl83xx_phylink_mac_link_down,
 	.phylink_mac_link_up	= rtl83xx_phylink_mac_link_up,
-	.phylink_mac_select_pcs	= rtl83xx_phylink_mac_select_pcs,
+	.phylink_mac_select_pcs	= rtldsa_phylink_mac_select_pcs,
 
 	.get_strings		= rtldsa_get_strings,
 	.get_ethtool_stats	= rtldsa_get_ethtool_stats,
@@ -2741,12 +2590,6 @@ const struct dsa_switch_ops rtl83xx_switch_ops = {
 	.port_bridge_flags	= rtl83xx_port_bridge_flags,
 };
 
-const struct phylink_pcs_ops rtl93xx_pcs_ops = {
-	.pcs_an_restart		= rtl83xx_pcs_an_restart,
-	.pcs_get_state		= rtldsa_93xx_pcs_get_state,
-	.pcs_config		= rtl83xx_pcs_config,
-};
-
 const struct dsa_switch_ops rtl930x_switch_ops = {
 	.get_tag_protocol	= rtl83xx_get_tag_protocol,
 	.setup			= rtl93xx_setup,
@@ -2758,7 +2601,7 @@ const struct dsa_switch_ops rtl930x_switch_ops = {
 	.phylink_mac_config	= rtl93xx_phylink_mac_config,
 	.phylink_mac_link_down	= rtl93xx_phylink_mac_link_down,
 	.phylink_mac_link_up	= rtl93xx_phylink_mac_link_up,
-	.phylink_mac_select_pcs	= rtl83xx_phylink_mac_select_pcs,
+	.phylink_mac_select_pcs	= rtldsa_phylink_mac_select_pcs,
 
 	.get_strings		= rtldsa_get_strings,
 	.get_ethtool_stats	= rtldsa_get_ethtool_stats,
