@@ -1,0 +1,39 @@
+From c77141c38de8980f0cedad1cba1eb454ff7d9639 Mon Sep 17 00:00:00 2001
+From: Md Sadre Alam <mdalam@qti.qualcomm.com>
+Date: Thu, 4 Sep 2025 17:49:18 +0530
+Subject: spi: spi-qpic-snand: Add support for ipq5424 spi nand
+
+Signed-off-by: Md Sadre Alam <mdalam@qti.qualcomm.com>
+---
+ drivers/spi/spi-qpic-snand.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/drivers/spi/spi-qpic-snand.c b/drivers/spi/spi-qpic-snand.c
+index 2812ffc421d2..0f6f1ca3792a 100644
+--- a/drivers/spi/spi-qpic-snand.c
++++ b/drivers/spi/spi-qpic-snand.c
+@@ -1649,11 +1649,21 @@ static const struct qcom_nandc_props ipq9574_snandc_props = {
+ 	.supports_bam = true,
+ };
+ 
++static const struct qcom_nandc_props ipq5424_snandc_props = {
++	.dev_cmd_reg_start = 0x7000,
++	.bam_offset = 0x30000,
++	.supports_bam = true,
++};
++
+ static const struct of_device_id qcom_snandc_of_match[] = {
+ 	{
+ 		.compatible = "qcom,ipq9574-snand",
+ 		.data = &ipq9574_snandc_props,
+ 	},
++	{
++		.compatible = "qcom,ipq5424-snand",
++		.data = &ipq5424_snandc_props,
++	},
+ 	{}
+ };
+ MODULE_DEVICE_TABLE(of, qcom_snandc_of_match);
+-- 
+2.34.1
+
