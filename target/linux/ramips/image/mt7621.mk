@@ -806,6 +806,16 @@ define Device/cudy_r700
 endef
 TARGET_DEVICES += cudy_r700
 
+define Device/cudy_c200p
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := C200P
+  IMAGE_SIZE := 15872k
+  UIMAGE_NAME := R74
+  DEVICE_PACKAGES := -uboot-envtools -wpad-basic-mbedtls kmod-usb3
+endef
+TARGET_DEVICES += cudy_c200p
+
 define Device/cudy_x6-v1
   $(Device/dsa-migration)
   IMAGE_SIZE := 32256k
