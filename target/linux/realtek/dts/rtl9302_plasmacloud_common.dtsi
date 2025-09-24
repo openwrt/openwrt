@@ -139,56 +139,48 @@
 		reg = <0>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		rtl9300,smi-address = <0 0>;
-		sds = < 2 >;
 	};
 
 	phy1: ethernet-phy@1 {
 		reg = <1>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		rtl9300,smi-address = <0 1>;
-		sds = < 2 >;
 	};
 
 	phy2: ethernet-phy@2 {
 		reg = <2>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		rtl9300,smi-address = <0 2>;
-		sds = < 2 >;
 	};
 
 	phy3: ethernet-phy@3 {
 		reg = <3>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		rtl9300,smi-address = <0 3>;
-		sds = < 2 >;
 	};
 
 	phy8: ethernet-phy@8 {
 		reg = <8>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		rtl9300,smi-address = <0 4>;
-		sds = < 3 >;
 	};
 
 	phy9: ethernet-phy@9 {
 		reg = <9>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		rtl9300,smi-address = <0 5>;
-		sds = < 3 >;
 	};
 
 	phy10: ethernet-phy@10 {
 		reg = <10>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		rtl9300,smi-address = <0 6>;
-		sds = < 3 >;
 	};
 
 	phy11: ethernet-phy@11 {
 		reg = <11>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		rtl9300,smi-address = <0 7>;
-		sds = < 3 >;
 	};
 };
 
@@ -197,14 +189,14 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		SWITCH_PORT(0, 1, usxgmii)
-		SWITCH_PORT(1, 2, usxgmii)
-		SWITCH_PORT(2, 3, usxgmii)
-		SWITCH_PORT(3, 4, usxgmii)
-		SWITCH_PORT(8, 5, usxgmii)
-		SWITCH_PORT(9, 6, usxgmii)
-		SWITCH_PORT(10, 7, usxgmii)
-		SWITCH_PORT(11, 8, usxgmii)
+		SWITCH_PORT_SDS(0, 1, 2, usxgmii)
+		SWITCH_PORT_SDS(1, 2, 2, usxgmii)
+		SWITCH_PORT_SDS(2, 3, 2, usxgmii)
+		SWITCH_PORT_SDS(3, 4, 2, usxgmii)
+		SWITCH_PORT_SDS(8, 5, 3, usxgmii)
+		SWITCH_PORT_SDS(9, 6, 3, usxgmii)
+		SWITCH_PORT_SDS(10, 7, 3, usxgmii)
+		SWITCH_PORT_SDS(11, 8, 3, usxgmii)
 
 		/* CPU-port */
 		port@28 {

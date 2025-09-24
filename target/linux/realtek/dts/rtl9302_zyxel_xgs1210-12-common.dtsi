@@ -152,7 +152,6 @@
 		reg = <0>;
 		compatible = "ethernet-phy-ieee802.3-c22";
 		rtl9300,smi-address = <0 0>;
-		sds = < 2 >;
 		// Disabled because we do not know how to bring up again
 		// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 	};
@@ -192,8 +191,8 @@
 		rtl9300,smi-address = <0 7>;
 	};
 
-	INTERNAL_PHY_SDS(26, 8)
-	INTERNAL_PHY_SDS(27, 9)
+	INTERNAL_PHY(26)
+	INTERNAL_PHY(27)
 };
 
 &switch0 {
