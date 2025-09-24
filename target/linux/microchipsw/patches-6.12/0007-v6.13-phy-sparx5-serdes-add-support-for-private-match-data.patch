@@ -1,0 +1,84 @@
+From 6c18e8aba5313a930a72c5b2143e73e2cc437a14 Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Mon, 9 Sep 2024 17:14:41 +0200
+Subject: [PATCH 08/25] phy: sparx5-serdes: add support for private match data
+
+In order to reuse the existing Sparx5 SERDES driver for lan969x, we add
+support for private match data, with initial fields for the iomap and
+imap_size.
+
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Reviewed-by: Steen Hegelund <Steen.Hegelund@microchip.com>
+Link: https://lore.kernel.org/r/20240909-sparx5-lan969x-serdes-driver-v2-1-d695bcb57b84@microchip.com
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
+---
+ drivers/phy/microchip/sparx5_serdes.c | 16 +++++++++++++---
+ drivers/phy/microchip/sparx5_serdes.h |  6 ++++++
+ 2 files changed, 19 insertions(+), 3 deletions(-)
+
+--- a/drivers/phy/microchip/sparx5_serdes.c
++++ b/drivers/phy/microchip/sparx5_serdes.c
+@@ -2507,6 +2507,11 @@ static struct sparx5_serdes_io_resource
+ 	{ TARGET_SD_LANE_25G + 7, 0x5c8000 }, /* 0x610dd0000: sd_lane_25g_32 */
+ };
+ 
++static const struct sparx5_serdes_match_data sparx5_desc = {
++	.iomap = sparx5_serdes_iomap,
++	.iomap_size = ARRAY_SIZE(sparx5_serdes_iomap),
++};
++
+ /* Client lookup function, uses serdes index */
+ static struct phy *sparx5_serdes_xlate(struct device *dev,
+ 				     const struct of_phandle_args *args)
+@@ -2555,6 +2560,10 @@ static int sparx5_serdes_probe(struct pl
+ 	platform_set_drvdata(pdev, priv);
+ 	priv->dev = &pdev->dev;
+ 
++	priv->data = device_get_match_data(priv->dev);
++	if (!priv->data)
++		return -EINVAL;
++
+ 	/* Get coreclock */
+ 	clk = devm_clk_get(priv->dev, NULL);
+ 	if (IS_ERR(clk)) {
+@@ -2579,8 +2588,9 @@ static int sparx5_serdes_probe(struct pl
+ 			iores->name);
+ 		return -ENOMEM;
+ 	}
+-	for (idx = 0; idx < ARRAY_SIZE(sparx5_serdes_iomap); idx++) {
+-		struct sparx5_serdes_io_resource *iomap = &sparx5_serdes_iomap[idx];
++	for (idx = 0; idx < priv->data->iomap_size; idx++) {
++		const struct sparx5_serdes_io_resource *iomap =
++			&priv->data->iomap[idx];
+ 
+ 		priv->regs[iomap->id] = iomem + iomap->offset;
+ 	}
+@@ -2599,7 +2609,7 @@ static int sparx5_serdes_probe(struct pl
+ }
+ 
+ static const struct of_device_id sparx5_serdes_match[] = {
+-	{ .compatible = "microchip,sparx5-serdes" },
++	{ .compatible = "microchip,sparx5-serdes", .data = &sparx5_desc },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(of, sparx5_serdes_match);
+--- a/drivers/phy/microchip/sparx5_serdes.h
++++ b/drivers/phy/microchip/sparx5_serdes.h
+@@ -26,11 +26,17 @@ enum sparx5_serdes_mode {
+ 	SPX5_SD_MODE_SFI,
+ };
+ 
++struct sparx5_serdes_match_data {
++	const struct sparx5_serdes_io_resource *iomap;
++	int iomap_size;
++};
++
+ struct sparx5_serdes_private {
+ 	struct device *dev;
+ 	void __iomem *regs[NUM_TARGETS];
+ 	struct phy *phys[SPX5_SERDES_MAX];
+ 	unsigned long coreclock;
++	const struct sparx5_serdes_match_data *data;
+ };
+ 
+ struct sparx5_serdes_macro {
