@@ -114,15 +114,13 @@ define Device/zyxel_xgs1210-12-a1
 endef
 TARGET_DEVICES += zyxel_xgs1210-12-a1
 
-define Device/zyxel_xgs1250-12-a1
+define Device/zyxel_xgs1250-12-common
   SOC := rtl9302
   UIMAGE_MAGIC := 0x93001250
   ZYXEL_VERS := ABWE
   DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := XGS1250-12
-  DEVICE_VARIANT := A1
   DEVICE_PACKAGES := kmod-hwmon-gpiofan kmod-thermal
-  SUPPORTED_DEVICES += zyxel,xgs1250-12
   IMAGE_SIZE := 13312k
   KERNEL_INITRAMFS := \
 	kernel-bin | \
@@ -131,4 +129,16 @@ define Device/zyxel_xgs1250-12-a1
 	zyxel-vers | \
 	uImage gzip
 endef
+
+define Device/zyxel_xgs1250-12-a1
+  $(Device/zyxel_xgs1250-12-common)
+  SUPPORTED_DEVICES += zyxel,xgs1250-12
+  DEVICE_VARIANT := A1
+endef
 TARGET_DEVICES += zyxel_xgs1250-12-a1
+
+define Device/zyxel_xgs1250-12-b1
+  $(Device/zyxel_xgs1250-12-common)
+  DEVICE_VARIANT := B1
+endef
+TARGET_DEVICES += zyxel_xgs1250-12-b1
