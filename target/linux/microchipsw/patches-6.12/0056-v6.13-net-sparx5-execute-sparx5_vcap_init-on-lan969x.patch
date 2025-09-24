@@ -1,0 +1,39 @@
+From 41742f746f4860ad7658484ec24a2971476a9d05 Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Fri, 1 Nov 2024 08:09:10 +0100
+Subject: [PATCH 61/82] net: sparx5: execute sparx5_vcap_init() on lan969x
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The is_sparx5() check was introduced in an earlier series, to make sure
+the sparx5_vcap_init() was not executed on lan969x, as it was not
+implemented there yet. Now that it is, remove that check.
+
+Reviewed-by: Steen Hegelund <Steen.Hegelund@microchip.com>
+Reviewed-by: Jens Emil Schulz Østergaard <jensemil.schulzostergaard@microchip.com>
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/ethernet/microchip/sparx5/sparx5_main.c | 10 ++++------
+ 1 file changed, 4 insertions(+), 6 deletions(-)
+
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
+@@ -770,12 +770,10 @@ static int sparx5_start(struct sparx5 *s
+ 	if (err)
+ 		return err;
+ 
+-	if (is_sparx5(sparx5)) {
+-		err = sparx5_vcap_init(sparx5);
+-		if (err) {
+-			sparx5_unregister_notifier_blocks(sparx5);
+-			return err;
+-		}
++	err = sparx5_vcap_init(sparx5);
++	if (err) {
++		sparx5_unregister_notifier_blocks(sparx5);
++		return err;
+ 	}
+ 
+ 	/* Start Frame DMA with fallback to register based INJ/XTR */

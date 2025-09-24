@@ -1,0 +1,38 @@
+From a02276501dbc5ae015e56aad0176e9f40703aac9 Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Thu, 24 Oct 2024 00:01:33 +0200
+Subject: [PATCH 56/82] net: sparx5: add compatible string for lan969x
+
+Add lan9691-switch compatible string to mchp_sparx5_match. Guard it with
+IS_ENABLED(CONFIG_LAN969X_SWITCH) to make sure Sparx5 can be compiled on
+its own.
+
+Reviewed-by: Steen Hegelund <Steen.Hegelund@microchip.com>
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Link: https://patch.msgid.link/20241024-sparx5-lan969x-switch-driver-2-v2-14-a0b5fae88a0f@microchip.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/ethernet/microchip/sparx5/sparx5_main.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
+@@ -24,6 +24,8 @@
+ #include <linux/types.h>
+ #include <linux/reset.h>
+ 
++#include "../lan969x/lan969x.h" /* for lan969x match data */
++
+ #include "sparx5_main_regs.h"
+ #include "sparx5_main.h"
+ #include "sparx5_port.h"
+@@ -1049,6 +1051,9 @@ static const struct sparx5_match_data sp
+ 
+ static const struct of_device_id mchp_sparx5_match[] = {
+ 	{ .compatible = "microchip,sparx5-switch", .data = &sparx5_desc },
++#if IS_ENABLED(CONFIG_LAN969X_SWITCH)
++	{ .compatible = "microchip,lan9691-switch", .data = &lan969x_desc },
++#endif
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(of, mchp_sparx5_match);
