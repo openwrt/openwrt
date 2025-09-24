@@ -1,0 +1,54 @@
+From df0ae12e09264cb432472c707ccb33ececc65935 Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Thu, 24 Oct 2024 00:01:27 +0200
+Subject: [PATCH 51/82] net: lan969x: add constants to match data
+
+Add the lan969x constants to match data. These are already used
+throughout the Sparx5 code (introduced in earlier series [1]), so no
+need to update any code use.
+
+[1] https://lore.kernel.org/netdev/20241004-b4-sparx5-lan969x-switch-driver-v2-0-d3290f581663@microchip.com/
+
+Reviewed-by: Steen Hegelund <Steen.Hegelund@microchip.com>
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Link: https://patch.msgid.link/20241024-sparx5-lan969x-switch-driver-2-v2-8-a0b5fae88a0f@microchip.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ .../net/ethernet/microchip/lan969x/lan969x.c  | 21 +++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+
+--- a/drivers/net/ethernet/microchip/lan969x/lan969x.c
++++ b/drivers/net/ethernet/microchip/lan969x/lan969x.c
+@@ -103,11 +103,32 @@ static const struct sparx5_regs lan969x_
+ 	.fsize = lan969x_fsize,
+ };
+ 
++static const struct sparx5_consts lan969x_consts = {
++	.n_ports             = 30,
++	.n_ports_all         = 35,
++	.n_hsch_l1_elems     = 32,
++	.n_hsch_queues       = 4,
++	.n_lb_groups         = 5,
++	.n_pgids             = 1054, /* (1024 + n_ports) */
++	.n_sio_clks          = 1,
++	.n_own_upsids        = 1,
++	.n_auto_cals         = 4,
++	.n_filters           = 256,
++	.n_gates             = 256,
++	.n_sdlbs             = 496,
++	.n_dsm_cal_taxis     = 5,
++	.buf_size            = 1572864,
++	.qres_max_prio_idx   = 315,
++	.qres_max_colour_idx = 323,
++	.tod_pin             = 4,
++};
++
+ const struct sparx5_match_data lan969x_desc = {
+ 	.iomap      = lan969x_main_iomap,
+ 	.iomap_size = ARRAY_SIZE(lan969x_main_iomap),
+ 	.ioranges   = 2,
+ 	.regs       = &lan969x_regs,
++	.consts     = &lan969x_consts,
+ };
+ EXPORT_SYMBOL_GPL(lan969x_desc);
+ 
