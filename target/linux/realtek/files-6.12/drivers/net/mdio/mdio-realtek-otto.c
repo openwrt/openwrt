@@ -1424,7 +1424,7 @@ static int rtmdio_get_family(void)
 
 static int rtmdio_probe(struct platform_device *pdev)
 {
-	struct device_node *dn, *mii_np;
+	struct device_node *dn, *mii_np, *pcs_node;
 	struct device *dev = &pdev->dev;
 	struct rtmdio_bus_priv *priv;
 	struct mii_bus *bus;
@@ -1527,11 +1527,6 @@ static int rtmdio_probe(struct platform_device *pdev)
 			return -ENODEV;
 		}
 
-		if (of_property_read_u32(dn, "sds", &priv->sds_id[pn]))
-			priv->sds_id[pn] = -1;
-		else
-			pr_info("set sds port %d to %d\n", pn, priv->sds_id[pn]);
-
 		if (of_property_read_u32_array(dn, "rtl9300,smi-address", &smi_addr[0], 2)) {
 			priv->smi_bus[pn] = 0;
 			priv->smi_addr[pn] = pn;
@@ -1547,9 +1542,7 @@ static int rtmdio_probe(struct platform_device *pdev)
 
 		priv->phy_is_internal[pn] = of_property_read_bool(dn, "phy-is-integrated");
 
-		if (priv->phy_is_internal[pn] && priv->sds_id[pn] >= 0)
-			priv->smi_bus[pn]= -1;
-		else if (of_device_is_compatible(dn, "ethernet-phy-ieee802.3-c45"))
+		if (of_device_is_compatible(dn, "ethernet-phy-ieee802.3-c45"))
 			priv->smi_bus_isc45[priv->smi_bus[pn]] = true;
 	}
 
@@ -1562,13 +1555,27 @@ static int rtmdio_probe(struct platform_device *pdev)
 	for_each_node_by_name(dn, "port") {
 		if (of_property_read_u32(dn, "reg", &pn))
 			continue;
-		pr_debug("%s Looking at port %d\n", __func__, pn);
+		dev_dbg(dev, "Looking at port %d\n", pn);
 		if (pn > priv->cpu_port)
 			continue;
 		if (of_get_phy_mode(dn, &priv->interfaces[pn]))
 			priv->interfaces[pn] = PHY_INTERFACE_MODE_NA;
-		pr_debug("%s phy mode of port %d is %s\n",
-			 __func__, pn, phy_modes(priv->interfaces[pn]));
+		dev_dbg(dev, "phy mode of port %d is %s\n", pn, phy_modes(priv->interfaces[pn]));
+
+		/*
+		 * TODO: The MDIO driver does not need any info about the SerDes. As long as
+		 * the PCS driver cannot completely control the SerDes, look up the information
+		 * via the pcs-handle of the switch port node.
+		 */
+
+		priv->sds_id[pn] = -1;
+		pcs_node = of_parse_phandle(dn, "pcs-handle", 0);
+		if (pcs_node)
+			of_property_read_u32(pcs_node, "reg", &priv->sds_id[pn]);
+		if (priv->phy_is_internal[pn] && priv->sds_id[pn] >= 0)
+			priv->smi_bus[pn]= -1;
+		if (priv->sds_id[pn] >= 0)
+			dev_dbg(dev, "PHY %d has SDS %d\n", pn, priv->sds_id[pn]);
 	}
 
 	snprintf(bus->id, MII_BUS_ID_SIZE, "%s-mii", dev_name(dev));
