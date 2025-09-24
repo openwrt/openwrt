@@ -128,7 +128,9 @@
 					};
 
 					macaddr_eeprom_6: macaddr@6 {
+						compatible = "mac-base";
 						reg = <0x6 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 				};
 			};
@@ -169,5 +171,19 @@
 };
 
 &wifi {
+	#address-cells = <1>;
+	#size-cells = <0>;
 	status = "okay";
+
+	band@0 {
+		reg = <0>;
+		nvmem-cells = <&macaddr_eeprom_6 0>;
+		nvmem-cell-names = "mac-address";
+	};
+
+	band@1 {
+		reg = <1>;
+		nvmem-cells = <&macaddr_eeprom_6 1>;
+		nvmem-cell-names = "mac-address";
+	};
 };
