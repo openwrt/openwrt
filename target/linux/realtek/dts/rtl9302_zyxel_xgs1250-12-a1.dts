@@ -226,7 +226,6 @@
 		reg = <0>;
 		compatible = "ethernet-phy-ieee802.3-c22";
 		rtl9300,smi-address = <0 0>;
-		sds = < 2 >;
 		// Disabled because we do not know how to bring up again
 		// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 	};
@@ -271,7 +270,6 @@
 		reg = <24>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		rtl9300,smi-address = <1 8>;
-		sds = < 6 >;
 		// Disabled because we do not know how to bring up again
 		// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 		#thermal-sensor-cells = <0>;
@@ -281,7 +279,6 @@
 		reg = <25>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		rtl9300,smi-address = <2 8>;
-		sds = < 7 >;
 		// Disabled because we do not know how to bring up again
 		// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 		#thermal-sensor-cells = <0>;
@@ -291,13 +288,12 @@
 		reg = <26>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		rtl9300,smi-address = <3 8>;
-		sds = < 8 >;
 		// Disabled because we do not know how to bring up again
 		// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 		#thermal-sensor-cells = <0>;
 	};
 
-	INTERNAL_PHY_SDS(27, 9)
+	INTERNAL_PHY(27)
 };
 
 &switch0 {
