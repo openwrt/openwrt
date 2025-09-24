@@ -1,0 +1,81 @@
+From 92da9095958114aca94d7ab0c8fa76ee556d412d Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Bence=20Cs=C3=B3k=C3=A1s?= <csokas.bence@prolan.hu>
+Date: Tue, 10 Jun 2025 10:22:53 +0200
+Subject: [PATCH 107/112] dmaengine: Add devm_dma_request_chan()
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Expand the arsenal of devm functions for DMA devices, this time for
+requesting channels.
+
+Signed-off-by: Bence Csókás <csokas.bence@prolan.hu>
+Link: https://lore.kernel.org/r/20250610082256.400492-2-csokas.bence@prolan.hu
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
+---
+ drivers/dma/dmaengine.c   | 30 ++++++++++++++++++++++++++++++
+ include/linux/dmaengine.h |  7 +++++++
+ 2 files changed, 37 insertions(+)
+
+--- a/drivers/dma/dmaengine.c
++++ b/drivers/dma/dmaengine.c
+@@ -926,6 +926,36 @@ void dma_release_channel(struct dma_chan
+ }
+ EXPORT_SYMBOL_GPL(dma_release_channel);
+ 
++static void dmaenginem_release_channel(void *chan)
++{
++	dma_release_channel(chan);
++}
++
++/**
++ * devm_dma_request_chan - try to allocate an exclusive slave channel
++ * @dev:	pointer to client device structure
++ * @name:	slave channel name
++ *
++ * Returns pointer to appropriate DMA channel on success or an error pointer.
++ *
++ * The operation is managed and will be undone on driver detach.
++ */
++
++struct dma_chan *devm_dma_request_chan(struct device *dev, const char *name)
++{
++	struct dma_chan *chan = dma_request_chan(dev, name);
++	int ret = 0;
++
++	if (!IS_ERR(chan))
++		ret = devm_add_action_or_reset(dev, dmaenginem_release_channel, chan);
++
++	if (ret)
++		return ERR_PTR(ret);
++
++	return chan;
++}
++EXPORT_SYMBOL_GPL(devm_dma_request_chan);
++
+ /**
+  * dmaengine_get - register interest in dma_channels
+  */
+--- a/include/linux/dmaengine.h
++++ b/include/linux/dmaengine.h
+@@ -1521,6 +1521,7 @@ struct dma_chan *__dma_request_channel(c
+ 
+ struct dma_chan *dma_request_chan(struct device *dev, const char *name);
+ struct dma_chan *dma_request_chan_by_mask(const dma_cap_mask_t *mask);
++struct dma_chan *devm_dma_request_chan(struct device *dev, const char *name);
+ 
+ void dma_release_channel(struct dma_chan *chan);
+ int dma_get_slave_caps(struct dma_chan *chan, struct dma_slave_caps *caps);
+@@ -1557,6 +1558,12 @@ static inline struct dma_chan *dma_reque
+ {
+ 	return ERR_PTR(-ENODEV);
+ }
++
++static inline struct dma_chan *devm_dma_request_chan(struct device *dev, const char *name)
++{
++	return ERR_PTR(-ENODEV);
++}
++
+ static inline void dma_release_channel(struct dma_chan *chan)
+ {
+ }

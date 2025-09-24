@@ -1,0 +1,64 @@
+From cb65fd2bb68fdbf719d1ce08b11b92d431be8a84 Mon Sep 17 00:00:00 2001
+From: Tony Han <tony.han@microchip.com>
+Date: Tue, 12 Dec 2023 13:32:42 +0800
+Subject: [PATCH] dmaengine: at_xdmac: get the number of DMA channels from
+ device tree
+
+In case of kernel runs in non-secure mode, the number of DMA channels can
+be got from device tree since the value read from GTYPE register is "0" as
+it's always secured.
+As the number of channels can never be negative, update them to the type
+"unsigned".
+
+Signed-off-by: Tony Han <tony.han@microchip.com>
+Reviewed-by: Cristian Birsan <cristian.birsan@microchip.com>
+---
+ drivers/dma/at_xdmac.c | 26 +++++++++++++++++++++++---
+ 1 file changed, 23 insertions(+), 3 deletions(-)
+
+--- a/drivers/dma/at_xdmac.c
++++ b/drivers/dma/at_xdmac.c
+@@ -2259,12 +2259,29 @@ static int __maybe_unused atmel_xdmac_ru
+ 	return clk_enable(atxdmac->clk);
+ }
+ 
++static inline int at_xdmac_get_channel_number(struct platform_device *pdev,
++					      u32 reg, u32 *pchannels)
++{
++	int	ret;
++
++	if (reg) {
++		*pchannels = AT_XDMAC_NB_CH(reg);
++		return 0;
++	}
++
++	ret = of_property_read_u32(pdev->dev.of_node, "dma-channels", pchannels);
++	if (ret)
++		dev_err(&pdev->dev, "can't get number of channels\n");
++
++	return ret;
++}
++
+ static int at_xdmac_probe(struct platform_device *pdev)
+ {
+ 	struct at_xdmac	*atxdmac;
+-	int		irq, nr_channels, i, ret;
++	int		irq, ret;
+ 	void __iomem	*base;
+-	u32		reg;
++	u32		nr_channels, i, reg;
+ 
+ 	irq = platform_get_irq(pdev, 0);
+ 	if (irq < 0)
+@@ -2280,7 +2297,10 @@ static int at_xdmac_probe(struct platfor
+ 	 * of channels to do the allocation.
+ 	 */
+ 	reg = readl_relaxed(base + AT_XDMAC_GTYPE);
+-	nr_channels = AT_XDMAC_NB_CH(reg);
++	ret = at_xdmac_get_channel_number(pdev, reg, &nr_channels);
++	if (ret)
++		return ret;
++
+ 	if (nr_channels > AT_XDMAC_MAX_CHAN) {
+ 		dev_err(&pdev->dev, "invalid number of channels (%u)\n",
+ 			nr_channels);

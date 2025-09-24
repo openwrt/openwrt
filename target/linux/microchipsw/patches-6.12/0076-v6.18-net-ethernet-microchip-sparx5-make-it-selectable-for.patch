@@ -1,0 +1,28 @@
+From 83b08a578a0b717d650d4dcdb17ec2b2899a6138 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Wed, 17 Sep 2025 13:00:24 +0200
+Subject: [PATCH 81/82] net: ethernet: microchip: sparx5: make it selectable
+ for ARCH_LAN969X
+
+LAN969x switchdev support depends on the SparX-5 core,so make it selectable
+for ARCH_LAN969X.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+Reviewed-by: Daniel Machon <daniel.machon@microchip.com>
+Link: https://patch.msgid.link/20250917110106.55219-1-robert.marko@sartura.hr
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/ethernet/microchip/sparx5/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/microchip/sparx5/Kconfig
++++ b/drivers/net/ethernet/microchip/sparx5/Kconfig
+@@ -3,7 +3,7 @@ config SPARX5_SWITCH
+ 	depends on NET_SWITCHDEV
+ 	depends on HAS_IOMEM
+ 	depends on OF
+-	depends on ARCH_SPARX5 || COMPILE_TEST
++	depends on ARCH_SPARX5 || ARCH_LAN969X || COMPILE_TEST
+ 	depends on PTP_1588_CLOCK_OPTIONAL
+ 	depends on BRIDGE || BRIDGE=n
+ 	select PHYLINK
