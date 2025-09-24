@@ -226,6 +226,13 @@ define U-Boot/fastrhino-r66s-rk3568
     lunzn_fastrhino-r66s
 endef
 
+define U-Boot/generic-rk3568
+  $(U-Boot/rk3568/Default)
+  NAME:=Generic RK3566/RK3568 board
+  BUILD_DEVICES:= \
+    linkease_easepi-r1
+endef
+
 define U-Boot/nanopi-r5c-rk3568
   $(U-Boot/rk3568/Default)
   NAME:=NanoPi R5C
@@ -394,6 +401,7 @@ UBOOT_TARGETS := \
   rock-3c-rk3566 \
   bpi-r2-pro-rk3568 \
   fastrhino-r66s-rk3568 \
+  generic-rk3568 \
   nanopi-r5c-rk3568 \
   nanopi-r5s-rk3568 \
   radxa-e25-rk3568 \
