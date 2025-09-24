@@ -341,20 +341,21 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 			continue;
 		}
 
-		/*
-		 * TODO: phylink_pcs was completely converted to the standalone PCS driver - see
-		 * rtpcs_create() below. Nevertheless we still make use of the old SerDes <sds>
-		 * attribute of the phy node for the scatterd SerDes configuration functions. As
-		 * soon as the PCS driver can completely configure the SerDes this is no longer
-		 * needed.
-		 */
-
-		if (of_property_read_u32(phy_node, "sds", &priv->ports[pn].sds_num))
-			priv->ports[pn].sds_num = -1;
-		pr_debug("%s port %d has SDS %d\n", __func__, pn, priv->ports[pn].sds_num);
-
 		pcs_node = of_parse_phandle(dn, "pcs-handle", 0);
 		priv->pcs[pn] = rtpcs_create(priv->dev, pcs_node, pn);
+
+		/*
+		 * TODO: phylink_pcs was completely converted to the standalone PCS driver - see
+		 * rtpcs_create(). Nevertheless the DSA driver still relies on the info about the
+		 * attached SerDes. As soon as the PCS driver can completely configure the SerDes
+		 * this is no longer needed.
+		 */
+
+		priv->ports[pn].sds_num = -1;
+		if (pcs_node)
+			of_property_read_u32(pcs_node, "reg", &priv->ports[pn].sds_num);
+		if (priv->ports[pn].sds_num >= 0)
+			dev_dbg(priv->dev, "port %d has SDS %d\n", pn, priv->ports[pn].sds_num);
 
 		if (of_get_phy_mode(dn, &interface))
 			interface = PHY_INTERFACE_MODE_NA;
