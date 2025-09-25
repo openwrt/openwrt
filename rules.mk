@@ -514,9 +514,9 @@ ext=$(word $(words $(subst ., ,$(1))),$(subst ., ,$(1)))
 ##
 define commitcount
 $(shell \
-  if git log -1 >/dev/null 2>/dev/null; then \
+  if git log -1 --no-show-signature >/dev/null 2>/dev/null; then \
     if [ -n "$(1)" ]; then \
-      last_bump="$$(git log --pretty=format:'%h %s' . | \
+      last_bump="$$(git log --no-show-signature --pretty=format:'%h %s' . | \
         grep -m 1 -e ': [uU]pdate to ' -e ': [bB]ump to ' | \
         cut -f 1 -d ' ')"; \
     fi; \

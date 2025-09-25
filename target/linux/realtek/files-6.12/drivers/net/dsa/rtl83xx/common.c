@@ -26,8 +26,7 @@ extern const struct rtl838x_reg rtl931x_reg;
 extern const struct dsa_switch_ops rtl83xx_switch_ops;
 extern const struct dsa_switch_ops rtl930x_switch_ops;
 
-extern const struct phylink_pcs_ops rtl83xx_pcs_ops;
-extern const struct phylink_pcs_ops rtl93xx_pcs_ops;
+extern struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int port);
 
 int rtl83xx_port_get_stp_state(struct rtl838x_switch_priv *priv, int port)
 {
@@ -268,7 +267,7 @@ static int rtldsa_bus_c45_write(struct mii_bus *bus, int addr, int devad, int re
 
 static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 {
-	struct device_node *dn, *phy_node, *led_node, *np, *mii_np;
+	struct device_node *dn, *phy_node, *pcs_node, *led_node, *np, *mii_np;
 	struct device *dev = priv->dev;
 	struct mii_bus *bus;
 	int ret;
@@ -342,9 +341,20 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 			continue;
 		}
 
+		/*
+		 * TODO: phylink_pcs was completely converted to the standalone PCS driver - see
+		 * rtpcs_create() below. Nevertheless we still make use of the old SerDes <sds>
+		 * attribute of the phy node for the scatterd SerDes configuration functions. As
+		 * soon as the PCS driver can completely configure the SerDes this is no longer
+		 * needed.
+		 */
+
 		if (of_property_read_u32(phy_node, "sds", &priv->ports[pn].sds_num))
 			priv->ports[pn].sds_num = -1;
 		pr_debug("%s port %d has SDS %d\n", __func__, pn, priv->ports[pn].sds_num);
+
+		pcs_node = of_parse_phandle(dn, "pcs-handle", 0);
+		priv->pcs[pn] = rtpcs_create(priv->dev, pcs_node, pn);
 
 		if (of_get_phy_mode(dn, &interface))
 			interface = PHY_INTERFACE_MODE_NA;
@@ -1501,10 +1511,10 @@ static int rtldsa_ethernet_loaded(struct platform_device *pdev)
 
 static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 {
-	int i, err = 0;
 	struct rtl838x_switch_priv *priv;
 	struct device *dev = &pdev->dev;
 	u64 bpdu_mask;
+	int err = 0;
 
 	pr_debug("Probing RTL838X switch device\n");
 	if (!pdev->dev.of_node) {
@@ -1615,22 +1625,6 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		break;
 	}
 	pr_debug("Chip version %c\n", priv->version);
-
-	for (i = 0; i <= priv->cpu_port; i++) {
-		switch (soc_info.family) {
-		case RTL8380_FAMILY_ID:
-		case RTL8390_FAMILY_ID:
-			priv->pcs[i].pcs.ops = &rtl83xx_pcs_ops;
-			break;
-		case RTL9300_FAMILY_ID:
-		case RTL9310_FAMILY_ID:
-			priv->pcs[i].pcs.ops = &rtl93xx_pcs_ops;
-			break;
-		}
-		priv->pcs[i].pcs.neg_mode = true;
-		priv->pcs[i].priv = priv;
-		priv->pcs[i].port = i;
-	}
 
 	err = rtl83xx_mdio_probe(priv);
 	if (err) {

@@ -254,12 +254,12 @@
 +	return xfer->len;
 +}
 +
-+size_t max_transfer_size(struct spi_device *spi)
++static size_t max_transfer_size(struct spi_device *spi)
 +{
 +	return _ENSPI_MAX_XFER;
 +}
 +
-+int transfer_one_message(struct spi_controller *ctrl, struct spi_message *msg)
++static int transfer_one_message(struct spi_controller *ctrl, struct spi_message *msg)
 +{
 +	struct spi_transfer *xfer;
 +	int next_xfer_is_rx = 0;

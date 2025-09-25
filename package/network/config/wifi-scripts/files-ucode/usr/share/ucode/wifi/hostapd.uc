@@ -1,6 +1,9 @@
 'use strict';
 
-import { append, append_raw, append_vars, dump_config, flush_config, set_default } from 'wifi.common';
+import {
+	append, append_raw, append_vars, dump_config, flush_config, set_default,
+	wiphy_info, wiphy_band
+} from 'wifi.common';
 import { validate } from 'wifi.validate';
 import * as netifd from 'wifi.netifd';
 import * as iface from 'wifi.iface';
@@ -11,7 +14,6 @@ import * as fs from 'fs';
 const NL80211_EXT_FEATURE_ENABLE_FTM_RESPONDER = 33;
 const NL80211_EXT_FEATURE_RADAR_BACKGROUND = 61;
 
-const nl80211_bands = [ '2g', '5g', '60g', '6g' ];
 let phy_features = {};
 let phy_capabilities = {};
 
@@ -439,18 +441,9 @@ function device_extended_features(data, flag) {
 
 function device_capabilities(config) {
 	let phy = config.phy;
-	let idx = +fs.readfile(`/sys/class/ieee80211/${phy}/index`);
-	phy = nl80211.request(nl80211.const.NL80211_CMD_GET_WIPHY, nl80211.const.NLM_F_DUMP, { wiphy: idx, split_wiphy_dump: true });
-	if (!phy)
-		return;
 
-	let band_idx = index(nl80211_bands, config.band);
-	if (band_idx < 0)
-		return;
-
-	let band = phy.wiphy_bands[band_idx];
-	if (!band)
-		return;
+	phy = wiphy_info(phy);
+	let band = wiphy_band(phy, config.band);
 
 	phy_capabilities.ht_capa = band.ht_capa ?? 0;
 	phy_capabilities.vht_capa = band.vht_capa ?? 0;
@@ -554,7 +547,7 @@ export function setup(data) {
 		append('\n#macaddr_base', data.config.macaddr_base);
 
 	for (let k, interface in data.interfaces) {
-		if (interface.config.mode != 'ap' && interface.config.mode != 'link')
+		if (interface.config.mode != 'ap')
 			continue;
 
 		interface.config.network_bridge = interface.bridge;

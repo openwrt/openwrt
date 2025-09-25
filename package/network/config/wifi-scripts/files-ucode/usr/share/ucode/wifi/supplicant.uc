@@ -1,7 +1,10 @@
 'use strict';
 
-import { append, append_raw, append_vars, network_append, network_append_raw, network_append_vars,
-	 network_append_string_vars, set_default, dump_network, flush_network } from 'wifi.common';
+import {
+	append, append_raw, append_vars, network_append, network_append_raw, network_append_vars,
+	network_append_string_vars, set_default, dump_network, flush_network,
+	wiphy_info, wiphy_band
+} from 'wifi.common';
 import * as netifd from 'wifi.netifd';
 import * as iface from 'wifi.iface';
 import * as fs from 'fs';
@@ -179,6 +182,39 @@ function setup_sta(data, config) {
 	]);
 }
 
+
+function freq_in_range(freq_ranges, freq)
+{
+	if (!freq_ranges)
+		return true;
+
+	freq *= 1000;
+	for (let range in freq_ranges)
+		if (freq >= range.start && freq <= range.end)
+			return true;
+}
+
+function wiphy_frequencies(phy, band, radio) {
+	phy = wiphy_info(phy);
+	band = wiphy_band(phy, band);
+	if (!band)
+		return;
+
+	let ranges;
+	for (let r in phy.radios)
+		if (r.index == radio)
+			ranges = r.freq_ranges;
+
+	let freqs = [];
+	for (let chan in band.freqs)
+		if (!chan.disabled && freq_in_range(ranges, chan.freq))
+			push(freqs, chan.freq);
+
+	if (length(freqs) > 0)
+		return freqs;
+}
+
+
 export function generate(config_list, data, interface) {
 	flush_network();
 
@@ -191,10 +227,13 @@ export function generate(config_list, data, interface) {
 
 	interface.config.country = data.config.country_code;
 	interface.config.beacon_int = data.config.beacon_int;
-	if (data.config.scan_list)
-		interface.config.scan_list = join(" ", data.config.scan_list);
+	if (!data.config.scan_list)
+		data.config.scan_list = wiphy_frequencies(data.phy, data.config.band, data.config.radio);
 
-	append_vars(interface.config, [ 'country', 'beacon_int', 'scan_list' ]);
+	if (data.config.scan_list)
+		interface.config.freq_list = join(" ", data.config.scan_list);
+
+	append_vars(interface.config, [ 'country', 'beacon_int', 'freq_list' ]);
 
 	setup_sta(data.config, interface.config);
 
@@ -209,6 +248,8 @@ export function generate(config_list, data, interface) {
 		iface: interface.config.ifname,
 		config: file_name,
 		'4addr': !!interface.config.wds,
+		mlo: !!interface.config.mlo,
+		freq_list: data.config.scan_list,
 		powersave: false
 	};
 

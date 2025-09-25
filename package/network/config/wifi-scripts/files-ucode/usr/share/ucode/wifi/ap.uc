@@ -482,7 +482,7 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 			'rsn_override_mfp'
 		]);
 
-		if (config.mode == 'link') {
+		if (config.mlo) {
 			config.rsn_override_mfp_2 ??= config.rsn_override_mfp;
 			config.rsn_override_key_mgmt_2 ??= config.rsn_override_key_mgmt;
 			config.rsn_override_pairwise_2 ??= config.rsn_override_pairwise;
@@ -499,7 +499,7 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 	for (let raw in config.hostapd_options)
 		append_raw(raw);
 
-	if (config.mode == 'link') {
+	if (config.mlo) {
 		append_raw('mld_ap=1');
 		if (data.config.radio != null)
 			append_raw('mld_link_id=' + data.config.radio);

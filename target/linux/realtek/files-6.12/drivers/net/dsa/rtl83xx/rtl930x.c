@@ -350,11 +350,6 @@ static inline int rtl930x_mac_port_ctrl(int p)
 	return RTL930X_MAC_L2_PORT_CTRL(p);
 }
 
-static inline int rtl930x_mac_link_spd_sts(int p)
-{
-	return RTL930X_MAC_LINK_SPD_STS(p);
-}
-
 static u64 rtl930x_l2_hash_seed(u64 mac, u32 vid)
 {
 	u64 v = vid;
@@ -2454,11 +2449,6 @@ const struct rtl838x_reg rtl930x_reg = {
 	.mir_ctrl = RTL930X_MIR_CTRL,
 	.mir_dpm = RTL930X_MIR_DPM_CTRL,
 	.mir_spm = RTL930X_MIR_SPM_CTRL,
-	.mac_link_sts = RTL930X_MAC_LINK_STS,
-	.mac_link_dup_sts = RTL930X_MAC_LINK_DUP_STS,
-	.mac_link_spd_sts = rtl930x_mac_link_spd_sts,
-	.mac_rx_pause_sts = RTL930X_MAC_RX_PAUSE_STS,
-	.mac_tx_pause_sts = RTL930X_MAC_TX_PAUSE_STS,
 	.read_l2_entry_using_hash = rtl930x_read_l2_entry_using_hash,
 	.write_l2_entry_using_hash = rtl930x_write_l2_entry_using_hash,
 	.read_cam = rtl930x_read_cam,
