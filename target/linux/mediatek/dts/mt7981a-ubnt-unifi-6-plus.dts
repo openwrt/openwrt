@@ -153,6 +153,33 @@
 	vmmc-supply = <&reg_3p3v>;
 	non-removable;
 	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	card@0 {
+		compatible = "mmc-card";
+		reg = <0>;
+
+		block {
+			compatible = "block-device";
+
+			partitions {
+				block-partition-factory {
+					partname = "factory";
+
+					nvmem: nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						eeprom_factory_0: eeprom@0 {
+							reg = <0x0 0x1000>;
+						};
+					};
+				};
+			};
+		};
+	};
 };
 
 &eth {
@@ -171,6 +198,8 @@
 };
 
 &wifi {
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	status = "okay";
