@@ -1,5 +1,5 @@
 let libubus = require("ubus");
-import { open, readfile } from "fs";
+import { open, readfile, access } from "fs";
 import { wdev_remove, is_equal, vlist_new, phy_is_fullmac, phy_open, wdev_set_radio_mask, wdev_set_up } from "common";
 
 let ubus = libubus.connect(null, 60);
@@ -777,6 +777,10 @@ function bss_check_mld(phydev, iface_name, bss)
 
 	bss.mld_bssid = mld_data.macaddr;
 	mld_data.iface[iface_name] = true;
+
+	if (!access('/sys/class/net/' + iface_name, 'x'))
+		mld_data.has_wdev = false;
+
 	if (mld_data.has_wdev)
 		return true;
 
