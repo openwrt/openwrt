@@ -58,11 +58,13 @@ menu "Global build settings"
 
 	config SIGNED_PACKAGES
 		bool "Cryptographically signed package lists"
+		depends on !USE_APK
 		default y
 
 	config SIGNATURE_CHECK
 		bool "Enable signature checking in opkg"
-		default SIGNED_PACKAGES
+		default y if SIGNED_PACKAGES
+		default y if USE_APK
 
 	config DOWNLOAD_CHECK_CERTIFICATE
 		bool "Enable TLS certificate verification during package download"

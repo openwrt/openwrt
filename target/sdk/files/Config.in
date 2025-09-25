@@ -16,6 +16,7 @@ menu "Global build settings"
 
 	config SIGNED_PACKAGES
 		bool "Cryptographically sign package lists"
+		depends on !USE_APK
 		default y
 
 	comment "General build options"
