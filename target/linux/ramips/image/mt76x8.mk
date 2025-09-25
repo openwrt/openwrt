@@ -21,6 +21,12 @@ define Build/elecom-header
 	mv $@.new $@
 endef
 
+define Build/qding-header
+  $(STAGING_DIR_HOST)/bin/mkqdimg \
+    -B $(1) -f $@ -o $@.new
+  mv $@.new $@
+endef
+
 define Build/ravpower-wd009-factory
 	mkimage -A mips -T standalone -C none -a 0x80010000 -e 0x80010000 \
 		-n "OpenWrt Bootloader" -d $(UBOOT_PATH) $@.new
@@ -532,6 +538,16 @@ define Device/oraybox_x1
   DEVICE_PACKAGES:= kmod-usb2 kmod-usb-ohci
 endef
 TARGET_DEVICES += oraybox_x1
+
+define Device/qding_qc202
+  IMAGE_SIZE := 7872k
+  DEVICE_VENDOR := Qding
+  DEVICE_MODEL := QC202
+  DEVICE_PACKAGES := kmod-i2c-mt7628 kmod-gpio-beeper kmod-input-matrix-keypad kmod-input-evdev uboot-envtools
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | qding-header qc202
+endef
+TARGET_DEVICES += qding_qc202
 
 define Device/rakwireless_rak633
   IMAGE_SIZE := 7872k
