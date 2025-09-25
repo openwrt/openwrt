@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
+include ./common.mk
+
 define Build/xikestor-nosimg
   $(STAGING_DIR_HOST)/bin/nosimg-enc -i $@ -o $@.new
   mv $@.new $@
@@ -97,22 +99,17 @@ endef
 TARGET_DEVICES += xikestor_sks8310-8x
 
 define Device/zyxel_xgs1210-12-a1
-  SOC := rtl9302
+  $(Device/zyxel_xgs1210-12)
   SUPPORTED_DEVICES += zyxel,xgs1210-12
-  UIMAGE_MAGIC := 0x93001210
-  ZYXEL_VERS := ABTY
-  DEVICE_VENDOR := Zyxel
-  DEVICE_MODEL := XGS1210-12
   DEVICE_VARIANT := A1
-  IMAGE_SIZE := 13312k
-  KERNEL_INITRAMFS := \
-        kernel-bin | \
-        append-dtb | \
-        gzip | \
-        zyxel-vers | \
-        uImage gzip
 endef
 TARGET_DEVICES += zyxel_xgs1210-12-a1
+
+define Device/zyxel_xgs1210-12-b1
+  $(Device/zyxel_xgs1210-12)
+  DEVICE_VARIANT := B1
+endef
+TARGET_DEVICES += zyxel_xgs1210-12-b1
 
 define Device/zyxel_xgs1250-12-common
   SOC := rtl9302

@@ -1,0 +1,48 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+/dts-v1/;
+
+#include "rtl9302_zyxel_xgs1210-12-common.dtsi"
+
+/ {
+	compatible = "zyxel,xgs1210-12-b1", "realtek,rtl838x-soc";
+	model = "Zyxel XGS1210-12 B1 Switch";
+};
+
+&mdio_bus0 {
+	phy24: ethernet-phy@24 {
+		reg = <24>;
+		compatible = "ethernet-phy-ieee802.3-c45";
+		rtl9300,smi-address = <1 1>;
+		// Disabled because we do not know how to bring up again
+		// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+	};
+
+	phy25: ethernet-phy@25 {
+		reg = <25>;
+		compatible = "ethernet-phy-ieee802.3-c45";
+		rtl9300,smi-address = <2 2>;
+		// Disabled because we do not know how to bring up again
+		// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&switch0 {
+	ports {
+		port@24 {
+			reg = <24>;
+			label = "lan9";
+			pcs-handle = <&serdes6>;
+			phy-handle = <&phy24>;
+			phy-mode = "2500base-x";
+			led-set = <1>;
+		};
+		port@25 {
+			reg = <25>;
+			label = "lan10";
+			pcs-handle = <&serdes7>;
+			phy-handle = <&phy25>;
+			phy-mode = "2500base-x";
+			led-set = <1>;
+		};
+	};
+};
