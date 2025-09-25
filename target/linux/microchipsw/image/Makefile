@@ -18,4 +18,6 @@ define Device/FitImage
 	KERNEL_NAME := Image
 endef
 
+include $(SUBTARGET).mk
+
 $(eval $(call BuildImage))
