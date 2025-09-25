@@ -175,7 +175,30 @@ function setup() {
 
 	log('Starting');
 
-	validate('device', data.config);
+	let config = data.config;
+
+	if (!config.band) {
+		switch (config.hwmode) {
+		case 'a':
+		case '11a':
+			config.band = '5g';
+			break;
+		case 'ad':
+		case '11ad':
+			config.band = '60g';
+			break;
+		case 'b':
+		case 'g':
+		case '11b':
+		case '11g':
+		default:
+			config.band = '2g';
+			break;
+		}
+	}
+	delete config.hwmode;
+
+	validate('device', config);
 	setup_phy(data.phy, data.config, data.data);
 
 	let supplicant_mesh;
