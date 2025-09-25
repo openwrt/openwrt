@@ -1,0 +1,233 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/memreserve/ 0x80000000 0x200000;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include "an7581.dtsi"
+
+/ {
+	aliases {
+		serial0 = &uart1;
+		led-boot = &led_status_red;
+		led-failsafe = &led_status_blue;
+		led-running = &led_status_green;
+		led-upgrade = &led_status_blue;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200 earlycon";
+		stdout-path = "serial0:115200n8";
+		linux,usable-memory-range = <0x0 0x80200000 0x0 0x7fe00000>;
+	};
+
+	memory@80000000 {
+		device_type = "memory";
+		reg = <0x0 0x80000000 0x0 0x80000000>;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		key-reset {
+			label = "Reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&en7581_pinctrl 0 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_status_green: led-0 {
+			label = "green:run";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&en7581_pinctrl 17 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_blue: led-1 {
+			label = "blue:upgrade";
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&en7581_pinctrl 19 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_white: led-2 {
+			label = "white:system";
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&en7581_pinctrl 20 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_red: led-3 {
+			label = "red:boot";
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&en7581_pinctrl 29 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&en7581_pinctrl {
+	gpio-ranges = <&en7581_pinctrl 0 13 47>;
+
+	mdio_pins: mdio-pins {
+		mux {
+			function = "mdio";
+			groups = "mdio";
+		};
+
+		conf {
+			pins = "gpio2";
+			output-high;
+		};
+	};
+
+	pcie0_rst_pins: pcie0-rst-pins {
+		conf {
+			pins = "pcie_reset0";
+			drive-open-drain = <1>;
+		};
+	};
+
+	pcie2_rst_pins: pcie2-rst-pins {
+		conf {
+			pins = "pcie_reset2";
+			drive-open-drain = <1>;
+		};
+	};
+};
+
+&eth {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+
+	/* NCT7511Y */
+	hwmon@2e {
+		compatible = "nuvoton,nct7802";
+		reg = <0x2e>;
+	};
+};
+
+&pcie0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie0_rst_pins>;
+	status = "okay";
+
+	pcie@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		device_type = "pci";
+
+		wifi@0,0 {
+			compatible = "mediatek,mt76";
+			reg = <0x0000 0 0 0 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			airoha,eth = <&eth>;
+			airoha,npu = <&npu>;
+
+			nvmem-cells = <&eeprom_dsd_5000>, <&lan_mac 1>;
+			nvmem-cell-names = "eeprom", "mac-address";
+		};
+	};
+};
+
+&pcie2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie2_rst_pins>;
+	status = "okay";
+
+	pcie@2,0 {
+		reg = <0x0000 0 0 0 0>;
+		device_type = "pci";
+
+		wifi@2,0 {
+			compatible = "mediatek,mt76";
+			regs = <0x0000 0 0 0 0>;
+			airoha,eth = <&eth>;
+			airoha,npu = <&npu>;
+		};
+	};
+};
+
+&snfi {
+	status = "okay";
+};
+
+&spi_nand {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "bootloader";
+			reg = <0x00000000 0x00200000>;
+			read-only;
+		};
+
+		partition@200000 {
+			label = "uenv";
+			reg = <0x00200000 0x00200000>;
+		};
+
+		partition@400000 {
+			label = "dsd";
+			reg = <0x00400000 0x00200000>;
+			read-only;
+
+			nvmem-layout@0 {
+				compatible = "ascii-eq-delim-env";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				lan_mac: lan_mac {
+					compatible = "mac-base";
+					#nvmem-cell-cells = <1>;
+				};
+
+				wan_mac: wan_mac {
+					compatible = "mac-base";
+					#nvmem-cell-cells = <1>;
+				};
+			};
+
+			nvmem-layout@5000 {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom_dsd_5000: eeprom@5000 {
+					reg = <0x5000 0x1e00>;
+				};
+			};
+		};
+
+		partition@600000 {
+			label = "kernel";
+			reg = <0x00600000 0x01000000>;
+		};
+
+		partition@1600000 {
+			label = "rootfs";
+			reg = <0x01600000 0x1e800000>;
+			compatible = "linux,ubi";
+		};
+
+		/* reserved for bad block table */
+		reserved@1fe00000 {
+			label = "reserved";
+			reg = <0x1fe00000 0x00200000>;
+			read-only;
+		};
+	};
+};
