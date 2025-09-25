@@ -105,6 +105,21 @@ define Device/gemtek_w1700k-ubi
 endef
 TARGET_DEVICES += gemtek_w1700k-ubi
 
+define Device/gemtek_w1701k
+  $(call Device/FitImageLzma)
+  DEVICE_VENDOR := Gemtek
+  DEVICE_MODEL := W1701K
+  DEVICE_ALT0_VENDOR := Quantum Fiber
+  DEVICE_ALT0_MODEL := W1701K
+  DEVICE_PACKAGES := airoha-en7581-mt7996-npu-firmware \
+		     kmod-hwmon-nct7802 kmod-i2c-an7581 \
+		     kmod-mt7996-firmware kmod-phy-airoha-en8811h \
+		     wpad-basic-mbedtls
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  SOC := an7581
+endef
+TARGET_DEVICES += gemtek_w1701k
+
 define Device/nokia_valyrian
   DEVICE_VENDOR := Nokia
   DEVICE_MODEL := Valyrian
