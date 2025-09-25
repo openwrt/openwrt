@@ -124,8 +124,8 @@
 
 	pinctrl-0 = <&spi0_pins>;
 	pinctrl-names = "default";
-	cs-gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>,
-		   <&tlmm  4 GPIO_ACTIVE_HIGH>;
+	cs-gpios = <&tlmm 54 GPIO_ACTIVE_LOW>,
+		   <&tlmm  4 GPIO_ACTIVE_LOW>;
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
