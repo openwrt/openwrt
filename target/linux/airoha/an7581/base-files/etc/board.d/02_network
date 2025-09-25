@@ -1,0 +1,21 @@
+#
+# Copyright (c) 2011-2015 OpenWrt.org
+#
+
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+board_config_update
+
+case "$(board_name)" in
+gemtek,w1701k)
+	ucidef_set_interfaces_lan_wan "eth2" "eth1"
+	;;
+*)
+	ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
+	;;
+esac
+
+board_config_flush
+
+exit 0
