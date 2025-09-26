@@ -1,0 +1,133 @@
+From 0343b5c2a754ca20f5155a8f3c6d58e887b9dd4f Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Tue, 20 May 2025 16:32:31 +0200
+Subject: [PATCH] net: airoha: Fix spurious Airoha Ethernet stall
+
+It was reported that sometimes the Airoha Ethernet driver stall and a
+reset is needed to actually receive packet.
+
+This seems to be related in the logic with how the CPU and DMA counter
+are handled for the RX path. The problem seems to be more evident when
+multiple device are connected to the Ethernet port.
+
+To handle this, drop local tracking of the current CPU/DMA counter and
+base everything on the current register by reading them and using the
+descriptor directly.
+
+Fixes: ee0f4afa982e ("net: airoha: Add Airoha Ethernet driver")
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/net/airoha_eth.c | 32 +++++++++++++++++---------------
+ 1 file changed, 17 insertions(+), 15 deletions(-)
+
+--- a/drivers/net/airoha_eth.c
++++ b/drivers/net/airoha_eth.c
+@@ -286,7 +286,6 @@ struct airoha_qdma_fwd_desc {
+ 
+ struct airoha_queue {
+ 	struct airoha_qdma_desc *desc;
+-	u16 head;
+ 
+ 	int ndesc;
+ };
+@@ -452,7 +451,6 @@ static int airoha_qdma_init_rx_queue(str
+ 	unsigned long dma_addr;
+ 
+ 	q->ndesc = ndesc;
+-	q->head = 0;
+ 
+ 	q->desc = dma_alloc_coherent(q->ndesc * sizeof(*q->desc), &dma_addr);
+ 	if (!q->desc)
+@@ -471,7 +469,7 @@ static int airoha_qdma_init_rx_queue(str
+ 	airoha_qdma_rmw(qdma, REG_RX_CPU_IDX(qid), RX_RING_CPU_IDX_MASK,
+ 			FIELD_PREP(RX_RING_CPU_IDX_MASK, q->ndesc - 1));
+ 	airoha_qdma_rmw(qdma, REG_RX_DMA_IDX(qid), RX_RING_DMA_IDX_MASK,
+-			FIELD_PREP(RX_RING_DMA_IDX_MASK, q->head));
++			FIELD_PREP(RX_RING_DMA_IDX_MASK, 0));
+ 
+ 	return 0;
+ }
+@@ -499,7 +497,6 @@ static int airoha_qdma_init_tx_queue(str
+ 	unsigned long dma_addr;
+ 
+ 	q->ndesc = size;
+-	q->head = 0;
+ 
+ 	q->desc = dma_alloc_coherent(q->ndesc * sizeof(*q->desc), &dma_addr);
+ 	if (!q->desc)
+@@ -510,9 +507,9 @@ static int airoha_qdma_init_tx_queue(str
+ 
+ 	airoha_qdma_wr(qdma, REG_TX_RING_BASE(qid), dma_addr);
+ 	airoha_qdma_rmw(qdma, REG_TX_CPU_IDX(qid), TX_RING_CPU_IDX_MASK,
+-			FIELD_PREP(TX_RING_CPU_IDX_MASK, q->head));
++			FIELD_PREP(TX_RING_CPU_IDX_MASK, 0));
+ 	airoha_qdma_rmw(qdma, REG_TX_DMA_IDX(qid), TX_RING_DMA_IDX_MASK,
+-			FIELD_PREP(TX_RING_DMA_IDX_MASK, q->head));
++			FIELD_PREP(TX_RING_DMA_IDX_MASK, 0));
+ 
+ 	return 0;
+ }
+@@ -898,8 +895,10 @@ static int airoha_eth_send(struct udevic
+ 
+ 	qid = 0;
+ 	q = &qdma->q_tx[qid];
+-	desc = &q->desc[q->head];
+-	index = (q->head + 1) % q->ndesc;
++
++	index = airoha_qdma_rr(qdma, REG_TX_CPU_IDX(qid));
++	desc = &q->desc[index];
++	index = (index + 1) % q->ndesc;
+ 
+ 	fport = 1;
+ 
+@@ -934,7 +933,6 @@ static int airoha_eth_send(struct udevic
+ 	if (!(desc->ctrl & QDMA_DESC_DONE_MASK))
+ 		return -EAGAIN;
+ 
+-	q->head = index;
+ 	airoha_qdma_rmw(qdma, REG_IRQ_CLEAR_LEN(0),
+ 			IRQ_CLEAR_LEN_MASK, 1);
+ 
+@@ -947,12 +945,15 @@ static int airoha_eth_recv(struct udevic
+ 	struct airoha_qdma *qdma = &eth->qdma[0];
+ 	struct airoha_qdma_desc *desc;
+ 	struct airoha_queue *q;
++	int qid, index;
+ 	u16 length;
+-	int qid;
+ 
+ 	qid = 0;
+ 	q = &qdma->q_rx[qid];
+-	desc = &q->desc[q->head];
++
++	index = airoha_qdma_rr(qdma, REG_RX_CPU_IDX(qid));
++	index = (index + 1) % q->ndesc;
++	desc = &q->desc[index];
+ 
+ 	dma_unmap_single(virt_to_phys(desc), sizeof(*desc),
+ 			 DMA_FROM_DEVICE);
+@@ -974,7 +975,7 @@ static int arht_eth_free_pkt(struct udev
+ 	struct airoha_eth *eth = dev_get_priv(dev);
+ 	struct airoha_qdma *qdma = &eth->qdma[0];
+ 	struct airoha_queue *q;
+-	int qid;
++	int qid, index;
+ 
+ 	if (!packet)
+ 		return 0;
+@@ -984,11 +985,12 @@ static int arht_eth_free_pkt(struct udev
+ 
+ 	dma_map_single(packet, length, DMA_TO_DEVICE);
+ 
+-	airoha_qdma_reset_rx_desc(q, q->head, packet);
++	index = airoha_qdma_rr(qdma, REG_RX_DMA_IDX(qid));
++	airoha_qdma_reset_rx_desc(q, index, packet);
+ 
++	index = (index + 1) % q->ndesc;
+ 	airoha_qdma_rmw(qdma, REG_RX_CPU_IDX(qid), RX_RING_CPU_IDX_MASK,
+-			FIELD_PREP(RX_RING_CPU_IDX_MASK, q->head));
+-	q->head = (q->head + 1) % q->ndesc;
++			FIELD_PREP(RX_RING_CPU_IDX_MASK, index));
+ 
+ 	return 0;
+ }

@@ -1,0 +1,279 @@
+From 289503869e5580658035e82d91b02a43c775f1a1 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Mon, 19 May 2025 14:29:53 +0200
+Subject: [PATCH 1/4] net: airoha: add support for Airoha AN7583
+
+Add support for Ethernet controller present in Airoha AN7583. This
+follow the same implementation of Airoha AN7581 with the only difference
+of having a different reset number and a different logic to reach the
+SCU node.
+
+Generalize the driver for these 2 part to account for these minor
+difference.
+
+The switch init part also required some care as the Switch Internal PHY
+enable BMCR_PDOWN by default and tweak to GEPHY_CONN_CFG is also needed.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/net/airoha_eth.c | 168 ++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 147 insertions(+), 21 deletions(-)
+
+--- a/drivers/net/airoha_eth.c
++++ b/drivers/net/airoha_eth.c
+@@ -20,6 +20,7 @@
+ #include <linux/dma-mapping.h>
+ #include <linux/io.h>
+ #include <linux/iopoll.h>
++#include <linux/mii.h>
+ #include <linux/time.h>
+ 
+ #define AIROHA_MAX_NUM_GDM_PORTS	1
+@@ -27,6 +28,11 @@
+ #define AIROHA_MAX_NUM_RSTS		3
+ #define AIROHA_MAX_NUM_XSI_RSTS		4
+ 
++#define AIROHA_MAX_NUM_SWITCH_PORT	4
++#define AIROHA_MAX_PBUS_TRY		10
++#define AIROHA_PBUS_SLEEP		100
++#define AIROHA_PBUS_C22_MASK		0x800000
++
+ #define AIROHA_MAX_PACKET_SIZE		2048
+ #define AIROHA_NUM_TX_RING		1
+ #define AIROHA_NUM_RX_RING		1
+@@ -77,6 +83,19 @@
+ #define   SWITCH_PHY_PRE_EN		BIT(15)
+ #define   SWITCH_PHY_END_ADDR		GENMASK(12, 8)
+ #define   SWITCH_PHY_ST_ADDR		GENMASK(4, 0)
++#define SWITCH_GEPHY_CONN_CFG		0x7c14
++#define   SWITCH_DPHY_CKIN_SEL		BIT(31)
++#define   SWITCH_PHY_CORE_REG_CLK_SEL	BIT(30)
++#define   SWITCH_ETHER_AFE_PWD		GENMASK(28, 24)
++#define SWITCH_PBUS_PHY_IAC		0x7c20
++#define   SWITCH_PBUS_PHY_START		BIT(31)
++#define   SWITCH_PBUS_PHY_CMD		BIT(30)
++#define   SWITCH_PBUS_PHY_CMD_READ	FIELD_PREP(SWITCH_PBUS_PHY_CMD, 0x0)
++#define   SWITCH_PBUS_PHY_CMD_WRITE	FIELD_PREP(SWITCH_PBUS_PHY_CMD, 0x1)
++#define   SWITCH_PBUS_PHY_PORTADDR	GENMASK(28, 24)
++#define   SWITCH_PBUS_PHY_REGADDR	GENMASK(23, 0)
++#define SWITCH_PBUS_PHY_IAWD		0x7c24
++#define SWITCH_PBUS_PHY_IARD		0x7c28
+ 
+ /* FE */
+ #define PSE_BASE			0x0100
+@@ -311,6 +330,26 @@ struct airoha_eth {
+ 	struct airoha_gdm_port *ports[AIROHA_MAX_NUM_GDM_PORTS];
+ };
+ 
++struct airoha_eth_soc_data {
++	int num_xsi_rsts;
++	const char * const *xsi_rsts_names;
++	ofnode (*get_scu_node)(struct udevice *dev);
++	const char *switch_compatible;
++};
++
++static const char * const en7581_xsi_rsts_names[] = {
++	"hsi0-mac",
++	"hsi1-mac",
++	"hsi-mac",
++	"xfp-mac",
++};
++
++static const char * const an7583_xsi_rsts_names[] = {
++	"hsi0-mac",
++	"hsi1-mac",
++	"xfp-mac",
++};
++
+ static u32 airoha_rr(void __iomem *base, u32 offset)
+ {
+ 	return readl(base + offset);
+@@ -351,8 +390,12 @@ static u32 airoha_rmw(void __iomem *base
+ #define airoha_qdma_clear(qdma, offset, val)			\
+ 	airoha_rmw((qdma)->regs, (offset), (val), 0)
+ 
++#define airoha_switch_rr(eth, offset)				\
++	airoha_rr((eth)->switch_regs, (offset))
+ #define airoha_switch_wr(eth, offset, val)			\
+ 	airoha_wr((eth)->switch_regs, (offset), (val))
++#define airoha_switch_rmw(eth, offset, mask, val)		\
++	airoha_rmw((eth)->switch_regs, (offset), (mask), (val))
+ 
+ static void airoha_fe_maccr_init(struct airoha_eth *eth)
+ {
+@@ -652,10 +695,12 @@ static int airoha_hw_init(struct udevice
+ 
+ static int airoha_switch_init(struct udevice *dev, struct airoha_eth *eth)
+ {
++	struct airoha_eth_soc_data *data = (void *)dev_get_driver_data(dev);
+ 	ofnode switch_node;
+ 	fdt_addr_t addr;
+ 
+-	switch_node = ofnode_by_compatible(ofnode_null(), "airoha,en7581-switch");
++	switch_node = ofnode_by_compatible(ofnode_null(),
++					   data->switch_compatible);
+ 	if (!ofnode_valid(switch_node))
+ 		return -EINVAL;
+ 
+@@ -687,17 +732,71 @@ static int airoha_switch_init(struct ude
+ 			 FIELD_PREP(SWITCH_PHY_END_ADDR, 0xc) |
+ 			 FIELD_PREP(SWITCH_PHY_ST_ADDR, 0x8));
+ 
++	/* AN7583 require tweak to GEPHY_CONN_CFG and clear PHY BMCR_PDOWN */
++	if (!strcmp(data->switch_compatible, "airoha,an7583-switch")) {
++		int i;
++
++		airoha_switch_rmw(eth, SWITCH_GEPHY_CONN_CFG,
++				  SWITCH_DPHY_CKIN_SEL |
++				  SWITCH_PHY_CORE_REG_CLK_SEL |
++				  SWITCH_ETHER_AFE_PWD,
++				  SWITCH_DPHY_CKIN_SEL |
++				  SWITCH_PHY_CORE_REG_CLK_SEL |
++				  FIELD_PREP(SWITCH_ETHER_AFE_PWD, 0));
++
++		/* Disable BMCR_PDOWN for every PHY */
++		for (i = 0; i < AIROHA_MAX_NUM_SWITCH_PORT; i++) {
++			int try;
++			u32 val;
++
++			airoha_switch_wr(eth, SWITCH_PBUS_PHY_IAC,
++					 SWITCH_PBUS_PHY_START |
++					 SWITCH_PBUS_PHY_CMD_READ |
++					 FIELD_PREP(SWITCH_PBUS_PHY_PORTADDR, i) |
++					 FIELD_PREP(SWITCH_PBUS_PHY_REGADDR,
++						    AIROHA_PBUS_C22_MASK | MII_BMCR));
++
++			for (try = 0; try < AIROHA_MAX_PBUS_TRY; try++) {
++				val = airoha_switch_rr(eth, SWITCH_PBUS_PHY_IAC);
++				if (!(val & SWITCH_PBUS_PHY_START))
++					break;
++
++				udelay(AIROHA_PBUS_SLEEP);
++			}
++
++			val = airoha_switch_rr(eth, SWITCH_PBUS_PHY_IARD);
++			val &= ~BMCR_PDOWN;
++
++			airoha_switch_wr(eth, SWITCH_PBUS_PHY_IAWD, val);
++			airoha_switch_wr(eth, SWITCH_PBUS_PHY_IAC,
++					 SWITCH_PBUS_PHY_START |
++					 SWITCH_PBUS_PHY_CMD_WRITE |
++					 FIELD_PREP(SWITCH_PBUS_PHY_PORTADDR, i) |
++					 FIELD_PREP(SWITCH_PBUS_PHY_REGADDR,
++						    AIROHA_PBUS_C22_MASK | MII_BMCR));
++
++			for (try = 0; try < AIROHA_MAX_PBUS_TRY; try++) {
++				val = airoha_switch_rr(eth, SWITCH_PBUS_PHY_IAC);
++				if (!(val & SWITCH_PBUS_PHY_START))
++					break;
++
++				udelay(AIROHA_PBUS_SLEEP);
++			}
++		}
++	}
++
+ 	return 0;
+ }
+ 
+ static int airoha_eth_probe(struct udevice *dev)
+ {
++	struct airoha_eth_soc_data *data = (void *)dev_get_driver_data(dev);
+ 	struct airoha_eth *eth = dev_get_priv(dev);
+ 	struct regmap *scu_regmap;
+ 	ofnode scu_node;
+-	int ret;
++	int i, ret;
+ 
+-	scu_node = ofnode_by_compatible(ofnode_null(), "airoha,en7581-scu");
++	scu_node = data->get_scu_node(dev);
+ 	if (!ofnode_valid(scu_node))
+ 		return -EINVAL;
+ 
+@@ -721,11 +820,11 @@ static int airoha_eth_probe(struct udevi
+ 		return -ENOMEM;
+ 	eth->rsts.count = AIROHA_MAX_NUM_RSTS;
+ 
+-	eth->xsi_rsts.resets = devm_kcalloc(dev, AIROHA_MAX_NUM_XSI_RSTS,
++	eth->xsi_rsts.resets = devm_kcalloc(dev, data->num_xsi_rsts,
+ 					    sizeof(struct reset_ctl), GFP_KERNEL);
+ 	if (!eth->xsi_rsts.resets)
+ 		return -ENOMEM;
+-	eth->xsi_rsts.count = AIROHA_MAX_NUM_XSI_RSTS;
++	eth->xsi_rsts.count = data->num_xsi_rsts;
+ 
+ 	ret = reset_get_by_name(dev, "fe", &eth->rsts.resets[0]);
+ 	if (ret)
+@@ -739,21 +838,12 @@ static int airoha_eth_probe(struct udevi
+ 	if (ret)
+ 		return ret;
+ 
+-	ret = reset_get_by_name(dev, "hsi0-mac", &eth->xsi_rsts.resets[0]);
+-	if (ret)
+-		return ret;
+-
+-	ret = reset_get_by_name(dev, "hsi1-mac", &eth->xsi_rsts.resets[1]);
+-	if (ret)
+-		return ret;
+-
+-	ret = reset_get_by_name(dev, "hsi-mac", &eth->xsi_rsts.resets[2]);
+-	if (ret)
+-		return ret;
+-
+-	ret = reset_get_by_name(dev, "xfp-mac", &eth->xsi_rsts.resets[3]);
+-	if (ret)
+-		return ret;
++	for (i = 0; i < data->num_xsi_rsts; i++) {
++		ret = reset_get_by_name(dev, data->xsi_rsts_names[i],
++					&eth->xsi_rsts.resets[i]);
++		if (ret)
++			return ret;
++	}
+ 
+ 	ret = airoha_hw_init(dev, eth);
+ 	if (ret)
+@@ -924,8 +1014,44 @@ static int arht_eth_write_hwaddr(struct
+ 	return 0;
+ }
+ 
++
++static ofnode en7581_get_scu_node(struct udevice *dev)
++{
++	return ofnode_by_compatible(ofnode_null(), "airoha,en7581-scu");
++}
++
++static ofnode an7583_get_scu_node(struct udevice *dev)
++{
++	ofnode scu_node;
++
++	scu_node = ofnode_by_compatible(ofnode_null(), "airoha,an7583-scu");
++	if (!ofnode_valid(scu_node))
++		return scu_node;
++
++	return ofnode_get_parent(scu_node);
++}
++
++static const struct airoha_eth_soc_data en7581_data = {
++	.xsi_rsts_names = en7581_xsi_rsts_names,
++	.num_xsi_rsts = ARRAY_SIZE(en7581_xsi_rsts_names),
++	.get_scu_node = en7581_get_scu_node,
++	.switch_compatible = "airoha,en7581-switch",
++};
++
++static const struct airoha_eth_soc_data an7583_data = {
++	.xsi_rsts_names = an7583_xsi_rsts_names,
++	.num_xsi_rsts = ARRAY_SIZE(an7583_xsi_rsts_names),
++	.get_scu_node = an7583_get_scu_node,
++	.switch_compatible = "airoha,an7583-switch",
++};
++
+ static const struct udevice_id airoha_eth_ids[] = {
+-	{ .compatible = "airoha,en7581-eth" },
++	{ .compatible = "airoha,en7581-eth",
++	  .data = (ulong)&en7581_data,
++	},
++	{ .compatible = "airoha,an7583-eth",
++	  .data = (ulong)&an7583_data,
++	},
+ };
+ 
+ static const struct eth_ops airoha_eth_ops = {
