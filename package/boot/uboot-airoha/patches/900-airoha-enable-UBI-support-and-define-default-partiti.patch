@@ -1,0 +1,113 @@
+From 28a72d957b897e7f7212c11f99052a32b0f6abc4 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Wed, 28 May 2025 03:10:53 +0200
+Subject: [PATCH 1/2] airoha: enable UBI support and define default partition
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ arch/arm/dts/an7581-u-boot.dtsi | 16 ++++++++++++++++
+ arch/arm/dts/an7583-evb.dts     | 22 ++++++++++++++++++++++
+ configs/an7581_evb_defconfig    | 16 ++++++++++++++++
+ configs/an7583_evb_defconfig    | 16 ++++++++++++++++
+ 4 files changed, 70 insertions(+)
+
+--- a/arch/arm/dts/an7581-u-boot.dtsi
++++ b/arch/arm/dts/an7581-u-boot.dtsi
+@@ -76,6 +76,22 @@
+ 				spi-max-frequency = <50000000>;
+ 				spi-tx-bus-width = <1>;
+ 				spi-rx-bus-width = <2>;
++
++				partitions {
++					compatible = "fixed-partitions";
++					#address-cells = <1>;
++					#size-cells = <1>;
++
++					bl2@0 {
++						label = "bl2";
++						reg = <0x0 0x20000>;
++					};
++
++					ubi@20000 {
++						label = "ubi";
++						reg = <0x20000 0x0>;
++					};
++				};
+ 			};
+ 		};
+ 
+--- a/arch/arm/dts/an7583-evb.dts
++++ b/arch/arm/dts/an7583-evb.dts
+@@ -46,6 +46,28 @@
+ 	};
+ };
+ 
++&snfi {
++	status = "okay";
++};
++
++&spi_nand {
++	partitions {
++		compatible = "fixed-partitions";
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		bl2@0 {
++			label = "bl2";
++			reg = <0x0 0x20000>;
++		};
++
++		ubi@20000 {
++			label = "ubi";
++			reg = <0x20000 0x0>;
++		};
++	};
++};
++
+ &pcie0 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pcie0_rst_pins>;
+--- a/configs/an7581_evb_defconfig
++++ b/configs/an7581_evb_defconfig
+@@ -77,3 +77,19 @@ CONFIG_SPI=y
+ CONFIG_DM_SPI=y
+ CONFIG_AIROHA_SNFI_SPI=y
+ CONFIG_SHA512=y
++CONFIG_CMD_UBI=y
++# CONFIG_CMD_UBI_RENAME is not set
++CONFIG_CMD_UBIFS=y
++CONFIG_ENV_IS_IN_UBI=y
++CONFIG_ENV_UBI_PART="ubi"
++CONFIG_ENV_UBI_VOLUME="ubootenv"
++CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
++CONFIG_ENV_UBI_VID_OFFSET=0
++CONFIG_MTD_UBI=y
++CONFIG_MTD_UBI_MODULE=y
++CONFIG_MTD_UBI_WL_THRESHOLD=4096
++CONFIG_MTD_UBI_BEB_LIMIT=20
++# CONFIG_MTD_UBI_FASTMAP is not set
++CONFIG_UBI_BLOCK=y
++# CONFIG_UBIFS_SILENCE_MSG is not set
++# CONFIG_UBIFS_SILENCE_DEBUG_DUMP is not set
+--- a/configs/an7583_evb_defconfig
++++ b/configs/an7583_evb_defconfig
+@@ -79,3 +79,19 @@ CONFIG_SHA512=y
+ CONFIG_AIROHA_ETH=y
+ CONFIG_MMC_MTK=y
+ CONFIG_AIROHA_SNFI_SPI=y
++CONFIG_CMD_UBI=y
++# CONFIG_CMD_UBI_RENAME is not set
++CONFIG_CMD_UBIFS=y
++CONFIG_ENV_IS_IN_UBI=y
++CONFIG_ENV_UBI_PART="ubi"
++CONFIG_ENV_UBI_VOLUME="ubootenv"
++CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
++CONFIG_ENV_UBI_VID_OFFSET=0
++CONFIG_MTD_UBI=y
++CONFIG_MTD_UBI_MODULE=y
++CONFIG_MTD_UBI_WL_THRESHOLD=4096
++CONFIG_MTD_UBI_BEB_LIMIT=20
++# CONFIG_MTD_UBI_FASTMAP is not set
++CONFIG_UBI_BLOCK=y
++# CONFIG_UBIFS_SILENCE_MSG is not set
++# CONFIG_UBIFS_SILENCE_DEBUG_DUMP is not set
