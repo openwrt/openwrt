@@ -1431,3 +1431,14 @@ define Device/teltonika_rut241
   SUPPORTED_TELTONIKA_HW_MODS := ala440
 endef
 TARGET_DEVICES += teltonika_rut241
+
+define Device/teltonika_rut241-v5
+  $(Device/teltonika_rut2xx_common)
+  DEVICE_MODEL := RUT241
+  DEVICE_VARIANT := v5
+  DEVICE_ALT0_VENDOR := Teltonika
+  DEVICE_ALT0_MODEL := RUT200
+  DEVICE_ALT0_VARIANT := v5
+  SUPPORTED_TELTONIKA_HW_MODS := 241v5 200v5 ala440
+endef
+TARGET_DEVICES += teltonika_rut241-v5
