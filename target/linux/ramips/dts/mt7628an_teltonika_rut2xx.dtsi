@@ -181,7 +181,7 @@
 
 &state_default {
 	gpio {
-		groups = "i2s", "uart1", "p4led_an", "p3led_an", "p2led_an", "p1led_an", "p0led_an", "gpio", "wled_an", "perst", "spi cs1";
+		groups = "i2s", "uart1", "p4led_an", "p3led_an", "p2led_an", "p1led_an", "p0led_an", "gpio", "wled_an", "perst", "spi cs1", "refclk";
 		function = "gpio";
 	};
 };
@@ -190,6 +190,9 @@
 	status = "okay";
 	nvmem-cells = <&eeprom_factory_0>, <&macaddr_config_0 2>;
 	nvmem-cell-names = "eeprom", "mac-address";
+	led {
+		status = "disabled";
+	};
 };
 
 &ethernet {
