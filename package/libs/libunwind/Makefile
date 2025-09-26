@@ -13,7 +13,7 @@ PKG_VERSION:=1.8.3
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://github.com/$(PKG_NAME)/$(PKG_NAME)/releases/download/v$(PKG_VERSION)/
+PKG_SOURCE_URL:=https://github.com/libunwind/libunwind/releases/download/v$(PKG_VERSION)/
 PKG_HASH:=be30d910e67f58d82e753231f1357f326a1a088acf126b21ff77e60aab19b90b
 
 PKG_MAINTAINER:=Yousong Zhou <yszhou4tech@gmail.com>
