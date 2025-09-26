@@ -119,7 +119,8 @@ ramips_setup_interfaces()
 	duzun,dm06|\
 	glinet,gl-mt300n-v2|\
 	hongdian,h7920-v40|\
-	teltonika,rut241)
+	teltonika,rut241|\
+	teltonika,rut241-v5)
 		ucidef_add_switch "switch0" \
 			"1:lan" "0:wan" "6@eth0"
 		;;
@@ -349,7 +350,8 @@ ramips_setup_macs()
 	wavlink,wl-wn575a3)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary factory 0x28)" 1)
 		;;
-	teltonika,rut241)
+	teltonika,rut241|\
+	teltonika,rut241-v5)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary config 0x0)" 1)
 		;;
 	tplink,archer-c20-v4|\
