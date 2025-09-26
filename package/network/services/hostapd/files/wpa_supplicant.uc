@@ -643,7 +643,7 @@ function iface_hostapd_notify(ifname, iface, state)
 
 	if (!mld) {
 		msg.phy = wpas.data.iface_phy[ifname];
-		if (!phy) {
+		if (!msg.phy) {
 			wpas.printf(`no PHY for ifname ${ifname}`);
 			return;
 		}
