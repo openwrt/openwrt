@@ -166,9 +166,9 @@ my %update_method = (
 		'controldir'	=> ".git",
 		'revision'	=> "git rev-parse HEAD | tr -d '\n'"},
 	'src-git-full' => {
-		'init'          => "git clone '%s' '%s'",
-		'init_branch'   => "git clone --branch '%s' '%s' '%s'",
-		'init_commit'   => "git clone '%s' '%s' && cd '%s' && git checkout -b '%s' '%s' && cd -",
+		'init'          => "git clone --filter=blob:none '%s' '%s'",
+		'init_branch'   => "git clone --filter=blob:none --branch '%s' '%s' '%s'",
+		'init_commit'   => "git clone --filter=blob:none '%s' '%s' && cd '%s' && git checkout -b '%s' '%s' && cd -",
 		'update'	=> "git pull --ff-only",
 		'update_rebase'	=> "git pull --rebase=merges",
 		'update_stash'	=> "git pull --rebase=merges --autostash",
