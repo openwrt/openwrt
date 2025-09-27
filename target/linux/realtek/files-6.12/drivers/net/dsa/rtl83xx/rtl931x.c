@@ -558,6 +558,7 @@ static void rtl931x_fill_l2_row(u32 r[], struct rtl838x_l2_entry *e)
 
 	r[0] |= e->is_open_flow ? BIT(30) : 0;
 	r[0] |= e->is_pe_forward ? BIT(29) : 0;
+	r[0] |= e->hash_msb ? BIT(28): 0;
 	r[2] = e->next_hop ? BIT(30) : 0;
 	r[0] |= (e->rvid & 0xfff) << 16;
 
@@ -675,10 +676,21 @@ static void rtl931x_write_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_
 	u32 r[4];
 	struct table_reg *q = rtl_table_get(RTL9310_TBL_0, 0);
 	u32 idx = (0 << 14) | (hash << 2) | pos; /* Access SRAM, with hash and at pos in bucket */
+	int hash_algo_id;
 
 	pr_debug("%s: hash %d, pos %d\n", __func__, hash, pos);
 	pr_debug("%s: index %d -> mac %02x:%02x:%02x:%02x:%02x:%02x\n", __func__, idx,
 		e->mac[0], e->mac[1], e->mac[2], e->mac[3],e->mac[4],e->mac[5]);
+
+	if (idx < 0x4000)
+		hash_algo_id = sw_r32(RTL931X_L2_CTRL) & BIT(0);
+	else
+		hash_algo_id = (sw_r32(RTL931X_L2_CTRL) & BIT(1)) >> 1;
+
+	if (hash_algo_id == 0)
+		e->hash_msb = (e->rvid >> 2) & 0x1;
+	else
+		e->hash_msb = (e->rvid >> 11) & 0x1;
 
 	rtl931x_fill_l2_row(r, e);
 	pr_debug("%s: %d: %08x %08x %08x\n", __func__, idx, r[0], r[1], r[2]);

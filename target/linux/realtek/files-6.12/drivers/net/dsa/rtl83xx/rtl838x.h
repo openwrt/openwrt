@@ -711,32 +711,33 @@ struct rtl838x_l2_entry {
 	u16 vid;
 	u16 rvid;
 	u8 port;
-	bool valid;
 	enum l2_entry_type type;
-	bool is_static;
-	bool is_ip_mc;
-	bool is_ipv6_mc;
-	bool block_da;
-	bool block_sa;
-	bool suspended;
-	bool next_hop;
+	bool valid:1;
+	bool is_static:1;
+	bool is_ip_mc:1;
+	bool is_ipv6_mc:1;
+	bool block_da:1;
+	bool block_sa:1;
+	bool suspended:1;
+	bool next_hop:1;
+	bool is_trunk:1;
+	bool nh_vlan_target:1;  /* Only RTL83xx: VLAN used for next hop */
 	int age;
 	u8 trunk;
-	bool is_trunk;
 	u8 stack_dev;
 	u16 mc_portmask_index;
 	u32 mc_gip;
 	u32 mc_sip;
 	u16 mc_mac_index;
 	u16 nh_route_id;
-	bool nh_vlan_target;  /* Only RTL83xx: VLAN used for next hop */
 
 	/* The following is only valid on RTL931x */
-	bool is_open_flow;
-	bool is_pe_forward;
-	bool is_local_forward;
-	bool is_remote_forward;
-	bool is_l2_tunnel;
+	bool is_open_flow:1;
+	bool is_pe_forward:1;
+	bool is_local_forward:1;
+	bool is_remote_forward:1;
+	bool is_l2_tunnel:1;
+	bool hash_msb:1;
 	int l2_tunnel_id;
 	int l2_tunnel_list_id;
 };
