@@ -193,10 +193,11 @@ define Device/acer_predator-w6d
 endef
 TARGET_DEVICES += acer_predator-w6d
 
-define Device/acer_predator-w6x
+define Device/acer_predator-w6x-stock
   DEVICE_VENDOR := Acer
-  DEVICE_MODEL := Predator Connect W6x
-  DEVICE_DTS := mt7986a-acer-predator-w6x
+  DEVICE_MODEL := Predator Connect W6x (Stock Layout)
+  DEVICE_DTS := mt7986a-acer-predator-w6x-stock
+  SUPPORTED_DEVICES += acer,predator-w6x
   DEVICE_DTS_DIR := ../dts
   DEVICE_DTS_LOADADDR := 0x47000000
   KERNEL_IN_UBI := 1
@@ -208,7 +209,31 @@ define Device/acer_predator-w6x
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
-TARGET_DEVICES += acer_predator-w6x
+TARGET_DEVICES += acer_predator-w6x-stock
+
+define Device/acer_predator-w6x-ubootmod
+  DEVICE_VENDOR := Acer
+  DEVICE_MODEL := Predator Connect W6x (OpenWrt U-Boot Layout)
+  DEVICE_DTS := mt7986a-acer-predator-w6x-ubootmod
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-usb3 kmod-leds-ws2812b kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  IMAGES := sysupgrade.itb
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_IN_UBI := 1
+  UBOOTENV_IN_UBI := 1
+  KERNEL := kernel-bin | gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+        fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.itb := append-kernel | \
+        fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | append-metadata
+  ARTIFACTS := preloader.bin bl31-uboot.fip
+  ARTIFACT/preloader.bin := mt7986-bl2 spim-nand-ddr4
+  ARTIFACT/bl31-uboot.fip := mt7986-bl31-uboot acer_predator-w6x
+endef
+TARGET_DEVICES += acer_predator-w6x-ubootmod
 
 define Device/acer_vero-w6m
   DEVICE_VENDOR := Acer
