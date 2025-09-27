@@ -32,9 +32,10 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	{								\
  		.desc = {						\
  			.func = {					\
- 				.name = #id,				\
+-				.name = #id,				\
 -				.groups = id##_groups,			\
 -				.ngroups = ARRAY_SIZE(id##_groups),	\
++				.name = id,				\
 +				.groups = table##_groups,		\
 +				.ngroups = ARRAY_SIZE(table##_groups),	\
  			}						\
