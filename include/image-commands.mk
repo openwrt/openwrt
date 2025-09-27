@@ -519,7 +519,7 @@ define Build/yaffs-filesystem
 		filesystem_size="filesystem_blocks * 64 * 1024" \
 		filesystem_size_with_reserve="(filesystem_blocks + 2) * 64 * 1024"; \
 		head -c $$filesystem_size_with_reserve /dev/zero | tr "\000" "\377" > $@.img \
-		&& yafut -d $@.img -w -i $@ -o kernel -C 1040 -B 64k -E -P -S $(1) \
+		&& yafut -d $@.img -w -i $@ -o $(if $(findstring v7,$@),bootimage,kernel) -C 1040 -B 64k -E -P -S $(1) \
 		&& truncate -s $$filesystem_size $@.img \
 		&& mv $@.img $@
 endef
@@ -555,6 +555,11 @@ define Build/gl-qsdk-factory
 		$(GL_ITS) \
 		$(GL_IMGK).tmp \
 		$(KDIR_TMP)/$(notdir $(BOOT_SCRIPT))
+endef
+
+define Build/kernel-pack-npk
+	$(STAGING_DIR_HOST)/bin/npk_pack_kernel $@ $@.npk
+	mv $@.npk $@
 endef
 
 define Build/linksys-image
