@@ -1,0 +1,58 @@
+From 0d966d3932e2e5e7d14301da9ced0d7a62fce367 Mon Sep 17 00:00:00 2001
+From: Frank Wang <frank.wang@rock-chips.com>
+Date: Fri, 1 Aug 2025 20:32:44 +0000
+Subject: [PATCH] phy: rockchip: usbdp: Add support for RK3576
+
+Add support for the USB3.0+DP PHY used in the RK3576 SoC.
+
+Config values are taken from vendor U-Boot linux-6.1-stan-rkr5 tag.
+
+Signed-off-by: Frank Wang <frank.wang@rock-chips.com>
+Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Reviewed-by: Kever Yang <kever.yang@rock-chips.com>
+---
+ drivers/phy/rockchip/phy-rockchip-usbdp.c | 26 +++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
+
+--- a/drivers/phy/rockchip/phy-rockchip-usbdp.c
++++ b/drivers/phy/rockchip/phy-rockchip-usbdp.c
+@@ -813,6 +813,28 @@ static const char * const rk3588_udphy_r
+ 	"init", "cmn", "lane", "pcs_apb", "pma_apb"
+ };
+ 
++static const struct rockchip_udphy_cfg rk3576_udphy_cfgs = {
++	.num_phys = 1,
++	.phy_ids = {
++		0x2b010000,
++	},
++	.num_rsts = ARRAY_SIZE(rk3588_udphy_rst_l),
++	.rst_list = rk3588_udphy_rst_l,
++	.grfcfg	= {
++		/* u2phy-grf */
++		.bvalid_phy_con		= { 0x0010, 1, 0, 0x2, 0x3 },
++		.bvalid_grf_con		= { 0x0000, 15, 14, 0x1, 0x3 },
++
++		/* usb-grf */
++		.usb3otg0_cfg		= { 0x0030, 15, 0, 0x1100, 0x0188 },
++
++		/* usbdpphy-grf */
++		.low_pwrn		= { 0x0004, 13, 13, 0, 1 },
++		.rx_lfps		= { 0x0004, 14, 14, 0, 1 },
++	},
++	.combophy_init = rk3588_udphy_init,
++};
++
+ static const struct rockchip_udphy_cfg rk3588_udphy_cfgs = {
+ 	.num_phys = 2,
+ 	.phy_ids = {
+@@ -839,6 +861,10 @@ static const struct rockchip_udphy_cfg r
+ 
+ static const struct udevice_id rockchip_udphy_dt_match[] = {
+ 	{
++		.compatible = "rockchip,rk3576-usbdp-phy",
++		.data = (ulong)&rk3576_udphy_cfgs
++	},
++	{
+ 		.compatible = "rockchip,rk3588-usbdp-phy",
+ 		.data = (ulong)&rk3588_udphy_cfgs
+ 	},
