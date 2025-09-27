@@ -105,13 +105,6 @@ DEFAULT_PACKAGES += $(DEFAULT_PACKAGES.$(DEVICE_TYPE))
 ##
 filter_packages = $(filter-out -% $(patsubst -%,%,$(filter -%,$(1))),$(1))
 
-##@
-# @brief Append extra package dependencies.
-#
-# @param 1: Package list.
-##
-extra_packages = $(if $(filter wpad wpad-% nas,$(1)),iwinfo)
-
 define ProfileDefault
   NAME:=
   PRIORITY:=
@@ -128,7 +121,7 @@ define Profile
 	echo "Target-Profile: $(1)"; \
 	$(if $(PRIORITY), echo "Target-Profile-Priority: $(PRIORITY)"; ) \
 	echo "Target-Profile-Name: $(NAME)"; \
-	echo "Target-Profile-Packages: $(PACKAGES) $(call extra_packages,$(DEFAULT_PACKAGES) $(PACKAGES))"; \
+	echo "Target-Profile-Packages: $(PACKAGES)"; \
 	echo "Target-Profile-Description:"; \
 	echo "$$$$$$$$$(call shvar,Profile/$(1)/Description)"; \
 	echo "@@"; \
@@ -386,7 +379,7 @@ define BuildTargets/DumpCurrent
 	 echo "$$$$DESCRIPTION"; \
 	 echo '@@'; \
 	 $(if $(DEFAULT_PROFILE),echo 'Target-Default-Profile: $(DEFAULT_PROFILE)';) \
-	 echo 'Default-Packages: $(DEFAULT_PACKAGES) $(call extra_packages,$(DEFAULT_PACKAGES))'; \
+	 echo 'Default-Packages: $(DEFAULT_PACKAGES)'; \
 	 $(DUMPINFO)
 	$(if $(CUR_SUBTARGET),$(SUBMAKE) -r --no-print-directory -C image -s DUMP=1 SUBTARGET=$(CUR_SUBTARGET))
 	$(if $(SUBTARGET),,@$(foreach SUBTARGET,$(SUBTARGETS),$(SUBMAKE) --no-print-directory -s DUMP=1 SUBTARGET=$(SUBTARGET); ))
