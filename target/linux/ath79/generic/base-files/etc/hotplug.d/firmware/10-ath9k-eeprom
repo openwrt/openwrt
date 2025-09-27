@@ -20,10 +20,6 @@ case "$FIRMWARE" in
 	avm,fritzdvbc)
 		caldata_extract_reverse "urlader" 0x1541 0x440
 		;;
-	dlink,dir-505)
-		caldata_extract "art" 0x1000 0x440
-		ath9k_patch_mac $(mtd_get_mac_text "mac" 0x4)
-		;;
 	wd,mynet-n600|\
 	wd,mynet-n750)
 		caldata_extract "art" 0x1000 0x440
@@ -64,11 +60,6 @@ case "$FIRMWARE" in
 	buffalo,wzr-hp-g450h)
 		caldata_extract "art" 0x1000 0x440
 		;;
-	dlink,dir-825-c1|\
-	dlink,dir-835-a1)
-		caldata_extract "art" 0x5000 0x440
-		ath9k_patch_mac $(macaddr_add $(mtd_get_mac_text "mac" 0x18) 1)
-		;;
 	enterasys,ws-ap3705i)
 		caldata_extract "calibrate" 0x5000 0x440
 		ath9k_patch_mac $(mtd_get_mac_ascii u-boot-env0 RADIOADDR0)
@@ -100,10 +91,6 @@ case "$FIRMWARE" in
 	buffalo,wzr-hp-ag300h)
 		caldata_extract "art" 0x1000 0xeb8
 		;;
-	trendnet,tew-673gru)
-		caldata_extract "caldata" 0x1000 0xeb8
-		ath9k_patch_mac_crc $(mtd_get_mac_text "caldata" 0xffa0) 0x20c
-		;;
 	meraki,mr16)
 		caldata_extract "art" 0x11000 0xeb8
 		;;
@@ -117,10 +104,6 @@ case "$FIRMWARE" in
 	buffalo,wzr-600dhp|\
 	buffalo,wzr-hp-ag300h)
 		caldata_extract "art" 0x5000 0xeb8
-		;;
-	trendnet,tew-673gru)
-		caldata_extract "caldata" 0x5000 0xeb8
-		ath9k_patch_mac_crc $(macaddr_add $(mtd_get_mac_text "caldata" 0xffb4) 1) 0x20c
 		;;
 	meraki,mr16)
 		caldata_extract "art" 0x15000 0xeb8
