@@ -1,0 +1,461 @@
+--- a/drivers/leds/trigger/Kconfig
++++ b/drivers/leds/trigger/Kconfig
+@@ -129,6 +129,20 @@ config LEDS_TRIGGER_NETDEV
+ 	  This allows LEDs to be controlled by network device activity.
+ 	  If unsure, say Y.
+ 
++config LEDS_TRIGGER_NETLAN
++	tristate "LED Network LAN Trigger"
++	depends on NET
++	help
++	  This allows LEDs to be controlled by network LAN interfaces activity.
++	  If unsure, say Y.
++
++config LEDS_TRIGGER_NETWLAN
++	tristate "LED Network WLAN Trigger"
++	depends on NET
++	help
++	  This allows LEDs to be controlled by network WLAN interfaces activity.
++	  If unsure, say Y.
++
+ config LEDS_TRIGGER_PATTERN
+ 	tristate "LED Pattern Trigger"
+ 	help
+--- /dev/null
++++ b/drivers/leds/trigger/ledtrig-netlan.c
+@@ -0,0 +1,199 @@
++// SPDX-License-Identifier: GPL-2.0
++// LED trigger monitoring up to 16 lan* interfaces using RX/TX summation and OR logic
++
++#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
++
++#include <linux/jiffies.h>
++#include <linux/leds.h>
++#include <linux/module.h>
++#include <linux/mutex.h>
++#include <linux/netdevice.h>
++#include <linux/workqueue.h>
++#include "../leds.h"
++
++#define MAX_IFACES 16 /* Support up to 16 LAN interfaces */
++#define DEFAULT_INTERVAL 50 /* Blink interval in ms */
++
++struct led_netlan {
++    struct mutex lock;
++    struct delayed_work work;
++    struct notifier_block notifier;
++    struct led_classdev *led_cdev;
++    struct net_device *netdevs[MAX_IFACES];
++    int iface_max;
++    unsigned long interval;   /* in jiffies */
++    u64 last_rx_sum;
++    u64 last_tx_sum;
++};
++
++/* Periodic work function */
++static void lan_work_fn(struct work_struct *work)
++{
++    struct led_netlan *d =
++        container_of(work, struct led_netlan, work.work);
++    u64 rx_sum = 0, tx_sum = 0;
++    unsigned long interval_ms;
++    bool any_up = false;
++    struct rtnl_link_stats64 dev_stats;
++
++    mutex_lock(&d->lock);
++
++    for (int i = 0; i < d->iface_max; i++) {
++        struct net_device *dev = d->netdevs[i];
++        if (!dev)
++            continue;
++        /* Check if the interface is online */
++        if (netif_running(dev) && netif_carrier_ok(dev))
++            any_up = true;
++        dev_get_stats(dev, &dev_stats);
++        rx_sum += dev_stats.rx_packets;
++        tx_sum += dev_stats.tx_packets;
++    }
++
++    if (!any_up) {
++        /* No active link on any interface — turn LED off */
++        led_set_brightness(d->led_cdev, LED_OFF);
++    } else if (rx_sum != d->last_rx_sum || tx_sum != d->last_tx_sum) {
++        interval_ms = jiffies_to_msecs(d->interval);
++        /* Detected RX/TX activity — blink LED */
++        led_stop_software_blink(d->led_cdev);
++        led_blink_set_oneshot(d->led_cdev,
++                              &interval_ms,
++                              &interval_ms,
++                              true);
++    } else {
++        /* Link up but no traffic — LED stays on */
++        led_set_brightness(d->led_cdev, LED_FULL);
++    }
++
++    d->last_rx_sum = rx_sum;
++    d->last_tx_sum = tx_sum;
++    mutex_unlock(&d->lock);
++
++    schedule_delayed_work(&d->work, d->interval * 2);
++}
++
++/* Notifier for link or registration changes */
++static int lan_notify(struct notifier_block *nb, unsigned long event, void *ptr)
++{
++    struct netdev_notifier_info *info = ptr;
++    struct net_device *dev = info->dev;
++    struct led_netlan *d = container_of(nb, struct led_netlan, notifier);
++    int i, id, newid;
++
++    if (event != NETDEV_REGISTER && event != NETDEV_UNREGISTER
++        && event != NETDEV_CHANGENAME)
++        return NOTIFY_DONE;
++
++    mutex_lock(&d->lock);
++    id = -1;
++    for (i = 0; i < d->iface_max; i++) {
++        if (d->netdevs[i] && (d->netdevs[i] == dev)) {
++            id = i;
++            break;
++        }
++    }
++
++    switch (event) {
++    case NETDEV_UNREGISTER:
++           if (id>=0) {
++                dev_put(d->netdevs[id]);
++                d->netdevs[id] = NULL;
++                pr_info("interface %s unregistered\n", dev->name);
++                if (d->iface_max == (id + 1)) /* last */
++                    d->iface_max--;
++            }
++            break;
++    case NETDEV_CHANGENAME:
++            if ((id>=0) && (strncmp(dev->name, "lan", 3) != 0)) {
++                dev_put(d->netdevs[id]);
++                d->netdevs[id] = NULL;
++                pr_info("interface %s unregistered\n", dev->name);
++                if (d->iface_max == (id + 1)) /* last */
++                    d->iface_max--;
++                break;
++            }
++            fallthrough;
++    case NETDEV_REGISTER:
++            if ((id<0) && !strncmp(dev->name, "lan", 3)) {
++                newid = -1;
++                for (i = 0; i < d->iface_max; i++) {
++                    if (!d->netdevs[i]) {
++                        newid = i; /* first unused */
++                        break;
++                    }
++                }
++                if ((newid<0) && (d->iface_max < MAX_IFACES)) {
++                    newid = d->iface_max; /* new */
++                    d->iface_max++;
++                }
++                if (newid>=0) {
++                    dev_hold(dev);
++                    d->netdevs[newid] = dev;
++                    pr_info("interface %s registered\n", dev->name);
++                }
++            }
++            break;
++    }
++    mutex_unlock(&d->lock);
++    return NOTIFY_DONE;
++}
++
++static int lan_activate(struct led_classdev *led_cdev)
++{
++    struct led_netlan *d;
++    int i, ret;
++
++    d = kzalloc(sizeof(*d), GFP_KERNEL);
++    if (!d)
++        return -ENOMEM;
++
++    mutex_init(&d->lock);
++    INIT_DELAYED_WORK(&d->work, lan_work_fn);
++    d->notifier.notifier_call = lan_notify;
++    d->notifier.priority = 0;
++    d->led_cdev = led_cdev;
++    d->interval = msecs_to_jiffies(DEFAULT_INTERVAL);
++    d->last_rx_sum = 0;
++    d->last_tx_sum = 0;
++    d->iface_max = 0;
++
++    ret = register_netdevice_notifier(&d->notifier);
++    if (ret) {
++        for (i = 0; i < d->iface_max; i++)
++            if (d->netdevs[i])
++                dev_put(d->netdevs[i]);
++        kfree(d);
++        return ret;
++    }
++    schedule_delayed_work(&d->work, 0);
++    led_cdev->trigger_data = d;
++    return 0;
++}
++
++static void lan_deactivate(struct led_classdev *led_cdev)
++{
++    struct led_netlan *d = led_cdev->trigger_data;
++    int i;
++
++    cancel_delayed_work_sync(&d->work);
++    unregister_netdevice_notifier(&d->notifier);
++    for (i = 0; i < d->iface_max; i++)
++        if (d->netdevs[i])
++            dev_put(d->netdevs[i]);
++
++    led_set_brightness(led_cdev, LED_OFF);
++    kfree(d);
++}
++
++static struct led_trigger netlan_trigger = {
++    .name = "netlan",
++    .activate = lan_activate,
++    .deactivate = lan_deactivate,
++};
++
++module_led_trigger(netlan_trigger);
++
++MODULE_AUTHOR("Mieczyslaw Nalewaj namiltd@yahoo.com");
++MODULE_DESCRIPTION("LED trigger for up to 16 lan* interfaces with RX/TX summation and OR logic");
++MODULE_LICENSE("GPL v2");
+--- /dev/null
++++ b/drivers/leds/trigger/ledtrig-netwlan.c
+@@ -0,0 +1,225 @@
++// SPDX-License-Identifier: GPL-2.0
++// LED trigger: emulate mac80211 tpt logic with blink at all traffic levels, but solid ON only when no traffic.
++
++#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
++
++#include <linux/jiffies.h>
++#include <linux/leds.h>
++#include <linux/module.h>
++#include <linux/mutex.h>
++#include <linux/netdevice.h>
++#include <linux/workqueue.h>
++#include "../leds.h"
++
++#define MAX_IFACES 16 /* Support up to 16 WLAN interfaces */
++#define FIXED_INTERVAL_MS 100
++
++/* Blink timing table (kbps thresholds, on/off ms) */
++static const struct {
++    u32 throughput;
++    long unsigned int on_ms;
++    long unsigned int off_ms;
++} tpt_table[] = {
++    {  64,   200, 800 },
++    { 512,   200, 300 },
++    {2048,   200, 150 },
++    {10000,  200,  50 },
++    {54000,  100,  50 }, /* now blink instead of solid ON */
++};
++
++struct led_netwlan {
++    struct mutex lock;
++    struct delayed_work work;
++    struct notifier_block notifier;
++    struct led_classdev *led_cdev;
++    struct net_device *netdevs[MAX_IFACES];
++    int iface_max;
++
++    u64 last_rx_bytes_sum;
++    u64 last_tx_bytes_sum;
++};
++
++/* Periodic work function */
++static void wlan_work_fn(struct work_struct *work)
++{
++    struct led_netwlan *d = container_of(work, struct led_netwlan, work.work);
++    u64 rx_bytes_sum = 0, tx_bytes_sum = 0, bytes_delta, bits_per_sec, kbps;
++    bool any_up = false;
++    struct rtnl_link_stats64 dev_stats;
++    unsigned int interval_ms = FIXED_INTERVAL_MS;
++    int idx = -1, i;
++    long unsigned int on_ms, off_ms;
++
++    mutex_lock(&d->lock);
++
++    for (i = 0; i < d->iface_max; i++) {
++        struct net_device *dev = d->netdevs[i];
++        if (!dev)
++            continue;
++        if (netif_running(dev) && netif_carrier_ok(dev))
++            any_up = true;
++        dev_get_stats(dev, &dev_stats);
++        rx_bytes_sum += dev_stats.rx_bytes;
++        tx_bytes_sum += dev_stats.tx_bytes;
++    }
++
++    if (!any_up) {
++        led_stop_software_blink(d->led_cdev);
++        led_set_brightness(d->led_cdev, LED_OFF);
++        goto resched;
++    }
++
++    bytes_delta = (rx_bytes_sum - d->last_rx_bytes_sum) +
++                  (tx_bytes_sum - d->last_tx_bytes_sum);
++    bits_per_sec = div64_u64(bytes_delta * 8ULL * 1000ULL, interval_ms);
++    kbps = div64_u64(bits_per_sec, 1000ULL);
++
++    if (kbps == 0) {
++        /* Solid ON when no traffic */
++        led_stop_software_blink(d->led_cdev);
++        led_set_brightness(d->led_cdev, LED_FULL);
++    } else {
++        /* Find the highest matching threshold */
++        for (i = 0; i < ARRAY_SIZE(tpt_table); i++) {
++            if (kbps >= tpt_table[i].throughput)
++                idx = i;
++            else
++                break;
++        }
++        if (idx < 0)
++            idx = 0;
++
++        on_ms = tpt_table[idx].on_ms;
++        off_ms = tpt_table[idx].off_ms;
++        led_blink_set(d->led_cdev, &on_ms, &off_ms);
++    }
++
++    d->last_rx_bytes_sum = rx_bytes_sum;
++    d->last_tx_bytes_sum = tx_bytes_sum;
++
++resched:
++    mutex_unlock(&d->lock);
++    schedule_delayed_work(&d->work, msecs_to_jiffies(FIXED_INTERVAL_MS));
++}
++
++/* Notifier for link or registration changes */
++static int wlan_notify(struct notifier_block *nb, unsigned long event, void *ptr)
++{
++    struct netdev_notifier_info *info = ptr;
++    struct net_device *dev = info->dev;
++    struct led_netwlan *d = container_of(nb, struct led_netwlan, notifier);
++    int i, id, newid;
++
++    if (event != NETDEV_REGISTER && event != NETDEV_UNREGISTER
++        && event != NETDEV_CHANGENAME)
++        return NOTIFY_DONE;
++
++    mutex_lock(&d->lock);
++    id = -1;
++    for (i = 0; i < d->iface_max; i++) {
++        if (d->netdevs[i] && (d->netdevs[i] == dev)) {
++            id = i;
++            break;
++        }
++    }
++
++    switch (event) {
++    case NETDEV_UNREGISTER:
++            if (id>=0) {
++                dev_put(d->netdevs[id]);
++                d->netdevs[id] = NULL;
++                pr_info("interface %s unregistered\n", dev->name);
++                if (d->iface_max == (id + 1)) /* last */
++                    d->iface_max--;
++            }
++            break;
++    case NETDEV_CHANGENAME:
++            if ((id>=0) && (strncmp(dev->name, "phy", 3) != 0) && (strncmp(dev->name, "wl", 2) != 0)) {
++                dev_put(d->netdevs[id]);
++                d->netdevs[id] = NULL;
++                pr_info("interface %s unregistered\n", dev->name);
++                if (d->iface_max == (id + 1)) /* last */
++                    d->iface_max--;
++                break;
++            }
++            fallthrough;
++    case NETDEV_REGISTER:
++            if ((id<0) && (!strncmp(dev->name, "phy", 3) || !strncmp(dev->name, "wl", 2))) {
++                newid = -1;
++                for (i = 0; i < d->iface_max; i++) {
++                    if (!d->netdevs[i]) {
++                        newid = i; /* first unused */
++                        break;
++                    }
++                }
++                if ((newid<0) && (d->iface_max < MAX_IFACES)) {
++                    newid = d->iface_max; /* new */
++                    d->iface_max++;
++                }
++                if (newid>=0) {
++                    dev_hold(dev);
++                    d->netdevs[newid] = dev;
++                    pr_info("interface %s registered\n", dev->name);
++                }
++            }
++            break;
++    }
++    mutex_unlock(&d->lock);
++    return NOTIFY_DONE;
++}
++
++static int wlan_activate(struct led_classdev *led_cdev)
++{
++    struct led_netwlan *d;
++    int i, ret;
++
++    d = kzalloc(sizeof(*d), GFP_KERNEL);
++    if (!d)
++        return -ENOMEM;
++
++    mutex_init(&d->lock);
++    INIT_DELAYED_WORK(&d->work, wlan_work_fn);
++    d->notifier.notifier_call = wlan_notify;
++    d->notifier.priority = 0;
++    d->led_cdev = led_cdev;
++    d->iface_max = 0;
++
++    ret = register_netdevice_notifier(&d->notifier);
++    if (ret) {
++        for (i = 0; i < d->iface_max; i++)
++            if (d->netdevs[i])
++                dev_put(d->netdevs[i]);
++        kfree(d);
++        return ret;
++    }
++    schedule_delayed_work(&d->work, 0);
++    led_cdev->trigger_data = d;
++    return 0;
++}
++
++static void wlan_deactivate(struct led_classdev *led_cdev)
++{
++    struct led_netwlan *d = led_cdev->trigger_data;
++    int i;
++
++    cancel_delayed_work_sync(&d->work);
++    unregister_netdevice_notifier(&d->notifier);
++    for (i = 0; i < d->iface_max; i++)
++        if (d->netdevs[i])
++            dev_put(d->netdevs[i]);
++
++    led_set_brightness(led_cdev, LED_OFF);
++    kfree(d);
++}
++
++static struct led_trigger netwlan_trigger = {
++    .name = "netwlan",
++    .activate = wlan_activate,
++    .deactivate = wlan_deactivate,
++};
++
++module_led_trigger(netwlan_trigger);
++
++MODULE_AUTHOR("Mieczyslaw Nalewaj <namiltd@yahoo.com>");
++MODULE_DESCRIPTION("LED trigger for up to 16 phy* or wl* interfaces with consistent blink and solid idle state");
++MODULE_LICENSE("GPL v2");
+--- a/drivers/leds/trigger/Makefile
++++ b/drivers/leds/trigger/Makefile
+@@ -16,3 +16,5 @@ obj-$(CONFIG_LEDS_TRIGGER_NETDEV)	+= led
+ obj-$(CONFIG_LEDS_TRIGGER_PATTERN)	+= ledtrig-pattern.o
+ obj-$(CONFIG_LEDS_TRIGGER_TTY)		+= ledtrig-tty.o
+ obj-$(CONFIG_LEDS_TRIGGER_INPUT_EVENTS)	+= ledtrig-input-events.o
++obj-$(CONFIG_LEDS_TRIGGER_NETLAN)	+= ledtrig-netlan.o
++obj-$(CONFIG_LEDS_TRIGGER_NETWLAN)	+= ledtrig-netwlan.o
