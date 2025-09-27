@@ -1,0 +1,16 @@
+diff --git a/drivers/pinctrl/mediatek/Kconfig b/drivers/pinctrl/mediatek/Kconfig
+index a417a0316..713b2d2d3 100644
+--- a/drivers/pinctrl/mediatek/Kconfig
++++ b/drivers/pinctrl/mediatek/Kconfig
+@@ -127,9 +127,9 @@ config PINCTRL_MT8127
+ 
+ # For ARMv8 SoCs
+ config PINCTRL_AIROHA
+-	tristate "Airoha EN7581 pin control"
++	tristate "Airoha EN7581/EN7523 pin control"
+ 	depends on OF
+-	depends on ARM64 || COMPILE_TEST
++	depends on ARCH_AIROHA || COMPILE_TEST
+ 	select PINMUX
+ 	select GENERIC_PINCONF
+ 	select GENERIC_PINCTRL_GROUPS

@@ -1,0 +1,336 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+/* Bootloader installs ATF here */
+/memreserve/ 0x80000000 0x200000;
+
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include "en7523.dtsi"
+
+/ {
+	model = "TP-Link xx230v";
+	compatible = "tplink,xx230v", "airoha,en7523";
+
+	chosen {
+		bootargs = "console=ttyS0,115200 earlycon";
+		stdout-path = "serial0:115200n8";
+	};
+
+	aliases {
+		serial0 = &uart1;
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-upgrade = &led_power;
+		led-running = &led_power;
+	};
+
+	memory@80000000 {
+		device_type = "memory";
+		reg = <0x80000000 0x40000000>;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pinctrl 0 GPIO_ACTIVE_LOW>;
+		};
+
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pinctrl 7 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: power {
+			label = "green:power";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <0>;
+			gpios = <&pinctrl 11 GPIO_ACTIVE_LOW>;
+		};
+
+		xpon {
+			label = "green:xpon";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <0>;
+			gpios = <&pinctrl 10 GPIO_ACTIVE_LOW>;
+		};
+
+		los {
+			label = "red:xpon:los";
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <1>;
+			gpios = <&pinctrl 3 GPIO_ACTIVE_HIGH>;
+		};
+
+		internet {
+			label = "green:internet";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <0>;
+			gpios = <&pinctrl 1 GPIO_ACTIVE_LOW>;
+		};
+
+		wifi {
+			label = "green:wifi";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <0>;
+			gpios = <&pinctrl 6 GPIO_ACTIVE_LOW>;
+		};
+
+		fxs {
+			label = "green:fxs";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <0>;
+			gpios = <&pinctrl 5 GPIO_ACTIVE_HIGH>;
+		};
+
+		lan1 {
+			label = "green:lan1";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <0>;
+			gpios = <&pinctrl 22 GPIO_ACTIVE_LOW>;
+		};
+
+		lan2 {
+			label = "green:lan2";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <0>;
+			gpios = <&pinctrl 23 GPIO_ACTIVE_LOW>;
+		};
+
+		lan3 {
+			label = "green:lan3";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <0>;
+			gpios = <&pinctrl 24 GPIO_ACTIVE_LOW>;
+		};
+
+		wan {
+			label = "green:wan";
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN;
+			function-enumerator = <0>;
+			gpios = <&pinctrl 25 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&snfi {
+	status = "okay";
+};
+
+&nand {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "u-boot";
+			reg = <0x0 0x7C000>;
+			read-only;
+		};
+
+		partition@7C000 {
+			compatible = "u-boot,env";
+			label = "u-boot-env";
+			reg = <0x7C000 0x4000>;
+			nvmem-layout {
+				compatible = "u-boot,env";
+			};
+		};
+
+		partition@80000 {
+			label = "romfile";
+			reg = <0x80000 0xa0000>;
+			read-only;
+		};
+
+		partition@a0000 {
+			label = "misc";
+			reg = <0x0a0000 0x1a0000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom0: eeprom@80000 {
+					reg = <0x80000 0xe00>;
+				};
+
+				switch_macaddr: macaddr@4f1e0 {
+					compatible = "mac-base";
+					reg = <0x4f1e0 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+
+				wifi_macaddr: macaddr@4f100 {
+					compatible = "mac-base";
+					reg = <0x4f100 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+			};
+		};
+
+		partition@1a0000 {
+			label = "firmware";
+			reg = <0x01a0000 0x2000000>;
+			compatible = "tplink,firmware";
+		};
+
+		partition@200000 {
+			label = "firmware_slave";
+			reg = <0x2000000 0x3e60000>;
+			compatible = "tplink,firmware";
+			read-only;
+		};
+
+		partition@3fe0000 {
+			label = "reserve";
+			reg = <0x3fe0000 0x4000000>;
+			read-only;
+		};
+	};
+};
+
+&pinctrl {
+	gpio-ranges = <&pinctrl 0 16 47>;
+
+	mdio_pins: mdio-pins {
+		mux {
+			function = "mdio";
+			groups = "mdio";
+		};
+
+		conf {
+			pins = "gpio13";
+			output-high;
+		};
+	};
+
+	pcie0_rst_pins: pcie0-rst-pins {
+		conf {
+			pins = "pcie_reset0";
+			drive-open-drain = <1>;
+		};
+	};
+
+	pcie1_rst_pins: pcie1-rst-pins {
+		conf {
+			pins = "pcie_reset1";
+			drive-open-drain = <1>;
+		};
+	};
+};
+
+&i2c0 {
+	status = "okay";
+};
+
+&npu {
+	status = "okay";
+};
+
+&eth {
+	status = "okay";
+};
+
+&gdm1 {
+	status = "okay";
+
+	nvmem-cells = <&switch_macaddr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&mdio_pins>;
+	reset-gpios = <&pinctrl 31 GPIO_ACTIVE_LOW>;
+
+	ports {
+		port@1 {
+			status = "okay";
+		};
+
+		port@2 {
+			status = "okay";
+		};
+
+		port@3 {
+			status = "okay";
+		};
+
+		port@4 {
+			status = "okay";
+			label = "wan";
+		};
+
+		port@6 {
+			nvmem-cells = <&switch_macaddr 0>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
+};
+
+&pcie0 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie0_rst_pins>;
+};
+
+&pcie1 {
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie1_rst_pins>;
+	pacie@1,0 {
+		reg = <0x00000800 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+
+		mt7915@0,0 {
+			reg = <0x0000 0 0 0 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			nvmem-cells = <&eeprom0>;
+			nvmem-cell-names = "eeprom";
+
+			airoha,npu = <&npu>;
+			airoha,eth = <&eth>;
+
+			// 2.4 GHz
+			band@0 {
+				reg = <0>;
+				nvmem-cells = <&wifi_macaddr 0>;
+				nvmem-cell-names = "mac-address";
+			};
+
+			// 5 GHz
+			band@1 {
+				reg = <1>;
+				nvmem-cells = <&wifi_macaddr 2>;
+				nvmem-cell-names = "mac-address";
+			};
+		};
+	};
+};

@@ -1,0 +1,230 @@
+diff --git a/drivers/clk/clk-en7523.c b/drivers/clk/clk-en7523.c
+index 15bbdeb60..50c3c8c20 100644
+--- a/drivers/clk/clk-en7523.c
++++ b/drivers/clk/clk-en7523.c
+@@ -10,6 +10,7 @@
+ #include <linux/reset-controller.h>
+ #include <dt-bindings/clock/en7523-clk.h>
+ #include <dt-bindings/reset/airoha,en7581-reset.h>
++#include <dt-bindings/reset/airoha,en7523-reset.h>
+ 
+ #define RST_NR_PER_BANK			32
+ 
+@@ -299,6 +300,11 @@ static const u16 en7581_rst_ofs[] = {
+ 	REG_RST_CTRL1,
+ };
+ 
++static const u16 en7523_rst_ofs[] = {
++	REG_RST_CTRL2,
++	REG_RST_CTRL1,
++};
++
+ static const u16 en7581_rst_map[] = {
+ 	/* RST_CTRL2 */
+ 	[EN7581_XPON_PHY_RST]		= 0,
+@@ -357,6 +363,64 @@ static const u16 en7581_rst_map[] = {
+ 	[EN7581_XPON_MAC_RST]		= RST_NR_PER_BANK + 31,
+ };
+ 
++static const u16 en7523_rst_map[] = {
++	/* RST_CTRL2 */
++	[EN7523_RST_XPON_PHY]		= 0,
++	[EN7523_RST_CPU_TIMER2]		= 2,
++	[EN7523_RST_HSUART]		= 3,
++	[EN7523_RST_UART4]		= 4,
++	[EN7523_RST_UART5]		= 5,
++	[EN7523_RST_I2C2]		= 6,
++	[EN7523_RST_XSI_MAC]		= 7,
++	[EN7523_RST_XSI_PHY]		= 8,
++	[EN7523_RST_NPU]		= 9,
++	[EN7523_RST_I2S]		= 10,
++	[EN7523_RST_TRNG]		= 11,
++	[EN7523_RST_TRNG_MSTART]	= 12,
++	[EN7523_RST_DUAL_HSI0]		= 13,
++	[EN7523_RST_DUAL_HSI1]		= 14,
++	[EN7523_RST_HSI]		= 15,
++	[EN7523_RST_DUAL_HSI0_MAC]	= 16,
++	[EN7523_RST_DUAL_HSI1_MAC]	= 17,
++	[EN7523_RST_HSI_MAC]		= 18,
++	[EN7523_RST_WDMA]		= 19,
++	[EN7523_RST_WOE0]		= 20,
++	[EN7523_RST_WOE1]		= 21,
++	[EN7523_RST_HSDMA]		= 22,
++	[EN7523_RST_TDMA]		= 24,
++	[EN7523_RST_EMMC]		= 25,
++	[EN7523_RST_SOE]		= 26,
++	[EN7523_RST_PCIE2]		= 27,
++	[EN7523_RST_XFP_MAC]		= 28,
++	[EN7523_RST_USB_HOST_P1]	= 29,
++	[EN7523_RST_USB_HOST_P1_U3_PHY]	= 30,
++	/* RST_CTRL1 */
++	[EN7523_RST_PCM1_ZSI_ISI]	= RST_NR_PER_BANK + 0,
++	[EN7523_RST_FE_PDMA]		= RST_NR_PER_BANK + 1,
++	[EN7523_RST_FE_QDMA]		= RST_NR_PER_BANK + 2,
++	[EN7523_RST_PCM_SPIWP]		= RST_NR_PER_BANK + 4,
++	[EN7523_RST_CRYPTO]		= RST_NR_PER_BANK + 6,
++	[EN7523_RST_TIMER]		= RST_NR_PER_BANK + 8,
++	[EN7523_RST_PCM1]		= RST_NR_PER_BANK + 11,
++	[EN7523_RST_UART]		= RST_NR_PER_BANK + 12,
++	[EN7523_RST_GPIO]		= RST_NR_PER_BANK + 13,
++	[EN7523_RST_GDMA]		= RST_NR_PER_BANK + 14,
++	[EN7523_RST_I2C_MASTER]		= RST_NR_PER_BANK + 16,
++	[EN7523_RST_PCM2_ZSI_ISI]	= RST_NR_PER_BANK + 17,
++	[EN7523_RST_SFC]		= RST_NR_PER_BANK + 18,
++	[EN7523_RST_UART2]		= RST_NR_PER_BANK + 19,
++	[EN7523_RST_GDMP]		= RST_NR_PER_BANK + 20,
++	[EN7523_RST_FE]			= RST_NR_PER_BANK + 21,
++	[EN7523_RST_USB_HOST_P0]	= RST_NR_PER_BANK + 22,
++	[EN7523_RST_GSW]		= RST_NR_PER_BANK + 23,
++	[EN7523_RST_SFC2_PCM]		= RST_NR_PER_BANK + 25,
++	[EN7523_RST_PCIE0]		= RST_NR_PER_BANK + 26,
++	[EN7523_RST_PCIE1]		= RST_NR_PER_BANK + 27,
++	[EN7523_RST_CPU_TIMER]		= RST_NR_PER_BANK + 28,
++	[EN7523_RST_PCIE_HB]		= RST_NR_PER_BANK + 29,
++	[EN7523_RST_XPON_MAC]		= RST_NR_PER_BANK + 31,
++};
++
+ static u32 en7523_get_base_rate(const struct en_clk_desc *desc, u32 val)
+ {
+ 	if (!desc->base_bits)
+@@ -537,24 +601,6 @@ static void en7523_register_clocks(struct device *dev, struct clk_hw_onecell_dat
+ 	clk_data->hws[EN7523_CLK_PCIE] = hw;
+ }
+ 
+-static int en7523_clk_hw_init(struct platform_device *pdev,
+-			      struct clk_hw_onecell_data *clk_data)
+-{
+-	void __iomem *base, *np_base;
+-
+-	base = devm_platform_ioremap_resource(pdev, 0);
+-	if (IS_ERR(base))
+-		return PTR_ERR(base);
+-
+-	np_base = devm_platform_ioremap_resource(pdev, 1);
+-	if (IS_ERR(np_base))
+-		return PTR_ERR(np_base);
+-
+-	en7523_register_clocks(&pdev->dev, clk_data, base, np_base);
+-
+-	return 0;
+-}
+-
+ static void en7581_register_clocks(struct device *dev, struct clk_hw_onecell_data *clk_data,
+ 				   struct regmap *map, void __iomem *base)
+ {
+@@ -675,6 +721,47 @@ static int en7581_reset_register(struct device *dev, void __iomem *base)
+ 	return devm_reset_controller_register(dev, &rst_data->rcdev);
+ }
+ 
++static int en7523_reset_register(struct device *dev, void __iomem *base)
++{
++	struct en_rst_data *rst_data;
++
++	rst_data = devm_kzalloc(dev, sizeof(*rst_data), GFP_KERNEL);
++	if (!rst_data)
++		return -ENOMEM;
++
++	rst_data->bank_ofs = en7523_rst_ofs;
++	rst_data->idx_map = en7523_rst_map;
++	rst_data->base = base;
++
++	rst_data->rcdev.nr_resets = ARRAY_SIZE(en7523_rst_map);
++	rst_data->rcdev.of_xlate = en7523_reset_xlate;
++	rst_data->rcdev.ops = &en7581_reset_ops;
++	rst_data->rcdev.of_node = dev->of_node;
++	rst_data->rcdev.of_reset_n_cells = 1;
++	rst_data->rcdev.owner = THIS_MODULE;
++	rst_data->rcdev.dev = dev;
++
++	return devm_reset_controller_register(dev, &rst_data->rcdev);
++}
++
++static int en7523_clk_hw_init(struct platform_device *pdev,
++			      struct clk_hw_onecell_data *clk_data)
++{
++	void __iomem *base, *np_base;
++
++	base = devm_platform_ioremap_resource(pdev, 0);
++	if (IS_ERR(base))
++		return PTR_ERR(base);
++
++	np_base = devm_platform_ioremap_resource(pdev, 1);
++	if (IS_ERR(np_base))
++		return PTR_ERR(np_base);
++
++	en7523_register_clocks(&pdev->dev, clk_data, base, np_base);
++
++	return en7523_reset_register(&pdev->dev, np_base);
++}
++
+ static int en7581_clk_hw_init(struct platform_device *pdev,
+ 			      struct clk_hw_onecell_data *clk_data)
+ {
+diff --git a/include/dt-bindings/reset/airoha,en7523-reset.h b/include/dt-bindings/reset/airoha,en7523-reset.h
+new file mode 100644
+index 000000000..5b1284428
+--- /dev/null
++++ b/include/dt-bindings/reset/airoha,en7523-reset.h
+@@ -0,0 +1,62 @@
++// SPDX-License-Identifier: GPL-2.0-only
++
++#ifndef __DT_BINDINGS_RESET_CONTROLLER_AIROHA_EN7523_H_
++#define __DT_BINDINGS_RESET_CONTROLLER_AIROHA_EN7523_H_
++
++/* RST_CTRL2 */
++#define EN7523_RST_XPON_PHY		 0
++#define EN7523_RST_CPU_TIMER2		 1
++#define EN7523_RST_HSUART		 2
++#define EN7523_RST_UART4		 3
++#define EN7523_RST_UART5		 4
++#define EN7523_RST_I2C2			 5
++#define EN7523_RST_XSI_MAC		 6
++#define EN7523_RST_XSI_PHY		 7
++#define EN7523_RST_NPU			 8
++#define EN7523_RST_I2S			 9
++#define EN7523_RST_TRNG			10
++#define EN7523_RST_TRNG_MSTART		11
++#define EN7523_RST_DUAL_HSI0		12
++#define EN7523_RST_DUAL_HSI1		13
++#define EN7523_RST_HSI			14
++#define EN7523_RST_DUAL_HSI0_MAC	15
++#define EN7523_RST_DUAL_HSI1_MAC	16
++#define EN7523_RST_HSI_MAC		17
++#define EN7523_RST_WDMA			18
++#define EN7523_RST_WOE0			19
++#define EN7523_RST_WOE1			20
++#define EN7523_RST_HSDMA		21
++#define EN7523_RST_TDMA			22
++#define EN7523_RST_EMMC			23
++#define EN7523_RST_SOE			24
++#define EN7523_RST_PCIE2		25
++#define EN7523_RST_XFP_MAC		26
++#define EN7523_RST_USB_HOST_P1		27
++#define EN7523_RST_USB_HOST_P1_U3_PHY	28
++/* RST_CTRL1 */
++#define EN7523_RST_PCM1_ZSI_ISI		29
++#define EN7523_RST_FE_PDMA		30
++#define EN7523_RST_FE_QDMA		31
++#define EN7523_RST_PCM_SPIWP		32
++#define EN7523_RST_CRYPTO		33
++#define EN7523_RST_TIMER		34
++#define EN7523_RST_PCM1			35
++#define EN7523_RST_UART			36
++#define EN7523_RST_GPIO			37
++#define EN7523_RST_GDMA			38
++#define EN7523_RST_I2C_MASTER		39
++#define EN7523_RST_PCM2_ZSI_ISI		40
++#define EN7523_RST_SFC			41
++#define EN7523_RST_UART2		42
++#define EN7523_RST_GDMP			43
++#define EN7523_RST_FE			44
++#define EN7523_RST_USB_HOST_P0		45
++#define EN7523_RST_GSW			46
++#define EN7523_RST_SFC2_PCM		47
++#define EN7523_RST_PCIE0		48
++#define EN7523_RST_PCIE1		49
++#define EN7523_RST_CPU_TIMER		50
++#define EN7523_RST_PCIE_HB		51
++#define EN7523_RST_XPON_MAC		52
++
++#endif /* __DT_BINDINGS_RESET_CONTROLLER_AIROHA_EN7523_H_ */

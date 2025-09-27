@@ -26,20 +26,34 @@
 	};
 };
 
-&gpio0 {
-	status = "okay";
-};
+&pinctrl {
+	gpio-ranges = <&pinctrl 0 16 47>;
 
-&gpio1 {
-	status = "okay";
+	pcie0_rst_pins: pcie0-rst-pins {
+		conf {
+			pins = "pcie_reset0";
+			drive-open-drain = <1>;
+		};
+	};
+
+	pcie1_rst_pins: pcie1-rst-pins {
+		conf {
+			pins = "pcie_reset1";
+			drive-open-drain = <1>;
+		};
+	};
 };
 
 &pcie0 {
 	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie0_rst_pins>;
 };
 
 &pcie1 {
 	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie1_rst_pins>;
 };
 
 &nand {
