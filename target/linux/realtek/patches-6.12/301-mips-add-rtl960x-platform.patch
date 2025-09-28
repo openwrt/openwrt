@@ -1,0 +1,24 @@
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -1042,6 +1042,21 @@ config RTL931X
+ 	select SYS_SUPPORTS_SMP
+ 	select SYS_SUPPORTS_MIPS_CPS
+ 
++config RTL960X
++	bool "Realtek RTL960X based platforms"
++	depends on MACH_REALTEK_RTL
++	select MIPS_CPU_SCACHE
++	select SYS_SUPPORTS_MULTITHREADING
++	select MIPS_GIC
++	select COMMON_CLK
++	select CLKSRC_MIPS_GIC
++	select SYS_SUPPORTS_VPE_LOADER
++	select SYS_SUPPORTS_SMP
++	select SYS_SUPPORTS_MIPS_CPS
++	select HAVE_PCI
++	select SYS_SUPPORTS_ZBOOT
++	select MIPS_EXTERNAL_TIMER
++
+ source "arch/mips/alchemy/Kconfig"
+ source "arch/mips/ath25/Kconfig"
+ source "arch/mips/ath79/Kconfig"
