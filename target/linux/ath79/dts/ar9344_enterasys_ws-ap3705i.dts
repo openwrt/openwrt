@@ -68,22 +68,6 @@
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 20 GPIO_ACTIVE_HIGH>;
 		};
-
-		radio2 {
-			label = "green:radio2";
-			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
-		};
-	};
-
-	ath9k-leds {
-		compatible = "gpio-leds";
-
-		radio1 {
-			label = "green:radio1";
-			gpios = <&ath9k 0 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
-		};
 	};
 
 	keys {
@@ -114,6 +98,11 @@
 &wmac {
 	status = "okay";
 	qca,no-eeprom;
+
+	led {
+		led-sources = <11>;
+		led-active-low;
+	};
 };
 
 &spi {
@@ -197,8 +186,11 @@
 		compatible = "pci168c,0033";
 		reg = <0x0000 0 0 0 0>;
 		qca,no-eeprom;
-		#gpio-cells = <2>;
-		gpio-controller;
+
+		led {
+			led-sources = <0>;
+			led-active-low;
+		};
 	};
 };
 
