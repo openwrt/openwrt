@@ -1166,20 +1166,22 @@ let main_obj = {
 				return 0;
 			}
 
-			if (!req.args.frequency)
-				return libubus.STATUS_INVALID_ARGUMENT;
+			let freq_info;
+			if (req.args.frequency) {
+				freq_info = iface_freq_info(iface, config, req.args);
+				if (!freq_info)
+					return libubus.STATUS_UNKNOWN_ERROR;
 
-			let freq_info = iface_freq_info(iface, config, req.args);
-			if (!freq_info)
-				return libubus.STATUS_UNKNOWN_ERROR;
-
-			let ret;
-			if (req.args.csa) {
-				freq_info.csa_count = req.args.csa_count ?? 10;
-				ret = iface.switch_channel(freq_info);
-			} else {
-				ret = iface.start(freq_info);
+				if (req.args.csa) {
+					freq_info.csa_count = req.args.csa_count ?? 10;
+					let ret = iface.switch_channel(freq_info);
+					if (!ret)
+						return libubus.STATUS_UNKNOWN_ERROR;
+					return 0;
+				}
 			}
+
+			let ret = iface.start(freq_info);
 			if (!ret)
 				return libubus.STATUS_UNKNOWN_ERROR;
 

@@ -582,10 +582,8 @@ uc_hostapd_iface_start(uc_vm_t *vm, size_t nargs)
 	if (!iface)
 		return NULL;
 
-	if (!info) {
-		iface->freq = 0;
+	if (!info)
 		goto out;
-	}
 
 	if (ucv_type(info) != UC_OBJECT)
 		return NULL;
