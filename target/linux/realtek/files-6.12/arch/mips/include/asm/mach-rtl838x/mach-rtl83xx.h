@@ -25,6 +25,9 @@
 #define RTL839X_CHIP_INFO		(0x0FF4)
 #define RTL93XX_MODEL_NAME_INFO		(0x0004)
 #define RTL93XX_CHIP_INFO		(0x0008)
+#define RTL96XX_MODEL_NAME_INFO		(0x10000)
+#define RTL96XX_CHIP_INFO		(0x10004)
+#define RTL96XX_CHIP_SUB_INFO	(0x10008)
 
 #define RTL838X_INT_RW_CTRL		(0x0058)
 #define RTL838X_EXT_VERSION		(0x00D0)
@@ -34,12 +37,14 @@
 #define RTL8390_FAMILY_ID		(0x8390)
 #define RTL9300_FAMILY_ID		(0x9300)
 #define RTL9310_FAMILY_ID		(0x9310)
+#define RTL9607_FAMILY_ID		(0x9607)
 
 /* Basic SoC Features */
 #define RTL838X_CPU_PORT		28
 #define RTL839X_CPU_PORT		52
 #define RTL930X_CPU_PORT		28
 #define RTL931X_CPU_PORT		56
+#define RTL9607_CPU_PORT		9
 
 struct rtl83xx_soc_info {
 	unsigned char *name;
@@ -48,6 +53,7 @@ struct rtl83xx_soc_info {
 	unsigned int revision;
 	unsigned int cpu;
 	bool testchip;
+	unsigned int subtype;
 	int cpu_port;
 	int memory_size;
 };
