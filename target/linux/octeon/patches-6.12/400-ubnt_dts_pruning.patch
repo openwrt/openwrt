@@ -17,7 +17,7 @@ Date:   Tue Jun 17 13:58:19 2025 +0200
 
 --- a/arch/mips/cavium-octeon/octeon-platform.c
 +++ b/arch/mips/cavium-octeon/octeon-platform.c
-@@ -1133,6 +1133,41 @@ end_led:
+@@ -1134,6 +1134,41 @@ end_led:
  	}
  #endif
  
@@ -61,14 +61,14 @@ Date:   Tue Jun 17 13:58:19 2025 +0200
  
 --- a/arch/mips/cavium-octeon/setup.c
 +++ b/arch/mips/cavium-octeon/setup.c
-@@ -1168,6 +1168,7 @@ void __init prom_free_prom_memory(void)
- 	}
- }
+@@ -43,6 +43,7 @@
+ #include <asm/time.h>
  
-+int __init ubnt_prune_device_tree(void);
- void __init octeon_fill_mac_addresses(void);
+ #include <asm/octeon/octeon.h>
++#include <asm/octeon/octeon-platform.h>
+ #include <asm/octeon/pci-octeon.h>
+ #include <asm/octeon/cvmx-rst-defs.h>
  
- void __init device_tree_init(void)
 @@ -1207,6 +1208,9 @@ void __init device_tree_init(void)
  		octeon_prune_device_tree();
  		pr_info("Using internal Device Tree.\n");
@@ -79,3 +79,12 @@ Date:   Tue Jun 17 13:58:19 2025 +0200
  	if (fill_mac)
  		octeon_fill_mac_addresses();
  	unflatten_and_copy_device_tree();
+--- a/arch/mips/include/asm/octeon/octeon-platform.h
++++ b/arch/mips/include/asm/octeon/octeon-platform.h
+@@ -2,5 +2,6 @@
+ #define __OCTEON_PLATFORM_H__
+ 
+ extern void octeon_fill_mac_addresses(void);
++extern int ubnt_prune_device_tree(void);
+ 
+ #endif
