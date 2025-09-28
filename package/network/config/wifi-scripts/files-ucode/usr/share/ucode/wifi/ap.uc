@@ -45,6 +45,7 @@ function iface_setup(config) {
 
 	append('bssid', config.macaddr);
 	config.ssid2 = config.ssid;
+	config.wmm_enabled = 1;
 	append_string_vars(config, [ 'ssid2' ]);
 
 	append_vars(config, [
@@ -53,9 +54,9 @@ function iface_setup(config) {
 		'disassoc_low_ack', 'skip_inactivity_poll', 'ignore_broadcast_ssid', 'uapsd_advertisement_enabled',
 		'utf8_ssid', 'multi_ap', 'tdls_prohibit', 'bridge', 'wds_sta', 'wds_bridge',
 		'snoop_iface', 'vendor_elements', 'nas_identifier', 'radius_acct_interim_interval',
-		'ocv', 'multicast_to_unicast', 'preamble', 'wmm_enabled', 'proxy_arp', 'per_sta_vif', 'mbo',
+		'ocv', 'multicast_to_unicast', 'preamble', 'proxy_arp', 'per_sta_vif', 'mbo',
 		'bss_transition', 'wnm_sleep_mode', 'wnm_sleep_mode_no_keys', 'qos_map_set', 'max_listen_int',
-		'dtim_period',
+		'dtim_period', 'wmm_enabled',
 	]);
 }
 
