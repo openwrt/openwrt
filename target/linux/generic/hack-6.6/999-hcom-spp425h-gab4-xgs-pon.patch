@@ -1,0 +1,31 @@
+From f0a1b2c3d4e56789012345678901633216744abc Mon Sep 17 00:00:00 2001
+From: Francisco Carlos Garcia Villalba <continentalwl@gmail.com>
+Date: Mon, 15 Sep 2025 19:40:31 +0000
+Subject: [PATCH] net: phy: sfp: add quirk for H-COM SPP425H-GAB4 XGS-PON module
+
+Add quirk for the H-COM SPP425H-GAB4 XGS-PON module to use sfp_fixup_halny_gsfp.
+This module requires the fixup for correct operation.
+
+The module identifiers are based on working EEPROM and ethtool output.
+
+Signed-off-by: Francisco Carlos Garcia Villalba <continentalwl@gmail.com>
+---
+drivers/net/phy/sfp.c | 4 ++++
+1 file changed, 4 insertions(+)
+
+diff --git a/drivers/net/phy/sfp.c b/drivers/net/phy/sfp.c
+index 14f14bc..7b2a6a1 100644
+--- a/drivers/net/phy/sfp.c
++++ b/drivers/net/phy/sfp.c
+@@ -505,6 +506,9 @@
+ 	// OEM SFP-GE-T is a 1000Base-T module with broken TX_FAULT indicator
+ 	SFP_QUIRK_F("OEM", "SFP-GE-T", sfp_fixup_ignore_tx_fault),
+ 
++	// H-COM SPP425H-GAB4 XGS-PON module (SFP+)
++	SFP_QUIRK_F("H-COM", "SPP425H-GAB4", sfp_fixup_halny_gsfp),
++
+ 	SFP_QUIRK_F("ETU", "ESP-T5-R", sfp_fixup_rollball_cc),
+ 	SFP_QUIRK_F("OEM", "SFP-10G-T", sfp_fixup_rollball_cc),
+ 	SFP_QUIRK_M("OEM", "SFP-2.5G-T", sfp_quirk_oem_2_5g),
+-- 
+2.45.2
