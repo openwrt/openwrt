@@ -178,6 +178,23 @@ static void __init rtl93xx_read_details(u32 model)
 		soc_info.testchip = true;
 }
 
+static void __init rtl96xx_read_details(u32 model)
+{
+	u32 chip_info, chip_subtype;
+
+	sw_w32(0xa << 28, RTL96XX_CHIP_INFO);
+
+	chip_info = sw_r32(RTL96XX_CHIP_INFO);
+	soc_info.cpu = chip_info & 0xffff;
+
+	sw_w32(0xb << 28, RTL96XX_CHIP_SUB_INFO);
+
+	chip_subtype = sw_r32(RTL96XX_CHIP_SUB_INFO);
+	soc_info.subtype = chip_subtype & 0x1f;
+
+	soc_info.revision = model & 0xf;
+}
+
 static u32 __init read_model(void)
 {
 	u32 model, id;
@@ -218,6 +235,16 @@ static u32 __init read_model(void)
 		return model;
 	}
 
+	model = sw_r32(RTL96XX_MODEL_NAME_INFO);
+	id = model >> 16 & 0xffff;
+	if (id == 0x9607) {
+		soc_info.id = id;
+		soc_info.family = RTL9607_FAMILY_ID;
+		soc_info.cpu_port = RTL9607_CPU_PORT;
+		rtl96xx_read_details(model);
+		return model;
+	}
+
 	return 0;
 }
 
@@ -240,6 +267,7 @@ static void __init set_system_type(void)
 {
 	char revision = '?';
 	char *es = "";
+	char subtype[12] = "";
 
 	if (soc_info.revision >= 0 && soc_info.revision < 26)
 		revision = 'A' + soc_info.revision;
@@ -247,9 +275,12 @@ static void __init set_system_type(void)
 	if (soc_info.testchip)
 		es = " ES";
 
+	if (soc_info.subtype)
+		snprintf(subtype, sizeof(subtype), " subtype %02X", soc_info.subtype);
+
 	snprintf(rtl_system_type, sizeof(rtl_system_type),
-		 "Realtek %s%s rev %c (%04X)",
-		 soc_info.name, es, revision, soc_info.cpu);
+		 "Realtek %s%s%s rev %c (%04X)",
+		 soc_info.name, es, subtype, revision, soc_info.cpu);
 }
 
 static void get_system_memory(void)
@@ -271,6 +302,7 @@ static void get_system_memory(void)
 static void prepare_highmem(void)
 {
 	if ((soc_info.family != RTL9300_FAMILY_ID) ||
+	    (soc_info.family != RTL9607_FAMILY_ID) ||
 	    (soc_info.memory_size <= 256 * 1024 * 1024) ||
 	    !IS_ENABLED(CONFIG_HIGHMEM))
 		return;
