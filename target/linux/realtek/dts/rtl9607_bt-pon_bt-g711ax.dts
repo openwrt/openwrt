@@ -1,0 +1,65 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "rtl960x.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "bt-pon,bt-g711ax", "realtek,rtl9607-soc";
+
+	model = "BT-PON BT-G711AX";
+
+};
+
+&ecc0 {
+	status = "okay";
+};
+
+&snand {
+	status= "okay";
+
+	flash@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+
+		nand-ecc-engine = <&ecc0>;
+		nand-ecc-strength = <6>;
+		nand-ecc-step-size = <512>;
+		nand-ecc-algo = "bch";
+		nand-ecc-placement = "oob";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0xe0000>;
+				read-only;
+			};
+
+			partition@e0000 {
+				label = "u-boot-env";
+				reg = <0xe0000 0x20000>;
+			};
+
+			partition@100000 {
+				label = "u-boot-env2";
+				reg = <0x100000 0x20000>;
+			};
+
+			partition@120000 {
+				label = "static_conf";
+				reg = <0x120000 0x20000>;
+			};
+
+			partition@140000 {
+				label = "ubi";
+				reg = <0x140000 0x7c40000>;
+			};
+		};
+	};
+};
