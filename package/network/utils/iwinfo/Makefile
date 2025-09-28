@@ -63,7 +63,7 @@ define Package/iwinfo
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Generalized Wireless Information utility
-  DEPENDS:=+libiwinfo @!WIFI_SCRIPTS_UCODE
+  DEPENDS:=+@!WIFI_SCRIPTS_UCODE:libiwinfo
 endef
 
 define Package/iwinfo/description
@@ -111,10 +111,16 @@ define Package/libiwinfo-data/install
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/devices.txt $(1)/usr/share/libiwinfo/devices.txt
 endef
 
-define Package/iwinfo/install
+ifdef CONFIG_WIFI_SCRIPTS_UCODE
+  define Package/iwinfo/install
+	:
+  endef
+else
+  define Package/iwinfo/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/iwinfo $(1)/usr/bin/iwinfo
-endef
+  endef
+endif
 
 $(eval $(call BuildPackage,libiwinfo))
 $(eval $(call BuildPackage,libiwinfo-lua))
