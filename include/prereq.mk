@@ -71,7 +71,7 @@ endef
 # 4: optional link library test (example -lncurses)
 define RequireCHeader
   define Require/$(1)
-    echo 'int main(int argc, char **argv) { $(3); return 0; }' | gcc -include $(1) -x c -o $(TMP_DIR)/a.out - $(4)
+    echo 'int main(int argc, char **argv) { $(3); return 0; }' | $(STAGING_DIR_HOST)/bin/gcc -include $(1) -x c -o $(TMP_DIR)/a.out - $(4)
   endef
 
   $$(eval $$(call Require,$(1),$(2)))
