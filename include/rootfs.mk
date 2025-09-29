@@ -78,7 +78,7 @@ define prepare_rootfs
 		cd $(1); \
 		if [ -n "$(CONFIG_USE_APK)" ]; then \
 			IPKG_POSTINST_PATH=./lib/apk/db/*.post-install; \
-			$(STAGING_DIR_HOST)/bin/tar -C ./lib/apk/db/ -xf ./lib/apk/db/scripts.tar --wildcards "*.post-install"; \
+			find ./lib/apk/db/ -name '*.post-install' | sort -u | $(STAGING_DIR_HOST)/bin/tar -xf ./lib/apk/db/scripts.tar -T -; \
 		else \
 			IPKG_POSTINST_PATH=./usr/lib/opkg/info/*.postinst; \
 		fi; \
