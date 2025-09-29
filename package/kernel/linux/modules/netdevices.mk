@@ -567,7 +567,7 @@ define KernelPackage/phy-aeonsemi-as21xxx
   AUTOLOAD:=$(call AutoLoad,18,as21xxx)
 endef
 
-define KernelPackage/phy-aeonsemi-as21x1x/description
+define KernelPackage/phy-aeonsemi-as21xxx/description
   Kernel modules for Aeonsemi AS21x1x 10G Ethernet PHY
 endef
 
