@@ -303,6 +303,9 @@ function mld_update_phy(phy, ifaces) {
 }
 
 function mld_start() {
+	if (wpas.data.mld_pending)
+		return;
+
 	wpas.printf(`Start pending MLD interfaces\n`);
 
 	let phy_list = {};
@@ -501,6 +504,7 @@ let main_obj = {
 			if (!req.args.config)
 				return libubus.STATUS_INVALID_ARGUMENT;
 
+			wpas.data.mld_pending = true;
 			mld_set_config(req.args.config);
 			return 0;
 		}
@@ -508,6 +512,7 @@ let main_obj = {
 	mld_start: {
 		args: {},
 		call: function(req) {
+			wpas.data.mld_pending = false;
 			mld_start();
 			return 0;
 		}
