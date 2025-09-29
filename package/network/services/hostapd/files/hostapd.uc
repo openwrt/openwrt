@@ -778,7 +778,7 @@ function bss_check_mld(phydev, iface_name, bss)
 	bss.mld_bssid = mld_data.macaddr;
 	mld_data.iface[iface_name] = true;
 
-	if (!access('/sys/class/net/' + iface_name, 'x'))
+	if (!access('/sys/class/net/' + bss.ifname, 'x'))
 		mld_data.has_wdev = false;
 
 	if (mld_data.has_wdev)
@@ -1166,20 +1166,22 @@ let main_obj = {
 				return 0;
 			}
 
-			if (!req.args.frequency)
-				return libubus.STATUS_INVALID_ARGUMENT;
+			let freq_info;
+			if (req.args.frequency) {
+				freq_info = iface_freq_info(iface, config, req.args);
+				if (!freq_info)
+					return libubus.STATUS_UNKNOWN_ERROR;
 
-			let freq_info = iface_freq_info(iface, config, req.args);
-			if (!freq_info)
-				return libubus.STATUS_UNKNOWN_ERROR;
-
-			let ret;
-			if (req.args.csa) {
-				freq_info.csa_count = req.args.csa_count ?? 10;
-				ret = iface.switch_channel(freq_info);
-			} else {
-				ret = iface.start(freq_info);
+				if (req.args.csa) {
+					freq_info.csa_count = req.args.csa_count ?? 10;
+					let ret = iface.switch_channel(freq_info);
+					if (!ret)
+						return libubus.STATUS_UNKNOWN_ERROR;
+					return 0;
+				}
 			}
+
+			let ret = iface.start(freq_info);
 			if (!ret)
 				return libubus.STATUS_UNKNOWN_ERROR;
 
@@ -1207,6 +1209,34 @@ let main_obj = {
 			ret.macaddr = map(config.bss, (bss) => bss.bssid);
 			return ret;
 		}
+	},
+	switch_channel: {
+		args: {
+			phy: "",
+			radio: 0,
+			csa_count: 0,
+			sec_channel: 0,
+			oper_chwidth: 0,
+			frequency: 0,
+			center_freq1: 0,
+			center_freq2: 0,
+		},
+		call: function(req) {
+			let phy = phy_name(req.args.phy, req.args.radio);
+			if (!req.args.frequency || !phy)
+				return libubus.STATUS_INVALID_ARGUMENT;
+
+			let iface = hostapd.interfaces[phy];
+			if (!iface)
+				return libubus.STATUS_NOT_FOUND;
+
+			req.args.csa_count ??= 10;
+			let ret = iface.switch_channel(req.args);
+			if (!ret)
+				return libubus.STATUS_UNKNOWN_ERROR;
+
+			return 0;
+		},
 	},
 	mld_set: {
 		args: {
