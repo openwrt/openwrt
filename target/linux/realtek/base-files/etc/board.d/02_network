@@ -70,7 +70,10 @@ realtek_setup_macs()
 	plasmacloud,esx28|\
 	plasmacloud,psx8|\
 	plasmacloud,psx10|\
-	plasmacloud,psx28|\
+	plasmacloud,psx28)
+		lan_mac_start=skip
+		lan_mac="$(get_mac_label)"
+	;;
 	tplink,sg2008p-v1|\
 	tplink,sg2210p-v3|\
 	tplink,sg2452p-v4|\
@@ -102,7 +105,7 @@ realtek_setup_macs()
 	[ -n "$lan_mac" ] && ucidef_set_network_device_mac eth0 $lan_mac
 
 	[ -z "$lan_mac_start" -a -n "$lan_mac" ] && lan_mac_start=$lan_mac
-	realtek_setup_macs_lan "$lan_list" "$lan_mac_start" "$lan_mac_end"
+	[ "$lan_mac_start" != "skip" ] && realtek_setup_macs_lan "$lan_list" "$lan_mac_start" "$lan_mac_end"
 
 	[ -n "$label_mac" ] && ucidef_set_label_macaddr $label_mac
 }
