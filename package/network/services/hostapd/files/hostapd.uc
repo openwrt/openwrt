@@ -778,7 +778,7 @@ function bss_check_mld(phydev, iface_name, bss)
 	bss.mld_bssid = mld_data.macaddr;
 	mld_data.iface[iface_name] = true;
 
-	if (!access('/sys/class/net/' + iface_name, 'x'))
+	if (!access('/sys/class/net/' + bss.ifname, 'x'))
 		mld_data.has_wdev = false;
 
 	if (mld_data.has_wdev)
