@@ -334,15 +334,15 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 		if (of_property_read_u32(dn, "reg", &pn))
 			continue;
 
+		pcs_node = of_parse_phandle(dn, "pcs-handle", 0);
+		priv->pcs[pn] = rtpcs_create(priv->dev, pcs_node, pn);
+
 		phy_node = of_parse_phandle(dn, "phy-handle", 0);
 		if (!phy_node) {
 			if (pn != priv->cpu_port)
 				dev_err(priv->dev, "Port node %d misses phy-handle\n", pn);
 			continue;
 		}
-
-		pcs_node = of_parse_phandle(dn, "pcs-handle", 0);
-		priv->pcs[pn] = rtpcs_create(priv->dev, pcs_node, pn);
 
 		/*
 		 * TODO: phylink_pcs was completely converted to the standalone PCS driver - see
