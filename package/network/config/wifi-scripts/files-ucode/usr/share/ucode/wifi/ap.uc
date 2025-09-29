@@ -56,7 +56,7 @@ function iface_setup(config) {
 		'snoop_iface', 'vendor_elements', 'nas_identifier', 'radius_acct_interim_interval',
 		'ocv', 'multicast_to_unicast', 'preamble', 'proxy_arp', 'per_sta_vif', 'mbo',
 		'bss_transition', 'wnm_sleep_mode', 'wnm_sleep_mode_no_keys', 'qos_map_set', 'max_listen_int',
-		'dtim_period', 'wmm_enabled',
+		'dtim_period', 'wmm_enabled', 'start_disabled',
 	]);
 }
 
@@ -434,6 +434,7 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 
 	iface_stations(config, stas);
 
+	config.start_disabled = data.ap_start_disabled;
 	iface_setup(config);
 
 	iface.parse_encryption(config, data.config);

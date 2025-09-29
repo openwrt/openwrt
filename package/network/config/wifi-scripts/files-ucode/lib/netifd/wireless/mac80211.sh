@@ -250,6 +250,7 @@ function setup() {
 				break;
 			// fallthrough
 		case 'sta':
+			data.ap_start_disabled = true;
 			let config = supplicant.generate(supplicant_data, data, v);
 			if (mode == "mesh")
 				config_add_mesh_params(config, v.config);
