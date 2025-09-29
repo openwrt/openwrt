@@ -1,0 +1,206 @@
+diff --git a/drivers/net/ethernet/airoha/airoha_npu.c b/drivers/net/ethernet/airoha/airoha_npu.c
+index 94c64ddc9..34aa2a106 100644
+--- a/drivers/net/ethernet/airoha/airoha_npu.c
++++ b/drivers/net/ethernet/airoha/airoha_npu.c
+@@ -16,16 +16,26 @@
+ 
+ #define NPU_EN7581_FIRMWARE_DATA		"airoha/en7581_npu_data.bin"
+ #define NPU_EN7581_FIRMWARE_RV32		"airoha/en7581_npu_rv32.bin"
+-#define NPU_EN7581_FIRMWARE_RV32_MAX_SIZE	0x200000
+-#define NPU_EN7581_FIRMWARE_DATA_MAX_SIZE	0x10000
++#define NPU_EN7523_FIRMWARE_DATA		"airoha/en7523_npu_data.bin"
++#define NPU_EN7523_FIRMWARE_RV32		"airoha/en7523_npu_rv32.bin"
++#define NPU_FIRMWARE_RV32_MAX_SIZE	0x200000
++#define NPU_FIRMWARE_DATA_MAX_SIZE	0x10000
+ #define NPU_DUMP_SIZE				512
+ 
+ #define REG_NPU_LOCAL_SRAM		0x0
+ 
++#if (IS_BUILTIN(CONFIG_ARM) || IS_MODULE(CONFIG_ARM))
++#define NPU_CLUSTER_BASE_ADDR		0x308000
++
++#define NPU_PC_BASE_ADDR		0x308800
++#define REG_PC_DBG(_n)			(0x308800 + ((_n) * 0x100))
++#else
+ #define NPU_PC_BASE_ADDR		0x305000
+ #define REG_PC_DBG(_n)			(0x305000 + ((_n) * 0x100))
+ 
+ #define NPU_CLUSTER_BASE_ADDR		0x306000
++#endif
++
+ 
+ #define REG_CR_BOOT_TRIGGER		(NPU_CLUSTER_BASE_ADDR + 0x000)
+ #define REG_CR_BOOT_CONFIG		(NPU_CLUSTER_BASE_ADDR + 0x004)
+@@ -103,6 +113,11 @@ enum {
+ 	QDMA_WAN_PON_XDSL,
+ };
+ 
++enum airoha_npu_type {
++	AIROHA_NPU_EN7581,
++	AIROHA_NPU_EN7523,
++};
++
+ #define MBOX_MSG_FUNC_ID	GENMASK(14, 11)
+ #define MBOX_MSG_STATIC_BUF	BIT(5)
+ #define MBOX_MSG_STATUS		GENMASK(4, 2)
+@@ -183,24 +198,27 @@ static int airoha_npu_send_msg(struct airoha_npu *npu, int func_id,
+ }
+ 
+ static int airoha_npu_run_firmware(struct device *dev, void __iomem *base,
+-				   struct reserved_mem *rmem)
++				   struct reserved_mem *rmem, enum airoha_npu_type npu_type)
+ {
+ 	const struct firmware *fw;
+ 	void __iomem *addr;
+ 	int ret;
++	const char* fw_rv32 = (npu_type == AIROHA_NPU_EN7581 ? NPU_EN7581_FIRMWARE_RV32 : NPU_EN7523_FIRMWARE_RV32);
++	const char* fw_data = (npu_type == AIROHA_NPU_EN7581 ? NPU_EN7581_FIRMWARE_DATA : NPU_EN7523_FIRMWARE_DATA);
+ 
+-	ret = request_firmware(&fw, NPU_EN7581_FIRMWARE_RV32, dev);
++	ret = request_firmware(&fw, fw_rv32, dev);
+ 	if (ret)
+ 		return ret == -ENOENT ? -EPROBE_DEFER : ret;
+ 
+-	if (fw->size > NPU_EN7581_FIRMWARE_RV32_MAX_SIZE) {
++	if (fw->size > NPU_FIRMWARE_RV32_MAX_SIZE) {
+ 		dev_err(dev, "%s: fw size too overlimit (%zu)\n",
+-			NPU_EN7581_FIRMWARE_RV32, fw->size);
++			fw_rv32, fw->size);
+ 		ret = -E2BIG;
+ 		goto out;
+ 	}
+ 
+-	addr = devm_ioremap(dev, rmem->base, rmem->size);
++	addr = npu_type == AIROHA_NPU_EN7581 ? devm_ioremap(dev, rmem->base, rmem->size) : 
++		devm_memremap(dev, rmem->base, rmem->size, MEMREMAP_WB);
+ 	if (!addr) {
+ 		ret = -ENOMEM;
+ 		goto out;
+@@ -209,13 +227,13 @@ static int airoha_npu_run_firmware(struct device *dev, void __iomem *base,
+ 	memcpy_toio(addr, fw->data, fw->size);
+ 	release_firmware(fw);
+ 
+-	ret = request_firmware(&fw, NPU_EN7581_FIRMWARE_DATA, dev);
++	ret = request_firmware(&fw, fw_data, dev);
+ 	if (ret)
+ 		return ret == -ENOENT ? -EPROBE_DEFER : ret;
+ 
+-	if (fw->size > NPU_EN7581_FIRMWARE_DATA_MAX_SIZE) {
++	if (fw->size > NPU_FIRMWARE_DATA_MAX_SIZE) {
+ 		dev_err(dev, "%s: fw size too overlimit (%zu)\n",
+-			NPU_EN7581_FIRMWARE_DATA, fw->size);
++			fw_data, fw->size);
+ 		ret = -E2BIG;
+ 		goto out;
+ 	}
+@@ -611,6 +629,7 @@ EXPORT_SYMBOL_GPL(airoha_npu_put);
+ 
+ static const struct of_device_id of_airoha_npu_match[] = {
+ 	{ .compatible = "airoha,en7581-npu" },
++	{ .compatible = "airoha,en7523-npu" },
+ 	{ /* sentinel */ }
+ };
+ MODULE_DEVICE_TABLE(of, of_airoha_npu_match);
+@@ -629,8 +648,12 @@ static int airoha_npu_probe(struct platform_device *pdev)
+ 	struct reserved_mem *rmem;
+ 	struct airoha_npu *npu;
+ 	struct device_node *np;
+-	void __iomem *base;
++	void __iomem *base, *sram_base;
+ 	int i, irq, err;
++	enum airoha_npu_type npu_type = AIROHA_NPU_EN7581;
++
++	if (of_device_is_compatible(pdev->dev.of_node, "airoha,en7523-npu"))
++		npu_type = AIROHA_NPU_EN7523;
+ 
+ 	base = devm_platform_ioremap_resource(pdev, 0);
+ 	if (IS_ERR(base))
+@@ -708,28 +731,46 @@ static int airoha_npu_probe(struct platform_device *pdev)
+ 	if (err)
+ 		return err;
+ 
+-	err = airoha_npu_run_firmware(dev, base, rmem);
++	err = airoha_npu_run_firmware(dev, base, rmem, npu_type);
+ 	if (err)
+ 		return dev_err_probe(dev, err, "failed to run npu firmware\n");
+ 
++	/* default SRAM: 256K or 384K */
++	int sram_size = npu_type == AIROHA_NPU_EN7581 ? 0x40000 : 0x60000;
++	sram_base = platform_get_resource(pdev, IORESOURCE_MEM, 1);
++	if (!!sram_base)
++		sram_size = resource_size(sram_base);
++	dev_info(dev, "SRAM Size: 0x%02x\n", sram_size);
++
+ 	regmap_write(npu->regmap, REG_CR_NPU_MIB(10),
+-		     rmem->base + NPU_EN7581_FIRMWARE_RV32_MAX_SIZE);
+-	regmap_write(npu->regmap, REG_CR_NPU_MIB(11), 0x40000); /* SRAM 256K */
+-	regmap_write(npu->regmap, REG_CR_NPU_MIB(12), 0);
+-	regmap_write(npu->regmap, REG_CR_NPU_MIB(21), 1);
++		     rmem->base + NPU_FIRMWARE_RV32_MAX_SIZE);
++	regmap_write(npu->regmap, REG_CR_NPU_MIB(11), sram_size);
++	regmap_write(npu->regmap, REG_CR_NPU_MIB(12), 0); // FPGA Mode: 0 => Disabled, 1 => Enabled
++	if (npu_type == AIROHA_NPU_EN7581)
++		regmap_write(npu->regmap, REG_CR_NPU_MIB(21), 1);
+ 	msleep(100);
+ 
+-	/* setting booting address */
+-	for (i = 0; i < NPU_NUM_CORES; i++)
++	/* setting booting address and enable NPU cores */
++	for (i = 0; i < NPU_NUM_CORES; i++) {
+ 		regmap_write(npu->regmap, REG_CR_BOOT_BASE(i), rmem->base);
+-	usleep_range(1000, 2000);
+-
+-	/* enable NPU cores */
+-	regmap_write(npu->regmap, REG_CR_BOOT_CONFIG, 0xff);
+-	regmap_write(npu->regmap, REG_CR_BOOT_TRIGGER, 0x1);
+-	msleep(100);
+-
++		mdelay(1);
++		if (i == 0) { // Power on core 0
++			dev_info(dev, "enabling NPU %d core\n", i);
++			regmap_write(npu->regmap, REG_CR_BOOT_CONFIG, 0x1);
++			regmap_write(npu->regmap, REG_CR_BOOT_TRIGGER, 0x1);
++		} else { // Reboot another cores
++			u32 val;
++			regmap_read(npu->regmap, REG_CR_BOOT_CONFIG, &val);
++			val |= (0x1 << i);    // add new enable bit for CoreX
++			val |= (0x0100 << i); // add reboot bit for CoreX
++			dev_info(dev, "rebooting NPU core %d with val 0x%x\n", i, val);
++			regmap_write(npu->regmap, REG_CR_BOOT_CONFIG, val);
++			regmap_write(npu->regmap, REG_CR_BOOT_TRIGGER, 0x2);
++		}
++		msleep(100);
++	}
+ 	platform_set_drvdata(pdev, npu);
++	dev_info(dev, "NPU Loaded\n");
+ 
+ 	return 0;
+ }
+diff --git a/drivers/net/phy/mediatek/Kconfig b/drivers/net/phy/mediatek/Kconfig
+index 4308002bb..c28f50f65 100644
+--- a/drivers/net/phy/mediatek/Kconfig
++++ b/drivers/net/phy/mediatek/Kconfig
+@@ -15,7 +15,6 @@ config MEDIATEK_GE_PHY
+ 
+ config MEDIATEK_GE_SOC_PHY
+ 	tristate "MediaTek SoC Ethernet PHYs"
+-	depends on ARM64 || COMPILE_TEST
+ 	depends on ARCH_AIROHA || (ARCH_MEDIATEK && NVMEM_MTK_EFUSE) || \
+ 		   COMPILE_TEST
+ 	select MTK_NET_PHYLIB
+diff --git a/include/linux/soc/airoha/airoha_offload.h b/include/linux/soc/airoha/airoha_offload.h
+index 1dc5b4e35..690424a84 100644
+--- a/include/linux/soc/airoha/airoha_offload.h
++++ b/include/linux/soc/airoha/airoha_offload.h
+@@ -64,7 +64,11 @@ static inline void airoha_ppe_dev_check_skb(struct airoha_ppe_dev *dev,
+ }
+ #endif
+ 
++#if (IS_BUILTIN(CONFIG_ARM) || IS_MODULE(CONFIG_ARM))
++#define NPU_NUM_CORES		4
++#else
+ #define NPU_NUM_CORES		8
++#endif
+ #define NPU_NUM_IRQ		6
+ #define NPU_RX0_DESC_NUM	512
+ #define NPU_RX1_DESC_NUM	512

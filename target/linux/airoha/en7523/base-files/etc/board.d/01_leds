@@ -1,0 +1,21 @@
+. /lib/functions/leds.sh
+. /lib/functions/uci-defaults.sh
+
+board=$(board_name)
+
+board_config_update
+
+case $board in
+    tplink,xx230v)
+    ucidef_set_led_netdev "lan1" "lan1" "green:lan1" "lan1" "link tx rx"
+    ucidef_set_led_netdev "lan2" "lan2" "green:lan2" "lan2" "link tx rx"
+    ucidef_set_led_netdev "lan3" "lan3" "green:lan3" "lan3" "link tx rx"
+    ucidef_set_led_netdev "wan" "wan" "green:wan" "wan" "link tx rx"
+    # phy0-ap0
+    # phy1-ap0
+    ;;
+esac
+
+board_config_flush
+
+exit 0
