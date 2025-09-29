@@ -90,6 +90,13 @@
 		#size-cells = <1>;
 		ranges = <0x0 0x18000000 0x20000>;
 
+		ecc0: ecc@1a600 {
+			compatible = "realtek,rtl9301-ecc";
+			reg = <0x1a600 0x54>;
+
+			status = "disabled";
+		};
+
 		spi0: spi@1200 {
 			status = "okay";
 

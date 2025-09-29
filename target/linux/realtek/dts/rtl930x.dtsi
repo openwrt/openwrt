@@ -55,6 +55,13 @@
 		#size-cells = <1>;
 		ranges = <0x0 0x18000000 0x20000>;
 
+		ecc0: ecc@1a600 {
+			compatible = "realtek,rtl9301-ecc";
+			reg = <0x1a600 0x54>;
+
+			status = "disabled";
+		};
+
 		intc: interrupt-controller@3000 {
 			compatible = "realtek,rtl9300-intc", "realtek,rtl-intc";
 			reg = <0x3000 0x18>, <0x3018 0x18>;
