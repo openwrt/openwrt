@@ -17,9 +17,12 @@ get_mac_binary() {
 
 get_mac_label_dt() {
 	local basepath="/proc/device-tree"
-	local macdevice="$(cat "$basepath/aliases/label-mac-device" 2>/dev/null)"
+	local macdevice
 	local macaddr
 
+	[ -e "$basepath" ] || return
+
+	macdevice="$(cat "$basepath/aliases/label-mac-device" 2>/dev/null)"
 	[ -n "$macdevice" ] || return
 
 	macaddr=$(get_mac_binary "$basepath/$macdevice/mac-address" 0 2>/dev/null)
