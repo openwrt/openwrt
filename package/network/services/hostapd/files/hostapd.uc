@@ -1008,6 +1008,7 @@ function mld_add_bss(name, data, phy_list, i)
 	if (!config.phy)
 		return;
 
+	hostapd.printf(`Add MLD interface ${name}`);
 	wdev_remove(name);
 	let phydev = phy_list[config.phy];
 	if (!phydev) {
@@ -1111,7 +1112,8 @@ function mld_set_config(config)
 	// add new interfaces
 	hostapd.data.mld = new_mld;
 	for (let name, data in new_mld)
-		mld_add_bss(name, data, phy_list);
+		if (!data.ifname)
+			mld_add_bss(name, data, phy_list);
 
 	if (!new_config)
 		return;
