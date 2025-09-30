@@ -5,7 +5,7 @@
 PART_NAME=firmware
 REQUIRE_IMAGE_METADATA=1
 
-RAMFS_COPY_BIN='fw_printenv fw_setenv'
+RAMFS_COPY_BIN='fw_printenv fw_setenv fitblk fit_check_sign'
 RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
 
 platform_check_image() {
@@ -194,6 +194,9 @@ platform_do_upgrade() {
 	ubnt,edgerouter-x|\
 	ubnt,edgerouter-x-sfp)
 		platform_upgrade_ubnt_erx "$1"
+		;;
+	ubnt,edgerouter-x-fit)
+		fit_do_upgrade "$1"
 		;;
 	zyxel,lte3301-plus|\
 	zyxel,lte5398-m904|\
