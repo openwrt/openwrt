@@ -383,6 +383,9 @@ else
 		exit 1; \
 	fi
 
+	# Touch all files to set mtime to PKG_SOURCE_DATE_EPOCH for reproducible builds
+	find $$(IDIR_$(1)) -exec touch -d "@$(PKG_SOURCE_DATE_EPOCH)" {} \;
+
 	$(FAKEROOT) $(STAGING_DIR_HOST)/bin/apk mkpkg \
 	  --info "name:$(1)$$(ABIV_$(1))" \
 	  --info "version:$(VERSION)" \
