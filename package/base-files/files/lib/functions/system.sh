@@ -42,7 +42,9 @@ get_mac_label_json() {
 		json_select ..
 	fi
 
-	echo $macaddr
+	[ -n "$macaddr" ] || return
+
+	echo "$macaddr"
 }
 
 get_mac_label() {
