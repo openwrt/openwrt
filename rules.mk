@@ -174,7 +174,7 @@ else
 endif
 
 ifeq ($(or $(CONFIG_EXTERNAL_TOOLCHAIN),$(CONFIG_TARGET_uml)),)
-  iremap = -f$(if $(CONFIG_REPRODUCIBLE_DEBUG_INFO),file,macro)-prefix-map=$(1)=$(2)
+  iremap = -fmacro-prefix-map=$(1)=$(2) $(if $(CONFIG_REPRODUCIBLE_DEBUG_INFO),-ffile-prefix-map=$(1)=$(2))
 endif
 
 PACKAGE_DIR?=$(BIN_DIR)/packages
