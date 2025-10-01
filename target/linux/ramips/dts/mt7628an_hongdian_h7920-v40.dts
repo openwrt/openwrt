@@ -140,7 +140,7 @@
 
 &state_default {
 	gpio {
-		groups = "i2s", "gpio", "refclk";
+		groups = "i2s", "i2c", "spi cs1", "gpio", "perst", "refclk", "wdt", "wled_an";
 		function = "gpio";
 	};
 };
@@ -166,6 +166,3 @@
 	status = "okay";
 };
 
-&pcie {
-	status = "okay";
-};
