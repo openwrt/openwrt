@@ -105,9 +105,6 @@
 #define RTL9300_FAMILY_ID		(0x9300)
 #define RTL9310_FAMILY_ID		(0x9310)
 
-/* SPI Support */
-#define RTL931X_SPI_CTRL0		(0x103C)
-
 /* Basic SoC Features */
 #define RTL838X_CPU_PORT		28
 #define RTL839X_CPU_PORT		52

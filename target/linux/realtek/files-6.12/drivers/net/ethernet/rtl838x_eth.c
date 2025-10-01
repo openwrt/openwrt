@@ -1519,9 +1519,6 @@ static int rtl931x_chip_init(struct rtl838x_eth_priv *priv)
 	/* Enable ESD auto recovery */
 	sw_w32(0x1, RTL931X_MDX_CTRL_RSVD);
 
-	/* Init SPI, is this for thermal control or what? */
-	sw_w32_mask(0x7 << 11, 0x2 << 11, RTL931X_SPI_CTRL0);
-
 	return 0;
 }
 
