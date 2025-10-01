@@ -71,6 +71,7 @@ function setup_sta(data, config) {
 	set_default(config, 'ieee80211r', 0);
 	set_default(config, 'sae_pwe', 2);
 	set_default(config, 'multi_ap', 0);
+	set_default(config, 'multi_profile', 1);
 	set_default(config, 'default_disabled', 0);
 
 	config.scan_ssid = 1;
@@ -170,7 +171,7 @@ function setup_sta(data, config) {
 
 	network_append_string_vars(config, [ 'ssid' ]);
 	network_append_vars(config, [
-		'rsn_overriding', 'scan_ssid', 'noscan', 'disabled', 'multi_ap_backhaul_sta',
+		'rsn_overriding', 'scan_ssid', 'noscan', 'disabled', 'multi_ap_profile', 'multi_ap_backhaul_sta',
 		'ocv', 'key_mgmt', 'sae_pwe', 'psk', 'sae_password', 'pairwise', 'group', 'bssid',
 		'proto', 'mesh_fwding', 'mesh_rssi_threshold', 'frequency', 'fixed_freq',
 		'disable_ht', 'disable_ht40', 'disable_vht', 'vht', 'max_oper_chwidth',
