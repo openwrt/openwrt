@@ -214,7 +214,19 @@ define KernelPackage
     CATEGORY:=Kernel modules
     DESCRIPTION:=$(DESCRIPTION)
     EXTRA_DEPENDS:=kernel (=$(LINUX_VERSION)~$(LINUX_VERMAGIC)-r$(LINUX_RELEASE))
-    VERSION:=$(LINUX_VERSION)$(if $(PKG_VERSION),.$(PKG_VERSION))-r$(if $(PKG_RELEASE),$(PKG_RELEASE),$(LINUX_RELEASE))
+    ifneq ($(PKG_VERSION),)
+      ifneq ($(PKG_RELEASE),)
+        VERSION:=$(LINUX_VERSION).$(PKG_VERSION)-r$(PKG_RELEASE)
+      else
+        VERSION:=$(LINUX_VERSION).$(PKG_VERSION)-r$(LINUX_RELEASE)
+      endif
+    else
+      ifneq ($(PKG_RELEASE),)
+        VERSION:=$(LINUX_VERSION)-r$(PKG_RELEASE)
+      else
+        VERSION:=$(LINUX_VERSION)-r$(LINUX_RELEASE)
+       endif
+    endif
     PKGFLAGS:=$(PKGFLAGS)
     $(call KernelPackage/$(1))
     $(call KernelPackage/$(1)/$(BOARD))
