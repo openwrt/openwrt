@@ -496,6 +496,18 @@ let main_obj = {
 			return libubus.STATUS_NOT_FOUND;
 		}
 	},
+	iface_status: {
+		args: {
+			name: ""
+		},
+		call: function(req) {
+			let iface = wpas.interfaces[req.args.name];
+			if (!iface)
+				return libubus.STATUS_NOT_FOUND;
+
+			return iface.status();
+		},
+	},
 	mld_set: {
 		args: {
 			config: {}
@@ -728,6 +740,9 @@ return {
 		iface_event("remove", name);
 	},
 	state: function(ifname, iface, state) {
+		let event_data = iface.status();
+		event_data.name = ifname;
+		iface_event("state", ifname, event_data);
 		try {
 			iface_hostapd_notify(ifname, iface, state);
 
