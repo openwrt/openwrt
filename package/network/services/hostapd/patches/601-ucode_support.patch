@@ -723,6 +723,33 @@ as adding/removing interfaces.
  	for (ssid = group; ssid; ssid = only_first_ssid ? NULL : ssid->pnext) {
  		if (wpa_scan_res_ok(wpa_s, ssid, match_ssid, match_ssid_len,
  				    bss, bssid_ignore_count, debug_print, link))
+@@ -3117,8 +3124,8 @@ fail:
+ static void multi_ap_process_assoc_resp(struct wpa_supplicant *wpa_s,
+ 					const u8 *ies, size_t ies_len)
+ {
++	struct multi_ap_params *multi_ap = &wpa_s->multi_ap;
+ 	struct ieee802_11_elems elems;
+-	struct multi_ap_params multi_ap;
+ 	u16 status;
+ 
+ 	wpa_s->multi_ap_ie = 0;
+@@ -3129,13 +3136,13 @@ static void multi_ap_process_assoc_resp(
+ 		return;
+ 
+ 	status = check_multi_ap_ie(elems.multi_ap + 4, elems.multi_ap_len - 4,
+-				   &multi_ap);
++				   multi_ap);
+ 	if (status != WLAN_STATUS_SUCCESS)
+ 		return;
+ 
+-	wpa_s->multi_ap_backhaul = !!(multi_ap.capability &
++	wpa_s->multi_ap_backhaul = !!(multi_ap->capability &
+ 				      MULTI_AP_BACKHAUL_BSS);
+-	wpa_s->multi_ap_fronthaul = !!(multi_ap.capability &
++	wpa_s->multi_ap_fronthaul = !!(multi_ap->capability &
+ 				       MULTI_AP_FRONTHAUL_BSS);
+ 	wpa_s->multi_ap_ie = 1;
+ }
 @@ -6293,6 +6300,7 @@ void supplicant_event(void *ctx, enum wp
  		event_to_string(event), event);
  #endif /* CONFIG_NO_STDOUT_DEBUG */
@@ -789,7 +816,15 @@ as adding/removing interfaces.
  	eap_server_unregister_methods();
 --- a/wpa_supplicant/wpa_supplicant_i.h
 +++ b/wpa_supplicant/wpa_supplicant_i.h
-@@ -22,6 +22,7 @@
+@@ -15,6 +15,7 @@
+ #include "common/sae.h"
+ #include "common/wpa_ctrl.h"
+ #include "common/dpp.h"
++#include "common/ieee802_11_common.h"
+ #include "crypto/sha384.h"
+ #include "eapol_supp/eapol_supp_sm.h"
+ #include "wps/wps_defs.h"
+@@ -22,6 +23,7 @@
  #include "wmm_ac.h"
  #include "pasn/pasn_common.h"
  #include "ubus.h"
@@ -797,7 +832,7 @@ as adding/removing interfaces.
  
  extern const char *const wpa_supplicant_version;
  extern const char *const wpa_supplicant_license;
-@@ -701,6 +702,7 @@ struct wpa_supplicant {
+@@ -701,6 +703,7 @@ struct wpa_supplicant {
  	unsigned char perm_addr[ETH_ALEN];
  	char ifname[100];
  	struct wpas_ubus_bss ubus;
@@ -805,6 +840,15 @@ as adding/removing interfaces.
  #ifdef CONFIG_MATCH_IFACE
  	int matched;
  #endif /* CONFIG_MATCH_IFACE */
+@@ -1568,6 +1571,8 @@ struct wpa_supplicant {
+ 	unsigned int enabled_4addr_mode:1;
+ 	unsigned int multi_bss_support:1;
+ 	unsigned int drv_authorized_port:1;
++
++	struct multi_ap_params multi_ap;
+ 	unsigned int multi_ap_ie:1;
+ 	unsigned int multi_ap_backhaul:1;
+ 	unsigned int multi_ap_fronthaul:1;
 --- a/src/ap/ieee802_11.c
 +++ b/src/ap/ieee802_11.c
 @@ -659,12 +659,17 @@ const char * sae_get_password(struct hos

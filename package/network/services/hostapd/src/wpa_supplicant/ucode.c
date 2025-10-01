@@ -261,6 +261,23 @@ uc_wpas_iface_status_bss(uc_value_t *ret, struct wpa_bss *bss)
 	ucv_object_add(ret, "frequency", ucv_int64_new(bss->freq));
 }
 
+static void
+uc_wpas_iface_status_multi_ap(uc_vm_t *vm, uc_value_t *ret, struct wpa_supplicant *wpa_s)
+{
+	struct multi_ap_params *multi_ap = &wpa_s->multi_ap;
+	uc_value_t *obj;
+
+	if (!wpa_s->multi_ap_ie)
+		return;
+
+	obj = ucv_object_new(vm);
+	ucv_object_add(ret, "multi_ap", obj);
+
+	ucv_object_add(obj, "profile", ucv_int64_new(multi_ap->profile));
+	ucv_object_add(obj, "capability", ucv_int64_new(multi_ap->capability));
+	ucv_object_add(obj, "vlanid", ucv_int64_new(multi_ap->vlanid));
+}
+
 static uc_value_t *
 uc_wpas_iface_status(uc_vm_t *vm, size_t nargs)
 {
@@ -300,6 +317,9 @@ uc_wpas_iface_status(uc_vm_t *vm, size_t nargs)
 
 		ucv_object_add(ret, "links", links);
 	}
+
+	if (wpa_s->wpa_state == WPA_COMPLETED)
+		uc_wpas_iface_status_multi_ap(vm, ret, wpa_s);
 
 #ifdef CONFIG_MESH
 	if (wpa_s->ifmsh) {
