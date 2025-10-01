@@ -614,7 +614,10 @@ function iface_event(type, name, data) {
 
 	data ??= {};
 	data.name = name;
-	wpas.data.obj.notify(`iface.${type}`, data, null, null, null, -1);
+	let req = wpas.data.obj.notify(`iface.${type}`, data, null, null, null, -1);
+	if (req)
+		req.abort();
+
 	ubus.call("service", "event", { type: `wpa_supplicant.${name}.${type}`, data: {} });
 }
 
