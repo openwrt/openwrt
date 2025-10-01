@@ -284,6 +284,7 @@ ramips_setup_macs()
 		label_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
 	duzun,dm06|\
+	hongdian,h7920-v40|\
 	netgear,r6020|\
 	netgear,r6080|\
 	netgear,r6120|\
@@ -302,7 +303,6 @@ ramips_setup_macs()
 	totolink,a3)
 		wan_mac=$(mtd_get_mac_binary u-boot 0x1fc40)
 		;;
-	hongdian,h7920-v40|\
 	jotale,js76x8-8m|\
 	jotale,js76x8-16m|\
 	jotale,js76x8-32m|\
