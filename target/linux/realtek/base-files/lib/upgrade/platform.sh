@@ -39,6 +39,9 @@ platform_do_upgrade() {
 		tplink_sg2xxx_fix_mtdparts
 		default_do_upgrade "$1"
 		;;
+	linksys,lgs328c)
+		nand_do_upgrade "$1"
+		;;
 	*)
 		default_do_upgrade "$1"
 		;;
