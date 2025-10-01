@@ -216,9 +216,9 @@ define KernelPackage
     EXTRA_DEPENDS:=kernel (=$(LINUX_VERSION)~$(LINUX_VERMAGIC)-r$(LINUX_RELEASE))
     ifneq ($(PKG_VERSION),)
       ifneq ($(PKG_RELEASE),)
-        VERSION:=$(LINUX_VERSION).$(PKG_VERSION)-r$(PKG_RELEASE)
+        VERSION:=$(PKG_VERSION)-r$(PKG_RELEASE)
       else
-        VERSION:=$(LINUX_VERSION).$(PKG_VERSION)-r$(LINUX_RELEASE)
+        VERSION:=$(PKG_VERSION)-r$(LINUX_RELEASE)
       endif
     else
       ifneq ($(PKG_RELEASE),)
