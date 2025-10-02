@@ -17,13 +17,23 @@ let wdev_handler = {};
 let wdev_script_task, wdev_script_timeout;
 let handler_timer;
 
-function supplicant_start_mlo()
+function wireless_config_done()
 {
 	ubus.call({
 		object: "wpa_supplicant",
 		method: "mld_start",
 		return: "ignore",
 		data: { },
+	});
+
+	ubus.call({
+		object: "service",
+		method: "event",
+		return: "ignore",
+		data: {
+			type: "netifd.wireless.done",
+			data: {},
+		},
 	});
 }
 
@@ -228,7 +238,7 @@ function run_next_handler()
 		__run_next_handler();
 
 	if (!wdev_cur && !length(wdev_handler))
-		supplicant_start_mlo();
+		wireless_config_done();
 }
 
 function run_handler(wdev, op, cb)
