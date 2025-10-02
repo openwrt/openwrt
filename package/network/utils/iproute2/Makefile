@@ -172,7 +172,8 @@ CONFIGURE_VARS += \
 
 CONFIGURE_ARGS += \
 	--include_dir="$(TOOLCHAIN_ROOT_DIR)/usr/include" \
-	--libbpf_force=$(LIBBPF_FORCE)
+	--libbpf_force=$(LIBBPF_FORCE) \
+	--color=auto
 
 MAKE_FLAGS += \
 	SHARED_LIBS=$(SHARED_LIBS) \
