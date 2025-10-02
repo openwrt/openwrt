@@ -446,6 +446,17 @@ const ubus_obj = {
 			});
 		}
 	},
+	retry: {
+		args: wdev_args,
+		call: function(req) {
+			hostapd_update_mlo();
+
+			return wdev_call(req, (dev) => {
+				dev.retry_setup();
+				return 0;
+			});
+		}
+	},
 	reconf: {
 		args: wdev_args,
 		call: function(req) {
