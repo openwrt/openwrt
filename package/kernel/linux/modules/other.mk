@@ -155,7 +155,9 @@ $(eval $(call KernelPackage,mlx_wdt))
 define KernelPackage/mlxreg
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Mellanox platform register access
-  DEPENDS:=@TARGET_x86 +kmod-i2c-mux-mlxcpld
+  DEPENDS:=@TARGET_x86 \
+	+kmod-i2c-mux-mlxcpld \
+	+kmod-i2c-mux-reg
   KCONFIG:= \
 	CONFIG_MELLANOX_PLATFORM=y \
 	CONFIG_MLX_PLATFORM \
