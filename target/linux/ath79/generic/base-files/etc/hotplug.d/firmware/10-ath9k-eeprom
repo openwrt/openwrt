@@ -9,11 +9,6 @@ board=$(board_name)
 case "$FIRMWARE" in
 "ath9k-eeprom-ahb-18100000.wmac.bin")
 	case $board in
-	asus,pl-ac56|\
-	asus,rp-ac51|\
-	asus,rp-ac66)
-		caldata_extract "art" 0x1000 0x440
-		;;
 	avm,fritz1750e|\
 	avm,fritz4020|\
 	avm,fritz450e|\
