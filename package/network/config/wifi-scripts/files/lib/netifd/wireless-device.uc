@@ -405,6 +405,19 @@ function start()
 	this.setup();
 }
 
+
+function retry_setup()
+{
+	if (this.delete)
+		return;
+
+	if (this.state != "down" || !this.autostart)
+		return;
+
+	this.start();
+}
+
+
 function stop()
 {
 	this.dbg("stop, state=" + this.state);
@@ -604,6 +617,7 @@ function dbg(msg)
 const wdev_proto = {
 	update,
 	destroy,
+	retry_setup,
 	start,
 	stop,
 	setup,
