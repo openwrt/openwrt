@@ -1616,6 +1616,21 @@ define Device/jdcloud_re-cp-03
 endef
 TARGET_DEVICES += jdcloud_re-cp-03
 
+define Device/kebidumei_ax3000-u22
+  DEVICE_VENDOR := Kebidumei
+  DEVICE_MODEL := AX3000-U22
+  DEVICE_DTS := mt7981b-kebidumei-ax3000-u22
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTS_LOADADDR := 0x43f00000
+  IMAGE_SIZE := 14848k
+  KERNEL_LOADADDR := 0x44000000
+  KERNEL := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  SUPPORTED_DEVICES += mediatek,mt7981-spim-nor-rfb
+endef
+TARGET_DEVICES += kebidumei_ax3000-u22
+
 define Device/keenetic_kn-1812-common
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7992-firmware kmod-usb3 \
