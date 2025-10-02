@@ -138,7 +138,7 @@ function config_init(uci)
 
 		for (let dev_name in dev_names) {
 			let dev = devices[dev_name];
-			if (!dev)
+			if (!dev || dev.config.disabled)
 				continue;
 
 			let handler = handlers[dev_name];

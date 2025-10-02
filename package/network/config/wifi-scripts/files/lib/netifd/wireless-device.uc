@@ -287,7 +287,7 @@ function setup()
 		return;
 
 	this.dbg("setup, state=" + this.state);
-	if (!this.autostart || this.retry_setup_failed || this.data.config.disabled)
+	if (!this.autostart || this.retry_setup_failed)
 		return;
 
 	wdev_proc_reset(this);
@@ -384,8 +384,6 @@ function start()
 
 	this.dbg("start, state=" + this.state);
 	this.autostart = true;
-	if (this.data.config.disabled)
-		return;
 
 	wdev_reset(this);
 
@@ -418,10 +416,7 @@ function check()
 		return;
 
 	wdev_config_init(this);
-	if (this.data.config.disabled)
-		this.teardown();
-	else
-		this.setup();
+	this.setup();
 }
 
 function wdev_mark_up(wdev)
