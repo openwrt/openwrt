@@ -62,9 +62,18 @@ case "$board" in
 		[ "$PHYNBR" -eq 0 ] && \
 		macaddr_add $(cat /sys/class/net/eth0/address) 1 > /sys${DEVPATH}/macaddress
 		;;
+	enterasys,ws-ap3705i)
+		[ "$PHYNBR" -eq 0 ] && \
+			mtd_get_mac_ascii u-boot-env0 RADIOADDR1 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" -eq 1 ] && \
+			mtd_get_mac_ascii u-boot-env0 RADIOADDR0 > /sys${DEVPATH}/macaddress
+		;;
 	extreme-networks,ws-ap3805i)
 		[ "$PHYNBR" -eq 0 ] && \
-		mtd_get_mac_ascii cfg1 RADIOADDR0 > /sys${DEVPATH}/macaddress
+			mtd_get_mac_ascii cfg1 RADIOADDR0 > /sys${DEVPATH}/macaddress
+		;;
+		[ "$PHYNBR" -eq 1 ] && \
+			mtd_get_mac_ascii cfg1 RADIOADDR1 > /sys${DEVPATH}/macaddress
 		;;
 	iodata,wn-ac1167dgr|\
 	iodata,wn-ac1600dgr|\
