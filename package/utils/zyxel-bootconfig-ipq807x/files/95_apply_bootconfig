@@ -1,0 +1,12 @@
+apply_bootconfig() {
+	. /lib/functions.sh
+
+	case $(board_name) in
+	zyxel,nwa210ax)
+		status="$(zyxel-bootconfig-ipq807x show | awk '/image0:/ {print $2}')"
+		[ "$status" != "selected" ] && zyxel-bootconfig-ipq807x --force set image0
+		;;
+	esac
+}
+
+[ "$INITRAMFS" = "1" ] || boot_hook_add preinit_main apply_bootconfig
