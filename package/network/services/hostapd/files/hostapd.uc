@@ -538,6 +538,11 @@ function iface_reload_config(name, phydev, config, old_config)
 		return false;
 	}
 
+	if (iface.state() != "ENABLED") {
+		hostapd.printf(`Interface ${iface_name} is not fully configured`);
+		return false;
+	}
+
 	let first_bss = get_config_bss(name, old_config, 0);
 	if (!first_bss) {
 		hostapd.printf(`Could not find bss of previous interface ${iface_name}`);
