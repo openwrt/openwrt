@@ -151,6 +151,16 @@ define Build/uDPU-firmware
 		-f $(KDIR_TMP)/$(DEVICE_IMG_PREFIX)-firmware.tgz -C $@-fw .
 endef
 
+define Build/wdcg2-firmware
+	(rm -fR $@-fw; mkdir -p $@-fw/boot)
+	$(CP) $(BIN_DIR)/$(DEVICE_IMG_PREFIX)-squashfs-uRamdisk $@-fw/boot/uRamdisk
+	$(CP) $(BIN_DIR)/$(DEVICE_IMG_PREFIX)-kernel.bin  $@-fw/boot/uImage
+	$(CP) $(TARGET_DIR)/* $@-fw
+	$(TAR) -cvzp --numeric-owner --owner=0 --group=0 --sort=name \
+		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
+		-f $(KDIR_TMP)/$(DEVICE_IMG_PREFIX)-squashfs-firmware.tgz -C $@-fw .
+endef
+
 define Device/Default
   PROFILES := Default
   DEVICE_DTS = $$(SOC)-$(lastword $(subst _, ,$(1)))
