@@ -20,11 +20,9 @@ Tested-by: Markus Stockhausen <markus.stockhausen@gmx.de>
 Signed-off-by: Andi Shyti <andi.shyti@kernel.org>
 Link: https://lore.kernel.org/r/20250927101931.71575-6-jelonek.jonas@gmail.com
 
-diff --git a/drivers/i2c/busses/i2c-rtl9300.c b/drivers/i2c/busses/i2c-rtl9300.c
-index 4177cfb77094..9e3517b09b3d 100644
 --- a/drivers/i2c/busses/i2c-rtl9300.c
 +++ b/drivers/i2c/busses/i2c-rtl9300.c
-@@ -130,11 +130,7 @@ static int rtl9300_i2c_config_xfer(struct rtl9300_i2c *i2c, struct rtl9300_i2c_c
+@@ -130,11 +130,7 @@ static int rtl9300_i2c_config_xfer(struc
  	if (ret)
  		return ret;
  
@@ -37,7 +35,7 @@ index 4177cfb77094..9e3517b09b3d 100644
  }
  
  static int rtl9300_i2c_read(struct rtl9300_i2c *i2c, u8 *buf, int len)
-@@ -455,6 +451,11 @@ static int rtl9300_i2c_probe(struct platform_device *pdev)
+@@ -455,6 +451,11 @@ static int rtl9300_i2c_probe(struct plat
  	}
  	i2c->sda_num = 0xff;
  
@@ -49,6 +47,3 @@ index 4177cfb77094..9e3517b09b3d 100644
  	return 0;
  }
  
--- 
-2.48.1
-

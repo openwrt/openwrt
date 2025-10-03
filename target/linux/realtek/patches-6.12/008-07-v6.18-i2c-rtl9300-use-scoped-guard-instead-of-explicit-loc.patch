@@ -17,8 +17,6 @@ Tested-by: Markus Stockhausen <markus.stockhausen@gmx.de>
 Signed-off-by: Andi Shyti <andi.shyti@kernel.org>
 Link: https://lore.kernel.org/r/20250927101931.71575-8-jelonek.jonas@gmail.com
 
-diff --git a/drivers/i2c/busses/i2c-rtl9300.c b/drivers/i2c/busses/i2c-rtl9300.c
-index fb3ebbd46a18..c67463228604 100644
 --- a/drivers/i2c/busses/i2c-rtl9300.c
 +++ b/drivers/i2c/busses/i2c-rtl9300.c
 @@ -72,6 +72,8 @@ struct rtl9300_i2c {
@@ -30,7 +28,7 @@ index fb3ebbd46a18..c67463228604 100644
  enum rtl9300_i2c_xfer_type {
  	RTL9300_I2C_XFER_BYTE,
  	RTL9300_I2C_XFER_WORD,
-@@ -283,11 +285,11 @@ static int rtl9300_i2c_smbus_xfer(struct i2c_adapter *adap, u16 addr, unsigned s
+@@ -283,11 +285,11 @@ static int rtl9300_i2c_smbus_xfer(struct
  	if (addr > 0x7f)
  		return -EINVAL;
  
@@ -44,7 +42,7 @@ index fb3ebbd46a18..c67463228604 100644
  
  	xfer.dev_addr = addr & 0x7f;
  	xfer.write = (read_write == I2C_SMBUS_WRITE);
-@@ -324,20 +326,14 @@ static int rtl9300_i2c_smbus_xfer(struct i2c_adapter *adap, u16 addr, unsigned s
+@@ -324,20 +326,14 @@ static int rtl9300_i2c_smbus_xfer(struct
  		break;
  	default:
  		dev_err(&adap->dev, "Unsupported transaction %d\n", size);
@@ -68,6 +66,3 @@ index fb3ebbd46a18..c67463228604 100644
  }
  
  static u32 rtl9300_i2c_func(struct i2c_adapter *a)
--- 
-2.48.1
-

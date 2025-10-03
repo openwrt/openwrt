@@ -56,11 +56,9 @@ Tested-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
 Signed-off-by: Andi Shyti <andi.shyti@kernel.org>
 Link: https://lore.kernel.org/r/20250810-i2c-rtl9300-multi-byte-v5-2-cd9dca0db722@narfation.org
 
-diff --git a/drivers/i2c/busses/i2c-rtl9300.c b/drivers/i2c/busses/i2c-rtl9300.c
-index 568495720810..4a538b266080 100644
 --- a/drivers/i2c/busses/i2c-rtl9300.c
 +++ b/drivers/i2c/busses/i2c-rtl9300.c
-@@ -143,10 +143,10 @@ static int rtl9300_i2c_write(struct rtl9300_i2c *i2c, u8 *buf, int len)
+@@ -143,10 +143,10 @@ static int rtl9300_i2c_write(struct rtl9
  		return -EIO;
  
  	for (i = 0; i < len; i++) {
@@ -75,6 +73,3 @@ index 568495720810..4a538b266080 100644
  	}
  
  	return regmap_bulk_write(i2c->regmap, i2c->reg_base + RTL9300_I2C_MST_DATA_WORD0,
--- 
-2.48.1
-

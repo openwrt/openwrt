@@ -44,11 +44,9 @@ Tested-by: Markus Stockhausen <markus.stockhausen@gmx.de>
 Signed-off-by: Andi Shyti <andi.shyti@kernel.org>
 Link: https://lore.kernel.org/r/20250831100457.3114-4-jelonek.jonas@gmail.com
 
-diff --git a/drivers/i2c/busses/i2c-rtl9300.c b/drivers/i2c/busses/i2c-rtl9300.c
-index 2b3e80aa1bdf..9e1f71fed0fe 100644
 --- a/drivers/i2c/busses/i2c-rtl9300.c
 +++ b/drivers/i2c/busses/i2c-rtl9300.c
-@@ -225,15 +225,6 @@ static int rtl9300_i2c_smbus_xfer(struct i2c_adapter *adap, u16 addr, unsigned s
+@@ -225,15 +225,6 @@ static int rtl9300_i2c_smbus_xfer(struct
  	}
  
  	switch (size) {
@@ -64,7 +62,7 @@ index 2b3e80aa1bdf..9e1f71fed0fe 100644
  	case I2C_SMBUS_BYTE:
  		if (read_write == I2C_SMBUS_WRITE) {
  			ret = rtl9300_i2c_config_xfer(i2c, chan, addr, 0);
-@@ -315,9 +306,9 @@ static int rtl9300_i2c_smbus_xfer(struct i2c_adapter *adap, u16 addr, unsigned s
+@@ -315,9 +306,9 @@ out_unlock:
  
  static u32 rtl9300_i2c_func(struct i2c_adapter *a)
  {
@@ -77,6 +75,3 @@ index 2b3e80aa1bdf..9e1f71fed0fe 100644
  }
  
  static const struct i2c_algorithm rtl9300_i2c_algo = {
--- 
-2.48.1
-

@@ -26,8 +26,6 @@ Tested-by: Markus Stockhausen <markus.stockhausen@gmx.de>
 Signed-off-by: Andi Shyti <andi.shyti@kernel.org>
 Link: https://lore.kernel.org/r/20250927101931.71575-2-jelonek.jonas@gmail.com
 
-diff --git a/drivers/i2c/busses/i2c-rtl9300.c b/drivers/i2c/busses/i2c-rtl9300.c
-index 9e6232075137..8483bab72146 100644
 --- a/drivers/i2c/busses/i2c-rtl9300.c
 +++ b/drivers/i2c/busses/i2c-rtl9300.c
 @@ -23,97 +23,117 @@ struct rtl9300_i2c_chan {
@@ -190,7 +188,7 @@ index 9e6232075137..8483bab72146 100644
  }
  
  static int rtl9300_i2c_read(struct rtl9300_i2c *i2c, u8 *buf, int len)
-@@ -124,8 +144,7 @@ static int rtl9300_i2c_read(struct rtl9300_i2c *i2c, u8 *buf, int len)
+@@ -124,8 +144,7 @@ static int rtl9300_i2c_read(struct rtl93
  	if (len > 16)
  		return -EIO;
  
@@ -200,7 +198,7 @@ index 9e6232075137..8483bab72146 100644
  	if (ret)
  		return ret;
  
-@@ -152,52 +171,49 @@ static int rtl9300_i2c_write(struct rtl9300_i2c *i2c, u8 *buf, int len)
+@@ -152,52 +171,49 @@ static int rtl9300_i2c_write(struct rtl9
  		vals[reg] |= buf[i] << shift;
  	}
  
@@ -267,7 +265,7 @@ index 9e6232075137..8483bab72146 100644
  			if (ret)
  				return ret;
  			data->word = val & 0xffff;
-@@ -355,9 +371,11 @@ static int rtl9300_i2c_probe(struct platform_device *pdev)
+@@ -355,9 +371,11 @@ static int rtl9300_i2c_probe(struct plat
  {
  	struct device *dev = &pdev->dev;
  	struct rtl9300_i2c *i2c;
@@ -280,7 +278,7 @@ index 9e6232075137..8483bab72146 100644
  
  	i2c = devm_kzalloc(dev, sizeof(*i2c), GFP_KERNEL);
  	if (!i2c)
-@@ -376,9 +394,22 @@ static int rtl9300_i2c_probe(struct platform_device *pdev)
+@@ -376,9 +394,22 @@ static int rtl9300_i2c_probe(struct plat
  
  	platform_set_drvdata(pdev, i2c);
  
@@ -304,7 +302,7 @@ index 9e6232075137..8483bab72146 100644
  	device_for_each_child_node(dev, child) {
  		struct rtl9300_i2c_chan *chan = &i2c->chans[i];
  		struct i2c_adapter *adap = &chan->adap;
-@@ -395,7 +426,6 @@ static int rtl9300_i2c_probe(struct platform_device *pdev)
+@@ -395,7 +426,6 @@ static int rtl9300_i2c_probe(struct plat
  		case I2C_MAX_STANDARD_MODE_FREQ:
  			chan->bus_freq = RTL9300_I2C_STD_FREQ;
  			break;
@@ -312,7 +310,7 @@ index 9e6232075137..8483bab72146 100644
  		case I2C_MAX_FAST_MODE_FREQ:
  			chan->bus_freq = RTL9300_I2C_FAST_FREQ;
  			break;
-@@ -427,11 +457,37 @@ static int rtl9300_i2c_probe(struct platform_device *pdev)
+@@ -427,11 +457,37 @@ static int rtl9300_i2c_probe(struct plat
  	return 0;
  }
  
@@ -354,6 +352,3 @@ index 9e6232075137..8483bab72146 100644
  	{}
  };
  MODULE_DEVICE_TABLE(of, i2c_rtl9300_dt_ids);
--- 
-2.48.1
-

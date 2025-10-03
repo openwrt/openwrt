@@ -30,11 +30,9 @@ Tested-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
 Signed-off-by: Andi Shyti <andi.shyti@kernel.org>
 Link: https://lore.kernel.org/r/20250810-i2c-rtl9300-multi-byte-v5-4-cd9dca0db722@narfation.org
 
-diff --git a/drivers/i2c/busses/i2c-rtl9300.c b/drivers/i2c/busses/i2c-rtl9300.c
-index 4a282d57e2c1..cfafe089102a 100644
 --- a/drivers/i2c/busses/i2c-rtl9300.c
 +++ b/drivers/i2c/busses/i2c-rtl9300.c
-@@ -285,15 +285,15 @@ static int rtl9300_i2c_smbus_xfer(struct i2c_adapter *adap, u16 addr, unsigned s
+@@ -285,15 +285,15 @@ static int rtl9300_i2c_smbus_xfer(struct
  			ret = -EINVAL;
  			goto out_unlock;
  		}
@@ -53,6 +51,3 @@ index 4a282d57e2c1..cfafe089102a 100644
  		break;
  
  	default:
--- 
-2.48.1
-
