@@ -1,0 +1,63 @@
+diff --git a/iptables.c b/iptables.c
+index d03d1dd..3dc5283 100644
+--- a/iptables.c
++++ b/iptables.c
+@@ -1694,7 +1694,6 @@ __fw3_ipt_rule_append(struct fw3_ipt_rule *r, bool repl, const char *fmt, ...)
+ 	va_end(ap);
+ 
+ 	g = (r->h->family == FW3_FAMILY_V6) ? &xtg6 : &xtg;
+-	g->opts = g->orig_opts;
+ 
+ 	optind = 0;
+ 	opterr = 0;
+@@ -1709,8 +1709,8 @@ __fw3_ipt_rule_append(struct fw3_ipt_rule *r, bool repl, const char *fmt, ...)
+ 
+ 	set_rule_tag(r);
+ 
+-	while ((optc = getopt_long(r->argc, r->argv, "-:m:j:i:o:s:d:", g->opts,
+-	                           NULL)) != -1)
++	while ((optc = getopt_long(r->argc, r->argv, "-:m:j:i:o:s:d:",
++				   g->opts ?: g->orig_opts, NULL)) != -1)
+ 	{
+ 		switch (optc)
+ 		{
+diff --git a/xtables-10.h b/xtables-10.h
+index 6a2275d..8c3e6c8 100644
+--- a/xtables-10.h
++++ b/xtables-10.h
+@@ -70,14 +70,14 @@ fw3_xt_merge_match_options(struct xtables_globals *g, struct xtables_match *m)
+ {
+ 	if (m->x6_options)
+ 		g->opts = xtables_options_xfrm(g->orig_opts, g->opts,
+-									   m->x6_options, &m->option_offset);
+-
+-	if (m->extra_opts)
++						m->x6_options, &m->option_offset);
++	else if (m->extra_opts)
+ 		g->opts = xtables_merge_options(g->orig_opts, g->opts,
+-										m->extra_opts, &m->option_offset);
++						m->extra_opts, &m->option_offset);
++	else
++		return;
+ }
+ 
+-
+ static inline const char *
+ fw3_xt_get_target_name(struct xtables_target *t)
+ {
+@@ -115,10 +115,12 @@ fw3_xt_merge_target_options(struct xtables_globals *g, struct xtables_target *t)
+ {
+ 	if (t->x6_options)
+ 		g->opts = xtables_options_xfrm(g->orig_opts, g->opts,
+-		                               t->x6_options, &t->option_offset);
+-	else
++						t->x6_options, &t->option_offset);
++	else if (t->extra_opts)
+ 		g->opts = xtables_merge_options(g->orig_opts, g->opts,
+-		                                t->extra_opts, &t->option_offset);
++						t->extra_opts, &t->option_offset);
++	else
++		return;
+ }
+ 
+ static inline void
