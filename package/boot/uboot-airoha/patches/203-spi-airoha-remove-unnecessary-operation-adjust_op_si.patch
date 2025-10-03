@@ -1,0 +1,51 @@
+From 1e29cf13c183ee457ed70055f5cbff60ff56a726 Mon Sep 17 00:00:00 2001
+From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Date: Sat, 7 Jun 2025 07:18:12 +0300
+Subject: [PATCH 2/5] spi: airoha: remove unnecessary operation adjust_op_size
+
+This operation is not needed because airoha_snand_write_data() and
+airoha_snand_read_data() will properly handle data transfers above
+SPI_MAX_TRANSFER_SIZE.
+
+Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+---
+ drivers/spi/airoha_snfi_spi.c | 16 ----------------
+ 1 file changed, 16 deletions(-)
+
+diff --git a/drivers/spi/airoha_snfi_spi.c b/drivers/spi/airoha_snfi_spi.c
+index 3ea25b293d1..4eb01038404 100644
+--- a/drivers/spi/airoha_snfi_spi.c
++++ b/drivers/spi/airoha_snfi_spi.c
+@@ -525,21 +525,6 @@ static int airoha_snand_nfi_config(struct airoha_snand_priv *priv)
+ 				  SPI_NFI_CUS_SEC_SIZE, val);
+ }
+ 
+-static int airoha_snand_adjust_op_size(struct spi_slave *slave,
+-				       struct spi_mem_op *op)
+-{
+-	size_t max_len;
+-
+-	max_len = 1 + op->addr.nbytes + op->dummy.nbytes;
+-	if (max_len >= 160)
+-		return -EOPNOTSUPP;
+-
+-	if (op->data.nbytes > 160 - max_len)
+-		op->data.nbytes = 160 - max_len;
+-
+-	return 0;
+-}
+-
+ static bool airoha_snand_supports_op(struct spi_slave *slave,
+ 				     const struct spi_mem_op *op)
+ {
+@@ -691,7 +676,6 @@ static int airoha_snand_nfi_setup(struct spi_slave *slave,
+ }
+ 
+ static const struct spi_controller_mem_ops airoha_snand_mem_ops = {
+-	.adjust_op_size = airoha_snand_adjust_op_size,
+ 	.supports_op = airoha_snand_supports_op,
+ 	.exec_op = airoha_snand_exec_op,
+ };
+-- 
+2.51.0
+
