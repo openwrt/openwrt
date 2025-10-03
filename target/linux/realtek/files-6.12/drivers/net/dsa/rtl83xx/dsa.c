@@ -692,10 +692,16 @@ static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
 		rtl931x_sds_init(sds_num, PHY_INTERFACE_MODE_10GBASER);
 		break;
 	case PHY_INTERFACE_MODE_USXGMII:
-		/* Translates to MII_USXGMII_10GSXGMII */
-		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_USXGMII);
-		rtl931x_sds_init(sds_num, PHY_INTERFACE_MODE_USXGMII);
-		break;
+		/*
+		 * TODO: USXGMII is currently the swiss army knife to declare 10G
+		 * multi port PHYs. Real devices use other modes instead. Especially
+		 *
+		 * - RTL8224 is driven in 10G_QXGMII
+		 * - RTL8218D/E are driven in (Realtek proprietary) XSGMII (10G SGMII)
+		 *
+		 * For now disable all USXGMII SerDes handling and rely on U-Boot setup.
+		 */
+		 break;
 	case PHY_INTERFACE_MODE_SGMII:
 		pr_info("%s setting mode PHY_INTERFACE_MODE_SGMII\n", __func__);
 		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_SGMII);
