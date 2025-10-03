@@ -21,8 +21,6 @@ Tested-by: Markus Stockhausen <markus.stockhausen@gmx.de>
 Signed-off-by: Andi Shyti <andi.shyti@kernel.org>
 Link: https://lore.kernel.org/r/20250927101931.71575-10-jelonek.jonas@gmail.com
 
-diff --git a/drivers/i2c/busses/i2c-rtl9300.c b/drivers/i2c/busses/i2c-rtl9300.c
-index c67463228604..4723e48cfe18 100644
 --- a/drivers/i2c/busses/i2c-rtl9300.c
 +++ b/drivers/i2c/busses/i2c-rtl9300.c
 @@ -60,14 +60,16 @@ struct rtl9300_i2c_drv_data {
@@ -56,7 +54,7 @@ index c67463228604..4723e48cfe18 100644
  static int rtl9300_i2c_reg_addr_set(struct rtl9300_i2c *i2c, u32 reg, u16 len)
  {
  	int ret;
-@@ -114,6 +122,11 @@ static int rtl9300_i2c_select_scl(struct rtl9300_i2c *i2c, u8 scl)
+@@ -114,6 +122,11 @@ static int rtl9300_i2c_select_scl(struct
  	return regmap_field_write(i2c->fields[F_SCL_SEL], 1);
  }
  
@@ -68,7 +66,7 @@ index c67463228604..4723e48cfe18 100644
  static int rtl9300_i2c_config_chan(struct rtl9300_i2c *i2c, struct rtl9300_i2c_chan *chan)
  {
  	struct rtl9300_i2c_drv_data *drv_data;
-@@ -127,7 +140,7 @@ static int rtl9300_i2c_config_chan(struct rtl9300_i2c *i2c, struct rtl9300_i2c_c
+@@ -127,7 +140,7 @@ static int rtl9300_i2c_config_chan(struc
  		return ret;
  
  	drv_data = (struct rtl9300_i2c_drv_data *)device_get_match_data(i2c->dev);
@@ -77,7 +75,7 @@ index c67463228604..4723e48cfe18 100644
  	if (ret)
  		return ret;
  
-@@ -361,7 +374,7 @@ static int rtl9300_i2c_probe(struct platform_device *pdev)
+@@ -361,7 +374,7 @@ static int rtl9300_i2c_probe(struct plat
  	struct fwnode_handle *child;
  	struct rtl9300_i2c_drv_data *drv_data;
  	struct reg_field fields[F_NUM_FIELDS];
@@ -86,7 +84,7 @@ index c67463228604..4723e48cfe18 100644
  	int ret, i = 0;
  
  	i2c = devm_kzalloc(dev, sizeof(*i2c), GFP_KERNEL);
-@@ -379,6 +392,11 @@ static int rtl9300_i2c_probe(struct platform_device *pdev)
+@@ -379,6 +392,11 @@ static int rtl9300_i2c_probe(struct plat
  	if (ret)
  		return ret;
  
@@ -98,7 +96,7 @@ index c67463228604..4723e48cfe18 100644
  	platform_set_drvdata(pdev, i2c);
  
  	drv_data = (struct rtl9300_i2c_drv_data *)device_get_match_data(i2c->dev);
-@@ -474,12 +492,35 @@ static const struct rtl9300_i2c_drv_data rtl9300_i2c_drv_data = {
+@@ -474,12 +492,35 @@ static const struct rtl9300_i2c_drv_data
  	.max_nchan = RTL9300_I2C_MUX_NCHAN,
  };
  
@@ -134,6 +132,3 @@ index c67463228604..4723e48cfe18 100644
  	{}
  };
  MODULE_DEVICE_TABLE(of, i2c_rtl9300_dt_ids);
--- 
-2.48.1
-

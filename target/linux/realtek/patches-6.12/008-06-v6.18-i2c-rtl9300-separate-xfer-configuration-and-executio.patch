@@ -41,8 +41,6 @@ Tested-by: Markus Stockhausen <markus.stockhausen@gmx.de>
 Signed-off-by: Andi Shyti <andi.shyti@kernel.org>
 Link: https://lore.kernel.org/r/20250927101931.71575-7-jelonek.jonas@gmail.com
 
-diff --git a/drivers/i2c/busses/i2c-rtl9300.c b/drivers/i2c/busses/i2c-rtl9300.c
-index 9e3517b09b3d..fb3ebbd46a18 100644
 --- a/drivers/i2c/busses/i2c-rtl9300.c
 +++ b/drivers/i2c/busses/i2c-rtl9300.c
 @@ -8,6 +8,7 @@
@@ -76,7 +74,7 @@ index 9e3517b09b3d..fb3ebbd46a18 100644
  #define RTL9300_I2C_MST_CTRL1				0x0
  #define RTL9300_I2C_MST_CTRL2				0x4
  #define RTL9300_I2C_MST_DATA_WORD0			0x8
-@@ -95,45 +112,37 @@ static int rtl9300_i2c_select_scl(struct rtl9300_i2c *i2c, u8 scl)
+@@ -95,45 +112,37 @@ static int rtl9300_i2c_select_scl(struct
  	return regmap_field_write(i2c->fields[F_SCL_SEL], 1);
  }
  
@@ -134,7 +132,7 @@ index 9e3517b09b3d..fb3ebbd46a18 100644
  {
  	u32 vals[4] = {};
  	int i, ret;
-@@ -153,7 +162,7 @@ static int rtl9300_i2c_read(struct rtl9300_i2c *i2c, u8 *buf, int len)
+@@ -153,7 +162,7 @@ static int rtl9300_i2c_read(struct rtl93
  	return 0;
  }
  
@@ -143,7 +141,7 @@ index 9e3517b09b3d..fb3ebbd46a18 100644
  {
  	u32 vals[4] = {};
  	int i;
-@@ -176,16 +185,51 @@ static int rtl9300_i2c_writel(struct rtl9300_i2c *i2c, u32 data)
+@@ -176,16 +185,51 @@ static int rtl9300_i2c_writel(struct rtl
  	return regmap_write(i2c->regmap, i2c->data_reg, data);
  }
  
@@ -159,9 +157,9 @@ index 9e3517b09b3d..fb3ebbd46a18 100644
 +		return -EINVAL;
 +
 +	ret = regmap_field_write(i2c->fields[F_DEV_ADDR], xfer->dev_addr);
-+	if (ret)
-+		return ret;
-+
+ 	if (ret)
+ 		return ret;
+ 
 +	ret = rtl9300_i2c_reg_addr_set(i2c, xfer->reg_addr, xfer->reg_addr_len);
 +	if (ret)
 +		return ret;
@@ -171,9 +169,9 @@ index 9e3517b09b3d..fb3ebbd46a18 100644
 +		return ret;
 +
 +	ret = regmap_field_write(i2c->fields[F_DATA_WIDTH], (xfer->data_len - 1) & 0xf);
- 	if (ret)
- 		return ret;
- 
++	if (ret)
++		return ret;
++
 +	if (xfer->write) {
 +		switch (xfer->type) {
 +		case RTL9300_I2C_XFER_BYTE:
@@ -199,7 +197,7 @@ index 9e3517b09b3d..fb3ebbd46a18 100644
  	ret = regmap_field_write(i2c->fields[F_I2C_TRIG], 1);
  	if (ret)
  		return ret;
-@@ -200,28 +244,24 @@ static int rtl9300_i2c_execute_xfer(struct rtl9300_i2c *i2c, char read_write,
+@@ -200,28 +244,24 @@ static int rtl9300_i2c_execute_xfer(stru
  	if (val)
  		return -EIO;
  
@@ -237,7 +235,7 @@ index 9e3517b09b3d..fb3ebbd46a18 100644
  			if (ret)
  				return ret;
  			break;
-@@ -237,108 +277,62 @@ static int rtl9300_i2c_smbus_xfer(struct i2c_adapter *adap, u16 addr, unsigned s
+@@ -237,108 +277,62 @@ static int rtl9300_i2c_smbus_xfer(struct
  {
  	struct rtl9300_i2c_chan *chan = i2c_get_adapdata(adap);
  	struct rtl9300_i2c *i2c = chan->i2c;
@@ -382,6 +380,3 @@ index 9e3517b09b3d..fb3ebbd46a18 100644
  
  out_unlock:
  	mutex_unlock(&i2c->lock);
--- 
-2.48.1
-

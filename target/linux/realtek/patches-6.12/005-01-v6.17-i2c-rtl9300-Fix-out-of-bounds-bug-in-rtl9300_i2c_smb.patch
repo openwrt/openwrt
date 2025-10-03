@@ -23,11 +23,9 @@ Signed-off-by: Sven Eckelmann <sven@narfation.org>
 Signed-off-by: Andi Shyti <andi.shyti@kernel.org>
 Link: https://lore.kernel.org/r/20250810-i2c-rtl9300-multi-byte-v5-1-cd9dca0db722@narfation.org
 
-diff --git a/drivers/i2c/busses/i2c-rtl9300.c b/drivers/i2c/busses/i2c-rtl9300.c
-index e064e8a4a1f0..568495720810 100644
 --- a/drivers/i2c/busses/i2c-rtl9300.c
 +++ b/drivers/i2c/busses/i2c-rtl9300.c
-@@ -281,6 +281,10 @@ static int rtl9300_i2c_smbus_xfer(struct i2c_adapter *adap, u16 addr, unsigned s
+@@ -281,6 +281,10 @@ static int rtl9300_i2c_smbus_xfer(struct
  		ret = rtl9300_i2c_reg_addr_set(i2c, command, 1);
  		if (ret)
  			goto out_unlock;
@@ -38,6 +36,3 @@ index e064e8a4a1f0..568495720810 100644
  		ret = rtl9300_i2c_config_xfer(i2c, chan, addr, data->block[0]);
  		if (ret)
  			goto out_unlock;
--- 
-2.48.1
-

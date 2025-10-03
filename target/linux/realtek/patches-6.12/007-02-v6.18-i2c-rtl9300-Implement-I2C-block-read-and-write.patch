@@ -43,11 +43,9 @@ Tested-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
 Reviewed-by: Jonas Jelonek <jelonek.jonas@gmail.com>
 Tested-by: Jonas Jelonek <jelonek.jonas@gmail.com>
 
-diff --git a/drivers/i2c/busses/i2c-rtl9300.c b/drivers/i2c/busses/i2c-rtl9300.c
-index af991b28e4f8..9e6232075137 100644
 --- a/drivers/i2c/busses/i2c-rtl9300.c
 +++ b/drivers/i2c/busses/i2c-rtl9300.c
-@@ -186,22 +186,32 @@ static int rtl9300_i2c_execute_xfer(struct rtl9300_i2c *i2c, char read_write,
+@@ -186,22 +186,32 @@ static int rtl9300_i2c_execute_xfer(stru
  		return -EIO;
  
  	if (read_write == I2C_SMBUS_READ) {
@@ -83,7 +81,7 @@ index af991b28e4f8..9e6232075137 100644
  		}
  	}
  
-@@ -290,6 +300,25 @@ static int rtl9300_i2c_smbus_xfer(struct i2c_adapter *adap, u16 addr, unsigned s
+@@ -290,6 +300,25 @@ static int rtl9300_i2c_smbus_xfer(struct
  		len = data->block[0] + 1;
  		break;
  
@@ -109,7 +107,7 @@ index af991b28e4f8..9e6232075137 100644
  	default:
  		dev_err(&adap->dev, "Unsupported transaction %d\n", size);
  		ret = -EOPNOTSUPP;
-@@ -307,7 +336,8 @@ static int rtl9300_i2c_smbus_xfer(struct i2c_adapter *adap, u16 addr, unsigned s
+@@ -307,7 +336,8 @@ out_unlock:
  static u32 rtl9300_i2c_func(struct i2c_adapter *a)
  {
  	return I2C_FUNC_SMBUS_BYTE | I2C_FUNC_SMBUS_BYTE_DATA |
@@ -119,6 +117,3 @@ index af991b28e4f8..9e6232075137 100644
  }
  
  static const struct i2c_algorithm rtl9300_i2c_algo = {
--- 
-2.48.1
-

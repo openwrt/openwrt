@@ -27,11 +27,9 @@ Tested-by: Markus Stockhausen <markus.stockhausen@gmx.de>
 Signed-off-by: Andi Shyti <andi.shyti@kernel.org>
 Link: https://lore.kernel.org/r/20250831100457.3114-2-jelonek.jonas@gmail.com
 
-diff --git a/drivers/i2c/busses/i2c-rtl9300.c b/drivers/i2c/busses/i2c-rtl9300.c
-index cfafe089102a..1a63790f1957 100644
 --- a/drivers/i2c/busses/i2c-rtl9300.c
 +++ b/drivers/i2c/busses/i2c-rtl9300.c
-@@ -353,7 +353,7 @@ static int rtl9300_i2c_probe(struct platform_device *pdev)
+@@ -353,7 +353,7 @@ static int rtl9300_i2c_probe(struct plat
  
  	platform_set_drvdata(pdev, i2c);
  
@@ -40,6 +38,3 @@ index cfafe089102a..1a63790f1957 100644
  		return dev_err_probe(dev, -EINVAL, "Too many channels\n");
  
  	device_for_each_child_node(dev, child) {
--- 
-2.48.1
-
