@@ -42,10 +42,6 @@ case "$FIRMWARE" in
 	meraki,mr12)
 		caldata_extract "art" 0x11000 0xeb8
 		;;
-	ubnt,powerbridge-m|\
-	ubnt,rocket-m)
-		caldata_extract "art" 0x1000 0x1000
-		;;
 	wd,mynet-wifi-rangeextender)
 		caldata_extract "art" 0x1000 0x440
 		ath9k_patch_mac $(nvram get wl0_hwaddr)
