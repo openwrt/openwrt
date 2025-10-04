@@ -1,0 +1,103 @@
+--- a/arch/arm64/boot/dts/mediatek/mt7622-bananapi-bpi-r64.dts
++++ b/arch/arm64/boot/dts/mediatek/mt7622-bananapi-bpi-r64.dts
+@@ -161,7 +161,7 @@
+ 			interrupt-controller;
+ 			#interrupt-cells = <1>;
+ 			interrupts-extended = <&pio 53 IRQ_TYPE_LEVEL_HIGH>;
+-			reset-gpios = <&pio 54 0>;
++			reset-gpios = <&pio 54 1>;
+ 
+ 			ports {
+ 				#address-cells = <1>;
+--- a/arch/arm64/boot/dts/mediatek/mt7622-rfb1.dts
++++ b/arch/arm64/boot/dts/mediatek/mt7622-rfb1.dts
+@@ -132,7 +132,7 @@
+ 		switch@1f {
+ 			compatible = "mediatek,mt7531";
+ 			reg = <31>;
+-			reset-gpios = <&pio 54 0>;
++			reset-gpios = <&pio 54 1>;
+ 
+ 			ports {
+ 				#address-cells = <1>;
+--- a/arch/arm64/boot/dts/mediatek/mt7981-rfb.dts
++++ b/arch/arm64/boot/dts/mediatek/mt7981-rfb.dts
+@@ -89,7 +89,7 @@
+ 		#interrupt-cells = <1>;
+ 		interrupt-parent = <&pio>;
+ 		interrupts = <38 IRQ_TYPE_LEVEL_HIGH>;
+-		reset-gpios = <&pio 5 GPIO_ACTIVE_HIGH>;
++		reset-gpios = <&pio 5 GPIO_ACTIVE_LOW>;
+ 	};
+ };
+ 
+--- a/arch/arm64/boot/dts/mediatek/mt7986a-bananapi-bpi-r3.dts
++++ b/arch/arm64/boot/dts/mediatek/mt7986a-bananapi-bpi-r3.dts
+@@ -211,7 +211,7 @@
+ 		interrupt-controller;
+ 		#interrupt-cells = <1>;
+ 		interrupts-extended = <&pio 66 IRQ_TYPE_LEVEL_HIGH>;
+-		reset-gpios = <&pio 5 GPIO_ACTIVE_HIGH>;
++		reset-gpios = <&pio 5 GPIO_ACTIVE_LOW>;
+ 	};
+ };
+ 
+--- a/arch/arm64/boot/dts/mediatek/mt7986a-rfb.dts
++++ b/arch/arm64/boot/dts/mediatek/mt7986a-rfb.dts
+@@ -87,7 +87,7 @@
+ 	switch: switch@0 {
+ 		compatible = "mediatek,mt7531";
+ 		reg = <31>;
+-		reset-gpios = <&pio 5 0>;
++		reset-gpios = <&pio 5 1>;
+ 	};
+ };
+ 
+--- a/arch/arm64/boot/dts/mediatek/mt7986a-rfb.dtsi
++++ b/arch/arm64/boot/dts/mediatek/mt7986a-rfb.dtsi
+@@ -104,7 +104,7 @@
+ 	switch: switch@1f {
+ 		compatible = "mediatek,mt7531";
+ 		reg = <31>;
+-		reset-gpios = <&pio 5 0>;
++		reset-gpios = <&pio 5 1>;
+ 	};
+ };
+ 
+--- a/arch/arm64/boot/dts/mediatek/mt7986b-rfb.dts
++++ b/arch/arm64/boot/dts/mediatek/mt7986b-rfb.dts
+@@ -64,7 +64,7 @@
+ 		switch@0 {
+ 			compatible = "mediatek,mt7531";
+ 			reg = <31>;
+-			reset-gpios = <&pio 5 0>;
++			reset-gpios = <&pio 5 1>;
+ 
+ 			ports {
+ 				#address-cells = <1>;
+--- a/drivers/net/dsa/mt7530.c
++++ b/drivers/net/dsa/mt7530.c
+@@ -2380,9 +2380,9 @@ mt7530_setup(struct dsa_switch *ds)
+ 		usleep_range(5000, 5100);
+ 		reset_control_deassert(priv->rstc);
+ 	} else {
+-		gpiod_set_value_cansleep(priv->reset, 0);
+-		usleep_range(5000, 5100);
+ 		gpiod_set_value_cansleep(priv->reset, 1);
++		usleep_range(5000, 5100);
++		gpiod_set_value_cansleep(priv->reset, 0);
+ 	}
+ 
+ 	/* Waiting for MT7530 got to stable */
+@@ -2613,9 +2613,9 @@ mt7531_setup(struct dsa_switch *ds)
+ 		usleep_range(5000, 5100);
+ 		reset_control_deassert(priv->rstc);
+ 	} else {
+-		gpiod_set_value_cansleep(priv->reset, 0);
+-		usleep_range(5000, 5100);
+ 		gpiod_set_value_cansleep(priv->reset, 1);
++		usleep_range(5000, 5100);
++		gpiod_set_value_cansleep(priv->reset, 0);
+ 	}
+ 
+ 	/* Waiting for MT7530 got to stable */

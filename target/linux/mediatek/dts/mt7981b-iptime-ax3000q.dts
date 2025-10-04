@@ -97,7 +97,7 @@
 	switch: switch@1f {
 		compatible = "mediatek,mt7531";
 		reg = <0x1f>;
-		reset-gpios = <&pio 39 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&pio 39 GPIO_ACTIVE_LOW>;
 		interrupt-controller;
 		#interrupt-cells = <1>;
 		interrupt-parent = <&pio>;
