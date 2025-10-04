@@ -119,6 +119,10 @@ ramips_setup_interfaces()
 		uci add_list firewall.@zone[1].network='eth_data'
 		uci add_list firewall.@zone[1].network='eth_om'
 		;;
+	cudy,c200p|\
+	mikrotik,routerboard-750gr3)
+		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan"
+		;;
 	dlink,covr-x1860-a1)
 		ucidef_set_interfaces_lan_wan "ethernet" "internet"
 		;;
@@ -136,9 +140,6 @@ ramips_setup_interfaces()
 		;;
 	gnubee,gb-pc2)
 		ucidef_set_interface_lan "ethblack ethblue ethyellow"
-		;;
-	mikrotik,routerboard-750gr3)
-		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan"
 		;;
 	mikrotik,routerboard-760igs)
 		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan sfp"
