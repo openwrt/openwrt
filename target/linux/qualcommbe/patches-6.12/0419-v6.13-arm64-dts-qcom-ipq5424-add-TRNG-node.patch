@@ -1,0 +1,36 @@
+From 7ae7df37528744ce4606456e084698a9e33254e2 Mon Sep 17 00:00:00 2001
+From: Md Sadre Alam <quic_mdalam@quicinc.com>
+Date: Thu, 26 Dec 2024 17:14:58 +0530
+Subject: [PATCH] arm64: dts: qcom: ipq5424: add TRNG node
+
+Add TRNG (Truly Random Number Generator) node for ipq5424
+
+Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Signed-off-by: Md Sadre Alam <quic_mdalam@quicinc.com>
+Link: https://lore.kernel.org/r/20241226114500.2623804-3-quic_mdalam@quicinc.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+---
+ arch/arm64/boot/dts/qcom/ipq5424.dtsi | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/ipq5424.dtsi b/arch/arm64/boot/dts/qcom/ipq5424.dtsi
+index 70e5d1d80271..5e79bd450a4e 100644
+--- a/arch/arm64/boot/dts/qcom/ipq5424.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5424.dtsi
+@@ -145,6 +145,13 @@ soc@0 {
+ 		#size-cells = <2>;
+ 		ranges = <0 0 0 0 0x10 0>;
+ 
++		rng: rng@4c3000 {
++			compatible = "qcom,ipq5424-trng", "qcom,trng";
++			reg = <0 0x004c3000 0 0x1000>;
++			clocks = <&gcc GCC_PRNG_AHB_CLK>;
++			clock-names = "core";
++		};
++
+ 		tlmm: pinctrl@1000000 {
+ 			compatible = "qcom,ipq5424-tlmm";
+ 			reg = <0 0x01000000 0 0x300000>;
+-- 
+2.34.1
+
