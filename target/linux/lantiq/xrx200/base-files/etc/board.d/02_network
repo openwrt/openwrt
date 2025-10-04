@@ -40,6 +40,7 @@ lantiq_setup_interfaces()
 	avm,fritz7490|\
 	avm,fritz7490-micron|\
 	buffalo,wbmr-300hpd|\
+	dlink,dwr-966|\
 	tplink,vr200|\
 	tplink,vr200v)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
@@ -57,6 +58,12 @@ lantiq_setup_dsl()
 {
 	local board="$1"
 	local annex="a"
+
+	case "$board" in
+	dlink,dwr-966)
+		return
+		;;
+	esac
 
 	case "$board" in
 	arcadyan,vgv7510kw22-brn|\
@@ -133,6 +140,9 @@ lantiq_setup_macs()
 	buffalo,wbmr-300hpd)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		wan_mac="$lan_mac"
+		;;
+	dlink,dwr-966)
+		lan_mac=$(mtd_get_mac_ascii ubootconfigA ethaddr)
 		;;
 	tplink,vr200|\
 	tplink,vr200v)
