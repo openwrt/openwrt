@@ -73,18 +73,20 @@
 	status = "okay";
 };
 
-&wmac {
-	nvmem-cells = <&calibration_art_1000>;
-	nvmem-cell-names = "calibration";
+&nvmem {
+	calibration_art_5000: calibration@5000 {
+		reg = <0x5000 0x440>;
+	};
 };
 
-&pcie0 {
-	status = "okay";
+&wmac {
+	nvmem-cells = <&calibration_art_1000>, <&macaddr_uboot_eth 0>;
+	nvmem-cell-names = "calibration", "mac-address";
+};
 
-	wifi@0,0 {
-		compatible = "pci168c,0033";
-		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&calibration_art_5000>;
-		nvmem-cell-names = "calibration";
-	};
+&wifi0 {
+	compatible = "pci168c,0033";
+
+	nvmem-cells = <&calibration_art_5000>, <&macaddr_uboot_eth 1>;
+	nvmem-cell-names = "calibration", "mac-address";
 };
