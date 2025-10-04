@@ -1,0 +1,102 @@
+From d8a0a67bf75c4cf2a760b6fa0002b0baff6e8b20 Mon Sep 17 00:00:00 2001
+From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Date: Mon, 11 Aug 2025 20:32:40 +0300
+Subject: [PATCH v6 06/13] spi: airoha: fix reading/writing of flashes with
+ more than one plane per lun
+
+Attaching UBI on the flash with more than one plane per lun will lead to
+the following error:
+
+[    2.980989] spi-nand spi0.0: Micron SPI NAND was found.
+[    2.986309] spi-nand spi0.0: 256 MiB, block size: 128 KiB, page size: 2048, OOB size: 128
+[    2.994978] 2 fixed-partitions partitions found on MTD device spi0.0
+[    3.001350] Creating 2 MTD partitions on "spi0.0":
+[    3.006159] 0x000000000000-0x000000020000 : "bl2"
+[    3.011663] 0x000000020000-0x000010000000 : "ubi"
+...
+[    6.391748] ubi0: attaching mtd1
+[    6.412545] ubi0 error: ubi_attach: PEB 0 contains corrupted VID header, and the data does not contain all 0xFF
+[    6.422677] ubi0 error: ubi_attach: this may be a non-UBI PEB or a severe VID header corruption which requires manual inspection
+[    6.434249] Volume identifier header dump:
+[    6.438349]     magic     55424923
+[    6.441482]     version   1
+[    6.444007]     vol_type  0
+[    6.446539]     copy_flag 0
+[    6.449068]     compat    0
+[    6.451594]     vol_id    0
+[    6.454120]     lnum      1
+[    6.456651]     data_size 4096
+[    6.459442]     used_ebs  1061644134
+[    6.462748]     data_pad  0
+[    6.465274]     sqnum     0
+[    6.467805]     hdr_crc   61169820
+[    6.470943] Volume identifier header hexdump:
+[    6.475308] hexdump of PEB 0 offset 4096, length 126976
+[    6.507391] ubi0 warning: ubi_attach: valid VID header but corrupted EC header at PEB 4
+[    6.515415] ubi0 error: ubi_compare_lebs: unsupported on-flash UBI format
+[    6.522222] ubi0 error: ubi_attach_mtd_dev: failed to attach mtd1, error -22
+[    6.529294] UBI error: cannot attach mtd1
+
+Non dirmap reading works good. Looking to spi_mem_no_dirmap_read() code we'll see:
+
+	static ssize_t spi_mem_no_dirmap_read(struct spi_mem_dirmap_desc *desc,
+					      u64 offs, size_t len, void *buf)
+	{
+		struct spi_mem_op op = desc->info.op_tmpl;
+		int ret;
+
+// --- see here ---
+		op.addr.val = desc->info.offset + offs;
+//-----------------
+		op.data.buf.in = buf;
+		op.data.nbytes = len;
+		ret = spi_mem_adjust_op_size(desc->mem, &op);
+		if (ret)
+		return ret;
+
+		ret = spi_mem_exec_op(desc->mem, &op);
+		if (ret)
+			return ret;
+
+		return op.data.nbytes;
+	}
+
+The similar happens for spi_mem_no_dirmap_write(). Thus the address
+passed to the flash should take in the account the value of
+desc->info.offset.
+
+This patch fix dirmap reading/writing of flashes with more than one
+plane per lun.
+
+Fixes: a403997c12019 ("spi: airoha: add SPI-NAND Flash controller driver")
+Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Reviewed-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>
+---
+ drivers/spi/spi-airoha-snfi.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+--- a/drivers/spi/spi-airoha-snfi.c
++++ b/drivers/spi/spi-airoha-snfi.c
+@@ -726,8 +726,9 @@ static ssize_t airoha_snand_dirmap_read(
+ 	if (err)
+ 		goto error_dma_unmap;
+ 
+-	/* set read addr */
+-	err = regmap_write(as_ctrl->regmap_nfi, REG_SPI_NFI_RD_CTL3, 0x0);
++	/* set read addr: zero page offset + descriptor read offset */
++	err = regmap_write(as_ctrl->regmap_nfi, REG_SPI_NFI_RD_CTL3,
++			   desc->info.offset);
+ 	if (err)
+ 		goto error_dma_unmap;
+ 
+@@ -860,7 +861,9 @@ static ssize_t airoha_snand_dirmap_write
+ 	if (err)
+ 		goto error_dma_unmap;
+ 
+-	err = regmap_write(as_ctrl->regmap_nfi, REG_SPI_NFI_PG_CTL2, 0x0);
++	/* set write addr: zero page offset + descriptor write offset */
++	err = regmap_write(as_ctrl->regmap_nfi, REG_SPI_NFI_PG_CTL2,
++			   desc->info.offset);
+ 	if (err)
+ 		goto error_dma_unmap;
+ 
