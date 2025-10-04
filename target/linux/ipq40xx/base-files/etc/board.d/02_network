@@ -29,6 +29,10 @@ ipq40xx_setup_interfaces()
 	zyxel,nbg6617)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
+	meraki,gx20|\
+	meraki,z3)
+		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan"
+		;;
 	8dev,jalapeno|\
 	alfa-network,ap120c-ac|\
 	asus,map-ac2200|\
@@ -133,6 +137,9 @@ ipq40xx_setup_interfaces()
 	netgear,lbr20)
 		ucidef_set_interface_lan "lan1 lan2"
 		ucidef_set_interface "wan" device "/dev/cdc-wdm0" protocol "qmi"
+		;;
+	meraki,mr30h)
+		ucidef_set_interface_lan "lan1 lan2 lan3 lan4 lan5"
 		;;
 	*)
 		echo "Unsupported hardware. Network interfaces not initialized"
