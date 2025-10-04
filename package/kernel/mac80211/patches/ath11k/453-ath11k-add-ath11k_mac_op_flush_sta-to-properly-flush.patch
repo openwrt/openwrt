@@ -1,0 +1,49 @@
+From 5cff5dfbb350af519d8be49ca4cc6a20c54d8afa Mon Sep 17 00:00:00 2001
+From: Florian Maurer <f.maurer@outlook.de>
+Date: Fri, 3 Oct 2025 12:56:13 +0200
+Subject: [PATCH] ath11k: add ath11k_mac_op_flush_sta to properly flush pending
+ packets
+
+warning print "ath11k c000000.wifi: failed to flush transmit queue 0"
+is observed on various openwrt devices.
+
+Signed-off-by: Florian Maurer <f.maurer@outlook.de>
+---
+ drivers/net/wireless/ath/ath11k/mac.c | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+--- a/drivers/net/wireless/ath/ath11k/mac.c
++++ b/drivers/net/wireless/ath/ath11k/mac.c
+@@ -8248,6 +8248,24 @@ static void ath11k_mac_op_flush(struct i
+ 	ath11k_mac_flush_tx_complete(ar);
+ }
+ 
++static void ath11k_mac_op_flush_sta(struct ieee80211_hw *hw,
++							struct ieee80211_vif *vif,
++			    			struct ieee80211_sta *sta)
++{
++	struct ath11k_vif *arvif = (void *)vif->drv_priv;
++	struct ath11k *ar = hw->priv;
++	struct peer_flush_params params = {
++		.peer_tid_bitmap = 0xFF,
++		.vdev_id = arvif->vdev_id,
++	};
++	int ret = 0;
++
++	ret = ath11k_wmi_send_peer_flush_tids_cmd(ar, sta->addr, &params);
++	if (ret)
++		ath11k_warn(ar->ab, "failed to flush sta (sta %pM)\n",
++			    sta->addr);
++}
++
+ static bool
+ ath11k_mac_has_single_legacy_rate(struct ath11k *ar,
+ 				  enum nl80211_band band,
+@@ -9823,6 +9841,7 @@ static const struct ieee80211_ops ath11k
+ 	.set_bitrate_mask		= ath11k_mac_op_set_bitrate_mask,
+ 	.get_survey			= ath11k_mac_op_get_survey,
+ 	.flush				= ath11k_mac_op_flush,
++	.flush_sta			= ath11k_mac_op_flush_sta,
+ 	.sta_statistics			= ath11k_mac_op_sta_statistics,
+ 	CFG80211_TESTMODE_CMD(ath11k_tm_cmd)
+ 
