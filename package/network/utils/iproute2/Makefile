@@ -161,24 +161,24 @@ ifdef CONFIG_PACKAGE_rdma
   HAVE_MNL:=y
 endif
 
-define Build/Configure
-	echo "static const char SNAPSHOT[] = \"$(PKG_VERSION)-$(PKG_RELEASE)-openwrt\";" \
-		> $(PKG_BUILD_DIR)/include/SNAPSHOT.h
-endef
-
 TARGET_LDFLAGS += -Wl,--as-needed
 TARGET_CPPFLAGS += -I$(STAGING_DIR)/usr/include/libnl-tiny
 
-MAKE_FLAGS += \
-	KERNEL_INCLUDE="$(TOOLCHAIN_ROOT_DIR)/usr/include" \
-	SHARED_LIBS=$(SHARED_LIBS) \
-	IP_CONFIG_TINY=$(IP_CONFIG_TINY) \
-	BUILD_VARIANT=$(BUILD_VARIANT) \
-	LIBBPF_FORCE=$(LIBBPF_FORCE) \
+CONFIGURE_VARS += \
 	HAVE_ELF=$(HAVE_ELF) \
 	HAVE_MNL=$(HAVE_MNL) \
 	HAVE_CAP=$(HAVE_CAP) \
-	HAVE_TIRPC=n \
+	HAVE_TIRPC=n
+
+CONFIGURE_ARGS += \
+	--include_dir="$(TOOLCHAIN_ROOT_DIR)/usr/include" \
+	--libbpf_force=$(LIBBPF_FORCE) \
+	--color=auto
+
+MAKE_FLAGS += \
+	SHARED_LIBS=$(SHARED_LIBS) \
+	IP_CONFIG_TINY=$(IP_CONFIG_TINY) \
+	BUILD_VARIANT=$(BUILD_VARIANT) \
 	IPT_LIB_DIR=/usr/lib/iptables \
 	XT_LIB_DIR=/usr/lib/iptables \
 	TC_CONFIG_XT=$(TC_CONFIG_XT) \
