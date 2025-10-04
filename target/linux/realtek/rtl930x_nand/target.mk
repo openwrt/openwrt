@@ -4,7 +4,7 @@ SUBTARGET:=rtl930x_nand
 CPU_TYPE:=24kc
 BOARD:=realtek
 BOARDNAME:=Realtek MIPS RTL930X (NAND)
-FEATURES+=nand source-only
+FEATURES+=nand
 
 define Target/Description
 	Build firmware images for Realtek RTL930x based boards.
