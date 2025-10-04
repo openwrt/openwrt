@@ -17,7 +17,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/dsa/lantiq_gswip.c
 +++ b/drivers/net/dsa/lantiq_gswip.c
-@@ -829,7 +829,7 @@ static int gswip_setup(struct dsa_switch
+@@ -830,7 +830,7 @@ static int gswip_setup(struct dsa_switch
  
  	err = gswip_pce_load_microcode(priv);
  	if (err) {
@@ -26,7 +26,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		return err;
  	}
  
-@@ -1780,7 +1780,7 @@ static u32 gswip_bcm_ram_entry_read(stru
+@@ -1782,7 +1782,7 @@ static u32 gswip_bcm_ram_entry_read(stru
  	err = gswip_switch_r_timeout(priv, GSWIP_BM_RAM_CTRL,
  				     GSWIP_BM_RAM_CTRL_BAS);
  	if (err) {
@@ -35,7 +35,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  			table, index);
  		return 0;
  	}
-@@ -2009,7 +2009,7 @@ static void gswip_gphy_fw_remove(struct
+@@ -2012,7 +2012,7 @@ static void gswip_gphy_fw_remove(struct
  
  	ret = regmap_write(priv->rcu_regmap, gphy_fw->fw_addr_offset, 0);
  	if (ret)
@@ -44,7 +44,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	clk_disable_unprepare(gphy_fw->clk_gate);
  
-@@ -2038,7 +2038,7 @@ static int gswip_gphy_fw_list(struct gsw
+@@ -2041,7 +2041,7 @@ static int gswip_gphy_fw_list(struct gsw
  			priv->gphy_fw_name_cfg = &xrx200a2x_gphy_data;
  			break;
  		default:
@@ -53,7 +53,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  			return -ENOENT;
  		}
  	}
-@@ -2048,7 +2048,7 @@ static int gswip_gphy_fw_list(struct gsw
+@@ -2051,7 +2051,7 @@ static int gswip_gphy_fw_list(struct gsw
  		priv->gphy_fw_name_cfg = match->data;
  
  	if (!priv->gphy_fw_name_cfg) {
@@ -62,7 +62,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		return -ENOENT;
  	}
  
-@@ -2150,7 +2150,7 @@ static int gswip_probe(struct platform_d
+@@ -2153,7 +2153,7 @@ static int gswip_probe(struct platform_d
  			return -EINVAL;
  		break;
  	default:
@@ -71,7 +71,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		return -ENOENT;
  	}
  
-@@ -2181,7 +2181,7 @@ static int gswip_probe(struct platform_d
+@@ -2184,7 +2184,7 @@ static int gswip_probe(struct platform_d
  		goto mdio_bus;
  	}
  	if (!dsa_is_cpu_port(priv->ds, priv->hw_info->cpu_port)) {
