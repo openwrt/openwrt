@@ -1,0 +1,67 @@
+From 073de6579cf8c7599d925852bb0fc7fa50378dd3 Mon Sep 17 00:00:00 2001
+From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Date: Thu, 14 Aug 2025 18:00:32 +0300
+Subject: [PATCH 1/4] spi: airoha: avoid setting of page/oob sizes in
+ REG_SPI_NFI_PAGEFMT
+
+spi-airoha-snfi uses custom sector size in REG_SPI_NFI_SECCUS_SIZE
+register, so setting of page/oob sizes in REG_SPI_NFI_PAGEFMT is not
+required.
+
+Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+---
+ drivers/spi/airoha_snfi_spi.c | 38 -----------------------------------
+ 1 file changed, 38 deletions(-)
+
+diff --git a/drivers/spi/airoha_snfi_spi.c b/drivers/spi/airoha_snfi_spi.c
+index 7cafa900bbc..71e4fc13924 100644
+--- a/drivers/spi/airoha_snfi_spi.c
++++ b/drivers/spi/airoha_snfi_spi.c
+@@ -514,44 +514,6 @@ static int airoha_snand_nfi_config(struct airoha_snand_priv *priv)
+ 	if (err)
+ 		return err;
+ 
+-	/* page format */
+-	switch (priv->nfi_cfg.spare_size) {
+-	case 26:
+-		val = FIELD_PREP(SPI_NFI_SPARE_SIZE, 0x1);
+-		break;
+-	case 27:
+-		val = FIELD_PREP(SPI_NFI_SPARE_SIZE, 0x2);
+-		break;
+-	case 28:
+-		val = FIELD_PREP(SPI_NFI_SPARE_SIZE, 0x3);
+-		break;
+-	default:
+-		val = FIELD_PREP(SPI_NFI_SPARE_SIZE, 0x0);
+-		break;
+-	}
+-
+-	err = regmap_update_bits(priv->regmap_nfi, REG_SPI_NFI_PAGEFMT,
+-				 SPI_NFI_SPARE_SIZE, val);
+-	if (err)
+-		return err;
+-
+-	switch (priv->nfi_cfg.page_size) {
+-	case 2048:
+-		val = FIELD_PREP(SPI_NFI_PAGE_SIZE, 0x1);
+-		break;
+-	case 4096:
+-		val = FIELD_PREP(SPI_NFI_PAGE_SIZE, 0x2);
+-		break;
+-	default:
+-		val = FIELD_PREP(SPI_NFI_PAGE_SIZE, 0x0);
+-		break;
+-	}
+-
+-	err = regmap_update_bits(priv->regmap_nfi, REG_SPI_NFI_PAGEFMT,
+-				 SPI_NFI_PAGE_SIZE, val);
+-	if (err)
+-		return err;
+-
+ 	/* sec num */
+ 	val = FIELD_PREP(SPI_NFI_SEC_NUM, priv->nfi_cfg.sec_num);
+ 	err = regmap_update_bits(priv->regmap_nfi, REG_SPI_NFI_CON,
+-- 
+2.51.0
+
