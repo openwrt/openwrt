@@ -1215,6 +1215,7 @@ config BUSYBOX_CONFIG_FEATURE_WGET_OPENSSL
 	bool "Try to connect to HTTPS using openssl"
 	default BUSYBOX_DEFAULT_FEATURE_WGET_OPENSSL
 	depends on BUSYBOX_CONFIG_WGET
+	select PACKAGE_openssl-util
 	help
 	Try to use openssl to handle HTTPS.
 
