@@ -32,7 +32,7 @@ def parse_args():
     parser.add_argument("-f", "--source-format", required=True, choices=source_format,
                         help="Required source format of input: 'apk' or 'opkg'")
     parser.add_argument("-m", "--manifest", action="store_true", default=False,
-                        help="Print output in manifest format, as package:version pairs")
+                        help="Print output in opkg list format, as 'package - version' pairs")
     parser.add_argument(dest="source",
                         help="File name for input, '-' for stdin")
     # fmt: on
@@ -90,8 +90,10 @@ if __name__ == "__main__":
 
     packages = parse_apk(text) if args.source_format == "apk" else parse_opkg(text)
     if args.manifest:
-        for name, version in packages.items():
-            print(name, version)
+        # Emulate the output of 'opkg list' command for compatibility with
+        # legacy tooling.
+        for name, version in sorted(packages.items()):
+            print(name, "-", version)
     else:
         index = {
             "version": 2,
