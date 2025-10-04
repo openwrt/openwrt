@@ -1,0 +1,33 @@
+From 4aac08add11979d838335ebff0dc42c532f05c98 Mon Sep 17 00:00:00 2001
+From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Date: Mon, 4 Aug 2025 21:45:46 +0300
+Subject: [PATCH v6 01/13] spi: airoha: return an error for continuous mode
+ dirmap creation cases
+
+This driver can accelerate single page operations only, thus
+continuous reading mode should not be used.
+
+Continuous reading will use sizes up to the size of one erase block.
+This size is much larger than the size of single flash page. Use this
+difference to identify continuous reading and return an error.
+
+Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Reviewed-by: Frieder Schrempf <frieder.schrempf@kontron.de>
+Reviewed-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>
+---
+ drivers/spi/spi-airoha-snfi.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/drivers/spi/spi-airoha-snfi.c
++++ b/drivers/spi/spi-airoha-snfi.c
+@@ -618,6 +618,10 @@ static int airoha_snand_dirmap_create(st
+ 	if (desc->info.offset + desc->info.length > U32_MAX)
+ 		return -EINVAL;
+ 
++	/* continuous reading is not supported */
++	if (desc->info.length > SPI_NAND_CACHE_SIZE)
++		return -E2BIG;
++
+ 	if (!airoha_snand_supports_op(desc->mem, &desc->info.op_tmpl))
+ 		return -EOPNOTSUPP;
+ 
