@@ -97,11 +97,11 @@ realtek_setup_macs()
 		;;
 	esac
 
-	ucidef_set_interface_macaddr "lan" $lan_mac
-	ucidef_set_bridge_mac "$lan_mac"
-	ucidef_set_network_device_mac eth0 $lan_mac
+	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" $lan_mac
+	[ -n "$lan_mac" ] && ucidef_set_bridge_mac "$lan_mac"
+	[ -n "$lan_mac" ] && ucidef_set_network_device_mac eth0 $lan_mac
 
-	[ -z "$lan_mac_start" ] && lan_mac_start=$lan_mac
+	[ -z "$lan_mac_start" -a -n "$lan_mac" ] && lan_mac_start=$lan_mac
 	realtek_setup_macs_lan "$lan_list" "$lan_mac_start" "$lan_mac_end"
 
 	[ -n "$label_mac" ] && ucidef_set_label_macaddr $label_mac
