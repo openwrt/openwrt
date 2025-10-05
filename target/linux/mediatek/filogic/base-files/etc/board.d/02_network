@@ -91,6 +91,9 @@ mediatek_setup_interfaces()
 	bananapi,bpi-r4)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 sfp-lan" "wan sfp-wan"
 		;;
+	bananapi,bpi-r4-lite)
+		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2 lan3 sfp0" "eth1"
+		;;
 	bananapi,bpi-r4-2g5|\
 	bananapi,bpi-r4-poe)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan sfp-wan"
