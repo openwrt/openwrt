@@ -26,11 +26,9 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  net/mac80211/ieee80211_i.h |  9 +++-
  5 files changed, 90 insertions(+), 48 deletions(-)
 
-diff --git a/include/linux/ieee80211.h b/include/linux/ieee80211.h
-index 456bca45ff05..05dedc45505c 100644
 --- a/include/linux/ieee80211.h
 +++ b/include/linux/ieee80211.h
-@@ -1445,6 +1445,8 @@ struct ieee80211_mgmt {
+@@ -1492,6 +1492,8 @@ struct ieee80211_mgmt {
  					__le16 status;
  					__le16 capab;
  					__le16 timeout;
@@ -39,11 +37,9 @@ index 456bca45ff05..05dedc45505c 100644
  				} __packed addba_resp;
  				struct{
  					u8 action_code;
-diff --git a/net/mac80211/agg-rx.c b/net/mac80211/agg-rx.c
-index fe7eab4b681b..f3fbe5a4395e 100644
 --- a/net/mac80211/agg-rx.c
 +++ b/net/mac80211/agg-rx.c
-@@ -170,28 +170,63 @@ static void sta_rx_agg_reorder_timer_expired(struct timer_list *t)
+@@ -170,28 +170,63 @@ static void sta_rx_agg_reorder_timer_exp
  	rcu_read_unlock();
  }
  
@@ -117,7 +113,7 @@ index fe7eab4b681b..f3fbe5a4395e 100644
  {
  	struct ieee80211_sub_if_data *sdata = sta->sdata;
  	struct ieee80211_local *local = sdata->local;
-@@ -223,8 +258,8 @@ static void ieee80211_send_addba_resp(struct sta_info *sta, u8 *da, u16 tid,
+@@ -223,8 +258,8 @@ static void ieee80211_send_addba_resp(st
  	mgmt->u.action.u.addba_resp.timeout = cpu_to_le16(timeout);
  	mgmt->u.action.u.addba_resp.status = cpu_to_le16(status);
  
@@ -128,7 +124,7 @@ index fe7eab4b681b..f3fbe5a4395e 100644
  
  	ieee80211_tx_skb(sdata, skb);
  }
-@@ -233,7 +268,7 @@ void __ieee80211_start_rx_ba_session(struct sta_info *sta,
+@@ -233,7 +268,7 @@ void __ieee80211_start_rx_ba_session(str
  				     u8 dialog_token, u16 timeout,
  				     u16 start_seq_num, u16 ba_policy, u16 tid,
  				     u16 buf_size, bool tx, bool auto_seq,
@@ -137,7 +133,7 @@ index fe7eab4b681b..f3fbe5a4395e 100644
  {
  	struct ieee80211_local *local = sta->sdata->local;
  	struct tid_ampdu_rx *tid_agg_rx;
-@@ -419,7 +454,7 @@ void __ieee80211_start_rx_ba_session(struct sta_info *sta,
+@@ -419,7 +454,7 @@ end:
  	if (tx)
  		ieee80211_send_addba_resp(sta, sta->sta.addr, tid,
  					  dialog_token, status, 1, buf_size,
@@ -146,7 +142,7 @@ index fe7eab4b681b..f3fbe5a4395e 100644
  }
  
  void ieee80211_process_addba_request(struct ieee80211_local *local,
-@@ -428,9 +463,7 @@ void ieee80211_process_addba_request(struct ieee80211_local *local,
+@@ -428,9 +463,7 @@ void ieee80211_process_addba_request(str
  				     size_t len)
  {
  	u16 capab, tid, timeout, ba_policy, buf_size, start_seq_num;
@@ -157,7 +153,7 @@ index fe7eab4b681b..f3fbe5a4395e 100644
  
  	/* extract session parameters from addba request frame */
  	dialog_token = mgmt->u.action.u.addba_req.dialog_token;
-@@ -443,28 +476,17 @@ void ieee80211_process_addba_request(struct ieee80211_local *local,
+@@ -443,28 +476,17 @@ void ieee80211_process_addba_request(str
  	tid = (capab & IEEE80211_ADDBA_PARAM_TID_MASK) >> 2;
  	buf_size = (capab & IEEE80211_ADDBA_PARAM_BUF_SIZE_MASK) >> 6;
  
@@ -194,8 +190,6 @@ index fe7eab4b681b..f3fbe5a4395e 100644
  }
  
  void ieee80211_manage_rx_ba_offl(struct ieee80211_vif *vif,
-diff --git a/net/mac80211/agg-tx.c b/net/mac80211/agg-tx.c
-index 04cb45cfb310..61f2cac37728 100644
 --- a/net/mac80211/agg-tx.c
 +++ b/net/mac80211/agg-tx.c
 @@ -58,23 +58,24 @@
@@ -228,7 +222,7 @@ index 04cb45cfb310..61f2cac37728 100644
  
  	skb_put(skb, 1 + sizeof(mgmt->u.action.u.addba_req));
  
-@@ -93,6 +94,9 @@ static void ieee80211_send_addba_request(struct ieee80211_sub_if_data *sdata,
+@@ -93,6 +94,9 @@ static void ieee80211_send_addba_request
  	mgmt->u.action.u.addba_req.start_seq_num =
  					cpu_to_le16(start_seq_num << 4);
  
@@ -238,7 +232,7 @@ index 04cb45cfb310..61f2cac37728 100644
  	ieee80211_tx_skb_tid(sdata, skb, tid, -1);
  }
  
-@@ -460,8 +464,11 @@ static void ieee80211_send_addba_with_timeout(struct sta_info *sta,
+@@ -460,8 +464,11 @@ static void ieee80211_send_addba_with_ti
  	sta->ampdu_mlme.addba_req_num[tid]++;
  	spin_unlock_bh(&sta->lock);
  
@@ -251,7 +245,7 @@ index 04cb45cfb310..61f2cac37728 100644
  	} else {
  		/*
  		 * We really should use what the driver told us it will
-@@ -473,9 +480,8 @@ static void ieee80211_send_addba_with_timeout(struct sta_info *sta,
+@@ -473,9 +480,8 @@ static void ieee80211_send_addba_with_ti
  	}
  
  	/* send AddBA request */
@@ -263,7 +257,7 @@ index 04cb45cfb310..61f2cac37728 100644
  
  	WARN_ON(test_and_set_bit(HT_AGG_STATE_SENT_ADDBA, &tid_tx->state));
  }
-@@ -970,6 +976,13 @@ void ieee80211_process_addba_resp(struct ieee80211_local *local,
+@@ -970,6 +976,13 @@ void ieee80211_process_addba_resp(struct
  	amsdu = capab & IEEE80211_ADDBA_PARAM_AMSDU_MASK;
  	tid = u16_get_bits(capab, IEEE80211_ADDBA_PARAM_TID_MASK);
  	buf_size = u16_get_bits(capab, IEEE80211_ADDBA_PARAM_BUF_SIZE_MASK);
@@ -277,11 +271,9 @@ index 04cb45cfb310..61f2cac37728 100644
  	buf_size = min(buf_size, local->hw.max_tx_aggregation_subframes);
  
  	txq = sta->sta.txq[tid];
-diff --git a/net/mac80211/ht.c b/net/mac80211/ht.c
-index 1c2b7dd8976a..32390d8a9d75 100644
 --- a/net/mac80211/ht.c
 +++ b/net/mac80211/ht.c
-@@ -379,7 +379,7 @@ void ieee80211_ba_session_work(struct wiphy *wiphy, struct wiphy_work *work)
+@@ -379,7 +379,7 @@ void ieee80211_ba_session_work(struct wi
  				       sta->ampdu_mlme.tid_rx_manage_offl))
  			__ieee80211_start_rx_ba_session(sta, 0, 0, 0, 1, tid,
  							IEEE80211_MAX_AMPDU_BUF_HT,
@@ -290,11 +282,9 @@ index 1c2b7dd8976a..32390d8a9d75 100644
  
  		if (test_and_clear_bit(tid + IEEE80211_NUM_TIDS,
  				       sta->ampdu_mlme.tid_rx_manage_offl))
-diff --git a/net/mac80211/ieee80211_i.h b/net/mac80211/ieee80211_i.h
-index 7dcb46120abc..752297bcde76 100644
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -2111,14 +2111,19 @@ int ieee80211_send_smps_action(struct ieee80211_sub_if_data *sdata,
+@@ -2131,14 +2131,19 @@ int ieee80211_send_smps_action(struct ie
  			       const u8 *bssid, int link_id);
  bool ieee80211_smps_is_restrictive(enum ieee80211_smps_mode smps_mode_old,
  				   enum ieee80211_smps_mode smps_mode_new);
@@ -316,6 +306,3 @@ index 7dcb46120abc..752297bcde76 100644
  void ieee80211_sta_tear_down_BA_sessions(struct sta_info *sta,
  					 enum ieee80211_agg_stop_reason reason);
  void ieee80211_process_delba(struct ieee80211_sub_if_data *sdata,
--- 
-2.39.5
-
