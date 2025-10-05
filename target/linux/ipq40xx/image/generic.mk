@@ -815,6 +815,14 @@ define Device/meraki_z3
 endef
 TARGET_DEVICES += meraki_z3
 
+define Device/meraki_gx20
+	$(call Device/meraki_common)
+	DEVICE_MODEL := GX20
+	DEVICE_DTS_CONFIG := config@2
+	DEVICE_PACKAGES := -ath10k-board-qca4019 -ath10k-firmware-qca9887-ct
+endef
+TARGET_DEVICES += meraki_gx20
+
 define Device/mobipromo_cm520-79f
 	$(call Device/FitzImage)
 	$(call Device/UbiFit)
