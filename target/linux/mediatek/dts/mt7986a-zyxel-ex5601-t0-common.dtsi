@@ -434,7 +434,7 @@
 		spi-cpol = <1>;
 		channel_count = <1>;
 		debug_level = <4>;       /* 1 = TRC, 2 = DBG, 4 = ERR */
-		reset_gpio = <&pio 25 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&pio 25 GPIO_ACTIVE_HIGH>;
 		ig,enable-spi = <1>;     /* 1: Enable, 0: Disable */
 	};
 };
