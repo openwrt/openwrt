@@ -68,22 +68,6 @@
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 20 GPIO_ACTIVE_HIGH>;
 		};
-
-		radio2 {
-			label = "green:radio2";
-			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
-		};
-	};
-
-	ath9k-leds {
-		compatible = "gpio-leds";
-
-		radio1 {
-			label = "green:radio1";
-			gpios = <&ath9k 0 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
-		};
 	};
 
 	keys {
@@ -113,7 +97,14 @@
 
 &wmac {
 	status = "okay";
-	qca,no-eeprom;
+
+	nvmem-cells = <&cal_art_1000>;
+	nvmem-cell-names = "calibration";
+
+	led {
+		led-sources = <11>;
+		led-active-low;
+	};
 };
 
 &spi {
@@ -136,9 +127,13 @@
 			};
 
 			partition@80000 {
+				compatible = "u-boot,env";
 				label = "u-boot-env0";
 				reg = <0x80000 0x10000>;
 				read-only;
+
+				macaddr_uboot_ethaddr: ethaddr {
+				};
 			};
 
 			partition@90000 {
@@ -157,6 +152,20 @@
 				label = "calibrate";
 				reg = <0x120000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+
+					cal_art_5000: calibration@5000 {
+						reg = <0x5000 0x440>;
+					};
+				};
 			};
 
 			partition@130000 {
@@ -193,12 +202,16 @@
 &pcie {
 	status = "okay";
 
-	ath9k: wifi@0,0 {
+	wifi@0,0 {
 		compatible = "pci168c,0033";
 		reg = <0x0000 0 0 0 0>;
-		qca,no-eeprom;
-		#gpio-cells = <2>;
-		gpio-controller;
+		nvmem-cells = <&cal_art_5000>;
+		nvmem-cell-names = "calibration";
+
+		led {
+			led-sources = <0>;
+			led-active-low;
+		};
 	};
 };
 
@@ -217,6 +230,9 @@
 
 	phy-mode = "rgmii";
 	phy-handle = <&phy0>;
+
+	nvmem-cells = <&macaddr_uboot_ethaddr>;
+	nvmem-cell-names = "mac-address";
 
 	gmac-config {
 		device = <&gmac>;
