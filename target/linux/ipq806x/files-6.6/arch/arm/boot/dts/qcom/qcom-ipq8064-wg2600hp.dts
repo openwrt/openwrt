@@ -63,7 +63,7 @@
 
 	leds {
 		compatible = "gpio-leds";
-		pinctrl-0 = <&led_pins>;
+		pinctrl-0 = <&leds_pins>;
 		pinctrl-names = "default";
 
 		converter_green {
@@ -505,7 +505,7 @@ switch@10 {
 		};
 	};
 
-	led_pins: led_pins {
+	leds_pins: leds_pins {
 		mux {
 			pins = "gpio6", "gpio7", "gpio8", "gpio9", "gpio14",
 				"gpio15", "gpio55", "gpio56", "gpio57", "gpio58",
