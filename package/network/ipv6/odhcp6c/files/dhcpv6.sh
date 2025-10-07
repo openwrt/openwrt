@@ -43,6 +43,7 @@ proto_dhcpv6_init_config() {
 	proto_config_add_boolean keep_ra_dnslifetime
 	proto_config_add_int "ra_holdoff"
 	proto_config_add_boolean verbose
+	proto_config_add_boolean dynamic
 }
 
 proto_dhcpv6_add_prefix() {
@@ -63,7 +64,7 @@ proto_dhcpv6_setup() {
 	local iface_map iface_464xlat ip6ifaceid userclass vendorclass
 	local delegate zone_dslite zone_map zone_464xlat zone encaplimit_dslite
 	local encaplimit_map skpriority soltimeout fakeroutes sourcefilter
-	local keep_ra_dnslifetime ra_holdoff verbose mtu_dslite
+	local keep_ra_dnslifetime ra_holdoff verbose mtu_dslite dynamic
 
 	local ip6prefix ip6prefixes
 
@@ -73,7 +74,7 @@ proto_dhcpv6_setup() {
 	json_get_vars iface_map iface_464xlat ip6ifaceid userclass vendorclass
 	json_get_vars delegate zone_dslite zone_map zone_464xlat zone encaplimit_dslite
 	json_get_vars encaplimit_map skpriority soltimeout fakeroutes sourcefilter
-	json_get_vars keep_ra_dnslifetime ra_holdoff verbose mtu_dslite
+	json_get_vars keep_ra_dnslifetime ra_holdoff verbose mtu_dslite dynamic
 
 	json_for_each_item proto_dhcpv6_add_prefix ip6prefix ip6prefixes
 
@@ -153,6 +154,12 @@ proto_dhcpv6_setup() {
 	[ "$fakeroutes" != "0" ] && proto_export "FAKE_ROUTES=1"
 	[ "$sourcefilter" = "0" ] && proto_export "NOSOURCEFILTER=1"
 	[ "$extendprefix" = "1" ] && proto_export "EXTENDPREFIX=1"
+
+	if [ "$dynamic" = 0 ]; then
+		proto_export "DYNAMIC=0"
+	else
+		proto_export "DYNAMIC=1"
+	fi
 
 	proto_export "INTERFACE=$config"
 	proto_run_command "$config" odhcp6c \

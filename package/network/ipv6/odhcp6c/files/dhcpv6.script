@@ -149,6 +149,11 @@ setup_interface () {
 
 	proto_send_update "$INTERFACE"
 
+	# If the flag '$DYNAMIC' is set to '0' (default=1), then the dynamic
+	# interfaces for the proto 'map', 'dslite' or '464xlat' are not
+	# created, even if the requirements are met.
+	[ "$DYNAMIC" = 0 ] && return
+
 	MAPTYPE=""
 	MAPRULE=""
 
