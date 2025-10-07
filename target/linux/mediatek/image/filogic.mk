@@ -2239,6 +2239,17 @@ define Device/wavlink_wl-wn573hx3
 endef
 TARGET_DEVICES += wavlink_wl-wn573hx3
 
+define Device/widelantech_wap430x
+  DEVICE_VENDOR := Widelantech
+  DEVICE_MODEL := WAP430X
+  DEVICE_DTS := mt7981b-widelantech-wap430x
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  IMAGE_SIZE := 14784k
+  SUPPORTED_DEVICES += UAP200
+endef
+TARGET_DEVICES += widelantech_wap430x
+
 define Device/xiaomi_mi-router-ax3000t
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := Mi Router AX3000T
