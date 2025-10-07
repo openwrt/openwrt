@@ -57,11 +57,28 @@ proto_dhcpv6_setup() {
 	local config="$1"
 	local iface="$2"
 
-	local reqaddress reqprefix clientid reqopts defaultreqopts noslaaconly forceprefix extendprefix norelease noserverunicast noclientfqdn noacceptreconfig ip6prefix ip6prefixes iface_dslite iface_map iface_464xlat ip6ifaceid userclass vendorclass sendopts delegate zone_dslite zone_map zone_464xlat zone encaplimit_dslite encaplimit_map skpriority soltimeout fakeroutes sourcefilter keep_ra_dnslifetime ra_holdoff verbose mtu_dslite
-	json_get_vars reqaddress reqprefix clientid reqopts defaultreqopts noslaaconly forceprefix extendprefix norelease noserverunicast noclientfqdn noacceptreconfig iface_dslite iface_map iface_464xlat ip6ifaceid userclass vendorclass delegate zone_dslite zone_map zone_464xlat zone encaplimit_dslite encaplimit_map skpriority soltimeout fakeroutes sourcefilter keep_ra_dnslifetime ra_holdoff verbose mtu_dslite
+	local reqaddress reqprefix clientid reqopts defaultreqopts
+	local noslaaconly forceprefix extendprefix norelease
+	local noserverunicast noclientfqdn noacceptreconfig iface_dslite
+	local iface_map iface_464xlat ip6ifaceid userclass vendorclass
+	local delegate zone_dslite zone_map zone_464xlat zone encaplimit_dslite
+	local encaplimit_map skpriority soltimeout fakeroutes sourcefilter
+	local keep_ra_dnslifetime ra_holdoff verbose mtu_dslite
+
+	local ip6prefix ip6prefixes
+
+	json_get_vars reqaddress reqprefix clientid reqopts defaultreqopts
+	json_get_vars noslaaconly forceprefix extendprefix norelease
+	json_get_vars noserverunicast noclientfqdn noacceptreconfig iface_dslite
+	json_get_vars iface_map iface_464xlat ip6ifaceid userclass vendorclass
+	json_get_vars delegate zone_dslite zone_map zone_464xlat zone encaplimit_dslite
+	json_get_vars encaplimit_map skpriority soltimeout fakeroutes sourcefilter
+	json_get_vars keep_ra_dnslifetime ra_holdoff verbose mtu_dslite
+
 	json_for_each_item proto_dhcpv6_add_prefix ip6prefix ip6prefixes
 
 	# Configure
+	local sendopts
 	local opts=""
 	[ -n "$reqaddress" ] && append opts "-N$reqaddress"
 
