@@ -179,7 +179,8 @@ irqreturn_t rtldsa_930x_switch_irq(int irq, void *dev_id);
 irqreturn_t rtl839x_switch_irq(int irq, void *dev_id);
 void rtl930x_vlan_profile_dump(int index);
 int rtl9300_sds_power(int mac, int val);
-extern int rtl9300_serdes_setup(int port, int sds_num, phy_interface_t phy_mode);
+extern int rtl9300_serdes_setup(int port, int sds_num, phy_interface_t phy_mode,
+	bool swap_rx_polarity, bool swap_tx_polarity);
 void rtl930x_print_matrix(void);
 
 /* RTL931x-specific */

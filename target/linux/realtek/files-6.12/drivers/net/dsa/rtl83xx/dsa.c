@@ -759,7 +759,9 @@ static void rtl93xx_phylink_mac_config(struct dsa_switch *ds, int port,
 	     state->interface == PHY_INTERFACE_MODE_SGMII ||
 	     state->interface == PHY_INTERFACE_MODE_2500BASEX ||
 	     state->interface == PHY_INTERFACE_MODE_10GBASER))
-		rtl9300_serdes_setup(port, sds_num, state->interface);
+		rtl9300_serdes_setup(port, sds_num, state->interface,
+		priv->ports[port].swap_rx_polarity,
+		priv->ports[port].swap_tx_polarity);
 }
 
 static void rtl83xx_phylink_mac_link_down(struct dsa_switch *ds, int port,

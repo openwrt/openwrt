@@ -2355,7 +2355,8 @@ static int rtl9300_sds_10g_idle(int sds_num);
 static void rtsds_930x_patch_serdes(int sds, phy_interface_t mode);
 
 #define RTL930X_MAC_FORCE_MODE_CTRL		(0xCA1C)
-int rtl9300_serdes_setup(int port, int sds_num, phy_interface_t phy_mode)
+int rtl9300_serdes_setup(int port, int sds_num, phy_interface_t phy_mode,
+	bool swap_rx_polarity, bool swap_tx_polarity)
 {
 	int calib_tries = 0;
 
@@ -2378,7 +2379,7 @@ int rtl9300_serdes_setup(int port, int sds_num, phy_interface_t phy_mode)
 	pr_info("%s: Configuring RTL9300 SERDES %d\n", __func__, sds_num);
 
 	/* Configure link to MAC */
-	rtl9300_serdes_mac_link_config(sds_num, true, true);	/* MAC Construct */
+	rtl9300_serdes_mac_link_config(sds_num, !swap_tx_polarity, !swap_rx_polarity);	/* MAC Construct */
 
 	/* Re-Enable MAC */
 	sw_w32_mask(1, 0, RTL930X_MAC_FORCE_MODE_CTRL + 4 * port);

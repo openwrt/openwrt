@@ -382,6 +382,14 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 				return -ENODEV;
 			}
 		}
+		
+		if (pcs_node) {
+			priv->ports[pn].swap_rx_polarity = of_property_read_bool(pcs_node, "swap_rx_polarity");
+			priv->ports[pn].swap_tx_polarity = of_property_read_bool(pcs_node, "swap_tx_polarity");
+		} else {
+			priv->ports[pn].swap_rx_polarity = false;
+			priv->ports[pn].swap_tx_polarity = false;
+		}
 
 		/* Check for the integrated SerDes of the RTL8380M first */
 		if (of_property_read_bool(phy_node, "phy-is-integrated")
