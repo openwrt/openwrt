@@ -71,8 +71,14 @@ yuncore,ax880)
 zbtlink,zbt-z800ax)
 	ucidef_set_led_netdev "internet" "Internet" "green:wan-online" "wan"
 	;;
+sagemcom,5866T)
+	ucidef_set_led_default "signal1" "SIGNAL1" "LED2_G" "1"
+	ucidef_set_led_default "signal2" "SIGNAL2" "LED3_G" "1"
+	ucidef_set_led_default "signal3" "SIGNAL3" "LED4_G" "1"
+	ucidef_set_led_default "signal4" "SIGNAL4" "LED5_G" "1"
+	ucidef_set_led_netdev "wifi_5g" "WIFI_5G" "green:wifi" "wifi0"
+	;;
 esac
-
 board_config_flush
 
 exit 0
