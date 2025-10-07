@@ -149,6 +149,9 @@ setup_interface () {
 
 	proto_send_update "$INTERFACE"
 
+	# Check if dynmaic 4in6 interfaces should be created
+	[ "$DYNAMIC" = 0 ] && return
+
 	MAPTYPE=""
 	MAPRULE=""
 
