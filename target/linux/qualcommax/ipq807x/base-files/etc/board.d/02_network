@@ -14,6 +14,9 @@ ipq807x_setup_interfaces()
 	asus,rt-ax89x)
 		ucidef_set_interfaces_lan_wan "10g-sfp 10g-copper lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8" "wan"
 		;;
+	sagemcom,5866t)
+		ucidef_set_interfaces_lan_wan "eth0 eth1" "eth2"
+		;;
 	arcadyan,aw1000|\
 	buffalo,wxr-5950ax12|\
 	dynalink,dl-wrx36|\
@@ -96,6 +99,10 @@ ipq807x_setup_macs()
 		tplink,eap660hd-v1)
 			label_mac=$(get_mac_binary /tmp/factory_data/default-mac 0)
 			lan_mac=$label_mac
+		;;
+		sagemcom,5866t)
+			wan_mac=$(mtd_get_mac_ascii 0:APPSBLENV eth1addr)
+			lan_mac=$(macaddr_add "$wan_mac" 1)
 		;;
 	esac
 
