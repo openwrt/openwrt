@@ -72,7 +72,8 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth1" "4:lan:1"
 		;;
-	nec,wf1200hp)
+	nec,wf1200hp|\
+	nec,wf1200hp2)
 		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan:3" "3:lan:2" "4:lan:1"
