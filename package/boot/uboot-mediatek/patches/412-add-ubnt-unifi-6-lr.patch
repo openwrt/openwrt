@@ -56,10 +56,10 @@
 +CONFIG_CMD_MTDPARTS=y
 +CONFIG_MTDPARTS_DEFAULT="mtdparts=nor0:128k(bl2),640k(fip),64k(u-boot-env),256k(factory),64k(eeprom),15232k(recovery),-(firmware)"
 +CONFIG_ENV_IS_IN_MTD=y
-+CONFIG_SYS_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_RELOC_GD_ENV_ADDR=y
 +CONFIG_ENV_MTD_DEV="nor0"
-+CONFIG_USE_DEFAULT_ENV_FILE=y
-+CONFIG_DEFAULT_ENV_FILE="defenvs/ubnt_unifi-6-lr_env"
++CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/ubnt_unifi-6-lr_env"
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
 +CONFIG_VERSION_VARIABLE=y
 +CONFIG_BOOTP_SEND_HOSTNAME=y
@@ -172,10 +172,10 @@
 +CONFIG_CMD_MTDPARTS=y
 +CONFIG_MTDPARTS_DEFAULT="mtdparts=nor0:128k(bl2),640k(fip),64k(u-boot-env),256k(factory),64k(eeprom),15232k(recovery),-(firmware)"
 +CONFIG_ENV_IS_IN_MTD=y
-+CONFIG_SYS_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_RELOC_GD_ENV_ADDR=y
 +CONFIG_ENV_MTD_DEV="nor0"
-+CONFIG_USE_DEFAULT_ENV_FILE=y
-+CONFIG_DEFAULT_ENV_FILE="defenvs/ubnt_unifi-6-lr-v2_env"
++CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/ubnt_unifi-6-lr-v2_env"
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
 +CONFIG_VERSION_VARIABLE=y
 +CONFIG_BOOTP_SEND_HOSTNAME=y
@@ -288,10 +288,10 @@
 +CONFIG_CMD_MTDPARTS=y
 +CONFIG_MTDPARTS_DEFAULT="mtdparts=nor0:128k(bl2),640k(fip),64k(u-boot-env),256k(factory),64k(eeprom),15232k(recovery),-(firmware)"
 +CONFIG_ENV_IS_IN_MTD=y
-+CONFIG_SYS_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_RELOC_GD_ENV_ADDR=y
 +CONFIG_ENV_MTD_DEV="nor0"
-+CONFIG_USE_DEFAULT_ENV_FILE=y
-+CONFIG_DEFAULT_ENV_FILE="defenvs/ubnt_unifi-6-lr_env"
++CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/ubnt_unifi-6-lr_env"
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
 +CONFIG_VERSION_VARIABLE=y
 +CONFIG_BOOTP_SEND_HOSTNAME=y
@@ -739,7 +739,7 @@
 +};
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
-@@ -1118,6 +1118,8 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
+@@ -1120,6 +1120,8 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
  	mt7623a-unielec-u7623-02-emmc.dtb \
  	mt7622-bananapi-bpi-r64.dtb \
  	mt7622-linksys-e8450-ubi.dtb \
@@ -909,7 +909,7 @@
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- a/common/board_r.c
 +++ b/common/board_r.c
-@@ -67,6 +67,7 @@
+@@ -66,6 +66,7 @@
  #include <wdt.h>
  #include <asm-generic/gpio.h>
  #include <relocate.h>
@@ -917,7 +917,7 @@
  
  DECLARE_GLOBAL_DATA_PTR;
  
-@@ -423,6 +424,20 @@ static int initr_onenand(void)
+@@ -422,6 +423,20 @@ static int initr_onenand(void)
  }
  #endif
  
@@ -938,7 +938,7 @@
  #ifdef CONFIG_MMC
  static int initr_mmc(void)
  {
-@@ -735,6 +750,9 @@ static void initcall_run_r(void)
+@@ -730,6 +745,9 @@ static void initcall_run_r(void)
  #if CONFIG_IS_ENABLED(NMBM_MTD)
  	INITCALL(initr_nmbm);
  #endif
