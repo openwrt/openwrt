@@ -34,7 +34,7 @@
 		regulator-name = "usb3_vbus";
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
-		gpio = <&cp0_gpio2 23 GPIO_ACTIVE_HIGH>;
+		gpios = <&cp0_gpio2 23 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
 
@@ -43,7 +43,7 @@
 		regulator-name = "LED-power";
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
-		gpio = <&cp0_gpio2 27 GPIO_ACTIVE_HIGH>;
+		gpios = <&cp0_gpio2 27 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 		regulator-boot-on;
 	};

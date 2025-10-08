@@ -208,8 +208,8 @@
 	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&pcie_pins>;
-	perst-gpio = <&tlmm 4 GPIO_ACTIVE_LOW>;
-	wake-gpio = <&tlmm 40 GPIO_ACTIVE_HIGH>;
+	perst-gpios = <&tlmm 4 GPIO_ACTIVE_LOW>;
+	wake-gpios = <&tlmm 40 GPIO_ACTIVE_HIGH>;
 };
 
 &qpic_bam {
