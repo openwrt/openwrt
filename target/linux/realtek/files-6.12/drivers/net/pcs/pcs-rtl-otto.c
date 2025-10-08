@@ -78,6 +78,7 @@ struct rtpcs_config {
 	int mac_tx_pause_sts;
 	const struct phylink_pcs_ops *pcs_ops;
 	int (*set_autoneg)(struct rtpcs_ctrl *ctrl, int sds, unsigned int neg_mode);
+	int (*setup_serdes)(struct rtpcs_ctrl *ctrl, int sds, phy_interface_t mode);
 };
 
 static int rtpcs_sds_to_mmd(int sds_page, int sds_regnum)
@@ -253,6 +254,12 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 		 phy_modes(interface), link->port, link->sds);
 
 	mutex_lock(&ctrl->lock);
+
+	if (ctrl->cfg->setup_serdes) {
+		ret = ctrl->cfg->setup_serdes(ctrl, link->sds, interface);
+		if (ret < 0)
+			goto out;
+	}
 
 	if (ctrl->cfg->set_autoneg) {
 		ret = ctrl->cfg->set_autoneg(ctrl, link->sds, neg_mode);
