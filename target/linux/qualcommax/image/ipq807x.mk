@@ -483,7 +483,8 @@ define Device/zyxel_nbg7815
 		kmod-bluetooth kmod-hwmon-tmp103
 endef
 TARGET_DEVICES += zyxel_nbg7815
-define Device/sagemcom_5866T
+
+define Device/sagemcom_5866t
 	$(call Device/FitImage)
 	$(call Device/EmmcImage)
 	DEVICE_VENDOR := Sagemcom
@@ -499,4 +500,4 @@ define Device/sagemcom_5866T
 	DEVICE_PACKAGES := kmod-fs-f2fs f2fs-tools kmod-spi-gpio \
 		kmod-gpio-nxp-74hc164 kmod-usb-serial-option uqmi
 endef
-TARGET_DEVICES += sagemcom_5866T
+TARGET_DEVICES += sagemcom_5866t
