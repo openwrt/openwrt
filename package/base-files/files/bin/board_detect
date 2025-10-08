@@ -4,11 +4,11 @@ CFG=$1
 
 [ -n "$CFG" ] || CFG=/etc/board.json
 
-[ -d "/etc/board.d/" -a ! -s "$CFG" ] && {
+if [ -d "/etc/board.d/" ] && [ ! -s "$CFG" ]; then
 	for a in $(ls /etc/board.d/*); do
-		[ -s $a ] || continue;
-		$(. $a)
+		[ -s "$a" ] || continue
+		(. "$a")
 	done
-}
+fi
 
 [ -s "$CFG" ] || return 1
