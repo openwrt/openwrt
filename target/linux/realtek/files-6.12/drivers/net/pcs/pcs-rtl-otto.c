@@ -555,6 +555,18 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_ctrl *ctrl, int sds,
 	if (sds < 0 || sds > 13)
 		return -EINVAL;
 
+	/*
+	 * TODO: USXGMII is currently the swiss army knife to declare 10G
+	 * multi port PHYs. Real devices use other modes instead. Especially
+	 *
+	 * - RTL8224 is driven in 10G_QXGMII
+	 * - RTL8218D/E are driven in (Realtek proprietary) XSGMII (10G SGMII)
+	 *
+	 * For now disable all USXGMII SerDes handling and rely on U-Boot setup.
+	 */
+	if (mode == PHY_INTERFACE_MODE_USXGMII)
+		return -ENOTSUPP;
+
 	pr_info("%s: set sds %d to mode %d\n", __func__, sds, mode);
 	val = rtpcs_sds_read_bits(ctrl, sds, 0x1F, 0x9, 11, 6);
 
