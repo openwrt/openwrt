@@ -62,6 +62,7 @@ define Device/asus_rt-ax89x
 		append-kernel | asus-fake-ramdisk |\
 		multiImage gzip $$(KDIR)/tmp/fakerd $$(KDIR)/image-$$(DEVICE_DTS).dtb |\
 		sysupgrade-tar kernel=$$$$@ | append-metadata
+ifeq ($(IB),)
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	ARTIFACTS := initramfs-factory.trx initramfs-uImage.itb
 	ARTIFACT/initramfs-uImage.itb := \
@@ -71,6 +72,7 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 		asus-fake-rootfs xz /lib/firmware/IPQ8074A/fw_version.txt "fake" -no-compression |\
 		multiImage gzip $$(KDIR)/tmp/fakehsqs $$(KDIR)/image-$$(DEVICE_DTS).dtb |\
 		asus-trx -v 2 -n RT-AX89U -b 388 -e 49000
+endif
 endif
 endef
 TARGET_DEVICES += asus_rt-ax89x
@@ -246,11 +248,13 @@ define Device/netgear_rax120v2
 	NETGEAR_HW_ID := 29765589+0+512+1024+4x4+8x8
 	DEVICE_PACKAGES := ipq-wifi-netgear_rax120v2 kmod-spi-gpio \
 		kmod-spi-bitbang kmod-gpio-nxp-74hc164 kmod-hwmon-g762
+ifeq ($(IB),)
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	IMAGES += web-ui-factory.img
 	IMAGE/web-ui-factory.img := append-image initramfs-uImage.itb | \
 		pad-offset $$$$(BLOCKSIZE) 64 | append-uImage-fakehdr filesystem | \
 		netgear-dni
+endif
 endif
 	IMAGE/sysupgrade.bin := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | \
 		append-uImage-fakehdr filesystem | sysupgrade-tar kernel=$$$$@ | \
