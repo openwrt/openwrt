@@ -92,16 +92,48 @@ static int rtpcs_sds_read(struct rtpcs_ctrl *ctrl, int sds, int page, int regnum
 	return mdiobus_c45_read(ctrl->bus, sds, MDIO_MMD_VEND1, mmd_regnum);
 }
 
-/*
- * For later use, when the SerDes registers need to be written ...
- *
- * static int rtpcs_sds_write(struct rtpcs_ctrl *ctrl, int sds, int page, int regnum, u16 value)
- * {
- *	int mmd_regnum = rtpcs_sds_to_mmd(page, regnum);
- *
- *	return mdiobus_c45_write(ctrl->bus, sds, MDIO_MMD_VEND1, mmd_regnum, value);
- * }
- */
+__attribute__((unused))
+static int rtpcs_sds_read_bits(struct rtpcs_ctrl *ctrl, int sds, int page,
+			       int regnum, int bithigh, int bitlow)
+{
+	int mask, val;
+
+	WARN_ON(bithigh < bitlow);
+
+	mask = GENMASK(bithigh, bitlow);
+	val = rtpcs_sds_read(ctrl, sds, page, regnum);
+	if (val < 0)
+		return val;
+
+	return (val & mask) >> bitlow;
+}
+
+__attribute__((unused))
+static int rtpcs_sds_write(struct rtpcs_ctrl *ctrl, int sds, int page, int regnum, u16 value)
+{
+	int mmd_regnum = rtpcs_sds_to_mmd(page, regnum);
+
+	return mdiobus_c45_write(ctrl->bus, sds, MDIO_MMD_VEND1, mmd_regnum, value);
+}
+
+__attribute__((unused))
+static int rtpcs_sds_write_bits(struct rtpcs_ctrl *ctrl, int sds, int page,
+				int regnum, int bithigh, int bitlow, u16 value)
+{
+	int mask, reg;
+
+	WARN_ON(bithigh < bitlow);
+
+	mask = GENMASK(bithigh, bitlow);
+	reg = rtpcs_sds_read(ctrl, sds, page, regnum);
+	if (reg < 0)
+		return reg;
+
+	reg = (reg & ~mask);
+	reg |= (value << bitlow) & mask;
+
+	return rtpcs_sds_write(ctrl, sds, page, regnum, reg);
+}
 
 static int rtpcs_sds_modify(struct rtpcs_ctrl *ctrl, int sds, int page, int regnum,
 			    u16 mask, u16 set)
