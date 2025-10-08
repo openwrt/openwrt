@@ -109,9 +109,8 @@
 };
 
 &pcie_bridge0 {
-	wifi2: wifi@0,0 {
+	wifi2: wifi@1,0 {
 		compatible = "qcom,ath10k";
-		status = "okay";
 		reg = <0x00010000 0 0 0 0>;
 		nvmem-cells = <&cal_factory_9000>;
 		nvmem-cell-names = "calibration";
