@@ -1069,6 +1069,7 @@ static const struct rtpcs_config rtpcs_931x_cfg = {
 	.mac_tx_pause_sts	= RTPCS_931X_MAC_TX_PAUSE_STS,
 	.pcs_ops		= &rtpcs_931x_pcs_ops,
 	.set_autoneg		= rtpcs_93xx_set_autoneg,
+	.setup_serdes		= rtpcs_931x_setup_serdes,
 };
 
 static const struct of_device_id rtpcs_of_match[] = {
