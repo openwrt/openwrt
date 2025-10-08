@@ -700,18 +700,8 @@ static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
 	reg = sw_r32(priv->r->mac_force_mode_ctrl(port));
 	pr_info("%s reading FORCE_MODE_CTRL: %08x\n", __func__, reg);
 
-	reg &= ~(RTL931X_DUPLEX_MODE | RTL931X_FORCE_EN | RTL931X_FORCE_LINK_EN);
-
-	reg &= ~(0xf << 12);
-	reg |= 0x2 << 12; /* Set SMI speed to 0x2 */
-
-	reg |= RTL931X_TX_PAUSE_EN | RTL931X_RX_PAUSE_EN;
-
-	if (priv->lagmembers & BIT_ULL(port))
-		reg |= RTL931X_DUPLEX_MODE;
-
-	if (state->duplex == DUPLEX_FULL)
-		reg |= RTL931X_DUPLEX_MODE;
+	/* Disable MAC completely so PCS can setup the SerDes */
+	reg = 0;
 
 	sw_w32(reg, priv->r->mac_force_mode_ctrl(port));
 }
