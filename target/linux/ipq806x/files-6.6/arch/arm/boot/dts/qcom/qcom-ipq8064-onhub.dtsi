@@ -448,17 +448,15 @@
 &pcie0 {
 	status = "okay";
 
-	pcie@0 {
-		reg = <0 0 0 0 0>;
-		#interrupt-cells = <1>;
-		#size-cells = <2>;
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
 		#address-cells = <3>;
-		device_type = "pci";
-		interrupt-controller;
+		#size-cells = <2>;
+		ranges;
 
-		wifi@0,0 {
+		wifi@1,0 {
 			compatible = "qcom,ath10k";
-			reg = <0 0 0 0 0>;
+			reg = <0x00010000 0 0 0 0>;
 			qcom,ath10k-sa-gpio = <2 3 4 0>;
 			qcom,ath10k-sa-gpio-func = <5 5 5 0>;
 		};
@@ -468,17 +466,15 @@
 &pcie1 {
 	status = "okay";
 
-	pcie@0 {
-		reg = <0 0 0 0 0>;
-		#interrupt-cells = <1>;
-		#size-cells = <2>;
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
 		#address-cells = <3>;
-		device_type = "pci";
-		interrupt-controller;
+		#size-cells = <2>;
+		ranges;
 
-		wifi@0,0 {
+		wifi@1,0 {
 			compatible = "qcom,ath10k";
-			reg = <0 0 0 0 0>;
+			reg = <0x00010000 0 0 0 0>;
 			qcom,ath10k-sa-gpio = <2 3 4 0>;
 			qcom,ath10k-sa-gpio-func = <5 5 5 0>;
 		};
@@ -488,17 +484,15 @@
 &pcie2 {
 	status = "okay";
 
-	pcie@0 {
-		reg = <0 0 0 0 0>;
-		#interrupt-cells = <1>;
-		#size-cells = <2>;
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
 		#address-cells = <3>;
-		device_type = "pci";
-		interrupt-controller;
+		#size-cells = <2>;
+		ranges;
 
-		wifi@0,0 {
+		wifi@1,0 {
 			compatible = "qcom,ath10k";
-			reg = <0 0 0 0 0>;
+			reg = <0x00010000 0 0 0 0>;
 		};
 	};
 };
