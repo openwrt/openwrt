@@ -1,0 +1,41 @@
+From: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Date: Mon, 6 Oct 2025 17:28:44 +0200
+Subject: [PATCH] MIPS: IRQ-protect stack ASLR randomization
+ in arch_align_stack
+
+On MT7620 (MIPS 24KEc), sporadic Oopses were observed during execve while
+randomizing the new process stack in arch_align_stack(), which calls
+get_random_u32_below(PAGE_SIZE).
+
+On MIPS32, even the "<=16-bit" multiply path used by get_random_u32_below()
+emits a 32-bit multiply and reads HI/LO via mfhi/mflo. If a hard IRQ fires
+between multu and mfhi/mflo and its handler also executes mul/div, HI/LO can
+be clobbered, leading to corrupted intermediates and bogus addresses.
+
+Make the random stack offset computation IRQ-safe on MT7620 by wrapping the
+get_random_u32_below(PAGE_SIZE) call with local_irq_save/restore(), ensuring
+the multu/mfhi/mflo sequence is not interrupted by hard IRQs. This preserves
+stack ASLR while eliminating the crash on this platform.
+
+Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+
+--- a/arch/mips/kernel/process.c
++++ b/arch/mips/kernel/process.c
+@@ -715,8 +715,16 @@ unsigned long mips_stack_top(void)
+  */
+ unsigned long arch_align_stack(unsigned long sp)
+ {
+-	if (!(current->personality & ADDR_NO_RANDOMIZE) && randomize_va_space)
++	if (!(current->personality & ADDR_NO_RANDOMIZE) && randomize_va_space) {
++#if defined(CONFIG_MIPS) && !defined(CONFIG_CPU_MIPSR6)
++		unsigned long flags;
++		local_irq_save(flags);
+ 		sp -= get_random_u32_below(PAGE_SIZE);
++		local_irq_restore(flags);
++#else
++		sp -= get_random_u32_below(PAGE_SIZE);
++#endif
++	}
+ 
+ 	return sp & ALMASK;
+ }
