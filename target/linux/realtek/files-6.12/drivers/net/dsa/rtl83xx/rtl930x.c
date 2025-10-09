@@ -755,19 +755,6 @@ void rtldsa_930x_set_receive_management_action(int port, rma_ctrl_t type,
 	}
 }
 
-static u64 rtl930x_traffic_get(int source)
-{
-	u32 v;
-	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 6);
-
-	rtl_table_read(r, source);
-	v = sw_r32(rtl_table_data(r, 0));
-	rtl_table_release(r);
-	v = v >> 3;
-
-	return v;
-}
-
 /* Enable traffic between a source port and a destination port matrix */
 static void rtl930x_traffic_set(int source, u64 dest_matrix)
 {
@@ -2470,7 +2457,6 @@ const struct rtl838x_reg rtl930x_reg = {
 	.stat_port_prv_mib = RTL930X_STAT_PORT_PRVTE_CNTR,
 	.traffic_enable = rtl930x_traffic_enable,
 	.traffic_disable = rtl930x_traffic_disable,
-	.traffic_get = rtl930x_traffic_get,
 	.traffic_set = rtl930x_traffic_set,
 	.l2_ctrl_0 = RTL930X_L2_CTRL,
 	.l2_ctrl_1 = RTL930X_L2_AGE_CTRL,
