@@ -1428,7 +1428,6 @@ static int rtl83xx_port_enable(struct dsa_switch *ds, int port,
 				struct phy_device *phydev)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	u64 v;
 
 	pr_debug("%s: %x %d", __func__, (u32) priv, port);
 	priv->ports[port].enable = true;
@@ -1448,9 +1447,7 @@ static int rtl83xx_port_enable(struct dsa_switch *ds, int port,
 	}
 
 	/* add all other ports in the same bridge to switch mask of port */
-	v = priv->r->traffic_get(port);
-	v |= priv->ports[port].pm;
-	priv->r->traffic_set(port, v);
+	priv->r->traffic_set(port, priv->ports[port].pm);
 
 	/* TODO: Figure out if this is necessary */
 	if (priv->family_id == RTL9300_FAMILY_ID) {
@@ -1467,7 +1464,6 @@ static int rtl83xx_port_enable(struct dsa_switch *ds, int port,
 static void rtl83xx_port_disable(struct dsa_switch *ds, int port)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	u64 v;
 
 	pr_debug("%s %x: %d", __func__, (u32)priv, port);
 	/* you can only disable user ports */
@@ -1478,10 +1474,8 @@ static void rtl83xx_port_disable(struct dsa_switch *ds, int port)
 	/* remove port from switch mask of CPU_PORT */
 	priv->r->traffic_disable(priv->cpu_port, port);
 
-	/* remove all other ports in the same bridge from switch mask of port */
-	v = priv->r->traffic_get(port);
-	v &= ~priv->ports[port].pm;
-	priv->r->traffic_set(port, v);
+	/* remove all other ports from switch mask of port */
+	priv->r->traffic_set(port, 0);
 
 	priv->ports[port].enable = false;
 }
