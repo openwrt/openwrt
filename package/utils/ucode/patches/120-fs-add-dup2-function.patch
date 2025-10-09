@@ -1,0 +1,75 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 8 Oct 2025 22:15:42 +0200
+Subject: [PATCH] fs: add dup2() function
+
+Add dup2() function to duplicate file descriptors, useful for redirecting
+standard streams in child processes.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/lib/fs.c
++++ b/lib/fs.c
+@@ -1278,6 +1278,54 @@ uc_fs_fdopen(uc_vm_t *vm, size_t nargs)
+ 	return ucv_resource_create(vm, "fs.file", fp);
+ }
+ 
++/**
++ * Duplicates a file descriptor.
++ *
++ * This function duplicates the file descriptor `oldfd` to `newfd`. If `newfd`
++ * was previously open, it is silently closed before being reused.
++ *
++ * Returns `true` on success.
++ * Returns `null` on error.
++ *
++ * @function module:fs#dup2
++ *
++ * @param {number} oldfd
++ * The file descriptor to duplicate.
++ *
++ * @param {number} newfd
++ * The file descriptor number to duplicate to.
++ *
++ * @returns {?boolean}
++ *
++ * @example
++ * // Redirect stderr to a log file
++ * const logfile = open('/tmp/error.log', 'w');
++ * dup2(logfile.fileno(), 2);
++ * logfile.close();
++ */
++static uc_value_t *
++uc_fs_dup2(uc_vm_t *vm, size_t nargs)
++{
++	uc_value_t *oldfd_arg = uc_fn_arg(0);
++	uc_value_t *newfd_arg = uc_fn_arg(1);
++	int oldfd, newfd;
++
++	oldfd = get_fd(vm, oldfd_arg);
++
++	if (oldfd == -1)
++		err_return(errno ? errno : EBADF);
++
++	newfd = get_fd(vm, newfd_arg);
++
++	if (newfd == -1)
++		err_return(errno ? errno : EBADF);
++
++	if (dup2(oldfd, newfd) == -1)
++		err_return(errno);
++
++	return ucv_boolean_new(true);
++}
++
+ 
+ /**
+  * Represents a handle for interacting with a directory opened by `opendir()`.
+@@ -2890,6 +2938,7 @@ static const uc_function_list_t global_f
+ 	{ "error",		uc_fs_error },
+ 	{ "open",		uc_fs_open },
+ 	{ "fdopen",		uc_fs_fdopen },
++	{ "dup2",		uc_fs_dup2 },
+ 	{ "opendir",	uc_fs_opendir },
+ 	{ "popen",		uc_fs_popen },
+ 	{ "readlink",	uc_fs_readlink },
