@@ -234,6 +234,10 @@ tplink,archer-c5-v4)
 	ucidef_set_led_switch "lan" "lan" "green:lan" "switch1" "0x0f"
 	ucidef_set_led_switch "wan" "wan" "green:wan" "switch1" "0x10"
 	;;
+tplink,archer-c5-v4-dsa)
+	ucidef_set_led_netdev "lan" "lan" "green:lan" "br-lan"
+	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan"
+	;;
 tplink,archer-c50-v1)
 	ucidef_set_led_switch "lan" "lan" "green:lan" "switch0" "0x1e"
 	ucidef_set_led_switch "wan" "wan" "green:wan" "switch0" "0x01"
@@ -245,6 +249,10 @@ tplink,archer-mr200)
 tplink,ec220-g5-v2)
 	ucidef_set_led_switch "lan" "lan" "green:lan" "switch1" "0x17"
 	ucidef_set_led_switch "wan" "wan" "orange:wan" "switch1" "0x08"
+	;;
+tplink,ec220-g5-v2-dsa)
+	ucidef_set_led_netdev "lan" "lan" "green:lan" "br-lan"
+	ucidef_set_led_netdev "wan" "wan" "orange:wan" "wan"
 	;;
 tplink,re200-v1)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0"
