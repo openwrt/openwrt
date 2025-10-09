@@ -1528,15 +1528,56 @@ static int rtl83xx_set_ageing_time(struct dsa_switch *ds, unsigned int msec)
 	return 0;
 }
 
+static void rtldsa_update_port_member(struct rtl838x_switch_priv *priv, int port,
+				      const struct net_device *bridge_dev, bool join)
+				      __must_hold(&priv->reg_mutex)
+{
+	struct dsa_port *dp = dsa_to_port(priv->ds, port);
+	struct rtl838x_port *p = &priv->ports[port];
+	struct dsa_port *cpu_dp = dp->cpu_dp;
+	u64 port_mask = BIT_ULL(cpu_dp->index);
+	struct rtl838x_port *other_p;
+	struct dsa_port *other_dp;
+	int other_port;
+
+	dsa_switch_for_each_user_port(other_dp, priv->ds) {
+		other_port = other_dp->index;
+		other_p = &priv->ports[other_port];
+
+		if (dp == other_dp)
+			continue;
+
+		if (!dsa_port_offloads_bridge_dev(other_dp, bridge_dev))
+			continue;
+
+		if (join && priv->is_lagmember[other_port])
+			continue;
+
+		if (join) {
+			port_mask |= BIT_ULL(other_port);
+			other_p->pm |= BIT_ULL(port);
+		} else {
+			other_p->pm &= ~BIT_ULL(port);
+		}
+
+		if (other_p->enable)
+			priv->r->traffic_set(other_port, other_p->pm);
+	}
+
+	p->pm = port_mask;
+
+	if (p->enable)
+		priv->r->traffic_set(port, port_mask);
+}
+
 static int rtl83xx_port_bridge_join(struct dsa_switch *ds, int port,
 				    struct dsa_bridge bridge,
 				    bool *tx_fwd_offload,
 				    struct netlink_ext_ack *extack)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	u64 port_bitmap = BIT_ULL(priv->cpu_port), v;
 
-	pr_debug("%s %x: %d %llx", __func__, (u32)priv, port, port_bitmap);
+	pr_debug("%s %x: %d", __func__, (u32)priv, port);
 
 	if (priv->is_lagmember[port]) {
 		pr_debug("%s: %d is lag slave. ignore\n", __func__, port);
@@ -1544,30 +1585,8 @@ static int rtl83xx_port_bridge_join(struct dsa_switch *ds, int port,
 	}
 
 	mutex_lock(&priv->reg_mutex);
-	for (int i = 0; i < ds->num_ports; i++) {
-		/* Add this port to the port matrix of the other ports in the
-		 * same bridge. If the port is disabled, port matrix is kept
-		 * and not being setup until the port becomes enabled.
-		 */
-		if (dsa_is_user_port(ds, i) && !priv->is_lagmember[i] && i != port) {
-			if (!dsa_port_offloads_bridge(dsa_to_port(ds, i), &bridge))
-				continue;
-			if (priv->ports[i].enable)
-				priv->r->traffic_enable(i, port);
 
-			priv->ports[i].pm |= BIT_ULL(port);
-			port_bitmap |= BIT_ULL(i);
-		}
-	}
-
-	/* Add all other ports to this port matrix. */
-	if (priv->ports[port].enable) {
-		priv->r->traffic_enable(priv->cpu_port, port);
-		v = priv->r->traffic_get(port);
-		v |= port_bitmap;
-		priv->r->traffic_set(port, v);
-	}
-	priv->ports[port].pm |= port_bitmap;
+	rtldsa_update_port_member(priv, port, bridge.dev, true);
 
 	if (priv->r->set_static_move_action)
 		priv->r->set_static_move_action(port, false);
@@ -1581,35 +1600,12 @@ static void rtl83xx_port_bridge_leave(struct dsa_switch *ds, int port,
 				      struct dsa_bridge bridge)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	u64 port_bitmap = 0, v;
 
 	pr_debug("%s %x: %d", __func__, (u32)priv, port);
+
 	mutex_lock(&priv->reg_mutex);
-	for (int i = 0; i < ds->num_ports; i++) {
-		/* Remove this port from the port matrix of the other ports
-		 * in the same bridge. If the port is disabled, port matrix
-		 * is kept and not being setup until the port becomes enabled.
-		 * And the other port's port matrix cannot be broken when the
-		 * other port is still a VLAN-aware port.
-		 */
-		if (dsa_is_user_port(ds, i) && i != port) {
-			if (!dsa_port_offloads_bridge(dsa_to_port(ds, i), &bridge))
-				continue;
-			if (priv->ports[i].enable)
-				priv->r->traffic_disable(i, port);
 
-			priv->ports[i].pm &= ~BIT_ULL(port);
-			port_bitmap |= BIT_ULL(i);
-		}
-	}
-
-	/* Remove all other ports from this port matrix. */
-	if (priv->ports[port].enable) {
-		v = priv->r->traffic_get(port);
-		v &= ~port_bitmap;
-		priv->r->traffic_set(port, v);
-	}
-	priv->ports[port].pm &= ~port_bitmap;
+	rtldsa_update_port_member(priv, port, bridge.dev, false);
 
 	if (priv->r->set_static_move_action)
 		priv->r->set_static_move_action(port, true);
