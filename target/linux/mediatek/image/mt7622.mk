@@ -196,6 +196,14 @@ define Device/dlink_eagle-pro-ai-m32-a1
 endef
 TARGET_DEVICES += dlink_eagle-pro-ai-m32-a1
 
+define Device/dlink_eagle-pro-ai-m32-a1-large
+  $(Device/dlink_eagle-pro-ai-ax3200-a1)
+  DEVICE_MODEL := EAGLE PRO AI M32 LARGE
+  DEVICE_DTS := mt7622-dlink-eagle-pro-ai-m32-a1-large
+  IMAGE/recovery.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | pad-to $$(IMAGE_SIZE) | dlink-ai-recovery-header DLK6E6010001 \x8D\x57\x30\x0B \x00\x00\x2C\x00 \x00\x00\xA0\x05 \x60\x6E
+endef
+TARGET_DEVICES += dlink_eagle-pro-ai-m32-a1-large
+
 define Device/dlink_eagle-pro-ai-r32-a1
   $(Device/dlink_eagle-pro-ai-ax3200-a1)
   DEVICE_MODEL := EAGLE PRO AI R32
