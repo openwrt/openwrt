@@ -1533,6 +1533,7 @@ static void rtldsa_update_port_member(struct rtl838x_switch_priv *priv, int port
 	struct rtl838x_port *other_p;
 	struct dsa_port *other_dp;
 	int other_port;
+	bool isolated;
 
 	dsa_switch_for_each_user_port(other_dp, priv->ds) {
 		other_port = other_dp->index;
@@ -1547,7 +1548,9 @@ static void rtldsa_update_port_member(struct rtl838x_switch_priv *priv, int port
 		if (join && priv->is_lagmember[other_port])
 			continue;
 
-		if (join) {
+		isolated = p->isolated && other_p->isolated;
+
+		if (join && !isolated) {
 			port_mask |= BIT_ULL(other_port);
 			other_p->pm |= BIT_ULL(port);
 		} else {
@@ -1577,6 +1580,9 @@ static int rtl83xx_port_bridge_join(struct dsa_switch *ds, int port,
 		pr_debug("%s: %d is lag slave. ignore\n", __func__, port);
 		return 0;
 	}
+
+	/* reset to default flags for new net_bridge_port */
+	priv->ports[port].isolated = false;
 
 	mutex_lock(&priv->reg_mutex);
 
@@ -2375,7 +2381,7 @@ out_unlock:
 static int rtl83xx_port_pre_bridge_flags(struct dsa_switch *ds, int port, struct switchdev_brport_flags flags, struct netlink_ext_ack *extack)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	unsigned long features = 0;
+	unsigned long features = BR_ISOLATED;
 	pr_debug("%s: %d %lX\n", __func__, port, flags.val);
 	if (priv->r->enable_learning)
 		features |= BR_LEARNING;
@@ -2407,6 +2413,17 @@ static int rtl83xx_port_bridge_flags(struct dsa_switch *ds, int port, struct swi
 
 	if (priv->r->enable_bcast_flood && (flags.mask & BR_BCAST_FLOOD))
 		priv->r->enable_bcast_flood(port, !!(flags.val & BR_BCAST_FLOOD));
+
+	if (flags.mask & BR_ISOLATED) {
+		struct dsa_port *dp = dsa_to_port(ds, port);
+		struct net_device *bridge_dev = dsa_port_bridge_dev_get(dp);
+
+		priv->ports[port].isolated = !!(flags.val & BR_ISOLATED);
+
+		mutex_lock(&priv->reg_mutex);
+		rtldsa_update_port_member(priv, port, bridge_dev, true);
+		mutex_unlock(&priv->reg_mutex);
+	}
 
 	return 0;
 }

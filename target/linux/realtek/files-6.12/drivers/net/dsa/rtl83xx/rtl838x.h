@@ -684,6 +684,7 @@ struct rtl838x_port {
 	bool phy_is_integrated:1;
 	bool is10G:1;
 	bool is2G5:1;
+	bool isolated:1;
 	u64 pm;
 	u16 pvid;
 	bool eee_enabled;
