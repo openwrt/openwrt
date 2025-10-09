@@ -1,0 +1,65 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+STOP=80
+EXTRA_COMMANDS="enable_wol disable_wol"
+EXTRA_HELP="	enable_wol      Enable WoL on EEPROM and NIC
+	disable_wol     Disable WoL on EEPROM and NIC"
+
+NVMEM_BASE="/sys/bus/nvmem/devices"
+
+iodata_wol_set_eeprom() {
+	local nvdev="$1"
+	local offset="$2"
+	local value="$3"
+
+	case "$value" in
+	0|1)        ;;
+	*) return 1 ;;
+	esac
+
+	printf "\x$value" | \
+		dd of=$NVMEM_BASE/$nvdev/nvmem bs=1 \
+		seek=$((offset)) count=1 conv=notrunc \
+		&> /dev/null
+}
+
+iodata_wol_set_nic() {
+	local nvdev="$1"
+	local nvcell="$2"
+	local nic="$3"
+	local wol=$(hexdump -e '1/1 "%d"' $NVMEM_BASE/$nvdev/cells/$nvcell)
+
+	! type ethtool &>/dev/null &&
+		return 1
+
+	# cleanup WoL configurations
+	ethtool -s $nic wol d || return 1
+	if [ "$wol" = "1" ]; then
+		ethtool -s $nic wol g
+	fi
+}
+
+shutdown() {
+	case $(board_name) in
+	iodata,hdl-ta)
+		iodata_wol_set_nic "0-00503" "wake-on-lan@1e,0" "eth0" || true
+		;;
+	esac
+}
+
+enable_wol() {
+	case $(board_name) in
+	iodata,hdl-ta)
+		iodata_wol_set_eeprom "0-00503" 0x1e 1
+		;;
+	esac
+}
+
+disable_wol() {
+	case $(board_name) in
+	iodata,hdl-ta)
+		iodata_wol_set_eeprom "0-00503" 0x1e 0
+		;;
+	esac
+}
