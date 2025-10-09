@@ -349,7 +349,6 @@ ifneq ($(CONFIG_CCACHE),)
   TARGET_CXX:= ccache $(TARGET_CXX)
   HOSTCC:= ccache $(HOSTCC)
   HOSTCXX:= ccache $(HOSTCXX)
-  export CCACHE_NOHASHDIR:=true
   export CCACHE_NOCOMPRESS:=true
   export CCACHE_BASEDIR:=$(TOPDIR)
   export CCACHE_DIR:=$(if $(call qstrip,$(CONFIG_CCACHE_DIR)),$(call qstrip,$(CONFIG_CCACHE_DIR)),$(TOPDIR)/.ccache)

@@ -36,7 +36,7 @@
 &gpio {
 	gpio_usb_power: usb_power {
 		gpio-hog;
-		gpios = <16 0>;
+		gpios = <16 GPIO_ACTIVE_HIGH>;
 		output-high;
 	};
 };

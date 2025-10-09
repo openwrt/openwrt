@@ -169,8 +169,8 @@
 		compatible = "ubnt,ledbar";
 		reg = <0x30>;
 
-		enable-gpio = <&gpio 44 GPIO_ACTIVE_HIGH>;
-		reset-gpio = <&gpio 41 GPIO_ACTIVE_LOW>;
+		enable-gpios = <&gpio 44 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio 41 GPIO_ACTIVE_LOW>;
 		led-count = <8>;
 
 		red {

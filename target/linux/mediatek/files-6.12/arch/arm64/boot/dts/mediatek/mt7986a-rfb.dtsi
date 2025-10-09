@@ -5,6 +5,7 @@
  */
 
 /dts-v1/;
+#include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/pinctrl/mt65xx.h>
 #include "mt7986a.dtsi"
 
@@ -92,7 +93,7 @@
 		compatible = "ethernet-phy-id67c9.de0a";
 		reg = <5>;
 
-		reset-gpios = <&pio 6 1>;
+		reset-gpios = <&pio 6 GPIO_ACTIVE_LOW>;
 		reset-deassert-us = <20000>;
 	};
 
@@ -104,7 +105,7 @@
 	switch: switch@1f {
 		compatible = "mediatek,mt7531";
 		reg = <31>;
-		reset-gpios = <&pio 5 0>;
+		reset-gpios = <&pio 5 GPIO_ACTIVE_HIGH>;
 	};
 };
 
@@ -301,7 +302,7 @@
 		spi-cpol = <1>;
 		channel_count = <1>;
 		debug_level = <4>;       /* 1 = TRC, 2 = DBG, 4 = ERR */
-		reset_gpio = <&pio 7 0>;
+		reset-gpios = <&pio 7 GPIO_ACTIVE_HIGH>;
 		ig,enable-spi = <1>;     /* 1: Enable, 0: Disable */
 	};
 };
