@@ -22,6 +22,13 @@ define U-Boot/Default
   HIDDEN:=1
 endef
 
+define U-Boot/mox
+  NAME:=CZ.NIC Turris Mox
+  BUILD_DEVICES:=cznic_turris-mox
+  BUILD_SUBTARGET:=cortexa53
+  UBOOT_CONFIG:=turris_mox
+endef
+
 define U-Boot/clearfog
   NAME:=SolidRun ClearFog A1
   BUILD_DEVICES:=solidrun_clearfog-base-a1 solidrun_clearfog-pro-a1
@@ -69,6 +76,7 @@ define U-Boot/rb5009
 endef
 
 UBOOT_TARGETS:= \
+	mox \
 	clearfog \
 	helios4 \
 	omnia \
