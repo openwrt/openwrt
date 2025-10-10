@@ -2614,7 +2614,7 @@ const struct dsa_switch_ops rtl83xx_switch_ops = {
 	.port_bridge_flags	= rtl83xx_port_bridge_flags,
 };
 
-const struct dsa_switch_ops rtl930x_switch_ops = {
+const struct dsa_switch_ops rtl93xx_switch_ops = {
 	.get_tag_protocol	= rtl83xx_get_tag_protocol,
 	.setup			= rtl93xx_setup,
 
