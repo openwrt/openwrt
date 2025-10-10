@@ -1,0 +1,87 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/interrupt-controller/irq.h>
+
+/ {
+	fragment@0 {
+		target = <&gmac0>;
+		__overlay__ {
+			phy-mode = "2500base-x";
+			status = "okay";
+			fixed-link {
+				speed = <2500>;
+				full-duplex;
+				pause;
+			};
+		};
+	};
+
+	fragment@1 {
+		target-path = "/soc_netsys/ethernet@15100000/mdio-bus";
+		__overlay__ {
+			phy12: phy@12 {
+				compatible = "ethernet-phy-id03a2.a411";
+				reg = <12>;
+				reset-gpios = <&pio 49 1>;
+				reset-assert-us = <10000>;
+				reset-deassert-us = <10000>;
+				phy-mode = "2500base-x";
+				full-duplex;
+				pause;
+				airoha,pnswap-rx;
+			};
+		};
+	};
+
+	fragment@2 {
+		target-path = "/";
+		__overlay__ {
+			gsw_mt753x: gsw@0 {
+				compatible = "mediatek,mt753x";
+				mediatek,ethsys = <&ethsys>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				mediatek,mdio = <&mdio>;
+				mediatek,portmap = "lllll";
+				mediatek,mdio_master_pinmux = <1>;
+				reset-gpios = <&pio 42 0>;
+				interrupt-parent = <&pio>;
+				interrupts = <41 IRQ_TYPE_LEVEL_HIGH>;
+				status = "okay";
+
+				port5: port@5 {
+					compatible = "mediatek,mt753x-port";
+					reg = <5>;
+					phy-mode = "2500base-x";
+
+					fixed-link {
+						speed = <2500>;
+						full-duplex;
+					};
+				};
+
+				port6: port@6 {
+					compatible = "mediatek,mt753x-port";
+					reg = <6>;
+					phy-mode = "2500base-x";
+
+					fixed-link {
+						speed = <2500>;
+						full-duplex;
+					};
+				};
+			};
+		};
+	};
+
+	fragment@3 {
+		target-path = "/soc_netsys/hnat@15000000";
+		__overlay__ {
+			mtketh-lan = "eth0";
+		};
+	};
+};

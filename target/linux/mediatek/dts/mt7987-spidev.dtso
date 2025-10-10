@@ -1,0 +1,28 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * Copyright (C) 2025 MediaTek Inc.
+ * Author: Tim.Kuo <Tim.Kuo@mediatek.com>
+ */
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	fragment@1 {
+		target = <&spi1>;
+		__overlay__ {
+			pinctrl-names = "default";
+			pinctrl-0 = <&spic_pins>;
+			status = "okay";
+
+			spi_dev1: spi@0 {
+				compatible = "rohm,dh2228fv";
+				reg = <0>;
+				spi-max-frequency = <52000000>;
+				spi-cs-setup-delay-ns = <90>;
+				spi-cs-hold-delay-ns = <90>;
+				spi-cs-inactive-delay-ns = <90>;
+			};
+		};
+	};
+};

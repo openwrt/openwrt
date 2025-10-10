@@ -1,0 +1,40 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	fragment@0 {
+		target = <&gmac0>;
+		__overlay__ {
+			phy-mode = "2500base-x";
+			phy-handle = <&phy12>;
+			status = "okay";
+		};
+	};
+
+	fragment@1 {
+		target-path = "/soc_netsys/ethernet@15100000/mdio-bus";
+		__overlay__ {
+			phy12: phy@12 {
+				compatible = "ethernet-phy-id03a2.a411";
+				reg = <12>;
+				reset-gpios = <&pio 49 1>;
+				reset-assert-us = <10000>;
+				reset-deassert-us = <10000>;
+				phy-mode = "2500base-x";
+				full-duplex;
+				pause;
+				airoha,phy-handle;
+			};
+		};
+	};
+
+	fragment@2 {
+		target-path = "/soc_netsys/hnat@15000000";
+		__overlay__ {
+			mtketh-lan = "eth0";
+		};
+	};
+};
+
