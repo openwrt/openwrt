@@ -32,7 +32,7 @@ Signed-off-by: John Thomson <git@johnthomson.fastmail.com.au>
 + * data and functionality from drivers/watchdog/qcom-wdt.c
 + * address from arch/arm/boot/dts/qcom-ipq4019.dtsi
 + */
-+#ifdef CONFIG_ARCH_IPQ40XX
++#ifdef CONFIG_ARCH_QCOM_IPQ40XX_BOOT_COMPRESSED_PET_WATCHDOG_EARLY
 +watchdog_set:
 +		/* offsets:
 +		 * 0x04 reset	(=1 resets countdown)
@@ -59,8 +59,23 @@ Signed-off-by: John Thomson <git@johnthomson.fastmail.com.au>
 +		mov r1, #1
 +		str r1, [r0, #0x08]	@Enable the watchdog
 +watchdog_finished:
-+#endif /* CONFIG_ARCH_IPQ40XX */
++#endif /* CONFIG_ARCH_QCOM_IPQ40XX_BOOT_COMPRESSED_PET_WATCHDOG_EARLY */
 +
  /*
   * The C runtime environment should now be setup sufficiently.
   * Set up some pointers, and start decompressing.
+--- a/arch/arm/mach-qcom/Kconfig
++++ b/arch/arm/mach-qcom/Kconfig
+@@ -21,4 +21,12 @@ config ARCH_QCOM_RESERVE_SMEM
+ 	  Reserve 2MB at the beginning of the System RAM for shared mem.
+ 	  This is required on IPQ40xx, MSM8x60 and MSM8960 platforms.
+ 
++config ARCH_QCOM_IPQ40XX_BOOT_COMPRESSED_PET_WATCHDOG_EARLY
++	bool "Pet ipq40xx watchdog early in boot uncompression"
++	help
++	  Pet the IPQ40xx watchdog very early in boot uncompress stage.
++	  Use where bootloader sets a watchdog timeout that bites the
++	  device before the Linux watchdog device driver can manage it.
++	  Required for Mikrotik RouterBOOT on ipq40xx devices
++
+ endif
