@@ -35,6 +35,14 @@ case "$FIRMWARE" in
 		;;
 	esac
 	;;
+"mediatek/mt7996/mt7992_eeprom.bin")
+	case "$board" in
+	tplink,be450)
+		ln -sf /tmp/tp_data/MT7992_EEPROM.bin \
+			/lib/firmware/$FIRMWARE
+		;;
+	esac
+	;;
 *)
 	exit 1
 	;;

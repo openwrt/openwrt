@@ -2053,6 +2053,24 @@ define Device/tplink_archer-ax80-v1
 endef
 TARGET_DEVICES += tplink_archer-ax80-v1
 
+define Device/tplink_be450
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := BE450
+  DEVICE_DTS := mt7988d-tplink-be450
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-usb3 mt7988-2p5g-phy-firmware kmod-mt7992-firmware mt7988-wo-firmware
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 51200k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+  ARTIFACTS := factory.bin
+  ARTIFACT/factory.bin := append-image initramfs-kernel.bin | uImage lzma
+endif
+endef
+TARGET_DEVICES += tplink_be450
+
 define Device/tplink_re6000xd
   DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := RE6000XD
