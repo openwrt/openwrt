@@ -1,0 +1,27 @@
+From 12664d09a94bd0f50f31a3811447f70275ea9bb8 Mon Sep 17 00:00:00 2001
+From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Date: Thu, 9 Oct 2025 19:49:18 +0300
+Subject: [PATCH 1/2] spi: airoha-snfi: make compatible with EN7523 SoC
+
+The driver is fully compatible with EN7523 based SoCs, so add
+corresponding compatible string.
+
+This driver is better than en7523-spi because it supports DMA.
+Measurements shows that DMA based flash reading is 4 times faster
+than non-dma one.
+
+Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+---
+ drivers/spi/spi-airoha-snfi.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/spi/spi-airoha-snfi.c
++++ b/drivers/spi/spi-airoha-snfi.c
+@@ -1047,6 +1047,7 @@ static const struct regmap_config spi_nf
+ };
+ 
+ static const struct of_device_id airoha_snand_ids[] = {
++	{ .compatible	= "airoha,en7523-snand" },
+ 	{ .compatible	= "airoha,en7581-snand" },
+ 	{ /* sentinel */ }
+ };
