@@ -24,7 +24,7 @@ extern const struct rtl838x_reg rtl930x_reg;
 extern const struct rtl838x_reg rtl931x_reg;
 
 extern const struct dsa_switch_ops rtl83xx_switch_ops;
-extern const struct dsa_switch_ops rtl930x_switch_ops;
+extern const struct dsa_switch_ops rtl93xx_switch_ops;
 
 extern struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int port);
 
@@ -1591,7 +1591,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->n_counters = 1024;
 		break;
 	case RTL9300_FAMILY_ID:
-		priv->ds->ops = &rtl930x_switch_ops;
+		priv->ds->ops = &rtl93xx_switch_ops;
 		priv->cpu_port = RTL930X_CPU_PORT;
 		priv->port_mask = 0x1f;
 		priv->port_width = 1;
@@ -1611,7 +1611,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->n_counters = 2048;
 		break;
 	case RTL9310_FAMILY_ID:
-		priv->ds->ops = &rtl930x_switch_ops;
+		priv->ds->ops = &rtl93xx_switch_ops;
 		priv->cpu_port = RTL931X_CPU_PORT;
 		priv->port_mask = 0x3f;
 		priv->port_width = 2;
