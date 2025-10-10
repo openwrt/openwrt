@@ -23,7 +23,7 @@ it on BCM4708 family.
  static void xhci_plat_quirks(struct device *dev, struct xhci_hcd *xhci)
  {
  	struct xhci_plat_priv *priv = xhci_to_priv(xhci);
-+	struct platform_device*pdev = to_platform_device(dev);
++	struct platform_device *pdev = to_platform_device(dev);
 +	struct device_node *node = pdev->dev.of_node;
  
  	xhci->quirks |= priv->quirks;
@@ -73,7 +73,7 @@ it on BCM4708 family.
 +	}
 +
 +	/* Free virt device */
-+	xhci_disable_and_free_slot(xhci, slot_id);
++	xhci_free_virt_device(xhci, xhci->devs[slot_id], slot_id);
 +
 +	/* We're done if controller is already running */
 +	if (readl(&xhci->op_regs->command) & CMD_RUN)
