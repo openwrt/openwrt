@@ -9,6 +9,15 @@ define Device/d-link_dgs-1210-52
 endef
 TARGET_DEVICES += d-link_dgs-1210-52
 
+define Device/d-link_dgs-1210-52mp-f
+  $(Device/d-link_dgs-1210)
+  SOC := rtl8393
+  DEVICE_MODEL := DGS-1210-52MP
+  DEVICE_VARIANT := F
+  DEVICE_PACKAGES += realtek-poe kmod-hwmon-lm63
+endef
+TARGET_DEVICES += d-link_dgs-1210-52mp-f
+
 define Device/hpe_1920-48g
   $(Device/hpe_1920)
   SOC := rtl8393
