@@ -1424,11 +1424,9 @@ static u64 rtl83xx_mc_group_del_port(struct rtl838x_switch_priv *priv, int mc_gr
 	return portmask;
 }
 
-static int rtl83xx_port_enable(struct dsa_switch *ds, int port,
-				struct phy_device *phydev)
+static int rtldsa_port_enable(struct dsa_switch *ds, int port, struct phy_device *phydev)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	u64 v;
 
 	pr_debug("%s: %x %d", __func__, (u32) priv, port);
 	priv->ports[port].enable = true;
@@ -1448,9 +1446,7 @@ static int rtl83xx_port_enable(struct dsa_switch *ds, int port,
 	}
 
 	/* add all other ports in the same bridge to switch mask of port */
-	v = priv->r->traffic_get(port);
-	v |= priv->ports[port].pm;
-	priv->r->traffic_set(port, v);
+	priv->r->traffic_set(port, priv->ports[port].pm);
 
 	/* TODO: Figure out if this is necessary */
 	if (priv->family_id == RTL9300_FAMILY_ID) {
@@ -1464,10 +1460,9 @@ static int rtl83xx_port_enable(struct dsa_switch *ds, int port,
 	return 0;
 }
 
-static void rtl83xx_port_disable(struct dsa_switch *ds, int port)
+static void rtldsa_port_disable(struct dsa_switch *ds, int port)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	u64 v;
 
 	pr_debug("%s %x: %d", __func__, (u32)priv, port);
 	/* you can only disable user ports */
@@ -1478,10 +1473,8 @@ static void rtl83xx_port_disable(struct dsa_switch *ds, int port)
 	/* remove port from switch mask of CPU_PORT */
 	priv->r->traffic_disable(priv->cpu_port, port);
 
-	/* remove all other ports in the same bridge from switch mask of port */
-	v = priv->r->traffic_get(port);
-	v &= ~priv->ports[port].pm;
-	priv->r->traffic_set(port, v);
+	/* remove all other ports from switch mask of port */
+	priv->r->traffic_set(port, 0);
 
 	priv->ports[port].enable = false;
 }
@@ -1528,46 +1521,69 @@ static int rtl83xx_set_ageing_time(struct dsa_switch *ds, unsigned int msec)
 	return 0;
 }
 
-static int rtl83xx_port_bridge_join(struct dsa_switch *ds, int port,
-				    struct dsa_bridge bridge,
-				    bool *tx_fwd_offload,
-				    struct netlink_ext_ack *extack)
+static void rtldsa_update_port_member(struct rtl838x_switch_priv *priv, int port,
+				      const struct net_device *bridge_dev, bool join)
+				      __must_hold(&priv->reg_mutex)
+{
+	struct dsa_port *dp = dsa_to_port(priv->ds, port);
+	struct rtl838x_port *p = &priv->ports[port];
+	struct dsa_port *cpu_dp = dp->cpu_dp;
+	u64 port_mask = BIT_ULL(cpu_dp->index);
+	struct rtl838x_port *other_p;
+	struct dsa_port *other_dp;
+	int other_port;
+	bool isolated;
+
+	dsa_switch_for_each_user_port(other_dp, priv->ds) {
+		other_port = other_dp->index;
+		other_p = &priv->ports[other_port];
+
+		if (dp == other_dp)
+			continue;
+
+		if (!dsa_port_offloads_bridge_dev(other_dp, bridge_dev))
+			continue;
+
+		if (join && priv->is_lagmember[other_port])
+			continue;
+
+		isolated = p->isolated && other_p->isolated;
+
+		if (join && !isolated) {
+			port_mask |= BIT_ULL(other_port);
+			other_p->pm |= BIT_ULL(port);
+		} else {
+			other_p->pm &= ~BIT_ULL(port);
+		}
+
+		if (other_p->enable)
+			priv->r->traffic_set(other_port, other_p->pm);
+	}
+
+	p->pm = port_mask;
+
+	if (p->enable)
+		priv->r->traffic_set(port, port_mask);
+}
+
+static int rtldsa_port_bridge_join(struct dsa_switch *ds, int port, struct dsa_bridge bridge,
+				   bool *tx_fwd_offload, struct netlink_ext_ack *extack)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	u64 port_bitmap = BIT_ULL(priv->cpu_port), v;
 
-	pr_debug("%s %x: %d %llx", __func__, (u32)priv, port, port_bitmap);
+	pr_debug("%s %x: %d", __func__, (u32)priv, port);
 
 	if (priv->is_lagmember[port]) {
 		pr_debug("%s: %d is lag slave. ignore\n", __func__, port);
 		return 0;
 	}
 
+	/* reset to default flags for new net_bridge_port */
+	priv->ports[port].isolated = false;
+
 	mutex_lock(&priv->reg_mutex);
-	for (int i = 0; i < ds->num_ports; i++) {
-		/* Add this port to the port matrix of the other ports in the
-		 * same bridge. If the port is disabled, port matrix is kept
-		 * and not being setup until the port becomes enabled.
-		 */
-		if (dsa_is_user_port(ds, i) && !priv->is_lagmember[i] && i != port) {
-			if (!dsa_port_offloads_bridge(dsa_to_port(ds, i), &bridge))
-				continue;
-			if (priv->ports[i].enable)
-				priv->r->traffic_enable(i, port);
 
-			priv->ports[i].pm |= BIT_ULL(port);
-			port_bitmap |= BIT_ULL(i);
-		}
-	}
-
-	/* Add all other ports to this port matrix. */
-	if (priv->ports[port].enable) {
-		priv->r->traffic_enable(priv->cpu_port, port);
-		v = priv->r->traffic_get(port);
-		v |= port_bitmap;
-		priv->r->traffic_set(port, v);
-	}
-	priv->ports[port].pm |= port_bitmap;
+	rtldsa_update_port_member(priv, port, bridge.dev, true);
 
 	if (priv->r->set_static_move_action)
 		priv->r->set_static_move_action(port, false);
@@ -1577,39 +1593,15 @@ static int rtl83xx_port_bridge_join(struct dsa_switch *ds, int port,
 	return 0;
 }
 
-static void rtl83xx_port_bridge_leave(struct dsa_switch *ds, int port,
-				      struct dsa_bridge bridge)
+static void rtldsa_port_bridge_leave(struct dsa_switch *ds, int port, struct dsa_bridge bridge)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	u64 port_bitmap = 0, v;
 
 	pr_debug("%s %x: %d", __func__, (u32)priv, port);
+
 	mutex_lock(&priv->reg_mutex);
-	for (int i = 0; i < ds->num_ports; i++) {
-		/* Remove this port from the port matrix of the other ports
-		 * in the same bridge. If the port is disabled, port matrix
-		 * is kept and not being setup until the port becomes enabled.
-		 * And the other port's port matrix cannot be broken when the
-		 * other port is still a VLAN-aware port.
-		 */
-		if (dsa_is_user_port(ds, i) && i != port) {
-			if (!dsa_port_offloads_bridge(dsa_to_port(ds, i), &bridge))
-				continue;
-			if (priv->ports[i].enable)
-				priv->r->traffic_disable(i, port);
 
-			priv->ports[i].pm &= ~BIT_ULL(port);
-			port_bitmap |= BIT_ULL(i);
-		}
-	}
-
-	/* Remove all other ports from this port matrix. */
-	if (priv->ports[port].enable) {
-		v = priv->r->traffic_get(port);
-		v &= ~port_bitmap;
-		priv->r->traffic_set(port, v);
-	}
-	priv->ports[port].pm &= ~port_bitmap;
+	rtldsa_update_port_member(priv, port, bridge.dev, false);
 
 	if (priv->r->set_static_move_action)
 		priv->r->set_static_move_action(port, true);
@@ -2382,10 +2374,12 @@ out_unlock:
 	mutex_unlock(&priv->reg_mutex);
 }
 
-static int rtl83xx_port_pre_bridge_flags(struct dsa_switch *ds, int port, struct switchdev_brport_flags flags, struct netlink_ext_ack *extack)
+static int rtldsa_port_pre_bridge_flags(struct dsa_switch *ds, int port,
+					struct switchdev_brport_flags flags,
+					struct netlink_ext_ack *extack)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	unsigned long features = 0;
+	unsigned long features = BR_ISOLATED;
 	pr_debug("%s: %d %lX\n", __func__, port, flags.val);
 	if (priv->r->enable_learning)
 		features |= BR_LEARNING;
@@ -2417,6 +2411,17 @@ static int rtl83xx_port_bridge_flags(struct dsa_switch *ds, int port, struct swi
 
 	if (priv->r->enable_bcast_flood && (flags.mask & BR_BCAST_FLOOD))
 		priv->r->enable_bcast_flood(port, !!(flags.val & BR_BCAST_FLOOD));
+
+	if (flags.mask & BR_ISOLATED) {
+		struct dsa_port *dp = dsa_to_port(ds, port);
+		struct net_device *bridge_dev = dsa_port_bridge_dev_get(dp);
+
+		priv->ports[port].isolated = !!(flags.val & BR_ISOLATED);
+
+		mutex_lock(&priv->reg_mutex);
+		rtldsa_update_port_member(priv, port, bridge_dev, true);
+		mutex_unlock(&priv->reg_mutex);
+	}
 
 	return 0;
 }
@@ -2573,15 +2578,15 @@ const struct dsa_switch_ops rtl83xx_switch_ops = {
 	.get_stats64		= rtldsa_get_stats64,
 	.get_pause_stats	= rtldsa_get_pause_stats,
 
-	.port_enable		= rtl83xx_port_enable,
-	.port_disable		= rtl83xx_port_disable,
+	.port_enable		= rtldsa_port_enable,
+	.port_disable		= rtldsa_port_disable,
 
 	.get_mac_eee		= rtldsa_get_mac_eee,
 	.set_mac_eee		= rtldsa_set_mac_eee,
 
 	.set_ageing_time	= rtl83xx_set_ageing_time,
-	.port_bridge_join	= rtl83xx_port_bridge_join,
-	.port_bridge_leave	= rtl83xx_port_bridge_leave,
+	.port_bridge_join	= rtldsa_port_bridge_join,
+	.port_bridge_leave	= rtldsa_port_bridge_leave,
 	.port_stp_state_set	= rtl83xx_port_stp_state_set,
 	.port_fast_age		= rtl83xx_fast_age,
 
@@ -2603,11 +2608,11 @@ const struct dsa_switch_ops rtl83xx_switch_ops = {
 	.port_lag_join		= rtl83xx_port_lag_join,
 	.port_lag_leave		= rtl83xx_port_lag_leave,
 
-	.port_pre_bridge_flags	= rtl83xx_port_pre_bridge_flags,
+	.port_pre_bridge_flags	= rtldsa_port_pre_bridge_flags,
 	.port_bridge_flags	= rtl83xx_port_bridge_flags,
 };
 
-const struct dsa_switch_ops rtl930x_switch_ops = {
+const struct dsa_switch_ops rtl93xx_switch_ops = {
 	.get_tag_protocol	= rtl83xx_get_tag_protocol,
 	.setup			= rtl93xx_setup,
 
@@ -2630,15 +2635,15 @@ const struct dsa_switch_ops rtl930x_switch_ops = {
 	.get_stats64		= rtldsa_get_stats64,
 	.get_pause_stats	= rtldsa_get_pause_stats,
 
-	.port_enable		= rtl83xx_port_enable,
-	.port_disable		= rtl83xx_port_disable,
+	.port_enable		= rtldsa_port_enable,
+	.port_disable		= rtldsa_port_disable,
 
 	.get_mac_eee		= rtldsa_get_mac_eee,
 	.set_mac_eee		= rtldsa_set_mac_eee,
 
 	.set_ageing_time	= rtl83xx_set_ageing_time,
-	.port_bridge_join	= rtl83xx_port_bridge_join,
-	.port_bridge_leave	= rtl83xx_port_bridge_leave,
+	.port_bridge_join	= rtldsa_port_bridge_join,
+	.port_bridge_leave	= rtldsa_port_bridge_leave,
 	.port_stp_state_set	= rtl83xx_port_stp_state_set,
 	.port_fast_age		= rtl930x_fast_age,
 
@@ -2660,6 +2665,6 @@ const struct dsa_switch_ops rtl930x_switch_ops = {
 	.port_lag_join		= rtl83xx_port_lag_join,
 	.port_lag_leave		= rtl83xx_port_lag_leave,
 
-	.port_pre_bridge_flags	= rtl83xx_port_pre_bridge_flags,
+	.port_pre_bridge_flags	= rtldsa_port_pre_bridge_flags,
 	.port_bridge_flags	= rtl83xx_port_bridge_flags,
 };

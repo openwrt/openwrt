@@ -680,14 +680,15 @@ struct rtldsa_counter_state {
 };
 
 struct rtl838x_port {
-	bool enable;
+	bool enable:1;
+	bool phy_is_integrated:1;
+	bool is10G:1;
+	bool is2G5:1;
+	bool isolated:1;
 	u64 pm;
 	u16 pvid;
 	bool eee_enabled;
 	enum phy_type phy;
-	bool phy_is_integrated;
-	bool is10G;
-	bool is2G5;
 	int sds_num;
 	int led_set;
 	int leds_on_this_port;
@@ -1040,7 +1041,6 @@ struct rtl838x_reg {
 	void (*traffic_enable)(int source, int dest);
 	void (*traffic_disable)(int source, int dest);
 	void (*traffic_set)(int source, u64 dest_matrix);
-	u64 (*traffic_get)(int source);
 	int l2_ctrl_0;
 	int l2_ctrl_1;
 	int smi_poll_ctrl;
