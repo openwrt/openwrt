@@ -1424,8 +1424,7 @@ static u64 rtl83xx_mc_group_del_port(struct rtl838x_switch_priv *priv, int mc_gr
 	return portmask;
 }
 
-static int rtl83xx_port_enable(struct dsa_switch *ds, int port,
-				struct phy_device *phydev)
+static int rtldsa_port_enable(struct dsa_switch *ds, int port, struct phy_device *phydev)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
@@ -1461,7 +1460,7 @@ static int rtl83xx_port_enable(struct dsa_switch *ds, int port,
 	return 0;
 }
 
-static void rtl83xx_port_disable(struct dsa_switch *ds, int port)
+static void rtldsa_port_disable(struct dsa_switch *ds, int port)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
@@ -1567,10 +1566,8 @@ static void rtldsa_update_port_member(struct rtl838x_switch_priv *priv, int port
 		priv->r->traffic_set(port, port_mask);
 }
 
-static int rtl83xx_port_bridge_join(struct dsa_switch *ds, int port,
-				    struct dsa_bridge bridge,
-				    bool *tx_fwd_offload,
-				    struct netlink_ext_ack *extack)
+static int rtldsa_port_bridge_join(struct dsa_switch *ds, int port, struct dsa_bridge bridge,
+				   bool *tx_fwd_offload, struct netlink_ext_ack *extack)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
@@ -1596,8 +1593,7 @@ static int rtl83xx_port_bridge_join(struct dsa_switch *ds, int port,
 	return 0;
 }
 
-static void rtl83xx_port_bridge_leave(struct dsa_switch *ds, int port,
-				      struct dsa_bridge bridge)
+static void rtldsa_port_bridge_leave(struct dsa_switch *ds, int port, struct dsa_bridge bridge)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
@@ -2378,7 +2374,9 @@ out_unlock:
 	mutex_unlock(&priv->reg_mutex);
 }
 
-static int rtl83xx_port_pre_bridge_flags(struct dsa_switch *ds, int port, struct switchdev_brport_flags flags, struct netlink_ext_ack *extack)
+static int rtldsa_port_pre_bridge_flags(struct dsa_switch *ds, int port,
+					struct switchdev_brport_flags flags,
+					struct netlink_ext_ack *extack)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	unsigned long features = BR_ISOLATED;
@@ -2580,15 +2578,15 @@ const struct dsa_switch_ops rtl83xx_switch_ops = {
 	.get_stats64		= rtldsa_get_stats64,
 	.get_pause_stats	= rtldsa_get_pause_stats,
 
-	.port_enable		= rtl83xx_port_enable,
-	.port_disable		= rtl83xx_port_disable,
+	.port_enable		= rtldsa_port_enable,
+	.port_disable		= rtldsa_port_disable,
 
 	.get_mac_eee		= rtldsa_get_mac_eee,
 	.set_mac_eee		= rtldsa_set_mac_eee,
 
 	.set_ageing_time	= rtl83xx_set_ageing_time,
-	.port_bridge_join	= rtl83xx_port_bridge_join,
-	.port_bridge_leave	= rtl83xx_port_bridge_leave,
+	.port_bridge_join	= rtldsa_port_bridge_join,
+	.port_bridge_leave	= rtldsa_port_bridge_leave,
 	.port_stp_state_set	= rtl83xx_port_stp_state_set,
 	.port_fast_age		= rtl83xx_fast_age,
 
@@ -2610,7 +2608,7 @@ const struct dsa_switch_ops rtl83xx_switch_ops = {
 	.port_lag_join		= rtl83xx_port_lag_join,
 	.port_lag_leave		= rtl83xx_port_lag_leave,
 
-	.port_pre_bridge_flags	= rtl83xx_port_pre_bridge_flags,
+	.port_pre_bridge_flags	= rtldsa_port_pre_bridge_flags,
 	.port_bridge_flags	= rtl83xx_port_bridge_flags,
 };
 
@@ -2637,15 +2635,15 @@ const struct dsa_switch_ops rtl93xx_switch_ops = {
 	.get_stats64		= rtldsa_get_stats64,
 	.get_pause_stats	= rtldsa_get_pause_stats,
 
-	.port_enable		= rtl83xx_port_enable,
-	.port_disable		= rtl83xx_port_disable,
+	.port_enable		= rtldsa_port_enable,
+	.port_disable		= rtldsa_port_disable,
 
 	.get_mac_eee		= rtldsa_get_mac_eee,
 	.set_mac_eee		= rtldsa_set_mac_eee,
 
 	.set_ageing_time	= rtl83xx_set_ageing_time,
-	.port_bridge_join	= rtl83xx_port_bridge_join,
-	.port_bridge_leave	= rtl83xx_port_bridge_leave,
+	.port_bridge_join	= rtldsa_port_bridge_join,
+	.port_bridge_leave	= rtldsa_port_bridge_leave,
 	.port_stp_state_set	= rtl83xx_port_stp_state_set,
 	.port_fast_age		= rtl930x_fast_age,
 
@@ -2667,6 +2665,6 @@ const struct dsa_switch_ops rtl93xx_switch_ops = {
 	.port_lag_join		= rtl83xx_port_lag_join,
 	.port_lag_leave		= rtl83xx_port_lag_leave,
 
-	.port_pre_bridge_flags	= rtl83xx_port_pre_bridge_flags,
+	.port_pre_bridge_flags	= rtldsa_port_pre_bridge_flags,
 	.port_bridge_flags	= rtl83xx_port_bridge_flags,
 };
