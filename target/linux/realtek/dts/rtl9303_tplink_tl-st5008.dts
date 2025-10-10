@@ -1,0 +1,516 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "rtl930x.dtsi"
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/thermal/thermal.h>
+
+/ {
+	compatible = "tplink,tl-st5008", "realtek,rtl930x-soc";
+	model = "TP-Link TL-ST5008";
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x10000000>, /* first 256 MiB */
+		      <0x20000000 0x10000000>; /* remaining 256 MiB */
+	};
+
+	aliases {
+		led-boot = &led_sys_red;
+		led-failsafe = &led_master_yellow;
+		led-running = &led_sys_green;
+		led-upgrade = &led_stack;
+		label-mac-device = &ethernet0;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		button-mode {
+			label = "mode";
+			gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+			debounce-interval = <50>;
+			linux,code = <BTN_0>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinmux_disable_sys_led>, <&pinmux_enable_usb_led>;
+
+		led_master_green: led-master-green {
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+		};
+
+		led_master_yellow: led-master-yellow {
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_YELLOW>;
+		};
+
+		led_stack: led-stack {
+			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+		};
+
+		led_sys_red: led-system-red {
+			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_BOOT;
+		};
+
+		led_sys_green: led-system-green {
+			gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+		};
+	};
+
+	led_set {
+		compatible = "realtek,rtl9300-leds";
+
+		led_set0 = <(RTL93XX_LED_SET_1G | RTL93XX_LED_SET_100M |
+			     RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)
+			     (RTL93XX_LED_SET_5G | RTL93XX_LED_SET_2P5G |
+			     RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)
+			     (RTL93XX_LED_SET_10G | RTL93XX_LED_SET_LINK |
+			     RTL93XX_LED_SET_ACT)>;
+	};
+
+	watchdog {
+		compatible = "linux,wdt-gpio";
+		gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
+		hw_algo = "toggle";
+		hw_margin_ms = <1200>;
+		always-running;
+	};
+
+	thermal-zones {
+		phy0-thermal {
+			/* Poll every 10 seconds */
+			polling-delay-passive = <10000>;
+			polling-delay = <10000>;
+			thermal-sensors = <&phy0>;
+
+			trips {
+				phy0_trip0: phy0-trip0 {
+					/* At 80 degrees turn on fan */
+					temperature = <80000>;
+					hysteresis = <1000>;
+					type = "active";
+				};
+
+				phy0-trip1 {
+					/* At 108 degrees phys exceed spec */
+					temperature = <108000>;
+					hysteresis = <5000>;
+					type = "critical";
+				};
+			};
+
+			cooling-maps {
+				map {
+					trip = <&phy0_trip0>;
+					cooling-device = <&chassis_fan THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+				};
+			};
+		};
+
+		phy8-thermal {
+			/* Poll every 10 seconds */
+			polling-delay-passive = <10000>;
+			polling-delay = <10000>;
+			thermal-sensors = <&phy8>;
+
+			trips {
+				phy8_trip0: phy8-trip0 {
+					/* At 80 degrees turn on fan */
+					temperature = <80000>;
+					hysteresis = <1000>;
+					type = "active";
+				};
+
+				phy8-trip1 {
+					/* At 108 degrees phys exceed spec */
+					temperature = <108000>;
+					hysteresis = <5000>;
+					type = "critical";
+				};
+			};
+
+			cooling-maps {
+				map {
+					trip = <&phy8_trip0>;
+					cooling-device = <&chassis_fan THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+				};
+			};
+		};
+
+		phy16-thermal {
+			/* Poll every 10 seconds */
+			polling-delay-passive = <10000>;
+			polling-delay = <10000>;
+			thermal-sensors = <&phy16>;
+
+			trips {
+				phy16_trip0: phy16-trip0 {
+					/* At 80 degrees turn on fan */
+					temperature = <80000>;
+					hysteresis = <1000>;
+					type = "active";
+				};
+
+				phy16-trip1 {
+					/* At 108 degrees phys exceed spec */
+					temperature = <108000>;
+					hysteresis = <5000>;
+					type = "critical";
+				};
+			};
+
+			cooling-maps {
+				map {
+					trip = <&phy16_trip0>;
+					cooling-device = <&chassis_fan THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+				};
+			};
+		};
+
+		phy20-thermal {
+			/* Poll every 10 seconds */
+			polling-delay-passive = <10000>;
+			polling-delay = <10000>;
+			thermal-sensors = <&phy20>;
+
+			trips {
+				phy20_trip0: phy20-trip0 {
+					/* At 80 degrees turn on fan */
+					temperature = <80000>;
+					hysteresis = <1000>;
+					type = "active";
+				};
+
+				phy20-trip1 {
+					/* At 108 degrees phys exceed spec */
+					temperature = <108000>;
+					hysteresis = <5000>;
+					type = "critical";
+				};
+			};
+
+			cooling-maps {
+				map {
+					trip = <&phy20_trip0>;
+					cooling-device = <&chassis_fan THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+				};
+			};
+		};
+
+		phy24-thermal {
+			/* Poll every 10 seconds */
+			polling-delay-passive = <10000>;
+			polling-delay = <10000>;
+			thermal-sensors = <&phy24>;
+
+			trips {
+				phy24_trip0: phy24-trip0 {
+					/* At 80 degrees turn on fan */
+					temperature = <80000>;
+					hysteresis = <1000>;
+					type = "active";
+				};
+
+				phy24-trip1 {
+					/* At 108 degrees phys exceed spec */
+					temperature = <108000>;
+					hysteresis = <5000>;
+					type = "critical";
+				};
+			};
+
+			cooling-maps {
+				map {
+					trip = <&phy24_trip0>;
+					cooling-device = <&chassis_fan THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+				};
+			};
+		};
+
+		phy25-thermal {
+			/* Poll every 10 seconds */
+			polling-delay-passive = <10000>;
+			polling-delay = <10000>;
+			thermal-sensors = <&phy25>;
+
+			trips {
+				phy25_trip0: phy25-trip0 {
+					/* At 80 degrees turn on fan */
+					temperature = <80000>;
+					hysteresis = <1000>;
+					type = "active";
+				};
+
+				phy25-trip1 {
+					/* At 108 degrees phys exceed spec */
+					temperature = <108000>;
+					hysteresis = <5000>;
+					type = "critical";
+				};
+			};
+
+			cooling-maps {
+				map {
+					trip = <&phy25_trip0>;
+					cooling-device = <&chassis_fan THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+				};
+			};
+		};
+
+		phy26-thermal {
+			/* Poll every 10 seconds */
+			polling-delay-passive = <10000>;
+			polling-delay = <10000>;
+			thermal-sensors = <&phy26>;
+
+			trips {
+				phy26_trip0: phy26-trip0 {
+					/* At 80 degrees turn on fan */
+					temperature = <80000>;
+					hysteresis = <1000>;
+					type = "active";
+				};
+
+				phy26-trip1 {
+					/* At 108 degrees phys exceed spec */
+					temperature = <108000>;
+					hysteresis = <5000>;
+					type = "critical";
+				};
+			};
+
+			cooling-maps {
+				map {
+					trip = <&phy26_trip0>;
+					cooling-device = <&chassis_fan THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+				};
+			};
+		};
+
+		phy27-thermal {
+			/* Poll every 10 seconds */
+			polling-delay-passive = <10000>;
+			polling-delay = <10000>;
+			thermal-sensors = <&phy27>;
+
+			trips {
+				phy27_trip0: phy27-trip0 {
+					/* At 80 degrees turn on fan */
+					temperature = <80000>;
+					hysteresis = <1000>;
+					type = "active";
+				};
+
+				phy27-trip1 {
+					/* At 108 degrees phys exceed spec */
+					temperature = <108000>;
+					hysteresis = <5000>;
+					type = "critical";
+				};
+			};
+
+			cooling-maps {
+				map {
+					trip = <&phy27_trip0>;
+					cooling-device = <&chassis_fan THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+				};
+			};
+		};
+	};
+
+	chassis_fan: gpio-fan {
+		compatible = "gpio-fan";
+		gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>, <&gpio0 16 GPIO_ACTIVE_HIGH>;
+		alarm-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+		gpio-fan,speed-map = <0 0>, <1 1>, <2 2>, <3 3>;
+		#cooling-cells = <2>;
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <100000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0xe0000>;
+				read-only;
+			};
+
+			partition@e0000 {
+				label = "u-boot-env";
+				reg = <0xe0000 0x20000>;
+			};
+
+			partition@100000 {
+				compatible = "openwrt,uimage", "denx,uimage";
+				label = "firmware";
+				reg = <0x100000 0x1e00000>;
+				openwrt,ih-magic = <0x93030000>;
+			};
+
+			partition@1f00000 {
+				label = "para";
+				reg = <0x1f00000 0x100000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					factory_macaddr: macaddr@fdff4 {
+						reg = <0xfdff4 0x6>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&ethernet0 {
+	nvmem-cells = <&factory_macaddr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&mdio_bus0 {
+	phy0: ethernet-phy@0 {
+		reg = <0>;
+		compatible = "ethernet-phy-ieee802.3-c45";
+		rtl9300,smi-address = <0 0>;
+		#thermal-sensor-cells = <0>;
+	};
+
+	phy8: ethernet-phy@8 {
+		reg = <8>;
+		compatible = "ethernet-phy-ieee802.3-c45";
+		rtl9300,smi-address = <0 1>;
+		#thermal-sensor-cells = <0>;
+	};
+
+	phy16: ethernet-phy@16 {
+		reg = <16>;
+		compatible = "ethernet-phy-ieee802.3-c45";
+		rtl9300,smi-address = <1 2>;
+		#thermal-sensor-cells = <0>;
+	};
+
+	phy20: ethernet-phy@20 {
+		reg = <20>;
+		compatible = "ethernet-phy-ieee802.3-c45";
+		rtl9300,smi-address = <1 3>;
+		#thermal-sensor-cells = <0>;
+	};
+
+	phy24: ethernet-phy@24 {
+		reg = <24>;
+		compatible = "ethernet-phy-ieee802.3-c45";
+		rtl9300,smi-address = <2 4>;
+		#thermal-sensor-cells = <0>;
+	};
+
+	phy25: ethernet-phy@25 {
+		reg = <25>;
+		compatible = "ethernet-phy-ieee802.3-c45";
+		rtl9300,smi-address = <2 5>;
+		#thermal-sensor-cells = <0>;
+	};
+
+	phy26: ethernet-phy@26 {
+		reg = <26>;
+		compatible = "ethernet-phy-ieee802.3-c45";
+		rtl9300,smi-address = <3 6>;
+		#thermal-sensor-cells = <0>;
+	};
+
+	phy27: ethernet-phy@27 {
+		reg = <27>;
+		compatible = "ethernet-phy-ieee802.3-c45";
+		rtl9300,smi-address = <3 7>;
+		#thermal-sensor-cells = <0>;
+	};
+};
+
+&serdes2 {
+	realtek,pnswap-tx;
+};
+
+&serdes3 {
+	realtek,pnswap-rx;
+};
+
+&serdes4 {
+	realtek,pnswap-tx;
+};
+
+&serdes5 {
+	realtek,pnswap-rx;
+};
+
+&serdes6 {
+	realtek,pnswap-tx;
+};
+
+&serdes7 {
+	realtek,pnswap-rx;
+};
+
+&serdes8 {
+	realtek,pnswap-tx;
+};
+
+&serdes9 {
+	realtek,pnswap-rx;
+};
+
+&switch0 {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		SWITCH_PORT_SDS(0, 1, 2, usxgmii)
+		SWITCH_PORT_SDS(8, 2, 3, usxgmii)
+		SWITCH_PORT_SDS(16, 3, 4, usxgmii)
+		SWITCH_PORT_SDS(20, 4, 5, usxgmii)
+		SWITCH_PORT_SDS(24, 5, 6, usxgmii)
+		SWITCH_PORT_SDS(25, 6, 7, usxgmii)
+		SWITCH_PORT_SDS(26, 7, 8, usxgmii)
+		SWITCH_PORT_SDS(27, 8, 9, usxgmii)
+
+		port@28 {
+			ethernet = <&ethernet0>;
+			reg = <28>;
+			phy-mode = "internal";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+	};
+};

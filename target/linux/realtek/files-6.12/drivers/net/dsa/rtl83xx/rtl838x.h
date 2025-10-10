@@ -691,6 +691,8 @@ struct rtl838x_port {
 	int sds_num;
 	int led_set;
 	int leds_on_this_port;
+	bool swap_rx_polarity:1;
+	bool swap_tx_polarity:1;
 	struct rtldsa_counter_state counters;
 	const struct dsa_port *dp;
 };
