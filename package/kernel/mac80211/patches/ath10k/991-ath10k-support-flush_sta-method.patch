@@ -29,7 +29,7 @@ Tested-by: Florian Maurer <maurer@fh-aachen.de>
 
 --- a/drivers/net/wireless/ath/ath10k/mac.c
 +++ b/drivers/net/wireless/ath/ath10k/mac.c
-@@ -8166,6 +8166,20 @@ static void ath10k_flush(struct ieee8021
+@@ -8135,6 +8135,20 @@ static void ath10k_flush(struct ieee8021
  	mutex_unlock(&ar->conf_mutex);
  }
  
@@ -50,7 +50,7 @@ Tested-by: Florian Maurer <maurer@fh-aachen.de>
  /* TODO: Implement this function properly
   * For now it is needed to reply to Probe Requests in IBSS mode.
   * Probably we need this information from FW.
-@@ -9513,6 +9527,7 @@ static const struct ieee80211_ops ath10k
+@@ -9486,6 +9500,7 @@ static const struct ieee80211_ops ath10k
  	.set_rts_threshold		= ath10k_set_rts_threshold,
  	.set_frag_threshold		= ath10k_mac_op_set_frag_threshold,
  	.flush				= ath10k_flush,
@@ -58,7 +58,7 @@ Tested-by: Florian Maurer <maurer@fh-aachen.de>
  	.tx_last_beacon			= ath10k_tx_last_beacon,
  	.set_antenna			= ath10k_set_antenna,
  	.get_antenna			= ath10k_get_antenna,
-@@ -10334,6 +10349,9 @@ int ath10k_mac_register(struct ath10k *a
+@@ -10307,6 +10322,9 @@ int ath10k_mac_register(struct ath10k *a
  	if (!ar->hw_params.hw_ops->set_coverage_class)
  		ar->ops->set_coverage_class = NULL;
  
