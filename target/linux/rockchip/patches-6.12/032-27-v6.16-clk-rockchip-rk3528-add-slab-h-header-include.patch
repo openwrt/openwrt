@@ -1,0 +1,30 @@
+From 276036283716b9135525b195675ea42801bde204 Mon Sep 17 00:00:00 2001
+From: Heiko Stuebner <heiko@sntech.de>
+Date: Thu, 15 May 2025 10:26:52 +0200
+Subject: [PATCH] clk: rockchip: rk3528: add slab.h header include
+
+The newly added GRF types introduced kzalloc usage into the rk3528.
+At least for the similar rk3576 driver, the kernel-test-robot reported the
+missing prototype, which warranted adding a slab.h include.
+
+While it did not complain about the rk3528, so the header might be included
+"accidentially" right now, add a real include to make sure we keep it
+included in the future.
+
+Fixes: 306d2f5ddaa7 ("clk: rockchip: rk3528: Add SD/SDIO tuning clocks in GRF region")
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+Link: https://lore.kernel.org/r/20250515082652.2503063-2-heiko@sntech.de
+---
+ drivers/clk/rockchip/clk-rk3528.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/clk/rockchip/clk-rk3528.c
++++ b/drivers/clk/rockchip/clk-rk3528.c
+@@ -12,6 +12,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/mfd/syscon.h>
+ #include <linux/minmax.h>
++#include <linux/slab.h>
+ 
+ #include <dt-bindings/clock/rockchip,rk3528-cru.h>
+ 
