@@ -17,6 +17,11 @@ define Device/rk3399
   KERNEL_LOADADDR := 0x03200000
 endef
 
+define Device/rk3528
+  SOC := rk3528
+  KERNEL_LOADADDR := 0x03000000
+endef
+
 define Device/rk3566
   SOC := rk3566
   KERNEL_LOADADDR := 0x03000000
@@ -215,6 +220,16 @@ define Device/radxa_cm3-io
   UBOOT_DEVICE_NAME := radxa-cm3-io-rk3566
 endef
 TARGET_DEVICES += radxa_cm3-io
+
+define Device/radxa_e20c
+  $(Device/rk3528)
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := E20C
+  DEVICE_DTS := rk3528-radxa-e20c
+  UBOOT_DEVICE_NAME := radxa-e20c-rk3528
+  DEVICE_PACKAGES := kmod-r8169
+endef
+TARGET_DEVICES += radxa_e20c
 
 define Device/radxa_e25
   $(Device/rk3568)
