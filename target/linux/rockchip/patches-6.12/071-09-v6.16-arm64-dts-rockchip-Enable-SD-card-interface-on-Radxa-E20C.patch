@@ -1,0 +1,75 @@
+From a2130d9123b23d74a717f52240fa3cb92bf8113c Mon Sep 17 00:00:00 2001
+From: Yao Zi <ziyao@disroot.org>
+Date: Thu, 8 May 2025 23:48:30 +0000
+Subject: [PATCH] arm64: dts: rockchip: Enable SD-card interface on Radxa E20C
+
+SD-card is available on Radxa E20C board.
+
+Signed-off-by: Yao Zi <ziyao@disroot.org>
+Reviewed-by: Jonas Karlman <jonas@kwiboo.se>
+Link: https://lore.kernel.org/r/20250508234829.27111-4-ziyao@disroot.org
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ .../boot/dts/rockchip/rk3528-radxa-e20c.dts   | 30 +++++++++++++++++++
+ 1 file changed, 30 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3528-radxa-e20c.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3528-radxa-e20c.dts
+@@ -18,6 +18,7 @@
+ 
+ 	aliases {
+ 		mmc0 = &sdhci;
++		mmc1 = &sdmmc;
+ 	};
+ 
+ 	chosen {
+@@ -130,6 +131,18 @@
+ 		regulator-max-microvolt = <5000000>;
+ 	};
+ 
++	vccio_sd: regulator-vccio-sd {
++		compatible = "regulator-gpio";
++		gpios = <&gpio4 RK_PB6 GPIO_ACTIVE_HIGH>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&sdmmc_vol_ctrl_h>;
++		regulator-name = "vccio_sd";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <3300000>;
++		states = <1800000 0x0>, <3300000 0x1>;
++		vin-supply = <&vcc5v0_sys>;
++	};
++
+ 	vdd_arm: regulator-vdd-arm {
+ 		compatible = "pwm-regulator";
+ 		pwms = <&pwm1 0 5000 PWM_POLARITY_INVERTED>;
+@@ -205,6 +218,12 @@
+ 			rockchip,pins = <4 RK_PC0 RK_FUNC_GPIO &pcfg_pull_none>;
+ 		};
+ 	};
++
++	sdmmc {
++		sdmmc_vol_ctrl_h: sdmmc-vol-ctrl-h {
++			rockchip,pins = <4 RK_PB6 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
+ };
+ 
+ &pwm1 {
+@@ -235,6 +254,17 @@
+ 	status = "okay";
+ };
+ 
++&sdmmc {
++	bus-width = <4>;
++	cap-mmc-highspeed;
++	cap-sd-highspeed;
++	disable-wp;
++	sd-uhs-sdr104;
++	vmmc-supply = <&vcc_3v3>;
++	vqmmc-supply = <&vccio_sd>;
++	status = "okay";
++};
++
+ &uart0 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&uart0m0_xfer>;

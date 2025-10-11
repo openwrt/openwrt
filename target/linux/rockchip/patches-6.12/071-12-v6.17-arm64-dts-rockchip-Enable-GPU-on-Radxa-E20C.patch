@@ -1,0 +1,28 @@
+From f4db84780427270dd20ec0e7079b0ae26dc88dd3 Mon Sep 17 00:00:00 2001
+From: Jonas Karlman <jonas@kwiboo.se>
+Date: Sun, 18 May 2025 22:54:13 +0000
+Subject: [PATCH] arm64: dts: rockchip: Enable GPU on Radxa E20C
+
+Enable the Mali-450 MP2 GPU on the Radxa E20C.
+
+Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Link: https://lore.kernel.org/r/20250518225418.682182-4-jonas@kwiboo.se
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3528-radxa-e20c.dts | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3528-radxa-e20c.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3528-radxa-e20c.dts
+@@ -198,6 +198,11 @@
+ 	status = "okay";
+ };
+ 
++&gpu {
++	mali-supply = <&vdd_logic>;
++	status = "okay";
++};
++
+ &i2c1 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&i2c1m0_xfer>;
