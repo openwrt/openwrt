@@ -196,6 +196,19 @@ v2: Add comment about the reset-gpios prop rename
  &usb_drd1_dwc3 {
  	dr_mode = "host";
  	status = "okay";
+--- /dev/null
++++ b/arch/arm/dts/rk3576-rock-4d-u-boot.dtsi
+@@ -0,0 +1,10 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++
++#include "rk3576-u-boot.dtsi"
++
++&sfc0 {
++	flash@0 {
++		bootph-pre-ram;
++		bootph-some-ram;
++	};
++};
 --- a/arch/arm/mach-rockchip/rk3576/MAINTAINERS
 +++ b/arch/arm/mach-rockchip/rk3576/MAINTAINERS
 @@ -4,6 +4,12 @@ S:	Maintained
