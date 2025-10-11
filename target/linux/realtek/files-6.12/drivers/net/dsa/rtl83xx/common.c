@@ -336,9 +336,8 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 
 		pcs_node = of_parse_phandle(dn, "pcs-handle", 0);
 		phy_node = of_parse_phandle(dn, "phy-handle", 0);
-		if (!phy_node) {
-			if (pn != priv->cpu_port)
-				dev_err(priv->dev, "Port node %d misses phy-handle\n", pn);
+		if (pn != priv->cpu_port && !phy_node && !pcs_node) {
+			dev_err(priv->dev, "Port node %d has neither pcs-handle nor phy-handle\n", pn);
 			continue;
 		}
 
@@ -383,6 +382,13 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 				dev_err(priv->dev, "led_set %d for port %d configuration is invalid\n", led_set, pn);
 				return -ENODEV;
 			}
+		}
+
+		if (!phy_node) {
+			if (priv->pcs[pn])
+				priv->ports[pn].phy_is_integrated = true;
+
+			continue;
 		}
 
 		/* Check for the integrated SerDes of the RTL8380M first */
