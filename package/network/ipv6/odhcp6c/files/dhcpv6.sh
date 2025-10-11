@@ -2,6 +2,7 @@
 
 . /lib/functions.sh
 . ../netifd-proto.sh
+. /lib/config/uci.sh
 init_proto "$@"
 
 proto_dhcpv6_init_config() {
@@ -66,6 +67,7 @@ proto_dhcpv6_setup() {
 	[ -z "$reqprefix" -o "$reqprefix" = "auto" ] && reqprefix=0
 	[ "$reqprefix" != "no" ] && append opts "-P$reqprefix"
 
+	[ -z "$clientid" ] && clientid="$(uci_get network @globals[0] dhcp_default_duid)"
 	[ -n "$clientid" ] && append opts "-c$clientid"
 
 	[ "$defaultreqopts" = "0" ] && append opts "-R"
