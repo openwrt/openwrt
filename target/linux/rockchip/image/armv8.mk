@@ -254,6 +254,22 @@ define Device/radxa_e52c
 endef
 TARGET_DEVICES += radxa_e52c
 
+define Device/radxa_rock-2a
+  $(Device/rk3528)
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := ROCK 2A
+  UBOOT_DEVICE_NAME := rock-2-rk3528
+endef
+TARGET_DEVICES += radxa_rock-2a
+
+define Device/radxa_rock-2f
+  $(Device/rk3528)
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := ROCK 2F
+  UBOOT_DEVICE_NAME := rock-2-rk3528
+endef
+TARGET_DEVICES += radxa_rock-2f
+
 define Device/radxa_rock-3a
   $(Device/rk3568)
   DEVICE_VENDOR := Radxa
