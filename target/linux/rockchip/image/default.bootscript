@@ -10,6 +10,8 @@ elif test $stdout = 'serial@ff130000' ;
 then serial_addr=',0xff130000'; serial_port='ttyS2';
 elif test $stdout = 'serial@ff1a0000' ;
 then serial_addr=',0xff1a0000'; serial_port='ttyS2';
+elif test $stdout = 'serial@ff9f0000' ;
+then serial_addr=',0xff9f0000'; serial_port='ttyS0';
 fi;
 
 setenv bootargs "console=${serial_port},1500000 earlycon=uart8250,mmio32${serial_addr} root=PARTUUID=${uuid} rw rootwait";
