@@ -1,0 +1,98 @@
+From 42bbc32c7e9e974ae4eb830ae1381cb016133e5c Mon Sep 17 00:00:00 2001
+From: Chukun Pan <amadeus@jmu.edu.cn>
+Date: Fri, 1 Aug 2025 16:00:25 +0800
+Subject: [PATCH] arm64: dts: rockchip: Add rk3528 CPU frequency scaling
+ support
+
+By default, the CPUs on RK3528 operates at 1.5GHz. Add CPU frequency and
+voltage mapping to the device tree to enable dynamic scaling via cpufreq.
+
+The OPP values come from downstream kernel[1], using a voltage close to
+the actual frequency. Frequencies below 1.2GHz have been removed due to
+the same voltage.
+
+[1] https://github.com/rockchip-linux/kernel/blob/develop-5.10/arch/arm64/boot/dts/rockchip/rk3528.dtsi
+
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+Link: https://lore.kernel.org/r/20250801080025.558935-2-amadeus@jmu.edu.cn
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3528.dtsi | 39 ++++++++++++++++++++++++
+ 1 file changed, 39 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3528.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3528.dtsi
+@@ -70,6 +70,7 @@
+ 			device_type = "cpu";
+ 			enable-method = "psci";
+ 			clocks = <&scmi_clk SCMI_CLK_CPU>;
++			operating-points-v2 = <&cpu_opp_table>;
+ 		};
+ 
+ 		cpu1: cpu@1 {
+@@ -78,6 +79,7 @@
+ 			device_type = "cpu";
+ 			enable-method = "psci";
+ 			clocks = <&scmi_clk SCMI_CLK_CPU>;
++			operating-points-v2 = <&cpu_opp_table>;
+ 		};
+ 
+ 		cpu2: cpu@2 {
+@@ -86,6 +88,7 @@
+ 			device_type = "cpu";
+ 			enable-method = "psci";
+ 			clocks = <&scmi_clk SCMI_CLK_CPU>;
++			operating-points-v2 = <&cpu_opp_table>;
+ 		};
+ 
+ 		cpu3: cpu@3 {
+@@ -94,6 +97,7 @@
+ 			device_type = "cpu";
+ 			enable-method = "psci";
+ 			clocks = <&scmi_clk SCMI_CLK_CPU>;
++			operating-points-v2 = <&cpu_opp_table>;
+ 		};
+ 	};
+ 
+@@ -112,6 +116,41 @@
+ 		};
+ 	};
+ 
++	cpu_opp_table: opp-table-cpu {
++		compatible = "operating-points-v2";
++		opp-shared;
++
++		opp-1200000000 {
++			opp-hz = /bits/ 64 <1200000000>;
++			opp-microvolt = <875000 875000 1100000>;
++			clock-latency-ns = <40000>;
++		};
++
++		opp-1416000000 {
++			opp-hz = /bits/ 64 <1416000000>;
++			opp-microvolt = <925000 925000 1100000>;
++			clock-latency-ns = <40000>;
++		};
++
++		opp-1608000000 {
++			opp-hz = /bits/ 64 <1608000000>;
++			opp-microvolt = <975000 975000 1100000>;
++			clock-latency-ns = <40000>;
++		};
++
++		opp-1800000000 {
++			opp-hz = /bits/ 64 <1800000000>;
++			opp-microvolt = <1037500 1037500 1100000>;
++			clock-latency-ns = <40000>;
++		};
++
++		opp-2016000000 {
++			opp-hz = /bits/ 64 <2016000000>;
++			opp-microvolt = <1100000 1100000 1100000>;
++			clock-latency-ns = <40000>;
++		};
++	};
++
+ 	gpu_opp_table: opp-table-gpu {
+ 		compatible = "operating-points-v2";
+ 

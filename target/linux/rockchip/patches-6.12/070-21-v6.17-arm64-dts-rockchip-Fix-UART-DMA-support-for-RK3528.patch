@@ -1,0 +1,106 @@
+From ae019f0bdfbef3e0671e7b954321e92fc24c7e54 Mon Sep 17 00:00:00 2001
+From: Jonas Karlman <jonas@kwiboo.se>
+Date: Wed, 9 Jul 2025 21:08:28 +0000
+Subject: [PATCH] arm64: dts: rockchip: Fix UART DMA support for RK3528
+
+Trying to use UART2 DMA for Bluetooth on ArmSoM Sige1 result in tx
+timeout when using dma-names = "tx", "rx" as required by the dt-binding:
+
+  Bluetooth: hci0: command 0x0c03 tx timeout
+  Bluetooth: hci0: BCM: Reset failed (-110)
+
+Change the dmas order to fix UART DMA support on RK3528.
+
+With this fixed Bluetooth can be loaded using DMA on ArmSoM Sige1:
+
+  Bluetooth: hci0: BCM: chip id 159
+  Bluetooth: hci0: BCM: features 0x0f
+  Bluetooth: hci0: BCM4362A2
+  Bluetooth: hci0: BCM4362A2 (000.017.017) build 0000
+  Bluetooth: hci0: BCM4362A2 'brcm/BCM4362A2.hcd' Patch
+  Bluetooth: hci0: BCM: features 0x0f
+  Bluetooth: hci0: BCM43752A2 UART 37.4MHz Ampak AP6398 sLNA iLNA CL1 [Version: 1091.1173]
+  Bluetooth: hci0: BCM4362A2 (000.017.017) build 1173
+
+Fixes: ab6fcb58aedf ("arm64: dts: rockchip: Add UART DMA support for RK3528")
+Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Link: https://lore.kernel.org/r/20250709210831.3170458-1-jonas@kwiboo.se
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3528.dtsi | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3528.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3528.dtsi
+@@ -611,7 +611,7 @@
+ 			clocks = <&cru SCLK_UART0>, <&cru PCLK_UART0>;
+ 			clock-names = "baudclk", "apb_pclk";
+ 			interrupts = <GIC_SPI 40 IRQ_TYPE_LEVEL_HIGH>;
+-			dmas = <&dmac 8>, <&dmac 9>;
++			dmas = <&dmac 9>, <&dmac 8>;
+ 			reg-io-width = <4>;
+ 			reg-shift = <2>;
+ 			status = "disabled";
+@@ -623,7 +623,7 @@
+ 			clocks = <&cru SCLK_UART1>, <&cru PCLK_UART1>;
+ 			clock-names = "baudclk", "apb_pclk";
+ 			interrupts = <GIC_SPI 41 IRQ_TYPE_LEVEL_HIGH>;
+-			dmas = <&dmac 10>, <&dmac 11>;
++			dmas = <&dmac 11>, <&dmac 10>;
+ 			reg-io-width = <4>;
+ 			reg-shift = <2>;
+ 			status = "disabled";
+@@ -635,7 +635,7 @@
+ 			clocks = <&cru SCLK_UART2>, <&cru PCLK_UART2>;
+ 			clock-names = "baudclk", "apb_pclk";
+ 			interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH>;
+-			dmas = <&dmac 12>, <&dmac 13>;
++			dmas = <&dmac 13>, <&dmac 12>;
+ 			reg-io-width = <4>;
+ 			reg-shift = <2>;
+ 			status = "disabled";
+@@ -647,7 +647,7 @@
+ 			clocks = <&cru SCLK_UART3>, <&cru PCLK_UART3>;
+ 			clock-names = "baudclk", "apb_pclk";
+ 			interrupts = <GIC_SPI 43 IRQ_TYPE_LEVEL_HIGH>;
+-			dmas = <&dmac 14>, <&dmac 15>;
++			dmas = <&dmac 15>, <&dmac 14>;
+ 			reg-io-width = <4>;
+ 			reg-shift = <2>;
+ 			status = "disabled";
+@@ -659,7 +659,7 @@
+ 			clocks = <&cru SCLK_UART4>, <&cru PCLK_UART4>;
+ 			clock-names = "baudclk", "apb_pclk";
+ 			interrupts = <GIC_SPI 44 IRQ_TYPE_LEVEL_HIGH>;
+-			dmas = <&dmac 16>, <&dmac 17>;
++			dmas = <&dmac 17>, <&dmac 16>;
+ 			reg-io-width = <4>;
+ 			reg-shift = <2>;
+ 			status = "disabled";
+@@ -671,7 +671,7 @@
+ 			clocks = <&cru SCLK_UART5>, <&cru PCLK_UART5>;
+ 			clock-names = "baudclk", "apb_pclk";
+ 			interrupts = <GIC_SPI 45 IRQ_TYPE_LEVEL_HIGH>;
+-			dmas = <&dmac 18>, <&dmac 19>;
++			dmas = <&dmac 19>, <&dmac 18>;
+ 			reg-io-width = <4>;
+ 			reg-shift = <2>;
+ 			status = "disabled";
+@@ -683,7 +683,7 @@
+ 			clocks = <&cru SCLK_UART6>, <&cru PCLK_UART6>;
+ 			clock-names = "baudclk", "apb_pclk";
+ 			interrupts = <GIC_SPI 46 IRQ_TYPE_LEVEL_HIGH>;
+-			dmas = <&dmac 20>, <&dmac 21>;
++			dmas = <&dmac 21>, <&dmac 20>;
+ 			reg-io-width = <4>;
+ 			reg-shift = <2>;
+ 			status = "disabled";
+@@ -695,7 +695,7 @@
+ 			clocks = <&cru SCLK_UART7>, <&cru PCLK_UART7>;
+ 			clock-names = "baudclk", "apb_pclk";
+ 			interrupts = <GIC_SPI 47 IRQ_TYPE_LEVEL_HIGH>;
+-			dmas = <&dmac 22>, <&dmac 23>;
++			dmas = <&dmac 23>, <&dmac 22>;
+ 			reg-io-width = <4>;
+ 			reg-shift = <2>;
+ 			status = "disabled";
