@@ -68,6 +68,7 @@ GLIBC_CONFIGURE:= \
 		  $(if $(CONFIG_PKG_RELRO_FULL),--enable-bind-now) \
 		  $(if $(CONFIG_PKG_FORTIFY_SOURCE_1),--enable-fortify-source=1) \
 		  $(if $(CONFIG_PKG_FORTIFY_SOURCE_2),--enable-fortify-source=2) \
+		  $(if $(CONFIG_PKG_FORTIFY_SOURCE_3),--enable-fortify-source=3) \
 		--enable-kernel=6.6.0
 
 export libc_cv_ssp=no
