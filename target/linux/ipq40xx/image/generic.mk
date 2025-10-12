@@ -189,6 +189,15 @@ define Device/aruba_ap-365
 endef
 TARGET_DEVICES += aruba_ap-365
 
+define Device/asus_map-ac1300
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := ASUS
+	DEVICE_MODEL := Lyra Mini (MAP-AC1300)
+	SOC := qcom-ipq4018
+	DEVICE_PACKAGES := kmod-ath3k
+endef
+TARGET_DEVICES += asus_map-ac1300
+
 define Device/asus_map-ac2200
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := ASUS
