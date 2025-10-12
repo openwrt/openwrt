@@ -204,8 +204,8 @@
 		};
 	};
 
-	spi_ctrl: spi_controller@1fa10000 {
-		compatible = "airoha,en7523-snand";
+	spi_ctrl: spi@1fa10000 {
+		compatible = "airoha,en7523-snand", "airoha,en7581-snand";
 		reg = <0x1fa10000 0x140>,
 		      <0x1fa11000 0x160>;
 
