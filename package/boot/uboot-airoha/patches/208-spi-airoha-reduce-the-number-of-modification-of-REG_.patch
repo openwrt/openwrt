@@ -15,8 +15,6 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  drivers/spi/airoha_snfi_spi.c | 134 +++++++++++++++++++++++++---------
  1 file changed, 101 insertions(+), 33 deletions(-)
 
-diff --git a/drivers/spi/airoha_snfi_spi.c b/drivers/spi/airoha_snfi_spi.c
-index 71e4fc13924..1fcf5dd89e9 100644
 --- a/drivers/spi/airoha_snfi_spi.c
 +++ b/drivers/spi/airoha_snfi_spi.c
 @@ -641,7 +641,47 @@ static ssize_t airoha_snand_dirmap_read(struct spi_mem_dirmap_desc *desc,
@@ -195,6 +193,3 @@ index 71e4fc13924..1fcf5dd89e9 100644
  	err = regmap_write(priv->regmap_nfi, REG_SPI_NFI_CMD, 0x80);
  	if (err)
  		goto error_dma_unmap;
--- 
-2.51.0
-
