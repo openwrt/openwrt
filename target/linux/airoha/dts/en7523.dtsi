@@ -2,6 +2,7 @@
 
 #include <dt-bindings/interrupt-controller/irq.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/leds/common.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/clock/en7523-clk.h>
 #include <dt-bindings/reset/airoha,en7523-reset.h>
@@ -16,7 +17,7 @@
 		#size-cells = <1>;
 		ranges;
 
-		npu_binary@84000000 {
+		npu_binary: npu_binary@84000000 {
 			no-map;
 			reg = <0x84000000 0xA00000>;
 		};
@@ -39,6 +40,16 @@
 		npu_rxdesc@86D00000 {
 			no-map;
 			reg = <0x86D00000 0x100000>;
+		};
+
+		qdma0_buf: qdma0-buf@87000000 {
+			no-map;
+			reg = <0x87000000 0x2000000>;
+		};
+
+		qdma1_buf: qdma1-buf@89000000 {
+			no-map;
+			reg = <0x89000000 0x1000000>;
 		};
 	};
 
@@ -86,7 +97,7 @@
 	};
 
 	scu: system-controller@1fa20000 {
-		compatible = "airoha,en7523-scu";
+		compatible = "airoha,en7523-scu", "syscon";
 		reg = <0x1fa20000 0x400>,
 		      <0x1fb00000 0x1000>;
 		#clock-cells = <1>;
@@ -222,5 +233,41 @@
 			spi-tx-bus-width = <1>;
 			spi-rx-bus-width = <2>;
 		};
+	};
+
+	watchdog@1fbf0100 {
+		compatible = "airoha,en7581-wdt";
+		reg = <0x1fbf0100 0x38>;
+
+		clocks = <&scu EN7523_CLK_BUS>;
+		clock-names = "bus";
+	};
+
+	crypto@1e004000 {
+		compatible = "inside-secure,safexcel-eip93ies";
+		reg = <0x1fb70000 0x1000>;
+
+		interrupts = <GIC_SPI 44 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
+	npu: npu@1e800000 {
+		compatible = "airoha,en7523-npu";
+		reg = <0x1e900000 0x313000>;
+		interrupts = <GIC_SPI 125 IRQ_TYPE_LEVEL_HIGH>,
+					<GIC_SPI 103 IRQ_TYPE_LEVEL_HIGH>,
+					<GIC_SPI 109 IRQ_TYPE_LEVEL_HIGH>,
+					<GIC_SPI 113 IRQ_TYPE_LEVEL_HIGH>,
+					<GIC_SPI 117 IRQ_TYPE_LEVEL_HIGH>,
+					<GIC_SPI 118 IRQ_TYPE_LEVEL_HIGH>,
+					<GIC_SPI 119 IRQ_TYPE_LEVEL_HIGH>,
+					<GIC_SPI 120 IRQ_TYPE_LEVEL_HIGH>,
+					<GIC_SPI 121 IRQ_TYPE_LEVEL_HIGH>,
+					<GIC_SPI 122 IRQ_TYPE_LEVEL_HIGH>,
+					<GIC_SPI 123 IRQ_TYPE_LEVEL_HIGH>;
+
+		memory-region = <&npu_binary>;
+		memory-region-names = "binary";
+
+		status = "disabled";
 	};
 };
