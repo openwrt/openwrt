@@ -8,6 +8,12 @@
 
 include $(TOPDIR)/rules.mk
 
+ifeq ($(CONFIG_TARGET_IMAGES_PIGZ),y)
+  GZIPCMD:=pigz
+else
+  GZIPCMD:=gzip
+endif
+
 LZMA_TEXT_START	:=
 LOADADDR	:=
 LOADER		:= loader.bin
@@ -53,7 +59,7 @@ loader-compile: $(PKG_BUILD_DIR)/.prepared
 		clean all
 
 loader.gz: $(PKG_BUILD_DIR)/loader.bin
-	gzip -nc9 $< > $(LOADER_GZ)
+	$(GZIPCMD) -nc9 $< > $(LOADER_GZ)
 
 loader.elf: $(PKG_BUILD_DIR)/loader.elf
 	$(CP) $< $(LOADER_ELF)
