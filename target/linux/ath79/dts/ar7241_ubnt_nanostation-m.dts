@@ -8,3 +8,11 @@
 	compatible = "ubnt,nanostation-m", "ubnt,xm", "qca,ar7241";
 	model = "Ubiquiti Nanostation M (XM)";
 };
+
+&cal_art_1000 {
+	reg = <0x1000 0xeb8>;
+};
+
+&wifi {
+	compatible = "pci168c,002a";
+};
