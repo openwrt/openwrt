@@ -659,15 +659,17 @@ static int32 _phy_rtl826xb_flow_n22(uint32 unit, rtk_port_t port, uint8 portOffs
 
 static int32 _phy_rtl826xb_flow_s(uint32 unit, rtk_port_t port, uint8 portOffset, uint8 patch_mode)
 {
-#ifdef CONFIG_MACH_REALTEK_RTL
+    struct rtk_phy_priv *priv = port->priv;
     int32 ret = RT_ERR_OK;
     rt_phy_patch_db_t *pPatchDb = NULL;
 
-    PHYPATCH_DB_GET(unit, port, pPatchDb);
+    if (priv->rtk_serdes_patch)
+    {
+        PHYPATCH_DB_GET(unit, port, pPatchDb);
 
-    RT_ERR_CHK(phy_patch_op(pPatchDb, unit, port, portOffset, RTK_PATCH_OP_PSDS0, 0xff, 0x07, 0x10, 15, 0, 0x80aa, patch_mode), ret);
-    RT_ERR_CHK(phy_patch_op(pPatchDb, unit, port, portOffset, RTK_PATCH_OP_PSDS0, 0xff, 0x06, 0x12, 15, 0, 0x5078, patch_mode), ret);
-#endif
+        RT_ERR_CHK(phy_patch_op(pPatchDb, unit, port, portOffset, RTK_PATCH_OP_PSDS0, 0xff, 0x07, 0x10, 15, 0, 0x80aa, patch_mode), ret);
+        RT_ERR_CHK(phy_patch_op(pPatchDb, unit, port, portOffset, RTK_PATCH_OP_PSDS0, 0xff, 0x06, 0x12, 15, 0, 0x5078, patch_mode), ret);
+    }
 
     return RT_ERR_OK;
 }

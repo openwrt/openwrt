@@ -118,6 +118,7 @@ static int rtl826xb_probe(struct phy_device *phydev)
     priv->isBasePort = (phydev->drv->phy_id == REALTEK_PHY_ID_RTL8261N) ? (1) : (((phydev->mdio.addr % 4) == 0) ? (1) : (0));
     priv->pnswap_tx = device_property_read_bool(dev, "realtek,pnswap-tx");
     priv->pnswap_rx = device_property_read_bool(dev, "realtek,pnswap-rx");
+    priv->rtk_serdes_patch = device_property_read_bool(dev, "realtek,rtk-serdes-patch");
     phydev->priv = priv;
 
     return 0;

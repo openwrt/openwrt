@@ -29,7 +29,7 @@ typedef enum rtk_phylib_phy_e
     RTK_PHYLIB_RTL8254B,
     RTK_PHYLIB_RTL8261N,
     RTK_PHYLIB_RTL8261BE,
-	RTK_PHYLIB_RTL8264,
+    RTK_PHYLIB_RTL8264,
     RTK_PHYLIB_RTL8264B,
     RTK_PHYLIB_END
 } rtk_phylib_phy_t;
@@ -41,6 +41,7 @@ struct rtk_phy_priv {
 
     bool pnswap_tx:1;
     bool pnswap_rx:1;
+    bool rtk_serdes_patch:1;
 };
 
 typedef struct phy_device rtk_phydev;
