@@ -17,8 +17,6 @@ Reviewed-by: Frieder Schrempf <frieder.schrempf@kontron.de>
  include/linux/mtd/spinand.h |   7 ++
  2 files changed, 95 insertions(+), 97 deletions(-)
 
-diff --git a/drivers/mtd/nand/spi/core.c b/drivers/mtd/nand/spi/core.c
-index f5ddfbf4b83..ea00cd7dcf0 100644
 --- a/drivers/mtd/nand/spi/core.c
 +++ b/drivers/mtd/nand/spi/core.c
 @@ -41,21 +41,6 @@ struct spinand_plat {
@@ -275,7 +273,7 @@ index f5ddfbf4b83..ea00cd7dcf0 100644
  static const struct nand_ops spinand_ops = {
  	.erase = spinand_erase,
  	.markbad = spinand_markbad,
-@@ -1116,6 +1099,14 @@ static int spinand_init(struct spinand_device *spinand)
+@@ -1134,6 +1117,14 @@ static int spinand_init(struct spinand_device *spinand)
  		goto err_free_bufs;
  	}
  
@@ -315,6 +313,3 @@ index 6fe6fd520a4..163269313f6 100644
  	int (*select_target)(struct spinand_device *spinand,
  			     unsigned int target);
  	unsigned int cur_target;
--- 
-2.51.0
-
