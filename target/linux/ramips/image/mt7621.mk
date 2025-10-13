@@ -1093,6 +1093,30 @@ define Device/dlink_dir-882-r1
 endef
 TARGET_DEVICES += dlink_dir-882-r1
 
+define Device/dlink_dir-x1860-b1
+  $(Device/nand)
+  KERNEL_SIZE := 8192k
+  IMAGE_SIZE := 40960k
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DIR-X1860
+  DEVICE_VARIANT := B1
+  DEVICE_ALT0_VENDOR := D-Link
+  DEVICE_ALT0_MODEL := DIR-X1550
+  DEVICE_ALT0_VARIANT := A1
+  DEVICE_PACKAGES := kmod-mt7915-firmware
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | \
+	append-squashfs4-fakeroot
+  IMAGES += factory.bin recovery.bin
+  IMAGE/recovery.bin := append-kernel | pad-to $$(KERNEL_SIZE) | \
+	append-ubi | check-size
+  IMAGE/factory.bin := $$(IMAGE/recovery.bin) | \
+	append-dlink-covr-metadata $$(DEVICE_MODEL) | \
+	dlink-sge-image $$(DEVICE_MODEL)-$$(DEVICE_VARIANT)
+endef
+TARGET_DEVICES += dlink_dir-x1860-b1
+
 define Device/dlink_dra-1360-a1
   $(Device/dlink_dxx-1xx0-x1)
   DEVICE_MODEL := DRA-1360
