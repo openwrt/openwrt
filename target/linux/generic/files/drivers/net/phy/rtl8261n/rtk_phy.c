@@ -106,25 +106,6 @@ static int rtkphy_config_init(struct phy_device *phydev)
     return ret;
 }
 
-static int rtkphy_c45_suspend(struct phy_device *phydev)
-{
-    int ret = 0;
-
-    ret = rtk_phylib_c45_power_low(phydev);
-
-    phydev->speed = SPEED_UNKNOWN;
-    phydev->duplex = DUPLEX_UNKNOWN;
-    phydev->pause = 0;
-    phydev->asym_pause = 0;
-
-    return ret;
-}
-
-static int rtkphy_c45_resume(struct phy_device *phydev)
-{
-    return rtk_phylib_c45_power_normal(phydev);
-}
-
 static int rtkphy_c45_config_aneg(struct phy_device *phydev)
 {
     bool changed = false;
@@ -158,11 +139,6 @@ static int rtkphy_c45_config_aneg(struct phy_device *phydev)
         changed = true;
 
     return genphy_c45_check_and_restart_aneg(phydev, changed);
-}
-
-static int rtkphy_c45_aneg_done(struct phy_device *phydev)
-{
-    return genphy_c45_aneg_done(phydev);
 }
 
 static int rtkphy_c45_read_status(struct phy_device *phydev)
@@ -230,10 +206,10 @@ static struct phy_driver rtk_phy_drivers[] = {
         .get_features       = rtl826xb_get_features,
         .config_init        = rtkphy_config_init,
         .probe              = rtl826xb_probe,
-        .suspend            = rtkphy_c45_suspend,
-        .resume             = rtkphy_c45_resume,
+        .suspend            = genphy_c45_pma_suspend,
+        .resume             = genphy_c45_pma_resume,
         .config_aneg        = rtkphy_c45_config_aneg,
-        .aneg_done          = rtkphy_c45_aneg_done,
+        .aneg_done          = genphy_c45_aneg_done,
         .read_status        = rtkphy_c45_read_status,
     },
     {
@@ -242,10 +218,10 @@ static struct phy_driver rtk_phy_drivers[] = {
         .get_features       = rtl826xb_get_features,
         .config_init        = rtkphy_config_init,
         .probe              = rtl826xb_probe,
-        .suspend            = rtkphy_c45_suspend,
-        .resume             = rtkphy_c45_resume,
+        .suspend            = genphy_c45_pma_suspend,
+        .resume             = genphy_c45_pma_resume,
         .config_aneg        = rtkphy_c45_config_aneg,
-        .aneg_done          = rtkphy_c45_aneg_done,
+        .aneg_done          = genphy_c45_aneg_done,
         .read_status        = rtkphy_c45_read_status,
     },
     {
@@ -254,10 +230,10 @@ static struct phy_driver rtk_phy_drivers[] = {
         .get_features       = rtl826xb_get_features,
         .config_init        = rtkphy_config_init,
         .probe              = rtl826xb_probe,
-        .suspend            = rtkphy_c45_suspend,
-        .resume             = rtkphy_c45_resume,
+        .suspend            = genphy_c45_pma_suspend,
+        .resume             = genphy_c45_pma_resume,
         .config_aneg        = rtkphy_c45_config_aneg,
-        .aneg_done          = rtkphy_c45_aneg_done,
+        .aneg_done          = genphy_c45_aneg_done,
         .read_status        = rtkphy_c45_read_status,
     },
 };
