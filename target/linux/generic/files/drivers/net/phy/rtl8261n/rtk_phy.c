@@ -62,6 +62,7 @@ static int rtl826xb_probe(struct phy_device *phydev)
     priv->phytype = (phydev->drv->phy_id == REALTEK_PHY_ID_RTL8261N) ? (RTK_PHYLIB_RTL8261N) : (RTK_PHYLIB_RTL8264B);
     priv->isBasePort = (phydev->drv->phy_id == REALTEK_PHY_ID_RTL8261N) ? (1) : (((phydev->mdio.addr % 4) == 0) ? (1) : (0));
     priv->pnswap_tx = device_property_read_bool(dev, "realtek,pnswap-tx");
+    priv->pnswap_rx = device_property_read_bool(dev, "realtek,pnswap-rx");
     phydev->priv = priv;
 
     return 0;
@@ -76,8 +77,8 @@ static int rtkphy_config_init(struct phy_device *phydev)
         case REALTEK_PHY_ID_RTL8261N:
         case REALTEK_PHY_ID_RTL8264B:
         case REALTEK_PHY_ID_RTL8264:
-            phydev_info(phydev, "%s:%u [RTL8261N/RTL8264/RTL826XB] phy_id: 0x%X PHYAD:%d\n", __FUNCTION__, __LINE__,
-                        phydev->drv->phy_id, phydev->mdio.addr);
+            phydev_info(phydev, "%s:%u [RTL8261N/RTL8264/RTL826XB] phy_id: 0x%X PHYAD:%d swap_tx: %d swap_rx: %d\n", __FUNCTION__, __LINE__,
+                        phydev->drv->phy_id, phydev->mdio.addr, priv->pnswap_tx, priv->pnswap_rx);
 
             /* toggle reset */
             phy_modify_mmd_changed(phydev, 30, 0x145, BIT(0)  , 1);
@@ -93,6 +94,8 @@ static int rtkphy_config_init(struct phy_device *phydev)
 
             if (priv->pnswap_tx)
                 phy_set_bits_mmd(phydev, MDIO_MMD_VEND1, REALTEK_SERDES_GLOBAL_CFG, REALTEK_HSO_INV);
+            if (priv->pnswap_rx)
+                phy_set_bits_mmd(phydev, MDIO_MMD_VEND1, REALTEK_SERDES_GLOBAL_CFG, REALTEK_HSI_INV);
 
             break;
         default:

@@ -35,7 +35,8 @@ struct rtk_phy_priv {
     uint8 isBasePort;
     rt_phy_patch_db_t *patch;
 
-    bool pnswap_tx;
+    bool pnswap_tx:1;
+    bool pnswap_rx:1;
 };
 
 typedef struct phy_device rtk_phydev;
