@@ -1,7 +1,7 @@
-From 289503869e5580658035e82d91b02a43c775f1a1 Mon Sep 17 00:00:00 2001
+From dfdc7309ba22f6a6b6c581acfe95a222108bd760 Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
 Date: Mon, 19 May 2025 14:29:53 +0200
-Subject: [PATCH 1/4] net: airoha: add support for Airoha AN7583
+Subject: [PATCH] net: airoha: add support for Airoha AN7583
 
 Add support for Ethernet controller present in Airoha AN7583. This
 follow the same implementation of Airoha AN7581 with the only difference
@@ -61,7 +61,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  /* FE */
  #define PSE_BASE			0x0100
-@@ -311,6 +330,26 @@ struct airoha_eth {
+@@ -312,6 +331,26 @@ struct airoha_eth {
  	struct airoha_gdm_port *ports[AIROHA_MAX_NUM_GDM_PORTS];
  };
  
@@ -88,7 +88,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  static u32 airoha_rr(void __iomem *base, u32 offset)
  {
  	return readl(base + offset);
-@@ -351,8 +390,12 @@ static u32 airoha_rmw(void __iomem *base
+@@ -352,8 +391,12 @@ static u32 airoha_rmw(void __iomem *base, u32 offset, u32 mask, u32 val)
  #define airoha_qdma_clear(qdma, offset, val)			\
  	airoha_rmw((qdma)->regs, (offset), (val), 0)
  
@@ -99,9 +99,9 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +#define airoha_switch_rmw(eth, offset, mask, val)		\
 +	airoha_rmw((eth)->switch_regs, (offset), (mask), (val))
  
- static void airoha_fe_maccr_init(struct airoha_eth *eth)
- {
-@@ -652,10 +695,12 @@ static int airoha_hw_init(struct udevice
+ static inline dma_addr_t dma_map_unaligned(void *vaddr, size_t len,
+ 					   enum dma_data_direction dir)
+@@ -682,10 +725,12 @@ static int airoha_hw_init(struct udevice *dev,
  
  static int airoha_switch_init(struct udevice *dev, struct airoha_eth *eth)
  {
@@ -115,7 +115,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	if (!ofnode_valid(switch_node))
  		return -EINVAL;
  
-@@ -687,17 +732,71 @@ static int airoha_switch_init(struct ude
+@@ -717,17 +762,71 @@ static int airoha_switch_init(struct udevice *dev, struct airoha_eth *eth)
  			 FIELD_PREP(SWITCH_PHY_END_ADDR, 0xc) |
  			 FIELD_PREP(SWITCH_PHY_ST_ADDR, 0x8));
  
@@ -189,7 +189,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	if (!ofnode_valid(scu_node))
  		return -EINVAL;
  
-@@ -721,11 +820,11 @@ static int airoha_eth_probe(struct udevi
+@@ -751,11 +850,11 @@ static int airoha_eth_probe(struct udevice *dev)
  		return -ENOMEM;
  	eth->rsts.count = AIROHA_MAX_NUM_RSTS;
  
@@ -203,7 +203,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  	ret = reset_get_by_name(dev, "fe", &eth->rsts.resets[0]);
  	if (ret)
-@@ -739,21 +838,12 @@ static int airoha_eth_probe(struct udevi
+@@ -769,21 +868,12 @@ static int airoha_eth_probe(struct udevice *dev)
  	if (ret)
  		return ret;
  
@@ -231,11 +231,10 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  	ret = airoha_hw_init(dev, eth);
  	if (ret)
-@@ -924,8 +1014,44 @@ static int arht_eth_write_hwaddr(struct
+@@ -971,8 +1061,43 @@ static int arht_eth_write_hwaddr(struct udevice *dev)
  	return 0;
  }
  
-+
 +static ofnode en7581_get_scu_node(struct udevice *dev)
 +{
 +	return ofnode_by_compatible(ofnode_null(), "airoha,en7581-scu");
@@ -274,6 +273,6 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +	{ .compatible = "airoha,an7583-eth",
 +	  .data = (ulong)&an7583_data,
 +	},
+ 	{ }
  };
  
- static const struct eth_ops airoha_eth_ops = {
