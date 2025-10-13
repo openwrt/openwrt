@@ -1,6 +1,6 @@
 --- a/ifxmips_ptm_adsl.c
 +++ b/ifxmips_ptm_adsl.c
-@@ -175,9 +175,11 @@ static INLINE void mailbox_signal(unsign
+@@ -177,9 +177,11 @@ static INLINE void mailbox_signal(unsign
   */
  static INLINE void proc_file_create(void);
  static INLINE void proc_file_delete(void);
@@ -12,7 +12,7 @@
  #if defined(ENABLE_FW_PROC) && ENABLE_FW_PROC
    static int proc_read_genconf(char *, char **, off_t, int, int *, void *);
  #endif
-@@ -889,6 +891,7 @@ static INLINE void proc_file_delete(void
+@@ -927,6 +929,7 @@ static INLINE void proc_file_delete(void
      remove_proc_entry("driver/ifx_ptm", NULL);
  }
  
@@ -20,7 +20,7 @@
  static int proc_read_version(char *buf, char **start, off_t offset, int count, int *eof, void *data)
  {
      int len = 0;
-@@ -963,8 +966,9 @@ static int proc_write_wanmib(struct file
+@@ -1001,8 +1004,9 @@ static int proc_write_wanmib(struct file
  
      return count;
  }
