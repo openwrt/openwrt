@@ -856,7 +856,7 @@ int32 phy_rtl826xb_patch_db_init(uint32 unit, rtk_port_t port, rt_phy_patch_db_t
 
     /* patch table */
     RT_ERR_CHK(phy_common_general_reg_mmd_get(unit, port, 30, 0x104, &rData), ret);
-    if ((rData & 0x7) == 0x0)
+    if ((rData & 0xF) == 0x0 && (rData & 0xFFC0) != 0x1140 /* RTL8261BE */)
     {
         /* patch */
         PHYPATCH_SEQ_TABLE_ASSIGN(patch_db,  0, RTK_PATCH_TYPE_FLOW(12), NULL);

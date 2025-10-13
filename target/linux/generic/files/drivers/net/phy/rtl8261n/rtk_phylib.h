@@ -25,7 +25,11 @@
 typedef enum rtk_phylib_phy_e
 {
     RTK_PHYLIB_NONE,
+    RTK_PHYLIB_RTL8251L,
+    RTK_PHYLIB_RTL8254B,
     RTK_PHYLIB_RTL8261N,
+    RTK_PHYLIB_RTL8261BE,
+	RTK_PHYLIB_RTL8264,
     RTK_PHYLIB_RTL8264B,
     RTK_PHYLIB_END
 } rtk_phylib_phy_t;

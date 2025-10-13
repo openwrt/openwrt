@@ -3,12 +3,12 @@
  *
  * Copyright (c) 2023 Realtek Semiconductor Corp. All rights reserved.
  */
+
 #ifndef __RTK_PHYLIB_DEF_H
 #define __RTK_PHYLIB_DEF_H
 
 #include "type.h"
 
-//#define PHY_C22_MMD_PAGE            0
 #define PHY_C22_MMD_PAGE            0x0A41
 #define PHY_C22_MMD_DEV_REG         13
 #define PHY_C22_MMD_ADD_REG         14
