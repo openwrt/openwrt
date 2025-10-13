@@ -28,7 +28,7 @@ int32 rtk_phylib_mmd_write(rtk_phydev *phydev, uint32 mmd, uint32 reg, uint8 msb
     uint32 mask = 0;
     mask = UINT32_BITS_MASK(msb,lsb);
 
-    ret = phy_modify_mmd(phydev, mmd, reg, mask, data);
+    ret = phy_modify_mmd(phydev, mmd, reg, mask, (data << lsb));
 
     return ret;
 }
