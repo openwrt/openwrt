@@ -664,10 +664,31 @@ static int32 _phy_rtl826xb_flow_s(uint32 unit, rtk_port_t port, uint8 portOffset
     rt_phy_patch_db_t *pPatchDb = NULL;
 
     PHYPATCH_DB_GET(unit, port, pPatchDb);
+
     RT_ERR_CHK(phy_patch_op(pPatchDb, unit, port, portOffset, RTK_PATCH_OP_PSDS0, 0xff, 0x07, 0x10, 15, 0, 0x80aa, patch_mode), ret);
     RT_ERR_CHK(phy_patch_op(pPatchDb, unit, port, portOffset, RTK_PATCH_OP_PSDS0, 0xff, 0x06, 0x12, 15, 0, 0x5078, patch_mode), ret);
 #endif
 
+    return RT_ERR_OK;
+}
+
+static int32 _phy_rtl826xb_flow_cmpstart(uint32 unit, rtk_port_t port, uint8 portOffset, uint8 patch_mode)
+{
+    int32 ret = RT_ERR_OK;
+    rt_phy_patch_db_t *pPatchDb = NULL;
+
+    PHYPATCH_DB_GET(unit, port, pPatchDb);
+    RT_ERR_CHK(phy_patch_op(pPatchDb, unit, port, portOffset, RTK_PATCH_OP_PHYOCP, 0xFF, 1, 0, 11, 11, 0x0, patch_mode), ret);
+    return RT_ERR_OK;
+}
+
+static int32 _phy_rtl826xb_flow_cmpend(uint32 unit, rtk_port_t port, uint8 portOffset, uint8 patch_mode)
+{
+    int32 ret = RT_ERR_OK;
+    rt_phy_patch_db_t *pPatchDb = NULL;
+
+    PHYPATCH_DB_GET(unit, port, pPatchDb);
+    RT_ERR_CHK(phy_patch_op(pPatchDb, unit, port, portOffset, RTK_PATCH_OP_PHYOCP, 0xFF, 1, 0, 11, 11, 0x1, patch_mode), ret);
     return RT_ERR_OK;
 }
 
@@ -770,6 +791,10 @@ static int32 phy_rtl826xb_patch_op(uint32 unit, rtk_port_t port, uint8 portOffse
             PHYPATCH_COMPARE(pPatch_data->pagemmd, pPatch_data->addr, pPatch_data->msb, pPatch_data->lsb, pPatch_data->data, rData, mask);
             break;
 
+        case RTK_PATCH_OP_DELAY_MS:
+            osal_time_mdelay(pPatch_data->data);
+            break;
+
         case RTK_PATCH_OP_SKIP:
             return RT_ERR_ABORT;
 
@@ -834,6 +859,13 @@ static int32 phy_rtl826xb_patch_flow(uint32 unit, rtk_port_t port, uint8 portOff
             RT_ERR_CHK(_phy_rtl826xb_flow_r12(unit, port, portOffset, patch_mode), ret);
             break;
 
+        case RTK_PATCH_TYPE_FLOW(13):
+            RT_ERR_CHK(_phy_rtl826xb_flow_cmpstart(unit, port, portOffset, patch_mode), ret);
+            break;
+        case RTK_PATCH_TYPE_FLOW(14):
+            RT_ERR_CHK(_phy_rtl826xb_flow_cmpend(unit, port, portOffset, patch_mode), ret);
+            break;
+
         default:
             return RT_ERR_INPUT;
     }
@@ -880,27 +912,29 @@ int32 phy_rtl826xb_patch_db_init(uint32 unit, rtk_port_t port, rt_phy_patch_db_t
         PHYPATCH_SEQ_TABLE_ASSIGN(patch_db, 18, RTK_PATCH_TYPE_FLOW(10), NULL);
 
         /* compare */
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  0, PHY_PATCH_TYPE_TOP, rtl8264b_top_conf);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  1, PHY_PATCH_TYPE_SDS, rtl8264b_sds_conf);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  2, PHY_PATCH_TYPE_AFE, rtl8264b_afe_conf);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  3, RTK_PATCH_TYPE_FLOW(4), NULL);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  4, PHY_PATCH_TYPE_NCTL0, rtl8264b_nctl0_conf);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  5, RTK_PATCH_TYPE_FLOW(5), NULL);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  6, RTK_PATCH_TYPE_FLOW(6), NULL);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  7, PHY_PATCH_TYPE_NCTL1, rtl8264b_nctl1_conf);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  8, RTK_PATCH_TYPE_FLOW(7), NULL);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  9, RTK_PATCH_TYPE_FLOW(8), NULL);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 10, PHY_PATCH_TYPE_NCTL2, rtl8264b_nctl2_conf);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 11, RTK_PATCH_TYPE_FLOW(9), NULL);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 12, PHY_PATCH_TYPE_UC, rtl8264b_uc_conf);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 13, PHY_PATCH_TYPE_UC2, rtl8264b_uc2_conf);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 14, RTK_PATCH_TYPE_FLOW(12), NULL);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 15, PHY_PATCH_TYPE_DATARAM, rtl8264b_dataram_conf);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 16, RTK_PATCH_TYPE_FLOW(1), NULL);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 17, PHY_PATCH_TYPE_ALGXG, rtl8264b_algxg_conf);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 18, PHY_PATCH_TYPE_ALG1G, rtl8264b_alg_giga_conf);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 19, PHY_PATCH_TYPE_NORMAL, rtl8264b_normal_conf);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 20, PHY_PATCH_TYPE_RTCT, rtl8264b_rtct_conf);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  0, RTK_PATCH_TYPE_FLOW(13), NULL);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  1, PHY_PATCH_TYPE_TOP, rtl8264b_top_conf);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  2, PHY_PATCH_TYPE_SDS, rtl8264b_sds_conf);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  3, PHY_PATCH_TYPE_AFE, rtl8264b_afe_conf);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  4, RTK_PATCH_TYPE_FLOW(4), NULL);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  5, PHY_PATCH_TYPE_NCTL0, rtl8264b_nctl0_conf);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  6, RTK_PATCH_TYPE_FLOW(5), NULL);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  7, RTK_PATCH_TYPE_FLOW(6), NULL);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  8, PHY_PATCH_TYPE_NCTL1, rtl8264b_nctl1_conf);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  9, RTK_PATCH_TYPE_FLOW(7), NULL);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 10, RTK_PATCH_TYPE_FLOW(8), NULL);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 11, PHY_PATCH_TYPE_NCTL2, rtl8264b_nctl2_conf);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 12, RTK_PATCH_TYPE_FLOW(9), NULL);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 13, PHY_PATCH_TYPE_UC, rtl8264b_uc_conf);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 14, PHY_PATCH_TYPE_UC2, rtl8264b_uc2_conf);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 15, RTK_PATCH_TYPE_FLOW(12), NULL);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 16, PHY_PATCH_TYPE_DATARAM, rtl8264b_dataram_conf);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 17, RTK_PATCH_TYPE_FLOW(1), NULL);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 18, PHY_PATCH_TYPE_ALGXG, rtl8264b_algxg_conf);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 19, PHY_PATCH_TYPE_ALG1G, rtl8264b_alg_giga_conf);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 20, PHY_PATCH_TYPE_NORMAL, rtl8264b_normal_conf);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 21, PHY_PATCH_TYPE_RTCT, rtl8264b_rtct_conf);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 22, RTK_PATCH_TYPE_FLOW(14), NULL);
     }
     else
     {
@@ -925,27 +959,29 @@ int32 phy_rtl826xb_patch_db_init(uint32 unit, rtk_port_t port, rt_phy_patch_db_t
         PHYPATCH_SEQ_TABLE_ASSIGN(patch_db, 17, RTK_PATCH_TYPE_FLOW(10), NULL);
 
         /* compare */
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  0, PHY_PATCH_TYPE_TOP, rtl8261n_c_top_conf);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  1, PHY_PATCH_TYPE_SDS, rtl8261n_c_sds_conf);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  2, PHY_PATCH_TYPE_AFE, rtl8261n_c_afe_conf);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  3, RTK_PATCH_TYPE_FLOW(4), NULL);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  4, PHY_PATCH_TYPE_NCTL0, rtl8261n_c_nctl0_conf);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  5, RTK_PATCH_TYPE_FLOW(5), NULL);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  6, RTK_PATCH_TYPE_FLOW(6), NULL);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  7, PHY_PATCH_TYPE_NCTL1, rtl8261n_c_nctl1_conf);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  8, RTK_PATCH_TYPE_FLOW(7), NULL);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  9, RTK_PATCH_TYPE_FLOW(8), NULL);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 10, PHY_PATCH_TYPE_NCTL2, rtl8261n_c_nctl2_conf);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 11, RTK_PATCH_TYPE_FLOW(9), NULL);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 12, PHY_PATCH_TYPE_UC, rtl8261n_c_uc_conf);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 13, PHY_PATCH_TYPE_UC2, rtl8261n_c_uc2_conf);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 14, RTK_PATCH_TYPE_FLOW(0), NULL);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 15, PHY_PATCH_TYPE_DATARAM, rtl8261n_c_dataram_conf);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 16, RTK_PATCH_TYPE_FLOW(1), NULL);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 17, PHY_PATCH_TYPE_ALGXG, rtl8261n_c_algxg_conf);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 18, PHY_PATCH_TYPE_ALG1G, rtl8261n_c_alg_giga_conf);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 19, PHY_PATCH_TYPE_NORMAL, rtl8261n_c_normal_conf);
-        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 20, PHY_PATCH_TYPE_RTCT, rtl8261n_c_rtct_conf);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  0, RTK_PATCH_TYPE_FLOW(13), NULL);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  1, PHY_PATCH_TYPE_TOP, rtl8261n_c_top_conf);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  2, PHY_PATCH_TYPE_SDS, rtl8261n_c_sds_conf);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  3, PHY_PATCH_TYPE_AFE, rtl8261n_c_afe_conf);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  4, RTK_PATCH_TYPE_FLOW(4), NULL);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  5, PHY_PATCH_TYPE_NCTL0, rtl8261n_c_nctl0_conf);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  6, RTK_PATCH_TYPE_FLOW(5), NULL);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  7, RTK_PATCH_TYPE_FLOW(6), NULL);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  8, PHY_PATCH_TYPE_NCTL1, rtl8261n_c_nctl1_conf);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db,  9, RTK_PATCH_TYPE_FLOW(7), NULL);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 10, RTK_PATCH_TYPE_FLOW(8), NULL);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 11, PHY_PATCH_TYPE_NCTL2, rtl8261n_c_nctl2_conf);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 12, RTK_PATCH_TYPE_FLOW(9), NULL);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 13, PHY_PATCH_TYPE_UC, rtl8261n_c_uc_conf);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 14, PHY_PATCH_TYPE_UC2, rtl8261n_c_uc2_conf);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 15, RTK_PATCH_TYPE_FLOW(0), NULL);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 16, PHY_PATCH_TYPE_DATARAM, rtl8261n_c_dataram_conf);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 17, RTK_PATCH_TYPE_FLOW(1), NULL);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 18, PHY_PATCH_TYPE_ALGXG, rtl8261n_c_algxg_conf);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 19, PHY_PATCH_TYPE_ALG1G, rtl8261n_c_alg_giga_conf);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 20, PHY_PATCH_TYPE_NORMAL, rtl8261n_c_normal_conf);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 21, PHY_PATCH_TYPE_RTCT, rtl8261n_c_rtct_conf);
+        PHYPATCH_CMP_TABLE_ASSIGN(patch_db, 22, RTK_PATCH_TYPE_FLOW(14), NULL);
     }
     *pPhy_patchDb = patch_db;
     return ret;
