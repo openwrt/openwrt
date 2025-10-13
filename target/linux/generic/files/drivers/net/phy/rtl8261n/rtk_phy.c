@@ -123,6 +123,21 @@ static int rtl826xb_probe(struct phy_device *phydev)
     return 0;
 }
 
+static const char *rtkphy_get_phy_name(struct phy_device *phydev)
+{
+    struct rtk_phy_priv *priv = phydev->priv;
+    switch (priv->phytype)
+    {
+        case RTK_PHYLIB_RTL8251L:  return "RTL8251L";
+        case RTK_PHYLIB_RTL8254B:  return "RTL8254B";
+        case RTK_PHYLIB_RTL8261N:  return "RTL8261N";
+        case RTK_PHYLIB_RTL8261BE: return "RTL8261BE";
+        case RTK_PHYLIB_RTL8264:   return "RTL8264";
+        case RTK_PHYLIB_RTL8264B:  return "RTL8264B";
+        default:                   return "RTL82????";
+    }
+}
+
 static int rtkphy_config_init(struct phy_device *phydev)
 {
     struct rtk_phy_priv *priv = phydev->priv;
@@ -132,8 +147,8 @@ static int rtkphy_config_init(struct phy_device *phydev)
         case REALTEK_PHY_ID_RTL8261N:
         case REALTEK_PHY_ID_RTL8264:
         case REALTEK_PHY_ID_RTL8264B:
-            phydev_info(phydev, "%s:%u [RTL82xx] phy_id: 0x%X PHYAD:%d swap_tx: %d swap_rx: %d\n", __FUNCTION__, __LINE__,
-                        phydev->drv->phy_id, phydev->mdio.addr, priv->pnswap_tx, priv->pnswap_rx);
+            phydev_info(phydev, "%s:%u [%s] phy_id: 0x%X PHYAD:%d swap_tx: %d swap_rx: %d\n", __FUNCTION__, __LINE__,
+                        rtkphy_get_phy_name(phydev), phydev->drv->phy_id, phydev->mdio.addr, priv->pnswap_tx, priv->pnswap_rx);
 
             /* toggle reset */
             phy_modify_mmd_changed(phydev, 30, 0x145, BIT(0)  , 1);
