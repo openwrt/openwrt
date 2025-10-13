@@ -10,20 +10,11 @@
 /*
  * Include Files
  */
-#if defined(RTK_PHYDRV_IN_LINUX)
-  #include "rtk_phylib_def.h"
-#else
-  #include <common/rt_type.h>
-  #include <common/rt_autoconf.h>
-#endif
+#include "rtk_phylib_def.h"
 
 /*
  * Symbol Definition
  */
-#define PHYPATCH_PHYCTRL_IN_HALCTRL   0  /* 3.6.x: 1 ,4.0.x: 1, 4.1.x+: 0 */
-#define PHYPATCH_FMAILY_IN_HWP        0  /* 3.6.x: 1 ,4.0.x: 0, 4.1.x+: 0 */
-#define PHY_PATCH_MODE_BCAST_DEFAULT  PHY_PATCH_MODE_BCAST  /* 3.6.x: PHY_PATCH_MODE_BCAST_BUS ,4.0.x+: PHY_PATCH_MODE_BCAST */
-
 #define PHY_PATCH_MODE_NORMAL       0
 #define PHY_PATCH_MODE_CMP          1
 #define PHY_PATCH_MODE_BCAST        2
@@ -83,34 +74,12 @@
 /*
  * Macro Definition
  */
-#if PHYPATCH_PHYCTRL_IN_HALCTRL
-  #define PHYPATCH_DB_GET(_unit, _port, _pPatchDb) \
-    do {\
-        hal_control_t   *pHalCtrl = NULL;\
-        if ((pHalCtrl = hal_ctrlInfo_get(_unit)) == NULL)\
-            return RT_ERR_FAILED;\
-        _pPatchDb = (pHalCtrl->pPhy_ctrl[_port]->pPhy_patchDb);\
+#define PHYPATCH_DB_GET(_unit, _pPhy_device, _pPatchDb) \
+    do { \
+        struct rtk_phy_priv *_pPriv = (_pPhy_device)->priv; \
+        rt_phy_patch_db_t *_pDb = _pPriv->patch; _pPatchDb = _pDb; \
+        /*printk("[PHYPATCH_DB_GET] ? [%s]\n", (_pDb != NULL) ? "E":"N");*/ \
     } while(0)
-#else
-  #if defined(RTK_PHYDRV_IN_LINUX)
-  #else
-    #include <hal/phy/phydef.h>
-    #include <hal/phy/phy_probe.h>
-  #endif
-  #define PHYPATCH_DB_GET(_unit, _port, _pPatchDb) \
-    do {\
-        rt_phyctrl_t *pPhyCtrl = NULL;\
-        if ((pPhyCtrl = phy_phyctrl_get(_unit, _port)) == NULL)\
-            return RT_ERR_FAILED;\
-        _pPatchDb = (pPhyCtrl->pPhy_patchDb);\
-    } while(0)
-#endif
-
-#if PHYPATCH_FMAILY_IN_HWP
-  #define PHYPATCH_IS_RTKSDS(_unit) (HWP_9300_FAMILY_ID(_unit) || HWP_9310_FAMILY_ID(_unit))
-#else
-  #define PHYPATCH_IS_RTKSDS(_unit) (RTK_9300_FAMILY_ID(_unit) || RTK_9310_FAMILY_ID(_unit) || RTK_9311B_FAMILY_ID(_unit) || RTK_9330_FAMILY_ID(_unit))
-#endif
 
 #define PHYPATCH_TABLE_ASSIGN(_pPatchDb, _table, _idx, _patch_type, _para) \
     do {\

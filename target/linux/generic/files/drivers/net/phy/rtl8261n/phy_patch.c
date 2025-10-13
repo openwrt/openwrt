@@ -7,15 +7,7 @@
 /*
  * Include Files
  */
-#if defined(RTK_PHYDRV_IN_LINUX)
-  #include "rtk_osal.h"
-#else
-  #include <common/rt_type.h>
-  #include <common/rt_error.h>
-  #include <common/debug/rt_log.h>
-  #include <hal/common/halctrl.h>
-  #include <hal/phy/phy_patch.h>
-#endif
+#include "rtk_osal.h"
 
 /*
  * Function Declaration
@@ -173,7 +165,3 @@ int32 phy_patch(uint32 unit, rtk_port_t port, uint8 portOffset, uint8 patch_mode
 
     return (chk_ret == RT_ERR_CHECK_FAILED) ? chk_ret : RT_ERR_OK;
 }
-
-
-
-

@@ -14,24 +14,6 @@
 #include "phy_patch.h"
 #include "rtk_phylib.h"
 
-#ifdef PHYPATCH_DB_GET
-    #undef PHYPATCH_DB_GET
-#endif
-
-#define PHYPATCH_DB_GET(_unit, _pPhy_device, _pPatchDb) \
-    do { \
-        struct rtk_phy_priv *_pPriv = (_pPhy_device)->priv; \
-        rt_phy_patch_db_t *_pDb = _pPriv->patch; _pPatchDb = _pDb; \
-        /*printk("[PHYPATCH_DB_GET] ? [%s]\n", (_pDb != NULL) ? "E":"N");*/ \
-    } while(0)
-
-#define HWP_9300_FAMILY_ID(_unit)       0
-#define HWP_9310_FAMILY_ID(_unit)       0
-#define RTK_9300_FAMILY_ID(_unit)       0
-#define RTK_9310_FAMILY_ID(_unit)       0
-#define RTK_9311B_FAMILY_ID(_unit)      0
-#define RTK_9330_FAMILY_ID(_unit)       0
-
 #ifndef WAIT_COMPLETE_VAR
 #define WAIT_COMPLETE_VAR() \
     osal_usecs_t    _t, _now, _t_wait=0, _timeout;  \

@@ -7,29 +7,9 @@
 /*
  * Include Files
  */
-#if defined(RTK_PHYDRV_IN_LINUX)
-  #include "phy_rtl826xb_patch.h"
-  #include "construct/conf_rtl8264b.c"
-  #include "construct/conf_rtl8261n_c.c"
-#else
-  #include <common/rt_type.h>
-  #include <common/rt_error.h>
-  #include <common/debug/rt_log.h>
-  #include <soc/type.h>
-  #include <hal/common/halctrl.h>
-  #include <hal/mac/miim_common_drv.h>
-  #include <hal/phy/phy_construct.h>
-  #include <osal/time.h>
-  #include <hal/phy/construct/conftypes.h>
-  #include <hal/phy/phy_probe.h>
-  #include <hal/phy/phy_patch.h>
-  #include <osal/memory.h>
-  #if defined(CONFIG_SDK_RTL826XB)
-    #include <hal/phy/phy_rtl826xb.h>
-    #include <hal/phy/construct/conf_rtl8264b.c>
-    #include <hal/phy/construct/conf_rtl8261n_c.c>
-  #endif
-#endif
+#include "phy_rtl826xb_patch.h"
+#include "construct/conf_rtl8264b.c"
+#include "construct/conf_rtl8261n_c.c"
 /*
  * Symbol Definition
  */
@@ -77,8 +57,7 @@ _phy_rtl826xb_patch_wait(uint32 unit, rtk_port_t port, uint32 mmdAddr, uint32 mm
     rtk_port_t  p = 0;
     uint8  smiBus = HWP_PORT_SMI(unit, port);
     uint32 phyChip = HWP_PHY_MODEL_BY_PORT(unit, port);
-    uint8  bcast_phyad = HWP_PHY_ADDR(unit, port);;
-
+    uint8  bcast_phyad = HWP_PHY_ADDR(unit, port);
 
     if (patch_mode == PHY_PATCH_MODE_BCAST_BUS)
     {
@@ -680,15 +659,14 @@ static int32 _phy_rtl826xb_flow_n22(uint32 unit, rtk_port_t port, uint8 portOffs
 
 static int32 _phy_rtl826xb_flow_s(uint32 unit, rtk_port_t port, uint8 portOffset, uint8 patch_mode)
 {
+#ifdef CONFIG_MACH_REALTEK_RTL
     int32 ret = RT_ERR_OK;
     rt_phy_patch_db_t *pPatchDb = NULL;
 
-    if (PHYPATCH_IS_RTKSDS(unit))
-    {
-        PHYPATCH_DB_GET(unit, port, pPatchDb);
-        RT_ERR_CHK(phy_patch_op(pPatchDb, unit, port, portOffset, RTK_PATCH_OP_PSDS0, 0xff, 0x07, 0x10, 15, 0, 0x80aa, patch_mode), ret);
-        RT_ERR_CHK(phy_patch_op(pPatchDb, unit, port, portOffset, RTK_PATCH_OP_PSDS0, 0xff, 0x06, 0x12, 15, 0, 0x5078, patch_mode), ret);
-    }
+    PHYPATCH_DB_GET(unit, port, pPatchDb);
+    RT_ERR_CHK(phy_patch_op(pPatchDb, unit, port, portOffset, RTK_PATCH_OP_PSDS0, 0xff, 0x07, 0x10, 15, 0, 0x80aa, patch_mode), ret);
+    RT_ERR_CHK(phy_patch_op(pPatchDb, unit, port, portOffset, RTK_PATCH_OP_PSDS0, 0xff, 0x06, 0x12, 15, 0, 0x5078, patch_mode), ret);
+#endif
 
     return RT_ERR_OK;
 }
