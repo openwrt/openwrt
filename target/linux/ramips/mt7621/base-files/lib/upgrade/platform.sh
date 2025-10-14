@@ -92,6 +92,7 @@ platform_do_upgrade() {
 	dlink,dir-3040-a1|\
 	dlink,dir-3060-a1|\
 	dlink,dir-853-a3|\
+	edup,ep-rt2960s|\
 	elecom,wmc-x1800gst|\
 	elecom,wsc-x1800gs|\
 	etisalat,s3|\
