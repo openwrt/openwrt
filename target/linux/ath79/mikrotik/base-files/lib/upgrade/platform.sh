@@ -26,6 +26,8 @@ platform_check_image_mikrotik_nor() {
 }
 
 platform_check_image() {
+	local board=$(board_name)
+
 	case "$board" in
 	mikrotik,routerboard-2011uias-2hnd|\
 	mikrotik,routerboard-493g|\
