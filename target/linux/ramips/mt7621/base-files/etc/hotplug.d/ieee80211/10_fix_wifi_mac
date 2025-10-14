@@ -71,19 +71,20 @@ case "$board" in
 			macaddr_setbit_la "$base_mac" > /sys${DEVPATH}/macaddress
 		fi
 		;;
-	h3c,tx1800-plus|\
-	h3c,tx1801-plus|\
-	h3c,tx1806)
-		addr=$(macaddr_setbit $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) 2) 7)
-		[ "$PHYNBR" = "0" ] && echo -n ${addr:0:9}'1'${addr:10:7} > /sys${DEVPATH}/macaddress
-		[ "$PHYNBR" = "1" ] && echo -n ${addr:0:9}'7'${addr:10:7} > /sys${DEVPATH}/macaddress
-		;;
+	edup,ep-rt2960s|\
 	haier,har-20s2u1|\
 	jcg,y2|\
 	sim,simax1800t|\
 	sim,simax1800u)
 		[ "$PHYNBR" = "1" ] && \
 			macaddr_setbit_la "$(mtd_get_mac_binary factory 0x4)" > /sys${DEVPATH}/macaddress
+		;;
+	h3c,tx1800-plus|\
+	h3c,tx1801-plus|\
+	h3c,tx1806)
+		addr=$(macaddr_setbit $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) 2) 7)
+		[ "$PHYNBR" = "0" ] && echo -n ${addr:0:9}'1'${addr:10:7} > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && echo -n ${addr:0:9}'7'${addr:10:7} > /sys${DEVPATH}/macaddress
 		;;
 	hiwifi,hc5962)
 		[ "$PHYNBR" = "1" ] && \

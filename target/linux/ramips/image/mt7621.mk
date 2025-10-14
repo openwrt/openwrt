@@ -1227,6 +1227,13 @@ define Device/edimax_rg21s
 endef
 TARGET_DEVICES += edimax_rg21s
 
+define Device/edup_ep-rt2960s
+  $(Device/haier-sim_wr1800k)
+  DEVICE_VENDOR := EDUP
+  DEVICE_MODEL := EP-RT2960S
+endef
+TARGET_DEVICES += edup_ep-rt2960s
+
 define Device/elecom_wrc-gs
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
