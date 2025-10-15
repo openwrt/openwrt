@@ -122,6 +122,10 @@ function setup_sta(data, config) {
 		iface.wpa_key_mgmt(config);
 		break;
 
+	case 'wps':
+		config.key_mgmt = 'WPS';
+		break;
+
 	case 'psk':
 	case 'psk2':
 	case 'sae':
