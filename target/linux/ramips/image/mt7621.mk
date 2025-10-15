@@ -228,8 +228,9 @@ define Build/zytrx-header
 endef
 
 define Build/zyxel-nwa-fit
+	# "77 e1" is NWA90AX
 	$(TOPDIR)/scripts/mkits-zyxel-fit.sh \
-		$@.its $@ "6b e1 6f e1 ff ff ff ff ff ff"
+		$@.its $@ "6b e1 6f e1 77 e1 ff ff ff ff"
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
 	@mv $@.new $@
 endef
@@ -3707,6 +3708,8 @@ endef
 define Device/zyxel_nwa50ax
   $(Device/zyxel_nwa-ax)
   DEVICE_MODEL := NWA50AX
+  DEVICE_ALT0_VENDOR := Zyxel
+  DEVICE_ALT0_MODEL := NWA90AX
 endef
 TARGET_DEVICES += zyxel_nwa50ax
 
