@@ -1,0 +1,149 @@
+From 88f170814fea74911ceab798a43cbd7c5599bed4 Mon Sep 17 00:00:00 2001
+From: Marios Makassikis <mmakassikis@freebox.fr>
+Date: Wed, 15 Oct 2025 09:25:46 +0200
+Subject: [PATCH] ksmbd: fix recursive locking in RPC handle list access
+
+Since commit 305853cce3794 ("ksmbd: Fix race condition in RPC handle list
+access"), ksmbd_session_rpc_method() attempts to lock sess->rpc_lock.
+
+This causes hung connections / tasks when a client attempts to open
+a named pipe. Using Samba's rpcclient tool:
+
+ $ rpcclient //192.168.1.254 -U user%password
+ $ rpcclient $> srvinfo
+ <connection hung here>
+
+Kernel side:
+  "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+  task:kworker/0:0 state:D stack:0 pid:5021 tgid:5021 ppid:2 flags:0x00200000
+  Workqueue: ksmbd-io handle_ksmbd_work
+  Call trace:
+  __schedule from schedule+0x3c/0x58
+  schedule from schedule_preempt_disabled+0xc/0x10
+  schedule_preempt_disabled from rwsem_down_read_slowpath+0x1b0/0x1d8
+  rwsem_down_read_slowpath from down_read+0x28/0x30
+  down_read from ksmbd_session_rpc_method+0x18/0x3c
+  ksmbd_session_rpc_method from ksmbd_rpc_open+0x34/0x68
+  ksmbd_rpc_open from ksmbd_session_rpc_open+0x194/0x228
+  ksmbd_session_rpc_open from create_smb2_pipe+0x8c/0x2c8
+  create_smb2_pipe from smb2_open+0x10c/0x27ac
+  smb2_open from handle_ksmbd_work+0x238/0x3dc
+  handle_ksmbd_work from process_scheduled_works+0x160/0x25c
+  process_scheduled_works from worker_thread+0x16c/0x1e8
+  worker_thread from kthread+0xa8/0xb8
+  kthread from ret_from_fork+0x14/0x38
+  Exception stack(0x8529ffb0 to 0x8529fff8)
+
+The task deadlocks because the lock is already held:
+  ksmbd_session_rpc_open
+    down_write(&sess->rpc_lock)
+    ksmbd_rpc_open
+      ksmbd_session_rpc_method
+        down_read(&sess->rpc_lock)   <-- deadlock
+
+Adjust ksmbd_session_rpc_method() callers to take the lock when necessary.
+
+Fixes: 305853cce3794 ("ksmbd: Fix race condition in RPC handle list access")
+Signed-off-by: Marios Makassikis <mmakassikis@freebox.fr>
+Acked-by: Namjae Jeon <linkinjeon@kernel.org>
+Signed-off-by: Steve French <stfrench@microsoft.com>
+---
+ fs/smb/server/mgmt/user_session.c |  7 ++-----
+ fs/smb/server/smb2pdu.c           |  9 ++++++++-
+ fs/smb/server/transport_ipc.c     | 12 ++++++++++++
+ 3 files changed, 22 insertions(+), 6 deletions(-)
+
+--- a/fs/smb/server/mgmt/user_session.c
++++ b/fs/smb/server/mgmt/user_session.c
+@@ -147,14 +147,11 @@ void ksmbd_session_rpc_close(struct ksmb
+ int ksmbd_session_rpc_method(struct ksmbd_session *sess, int id)
+ {
+ 	struct ksmbd_session_rpc *entry;
+-	int method;
+ 
+-	down_read(&sess->rpc_lock);
++	lockdep_assert_held(&sess->rpc_lock);
+ 	entry = xa_load(&sess->rpc_handle_list, id);
+-	method = entry ? entry->method : 0;
+-	up_read(&sess->rpc_lock);
+ 
+-	return method;
++	return entry ? entry->method : 0;
+ }
+ 
+ void ksmbd_session_destroy(struct ksmbd_session *sess)
+--- a/fs/smb/server/smb2pdu.c
++++ b/fs/smb/server/smb2pdu.c
+@@ -4623,8 +4623,15 @@ static int smb2_get_info_file_pipe(struc
+ 	 * pipe without opening it, checking error condition here
+ 	 */
+ 	id = req->VolatileFileId;
+-	if (!ksmbd_session_rpc_method(sess, id))
++
++	lockdep_assert_not_held(&sess->rpc_lock);
++
++	down_read(&sess->rpc_lock);
++	if (!ksmbd_session_rpc_method(sess, id)) {
++		up_read(&sess->rpc_lock);
+ 		return -ENOENT;
++	}
++	up_read(&sess->rpc_lock);
+ 
+ 	ksmbd_debug(SMB, "FileInfoClass %u, FileId 0x%llx\n",
+ 		    req->FileInfoClass, req->VolatileFileId);
+--- a/fs/smb/server/transport_ipc.c
++++ b/fs/smb/server/transport_ipc.c
+@@ -825,6 +825,9 @@ struct ksmbd_rpc_command *ksmbd_rpc_writ
+ 	if (!msg)
+ 		return NULL;
+ 
++	lockdep_assert_not_held(&sess->rpc_lock);
++
++	down_read(&sess->rpc_lock);
+ 	msg->type = KSMBD_EVENT_RPC_REQUEST;
+ 	req = (struct ksmbd_rpc_command *)msg->payload;
+ 	req->handle = handle;
+@@ -833,6 +836,7 @@ struct ksmbd_rpc_command *ksmbd_rpc_writ
+ 	req->flags |= KSMBD_RPC_WRITE_METHOD;
+ 	req->payload_sz = payload_sz;
+ 	memcpy(req->payload, payload, payload_sz);
++	up_read(&sess->rpc_lock);
+ 
+ 	resp = ipc_msg_send_request(msg, req->handle);
+ 	ipc_msg_free(msg);
+@@ -849,6 +853,9 @@ struct ksmbd_rpc_command *ksmbd_rpc_read
+ 	if (!msg)
+ 		return NULL;
+ 
++	lockdep_assert_not_held(&sess->rpc_lock);
++
++	down_read(&sess->rpc_lock);
+ 	msg->type = KSMBD_EVENT_RPC_REQUEST;
+ 	req = (struct ksmbd_rpc_command *)msg->payload;
+ 	req->handle = handle;
+@@ -856,6 +863,7 @@ struct ksmbd_rpc_command *ksmbd_rpc_read
+ 	req->flags |= rpc_context_flags(sess);
+ 	req->flags |= KSMBD_RPC_READ_METHOD;
+ 	req->payload_sz = 0;
++	up_read(&sess->rpc_lock);
+ 
+ 	resp = ipc_msg_send_request(msg, req->handle);
+ 	ipc_msg_free(msg);
+@@ -876,6 +884,9 @@ struct ksmbd_rpc_command *ksmbd_rpc_ioct
+ 	if (!msg)
+ 		return NULL;
+ 
++	lockdep_assert_not_held(&sess->rpc_lock);
++
++	down_read(&sess->rpc_lock);
+ 	msg->type = KSMBD_EVENT_RPC_REQUEST;
+ 	req = (struct ksmbd_rpc_command *)msg->payload;
+ 	req->handle = handle;
+@@ -884,6 +895,7 @@ struct ksmbd_rpc_command *ksmbd_rpc_ioct
+ 	req->flags |= KSMBD_RPC_IOCTL_METHOD;
+ 	req->payload_sz = payload_sz;
+ 	memcpy(req->payload, payload, payload_sz);
++	up_read(&sess->rpc_lock);
+ 
+ 	resp = ipc_msg_send_request(msg, req->handle);
+ 	ipc_msg_free(msg);
