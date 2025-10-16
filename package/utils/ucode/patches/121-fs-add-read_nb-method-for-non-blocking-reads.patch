@@ -10,7 +10,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/lib/fs.c
 +++ b/lib/fs.c
-@@ -674,6 +674,112 @@ uc_fs_read(uc_vm_t *vm, size_t nargs)
+@@ -674,6 +674,116 @@ uc_fs_read(uc_vm_t *vm, size_t nargs)
  }
  
  /**
@@ -65,6 +65,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	FILE **fp = uc_fn_this("fs.file");
 +	char *buf = NULL;
 +	ssize_t n_read;
++	uc_value_t *rv;
 +	size_t limit = 4096;
 +	int fd;
 +
@@ -113,7 +114,10 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +		err_return(errno);
 +	}
 +
-+	uc_value_t *rv = ucv_string_new_length(buf, (size_t)n_read);
++	if (!n_read)
++		return NULL;
++
++	rv = ucv_string_new_length(buf, (size_t)n_read);
 +	free(buf);
 +
 +	return rv;
@@ -123,7 +127,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   * Writes a chunk of data to the file handle.
   *
   * In case the given data is not a string, it is converted to a string before
-@@ -2910,6 +3016,7 @@ static const uc_function_list_t proc_fns
+@@ -2910,6 +3020,7 @@ static const uc_function_list_t proc_fns
  
  static const uc_function_list_t file_fns[] = {
  	{ "read",		uc_fs_read },

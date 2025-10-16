@@ -10,7 +10,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/lib/fs.c
 +++ b/lib/fs.c
-@@ -2632,6 +2632,86 @@ uc_fs_mkstemp(uc_vm_t *vm, size_t nargs)
+@@ -2636,6 +2636,86 @@ uc_fs_mkstemp(uc_vm_t *vm, size_t nargs)
  }
  
  /**
@@ -97,7 +97,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   * Checks the accessibility of a file or directory.
   *
   * The optional modes argument specifies the access modes which should be
-@@ -3065,6 +3145,7 @@ static const uc_function_list_t global_f
+@@ -3069,6 +3149,7 @@ static const uc_function_list_t global_f
  	{ "basename",	uc_fs_basename },
  	{ "lsdir",		uc_fs_lsdir },
  	{ "mkstemp",	uc_fs_mkstemp },
