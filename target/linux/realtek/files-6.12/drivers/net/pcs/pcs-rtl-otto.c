@@ -1903,55 +1903,61 @@ static int rtpcs_930x_sds_cmu_band_get(struct rtpcs_ctrl *ctrl, int sds)
 	return cmu_band;
 }
 
-#define RTL930X_MAC_FORCE_MODE_CTRL		(0xCA1C)
-__attribute__((unused))
-static int rtpcs_930x_setup_serdes(struct rtpcs_ctrl *ctrl, int port, int sds_num,
+static int rtpcs_930x_setup_serdes(struct rtpcs_ctrl *ctrl, int sds,
 				   phy_interface_t phy_mode)
 {
 	int calib_tries = 0;
+
+	if (sds < 0 || sds > 11)
+		return -EINVAL;
+
+	/* Rely on setup from U-boot for some modes, e.g. USXGMII */
+	switch (phy_mode) {
+	case PHY_INTERFACE_MODE_1000BASEX:
+	case PHY_INTERFACE_MODE_SGMII:
+	case PHY_INTERFACE_MODE_2500BASEX:
+	case PHY_INTERFACE_MODE_10GBASER:
+	case PHY_INTERFACE_MODE_10G_QXGMII:
+		break;
+	default:
+		return 0;
+	}
 
 	/* Turn Off Serdes */
 	rtpcs_930x_sds_set(ctrl, sds, RTL930X_SDS_OFF);
 
 	/* Apply serdes patches */
-	rtpcs_930x_sds_patch(ctrl, sds_num, phy_mode);
+	rtpcs_930x_sds_patch(ctrl, sds, phy_mode);
 
 	/* Maybe use dal_longan_sds_init */
 
 	/* dal_longan_construct_serdesConfig_init */ /* Serdes Construct */
-	rtpcs_930x_phy_enable_10g_1g(ctrl, sds_num);
-
-	/* Disable MAC */
-	regmap_write_bits(ctrl->map, RTL930X_MAC_FORCE_MODE_CTRL + 4 * port, 1, 0);
-	mdelay(20);
+	rtpcs_930x_phy_enable_10g_1g(ctrl, sds);
 
 	/* ----> dal_longan_sds_mode_set */
-	pr_info("%s: Configuring RTL9300 SERDES %d\n", __func__, sds_num);
+	pr_info("%s: Configuring RTL9300 SERDES %d\n", __func__, sds);
 
 	/* Configure link to MAC */
-	rtpcs_930x_sds_mac_link_config(ctrl, sds_num, true, true);	/* MAC Construct */
-
-	/* Re-Enable MAC */
-	regmap_write_bits(ctrl->map, RTL930X_MAC_FORCE_MODE_CTRL + 4 * port, 1, 1);
+	rtpcs_930x_sds_mac_link_config(ctrl, sds, true, true);	/* MAC Construct */
 
 	/* Enable SDS in desired mode */
-	rtpcs_930x_sds_mode_set(ctrl, sds_num, phy_mode);
+	rtpcs_930x_sds_mode_set(ctrl, sds, phy_mode);
 
 	/* Enable Fiber RX */
-	rtpcs_sds_write_bits(ctrl, sds_num, 0x20, 2, 12, 12, 0);
+	rtpcs_sds_write_bits(ctrl, sds, 0x20, 2, 12, 12, 0);
 
 	/* Calibrate SerDes receiver in loopback mode */
-	rtpcs_930x_sds_10g_idle(ctrl, sds_num);
+	rtpcs_930x_sds_10g_idle(ctrl, sds);
 	do {
-		rtpcs_930x_sds_do_rx_calibration(ctrl, sds_num, phy_mode);
+		rtpcs_930x_sds_do_rx_calibration(ctrl, sds, phy_mode);
 		calib_tries++;
 		mdelay(50);
-	} while (rtpcs_930x_sds_check_calibration(ctrl, sds_num, phy_mode) && calib_tries < 3);
+	} while (rtpcs_930x_sds_check_calibration(ctrl, sds, phy_mode) && calib_tries < 3);
 	if (calib_tries >= 3)
 		pr_warn("%s: SerDes RX calibration failed\n", __func__);
 
 	/* Leave loopback mode */
-	rtpcs_930x_sds_tx_config(ctrl, sds_num, phy_mode);
+	rtpcs_930x_sds_tx_config(ctrl, sds, phy_mode);
 
 	return 0;
 }
@@ -2831,6 +2837,7 @@ static const struct rtpcs_config rtpcs_930x_cfg = {
 	.mac_tx_pause_sts	= RTPCS_930X_MAC_TX_PAUSE_STS,
 	.pcs_ops		= &rtpcs_930x_pcs_ops,
 	.set_autoneg		= rtpcs_93xx_set_autoneg,
+	.setup_serdes		= rtpcs_930x_setup_serdes,
 };
 
 static const struct phylink_pcs_ops rtpcs_931x_pcs_ops = {
