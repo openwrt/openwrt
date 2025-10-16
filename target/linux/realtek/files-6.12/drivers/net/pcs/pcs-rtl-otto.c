@@ -10,8 +10,6 @@
 #include <linux/phylink.h>
 #include <linux/regmap.h>
 
-#include <asm/mach-rtl838x/mach-rtl83xx.h>
-
 #define RTPCS_PORT_CNT				57
 
 #define RTPCS_SPEED_10				0
@@ -53,6 +51,9 @@
 #define RTPCS_931X_MAC_TX_PAUSE_STS		0x0ef8
 
 #define RTPCS_93XX_MAC_LINK_SPD_BITS		4
+
+#define RTL93XX_MODEL_NAME_INFO			(0x0004)
+#define RTL93XX_CHIP_INFO			(0x0008)
 
 /* Registers of the internal SerDes of the 9310 */
 #define RTL931X_SERDES_MODE_CTRL		(0x13cc)
@@ -177,23 +178,29 @@ static struct rtpcs_link *rtpcs_phylink_pcs_to_link(struct phylink_pcs *pcs)
 
 /* RTL931X */
 
-static void rtpcs_931x_sds_reset(u32 sds)
+static void rtpcs_931x_sds_reset(struct rtpcs_ctrl *ctrl, u32 sds)
 {
 	u32 o, v, o_mode;
 	int shift = ((sds & 0x3) << 3);
 
 	/* TODO: We need to lock this! */
 
-	o = sw_r32(RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
+	regmap_read(ctrl->map, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR, &o);
 	v = o | BIT(sds);
-	sw_w32(v, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
+	regmap_write(ctrl->map, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR, v);
 
-	o_mode = sw_r32(RTL931X_SERDES_MODE_CTRL + 4 * (sds >> 2));
+	regmap_read(ctrl->map, RTL931X_SERDES_MODE_CTRL + 4 * (sds >> 2), &o_mode);
 	v = BIT(7) | 0x1F;
-	sw_w32_mask(0xff << shift, v << shift, RTL931X_SERDES_MODE_CTRL + 4 * (sds >> 2));
-	sw_w32(o_mode, RTL931X_SERDES_MODE_CTRL + 4 * (sds >> 2));
+	regmap_write_bits(ctrl->map, RTL931X_SERDES_MODE_CTRL + 4 * (sds >> 2),
+			  0xff << shift, v << shift);
+	regmap_write(ctrl->map, RTL931X_SERDES_MODE_CTRL + 4 * (sds >> 2), o_mode);
 
-	sw_w32(o, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
+	regmap_write(ctrl->map, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR, o);
+}
+
+static void rtpcs_931x_sds_disable(struct rtpcs_ctrl *ctrl, u32 sds)
+{
+	regmap_write(ctrl->map, RTL931X_SERDES_MODE_CTRL + (sds >> 2) * 4, 0x9f);
 }
 
 static void rtpcs_931x_sds_symerr_clear(struct rtpcs_ctrl *ctrl, u32 sds,
@@ -244,8 +251,7 @@ static void rtpcs_931x_sds_fiber_mode_set(struct rtpcs_ctrl *ctrl, u32 sds,
 	/* clear symbol error count before changing mode */
 	rtpcs_931x_sds_symerr_clear(ctrl, sds, mode);
 
-	val = 0x9F;
-	sw_w32(val, RTL931X_SERDES_MODE_CTRL + 4 * (sds >> 2));
+	rtpcs_931x_sds_disable(ctrl, sds);
 
 	switch (mode) {
 	case PHY_INTERFACE_MODE_SGMII:
@@ -411,16 +417,8 @@ static void rtpcs_931x_sds_rx_reset(struct rtpcs_ctrl *ctrl, u32 sds)
 	mdelay(50);
 }
 
-__attribute__((unused))
-static void rtpcs_931x_sds_disable(u32 sds)
-{
-	u32 v = 0x1f;
-
-	v |= BIT(7);
-	sw_w32(v, RTL931X_SERDES_MODE_CTRL + (sds >> 2) * 4);
-}
-
-static void rtpcs_931x_sds_mii_mode_set(u32 sds, phy_interface_t mode)
+static void rtpcs_931x_sds_mii_mode_set(struct rtpcs_ctrl *ctrl, u32 sds,
+					phy_interface_t mode)
 {
 	u32 val;
 
@@ -444,7 +442,7 @@ static void rtpcs_931x_sds_mii_mode_set(u32 sds, phy_interface_t mode)
 
 	val |= (1 << 7);
 
-	sw_w32(val, RTL931X_SERDES_MODE_CTRL + 4 * (sds >> 2));
+	regmap_write(ctrl->map, RTL931X_SERDES_MODE_CTRL + 4 * (sds >> 2), val);
 }
 
 static int rtpcs_931x_sds_cmu_band_set(struct rtpcs_ctrl *ctrl, int sds,
@@ -467,7 +465,7 @@ static int rtpcs_931x_sds_cmu_band_set(struct rtpcs_ctrl *ctrl, int sds,
 
 	rtpcs_sds_write_bits(ctrl, sds, page, 0x7, 4, 0, band);
 
-	rtpcs_931x_sds_reset(sds);
+	rtpcs_931x_sds_reset(ctrl, sds);
 
 	return 0;
 }
@@ -573,7 +571,7 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_ctrl *ctrl, int sds,
 	pr_info("%s XSG page 0x0 0xe %08x\n", __func__, rtpcs_sds_read(ctrl, sds, 0x100, 0xe));
 	pr_info("%s XSG2 page 0x0 0xe %08x\n", __func__, rtpcs_sds_read(ctrl, sds, 0x200, 0xe));
 
-	model_info = sw_r32(RTL93XX_MODEL_NAME_INFO);
+	regmap_read(ctrl->map, RTL93XX_MODEL_NAME_INFO, &model_info);
 	if ((model_info >> 4) & 0x1) {
 		pr_info("detected chiptype 1\n");
 		chiptype = 1;
@@ -584,10 +582,10 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_ctrl *ctrl, int sds,
 	pr_info("%s: 2.5gbit %08X", __func__,
 	        rtpcs_sds_read(ctrl, sds, 0x101, 0x14));
 
-	pr_info("%s: RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR 0x%08X\n", __func__, sw_r32(RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR));
-	ori = sw_r32(RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
+	regmap_read(ctrl->map, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR, &ori);
+	pr_info("%s: RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR 0x%08X\n", __func__, ori);
 	val = ori | (1 << sds);
-	sw_w32(val, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
+	regmap_write(ctrl->map, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR, val);
 
 	/* this was in rtl931x_phylink_mac_config in dsa/rtl83xx/dsa.c before */
 	band = rtpcs_931x_sds_cmu_band_get(ctrl, sds, mode);
@@ -708,8 +706,8 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_ctrl *ctrl, int sds,
 			rtpcs_sds_write(ctrl, sds, 0x2E, 0x1, board_sds_tx_type1[sds - 2]);
 		else {
 			val = 0xa0000;
-			sw_w32(val, RTL93XX_CHIP_INFO);
-			val = sw_r32(RTL93XX_CHIP_INFO);
+			regmap_write(ctrl->map, RTL93XX_CHIP_INFO, val);
+			regmap_read(ctrl->map, RTL93XX_CHIP_INFO, &val);
 			if (val & BIT(28)) /* consider 9311 etc. RTL9313_CHIP_ID == HWP_CHIP_ID(unit)) */
 			{
 				rtpcs_sds_write(ctrl, sds, 0x2E, 0x1, board_sds_tx2[sds - 2]);
@@ -717,20 +715,21 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_ctrl *ctrl, int sds,
 				rtpcs_sds_write(ctrl, sds, 0x2E, 0x1, board_sds_tx[sds - 2]);
 			}
 			val = 0;
-			sw_w32(val, RTL93XX_CHIP_INFO);
+			regmap_write(ctrl->map, RTL93XX_CHIP_INFO, val);
 		}
 	}
 
 	val = ori & ~BIT(sds);
-	sw_w32(val, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
-	pr_debug("%s: RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR 0x%08X\n", __func__, sw_r32(RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR));
+	regmap_write(ctrl->map, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR, val);
+	regmap_read(ctrl->map, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR, &val);
+	pr_debug("%s: RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR 0x%08X\n", __func__, val);
 
 	if (mode == PHY_INTERFACE_MODE_XGMII ||
 	    mode == PHY_INTERFACE_MODE_QSGMII ||
 	    mode == PHY_INTERFACE_MODE_SGMII ||
 	    mode == PHY_INTERFACE_MODE_USXGMII) {
 		if (mode == PHY_INTERFACE_MODE_XGMII)
-			rtpcs_931x_sds_mii_mode_set(sds, mode);
+			rtpcs_931x_sds_mii_mode_set(ctrl, sds, mode);
 		else
 			rtpcs_931x_sds_fiber_mode_set(ctrl, sds, mode);
 	}
