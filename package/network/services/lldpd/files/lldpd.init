@@ -231,13 +231,15 @@ write_lldpd_conf()
 	local lldp_mgmt_addr_advertisements
 	config_get_bool lldp_mgmt_addr_advertisements 'config' 'lldp_mgmt_addr_advertisements' 1
 
+	# lldpd 1.0.20 configure med fast-start -> configure lldp fast-start (doesn't depend on med, enabled unconditionally)
+	# See: https://github.com/lldpd/lldpd/commit/f2ea6e6a86e7d70104e1428a94ec37a24fe604ef
+	local lldp_fast_start
+	config_get_bool lldp_fast_start 'config' 'lldpmed_fast_start' 0
+
+	local lldp_fast_start_tx_interval
+	config_get lldp_fast_start_tx_interval 'config' 'lldpmed_fast_start_tx_interval' 0
+
 	if [ "$CONFIG_LLDPD_WITH_LLDPMED" = "y" ]; then
-		local lldpmed_fast_start
-		config_get_bool lldpmed_fast_start 'config' 'lldpmed_fast_start' 0
-
-		local lldpmed_fast_start_tx_interval
-		config_get lldpmed_fast_start_tx_interval 'config' 'lldpmed_fast_start_tx_interval' 0
-
 		local lldp_location
 		config_get lldp_location 'config' 'lldp_location'
 
@@ -283,11 +285,11 @@ write_lldpd_conf()
 		[ -n "$lldp_med_inv_asset_id" ] && echo "configure inventory asset \"$lldp_med_inv_asset_id\"" >> "$LLDPD_CONF"
 	fi
 
-	if [ "$CONFIG_LLDPD_WITH_LLDPMED" = "y" ] && [ "$lldpmed_fast_start" -gt 0 ]; then
-		if [ "$lldpmed_fast_start_tx_interval" -gt 0 ]; then
-			echo "configure med fast-start tx-interval $lldpmed_fast_start_tx_interval" >> "$LLDPD_CONF"
+	if [ "$lldp_fast_start" -gt 0 ]; then
+		if [ "$lldp_fast_start_tx_interval" -gt 0 ]; then
+			echo "configure lldp fast-start tx-interval $lldp_fast_start_tx_interval" >> "$LLDPD_CONF"
 		else
-			echo "configure med fast-start enable" >> "$LLDPD_CONF"
+			echo "configure lldp fast-start enable" >> "$LLDPD_CONF"
 		fi
 	fi
 	if [ "$CONFIG_LLDPD_WITH_LLDPMED" = "y" ]; then
@@ -493,6 +495,7 @@ reload_service() {
 	$LLDPCLI -u "$LLDPSOCKET" >/dev/null 2>&1 <<-EOF
 		pause
 		unconfigure lldp custom-tlv
+		unconfigure lldp fast-start
 		unconfigure lldp capabilities-advertisements
 		unconfigure lldp management-addresses-advertisements
 		# unconfigures user-configured system capabilities, and instead uses the kernel information:
@@ -511,12 +514,13 @@ reload_service() {
 		unconfigure inventory model
 		unconfigure inventory asset
 	EOF
+
 	if [ "$CONFIG_LLDPD_WITH_LLDPMED" = "y" ]; then
 		$LLDPCLI -u "$LLDPSOCKET" >/dev/null 2>&1 <<-EOF
-			unconfigure med fast-start
+			# unconfigure med xxxxxxx
 		EOF
-
 	fi
+
 	# Rewrite lldpd.conf
 	# If something changed it should be included by the lldpcli call
 	write_lldpd_conf
