@@ -1,0 +1,120 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+/* Copyright (c) 2025, Natalie Moore <natalie@natalielucy.dev> */
+
+#include "qcom-ipq4029-brulk-common.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	/* Codename Hulk */
+	model = "Cradlepoint IBR1700";
+	compatible = "cradlepoint,ibr1700";
+
+	gpio_export {
+		2g_antenna_toggle {
+			gpio-export,name = "2g_antenna_toggle";
+			gpio-export,output = <0>;
+			gpio-export,direction_may_change = <0>;
+			gpios = <&tlmm 69 GPIO_ACTIVE_HIGH>;
+		};
+
+		conn_ign_sense {
+			gpio-export,name = "conn_ign_sense";
+			gpio-export,input = <0>;
+			gpio-export,direction_may_change = <0>;
+			gpios = <&tlmm 19 GPIO_ACTIVE_LOW>;
+		};
+
+		conn_output {
+			gpio-export,name = "conn_output";
+			gpio-export,output = <0>;
+			gpio-export,direction_may_change = <0>;
+			gpios = <&expander1 7 GPIO_ACTIVE_HIGH>;
+		};
+
+		sata_ign_sense {
+			gpio-export,name = "sata_ign_sense";
+			gpio-export,input = <0>;
+			gpio-export,direction_may_change = <0>;
+			gpios = <&tlmm 53 GPIO_ACTIVE_LOW>;
+		};
+
+		/* GPS + RS-232 + GPIO riser card */
+		riser_mux {
+			gpio-export,name = "riser_mux";
+			gpio-export,output = <0>;	/* 0 = console; 1 = GPS */
+			gpio-export,direction_may_change = <0>;
+			gpios = <&tlmm 37 GPIO_ACTIVE_HIGH>;
+		};
+
+		riser_flipflop_d {
+			gpio-export,name = "riser_flipflop_d";
+			gpio-export,output = <0>;
+			gpio-export,direction_may_change = <1>;
+			gpios = <&expander1 10 GPIO_ACTIVE_HIGH>;
+		};
+
+		riser_pwr_clk {
+			gpio-export,name = "riser_pwr_clk";
+			gpio-export,output = <0>;
+			gpio-export,direction_may_change = <0>;
+			gpios = <&tlmm 50 GPIO_ACTIVE_HIGH>;
+		};
+
+		riser_bias_clk {
+			gpio-export,name = "riser_bias_clk";
+			gpio-export,output = <0>;
+			gpio-export,direction_may_change = <0>;
+			gpios = <&tlmm 48 GPIO_ACTIVE_HIGH>;
+		};
+
+		riser_gps_boot_mode {
+			gpio-export,name = "riser_gps_boot_mode";
+			gpio-export,output = <0>;
+			gpio-export,direction_may_change = <0>;
+			gpios = <&tlmm 63 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	leds {
+		led_5g_right_blue: led-3 {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&tlmm 33 GPIO_ACTIVE_HIGH>;
+			label = "blue:5g_2x2";
+		};
+
+		led_2g_right_green: led-4 {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&tlmm 34 GPIO_ACTIVE_HIGH>;
+			label = "green:2g_2x2";
+		};
+
+		led_5g_left_blue: led-5 {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&tlmm 36 GPIO_ACTIVE_HIGH>;
+			label = "blue:5g_4x4";
+		};
+
+		led_2g_left_green: led-6 {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&tlmm 56 GPIO_ACTIVE_HIGH>;
+			label = "green:2g_4x4";
+		};
+	};
+};
+
+&blsp1_i2c3 {
+	adc: adc@49 {
+		compatible = "ads7924";
+		reg = <0x49>;
+		status = "okay";
+	};
+};
+
+&ext_wifi {
+	status = "okay";
+};
