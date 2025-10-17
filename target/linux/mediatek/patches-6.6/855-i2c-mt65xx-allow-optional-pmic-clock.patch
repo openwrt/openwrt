@@ -19,7 +19,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/i2c/busses/i2c-mt65xx.c
 +++ b/drivers/i2c/busses/i2c-mt65xx.c
-@@ -1442,15 +1442,19 @@ static int mtk_i2c_probe(struct platform
+@@ -1445,15 +1445,19 @@ static int mtk_i2c_probe(struct platform
  	if (IS_ERR(i2c->clocks[I2C_MT65XX_CLK_ARB].clk))
  		return PTR_ERR(i2c->clocks[I2C_MT65XX_CLK_ARB].clk);
  

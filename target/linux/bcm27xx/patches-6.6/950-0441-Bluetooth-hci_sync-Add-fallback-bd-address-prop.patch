@@ -20,7 +20,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 
 --- a/net/bluetooth/hci_sync.c
 +++ b/net/bluetooth/hci_sync.c
-@@ -4934,6 +4934,7 @@ static const struct {
+@@ -4936,6 +4936,7 @@ static const struct {
   */
  static int hci_dev_setup_sync(struct hci_dev *hdev)
  {
@@ -28,7 +28,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	int ret = 0;
  	bool invalid_bdaddr;
  	size_t i;
-@@ -4962,7 +4963,8 @@ static int hci_dev_setup_sync(struct hci
+@@ -4964,7 +4965,8 @@ static int hci_dev_setup_sync(struct hci
  			 test_bit(HCI_QUIRK_USE_BDADDR_PROPERTY, &hdev->quirks);
  	if (!ret) {
  		if (test_bit(HCI_QUIRK_USE_BDADDR_PROPERTY, &hdev->quirks) &&
