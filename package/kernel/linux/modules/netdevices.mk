@@ -525,22 +525,6 @@ endef
 $(eval $(call KernelPackage,phy-realtek))
 
 
-define KernelPackage/phy-rtl8261n
-   SUBMENU:=$(NETWORK_DEVICES_MENU)
-   TITLE:=Realtek RTL8261N NBASE-T PHY driver
-   KCONFIG:=CONFIG_RTL8261N_PHY
-   DEPENDS:=+kmod-libphy
-   FILES:=$(LINUX_DIR)/drivers/net/phy/rtl8261n/rtl8261n.ko
-   AUTOLOAD:=$(call AutoLoad,18,rtl8261n,1)
-endef
-
-define KernelPackage/phy-rtl8261n/description
-   Supports the Realtek 8261N NBASE-T PHY.
-endef
-
-$(eval $(call KernelPackage,phy-rtl8261n))
-
-
 define KernelPackage/phy-smsc
    SUBMENU:=$(NETWORK_DEVICES_MENU)
    TITLE:=SMSC PHY driver
