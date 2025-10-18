@@ -1,0 +1,86 @@
+From 5eac9c56ff3b0a013c5241f449ca144f70bf4c02 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
+Date: Tue, 7 Oct 2025 10:30:15 +0200
+Subject: [PATCH] router: fix SLAAC on subnets > 64
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+---
+ src/router.c | 22 +++++++++++-----------
+ 1 file changed, 11 insertions(+), 11 deletions(-)
+
+--- a/src/router.c
++++ b/src/router.c
+@@ -448,13 +448,13 @@ struct nd_opt_dnr_info {
+ 
+ /* IPv6 RA PIOs */
+ static struct ra_pio *router_find_ra_pio(struct interface *iface,
+-	struct nd_opt_prefix_info *p)
++	struct odhcpd_ipaddr *addr)
+ {
+ 	for (size_t i = 0; i < iface->pio_cnt; i++) {
+ 		struct ra_pio *cur_pio = &iface->pios[i];
+ 
+-		if (p->nd_opt_pi_prefix_len == cur_pio->length &&
+-			!odhcpd_bmemcmp(&p->nd_opt_pi_prefix, &cur_pio->prefix, cur_pio->length))
++		if (addr->prefix == cur_pio->length &&
++			!odhcpd_bmemcmp(&addr->addr.in6, &cur_pio->prefix, cur_pio->length))
+ 			return cur_pio;
+ 	}
+ 
+@@ -462,12 +462,12 @@ static struct ra_pio *router_find_ra_pio
+ }
+ 
+ static void router_add_ra_pio(struct interface *iface,
+-	struct nd_opt_prefix_info *p)
++	struct odhcpd_ipaddr *addr)
+ {
+ 	char ipv6_str[INET6_ADDRSTRLEN];
+ 	struct ra_pio *new_pios, *pio;
+ 
+-	pio = router_find_ra_pio(iface, p);
++	pio = router_find_ra_pio(iface, addr);
+ 	if (pio) {
+ 		if (pio->lifetime) {
+ 			pio->lifetime = 0;
+@@ -490,8 +490,8 @@ static void router_add_ra_pio(struct int
+ 	pio = &iface->pios[iface->pio_cnt];
+ 	iface->pio_cnt++;
+ 
+-	memcpy(&pio->prefix, &p->nd_opt_pi_prefix, sizeof(pio->prefix));
+-	pio->length = p->nd_opt_pi_prefix_len;
++	memcpy(&pio->prefix, &addr->addr.in6, sizeof(pio->prefix));
++	pio->length = addr->prefix;
+ 	pio->lifetime = 0;
+ 
+ 	iface->pio_update = true;
+@@ -538,10 +538,10 @@ static void router_clear_ra_pio(time_t n
+ }
+ 
+ static void router_stale_ra_pio(struct interface *iface,
+-	struct nd_opt_prefix_info *p,
++	struct odhcpd_ipaddr *addr,
+ 	time_t now)
+ {
+-	struct ra_pio *pio = router_find_ra_pio(iface, p);
++	struct ra_pio *pio = router_find_ra_pio(iface, addr);
+ 	char ipv6_str[INET6_ADDRSTRLEN];
+ 
+ 	if (!pio || pio->lifetime)
+@@ -774,12 +774,12 @@ static int send_router_advert(struct int
+ 			p->nd_opt_pi_preferred_time = 0;
+ 			p->nd_opt_pi_valid_time = 0;
+ 
+-			router_stale_ra_pio(iface, p, now);
++			router_stale_ra_pio(iface, addr, now);
+ 		} else {
+ 			p->nd_opt_pi_preferred_time = htonl(preferred_lt);
+ 			p->nd_opt_pi_valid_time = htonl(valid_lt);
+ 
+-			router_add_ra_pio(iface, p);
++			router_add_ra_pio(iface, addr);
+ 		}
+ 	}
+ 

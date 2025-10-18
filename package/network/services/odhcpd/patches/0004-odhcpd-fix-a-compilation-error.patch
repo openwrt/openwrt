@@ -1,0 +1,44 @@
+From 30780debd691aee7567784daf1fdfd8db500a485 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20H=C3=A4rdeman?= <david@hardeman.nu>
+Date: Thu, 9 Oct 2025 11:08:14 +0200
+Subject: [PATCH] odhcpd: fix a compilation error
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+odhcpd_get_interface_dns_addr() calls odhcpd_get_interface_linklocal_addr(),
+the former takes a const struct interface ptr, the latter takes a non-const
+struct interface ptr.
+
+The end result is an unhappy compiler.
+
+Signed-off-by: David Härdeman <david@hardeman.nu>
+Link: https://github.com/openwrt/odhcpd/pull/272
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+---
+ src/odhcpd.c | 2 +-
+ src/odhcpd.h | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/src/odhcpd.c
++++ b/src/odhcpd.c
+@@ -314,7 +314,7 @@ ssize_t odhcpd_try_send_with_src(int soc
+  * - use an IPv6 ULA address if the already selected IPv6 address is not an ULA address
+  * - use the IPv6 address with the longest preferred lifetime
+  */
+-int odhcpd_get_interface_dns_addr(const struct interface *iface, struct in6_addr *addr)
++int odhcpd_get_interface_dns_addr(struct interface *iface, struct in6_addr *addr)
+ {
+ 	time_t now = odhcpd_time();
+ 	ssize_t m = -1;
+--- a/src/odhcpd.h
++++ b/src/odhcpd.h
+@@ -481,7 +481,7 @@ ssize_t odhcpd_send(int socket, struct s
+ ssize_t odhcpd_try_send_with_src(int socket, struct sockaddr_in6 *dest,
+ 		struct iovec *iov, size_t iov_len,
+ 		struct interface *iface);
+-int odhcpd_get_interface_dns_addr(const struct interface *iface,
++int odhcpd_get_interface_dns_addr(struct interface *iface,
+ 		struct in6_addr *addr);
+ int odhcpd_get_interface_linklocal_addr(struct interface *iface,
+ 		struct in6_addr *addr);

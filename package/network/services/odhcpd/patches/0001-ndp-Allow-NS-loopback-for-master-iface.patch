@@ -1,0 +1,61 @@
+From f0d855358b86a36efbfeb5a9de5a1d2a4d9d80fe Mon Sep 17 00:00:00 2001
+From: Haoyi Ci <cihaoyi@outlook.com>
+Date: Thu, 2 Oct 2025 16:14:05 +0800
+Subject: [PATCH] ndp: Allow NS loopback for master iface
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This commit modifies handle_solicit() in ndp.c to correct IPv6 relay
+handling of Neighbor Solicitation (NS) requests when no upstream
+solicitation is received.
+
+Background: In IPv6 relay mode, odhcpd discovers local devices only upon
+receiving upstream NS packets. If no upstream NS arrives (e.g. because the
+upstream router’s neighbor cache is still valid or no solicitation was
+ever sent), OpenWrt may attempt neighbor resolution via the master (WAN)
+interface instead of the LAN, leaving local devices undiscoverable and
+breaking connectivity.
+
+- When an NS packet is sent by the host's master interface, do not
+  immediately return; instead continue searching slave interfaces for the
+  target neighbor.
+- When odhcpd responds to NS packets, add a check to prevent replying to
+  NS packets that were sent by the host itself.
+
+Signed-off-by: Haoyi Ci cihaoyi@outlook.com
+Link: https://github.com/openwrt/odhcpd/pull/240
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+---
+ src/ndp.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+--- a/src/ndp.c
++++ b/src/ndp.c
+@@ -332,6 +332,7 @@ static void handle_solicit(void *addr, v
+ 	struct interface *c;
+ 	char ipbuf[INET6_ADDRSTRLEN];
+ 	uint8_t mac[6];
++	bool is_self_sent;
+ 
+ 	/* Solicitation is for duplicate address detection */
+ 	bool ns_is_dad = IN6_IS_ADDR_UNSPECIFIED(&ip6->ip6_src);
+@@ -354,7 +355,8 @@ static void handle_solicit(void *addr, v
+ 	syslog(LOG_DEBUG, "Got a NS for %s on %s", ipbuf, iface->name);
+ 
+ 	odhcpd_get_mac(iface, mac);
+-	if (!memcmp(ll->sll_addr, mac, sizeof(mac)))
++	is_self_sent = !memcmp(ll->sll_addr, mac, sizeof(mac));
++	if (is_self_sent && !iface->master)
+ 		return; /* Looped back */
+ 
+ 	avl_for_each_element(&interfaces, c, avl) {
+@@ -366,7 +368,7 @@ static void handle_solicit(void *addr, v
+ 	/* Catch global-addressed NS and answer them manually.
+ 	 * The kernel won't answer these and cannot route them either. */
+ 	if (!IN6_IS_ADDR_MULTICAST(&ip6->ip6_dst) &&
+-			IN6_IS_ADDR_LINKLOCAL(&ip6->ip6_src)) {
++			IN6_IS_ADDR_LINKLOCAL(&ip6->ip6_src) && !is_self_sent) {
+ 		bool is_proxy_neigh = netlink_get_interface_proxy_neigh(iface->ifindex,
+ 				&req->nd_ns_target) == 1;
+ 
