@@ -37,6 +37,10 @@ migrate_radio()
 WIRELESS_CHANGED=false
 
 case "$(board_name)" in
+asus,onhub |\
+tplink,onhub)
+	exit 0
+	;;
 *)
 	migrate_radio
 	;;
