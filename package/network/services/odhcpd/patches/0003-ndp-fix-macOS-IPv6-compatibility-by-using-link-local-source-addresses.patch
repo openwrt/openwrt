@@ -1,0 +1,285 @@
+From d402cdae431668f55f9d82b7072b0afa3b8090df Mon Sep 17 00:00:00 2001
+From: Stephen Groat <stephen.groat@datadoghq.com>
+Date: Wed, 8 Oct 2025 11:54:51 -0700
+Subject: [PATCH] ndp: fix macOS IPv6 compatibility by using link-local source
+ addresses
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+macOS ignores NDP packets that don't originate from link-local addresses,
+causing IPv6 connectivity issues with odhcpd. This change ensures NDP
+packets (Neighbor Advertisements and ICMP Echo Requests) are sent using
+link-local source addresses for RFC 4861 compliance.
+
+Changes:
+* Add ndp_from_link_local configuration flag (defaults to true)
+* Add odhcpd_send_with_src() to allow explicit source address control
+* Add odhcpd_try_send_with_src() helper to eliminate code duplication
+* Add odhcpd_get_interface_linklocal_addr() with caching for performance
+* Update send_na() and ping6() to use link-local source addresses when
+  enabled
+* Add RFC 4861, §4.2 comments explaining the mandated behavior
+* Maintain backward compatibility with fallback behavior
+
+Fixes: openwrt/openwrt#7561 #202
+Signed-off-by: Stephen Groat <stephengroat@gmail.com>
+Link: https://github.com/openwrt/odhcpd/pull/242
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+---
+ README.md    |  1 +
+ src/config.c |  7 ++++
+ src/ndp.c    | 12 ++++---
+ src/odhcpd.c | 91 ++++++++++++++++++++++++++++++++++++++++------------
+ src/odhcpd.h | 11 +++++++
+ 5 files changed, 97 insertions(+), 25 deletions(-)
+
+--- a/README.md
++++ b/README.md
+@@ -114,6 +114,7 @@ and may also receive information from ub
+ | ra_pref64		|string	| -	| Announce PREF64 option for NAT64 prefix (RFC8781) [IPv6 prefix] |
+ | ndproxy_routing	|bool	| 1	| Learn routes from NDP |
+ | ndproxy_slave		|bool	| 0	| NDProxy external slave |
++| ndp_from_link_local	|bool	| 1	| Use link-local source addresses for NDP operations (RFC 4861, §4.2 compliance) and macOS compatibility |
+ | prefix_filter		|string	|`::/0`	| Only advertise on-link prefixes within the provided IPv6 prefix; others are filtered out. [IPv6 prefix] |
+ | ntp			|list	|`<local address>`| NTP servers to announce accepts IPv4 and IPv6 |
+ 
+--- a/src/config.c
++++ b/src/config.c
+@@ -117,6 +117,7 @@ enum {
+ 	IFACE_ATTR_PD_CER,
+ 	IFACE_ATTR_NDPROXY_ROUTING,
+ 	IFACE_ATTR_NDPROXY_SLAVE,
++	IFACE_ATTR_NDP_FROM_LINK_LOCAL,
+ 	IFACE_ATTR_PREFIX_FILTER,
+ 	IFACE_ATTR_MAX_PREFERRED_LIFETIME,
+ 	IFACE_ATTR_MAX_VALID_LIFETIME,
+@@ -171,6 +172,7 @@ static const struct blobmsg_policy iface
+ 	[IFACE_ATTR_RA_PREF64] = { .name = "ra_pref64", .type = BLOBMSG_TYPE_STRING },
+ 	[IFACE_ATTR_NDPROXY_ROUTING] = { .name = "ndproxy_routing", .type = BLOBMSG_TYPE_BOOL },
+ 	[IFACE_ATTR_NDPROXY_SLAVE] = { .name = "ndproxy_slave", .type = BLOBMSG_TYPE_BOOL },
++	[IFACE_ATTR_NDP_FROM_LINK_LOCAL] = { .name = "ndp_from_link_local", .type = BLOBMSG_TYPE_BOOL },
+ 	[IFACE_ATTR_PREFIX_FILTER] = { .name = "prefix_filter", .type = BLOBMSG_TYPE_STRING },
+ 	[IFACE_ATTR_MAX_PREFERRED_LIFETIME] = { .name = "max_preferred_lifetime", .type = BLOBMSG_TYPE_STRING },
+ 	[IFACE_ATTR_MAX_VALID_LIFETIME] = { .name = "max_valid_lifetime", .type = BLOBMSG_TYPE_STRING },
+@@ -271,6 +273,8 @@ static void set_interface_defaults(struc
+ 	iface->ra = MODE_DISABLED;
+ 	iface->ndp = MODE_DISABLED;
+ 	iface->learn_routes = 1;
++	iface->ndp_from_link_local = true;
++	iface->cached_linklocal_valid = false;
+ 	iface->dhcp_leasetime = 43200;
+ 	iface->max_preferred_lifetime = ND_PREFERRED_LIMIT;
+ 	iface->max_valid_lifetime = ND_VALID_LIMIT;
+@@ -1451,6 +1455,9 @@ int config_parse_interface(void *data, s
+ 	if ((c = tb[IFACE_ATTR_NDPROXY_SLAVE]))
+ 		iface->external = blobmsg_get_bool(c);
+ 
++	if ((c = tb[IFACE_ATTR_NDP_FROM_LINK_LOCAL]))
++		iface->ndp_from_link_local = blobmsg_get_bool(c);
++
+ 	if ((c = tb[IFACE_ATTR_PREFIX_FILTER]))
+ 		odhcpd_parse_addr6_prefix(blobmsg_get_string(c),
+ 					  &iface->pio_filter_addr,
+--- a/src/ndp.c
++++ b/src/ndp.c
+@@ -280,7 +280,7 @@ static void ndp_netevent_cb(unsigned lon
+ /* Send an ICMP-ECHO. This is less for actually pinging but for the
+  * neighbor cache to be kept up-to-date. */
+ static void ping6(struct in6_addr *addr,
+-		const struct interface *iface)
++		struct interface *iface)
+ {
+ 	struct sockaddr_in6 dest = { .sin6_family = AF_INET6, .sin6_addr = *addr , };
+ 	struct icmp6_hdr echo = { .icmp6_type = ICMP6_ECHO_REQUEST };
+@@ -291,13 +291,16 @@ static void ping6(struct in6_addr *addr,
+ 	syslog(LOG_DEBUG, "Pinging for %s on %s", ipbuf, iface->name);
+ 
+ 	netlink_setup_route(addr, 128, iface->ifindex, NULL, 128, true);
+-	odhcpd_send(iface->ndp_ping_fd, &dest, &iov, 1, iface);
++
++	/* Use link-local address as source for RFC 4861 compliance and macOS compatibility */
++	odhcpd_try_send_with_src(iface->ndp_ping_fd, &dest, &iov, 1, iface);
++
+ 	netlink_setup_route(addr, 128, iface->ifindex, NULL, 128, false);
+ }
+ 
+ /* Send a Neighbor Advertisement. */
+ static void send_na(struct in6_addr *to_addr,
+-		const struct interface *iface, struct in6_addr *for_addr,
++		struct interface *iface, struct in6_addr *for_addr,
+ 		const uint8_t *mac)
+ {
+ 	struct sockaddr_in6 dest = { .sin6_family = AF_INET6, .sin6_addr = *to_addr };
+@@ -319,7 +322,8 @@ static void send_na(struct in6_addr *to_
+ 	inet_ntop(AF_INET6, to_addr, ipbuf, sizeof(ipbuf));
+ 	syslog(LOG_DEBUG, "Answering NS to %s on %s", ipbuf, iface->ifname);
+ 
+-	odhcpd_send(iface->ndp_ping_fd, &dest, &iov, 1, iface);
++	/* Use link-local address as source for RFC 4861 compliance and macOS compatibility */
++	odhcpd_try_send_with_src(iface->ndp_ping_fd, &dest, &iov, 1, iface);
+ }
+ 
+ /* Handle solicitations */
+--- a/src/odhcpd.c
++++ b/src/odhcpd.c
+@@ -189,10 +189,10 @@ int odhcpd_get_flags(const struct interf
+ }
+ 
+ 
+-/* Forwards a packet on a specific interface */
+-ssize_t odhcpd_send(int socket, struct sockaddr_in6 *dest,
++/* Forwards a packet on a specific interface with optional source address */
++ssize_t odhcpd_send_with_src(int socket, struct sockaddr_in6 *dest,
+ 		struct iovec *iov, size_t iov_len,
+-		const struct interface *iface)
++		const struct interface *iface, const struct in6_addr *src_addr)
+ {
+ 	/* Construct headers */
+ 	uint8_t cmsg_buf[CMSG_SPACE(sizeof(struct in6_pktinfo))] = {0};
+@@ -214,6 +214,10 @@ ssize_t odhcpd_send(int socket, struct s
+ 	struct in6_pktinfo *pktinfo = (struct in6_pktinfo*)CMSG_DATA(chdr);
+ 	pktinfo->ipi6_ifindex = iface->ifindex;
+ 
++	/* Set source address if provided */
++	if (src_addr)
++		pktinfo->ipi6_addr = *src_addr;
++
+ 	/* Also set scope ID if link-local */
+ 	if (IN6_IS_ADDR_LINKLOCAL(&dest->sin6_addr)
+ 			|| IN6_IS_ADDR_MC_LINKLOCAL(&dest->sin6_addr))
+@@ -232,30 +236,75 @@ ssize_t odhcpd_send(int socket, struct s
+ 	return sent;
+ }
+ 
++/* Forwards a packet on a specific interface */
++ssize_t odhcpd_send(int socket, struct sockaddr_in6 *dest,
++		struct iovec *iov, size_t iov_len,
++		const struct interface *iface)
++{
++	return odhcpd_send_with_src(socket, dest, iov, iov_len, iface, NULL);
++}
++
+ 
+-static int odhcpd_get_linklocal_interface_address(int ifindex, struct in6_addr *lladdr)
++int odhcpd_get_interface_linklocal_addr(struct interface *iface, struct in6_addr *addr)
+ {
+-	int ret = -1;
+-	struct sockaddr_in6 addr;
+-	socklen_t alen = sizeof(addr);
+-	int sock = socket(AF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
++	/* Return cached address if valid */
++	if (iface->cached_linklocal_valid) {
++		*addr = iface->cached_linklocal_addr;
++		return 0;
++	}
+ 
+-	if (sock < 0)
+-		return -1;
++	/* First try to get link-local address from interface addresses */
++	for (size_t i = 0; i < iface->addr6_len; ++i) {
++		if (IN6_IS_ADDR_LINKLOCAL(&iface->addr6[i].addr.in6)) {
++			*addr = iface->addr6[i].addr.in6;
++			/* Cache the result for future use */
++			iface->cached_linklocal_addr = *addr;
++			iface->cached_linklocal_valid = true;
++			return 0;
++		}
++	}
+ 
+-	memset(&addr, 0, sizeof(addr));
+-	addr.sin6_family = AF_INET6;
+-	inet_pton(AF_INET6, ALL_IPV6_ROUTERS, &addr.sin6_addr);
+-	addr.sin6_scope_id = ifindex;
+-
+-	if (!connect(sock, (struct sockaddr*)&addr, sizeof(addr)) &&
+-			!getsockname(sock, (struct sockaddr*)&addr, &alen)) {
+-		*lladdr = addr.sin6_addr;
+-		ret = 0;
++	/* Fallback to socket-based method */
++	struct sockaddr_in6 sockaddr;
++	socklen_t alen = sizeof(sockaddr);
++	int sock = socket(AF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
++
++	if (sock >= 0) {
++		memset(&sockaddr, 0, sizeof(sockaddr));
++		sockaddr.sin6_family = AF_INET6;
++		inet_pton(AF_INET6, ALL_IPV6_ROUTERS, &sockaddr.sin6_addr);
++		sockaddr.sin6_scope_id = iface->ifindex;
++
++		if (!connect(sock, (struct sockaddr*)&sockaddr, sizeof(sockaddr)) &&
++				!getsockname(sock, (struct sockaddr*)&sockaddr, &alen)) {
++			*addr = sockaddr.sin6_addr;
++			/* Cache the result for future use */
++			iface->cached_linklocal_addr = *addr;
++			iface->cached_linklocal_valid = true;
++			close(sock);
++			return 0;
++		}
++		close(sock);
+ 	}
+ 
+-	close(sock);
+-	return ret;
++	return -1;
++}
++
++/* Try to send with link-local source address for RFC 4861 compliance and macOS compatibility.
++ * RFC 4861, §4.2 mandates that Neighbor Advertisement source address MUST be
++ * the link-local address assigned to the interface from which this message is sent. */
++ssize_t odhcpd_try_send_with_src(int socket, struct sockaddr_in6 *dest,
++		struct iovec *iov, size_t iov_len,
++		struct interface *iface)
++{
++	struct in6_addr src_addr;
++
++	if (iface->ndp_from_link_local && odhcpd_get_interface_linklocal_addr(iface, &src_addr) == 0) {
++		return odhcpd_send_with_src(socket, dest, iov, iov_len, iface, &src_addr);
++	} else {
++		/* Fall back to default behavior if no link-local address is available or flag is disabled */
++		return odhcpd_send(socket, dest, iov, iov_len, iface);
++	}
+ }
+ 
+ /*
+@@ -303,7 +352,7 @@ int odhcpd_get_interface_dns_addr(const
+ 		return 0;
+ 	}
+ 
+-	return odhcpd_get_linklocal_interface_address(iface->ifindex, addr);
++	return odhcpd_get_interface_linklocal_addr(iface, addr);
+ }
+ 
+ struct interface* odhcpd_get_interface_by_index(int ifindex)
+--- a/src/odhcpd.h
++++ b/src/odhcpd.h
+@@ -333,6 +333,9 @@ struct interface {
+ 
+ 	// NDP
+ 	int learn_routes;
++	bool ndp_from_link_local;
++	struct in6_addr cached_linklocal_addr;
++	bool cached_linklocal_valid;
+ 
+ 	// RA
+ 	uint8_t ra_flags;
+@@ -469,11 +472,19 @@ int odhcpd_register(struct odhcpd_event
+ int odhcpd_deregister(struct odhcpd_event *event);
+ void odhcpd_process(struct odhcpd_event *event);
+ 
++ssize_t odhcpd_send_with_src(int socket, struct sockaddr_in6 *dest,
++		struct iovec *iov, size_t iov_len,
++		const struct interface *iface, const struct in6_addr *src_addr);
+ ssize_t odhcpd_send(int socket, struct sockaddr_in6 *dest,
+ 		struct iovec *iov, size_t iov_len,
+ 		const struct interface *iface);
++ssize_t odhcpd_try_send_with_src(int socket, struct sockaddr_in6 *dest,
++		struct iovec *iov, size_t iov_len,
++		struct interface *iface);
+ int odhcpd_get_interface_dns_addr(const struct interface *iface,
+ 		struct in6_addr *addr);
++int odhcpd_get_interface_linklocal_addr(struct interface *iface,
++		struct in6_addr *addr);
+ int odhcpd_get_interface_config(const char *ifname, const char *what);
+ int odhcpd_get_mac(const struct interface *iface, uint8_t mac[6]);
+ int odhcpd_get_flags(const struct interface *iface);
