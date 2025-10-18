@@ -6,13 +6,10 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_VERSION:=2023.01
+PKG_VERSION:=2024.01
 PKG_RELEASE:=1
 
-PKG_HASH:=69423bad380f89a0916636e89e6dcbd2e4512d584308d922d1039d1e4331950f
-
-include $(INCLUDE_DIR)/u-boot.mk
-include $(INCLUDE_DIR)/package.mk
+PKG_HASH:=b99611f1ed237bf3541bdc8434b68c96a6e05967061f992443cb30aabebef5b3
 
 include $(INCLUDE_DIR)/u-boot.mk
 include $(INCLUDE_DIR)/package.mk
