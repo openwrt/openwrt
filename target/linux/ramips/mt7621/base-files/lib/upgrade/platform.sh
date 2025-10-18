@@ -84,7 +84,7 @@ platform_do_upgrade() {
 	dlink,covr-x1860-a1|\
 	dlink,dap-x1860-a1|\
 	dlink,dir-1960-a1|\
-        dlink,dir-2055-a1|\
+	dlink,dir-2055-a1|\
 	dlink,dir-2150-a1|\
 	dlink,dir-2150-r1|\
 	dlink,dir-2640-a1|\
@@ -92,6 +92,7 @@ platform_do_upgrade() {
 	dlink,dir-3040-a1|\
 	dlink,dir-3060-a1|\
 	dlink,dir-853-a3|\
+	dlink,dir-x1860-b1|\
 	elecom,wmc-x1800gst|\
 	elecom,wsc-x1800gs|\
 	etisalat,s3|\
