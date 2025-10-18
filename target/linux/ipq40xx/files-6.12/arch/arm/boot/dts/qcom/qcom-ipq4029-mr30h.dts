@@ -1,0 +1,155 @@
+// SPDX-License-Identifier: GPL-2.0-only
+// Device Tree Source for Meraki MR30H (Noisy Cricket)
+
+#include "qcom-ipq4029-wired-qca-common.dtsi"
+
+/ {
+	model = "Meraki MR30H";
+	compatible = "meraki,mr30h";
+
+	soc {
+		/* for USB PHY, device has no USB port */
+		tcsr@194b000 {
+			status = "disabled";
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		power_orange: power {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&tlmm 49 GPIO_ACTIVE_LOW>;
+			panic-indicator;
+		};
+
+		led-0 {
+			/* LAN 1 act */
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_ACTIVITY;
+			gpios = <&tlmm 33 GPIO_ACTIVE_LOW>;
+		};
+
+		led-1 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+			gpios = <&tlmm 32 GPIO_ACTIVE_LOW>;
+		};
+
+		led-2 {
+			/* LAN 2 act */
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_ACTIVITY;
+			gpios = <&tlmm 27 GPIO_ACTIVE_HIGH>;
+		};
+
+		led-3 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
+			gpios = <&tlmm 26 GPIO_ACTIVE_LOW>;
+		};
+
+		led-4 {
+			/* LAN 3 act */
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_ACTIVITY;
+			gpios = <&tlmm 25 GPIO_ACTIVE_LOW>;
+		};
+
+		led-5 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <3>;
+			gpios = <&tlmm 24 GPIO_ACTIVE_LOW>;
+		};
+
+		led-6 {
+			/* LAN 4 act */
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_ACTIVITY;
+			gpios = <&tlmm 23 GPIO_ACTIVE_LOW>;
+		};
+
+		led-7 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <4>;
+			gpios = <&tlmm 22 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&usb2_hs_phy {
+	status = "disabled";
+};
+
+&usb2 {
+	status = "disabled";
+};
+
+&usb3_hs_phy {
+	status = "disabled";
+};
+
+&usb3_ss_phy {
+	status = "disabled";
+};
+
+&usb3 {
+	status = "disabled";
+};
+
+&pcie0 {
+	status = "okay";
+	perst-gpio = <&tlmm 38 GPIO_ACTIVE_LOW>;
+	wake-gpio = <&tlmm 50 GPIO_ACTIVE_LOW>;
+};
+
+&pcie_bridge0 {
+	wifi2: wifi@0,0 {
+		compatible = "qcom,ath10k";
+		status = "okay";
+		reg = <0x00010000 0 0 0 0>;
+		nvmem-cells = <&cal_factory_9000>;
+		nvmem-cell-names = "calibration";
+	};
+};
+
+&wifi0 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "Meraki-MR30H";
+};
+
+&wifi1 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "Meraki-MR30H";
+};
+
+
+&swport1 {
+	label = "lan4";
+	status = "okay";
+};
+
+&swport2 {
+	label = "lan3";
+	status = "okay";
+};
+
+&swport3 {
+	label = "lan2";
+	status = "okay";
+};
+
+&swport4 {
+	label = "lan1";
+	status = "okay";
+};
+
+&swport5 {
+	label = "lan5";
+	status = "okay";
+};
