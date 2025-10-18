@@ -99,6 +99,7 @@ mediatek_setup_interfaces()
 	cudy,ap3000outdoor-v1|\
 	cudy,ap3000-v1|\
 	cudy,re3000-v1|\
+	netgear,eax17|\
 	netgear,wax220|\
 	openfi,6c|\
 	ubnt,unifi-6-plus|\
@@ -211,6 +212,10 @@ mediatek_setup_macs()
 	tplink,re6000xd)
 		label_mac=$(get_mac_binary "/tmp/tp_data/default-mac" 0)
 		lan_mac=$label_mac
+		;;
+	netgear,eax17)
+		lan_mac=$(grep -aoE '([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}' /dev/ubi0_0 | head -n1)
+		label_mac=$lan_mac
 		;;
 	netgear,wax220)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env mac)

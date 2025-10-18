@@ -31,6 +31,7 @@ usage() {
 	printf "\n\t-n ==> fdt unit-address 'address'"
 	printf "\n\t-d ==> include Device Tree Blob 'dtb'"
 	printf "\n\t-r ==> include RootFS blob 'rootfs'"
+	printf "\n\t-R ==> include Netgear style top level RootFS blob 'rootfs'"
 	printf "\n\t-H ==> specify hash algo instead of SHA1"
 	printf "\n\t-l ==> legacy mode character (@ etc otherwise -)"
 	printf "\n\t-o ==> create output file 'its_file'"
@@ -49,7 +50,7 @@ LOADABLES=
 DTOVERLAY=
 DTADDR=
 
-while getopts ":A:a:c:C:D:d:e:f:i:k:l:n:o:O:v:r:s:H:" OPTION
+while getopts ":A:a:c:C:D:d:e:f:i:k:l:n:o:O:v:r:R:s:H:" OPTION
 do
 	case $OPTION in
 		A ) ARCH=$OPTARG;;
@@ -67,6 +68,7 @@ do
 		o ) OUTPUT=$OPTARG;;
 		O ) DTOVERLAY="$DTOVERLAY ${OPTARG}";;
 		r ) ROOTFS=$OPTARG;;
+		R ) ROOTFS_FILE=$OPTARG;;
 		s ) FDTADDR=$OPTARG;;
 		H ) HASH=$OPTARG;;
 		v ) VERSION=$OPTARG;;
@@ -156,6 +158,32 @@ if [ -n "${ROOTFS}" ]; then
 	LOADABLES="${LOADABLES:+$LOADABLES, }\"rootfs${REFERENCE_CHAR}${ROOTFSNUM}\""
 fi
 
+if [ -f "${ROOTFS_FILE}" ]; then
+	ROOTFS_SIZE=$(stat -c %s ${ROOTFS_FILE})
+
+	ROOTFS_SHA1=$(
+	sha1sum "${ROOTFS_FILE}" | \
+	awk '{
+		print "<0x" substr($0, 1, 8) \
+		      " 0x" substr($0, 9, 8) \
+		      " 0x" substr($0, 17, 8) \
+		      " 0x" substr($0, 25, 8) \
+		      " 0x" substr($0, 33, 8) ">"
+		}'
+	)
+
+	TOP_LEVEL_ROOTFS="
+	rootfs {
+		size = <${ROOTFS_SIZE}>;
+
+		hash-1 {
+			value = ${ROOTFS_SHA1};
+			algo = \"sha1\";
+		};
+	};
+"
+fi
+
 # add DT overlay blobs
 FDTOVERLAY_NODE=""
 OVCONFIGS=""
@@ -221,6 +249,8 @@ ${FDT_NODE}
 ${FDTOVERLAY_NODE}
 ${ROOTFS_NODE}
 	};
+
+${TOP_LEVEL_ROOTFS}
 
 	configurations {
 		default = \"${CONFIG}\";

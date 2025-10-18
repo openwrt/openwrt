@@ -1,0 +1,26 @@
+#!/bin/sh /etc/rc.common
+# SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+START=69
+USE_PROCD=1
+NAME=eax17-ledq
+start_service() {
+	procd_open_instance
+	procd_set_param command /bin/sh -c '
+GOOD=-60; OK=-75; BAD=-90
+on(){ echo 1 > "/sys/class/leds/$1/brightness"; }
+off(){ echo 0 > "/sys/class/leds/$1/brightness"; }
+set_color(){ g="green:$1"; r="red:$1"; case "$2" in off)off "$g";off "$r";; green)on "$g";off "$r";; amber)on "$g";on "$r";; red)off "$g";on "$r";; esac; }
+uplink_iface(){ iw dev 2>/dev/null | awk "/Interface/{i=\$2} /type managed/ {print i; exit}"; }
+best_client_dbm(){ for i in $(iw dev 2>/dev/null | awk "/Interface/{i=\$2} /type AP/ {print i}"); do iw dev "$i" station dump 2>/dev/null | awk "/signal:/ {print \$2}"; done | sort -nr | head -n1; }
+quality(){ v=$1; [ -z "$v" ] && { echo off; return; }; [ "$v" -ge "$GOOD" ] && { echo green; return; }; [ "$v" -ge "$OK" ] && { echo amber; return; }; [ "$v" -ge "$BAD" ] && { echo red; return; }; echo red; }
+while :; do
+  uplink_dbm=$(iw dev "$(uplink_iface)" link 2>/dev/null | awk "/signal:/ {print \$2}")
+  set_color wan "$(quality "$uplink_dbm")"
+  set_color lan "$(quality "$(best_client_dbm)")"
+  sleep 2
+done'
+	procd_set_param respawn 2000 1 0
+	procd_close_instance
+}
+
