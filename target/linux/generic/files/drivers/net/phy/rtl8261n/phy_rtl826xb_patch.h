@@ -10,13 +10,8 @@
 /*
  * Include Files
  */
-#if defined(RTK_PHYDRV_IN_LINUX)
-  #include "rtk_osal.h"
-  #include "rtk_phylib_def.h"
-#else
-  #include <common/rt_type.h>
-  #include <rtk/port.h>
-#endif
+#include "rtk_osal.h"
+#include "rtk_phylib_def.h"
 
 /* Function Name:
  *      phy_rtl826xb_patch
