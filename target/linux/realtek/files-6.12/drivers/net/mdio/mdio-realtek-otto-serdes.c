@@ -52,6 +52,7 @@ struct rtsds_config {
 	int sds_cnt;
 	int page_cnt;
 	int base;
+	int (*get_backing_sds)(struct rtsds_ctrl *ctrl, int sds, int page);
 	int (*read)(struct rtsds_ctrl *ctrl, int sds, int page, int regnum);
 	int (*write)(struct rtsds_ctrl *ctrl, int sds, int page, int regnum, u16 value);
 };
@@ -66,24 +67,6 @@ static bool rtsds_mmd_to_sds(struct rtsds_ctrl *ctrl, int addr, int devad, int m
 		 *sds_page < 0 || *sds_page >= ctrl->cfg->page_cnt ||
 		 *sds_regnum < 0 || *sds_regnum >= RTSDS_REG_CNT ||
 		 devad != MDIO_MMD_VEND1);
-}
-
-static int rtsds_get_backing_sds(struct rtsds_ctrl *ctrl, int sds, int page)
-{
-	int map[] = { 0, 1, 2, 3, 6, 7, 10, 11, 14, 15, 18, 19, 22, 23 };
-	int backsds;
-
-	/* non-RTL931x and first two RTL931x SerDes have 1:1 frontend/backend mapping */
-	if (ctrl->cfg->base != RTSDS_931X_BASE || sds < 2)
-		return sds;
-
-	backsds = map[sds];
-	if (sds & 1)
-		backsds += (page >> 6); /* distribute "odd" to 3 background SerDes */
-	else
-		backsds += (page >> 7); /* distribute "even" to 2 background SerDes */
-
-	return backsds;
 }
 
 #ifdef CONFIG_DEBUG_FS
@@ -137,7 +120,7 @@ static int rtsds_dbg_registers_show(struct seq_file *seqf, void *unused)
 	do {
 		subpage = RTSDS_SUBPAGE(page);
 		if (!subpage) {
-			seq_printf(seqf, "Back SDS %02d:", rtsds_get_backing_sds(ctrl, sds, page));
+			seq_printf(seqf, "Back SDS %02d:", ctrl->cfg->get_backing_sds(ctrl, sds, page));
 			for (regnum = 0; regnum < RTSDS_REG_CNT; regnum++)
 				seq_printf(seqf, "   %02X", regnum);
 			seq_puts(seqf, "\n");
@@ -302,6 +285,32 @@ static int rtsds_839x_write(struct rtsds_ctrl *ctrl, int sds, int page, int regn
 	return regmap_write(ctrl->map, ctrl->cfg->base + offset, write_value);
 }
 
+static int rtsds_83xx_get_backing_sds(struct rtsds_ctrl *ctrl, int sds, int page)
+{
+	return sds;
+}
+
+static int rtsds_rt93xx_io(struct rtsds_ctrl *ctrl, int sds, int page, int regnum, int cmd)
+{
+	int ret, op, value;
+
+	op = FIELD_PREP(RTSDS_93XX_CMD_SDS_MASK, sds) |
+	     FIELD_PREP(RTSDS_93XX_CMD_PAGE_MASK, page) |
+	     FIELD_PREP(RTSDS_93XX_CMD_REG_MASK, regnum) |
+	     RTSDS_93XX_CMD_BUSY | cmd;
+
+	regmap_write(ctrl->map, ctrl->cfg->base, op);
+	ret = regmap_read_poll_timeout(ctrl->map, ctrl->cfg->base, value,
+				       !(value & RTSDS_93XX_CMD_BUSY), 30, 1000000);
+
+	if (ret < 0) {
+		dev_err(ctrl->dev, "SerDes I/O timed out\n");
+		return -ETIMEDOUT;
+	}
+
+	return 0;
+}
+
 /*
  * RTL93xx targets use a shared implementation. Their SerDes data is accessed through two IO
  * registers which simulate commands to an internal MDIO bus.
@@ -311,7 +320,16 @@ static int rtsds_839x_write(struct rtsds_ctrl *ctrl, int sds, int page, int regn
  * - SerDes 0-1 exist on the RTL9301 and 9302B and are QSGMII capable
  * - SerDes 2-9 are USXGMII capabable with either quad or single configuration
  * - SerDes 10-11 are 10GBase-R capable
- *
+ */
+static int rtsds_930x_get_backing_sds(struct rtsds_ctrl *ctrl, int sds, int page)
+{
+	if (sds == 3 && page < 4)
+		return 10;
+
+	return sds;
+}
+
+/*
  * The RTL931x family has 14 "frontend" SerDes that are cascaded. All operations (e.g. reset) work
  * on this frontend view while their registers are distributed over a total of least 26 background
  * SerDes with 64 pages and 32 registers. Three types of SerDes exist:
@@ -342,26 +360,22 @@ static int rtsds_839x_write(struct rtsds_ctrl *ctrl, int sds, int page, int regn
  * page 0x40-0x7f (digi 1):	page 0x00-0x3f back SDS		page 0x00-0x3f back SDS+1
  * page 0x80-0xbf (digi 2):	page 0x00-0x3f back SDS+1	page 0x00-0x3f back SDS+2
  */
-
-static int rtsds_rt93xx_io(struct rtsds_ctrl *ctrl, int sds, int page, int regnum, int cmd)
+static int rtsds_931x_get_backing_sds(struct rtsds_ctrl *ctrl, int sds, int page)
 {
-	int ret, op, value;
+	int map[] = { 0, 1, 2, 3, 6, 7, 10, 11, 14, 15, 18, 19, 22, 23 };
+	int backsds;
 
-	op = FIELD_PREP(RTSDS_93XX_CMD_SDS_MASK, sds) |
-	     FIELD_PREP(RTSDS_93XX_CMD_PAGE_MASK, page) |
-	     FIELD_PREP(RTSDS_93XX_CMD_REG_MASK, regnum) |
-	     RTSDS_93XX_CMD_BUSY | cmd;
+	/* First two RTL931x SerDes have 1:1 frontend/backend mapping */
+	if (sds < 2)
+		return sds;
 
-	regmap_write(ctrl->map, ctrl->cfg->base, op);
-	ret = regmap_read_poll_timeout(ctrl->map, ctrl->cfg->base, value,
-				       !(value & RTSDS_93XX_CMD_BUSY), 30, 1000000);
+	backsds = map[sds];
+	if (sds & 1)
+		backsds += (page >> 6); /* distribute "odd" to 3 background SerDes */
+	else
+		backsds += (page >> 7); /* distribute "even" to 2 background SerDes */
 
-	if (ret < 0) {
-		dev_err(ctrl->dev, "SerDes I/O timed out\n");
-		return -ETIMEDOUT;
-	}
-
-	return 0;
+	return backsds;
 }
 
 static int rtsds_93xx_read(struct rtsds_ctrl *ctrl, int sds, int page, int regnum)
@@ -369,7 +383,7 @@ static int rtsds_93xx_read(struct rtsds_ctrl *ctrl, int sds, int page, int regnu
 	int subpage = RTSDS_SUBPAGE(page);
 	int ret, backsds, value;
 
-	backsds = rtsds_get_backing_sds(ctrl, sds, page);
+	backsds = ctrl->cfg->get_backing_sds(ctrl, sds, page);
 	ret = rtsds_rt93xx_io(ctrl, backsds, subpage, regnum, RTSDS_93XX_CMD_READ);
 	if (ret)
 		return ret;
@@ -384,7 +398,7 @@ static int rtsds_93xx_write(struct rtsds_ctrl *ctrl, int sds, int page, int regn
 	int subpage = RTSDS_SUBPAGE(page);
 	int ret, backsds;
 
-	backsds = rtsds_get_backing_sds(ctrl, sds, page);
+	backsds = ctrl->cfg->get_backing_sds(ctrl, sds, page);
 	ret = regmap_write(ctrl->map, ctrl->cfg->base + 4, value);
 	if (ret)
 		return ret;
@@ -458,35 +472,39 @@ static int rtsds_probe(struct platform_device *pdev)
 }
 
 static const struct rtsds_config rtsds_838x_cfg = {
-	.sds_cnt	= RTSDS_838X_SDS_CNT,
-	.page_cnt	= RTSDS_838X_PAGE_CNT,
-	.base		= RTSDS_838X_BASE,
-	.read		= rtsds_838x_read,
-	.write		= rtsds_838x_write,
+	.sds_cnt		= RTSDS_838X_SDS_CNT,
+	.page_cnt		= RTSDS_838X_PAGE_CNT,
+	.base			= RTSDS_838X_BASE,
+	.get_backing_sds	= rtsds_83xx_get_backing_sds,
+	.read			= rtsds_838x_read,
+	.write			= rtsds_838x_write,
 };
 
 static const struct rtsds_config rtsds_839x_cfg = {
-	.sds_cnt	= RTSDS_839X_SDS_CNT,
-	.page_cnt	= RTSDS_839X_PAGE_CNT,
-	.base		= RTSDS_839X_BASE,
-	.read		= rtsds_839x_read,
-	.write		= rtsds_839x_write,
+	.sds_cnt		= RTSDS_839X_SDS_CNT,
+	.page_cnt		= RTSDS_839X_PAGE_CNT,
+	.base			= RTSDS_839X_BASE,
+	.get_backing_sds	= rtsds_83xx_get_backing_sds,
+	.read			= rtsds_839x_read,
+	.write			= rtsds_839x_write,
 };
 
 static const struct rtsds_config rtsds_930x_cfg = {
-	.sds_cnt	= RTSDS_930X_SDS_CNT,
-	.page_cnt	= RTSDS_930X_PAGE_CNT,
-	.base		= RTSDS_930X_BASE,
-	.read		= rtsds_93xx_read,
-	.write		= rtsds_93xx_write,
+	.sds_cnt		= RTSDS_930X_SDS_CNT,
+	.page_cnt		= RTSDS_930X_PAGE_CNT,
+	.base			= RTSDS_930X_BASE,
+	.get_backing_sds	= rtsds_930x_get_backing_sds,
+	.read			= rtsds_93xx_read,
+	.write			= rtsds_93xx_write,
 };
 
 static const struct rtsds_config rtsds_931x_cfg = {
-	.sds_cnt	= RTSDS_931X_SDS_CNT,
-	.page_cnt	= RTSDS_931X_PAGE_CNT,
-	.base		= RTSDS_931X_BASE,
-	.read		= rtsds_93xx_read,
-	.write		= rtsds_93xx_write,
+	.sds_cnt		= RTSDS_931X_SDS_CNT,
+	.page_cnt		= RTSDS_931X_PAGE_CNT,
+	.base			= RTSDS_931X_BASE,
+	.get_backing_sds	= rtsds_931x_get_backing_sds,
+	.read			= rtsds_93xx_read,
+	.write			= rtsds_93xx_write,
 };
 
 static const struct of_device_id rtsds_of_match[] = {
