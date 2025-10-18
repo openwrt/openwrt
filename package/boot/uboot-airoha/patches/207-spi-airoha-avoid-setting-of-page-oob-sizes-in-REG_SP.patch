@@ -13,8 +13,6 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  drivers/spi/airoha_snfi_spi.c | 38 -----------------------------------
  1 file changed, 38 deletions(-)
 
-diff --git a/drivers/spi/airoha_snfi_spi.c b/drivers/spi/airoha_snfi_spi.c
-index 7cafa900bbc..71e4fc13924 100644
 --- a/drivers/spi/airoha_snfi_spi.c
 +++ b/drivers/spi/airoha_snfi_spi.c
 @@ -514,44 +514,6 @@ static int airoha_snand_nfi_config(struct airoha_snand_priv *priv)
@@ -62,6 +60,3 @@ index 7cafa900bbc..71e4fc13924 100644
  	/* sec num */
  	val = FIELD_PREP(SPI_NFI_SEC_NUM, priv->nfi_cfg.sec_num);
  	err = regmap_update_bits(priv->regmap_nfi, REG_SPI_NFI_CON,
--- 
-2.51.0
-
