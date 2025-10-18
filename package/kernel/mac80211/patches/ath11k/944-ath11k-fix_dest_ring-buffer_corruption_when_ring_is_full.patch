@@ -1,0 +1,61 @@
+From 6fc2589aae91818dd1183a589ab97d8e5c25364e Mon Sep 17 00:00:00 2001
+From: Johan Hovold <johan+linaro@kernel.org>
+Date: Wed, 4 Jun 2025 16:34:57 +0200
+Subject: wifi: ath11k: fix dest ring-buffer corruption when ring is full
+
+commit aa6956150f820e6a6deba44be325ddfcb5b10f88 upstream.
+
+Add the missing memory barriers to make sure that destination ring
+descriptors are read before updating the tail pointer (and passing
+ownership to the device) to avoid memory corruption on weakly ordered
+architectures like aarch64 when the ring is full.
+
+Tested-on: WCN6855 hw2.1 WLAN.HSP.1.1-03125-QCAHSPSWPL_V1_V2_SILICONZ_LITE-3.6510.41
+
+Fixes: d5c65159f289 ("ath11k: driver for Qualcomm IEEE 802.11ax devices")
+Cc: stable@vger.kernel.org      # 5.6
+Signed-off-by: Johan Hovold <johan+linaro@kernel.org>
+Reviewed-by: Baochen Qiang <quic_bqiang@quicinc.com>
+Link: https://patch.msgid.link/20250604143457.26032-6-johan+linaro@kernel.org
+Signed-off-by: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/net/wireless/ath/ath11k/hal.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+(limited to 'drivers/net/wireless/ath/ath11k')
+
+--- a/drivers/net/wireless/ath/ath11k/hal.c
++++ b/drivers/net/wireless/ath/ath11k/hal.c
+@@ -854,7 +854,6 @@ void ath11k_hal_srng_access_end(struct a
+ {
+ 	lockdep_assert_held(&srng->lock);
+ 
+-	/* TODO: See if we need a write memory barrier here */
+ 	if (srng->flags & HAL_SRNG_FLAGS_LMAC_RING) {
+ 		/* For LMAC rings, ring pointer updates are done through FW and
+ 		 * hence written to a shared memory location that is read by FW
+@@ -869,7 +868,11 @@ void ath11k_hal_srng_access_end(struct a
+ 			WRITE_ONCE(*srng->u.src_ring.hp_addr, srng->u.src_ring.hp);
+ 		} else {
+ 			srng->u.dst_ring.last_hp = *srng->u.dst_ring.hp_addr;
+-			*srng->u.dst_ring.tp_addr = srng->u.dst_ring.tp;
++			/* Make sure descriptor is read before updating the
++			 * tail pointer.
++			 */
++			dma_mb();
++			WRITE_ONCE(*srng->u.dst_ring.tp_addr, srng->u.dst_ring.tp);
+ 		}
+ 	} else {
+ 		if (srng->ring_dir == HAL_SRNG_DIR_SRC) {
+@@ -885,6 +888,10 @@ void ath11k_hal_srng_access_end(struct a
+ 					   srng->u.src_ring.hp);
+ 		} else {
+ 			srng->u.dst_ring.last_hp = *srng->u.dst_ring.hp_addr;
++			/* Make sure descriptor is read before updating the
++			 * tail pointer.
++			 */
++			mb();
+ 			ath11k_hif_write32(ab,
+ 					   (unsigned long)srng->u.dst_ring.tp_addr -
+ 					   (unsigned long)ab->mem,
