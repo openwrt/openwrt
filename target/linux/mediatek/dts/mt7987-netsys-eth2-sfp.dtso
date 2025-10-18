@@ -1,0 +1,50 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	fragment@0 {
+		target-path = "/";
+		__overlay__ {
+			sfp_cage0: sfp@0 {
+				compatible = "sff,sfp";
+				i2c-bus = <&i2c0>;
+				mod-def0-gpios = <&pio 49 GPIO_ACTIVE_LOW>;
+				los-gpios = <&pio 46 GPIO_ACTIVE_HIGH>;
+				tx-disable-gpios = <&pio 48 GPIO_ACTIVE_HIGH>;
+				maximum-power-milliwatt = <3000>;
+			};
+		};
+	};
+
+	fragment@1 {
+		target = <&gmac2>;
+		__overlay__ {
+			phy-mode = "2500base-x";
+			managed = "in-band-status";
+			sfp = <&sfp_cage0>;
+			status = "okay";
+		};
+	};
+
+	fragment@2 {
+		target-path = "/soc_netsys/hnat@15000000";
+		__overlay__ {
+			mtketh-lan2 = "eth2";
+			mtketh-max-gmac = <3>;
+		};
+	};
+
+	fragment@3 {
+		target-path = "/soc/i2c@11003000";
+		__overlay__ {
+			pinctrl-names = "default";
+			pinctrl-0 = <&i2c0_pins>;
+			status = "okay";
+		};
+	};
+};
+
