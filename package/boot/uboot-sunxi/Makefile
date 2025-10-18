@@ -264,6 +264,12 @@ define U-Boot/pangolin
   UENV:=pangolin
 endef
 
+define U-Boot/pinecube
+  BUILD_SUBTARGET:=cortexa7
+  NAME:=Pine64 PineCube
+  BUILD_DEVICES:=pinecube
+endef
+
 define U-Boot/popstick
   BUILD_SUBTARGET:=arm926ejs
   NAME:=PopStick
@@ -451,6 +457,7 @@ UBOOT_TARGETS := \
 	orangepi_zero2w \
 	orangepi_zero3 \
 	pangolin \
+	pinecube \
 	popstick \
 	pine64_plus \
 	Sinovoip_BPI_M3 \
