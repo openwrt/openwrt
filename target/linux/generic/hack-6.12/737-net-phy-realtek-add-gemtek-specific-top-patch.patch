@@ -1,0 +1,44 @@
+From d5f89c5ec52aba2cd89918c331bbdd44cc253275 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Bal=C3=A1zs=20Triszka?= <info@balika011.hu>
+Date: Sat, 18 Oct 2025 21:57:14 +0200
+Subject: [PATCH] phy-realtek: add gemtek specific top patch
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Balázs Triszka <info@balika011.hu>
+
+---
+ drivers/net/phy/realtek/realtek.h      | 3 ++-
+ drivers/net/phy/realtek/realtek_main.c | 3 ++-
+ 2 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/phy/realtek/realtek.h b/drivers/net/phy/realtek/realtek.h
+index 2166f1109..13222b74c 100644
+--- a/drivers/net/phy/realtek/realtek.h
++++ b/drivers/net/phy/realtek/realtek.h
+@@ -12,7 +12,8 @@ struct rtl826x_priv {
+ 	rt_phy_patch_db_t *patch;
+ 	bool pnswap_tx : 1;
+ 	bool pnswap_rx : 1;
+ 	bool patch_rtk_serdes : 1;
++	bool patch_gemtek_top : 1;
+ };
+ 
+ int rtl822x_hwmon_init(struct phy_device *phydev);
+diff --git a/drivers/net/phy/realtek/realtek_main.c b/drivers/net/phy/realtek/realtek_main.c
+index d79fa86f2..338b84039 100644
+--- a/drivers/net/phy/realtek/realtek_main.c
++++ b/drivers/net/phy/realtek/realtek_main.c
+@@ -1835,7 +1835,8 @@ static int rtl826x_probe(struct phy_device *phydev)
+ 
+ 	priv->pnswap_tx = device_property_read_bool(dev, "realtek,pnswap-tx");
+ 	priv->pnswap_rx = device_property_read_bool(dev, "realtek,pnswap-rx");
+ 	priv->patch_rtk_serdes = device_property_read_bool(dev, "realtek,rtk-serdes-patch");
++	priv->patch_gemtek_top = device_property_read_bool(dev, "realtek,patch-gemtek-top");
+ 	phydev->priv = priv;
+ 
+ 	return 0;
+-- 
+2.48.1
+
