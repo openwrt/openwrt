@@ -16,7 +16,7 @@
 #define REALTEK_PHY_ID_RTL8264B         0x001CC813
 #define REALTEK_PHY_ID_RTL8264          0x001CCAF2
 
-#define REALTEK_SERDES_GLOBAL_CFG       0x1c
+#define REALTEK_SERDES_GLOBAL_CFG       0xC1
 #define   REALTEK_HSO_INV               BIT(7)
 #define   REALTEK_HSI_INV               BIT(6)
 
