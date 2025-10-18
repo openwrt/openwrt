@@ -1,0 +1,31 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 18 Oct 2025 21:55:44 +0200
+Subject: [PATCH] netlink: increase buffer size
+
+When lots of events are waiting to be received, the default buffer size
+is not enough, and hostapd can run into "No buffer space available" on
+recvmsg. This will cause the netdev state tracking to go out of sync.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/drivers/netlink.c
++++ b/src/drivers/netlink.c
+@@ -92,6 +92,7 @@ struct netlink_data * netlink_init(struc
+ {
+ 	struct netlink_data *netlink;
+ 	struct sockaddr_nl local;
++	int size = 262144;
+ 
+ 	netlink = os_zalloc(sizeof(*netlink));
+ 	if (netlink == NULL)
+@@ -105,6 +106,9 @@ struct netlink_data * netlink_init(struc
+ 		return NULL;
+ 	}
+ 
++	setsockopt(netlink->sock, SOL_SOCKET, SO_RCVBUF, &size, sizeof(size));
++	setsockopt(netlink->sock, SOL_SOCKET, SO_SNDBUF, &size, sizeof(size));
++
+ 	os_memset(&local, 0, sizeof(local));
+ 	local.nl_family = AF_NETLINK;
+ 	local.nl_groups = RTMGRP_LINK;
