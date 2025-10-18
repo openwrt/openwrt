@@ -692,70 +692,18 @@ static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	int sds_num;
-	u32 reg, band;
+	u32 reg;
 
 	sds_num = priv->ports[port].sds_num;
 	pr_info("%s: speed %d sds_num %d\n", __func__, state->speed, sds_num);
 
-	switch (state->interface) {
-	case PHY_INTERFACE_MODE_1000BASEX:
-		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_1000BASEX);
-		rtl931x_sds_init(sds_num, PHY_INTERFACE_MODE_1000BASEX);
-		break;
-	case PHY_INTERFACE_MODE_XGMII:
-		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_XGMII);
-		rtl931x_sds_init(sds_num, PHY_INTERFACE_MODE_XGMII);
-		break;
-	case PHY_INTERFACE_MODE_10GBASER:
-	case PHY_INTERFACE_MODE_10GKR:
-		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_10GBASER);
-		rtl931x_sds_init(sds_num, PHY_INTERFACE_MODE_10GBASER);
-		break;
-	case PHY_INTERFACE_MODE_USXGMII:
-		/*
-		 * TODO: USXGMII is currently the swiss army knife to declare 10G
-		 * multi port PHYs. Real devices use other modes instead. Especially
-		 *
-		 * - RTL8224 is driven in 10G_QXGMII
-		 * - RTL8218D/E are driven in (Realtek proprietary) XSGMII (10G SGMII)
-		 *
-		 * For now disable all USXGMII SerDes handling and rely on U-Boot setup.
-		 */
-		 break;
-	case PHY_INTERFACE_MODE_SGMII:
-		pr_info("%s setting mode PHY_INTERFACE_MODE_SGMII\n", __func__);
-		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_SGMII);
-		rtl931x_sds_init(sds_num, PHY_INTERFACE_MODE_SGMII);
-		band = rtl931x_sds_cmu_band_set(sds_num, true, 62, PHY_INTERFACE_MODE_SGMII);
-		break;
-	case PHY_INTERFACE_MODE_QSGMII:
-		band = rtl931x_sds_cmu_band_get(sds_num, PHY_INTERFACE_MODE_QSGMII);
-		rtl931x_sds_init(sds_num, PHY_INTERFACE_MODE_QSGMII);
-		break;
-	default:
-		pr_err("%s: unknown serdes mode: %s\n",
-			__func__, phy_modes(state->interface));
-		return;
-	}
-
 	reg = sw_r32(priv->r->mac_force_mode_ctrl(port));
 	pr_info("%s reading FORCE_MODE_CTRL: %08x\n", __func__, reg);
 
-	reg &= ~(RTL931X_DUPLEX_MODE | RTL931X_FORCE_EN | RTL931X_FORCE_LINK_EN);
-
-	reg &= ~(0xf << 12);
-	reg |= 0x2 << 12; /* Set SMI speed to 0x2 */
-
-	reg |= RTL931X_TX_PAUSE_EN | RTL931X_RX_PAUSE_EN;
-
-	if (priv->lagmembers & BIT_ULL(port))
-		reg |= RTL931X_DUPLEX_MODE;
-
-	if (state->duplex == DUPLEX_FULL)
-		reg |= RTL931X_DUPLEX_MODE;
+	/* Disable MAC completely so PCS can setup the SerDes */
+	reg = 0;
 
 	sw_w32(reg, priv->r->mac_force_mode_ctrl(port));
-
 }
 
 static void rtl93xx_phylink_mac_config(struct dsa_switch *ds, int port,
