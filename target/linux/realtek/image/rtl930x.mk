@@ -119,12 +119,19 @@ define Device/zyxel_xgs1250-12-common
   DEVICE_MODEL := XGS1250-12
   DEVICE_PACKAGES := kmod-hwmon-gpiofan kmod-thermal
   IMAGE_SIZE := 13312k
+  KERNEL := \
+	kernel-bin | \
+	append-dtb | \
+	rt-compress | \
+	rt-loader | \
+	uImage none
   KERNEL_INITRAMFS := \
 	kernel-bin | \
 	append-dtb | \
-	gzip | \
+	rt-compress | \
 	zyxel-vers | \
-	uImage gzip
+	rt-loader | \
+	uImage none
 endef
 
 define Device/zyxel_xgs1250-12-a1
