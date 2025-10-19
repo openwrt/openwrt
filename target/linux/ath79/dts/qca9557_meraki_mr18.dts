@@ -127,6 +127,46 @@
 		partition@1080000 {
 			label = "ubi";
 			reg = <0x1080000 0x6f00000>;
+
+			volumes {
+				ubi-volume-board-config {
+					volname = "board-config";
+
+					nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						macaddr_board_102: macaddr@102 {
+							compatible = "mac-base";
+							reg = <0x102 0x6>;
+							#nvmem-cell-cells = <1>;
+						};
+					};
+				};
+
+				ubi-volume-caldata {
+					volname = "caldata";
+
+					nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						cal_data_1000: cal@1000 {
+							reg = <0x1000 0x440>;
+						};
+
+						cal_data_5000: cal@5000 {
+							reg = <0x5000 0x440>;
+						};
+
+						cal_data_9000: cal@9000 {
+							reg = <0x9000 0x440>;
+						};
+					};
+				};
+			};
 		};
 
 		partition@7fe0000 {
@@ -157,7 +197,9 @@
 	wifi@0,0 {
 		compatible = "pci168c,0033";
 		reg = <0x0000 0 0 0 0>;
-		qca,no-eeprom;
+
+		nvmem-cells = <&macaddr_board_102 2>, <&cal_data_5000>;
+		nvmem-cell-names = "mac-address", "calibration";
 	};
 };
 
@@ -167,7 +209,9 @@
 	wifi@0,0 {
 		compatible = "pci168c,0033";
 		reg = <0x0000 0 0 0 0>;
-		qca,no-eeprom;
+
+		nvmem-cells = <&macaddr_board_102 3>, <&cal_data_9000>;
+		nvmem-cell-names = "mac-address", "calibration";
 	};
 };
 
@@ -184,6 +228,9 @@
 	pll-data = <0xa6000000 0xa0000101 0x80001313>;
 	phy-handle = <&phy>;
 
+	nvmem-cells = <&macaddr_board_102 0>;
+	nvmem-cell-names = "mac-address";
+
 	gmac-config {
 		device = <&gmac>;
 		rgmii-enabled = <1>;
@@ -194,5 +241,7 @@
 
 &wmac {
 	status = "okay";
-	qca,no-eeprom;
+
+	nvmem-cells = <&macaddr_board_102 1>, <&cal_data_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
 };
