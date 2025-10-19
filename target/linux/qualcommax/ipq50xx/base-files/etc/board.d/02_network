@@ -25,6 +25,10 @@ ipq50xx_setup_interfaces()
 	yuncore,ax850)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
+	wallys,dr5018)
+		ucidef_set_interface_wan "eth0"
+		ucidef_add_switch "switch1" \
+			"6@eth1" "1:lan" "2:lan" "3:lan" "4:lan"
 	esac
 }
 

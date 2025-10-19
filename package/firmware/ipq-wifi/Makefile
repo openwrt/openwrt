@@ -91,6 +91,7 @@ ALLWIFIBOARDS:= \
 	yuncore_ax850 \
 	yuncore_ax880 \
 	yuncore_fap650 \
+	wallys_dr5018 \
 	zbtlink_zbt-z800ax \
 	zte_mf269 \
 	zte_mf286ar\
@@ -264,6 +265,7 @@ $(eval $(call generate-ipq-wifi-package,yuncore_ax830,Yuncore AX830))
 $(eval $(call generate-ipq-wifi-package,yuncore_ax850,Yuncore AX850))
 $(eval $(call generate-ipq-wifi-package,yuncore_ax880,Yuncore AX880))
 $(eval $(call generate-ipq-wifi-package,yuncore_fap650,Yuncore FAP650))
+$(eval $(call generate-ipq-wifi-package,wallys_dr5018,Wallys DR5018))
 $(eval $(call generate-ipq-wifi-package,zbtlink_zbt-z800ax,Zbtlink ZBT-Z800AX))
 $(eval $(call generate-ipq-wifi-package,zte_mf269,ZTE MF269))
 $(eval $(call generate-ipq-wifi-package,zte_mf286ar,ZTE MF286A/R))
