@@ -60,7 +60,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		cdev->brightness_set_blocking = phy_led_set_brightness;
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -867,6 +867,15 @@ struct phy_led {
+@@ -885,6 +885,15 @@ struct phy_led {
  
  #define to_phy_led(d) container_of(d, struct phy_led, led_cdev)
  
@@ -76,7 +76,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  /**
   * struct phy_driver - Driver structure for a particular PHY type
   *
-@@ -1144,6 +1153,19 @@ struct phy_driver {
+@@ -1175,6 +1184,19 @@ struct phy_driver {
  	int (*led_hw_control_get)(struct phy_device *dev, u8 index,
  				  unsigned long *rules);
  
