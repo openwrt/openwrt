@@ -1,0 +1,344 @@
+// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+/dts-v1/;
+
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include "an7581.dtsi"
+
+/ {
+	model = "Bell XG-140G-Y003";
+	compatible = "bell,xg-140g-y003", "airoha,an7581", "airoha,en7581";
+
+	aliases {
+		serial0 = &uart1;
+	};
+
+	chosen {
+		bootargs-append = " root=/dev/ubiblock0_0 rootfstype=squashfs ro console=ttyS0,115200 earlycon";
+		stdout-path = "serial0:115200n8";
+	};
+
+	memory@80000000 {
+		device_type = "memory";
+		reg = <0x0 0x80000000 0x2 0x00000000>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		pwr_led: led-0 {
+			// label = "blue:power";
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&en7581_pinctrl 17 GPIO_ACTIVE_LOW>;
+		};
+
+		led-1 {
+			label = "blue:pon";
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&en7581_pinctrl 18 GPIO_ACTIVE_LOW>;
+		};
+
+		los_led: led-2 {
+			label = "blue:los";
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&en7581_pinctrl 19 GPIO_ACTIVE_LOW>;
+		};
+
+		internet_led: led-3 {
+			label = "blue:internet";
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&en7581_pinctrl 20 GPIO_ACTIVE_LOW>;
+		};
+
+		led-4 {
+			label = "blue:fxs";
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&en7581_pinctrl 33 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&en7581_pinctrl 0 GPIO_ACTIVE_LOW>;
+			linux,input-type = <EV_KEY>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+	};
+};
+
+&en7581_pinctrl {
+	gpio-ranges = <&en7581_pinctrl 0 13 47>;
+
+	mdio_pins: mdio-pins {
+		mux {
+			function = "mdio";
+			groups = "mdio";
+		};
+
+		conf {
+			pins = "gpio2";
+			output-high;
+		};
+	};
+
+	gswp2_led0_pins: gswp2-led0-pins {
+		mux {
+			pins = "gpio34";
+			function = "phy2_led0";
+		};
+	};
+
+	gswp3_led0_pins: gswp3-led0-pins {
+		mux {
+			pins = "gpio35";
+			function = "phy3_led0";
+		};
+	};
+
+	gswp4_led0_pins: gswp4-led0-pins {
+		mux {
+			pins = "gpio42";
+			function = "phy4_led0";
+		};
+	};
+};
+
+&snfi {
+	status = "okay";
+};
+
+&spi_nand {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "bootloader";
+			reg = <0x00000000 0x00080000>;
+			read-only;
+
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x7c000>;
+			};
+
+			partition@7c000 {
+				label = "u-boot-env";
+				reg = <0x7c000 0x2000>;
+
+				// nvmem-layout {
+				// 	compatible = "u-boot,env";
+				// };
+			};
+		};
+
+		partition@80000 {
+			label = "romfile";
+			reg = <0x00080000 0x00040000>;
+		};
+
+		partition@c0000 {
+			label = "nsb_master";
+			reg = <0x000c0000 0x02880000>;
+
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "kernel";
+				reg = <0x0 0x880000>;
+			};
+
+			partition@880000 {
+				compatible = "linux,ubi";
+				label = "ubi";
+				reg = <0x880000 0x2000000>;
+			};
+		};
+
+		partition@2940000 {
+			label = "nsb_slave";
+			reg = <0x02940000 0x02880000>;
+		};
+
+		partition@51c0000 {
+			label = "bosa";
+			reg = <0x051c0000 0x00040000>;
+		};
+
+		partition@5200000 {
+			label = "ri";
+			reg = <0x05200000 0x00040000>;
+		};
+
+		partition@5240000 {
+			label = "flag";
+			reg = <0x05240000 0x00040000>;
+		};
+
+		partition@5280000 {
+			label = "flagback";
+			reg = <0x05280000 0x00040000>;
+		};
+
+		partition@52c0000 {
+			label = "config";
+			reg = <0x052c0000 0x00a00000>;
+		};
+
+		partition@5cc0000 {
+			label = "framwork1";
+			reg = <0x05cc0000 0x01000000>;
+		};
+
+		partition@6cc0000 {
+			label = "framwork2";
+			reg = <0x06cc0000 0x01000000>;
+		};
+
+		partition@7cc0000 {
+			label = "apps";
+			reg = <0x07cc0000 0x060e0000>;
+		};
+
+		partition@dda0000 {
+			label = "oopsfs";
+			reg = <0x0dda0000 0x00400000>;
+		};
+
+		partition@e1a0000 {
+			label = "log";
+			reg = <0x0e1a0000 0x00a00000>;
+		};
+	};
+};
+
+&i2c0 {
+	status = "okay";
+};
+
+&npu {
+	status = "okay";
+};
+
+&eth {
+	status = "okay";
+};
+
+&gdm1 {
+	status = "okay";
+};
+
+&gdm4 {
+	status = "okay";
+	phy-handle = <&phy15>;
+	phy-mode = "2500base-x";
+	label = "lan1";
+};
+
+&switch {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&mdio_pins>;
+
+	ports {
+		port@2 {
+			status = "okay";
+			label = "lan2";
+		};
+
+		port@3 {
+			status = "okay";
+			label = "lan3";
+		};
+
+		port@4 {
+			status = "okay";
+			label = "lan4";
+		};
+	};
+
+	mdio {
+		ethernet-phy@a {
+			status = "okay";
+			pinctrl-names = "gbe-led";
+			pinctrl-0 = <&gswp2_led0_pins>;
+
+			leds {
+				led@0 {
+					status = "okay";
+					active-low;
+					function = LED_FUNCTION_LAN;
+					color = <LED_COLOR_ID_BLUE>;
+				};
+			};
+		};
+
+		ethernet-phy@b {
+			status = "okay";
+			pinctrl-names = "gbe-led";
+			pinctrl-0 = <&gswp3_led0_pins>;
+
+			leds {
+				led@0 {
+					status = "okay";
+					active-low;
+					function = LED_FUNCTION_LAN;
+					color = <LED_COLOR_ID_BLUE>;
+				};
+			};
+		};
+
+		ethernet-phy@c {
+			status = "okay";
+			pinctrl-names = "gbe-led";
+			pinctrl-0 = <&gswp4_led0_pins>;
+
+			leds {
+				led@0 {
+					status = "okay";
+					active-low;
+					function = LED_FUNCTION_LAN;
+					color = <LED_COLOR_ID_BLUE>;
+				};
+			};
+		};
+
+		phy15: ethernet-phy@f {
+			/* Airoha EN8811H */
+			compatible = "ethernet-phy-id03a2.a411", "ethernet-phy-ieee802.3-c22";
+			reg = <15>;
+
+			reset-gpios = <&en7581_pinctrl 31 GPIO_ACTIVE_LOW>;
+			reset-assert-us = <10000>;
+			reset-deassert-us = <2000000>;
+
+			leds {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				led@0 {
+					reg = <0>;
+					function = LED_FUNCTION_LAN;
+					color = <LED_COLOR_ID_BLUE>;
+				};
+			};
+		};
+	};
+};
