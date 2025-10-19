@@ -134,6 +134,35 @@ endef
 
 PKG_INSTALL_STAMP:=$(PKG_INFO_DIR)/$(PKG_DIR_NAME).$(if $(BUILD_VARIANT),$(BUILD_VARIANT),default).install
 
+# Normalize package SOURCE entry to pack reproducible package
+# If we are packing a package with OpenWrt buildroot:
+# - Replace package/... with feeds/base/...
+# If we are packing a package with SDK:
+# - Replace feeds/.*_root/... with feeds/.*/... and remove
+#   the intermediate directory to reflect what the symbolic link
+#   points to.
+#   Example:
+#   Feed link: feeds/base_root/package -> feeds/base
+#   Package: feeds/base_root/package/system/uci -> feeds/base/system/uci
+ifeq ($(DUMP),)
+  __pkg_base_path:=$(patsubst $(TOPDIR)/%,%,$(CURDIR))
+  __pkg_provider_path:=$(word 1,$(subst /, ,$(__pkg_base_path)))
+  ifeq ($(__pkg_provider_path), feeds)
+    __pkg_feed_path:=$(word 2,$(subst /, ,$(__pkg_base_path)))
+    __pkg_feed_name:=$(patsubst %_root,%,$(__pkg_feed_path))
+    ifneq (__pkg_feed_path, __pkg_feed_name)
+      __pkg_feed_realpath:=$(realpath $(TOPDIR)/feeds/$(__pkg_feed_name))
+      __pkg_feed_dir:=$(patsubst $(TOPDIR)/feeds/$(__pkg_feed_path)/%,%,$(__pkg_feed_realpath))
+      __pkg_path:=$(patsubst feeds/$(__pkg_feed_path)/$(__pkg_feed_dir)/%,%,$(__pkg_base_path))
+    else
+      __pkg_path:=$(patsubst feeds/$(__pkg_feed_path)/%,%,$(__pkg_base_path))
+    endif
+    __pkg_source_makefile:=$(TOPDIR)/feeds/$(__pkg_feed_name)/$(__pkg_path)
+  else ifeq ($(__pkg_provider_path), package)
+    __pkg_source_makefile:=$(TOPDIR)/feeds/base/$(patsubst package/%,%,$(__pkg_base_path))
+  endif
+endif
+
 include $(INCLUDE_DIR)/package-defaults.mk
 include $(INCLUDE_DIR)/package-dumpinfo.mk
 include $(INCLUDE_DIR)/package-pack.mk
