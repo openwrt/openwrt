@@ -7,7 +7,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=riscv64
 BOARD:=d1
 BOARDNAME:=AllWinner D1 RISC-V SoC
-FEATURES:=ext4 squashfs
+FEATURES:=ext4 squashfs usbgadget
 KERNELNAME:=Image dtbs
 SUBTARGETS:=generic
 
