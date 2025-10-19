@@ -178,6 +178,7 @@ platform_do_upgrade() {
 	linksys,whw03)
 		platform_do_upgrade_linksys_emmc "$1"
 		;;
+	meraki,mr30h |\
 	meraki,mr33 |\
 	meraki,mr74)
 		CI_KERNPART="part.safe"

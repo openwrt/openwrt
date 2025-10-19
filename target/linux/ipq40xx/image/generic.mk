@@ -798,6 +798,7 @@ define Device/meraki_mr30h
 	$(call Device/meraki_common)
 	DEVICE_MODEL := MR30H
 	DEVICE_DTS_CONFIG := config@2
+	DEVICE_PACKAGES += ipq-wifi-meraki_mr30h
 endef
 TARGET_DEVICES += meraki_mr30h
 
