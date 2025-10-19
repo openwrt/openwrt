@@ -22,3 +22,22 @@ define Device/airoha_an7581-evb-emmc
   DEVICE_PACKAGES := kmod-i2c-an7581
 endef
 TARGET_DEVICES += airoha_an7581-evb-emmc
+
+define Device/bell_xg-140g-y003
+  $(call Device/FitImageLzma)
+  DEVICE_VENDOR := Bell
+  DEVICE_MODEL := Bell XG-140G-Y003
+  DEVICE_DTS := an7581-xg-140g-y003
+  KERNEL_SIZE := 8704k
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES := \
+	kmod-phy-airoha-en8811h \
+	kmod-gpio-button-hotplug \
+	kmod-i2c-an7581 \
+	uboot-envtools
+endef
+TARGET_DEVICES += bell_xg-140g-y003
