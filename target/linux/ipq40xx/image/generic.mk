@@ -727,6 +727,8 @@ define Device/linksys_whw01
 	$(call Device/FitzImage)
 	DEVICE_VENDOR := Linksys
 	DEVICE_MODEL := WHW01
+	DEVICE_ALT0_VENDOR := Linksys
+	DEVICE_ALT0_MODEL := VLP01
 	KERNEL_SIZE := 6144k
 	IMAGE_SIZE := 75776k
 	NAND_SIZE := 256m
