@@ -929,6 +929,7 @@
 					label = "lan1";
 					phy-mode = "internal";
 					phy-handle = <&gsw_phy1>;
+					status = "disabled";
 				};
 
 				gsw_port2: port@2 {
@@ -936,6 +937,7 @@
 					label = "lan2";
 					phy-mode = "internal";
 					phy-handle = <&gsw_phy2>;
+					status = "disabled";
 				};
 
 				gsw_port3: port@3 {
@@ -943,6 +945,7 @@
 					label = "lan3";
 					phy-mode = "internal";
 					phy-handle = <&gsw_phy3>;
+					status = "disabled";
 				};
 
 				gsw_port4: port@4 {
@@ -950,6 +953,7 @@
 					label = "lan4";
 					phy-mode = "internal";
 					phy-handle = <&gsw_phy4>;
+					status = "disabled";
 				};
 
 				port@6 {
@@ -974,6 +978,7 @@
 					compatible = "ethernet-phy-ieee802.3-c22";
 					reg = <9>;
 					phy-mode = "internal";
+					status = "disabled";
 
 					leds {
 						#address-cells = <1>;
@@ -997,6 +1002,7 @@
 					compatible = "ethernet-phy-ieee802.3-c22";
 					reg = <10>;
 					phy-mode = "internal";
+					status = "disabled";
 
 					leds {
 						#address-cells = <1>;
@@ -1020,6 +1026,7 @@
 					compatible = "ethernet-phy-ieee802.3-c22";
 					reg = <11>;
 					phy-mode = "internal";
+					status = "disabled";
 
 					leds {
 						#address-cells = <1>;
@@ -1043,6 +1050,7 @@
 					compatible = "ethernet-phy-ieee802.3-c22";
 					reg = <12>;
 					phy-mode = "internal";
+					status = "disabled";
 
 					leds {
 						#address-cells = <1>;
