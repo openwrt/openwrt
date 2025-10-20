@@ -32,7 +32,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +dma-buf-objs-$(CONFIG_DMABUF_HEAPS_CMA)		+= cma_heap.o
 --- a/drivers/dma-buf/Makefile
 +++ b/drivers/dma-buf/Makefile
-@@ -1,12 +1,14 @@
+@@ -1,12 +1,15 @@
  # SPDX-License-Identifier: GPL-2.0-only
 -obj-y := dma-buf.o dma-fence.o dma-fence-array.o dma-fence-chain.o \
 +obj-$(CONFIG_DMA_SHARED_BUFFER) := dma-shared-buffer.o
@@ -46,7 +46,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -obj-$(CONFIG_UDMABUF)		+= udmabuf.o
 -obj-$(CONFIG_DMABUF_SYSFS_STATS) += dma-buf-sysfs-stats.o
 +dma-buf-objs-$(CONFIG_DMABUF_HEAPS)	+= dma-heap.o
-+obj-$(CONFIG_DMABUF_HEAPS)		+= heaps/
++dma-buf-objs-$(CONFIG_DMABUF_HEAPS_SYSTEM)	+= heaps/system_heap.o
++dma-buf-objs-$(CONFIG_DMABUF_HEAPS_CMA)		+= heaps/cma_heap.o
 +dma-buf-objs-$(CONFIG_SYNC_FILE)	+= sync_file.o
 +dma-buf-objs-$(CONFIG_SW_SYNC)		+= sw_sync.o sync_debug.o
 +dma-buf-objs-$(CONFIG_UDMABUF)		+= udmabuf.o
