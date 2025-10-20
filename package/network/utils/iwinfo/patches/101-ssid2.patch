@@ -1,0 +1,127 @@
+From 2ebef3da84e8e35e54657eb8d7e493a9a144da4d Mon Sep 17 00:00:00 2001
+From: David Woodhouse <dwmw2@infradead.org>
+Date: Sun, 19 Oct 2025 21:15:17 +0100
+Subject: [PATCH] iwinfo: Query hostapd for 'ssid2'
+
+DAWN is reporting invalid results because it can't find the SSID of the
+running networks. Reported by Elwin Huang in
+https://github.com/berlin-open-wireless-lab/DAWN/issues/247#issuecomment-3327148254
+
+It needs to be parsed like wpa_config_parse_string() does.
+
+Signed-off-by: David Woodhouse <dwmw2@infradead.org>
+---
+ iwinfo_nl80211.c | 90 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 90 insertions(+)
+
+diff --git a/iwinfo_nl80211.c b/iwinfo_nl80211.c
+index cd801af..813678a 100644
+--- a/iwinfo_nl80211.c
++++ b/iwinfo_nl80211.c
+@@ -1299,6 +1299,87 @@ static int nl80211_get_ssid_bssid_cb(struct nl_msg *msg, void *arg)
+ 	}
+ }
+ 
++/*
++ * This matches the behaviour of hostapd's wpa_config_parse_string
++ *
++ * (double quoted string, hexdump, printf-escaped string)
++ * ssid2="test"
++ * ssid2=74657374
++ * ssid2=P"hello\nthere"
++ */
++static int parse_ssid2(const char *value, char *buf, size_t buflen)
++{
++	const char *pos;
++	size_t len, i;
++
++	if (*value == '"') {
++		value++;
++		pos = strrchr(value, '"');
++		if (!pos || pos[1] != '\0')
++			return -1;
++		len = pos - value;
++		if (len >= buflen)
++			len = buflen - 1;
++		memcpy(buf, value, len);
++		buf[len] = '\0';
++		return 0;
++	} else if (*value == 'P' && value[1] == '"') {
++		value += 2;
++		pos = strrchr(value, '"');
++		if (!pos || pos[1] != '\0')
++			return -1;
++		len = 0;
++		while (*value && value < pos && len < buflen - 1) {
++			if (*value == '\\' && value + 1 < pos) {
++				value++;
++				if (*value == 'x' && value + 2 < pos) {
++					char hex[3] = {value[1], value[2], 0};
++					buf[len++] = strtol(hex, NULL, 16);
++					value += 3;
++				} else if (*value >= '0' && *value <= '7' && value + 2 < pos &&
++					   value[1] >= '0' && value[1] <= '7' &&
++					   value[2] >= '0' && value[2] <= '7') {
++					buf[len++] = ((value[0] - '0') << 6) |
++						     ((value[1] - '0') << 3) |
++						     (value[2] - '0');
++					value += 3;
++				} else {
++					switch (*value) {
++					case 'n': buf[len++] = '\n'; break;
++					case 'r': buf[len++] = '\r'; break;
++					case 't': buf[len++] = '\t'; break;
++					case '\\': buf[len++] = '\\'; break;
++					case '"': buf[len++] = '"'; break;
++					default: buf[len++] = *value; break;
++					}
++					value++;
++				}
++			} else {
++				buf[len++] = *value++;
++			}
++		}
++		buf[len] = '\0';
++		return 0;
++	} else {
++		len = strlen(value);
++		if (len & 1)
++			return -1;
++		len /= 2;
++		if (len >= buflen)
++			len = buflen - 1;
++		for (i = 0; i < len; i++) {
++			char hex[3] = {value[i*2], value[i*2+1], 0};
++			char *end;
++			long val = strtol(hex, &end, 16);
++			if (*end)
++				return -1;
++			buf[i] = val;
++		}
++		buf[len] = '\0';
++		return 0;
++	}
++}
++
+ static int nl80211_get_ssid(const char *ifname, char *buf)
+ {
+ 	char *res;
+@@ -1316,6 +1397,15 @@ static int nl80211_get_ssid(const char *ifname, char *buf)
+ 		nl80211_hostapd_query(ifname, "ssid", sb.ssid,
+ 		                      IWINFO_ESSID_MAX_SIZE + 1);
+ 
++	if (sb.ssid[0] == 0) {
++		/* ssid2 can be quoted, printf-encoded, or hex; needs parsing.
++		 * Buffer sized for printf encoding (\xHH = 4 chars per byte) plus P"" wrapper. */
++		char ssid2_raw[IWINFO_ESSID_MAX_SIZE * 4 + 3];
++		ssid2_raw[0] = 0;
++		if (nl80211_hostapd_query(ifname, "ssid2", ssid2_raw, sizeof(ssid2_raw)))
++			parse_ssid2(ssid2_raw, (char *)sb.ssid, IWINFO_ESSID_MAX_SIZE + 1);
++	}
++
+ 	/* failed, try to obtain Mesh ID */
+ 	if (sb.ssid[0] == 0)
+ 		iwinfo_ubus_query(res ? res : ifname, "mesh_id",
+-- 
+2.43.0
+
