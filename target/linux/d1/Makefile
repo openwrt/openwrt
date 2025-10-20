@@ -15,6 +15,8 @@ KERNEL_PATCHVER:=6.12
 
 include $(INCLUDE_DIR)/target.mk
 
+DEFAULT_PACKAGES += e2fsprogs f2fsck mkf2fs
+
 define Target/Description
 	Build firmware images for Allwinner D1 RISC-V boards
 endef
