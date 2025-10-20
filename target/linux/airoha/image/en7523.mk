@@ -1,5 +1,3 @@
-KERNEL_LOADADDR := 0x80208000
-
 define Target/Description
 	Build firmware images for Airoha EN7523 ARM based boards.
 endef
