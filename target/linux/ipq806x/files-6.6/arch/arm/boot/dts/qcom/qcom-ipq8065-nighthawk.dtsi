@@ -68,7 +68,7 @@
 
 	leds: leds {
 		compatible = "gpio-leds";
-		pinctrl-0 = <&led_pins>;
+		pinctrl-0 = <&leds_pins>;
 		pinctrl-names = "default";
 
 		power_white: power_white {
@@ -119,7 +119,7 @@
 		};
 	};
 
-	led_pins: led_pins {
+	leds_pins: leds_pins {
 		mux {
 			pins = "gpio7", "gpio8", "gpio9",
 				"gpio22", "gpio23", "gpio24",

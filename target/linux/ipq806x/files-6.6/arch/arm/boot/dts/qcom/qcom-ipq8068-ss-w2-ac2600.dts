@@ -63,7 +63,7 @@
 
 	leds {
 		compatible = "gpio-leds";
-		pinctrl-0 = <&led_pins>;
+		pinctrl-0 = <&leds_pins>;
 		pinctrl-names = "default";
 
 		wlan2g_green {
@@ -118,7 +118,7 @@
 		};
 	};
 
-	led_pins: led_pins {
+	leds_pins: leds_pins {
 		mux {
 			pins = "gpio16", "gpio23", "gpio24", "gpio26",
 				   "gpio28", "gpio59";
