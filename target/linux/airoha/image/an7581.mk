@@ -25,7 +25,6 @@ define Device/airoha_an7581-evb
   DEVICE_PACKAGES := kmod-leds-pwm kmod-i2c-an7581 kmod-pwm-airoha kmod-input-gpio-keys-polled
   DEVICE_DTS := an7581-evb
   DEVICE_DTS_CONFIG := config@1
-  KERNEL_LOADADDR := 0x80088000
   IMAGE/sysupgrade.bin := append-kernel | pad-to 128k | append-rootfs | pad-rootfs | append-metadata
   ARTIFACT/preloader.bin := an7581-preloader rfb
   ARTIFACT/bl31-uboot.fip := an7581-bl31-uboot rfb
