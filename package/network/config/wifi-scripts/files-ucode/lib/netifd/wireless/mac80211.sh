@@ -277,6 +277,8 @@ function setup() {
 			config_add(config, "basic-rates", supplicant.ratelist(basic_rate_list));
 			config_add(config, "mcast-rate", supplicant.ratestr(v.config.mcast_rate));
 			config_add(config, "beacon-interval", data.config.beacon_int);
+			if (mode == "adhoc")
+				config_add(config, "bssid", v.config.bssid);
 			if (mode == "mesh") {
 				config_add(config, "ssid", v.config.mesh_id);
 				config_add_mesh_params(config, v.config);
