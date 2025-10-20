@@ -273,7 +273,8 @@ function setup() {
 		config_add(config, "freq", data.config.frequency);
 		config_add(config, "htmode", iw_htmode(data.config));
 		if (mode != "monitor") {
-			config_add(config, "basic-rates", supplicant.ratelist(data.config.basic_rate));
+			let basic_rate_list = v.config.basic_rate ?? data.config.basic_rate;
+			config_add(config, "basic-rates", supplicant.ratelist(basic_rate_list));
 			config_add(config, "mcast-rate", supplicant.ratestr(v.config.mcast_rate));
 			config_add(config, "beacon-interval", data.config.beacon_int);
 			if (mode == "mesh") {
