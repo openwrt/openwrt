@@ -2345,10 +2345,10 @@ endif
 endef
 TARGET_DEVICES += xiaomi_mi-router-wr30u-ubootmod
 
-define Device/jio_router-jidu6401
-  DEVICE_VENDOR := Jio
-  DEVICE_MODEL := Router Jidu6401
-  DEVICE_DTS := mt7986a-jio-router-Jidu6401
+define Device/jrouter-jidu6x01
+  DEVICE_VENDOR := jrouter
+  DEVICE_MODEL := Router Jidu6x01
+  DEVICE_DTS := mt7986a-jrouter-jidu6x01
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-leds-ws2812b kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
   UBINIZE_OPTS := -E 5
@@ -2362,7 +2362,7 @@ endif
 endif
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
-TARGET_DEVICES += jio_router-jidu6401
+TARGET_DEVICES += jrouter-jidu6x01
 
 
 define Device/xiaomi_redmi-router-ax6000-stock
