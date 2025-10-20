@@ -270,7 +270,8 @@ function setup() {
 		if (!v.config.default_macaddr)
 			config.macaddr = v.config.macaddr;
 
-		config_add(config, "htmode", wdev_htmode(data.config));
+		config_add(config, "freq", data.config.frequency);
+		config_add(config, "htmode", iw_htmode(data.config));
 		if (mode != "monitor") {
 			config_add(config, "basic-rates", supplicant.ratelist(data.config.basic_rate));
 			config_add(config, "mcast-rate", supplicant.ratestr(v.config.mcast_rate));
