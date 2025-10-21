@@ -97,6 +97,7 @@ ALLWIFIBOARDS:= \
 	tplink_archer-c60-v1 \
 	tplink_archer-c60-v2 \
 	tplink_tl-wa1201-v2 \
+	tplink_archer-be800 \
 	wallys_dr40x9 \
 	xiaomi_aiot-ac2350 \
 	xiaomi_ax3600 \
@@ -120,6 +121,11 @@ ALLWIFIBOARDS:= \
 
 ALLWIFIPACKAGES:=$(foreach BOARD,$(ALLWIFIBOARDS),ipq-wifi-$(BOARD))
 
+ALLWIFIFIRMWAREBOARDS:= \
+	tplink_archer-be800
+
+ALLWIFIFIRMWAREPACKAGES:=$(foreach BOARD,$(ALLWIFIFIRMWAREBOARDS),ipq-wifi-firmware-$(BOARD))
+
 define Package/ipq-wifi-default
   SUBMENU:=ath10k Board-Specific Overrides
   SECTION:=firmware
@@ -141,6 +147,11 @@ endef
 define ipq-wifi-install-ath12-one-to
   $(INSTALL_DIR)  $(2)/lib/firmware/ath12k/$(3)/
   $(INSTALL_DATA) $(1) $(2)/lib/firmware/ath12k/$(3)/board-2.bin
+endef
+
+define ipq-wifi-install-ath12-firmware-one-to
+  $(INSTALL_DIR)  $(2)/lib/firmware/ath12k/$(3)/
+  $(INSTALL_DATA) $(1) $(2)/lib/firmware/ath12k/$(3)/firmware-2.bin
 endef
 
 define ipq-wifi-install-one
@@ -174,6 +185,15 @@ define ipq-wifi-install-one
 endef
 # Blank line required at end of above define due to foreach context
 
+define ipq-wifi-install-firmware-one
+  $(if $(filter $(suffix $(1)),.QCN9274 .qcn9274),\
+    $(call ipq-wifi-install-ath12-firmware-one-to,$(1),$(2),QCN9274/hw2.0),\
+    $(error Unrecognized board-file suffix '$(suffix $(1))' for '$(1)')\
+  )
+
+endef
+# Blank line required at end of above define due to foreach context
+
 define generate-ipq-wifi-package
   define Package/ipq-wifi-$(1)
     $(call Package/ipq-wifi-default)
@@ -199,6 +219,33 @@ Do not install it for any other device!
   endef
 
   PREV_BOARD+=ipq-wifi-$(1)
+endef
+
+define generate-ipq-wifi-firmware-package
+  define Package/ipq-wifi-firmware-$(1)
+    $(call Package/ipq-wifi-default)
+    TITLE:=firmware-2.bin Overrides for $(2)
+    CONFLICTS:=$(PREV_FIRMWARE)
+  endef
+
+  define Package/ipq-wifi-firmware-$(1)/description
+The $(2) requires board-specific, reference ("cal") data
+that is not yet present in the upstream wireless firmware distribution.
+
+This package supplies firmware-2.bin file(s) that, in the interim,
+overwrite those supplied by the ath10k-firmware-* packages.
+
+This is package is only necessary for the $(2).
+
+Do not install it for any other device!
+  endef
+
+  define Package/ipq-wifi-firmware-$(1)/install-overlay
+    $$$$(foreach IPQ_WIFI_FIRMWARE_FILE,$$$$(wildcard $(PKG_BUILD_DIR)/firmware-$(1).*),\
+      $$$$(call ipq-wifi-install-firmware-one,$$$$(IPQ_WIFI_FIRMWARE_FILE),$$(1)))
+  endef
+
+  PREV_FIRMWARE+=ipq-wifi-firmware-$(1)
 endef
 
 # To add local files for testing:
@@ -289,6 +336,7 @@ $(eval $(call generate-ipq-wifi-package,tplink_archer-c6-v2,TP-Link Archer C6 V2
 $(eval $(call generate-ipq-wifi-package,tplink_archer-c60-v1,TP-Link Archer C60 V1))
 $(eval $(call generate-ipq-wifi-package,tplink_archer-c60-v2,TP-Link Archer C60 V2))
 $(eval $(call generate-ipq-wifi-package,tplink_tl-wa1201-v2,TP-Link TL-WA1201 V2))
+$(eval $(call generate-ipq-wifi-package,tplink_archer-be800,TP-Link Archer BE800))
 $(eval $(call generate-ipq-wifi-package,wallys_dr40x9,Wallys DR40X9))
 $(eval $(call generate-ipq-wifi-package,xiaomi_aiot-ac2350,Xiaomi AIoT AC2350))
 $(eval $(call generate-ipq-wifi-package,xiaomi_ax3600,Xiaomi AX3600))
@@ -310,4 +358,8 @@ $(eval $(call generate-ipq-wifi-package,zyxel_nwa110ax,Zyxel NWA110AX))
 $(eval $(call generate-ipq-wifi-package,zyxel_nwa210ax,Zyxel NWA210AX))
 $(eval $(call generate-ipq-wifi-package,zyxel_scr50axe,Zyxel SCR50AXE))
 
+$(eval $(call generate-ipq-wifi-firmware-package,tplink_archer-be800,TP-Link Archer BE800))
+
 $(foreach PACKAGE,$(ALLWIFIPACKAGES),$(eval $(call BuildPackage,$(PACKAGE))))
+
+$(foreach PACKAGE,$(ALLWIFIFIRMWAREPACKAGES),$(eval $(call BuildPackage,$(PACKAGE))))

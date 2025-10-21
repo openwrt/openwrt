@@ -1,0 +1,27 @@
+From 98e5ba8626b232e046ce0f7017a9d4a9610cf46e Mon Sep 17 00:00:00 2001
+From: Sidhant Goel <sidhant@hexcod.in>
+Date: Tue, 18 Nov 2025 15:04:10 +0000
+Subject: [PATCH] phy: aquantia: defer probe on firmware mtd not ready
+
+Signed-off-by: Sidhant Goel <sidhant@hexcod.in>
+---
+ drivers/net/phy/aquantia/aquantia_firmware.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/net/phy/aquantia/aquantia_firmware.c b/drivers/net/phy/aquantia/aquantia_firmware.c
+index dab3af80593f..05a90cc030ad 100644
+--- a/drivers/net/phy/aquantia/aquantia_firmware.c
++++ b/drivers/net/phy/aquantia/aquantia_firmware.c
+@@ -371,6 +371,9 @@ int aqr_firmware_load(struct phy_device *phydev)
+ 		if (!ret)
+ 			return ret;
+ 
++		if(ret == -EPROBE_DEFER) 
++			return ret;
++
+ 		ret = aqr_firmware_load_fs(phydev);
+ 		if (ret)
+ 			return ret;
+-- 
+2.43.0
+
