@@ -15,7 +15,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -507,8 +507,8 @@ static int airoha_fe_init(struct airoha_
+@@ -514,8 +514,8 @@ static int airoha_fe_init(struct airoha_
  		      FIELD_PREP(IP_ASSEMBLE_PORT_MASK, 0) |
  		      FIELD_PREP(IP_ASSEMBLE_NBQ_MASK, 22));
  
@@ -36,7 +36,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  #define GDM_DROP_CRC_ERR		BIT(23)
  #define GDM_IP4_CKSUM			BIT(22)
  #define GDM_TCP_CKSUM			BIT(21)
-@@ -349,13 +350,6 @@
+@@ -352,13 +353,6 @@
  #define MBI_RX_AGE_SEL_MASK		GENMASK(26, 25)
  #define MBI_TX_AGE_SEL_MASK		GENMASK(18, 17)
  

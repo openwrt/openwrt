@@ -22,8 +22,8 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -1041,6 +1041,12 @@ static void phylink_pcs_link_up(struct p
- 		pcs->ops->pcs_link_up(pcs, neg_mode, interface, speed, duplex);
+@@ -1088,6 +1088,12 @@ static unsigned int phylink_inband_caps(
+ 	return phylink_pcs_inband_caps(pcs, interface);
  }
  
 +static void phylink_pcs_link_down(struct phylink_pcs *pcs)
@@ -35,7 +35,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  static void phylink_pcs_poll_stop(struct phylink *pl)
  {
  	if (pl->cfg_link_an_mode == MLO_AN_INBAND)
-@@ -1454,6 +1460,8 @@ static void phylink_link_down(struct phy
+@@ -1642,6 +1648,8 @@ static void phylink_link_down(struct phy
  
  	if (ndev)
  		netif_carrier_off(ndev);
