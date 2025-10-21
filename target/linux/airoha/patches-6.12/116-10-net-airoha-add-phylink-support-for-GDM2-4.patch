@@ -35,7 +35,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  static void airoha_set_macaddr(struct airoha_gdm_port *port, const u8 *addr)
  {
  	struct airoha_eth *eth = port->qdma->eth;
-@@ -1640,6 +1646,17 @@ static int airoha_dev_open(struct net_de
+@@ -1627,6 +1633,17 @@ static int airoha_dev_open(struct net_de
  	struct airoha_gdm_port *port = netdev_priv(dev);
  	struct airoha_qdma *qdma = port->qdma;
  
@@ -53,7 +53,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	netif_tx_start_all_queues(dev);
  	err = airoha_set_vip_for_gdm_port(port, true);
  	if (err)
-@@ -1693,6 +1710,11 @@ static int airoha_dev_stop(struct net_de
+@@ -1680,6 +1697,11 @@ static int airoha_dev_stop(struct net_de
  		}
  	}
  
@@ -65,8 +65,8 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	return 0;
  }
  
-@@ -2781,6 +2803,20 @@ static const struct ethtool_ops airoha_e
- 	.get_rmon_stats		= airoha_ethtool_get_rmon_stats,
+@@ -2828,6 +2850,20 @@ static const struct ethtool_ops airoha_e
+ 	.get_link		= ethtool_op_get_link,
  };
  
 +static struct phylink_pcs *airoha_phylink_mac_select_pcs(struct phylink_config *config,
@@ -86,7 +86,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  static int airoha_metadata_dst_alloc(struct airoha_gdm_port *port)
  {
  	int i;
-@@ -2825,6 +2861,99 @@ bool airoha_is_valid_gdm_port(struct air
+@@ -2872,6 +2908,99 @@ bool airoha_is_valid_gdm_port(struct air
  	return false;
  }
  
@@ -186,7 +186,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  static int airoha_alloc_gdm_port(struct airoha_eth *eth,
  				 struct device_node *np, int index)
  {
-@@ -2903,6 +3032,12 @@ static int airoha_alloc_gdm_port(struct
+@@ -2950,6 +3079,12 @@ static int airoha_alloc_gdm_port(struct
  	if (err)
  		return err;
  
@@ -199,7 +199,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	err = register_netdev(dev);
  	if (err)
  		goto free_metadata_dst;
-@@ -3006,6 +3141,10 @@ error_hw_cleanup:
+@@ -3064,6 +3199,10 @@ error_hw_cleanup:
  		if (port && port->dev->reg_state == NETREG_REGISTERED) {
  			unregister_netdev(port->dev);
  			airoha_metadata_dst_free(port);
@@ -210,7 +210,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  		}
  	}
  	free_netdev(eth->napi_dev);
-@@ -3033,6 +3172,10 @@ static void airoha_remove(struct platfor
+@@ -3091,6 +3230,10 @@ static void airoha_remove(struct platfor
  		airoha_dev_stop(port->dev);
  		unregister_netdev(port->dev);
  		airoha_metadata_dst_free(port);
@@ -223,7 +223,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
 --- a/drivers/net/ethernet/airoha/airoha_eth.h
 +++ b/drivers/net/ethernet/airoha/airoha_eth.h
-@@ -528,6 +528,10 @@ struct airoha_gdm_port {
+@@ -531,6 +531,10 @@ struct airoha_gdm_port {
  	struct net_device *dev;
  	int id;
  
@@ -236,7 +236,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	DECLARE_BITMAP(qos_sq_bmap, AIROHA_NUM_QOS_CHANNELS);
 --- a/drivers/net/ethernet/airoha/airoha_regs.h
 +++ b/drivers/net/ethernet/airoha/airoha_regs.h
-@@ -361,6 +361,18 @@
+@@ -364,6 +364,18 @@
  #define IP_FRAGMENT_PORT_MASK		GENMASK(8, 5)
  #define IP_FRAGMENT_NBQ_MASK		GENMASK(4, 0)
  

@@ -15,30 +15,19 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -2948,11 +2948,10 @@ static int airoha_probe(struct platform_
- 		return err;
- 	}
+@@ -3099,7 +3099,6 @@ static void airoha_remove(struct platfor
+ }
  
--	eth->xsi_rsts[0].id = "xsi-mac";
--	eth->xsi_rsts[1].id = "hsi0-mac";
--	eth->xsi_rsts[2].id = "hsi1-mac";
--	eth->xsi_rsts[3].id = "hsi-mac";
--	eth->xsi_rsts[4].id = "xfp-mac";
-+	eth->xsi_rsts[0].id = "hsi0-mac";
-+	eth->xsi_rsts[1].id = "hsi1-mac";
-+	eth->xsi_rsts[2].id = "hsi-mac";
-+	eth->xsi_rsts[3].id = "xfp-mac";
- 	err = devm_reset_control_bulk_get_exclusive(eth->dev,
- 						    ARRAY_SIZE(eth->xsi_rsts),
- 						    eth->xsi_rsts);
---- a/drivers/net/ethernet/airoha/airoha_eth.h
-+++ b/drivers/net/ethernet/airoha/airoha_eth.h
-@@ -21,7 +21,7 @@
- #define AIROHA_MAX_NUM_IRQ_BANKS	4
- #define AIROHA_MAX_DSA_PORTS		7
- #define AIROHA_MAX_NUM_RSTS		3
--#define AIROHA_MAX_NUM_XSI_RSTS		5
-+#define AIROHA_MAX_NUM_XSI_RSTS		4
- #define AIROHA_MAX_MTU			9216
- #define AIROHA_MAX_PACKET_SIZE		2048
- #define AIROHA_NUM_QOS_CHANNELS		4
+ static const char * const en7581_xsi_rsts_names[] = {
+-	"xsi-mac",
+ 	"hsi0-mac",
+ 	"hsi1-mac",
+ 	"hsi-mac",
+@@ -3131,7 +3130,6 @@ static int airoha_en7581_get_src_port_id
+ }
+ 
+ static const char * const an7583_xsi_rsts_names[] = {
+-	"xsi-mac",
+ 	"hsi0-mac",
+ 	"hsi1-mac",
+ 	"xfp-mac",

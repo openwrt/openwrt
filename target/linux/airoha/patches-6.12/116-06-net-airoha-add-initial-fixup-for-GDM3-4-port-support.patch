@@ -15,7 +15,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -507,8 +507,10 @@ static int airoha_fe_init(struct airoha_
+@@ -514,8 +514,10 @@ static int airoha_fe_init(struct airoha_
  		      FIELD_PREP(IP_ASSEMBLE_PORT_MASK, 0) |
  		      FIELD_PREP(IP_ASSEMBLE_NBQ_MASK, 22));
  
@@ -28,7 +28,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  	airoha_fe_crsn_qsel_init(eth);
  
-@@ -1643,7 +1645,8 @@ static int airoha_dev_open(struct net_de
+@@ -1630,7 +1632,8 @@ static int airoha_dev_open(struct net_de
  	if (err)
  		return err;
  
