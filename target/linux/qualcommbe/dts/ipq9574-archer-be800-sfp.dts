@@ -1,0 +1,21 @@
+/dts-v1/;
+
+#include "ipq9574-archer-be800-common.dtsi"
+
+/ {
+	model = "TP-Link Archer BE800 SFP";
+	compatible = "tplink,archer-be800-sfp", "qcom,ipq9574";
+};
+
+&xgmac6 {
+	phy-mode = "10gbase-r";
+	sfp = <&sfp0>;
+};
+
+&sfp_medium {
+	default-state = "on";
+};
+
+&sfp0 {
+	status = "okay";
+};
