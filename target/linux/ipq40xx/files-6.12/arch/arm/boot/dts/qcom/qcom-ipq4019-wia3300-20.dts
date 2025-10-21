@@ -126,8 +126,6 @@
 	pinctrl-0 = <&spi0_pins>;
 	pinctrl-names = "default";
 
-	cs-gpios = <&tlmm 12 GPIO_ACTIVE_LOW>;
-
 	flash@0 {
 		compatible = "jedec,spi-nor";
 		spi-max-frequency = <24000000>;
@@ -398,18 +396,10 @@
 
 	spi0_pins: spi0_pinmux {
 		blsp_spi0 {
-			pins = "gpio13", "gpio14", "gpio15";
+			pins = "gpio12", "gpio13", "gpio14", "gpio15";
 			function = "blsp_spi0";
 			drive-strength = <4>;
 			bias-disable;
-		};
-
-		gpio {
-			pins = "gpio12";
-			function = "gpio";
-			drive-strength = <4>;
-			bias-disable;
-			output-high;
 		};
 	};
 };
