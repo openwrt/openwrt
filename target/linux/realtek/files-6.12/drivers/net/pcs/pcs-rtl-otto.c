@@ -10,8 +10,6 @@
 #include <linux/phylink.h>
 #include <linux/regmap.h>
 
-#include <asm/mach-rtl838x/mach-rtl83xx.h>
-
 #define RTPCS_PORT_CNT				57
 
 #define RTPCS_SPEED_10				0
@@ -223,7 +221,7 @@ u16 rtpcs_930x_sds_submode_regs[] = { 0x1cc, 0x1cc, 0x2d8, 0x2d8, 0x2d8, 0x2d8,
 				      0x2d8, 0x2d8};
 u8  rtpcs_930x_sds_submode_lsb[]  = { 0, 5, 0, 5, 10, 15, 20, 25 };
 
-static void rtpcs_930x_sds_set(int sds_num, u32 mode)
+static void rtpcs_930x_sds_set(struct rtpcs_ctrl *ctrl, int sds_num, u32 mode)
 {
 	pr_info("%s %d\n", __func__, mode);
 	if (sds_num < 0 || sds_num > 11) {
@@ -231,17 +229,14 @@ static void rtpcs_930x_sds_set(int sds_num, u32 mode)
 		return;
 	}
 
-	sw_w32_mask(RTL930X_SDS_MASK << rtpcs_930x_sds_lsb[sds_num],
-		    mode << rtpcs_930x_sds_lsb[sds_num],
-		    rtpcs_930x_sds_regs[sds_num]);
+	regmap_write_bits(ctrl->map, rtpcs_930x_sds_regs[sds_num],
+			  RTL930X_SDS_MASK << rtpcs_930x_sds_lsb[sds_num],
+			  mode << rtpcs_930x_sds_lsb[sds_num]);
 	mdelay(10);
-
-	pr_debug("%s: 194:%08x 198:%08x 2a0:%08x 2a4:%08x\n", __func__,
-	         sw_r32(0x194), sw_r32(0x198), sw_r32(0x2a0), sw_r32(0x2a4));
 }
 
 __attribute__((unused))
-static u32 rtpcs_930x_sds_mode_get(int sds_num)
+static u32 rtpcs_930x_sds_mode_get(struct rtpcs_ctrl *ctrl, int sds_num)
 {
 	u32 v;
 
@@ -250,14 +245,14 @@ static u32 rtpcs_930x_sds_mode_get(int sds_num)
 		return 0;
 	}
 
-	v = sw_r32(rtpcs_930x_sds_regs[sds_num]);
+	regmap_read(ctrl->map, rtpcs_930x_sds_regs[sds_num], &v);
 	v >>= rtpcs_930x_sds_lsb[sds_num];
 
 	return v & RTL930X_SDS_MASK;
 }
 
 __attribute__((unused))
-static u32 rtpcs_930x_sds_submode_get(int sds_num)
+static u32 rtpcs_930x_sds_submode_get(struct rtpcs_ctrl *ctrl, int sds_num)
 {
 	u32 v;
 
@@ -266,13 +261,14 @@ static u32 rtpcs_930x_sds_submode_get(int sds_num)
 		return 0;
 	}
 
-	v = sw_r32(rtpcs_930x_sds_submode_regs[sds_num]);
+	regmap_read(ctrl->map, rtpcs_930x_sds_submode_regs[sds_num], &v);
 	v >>= rtpcs_930x_sds_submode_lsb[sds_num];
 
 	return v & RTL930X_SDS_MASK;
 }
 
-static void rtpcs_930x_sds_submode_set(int sds, u32 submode)
+static void rtpcs_930x_sds_submode_set(struct rtpcs_ctrl *ctrl, int sds,
+				       u32 submode)
 {
 	if (sds < 2 || sds > 9) {
 		pr_err("%s: submode unsupported on serdes %d\n", __func__, sds);
@@ -284,9 +280,9 @@ static void rtpcs_930x_sds_submode_set(int sds, u32 submode)
 		pr_err("%s: unsupported submode 0x%x\n", __func__, submode);
 	}
 
-	sw_w32_mask(RTL930X_SDS_MASK << rtpcs_930x_sds_submode_lsb[sds-2],
-		submode << rtpcs_930x_sds_submode_lsb[sds-2],
-		rtpcs_930x_sds_submode_regs[sds-2]);
+	regmap_write_bits(ctrl->map, rtpcs_930x_sds_submode_regs[sds - 2],
+			  RTL930X_SDS_MASK << rtpcs_930x_sds_submode_lsb[sds - 2],
+			  submode << rtpcs_930x_sds_submode_lsb[sds - 2]);
 }
 
 static void rtpcs_930x_sds_rx_reset(struct rtpcs_ctrl *ctrl, int sds_num,
@@ -589,14 +585,14 @@ static void rtpcs_930x_sds_mode_set(struct rtpcs_ctrl *ctrl, int sds,
 	}
 
 	/* SerDes off first. */
-	rtpcs_930x_sds_set(sds, RTL930X_SDS_OFF);
+	rtpcs_930x_sds_set(ctrl, sds, RTL930X_SDS_OFF);
 
 	/* Set the mode. */
-	rtpcs_930x_sds_set(sds, mode);
+	rtpcs_930x_sds_set(ctrl, sds, mode);
 
 	/* Set the submode if needed. */
 	if (phy_mode == PHY_INTERFACE_MODE_10G_QXGMII) {
-		rtpcs_930x_sds_submode_set(sds, submode);
+		rtpcs_930x_sds_submode_set(ctrl, sds, submode);
 	}
 }
 
@@ -1915,7 +1911,7 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_ctrl *ctrl, int port, int sds_nu
 	int calib_tries = 0;
 
 	/* Turn Off Serdes */
-	rtpcs_930x_sds_set(sds_num, RTL930X_SDS_OFF);
+	rtpcs_930x_sds_set(ctrl, sds, RTL930X_SDS_OFF);
 
 	/* Apply serdes patches */
 	rtpcs_930x_sds_patch(ctrl, sds_num, phy_mode);
@@ -1926,7 +1922,7 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_ctrl *ctrl, int port, int sds_nu
 	rtpcs_930x_phy_enable_10g_1g(ctrl, sds_num);
 
 	/* Disable MAC */
-	sw_w32_mask(0, 1, RTL930X_MAC_FORCE_MODE_CTRL + 4 * port);
+	regmap_write_bits(ctrl->map, RTL930X_MAC_FORCE_MODE_CTRL + 4 * port, 1, 0);
 	mdelay(20);
 
 	/* ----> dal_longan_sds_mode_set */
@@ -1936,7 +1932,7 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_ctrl *ctrl, int port, int sds_nu
 	rtpcs_930x_sds_mac_link_config(ctrl, sds_num, true, true);	/* MAC Construct */
 
 	/* Re-Enable MAC */
-	sw_w32_mask(1, 0, RTL930X_MAC_FORCE_MODE_CTRL + 4 * port);
+	regmap_write_bits(ctrl->map, RTL930X_MAC_FORCE_MODE_CTRL + 4 * port, 1, 1);
 
 	/* Enable SDS in desired mode */
 	rtpcs_930x_sds_mode_set(ctrl, sds_num, phy_mode);
