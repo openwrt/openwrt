@@ -7,15 +7,6 @@
 board=$(board_name)
 
 case "$FIRMWARE" in
-"ath10k/cal-pci-0000:01:00.0.bin")
-	case "$board" in
-	meraki,mr33 |\
-	meraki,mr74)
-		caldata_extract_ubi "ART" 0x9000 0x844
-		caldata_valid "4408" || caldata_extract "ART" 0x9000 0x844
-		;;
-	esac
-	;;
 "ath10k/pre-cal-pci-0000:01:00.0.bin")
 	case "$board" in
 	asus,map-ac2200)
@@ -111,11 +102,6 @@ case "$FIRMWARE" in
 		caldata_extract_mmc "0:ART" 0x1000 0x2f20
 		ath10k_patch_mac $(macaddr_add "$(cat /sys/class/net/eth0/address)" 1)
 		;;
-	meraki,mr33 |\
-	meraki,mr74)
-		caldata_extract_ubi "ART" 0x1000 0x2f20
-		caldata_valid "202f" || caldata_extract "ART" 0x1000 0x2f20
-		;;
 	mikrotik,cap-ac |\
 	mikrotik,hap-ac2 |\
 	mikrotik,hap-ac3 |\
@@ -209,11 +195,6 @@ case "$FIRMWARE" in
 	linksys,whw03)
 		caldata_extract_mmc "0:ART" 0x5000 0x2f20
 		ath10k_patch_mac $(macaddr_add "$(cat /sys/class/net/eth0/address)" 2)
-		;;
-	meraki,mr33 |\
-	meraki,mr74)
-		caldata_extract_ubi "ART" 0x5000 0x2f20
-		caldata_valid "202f" || caldata_extract "ART" 0x5000 0x2f20
 		;;
 	mikrotik,cap-ac |\
 	mikrotik,hap-ac2 |\
