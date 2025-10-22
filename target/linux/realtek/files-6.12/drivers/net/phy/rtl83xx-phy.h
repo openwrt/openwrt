@@ -54,15 +54,7 @@ struct __attribute__ ((__packed__)) fw_header {
 /* Registers of the internal Serdes of the 9300 */
 #define RTL930X_MAC_FORCE_MODE_CTRL		(0xCA1C)
 
-/* Registers of the internal SerDes of the 9310 */
-#define RTL931X_SERDES_MODE_CTRL		(0x13cc)
-#define RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR	(0x13F4)
-#define RTL931X_MAC_SERDES_MODE_CTRL(sds)	(0x136C + (((sds) << 2)))
-
 int rtl9300_serdes_setup(int port, int sds_num, phy_interface_t phy_mode);
-
-int rtl931x_sds_cmu_band_get(int sds, phy_interface_t mode);
-void rtl931x_sds_init(u32 sds, phy_interface_t mode);
 
 /*
  * TODO: The following functions are currently not in use. So compiler will complain if
@@ -77,6 +69,3 @@ void rtl9300_sds_rxcal_dcvs_get(u32 sds_num, u32 dcvs_id, u32 dcvs_list[]);
 void rtl9300_sds_rxcal_dcvs_manual(u32 sds_num, u32 dcvs_id, bool manual, u32 dvcs_list[]);
 void rtl9300_sds_set(int sds_num, u32 mode);
 
-int rtl931x_link_sts_get(u32 sds);
-void rtl931x_sds_fiber_disable(u32 sds);
-int rtl931x_sds_cmu_band_set(int sds, bool enable, u32 band, phy_interface_t mode);
