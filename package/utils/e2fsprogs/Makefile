@@ -168,7 +168,8 @@ CONFIGURE_ARGS += \
 	--disable-tls		\
 	--disable-nls		\
 	--disable-rpath		\
-	--disable-fuse2fs
+	--disable-fuse2fs	\
+	--without-libmagic
 
 ifneq ($(CONFIG_USE_MUSL),)
   CONFIGURE_VARS += ac_cv_func_lseek64=yes
