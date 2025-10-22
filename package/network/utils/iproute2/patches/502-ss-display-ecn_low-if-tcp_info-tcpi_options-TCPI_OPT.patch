@@ -1,0 +1,59 @@
+From afbfd7c9ad9161305fff17943f6b38c773ed54a2 Mon Sep 17 00:00:00 2001
+From: Neal Cardwell <ncardwell@google.com>
+Date: Sun, 23 Jul 2023 23:33:21 -0400
+Subject: [PATCH 3/3] ss: display "ecn_low" if tcp_info tcpi_options
+ TCPI_OPT_ECN_LOW bit is set
+
+Display "ecn_low" if the TCPI_OPT_ECN_LOW bit is set in the
+tcpi_options field in tcp_info.
+
+Signed-off-by: Neal Cardwell <ncardwell@google.com>
+---
+ include/uapi/linux/tcp.h | 1 +
+ misc/ss.c                | 4 ++++
+ 2 files changed, 5 insertions(+)
+
+diff --git a/include/uapi/linux/tcp.h b/include/uapi/linux/tcp.h
+index 03d1f22f..d58ea542 100644
+--- a/include/uapi/linux/tcp.h
++++ b/include/uapi/linux/tcp.h
+@@ -178,6 +178,7 @@ enum tcp_fastopen_client_fail {
+ #define TCPI_OPT_ECN_SEEN	16 /* we received at least one packet with ECT */
+ #define TCPI_OPT_SYN_DATA	32 /* SYN-ACK acked data in SYN sent or rcvd */
+ #define TCPI_OPT_USEC_TS	64 /* usec timestamps */
++#define TCPI_OPT_ECN_LOW	128 /* Low-latency ECN configured at init */
+ 
+ /*
+  * Sender's congestion state indicating normal or abnormal situations
+diff --git a/misc/ss.c b/misc/ss.c
+index 5c176172..95ff2234 100644
+--- a/misc/ss.c
++++ b/misc/ss.c
+@@ -890,6 +890,7 @@ struct tcpstat {
+ 	bool		    has_sack_opt;
+ 	bool		    has_ecn_opt;
+ 	bool		    has_ecnseen_opt;
++	bool		    has_ecn_low_opt;
+ 	bool		    has_fastopen_opt;
+ 	bool		    has_wscale_opt;
+ 	bool		    app_limited;
+@@ -2635,6 +2636,8 @@ static void tcp_stats_print(struct tcpstat *s)
+ 		out(" ecn");
+ 	if (s->has_ecnseen_opt)
+ 		out(" ecnseen");
++	if (s->has_ecn_low_opt)
++		out(" ecn_low");
+ 	if (s->has_fastopen_opt)
+ 		out(" fastopen");
+ 	if (s->cong_alg[0])
+@@ -3161,6 +3164,7 @@ static void tcp_show_info(const struct nlmsghdr *nlh, struct inet_diag_msg *r,
+ 			s.has_sack_opt	   = TCPI_HAS_OPT(info, TCPI_OPT_SACK);
+ 			s.has_ecn_opt	   = TCPI_HAS_OPT(info, TCPI_OPT_ECN);
+ 			s.has_ecnseen_opt  = TCPI_HAS_OPT(info, TCPI_OPT_ECN_SEEN);
++			s.has_ecn_low_opt  = TCPI_HAS_OPT(info, TCPI_OPT_ECN_LOW);
+ 			s.has_fastopen_opt = TCPI_HAS_OPT(info, TCPI_OPT_SYN_DATA);
+ 		}
+ 
+-- 
+2.43.0
+
