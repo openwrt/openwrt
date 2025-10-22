@@ -32,6 +32,7 @@ case "$(board_name)" in
 armsom,sige7|\
 friendlyarm,nanopi-r3s|\
 friendlyarm,nanopi-r5c|\
+lunzn,fastrhino-r66s|\
 radxa,e25|\
 sinovoip,rk3568-bpi-r2pro)
 	set_interface_core 2 "eth0"
@@ -49,7 +50,11 @@ xunlong,orangepi-r1-plus-lts)
 friendlyarm,nanopi-r4s|\
 friendlyarm,nanopi-r4s-enterprise|\
 friendlyarm,nanopi-r6c|\
-friendlyarm,nanopc-t6)
+friendlyarm,nanopi-r76s|\
+friendlyarm,nanopc-t6|\
+radxa,e52c|\
+radxa,rock-5-itx|\
+radxa,rock-5t)
 	set_interface_core 10 "eth0"
 	set_interface_core 20 "eth1"
 	;;
@@ -62,6 +67,11 @@ friendlyarm,nanopi-r6s)
 	set_interface_core 10 "eth0"
 	set_interface_core 20 "eth1"
 	set_interface_core 40 "eth2"
+	;;
+radxa,rock-5a|\
+radxa,rock-5c)
+	set_interface_core 10 "eth1"
+	set_interface_core 20 "eth2"
 	;;
 esac
 

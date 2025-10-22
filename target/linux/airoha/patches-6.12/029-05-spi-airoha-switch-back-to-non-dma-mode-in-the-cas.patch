@@ -1,0 +1,54 @@
+From 711584484d76448763959ed4e103895d9dcc7438 Mon Sep 17 00:00:00 2001
+From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Date: Mon, 11 Aug 2025 20:24:42 +0300
+Subject: [PATCH v6 05/13] spi: airoha: switch back to non-dma mode in the case
+ of error
+
+Current dirmap code does not switch back to non-dma mode in the case of
+error. This is wrong.
+
+This patch fixes dirmap read/write error path.
+
+Fixes: a403997c12019 ("spi: airoha: add SPI-NAND Flash controller driver")
+Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Acked-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Reviewed-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>
+---
+ drivers/spi/spi-airoha-snfi.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+--- a/drivers/spi/spi-airoha-snfi.c
++++ b/drivers/spi/spi-airoha-snfi.c
+@@ -691,13 +691,13 @@ static ssize_t airoha_snand_dirmap_read(
+ 
+ 	err = airoha_snand_nfi_config(as_ctrl);
+ 	if (err)
+-		return err;
++		goto error_dma_mode_off;
+ 
+ 	dma_addr = dma_map_single(as_ctrl->dev, txrx_buf, SPI_NAND_CACHE_SIZE,
+ 				  DMA_FROM_DEVICE);
+ 	err = dma_mapping_error(as_ctrl->dev, dma_addr);
+ 	if (err)
+-		return err;
++		goto error_dma_mode_off;
+ 
+ 	/* set dma addr */
+ 	err = regmap_write(as_ctrl->regmap_nfi, REG_SPI_NFI_STRADDR,
+@@ -797,6 +797,8 @@ static ssize_t airoha_snand_dirmap_read(
+ error_dma_unmap:
+ 	dma_unmap_single(as_ctrl->dev, dma_addr, SPI_NAND_CACHE_SIZE,
+ 			 DMA_FROM_DEVICE);
++error_dma_mode_off:
++	airoha_snand_set_mode(as_ctrl, SPI_MODE_MANUAL);
+ 	return err;
+ }
+ 
+@@ -926,6 +928,7 @@ static ssize_t airoha_snand_dirmap_write
+ error_dma_unmap:
+ 	dma_unmap_single(as_ctrl->dev, dma_addr, SPI_NAND_CACHE_SIZE,
+ 			 DMA_TO_DEVICE);
++	airoha_snand_set_mode(as_ctrl, SPI_MODE_MANUAL);
+ 	return err;
+ }
+ 

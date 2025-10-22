@@ -198,7 +198,7 @@ my %update_method = (
 # src-git: pull broken
 # src-cpy: broken if `basename $src` != $name
 
-sub update_feed_via($$$$$$$) {
+sub update_feed_via($$$$$$$$) {
 	my $type = shift;
 	my $name = shift;
 	my $src = shift;
@@ -206,22 +206,32 @@ sub update_feed_via($$$$$$$) {
 	my $force = shift;
 	my $rebase = shift;
 	my $stash = shift;
+	my $flags = shift;
 
 	my $m = $update_method{$type};
-	my $localpath = "./feeds/$name";
-	my $safepath = $localpath;
-	$safepath =~ s/'/'\\''/;
+	my $safename = $name;
+	$safename =~ s/'/'\\''/;
+	my $localpath = "./feeds/$safename";
+	my $localpath_orig;
+	if (defined $flags->{'root'}) {
+		$safename .= "_root";
+		$localpath_orig = $localpath;
+		$localpath .= "_root";
+	}
 	my ($base_branch, $branch) = split(/;/, $src, 2);
 	my ($base_commit, $commit) = split(/\^/, $src, 2);
 
 	if( $relocate || !$m->{'update'} || !-d "$localpath/$m->{'controldir'}" ) {
-		system("rm -rf '$safepath'");
+		if (defined $flags->{'root'}) {
+			system("rm -rf $localpath_orig; ln -s $safename/$flags->{'root'} $localpath_orig");
+		}
+		system("rm -rf '$localpath'");
 		if ($m->{'init_branch'} and $branch) {
-			system(sprintf($m->{'init_branch'}, $branch, $base_branch, $safepath)) == 0 or return 1;
+			system(sprintf($m->{'init_branch'}, $branch, $base_branch, $localpath)) == 0 or return 1;
 		} elsif ($m->{'init_commit'} and $commit) {
-			system(sprintf($m->{'init_commit'}, $base_commit, $safepath, $safepath, $commit, $commit)) == 0 or return 1;
+			system(sprintf($m->{'init_commit'}, $base_commit, $localpath, $localpath, $commit, $commit)) == 0 or return 1;
 		} else {
-			system(sprintf($m->{'init'}, $src, $safepath)) == 0 or return 1;
+			system(sprintf($m->{'init'}, $src, $localpath)) == 0 or return 1;
 		}
 	} elsif ($m->{'init_commit'} and $commit) {
 		# in case git hash has been provided don't update the feed
@@ -236,11 +246,11 @@ sub update_feed_via($$$$$$$) {
 		if ($stash && exists $m->{'update_stash'}) {
 			$update_cmd = $m->{'update_stash'};
 		}
-		system("cd '$safepath'; $update_cmd") == 0 or return 1;
+		system("cd '$localpath'; $update_cmd") == 0 or return 1;
 	}
 	if ($m->{'post_update'}) {
 		my $cmd = $m->{'post_update'};
-		system("cd '$safepath'; $cmd") == 0 or return 1;
+		system("cd '$localpath'; $cmd") == 0 or return 1;
 	}
 
 	return 0;
@@ -793,7 +803,7 @@ sub uninstall {
 	return 0;
 }
 
-sub update_feed($$$$$$)
+sub update_feed($$$$$$$)
 {
 	my $type=shift;
 	my $name=shift;
@@ -801,6 +811,7 @@ sub update_feed($$$$$$)
 	my $force_update=shift;
 	my $rebase_update=shift;
 	my $stash_update=shift;
+	my $flags=shift;
 	my $force_relocate=update_location( $name, "@$src" );
 	my $rv=0;
 
@@ -815,7 +826,7 @@ sub update_feed($$$$$$)
 	my $failed = 1;
 	foreach my $feedsrc (@$src) {
 		warn "Updating feed '$name' from '$feedsrc' ...\n";
-		if (update_feed_via($type, $name, $feedsrc, $force_relocate, $force_update, $rebase_update, $stash_update) != 0) {
+		if (update_feed_via($type, $name, $feedsrc, $force_relocate, $force_update, $rebase_update, $stash_update, $flags) != 0) {
 			if ($force_update) {
 				$rv=1;
 				$failed=0;
@@ -860,10 +871,10 @@ sub update {
 
 	my @index_feeds;
 	foreach my $feed (@feeds) {
-		my ($type, $name, $src) = @$feed;
+		my ($type, $name, $src, $flags) = @$feed;
 		next unless $#ARGV == -1 or $opts{a} or $argv_feeds{$name};
 		if (not $opts{i}) {
-			update_feed($type, $name, $src, $opts{f}, $opts{r}, $opts{s}) == 0 or $failed=1;
+			update_feed($type, $name, $src, $opts{f}, $opts{r}, $opts{s}, $flags) == 0 or $failed=1;
 		}
 		push @index_feeds, $name;
 	}

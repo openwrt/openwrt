@@ -87,7 +87,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	phy_unlock_mdio_bus(phydev);
 --- a/drivers/net/phy/mscc/mscc.h
 +++ b/drivers/net/phy/mscc/mscc.h
-@@ -416,6 +416,11 @@ struct vsc8531_private {
+@@ -428,6 +428,11 @@ struct vsc8531_private {
   * gpio_lock: used for PHC operations. Common for all PHYs as the load/save GPIO
   * is shared.
   */
@@ -242,7 +242,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	refcount_t refcnt;
  	unsigned long flags;
  	size_t priv_size;
-@@ -1966,10 +1967,10 @@ int phy_ethtool_get_link_ksettings(struc
+@@ -2000,10 +2001,10 @@ int phy_ethtool_get_link_ksettings(struc
  int phy_ethtool_set_link_ksettings(struct net_device *ndev,
  				   const struct ethtool_link_ksettings *cmd);
  int phy_ethtool_nway_reset(struct net_device *ndev);
@@ -255,7 +255,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  int __init mdio_bus_init(void);
  void mdio_bus_exit(void);
-@@ -1992,46 +1993,65 @@ int __phy_hwtstamp_set(struct phy_device
+@@ -2026,46 +2027,65 @@ int __phy_hwtstamp_set(struct phy_device
  		       struct kernel_hwtstamp_config *config,
  		       struct netlink_ext_ack *extack);
  

@@ -17,7 +17,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -734,7 +734,8 @@ static void phylink_validate_one(struct
+@@ -754,7 +754,8 @@ static void phylink_validate_one(struct
  	}
  }
  
@@ -27,7 +27,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  				 struct phylink_link_state *state,
  				 const unsigned long *interfaces)
  {
-@@ -743,7 +744,7 @@ static int phylink_validate_mask(struct
+@@ -763,7 +764,7 @@ static int phylink_validate_mask(struct
  	int interface;
  
  	for_each_set_bit(interface, interfaces, PHY_INTERFACE_MODE_MAX)
@@ -36,7 +36,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  				     all_s, all_adv);
  
  	linkmode_copy(supported, all_s);
-@@ -758,7 +759,8 @@ static int phylink_validate(struct phyli
+@@ -778,7 +779,8 @@ static int phylink_validate(struct phyli
  	const unsigned long *interfaces = pl->config->supported_interfaces;
  
  	if (state->interface == PHY_INTERFACE_MODE_NA)
@@ -46,7 +46,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	if (!test_bit(state->interface, interfaces))
  		return -EINVAL;
-@@ -3194,7 +3196,8 @@ static int phylink_sfp_config_optical(st
+@@ -3465,7 +3467,8 @@ static int phylink_sfp_config_optical(st
  	/* For all the interfaces that are supported, reduce the sfp_support
  	 * mask to only those link modes that can be supported.
  	 */

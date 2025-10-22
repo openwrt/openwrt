@@ -20,8 +20,9 @@
 		stdout-path = "serial0:115200n8";
 	};
 
-	memory {
+	memory@40000000 {
 		reg = <0 0x40000000 0 0x10000000>; // 256mb
+		device_type = "memory";
 	};
 
 	gpio-keys {
@@ -125,18 +126,17 @@
 &spi0 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&spi0_flash_pins>;
-	cs-gpios = <0>, <0>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
 
-	spi_nand: spi_nand@1 {
+	spi_nand: spi_nand@0 {
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "spi-nand";
-		reg = <1>;
+		reg = <0>;
 		spi-max-frequency = <52000000>;
 
 		spi-cal-enable;

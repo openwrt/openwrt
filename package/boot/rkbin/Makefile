@@ -9,9 +9,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/rockchip-linux/rkbin.git
-PKG_SOURCE_DATE:=2024-02-22
-PKG_SOURCE_VERSION:=a2a0b89b6c8c612dca5ed9ed8a68db8a07f68bc0
-PKG_MIRROR_HASH:=39f15e5f8fac02026065b6747b355b93f4e06202783ae448c43607763211597c
+PKG_SOURCE_DATE:=2025-06-13
+PKG_SOURCE_VERSION:=74213af1e952c4683d2e35952507133b61394862
+PKG_MIRROR_HASH:=4b801b1301ae297f660340617b5f398b23a3f0b43bc7f0ef42c21f0f43eb8990
 
 PKG_LICENSE_FILES:=LICENSE
 PKG_MAINTAINER:=Tianling Shen <cnsztl@immortalwrt.org>
@@ -27,78 +27,84 @@ endef
 
 define Trusted-Firmware-A/rk3308
   BUILD_SUBTARGET:=armv8
-  ATF:=rk33/rk3308_bl31_v2.26.elf
-  TPL:=rk33/rk3308_ddr_589MHz_uart2_m1_v2.07.bin
+  ATF:=rk33/rk3308_bl31_v2.27.elf
+  TPL:=rk33/rk3308_ddr_589MHz_uart2_m1_v2.10.bin
 endef
 
-define Trusted-Firmware-A/rk3308-rock-pi-s
-  NAME:=Radxa ROCK Pi S
+define Trusted-Firmware-A/rk3308-tpl-rock-pi-s
+  NAME:=Radxa ROCK Pi S board
   BUILD_SUBTARGET:=armv8
-  ATF:=rk33/rk3308_bl31_v2.26.elf
-  TPL:=rk33/rk3308_ddr_589MHz_uart0_m0_v2.07.bin
+  TPL:=rk33/rk3308_ddr_589MHz_uart0_m0_v2.10.bin
 endef
 
 define Trusted-Firmware-A/rk3566
   BUILD_SUBTARGET:=armv8
-  ATF:=rk35/rk3568_bl31_v1.44.elf
-  TPL:=rk35/rk3566_ddr_1056MHz_v1.21.bin
+  ATF:=rk35/rk3568_bl31_v1.45.elf
+  TPL:=rk35/rk3566_ddr_1056MHz_v1.23.bin
 endef
 
 define Trusted-Firmware-A/rk3568
   BUILD_SUBTARGET:=armv8
-  ATF:=rk35/rk3568_bl31_v1.44.elf
-  TPL:=rk35/rk3568_ddr_1560MHz_v1.21.bin
+  ATF:=rk35/rk3568_bl31_v1.45.elf
+  TPL:=rk35/rk3568_ddr_1560MHz_v1.23.bin
 endef
 
-define Trusted-Firmware-A/rk3568-e25
+define Trusted-Firmware-A/rk3568-tpl-e25
   NAME:=Radxa E25 board
   BUILD_SUBTARGET:=armv8
-  ATF:=rk35/rk3568_bl31_v1.44.elf
-  TPL:=rk35/rk3568_ddr_1560MHz_uart2_m0_115200_v1.21.bin
+  TPL:=rk35/rk3568_ddr_1560MHz_uart2_m0_115200_v1.23.bin
+endef
+
+define Trusted-Firmware-A/rk3576-tpl
+  NAME:=Rockchip RK3576 SoCs
+  BUILD_SUBTARGET:=armv8
+  TPL:=rk35/rk3576_ddr_lp4_2112MHz_lp5_2736MHz_v1.09.bin
 endef
 
 define Trusted-Firmware-A/rk3588-tpl
+  NAME:=Rockchip RK3588 SoCs
   BUILD_SUBTARGET:=armv8
-  TPL:=rk35/rk3588_ddr_lp4_2112MHz_lp5_2400MHz_v1.16.bin
+  TPL:=rk35/rk3588_ddr_lp4_2112MHz_lp5_2400MHz_v1.19.bin
 endef
 
 TFA_TARGETS:= \
 	rk3308 \
-	rk3308-rock-pi-s \
+	rk3308-tpl-rock-pi-s \
 	rk3566 \
 	rk3568 \
-	rk3568-e25 \
+	rk3568-tpl-e25 \
+	rk3576-tpl \
 	rk3588-tpl
 
-ifeq ($(BUILD_VARIANT),rk3308-rock-pi-s)
-  TPL_FILE:=rk3308_ddr_589MHz_uart0_m0_v2.07.bin
+ifeq ($(BUILD_VARIANT),rk3308-tpl-rock-pi-s)
   define Download/rk3308-tpl-rock-pi-s
-    FILE:=$(TPL_FILE)
-    URL:=https://github.com/radxa/rkbin/raw/5696fab20dcac57c1458f72dc7604ba60e553adf/bin/rk33/
-    HASH:=8a1a42df23cccb86a2dabc14a5c0e9227d64a51b9b83e9968ef5af3b30787f7d
+    FILE:=$(notdir $(TPL))
+    URL_FILE:=$(TPL)
+    URL:=https://github.com/radxa/rkbin/raw/2b54df9d062ef91a9fffbc85472b070c9220c4cf/bin/
+    HASH:=45af030ed2cb322cc5a91c32350130fc1f1ea9508794fa4b5d309eadf70e3d04
   endef
 
   define Build/Prepare
 	$(eval $(call Download,rk3308-tpl-rock-pi-s))
 	$(call Build/Prepare/Default)
 
-	$(CP) $(DL_DIR)/$(TPL_FILE) $(PKG_BUILD_DIR)/bin/rk33/
+	$(CP) $(DL_DIR)/$(notdir $(TPL)) $(PKG_BUILD_DIR)/bin/$(TPL)
   endef
 endif
 
-ifeq ($(BUILD_VARIANT),rk3568-e25)
-  TPL_FILE:=rk3568_ddr_1560MHz_uart2_m0_115200_v1.21.bin
+ifeq ($(BUILD_VARIANT),rk3568-tpl-e25)
   define Download/rk3568-tpl-e25
-    FILE:=$(TPL_FILE)
-    URL:=https://github.com/radxa/rkbin/raw/5696fab20dcac57c1458f72dc7604ba60e553adf/bin/rk35/
-    HASH:=1815f9649dc5661a3ef184b052da39286e51453a66f6ff53cc3e345d65dfabd4
+    FILE:=$(notdir $(TPL))
+    URL_FILE:=$(TPL)
+    URL:=https://github.com/radxa/rkbin/raw/2e77c53ab0279585b09ecdaa54fe3e2bf80f9475/bin/
+    HASH:=1bb9f92a6515a70b91c0f8bd3aa4dc31432afc4317b9408f82c43ca63cb10ab6
   endef
 
   define Build/Prepare
 	$(eval $(call Download,rk3568-tpl-e25))
 	$(call Build/Prepare/Default)
 
-	$(CP) $(DL_DIR)/$(TPL_FILE) $(PKG_BUILD_DIR)/bin/rk35/
+	$(CP) $(DL_DIR)/$(notdir $(TPL)) $(PKG_BUILD_DIR)/bin/$(TPL)
   endef
 endif
 

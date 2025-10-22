@@ -196,7 +196,6 @@ define KernelPackage/stm32-dcmipp
   FILES:=$(LINUX_DIR)/drivers/media/platform/st/stm32/stm32-dcmipp/stm32-dcmipp.ko
   AUTOLOAD:=$(call AutoProbe,stm32-dcmipp)
   $(call AddDepends/video,@TARGET_stm32 \
-	  @!LINUX_6_6 \
 	  +kmod-video-videobuf2 \
 	  +kmod-video-dma-contig \
 	  +kmod-video-fwnode)
@@ -216,7 +215,7 @@ define KernelPackage/stm32-dfsdm-adc
 	  +kmod-stm32-timer-trigger \
 	  +kmod-industrialio-triggered-buffer \
 	  +kmod-industrialio-hw-consumer \
-	  +!LINUX_6_6:kmod-industrialio-backend)
+	  +kmod-industrialio-backend)
 endef
 
 $(eval $(call KernelPackage,stm32-dfsdm-adc))

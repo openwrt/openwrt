@@ -1,0 +1,55 @@
+From 58ebba35ddab4868c921f970b60a77032362ef4c Mon Sep 17 00:00:00 2001
+From: Shawn Lin <shawn.lin@rock-chips.com>
+Date: Wed, 5 Feb 2025 14:15:53 +0800
+Subject: [PATCH] pmdomain: rockchip: Add smc call to inform firmware
+
+Inform firmware to keep the power domain on or off.
+
+Suggested-by: Ulf Hansson <ulf.hansson@linaro.org>
+Signed-off-by: Shawn Lin <shawn.lin@rock-chips.com>
+Reviewed-by: Ulf Hansson <ulf.hansson@linaro.org>
+Acked-by: Heiko Stuebner <heiko@sntech.de>
+Link: https://lore.kernel.org/r/1738736156-119203-5-git-send-email-shawn.lin@rock-chips.com
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+---
+ drivers/pmdomain/rockchip/pm-domains.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/drivers/pmdomain/rockchip/pm-domains.c
++++ b/drivers/pmdomain/rockchip/pm-domains.c
+@@ -5,6 +5,7 @@
+  * Copyright (c) 2015 ROCKCHIP, Co. Ltd.
+  */
+ 
++#include <linux/arm-smccc.h>
+ #include <linux/io.h>
+ #include <linux/iopoll.h>
+ #include <linux/err.h>
+@@ -20,6 +21,7 @@
+ #include <linux/regmap.h>
+ #include <linux/mfd/syscon.h>
+ #include <soc/rockchip/pm_domains.h>
++#include <soc/rockchip/rockchip_sip.h>
+ #include <dt-bindings/power/px30-power.h>
+ #include <dt-bindings/power/rockchip,rv1126-power.h>
+ #include <dt-bindings/power/rk3036-power.h>
+@@ -540,6 +542,7 @@ static void rockchip_do_pmu_set_power_do
+ 	struct generic_pm_domain *genpd = &pd->genpd;
+ 	u32 pd_pwr_offset = pd->info->pwr_offset;
+ 	bool is_on, is_mem_on = false;
++	struct arm_smccc_res res;
+ 
+ 	if (pd->info->pwr_mask == 0)
+ 		return;
+@@ -567,6 +570,11 @@ static void rockchip_do_pmu_set_power_do
+ 			genpd->name, is_on);
+ 		return;
+ 	}
++
++	/* Inform firmware to keep this pd on or off */
++	arm_smccc_smc(ROCKCHIP_SIP_SUSPEND_MODE, ROCKCHIP_SLEEP_PD_CONFIG,
++			pmu->info->pwr_offset + pd_pwr_offset,
++			pd->info->pwr_mask, on, 0, 0, 0, &res);
+ }
+ 
+ static int rockchip_pd_power(struct rockchip_pm_domain *pd, bool power_on)

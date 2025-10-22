@@ -108,6 +108,11 @@
 	nvmem-cell-names = "mac-address";
 };
 
+&ppe {
+	nvmem-cells = <&macaddr_boardconfig_16 2>;
+	nvmem-cell-names = "mac-address";
+};
+
 &localbus {
 	flash@0 {
 		compatible = "lantiq,nor";

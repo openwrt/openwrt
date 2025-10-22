@@ -144,10 +144,6 @@
 
 };
 
-&builtin_switch {
-	/delete-property/ qca,phy4-mii-enable; /* need to delete this to make all 5 FE ports work */
-};
-
 &usb_phy {
 	status = "okay";
 };
@@ -172,7 +168,16 @@
 	gmac-config {
 		device = <&gmac>;
 		switch-phy-swap = <0>;
-		switch-only-mode = <1>;
+		switch-only-mode = <0>;
 	};
+};
+
+&eth0 {
+	status = "okay";
+
+	phy-handle = <&swphy4>;
+
+	nvmem-cells = <&macaddr_art_1002 1>;
+	nvmem-cell-names = "mac-address";
 };
 

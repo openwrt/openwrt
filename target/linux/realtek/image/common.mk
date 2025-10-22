@@ -86,8 +86,31 @@ define Device/zyxel_gs1900
   KERNEL_INITRAMFS := \
 	kernel-bin | \
 	append-dtb | \
-	libdeflate-gzip | \
+	rt-compress | \
 	zyxel-vers | \
-	uImage gzip | \
+	rt-loader | \
+	uImage none | \
 	check-size 6976k
+endef
+
+define Device/zyxel_xgs1210-12
+  SOC := rtl9302
+  UIMAGE_MAGIC := 0x93001210
+  ZYXEL_VERS := ABTY
+  DEVICE_VENDOR := Zyxel
+  DEVICE_MODEL := XGS1210-12
+  IMAGE_SIZE := 13312k
+  KERNEL := \
+        kernel-bin | \
+        append-dtb | \
+        rt-compress | \
+        rt-loader | \
+        uImage none
+  KERNEL_INITRAMFS := \
+        kernel-bin | \
+        append-dtb | \
+        rt-compress | \
+        zyxel-vers | \
+        rt-loader | \
+        uImage none
 endef

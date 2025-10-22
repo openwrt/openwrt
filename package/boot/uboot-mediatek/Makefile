@@ -1,8 +1,8 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_VERSION:=2025.04
-PKG_HASH:=439d3bef296effd54130be6a731c5b118be7fddd7fcc663ccbc5fb18294d8718
+PKG_VERSION:=2025.10
+PKG_HASH:=b4f032848e56cc8f213ad59f9132c084dbbb632bc29176d024e58220e0efdf4a
 PKG_BUILD_DEPENDS:=!(TARGET_ramips||TARGET_mediatek_mt7623):arm-trusted-firmware-tools/host
 
 UBOOT_USE_INTREE_DTC:=1
@@ -243,7 +243,19 @@ define U-Boot/mt7981_cmcc_a10
   DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
 endef
 
-define U-Boot/mt7981_cmcc_rax3000m-emmc
+define U-Boot/mt7981_cmcc_rax3000m-emmc-ddr3
+  NAME:=CMCC RAX3000M
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=cmcc_rax3000m
+  UBOOT_CONFIG:=mt7981_cmcc_rax3000m-emmc
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=emmc
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3-1866mhz
+  DEPENDS:=+trusted-firmware-a-mt7981-emmc-ddr3-1866mhz
+endef
+
+define U-Boot/mt7981_cmcc_rax3000m-emmc-ddr4
   NAME:=CMCC RAX3000M
   BUILD_SUBTARGET:=filogic
   BUILD_DEVICES:=cmcc_rax3000m
@@ -255,7 +267,19 @@ define U-Boot/mt7981_cmcc_rax3000m-emmc
   DEPENDS:=+trusted-firmware-a-mt7981-emmc-ddr4
 endef
 
-define U-Boot/mt7981_cmcc_rax3000m-nand
+define U-Boot/mt7981_cmcc_rax3000m-nand-ddr3
+  NAME:=CMCC RAX3000M
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=cmcc_rax3000m
+  UBOOT_CONFIG:=mt7981_cmcc_rax3000m-nand
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3-1866mhz
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3-1866mhz
+endef
+
+define U-Boot/mt7981_cmcc_rax3000m-nand-ddr4
   NAME:=CMCC RAX3000M
   BUILD_SUBTARGET:=filogic
   BUILD_DEVICES:=cmcc_rax3000m
@@ -276,6 +300,18 @@ define U-Boot/mt7981_cudy_tr3000-v1
   BL2_BOOTDEV:=cudy-tr3000-v1
   BL2_SOC:=mt7981
   DEPENDS:=+trusted-firmware-a-mt7981-cudy-tr3000-v1
+endef
+
+define U-Boot/mt7981_glinet_gl-mt2500
+  NAME:=GL.iNet GL-MT2500
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=glinet_gl-mt2500
+  UBOOT_CONFIG:=mt7981_glinet_gl-mt2500
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=emmc
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr4
+  DEPENDS:=+trusted-firmware-a-mt7981-emmc-ddr4
 endef
 
 define U-Boot/mt7981_glinet_gl-x3000
@@ -319,6 +355,18 @@ define U-Boot/mt7981_jcg_q30-pro
   BUILD_SUBTARGET:=filogic
   BUILD_DEVICES:=jcg_q30-pro
   UBOOT_CONFIG:=mt7981_jcg_q30-pro
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
+endef
+
+define U-Boot/mt7981_konka_komi-a31
+  NAME:=Konka KOMI A31
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=konka_komi-a31
+  UBOOT_CONFIG:=mt7981_konka_komi-a31
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=spim-nand
   BL2_SOC:=mt7981
@@ -916,14 +964,18 @@ UBOOT_TARGETS := \
 	mt7629_rfb \
 	mt7981_abt_asr3000 \
 	mt7981_cmcc_a10 \
-	mt7981_cmcc_rax3000m-emmc \
-	mt7981_cmcc_rax3000m-nand \
+	mt7981_cmcc_rax3000m-emmc-ddr3 \
+	mt7981_cmcc_rax3000m-emmc-ddr4 \
+	mt7981_cmcc_rax3000m-nand-ddr3 \
+	mt7981_cmcc_rax3000m-nand-ddr4 \
 	mt7981_cudy_tr3000-v1 \
 	mt7981_gatonetworks_gdsp \
+	mt7981_glinet_gl-mt2500 \
 	mt7981_glinet_gl-x3000 \
 	mt7981_glinet_gl-xe3000 \
 	mt7981_h3c_magic-nx30-pro \
 	mt7981_jcg_q30-pro \
+	mt7981_konka_komi-a31 \
 	mt7981_netis_nx31 \
 	mt7981_nokia_ea0326gmp \
 	mt7981_openwrt_one-snand \

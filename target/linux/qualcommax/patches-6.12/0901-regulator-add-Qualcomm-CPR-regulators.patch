@@ -631,7 +631,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	.cpr_clk_rate = IPQ9574_NPU_CPR_CLOCK_RATE,
 +};
 +
-+static struct of_device_id cpr3_regulator_match_table[] = {
++static const struct of_device_id cpr3_regulator_match_table[] = {
 +	{
 +		.compatible = "qcom,cpr3-ipq807x-npu-regulator",
 +		.data = &ipq807x_cpr_npu
@@ -11538,7 +11538,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	.mem_acc_funcs = NULL,
 +};
 +
-+static struct of_device_id cpr4_regulator_match_table[] = {
++static const struct of_device_id cpr4_regulator_match_table[] = {
 +	{
 +		.compatible = "qcom,cpr4-ipq807x-apss-regulator",
 +		.data = &ipq807x_cpr_apss

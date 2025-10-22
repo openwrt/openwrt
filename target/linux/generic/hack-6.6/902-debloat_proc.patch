@@ -235,7 +235,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!pe)
 --- a/mm/vmalloc.c
 +++ b/mm/vmalloc.c
-@@ -4450,6 +4450,8 @@ static const struct seq_operations vmall
+@@ -4458,6 +4458,8 @@ static const struct seq_operations vmall
  
  static int __init proc_vmalloc_init(void)
  {
@@ -330,7 +330,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/core/sock.c
 +++ b/net/core/sock.c
-@@ -4143,6 +4143,8 @@ static __net_initdata struct pernet_oper
+@@ -4165,6 +4165,8 @@ static __net_initdata struct pernet_oper
  
  static int __init proto_init(void)
  {

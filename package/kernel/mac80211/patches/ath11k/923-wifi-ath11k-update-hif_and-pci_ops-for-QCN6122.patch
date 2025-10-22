@@ -68,16 +68,16 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  		return -EOPNOTSUPP;
 --- a/drivers/net/wireless/ath/ath11k/hif.h
 +++ b/drivers/net/wireless/ath/ath11k/hif.h
-@@ -31,6 +31,7 @@ struct ath11k_hif_ops {
- 	void (*ce_irq_enable)(struct ath11k_base *ab);
+@@ -32,6 +32,7 @@ struct ath11k_hif_ops {
  	void (*ce_irq_disable)(struct ath11k_base *ab);
  	void (*get_ce_msi_idx)(struct ath11k_base *ab, u32 ce_id, u32 *msi_idx);
+ 	void (*coredump_download)(struct ath11k_base *ab);
 +	void (*config_static_window)(struct ath11k_base *ab);
  };
  
  static inline void ath11k_hif_ce_irq_enable(struct ath11k_base *ab)
-@@ -146,4 +147,12 @@ static inline void ath11k_get_ce_msi_idx
- 		*msi_data_idx = ce_id;
+@@ -159,4 +160,12 @@ static inline void ath11k_hif_coredump_d
+ 		ab->hif.ops->coredump_download(ab);
  }
  
 +static inline void ath11k_hif_config_static_window(struct ath11k_base *ab)
@@ -91,7 +91,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  #endif /* _HIF_H_ */
 --- a/drivers/net/wireless/ath/ath11k/qmi.c
 +++ b/drivers/net/wireless/ath/ath11k/qmi.c
-@@ -2189,6 +2189,8 @@ static int ath11k_qmi_request_device_inf
+@@ -2201,6 +2201,8 @@ static int ath11k_qmi_request_device_inf
  	if (!ab->hw_params.ce_remap)
  		ab->mem_ce = ab->mem;
  

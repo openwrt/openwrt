@@ -121,9 +121,9 @@ JIRA: SWWLAN-136577
  {
  	struct brcmf_bus *bus_if = dev_get_drvdata(dev);
  	struct brcmf_pub *drvr = bus_if->drvr;
-@@ -1363,10 +1363,13 @@ int brcmf_attach(struct device *dev)
- 	brcmf_fweh_register(drvr, BRCMF_E_PSM_WATCHDOG,
- 			    brcmf_psm_watchdog_notify);
+@@ -1365,10 +1365,13 @@ int brcmf_attach(struct device *dev)
+ 
+ 	brcmf_fwvid_get_cfg80211_ops(drvr);
  
 -	ret = brcmf_bus_started(drvr, drvr->ops);
 -	if (ret != 0) {
@@ -151,17 +151,17 @@ JIRA: SWWLAN-136577
  #undef pr_fmt
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fweh.h
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/fweh.h
-@@ -94,7 +94,8 @@ struct brcmf_cfg80211_info;
- 	BRCMF_ENUM_DEF(FIFO_CREDIT_MAP, 74) \
- 	BRCMF_ENUM_DEF(ACTION_FRAME_RX, 75) \
- 	BRCMF_ENUM_DEF(TDLS_PEER_EVENT, 92) \
--	BRCMF_ENUM_DEF(BCMC_CREDIT_SUPPORT, 127)
-+	BRCMF_ENUM_DEF(BCMC_CREDIT_SUPPORT, 127) \
+@@ -98,7 +98,8 @@ struct brcmf_cfg80211_info;
+ 	BRCMF_ABSTRACT_ENUM_DEF(EXT_AUTH_REQ, 0) \
+ 	BRCMF_ABSTRACT_ENUM_DEF(EXT_AUTH_FRAME_RX, 1) \
+ 	BRCMF_ABSTRACT_ENUM_DEF(MGMT_FRAME_TXSTATUS, 2) \
+-	BRCMF_ABSTRACT_ENUM_DEF(MGMT_FRAME_OFFCHAN_DONE, 3)
++	BRCMF_ABSTRACT_ENUM_DEF(MGMT_FRAME_OFFCHAN_DONE, 3) \
 +	BRCMF_ENUM_DEF(ULP, 146)
  
  #define BRCMF_ENUM_DEF(id, val) \
  	BRCMF_E_##id = (val),
-@@ -102,6 +103,12 @@ struct brcmf_cfg80211_info;
+@@ -106,6 +107,12 @@ struct brcmf_cfg80211_info;
  /* firmware event codes sent by the dongle */
  enum brcmf_fweh_event_code {
  	BRCMF_FWEH_EVENT_ENUM_DEFLIST
@@ -174,7 +174,7 @@ JIRA: SWWLAN-136577
  };
  #undef BRCMF_ENUM_DEF
  
-@@ -280,6 +287,28 @@ struct brcmf_if_event {
+@@ -284,6 +291,28 @@ struct brcmf_if_event {
  	u8 role;
  };
  
@@ -692,7 +692,7 @@ JIRA: SWWLAN-136577
  #endif /* BRCMFMAC_SDIO_H */
 --- a/drivers/net/wireless/broadcom/brcm80211/brcmfmac/usb.c
 +++ b/drivers/net/wireless/broadcom/brcm80211/brcmfmac/usb.c
-@@ -1202,7 +1202,7 @@ static void brcmf_usb_probe_phase2(struc
+@@ -1211,7 +1211,7 @@ static void brcmf_usb_probe_phase2(struc
  		goto error;
  
  	/* Attach to the common driver interface */
@@ -701,7 +701,7 @@ JIRA: SWWLAN-136577
  	if (ret)
  		goto error;
  
-@@ -1282,7 +1282,7 @@ static int brcmf_usb_probe_cb(struct brc
+@@ -1291,7 +1291,7 @@ static int brcmf_usb_probe_cb(struct brc
  		ret = brcmf_alloc(devinfo->dev, devinfo->settings);
  		if (ret)
  			goto fail;

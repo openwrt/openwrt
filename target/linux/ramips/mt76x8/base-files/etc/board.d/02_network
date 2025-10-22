@@ -11,6 +11,7 @@ ramips_setup_interfaces()
 	7links,wlr-1230|\
 	7links,wlr-1240|\
 	alfa-network,awusfree1|\
+	creality,wb-01|\
 	d-team,pbr-d1|\
 	dlink,dap-1325-a1|\
 	glinet,microuter-n300|\
@@ -21,6 +22,7 @@ ramips_setup_interfaces()
 	minew,g1-c|\
 	onion,omega2p|\
 	onion,omega2|\
+	qding,qc202|\
 	ravpower,rp-wd009|\
 	tama,w06|\
 	tplink,re200-v2|\
@@ -109,6 +111,7 @@ ramips_setup_interfaces()
 		;;
 	duzun,dm06|\
 	glinet,gl-mt300n-v2|\
+	hongdian,h7920-v40|\
 	teltonika,rut200|\
 	teltonika,rut241)
 		ucidef_add_switch "switch0" \
@@ -192,6 +195,7 @@ ramips_setup_interfaces()
 			"0:lan" "1:lan" "2:lan" "3:lan" "6t@eth0"
 		ucidef_set_interface "wan" device "/dev/cdc-wdm0" protocol "qmi"
 		;;
+	cudy,re1200-outdoor-v1|\
 	tplink,tl-mr3020-v3)
 		ucidef_add_switch "switch0" \
 			"0:lan" "6@eth0"
@@ -281,6 +285,7 @@ ramips_setup_macs()
 		label_mac=$(mtd_get_mac_binary factory 0x4)
 		;;
 	duzun,dm06|\
+	hongdian,h7920-v40|\
 	netgear,r6020|\
 	netgear,r6080|\
 	netgear,r6120|\

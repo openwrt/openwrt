@@ -49,13 +49,14 @@
 	status = "okay";
 };
 
-&mdio {
-	INTERNAL_PHY_SDS(24, 4)
-	INTERNAL_PHY_SDS(26, 5)
+&mdio_bus0 {
+	INTERNAL_PHY(24)
+	INTERNAL_PHY(26)
 };
 
 &switch0 {
 	ports {
+		/* TODO: fixed link SFP is not right */
 		SWITCH_SFP_PORT(24, 9, 1000base-x)
 		SWITCH_SFP_PORT(26, 10, 1000base-x)
 	};

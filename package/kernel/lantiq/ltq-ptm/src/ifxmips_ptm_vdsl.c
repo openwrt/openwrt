@@ -35,6 +35,7 @@
 #include <linux/netdevice.h>
 #include <linux/platform_device.h>
 #include <linux/of_device.h>
+#include <linux/of_net.h>
 
 #include "ifxmips_ptm_vdsl.h"
 #include <lantiq_soc.h>
@@ -69,7 +70,7 @@ unsigned long cgu_get_pp32_clock(void)
 	return rate;
 }
 
-static void ptm_setup(struct net_device *, int);
+static int ptm_setup(struct device_node* np, struct net_device *, int);
 static struct net_device_stats *ptm_get_stats(struct net_device *);
 static int ptm_open(struct net_device *);
 static int ptm_stop(struct net_device *);
@@ -144,9 +145,10 @@ unsigned int ifx_ptm_dbg_enable = DBG_ENABLE_MASK_ERR;
  * ####################################
  */
 
-static void ptm_setup(struct net_device *dev, int ndev)
+static int ptm_setup(struct device_node *np, struct net_device *dev, int ndev)
 {
     u8 addr[ETH_ALEN];
+    int err;
 
     netif_carrier_off(dev);
 
@@ -160,13 +162,20 @@ static void ptm_setup(struct net_device *dev, int ndev)
 #endif
     dev->watchdog_timeo  = ETH_WATCHDOG_TIMEOUT;
 
-    addr[0] = 0x00;
-    addr[1] = 0x20;
-    addr[2] = 0xda;
-    addr[3] = 0x86;
-    addr[4] = 0x23;
-    addr[5] = 0x75 + ndev;
-    eth_hw_addr_set(dev, addr);
+    err = of_get_ethdev_address(np, dev);
+    if (err == -EPROBE_DEFER)
+        return err;
+    if (err) {
+        addr[0] = 0x00;
+        addr[1] = 0x20;
+        addr[2] = 0xda;
+        addr[3] = 0x86;
+        addr[4] = 0x23;
+        addr[5] = 0x75 + ndev;
+        eth_hw_addr_set(dev, addr);
+    }
+
+    return 0;
 }
 
 static struct net_device_stats *ptm_get_stats(struct net_device *dev)
@@ -381,14 +390,24 @@ static int ptm_ioctl(struct net_device *dev, struct ifreq *ifr, void __user *dat
 {
     ASSERT(dev == g_net_dev[0], "incorrect device");
 
+    if (!capable(CAP_NET_ADMIN))
+        return -EPERM;
+
     switch ( cmd )
     {
     case IFX_PTM_MIB_CW_GET:
-	((PTM_CW_IF_ENTRY_T *)data)->ifRxNoIdleCodewords   = IFX_REG_R32(DREG_AR_CELL0) + IFX_REG_R32(DREG_AR_CELL1);
-        ((PTM_CW_IF_ENTRY_T *)data)->ifRxIdleCodewords     = IFX_REG_R32(DREG_AR_IDLE_CNT0) + IFX_REG_R32(DREG_AR_IDLE_CNT1);
-        ((PTM_CW_IF_ENTRY_T *)data)->ifRxCodingViolation   = IFX_REG_R32(DREG_AR_CVN_CNT0) + IFX_REG_R32(DREG_AR_CVN_CNT1) + IFX_REG_R32(DREG_AR_CVNP_CNT0) + IFX_REG_R32(DREG_AR_CVNP_CNT1);
-        ((PTM_CW_IF_ENTRY_T *)data)->ifTxNoIdleCodewords   = IFX_REG_R32(DREG_AT_CELL0) + IFX_REG_R32(DREG_AT_CELL1);
-        ((PTM_CW_IF_ENTRY_T *)data)->ifTxIdleCodewords     = IFX_REG_R32(DREG_AT_IDLE_CNT0) + IFX_REG_R32(DREG_AT_IDLE_CNT1);
+        {
+            PTM_CW_IF_ENTRY_T tmp = {0};
+
+            tmp.ifRxNoIdleCodewords   = IFX_REG_R32(DREG_AR_CELL0) + IFX_REG_R32(DREG_AR_CELL1);
+            tmp.ifRxIdleCodewords     = IFX_REG_R32(DREG_AR_IDLE_CNT0) + IFX_REG_R32(DREG_AR_IDLE_CNT1);
+            tmp.ifRxCodingViolation   = IFX_REG_R32(DREG_AR_CVN_CNT0) + IFX_REG_R32(DREG_AR_CVN_CNT1) + IFX_REG_R32(DREG_AR_CVNP_CNT0) + IFX_REG_R32(DREG_AR_CVNP_CNT1);
+            tmp.ifTxNoIdleCodewords   = IFX_REG_R32(DREG_AT_CELL0) + IFX_REG_R32(DREG_AT_CELL1);
+            tmp.ifTxIdleCodewords     = IFX_REG_R32(DREG_AT_IDLE_CNT0) + IFX_REG_R32(DREG_AT_IDLE_CNT1);
+
+            if (copy_to_user(data, &tmp, sizeof(tmp)))
+                return -EFAULT;
+        }
         break;
     case IFX_PTM_MIB_FRAME_GET:
 	{
@@ -401,38 +420,50 @@ static int ptm_ioctl(struct net_device *dev, struct ifreq *ifr, void __user *dat
             for ( i = 0; i < 8; i++ )
                 tmp.TxSend    += WAN_TX_MIB_TABLE(i)->wtx_total_pdu;
 
-            *((PTM_FRAME_MIB_T *)data) = tmp;
+            if (copy_to_user(data, &tmp, sizeof(tmp)))
+                return -EFAULT;
         }
         break;
     case IFX_PTM_CFG_GET:
-	//  use bear channel 0 preemption gamma interface settings
-        ((IFX_PTM_CFG_T *)data)->RxEthCrcPresent = 1;
-        ((IFX_PTM_CFG_T *)data)->RxEthCrcCheck   = RX_GAMMA_ITF_CFG(0)->rx_eth_fcs_ver_dis == 0 ? 1 : 0;
-        ((IFX_PTM_CFG_T *)data)->RxTcCrcCheck    = RX_GAMMA_ITF_CFG(0)->rx_tc_crc_ver_dis == 0 ? 1 : 0;;
-        ((IFX_PTM_CFG_T *)data)->RxTcCrcLen      = RX_GAMMA_ITF_CFG(0)->rx_tc_crc_size == 0 ? 0 : (RX_GAMMA_ITF_CFG(0)->rx_tc_crc_size * 16);
-        ((IFX_PTM_CFG_T *)data)->TxEthCrcGen     = TX_GAMMA_ITF_CFG(0)->tx_eth_fcs_gen_dis == 0 ? 1 : 0;
-        ((IFX_PTM_CFG_T *)data)->TxTcCrcGen      = TX_GAMMA_ITF_CFG(0)->tx_tc_crc_size == 0 ? 0 : 1;
-        ((IFX_PTM_CFG_T *)data)->TxTcCrcLen      = TX_GAMMA_ITF_CFG(0)->tx_tc_crc_size == 0 ? 0 : (TX_GAMMA_ITF_CFG(0)->tx_tc_crc_size * 16);
+        {
+            IFX_PTM_CFG_T tmp = {0};
+
+            //  use bear channel 0 preemption gamma interface settings
+            tmp.RxEthCrcPresent = 1;
+            tmp.RxEthCrcCheck   = RX_GAMMA_ITF_CFG(0)->rx_eth_fcs_ver_dis == 0 ? 1 : 0;
+            tmp.RxTcCrcCheck    = RX_GAMMA_ITF_CFG(0)->rx_tc_crc_ver_dis == 0 ? 1 : 0;
+            tmp.RxTcCrcLen      = RX_GAMMA_ITF_CFG(0)->rx_tc_crc_size == 0 ? 0 : (RX_GAMMA_ITF_CFG(0)->rx_tc_crc_size * 16);
+            tmp.TxEthCrcGen     = TX_GAMMA_ITF_CFG(0)->tx_eth_fcs_gen_dis == 0 ? 1 : 0;
+            tmp.TxTcCrcGen      = TX_GAMMA_ITF_CFG(0)->tx_tc_crc_size == 0 ? 0 : 1;
+            tmp.TxTcCrcLen      = TX_GAMMA_ITF_CFG(0)->tx_tc_crc_size == 0 ? 0 : (TX_GAMMA_ITF_CFG(0)->tx_tc_crc_size * 16);
+
+            if (copy_to_user(data, &tmp, sizeof(tmp)))
+                return -EFAULT;
+        }
         break;
     case IFX_PTM_CFG_SET:
 	{
+            IFX_PTM_CFG_T cfg;
             int i;
 
+            if (copy_from_user(&cfg, data, sizeof(cfg)))
+                return -EFAULT;
+
             for ( i = 0; i < 4; i++ ) {
-                RX_GAMMA_ITF_CFG(i)->rx_eth_fcs_ver_dis = ((IFX_PTM_CFG_T *)data)->RxEthCrcCheck ? 0 : 1;
+                RX_GAMMA_ITF_CFG(i)->rx_eth_fcs_ver_dis = cfg.RxEthCrcCheck ? 0 : 1;
 
-                RX_GAMMA_ITF_CFG(0)->rx_tc_crc_ver_dis = ((IFX_PTM_CFG_T *)data)->RxTcCrcCheck ? 0 : 1;
+                RX_GAMMA_ITF_CFG(0)->rx_tc_crc_ver_dis = cfg.RxTcCrcCheck ? 0 : 1;
 
-                switch ( ((IFX_PTM_CFG_T *)data)->RxTcCrcLen ) {
+                switch ( cfg.RxTcCrcLen ) {
                     case 16: RX_GAMMA_ITF_CFG(0)->rx_tc_crc_size = 1; break;
                     case 32: RX_GAMMA_ITF_CFG(0)->rx_tc_crc_size = 2; break;
                     default: RX_GAMMA_ITF_CFG(0)->rx_tc_crc_size = 0;
                 }
 
-                TX_GAMMA_ITF_CFG(0)->tx_eth_fcs_gen_dis = ((IFX_PTM_CFG_T *)data)->TxEthCrcGen ? 0 : 1;
+                TX_GAMMA_ITF_CFG(0)->tx_eth_fcs_gen_dis = cfg.TxEthCrcGen ? 0 : 1;
 
-                if ( ((IFX_PTM_CFG_T *)data)->TxTcCrcGen ) {
-                    switch ( ((IFX_PTM_CFG_T *)data)->TxTcCrcLen ) {
+                if ( cfg.TxTcCrcGen ) {
+                    switch ( cfg.TxTcCrcLen ) {
                         case 16: TX_GAMMA_ITF_CFG(0)->tx_tc_crc_size = 1; break;
                         case 32: TX_GAMMA_ITF_CFG(0)->tx_tc_crc_size = 2; break;
                         default: TX_GAMMA_ITF_CFG(0)->tx_tc_crc_size = 0;
@@ -986,6 +1017,7 @@ static int ltq_ptm_probe(struct platform_device *pdev)
     int i;
     char ver_str[256];
     struct port_cell_info port_cell = {0};
+    struct device_node *np = pdev->dev.of_node;
 
     ret = init_priv_data();
     if ( ret != 0 ) {
@@ -1006,7 +1038,9 @@ static int ltq_ptm_probe(struct platform_device *pdev)
         g_net_dev[i] = alloc_netdev(0, g_net_dev_name[i], NET_NAME_UNKNOWN, ether_setup);
         if ( g_net_dev[i] == NULL )
             goto ALLOC_NETDEV_FAIL;
-        ptm_setup(g_net_dev[i], i);
+        ret = ptm_setup(np, g_net_dev[i], i);
+        if (ret == -EPROBE_DEFER)
+            goto INIT_TABLES_FAIL;
     }
 
     for ( i = 0; i < ARRAY_SIZE(g_net_dev); i++ ) {

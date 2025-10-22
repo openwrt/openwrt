@@ -1,69 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
+#include "macros.dtsi"
 #include <dt-bindings/clock/rtl83xx-clk.h>
 #include <dt-bindings/gpio/gpio.h>
 
 /dts-v1/;
-
-#define STRINGIZE(s) #s
-#define LAN_LABEL(p, s) STRINGIZE(p ## s)
-#define SWITCH_PORT_LABEL(n) LAN_LABEL(lan, n)
-
-#define INTERNAL_PHY(n) \
-	phy##n: ethernet-phy@##n { \
-		reg = <##n>; \
-		compatible = "ethernet-phy-ieee802.3-c22"; \
-		phy-is-integrated; \
-	};
-
-#define INTERNAL_PHY_SDS(n, s) \
-	phy##n: ethernet-phy@##n { \
-		reg = <##n>; \
-		compatible = "ethernet-phy-ieee802.3-c22"; \
-		phy-is-integrated; \
-		sds = <##s>; \
-	};
-
-#define EXTERNAL_PHY(n) \
-	phy##n: ethernet-phy@##n { \
-		reg = <##n>; \
-		compatible = "ethernet-phy-ieee802.3-c22"; \
-	};
-
-#define EXTERNAL_SFP_PHY(n) \
-	phy##n: ethernet-phy@##n { \
-		compatible = "ethernet-phy-ieee802.3-c22"; \
-		sfp; \
-		media = "fibre"; \
-		reg = <##n>; \
-	};
-
-#define EXTERNAL_SFP_PHY_FULL(n, s) \
-	phy##n: ethernet-phy@##n { \
-		compatible = "ethernet-phy-ieee802.3-c22"; \
-		sfp = <&sfp##s>; \
-		reg = <##n>; \
-	};
-
-#define SWITCH_PORT(n, s, m) \
-	port##n: port@##n { \
-		reg = <##n>; \
-		label = SWITCH_PORT_LABEL(s) ; \
-		phy-handle = <&phy##n>; \
-		phy-mode = #m ; \
-	};
-
-#define SWITCH_SFP_PORT(n, s, m) \
-	port##n: port@##n { \
-		reg = <##n>; \
-		label = SWITCH_PORT_LABEL(s) ; \
-		phy-handle = <&phy##n>; \
-		phy-mode = #m ; \
-		fixed-link { \
-			speed = <1000>; \
-			full-duplex; \
-		}; \
-	};
 
 / {
 	#address-cells = <1>;
@@ -261,6 +202,20 @@
 	switchcore@1b000000 {
 		compatible = "syscon", "simple-mfd";
 		reg = <0x1b000000 0x10000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		mdio_ctrl: mdio-controller {
+			compatible = "realtek,rtl8380-mdio", "realtek,otto-mdio";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			mdio_bus0: mdio-bus@0 {
+				reg = <0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+		};
 
 		mdio_aux: mdio-aux {
 			compatible = "realtek,rtl8380-aux-mdio";
@@ -271,6 +226,35 @@
 
 			pinctrl-names = "default";
 			pinctrl-0 = <&mdio_aux_mdx>, <&aux_mode_mdio>;
+		};
+
+		mdio_serdes: mdio-serdes {
+			compatible = "realtek,rtl8380-serdes-mdio", "realtek,otto-serdes-mdio";
+		};
+
+		pcs {
+			compatible = "realtek,rtl8380-pcs", "realtek,otto-pcs";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			serdes0: serdes@0 {
+				reg = <0>;
+			};
+			serdes1: serdes@1 {
+				reg = <1>;
+			};
+			serdes2: serdes@2 {
+				reg = <2>;
+			};
+			serdes3: serdes@3 {
+				reg = <3>;
+			};
+			serdes4: serdes@4 {
+				reg = <4>;
+			};
+			serdes5: serdes@5 {
+				reg = <5>;
+			};
 		};
 
 		soc_thermal: thermal {

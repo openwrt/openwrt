@@ -1,0 +1,107 @@
+From 8fce1cfe775e1f3b5d7cecb8bdcc8271bf9f799c Mon Sep 17 00:00:00 2001
+From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Date: Wed, 9 Jul 2025 12:28:08 +0300
+Subject: [PATCH 2/5] drivers/net/airoha_eth: fix packet transmission errors
+
+The dma_map_single() function calls one of the functions
+  * invalidate_dcache_range(),
+  * flush_dcache_range().
+Both of them expect that 'vaddr' is aligned to the ARCH_DMA_MINALIGN
+boundary. Unfortunately, RX/TX descriptors are 32-byte long. Thus they
+might not be aligned to the ARCH_DMA_MINALIGN boundary. Data flushing
+(or invalidating) might do nothing in this case.
+
+The same applies to dma_unmap_single() function.
+
+In the TX path case the issue might prevent package transmission (filled
+TX descriptor was not flushed).
+
+To fix an issue a special wrappers for
+  * dma_map_single(),
+  * dma_unmap_single()
+functions were created. The patch fix flushing/invalidatiog for the
+RX path as well.
+
+The bug appears on 32-bit airoha platform, but should be present on
+64-bit as well.
+
+The code was tested both on 32-bit and 64-bit airoha boards.
+
+Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+---
+ drivers/net/airoha_eth.c | 33 +++++++++++++++++++++++++++------
+ 1 file changed, 27 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/net/airoha_eth.c b/drivers/net/airoha_eth.c
+index db34ec48c81..aae6922f3c7 100644
+--- a/drivers/net/airoha_eth.c
++++ b/drivers/net/airoha_eth.c
+@@ -397,6 +397,27 @@ static u32 airoha_rmw(void __iomem *base, u32 offset, u32 mask, u32 val)
+ #define airoha_switch_rmw(eth, offset, mask, val)		\
+ 	airoha_rmw((eth)->switch_regs, (offset), (mask), (val))
+ 
++static inline dma_addr_t dma_map_unaligned(void *vaddr, size_t len,
++					   enum dma_data_direction dir)
++{
++	uintptr_t start, end;
++
++	start = ALIGN_DOWN((uintptr_t)vaddr, ARCH_DMA_MINALIGN);
++	end = ALIGN((uintptr_t)(vaddr + len), ARCH_DMA_MINALIGN);
++
++	return dma_map_single((void *)start, end - start, dir);
++}
++
++static inline void dma_unmap_unaligned(dma_addr_t addr, size_t len,
++				       enum dma_data_direction dir)
++{
++	uintptr_t start, end;
++
++	start = ALIGN_DOWN((uintptr_t)addr, ARCH_DMA_MINALIGN);
++	end = ALIGN((uintptr_t)(addr + len), ARCH_DMA_MINALIGN);
++	dma_unmap_single(start, end - start, dir);
++}
++
+ static void airoha_fe_maccr_init(struct airoha_eth *eth)
+ {
+ 	int p;
+@@ -434,7 +455,7 @@ static void airoha_qdma_reset_rx_desc(struct airoha_queue *q, int index,
+ 	val = FIELD_PREP(QDMA_DESC_LEN_MASK, PKTSIZE_ALIGN);
+ 	WRITE_ONCE(desc->ctrl, cpu_to_le32(val));
+ 
+-	dma_map_single(desc, sizeof(*desc), DMA_TO_DEVICE);
++	dma_map_unaligned(desc, sizeof(*desc), DMA_TO_DEVICE);
+ }
+ 
+ static void airoha_qdma_init_rx_desc(struct airoha_queue *q)
+@@ -916,14 +937,14 @@ static int airoha_eth_send(struct udevice *dev, void *packet, int length)
+ 	WRITE_ONCE(desc->msg1, cpu_to_le32(msg1));
+ 	WRITE_ONCE(desc->msg2, cpu_to_le32(0xffff));
+ 
+-	dma_map_single(desc, sizeof(*desc), DMA_TO_DEVICE);
++	dma_map_unaligned(desc, sizeof(*desc), DMA_TO_DEVICE);
+ 
+ 	airoha_qdma_rmw(qdma, REG_TX_CPU_IDX(qid), TX_RING_CPU_IDX_MASK,
+ 			FIELD_PREP(TX_RING_CPU_IDX_MASK, index));
+ 
+ 	for (i = 0; i < 100; i++) {
+-		dma_unmap_single(virt_to_phys(desc), sizeof(*desc),
+-				 DMA_FROM_DEVICE);
++		dma_unmap_unaligned(virt_to_phys(desc), sizeof(*desc),
++				    DMA_FROM_DEVICE);
+ 		if (desc->ctrl & QDMA_DESC_DONE_MASK)
+ 			break;
+ 
+@@ -954,8 +975,8 @@ static int airoha_eth_recv(struct udevice *dev, int flags, uchar **packetp)
+ 	q = &qdma->q_rx[qid];
+ 	desc = &q->desc[q->head];
+ 
+-	dma_unmap_single(virt_to_phys(desc), sizeof(*desc),
+-			 DMA_FROM_DEVICE);
++	dma_unmap_unaligned(virt_to_phys(desc), sizeof(*desc),
++			    DMA_FROM_DEVICE);
+ 
+ 	if (!(desc->ctrl & QDMA_DESC_DONE_MASK))
+ 		return -EAGAIN;
+-- 
+2.51.0
+

@@ -18,10 +18,6 @@ preinit_set_mac_address() {
 	engenius,esr900)
 		ip link set dev eth0 address $(mtd_get_mac_ascii u-boot-env ethaddr)
 		;;
-	enterasys,ws-ap3705i)
-		ip link set dev eth0 address $(mtd_get_mac_ascii u-boot-env0 ethaddr)
-		;;
-	extreme-networks,ws-ap3805i|\
 	siemens,ws-ap3610)
 		ip link set dev eth0 address $(mtd_get_mac_ascii cfg1 ethaddr)
 		;;

@@ -1,0 +1,29 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sun, 5 Oct 2025 11:25:15 +0200
+Subject: [PATCH] lexer: fix parsing \xHH and \0OOO escape sequences
+
+Both need to add add bytes, not UTF-8 sequences.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/lexer.c
++++ b/lexer.c
+@@ -277,7 +277,7 @@ parse_escape(uc_lexer_t *lex, const char
+ 			code = code * 16 + hex(ch);
+ 		}
+ 
+-		append_utf8(lex, code);
++		uc_vector_push(&lex->buffer, code);
+ 	}
+ 
+ 	/* octal or letter */
+@@ -293,7 +293,7 @@ parse_escape(uc_lexer_t *lex, const char
+ 			if (code > 255)
+ 				return emit_op(lex, -3, TK_ERROR, ucv_string_new("Invalid escape sequence"));
+ 
+-			append_utf8(lex, code);
++			uc_vector_push(&lex->buffer, code);
+ 		}
+ 
+ 		/* ... no octal sequence, handle potential regex macros */

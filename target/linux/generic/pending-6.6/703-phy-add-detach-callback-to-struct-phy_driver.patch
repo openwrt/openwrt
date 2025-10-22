@@ -11,7 +11,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 
 --- a/drivers/net/phy/phy_device.c
 +++ b/drivers/net/phy/phy_device.c
-@@ -1912,6 +1912,9 @@ void phy_detach(struct phy_device *phyde
+@@ -1934,6 +1934,9 @@ void phy_detach(struct phy_device *phyde
  		phydev->devlink = NULL;
  	}
  
@@ -23,7 +23,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  			sysfs_remove_link(&dev->dev.kobj, "phydev");
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -977,6 +977,12 @@ struct phy_driver {
+@@ -1008,6 +1008,12 @@ struct phy_driver {
  	/** @handle_interrupt: Override default interrupt handling */
  	irqreturn_t (*handle_interrupt)(struct phy_device *phydev);
  

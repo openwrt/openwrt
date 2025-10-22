@@ -23,8 +23,6 @@
 #define RTL838X_VLAN_PORT_TAG_STS_CTRL_OTAG_STS_MASK		GENMASK(3,2)
 #define RTL838X_VLAN_PORT_TAG_STS_CTRL_ITAG_STS_MASK		GENMASK(1,0)
 
-extern struct mutex smi_lock;
-
 /* see_dal_maple_acl_log2PhyTmplteField and src/app/diag_v2/src/diag_acl.c */
 /* Definition of the RTL838X-specific template field IDs as used in the PIE */
 enum template_field_id {
@@ -155,9 +153,9 @@ static void rtl838x_vlan_tables_read(u32 vlan, struct rtl838x_vlan_info *info)
 	struct table_reg *r = rtl_table_get(RTL8380_TBL_0, 0);
 
 	rtl_table_read(r, vlan);
-	info->tagged_ports = sw_r32(rtl_table_data(r, 0));
+	info->member_ports = sw_r32(rtl_table_data(r, 0));
 	v = sw_r32(rtl_table_data(r, 1));
-	pr_debug("VLAN_READ %d: %016llx %08x\n", vlan, info->tagged_ports, v);
+	pr_debug("VLAN_READ %d: %016llx %08x\n", vlan, info->member_ports, v);
 	rtl_table_release(r);
 
 	info->profile_id = v & 0x7;
@@ -178,7 +176,7 @@ static void rtl838x_vlan_set_tagged(u32 vlan, struct rtl838x_vlan_info *info)
 	/* Access VLAN table (0) via register 0 */
 	struct table_reg *r = rtl_table_get(RTL8380_TBL_0, 0);
 
-	sw_w32(info->tagged_ports, rtl_table_data(r, 0));
+	sw_w32(info->member_ports, rtl_table_data(r, 0));
 
 	v = info->profile_id;
 	v |= info->hash_mc_fid ? 0x8 : 0;
@@ -263,9 +261,21 @@ static inline int rtl838x_l2_port_new_sa_fwd(int p)
 	return RTL838X_L2_PORT_NEW_SA_FWD(p);
 }
 
-static inline int rtl838x_mac_link_spd_sts(int p)
+static int rtldsa_838x_get_mirror_config(struct rtldsa_mirror_config *config,
+					 int group, int port)
 {
-	return RTL838X_MAC_LINK_SPD_STS(p);
+	config->ctrl = RTL838X_MIR_CTRL + group * 4;
+	config->spm = RTL838X_MIR_SPM_CTRL + group * 4;
+	config->dpm = RTL838X_MIR_DPM_CTRL + group * 4;
+
+	/* Enable mirroring to destination port */
+	config->val = BIT(0);
+	config->val |= port << 4;
+
+	/* Enable mirroring to port across VLANs */
+	config->val |= BIT(11);
+
+	return 0;
 }
 
 inline static int rtl838x_trk_mbr_ctr(int group)
@@ -575,11 +585,6 @@ static void rtl838x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, u32 port
 	for (int i = 0; i < 2; i++)
 		sw_w32(port_state[i], priv->r->tbl_access_data_0(i));
 	priv->r->exec_tbl0_cmd(cmd);
-}
-
-static u64 rtl838x_traffic_get(int source)
-{
-	return rtl838x_get_port_reg(rtl838x_port_iso_ctrl(source));
 }
 
 static void rtl838x_traffic_set(int source, u64 dest_matrix)
@@ -1671,7 +1676,6 @@ const struct rtl838x_reg rtl838x_reg = {
 	.port_iso_ctrl = rtl838x_port_iso_ctrl,
 	.traffic_enable = rtl838x_traffic_enable,
 	.traffic_disable = rtl838x_traffic_disable,
-	.traffic_get = rtl838x_traffic_get,
 	.traffic_set = rtl838x_traffic_set,
 	.l2_ctrl_0 = RTL838X_L2_CTRL_0,
 	.l2_ctrl_1 = RTL838X_L2_CTRL_1,
@@ -1705,14 +1709,7 @@ const struct rtl838x_reg rtl838x_reg = {
 	.mac_port_ctrl = rtl838x_mac_port_ctrl,
 	.l2_port_new_salrn = rtl838x_l2_port_new_salrn,
 	.l2_port_new_sa_fwd = rtl838x_l2_port_new_sa_fwd,
-	.mir_ctrl = RTL838X_MIR_CTRL,
-	.mir_dpm = RTL838X_MIR_DPM_CTRL,
-	.mir_spm = RTL838X_MIR_SPM_CTRL,
-	.mac_link_sts = RTL838X_MAC_LINK_STS,
-	.mac_link_dup_sts = RTL838X_MAC_LINK_DUP_STS,
-	.mac_link_spd_sts = rtl838x_mac_link_spd_sts,
-	.mac_rx_pause_sts = RTL838X_MAC_RX_PAUSE_STS,
-	.mac_tx_pause_sts = RTL838X_MAC_TX_PAUSE_STS,
+	.get_mirror_config = rtldsa_838x_get_mirror_config,
 	.read_l2_entry_using_hash = rtl838x_read_l2_entry_using_hash,
 	.write_l2_entry_using_hash = rtl838x_write_l2_entry_using_hash,
 	.read_cam = rtl838x_read_cam,
@@ -1766,169 +1763,6 @@ irqreturn_t rtl838x_switch_irq(int irq, void *dev_id)
 	}
 
 	return IRQ_HANDLED;
-}
-
-int rtl838x_smi_wait_op(int timeout)
-{
-	int ret = 0;
-	u32 val;
-
-	ret = readx_poll_timeout(sw_r32, RTL838X_SMI_ACCESS_PHY_CTRL_1,
-				 val, !(val & 0x1), 20, timeout);
-	if (ret)
-		pr_err("%s: timeout\n", __func__);
-
-	return ret;
-}
-
-/* Reads a register in a page from the PHY */
-int rtl838x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
-{
-	u32 v, park_page = 0x1f << 15;
-	int err;
-
-	if (port > 31) {
-		*val = 0xffff;
-		return 0;
-	}
-
-	if (page > 4095 || reg > 31)
-		return -ENOTSUPP;
-
-	mutex_lock(&smi_lock);
-
-	err = rtl838x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	sw_w32_mask(0xffff0000, port << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
-
-	v = reg << 20 | page << 3;
-	sw_w32(v | park_page, RTL838X_SMI_ACCESS_PHY_CTRL_1);
-	sw_w32_mask(0, 1, RTL838X_SMI_ACCESS_PHY_CTRL_1);
-
-	err = rtl838x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	*val = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_2) & 0xffff;
-
-	err = 0;
-
-errout:
-	mutex_unlock(&smi_lock);
-
-	return err;
-}
-
-/* Write to a register in a page of the PHY */
-int rtl838x_write_phy(u32 port, u32 page, u32 reg, u32 val)
-{
-	u32 v, park_page = 0x1f << 15;
-	int err;
-
-	val &= 0xffff;
-	if (port > 31 || page > 4095 || reg > 31)
-		return -ENOTSUPP;
-
-	mutex_lock(&smi_lock);
-	err = rtl838x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	sw_w32(BIT(port), RTL838X_SMI_ACCESS_PHY_CTRL_0);
-	mdelay(10);
-
-	sw_w32_mask(0xffff0000, val << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
-
-	v = reg << 20 | page << 3 | 0x4;
-	sw_w32(v | park_page, RTL838X_SMI_ACCESS_PHY_CTRL_1);
-	sw_w32_mask(0, 1, RTL838X_SMI_ACCESS_PHY_CTRL_1);
-
-	err = rtl838x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	err = 0;
-
-errout:
-	mutex_unlock(&smi_lock);
-
-	return err;
-}
-
-/* Read an mmd register of a PHY */
-int rtl838x_read_mmd_phy(u32 port, u32 addr, u32 reg, u32 *val)
-{
-	int err;
-	u32 v;
-
-	mutex_lock(&smi_lock);
-
-	err = rtl838x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	sw_w32(1 << port, RTL838X_SMI_ACCESS_PHY_CTRL_0);
-	mdelay(10);
-
-	sw_w32_mask(0xffff0000, port << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
-
-	v = addr << 16 | reg;
-	sw_w32(v, RTL838X_SMI_ACCESS_PHY_CTRL_3);
-
-	/* mmd-access | read | cmd-start */
-	v = 1 << 1 | 0 << 2 | 1;
-	sw_w32(v, RTL838X_SMI_ACCESS_PHY_CTRL_1);
-
-	err = rtl838x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	*val = sw_r32(RTL838X_SMI_ACCESS_PHY_CTRL_2) & 0xffff;
-
-	err = 0;
-
-errout:
-	mutex_unlock(&smi_lock);
-
-	return err;
-}
-
-/* Write to an mmd register of a PHY */
-int rtl838x_write_mmd_phy(u32 port, u32 addr, u32 reg, u32 val)
-{
-	int err;
-	u32 v;
-
-	pr_debug("MMD write: port %d, dev %d, reg %d, val %x\n", port, addr, reg, val);
-	val &= 0xffff;
-	mutex_lock(&smi_lock);
-
-	err = rtl838x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	sw_w32(1 << port, RTL838X_SMI_ACCESS_PHY_CTRL_0);
-	mdelay(10);
-
-	sw_w32_mask(0xffff0000, val << 16, RTL838X_SMI_ACCESS_PHY_CTRL_2);
-
-	sw_w32_mask(0x1f << 16, addr << 16, RTL838X_SMI_ACCESS_PHY_CTRL_3);
-	sw_w32_mask(0xffff, reg, RTL838X_SMI_ACCESS_PHY_CTRL_3);
-	/* mmd-access | write | cmd-start */
-	v = 1 << 1 | 1 << 2 | 1;
-	sw_w32(v, RTL838X_SMI_ACCESS_PHY_CTRL_1);
-
-	err = rtl838x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	err = 0;
-
-errout:
-	mutex_unlock(&smi_lock);
-	return err;
 }
 
 void rtl8380_get_version(struct rtl838x_switch_priv *priv)

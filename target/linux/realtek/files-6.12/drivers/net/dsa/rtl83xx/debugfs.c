@@ -631,9 +631,9 @@ void rtl838x_dbgfs_init(struct rtl838x_switch_priv *priv)
 			debugfs_create_x32("ctrl", 0644, mirror_dir,
 				(u32 *)(RTL838X_SW_BASE + RTL838X_MIR_CTRL + i * 4));
 			debugfs_create_x32("ingress_pm", 0644, mirror_dir,
-				(u32 *)(RTL838X_SW_BASE + priv->r->mir_spm + i * 4));
+				(u32 *)(RTL838X_SW_BASE + RTL838X_MIR_SPM_CTRL + i * 4));
 			debugfs_create_x32("egress_pm", 0644, mirror_dir,
-				(u32 *)(RTL838X_SW_BASE + priv->r->mir_dpm + i * 4));
+				(u32 *)(RTL838X_SW_BASE + RTL838X_MIR_DPM_CTRL + i * 4));
 			debugfs_create_x32("qid", 0644, mirror_dir,
 				(u32 *)(RTL838X_SW_BASE + RTL838X_MIR_QID_CTRL(i)));
 			debugfs_create_x32("rspan_vlan", 0644, mirror_dir,
@@ -650,9 +650,9 @@ void rtl838x_dbgfs_init(struct rtl838x_switch_priv *priv)
 			debugfs_create_x32("ctrl", 0644, mirror_dir,
 				(u32 *)(RTL838X_SW_BASE + RTL839X_MIR_CTRL + i * 4));
 			debugfs_create_x64("ingress_pm", 0644, mirror_dir,
-				(u64 *)(RTL838X_SW_BASE + priv->r->mir_spm + i * 8));
+				(u64 *)(RTL838X_SW_BASE + RTL839X_MIR_SPM_CTRL + i * 8));
 			debugfs_create_x64("egress_pm", 0644, mirror_dir,
-				(u64 *)(RTL838X_SW_BASE + priv->r->mir_dpm + i * 8));
+				(u64 *)(RTL838X_SW_BASE + RTL839X_MIR_DPM_CTRL + i * 8));
 			debugfs_create_x32("rspan_vlan", 0644, mirror_dir,
 				(u32 *)(RTL838X_SW_BASE + RTL839X_MIR_RSPAN_VLAN_CTRL(i)));
 			debugfs_create_x32("rspan_tx", 0644, mirror_dir,

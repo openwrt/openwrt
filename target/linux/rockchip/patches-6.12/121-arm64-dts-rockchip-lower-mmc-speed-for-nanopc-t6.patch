@@ -1,6 +1,16 @@
 --- a/arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6.dtsi
 +++ b/arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6.dtsi
-@@ -632,7 +632,7 @@
+@@ -619,8 +619,7 @@
+ 	no-sd;
+ 	non-removable;
+ 	max-frequency = <200000000>;
+-	mmc-hs400-1_8v;
+-	mmc-hs400-enhanced-strobe;
++	mmc-hs200-1_8v;
+ 	status = "okay";
+ };
+ 
+@@ -632,7 +631,7 @@
  	disable-wp;
  	no-mmc;
  	no-sdio;

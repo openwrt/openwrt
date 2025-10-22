@@ -1,5 +1,14 @@
 #!/bin/sh
-uci -q get dhcp.odhcpd && exit 0
+
+if [ -n "$(uci -q get dhcp.odhcpd)" ]; then
+	if [ -z "$(uci -q get dhcp.odhcpd.piofolder)" ]; then
+		uci set dhcp.odhcpd.piofolder=/tmp/odhcpd-piofolder
+		uci commit dhcp
+	fi
+
+	exit 0
+fi
+
 touch /etc/config/dhcp
 
 . /usr/share/libubox/jshn.sh
@@ -42,6 +51,7 @@ set dhcp.odhcpd.maindhcp=$ODHCPDONLY
 set dhcp.odhcpd.leasefile=/tmp/hosts/odhcpd
 set dhcp.odhcpd.leasetrigger=/usr/sbin/odhcpd-update
 set dhcp.odhcpd.loglevel=4
+set dhcp.odhcpd.piofolder=/tmp/odhcpd-piofolder
 set dhcp.lan.dhcpv4=$V4MODE
 set dhcp.lan.dhcpv6=$V6MODE
 set dhcp.lan.ra=$V6MODE

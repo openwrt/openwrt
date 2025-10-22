@@ -1,0 +1,107 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 9 Oct 2025 14:11:55 +0200
+Subject: [PATCH] fs: add mkdtemp() method for creating temporary directories
+
+Returns the directory path as a string, following the same template
+handling pattern as mkstemp().
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/lib/fs.c
++++ b/lib/fs.c
+@@ -2636,6 +2636,86 @@ uc_fs_mkstemp(uc_vm_t *vm, size_t nargs)
+ }
+ 
+ /**
++ * Creates a unique temporary directory based on the given template.
++ *
++ * If the template argument is given and contains a relative path, the created
++ * directory will be placed relative to the current working directory.
++ *
++ * If the template argument is given and contains an absolute path, the created
++ * directory will be placed relative to the given directory.
++ *
++ * If the template argument is given but does not contain a directory separator,
++ * the directory will be placed in `/tmp/`.
++ *
++ * If no template argument is given, the default `/tmp/XXXXXX` is used.
++ *
++ * The template argument must end with six consecutive X characters (`XXXXXX`),
++ * which will be replaced with a random string to create the unique directory name.
++ * If the template does not end with `XXXXXX`, it will be automatically appended.
++ *
++ * Returns a string containing the path of the created directory on success.
++ *
++ * Returns `null` if an error occurred, e.g. on insufficient permissions or
++ * inaccessible directory.
++ *
++ * @function module:fs#mkdtemp
++ *
++ * @param {string} [template="/tmp/XXXXXX"]
++ * The path template to use when forming the temporary directory name.
++ *
++ * @returns {?string}
++ *
++ * @example
++ * // Create a unique temporary directory in the current working directory
++ * const tempDir = mkdtemp('./data-XXXXXX');
++ */
++static uc_value_t *
++uc_fs_mkdtemp(uc_vm_t *vm, size_t nargs)
++{
++	uc_value_t *template = uc_fn_arg(0);
++	bool ends_with_template = false;
++	char *path, *t, *result;
++	uc_value_t *rv;
++	size_t l;
++
++	if (template && ucv_type(template) != UC_STRING)
++		err_return(EINVAL);
++
++	t = ucv_string_get(template);
++	l = ucv_string_length(template);
++
++	ends_with_template = (l >= 6 && strcmp(&t[l - 6], "XXXXXX") == 0);
++
++	if (t && strchr(t, '/')) {
++		if (ends_with_template)
++			xasprintf(&path, "%s", t);
++		else
++			xasprintf(&path, "%s.XXXXXX", t);
++	}
++	else if (t) {
++		if (ends_with_template)
++			xasprintf(&path, "/tmp/%s", t);
++		else
++			xasprintf(&path, "/tmp/%s.XXXXXX", t);
++	}
++	else {
++		xasprintf(&path, "/tmp/XXXXXX");
++	}
++
++	result = mkdtemp(path);
++
++	if (!result) {
++		free(path);
++		err_return(errno);
++	}
++
++	rv = ucv_string_new(result);
++	free(path);
++
++	return rv;
++}
++
++/**
+  * Checks the accessibility of a file or directory.
+  *
+  * The optional modes argument specifies the access modes which should be
+@@ -3069,6 +3149,7 @@ static const uc_function_list_t global_f
+ 	{ "basename",	uc_fs_basename },
+ 	{ "lsdir",		uc_fs_lsdir },
+ 	{ "mkstemp",	uc_fs_mkstemp },
++	{ "mkdtemp",	uc_fs_mkdtemp },
+ 	{ "access",		uc_fs_access },
+ 	{ "readfile",	uc_fs_readfile },
+ 	{ "writefile",	uc_fs_writefile },

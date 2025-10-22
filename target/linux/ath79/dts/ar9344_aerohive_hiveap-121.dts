@@ -74,21 +74,21 @@
 
 	gpio_ext_lna0 {
 		gpio-hog;
-		gpios = <20 0>;
+		gpios = <20 GPIO_ACTIVE_HIGH>;
 		output-low;
 		line-name = "hiveap-121:ext:lna0";
 	};
 
 	gpio_ext_lna1 {
 		gpio-hog;
-		gpios = <19 0>;
+		gpios = <19 GPIO_ACTIVE_HIGH>;
 		output-low;
 		line-name = "hiveap-121:ext:lna1";
 	};
 
 	gpio_usb_power {
 		gpio-hog;
-		gpios = <15 0>;
+		gpios = <15 GPIO_ACTIVE_HIGH>;
 		output-high;
 		line-name = "hiveap-121:power:usb";
 	};

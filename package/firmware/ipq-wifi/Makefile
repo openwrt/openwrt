@@ -6,9 +6,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware/qca-wireless.git
-PKG_SOURCE_DATE:=2025-06-23
-PKG_SOURCE_VERSION:=63bd0faafd4a261deae27bb233e10ae2f216c755
-PKG_MIRROR_HASH:=dcdc847e0f6a5655df9018ead35396f4414447b140cbfd3b24dd03514e27cf0e
+PKG_SOURCE_DATE:=2025-10-22
+PKG_SOURCE_VERSION:=ec6831a43ff066c9873e7c41fd6f68354bb67b4a
+PKG_MIRROR_HASH:=33a26f90fd450e9dc2b2d5ae9c137ffcd57ef62dac277d63c5d5f6f5a1262a2f
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
@@ -57,6 +57,8 @@ ALLWIFIBOARDS:= \
 	linksys_mx8500 \
 	linksys_spnmx56 \
 	linksys_whw03 \
+	meraki_mr30h \
+	meraki_z3 \
 	netgear_lbr20 \
 	netgear_rax120v2 \
 	netgear_sxk80 \
@@ -78,13 +80,18 @@ ALLWIFIBOARDS:= \
 	tplink_eap623od-hd-v1 \
 	tplink_eap625-outdoor-hd-v1 \
 	tplink_eap660hd-v1 \
+	tplink_archer-c59-v1 \
 	tplink_archer-c6-v2 \
+	tplink_archer-c60-v1 \
+	tplink_archer-c60-v2 \
 	wallys_dr40x9 \
+	xiaomi_aiot-ac2350 \
 	xiaomi_ax3600 \
 	xiaomi_ax6000 \
 	xiaomi_ax9000 \
 	yyets_le1 \
 	yuncore_ax830 \
+	yuncore_ax850 \
 	yuncore_ax880 \
 	yuncore_fap650 \
 	zbtlink_zbt-z800ax \
@@ -129,6 +136,8 @@ define ipq-wifi-install-one
     $(call ipq-wifi-install-one-to,$(1),$(2),QCA9887/hw1.0),\
   $(if $(filter $(suffix $(1)),.QCA9984 .qca9984),\
     $(call ipq-wifi-install-one-to,$(1),$(2),QCA9984/hw1.0),\
+  $(if $(filter $(suffix $(1)),.QCA9988 .qca9988),\
+    $(call ipq-wifi-install-one-to,$(1),$(2),QCA9984/hw1.0),\
   $(if $(filter $(suffix $(1)),.QCA99X0 .qca99x0),\
     $(call ipq-wifi-install-one-to,$(1),$(2),QCA99X0/hw2.0),\
   $(if $(filter $(suffix $(1)),.IPQ5018 .ipq5018),\
@@ -144,7 +153,7 @@ define ipq-wifi-install-one
   $(if $(filter $(suffix $(1)),.QCN9274 .qcn9274),\
     $(call ipq-wifi-install-ath12-one-to,$(1),$(2),QCN9274/hw2.0),\
     $(error Unrecognized board-file suffix '$(suffix $(1))' for '$(1)')\
-  )))))))))))
+  ))))))))))))
 
 endef
 # Blank line required at end of above define due to foreach context
@@ -224,6 +233,8 @@ $(eval $(call generate-ipq-wifi-package,linksys_mx5500,Linksys MX5500))
 $(eval $(call generate-ipq-wifi-package,linksys_mx8500,Linksys MX8500))
 $(eval $(call generate-ipq-wifi-package,linksys_spnmx56,Linksys SPNMX56))
 $(eval $(call generate-ipq-wifi-package,linksys_whw03,Linksys WHW03))
+$(eval $(call generate-ipq-wifi-package,meraki_mr30h,Meraki MR30H))
+$(eval $(call generate-ipq-wifi-package,meraki_z3,Meraki Z3))
 $(eval $(call generate-ipq-wifi-package,netgear_lbr20,Netgear LBR20))
 $(eval $(call generate-ipq-wifi-package,netgear_rax120v2,Netgear RAX120v2))
 $(eval $(call generate-ipq-wifi-package,netgear_sxk80,Netgear SXK80))
@@ -245,13 +256,18 @@ $(eval $(call generate-ipq-wifi-package,tplink_eap620hd-v1,TP-Link EAP620 HD v1)
 $(eval $(call generate-ipq-wifi-package,tplink_eap623od-hd-v1,TP-Link EAP623-Outdoor HD v1))
 $(eval $(call generate-ipq-wifi-package,tplink_eap625-outdoor-hd-v1,TP-Link EAP625-Outdoor HD v1))
 $(eval $(call generate-ipq-wifi-package,tplink_eap660hd-v1,TP-Link EAP660 HD v1))
+$(eval $(call generate-ipq-wifi-package,tplink_archer-c59-v1,TP-Link Archer C59 V1))
 $(eval $(call generate-ipq-wifi-package,tplink_archer-c6-v2,TP-Link Archer C6 V2))
+$(eval $(call generate-ipq-wifi-package,tplink_archer-c60-v1,TP-Link Archer C60 V1))
+$(eval $(call generate-ipq-wifi-package,tplink_archer-c60-v2,TP-Link Archer C60 V2))
 $(eval $(call generate-ipq-wifi-package,wallys_dr40x9,Wallys DR40X9))
+$(eval $(call generate-ipq-wifi-package,xiaomi_aiot-ac2350,Xiaomi AIoT AC2350))
 $(eval $(call generate-ipq-wifi-package,xiaomi_ax3600,Xiaomi AX3600))
 $(eval $(call generate-ipq-wifi-package,xiaomi_ax6000,Xiaomi AX6000))
 $(eval $(call generate-ipq-wifi-package,xiaomi_ax9000,Xiaomi AX9000))
 $(eval $(call generate-ipq-wifi-package,yyets_le1,YYeTs LE1))
 $(eval $(call generate-ipq-wifi-package,yuncore_ax830,Yuncore AX830))
+$(eval $(call generate-ipq-wifi-package,yuncore_ax850,Yuncore AX850))
 $(eval $(call generate-ipq-wifi-package,yuncore_ax880,Yuncore AX880))
 $(eval $(call generate-ipq-wifi-package,yuncore_fap650,Yuncore FAP650))
 $(eval $(call generate-ipq-wifi-package,zbtlink_zbt-z800ax,Zbtlink ZBT-Z800AX))

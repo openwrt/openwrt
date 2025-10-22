@@ -1,0 +1,22 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 21 Oct 2025 10:19:41 +0200
+Subject: [PATCH] nl80211: cancel scans whenever the first bss is removed
+
+Whenever the first bss is removed, any pending scan still keeps a reference
+to it. Cancel it in order to prevent use-after-free bugs.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/src/drivers/driver_nl80211.c
++++ b/src/drivers/driver_nl80211.c
+@@ -9261,6 +9261,9 @@ static int wpa_driver_nl80211_if_remove(
+ 			wpa_printf(MSG_INFO, "nl80211: %s - could not find "
+ 				   "BSS %p in the list", __func__, bss);
+ 	} else {
++		if (eloop_cancel_timeout(wpa_driver_nl80211_scan_timeout, drv, bss->ctx))
++			wpa_driver_nl80211_scan_timeout(drv, bss->ctx);
++
+ 		wpa_printf(MSG_DEBUG, "nl80211: First BSS - reassign context");
+ 		nl80211_teardown_ap(bss);
+ 		nl80211_remove_links(bss);

@@ -25,8 +25,8 @@
 #include <linux/input.h>
 #include <linux/interrupt.h>
 #include <linux/platform_device.h>
-#include <linux/of_gpio.h>
 #include <linux/of_irq.h>
+#include <linux/gpio.h>
 #include <linux/gpio_keys.h>
 #include <linux/gpio/consumer.h>
 
@@ -416,13 +416,13 @@ gpio_keys_get_devtree_pdata(struct device *dev)
 	return pdata;
 }
 
-static struct of_device_id gpio_keys_of_match[] = {
+static const struct of_device_id gpio_keys_of_match[] = {
 	{ .compatible = "gpio-keys", },
 	{ },
 };
 MODULE_DEVICE_TABLE(of, gpio_keys_of_match);
 
-static struct of_device_id gpio_keys_polled_of_match[] = {
+static const struct of_device_id gpio_keys_polled_of_match[] = {
 	{ .compatible = "gpio-keys-polled", },
 	{ },
 };

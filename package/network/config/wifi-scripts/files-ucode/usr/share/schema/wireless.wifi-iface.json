@@ -223,6 +223,13 @@
 			"type": "alias",
 			"default": "disabled"
 		},
+		"device": {
+			"description": "Devices to enable this interface on (wifi-device section names)",
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
 		"device_name": {
 			"description": "Primary Device Name used by WPS",
 			"type": "string",
@@ -286,8 +293,10 @@
 			"type": "boolean"
 		},
 		"dynamic_vlan": {
-			"description": "Allow RADIUS authentication server to decide which VLAN is used for the stations",
-			"type": "boolean"
+			"description": "Allow RADIUS authentication server to decide which VLAN is used for the stations (0 = disabled, 1 = optional, 2 = required)",
+			"type": "number",
+			"enum": [ 0, 1, 2 ],
+			"default": 0
 		},
 		"eap_reauth_period": {
 			"description": "EAP reauthentication period in seconds",
@@ -680,6 +689,10 @@
 		"mesh_ttl": {
 			"type": "number"
 		},
+		"mlo": {
+			"description": "Multi-Link Operation",
+			"type": "boolean"
+		},
 		"mobility_domain": {
 			"description": "DID is used to indicate a group of APs between which a STA can use Fast BSS Transition.",
 			"type": "string"
@@ -689,6 +702,14 @@
 		},
 		"multi_ap": {
 			"description": "Enable Multi-AP functionality",
+			"type": "number"
+		},
+		"multi_ap_vlanid": {
+			"description": "Multi-AP Default VLAN ID",
+			"type": "number"
+		},
+		"multi_ap_profile": {
+			"description": "Multi-AP Profile",
 			"type": "number"
 		},
 		"multi_ap_backhaul_key": {
@@ -837,6 +858,12 @@
 		},
 		"r1kh": {
 			"description": "List of R1KHs in the same Mobility Domain",
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
+		"radios": {
 			"type": "array",
 			"items": {
 				"type": "string"
@@ -1057,15 +1084,6 @@
 		"wds_sta": {
 			"description": "If bridge parameter is set, the WDS STA interface will be added to the same bridge by default",
 			"type": "boolean"
-		},
-		"wmm": {
-			"type": "alias",
-			"default": "wmm_enabled"
-		},
-		"wmm_enabled": {
-			"description": "Default WMM parameters (IEEE 802.11 draft; 11-03-0504-03-000e)",
-			"type": "boolean",
-			"default": true
 		},
 		"wnm_sleep_mode": {
 			"description": "WNM-Sleep Mode (extended sleep mode for stations)",

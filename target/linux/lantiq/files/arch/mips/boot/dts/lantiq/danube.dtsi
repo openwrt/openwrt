@@ -294,7 +294,7 @@
 			interrupts = <63 61 159>;
 		};
 
-		gsw: etop@e180000 {
+		gsw: ethernet@e180000 {
 			compatible = "lantiq,etop-xway";
 			reg = <0xe180000 0x40000>;
 			interrupt-parent = <&icu0>;
@@ -303,7 +303,7 @@
 			lantiq,rx-burst-length = <4>;
 		};
 
-		ppe@e234000 {
+		ppe: ppe@e234000 {
 			compatible = "lantiq,ppe-danube";
 			reg = <0xe234000 0x40000>;
 			interrupt-parent = <&icu0>;

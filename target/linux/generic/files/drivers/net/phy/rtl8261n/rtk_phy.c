@@ -6,6 +6,7 @@
 
 #include <linux/module.h>
 #include <linux/phy.h>
+#include <linux/property.h>
 
 #include "phy_rtl826xb_patch.h"
 #include "rtk_phylib_rtl826xb.h"
@@ -14,6 +15,10 @@
 #define REALTEK_PHY_ID_RTL8261N         0x001CCAF3
 #define REALTEK_PHY_ID_RTL8264B         0x001CC813
 #define REALTEK_PHY_ID_RTL8264          0x001CCAF2
+
+#define REALTEK_SERDES_GLOBAL_CFG       0x1c
+#define   REALTEK_HSO_INV               BIT(7)
+#define   REALTEK_HSI_INV               BIT(6)
 
 static int rtl826xb_get_features(struct phy_device *phydev)
 {
@@ -41,6 +46,7 @@ static int rtl826xb_get_features(struct phy_device *phydev)
 
 static int rtl826xb_probe(struct phy_device *phydev)
 {
+    struct device *dev = &phydev->mdio.dev;
     struct rtk_phy_priv *priv = NULL;
 
     priv = devm_kzalloc(&phydev->mdio.dev, sizeof(struct rtk_phy_priv), GFP_KERNEL);
@@ -55,6 +61,7 @@ static int rtl826xb_probe(struct phy_device *phydev)
 
     priv->phytype = (phydev->drv->phy_id == REALTEK_PHY_ID_RTL8261N) ? (RTK_PHYLIB_RTL8261N) : (RTK_PHYLIB_RTL8264B);
     priv->isBasePort = (phydev->drv->phy_id == REALTEK_PHY_ID_RTL8261N) ? (1) : (((phydev->mdio.addr % 4) == 0) ? (1) : (0));
+    priv->pnswap_tx = device_property_read_bool(dev, "realtek,pnswap-tx");
     phydev->priv = priv;
 
     return 0;
@@ -62,6 +69,7 @@ static int rtl826xb_probe(struct phy_device *phydev)
 
 static int rtkphy_config_init(struct phy_device *phydev)
 {
+    struct rtk_phy_priv *priv = phydev->priv;
     int ret = 0;
     switch (phydev->drv->phy_id)
     {
@@ -116,6 +124,11 @@ static int rtkphy_config_init(struct phy_device *phydev)
                 printk("[%s,%d] sds link [%s] (0x%X)\n", __FUNCTION__, __LINE__, (readData & BIT(12)) ? "UP" : "DOWN", readData);
             }
           #endif
+
+            if (priv->pnswap_tx)
+                phy_set_bits_mmd(phydev, MDIO_MMD_VEND1,
+                                 REALTEK_SERDES_GLOBAL_CFG,
+                                 REALTEK_HSO_INV);
 
             break;
         default:

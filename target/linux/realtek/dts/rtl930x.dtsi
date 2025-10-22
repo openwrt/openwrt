@@ -1,14 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
-/dts-v1/;
+#include "macros.dtsi"
 
-#define INTERNAL_PHY_SDS(n, s) \
-	phy##n: ethernet-phy@##n { \
-		reg = <##n>; \
-		compatible = "ethernet-phy-ieee802.3-c22"; \
-		phy-is-integrated; \
-		sds = <##s>; \
-	};
+/dts-v1/;
 
 / {
 	#address-cells = <1>;
@@ -59,7 +53,14 @@
 		compatible = "simple-bus";
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x18000000 0x10000>;
+		ranges = <0x0 0x18000000 0x20000>;
+
+		ecc0: ecc@1a600 {
+			compatible = "realtek,rtl9301-ecc";
+			reg = <0x1a600 0x54>;
+
+			status = "disabled";
+		};
 
 		intc: interrupt-controller@3000 {
 			compatible = "realtek,rtl9300-intc", "realtek,rtl-intc";
@@ -69,6 +70,18 @@
 
 			interrupt-parent = <&cpuintc>;
 			interrupts = <2>, <3>, <4>, <5>, <6>, <7>;
+		};
+
+		snand: spi@1a400 {
+			compatible = "realtek,rtl9301-snand";
+			reg = <0x1a400 0x44>;
+			interrupt-parent = <&intc>;
+			interrupts = <19 2>;
+			clocks = <&lx_clk>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
 		};
 
 		spi0: spi@1200 {
@@ -154,6 +167,38 @@
 	switchcore@1b000000 {
 		compatible = "syscon", "simple-mfd";
 		reg = <0x1b000000 0x10000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		i2c_mst1: i2c@36c {
+			compatible = "realtek,rtl9301-i2c";
+			reg = <0x36c 0x18>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
+		};
+
+		i2c_mst2: i2c@388 {
+			compatible = "realtek,rtl9301-i2c";
+			reg = <0x388 0x18>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
+		};
+
+		mdio_ctrl: mdio-controller {
+			compatible = "realtek,rtl9301-mdio", "realtek,otto-mdio";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			mdio_bus0: mdio-bus@0 {
+				reg = <0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+		};
 
 		mdio_aux: mdio-aux {
 			compatible = "realtek,rtl9300-aux-mdio";
@@ -165,9 +210,94 @@
 			status = "disabled";
 		};
 
+		mdio_serdes: mdio-serdes {
+			compatible = "realtek,rtl9301-serdes-mdio", "realtek,otto-serdes-mdio";
+		};
+
+		pcs {
+			compatible = "realtek,rtl9301-pcs", "realtek,otto-pcs";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			serdes0: serdes@0 {
+				reg = <0>;
+			};
+			serdes1: serdes@1 {
+				reg = <1>;
+			};
+			serdes2: serdes@2 {
+				reg = <2>;
+			};
+			serdes3: serdes@3 {
+				reg = <3>;
+			};
+			serdes4: serdes@4 {
+				reg = <4>;
+			};
+			serdes5: serdes@5 {
+				reg = <5>;
+			};
+			serdes6: serdes@6 {
+				reg = <6>;
+			};
+			serdes7: serdes@7 {
+				reg = <7>;
+			};
+			serdes8: serdes@8 {
+				reg = <8>;
+			};
+			serdes9: serdes@9 {
+				reg = <9>;
+			};
+			serdes10: serdes@10 {
+				reg = <10>;
+			};
+			serdes11: serdes@11 {
+				reg = <11>;
+			};
+		};
+
 		soc_thermal: thermal {
 			compatible = "realtek,rtl9300-thermal";
 			#thermal-sensor-cells = <0>;
+		};
+	};
+
+	pinmux@1b000200 {
+		compatible = "pinctrl-single";
+		reg = <0x1b000200 0x4>;
+
+		pinctrl-single,bit-per-mux;
+		pinctrl-single,register-width = <32>;
+		pinctrl-single,function-mask = <0x1>;
+		#pinctrl-cells = <2>;
+
+		/* Enable GPIO 19 */
+		pinmux_disable_led_sync: disable-led-sync {
+			pinctrl-single,bits = <0x0 0x0 0x800>;
+		};
+
+		pinmux_enable_led_sync: enable-led-sync {
+			pinctrl-single,bits = <0x0 0x800 0x800>;
+		};
+
+		/* Enable GPIO 18 */
+		pinmux_disable_usb_led: disable-usb-led {
+			pinctrl-single,bits = <0x0 0x0 0x400>;
+		};
+
+		pinmux_enable_usb_led: enable-usb-led {
+			pinctrl-single,bits = <0x0 0x400 0x400>;
+		};
+
+		/* Disable SLV SPI CS - freeing any associated GPIOs */
+		pinmux_disable_slv_spi_cs: disable-slv-spi-cs {
+			pinctrl-single,bits = <0x0 0x0 0x3E0>;
+		};
+
+		/* Disable SLV SPI SDO - freeing any associated GPIOs */
+		pinmux_disable_slv_spi_sdo: disable-slv-spi-sdo {
+			pinctrl-single,bits = <0x0 0x0 0x1F>;
 		};
 	};
 

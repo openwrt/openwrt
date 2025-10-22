@@ -81,12 +81,10 @@ alfa-network,tube-2hq)
 	;;
 asus,pl-ac56)
 	ucidef_set_led_switch "lan" "LAN" "green:lan" "switch0" "0x3e"
-	ucidef_set_led_netdev "wlan2g" "WLAN2G" "green:wlan2g" "wlan1" "link"
 	ucidef_set_led_netdev "wlan5g" "WLAN5G" "green:wlan5g" "wlan0" "link"
 	;;
 asus,rp-ac51)
 	ucidef_set_led_netdev "lan" "LAN" "blue:lan" "eth0"
-	ucidef_set_led_netdev "wlan2g" "WLAN2G" "blue:wlan2G" "wlan1" "link"
 	ucidef_set_led_netdev "wlan5g" "WLAN5G" "blue:wlan5G" "wlan0" "link"
 	;;
 asus,rp-ac66)
@@ -300,7 +298,7 @@ kuwfi,c910)
 	ucidef_set_led_switch "lan2" "LAN2" "white:lan2" "switch0" "0x02"
 	;;
 longdata,aps256)
-	ucidef_set_led_switch "wan" "WAN" "blue:wan" "switch0" "0x20"
+	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "eth1"
 	ucidef_set_led_switch "lan1" "LAN1" "blue:lan-1" "switch0" "0x04"
 	ucidef_set_led_switch "lan2" "LAN2" "blue:lan-2" "switch0" "0x02"
 	;;

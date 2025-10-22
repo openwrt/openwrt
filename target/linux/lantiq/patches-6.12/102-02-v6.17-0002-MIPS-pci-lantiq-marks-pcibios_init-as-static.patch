@@ -1,0 +1,28 @@
+From 50162a0c6e014c4954ee4443109b7a4251b377fc Mon Sep 17 00:00:00 2001
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Wed, 18 Jun 2025 22:53:19 +0800
+Subject: [PATCH 02/11] MIPS: pci: lantiq: marks pcibios_init() as static
+
+Fix the following missing-prototypes build warning:
+
+arch/mips/pci/pci-lantiq.c:239:12: error: no previous prototype for 'pcibios_init' [-Werror=missing-prototypes]
+  239 | int __init pcibios_init(void)
+      |            ^~~~~~~~~~~~
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
+---
+ arch/mips/pci/pci-lantiq.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/mips/pci/pci-lantiq.c
++++ b/arch/mips/pci/pci-lantiq.c
+@@ -234,7 +234,7 @@ static struct platform_driver ltq_pci_dr
+ 	},
+ };
+ 
+-int __init pcibios_init(void)
++static int __init pcibios_init(void)
+ {
+ 	int ret = platform_driver_register(&ltq_pci_driver);
+ 	if (ret)

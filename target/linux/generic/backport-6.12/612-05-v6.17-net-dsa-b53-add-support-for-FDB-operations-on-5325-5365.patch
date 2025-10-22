@@ -24,7 +24,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/dsa/b53/b53_common.c
 +++ b/drivers/net/dsa/b53/b53_common.c
-@@ -1764,6 +1764,45 @@ static int b53_arl_read(struct b53_devic
+@@ -1802,6 +1802,45 @@ static int b53_arl_read(struct b53_devic
  	return *idx >= dev->num_arl_bins ? -ENOSPC : -ENOENT;
  }
  
@@ -70,7 +70,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static int b53_arl_op(struct b53_device *dev, int op, int port,
  		      const unsigned char *addr, u16 vid, bool is_valid)
  {
-@@ -1786,7 +1825,10 @@ static int b53_arl_op(struct b53_device
+@@ -1824,7 +1863,10 @@ static int b53_arl_op(struct b53_device
  	if (ret)
  		return ret;
  
@@ -82,7 +82,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	/* If this is a read, just finish now */
  	if (op)
-@@ -1830,12 +1872,17 @@ static int b53_arl_op(struct b53_device
+@@ -1868,12 +1910,17 @@ static int b53_arl_op(struct b53_device
  	ent.is_static = true;
  	ent.is_age = false;
  	memcpy(ent.mac, addr, ETH_ALEN);
@@ -103,7 +103,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	return b53_arl_rw_op(dev, 0);
  }
-@@ -1847,12 +1894,6 @@ int b53_fdb_add(struct dsa_switch *ds, i
+@@ -1885,12 +1932,6 @@ int b53_fdb_add(struct dsa_switch *ds, i
  	struct b53_device *priv = ds->priv;
  	int ret;
  
@@ -116,7 +116,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	mutex_lock(&priv->arl_mutex);
  	ret = b53_arl_op(priv, 0, port, addr, vid, true);
  	mutex_unlock(&priv->arl_mutex);
-@@ -1879,10 +1920,15 @@ EXPORT_SYMBOL(b53_fdb_del);
+@@ -1917,10 +1958,15 @@ EXPORT_SYMBOL(b53_fdb_del);
  static int b53_arl_search_wait(struct b53_device *dev)
  {
  	unsigned int timeout = 1000;
@@ -134,7 +134,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		if (!(reg & ARL_SRCH_STDN))
  			return 0;
  
-@@ -1899,13 +1945,24 @@ static void b53_arl_search_rd(struct b53
+@@ -1937,13 +1983,24 @@ static void b53_arl_search_rd(struct b53
  			      struct b53_arl_entry *ent)
  {
  	u64 mac_vid;
@@ -165,7 +165,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  }
  
  static int b53_fdb_copy(int port, const struct b53_arl_entry *ent,
-@@ -1926,14 +1983,20 @@ int b53_fdb_dump(struct dsa_switch *ds,
+@@ -1964,14 +2021,20 @@ int b53_fdb_dump(struct dsa_switch *ds,
  	struct b53_device *priv = ds->priv;
  	struct b53_arl_entry results[2];
  	unsigned int count = 0;
@@ -234,7 +234,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  #include <linux/bcm47xx_nvram.h>
 --- a/drivers/net/dsa/b53/b53_regs.h
 +++ b/drivers/net/dsa/b53/b53_regs.h
-@@ -324,9 +324,10 @@
+@@ -329,9 +329,10 @@
  #define   ARLTBL_VID_MASK		0xfff
  #define   ARLTBL_DATA_PORT_ID_S_25	48
  #define   ARLTBL_DATA_PORT_ID_MASK_25	0xf

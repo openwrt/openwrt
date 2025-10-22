@@ -1,14 +1,17 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 /dts-v1/;
 
+#include <dt-bindings/pinctrl/mt65xx.h>
+
 #include "mt7622-buffalo-wsr.dtsi"
 
 / {
 	model = "Buffalo WSR-3200AX4S";
 	compatible = "buffalo,wsr-3200ax4s", "mediatek,mt7622";
 
-	memory {
+	memory@40000000 {
 		reg = <0 0x40000000 0 0x1f000000>;
+		device_type = "memory";
 	};
 };
 
@@ -24,13 +27,13 @@
 			pins = "SPI_WP", "SPI_HOLD", "SPI_MOSI",
 			       "SPI_MISO", "SPI_CS";
 			input-enable;
-			drive-strength = <16>;
+			drive-strength = <MTK_DRIVE_16mA>;
 			bias-pull-up;
 		};
 
 		conf-clk {
 			pins = "SPI_CLK";
-			drive-strength = <16>;
+			drive-strength = <MTK_DRIVE_16mA>;
 			bias-pull-down;
 		};
 	};

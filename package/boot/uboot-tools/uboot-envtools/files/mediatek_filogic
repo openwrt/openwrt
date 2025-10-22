@@ -28,6 +28,7 @@ cmcc,a10-ubootmod|\
 cudy,tr3000-v1-ubootmod|\
 h3c,magic-nx30-pro|\
 jcg,q30-pro|\
+konka,komi-a31|\
 mercusys,mr90x-v1-ubi|\
 netcore,n60|\
 netcore,n60-pro|\
@@ -82,9 +83,20 @@ jdcloud,re-cp-03)
 		;;
 	esac
 	;;
-comfast,cf-e393ax)
+buffalo,wsr-6000ax8|\
+mercusys,mr80x-v3|\
+mercusys,mr90x-v1|\
+routerich,ax3000|\
+routerich,ax3000-v1|\
+tenbay,wr3000k|\
+tplink,re6000xd)
+	ubootenv_add_mtd "u-boot-env" "0x0" "0x20000" "0x20000" "1"
+	;;
+comfast,cf-e393ax|\
+iptime,ax3000m)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x80000"
 	;;
+asiarf,ap7986-003|\
 cetron,ct3003|\
 edgecore,eap111|\
 netgear,wax220|\
@@ -101,14 +113,6 @@ gatonetworks,gdsp)
 	;;
 glinet,gl-mt3000)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x80000" "0x20000"
-	;;
-mercusys,mr80x-v3|\
-mercusys,mr90x-v1|\
-routerich,ax3000|\
-routerich,ax3000-v1|\
-tenbay,wr3000k|\
-tplink,re6000xd)
-	ubootenv_add_mtd "u-boot-env" "0x0" "0x20000" "0x20000" "1"
 	;;
 openembed,som7981)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x80000" "0x80000"
@@ -127,6 +131,9 @@ tplink,archer-ax80-v1)
 	;;
 ubnt,unifi-6-plus)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x80000" "0x10000"
+	;;
+teltonika,rutc50)
+	ubootenv_add_mtd "u-boot-env" "0x0" "0x10000" "0x10000"
 	;;
 xiaomi,mi-router-ax3000t|\
 xiaomi,mi-router-wr30u-stock|\

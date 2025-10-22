@@ -20,8 +20,9 @@
 		bootargs-append = " root=/dev/fit0 rootwait";
 	};
 
-	memory {
+	memory@40000000 {
 		reg = <0 0x40000000 0 0x20000000>;
+		device_type = "memory";
 	};
 
 	reg_3p3v: regulator-3p3v {
@@ -119,7 +120,6 @@
 &spi0 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&spi0_flash_pins>;
-	cs-gpios = <0>, <0>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 	status = "disabled";

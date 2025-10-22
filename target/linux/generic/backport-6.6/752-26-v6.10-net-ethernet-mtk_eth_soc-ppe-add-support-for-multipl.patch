@@ -60,7 +60,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	.ppe_base		= 0x2000,
  	.wdma_base = {
  		[0]		= 0x4800,
-@@ -2015,6 +2024,7 @@ static int mtk_poll_rx(struct napi_struc
+@@ -2023,6 +2032,7 @@ static int mtk_poll_rx(struct napi_struc
  	struct mtk_rx_dma_v2 *rxd, trxd;
  	int done = 0, bytes = 0;
  	dma_addr_t dma_addr = DMA_MAPPING_ERROR;
@@ -68,7 +68,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	while (done < budget) {
  		unsigned int pktlen, *rxdcsum;
-@@ -2058,6 +2068,7 @@ static int mtk_poll_rx(struct napi_struc
+@@ -2066,6 +2076,7 @@ static int mtk_poll_rx(struct napi_struc
  			goto release_desc;
  
  		netdev = eth->netdev[mac];
@@ -76,7 +76,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  		if (unlikely(test_bit(MTK_RESETTING, &eth->state)))
  			goto release_desc;
-@@ -2181,7 +2192,7 @@ static int mtk_poll_rx(struct napi_struc
+@@ -2189,7 +2200,7 @@ static int mtk_poll_rx(struct napi_struc
  		}
  
  		if (reason == MTK_PPE_CPU_REASON_HIT_UNBIND_RATE_REACHED)
@@ -85,7 +85,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  		skb_record_rx_queue(skb, 0);
  		napi_gro_receive(napi, skb);
-@@ -3288,37 +3299,27 @@ static int mtk_start_dma(struct mtk_eth
+@@ -3296,37 +3307,27 @@ static int mtk_start_dma(struct mtk_eth
  	return 0;
  }
  
@@ -134,7 +134,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  }
  
  
-@@ -3378,7 +3379,10 @@ static int mtk_open(struct net_device *d
+@@ -3386,7 +3387,10 @@ static int mtk_open(struct net_device *d
  {
  	struct mtk_mac *mac = netdev_priv(dev);
  	struct mtk_eth *eth = mac->hw;
@@ -146,7 +146,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	err = phylink_of_phy_connect(mac->phylink, mac->of_node, 0);
  	if (err) {
-@@ -3402,18 +3406,38 @@ static int mtk_open(struct net_device *d
+@@ -3410,18 +3414,38 @@ static int mtk_open(struct net_device *d
  		for (i = 0; i < ARRAY_SIZE(eth->ppe); i++)
  			mtk_ppe_start(eth->ppe[i]);
  
@@ -190,7 +190,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	phylink_start(mac->phylink);
  	netif_tx_start_all_queues(dev);
-@@ -3490,7 +3514,8 @@ static int mtk_stop(struct net_device *d
+@@ -3498,7 +3522,8 @@ static int mtk_stop(struct net_device *d
  	if (!refcount_dec_and_test(&eth->dma_refcnt))
  		return 0;
  
@@ -200,7 +200,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	mtk_tx_irq_disable(eth, MTK_TX_DONE_INT);
  	mtk_rx_irq_disable(eth, eth->soc->rx.irq_done_mask);
-@@ -4985,23 +5010,24 @@ static int mtk_probe(struct platform_dev
+@@ -4993,23 +5018,24 @@ static int mtk_probe(struct platform_dev
  	}
  
  	if (eth->soc->offload_version) {
@@ -233,7 +233,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	}
  
  	for (i = 0; i < MTK_MAX_DEVS; i++) {
-@@ -5104,6 +5130,7 @@ static const struct mtk_soc_data mt7621_
+@@ -5112,6 +5138,7 @@ static const struct mtk_soc_data mt7621_
  	.required_pctl = false,
  	.version = 1,
  	.offload_version = 1,
@@ -241,7 +241,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	.hash_offset = 2,
  	.foe_entry_size = MTK_FOE_ENTRY_V1_SIZE,
  	.tx = {
-@@ -5132,6 +5159,7 @@ static const struct mtk_soc_data mt7622_
+@@ -5140,6 +5167,7 @@ static const struct mtk_soc_data mt7622_
  	.required_pctl = false,
  	.version = 1,
  	.offload_version = 2,
@@ -249,7 +249,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	.hash_offset = 2,
  	.has_accounting = true,
  	.foe_entry_size = MTK_FOE_ENTRY_V1_SIZE,
-@@ -5160,6 +5188,7 @@ static const struct mtk_soc_data mt7623_
+@@ -5168,6 +5196,7 @@ static const struct mtk_soc_data mt7623_
  	.required_pctl = true,
  	.version = 1,
  	.offload_version = 1,
@@ -257,7 +257,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	.hash_offset = 2,
  	.foe_entry_size = MTK_FOE_ENTRY_V1_SIZE,
  	.disable_pll_modes = true,
-@@ -5215,6 +5244,7 @@ static const struct mtk_soc_data mt7981_
+@@ -5223,6 +5252,7 @@ static const struct mtk_soc_data mt7981_
  	.required_pctl = false,
  	.version = 2,
  	.offload_version = 2,
@@ -265,7 +265,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	.hash_offset = 4,
  	.has_accounting = true,
  	.foe_entry_size = MTK_FOE_ENTRY_V2_SIZE,
-@@ -5244,6 +5274,7 @@ static const struct mtk_soc_data mt7986_
+@@ -5252,6 +5282,7 @@ static const struct mtk_soc_data mt7986_
  	.required_pctl = false,
  	.version = 2,
  	.offload_version = 2,
@@ -273,7 +273,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	.hash_offset = 4,
  	.has_accounting = true,
  	.foe_entry_size = MTK_FOE_ENTRY_V2_SIZE,
-@@ -5273,6 +5304,7 @@ static const struct mtk_soc_data mt7988_
+@@ -5281,6 +5312,7 @@ static const struct mtk_soc_data mt7988_
  	.required_pctl = false,
  	.version = 3,
  	.offload_version = 2,
@@ -328,7 +328,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  int mtk_flow_offload_cmd(struct mtk_eth *eth, struct flow_cls_offload *cls,
 --- a/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
 +++ b/drivers/net/ethernet/mediatek/mtk_ppe_offload.c
-@@ -247,10 +247,10 @@ mtk_flow_offload_replace(struct mtk_eth
+@@ -249,10 +249,10 @@ mtk_flow_offload_replace(struct mtk_eth
  			 int ppe_index)
  {
  	struct flow_rule *rule = flow_cls_offload_flow_rule(f);
@@ -340,7 +340,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	struct mtk_flow_entry *entry;
  	int offload_type = 0;
  	int wed_index = -1;
-@@ -266,6 +266,17 @@ mtk_flow_offload_replace(struct mtk_eth
+@@ -268,6 +268,17 @@ mtk_flow_offload_replace(struct mtk_eth
  		struct flow_match_meta match;
  
  		flow_rule_match_meta(rule, &match);
@@ -358,7 +358,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	} else {
  		return -EOPNOTSUPP;
  	}
-@@ -633,7 +644,9 @@ int mtk_eth_setup_tc(struct net_device *
+@@ -635,7 +646,9 @@ int mtk_eth_setup_tc(struct net_device *
  	}
  }
  

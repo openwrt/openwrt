@@ -48,13 +48,13 @@
 		led_status_white: status-white {
 			color = <LED_COLOR_ID_WHITE>;
 			function = LED_FUNCTION_STATUS;
-			gpio = <&tlmm 56 GPIO_ACTIVE_LOW>;
+			gpios = <&tlmm 56 GPIO_ACTIVE_LOW>;
 		};
 
 		led_status_amber: status-amber {
 			color = <LED_COLOR_ID_AMBER>;
 			function = LED_FUNCTION_STATUS;
-			gpio = <&tlmm 35 GPIO_ACTIVE_LOW>;
+			gpios = <&tlmm 35 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -66,7 +66,7 @@
 
 		startup-delay-us = <200>;
 
-		gpio = <&tlmm 66 GPIO_ACTIVE_HIGH>;
+		gpios = <&tlmm 66 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 
 		pinctrl-names = "default";
@@ -153,7 +153,7 @@
 
 &pcie0 {
 	status = "okay";
-	perst-gpio = <&tlmm 60 GPIO_ACTIVE_LOW>;
+	perst-gpios = <&tlmm 60 GPIO_ACTIVE_LOW>;
 
 	pcie@0 {
 		wifi@0,0 {

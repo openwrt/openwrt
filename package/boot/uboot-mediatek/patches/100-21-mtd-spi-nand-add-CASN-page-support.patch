@@ -1,0 +1,1225 @@
+From ce3ecc9bc5d22327dca2ba91fb0bfbf50ce4e573 Mon Sep 17 00:00:00 2001
+From: Weijie Gao <weijie.gao@mediatek.com>
+Date: Wed, 15 Jan 2025 14:51:40 +0800
+Subject: [PATCH 21/30] mtd: spi-nand: add CASN page support
+
+CASN page implements full description for SPI-NAND.
+Software driver can utililize it to address the whole NAND chip.
+Also, it can handle ECC information as well.
+
+CASN page is designed to solve the following problems:
+1. Increasing size of SPI-NAND flash tables, which exist in various
+   drivers/mtd/nand/spi/*.c files.
+2. Decreasing efforts on adding new SPI-NAND's flash tables.
+3. Extract correct flash on-die ECC's bitflip numbers if it supports
+   advanced ECC status registers. The on-die ECC engine design
+   varies from vendor to vendor. CASN can transform them into
+   unified format.
+4. A single Uboot image can deal with most of SPI-NAND devices.
+
+Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
+Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
+---
+ drivers/mtd/nand/spi/core.c | 800 +++++++++++++++++++++++++++++++++++-
+ include/linux/mtd/casn.h    | 191 +++++++++
+ include/linux/mtd/spinand.h |  97 +++++
+ 3 files changed, 1074 insertions(+), 14 deletions(-)
+ create mode 100644 include/linux/mtd/casn.h
+
+--- a/drivers/mtd/nand/spi/core.c
++++ b/drivers/mtd/nand/spi/core.c
+@@ -10,10 +10,12 @@
+ #define pr_fmt(fmt)	"spi-nand: " fmt
+ 
+ #ifndef __UBOOT__
++#include <linux/bitfield.h>
+ #include <linux/device.h>
+ #include <linux/jiffies.h>
+ #include <linux/kernel.h>
+ #include <linux/module.h>
++#include <linux/mtd/casn.h>
+ #include <linux/mtd/spinand.h>
+ #include <linux/of.h>
+ #include <linux/slab.h>
+@@ -28,8 +30,10 @@
+ #include <ubi_uboot.h>
+ #include <dm/device_compat.h>
+ #include <dm/devres.h>
++#include <linux/bitfield.h>
+ #include <linux/bitops.h>
+ #include <linux/bug.h>
++#include <linux/mtd/casn.h>
+ #include <linux/mtd/spinand.h>
+ #include <linux/printk.h>
+ #endif
+@@ -496,6 +500,62 @@ static int spinand_lock_block(struct spi
+ 	return spinand_write_reg_op(spinand, REG_BLOCK_LOCK, lock);
+ }
+ 
++static size_t eccsr_none_op(size_t val, size_t mask) { return val; }
++static size_t eccsr_and_op(size_t val, size_t mask) { return val & mask; }
++static size_t eccsr_add_op(size_t val, size_t mask) { return val + mask; }
++static size_t eccsr_minus_op(size_t val, size_t mask) { return val - mask; }
++static size_t eccsr_mul_op(size_t val, size_t mask) { return val * mask; }
++
++static void spinand_read_adv_ecc(struct spinand_device *spinand,
++				 struct spi_mem_op *ops, u16 *eccsr,
++				 u16 mask, u8 shift,
++				 u8 pre_op, u8 pre_mask)
++{
++	u8 *p = spinand->scratchbuf;
++
++	spi_mem_exec_op(spinand->slave, ops);
++
++	if (likely(mask <= 0xff))
++		*eccsr += (*p & mask) >> shift;
++	else
++		*eccsr += (((*p << 8) | (*p+1)) & mask) >> shift;
++
++	*eccsr = spinand->eccsr_math_op[pre_op](*eccsr, pre_mask);
++}
++
++static int spinand_casn_get_ecc_status(struct spinand_device *spinand, u8 status)
++{
++	struct mtd_info *mtd = spinand_to_mtd(spinand);
++	struct CASN_ADVECC *ah = spinand->advecc_high;
++	struct CASN_ADVECC *al = spinand->advecc_low;
++	u16 eccsr_high = 0;
++	u16 eccsr_low = 0;
++	u32 eccsr = 0;
++
++	if (al->cmd) {
++		spinand_read_adv_ecc(spinand,
++				     spinand->advecc_low_ops, &eccsr_low,
++				     al->mask, al->shift,
++				     al->pre_op, al->pre_mask);
++		eccsr += eccsr_low;
++	}
++	if (ah->cmd) {
++		spinand_read_adv_ecc(spinand,
++				     spinand->advecc_high_ops, &eccsr_high,
++				     ah->mask, ah->shift,
++				     ah->pre_op, ah->pre_mask);
++		eccsr += eccsr_high << spinand->advecc_low_bitcnt;
++	}
++
++	if (eccsr == spinand->advecc_noerr_status)
++		return 0;
++	else if (eccsr == spinand->advecc_uncor_status)
++		return -EBADMSG;
++	eccsr = spinand->eccsr_math_op[spinand->advecc_post_op](eccsr, spinand->advecc_post_mask);
++
++	return eccsr > mtd->ecc_strength ? mtd->ecc_strength : eccsr;
++}
++
+ static int spinand_check_ecc_status(struct spinand_device *spinand, u8 status)
+ {
+ 	struct nand_device *nand = spinand_to_nand(spinand);
+@@ -865,6 +925,300 @@ static int spinand_manufacturer_match(st
+ 	return -ENOTSUPP;
+ }
+ 
++static u16 nanddev_crc16(u16 crc, u8 const *p, size_t len)
++{
++	int i;
++	while (len--) {
++		crc ^= *p++ << 8;
++		for (i = 0; i < 8; i++)
++			crc = (crc << 1) ^ ((crc & 0x8000) ? 0x8005 : 0);
++	}
++
++	return crc;
++}
++
++/* Sanitize ONFI strings so we can safely print them */
++static void sanitize_string(char *s, size_t len)
++{
++	ssize_t i;
++
++	/* Null terminate */
++	s[len - 1] = 0;
++
++	/* Remove non printable chars */
++	for (i = 0; i < len - 1; i++) {
++		if (s[i] < ' ' || s[i] > 127)
++			s[i] = '?';
++	}
++
++	/* Remove trailing spaces */
++	strim(s);
++}
++
++/*
++ * Recover data with bit-wise majority
++ */
++static void nanddev_bit_wise_majority(const void **srcbufs,
++				   unsigned int nsrcbufs,
++				   void *dstbuf,
++				   unsigned int bufsize)
++{
++	int i, j, k;
++
++	for (i = 0; i < bufsize; i++) {
++		u8 val = 0;
++
++		for (j = 0; j < 8; j++) {
++			unsigned int cnt = 0;
++
++			for (k = 0; k < nsrcbufs; k++) {
++				const u8 *srcbuf = srcbufs[k];
++
++				if (srcbuf[i] & BIT(j))
++					cnt++;
++			}
++
++			if (cnt > nsrcbufs / 2)
++				val |= BIT(j);
++		}
++
++		((u8 *)dstbuf)[i] = val;
++	}
++}
++
++static int spinand_check_casn_validity(struct spinand_device *spinand,
++				       struct nand_casn *casn)
++{
++	struct udevice *dev = spinand->slave->dev;
++
++	if (be32_to_cpu(casn->bits_per_cell) != 1) {
++		dev_err(dev, "[CASN] bits-per-cell must be 1\n");
++		return -EINVAL;
++	}
++
++	switch (be32_to_cpu(casn->bytes_per_page)) {
++	case 2048:
++	case 4096:
++		break;
++	default:
++		dev_err(dev, "[CASN] page size must be 2048/4096\n");
++		return -EINVAL;
++	}
++
++	switch (be32_to_cpu(casn->spare_bytes_per_page)) {
++	case 64:
++	case 96:
++	case 128:
++	case 256:
++		break;
++	default:
++		dev_err(dev, "[CASN] spare size must be 64/128/256\n");
++		return -EINVAL;
++	}
++
++	switch (be32_to_cpu(casn->pages_per_block)) {
++	case 64:
++	case 128:
++		break;
++	default:
++		dev_err(dev, "[CASN] pages_per_block must be 64/128\n");
++		return -EINVAL;
++	}
++
++	switch (be32_to_cpu(casn->blocks_per_lun)) {
++	case 1024:
++		if (be32_to_cpu(casn->max_bb_per_lun) != 20) {
++			dev_err(dev, "[CASN] max_bb_per_lun must be 20 when blocks_per_lun is 1024\n");
++			return -EINVAL;
++		}
++		break;
++	case 2048:
++		if (be32_to_cpu(casn->max_bb_per_lun) != 40) {
++			dev_err(dev, "[CASN] max_bb_per_lun must be 40 when blocks_per_lun is 2048\n");
++			return -EINVAL;
++		}
++		break;
++	case 4096:
++		if (be32_to_cpu(casn->max_bb_per_lun) != 80) {
++			dev_err(dev, "[CASN] max_bb_per_lun must be 80 when blocks_per_lun is 4096\n");
++			return -EINVAL;
++		}
++		break;
++	default:
++		dev_err(dev, "[CASN] blocks_per_lun must be 1024/2048/4096\n");
++		return -EINVAL;
++	}
++
++	switch (be32_to_cpu(casn->planes_per_lun)) {
++	case 1:
++	case 2:
++		break;
++	default:
++		dev_err(dev, "[CASN] planes_per_lun must be 1/2\n");
++		return -EINVAL;
++	}
++
++	switch (be32_to_cpu(casn->luns_per_target)) {
++	case 1:
++	case 2:
++		break;
++	default:
++		dev_err(dev, "[CASN] luns_per_target must be 1/2\n");
++		return -EINVAL;
++	}
++
++	switch (be32_to_cpu(casn->total_target)) {
++	case 1:
++	case 2:
++		break;
++	default:
++		dev_err(dev, "[CASN] ntargets must be 1/2\n");
++		return -EINVAL;
++	}
++
++	if (casn->casn_oob.layout_type != OOB_CONTINUOUS &&
++	    casn->casn_oob.layout_type != OOB_DISCRETE) {
++		dev_err(dev, "[CASN] OOB layout type isn't correct.\n");
++		return -EINVAL;
++	}
++
++	if (casn->ecc_status_high.status_nbytes > 2 ||
++	    casn->ecc_status_low.status_nbytes > 2) {
++		dev_err(dev, "[CASN] ADVECC status nbytes must be no more than 2\n");
++		return -EINVAL;
++	}
++
++	return 0;
++}
++
++static int spinand_check_casn(struct spinand_device *spinand,
++			struct nand_casn *casn, unsigned int *sel)
++{
++	struct udevice *dev = spinand->slave->dev;
++	uint16_t crc = be16_to_cpu(casn->crc);
++	uint16_t crc_compute;
++	int ret = 0;
++	int i;
++
++	/* There are 3 copies of CASN Pages V1. Choose one avabilable copy
++	 * first. If none of the copies is available, try to recover.
++	 */
++	for (i = 0; i < CASN_PAGE_V1_COPIES; i++) {
++		if (be32_to_cpu(casn[i].signature) != CASN_SIGNATURE) {
++			ret = -EINVAL;
++			continue;
++		}
++		crc_compute = nanddev_crc16(CASN_CRC_BASE, (u8 *)(casn + i),
++					    SPINAND_CASN_V1_CRC_OFS);
++		dev_dbg(dev, "CASN COPY %d CRC read: 0x%x, compute: 0x%x\n",
++			i, crc, crc_compute);
++		if (crc != crc_compute) {
++			ret = -EBADMSG;
++			continue;
++		}
++		ret = spinand_check_casn_validity(spinand, casn + i);
++		if (ret < 0)
++			continue;
++		*sel = i;
++		break;
++	}
++
++	if (i == CASN_PAGE_V1_COPIES && ret == -EBADMSG) {
++		const void *srcbufs[CASN_PAGE_V1_COPIES];
++		int j;
++
++		for (j = 0; j < CASN_PAGE_V1_COPIES; j++)
++			srcbufs[j] = casn + j;
++		dev_info(dev, "Couldn't find a valid CASN page, try bitwise majority to recover it\n");
++		nanddev_bit_wise_majority(srcbufs, CASN_PAGE_V1_COPIES, casn,
++					  sizeof(*casn));
++		crc_compute = nanddev_crc16(CASN_CRC_BASE, (uint8_t *)casn,
++					    SPINAND_CASN_V1_CRC_OFS);
++		if (crc_compute != crc) {
++			dev_err(dev, "CASN page recovery failed, aborting\n");
++			return -EBADMSG;
++		}
++		ret = spinand_check_casn_validity(spinand, casn + i);
++		if (ret < 0)
++			return ret;
++		dev_info(dev, "CASN page recovery succeeded\n");
++		*sel = 0;
++	}
++
++	return ret;
++}
++
++static int spinand_casn_detect(struct spinand_device *spinand,
++			       struct nand_casn *casn, unsigned int *sel)
++{
++	struct udevice *dev = spinand->slave->dev;
++	uint8_t casn_offset[3] = {0x0, 0x1, 0x4};
++	struct nand_page_io_req req;
++	struct spi_mem_op op;
++	struct nand_pos pos;
++	int check_ret = 0;
++	uint8_t status;
++	int final_ret;
++	int ret = 0;
++	u8 cfg_reg;
++	int i;
++
++	ret = spinand_read_reg_op(spinand, REG_CFG, &cfg_reg);
++	if (ret)
++		return ret;
++
++	ret = spinand_write_reg_op(spinand, REG_CFG, cfg_reg | BIT(6));
++	if (ret)
++		return ret;
++
++	memset(&pos, 0, sizeof(pos));
++
++	req = (struct nand_page_io_req){
++		.pos = pos,
++		.dataoffs = 0,
++		.datalen = 256 * CASN_PAGE_V1_COPIES,
++		.databuf.in = (u8 *)casn,
++		.mode = MTD_OPS_AUTO_OOB,
++	};
++
++	for (i = 0; i < sizeof(casn_offset)/sizeof(uint8_t); i++) {
++		req.pos.page = casn_offset[i];
++		ret = spinand_load_page_op(spinand, &req);
++		if (ret)
++			goto finish;
++
++		ret = spinand_wait(spinand, &status);
++		if (ret < 0)
++			goto finish;
++
++		op = (struct spi_mem_op) SPINAND_PAGE_READ_FROM_CACHE_OP(
++			false, 768, 1, (u8 *)casn, 256 * CASN_PAGE_V1_COPIES);
++		ret = spi_mem_exec_op(spinand->slave, &op);
++		if (ret < 0)
++			goto finish;
++
++		check_ret = spinand_check_casn(spinand, casn, sel);
++		if (!check_ret)
++			break;
++	}
++
++finish:
++	/* We need to restore configuration register. */
++	final_ret = spinand_write_reg_op(spinand, REG_CFG, cfg_reg);
++	if (final_ret)
++		return final_ret;
++
++	if (check_ret) {
++		dev_err(dev, "CASN page check failed\n");
++		return check_ret;
++	}
++
++	if (ret)
++		dev_err(dev, "CASN page read failed\n");
++
++	return ret;
++}
++
+ static int spinand_id_detect(struct spinand_device *spinand)
+ {
+ 	u8 *id = spinand->id.data;
+@@ -896,7 +1250,7 @@ static int spinand_id_detect(struct spin
+ 
+ static int spinand_manufacturer_init(struct spinand_device *spinand)
+ {
+-	if (spinand->manufacturer->ops->init)
++	if (!spinand->use_casn && spinand->manufacturer->ops->init)
+ 		return spinand->manufacturer->ops->init(spinand);
+ 
+ 	return 0;
+@@ -905,7 +1259,7 @@ static int spinand_manufacturer_init(str
+ static void spinand_manufacturer_cleanup(struct spinand_device *spinand)
+ {
+ 	/* Release manufacturer private data */
+-	if (spinand->manufacturer->ops->cleanup)
++	if (!spinand->use_casn && spinand->manufacturer->ops->cleanup)
+ 		return spinand->manufacturer->ops->cleanup(spinand);
+ }
+ 
+@@ -1026,37 +1380,455 @@ int spinand_match_and_init(struct spinan
+ 	return -ENOTSUPP;
+ }
+ 
++static int spinand_casn_ooblayout_ecc(struct mtd_info *mtd, int section,
++				       struct mtd_oob_region *region)
++{
++	struct spinand_device *spinand = mtd_to_spinand(mtd);
++	int sectionp;
++	struct CASN_OOB *co = spinand->casn_oob;
++
++	sectionp = spinand->base.memorg.pagesize/mtd->ecc_step_size;
++	if (section >= sectionp)
++		return -ERANGE;
++
++	if (co->layout_type == OOB_DISCRETE) {
++		region->offset = co->ecc_parity_start +
++				 (co->free_length + co->ecc_parity_space)
++				 * section;
++	} else if (co->layout_type == OOB_CONTINUOUS) {
++		region->offset = co->ecc_parity_start + co->ecc_parity_space * section;
++	}
++	region->length = co->ecc_parity_real_length;
++
++	return 0;
++}
++
++static int spinand_casn_ooblayout_free(struct mtd_info *mtd, int section,
++					struct mtd_oob_region *region)
++{
++	struct spinand_device *spinand = mtd_to_spinand(mtd);
++	int sectionp;
++	struct CASN_OOB *co = spinand->casn_oob;
++
++	sectionp = spinand->base.memorg.pagesize/mtd->ecc_step_size;
++	if (section >= sectionp)
++		return -ERANGE;
++
++	if (!section) {
++		region->offset = co->free_start + co->bbm_length;
++		region->length = co->free_length - co->bbm_length;
++	} else {
++		if (co->layout_type == OOB_DISCRETE) {
++			region->offset = co->free_start +
++					 (co->free_length +
++					  co->ecc_parity_space) * section;
++		} else if (co->layout_type == OOB_CONTINUOUS) {
++			region->offset = co->free_start +
++					 co->free_length * section;
++		}
++		region->length = co->free_length;
++	}
++
++	return 0;
++}
++
++static const struct mtd_ooblayout_ops spinand_casn_ooblayout = {
++	.ecc = spinand_casn_ooblayout_ecc,
++	.rfree = spinand_casn_ooblayout_free,
++};
++
++static int spinand_set_read_op_variants(struct spinand_device *spinand,
++					struct nand_casn *casn)
++{
++	struct spinand_op_variants casn_read_cache_variants;
++	u16 sdr_read_cap = be16_to_cpu(casn->sdr_read_cap);
++	struct spi_mem_op *read_ops;
++	const struct spi_mem_op *op;
++	int i = 0;
++
++	read_ops = devm_kzalloc(spinand->slave->dev,
++				sizeof(struct spi_mem_op) *
++				hweight16(sdr_read_cap),
++				GFP_KERNEL);
++	if (!read_ops)
++		return -ENOMEM;
++
++	if (FIELD_GET(SDR_READ_1_4_4, sdr_read_cap)) {
++		read_ops[i] = (struct spi_mem_op)
++			SPINAND_CASN_PAGE_READ_FROM_CACHE_QUADIO_OP(
++				casn->sdr_read_1_4_4.addr_nbytes, 0,
++				casn->sdr_read_1_4_4.dummy_nbytes, NULL, 0
++			);
++		i++;
++	}
++	if (FIELD_GET(SDR_READ_1_1_4, sdr_read_cap)) {
++		read_ops[i] = (struct spi_mem_op)
++			SPINAND_CASN_PAGE_READ_FROM_CACHE_X4_OP(
++				casn->sdr_read_1_1_4.addr_nbytes, 0,
++				casn->sdr_read_1_1_4.dummy_nbytes, NULL, 0
++			);
++		i++;
++	}
++	if (FIELD_GET(SDR_READ_1_2_2, sdr_read_cap)) {
++		read_ops[i] = (struct spi_mem_op)
++			SPINAND_CASN_PAGE_READ_FROM_CACHE_DUALIO_OP(
++				casn->sdr_read_1_2_2.addr_nbytes, 0,
++				casn->sdr_read_1_2_2.dummy_nbytes, NULL, 0
++			);
++		i++;
++	}
++	if (FIELD_GET(SDR_READ_1_1_2, sdr_read_cap)) {
++		read_ops[i] = (struct spi_mem_op)
++			SPINAND_CASN_PAGE_READ_FROM_CACHE_X2_OP(
++				casn->sdr_read_1_1_2.addr_nbytes, 0,
++				casn->sdr_read_1_1_2.dummy_nbytes, NULL, 0
++			);
++		i++;
++	}
++	if (FIELD_GET(SDR_READ_1_1_1_FAST, sdr_read_cap)) {
++		read_ops[i] = (struct spi_mem_op)
++			SPINAND_CASN_PAGE_READ_FROM_CACHE_OP(
++				true, casn->sdr_read_1_1_1_fast.addr_nbytes, 0,
++				casn->sdr_read_1_1_1_fast.dummy_nbytes, NULL, 0
++			);
++		i++;
++	}
++	if (FIELD_GET(SDR_READ_1_1_1, sdr_read_cap)) {
++		read_ops[i] = (struct spi_mem_op)
++			SPINAND_CASN_PAGE_READ_FROM_CACHE_OP(
++				false, casn->sdr_read_1_1_1.addr_nbytes, 0,
++				casn->sdr_read_1_1_1.dummy_nbytes, NULL, 0
++			);
++		i++;
++	}
++
++	casn_read_cache_variants = (struct spinand_op_variants){
++		.ops = read_ops,
++		.nops = hweight16(sdr_read_cap),
++	};
++
++	op = spinand_select_op_variant(spinand, &casn_read_cache_variants);
++	if (!op) {
++		devm_kfree(spinand->slave->dev, read_ops);
++		return -ENOTSUPP;
++	}
++	spinand->op_templates.read_cache = op;
++
++	return 0;
++}
++
++static int spinand_set_write_op_variants(struct spinand_device *spinand,
++					 struct nand_casn *casn)
++{
++	struct spinand_op_variants casn_write_cache_variants;
++	struct spi_mem_op *write_ops;
++	const struct spi_mem_op *op;
++	int i = 0;
++
++	write_ops = devm_kzalloc(spinand->slave->dev,
++				 sizeof(struct spi_mem_op) *
++				 hweight8(casn->sdr_write_cap),
++				 GFP_KERNEL);
++	if (!write_ops)
++		return -ENOMEM;
++
++	if (FIELD_GET(SDR_WRITE_1_1_4, casn->sdr_write_cap)) {
++		write_ops[i] = (struct spi_mem_op)
++			SPINAND_CASN_PROG_LOAD_X4(
++				true, casn->sdr_write_1_1_4.addr_nbytes, 0,
++				NULL, 0);
++		i++;
++	}
++	if (FIELD_GET(SDR_WRITE_1_1_1, casn->sdr_write_cap)) {
++		write_ops[i] = (struct spi_mem_op)
++			SPINAND_CASN_PROG_LOAD(
++				true, casn->sdr_write_1_1_1.addr_nbytes, 0,
++				NULL, 0);
++		i++;
++	}
++
++	casn_write_cache_variants = (struct spinand_op_variants){
++		.ops = write_ops,
++		.nops = hweight8(casn->sdr_write_cap),
++	};
++
++	op = spinand_select_op_variant(spinand, &casn_write_cache_variants);
++	if (!op) {
++		devm_kfree(spinand->slave->dev, write_ops);
++		return -ENOTSUPP;
++	}
++	spinand->op_templates.write_cache = op;
++
++	return 0;
++}
++
++static int spinand_set_update_op_variants(struct spinand_device *spinand,
++					  struct nand_casn *casn)
++{
++	struct spinand_op_variants casn_update_cache_variants;
++	struct spi_mem_op *update_ops;
++	const struct spi_mem_op *op;
++	int i = 0;
++
++	update_ops = devm_kzalloc(spinand->slave->dev,
++				  sizeof(struct spi_mem_op) *
++				  hweight8(casn->sdr_update_cap),
++				  GFP_KERNEL);
++	if (!update_ops)
++		return -ENOMEM;
++
++	if (FIELD_GET(SDR_UPDATE_1_1_4, casn->sdr_update_cap)) {
++		update_ops[i] = (struct spi_mem_op)
++			SPINAND_CASN_PROG_LOAD_X4(
++				false, casn->sdr_update_1_1_4.addr_nbytes, 0,
++				NULL, 0);
++		i++;
++	}
++	if (FIELD_GET(SDR_UPDATE_1_1_1, casn->sdr_update_cap)) {
++		update_ops[i] = (struct spi_mem_op)
++			SPINAND_CASN_PROG_LOAD(
++				false, casn->sdr_update_1_1_1.addr_nbytes, 0,
++				NULL, 0);
++		i++;
++	}
++
++	casn_update_cache_variants = (struct spinand_op_variants){
++		.ops = update_ops,
++		.nops = hweight8(casn->sdr_update_cap),
++	};
++
++	op = spinand_select_op_variant(spinand, &casn_update_cache_variants);
++	if (!op) {
++		devm_kfree(spinand->slave->dev, update_ops);
++		return -ENOTSUPP;
++	}
++	spinand->op_templates.update_cache = op;
++
++	return 0;
++}
++
++static int spinand_init_via_casn(struct spinand_device *spinand,
++				 struct nand_casn *casn)
++{
++	struct nand_device *nand = spinand_to_nand(spinand);
++	u32 val;
++	int ret;
++	int i;
++
++	/* Set members of nand->memorg via CASN. */
++	for (i = 0; i < 9; i++) {
++		val = be32_to_cpu(*(&casn->bits_per_cell + i));
++		memcpy((u32 *)&nand->memorg.bits_per_cell + i, &val, sizeof(u32));
++	}
++	nand->eccreq.strength = be32_to_cpu(casn->ecc_strength);
++	nand->eccreq.step_size = be32_to_cpu(casn->ecc_step_size);
++	spinand->flags = casn->flags;
++
++	if (spinand->flags & SPINAND_SUP_ADV_ECC_STATUS) {
++		spinand->eccinfo = (struct spinand_ecc_info) {
++			&spinand_casn_get_ecc_status, &spinand_casn_ooblayout};
++	} else {
++		spinand->eccinfo = (struct spinand_ecc_info) {
++			NULL, &spinand_casn_ooblayout };
++	}
++
++	spinand->advecc_high_ops = devm_kzalloc(spinand->slave->dev,
++						sizeof(struct spi_mem_op),
++						GFP_KERNEL);
++	if (!spinand->advecc_high_ops)
++		return -ENOMEM;
++	spinand->advecc_low_ops = devm_kzalloc(spinand->slave->dev,
++					       sizeof(struct spi_mem_op),
++					       GFP_KERNEL);
++	if (!spinand->advecc_low_ops)
++		return -ENOMEM;
++	spinand->casn_oob = devm_kzalloc(spinand->slave->dev,
++					 sizeof(struct CASN_OOB),
++					 GFP_KERNEL);
++	if (!spinand->casn_oob)
++		return -ENOMEM;
++	spinand->advecc_high = devm_kzalloc(spinand->slave->dev,
++					    sizeof(struct CASN_ADVECC),
++					    GFP_KERNEL);
++	if (!spinand->advecc_high)
++		return -ENOMEM;
++	spinand->advecc_low = devm_kzalloc(spinand->slave->dev,
++					   sizeof(struct CASN_ADVECC),
++					   GFP_KERNEL);
++	if (!spinand->advecc_low)
++		return -ENOMEM;
++
++	*spinand->advecc_high_ops = (struct spi_mem_op)
++		SPINAND_CASN_ADVECC_OP(casn->ecc_status_high, spinand->scratchbuf);
++	*spinand->advecc_low_ops = (struct spi_mem_op)
++		SPINAND_CASN_ADVECC_OP(casn->ecc_status_low, spinand->scratchbuf);
++
++	memcpy(spinand->casn_oob, &casn->casn_oob, sizeof(struct CASN_OOB));
++
++	spinand->advecc_high->cmd = casn->ecc_status_high.cmd;
++	spinand->advecc_high->mask = be16_to_cpu(casn->ecc_status_high.status_mask);
++	spinand->advecc_high->shift = spinand->advecc_high->mask ?
++				      ffs(spinand->advecc_high->mask)-1 : 0;
++	spinand->advecc_high->pre_op = casn->ecc_status_high.pre_op;
++	spinand->advecc_high->pre_mask = casn->ecc_status_high.pre_mask;
++
++	spinand->advecc_low->cmd = casn->ecc_status_low.cmd;
++	spinand->advecc_low->mask = be16_to_cpu(casn->ecc_status_low.status_mask);
++	spinand->advecc_low->shift = spinand->advecc_low->mask ?
++				     ffs(spinand->advecc_low->mask)-1 : 0;
++	spinand->advecc_low->pre_op = casn->ecc_status_low.pre_op;
++	spinand->advecc_low->pre_mask = casn->ecc_status_low.pre_mask;
++
++	spinand->advecc_low_bitcnt = hweight16(spinand->advecc_low->mask);
++
++	spinand->advecc_noerr_status = casn->advecc_noerr_status;
++	spinand->advecc_uncor_status = casn->advecc_uncor_status;
++	spinand->advecc_post_op = casn->advecc_post_op;
++	spinand->advecc_post_mask = casn->advecc_post_mask;
++	spinand->eccsr_math_op[0] = eccsr_none_op;
++	spinand->eccsr_math_op[1] = eccsr_and_op;
++	spinand->eccsr_math_op[2] = eccsr_add_op;
++	spinand->eccsr_math_op[3] = eccsr_minus_op;
++	spinand->eccsr_math_op[4] = eccsr_mul_op;
++
++	ret = spinand_set_read_op_variants(spinand, casn);
++	if (ret < 0)
++		return ret;
++	ret = spinand_set_write_op_variants(spinand, casn);
++	if (ret < 0)
++		return ret;
++	ret = spinand_set_update_op_variants(spinand, casn);
++	if (ret < 0)
++		return ret;
++
++	return 0;
++}
++
++static void spinand_dump_casn(struct spinand_device *spinand, struct nand_casn *casn)
++{
++	int i;
++
++	dev_dbg(spinand->slave->dev,
++		"---Start dumping full CASN page---\n");
++	for (i = 0; i < 64; i++)
++		pr_debug("0x%08x", *((u32 *)casn + i));
++
++	pr_debug("** Dump critical fields **\n");
++	pr_debug("signature: 0x%04x\n", be32_to_cpu(casn->signature));
++	pr_debug("version: v%u.%u\n", casn->version >> 4, casn->version & 0xf);
++	pr_debug("[Memory Organization]\n");
++	pr_debug("  bits_per_cell: %d\n", be32_to_cpu(casn->bits_per_cell));
++	pr_debug("  bytes_per_page: %d\n", be32_to_cpu(casn->bytes_per_page));
++	pr_debug("  spare_bytes_per_page: %d\n",
++		 be32_to_cpu(casn->spare_bytes_per_page));
++	pr_debug("  pages_per_block: %d\n",
++		 be32_to_cpu(casn->pages_per_block));
++	pr_debug("  blocks_per_lun: %d\n", be32_to_cpu(casn->blocks_per_lun));
++	pr_debug("  max_bb_per_lun: %d\n", be32_to_cpu(casn->max_bb_per_lun));
++	pr_debug("  planes_per_lun: %d\n", be32_to_cpu(casn->planes_per_lun));
++	pr_debug("  luns_per_target: %d\n",
++		 be32_to_cpu(casn->luns_per_target));
++	pr_debug("  total_target: %d\n", be32_to_cpu(casn->total_target));
++	pr_debug("[flags]\n");
++	pr_debug("  0. Have QE bit? %s\n",
++		casn->flags & SPINAND_HAS_QE_BIT ? "Yes" : "No");
++	pr_debug("  1. Have continuous read feature bit? %s\n",
++		casn->flags & SPINAND_HAS_CR_FEAT_BIT ? "Yes" : "No");
++	pr_debug("  2. Support continuous read? %s\n",
++		casn->flags & SPINAND_SUP_CR ? "Yes" : "No");
++	pr_debug("  3. Support on-die ECC? %s\n",
++		casn->flags & SPINAND_SUP_ON_DIE_ECC ? "Yes" : "No");
++	pr_debug("  4. Support legacy ECC status? %s\n",
++		casn->flags & SPINAND_SUP_LEGACY_ECC_STATUS ? "Yes" : "No");
++	pr_debug("  5. Support advanced ECC status? %s\n",
++		casn->flags & SPINAND_SUP_ADV_ECC_STATUS ? "Yes" : "No");
++	pr_debug("  6. ECC parity readable? %s\n",
++		casn->flags & SPINAND_ECC_PARITY_READABLE ? "Yes" : "No");
++	pr_debug("[R/W ability]\n");
++	pr_debug("  read ability: %x\n", be16_to_cpu(casn->sdr_read_cap));
++	pr_debug("  write ability: %x\n", casn->sdr_write_cap);
++	pr_debug("  update ability: %x\n", casn->sdr_update_cap);
++	pr_debug("advanced ECC no error state: %x\n",
++		 casn->advecc_noerr_status);
++	pr_debug("advecced ECC uncorrectable state: %x\n",
++		 casn->advecc_uncor_status);
++	pr_debug("CRC: 0x%04x\n", be16_to_cpu(casn->crc));
++
++	dev_dbg(spinand->slave->dev,
++		"---Dumping full CASN page ends here.---\n");
++}
++
+ static int spinand_detect(struct spinand_device *spinand)
+ {
+ 	struct nand_device *nand = spinand_to_nand(spinand);
++	struct udevice *dev = spinand->slave->dev;
++	struct nand_casn *casn;
++	char manufacturer[14];
++	unsigned int sel = 0;
++	char model[17];
+ 	int ret;
+ 
+ 	ret = spinand_reset_op(spinand);
+ 	if (ret)
+ 		return ret;
+ 
+-	ret = spinand_id_detect(spinand);
+-	if (ret) {
+-		dev_err(spinand->slave->dev, "unknown raw ID %02x %02x %02x %02x\n",
+-			spinand->id.data[0], spinand->id.data[1],
+-			spinand->id.data[2], spinand->id.data[3]);
+-		return ret;
++	spinand->use_casn = false;
++	casn = kzalloc((sizeof(struct nand_casn) * CASN_PAGE_V1_COPIES), GFP_KERNEL);
++	if (!casn)
++		return -ENOMEM;
++
++	ret = spinand_casn_detect(spinand, casn, &sel);
++	if (!ret) {
++		spinand->use_casn = true;
++		strncpy(manufacturer, casn[sel].manufacturer, sizeof(manufacturer)-1);
++		sanitize_string(manufacturer, sizeof(manufacturer));
++		strncpy(model, casn[sel].model, sizeof(model)-1);
++		sanitize_string(model, sizeof(model));
++
++		spinand_dump_casn(spinand, casn + sel);
++
++		ret = spinand_init_via_casn(spinand, casn + sel);
++		if (ret)
++			dev_err(dev, "Initilize spinand via CASN failed: %d\n", ret);
++	}
++
++	if (ret < 0) {
++		dev_warn(dev, "Fallback to read ID\n");
++
++		ret = spinand_reset_op(spinand);
++		if (ret)
++			goto free_casn;
++		ret = spinand_id_detect(spinand);
++		if (ret) {
++			dev_err(dev, "unknown raw ID %*phN\n", SPINAND_MAX_ID_LEN,
++				spinand->id.data);
++			goto free_casn;
++		}
+ 	}
+ 
+ 	if (nand->memorg.ntargets > 1 && !spinand->select_target) {
+-		dev_err(spinand->slave->dev,
++		dev_err(dev,
+ 			"SPI NANDs with more than one die must implement ->select_target()\n");
+ 		return -EINVAL;
++		goto free_casn;
++	}
++
++	if (spinand->use_casn) {
++		dev_info(spinand->slave->dev,
++			 "%s %s SPI NAND was found.\n", manufacturer, model);
++	} else {
++		dev_info(spinand->slave->dev,
++			 "%s SPI NAND was found.\n", spinand->manufacturer->name);
+ 	}
+ 
+-	dev_info(spinand->slave->dev,
+-		 "%s SPI NAND was found.\n", spinand->manufacturer->name);
+-	dev_info(spinand->slave->dev,
+-		 "%llu MiB, block size: %zu KiB, page size: %zu, OOB size: %u\n",
++	dev_info(dev, "%llu MiB, block size: %zu KiB, page size: %zu, OOB size: %u\n",
+ 		 nanddev_size(nand) >> 20, nanddev_eraseblock_size(nand) >> 10,
+ 		 nanddev_page_size(nand), nanddev_per_page_oobsize(nand));
+ 
+-	return 0;
++free_casn:
++	kfree(casn);
++
++	return ret;
+ }
+ 
+ static int spinand_noecc_ooblayout_ecc(struct mtd_info *mtd, int section,
+--- /dev/null
++++ b/include/linux/mtd/casn.h
+@@ -0,0 +1,191 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2023 MediaTek Inc. All Rights Reserved.
++ *
++ * Author: SkyLake.Huang <skylake.huang@mediatek.com>
++ */
++
++#ifndef __LINUX_MTD_CASN_H
++#define __LINUX_MTD_CASN_H
++
++#define CASN_CRC_BASE	0x4341
++#define CASN_SIGNATURE	0x4341534EU
++#define SPINAND_CASN_V1_CRC_OFS (254)
++#define CASN_PAGE_V1_COPIES     (3)
++
++#define SDR_READ_1_1_1		BIT(0)
++#define SDR_READ_1_1_1_FAST	BIT(1)
++#define SDR_READ_1_1_2		BIT(2)
++#define SDR_READ_1_2_2		BIT(3)
++#define SDR_READ_1_1_4		BIT(4)
++#define SDR_READ_1_4_4		BIT(5)
++#define SDR_READ_1_1_8		BIT(6)
++#define SDR_READ_1_8_8		BIT(7)
++
++#define SDR_WRITE_1_1_1		BIT(0)
++#define SDR_WRITE_1_1_4		BIT(1)
++
++#define SDR_UPDATE_1_1_1	BIT(0)
++#define SDR_UPDATE_1_1_4	BIT(1)
++
++struct op_slice {
++	u8 cmd_opcode;
++#if defined(__LITTLE_ENDIAN_BITFIELD)
++	u8 dummy_nbytes : 4;
++	u8 addr_nbytes : 4;
++#elif defined(__BIG_ENDIAN_BITFIELD)
++	u8 addr_nbytes : 4;
++	u8 dummy_nbytes : 4;
++#endif
++};
++
++struct SPINAND_FLAGS {
++#if defined(__LITTLE_ENDIAN_BITFIELD)
++	u8 has_qe_bit : 1;
++	u8 has_cr_feat_bit : 1;
++	u8 conti_read_cap : 1;
++	u8 on_die_ecc : 1;
++	u8 legacy_ecc_status : 1;
++	u8 adv_ecc_status : 1;
++	u8 ecc_parity_readable : 1;
++	u8 ecc_alg : 1; /* ECC algorithm */
++#elif defined(__BIG_ENDIAN_BITFIELD)
++	u8 ecc_alg : 1; /* ECC algorithm */
++	u8 ecc_parity_readable : 1;
++	u8 adv_ecc_status : 1;
++	u8 legacy_ecc_status : 1;
++	u8 on_die_ecc : 1;
++	u8 conti_read_cap : 1;
++	u8 has_cr_feat_bit : 1;
++	u8 has_qe_bit : 1;
++#endif
++};
++
++struct ADV_ECC_STATUS {
++	u8 cmd;
++	u8 addr;
++	u8 addr_nbytes;
++	u8 addr_buswidth;
++	u8 dummy_nbytes;
++	u8 dummy_buswidth;
++	u8 status_nbytes;
++	u16 status_mask;
++	u8 pre_op; /* pre-process operator */
++	u8 pre_mask; /* pre-process mask */
++} __packed;
++
++struct CASN_OOB {
++	u8 layout_type;
++
++	/* OOB free layout */
++	u8 free_start;
++	u8 free_length;
++	u8 bbm_length;
++
++	/* ECC parity layout */
++	u8 ecc_parity_start;
++	u8 ecc_parity_space;
++	u8 ecc_parity_real_length;
++};
++
++enum oob_overall {
++	OOB_DISCRETE = 0,
++	OOB_CONTINUOUS,
++};
++
++struct nand_casn {
++	/* CASN signature must be 4 chars: 'C','A','S','N'  */
++	union {
++		u8 sig[4];
++		u32 signature;
++	};
++
++	u8 version;
++	char manufacturer[13];
++	char model[16];
++
++	__be32 bits_per_cell;
++	__be32 bytes_per_page;
++	__be32 spare_bytes_per_page;
++	__be32 pages_per_block;
++	__be32 blocks_per_lun;
++	__be32 max_bb_per_lun;
++	__be32 planes_per_lun;
++	__be32 luns_per_target;
++	__be32 total_target;
++
++	__be32 ecc_strength;
++	__be32 ecc_step_size;
++
++	u8 flags;
++	u8 reserved1;
++
++	__be16 sdr_read_cap;
++	struct op_slice sdr_read_1_1_1;
++	struct op_slice sdr_read_1_1_1_fast;
++	struct op_slice sdr_read_1_1_2;
++	struct op_slice sdr_read_1_2_2;
++	struct op_slice sdr_read_1_1_4;
++	struct op_slice sdr_read_1_4_4;
++	struct op_slice sdr_read_1_1_8;
++	struct op_slice sdr_read_1_8_8;
++
++	struct op_slice sdr_cont_read_1_1_1;
++	struct op_slice sdr_cont_read_1_1_1_fast;
++	struct op_slice sdr_cont_read_1_1_2;
++	struct op_slice sdr_cont_read_1_2_2;
++	struct op_slice sdr_cont_read_1_1_4;
++	struct op_slice sdr_cont_read_1_4_4;
++	struct op_slice sdr_cont_read_1_1_8;
++	struct op_slice sdr_cont_read_1_8_8;
++
++	__be16 ddr_read_cap;
++	struct op_slice ddr_read_1_1_1;
++	struct op_slice ddr_read_1_1_1_fast;
++	struct op_slice ddr_read_1_1_2;
++	struct op_slice ddr_read_1_2_2;
++	struct op_slice ddr_read_1_1_4;
++	struct op_slice ddr_read_1_4_4;
++	struct op_slice ddr_read_1_1_8;
++	struct op_slice ddr_read_1_8_8;
++
++	struct op_slice ddr_cont_read_1_1_1;
++	struct op_slice ddr_cont_read_1_1_1_fast;
++	struct op_slice ddr_cont_read_1_1_2;
++	struct op_slice ddr_cont_read_1_2_2;
++	struct op_slice ddr_cont_read_1_1_4;
++	struct op_slice ddr_cont_read_1_4_4;
++	struct op_slice ddr_cont_read_1_1_8;
++	struct op_slice ddr_cont_read_1_8_8;
++
++	u8 sdr_write_cap;
++	struct op_slice sdr_write_1_1_1;
++	struct op_slice sdr_write_1_1_4;
++	struct op_slice reserved2[6];
++	u8 ddr_write_cap;
++	struct op_slice reserved3[8];
++
++	u8 sdr_update_cap;
++	struct op_slice sdr_update_1_1_1;
++	struct op_slice sdr_update_1_1_4;
++	struct op_slice reserved4[6];
++	u8 ddr_update_cap;
++	struct op_slice reserved5[8];
++
++	struct CASN_OOB casn_oob;
++
++	/* Advanced ECC status CMD0 (higher bits) */
++	struct ADV_ECC_STATUS ecc_status_high;
++	/* Advanced ECC status CMD1 (lower bits) */
++	struct ADV_ECC_STATUS ecc_status_low;
++
++	u8 advecc_noerr_status;
++	u8 advecc_uncor_status;
++	u8 advecc_post_op;
++	u8 advecc_post_mask;
++
++	u8 reserved6[5];
++	__be16 crc;
++} __packed;
++
++#endif /* __LINUX_MTD_CASN_H */
+--- a/include/linux/mtd/spinand.h
++++ b/include/linux/mtd/spinand.h
+@@ -68,6 +68,59 @@
+ 		   SPI_MEM_OP_NO_DUMMY,					\
+ 		   SPI_MEM_OP_NO_DATA)
+ 
++/* Macros for CASN */
++#define SPINAND_CASN_PAGE_READ_FROM_CACHE_OP(fast, naddr, addr, ndummy, buf, len) \
++	SPI_MEM_OP(SPI_MEM_OP_CMD(fast ? 0x0b : 0x03, 1),		\
++		   SPI_MEM_OP_ADDR(naddr, addr, 1),			\
++		   SPI_MEM_OP_DUMMY(ndummy, 1),				\
++		   SPI_MEM_OP_DATA_IN(len, buf, 1))
++
++#define SPINAND_CASN_PAGE_READ_FROM_CACHE_X2_OP(naddr, addr, ndummy, buf, len)	\
++	SPI_MEM_OP(SPI_MEM_OP_CMD(0x3b, 1),				\
++		   SPI_MEM_OP_ADDR(naddr, addr, 1),			\
++		   SPI_MEM_OP_DUMMY(ndummy, 1),				\
++		   SPI_MEM_OP_DATA_IN(len, buf, 2))
++
++#define SPINAND_CASN_PAGE_READ_FROM_CACHE_DUALIO_OP(naddr, addr, ndummy, buf, len)	\
++		SPI_MEM_OP(SPI_MEM_OP_CMD(0xbb, 1),			\
++			   SPI_MEM_OP_ADDR(naddr, addr, 2),		\
++			   SPI_MEM_OP_DUMMY(ndummy, 2),			\
++			   SPI_MEM_OP_DATA_IN(len, buf, 2))
++
++#define SPINAND_CASN_PAGE_READ_FROM_CACHE_X4_OP(naddr, addr, ndummy, buf, len)	\
++	SPI_MEM_OP(SPI_MEM_OP_CMD(0x6b, 1),				\
++		   SPI_MEM_OP_ADDR(naddr, addr, 1),			\
++		   SPI_MEM_OP_DUMMY(ndummy, 1),				\
++		   SPI_MEM_OP_DATA_IN(len, buf, 4))
++
++#define SPINAND_CASN_PAGE_READ_FROM_CACHE_QUADIO_OP(naddr, addr, ndummy, buf, len)	\
++	SPI_MEM_OP(SPI_MEM_OP_CMD(0xeb, 1),				\
++		   SPI_MEM_OP_ADDR(naddr, addr, 4),			\
++		   SPI_MEM_OP_DUMMY(ndummy, 4),				\
++		   SPI_MEM_OP_DATA_IN(len, buf, 4))
++
++#define SPINAND_CASN_PROG_LOAD(reset, naddr, addr, buf, len)		\
++	SPI_MEM_OP(SPI_MEM_OP_CMD(reset ? 0x02 : 0x84, 1),		\
++		   SPI_MEM_OP_ADDR(naddr, addr, 1),			\
++		   SPI_MEM_OP_NO_DUMMY,					\
++		   SPI_MEM_OP_DATA_OUT(len, buf, 1))
++
++#define SPINAND_CASN_PROG_LOAD_X4(reset, naddr, addr, buf, len)		\
++	SPI_MEM_OP(SPI_MEM_OP_CMD(reset ? 0x32 : 0x34, 1),		\
++		   SPI_MEM_OP_ADDR(naddr, addr, 1),			\
++		   SPI_MEM_OP_NO_DUMMY,					\
++		   SPI_MEM_OP_DATA_OUT(len, buf, 4))
++
++#define SPINAND_CASN_ADVECC_OP(casn_adv_ecc_status, buf)			\
++	SPI_MEM_OP(SPI_MEM_OP_CMD(casn_adv_ecc_status.cmd, 1),			\
++		   SPI_MEM_OP_ADDR(casn_adv_ecc_status.addr_nbytes,		\
++				   casn_adv_ecc_status.addr,			\
++				   casn_adv_ecc_status.addr_buswidth),		\
++		   SPI_MEM_OP_DUMMY(casn_adv_ecc_status.dummy_nbytes,		\
++				    casn_adv_ecc_status.dummy_buswidth),	\
++		   SPI_MEM_OP_DATA_IN(casn_adv_ecc_status.status_nbytes, buf, 1))
++/* Macros for CASN end */
++
+ #define SPINAND_PAGE_READ_FROM_CACHE_OP(fast, addr, ndummy, buf, len)	\
+ 	SPI_MEM_OP(SPI_MEM_OP_CMD(fast ? 0x0b : 0x03, 1),		\
+ 		   SPI_MEM_OP_ADDR(2, addr, 1),				\
+@@ -295,6 +348,11 @@ struct spinand_ecc_info {
+ 
+ #define SPINAND_HAS_QE_BIT		BIT(0)
+ #define SPINAND_HAS_CR_FEAT_BIT		BIT(1)
++#define SPINAND_SUP_CR			BIT(2)
++#define SPINAND_SUP_ON_DIE_ECC		BIT(3)
++#define SPINAND_SUP_LEGACY_ECC_STATUS	BIT(4)
++#define SPINAND_SUP_ADV_ECC_STATUS	BIT(5)
++#define SPINAND_ECC_PARITY_READABLE	BIT(6)
+ 
+ /**
+  * struct spinand_info - Structure used to describe SPI NAND chips
+@@ -366,6 +424,28 @@ struct spinand_info {
+ 	}
+ 
+ /**
++ * struct CASN_ADVECC - CASN's advanced ECC description
++ * @cmd: Command to access SPI-NAND on-chip ECC status registers
++ * @mask: Mask to access SPI-NAND on-chip ECC status registers.
++ *	  ADV_ECC_STATUS->status_nbytes | CASN_ADVECC->mask
++ *			1		|      0 to 0xff
++ *			2		|     0 to 0xffff
++ * @shift: How many bits to shift to get on-chip ECC status
++ * @pre_op: This comes from CASN page's ADV_ECC_STATUS's pre_op.
++ *	    After reading on-chip ECC status, we need to do some math
++ *	    operations if this is specified.
++ * @pre_mask: This comes from CASN page's ADV_ECC_STATUS's pre_mask.
++ *	      This is used in companion with pre_op above.
++ */
++struct CASN_ADVECC {
++	u8 cmd;
++	u16 mask;
++	u8 shift;
++	u8 pre_op;
++	u8 pre_mask;
++};
++
++/**
+  * struct spinand_device - SPI NAND device instance
+  * @base: NAND device instance
+  * @slave: pointer to the SPI slave object
+@@ -419,6 +499,23 @@ struct spinand_device {
+ 	u8 *oobbuf;
+ 	u8 *scratchbuf;
+ 	const struct spinand_manufacturer *manufacturer;
++
++	bool use_casn;
++	struct nand_casn *casn;
++	struct spi_mem_op *advecc_high_ops; /* ops to read higher part of advanced ECC status*/
++	struct spi_mem_op *advecc_low_ops;
++	struct CASN_OOB *casn_oob;
++	struct CASN_ADVECC *advecc_high;
++	struct CASN_ADVECC *advecc_low;
++
++	u8 advecc_low_bitcnt;
++	u8 advecc_noerr_status;
++	u8 advecc_uncor_status;
++	u8 advecc_post_op;
++	u8 advecc_post_mask;
++
++	size_t (*eccsr_math_op[4])(size_t, size_t);
++
+ 	void *priv;
+ };
+ 

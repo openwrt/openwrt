@@ -155,7 +155,9 @@ $(eval $(call KernelPackage,mlx_wdt))
 define KernelPackage/mlxreg
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Mellanox platform register access
-  DEPENDS:=@TARGET_x86 +kmod-i2c-mux-mlxcpld
+  DEPENDS:=@TARGET_x86 \
+	+kmod-i2c-mux-mlxcpld \
+	+kmod-i2c-mux-reg
   KCONFIG:= \
 	CONFIG_MELLANOX_PLATFORM=y \
 	CONFIG_MLX_PLATFORM \
@@ -220,7 +222,7 @@ define KernelPackage/pinctrl-mcp23s08
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Microchip MCP23xxx I/O expander
   HIDDEN:=1
-  DEPENDS:=@GPIO_SUPPORT +kmod-regmap-core
+  DEPENDS:=@GPIO_SUPPORT @PINCTRL_SUPPORT +kmod-regmap-core
   KCONFIG:=CONFIG_PINCTRL_MCP23S08
   FILES:=$(LINUX_DIR)/drivers/pinctrl/pinctrl-mcp23s08.ko
   AUTOLOAD:=$(call AutoLoad,40,pinctrl-mcp23s08)

@@ -18,10 +18,20 @@ define gen_package_wildcard
   $(1)$$(if $$(filter -%,$$(ABIV_$(1))),,[^a-z$(if $(CONFIG_USE_APK),,-)])*
 endef
 
+# 1: command and initial arguments
+# 2: arguments list
+# 3: tmp filename
+define maybe_use_xargs
+  $(if $(word 512,$(2)), \
+    $(file >$(3),$(2)) $(XARGS) $(1) < "$(3)"; rm "$(3)", \
+    $(1) $(2))
+endef
+
 # 1: package name
 # 2: candidate ipk files
 define remove_ipkg_files
-  $(if $(strip $(2)),$(SCRIPT_DIR)/ipkg-remove $(1) $(2))
+  $(if $(strip $(2)), \
+    $(call maybe_use_xargs,$(SCRIPT_DIR)/ipkg-remove $(1),$(2),$(TMP_DIR)/$(1).in))
 endef
 
 # 1: package name
@@ -222,6 +232,7 @@ $(_endef)
     $$(PACK_$(1)) : export DESCRIPTION=$$(Package/$(1)/description)
     $$(PACK_$(1)) : export PATH=$$(TARGET_PATH_PKG)
     $$(PACK_$(1)) : export PKG_SOURCE_DATE_EPOCH:=$(PKG_SOURCE_DATE_EPOCH)
+    $$(PACK_$(1)) : export SOURCE_DATE_EPOCH:=$(PKG_SOURCE_DATE_EPOCH)
     $(PKG_INFO_DIR)/$(1).provides $$(PACK_$(1)): $(STAMP_BUILT) $(INCLUDE_DIR)/package-pack.mk
 	rm -rf $$(IDIR_$(1))
 ifeq ($$(CONFIG_USE_APK),)
@@ -343,7 +354,7 @@ else
 
 	if [ -n "$(USERID)" ]; then echo $(USERID) > $$(IDIR_$(1))/lib/apk/packages/$(1).rusers; fi;
 	if [ -n "$(ALTERNATIVES)" ]; then echo $(ALTERNATIVES) > $$(IDIR_$(1))/lib/apk/packages/$(1).alternatives; fi;
-	(cd $$(IDIR_$(1)) && find . -type f,l -printf "/%P\n" > $$(IDIR_$(1))/lib/apk/packages/$(1).list)
+	(cd $$(IDIR_$(1)) && find . -type f,l -printf "/%P\n" | sort > $(TMP_DIR)/$(1).list && mv $(TMP_DIR)/$(1).list $$(IDIR_$(1))/lib/apk/packages/$(1).list)
 	# Move conffiles to IDIR and build conffiles_static with csums
 	if [ -f $$(ADIR_$(1))/conffiles ]; then \
 		mv -f $$(ADIR_$(1))/conffiles $$(IDIR_$(1))/lib/apk/packages/$(1).conffiles; \
@@ -397,8 +408,7 @@ else
 	  $$(APK_SCRIPTS_$(1)) \
 	  --info "depends:$$(foreach depends,$$(subst $$(comma),$$(space),$$(subst $$(space),,$$(subst $$(paren_right),,$$(subst $$(paren_left),,$$(Package/$(1)/DEPENDS))))),$$(depends))" \
 	  --files "$$(IDIR_$(1))" \
-	  --output "$$(PACK_$(1))" \
-	  --sign "$(BUILD_KEY_APK_SEC)"
+	  --output "$$(PACK_$(1))"
 endif
 
 	@[ -f $$(PACK_$(1)) ]

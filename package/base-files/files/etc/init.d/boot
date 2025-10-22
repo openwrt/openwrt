@@ -10,10 +10,13 @@ uci_apply_defaults() {
 	cd /etc/uci-defaults || return 0
 	files="$(ls)"
 	[ -z "$files" ] && return 0
+	applied=""
 	for file in $files; do
-		( . "./$(basename $file)" ) && rm -f "$file"
+		( . "./$(basename $file)" ) && applied="$applied $file"
 	done
 	uci commit
+	sync
+	rm -f $applied
 }
 
 boot() {

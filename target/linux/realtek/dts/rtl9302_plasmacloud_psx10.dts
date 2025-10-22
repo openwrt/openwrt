@@ -1,0 +1,73 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+/dts-v1/;
+
+#include "rtl9302_plasmacloud_common.dtsi"
+
+/ {
+	compatible = "plasmacloud,psx10", "realtek,rtl838x-soc";
+	model = "Plasma Cloud PSX10";
+
+	i2c1: i2c-gpio1 {
+		compatible = "i2c-gpio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		sda-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+		scl-gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
+
+		i2c-gpio,delay-us = <5>;	/* ~100 kHz */
+	};
+
+	sfp0: sfp-lan9 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c0>;
+		los-gpio = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio0 12 GPIO_ACTIVE_LOW>;
+		tx-disable-gpio = <&gpio0 22 GPIO_ACTIVE_HIGH>;
+	};
+
+	sfp1: sfp-lan10 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c1>;
+		los-gpio = <&gpio0 16 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio = <&gpio0 20 GPIO_ACTIVE_LOW>;
+		tx-disable-gpio = <&gpio0 21 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&mdio_bus0 {
+	INTERNAL_PHY(26)
+	INTERNAL_PHY(27)
+};
+
+&switch0 {
+	ports {
+		port@26 {
+			reg = <26>;
+			label = "lan9";
+			pcs-handle = <&serdes8>;
+			phy-handle = <&phy26>;
+			phy-mode = "1000base-x";
+			sfp = <&sfp0>;
+			led-set = <0>;
+			managed = "in-band-status";
+
+			nvmem-cells = <&macaddr_ubootenv_ethaddr 9>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		port@27 {
+			reg = <27>;
+			label = "lan10";
+			pcs-handle = <&serdes9>;
+			phy-handle = <&phy27>;
+			phy-mode = "1000base-x";
+			sfp = <&sfp1>;
+			led-set = <0>;
+			managed = "in-band-status";
+
+			nvmem-cells = <&macaddr_ubootenv_ethaddr 10>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
+};

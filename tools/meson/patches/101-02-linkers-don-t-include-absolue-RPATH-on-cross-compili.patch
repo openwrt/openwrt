@@ -1,0 +1,167 @@
+From 6d3899390bf75985eb79a106f6a487b335509114 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Sun, 12 Oct 2025 13:57:15 +0200
+Subject: [PATCH] linkers: don't include absolue RPATH on cross-compiling
+
+There is currently a reproducible problem when cross-compiling with the
+inclusion of external shared library RPATH entry. Meson normally
+includes RPATH entry to permit the usage of the tool in the build process
+and later removes it on the intall phase. This might be ok and permits
+creating reproducible build to some degree when building on host (as we
+can expect the shared library are always placed on a standard directory
+path and have a consistent RPATH)
+
+This doesn't apply for cross-compilation scenario where the shared
+library might be provided from an arbritrary directory to be later
+packed in the final system (for example a squashfs image)
+
+On top of this on cross-compilation on 99% of the scenario, it's not
+really possible to run the just built tool for build usage as it
+probably target a different arch.
+
+To permit building REAL reproducible binary, add extra logic to skip the
+inclusion of such library path in RPATH if we detect a cross-compilation
+scenario and limit the inclusion of library path in RPATH only to
+relative path (expected to be the ones specific to the building
+binary/internal shared library)
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ mesonbuild/linkers/linkers.py | 57 ++++++++++++++++++++++++-----------
+ 1 file changed, 40 insertions(+), 17 deletions(-)
+
+--- a/mesonbuild/linkers/linkers.py
++++ b/mesonbuild/linkers/linkers.py
+@@ -523,11 +523,11 @@ class MetrowerksStaticLinkerARM(Metrower
+ class MetrowerksStaticLinkerEmbeddedPowerPC(MetrowerksStaticLinker):
+     id = 'mwldeppc'
+ 
+-def prepare_rpaths(raw_rpaths: T.Tuple[str, ...], build_dir: str, from_dir: str) -> T.List[str]:
++def prepare_rpaths(env: Environment, raw_rpaths: T.Tuple[str, ...], build_dir: str, from_dir: str) -> T.List[str]:
+     # The rpaths we write must be relative if they point to the build dir,
+     # because otherwise they have different length depending on the build
+     # directory. This breaks reproducible builds.
+-    internal_format_rpaths = [evaluate_rpath(p, build_dir, from_dir) for p in raw_rpaths]
++    internal_format_rpaths = [evaluate_rpath(env, p, build_dir, from_dir) for p in raw_rpaths]
+     ordered_rpaths = order_rpaths(internal_format_rpaths)
+     return ordered_rpaths
+ 
+@@ -544,11 +544,16 @@ def order_rpaths(rpath_list: T.List[str]
+     return sorted(rpath_list, key=os.path.isabs)
+ 
+ 
+-def evaluate_rpath(p: str, build_dir: str, from_dir: str) -> str:
++def evaluate_rpath(env: Environment, p: str, build_dir: str, from_dir: str) -> str:
+     if p == from_dir:
+         return '' # relpath errors out in this case
+     elif os.path.isabs(p):
+-        return p # These can be outside of build dir.
++        if env.can_run_host_binaries():
++            return p # These can be outside of build dir.
++        # Skip external library if we can't run binaries on host system.
++        # (cross-compilation and no exe_wrapper)
++        else:
++            return ''
+     else:
+         return os.path.relpath(os.path.join(build_dir, p), os.path.join(build_dir, from_dir))
+ 
+@@ -673,7 +678,7 @@ class GnuLikeDynamicLinkerMixin(DynamicL
+             return ([], set())
+         args: T.List[str] = []
+         origin_placeholder = '$ORIGIN'
+-        processed_rpaths = prepare_rpaths(rpath_paths, build_dir, from_dir)
++        processed_rpaths = prepare_rpaths(env, rpath_paths, build_dir, from_dir)
+         # Need to deduplicate rpaths, as macOS's install_name_tool
+         # is *very* allergic to duplicate -delete_rpath arguments
+         # when calling depfixer on installation.
+@@ -683,9 +688,13 @@ class GnuLikeDynamicLinkerMixin(DynamicL
+             rpath_dirs_to_remove.add(p.encode('utf8'))
+         # Build_rpath is used as-is (it is usually absolute).
+         if build_rpath != '':
+-            all_paths.add(build_rpath)
+-            for p in build_rpath.split(':'):
+-                rpath_dirs_to_remove.add(p.encode('utf8'))
++            paths = build_rpath.split(':')
++            for p in paths:
++                # Only include relative paths if we can't run binaries on host system.
++                # (cross-compilation and no exe_wrapper)
++                if env.can_run_host_binaries() or not os.path.isabs(p):
++                    all_paths.add(p)
++                    rpath_dirs_to_remove.add(p.encode('utf8'))
+ 
+         # TODO: should this actually be "for (dragonfly|open)bsd"?
+         if mesonlib.is_dragonflybsd() or mesonlib.is_openbsd():
+@@ -828,10 +837,15 @@ class AppleDynamicLinker(PosixDynamicLin
+         # @loader_path is the equivalent of $ORIGIN on macOS
+         # https://stackoverflow.com/q/26280738
+         origin_placeholder = '@loader_path'
+-        processed_rpaths = prepare_rpaths(rpath_paths, build_dir, from_dir)
++        processed_rpaths = prepare_rpaths(env, rpath_paths, build_dir, from_dir)
+         all_paths = mesonlib.OrderedSet([os.path.join(origin_placeholder, p) for p in processed_rpaths])
+         if build_rpath != '':
+-            all_paths.update(build_rpath.split(':'))
++            paths = build_rpath.split(':')
++            for p in paths:
++                # Only include relative paths if we can't run binaries on host system.
++                # (cross-compilation and no exe_wrapper)
++                if env.can_run_host_binaries() or not os.path.isabs(p):
++                    all_paths.add(p)
+         for rp in all_paths:
+             rpath_dirs_to_remove.add(rp.encode('utf8'))
+             args.extend(self._apply_prefix('-rpath,' + rp))
+@@ -1200,10 +1214,15 @@ class NAGDynamicLinker(PosixDynamicLinke
+             return ([], set())
+         args: T.List[str] = []
+         origin_placeholder = '$ORIGIN'
+-        processed_rpaths = prepare_rpaths(rpath_paths, build_dir, from_dir)
++        processed_rpaths = prepare_rpaths(env, rpath_paths, build_dir, from_dir)
+         all_paths = mesonlib.OrderedSet([os.path.join(origin_placeholder, p) for p in processed_rpaths])
+         if build_rpath != '':
+-            all_paths.add(build_rpath)
++            paths = build_rpath.split(':')
++            for p in paths:
++                # Only include relative paths if we can't run binaries on host system.
++                # (cross-compilation and no exe_wrapper)
++                if env.can_run_host_binaries() or not os.path.isabs(p):
++                    all_paths.add(p)
+         for rp in all_paths:
+             args.extend(self._apply_prefix('-Wl,-Wl,,-rpath,,' + rp))
+ 
+@@ -1454,15 +1473,19 @@ class SolarisDynamicLinker(PosixDynamicL
+                          install_rpath: str) -> T.Tuple[T.List[str], T.Set[bytes]]:
+         if not rpath_paths and not install_rpath and not build_rpath:
+             return ([], set())
+-        processed_rpaths = prepare_rpaths(rpath_paths, build_dir, from_dir)
++        processed_rpaths = prepare_rpaths(env, rpath_paths, build_dir, from_dir)
+         all_paths = mesonlib.OrderedSet([os.path.join('$ORIGIN', p) for p in processed_rpaths])
+         rpath_dirs_to_remove: T.Set[bytes] = set()
+         for p in all_paths:
+             rpath_dirs_to_remove.add(p.encode('utf8'))
+         if build_rpath != '':
+-            all_paths.add(build_rpath)
+-            for p in build_rpath.split(':'):
+-                rpath_dirs_to_remove.add(p.encode('utf8'))
++            paths = build_rpath.split(':')
++            for p in paths:
++                # Only include relative paths if we can't run binaries on host system.
++                # (cross-compilation and no exe_wrapper)
++                if env.can_run_host_binaries() or not os.path.isabs(p):
++                    all_paths.add(p)
++                    rpath_dirs_to_remove.add(p.encode('utf8'))
+ 
+         # In order to avoid relinking for RPATH removal, the binary needs to contain just
+         # enough space in the ELF header to hold the final installation RPATH.
+@@ -1525,7 +1548,12 @@ class AIXDynamicLinker(PosixDynamicLinke
+         if install_rpath != '':
+             all_paths.add(install_rpath)
+         if build_rpath != '':
+-            all_paths.add(build_rpath)
++            paths = build_rpath.split(':')
++            for p in paths:
++                # Only include relative paths if we can't run binaries on host system.
++                # (cross-compilation and no exe_wrapper)
++                if env.can_run_host_binaries() or not os.path.isabs(p):
++                    all_paths.add(p)
+         for p in rpath_paths:
+             all_paths.add(os.path.join(build_dir, p))
+         # We should consider allowing the $LIBPATH environment variable

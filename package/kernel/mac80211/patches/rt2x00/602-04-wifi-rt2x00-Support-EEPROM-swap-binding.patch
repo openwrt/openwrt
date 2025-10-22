@@ -32,13 +32,13 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +
  static int rt2800lib_read_eeprom_mtd(struct rt2x00_dev *rt2x00dev)
  {
- 	int ret = -EINVAL;
-@@ -66,6 +79,8 @@ static int rt2800lib_read_eeprom_mtd(str
+ 	struct device_node *np = rt2x00dev->dev->of_node, *mtd_np = NULL;
+@@ -65,6 +78,8 @@ static int rt2800lib_read_eeprom_mtd(str
  		return ret;
  	}
  
 +	rt2800lib_eeprom_swap(rt2x00dev);
 +
  	dev_info(rt2x00dev->dev, "loaded eeprom from mtd device \"%s\"\n", part);
- #endif
  
+ 	return ret;

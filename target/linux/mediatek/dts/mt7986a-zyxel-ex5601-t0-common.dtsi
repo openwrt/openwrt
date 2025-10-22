@@ -4,10 +4,12 @@
  * Author: Sam.Shih <sam.shih@mediatek.com>
  */
 
-#include "mt7986a.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/leds/common.h>
+#include <dt-bindings/pinctrl/mt65xx.h>
+
+#include "mt7986a.dtsi"
 
 / {
 	aliases {
@@ -23,8 +25,9 @@
 		stdout-path = "serial0:115200n8";
 	};
 
-	memory {
+	memory@40000000 {
 		reg = <0 0x40000000 0 0x40000000>;
+		device_type = "memory";
 	};
 
 	reg_1p8v: regulator-1p8v {
@@ -156,21 +159,20 @@
 };
 
 &spi0 {
-        pinctrl-names = "default";
-        pinctrl-0 = <&spi_flash_pins>;
-        cs-gpios = <0>, <0>;
-        #address-cells = <1>;
-        #size-cells = <0>;
-        status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi_flash_pins>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
 
-        spi_nand: spi_nand@1 {
-                #address-cells = <1>;
-                #size-cells = <1>;
-                compatible = "spi-nand";
-                reg = <1>;
-                spi-max-frequency = <52000000>;
-                spi-tx-bus-width = <4>;
-                spi-rx-bus-width = <4>;
+	spi_nand: spi_nand@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "spi-nand";
+		reg = <0>;
+		spi-max-frequency = <52000000>;
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
 
 		nand_partitions: partitions {
 			compatible = "fixed-partitions";
@@ -190,6 +192,9 @@
 		reg = <0>;
 		phy-mode = "2500base-x";
 
+		nvmem-cells = <&macaddr_factory_2a 0>;
+		nvmem-cell-names = "mac-address";
+
 		fixed-link {
 			speed = <2500>;
 			full-duplex;
@@ -200,8 +205,12 @@
 	gmac1: mac@1 {
 		compatible = "mediatek,eth-mac";
 		reg = <1>;
+		label = "wan";
 		phy-mode = "2500base-x";
 		phy = <&phy6>;
+
+		nvmem-cells = <&macaddr_factory_24 0>;
+		nvmem-cell-names = "mac-address";
 	};
 
 	mdio: mdio-bus {
@@ -295,10 +304,21 @@
 };
 
 &wifi {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
 	status = "okay";
 	pinctrl-names = "default", "dbdc";
 	pinctrl-0 = <&wf_2g_5g_pins>;
 	pinctrl-1 = <&wf_dbdc_pins>;
+	nvmem-cells = <&eeprom_factory>;
+	nvmem-cell-names = "eeprom";
+
+	band@1 {
+		reg = <1>;
+		nvmem-cells = <&macaddr_factory_4 1>;
+		nvmem-cell-names = "mac-address";
+	};
 };
 
 &crypto {
@@ -327,22 +347,22 @@
 		};
 		conf-pu {
 			pins = "SPI2_CS", "SPI2_HOLD", "SPI2_WP";
-			drive-strength = <4>;
-			mediatek,pull-up-adv = <0>;	/* bias-disable */
+			drive-strength = <MTK_DRIVE_4mA>;
+			bias-disable;	/* bias-disable */
 		};
 		conf-pd {
 			pins = "SPI2_CLK", "SPI2_MOSI", "SPI2_MISO";
-			drive-strength = <4>;
-			mediatek,pull-down-adv = <0>;	/* bias-disable */
+			drive-strength = <MTK_DRIVE_4mA>;
+			bias-disable;	/* bias-disable */
 		};
 	};
 
 	uart0_pins: uart0-pins {
-                mux {
-                        function = "uart";
-                        groups = "uart0";
-                };
-        };
+		mux {
+			function = "uart";
+			groups = "uart0";
+		};
+	};
 
 	uart1_pins: uart1-pins {
 		mux {
@@ -365,13 +385,13 @@
 		};
 		conf {
 			pins = "WF0_HB1", "WF0_HB2", "WF0_HB3", "WF0_HB4",
-			       "WF0_HB0", "WF0_HB0_B", "WF0_HB5", "WF0_HB6",
-			       "WF0_HB7", "WF0_HB8", "WF0_HB9", "WF0_HB10",
-			       "WF0_TOP_CLK", "WF0_TOP_DATA", "WF1_HB1",
-			       "WF1_HB2", "WF1_HB3", "WF1_HB4", "WF1_HB0",
-			       "WF1_HB5", "WF1_HB6", "WF1_HB7", "WF1_HB8",
-			       "WF1_TOP_CLK", "WF1_TOP_DATA";
-			drive-strength = <4>;
+				"WF0_HB0", "WF0_HB0_B", "WF0_HB5", "WF0_HB6",
+				"WF0_HB7", "WF0_HB8", "WF0_HB9", "WF0_HB10",
+				"WF0_TOP_CLK", "WF0_TOP_DATA", "WF1_HB1",
+				"WF1_HB2", "WF1_HB3", "WF1_HB4", "WF1_HB0",
+				"WF1_HB5", "WF1_HB6", "WF1_HB7", "WF1_HB8",
+				"WF1_TOP_CLK", "WF1_TOP_DATA";
+			drive-strength = <MTK_DRIVE_4mA>;
 		};
 	};
 
@@ -382,22 +402,22 @@
 		};
 		conf {
 			pins = "WF0_HB1", "WF0_HB2", "WF0_HB3", "WF0_HB4",
-			       "WF0_HB0", "WF0_HB0_B", "WF0_HB5", "WF0_HB6",
-			       "WF0_HB7", "WF0_HB8", "WF0_HB9", "WF0_HB10",
-			       "WF0_TOP_CLK", "WF0_TOP_DATA", "WF1_HB1",
-			       "WF1_HB2", "WF1_HB3", "WF1_HB4", "WF1_HB0",
-			       "WF1_HB5", "WF1_HB6", "WF1_HB7", "WF1_HB8",
-			       "WF1_TOP_CLK", "WF1_TOP_DATA";
-			drive-strength = <4>;
+				"WF0_HB0", "WF0_HB0_B", "WF0_HB5", "WF0_HB6",
+				"WF0_HB7", "WF0_HB8", "WF0_HB9", "WF0_HB10",
+				"WF0_TOP_CLK", "WF0_TOP_DATA", "WF1_HB1",
+				"WF1_HB2", "WF1_HB3", "WF1_HB4", "WF1_HB0",
+				"WF1_HB5", "WF1_HB6", "WF1_HB7", "WF1_HB8",
+				"WF1_TOP_CLK", "WF1_TOP_DATA";
+			drive-strength = <MTK_DRIVE_4mA>;
 		};
 	};
 
-        usb-oc-hog {
-                gpio-hog;
-                gpios = <7 GPIO_ACTIVE_LOW>;
-                input;
-                line-name = "usb-oc";
-        };
+	usb-oc-hog {
+		gpio-hog;
+		gpios = <7 GPIO_ACTIVE_LOW>;
+		input;
+		line-name = "usb-oc";
+	};
 };
 
 &spi1 {
@@ -413,7 +433,7 @@
 		spi-cpol = <1>;
 		channel_count = <1>;
 		debug_level = <4>;       /* 1 = TRC, 2 = DBG, 4 = ERR */
-		reset_gpio = <&pio 25 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&pio 25 GPIO_ACTIVE_HIGH>;
 		ig,enable-spi = <1>;     /* 1: Enable, 0: Disable */
 	};
 };

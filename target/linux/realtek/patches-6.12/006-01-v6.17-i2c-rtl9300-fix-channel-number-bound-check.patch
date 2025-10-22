@@ -1,0 +1,40 @@
+From cd6c956fbc13156bcbcca084b46a8380caebc2a8 Mon Sep 17 00:00:00 2001
+From: Jonas Jelonek <jelonek.jonas@gmail.com>
+Date: Sun, 31 Aug 2025 10:04:46 +0000
+Subject: [PATCH] i2c: rtl9300: fix channel number bound check
+
+Fix the current check for number of channels (child nodes in the device
+tree). Before, this was:
+
+if (device_get_child_node_count(dev) >= RTL9300_I2C_MUX_NCHAN)
+
+RTL9300_I2C_MUX_NCHAN gives the maximum number of channels so checking
+with '>=' isn't correct because it doesn't allow the last channel
+number. Thus, fix it to:
+
+if (device_get_child_node_count(dev) > RTL9300_I2C_MUX_NCHAN)
+
+Issue occured on a TP-Link TL-ST1008F v2.0 device (8 SFP+ ports) and fix
+is tested there.
+
+Fixes: c366be720235 ("i2c: Add driver for the RTL9300 I2C controller")
+Cc: stable@vger.kernel.org # v6.13+
+Signed-off-by: Jonas Jelonek <jelonek.jonas@gmail.com>
+Tested-by: Sven Eckelmann <sven@narfation.org>
+Reviewed-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
+Tested-by: Chris Packham <chris.packham@alliedtelesis.co.nz> # On RTL9302C based board
+Tested-by: Markus Stockhausen <markus.stockhausen@gmx.de>
+Signed-off-by: Andi Shyti <andi.shyti@kernel.org>
+Link: https://lore.kernel.org/r/20250831100457.3114-2-jelonek.jonas@gmail.com
+
+--- a/drivers/i2c/busses/i2c-rtl9300.c
++++ b/drivers/i2c/busses/i2c-rtl9300.c
+@@ -353,7 +353,7 @@ static int rtl9300_i2c_probe(struct plat
+ 
+ 	platform_set_drvdata(pdev, i2c);
+ 
+-	if (device_get_child_node_count(dev) >= RTL9300_I2C_MUX_NCHAN)
++	if (device_get_child_node_count(dev) > RTL9300_I2C_MUX_NCHAN)
+ 		return dev_err_probe(dev, -EINVAL, "Too many channels\n");
+ 
+ 	device_for_each_child_node(dev, child) {

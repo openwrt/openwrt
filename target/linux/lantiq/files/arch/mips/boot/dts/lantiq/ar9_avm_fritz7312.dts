@@ -115,6 +115,11 @@
 	};
 };
 
+&ppe {
+	nvmem-cells = <&macaddr_ath9k_cal_a91 1>;
+	nvmem-cell-names = "mac-address";
+};
+
 &localbus {
 	flash@0 {
 		compatible = "lantiq,nor";

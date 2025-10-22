@@ -32,7 +32,6 @@
 #include <linux/bug.h>
 #include <linux/netfilter.h>
 #include <net/netfilter/nf_flow_table.h>
-#include <linux/of_gpio.h>
 #include <linux/gpio.h>
 #include <linux/gpio/consumer.h>
 

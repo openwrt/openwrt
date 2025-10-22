@@ -46,11 +46,12 @@ endef
 ### Devices ###
 define Device/Default
   PROFILES := Default
-  KERNEL = kernel-bin | lzma | fit lzma $$(DTS_DIR)/$$(DEVICE_DTS).dtb
+  KERNEL = kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   BOOT_SCRIPT :=
   IMAGES := sysupgrade.img.gz
   IMAGE/sysupgrade.img.gz = boot-common | boot-script $$(BOOT_SCRIPT) | pine64-img | gzip | append-metadata
-  DEVICE_DTS = rockchip/$$(SOC)-$(lastword $(subst _, ,$(1)))
+  DEVICE_DTS_DIR = $$(DTS_DIR)/rockchip
+  DEVICE_DTS = $$(SOC)-$(lastword $(subst _, ,$(1)))
   UBOOT_DEVICE_NAME = $(lastword $(subst _, ,$(1)))-$$(SOC)
 endef
 

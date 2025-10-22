@@ -45,7 +45,7 @@
 	status = "okay";
 };
 
-&mdio {
+&mdio_bus0 {
 	EXTERNAL_PHY(16)
 	EXTERNAL_PHY(24)
 };
@@ -53,6 +53,7 @@
 &switch0 {
 	ports {
 		SWITCH_PORT(16, 9, qsgmii)
+		/* TODO: fixed link SFP is not right */
 		SWITCH_SFP_PORT(24, 10, rgmii-id)
 	};
 };

@@ -36,7 +36,7 @@ $(eval $(call KernelPackage,skge))
 define KernelPackage/ag71xx
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Atheros AR7XXX/AR9XXX ethernet mac support
-  DEPENDS:=@PCI_SUPPORT||TARGET_ath79 +kmod-phylink +kmod-mdio-devres +kmod-net-selftests
+  DEPENDS:=@TARGET_ath79 +kmod-phylink +kmod-mdio-devres +kmod-net-selftests
   KCONFIG:=CONFIG_AG71XX
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/atheros/ag71xx.ko
   AUTOLOAD:=$(call AutoLoad,50,ag71xx,1)
@@ -374,6 +374,23 @@ endef
 $(eval $(call KernelPackage,phy-broadcom))
 
 
+define KernelPackage/phy-bcm7xxx
+   SUBMENU:=$(NETWORK_DEVICES_MENU)
+   TITLE:=Broadcom 7xxx SOCs internal PHYs
+   KCONFIG:=CONFIG_BCM7XXX_PHY
+   DEPENDS:=+kmod-libphy +kmod-phylib-broadcom
+   FILES:=$(LINUX_DIR)/drivers/net/phy/bcm7xxx.ko
+   AUTOLOAD:=$(call AutoLoad,18,bcm7xxx,1)
+endef
+
+define KernelPackage/phy-bcm7xxx/description
+   Currently supports the BCM7366, BCM7439, BCM7445, and
+   40nm and 65nm generation of BCM7xxx Set Top Box SoCs.
+endef
+
+$(eval $(call KernelPackage,phy-bcm7xxx))
+
+
 define KernelPackage/phy-bcm84881
    SUBMENU:=$(NETWORK_DEVICES_MENU)
    TITLE:=Broadcom BCM84881 PHY driver
@@ -508,6 +525,22 @@ endef
 $(eval $(call KernelPackage,phy-realtek))
 
 
+define KernelPackage/phy-rtl8261n
+   SUBMENU:=$(NETWORK_DEVICES_MENU)
+   TITLE:=Realtek RTL8261N NBASE-T PHY driver
+   KCONFIG:=CONFIG_RTL8261N_PHY
+   DEPENDS:=+kmod-libphy
+   FILES:=$(LINUX_DIR)/drivers/net/phy/rtl8261n/rtl8261n.ko
+   AUTOLOAD:=$(call AutoLoad,18,rtl8261n,1)
+endef
+
+define KernelPackage/phy-rtl8261n/description
+   Supports the Realtek 8261N NBASE-T PHY.
+endef
+
+$(eval $(call KernelPackage,phy-rtl8261n))
+
+
 define KernelPackage/phy-smsc
    SUBMENU:=$(NETWORK_DEVICES_MENU)
    TITLE:=SMSC PHY driver
@@ -538,6 +571,23 @@ define KernelPackage/phy-vitesse/description
 endef
 
 $(eval $(call KernelPackage,phy-vitesse))
+
+
+define KernelPackage/phy-aeonsemi-as21xxx
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Aeonsemi AS21xxx 10G Ethernet PHY
+  DEPENDS:=+aeonsemi-as21xxx-firmware +kmod-libphy
+  KCONFIG:=CONFIG_AS21XXX_PHY
+  FILES:= \
+   $(LINUX_DIR)/drivers/net/phy/as21xxx.ko
+  AUTOLOAD:=$(call AutoLoad,18,as21xxx)
+endef
+
+define KernelPackage/phy-aeonsemi-as21xxx/description
+  Kernel modules for Aeonsemi AS21x1x 10G Ethernet PHY
+endef
+
+$(eval $(call KernelPackage,phy-aeonsemi-as21xxx))
 
 
 define KernelPackage/phy-airoha-en8811h
@@ -587,10 +637,25 @@ endef
 $(eval $(call KernelPackage,dsa))
 
 
+define KernelPackage/dsa-notag
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=DSA No-op tag driver
+  DEPENDS:=+kmod-dsa
+  KCONFIG:=CONFIG_NET_DSA_TAG_NONE
+  FILES:=$(LINUX_DIR)/net/dsa/tag_none.ko
+endef
+
+define KernelPackage/dsa-notag/description
+  Kernel module support for switches which don't tag frames over the CPU port.
+endef
+
+$(eval $(call KernelPackage,dsa-notag))
+
+
 define KernelPackage/dsa-b53
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Broadcom BCM53xx managed switch DSA support
-  DEPENDS:=+kmod-dsa
+  DEPENDS:=+kmod-dsa +kmod-dsa-notag
   KCONFIG:=CONFIG_B53 \
   CONFIG_NET_DSA_TAG_BRCM \
   CONFIG_NET_DSA_TAG_BRCM_LEGACY \
@@ -743,6 +808,75 @@ define KernelPackage/dsa-rtl8365mb/description
 endef
 
 $(eval $(call KernelPackage,dsa-rtl8365mb))
+
+
+define KernelPackage/dsa-ks8995
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Micrel/Kendin KS8995 Ethernet DSA Switch
+  DEPENDS:=@!LINUX_6_6 +kmod-dsa +kmod-dsa-notag
+  FILES:= $(LINUX_DIR)/drivers/net/dsa/ks8995.ko
+  KCONFIG:= CONFIG_NET_DSA_KS8995 \
+	CONFIG_SPI=y \
+	CONFIG_SPI_MASTER=y
+  AUTOLOAD:=$(call AutoLoad,42,ks8995)
+endef
+
+define KernelPackage/dsa-ks8995/description
+  Kernel module for Micrel/Kendin KS8995 DSA switch
+endef
+
+$(eval $(call KernelPackage,dsa-ks8995))
+
+
+define KernelPackage/dsa-vsc73xx
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Vitesse VSC73XX DSA switch family support
+  DEPENDS:=@!LINUX_6_6 +kmod-dsa +kmod-phy-vitesse +kmod-fixed-phy
+  KCONFIG:= \
+	CONFIG_NET_DSA_VITESSE_VSC73XX \
+	CONFIG_NET_DSA_TAG_VSC73XX_8021Q
+  FILES:= \
+	$(LINUX_DIR)/drivers/net/dsa/vitesse-vsc73xx-core.ko \
+	$(LINUX_DIR)/net/dsa/tag_vsc73xx_8021q.ko
+endef
+
+define KernelPackage/dsa-vsc73xx/description
+  Kernel modules for Vitesse VSC73XX switches
+endef
+
+$(eval $(call KernelPackage,dsa-vsc73xx))
+
+
+define KernelPackage/dsa-vsc73xx-spi
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Vitesse VSC73XX SPI support
+  DEPENDS:=@!LINUX_6_6 +kmod-dsa-vsc73xx
+  KCONFIG:= CONFIG_NET_DSA_VITESSE_VSC73XX_SPI
+  FILES:= $(LINUX_DIR)/drivers/net/dsa/vitesse-vsc73xx-spi.ko
+  AUTOLOAD:=$(call AutoProbe,vitesse-vsc73xx-spi)
+endef
+
+define KernelPackage/dsa-vsc73xx-spi/description
+  Kernel modules for Vitesse VSC73XX switches using SPI
+endef
+
+$(eval $(call KernelPackage,dsa-vsc73xx-spi))
+
+
+define KernelPackage/dsa-vsc73xx-platform
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Vitesse VSC73XX platform support
+  DEPENDS:=@!LINUX_6_6 +kmod-dsa-vsc73xx
+  KCONFIG:= CONFIG_NET_DSA_VITESSE_VSC73XX_PLATFORM
+  FILES:= $(LINUX_DIR)/drivers/net/dsa/vitesse-vsc73xx-platform.ko
+  AUTOLOAD:=$(call AutoProbe,vitesse-vsc73xx-platform)
+endef
+
+define KernelPackage/dsa-vsc73xx-spi/description
+  Kernel modules for Vitesse VSC73XX switches using platform integration
+endef
+
+$(eval $(call KernelPackage,dsa-vsc73xx-platform))
 
 
 define KernelPackage/swconfig
@@ -1141,7 +1275,7 @@ define KernelPackage/e1000e
   DEPENDS:=@PCIE_SUPPORT +kmod-ptp
   KCONFIG:=CONFIG_E1000E
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/e1000e/e1000e.ko
-  AUTOLOAD:=$(call AutoProbe,e1000e)
+  AUTOLOAD:=$(call AutoProbe,e1000e,1)
   MODPARAMS.e1000e:= \
     IntMode=1 \
     InterruptThrottleRate=4,4,4,4,4,4,4,4
@@ -1592,6 +1726,7 @@ $(eval $(call KernelPackage,vmxnet3))
 define KernelPackage/spi-ks8995
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Micrel/Kendin KS8995 Ethernet switch control
+  DEPENDS:=@LINUX_6_6
   FILES:=$(LINUX_DIR)/drivers/net/phy/spi_ks8995.ko
   KCONFIG:=CONFIG_MICREL_KS8995MA \
 	CONFIG_SPI=y \
@@ -1853,6 +1988,13 @@ define KernelPackage/mlxsw-spectrum/description
   Spectrum/Spectrum-2/Spectrum-3/Spectrum-4 Ethernet Switch ASICs.
 endef
 
+define KernelPackage/mlxsw-spectrum/install
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/net
+	$(INSTALL_DATA) \
+		./files/hotplug-mlxsw-spectrum-port-names.sh \
+		$(1)/etc/hotplug.d/net/10-mlxsw-spectrum-port-names
+endef
+
 $(eval $(call KernelPackage,mlxsw-spectrum))
 
 
@@ -2037,6 +2179,27 @@ define KernelPackage/sfc-falcon/description
 endef
 
 $(eval $(call KernelPackage,sfc-falcon))
+
+
+define KernelPackage/sfc-siena
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Solarflare SFN5000/6000 'Siena' based card support
+  DEPENDS:=@PCI_SUPPORT +kmod-mdio +kmod-lib-crc32c +kmod-i2c-algo-bit +kmod-ptp +kmod-hwmon-core
+  KCONFIG:= \
+	CONFIG_SFC_SIENA \
+	CONFIG_SFC_SIENA_MTD=y \
+	CONFIG_SFC_SIENA_MCDI_MON=y \
+	CONFIG_SFC_SIENA_MCDI_LOGGING=y \
+	CONFIG_SFC_SIENA_SRIOV=y
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/sfc/siena/sfc-siena.ko
+  AUTOLOAD:=$(call AutoProbe,sfc-siena)
+endef
+
+define KernelPackage/sfc-siena/description
+  Solarflare SFN5000/6000 'Siena' based card support
+endef
+
+$(eval $(call KernelPackage,sfc-siena))
 
 
 define KernelPackage/wwan

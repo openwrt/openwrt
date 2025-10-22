@@ -8,6 +8,8 @@
 #define __RTK_PHYLIB_H
 
 #if defined(RTK_PHYDRV_IN_LINUX)
+  #include <linux/types.h>
+
   #include "type.h"
   #include "rtk_phylib_def.h"
 #else
@@ -48,6 +50,8 @@ struct rtk_phy_priv {
     rtk_phylib_phy_t phytype;
     uint8 isBasePort;
     rt_phy_patch_db_t *patch;
+
+    bool pnswap_tx;
 };
 
 #if defined(RTK_PHYDRV_IN_LINUX)

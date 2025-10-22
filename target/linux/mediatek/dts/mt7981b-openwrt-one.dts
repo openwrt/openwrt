@@ -22,8 +22,9 @@
 		rootdisk = <&ubi_fit_volume>;
 	};
 
-	memory {
+	memory@40000000 {
 		reg = <0 0x40000000 0 0x40000000>;
+		device_type = "memory";
 	};
 
 	reg_3p3v: regulator-3p3v {
@@ -50,7 +51,7 @@
 		user {
 			label = "user";
 			linux,code = <BTN_0>;
-			gpios = <&pio 0 GPIO_ACTIVE_HIGH>;
+			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
 		};
 
 		reset {
@@ -297,16 +298,15 @@
 &spi0 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&spi0_flash_pins>;
-	cs-gpios = <0>, <0>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 	status = "okay";
 
-	flash@1 {
+	flash@0 {
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "spi-nand";
-		reg = <1>;
+		reg = <0>;
 		spi-max-frequency = <52000000>;
 
 		spi-cal-enable;

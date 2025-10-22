@@ -130,6 +130,33 @@ define Build/append-gl-metadata
 	}
 endef
 
+define Build/append-teltonika-metadata
+	echo \
+		'{$(if $(IMAGE_METADATA),$(IMAGE_METADATA)$(comma)) \
+			"metadata_version": "1.1", \
+			"compat_version": "$(call json_quote,$(compat_version))", \
+			"version":"$(call json_quote,$(VERSION_DIST))-$(call json_quote,$(VERSION_NUMBER))-$(call json_quote,$(REVISION))", \
+			"device_code": [".*"], \
+			"hwver": [".*"], \
+			"batch": [".*"], \
+			"serial": [".*"], \
+			$(if $(DEVICE_COMPAT_MESSAGE),"compat_message": "$(call json_quote,$(DEVICE_COMPAT_MESSAGE))"$(comma)) \
+			$(if $(filter-out 1.0,$(compat_version)),"new_supported_devices": \
+				[$(call metadata_devices,$(SUPPORTED_TELTONIKA_DEVICES))]$(comma) \
+				"supported_devices": ["$(call json_quote,$(legacy_supported_message))"]$(comma)) \
+			$(if $(filter 1.0,$(compat_version)),"supported_devices":[$(call metadata_devices,$(SUPPORTED_TELTONIKA_DEVICES))]$(comma)) \
+			"version_wrt": { \
+			"dist": "$(call json_quote,$(VERSION_DIST))", \
+			"version": "$(call json_quote,$(VERSION_NUMBER))", \
+			"revision": "$(call json_quote,$(REVISION))", \
+			"target": "$(call json_quote,$(TARGETID))", \
+			"board": "$(call json_quote,$(if $(BOARD_NAME),$(BOARD_NAME),$(DEVICE_NAME)))" \
+		}, \
+			"hw_support": {}, \
+			"hw_mods": {$(shell i=1; for mod in $(SUPPORTED_TELTONIKA_HW_MODS); do [ $$i -gt 1 ] && echo -n ,; echo -n "\"mod$$i\": \"$$mod\""; i=$$((i+1)); done)} \
+		}' | fwtool -I - $@
+endef
+
 define Build/append-rootfs
 	dd if=$(IMAGE_ROOTFS) >> $@
 endef
@@ -492,7 +519,7 @@ define Build/yaffs-filesystem
 		filesystem_size="filesystem_blocks * 64 * 1024" \
 		filesystem_size_with_reserve="(filesystem_blocks + 2) * 64 * 1024"; \
 		head -c $$filesystem_size_with_reserve /dev/zero | tr "\000" "\377" > $@.img \
-		&& yafut -d $@.img -w -i $@ -o kernel -C 1040 -B 64k -E -P -S $(1) \
+		&& yafut -d $@.img -w -i $@ -o $(if $(findstring v7,$@),bootimage,kernel) -C 1040 -B 64k -E -P -S $(1) \
 		&& truncate -s $$filesystem_size $@.img \
 		&& mv $@.img $@
 endef
@@ -528,6 +555,11 @@ define Build/gl-qsdk-factory
 		$(GL_ITS) \
 		$(GL_IMGK).tmp \
 		$(KDIR_TMP)/$(notdir $(BOOT_SCRIPT))
+endef
+
+define Build/kernel-pack-npk
+	$(STAGING_DIR_HOST)/bin/npk_pack_kernel $@ $@.npk
+	mv $@.npk $@
 endef
 
 define Build/linksys-image
@@ -597,6 +629,19 @@ endef
 
 define Build/openmesh-image
 	$(TOPDIR)/scripts/om-fwupgradecfg-gen.sh \
+		"$(call param_get_default,ce_type,$(1),$(DEVICE_NAME))" \
+		"$@-fwupgrade.cfg" \
+		"$(call param_get_default,kernel,$(1),$(IMAGE_KERNEL))" \
+		"$(call param_get_default,rootfs,$(1),$@)"
+	$(TOPDIR)/scripts/combined-ext-image.sh \
+		"$(call param_get_default,ce_type,$(1),$(DEVICE_NAME))" "$@" \
+		"$@-fwupgrade.cfg" "fwupgrade.cfg" \
+		"$(call param_get_default,kernel,$(1),$(IMAGE_KERNEL))" "kernel" \
+		"$(call param_get_default,rootfs,$(1),$@)" "rootfs"
+endef
+
+define Build/dualboot-datachk-nand-image
+	$(TOPDIR)/scripts/nand-fwupgradecfg-gen.sh \
 		"$(call param_get_default,ce_type,$(1),$(DEVICE_NAME))" \
 		"$@-fwupgrade.cfg" \
 		"$(call param_get_default,kernel,$(1),$(IMAGE_KERNEL))" \

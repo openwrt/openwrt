@@ -30,8 +30,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -5470,7 +5470,7 @@ static const struct mtk_soc_data mt2701_
- 		.desc_size = sizeof(struct mtk_rx_dma),
+@@ -5509,7 +5509,7 @@ static const struct mtk_soc_data mt2701_
+ 		DESC_SIZE(struct mtk_rx_dma),
  		.irq_done_mask = MTK_RX_DONE_INT,
  		.dma_l4_valid = RX_DMA_L4_VALID,
 -		.dma_size = MTK_DMA_SIZE(2K),
@@ -39,8 +39,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -5498,7 +5498,7 @@ static const struct mtk_soc_data mt7621_
- 		.desc_size = sizeof(struct mtk_rx_dma),
+@@ -5537,7 +5537,7 @@ static const struct mtk_soc_data mt7621_
+ 		DESC_SIZE(struct mtk_rx_dma),
  		.irq_done_mask = MTK_RX_DONE_INT,
  		.dma_l4_valid = RX_DMA_L4_VALID,
 -		.dma_size = MTK_DMA_SIZE(2K),
@@ -48,8 +48,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -5528,7 +5528,7 @@ static const struct mtk_soc_data mt7622_
- 		.desc_size = sizeof(struct mtk_rx_dma),
+@@ -5567,7 +5567,7 @@ static const struct mtk_soc_data mt7622_
+ 		DESC_SIZE(struct mtk_rx_dma),
  		.irq_done_mask = MTK_RX_DONE_INT,
  		.dma_l4_valid = RX_DMA_L4_VALID,
 -		.dma_size = MTK_DMA_SIZE(2K),
@@ -57,8 +57,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -5557,7 +5557,7 @@ static const struct mtk_soc_data mt7623_
- 		.desc_size = sizeof(struct mtk_rx_dma),
+@@ -5596,7 +5596,7 @@ static const struct mtk_soc_data mt7623_
+ 		DESC_SIZE(struct mtk_rx_dma),
  		.irq_done_mask = MTK_RX_DONE_INT,
  		.dma_l4_valid = RX_DMA_L4_VALID,
 -		.dma_size = MTK_DMA_SIZE(2K),
@@ -66,8 +66,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -5583,7 +5583,7 @@ static const struct mtk_soc_data mt7629_
- 		.desc_size = sizeof(struct mtk_rx_dma),
+@@ -5622,7 +5622,7 @@ static const struct mtk_soc_data mt7629_
+ 		DESC_SIZE(struct mtk_rx_dma),
  		.irq_done_mask = MTK_RX_DONE_INT,
  		.dma_l4_valid = RX_DMA_L4_VALID,
 -		.dma_size = MTK_DMA_SIZE(2K),
@@ -75,7 +75,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
  	},
-@@ -5615,7 +5615,7 @@ static const struct mtk_soc_data mt7981_
+@@ -5654,7 +5654,7 @@ static const struct mtk_soc_data mt7981_
  		.dma_l4_valid = RX_DMA_L4_VALID_V2,
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
@@ -84,7 +84,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	},
  };
  
-@@ -5645,7 +5645,7 @@ static const struct mtk_soc_data mt7986_
+@@ -5684,7 +5684,7 @@ static const struct mtk_soc_data mt7986_
  		.dma_l4_valid = RX_DMA_L4_VALID_V2,
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,
@@ -93,7 +93,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	},
  };
  
-@@ -5698,7 +5698,7 @@ static const struct mtk_soc_data rt5350_
+@@ -5737,7 +5737,7 @@ static const struct mtk_soc_data rt5350_
  		.dma_l4_valid = RX_DMA_L4_VALID_PDMA,
  		.dma_max_len = MTK_TX_DMA_BUF_LEN,
  		.dma_len_offset = 16,

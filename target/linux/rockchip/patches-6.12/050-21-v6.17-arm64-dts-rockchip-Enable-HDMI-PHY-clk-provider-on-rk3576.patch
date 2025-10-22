@@ -1,0 +1,32 @@
+From aba7987a536cee67fb0cb724099096fd8f8f5350 Mon Sep 17 00:00:00 2001
+From: Cristian Ciocaltea <cristian.ciocaltea@collabora.com>
+Date: Thu, 12 Jun 2025 00:47:48 +0300
+Subject: [PATCH] arm64: dts: rockchip: Enable HDMI PHY clk provider on rk3576
+
+As with the RK3588 SoC, the HDMI PHY PLL on RK3576 can be used as a more
+accurate pixel clock source for VOP2, which is actually mandatory to
+ensure proper support for display modes handling.
+
+Add the missing #clock-cells property to allow using the clock provider
+functionality of HDMI PHY.
+
+Fixes: ad0ea230ab2a ("arm64: dts: rockchip: Add hdmi for rk3576")
+Cc: stable@vger.kernel.org
+Signed-off-by: Cristian Ciocaltea <cristian.ciocaltea@collabora.com>
+Tested-by: Nicolas Frattaroli <nicolas.frattaroli@collabora.com>
+Link: https://lore.kernel.org/r/20250612-rk3576-hdmitx-fix-v1-2-4b11007d8675@collabora.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3576.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3576.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3576.dtsi
+@@ -2407,6 +2407,7 @@
+ 			reg = <0x0 0x2b000000 0x0 0x2000>;
+ 			clocks = <&cru CLK_PHY_REF_SRC>, <&cru PCLK_HDPTX_APB>;
+ 			clock-names = "ref", "apb";
++			#clock-cells = <0>;
+ 			resets = <&cru SRST_P_HDPTX_APB>, <&cru SRST_HDPTX_INIT>,
+ 				 <&cru SRST_HDPTX_CMN>, <&cru SRST_HDPTX_LANE>;
+ 			reset-names = "apb", "init", "cmn", "lane";

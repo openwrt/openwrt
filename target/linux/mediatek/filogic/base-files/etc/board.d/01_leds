@@ -16,6 +16,9 @@ acer,predator-w6d)
 	ucidef_set_led_netdev "internet" "INTERNET" "mdio-bus:06:amber:wan" "eth1" "link_10 link_100 link_1000 tx rx"
 	ucidef_set_led_netdev "internet" "INTERNET" "mdio-bus:06:green:wan" "eth1" "link_2500 tx rx"
 	;;
+acer,predator-w6x)
+	ucidef_set_led_netdev "wan" "wan" "rgb:status" "eth1"
+	;;
 asus,rt-ax52|\
 snr,snr-cpe-ax2)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan" "link tx rx"
@@ -56,13 +59,17 @@ wavlink,wl-wn573hx3)
 cudy,wr3000-v1)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan"
 	;;
-cudy,wr3000h-v1)
+cudy,wr3000h-v1|\
+cudy,wr3000p-v1)
 	ucidef_set_led_netdev "lan1" "lan1" "white:lan-1" "lan1" "link tx rx"
 	ucidef_set_led_netdev "lan2" "lan2" "white:lan-2" "lan2" "link tx rx"
 	ucidef_set_led_netdev "lan3" "lan3" "white:lan-3" "lan3" "link tx rx"
 	ucidef_set_led_netdev "lan4" "lan4" "white:lan-4" "lan4" "link tx rx"
 	ucidef_set_led_netdev "wan" "wan" "white:wan" "wan" "link tx rx"
 	ucidef_set_led_netdev "internet" "internet" "white:wan-online" "wan" "link"
+	;;
+elecom,wrc-x3000gs3)
+	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan"
 	;;
 glinet,gl-x3000|\
 glinet,gl-xe3000)
@@ -78,8 +85,14 @@ glinet,gl-xe3000)
 huasifei,wh3000)
 	ucidef_set_led_netdev "wan" "WAN" "red:wan" "eth1" "link tx rx"
 	;;
+iptime,ax3000q)
+	ucidef_set_led_netdev "wan" "WAN" "amber:wan" "wan" "link tx rx"
+	;;
 iptime,ax3000sm)
 	ucidef_set_led_netdev "wan" "wan" "amber:wan" "eth1" "link tx rx"
+	;;
+iptime,ax7800m-6e)
+	ucidef_set_led_netdev "wan" "wan" "mdio-bus:06:blue:wan" "eth1" "link tx rx"
 	;;
 mercusys,mr80x-v3)
 	ucidef_set_led_netdev "lan1" "lan-1" "green:lan-1" "lan1" "link tx rx"
@@ -120,6 +133,9 @@ nradio,c8-668gl)
 openembed,som7981)
 	ucidef_set_led_netdev "lanact" "LANACT" "amber:lan" "eth1" "rx tx"
 	ucidef_set_led_netdev "lanlink" "LANLINK" "green:lan" "eth1" "link"
+	;;
+openfi,6c)
+	ucidef_set_led_netdev "lan" "LAN" "green:lan" "eth0" "link tx rx"
 	;;
 openwrt,one)
 	ucidef_set_led_netdev "wanact" "WANACT" "mdio-bus:0f:green:wan" "eth0" "rx tx"
@@ -187,6 +203,13 @@ smartrg,sdg-8733a)
 	ucidef_set_led_netdev "wan-orange" "WAN" "mdio-bus:08:orange:wan" "wan" "link_100 link_1000"
 	ucidef_set_led_netdev "wan-white" "WAN" "mdio-bus:08:white:wan" "wan" "link_10000"
 	;;
+teltonika,rutc50)
+	ucidef_set_led_netdev "wan-green" "WAN" "mdio-bus:00:green:wan" "wan" "link_1000 tx rx"
+	ucidef_set_led_netdev "wan-amber" "WAN" "mdio-bus:00:amber:wan" "wan" "link_100 link_10 tx rx"
+	;;
+totolink,x6000r)
+	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan" "link tx rx"
+	;;
 tplink,fr365-v1)
 	ucidef_set_led_netdev "port2-green-act" "port-2" "green:port2_act" "port2" "link tx rx"
 	ucidef_set_led_netdev "port1-green-act" "port-1" "green:sfp" "port1" "link tx rx"
@@ -197,7 +220,13 @@ tplink,re6000xd)
 	ucidef_set_led_netdev "lan-2" "lan-2" "blue:lan-1" "lan2" "link tx rx"
 	ucidef_set_led_netdev "eth1" "lan-3" "blue:lan-2" "eth1" "link tx rx"
 	;;
-wavlink,wl-wn586x3)
+wavlink,wl-wn551x3)
+        ucidef_set_led_netdev "lan-1" "lan-1" "green:lan-1" "lan1" "link tx rx"
+        ucidef_set_led_netdev "lan-2" "lan-2" "green:lan-2" "lan2" "link tx rx"
+        ucidef_set_led_netdev "wan" "wan" "green:wan" "eth1" "link tx rx"
+        ;;
+wavlink,wl-wn586x3|\
+wavlink,wl-wn586x3b)
 	ucidef_set_led_netdev "lan-1" "lan-1" "blue:lan-1" "lan1" "link tx rx"
 	ucidef_set_led_netdev "lan-2" "lan-2" "blue:lan-2" "lan2" "link tx rx"
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "eth1" "link tx rx"
@@ -216,9 +245,9 @@ zbtlink,zbt-z8103ax)
 zyxel,ex5601-t0-stock|\
 zyxel,ex5601-t0-ubootmod)
 	ucidef_set_led_netdev "lan1" "LAN1" "mdio-bus:05:green:lan" "lan1" "link tx rx"
-	ucidef_set_led_netdev "wan" "2.5G-WAN" "mdio-bus:06:green:wan" "eth1" "link_2500"
+	ucidef_set_led_netdev "wan" "2.5G-WAN" "mdio-bus:06:green:wan" "wan" "link_2500"
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "eth0" "link tx rx"
-	ucidef_set_led_netdev "internet" "INTERNET" "green:inet" "eth1" "link tx rx"
+	ucidef_set_led_netdev "internet" "INTERNET" "green:inet" "wan" "link tx rx"
 	ucidef_set_led_netdev "wifi-24g" "WIFI-2.4G" "green:wifi24g" "phy0-ap0" "link tx rx"
 	ucidef_set_led_netdev "wifi-5g" "WIFI-5G" "green:wifi5g" "phy1-ap0" "link tx rx"
 	;;

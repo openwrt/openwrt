@@ -1,0 +1,48 @@
+From b2e668a60ed866ba960acb5310d1fb6bf81d154f Mon Sep 17 00:00:00 2001
+From: Cristian Ciocaltea <cristian.ciocaltea@collabora.com>
+Date: Sun, 23 Feb 2025 11:31:40 +0200
+Subject: arm64: dts: rockchip: Add HDMI1 PHY PLL clock source to VOP2 on
+ RK3588
+
+VOP2 on RK3588 is able to use the HDMI PHY PLL as an alternative and
+more accurate pixel clock source to improve handling of display modes up
+to 4K@60Hz on video ports 0, 1 and 2.
+
+The HDMI1 PHY PLL clock source cannot be added directly to vop node in
+rk3588-base.dtsi, along with the HDMI0 related one, because HDMI1 is an
+optional feature and its PHY node belongs to a separate (extra) DT file.
+
+Therefore, add the HDMI1 PHY PLL clock source to VOP2 by overwriting its
+clocks & clock-names properties in the extra DT file.
+
+Signed-off-by: Cristian Ciocaltea <cristian.ciocaltea@collabora.com>
+Link: https://lore.kernel.org/r/20250223-vop2-hdmi1-disp-modes-v2-4-f4cec5e06fbe@collabora.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588-extra.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588-extra.dtsi
+@@ -509,3 +509,24 @@
+ 		status = "disabled";
+ 	};
+ };
++
++&vop {
++	clocks = <&cru ACLK_VOP>,
++		 <&cru HCLK_VOP>,
++		 <&cru DCLK_VOP0>,
++		 <&cru DCLK_VOP1>,
++		 <&cru DCLK_VOP2>,
++		 <&cru DCLK_VOP3>,
++		 <&cru PCLK_VOP_ROOT>,
++		 <&hdptxphy0>,
++		 <&hdptxphy1>;
++	clock-names = "aclk",
++		      "hclk",
++		      "dclk_vp0",
++		      "dclk_vp1",
++		      "dclk_vp2",
++		      "dclk_vp3",
++		      "pclk_vop",
++		      "pll_hdmiphy0",
++		      "pll_hdmiphy1";
++};
