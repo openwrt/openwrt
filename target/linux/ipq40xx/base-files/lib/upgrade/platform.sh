@@ -129,12 +129,6 @@ platform_do_upgrade() {
 	wallys,dr40x9)
 		nand_do_upgrade "$1"
 		;;
-	glinet,gl-b2200)
-		CI_KERNPART="0:HLOS"
-		CI_ROOTPART="rootfs"
-		CI_DATAPART="rootfs_data"
-		emmc_do_upgrade "$1"
-		;;
 	alfa-network,ap120c-ac)
 		part="$(awk -F 'ubi.mtd=' '{printf $2}' /proc/cmdline | sed -e 's/ .*$//')"
 		if [ "$part" = "rootfs1" ]; then
@@ -156,6 +150,12 @@ platform_do_upgrade() {
 		CI_UBIPART="ubifs"
 		askey_do_upgrade "$1"
 		;;
+	glinet,gl-b2200)
+		CI_KERNPART="0:HLOS"
+		CI_ROOTPART="rootfs"
+		CI_DATAPART="rootfs_data"
+		emmc_do_upgrade "$1"
+		;;
 	google,wifi)
 		export_bootdevice
 		export_partdevice CI_ROOTDEV 0
@@ -173,18 +173,18 @@ platform_do_upgrade() {
 	linksys,whw03)
 		platform_do_upgrade_linksys_emmc "$1"
 		;;
-	meraki,mr30h|\
-	meraki,mr33|\
-	meraki,mr74)
-		CI_KERNPART="part.safe"
-		nand_do_upgrade "$1"
-		;;
 	meraki,gx20|\
 	meraki,z3)
 		# DO NOT set CI_KERNPART to part.safe,
 		# that is used for chain-loading an unlocked u-boot
 		# if part.safe is overwritten, then u-boot is lost!
 		CI_KERNPART="part.old"
+		nand_do_upgrade "$1"
+		;;
+	meraki,mr30h|\
+	meraki,mr33|\
+	meraki,mr74)
+		CI_KERNPART="part.safe"
 		nand_do_upgrade "$1"
 		;;
 	mikrotik,cap-ac|\

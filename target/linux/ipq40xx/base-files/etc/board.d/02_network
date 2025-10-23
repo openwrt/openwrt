@@ -29,10 +29,6 @@ ipq40xx_setup_interfaces()
 	zyxel,nbg6617)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
-	meraki,gx20|\
-	meraki,z3)
-		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan"
-		;;
 	8dev,jalapeno|\
 	alfa-network,ap120c-ac|\
 	asus,map-ac2200|\
@@ -67,6 +63,17 @@ ipq40xx_setup_interfaces()
 	zte,mf282plus)
 		ucidef_set_interface_lan "lan"
 		;;
+	aruba,ap-303h|\
+	buffalo,wtr-m2133hp|\
+	ezviz,cs-w3-wd1200g-eup|\
+	netgear,rbr40|\
+	netgear,rbs40|\
+	netgear,rbr50|\
+	netgear,rbs50|\
+	netgear,srr60|\
+	netgear,srs60)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+		;;
 	avm,fritzbox-7530)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		;;
@@ -90,21 +97,21 @@ ipq40xx_setup_interfaces()
 	mobipromo,cm520-79f)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
 		;;
+	meraki,gx20|\
+	meraki,z3)
+		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan"
+		;;
+	meraki,mr30h)
+		ucidef_set_interface_lan "lan1 lan2 lan3 lan4 lan5"
+		;;
 	mikrotik,wap-ac|\
 	mikrotik,wap-ac-lte|\
 	mikrotik,wap-r-ac)
 		ucidef_set_interface_lan "sw-eth1 sw-eth2"
 		;;
-	aruba,ap-303h|\
-	buffalo,wtr-m2133hp|\
-	ezviz,cs-w3-wd1200g-eup|\
-	netgear,rbr40|\
-	netgear,rbs40|\
-	netgear,rbr50|\
-	netgear,rbs50|\
-	netgear,srr60|\
-	netgear,srs60)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+	netgear,lbr20)
+		ucidef_set_interface_lan "lan1 lan2"
+		ucidef_set_interface "wan" device "/dev/cdc-wdm0" protocol "qmi"
 		;;
 	openmesh,a42|\
 	openmesh,a62)
@@ -131,13 +138,6 @@ ipq40xx_setup_interfaces()
 	zte,mf287pro)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		ucidef_set_interface "wan" device "/dev/cdc-wdm0" protocol "qmi"
-		;;
-	netgear,lbr20)
-		ucidef_set_interface_lan "lan1 lan2"
-		ucidef_set_interface "wan" device "/dev/cdc-wdm0" protocol "qmi"
-		;;
-	meraki,mr30h)
-		ucidef_set_interface_lan "lan1 lan2 lan3 lan4 lan5"
 		;;
 	*)
 		echo "Unsupported hardware. Network interfaces not initialized"

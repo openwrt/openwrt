@@ -1,10 +1,10 @@
 . /lib/functions.sh
 
 case "$(board_name)" in
+ezviz,cs-w3-wd1200g-eup|\
 linksys,ea6350v3|\
 linksys,ea8300|\
-linksys,mr8300|\
-ezviz,cs-w3-wd1200g-eup)
+linksys,mr8300)
 	uci set system.@system[0].compat_version="2.0"
 	uci commit system
 	;;
