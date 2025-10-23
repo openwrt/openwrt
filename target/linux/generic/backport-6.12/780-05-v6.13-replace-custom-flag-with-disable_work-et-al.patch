@@ -75,7 +75,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  	free_irq(tp->irq, tp);
  
  	phy_disconnect(tp->phydev);
-@@ -5201,7 +5194,7 @@ static void rtl_remove_one(struct pci_de
+@@ -5202,7 +5195,7 @@ static void rtl_remove_one(struct pci_de
  	if (pci_dev_run_wake(pdev))
  		pm_runtime_get_noresume(&pdev->dev);
  
@@ -84,7 +84,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  
  	if (IS_ENABLED(CONFIG_R8169_LEDS))
  		r8169_remove_leds(tp->leds);
-@@ -5579,6 +5572,7 @@ static int rtl_init_one(struct pci_dev *
+@@ -5580,6 +5573,7 @@ static int rtl_init_one(struct pci_dev *
  	tp->irq = pci_irq_vector(pdev, 0);
  
  	INIT_WORK(&tp->wk.work, rtl_task);
