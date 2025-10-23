@@ -123,6 +123,7 @@ platform_do_upgrade() {
 	luma,wrtq-329acn|\
 	mobipromo,cm520-79f|\
 	netgear,lbr20|\
+	netgear,rbr20|\
 	netgear,wac510|\
 	p2w,r619ac-64m|\
 	p2w,r619ac-128m|\
