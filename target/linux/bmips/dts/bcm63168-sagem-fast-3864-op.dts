@@ -11,6 +11,10 @@
 		led-failsafe = &led_power_red;
 		led-running = &led_power_green;
 		led-upgrade = &led_power_green;
+
+		led-dsl = &led_dsl_green;
+		led-internet = &led_internet_green;
+		led-usb = &led_usb_green;
 	};
 
 	keys {
@@ -38,6 +42,56 @@
 			debounce-interval = <60>;
 		};
 	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_internet_green: led@8 {
+			label = "green:internet";
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+		};
+
+		led_usb_green: led@9 {
+			label = "green:dsl_bonding";
+			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_red: led@15 {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_green: led@20 {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
+		};
+
+		led@36 {
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 36 GPIO_ACTIVE_LOW>;
+		};
+
+		led@37 {
+			label = "green:wlan_pull_up";
+			default-state = "on";
+			gpios = <&gpio 37 GPIO_ACTIVE_HIGH>;
+		};
+
+		led@38 {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_AMBER>;
+			gpios = <&gpio 38 GPIO_ACTIVE_LOW>;
+		};
+
+		led@39 {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 39 GPIO_ACTIVE_LOW>;
+		};
+	};
 };
 
 &ehci {
@@ -59,7 +113,7 @@
 	brcm,serial-mux;
 
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_leds &pinctrl_serial_led>;
+	pinctrl-0 = <&pinctrl_serial_led>;
 
 	led@0 {
 		reg = <0>;
@@ -81,7 +135,7 @@
 		label = "red:internet";
 	};
 
-	led@3 {
+	led_dsl_green: led@3 {
 		reg = <3>;
 		active-low;
 		label = "green:dsl";
@@ -97,32 +151,6 @@
 		reg = <5>;
 		active-low;
 		label = "red:fxs";
-	};
-
-	led@8 {
-		reg = <8>;
-		active-low;
-		label = "green:internet";
-	};
-
-	led@9 {
-		reg = <9>;
-		active-low;
-		label = "green:dsl_bonding";
-	};
-
-	led_power_red: led@15 {
-		reg = <15>;
-		active-low;
-		function = LED_FUNCTION_POWER;
-		color = <LED_COLOR_ID_RED>;
-	};
-
-	led_power_green: led@20 {
-		reg = <20>;
-		active-low;
-		function = LED_FUNCTION_POWER;
-		color = <LED_COLOR_ID_GREEN>;
 	};
 };
 
@@ -239,14 +267,6 @@
 
 &pcie {
 	status = "okay";
-};
-
-&pinctrl {
-	pinctrl_leds: leds {
-		function = "led";
-		pins = "gpio8", "gpio9", "gpio15",
-		       "gpio20";
-	};
 };
 
 &switch0 {
