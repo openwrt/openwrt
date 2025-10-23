@@ -71,9 +71,7 @@ ipq40xx_setup_interfaces()
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		;;
 	avm,fritzrepeater-3000|\
-	cellc,rtl30vw)
-		ucidef_set_interface_lan "lan1 lan2"
-		;;
+	cellc,rtl30vw|\
 	compex,wpj428)
 		ucidef_set_interface_lan "lan1 lan2"
 		;;
@@ -175,7 +173,8 @@ ipq40xx_setup_macs()
 	local label_mac=""
 
 	case "$board" in
-	8dev,habanero-dvk)
+	8dev,habanero-dvk|\
+	cilab,meshpoint-one)
 		label_mac=$(mtd_get_mac_binary "ART" 0x1006)
 		;;
 	asus,rt-ac42u)
@@ -184,9 +183,6 @@ ipq40xx_setup_macs()
 	avm,fritzbox-7530)
 		local tffsdev=$(find_mtd_chardev "nand-tffs")
 		wan_mac=$(/usr/bin/fritz_tffs_nand -b -d $tffsdev -n macdsl)
-		;;
-	cilab,meshpoint-one)
-		label_mac=$(mtd_get_mac_binary "ART" 0x1006)
 		;;
 	devolo,magic-2-wifi-next)
 		lan_mac=$(mtd_get_mac_ascii APPSBLENV MacAddress0)

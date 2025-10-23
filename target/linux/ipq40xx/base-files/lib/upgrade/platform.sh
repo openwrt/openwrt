@@ -113,6 +113,7 @@ platform_do_upgrade() {
 	avm,fritzrepeater-3000|\
 	buffalo,wtr-m2133hp|\
 	cilab,meshpoint-one|\
+	compex,wpj419|\
 	edgecore,ecw5211|\
 	edgecore,oap100|\
 	engenius,eap2200|\
@@ -145,10 +146,7 @@ platform_do_upgrade() {
 		fi
 		nand_do_upgrade "$1"
 		;;
-	asus,map-ac2200)
-		CI_KERNPART="linux"
-		nand_do_upgrade "$1"
-		;;
+	asus,map-ac2200|\
 	asus,rt-ac42u|\
 	asus,rt-ac58u)
 		CI_KERNPART="linux"
@@ -157,9 +155,6 @@ platform_do_upgrade() {
 	cellc,rtl30vw)
 		CI_UBIPART="ubifs"
 		askey_do_upgrade "$1"
-		;;
-	compex,wpj419)
-		nand_do_upgrade "$1"
 		;;
 	google,wifi)
 		export_bootdevice
