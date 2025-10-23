@@ -161,7 +161,7 @@
 		pinctrl-0 = <&spi_pins>;
 		pinctrl-names = "default";
 
-		cs-gpios = <&qcom_pinmux 20 GPIO_ACTIVE_HIGH>;
+		cs-gpios = <&qcom_pinmux 20 GPIO_ACTIVE_LOW>;
 
 		m25p80@0 {
 			compatible = "jedec,spi-nor";

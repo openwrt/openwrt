@@ -24,7 +24,7 @@ extern const struct rtl838x_reg rtl930x_reg;
 extern const struct rtl838x_reg rtl931x_reg;
 
 extern const struct dsa_switch_ops rtl83xx_switch_ops;
-extern const struct dsa_switch_ops rtl930x_switch_ops;
+extern const struct dsa_switch_ops rtl93xx_switch_ops;
 
 extern struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int port);
 
@@ -334,6 +334,9 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 		if (of_property_read_u32(dn, "reg", &pn))
 			continue;
 
+		pcs_node = of_parse_phandle(dn, "pcs-handle", 0);
+		priv->pcs[pn] = rtpcs_create(priv->dev, pcs_node, pn);
+
 		phy_node = of_parse_phandle(dn, "phy-handle", 0);
 		if (!phy_node) {
 			if (pn != priv->cpu_port)
@@ -343,21 +346,25 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 
 		/*
 		 * TODO: phylink_pcs was completely converted to the standalone PCS driver - see
-		 * rtpcs_create() below. Nevertheless we still make use of the old SerDes <sds>
-		 * attribute of the phy node for the scatterd SerDes configuration functions. As
-		 * soon as the PCS driver can completely configure the SerDes this is no longer
-		 * needed.
+		 * rtpcs_create(). Nevertheless the DSA driver still relies on the info about the
+		 * attached SerDes. As soon as the PCS driver can completely configure the SerDes
+		 * this is no longer needed.
 		 */
 
-		if (of_property_read_u32(phy_node, "sds", &priv->ports[pn].sds_num))
-			priv->ports[pn].sds_num = -1;
-		pr_debug("%s port %d has SDS %d\n", __func__, pn, priv->ports[pn].sds_num);
-
-		pcs_node = of_parse_phandle(dn, "pcs-handle", 0);
-		priv->pcs[pn] = rtpcs_create(priv->dev, pcs_node, pn);
+		priv->ports[pn].sds_num = -1;
+		if (pcs_node)
+			of_property_read_u32(pcs_node, "reg", &priv->ports[pn].sds_num);
+		if (priv->ports[pn].sds_num >= 0)
+			dev_dbg(priv->dev, "port %d has SDS %d\n", pn, priv->ports[pn].sds_num);
 
 		if (of_get_phy_mode(dn, &interface))
 			interface = PHY_INTERFACE_MODE_NA;
+
+		if (interface == PHY_INTERFACE_MODE_10G_QXGMII) {
+			interface = PHY_INTERFACE_MODE_USXGMII;
+			dev_warn(priv->dev, "handle mode 10g-qsxgmii internally as usxgmii for now\n");
+		}
+
 		if (interface == PHY_INTERFACE_MODE_USXGMII)
 			priv->ports[pn].is2G5 = priv->ports[pn].is10G = true;
 		if (interface == PHY_INTERFACE_MODE_10GBASER)
@@ -1319,6 +1326,10 @@ static int rtl83xx_netevent_event(struct notifier_block *this,
 
 	switch (event) {
 	case NETEVENT_NEIGH_UPDATE:
+		/* ignore events for HW with missing L3 offloading implementation */
+		if (!priv->r->l3_setup)
+			return NOTIFY_DONE;
+
 		if (n->tbl != &arp_tbl)
 			return NOTIFY_DONE;
 		dev = n->dev;
@@ -1417,6 +1428,10 @@ static int rtl83xx_fib_event(struct notifier_block *this, unsigned long event, v
 		return NOTIFY_DONE;
 
 	priv = container_of(this, struct rtl838x_switch_priv, fib_nb);
+
+	/* ignore FIB events for HW with missing L3 offloading implementation */
+	if (!priv->r->l3_setup)
+		return NOTIFY_DONE;
 
 	fib_work = kzalloc(sizeof(*fib_work), GFP_ATOMIC);
 	if (!fib_work)
@@ -1584,7 +1599,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->n_counters = 1024;
 		break;
 	case RTL9300_FAMILY_ID:
-		priv->ds->ops = &rtl930x_switch_ops;
+		priv->ds->ops = &rtl93xx_switch_ops;
 		priv->cpu_port = RTL930X_CPU_PORT;
 		priv->port_mask = 0x1f;
 		priv->port_width = 1;
@@ -1604,7 +1619,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->n_counters = 2048;
 		break;
 	case RTL9310_FAMILY_ID:
-		priv->ds->ops = &rtl930x_switch_ops;
+		priv->ds->ops = &rtl93xx_switch_ops;
 		priv->cpu_port = RTL931X_CPU_PORT;
 		priv->port_mask = 0x3f;
 		priv->port_width = 2;
@@ -1692,7 +1707,8 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 
 	rtl83xx_setup_qos(priv);
 
-	priv->r->l3_setup(priv);
+	if (priv->r->l3_setup)
+		priv->r->l3_setup(priv);
 
 	/* Clear all destination ports for mirror groups */
 	for (int i = 0; i < 4; i++)

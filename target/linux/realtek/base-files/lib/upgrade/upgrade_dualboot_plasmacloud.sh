@@ -17,6 +17,19 @@ set_boot_part() {
 			return 1
 		fi
 		;;
+	plasmacloud,esx28|\
+	plasmacloud,psx28)
+		if [ "$part_num" = "1" ]; then
+			echo "bootargs mtdparts=spi0.0:768k(u-boot),64k(u-boot-env),64k(u-boot-env2),5120k(reserved),13376k(firmware1),13376k(inactive)" > $setenv_script
+			echo "bootcmd rtk init; bootm 0xb45e0000" >> $setenv_script
+		elif [ "$part_num" = "2" ]; then
+			echo "bootargs mtdparts=spi0.0:768k(u-boot),64k(u-boot-env),64k(u-boot-env2),5120k(reserved),13376k(inactive),13376k(firmware2)" > $setenv_script
+			echo "bootcmd rtk init; bootm 0xb52f0000" >> $setenv_script
+		else
+			echo "Partition number $part_num is not supported for ${board}" 2>&1
+			return 1
+		fi
+		;;
 	*)
 		echo "${board} is not supported for dual boot" 1>&2
 		return 1
@@ -60,6 +73,10 @@ platform_do_upgrade_dualboot_plasmacloud() {
 	plasmacloud,psx8|\
 	plasmacloud,psx10)
 		primary_firmware_mtd=3
+		;;
+	plasmacloud,esx28|\
+	plasmacloud,psx28)
+		primary_firmware_mtd=4
 		;;
 	*)
 		echo "failed to detect primary firmware mtd partition for board" 2>&1

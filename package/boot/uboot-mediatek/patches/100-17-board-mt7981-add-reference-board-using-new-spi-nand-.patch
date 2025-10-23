@@ -18,7 +18,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
-@@ -1119,6 +1119,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
+@@ -1121,6 +1121,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
  	mt7622-bananapi-bpi-r64.dtb \
  	mt7623n-bananapi-bpi-r2.dtb \
  	mt7981-rfb.dtb \
@@ -163,7 +163,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +};
 --- /dev/null
 +++ b/configs/mt7981_snfi_nand_rfb_defconfig
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,58 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -173,6 +173,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +CONFIG_NR_DRAM_BANKS=1
 +CONFIG_ENV_SIZE=0x20000
 +CONFIG_DEFAULT_DEVICE_TREE="mt7981-snfi-nand-rfb"
++# CONFIG_BOARD_INIT is not set
 +CONFIG_SYS_PROMPT="MT7981> "
 +CONFIG_TARGET_MT7981=y
 +CONFIG_DEBUG_UART_BASE=0x11002000

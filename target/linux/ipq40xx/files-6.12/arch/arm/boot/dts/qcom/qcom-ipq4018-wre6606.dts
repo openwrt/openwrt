@@ -149,7 +149,7 @@
 	pinctrl-0 = <&spi_0_pins>;
 	pinctrl-names = "default";
 	status = "okay";
-	cs-gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>;
+	cs-gpios = <&tlmm 54 GPIO_ACTIVE_LOW>;
 
 	mx25l12805d@0 {
 		compatible = "jedec,spi-nor";

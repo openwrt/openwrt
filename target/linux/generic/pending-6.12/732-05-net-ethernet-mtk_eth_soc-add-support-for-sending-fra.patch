@@ -178,7 +178,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +		.vlan_tci = skb_vlan_tag_get(skb),
 +		.first = true,
 +	};
-+
+ 
+-	mtk_tx_set_dma_desc(dev, itxd, &txd_info);
 +	offset = 0;
 +	frag_size = skb_headlen(cur_skb);
 +	if (cur_skb != skb) {
@@ -204,13 +205,6 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +			struct ipv6hdr *iph = ipv6_hdr(cur_skb);
 +			struct ipv6hdr *iph2 = ipv6_hdr(skb);
  
--	mtk_tx_set_dma_desc(dev, itxd, &txd_info);
-+			mtk_tx_update_ip6addr(skb, iph, th, &iph->saddr,
-+					      &iph2->saddr);
-+			mtk_tx_update_ip6addr(skb, iph, th, &iph->daddr,
-+					      &iph2->daddr);
-+		}
- 
 -	itx_buf->mac_id = mac->id;
 -	setup_tx_buf(eth, itx_buf, itxd_pdma, txd_info.addr, txd_info.size,
 -		     k++);
@@ -223,11 +217,23 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -		skb_frag_t *frag = &skb_shinfo(skb)->frags[i];
 -		unsigned int offset = 0;
 -		int frag_size = skb_frag_size(frag);
-+		mtk_tx_update_port(skb, th, &th->source, th2->source);
-+		mtk_tx_update_port(skb, th, &th->dest, th2->dest);
++			mtk_tx_update_ip6addr(skb, iph, th, &iph->saddr,
++					      &iph2->saddr);
++			mtk_tx_update_ip6addr(skb, iph, th, &iph->daddr,
++					      &iph2->daddr);
++		}
  
 -		while (frag_size) {
 -			bool new_desc = true;
++		mtk_tx_update_port(skb, th, &th->source, th2->source);
++		mtk_tx_update_port(skb, th, &th->dest, th2->dest);
+ 
+-			if (MTK_HAS_CAPS(soc->caps, MTK_QDMA) ||
+-			    (i & 0x1)) {
+-				txd = mtk_qdma_phys_to_virt(ring, txd->txd2);
+-				txd_pdma = qdma_to_pdma(ring, txd);
+-				if (txd == ring->last_free)
+-					goto err_dma;
 +		offset = -header_len;
 +		frag_size += header_len;
 +	} else if (next_skb) {
@@ -236,22 +242,16 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +			struct iphdr *iph = ip_hdr(cur_skb);
 +			__be16 ip_len_val = cpu_to_be16(ip_len);
  
--			if (MTK_HAS_CAPS(soc->caps, MTK_QDMA) ||
--			    (i & 0x1)) {
--				txd = mtk_qdma_phys_to_virt(ring, txd->txd2);
--				txd_pdma = qdma_to_pdma(ring, txd);
--				if (txd == ring->last_free)
--					goto err_dma;
+-				n_desc++;
+-			} else {
+-				new_desc = false;
+-			}
 +			csum_replace2(&iph->check, iph->tot_len, ip_len_val);
 +			iph->tot_len = ip_len_val;
 +		} else {
 +			struct ipv6hdr *iph = ipv6_hdr(cur_skb);
 +			__be16 ip_len_val = cpu_to_be16(ip_len - sizeof(*iph));
- 
--				n_desc++;
--			} else {
--				new_desc = false;
--			}
++
 +			iph->payload_len = ip_len_val;
 +		}
 +	}
@@ -329,14 +329,14 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +		} else {
 +			state.txd_pdma->txd2 |= TX_DMA_LS1;
 +		}
- 	}
- 
++	}
++
 +	if (next_skb) {
 +		cur_skb = next_skb;
 +		next_skb = cur_skb->next;
 +		goto next;
-+	}
-+
+ 	}
+ 
 +	/* store skb to cleanup */
 +	state.tx_buf->type = MTK_TYPE_SKB;
 +	state.tx_buf->data = skb;
@@ -400,7 +400,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	return nfrags;
  }
  
-@@ -1609,9 +1742,26 @@ static bool mtk_skb_has_small_frag(struc
+@@ -1609,9 +1742,29 @@ static bool mtk_skb_has_small_frag(struc
  		if (skb_frag_size(&skb_shinfo(skb)->frags[i]) < min_size)
  			return true;
  
@@ -420,6 +420,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	if (!(skb_shinfo(skb)->gso_type & SKB_GSO_FRAGLIST))
 +		return true;
 +
++	if (skb_tnl_header_len(skb))
++		return false;
++
 +	return skb_pagelen(skb) - header_len == skb_shinfo(skb)->gso_size &&
 +	       skb_headlen(skb) > header_len;
 +}
@@ -427,7 +430,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static netdev_tx_t mtk_start_xmit(struct sk_buff *skb, struct net_device *dev)
  {
  	struct mtk_mac *mac = netdev_priv(dev);
-@@ -1619,6 +1769,7 @@ static netdev_tx_t mtk_start_xmit(struct
+@@ -1619,6 +1772,7 @@ static netdev_tx_t mtk_start_xmit(struct
  	struct mtk_tx_ring *ring = &eth->tx_ring;
  	struct net_device_stats *stats = &dev->stats;
  	struct sk_buff *segs, *next;
@@ -435,7 +438,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	bool gso = false;
  	int tx_num;
  
-@@ -1647,37 +1798,42 @@ static netdev_tx_t mtk_start_xmit(struct
+@@ -1647,37 +1801,42 @@ static netdev_tx_t mtk_start_xmit(struct
  		return NETDEV_TX_BUSY;
  	}
  

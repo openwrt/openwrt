@@ -24,11 +24,6 @@ case "$board" in
 		[ "$PHYNBR" -eq 1 ] && \
 			mtd_get_mac_ascii art "protest_ath0_mac" > /sys${DEVPATH}/macaddress
 		;;
-	dlink,dap-1330-a1|\
-	dlink,dap-1365-a1|\
-	dlink,dch-g020-a1)
-		mtd_get_mac_text "mp" 0x13 > /sys${DEVPATH}/macaddress
-		;;
 	dlink,dap-2230-a1|\
 	dlink,dap-3320-a1)
 		mtd_get_mac_ascii bdcfg "wlanmac" > /sys${DEVPATH}/macaddress
@@ -67,9 +62,18 @@ case "$board" in
 		[ "$PHYNBR" -eq 0 ] && \
 		macaddr_add $(cat /sys/class/net/eth0/address) 1 > /sys${DEVPATH}/macaddress
 		;;
+	enterasys,ws-ap3705i)
+		[ "$PHYNBR" -eq 0 ] && \
+			mtd_get_mac_ascii u-boot-env0 RADIOADDR1 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" -eq 1 ] && \
+			mtd_get_mac_ascii u-boot-env0 RADIOADDR0 > /sys${DEVPATH}/macaddress
+		;;
 	extreme-networks,ws-ap3805i)
 		[ "$PHYNBR" -eq 0 ] && \
-		mtd_get_mac_ascii cfg1 RADIOADDR0 > /sys${DEVPATH}/macaddress
+			mtd_get_mac_ascii cfg1 RADIOADDR0 > /sys${DEVPATH}/macaddress
+		;;
+		[ "$PHYNBR" -eq 1 ] && \
+			mtd_get_mac_ascii cfg1 RADIOADDR1 > /sys${DEVPATH}/macaddress
 		;;
 	iodata,wn-ac1167dgr|\
 	iodata,wn-ac1600dgr|\
@@ -120,12 +124,11 @@ case "$board" in
 		[ "$PHYNBR" -eq 1 ] && \
 			macaddr_add $base_mac 1 > /sys${DEVPATH}/macaddress
 		;;
-	zyxel,nwa1123-ac)
+	wd,mynet-n600|\
+	wd,mynet-n750)
 		[ "$PHYNBR" -eq 0 ] && \
-			mtd_get_mac_text mib0 0x66 > /sys${DEVPATH}/macaddress
-		;;
-	zyxel,nwa1123-ni)
+			mtd_get_mac_ascii devdata wlan24mac > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" -eq 1 ] && \
-			mtd_get_mac_text mib0 0x66 > /sys${DEVPATH}/macaddress
+			mtd_get_mac_ascii devdata wlan5mac > /sys${DEVPATH}/macaddress
 		;;
 esac

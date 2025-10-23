@@ -27,8 +27,10 @@ platform_do_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
+	plasmacloud,esx28|\
 	plasmacloud,psx8|\
-	plasmacloud,psx10)
+	plasmacloud,psx10|\
+	plasmacloud,psx28)
 		PART_NAME="inactive"
 		platform_do_upgrade_dualboot_plasmacloud "$1"
 		;;
@@ -36,6 +38,10 @@ platform_do_upgrade() {
 	tplink,sg2210p-v3)
 		tplink_sg2xxx_fix_mtdparts
 		default_do_upgrade "$1"
+		;;
+	linksys,lgs328c|\
+	linksys,lgs352c)
+		nand_do_upgrade "$1"
 		;;
 	*)
 		default_do_upgrade "$1"

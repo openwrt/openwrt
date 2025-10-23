@@ -1,0 +1,26 @@
+From bc4bc2a1609712e6c5de01be8a20341b710dc99b Mon Sep 17 00:00:00 2001
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Mon, 24 Feb 2025 13:05:29 +0100
+Subject: [PATCH] pmdomain: rockchip: Fix build error
+
+To resolve the build error with undefined reference to
+`arm_smccc_1_1_get_conduit', let's add a build dependency to
+HAVE_ARM_SMCCC_DISCOVERY.
+
+Reported-by: Stephen Rothwell <sfr@canb.auug.org.au>
+Fixes: 61eeb9678789 ("pmdomain: rockchip: Check if SMC could be handled by TA")
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+---
+ drivers/pmdomain/rockchip/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/pmdomain/rockchip/Kconfig
++++ b/drivers/pmdomain/rockchip/Kconfig
+@@ -4,6 +4,7 @@ if ARCH_ROCKCHIP || COMPILE_TEST
+ config ROCKCHIP_PM_DOMAINS
+ 	bool "Rockchip generic power domain"
+ 	depends on PM
++	depends on HAVE_ARM_SMCCC_DISCOVERY
+ 	select PM_GENERIC_DOMAINS
+ 	help
+ 	  Say y here to enable power domain support.

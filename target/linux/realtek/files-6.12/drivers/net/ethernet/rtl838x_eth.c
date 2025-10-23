@@ -131,7 +131,10 @@ static void rtl839x_create_tx_header(struct p_hdr *h, unsigned int dest_port, in
 static void rtl930x_create_tx_header(struct p_hdr *h, unsigned int dest_port, int prio)
 {
 	h->cpu_tag[0] = 0x8000;  /* CPU tag marker */
-	h->cpu_tag[1] = 0x0200; /* Set FWD_TYPE to LOGICAL (2) */
+
+	h->cpu_tag[1] = FIELD_PREP(RTL93XX_CPU_TAG1_FWD_MASK,
+				   RTL93XX_CPU_TAG1_FWD_LOGICAL);
+	h->cpu_tag[1] |= FIELD_PREP(RTL93XX_CPU_TAG1_IGNORE_STP_MASK, 1);
 	h->cpu_tag[2] = 0;
 	h->cpu_tag[3] = 0;
 	h->cpu_tag[4] = 0;
@@ -147,7 +150,10 @@ static void rtl930x_create_tx_header(struct p_hdr *h, unsigned int dest_port, in
 static void rtl931x_create_tx_header(struct p_hdr *h, unsigned int dest_port, int prio)
 {
 	h->cpu_tag[0] = 0x8000;  /* CPU tag marker */
-	h->cpu_tag[1] = 0x0200; /* Set FWD_TYPE to LOGICAL (2) */
+
+	h->cpu_tag[1] = FIELD_PREP(RTL93XX_CPU_TAG1_FWD_MASK,
+				   RTL93XX_CPU_TAG1_FWD_LOGICAL);
+	h->cpu_tag[1] |= FIELD_PREP(RTL93XX_CPU_TAG1_IGNORE_STP_MASK, 1);
 	h->cpu_tag[2] = 0;
 	h->cpu_tag[3] = 0;
 	h->cpu_tag[4] = h->cpu_tag[5] = h->cpu_tag[6] = h->cpu_tag[7] = 0;
@@ -1518,9 +1524,6 @@ static int rtl931x_chip_init(struct rtl838x_eth_priv *priv)
 
 	/* Enable ESD auto recovery */
 	sw_w32(0x1, RTL931X_MDX_CTRL_RSVD);
-
-	/* Init SPI, is this for thermal control or what? */
-	sw_w32_mask(0x7 << 11, 0x2 << 11, RTL931X_SPI_CTRL0);
 
 	return 0;
 }

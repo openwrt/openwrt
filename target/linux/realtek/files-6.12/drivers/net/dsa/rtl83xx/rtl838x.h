@@ -582,6 +582,17 @@ typedef enum {
 #define RTL931X_LED_PORT_FIB_MASK_CTRL		(0x065c)
 #define RTL931X_LED_PORT_COMBO_MASK_CTRL	(0x0664)
 
+#define RTL931X_LED_GLB_ACTIVE_LOW BIT(21)
+
+#define RTL931X_LED_SETX_0_CTRL(x) (RTL931X_LED_SET0_0_CTRL - (x * 8))
+#define RTL931X_LED_SETX_1_CTRL(x) (RTL931X_LED_SETX_0_CTRL(x) - 4)
+
+/* get register for given set and led in the set */
+#define RTL931X_LED_SETX_LEDY(x,y) (RTL931X_LED_SETX_0_CTRL(x) - 4 * (y / 2))
+
+/* get shift for given led in any set */
+#define RTL931X_LED_SET_LEDX_SHIFT(x) (16 * (x % 2))
+
 #define MAX_VLANS 4096
 #define MAX_LAGS 16
 #define MAX_PRIOS 8
@@ -669,14 +680,15 @@ struct rtldsa_counter_state {
 };
 
 struct rtl838x_port {
-	bool enable;
+	bool enable:1;
+	bool phy_is_integrated:1;
+	bool is10G:1;
+	bool is2G5:1;
+	bool isolated:1;
 	u64 pm;
 	u16 pvid;
 	bool eee_enabled;
 	enum phy_type phy;
-	bool phy_is_integrated;
-	bool is10G;
-	bool is2G5;
 	int sds_num;
 	int led_set;
 	int leds_on_this_port;
@@ -711,32 +723,33 @@ struct rtl838x_l2_entry {
 	u16 vid;
 	u16 rvid;
 	u8 port;
-	bool valid;
 	enum l2_entry_type type;
-	bool is_static;
-	bool is_ip_mc;
-	bool is_ipv6_mc;
-	bool block_da;
-	bool block_sa;
-	bool suspended;
-	bool next_hop;
+	bool valid:1;
+	bool is_static:1;
+	bool is_ip_mc:1;
+	bool is_ipv6_mc:1;
+	bool block_da:1;
+	bool block_sa:1;
+	bool suspended:1;
+	bool next_hop:1;
+	bool is_trunk:1;
+	bool nh_vlan_target:1;  /* Only RTL83xx: VLAN used for next hop */
 	int age;
 	u8 trunk;
-	bool is_trunk;
 	u8 stack_dev;
 	u16 mc_portmask_index;
 	u32 mc_gip;
 	u32 mc_sip;
 	u16 mc_mac_index;
 	u16 nh_route_id;
-	bool nh_vlan_target;  /* Only RTL83xx: VLAN used for next hop */
 
 	/* The following is only valid on RTL931x */
-	bool is_open_flow;
-	bool is_pe_forward;
-	bool is_local_forward;
-	bool is_remote_forward;
-	bool is_l2_tunnel;
+	bool is_open_flow:1;
+	bool is_pe_forward:1;
+	bool is_local_forward:1;
+	bool is_remote_forward:1;
+	bool is_l2_tunnel:1;
+	bool hash_msb:1;
 	int l2_tunnel_id;
 	int l2_tunnel_list_id;
 };
@@ -996,6 +1009,23 @@ struct rtl83xx_route {
 	struct rtl93xx_route_attr attr;
 };
 
+/**
+ * struct rtldsa_mirror_config - Mirror configuration for specific group and port
+ */
+struct rtldsa_mirror_config {
+	/** @ctrl: control register for mirroring group */
+	int ctrl;
+
+	/** @spm: register for the destination port members */
+	int spm;
+
+	/** @dpm: register for the source port members */
+	int dpm;
+
+	/** @val: @ctrl register settings to enable mirroring */
+	u32 val;
+};
+
 struct rtl838x_reg {
 	void (*mask_port_reg_be)(u64 clear, u64 set, int reg);
 	void (*set_port_reg_be)(u64 set, int reg);
@@ -1011,7 +1041,6 @@ struct rtl838x_reg {
 	void (*traffic_enable)(int source, int dest);
 	void (*traffic_disable)(int source, int dest);
 	void (*traffic_set)(int source, u64 dest_matrix);
-	u64 (*traffic_get)(int source);
 	int l2_ctrl_0;
 	int l2_ctrl_1;
 	int smi_poll_ctrl;
@@ -1046,9 +1075,7 @@ struct rtl838x_reg {
 	int  (*l2_port_new_salrn)(int port);
 	int  (*l2_port_new_sa_fwd)(int port);
 	int (*set_ageing_time)(unsigned long msec);
-	int mir_ctrl;
-	int mir_dpm;
-	int mir_spm;
+	int (*get_mirror_config)(struct rtldsa_mirror_config *config, int group, int port);
 	u64 (*read_l2_entry_using_hash)(u32 hash, u32 position, struct rtl838x_l2_entry *e);
 	void (*write_l2_entry_using_hash)(u32 hash, u32 pos, struct rtl838x_l2_entry *e);
 	u64 (*read_cam)(int idx, struct rtl838x_l2_entry *e);

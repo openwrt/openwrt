@@ -293,6 +293,20 @@ static inline int rtl839x_l2_port_new_sa_fwd(int p)
 	return RTL839X_L2_PORT_NEW_SA_FWD(p);
 }
 
+static int rtldsa_839x_get_mirror_config(struct rtldsa_mirror_config *config,
+					 int group, int port)
+{
+	config->ctrl = RTL839X_MIR_CTRL + group * 4;
+	config->spm = RTL839X_MIR_SPM_CTRL + group * 8;
+	config->dpm = RTL839X_MIR_DPM_CTRL + group * 8;
+
+	/* Enable mirroring to destination port */
+	config->val = BIT(0);
+	config->val |= port << 4;
+
+	return 0;
+}
+
 static inline int rtl839x_trk_mbr_ctr(int group)
 {
 	return RTL839X_TRK_MBR_CTR + (group << 3);
@@ -521,11 +535,6 @@ static void rtl839x_vlan_profile_setup(int profile)
 	sw_w32(p[1], RTL839X_VLAN_PROFILE(profile) + 4);
 
 	rtl839x_write_mcast_pmask(UNKNOWN_MC_PMASK, 0x001fffffffffffff);
-}
-
-static u64 rtl839x_traffic_get(int source)
-{
-	return rtl839x_get_port_reg_be(rtl839x_port_iso_ctrl(source));
 }
 
 static void rtl839x_traffic_set(int source, u64 dest_matrix)
@@ -1640,7 +1649,6 @@ const struct rtl838x_reg rtl839x_reg = {
 	.stat_port_std_mib = RTL839X_STAT_PORT_STD_MIB,
 	.traffic_enable = rtl839x_traffic_enable,
 	.traffic_disable = rtl839x_traffic_disable,
-	.traffic_get = rtl839x_traffic_get,
 	.traffic_set = rtl839x_traffic_set,
 	.port_iso_ctrl = rtl839x_port_iso_ctrl,
 	.l2_ctrl_0 = RTL839X_L2_CTRL_0,
@@ -1678,9 +1686,7 @@ const struct rtl838x_reg rtl839x_reg = {
 	.mac_port_ctrl = rtl839x_mac_port_ctrl,
 	.l2_port_new_salrn = rtl839x_l2_port_new_salrn,
 	.l2_port_new_sa_fwd = rtl839x_l2_port_new_sa_fwd,
-	.mir_ctrl = RTL839X_MIR_CTRL,
-	.mir_dpm = RTL839X_MIR_DPM_CTRL,
-	.mir_spm = RTL839X_MIR_SPM_CTRL,
+	.get_mirror_config = rtldsa_839x_get_mirror_config,
 	.read_l2_entry_using_hash = rtl839x_read_l2_entry_using_hash,
 	.write_l2_entry_using_hash = rtl839x_write_l2_entry_using_hash,
 	.read_cam = rtl839x_read_cam,

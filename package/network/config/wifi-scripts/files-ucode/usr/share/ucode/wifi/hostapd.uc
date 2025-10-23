@@ -483,7 +483,8 @@ function generate(config) {
 	append_vars(config, [ 'noscan' ]);
 
 	/* airtime */
-	append_vars(config, [ 'airtime_mode' ]);
+	if (config.airtime_mode)
+		append_vars(config, [ 'airtime_mode' ]);
 
 	/* assoc/thresholds */
 	append_vars(config, [ 'rssi_reject_assoc_rssi', 'rssi_ignore_probe_request', 'iface_max_num_sta', 'no_probe_resp_if_max_sta' ]);
@@ -546,6 +547,7 @@ export function setup(data) {
 	if (data.config.macaddr_base)
 		append('\n#macaddr_base', data.config.macaddr_base);
 
+	let has_ap;
 	for (let k, interface in data.interfaces) {
 		if (interface.config.mode != 'ap')
 			continue;
@@ -558,6 +560,7 @@ export function setup(data) {
 		setup_interface(k, data, interface.config, interface.vlans, interface.stas, phy_features, owe ? 'owe' : null );
 		if (owe)
 			setup_interface(k, data, interface.config, interface.vlans, interface.stas, phy_features, 'owe-transition');
+		has_ap = true;
 	}
 
 	let config = dump_config(file_name);
@@ -565,7 +568,7 @@ export function setup(data) {
 	let msg = {
 		phy: data.phy,
 		radio: data.config.radio,
-		config: file_name,
+		config: has_ap ? file_name : "",
 		prev_config: file_name + '.prev'
 	};
 	let ret = global.ubus.call('hostapd', 'config_set', msg);

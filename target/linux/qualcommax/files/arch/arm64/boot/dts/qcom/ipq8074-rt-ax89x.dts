@@ -146,7 +146,7 @@
 		regulator-name = "usb0_vbus";
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
-		gpio = <&tlmm 30 GPIO_ACTIVE_HIGH>;
+		gpios = <&tlmm 30 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 		regulator-boot-on;
 	};
@@ -156,7 +156,7 @@
 		regulator-name = "usb1_vbus";
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
-		gpio = <&tlmm 31 GPIO_ACTIVE_HIGH>;
+		gpios = <&tlmm 31 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 		regulator-boot-on;
 	};
@@ -554,6 +554,9 @@
 		reg = <0x10>;
 
 		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
 			port@0 {
 				reg = <0>;
 				label = "cpu";

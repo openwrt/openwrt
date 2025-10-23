@@ -1,0 +1,75 @@
+From d67b740b9edfa46310355e2b68050f79ebf05a4c Mon Sep 17 00:00:00 2001
+From: Harshal Gohel <hg@simonwunderlich.de>
+Date: Sun, 10 Aug 2025 20:05:14 +0200
+Subject: [PATCH] i2c: rtl9300: Fix multi-byte I2C write
+
+The RTL93xx I2C controller has 4 32 bit registers to store the bytes for
+the upcoming I2C transmission. The first byte is stored in the
+least-significant byte of the first register. And the last byte in the most
+significant byte of the last register. A map of the transferred bytes to
+their order in the registers is:
+
+reg 0: 0x04_03_02_01
+reg 1: 0x08_07_06_05
+reg 2: 0x0c_0b_0a_09
+reg 3: 0x10_0f_0e_0d
+
+The i2c_read() function basically demonstrates how the hardware would pick
+up bytes from this register set. But the i2c_write() function was just
+pushing bytes one after another to the least significant byte of a register
+AFTER shifting the last one to the next more significant byte position.
+
+If you would then have tried to send a buffer with numbers 1-11 using
+i2c_write(), you would have ended up with following register content:
+
+reg 0: 0x01_02_03_04
+reg 1: 0x05_06_07_08
+reg 2: 0x00_09_0a_0b
+reg 3: 0x00_00_00_00
+
+On the wire, you would then have seen:
+
+  Sr Addr Wr [A] 04 A 03 A 02 A 01 A 08 A 07 A 06 A 05 A 0b A 0a A 09 A P
+
+But the correct data transmission was expected to be
+
+  Sr Addr Wr [A] 01 A 02 A 03 A 04 A 05 A 06 A 07 A 08 A 09 A 0a A 0b A P
+
+Because of this multi-byte ordering problem, only single byte i2c_write()
+operations were executed correctly (on the wire).
+
+By shifting the byte directly to the correct end position in the register,
+it is possible to avoid this incorrect byte ordering and fix multi-byte
+transmissions.
+
+The second initialization (to 0) of vals was also be dropped because this
+array is initialized to 0 on the stack by using `= {};`. This makes the
+fix a lot more readable.
+
+Fixes: c366be720235 ("i2c: Add driver for the RTL9300 I2C controller")
+Signed-off-by: Harshal Gohel <hg@simonwunderlich.de>
+Cc: <stable@vger.kernel.org> # v6.13+
+Co-developed-by: Sven Eckelmann <sven@narfation.org>
+Signed-off-by: Sven Eckelmann <sven@narfation.org>
+Reviewed-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
+Tested-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
+Signed-off-by: Andi Shyti <andi.shyti@kernel.org>
+Link: https://lore.kernel.org/r/20250810-i2c-rtl9300-multi-byte-v5-2-cd9dca0db722@narfation.org
+
+--- a/drivers/i2c/busses/i2c-rtl9300.c
++++ b/drivers/i2c/busses/i2c-rtl9300.c
+@@ -143,10 +143,10 @@ static int rtl9300_i2c_write(struct rtl9
+ 		return -EIO;
+ 
+ 	for (i = 0; i < len; i++) {
+-		if (i % 4 == 0)
+-			vals[i/4] = 0;
+-		vals[i/4] <<= 8;
+-		vals[i/4] |= buf[i];
++		unsigned int shift = (i % 4) * 8;
++		unsigned int reg = i / 4;
++
++		vals[reg] |= buf[i] << shift;
+ 	}
+ 
+ 	return regmap_bulk_write(i2c->regmap, i2c->reg_base + RTL9300_I2C_MST_DATA_WORD0,

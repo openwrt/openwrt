@@ -166,7 +166,7 @@
 &blsp1_spi1 {
 	pinctrl-0 = <&spi_0_pins>;
 	pinctrl-names = "default";
-	cs-gpios = <&tlmm 12 GPIO_ACTIVE_HIGH>;
+	cs-gpios = <&tlmm 12 GPIO_ACTIVE_LOW>;
 	status = "okay";
 
 	m25p80@0 {
@@ -226,7 +226,7 @@
 
 &pcie0 {
 	status = "okay";
-	perst-gpio = <&tlmm 42 GPIO_ACTIVE_HIGH>;
+	perst-gpios = <&tlmm 42 GPIO_ACTIVE_HIGH>;
 };
 
 &pcie_bridge0 {

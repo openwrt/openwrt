@@ -17,9 +17,9 @@
  
  #include <mtd.h>
  #include <linux/mtd/mtd.h>
-@@ -21,6 +28,28 @@ int board_init(void)
- 	return 0;
- }
+@@ -16,6 +23,28 @@
+ 
+ DECLARE_GLOBAL_DATA_PTR;
  
 +int board_late_init(void)
 +{
@@ -39,9 +39,9 @@
 +		}
 +	}
 +
-+ 	env_relocate();
-+ 	return 0;
-+ }
++	env_relocate();
++	return 0;
++}
 +
  int board_nmbm_init(void)
  {

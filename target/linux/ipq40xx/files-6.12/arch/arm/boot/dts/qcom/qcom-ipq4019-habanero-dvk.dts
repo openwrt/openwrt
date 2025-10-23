@@ -210,7 +210,7 @@
 
 	pinctrl-0 = <&spi_0_pins>;
 	pinctrl-names = "default";
-	cs-gpios = <&tlmm 12 GPIO_ACTIVE_HIGH>;
+	cs-gpios = <&tlmm 12 GPIO_ACTIVE_LOW>;
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
@@ -319,8 +319,8 @@
 &pcie0 {
 	status = "okay";
 
-	perst-gpio = <&tlmm 38 GPIO_ACTIVE_LOW>;
-	wake-gpio = <&tlmm 50 GPIO_ACTIVE_LOW>;
+	perst-gpios = <&tlmm 38 GPIO_ACTIVE_LOW>;
+	wake-gpios = <&tlmm 50 GPIO_ACTIVE_LOW>;
 };
 
 &mdio {

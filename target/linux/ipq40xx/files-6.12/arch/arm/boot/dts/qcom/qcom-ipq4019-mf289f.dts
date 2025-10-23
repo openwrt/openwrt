@@ -132,8 +132,8 @@
 	pinctrl-0 = <&spi_0_pins>;
 	pinctrl-names = "default";
 	status = "okay";
-	cs-gpios = <&tlmm 12 GPIO_ACTIVE_HIGH>,
-		   <&tlmm 54 GPIO_ACTIVE_HIGH>;
+	cs-gpios = <&tlmm 12 GPIO_ACTIVE_LOW>,
+		   <&tlmm 54 GPIO_ACTIVE_LOW>;
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
@@ -420,9 +420,9 @@
 /* This node is used only on AT1 version for 5Ghz on QCA9984 */
 &pcie0 {
 	status = "okay";
-	perst-gpio = <&tlmm 38 GPIO_ACTIVE_LOW>;
-	wake-gpio = <&tlmm 40 GPIO_ACTIVE_LOW>;
-	clkreq-gpio = <&tlmm 39 GPIO_ACTIVE_LOW>;
+	perst-gpios = <&tlmm 38 GPIO_ACTIVE_LOW>;
+	wake-gpios = <&tlmm 40 GPIO_ACTIVE_LOW>;
+	clkreq-gpios = <&tlmm 39 GPIO_ACTIVE_LOW>;
 };
 
 &pcie_bridge0 {

@@ -237,7 +237,7 @@ endif
 
 $(STAGING_DIR_HOST)/bin/mkhash: $(SCRIPT_DIR)/mkhash.c
 	mkdir -p $(dir $@)
-	$(CC) -O2 -I$(TOPDIR)/tools/include -o $@ $<
+	$(STAGING_DIR_HOST)/bin/gcc -O2 -I$(TOPDIR)/tools/include -o $@ $<
 
 $(STAGING_DIR_HOST)/bin/xxd: $(SCRIPT_DIR)/xxdi.pl
 	$(LN) $< $@

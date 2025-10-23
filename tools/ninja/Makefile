@@ -1,12 +1,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ninja
-PKG_VERSION:=1.12.1
+PKG_VERSION:=1.13.1
 PKG_RELEASE:=1
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://codeload.github.com/ninja-build/ninja/tar.gz/v$(PKG_VERSION)?
-PKG_HASH:=821bdff48a3f683bc4bb3b6f0b5fe7b2d647cf65d52aeb63328c91a6c6df285a
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_URL:=https://github.com/ninja-build/ninja
+PKG_SOURCE_VERSION:=v$(PKG_VERSION)
+PKG_MIRROR_HASH:=6e8b53c51243fbd1243736b8ebdc90e942c7ba91bea57bbae650ea2de534a7de
 
 include $(INCLUDE_DIR)/host-build.mk
 

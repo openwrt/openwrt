@@ -525,6 +525,22 @@ endef
 $(eval $(call KernelPackage,phy-realtek))
 
 
+define KernelPackage/phy-rtl8261n
+   SUBMENU:=$(NETWORK_DEVICES_MENU)
+   TITLE:=Realtek RTL8261N NBASE-T PHY driver
+   KCONFIG:=CONFIG_RTL8261N_PHY
+   DEPENDS:=+kmod-libphy
+   FILES:=$(LINUX_DIR)/drivers/net/phy/rtl8261n/rtl8261n.ko
+   AUTOLOAD:=$(call AutoLoad,18,rtl8261n,1)
+endef
+
+define KernelPackage/phy-rtl8261n/description
+   Supports the Realtek 8261N NBASE-T PHY.
+endef
+
+$(eval $(call KernelPackage,phy-rtl8261n))
+
+
 define KernelPackage/phy-smsc
    SUBMENU:=$(NETWORK_DEVICES_MENU)
    TITLE:=SMSC PHY driver
@@ -567,7 +583,7 @@ define KernelPackage/phy-aeonsemi-as21xxx
   AUTOLOAD:=$(call AutoLoad,18,as21xxx)
 endef
 
-define KernelPackage/phy-aeonsemi-as21x1x/description
+define KernelPackage/phy-aeonsemi-as21xxx/description
   Kernel modules for Aeonsemi AS21x1x 10G Ethernet PHY
 endef
 
@@ -1259,7 +1275,7 @@ define KernelPackage/e1000e
   DEPENDS:=@PCIE_SUPPORT +kmod-ptp
   KCONFIG:=CONFIG_E1000E
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/e1000e/e1000e.ko
-  AUTOLOAD:=$(call AutoProbe,e1000e)
+  AUTOLOAD:=$(call AutoProbe,e1000e,1)
   MODPARAMS.e1000e:= \
     IntMode=1 \
     InterruptThrottleRate=4,4,4,4,4,4,4,4
@@ -1970,6 +1986,13 @@ endef
 define KernelPackage/mlxsw-spectrum/description
   This driver supports Mellanox Technologies
   Spectrum/Spectrum-2/Spectrum-3/Spectrum-4 Ethernet Switch ASICs.
+endef
+
+define KernelPackage/mlxsw-spectrum/install
+	$(INSTALL_DIR) $(1)/etc/hotplug.d/net
+	$(INSTALL_DATA) \
+		./files/hotplug-mlxsw-spectrum-port-names.sh \
+		$(1)/etc/hotplug.d/net/10-mlxsw-spectrum-port-names
 endef
 
 $(eval $(call KernelPackage,mlxsw-spectrum))

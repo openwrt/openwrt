@@ -1,0 +1,90 @@
+From 7daf0565460e548eb766a0bcc171c34e02dd6eba Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Mon, 19 May 2025 14:22:55 +0200
+Subject: [PATCH 3/6] reset: airoha: convert to regmap API
+
+In preparation for support for Airoha AN7583, convert the driver to
+regmap API. This is needed as Airoha AN7583 will use syscon to access
+reset registers.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/reset/reset-airoha.c | 35 ++++++++++++++++++-----------------
+ 1 file changed, 18 insertions(+), 17 deletions(-)
+
+--- a/drivers/reset/reset-airoha.c
++++ b/drivers/reset/reset-airoha.c
+@@ -10,6 +10,7 @@
+ #include <dm.h>
+ #include <linux/io.h>
+ #include <reset-uclass.h>
++#include <regmap.h>
+ 
+ #include <dt-bindings/reset/airoha,en7581-reset.h>
+ 
+@@ -21,7 +22,7 @@
+ struct airoha_reset_priv {
+ 	const u16 *bank_ofs;
+ 	const u16 *idx_map;
+-	void __iomem *base;
++	struct regmap *map;
+ };
+ 
+ static const u16 en7581_rst_ofs[] = {
+@@ -90,17 +91,11 @@ static const u16 en7581_rst_map[] = {
+ static int airoha_reset_update(struct airoha_reset_priv *priv,
+ 			       unsigned long id, bool assert)
+ {
+-	void __iomem *addr = priv->base + priv->bank_ofs[id / RST_NR_PER_BANK];
+-	u32 val;
+-
+-	val = readl(addr);
+-	if (assert)
+-		val |= BIT(id % RST_NR_PER_BANK);
+-	else
+-		val &= ~BIT(id % RST_NR_PER_BANK);
+-	writel(val, addr);
++	u16 offset = priv->bank_ofs[id / RST_NR_PER_BANK];
+ 
+-	return 0;
++	return regmap_update_bits(priv->map, offset,
++				  BIT(id % RST_NR_PER_BANK),
++				  assert ? BIT(id % RST_NR_PER_BANK) : 0);
+ }
+ 
+ static int airoha_reset_assert(struct reset_ctl *reset_ctl)
+@@ -123,11 +118,16 @@ static int airoha_reset_status(struct re
+ {
+ 	struct airoha_reset_priv *priv = dev_get_priv(reset_ctl->dev);
+ 	int id = reset_ctl->id;
+-	void __iomem *addr;
++	u16 offset;
++	u32 val;
++	int ret;
+ 
+-	addr = priv->base + priv->bank_ofs[id / RST_NR_PER_BANK];
++	offset = priv->bank_ofs[id / RST_NR_PER_BANK];
++	ret = regmap_read(priv->map, offset, &val);
++	if (ret)
++		return ret;
+ 
+-	return !!(readl(addr) & BIT(id % RST_NR_PER_BANK));
++	return !!(val & BIT(id % RST_NR_PER_BANK));
+ }
+ 
+ static int airoha_reset_xlate(struct reset_ctl *reset_ctl,
+@@ -153,10 +153,11 @@ static struct reset_ops airoha_reset_ops
+ static int airoha_reset_probe(struct udevice *dev)
+ {
+ 	struct airoha_reset_priv *priv = dev_get_priv(dev);
++	int ret;
+ 
+-	priv->base = dev_remap_addr(dev);
+-	if (!priv->base)
+-		return -ENOMEM;
++	ret = regmap_init_mem(dev_ofnode(dev), &priv->map);
++	if (ret)
++		return ret;
+ 
+ 	priv->bank_ofs = en7581_rst_ofs;
+ 	priv->idx_map = en7581_rst_map;

@@ -138,7 +138,7 @@ function config_init(uci)
 
 		for (let dev_name in dev_names) {
 			let dev = devices[dev_name];
-			if (!dev)
+			if (!dev || dev.config.disabled)
 				continue;
 
 			let handler = handlers[dev_name];
@@ -442,6 +442,17 @@ const ubus_obj = {
 		call: function(req) {
 			return wdev_call(req, (dev) => {
 				dev.stop();
+				return 0;
+			});
+		}
+	},
+	retry: {
+		args: wdev_args,
+		call: function(req) {
+			hostapd_update_mlo();
+
+			return wdev_call(req, (dev) => {
+				dev.retry_setup();
 				return 0;
 			});
 		}

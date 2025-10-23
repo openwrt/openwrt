@@ -253,7 +253,7 @@ Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
 +};
 --- /dev/null
 +++ b/configs/mt7981_gatonetworks_gdsp_defconfig
-@@ -0,0 +1,145 @@
+@@ -0,0 +1,146 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -281,6 +281,7 @@ Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
 +CONFIG_LOGLEVEL=7
 +CONFIG_CONSOLE_MUX=y
 +CONFIG_LOG=y
++# CONFIG_BOARD_INIT is not set
 +CONFIG_BOARD_LATE_INIT=y
 +CONFIG_HUSH_PARSER=y
 +CONFIG_SYS_PROMPT="GDSP> "
@@ -341,10 +342,10 @@ Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
 +CONFIG_EFI_PARTITION=y
 +CONFIG_ENV_OVERWRITE=y
 +CONFIG_ENV_IS_IN_MTD=y
-+CONFIG_SYS_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_RELOC_GD_ENV_ADDR=y
 +CONFIG_ENV_MTD_DEV="u-boot-env"
-+CONFIG_USE_DEFAULT_ENV_FILE=y
-+CONFIG_DEFAULT_ENV_FILE="defenvs/gatonetworks_gdsp_env"
++CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/gatonetworks_gdsp_env"
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
 +CONFIG_VERSION_VARIABLE=y
 +CONFIG_NETCONSOLE=y

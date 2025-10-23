@@ -45,17 +45,18 @@ function iface_setup(config) {
 
 	append('bssid', config.macaddr);
 	config.ssid2 = config.ssid;
+	config.wmm_enabled = 1;
 	append_string_vars(config, [ 'ssid2' ]);
 
 	append_vars(config, [
 		'ctrl_interface', 'ap_isolate', 'max_num_sta', 'ap_max_inactivity', 'airtime_bss_weight',
 		'airtime_bss_limit', 'airtime_sta_weight', 'bss_load_update_period', 'chan_util_avg_period',
 		'disassoc_low_ack', 'skip_inactivity_poll', 'ignore_broadcast_ssid', 'uapsd_advertisement_enabled',
-		'utf8_ssid', 'multi_ap', 'tdls_prohibit', 'bridge', 'wds_sta', 'wds_bridge',
-		'snoop_iface', 'vendor_elements', 'nas_identifier', 'radius_acct_interim_interval',
-		'ocv', 'multicast_to_unicast', 'preamble', 'wmm_enabled', 'proxy_arp', 'per_sta_vif', 'mbo',
+		'utf8_ssid', 'multi_ap', 'multi_ap_vlanid', 'multi_ap_profile', 'tdls_prohibit', 'bridge',
+		'wds_sta', 'wds_bridge', 'snoop_iface', 'vendor_elements', 'nas_identifier', 'radius_acct_interim_interval',
+		'ocv', 'multicast_to_unicast', 'preamble', 'proxy_arp', 'per_sta_vif', 'mbo',
 		'bss_transition', 'wnm_sleep_mode', 'wnm_sleep_mode_no_keys', 'qos_map_set', 'max_listen_int',
-		'dtim_period',
+		'dtim_period', 'wmm_enabled', 'start_disabled',
 	]);
 }
 
@@ -340,12 +341,16 @@ function iface_roaming(config) {
 
 			let ft_key = md5(`${config.mobility_domain}/${config.auth_secret ?? config.key}`);
 
-			set_default(config, 'r0kh', 'ff:ff:ff:ff:ff:ff * ' + ft_key);
-			set_default(config, 'r1kh', '00:00:00:00:00:00 00:00:00:00:00:00 ' + ft_key);
+			set_default(config, 'r0kh', [ 'ff:ff:ff:ff:ff:ff,*,' + ft_key ]);
+			set_default(config, 'r1kh', [ '00:00:00:00:00:00,00:00:00:00:00:00,' + ft_key ]);
 		}
 
+		for (let name in [ 'r0kh', 'r1kh' ])
+			for (let val in config[name])
+				append(name, join(' ', split(val, ',', 3)));
+
 		append_vars(config, [
-			'r0kh', 'r1kh', 'r1_key_holder', 'r0_key_lifetime', 'pmk_r1_push'
+			'r1_key_holder', 'r0_key_lifetime', 'pmk_r1_push'
 		]);
 	}
 
@@ -429,6 +434,7 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 
 	iface_stations(config, stas);
 
+	config.start_disabled = data.ap_start_disabled;
 	iface_setup(config);
 
 	iface.parse_encryption(config, data.config);

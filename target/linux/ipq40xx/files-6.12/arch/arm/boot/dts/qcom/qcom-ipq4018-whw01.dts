@@ -6,15 +6,17 @@
 #include <dt-bindings/input/input.h>
 
 / {
-	model = "Linksys WHW01";
+	model = "Linksys WHW01 / VLP01";
 	compatible = "linksys,whw01";
 
 	aliases {
-		// TODO: Verify if the ethernet0 alias is needed
 		ethernet0 = &gmac;
 		serial0 = &blsp1_uart1;
 		led-boot = &led_system_blue;
+		led-failsafe = &led_system_red;
 		led-running = &led_system_blue;
+		led-upgrade = &led_system_red;
+		label-mac-device = &gmac;
 	};
 
 	chosen {
@@ -56,7 +58,7 @@
 		reg = <0x62>;
 
 		/* RGB? */
-		led@0 {
+		led_system_red: led@0 {
 			reg = <0>;
 			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_POWER;
@@ -81,7 +83,7 @@
 	status = "okay";
 	pinctrl-0 = <&spi_0_pins>;
 	pinctrl-names = "default";
-	cs-gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>, <&tlmm 4 GPIO_ACTIVE_HIGH>;
+	cs-gpios = <&tlmm 54 GPIO_ACTIVE_LOW>, <&tlmm 4 GPIO_ACTIVE_LOW>;
 
 	nor@0 {
 		reg = <0>;
@@ -216,7 +218,7 @@
 	status = "okay";
 	pinctrl-0 = <&mdio_pins>;
 	pinctrl-names = "default";
-	phy-reset-gpio = <&tlmm 62 GPIO_ACTIVE_HIGH>;
+	phy-reset-gpios = <&tlmm 62 GPIO_ACTIVE_HIGH>;
 };
 
 &tlmm {

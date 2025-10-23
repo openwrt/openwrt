@@ -1,0 +1,97 @@
+From 0299de52cbb2274345e12518298a8014adb56411 Mon Sep 17 00:00:00 2001
+From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Date: Thu, 9 Oct 2025 19:33:23 +0300
+Subject: [PATCH 2/2] spi: airoha-snfi: en7523: workaround flash damaging if
+ UART_TXD was short to GND
+
+We found that some serial console may pull TX line to GROUND during board
+boot time. Airoha uses TX line as one of it's BOOT pins. This will lead
+to booting in RESERVED boot mode.
+
+It was found that some flashes operates incorrectly in RESERVED mode.
+Micron and Skyhigh flashes are definitely affected by the issue,
+Winbond flashes are NOT affected.
+
+Details:
+--------
+DMA reading of odd pages on affected flashes operates incorrectly. Page
+reading offset (start of the page) on hardware level is replaced by 0x10.
+Thus results in incorrect data reading. Usage of UBI make things even
+worse. Any attempt to access UBI leads to ubi damaging. As result OS loading
+becomes impossible.
+
+Non-DMA reading is OK.
+
+This patch detects booting in reserved mode, turn off DMA and print big
+fat warning.
+
+Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+---
+ drivers/spi/spi-airoha-snfi.c | 38 ++++++++++++++++++++++++++++++++---
+ 1 file changed, 35 insertions(+), 3 deletions(-)
+
+--- a/drivers/spi/spi-airoha-snfi.c
++++ b/drivers/spi/spi-airoha-snfi.c
+@@ -1013,6 +1013,11 @@ static const struct spi_controller_mem_o
+ 	.dirmap_write = airoha_snand_dirmap_write,
+ };
+ 
++static const struct spi_controller_mem_ops airoha_snand_nodma_mem_ops = {
++	.supports_op = airoha_snand_supports_op,
++	.exec_op = airoha_snand_exec_op,
++};
++
+ static int airoha_snand_setup(struct spi_device *spi)
+ {
+ 	struct airoha_snand_ctrl *as_ctrl;
+@@ -1059,7 +1064,10 @@ static int airoha_snand_probe(struct pla
+ 	struct device *dev = &pdev->dev;
+ 	struct spi_controller *ctrl;
+ 	void __iomem *base;
+-	int err;
++	int err, dma_enabled;
++#if defined(CONFIG_ARM)
++	u32 sfc_strap;
++#endif
+ 
+ 	ctrl = devm_spi_alloc_host(dev, sizeof(*as_ctrl));
+ 	if (!ctrl)
+@@ -1093,12 +1101,36 @@ static int airoha_snand_probe(struct pla
+ 		return dev_err_probe(dev, PTR_ERR(as_ctrl->spi_clk),
+ 				     "unable to get spi clk\n");
+ 
+-	err = dma_set_mask(as_ctrl->dev, DMA_BIT_MASK(32));
++	dma_enabled = 1;
++#if defined(CONFIG_ARM)
++	err = regmap_read(as_ctrl->regmap_ctrl,
++			  REG_SPI_CTRL_SFC_STRAP, &sfc_strap);
+ 	if (err)
+ 		return err;
+ 
++	if (!(sfc_strap & 0x04)) {
++		dma_enabled = 0;
++		printk(KERN_WARNING "\n"
++			"=== WARNING ======================================================\n"
++			"Detected booting in RESERVED mode (UART_TXD was short to GND).\n"
++			"This mode is known for incorrect DMA reading of some flashes.\n"
++			"Usage of DMA for flash operations will be disabled to prevent data\n"
++			"damage. Unplug your serial console and power cycle the board\n"
++			"to boot with full performance.\n"
++			"==================================================================\n\n");
++	}
++#endif
++
++	if (dma_enabled) {
++		err = dma_set_mask(as_ctrl->dev, DMA_BIT_MASK(32));
++		if (err)
++			return err;
++	}
++
+ 	ctrl->num_chipselect = 2;
+-	ctrl->mem_ops = &airoha_snand_mem_ops;
++	ctrl->mem_ops = dma_enabled ?
++				&airoha_snand_mem_ops :
++				&airoha_snand_nodma_mem_ops;
+ 	ctrl->bits_per_word_mask = SPI_BPW_MASK(8);
+ 	ctrl->mode_bits = SPI_RX_DUAL;
+ 	ctrl->setup = airoha_snand_setup;

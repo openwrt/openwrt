@@ -1,3 +1,22 @@
+define Device/en751221_generic
+  DEVICE_VENDOR := EN751221 Family
+  DEVICE_MODEL := Initramfs Image
+  DEVICE_TITLE := EN751221 Initramfs Image
+  DEVICE_DESCRIPTION := In-memory build for testing and recovery of EN751221 SoCs
+  DEVICE_DTS := en751221_generic
+endef
+TARGET_DEVICES += en751221_generic
+
+define Device/nokia_g240g-e
+  DEVICE_VENDOR := Nokia
+  DEVICE_MODEL := G-240G-E
+  DEVICE_DTS := en751221_nokia_g240g-e
+  IMAGES := tclinux.trx
+  IMAGE/tclinux.trx := append-kernel | lzma | tclinux-trx
+  DEVICE_PACKAGES := kmod-usb3
+endef
+TARGET_DEVICES += nokia_g240g-e
+
 define Device/smartfiber_xp8421-b
   DEVICE_VENDOR := SmartFiber
   DEVICE_MODEL := XP8421-B

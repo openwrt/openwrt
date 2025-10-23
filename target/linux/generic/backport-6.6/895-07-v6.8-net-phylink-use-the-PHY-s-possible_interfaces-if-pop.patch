@@ -40,7 +40,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -121,6 +121,19 @@ do {									\
+@@ -123,6 +123,19 @@ do {									\
  })
  #endif
  
@@ -60,7 +60,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  /**
   * phylink_set_port_modes() - set the port type modes in the ethtool mask
   * @mask: ethtool link mode mask
-@@ -1779,6 +1792,47 @@ static int phylink_validate_phy(struct p
+@@ -2023,6 +2036,47 @@ static int phylink_validate_phy(struct p
  				unsigned long *supported,
  				struct phylink_link_state *state)
  {
@@ -108,7 +108,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	/* Check whether we would use rate matching for the proposed interface
  	 * mode.
  	 */
-@@ -3047,19 +3101,6 @@ static void phylink_sfp_detach(void *ups
+@@ -3318,19 +3372,6 @@ static void phylink_sfp_detach(void *ups
  	pl->netdev->sfp_bus = NULL;
  }
  

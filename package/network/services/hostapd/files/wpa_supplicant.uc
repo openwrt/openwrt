@@ -303,6 +303,9 @@ function mld_update_phy(phy, ifaces) {
 }
 
 function mld_start() {
+	if (wpas.data.mld_pending)
+		return;
+
 	wpas.printf(`Start pending MLD interfaces\n`);
 
 	let phy_list = {};
@@ -355,6 +358,32 @@ function set_config(config_name, phy_name, radio, num_global_macaddr, macaddr_ba
 	phy.update(values);
 }
 
+function iface_status_fill_radio_link(mld, radio, msg, link)
+{
+	let config = mld.phy_config[radio];
+	if (!config)
+		return;
+
+	let freq_list = config.freq_list;
+	if (!freq_list)
+		return;
+
+	if (!link || index(freq_list, link.frequency) < 0)
+		return;
+
+	msg.frequency = link.frequency;
+	msg.sec_chan_offset = link.sec_chan_offset;
+}
+
+function iface_status_fill_radio(mld, radio, msg, status)
+{
+	if (status.links)
+		for (let link in status.links)
+			iface_status_fill_radio_link(mld, radio, msg, link);
+	else
+		iface_status_fill_radio_link(mld, radio, msg, status);
+}
+
 let main_obj = {
 	phy_set_state: {
 		args: {
@@ -371,11 +400,27 @@ let main_obj = {
 			if (!phy)
 				return libubus.STATUS_NOT_FOUND;
 
+			let radio_mask = phy.radio != null ? (1 << phy.radio) : 0;
 			if (req.args.stop) {
 				for (let ifname in phy.data)
 					iface_stop(phy.data[ifname]);
+				for (let name, data in wpas.data.mld) {
+					data.radio_mask_present &= ~radio_mask;
+					if (data.radio_mask_up & radio_mask)
+						mld_update_iface(name, data);
+				}
 			} else {
 				start_pending(name);
+
+				let found;
+				for (let name, data in wpas.data.mld) {
+					if (!(data.radio_mask & radio_mask))
+						continue;
+					data.radio_mask_present |= radio_mask;
+					found = true;
+				}
+				if (found)
+					mld_start();
 			}
 
 			return 0;
@@ -410,7 +455,13 @@ let main_obj = {
 			if (!phy)
 				return libubus.STATUS_NOT_FOUND;
 
-			for (let ifname in phy.data) {
+			let ifnames = keys(phy.data);
+			let radio_mask = phy.radio != null ? (1 << phy.radio) : 0;
+			for (let name, data in wpas.data.mld)
+				if (data.radio_mask_up & radio_mask)
+					push(ifnames, name);
+
+			for (let ifname in ifnames) {
 				try {
 					let iface = wpas.interfaces[ifname];
 					if (!iface)
@@ -423,15 +474,39 @@ let main_obj = {
 					if (status.state == "INTERFACE_DISABLED")
 						continue;
 
-					status.ifname = ifname;
-					return status;
+					if (phy.data[ifname]) {
+						status.ifname = ifname;
+						return status;
+					}
+
+					let ret = {
+						ifname,
+						state: status.state,
+					};
+
+					let mld = wpas.data.mld[ifname];
+					iface_status_fill_radio(mld, phy.radio, ret, status);
+					return ret;
 				} catch (e) {
+					ex_handler(e);
 					continue;
 				}
 			}
 
 			return libubus.STATUS_NOT_FOUND;
 		}
+	},
+	iface_status: {
+		args: {
+			name: ""
+		},
+		call: function(req) {
+			let iface = wpas.interfaces[req.args.name];
+			if (!iface)
+				return libubus.STATUS_NOT_FOUND;
+
+			return iface.status();
+		},
 	},
 	mld_set: {
 		args: {
@@ -441,6 +516,7 @@ let main_obj = {
 			if (!req.args.config)
 				return libubus.STATUS_INVALID_ARGUMENT;
 
+			wpas.data.mld_pending = true;
 			mld_set_config(req.args.config);
 			return 0;
 		}
@@ -448,6 +524,7 @@ let main_obj = {
 	mld_start: {
 		args: {},
 		call: function(req) {
+			wpas.data.mld_pending = false;
 			mld_start();
 			return 0;
 		}
@@ -549,25 +626,11 @@ function iface_event(type, name, data) {
 
 	data ??= {};
 	data.name = name;
-	wpas.data.obj.notify(`iface.${type}`, data, null, null, null, -1);
+	let req = wpas.data.obj.notify(`iface.${type}`, data, null, null, null, -1);
+	if (req)
+		req.abort();
+
 	ubus.call("service", "event", { type: `wpa_supplicant.${name}.${type}`, data: {} });
-}
-
-function iface_hostapd_fill_radio_link(mld, radio, msg, link)
-{
-	let config = mld.phy_config[radio];
-	if (!config)
-		return;
-
-	let freq_list = config.freq_list;
-	if (!freq_list)
-		return;
-
-	if (!link || index(freq_list, link.frequency) < 0)
-		return;
-
-	msg.frequency = link.frequency;
-	msg.sec_chan_offset = link.sec_chan_offset;
 }
 
 function iface_hostapd_notify(ifname, iface, state)
@@ -600,7 +663,7 @@ function iface_hostapd_notify(ifname, iface, state)
 
 	if (!mld) {
 		msg.phy = wpas.data.iface_phy[ifname];
-		if (!phy) {
+		if (!msg.phy) {
 			wpas.printf(`no PHY for ifname ${ifname}`);
 			return;
 		}
@@ -621,13 +684,8 @@ function iface_hostapd_notify(ifname, iface, state)
 			radio: i,
 		};
 
-		if (state == "COMPLETED") {
-			if (status.links)
-				for (let link in status.links)
-					iface_hostapd_fill_radio_link(mld, i, radio_msg, link);
-			else
-				iface_hostapd_fill_radio_link(mld, i, radio_msg, status);
-		}
+		if (state == "COMPLETED")
+			iface_status_fill_radio(mld, i, radio_msg, status);
 
 		ubus.call("hostapd", "apsta_state", radio_msg);
 	}
@@ -682,6 +740,9 @@ return {
 		iface_event("remove", name);
 	},
 	state: function(ifname, iface, state) {
+		let event_data = iface.status();
+		event_data.name = ifname;
+		iface_event("state", ifname, event_data);
 		try {
 			iface_hostapd_notify(ifname, iface, state);
 

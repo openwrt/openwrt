@@ -13,7 +13,7 @@ Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
 
 --- a/common/board_r.c
 +++ b/common/board_r.c
-@@ -706,19 +706,13 @@ static void initcall_run_r(void)
+@@ -701,19 +701,13 @@ static void initcall_run_r(void)
  	INITCALL(serial_initialize);
  	INITCALL(initr_announce);
  	INITCALL(dm_announce);
@@ -33,7 +33,7 @@ Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
  #if CONFIG_IS_ENABLED(PCI_INIT_R) && CONFIG_IS_ENABLED(SYS_EARLY_PCI_INIT)
  	/*
  	 * Do early PCI configuration _before_ the flash gets initialised,
-@@ -733,7 +727,6 @@ static void initcall_run_r(void)
+@@ -728,7 +722,6 @@ static void initcall_run_r(void)
  #if CONFIG_IS_ENABLED(MTD_NOR_FLASH)
  	INITCALL(initr_flash);
  #endif
@@ -41,7 +41,7 @@ Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
  #if CONFIG_IS_ENABLED(PPC) || CONFIG_IS_ENABLED(M68K) || CONFIG_IS_ENABLED(X86)
  	/* initialize higher level parts of CPU like time base and timers */
  	INITCALL(cpu_init_r);
-@@ -762,6 +755,10 @@ static void initcall_run_r(void)
+@@ -757,6 +750,10 @@ static void initcall_run_r(void)
  #if CONFIG_IS_ENABLED(PVBLOCK)
  	INITCALL(initr_pvblock);
  #endif

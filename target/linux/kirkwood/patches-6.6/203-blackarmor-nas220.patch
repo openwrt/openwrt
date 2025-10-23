@@ -63,13 +63,15 @@
  	};
  
  	regulators {
-@@ -153,6 +176,33 @@
+@@ -153,6 +176,35 @@
  
  &nand {
  	status = "okay";
 +
 +	partitions {
 +		compatible = "fixed-partitions";
++		#address-cells = <1>;
++		#size-cells = <1>;
 +
 +		partition@0 {
 +			label = "uboot";

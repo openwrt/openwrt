@@ -533,7 +533,7 @@
 &pcie0 {
 	status = "okay";
 
-	perst-gpio = <&tlmm 58 GPIO_ACTIVE_LOW>;
+	perst-gpios = <&tlmm 58 GPIO_ACTIVE_LOW>;
 
 	pcie@0 {
 		wifi@0,0 {
@@ -555,7 +555,7 @@
 &pcie1 {
 	status = "okay";
 
-	perst-gpio = <&tlmm 62 GPIO_ACTIVE_HIGH>;
+	perst-gpios = <&tlmm 62 GPIO_ACTIVE_HIGH>;
 
 	pcie@0 {
 		wifi@0,0 {

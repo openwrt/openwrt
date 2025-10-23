@@ -52,7 +52,7 @@
 
 			reset {
 				label = "reset";
-				gpios = <&tlmm 4 1>;
+				gpios = <&tlmm 4 GPIO_ACTIVE_LOW>;
 				linux,code = <KEY_RESTART>;
 			};
 		};
@@ -141,7 +141,7 @@
 &blsp1_spi1 {
 	pinctrl-0 = <&spi_0_pins>;
 	pinctrl-names = "default";
-	cs-gpios = <&tlmm 54 0>, <&tlmm 63 0>;
+	cs-gpios = <&tlmm 54 GPIO_ACTIVE_LOW>, <&tlmm 63 GPIO_ACTIVE_LOW>;
 	num-cs = <2>;
 	status = "okay";
 
@@ -300,7 +300,7 @@
 	status = "okay";
 	pinctrl-0 = <&mdio_pins>;
 	pinctrl-names = "default";
-	phy-reset-gpio = <&tlmm 62 0>;
+	phy-reset-gpios = <&tlmm 62 GPIO_ACTIVE_HIGH>;
 };
 
 &usb3_ss_phy {

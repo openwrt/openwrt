@@ -138,7 +138,7 @@ Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
 +};
 --- /dev/null
 +++ b/configs/mt7981_glinet_gl-mt2500_defconfig
-@@ -0,0 +1,113 @@
+@@ -0,0 +1,114 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -169,6 +169,7 @@ Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
 +CONFIG_LOGLEVEL=7
 +CONFIG_CONSOLE_MUX=y
 +CONFIG_SYS_CONSOLE_ENV_OVERWRITE=y
++# CONFIG_BOARD_INIT is not set
 +CONFIG_BOARD_LATE_INIT=y
 +CONFIG_HUSH_PARSER=y
 +CONFIG_SYS_PROMPT="GL-MT2500> "
@@ -218,8 +219,8 @@ Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
 +CONFIG_PARTITION_TYPE_GUID=y
 +CONFIG_ENV_OVERWRITE=y
 +CONFIG_ENV_IS_IN_MMC=y
-+CONFIG_USE_DEFAULT_ENV_FILE=y
-+CONFIG_DEFAULT_ENV_FILE="defenvs/glinet_gl-mt2500_env"
++CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/glinet_gl-mt2500_env"
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
 +CONFIG_VERSION_VARIABLE=y
 +CONFIG_NETCONSOLE=y

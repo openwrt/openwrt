@@ -147,7 +147,7 @@
 	pinctrl-0 = <&spi_0_pins>;
 	pinctrl-names = "default";
 	status = "okay";
-	cs-gpios = <&tlmm 12 GPIO_ACTIVE_HIGH>;
+	cs-gpios = <&tlmm 12 GPIO_ACTIVE_LOW>;
 
 	flash@0 {
 		/* u-boot is looking for "n25q128a11" property */
@@ -469,9 +469,9 @@
 //* This node is used for 5Ghz on QCA9982 */
 &pcie0 {
 	status = "okay";
-	perst-gpio = <&tlmm 38 GPIO_ACTIVE_LOW>;
-	wake-gpio = <&tlmm 40 GPIO_ACTIVE_LOW>;
-	clkreq-gpio = <&tlmm 39 GPIO_ACTIVE_LOW>;
+	perst-gpios = <&tlmm 38 GPIO_ACTIVE_LOW>;
+	wake-gpios = <&tlmm 40 GPIO_ACTIVE_LOW>;
+	clkreq-gpios = <&tlmm 39 GPIO_ACTIVE_LOW>;
 };
 
 &pcie_bridge0 {

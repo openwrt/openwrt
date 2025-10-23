@@ -1,0 +1,140 @@
+From 8e6cba428ce48005b5b8be64c2a08c98d04865e9 Mon Sep 17 00:00:00 2001
+From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Date: Thu, 14 Aug 2025 22:47:17 +0300
+Subject: [PATCH 3/4] spi: airoha: set custom sector size equal to flash page
+ size
+
+Set custom sector size equal to flash page size including oob. Thus we
+will always read a single sector. The maximum custom sector size is
+8187, so all possible flash sector sizes are supported.
+
+This patch is a necessary step to avoid usage of flash specific
+parameters.
+
+Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+---
+ drivers/spi/airoha_snfi_spi.c | 35 +++++++++++++++++++----------------
+ 1 file changed, 19 insertions(+), 16 deletions(-)
+
+diff --git a/drivers/spi/airoha_snfi_spi.c b/drivers/spi/airoha_snfi_spi.c
+index 1fcf5dd89e9..c9feef83f89 100644
+--- a/drivers/spi/airoha_snfi_spi.c
++++ b/drivers/spi/airoha_snfi_spi.c
+@@ -515,7 +515,7 @@ static int airoha_snand_nfi_config(struct airoha_snand_priv *priv)
+ 		return err;
+ 
+ 	/* sec num */
+-	val = FIELD_PREP(SPI_NFI_SEC_NUM, priv->nfi_cfg.sec_num);
++	val = FIELD_PREP(SPI_NFI_SEC_NUM, 1);
+ 	err = regmap_update_bits(priv->regmap_nfi, REG_SPI_NFI_CON,
+ 				 SPI_NFI_SEC_NUM, val);
+ 	if (err)
+@@ -528,7 +528,8 @@ static int airoha_snand_nfi_config(struct airoha_snand_priv *priv)
+ 		return err;
+ 
+ 	/* set cust sec size */
+-	val = FIELD_PREP(SPI_NFI_CUS_SEC_SIZE, priv->nfi_cfg.sec_size);
++	val = FIELD_PREP(SPI_NFI_CUS_SEC_SIZE,
++			 priv->nfi_cfg.sec_size * priv->nfi_cfg.sec_num);
+ 	return regmap_update_bits(priv->regmap_nfi,
+ 				  REG_SPI_NFI_SECCUS_SIZE,
+ 				  SPI_NFI_CUS_SEC_SIZE, val);
+@@ -610,8 +611,11 @@ static ssize_t airoha_snand_dirmap_read(struct spi_mem_dirmap_desc *desc,
+ 	u8 *txrx_buf = priv->txrx_buf;
+ 	dma_addr_t dma_addr;
+ 	u32 val, rd_mode, opcode;
++	size_t bytes;
+ 	int err;
+ 
++	bytes = priv->nfi_cfg.sec_num * priv->nfi_cfg.sec_size;
++
+ 	/*
+ 	 * DUALIO and QUADIO opcodes are not supported by the spi controller,
+ 	 * replace them with supported opcodes.
+@@ -669,18 +673,17 @@ static ssize_t airoha_snand_dirmap_read(struct spi_mem_dirmap_desc *desc,
+ 				 FIELD_PREP(SPI_NFI_OPMODE, 6));
+ 
+ 	/* Set number of sector will be read */
+-	val = FIELD_PREP(SPI_NFI_SEC_NUM, priv->nfi_cfg.sec_num);
+ 	err = regmap_update_bits(priv->regmap_nfi, REG_SPI_NFI_CON,
+-				 SPI_NFI_SEC_NUM, val);
++				 SPI_NFI_SEC_NUM,
++				 FIELD_PREP(SPI_NFI_SEC_NUM, 1));
+ 	if (err)
+ 		goto error_dma_mode_off;
+ 
+ 	/* Set custom sector size */
+-	val = priv->nfi_cfg.sec_size;
+ 	err = regmap_update_bits(priv->regmap_nfi, REG_SPI_NFI_SECCUS_SIZE,
+ 				 SPI_NFI_CUS_SEC_SIZE |
+ 				 SPI_NFI_CUS_SEC_SIZE_EN,
+-				 FIELD_PREP(SPI_NFI_CUS_SEC_SIZE, val) |
++				 FIELD_PREP(SPI_NFI_CUS_SEC_SIZE, bytes) |
+ 				 SPI_NFI_CUS_SEC_SIZE_EN);
+ 	if (err)
+ 		goto error_dma_mode_off;
+@@ -702,11 +705,10 @@ static ssize_t airoha_snand_dirmap_read(struct spi_mem_dirmap_desc *desc,
+ 	 *        = NFI_SNF_MISC_CTL2.read_data_byte_number =
+ 	 *        = NFI_CON.sector_number * NFI_SECCUS.custom_sector_size
+ 	 */
+-	val = priv->nfi_cfg.sec_size * priv->nfi_cfg.sec_num;
+-	val = FIELD_PREP(SPI_NFI_READ_DATA_BYTE_NUM, val);
+ 	err = regmap_update_bits(priv->regmap_nfi,
+ 				 REG_SPI_NFI_SNF_MISC_CTL2,
+-				 SPI_NFI_READ_DATA_BYTE_NUM, val);
++				 SPI_NFI_READ_DATA_BYTE_NUM,
++				 FIELD_PREP(SPI_NFI_READ_DATA_BYTE_NUM, bytes));
+ 	if (err)
+ 		goto error_dma_unmap;
+ 
+@@ -795,8 +797,11 @@ static ssize_t airoha_snand_dirmap_write(struct spi_mem_dirmap_desc *desc,
+ 	u8 *txrx_buf = priv->txrx_buf;
+ 	dma_addr_t dma_addr;
+ 	u32 wr_mode, val, opcode;
++	size_t bytes;
+ 	int err;
+ 
++	bytes = priv->nfi_cfg.sec_num * priv->nfi_cfg.sec_size;
++
+ 	opcode = desc->info.op_tmpl.cmd.opcode;
+ 	switch (opcode) {
+ 	case SPI_NAND_OP_PROGRAM_LOAD_SINGLE:
+@@ -847,18 +852,17 @@ static ssize_t airoha_snand_dirmap_write(struct spi_mem_dirmap_desc *desc,
+ 		goto error_dma_mode_off;
+ 
+ 	/* Set number of sector will be written */
+-	val = FIELD_PREP(SPI_NFI_SEC_NUM, priv->nfi_cfg.sec_num);
+ 	err = regmap_update_bits(priv->regmap_nfi, REG_SPI_NFI_CON,
+-				 SPI_NFI_SEC_NUM, val);
++				 SPI_NFI_SEC_NUM,
++				 FIELD_PREP(SPI_NFI_SEC_NUM, 1));
+ 	if (err)
+ 		goto error_dma_mode_off;
+ 
+ 	/* Set custom sector size */
+-	val = priv->nfi_cfg.sec_size;
+ 	err = regmap_update_bits(priv->regmap_nfi, REG_SPI_NFI_SECCUS_SIZE,
+ 				 SPI_NFI_CUS_SEC_SIZE |
+ 				 SPI_NFI_CUS_SEC_SIZE_EN,
+-				 FIELD_PREP(SPI_NFI_CUS_SEC_SIZE, val) |
++				 FIELD_PREP(SPI_NFI_CUS_SEC_SIZE, bytes) |
+ 				 SPI_NFI_CUS_SEC_SIZE_EN);
+ 	if (err)
+ 		goto error_dma_mode_off;
+@@ -880,11 +884,10 @@ static ssize_t airoha_snand_dirmap_write(struct spi_mem_dirmap_desc *desc,
+ 	 *        = NFI_SNF_MISC_CTL2.write_data_byte_number =
+ 	 *        = NFI_CON.sector_number * NFI_SECCUS.custom_sector_size
+ 	 */
+-	val = priv->nfi_cfg.sec_size * priv->nfi_cfg.sec_num;
+-	val = FIELD_PREP(SPI_NFI_PROG_LOAD_BYTE_NUM, val);
+ 	err = regmap_update_bits(priv->regmap_nfi,
+ 				 REG_SPI_NFI_SNF_MISC_CTL2,
+-				 SPI_NFI_PROG_LOAD_BYTE_NUM, val);
++				 SPI_NFI_PROG_LOAD_BYTE_NUM,
++				 FIELD_PREP(SPI_NFI_PROG_LOAD_BYTE_NUM, bytes));
+ 	if (err)
+ 		goto error_dma_unmap;
+ 
+-- 
+2.51.0
+

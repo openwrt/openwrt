@@ -280,6 +280,30 @@ static inline int rtl931x_l2_port_new_sa_fwd(int p)
 	return RTL931X_L2_PORT_NEW_SA_FWD(p);
 }
 
+static int rtldsa_931x_get_mirror_config(struct rtldsa_mirror_config *config,
+					 int group, int port)
+{
+	config->ctrl = RTL931X_MIR_CTRL + group * 4;
+	config->spm = RTL931X_MIR_SPM_CTRL + group * 8;
+	config->dpm = RTL931X_MIR_DPM_CTRL + group * 8;
+
+	/* Enable mirroring to destination port */
+	config->val = BIT(0);
+	config->val |= port << 9;
+
+	/* mirror mode: let mirrored packets follow TX settings of
+	 * mirroring port
+	 */
+	config->val |= BIT(5);
+
+	/* direction of traffic to be mirrored when a packet
+	 * hits both SPM and DPM ports: prefer egress
+	 */
+	config->val |= BIT(4);
+
+	return 0;
+}
+
 irqreturn_t rtl931x_switch_irq(int irq, void *dev_id)
 {
 	struct dsa_switch *ds = dev_id;
@@ -377,21 +401,6 @@ void rtldsa_931x_set_receive_management_action(int port, rma_ctrl_t type, action
 		sw_w32_mask(3 << ((port & 0xf) << 1), value << ((port & 0xf) << 1), RTL931X_TRAP_ARP_GRAT_PORT_ACT + ((port >> 4) << 2));
 	break;
 	}
-}
-
-static u64 rtl931x_traffic_get(int source)
-{
-	u64 v;
-	struct table_reg *r = rtl_table_get(RTL9310_TBL_2, 1);
-
-	rtl_table_read(r, source);
-	v = sw_r32(rtl_table_data(r, 0));
-	v <<= 32;
-	v |= sw_r32(rtl_table_data(r, 1));
-	v >>= 7;
-	rtl_table_release(r);
-
-	return v;
 }
 
 /* Enable traffic between a source port and a destination port matrix */
@@ -558,6 +567,7 @@ static void rtl931x_fill_l2_row(u32 r[], struct rtl838x_l2_entry *e)
 
 	r[0] |= e->is_open_flow ? BIT(30) : 0;
 	r[0] |= e->is_pe_forward ? BIT(29) : 0;
+	r[0] |= e->hash_msb ? BIT(28): 0;
 	r[2] = e->next_hop ? BIT(30) : 0;
 	r[0] |= (e->rvid & 0xfff) << 16;
 
@@ -675,10 +685,21 @@ static void rtl931x_write_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_
 	u32 r[4];
 	struct table_reg *q = rtl_table_get(RTL9310_TBL_0, 0);
 	u32 idx = (0 << 14) | (hash << 2) | pos; /* Access SRAM, with hash and at pos in bucket */
+	int hash_algo_id;
 
 	pr_debug("%s: hash %d, pos %d\n", __func__, hash, pos);
 	pr_debug("%s: index %d -> mac %02x:%02x:%02x:%02x:%02x:%02x\n", __func__, idx,
 		e->mac[0], e->mac[1], e->mac[2], e->mac[3],e->mac[4],e->mac[5]);
+
+	if (idx < 0x4000)
+		hash_algo_id = sw_r32(RTL931X_L2_CTRL) & BIT(0);
+	else
+		hash_algo_id = (sw_r32(RTL931X_L2_CTRL) & BIT(1)) >> 1;
+
+	if (hash_algo_id == 0)
+		e->hash_msb = (e->rvid >> 2) & 0x1;
+	else
+		e->hash_msb = (e->rvid >> 11) & 0x1;
 
 	rtl931x_fill_l2_row(r, e);
 	pr_debug("%s: %d: %08x %08x %08x\n", __func__, idx, r[0], r[1], r[2]);
@@ -1364,11 +1385,6 @@ static void rtl931x_pie_init(struct rtl838x_switch_priv *priv)
 
 }
 
-static int rtl931x_l3_setup(struct rtl838x_switch_priv *priv)
-{
-	return 0;
-}
-
 static void rtl931x_vlan_port_keep_tag_set(int port, bool keep_outer, bool keep_inner)
 {
 	sw_w32(FIELD_PREP(RTL931X_VLAN_PORT_TAG_EGR_OTAG_STS_MASK,
@@ -1446,17 +1462,82 @@ static void rtl931x_set_distribution_algorithm(int group, int algoidx, u32 algom
 	sw_w32(newmask << l3shift, RTL931X_TRK_HASH_CTRL + (algoidx << 2));
 }
 
+static void rtldsa_931x_led_get_forced(const struct device_node *node,
+				       const u8 leds_in_set[4],
+				       u8 forced_leds_per_port[RTL931X_CPU_PORT])
+{
+	DECLARE_BITMAP(mask, RTL931X_CPU_PORT);
+	unsigned int port;
+	char set_str[36];
+	u64 pm;
+
+	for (u8 set = 0; set < 4; set++) {
+		snprintf(set_str, sizeof(set_str), "realtek,led-set%d-force-port-mask", set);
+		if (of_property_read_u64(node, set_str, &pm))
+			continue;
+
+		bitmap_from_arr64(mask, &pm, RTL931X_CPU_PORT);
+
+		for_each_set_bit(port, mask, RTL931X_CPU_PORT)
+			forced_leds_per_port[port] = leds_in_set[set];
+	}
+}
+
 static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 {
+	u8 forced_leds_per_port[RTL931X_CPU_PORT] = {};
 	u64 pm_copper = 0, pm_fiber = 0;
+	struct device *dev = priv->dev;
 	struct device_node *node;
+	u8 leds_in_set[4] = {};
 
-	pr_debug("%s called\n", __func__);
 	node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
 	if (!node) {
-		pr_debug("%s No compatible LED node found\n", __func__);
+		dev_dbg(dev, "No compatible LED node found\n");
 		return;
 	}
+
+	for (int set = 0; set < 4; set++) {
+		char set_name[16] = {0};
+		u32 set_config[4];
+		int leds_in_this_set = 0;
+
+		/* Reset LED set configuration */
+		sw_w32(0, RTL931X_LED_SETX_0_CTRL(set));
+		sw_w32(0, RTL931X_LED_SETX_1_CTRL(set));
+
+		/* Each LED set has (up to) 4 LEDs, and each LED is configured
+		 * with 16 bits. So each 32 bit register holds configuration for
+		 * 2 LEDs. Therefore, each set requires 2 registers for
+		 * configuring all 4 LEDs.
+		 */
+		snprintf(set_name, sizeof(set_name), "led_set%d", set);
+		leds_in_this_set = of_property_count_u32_elems(node, set_name);
+
+		if (leds_in_this_set <= 0 || leds_in_this_set > ARRAY_SIZE(set_config)) {
+			if (leds_in_this_set != -EINVAL) {
+				dev_err(dev, "%s invalid, skipping this set, leds_in_this_set=%d, should be (0, %d]\n",
+					set_name, leds_in_this_set, ARRAY_SIZE(set_config));
+			}
+
+			continue;
+		}
+
+		dev_info(dev, "%s has %d LEDs configured\n", set_name, leds_in_this_set);
+		leds_in_set[set] = leds_in_this_set;
+
+		if (of_property_read_u32_array(node, set_name, set_config, leds_in_this_set))
+			break;
+
+		/* Write configuration for selected LEDs */
+		for (int i = 0, led = leds_in_this_set - 1; led >= 0; led--, i++) {
+			sw_w32_mask(0xffff << RTL931X_LED_SET_LEDX_SHIFT(led),
+				    (0xffff & set_config[i]) << RTL931X_LED_SET_LEDX_SHIFT(led),
+				    RTL931X_LED_SETX_LEDY(set, led));
+		}
+	}
+
+	rtldsa_931x_led_get_forced(node, leds_in_set, forced_leds_per_port);
 
 	for (int i = 0; i < priv->cpu_port; i++) {
 		int pos = (i << 1) % 32;
@@ -1465,8 +1546,12 @@ static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 		sw_w32_mask(0x3 << pos, 0, RTL931X_LED_PORT_FIB_SET_SEL_CTRL(i));
 		sw_w32_mask(0x3 << pos, 0, RTL931X_LED_PORT_COPR_SET_SEL_CTRL(i));
 
-		if (!priv->ports[i].phy)
+		/* Skip port if not present (auto-detect) or not in forced mask */
+		if (!priv->ports[i].phy && !(forced_leds_per_port[i]))
 			continue;
+
+		if (forced_leds_per_port[i] > 0)
+			priv->ports[i].leds_on_this_port = forced_leds_per_port[i];
 
 		/* 0x0 = 1 led, 0x1 = 2 leds, 0x2 = 3 leds, 0x3 = 4 leds per port */
 		sw_w32_mask(0x3 << pos, (priv->ports[i].leds_on_this_port - 1) << pos,
@@ -1482,32 +1567,20 @@ static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 		sw_w32_mask(0, set << pos, RTL931X_LED_PORT_FIB_SET_SEL_CTRL(i));
 	}
 
-	for (int i = 0; i < 4; i++) {
-		const __be32 *led_set;
-		char set_name[9];
-		u32 setlen;
-		u32 v;
-
-		sprintf(set_name, "led_set%d", i);
-		pr_debug(">%s<\n", set_name);
-		led_set = of_get_property(node, set_name, &setlen);
-		if (!led_set || setlen != 16)
-			break;
-		v = be32_to_cpup(led_set) << 16 | be32_to_cpup(led_set + 1);
-		sw_w32(v, RTL931X_LED_SET0_0_CTRL - 4 - i * 8);
-		v = be32_to_cpup(led_set + 2) << 16 | be32_to_cpup(led_set + 3);
-		sw_w32(v, RTL931X_LED_SET0_0_CTRL - i * 8);
-	}
-
 	/* Set LED mode to serial (0x1) */
 	sw_w32_mask(0x3, 0x1, RTL931X_LED_GLB_CTRL);
+
+	if (of_property_read_bool(node, "active-low"))
+		sw_w32_mask(RTL931X_LED_GLB_ACTIVE_LOW, 0, RTL931X_LED_GLB_CTRL);
+	else
+		sw_w32_mask(0, RTL931X_LED_GLB_ACTIVE_LOW, RTL931X_LED_GLB_CTRL);
 
 	rtl839x_set_port_reg_le(pm_copper, RTL931X_LED_PORT_COPR_MASK_CTRL);
 	rtl839x_set_port_reg_le(pm_fiber, RTL931X_LED_PORT_FIB_MASK_CTRL);
 	rtl839x_set_port_reg_le(pm_copper | pm_fiber, RTL931X_LED_PORT_COMBO_MASK_CTRL);
 
 	for (int i = 0; i < 32; i++)
-		pr_debug("%s %08x: %08x\n",__func__, 0xbb000600 + i * 4, sw_r32(0x0600 + i * 4));
+		dev_dbg(dev, "%08x: %08x\n", 0xbb000600 + i * 4, sw_r32(0x0600 + i * 4));
 }
 
 const struct rtl838x_reg rtl931x_reg = {
@@ -1522,7 +1595,6 @@ const struct rtl838x_reg rtl931x_reg = {
 	.stat_port_std_mib = 0,  /* Not defined */
 	.traffic_enable = rtl931x_traffic_enable,
 	.traffic_disable = rtl931x_traffic_disable,
-	.traffic_get = rtl931x_traffic_get,
 	.traffic_set = rtl931x_traffic_set,
 	.l2_ctrl_0 = RTL931X_L2_CTRL,
 	.l2_ctrl_1 = RTL931X_L2_AGE_CTRL,
@@ -1549,9 +1621,7 @@ const struct rtl838x_reg rtl931x_reg = {
 	.mac_port_ctrl = rtl931x_mac_port_ctrl,
 	.l2_port_new_salrn = rtl931x_l2_port_new_salrn,
 	.l2_port_new_sa_fwd = rtl931x_l2_port_new_sa_fwd,
-	.mir_ctrl = RTL931X_MIR_CTRL,
-	.mir_dpm = RTL931X_MIR_DPM_CTRL,
-	.mir_spm = RTL931X_MIR_SPM_CTRL,
+	.get_mirror_config = rtldsa_931x_get_mirror_config,
 	.read_l2_entry_using_hash = rtl931x_read_l2_entry_using_hash,
 	.write_l2_entry_using_hash = rtl931x_write_l2_entry_using_hash,
 	.read_cam = rtl931x_read_cam,
@@ -1573,7 +1643,6 @@ const struct rtl838x_reg rtl931x_reg = {
 	.pie_rule_add = rtl931x_pie_rule_add,
 	.pie_rule_rm = rtl931x_pie_rule_rm,
 	.l2_learning_setup = rtl931x_l2_learning_setup,
-	.l3_setup = rtl931x_l3_setup,
 	.led_init = rtldsa_931x_led_init,
 	.enable_learning = rtldsa_931x_enable_learning,
 	.enable_flood = rtldsa_931x_enable_flood,

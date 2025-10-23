@@ -1,0 +1,32 @@
+From a11420dac873fbd5b8a81192571d914f01bee26d Mon Sep 17 00:00:00 2001
+From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Date: Wed, 9 Jul 2025 12:28:07 +0300
+Subject: [PATCH 1/5] drivers/net/airoha_eth: add missing terminator for
+ compatible devices list
+
+Compatible device list must have a terminator. If terminator is missed
+the u-boot driver subsystem will access random data placed after the
+list in the memory.
+
+The issue can be observed with the "dm compat" command.
+
+Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+---
+ drivers/net/airoha_eth.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/net/airoha_eth.c b/drivers/net/airoha_eth.c
+index b3fd1ab9064..db34ec48c81 100644
+--- a/drivers/net/airoha_eth.c
++++ b/drivers/net/airoha_eth.c
+@@ -1052,6 +1052,7 @@ static const struct udevice_id airoha_eth_ids[] = {
+ 	{ .compatible = "airoha,an7583-eth",
+ 	  .data = (ulong)&an7583_data,
+ 	},
++	{ }
+ };
+ 
+ static const struct eth_ops airoha_eth_ops = {
+-- 
+2.51.0
+

@@ -8,9 +8,10 @@ define Device/Default
   KERNEL = kernel-bin | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   KERNEL_INITRAMFS = kernel-bin | lzma | \
-	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   FILESYSTEMS := squashfs
-  DEVICE_DTS_DIR := $(DTS_DIR)
+  DEVICE_DTS = $$(SOC)-$(lastword $(subst _, ,$(1)))
+  DEVICE_DTS_DIR := ../dts
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := append-kernel | pad-to 128k | append-rootfs | \
 	pad-rootfs | append-metadata

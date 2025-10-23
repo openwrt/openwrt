@@ -44,14 +44,15 @@ generate_static_network() {
 		set network.loopback.device='lo'
 		set network.loopback.proto='static'
 		add_list network.loopback.ipaddr='127.0.0.1/8'
+		delete network.globals
+		set network.globals='globals'
+		set network.globals.dhcp_default_duid='auto'
 	EOF
-		[ -e /proc/sys/net/ipv6 ] && {
-			uci -q batch <<-EOF
-				delete network.globals
-				set network.globals='globals'
-				set network.globals.ula_prefix='auto'
-			EOF
-		}
+	[ -e /proc/sys/net/ipv6 ] && {
+		uci -q batch <<-EOF
+			set network.globals.ula_prefix='auto'
+		EOF
+	}
 
 	if json_is_a dsl object; then
 		json_select dsl

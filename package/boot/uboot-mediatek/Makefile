@@ -1,8 +1,8 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_VERSION:=2025.07
-PKG_HASH:=0f933f6c5a426895bf306e93e6ac53c60870e4b54cda56d95211bec99e63bec7
+PKG_VERSION:=2025.10
+PKG_HASH:=b4f032848e56cc8f213ad59f9132c084dbbb632bc29176d024e58220e0efdf4a
 PKG_BUILD_DEPENDS:=!(TARGET_ramips||TARGET_mediatek_mt7623):arm-trusted-firmware-tools/host
 
 UBOOT_USE_INTREE_DTC:=1
@@ -251,7 +251,7 @@ define U-Boot/mt7981_cmcc_rax3000m-emmc-ddr3
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=emmc
   BL2_SOC:=mt7981
-  BL2_DDRTYPE:=ddr3
+  BL2_DDRTYPE:=ddr3-1866mhz
   DEPENDS:=+trusted-firmware-a-mt7981-emmc-ddr3-1866mhz
 endef
 
@@ -275,7 +275,7 @@ define U-Boot/mt7981_cmcc_rax3000m-nand-ddr3
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=spim-nand
   BL2_SOC:=mt7981
-  BL2_DDRTYPE:=ddr3
+  BL2_DDRTYPE:=ddr3-1866mhz
   DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3-1866mhz
 endef
 
@@ -355,6 +355,18 @@ define U-Boot/mt7981_jcg_q30-pro
   BUILD_SUBTARGET:=filogic
   BUILD_DEVICES:=jcg_q30-pro
   UBOOT_CONFIG:=mt7981_jcg_q30-pro
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
+endef
+
+define U-Boot/mt7981_konka_komi-a31
+  NAME:=Konka KOMI A31
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=konka_komi-a31
+  UBOOT_CONFIG:=mt7981_konka_komi-a31
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=spim-nand
   BL2_SOC:=mt7981
@@ -951,6 +963,7 @@ UBOOT_TARGETS := \
 	mt7981_glinet_gl-xe3000 \
 	mt7981_h3c_magic-nx30-pro \
 	mt7981_jcg_q30-pro \
+	mt7981_konka_komi-a31 \
 	mt7981_netis_nx31 \
 	mt7981_nokia_ea0326gmp \
 	mt7981_openwrt_one-snand \

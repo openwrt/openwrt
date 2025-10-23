@@ -1,0 +1,123 @@
+// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+/dts-v1/;
+
+#include "en751221.dtsi"
+
+/ {
+	model = "Nokia G-240G-E";
+	compatible = "nokia,g240g-e", "econet,en751221";
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x10000000>;
+	};
+
+	chosen {
+		stdout-path = "/serial@1fbf0000:115200";
+		linux,usable-memory-range = <0x00020000 0x0ffe0000>;
+	};
+};
+
+&nand {
+	status = "okay";
+	econet,bmt;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "bootloader";
+			reg = <0x00000000 0x00040000>;
+			read-only;
+		};
+
+		partition@40000 {
+			// Unused
+			label = "romfile";
+			reg = <0x00040000 0x00040000>;
+		};
+
+		partition@80000 {
+			// trx - OpenWRT kernel is 4MB, factory is 3MB
+			label = "kernel";
+			reg = <0x00080000 0x00400000>;
+		};
+
+		partition@380000 {
+			// squashfs
+			label = "rootfs";
+			reg = <0x00480000 0x01F00000>;
+			linux,rootfs;
+		};
+
+		partition@2280000 {
+			// trx
+			label = "kernel_slave";
+			reg = <0x02280000 0x00300000>;
+		};
+
+		partition@2580000 {
+			// squashfs
+			label = "rootfs_slave";
+			reg = <0x02580000 0x01F00000>;
+		};
+
+		partition@4480000 {
+			// trx
+			label = "kernel_oflt";
+			reg = <0x04480000 0x00300000>;
+		};
+
+		partition@4780000 {
+			// squashfs
+			label = "rootfs_oflt";
+			reg = <0x04780000 0x00C00000>;
+		};
+
+		partition@5380000 {
+			// UBI
+			label = "config";
+			reg = <0x05380000 0x00800000>;
+		};
+
+		partition@5b80000 {
+			// UBI
+			label = "log";
+			reg = <0x05b80000 0x00C00000>;
+		};
+
+		partition@6780000 {
+			// UBI / unused
+			label = "extfs";
+			reg = <0x06780000 0x00600000>;
+		};
+
+		partition@6d80000 {
+			// binary
+			label = "bosa";
+			reg = <0x06d80000 0x00040000>;
+		};
+
+		partition@6dc0000 {
+			label = "flag";
+			reg = <0x06dc0000 0x00040000>;
+		};
+
+		partition@6e00000 {
+			label = "flagback";
+			reg = <0x06e00000 0x00040000>;
+		};
+
+		partition@6e40000 {
+			label = "ri";
+			reg = <0x06e40000 0x00040000>;
+		};
+
+		partition@6e80000 {
+			label = "riback";
+			reg = <0x06e80000 0x00040000>;
+		};
+	};
+};
