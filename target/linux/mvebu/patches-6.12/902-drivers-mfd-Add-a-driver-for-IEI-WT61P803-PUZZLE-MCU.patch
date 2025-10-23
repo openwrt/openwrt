@@ -820,7 +820,7 @@ Cc: Robert Marko <robert.marko@sartura.hr>
 +static IEI_WT61P803_PUZZLE_ATTR_RW(power_loss_recovery, IEI_WT61P803_PUZZLE_POWER_LOSS_RECOVERY, 0);
 +static IEI_WT61P803_PUZZLE_ATTR_RO(power_status, IEI_WT61P803_PUZZLE_POWER_STATUS, 0);
 +
-+static struct attribute *iei_wt61p803_puzzle_attrs[] = {
++static const struct attribute *iei_wt61p803_puzzle_attrs[] = {
 +	&dev_attr_version.dev_attr.attr,
 +	&dev_attr_build_info.dev_attr.attr,
 +	&dev_attr_bootloader_mode.dev_attr.attr,
