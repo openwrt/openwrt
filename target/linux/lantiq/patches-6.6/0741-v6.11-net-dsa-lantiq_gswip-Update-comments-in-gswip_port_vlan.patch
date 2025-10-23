@@ -21,7 +21,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/dsa/lantiq_gswip.c
 +++ b/drivers/net/dsa/lantiq_gswip.c
-@@ -773,7 +773,7 @@ static int gswip_port_vlan_filtering(str
+@@ -782,7 +782,7 @@ static int gswip_port_vlan_filtering(str
  	}
  
  	if (vlan_filtering) {
@@ -30,7 +30,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		gswip_switch_mask(priv,
  				  GSWIP_PCE_VCTRL_VSR,
  				  GSWIP_PCE_VCTRL_UVR | GSWIP_PCE_VCTRL_VIMR |
-@@ -782,7 +782,7 @@ static int gswip_port_vlan_filtering(str
+@@ -791,7 +791,7 @@ static int gswip_port_vlan_filtering(str
  		gswip_switch_mask(priv, GSWIP_PCE_PCTRL_0_TVM, 0,
  				  GSWIP_PCE_PCTRL_0p(port));
  	} else {

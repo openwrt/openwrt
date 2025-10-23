@@ -10,11 +10,13 @@
 	compatible = "linksys,whw01";
 
 	aliases {
-		// TODO: Verify if the ethernet0 alias is needed
 		ethernet0 = &gmac;
 		serial0 = &blsp1_uart1;
 		led-boot = &led_system_blue;
+		led-failsafe = &led_system_red;
 		led-running = &led_system_blue;
+		led-upgrade = &led_system_red;
+		label-mac-device = &gmac;
 	};
 
 	chosen {
@@ -56,7 +58,7 @@
 		reg = <0x62>;
 
 		/* RGB? */
-		led@0 {
+		led_system_red: led@0 {
 			reg = <0>;
 			color = <LED_COLOR_ID_RED>;
 			function = LED_FUNCTION_POWER;

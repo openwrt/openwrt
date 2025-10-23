@@ -232,7 +232,9 @@ define DownloadMethod/rawgit
 	echo "Generating formal git archive (apply .gitattributes rules)" && \
 	(cd $(SUBDIR) && git config core.abbrev 8 && \
 	git archive --format=tar HEAD --output=../$(SUBDIR).tar.git) && \
-	$(if $(filter skip,$(SUBMODULES)),true,$(TAR) --ignore-failed-read -C $(SUBDIR) -f $(SUBDIR).tar.git -r .git .gitmodules 2>/dev/null) && \
+	$(if $(filter skip,$(SUBMODULES)),true, \
+		$(TAR) --numeric-owner --owner=0 --group=0 --ignore-failed-read -C $(SUBDIR) -f $(SUBDIR).tar.git -r .git .gitmodules 2>/dev/null \
+	) && \
 	rm -rf $(SUBDIR) && mkdir $(SUBDIR) && \
 	$(TAR) -C $(SUBDIR) -xf $(SUBDIR).tar.git && \
 	(cd $(SUBDIR) && $(if $(filter skip,$(SUBMODULES)),true,git submodule update --init --recursive -- $(SUBMODULES) && \

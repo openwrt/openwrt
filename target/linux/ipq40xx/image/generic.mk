@@ -731,6 +731,23 @@ define Device/linksys_mr8300
 endef
 TARGET_DEVICES += linksys_mr8300
 
+define Device/linksys_whw01
+	$(call Device/FitzImage)
+	DEVICE_VENDOR := Linksys
+	DEVICE_MODEL := WHW01
+	KERNEL_SIZE := 6144k
+	IMAGE_SIZE := 75776k
+	NAND_SIZE := 256m
+	SOC := qcom-ipq4018
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	UBINIZE_OPTS := -E 5    # EOD marks to "hide" factory sig at EOF
+	IMAGES += factory.bin
+	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=WHW01
+	DEVICE_PACKAGES := uboot-envtools kmod-leds-pca963x
+endef
+TARGET_DEVICES += linksys_whw01
+
 define Device/linksys_whw03
 	$(call Device/FitzImage)
 	DEVICE_VENDOR := Linksys
@@ -762,23 +779,6 @@ define Device/linksys_whw03v2
 	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct kmod-leds-pca963x kmod-spi-dev kmod-bluetooth
 endef
 TARGET_DEVICES += linksys_whw03v2
-
-define Device/linksys_whw01
-	$(call Device/FitzImage)
-	DEVICE_VENDOR := Linksys
-	DEVICE_MODEL := WHW01
-	KERNEL_SIZE := 6144k
-	IMAGE_SIZE := 75776k
-	NAND_SIZE := 256m
-	SOC := qcom-ipq4018
-	BLOCKSIZE := 128k
-	PAGESIZE := 2048
-	UBINIZE_OPTS := -E 5    # EOD marks to "hide" factory sig at EOF
-	IMAGES += factory.bin
-	IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=WHW01
-	DEVICE_PACKAGES := uboot-envtools kmod-leds-pca963x
-endef
-TARGET_DEVICES += linksys_whw01
 
 define Device/luma_wrtq-329acn
 	$(call Device/FitImage)

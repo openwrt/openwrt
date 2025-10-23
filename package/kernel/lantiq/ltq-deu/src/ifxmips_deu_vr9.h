@@ -321,4 +321,7 @@ struct deu_dma_t {
 	} controlr;
 };
 
+u32 input_swap(u32 input);
+void chip_version(void);
+
 #endif /* IFXMIPS_DEU_VR9_H */

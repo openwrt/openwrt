@@ -20,7 +20,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/dsa/lantiq_gswip.c
 +++ b/drivers/net/dsa/lantiq_gswip.c
-@@ -1509,6 +1509,7 @@ static void gswip_xrx200_phylink_get_cap
+@@ -1511,6 +1511,7 @@ static void gswip_xrx200_phylink_get_cap
  	case 2:
  	case 3:
  	case 4:
@@ -28,7 +28,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		__set_bit(PHY_INTERFACE_MODE_INTERNAL,
  			  config->supported_interfaces);
  		break;
-@@ -1540,6 +1541,7 @@ static void gswip_xrx300_phylink_get_cap
+@@ -1542,6 +1543,7 @@ static void gswip_xrx300_phylink_get_cap
  	case 2:
  	case 3:
  	case 4:

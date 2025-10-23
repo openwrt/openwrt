@@ -21,7 +21,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/dsa/lantiq_gswip.c
 +++ b/drivers/net/dsa/lantiq_gswip.c
-@@ -1919,11 +1919,9 @@ static int gswip_gphy_fw_load(struct gsw
+@@ -1922,11 +1922,9 @@ static int gswip_gphy_fw_load(struct gsw
  	msleep(200);
  
  	ret = request_firmware(&fw, gphy_fw->fw_name, dev);
@@ -36,7 +36,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	/* GPHY cores need the firmware code in a persistent and contiguous
  	 * memory area with a 16 kB boundary aligned start address.
-@@ -1936,9 +1934,9 @@ static int gswip_gphy_fw_load(struct gsw
+@@ -1939,9 +1937,9 @@ static int gswip_gphy_fw_load(struct gsw
  		dev_addr = ALIGN(dma_addr, XRX200_GPHY_FW_ALIGN);
  		memcpy(fw_addr, fw->data, fw->size);
  	} else {
@@ -48,7 +48,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	}
  
  	release_firmware(fw);
-@@ -1965,8 +1963,8 @@ static int gswip_gphy_fw_probe(struct gs
+@@ -1968,8 +1966,8 @@ static int gswip_gphy_fw_probe(struct gs
  
  	gphy_fw->clk_gate = devm_clk_get(dev, gphyname);
  	if (IS_ERR(gphy_fw->clk_gate)) {
@@ -59,7 +59,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	}
  
  	ret = of_property_read_u32(gphy_fw_np, "reg", &gphy_fw->fw_addr_offset);
-@@ -1986,8 +1984,8 @@ static int gswip_gphy_fw_probe(struct gs
+@@ -1989,8 +1987,8 @@ static int gswip_gphy_fw_probe(struct gs
  		gphy_fw->fw_name = priv->gphy_fw_name_cfg->ge_firmware_name;
  		break;
  	default:
@@ -70,7 +70,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	}
  
  	gphy_fw->reset = of_reset_control_array_get_exclusive(gphy_fw_np);
-@@ -2038,8 +2036,9 @@ static int gswip_gphy_fw_list(struct gsw
+@@ -2041,8 +2039,9 @@ static int gswip_gphy_fw_list(struct gsw
  			priv->gphy_fw_name_cfg = &xrx200a2x_gphy_data;
  			break;
  		default:
@@ -82,7 +82,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		}
  	}
  
-@@ -2047,10 +2046,9 @@ static int gswip_gphy_fw_list(struct gsw
+@@ -2050,10 +2049,9 @@ static int gswip_gphy_fw_list(struct gsw
  	if (match && match->data)
  		priv->gphy_fw_name_cfg = match->data;
  
@@ -96,7 +96,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	priv->num_gphy_fw = of_get_available_child_count(gphy_fw_list_np);
  	if (!priv->num_gphy_fw)
-@@ -2150,8 +2148,8 @@ static int gswip_probe(struct platform_d
+@@ -2153,8 +2151,8 @@ static int gswip_probe(struct platform_d
  			return -EINVAL;
  		break;
  	default:
@@ -107,7 +107,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	}
  
  	/* bring up the mdio bus */
-@@ -2159,10 +2157,9 @@ static int gswip_probe(struct platform_d
+@@ -2162,10 +2160,9 @@ static int gswip_probe(struct platform_d
  	if (gphy_fw_np) {
  		err = gswip_gphy_fw_list(priv, gphy_fw_np, version);
  		of_node_put(gphy_fw_np);
@@ -121,7 +121,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	}
  
  	/* bring up the mdio bus */
-@@ -2170,20 +2167,20 @@ static int gswip_probe(struct platform_d
+@@ -2173,20 +2170,20 @@ static int gswip_probe(struct platform_d
  	if (mdio_np) {
  		err = gswip_mdio(priv, mdio_np);
  		if (err) {
