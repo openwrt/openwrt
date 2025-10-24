@@ -17565,7 +17565,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	}
 --- a/sound/usb/card.c
 +++ b/sound/usb/card.c
-@@ -863,8 +863,14 @@ static int usb_audio_probe(struct usb_in
+@@ -869,8 +869,14 @@ static int usb_audio_probe(struct usb_in
  	if (ignore_ctl_error)
  		chip->quirk_flags |= QUIRK_FLAG_IGNORE_CTL_ERROR;
  
