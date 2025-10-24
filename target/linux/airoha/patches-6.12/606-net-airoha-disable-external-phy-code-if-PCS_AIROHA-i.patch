@@ -103,7 +103,7 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  
  	err = register_netdev(dev);
  	if (err)
-@@ -3202,10 +3214,12 @@ error_hw_cleanup:
+@@ -3203,10 +3215,12 @@ error_hw_cleanup:
  		if (port && port->dev->reg_state == NETREG_REGISTERED) {
  			unregister_netdev(port->dev);
  			airoha_metadata_dst_free(port);
@@ -116,7 +116,7 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  		}
  	}
  	free_netdev(eth->napi_dev);
-@@ -3233,10 +3247,12 @@ static void airoha_remove(struct platfor
+@@ -3234,10 +3248,12 @@ static void airoha_remove(struct platfor
  		airoha_dev_stop(port->dev);
  		unregister_netdev(port->dev);
  		airoha_metadata_dst_free(port);
