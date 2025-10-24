@@ -72,7 +72,7 @@ function print_scan(cells) {
 		printf('\t  Mode: %s  Frequency: %s GHz  Band: %s GHz  Channel: %d\n', cell.mode, cell.frequency, cell.band, cell.channel);
 		printf('\t  Signal: %d dBm  Quality: %2d/70\n', cell.dbm, cell.quality);
 
-		if (!length(cell.crypto.key_mgmt))
+		if (!cell.crypto || !length(cell.crypto.key_mgmt))
 			printf('\t  Encryption: NONE\n');
 		else
 			printf('\t  Encryption: %s (%s)\n', join(' / ', cell.crypto.key_mgmt), join(' / ', cell.crypto.pair));
