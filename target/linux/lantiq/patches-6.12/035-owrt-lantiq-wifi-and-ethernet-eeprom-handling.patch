@@ -118,7 +118,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		return -ENODEV;
 +	}
 +
-+	if (of_find_property(np, "ath,eep-swap", NULL))
++	if (of_property_present(np, "ath,eep-swap"))
 +		for (i = 0; i < ATH5K_PLAT_EEP_MAX_WORDS; i++)
 +			ath5k_pdata.eeprom_data[i] = swab16(ath5k_pdata.eeprom_data[i]);
 +
