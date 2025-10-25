@@ -442,6 +442,7 @@ define Build/fit
 				-d $(KERNEL_BUILD_DIR)/image-$$(basename $(word 2,$(1))), \
 				-d $(word 2,$(1)))) \
 		$(if $(findstring with-rootfs,$(word 3,$(1))),-r $(IMAGE_ROOTFS)) \
+		$(if $(findstring with-netgear-rootfs-node,$(word 3,$(1))),-R $(KERNEL_BUILD_DIR)/root.squashfs) \
 		$(if $(findstring with-initrd,$(word 3,$(1))), \
 			$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS_SEPARATE), \
 				-i $(KERNEL_BUILD_DIR)/initrd$(if $(TARGET_PER_DEVICE_ROOTFS),.$(ROOTFS_ID/$(DEVICE_NAME))).cpio$(strip $(call Build/initrd_compression)))) \
