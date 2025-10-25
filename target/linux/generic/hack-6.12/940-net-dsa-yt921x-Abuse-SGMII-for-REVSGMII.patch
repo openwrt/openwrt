@@ -1,0 +1,33 @@
+From e9a88e643d0826cd1f7d464ce8508e12e413a90f Mon Sep 17 00:00:00 2001
+From: David Yang <mmyangfl@gmail.com>
+Date: Thu, 23 Oct 2025 21:43:16 +0800
+Subject: [PATCH] net: dsa: yt921x: Abuse SGMII for REVSGMII
+
+Although it shows that YT9215s + IPQ5018 works on 2500Base-X mode in an
+old unofficial port version of OpenWRT, it stops working in the latest
+version, probably due to unknown changes in qca-ssdk (see link below).
+REVSGMII (SGMII in PHY role) is the only available mode for (the
+mainline) OpenWRT, however we lack PHY_INTERFACE_MODE_REVSGMII in the
+linux kernel, so we abuse SGMII to denote REVSGMII for the moment, until
+a solution (either introducing REVSGMII mode or fixing qca-ssdk) is
+found.
+
+Link: https://forum.openwrt.org/t/241325
+
+Signed-off-by: David Yang <mmyangfl@gmail.com>
+---
+ drivers/net/dsa/yt921x.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/yt921x.c
++++ b/drivers/net/dsa/yt921x.c
+@@ -2276,7 +2276,8 @@ yt921x_port_config(struct yt921x_priv *p
+ 		mask = YT921X_SERDES_MODE_M;
+ 		switch (interface) {
+ 		case PHY_INTERFACE_MODE_SGMII:
+-			ctrl = YT921X_SERDES_MODE_SGMII;
++			/* abuse SGMII for REVSGMII */
++			ctrl = YT921X_SERDES_MODE_REVSGMII;
+ 			break;
+ 		case PHY_INTERFACE_MODE_100BASEX:
+ 			ctrl = YT921X_SERDES_MODE_100BASEX;
