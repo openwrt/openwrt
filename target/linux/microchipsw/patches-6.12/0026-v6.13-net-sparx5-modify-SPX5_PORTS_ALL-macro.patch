@@ -1,0 +1,36 @@
+From 9f4b9996e892cd721bf1f6664c3ba95a7592924c Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Fri, 4 Oct 2024 15:19:29 +0200
+Subject: [PATCH 31/82] net: sparx5: modify SPX5_PORTS_ALL macro
+
+In preparation for lan969x, we need to define the SPX5_PORTS_ALL macro
+as 70 (65 front ports + 5 internal ports). This is required as the
+SPX5_PORT_CPU will be redefined as an offset to the number of front
+ports, in a subsequent patch.
+
+Reviewed-by: Steen Hegelund <Steen.Hegelund@microchip.com>
+Reviewed-by: Jacob Keller <jacob.e.keller@intel.com>
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/ethernet/microchip/sparx5/sparx5_main.h | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
+@@ -52,13 +52,14 @@ enum sparx5_vlan_port_type {
+ };
+ 
+ #define SPX5_PORTS             65
++#define SPX5_PORTS_ALL         70 /* Total number of ports */
++
+ #define SPX5_PORT_CPU          (SPX5_PORTS)  /* Next port is CPU port */
+ #define SPX5_PORT_CPU_0        (SPX5_PORT_CPU + 0) /* CPU Port 65 */
+ #define SPX5_PORT_CPU_1        (SPX5_PORT_CPU + 1) /* CPU Port 66 */
+ #define SPX5_PORT_VD0          (SPX5_PORT_CPU + 2) /* VD0/Port 67 used for IPMC */
+ #define SPX5_PORT_VD1          (SPX5_PORT_CPU + 3) /* VD1/Port 68 used for AFI/OAM */
+ #define SPX5_PORT_VD2          (SPX5_PORT_CPU + 4) /* VD2/Port 69 used for IPinIP*/
+-#define SPX5_PORTS_ALL         (SPX5_PORT_CPU + 5) /* Total number of ports */
+ 
+ #define PGID_BASE              SPX5_PORTS /* Starts after port PGIDs */
+ #define PGID_UC_FLOOD          (PGID_BASE + 0)
