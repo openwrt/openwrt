@@ -12,9 +12,7 @@
 #include "rtk_phylib_rtl826xb.h"
 #include "rtk_phylib.h"
 
-#define REALTEK_PHY_ID_RTL8261N         0x001CCAF3
-#define REALTEK_PHY_ID_RTL8264B         0x001CC813
-#define REALTEK_PHY_ID_RTL8264          0x001CCAF2
+#include "rtk_phy.h"
 
 #define REALTEK_SERDES_GLOBAL_CFG       0x1c
 #define   REALTEK_HSO_INV               BIT(7)
@@ -23,23 +21,35 @@
 static int rtl826xb_get_features(struct phy_device *phydev)
 {
     int ret;
+    struct rtk_phy_priv *priv = phydev->priv;
+
     ret = genphy_c45_pma_read_abilities(phydev);
     if (ret)
         return ret;
 
     linkmode_or(phydev->supported, phydev->supported, PHY_BASIC_FEATURES);
 
-
     linkmode_set_bit(ETHTOOL_LINK_MODE_2500baseT_Full_BIT,
                        phydev->supported);
     linkmode_set_bit(ETHTOOL_LINK_MODE_5000baseT_Full_BIT,
                        phydev->supported);
-
     /* not support 10M modes */
     linkmode_clear_bit(ETHTOOL_LINK_MODE_10baseT_Half_BIT,
                        phydev->supported);
     linkmode_clear_bit(ETHTOOL_LINK_MODE_10baseT_Full_BIT,
                        phydev->supported);
+
+    switch (priv->phytype)
+    {
+        case RTK_PHYLIB_RTL8251L:
+        case RTK_PHYLIB_RTL8254B:
+            linkmode_clear_bit(ETHTOOL_LINK_MODE_10000baseT_Full_BIT,
+                       phydev->supported);
+            break;
+
+        default:
+            break;
+    }
 
     return 0;
 }
@@ -48,6 +58,7 @@ static int rtl826xb_probe(struct phy_device *phydev)
 {
     struct device *dev = &phydev->mdio.dev;
     struct rtk_phy_priv *priv = NULL;
+    int data = 0;
 
     priv = devm_kzalloc(&phydev->mdio.dev, sizeof(struct rtk_phy_priv), GFP_KERNEL);
     if (!priv)
@@ -59,12 +70,73 @@ static int rtl826xb_probe(struct phy_device *phydev)
     if (phy_rtl826xb_patch_db_init(0, phydev, &(priv->patch)) != RT_ERR_OK)
         return -ENOMEM;
 
-    priv->phytype = (phydev->drv->phy_id == REALTEK_PHY_ID_RTL8261N) ? (RTK_PHYLIB_RTL8261N) : (RTK_PHYLIB_RTL8264B);
+    if (phydev->drv->phy_id == REALTEK_PHY_ID_RTL8261N)
+    {
+        data = phy_read_mmd(phydev, 30, 0x103);
+        if (data < 0)
+            return data;
+
+        if (data == 0x8251)
+        {
+            priv->phytype = RTK_PHYLIB_RTL8251L;
+        }
+        else
+        {
+            data = phy_read_mmd(phydev, 30, 0x104);
+            if (data < 0)
+                return data;
+
+            if ((data & 0xFFC0) == 0x1140)
+            {
+                priv->phytype = RTK_PHYLIB_RTL8261BE;
+            }
+            else
+            {
+                priv->phytype = RTK_PHYLIB_RTL8261N;
+            }
+        }
+    }
+    else if (phydev->drv->phy_id == REALTEK_PHY_ID_RTL8264B)
+    {
+        data = phy_read_mmd(phydev, 30, 0x103);
+        if (data < 0)
+            return data;
+
+        if (data == 0x8254)
+        {
+            priv->phytype = RTK_PHYLIB_RTL8254B;
+        }
+        else
+        {
+            priv->phytype = RTK_PHYLIB_RTL8264B;
+        }
+    }
+    else if (phydev->drv->phy_id == REALTEK_PHY_ID_RTL8264)
+    {
+         priv->phytype = RTK_PHYLIB_RTL8264;
+    }
     priv->isBasePort = (phydev->drv->phy_id == REALTEK_PHY_ID_RTL8261N) ? (1) : (((phydev->mdio.addr % 4) == 0) ? (1) : (0));
     priv->pnswap_tx = device_property_read_bool(dev, "realtek,pnswap-tx");
+    priv->pnswap_rx = device_property_read_bool(dev, "realtek,pnswap-rx");
+    priv->rtk_serdes_patch = device_property_read_bool(dev, "realtek,rtk-serdes-patch");
     phydev->priv = priv;
 
     return 0;
+}
+
+static const char *rtkphy_get_phy_name(struct phy_device *phydev)
+{
+    struct rtk_phy_priv *priv = phydev->priv;
+    switch (priv->phytype)
+    {
+        case RTK_PHYLIB_RTL8251L:  return "RTL8251L";
+        case RTK_PHYLIB_RTL8254B:  return "RTL8254B";
+        case RTK_PHYLIB_RTL8261N:  return "RTL8261N";
+        case RTK_PHYLIB_RTL8261BE: return "RTL8261BE";
+        case RTK_PHYLIB_RTL8264:   return "RTL8264";
+        case RTK_PHYLIB_RTL8264B:  return "RTL8264B";
+        default:                   return "RTL82????";
+    }
 }
 
 static int rtkphy_config_init(struct phy_device *phydev)
@@ -74,18 +146,15 @@ static int rtkphy_config_init(struct phy_device *phydev)
     switch (phydev->drv->phy_id)
     {
         case REALTEK_PHY_ID_RTL8261N:
-        case REALTEK_PHY_ID_RTL8264B:
         case REALTEK_PHY_ID_RTL8264:
-            phydev_info(phydev, "%s:%u [RTL8261N/RTL8264/RTL826XB] phy_id: 0x%X PHYAD:%d\n", __FUNCTION__, __LINE__, phydev->drv->phy_id, phydev->mdio.addr);
-#ifdef CONFIG_MACH_REALTEK_RTL
-            return 0;
-#endif
+        case REALTEK_PHY_ID_RTL8264B:
+            phydev_info(phydev, "%s:%u [%s] phy_id: 0x%X PHYAD:%d swap_tx: %d swap_rx: %d\n", __FUNCTION__, __LINE__,
+                        rtkphy_get_phy_name(phydev), phydev->drv->phy_id, phydev->mdio.addr, priv->pnswap_tx, priv->pnswap_rx);
 
-          #if 1 /* toggle reset */
+            /* toggle reset */
             phy_modify_mmd_changed(phydev, 30, 0x145, BIT(0)  , 1);
             phy_modify_mmd_changed(phydev, 30, 0x145, BIT(0)  , 0);
             mdelay(30);
-          #endif
 
             ret = phy_patch(0, phydev, 0, PHY_PATCH_MODE_NORMAL);
             if (ret)
@@ -93,42 +162,11 @@ static int rtkphy_config_init(struct phy_device *phydev)
                 phydev_err(phydev, "%s:%u [RTL8261N/RTL826XB] patch failed!! 0x%X\n", __FUNCTION__, __LINE__, ret);
                 return ret;
             }
-          #if 0 /* Debug: patch check */
-            ret = phy_patch(0, phydev, 0, PHY_PATCH_MODE_CMP);
-            if (ret)
-            {
-                phydev_err(phydev, "%s:%u [RTL8261N/RTL826XB] phy_patch failed!! 0x%X\n", __FUNCTION__, __LINE__, ret);
-                return ret;
-            }
-            printk("[%s,%u] patch chk %s\n", __FUNCTION__, __LINE__, (ret == 0) ? "PASS" : "FAIL");
-          #endif
-          #if 0 /* Debug: USXGMII*/
-            {
-                uint32 data = 0;
-                rtk_phylib_826xb_sds_read(phydev, 0x07, 0x10, 15, 0, &data);
-                printk("[%s,%u] SDS 0x07, 0x10 : 0x%X\n", __FUNCTION__, __LINE__, data);
-                rtk_phylib_826xb_sds_read(phydev, 0x06, 0x12, 15, 0, &data);
-                printk("[%s,%u] SDS 0x06, 0x12 : 0x%X\n", __FUNCTION__, __LINE__, data);
-            }
-            {
-                u16 sdspage = 0x5, sdsreg = 0x0;
-                u16 regData = (sdspage & 0x3f) | ((sdsreg & 0x1f) << 6) | BIT(15);
-                u16 readData = 0;
-                phy_write_mmd(phydev, 30, 323, regData);
-                do
-                {
-                    udelay(10);
-                    readData = phy_read_mmd(phydev, 30, 323);
-                } while ((readData & BIT(15)) != 0);
-                readData = phy_read_mmd(phydev, 30, 322);
-                printk("[%s,%d] sds link [%s] (0x%X)\n", __FUNCTION__, __LINE__, (readData & BIT(12)) ? "UP" : "DOWN", readData);
-            }
-          #endif
 
             if (priv->pnswap_tx)
-                phy_set_bits_mmd(phydev, MDIO_MMD_VEND1,
-                                 REALTEK_SERDES_GLOBAL_CFG,
-                                 REALTEK_HSO_INV);
+                phy_set_bits_mmd(phydev, MDIO_MMD_VEND1, REALTEK_SERDES_GLOBAL_CFG, REALTEK_HSO_INV);
+            if (priv->pnswap_rx)
+                phy_set_bits_mmd(phydev, MDIO_MMD_VEND1, REALTEK_SERDES_GLOBAL_CFG, REALTEK_HSI_INV);
 
             break;
         default:
@@ -137,31 +175,6 @@ static int rtkphy_config_init(struct phy_device *phydev)
     }
 
     return ret;
-}
-
-static int rtkphy_c45_suspend(struct phy_device *phydev)
-{
-    int ret = 0;
-
-#ifndef CONFIG_MACH_REALTEK_RTL
-    ret = rtk_phylib_c45_power_low(phydev);
-#endif
-
-    phydev->speed = SPEED_UNKNOWN;
-    phydev->duplex = DUPLEX_UNKNOWN;
-    phydev->pause = 0;
-    phydev->asym_pause = 0;
-
-    return ret;
-}
-
-static int rtkphy_c45_resume(struct phy_device *phydev)
-{
-#ifndef CONFIG_MACH_REALTEK_RTL
-    return rtk_phylib_c45_power_normal(phydev);
-#else
-    return 0;
-#endif
 }
 
 static int rtkphy_c45_config_aneg(struct phy_device *phydev)
@@ -197,11 +210,6 @@ static int rtkphy_c45_config_aneg(struct phy_device *phydev)
         changed = true;
 
     return genphy_c45_check_and_restart_aneg(phydev, changed);
-}
-
-static int rtkphy_c45_aneg_done(struct phy_device *phydev)
-{
-    return genphy_c45_aneg_done(phydev);
 }
 
 static int rtkphy_c45_read_status(struct phy_device *phydev)
@@ -261,30 +269,17 @@ static int rtkphy_c45_read_status(struct phy_device *phydev)
     return ret;
 }
 
-
 static struct phy_driver rtk_phy_drivers[] = {
     {
         PHY_ID_MATCH_EXACT(REALTEK_PHY_ID_RTL8261N),
-        .name               = "Realtek RTL8261N",
+        .name               = "Realtek RTL8261N/8261BE/8251L",
         .get_features       = rtl826xb_get_features,
         .config_init        = rtkphy_config_init,
         .probe              = rtl826xb_probe,
-        .suspend            = rtkphy_c45_suspend,
-        .resume             = rtkphy_c45_resume,
+        .suspend            = genphy_c45_pma_suspend,
+        .resume             = genphy_c45_pma_resume,
         .config_aneg        = rtkphy_c45_config_aneg,
-        .aneg_done          = rtkphy_c45_aneg_done,
-        .read_status        = rtkphy_c45_read_status,
-    },
-    {
-        PHY_ID_MATCH_EXACT(REALTEK_PHY_ID_RTL8264B),
-        .name               = "Realtek RTL8264B",
-        .get_features       = rtl826xb_get_features,
-        .config_init        = rtkphy_config_init,
-        .probe              = rtl826xb_probe,
-        .suspend            = rtkphy_c45_suspend,
-        .resume             = rtkphy_c45_resume,
-        .config_aneg        = rtkphy_c45_config_aneg,
-        .aneg_done          = rtkphy_c45_aneg_done,
+        .aneg_done          = genphy_c45_aneg_done,
         .read_status        = rtkphy_c45_read_status,
     },
     {
@@ -293,10 +288,22 @@ static struct phy_driver rtk_phy_drivers[] = {
         .get_features       = rtl826xb_get_features,
         .config_init        = rtkphy_config_init,
         .probe              = rtl826xb_probe,
-        .suspend            = rtkphy_c45_suspend,
-        .resume             = rtkphy_c45_resume,
+        .suspend            = genphy_c45_pma_suspend,
+        .resume             = genphy_c45_pma_resume,
         .config_aneg        = rtkphy_c45_config_aneg,
-        .aneg_done          = rtkphy_c45_aneg_done,
+        .aneg_done          = genphy_c45_aneg_done,
+        .read_status        = rtkphy_c45_read_status,
+    },
+    {
+        PHY_ID_MATCH_EXACT(REALTEK_PHY_ID_RTL8264B),
+        .name               = "Realtek RTL8264B/8254B",
+        .get_features       = rtl826xb_get_features,
+        .config_init        = rtkphy_config_init,
+        .probe              = rtl826xb_probe,
+        .suspend            = genphy_c45_pma_suspend,
+        .resume             = genphy_c45_pma_resume,
+        .config_aneg        = rtkphy_c45_config_aneg,
+        .aneg_done          = genphy_c45_aneg_done,
         .read_status        = rtkphy_c45_read_status,
     },
 };

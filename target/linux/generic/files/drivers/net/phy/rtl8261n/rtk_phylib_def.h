@@ -3,12 +3,12 @@
  *
  * Copyright (c) 2023 Realtek Semiconductor Corp. All rights reserved.
  */
+
 #ifndef __RTK_PHYLIB_DEF_H
 #define __RTK_PHYLIB_DEF_H
 
 #include "type.h"
 
-//#define PHY_C22_MMD_PAGE            0
 #define PHY_C22_MMD_PAGE            0x0A41
 #define PHY_C22_MMD_DEV_REG         13
 #define PHY_C22_MMD_ADD_REG         14
@@ -91,7 +91,8 @@
 
 typedef struct phy_device *  rtk_port_t;
 
-#if 1 /* ss\sdk\include\hal\phy\phydef.h */
+/* ss\sdk\include\hal\phy\phydef.h */
+
 /* unified patch format */
 typedef enum rtk_phypatch_type_e
 {
@@ -159,8 +160,5 @@ typedef struct rt_phy_patch_db_s
     rtk_hwpatch_seq_t cmp_table[RTK_PATCH_SEQ_MAX];
 
 } rt_phy_patch_db_t;
-#endif
-
-
 
 #endif /* __RTK_PHYLIB_DEF_H */
