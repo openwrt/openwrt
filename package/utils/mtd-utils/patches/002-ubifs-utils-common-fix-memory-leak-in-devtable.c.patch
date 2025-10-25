@@ -1,0 +1,32 @@
+From 2669111e3c60b8e146c174db5d2e7e9991f3dd87 Mon Sep 17 00:00:00 2001
+From: AntonMoryakov <ant.v.moryakov@gmail.com>
+Date: Thu, 24 Apr 2025 21:19:22 +0300
+Subject: ubifs-utils: common: fix memory leak in devtable.c
+
+Report of the static analyzer:
+Dynamic memory, referenced by 'line', is allocated at devtable.c:356
+by calling function 'getline' and lost at devtable.c:388.
+(line: while (getline(&line, &len, f) != -1) {)
+
+Correct explained:
+Now line is freed in any exit scenario via out_close which eliminates this error.
+
+Triggers found by static analyzer Svace.
+
+Signed-off-by: Anton Moryakov <ant.v.moryakov@gmail.co
+Reviewed-by: Zhihao Cheng <chengzhihao1@huawei.com>
+Signed-off-by: David Oberhollenzer <david.oberhollenzer@sigma-star.at>
+---
+ ubifs-utils/common/devtable.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/ubifs-utils/common/devtable.c
++++ b/ubifs-utils/common/devtable.c
+@@ -392,6 +392,7 @@ int parse_devtable(const char *tbl_file)
+ 
+ out_close:
+ 	fclose(f);
++	free(line);
+ 	free_devtable_info();
+ 	return -1;
+ }
