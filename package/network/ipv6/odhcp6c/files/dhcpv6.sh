@@ -30,7 +30,7 @@ proto_dhcpv6_init_config() {
 	proto_config_add_string iface_464xlat
 	proto_config_add_string zone_464xlat
 	proto_config_add_string zone
-	proto_config_add_string 'ifaceid:ip6addr'
+	proto_config_add_string 'ip6ifaceid:ip6addr'
 	proto_config_add_string "userclass"
 	proto_config_add_string "vendorclass"
 	proto_config_add_array "sendopts:list(string)"
@@ -56,8 +56,8 @@ proto_dhcpv6_setup() {
 	local config="$1"
 	local iface="$2"
 
-	local reqaddress reqprefix clientid reqopts defaultreqopts noslaaconly forceprefix extendprefix norelease noserverunicast noclientfqdn noacceptreconfig ip6prefix ip6prefixes iface_dslite iface_map iface_464xlat ifaceid userclass vendorclass sendopts delegate zone_dslite zone_map zone_464xlat zone encaplimit_dslite encaplimit_map skpriority soltimeout fakeroutes sourcefilter keep_ra_dnslifetime ra_holdoff verbose
-	json_get_vars reqaddress reqprefix clientid reqopts defaultreqopts noslaaconly forceprefix extendprefix norelease noserverunicast noclientfqdn noacceptreconfig iface_dslite iface_map iface_464xlat ifaceid userclass vendorclass delegate zone_dslite zone_map zone_464xlat zone encaplimit_dslite encaplimit_map skpriority soltimeout fakeroutes sourcefilter keep_ra_dnslifetime ra_holdoff verbose
+	local reqaddress reqprefix clientid reqopts defaultreqopts noslaaconly forceprefix extendprefix norelease noserverunicast noclientfqdn noacceptreconfig ip6prefix ip6prefixes iface_dslite iface_map iface_464xlat ip6ifaceid userclass vendorclass sendopts delegate zone_dslite zone_map zone_464xlat zone encaplimit_dslite encaplimit_map skpriority soltimeout fakeroutes sourcefilter keep_ra_dnslifetime ra_holdoff verbose
+	json_get_vars reqaddress reqprefix clientid reqopts defaultreqopts noslaaconly forceprefix extendprefix norelease noserverunicast noclientfqdn noacceptreconfig iface_dslite iface_map iface_464xlat ip6ifaceid userclass vendorclass delegate zone_dslite zone_map zone_464xlat zone encaplimit_dslite encaplimit_map skpriority soltimeout fakeroutes sourcefilter keep_ra_dnslifetime ra_holdoff verbose
 	json_for_each_item proto_dhcpv6_add_prefix ip6prefix ip6prefixes
 
 	# Configure
@@ -84,7 +84,8 @@ proto_dhcpv6_setup() {
 
 	[ "$noacceptreconfig" = "1" ] && append opts "-a"
 
-	[ -n "$ifaceid" ] && append opts "-i$ifaceid"
+	[ -z "$ip6ifaceid" ] && json_get_var ip6ifaceid ifaceid
+	[ -n "$ip6ifaceid" ] && append opts "-i$ip6ifaceid"
 
 	[ -n "$vendorclass" ] && append opts "-V$vendorclass"
 

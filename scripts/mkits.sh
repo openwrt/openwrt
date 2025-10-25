@@ -82,6 +82,11 @@ if [ -z "${ARCH}" ] || [ -z "${COMPRESS}" ] || [ -z "${LOAD_ADDR}" ] || \
 	usage
 fi
 
+if [ -n "${ROOTFS}" ] && [ ! -f "${ROOTFS}".pagesync ]; then
+	echo "Missing .pagesync blob for RootFS blob '${ROOTFS}'"
+	exit 1
+fi
+
 ARCH_UPPER=$(echo "$ARCH" | tr '[:lower:]' '[:upper:]')
 
 if [ -n "${COMPATIBLE}" ]; then
@@ -136,7 +141,6 @@ fi
 
 
 if [ -n "${ROOTFS}" ]; then
-	dd if="${ROOTFS}" of="${ROOTFS}.pagesync" bs=4096 conv=sync
 	ROOTFS_NODE="
 		rootfs${REFERENCE_CHAR}$ROOTFSNUM {
 			description = \"${ARCH_UPPER} OpenWrt ${DEVICE} rootfs\";

@@ -353,7 +353,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  }
  
  static void rtl_release_firmware(struct rtl8169_private *tp)
-@@ -5448,9 +5380,9 @@ static bool rtl_aspm_is_safe(struct rtl8
+@@ -5449,9 +5381,9 @@ static bool rtl_aspm_is_safe(struct rtl8
  
  static int rtl_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
  {
@@ -364,7 +364,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	struct net_device *dev;
  	u32 txconfig;
  	u16 xid;
-@@ -5501,12 +5433,13 @@ static int rtl_init_one(struct pci_dev *
+@@ -5502,12 +5434,13 @@ static int rtl_init_one(struct pci_dev *
  	xid = (txconfig >> 20) & 0xfcf;
  
  	/* Identify chip attached to board */
@@ -381,7 +381,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	/* Disable ASPM L1 as that cause random device stop working
  	 * problems as well as full system hangs for some PCIe devices users.
-@@ -5610,8 +5543,6 @@ static int rtl_init_one(struct pci_dev *
+@@ -5611,8 +5544,6 @@ static int rtl_init_one(struct pci_dev *
  
  	rtl_set_irq_mask(tp);
  
@@ -390,7 +390,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	tp->counters = dmam_alloc_coherent (&pdev->dev, sizeof(*tp->counters),
  					    &tp->counters_phys_addr,
  					    GFP_KERNEL);
-@@ -5636,7 +5567,7 @@ static int rtl_init_one(struct pci_dev *
+@@ -5637,7 +5568,7 @@ static int rtl_init_one(struct pci_dev *
  	}
  
  	netdev_info(dev, "%s, %pM, XID %03x, IRQ %d\n",

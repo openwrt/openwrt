@@ -55,48 +55,11 @@ engenius,ens620ext)
 glinet,gl-ap1300)
 	ucidef_set_led_netdev "wan" "WAN" "white:wan" "wan"
 	;;
-glinet,gl-b1300 |\
+glinet,gl-b1300|\
 mikrotik,lhgg-60ad)
 	ucidef_set_led_wlan "wlan" "WLAN" "green:wlan" "phy0tpt"
 	;;
-mikrotik,cap-ac)
-	ucidef_set_led_default "power" "POWER" "blue:power" "1"
-	ucidef_set_led_default "user" "USER" "green:user" "0"
-	ucidef_set_led_netdev "eth1" "ETH1" "green:eth1" "wan"
-	ucidef_set_led_netdev "eth2" "ETH2" "green:eth2" "lan"
-	ucidef_set_led_wlan "wlan2g" "WLAN2G" "green:wlan2g" "phy0tpt"
-	ucidef_set_led_wlan "wlan5g" "WLAN5G" "green:wlan5g" "phy1tpt"
-	;;
-mikrotik,hap-ac3)
-	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth0"
-	ucidef_set_led_netdev "lan1" "LAN1" "green:lan1" "lan1"
-	ucidef_set_led_netdev "lan2" "LAN2" "green:lan2" "lan2"
-	ucidef_set_led_netdev "lan3" "LAN3" "green:lan3" "lan3"
-	ucidef_set_led_netdev "lan4" "LAN4" "green:lan4" "lan4"
-	ucidef_set_led_gpio "poe" "POE" "red:poe" "452" "0"
-	;;
-mikrotik,hap-ac3-lte6-kit)
-        ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
-        ucidef_set_led_netdev "lan1" "LAN1" "green:lan1" "lan1"
-        ucidef_set_led_netdev "lan2" "LAN2" "green:lan2" "lan2"
-        ucidef_set_led_netdev "lan3" "LAN3" "green:lan3" "lan3"
-        ucidef_set_led_netdev "lan4" "LAN4" "green:lan4" "lan4"
-        ;;
-
-mikrotik,sxtsq-5-ac)
-	ucidef_set_rssimon "wlan0" "200000" "1"
-	ucidef_set_led_rssi "rssilow" "rssilow" "green:rssilow" "wlan0" "1" "100"
-	ucidef_set_led_rssi "rssimediumlow" "rssimediumlow" "green:rssimediumlow" "wlan0" "21" "100"
-	ucidef_set_led_rssi "rssimedium" "rssimedium" "green:rssimedium" "wlan0" "41" "100"
-	ucidef_set_led_rssi "rssimediumhigh" "rssimediumhigh" "green:rssimediumhigh" "wlan0" "61" "100"
-	ucidef_set_led_rssi "rssihigh" "rssihigh" "green:rssihigh" "wlan0" "81" "100"
-	;;
-mobipromo,cm520-79f)
-	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "wan"
-	ucidef_set_led_netdev "lan1" "LAN1" "blue:lan1" "lan1"
-	ucidef_set_led_netdev "lan2" "LAN2" "blue:lan2" "lan2"
-	;;
-meraki,gx20 |\
+meraki,gx20|\
 meraki,z3)
 	ucidef_set_led_netdev "wan_link" "WAN (link)" "green:wan-0" "wan" "link"
 	ucidef_set_led_netdev "wan_act" "WAN (txrx)" "green:wan-1" "wan" "tx rx"
@@ -119,12 +82,48 @@ meraki,mr30h)
 	ucidef_set_led_netdev "lan4_link" "LAN4 (link)" "green:lan-6" "lan4" "link"
 	ucidef_set_led_netdev "lan4_act" "LAN4 (txrx)" "amber:lan-7" "lan4" "tx rx"
 	;;
-netgear,ex6100v2 |\
+mikrotik,cap-ac)
+	ucidef_set_led_default "power" "POWER" "blue:power" "1"
+	ucidef_set_led_default "user" "USER" "green:user" "0"
+	ucidef_set_led_netdev "eth1" "ETH1" "green:eth1" "wan"
+	ucidef_set_led_netdev "eth2" "ETH2" "green:eth2" "lan"
+	ucidef_set_led_wlan "wlan2g" "WLAN2G" "green:wlan2g" "phy0tpt"
+	ucidef_set_led_wlan "wlan5g" "WLAN5G" "green:wlan5g" "phy1tpt"
+	;;
+mikrotik,hap-ac3)
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth0"
+	ucidef_set_led_netdev "lan1" "LAN1" "green:lan1" "lan1"
+	ucidef_set_led_netdev "lan2" "LAN2" "green:lan2" "lan2"
+	ucidef_set_led_netdev "lan3" "LAN3" "green:lan3" "lan3"
+	ucidef_set_led_netdev "lan4" "LAN4" "green:lan4" "lan4"
+	ucidef_set_led_gpio "poe" "POE" "red:poe" "452" "0"
+	;;
+mikrotik,hap-ac3-lte6-kit)
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
+	ucidef_set_led_netdev "lan1" "LAN1" "green:lan1" "lan1"
+	ucidef_set_led_netdev "lan2" "LAN2" "green:lan2" "lan2"
+	ucidef_set_led_netdev "lan3" "LAN3" "green:lan3" "lan3"
+	ucidef_set_led_netdev "lan4" "LAN4" "green:lan4" "lan4"
+	;;
+mikrotik,sxtsq-5-ac)
+	ucidef_set_rssimon "wlan0" "200000" "1"
+	ucidef_set_led_rssi "rssilow" "rssilow" "green:rssilow" "wlan0" "1" "100"
+	ucidef_set_led_rssi "rssimediumlow" "rssimediumlow" "green:rssimediumlow" "wlan0" "21" "100"
+	ucidef_set_led_rssi "rssimedium" "rssimedium" "green:rssimedium" "wlan0" "41" "100"
+	ucidef_set_led_rssi "rssimediumhigh" "rssimediumhigh" "green:rssimediumhigh" "wlan0" "61" "100"
+	ucidef_set_led_rssi "rssihigh" "rssihigh" "green:rssihigh" "wlan0" "81" "100"
+	;;
+mobipromo,cm520-79f)
+	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "wan"
+	ucidef_set_led_netdev "lan1" "LAN1" "blue:lan1" "lan1"
+	ucidef_set_led_netdev "lan2" "LAN2" "blue:lan2" "lan2"
+	;;
+netgear,ex6100v2|\
 netgear,ex6150v2)
 	ucidef_set_led_wlan "wlan2g" "WLAN2G" "green:router" "phy0tpt"
 	ucidef_set_led_wlan "wlan5g" "WLAN5G" "green:client" "phy1tpt"
 	;;
-qxwlan,e2600ac-c1 |\
+qxwlan,e2600ac-c1|\
 qxwlan,e2600ac-c2)
 	ucidef_set_led_wlan "wlan2g" "WLAN0" "green:wlan0" "phy0tpt"
 	ucidef_set_led_wlan "wlan5g" "WLAN1" "green:wlan1" "phy1tpt"
@@ -134,7 +133,7 @@ sony,ncp-hg100-cellular)
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
 	ucidef_set_led_netdev "wwan" "WWAN" "green:wan-4" "wwan0"
 	;;
-zyxel,nbg6617 |\
+zyxel,nbg6617|\
 zyxel,wre6606)
 	ucidef_set_led_wlan "wlan2g" "WLAN2G" "green:wlan2g" "phy0tpt"
 	ucidef_set_led_wlan "wlan5g" "WLAN5G" "green:wlan5g" "phy1tpt"

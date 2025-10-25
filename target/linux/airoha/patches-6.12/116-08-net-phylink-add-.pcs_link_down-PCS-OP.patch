@@ -22,8 +22,8 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -1041,6 +1041,12 @@ static void phylink_pcs_link_up(struct p
- 		pcs->ops->pcs_link_up(pcs, neg_mode, interface, speed, duplex);
+@@ -1088,6 +1088,12 @@ static unsigned int phylink_inband_caps(
+ 	return phylink_pcs_inband_caps(pcs, interface);
  }
  
 +static void phylink_pcs_link_down(struct phylink_pcs *pcs)
@@ -35,18 +35,18 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  static void phylink_pcs_poll_stop(struct phylink *pl)
  {
  	if (pl->cfg_link_an_mode == MLO_AN_INBAND)
-@@ -1454,6 +1460,8 @@ static void phylink_link_down(struct phy
+@@ -1642,6 +1648,8 @@ static void phylink_link_down(struct phy
  
  	if (ndev)
  		netif_carrier_off(ndev);
 +	phylink_pcs_link_down(pl->pcs);
 +
- 	pl->mac_ops->mac_link_down(pl->config, pl->cur_link_an_mode,
+ 	pl->mac_ops->mac_link_down(pl->config, pl->act_link_an_mode,
  				   pl->cur_interface);
  	phylink_info(pl, "Link is Down\n");
 --- a/include/linux/phylink.h
 +++ b/include/linux/phylink.h
-@@ -430,6 +430,7 @@ struct phylink_pcs {
+@@ -431,6 +431,7 @@ struct phylink_pcs {
   *               (where necessary).
   * @pcs_pre_init: configure PCS components necessary for MAC hardware
   *                initialization e.g. RX clock for stmmac.
@@ -54,7 +54,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
   */
  struct phylink_pcs_ops {
  	int (*pcs_validate)(struct phylink_pcs *pcs, unsigned long *supported,
-@@ -450,6 +451,7 @@ struct phylink_pcs_ops {
+@@ -453,6 +454,7 @@ struct phylink_pcs_ops {
  	void (*pcs_link_up)(struct phylink_pcs *pcs, unsigned int neg_mode,
  			    phy_interface_t interface, int speed, int duplex);
  	int (*pcs_pre_init)(struct phylink_pcs *pcs);

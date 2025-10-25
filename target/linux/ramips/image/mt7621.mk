@@ -1659,9 +1659,11 @@ define Device/iodata_wn-ax1167gr
   IMAGE_SIZE := 15552k
   DEVICE_VENDOR := I-O DATA
   DEVICE_MODEL := WN-AX1167GR
+ifeq ($(IB),)
   ARTIFACTS := initramfs-factory.bin
   ARTIFACT/initramfs-factory.bin := append-image-stage initramfs-kernel.bin | \
 	check-size 7680k | senao-header -r 0x30a -p 0x1055 -t 4
+endif
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 -uboot-envtools
 endef
 TARGET_DEVICES += iodata_wn-ax1167gr
@@ -1711,10 +1713,12 @@ define Device/iodata_wn-deax1800gr
   KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+ifeq ($(IB),)
   ARTIFACTS := initramfs-factory.bin
   ARTIFACT/initramfs-factory.bin := append-image-stage initramfs-kernel.bin | \
 	check-size | xor-image -p 29944a25120984c2 -x | \
 	iodata-mstc-header2 WN-DEAX1800GR 00021003
+endif
   DEVICE_PACKAGES := kmod-mt7915-firmware
 endef
 TARGET_DEVICES += iodata_wn-deax1800gr
@@ -1842,9 +1846,11 @@ define Device/iptime_ax2004m
   KERNEL_LOADADDR := 0x82000000
   KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+ifeq ($(IB),)
   ARTIFACTS := initramfs-factory.bin
   ARTIFACT/initramfs-factory.bin := append-image-stage initramfs-kernel.bin | \
 	check-size | iptime-crc32 ax2004m
+endif
   DEVICE_VENDOR := ipTIME
   DEVICE_MODEL := AX2004M
   DEVICE_PACKAGES := kmod-mt7915-firmware kmod-usb3

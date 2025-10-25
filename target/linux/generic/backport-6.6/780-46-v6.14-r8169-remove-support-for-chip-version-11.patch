@@ -68,7 +68,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	rtl_irq_disable(tp);
  	napi_schedule(&tp->napi);
  out:
-@@ -5107,9 +5099,6 @@ static void rtl_set_irq_mask(struct rtl8
+@@ -5108,9 +5100,6 @@ static void rtl_set_irq_mask(struct rtl8
  
  	if (tp->mac_version <= RTL_GIGA_MAC_VER_06)
  		tp->irq_mask |= SYSErr | RxFIFOOver;
@@ -78,7 +78,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  }
  
  static int rtl_alloc_irq(struct rtl8169_private *tp)
-@@ -5305,7 +5294,6 @@ static int rtl_jumbo_max(struct rtl8169_
+@@ -5306,7 +5295,6 @@ static int rtl_jumbo_max(struct rtl8169_
  	case RTL_GIGA_MAC_VER_02 ... RTL_GIGA_MAC_VER_06:
  		return JUMBO_7K;
  	/* RTL8168b */

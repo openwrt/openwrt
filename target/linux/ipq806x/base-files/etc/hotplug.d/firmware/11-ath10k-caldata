@@ -6,9 +6,9 @@
 
 board=$(board_name)
 
-dt_base64_extract() {
+base64_extract() {
 	local target_dir="/sys$DEVPATH"
-	local source="$target_dir/../../of_node/qcom,ath10k-calibration-data-base64"
+	local source="$1"
 
 	[ -e "$source" ] || caldata_die "cannot find base64 calibration data: $source"
 	[ -d "$target_dir" ] || \
@@ -30,7 +30,7 @@ case "$FIRMWARE" in
 	case "$board" in
 	asus,onhub |\
 	tplink,onhub)
-		dt_base64_extract
+		base64_extract /sys/firmware/vpd/ro/wifi_base64_calibration0
 		;;
 	meraki,mr52)
 		CI_UBIPART=art
@@ -61,7 +61,7 @@ case "$FIRMWARE" in
 	case "$board" in
 	asus,onhub |\
 	tplink,onhub)
-		dt_base64_extract
+		base64_extract /sys/firmware/vpd/ro/wifi_base64_calibration1
 		;;
 	esac
 	;;
@@ -92,7 +92,7 @@ case "$FIRMWARE" in
 	case "$board" in
 	asus,onhub |\
 	tplink,onhub)
-		dt_base64_extract
+		base64_extract /sys/firmware/vpd/ro/wifi_base64_calibration2
 		;;
 	meraki,mr42)
 		CI_UBIPART=art
