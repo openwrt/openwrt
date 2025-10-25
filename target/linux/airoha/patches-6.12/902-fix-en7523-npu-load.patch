@@ -1,0 +1,128 @@
+diff --git a/drivers/net/ethernet/airoha/airoha_npu.c b/drivers/net/ethernet/airoha/airoha_npu.c
+index 94c64ddc9..337c80fa2 100644
+--- a/drivers/net/ethernet/airoha/airoha_npu.c
++++ b/drivers/net/ethernet/airoha/airoha_npu.c
+@@ -14,18 +14,27 @@
+ 
+ #include "airoha_eth.h"
+ 
+-#define NPU_EN7581_FIRMWARE_DATA		"airoha/en7581_npu_data.bin"
+-#define NPU_EN7581_FIRMWARE_RV32		"airoha/en7581_npu_rv32.bin"
+-#define NPU_EN7581_FIRMWARE_RV32_MAX_SIZE	0x200000
+-#define NPU_EN7581_FIRMWARE_DATA_MAX_SIZE	0x10000
+-#define NPU_DUMP_SIZE				512
++#define NPU_EN7581_FIRMWARE_DATA	"airoha/en7581_npu_data.bin"
++#define NPU_EN7581_FIRMWARE_RV32	"airoha/en7581_npu_rv32.bin"
++#define NPU_EN7523_FIRMWARE_DATA	"airoha/en7523_npu_data.bin"
++#define NPU_EN7523_FIRMWARE_RV32	"airoha/en7523_npu_rv32.bin"
++#define NPU_FIRMWARE_RV32_MAX_SIZE	0x200000
++#define NPU_FIRMWARE_DATA_MAX_SIZE	0x10000
++#define NPU_DUMP_SIZE			512
+ 
+ #define REG_NPU_LOCAL_SRAM		0x0
+ 
++#if (IS_BUILTIN(CONFIG_ARM) || IS_MODULE(CONFIG_ARM))
++#define NPU_CLUSTER_BASE_ADDR		0x308000
++
++#define NPU_PC_BASE_ADDR		0x308800
++#define REG_PC_DBG(_n)			(0x308800 + ((_n) * 0x100))
++#else
+ #define NPU_PC_BASE_ADDR		0x305000
+ #define REG_PC_DBG(_n)			(0x305000 + ((_n) * 0x100))
+ 
+ #define NPU_CLUSTER_BASE_ADDR		0x306000
++#endif
+ 
+ #define REG_CR_BOOT_TRIGGER		(NPU_CLUSTER_BASE_ADDR + 0x000)
+ #define REG_CR_BOOT_CONFIG		(NPU_CLUSTER_BASE_ADDR + 0x004)
+@@ -188,19 +197,30 @@ static int airoha_npu_run_firmware(struct device *dev, void __iomem *base,
+ 	const struct firmware *fw;
+ 	void __iomem *addr;
+ 	int ret;
+-
+-	ret = request_firmware(&fw, NPU_EN7581_FIRMWARE_RV32, dev);
++	
++	const char *fw_path;
++	
++	if (of_device_is_compatible(dev->of_node, "airoha,en7523-npu"))
++		fw_path = NPU_EN7523_FIRMWARE_RV32;
++	else
++		fw_path = NPU_EN7581_FIRMWARE_RV32;
++
++	ret = request_firmware(&fw, fw_path, dev);
+ 	if (ret)
+ 		return ret == -ENOENT ? -EPROBE_DEFER : ret;
+ 
+-	if (fw->size > NPU_EN7581_FIRMWARE_RV32_MAX_SIZE) {
++	if (fw->size > NPU_FIRMWARE_RV32_MAX_SIZE) {
+ 		dev_err(dev, "%s: fw size too overlimit (%zu)\n",
+-			NPU_EN7581_FIRMWARE_RV32, fw->size);
++			fw_path, fw->size);
+ 		ret = -E2BIG;
+ 		goto out;
+ 	}
+ 
+-	addr = devm_ioremap(dev, rmem->base, rmem->size);
++	if (of_device_is_compatible(dev->of_node, "airoha,en7523-npu"))
++		addr = devm_memremap(dev, rmem->base, rmem->size, MEMREMAP_WB);
++	else
++		addr = devm_ioremap(dev, rmem->base, rmem->size);
++	
+ 	if (!addr) {
+ 		ret = -ENOMEM;
+ 		goto out;
+@@ -209,13 +229,18 @@ static int airoha_npu_run_firmware(struct device *dev, void __iomem *base,
+ 	memcpy_toio(addr, fw->data, fw->size);
+ 	release_firmware(fw);
+ 
+-	ret = request_firmware(&fw, NPU_EN7581_FIRMWARE_DATA, dev);
++	if (of_device_is_compatible(dev->of_node, "airoha,en7523-npu"))
++		fw_path = NPU_EN7523_FIRMWARE_DATA;
++	else
++		fw_path = NPU_EN7581_FIRMWARE_DATA;
++	
++	ret = request_firmware(&fw, fw_path, dev);
+ 	if (ret)
+ 		return ret == -ENOENT ? -EPROBE_DEFER : ret;
+ 
+-	if (fw->size > NPU_EN7581_FIRMWARE_DATA_MAX_SIZE) {
++	if (fw->size > NPU_FIRMWARE_DATA_MAX_SIZE) {
+ 		dev_err(dev, "%s: fw size too overlimit (%zu)\n",
+-			NPU_EN7581_FIRMWARE_DATA, fw->size);
++			fw_path, fw->size);
+ 		ret = -E2BIG;
+ 		goto out;
+ 	}
+@@ -611,6 +636,7 @@ EXPORT_SYMBOL_GPL(airoha_npu_put);
+ 
+ static const struct of_device_id of_airoha_npu_match[] = {
+ 	{ .compatible = "airoha,en7581-npu" },
++	{ .compatible = "airoha,en7523-npu" },
+ 	{ /* sentinel */ }
+ };
+ MODULE_DEVICE_TABLE(of, of_airoha_npu_match);
+@@ -713,7 +739,7 @@ static int airoha_npu_probe(struct platform_device *pdev)
+ 		return dev_err_probe(dev, err, "failed to run npu firmware\n");
+ 
+ 	regmap_write(npu->regmap, REG_CR_NPU_MIB(10),
+-		     rmem->base + NPU_EN7581_FIRMWARE_RV32_MAX_SIZE);
++		     rmem->base + NPU_FIRMWARE_RV32_MAX_SIZE);
+ 	regmap_write(npu->regmap, REG_CR_NPU_MIB(11), 0x40000); /* SRAM 256K */
+ 	regmap_write(npu->regmap, REG_CR_NPU_MIB(12), 0);
+ 	regmap_write(npu->regmap, REG_CR_NPU_MIB(21), 1);
+diff --git a/include/linux/soc/airoha/airoha_offload.h b/include/linux/soc/airoha/airoha_offload.h
+index 1dc5b4e35..690424a84 100644
+--- a/include/linux/soc/airoha/airoha_offload.h
++++ b/include/linux/soc/airoha/airoha_offload.h
+@@ -64,7 +64,11 @@ static inline void airoha_ppe_dev_check_skb(struct airoha_ppe_dev *dev,
+ }
+ #endif
+ 
++#if (IS_BUILTIN(CONFIG_ARM) || IS_MODULE(CONFIG_ARM))
++#define NPU_NUM_CORES		4
++#else
+ #define NPU_NUM_CORES		8
++#endif
+ #define NPU_NUM_IRQ		6
+ #define NPU_RX0_DESC_NUM	512
+ #define NPU_RX1_DESC_NUM	512
