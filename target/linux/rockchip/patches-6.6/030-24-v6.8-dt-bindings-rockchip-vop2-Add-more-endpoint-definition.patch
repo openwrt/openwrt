@@ -1,0 +1,28 @@
+From dc7226acacc6502291446f9e33cf96246ec49a30 Mon Sep 17 00:00:00 2001
+From: Andy Yan <andy.yan@rock-chips.com>
+Date: Mon, 11 Dec 2023 19:59:07 +0800
+Subject: [PATCH] dt-bindings: rockchip,vop2: Add more endpoint definition
+
+There are 2 HDMI, 2 DP, 2 eDP on rk3588, so add
+corresponding endpoint definition for it.
+
+Signed-off-by: Andy Yan <andy.yan@rock-chips.com>
+Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+Link: https://patchwork.freedesktop.org/patch/msgid/20231211115907.1785377-1-andyshrk@163.com
+---
+ include/dt-bindings/soc/rockchip,vop2.h | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/include/dt-bindings/soc/rockchip,vop2.h
++++ b/include/dt-bindings/soc/rockchip,vop2.h
+@@ -10,5 +10,9 @@
+ #define ROCKCHIP_VOP2_EP_LVDS0	5
+ #define ROCKCHIP_VOP2_EP_MIPI1	6
+ #define ROCKCHIP_VOP2_EP_LVDS1	7
++#define ROCKCHIP_VOP2_EP_HDMI1	8
++#define ROCKCHIP_VOP2_EP_EDP1	9
++#define ROCKCHIP_VOP2_EP_DP0	10
++#define ROCKCHIP_VOP2_EP_DP1	11
+ 
+ #endif /* __DT_BINDINGS_ROCKCHIP_VOP2_H */
