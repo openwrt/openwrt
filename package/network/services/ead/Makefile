@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=ead
 PKG_RELEASE:=1
 
-PKG_BUILD_DEPENDS:=libpcap
+PKG_BUILD_DEPENDS:=libbsd libmd libpcap
 PKG_BUILD_DIR:=$(BUILD_DIR)/ead
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
@@ -35,16 +35,21 @@ endef
 CONFIGURE_PATH = tinysrp
 
 TARGET_CFLAGS += \
+	-std=gnu17 \
+	$(FPIC) \
 	-I$(PKG_BUILD_DIR) \
 	-I$(PKG_BUILD_DIR)/tinysrp \
 	$(TARGET_CPPFLAGS) \
+	-I$(STAGING_DIR)/usr/include \
 	-Wno-error=implicit-function-declaration
 
 MAKE_FLAGS += \
+	$(TARGET_CONFIGURE_OPTS) \
 	CONFIGURE_ARGS="$(CONFIGURE_ARGS)" \
 	LIBS_EADCLIENT="$(PKG_BUILD_DIR)/tinysrp/libtinysrp.a" \
-	LIBS_EAD="$(PKG_BUILD_DIR)/tinysrp/libtinysrp.a $(STAGING_DIR)/usr/lib/libpcap.a" \
-	CFLAGS="$(TARGET_CFLAGS)"
+	LIBS_EAD="$(PKG_BUILD_DIR)/tinysrp/libtinysrp.a $(STAGING_DIR)/usr/lib/libpcap.a -lbsd -lmd" \
+	CFLAGS="$(TARGET_CFLAGS)" \
+	LDFLAGS="-L$(STAGING_DIR)/usr/lib"
 
 define Package/ead/install
 	$(INSTALL_DIR) $(1)/sbin

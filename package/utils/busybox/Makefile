@@ -115,13 +115,15 @@ ifeq ($(BUILD_VARIANT),selinux)
   LDLIBS += selinux sepol
 endif
 
-MAKE_VARS :=
 MAKE_FLAGS += \
+	$(MAKE_VARS) \
 	EXTRA_CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS)" \
 	EXTRA_LDFLAGS="$(TARGET_LDFLAGS) $(TARGET_CFLAGS)" \
 	LDLIBS="$(LDLIBS)" \
-	LD="$(TARGET_CC)" \
 	SKIP_STRIP=y
+
+MAKE_VARS :=
+
 ifneq ($(findstring c,$(OPENWRT_VERBOSE)),)
   MAKE_FLAGS += V=1
 endif
