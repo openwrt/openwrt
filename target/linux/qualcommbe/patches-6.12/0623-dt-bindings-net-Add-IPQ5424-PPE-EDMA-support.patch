@@ -1,0 +1,65 @@
+From 748423c3fee3bda0e87b0c9cdad7ff9113724437 Mon Sep 17 00:00:00 2001
+From: Pavithra R <quic_pavir@quicinc.com>
+Date: Mon, 21 Apr 2025 15:45:41 +0530
+Subject: [PATCH 623/636] dt-bindings: net: Add IPQ5424 PPE EDMA support
+
+Change-Id: I631683531af27f16ebcc176f353201c822971b77
+Signed-off-by: Pavithra R <quic_pavir@quicinc.com>
+---
+ .../bindings/net/qcom,ipq9574-ppe.yaml        | 29 +++++++++++++------
+ 1 file changed, 20 insertions(+), 9 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/net/qcom,ipq9574-ppe.yaml b/Documentation/devicetree/bindings/net/qcom,ipq9574-ppe.yaml
+index 93492ed90526..45ec952e6271 100644
+--- a/Documentation/devicetree/bindings/net/qcom,ipq9574-ppe.yaml
++++ b/Documentation/devicetree/bindings/net/qcom,ipq9574-ppe.yaml
+@@ -139,9 +139,12 @@ properties:
+     type: object
+     additionalProperties: false
+     description:
+-      EDMA (Ethernet DMA) is used to transmit packets between PPE and ARM
+-      host CPU. There are 32 TX descriptor rings, 32 TX completion rings,
+-      24 RX descriptor rings and 8 RX fill rings supported.
++      EDMA (Ethernet DMA) driver for IPQ9574 and IPQ5424 SoC. This driver
++      supports the Qualcomm Technologies, Inc. EDMA control and transfer
++      functions on IPQ9574 and IPQ5424 platform. 6 ethernet ports are
++      supported for IPQ9574 and 3 ethernet ports are supported for IPQ5424.
++      There are 32 Tx descriptor rings, 32 Tx completion rings,
++      24 Rx descriptor rings and 8 Rx fill rings.
+ 
+     properties:
+       clocks:
+@@ -156,16 +159,24 @@ properties:
+           - const: apb
+ 
+       resets:
+-        maxItems: 1
+-        description: EDMA reset from NSS clock controller
++        minItems: 1
++        items:
++          - description: EDMA reset
++          - description: EDMA configuration reset
++
++      reset-names:
++        minItems: 1
++        items:
++          - const: edma
++          - const: edma_cfg
+ 
+       interrupts:
+-        minItems: 29
+-        maxItems: 57
++        minItems: 41
++        maxItems: 65
+ 
+       interrupt-names:
+-        minItems: 29
+-        maxItems: 57
++        minItems: 41
++        maxItems: 65
+         items:
+           pattern: '^(txcmpl_([0-9]|[1-2][0-9]|3[0-1])|rxdesc_([0-9]|1[0-9]|2[0-3])|misc)$'
+         description:
+-- 
+2.34.1
+

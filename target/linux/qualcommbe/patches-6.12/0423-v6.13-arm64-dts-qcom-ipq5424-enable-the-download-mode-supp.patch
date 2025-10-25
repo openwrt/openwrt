@@ -1,0 +1,43 @@
+From b6f4f8c7690cf117ac40837a870d4d309c23c899 Mon Sep 17 00:00:00 2001
+From: Manikanta Mylavarapu <quic_mmanikan@quicinc.com>
+Date: Wed, 4 Dec 2024 19:44:16 +0530
+Subject: [PATCH] arm64: dts: qcom: ipq5424: enable the download mode support
+
+Enable support for download mode to collect RAM dumps in case
+of system crash, facilitating post mortem analysis.
+
+Signed-off-by: Manikanta Mylavarapu <quic_mmanikan@quicinc.com>
+Reviewed-by: Dmitry Baryshkov <dmitry.baryshkov@linaro.org>
+Link: https://lore.kernel.org/r/20241204141416.1352545-3-quic_mmanikan@quicinc.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+---
+ arch/arm64/boot/dts/qcom/ipq5424.dtsi | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/ipq5424.dtsi b/arch/arm64/boot/dts/qcom/ipq5424.dtsi
+index 19bf77143728..7034d378b1ef 100644
+--- a/arch/arm64/boot/dts/qcom/ipq5424.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5424.dtsi
+@@ -101,6 +101,7 @@ l2_300: l2-cache {
+ 	firmware {
+ 		scm {
+ 			compatible = "qcom,scm-ipq5424", "qcom,scm";
++			qcom,dload-mode = <&tcsr 0x25100>;
+ 		};
+ 	};
+ 
+@@ -204,6 +205,11 @@ tcsr_mutex: hwlock@1905000 {
+ 			#hwlock-cells = <1>;
+ 		};
+ 
++		tcsr: syscon@1937000 {
++			compatible = "qcom,tcsr-ipq5424", "syscon";
++			reg = <0 0x01937000 0 0x2a000>;
++		};
++
+ 		qupv3: geniqup@1ac0000 {
+ 			compatible = "qcom,geni-se-qup";
+ 			reg = <0 0x01ac0000 0 0x2000>;
+-- 
+2.34.1
+
