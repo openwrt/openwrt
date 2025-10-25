@@ -18,7 +18,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/configure
 +++ b/configure
-@@ -930,6 +930,7 @@ enable_rpath
+@@ -931,6 +931,7 @@ enable_rpath
  with_libiconv_prefix
  with_libintl_prefix
  enable_largefile
@@ -26,7 +26,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  with_libarchive
  enable_fuse2fs
  enable_lto
-@@ -1647,6 +1648,7 @@ Optional Packages:
+@@ -1650,6 +1651,7 @@ Optional Packages:
    --without-libiconv-prefix     don't search for libiconv in includedir and libdir
    --with-libintl-prefix[=DIR]  search for libintl in DIR/include and DIR/lib
    --without-libintl-prefix     don't search for libintl in includedir and libdir
@@ -34,7 +34,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
    --without-libarchive    disable use of libarchive
    --with-multiarch=ARCH   specify the multiarch triplet
    --with-udev-rules-dir[=DIR]
-@@ -13690,7 +13692,155 @@ then :
+@@ -13736,7 +13738,155 @@ then :
  fi
  
  
@@ -191,7 +191,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  printf %s "checking for magic_file in -lmagic... " >&6; }
  if test ${ac_cv_lib_magic_magic_file+y}
  then :
-@@ -13728,17 +13878,39 @@ printf "%s\n" "$ac_cv_lib_magic_magic_fi
+@@ -13774,17 +13924,39 @@ printf "%s\n" "$ac_cv_lib_magic_magic_fi
  if test "x$ac_cv_lib_magic_magic_file" = xyes
  then :
    MAGIC_LIB=-lmagic
@@ -237,7 +237,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
 --- a/configure.ac
 +++ b/configure.ac
-@@ -1295,12 +1295,59 @@ SOCKET_LIB=''
+@@ -1297,12 +1297,59 @@ SOCKET_LIB=''
  AC_CHECK_LIB(socket, socket, [SOCKET_LIB=-lsocket])
  AC_SUBST(SOCKET_LIB)
  dnl
