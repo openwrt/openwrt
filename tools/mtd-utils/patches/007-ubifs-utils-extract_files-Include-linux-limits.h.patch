@@ -1,0 +1,33 @@
+From 77981a2888c711268b0e7f32af6af159c2288e23 Mon Sep 17 00:00:00 2001
+From: Fabio Estevam <festevam@gmail.com>
+Date: Wed, 19 Feb 2025 10:02:44 -0300
+Subject: ubifs-utils: extract_files: Include <linux/limits.h>
+
+Include <linux/limits.h> to fix the following build error when building
+with musl:
+
+| ../git/ubifs-utils/fsck.ubifs/extract_files.c: In function 'parse_ino_node':
+| ../git/ubifs-utils/fsck.ubifs/extract_files.c:144:47: error: 'XATTR_LIST_MAX' undeclared (first use in this function)
+|   144 |         if (ino_node->xnms + ino_node->xcnt > XATTR_LIST_MAX) {
+|       |                                               ^~~~~~~~~~~~~~
+| ../git/ubifs-utils/fsck.ubifs/extract_files.c:144:47: note: each undeclared identifier is reported only once for each function it appears in
+| make: *** [Makefile:4374: ubifs-utils/fsck.ubifs/fsck_ubifs-extract_files.o] Error 1
+
+Signed-off-by: Fabio Estevam <festevam@gmail.com>
+Reviewed-by: Zhihao Cheng <chengzhihao1@huawei.com>
+Signed-off-by: David Oberhollenzer <david.oberhollenzer@sigma-star.at>
+---
+ ubifs-utils/fsck.ubifs/extract_files.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/ubifs-utils/fsck.ubifs/extract_files.c
++++ b/ubifs-utils/fsck.ubifs/extract_files.c
+@@ -10,6 +10,8 @@
+ #include <getopt.h>
+ #include <sys/stat.h>
+ 
++#include <linux/limits.h>
++
+ #include "linux_err.h"
+ #include "bitops.h"
+ #include "kmem.h"

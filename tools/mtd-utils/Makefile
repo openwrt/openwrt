@@ -7,12 +7,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mtd-utils
-PKG_VERSION:=2.2.1
+PKG_VERSION:=2.3.0
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=https://infraroot.at/pub/mtd/
-PKG_HASH:=f7ae20b2eb79ee83441468f0b99d897024cd96ff853eea59106fb1952065c803
+PKG_HASH:=2db102908b232406ccb20719c0f43b61196aef4534493419fbf98a273c598c10
 PKG_CPE_ID:=cpe:/a:mtd-utils_project:mtd-utils
 
 PKG_FIXUP:=autoreconf
