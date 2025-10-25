@@ -1,0 +1,91 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	fragment@0 {
+		target = <&gmac0>;
+		__overlay__ {
+			phy-mode = "2500base-x";
+			status = "okay";
+			fixed-link {
+				speed = <2500>;
+				full-duplex;
+				pause;
+			};
+		};
+	};
+
+	fragment@1 {
+		target-path = "/soc_netsys/ethernet@15100000/mdio-bus";
+		__overlay__ {
+			phy12: phy@12 {
+				compatible = "ethernet-phy-id03a2.a411";
+				reg = <12>;
+				reset-gpios = <&pio 49 1>;
+				reset-assert-us = <10000>;
+				reset-deassert-us = <10000>;
+				phy-mode = "2500base-x";
+				full-duplex;
+				pause;
+				airoha,pnswap-rx;
+				airoha,phy-handle;
+			};
+
+			switch31: switch@31 {
+				compatible = "mediatek,mt7531";
+				reg = <31>;
+				reset-gpios = <&pio 42 0>;
+				status = "okay";
+
+				ports {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					port@0 {
+						reg = <0>;
+						label = "lan0";
+					};
+
+					port@1 {
+						reg = <1>;
+						label = "lan1";
+					};
+
+					port@2 {
+						reg = <2>;
+						label = "lan2";
+					};
+
+					port@3 {
+						reg = <3>;
+						label = "lan3";
+					};
+
+					port@5 {
+						reg = <5>;
+						label = "lan5";
+						phy-mode = "2500base-x";
+						phy-handle = <&phy12>;
+					};
+
+					port@6 {
+						reg = <6>;
+						label = "cpu";
+						ethernet = <&gmac0>;
+						phy-mode = "2500base-x";
+
+						fixed-link {
+							speed = <2500>;
+							full-duplex;
+							pause;
+						};
+					};
+				};
+
+			};
+		};
+	};
+};
+

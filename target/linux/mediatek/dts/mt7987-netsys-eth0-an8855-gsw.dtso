@@ -1,0 +1,61 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	fragment@0 {
+		target = <&gmac0>;
+		__overlay__ {
+			phy-mode = "2500base-x";
+			status = "okay";
+			fixed-link {
+				speed = <2500>;
+				full-duplex;
+				pause;
+			};
+		};
+	};
+
+	fragment@1 {
+		target-path = "/";
+		__overlay__ {
+			gsw_an8855: gsw@1 {
+				compatible = "airoha,an8855";
+				#mediatek,ethsys = <&ethsys>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				airoha,mdio = <&mdio>;
+				airoha,portmap = "lllll";
+				airoha,intr = <6>;
+				airoha,extSurge = <1>;
+				reset-gpios = <&pio 42 0>;
+				interrupt-parent = <&pio>;
+				interrupts = <41 IRQ_TYPE_LEVEL_HIGH>;
+				status = "okay";
+
+				port5: port@5 {
+					compatible = "airoha,an8855-port";
+					reg = <5>;
+					phy-mode = "2500base-x";
+
+					fixed-link {
+						speed = <2500>;
+						full-duplex;
+					};
+				};
+			};
+		};
+	};
+
+	fragment@2 {
+		target-path = "/soc_netsys/hnat@15000000";
+		__overlay__ {
+			mtketh-lan = "eth0";
+		};
+	};
+};
