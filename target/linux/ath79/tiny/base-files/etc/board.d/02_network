@@ -148,14 +148,7 @@ ath79_setup_macs()
 		lan_mac=$(get_mac_label)
 		wan_mac=$(macaddr_add "$lan_mac" 3)
 		;;
-	engenius,enh202-v1|\
-	ubnt,airrouter|\
-	ubnt,bullet-m-ar7240|\
-	ubnt,bullet-m-ar7241|\
-	ubnt,nanobridge-m|\
-	ubnt,nanostation-loco-m|\
-	ubnt,nanostation-m|\
-	ubnt,picostation-m)
+	engenius,enh202-v1)
 		label_mac=$(cat /sys/class/ieee80211/phy0/macaddress)
 		;;
 	nec,wg600hp|\
