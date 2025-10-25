@@ -1,0 +1,19 @@
+. /lib/functions/leds.sh
+. /lib/functions/uci-defaults.sh
+
+board=$(board_name)
+
+board_config_update
+
+case $board in
+    gemtek,w1700k)
+    ucidef_set_led_netdev "lan3-yellow" "lan3" "yellow:lan-3" "lan3" "link_10 link_100"
+    ucidef_set_led_netdev "lan3-green" "lan3" "green:lan-3" "lan3" "link_1000 tx rx"
+    ucidef_set_led_netdev "lan4-yellow" "lan4" "yellow:lan-4" "lan4" "link_10 link_100"
+    ucidef_set_led_netdev "lan4-green" "lan4" "green:lan-4" "lan4" "link_1000 tx rx"
+    ;;
+esac
+
+board_config_flush
+
+exit 0
