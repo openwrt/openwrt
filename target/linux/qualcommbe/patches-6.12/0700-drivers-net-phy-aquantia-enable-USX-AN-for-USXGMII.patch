@@ -1,0 +1,23 @@
+--- a/drivers/net/phy/aquantia/aquantia_main.c
++++ b/drivers/net/phy/aquantia/aquantia_main.c
+@@ -46,6 +46,9 @@
+ #define MDIO_PHYXS_VEND_IF_STATUS_TYPE_RXAUI	7
+ #define MDIO_PHYXS_VEND_IF_STATUS_TYPE_OCSGMII	10
+ 
++#define MDIO_PHYXS_VEND_PROV2			0xC441
++#define MDIO_PHYXS_VEND_PROV2_USX_AN		BIT(3)
++
+ #define MDIO_AN_VEND_PROV			0xc400
+ #define MDIO_AN_VEND_PROV_1000BASET_FULL	BIT(15)
+ #define MDIO_AN_VEND_PROV_1000BASET_HALF	BIT(14)
+@@ -185,6 +188,10 @@ static int aqr_config_aneg(struct phy_de
+ 	u16 reg;
+ 	int ret;
+ 
++	if (phydev->interface == PHY_INTERFACE_MODE_USXGMII)
++	    phy_write_mmd(phydev, MDIO_MMD_PHYXS, MDIO_PHYXS_VEND_PROV2,
++	        MDIO_PHYXS_VEND_PROV2_USX_AN);
++
+ 	if (phydev->autoneg == AUTONEG_DISABLE)
+ 		return genphy_c45_pma_setup_forced(phydev);
+ 
