@@ -1,0 +1,32 @@
+From c56816dfc6473468f85260c43258083e6ab65245 Mon Sep 17 00:00:00 2001
+From: David Woodhouse <dwmw2@infradead.org>
+Date: Sun, 19 Oct 2025 21:15:17 +0100
+Subject: [PATCH] iwinfo: Query hostapd for 'ssid2'
+
+DAWN is reporting invalid results because it can't find the SSID of the
+running networks. Reported by Elwin Huang in
+https://github.com/berlin-open-wireless-lab/DAWN/issues/247#issuecomment-3327148254
+
+Signed-off-by: David Woodhouse <dwmw2@infradead.org>
+---
+ iwinfo_nl80211.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/iwinfo_nl80211.c b/iwinfo_nl80211.c
+index 97f2131..90e16ab 100644
+--- a/iwinfo_nl80211.c
++++ b/iwinfo_nl80211.c
+@@ -1316,6 +1316,10 @@ static int nl80211_get_ssid(const char *ifname, char *buf)
+ 		nl80211_hostapd_query(ifname, "ssid", sb.ssid,
+ 		                      IWINFO_ESSID_MAX_SIZE + 1);
+ 
++	if (sb.ssid[0] == 0)
++		nl80211_hostapd_query(ifname, "ssid2", sb.ssid,
++		                      IWINFO_ESSID_MAX_SIZE + 1);
++
+ 	/* failed, try to obtain Mesh ID */
+ 	if (sb.ssid[0] == 0)
+ 		iwinfo_ubus_query(res ? res : ifname, "mesh_id",
+-- 
+2.51.0
+
