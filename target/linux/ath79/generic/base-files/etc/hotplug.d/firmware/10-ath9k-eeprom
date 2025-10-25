@@ -15,11 +15,6 @@ case "$FIRMWARE" in
 	avm,fritzdvbc)
 		caldata_extract_reverse "urlader" 0x1541 0x440
 		;;
-	engenius,ecb1200|\
-	engenius,ecb1750)
-		caldata_extract "art" 0x1000 0x440
-		ath9k_patch_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env athaddr) 1)
-		;;
 	sitecom,wlr-7100|\
 	sitecom,wlr-8100)
 		caldata_extract "art" 0x1000 0x440
