@@ -166,13 +166,9 @@
 	perst-gpios = <&tlmm 15 GPIO_ACTIVE_LOW>;
 
 	pcie@0 {
-		wifi@0,0 {
-			status = "okay";
-
-			/* QCN9074: ath11k lacks DT compatible for PCI cards */
+		wifi@1,0 {
 			compatible = "pci17cb,1104";
 			reg = <0x00010000 0 0 0 0>;
-
 			qcom,ath11k-calibration-variant = "Linksys-SPNMX56";
 		};
 	};
