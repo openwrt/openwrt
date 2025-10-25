@@ -1,0 +1,207 @@
+From 762aa43b98d8d7f989e9349c25e4fc9a8d3dbb19 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Thu, 20 Mar 2025 14:00:26 +0100
+Subject: [PATCH 111/113] dt-bindings: clock: en7523: add Documentation for
+ Airoha AN7581 SCU SSR
+
+The Airoha AN7581 SoC have in the SCU register space particular
+address that control how some peripheral are configured.
+
+These are toggeled in the System Status Register and are used to
+toggle Serdes port for USB 3.0 mode or HSGMII, USB 3.0 mode or PCIe2
+or setup port for PCIe mode or Ethrnet mode (HSGMII/USXGMII).
+
+Modes are mutually exclusive and selecting one mode cause the
+other feature to not work (example a mode in USB 3.0 cause PCIe
+port 2 to not work) This depends also on what is physically
+connected to the Hardware and needs to correctly reflect the
+System Status Register bits.
+
+Special care is needed for PCIe port 0 in 2 line mode that
+requires both WiFi1 and WiFi2 Serdes port set to PCIe0 2 Line
+mode.
+
+Expose these configuration as an enum of strings in the SCU node and
+also add dt-bindings header to reference each serdes port in DT.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ .../bindings/clock/airoha,en7523-scu.yaml     | 101 ++++++++++++++++--
+ MAINTAINERS                                   |   7 ++
+ include/dt-bindings/soc/airoha,scu-ssr.h      |  11 ++
+ 3 files changed, 110 insertions(+), 9 deletions(-)
+ create mode 100644 include/dt-bindings/soc/airoha,scu-ssr.h
+
+--- a/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
++++ b/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
+@@ -9,6 +9,7 @@ title: EN7523 Clock
+ maintainers:
+   - Felix Fietkau <nbd@nbd.name>
+   - John Crispin <nbd@nbd.name>
++  - Christian Marangi <ansuelsmth@gmail.com>
+ 
+ description: |
+   This node defines the System Control Unit of the EN7523 SoC,
+@@ -26,6 +27,23 @@ description: |
+ 
+   The clocks are provided inside a system controller node.
+ 
++  The System Control Unit may also set different mode for the Serdes ports
++  present on the SoC.
++
++  These are toggeled in the System Status Register and are used to
++  toggle Serdes port for USB 3.0 mode or HSGMII, USB 3.0 mode or PCIe2
++  or setup port for PCIe mode or Ethernet mode (HSGMII/USXGMII).
++
++  Modes are mutually exclusive and selecting one mode cause the
++  other feature to not work (example a mode in USB 3.0 cause PCIe
++  port 2 to not work) This depends also on what is physically
++  connected to the Hardware and needs to correctly reflect the
++  System Status Register bits.
++
++  Special care is needed for PCIe port 0 in 2 line mode that
++  requires both WiFi1 and WiFi2 Serdes port set to PCIe0 2 Line
++  mode.
++
+ properties:
+   compatible:
+     items:
+@@ -47,6 +65,40 @@ properties:
+     description: ID of the controller reset line
+     const: 1
+ 
++  airoha,serdes-wifi1:
++    description: Configure the WiFi1 Serdes port
++    $ref: /schemas/types.yaml#/definitions/string
++    enum:
++      - pcie0_x2
++      - pcie0_x1
++      - ethernet
++    default: pcie0_x1
++
++  airoha,serdes-wifi2:
++    description: Configure the WiFi2 Serdes port
++    $ref: /schemas/types.yaml#/definitions/string
++    enum:
++      - pcie0_x2
++      - pcie1_x1
++      - ethernet
++    default: pcie1_x1
++
++  airoha,serdes-usb1:
++    description: Configure the USB1 Serdes port
++    $ref: /schemas/types.yaml#/definitions/string
++    enum:
++      - usb3
++      - ethernet
++    default: usb3
++
++  airoha,serdes-usb2:
++    description: Configure the USB2 Serdes port
++    $ref: /schemas/types.yaml#/definitions/string
++    enum:
++      - usb3
++      - pcie2_x1
++    default: usb3
++
+ required:
+   - compatible
+   - reg
+@@ -64,6 +64,12 @@
+             - description: scu base address
+             - description: misc scu base address
+ 
++        airoha,serdes-wifi1: false
++        airoha,serdes-wifi2: false
++
++        airoha,serdes-usb1: false
++        airoha,serdes-usb2: false
++
+   - if:
+       properties:
+         compatible:
+@@ -79,6 +137,24 @@ allOf:
+             - description: reset base address
+             - description: pb scu base address
+ 
++  - if:
++      properties:
++        airoha,serdes-wifi1:
++          const: pcie0_x2
++    then:
++      properties:
++        airoha,serdes-wifi2:
++          const: pcie0_x2
++
++  - if:
++      properties:
++        airoha,serdes-wifi2:
++          const: pcie0_x2
++    then:
++      properties:
++        airoha,serdes-wifi1:
++          const: pcie0_x2
++
+ additionalProperties: false
+ 
+ examples:
+@@ -91,18 +167,22 @@ examples:
+       #clock-cells = <1>;
+     };
+ 
++  # Example SCU node with Serdes set to PCIe0 to x2 mode
++  # and USB2 set to PCIe2 to x1 mode
+   - |
+     soc {
+       #address-cells = <2>;
+       #size-cells = <2>;
+ 
+-      scuclk: clock-controller@1fa20000 {
++      scuclk: clock-controller@1fb00000 {
+         compatible = "airoha,en7581-scu";
+-        reg = <0x0 0x1fa20000 0x0 0x400>,
+-              <0x0 0x1fb00000 0x0 0x90>,
+-              <0x0 0x1fb00830 0x0 0x8>,
+-              <0x0 0x1fbe3400 0x0 0xfc>;
+-              #clock-cells = <1>;
+-              #reset-cells = <1>;
++        reg = <0x0 0x1fb00000 0x0 0x970>;
++
++        airoha,serdes-wifi1 = "pcie0_x2";
++        airoha,serdes-wifi2 = "pcie0_x2";
++        airoha,serdes-usb2 = "pcie2_x1";
++
++        #clock-cells = <1>;
++        #reset-cells = <1>;
+       };
+     };
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -728,6 +728,13 @@ F:	Documentation/devicetree/bindings/phy
+ F:	drivers/phy/phy-airoha-pcie-regs.h
+ F:	drivers/phy/phy-airoha-pcie.c
+ 
++AIROHA SCU SSR DRIVER
++M:	Christian Marangi <ansuelsmth@gmail.com>
++L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
++S:	Maintained
++F:	Documentation/devicetree/bindings/soc/airoha/airoha,an7581-scu-ssr.yaml
++F:	include/dt-bindings/soc/airoha,scu-ssr.h
++
+ AIROHA SPI SNFI DRIVER
+ M:	Lorenzo Bianconi <lorenzo@kernel.org>
+ M:	Ray Liu <ray.liu@airoha.com>
+--- /dev/null
++++ b/include/dt-bindings/soc/airoha,scu-ssr.h
+@@ -0,0 +1,11 @@
++/* SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) */
++
++#ifndef __DT_BINDINGS_AIROHA_SCU_SSR_H
++#define __DT_BINDINGS_AIROHA_SCU_SSR_H
++
++#define AIROHA_SCU_SERDES_WIFI1		0
++#define AIROHA_SCU_SERDES_WIFI2		1
++#define AIROHA_SCU_SERDES_USB1		2
++#define AIROHA_SCU_SERDES_USB2		3
++
++#endif /* __DT_BINDINGS_AIROHA_SCU_SSR_H */
