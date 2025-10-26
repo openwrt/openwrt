@@ -2910,6 +2910,7 @@ define Device/tplink_eap235-wall-v1
   IMAGE_SIZE := 13440k
   IMAGE/factory.bin := append-rootfs | tplink-safeloader factory | \
 	pad-extra 128
+  DEFAULT := n
 endef
 TARGET_DEVICES += tplink_eap235-wall-v1
 
