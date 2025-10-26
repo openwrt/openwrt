@@ -1,0 +1,80 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sun, 26 Oct 2025 23:16:01 +0100
+Subject: fortify-headers: Remove __fh_has_builtin()
+
+GCC complains about the `defined` usage here. Just call `__has_builtin` directly.
+
+This fixes the following compile error when compiling strace:
+```
+In file included from /home/hauke/openwrt/openwrt/staging_dir/toolchain-aarch64_generic_gcc-14.3.0_musl/include/fortify/stdlib.h:27,
+                 from number_set.c:14:
+/home/hauke/openwrt/openwrt/staging_dir/toolchain-aarch64_generic_gcc-14.3.0_musl/include/fortify/fortify-headers.h:26:30: error: this use of "defined" may not be portable [-Werror=expansion-to-defined]
+   26 | #define __fh_has_builtin(x) (__has_builtin(x) || defined(x))
+      |                              ^~~~~~~~~~~~~
+/home/hauke/openwrt/openwrt/staging_dir/toolchain-aarch64_generic_gcc-14.3.0_musl/include/fortify/fortify-headers.h:28:7: note: in expansion of macro '__fh_has_builtin'
+   28 | #if ! __fh_has_builtin(__builtin_trap)
+      |       ^~~~~~~~~~~~~~~~
+/home/hauke/openwrt/openwrt/staging_dir/toolchain-aarch64_generic_gcc-14.3.0_musl/include/fortify/fortify-headers.h:26:30: error: this use of "defined" may not be portable [-Werror=expansion-to-defined]
+   26 | #define __fh_has_builtin(x) (__has_builtin(x) || defined(x))
+      |                              ^~~~~~~~~~~~~
+/home/hauke/openwrt/openwrt/staging_dir/toolchain-aarch64_generic_gcc-14.3.0_musl/include/fortify/fortify-headers.h:73:29: note: in expansion of macro '__fh_has_builtin'
+   73 | #if _FORTIFY_SOURCE  > 2 && __fh_has_builtin (__builtin_dynamic_object_size)
+      |                             ^~~~~~~~~~~~~~~~
+/home/hauke/openwrt/openwrt/staging_dir/toolchain-aarch64_generic_gcc-14.3.0_musl/include/fortify/fortify-headers.h:26:30: error: this use of "defined" may not be portable [-Werror=expansion-to-defined]
+   26 | #define __fh_has_builtin(x) (__has_builtin(x) || defined(x))
+      |                              ^~~~~~~~~~~~~
+/home/hauke/openwrt/openwrt/staging_dir/toolchain-aarch64_generic_gcc-14.3.0_musl/include/fortify/fortify-headers.h:158:5: note: in expansion of macro '__fh_has_builtin'
+  158 | #if __fh_has_builtin (__builtin_mul_overflow_p)
+      |     ^~~~~~~~~~~~~~~~
+cc1: all warnings being treated as errors
+```
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ include/fortify-headers.h | 14 +++-----------
+ 1 file changed, 3 insertions(+), 11 deletions(-)
+
+--- a/include/fortify-headers.h
++++ b/include/fortify-headers.h
+@@ -21,21 +21,13 @@
+ #error a compiler with __has_builtin support is required
+ #endif
+ 
+-// https://clang.llvm.org/docs/LanguageExtensions.html#has-builtin
+-// > __has_builtin should not be used to detect support for a builtin macro; use #ifdef instead.
+-#define __fh_has_builtin(x) (__has_builtin(x) || defined(x))
+-
+-#if ! __fh_has_builtin(__builtin_trap)
+-#define __builtin_trap abort
+-#endif
+-
+ #if _FORTIFY_SOURCE > 3
+ #warning _FORTIFY_SOURCE > 3 is treated as 3
+ #endif
+ 
+ #ifdef __clang__
+ 
+-#if _FORTIFY_SOURCE  > 2 && __fh_has_builtin (__builtin_dynamic_object_size) && __has_attribute(pass_dynamic_object_size)
++#if _FORTIFY_SOURCE  > 2 && __has_builtin (__builtin_dynamic_object_size) && __has_attribute(pass_dynamic_object_size)
+ #define _FORTIFY_POSN(n) const __attribute__((pass_dynamic_object_size(n)))
+ #else
+ #define _FORTIFY_POSN(n) const __attribute__((pass_object_size(n)))
+@@ -70,7 +62,7 @@
+ #define _FORTIFY_FN(fn) _FORTIFY_FNB(fn); _FORTIFY_INLINE
+ 
+ /* Use __builtin_dynamic_object_size with _FORTIFY_SOURCE>2, if available.  */
+-#if _FORTIFY_SOURCE  > 2 && __fh_has_builtin (__builtin_dynamic_object_size)
++#if _FORTIFY_SOURCE  > 2 && __has_builtin (__builtin_dynamic_object_size)
+ /* 
+  * See:
+  * - https://gcc.gnu.org/onlinedocs/gcc/Object-Size-Checking.html
+@@ -155,7 +147,7 @@
+  * - https://gcc.gnu.org/onlinedocs/gcc/Integer-Overflow-Builtins.html
+  * - https://clang.llvm.org/docs/LanguageExtensions.html#checked-arithmetic-builtins
+  */
+-#if __fh_has_builtin (__builtin_mul_overflow_p)
++#if __has_builtin (__builtin_mul_overflow_p)
+ #define __bmo(x, y) (x != 0 && __builtin_mul_overflow_p(x, y, (__typeof__ ((x) + (y))) 0))
+ #else /* !__builtin_mul_overflow_p */
+ #define __bmo(x, y) (x != 0 && (x * y) / x != y)
