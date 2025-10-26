@@ -221,17 +221,6 @@
 	};
 };
 
-&mdio_bus0 {
-	INTERNAL_PHY(0)
-	INTERNAL_PHY(8)
-	INTERNAL_PHY(16)
-	INTERNAL_PHY(20)
-	INTERNAL_PHY(24)
-	INTERNAL_PHY(25)
-	INTERNAL_PHY(26)
-	INTERNAL_PHY(27)
-};
-
 &switch0 {
 	ports {
 		#address-cells = <1>;
@@ -241,7 +230,6 @@
 			reg = <0>;
 			label = "lan1";
 			pcs-handle = <&serdes2>;
-			phy-handle = <&phy0>;
 			phy-mode = "1000base-x";
 			sfp = <&sfp0>;
 			managed = "in-band-status";
@@ -252,7 +240,6 @@
 			reg = <8>;
 			label = "lan2";
 			pcs-handle = <&serdes3>;
-			phy-handle = <&phy8>;
 			phy-mode = "1000base-x";
 			sfp = <&sfp1>;
 			managed = "in-band-status";
@@ -263,7 +250,6 @@
 			reg = <16>;
 			label = "lan3";
 			pcs-handle = <&serdes4>;
-			phy-handle = <&phy16>;
 			phy-mode = "1000base-x";
 			sfp = <&sfp2>;
 			managed = "in-band-status";
@@ -274,7 +260,6 @@
 			reg = <20>;
 			label = "lan4";
 			pcs-handle = <&serdes5>;
-			phy-handle = <&phy20>;
 			phy-mode = "1000base-x";
 			sfp = <&sfp3>;
 			managed = "in-band-status";
@@ -285,7 +270,6 @@
 			reg = <24>;
 			label = "lan5";
 			pcs-handle = <&serdes6>;
-			phy-handle = <&phy24>;
 			phy-mode = "1000base-x";
 			sfp = <&sfp4>;
 			managed = "in-band-status";
@@ -296,7 +280,6 @@
 			reg = <25>;
 			label = "lan6";
 			pcs-handle = <&serdes7>;
-			phy-handle = <&phy25>;
 			phy-mode = "1000base-x";
 			sfp = <&sfp5>;
 			managed = "in-band-status";
@@ -307,7 +290,6 @@
 			reg = <26>;
 			label = "lan7";
 			pcs-handle = <&serdes8>;
-			phy-handle = <&phy26>;
 			phy-mode = "1000base-x";
 			sfp = <&sfp6>;
 			managed = "in-band-status";
@@ -318,7 +300,6 @@
 			reg = <27>;
 			label = "lan8";
 			pcs-handle = <&serdes9>;
-			phy-handle = <&phy27>;
 			phy-mode = "1000base-x";
 			sfp = <&sfp7>;
 			managed = "in-band-status";
