@@ -383,12 +383,6 @@
 		compatible = "ethernet-phy-ieee802.3-c45";
 		rtl9300,smi-address = <1 23>;
 	};
-
-	/* fiber */
-	INTERNAL_PHY(48)
-	INTERNAL_PHY(50)
-	INTERNAL_PHY(52)
-	INTERNAL_PHY(53)
 };
 
 &switch0 {
@@ -426,7 +420,6 @@
 			reg = <48>;
 			label = "lan25";
 			pcs-handle = <&serdes8>;
-			phy-handle = <&phy48>;
 			phy-mode = "1000base-x";
 			sfp = <&sfp0>;
 			led-set = <1>;
@@ -440,7 +433,6 @@
 			reg = <50>;
 			label = "lan26";
 			pcs-handle = <&serdes9>;
-			phy-handle = <&phy50>;
 			phy-mode = "1000base-x";
 			sfp = <&sfp1>;
 			led-set = <1>;
@@ -454,7 +446,6 @@
 			reg = <52>;
 			label = "lan27";
 			pcs-handle = <&serdes10>;
-			phy-handle = <&phy52>;
 			phy-mode = "1000base-x";
 			sfp = <&sfp2>;
 			led-set = <1>;
@@ -468,7 +459,6 @@
 			reg = <53>;
 			label = "lan28";
 			pcs-handle = <&serdes11>;
-			phy-handle = <&phy53>;
 			phy-mode = "1000base-x";
 			sfp = <&sfp3>;
 			led-set = <1>;
