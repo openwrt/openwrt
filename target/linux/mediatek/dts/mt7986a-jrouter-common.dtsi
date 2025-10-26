@@ -11,11 +11,6 @@
 / {
 	aliases {
 		serial0 = &uart0;
-		// led-boot = &led_status_red;
-		// led-failsafe = &led_status_red;
-		// led-running = &led_status_green;
-		// led-upgrade = &led_status_blue;
-
 	};
 
 	leds {
@@ -158,13 +153,6 @@
 		};
 	};
 
-	// spi_led_pins: spic-pins-29-to-32 {
-	// 	mux {
-	// 		function = "spi";
-	// 		groups = "spi1_2";
-	// 	};
-	// };
-
 	wf_2g_5g_pins: wf_2g_5g-pins {
 		mux {
 			function = "wifi";
@@ -245,37 +233,6 @@
 		};
 	};
 };
-
-// &spi1 {
-// 	pinctrl-names = "default";
-// 	pinctrl-0 = <&spi_led_pins>;
-// 	status = "okay";
-
-// 	ws2812b@0 {
-// 		#address-cells = <1>;
-// 		#size-cells = <0>;
-// 		compatible = "worldsemi,ws2812b";
-// 		reg = <0>;
-// 		spi-max-frequency = <3000000>;
-
-// 		led_status_rgb: led@0 {
-// 			reg = <0>;
-// 			function = LED_FUNCTION_STATUS;
-// 			color = <LED_COLOR_ID_RGB>;
-// 			color-index = <LED_COLOR_ID_RED LED_COLOR_ID_GREEN LED_COLOR_ID_BLUE>;
-// 		};
-
-// 		led_network_rgb: led@1 {
-// 			reg = <1>;
-
-// 			/* Hardcoding here for backward compatibility */
-// 			function = "network";
-
-// 			color = <LED_COLOR_ID_RGB>;
-// 			color-index = <LED_COLOR_ID_RED LED_COLOR_ID_GREEN LED_COLOR_ID_BLUE>;
-// 		};
-// 	};
-// };
 
 &switch {
 	ports {
