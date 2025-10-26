@@ -571,10 +571,11 @@ export function setup(data) {
 		config: has_ap ? file_name : "",
 		prev_config: file_name + '.prev'
 	};
+	system(`ubus wait_for hostapd`);
 	let ret = global.ubus.call('hostapd', 'config_set', msg);
 
 	if (ret)
 		netifd.add_process('/usr/sbin/hostapd', ret.pid, true, true);
-	else if (fs.access('/usr/sbin/hostapd', 'x'))
+	else
 		netifd.setup_failed('HOSTAPD_START_FAILED');
 };
