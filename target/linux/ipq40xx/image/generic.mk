@@ -882,7 +882,9 @@ define Device/netgear_orbi
 endef
 
 define Device/netgear_lbr20
-	$(call Device/netgear_orbi)
+	$(call Device/DniImage)
+	SOC := qcom-ipq4019
+	DEVICE_VENDOR := NETGEAR
 	DEVICE_MODEL := LBR20
 	NETGEAR_BOARD_ID := LBR20
 	NETGEAR_HW_ID := 29766182+0+256+512+2x2+2x2+2x2+1
