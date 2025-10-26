@@ -58,11 +58,11 @@ static void rtl83xx_enable_phy_polling(struct rtl838x_switch_priv *priv)
 	pr_info("%s: %16llx\n", __func__, v);
 	priv->r->set_port_reg_le(v, priv->r->smi_poll_ctrl);
 
-	/* PHY update complete, there is no global PHY polling enable bit on the 9300 */
+	/* PHY update complete, there is no global PHY polling enable bit on the 93xx */
 	if (priv->family_id == RTL8390_FAMILY_ID)
 		sw_w32_mask(0, BIT(7), RTL839X_SMI_GLB_CTRL);
-	else if(priv->family_id == RTL9300_FAMILY_ID)
-		sw_w32_mask(0, 0x8000, RTL838X_SMI_GLB_CTRL);
+	else if(priv->family_id == RTL8380_FAMILY_ID)
+		sw_w32_mask(0, BIT(15), RTL838X_SMI_GLB_CTRL);
 }
 
 const struct rtldsa_mib_list_item rtldsa_838x_mib_list[] = {
