@@ -2373,6 +2373,26 @@ endif
 endef
 TARGET_DEVICES += xiaomi_mi-router-wr30u-ubootmod
 
+define Device/jrouter-6x01
+  DEVICE_VENDOR := jrouter
+  DEVICE_MODEL := HomeRouter
+  DEVICE_DTS := mt7986a-jrouter-6x01
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-usb3 kmod-usb2 kmod-mt7915e kmod-mt7916-firmware kmod-mt7986-firmware mt7986-wo-firmware e2fsprogs f2fsck mkf2fs
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+ifeq ($(IB),)
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+  ARTIFACTS := initramfs-factory.ubi
+  ARTIFACT/initramfs-factory.ubi := append-image-stage initramfs-kernel.bin | ubinize-kernel
+endif
+endif
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += jrouter-6x01
+
+
 define Device/xiaomi_redmi-router-ax6000-stock
   DEVICE_VENDOR := Xiaomi
   DEVICE_MODEL := Redmi Router AX6000 (stock layout)
