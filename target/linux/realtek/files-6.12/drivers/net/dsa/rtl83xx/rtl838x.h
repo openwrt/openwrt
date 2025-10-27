@@ -1215,6 +1215,7 @@ struct rtl838x_switch_priv {
 	u64 irq_mask;
 	u32 fib_entries;
 	int l2_bucket_size;
+	u16 n_mst;
 	struct dentry *dbgfs_dir;
 
 	/** @lags_port_members: Port (bit) is part of a specific LAG */
