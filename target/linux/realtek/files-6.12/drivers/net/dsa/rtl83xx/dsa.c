@@ -1597,9 +1597,20 @@ static void rtldsa_port_xstp_state_set(struct rtl838x_switch_priv *priv, int por
 void rtl83xx_port_stp_state_set(struct dsa_switch *ds, int port, u8 state)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
+	struct dsa_port *dp = dsa_to_port(ds, port);
+	unsigned int i;
 
 	mutex_lock(&priv->reg_mutex);
 	rtldsa_port_xstp_state_set(priv, port, state, 0);
+
+	if (dp->bridge)
+		goto unlock;
+
+	/* for unbridged ports, also force the same state to the MSTIs */
+	for (i = 1; i < priv->n_mst; i++)
+		rtldsa_port_xstp_state_set(priv, port, state, i);
+
+unlock:
 	mutex_unlock(&priv->reg_mutex);
 }
 
