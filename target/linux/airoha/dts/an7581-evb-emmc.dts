@@ -57,6 +57,13 @@
 		};
 	};
 
+	pcie2_rst_pins: pcie2-rst-pins {
+		conf {
+			pins = "pcie_reset2";
+			drive-open-drain = <1>;
+		};
+	};
+
 	gswp1_led0_pins: gswp1-led0-pins {
 		mux {
 			function = "phy1_led0";
@@ -153,6 +160,12 @@
 &pcie1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pcie1_rst_pins>;
+	status = "okay";
+};
+
+&pcie2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie2_rst_pins>;
 	status = "okay";
 };
 
