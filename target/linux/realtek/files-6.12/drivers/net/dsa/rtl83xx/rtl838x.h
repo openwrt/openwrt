@@ -620,7 +620,6 @@ enum phy_type {
 	PHY_RTL8218B_EXT = 3,
 	PHY_RTL8214FC = 4,
 	PHY_RTL839X_SDS = 5,
-	PHY_RTL930X_SDS = 6,
 };
 
 enum pbvlan_type {

@@ -178,15 +178,10 @@ u32 rtl930x_hash(struct rtl838x_switch_priv *priv, u64 seed);
 irqreturn_t rtldsa_930x_switch_irq(int irq, void *dev_id);
 irqreturn_t rtl839x_switch_irq(int irq, void *dev_id);
 void rtl930x_vlan_profile_dump(int index);
-int rtl9300_sds_power(int mac, int val);
-extern int rtl9300_serdes_setup(int port, int sds_num, phy_interface_t phy_mode);
 void rtl930x_print_matrix(void);
 
 /* RTL931x-specific */
 irqreturn_t rtl931x_switch_irq(int irq, void *dev_id);
-int rtl931x_sds_cmu_band_get(int sds, phy_interface_t mode);
-int rtl931x_sds_cmu_band_set(int sds, bool enable, u32 band, phy_interface_t mode);
-extern void rtl931x_sds_init(u32 sds, phy_interface_t mode);
 void rtl931x_print_matrix(void);
 
 int rtl83xx_lag_add(struct dsa_switch *ds, int group, int port, struct netdev_lag_upper_info *info);
@@ -212,7 +207,5 @@ void rtl931x_print_matrix(void);
 
 void rtldsa_930x_set_receive_management_action(int port, rma_ctrl_t type, action_type_t action);
 void rtldsa_931x_set_receive_management_action(int port, rma_ctrl_t type, action_type_t action);
-
-void rtl931x_sw_init(struct rtl838x_switch_priv *priv);
 
 #endif /* _NET_DSA_RTL83XX_H */

@@ -399,18 +399,10 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 			continue;
 		}
 
-		if (priv->id >= 0x9300) {
-			priv->ports[pn].phy_is_integrated = false;
-			if (of_property_read_bool(phy_node, "phy-is-integrated")) {
-				priv->ports[pn].phy_is_integrated = true;
-				priv->ports[pn].phy = PHY_RTL930X_SDS;
-			}
-		} else {
-			if (of_property_read_bool(phy_node, "phy-is-integrated") &&
-			    !of_property_read_bool(phy_node, "sfp")) {
-				priv->ports[pn].phy = PHY_RTL8218B_INT;
-				continue;
-			}
+		if (of_property_read_bool(phy_node, "phy-is-integrated") &&
+		    !of_property_read_bool(phy_node, "sfp")) {
+			priv->ports[pn].phy = PHY_RTL8218B_INT;
+			continue;
 		}
 
 		if (!of_property_read_bool(phy_node, "phy-is-integrated") &&
