@@ -1542,6 +1542,12 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		return err;
 	}
 
+	priv->msts = devm_kcalloc(priv->dev,
+				  priv->n_mst - 1, sizeof(struct rtldsa_mst),
+				  GFP_KERNEL);
+	if (!priv->msts)
+		return -ENOMEM;
+
 	priv->wq = create_singlethread_workqueue("rtl83xx");
 	if (!priv->wq) {
 		dev_err(dev, "Error creating workqueue: %d\n", err);

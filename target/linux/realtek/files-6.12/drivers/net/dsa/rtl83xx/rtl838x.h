@@ -781,6 +781,14 @@ struct rtl838x_vlan_info {
 	int l2_tunnel_list_id;
 };
 
+struct rtldsa_mst {
+	/** @msti: MSTI mapped to this slot. 0 == unused */
+	u16 msti;
+
+	/** @refcount: number of vlans currently using this msti, undefined when unused */
+	struct kref refcount;
+};
+
 enum l2_entry_type {
 	L2_INVALID = 0,
 	L2_UNICAST = 1,
@@ -1251,6 +1259,12 @@ struct rtl838x_switch_priv {
 	struct rtl838x_l3_intf *interfaces[MAX_INTERFACES];
 	u16 intf_mtus[MAX_INTF_MTUS];
 	int intf_mtu_count[MAX_INTF_MTUS];
+
+	/**
+	 * @msts: MSTI to HW MST slot allocations. index 0 is for HW slot 1 because CIST is
+	 * not stored in @msts
+	 */
+	struct rtldsa_mst *msts;
 	struct delayed_work counters_work;
 };
 
