@@ -548,26 +548,6 @@ static int rtl93xx_setup(struct dsa_switch *ds)
 	return 0;
 }
 
-static int rtl93xx_get_sds(struct phy_device *phydev)
-{
-	struct device *dev = &phydev->mdio.dev;
-	struct device_node *dn;
-	u32 sds_num;
-
-	if (!dev)
-		return -1;
-	if (dev->of_node) {
-		dn = dev->of_node;
-		if (of_property_read_u32(dn, "sds", &sds_num))
-			sds_num = -1;
-	} else {
-		dev_err(dev, "No DT node.\n");
-		return -1;
-	}
-
-	return sds_num;
-}
-
 static struct phylink_pcs *rtldsa_phylink_mac_select_pcs(struct dsa_switch *ds,
 							 int port,
 							 phy_interface_t interface)
@@ -692,11 +672,7 @@ static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
 					const struct phylink_link_state *state)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	int sds_num;
 	u32 reg;
-
-	sds_num = priv->ports[port].sds_num;
-	pr_info("%s: speed %d sds_num %d\n", __func__, state->speed, sds_num);
 
 	reg = sw_r32(priv->r->mac_force_mode_ctrl(port));
 	pr_info("%s reading FORCE_MODE_CTRL: %08x\n", __func__, reg);
@@ -1415,9 +1391,6 @@ static int rtldsa_port_enable(struct dsa_switch *ds, int port, struct phy_device
 		sw_w32_mask(0, BIT(port), RTL930X_L2_PORT_SABLK_CTRL);
 		sw_w32_mask(0, BIT(port), RTL930X_L2_PORT_DABLK_CTRL);
 	}
-
-	if (priv->ports[port].sds_num < 0)
-		priv->ports[port].sds_num = rtl93xx_get_sds(phydev);
 
 	return 0;
 }
