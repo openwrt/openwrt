@@ -828,10 +828,6 @@ static int rtl931x_set_ageing_time(unsigned long msec)
 
 	return 0;
 }
-void rtl931x_sw_init(struct rtl838x_switch_priv *priv)
-{
-/*	rtl931x_sds_init(priv); */
-}
 
 static void rtl931x_pie_lookup_enable(struct rtl838x_switch_priv *priv, int index)
 {
