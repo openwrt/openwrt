@@ -10,11 +10,7 @@
 /*
  * Include Files
  */
-#if defined(RTK_PHYDRV_IN_LINUX)
-  #include "type.h"
-#else
-  #include <common/type.h>
-#endif
+#include "type.h"
 /*
  * Data Type Declaration
  */

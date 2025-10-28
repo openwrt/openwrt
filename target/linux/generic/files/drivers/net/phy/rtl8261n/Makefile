@@ -8,4 +8,4 @@ rtl8261n-objs += rtk_phy.o
 rtl8261n-objs += rtk_phylib.o
 rtl8261n-objs += rtk_phylib_rtl826xb.o
 
-ccflags-y += -Werror -DRTK_PHYDRV_IN_LINUX
+ccflags-y += -Werror
