@@ -110,14 +110,35 @@
 			};
 
 			nvram: partition@7e0000 {
+				compatible = "brcm,nvram";
 				label = "nvram";
 				reg = <0x7e0000 0x10000>;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					et0macaddr: et0macaddr {
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@7f0000 {
 				label = "art";
 				reg = <0x7f0000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+				};
 			};
 		};
 	};
@@ -129,8 +150,8 @@
 	ath9k: wifi@0,0 {
 		compatible = "pci168c,0030";
 		reg = <0x0000 0 0 0 0>;
-		qca,no-eeprom;
-		/* wifi MAC is stored in nvram */
+		nvmem-cells = <&cal_art_1000>, <&et0macaddr 1>;
+		nvmem-cell-names = "calibration", "mac-address";
 	};
 };
 
@@ -147,9 +168,11 @@
 
 	pll-data = <0x02000000 0x00000101 0x00001313>;
 
-	/* ethernet MAC is stored in nvram */
 	phy-mode = "rgmii-id";
 	phy-handle = <&phy4>;
+
+	nvmem-cells = <&et0macaddr 0>;
+	nvmem-cell-names = "mac-address";
 
 	gmac-config {
 		device = <&gmac>;
