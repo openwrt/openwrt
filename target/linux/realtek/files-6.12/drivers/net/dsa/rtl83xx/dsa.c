@@ -1819,6 +1819,10 @@ static int rtl83xx_vlan_del(struct dsa_switch *ds, int port,
 	info.untagged_ports &= (~BIT_ULL(port));
 	info.member_ports &= (~BIT_ULL(port));
 
+	/* VLANs without members are set back (implicitly) to CIST by DSA */
+	if (!info.member_ports)
+		info.fid = 0;
+
 	priv->r->vlan_set_untagged(vlan->vid, info.untagged_ports);
 	pr_debug("Untagged ports, VLAN %d: %llx\n", vlan->vid, info.untagged_ports);
 
