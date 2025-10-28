@@ -722,9 +722,7 @@ ath79_setup_macs()
 		;;
 	elecom,wab-i1750-ps|\
 	elecom,wab-s1167-ps|\
-	elecom,wab-s600-ps|\
-	engenius,ecb1200|\
-	engenius,ecb1750)
+	elecom,wab-s600-ps)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		label_mac=$lan_mac
 		;;
