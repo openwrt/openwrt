@@ -10,6 +10,7 @@
 #include <linux/phylink.h>
 #include <linux/regmap.h>
 
+#define RTPCS_SDS_CNT				14
 #define RTPCS_PORT_CNT				57
 
 #define RTPCS_SPEED_10				0
@@ -100,6 +101,8 @@ struct rtpcs_ctrl {
 	struct mii_bus *bus;
 	const struct rtpcs_config *cfg;
 	struct rtpcs_link *link[RTPCS_PORT_CNT];
+	bool rx_pol_inv[RTPCS_SDS_CNT];
+	bool tx_pol_inv[RTPCS_SDS_CNT];
 	struct mutex lock;
 };
 
@@ -1914,7 +1917,8 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_ctrl *ctrl, int sds,
 	pr_info("%s: Configuring RTL9300 SERDES %d\n", __func__, sds);
 
 	/* Set SDS polarity */
-	rtpcs_93xx_sds_set_polarity(ctrl, sds, false, false);
+	rtpcs_93xx_sds_set_polarity(ctrl, sds, ctrl->tx_pol_inv[sds],
+				    ctrl->rx_pol_inv[sds]);
 
 	/* Enable SDS in desired mode */
 	rtpcs_930x_sds_mode_set(ctrl, sds, phy_mode);
@@ -2493,7 +2497,8 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_ctrl *ctrl, int sds,
 		}
 	}
 
-	rtpcs_93xx_sds_set_polarity(ctrl, sds, false, false);
+	rtpcs_93xx_sds_set_polarity(ctrl, sds, ctrl->tx_pol_inv[sds],
+				    ctrl->rx_pol_inv[sds]);
 
 	val = ori & ~BIT(sds);
 	regmap_write(ctrl->map, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR, val);
@@ -2729,7 +2734,10 @@ static int rtpcs_probe(struct platform_device *pdev)
 {
 	struct device_node *np = pdev->dev.of_node;
 	struct device *dev = &pdev->dev;
+	struct device_node *child;
 	struct rtpcs_ctrl *ctrl;
+	u32 sds;
+	int ret;
 
 	ctrl = devm_kzalloc(dev, sizeof(*ctrl), GFP_KERNEL);
 	if (!ctrl)
@@ -2746,6 +2754,18 @@ static int rtpcs_probe(struct platform_device *pdev)
 	ctrl->bus = rtpcs_probe_serdes_bus(ctrl);
 	if (IS_ERR(ctrl->bus))
 		return PTR_ERR(ctrl->bus);
+
+	for_each_child_of_node(dev->of_node, child) {
+		ret = of_property_read_u32(child, "reg", &sds);
+		if (ret)
+			return ret;
+		if (sds >= RTPCS_SDS_CNT)
+			return -EINVAL;
+
+		ctrl->rx_pol_inv[sds] = of_property_read_bool(child, "realtek,pnswap-rx");
+		ctrl->tx_pol_inv[sds] = of_property_read_bool(child, "realtek,pnswap-tx");
+	}
+
 	/*
 	 * rtpcs_create() relies on that fact that data is attached to the platform device to
 	 * determine if the driver is ready. Do this after everything is initialized properly.
