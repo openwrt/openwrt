@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=elfutils
 PKG_VERSION:=0.192
-PKG_RELEASE:=2
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=https://sourceware.org/$(PKG_NAME)/ftp/$(PKG_VERSION) \
@@ -87,7 +87,6 @@ TARGET_CFLAGS += \
 	-D_GNU_SOURCE \
 	-Wno-unused-result \
 	-Wno-format-nonliteral \
-	-Wno-error=nonnull-compare \
 	-Wno-error=use-after-free
 
 define Build/InstallDev
