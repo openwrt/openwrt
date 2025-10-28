@@ -27,6 +27,8 @@ static const u8 ipv6_all_hosts_mcast_addr_mask[ETH_ALEN] =
 extern struct rtl83xx_soc_info soc_info;
 
 static void rtldsa_init_counters(struct rtl838x_switch_priv *priv);
+static void rtldsa_port_xstp_state_set(struct rtl838x_switch_priv *priv, int port,
+				       u8 state, u16 mst_slot);
 
 static void rtl83xx_init_stats(struct rtl838x_switch_priv *priv)
 {
@@ -1497,6 +1499,7 @@ static int rtldsa_port_bridge_join(struct dsa_switch *ds, int port, struct dsa_b
 				   bool *tx_fwd_offload, struct netlink_ext_ack *extack)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
+	unsigned int i;
 
 	pr_debug("%s %x: %d", __func__, (u32)priv, port);
 
@@ -1510,6 +1513,10 @@ static int rtldsa_port_bridge_join(struct dsa_switch *ds, int port, struct dsa_b
 	if (priv->r->set_static_move_action)
 		priv->r->set_static_move_action(port, false);
 
+	/* Set to disabled in all MSTs, common code will take care of CIST */
+	for (i = 1; i < priv->n_mst; i++)
+		rtldsa_port_xstp_state_set(priv, port, BR_STATE_DISABLED, i);
+
 	mutex_unlock(&priv->reg_mutex);
 
 	return 0;
@@ -1518,6 +1525,7 @@ static int rtldsa_port_bridge_join(struct dsa_switch *ds, int port, struct dsa_b
 static void rtldsa_port_bridge_leave(struct dsa_switch *ds, int port, struct dsa_bridge bridge)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
+	unsigned int i;
 
 	pr_debug("%s %x: %d", __func__, (u32)priv, port);
 
@@ -1528,23 +1536,25 @@ static void rtldsa_port_bridge_leave(struct dsa_switch *ds, int port, struct dsa
 	if (priv->r->set_static_move_action)
 		priv->r->set_static_move_action(port, true);
 
+	/* Set to forwarding in all MSTs, common code will take care of CIST */
+	for (i = 1; i < priv->n_mst; i++)
+		rtldsa_port_xstp_state_set(priv, port, BR_STATE_FORWARDING, i);
+
 	mutex_unlock(&priv->reg_mutex);
 }
 
-void rtl83xx_port_stp_state_set(struct dsa_switch *ds, int port, u8 state)
+static void rtldsa_port_xstp_state_set(struct rtl838x_switch_priv *priv, int port,
+				       u8 state, u16 mst_slot)
+				       __must_hold(&priv->reg_mutex)
 {
-	u32 msti = 0;
 	u32 port_state[4];
 	int index, bit;
 	int pos = port;
-	struct rtl838x_switch_priv *priv = ds->priv;
 	int n = priv->port_width << 1;
 
 	/* Ports above or equal CPU port can never be configured */
 	if (port >= priv->cpu_port)
 		return;
-
-	mutex_lock(&priv->reg_mutex);
 
 	/* For the RTL839x and following, the bits are left-aligned, 838x and 930x
 	 * have 64 bit fields, 839x and 931x have 128 bit fields
@@ -1559,7 +1569,7 @@ void rtl83xx_port_stp_state_set(struct dsa_switch *ds, int port, u8 state)
 	index = n - (pos >> 4) - 1;
 	bit = (pos << 1) % 32;
 
-	priv->r->stp_get(priv, msti, port_state);
+	priv->r->stp_get(priv, mst_slot, port_state);
 
 	pr_debug("Current state, port %d: %d\n", port, (port_state[index] >> bit) & 3);
 	port_state[index] &= ~(3 << bit);
@@ -1581,8 +1591,15 @@ void rtl83xx_port_stp_state_set(struct dsa_switch *ds, int port, u8 state)
 		break;
 	}
 
-	priv->r->stp_set(priv, msti, port_state);
+	priv->r->stp_set(priv, mst_slot, port_state);
+}
 
+void rtl83xx_port_stp_state_set(struct dsa_switch *ds, int port, u8 state)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+
+	mutex_lock(&priv->reg_mutex);
+	rtldsa_port_xstp_state_set(priv, port, state, 0);
 	mutex_unlock(&priv->reg_mutex);
 }
 
