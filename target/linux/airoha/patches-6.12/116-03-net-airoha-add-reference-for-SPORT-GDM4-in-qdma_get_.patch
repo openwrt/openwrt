@@ -16,7 +16,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -593,8 +593,11 @@ static int airoha_qdma_get_gdm_port(stru
+@@ -588,8 +588,11 @@ static int airoha_qdma_get_gdm_port(stru
  
  	sport = FIELD_GET(QDMA_ETH_RXMSG_SPORT_MASK, msg1);
  	switch (sport) {
