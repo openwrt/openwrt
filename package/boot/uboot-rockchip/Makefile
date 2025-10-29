@@ -181,6 +181,14 @@ define U-Boot/radxa-e20c-rk3528
     radxa_e20c
 endef
 
+define U-Boot/rock-2-rk3528
+  $(U-Boot/rk3528/Default)
+  NAME:=ROCK 2A/2F
+  BUILD_DEVICES:= \
+    radxa_rock-2a \
+    radxa_rock-2f
+endef
+
 
 # RK3566 boards
 
@@ -413,6 +421,7 @@ UBOOT_TARGETS := \
   rock-pi-e-rk3328 \
   rock-pi-e-v3-rk3328 \
   radxa-e20c-rk3528 \
+  rock-2-rk3528 \
   nanopi-r3s-rk3566 \
   radxa-cm3-io-rk3566 \
   radxa-zero-3-rk3566 \
