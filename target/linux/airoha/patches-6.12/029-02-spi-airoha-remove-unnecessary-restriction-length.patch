@@ -15,7 +15,7 @@ Reviewed-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com
 
 --- a/drivers/spi/spi-airoha-snfi.c
 +++ b/drivers/spi/spi-airoha-snfi.c
-@@ -579,13 +579,6 @@ static int airoha_snand_adjust_op_size(s
+@@ -619,13 +619,6 @@ static int airoha_snand_adjust_op_size(s
  
  		if (op->data.nbytes > max_len)
  			op->data.nbytes = max_len;
