@@ -17,7 +17,7 @@
 		serial0 = &uart0;
 	};
 
-	chosen {
+	chosen: chosen {
 		stdout-path = "serial0:115200n8";
 	};
 
@@ -109,7 +109,7 @@
 	pinctrl-0 = <&spi0_flash_pins>;
 	status = "okay";
 
-	spi_nand@0 {
+	spi_nand: spi-nand@0 {
 		compatible = "spi-nand";
 		reg = <0>;
 
@@ -123,10 +123,6 @@
 		spi-cal-data = /bits/ 8 <0x53 0x50 0x49 0x4e 0x41 0x4e 0x44>;
 		spi-cal-addrlen = <5>;
 		spi-cal-addr = /bits/ 32 <0x0 0x0 0x0 0x0 0x0>;
-
-		mediatek,nmbm;
-		mediatek,bmt-max-ratio = <1>;
-		mediatek,bmt-max-reserved-blocks = <64>;
 
 		partitions: partitions {
 			compatible = "fixed-partitions";
@@ -182,6 +178,10 @@
 				label = "FIP";
 				reg = <0x380000 0x200000>;
 				read-only;
+			};
+
+			ubi: partition@580000 {
+				label = "ubi";
 			};
 		};
 	};
