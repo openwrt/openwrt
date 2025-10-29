@@ -1,0 +1,165 @@
+From ad88513712d939af5b51ff0f1ba8152ca663ed6c Mon Sep 17 00:00:00 2001
+From: Arjun Roy <arjunroy@google.com>
+Date: Mon, 25 Jul 2022 12:49:35 -0400
+Subject: [PATCH 1/3] ss: output TCP BBRv3 diag information
+
+Add logic for printing diag information for TCP BBRv3 congestion
+control.  This commit leaves in place the support for printing the
+earlier TCP BBRv1 congestion control information.
+
+Both BBRv1 and BBRv3 are using the same enum value.  The BBRv3 struct
+starts with the same data as BBRv1, so it is is backward-compatible
+with BBRv1, to allow lder ss binaries to print basic information for
+BBRv3. We use the size of the returned data and the version field to
+check the version of the data.
+
+Signed-off-by: Arjun Roy <arjunroy@google.com>
+Signed-off-by: Neal Cardwell <ncardwell@google.com>
+Signed-off-by: David Morley <morleyd@google.com>
+---
+ include/uapi/linux/inet_diag.h | 23 ++++++++++++
+ misc/ss.c                      | 66 +++++++++++++++++++++++++++++++++-
+ 2 files changed, 88 insertions(+), 1 deletion(-)
+
+diff --git a/include/uapi/linux/inet_diag.h b/include/uapi/linux/inet_diag.h
+index 2b3c8227..0a895943 100644
+--- a/include/uapi/linux/inet_diag.h
++++ b/include/uapi/linux/inet_diag.h
+@@ -229,6 +229,29 @@ struct tcp_bbr_info {
+ 	__u32	bbr_min_rtt;		/* min-filtered RTT in uSec */
+ 	__u32	bbr_pacing_gain;	/* pacing gain shifted left 8 bits */
+ 	__u32	bbr_cwnd_gain;		/* cwnd gain shifted left 8 bits */
++	__u32	bbr_bw_hi_lsb;		/* lower 32 bits of bw_hi */
++	__u32	bbr_bw_hi_msb;		/* upper 32 bits of bw_hi */
++	__u32	bbr_bw_lo_lsb;		/* lower 32 bits of bw_lo */
++	__u32	bbr_bw_lo_msb;		/* upper 32 bits of bw_lo */
++	__u8	bbr_mode;		/* current bbr_mode in state machine */
++	__u8	bbr_phase;		/* current state machine phase */
++	__u8	unused1;		/* alignment padding; not used yet */
++	__u8	bbr_version;		/* BBR algorithm version */
++	__u32	bbr_inflight_lo;	/* lower short-term data volume bound */
++	__u32	bbr_inflight_hi;	/* higher long-term data volume bound */
++	__u32	bbr_extra_acked;	/* max excess packets ACKed in epoch */
++};
++
++/* TCP BBR congestion control bbr_phase as reported in netlink/ss stats. */
++enum tcp_bbr_phase {
++	BBR_PHASE_INVALID		= 0,
++	BBR_PHASE_STARTUP		= 1,
++	BBR_PHASE_DRAIN			= 2,
++	BBR_PHASE_PROBE_RTT		= 3,
++	BBR_PHASE_PROBE_BW_UP		= 4,
++	BBR_PHASE_PROBE_BW_DOWN		= 5,
++	BBR_PHASE_PROBE_BW_CRUISE	= 6,
++	BBR_PHASE_PROBE_BW_REFILL	= 7,
+ };
+ 
+ union tcp_cc_info {
+diff --git a/misc/ss.c b/misc/ss.c
+index 6d597650..5c176172 100644
+--- a/misc/ss.c
++++ b/misc/ss.c
+@@ -895,6 +895,7 @@ struct tcpstat {
+ 	bool		    app_limited;
+ 	struct dctcpstat    *dctcp;
+ 	struct tcp_bbr_info *bbr_info;
++	unsigned int	    bbr_info_len;
+ };
+ 
+ /* SCTP assocs share the same inode number with their parent endpoint. So if we
+@@ -2597,6 +2598,29 @@ static void sctp_stats_print(struct sctp_info *s)
+ 		out(" fraginl:%d", s->sctpi_s_frag_interleave);
+ }
+ 
++static const char* bbr_phase_to_str(enum tcp_bbr_phase phase)
++{
++	switch (phase) {
++	case BBR_PHASE_STARTUP:
++		return "STARTUP";
++	case BBR_PHASE_DRAIN:
++		return "DRAIN";
++	case BBR_PHASE_PROBE_RTT:
++		return "PROBE_RTT";
++	case BBR_PHASE_PROBE_BW_UP:
++		return "PROBE_BW_UP";
++	case BBR_PHASE_PROBE_BW_DOWN:
++		return "PROBE_BW_DOWN";
++	case BBR_PHASE_PROBE_BW_CRUISE:
++		return "PROBE_BW_CRUISE";
++	case BBR_PHASE_PROBE_BW_REFILL:
++		return "PROBE_BW_REFILL";
++	case BBR_PHASE_INVALID:
++	default:
++		return "INVALID";
++	}
++}
++
+ static void tcp_stats_print(struct tcpstat *s)
+ {
+ 	char b1[64];
+@@ -2672,7 +2696,14 @@ static void tcp_stats_print(struct tcpstat *s)
+ 	}
+ 
+ 	if (s->bbr_info) {
+-		__u64 bw;
++		/* All versions of the BBR algorithm use the INET_DIAG_BBRINFO
++		 * enum value. Later versions of the tcp_bbr_info struct are
++		 * backward-compatible with earlier versions, to allow older ss
++		 * binaries to print basic information for newer versions of
++		 * the algorithm. We use the size of the returned tcp_bbr_info
++		 * struct to decide how much to print.
++		 */
++		__u64 bw, bw_hi, bw_lo;
+ 
+ 		bw = s->bbr_info->bbr_bw_hi;
+ 		bw <<= 32;
+@@ -2687,6 +2718,38 @@ static void tcp_stats_print(struct tcpstat *s)
+ 		if (s->bbr_info->bbr_cwnd_gain)
+ 			out(",cwnd_gain:%g",
+ 			    (double)s->bbr_info->bbr_cwnd_gain / 256.0);
++
++		if (s->bbr_info_len >=
++		    (offsetof(struct tcp_bbr_info, bbr_extra_acked) +
++		     sizeof(__u32))) {
++
++			bw_hi = s->bbr_info->bbr_bw_hi_msb;
++			bw_hi <<= 32;
++			bw_hi |= s->bbr_info->bbr_bw_hi_lsb;
++
++			bw_lo = s->bbr_info->bbr_bw_lo_msb;
++			bw_lo <<= 32;
++			bw_lo |= s->bbr_info->bbr_bw_lo_lsb;
++
++			out(",version:%u", s->bbr_info->bbr_version);
++			if (bw_hi != ~0UL)
++				out(",bw_hi:%sbps", sprint_bw(b1, bw_hi * 8.0));
++			if (bw_lo != ~0UL)
++				out(",bw_lo:%sbps", sprint_bw(b1, bw_lo * 8.0));
++			if (s->bbr_info->bbr_inflight_hi != ~0U)
++				out(",inflight_hi:%u",
++				    s->bbr_info->bbr_inflight_hi);
++			if (s->bbr_info->bbr_inflight_lo != ~0U)
++				out(",inflight_lo:%u",
++				    s->bbr_info->bbr_inflight_lo);
++			out(",extra_acked:%u", s->bbr_info->bbr_extra_acked);
++			out(",mode:%d", (int)s->bbr_info->bbr_mode);
++			out(",phase:%s",
++			    bbr_phase_to_str(
++				    (enum tcp_bbr_phase)
++				    s->bbr_info->bbr_phase));
++		}
++
+ 		out(")");
+ 	}
+ 
+@@ -3174,6 +3237,7 @@ static void tcp_show_info(const struct nlmsghdr *nlh, struct inet_diag_msg *r,
+ 			s.bbr_info = calloc(1, sizeof(*s.bbr_info));
+ 			if (s.bbr_info && bbr_info)
+ 				memcpy(s.bbr_info, bbr_info, len);
++			s.bbr_info_len = len;
+ 		}
+ 
+ 		if (rtt > 0 && info->tcpi_snd_mss && info->tcpi_snd_cwnd) {
+-- 
+2.43.0
+
