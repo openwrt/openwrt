@@ -7,9 +7,12 @@
 	compatible = "creatlentem,clt-r30b1-112m", "mediatek,mt7981";
 };
 
-&partitions {
-	partition@580000 {
-		label = "ubi";
+&spi_nand {
+	mediatek,nmbm;
+	mediatek,bmt-max-ratio = <1>;
+	mediatek,bmt-max-reserved-blocks = <64>;
+};
+
+&ubi {
 		reg = <0x0580000 0x7000000>;
-	};
 };
