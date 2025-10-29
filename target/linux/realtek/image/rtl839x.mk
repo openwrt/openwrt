@@ -129,3 +129,12 @@ define Device/zyxel_gs1920-24hp-v1
   DEVICE_VARIANT := v1
 endef
 TARGET_DEVICES += zyxel_gs1920-24hp-v1
+
+define Device/zyxel_gs1920-24hp-v2
+  $(Device/zyxel_gs1920-24hp)
+  SOC := rtl8391
+  FLASH_ADDR := 0xb4210000
+  IMAGE_SIZE := 30720k
+  DEVICE_VARIANT := v2
+endef
+TARGET_DEVICES += zyxel_gs1920-24hp-v2
