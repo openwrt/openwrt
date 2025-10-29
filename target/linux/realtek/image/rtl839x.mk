@@ -98,19 +98,15 @@ define Device/zyxel_gs1900-48-a1
 endef
 TARGET_DEVICES += zyxel_gs1900-48-a1
 
-define Device/zyxel_gs1920-24hp-v1
-  FLASH_ADDR := 0xb40c0000
+define Device/zyxel_gs1920-24hp
 ifeq ($(IB),)
   ARTIFACTS := loader.bin
   ARTIFACT/loader.bin := \
     rt-loader-standalone | \
     zynsig
 endif
-  SOC := rtl8392
-  IMAGE_SIZE := 12144k
   DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := GS1920-24HP
-  DEVICE_VARIANT := v1
   DEVICE_PACKAGES := \
 	  kmod-hwmon-lm85
   KERNEL := \
@@ -123,5 +119,13 @@ endif
     append-dtb | \
     rt-compress | \
     rt-loader
+endef
+
+define Device/zyxel_gs1920-24hp-v1
+  $(Device/zyxel_gs1920-24hp)
+  SOC := rtl8392
+  FLASH_ADDR := 0xb40c0000
+  IMAGE_SIZE := 12144k
+  DEVICE_VARIANT := v1
 endef
 TARGET_DEVICES += zyxel_gs1920-24hp-v1
