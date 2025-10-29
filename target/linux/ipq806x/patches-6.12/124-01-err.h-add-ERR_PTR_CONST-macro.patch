@@ -1,0 +1,32 @@
+From ade635fbc2e3006006e97545bd9fcb3a1290b91c Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Wed, 29 Oct 2025 14:20:00 +0100
+Subject: [PATCH 1/3] err.h: add ERR_PTR_CONST macro
+
+Add ERR_PTR_CONST macro to initialize global variables with error
+pointers. This might be useful for specific case where there is a global
+variables initialized to an error condition and then later set to the
+real handle once probe finish/completes.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ include/linux/err.h | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/include/linux/err.h
++++ b/include/linux/err.h
+@@ -41,6 +41,14 @@ static inline void * __must_check ERR_PT
+ 	return (void *) error;
+ }
+ 
++/**
++ * ERR_PTR_CONST - define a const error pointer.
++ * @error: A negative error code.
++ *
++ * Like ERR_PTR(), but usable to initialize global variables.
++ */
++#define ERR_PTR_CONST(error) ((void *)(error))
++
+ /* Return the pointer in the percpu address space. */
+ #define ERR_PTR_PCPU(error) ((void __percpu *)(unsigned long)ERR_PTR(error))
+ 
