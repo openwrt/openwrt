@@ -383,7 +383,7 @@ hostapd_common_add_bss_config() {
 	config_add_array airtime_sta_weight
 	config_add_int airtime_bss_weight airtime_bss_limit
 
-	config_add_boolean multicast_to_unicast multicast_to_unicast_all proxy_arp per_sta_vif
+	config_add_boolean multicast_to_unicast multicast_to_unicast_all proxy_arp per_sta_vif na_mcast_to_ucast
 
 	config_add_array hostapd_bss_options
 	config_add_boolean default_disabled
@@ -552,7 +552,7 @@ hostapd_set_bss_options() {
 		bss_load_update_period chan_util_avg_period sae_require_mfp sae_pwe \
 		multi_ap multi_ap_backhaul_ssid multi_ap_backhaul_key skip_inactivity_poll \
 		ppsk airtime_bss_weight airtime_bss_limit airtime_sta_weight \
-		multicast_to_unicast_all proxy_arp per_sta_vif \
+		multicast_to_unicast_all proxy_arp per_sta_vif na_mcast_to_ucast \
 		eap_server eap_user_file ca_cert server_cert private_key private_key_passwd server_id radius_server_clients radius_server_auth_port \
 		vendor_elements fils ocv apup rsn_override
 
@@ -1159,6 +1159,10 @@ hostapd_set_bss_options() {
 	set_default proxy_arp 0
 	if [ "$proxy_arp" -gt 0 ]; then
 		append bss_conf "proxy_arp=$proxy_arp" "$N"
+		set_default na_mcast_to_ucast 1
+	fi
+	if [ "$na_mcast_to_ucast" -gt 0 ]; then
+		append bss_conf "na_mcast_to_ucast=$na_mcast_to_ucast" "$N"
 	fi
 
 	set_default per_sta_vif 0
