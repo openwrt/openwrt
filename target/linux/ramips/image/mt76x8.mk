@@ -373,6 +373,15 @@ define Device/hongdian_h7920-v40
 endef
 TARGET_DEVICES += hongdian_h7920-v40
 
+define Device/hongdian_h8850-v20
+  IMAGE_SIZE := 16064k
+  DEVICE_VENDOR := Hongdian
+  DEVICE_MODEL := H8850
+  DEVICE_VARIANT := v20
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
+endef
+TARGET_DEVICES += hongdian_h8850-v20
+
 define Device/iptime_a3
   IMAGE_SIZE := 7936k
   UIMAGE_NAME := a3
