@@ -773,6 +773,20 @@ function iface_ubus_add(ifname)
 				return 0;
 			},
 		},
+		control: {
+			args: {
+				command: ""
+			},
+			call: (req) => {
+				let iface = wpas.interfaces[ifname];
+				if (!iface)
+					return libubus.STATUS_NOT_FOUND;
+
+				return {
+					result: iface.ctrl(req.args.command)
+				};
+			},
+		},
 	});
 	wpas.data.iface_ubus[ifname] = obj;
 }
