@@ -546,6 +546,30 @@
 			interrupts = <GIC_SPI 44 IRQ_TYPE_LEVEL_HIGH>;
 		};
 
+		npu: npu@1e900000 {
+			compatible = "airoha,an7583-npu";
+			reg = <0x0 0x1e900000 0x0 0x313000>;
+			interrupts = <GIC_SPI 125 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 103 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 109 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 113 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 117 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 134 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 135 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 136 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 137 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 118 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 119 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 120 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 121 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 122 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 123 IRQ_TYPE_LEVEL_HIGH>;
+			memory-region = <&npu_binary>;
+			memory-region-names = "binary";
+
+			status = "disabled";
+		};
+
 		pon_pcs: pcs@1fa08000 {
 			compatible = "airoha,an7583-pcs-pon";
 			reg = <0x0 0x1fa08000 0x0 0x1000>,
@@ -619,6 +643,8 @@
 
 			memory-region = <&qdma0_buf>, <&qdma1_buf>;
 			memory-region-names = "qdma0-buf", "qdma1-buf";
+
+			airoha,npu = <&npu>;
 
 			status = "disabled";
 

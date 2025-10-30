@@ -23,12 +23,6 @@ extern struct rtl83xx_soc_info soc_info;
 extern int rtmdio_930x_read_sds_phy(int sds, int page, int regnum);
 extern int rtmdio_930x_write_sds_phy(int sds, int page, int regnum, u16 val);
 
-extern int rtsds_931x_read(int sds, int page, int regnum);
-extern int rtsds_931x_read_field(int sds, int page, int regnum, int end_bit, int start_bit);
-
-extern int rtsds_931x_write(int sds, int page, int regnum, u16 val);
-extern int rtsds_931x_write_field(int sds, int page, int regnum, int end_bit, int start_bit, u16 val);
-
 #define PHY_PAGE_2	2
 #define PHY_PAGE_4	4
 
@@ -82,6 +76,13 @@ extern int rtsds_931x_write_field(int sds, int page, int regnum, int end_bit, in
 #define RTL930X_SDS_MODE_10GBASER	0x1a
 #define RTL930X_SDS_OFF			0x1f
 #define RTL930X_SDS_MASK		0x1f
+
+/* RTL930X SerDes supports two submodes when mode is USXGMII:
+ * 0x00: USXGMII (aka USXGMII_SX)
+ * 0x02: 10G_QXGMII (aka USXGMII_QX)
+ */
+#define RTL930X_SDS_SUBMODE_USXGMII_SX	0x0
+#define RTL930X_SDS_SUBMODE_USXGMII_QX	0x2
 
 #define RTSDS_930X_PLL_1000		0x1
 #define RTSDS_930X_PLL_10000		0x5
@@ -184,29 +185,9 @@ u16 rtl9300_sds_regs[] = { 0x0194, 0x0194, 0x0194, 0x0194, 0x02a0, 0x02a0, 0x02a
 			   0x02A4, 0x02A4, 0x0198, 0x0198 };
 u8  rtl9300_sds_lsb[]  = { 0, 6, 12, 18, 0, 6, 12, 18, 0, 6, 0, 6};
 
-/* Reset the SerDes by powering it off and set a new operation mode
- * of the SerDes.
- */
-static void rtl9300_sds_rst(int sds_num, u32 mode)
-{
-	pr_info("%s %d\n", __func__, mode);
-	if (sds_num < 0 || sds_num > 11) {
-		pr_err("Wrong SerDes number: %d\n", sds_num);
-		return;
-	}
-
-	sw_w32_mask(RTL930X_SDS_MASK << rtl9300_sds_lsb[sds_num],
-		    RTL930X_SDS_OFF << rtl9300_sds_lsb[sds_num],
-		    rtl9300_sds_regs[sds_num]);
-	mdelay(10);
-
-	sw_w32_mask(RTL930X_SDS_MASK << rtl9300_sds_lsb[sds_num], mode << rtl9300_sds_lsb[sds_num],
-		    rtl9300_sds_regs[sds_num]);
-	mdelay(10);
-
-	pr_debug("%s: 194:%08x 198:%08x 2a0:%08x 2a4:%08x\n", __func__,
-	         sw_r32(0x194), sw_r32(0x198), sw_r32(0x2a0), sw_r32(0x2a4));
-}
+u16 rtl9300_sds_submode_regs[] = { 0x1cc, 0x1cc, 0x2d8, 0x2d8, 0x2d8, 0x2d8,
+				0x2d8, 0x2d8};
+u8  rtl9300_sds_submode_lsb[]  = { 0, 5, 0, 5, 10, 15, 20, 25 };
 
 void rtl9300_sds_set(int sds_num, u32 mode)
 {
@@ -237,6 +218,35 @@ static u32 rtl9300_sds_mode_get(int sds_num)
 	v >>= rtl9300_sds_lsb[sds_num];
 
 	return v & RTL930X_SDS_MASK;
+}
+
+static u32 rtl9300_sds_submode_get(int sds_num)
+{
+	u32 v;
+
+	if (sds_num < 2 || sds_num > 9) {
+		pr_err("%s: unsupported SerDes %d\n", __func__, sds_num);
+		return 0;
+	}
+
+	v = sw_r32(rtl9300_sds_submode_regs[sds_num]);
+	v >>= rtl9300_sds_submode_lsb[sds_num];
+
+	return v & RTL930X_SDS_MASK;
+}
+
+static void rtsds_930x_submode_set(int sds, u32 submode) {
+	if (sds < 2 || sds > 9) {
+		pr_err("%s: submode unsupported on serdes %d\n", __func__, sds);
+		return;
+	}
+	if (submode != RTL930X_SDS_SUBMODE_USXGMII_SX &&
+	    submode != RTL930X_SDS_SUBMODE_USXGMII_QX) {
+		pr_err("%s: unsupported submode 0x%x\n", __func__, submode);
+	}
+	sw_w32_mask(RTL930X_SDS_MASK << rtl9300_sds_submode_lsb[sds-2],
+		submode << rtl9300_sds_submode_lsb[sds-2],
+		rtl9300_sds_submode_regs[sds-2]);
 }
 
 /* Read the link and speed status of the 2 internal SGMII/1000Base-X
@@ -1074,7 +1084,7 @@ static int rtl9300_read_status(struct phy_device *phydev)
 	struct device *dev = &phydev->mdio.dev;
 	int phy_addr = phydev->mdio.addr;
 	struct device_node *dn;
-	u32 sds_num = 0, status, latch_status, mode;
+	u32 sds_num = 0, status, latch_status, latch_status1, mode, submode;
 
 	if (dev->of_node) {
 		dn = dev->of_node;
@@ -1099,6 +1109,14 @@ static int rtl9300_read_status(struct phy_device *phydev)
 		latch_status = rtl9300_sds_field_r(sds_num, 0x4, 1, 2, 2);
 		status |= rtl9300_sds_field_r(sds_num, 0x5, 0, 12, 12);
 		latch_status |= rtl9300_sds_field_r(sds_num, 0x4, 1, 2, 2);
+	} else if (mode == RTL930X_SDS_MODE_USXGMII) {
+		submode = rtl9300_sds_submode_get(sds_num);
+		status = rtl9300_sds_field_r(sds_num, 0x5, 0, 12, 12);
+		latch_status = rtl9300_sds_field_r(sds_num, 0x4, 1, 2, 2);
+		latch_status1 = rtl9300_sds_field_r(sds_num, 0x7, 21, 14, 4);
+		status |= rtl9300_sds_field_r(sds_num, 0x5, 0, 12, 12);
+		latch_status |= rtl9300_sds_field_r(sds_num, 0x4, 1, 2, 2);
+		latch_status1 |= rtl9300_sds_field_r(sds_num, 0x7, 21, 14, 4);
 	} else {
 		status = rtl9300_sds_field_r(sds_num, 0x1, 29, 8, 0);
 		latch_status = rtl9300_sds_field_r(sds_num, 0x1, 30, 8, 0);
@@ -1113,6 +1131,13 @@ static int rtl9300_read_status(struct phy_device *phydev)
 		if (mode == RTL930X_SDS_MODE_10GBASER) {
 			phydev->speed = SPEED_10000;
 			phydev->interface = PHY_INTERFACE_MODE_10GBASER;
+		} else if (mode == RTL930X_SDS_MODE_USXGMII) {
+			phydev->speed = SPEED_10000;
+			if (submode == RTL930X_SDS_SUBMODE_USXGMII_QX) {
+				phydev->interface = PHY_INTERFACE_MODE_10G_QXGMII;
+			} else {
+				phydev->interface = PHY_INTERFACE_MODE_USXGMII;
+			}
 		} else {
 			phydev->speed = SPEED_1000;
 			phydev->interface = PHY_INTERFACE_MODE_1000BASEX;
@@ -1388,6 +1413,45 @@ static void rtsds_930x_force_mode(int sds, phy_interface_t interface)
 	rtl930x_sds_rx_rst(sds, interface);
 }
 
+static void rtsds_930x_mode_set(int sds, phy_interface_t phy_mode)
+{
+	u32 mode;
+	u32 submode;
+
+	if (sds < 0 || sds > 11) {
+		pr_err("%s: invalid SerDes number: %d\n", __func__, sds);
+		return;
+	}
+
+	switch(phy_mode) {
+	case PHY_INTERFACE_MODE_SGMII:
+	case PHY_INTERFACE_MODE_1000BASEX:
+	case PHY_INTERFACE_MODE_2500BASEX:
+	case PHY_INTERFACE_MODE_10GBASER:
+		rtsds_930x_force_mode(sds, phy_mode);
+		return;
+	case PHY_INTERFACE_MODE_10G_QXGMII:
+		mode = RTL930X_SDS_MODE_USXGMII;
+		submode = RTL930X_SDS_SUBMODE_USXGMII_QX;
+		break;
+	default:
+		pr_warn("%s: unsupported mode %s\n", __func__, phy_modes(phy_mode));
+		return;
+	}
+
+	/* SerDes off first. */
+	rtl9300_sds_set(sds, RTL930X_SDS_OFF);
+
+	/* Set the mode. */
+	rtl9300_sds_set(sds, mode);
+
+	/* Set the submode if needed. */
+	if (phy_mode == PHY_INTERFACE_MODE_10G_QXGMII) {
+		rtsds_930x_submode_set(sds, submode);
+	}
+}
+
+
 static void rtl9300_sds_tx_config(int sds, phy_interface_t phy_if)
 {
 	/* parameters: rtl9303_80G_txParam_s2 */
@@ -1415,6 +1479,7 @@ static void rtl9300_sds_tx_config(int sds, phy_interface_t phy_if)
 		break;
 	case PHY_INTERFACE_MODE_10GBASER:
 	case PHY_INTERFACE_MODE_USXGMII:
+	case PHY_INTERFACE_MODE_10G_QXGMII:
 	case PHY_INTERFACE_MODE_XGMII:
 		pre_en = 0;
 		pre_amp = 0;
@@ -2256,6 +2321,7 @@ static int rtl9300_sds_sym_err_reset(int sds_num, phy_interface_t phy_mode)
 
 	case PHY_INTERFACE_MODE_1000BASEX:
 	case PHY_INTERFACE_MODE_SGMII:
+	case PHY_INTERFACE_MODE_10G_QXGMII:
 		rtl9300_sds_field_w(sds_num, 0x1, 24, 2, 0, 0);
 		rtl9300_sds_field_w(sds_num, 0x1, 3, 15, 8, 0);
 		rtl9300_sds_field_w(sds_num, 0x1, 2, 15, 0, 0);
@@ -2275,6 +2341,7 @@ static u32 rtl9300_sds_sym_err_get(int sds_num, phy_interface_t phy_mode)
 
 	switch (phy_mode) {
 	case PHY_INTERFACE_MODE_XGMII:
+	case PHY_INTERFACE_MODE_10G_QXGMII:
 		break;
 
 	case PHY_INTERFACE_MODE_1000BASEX:
@@ -2313,8 +2380,9 @@ static int rtl9300_sds_check_calibration(int sds_num, phy_interface_t phy_mode)
 		}
 		break;
 	case PHY_INTERFACE_MODE_10GBASER:
+	case PHY_INTERFACE_MODE_10G_QXGMII:
 		if (errors2 > 0) {
-			pr_info("%s 10GBASER error rate too high\n", __func__);
+			pr_info("%s: %s error rate too high\n", __func__, phy_modes(phy_mode));
 			return 1;
 		}
 		break;
@@ -2360,7 +2428,7 @@ int rtl9300_serdes_setup(int port, int sds_num, phy_interface_t phy_mode)
 	int calib_tries = 0;
 
 	/* Turn Off Serdes */
-	rtl9300_sds_rst(sds_num, RTL930X_SDS_OFF);
+	rtl9300_sds_set(sds_num, RTL930X_SDS_OFF);
 
 	/* Apply serdes patches */
 	rtsds_930x_patch_serdes(sds_num, phy_mode);
@@ -2384,7 +2452,7 @@ int rtl9300_serdes_setup(int port, int sds_num, phy_interface_t phy_mode)
 	sw_w32_mask(1, 0, RTL930X_MAC_FORCE_MODE_CTRL + 4 * port);
 
 	/* Enable SDS in desired mode */
-	rtsds_930x_force_mode(sds_num, phy_mode);
+	rtsds_930x_mode_set(sds_num, phy_mode);
 
 	/* Enable Fiber RX */
 	rtl9300_sds_field_w(sds_num, 0x20, 2, 12, 12, 0);
@@ -2571,6 +2639,70 @@ static const sds_config rtsds_930x_cfg_10g_2500bx_odd[] =
 	{0x2D, 0x13, 0x3C87}, {0x2D, 0x14, 0x1808},
 };
 
+sds_config rtsds_930x_cfg_usxgmii_qx_even[] =
+{
+    {0x06, 0x00, 0x0000}, {0x06, 0x0D, 0x0F00}, {0x06, 0x0E, 0x055A}, {0x06, 0x1D, 0x0600},
+    {0x07, 0x10, 0x6003}, {0x06, 0x13, 0x68C1}, {0x06, 0x14, 0xF021}, {0x07, 0x06, 0x1401},
+    {0x21, 0x03, 0x8206}, {0x21, 0x05, 0x40B0}, {0x21, 0x06, 0x0010}, {0x21, 0x07, 0xF09F},
+    {0x21, 0x0C, 0x0007}, {0x21, 0x0D, 0x6009}, {0x21, 0x0E, 0x0000}, {0x21, 0x0F, 0x0008},
+    {0x2E, 0x00, 0xA668}, {0x2E, 0x01, 0x2088}, {0x2E, 0x02, 0xD020}, {0x2E, 0x06, 0xC000},
+    {0x2E, 0x0B, 0x1892}, {0x2E, 0x0F, 0xFFDF}, {0x2E, 0x11, 0x8280}, {0x2E, 0x12, 0x0484},
+    {0x2E, 0x13, 0x027F}, {0x2E, 0x14, 0x1311}, {0x2E, 0x17, 0xA100}, {0x2E, 0x1A, 0x0001},
+    {0x2E, 0x1C, 0x0400}, {0x2F, 0x01, 0x0300}, {0x2F, 0x02, 0x1017}, {0x2F, 0x03, 0xFFDF},
+    {0x2F, 0x05, 0x7F7C}, {0x2F, 0x07, 0x8104}, {0x2F, 0x08, 0x0001}, {0x2F, 0x09, 0xFFD4},
+    {0x2F, 0x0A, 0x7C2F}, {0x2F, 0x0E, 0x003F}, {0x2F, 0x0F, 0x0121}, {0x2F, 0x10, 0x0020},
+    {0x2F, 0x11, 0x8840},
+    {0x2B, 0x13, 0x0050}, {0x2B, 0x18, 0x8E88}, {0x2B, 0x19, 0x4902}, {0x2B, 0x1D, 0x2501},
+    {0x2D, 0x13, 0x0050}, {0x2D, 0x18, 0x8E88}, {0x2D, 0x19, 0x4902}, {0x2D, 0x1D, 0x2641},
+    {0x2F, 0x13, 0x0050}, {0x2F, 0x18, 0x8E88}, {0x2F, 0x19, 0x4902}, {0x2F, 0x1D, 0x66E1},
+    /* enable IEEE 802.3az EEE */
+    {0x06, 0x03, 0xc45c},
+};
+
+sds_config rtsds_930x_cfg_usxgmii_qx_odd[] =
+{
+    {0x06, 0x00, 0x0000}, {0x06, 0x0D, 0x0F00}, {0x06, 0x0E, 0x055A}, {0x06, 0x1D, 0x0600},
+    {0x07, 0x10, 0x6003}, {0x06, 0x13, 0x68C1}, {0x06, 0x14, 0xF021}, {0x07, 0x06, 0x1401},
+    {0x21, 0x03, 0x8206}, {0x21, 0x05, 0x40B0}, {0x21, 0x06, 0x0010}, {0x21, 0x07, 0xF09F},
+    {0x21, 0x0A, 0x0003}, {0x21, 0x0B, 0x0005}, {0x21, 0x0C, 0x0007}, {0x21, 0x0D, 0x6009},
+    {0x21, 0x0E, 0x0000}, {0x21, 0x0F, 0x0008},
+    {0x2E, 0x00, 0xA668}, {0x2E, 0x02, 0xD020}, {0x2E, 0x06, 0xC000}, {0x2E, 0x0B, 0x1892},
+    {0x2E, 0x0F, 0xFFDF}, {0x2E, 0x11, 0x8280}, {0x2E, 0x12, 0x0484}, {0x2E, 0x13, 0x027F},
+    {0x2E, 0x14, 0x1311}, {0x2E, 0x17, 0xA100}, {0x2E, 0x1A, 0x0001}, {0x2E, 0x1C, 0x0400},
+    {0x2F, 0x00, 0x820F}, {0x2F, 0x01, 0x0300}, {0x2F, 0x02, 0x1017}, {0x2F, 0x03, 0xFFDF},
+    {0x2F, 0x05, 0x7F7C}, {0x2F, 0x07, 0x8104}, {0x2F, 0x08, 0x0001}, {0x2F, 0x09, 0xFFD4},
+    {0x2F, 0x0A, 0x7C2F}, {0x2F, 0x0E, 0x003F}, {0x2F, 0x0F, 0x0121}, {0x2F, 0x10, 0x0020},
+    {0x2F, 0x11, 0x8840},
+    {0x2B, 0x13, 0x3D87}, {0x2B, 0x14, 0x3108},
+    {0x2D, 0x13, 0x3C87}, {0x2D, 0x14, 0x1808},
+    /* enable IEEE 802.3az EEE */
+    {0x06, 0x03, 0xc45c},
+};
+
+static void rtsds_930x_usxgmii_config(int sds, int nway_en, u32 opcode, u32 am_period, u32 all_am_markers, u32 an_table, u32 sync_bit)
+{
+	rtl9300_sds_field_w(sds, 0x7, 0x11, 0, 0, nway_en);
+	rtl9300_sds_field_w(sds, 0x7, 0x11, 1, 1, nway_en);
+	rtl9300_sds_field_w(sds, 0x7, 0x11, 2, 2, nway_en);
+	rtl9300_sds_field_w(sds, 0x7, 0x11, 3, 3, nway_en);
+	rtl9300_sds_field_w(sds, 0x6, 0x12, 15, 0, am_period);
+	rtl9300_sds_field_w(sds, 0x6, 0x13, 7,  0, all_am_markers);
+	rtl9300_sds_field_w(sds, 0x6, 0x13, 15, 8, all_am_markers);
+	rtl9300_sds_field_w(sds, 0x6, 0x14, 7,  0, all_am_markers);
+	rtl9300_sds_field_w(sds, 0x6, 0x14, 15, 8, all_am_markers);
+	rtl9300_sds_field_w(sds, 0x6, 0x15, 7,  0, all_am_markers);
+	rtl9300_sds_field_w(sds, 0x6, 0x15, 15, 8, all_am_markers);
+	rtl9300_sds_field_w(sds, 0x6, 0x16, 7,  0, all_am_markers);
+	rtl9300_sds_field_w(sds, 0x6, 0x16, 15, 8, all_am_markers);
+	rtl9300_sds_field_w(sds, 0x6, 0x17, 7,  0, all_am_markers);
+	rtl9300_sds_field_w(sds, 0x6, 0x17, 15, 8, all_am_markers);
+	rtl9300_sds_field_w(sds, 0x6, 0x18, 7,  0, all_am_markers);
+	rtl9300_sds_field_w(sds, 0x6, 0x18, 15, 8, all_am_markers);
+	rtl9300_sds_field_w(sds, 0x7, 0x10, 7, 0, opcode);
+	rtl9300_sds_field_w(sds, 0x6, 0xe, 10, 10, an_table);
+	rtl9300_sds_field_w(sds, 0x6, 0x1d, 11, 10, sync_bit);
+}
+
 static void rtsds_930x_patch_serdes(int sds, phy_interface_t mode)
 {
 	const bool even_sds = ((sds & 1) == 0);
@@ -2600,6 +2732,16 @@ static void rtsds_930x_patch_serdes(int sds, phy_interface_t mode)
 		}
 		break;
 
+	case PHY_INTERFACE_MODE_10G_QXGMII:
+		if (even_sds) {
+			config = rtsds_930x_cfg_usxgmii_qx_even;
+			count = ARRAY_SIZE(rtsds_930x_cfg_usxgmii_qx_even);
+		} else {
+			config = rtsds_930x_cfg_usxgmii_qx_odd;
+			count = ARRAY_SIZE(rtsds_930x_cfg_usxgmii_qx_odd);
+		}
+		break;
+
 	default:
 		pr_warn("%s: unsupported mode %s on serdes %d\n", __func__, phy_modes(mode), sds);
 		return;
@@ -2609,6 +2751,11 @@ static void rtsds_930x_patch_serdes(int sds, phy_interface_t mode)
 		rtmdio_930x_write_sds_phy(sds, config[i].page,
 					  config[i].reg,
 					  config[i].data);
+	}
+
+	if (mode == PHY_INTERFACE_MODE_10G_QXGMII) {
+		/* Default configuration */
+		rtsds_930x_usxgmii_config(sds, 1, 0xaa, 0x5078, 0, 1, 0x1);
 	}
 }
 
@@ -2635,545 +2782,6 @@ int rtl9300_sds_cmu_band_get(int sds)
 	}
 
 	return cmu_band;
-}
-
-static void rtl931x_sds_rst(u32 sds)
-{
-	u32 o, v, o_mode;
-	int shift = ((sds & 0x3) << 3);
-
-	/* TODO: We need to lock this! */
-
-	o = sw_r32(RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
-	v = o | BIT(sds);
-	sw_w32(v, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
-
-	o_mode = sw_r32(RTL931X_SERDES_MODE_CTRL + 4 * (sds >> 2));
-	v = BIT(7) | 0x1F;
-	sw_w32_mask(0xff << shift, v << shift, RTL931X_SERDES_MODE_CTRL + 4 * (sds >> 2));
-	sw_w32(o_mode, RTL931X_SERDES_MODE_CTRL + 4 * (sds >> 2));
-
-	sw_w32(o, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
-}
-
-static void rtl931x_symerr_clear(u32 sds, phy_interface_t mode)
-{
-
-	switch (mode) {
-	case PHY_INTERFACE_MODE_NA:
-		break;
-	case PHY_INTERFACE_MODE_XGMII:
-		for (int i = 0; i < 4; ++i) {
-			rtsds_931x_write_field(sds, 0x101, 24,  2, 0, i);
-			rtsds_931x_write_field(sds, 0x101,  3, 15, 8, 0x0);
-			rtsds_931x_write_field(sds, 0x101,  2, 15, 0, 0x0);
-		}
-
-		for (int i = 0; i < 4; ++i) {
-			rtsds_931x_write_field(sds, 0x201, 24,  2, 0, i);
-			rtsds_931x_write_field(sds, 0x201,  3, 15, 8, 0x0);
-			rtsds_931x_write_field(sds, 0x201,  2, 15, 0, 0x0);
-		}
-
-		rtsds_931x_write_field(sds, 0x101, 0, 15, 0, 0x0);
-		rtsds_931x_write_field(sds, 0x101, 1, 15, 8, 0x0);
-		rtsds_931x_write_field(sds, 0x201, 0, 15, 0, 0x0);
-		rtsds_931x_write_field(sds, 0x201, 1, 15, 8, 0x0);
-		break;
-	default:
-		break;
-	}
-
-	return;
-}
-
-void rtl931x_sds_fiber_disable(u32 sds)
-{
-	u32 v = 0x3F;
-
-	rtsds_931x_write_field(sds, 0x1F, 0x9, 11, 6, v);
-}
-
-static void rtl931x_sds_fiber_mode_set(u32 sds, phy_interface_t mode)
-{
-	u32 val;
-
-	/* clear symbol error count before changing mode */
-	rtl931x_symerr_clear(sds, mode);
-
-	val = 0x9F;
-	sw_w32(val, RTL931X_SERDES_MODE_CTRL + 4 * (sds >> 2));
-
-	switch (mode) {
-	case PHY_INTERFACE_MODE_SGMII:
-		val = 0x5;
-		break;
-
-	case PHY_INTERFACE_MODE_1000BASEX:
-		/* serdes mode FIBER1G */
-		val = 0x9;
-		break;
-
-	case PHY_INTERFACE_MODE_10GBASER:
-	case PHY_INTERFACE_MODE_10GKR:
-		val = 0x35;
-		break;
-/*	case MII_10GR1000BX_AUTO:
-		val = 0x39;
-		break; */
-
-
-	case PHY_INTERFACE_MODE_USXGMII:
-		val = 0x1B;
-		break;
-	default:
-		val = 0x25;
-	}
-
-	pr_info("%s writing analog SerDes Mode value %02x\n", __func__, val);
-	rtsds_931x_write_field(sds, 0x1F, 0x9, 11, 6, val);
-
-	return;
-}
-
-static int rtl931x_sds_cmu_page_get(phy_interface_t mode)
-{
-	switch (mode) {
-	case PHY_INTERFACE_MODE_SGMII:
-	case PHY_INTERFACE_MODE_1000BASEX:	/* MII_1000BX_FIBER / 100BX_FIBER / 1000BX100BX_AUTO */
-		return 0x24;
-	case PHY_INTERFACE_MODE_2500BASEX:	/* MII_2500Base_X: */
-		return 0x28;
-/*	case MII_HISGMII_5G: */
-/*		return 0x2a; */
-	case PHY_INTERFACE_MODE_QSGMII:
-		return 0x2a;			/* Code also has 0x34 */
-	case PHY_INTERFACE_MODE_XAUI:		/* MII_RXAUI_LITE: */
-		return 0x2c;
-	case PHY_INTERFACE_MODE_XGMII:		/* MII_XSGMII */
-	case PHY_INTERFACE_MODE_10GKR:
-	case PHY_INTERFACE_MODE_10GBASER:	/* MII_10GR */
-		return 0x2e;
-	default:
-		return -1;
-	}
-
-	return -1;
-}
-
-static void rtl931x_cmu_type_set(u32 sds, phy_interface_t mode, int chiptype)
-{
-	int cmu_type = 0; /* Clock Management Unit */
-	u32 cmu_page = 0;
-	u32 frc_cmu_spd;
-	u32 evenSds;
-	u32 lane, frc_lc_mode_bitnum, frc_lc_mode_val_bitnum;
-
-	switch (mode) {
-	case PHY_INTERFACE_MODE_NA:
-	case PHY_INTERFACE_MODE_10GKR:
-	case PHY_INTERFACE_MODE_XGMII:
-	case PHY_INTERFACE_MODE_10GBASER:
-	case PHY_INTERFACE_MODE_USXGMII:
-		return;
-
-/*	case MII_10GR1000BX_AUTO:
-		if (chiptype)
-			rtsds_931x_write_field(sds, 0x24, 0xd, 14, 14, 0);
-		return; */
-
-	case PHY_INTERFACE_MODE_QSGMII:
-		cmu_type = 1;
-		frc_cmu_spd = 0;
-		break;
-
-	case PHY_INTERFACE_MODE_1000BASEX:
-		cmu_type = 1;
-		frc_cmu_spd = 0;
-		break;
-
-/*	case MII_1000BX100BX_AUTO:
-		cmu_type = 1;
-		frc_cmu_spd = 0;
-		break; */
-
-	case PHY_INTERFACE_MODE_SGMII:
-		cmu_type = 1;
-		frc_cmu_spd = 0;
-		break;
-
-	case PHY_INTERFACE_MODE_2500BASEX:
-		cmu_type = 1;
-		frc_cmu_spd = 1;
-		break;
-
-	default:
-		pr_info("SerDes %d mode is invalid\n", sds);
-		return;
-	}
-
-	if (cmu_type == 1)
-		cmu_page = rtl931x_sds_cmu_page_get(mode);
-
-	lane = sds % 2;
-
-	if (!lane) {
-		frc_lc_mode_bitnum = 4;
-		frc_lc_mode_val_bitnum = 5;
-	} else {
-		frc_lc_mode_bitnum = 6;
-		frc_lc_mode_val_bitnum = 7;
-	}
-
-	evenSds = sds - lane;
-
-	pr_info("%s: cmu_type %0d cmu_page %x frc_cmu_spd %d lane %d sds %d\n",
-	        __func__, cmu_type, cmu_page, frc_cmu_spd, lane, sds);
-
-	if (cmu_type == 1) {
-		pr_info("%s A CMU page 0x28 0x7 %08x\n", __func__, rtsds_931x_read(sds, 0x28, 0x7));
-		rtsds_931x_write_field(sds, cmu_page, 0x7, 15, 15, 0);
-		pr_info("%s B CMU page 0x28 0x7 %08x\n", __func__, rtsds_931x_read(sds, 0x28, 0x7));
-		if (chiptype) {
-			rtsds_931x_write_field(sds, cmu_page, 0xd, 14, 14, 0);
-		}
-
-		rtsds_931x_write_field(evenSds, 0x20, 0x12, 3, 2, 0x3);
-		rtsds_931x_write_field(evenSds, 0x20, 0x12, frc_lc_mode_bitnum, frc_lc_mode_bitnum, 1);
-		rtsds_931x_write_field(evenSds, 0x20, 0x12, frc_lc_mode_val_bitnum, frc_lc_mode_val_bitnum, 0);
-		rtsds_931x_write_field(evenSds, 0x20, 0x12, 12, 12, 1);
-		rtsds_931x_write_field(evenSds, 0x20, 0x12, 15, 13, frc_cmu_spd);
-	}
-
-	pr_info("%s CMU page 0x28 0x7 %08x\n", __func__, rtsds_931x_read(sds, 0x28, 0x7));
-	return;
-}
-
-static void rtl931x_sds_rx_rst(u32 sds)
-{
-	if (sds < 2)
-		return;
-
-	rtsds_931x_write(sds, 0x2e, 0x12, 0x2740);
-	rtsds_931x_write(sds, 0x2f, 0x0, 0x0);
-	rtsds_931x_write(sds, 0x2f, 0x2, 0x2010);
-	rtsds_931x_write(sds, 0x20, 0x0, 0xc10);
-
-	rtsds_931x_write(sds, 0x2e, 0x12, 0x27c0);
-	rtsds_931x_write(sds, 0x2f, 0x0, 0xc000);
-	rtsds_931x_write(sds, 0x2f, 0x2, 0x6010);
-	rtsds_931x_write(sds, 0x20, 0x0, 0xc30);
-
-	mdelay(50);
-}
-
-// Currently not used
-// static void rtl931x_sds_disable(u32 sds)
-// {
-// 	u32 v = 0x1f;
-
-// 	v |= BIT(7);
-// 	sw_w32(v, RTL931X_SERDES_MODE_CTRL + (sds >> 2) * 4);
-// }
-
-static void rtl931x_sds_mii_mode_set(u32 sds, phy_interface_t mode)
-{
-	u32 val;
-
-	switch (mode) {
-	case PHY_INTERFACE_MODE_QSGMII:
-		val = 0x6;
-		break;
-	case PHY_INTERFACE_MODE_XGMII:
-		val = 0x10; /* serdes mode XSGMII */
-		break;
-	case PHY_INTERFACE_MODE_USXGMII:
-	case PHY_INTERFACE_MODE_2500BASEX:
-		val = 0xD;
-		break;
-	case PHY_INTERFACE_MODE_SGMII:
-		val = 0x2;
-		break;
-	default:
-		return;
-	}
-
-	val |= (1 << 7);
-
-	sw_w32(val, RTL931X_SERDES_MODE_CTRL + 4 * (sds >> 2));
-}
-
-static sds_config sds_config_10p3125g_type1[] = {
-	{ 0x2E, 0x00, 0x0107 }, { 0x2E, 0x01, 0x01A3 }, { 0x2E, 0x02, 0x6A24 },
-	{ 0x2E, 0x03, 0xD10D }, { 0x2E, 0x04, 0x8000 }, { 0x2E, 0x05, 0xA17E },
-	{ 0x2E, 0x06, 0xE31D }, { 0x2E, 0x07, 0x800E }, { 0x2E, 0x08, 0x0294 },
-	{ 0x2E, 0x09, 0x0CE4 }, { 0x2E, 0x0A, 0x7FC8 }, { 0x2E, 0x0B, 0xE0E7 },
-	{ 0x2E, 0x0C, 0x0200 }, { 0x2E, 0x0D, 0xDF80 }, { 0x2E, 0x0E, 0x0000 },
-	{ 0x2E, 0x0F, 0x1FC2 }, { 0x2E, 0x10, 0x0C3F }, { 0x2E, 0x11, 0x0000 },
-	{ 0x2E, 0x12, 0x27C0 }, { 0x2E, 0x13, 0x7E1D }, { 0x2E, 0x14, 0x1300 },
-	{ 0x2E, 0x15, 0x003F }, { 0x2E, 0x16, 0xBE7F }, { 0x2E, 0x17, 0x0090 },
-	{ 0x2E, 0x18, 0x0000 }, { 0x2E, 0x19, 0x4000 }, { 0x2E, 0x1A, 0x0000 },
-	{ 0x2E, 0x1B, 0x8000 }, { 0x2E, 0x1C, 0x011F }, { 0x2E, 0x1D, 0x0000 },
-	{ 0x2E, 0x1E, 0xC8FF }, { 0x2E, 0x1F, 0x0000 }, { 0x2F, 0x00, 0xC000 },
-	{ 0x2F, 0x01, 0xF000 }, { 0x2F, 0x02, 0x6010 }, { 0x2F, 0x12, 0x0EE7 },
-	{ 0x2F, 0x13, 0x0000 }
-};
-
-static sds_config sds_config_10p3125g_cmu_type1[] = {
-	{ 0x2F, 0x03, 0x4210 }, { 0x2F, 0x04, 0x0000 }, { 0x2F, 0x05, 0x0019 },
-	{ 0x2F, 0x06, 0x18A6 }, { 0x2F, 0x07, 0x2990 }, { 0x2F, 0x08, 0xFFF4 },
-	{ 0x2F, 0x09, 0x1F08 }, { 0x2F, 0x0A, 0x0000 }, { 0x2F, 0x0B, 0x8000 },
-	{ 0x2F, 0x0C, 0x4224 }, { 0x2F, 0x0D, 0x0000 }, { 0x2F, 0x0E, 0x0000 },
-	{ 0x2F, 0x0F, 0xA470 }, { 0x2F, 0x10, 0x8000 }, { 0x2F, 0x11, 0x037B }
-};
-
-void rtl931x_sds_init(u32 sds, phy_interface_t mode)
-{
-	u32 board_sds_tx_type1[] = {
-		0x01c3, 0x01c3, 0x01c3, 0x01a3, 0x01a3, 0x01a3,
-		0x0143, 0x0143, 0x0143, 0x0143, 0x0163, 0x0163,
-	};
-	u32 board_sds_tx[] = {
-		0x1a00, 0x1a00, 0x0200, 0x0200, 0x0200, 0x0200,
-		0x01a3, 0x01a3, 0x01a3, 0x01a3, 0x01e3, 0x01e3
-	};
-	u32 board_sds_tx2[] = {
-		0x0dc0, 0x01c0, 0x0200, 0x0180, 0x0160, 0x0123,
-		0x0123, 0x0163, 0x01a3, 0x01a0, 0x01c3, 0x09c3,
-	};
-	u32 ori, model_info, val;
-	int chiptype = 0;
-
-	if (sds > 13)
-		return;
-
-	pr_info("%s: set sds %d to mode %d\n", __func__, sds, mode);
-	val = rtsds_931x_read_field(sds, 0x1F, 0x9, 11, 6);
-
-	pr_info("%s: fibermode %08X stored mode 0x%x", __func__,
-			rtsds_931x_read(sds, 0x1f, 0x9), val);
-	pr_info("%s: SGMII mode %08X in 0x24 0x9", __func__,
-			rtsds_931x_read(sds, 0x24, 0x9));
-	pr_info("%s: CMU mode %08X stored even SDS %d", __func__,
-			rtsds_931x_read(sds & ~1, 0x20, 0x12), sds & ~1);
-	pr_info("%s: serdes_mode_ctrl %08X", __func__,  RTL931X_SERDES_MODE_CTRL + 4 * (sds >> 2));
-	pr_info("%s CMU page 0x24 0x7 %08x\n", __func__, rtsds_931x_read(sds, 0x24, 0x7));
-	pr_info("%s CMU page 0x26 0x7 %08x\n", __func__, rtsds_931x_read(sds, 0x26, 0x7));
-	pr_info("%s CMU page 0x28 0x7 %08x\n", __func__, rtsds_931x_read(sds, 0x28, 0x7));
-	pr_info("%s XSG page 0x0 0xe %08x\n", __func__, rtsds_931x_read(sds, 0x100, 0xe));
-	pr_info("%s XSG2 page 0x0 0xe %08x\n", __func__, rtsds_931x_read(sds, 0x200, 0xe));
-
-	model_info = sw_r32(RTL93XX_MODEL_NAME_INFO);
-	if ((model_info >> 4) & 0x1) {
-		pr_info("detected chiptype 1\n");
-		chiptype = 1;
-	} else {
-		pr_info("detected chiptype 0\n");
-	}
-
-	pr_info("%s: 2.5gbit %08X", __func__,
-	        rtsds_931x_read(sds, 0x101, 0x14));
-
-	pr_info("%s: RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR 0x%08X\n", __func__, sw_r32(RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR));
-	ori = sw_r32(RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
-	val = ori | (1 << sds);
-	sw_w32(val, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
-
-	switch (mode) {
-	case PHY_INTERFACE_MODE_NA:
-		break;
-
-	case PHY_INTERFACE_MODE_XGMII: /* MII_XSGMII */
-
-		if (chiptype) {
-			/* fifo inv clk */
-			rtsds_931x_write_field(sds, 0x101, 0x1, 7, 4, 0xf);
-			rtsds_931x_write_field(sds, 0x101, 0x1, 3, 0, 0xf);
-
-			rtsds_931x_write_field(sds, 0x201, 0x1, 7, 4, 0xf);
-			rtsds_931x_write_field(sds, 0x201, 0x1, 3, 0, 0xf);
-
-		}
-
-		rtsds_931x_write_field(sds, 0x100, 0xE, 12, 12, 1);
-		rtsds_931x_write_field(sds, 0x200, 0xE, 12, 12, 1);
-		break;
-
-	case PHY_INTERFACE_MODE_USXGMII: /* MII_USXGMII_10GSXGMII/10GDXGMII/10GQXGMII: */
-		u32 op_code = 0x6003;
-		u32 evenSds;
-
-		if (chiptype) {
-			rtsds_931x_write_field(sds, 0x6, 0x2, 12, 12, 1);
-
-			for (int i = 0; i < sizeof(sds_config_10p3125g_type1) / sizeof(sds_config); ++i) {
-				rtsds_931x_write(sds, sds_config_10p3125g_type1[i].page - 0x4, sds_config_10p3125g_type1[i].reg, sds_config_10p3125g_type1[i].data);
-			}
-
-			evenSds = sds & ~1;
-
-			for (int i = 0; i < sizeof(sds_config_10p3125g_cmu_type1) / sizeof(sds_config); ++i) {
-				rtsds_931x_write(evenSds,
-				                      sds_config_10p3125g_cmu_type1[i].page - 0x4, sds_config_10p3125g_cmu_type1[i].reg, sds_config_10p3125g_cmu_type1[i].data);
-			}
-
-			rtsds_931x_write_field(sds, 0x6, 0x2, 12, 12, 0);
-		} else {
-
-			rtsds_931x_write_field(sds, 0x2e, 0xd, 6, 0, 0x0);
-			rtsds_931x_write_field(sds, 0x2e, 0xd, 7, 7, 0x1);
-
-			rtsds_931x_write_field(sds, 0x2e, 0x1c, 5, 0, 0x1E);
-			rtsds_931x_write_field(sds, 0x2e, 0x1d, 11, 0, 0x00);
-			rtsds_931x_write_field(sds, 0x2e, 0x1f, 11, 0, 0x00);
-			rtsds_931x_write_field(sds, 0x2f, 0x0, 11, 0, 0x00);
-			rtsds_931x_write_field(sds, 0x2f, 0x1, 11, 0, 0x00);
-
-			rtsds_931x_write_field(sds, 0x2e, 0xf, 12, 6, 0x7F);
-			rtsds_931x_write(sds, 0x2f, 0x12, 0xaaa);
-
-			rtl931x_sds_rx_rst(sds);
-
-			rtsds_931x_write(sds, 0x7, 0x10, op_code);
-			rtsds_931x_write(sds, 0x6, 0x1d, 0x0480);
-			rtsds_931x_write(sds, 0x6, 0xe, 0x0400);
-		}
-		break;
-
-	case PHY_INTERFACE_MODE_10GBASER: /* MII_10GR / MII_10GR1000BX_AUTO: */
-	                                  /* configure 10GR fiber mode=1 */
-		rtsds_931x_write_field(sds, 0x1f, 0xb, 1, 1, 1);
-
-		/* init fiber_1g */
-		rtsds_931x_write_field(sds, 0x103, 0x13, 15, 14, 0);
-
-		rtsds_931x_write_field(sds, 0x102, 0x0, 12, 12, 1);
-		rtsds_931x_write_field(sds, 0x102, 0x0, 6, 6, 1);
-		rtsds_931x_write_field(sds, 0x102, 0x0, 13, 13, 0);
-
-		/* init auto */
-		rtsds_931x_write_field(sds, 0x1f, 13, 15, 0, 0x109e);
-		rtsds_931x_write_field(sds, 0x1f, 0x6, 14, 10, 0x8);
-		rtsds_931x_write_field(sds, 0x1f, 0x7, 10, 4, 0x7f);
-		break;
-
-	case PHY_INTERFACE_MODE_1000BASEX: /* MII_1000BX_FIBER */
-		rtsds_931x_write_field(sds, 0x103, 0x13, 15, 14, 0);
-
-		rtsds_931x_write_field(sds, 0x102, 0x0, 12, 12, 1);
-		rtsds_931x_write_field(sds, 0x102, 0x0, 6, 6, 1);
-		rtsds_931x_write_field(sds, 0x102, 0x0, 13, 13, 0);
-		break;
-
-	case PHY_INTERFACE_MODE_SGMII:
-		rtsds_931x_write_field(sds, 0x24, 0x9, 15, 15, 0);
-		break;
-
-	case PHY_INTERFACE_MODE_2500BASEX:
-		rtsds_931x_write_field(sds, 0x101, 0x14, 8, 8, 1);
-		break;
-
-	case PHY_INTERFACE_MODE_QSGMII:
-	default:
-		pr_info("%s: PHY mode %s not supported by SerDes %d\n",
-		        __func__, phy_modes(mode), sds);
-		return;
-	}
-
-	rtl931x_cmu_type_set(sds, mode, chiptype);
-
-	if (sds >= 2 && sds <= 13) {
-		if (chiptype)
-			rtsds_931x_write(sds, 0x2E, 0x1, board_sds_tx_type1[sds - 2]);
-		else {
-			val = 0xa0000;
-			sw_w32(val, RTL93XX_CHIP_INFO);
-			val = sw_r32(RTL93XX_CHIP_INFO);
-			if (val & BIT(28)) /* consider 9311 etc. RTL9313_CHIP_ID == HWP_CHIP_ID(unit)) */
-			{
-				rtsds_931x_write(sds, 0x2E, 0x1, board_sds_tx2[sds - 2]);
-			} else {
-				rtsds_931x_write(sds, 0x2E, 0x1, board_sds_tx[sds - 2]);
-			}
-			val = 0;
-			sw_w32(val, RTL93XX_CHIP_INFO);
-		}
-	}
-
-	val = ori & ~BIT(sds);
-	sw_w32(val, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR);
-	pr_debug("%s: RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR 0x%08X\n", __func__, sw_r32(RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR));
-
-	if (mode == PHY_INTERFACE_MODE_XGMII ||
-	    mode == PHY_INTERFACE_MODE_QSGMII ||
-	    mode == PHY_INTERFACE_MODE_SGMII ||
-	    mode == PHY_INTERFACE_MODE_USXGMII) {
-		if (mode == PHY_INTERFACE_MODE_XGMII)
-			rtl931x_sds_mii_mode_set(sds, mode);
-		else
-			rtl931x_sds_fiber_mode_set(sds, mode);
-	}
-}
-
-int rtl931x_sds_cmu_band_set(int sds, bool enable, u32 band, phy_interface_t mode)
-{
-	int page = rtl931x_sds_cmu_page_get(mode);
-
-	sds -= (sds % 2);
-	sds = sds & ~1;
-	page += 1;
-
-	if (enable) {
-		rtsds_931x_write_field(sds, page, 0x7, 13, 13, 0);
-		rtsds_931x_write_field(sds, page, 0x7, 11, 11, 0);
-	} else {
-		rtsds_931x_write_field(sds, page, 0x7, 13, 13, 0);
-		rtsds_931x_write_field(sds, page, 0x7, 11, 11, 0);
-	}
-
-	rtsds_931x_write_field(sds, page, 0x7, 4, 0, band);
-
-	rtl931x_sds_rst(sds);
-
-	return 0;
-}
-
-int rtl931x_sds_cmu_band_get(int sds, phy_interface_t mode)
-{
-	int page = rtl931x_sds_cmu_page_get(mode);
-	u32 band;
-
-	sds -= (sds % 2);
-	page += 1;
-	rtsds_931x_write(sds, 0x1f, 0x02, 73);
-
-	rtsds_931x_write_field(sds, page, 0x5, 15, 15, 1);
-	band = rtsds_931x_read_field(sds, 0x1f, 0x15, 8, 3);
-	pr_info("%s band is: %d\n", __func__, band);
-
-	return band;
-}
-
-
-int rtl931x_link_sts_get(u32 sds)
-{
-	u32 sts, sts1, latch_sts, latch_sts1;
-	if (0){
-		sts = rtsds_931x_read_field(sds, 0x101, 29, 8, 0);
-		sts1 = rtsds_931x_read_field(sds, 0x201, 29, 8, 0);
-		latch_sts = rtsds_931x_read_field(sds, 0x101, 30, 8, 0);
-		latch_sts1 = rtsds_931x_read_field(sds, 0x201, 30, 8, 0);
-	} else {
-		sts = rtsds_931x_read_field(sds, 0x5, 0, 12, 12);
-		latch_sts = rtsds_931x_read_field(sds, 0x4, 1, 2, 2);
-		latch_sts1 = rtsds_931x_read_field(sds, 0x102, 1, 2, 2);
-		sts1 = rtsds_931x_read_field(sds, 0x102, 1, 2, 2);
-	}
-
-	pr_info("%s: serdes %d sts %d, sts1 %d, latch_sts %d, latch_sts1 %d\n", __func__,
-		sds, sts, sts1, latch_sts, latch_sts1);
-
-	return sts1;
 }
 
 static int rtl8214fc_sfp_insert(void *upstream, const struct sfp_eeprom_id *id)

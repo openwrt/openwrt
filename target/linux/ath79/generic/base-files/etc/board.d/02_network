@@ -737,7 +737,6 @@ ath79_setup_macs()
 	engenius,esr1200|\
 	engenius,esr1750|\
 	engenius,esr900)
-		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
 		;;
 	engenius,ews511ap)
@@ -745,9 +744,6 @@ ath79_setup_macs()
 		eth1_mac=$(macaddr_add "$lan_mac" 1)
 		ucidef_set_interface "eth0" ifname "eth0" protocol "none" macaddr "$lan_mac"
 		ucidef_set_interface "eth1" ifname "eth1" protocol "none" macaddr "$eth1_mac"
-		;;
-	enterasys,ws-ap3705i)
-		label_mac=$(mtd_get_mac_ascii u-boot-env0 ethaddr)
 		;;
 	hak5,lan-turtle|\
 	hak5,packet-squirrel)

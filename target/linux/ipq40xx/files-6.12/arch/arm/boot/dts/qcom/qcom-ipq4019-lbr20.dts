@@ -15,12 +15,10 @@
 	};
 
 	aliases {
-		// TODO: Verify if the ethernet0 alias is needed
-		ethernet0 = &gmac;
-		led-boot = &led_backlight_white;
-		led-failsafe = &led_status_green;
+		led-boot = &led_status_white;
+		led-failsafe = &led_status_red;
 		led-running = &led_status_green;
-		led-upgrade = &led_status_red;
+		led-upgrade = &led_status_blue;
 		label-mac-device = &gmac;
 	};
 
@@ -43,17 +41,18 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led_status_green: led-status-green {
-			function = LED_FUNCTION_STATUS;
+		led-0 {
+			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&tlmm 22 GPIO_ACTIVE_LOW>;
-			default-state = "keep";
+			default-state = "on";
 		};
 
-		led_status_red: led-status-red {
-			function = LED_FUNCTION_STATUS;
+		led-1 {
+			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_RED>;
 			gpios = <&tlmm 23 GPIO_ACTIVE_LOW>;
+			panic-indicator;
 		};
 	};
 
@@ -83,7 +82,6 @@
 			gpio-export,output = <1>;
 			gpios = <&tlmm 31 GPIO_ACTIVE_HIGH>;
 		};
-
 	};
 
 	soc {
@@ -113,7 +111,6 @@
 			reg = <0x1957000 0x100>;
 			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
 		};
-
 	};
 };
 
@@ -186,7 +183,7 @@
 
 	nand_pins: nand-pins {
 		pullups {
-			pins =	"gpio52", "gpio53", "gpio58", "gpio59";
+			pins = "gpio52", "gpio53", "gpio58", "gpio59";
 			function = "qpic";
 			bias-pull-up;
 		};
@@ -300,7 +297,6 @@
 					precal_art_9000: precal@9000 {
 						reg = <0x9000 0x2f20>;
 					};
-
 				};
 			};
 
@@ -349,7 +345,6 @@
 						reg = <0x12 0x6>;
 						#nvmem-cell-cells = <1>;
 					};
-
 				};
 			};
 
@@ -403,7 +398,6 @@
 				label = "ubi";
 				reg = <0x0ad00000 0x05300000>;
 			};
-
 		};
 	};
 };
@@ -417,34 +411,29 @@
 		compatible = "ti,tlc59108"; /* really is tlc59208f */
 		reg = <0x27>;
 
-		led_backlight_green: led-backlight-green {
-			function = LED_FUNCTION_BACKLIGHT;
+		led_status_green: led-0 {
+			function = LED_FUNCTION_STATUS;
 			color = <LED_COLOR_ID_GREEN>;
 			reg = <0x0>;
-			linux,default-trigger = "default-off";
 		};
 
-		led_backlight_red: led-backlight-red {
-			function = LED_FUNCTION_BACKLIGHT;
+		led_status_red: led-1 {
+			function = LED_FUNCTION_STATUS;
 			color = <LED_COLOR_ID_RED>;
 			reg = <0x1>;
-			linux,default-trigger = "default-off";
 		};
 
-		led_backlight_blue: led-backlight-blue {
-			function = LED_FUNCTION_BACKLIGHT;
+		led_status_blue: led-2 {
+			function = LED_FUNCTION_STATUS;
 			color = <LED_COLOR_ID_BLUE>;
 			reg = <0x2>;
-			linux,default-trigger = "default-off";
 		};
 
-		led_backlight_white: led-backlight-white {
-			function = LED_FUNCTION_BACKLIGHT;
+		led_status_white: led-3 {
+			function = LED_FUNCTION_STATUS;
 			color = <LED_COLOR_ID_WHITE>;
 			reg = <0x3>;
-			linux,default-trigger = "default-off";
 		};
-
 	};
 };
 

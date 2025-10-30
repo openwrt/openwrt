@@ -189,6 +189,15 @@ define Device/aruba_ap-365
 endef
 TARGET_DEVICES += aruba_ap-365
 
+define Device/asus_map-ac1300
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := ASUS
+	DEVICE_MODEL := Lyra Mini (MAP-AC1300)
+	SOC := qcom-ipq4018
+	DEVICE_PACKAGES := kmod-ath3k
+endef
+TARGET_DEVICES += asus_map-ac1300
+
 define Device/asus_map-ac2200
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := ASUS
@@ -882,7 +891,9 @@ define Device/netgear_orbi
 endef
 
 define Device/netgear_lbr20
-	$(call Device/netgear_orbi)
+	$(call Device/DniImage)
+	SOC := qcom-ipq4019
+	DEVICE_VENDOR := NETGEAR
 	DEVICE_MODEL := LBR20
 	NETGEAR_BOARD_ID := LBR20
 	NETGEAR_HW_ID := 29766182+0+256+512+2x2+2x2+2x2+1

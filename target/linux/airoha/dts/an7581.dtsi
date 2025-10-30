@@ -3,6 +3,9 @@
 #include <dt-bindings/interrupt-controller/irq.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/clock/en7523-clk.h>
+#include <dt-bindings/phy/phy.h>
+#include <dt-bindings/phy/airoha,an7581-usb-phy.h>
+#include <dt-bindings/soc/airoha,scu-ssr.h>
 #include <dt-bindings/reset/airoha,en7581-reset.h>
 #include <dt-bindings/leds/common.h>
 #include <dt-bindings/thermal/thermal.h>
@@ -503,6 +506,52 @@
 			interrupts = <GIC_SPI 35 IRQ_TYPE_LEVEL_HIGH>;
 		};
 
+		usb0: usb@1fab0000 {
+			compatible = "mediatek,mtk-xhci";
+			reg = <0x0 0x1fab0000 0x0 0x3e00>,
+				<0x0 0x1fab3e00 0x0 0x100>;
+			reg-names = "mac", "ippc";
+			interrupts = <GIC_SPI 33 IRQ_TYPE_LEVEL_HIGH>;
+
+			phys = <&usb0_phy PHY_TYPE_USB2>, <&usb0_phy PHY_TYPE_USB3>;
+
+			status = "disabled";
+		};
+
+		usb0_phy: phy@1fac0000 {
+			compatible = "airoha,an7581-usb-phy";
+			reg = <0x0 0x1fac0000 0x0 0x10000>;
+
+			airoha,scu = <&scuclk>;
+			airoha,usb2-monitor-clk-sel = <AIROHA_USB2_MONCLK_SEL1>;
+			airoha,serdes-port = <AIROHA_SCU_SERDES_USB1>;
+
+			#phy-cells = <1>;
+		};
+
+		usb1: usb@1fad0000 {
+			compatible = "mediatek,mtk-xhci";
+			reg = <0x0 0x1fad0000 0x0 0x3e00>,
+				<0x0 0x1fad3e00 0x0 0x100>;
+			reg-names = "mac", "ippc";
+			interrupts = <GIC_SPI 150 IRQ_TYPE_LEVEL_HIGH>;
+
+			phys = <&usb1_phy PHY_TYPE_USB2>, <&usb1_phy PHY_TYPE_USB3>;
+
+			status = "disabled";
+		};
+
+		usb1_phy: phy@1fae0000 {
+			compatible = "airoha,an7581-usb-phy";
+			reg = <0x0 0x1fae0000 0x0 0x10000>;
+
+			airoha,scu = <&scuclk>;
+			airoha,usb2-monitor-clk-sel = <AIROHA_USB2_MONCLK_SEL2>;
+			airoha,serdes-port = <AIROHA_SCU_SERDES_USB2>;
+
+			#phy-cells = <1>;
+		};
+
 		crypto@1e004000 {
 			compatible = "inside-secure,safexcel-eip93ies";
 			reg = <0x0 0x1fb70000 0x0 0x1000>;
@@ -718,6 +767,49 @@
 			};
 		};
 
+		pcie2: pcie@1fc40000 {
+			compatible = "airoha,en7581-pcie";
+			device_type = "pci";
+			linux,pci-domain = <2>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+
+			reg = <0x0 0x1fc40000 0x0 0x1670>;
+			reg-names = "pcie-mac";
+
+			clocks = <&scuclk EN7523_CLK_PCIE>;
+			clock-names = "sys-ck";
+
+			phys = <&usb1_phy PHY_TYPE_USB3>;
+			phy-names = "pcie-phy";
+
+			ranges = <0x02000000 0 0x28000000 0x0 0x28000000 0 0x4000000>;
+
+			resets = <&scuclk EN7581_PCIE0_RST>,
+				 <&scuclk EN7581_PCIE1_RST>,
+				 <&scuclk EN7581_PCIE2_RST>;
+			reset-names = "phy-lane0", "phy-lane1", "phy-lane2";
+
+			mediatek,pbus-csr = <&pbus_csr 0x10 0x14>;
+
+			interrupts = <GIC_SPI 41 IRQ_TYPE_LEVEL_HIGH>;
+			bus-range = <0x00 0xff>;
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0 0 7>;
+			interrupt-map = <0 0 0 1 &pcie_intc2 0>,
+					<0 0 0 2 &pcie_intc2 1>,
+					<0 0 0 3 &pcie_intc2 2>,
+					<0 0 0 4 &pcie_intc2 3>;
+
+			status = "disabled";
+
+			pcie_intc2: interrupt-controller {
+				interrupt-controller;
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+			};
+		};
+
 		npu: npu@1e900000 {
 			compatible = "airoha,en7581-npu";
 			reg = <0x0 0x1e900000 0x0 0x313000>;
@@ -874,7 +966,7 @@
 				};
 			};
 
-			mdio {
+			mdio: mdio {
 				#address-cells = <1>;
 				#size-cells = <0>;
 

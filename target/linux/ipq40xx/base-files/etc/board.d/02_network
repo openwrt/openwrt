@@ -29,12 +29,9 @@ ipq40xx_setup_interfaces()
 	zyxel,nbg6617)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
-	meraki,gx20|\
-	meraki,z3)
-		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan"
-		;;
 	8dev,jalapeno|\
 	alfa-network,ap120c-ac|\
+	asus,map-ac1300|\
 	asus,map-ac2200|\
 	cilab,meshpoint-one|\
 	edgecore,ecw5211|\
@@ -67,13 +64,22 @@ ipq40xx_setup_interfaces()
 	zte,mf282plus)
 		ucidef_set_interface_lan "lan"
 		;;
+	aruba,ap-303h|\
+	buffalo,wtr-m2133hp|\
+	ezviz,cs-w3-wd1200g-eup|\
+	netgear,rbr40|\
+	netgear,rbs40|\
+	netgear,rbr50|\
+	netgear,rbs50|\
+	netgear,srr60|\
+	netgear,srs60)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+		;;
 	avm,fritzbox-7530)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		;;
 	avm,fritzrepeater-3000|\
-	cellc,rtl30vw)
-		ucidef_set_interface_lan "lan1 lan2"
-		;;
+	cellc,rtl30vw|\
 	compex,wpj428)
 		ucidef_set_interface_lan "lan1 lan2"
 		;;
@@ -92,21 +98,21 @@ ipq40xx_setup_interfaces()
 	mobipromo,cm520-79f)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
 		;;
+	meraki,gx20|\
+	meraki,z3)
+		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan"
+		;;
+	meraki,mr30h)
+		ucidef_set_interface_lan "lan1 lan2 lan3 lan4 lan5"
+		;;
 	mikrotik,wap-ac|\
 	mikrotik,wap-ac-lte|\
 	mikrotik,wap-r-ac)
 		ucidef_set_interface_lan "sw-eth1 sw-eth2"
 		;;
-	aruba,ap-303h|\
-	buffalo,wtr-m2133hp|\
-	ezviz,cs-w3-wd1200g-eup|\
-	netgear,rbr40|\
-	netgear,rbs40|\
-	netgear,rbr50|\
-	netgear,rbs50|\
-	netgear,srr60|\
-	netgear,srs60)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+	netgear,lbr20)
+		ucidef_set_interface_lan "lan1 lan2"
+		ucidef_set_interface "wan" device "/dev/cdc-wdm0" protocol "qmi"
 		;;
 	openmesh,a42|\
 	openmesh,a62)
@@ -133,13 +139,6 @@ ipq40xx_setup_interfaces()
 	zte,mf287pro)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		ucidef_set_interface "wan" device "/dev/cdc-wdm0" protocol "qmi"
-		;;
-	netgear,lbr20)
-		ucidef_set_interface_lan "lan1 lan2"
-		ucidef_set_interface "wan" device "/dev/cdc-wdm0" protocol "qmi"
-		;;
-	meraki,mr30h)
-		ucidef_set_interface_lan "lan1 lan2 lan3 lan4 lan5"
 		;;
 	*)
 		echo "Unsupported hardware. Network interfaces not initialized"
@@ -175,7 +174,8 @@ ipq40xx_setup_macs()
 	local label_mac=""
 
 	case "$board" in
-	8dev,habanero-dvk)
+	8dev,habanero-dvk|\
+	cilab,meshpoint-one)
 		label_mac=$(mtd_get_mac_binary "ART" 0x1006)
 		;;
 	asus,rt-ac42u)
@@ -184,9 +184,6 @@ ipq40xx_setup_macs()
 	avm,fritzbox-7530)
 		local tffsdev=$(find_mtd_chardev "nand-tffs")
 		wan_mac=$(/usr/bin/fritz_tffs_nand -b -d $tffsdev -n macdsl)
-		;;
-	cilab,meshpoint-one)
-		label_mac=$(mtd_get_mac_binary "ART" 0x1006)
 		;;
 	devolo,magic-2-wifi-next)
 		lan_mac=$(mtd_get_mac_ascii APPSBLENV MacAddress0)
@@ -221,7 +218,7 @@ ipq40xx_setup_macs()
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		;;
 	linksys,ea6350v3|\
-	linksys,ea8300  |\
+	linksys,ea8300|\
 	linksys,mr8300)
 		wan_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
@@ -230,7 +227,7 @@ ipq40xx_setup_macs()
 		wan_mac=$(mmc_get_mac_ascii devinfo hw_mac_addr)
 		lan_mac="$wan_mac"
 		;;
-	mikrotik,cap-ac |\
+	mikrotik,cap-ac|\
 	mikrotik,hap-ac2|\
 	mikrotik,hap-ac3|\
 	mikrotik,hap-ac3-lte6-kit)

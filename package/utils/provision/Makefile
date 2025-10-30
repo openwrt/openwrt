@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=provision
-PKG_RELEASE:=$(AUTORELEASE)
+PKG_RELEASE:=1
 
 PKG_LICENSE:=GPL-2.0
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>

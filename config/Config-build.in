@@ -358,9 +358,11 @@ menu "Global build settings"
 		config PKG_FORTIFY_SOURCE_NONE
 			bool "None"
 		config PKG_FORTIFY_SOURCE_1
-			bool "Conservative"
+			bool "Conservative Level 1"
 		config PKG_FORTIFY_SOURCE_2
-			bool "Aggressive"
+			bool "Aggressive Level 2"
+		config PKG_FORTIFY_SOURCE_3
+			bool "Aggressive Level 3"
 	endchoice
 
 	choice

@@ -267,7 +267,32 @@
 				 * confuse the u-boot and it might not
 				 * find the kernel partition anymore.
 				 */
+				volumes {
+					ubi_art: ubi-volume-art {
+						volname = "ART";
+					};
+				};
 			};
+		};
+	};
+};
+
+&ubi_art {
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		precal_factory_1000: precal@1000 {
+			reg = <0x1000 0x2f20>;
+		};
+
+		precal_factory_5000: precal@5000 {
+			reg = <0x5000 0x2f20>;
+		};
+
+		cal_factory_9000: cal@9000 {
+			reg = <0x9000 0x844>;
 		};
 	};
 };
@@ -282,8 +307,8 @@
 	wifi@0,0 {
 		compatible = "qcom,ath10k";
 		reg = <0x00010000 0 0 0 0>;
-		nvmem-cells = <&mac_address 1>;
-		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&mac_address 1>, <&cal_factory_9000>;
+		nvmem-cell-names = "mac-address", "calibration";
 	};
 };
 
@@ -385,16 +410,14 @@
 
 &wifi0 {
 	status = "okay";
-	qcom,ath10k-calibration-variant = "Meraki-MR33";
-	nvmem-cells = <&mac_address 2>;
-	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&mac_address 2>, <&precal_factory_1000>;
+	nvmem-cell-names = "mac-address", "pre-calibration";
 };
 
 &wifi1 {
 	status = "okay";
-	qcom,ath10k-calibration-variant = "Meraki-MR33";
-	nvmem-cells = <&mac_address 3>;
-	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&mac_address 3>, <&precal_factory_5000>;
+	nvmem-cell-names = "mac-address", "pre-calibration";
 };
 
 &mdio {

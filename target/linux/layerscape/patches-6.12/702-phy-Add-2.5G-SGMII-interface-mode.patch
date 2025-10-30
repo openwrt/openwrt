@@ -36,7 +36,7 @@ Signed-off-by: Bhaskar Upadhaya <Bhaskar.Upadhaya@nxp.com>
  	case PHY_INTERFACE_MODE_QUSGMII:
 --- a/drivers/net/phy/phylink.c
 +++ b/drivers/net/phy/phylink.c
-@@ -230,6 +230,7 @@ static int phylink_interface_max_speed(p
+@@ -250,6 +250,7 @@ static int phylink_interface_max_speed(p
  	case PHY_INTERFACE_MODE_GMII:
  		return SPEED_1000;
  
@@ -44,7 +44,7 @@ Signed-off-by: Bhaskar Upadhaya <Bhaskar.Upadhaya@nxp.com>
  	case PHY_INTERFACE_MODE_2500BASEX:
  	case PHY_INTERFACE_MODE_10G_QXGMII:
  		return SPEED_2500;
-@@ -544,6 +545,7 @@ static unsigned long phylink_get_capabil
+@@ -564,6 +565,7 @@ static unsigned long phylink_get_capabil
  		break;
  
  	case PHY_INTERFACE_MODE_2500BASEX:

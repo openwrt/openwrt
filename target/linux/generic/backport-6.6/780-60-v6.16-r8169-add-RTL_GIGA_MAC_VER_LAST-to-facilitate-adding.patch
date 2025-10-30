@@ -139,7 +139,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		padto = max_t(unsigned int, padto, ETH_ZLEN);
  		break;
  	default:
-@@ -5310,7 +5310,7 @@ static void rtl_hw_initialize(struct rtl
+@@ -5311,7 +5311,7 @@ static void rtl_hw_initialize(struct rtl
  	case RTL_GIGA_MAC_VER_40 ... RTL_GIGA_MAC_VER_48:
  		rtl_hw_init_8168g(tp);
  		break;
@@ -148,7 +148,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		rtl_hw_init_8125(tp);
  		break;
  	default:
-@@ -5335,7 +5335,7 @@ static int rtl_jumbo_max(struct rtl8169_
+@@ -5336,7 +5336,7 @@ static int rtl_jumbo_max(struct rtl8169_
  	case RTL_GIGA_MAC_VER_18 ... RTL_GIGA_MAC_VER_24:
  		return JUMBO_6K;
  	/* RTL8125/8126 */

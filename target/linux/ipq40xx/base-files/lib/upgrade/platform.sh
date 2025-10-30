@@ -6,7 +6,8 @@ RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
 
 platform_check_image() {
 	case "$(board_name)" in
-	asus,rt-ac42u |\
+	asus,map-ac1300|\
+	asus,rt-ac42u|\
 	asus,rt-ac58u)
 		local ubidev=$(nand_find_ubi $CI_UBIPART)
 		local asus_root=$(nand_find_volume $ubidev jffs2)
@@ -25,12 +26,12 @@ Once this is done. Retry.
 EOF
 		return 1
 		;;
-	zte,mf18a |\
+	zte,mf18a|\
 	zte,mf282plus|\
-	zte,mf286d |\
+	zte,mf286d|\
 	zte,mf287|\
-	zte,mf287plus |\
-	zte,mf287pro |\
+	zte,mf287plus|\
+	zte,mf287pro|\
 	zte,mf289f)
 		CI_UBIPART="rootfs"
 		local mtdnum="$( find_mtd_index $CI_UBIPART )"
@@ -104,35 +105,30 @@ platform_do_upgrade_mikrotik_nand() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
-	8dev,jalapeno |\
-	aruba,ap-303 |\
-	aruba,ap-303h |\
-	aruba,ap-365 |\
-	avm,fritzbox-7530 |\
-	avm,fritzrepeater-1200 |\
-	avm,fritzrepeater-3000 |\
-	buffalo,wtr-m2133hp |\
-	cilab,meshpoint-one |\
-	edgecore,ecw5211 |\
-	edgecore,oap100 |\
-	engenius,eap2200 |\
-	glinet,gl-a1300 |\
-	glinet,gl-ap1300 |\
-	luma,wrtq-329acn |\
-	mobipromo,cm520-79f |\
-	netgear,lbr20 |\
-	netgear,wac510 |\
-	p2w,r619ac-64m |\
-	p2w,r619ac-128m |\
-	qxwlan,e2600ac-c2 |\
+	8dev,jalapeno|\
+	aruba,ap-303|\
+	aruba,ap-303h|\
+	aruba,ap-365|\
+	avm,fritzbox-7530|\
+	avm,fritzrepeater-1200|\
+	avm,fritzrepeater-3000|\
+	buffalo,wtr-m2133hp|\
+	cilab,meshpoint-one|\
+	compex,wpj419|\
+	edgecore,ecw5211|\
+	edgecore,oap100|\
+	engenius,eap2200|\
+	glinet,gl-a1300|\
+	glinet,gl-ap1300|\
+	luma,wrtq-329acn|\
+	mobipromo,cm520-79f|\
+	netgear,lbr20|\
+	netgear,wac510|\
+	p2w,r619ac-64m|\
+	p2w,r619ac-128m|\
+	qxwlan,e2600ac-c2|\
 	wallys,dr40x9)
 		nand_do_upgrade "$1"
-		;;
-	glinet,gl-b2200)
-		CI_KERNPART="0:HLOS"
-		CI_ROOTPART="rootfs"
-		CI_DATAPART="rootfs_data"
-		emmc_do_upgrade "$1"
 		;;
 	alfa-network,ap120c-ac)
 		part="$(awk -F 'ubi.mtd=' '{printf $2}' /proc/cmdline | sed -e 's/ .*$//')"
@@ -145,11 +141,9 @@ platform_do_upgrade() {
 		fi
 		nand_do_upgrade "$1"
 		;;
-	asus,map-ac2200)
-		CI_KERNPART="linux"
-		nand_do_upgrade "$1"
-		;;
-	asus,rt-ac42u |\
+	asus,map-ac1300|\
+	asus,map-ac2200|\
+	asus,rt-ac42u|\
 	asus,rt-ac58u)
 		CI_KERNPART="linux"
 		nand_do_upgrade "$1"
@@ -158,8 +152,11 @@ platform_do_upgrade() {
 		CI_UBIPART="ubifs"
 		askey_do_upgrade "$1"
 		;;
-	compex,wpj419)
-		nand_do_upgrade "$1"
+	glinet,gl-b2200)
+		CI_KERNPART="0:HLOS"
+		CI_ROOTPART="rootfs"
+		CI_DATAPART="rootfs_data"
+		emmc_do_upgrade "$1"
 		;;
 	google,wifi)
 		export_bootdevice
@@ -168,21 +165,15 @@ platform_do_upgrade() {
 		CI_ROOTPART="rootfs"
 		emmc_do_upgrade "$1"
 		;;
-	linksys,ea6350v3 |\
-	linksys,ea8300 |\
-	linksys,mr8300 |\
-	linksys,whw01 |\
+	linksys,ea6350v3|\
+	linksys,ea8300|\
+	linksys,mr8300|\
+	linksys,whw01|\
 	linksys,whw03v2)
 		platform_do_upgrade_linksys "$1"
 		;;
 	linksys,whw03)
 		platform_do_upgrade_linksys_emmc "$1"
-		;;
-	meraki,mr30h |\
-	meraki,mr33 |\
-	meraki,mr74)
-		CI_KERNPART="part.safe"
-		nand_do_upgrade "$1"
 		;;
 	meraki,gx20|\
 	meraki,z3)
@@ -190,6 +181,12 @@ platform_do_upgrade() {
 		# that is used for chain-loading an unlocked u-boot
 		# if part.safe is overwritten, then u-boot is lost!
 		CI_KERNPART="part.old"
+		nand_do_upgrade "$1"
+		;;
+	meraki,mr30h|\
+	meraki,mr33|\
+	meraki,mr74)
+		CI_KERNPART="part.safe"
 		nand_do_upgrade "$1"
 		;;
 	mikrotik,cap-ac|\
@@ -208,15 +205,15 @@ platform_do_upgrade() {
 		;;
 	netgear,rbr40|\
 	netgear,rbs40|\
-	netgear,rbr50 |\
-	netgear,rbs50 |\
-	netgear,srr60 |\
+	netgear,rbr50|\
+	netgear,rbs50|\
+	netgear,srr60|\
 	netgear,srs60)
 		platform_do_upgrade_netgear_orbi_upgrade "$1"
 		;;
-	openmesh,a42 |\
-	openmesh,a62 |\
-	plasmacloud,pa1200 |\
+	openmesh,a42|\
+	openmesh,a62|\
+	plasmacloud,pa1200|\
 	plasmacloud,pa2200)
 		PART_NAME="inactive"
 		platform_do_upgrade_dualboot_datachk "$1"
@@ -224,14 +221,14 @@ platform_do_upgrade() {
 	sony,ncp-hg100-cellular)
 		sony_emmc_do_upgrade "$1"
 		;;
-	teltonika,rutx10 |\
-	teltonika,rutx50 |\
-	zte,mf18a |\
-	zte,mf282plus |\
-	zte,mf286d |\
-	zte,mf287 |\
-	zte,mf287plus |\
-	zte,mf287pro |\
+	teltonika,rutx10|\
+	teltonika,rutx50|\
+	zte,mf18a|\
+	zte,mf282plus|\
+	zte,mf286d|\
+	zte,mf287|\
+	zte,mf287plus|\
+	zte,mf287pro|\
 	zte,mf289f)
 		CI_UBIPART="rootfs"
 		nand_do_upgrade "$1"
@@ -247,8 +244,8 @@ platform_do_upgrade() {
 
 platform_copy_config() {
 	case "$(board_name)" in
-	glinet,gl-b2200 |\
-	google,wifi |\
+	glinet,gl-b2200|\
+	google,wifi|\
 	linksys,whw03)
 		emmc_copy_config
 		;;

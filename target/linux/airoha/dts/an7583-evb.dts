@@ -84,6 +84,10 @@
 	status = "okay";
 };
 
+&npu {
+	status = "okay";
+};
+
 &eth {
 	status = "okay";
 };
@@ -135,37 +139,41 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&mdio0_pins>;
 
-	as21xx_0: ethernet-phy@1d {
-		reg = <0x1d>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-
-		firmware-name = "as21x1x_fw.bin";
-
-		reset-deassert-us = <350000>;
-		reset-assert-us = <200000>;
-		reset-gpios = <&an7583_pinctrl 34 GPIO_ACTIVE_LOW>;
-
-		leds {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			led@0 {
-				reg = <0>;
-				color = <LED_COLOR_ID_GREEN>;
-				function = LED_FUNCTION_LAN;
-				function-enumerator = <0>;
-				default-state = "keep";
-			};
-
-			led@1 {
-				reg = <1>;
-				color = <LED_COLOR_ID_GREEN>;
-				function = LED_FUNCTION_LAN;
-				function-enumerator = <1>;
-				default-state = "keep";
-			};
-		};
-	};
+	/* Present but not HW connected to GDM port */
+	/*
+	 * as21xx_0: ethernet-phy@1d {
+	 *		reg = <0x1d>;
+	 *		compatible = "ethernet-phy-ieee802.3-c45";
+	 *		status = "disabled";
+	 *
+	 *		firmware-name = "as21x1x_fw.bin";
+	 *
+	 *		reset-deassert-us = <350000>;
+	 *		reset-assert-us = <200000>;
+	 *		reset-gpios = <&an7583_pinctrl 34 GPIO_ACTIVE_LOW>;
+	 *
+	 *		leds {
+	 *			#address-cells = <1>;
+	 *			#size-cells = <0>;
+	 *
+	 *			led@0 {
+	 *				reg = <0>;
+	 *				color = <LED_COLOR_ID_GREEN>;
+	 *				function = LED_FUNCTION_LAN;
+	 *				function-enumerator = <0>;
+	 *				default-state = "keep";
+	 *			};
+	 *
+	 *			led@1 {
+	 *				reg = <1>;
+	 *				color = <LED_COLOR_ID_GREEN>;
+	 *				function = LED_FUNCTION_LAN;
+	 *				function-enumerator = <1>;
+	 *				default-state = "keep";
+	 *			};
+	 *		};
+	 * };
+	 */
 
 	as21xx_1: ethernet-phy@1f {
 		reg = <0x1f>;
@@ -200,16 +208,19 @@
 	};
 };
 
+/* GDM2 seems to be connected to PON */
+/*
+ *&gdm2 {
+ *	status = "disabled";
+ *
+ *	phy-handle = <&as21xx_0>;
+ *	phy-mode = "usxgmii";
+ *};
+ */
+
 &gdm3 {
 	status = "okay";
 
 	phy-handle = <&as21xx_1>;
-	phy-mode = "usxgmii";
-};
-
-&gdm2 {
-	status = "okay";
-
-	phy-handle = <&as21xx_0>;
 	phy-mode = "usxgmii";
 };

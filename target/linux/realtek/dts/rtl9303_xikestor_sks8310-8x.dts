@@ -56,9 +56,9 @@
 	sfp0: sfp-p1 {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c0>;
-		los-gpio = <&gpio1 0 GPIO_ACTIVE_HIGH>;
+		los-gpio = <&gpio1 2 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpio = <&gpio1 1 GPIO_ACTIVE_LOW>;
-		tx-disable-gpio = <&gpio1 2 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpio = <&gpio1 0 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <2900>;
 		#thermal-sensor-cells = <0>;
 	};
@@ -66,9 +66,9 @@
 	sfp1: sfp-p2 {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c1>;
-		los-gpio = <&gpio1 3 GPIO_ACTIVE_HIGH>;
+		los-gpio = <&gpio1 5 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpio = <&gpio1 4 GPIO_ACTIVE_LOW>;
-		tx-disable-gpio = <&gpio1 5 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpio = <&gpio1 3 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <1500>;
 		#thermal-sensor-cells = <0>;
 	};
@@ -76,9 +76,9 @@
 	sfp2: sfp-p3 {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c2>;
-		los-gpio = <&gpio1 6 GPIO_ACTIVE_HIGH>;
+		los-gpio = <&gpio1 8 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpio = <&gpio1 7 GPIO_ACTIVE_LOW>;
-		tx-disable-gpio = <&gpio1 8 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpio = <&gpio1 6 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <1500>;
 		#thermal-sensor-cells = <0>;
 	};
@@ -86,9 +86,9 @@
 	sfp3: sfp-p4 {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c3>;
-		los-gpio = <&gpio1 9 GPIO_ACTIVE_HIGH>;
+		los-gpio = <&gpio1 11 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpio = <&gpio1 10 GPIO_ACTIVE_LOW>;
-		tx-disable-gpio = <&gpio1 11 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpio = <&gpio1 9 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <2000>;
 		#thermal-sensor-cells = <0>;
 	};
@@ -96,9 +96,9 @@
 	sfp4: sfp-p5 {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c4>;
-		los-gpio = <&gpio1 12 GPIO_ACTIVE_HIGH>;
+		los-gpio = <&gpio1 14 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpio = <&gpio1 13 GPIO_ACTIVE_LOW>;
-		tx-disable-gpio = <&gpio1 14 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpio = <&gpio1 12 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <2000>;
 		#thermal-sensor-cells = <0>;
 	};
@@ -106,9 +106,9 @@
 	sfp5: sfp-p6 {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c5>;
-		los-gpio = <&gpio1 21 GPIO_ACTIVE_HIGH>;
+		los-gpio = <&gpio1 23 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpio = <&gpio1 22 GPIO_ACTIVE_LOW>;
-		tx-disable-gpio = <&gpio1 23 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpio = <&gpio1 21 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <1500>;
 		#thermal-sensor-cells = <0>;
 	};
@@ -116,9 +116,9 @@
 	sfp6: sfp-p7 {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c6>;
-		los-gpio = <&gpio1 24 GPIO_ACTIVE_HIGH>;
+		los-gpio = <&gpio1 26 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpio = <&gpio1 25 GPIO_ACTIVE_LOW>;
-		tx-disable-gpio = <&gpio1 26 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpio = <&gpio1 24 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <1500>;
 		#thermal-sensor-cells = <0>;
 	};
@@ -126,9 +126,9 @@
 	sfp7: sfp-p8 {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c7>;
-		los-gpio = <&gpio1 27 GPIO_ACTIVE_HIGH>;
+		los-gpio = <&gpio1 29 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpio = <&gpio1 28 GPIO_ACTIVE_LOW>;
-		tx-disable-gpio = <&gpio1 29 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpio = <&gpio1 27 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <2900>;
 		#thermal-sensor-cells = <0>;
 	};
