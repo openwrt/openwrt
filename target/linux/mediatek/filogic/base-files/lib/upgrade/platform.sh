@@ -154,7 +154,8 @@ platform_do_upgrade() {
 	cudy,re3000-v1|\
 	cudy,wr3000-v1|\
 	yuncore,ax835|\
-	wavlink,wl-wn573hx3)
+	wavlink,wl-wn573hx3|\
+	totolink,x6000r)
 		default_do_upgrade "$1"
 		;;
 	dlink,aquila-pro-ai-m30-a1|\
