@@ -515,6 +515,7 @@ define commitcount
 $(shell \
   if git log -1 --no-show-signature >/dev/null 2>/dev/null; then \
     if [ -n "$(1)" ]; then \
+      $(call ERROR_MESSAGE,DEPRECATION NOTICE: The use of AUTORELEASE has been deprecated. Fix your Makefile.); \
       last_bump="$$(git log --no-show-signature --pretty=format:'%h %s' . | \
         grep -m 1 -e ': [uU]pdate to ' -e ': [bB]ump to ' | \
         cut -f 1 -d ' ')"; \
