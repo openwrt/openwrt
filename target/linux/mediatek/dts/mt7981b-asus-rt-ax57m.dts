@@ -9,10 +9,10 @@
 	aliases {
 		serial0 = &uart0;
 		label-mac-device = &gmac0;
-		led-boot = &led_system;
-		led-failsafe = &led_system;
-		led-running = &led_system;
-		led-upgrade = &led_system;
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
 	};
 
 	chosen {
@@ -44,29 +44,43 @@
 	leds {
 		compatible = "gpio-leds";
 
+		led_power: power {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&pio 4 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+
+		wan-blue {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&pio 5 GPIO_ACTIVE_LOW>;
+		};
+
+		wan-red {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&pio 6 GPIO_ACTIVE_LOW>;
+		};
+
+		lan {
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&pio 7 GPIO_ACTIVE_LOW>;
+		};		
+
 		wlan24 {
 			function = LED_FUNCTION_WLAN_2GHZ;
-			color = <LED_COLOR_ID_WHITE>;
-			gpios = <&pio 34 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
 
 		wlan5 {
 			function = LED_FUNCTION_WLAN_5GHZ;
-			color = <LED_COLOR_ID_WHITE>;
-			gpios = <&pio 35 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
-		};
-
-		wan {
-			function = LED_FUNCTION_WAN;
 			color = <LED_COLOR_ID_BLUE>;
-			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
-		};
-
-		led_system: system {
-			label = "blue:system";
-			gpios = <&pio 12 GPIO_ACTIVE_HIGH>;
+			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
 		};
 	};
 
