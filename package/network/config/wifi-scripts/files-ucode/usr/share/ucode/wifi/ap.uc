@@ -170,7 +170,7 @@ function iface_auth_type(config) {
 	}
 
 	append_vars(config, [
-		'sae_require_mfp', 'sae_pwe', 'time_advertisement', 'time_zone',
+		'sae_require_mfp', 'sae_pwe', 'sae_track_password', 'time_advertisement', 'time_zone',
 		'wpa_group_rekey', 'wpa_ptk_rekey', 'wpa_gmk_rekey', 'wpa_strict_rekey',
 		'macaddr_acl', 'wpa_psk_radius', 'wpa_psk', 'wpa_passphrase', 'wpa_psk_file',
 		'eapol_version', 'dynamic_vlan', 'radius_request_cui', 'eap_reauth_period',
