@@ -117,22 +117,21 @@
 		reg = <1>;
 		nvmem-cells = <&macaddr_factory_4>;
 		nvmem-cell-names = "mac-address";
-		phy-mode = "gmii";
-		phy-handle = <&phy0>;
 		label = "wan";
+		phy-mode = "2500base-x";
+
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+			pause;
+		};
 	};
 
 	mdio: mdio-bus {
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		phy0: ethernet-phy@0 {
-			compatible = "ethernet-phy-id03a2.9461";
-			reg = <0>;
-			phy-mode = "gmii";
-			#nvmem-cells = <&phy_calibration>;
-			#nvmem-cell-names = "phy-cal-data";
-		};
+		/delete-node/ ethernet-phy@0;
 
 		switch@1f {
 			compatible = "mediatek,mt7531";
