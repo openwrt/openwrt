@@ -10,15 +10,15 @@ Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
 
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -861,6 +861,35 @@ config SIBYTE_BIGSUR
+@@ -893,6 +893,35 @@ config SIBYTE_BIGSUR
  	select ZONE_DMA32 if 64BIT
  	select SWIOTLB if ARCH_DMA_ADDR_T_64BIT && PCI
  
 +config MACH_SIFLOWER_MIPS
 +	bool "Siflower MIPS SoCs"
 +	select MIPS_GENERIC
++	select MACH_GENERIC_CORE
 +	select ARM_AMBA
-+	select BOOT_RAW
 +	select CEVT_R4K
 +	select CLKSRC_MIPS_GIC
 +	select COMMON_CLK

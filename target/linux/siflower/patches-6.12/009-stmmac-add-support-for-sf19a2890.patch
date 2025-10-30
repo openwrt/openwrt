@@ -9,9 +9,9 @@ Subject: [PATCH 09/20] stmmac: add support for sf19a2890
 
 --- a/drivers/net/ethernet/stmicro/stmmac/Kconfig
 +++ b/drivers/net/ethernet/stmicro/stmmac/Kconfig
-@@ -142,6 +142,15 @@ config DWMAC_ROCKCHIP
- 	  This selects the Rockchip RK3288 SoC glue layer support for
- 	  the stmmac device driver.
+@@ -154,6 +154,15 @@ config DWMAC_RZN1
+ 	  the stmmac device driver. This support can make use of a custom MII
+ 	  converter PCS device.
  
 +config DWMAC_SF19A2890
 +	tristate "Siflower SF19A2890 GMAC support"
@@ -32,6 +32,6 @@ Subject: [PATCH 09/20] stmmac: add support for sf19a2890
  obj-$(CONFIG_DWMAC_QCOM_ETHQOS)	+= dwmac-qcom-ethqos.o
  obj-$(CONFIG_DWMAC_ROCKCHIP)	+= dwmac-rk.o
 +obj-$(CONFIG_DWMAC_SF19A2890)	+= dwmac-sf19a2890.o
+ obj-$(CONFIG_DWMAC_RZN1)	+= dwmac-rzn1.o
  obj-$(CONFIG_DWMAC_SOCFPGA)	+= dwmac-altr-socfpga.o
  obj-$(CONFIG_DWMAC_STARFIVE)	+= dwmac-starfive.o
- obj-$(CONFIG_DWMAC_STI)		+= dwmac-sti.o

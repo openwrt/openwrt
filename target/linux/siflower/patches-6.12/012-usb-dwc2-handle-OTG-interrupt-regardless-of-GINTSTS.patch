@@ -27,7 +27,7 @@ Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
  {
  	u32 gotgint;
  	u32 gotgctl;
-@@ -87,6 +87,10 @@ static void dwc2_handle_otg_intr(struct
+@@ -88,6 +88,10 @@ static void dwc2_handle_otg_intr(struct
  
  	gotgint = dwc2_readl(hsotg, GOTGINT);
  	gotgctl = dwc2_readl(hsotg, GOTGCTL);
@@ -38,7 +38,7 @@ Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
  	dev_dbg(hsotg->dev, "++OTG Interrupt gotgint=%0x [%s]\n", gotgint,
  		dwc2_op_state_str(hsotg));
  
-@@ -229,6 +233,7 @@ static void dwc2_handle_otg_intr(struct
+@@ -244,6 +248,7 @@ static void dwc2_handle_otg_intr(struct
  
  	/* Clear GOTGINT */
  	dwc2_writel(hsotg, gotgint, GOTGINT);
@@ -46,7 +46,7 @@ Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
  }
  
  /**
-@@ -842,6 +847,8 @@ irqreturn_t dwc2_handle_common_intr(int
+@@ -862,6 +867,8 @@ irqreturn_t dwc2_handle_common_intr(int
  		hsotg->frame_number = (dwc2_readl(hsotg, HFNUM)
  				       & HFNUM_FRNUM_MASK) >> HFNUM_FRNUM_SHIFT;
  
@@ -55,7 +55,7 @@ Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
  	gintsts = dwc2_read_common_intr(hsotg);
  	if (gintsts & ~GINTSTS_PRTINT)
  		retval = IRQ_HANDLED;
-@@ -855,8 +862,6 @@ irqreturn_t dwc2_handle_common_intr(int
+@@ -875,8 +882,6 @@ irqreturn_t dwc2_handle_common_intr(int
  
  	if (gintsts & GINTSTS_MODEMIS)
  		dwc2_handle_mode_mismatch_intr(hsotg);

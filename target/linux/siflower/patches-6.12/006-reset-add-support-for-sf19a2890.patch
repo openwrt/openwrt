@@ -10,7 +10,7 @@ Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
 
 --- a/drivers/reset/Kconfig
 +++ b/drivers/reset/Kconfig
-@@ -211,6 +211,14 @@ config RESET_SCMI
+@@ -242,6 +242,14 @@ config RESET_SCMI
  	  This driver uses SCMI Message Protocol to interact with the
  	  firmware controlling all the reset signals.
  
@@ -24,10 +24,10 @@ Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
 +
  config RESET_SIMPLE
  	bool "Simple Reset Controller Driver" if COMPILE_TEST || EXPERT
- 	default ARCH_ASPEED || ARCH_BCMBCA || ARCH_BITMAIN || ARCH_REALTEK || ARCH_STM32 || (ARCH_INTEL_SOCFPGA && ARM64) || ARCH_SUNXI || ARC
+ 	default ARCH_ASPEED || ARCH_BCMBCA || ARCH_BITMAIN || ARCH_REALTEK || ARCH_SOPHGO || ARCH_STM32 || (ARCH_INTEL_SOCFPGA && ARM64) || ARCH_SUNXI || ARC
 --- a/drivers/reset/Makefile
 +++ b/drivers/reset/Makefile
-@@ -29,6 +29,7 @@ obj-$(CONFIG_RESET_QCOM_PDC) += reset-qc
+@@ -32,6 +32,7 @@ obj-$(CONFIG_RESET_QCOM_PDC) += reset-qc
  obj-$(CONFIG_RESET_RASPBERRYPI) += reset-raspberrypi.o
  obj-$(CONFIG_RESET_RZG2L_USBPHY_CTRL) += reset-rzg2l-usbphy-ctrl.o
  obj-$(CONFIG_RESET_SCMI) += reset-scmi.o

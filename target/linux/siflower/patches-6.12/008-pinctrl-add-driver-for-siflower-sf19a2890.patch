@@ -9,9 +9,9 @@ Subject: [PATCH 08/20] pinctrl: add driver for siflower sf19a2890
 
 --- a/drivers/pinctrl/Kconfig
 +++ b/drivers/pinctrl/Kconfig
-@@ -417,6 +417,16 @@ config PINCTRL_ROCKCHIP
- 	help
-           This support pinctrl and GPIO driver for Rockchip SoCs.
+@@ -483,6 +483,16 @@ config PINCTRL_SCMI
+ 	  It uses SCMI Message Protocol to interact with the
+ 	  firmware providing all the pinctrl controls.
  
 +config PINCTRL_SF19A2890
 +	tristate "Siflower SF19A2890 pinctrl driver"
@@ -28,10 +28,10 @@ Subject: [PATCH 08/20] pinctrl: add driver for siflower sf19a2890
  	depends on OF
 --- a/drivers/pinctrl/Makefile
 +++ b/drivers/pinctrl/Makefile
-@@ -43,6 +43,7 @@ obj-$(CONFIG_PINCTRL_PIC32)	+= pinctrl-p
- obj-$(CONFIG_PINCTRL_PISTACHIO)	+= pinctrl-pistachio.o
+@@ -48,6 +48,7 @@ obj-$(CONFIG_PINCTRL_PISTACHIO)	+= pinct
  obj-$(CONFIG_PINCTRL_RK805)	+= pinctrl-rk805.o
  obj-$(CONFIG_PINCTRL_ROCKCHIP)	+= pinctrl-rockchip.o
+ obj-$(CONFIG_PINCTRL_SCMI)	+= pinctrl-scmi.o
 +obj-$(CONFIG_PINCTRL_SF19A2890)	+= pinctrl-sf19a2890.o
  obj-$(CONFIG_PINCTRL_SINGLE)	+= pinctrl-single.o
  obj-$(CONFIG_PINCTRL_ST) 	+= pinctrl-st.o
