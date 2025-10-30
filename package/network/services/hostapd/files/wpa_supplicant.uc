@@ -16,6 +16,7 @@ libubus.guard(ex_handler);
 wpas.data.mld = {};
 wpas.data.config = {};
 wpas.data.iface_phy = {};
+wpas.data.iface_ubus = {};
 wpas.data.macaddr_list = {};
 
 function iface_stop(iface)
@@ -720,6 +721,62 @@ function iface_channel_switch(ifname, iface, info)
 	ubus.call("hostapd", "apsta_state", msg);
 }
 
+function iface_ubus_remove(ifname)
+{
+	let obj = wpas.data.iface_ubus[ifname];
+	if (!obj)
+		return;
+
+	obj.remove();
+	delete wpas.data.iface_ubus[ifname];
+}
+
+function iface_ubus_add(ifname)
+{
+	let ubus = wpas.data.ubus;
+
+	iface_ubus_remove(ifname);
+
+	let obj = ubus.publish(`wpa_supplicant.${ifname}`, {
+		reload: {
+			args: {},
+			call: (req) => {
+				let iface = wpas.interfaces[ifname];
+				if (!iface)
+					return libubus.STATUS_NOT_FOUND;
+
+				iface.ctrl("RECONFIGURE");
+				return 0;
+			},
+		},
+		wps_start: {
+			args: {
+				multi_ap: true
+			},
+			call: (req) => {
+				let iface = wpas.interfaces[ifname];
+				if (!iface)
+					return libubus.STATUS_NOT_FOUND;
+
+				iface.ctrl(`WPS_PBC multi_ap=${+req.args.multi_ap}`);
+				return 0;
+			},
+		},
+		wps_cancel: {
+			args: {},
+			call: (req) => {
+				let iface = wpas.interfaces[ifname];
+				if (!iface)
+					return libubus.STATUS_NOT_FOUND;
+
+				iface.ctrl("WPS_CANCEL");
+				return 0;
+			},
+		},
+	});
+	wpas.data.iface_ubus[ifname] = obj;
+}
+
 return {
 	shutdown: function() {
 		for (let phy in wpas.data.config)
@@ -734,10 +791,12 @@ return {
 		return mld_bss_allowed(mld, bss);
 	},
 	iface_add: function(name, obj) {
+		iface_ubus_add(name);
 		iface_event("add", name);
 	},
 	iface_remove: function(name, obj) {
 		iface_event("remove", name);
+		iface_ubus_remove(name);
 	},
 	state: function(ifname, iface, state) {
 		let event_data = iface.status();
@@ -773,5 +832,9 @@ return {
 	event: function(ifname, iface, ev, info) {
 		if (ev == "CH_SWITCH_STARTED")
 			iface_channel_switch(ifname, iface, info);
+	},
+	wps_credentials: function(ifname, iface, cred) {
+		cred.ifname = ifname;
+		ubus.event("wps_credentials", cred);
 	}
 };
