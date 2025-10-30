@@ -24,6 +24,6 @@ Signed-off-by: shanlong.li <shanlong.li@starfivetech.com>
 +	if (IS_ERR(data->rst)) {
 +		err = PTR_ERR(data->rst);
 +	}
- 	reset_control_deassert(data->rst);
- 
- 	err = devm_add_action_or_reset(dev, dw8250_reset_control_assert, data->rst);
+ 	err = reset_control_deassert(data->rst);
+ 	if (err)
+ 		return dev_err_probe(dev, err, "failed to deassert resets\n");
