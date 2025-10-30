@@ -670,6 +670,15 @@ typedef enum {
 #define RTL930X_L3_IP_ROUTE_CTRL		0xab44
 
 /* Port LED Control */
+#define RTL839X_MAX_LEDS_PER_PORT		3
+#define RTL839X_LED_SET_2_3_CTRL		(0x00e8)
+#define RTL839X_LED_SET_0_1_CTRL		(0x00ec)
+#define RTL839X_LED_PORT_COPR_SET_SEL_CTRL(p)	(0x00f0 + (((p >> 4) << 2)))
+#define RTL839X_LED_PORT_FIB_SET_SEL_CTRL(p)	(0x0100 + (((p >> 4) << 2)))
+#define RTL839X_LED_PORT_COPR_MASK_CTRL		(0x0110)
+#define RTL839X_LED_PORT_FIB_MASK_CTRL		(0x0118)
+#define RTL839X_LED_PORT_COMBO_MASK_CTRL	(0x0120)
+
 #define RTL930X_LED_PORT_NUM_CTRL(p)		(0xCC04 + (((p >> 4) << 2)))
 #define RTL930X_LED_SET0_0_CTRL			(0xCC28)
 #define RTL930X_LED_PORT_COPR_SET_SEL_CTRL(p)	(0xCC2C + (((p >> 4) << 2)))

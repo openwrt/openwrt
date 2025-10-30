@@ -1614,6 +1614,129 @@ static void rtl839x_set_receive_management_action(int port, rma_ctrl_t type, act
 	}
 }
 
+static void rtldsa_839x_led_init(struct rtl838x_switch_priv *priv)
+{
+	struct device *dev = priv->dev;
+	struct device_node *node;
+	u64 ignore_port_mask = 0;
+	u32 leds_per_port = 0;
+	u64 pm_copper = 0;
+	u64 pm_fiber = 0;
+
+	node = of_find_compatible_node(NULL, NULL, "realtek,rtl8390-leds");
+	if (!node) {
+		dev_err(dev, "No compatible LED node found\n");
+		return;
+	}
+
+	if (of_property_read_u32(node, "realtek,leds-per-port", &leds_per_port)) {
+		dev_err(dev, "no 'leds-per-port' given, assuming default of 2");
+		leds_per_port = 2;
+	}
+
+	dev_dbg(dev, "leds-per-port: %u\n", leds_per_port);
+	if (leds_per_port > RTL839X_MAX_LEDS_PER_PORT) {
+		dev_err(dev, "leds-per-port exceeds maximum of %u\n",
+			RTL839X_MAX_LEDS_PER_PORT);
+		return;
+	}
+
+	if (!of_property_read_u64(node, "realtek,ignore-port-mask", &ignore_port_mask))
+		dev_info(dev, "applying ignore portmask %llx\n", ignore_port_mask);
+
+	/* Clear complete LED set configuration */
+	sw_w32(0, RTL839X_LED_SET_2_3_CTRL);
+	sw_w32(0, RTL839X_LED_SET_0_1_CTRL);
+
+	/* Each LED set has (up to) 3 LEDs, and each LED is configured
+	 * with 5 bits. In each 32 bit register, 30 bits are used and
+	 * thus, each register holds configuration for 6 LEDs aka 2 sets.
+	 *
+	 * There's an additional limit: All ports have the same number of
+	 * LEDs because there's only a single 2-bit field LED_NUM_SEL in
+	 * LED_GLB_CTRL setting this for all ports.
+	 */
+
+	/* set number of LEDs per port (applies to all ports) */
+	sw_w32_mask(0xc, (leds_per_port & 0x3) << 2, RTL839X_LED_GLB_CTRL);
+
+	for (int set = 0; set < 4; set++) {
+		int leds_in_this_set;
+		char set_name[16] = {0};
+		u32 set_config[3] = {0};
+
+		int reg, set_shift, led_shift;
+
+		snprintf(set_name, sizeof(set_name), "led_set%d", set);
+		leds_in_this_set = of_property_count_u32_elems(node, set_name);
+
+		if (leds_in_this_set <= 0) {
+			dev_err(dev, "%s invalid, no leds given, leds_in_this_set=%d, should be (0, %d]\n",
+				set_name, leds_in_this_set, RTL839X_MAX_LEDS_PER_PORT);
+			continue;
+		}
+		if (leds_in_this_set > leds_per_port)
+			dev_warn(dev, "%s more leds than configured per port, excess values are ignored\n",
+				 set_name);
+
+		dev_dbg(dev, "%s has %d LEDs configured\n", set_name, leds_in_this_set);
+		if (of_property_read_u32_array(node, set_name, set_config, leds_per_port))
+			break;
+
+		/* Write configuration for selected LEDs */
+		reg = (set < 2) ? RTL839X_LED_SET_0_1_CTRL : RTL839X_LED_SET_2_3_CTRL;
+		set_shift = (set % 2) ? 15 : 0;
+
+		for (int i = 0, led = leds_in_this_set - 1; led >= 0; led--, i++) {
+			led_shift = (i % 3) * 5;
+
+			sw_w32_mask(0x1f << (set_shift + led_shift),
+				    (set_config[i] & 0x1f) << (set_shift + led_shift),
+				    reg);
+		}
+	}
+
+	for (int i = 0; i < priv->cpu_port; i++) {
+		int pos = (i << 1) % 32;
+		u32 set;
+
+		sw_w32_mask(0x3 << pos, 0, RTL839X_LED_PORT_FIB_SET_SEL_CTRL(i));
+		sw_w32_mask(0x3 << pos, 0, RTL839X_LED_PORT_COPR_SET_SEL_CTRL(i));
+
+		if (!priv->ports[i].phy && !priv->pcs[i])
+			continue;
+
+		if (!priv->ports[i].phy)
+			pm_fiber |= BIT_ULL(i);
+		else
+			pm_copper |= BIT_ULL(i);
+
+		set = priv->ports[i].led_set & 0x3;
+		sw_w32_mask(0, set << pos, RTL839X_LED_PORT_COPR_SET_SEL_CTRL(i));
+		sw_w32_mask(0, set << pos, RTL839X_LED_PORT_FIB_SET_SEL_CTRL(i));
+	}
+
+	/* Set LED mode to serial (0x0) */
+	sw_w32_mask(0x3, 0x0, RTL839X_LED_GLB_CTRL);
+
+	/* Set LED active state */
+	if (of_property_read_bool(node, "active-low"))
+		sw_w32_mask(BIT(25), 0, RTL839X_LED_GLB_CTRL);
+	else
+		sw_w32_mask(0, BIT(25), RTL839X_LED_GLB_CTRL);
+
+	/* Apply ignore port mask */
+	pm_copper &= ~ignore_port_mask;
+	pm_fiber &= ~ignore_port_mask;
+
+	/* Set port type masks */
+	rtl839x_set_port_reg_le(pm_copper, RTL839X_LED_PORT_COPR_MASK_CTRL);
+	rtl839x_set_port_reg_le(pm_fiber, RTL839X_LED_PORT_FIB_MASK_CTRL);
+
+	/* Enable port LED output */
+	sw_w32_mask(0, 0x20, RTL839X_LED_GLB_CTRL);
+}
+
 const struct rtl838x_reg rtl839x_reg = {
 	.mask_port_reg_be = rtl839x_mask_port_reg_be,
 	.set_port_reg_be = rtl839x_set_port_reg_be,
@@ -1694,4 +1817,5 @@ const struct rtl838x_reg rtl839x_reg = {
 	.l3_setup = rtl839x_l3_setup,
 	.set_distribution_algorithm = rtl839x_set_distribution_algorithm,
 	.set_receive_management_action = rtl839x_set_receive_management_action,
+	.led_init = rtldsa_839x_led_init,
 };

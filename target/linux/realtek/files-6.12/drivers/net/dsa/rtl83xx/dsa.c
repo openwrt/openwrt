@@ -580,6 +580,9 @@ static int rtl83xx_setup(struct dsa_switch *ds)
 	msleep(1000);
 	priv->r->pie_init(priv);
 
+	if (priv->r->led_init)
+		priv->r->led_init(priv);
+
 	return 0;
 }
 
