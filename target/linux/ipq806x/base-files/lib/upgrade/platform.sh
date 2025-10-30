@@ -30,6 +30,15 @@ platform_do_upgrade() {
 		asrock_upgrade_prepare
 		nand_do_upgrade "$1"
 		;;
+	asus,onhub|\
+	tplink,onhub)
+		export_bootdevice
+		export_partdevice CI_ROOTDEV 0
+		CI_KERNPART="kernel"
+		CI_ROOTPART="rootfs"
+		CI_DATAPART="rootfs_data"
+		emmc_do_upgrade "$1"
+		;;
 	buffalo,wxr-2533dhp)
 		buffalo_upgrade_prepare_ubi
 		CI_ROOTPART="ubi_rootfs"
@@ -66,15 +75,6 @@ platform_do_upgrade() {
 		PART_NAME="os-image:rootfs"
 		MTD_CONFIG_ARGS="-s 0x200000"
 		default_do_upgrade "$1"
-		;;
-	asus,onhub|\
-	tplink,onhub)
-		export_bootdevice
-		export_partdevice CI_ROOTDEV 0
-		CI_KERNPART="kernel"
-		CI_ROOTPART="rootfs"
-		CI_DATAPART="rootfs_data"
-		emmc_do_upgrade "$1"
 		;;
 	tplink,vr2600v)
 		MTD_CONFIG_ARGS="-s 0x200000"
