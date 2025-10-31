@@ -15,7 +15,6 @@ friendlyarm,nanopi-r3s|\
 friendlyarm,nanopi-r4s|\
 friendlyarm,nanopi-r4s-enterprise|\
 friendlyarm,nanopi-r6c|\
-radxa,e52c|\
 xunlong,orangepi-r1-plus|\
 xunlong,orangepi-r1-plus-lts)
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth0"
@@ -39,6 +38,10 @@ friendlyarm,nanopi-r6s)
 friendlyarm,nanopi-r76s)
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1"
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "eth0"
+	;;
+radxa,e52c)
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
+	ucidef_set_led_netdev "lan" "LAN" "green:lan" "lan"
 	;;
 esac
 
