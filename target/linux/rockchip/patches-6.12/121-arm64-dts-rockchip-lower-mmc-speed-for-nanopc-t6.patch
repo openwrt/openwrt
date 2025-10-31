@@ -1,3 +1,18 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Grzegorz Sterniczuk <grzegorz@sternicz.uk>
+Date: Mon, 21 Jul 2025 23:24:11 +0200
+Subject: rockchip: fix eMMC corruption on NanoPC-T6 with A3A444 chips
+
+Some NanoPC-T6 boards with A3A444 eMMC chips experience I/O errors and
+corruption when using HS400 mode. Downgrade to HS200 mode to ensure
+stable operation.
+
+Fixes: #18844
+Signed-off-by: Grzegorz Sterniczuk <grzegorz@sternicz.uk>
+---
+ arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6.dtsi | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
 --- a/arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6.dtsi
 +++ b/arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6.dtsi
 @@ -619,8 +619,7 @@
@@ -10,12 +25,3 @@
  	status = "okay";
  };
  
-@@ -632,7 +631,7 @@
- 	disable-wp;
- 	no-mmc;
- 	no-sdio;
--	sd-uhs-sdr104;
-+	sd-uhs-sdr50;
- 	vmmc-supply = <&vcc3v3_sd_s0>;
- 	vqmmc-supply = <&vccio_sd_s0>;
- 	status = "okay";
