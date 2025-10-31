@@ -225,6 +225,8 @@ define Device/radxa_e52c
   UBOOT_DEVICE_NAME := generic-rk3588
   DEVICE_DTS := rk3582-radxa-e52c
   DEVICE_PACKAGES := blkdiscard kmod-r8169
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Network interface names have been changed
 endef
 TARGET_DEVICES += radxa_e52c
 
