@@ -1,0 +1,113 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "an7581-gemtek.dtsi"
+
+/ {
+	model = "Gemtek W1701K";
+	compatible = "gemtek,w1701k", "airoha,en7581";
+};
+
+&gdm1 {
+	status = "okay";
+
+	nvmem-cells = <&lan_mac 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gdm2 {
+	status = "okay";
+
+	phy-handle = <&phy15>;
+	phy-mode = "2500base-x";
+
+	nvmem-cells = <&wan_mac 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gdm4 {
+	status = "okay";
+
+	phy-handle = <&phy14>;
+	phy-mode = "2500base-x";
+
+	nvmem-cells = <&lan_mac 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gsw_port1 {
+	status = "disabled";
+};
+
+&gsw_port2 {
+	status = "disabled";
+};
+
+&gsw_port3 {
+	status = "disabled";
+};
+
+&gsw_port4 {
+	status = "disabled";
+};
+
+&mdio {
+	phy14: ethernet-phy@14 {
+		reg = <14>;
+		reset-assert-us = <10000>;
+		reset-deassert-us = <20000>;
+		reset-gpios = <&en7581_pinctrl 46 GPIO_ACTIVE_LOW>;
+
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led@0 {
+				reg = <0>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_LAN;
+				default-state = "keep";
+			};
+
+			led@1 {
+				reg = <1>;
+				color = <LED_COLOR_ID_AMBER>;
+				function = LED_FUNCTION_LAN;
+				default-state = "keep";
+			};
+		};
+	};
+
+	phy15: ethernet-phy@15 {
+		reg = <15>;
+		reset-assert-us = <10000>;
+		reset-deassert-us = <20000>;
+		reset-gpios = <&en7581_pinctrl 27 GPIO_ACTIVE_LOW>;
+
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led@0 {
+				reg = <0>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_WAN;
+				default-state = "keep";
+			};
+
+			led@1 {
+				reg = <1>;
+				color = <LED_COLOR_ID_AMBER>;
+				function = LED_FUNCTION_WAN;
+				default-state = "keep";
+			};
+		};
+	};
+};
+
+&switch {
+	pinctrl-names = "default";
+	pinctrl-0 = <&mdio_pins>;
+	status = "okay";
+};
