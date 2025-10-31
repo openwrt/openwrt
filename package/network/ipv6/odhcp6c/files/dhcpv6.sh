@@ -24,6 +24,7 @@ proto_dhcpv6_init_config() {
 	proto_config_add_string iface_dslite
 	proto_config_add_string zone_dslite
 	proto_config_add_string encaplimit_dslite
+	proto_config_add_int mtu_dslite
 	proto_config_add_string iface_map
 	proto_config_add_string zone_map
 	proto_config_add_string encaplimit_map
@@ -56,8 +57,8 @@ proto_dhcpv6_setup() {
 	local config="$1"
 	local iface="$2"
 
-	local reqaddress reqprefix clientid reqopts defaultreqopts noslaaconly forceprefix extendprefix norelease noserverunicast noclientfqdn noacceptreconfig ip6prefix ip6prefixes iface_dslite iface_map iface_464xlat ip6ifaceid userclass vendorclass sendopts delegate zone_dslite zone_map zone_464xlat zone encaplimit_dslite encaplimit_map skpriority soltimeout fakeroutes sourcefilter keep_ra_dnslifetime ra_holdoff verbose
-	json_get_vars reqaddress reqprefix clientid reqopts defaultreqopts noslaaconly forceprefix extendprefix norelease noserverunicast noclientfqdn noacceptreconfig iface_dslite iface_map iface_464xlat ip6ifaceid userclass vendorclass delegate zone_dslite zone_map zone_464xlat zone encaplimit_dslite encaplimit_map skpriority soltimeout fakeroutes sourcefilter keep_ra_dnslifetime ra_holdoff verbose
+	local reqaddress reqprefix clientid reqopts defaultreqopts noslaaconly forceprefix extendprefix norelease noserverunicast noclientfqdn noacceptreconfig ip6prefix ip6prefixes iface_dslite iface_map iface_464xlat ip6ifaceid userclass vendorclass sendopts delegate zone_dslite zone_map zone_464xlat zone encaplimit_dslite encaplimit_map skpriority soltimeout fakeroutes sourcefilter keep_ra_dnslifetime ra_holdoff verbose mtu_dslite
+	json_get_vars reqaddress reqprefix clientid reqopts defaultreqopts noslaaconly forceprefix extendprefix norelease noserverunicast noclientfqdn noacceptreconfig iface_dslite iface_map iface_464xlat ip6ifaceid userclass vendorclass delegate zone_dslite zone_map zone_464xlat zone encaplimit_dslite encaplimit_map skpriority soltimeout fakeroutes sourcefilter keep_ra_dnslifetime ra_holdoff verbose mtu_dslite
 	json_for_each_item proto_dhcpv6_add_prefix ip6prefix ip6prefixes
 
 	# Configure
@@ -120,6 +121,7 @@ proto_dhcpv6_setup() {
 
 	[ -n "$ip6prefixes" ] && proto_export "USERPREFIX=$ip6prefixes"
 	[ -n "$iface_dslite" ] && proto_export "IFACE_DSLITE=$iface_dslite"
+	[ -n "$mtu_dslite" ] && proto_export "MTU_DSLITE=$mtu_dslite"
 	[ -n "$iface_map" ] && proto_export "IFACE_MAP=$iface_map"
 	[ -n "$iface_464xlat" ] && proto_export "IFACE_464XLAT=$iface_464xlat"
 	[ "$delegate" = "0" ] && proto_export "IFACE_DSLITE_DELEGATE=0"

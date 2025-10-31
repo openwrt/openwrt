@@ -192,6 +192,7 @@ setup_interface () {
 		json_add_string tunlink "$INTERFACE"
 		[ -n "$ZONE_DSLITE" ] || ZONE_DSLITE=$ZONE
 		[ -n "$ZONE_DSLITE" ] && json_add_string zone "$ZONE_DSLITE"
+		[ -n "$MTU_DSLITE" ] && json_add_string mtu "$MTU_DSLITE"
 		[ -n "$ENCAPLIMIT_DSLITE" ] && json_add_string encaplimit "$ENCAPLIMIT_DSLITE"
 		[ -n "$IFACE_DSLITE_DELEGATE" ] && json_add_boolean delegate "$IFACE_DSLITE_DELEGATE"
 		json_close_object
