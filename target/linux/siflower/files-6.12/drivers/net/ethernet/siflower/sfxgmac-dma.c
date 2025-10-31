@@ -1,4 +1,13 @@
+#include <linux/module.h>
+#include <linux/kernel.h>
+#include <linux/netdevice.h>
+#include <linux/etherdevice.h>
+#include <linux/skbuff.h>
+#include <linux/platform_device.h>
+#include <linux/of_platform.h>
 #include <linux/clk.h>
+#include <linux/mfd/syscon.h>
+#include <linux/genalloc.h>
 #include <linux/debugfs.h>
 #include <linux/dma-mapping.h>
 #include <linux/if_ether.h>
@@ -154,11 +163,11 @@ static int xgmac_dma_poll_rx(struct xgmac_rxq *rxq, int budget)
 						   rxq[rxq->idx]);
 	unsigned int next_entry = rxq->cur_rx;
 	int count = 0;
+	struct xgmac_dma_desc_rx rx;
 
 	for (; count < budget; count++) {
 		u32 len, rdes0, rdes2, rdes3, rdes_ctx0, rdes_ctx1, rdes_ctx2, rdes_ctx3, sta_index, rpt_index;
 		struct xgmac_dma_rx_buffer *buf;
-		register struct xgmac_dma_desc_rx rx;
 		struct net_device *netdev;
 		struct sk_buff *skb;
 		unsigned int entry;
@@ -169,7 +178,7 @@ static int xgmac_dma_poll_rx(struct xgmac_rxq *rxq, int budget)
 		entry = next_entry;
 		buf = &rxq->buf_pool[entry];
 
-		rx = __READ_ONCE(*(struct xgmac_dma_desc_rx *)&rxq->dma_rx[next_entry]);
+		memcpy(&rx, &rxq->dma_rx[next_entry], sizeof(rx));
 		/* check if owned by the DMA otherwise go ahead */
 		if (unlikely(le32_to_cpu(rx.ctxt.des3) & XGMAC_RDES3_OWN))
 			break;
@@ -737,7 +746,7 @@ static int xgmac_dma_alloc_rx_descs(struct xgmac_dma_priv *priv)
 	int ret = -ENOMEM;
 	u32 i;
 
-	pp_params.flags = PP_FLAG_DMA_MAP | PP_FLAG_DMA_SYNC_DEV | PP_FLAG_PAGE_FRAG;
+	pp_params.flags = PP_FLAG_DMA_MAP | PP_FLAG_DMA_SYNC_DEV;
 	pp_params.pool_size = DMA_RX_SIZE;
 	pp_params.order = 0;
 	pp_params.max_len = PAGE_SIZE;
@@ -892,7 +901,7 @@ static int xgmac_dma_enable(struct xgmac_dma_priv *priv)
 	return 0;
 }
 
-static void xgmac_dma_disable(struct xgmac_dma_priv *priv)
+void xgmac_dma_disable(struct xgmac_dma_priv *priv)
 {
 	u32 i;
 
@@ -1605,7 +1614,7 @@ MODULE_DEVICE_TABLE(of, xgmac_dma_match);
 
 static struct platform_driver xgmac_dma_driver = {
 	.probe	= xgmac_dma_probe,
-	.remove_new	= xgmac_dma_remove,
+	.remove	= xgmac_dma_remove,
 	.driver	= {
 		.name		= "sfxgmac_dma",
 		.of_match_table	= xgmac_dma_match,

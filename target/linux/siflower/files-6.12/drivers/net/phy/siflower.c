@@ -410,7 +410,7 @@ static int sfphy_restart_aneg(struct phy_device *phydev)
 	return 0;
 }
 
-int sf1211f_config_aneg(struct phy_device *phydev)
+static int sf1211f_config_aneg(struct phy_device *phydev)
 {
 	int ret, phymode, oldpage = 0;
 
@@ -450,7 +450,7 @@ int sf1211f_config_aneg(struct phy_device *phydev)
 	return 0;
 }
 
-int sf1211f_aneg_done(struct phy_device *phydev)
+static int sf1211f_aneg_done(struct phy_device *phydev)
 {
 	int val = 0;
 
@@ -757,7 +757,7 @@ static int phy_mode_set(struct phy_device *phydev, u16 phyMode)
 }
 #endif
 
-int sf1240_config_init(struct phy_device *phydev)
+static int sf1240_config_init(struct phy_device *phydev)
 {
 	int ret;
 		ret = genphy_read_abilities(phydev);
@@ -771,7 +771,7 @@ int sf1240_config_init(struct phy_device *phydev)
 	return 0;
 }
 
-int sf1211f_config_init(struct phy_device *phydev)
+static int sf1211f_config_init(struct phy_device *phydev)
 {
 	int ret, phymode;
 

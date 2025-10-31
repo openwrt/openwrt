@@ -145,7 +145,7 @@ static int sf19a2890_gmac_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
-	plat_dat = stmmac_probe_config_dt(pdev, stmmac_res.mac);
+	plat_dat = devm_stmmac_probe_config_dt(pdev, stmmac_res.mac);
 	if (IS_ERR(plat_dat)) {
 		dev_err(&pdev->dev, "dt configuration failed\n");
 		return PTR_ERR(plat_dat);
@@ -160,14 +160,6 @@ static int sf19a2890_gmac_probe(struct platform_device *pdev)
 	plat_dat->flags |= STMMAC_FLAG_HAS_INTEGRATED_PCS;
 
 	ret = stmmac_pltfr_probe(pdev, plat_dat, &stmmac_res);
-	if (ret)
-		goto err_remove_config_dt;
-
-	return 0;
-
-err_remove_config_dt:
-	if (pdev->dev.of_node)
-		stmmac_remove_config_dt(pdev, plat_dat);
 
 	return ret;
 }
@@ -180,7 +172,7 @@ MODULE_DEVICE_TABLE(of, dwmac_sf19a2890_match);
 
 static struct platform_driver sf19a2890_gmac_driver = {
 	.probe  = sf19a2890_gmac_probe,
-	.remove_new = stmmac_pltfr_remove,
+	.remove = stmmac_pltfr_remove,
 	.driver = {
 		.name           = "sf19a2890-gmac",
 		.pm		= &stmmac_pltfr_pm_ops,

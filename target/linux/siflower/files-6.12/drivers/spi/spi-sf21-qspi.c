@@ -258,7 +258,7 @@ static void sf_qspi_set_param(struct sf_qspi *s, const struct spi_mem_op *op)
 
 static int sf_qspi_exec_op(struct spi_mem *mem, const struct spi_mem_op *op)
 {
-	struct sf_qspi *s = spi_controller_get_devdata(mem->spi->master);
+	struct sf_qspi *s = spi_controller_get_devdata(mem->spi->controller);
 	struct chip_data *chip = spi_get_ctldata(mem->spi);
 	unsigned int pops = 0;
 	int ret, i, op_len;
@@ -467,18 +467,18 @@ static const struct spi_controller_mem_ops sf_qspi_mem_ops = {
 
 static int sf_qspi_probe(struct platform_device *pdev)
 {
-	struct spi_controller *master;
+	struct spi_controller *controller;
 	struct device *dev = &pdev->dev;
 	struct device_node *np = dev->of_node;
 	struct sf_qspi *s;
 	int ret;
 
-	master = devm_spi_alloc_master(&pdev->dev, sizeof(*s));
-	if (!master)
+	controller = devm_spi_alloc_host(&pdev->dev, sizeof(*s));
+	if (!controller)
 		return -ENOMEM;
-	master->mode_bits = SPI_RX_DUAL | SPI_RX_QUAD | SPI_TX_DUAL |
+	controller->mode_bits = SPI_RX_DUAL | SPI_RX_QUAD | SPI_TX_DUAL |
 			    SPI_TX_QUAD;
-	s = spi_controller_get_devdata(master);
+	s = spi_controller_get_devdata(controller);
 	s->dev = dev;
 	platform_set_drvdata(pdev, s);
 
@@ -497,17 +497,17 @@ static int sf_qspi_probe(struct platform_device *pdev)
 		return dev_err_probe(dev, PTR_ERR(s->apbclk),
 				     "failed to get and enable apb_pclk.\n");
 
-	master->cleanup = sf_qspi_cleanup;
-	master->setup = sf_qspi_setup;
-	master->use_gpio_descriptors = true;
-	master->mem_ops = &sf_qspi_mem_ops;
-	master->dev.of_node = np;
+	controller->cleanup = sf_qspi_cleanup;
+	controller->setup = sf_qspi_setup;
+	controller->use_gpio_descriptors = true;
+	controller->mem_ops = &sf_qspi_mem_ops;
+	controller->dev.of_node = np;
 
 	writew(FIELD_PREP(SSP_FIFO_LEVEL_RX, DFLT_THRESH_RX) |
 	       FIELD_PREP(SSP_FIFO_LEVEL_TX, DFLT_THRESH_TX),
 	       s->base + SSP_FIFO_LEVEL);
 
-	ret = devm_spi_register_controller(dev, master);
+	ret = devm_spi_register_controller(dev, controller);
 	if (ret)
 		return dev_err_probe(dev, ret,
 				     "failed to register controller.\n");

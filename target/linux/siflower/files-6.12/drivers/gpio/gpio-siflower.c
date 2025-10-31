@@ -317,12 +317,11 @@ static int sf_gpio_probe(struct platform_device *pdev)
 	return devm_gpiochip_add_data(dev, gc, priv);
 }
 
-static int sf_gpio_remove(struct platform_device *pdev)
+static void sf_gpio_remove(struct platform_device *pdev)
 {
 	struct sf_gpio_priv *priv = platform_get_drvdata(pdev);
 
 	reset_control_assert(priv->rstc);
-	return 0;
 }
 
 static const struct of_device_id sf_gpio_ids[] = {
