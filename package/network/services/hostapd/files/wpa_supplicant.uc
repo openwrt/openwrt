@@ -1,4 +1,5 @@
 let libubus = require("ubus");
+import * as uloop from "uloop";
 import { open, readfile } from "fs";
 import { wdev_create, wdev_set_mesh_params, wdev_remove, is_equal, wdev_set_up, vlist_new, phy_open } from "common";
 
@@ -549,7 +550,7 @@ let main_obj = {
 				set_config(phy, req.args.phy, req.args.radio, req.args.num_global_macaddr, req.args.macaddr_base, req.args.config);
 
 			if (!req.args.defer)
-				start_pending(phy);
+				uloop.timer(100, () => start_pending(phy));
 
 			return {
 				pid: wpas.getpid()
