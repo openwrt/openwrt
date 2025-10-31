@@ -175,6 +175,15 @@ define Device/friendlyarm_nanopi-r76s
 endef
 TARGET_DEVICES += friendlyarm_nanopi-r76s
 
+define Device/linkease_easepi-r1
+  DEVICE_VENDOR := LinkEase
+  DEVICE_MODEL := EasePi R1
+  SOC := rk3568
+  UBOOT_DEVICE_NAME := generic-rk3568
+  DEVICE_PACKAGES := blkdiscard block-mount kmod-button-hotplug kmod-nvme kmod-r8169
+endef
+TARGET_DEVICES += linkease_easepi-r1
+
 define Device/lunzn_fastrhino-r66s
   $(Device/rk3568)
   DEVICE_VENDOR := Lunzn
