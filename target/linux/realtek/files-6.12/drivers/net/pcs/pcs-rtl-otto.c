@@ -2264,6 +2264,9 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 		return 0;
 	}
 
+	/* Set SDS polarity */
+	rtpcs_930x_sds_set_polarity(sds, sds->tx_pol_inv, sds->rx_pol_inv);
+
 	/* Turn Off Serdes */
 	rtpcs_930x_sds_set(sds, RTL930X_SDS_OFF);
 
@@ -2277,9 +2280,6 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 
 	/* ----> dal_longan_sds_mode_set */
 	pr_info("%s: Configuring RTL9300 SERDES %d\n", __func__, sds->id);
-
-	/* Set SDS polarity */
-	rtpcs_930x_sds_set_polarity(sds, sds->tx_pol_inv, sds->rx_pol_inv);
 
 	/* Enable SDS in desired mode */
 	rtpcs_930x_sds_mode_set(sds, phy_mode);
