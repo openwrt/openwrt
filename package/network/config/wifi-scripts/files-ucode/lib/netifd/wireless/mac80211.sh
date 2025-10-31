@@ -288,8 +288,11 @@ function setup() {
 		wdev_data[v.config.ifname] = config;
 	}
 
-	supplicant.setup(supplicant_data, data);
-	hostapd.setup(data);
+	if (fs.access('/usr/sbin/wpa_supplicant', 'x'))
+		supplicant.setup(supplicant_data, data);
+
+	if (fs.access('/usr/sbin/hostapd', 'x'))
+		hostapd.setup(data);
 
 	system(`ucode /usr/share/hostap/wdev.uc ${data.phy}${data.phy_suffix} set_config '${printf("%J", wdev_data)}' ${join(' ', active_ifnames)}`);
 
