@@ -410,6 +410,26 @@ static void rtpcs_930x_sds_set_power(struct rtpcs_ctrl *ctrl, int sds, bool on)
 	rtpcs_sds_write_bits(ctrl, sds, 0x20, 0x00, 5, 4, rx_enable);
 }
 
+static void rtpcs_930x_sds_reconfigure_pll(struct rtpcs_ctrl *ctrl, int sds, int pll)
+{
+	int mode, tmp, speed;
+
+	mode = rtpcs_930x_sds_get_internal_mode(ctrl, sds);
+	rtpcs_930x_sds_get_pll_data(ctrl, sds, &tmp, &speed);
+
+	rtpcs_930x_sds_set_power(ctrl, sds, false);
+	rtpcs_930x_sds_set_internal_mode(ctrl, sds, RTL930X_SDS_OFF);
+
+	rtpcs_930x_sds_set_pll_data(ctrl, sds, pll, speed);
+	rtpcs_930x_sds_reset_cmu(ctrl, sds);
+
+	rtpcs_930x_sds_set_internal_mode(ctrl, sds, mode);
+	if (rtpcs_930x_sds_wait_clock_ready(ctrl, sds))
+		pr_err("%s: SDS %d could not sync clock\n", __func__, sds);
+
+	rtpcs_930x_sds_set_power(ctrl, sds, true);
+}
+
 static int rtpcs_930x_sds_config_pll(struct rtpcs_ctrl *ctrl, int sds,
 				     phy_interface_t interface)
 {
@@ -429,6 +449,11 @@ static int rtpcs_930x_sds_config_pll(struct rtpcs_ctrl *ctrl, int sds,
 	 * - Use ring PLL for slow 1G speeds
 	 * - Use LC PLL for fast 10G speeds
 	 * - For 2.5G prefer ring over LC PLL
+	 *
+	 * However, when we want to configure 10G speed while the other SerDes is already using
+	 * the LC PLL for a slower speed, there is no way to avoid reconfiguration. Note that
+	 * this can even happen when the other SerDes is not actually in use, because changing
+	 * the state of a SerDes back to RTL930X_SDS_OFF is not (yet) implemented.
 	 */
 
 	neighbor_mode = rtpcs_930x_sds_get_internal_mode(ctrl, neighbor);
@@ -451,9 +476,12 @@ static int rtpcs_930x_sds_config_pll(struct rtpcs_ctrl *ctrl, int sds,
 		pll = neighbor_pll;
 	} else if (neighbor_pll == RTSDS_930X_PLL_RING)
 		pll = RTSDS_930X_PLL_LC;
-	else if (speed == RTSDS_930X_PLL_10000)
-		return -ENOTSUPP; /* caller wants 10G but only ring PLL available */
-	else
+	else if (speed == RTSDS_930X_PLL_10000) {
+		pr_info("%s: SDS %d needs LC PLL, reconfigure SDS %d to use ring PLL\n",
+			__func__, sds, neighbor);
+		rtpcs_930x_sds_reconfigure_pll(ctrl, neighbor, RTSDS_930X_PLL_RING);
+		pll = RTSDS_930X_PLL_LC;
+	} else
 		pll = RTSDS_930X_PLL_RING;
 
 	rtpcs_930x_sds_set_pll_data(ctrl, sds, pll, speed);
