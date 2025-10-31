@@ -153,6 +153,7 @@ platform_do_upgrade() {
 		;;
 	cudy,re3000-v1|\
 	cudy,wr3000-v1|\
+	kebidumei,ax3000-u22|\
 	yuncore,ax835|\
 	wavlink,wl-wn573hx3|\
 	totolink,x6000r)
