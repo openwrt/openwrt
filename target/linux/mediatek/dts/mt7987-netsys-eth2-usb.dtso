@@ -1,0 +1,25 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/phy/phy.h>
+
+/ {
+	fragment@0 {
+		target-path = "/soc/usb-phy@11c50000/usb-phy@11c50700";
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	fragment@1 {
+		target-path = "/soc/usb@11200000";
+		__overlay__ {
+			phys = <&tphyu2port0 PHY_TYPE_USB2>,
+			       <&tphyu3port0 PHY_TYPE_USB3>;
+			mediatek,u3p-dis-msk=<0>;
+		};
+	};
+};
+

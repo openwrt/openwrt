@@ -785,6 +785,55 @@ define U-Boot/mt7986_zyxel_ex5601-t0
   DEPENDS:=+trusted-firmware-a-mt7986-spim-nand-4k-ddr4
 endef
 
+define U-Boot/mt7987_bananapi_bpi-r4-lite-emmc
+  NAME:=BananaPi BPi-R4 Lite
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=bananapi_bpi-r4-lite
+  UBOOT_CONFIG:=mt7987a_bpi-r4-lite-emmc
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=emmc
+  BL2_SOC:=mt7987
+  BL2_DDRTYPE:=comb
+  DEPENDS:=+trusted-firmware-a-mt7987-emmc-comb
+endef
+
+define U-Boot/mt7987_bananapi_bpi-r4-lite-sdmmc
+  NAME:=BananaPi BPi-R4 Lite
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=bananapi_bpi-r4-lite
+  UBOOT_CONFIG:=mt7987a_bpi-r4-lite-sd
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=sdmmc
+  BL2_SOC:=mt7987
+  BL2_DDRTYPE:=comb
+  DEPENDS:=+trusted-firmware-a-mt7987-sdmmc-comb
+endef
+
+define U-Boot/mt7987_bananapi_bpi-r4-lite-snand
+  NAME:=BananaPi BPi-R4 Lite
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=bananapi_bpi-r4-lite
+  UBOOT_CONFIG:=mt7987a_bpi-r4-lite-snand
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand2-ubi
+  BL2_SOC:=mt7987
+  BL2_DDRTYPE:=comb
+  DEPENDS:=+trusted-firmware-a-mt7987-spim-nand2-ubi-comb
+endef
+
+define U-Boot/mt7987_bananapi_bpi-r4-lite-nor
+  NAME:=BananaPi BPi-R4 Lite
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=bananapi_bpi-r4-lite
+  UBOOT_CONFIG:=mt7987a_bpi-r4-lite-nor
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=nor
+  BL2_SOC:=mt7987
+  BL2_DDRTYPE:=comb
+  DEPENDS:=+trusted-firmware-a-mt7987-nor-comb
+  FIP_COMPRESS:=1
+endef
+
 define U-Boot/mt7988_arcadyan_mozart
   NAME:=Arcadyan Mozart
   BUILD_SUBTARGET:=filogic
@@ -879,6 +928,42 @@ define U-Boot/mt7988_bananapi_bpi-r4-poe-snand
   BL2_SOC:=mt7988
   BL2_DDRTYPE:=comb
   DEPENDS:=+trusted-firmware-a-mt7988-spim-nand-ubi-comb
+endef
+
+define U-Boot/mt7987_rfb-emmc
+  NAME:=MT7987 Reference Board
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=mediatek_mt7987a-rfb
+  UBOOT_CONFIG:=mt7987_emmc_rfb
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=sdmmc
+  BL2_SOC:=mt7987
+  BL2_DDRTYPE:=comb
+  DEPENDS:=+trusted-firmware-a-mt7987-emmc-comb
+endef
+
+define U-Boot/mt7987_rfb-spim-nand
+  NAME:=MT7987 Reference Board
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=mediatek_mt7987a-rfb
+  UBOOT_CONFIG:=mt7987_rfb
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand0-ubi
+  BL2_SOC:=mt7987
+  BL2_DDRTYPE:=comb
+  DEPENDS:=+trusted-firmware-a-mt7987-spim-nand0-ubi-comb
+endef
+
+define U-Boot/mt7987_rfb-sd
+  NAME:=MT7987 Reference Board
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=mediatek_mt7987a-rfb
+  UBOOT_CONFIG:=mt7987_sd_rfb
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=sdmmc
+  BL2_SOC:=mt7987
+  BL2_DDRTYPE:=comb
+  DEPENDS:=+trusted-firmware-a-mt7987-sdmmc-comb
 endef
 
 define U-Boot/mt7988_rfb-spim-nand
@@ -1009,6 +1094,13 @@ UBOOT_TARGETS := \
 	mt7986_xiaomi_redmi-router-ax6000 \
 	mt7986_zyxel_ex5601-t0 \
 	mt7986_rfb \
+	mt7987_bananapi_bpi-r4-lite-emmc \
+	mt7987_bananapi_bpi-r4-lite-sdmmc \
+	mt7987_bananapi_bpi-r4-lite-snand \
+	mt7987_bananapi_bpi-r4-lite-nor \
+	mt7987_rfb-emmc \
+	mt7987_rfb-sd \
+	mt7987_rfb-spim-nand \
 	mt7988_arcadyan_mozart \
 	mt7988_asus_zenwifi-bt8 \
 	mt7988_bananapi_bpi-r4-emmc \
