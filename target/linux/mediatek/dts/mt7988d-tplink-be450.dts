@@ -1,0 +1,409 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+/dts-v1/;
+
+#include "mt7988a.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/pinctrl/mt65xx.h>
+#include <dt-bindings/regulator/richtek,rt5190a-regulator.h>
+
+/ {
+	model = "TP-Link BE450";
+	compatible = "tplink,be450", "mediatek,mt7988d";
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	aliases {
+		serial0 = &serial0;
+		label-mac-device = &gmac0;
+		led-boot = &led_status;
+		led-failsafe = &led_status;
+		led-running = &led_status;
+		led-upgrade = &led_status;
+	};
+
+	memory@40000000 {
+		reg = <0x0 0x40000000 0x0 0x40000000>;
+		device_type = "memory";
+	};
+
+	cpus {
+		/delete-node/ cpu@3;
+	};
+
+	reg_1p8v: regulator-1p8v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-1.8V";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	reg_3p3v: regulator-3p3v {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-3.3V";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+		pinctrl-names = "default";
+		pinctrl-0 = <&button_pins>;
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pio 14 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		led-0 {
+			gpios = <&pio 21 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_ORANGE>;
+			function = LED_FUNCTION_WAN;
+		};
+
+		led-1 {
+			gpios = <&pio 28 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN_5GHZ;
+		};
+
+		led-2 {
+			gpios = <&pio 29 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN_2GHZ;
+		};
+
+		led_status: led-3 {
+			gpios = <&pio 30 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			panic-indicator;
+		};
+
+		led-4 {
+			gpios = <&pio 31 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_LAN;
+		};
+
+		led-5 {
+			gpios = <&pio 35 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WPS;
+		};
+
+		led-6 {
+			gpios = <&pio 57 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WAN;
+		};
+
+		led-7 {
+			gpios = <&pio 68 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_USB;
+		};		
+	};
+};
+
+&cpu0 {
+	proc-supply = <&rt5190_buck3>;
+};
+
+&cpu1 {
+	proc-supply = <&rt5190_buck3>;
+};
+
+&cpu2 {
+	proc-supply = <&rt5190_buck3>;
+};
+
+&cci {
+	proc-supply = <&rt5190_buck3>;
+};
+
+&spi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi0_flash_pins>;
+	status = "okay";
+
+	spi_nand: spi_nand@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "spi-nand";
+		
+		reg = <0>;
+
+		spi-cal-addr = /bits/ 32 <0x0 0x0 0x0 0x0 0x0>;
+		spi-cal-addrlen = <5>;
+		spi-cal-data = /bits/ 8 <0x53 0x50 0x49 0x4E 0x41 0x4E 0x44>;
+		spi-cal-datalen = <7>;
+		spi-cal-enable;
+		spi-cal-mode = "read-data";		
+
+		spi-max-frequency = <52000000>;
+		spi-rx-bus-width = <4>;
+		spi-tx-bus-width = <4>;
+
+		partitions: partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "boot";
+				reg = <0x0 0x200000>;
+				read-only;
+			};
+
+			partition@200000 {
+				label = "u-boot-env";
+				reg = <0x200000 0x100000>;
+			};
+
+			partition@300000 {
+				label = "ubi0";
+				reg = <0x300000 0x3200000>;
+			};
+
+			partition@3500000 {
+				label = "ubi1";
+				reg = <0x3500000 0x3200000>;
+				read-only;
+			};
+
+			partition@6700000 {
+				label = "userconfig";
+				reg = <0x6700000 0x800000>;
+				read-only;
+			};
+
+			partition@6f00000 {
+				label = "tp_data";
+				reg = <0x6f00000 0x800000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&eth {
+	pinctrl-names = "default";
+	pinctrl-0 = <&mdio0_pins>;
+	status = "okay";
+};
+
+&gmac0 {
+	status = "okay";
+};
+
+&gmac1 {
+	phy-mode = "internal";
+	phy-connection-type = "internal";
+	phy = <&int_2p5g_phy>;
+	status = "okay";
+};
+
+&gmac2 {
+	phy-mode = "usxgmii";
+	phy-connection-type = "usxgmii";
+	phy = <&phy0>;
+	status = "okay";
+};
+
+&gsw_phy3 {
+	status = "disabled";
+};
+
+&mdio_bus {
+	phy0: ethernet-phy@0 {
+		/* RTL8261N */
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <0>;
+
+		reset-gpios = <&pio 3 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <100000>;
+		reset-deassert-us = <100000>;
+	};
+};
+
+&i2c0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c0_pins>;
+	status = "okay";
+
+	rt5190a_64: rt5190a@64 {
+		compatible = "richtek,rt5190a";
+		reg = <0x64>;
+		/*interrupts-extended = <&gpio26 0 IRQ_TYPE_LEVEL_LOW>;*/
+		vin2-supply = <&rt5190_buck1>;
+		vin3-supply = <&rt5190_buck1>;
+		vin4-supply = <&rt5190_buck1>;
+
+		regulators {
+			rt5190_buck1: buck1 {
+				regulator-name = "rt5190a-buck1";
+				regulator-min-microvolt = <5090000>;
+				regulator-max-microvolt = <5090000>;
+				regulator-allowed-modes =
+				<RT5190A_OPMODE_AUTO RT5190A_OPMODE_FPWM>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			buck2 {
+				regulator-name = "vcore";
+				regulator-min-microvolt = <600000>;
+				regulator-max-microvolt = <1400000>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			rt5190_buck3: buck3 {
+				regulator-name = "vproc";
+				regulator-min-microvolt = <600000>;
+				regulator-max-microvolt = <1400000>;
+				regulator-boot-on;
+			};
+
+			buck4 {
+				regulator-name = "rt5190a-buck4";
+				regulator-min-microvolt = <850000>;
+				regulator-max-microvolt = <850000>;
+				regulator-allowed-modes =
+				<RT5190A_OPMODE_AUTO RT5190A_OPMODE_FPWM>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			ldo {
+				regulator-name = "rt5190a-ldo";
+				regulator-min-microvolt = <1200000>;
+				regulator-max-microvolt = <1200000>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+		};
+	};
+};
+
+&pcie0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie0_1_pins>;
+	reset-gpios = <&pio 7 GPIO_ACTIVE_LOW>;
+	status = "okay";
+
+	pcie@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+
+		mt7996@0,0 {
+			reg = <0x0000 0 0 0 0>;
+		};
+	};
+};
+
+&pio {
+	button_pins: button-pins {
+		pins = "GPIO_RESET", "GPIO_WPS";
+		bias-disable; /* bias-disable */
+	};
+
+	mdio0_pins: mdio0-pins {
+		mux {
+			function = "eth";
+			groups = "mdc_mdio0";
+		};
+
+		conf {
+			groups = "mdc_mdio0";
+			drive-strength = <MTK_DRIVE_8mA>;
+		};
+	};
+
+	i2c0_pins: i2c0-pins-g0 {
+		mux {
+			function = "i2c";
+			groups = "i2c0_1";
+		};
+	};
+
+	pcie0_1_pins: pcie0-pins-g1 {
+		mux {
+			function = "pcie";
+			groups = "pcie_2l_0_pereset", "pcie_clk_req_n0_0";
+		};
+	};
+
+	spi0_flash_pins: spi0-pins {
+		mux {
+			function = "spi";
+			groups = "spi0", "spi0_wp_hold";
+		};
+	};
+
+	enable-usb-power {
+        gpio-hog;
+        gpios = <32 GPIO_ACTIVE_HIGH>;
+        output-high;
+        line-name = "USB power";
+    };
+};
+
+&ssusb1 {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+
+	ports {
+		port@0 {
+			label = "lan3";
+		};
+
+		port@1 {
+			label = "lan2";
+		};
+
+		port@2 {
+			label = "lan1";
+		};
+
+		port@3 {
+			status = "disabled";
+		};
+	};
+};
+
+&tphy {
+	status = "okay";
+};
+
+&serial0 {
+	status = "okay";
+};
+
+&watchdog {
+	status = "okay";
+};
