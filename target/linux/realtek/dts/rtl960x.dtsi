@@ -191,10 +191,40 @@
 		};
 	};
 
+	i2cclock: i2cclock {
+		#clock-cells = <0>;
+		compatible = "fixed-clock";
+
+		/* 62.5 MHz */
+		clock-frequency = <62500000>;
+	};
+
 	switchcore@1b000000 {
 		compatible = "syscon", "simple-mfd";
 		reg = <0x1b000000 0x1000000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+
+		i2c_mst1: i2c@b4 {
+			compatible = "realtek,rtl9607-i2c";
+			reg = <0xb4 0x4>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&i2cclock>;
+			realtek,scl = <0>;
+
+			status = "disabled";
+		};
+
+		i2c_mst2: i2c@b8 {
+			compatible = "realtek,rtl9607-i2c";
+			reg = <0xb8 0x4>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&i2cclock>;
+			realtek,scl = <1>;
+
+			status = "disabled";
+		};
 	};
 };
