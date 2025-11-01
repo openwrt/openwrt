@@ -710,6 +710,14 @@ struct rtl838x_vlan_info {
 	int l2_tunnel_list_id;
 };
 
+struct rtldsa_mst {
+	/** @msti: MSTI mapped to this slot. 0 == unused */
+	u16 msti;
+
+	/** @refcount: number of vlans currently using this msti, undefined when unused */
+	struct kref refcount;
+};
+
 enum l2_entry_type {
 	L2_INVALID = 0,
 	L2_UNICAST = 1,
@@ -1061,6 +1069,7 @@ struct rtl838x_reg {
 	void (*vlan_port_pvidmode_set)(int port, enum pbvlan_type type, enum pbvlan_mode mode);
 	void (*vlan_port_pvid_set)(int port, enum pbvlan_type type, int pvid);
 	void (*vlan_port_keep_tag_set)(int port, bool keep_outer, bool keep_inner);
+	int (*vlan_port_fast_age)(struct rtl838x_switch_priv *priv, int port, u16 vid);
 	void (*set_vlan_igr_filter)(int port, enum igr_filter state);
 	void (*set_vlan_egr_filter)(int port, enum egr_filter state);
 	void (*enable_learning)(int port, bool enable);
@@ -1138,6 +1147,7 @@ struct rtl838x_switch_priv {
 	u64 irq_mask;
 	u32 fib_entries;
 	int l2_bucket_size;
+	u16 n_mst;
 	struct dentry *dbgfs_dir;
 	int n_lags;
 	u64 lags_port_members[MAX_LAGS];
@@ -1163,6 +1173,12 @@ struct rtl838x_switch_priv {
 	struct rtl838x_l3_intf *interfaces[MAX_INTERFACES];
 	u16 intf_mtus[MAX_INTF_MTUS];
 	int intf_mtu_count[MAX_INTF_MTUS];
+
+	/**
+	 * @msts: MSTI to HW MST slot allocations. index 0 is for HW slot 1 because CIST is
+	 * not stored in @msts
+	 */
+	struct rtldsa_mst *msts;
 	struct delayed_work counters_work;
 };
 
