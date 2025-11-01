@@ -39,7 +39,7 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
 
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -8740,9 +8740,9 @@ ath11k_mac_op_set_bitrate_mask(struct ie
+@@ -8757,9 +8757,9 @@ ath11k_mac_op_set_bitrate_mask(struct ie
  				    arvif->vdev_id, ret);
  			return ret;
  		}
@@ -52,7 +52,7 @@ Signed-off-by: Sasha Levin <sashal@kernel.org>
  	} else if (ath11k_mac_bitrate_mask_get_single_nss(ar, arvif, band, mask,
  							  &single_nss)) {
  		rate = WMI_FIXED_RATE_NONE;
-@@ -8809,9 +8809,9 @@ ath11k_mac_op_set_bitrate_mask(struct ie
+@@ -8826,9 +8826,9 @@ ath11k_mac_op_set_bitrate_mask(struct ie
  		}
  
  		mutex_lock(&ar->conf_mutex);
