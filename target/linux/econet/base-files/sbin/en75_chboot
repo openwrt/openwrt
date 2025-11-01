@@ -124,6 +124,14 @@ main() {
         code_offset=0
         code_openwrt=30000000
         code_factory=31000000
+    elif [ "$machine" = "Zyxel PMG5617GA" ]; then
+        # 00060fff
+        part=$(part_named '"reservearea"')
+        offset_blocks=3
+        block_size=$((1024 * 128))
+        code_offset=4095
+        code_openwrt=30
+        code_factory=31
     else
         echo "Unsupported machine: $machine"
         exit 1
