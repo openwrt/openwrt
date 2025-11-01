@@ -45,6 +45,7 @@ platform_do_upgrade() {
 			fw_setenv --lock / bootImage 0 || exit 1
 		fi
 		;;
+	iptime,ax2002m|\
 	iptime,ax2004m)
 		if [ "$(fw_printenv -n boot_from 2>/dev/null)" != "firmware1" ]; then
 			fw_setenv boot_from firmware1 || exit 1
@@ -104,6 +105,7 @@ platform_do_upgrade() {
 	gemtek,wvrtm-127acn|\
 	gemtek,wvrtm-130acn|\
 	iptime,a3004t|\
+	iptime,ax2002m|\
 	iptime,ax2004m|\
 	iptime,t5004|\
 	jcg,q20|\
