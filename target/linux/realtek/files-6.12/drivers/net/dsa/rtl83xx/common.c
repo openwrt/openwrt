@@ -335,27 +335,19 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 			continue;
 
 		pcs_node = of_parse_phandle(dn, "pcs-handle", 0);
-		priv->pcs[pn] = rtpcs_create(priv->dev, pcs_node, pn);
-
 		phy_node = of_parse_phandle(dn, "phy-handle", 0);
-		if (!phy_node) {
-			if (pn != priv->cpu_port)
-				dev_err(priv->dev, "Port node %d misses phy-handle\n", pn);
+		if (pn != priv->cpu_port && !phy_node && !pcs_node) {
+			dev_err(priv->dev, "Port node %d has neither pcs-handle nor phy-handle\n", pn);
 			continue;
 		}
 
-		/*
-		 * TODO: phylink_pcs was completely converted to the standalone PCS driver - see
-		 * rtpcs_create(). Nevertheless the DSA driver still relies on the info about the
-		 * attached SerDes. As soon as the PCS driver can completely configure the SerDes
-		 * this is no longer needed.
-		 */
-
-		priv->ports[pn].sds_num = -1;
-		if (pcs_node)
-			of_property_read_u32(pcs_node, "reg", &priv->ports[pn].sds_num);
-		if (priv->ports[pn].sds_num >= 0)
-			dev_dbg(priv->dev, "port %d has SDS %d\n", pn, priv->ports[pn].sds_num);
+		priv->pcs[pn] = rtpcs_create(priv->dev, pcs_node, pn);
+		if (IS_ERR(priv->pcs[pn])) {
+			dev_err(priv->dev, "port %u failed to create PCS instance: %ld\n",
+				pn, PTR_ERR(priv->pcs[pn]));
+			priv->pcs[pn] = NULL;
+			continue;
+		}
 
 		if (of_get_phy_mode(dn, &interface))
 			interface = PHY_INTERFACE_MODE_NA;
@@ -379,6 +371,13 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 			}
 		}
 
+		if (!phy_node) {
+			if (priv->pcs[pn])
+				priv->ports[pn].phy_is_integrated = true;
+
+			continue;
+		}
+
 		/* Check for the integrated SerDes of the RTL8380M first */
 		if (of_property_read_bool(phy_node, "phy-is-integrated")
 		    && priv->id == 0x8380 && pn >= 24) {
@@ -387,18 +386,10 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 			continue;
 		}
 
-		if (priv->id >= 0x9300) {
-			priv->ports[pn].phy_is_integrated = false;
-			if (of_property_read_bool(phy_node, "phy-is-integrated")) {
-				priv->ports[pn].phy_is_integrated = true;
-				priv->ports[pn].phy = PHY_RTL930X_SDS;
-			}
-		} else {
-			if (of_property_read_bool(phy_node, "phy-is-integrated") &&
-			    !of_property_read_bool(phy_node, "sfp")) {
-				priv->ports[pn].phy = PHY_RTL8218B_INT;
-				continue;
-			}
+		if (of_property_read_bool(phy_node, "phy-is-integrated") &&
+		    !of_property_read_bool(phy_node, "sfp")) {
+			priv->ports[pn].phy = PHY_RTL8218B_INT;
+			continue;
 		}
 
 		if (!of_property_read_bool(phy_node, "phy-is-integrated") &&

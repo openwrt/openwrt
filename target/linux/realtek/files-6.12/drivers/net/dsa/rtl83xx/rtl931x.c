@@ -828,10 +828,6 @@ static int rtl931x_set_ageing_time(unsigned long msec)
 
 	return 0;
 }
-void rtl931x_sw_init(struct rtl838x_switch_priv *priv)
-{
-/*	rtl931x_sds_init(priv); */
-}
 
 static void rtl931x_pie_lookup_enable(struct rtl838x_switch_priv *priv, int index)
 {
@@ -1547,7 +1543,7 @@ static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 		sw_w32_mask(0x3 << pos, 0, RTL931X_LED_PORT_COPR_SET_SEL_CTRL(i));
 
 		/* Skip port if not present (auto-detect) or not in forced mask */
-		if (!priv->ports[i].phy && !(forced_leds_per_port[i]))
+		if (!priv->ports[i].phy && !priv->pcs[i] && !(forced_leds_per_port[i]))
 			continue;
 
 		if (forced_leds_per_port[i] > 0)

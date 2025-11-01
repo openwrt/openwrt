@@ -180,11 +180,6 @@
 		compatible = "ethernet-phy-ieee802.3-c22";
 		rtl9300,smi-address = <2 23>;
 	};	
-
-	INTERNAL_PHY(24)
-	INTERNAL_PHY(25)
-	INTERNAL_PHY(26)
-	INTERNAL_PHY(27)
 };
 
 &switch0 {
@@ -222,7 +217,6 @@
 			reg = <24>;
 			label = "lan25";
 			pcs-handle = <&serdes4>;
-			phy-handle = <&phy24>;
 			phy-mode = "1000base-x";
 			managed = "in-band-status";
 			sfp = <&sfp0>;
@@ -231,7 +225,6 @@
 			reg = <25>;
 			label = "lan26";
 			pcs-handle = <&serdes6>;
-			phy-handle = <&phy25>;
 			phy-mode = "1000base-x";
 			managed = "in-band-status";
 			sfp = <&sfp1>;
@@ -240,7 +233,6 @@
 			reg = <26>;
 			label = "lan27";
 			pcs-handle = <&serdes8>;
-			phy-handle = <&phy26>;
 			phy-mode = "1000base-x";
 			managed = "in-band-status";
 			sfp = <&sfp2>;
@@ -249,7 +241,6 @@
 			reg = <27>;
 			label = "lan28";
 			pcs-handle = <&serdes9>;
-			phy-handle = <&phy27>;
 			phy-mode = "1000base-x";
 			managed = "in-band-status";
 			sfp = <&sfp3>;

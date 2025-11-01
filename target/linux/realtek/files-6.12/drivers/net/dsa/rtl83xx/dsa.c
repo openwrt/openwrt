@@ -51,7 +51,7 @@ static void rtl83xx_enable_phy_polling(struct rtl838x_switch_priv *priv)
 	msleep(1000);
 	/* Enable all ports with a PHY, including the SFP-ports */
 	for (int i = 0; i < priv->cpu_port; i++) {
-		if (priv->ports[i].phy)
+		if (priv->ports[i].phy || priv->pcs[i])
 			v |= BIT_ULL(i);
 	}
 
@@ -436,7 +436,7 @@ static int rtl83xx_setup(struct dsa_switch *ds)
 	 * they will work in isolated mode (only traffic between port and CPU).
 	 */
 	for (int i = 0; i < priv->cpu_port; i++) {
-		if (priv->ports[i].phy) {
+		if (priv->ports[i].phy || priv->pcs[i]) {
 			priv->ports[i].pm = BIT_ULL(priv->cpu_port);
 			priv->r->traffic_set(i, BIT_ULL(i));
 		}
@@ -512,7 +512,7 @@ static int rtl93xx_setup(struct dsa_switch *ds)
 	 * they will work in isolated mode (only traffic between port and CPU).
 	 */
 	for (int i = 0; i < priv->cpu_port; i++) {
-		if (priv->ports[i].phy) {
+		if (priv->ports[i].phy || priv->pcs[i]) {
 			priv->ports[i].pm = BIT_ULL(priv->cpu_port);
 			priv->r->traffic_set(i, BIT_ULL(i));
 		}
@@ -546,26 +546,6 @@ static int rtl93xx_setup(struct dsa_switch *ds)
 	priv->r->led_init(priv);
 
 	return 0;
-}
-
-static int rtl93xx_get_sds(struct phy_device *phydev)
-{
-	struct device *dev = &phydev->mdio.dev;
-	struct device_node *dn;
-	u32 sds_num;
-
-	if (!dev)
-		return -1;
-	if (dev->of_node) {
-		dn = dev->of_node;
-		if (of_property_read_u32(dn, "sds", &sds_num))
-			sds_num = -1;
-	} else {
-		dev_err(dev, "No DT node.\n");
-		return -1;
-	}
-
-	return sds_num;
 }
 
 static struct phylink_pcs *rtldsa_phylink_mac_select_pcs(struct dsa_switch *ds,
@@ -692,11 +672,7 @@ static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
 					const struct phylink_link_state *state)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	int sds_num;
 	u32 reg;
-
-	sds_num = priv->ports[port].sds_num;
-	pr_info("%s: speed %d sds_num %d\n", __func__, state->speed, sds_num);
 
 	reg = sw_r32(priv->r->mac_force_mode_ctrl(port));
 	pr_info("%s reading FORCE_MODE_CTRL: %08x\n", __func__, reg);
@@ -1045,7 +1021,7 @@ static void rtldsa_poll_counters(struct work_struct *work)
 	struct rtldsa_counter_state *counters;
 
 	for (int i = 0; i < priv->cpu_port; i++) {
-		if (!priv->ports[i].phy)
+		if (!priv->ports[i].phy && !priv->pcs[i])
 			continue;
 
 		counters = &priv->ports[i].counters;
@@ -1064,7 +1040,7 @@ static void rtldsa_init_counters(struct rtl838x_switch_priv *priv)
 	struct rtldsa_counter_state *counters;
 
 	for (int i = 0; i < priv->cpu_port; i++) {
-		if (!priv->ports[i].phy)
+		if (!priv->ports[i].phy && !priv->pcs[i])
 			continue;
 
 		counters = &priv->ports[i].counters;
@@ -1415,9 +1391,6 @@ static int rtldsa_port_enable(struct dsa_switch *ds, int port, struct phy_device
 		sw_w32_mask(0, BIT(port), RTL930X_L2_PORT_SABLK_CTRL);
 		sw_w32_mask(0, BIT(port), RTL930X_L2_PORT_DABLK_CTRL);
 	}
-
-	if (priv->ports[port].sds_num < 0)
-		priv->ports[port].sds_num = rtl93xx_get_sds(phydev);
 
 	return 0;
 }

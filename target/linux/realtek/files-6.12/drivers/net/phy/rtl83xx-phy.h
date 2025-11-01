@@ -51,21 +51,3 @@ struct __attribute__ ((__packed__)) fw_header {
 /* Registers of the internal SerDes of the RTL8390 */
 #define RTL839X_SDS12_13_XSG0			(0xB800)
 
-/* Registers of the internal Serdes of the 9300 */
-#define RTL930X_MAC_FORCE_MODE_CTRL		(0xCA1C)
-
-int rtl9300_serdes_setup(int port, int sds_num, phy_interface_t phy_mode);
-
-/*
- * TODO: The following functions are currently not in use. So compiler will complain if
- * they are static and not made available externally. Collect them in this section to
- * preserve for future use.
- */
-
-void rtl9300_do_rx_calibration_3(int sds_num, phy_interface_t phy_mode);
-int rtl9300_sds_clock_wait(int timeout);
-int rtl9300_sds_cmu_band_get(int sds);
-void rtl9300_sds_rxcal_dcvs_get(u32 sds_num, u32 dcvs_id, u32 dcvs_list[]);
-void rtl9300_sds_rxcal_dcvs_manual(u32 sds_num, u32 dcvs_id, bool manual, u32 dvcs_list[]);
-void rtl9300_sds_set(int sds_num, u32 mode);
-
