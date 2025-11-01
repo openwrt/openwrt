@@ -13,6 +13,15 @@
 
 };
 
+&i2c_mst1 {
+	status = "okay";
+
+	/* i2c of the Laser Driver */
+	i2c0: i2c@0 {
+		reg = <0>;
+	};
+};
+
 &ecc0 {
 	status = "okay";
 };
