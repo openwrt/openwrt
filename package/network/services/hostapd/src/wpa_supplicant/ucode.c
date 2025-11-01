@@ -157,6 +157,27 @@ void wpas_ucode_event(struct wpa_supplicant *wpa_s, int event, union wpa_event_d
 	ucv_put(wpa_ucode_call(4));
 }
 
+void wpas_ucode_ctrl_event(struct wpa_supplicant *wpa_s, const char *str, size_t len)
+{
+	uc_value_t *val;
+
+#define _EV_PREFIX "CTRL-EVENT-"
+	if (strncmp(str, _EV_PREFIX, sizeof(_EV_PREFIX) - 1) != 0)
+		return;
+
+	val = wpa_ucode_registry_get(iface_registry, wpa_s->ucode.idx);
+	if (!val)
+		return;
+
+	if (wpa_ucode_call_prepare("ctrl_event"))
+		return;
+
+	uc_value_push(ucv_string_new(wpa_s->ifname));
+	uc_value_push(ucv_get(val));
+	uc_value_push(ucv_string_new_length(str, len));
+	ucv_put(wpa_ucode_call(3));
+}
+
 void wpas_ucode_wps_complete(struct wpa_supplicant *wpa_s,
 			     const struct wps_credential *cred)
 {

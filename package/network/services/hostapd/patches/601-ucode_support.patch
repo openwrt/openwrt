@@ -995,3 +995,21 @@ as adding/removing interfaces.
  	switch (event) {
  	case EVENT_AUTH:
  #ifdef CONFIG_FST
+--- a/wpa_supplicant/ctrl_iface_unix.c
++++ b/wpa_supplicant/ctrl_iface_unix.c
+@@ -28,6 +28,7 @@
+ #include "config.h"
+ #include "wpa_supplicant_i.h"
+ #include "ctrl_iface.h"
++#include "ucode.h"
+ 
+ /* Per-interface ctrl_iface */
+ 
+@@ -436,6 +437,7 @@ static void wpa_supplicant_ctrl_iface_ms
+ 	if (wpa_s == NULL)
+ 		return;
+ 
++	wpas_ucode_ctrl_event(wpa_s, txt, len);
+ 	gpriv = wpa_s->global->ctrl_iface;
+ 
+ 	if (type != WPA_MSG_NO_GLOBAL && gpriv &&
