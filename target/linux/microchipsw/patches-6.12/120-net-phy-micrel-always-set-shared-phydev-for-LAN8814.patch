@@ -1,0 +1,41 @@
+From 06f6c6725eeae6b32980130371b3720a5cbc08e7 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Tue, 21 Oct 2025 14:59:55 +0200
+Subject: [PATCH net] net: phy: micrel: always set shared->phydev for LAN8814
+
+Currently, during the LAN8814 PTP probe shared->phydev is only set if PTP
+clock gets actually set, otherwise the function will return before setting
+it.
+
+This is an issue as shared->phydev is unconditionally being used when IRQ
+is being handled, especially in lan8814_gpio_process_cap and since it was
+not set it will cause a NULL pointer exception and crash the kernel.
+
+So, simply always set shared->phydev to avoid the NULL pointer exception.
+
+Fixes: b3f1a08fcf0d ("net: phy: micrel: Add support for PTP_PF_EXTTS for lan8814")
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+---
+ drivers/net/phy/micrel.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/phy/micrel.c
++++ b/drivers/net/phy/micrel.c
+@@ -3872,6 +3872,8 @@ static int lan8814_ptp_probe_once(struct
+ {
+ 	struct lan8814_shared_priv *shared = phydev->shared->priv;
+ 
++	shared->phydev = phydev;
++
+ 	/* Initialise shared lock for clock*/
+ 	mutex_init(&shared->shared_lock);
+ 
+@@ -3923,8 +3925,6 @@ static int lan8814_ptp_probe_once(struct
+ 
+ 	phydev_dbg(phydev, "successfully registered ptp clock\n");
+ 
+-	shared->phydev = phydev;
+-
+ 	/* The EP.4 is shared between all the PHYs in the package and also it
+ 	 * can be accessed by any of the PHYs
+ 	 */

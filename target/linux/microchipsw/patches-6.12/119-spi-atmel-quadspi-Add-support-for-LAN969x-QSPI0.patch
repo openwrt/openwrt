@@ -1,0 +1,80 @@
+From 9df17cd4cbde177d11fe5b42209cb07a8cc5fd2a Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Mon, 22 Sep 2025 16:30:16 +0200
+Subject: [PATCH 112/112] spi: atmel-quadspi: Add support for LAN969x QSPI0
+
+LAN969x has a similar QSPI0 controller to sama7g5 but with no octal mode
+support.
+
+Sadly, DMA does not currently work and auto refresh must be disabled as
+otherwise board will simply freeze.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+---
+ drivers/spi/Kconfig         |  2 +-
+ drivers/spi/atmel-quadspi.c | 21 ++++++++++++++++++---
+ 2 files changed, 19 insertions(+), 4 deletions(-)
+
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -147,7 +147,7 @@ config SPI_AT91_USART
+ 
+ config SPI_ATMEL_QUADSPI
+ 	tristate "Atmel Quad SPI Controller"
+-	depends on ARCH_AT91 || COMPILE_TEST
++	depends on ARCH_MICROCHIP || COMPILE_TEST
+ 	depends on OF && HAS_IOMEM
+ 	help
+ 	  This enables support for the Quad SPI controller in master mode.
+--- a/drivers/spi/atmel-quadspi.c
++++ b/drivers/spi/atmel-quadspi.c
+@@ -1053,9 +1053,9 @@ static int atmel_qspi_set_pad_calibratio
+ 					  ATMEL_QSPI_TIMEOUT);
+ 
+ 	/* Refresh analogic blocks every 1 ms.*/
+-	atmel_qspi_write(FIELD_PREP(QSPI_REFRESH_DELAY_COUNTER,
++	/*atmel_qspi_write(FIELD_PREP(QSPI_REFRESH_DELAY_COUNTER,
+ 				    aq->target_max_speed_hz / 1000),
+-			 aq, QSPI_REFRESH);
++			 aq, QSPI_REFRESH);*/
+ 
+ 	return ret;
+ }
+@@ -1114,7 +1114,7 @@ static int atmel_qspi_sama7g5_init(struc
+ 	 * Check if the SoC supports pad calibration in Octal SPI mode.
+ 	 * Proceed only if both the capabilities are true.
+ 	 */
+-	if (aq->caps->octal && aq->caps->has_padcalib) {
++	if (aq->caps->has_padcalib) {
+ 		ret = atmel_qspi_set_pad_calibration(aq);
+ 		if (ret)
+ 			return ret;
+@@ -1649,6 +1649,17 @@ static const struct atmel_qspi_caps atme
+ 	.has_dllon = true,
+ };
+ 
++static const struct atmel_qspi_caps microchip_lan969x_qspi_caps = {
++	.max_speed_hz = SAM9X7_QSPI_MAX_SPEED_HZ,
++	.has_gclk = true,
++	.octal = false,
++	/* It supports using DMA but its currently broken */
++	.has_dma = false,
++	.has_2xgclk = false,
++	.has_padcalib = true,
++	.has_dllon = true,
++};
++
+ static const struct of_device_id atmel_qspi_dt_ids[] = {
+ 	{
+ 		.compatible = "atmel,sama5d2-qspi",
+@@ -1678,6 +1689,10 @@ static const struct of_device_id atmel_q
+ 		.compatible = "microchip,sama7d65-qspi",
+ 		.data = &atmel_sama7d65_qspi_caps,
+ 	},
++	{
++		.compatible = "microchip,lan9691-qspi",
++		.data = &microchip_lan969x_qspi_caps,
++	},
+ 
+ 
+ 	{ /* sentinel */ }

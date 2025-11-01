@@ -1,0 +1,57 @@
+From f157bc4635178eccb282031d7c2ba2867bd3274c Mon Sep 17 00:00:00 2001
+From: Varshini Rajendran <varshini.rajendran@microchip.com>
+Date: Mon, 8 Sep 2025 09:44:20 +0530
+Subject: [PATCH 111/112] spi: atmel-quadspi: Add support for sama7d65 QSPI
+
+Add support for sama7d65 QSPI controller and define its caps.
+
+Signed-off-by: Varshini Rajendran <varshini.rajendran@microchip.com>
+Link: https://patch.msgid.link/20250908-microchip-qspi-v2-5-8f3d69fdd5c9@microchip.com
+Signed-off-by: Mark Brown <broonie@kernel.org>
+---
+ drivers/spi/atmel-quadspi.c | 27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
+
+--- a/drivers/spi/atmel-quadspi.c
++++ b/drivers/spi/atmel-quadspi.c
+@@ -1615,6 +1615,24 @@ static const struct atmel_qspi_caps atme
+ 	.has_dllon = false,
+ };
+ 
++static const struct atmel_qspi_caps atmel_sama7d65_ospi_caps = {
++	.max_speed_hz = SAMA7G5_QSPI0_MAX_SPEED_HZ,
++	.has_gclk = true,
++	.octal = true,
++	.has_dma = true,
++	.has_2xgclk = true,
++	.has_padcalib = true,
++	.has_dllon = false,
++};
++
++static const struct atmel_qspi_caps atmel_sama7d65_qspi_caps = {
++	.max_speed_hz = SAMA7G5_QSPI1_SDR_MAX_SPEED_HZ,
++	.has_gclk = true,
++	.has_dma = true,
++	.has_2xgclk = true,
++	.has_dllon = false,
++};
++
+ static const struct atmel_qspi_caps atmel_sama7g5_ospi_caps = {
+ 	.max_speed_hz = SAMA7G5_QSPI0_MAX_SPEED_HZ,
+ 	.has_gclk = true,
+@@ -1652,6 +1670,15 @@ static const struct of_device_id atmel_q
+ 		.compatible = "microchip,sam9x7-ospi",
+ 		.data = &atmel_sam9x7_ospi_caps,
+ 	},
++	{
++		.compatible = "microchip,sama7d65-ospi",
++		.data = &atmel_sama7d65_ospi_caps,
++	},
++	{
++		.compatible = "microchip,sama7d65-qspi",
++		.data = &atmel_sama7d65_qspi_caps,
++	},
++
+ 
+ 	{ /* sentinel */ }
+ };

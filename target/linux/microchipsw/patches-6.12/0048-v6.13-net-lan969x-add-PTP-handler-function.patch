@@ -1,0 +1,180 @@
+From a84b19eaf3ede71d2e4075dddffc71a529ccbdd9 Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Thu, 24 Oct 2024 00:01:29 +0200
+Subject: [PATCH 53/82] net: lan969x: add PTP handler function
+
+Add PTP IRQ handler for lan969x. This is required, as the PTP registers
+are placed in two different targets on Sparx5 and lan969x. The
+implementation is otherwise the same as on Sparx5.
+
+Also, expose sparx5_get_hwtimestamp() for use by lan969x.
+
+Reviewed-by: Steen Hegelund <Steen.Hegelund@microchip.com>
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Link: https://patch.msgid.link/20241024-sparx5-lan969x-switch-driver-2-v2-10-a0b5fae88a0f@microchip.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ .../net/ethernet/microchip/lan969x/lan969x.c  | 90 +++++++++++++++++++
+ .../ethernet/microchip/sparx5/sparx5_main.h   |  5 ++
+ .../ethernet/microchip/sparx5/sparx5_ptp.c    |  9 +-
+ 3 files changed, 99 insertions(+), 5 deletions(-)
+
+--- a/drivers/net/ethernet/microchip/lan969x/lan969x.c
++++ b/drivers/net/ethernet/microchip/lan969x/lan969x.c
+@@ -201,6 +201,95 @@ static int lan969x_port_mux_set(struct s
+ 	return 0;
+ }
+ 
++static irqreturn_t lan969x_ptp_irq_handler(int irq, void *args)
++{
++	int budget = SPARX5_MAX_PTP_ID;
++	struct sparx5 *sparx5 = args;
++
++	while (budget--) {
++		struct sk_buff *skb, *skb_tmp, *skb_match = NULL;
++		struct skb_shared_hwtstamps shhwtstamps;
++		struct sparx5_port *port;
++		struct timespec64 ts;
++		unsigned long flags;
++		u32 val, id, txport;
++		u32 delay;
++
++		val = spx5_rd(sparx5, PTP_TWOSTEP_CTRL);
++
++		/* Check if a timestamp can be retrieved */
++		if (!(val & PTP_TWOSTEP_CTRL_PTP_VLD))
++			break;
++
++		WARN_ON(val & PTP_TWOSTEP_CTRL_PTP_OVFL);
++
++		if (!(val & PTP_TWOSTEP_CTRL_STAMP_TX))
++			continue;
++
++		/* Retrieve the ts Tx port */
++		txport = PTP_TWOSTEP_CTRL_STAMP_PORT_GET(val);
++
++		/* Retrieve its associated skb */
++		port = sparx5->ports[txport];
++
++		/* Retrieve the delay */
++		delay = spx5_rd(sparx5, PTP_TWOSTEP_STAMP_NSEC);
++		delay = PTP_TWOSTEP_STAMP_NSEC_NS_GET(delay);
++
++		/* Get next timestamp from fifo, which needs to be the
++		 * rx timestamp which represents the id of the frame
++		 */
++		spx5_rmw(PTP_TWOSTEP_CTRL_PTP_NXT_SET(1),
++			 PTP_TWOSTEP_CTRL_PTP_NXT,
++			 sparx5, PTP_TWOSTEP_CTRL);
++
++		val = spx5_rd(sparx5, PTP_TWOSTEP_CTRL);
++
++		/* Check if a timestamp can be retrieved */
++		if (!(val & PTP_TWOSTEP_CTRL_PTP_VLD))
++			break;
++
++		/* Read RX timestamping to get the ID */
++		id = spx5_rd(sparx5, PTP_TWOSTEP_STAMP_NSEC);
++		id <<= 8;
++		id |= spx5_rd(sparx5, PTP_TWOSTEP_STAMP_SUBNS);
++
++		spin_lock_irqsave(&port->tx_skbs.lock, flags);
++		skb_queue_walk_safe(&port->tx_skbs, skb, skb_tmp) {
++			if (SPARX5_SKB_CB(skb)->ts_id != id)
++				continue;
++
++			__skb_unlink(skb, &port->tx_skbs);
++			skb_match = skb;
++			break;
++		}
++		spin_unlock_irqrestore(&port->tx_skbs.lock, flags);
++
++		/* Next ts */
++		spx5_rmw(PTP_TWOSTEP_CTRL_PTP_NXT_SET(1),
++			 PTP_TWOSTEP_CTRL_PTP_NXT,
++			 sparx5, PTP_TWOSTEP_CTRL);
++
++		if (WARN_ON(!skb_match))
++			continue;
++
++		spin_lock(&sparx5->ptp_ts_id_lock);
++		sparx5->ptp_skbs--;
++		spin_unlock(&sparx5->ptp_ts_id_lock);
++
++		/* Get the h/w timestamp */
++		sparx5_get_hwtimestamp(sparx5, &ts, delay);
++
++		/* Set the timestamp in the skb */
++		shhwtstamps.hwtstamp = ktime_set(ts.tv_sec, ts.tv_nsec);
++		skb_tstamp_tx(skb_match, &shhwtstamps);
++
++		dev_kfree_skb_any(skb_match);
++	}
++
++	return IRQ_HANDLED;
++}
++
+ static const struct sparx5_regs lan969x_regs = {
+ 	.tsize = lan969x_tsize,
+ 	.gaddr = lan969x_gaddr,
+@@ -242,6 +331,7 @@ static const struct sparx5_ops lan969x_o
+ 	.get_hsch_max_group_rate = &lan969x_get_hsch_max_group_rate,
+ 	.get_sdlb_group          = &lan969x_get_sdlb_group,
+ 	.set_port_mux            = &lan969x_port_mux_set,
++	.ptp_irq_handler         = &lan969x_ptp_irq_handler,
+ };
+ 
+ const struct sparx5_match_data lan969x_desc = {
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
+@@ -114,6 +114,8 @@ enum sparx5_vlan_port_type {
+ #define SPX5_DSM_CAL_LEN               64
+ #define SPX5_DSM_CAL_MAX_DEVS_PER_TAXI 13
+ 
++#define SPARX5_MAX_PTP_ID	512
++
+ struct sparx5;
+ 
+ struct sparx5_calendar_data {
+@@ -499,6 +501,9 @@ void sparx5_ptp_txtstamp_release(struct
+ 				 struct sk_buff *skb);
+ irqreturn_t sparx5_ptp_irq_handler(int irq, void *args);
+ int sparx5_ptp_gettime64(struct ptp_clock_info *ptp, struct timespec64 *ts);
++void sparx5_get_hwtimestamp(struct sparx5 *sparx5,
++			    struct timespec64 *ts,
++			    u32 nsec);
+ 
+ /* sparx5_vcap_impl.c */
+ int sparx5_vcap_init(struct sparx5 *sparx5);
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_ptp.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_ptp.c
+@@ -11,8 +11,6 @@
+ #include "sparx5_main_regs.h"
+ #include "sparx5_main.h"
+ 
+-#define SPARX5_MAX_PTP_ID	512
+-
+ #define TOD_ACC_PIN		0x4
+ 
+ enum {
+@@ -275,9 +273,9 @@ void sparx5_ptp_txtstamp_release(struct
+ 	spin_unlock_irqrestore(&sparx5->ptp_ts_id_lock, flags);
+ }
+ 
+-static void sparx5_get_hwtimestamp(struct sparx5 *sparx5,
+-				   struct timespec64 *ts,
+-				   u32 nsec)
++void sparx5_get_hwtimestamp(struct sparx5 *sparx5,
++			    struct timespec64 *ts,
++			    u32 nsec)
+ {
+ 	/* Read current PTP time to get seconds */
+ 	const struct sparx5_consts *consts = sparx5->data->consts;
+@@ -305,6 +303,7 @@ static void sparx5_get_hwtimestamp(struc
+ 
+ 	spin_unlock_irqrestore(&sparx5->ptp_clock_lock, flags);
+ }
++EXPORT_SYMBOL_GPL(sparx5_get_hwtimestamp);
+ 
+ irqreturn_t sparx5_ptp_irq_handler(int irq, void *args)
+ {
