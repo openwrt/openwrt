@@ -8,41 +8,10 @@
 	model = "Zyxel XGS1210-12 A1 Switch";
 };
 
-&mdio_bus0 {
-	phy24: ethernet-phy@24 {
-		reg = <24>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		rtl9300,smi-address = <1 8>;
-		// Disabled because we do not know how to bring up again
-		// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
-	};
-
-	phy25: ethernet-phy@25 {
-		reg = <25>;
-		compatible = "ethernet-phy-ieee802.3-c45";
-		rtl9300,smi-address = <2 9>;
-		// Disabled because we do not know how to bring up again
-		// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
-	};
+&phy24 {
+	rtl9300,smi-address = <1 8>;
 };
 
-&switch0 {
-	ports {
-		port@24 {
-			reg = <24>;
-			label = "lan9";
-			pcs-handle = <&serdes6>;
-			phy-handle = <&phy24>;
-			phy-mode = "2500base-x";
-			led-set = <1>;
-		};
-		port@25 {
-			reg = <25>;
-			label = "lan10";
-			pcs-handle = <&serdes7>;
-			phy-handle = <&phy25>;
-			phy-mode = "2500base-x";
-			led-set = <1>;
-		};
-	};
+&phy25 {
+	rtl9300,smi-address = <2 9>;
 };

@@ -98,6 +98,18 @@ define Device/xikestor_sks8310-8x
 endef
 TARGET_DEVICES += xikestor_sks8310-8x
 
+define Device/zyxel_xgs1010-12-a1
+  SOC := rtl9302
+  UIMAGE_MAGIC := 0x93001010
+  DEVICE_VENDOR := Zyxel
+  DEVICE_MODEL := XGS1010-12
+  DEVICE_VARIANT := A1
+  KERNEL_SIZE := 7168k
+  IMAGE_SIZE := 13184k
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += zyxel_xgs1010-12-a1
+
 define Device/zyxel_xgs1210-12-a1
   $(Device/zyxel_xgs1210-12)
   SUPPORTED_DEVICES += zyxel,xgs1210-12
