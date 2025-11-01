@@ -135,10 +135,11 @@
 
 	reset-gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 
-	wifi@168c,0029 {
+	wifi@e,0 {
 		compatible = "pci168c,0029";
 		reg = <0x7000 0 0 0 0>;
-		qca,no-eeprom; /* load from ath9k-eeprom-pci-0000:00:0e.0.bin */
+		nvmem-cells = <&cal_f000>;
+		nvmem-cell-names = "calibration";
 	};
 };
 
@@ -167,10 +168,20 @@
 				read-only;
 			};
 
-			ath9k_cal: partition@20000 {
+			partition@20000 {
 				reg = <0x20000 0x10000>;
 				label = "calibration";
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_f000: calibration@f000 {
+						reg = <0xf000 0xeb8>;
+					};
+				};
 			};
 
 			partition@50000 {
