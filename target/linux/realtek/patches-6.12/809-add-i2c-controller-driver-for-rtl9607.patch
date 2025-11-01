@@ -1,0 +1,29 @@
+--- a/drivers/i2c/busses/Kconfig
++++ b/drivers/i2c/busses/Kconfig
+@@ -1081,6 +1081,16 @@ config I2C_RTL9300
+ 	  This driver can also be built as a module. If so, the module will
+ 	  be called i2c-rtl9300.
+ 
++config I2C_RTL960X
++	tristate "Realtek RTL960X I2C controller"
++	depends on MACH_REALTEK_RTL || COMPILE_TEST
++	help
++	  Say Y here to include support for the I2C controller in Realtek
++	  RTL960x SoCs.
++
++	  This driver can also be built as a module. If so, the module will
++	  be called i2c-rtl960x.
++
+ config I2C_RZV2M
+ 	tristate "Renesas RZ/V2M adapter"
+ 	depends on ARCH_RENESAS || COMPILE_TEST
+--- a/drivers/i2c/busses/Makefile
++++ b/drivers/i2c/busses/Makefile
+@@ -105,6 +105,7 @@ obj-$(CONFIG_I2C_QUP)		+= i2c-qup.o
+ obj-$(CONFIG_I2C_RIIC)		+= i2c-riic.o
+ obj-$(CONFIG_I2C_RK3X)		+= i2c-rk3x.o
+ obj-$(CONFIG_I2C_RTL9300)	+= i2c-rtl9300.o
++obj-$(CONFIG_I2C_RTL960X)	+= i2c-rtl960x.o
+ obj-$(CONFIG_I2C_RZV2M)		+= i2c-rzv2m.o
+ obj-$(CONFIG_I2C_S3C2410)	+= i2c-s3c2410.o
+ obj-$(CONFIG_I2C_SH7760)	+= i2c-sh7760.o
