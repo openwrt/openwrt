@@ -38,14 +38,10 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
 --- a/arch/arm/dts/an7583-evb.dts
 +++ b/arch/arm/dts/an7583-evb.dts
-@@ -46,6 +46,28 @@
+@@ -46,6 +46,24 @@
  	};
  };
  
-+&snfi {
-+	status = "okay";
-+};
-+
 +&spi_nand {
 +	partitions {
 +		compatible = "fixed-partitions";
@@ -69,7 +65,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	pinctrl-0 = <&pcie0_rst_pins>;
 --- a/configs/an7581_evb_defconfig
 +++ b/configs/an7581_evb_defconfig
-@@ -77,3 +77,19 @@ CONFIG_SPI=y
+@@ -78,3 +78,19 @@ CONFIG_SPI=y
  CONFIG_DM_SPI=y
  CONFIG_AIROHA_SNFI_SPI=y
  CONFIG_SHA512=y
@@ -91,7 +87,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +# CONFIG_UBIFS_SILENCE_DEBUG_DUMP is not set
 --- a/configs/an7583_evb_defconfig
 +++ b/configs/an7583_evb_defconfig
-@@ -79,3 +79,19 @@ CONFIG_SHA512=y
+@@ -80,3 +80,19 @@ CONFIG_SHA512=y
  CONFIG_AIROHA_ETH=y
  CONFIG_MMC_MTK=y
  CONFIG_AIROHA_SNFI_SPI=y

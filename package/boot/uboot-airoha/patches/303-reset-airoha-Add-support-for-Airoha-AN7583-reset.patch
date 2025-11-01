@@ -96,7 +96,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  static int airoha_reset_update(struct airoha_reset_priv *priv,
  			       unsigned long id, bool assert)
  {
-@@ -135,7 +191,7 @@ static int airoha_reset_xlate(struct res
+@@ -135,7 +191,7 @@ static int airoha_reset_xlate(struct reset_ctl *reset_ctl,
  {
  	struct airoha_reset_priv *priv = dev_get_priv(reset_ctl->dev);
  
@@ -105,7 +105,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  		return -EINVAL;
  
  	reset_ctl->id = priv->idx_map[args->args[0]];
-@@ -150,7 +206,7 @@ static struct reset_ops airoha_reset_ops
+@@ -150,7 +206,7 @@ static struct reset_ops airoha_reset_ops = {
  	.rst_status = airoha_reset_status,
  };
  
@@ -114,15 +114,15 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  {
  	struct airoha_reset_priv *priv = dev_get_priv(dev);
  	int ret;
-@@ -161,10 +217,44 @@ static int airoha_reset_probe(struct ude
+@@ -161,10 +217,44 @@ static int airoha_reset_probe(struct udevice *dev)
  
  	priv->bank_ofs = en7581_rst_ofs;
  	priv->idx_map = en7581_rst_map;
 +	priv->num_rsts = ARRAY_SIZE(en7581_rst_map);
- 
- 	return 0;
- }
- 
++
++	return 0;
++}
++
 +static int an7583_reset_probe(struct udevice *dev)
 +{
 +	struct airoha_reset_priv *priv = dev_get_priv(dev);
@@ -139,10 +139,10 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +	priv->bank_ofs = en7581_rst_ofs;
 +	priv->idx_map = an7583_rst_map;
 +	priv->num_rsts = ARRAY_SIZE(an7583_rst_map);
-+
-+	return 0;
-+}
-+
+ 
+ 	return 0;
+ }
+ 
 +static int airoha_reset_probe(struct udevice *dev)
 +{
 +	if (ofnode_device_is_compatible(dev_ofnode(dev),
@@ -223,3 +223,4 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +#define AN7583_XPON_MAC_RST		47
 +
 +#endif /* __DT_BINDINGS_RESET_CONTROLLER_AIROHA_AN7583_H_ */
+
