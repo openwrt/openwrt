@@ -251,6 +251,10 @@
 		macaddr_factory_4: macaddr@4 {
 			reg = <0x4 0x6>;
 		};
+
+		precal_factory_1010: precal@1010 {
+			reg = <0x1010 0x6f010>;
+		};		
 	};
 };
 
@@ -342,8 +346,8 @@
 };
 
 &wifi {
-	nvmem-cells = <&eeprom_factory_0>;
-	nvmem-cell-names = "eeprom";
+	nvmem-cells = <&eeprom_factory_0>, <&precal_factory_1010>;
+	nvmem-cell-names = "eeprom", "precal";
 
 	status = "okay";
 };
