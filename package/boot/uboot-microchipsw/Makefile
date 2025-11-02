@@ -27,7 +27,16 @@ define U-Boot/ev23x71a
   UBOOT_CONFIG:=mchp_lan969x
 endef
 
-UBOOT_TARGETS:= ev23x71a
+define U-Boot/tactical-1000
+  NAME:=Novarq Tactical 1000
+  BUILD_DEVICES:=novarq_tactical-1000
+  BUILD_SUBTARGET:=lan969x
+  UBOOT_CONFIG:=mchp_lan969x
+endef
+
+UBOOT_TARGETS:= \
+	ev23x71a \
+	tactical-1000
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
