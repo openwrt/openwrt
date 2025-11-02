@@ -28,7 +28,17 @@ define Trusted-Firmware-A/ev23x71a
   DEPENDS:=+u-boot-ev23x71a
 endef
 
-TFA_TARGETS:= ev23x71a
+define Trusted-Firmware-A/tactical-1000
+  NAME:=Novarq Tactical 1000
+  BUILD_SUBTARGET:=lan969x
+  BUILD_DEVICES:=novarq_tactical-1000
+  PLAT:=novarq_tactical_1000_v3
+  DEPENDS:=+u-boot-tactical-1000
+endef
+
+TFA_TARGETS:= \
+	ev23x71a \
+	tactical-1000
 
 MBEDTLS_NAME:=mbedtls
 MBEDTLS_RELEASE:=2.28.10
