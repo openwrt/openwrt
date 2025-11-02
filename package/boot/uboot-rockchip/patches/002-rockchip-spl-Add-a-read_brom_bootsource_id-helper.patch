@@ -1,14 +1,7 @@
+From 20c950de5e0431464b7068fdb2c6ec4ead3940ad Mon Sep 17 00:00:00 2001
 From: Jonas Karlman <jonas@kwiboo.se>
-To: Kever Yang <kever.yang@rock-chips.com>,
-	Simon Glass <sjg@chromium.org>,
-	Philipp Tomsich <philipp.tomsich@vrull.eu>,
-	Tom Rini <trini@konsulko.com>
-Cc: Quentin Schulz <quentin.schulz@cherry.de>,
-	u-boot@lists.denx.de, Jonas Karlman <jonas@kwiboo.se>
-Subject: [PATCH v3 02/10] rockchip: spl: Add a read_brom_bootsource_id() helper
-Date: Sun, 31 Aug 2025 11:20:23 +0000	[thread overview]
-Message-ID: <20250831112046.2642363-3-jonas@kwiboo.se> (raw)
-In-Reply-To: <20250831112046.2642363-1-jonas@kwiboo.se>
+Date: Sun, 19 Oct 2025 15:47:16 +0000
+Subject: [PATCH] rockchip: spl: Add a read_brom_bootsource_id() helper
 
 The bootsource ids reported by BootROM of RK3528 and RK3576 for e.g.
 SPI NOR and USB differs slightly compared to prior SoCs:
@@ -23,9 +16,7 @@ will be used to translate the new values to the common BROM_BOOTSOURCE
 enum values on RK3528 and RK3576.
 
 Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
----
-v3: Mention RK3528 in commit message
-v2: No change
+Reviewed-by: Kever Yang <kever.yang@rock-chips.com>
 ---
  arch/arm/include/asm/arch-rockchip/bootrom.h | 2 ++
  arch/arm/mach-rockchip/spl.c                 | 7 ++++++-

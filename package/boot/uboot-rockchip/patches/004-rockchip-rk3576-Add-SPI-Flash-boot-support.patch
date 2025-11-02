@@ -1,14 +1,7 @@
+From 06d52d81cbd4275c86a7a150a23ab4d1dee8f435 Mon Sep 17 00:00:00 2001
 From: Jonas Karlman <jonas@kwiboo.se>
-To: Kever Yang <kever.yang@rock-chips.com>,
-	Simon Glass <sjg@chromium.org>,
-	Philipp Tomsich <philipp.tomsich@vrull.eu>,
-	Tom Rini <trini@konsulko.com>
-Cc: Quentin Schulz <quentin.schulz@cherry.de>,
-	u-boot@lists.denx.de, Jonas Karlman <jonas@kwiboo.se>
-Subject: [PATCH v3 04/10] rockchip: rk3576: Add SPI Flash boot support
-Date: Sun, 31 Aug 2025 11:20:25 +0000	[thread overview]
-Message-ID: <20250831112046.2642363-5-jonas@kwiboo.se> (raw)
-In-Reply-To: <20250831112046.2642363-1-jonas@kwiboo.se>
+Date: Sun, 19 Oct 2025 15:47:18 +0000
+Subject: [PATCH] rockchip: rk3576: Add SPI Flash boot support
 
 The bootsource ids reported by BootROM of RK3576 for SPI NOR and USB
 differs slightly compared to prior SoCs:
@@ -23,13 +16,7 @@ the new bootsource id values and the required boot_devices mapping of
 sfc0 and sfc1 to help support booting from SPI flash on RK3576.
 
 Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
----
-Changes in v3:
-- Add fspi1m1 pinctrl bootph- props to SoC u-boot.dtsi
-- Drop the incomplete support for FSPI1_M0
-- Add a short code comment about the re-mapping of bootsource id
-
-v2: No change
+Reviewed-by: Kever Yang <kever.yang@rock-chips.com>
 ---
  arch/arm/dts/rk3576-u-boot.dtsi        | 46 ++++++++++++++++++++++++++
  arch/arm/mach-rockchip/rk3576/rk3576.c | 25 ++++++++++++++
