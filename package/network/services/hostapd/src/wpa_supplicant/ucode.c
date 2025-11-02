@@ -157,6 +157,64 @@ void wpas_ucode_event(struct wpa_supplicant *wpa_s, int event, union wpa_event_d
 	ucv_put(wpa_ucode_call(4));
 }
 
+void wpas_ucode_wps_complete(struct wpa_supplicant *wpa_s,
+			     const struct wps_credential *cred)
+{
+#ifdef CONFIG_WPS
+	uc_value_t *val;
+	char *ifname, *encryption, *ssid, *key;
+	size_t ifname_len;
+
+	if (!cred)
+		return;
+
+	switch (cred->auth_type) {
+	case WPS_AUTH_WPAPSK | WPS_AUTH_WPA2PSK:
+	case WPS_AUTH_WPA2PSK:
+		encryption = "psk2";
+		break;
+	case WPS_AUTH_WPAPSK:
+		encryption = "psk";
+		break;
+	case WPS_AUTH_OPEN:
+		encryption = "none";
+		break;
+	default:
+		wpa_printf(MSG_DEBUG, "WPS: Ignored credentials for "
+			   "unsupported authentication type 0x%x",
+			   cred->auth_type);
+		return;
+	}
+
+	if (cred->auth_type != WPS_AUTH_OPEN &&
+	    (cred->key_len < 8 || cred->key_len > 2 * PMK_LEN)) {
+		wpa_printf(MSG_ERROR, "WPS: Reject PSK credential with "
+			   "invalid Network Key length %lu",
+			   (unsigned long) cred->key_len);
+		return;
+	}
+
+	val = wpa_ucode_registry_get(iface_registry, wpa_s->ucode.idx);
+	if (!val)
+		return;
+
+	if (wpa_ucode_call_prepare("wps_credentials"))
+		return;
+
+	uc_value_push(ucv_string_new(wpa_s->ifname));
+	uc_value_push(ucv_get(val));
+
+	val = ucv_object_new(vm);
+	uc_value_push(val);
+
+	ucv_object_add(val, "encryption", ucv_string_new(encryption));
+	ucv_object_add(val, "ssid", ucv_string_new_length(cred->ssid, cred->ssid_len));
+	ucv_object_add(val, "key", ucv_string_new_length(cred->key, cred->key_len));
+
+	ucv_put(wpa_ucode_call(3));
+#endif /* CONFIG_WPS */
+}
+
 static const char *obj_stringval(uc_value_t *obj, const char *name)
 {
 	uc_value_t *val = ucv_object_get(obj, name, NULL);

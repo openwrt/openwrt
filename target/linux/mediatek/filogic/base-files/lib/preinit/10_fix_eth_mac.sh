@@ -12,7 +12,8 @@ preinit_set_mac_address() {
 		ip link set dev game address "$lan_mac"
 		ip link set dev eth1 address "$wan_mac"
 		;;
-	acer,predator-w6x)
+	acer,predator-w6x-stock|\
+	acer,predator-w6x-ubootmod)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		ip link set dev lan1 address "$lan_mac"
