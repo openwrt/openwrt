@@ -7,7 +7,8 @@ lan969x_setup_interfaces()
 	local board="$1"
 
 	case "$board" in
-	microchip,ev23x71a)
+	microchip,ev23x71a|\
+	novarq,tactical-1000)
 		lan_list=$(ls -1 -v -d /sys/class/net/eth* | xargs -n1 basename | xargs)
 		ucidef_set_interface_lan "$lan_list"
 		;;
