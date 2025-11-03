@@ -16,14 +16,6 @@ static const u8 ipv6_all_hosts_mcast_addr_base[ETH_ALEN] =
 static const u8 ipv6_all_hosts_mcast_addr_mask[ETH_ALEN] =
 { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
-/* This interval needs to be short enough to prevent an undetected counter
- * overflow. The octet counters don't need to be considered for this, because
- * they are 64 bits on all platforms. Based on the possible packets per second
- * at the highest supported speeds, an interval of a minute is probably a safe
- * choice for the other counters.
- */
-#define RTLDSA_COUNTERS_POLL_INTERVAL	(60 * HZ)
-
 extern struct rtl83xx_soc_info soc_info;
 
 static void rtldsa_init_counters(struct rtl838x_switch_priv *priv);
@@ -1213,7 +1205,7 @@ static void rtldsa_poll_counters(struct work_struct *work)
 	}
 
 	queue_delayed_work(priv->wq, &priv->counters_work,
-			   RTLDSA_COUNTERS_POLL_INTERVAL);
+			   priv->r->stat_counter_poll_interval);
 }
 
 static void rtldsa_init_counters(struct rtl838x_switch_priv *priv)
@@ -1233,7 +1225,7 @@ static void rtldsa_init_counters(struct rtl838x_switch_priv *priv)
 
 	INIT_DELAYED_WORK(&priv->counters_work, rtldsa_poll_counters);
 	queue_delayed_work(priv->wq, &priv->counters_work,
-			   RTLDSA_COUNTERS_POLL_INTERVAL);
+			   priv->r->stat_counter_poll_interval);
 }
 
 static void rtldsa_get_strings(struct dsa_switch *ds,

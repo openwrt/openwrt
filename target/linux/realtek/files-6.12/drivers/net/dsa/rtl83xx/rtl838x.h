@@ -684,6 +684,24 @@ typedef enum {
 #define MAX_SMACS 64
 #define DSCP_MAP_MAX 64
 
+/* This interval needs to be short enough to prevent an undetected counter
+ * overflow. The octet counters don't need to be considered for this, because
+ * they are 64 bits on all platforms. Based on the possible packets per second
+ * at the highest supported speeds, an interval of a minute is probably a safe
+ * choice for the other counters.
+ */
+#define RTLDSA_COUNTERS_POLL_INTERVAL	(60 * HZ)
+
+/* Some SoC families require table access to get the HW counters. A mutex is
+ * required for this access - which will potentially cause a sleep in the
+ * current context. This is not always possible with .get_stats64 because it
+ * is also called in atomic contexts.
+ *
+ * For these SoCs, the retrieval of the current counters in .get_stats64 is
+ * skipped and the counters are simply retrieved a lot more often from the HW.
+ */
+#define RTLDSA_COUNTERS_FAST_POLL_INTERVAL	(3 * HZ)
+
 enum phy_type {
 	PHY_NONE = 0,
 	PHY_RTL838X_SDS = 1,
@@ -1140,6 +1158,7 @@ struct rtl838x_reg {
 	 * update is therefore not atomic.
 	 */
 	void (*stat_update_counters_atomically)(struct rtl838x_switch_priv *priv, int port);
+	unsigned long stat_counter_poll_interval;
 	int (*port_iso_ctrl)(int p);
 	void (*traffic_enable)(int source, int dest);
 	void (*traffic_disable)(int source, int dest);

@@ -1777,6 +1777,7 @@ const struct rtl838x_reg rtl931x_reg = {
 	.stat_port_table_read = rtldsa_931x_stat_port_table_read,
 	.stat_counters_lock = rtldsa_counters_lock_table,
 	.stat_counters_unlock = rtldsa_counters_unlock_table,
+	.stat_counter_poll_interval = RTLDSA_COUNTERS_FAST_POLL_INTERVAL,
 	.traffic_enable = rtl931x_traffic_enable,
 	.traffic_disable = rtl931x_traffic_disable,
 	.traffic_set = rtl931x_traffic_set,
