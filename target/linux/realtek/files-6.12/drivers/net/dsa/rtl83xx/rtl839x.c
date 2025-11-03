@@ -1649,6 +1649,7 @@ const struct rtl838x_reg rtl839x_reg = {
 	.stat_port_std_mib = RTL839X_STAT_PORT_STD_MIB,
 	.stat_counters_lock = rtldsa_counters_lock_register,
 	.stat_counters_unlock = rtldsa_counters_unlock_register,
+	.stat_update_counters_atomically = rtldsa_update_counters_atomically,
 	.traffic_enable = rtl839x_traffic_enable,
 	.traffic_disable = rtl839x_traffic_disable,
 	.traffic_set = rtl839x_traffic_set,

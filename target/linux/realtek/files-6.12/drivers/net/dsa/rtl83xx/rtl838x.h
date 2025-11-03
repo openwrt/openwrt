@@ -712,7 +712,7 @@ struct rtldsa_counter {
 struct rtldsa_counter_state {
 	/**
 	 * @lock: protect updates to members of the structure when the
-	 * priv->counters_lock is not used.
+	 * priv->counters_lock is not used. (see rtl931x_reg->stat_update_counters_atomically)
 	 */
 	spinlock_t lock;
 	ktime_t last_update;
@@ -1129,6 +1129,17 @@ struct rtl838x_reg {
 	u64 (*stat_port_table_read)(int port, unsigned int mib_size, unsigned int offset, bool is_pvt);
 	void (*stat_counters_lock)(struct rtl838x_switch_priv *priv, int port);
 	void (*stat_counters_unlock)(struct rtl838x_switch_priv *priv, int port);
+
+	/**
+	 * @stat_update_counters_atomically: When set, the SoC family allows atomically retrieving
+	 * of statistic counters using this function.  This function must not require "might_sleep"
+	 * code.
+	 *
+	 * Any SoC family which requires stat_port_table_read must use the table
+	 * rtldsa_counters_(un)lock_table helpers. They are using a mutex for locking. The counters
+	 * update is therefore not atomic.
+	 */
+	void (*stat_update_counters_atomically)(struct rtl838x_switch_priv *priv, int port);
 	int (*port_iso_ctrl)(int p);
 	void (*traffic_enable)(int source, int dest);
 	void (*traffic_disable)(int source, int dest);
@@ -1299,6 +1310,8 @@ void rtldsa_counters_lock_table(struct rtl838x_switch_priv *priv, int port)
 	__acquires(&priv->counters_lock);
 void rtldsa_counters_unlock_table(struct rtl838x_switch_priv *priv, int port)
 	__releases(&priv->ports[port].counters.lock);
+
+void rtldsa_update_counters_atomically(struct rtl838x_switch_priv *priv, int port);
 
 extern int rtldsa_max_available_queue[];
 extern int rtldsa_default_queue_weights[];
