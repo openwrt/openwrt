@@ -4,12 +4,11 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/leds/common.h>
-#include <dt-bindings/pinctrl/mt65xx.h>
 
-#include "mt7986a.dtsi"
+#include "mt7986b.dtsi"
 
 / {
-	compatible = "tplink,archer-ax80-v1", "mediatek,mt7986a";
+	compatible = "tplink,archer-ax80-v1-eu", "mediatek,mt7986b";
 	model = "TP-Link Archer AX80 v1 (EU)";
 
 	aliases {
@@ -26,7 +25,6 @@
 
 	memory@40000000 {
 		reg = <0 0x40000000 0 0x20000000>;
-		device_type = "memory";
 	};
 
 	gpio-keys {
@@ -41,19 +39,19 @@
 		button-ledswitch {
 			label = "ledswitch";
 			linux,code = <KEY_BRIGHTNESS_ZERO>;
-			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
+			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
 		};
 
 		button-wps {
 			label = "wps";
 			linux,code = <KEY_WPS_BUTTON>;
-			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
+			gpios = <&pio 16 GPIO_ACTIVE_LOW>;
 		};
 
 		button-wifi {
 			label = "wlan";
 			linux,code = <KEY_WLAN>;
-			gpios = <&pio 16 GPIO_ACTIVE_LOW>;
+			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -126,7 +124,7 @@
 			reg = <6>;
 		};
 
-		switch@1f {
+		switch@0 {
 			compatible = "mediatek,mt7531";
 			reg = <31>;
 			reset-gpios = <&pio 5 GPIO_ACTIVE_HIGH>;
@@ -139,19 +137,19 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				port@0 {
-					reg = <0>;
+					reg = <1>;
 					label = "lan0";
 				};
 				port@1 {
-					reg = <1>;
+					reg = <2>;
 					label = "lan1";
 				};
 				port@2 {
-					reg = <2>;
+					reg = <3>;
 					label = "lan2";
 				};
 				port@3 {
-					reg = <3>;
+					reg = <4>;
 					label = "lan3";
 				};
 				port@6 {
@@ -211,7 +209,7 @@
 	pinctrl-0 = <&spi_flash_pins>;
 	status = "okay";
 
-	spi_nand_flash: flash@0 {
+	flash@0 {
 		compatible = "spi-nand";
 		reg = <0>;
 
@@ -233,13 +231,13 @@
 
 			partition@0 {
 				label = "boot";
-				reg = <0x0 0x200000>;
+				reg = <0x00000 0x0200000>;
 				read-only;
 			};
 
 			partition@200000 {
 				label = "u-boot-env";
-				reg = <0x200000 0x100000>;
+				reg = <0x0200000 0x0100000>;
 			};
 
 			partition@300000 {
@@ -262,12 +260,12 @@
 				reg = <0x6f00000 0x400000>;
 			};
 
-			partition@7300000 {
+            partition@7300000 {
 				label = "mali_data";
 				reg = <0x7300000 0x800000>;
-			};
-		};
-	};
+            };
+	    };
+    };
 };
 
 &pio {
@@ -278,13 +276,13 @@
 		};
 		conf-pu {
 			pins = "SPI2_CS", "SPI2_HOLD", "SPI2_WP";
-			drive-strength = <MTK_DRIVE_8mA>;
-			bias-disable; /* bias-disable */
+			drive-strength = <4>;
+			mediatek,pull-up-adv = <0>;
 		};
 		conf-pd {
 			pins = "SPI2_CLK", "SPI2_MOSI", "SPI2_MISO";
-			drive-strength = <MTK_DRIVE_8mA>;
-			bias-disable; /* bias-disable */
+			drive-strength = <4>;
+			mediatek,pull-down-adv = <0>;
 		};
 	};
 	wf_2g_5g_pins: wf_2g_5g-pins {
@@ -300,7 +298,7 @@
 			"WF1_HB2", "WF1_HB3", "WF1_HB4", "WF1_HB0",
 			"WF1_HB5", "WF1_HB6", "WF1_HB7", "WF1_HB8",
 			"WF1_TOP_CLK", "WF1_TOP_DATA";
-			drive-strength = <MTK_DRIVE_4mA>;
+			drive-strength = <4>;
 		};
 	};
 };
