@@ -231,6 +231,8 @@
 
 	flash0: flash@0 {
 		compatible = "jedec,spi-nor";
+		#address-cells = <1>;
+		#size-cells = <1>;
 		reg = <0>;
 		spi-max-frequency = <50000000>;
 		m25p,fast-read;
@@ -238,6 +240,8 @@
 
 	flash1: flash@1 {
 		compatible = "jedec,spi-nor";
+		#address-cells = <1>;
+		#size-cells = <1>;
 		reg = <1>;
 		spi-max-frequency = <50000000>;
 		m25p,fast-read;
