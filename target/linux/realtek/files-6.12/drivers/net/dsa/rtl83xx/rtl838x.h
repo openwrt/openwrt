@@ -710,6 +710,11 @@ struct rtldsa_counter {
 };
 
 struct rtldsa_counter_state {
+	/**
+	 * @lock: protect updates to members of the structure when the
+	 * priv->counters_lock is not used.
+	 */
+	spinlock_t lock;
 	ktime_t last_update;
 
 	struct rtldsa_counter symbol_errors;
@@ -1122,6 +1127,8 @@ struct rtl838x_reg {
 	int stat_port_std_mib;
 	int stat_port_prv_mib;
 	u64 (*stat_port_table_read)(int port, unsigned int mib_size, unsigned int offset, bool is_pvt);
+	void (*stat_counters_lock)(struct rtl838x_switch_priv *priv, int port);
+	void (*stat_counters_unlock)(struct rtl838x_switch_priv *priv, int port);
 	int (*port_iso_ctrl)(int p);
 	void (*traffic_enable)(int source, int dest);
 	void (*traffic_disable)(int source, int dest);
@@ -1283,6 +1290,15 @@ struct rtl838x_switch_priv {
 
 void rtl838x_dbgfs_init(struct rtl838x_switch_priv *priv);
 void rtl930x_dbgfs_init(struct rtl838x_switch_priv *priv);
+
+void rtldsa_counters_lock_register(struct rtl838x_switch_priv *priv, int port)
+	__acquires(&priv->ports[port].counters.lock);
+void rtldsa_counters_unlock_register(struct rtl838x_switch_priv *priv, int port)
+	__releases(&priv->ports[port].counters.lock);
+void rtldsa_counters_lock_table(struct rtl838x_switch_priv *priv, int port)
+	__acquires(&priv->counters_lock);
+void rtldsa_counters_unlock_table(struct rtl838x_switch_priv *priv, int port)
+	__releases(&priv->ports[port].counters.lock);
 
 extern int rtldsa_max_available_queue[];
 extern int rtldsa_default_queue_weights[];

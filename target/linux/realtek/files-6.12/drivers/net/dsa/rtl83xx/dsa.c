@@ -1163,6 +1163,40 @@ static void rtldsa_update_port_counters(struct rtl838x_switch_priv *priv, int po
 	spin_unlock(&counters->link_stat_lock);
 }
 
+void rtldsa_counters_lock_register(struct rtl838x_switch_priv *priv, int port)
+	__acquires(&priv->ports[port].counters.lock)
+{
+	spin_lock(&priv->ports[port].counters.lock);
+}
+
+void rtldsa_counters_unlock_register(struct rtl838x_switch_priv *priv, int port)
+	__releases(&priv->ports[port].counters.lock)
+{
+	spin_unlock(&priv->ports[port].counters.lock);
+}
+
+void rtldsa_counters_lock_table(struct rtl838x_switch_priv *priv, int port __maybe_unused)
+	__acquires(&priv->counters_lock)
+{
+	mutex_lock(&priv->counters_lock);
+}
+
+void rtldsa_counters_unlock_table(struct rtl838x_switch_priv *priv, int port __maybe_unused)
+	__releases(&priv->ports[port].counters.lock)
+{
+	mutex_unlock(&priv->counters_lock);
+}
+
+static void rtldsa_counters_lock(struct rtl838x_switch_priv *priv, int port)
+{
+	priv->r->stat_counters_lock(priv, port);
+}
+
+static void rtldsa_counters_unlock(struct rtl838x_switch_priv *priv, int port)
+{
+	priv->r->stat_counters_unlock(priv, port);
+}
+
 static void rtldsa_poll_counters(struct work_struct *work)
 {
 	struct rtl838x_switch_priv *priv = container_of(to_delayed_work(work),
@@ -1173,9 +1207,9 @@ static void rtldsa_poll_counters(struct work_struct *work)
 		if (!priv->ports[i].phy && !priv->pcs[i])
 			continue;
 
-		mutex_lock(&priv->counters_lock);
+		rtldsa_counters_lock(priv, i);
 		rtldsa_update_port_counters(priv, i);
-		mutex_unlock(&priv->counters_lock);
+		rtldsa_counters_unlock(priv, i);
 	}
 
 	queue_delayed_work(priv->wq, &priv->counters_work,
@@ -1193,6 +1227,7 @@ static void rtldsa_init_counters(struct rtl838x_switch_priv *priv)
 		counters = &priv->ports[i].counters;
 
 		memset(counters, 0, sizeof(*counters));
+		spin_lock_init(&counters->lock);
 		spin_lock_init(&counters->link_stat_lock);
 	}
 
@@ -1272,13 +1307,13 @@ static void rtldsa_get_eth_phy_stats(struct dsa_switch *ds, int port,
 	if (!rtldsa_get_mib_desc(priv))
 		return;
 
-	mutex_lock(&priv->counters_lock);
+	rtldsa_counters_lock(priv, port);
 
 	rtldsa_update_port_counters(priv, port);
 
 	phy_stats->SymbolErrorDuringCarrier = counters->symbol_errors.val;
 
-	mutex_unlock(&priv->counters_lock);
+	rtldsa_counters_unlock(priv, port);
 }
 
 static void rtldsa_get_eth_mac_stats(struct dsa_switch *ds, int port,
@@ -1293,7 +1328,7 @@ static void rtldsa_get_eth_mac_stats(struct dsa_switch *ds, int port,
 	if (!rtldsa_get_mib_desc(priv))
 		return;
 
-	mutex_lock(&priv->counters_lock);
+	rtldsa_counters_lock(priv, port);
 
 	rtldsa_update_port_counters(priv, port);
 
@@ -1327,7 +1362,7 @@ static void rtldsa_get_eth_mac_stats(struct dsa_switch *ds, int port,
 
 	mac_stats->FrameCheckSequenceErrors = counters->crc_align_errors.val;
 
-	mutex_unlock(&priv->counters_lock);
+	rtldsa_counters_unlock(priv, port);
 }
 
 static void rtldsa_get_eth_ctrl_stats(struct dsa_switch *ds, int port,
@@ -1342,13 +1377,13 @@ static void rtldsa_get_eth_ctrl_stats(struct dsa_switch *ds, int port,
 	if (!rtldsa_get_mib_desc(priv))
 		return;
 
-	mutex_lock(&priv->counters_lock);
+	rtldsa_counters_lock(priv, port);
 
 	rtldsa_update_port_counters(priv, port);
 
 	ctrl_stats->UnsupportedOpcodesReceived = counters->unsupported_opcodes.val;
 
-	mutex_unlock(&priv->counters_lock);
+	rtldsa_counters_unlock(priv, port);
 }
 
 static void rtldsa_get_rmon_stats(struct dsa_switch *ds, int port,
@@ -1366,7 +1401,7 @@ static void rtldsa_get_rmon_stats(struct dsa_switch *ds, int port,
 	if (!mib_desc)
 		return;
 
-	mutex_lock(&priv->counters_lock);
+	rtldsa_counters_lock(priv, port);
 
 	rtldsa_update_port_counters(priv, port);
 
@@ -1392,7 +1427,7 @@ static void rtldsa_get_rmon_stats(struct dsa_switch *ds, int port,
 
 	*ranges = mib_desc->rmon_ranges;
 
-	mutex_unlock(&priv->counters_lock);
+	rtldsa_counters_unlock(priv, port);
 }
 
 static void rtldsa_get_stats64(struct dsa_switch *ds, int port,
@@ -1427,14 +1462,14 @@ static void rtldsa_get_pause_stats(struct dsa_switch *ds, int port,
 	if (!rtldsa_get_mib_desc(priv))
 		return;
 
-	mutex_lock(&priv->counters_lock);
+	rtldsa_counters_lock(priv, port);
 
 	rtldsa_update_port_counters(priv, port);
 
 	pause_stats->tx_pause_frames = counters->tx_pause_frames.val;
 	pause_stats->rx_pause_frames = counters->rx_pause_frames.val;
 
-	mutex_unlock(&priv->counters_lock);
+	rtldsa_counters_unlock(priv, port);
 }
 
 static int rtl83xx_mc_group_alloc(struct rtl838x_switch_priv *priv, int port)
