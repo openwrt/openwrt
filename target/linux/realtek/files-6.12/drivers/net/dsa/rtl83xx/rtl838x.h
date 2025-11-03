@@ -620,7 +620,6 @@ enum phy_type {
 	PHY_RTL8218B_EXT = 3,
 	PHY_RTL8214FC = 4,
 	PHY_RTL839X_SDS = 5,
-	PHY_RTL930X_SDS = 6,
 };
 
 enum pbvlan_type {
@@ -689,7 +688,6 @@ struct rtl838x_port {
 	u16 pvid;
 	bool eee_enabled;
 	enum phy_type phy;
-	int sds_num;
 	int led_set;
 	int leds_on_this_port;
 	struct rtldsa_counter_state counters;

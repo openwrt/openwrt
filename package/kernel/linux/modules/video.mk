@@ -365,6 +365,24 @@ endef
 
 $(eval $(call KernelPackage,drm-dma-helper))
 
+
+define KernelPackage/drm-shmem-helper
+  SUBMENU:=$(VIDEO_MENU)
+  HIDDEN:=1
+  TITLE:=GEM SHMEM helper functions
+  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm-kms-helper
+  KCONFIG:=CONFIG_DRM_GEM_SHMEM_HELPER
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/drm_shmem_helper.ko
+  AUTOLOAD:=$(call AutoProbe,drm_shmem_helper)
+endef
+
+define KernelPackage/drm-shmem-helper/description
+  GEM SHMEM helper functions.
+endef
+
+$(eval $(call KernelPackage,drm-shmem-helper))
+
+
 define KernelPackage/drm-mipi-dbi
   SUBMENU:=$(VIDEO_MENU)
   HIDDEN:=1
@@ -380,6 +398,25 @@ define KernelPackage/drm-mipi-dbi/description
 endef
 
 $(eval $(call KernelPackage,drm-mipi-dbi))
+
+
+define KernelPackage/drm-sched
+  SUBMENU:=$(VIDEO_MENU)
+  HIDDEN:=1
+  TITLE:=GPU scheduler
+  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm
+  KCONFIG:=CONFIG_DRM_SCHED
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/scheduler/gpu-sched.ko
+  AUTOLOAD:=$(call AutoProbe,gpu-sched)
+endef
+
+define KernelPackage/drm-sched/description
+  The GPU scheduler provides entities which allow userspace to push jobs
+  into software queues which are then scheduled on a hardware run queue.
+endef
+
+$(eval $(call KernelPackage,drm-sched))
+
 
 define KernelPackage/drm-ttm
   SUBMENU:=$(VIDEO_MENU)
