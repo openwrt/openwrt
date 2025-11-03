@@ -502,7 +502,7 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 	}
 
 	/* raw options */
-	for (let raw in config.hostapd_options)
+	for (let raw in config.hostapd_bss_options)
 		append_raw(raw);
 
 	if (config.mlo) {
