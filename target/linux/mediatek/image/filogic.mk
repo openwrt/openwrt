@@ -2116,7 +2116,7 @@ TARGET_DEVICES += tplink_archer-ax80-v1
 
 define Device/tplink_archer-ax80-v1-eu
   DEVICE_VENDOR := TP-Link
-  DEVICE_MODEL := Archer AX80V1-eu
+  DEVICE_MODEL := Archer AX80 v1 (EU)
   DEVICE_DTS := mt7986a-tplink-archer-ax80-v1-eu
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-leds-lp5523 kmod-usb3 kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
