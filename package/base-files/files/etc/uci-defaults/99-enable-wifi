@@ -1,0 +1,11 @@
+#!/bin/sh
+# Enable Wi-Fi radios at first boot
+uci set wireless.@wifi-device[0].disabled='0'
+uci set wireless.@wifi-device[1].disabled='0'
+uci set wireless.@wifi-device[0].channel='6'
+uci set wireless.@wifi-iface[0].ssid='AX80-EU-test-emre'
+uci set wireless.@wifi-iface[0].encryption='psk2'
+uci set wireless.@wifi-iface[0].key='12345678'
+uci commit wireless
+wifi reload
+exit 0

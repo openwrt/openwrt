@@ -1,0 +1,29 @@
+#!/bin/sh /etc/rc.common
+# Mount TP-Link tp_data (UBIFS) in early stages, neccessary for TP-Link Archer AX80 EU version Wi-Fi to work
+START=01
+
+# Find tp_data volume in UBI
+_find_tpdata_vol() {
+	for v in /sys/class/ubi/ubi*/ubi*_*; do
+		[ -e "$v/name" ] || continue
+		read name < "$v/name"
+		[ "$name" = "tp_data" ] && basename "$v" && return 0
+	done
+	return 1
+}
+
+start() {
+	# if mtd name is static use by-name, if not use mtd5 fallback
+	MTD=/dev/mtd/by-name/tp_data
+	[ -e "$MTD" ] || MTD=/dev/mtd5
+
+	# UBI attach (if already attached no errors)
+	ubiattach -p "$MTD" 2>/dev/null
+
+	# find tp_data volume and mount it to /tmp/tp_data
+	TPVOL=$(_find_tpdata_vol)
+	[ -n "$TPVOL" ] || exit 0
+
+	mkdir -p /tmp/tp_data
+	mountpoint -q /tmp/tp_data || mount -t ubifs "$TPVOL" /tmp/tp_data 2>/dev/null || true
+}
