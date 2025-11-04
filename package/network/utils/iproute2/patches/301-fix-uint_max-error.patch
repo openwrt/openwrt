@@ -1,0 +1,24 @@
+diff --git a/include/utils.h b/include/utils.h
+index 7d9b3cf..9d15ddc 100644
+--- a/include/utils.h
++++ b/include/utils.h
+@@ -9,6 +9,7 @@
+ #include <stdbool.h>
+ #include <time.h>
+ #include <stdint.h>
++#include <limits.h>
+ 
+ #ifdef HAVE_LIBBSD
+ #include <bsd/string.h>
+diff --git a/lib/utils_math.c b/lib/utils_math.c
+index a7e7474..fd2ddc7 100644
+--- a/lib/utils_math.c
++++ b/lib/utils_math.c
+@@ -4,6 +4,7 @@
+ #include <stdlib.h>
+ #include <string.h>
+ #include <math.h>
++#include <limits.h>
+ #include <asm/types.h>
+ 
+ #include "utils.h"
