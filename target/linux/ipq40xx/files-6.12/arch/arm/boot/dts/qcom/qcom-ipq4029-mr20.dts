@@ -1,0 +1,127 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Device Tree Source for Meraki MR20 (Grub) / Go GR10 (Maggot)
+ *
+ * Copyright (C) 2025 Hal Martin <halmartin@googlemail.com>
+ *
+ */
+
+#include "qcom-ipq4029-insect-common.dtsi"
+
+/ {
+	model = "Meraki MR20";
+	compatible = "meraki,mr20";
+
+	aliases {
+		led-boot = &status_green;
+		led-failsafe = &status_red;
+		led-running = &status_green;
+		led-upgrade = &power_orange;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		power_orange: power {
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_POWER;
+			label = "orange:power";
+			gpios = <&tlmm 49 GPIO_ACTIVE_HIGH>;
+			panic-indicator;
+		};
+
+		status_green: led_green {
+			color = <LED_COLOR_ID_GREEN>;
+			label = "green:tricolor0";
+			gpios = <&tlmm 34 GPIO_ACTIVE_HIGH>;
+		};
+
+		status_blue: led_blue {
+			color = <LED_COLOR_ID_BLUE>;
+			label = "blue:tricolor0";
+			gpios = <&tlmm 35 GPIO_ACTIVE_HIGH>;
+		};
+
+		status_red: led_red {
+			color = <LED_COLOR_ID_RED>;
+			label = "red:tricolor0";
+			gpios = <&tlmm 8 GPIO_ACTIVE_HIGH>;
+		};
+
+	};
+};
+
+&tlmm {
+	i2c_0_pins: i2c_0_pinmux {
+		function = "blsp_i2c0";
+		pins = "gpio10", "gpio11";
+		drive-strength = <16>;
+		bias-disable;
+	};
+};
+
+&blsp1_i2c3 {
+	pinctrl-0 = <&i2c_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	/delete-node/ eeprom@50;
+	eeprom@56 {
+		compatible = "atmel,24c64";
+		pagesize = <32>;
+		reg = <0x56>;
+		read-only; /* This holds our MAC & Meraki board-data */
+
+		nvmem-layout {
+			compatible = "fixed-layout";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mac_address: mac-address@66 {
+				compatible = "mac-base";
+				reg = <0x66 0x6>;
+				#nvmem-cell-cells = <1>;
+			};
+		};
+	};
+};
+
+&blsp1_i2c4 {
+	pinctrl-0 = <&i2c_1_pins>;
+	pinctrl-names = "default";
+	status = "disabled";
+	/delete-node/ led-controller@30;
+};
+
+&pcie0 {
+	status = "disabled";
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+
+	/delete-node/ ethernet-phy@1;
+	ar8035: ethernet-phy@0 {
+		reg = <0>;
+	};
+};
+
+&swport5 {
+	phy-mode = "rgmii-id";
+};
+
+&wifi0 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "Meraki-underdog";
+	nvmem-cells = <&precal_factory_1000>;
+	nvmem-cell-names = "pre-calibration";
+};
+
+&wifi1 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "Meraki-underdog";
+	nvmem-cells = <&precal_factory_5000>;
+	nvmem-cell-names = "pre-calibration";
+};

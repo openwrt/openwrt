@@ -355,27 +355,17 @@
 	};
 
 	i2c_0_pins: i2c_0_pinmux {
-		pinmux {
-			function = "blsp_i2c0";
-			pins = "gpio20", "gpio21";
-		};
-		pinconf {
-			pins = "gpio20", "gpio21";
-			drive-strength = <16>;
-			bias-disable;
-		};
+		function = "blsp_i2c0";
+		pins = "gpio20", "gpio21";
+		drive-strength = <16>;
+		bias-disable;
 	};
 
 	i2c_1_pins: i2c_1_pinmux {
-		pinmux {
-			function = "blsp_i2c1";
-			pins = "gpio34", "gpio35";
-		};
-		pinconf {
-			pins = "gpio34", "gpio35";
-			drive-strength = <16>;
-			bias-disable;
-		};
+		function = "blsp_i2c1";
+		pins = "gpio34", "gpio35";
+		drive-strength = <16>;
+		bias-disable;
 	};
 
 	nand_pins: nand_pins {
