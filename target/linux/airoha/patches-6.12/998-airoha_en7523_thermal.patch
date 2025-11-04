@@ -1,0 +1,249 @@
+From f6844c392fb5d5f29d10ed15a4c62669ab1e5108 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Mon, 19 Jan 2026 14:08:05 -0300
+Subject: [PATCH] thermal: airoha: Add thermal to en7523
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/thermal/airoha_thermal.c | 147 +++++++++++++++++++++++++++++--
+ 1 file changed, 141 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/thermal/airoha_thermal.c b/drivers/thermal/airoha_thermal.c
+index e71548f9c..cddaf5acf 100644
+--- a/drivers/thermal/airoha_thermal.c
++++ b/drivers/thermal/airoha_thermal.c
+@@ -24,6 +24,16 @@
+ #define   AN7583_MUX_TADC_MASK			GENMASK(3, 1)
+ #define AN7583_DOUT_TADC			0x2f0
+ 
++#define EN7523_PLLRG_PROTECT		0x264
++#define EN7523_MUX_TADC				0x2ec
++#define EN7523_DOUT_TADC			0x2f0
++#define EN7523_CODE_30_DEFAULT_E2	0x87ef
++#define EN7523_CODE_30_DEFAULT_E3	0x7bae
++#define EN7523_BIAS_E2QFP			0x82
++#define EN7523_BIAS_E2BGA			0x16e
++#define EN7523_BIAS_E3BGA			0x15a
++#define EN7523_PKG_BGA				3
++
+ /* PTP_THERMAL regs */
+ #define EN7581_TEMPMONCTL0			0x800
+ #define   EN7581_SENSE3_EN			BIT(3)
+@@ -179,6 +189,8 @@
+ 
+ #define EN7581_SLOPE_X100_DIO_DEFAULT		5645
+ #define EN7581_SLOPE_X100_DIO_AVS		5645
++#define EN7523_SLOPE_E2				0x712
++#define EN7523_SLOPE_E3				0x6d6
+ 
+ #define EN7581_INIT_TEMP_CPK_X10		300
+ #define EN7581_INIT_TEMP_FTK_X10		620
+@@ -249,6 +261,7 @@ struct airoha_thermal_priv {
+ 	struct regmap_field *chip_scu_fields[AIROHA_THERMAL_FIELD_MAX];
+ 	struct resource scu_adc_res;
+ 
++	u32 pllrg_protect_key;
+ 	u32 pllrg_protect;
+ 	int current_adc;
+ 
+@@ -259,6 +272,7 @@ struct airoha_thermal_priv {
+ };
+ 
+ struct airoha_thermal_soc_data {
++	u32 pllrg_protect_key;
+ 	u32 pllrg_protect;
+ 
+ 	const struct thermal_zone_device_ops *thdev_ops;
+@@ -285,6 +299,29 @@ static const unsigned int an7583_thermal_offset[AN7583_ADC_MUX_MAX] = {
+ 	[AN7583_CPU_TEMP_SENSOR] = 344,
+ };
+ 
++static const unsigned int en7523_SLOPE_7523_X100_E2[1] = {1810};
++static const unsigned int en7523_SLOPE_7523_X100_E3[1] = {1750};
++static const unsigned int en7523_CODE_30_DEFAULT_7523_E2[1] = {34799};
++static const unsigned int en7523_CODE_30_DEFAULT_7523_E3[1] = {31662};
++static const unsigned int en7523_CODE_30_BIAS_E2QFP[1] = {130};
++static const unsigned int en7523_CODE_30_BIAS_E2BGA[1] = {366};
++static const unsigned int en7523_CODE_30_BIAS_E3BGA[1] = {346};
++
++static u32 get_pdid(struct airoha_thermal_priv *priv)
++{
++	u32 val;
++	regmap_read(priv->chip_scu, 0x5c, &val);
++	return val & 0xffff;
++}
++
++static u32 get_pkg_type(struct airoha_thermal_priv *priv)
++{
++	u32 val;
++	regmap_read(priv->chip_scu, 0x254, &val);
++	return (val >> 14) & 0x3;
++}
++
++
+ static int airoha_get_thermal_ADC(struct airoha_thermal_priv *priv)
+ {
+ 	u32 val;
+@@ -300,11 +337,11 @@ static void airoha_set_thermal_mux(struct airoha_thermal_priv *priv,
+ 	u32 pllrg;
+ 
+ 	/* Save PLLRG current value */
+-	regmap_read(priv->chip_scu, EN7581_PLLRG_PROTECT, &pllrg);
++	regmap_read(priv->chip_scu, priv->pllrg_protect, &pllrg);
+ 
+ 	/* Give access to Thermal regs */
+-	regmap_write(priv->chip_scu, EN7581_PLLRG_PROTECT,
+-		     priv->pllrg_protect);
++	regmap_write(priv->chip_scu, priv->pllrg_protect,
++		     priv->pllrg_protect_key);
+ 
+ 	/*
+ 	 * Configure Thermal Sensor mux to sensor_idx.
+@@ -325,7 +362,7 @@ static void airoha_set_thermal_mux(struct airoha_thermal_priv *priv,
+ 	usleep_range(10 * USEC_PER_MSEC, 11 * USEC_PER_MSEC);
+ 
+ 	/* Restore PLLRG value on exit */
+-	regmap_write(priv->chip_scu, EN7581_PLLRG_PROTECT, pllrg);
++	regmap_write(priv->chip_scu, priv->pllrg_protect, pllrg);
+ }
+ 
+ static int en7581_thermal_get_temp(struct thermal_zone_device *tz, int *temp)
+@@ -658,6 +695,93 @@ static int an7583_thermal_probe(struct platform_device *pdev,
+ 	return 0;
+ }
+ 
++static const struct reg_field en7523_chip_scu_fields[AIROHA_THERMAL_FIELD_MAX] = {
++	[AIROHA_THERMAL_DOUT_TADC] = REG_FIELD(EN7523_DOUT_TADC, 0, 15),
++	[AIROHA_THERMAL_MUX_TADC] = REG_FIELD(EN7523_MUX_TADC, 1, 3),
++};
++
++static int en7523_thermal_probe(struct platform_device *pdev,
++				struct airoha_thermal_priv *priv)
++{
++	struct device *dev = &pdev->dev;
++	u32 pdid, pkg, efuse_val, val;
++	int ret;
++
++	ret = en7581_thermal_probe(pdev, priv);
++	if (ret)
++		return ret;
++
++	// set_chip_scu_data(PLLRG_PROTECT,  0x80);
++	regmap_write(priv->chip_scu, priv->pllrg_protect,
++		priv->pllrg_protect_key);
++
++	// set_chip_scu_data(EN7523_MUX_TADC,  (get_chip_scu_data(EN7523_MUX_TADC) &(~(0x1 <<7)) ) | (0x0<<7) );
++	regmap_read(priv->chip_scu, EN7523_MUX_TADC, &val);
++	val &= (~(0x1 <<7)) | (0x0<<7);
++	regmap_write(priv->chip_scu, EN7523_MUX_TADC, val);
++
++	// set_chip_scu_data(EN7523_MUX_TADC,  (get_chip_scu_data(EN7523_MUX_TADC) &(~(0x1 <<7)) ) | (0x1<<7) );
++	regmap_read(priv->chip_scu, EN7523_MUX_TADC, &val);
++	val &= (~(0x1 <<7)) | (0x1<<7);
++	regmap_write(priv->chip_scu, EN7523_MUX_TADC, val);
++
++	// set_chip_scu_data(EN7523_MUX_TADC,  (get_chip_scu_data(EN7523_MUX_TADC) &(~(0x7f <<0)) ) | (0x70<<0) );
++	regmap_read(priv->chip_scu, EN7523_MUX_TADC, &val);
++	val &= (~(0x7f <<0)) | (0x70<<0);
++	regmap_write(priv->chip_scu, EN7523_MUX_TADC, val);
++
++	// Get Pkg info
++	pdid = get_pdid(priv);
++	pkg = get_pkg_type(priv);
++	regmap_read(priv->map, EN7581_EFUSE_TEMP_OFFSET_REG, &efuse_val);
++
++	if (pdid == 2) {
++		priv->default_slope = EN7523_SLOPE_E2;
++		priv->default_offset = (pkg == EN7523_PKG_BGA) ?
++					EN7523_BIAS_E2BGA : EN7523_BIAS_E2QFP;
++
++		if (efuse_val)
++			priv->default_offset += efuse_val;
++		else
++			priv->default_offset += EN7523_CODE_30_DEFAULT_E2;
++	} else {
++		priv->default_slope = EN7523_SLOPE_E3;
++		priv->default_offset = EN7523_BIAS_E3BGA;
++
++		if (efuse_val)
++			priv->default_offset += efuse_val;
++		else
++			priv->default_offset += EN7523_CODE_30_DEFAULT_E3;
++	}
++
++	for (int i = 0; i < AIROHA_THERMAL_FIELD_MAX; i++) {
++		struct regmap_field *field;
++
++		field = devm_regmap_field_alloc(dev, priv->chip_scu,
++						en7523_chip_scu_fields[i]);
++		if (IS_ERR(field))
++			return PTR_ERR(field);
++
++		priv->chip_scu_fields[i] = field;
++	}
++
++	return 0;
++}
++
++static int en7523_thermal_get_temp(struct thermal_zone_device *tz, int *temp)
++{
++	struct airoha_thermal_priv *priv = thermal_zone_device_priv(tz);
++	int adc_val, temp_x10;
++	adc_val = airoha_get_thermal_ADC(priv);
++	temp_x10 = 1000 * (adc_val - priv->default_offset) / priv->default_slope + 300;
++	*temp = temp_x10 * 100;
++	return 0;
++}
++
++static const struct thermal_zone_device_ops en7523_thdev_ops = {
++	.get_temp = en7523_thermal_get_temp,
++};
++
+ static int airoha_thermal_probe(struct platform_device *pdev)
+ {
+ 	const struct airoha_thermal_soc_data *soc_data;
+@@ -671,6 +795,7 @@ static int airoha_thermal_probe(struct platform_device *pdev)
+ 	if (!priv)
+ 		return -ENOMEM;
+ 
++	priv->pllrg_protect_key = soc_data->pllrg_protect_key;
+ 	priv->pllrg_protect = soc_data->pllrg_protect;
+ 	priv->current_adc = -1;
+ 
+@@ -695,21 +820,31 @@ static int airoha_thermal_probe(struct platform_device *pdev)
+ }
+ 
+ static const struct airoha_thermal_soc_data en7581_data = {
+-	.pllrg_protect = EN7581_SCU_THERMAL_PROTECT_KEY,
++	.pllrg_protect_key = EN7581_SCU_THERMAL_PROTECT_KEY,
++	.pllrg_protect = EN7581_PLLRG_PROTECT,
+ 	.thdev_ops = &en7581_thdev_ops,
+ 	.probe = &en7581_thermal_probe,
+ 	.post_probe = &en7581_thermal_post_probe,
+ };
+ 
+ static const struct airoha_thermal_soc_data an7583_data = {
+-	.pllrg_protect = AN7583_SCU_THERMAL_PROTECT_KEY,
++	.pllrg_protect_key = AN7583_SCU_THERMAL_PROTECT_KEY,
++	.pllrg_protect = EN7581_PLLRG_PROTECT,
+ 	.thdev_ops = &an7583_tz_ops,
+ 	.probe = &an7583_thermal_probe,
+ };
+ 
++static const struct airoha_thermal_soc_data en7523_data = {
++	.pllrg_protect_key = AN7583_SCU_THERMAL_PROTECT_KEY,
++	.pllrg_protect = EN7523_PLLRG_PROTECT,
++	.thdev_ops = &en7523_thdev_ops,
++	.probe = &en7523_thermal_probe,
++};
++
+ static const struct of_device_id airoha_thermal_match[] = {
+ 	{ .compatible = "airoha,en7581-thermal", .data = &en7581_data },
+ 	{ .compatible = "airoha,an7583-thermal", .data = &an7583_data },
++	{ .compatible = "airoha,en7523-thermal", .data = &en7523_data },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, airoha_thermal_match);
+-- 
+2.53.0
+

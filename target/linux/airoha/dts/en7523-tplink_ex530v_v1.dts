@@ -1,0 +1,251 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include "en7523.dtsi"
+
+/ {
+	model = "TP-Link ex530v";
+	compatible = "tplink,ex530v", "airoha,en7523";
+
+	chosen {
+		bootargs = "console=ttyS0,115200 earlycon";
+		stdout-path = "serial0:115200n8";
+	};
+
+	aliases {
+		serial0 = &uart1;
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-upgrade = &led_power;
+		led-running = &led_power;
+	};
+
+	memory@80000000 {
+		device_type = "memory";
+		reg = <0x80000000 0x40000000>;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pinctrl 26 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pinctrl 7 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		/*
+		#id   gpio  mode  speed reve  priv
+		POWR  11    3     1     1     0
+		INE2  10    0     1     1     0
+		WIFI   6    1     1     1     0
+		FXS1   5    1     1     0     0
+		USB	   4    1     1     0     0
+		LAN    3    1     1     0     0
+		INET   1    1     1     1     0
+		*/
+
+		led_power: led@11 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <11>;
+			gpios = <&pinctrl 11 GPIO_ACTIVE_LOW>;
+		};
+
+		led@10 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <10>;
+			gpios = <&pinctrl 10 GPIO_ACTIVE_LOW>;
+		};
+
+		led@6 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <6>;
+			gpios = <&pinctrl 6 GPIO_ACTIVE_LOW>;
+		};
+
+		led@5 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <5>;
+			gpios = <&pinctrl 5 GPIO_ACTIVE_LOW>;
+		};
+
+		led@4 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <4>;
+			gpios = <&pinctrl 4 GPIO_ACTIVE_LOW>;
+		};
+
+		led@3 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <3>;
+			gpios = <&pinctrl 3 GPIO_ACTIVE_LOW>;
+		};
+
+		led@1 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <1>;
+			gpios = <&pinctrl 1 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&pinctrl {
+	gpio-ranges = <&pinctrl 0 0 32>;
+};
+
+&nand {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+      label = "boot";
+      reg = <0x00000000 0x00080000>;
+      read-only;
+    };
+
+    partition@80000 {
+      label = "romfile";
+      reg = <0x00080000 0x00040000>;
+      read-only;
+    };
+
+    partition@c0000 {
+      label = "misc";
+      reg = <0x000c0000 0x00400000>;
+      read-only;
+
+ 			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr: macaddr@4f100 {
+					#nvmem-cell-cells = <1>;
+					compatible = "mac-base";
+					reg = <0x8f100 0x6>;
+				};
+
+				eeprom0: eeprom@80000 {
+					reg = <0x100000 0x1000>;
+				};
+			};
+    };
+
+    partition@4c0000 {
+      label = "firmware";
+      reg = <0x004c0000 0x05000000>;
+    };
+	};
+};
+
+&pcie0 {
+	status = "okay";
+};
+
+&pcie1 {
+	status = "okay";
+
+	pcie@1,0 {
+		reg = <0x00000800 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+
+		mt7915@0,0 {
+			reg = <0x0000 0 0 0 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			nvmem-cells = <&eeprom0>;
+			nvmem-cell-names = "eeprom";
+			airoha,npu = <&npu>;
+			airoha,eth = <&eth>;
+
+			// 2.4 GHz
+			band@0 {
+				reg = <0>;
+				nvmem-cells = <&macaddr 0>;
+				nvmem-cell-names = "mac-address";
+			};
+
+			// 5 GHz
+			band@1 {
+				reg = <1>;
+				nvmem-cells = <&macaddr 2>;
+				nvmem-cell-names = "mac-address";
+			};
+		};
+	};
+};
+
+&usb0 {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+};
+
+&eth {
+	status = "okay";
+};
+
+&gdm1 {
+	status = "okay";
+
+	nvmem-cells = <&macaddr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch {
+	status = "okay";
+	ports {
+		port@1 {
+			label = "lan1";
+			status = "okay";
+		};
+
+		port@2 {
+			label = "lan2";
+			status = "okay";
+		};
+
+		port@3 {
+			label = "lan3";
+			status = "okay";
+		};
+
+		port@4 {
+			label = "wan";
+			status = "okay";
+		};
+
+		port@6 {
+			nvmem-cells = <&macaddr 0>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
+};

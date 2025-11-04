@@ -1,0 +1,77 @@
+From 4a48009b4de4ce38489607df620e2339a09a5a67 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Fri, 30 Jan 2026 16:08:04 -0300
+Subject: [PATCH] hwrng: airoha: read more data and wait for new data if
+ avaible
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/char/hw_random/airoha-trng.c | 47 +++++++++++++++++++++-------
+ 1 file changed, 35 insertions(+), 12 deletions(-)
+
+diff --git a/drivers/char/hw_random/airoha-trng.c b/drivers/char/hw_random/airoha-trng.c
+index 9a648f6d9..547ed4f44 100644
+--- a/drivers/char/hw_random/airoha-trng.c
++++ b/drivers/char/hw_random/airoha-trng.c
+@@ -135,23 +135,46 @@ static void airoha_trng_cleanup(struct hwrng *rng)
+ 	writel(SW_RST, trng->base + TRNG_HEALTH_TEST_SW_RST);
+ }
+ 
+-static int airoha_trng_read(struct hwrng *rng, void *buf, size_t max, bool wait)
++static int airoha_trng_wait_ready(struct airoha_trng *trng, bool wait)
+ {
+-	struct airoha_trng *trng = container_of(rng, struct airoha_trng, rng);
+-	u32 *data = buf;
+ 	u32 status;
+-	int ret;
++	int ready;
++	int try_count = 0;
+ 
+-	ret = readl_poll_timeout(trng->base + TRNG_HEALTH_TEST_STATUS, status,
+-				 status & RAW_DATA_VALID, 10, 1000);
+-	if (ret < 0) {
+-		dev_err(trng->dev, "Timeout waiting for TRNG RAW Data valid\n");
+-		return ret;
+-	}
++	do {
++		ready = readl_poll_timeout(trng->base + TRNG_HEALTH_TEST_STATUS, status,
++					   status & RAW_DATA_VALID, 10, 1000);
++		if (ready < 0 && wait)
++			mdelay(1);
++	} while (++try_count < 30 && ready < 0 && wait);
+ 
+-	*data = readl(trng->base + TRNG_RAW_DATA_OUT);
++	return ready;
++}
++
++static int airoha_trng_read(struct hwrng *rng, void *buf, size_t max, bool wait)
++{
++	struct airoha_trng *trng = container_of(rng, struct airoha_trng, rng);
++	int ret, size_read = 0;
++
++	while(max >= sizeof(u32))
++	{
++		ret = airoha_trng_wait_ready(trng, wait);
++		if (ret < 0) {
++			dev_err(trng->dev, "Timeout waiting for TRNG RAW Data valid %d", ret);
++			if (ret == 2)
++				ret = -EIO;
++			if (size_read == 0)
++				return ret;
++			break;
++		}
++
++		*(u32 *)buf = readl(trng->base + TRNG_RAW_DATA_OUT);
++		size_read += sizeof(u32);
++		buf += sizeof(u32);
++		max -= sizeof(u32);
++	}
+ 
+-	return 4;
++	return size_read;
+ }
+ 
+ static irqreturn_t airoha_trng_irq(int irq, void *priv)
+-- 
+2.53.0
+

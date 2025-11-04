@@ -1,0 +1,1128 @@
+From ad666a6c5dec06575f3a3944e29cc685a1b34d87 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Sat, 6 Dec 2025 19:35:41 -0300
+Subject: [PATCH] Airoha: Init HSDMA drivers
+
+much of the drive was copied from mediatek, but some things are different on airoha SoC's
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/dma/Kconfig        |   15 +-
+ drivers/dma/Makefile       |    1 +
+ drivers/dma/airoha-hsdma.c | 1059 ++++++++++++++++++++++++++++++++++++
+ 3 files changed, 1074 insertions(+), 1 deletion(-)
+ create mode 100644 drivers/dma/airoha-hsdma.c
+
+diff --git a/drivers/dma/Kconfig b/drivers/dma/Kconfig
+index d9ec1e69e..975c9470e 100644
+--- a/drivers/dma/Kconfig
++++ b/drivers/dma/Kconfig
+@@ -57,6 +57,19 @@ config DMA_OF
+ 	select DMA_ENGINE
+ 
+ #devices
++config AIROHA_HSDMA
++	tristate "Airoha High-Speed DMA controller support"
++	depends on ARCH_AIROHA || COMPILE_TEST
++	select DMA_ENGINE
++	select DMA_VIRTUAL_CHANNELS
++	help
++	  Enable support for High-Speed DMA controller on Airoha
++	  SoCs.
++
++	  This controller provides the channels which is dedicated to
++	  memory-to-memory transfer to offload from CPU through ring-
++	  based descriptor management.
++
+ config ALTERA_MSGDMA
+ 	tristate "Altera / Intel mSGDMA Engine"
+ 	depends on HAS_IOMEM
+@@ -464,7 +477,7 @@ config MOXART_DMA
+ 	select DMA_VIRTUAL_CHANNELS
+ 	help
+ 	  Enable support for the MOXA ART SoC DMA controller.
+- 
++
+ 	  Say Y here if you enabled MMP ADMA, otherwise say N.
+ 
+ config MPC512X_DMA
+diff --git a/drivers/dma/Makefile b/drivers/dma/Makefile
+index ad6a03c05..c94d5617a 100644
+--- a/drivers/dma/Makefile
++++ b/drivers/dma/Makefile
+@@ -14,6 +14,7 @@ obj-$(CONFIG_DMATEST) += dmatest.o
+ 
+ #devices
+ obj-$(CONFIG_ALTERA_MSGDMA) += altera-msgdma.o
++obj-$(CONFIG_AIROHA_HSDMA) += airoha-hsdma.o
+ obj-$(CONFIG_AMBA_PL08X) += amba-pl08x.o
+ obj-$(CONFIG_AMCC_PPC440SPE_ADMA) += ppc4xx/
+ obj-$(CONFIG_AMD_PTDMA) += ptdma/
+diff --git a/drivers/dma/airoha-hsdma.c b/drivers/dma/airoha-hsdma.c
+new file mode 100644
+index 000000000..6c8cf3127
+--- /dev/null
++++ b/drivers/dma/airoha-hsdma.c
+@@ -0,0 +1,1059 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Driver for Airoha High-Speed DMA Controller
++ */
++
++#include <linux/bitops.h>
++#include <linux/clk.h>
++#include <linux/dmaengine.h>
++#include <linux/dma-mapping.h>
++#include <linux/err.h>
++#include <linux/iopoll.h>
++#include <linux/list.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/of_dma.h>
++#include <linux/platform_device.h>
++#include <linux/pm_runtime.h>
++#include <linux/refcount.h>
++#include <linux/slab.h>
++
++#include "virt-dma.h"
++
++#define AIROHA_HSDMA_USEC_POLL 20
++#define AIROHA_HSDMA_TIMEOUT_POLL 200000
++#define AIROHA_HSDMA_DMA_BUSWIDTHS                                           \
++	(BIT(DMA_SLAVE_BUSWIDTH_4_BYTES) | BIT(DMA_SLAVE_BUSWIDTH_8_BYTES) | \
++	 BIT(DMA_SLAVE_BUSWIDTH_16_BYTES))
++
++#define AIROHA_HSDMA_NR_VCHANS 2
++#define AIROHA_HSDMA_NR_MAX_PCHANS 2
++
++#define AIROHA_DMA_SIZE 2048
++#define AIROHA_HSDMA_NEXT_DESP_IDX(x, y) (((x) + 1) & ((y) - 1))
++#define AIROHA_HSDMA_LAST_DESP_IDX(x, y) (((x) - 1) & ((y) - 1))
++#define AIROHA_HSDMA_MAX_LEN 0xFFFF
++#define AIROHA_HSDMA_ALIGN_SIZE 1
++#define AIROHA_HSDMA_PLEN_MASK 0xFFFF
++#define AIROHA_HSDMA_DESC_PLEN(x) ((x) & AIROHA_HSDMA_PLEN_MASK)
++#define AIROHA_HSDMA_DESC_PLEN_GET(x) ((x) & AIROHA_HSDMA_PLEN_MASK)
++
++#define AIROHA_HSDMA_TX_BASE 0x0
++#define AIROHA_HSDMA_TX_CNT 0x4
++#define AIROHA_HSDMA_TX_CPU 0x8
++#define AIROHA_HSDMA_TX_DMA 0xC
++
++#define AIROHA_HSDMA_RX_BASE 0x100
++#define AIROHA_HSDMA_RX_CNT 0x104
++#define AIROHA_HSDMA_RX_CPU 0x108
++#define AIROHA_HSDMA_RX_DMA 0x10C
++
++#define AIROHA_HSDMA_GLO 0x204
++#define AIROHA_HSDMA_GLO_BYTE_SWAP BIT(29)
++#define AIROHA_HSDMA_GLO_READ_BACK BIT(11)
++#define AIROHA_HSDMA_TX_WB_DDONE BIT(6)
++#define AIROHA_HSDMA_BURST_128BYTES (0x3 << 4)
++#define AIROHA_HSDMA_GLO_RX_BUSY BIT(3)
++#define AIROHA_HSDMA_GLO_RX_DMA BIT(2)
++#define AIROHA_HSDMA_GLO_TX_BUSY BIT(1)
++#define AIROHA_HSDMA_GLO_TX_DMA BIT(0)
++#define AIROHA_HSDMA_GLO_DMA (AIROHA_HSDMA_GLO_TX_DMA | AIROHA_HSDMA_GLO_RX_DMA)
++#define AIROHA_HSDMA_GLO_BUSY \
++	(AIROHA_HSDMA_GLO_RX_BUSY | AIROHA_HSDMA_GLO_TX_BUSY)
++#define AIROHA_HSDMA_GLO_DEFAULT                                  \
++	(AIROHA_HSDMA_GLO_TX_DMA | AIROHA_HSDMA_GLO_RX_DMA |      \
++	 AIROHA_HSDMA_TX_WB_DDONE | AIROHA_HSDMA_BURST_128BYTES | \
++	 AIROHA_HSDMA_GLO_READ_BACK)
++
++#define AIROHA_HSDMA_RESET 0x208
++#define AIROHA_HSDMA_RST_TX BIT(0)
++#define AIROHA_HSDMA_RST_RX BIT(16)
++
++/* Registers for free queue thershold */
++#define AIROHA_HSDMA_FRQ_THR 0x210
++
++#define AIROHA_HSDMA_DLYINT 0x20C
++#define AIROHA_HSDMA_RXDLY_INT_EN BIT(15)
++#define AIROHA_HSDMA_RXMAX_PINT(x) (((x) & 0x7f) << 8)
++#define AIROHA_HSDMA_RXMAX_PTIME(x) ((x) & 0xff)
++#define AIROHA_HSDMA_DLYINT_DEFAULT                                \
++	(AIROHA_HSDMA_RXDLY_INT_EN | AIROHA_HSDMA_RXMAX_PINT(20) | \
++	 AIROHA_HSDMA_RXMAX_PTIME(20))
++
++#define AIROHA_HSDMA_INT_STATUS 0x220
++#define AIROHA_HSDMA_INT_ENABLE 0x228
++#define AIROHA_HSDMA_INT_RXDONE BIT(16)
++#define AIROHA_HSDMA_INT_RXDONE_1 BIT(17)
++
++#define IS_AIROHA_HSDMA_VDESC_FINISHED(x) ((x) == AIROHA_HSDMA_VDESC_FINISHED)
++
++enum airoha_hsdma_vdesc_flag {
++	AIROHA_HSDMA_VDESC_FINISHED = 0x01,
++};
++
++#define IS_AIROHA_HSDMA_VDESC_FINISHED(x) ((x) == AIROHA_HSDMA_VDESC_FINISHED)
++
++/**
++ * struct airoha_hsdma_pdesc - This is the struct holding info describing physical
++ *			    descriptor (PD) and its placement must be kept at
++ *			    4-bytes alignment in little endian order.
++ * @desc[1-4]:		    The control pad used to indicate hardware how to
++ *			    deal with the descriptor such as source and
++ *			    destination address and data length. The maximum
++ *			    data length each pdesc can handle is 0x3f80 bytes
++ */
++struct airoha_hsdma_pdesc {
++	__le32 desc1;
++	__le32 desc2;
++	__le32 desc3;
++	__le32 desc4;
++	__le32 desc5;
++	__le32 desc6;
++	__le32 desc7;
++	__le32 desc8;
++} __packed __aligned(32);
++
++/**
++ * struct airoha_hsdma_vdesc - This is the struct holding info describing virtual
++ *			    descriptor (VD)
++ * @vd:			    An instance for struct virt_dma_desc
++ * @len:		    The total data size device wants to move
++ * @residue:		    The remaining data size device will move
++ * @dest:		    The destination address device wants to move to
++ * @src:		    The source address device wants to move from
++ */
++struct airoha_hsdma_vdesc {
++	struct virt_dma_desc vd;
++	size_t len;
++	size_t residue;
++	dma_addr_t dest;
++	dma_addr_t src;
++};
++
++/**
++ * struct airoha_hsdma_cb - This is the struct holding extra info required for RX
++ *			 ring to know what relevant VD the PD is being
++ *			 mapped to.
++ * @vd:			 Pointer to the relevant VD.
++ * @flag:		 Flag indicating what action should be taken when VD
++ *			 is completed.
++ */
++struct airoha_hsdma_cb {
++	struct virt_dma_desc *vd;
++	enum airoha_hsdma_vdesc_flag flag;
++};
++
++/**
++ * struct airoha_hsdma_ring - This struct holds info describing underlying ring
++ *			   space
++ * @txd:		   The descriptor TX ring which describes DMA source
++ *			   information
++ * @rxd:		   The descriptor RX ring which describes DMA
++ *			   destination information
++ * @cb:			   The extra information pointed at by RX ring
++ * @tphys:		   The physical addr of TX ring
++ * @rphys:		   The physical addr of RX ring
++ * @cur_tptr:		   Pointer to the next free descriptor used by the host
++ * @cur_rptr:		   Pointer to the last done descriptor by the device
++ */
++struct airoha_hsdma_ring {
++	struct airoha_hsdma_pdesc *txd;
++	struct airoha_hsdma_pdesc *rxd;
++	struct airoha_hsdma_cb *cb;
++	dma_addr_t tphys;
++	dma_addr_t rphys;
++	u16 cur_tptr;
++	u16 cur_rptr;
++};
++
++/**
++ * struct airoha_hsdma_pchan - This is the struct holding info describing physical
++ *			   channel (PC)
++ * @ring:		   An instance for the underlying ring
++ * @sz_ring:		   Total size allocated for the ring
++ * @nr_free:		   Total number of free rooms in the ring. It would
++ *			   be accessed and updated frequently between IRQ
++ *			   context and user context to reflect whether ring
++ *			   can accept requests from VD.
++ */
++struct airoha_hsdma_pchan {
++	struct airoha_hsdma_ring ring;
++	size_t sz_ring;
++	atomic_t nr_free;
++
++	int chan_num;
++	u32 tx_base;
++	u32 tx_cnt;
++	u32 tx_cpu;
++	u32 tx_dma;
++	u32 rx_base;
++	u32 rx_cnt;
++	u32 rx_cpu;
++	u32 rx_dma;
++	u32 reset;
++	u32 intr;
++};
++
++/**
++ * struct airoha_hsdma_vchan - This is the struct holding info describing virtual
++ *			   channel (VC)
++ * @vc:			   An instance for struct virt_dma_chan
++ * @issue_completion:	   The wait for all issued descriptors completited
++ * @issue_synchronize:	   Bool indicating channel synchronization starts
++ * @desc_hw_processing:	   List those descriptors the hardware is processing,
++ *			   which is protected by vc.lock
++ */
++struct airoha_hsdma_vchan {
++	struct virt_dma_chan vc;
++	struct completion issue_completion;
++	bool issue_synchronize;
++	struct list_head desc_hw_processing;
++};
++
++/**
++ * struct airoha_hsdma_soc - This is the struct holding differences among SoCs
++ * @ddone:		  Bit mask for DDONE
++ * @ls0:		  Bit mask for LS0
++ */
++struct airoha_hsdma_soc {
++	__le32 ddone;
++	__le32 ls0;
++};
++
++/**
++ * struct airoha_hsdma_device - This is the struct holding info describing HSDMA
++ *			     device
++ * @ddev:		     An instance for struct dma_device
++ * @base:		     The mapped register I/O base
++ * @irq:		     The IRQ that device are using
++ * @dma_requests:	     The number of VCs the device supports to
++ * @vc:			     The pointer to all available VCs
++ * @pc:			     The pointer to the underlying PC
++ * @pc_refcnt:		     Track how many VCs are using the PC
++ * @lock:		     Lock protect agaisting multiple VCs access PC
++ * @soc:		     The pointer to area holding differences among
++ *			     various platform
++ */
++struct airoha_hsdma_device {
++	struct dma_device ddev;
++	void __iomem *base;
++	u32 irq;
++
++	u32 dma_requests;
++	struct airoha_hsdma_vchan *vc;
++	struct airoha_hsdma_pchan *pc;
++	refcount_t pc_refcnt;
++
++	/* Lock used to protect against multiple VCs access PC */
++	spinlock_t lock;
++
++	const struct airoha_hsdma_soc *soc;
++};
++
++static struct airoha_hsdma_device *to_hsdma_dev(struct dma_chan *chan)
++{
++	return container_of(chan->device, struct airoha_hsdma_device, ddev);
++}
++
++static inline struct airoha_hsdma_vchan *to_hsdma_vchan(struct dma_chan *chan)
++{
++	return container_of(chan, struct airoha_hsdma_vchan, vc.chan);
++}
++
++static struct airoha_hsdma_vdesc *to_hsdma_vdesc(struct virt_dma_desc *vd)
++{
++	return container_of(vd, struct airoha_hsdma_vdesc, vd);
++}
++
++static struct device *hsdma2dev(struct airoha_hsdma_device *hsdma)
++{
++	return hsdma->ddev.dev;
++}
++
++static u32 airoha_dma_read(struct airoha_hsdma_device *hsdma, u32 reg)
++{
++	return readl(hsdma->base + reg);
++}
++
++static void airoha_dma_write(struct airoha_hsdma_device *hsdma, u32 reg,
++			     u32 val)
++{
++	writel(val, hsdma->base + reg);
++}
++
++static void airoha_dma_rmw(struct airoha_hsdma_device *hsdma, u32 reg, u32 mask,
++			   u32 set)
++{
++	u32 val;
++
++	val = airoha_dma_read(hsdma, reg);
++	val &= ~mask;
++	val |= set;
++	airoha_dma_write(hsdma, reg, val);
++}
++
++static void airoha_dma_set(struct airoha_hsdma_device *hsdma, u32 reg, u32 val)
++{
++	airoha_dma_rmw(hsdma, reg, 0, val);
++}
++
++static void airoha_dma_clr(struct airoha_hsdma_device *hsdma, u32 reg, u32 val)
++{
++	airoha_dma_rmw(hsdma, reg, val, 0);
++}
++
++static void airoha_hsdma_vdesc_free(struct virt_dma_desc *vd)
++{
++	kfree(container_of(vd, struct airoha_hsdma_vdesc, vd));
++}
++
++static int airoha_hsdma_busy_wait(struct airoha_hsdma_device *hsdma)
++{
++	u32 status = 0;
++
++	return readl_poll_timeout(hsdma->base + AIROHA_HSDMA_GLO, status,
++				  !(status & AIROHA_HSDMA_GLO_BUSY),
++				  AIROHA_HSDMA_USEC_POLL,
++				  AIROHA_HSDMA_TIMEOUT_POLL);
++}
++
++static int airoha_hsdma_alloc_pchan(struct airoha_hsdma_device *hsdma,
++				    struct airoha_hsdma_pchan *pc, int chan_num)
++{
++	struct airoha_hsdma_ring *ring = &pc->ring;
++	int err;
++
++	memset(pc, 0, sizeof(*pc));
++
++	pc->chan_num = chan_num;
++	pc->tx_base = (AIROHA_HSDMA_TX_BASE + (chan_num << 4));
++	pc->tx_cnt = (AIROHA_HSDMA_TX_CNT + (chan_num << 4));
++	pc->tx_cpu = (AIROHA_HSDMA_TX_CPU + (chan_num << 4));
++	pc->tx_dma = (AIROHA_HSDMA_TX_DMA + (chan_num << 4));
++	pc->rx_base = (AIROHA_HSDMA_RX_BASE + (chan_num << 4));
++	pc->rx_cnt = (AIROHA_HSDMA_RX_CNT + (chan_num << 4));
++	pc->rx_cpu = (AIROHA_HSDMA_RX_CPU + (chan_num << 4));
++	pc->rx_dma = (AIROHA_HSDMA_RX_DMA + (chan_num << 4));
++	pc->reset = ((AIROHA_HSDMA_RST_TX | AIROHA_HSDMA_RST_RX) << chan_num);
++	pc->intr = (AIROHA_HSDMA_INT_RXDONE << chan_num);
++
++	/*
++	 * Allocate ring space where [0 ... AIROHA_DMA_SIZE - 1] is for TX ring
++	 * and [AIROHA_DMA_SIZE ... 2 * AIROHA_DMA_SIZE - 1] is for RX ring.
++	 */
++	pc->sz_ring = 2 * AIROHA_DMA_SIZE * sizeof(*ring->txd);
++	ring->txd = dma_alloc_coherent(hsdma2dev(hsdma), pc->sz_ring,
++				       &ring->tphys, GFP_NOWAIT);
++	if (!ring->txd)
++		return -ENOMEM;
++
++	ring->rxd = &ring->txd[AIROHA_DMA_SIZE];
++	ring->rphys = ring->tphys + AIROHA_DMA_SIZE * sizeof(*ring->txd);
++	ring->cur_tptr = 0;
++	ring->cur_rptr = AIROHA_DMA_SIZE - 1;
++
++	ring->cb = kcalloc(AIROHA_DMA_SIZE, sizeof(*ring->cb), GFP_NOWAIT);
++	if (!ring->cb) {
++		err = -ENOMEM;
++		goto err_free_dma;
++	}
++
++	atomic_set(&pc->nr_free, AIROHA_DMA_SIZE - 1);
++
++	/* Disable HSDMA and wait for the completion */
++	airoha_dma_clr(hsdma, AIROHA_HSDMA_GLO, AIROHA_HSDMA_GLO_DMA);
++	err = airoha_hsdma_busy_wait(hsdma);
++	if (err)
++		goto err_free_cb;
++
++	/* Reset */
++	airoha_dma_set(hsdma, AIROHA_HSDMA_RESET,
++		       AIROHA_HSDMA_RST_TX | AIROHA_HSDMA_RST_RX);
++	airoha_dma_clr(hsdma, AIROHA_HSDMA_RESET,
++		       AIROHA_HSDMA_RST_TX | AIROHA_HSDMA_RST_RX);
++
++	/* Setup HSDMA initial pointer in the ring */
++	airoha_dma_write(hsdma, pc->tx_base, ring->tphys);
++	airoha_dma_write(hsdma, pc->tx_cnt, AIROHA_DMA_SIZE);
++	airoha_dma_write(hsdma, pc->tx_cpu, ring->cur_tptr);
++	airoha_dma_write(hsdma, pc->rx_base, ring->rphys);
++	airoha_dma_write(hsdma, pc->rx_cnt, AIROHA_DMA_SIZE);
++	airoha_dma_write(hsdma, pc->rx_cpu, ring->cur_rptr);
++
++	/* Enable HSDMA */
++	airoha_dma_set(hsdma, AIROHA_HSDMA_GLO, AIROHA_HSDMA_GLO_DMA);
++
++	/* Setup delayed interrupt */
++	airoha_dma_write(hsdma, AIROHA_HSDMA_DLYINT,
++			 AIROHA_HSDMA_DLYINT_DEFAULT);
++
++	/* Enable interrupt */
++	airoha_dma_set(hsdma, AIROHA_HSDMA_INT_ENABLE, pc->intr);
++
++	return 0;
++
++err_free_cb:
++	kfree(ring->cb);
++
++err_free_dma:
++	dma_free_coherent(hsdma2dev(hsdma), pc->sz_ring, ring->txd,
++			  ring->tphys);
++	return err;
++}
++
++static void airoha_hsdma_free_pchan(struct airoha_hsdma_device *hsdma,
++				    struct airoha_hsdma_pchan *pc)
++{
++	struct airoha_hsdma_ring *ring = &pc->ring;
++
++	/* Disable HSDMA and then wait for the completion */
++	airoha_dma_clr(hsdma, AIROHA_HSDMA_GLO, AIROHA_HSDMA_GLO_DMA);
++	airoha_hsdma_busy_wait(hsdma);
++
++	/* Reset pointer in the ring */
++	airoha_dma_clr(hsdma, AIROHA_HSDMA_INT_ENABLE, pc->intr);
++	airoha_dma_write(hsdma, pc->tx_base, 0);
++	airoha_dma_write(hsdma, pc->tx_cnt, 0);
++	airoha_dma_write(hsdma, pc->tx_cpu, 0);
++	airoha_dma_write(hsdma, pc->rx_base, 0);
++	airoha_dma_write(hsdma, pc->rx_cnt, 0);
++	airoha_dma_write(hsdma, pc->rx_cpu, AIROHA_DMA_SIZE - 1);
++
++	kfree(ring->cb);
++
++	dma_free_coherent(hsdma2dev(hsdma), pc->sz_ring, ring->txd,
++			  ring->tphys);
++}
++
++static int airoha_hsdma_issue_pending_vdesc(struct airoha_hsdma_device *hsdma,
++					    struct airoha_hsdma_pchan *pc,
++					    struct airoha_hsdma_vdesc *hvd)
++{
++	struct airoha_hsdma_ring *ring = &pc->ring;
++	struct airoha_hsdma_pdesc *txd, *rxd;
++	u16 reserved, prev, tlen, num_sgs;
++	__le32 desc2 = 0;
++	unsigned long flags;
++
++	/* Protect against PC is accessed by multiple VCs simultaneously */
++	spin_lock_irqsave(&hsdma->lock, flags);
++
++	/*
++	 * Reserve rooms, where pc->nr_free is used to track how many free
++	 * rooms in the ring being updated in user and IRQ context.
++	 */
++	num_sgs = DIV_ROUND_UP(hvd->len, AIROHA_HSDMA_MAX_LEN);
++	reserved = min_t(u16, num_sgs, atomic_read(&pc->nr_free));
++
++	if (!reserved) {
++		spin_unlock_irqrestore(&hsdma->lock, flags);
++		return -ENOSPC;
++	}
++
++	atomic_sub(reserved, &pc->nr_free);
++
++	while (reserved--) {
++		/*
++		 * Setup PDs using the remaining VD info mapped on those
++		 * reserved rooms. And since RXD is shared memory between the
++		 * host and the device allocated by dma_alloc_coherent call,
++		 * the helper macro WRITE_ONCE can ensure the data written to
++		 * RAM would really happens.
++		 */
++		txd = &(ring->txd[ring->cur_tptr]);
++		rxd = &(ring->rxd[ring->cur_tptr]);
++
++		if (!(txd->desc2 & hsdma->soc->ddone))
++			dev_warn(hsdma->ddev.dev, "%d: TXD done bit is 0",
++				 pc->chan_num);
++		if ((rxd->desc2 & hsdma->soc->ddone))
++			dev_warn(hsdma->ddev.dev, "%d: RXD done bit is 1",
++				 pc->chan_num);
++
++		desc2 = 0;
++		/* Limit size by PD capability for valid data moving */
++		if (hvd->len > AIROHA_HSDMA_MAX_LEN) {
++			tlen = AIROHA_HSDMA_MAX_LEN;
++			desc2 |= hsdma->soc->ls0;
++		} else
++			tlen = hvd->len;
++
++		desc2 |= AIROHA_HSDMA_DESC_PLEN(tlen);
++
++		WRITE_ONCE(rxd->desc3, hvd->dest);
++		WRITE_ONCE(rxd->desc2, desc2);
++		WRITE_ONCE(txd->desc3, hvd->src);
++		WRITE_ONCE(txd->desc2, desc2);
++
++		/* Associate VD, the PD belonged to */
++		ring->cb[ring->cur_tptr].vd = &hvd->vd;
++
++		/* Move forward the pointer of TX ring */
++		ring->cur_tptr = AIROHA_HSDMA_NEXT_DESP_IDX(ring->cur_tptr,
++							    AIROHA_DMA_SIZE);
++
++		/* Update VD with remaining data */
++		hvd->src += tlen;
++		hvd->dest += tlen;
++		hvd->len -= tlen;
++	}
++
++	/*
++	 * Tagging flag for the last PD for VD will be responsible for
++	 * completing VD.
++	 */
++	if (!hvd->len) {
++		prev = AIROHA_HSDMA_LAST_DESP_IDX(ring->cur_tptr,
++						  AIROHA_DMA_SIZE);
++		ring->cb[prev].flag = AIROHA_HSDMA_VDESC_FINISHED;
++	}
++
++	/* Ensure all changes indeed done before we're going on */
++	wmb();
++
++	/*
++	 * Updating into hardware the pointer of TX ring lets HSDMA to take
++	 * action for those pending PDs.
++	 */
++	airoha_dma_write(hsdma, pc->tx_cpu, ring->cur_tptr);
++
++	spin_unlock_irqrestore(&hsdma->lock, flags);
++
++	return 0;
++}
++
++static void airoha_hsdma_issue_vchan_pending(struct airoha_hsdma_device *hsdma,
++					     struct airoha_hsdma_vchan *hvc)
++{
++	struct virt_dma_desc *vd, *vd2;
++	int err;
++
++	lockdep_assert_held(&hvc->vc.lock);
++
++	list_for_each_entry_safe(vd, vd2, &hvc->vc.desc_issued, node) {
++		struct airoha_hsdma_vdesc *hvd;
++
++		hvd = to_hsdma_vdesc(vd);
++
++		/* Map VD into PC and all VCs shares a single PC */
++		err = airoha_hsdma_issue_pending_vdesc(hsdma, hsdma->pc, hvd);
++
++		/*
++		 * Move VD from desc_issued to desc_hw_processing when entire
++		 * VD is fit into available PDs. Otherwise, the uncompleted
++		 * VDs would stay in list desc_issued and then restart the
++		 * processing as soon as possible once underlying ring space
++		 * got freed.
++		 */
++		if (err == -ENOSPC || hvd->len > 0)
++			break;
++
++		/*
++		 * The extra list desc_hw_processing is used because
++		 * hardware can't provide sufficient information allowing us
++		 * to know what VDs are still working on the underlying ring.
++		 * Through the additional list, it can help us to implement
++		 * terminate_all, residue calculation and such thing needed
++		 * to know detail descriptor status on the hardware.
++		 */
++		list_move_tail(&vd->node, &hvc->desc_hw_processing);
++	}
++}
++
++static void airoha_hsdma_free_rooms_in_ring(struct airoha_hsdma_device *hsdma)
++{
++	struct airoha_hsdma_vchan *hvc;
++	struct airoha_hsdma_pdesc *rxd;
++	struct airoha_hsdma_vdesc *hvd;
++	struct airoha_hsdma_pchan *pc;
++	struct airoha_hsdma_cb *cb;
++	int i = AIROHA_DMA_SIZE;
++	__le32 desc2;
++	u32 status;
++	u16 next;
++
++	/* Read IRQ status */
++	status = airoha_dma_read(hsdma, AIROHA_HSDMA_INT_STATUS);
++	if (unlikely(!(status & AIROHA_HSDMA_INT_RXDONE)))
++		goto rx_done;
++
++	pc = hsdma->pc;
++
++	/*
++	 * Using a fail-safe loop with iterations of up to AIROHA_DMA_SIZE to
++	 * reclaim these finished descriptors: The most number of PDs the ISR
++	 * can handle at one time shouldn't be more than AIROHA_DMA_SIZE so we
++	 * take it as limited count instead of just using a dangerous infinite
++	 * poll.
++	 */
++	while (i--) {
++		next = AIROHA_HSDMA_NEXT_DESP_IDX(pc->ring.cur_rptr,
++						  AIROHA_DMA_SIZE);
++		rxd = &pc->ring.rxd[next];
++
++		/*
++		 * If AIROHA_HSDMA_DESC_DDONE is no specified, that means data
++		 * moving for the PD is still under going.
++		 */
++		desc2 = READ_ONCE(rxd->desc2);
++		if (!(desc2 & hsdma->soc->ddone))
++			break;
++
++		cb = &pc->ring.cb[next];
++		if (unlikely(!cb->vd)) {
++			dev_err(hsdma2dev(hsdma), "cb->vd cannot be null\n");
++			break;
++		}
++
++		/* Update residue of VD the associated PD belonged to */
++		hvd = to_hsdma_vdesc(cb->vd);
++		hvd->residue -= AIROHA_HSDMA_DESC_PLEN_GET(rxd->desc2);
++
++		/* Complete VD until the relevant last PD is finished */
++		if (IS_AIROHA_HSDMA_VDESC_FINISHED(cb->flag)) {
++			hvc = to_hsdma_vchan(cb->vd->tx.chan);
++
++			spin_lock(&hvc->vc.lock);
++
++			/* Remove VD from list desc_hw_processing */
++			list_del(&cb->vd->node);
++
++			/* Add VD into list desc_completed */
++			vchan_cookie_complete(cb->vd);
++
++			if (hvc->issue_synchronize &&
++			    list_empty(&hvc->desc_hw_processing)) {
++				complete(&hvc->issue_completion);
++				hvc->issue_synchronize = false;
++			}
++			spin_unlock(&hvc->vc.lock);
++
++			cb->flag = 0;
++		}
++
++		cb->vd = NULL;
++
++		/*
++		 * Recycle the RXD with the helper WRITE_ONCE that can ensure
++		 * data written into RAM would really happens.
++		 */
++		WRITE_ONCE(rxd->desc1, 0);
++		WRITE_ONCE(rxd->desc2, 0);
++		pc->ring.cur_rptr = next;
++
++		/* Release rooms */
++		atomic_inc(&pc->nr_free);
++	}
++
++	/* Ensure all changes indeed done before we're going on */
++	wmb();
++
++	/* Update CPU pointer for those completed PDs */
++	airoha_dma_write(hsdma, pc->rx_cpu, pc->ring.cur_rptr);
++
++	/*
++	 * Acking the pending IRQ allows hardware no longer to keep the used
++	 * IRQ line in certain trigger state when software has completed all
++	 * the finished physical descriptors.
++	 */
++	if (atomic_read(&pc->nr_free) >= AIROHA_DMA_SIZE - 1)
++		airoha_dma_write(hsdma, AIROHA_HSDMA_INT_STATUS, status);
++
++	/* ASAP handles pending VDs in all VCs after freeing some rooms */
++	for (i = 0; i < hsdma->dma_requests; i++) {
++		hvc = &hsdma->vc[i];
++		spin_lock(&hvc->vc.lock);
++		airoha_hsdma_issue_vchan_pending(hsdma, hvc);
++		spin_unlock(&hvc->vc.lock);
++	}
++
++rx_done:
++	/* All completed PDs are cleaned up, so enable interrupt again */
++	airoha_dma_set(hsdma, AIROHA_HSDMA_INT_ENABLE, AIROHA_HSDMA_INT_RXDONE);
++}
++
++static irqreturn_t airoha_hsdma_irq(int irq, void *devid)
++{
++	struct airoha_hsdma_device *hsdma = devid;
++
++	/*
++	 * Disable interrupt until all completed PDs are cleaned up in
++	 * airoha_hsdma_free_rooms call.
++	 */
++	airoha_dma_clr(hsdma, AIROHA_HSDMA_INT_ENABLE, AIROHA_HSDMA_INT_RXDONE);
++
++	airoha_hsdma_free_rooms_in_ring(hsdma);
++
++	return IRQ_HANDLED;
++}
++
++static struct virt_dma_desc *airoha_hsdma_find_active_desc(struct dma_chan *c,
++							   dma_cookie_t cookie)
++{
++	struct airoha_hsdma_vchan *hvc = to_hsdma_vchan(c);
++	struct virt_dma_desc *vd;
++
++	list_for_each_entry(vd, &hvc->desc_hw_processing, node)
++		if (vd->tx.cookie == cookie)
++			return vd;
++
++	list_for_each_entry(vd, &hvc->vc.desc_issued, node)
++		if (vd->tx.cookie == cookie)
++			return vd;
++
++	return NULL;
++}
++
++static enum dma_status airoha_hsdma_tx_status(struct dma_chan *c,
++					      dma_cookie_t cookie,
++					      struct dma_tx_state *txstate)
++{
++	struct airoha_hsdma_vchan *hvc = to_hsdma_vchan(c);
++	struct airoha_hsdma_vdesc *hvd;
++	struct virt_dma_desc *vd;
++	enum dma_status ret;
++	unsigned long flags;
++	size_t bytes = 0;
++
++	ret = dma_cookie_status(c, cookie, txstate);
++	if (ret == DMA_COMPLETE || !txstate)
++		return ret;
++
++	spin_lock_irqsave(&hvc->vc.lock, flags);
++	vd = airoha_hsdma_find_active_desc(c, cookie);
++	spin_unlock_irqrestore(&hvc->vc.lock, flags);
++
++	if (vd) {
++		hvd = to_hsdma_vdesc(vd);
++		bytes = hvd->residue;
++	}
++
++	dma_set_residue(txstate, bytes);
++
++	return ret;
++}
++
++static void airoha_hsdma_issue_pending(struct dma_chan *c)
++{
++	struct airoha_hsdma_device *hsdma = to_hsdma_dev(c);
++	struct airoha_hsdma_vchan *hvc = to_hsdma_vchan(c);
++	unsigned long flags;
++
++	spin_lock_irqsave(&hvc->vc.lock, flags);
++
++	if (vchan_issue_pending(&hvc->vc))
++		airoha_hsdma_issue_vchan_pending(hsdma, hvc);
++
++	spin_unlock_irqrestore(&hvc->vc.lock, flags);
++}
++
++static struct dma_async_tx_descriptor *
++airoha_hsdma_prep_dma_memcpy(struct dma_chan *c, dma_addr_t dest,
++			     dma_addr_t src, size_t len, unsigned long flags)
++{
++	struct airoha_hsdma_vdesc *hvd;
++
++	hvd = kzalloc(sizeof(*hvd), GFP_NOWAIT);
++	if (!hvd)
++		return NULL;
++
++	hvd->len = len;
++	hvd->residue = len;
++	hvd->src = src;
++	hvd->dest = dest;
++
++	return vchan_tx_prep(to_virt_chan(c), &hvd->vd, flags);
++}
++
++static int airoha_hsdma_free_inactive_desc(struct dma_chan *c)
++{
++	struct virt_dma_chan *vc = to_virt_chan(c);
++	unsigned long flags;
++	LIST_HEAD(head);
++
++	spin_lock_irqsave(&vc->lock, flags);
++	list_splice_tail_init(&vc->desc_allocated, &head);
++	list_splice_tail_init(&vc->desc_submitted, &head);
++	list_splice_tail_init(&vc->desc_issued, &head);
++	spin_unlock_irqrestore(&vc->lock, flags);
++
++	/* At the point, we don't expect users put descriptor into VC again */
++	vchan_dma_desc_free_list(vc, &head);
++
++	return 0;
++}
++
++static void airoha_hsdma_free_active_desc(struct dma_chan *c)
++{
++	struct airoha_hsdma_vchan *hvc = to_hsdma_vchan(c);
++	bool sync_needed = false;
++
++	/*
++	 * Once issue_synchronize is being set, which means once the hardware
++	 * consumes all descriptors for the channel in the ring, the
++	 * synchronization must be notified immediately it is completed.
++	 */
++	spin_lock(&hvc->vc.lock);
++	if (!list_empty(&hvc->desc_hw_processing)) {
++		hvc->issue_synchronize = true;
++		sync_needed = true;
++	}
++	spin_unlock(&hvc->vc.lock);
++
++	if (sync_needed)
++		wait_for_completion(&hvc->issue_completion);
++	/*
++	 * At the point, we expect that all remaining descriptors in the ring
++	 * for the channel should be all processing done.
++	 */
++	WARN_ONCE(!list_empty(&hvc->desc_hw_processing),
++		  "Desc pending still in list desc_hw_processing\n");
++
++	/* Free all descriptors in list desc_completed */
++	vchan_synchronize(&hvc->vc);
++
++	WARN_ONCE(!list_empty(&hvc->vc.desc_completed),
++		  "Desc pending still in list desc_completed\n");
++}
++
++static int airoha_hsdma_terminate_all(struct dma_chan *c)
++{
++	/*
++	 * Free pending descriptors not processed yet by hardware that have
++	 * previously been submitted to the channel.
++	 */
++	airoha_hsdma_free_inactive_desc(c);
++
++	/*
++	 * However, the DMA engine doesn't provide any way to stop these
++	 * descriptors being processed currently by hardware. The only way is
++	 * to just waiting until these descriptors are all processed completely
++	 * through airoha_hsdma_free_active_desc call.
++	 */
++	airoha_hsdma_free_active_desc(c);
++
++	return 0;
++}
++
++static int airoha_hsdma_alloc_chan_resources(struct dma_chan *c)
++{
++	struct airoha_hsdma_device *hsdma = to_hsdma_dev(c);
++	int err;
++
++	/*
++	 * Since HSDMA has only one PC, the resource for PC is being allocated
++	 * when the first VC is being created and the other VCs would run on
++	 * the same PC.
++	 */
++	if (!refcount_read(&hsdma->pc_refcnt)) {
++		err = airoha_hsdma_alloc_pchan(hsdma, hsdma->pc, c->chan_id);
++		if (err)
++			return err;
++		/*
++		 * refcount_inc would complain increment on 0; use-after-free.
++		 * Thus, we need to explicitly set it as 1 initially.
++		 */
++		refcount_set(&hsdma->pc_refcnt, 1);
++	} else {
++		refcount_inc(&hsdma->pc_refcnt);
++	}
++
++	return 0;
++}
++
++static void airoha_hsdma_free_chan_resources(struct dma_chan *c)
++{
++	struct airoha_hsdma_device *hsdma = to_hsdma_dev(c);
++
++	/* Free all descriptors in all lists on the VC */
++	airoha_hsdma_terminate_all(c);
++
++	/* The resource for PC is not freed until all the VCs are destroyed */
++	if (!refcount_dec_and_test(&hsdma->pc_refcnt))
++		return;
++
++	airoha_hsdma_free_pchan(hsdma, hsdma->pc);
++}
++
++static int airoha_hsdma_hw_init(struct airoha_hsdma_device *hsdma)
++{
++	pm_runtime_enable(hsdma2dev(hsdma));
++	pm_runtime_get_sync(hsdma2dev(hsdma));
++
++	airoha_dma_write(hsdma, AIROHA_HSDMA_FRQ_THR, 0);
++	airoha_dma_write(hsdma, AIROHA_HSDMA_INT_ENABLE, 0);
++	airoha_dma_write(hsdma, AIROHA_HSDMA_GLO, AIROHA_HSDMA_GLO_DEFAULT);
++
++	return 0;
++}
++
++static int airoha_hsdma_hw_deinit(struct airoha_hsdma_device *hsdma)
++{
++	airoha_dma_write(hsdma, AIROHA_HSDMA_GLO, 0);
++
++	pm_runtime_put_sync(hsdma2dev(hsdma));
++	pm_runtime_disable(hsdma2dev(hsdma));
++
++	return 0;
++}
++
++static int airoha_hsdma_probe(struct platform_device *pdev)
++{
++	struct airoha_hsdma_device *hsdma;
++	struct airoha_hsdma_vchan *vc;
++	struct dma_device *dd;
++	int i, err;
++
++	hsdma = devm_kzalloc(&pdev->dev, sizeof(*hsdma), GFP_KERNEL);
++	if (!hsdma)
++		return -ENOMEM;
++
++	dd = &hsdma->ddev;
++
++	hsdma->base = devm_platform_ioremap_resource(pdev, 0);
++	if (IS_ERR(hsdma->base))
++		return PTR_ERR(hsdma->base);
++
++	hsdma->soc = of_device_get_match_data(&pdev->dev);
++	if (!hsdma->soc) {
++		dev_err(&pdev->dev, "No device match found\n");
++		return -ENODEV;
++	}
++
++	err = platform_get_irq(pdev, 0);
++	if (err < 0)
++		return err;
++	hsdma->irq = err;
++
++	refcount_set(&hsdma->pc_refcnt, 0);
++	spin_lock_init(&hsdma->lock);
++
++	dma_cap_set(DMA_MEMCPY, dd->cap_mask);
++
++	dd->copy_align = AIROHA_HSDMA_ALIGN_SIZE;
++	dd->device_alloc_chan_resources = airoha_hsdma_alloc_chan_resources;
++	dd->device_free_chan_resources = airoha_hsdma_free_chan_resources;
++	dd->device_tx_status = airoha_hsdma_tx_status;
++	dd->device_issue_pending = airoha_hsdma_issue_pending;
++	dd->device_prep_dma_memcpy = airoha_hsdma_prep_dma_memcpy;
++	dd->device_terminate_all = airoha_hsdma_terminate_all;
++	dd->src_addr_widths = AIROHA_HSDMA_DMA_BUSWIDTHS;
++	dd->dst_addr_widths = AIROHA_HSDMA_DMA_BUSWIDTHS;
++	dd->directions = BIT(DMA_MEM_TO_MEM);
++	dd->residue_granularity = DMA_RESIDUE_GRANULARITY_SEGMENT;
++	dd->dev = &pdev->dev;
++	INIT_LIST_HEAD(&dd->channels);
++
++	hsdma->dma_requests = AIROHA_HSDMA_NR_VCHANS;
++	if (pdev->dev.of_node &&
++	    of_property_read_u32(pdev->dev.of_node, "#dma-requests",
++				 &hsdma->dma_requests)) {
++		dev_info(&pdev->dev,
++			 "Using %u as missing dma-requests property\n",
++			 AIROHA_HSDMA_NR_VCHANS);
++	}
++
++	hsdma->pc = devm_kcalloc(&pdev->dev, AIROHA_HSDMA_NR_MAX_PCHANS,
++				 sizeof(*hsdma->pc), GFP_KERNEL);
++	if (!hsdma->pc)
++		return -ENOMEM;
++
++	hsdma->vc = devm_kcalloc(&pdev->dev, hsdma->dma_requests,
++				 sizeof(*hsdma->vc), GFP_KERNEL);
++	if (!hsdma->vc)
++		return -ENOMEM;
++
++	for (i = 0; i < hsdma->dma_requests; i++) {
++		vc = &hsdma->vc[i];
++		vc->vc.desc_free = airoha_hsdma_vdesc_free;
++		vchan_init(&vc->vc, dd);
++		init_completion(&vc->issue_completion);
++		INIT_LIST_HEAD(&vc->desc_hw_processing);
++	}
++
++	err = dma_async_device_register(dd);
++	if (err)
++		return err;
++
++	err = of_dma_controller_register(pdev->dev.of_node,
++					 of_dma_xlate_by_chan_id, hsdma);
++	if (err) {
++		dev_err(&pdev->dev, "Airoha HSDMA OF registration failed %d\n",
++			err);
++		goto err_unregister;
++	}
++
++	airoha_hsdma_hw_init(hsdma);
++
++	err = devm_request_irq(&pdev->dev, hsdma->irq, airoha_hsdma_irq, 0,
++			       dev_name(&pdev->dev), hsdma);
++	if (err) {
++		dev_err(&pdev->dev, "request_irq failed with err %d\n", err);
++		goto err_free;
++	}
++
++	platform_set_drvdata(pdev, hsdma);
++
++	dev_info(&pdev->dev, "Airoha HSDMA driver registered\n");
++
++	return 0;
++
++err_free:
++	airoha_hsdma_hw_deinit(hsdma);
++	of_dma_controller_free(pdev->dev.of_node);
++err_unregister:
++	dma_async_device_unregister(dd);
++
++	return err;
++}
++
++static void airoha_hsdma_remove(struct platform_device *pdev)
++{
++	struct airoha_hsdma_device *hsdma = platform_get_drvdata(pdev);
++	struct airoha_hsdma_vchan *vc;
++	int i;
++
++	/* Kill VC task */
++	for (i = 0; i < hsdma->dma_requests; i++) {
++		vc = &hsdma->vc[i];
++
++		list_del(&vc->vc.chan.device_node);
++		tasklet_kill(&vc->vc.task);
++	}
++
++	/* Disable DMA interrupt */
++	airoha_dma_write(hsdma, AIROHA_HSDMA_INT_ENABLE, 0);
++
++	/* Waits for any pending IRQ handlers to complete */
++	synchronize_irq(hsdma->irq);
++
++	/* Disable hardware */
++	airoha_hsdma_hw_deinit(hsdma);
++
++	dma_async_device_unregister(&hsdma->ddev);
++	of_dma_controller_free(pdev->dev.of_node);
++}
++
++static const struct airoha_hsdma_soc en7523_soc = {
++	.ddone = BIT(31),
++	.ls0 = BIT(29),
++};
++
++static const struct of_device_id airoha_hsdma_match[] = {
++	{ .compatible = "airoha,en7523-hsdma", .data = &en7523_soc },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, airoha_hsdma_match);
++
++static struct platform_driver airoha_hsdma_driver = {
++	.probe		= airoha_hsdma_probe,
++	.remove_new	= airoha_hsdma_remove,
++	.driver = {
++		.name		= KBUILD_MODNAME,
++		.of_match_table	= airoha_hsdma_match,
++	},
++};
++module_platform_driver(airoha_hsdma_driver);
++
++MODULE_DESCRIPTION("Airoha High-Speed DMA Controller Driver");
++MODULE_LICENSE("GPL");
+-- 
+2.53.0
+

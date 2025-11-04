@@ -1,0 +1,182 @@
+From 3f4cca8f1b1e2d5911a493a8568c3c05dc232f67 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Fri, 30 Jan 2026 11:20:30 -0300
+Subject: [PATCH] clk: airoha: split en7523 chip-scu and add trng reset bits
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/clk/clk-en7523.c | 68 +++++++++++++++++++++++++++-------------
+ 1 file changed, 46 insertions(+), 22 deletions(-)
+
+diff --git a/drivers/clk/clk-en7523.c b/drivers/clk/clk-en7523.c
+index b8aa51519..863913e62 100644
+--- a/drivers/clk/clk-en7523.c
++++ b/drivers/clk/clk-en7523.c
+@@ -36,6 +36,12 @@
+ #define   REG_RESET_CONTROL_PCIEHB	BIT(29)
+ #define   REG_RESET_CONTROL_PCIE1	BIT(27)
+ #define   REG_RESET_CONTROL_PCIE2	BIT(26)
++#define REG_TRNG_BUS_CLK_GAT		0x1e4
++#define REG_TRNG_PER_CLK_GAT_1		0x1e8
++#define REG_TRNG_PER_CLK_GAT_2		0x1ec
++#define   REG_TRNG_BUS_EN		BIT(3)
++#define   REG_TRNG_PER1_EN		BIT(21)
++#define   REG_TRNG_PER2_EN		BIT(0)
+ /* EN7581 */
+ #define REG_NP_SCU_PCIC			0x88
+ #define REG_PCIE_CTRL			GENMASK(7, 0)
+@@ -43,6 +49,8 @@
+ #define REG_PCIE_XSI0_SEL_MASK		GENMASK(14, 13)
+ #define REG_PCIE_XSI1_SEL_MASK		GENMASK(12, 11)
+ #define REG_CRYPTO_CLKSRC2		0x20c
++#define REG_TRNG_PER_CLK_GAT_1_AN7581	0x1ec
++#define REG_TRNG_PER_CLK_GAT_2_AN7581	0x200
+ 
+ #define REG_RST_CTRL2			0x830
+ #define REG_RST_CTRL1			0x834
+@@ -88,6 +96,8 @@ struct en_rst_data {
+ struct en_clk_soc_data {
+ 	bool probe_child;
+ 	u32 num_clocks;
++	const u16 *rst_map;
++	int nr_resets;
+ 	const struct en_clk_desc *base_clks;
+ 	const struct clk_ops pcie_ops;
+ 	int (*hw_init)(struct platform_device *pdev,
+@@ -612,8 +622,8 @@ static const u16 an7583_rst_map[] = {
+ 	[AN7583_XPON_MAC_RST]		= RST_NR_PER_BANK + 31,
+ };
+ 
+-static int en7581_reset_register(struct device *dev, struct regmap *map,
+-				 const u16 *rst_map, int nr_resets);
++static int register_resets(struct device *dev, struct regmap *map,
++				 const struct en_clk_soc_data *soc_data);
+ 
+ static u32 en7523_get_base_rate(const struct en_clk_desc *desc, u32 val)
+ {
+@@ -992,35 +1002,36 @@ static int en7523_clk_hw_init(struct platform_device *pdev,
+ 			      const struct en_clk_soc_data *soc_data,
+ 			      struct clk_hw_onecell_data *clk_data)
+ {
+-	void __iomem *base, *np_base;
++	struct device *dev = &pdev->dev;
++	void __iomem *np_base;
+ 	struct regmap *map, *clk_map;
+ 	int err;
+ 
+-	base = devm_platform_ioremap_resource(pdev, 0);
+-	if (IS_ERR(base))
+-		return PTR_ERR(base);
+-
+-	map = devm_regmap_init_mmio(&pdev->dev, base,
+-				    &en7523_clk_regmap_config);
++	if (of_property_present(dev->of_node, "airoha,chip-scu"))
++		map = syscon_regmap_lookup_by_phandle(dev->of_node,
++						      "airoha,chip-scu");
++	else
++		map = syscon_regmap_lookup_by_compatible("airoha,chip-scu");
+ 	if (IS_ERR(map))
+ 		return PTR_ERR(map);
+ 
+-	np_base = devm_platform_ioremap_resource(pdev, 1);
++	np_base = devm_platform_ioremap_resource(pdev, 0);
+ 	if (IS_ERR(np_base))
+ 		return PTR_ERR(np_base);
+ 
+-	clk_map = devm_regmap_init_mmio(&pdev->dev, np_base,
+-					&en7523_clk_regmap_config);
++	clk_map = devm_regmap_init_mmio(&pdev->dev, np_base, &en7523_clk_regmap_config);
+ 	if (IS_ERR(clk_map))
+ 		return PTR_ERR(clk_map);
+ 
+-
+ 	err = en75xx_register_clocks(&pdev->dev, soc_data, clk_data, map, clk_map);
+ 	if (err)
+ 		return err;
+ 
+-	return en7581_reset_register(&pdev->dev, clk_map, en7523_rst_map,
+-				     ARRAY_SIZE(en7523_rst_map));
++	regmap_set_bits(map, REG_TRNG_BUS_CLK_GAT, REG_TRNG_BUS_EN);
++	regmap_set_bits(map, REG_TRNG_PER_CLK_GAT_1, REG_TRNG_PER1_EN);
++	regmap_set_bits(map, REG_TRNG_PER_CLK_GAT_2, REG_TRNG_PER2_EN);
++
++	return register_resets(&pdev->dev, clk_map, soc_data);
+ }
+ 
+ static int en7523_reset_update(struct reset_controller_dev *rcdev,
+@@ -1075,10 +1086,12 @@ static const struct reset_control_ops en7581_reset_ops = {
+ 	.status = en7523_reset_status,
+ };
+ 
+-static int en7581_reset_register(struct device *dev, struct regmap *map,
+-				 const u16 *rst_map, int nr_resets)
++static int register_resets(struct device *dev, struct regmap *map,
++				 const struct en_clk_soc_data *soc_data)
+ {
+ 	struct en_rst_data *rst_data;
++	const u16 *rst_map = soc_data->rst_map;
++ 	size_t nr_resets = soc_data->nr_resets;
+ 
+ 	rst_data = devm_kzalloc(dev, sizeof(*rst_data), GFP_KERNEL);
+ 	if (!rst_data)
+@@ -1132,9 +1145,11 @@ static int en7581_clk_hw_init(struct platform_device *pdev,
+ 			  REG_PCIE_XSI0_SEL_MASK | REG_PCIE_XSI1_SEL_MASK);
+ 	regmap_update_bits(clk_map, REG_NP_SCU_PCIC, REG_PCIE_CTRL,
+ 			   FIELD_PREP(REG_PCIE_CTRL, 3));
++	regmap_set_bits(map, REG_TRNG_BUS_CLK_GAT, REG_TRNG_BUS_EN);
++	regmap_set_bits(map, REG_TRNG_PER_CLK_GAT_1_AN7581, REG_TRNG_PER1_EN);
++	regmap_set_bits(map, REG_TRNG_PER_CLK_GAT_2_AN7581, REG_TRNG_PER2_EN);
+ 
+-	return en7581_reset_register(&pdev->dev, clk_map, en7581_rst_map,
+-				     ARRAY_SIZE(en7581_rst_map));
++	return register_resets(&pdev->dev, clk_map, soc_data);
+ }
+ 
+ static int an7583_clk_hw_init(struct platform_device *pdev,
+@@ -1166,9 +1181,11 @@ static int an7583_clk_hw_init(struct platform_device *pdev,
+ 			  REG_PCIE_XSI0_SEL_MASK | REG_PCIE_XSI1_SEL_MASK);
+ 	regmap_update_bits(clk_map, REG_NP_SCU_PCIC, REG_PCIE_CTRL,
+ 			   FIELD_PREP(REG_PCIE_CTRL, 3));
+-
+-	return en7581_reset_register(dev, clk_map, an7583_rst_map,
+-				     ARRAY_SIZE(an7583_rst_map));
++	regmap_set_bits(map, REG_TRNG_BUS_CLK_GAT, REG_TRNG_BUS_EN);
++	regmap_set_bits(map, REG_TRNG_PER_CLK_GAT_1_AN7581, REG_TRNG_PER1_EN);
++	regmap_set_bits(map, REG_TRNG_PER_CLK_GAT_2_AN7581, REG_TRNG_PER2_EN);
++	
++	return register_resets(dev, clk_map, soc_data);
+ }
+ 
+ static int en7523_clk_probe(struct platform_device *pdev)
+@@ -1209,7 +1226,10 @@ static int en7523_clk_probe(struct platform_device *pdev)
+ 
+ static const struct en_clk_soc_data en7523_data = {
+ 	.base_clks = en7523_base_clks,
++	/* We increment num_clocks by 1 to account for additional PCIe clock */
+ 	.num_clocks = ARRAY_SIZE(en7523_base_clks) + 1,
++	.rst_map = en7523_rst_map,
++	.nr_resets = ARRAY_SIZE(en7523_rst_map),
+ 	.pcie_ops = {
+ 		.is_enabled = en7523_pci_is_enabled,
+ 		.prepare = en7523_pci_prepare,
+@@ -1222,6 +1242,8 @@ static const struct en_clk_soc_data en7581_data = {
+ 	.base_clks = en7581_base_clks,
+ 	/* We increment num_clocks by 1 to account for additional PCIe clock */
+ 	.num_clocks = ARRAY_SIZE(en7581_base_clks) + 1,
++	.rst_map = en7581_rst_map,
++	.nr_resets = ARRAY_SIZE(en7581_rst_map),
+ 	.pcie_ops = {
+ 		.is_enabled = en7581_pci_is_enabled,
+ 		.enable = en7581_pci_enable,
+@@ -1235,6 +1257,8 @@ static const struct en_clk_soc_data an7583_data = {
+ 	.base_clks = an7583_base_clks,
+ 	/* We increment num_clocks by 1 to account for additional PCIe clock */
+ 	.num_clocks = ARRAY_SIZE(an7583_base_clks) + 1,
++	.rst_map = an7583_rst_map,
++	.nr_resets = ARRAY_SIZE(an7583_rst_map),
+ 	.pcie_ops = {
+ 		.is_enabled = en7581_pci_is_enabled,
+ 		.enable = en7581_pci_enable,
+-- 
+2.53.0
+
