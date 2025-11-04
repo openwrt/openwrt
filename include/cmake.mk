@@ -86,6 +86,10 @@ else
   CMAKE_OPTIONS += -DCMAKE_GENERATOR="Unix Makefiles"
 endif
 
+# CMAKE_OPTIONS += -DCMAKE_C_FLAGS="$(TARGET_CFLAGS)" -DBUILD_SHARED_LIBS=ON
+CMAKE_OPTIONS += -DCMAKE_C_FLAGS="$(TARGET_CFLAGS)"
+
+
 define Build/Configure/Default
 	mkdir -p $(CMAKE_BINARY_DIR)
 	(cd $(CMAKE_BINARY_DIR); \
