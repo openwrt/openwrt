@@ -2,9 +2,14 @@
 
 #include <dt-bindings/interrupt-controller/irq.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/leds/common.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/clock/en7523-clk.h>
 #include <dt-bindings/reset/airoha,en7523-reset.h>
+#include <dt-bindings/phy/phy.h>
+#include <dt-bindings/phy/airoha,an7581-usb-phy.h>
+#include <dt-bindings/soc/airoha,scu-ssr.h>
+#include <dt-bindings/thermal/thermal.h>
 
 / {
 	interrupt-parent = <&gic>;
@@ -16,7 +21,7 @@
 		#size-cells = <1>;
 		ranges;
 
-		npu_binary@84000000 {
+		npu_binary: npu_binary@84000000 {
 			no-map;
 			reg = <0x84000000 0xA00000>;
 		};
@@ -40,13 +45,68 @@
 			no-map;
 			reg = <0x86D00000 0x100000>;
 		};
+
+		qdma0_buf: qdma0-buf@87000000 {
+			no-map;
+			reg = <0x87000000 0x2000000>;
+		};
+
+		qdma1_buf: qdma1-buf@89000000 {
+			no-map;
+			reg = <0x89000000 0x1000000>;
+		};
 	};
 
+	cpu_opp_table: opp-table {
+		compatible = "operating-points-v2";
+		opp-shared;
+
+		opp-500000000 {
+			opp-hz = /bits/ 64 <500000000>;
+		};
+
+		opp-550000000 {
+			opp-hz = /bits/ 64 <550000000>;
+		};
+
+		opp-600000000 {
+			opp-hz = /bits/ 64 <600000000>;
+		};
+
+		opp-650000000 {
+			opp-hz = /bits/ 64 <650000000>;
+		};
+
+		opp-7000000000 {
+			opp-hz = /bits/ 64 <700000000>;
+		};
+
+		opp-7500000000 {
+			opp-hz = /bits/ 64 <750000000>;
+		};
+
+		opp-8000000000 {
+			opp-hz = /bits/ 64 <800000000>;
+		};
+
+		opp-8500000000 {
+			opp-hz = /bits/ 64 <850000000>;
+		};
+
+		opp-9000000000 {
+			opp-hz = /bits/ 64 <900000000>;
+		};
+
+		opp-9500000000 {
+			opp-hz = /bits/ 64 <950000000>;
+		};
+	};
+	
 	psci {
 		compatible = "arm,psci-0.2";
 		method = "smc";
 	};
-
+		
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -69,6 +129,8 @@
 			enable-method = "psci";
 			clock-frequency = <80000000>;
 			next-level-cache = <&L2_0>;
+			#cooling-cells = <2>;
+			operating-points-v2 = <&cpu_opp_table>;
 		};
 
 		cpu1: cpu@1 {
@@ -78,6 +140,8 @@
 			enable-method = "psci";
 			clock-frequency = <80000000>;
 			next-level-cache = <&L2_0>;
+			#cooling-cells = <2>;
+			operating-points-v2 = <&cpu_opp_table>;
 		};
 
 		L2_0: l2-cache0 {
@@ -86,7 +150,7 @@
 	};
 
 	scu: system-controller@1fa20000 {
-		compatible = "airoha,en7523-scu";
+		compatible = "airoha,en7523-scu", "syscon";
 		reg = <0x1fa20000 0x400>,
 		      <0x1fb00000 0x1000>;
 		#clock-cells = <1>;
@@ -105,6 +169,11 @@
 		      <0x09500000 0x2000>,
 		      <0x09600000 0x20000>;
 		interrupts = <GIC_PPI 9 IRQ_TYPE_LEVEL_LOW>;
+	};
+
+	pmu {
+		compatible = "arm,cortex-a15-pmu";
+		interrupts = <GIC_PPI 7 IRQ_TYPE_LEVEL_HIGH>;
 	};
 
 	timer {
@@ -221,6 +290,372 @@
 			spi-max-frequency = <50000000>;
 			spi-tx-bus-width = <1>;
 			spi-rx-bus-width = <2>;
+		};
+	};
+
+	watchdog@1fbf0100 {
+		compatible = "airoha,en7581-wdt";
+		reg = <0x1fbf0100 0x38>;
+
+		clocks = <&scu EN7523_CLK_BUS>;
+		clock-names = "bus";
+
+		#interrupt-cells = <1>;
+	};
+
+	usb0: usb@1fab0000 {
+		compatible = "mediatek,mtk-xhci";
+		reg = <0x1fab0000 0x3e00>,
+					<0x1fab3e00 0x100>;
+		reg-names = "mac", "ippc";
+		interrupts = <GIC_SPI 33 IRQ_TYPE_LEVEL_HIGH>;
+
+		phys = <&usb0_phy PHY_TYPE_USB2>, <&usb0_phy PHY_TYPE_USB3>;
+
+		status = "disabled";
+	};
+
+	usb0_phy: phy@1fac0000 {
+		compatible = "airoha,an7581-usb-phy";
+		reg = <0x1fad0000 0x1fff>;
+
+		airoha,scu = <&scu>;
+		airoha,usb2-monitor-clk-sel = <AIROHA_USB2_MONCLK_SEL1>;
+		airoha,serdes-port = <AIROHA_SCU_SERDES_USB1>;
+
+		#phy-cells = <1>;
+	};
+
+	crypto@1e004000 {
+		compatible = "inside-secure,safexcel-eip93ies";
+		reg = <0x1fb70000 0x1000>;
+		interrupts = <GIC_SPI 44 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
+	rng@1faa1000 {
+		compatible = "airoha,en7523-trng";
+		reg = <0x1faa1000 0xc04>;
+		interrupts = <GIC_SPI 35 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
+	thermal-zones {
+		cpu_thermal: cpu-thermal {
+			polling-delay-passive = <200>;
+			polling-delay = <1000>;
+			thermal-sensors = <&thermal 0>;
+			trips {
+				cpu_passive: cpu-passive {
+					temperature = <105000>;
+					hysteresis = <0>;
+					type = "passive";
+				};
+			};
+			cooling-maps {
+				map0 {
+					trip = <&cpu_passive>;
+					cooling-device = <&cpu0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
+							 <&cpu1 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+				};
+			};
+		};
+	};
+
+	thermal: thermal-sensor@1efbd800 {
+		compatible = "airoha,en7523-thermal";
+		reg = <0x1efbd000 0x0fff>;
+		interrupts = <GIC_SPI 23 IRQ_TYPE_LEVEL_HIGH>;
+		airoha,chip-scu = <&scu>;
+
+		#thermal-sensor-cells = <0>;
+	};
+
+	en7523_pwm: pwm@1fbf0234{
+		compatible = "airoha,en7523-pwm";
+		reg = <0x1fbf0234 0x20>,
+		      <0x1fbf0268 0x4>,
+		      <0x1fbf0298 0x24>;
+
+		#pwm-cells = <3>;
+	};
+
+	i2cclock: i2cclock@0 {
+		#clock-cells = <0>;
+		compatible = "fixed-clock";
+
+		/* 20 MHz */
+		clock-frequency = <20000000>;
+	};
+
+	i2c0: i2c0@1fbf8000 {
+		compatible = "mediatek,mt7621-i2c";
+		reg = <0x1fbf8000 0x100>;
+
+		clocks = <&i2cclock>;
+
+		/* 100 kHz */
+		clock-frequency = <100000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		// slave@1fbe3300 {
+		// 	reg = <0x1fbe3300 0x10>,
+		// 	      <0x1fbe3000 0x200>; // sram
+		// 	dev0_addr = <0x60>;
+		// 	dev1_addr = <0x62>;
+		// 	interrupts = <GIC_SPI 28 IRQ_TYPE_LEVEL_HIGH>;
+		// };
+
+		status = "disabled";
+	};
+
+	afe: audio-controller@1fbe2200 {
+		compatible = "airoha,en7523-afe";
+		reg = <0x1fbe2200 0xfc>,
+		      <0x1fbe2e00 0x114>;
+		interrupts = <GIC_SPI 48 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
+	sound {
+		compatible = "airoha,en7523-i2s";
+		reg = <0x1fbd0000 0x4fff>;
+		interrupts = <GIC_SPI 27 IRQ_TYPE_LEVEL_HIGH>;
+		platform {
+			sound-dai = <&afe>;
+		};
+	};
+
+  // Wireless Ethernet Dispatch
+  //  WED Number: 2
+  //  PCI Slot Map: 0, 1
+  // {wed1,wed2,wed test}
+  // Wed test:
+  //  reg = 0x1fa02b00, 0x1fa03b00
+  //  WED Number: 2
+	wed: wed@1fa02000 {
+		compatible = "mediatek,mt7622-wed", "syscon";
+		reg = <0x1fa02000 0xb00>;
+		interrupts = <GIC_SPI 67 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 68 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
+	// Wireless DMA
+	wdma {
+		compatible = "en751221,wdma"; 
+		reg = <0x1fa06000 0x400>,
+		      <0x1fa06400 0x400>;
+		interrupts = <GIC_SPI 69 IRQ_TYPE_LEVEL_HIGH>,   
+		             <GIC_SPI 70 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 71 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 72 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 73 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 74 IRQ_TYPE_LEVEL_HIGH>;
+  }; 
+
+  // High-Speed DMA
+	hsdma: hsdma@1fa01800 {
+		compatible = "airoha,en7523-hsdma";
+		reg = <0x1fa01800 0x300>;
+
+		resets = <&scu EN7523_HSDMA_RST>;
+		reset-names = "hsdma";
+
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 63 IRQ_TYPE_LEVEL_HIGH>;
+
+		#dma-cells = <1>;
+		#dma-channels = <2>;
+		#dma-requests = <2>;
+	};
+
+	xpon_phy: xpon_phy@1faf0000 {
+		compatible = "airoha,en7523-xpon-phy";
+		reg = <0x1faf0000 0x800>, // PON_PHY_ASIC_RG range
+		      <0x1fa2ff24 0x4>,   // PON_PHY_FPGA_RG_TX_OFF
+		      <0x1faf3000 0xfff>, // PON_PHY_ASIC_RG range2
+		      <0x1faf4000 0xfff>; // PON_PHY_ASIC_RG range3
+		reg-names = "asic1", "fpga-off", "asic2", "asic3";
+
+		interrupts = <GIC_SPI 43 IRQ_TYPE_LEVEL_HIGH>; // XPON_PHY_INTR 27+16
+
+		i2c,chip = <&i2c0>;
+		airoha,npu = <&npu>;
+
+		#phy-cells = <0>;
+	};
+
+	xpon: xpon@1fb64000 {
+		compatible = "airoha,en7523-xpon";
+		reg = <0x1fb64000 0x3e8>, // GPON MAC Layer
+		      <0x1fb66000 0x23c>; // EPON MAC Layer
+		reg-names = "gpon", "epon";
+
+		interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH>, // XPON MAC INT 26+16
+		             <GIC_SPI 34 IRQ_TYPE_LEVEL_HIGH>; // DYINGGASP INT 18+16
+
+		phys = <&xpon_phy>;
+		phy-names = "xpon-phy";
+
+		status = "disabled";
+	};
+
+	npu: npu@1e900000 {
+		compatible = "airoha,en7523-npu";
+		reg = <0x1e900000 0x313000>,
+		      <0x1e800000 0x60000>;
+		interrupts = <GIC_SPI 125 IRQ_TYPE_LEVEL_HIGH>,
+		    <GIC_SPI 118 IRQ_TYPE_LEVEL_HIGH>,
+		    <GIC_SPI 119 IRQ_TYPE_LEVEL_HIGH>,
+		    <GIC_SPI 120 IRQ_TYPE_LEVEL_HIGH>,
+		    <GIC_SPI 121 IRQ_TYPE_LEVEL_HIGH>,
+		    <GIC_SPI 122 IRQ_TYPE_LEVEL_HIGH>,
+		    <GIC_SPI 123 IRQ_TYPE_LEVEL_HIGH>;
+
+		memory-region = <&npu_binary>;
+		memory-region-names = "binary";
+
+		status = "disabled";
+	};
+
+	eth: ethernet@1fb50000 {
+		compatible = "airoha,en7523-eth";
+		reg = <0x1fb50000 0x2600>,
+		      <0x1fb54000 0x2000>,
+		      <0x1fb56000 0x2000>;
+		reg-names = "fe", "qdma0", "qdma1";
+
+		resets = <&scu EN7523_FE_RST>,
+			 <&scu EN7523_FE_PDMA_RST>,
+			 <&scu EN7523_FE_QDMA_RST>,
+			 <&scu EN7523_XSI_MAC_RST>,
+			 <&scu EN7523_DUAL_HSI0_MAC_RST>,
+			 <&scu EN7523_DUAL_HSI1_MAC_RST>,
+			 <&scu EN7523_HSI_MAC_RST>;
+		reset-names = "fe", "pdma", "qdma",
+		      "xsi-mac", "hsi0-mac", "hsi1-mac", "hsi-mac";
+
+		interrupts = <GIC_SPI 37 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 55 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 56 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 57 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 38 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 58 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 59 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 60 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 49 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 64 IRQ_TYPE_LEVEL_HIGH>;
+
+		memory-region = <&qdma0_buf>, <&qdma1_buf>;
+		memory-region-names = "qdma0-buf", "qdma1-buf";
+
+		airoha,npu = <&npu>;
+
+		status = "disabled";
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		gdm1: ethernet@1 {
+			compatible = "airoha,eth-mac";
+			reg = <1>;
+			phy-mode = "internal";
+			status = "disabled";
+
+			fixed-link {
+				speed = <10000>;
+				full-duplex;
+				pause;
+			};
+		};
+	};
+
+	switch: switch@1fb58000 {
+		compatible = "airoha,en7581-switch";
+		reg = <0x1fb58000 0x8000>;
+		resets = <&scu EN7523_GSW_RST>;
+
+		interrupt-controller;
+		#interrupt-cells = <1>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 209 IRQ_TYPE_LEVEL_HIGH>;
+
+		status = "disabled";
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@1 {
+				reg = <1>;
+				label = "lan1";
+				phy-mode = "internal";
+				phy-handle = <&gsw_phy1>;
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan2";
+				phy-mode = "internal";
+				phy-handle = <&gsw_phy2>;
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan3";
+				phy-mode = "internal";
+				phy-handle = <&gsw_phy3>;
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "lan4";
+				phy-mode = "internal";
+				phy-handle = <&gsw_phy4>;
+			};
+
+			port@6 {
+				reg = <6>;
+				label = "cpu";
+				ethernet = <&gdm1>;
+				phy-mode = "internal";
+
+				fixed-link {
+					speed = <10000>;
+					full-duplex;
+					pause;
+				};
+			};
+		};
+
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			gsw_phy1: ethernet-phy@1 {
+				compatible = "ethernet-phy-ieee802.3-c22";
+				reg = <9>;
+				phy-mode = "internal";
+			};
+
+			gsw_phy2: ethernet-phy@2 {
+				compatible = "ethernet-phy-ieee802.3-c22";
+				reg = <10>;
+				phy-mode = "internal";
+			};
+
+			gsw_phy3: ethernet-phy@3 {
+				compatible = "ethernet-phy-ieee802.3-c22";
+				reg = <11>;
+				phy-mode = "internal";
+			};
+
+			gsw_phy4: ethernet-phy@4 {
+				compatible = "ethernet-phy-ieee802.3-c22";
+				reg = <12>;
+				phy-mode = "internal";
+			};
 		};
 	};
 };
