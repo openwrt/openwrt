@@ -19,7 +19,10 @@ endef
 define U-Boot/en7523_rfb
   NAME:=EN7523 Reference Board
   UBOOT_CONFIG:=en7523_evb
-  BUILD_DEVICES:=airoha_en7523-evb
+  BUILD_DEVICES:=airoha_en7523-evb \
+    tplink_ex530v_v1 \
+    tplink_xx230v_v1 \
+    tplink_xx530v_v1
   BUILD_SUBTARGET:=en7523
   UBOOT_IMAGE:=u-boot.fip
   BL2_IMAGE:=en7523-bl2.bin

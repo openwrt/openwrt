@@ -753,6 +753,16 @@ define Build/tplink-image-2022
 	@mv $@.new $@
 endef
 
+define Build/tplink-image-2024
+	$(TOPDIR)/scripts/tplink-mkimage-2024.py  \
+		-k $(IMAGE_KERNEL) \
+		-r $(IMAGE_ROOTFS) \
+		-P $(TPLINK_PRODUCT) \
+		-a $(TPLINK_KERNEL_PART_SIZE) \
+		-o $@.new
+	@mv $@.new $@
+endef
+
 define Build/tplink-safeloader
 	-$(STAGING_DIR_HOST)/bin/tplink-safeloader \
 		-B $(TPLINK_BOARD_ID) \

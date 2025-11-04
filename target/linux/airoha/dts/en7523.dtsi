@@ -1,10 +1,14 @@
-// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+/* SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) */
 
 #include <dt-bindings/interrupt-controller/irq.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
-#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
 #include <dt-bindings/clock/en7523-clk.h>
 #include <dt-bindings/reset/airoha,en7523-reset.h>
+#include <dt-bindings/phy/phy.h>
+#include <dt-bindings/phy/airoha,an7581-usb-phy.h>
+#include <dt-bindings/soc/airoha,scu-ssr.h>
+#include <dt-bindings/thermal/thermal.h>
 
 / {
 	interrupt-parent = <&gic>;
@@ -16,29 +20,24 @@
 		#size-cells = <1>;
 		ranges;
 
-		npu_binary@84000000 {
+		atf@80000000 {
 			no-map;
-			reg = <0x84000000 0xA00000>;
+			reg = <0x80000000 0x40000>;
 		};
 
-		npu_flag@84B0000 {
+		npu_binary: npu_binary@84000000 {
 			no-map;
-			reg = <0x84B00000 0x100000>;
+			reg = <0x84000000 0xa00000>;
 		};
 
-		npu_pkt@85000000 {
+		qdma0_buf: qdma0-buf@86206800 {
 			no-map;
-			reg = <0x85000000 0x1A00000>;
+			reg = <0x84a00000 0x800000>;
 		};
 
-		npu_phyaddr@86B00000 {
+		qdma1_buf: qdma1-buf@86a06800 {
 			no-map;
-			reg = <0x86B00000 0x100000>;
-		};
-
-		npu_rxdesc@86D00000 {
-			no-map;
-			reg = <0x86D00000 0x100000>;
+			reg = <0x85200000 0x800000>;
 		};
 	};
 
@@ -68,7 +67,7 @@
 			reg = <0x0>;
 			enable-method = "psci";
 			clock-frequency = <80000000>;
-			next-level-cache = <&L2_0>;
+			next-level-cache = <&l2>;
 		};
 
 		cpu1: cpu@1 {
@@ -77,20 +76,12 @@
 			reg = <0x1>;
 			enable-method = "psci";
 			clock-frequency = <80000000>;
-			next-level-cache = <&L2_0>;
+			next-level-cache = <&l2>;
 		};
 
-		L2_0: l2-cache0 {
+		l2: l2-cache0 {
 			compatible = "cache";
 		};
-	};
-
-	scu: system-controller@1fa20000 {
-		compatible = "airoha,en7523-scu";
-		reg = <0x1fa20000 0x400>,
-		      <0x1fb00000 0x1000>;
-		#clock-cells = <1>;
-		#reset-cells = <1>;
 	};
 
 	gic: interrupt-controller@9000000 {
@@ -105,6 +96,13 @@
 		      <0x09500000 0x2000>,
 		      <0x09600000 0x20000>;
 		interrupts = <GIC_PPI 9 IRQ_TYPE_LEVEL_LOW>;
+
+		its: gic-its@09020000 {
+			compatible = "arm,gic-v3-its";
+			msi-controller;
+			#msi-cell = <1>;
+			reg = <0x090200000 0x20000>;
+		};
 	};
 
 	timer {
@@ -116,6 +114,121 @@
 			     <GIC_PPI 10 IRQ_TYPE_LEVEL_LOW>;
 	};
 
+	pmu {
+		compatible = "arm,cortex-a15-pmu";
+		interrupts = <GIC_PPI 7 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
+	chip_scu: syscon@1fa20000 {
+		compatible = "airoha,chip-scu", "syscon";
+		reg = <0x1fa20000 0x400>;
+	};
+
+	scuclk: system-controller@1fb00000 {
+		compatible = "airoha,en7523-scu", "syscon";
+		reg = <0x1fb00000 0x1000>;
+
+		airoha,chip-scu = <&chip_scu>;
+
+		#clock-cells = <1>;
+		#reset-cells = <1>;
+	};
+
+	rng@1faa1000 {
+		compatible = "airoha,en7581-trng";
+		reg = <0x1faa1000 0xc04>;
+		interrupts = <GIC_SPI 35 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
+	system-controller@1fbf0200 {
+		compatible = "syscon", "simple-mfd";
+		reg = <0x1fbf0200 0xc0>;
+
+		pinctrl: pinctrl {
+			compatible = "airoha,en7523-pinctrl";
+
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 26 IRQ_TYPE_LEVEL_HIGH>;
+
+			airoha,chip-scu = <&chip_scu>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			interrupt-controller;
+			#interrupt-cells = <2>;
+
+			gpio-ranges = <&pinctrl 0 0 32>;
+
+			mdio_pins: mdio-pins {
+				mux {
+					function = "mdio";
+					groups = "mdio";
+				};
+
+				conf {
+					pins = "gpio9";
+					output-high;
+				};
+			};
+
+			uart2_pins: uart2 {
+				mux {
+					function = "uart";
+					groups = "uart2";
+				};
+			};
+
+			pcie0_rst_pins: pcie0-rst-pins {
+				conf {
+					pins = "pcie_reset0";
+					drive-open-drain = <1>;
+				};
+			};
+
+			pcie1_rst_pins: pcie1-rst-pins {
+				conf {
+					pins = "pcie_reset1";
+					drive-open-drain = <1>;
+				};
+			};
+
+			gswp1_led0_pins: gswp1-led0-pins {
+				mux {
+					function = "phy1_led0";
+					groups = "phy0_led0";
+				};
+			};
+
+			gswp2_led0_pins: gswp2-led0-pins {
+				mux {
+					function = "phy2_led0";
+					groups = "phy1_led0";
+				};
+			};
+
+			gswp3_led0_pins: gswp3-led0-pins {
+				mux {
+					function = "phy3_led0";
+					groups = "phy2_led0";
+				};
+			};
+
+			gswp4_led0_pins: gswp4-led0-pins {
+				mux {
+					function = "phy4_led0";
+					groups = "phy3_led0";
+				};
+			};
+		};
+
+		en7523_pwm: pwm {
+			compatible = "airoha,en7581-pwm";
+
+			#pwm-cells = <3>;
+		};
+	};
+
 	uart1: serial@1fbf0000 {
 		compatible = "ns16550";
 		reg = <0x1fbf0000 0x30>;
@@ -123,27 +236,17 @@
 		reg-shift = <2>;
 		interrupts = <GIC_SPI 18 IRQ_TYPE_LEVEL_HIGH>;
 		clock-frequency = <1843200>;
-		status = "okay";
 	};
 
-	gpio0: gpio@1fbf0200 {
-		compatible = "airoha,en7523-gpio";
-		reg = <0x1fbf0204 0x4>,
-		      <0x1fbf0200 0x4>,
-		      <0x1fbf0220 0x4>,
-		      <0x1fbf0214 0x4>;
-		gpio-controller;
-		#gpio-cells = <2>;
-	};
+	uart2: serial@1fbf0300 {
+		compatible = "airoha,en7523-uart";
+		reg = <0x1fbf0300 0x30>;
+		interrupts = <GIC_SPI 32 IRQ_TYPE_LEVEL_HIGH>;
 
-	gpio1: gpio@1fbf0270 {
-		compatible = "airoha,en7523-gpio";
-		reg = <0x1fbf0270 0x4>,
-		      <0x1fbf0260 0x4>,
-		      <0x1fbf0264 0x4>,
-		      <0x1fbf0278 0x4>;
-		gpio-controller;
-		#gpio-cells = <2>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&uart2_pins>;
+
+		status = "disabled";
 	};
 
 	pcie0: pcie@1fa91000 {
@@ -156,11 +259,14 @@
 		#size-cells = <2>;
 		interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "pcie_irq";
-		clocks = <&scu EN7523_CLK_PCIE>;
+		clocks = <&scuclk EN7523_CLK_PCIE>;
 		clock-names = "sys_ck0";
 		bus-range = <0x00 0xff>;
 		ranges = <0x82000000 0 0x20000000 0x20000000 0 0x2000000>;
 		status = "disabled";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&pcie0_rst_pins>;
 
 		#interrupt-cells = <1>;
 		interrupt-map-mask = <0 0 0 7>;
@@ -185,11 +291,14 @@
 		#size-cells = <2>;
 		interrupts = <GIC_SPI 40 IRQ_TYPE_LEVEL_HIGH>;
 		interrupt-names = "pcie_irq";
-		clocks = <&scu EN7523_CLK_PCIE>;
+		clocks = <&scuclk EN7523_CLK_PCIE>;
 		clock-names = "sys_ck1";
 		bus-range = <0x00 0xff>;
 		ranges = <0x82000000 0 0x22000000 0x22000000 0 0x2000000>;
 		status = "disabled";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&pcie1_rst_pins>;
 
 		#interrupt-cells = <1>;
 		interrupt-map-mask = <0 0 0 7>;
@@ -204,12 +313,18 @@
 		};
 	};
 
+	pcie_phy@1fa93700 {
+		compatible = "airoha,en7523-pcie,phy";
+		reg = <0x1fa93700 0x568>, /* PC0 RG range */
+		      <0x1fa95700 0x568>; /* PC1 RG range */
+	};
+
 	spi_ctrl: spi@1fa10000 {
 		compatible = "airoha,en7523-snand", "airoha,en7581-snand";
 		reg = <0x1fa10000 0x140>,
 		      <0x1fa11000 0x160>;
 
-		clocks = <&scu EN7523_CLK_SPI>;
+		clocks = <&scuclk EN7523_CLK_SPI>;
 		clock-names = "spi";
 
 		#address-cells = <1>;
@@ -221,6 +336,525 @@
 			spi-max-frequency = <50000000>;
 			spi-tx-bus-width = <1>;
 			spi-rx-bus-width = <2>;
+		};
+	};
+
+	watchdog@1fbf0100 {
+		compatible = "airoha,en7581-wdt";
+		reg = <0x1fbf0100 0x40>;
+
+		interrupts = <GIC_SPI 20 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 21 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 22 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 25 IRQ_TYPE_LEVEL_HIGH>;
+
+		clocks = <&scuclk EN7523_CLK_BUS>;
+		clock-names = "bus";
+
+		#interrupt-cells = <1>;
+	};
+
+	usb0_phy: phy@1fac0000 {
+		compatible = "airoha,an7581-usb-phy";
+		reg = <0x1fad0000 0x1fff>;
+
+		airoha,scu = <&scuclk>;
+		airoha,usb2-monitor-clk-sel = <AIROHA_USB2_MONCLK_SEL1>;
+		airoha,serdes-port = <AIROHA_SCU_SERDES_USB1>;
+
+		#phy-cells = <1>;
+	};
+
+	usb0: usb@1fab0000 {
+		compatible = "mediatek,mtk-xhci";
+		reg = <0x1fab0000 0x3e00>,
+		      <0x1fab3e00 0x100>;
+		reg-names = "mac", "ippc";
+		interrupts = <GIC_SPI 33 IRQ_TYPE_LEVEL_HIGH>;
+
+		phys = <&usb0_phy PHY_TYPE_USB2>, <&usb0_phy PHY_TYPE_USB3>;
+
+		status = "disabled";
+	};
+
+	crypto@1e004000 {
+		compatible = "inside-secure,safexcel-eip93ies";
+		reg = <0x1fb70000 0x1000>;
+		interrupts = <GIC_SPI 44 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
+	thermal: thermal-sensor@1efbd800 {
+		compatible = "airoha,en7523-thermal";
+		reg = <0x1efbd000 0x0fff>;
+		interrupts = <GIC_SPI 23 IRQ_TYPE_LEVEL_HIGH>;
+		airoha,chip-scu = <&chip_scu>;
+
+		#thermal-sensor-cells = <0>;
+	};
+
+	thermal-zones {
+		cpu_thermal: cpu-thermal {
+			polling-delay-passive = <200>;
+			polling-delay = <1000>;
+			thermal-sensors = <&thermal 0>;
+			trips {
+				cpu_passive: cpu-passive {
+					temperature = <105000>;
+					hysteresis = <0>;
+					type = "passive";
+				};
+			};
+			cooling-maps {
+				map0 {
+					trip = <&cpu_passive>;
+					cooling-device = <&cpu0 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>,
+							 <&cpu1 THERMAL_NO_LIMIT THERMAL_NO_LIMIT>;
+				};
+			};
+		};
+	};
+
+	i2cclock: i2cclock@0 {
+		#clock-cells = <0>;
+		compatible = "fixed-clock";
+
+		/* 20 MHz */
+		clock-frequency = <20000000>;
+	};
+
+	i2c0: i2c0@1fbf8000 {
+		compatible = "mediatek,mt7621-i2c";
+		reg = <0x1fbf8000 0x100>;
+
+		clocks = <&i2cclock>;
+
+		/* 100 kHz */
+		clock-frequency = <100000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		status = "disabled";
+	};
+
+	/* old econet,ecnt-i2s */
+	afe@1fbe2200 {
+		compatible = "airoha,en7523-afe";
+		reg = <0x1fbe2200 0xfc>,
+		      <0x1fbe2e00 0x114>;
+		interrupts = <GIC_SPI 48 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
+	pcm@bfbd0000 {
+		compatible = "airoha,en7523-pcm";
+		reg = <0x1fbd0000 0x4fff>;
+		interrupts = <GIC_SPI 27 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
+	/*
+	uses in (h)sgmii and ae_wan
+
+	- https://sirherobrine23.com.br/netgear_gpl/exs18_exs25_exs27/src/branch/b1.0.0.32/target/linux/airoha/files/arch/arm/mach-econet/sgmii
+	- https://sirherobrine23.com.br/netgear_gpl/exs18_exs25_exs27/src/branch/b1.0.0.32/target/linux/airoha/files/arch/arm/mach-econet/ecnt_xsi.c
+	- https://sirherobrine23.com.br/netgear_gpl/exs18_exs25_exs27/src/branch/b1.0.0.32/target/linux/airoha/files/arch/arm/mach-econet/ecnt_ptp.c
+	- https://sirherobrine23.com.br/netgear_gpl/exs18_exs25_exs27/src/branch/b1.0.0.32/feeds/airoha/package/airoha/drivers/ae_wan/src
+
+	*/
+	xsi@1fa60000 {
+		compatible = "airoha,en7523-xsi";
+		reg = <0x1fa60000 0x300>, /* hsgmii ae */
+		      <0x1fa70000 0x300>, /* hsgmii pcie0 */
+		      <0x1fa71000 0x300>, /* hsgmii pcie1 */
+		      <0x1fa80000 0x300>; /* hsgmii usb */
+	};
+
+	hsdma: hsdma@1fa01800 {
+		compatible = "airoha,en7523-hsdma";
+		reg = <0x1fa01800 0x300>;
+
+		resets = <&scuclk EN7523_HSDMA_RST>;
+		reset-names = "hsdma";
+
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 63 IRQ_TYPE_LEVEL_HIGH>;
+
+		#dma-cells = <1>;
+		#dma-channels = <2>;
+		#dma-requests = <2>;
+	};
+
+	xpon_phy: xpon_phy@1faf0000 {
+		compatible = "airoha,xpon-phy";
+		status = "disabled";
+		reg = <0x1faf0000 0x800>,
+		      <0x1fa2ff24 0x4>,
+		      <0x1faf3000 0xfff>,
+		      <0x1faf4000 0xfff>;
+		reg-names = "asic1", "fpga-off", "asic2", "asic3";
+
+		interrupts = <GIC_SPI 43 IRQ_TYPE_LEVEL_HIGH>; /* XPON_PHY_INTR */
+
+		resets = <&scuclk EN7523_XPON_PHY_RST>;
+		reset-names = "phy";
+
+		i2c,chip = <&i2c0>;
+		airoha,scu = <&chip_scu>, <&scuclk>;
+	};
+
+	xpon: xpon@1fb60000 {
+		compatible = "airoha,xpon";
+		status = "disabled";
+		reg = <0x1fb60000 0x4000>,
+		      <0x1fb64000 0x3e8>,
+		      <0x1fb66000 0x23c>;
+		reg-names = "xpon-base", "gpon-mac", "epon-mac";
+
+		phy = <&xpon_phy>;
+
+		resets = <&scuclk EN7523_XPON_MAC_RST>;
+		reset-names = "mac";
+
+		interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL_HIGH>, /* XPON MAC */
+		             <GIC_SPI 34 IRQ_TYPE_LEVEL_HIGH>; /* DYINGGASP */
+	};
+
+	npu: npu@1e800000 {
+		compatible = "airoha,en7523-npu";
+		status = "disabled";
+		reg = <0x1e800000 0x60000>,  /* NPU 384K SRAM */
+		      <0x1e900000 0x313000>; /* NPU 16K SRAM, Registers */
+		interrupts = <GIC_SPI 125 IRQ_TYPE_LEVEL_HIGH>, /* mbox2host irq */
+		             <GIC_SPI 118 IRQ_TYPE_LEVEL_HIGH>, /* 102+16 tr done */
+		             <GIC_SPI 119 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 120 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 121 IRQ_TYPE_LEVEL_HIGH>, /* 105+16 hadap irq0 */
+		             <GIC_SPI 122 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 123 IRQ_TYPE_LEVEL_HIGH>;
+
+		/* The system is crashing when Core 4 loads after the network switch goes up or the MT76, so far using only 3 cores */
+		core_to_stop = <3>;
+		airoha,scu = <&scuclk>;
+		memory-region = <&npu_binary>;
+		memory-region-names = "binary";
+	};
+
+	wdma0: wdma@1fa06000 {
+		compatible = "airoha,wdma", "syscon";
+		reg = <0x1fa06000 0x400>;
+
+		interrupts = <GIC_SPI 69 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 70 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 71 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
+	wed0: wed@1fa02000 {
+		compatible = "airoha,wed", "syscon";
+		reg = <0x1fa02000 0xb00>,
+		      <0x1fa02b00 0x100>;
+		reg-names = "wed", "wed_test";
+
+		interrupts = <GIC_SPI 67 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
+	wdma1: wdma@1fa06400 {
+		compatible = "airoha,wdma", "syscon";
+		reg = <0x1fa06400 0x400>;
+
+		interrupts = <GIC_SPI 72 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 73 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 74 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
+	wed1: wed@1fa03000 {
+		compatible = "airoha,wed", "syscon";
+		reg = <0x1fa03000 0xb00>,
+		      <0x1fa03b00 0x100>;
+		reg-names = "wed", "wed_test";
+
+		interrupts = <GIC_SPI 68 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
+	hsgmii@1fa65000 {
+		compatible = "airoha,en7523-hsgmii-pon";
+		reg = <0x1fa65100 0x4a0>, /* PCS mode1 range */
+		      <0x1fa65a00 0x1ac>, /* PCS mode2 range */
+		      <0x1fa65e00 0x64>,  /* AN range */
+		      <0x1fa66000 0xdc>;  /* rate adaption range */
+
+		interrupts = <GIC_SPI 66 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
+	sgmii@1fa72000 {
+		compatible = "airoha,en7523-sgmii-pcie";
+		reg = <0x1fa72100 0x4a0>, /* PCS mode1 range */
+		      <0x1fa72a00 0x160>, /* PCS mode2 range */
+		      <0x1fa72000 0x64>,  /* AN range */
+		      <0x1fa72600 0xdc>,  /* rate adaption range */
+		      <0x1fa72c00 0x3b0>; /* phya */
+
+		interrupts = <GIC_SPI 151 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
+	sgmii@1fa77000 {
+		compatible = "airoha,en7523-sgmii-pcie";
+		reg = <0x1fa77100 0x4a0>, /* PCS mode1 range */
+		      <0x1fa77a00 0x160>, /* PCS mode2 range */
+		      <0x1fa77000 0x64>,  /* AN range */
+		      <0x1fa77600 0xdc>,  /* rate adaption range */
+		      <0x1fa77c00 0x3b0>; /* phya */
+
+		interrupts = <GIC_SPI 152 IRQ_TYPE_LEVEL_HIGH>;
+	};
+
+	sgmii@1fa81000 {
+		compatible = "airoha,en7523-sgmii-usb0";
+		reg = <0x1fa81100 0x4a0>, /* PCS mode1 range */
+		      <0x1fa81a00 0x160>, /* PCS mode2 range */
+		      <0x1fa81000 0x64>,  /* AN range */
+		      <0x1fa81600 0xdc>,  /* rate adaption range */
+		      <0x1fa81c00 0x3b0>; /* phya */
+
+		interrupts = <GIC_SPI 153 IRQ_TYPE_LEVEL_HIGH>;	/* usb_hsgmii INT 137+16 */
+	};
+
+	eth: ethernet@1fb50000 {
+		compatible = "airoha,en7523-eth";
+		reg = <0x1fb50000 0x2600>,
+		      <0x1fb54000 0x2000>,
+		      <0x1fb56000 0x2000>,
+		      <0x1fbf9000 0x1000>;
+		reg-names = "fe", "qdma0", "qdma1", "gdmp";
+
+		resets = <&scuclk EN7523_FE_RST>,
+		         <&scuclk EN7523_FE_PDMA_RST>,
+		         <&scuclk EN7523_FE_QDMA_RST>,
+		         <&scuclk EN7523_GDMP_RST>,
+		         <&scuclk EN7523_XSI_MAC_RST>,
+		         <&scuclk EN7523_DUAL_HSI0_MAC_RST>,
+		         <&scuclk EN7523_DUAL_HSI1_MAC_RST>,
+		         <&scuclk EN7523_HSI_MAC_RST>;
+		reset-names = "fe", "pdma", "qdma", "gdmp",
+		              "xsi-mac", "hsi0-mac",
+		              "hsi1-mac", "hsi-mac";
+
+		interrupts = <GIC_SPI 37 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 55 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 56 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 57 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 38 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 58 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 59 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 60 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 49 IRQ_TYPE_LEVEL_HIGH>,
+		             <GIC_SPI 64 IRQ_TYPE_LEVEL_HIGH>;
+
+		memory-region = <&qdma0_buf>, <&qdma1_buf>;
+		memory-region-names = "qdma0-buf", "qdma1-buf";
+
+		airoha,npu = <&npu>;
+		airoha,wed = <&wed0>, <&wed1>;
+		airoha,wdma = <&wdma0>, <&wdma1>;
+
+		status = "disabled";
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		gdm1: ethernet@1 {
+			compatible = "airoha,eth-mac";
+			reg = <1>;
+			phy-mode = "internal";
+			status = "disabled";
+
+			fixed-link {
+				speed = <10000>;
+				full-duplex;
+				pause;
+			};
+		};
+	};
+
+	switch: switch@1fb58000 {
+		compatible = "airoha,en7523-switch";
+		reg = <0x1fb58000 0x8000>;
+		resets = <&scuclk EN7523_GSW_RST>;
+
+		interrupt-controller;
+		#interrupt-cells = <1>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 31 IRQ_TYPE_LEVEL_HIGH>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&mdio_pins>;
+
+		status = "disabled";
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@1 {
+				reg = <1>;
+				phy-mode = "internal";
+				phy-handle = <&gsw_phy1>;
+				status = "disabled";
+			};
+
+			port@2 {
+				reg = <2>;
+				phy-mode = "internal";
+				phy-handle = <&gsw_phy2>;
+				status = "disabled";
+			};
+
+			port@3 {
+				reg = <3>;
+				phy-mode = "internal";
+				phy-handle = <&gsw_phy3>;
+				status = "disabled";
+			};
+
+			port@4 {
+				reg = <4>;
+				phy-mode = "internal";
+				phy-handle = <&gsw_phy4>;
+				status = "disabled";
+			};
+
+			port@6 {
+				reg = <6>;
+				ethernet = <&gdm1>;
+				phy-mode = "internal";
+
+				fixed-link {
+					speed = <10000>;
+					full-duplex;
+					pause;
+				};
+			};
+		};
+
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			gsw_phy1: ethernet-phy@9 {
+				compatible = "ethernet-phy-ieee802.3-c22";
+				reg = <9>;
+				interrupts = <1>;
+				phy-mode = "internal";
+
+				pinctrl-0 = <&gswp1_led0_pins>;
+				pinctrl-names = "gbe-led";
+				airoha,scu = <&scuclk>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led0@0 {
+						reg = <0>;
+						function = LED_FUNCTION_LAN;
+						status = "disabled";
+						active-low;
+					};
+
+					led1@1 {
+						reg = <1>;
+						status = "disabled";
+						active-low;
+					};
+				};
+			};
+
+			gsw_phy2: ethernet-phy@10 {
+				compatible = "ethernet-phy-ieee802.3-c22";
+				reg = <10>;
+				interrupts = <2>;
+				phy-mode = "internal";
+
+				pinctrl-0 = <&gswp2_led0_pins>;
+				pinctrl-names = "gbe-led";
+				airoha,scu = <&scuclk>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led0@0 {
+						reg = <0>;
+						function = LED_FUNCTION_LAN;
+						status = "disabled";
+						active-low;
+					};
+
+					led1@1 {
+						reg = <1>;
+						status = "disabled";
+						active-low;
+					};
+				};
+			};
+
+			gsw_phy3: ethernet-phy@11 {
+				compatible = "ethernet-phy-ieee802.3-c22";
+				reg = <11>;
+				interrupts = <3>;
+				phy-mode = "internal";
+
+				pinctrl-0 = <&gswp3_led0_pins>;
+				pinctrl-names = "gbe-led";
+				airoha,scu = <&scuclk>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led0@0 {
+						reg = <0>;
+						function = LED_FUNCTION_LAN;
+						status = "disabled";
+						active-low;
+					};
+
+					led1@1 {
+						reg = <1>;
+						status = "disabled";
+						active-low;
+					};
+				};
+			};
+
+			gsw_phy4: ethernet-phy@12 {
+				compatible = "ethernet-phy-ieee802.3-c22";
+				reg = <12>;
+				interrupts = <4>;
+				phy-mode = "internal";
+
+				pinctrl-0 = <&gswp4_led0_pins>;
+				pinctrl-names = "gbe-led";
+				airoha,scu = <&scuclk>;
+
+				leds {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					led0@0 {
+						reg = <0>;
+						function = LED_FUNCTION_LAN;
+						status = "disabled";
+						active-low;
+					};
+
+					led1@1 {
+						reg = <1>;
+						status = "disabled";
+						active-low;
+					};
+				};
+			};
 		};
 	};
 };
