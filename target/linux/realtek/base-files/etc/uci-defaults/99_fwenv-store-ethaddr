@@ -24,6 +24,22 @@ tplink,tl-st1008f-v2)
 		[ -n "$board_ethaddr" ] && fw_setenv ethaddr "$board_ethaddr"
 	fi
 	;;
+zyxel,xgs1010-12-a1)
+	env_ethaddr=$(macaddr_canonicalize "$(fw_printenv -n ethaddr 2>/dev/null)")
+
+	# This device ships with an empty environment (invalid CRC). If it is still in
+	# that state, we don't want to modify it, because that would write the defaults
+	# of the userspace U-Boot tools (which differ from the ones in the bootloader).
+	# Thus, we don't do anything here if the ethaddr variable is empty.
+	if [ "$env_ethaddr" = "00:e0:4c:00:00:00" ]; then
+		json_init
+		json_load_file "$BOARD_CFG"
+		json_select network_device
+		json_select eth0
+		json_get_var board_ethaddr macaddr
+		[ -n "$board_ethaddr" ] && fw_setenv ethaddr "$board_ethaddr"
+	fi
+	;;
 esac
 
 exit 0

@@ -24,6 +24,7 @@ proto_dhcpv6_init_config() {
 	proto_config_add_string iface_dslite
 	proto_config_add_string zone_dslite
 	proto_config_add_string encaplimit_dslite
+	proto_config_add_int mtu_dslite
 	proto_config_add_string iface_map
 	proto_config_add_string zone_map
 	proto_config_add_string encaplimit_map
@@ -42,6 +43,7 @@ proto_dhcpv6_init_config() {
 	proto_config_add_boolean keep_ra_dnslifetime
 	proto_config_add_int "ra_holdoff"
 	proto_config_add_boolean verbose
+	proto_config_add_boolean dynamic
 }
 
 proto_dhcpv6_add_prefix() {
@@ -56,11 +58,28 @@ proto_dhcpv6_setup() {
 	local config="$1"
 	local iface="$2"
 
-	local reqaddress reqprefix clientid reqopts defaultreqopts noslaaconly forceprefix extendprefix norelease noserverunicast noclientfqdn noacceptreconfig ip6prefix ip6prefixes iface_dslite iface_map iface_464xlat ip6ifaceid userclass vendorclass sendopts delegate zone_dslite zone_map zone_464xlat zone encaplimit_dslite encaplimit_map skpriority soltimeout fakeroutes sourcefilter keep_ra_dnslifetime ra_holdoff verbose
-	json_get_vars reqaddress reqprefix clientid reqopts defaultreqopts noslaaconly forceprefix extendprefix norelease noserverunicast noclientfqdn noacceptreconfig iface_dslite iface_map iface_464xlat ip6ifaceid userclass vendorclass delegate zone_dslite zone_map zone_464xlat zone encaplimit_dslite encaplimit_map skpriority soltimeout fakeroutes sourcefilter keep_ra_dnslifetime ra_holdoff verbose
+	local reqaddress reqprefix clientid reqopts defaultreqopts
+	local noslaaconly forceprefix extendprefix norelease
+	local noserverunicast noclientfqdn noacceptreconfig iface_dslite
+	local iface_map iface_464xlat ip6ifaceid userclass vendorclass
+	local delegate zone_dslite zone_map zone_464xlat zone encaplimit_dslite
+	local encaplimit_map skpriority soltimeout fakeroutes sourcefilter
+	local keep_ra_dnslifetime ra_holdoff verbose mtu_dslite dynamic
+
+	local ip6prefix ip6prefixes
+
+	json_get_vars reqaddress reqprefix clientid reqopts defaultreqopts
+	json_get_vars noslaaconly forceprefix extendprefix norelease
+	json_get_vars noserverunicast noclientfqdn noacceptreconfig iface_dslite
+	json_get_vars iface_map iface_464xlat ip6ifaceid userclass vendorclass
+	json_get_vars delegate zone_dslite zone_map zone_464xlat zone encaplimit_dslite
+	json_get_vars encaplimit_map skpriority soltimeout fakeroutes sourcefilter
+	json_get_vars keep_ra_dnslifetime ra_holdoff verbose mtu_dslite dynamic
+
 	json_for_each_item proto_dhcpv6_add_prefix ip6prefix ip6prefixes
 
 	# Configure
+	local sendopts
 	local opts=""
 	[ -n "$reqaddress" ] && append opts "-N$reqaddress"
 
@@ -120,6 +139,7 @@ proto_dhcpv6_setup() {
 
 	[ -n "$ip6prefixes" ] && proto_export "USERPREFIX=$ip6prefixes"
 	[ -n "$iface_dslite" ] && proto_export "IFACE_DSLITE=$iface_dslite"
+	[ -n "$mtu_dslite" ] && proto_export "MTU_DSLITE=$mtu_dslite"
 	[ -n "$iface_map" ] && proto_export "IFACE_MAP=$iface_map"
 	[ -n "$iface_464xlat" ] && proto_export "IFACE_464XLAT=$iface_464xlat"
 	[ "$delegate" = "0" ] && proto_export "IFACE_DSLITE_DELEGATE=0"
@@ -134,6 +154,12 @@ proto_dhcpv6_setup() {
 	[ "$fakeroutes" != "0" ] && proto_export "FAKE_ROUTES=1"
 	[ "$sourcefilter" = "0" ] && proto_export "NOSOURCEFILTER=1"
 	[ "$extendprefix" = "1" ] && proto_export "EXTENDPREFIX=1"
+
+	if [ "$dynamic" = 0 ]; then
+		proto_export "DYNAMIC=0"
+	else
+		proto_export "DYNAMIC=1"
+	fi
 
 	proto_export "INTERFACE=$config"
 	proto_run_command "$config" odhcp6c \
