@@ -553,13 +553,14 @@ void __init rtl83xx_setup_qos(struct rtl838x_switch_priv *priv)
 
 	pr_info("In %s\n", __func__);
 
-	if (priv->family_id == RTL8380_FAMILY_ID)
+	switch (priv->family_id) {
+	case RTL8380_FAMILY_ID:
 		rtl838x_config_qos();
-	else if (priv->family_id == RTL8390_FAMILY_ID)
-		rtl839x_config_qos();
-
-	if (priv->family_id == RTL8380_FAMILY_ID)
 		rtl838x_rate_control_init(priv);
-	else if (priv->family_id == RTL8390_FAMILY_ID)
+		break;
+	case RTL8390_FAMILY_ID:
+		rtl839x_config_qos();
 		rtl839x_rate_control_init(priv);
+		break;
+	}
 }
