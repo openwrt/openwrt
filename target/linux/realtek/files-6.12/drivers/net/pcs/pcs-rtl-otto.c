@@ -210,6 +210,27 @@ static struct rtpcs_link *rtpcs_phylink_pcs_to_link(struct phylink_pcs *pcs)
 
 /* Variant-specific functions */
 
+/* RTL93XX */
+
+static int rtpcs_93xx_sds_set_polarity(struct rtpcs_ctrl *ctrl, u32 sds,
+				       bool tx_inv, bool rx_inv)
+{
+	u8 rx_val = rx_inv ? 1 : 0;
+	u8 tx_val = tx_inv ? 1 : 0;
+	u32 val;
+	int ret;
+
+	/* 10GR */
+	val = (tx_val << 1) | rx_val;
+	ret = rtpcs_sds_write_bits(ctrl, sds, 0x6, 0x2, 14, 13, val);
+	if (ret)
+		return ret;
+
+	/* 1G */
+	val = (rx_val << 1) | tx_val;
+	return rtpcs_sds_write_bits(ctrl, sds, 0x0, 0x0, 9, 8, val);
+}
+
 /* RTL930X */
 
 /* The access registers for SDS_MODE_SEL and the LSB for each SDS within */
@@ -692,32 +713,6 @@ static int rtpcs_930x_sds_clock_wait(struct rtpcs_ctrl *ctrl, int timeout)
 	} while (jiffies < start + (HZ / 1000) * timeout);
 
 	return 1;
-}
-
-static void rtpcs_930x_sds_mac_link_config(struct rtpcs_ctrl *ctrl, int sds,
-					   bool tx_normal, bool rx_normal)
-{
-	u32 v10, v1;
-
-	v10 = rtpcs_sds_read(ctrl, sds, 6, 2); /* 10GBit, page 6, reg 2 */
-	v1 = rtpcs_sds_read(ctrl, sds, 0, 0); /* 1GBit, page 0, reg 0 */
-	pr_info("%s: registers before %08x %08x\n", __func__, v10, v1);
-
-	v10 &= ~(BIT(13) | BIT(14));
-	v1 &= ~(BIT(8) | BIT(9));
-
-	v10 |= rx_normal ? 0 : BIT(13);
-	v1 |= rx_normal ? 0 : BIT(9);
-
-	v10 |= tx_normal ? 0 : BIT(14);
-	v1 |= tx_normal ? 0 : BIT(8);
-
-	rtpcs_sds_write(ctrl, sds, 6, 2, v10);
-	rtpcs_sds_write(ctrl, sds, 0, 0, v1);
-
-	v10 = rtpcs_sds_read(ctrl, sds, 6, 2);
-	v1 = rtpcs_sds_read(ctrl, sds, 0, 0);
-	pr_info("%s: registers after %08x %08x\n", __func__, v10, v1);
 }
 
 __attribute__((unused))
@@ -1918,8 +1913,8 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_ctrl *ctrl, int sds,
 	/* ----> dal_longan_sds_mode_set */
 	pr_info("%s: Configuring RTL9300 SERDES %d\n", __func__, sds);
 
-	/* Configure link to MAC */
-	rtpcs_930x_sds_mac_link_config(ctrl, sds, true, true);	/* MAC Construct */
+	/* Set SDS polarity */
+	rtpcs_93xx_sds_set_polarity(ctrl, sds, false, false);
 
 	/* Enable SDS in desired mode */
 	rtpcs_930x_sds_mode_set(ctrl, sds, phy_mode);
@@ -2497,6 +2492,8 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_ctrl *ctrl, int sds,
 			regmap_write(ctrl->map, RTL93XX_CHIP_INFO, val);
 		}
 	}
+
+	rtpcs_93xx_sds_set_polarity(ctrl, sds, false, false);
 
 	val = ori & ~BIT(sds);
 	regmap_write(ctrl->map, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR, val);
