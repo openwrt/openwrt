@@ -806,6 +806,30 @@ define Device/comfast_cf-wr633ax
 endef
 TARGET_DEVICES += comfast_cf-wr633ax
 
+define Device/comfast_cf-wr630ax
+  DEVICE_VENDOR := COMFAST
+  DEVICE_MODEL := CF-WR630AX
+  DEVICE_DTS := mt7981b-comfast-cf-wr630ax
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTC_FLAGS := --pad 4096
+  DEVICE_DTS_LOADADDR := 0x43f00000
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  KERNEL_LOADADDR := 0x44000000
+  KERNEL = kernel-bin | lzma | \
+       fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL_INITRAMFS = kernel-bin | lzma | \
+       fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 65536k
+  KERNEL_IN_UBI := 1
+  IMAGES := sysupgrade.bin factory.bin
+  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += comfast_cf-wr630ax
+
 define Device/confiabits_mt7981
   DEVICE_VENDOR := Confiabits
   DEVICE_MODEL := MT7981
