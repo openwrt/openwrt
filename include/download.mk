@@ -159,7 +159,7 @@ $(if $(if $(MIRROR), \
 		( $(3) ) \
 		$(if $(filter-out x,$(MIRROR_HASH)), && ( \
 			file_hash="$$$$($(MKHASH) sha256 "$(DL_DIR)/$(FILE)")"; \
-			[ "$$$$file_hash" = "$(MIRROR_HASH)" ] || { \
+			[ "$$$$file_hash" = "$(MIRROR_HASH)" ] || [ "$(MIRROR_HASH)" = "skip" ] || { \
 				echo "Hash mismatch for file $(FILE): expected $(MIRROR_HASH), got $$$$file_hash"; \
 				false; \
 			}; \
