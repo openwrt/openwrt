@@ -14,16 +14,9 @@
 	memory {
 		reg = <0 0x40000000 0 0x10000000>;
 	};
-
 };
 
 &boottrap {
-	status = "okay";
-};
-
-&i2c0 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&i2c0_pins>;
 	status = "okay";
 };
 
@@ -35,36 +28,10 @@
 	status = "okay";
 };
 
-&pcie0 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pcie0_pins>;
-	status = "okay";
-};
-
-&pcie1 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pcie1_pins>;
-	status = "disabled";
-};
-
-&pwm {
-	status = "okay";
-};
-
 &trng {
 	status = "okay";
 };
 
-&uart0 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&uart0_pins>;
-	status = "okay";
-};
-
 &watchdog {
-	status = "okay";
-};
-
-&ssusb {
 	status = "okay";
 };

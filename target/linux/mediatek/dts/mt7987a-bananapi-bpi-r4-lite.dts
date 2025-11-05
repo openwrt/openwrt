@@ -244,10 +244,23 @@
 	};
 };
 
+&pcie0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie0_pins>;
+	status = "okay";
+};
+
+&pcie1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie1_pins>;
+	status = "disabled";
+};
+
 &ssusb {
 	mediatek,u3p-dis-msk=<0>;
 	phys = <&tphyu2port0 PHY_TYPE_USB2>,
 	       <&tphyu3port0 PHY_TYPE_USB3>;
+	status = "okay";
 
 	/*
 	 * VIA VL817 USB3.1/USB2.0 hub
@@ -310,6 +323,12 @@
 };
 
 &tphyu3port0 {
+	status = "okay";
+};
+
+&uart0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_pins>;
 	status = "okay";
 };
 
