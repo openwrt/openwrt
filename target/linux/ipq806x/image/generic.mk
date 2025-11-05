@@ -47,6 +47,18 @@ define Build/linksys-addfwhdr
        	;mv "$@.new" "$@"
 endef
 
+define Build/apboot-addfwhdr
+	$(SCRIPT_DIR)/aruba-header.py \
+	$@ $@.new \
+	"$(call toupper,$(LINUX_KARCH)) $(VERSION_DIST) Linux-$(LINUX_VERSION), $(VERSION_NUMBER) $(VERSION_CODE)"\
+	"$(VERSION_NUMBER)" \
+	"$(VERSION_DIST)" \
+	os \
+	"$(word 1,$(1))"
+
+	mv "$@.new" "$@"
+endef
+
 define Device/DniImage
 	KERNEL_SUFFIX := -uImage
 	KERNEL = kernel-bin | append-dtb | uImage none
@@ -100,6 +112,21 @@ define Device/arris_tr4400-v2
 	KERNEL_IN_UBI := 1
 endef
 TARGET_DEVICES += arris_tr4400-v2
+
+define Device/aruba_ap-325
+	$(call Device/LegacyImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Aruba
+	DEVICE_MODEL := AP-325
+	SOC := qcom-ipq8068
+	PAGESIZE := 2048
+	BLOCKSIZE := 128k
+	KERNEL_SUFFIX := .ari
+	KERNEL = kernel-bin | append-dtb | uImage none | apboot-addfwhdr Octomore
+	KERNEL_LOADADDR = 0x41508000
+	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct kmod-i2c-gpio kmod-tpm-i2c-atmel
+endef
+TARGET_DEVICES += aruba_ap-325
 
 define Device/askey_rt4230w-rev6
 	$(call Device/LegacyImage)

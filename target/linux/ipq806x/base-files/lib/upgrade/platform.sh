@@ -26,6 +26,17 @@ platform_do_upgrade() {
 	qcom,ipq8064-ap161)
 		nand_do_upgrade "$1"
 		;;
+	aruba,ap-325)
+		part="$(awk -F 'ubi.mtd=' '{printf $2}' /proc/cmdline | sed -e 's/ .*$//')"
+		if [ "$part" = "aos0" ]; then
+			fw_setenv os_partition 1 || exit 1
+			CI_UBIPART="aos1"
+		else
+			fw_setenv os_partition 0 || exit 1
+			CI_UBIPART="aos0"
+		fi
+		nand_do_upgrade "$1"
+		;;
 	asrock,g10)
 		asrock_upgrade_prepare
 		nand_do_upgrade "$1"
