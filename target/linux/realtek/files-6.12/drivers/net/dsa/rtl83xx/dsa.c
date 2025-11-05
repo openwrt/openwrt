@@ -1195,13 +1195,13 @@ static void rtldsa_poll_counters(struct work_struct *work)
 							struct rtl838x_switch_priv,
 							counters_work);
 
-	for (int i = 0; i < priv->cpu_port; i++) {
-		if (!priv->ports[i].phy && !priv->pcs[i])
+	for (int port = 0; port < priv->cpu_port; port++) {
+		if (!priv->ports[port].phy && !priv->pcs[port])
 			continue;
 
-		rtldsa_counters_lock(priv, i);
-		rtldsa_update_port_counters(priv, i);
-		rtldsa_counters_unlock(priv, i);
+		rtldsa_counters_lock(priv, port);
+		rtldsa_update_port_counters(priv, port);
+		rtldsa_counters_unlock(priv, port);
 	}
 
 	queue_delayed_work(priv->wq, &priv->counters_work,
@@ -1212,11 +1212,11 @@ static void rtldsa_init_counters(struct rtl838x_switch_priv *priv)
 {
 	struct rtldsa_counter_state *counters;
 
-	for (int i = 0; i < priv->cpu_port; i++) {
-		if (!priv->ports[i].phy && !priv->pcs[i])
+	for (int port = 0; port < priv->cpu_port; port++) {
+		if (!priv->ports[port].phy && !priv->pcs[port])
 			continue;
 
-		counters = &priv->ports[i].counters;
+		counters = &priv->ports[port].counters;
 
 		memset(counters, 0, sizeof(*counters));
 		spin_lock_init(&counters->lock);
