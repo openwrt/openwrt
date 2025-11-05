@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013-2015 OpenWrt.org
+# Copyright (C) 2013-2025 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=odhcpd
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/odhcpd.git
@@ -27,7 +27,6 @@ include $(INCLUDE_DIR)/cmake.mk
 define Package/odhcpd/default
   SECTION:=net
   CATEGORY:=Network
-  TITLE:=OpenWrt DHCPv6(-PD)/RA Server & Relay
   DEPENDS:=+libjson-c +libubox +libuci +libubus +libnl-tiny
 endef
 
@@ -39,31 +38,31 @@ endef
 
 define Package/odhcpd
   $(Package/odhcpd/default)
-  TITLE += and DHCPv4 server
+  TITLE:=OpenWrt DHCPv4/DHCPv6/NDP/RA server
   VARIANT:=full
 endef
 
 define Package/odhcpd/description
  $(Package/odhcpd/default/description)
 
- This is a variant providing server services for DHCPv4, RA, stateless and
- stateful DHCPv6,  prefix delegation and can be used to relay RA, DHCPv6 and
- NDP between routed (non-bridged) interfaces in case no delegated prefixes
- are available.
+ This is a variant with support for RA, DHCPv4 and DHCPv6. It can also be used
+ to relay RA, DHCPv6 and NDP messages between routed (non-bridged) interfaces
+ in case no delegated prefixes are available.
 endef
 
 define Package/odhcpd-ipv6only
   $(Package/odhcpd/default)
+  TITLE:=OpenWrt DHCPv6/NDP/RA server (without DHCPv4)
   VARIANT:=ipv6only
-  DEPENDS+= @IPV6
+  DEPENDS+=@IPV6
 endef
 
 define Package/odhcpd-ipv6only/description
  $(Package/odhcpd/default/description)
 
- This is a variant providing server services for RA, stateless and stateful
- DHCPv6,  prefix delegation and can be used to relay RA, DHCPv6 and NDP between
- routed (non-bridged) interfaces in case no delegated prefixes are available.
+ This is a variant with support for RA and DHCPv6. It can also be used to
+ relay RA, DHCPv6 and NDP messages between routed (non-bridged) interfaces
+ in case no delegated prefixes are available.
 endef
 
 CMAKE_OPTIONS += -DUBUS=1
