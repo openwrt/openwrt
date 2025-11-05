@@ -35,18 +35,12 @@
 	};
 };
 
-&mdio_bus0 {
-	INTERNAL_PHY(26)
-	INTERNAL_PHY(27)
-};
-
 &switch0 {
 	ports {
 		port@26 {
 			reg = <26>;
 			label = "lan9";
 			pcs-handle = <&serdes8>;
-			phy-handle = <&phy26>;
 			phy-mode = "1000base-x";
 			sfp = <&sfp0>;
 			led-set = <0>;
@@ -60,7 +54,6 @@
 			reg = <27>;
 			label = "lan10";
 			pcs-handle = <&serdes9>;
-			phy-handle = <&phy27>;
 			phy-mode = "1000base-x";
 			sfp = <&sfp1>;
 			led-set = <0>;

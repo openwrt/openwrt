@@ -16,7 +16,8 @@ acer,predator-w6d)
 	ucidef_set_led_netdev "internet" "INTERNET" "mdio-bus:06:amber:wan" "eth1" "link_10 link_100 link_1000 tx rx"
 	ucidef_set_led_netdev "internet" "INTERNET" "mdio-bus:06:green:wan" "eth1" "link_2500 tx rx"
 	;;
-acer,predator-w6x)
+acer,predator-w6x-stock|\
+acer,predator-w6x-ubootmod)
 	ucidef_set_led_netdev "wan" "wan" "rgb:status" "eth1"
 	;;
 asus,rt-ax52|\

@@ -6,6 +6,104 @@ This implements vastly improved dynamic configuration reload support.
 It can handle configuration changes on individual wifi interfaces, as well
 as adding/removing interfaces.
 
+--- a/wpa_supplicant/wpa_supplicant.c
++++ b/wpa_supplicant/wpa_supplicant.c
+@@ -1278,6 +1278,7 @@ void wpa_supplicant_set_state(struct wpa
+ 		sme_sched_obss_scan(wpa_s, 0);
+ 	}
+ 	wpa_s->wpa_state = state;
++	wpas_ucode_update_state(wpa_s);
+ 
+ #ifndef CONFIG_NO_ROBUST_AV
+ 	if (state == WPA_COMPLETED && dl_list_len(&wpa_s->active_scs_ids) &&
+@@ -8289,6 +8290,8 @@ struct wpa_supplicant * wpa_supplicant_a
+ 	}
+ #endif /* CONFIG_P2P */
+ 
++	wpas_ucode_add_bss(wpa_s);
++
+ 	return wpa_s;
+ }
+ 
+@@ -8315,6 +8318,8 @@ int wpa_supplicant_remove_iface(struct w
+ 	struct wpa_supplicant *parent = wpa_s->parent;
+ #endif /* CONFIG_MESH */
+ 
++	wpas_ucode_free_bss(wpa_s);
++
+ 	/* Remove interface from the global list of interfaces */
+ 	prev = global->ifaces;
+ 	if (prev == wpa_s) {
+@@ -8623,6 +8628,7 @@ struct wpa_global * wpa_supplicant_init(
+ 
+ 	eloop_register_timeout(WPA_SUPPLICANT_CLEANUP_INTERVAL, 0,
+ 			       wpas_periodic, global, NULL);
++	wpas_ucode_init(global);
+ 
+ 	return global;
+ }
+@@ -8695,6 +8701,8 @@ void wpa_supplicant_deinit(struct wpa_gl
+ 
+ 	wpas_notify_supplicant_deinitialized(global);
+ 
++	wpas_ucode_free();
++
+ 	eap_peer_unregister_methods();
+ #ifdef CONFIG_AP
+ 	eap_server_unregister_methods();
+--- a/wpa_supplicant/wpa_supplicant_i.h
++++ b/wpa_supplicant/wpa_supplicant_i.h
+@@ -15,12 +15,14 @@
+ #include "common/sae.h"
+ #include "common/wpa_ctrl.h"
+ #include "common/dpp.h"
++#include "common/ieee802_11_common.h"
+ #include "crypto/sha384.h"
+ #include "eapol_supp/eapol_supp_sm.h"
+ #include "wps/wps_defs.h"
+ #include "config_ssid.h"
+ #include "wmm_ac.h"
+ #include "pasn/pasn_common.h"
++#include "ucode.h"
+ 
+ extern const char *const wpa_supplicant_version;
+ extern const char *const wpa_supplicant_license;
+@@ -697,6 +699,7 @@ struct wpa_supplicant {
+ 	unsigned char own_addr[ETH_ALEN];
+ 	unsigned char perm_addr[ETH_ALEN];
+ 	char ifname[100];
++	struct wpas_ucode_bss ucode;
+ #ifdef CONFIG_MATCH_IFACE
+ 	int matched;
+ #endif /* CONFIG_MATCH_IFACE */
+@@ -1564,6 +1567,8 @@ struct wpa_supplicant {
+ 	unsigned int enabled_4addr_mode:1;
+ 	unsigned int multi_bss_support:1;
+ 	unsigned int drv_authorized_port:1;
++
++	struct multi_ap_params multi_ap;
+ 	unsigned int multi_ap_ie:1;
+ 	unsigned int multi_ap_backhaul:1;
+ 	unsigned int multi_ap_fronthaul:1;
+--- a/wpa_supplicant/wps_supplicant.c
++++ b/wpa_supplicant/wps_supplicant.c
+@@ -33,6 +33,7 @@
+ #include "p2p/p2p.h"
+ #include "p2p_supplicant.h"
+ #include "wps_supplicant.h"
++#include "ucode.h"
+ 
+ 
+ #ifndef WPS_PIN_SCAN_IGNORE_SEL_REG
+@@ -401,6 +402,8 @@ static int wpa_supplicant_wps_cred(void
+ 	wpa_hexdump_key(MSG_DEBUG, "WPS: Received Credential attribute",
+ 			cred->cred_attr, cred->cred_attr_len);
+ 
++	wpas_ucode_wps_complete(wpa_s, cred);
++
+ 	if (wpa_s->conf->wps_cred_processing == 1)
+ 		return 0;
+ 
 --- a/hostapd/Makefile
 +++ b/hostapd/Makefile
 @@ -169,9 +169,21 @@ OBJS += ../src/eapol_auth/eapol_auth_sm.
@@ -310,6 +408,152 @@ as adding/removing interfaces.
  void hostapd_ocv_check_csa_sa_query(void *eloop_ctx, void *timeout_ctx);
  
  void hostapd_switch_color(struct hostapd_data *hapd, u64 bitmap);
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -659,12 +659,17 @@ const char * sae_get_password(struct hos
+ 			      struct sae_pt **s_pt,
+ 			      const struct sae_pk **s_pk)
+ {
++	struct hostapd_bss_config *conf = hapd->conf;
++	struct hostapd_ssid *ssid = &conf->ssid;
+ 	const char *password = NULL;
+-	struct sae_password_entry *pw;
++	struct sae_password_entry *pw = NULL;
+ 	struct sae_pt *pt = NULL;
+ 	const struct sae_pk *pk = NULL;
+ 	struct hostapd_sta_wpa_psk_short *psk = NULL;
+ 
++	if (sta && sta->use_sta_psk)
++		goto use_sta_psk;
++
+ 	/* With sae_track_password functionality enabled, try to first find the
+ 	 * next viable wildcard-address password if a password identifier was
+ 	 * not used. Select an wildcard-addr entry if the STA is known to have
+@@ -725,12 +730,30 @@ const char * sae_get_password(struct hos
+ 		pt = hapd->conf->ssid.pt;
+ 	}
+ 
++use_sta_psk:
+ 	if (!password && sta && !rx_id) {
+ 		for (psk = sta->psk; psk; psk = psk->next) {
+-			if (psk->is_passphrase) {
+-				password = psk->passphrase;
++			if (!psk->is_passphrase)
++				continue;
++
++			password = psk->passphrase;
++			if (!sta->use_sta_psk)
++				break;
++
++#ifdef CONFIG_SAE
++			if (sta->sae_pt) {
++				pt = sta->sae_pt;
+ 				break;
+ 			}
++
++			pt = sae_derive_pt(conf->sae_groups, ssid->ssid,
++					   ssid->ssid_len,
++					   (const u8 *) password,
++					   os_strlen(password),
++					   NULL);
++			sta->sae_pt = pt;
++			break;
++#endif
+ 		}
+ 	}
+ 
+@@ -3489,6 +3512,12 @@ static void handle_auth(struct hostapd_d
+ 		goto fail;
+ 	}
+ 
++	res = hostapd_ucode_sta_auth(hapd, sta);
++	if (res) {
++		resp = res;
++		goto fail;
++	}
++
+ 	sta->flags &= ~WLAN_STA_PREAUTH;
+ 	ieee802_1x_notify_pre_auth(sta->eapol_sm, 0);
+ 
+--- a/src/ap/sta_info.c
++++ b/src/ap/sta_info.c
+@@ -477,6 +477,11 @@ void ap_free_sta(struct hostapd_data *ha
+ 	forced_memzero(sta->last_tk, WPA_TK_MAX_LEN);
+ #endif /* CONFIG_TESTING_OPTIONS */
+ 
++#ifdef CONFIG_SAE
++	if (sta->sae_pt)
++		sae_deinit_pt(sta->sae_pt);
++#endif
++
+ 	os_free(sta);
+ }
+ 
+@@ -1576,6 +1581,8 @@ void ap_sta_set_authorized_event(struct
+ #endif /* CONFIG_P2P */
+ 	const u8 *ip_ptr = NULL;
+ 
++	if (authorized)
++		hostapd_ucode_sta_connected(hapd, sta);
+ #ifdef CONFIG_P2P
+ 	if (hapd->p2p_group == NULL) {
+ 		if (sta->p2p_ie != NULL &&
+--- a/src/ap/sta_info.h
++++ b/src/ap/sta_info.h
+@@ -180,6 +180,9 @@ struct sta_info {
+ 	int vlan_id_bound; /* updated by ap_sta_bind_vlan() */
+ 	 /* PSKs from RADIUS authentication server */
+ 	struct hostapd_sta_wpa_psk_short *psk;
++	struct sae_pt *sae_pt;
++	int use_sta_psk;
++	int psk_idx;
+ 
+ 	char *identity; /* User-Name from RADIUS */
+ 	char *radius_cui; /* Chargeable-User-Identity from RADIUS */
+--- a/src/ap/wpa_auth_glue.c
++++ b/src/ap/wpa_auth_glue.c
+@@ -392,6 +392,7 @@ static const u8 * hostapd_wpa_auth_get_p
+ 	struct sta_info *sta = ap_get_sta(hapd, addr);
+ 	const u8 *psk;
+ 
++	sta->psk_idx = 0;
+ 	if (vlan_id)
+ 		*vlan_id = 0;
+ 	if (psk_len)
+@@ -442,13 +443,18 @@ static const u8 * hostapd_wpa_auth_get_p
+ 	 * returned psk which should not be returned again.
+ 	 * logic list (all hostapd_get_psk; all sta->psk)
+ 	 */
++	if (sta && sta->use_sta_psk)
++		psk = NULL;
+ 	if (sta && sta->psk && !psk) {
+ 		struct hostapd_sta_wpa_psk_short *pos;
++		int psk_idx = 1;
+ 
+ 		if (vlan_id)
+ 			*vlan_id = 0;
+ 		psk = sta->psk->psk;
+-		for (pos = sta->psk; pos; pos = pos->next) {
++		if (vlan_id)
++			sta->psk_idx = psk_idx;
++		for (pos = sta->psk; pos; pos = pos->next, psk_idx++) {
+ 			if (pos->is_passphrase) {
+ 				if (pbkdf2_sha1(pos->passphrase,
+ 						hapd->conf->ssid.ssid,
+@@ -462,9 +468,13 @@ static const u8 * hostapd_wpa_auth_get_p
+ 			}
+ 			if (pos->psk == prev_psk) {
+ 				psk = pos->next ? pos->next->psk : NULL;
++				if (vlan_id)
++					sta->psk_idx = psk_idx + 1;
+ 				break;
+ 			}
+ 		}
++		if (vlan_id && !psk)
++			sta->psk_idx = 0;
+ 	}
+ 	return psk;
+ }
 --- a/src/drivers/driver.h
 +++ b/src/drivers/driver.h
 @@ -4072,6 +4072,25 @@ struct wpa_driver_ops {
@@ -668,32 +912,25 @@ as adding/removing interfaces.
  extern int wpa_debug_timestamp;
 --- a/wpa_supplicant/Makefile
 +++ b/wpa_supplicant/Makefile
-@@ -194,8 +194,20 @@ endif
- ifdef CONFIG_UBUS
- CFLAGS += -DUBUS_SUPPORT
- OBJS += ubus.o
-+LIBS += -lubus
-+NEED_ULOOP:=y
-+endif
-+
+@@ -191,6 +191,14 @@ ifdef CONFIG_EAPOL_TEST
+ CFLAGS += -Werror -DEAPOL_TEST
+ endif
+ 
 +ifdef CONFIG_UCODE
 +CFLAGS += -DUCODE_SUPPORT
 +OBJS += ../src/utils/ucode.o
++OBJS += ../src/utils/uloop.o
 +OBJS += ucode.o
-+NEED_ULOOP:=y
++LIBS += -lubox
 +endif
 +
-+ifdef NEED_ULOOP
- OBJS += ../src/utils/uloop.o
--LIBS += -lubox -lubus
-+LIBS += -lubox
- endif
- 
  ifdef CONFIG_CODE_COVERAGE
-@@ -1056,6 +1068,9 @@ OBJS += ../src/ap/ctrl_iface_ap.o
- ifdef CONFIG_UBUS
- OBJS += ../src/ap/ubus.o
+ CFLAGS += -O0 -fprofile-arcs -ftest-coverage -U_FORTIFY_SOURCE
+ LIBS += -lgcov
+@@ -1046,6 +1054,9 @@ ifdef CONFIG_CTRL_IFACE_MIB
+ CFLAGS += -DCONFIG_CTRL_IFACE_MIB
  endif
+ OBJS += ../src/ap/ctrl_iface_ap.o
 +ifdef CONFIG_UCODE
 +OBJS += ../src/ap/ucode.o
 +endif
@@ -758,240 +995,3 @@ as adding/removing interfaces.
  	switch (event) {
  	case EVENT_AUTH:
  #ifdef CONFIG_FST
---- a/wpa_supplicant/wpa_supplicant.c
-+++ b/wpa_supplicant/wpa_supplicant.c
-@@ -1278,6 +1278,7 @@ void wpa_supplicant_set_state(struct wpa
- 		sme_sched_obss_scan(wpa_s, 0);
- 	}
- 	wpa_s->wpa_state = state;
-+	wpas_ucode_update_state(wpa_s);
- 
- #ifndef CONFIG_NO_ROBUST_AV
- 	if (state == WPA_COMPLETED && dl_list_len(&wpa_s->active_scs_ids) &&
-@@ -8290,6 +8291,7 @@ struct wpa_supplicant * wpa_supplicant_a
- #endif /* CONFIG_P2P */
- 
- 	wpas_ubus_add_bss(wpa_s);
-+	wpas_ucode_add_bss(wpa_s);
- 
- 	return wpa_s;
- }
-@@ -8317,6 +8319,7 @@ int wpa_supplicant_remove_iface(struct w
- 	struct wpa_supplicant *parent = wpa_s->parent;
- #endif /* CONFIG_MESH */
- 
-+	wpas_ucode_free_bss(wpa_s);
- 	wpas_ubus_free_bss(wpa_s);
- 
- 	/* Remove interface from the global list of interfaces */
-@@ -8627,6 +8630,7 @@ struct wpa_global * wpa_supplicant_init(
- 
- 	eloop_register_timeout(WPA_SUPPLICANT_CLEANUP_INTERVAL, 0,
- 			       wpas_periodic, global, NULL);
-+	wpas_ucode_init(global);
- 
- 	return global;
- }
-@@ -8665,12 +8669,8 @@ int wpa_supplicant_run(struct wpa_global
- 	eloop_register_signal_terminate(wpa_supplicant_terminate, global);
- 	eloop_register_signal_reconfig(wpa_supplicant_reconfig, global);
- 
--	wpas_ubus_add(global);
--
- 	eloop_run();
- 
--	wpas_ubus_free(global);
--
- 	return 0;
- }
- 
-@@ -8703,6 +8703,8 @@ void wpa_supplicant_deinit(struct wpa_gl
- 
- 	wpas_notify_supplicant_deinitialized(global);
- 
-+	wpas_ucode_free();
-+
- 	eap_peer_unregister_methods();
- #ifdef CONFIG_AP
- 	eap_server_unregister_methods();
---- a/wpa_supplicant/wpa_supplicant_i.h
-+++ b/wpa_supplicant/wpa_supplicant_i.h
-@@ -15,6 +15,7 @@
- #include "common/sae.h"
- #include "common/wpa_ctrl.h"
- #include "common/dpp.h"
-+#include "common/ieee802_11_common.h"
- #include "crypto/sha384.h"
- #include "eapol_supp/eapol_supp_sm.h"
- #include "wps/wps_defs.h"
-@@ -22,6 +23,7 @@
- #include "wmm_ac.h"
- #include "pasn/pasn_common.h"
- #include "ubus.h"
-+#include "ucode.h"
- 
- extern const char *const wpa_supplicant_version;
- extern const char *const wpa_supplicant_license;
-@@ -701,6 +703,7 @@ struct wpa_supplicant {
- 	unsigned char perm_addr[ETH_ALEN];
- 	char ifname[100];
- 	struct wpas_ubus_bss ubus;
-+	struct wpas_ucode_bss ucode;
- #ifdef CONFIG_MATCH_IFACE
- 	int matched;
- #endif /* CONFIG_MATCH_IFACE */
-@@ -1568,6 +1571,8 @@ struct wpa_supplicant {
- 	unsigned int enabled_4addr_mode:1;
- 	unsigned int multi_bss_support:1;
- 	unsigned int drv_authorized_port:1;
-+
-+	struct multi_ap_params multi_ap;
- 	unsigned int multi_ap_ie:1;
- 	unsigned int multi_ap_backhaul:1;
- 	unsigned int multi_ap_fronthaul:1;
---- a/src/ap/ieee802_11.c
-+++ b/src/ap/ieee802_11.c
-@@ -659,12 +659,17 @@ const char * sae_get_password(struct hos
- 			      struct sae_pt **s_pt,
- 			      const struct sae_pk **s_pk)
- {
-+	struct hostapd_bss_config *conf = hapd->conf;
-+	struct hostapd_ssid *ssid = &conf->ssid;
- 	const char *password = NULL;
--	struct sae_password_entry *pw;
-+	struct sae_password_entry *pw = NULL;
- 	struct sae_pt *pt = NULL;
- 	const struct sae_pk *pk = NULL;
- 	struct hostapd_sta_wpa_psk_short *psk = NULL;
- 
-+	if (sta && sta->use_sta_psk)
-+		goto use_sta_psk;
-+
- 	/* With sae_track_password functionality enabled, try to first find the
- 	 * next viable wildcard-address password if a password identifier was
- 	 * not used. Select an wildcard-addr entry if the STA is known to have
-@@ -725,12 +730,30 @@ const char * sae_get_password(struct hos
- 		pt = hapd->conf->ssid.pt;
- 	}
- 
-+use_sta_psk:
- 	if (!password && sta && !rx_id) {
- 		for (psk = sta->psk; psk; psk = psk->next) {
--			if (psk->is_passphrase) {
--				password = psk->passphrase;
-+			if (!psk->is_passphrase)
-+				continue;
-+
-+			password = psk->passphrase;
-+			if (!sta->use_sta_psk)
-+				break;
-+
-+#ifdef CONFIG_SAE
-+			if (sta->sae_pt) {
-+				pt = sta->sae_pt;
- 				break;
- 			}
-+
-+			pt = sae_derive_pt(conf->sae_groups, ssid->ssid,
-+					   ssid->ssid_len,
-+					   (const u8 *) password,
-+					   os_strlen(password),
-+					   NULL);
-+			sta->sae_pt = pt;
-+			break;
-+#endif
- 		}
- 	}
- 
-@@ -3489,6 +3512,12 @@ static void handle_auth(struct hostapd_d
- 		goto fail;
- 	}
- 
-+	res = hostapd_ucode_sta_auth(hapd, sta);
-+	if (res) {
-+		resp = res;
-+		goto fail;
-+	}
-+
- 	sta->flags &= ~WLAN_STA_PREAUTH;
- 	ieee802_1x_notify_pre_auth(sta->eapol_sm, 0);
- 
---- a/src/ap/sta_info.c
-+++ b/src/ap/sta_info.c
-@@ -477,6 +477,11 @@ void ap_free_sta(struct hostapd_data *ha
- 	forced_memzero(sta->last_tk, WPA_TK_MAX_LEN);
- #endif /* CONFIG_TESTING_OPTIONS */
- 
-+#ifdef CONFIG_SAE
-+	if (sta->sae_pt)
-+		sae_deinit_pt(sta->sae_pt);
-+#endif
-+
- 	os_free(sta);
- }
- 
-@@ -1576,6 +1581,8 @@ void ap_sta_set_authorized_event(struct
- #endif /* CONFIG_P2P */
- 	const u8 *ip_ptr = NULL;
- 
-+	if (authorized)
-+		hostapd_ucode_sta_connected(hapd, sta);
- #ifdef CONFIG_P2P
- 	if (hapd->p2p_group == NULL) {
- 		if (sta->p2p_ie != NULL &&
---- a/src/ap/sta_info.h
-+++ b/src/ap/sta_info.h
-@@ -180,6 +180,9 @@ struct sta_info {
- 	int vlan_id_bound; /* updated by ap_sta_bind_vlan() */
- 	 /* PSKs from RADIUS authentication server */
- 	struct hostapd_sta_wpa_psk_short *psk;
-+	struct sae_pt *sae_pt;
-+	int use_sta_psk;
-+	int psk_idx;
- 
- 	char *identity; /* User-Name from RADIUS */
- 	char *radius_cui; /* Chargeable-User-Identity from RADIUS */
---- a/src/ap/wpa_auth_glue.c
-+++ b/src/ap/wpa_auth_glue.c
-@@ -392,6 +392,7 @@ static const u8 * hostapd_wpa_auth_get_p
- 	struct sta_info *sta = ap_get_sta(hapd, addr);
- 	const u8 *psk;
- 
-+	sta->psk_idx = 0;
- 	if (vlan_id)
- 		*vlan_id = 0;
- 	if (psk_len)
-@@ -442,13 +443,18 @@ static const u8 * hostapd_wpa_auth_get_p
- 	 * returned psk which should not be returned again.
- 	 * logic list (all hostapd_get_psk; all sta->psk)
- 	 */
-+	if (sta && sta->use_sta_psk)
-+		psk = NULL;
- 	if (sta && sta->psk && !psk) {
- 		struct hostapd_sta_wpa_psk_short *pos;
-+		int psk_idx = 1;
- 
- 		if (vlan_id)
- 			*vlan_id = 0;
- 		psk = sta->psk->psk;
--		for (pos = sta->psk; pos; pos = pos->next) {
-+		if (vlan_id)
-+			sta->psk_idx = psk_idx;
-+		for (pos = sta->psk; pos; pos = pos->next, psk_idx++) {
- 			if (pos->is_passphrase) {
- 				if (pbkdf2_sha1(pos->passphrase,
- 						hapd->conf->ssid.ssid,
-@@ -462,9 +468,13 @@ static const u8 * hostapd_wpa_auth_get_p
- 			}
- 			if (pos->psk == prev_psk) {
- 				psk = pos->next ? pos->next->psk : NULL;
-+				if (vlan_id)
-+					sta->psk_idx = psk_idx + 1;
- 				break;
- 			}
- 		}
-+		if (vlan_id && !psk)
-+			sta->psk_idx = 0;
- 	}
- 	return psk;
- }

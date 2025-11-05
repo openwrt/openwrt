@@ -29,7 +29,8 @@ compex,wpq864)
 	ucidef_set_led_usbport "usb" "USB" "green:usb" "usb1-port1" "usb2-port1"
 	ucidef_set_led_usbport "pcie-usb" "PCIe USB" "green:usb-pcie" "usb3-port1"
 	;;
-edgecore,ecw5410)
+edgecore,ecw5410|\
+ignitenet,ss-w2-ac2600)
 	ucidef_set_led_wlan "wlan2g" "WLAN2G" "green:wlan2g" "phy1tpt"
 	ucidef_set_led_wlan "wlan5g" "WLAN5G" "green:wlan5g" "phy0tpt"
 	;;
@@ -45,10 +46,6 @@ fortinet,fap-421e)
 	ucidef_set_led_wlan "wlan2g" "2.4G" "yellow:2g" "phy1tpt"
 	ucidef_set_led_wlan "wlan5g" "5G" "yellow:5g" "phy0tpt"
 	ucidef_set_led_usbport "usb" "USB" "amber:power" "usb1-port1" "usb2-port1"
-	;;
-ignitenet,ss-w2-ac2600)
-	ucidef_set_led_wlan "wlan2g" "WLAN2G" "green:wlan2g" "phy1tpt"
-	ucidef_set_led_wlan "wlan5g" "WLAN5G" "green:wlan5g" "phy0tpt"
 	;;
 linksys,e8350-v1)
 	ucidef_set_led_wlan "wlan" "WLAN" "green:wifi" "phy0tpt"
@@ -80,11 +77,11 @@ nec,wg2600hp3)
 	ucidef_set_led_netdev "lan4-port-100" "LAN4-PORT-100" "qca8k-0.0:04:green:lan-2" "lan4" "tx rx link_100"
 	ucidef_set_led_netdev "lan4-port-1000" "LAN4-PORT-1000" "qca8k-0.0:04:green:lan-3" "lan4" "tx rx link_1000"
 	;;
-netgear,d7800 |\
-netgear,r7500 |\
-netgear,r7500v2 |\
-netgear,r7800 |\
-netgear,xr450 |\
+netgear,d7800|\
+netgear,r7500|\
+netgear,r7500v2|\
+netgear,r7800|\
+netgear,xr450|\
 netgear,xr500)
 	ucidef_set_led_usbport "usb1" "USB 1" "white:usb1" "usb1-port1" "usb2-port1"
 	ucidef_set_led_usbport "usb2" "USB 2" "white:usb2" "usb3-port1" "usb4-port1"

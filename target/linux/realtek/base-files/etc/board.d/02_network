@@ -81,7 +81,8 @@ realtek_setup_macs()
 		label_mac=$(get_mac_label)
 		lan_mac="$label_mac"
 		;;
-	tplink,tl-st1008f-v2)
+	tplink,tl-st1008f-v2|\
+	zyxel,xgs1010-12-a1)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		[ -z "$lan_mac" ] || [ "$lan_mac" = "00:e0:4c:00:00:00" ] && lan_mac=$(macaddr_random)
 		;;
@@ -160,18 +161,18 @@ realtek_setup_poe()
 	netgear,gs310tp-v1)
 		ucidef_set_poe 55 "$(filter_port_list "$lan_list" "lan9 lan10")"
 		;;
-	zyxel,gs1900-10hp)
+	zyxel,gs1900-10hp-a1)
 		ucidef_set_poe 77 "$(filter_port_list "$lan_list" "lan9 lan10")"
 		;;
-	zyxel,gs1900-8hp-v1|\
-	zyxel,gs1900-8hp-v2)
+	zyxel,gs1900-8hp-a1|\
+	zyxel,gs1900-8hp-b1)
 		ucidef_set_poe 70 "$lan_list"
 		;;
-	zyxel,gs1900-24ep)
+	zyxel,gs1900-24ep-a1)
 		ucidef_set_poe 130 "lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8 lan9 lan10 lan11 lan12"
 		;;
-	zyxel,gs1900-24hp-v1|\
-	zyxel,gs1900-24hp-v2)
+	zyxel,gs1900-24hp-a1|\
+	zyxel,gs1900-24hp-b1)
 		ucidef_set_poe 170 "$(filter_port_list "$lan_list" "lan25 lan26")"
 		;;
 	esac
