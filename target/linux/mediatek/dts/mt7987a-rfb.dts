@@ -1,0 +1,87 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * Copyright (C) 2025 MediaTek Inc.
+ * Author: Sam.Shih <sam.shih@mediatek.com>
+ */
+
+/dts-v1/;
+#include "mt7987a.dtsi"
+#include <dt-bindings/input/input.h>
+
+/* MT7987A RFB DTS for DT overlay-based device tree */
+/ {
+	model = "MediaTek MT7987A RFB";
+	compatible = "mediatek,mt7987a", "mediatek,mt7987";
+
+	chosen {
+		bootargs = "console=ttyS0,115200n1 \
+			    earlycon=uart8250,mmio32,0x11000000 \
+			    pci=pcie_bus_perf ubi.block=0,firmware \
+			    root=/dev/fit0 rootwait nosmp";
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
+			debounce-interval = <10>;
+		};
+
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
+			debounce-interval = <10>;
+		};
+	};
+
+	/* use pwm0 as led: share with fan/pwm_rgb */
+	pwm_led {
+		pinctrl-names = "default";
+		pinctrl-0 = <&pwm_pins>;
+		status = "okay";
+
+		led {
+			pwms = <&pwm 0 50000 0>;
+			max-brightness = <255>;
+			active-low;
+			linux,default-trigger = "default-on";
+		};
+	};
+
+	/* use pwm0/1/2 as multicolor LED: share with fan/pwm_led */
+	pwm_rgb {
+		pinctrl-names = "default";
+		pinctrl-0 = <&pwm_rgb_pins>;
+		status = "disabled";
+
+		multi-led {
+			color = <LED_COLOR_ID_RGB>;
+			function = LED_FUNCTION_INDICATOR;
+			max-brightness = <255>;
+
+			led-red {
+				pwms = <&pwm 0 50000>;
+				color = <LED_COLOR_ID_RED>;
+			};
+
+			led-green {
+				pwms = <&pwm 1 50000>;
+				color = <LED_COLOR_ID_GREEN>;
+			};
+
+			led-blue {
+				pwms = <&pwm 2 50000>;
+				color = <LED_COLOR_ID_BLUE>;
+			};
+		};
+	};
+};
+
+&fan {
+	pwms = <&pwm 0 50000 0>;
+	status = "disabled";
+};
