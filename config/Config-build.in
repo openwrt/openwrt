@@ -383,6 +383,15 @@ menu "Global build settings"
 			bool "Full"
 	endchoice
 
+	config PKG_DT_RELR
+		bool "Link with relative relocations (RELR)"
+		depends on (aarch64 || i386 || loongarch64 || x86_64)
+		default y
+		help
+		  Link all applications with -Wl,-z,pack-relative-relocs.
+		  This will reduce the size of many applications.
+		  This is only supported on a limited number of architectures.
+
 	config TARGET_ROOTFS_SECURITY_LABELS
 		bool
 		select KERNEL_SQUASHFS_XATTR
