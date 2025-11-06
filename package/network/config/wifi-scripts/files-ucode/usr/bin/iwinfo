@@ -69,6 +69,7 @@ function print_scan(cells) {
 
 	for (let cell in cells) {
 		printf('Cell %02d - Address: %s\n', idx++, cell.bssid);
+		printf('\t  ESSID: %s\n', cell.ssid ? '"' + cell.ssid + '"' : 'unknown');
 		printf('\t  Mode: %s  Frequency: %s GHz  Band: %s GHz  Channel: %d\n', cell.mode, cell.frequency, cell.band, cell.channel);
 		printf('\t  Signal: %d dBm  Quality: %2d/70\n', cell.dbm, cell.quality);
 
