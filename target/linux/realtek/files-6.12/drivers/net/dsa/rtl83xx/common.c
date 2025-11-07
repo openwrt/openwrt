@@ -408,13 +408,6 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 		sw_w32_mask(BIT(7), 0, RTL839X_SMI_GLB_CTRL);
 	}
 
-	/* Power on fibre ports and reset them if necessary */
-	if (priv->ports[24].phy == PHY_RTL838X_SDS) {
-		pr_debug("Powering on fibre ports & reset\n");
-		rtl8380_sds_power(24, 1);
-		rtl8380_sds_power(26, 1);
-	}
-
 	return 0;
 }
 

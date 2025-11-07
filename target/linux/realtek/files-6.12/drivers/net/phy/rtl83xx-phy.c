@@ -146,6 +146,7 @@ static void rtl8380_phy_reset(struct phy_device *phydev)
 /* Read the link and speed status of the 2 internal SGMII/1000Base-X
  * ports of the RTL838x SoCs
  */
+__attribute__((unused))
 static int rtl8380_read_status(struct phy_device *phydev)
 {
 	int err;
@@ -1107,14 +1108,7 @@ static int rtl838x_serdes_probe(struct phy_device *phydev)
 	if (addr < 24)
 		return -ENODEV;
 
-	/* On the RTL8380M, PHYs 24-27 connect to the internal SerDes */
-	if (soc_info.id == 0x8380) {
-		if (addr == 24)
-			return rtl8380_configure_serdes(phydev);
-		return 0;
-	}
-
-	return -ENODEV;
+	return 0;
 }
 
 static int rtl8393_serdes_probe(struct phy_device *phydev)
