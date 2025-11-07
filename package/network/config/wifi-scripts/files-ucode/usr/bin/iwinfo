@@ -6,6 +6,13 @@ import { find_phy } from 'wifi.utils';
 import * as uci from 'uci';
 import * as iwinfo from 'iwinfo';
 
+function normalize_ssid(ssid) {
+	if (!ssid)
+		return 'unknown';
+	return '"' + replace(ssid, /[[:cntrl:]]/g,
+			     function(c) { return '\\x' + hexenc(c); }) + '"'
+}
+
 function print_assoclist(stations) {
 	for (let mac, station in stations) {
 		printf(`${station.mac}  ${station.signal} dBm / ${station.noise} dBm (SNR ${station.snr})  ${station.inactive_time} ms ago\n`);
@@ -44,7 +51,7 @@ function print_info(list) {
 	let padding = '         ';
 
 	for (let bss in list) {
-		printf(`${bss.iface} ESSID: ${bss.ssid === null ? 'unknown' : '"' + bss.ssid + '"'}\n`);
+		printf(`${bss.iface} ESSID: ${normalize_ssid(bss.ssid)}\n`);
 		printf(`${padding}Access Point: ${bss.mac}\n`);
 		printf(`${padding}Mode: ${bss.mode}  Channel: ${bss.channel} (${bss.freq} GHz)  HT Mode: ${bss.htmode}\n`);
 		printf(`${padding}Center Channel 1: ${bss.center_freq1} 2: ${bss.center_freq2}\n`);
@@ -69,7 +76,7 @@ function print_scan(cells) {
 
 	for (let cell in cells) {
 		printf('Cell %02d - Address: %s\n', idx++, cell.bssid);
-		printf('\t  ESSID: %s\n', cell.ssid ? '"' + cell.ssid + '"' : 'unknown');
+		printf('\t  ESSID: %s\n', normalize_ssid(cell.ssid));
 		printf('\t  Mode: %s  Frequency: %s GHz  Band: %s GHz  Channel: %d\n', cell.mode, cell.frequency, cell.band, cell.channel);
 		printf('\t  Signal: %d dBm  Quality: %2d/70\n', cell.dbm, cell.quality);
 
