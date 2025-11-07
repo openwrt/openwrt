@@ -122,6 +122,7 @@ struct rtpcs_config {
 	int mac_rx_pause_sts;
 	int mac_tx_pause_sts;
 	const struct phylink_pcs_ops *pcs_ops;
+	int (*init_serdes_common)(struct rtpcs_ctrl *ctrl);
 	int (*set_autoneg)(struct rtpcs_ctrl *ctrl, int sds, unsigned int neg_mode);
 	int (*setup_serdes)(struct rtpcs_ctrl *ctrl, int sds, phy_interface_t mode);
 };
@@ -2767,6 +2768,12 @@ static int rtpcs_probe(struct platform_device *pdev)
 
 		ctrl->rx_pol_inv[sds] = of_property_read_bool(child, "realtek,pnswap-rx");
 		ctrl->tx_pol_inv[sds] = of_property_read_bool(child, "realtek,pnswap-tx");
+	}
+
+	if (ctrl->cfg->init_serdes_common) {
+		ret = ctrl->cfg->init_serdes_common(ctrl);
+		if (ret)
+			return ret;
 	}
 
 	/*
