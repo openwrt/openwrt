@@ -53,18 +53,10 @@
 
 #define RTPCS_838X_SDS_CFG_REG			0x34
 #define RTPCS_838X_RST_GLB_CTRL_0		0x3c
-#define RTL838X_SDS_MODE_SEL                    (0x0028)
-#define RTL838X_INT_MODE_CTRL                   (0x005c)
-#define RTL838X_DMY_REG31                       (0x3b28)
-#define RTL838X_INT_RW_CTRL                     (0x0058)
-#define RTL838X_PLL_CML_CTRL                    (0x0FF8)
-
-#define RTL8380_SDS4_FIB_REG0                   (0xF800)
-#define RTL838X_SDS4_REG28                      (0xef80)
-#define RTL838X_SDS4_DUMMY0                     (0xef8c)
-#define RTL838X_SDS5_EXT_REG6                   (0xf18c)
-#define RTL838X_SDS4_FIB_REG0                   (RTL838X_SDS4_REG28 + 0x880)
-#define RTL838X_SDS5_FIB_REG0                   (RTL838X_SDS4_REG28 + 0x980)
+#define RTPCS_838X_SDS_MODE_SEL			0x0028
+#define RTPCS_838X_INT_RW_CTRL			0x0058
+#define RTPCS_838X_INT_MODE_CTRL		0x005c
+#define RTPCS_838X_PLL_CML_CTRL			0x0ff8
 
 #define RTPCS_93XX_MAC_LINK_SPD_BITS		4
 
@@ -250,7 +242,7 @@ static void rtpcs_838x_sds_take_reset(struct rtpcs_ctrl *ctrl)
 	udelay(1000);
 }
 
-static void rtpcs_838x_sds_reset(struct rtpcs_ctrl *ctrl)
+static void rtpcs_838x_sds_reset_all(struct rtpcs_ctrl *ctrl)
 {
 	rtpcs_sds_write(ctrl, 0, 0, 0, 0xc00);
 	rtpcs_sds_write(ctrl, 1, 0, 0, 0xc00);
@@ -348,7 +340,6 @@ static void rtpcs_838x_sds_patch_23_qsgmii_6275b(struct rtpcs_ctrl *ctrl)
 	rtpcs_sds_write(ctrl, 2, 1, 3, 0xf46d);
 	rtpcs_sds_write(ctrl, 2, 1, 2, 0x85fa);
 	rtpcs_sds_write(ctrl, 3, 1, 2, 0x85fa);
-//	rtpcs_sds_write(ctrl, 4, 1, 2, 0x85fa);
 	rtpcs_sds_write(ctrl, 2, 1, 6, 0x20d8);
 	rtpcs_sds_write(ctrl, 3, 1, 6, 0x20d8);
 	rtpcs_sds_write(ctrl, 2, 1, 17, 0xb7c9);
@@ -385,6 +376,22 @@ static void rtpcs_838x_sds_patch_4_fiber_6275b(struct rtpcs_ctrl *ctrl)
 	rtpcs_sds_write(ctrl, 4, 1, 9, 0x8c64);
 }
 
+static void rtpcs_838x_sds_patch_4_qsgmii_6275b(struct rtpcs_ctrl *ctrl)
+{
+	rtpcs_sds_write(ctrl, 4, 1, 3, 0xf46d);
+	rtpcs_sds_write(ctrl, 4, 1, 2, 0x85fa);
+	rtpcs_sds_write(ctrl, 4, 1, 11, 0x0482);
+	rtpcs_sds_write(ctrl, 4, 1, 6, 0x20d8);
+	rtpcs_sds_write(ctrl, 4, 1, 10, 0x58c7);
+	rtpcs_sds_write(ctrl, 4, 1, 17, 0xb7c9);
+	rtpcs_sds_write(ctrl, 4, 1, 18, 0xab8e);
+	rtpcs_sds_write(ctrl, 4, 2, 25, 0x303);
+	rtpcs_sds_write(ctrl, 4, 1, 14, 0xfcc2);
+
+	rtpcs_sds_write(ctrl, 4, 1, 9, 0x8e64);
+	rtpcs_sds_write(ctrl, 4, 1, 9, 0x8c64);
+}
+
 static void rtpcs_838x_sds_patch_5_fiber_6275b(struct rtpcs_ctrl *ctrl)
 {
 	rtpcs_sds_write(ctrl, 5, 1, 2, 0x85fa);
@@ -406,195 +413,145 @@ static void rtpcs_838x_sds_patch_5_fiber_6275b(struct rtpcs_ctrl *ctrl)
 	rtpcs_sds_write(ctrl, 5, 1, 9, 0x8c64);
 }
 
-/*
-void rtl8380_sds_rst(int mac)
+static void rtpcs_838x_sds_reset(struct rtpcs_ctrl *ctrl, u32 sds)
 {
-	u32 offset = (mac == 24) ? 0 : 0x100;
+	if (sds < 4 || sds > 5)
+		return;
 
-	sw_w32_mask(1 << 11, 0, RTL838X_SDS4_FIB_REG0 + offset);
-	sw_w32_mask(0x3, 0, RTL838X_SDS4_REG28 + offset);
-	sw_w32_mask(0x3, 0x3, RTL838X_SDS4_REG28 + offset);
-	sw_w32_mask(0, 0x1 << 6, RTL838X_SDS4_DUMMY0 + offset);
-	sw_w32_mask(0x1 << 6, 0, RTL838X_SDS4_DUMMY0 + offset);
-	pr_debug("SERDES reset: %d\n", mac);
+	rtpcs_sds_write_bits(ctrl, sds, 2, 0, 11, 11, 0x0);	/* SDS*_FIB_REG0 */
+	rtpcs_sds_write_bits(ctrl, sds, 0, 0, 1, 0, 0x0);	/* SDS*_REG0 */
+	rtpcs_sds_write_bits(ctrl, sds, 0, 0, 1, 0, 0x3);	/* SDS*_REG0 */
+	rtpcs_sds_write_bits(ctrl, sds, 0, 3, 6, 6, 0x1);	/* SDS*_REG3 */
+	rtpcs_sds_write_bits(ctrl, sds, 0, 3, 6, 6, 0x0);	/* SDS*_REG3 */
+
+	pr_info("SERDES %d reset\n", sds);
 }
 
-int rtl8380_sds_power(int mac, int val)
+static int rtpcs_838x_sds_power(struct rtpcs_ctrl *ctrl, u32 sds, bool power_on)
 {
-	u32 mode = (val == 1) ? 0x4 : 0x9;
-	u32 offset = (mac == 24) ? 5 : 0;
+	u32 mode = (power_on) ? 0x4 : 0x9;
+	u32 offset = (sds == 4) ? 5 : 0;
 
-	if ((mac != 24) && (mac != 26)) {
-		pr_err("%s: not a fibre port: %d\n", __func__, mac);
+	if (sds < 4 || sds > 5)
 		return -1;
-	}
 
-	sw_w32_mask(0x1f << offset, mode << offset, RTL838X_SDS_MODE_SEL);
+	regmap_write_bits(ctrl->map, RTPCS_838X_SDS_MODE_SEL, 0x1f << offset,
+			  mode << offset);
 
-	rtl8380_sds_rst(mac);
+	rtpcs_838x_sds_reset(ctrl, sds);
 
 	return 0;
 }
 
-static int rtl8380_configure_serdes(struct phy_device *phydev)
+__attribute__((unused))
+static int rtpcs_838x_init_serdes_common(struct rtpcs_ctrl *ctrl)
 {
-	u32 v;
-	u32 sds_conf_value;
-	int i;
-	struct fw_header *h;
-	u32 *rtl8380_sds_take_reset;
-	u32 *rtl8380_sds_common;
-	u32 *rtl8380_sds01_qsgmii_6275b;
-	u32 *rtl8380_sds23_qsgmii_6275b;
-	u32 *rtl8380_sds4_fiber_6275b;
-	u32 *rtl8380_sds5_fiber_6275b;
-	u32 *rtl8380_sds_reset;
-	u32 *rtl8380_sds_release_reset;
+	u32 sds_conf_value, val;
 
-	phydev_info(phydev, "Detected internal RTL8380 SERDES\n");
+	dev_info(ctrl->dev, "Configuring RTL838X SerDes\n");
 
-	h = rtl838x_request_fw(phydev, &rtl838x_8218b_fw, FIRMWARE_838X_8380_1);
-	if (!h)
-		return -1;
+	/* Back up serdes power off value */
+	regmap_read(ctrl->map, RTPCS_838X_SDS_CFG_REG, &sds_conf_value);
+	dev_info(ctrl->dev, "SDS power down value: %x\n", sds_conf_value);
 
-	if (h->magic != 0x83808380) {
-		phydev_err(phydev, "Wrong firmware file: magic number mismatch.\n");
-		return -1;
-	}
+	/* take serdes into reset */
+	rtpcs_838x_sds_take_reset(ctrl);
 
-	rtl8380_sds_take_reset = (void *)h + sizeof(struct fw_header) + h->parts[0].start;
+	/* apply common serdes patch */
+	rtpcs_838x_sds_patch_common(ctrl);
 
-	rtl8380_sds_common = (void *)h + sizeof(struct fw_header) + h->parts[1].start;
+	/* internal R/W enable */
+	regmap_write(ctrl->map, RTPCS_838X_INT_RW_CTRL, 0x3);
 
-	rtl8380_sds01_qsgmii_6275b = (void *)h + sizeof(struct fw_header) + h->parts[2].start;
+	/* SerDes ports 4 and 5 are FIBRE ports */
+	regmap_write_bits(ctrl->map, RTPCS_838X_INT_MODE_CTRL, 0x38 | 0x7,
+			  (1 << 3) | 1);
 
-	rtl8380_sds23_qsgmii_6275b = (void *)h + sizeof(struct fw_header) + h->parts[3].start;
+	/* SerDes module settings, SerDes 0-3 are QSGMII */
+	val = 0x6 << 25 | 0x6 << 20 | 0x6 << 15 | 0x6 << 10;
+	/* SerDes 4 and 5 are 1000BX FIBRE */
+	val |= 0x4 << 5 | 0x4;
+	regmap_write(ctrl->map, RTPCS_838X_SDS_MODE_SEL, val);
 
-	rtl8380_sds4_fiber_6275b = (void *)h + sizeof(struct fw_header) + h->parts[4].start;
+	regmap_read(ctrl->map, RTPCS_838X_PLL_CML_CTRL, &val);
+	dev_info(ctrl->dev, "PLL control register: %x\n", val);
+	regmap_write_bits(ctrl->map, RTPCS_838X_PLL_CML_CTRL, 0xfffffff0,
+			  0xaaaaaaaf & 0xf);
 
-	rtl8380_sds5_fiber_6275b = (void *)h + sizeof(struct fw_header) + h->parts[5].start;
+	/* apply per-SerDes patch values */
+	rtpcs_838x_sds_patch_01_qsgmii_6275b(ctrl);
+	rtpcs_838x_sds_patch_23_qsgmii_6275b(ctrl);
+	rtpcs_838x_sds_patch_4_fiber_6275b(ctrl);
+	rtpcs_838x_sds_patch_5_fiber_6275b(ctrl);
 
-	rtl8380_sds_reset = (void *)h + sizeof(struct fw_header) + h->parts[6].start;
+	rtpcs_838x_sds_reset_all(ctrl);
+	rtpcs_838x_sds_release_reset(ctrl);
 
-	rtl8380_sds_release_reset = (void *)h + sizeof(struct fw_header) + h->parts[7].start;
+	regmap_read(ctrl->map, RTPCS_838X_SDS_CFG_REG, &val);
+	dev_info(ctrl->dev, "SDS power down value now: %x\n", val);
+	regmap_write(ctrl->map, RTPCS_838X_SDS_CFG_REG, sds_conf_value);
 
-	// Back up serdes power off value
-	sds_conf_value = sw_r32(RTL838X_SDS_CFG_REG);
-	pr_info("SDS power down value: %x\n", sds_conf_value);
-
-	// take serdes into reset
-	i = 0;
-	while (rtl8380_sds_take_reset[2 * i]) {
-		sw_w32(rtl8380_sds_take_reset[2 * i + 1], rtl8380_sds_take_reset[2 * i]);
-		i++;
-		udelay(1000);
-	}
-
-	// apply common serdes patch
-	i = 0;
-	while (rtl8380_sds_common[2 * i]) {
-		sw_w32(rtl8380_sds_common[2 * i + 1], rtl8380_sds_common[2 * i]);
-		i++;
-		udelay(1000);
-	}
-
-	// internal R/W enable
-	sw_w32(3, RTL838X_INT_RW_CTRL);
-
-	// SerDes ports 4 and 5 are FIBRE ports
-	sw_w32_mask(0x7 | 0x38, 1 | (1 << 3), RTL838X_INT_MODE_CTRL);
-
-	// SerDes module settings, SerDes 0-3 are QSGMII
-	v = 0x6 << 25 | 0x6 << 20 | 0x6 << 15 | 0x6 << 10;
-	// SerDes 4 and 5 are 1000BX FIBRE
-	v |= 0x4 << 5 | 0x4;
-	sw_w32(v, RTL838X_SDS_MODE_SEL);
-
-	pr_info("PLL control register: %x\n", sw_r32(RTL838X_PLL_CML_CTRL));
-	sw_w32_mask(0xfffffff0, 0xaaaaaaaf & 0xf, RTL838X_PLL_CML_CTRL);
-	i = 0;
-	while (rtl8380_sds01_qsgmii_6275b[2 * i]) {
-		sw_w32(rtl8380_sds01_qsgmii_6275b[2 * i + 1],
-		       rtl8380_sds01_qsgmii_6275b[2 * i]);
-		i++;
-	}
-
-	i = 0;
-	while (rtl8380_sds23_qsgmii_6275b[2 * i]) {
-		sw_w32(rtl8380_sds23_qsgmii_6275b[2 * i + 1], rtl8380_sds23_qsgmii_6275b[2 * i]);
-		i++;
-	}
-
-	i = 0;
-	while (rtl8380_sds4_fiber_6275b[2 * i]) {
-		sw_w32(rtl8380_sds4_fiber_6275b[2 * i + 1], rtl8380_sds4_fiber_6275b[2 * i]);
-		i++;
-	}
-
-	i = 0;
-	while (rtl8380_sds5_fiber_6275b[2 * i]) {
-		sw_w32(rtl8380_sds5_fiber_6275b[2 * i + 1], rtl8380_sds5_fiber_6275b[2 * i]);
-		i++;
-	}
-
-	i = 0;
-	while (rtl8380_sds_reset[2 * i]) {
-		sw_w32(rtl8380_sds_reset[2 * i + 1], rtl8380_sds_reset[2 * i]);
-		i++;
-	}
-
-	i = 0;
-	while (rtl8380_sds_release_reset[2 * i]) {
-		sw_w32(rtl8380_sds_release_reset[2 * i + 1], rtl8380_sds_release_reset[2 * i]);
-		i++;
-	}
-
-	pr_info("SDS power down value now: %x\n", sw_r32(RTL838X_SDS_CFG_REG));
-	sw_w32(sds_conf_value, RTL838X_SDS_CFG_REG);
-
-	pr_info("Configuration of SERDES done\n");
+	dev_info(ctrl->dev, "Configuration of SERDES done\n");
 
 	return 0;
 }
 
-static void rtl83xx_config_interface(int port, phy_interface_t interface)
+__attribute__((unused))
+static int rtpcs_838x_setup_serdes(struct rtpcs_ctrl *ctrl, int sds,
+				   phy_interface_t mode)
 {
-	u32 old, int_shift, sds_shift;
+	u32 int_shift, sds_shift;
 
-	switch (port) {
-	case 24:
+	if (sds < 4)
+		return 0;
+
+	switch (sds) {
+	case 4:
 		int_shift = 0;
 		sds_shift = 5;
 		break;
-	case 26:
+	case 5:
 		int_shift = 3;
 		sds_shift = 0;
 		break;
 	default:
-		return;
+		return 0;
 	}
 
-	old = sw_r32(RTL838X_SDS_MODE_SEL);
-	switch (interface) {
+	switch (mode) {
 	case PHY_INTERFACE_MODE_1000BASEX:
-		if ((old >> sds_shift & 0x1f) == 4)
-			return;
-		sw_w32_mask(0x7 << int_shift, 1 << int_shift, RTL838X_INT_MODE_CTRL);
-		sw_w32_mask(0x1f << sds_shift, 4 << sds_shift, RTL838X_SDS_MODE_SEL);
+		regmap_write_bits(ctrl->map, RTPCS_838X_INT_MODE_CTRL,
+				  0x7 << int_shift, 0x1 << int_shift);
+		regmap_write_bits(ctrl->map, RTPCS_838X_SDS_MODE_SEL,
+				  0x1f << sds_shift, 0x4 << sds_shift);
 		break;
 	case PHY_INTERFACE_MODE_SGMII:
-		if ((old >> sds_shift & 0x1f) == 2)
-			return;
-		sw_w32_mask(0x7 << int_shift, 2 << int_shift, RTL838X_INT_MODE_CTRL);
-		sw_w32_mask(0x1f << sds_shift, 2 << sds_shift, RTL838X_SDS_MODE_SEL);
+		regmap_write_bits(ctrl->map, RTPCS_838X_INT_MODE_CTRL,
+				  0x7 << int_shift, 0x2 << int_shift);
+		regmap_write_bits(ctrl->map, RTPCS_838X_SDS_MODE_SEL,
+				  0x1f << sds_shift, 0x2 << sds_shift);
+		break;
+	case PHY_INTERFACE_MODE_QSGMII:
+		if (sds == 5)
+			return -EOPNOTSUPP;
+
+		regmap_write_bits(ctrl->map, RTPCS_838X_INT_MODE_CTRL,
+				  0x7 << int_shift, 0x5 << int_shift);
+		regmap_write_bits(ctrl->map, RTPCS_838X_SDS_MODE_SEL,
+				  0x1f << sds_shift, 0x6 << sds_shift);
+
+		rtpcs_838x_sds_patch_4_qsgmii_6275b(ctrl);
+
 		break;
 	default:
-		return;
+		return 0;
 	}
-	pr_debug("configured port %d for interface %s\n", port, phy_modes(interface));
-}
 
-*/
+	rtpcs_838x_sds_power(ctrl, sds, true);
+
+	pr_info("configured SDS %d for interface %s\n", sds, phy_modes(mode));
+	return 0;
+}
 
 /* RTL930X */
 
