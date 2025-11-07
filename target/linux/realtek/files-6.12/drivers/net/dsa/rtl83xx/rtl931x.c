@@ -389,7 +389,8 @@ void rtl931x_print_matrix(void)
 	rtl_table_release(r);
 }
 
-void rtldsa_931x_set_receive_management_action(int port, rma_ctrl_t type, action_type_t action)
+static void rtldsa_931x_set_receive_management_action(int port, rma_ctrl_t type,
+						      action_type_t action)
 {
 	u32 shift;
 	u32 value;

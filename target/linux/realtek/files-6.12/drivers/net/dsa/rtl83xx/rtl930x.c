@@ -738,8 +738,8 @@ static void rtl930x_write_mcast_pmask(int idx, u64 portmask)
 	rtl_table_release(q);
 }
 
-void rtldsa_930x_set_receive_management_action(int port, rma_ctrl_t type,
-					       action_type_t action)
+static void rtldsa_930x_set_receive_management_action(int port, rma_ctrl_t type,
+						      action_type_t action)
 {
 	u32 shift;
 	u32 value;
