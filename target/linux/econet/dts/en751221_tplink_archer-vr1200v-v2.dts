@@ -96,3 +96,9 @@
 		};
 	};
 };
+
+&gmac0 {
+	status = "okay";
+	nvmem-cells = <&macaddr_misc_8f100 0>;
+	nvmem-cell-names = "mac-address";
+};
