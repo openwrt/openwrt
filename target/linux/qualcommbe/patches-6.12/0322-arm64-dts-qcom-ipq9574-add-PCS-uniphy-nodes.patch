@@ -1,4 +1,4 @@
-From 8c02b6438167e1b73b908040c4ec3d4877c16f83 Mon Sep 17 00:00:00 2001
+From d6f184181b076cbb54f152994f5bc73ce524a67e Mon Sep 17 00:00:00 2001
 From: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 Date: Sun, 11 May 2025 18:21:00 -0500
 Subject: [PATCH] arm64: dts: qcom: ipq9574: add PCS uniphy nodes
@@ -11,8 +11,8 @@ feed back to the NSSCC node.
 
 Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 ---
- arch/arm64/boot/dts/qcom/ipq9574.dtsi | 116 ++++++++++++++++++++++++--
- 1 file changed, 110 insertions(+), 6 deletions(-)
+ arch/arm64/boot/dts/qcom/ipq9574.dtsi | 100 ++++++++++++++++++++++++--
+ 1 file changed, 94 insertions(+), 6 deletions(-)
 
 --- a/arch/arm64/boot/dts/qcom/ipq9574.dtsi
 +++ b/arch/arm64/boot/dts/qcom/ipq9574.dtsi
@@ -43,7 +43,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  				 <&gcc GCC_NSSCC_CLK>;
  			clock-names = "xo",
  				      "nss_1200",
-@@ -1269,6 +1270,109 @@
+@@ -1269,6 +1270,93 @@
  			#reset-cells = <1>;
  			#interconnect-cells = <1>;
  		};
@@ -57,13 +57,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 +				 <&gcc GCC_UNIPHY0_AHB_CLK>;
 +			clock-names = "sys",
 +				      "ahb";
-+			resets = <&gcc GCC_UNIPHY0_SYS_RESET>,
-+				 <&gcc GCC_UNIPHY0_AHB_RESET>,
-+				 <&gcc GCC_UNIPHY0_XPCS_RESET>;
-+			reset-names = "sys",
-+				      "ahb",
-+				      "xpcs";
-+
++			resets = <&gcc GCC_UNIPHY0_XPCS_RESET>;
 +			#clock-cells = <1>;
 +
 +			pcs0_ch0: pcs-mii@0 {
@@ -108,12 +102,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 +				 <&gcc GCC_UNIPHY1_AHB_CLK>;
 +			clock-names = "sys",
 +				      "ahb";
-+			resets = <&gcc GCC_UNIPHY1_SYS_RESET>,
-+				 <&gcc GCC_UNIPHY1_AHB_RESET>,
-+				 <&gcc GCC_UNIPHY1_XPCS_RESET>;
-+			reset-names = "sys",
-+				      "ahb",
-+				      "xpcs";
++			resets = <&gcc GCC_UNIPHY1_XPCS_RESET>;
 +			#clock-cells = <1>;
 +
 +			pcs1_ch0: pcs-mii@0 {
@@ -134,12 +123,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 +				 <&gcc GCC_UNIPHY2_AHB_CLK>;
 +			clock-names = "sys",
 +				      "ahb";
-+			resets = <&gcc GCC_UNIPHY2_SYS_RESET>,
-+				 <&gcc GCC_UNIPHY2_AHB_RESET>,
-+				 <&gcc GCC_UNIPHY2_XPCS_RESET>;
-+			reset-names = "sys",
-+				      "ahb",
-+				      "xpcs";
++			resets = <&gcc GCC_UNIPHY2_XPCS_RESET>;
 +			#clock-cells = <1>;
 +
 +			pcs2_ch0: pcs-mii@0 {
