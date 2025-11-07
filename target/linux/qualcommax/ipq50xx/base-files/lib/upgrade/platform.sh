@@ -102,6 +102,7 @@ platform_pre_upgrade() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
+	cmcc,pz-l8|\
 	elecom,wrc-x3000gs2|\
 	iodata,wn-dax3000gr)
 		local delay
