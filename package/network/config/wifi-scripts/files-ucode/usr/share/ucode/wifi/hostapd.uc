@@ -385,6 +385,11 @@ function device_htmode_append(config) {
 			config.he_oper_centr_freq_seg0_idx = config.vht_oper_centr_freq_seg0_idx;
 		}
 
+		if (config.band == "6g") {
+			config.stationary_ap = true;
+			append_vars(config, [ 'he_6ghz_reg_pwr_type', ]);
+		}
+
 		if (config.he_bss_color_enabled) {
 			if (config.he_spr_non_srg_obss_pd_max_offset)
 				config.he_spr_sr_control |= 1 << 2;
@@ -425,11 +430,6 @@ function device_htmode_append(config) {
 
 		if (config.hw_mode == 'a')
 			append_vars(config, [ 'eht_oper_chwidth', 'eht_oper_centr_freq_seg0_idx' ]);
-
-		if (config.band == "6g") {
-			config.stationary_ap = true;
-			append_vars(config, [ 'he_6ghz_reg_pwr_type', ]);
-		}
 	}
 
 	append_vars(config, [ 'tx_queue_data2_burst', 'stationary_ap' ]);
