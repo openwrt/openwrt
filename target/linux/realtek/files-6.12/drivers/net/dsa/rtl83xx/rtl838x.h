@@ -21,10 +21,6 @@
 #define RTL930X_MAC_FORCE_MODE_CTRL		(0xCA1C)
 #define RTL931X_MAC_FORCE_MODE_CTRL		(0x0DCC)
 
-#define RTL838X_DMY_REG31			(0x3b28)
-#define RTL838X_SDS_MODE_SEL			(0x0028)
-#define RTL838X_SDS_CFG_REG			(0x0034)
-#define RTL838X_INT_MODE_CTRL			(0x005c)
 #define RTL838X_PORT_ISO_CTRL(port)		(0x4100 + ((port) << 2))
 #define RTL839X_PORT_ISO_CTRL(port)		(0x1400 + ((port) << 3))
 
@@ -53,12 +49,6 @@
 #define RTL839X_SDS12_13_XSG1			(0xB900)
 #define RTL839X_SDS12_13_PWR0			(0xb880)
 #define RTL839X_SDS12_13_PWR1			(0xb980)
-
-/* Registers of the internal Serdes of the 8380 */
-#define RTL838X_SDS4_FIB_REG0			(0xF800)
-#define RTL838X_SDS4_REG28			(0xef80)
-#define RTL838X_SDS4_DUMMY0			(0xef8c)
-#define RTL838X_SDS5_EXT_REG6			(0xf18c)
 
 /* VLAN registers */
 #define RTL838X_VLAN_CTRL			(0x3A74)
