@@ -51,6 +51,9 @@
 #define RTPCS_931X_MAC_RX_PAUSE_STS		0x0f00
 #define RTPCS_931X_MAC_TX_PAUSE_STS		0x0ef8
 
+#define RTPCS_838X_SDS_CFG_REG			0x34
+#define RTPCS_838X_RST_GLB_CTRL_0		0x3c
+
 #define RTPCS_93XX_MAC_LINK_SPD_BITS		4
 
 #define RTL93XX_MODEL_NAME_INFO			(0x0004)
@@ -213,6 +216,183 @@ static struct rtpcs_link *rtpcs_phylink_pcs_to_link(struct phylink_pcs *pcs)
 }
 
 /* Variant-specific functions */
+
+/* RTL838X */
+
+static void rtpcs_838x_sds_take_reset(struct rtpcs_ctrl *ctrl)
+{
+	regmap_write(ctrl->map, RTPCS_838X_SDS_CFG_REG, 0x3f);
+	regmap_write(ctrl->map, RTPCS_838X_RST_GLB_CTRL_0, 0x10);
+
+	rtpcs_sds_write(ctrl, 0, 0x0, 0x3, 0x7146);
+	udelay(1000);
+	rtpcs_sds_write(ctrl, 1, 0x0, 0x3, 0x7146);
+	udelay(1000);
+	rtpcs_sds_write(ctrl, 2, 0x0, 0x3, 0x7146);
+	udelay(1000);
+	rtpcs_sds_write(ctrl, 3, 0x0, 0x3, 0x7146);
+	udelay(1000);
+	rtpcs_sds_write(ctrl, 4, 0x0, 0x3, 0x7146);
+	udelay(1000);
+	rtpcs_sds_write(ctrl, 5, 0x0, 0x3, 0x7146);
+	udelay(1000);
+}
+
+static void rtpcs_838x_sds_reset(struct rtpcs_ctrl *ctrl)
+{
+	rtpcs_sds_write(ctrl, 0, 0, 0, 0xc00);
+	rtpcs_sds_write(ctrl, 1, 0, 0, 0xc00);
+	rtpcs_sds_write(ctrl, 2, 0, 0, 0xc00);
+	rtpcs_sds_write(ctrl, 3, 0, 0, 0xc00);
+	rtpcs_sds_write(ctrl, 4, 0, 0, 0xc00);
+	rtpcs_sds_write(ctrl, 5, 0, 0, 0xc00);
+
+	rtpcs_sds_write(ctrl, 0, 0, 0, 0xc03);
+	rtpcs_sds_write(ctrl, 1, 0, 0, 0xc03);
+	rtpcs_sds_write(ctrl, 2, 0, 0, 0xc03);
+	rtpcs_sds_write(ctrl, 3, 0, 0, 0xc03);
+	rtpcs_sds_write(ctrl, 4, 0, 0, 0xc03);
+	rtpcs_sds_write(ctrl, 5, 0, 0, 0xc03);
+}
+
+static void rtpcs_838x_sds_release_reset(struct rtpcs_ctrl *ctrl)
+{
+	rtpcs_sds_write(ctrl, 0, 0, 3, 0x7106);
+	rtpcs_sds_write(ctrl, 1, 0, 3, 0x7106);
+	rtpcs_sds_write(ctrl, 2, 0, 3, 0x7106);
+	rtpcs_sds_write(ctrl, 3, 0, 3, 0x7106);
+	rtpcs_sds_write(ctrl, 4, 0, 3, 0x7106);
+	rtpcs_sds_write(ctrl, 5, 0, 3, 0x7106);
+}
+
+static void rtpcs_838x_sds_patch_common(struct rtpcs_ctrl *ctrl)
+{
+	rtpcs_sds_write(ctrl, 4, 2, 30, 0x71e);
+	udelay(1000);
+	rtpcs_sds_write(ctrl, 5, 2, 30, 0x71e);
+	udelay(1000);
+
+	rtpcs_sds_write(ctrl, 0, 0, 1, 0xf00);
+	udelay(1000);
+	rtpcs_sds_write(ctrl, 1, 0, 1, 0xf00);
+	udelay(1000);
+	rtpcs_sds_write(ctrl, 2, 0, 1, 0xf00);
+	udelay(1000);
+	rtpcs_sds_write(ctrl, 3, 0, 1, 0xf00);
+	udelay(1000);
+	rtpcs_sds_write(ctrl, 4, 0, 1, 0xf00);
+	udelay(1000);
+	rtpcs_sds_write(ctrl, 5, 0, 1, 0xf00);
+	udelay(1000);
+
+	rtpcs_sds_write(ctrl, 0, 0, 2, 0x7060);
+	udelay(1000);
+	rtpcs_sds_write(ctrl, 1, 0, 2, 0x7060);
+	udelay(1000);
+	rtpcs_sds_write(ctrl, 2, 0, 2, 0x7060);
+	udelay(1000);
+	rtpcs_sds_write(ctrl, 3, 0, 2, 0x7060);
+	udelay(1000);
+	rtpcs_sds_write(ctrl, 4, 0, 2, 0x7060);
+	udelay(1000);
+	rtpcs_sds_write(ctrl, 5, 0, 2, 0x7060);
+	udelay(1000);
+
+	rtpcs_sds_write(ctrl, 4, 0, 4, 0x74d);
+	udelay(1000);
+	rtpcs_sds_write(ctrl, 5, 0, 4, 0x74d);
+	udelay(1000);
+}
+
+static void rtpcs_838x_sds_patch_01_qsgmii_6275b(struct rtpcs_ctrl *ctrl)
+{
+	rtpcs_sds_write(ctrl, 0, 1, 3, 0xf46f);
+	rtpcs_sds_write(ctrl, 0, 1, 2, 0x85fa);
+	rtpcs_sds_write(ctrl, 1, 1, 2, 0x85fa);
+	rtpcs_sds_write(ctrl, 0, 1, 6, 0x20d8);
+	rtpcs_sds_write(ctrl, 1, 1, 6, 0x20d8);
+	rtpcs_sds_write(ctrl, 0, 1, 17, 0xb7c9);
+	rtpcs_sds_write(ctrl, 1, 1, 11, 0x482);
+	rtpcs_sds_write(ctrl, 1, 1, 10, 0x80c7);
+	rtpcs_sds_write(ctrl, 0, 1, 18, 0xab8e);
+	rtpcs_sds_write(ctrl, 0, 1, 11, 0x482);
+	rtpcs_sds_write(ctrl, 0, 1, 19, 0x24ab);
+	rtpcs_sds_write(ctrl, 1, 1, 17, 0x4208);
+	rtpcs_sds_write(ctrl, 1, 1, 18, 0xc208);
+	rtpcs_sds_write(ctrl, 0, 2, 25, 0x303);
+	rtpcs_sds_write(ctrl, 1, 2, 25, 0x303);
+	rtpcs_sds_write(ctrl, 0, 1, 14, 0xfcc2);
+	rtpcs_sds_write(ctrl, 1, 1, 14, 0xfcc2);
+
+	rtpcs_sds_write(ctrl, 0, 1, 9, 0x8e64);
+	rtpcs_sds_write(ctrl, 0, 1, 9, 0x8c64);
+
+	rtpcs_sds_write(ctrl, 1, 1, 9, 0x8e64);
+	rtpcs_sds_write(ctrl, 1, 1, 9, 0x8c64);
+}
+
+static void rtpcs_838x_sds_patch_23_qsgmii_6275b(struct rtpcs_ctrl *ctrl)
+{
+	rtpcs_sds_write(ctrl, 2, 1, 3, 0xf46d);
+	rtpcs_sds_write(ctrl, 2, 1, 2, 0x85fa);
+	rtpcs_sds_write(ctrl, 3, 1, 2, 0x85fa);
+//	rtpcs_sds_write(ctrl, 4, 1, 2, 0x85fa);
+	rtpcs_sds_write(ctrl, 2, 1, 6, 0x20d8);
+	rtpcs_sds_write(ctrl, 3, 1, 6, 0x20d8);
+	rtpcs_sds_write(ctrl, 2, 1, 17, 0xb7c9);
+	rtpcs_sds_write(ctrl, 2, 1, 18, 0xab8e);
+	rtpcs_sds_write(ctrl, 2, 1, 11, 0x482);
+	rtpcs_sds_write(ctrl, 3, 1, 11, 0x482);
+	rtpcs_sds_write(ctrl, 2, 1, 19, 0x24ab);
+	rtpcs_sds_write(ctrl, 3, 1, 17, 0x4208);
+	rtpcs_sds_write(ctrl, 3, 1, 18, 0xc208);
+	rtpcs_sds_write(ctrl, 2, 2, 25, 0x303);
+	rtpcs_sds_write(ctrl, 3, 2, 25, 0x303);
+	rtpcs_sds_write(ctrl, 2, 1, 14, 0xfcc2);
+	rtpcs_sds_write(ctrl, 3, 1, 14, 0xfcc2);
+
+	rtpcs_sds_write(ctrl, 2, 1, 9, 0x8e64);
+	rtpcs_sds_write(ctrl, 2, 1, 9, 0x8c64);
+
+	rtpcs_sds_write(ctrl, 3, 1, 9, 0x8e64);
+	rtpcs_sds_write(ctrl, 3, 1, 9, 0x8c64);
+}
+
+static void rtpcs_838x_sds_patch_4_fiber_6275b(struct rtpcs_ctrl *ctrl)
+{
+	rtpcs_sds_write(ctrl, 4, 1, 2, 0x85fa);
+	rtpcs_sds_write(ctrl, 4, 1, 11, 0x1482);
+	rtpcs_sds_write(ctrl, 4, 1, 6, 0x20d8);
+	rtpcs_sds_write(ctrl, 4, 1, 10, 0xc3);
+	rtpcs_sds_write(ctrl, 4, 1, 17, 0xb7c9);
+	rtpcs_sds_write(ctrl, 4, 1, 18, 0xab8e);
+	rtpcs_sds_write(ctrl, 4, 2, 25, 0x303);
+	rtpcs_sds_write(ctrl, 4, 1, 14, 0xfcc2);
+
+	rtpcs_sds_write(ctrl, 4, 1, 9, 0x8e64);
+	rtpcs_sds_write(ctrl, 4, 1, 9, 0x8c64);
+}
+
+static void rtpcs_838x_sds_patch_5_fiber_6275b(struct rtpcs_ctrl *ctrl)
+{
+	rtpcs_sds_write(ctrl, 5, 1, 2, 0x85fa);
+	rtpcs_sds_write(ctrl, 5, 1, 3, 0x00);
+	rtpcs_sds_write(ctrl, 5, 1, 4, 0xdccc);
+	rtpcs_sds_write(ctrl, 5, 1, 5, 0x00);
+	rtpcs_sds_write(ctrl, 5, 1, 6, 0x3600);
+	rtpcs_sds_write(ctrl, 5, 1, 7, 0x03);
+	rtpcs_sds_write(ctrl, 5, 1, 8, 0x79aa);
+	rtpcs_sds_write(ctrl, 5, 1, 9, 0x8c64);
+	rtpcs_sds_write(ctrl, 5, 1, 10, 0xc3);
+	rtpcs_sds_write(ctrl, 5, 1, 11, 0x1482);
+	rtpcs_sds_write(ctrl, 5, 2, 24, 0x14aa);
+	rtpcs_sds_write(ctrl, 5, 2, 25, 0x303);
+	rtpcs_sds_write(ctrl, 5, 1, 14, 0xf002);
+	rtpcs_sds_write(ctrl, 5, 2, 27, 0x4bf);
+
+	rtpcs_sds_write(ctrl, 5, 1, 9, 0x8e64);
+	rtpcs_sds_write(ctrl, 5, 1, 9, 0x8c64);
+}
 
 /* RTL930X */
 
