@@ -17,9 +17,9 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 --- a/arch/arm64/boot/dts/qcom/ipq9574.dtsi
 +++ b/arch/arm64/boot/dts/qcom/ipq9574.dtsi
 @@ -1255,7 +1255,10 @@
- 				 <&pcs_uniphy1 1>,
- 				 <&pcs_uniphy2 0>,
- 				 <&pcs_uniphy2 1>,
+ 				 <&pcs1 1>,
+ 				 <&pcs2 0>,
+ 				 <&pcs2 1>,
 -				 <&gcc GCC_NSSCC_CLK>;
 +				 <&gcc GCC_NSSCC_CLK>,
 +				 <&gcc GCC_NSSNOC_NSSCC_CLK>,
