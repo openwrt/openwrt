@@ -53,6 +53,18 @@
 
 #define RTPCS_838X_SDS_CFG_REG			0x34
 #define RTPCS_838X_RST_GLB_CTRL_0		0x3c
+#define RTL838X_SDS_MODE_SEL                    (0x0028)
+#define RTL838X_INT_MODE_CTRL                   (0x005c)
+#define RTL838X_DMY_REG31                       (0x3b28)
+#define RTL838X_INT_RW_CTRL                     (0x0058)
+#define RTL838X_PLL_CML_CTRL                    (0x0FF8)
+
+#define RTL8380_SDS4_FIB_REG0                   (0xF800)
+#define RTL838X_SDS4_REG28                      (0xef80)
+#define RTL838X_SDS4_DUMMY0                     (0xef8c)
+#define RTL838X_SDS5_EXT_REG6                   (0xf18c)
+#define RTL838X_SDS4_FIB_REG0                   (RTL838X_SDS4_REG28 + 0x880)
+#define RTL838X_SDS5_FIB_REG0                   (RTL838X_SDS4_REG28 + 0x980)
 
 #define RTPCS_93XX_MAC_LINK_SPD_BITS		4
 
@@ -393,6 +405,196 @@ static void rtpcs_838x_sds_patch_5_fiber_6275b(struct rtpcs_ctrl *ctrl)
 	rtpcs_sds_write(ctrl, 5, 1, 9, 0x8e64);
 	rtpcs_sds_write(ctrl, 5, 1, 9, 0x8c64);
 }
+
+/*
+void rtl8380_sds_rst(int mac)
+{
+	u32 offset = (mac == 24) ? 0 : 0x100;
+
+	sw_w32_mask(1 << 11, 0, RTL838X_SDS4_FIB_REG0 + offset);
+	sw_w32_mask(0x3, 0, RTL838X_SDS4_REG28 + offset);
+	sw_w32_mask(0x3, 0x3, RTL838X_SDS4_REG28 + offset);
+	sw_w32_mask(0, 0x1 << 6, RTL838X_SDS4_DUMMY0 + offset);
+	sw_w32_mask(0x1 << 6, 0, RTL838X_SDS4_DUMMY0 + offset);
+	pr_debug("SERDES reset: %d\n", mac);
+}
+
+int rtl8380_sds_power(int mac, int val)
+{
+	u32 mode = (val == 1) ? 0x4 : 0x9;
+	u32 offset = (mac == 24) ? 5 : 0;
+
+	if ((mac != 24) && (mac != 26)) {
+		pr_err("%s: not a fibre port: %d\n", __func__, mac);
+		return -1;
+	}
+
+	sw_w32_mask(0x1f << offset, mode << offset, RTL838X_SDS_MODE_SEL);
+
+	rtl8380_sds_rst(mac);
+
+	return 0;
+}
+
+static int rtl8380_configure_serdes(struct phy_device *phydev)
+{
+	u32 v;
+	u32 sds_conf_value;
+	int i;
+	struct fw_header *h;
+	u32 *rtl8380_sds_take_reset;
+	u32 *rtl8380_sds_common;
+	u32 *rtl8380_sds01_qsgmii_6275b;
+	u32 *rtl8380_sds23_qsgmii_6275b;
+	u32 *rtl8380_sds4_fiber_6275b;
+	u32 *rtl8380_sds5_fiber_6275b;
+	u32 *rtl8380_sds_reset;
+	u32 *rtl8380_sds_release_reset;
+
+	phydev_info(phydev, "Detected internal RTL8380 SERDES\n");
+
+	h = rtl838x_request_fw(phydev, &rtl838x_8218b_fw, FIRMWARE_838X_8380_1);
+	if (!h)
+		return -1;
+
+	if (h->magic != 0x83808380) {
+		phydev_err(phydev, "Wrong firmware file: magic number mismatch.\n");
+		return -1;
+	}
+
+	rtl8380_sds_take_reset = (void *)h + sizeof(struct fw_header) + h->parts[0].start;
+
+	rtl8380_sds_common = (void *)h + sizeof(struct fw_header) + h->parts[1].start;
+
+	rtl8380_sds01_qsgmii_6275b = (void *)h + sizeof(struct fw_header) + h->parts[2].start;
+
+	rtl8380_sds23_qsgmii_6275b = (void *)h + sizeof(struct fw_header) + h->parts[3].start;
+
+	rtl8380_sds4_fiber_6275b = (void *)h + sizeof(struct fw_header) + h->parts[4].start;
+
+	rtl8380_sds5_fiber_6275b = (void *)h + sizeof(struct fw_header) + h->parts[5].start;
+
+	rtl8380_sds_reset = (void *)h + sizeof(struct fw_header) + h->parts[6].start;
+
+	rtl8380_sds_release_reset = (void *)h + sizeof(struct fw_header) + h->parts[7].start;
+
+	// Back up serdes power off value
+	sds_conf_value = sw_r32(RTL838X_SDS_CFG_REG);
+	pr_info("SDS power down value: %x\n", sds_conf_value);
+
+	// take serdes into reset
+	i = 0;
+	while (rtl8380_sds_take_reset[2 * i]) {
+		sw_w32(rtl8380_sds_take_reset[2 * i + 1], rtl8380_sds_take_reset[2 * i]);
+		i++;
+		udelay(1000);
+	}
+
+	// apply common serdes patch
+	i = 0;
+	while (rtl8380_sds_common[2 * i]) {
+		sw_w32(rtl8380_sds_common[2 * i + 1], rtl8380_sds_common[2 * i]);
+		i++;
+		udelay(1000);
+	}
+
+	// internal R/W enable
+	sw_w32(3, RTL838X_INT_RW_CTRL);
+
+	// SerDes ports 4 and 5 are FIBRE ports
+	sw_w32_mask(0x7 | 0x38, 1 | (1 << 3), RTL838X_INT_MODE_CTRL);
+
+	// SerDes module settings, SerDes 0-3 are QSGMII
+	v = 0x6 << 25 | 0x6 << 20 | 0x6 << 15 | 0x6 << 10;
+	// SerDes 4 and 5 are 1000BX FIBRE
+	v |= 0x4 << 5 | 0x4;
+	sw_w32(v, RTL838X_SDS_MODE_SEL);
+
+	pr_info("PLL control register: %x\n", sw_r32(RTL838X_PLL_CML_CTRL));
+	sw_w32_mask(0xfffffff0, 0xaaaaaaaf & 0xf, RTL838X_PLL_CML_CTRL);
+	i = 0;
+	while (rtl8380_sds01_qsgmii_6275b[2 * i]) {
+		sw_w32(rtl8380_sds01_qsgmii_6275b[2 * i + 1],
+		       rtl8380_sds01_qsgmii_6275b[2 * i]);
+		i++;
+	}
+
+	i = 0;
+	while (rtl8380_sds23_qsgmii_6275b[2 * i]) {
+		sw_w32(rtl8380_sds23_qsgmii_6275b[2 * i + 1], rtl8380_sds23_qsgmii_6275b[2 * i]);
+		i++;
+	}
+
+	i = 0;
+	while (rtl8380_sds4_fiber_6275b[2 * i]) {
+		sw_w32(rtl8380_sds4_fiber_6275b[2 * i + 1], rtl8380_sds4_fiber_6275b[2 * i]);
+		i++;
+	}
+
+	i = 0;
+	while (rtl8380_sds5_fiber_6275b[2 * i]) {
+		sw_w32(rtl8380_sds5_fiber_6275b[2 * i + 1], rtl8380_sds5_fiber_6275b[2 * i]);
+		i++;
+	}
+
+	i = 0;
+	while (rtl8380_sds_reset[2 * i]) {
+		sw_w32(rtl8380_sds_reset[2 * i + 1], rtl8380_sds_reset[2 * i]);
+		i++;
+	}
+
+	i = 0;
+	while (rtl8380_sds_release_reset[2 * i]) {
+		sw_w32(rtl8380_sds_release_reset[2 * i + 1], rtl8380_sds_release_reset[2 * i]);
+		i++;
+	}
+
+	pr_info("SDS power down value now: %x\n", sw_r32(RTL838X_SDS_CFG_REG));
+	sw_w32(sds_conf_value, RTL838X_SDS_CFG_REG);
+
+	pr_info("Configuration of SERDES done\n");
+
+	return 0;
+}
+
+static void rtl83xx_config_interface(int port, phy_interface_t interface)
+{
+	u32 old, int_shift, sds_shift;
+
+	switch (port) {
+	case 24:
+		int_shift = 0;
+		sds_shift = 5;
+		break;
+	case 26:
+		int_shift = 3;
+		sds_shift = 0;
+		break;
+	default:
+		return;
+	}
+
+	old = sw_r32(RTL838X_SDS_MODE_SEL);
+	switch (interface) {
+	case PHY_INTERFACE_MODE_1000BASEX:
+		if ((old >> sds_shift & 0x1f) == 4)
+			return;
+		sw_w32_mask(0x7 << int_shift, 1 << int_shift, RTL838X_INT_MODE_CTRL);
+		sw_w32_mask(0x1f << sds_shift, 4 << sds_shift, RTL838X_SDS_MODE_SEL);
+		break;
+	case PHY_INTERFACE_MODE_SGMII:
+		if ((old >> sds_shift & 0x1f) == 2)
+			return;
+		sw_w32_mask(0x7 << int_shift, 2 << int_shift, RTL838X_INT_MODE_CTRL);
+		sw_w32_mask(0x1f << sds_shift, 2 << sds_shift, RTL838X_SDS_MODE_SEL);
+		break;
+	default:
+		return;
+	}
+	pr_debug("configured port %d for interface %s\n", port, phy_modes(interface));
+}
+
+*/
 
 /* RTL930X */
 
