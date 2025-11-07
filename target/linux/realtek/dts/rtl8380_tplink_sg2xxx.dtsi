@@ -143,9 +143,6 @@
 	INTERNAL_PHY(13)
 	INTERNAL_PHY(14)
 	INTERNAL_PHY(15)
-
-	INTERNAL_PHY(24)
-	INTERNAL_PHY(26)
 };
 
 &ethernet0 {
@@ -172,7 +169,6 @@
 			reg = <24>;
 			label = SWITCH_PORT_LABEL(9);
 			pcs-handle = <&serdes4>;
-			phy-handle = <&phy24>;
 			phy-mode = "1000base-x";
 			fixed-link {
 				speed = <1000>;
@@ -183,7 +179,6 @@
 			reg = <26>;
 			label = SWITCH_PORT_LABEL(10);
 			pcs-handle = <&serdes5>;
-			phy-handle = <&phy26>;
 			phy-mode = "1000base-x";
 			fixed-link {
 				speed = <1000>;
