@@ -391,11 +391,20 @@ void rtl931x_print_matrix(void)
 
 void rtldsa_931x_set_receive_management_action(int port, rma_ctrl_t type, action_type_t action)
 {
-	u32 value = 0;
+	u32 shift;
+	u32 value;
+	u32 reg;
 
 	/* hack for value mapping */
 	if (type == GRATARP && action == COPY2CPU)
 		action = TRAP2MASTERCPU;
+
+	/* PTP doesn't allow to flood to all ports */
+	if (action == FLOODALL &&
+	    (type == PTP || type == PTP_UDP || type == PTP_ETH2)) {
+		pr_warn("%s: Port flooding not supported for PTP\n", __func__);
+		return;
+	}
 
 	switch(action) {
 	case FORWARD:
@@ -414,34 +423,47 @@ void rtldsa_931x_set_receive_management_action(int port, rma_ctrl_t type, action
 		value = 4;
 		break;
 	default:
-		break;
+		return;
 	}
 
 	switch(type) {
 	case BPDU:
-		sw_w32_mask(7 << ((port % 10) * 3), value << ((port % 10) * 3), RTL931X_RMA_BPDU_CTRL + ((port / 10) << 2));
-	break;
+		reg = RTL931X_RMA_BPDU_CTRL + (port / 10) * 4;
+		shift = (port % 10) * 3;
+		sw_w32_mask(GENMASK(shift + 2, shift), value << shift, reg);
+		break;
 	case PTP:
+		reg = RTL931X_RMA_PTP_CTRL + port * 4;
+
 		/* udp */
-		sw_w32_mask(3 << 2, value << 2, RTL931X_RMA_PTP_CTRL + (port << 2));
+		sw_w32_mask(GENMASK(3, 2), value << 2, reg);
+
 		/* eth2 */
-		sw_w32_mask(3, value, RTL931X_RMA_PTP_CTRL + (port << 2));
-	break;
+		sw_w32_mask(GENMASK(1, 0), value, reg);
+		break;
 	case PTP_UDP:
-		sw_w32_mask(3 << 2, value << 2, RTL931X_RMA_PTP_CTRL + (port << 2));
-	break;
+		reg = RTL931X_RMA_PTP_CTRL + port * 4;
+		sw_w32_mask(GENMASK(3, 2), value << 2, reg);
+		break;
 	case PTP_ETH2:
-		sw_w32_mask(3, value, RTL931X_RMA_PTP_CTRL + (port << 2));
-	break;
+		reg = RTL931X_RMA_PTP_CTRL + port * 4;
+		sw_w32_mask(GENMASK(1, 0), value, reg);
+		break;
 	case LLDP:
-		sw_w32_mask(7 << ((port % 10) * 3), value << ((port % 10) * 3), RTL931X_RMA_LLDP_CTRL + ((port / 10) << 2));
-	break;
+		reg = RTL931X_RMA_LLDP_CTRL + (port / 10) * 4;
+		shift = (port % 10) * 3;
+		sw_w32_mask(GENMASK(shift + 2, shift), value << shift, reg);
+		break;
 	case EAPOL:
-		sw_w32_mask(7 << ((port % 10) * 3), value << ((port % 10) * 3), RTL931X_RMA_EAPOL_CTRL + ((port / 10) << 2));
-	break;
+		reg = RTL931X_RMA_EAPOL_CTRL + (port / 10) * 4;
+		shift = (port % 10) * 3;
+		sw_w32_mask(GENMASK(shift + 2, shift), value << shift, reg);
+		break;
 	case GRATARP:
-		sw_w32_mask(3 << ((port & 0xf) << 1), value << ((port & 0xf) << 1), RTL931X_TRAP_ARP_GRAT_PORT_ACT + ((port >> 4) << 2));
-	break;
+		reg = RTL931X_TRAP_ARP_GRAT_PORT_ACT + (port / 16) * 4;
+		shift = (port % 16) * 2;
+		sw_w32_mask(GENMASK(shift + 1, shift), value << shift, reg);
+		break;
 	}
 }
 
