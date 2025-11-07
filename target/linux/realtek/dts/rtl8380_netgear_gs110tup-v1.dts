@@ -53,7 +53,18 @@
 &switch0 {
 	ports {
 		SWITCH_PORT(16, 9, qsgmii)
+
 		/* TODO: fixed link SFP is not right */
-		SWITCH_SFP_PORT(24, 10, rgmii-id)
+		port24: port@24 {
+			reg = <24>;
+			label = SWITCH_PORT_LABEL(10);
+			pcs-handle = <&serdes4>;
+			phy-handle = <&phy24>;
+			phy-mode = "1000base-x";
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
 	};
 };

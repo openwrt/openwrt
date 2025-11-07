@@ -453,7 +453,6 @@ static int rtpcs_838x_sds_patch(struct rtpcs_ctrl *ctrl, u32 sds,
 	return 0;
 }
 
-__always_unused
 static int rtpcs_838x_init_serdes_common(struct rtpcs_ctrl *ctrl)
 {
 	u32 val;
@@ -474,7 +473,6 @@ static int rtpcs_838x_init_serdes_common(struct rtpcs_ctrl *ctrl)
 	return 0;
 }
 
-__always_unused
 static int rtpcs_838x_setup_serdes(struct rtpcs_ctrl *ctrl, int sds,
 				   phy_interface_t mode)
 {
@@ -3101,6 +3099,8 @@ static const struct rtpcs_config rtpcs_838x_cfg = {
 	.mac_rx_pause_sts	= RTPCS_838X_MAC_RX_PAUSE_STS,
 	.mac_tx_pause_sts	= RTPCS_838X_MAC_TX_PAUSE_STS,
 	.pcs_ops		= &rtpcs_838x_pcs_ops,
+	.init_serdes_common	= rtpcs_838x_init_serdes_common,
+	.setup_serdes		= rtpcs_838x_setup_serdes,
 };
 
 static const struct phylink_pcs_ops rtpcs_839x_pcs_ops = {

@@ -652,6 +652,7 @@ static struct phylink_pcs *rtldsa_phylink_mac_select_pcs(struct dsa_switch *ds,
 	return priv->pcs[port];
 }
 
+__attribute__((unused))
 static void rtl83xx_config_interface(int port, phy_interface_t interface)
 {
 	u32 old, int_shift, sds_shift;
@@ -754,7 +755,7 @@ static void rtl83xx_phylink_mac_config(struct dsa_switch *ds, int port,
 	mcr = sw_r32(priv->r->mac_force_mode_ctrl(port));
 	if (mode == MLO_AN_PHY || phylink_autoneg_inband(mode)) {
 		pr_debug("port %d PHY autonegotiates\n", port);
-		rtl83xx_config_interface(port, state->interface);
+
 		mcr |= RTL838X_NWAY_EN;
 	} else {
 		mcr &= ~RTL838X_NWAY_EN;
