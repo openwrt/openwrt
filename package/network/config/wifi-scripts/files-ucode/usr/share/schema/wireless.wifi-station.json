@@ -5,9 +5,12 @@
 	"type": "object",
 	"properties": {
 		"mac": {
-			"description": "The stations MAC",
-			"type": "string",
-			"default": "00:00:00:00:00:00"
+			"description": "The station's MAC addresses",
+			"type": "array",
+			"items": {
+				"type": "string"
+			},
+			"default": ["00:00:00:00:00:00"]
 		},
 		"key": {
 			"description": "The passphrase that shall be used",
