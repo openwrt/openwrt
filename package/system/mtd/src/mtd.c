@@ -774,6 +774,7 @@ static void usage(void)
 	fprintf(stderr, "Usage: mtd [<options> ...] <command> [<arguments> ...] <device>[:<device>...]\n\n"
 	"The device is in the format of mtdX (eg: mtd4) or its label.\n"
 	"mtd recognizes these commands:\n"
+	"        dump                    dump mtd device\n"	
 	"        unlock                  unlock the device\n"
 	"        refresh                 refresh mtd partition\n"
 	"        erase                   erase all data on device\n"
@@ -816,7 +817,10 @@ static void usage(void)
 	if (mtd_fixtrx) {
 	    fprintf(stderr,
 	"        -M <magic>              magic number of the image header in the partition (for fixtrx)\n"
-	"        -o offset               offset of the image header in the partition(for fixtrx)\n");
+	"        -o offset               offset of the image header in the partition (for dump / fixtrx)\n");
+	} else {
+	    fprintf(stderr,
+	"        -o offset               offset of the image header in the partition (for dump)\n");
 	}
 	if (mtd_fixtrx || mtd_fixseama || mtd_fixwrg || mtd_fixwrgg) {
 		fprintf(stderr,
