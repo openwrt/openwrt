@@ -133,7 +133,7 @@ static void rtl930x_create_tx_header(struct p_hdr *h, unsigned int dest_port, in
 	h->cpu_tag[0] = 0x8000;  /* CPU tag marker */
 
 	h->cpu_tag[1] = FIELD_PREP(RTL93XX_CPU_TAG1_FWD_MASK,
-				   RTL93XX_CPU_TAG1_FWD_LOGICAL);
+				   RTL93XX_CPU_TAG1_FWD_PHYSICAL);
 	h->cpu_tag[1] |= FIELD_PREP(RTL93XX_CPU_TAG1_IGNORE_STP_MASK, 1);
 	h->cpu_tag[2] = 0;
 	h->cpu_tag[3] = 0;
@@ -152,7 +152,7 @@ static void rtl931x_create_tx_header(struct p_hdr *h, unsigned int dest_port, in
 	h->cpu_tag[0] = 0x8000;  /* CPU tag marker */
 
 	h->cpu_tag[1] = FIELD_PREP(RTL93XX_CPU_TAG1_FWD_MASK,
-				   RTL93XX_CPU_TAG1_FWD_LOGICAL);
+				   RTL93XX_CPU_TAG1_FWD_PHYSICAL);
 	h->cpu_tag[1] |= FIELD_PREP(RTL93XX_CPU_TAG1_IGNORE_STP_MASK, 1);
 	h->cpu_tag[2] = 0;
 	h->cpu_tag[3] = 0;
