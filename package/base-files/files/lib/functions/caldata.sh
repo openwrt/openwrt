@@ -91,6 +91,37 @@ caldata_from_file() {
 		caldata_die "failed to extract calibration data from $source"
 }
 
+caldata_from_file_ubifs() {
+	local ubipart=$1
+	local ubivol=$2
+	local source=$3
+	local offset=$4
+	local count=$(($5))
+	local target=$6
+	local dir="/tmp/caldata"
+	local ubi
+	local ubidev
+
+	. /lib/upgrade/nand.sh
+
+	[ -n "$target" ] || target=/lib/firmware/$FIRMWARE
+
+	ubidev=$(nand_attach_ubi "$ubipart")
+	ubi=$(nand_find_volume "$ubidev" "$ubivol")
+
+	[ -n "$ubi" ] || caldata_die "no UBI volume $ubivol found on $ubipart partition"
+
+	mkdir -p "$dir" || caldata_die "failed to create temporary directory"
+
+	grep -q "$dir" /proc/mounts || {
+		mount -t ubifs "${ubidev}:${ubivol}" "$dir" || caldata_die "failed to mount caldata ubifs"
+	}
+
+	caldata_from_file "${dir}/${source}" "$offset" "$count" "$target"
+
+	umount "$dir"
+}
+
 caldata_sysfsload_from_file() {
 	local source=$1
 	local offset=$(($2))
