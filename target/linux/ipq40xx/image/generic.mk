@@ -911,13 +911,10 @@ define Device/netgear_lbr20
 endef
 TARGET_DEVICES += netgear_lbr20
 
-define Device/netgear_rbr20
+define Device/netgear_rbx20
 	$(call Device/DniImage)
 	SOC := qcom-ipq4019
 	DEVICE_VENDOR := NETGEAR
-	DEVICE_MODEL := RBR20
-	NETGEAR_BOARD_ID := RBR20
-	NETGEAR_HW_ID := 29765641+0+256+512+2x2+2x2+2x2
 	KERNEL_SIZE := 7340032
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
@@ -930,7 +927,22 @@ define Device/netgear_rbr20
 		append-metadata
 	DEVICE_PACKAGES := ipq-wifi-netgear_rbk20 ath10k-firmware-qca9888-ct
 endef
+
+define Device/netgear_rbr20
+	$(call Device/netgear_rbx20)
+	DEVICE_MODEL := RBR20
+	NETGEAR_BOARD_ID := RBR20
+	NETGEAR_HW_ID := 29765641+0+256+512+2x2+2x2+2x2
+endef
 TARGET_DEVICES += netgear_rbr20
+
+define Device/netgear_rbs20
+	$(call Device/netgear_rbx20)
+	DEVICE_MODEL := RBS20
+	NETGEAR_BOARD_ID := RBS20
+	NETGEAR_HW_ID := 29765641+0+128+512+2x2+2x2+2x2
+endef
+TARGET_DEVICES += netgear_rbs20
 
 define Device/netgear_rbx40
 	$(call Device/netgear_orbi)

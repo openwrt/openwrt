@@ -3,8 +3,8 @@
 #include "qcom-ipq4019-rbx20.dtsi"
 
 / {
-	model = "Netgear RBR20";
-	compatible = "netgear,rbr20";
+	model = "Netgear RBS20";
+	compatible = "netgear,rbs20";
 };
 
 &nand {
@@ -135,12 +135,6 @@
 						#nvmem-cell-cells = <1>;
 					};
 
-					mac_address_wan: macaddr@6 {
-						compatible = "mac-base";
-						reg = <0x6 0x6>;
-						#nvmem-cell-cells = <1>;
-					};
-
 					mac_address_wlan_5g: macaddr@c {
 						compatible = "mac-base";
 						reg = <0xc 0x6>;
@@ -186,24 +180,18 @@
 			};
 
 			partition@1280000 {
-				label = "cert";
-				reg = <0x01280000 0x00080000>;
-				read-only;
-			};
-
-			partition@1300000 {
 				label = "ntgrdata";
-				reg = <0x01300000 0x09300000>;
+				reg = <0x01280000 0x01e00000>;
 			};
 
-			partition@a600000 {
+			partition@3080000 {
 				label = "kernel";
-				reg = <0x0a600000 0x00700000>;
+				reg = <0x03080000 0x00700000>;
 			};
 
-			partition@ad00000 {
+			partition@3780000 {
 				label = "ubi";
-				reg = <0x0ad00000 0x05300000>;
+				reg = <0x03780000 0x04880000>;
 			};
 		};
 	};
@@ -212,13 +200,11 @@
 &swport4 {
 	status = "okay";
 
-	label = "wan";
-	nvmem-cell-names = "mac-address";
-	nvmem-cells = <&mac_address_wan 0>;
+	label = "lan1";
 };
 
 &swport5 {
 	status = "okay";
 
-	label = "lan";
+	label = "lan2";
 };
