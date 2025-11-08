@@ -13,7 +13,6 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/thermal/thermal.h>
 #include <dt-bindings/reset/mediatek,mt7987-resets.h>
-#include <dt-bindings/regulator/richtek,rt5190a-regulator.h>
 
 /* TOPRGU resets */
 #define MT7987_TOPRGU_SGMII0_GRST		1
@@ -45,7 +44,6 @@
 		optee {
 			method = "smc";
 			compatible = "linaro,optee-tz";
-			status = "okay";
 		};
 	};
 
@@ -237,7 +235,7 @@
 
 	fan: pwm-fan {
 		compatible = "pwm-fan";
-		cooling-levels = <0 128 255>;
+		cooling-levels = <0 128 192 255>;
 		#cooling-cells = <2>;
 		#thermal-sensor-cells = <1>;
 		status = "disabled";
@@ -1001,9 +999,6 @@
 				#address-cells = <0>;
 				#interrupt-cells = <1>;
 				interrupt-controller;
-			};
-			slot1: pcie@0,0 {
-				reg = <0x0000 0 0 0 0>;
 			};
 		};
 
