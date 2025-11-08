@@ -1378,11 +1378,6 @@ static int rtldsa_port_enable(struct dsa_switch *ds, int port, struct phy_device
 	/* add port to switch mask of CPU_PORT */
 	priv->r->traffic_enable(priv->cpu_port, port);
 
-	if (priv->lag_non_primary & BIT_ULL(port)) {
-		pr_debug("%s: %d is lag slave. ignore\n", __func__, port);
-		return 0;
-	}
-
 	/* add all other ports in the same bridge to switch mask of port */
 	priv->r->traffic_set(port, priv->ports[port].pm);
 
@@ -1479,9 +1474,6 @@ static void rtldsa_update_port_member(struct rtl838x_switch_priv *priv, int port
 		if (!dsa_port_offloads_bridge_dev(other_dp, bridge_dev))
 			continue;
 
-		if (join && priv->lag_non_primary & BIT_ULL(other_port))
-			continue;
-
 		isolated = p->isolated && other_p->isolated;
 
 		if (join && !isolated) {
@@ -1507,11 +1499,6 @@ static int rtldsa_port_bridge_join(struct dsa_switch *ds, int port, struct dsa_b
 	struct rtl838x_switch_priv *priv = ds->priv;
 
 	pr_debug("%s %x: %d", __func__, (u32)priv, port);
-
-	if (priv->lag_non_primary & BIT_ULL(port)) {
-		pr_debug("%s: %d is lag slave. ignore\n", __func__, port);
-		return 0;
-	}
 
 	/* reset to default flags for new net_bridge_port */
 	priv->ports[port].isolated = false;
