@@ -2400,34 +2400,32 @@ static int rtl83xx_port_lag_join(struct dsa_switch *ds,
 				  struct netlink_ext_ack *extack)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	int i, err = 0;
+	int err = 0;
+	int group;
 
 	if (!rtl83xx_lag_can_offload(ds, lag.dev, info))
 		return -EOPNOTSUPP;
 
 	mutex_lock(&priv->reg_mutex);
 
-	for (i = 0; i < priv->ds->num_lag_ids; i++) {
-		if ((!priv->lag_devs[i]) || (priv->lag_devs[i] == lag.dev))
-			break;
-	}
 	if (port >= priv->cpu_port) {
 		err = -EINVAL;
 		goto out;
 	}
-	pr_info("port_lag_join: group %d, port %d\n",i, port);
-	if (!priv->lag_devs[i])
-		priv->lag_devs[i] = lag.dev;
 
-	if (priv->lag_primary[i] == -1) {
-		priv->lag_primary[i] = port;
-	} else
+	group = dsa_lag_id(ds->dst, lag.dev);
+
+	pr_info("port_lag_join: group %d, port %d\n", group, port);
+
+	if (priv->lag_primary[group] == -1)
+		priv->lag_primary[group] = port;
+	else
 		priv->is_lagmember[port] = 1;
 
 	priv->lagmembers |= (1ULL << port);
 
 	pr_debug("lag_members = %llX\n", priv->lagmembers);
-	err = rtl83xx_lag_add(priv->ds, i, port, info);
+	err = rtl83xx_lag_add(priv->ds, group, port, info);
 	if (err) {
 		err = -EINVAL;
 		goto out;
@@ -2442,19 +2440,14 @@ out:
 static int rtl83xx_port_lag_leave(struct dsa_switch *ds, int port,
 				  struct dsa_lag lag)
 {
-	int i, group = -1, err;
+	int group, err;
 	struct rtl838x_switch_priv *priv = ds->priv;
 
 	mutex_lock(&priv->reg_mutex);
-	for (i = 0; i < priv->ds->num_lag_ids; i++) {
-		if (priv->lags_port_members[i] & BIT_ULL(port)) {
-			group = i;
-			break;
-		}
-	}
 
+	group = dsa_lag_id(ds->dst, lag.dev);
 	if (group == -1) {
-		pr_info("port_lag_leave: port %d is not a member\n", port);
+		pr_info("port_lag_leave: group %d not set\n", port);
 		err = -EINVAL;
 		goto out;
 	}
@@ -2465,7 +2458,7 @@ static int rtl83xx_port_lag_leave(struct dsa_switch *ds, int port,
 	}
 	pr_info("port_lag_del: group %d, port %d\n",group, port);
 	priv->lagmembers &=~ (1ULL << port);
-	priv->lag_primary[i] = -1;
+	priv->lag_primary[group] = -1;
 	priv->is_lagmember[port] = 0;
 	pr_debug("lag_members = %llX\n", priv->lagmembers);
 	err = rtl83xx_lag_del(priv->ds, group, port);
@@ -2473,8 +2466,6 @@ static int rtl83xx_port_lag_leave(struct dsa_switch *ds, int port,
 		err = -EINVAL;
 		goto out;
 	}
-	if (!priv->lags_port_members[i])
-		priv->lag_devs[i] = NULL;
 
 out:
 	mutex_unlock(&priv->reg_mutex);

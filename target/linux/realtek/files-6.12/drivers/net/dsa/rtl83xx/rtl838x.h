@@ -1165,7 +1165,6 @@ struct rtl838x_switch_priv {
 	int l2_bucket_size;
 	struct dentry *dbgfs_dir;
 	u64 lags_port_members[MAX_LAGS];
-	struct net_device *lag_devs[MAX_LAGS];
 	u32 lag_primary[MAX_LAGS];
 	u32 is_lagmember[57];
 	u64 lagmembers;
