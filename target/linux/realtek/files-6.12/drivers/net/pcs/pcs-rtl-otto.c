@@ -646,7 +646,6 @@ static void rtpcs_839x_sds_reset(struct rtpcs_serdes *sds)
 	rtpcs_sds_write(odd_sds, 0x0, 0x3, 0x7106);
 }
 
-__maybe_unused
 static int rtpcs_839x_init_serdes_common(struct rtpcs_ctrl *ctrl)
 {
 	/* In autoneg state, force link, set SR4_CFG_EN_LINK_FIB1G */
@@ -661,7 +660,6 @@ static int rtpcs_839x_init_serdes_common(struct rtpcs_ctrl *ctrl)
 	return 0;
 }
 
-__maybe_unused
 static int rtpcs_839x_setup_serdes(struct rtpcs_serdes *sds,
 				   phy_interface_t mode)
 {
@@ -3376,6 +3374,8 @@ static const struct rtpcs_config rtpcs_839x_cfg = {
 	.mac_tx_pause_sts	= RTPCS_839X_MAC_TX_PAUSE_STS,
 	.serdes_count		= RTPCS_839X_SERDES_CNT,
 	.pcs_ops		= &rtpcs_839x_pcs_ops,
+	.init_serdes_common	= rtpcs_839x_init_serdes_common,
+	.setup_serdes		= rtpcs_839x_setup_serdes,
 };
 
 static const struct phylink_pcs_ops rtpcs_930x_pcs_ops = {
