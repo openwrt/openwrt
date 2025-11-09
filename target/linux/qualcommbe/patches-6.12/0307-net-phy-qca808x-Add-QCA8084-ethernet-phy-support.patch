@@ -1,4 +1,4 @@
-From 816bff9bcd2ff7c1e84dd14fc81c9c1bdaa609e7 Mon Sep 17 00:00:00 2001
+From 60c44842f9611be237ab3f68afe8ebf2d9595fb2 Mon Sep 17 00:00:00 2001
 From: Luo Jie <quic_luoj@quicinc.com>
 Date: Thu, 6 Apr 2023 18:09:07 +0800
 Subject: [PATCH] net: phy: qca808x: Add QCA8084 ethernet phy support
@@ -20,9 +20,11 @@ with QCA8081.
 
 Change-Id: I12555fa70662682474ab4432204405b5e752fef6
 Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
+Alex G: Update to match the patches that will be upstream.
+Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 ---
- drivers/net/phy/qcom/qca808x.c | 62 ++++++++++++++++++++++++++++++++--
- 1 file changed, 60 insertions(+), 2 deletions(-)
+ drivers/net/phy/qcom/qca808x.c | 65 ++++++++++++++++++++++++++++++++--
+ 1 file changed, 63 insertions(+), 2 deletions(-)
 
 --- a/drivers/net/phy/qcom/qca808x.c
 +++ b/drivers/net/phy/qcom/qca808x.c
@@ -44,7 +46,7 @@ Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
  MODULE_LICENSE("GPL");
  
  struct qca808x_priv {
-@@ -153,7 +160,9 @@ static bool qca808x_is_prefer_master(str
+@@ -153,13 +160,18 @@ static bool qca808x_is_prefer_master(str
  
  static bool qca808x_has_fast_retrain_or_slave_seed(struct phy_device *phydev)
  {
@@ -55,7 +57,16 @@ Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
  }
  
  static bool qca808x_is_1g_only(struct phy_device *phydev)
-@@ -273,6 +282,23 @@ static int qca808x_read_status(struct ph
+ {
+ 	int ret;
+ 
++	if (!phydev_id_compare(phydev, QCA8081_PHY_ID))
++		return false;
++
+ 	ret = phy_read_mmd(phydev, MDIO_MMD_AN, QCA808X_PHY_MMD7_CHIP_TYPE);
+ 	if (ret < 0)
+ 		return true;
+@@ -273,6 +285,23 @@ static int qca808x_read_status(struct ph
  		return ret;
  
  	if (phydev->link) {
@@ -79,7 +90,7 @@ Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
  		if (phydev->speed == SPEED_2500)
  			phydev->interface = PHY_INTERFACE_MODE_2500BASEX;
  		else
-@@ -352,6 +378,18 @@ static int qca808x_cable_test_start(stru
+@@ -352,6 +381,18 @@ static int qca808x_cable_test_start(stru
  	phy_write_mmd(phydev, MDIO_MMD_PCS, 0x807a, 0xc060);
  	phy_write_mmd(phydev, MDIO_MMD_PCS, 0x807e, 0xb060);
  
@@ -98,7 +109,7 @@ Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
  	return 0;
  }
  
-@@ -651,12 +689,32 @@ static struct phy_driver qca808x_driver[
+@@ -651,12 +692,32 @@ static struct phy_driver qca808x_driver[
  	.led_hw_control_set	= qca808x_led_hw_control_set,
  	.led_hw_control_get	= qca808x_led_hw_control_get,
  	.led_polarity_set	= qca808x_led_polarity_set,

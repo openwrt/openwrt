@@ -1,4 +1,4 @@
-From 685566f8b765f522b7f4d4deb06bf84a557dc4ac Mon Sep 17 00:00:00 2001
+From 57379fe257895b374d35ce6578ecd62ce1cc1a4d Mon Sep 17 00:00:00 2001
 From: Luo Jie <quic_luoj@quicinc.com>
 Date: Tue, 9 Apr 2024 16:30:55 +0800
 Subject: [PATCH] net: phy: qca808x: Add package clocks and resets for QCA8084
@@ -12,21 +12,16 @@ the PHY registers.
 
 Change-Id: I254d0aa0a1155d3618c6f1fc7d7a5b6ecadccbaa
 Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
+Alex G: Use accessors for struct phy_package_shared
+        Update to match the patches that will be upstream.
+Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 ---
- drivers/net/phy/qcom/qca808x.c | 67 ++++++++++++++++++++++++++++++++--
- 1 file changed, 64 insertions(+), 3 deletions(-)
+ drivers/net/phy/qcom/qca808x.c | 74 ++++++++++++++++++++++++++++++++--
+ 1 file changed, 71 insertions(+), 3 deletions(-)
 
 --- a/drivers/net/phy/qcom/qca808x.c
 +++ b/drivers/net/phy/qcom/qca808x.c
-@@ -4,6 +4,7 @@
- #include <linux/module.h>
- #include <linux/of.h>
- #include <linux/clk.h>
-+#include <linux/reset.h>
- 
- #include "qcom.h"
- 
-@@ -148,10 +149,35 @@ MODULE_DESCRIPTION("Qualcomm Atheros QCA
+@@ -150,10 +150,39 @@ MODULE_DESCRIPTION("Qualcomm Atheros QCA
  MODULE_AUTHOR("Matus Ujhelyi, Luo Jie");
  MODULE_LICENSE("GPL");
  
@@ -38,6 +33,8 @@ Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
 +	TLMM_AHB_CLK,
 +	CNOC_AHB_CLK,
 +	MDIO_AHB_CLK,
++	MDIO_MASTER_AHB_CLK,
++	SWITCH_CORE_CLK,
 +	PACKAGE_CLK_MAX
 +};
 +
@@ -57,12 +54,14 @@ Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
 +	[TLMM_AHB_CLK] =	"tlmm_ahb",
 +	[CNOC_AHB_CLK] =	"cnoc_ahb",
 +	[MDIO_AHB_CLK] =	"mdio_ahb",
++	[MDIO_MASTER_AHB_CLK] =	"mdio_master_ahb",
++	[SWITCH_CORE_CLK] =	"switch_core",
 +};
 +
  static int __qca8084_set_page(struct mii_bus *bus, u16 sw_addr, u16 page)
  {
  	return __mdiobus_write(bus, QCA8084_HIGH_ADDR_PREFIX | (sw_addr >> 5),
-@@ -853,11 +879,24 @@ static void qca8084_link_change_notify(s
+@@ -858,11 +887,24 @@ static void qca8084_link_change_notify(s
  			       QCA8084_IPG_10_TO_11_EN : 0);
  }
  
@@ -79,7 +78,7 @@ Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
  static int qca8084_phy_package_probe_once(struct phy_device *phydev)
  {
  	int addr[QCA8084_MDIO_DEVICE_NUM] = {0, 1, 2, 3, 4, 5, 6};
- 	struct phy_package_shared *shared = phydev->shared;
+ 	struct device_node *np = phy_package_get_node(phydev);
 -	int ret, clear, set;
 +	struct qca808x_shared_priv *shared_priv;
 +	struct reset_control *rstc;
@@ -88,7 +87,7 @@ Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
  
  	/* Program the MDIO address of PHY and PCS optionally, the MDIO
  	 * address 0-6 is used for PHY and PCS MDIO devices by default.
-@@ -889,17 +928,39 @@ static int qca8084_phy_package_probe_onc
+@@ -893,17 +935,43 @@ static int qca8084_phy_package_probe_onc
  	set |= FIELD_PREP(QCA8084_PCS_ADDR1_MASK, addr[5]);
  	set |= FIELD_PREP(QCA8084_PCS_ADDR2_MASK, addr[6]);
  
@@ -97,18 +96,22 @@ Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
 +	if (ret)
 +		return ret;
 +
-+	shared_priv = shared->priv;
++	shared_priv = phy_package_get_priv(phydev);
 +	for (i = 0; i < ARRAY_SIZE(qca8084_package_clk_name); i++) {
-+		clk = of_clk_get_by_name(shared->np,
-+					 qca8084_package_clk_name[i]);
-+		if (IS_ERR(clk))
-+			return dev_err_probe(&phydev->mdio.dev, PTR_ERR(clk),
-+					     "package clock %s not ready\n",
-+					     qca8084_package_clk_name[i]);
++		clk = of_clk_get_by_name(np, qca8084_package_clk_name[i]);
++		if (IS_ERR(clk)) {
++			if (PTR_ERR(clk) == -EINVAL)
++				clk = NULL;
++			else
++				return dev_err_probe(&phydev->mdio.dev, PTR_ERR(clk),
++						     "package clock %s not ready\n",
++						     qca8084_package_clk_name[i]);
++		}
++
 +		shared_priv->clk[i] = clk;
 +	}
 +
-+	rstc = of_reset_control_get_exclusive(shared->np, NULL);
++	rstc = of_reset_control_get_exclusive(np, NULL);
 +	if (IS_ERR(rstc))
 +		return dev_err_probe(&phydev->mdio.dev, PTR_ERR(rstc),
 +				     "package reset not ready\n");

@@ -1,4 +1,4 @@
-From 5a57611512593212b7fd9c23b4d96486bab6dee3 Mon Sep 17 00:00:00 2001
+From c052b9a4ab869cc54976402b3f9dbdef5bdb9f27 Mon Sep 17 00:00:00 2001
 From: Luo Jie <quic_luoj@quicinc.com>
 Date: Wed, 8 Nov 2023 16:18:02 +0800
 Subject: [PATCH] net: phy: qca808x: Add config_init function for QCA8084
@@ -40,7 +40,7 @@ Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
  MODULE_DESCRIPTION("Qualcomm Atheros QCA808X PHY driver");
  MODULE_AUTHOR("Matus Ujhelyi, Luo Jie");
  MODULE_LICENSE("GPL");
-@@ -660,6 +669,34 @@ static int qca808x_led_polarity_set(stru
+@@ -663,6 +672,34 @@ static int qca808x_led_polarity_set(stru
  			      active_low ? 0 : QCA808X_LED_ACTIVE_HIGH);
  }
  
@@ -75,7 +75,7 @@ Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
  static struct phy_driver qca808x_driver[] = {
  {
  	/* Qualcomm QCA8081 */
-@@ -708,6 +745,7 @@ static struct phy_driver qca808x_driver[
+@@ -711,6 +748,7 @@ static struct phy_driver qca808x_driver[
  	.soft_reset		= qca808x_soft_reset,
  	.cable_test_start	= qca808x_cable_test_start,
  	.cable_test_get_status	= qca808x_cable_test_get_status,

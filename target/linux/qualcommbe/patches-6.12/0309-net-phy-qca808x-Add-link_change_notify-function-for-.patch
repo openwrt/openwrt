@@ -1,4 +1,4 @@
-From d1f2a1810af1833196934977f57607432fda46b4 Mon Sep 17 00:00:00 2001
+From aec49c172cd9c739c1d97ff2d42b9718bb20b609 Mon Sep 17 00:00:00 2001
 From: Luo Jie <quic_luoj@quicinc.com>
 Date: Wed, 8 Nov 2023 18:01:14 +0800
 Subject: [PATCH] net: phy: qca808x: Add link_change_notify function for
@@ -30,7 +30,7 @@ Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
  MODULE_DESCRIPTION("Qualcomm Atheros QCA808X PHY driver");
  MODULE_AUTHOR("Matus Ujhelyi, Luo Jie");
  MODULE_LICENSE("GPL");
-@@ -697,6 +705,49 @@ static int qca8084_config_init(struct ph
+@@ -700,6 +708,49 @@ static int qca8084_config_init(struct ph
  			     QCA8084_MSE_THRESHOLD_2P5G_VAL);
  }
  
@@ -80,7 +80,7 @@ Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
  static struct phy_driver qca808x_driver[] = {
  {
  	/* Qualcomm QCA8081 */
-@@ -746,6 +797,7 @@ static struct phy_driver qca808x_driver[
+@@ -749,6 +800,7 @@ static struct phy_driver qca808x_driver[
  	.cable_test_start	= qca808x_cable_test_start,
  	.cable_test_get_status	= qca808x_cable_test_get_status,
  	.config_init		= qca8084_config_init,
