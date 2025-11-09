@@ -1170,7 +1170,6 @@ struct rtl838x_switch_priv {
 	u32 is_lagmember[57];
 	u64 lagmembers;
 	struct workqueue_struct *wq;
-	struct notifier_block nb;  /* TODO: change to different name */
 	struct notifier_block ne_nb;
 	struct notifier_block fib_nb;
 	bool eee_enabled;
