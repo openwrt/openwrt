@@ -25,16 +25,10 @@ struct __packed fw_header {
 #define PHY_ID_RTL8218D				0x001cc983
 #define PHY_ID_RTL8218E				0x001cc984
 #define PHY_ID_RTL8218B_I			0x001cca40
-#define PHY_ID_RTL8390_GENERIC			0x001ccab0
-#define PHY_ID_RTL8393_I			0x001c8393
-#define PHY_ID_RTL9300_I			0x338002a0
 
 /* These PHYs share the same id (0x001cc981) */
 #define PHY_IS_NOT_RTL821X			0
 #define PHY_IS_RTL8214FC			1
 #define PHY_IS_RTL8214FB			2
 #define PHY_IS_RTL8218B_E			3
-
-/* Registers of the internal SerDes of the RTL8390 */
-#define RTL839X_SDS12_13_XSG0			(0xB800)
 

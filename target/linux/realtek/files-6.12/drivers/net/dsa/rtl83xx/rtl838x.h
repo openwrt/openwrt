@@ -42,14 +42,6 @@
 #define RTL930X_STAT_CTRL			(0x3248)
 #define RTL931X_STAT_CTRL			(0x5720)
 
-/* Registers of the internal Serdes of the 8390 */
-#define RTL8390_SDS0_1_XSG0			(0xA000)
-#define RTL8390_SDS0_1_XSG1			(0xA100)
-#define RTL839X_SDS12_13_XSG0			(0xB800)
-#define RTL839X_SDS12_13_XSG1			(0xB900)
-#define RTL839X_SDS12_13_PWR0			(0xb880)
-#define RTL839X_SDS12_13_PWR1			(0xb980)
-
 /* VLAN registers */
 #define RTL838X_VLAN_CTRL			(0x3A74)
 #define RTL838X_VLAN_PROFILE(idx)		(0x3A88 + ((idx) << 2))
