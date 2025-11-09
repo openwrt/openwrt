@@ -452,21 +452,6 @@ int rtl83xx_lag_add(struct dsa_switch *ds, int group, int port, struct netdev_la
 	u32 algomsk = 0;
 	u32 algoidx = 0;
 
-	if (info->tx_type != NETDEV_LAG_TX_TYPE_HASH) {
-		pr_err("%s: Only mode LACP 802.3ad (4) allowed.\n", __func__);
-		return -EINVAL;
-	}
-
-	if (group >= priv->ds->num_lag_ids) {
-		pr_err("%s: LAG %d invalid.\n", __func__, group);
-		return -EINVAL;
-	}
-
-	if (port >= priv->cpu_port) {
-		pr_err("%s: Port %d invalid.\n", __func__, port);
-		return -EINVAL;
-	}
-
 	for (i = 0; i < priv->ds->num_lag_ids; i++) {
 		if (priv->lags_port_members[i] & BIT_ULL(port))
 			break;
@@ -515,11 +500,6 @@ int rtl83xx_lag_del(struct dsa_switch *ds, int group, int port)
 
 	if (group >= priv->ds->num_lag_ids) {
 		pr_err("%s: LAG %d invalid.\n", __func__, group);
-		return -EINVAL;
-	}
-
-	if (port >= priv->cpu_port) {
-		pr_err("%s: Port %d invalid.\n", __func__, port);
 		return -EINVAL;
 	}
 
