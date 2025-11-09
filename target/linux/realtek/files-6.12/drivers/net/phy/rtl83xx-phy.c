@@ -181,34 +181,6 @@ static void rtl8380_phy_reset(struct phy_device *phydev)
 	phy_modify(phydev, 0, BMCR_RESET, BMCR_RESET);
 }
 
-/* Read the link and speed status of the 2 internal SGMII/1000Base-X
- * ports of the RTL8393 SoC
- */
-static int rtl8393_read_status(struct phy_device *phydev)
-{
-	int offset = 0;
-	int err;
-	int phy_addr = phydev->mdio.addr;
-	u32 v;
-
-	err = genphy_read_status(phydev);
-	if (phy_addr == 49)
-		offset = 0x100;
-
-	if (phydev->link) {
-		phydev->speed = SPEED_100;
-		/* Read SPD_RD_00 (bit 13) and SPD_RD_01 (bit 6) out of the internal
-		 * PHY registers
-		 */
-		v = sw_r32(RTL839X_SDS12_13_XSG0 + offset + 0x80);
-		if (!(v & (1 << 13)) && (v & (1 << 6)))
-			phydev->speed = SPEED_1000;
-		phydev->duplex = DUPLEX_FULL;
-	}
-
-	return err;
-}
-
 static int rtl821x_read_page(struct phy_device *phydev)
 {
 	return __phy_read(phydev, RTL8XXX_PAGE_SELECT);
@@ -279,27 +251,6 @@ static void rtl821x_phy_setup_package_broadcast(struct phy_device *phydev, bool 
 	/* write to 0x0 to register 0x1d on main page 0 */
 	phy_write_paged(phydev, RTL838X_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 	mdelay(1);
-}
-
-static int rtl8390_configure_generic(struct phy_device *phydev)
-{
-	int mac = phydev->mdio.addr;
-	u32 val, phy_id;
-
-	val = phy_read(phydev, 2);
-	phy_id = val << 16;
-	val = phy_read(phydev, 3);
-	phy_id |= val;
-	pr_debug("Phy on MAC %d: %x\n", mac, phy_id);
-
-	/* Read internal PHY ID */
-	phy_write_paged(phydev, 31, 27, 0x0002);
-	val = phy_read_paged(phydev, 31, 28);
-
-	/* Internal RTL8218B, version 2 */
-	phydev_info(phydev, "Detected unknown %x\n", val);
-
-	return 0;
 }
 
 static int rtl821x_prepare_patch(struct phy_device *phydev, int ports)
@@ -828,22 +779,6 @@ static int rtl8380_configure_rtl8214fc(struct phy_device *phydev)
 	return 0;
 }
 
-static int rtl8390_configure_serdes(struct phy_device *phydev)
-{
-	phydev_info(phydev, "Detected internal RTL8390 SERDES\n");
-
-	/* In autoneg state, force link, set SR4_CFG_EN_LINK_FIB1G */
-	sw_w32_mask(0, 1 << 18, RTL839X_SDS12_13_XSG0 + 0x0a);
-
-	/* Disable EEE: Clear FRE16_EEE_RSG_FIB1G, FRE16_EEE_STD_FIB1G,
-	 * FRE16_C1_PWRSAV_EN_FIB1G, FRE16_C2_PWRSAV_EN_FIB1G
-	 * and FRE16_EEE_QUIET_FIB1G
-	 */
-	sw_w32_mask(0x1f << 10, 0, RTL839X_SDS12_13_XSG0 + 0xe0);
-
-	return 0;
-}
-
 static int rtl8214fc_sfp_insert(void *upstream, const struct sfp_eeprom_id *id)
 {
 	__ETHTOOL_DECLARE_LINK_MODE_MASK(support) = { 0, };
@@ -985,33 +920,6 @@ static int rtl8218b_config_init(struct phy_device *phydev)
 	return 0;
 }
 
-static int rtl8393_serdes_probe(struct phy_device *phydev)
-{
-	int addr = phydev->mdio.addr;
-
-	pr_info("%s: id: %d\n", __func__, addr);
-	if (soc_info.family != RTL8390_FAMILY_ID)
-		return -ENODEV;
-
-	if (addr < 24)
-		return -ENODEV;
-
-	return rtl8390_configure_serdes(phydev);
-}
-
-static int rtl8390_serdes_probe(struct phy_device *phydev)
-{
-	int addr = phydev->mdio.addr;
-
-	if (soc_info.family != RTL8390_FAMILY_ID)
-		return -ENODEV;
-
-	if (addr < 24)
-		return -ENODEV;
-
-	return rtl8390_configure_generic(phydev);
-}
-
 static struct phy_driver rtl83xx_phy_driver[] = {
 	{
 		PHY_ID_MATCH_EXACT(PHY_ID_RTL8214C),
@@ -1091,27 +999,6 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.suspend	= genphy_suspend,
 		.write_mmd	= rtl821x_write_mmd,
 		.write_page	= rtl821x_write_page,
-	},
-	{
-		PHY_ID_MATCH_MODEL(PHY_ID_RTL8393_I),
-		.name		= "Realtek RTL8393 SERDES",
-		.features	= PHY_GBIT_FIBRE_FEATURES,
-		.probe		= rtl8393_serdes_probe,
-		.read_page	= rtl821x_read_page,
-		.write_page	= rtl821x_write_page,
-		.suspend	= genphy_suspend,
-		.resume		= genphy_resume,
-		.read_status	= rtl8393_read_status,
-	},
-	{
-		PHY_ID_MATCH_MODEL(PHY_ID_RTL8390_GENERIC),
-		.name		= "Realtek RTL8390 Generic",
-		.features	= PHY_GBIT_FIBRE_FEATURES,
-		.read_page	= rtl821x_read_page,
-		.write_page	= rtl821x_write_page,
-		.probe		= rtl8390_serdes_probe,
-		.suspend	= genphy_suspend,
-		.resume		= genphy_resume,
 	},
 };
 
