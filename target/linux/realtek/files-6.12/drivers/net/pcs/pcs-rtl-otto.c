@@ -608,7 +608,6 @@ static int rtpcs_838x_setup_serdes(struct rtpcs_serdes *sds,
 
 #define RTL839X_SDS12_13_XSG0	0xb800
 
-__maybe_unused
 static void rtpcs_839x_sds_reset(struct rtpcs_serdes *sds)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
@@ -647,6 +646,7 @@ static void rtpcs_839x_sds_reset(struct rtpcs_serdes *sds)
 	rtpcs_sds_write(odd_sds, 0x0, 0x3, 0x7106);
 }
 
+__maybe_unused
 static int rtpcs_839x_init_serdes_common(struct rtpcs_ctrl *ctrl)
 {
 	/* In autoneg state, force link, set SR4_CFG_EN_LINK_FIB1G */
@@ -658,6 +658,53 @@ static int rtpcs_839x_init_serdes_common(struct rtpcs_ctrl *ctrl)
 	 */
 	regmap_write_bits(ctrl->map, RTL839X_SDS12_13_XSG0 + 0xe0, 0x1f << 10, 0);
 
+	return 0;
+}
+
+__maybe_unused
+static int rtpcs_839x_setup_serdes(struct rtpcs_serdes *sds,
+				   phy_interface_t mode)
+{
+	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
+
+	/* Don't touch 5G SerDes, they are already properly configured 
+	 * at startup for QSGMII. Thus, connected PHYs should work out
+	 * of the box.
+	 */
+	if (sds->id != 8 && sds->id != 9 && sds->id != 12 && sds->id != 13)
+		return 0;
+
+	/* The sequence below is only valid for QSGMII. Leave as-is and rely
+	 * on bootloader setup for other modes
+	 */
+	if (mode != PHY_INTERFACE_MODE_QSGMII)
+		return 0;
+
+	rtpcs_sds_write(sds, 0x0a, 0x1c, 0x002a);
+	rtpcs_sds_write(sds, 0x0a, 0x1d, 0x0000);
+	rtpcs_sds_write(sds, 0x0a, 0x1e, 0xa052); // changes to 0x0002
+	rtpcs_sds_write(sds, 0x0a, 0x1f, 0x9a00); // changes to 0xbe00
+	rtpcs_sds_write(sds, 0x0b, 0x00, 0x00f5);
+	rtpcs_sds_write(sds, 0x0b, 0x01, 0xc480);
+	rtpcs_sds_write(sds, 0x0b, 0x05, 0x3340);
+	rtpcs_sds_write(sds, 0x0b, 0x08, 0x803f);
+	rtpcs_sds_write(sds, 0x0b, 0x0c, 0x2bff);
+	rtpcs_sds_write(sds, 0x0b, 0x0d, 0x2bff);
+	rtpcs_sds_write(sds, 0x0b, 0x11, 0x0000);
+
+	if (sds == even_sds) {
+		rtpcs_sds_write(sds, 0x0a, 0x11, 0xf04a);
+		rtpcs_sds_write(sds, 0x0b, 0x04, 0x39ff);
+		rtpcs_sds_write(sds, 0x0b, 0x06, 0x40a2);
+		rtpcs_sds_write(sds, 0x0b, 0x0e, 0x4e10); // changes to 0x0a10
+	} else {
+		rtpcs_sds_write(sds, 0x0a, 0x11, 0xfdab);
+		rtpcs_sds_write(sds, 0x0b, 0x04, 0x93fa);
+		rtpcs_sds_write(sds, 0x0b, 0x06, 0x4280);
+		rtpcs_sds_write(sds, 0x0b, 0x0e, 0x4c50); // changes to 0x0a10
+	}
+
+	rtpcs_839x_sds_reset(sds);
 	return 0;
 }
 
