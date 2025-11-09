@@ -11,7 +11,7 @@
 #include "mt7987a-bananapi-bpi-r4-lite-mikrobus.dtsi"
 
 / {
-	model = "Bananapi BPI-R4-LITE";
+	model = "BananaPi BPI-R4 Lite";
 	compatible = "bananapi,bpi-r4-lite",
 		     "mediatek,mt7987a", "mediatek,mt7987";
 
@@ -23,10 +23,10 @@
 		i2c2 = &imux1_sfp;
 		i2c3 = &imux2_MikroBus;
 		i2c4 = &imux3;
-		led-boot = &sys_led_blue;
-		led-failsafe = &sys_led_blue;
-		led-running = &sys_led_blue;
-		led-upgrade = &sys_led_blue;
+		led-boot = &act_led;
+		led-failsafe = &act_led;
+		led-running = &act_led;
+		led-upgrade = &act_led;
 		serial0 = &uart0;
 	};
 
@@ -58,24 +58,22 @@
 		compatible = "gpio-leds";
 
 		sfp-led {
-			gpios = <&pca9555 11 GPIO_ACTIVE_LOW>;
 			function = "sfp";
 			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&pca9555 11 GPIO_ACTIVE_LOW>;
 		};
 	};
 
 	pwm-leds {
 		compatible = "pwm-leds";
-		status = "okay";
 
 		/* ACT LED on bpi-r4-lite */
-		sys_led_blue: sys-led {
+		act_led: act-led {
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_STATUS;
-			pwms = <&pwm 0 50000>;
+			pwms = <&pwm 0 50000 0>;
 			max-brightness = <255>;
-			active-high;
-			linux,default-trigger = "default-on";
+			default-state = "on";
 		};
 	};
 
@@ -106,22 +104,19 @@
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 		gpio = <&pca9555 9 GPIO_ACTIVE_HIGH>;
-	};
-
-	usb-vbus-regulator {
-		compatible = "regulator-output";
-		vout-supply = <&reg_usb_5v>;
+		enable-active-high;
 	};
 };
 
 &fan {
-	pwms = <&pwm 2 50000>;
+	pwms = <&pwm 2 50000 0>;
 	status = "okay";
 };
 
 &gmac0 {
 	phy-mode = "2500base-x";
 	status = "okay";
+
 	fixed-link {
 		speed = <2500>;
 		full-duplex;
@@ -130,27 +125,10 @@
 };
 
 &gmac1 {
+	openwrt,netdev-name = "wan";
 	phy-mode = "internal";
 	phy-handle = <&phy15>;
 	status = "okay";
-};
-
-&pwm {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pwm_pins>;
-	status = "okay";
-};
-
-&pwm_pins {
-	mux {
-		/*
-		 * - pwm0   : PWM0@PIN13
-		 * - pwm1_0 : PWM@PIN7  (share with JTAG)
-		 * - pwm2_0 : PWM2@PIN12 (share with PCM)
-		 */
-		function = "pwm";
-		groups = "pwm0", "pwm1_0", "pwm2_0";
-	};
 };
 
 &i2c0 {
@@ -161,6 +139,7 @@
 	pca9545@70 {
 		compatible = "nxp,pca9545";
 		reg = <0x70>;
+		vdd-supply = <&reg_3p3v>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 
@@ -180,6 +159,7 @@
 				address-bits = <8>;
 				page-size = <8>;
 				size = <256>;
+				vcc-supply = <&reg_3p3v>;
 			};
 		};
 
@@ -202,18 +182,19 @@
 
 			pca9555: i2c-gpio-expander@20 {
 				compatible = "nxp,pca9555";
+				reg = <0x20>;
+				gpio-controller;
+				#gpio-cells = <2>;
 				interrupt-controller;
 				interrupt-parent = <&pio>;
 				interrupts = <2 IRQ_TYPE_LEVEL_LOW>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				reg = <0x20>;
+				vcc-supply = <&reg_3p3v>;
 			};
 
-			wifi_eeprom@50 {
+			/* on the Wi-Fi card */
+			eeprom@50 {
 				compatible = "atmel,24c02";
 				reg = <0x50>;
-				wp-gpios = <&pca9555 10 GPIO_ACTIVE_LOW>;
 				address-bits = <8>;
 				page-size = <8>;
 				size = <256>;
@@ -225,14 +206,13 @@
 &mdio {
 	/* built-in 2.5G Ethernet PHY */
 	phy15: phy@15 {
-		pinctrl-names = "i2p5gbe-led";
-		pinctrl-0 = <&i2p5gbe_led0_pins>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		reg = <15>;
-		phy-mode = "internal";
+		pinctrl-names = "i2p5gbe-led";
+		pinctrl-0 = <&i2p5gbe_led0_pins>;
 	};
 
-	switch31: switch@31 {
+	switch: switch@31 {
 		compatible = "mediatek,mt7531";
 		reg = <31>;
 		reset-gpios = <&pio 42 GPIO_ACTIVE_HIGH>;
@@ -240,7 +220,6 @@
 		#interrupt-cells = <1>;
 		interrupt-parent = <&pio>;
 		interrupts = <41 IRQ_TYPE_LEVEL_HIGH>;
-		status = "okay";
 	};
 };
 
@@ -256,7 +235,33 @@
 	status = "disabled";
 };
 
+&pwm {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pwm_pins>;
+	status = "okay";
+};
+
+&pwm_pins {
+	mux {
+		/*
+		 * - pwm0   : PWM0@PIN13
+		 * - pwm1_0 : PWM@PIN7  (share with JTAG)
+		 * - pwm2_0 : PWM2@PIN12 (share with PCM)
+		 */
+		function = "pwm";
+		groups = "pwm0", "pwm1_0", "pwm2_0";
+	};
+};
+
+&spi2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi2_flash_pins>;
+	status = "okay";
+};
+
 &ssusb {
+	vusb33-supply = <&reg_3p3v>;
+	vbus-supply = <&reg_usb_5v>;
 	status = "okay";
 
 	/*
@@ -271,37 +276,38 @@
 	// reset-gpios = <&pca9555 8 GPIO_ACTIVE_HIGH>;
 };
 
-&switch31 {
+&switch {
 	ports {
 		#address-cells = <1>;
 		#size-cells = <0>;
 
 		port@0 {
 			reg = <0>;
-			label = "lan0";
+			label = "lan1";
 		};
 
 		port@1 {
 			reg = <1>;
-			label = "lan1";
+			label = "lan2";
 		};
 
 		port@2 {
 			reg = <2>;
-			label = "lan2";
+			label = "lan3";
 		};
 
 		port@3 {
 			reg = <3>;
-			label = "lan3";
+			label = "lan4";
 		};
 
 		port@5 {
 			reg = <5>;
-			label = "sfp0";
-			phy-mode = "2500base-x";
+			label = "sfp";
 			sfp = <&sfp>;
+			phy-mode = "2500base-x";
 			managed = "in-band-status";
+			openwrt,netdev-name = "sfp-lan";
 		};
 
 		port@6 {
@@ -326,12 +332,5 @@
 &uart0 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&uart0_pins>;
-	status = "okay";
-};
-
-&spi2 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&spi2_flash_pins>;
-
 	status = "okay";
 };
