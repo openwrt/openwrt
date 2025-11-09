@@ -613,7 +613,7 @@ void rtl838x_dbgfs_init(struct rtl838x_switch_priv *priv)
 	debugfs_create_u8("id", 0444, port_dir, &priv->cpu_port);
 
 	/* Create entries for LAGs */
-	for (int i = 0; i < priv->n_lags; i++) {
+	for (int i = 0; i < priv->ds->num_lag_ids; i++) {
 		snprintf(lag_name, sizeof(lag_name), "lag.%02d", i);
 		if (priv->family_id == RTL8380_FAMILY_ID)
 			debugfs_create_x32(lag_name, 0644, rtl838x_dir,

@@ -457,7 +457,7 @@ int rtl83xx_lag_add(struct dsa_switch *ds, int group, int port, struct netdev_la
 		return -EINVAL;
 	}
 
-	if (group >= priv->n_lags) {
+	if (group >= priv->ds->num_lag_ids) {
 		pr_err("%s: LAG %d invalid.\n", __func__, group);
 		return -EINVAL;
 	}
@@ -467,11 +467,11 @@ int rtl83xx_lag_add(struct dsa_switch *ds, int group, int port, struct netdev_la
 		return -EINVAL;
 	}
 
-	for (i = 0; i < priv->n_lags; i++) {
+	for (i = 0; i < priv->ds->num_lag_ids; i++) {
 		if (priv->lags_port_members[i] & BIT_ULL(port))
 			break;
 	}
-	if (i != priv->n_lags) {
+	if (i != priv->ds->num_lag_ids) {
 		pr_err("%s: Port %d already member of LAG %d.\n", __func__, port, i);
 		return -ENOSPC;
 	}
@@ -513,7 +513,7 @@ int rtl83xx_lag_del(struct dsa_switch *ds, int group, int port)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
-	if (group >= priv->n_lags) {
+	if (group >= priv->ds->num_lag_ids) {
 		pr_err("%s: LAG %d invalid.\n", __func__, group);
 		return -EINVAL;
 	}
@@ -702,7 +702,7 @@ static int rtl83xx_handle_changeupper(struct rtl838x_switch_priv *priv,
 
 	mutex_lock(&priv->reg_mutex);
 
-	for (i = 0; i < priv->n_lags; i++) {
+	for (i = 0; i < priv->ds->num_lag_ids; i++) {
 		if ((!priv->lag_devs[i]) || (priv->lag_devs[i] == upper))
 			break;
 	}
@@ -1563,7 +1563,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->ds->num_ports = 29;
 		priv->fib_entries = 8192;
 		rtl8380_get_version(priv);
-		priv->n_lags = 8;
+		priv->ds->num_lag_ids = 8;
 		priv->l2_bucket_size = 4;
 		priv->n_pie_blocks = 12;
 		priv->port_ignore = 0x1f;
@@ -1579,7 +1579,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->ds->num_ports = 53;
 		priv->fib_entries = 16384;
 		rtl8390_get_version(priv);
-		priv->n_lags = 16;
+		priv->ds->num_lag_ids = 16;
 		priv->l2_bucket_size = 4;
 		priv->n_pie_blocks = 18;
 		priv->port_ignore = 0x3f;
@@ -1598,7 +1598,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		 * be constructed. For now, just set it to a static 'A'
 		 */
 		priv->version = RTL8390_VERSION_A;
-		priv->n_lags = 16;
+		priv->ds->num_lag_ids = 16;
 		sw_w32(1, RTL930X_ST_CTRL);
 		priv->l2_bucket_size = 8;
 		priv->n_pie_blocks = 16;
@@ -1618,7 +1618,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		 * be constructed. For now, just set it to a static 'A'
 		 */
 		priv->version = RTL8390_VERSION_A;
-		priv->n_lags = 16;
+		priv->ds->num_lag_ids = 16;
 		sw_w32(1, RTL931x_ST_CTRL);
 		priv->l2_bucket_size = 8;
 		priv->n_pie_blocks = 16;

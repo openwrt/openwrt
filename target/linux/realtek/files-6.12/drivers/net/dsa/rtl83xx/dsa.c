@@ -2407,7 +2407,7 @@ static int rtl83xx_port_lag_join(struct dsa_switch *ds,
 
 	mutex_lock(&priv->reg_mutex);
 
-	for (i = 0; i < priv->n_lags; i++) {
+	for (i = 0; i < priv->ds->num_lag_ids; i++) {
 		if ((!priv->lag_devs[i]) || (priv->lag_devs[i] == lag.dev))
 			break;
 	}
@@ -2446,7 +2446,7 @@ static int rtl83xx_port_lag_leave(struct dsa_switch *ds, int port,
 	struct rtl838x_switch_priv *priv = ds->priv;
 
 	mutex_lock(&priv->reg_mutex);
-	for (i = 0; i < priv->n_lags; i++) {
+	for (i = 0; i < priv->ds->num_lag_ids; i++) {
 		if (priv->lags_port_members[i] & BIT_ULL(port)) {
 			group = i;
 			break;
