@@ -36,7 +36,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
  
 +	/* Don't parse any failsafe / backup partitions */
 +	if (strcmp(mtd->name, "firmware"))
-+		return -EINVAL;
++		return -ENOENT;
 +
  	parts = kcalloc(TRX_PARSER_MAX_PARTS, sizeof(struct mtd_partition),
  			GFP_KERNEL);
