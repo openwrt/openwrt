@@ -604,6 +604,24 @@ static int rtpcs_838x_setup_serdes(struct rtpcs_serdes *sds,
 	return 0;
 }
 
+/* RTL839X */
+
+#define RTL839X_SDS12_13_XSG0	0xb800
+
+static int rtpcs_839x_init_serdes_common(struct rtpcs_ctrl *ctrl)
+{
+	/* In autoneg state, force link, set SR4_CFG_EN_LINK_FIB1G */
+	regmap_write_bits(ctrl->map, RTL839X_SDS12_13_XSG0 + 0x0a, BIT(18), BIT(18));
+
+	/* Disable EEE: Clear FRE16_EEE_RSG_FIB1G, FRE16_EEE_STD_FIB1G,
+	 * FRE16_C1_PWRSAV_EN_FIB1G, FRE16_C2_PWRSAV_EN_FIB1G
+	 * and FRE16_EEE_QUIET_FIB1G
+	 */
+	regmap_write_bits(ctrl->map, RTL839X_SDS12_13_XSG0 + 0xe0, 0x1f << 10, 0);
+
+	return 0;
+}
+
 /* RTL930X */
 
 /* The access registers for SDS_MODE_SEL and the LSB for each SDS within */
