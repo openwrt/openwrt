@@ -836,7 +836,6 @@ static void rtpcs_839x_sds_init(struct rtpcs_serdes *sds)
 	rtpcs_sds_write_bits(sds, 0xa, 0x13, 8, 5, 0x0008);
 }
 
-__maybe_unused
 static int rtpcs_839x_init_serdes_common(struct rtpcs_ctrl *ctrl)
 {
 	for (int sds_id = 0; sds_id < ctrl->cfg->serdes_count; sds_id++)
@@ -848,7 +847,6 @@ static int rtpcs_839x_init_serdes_common(struct rtpcs_ctrl *ctrl)
 	return 0;
 }
 
-__maybe_unused
 static int rtpcs_839x_setup_serdes(struct rtpcs_serdes *sds,
 				   phy_interface_t if_mode)
 {
@@ -3687,6 +3685,8 @@ static const struct rtpcs_config rtpcs_839x_cfg = {
 	.mac_tx_pause_sts	= RTPCS_839X_MAC_TX_PAUSE_STS,
 	.serdes_count		= RTPCS_839X_SERDES_CNT,
 	.pcs_ops		= &rtpcs_839x_pcs_ops,
+	.init_serdes_common	= rtpcs_839x_init_serdes_common,
+	.setup_serdes		= rtpcs_839x_setup_serdes,
 };
 
 static const struct phylink_pcs_ops rtpcs_930x_pcs_ops = {
