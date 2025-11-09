@@ -63,6 +63,8 @@
 #define RTPCS_838X_INT_MODE_CTRL		0x005c
 #define RTPCS_838X_PLL_CML_CTRL			0x0ff8
 
+#define RTPCS_839X_MAC_SERDES_IF_CTRL		0x0008
+
 #define RTPCS_93XX_MAC_LINK_SPD_BITS		4
 
 #define RTL93XX_MODEL_NAME_INFO			(0x0004)
@@ -643,7 +645,6 @@ static int rtpcs_838x_setup_serdes(struct rtpcs_serdes *sds,
 
 /* RTL839X */
 
-__maybe_unused
 static void rtpcs_839x_sds_reset(struct rtpcs_serdes *sds)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
@@ -680,6 +681,71 @@ static void rtpcs_839x_sds_reset(struct rtpcs_serdes *sds)
 	rtpcs_sds_write(odd_sds, 0x0, 0x3, 0x7146);
 	msleep(100);
 	rtpcs_sds_write(odd_sds, 0x0, 0x3, 0x7106);
+}
+
+static int rtpcs_839x_sds_set_mode(struct rtpcs_serdes *sds,
+				   enum rtpcs_sds_mode hw_mode)
+{
+	u32 mode_val, reg, shift;
+
+	switch (hw_mode) {
+	case RTPCS_SDS_MODE_OFF:
+		mode_val = 0x0;
+		break;
+/*
+	case RTPCS_SDS_MODE_100BASEX:
+		mode_val = 0x8;
+		break;
+	case RTPCS_SDS_MODE_1000BASEX:
+	case RTPCS_SDS_MODE_SGMII:
+		mode_val = 0x7;
+		break;
+*/
+	case RTPCS_SDS_MODE_QSGMII:
+		mode_val = 0x6;
+		break;
+	default:
+		return -ENOTSUPP;
+	}
+
+	reg = RTPCS_839X_MAC_SERDES_IF_CTRL + (sds->id / 8) * 4;
+	shift = (sds->id % 8) * 4;
+	return regmap_write_bits(sds->ctrl->map, reg, 0xf << shift,
+				 mode_val << shift);
+}
+
+__maybe_unused
+static int rtpcs_839x_init_serdes_common(struct rtpcs_ctrl *ctrl)
+{
+	return 0;
+}
+
+__maybe_unused
+static int rtpcs_839x_setup_serdes(struct rtpcs_serdes *sds,
+				   phy_interface_t if_mode)
+{
+	enum rtpcs_sds_mode hw_mode;
+	int ret;
+
+	/* Don't touch 5G SerDes, they are already properly configured
+	 * at startup for QSGMII. Thus, connected PHYs should work out
+	 * of the box.
+	 */
+	if (sds->id != 8 && sds->id != 9 && sds->id != 12 && sds->id != 13)
+		return 0;
+
+	ret = rtpcs_sds_determine_hw_mode(sds, if_mode, &hw_mode);
+	if (ret < 0)
+		return ret;
+
+	ret = rtpcs_839x_sds_set_mode(sds, hw_mode);
+	if (ret < 0)
+		return ret;
+
+	sds->hw_mode = hw_mode;
+
+	rtpcs_839x_sds_reset(sds);
+	return 0;
 }
 
 /* RTL930X */
