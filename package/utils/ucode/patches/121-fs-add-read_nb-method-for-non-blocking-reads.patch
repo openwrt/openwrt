@@ -10,7 +10,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/lib/fs.c
 +++ b/lib/fs.c
-@@ -674,6 +674,116 @@ uc_fs_read(uc_vm_t *vm, size_t nargs)
+@@ -675,6 +675,116 @@ uc_fs_read(uc_vm_t *vm, size_t nargs)
  }
  
  /**
@@ -127,7 +127,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   * Writes a chunk of data to the file handle.
   *
   * In case the given data is not a string, it is converted to a string before
-@@ -2910,6 +3020,7 @@ static const uc_function_list_t proc_fns
+@@ -2991,6 +3101,7 @@ static const uc_function_list_t proc_fns
  
  static const uc_function_list_t file_fns[] = {
  	{ "read",		uc_fs_read },
