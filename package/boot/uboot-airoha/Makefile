@@ -13,7 +13,6 @@ include $(INCLUDE_DIR)/host-build.mk
 
 define U-Boot/Default
   BUILD_TARGET:=airoha
-  HIDDEN:=1
   FIP_COMPRESS:=1
 endef
 
