@@ -22,7 +22,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -15,8 +15,9 @@ config MEDIATEK_GE_PHY
+@@ -320,8 +320,9 @@ config MEDIATEK_GE_PHY
  
  config MEDIATEK_GE_SOC_PHY
  	tristate "MediaTek SoC Ethernet PHYs"
@@ -36,9 +36,9 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
 --- a/drivers/net/phy/mediatek-ge-soc.c
 +++ b/drivers/net/phy/mediatek-ge-soc.c
-@@ -10,8 +10,11 @@
- 
- #include "mtk.h"
+@@ -8,8 +8,11 @@
+ #include <linux/phy.h>
+ #include <linux/regmap.h>
  
 +#define MTK_PHY_MAX_LEDS			2
 +
@@ -48,7 +48,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  #define MTK_EXT_PAGE_ACCESS			0x1f
  #define MTK_PHY_PAGE_STANDARD			0x0000
-@@ -1405,6 +1408,53 @@ static int mt7981_phy_probe(struct phy_d
+@@ -1502,6 +1505,53 @@ static int mt7981_phy_probe(struct phy_d
  	return mt798x_phy_calibration(phydev);
  }
  
@@ -102,7 +102,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static struct phy_driver mtk_socphy_driver[] = {
  	{
  		PHY_ID_MATCH_EXACT(MTK_GPHY_ID_MT7981),
-@@ -1440,6 +1490,17 @@ static struct phy_driver mtk_socphy_driv
+@@ -1537,6 +1587,17 @@ static struct phy_driver mtk_socphy_driv
  		.led_hw_control_set = mt798x_phy_led_hw_control_set,
  		.led_hw_control_get = mt798x_phy_led_hw_control_get,
  	},
@@ -120,7 +120,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  };
  
  module_phy_driver(mtk_socphy_driver);
-@@ -1447,6 +1508,7 @@ module_phy_driver(mtk_socphy_driver);
+@@ -1544,6 +1605,7 @@ module_phy_driver(mtk_socphy_driver);
  static struct mdio_device_id __maybe_unused mtk_socphy_tbl[] = {
  	{ PHY_ID_MATCH_EXACT(MTK_GPHY_ID_MT7981) },
  	{ PHY_ID_MATCH_EXACT(MTK_GPHY_ID_MT7988) },

@@ -19,7 +19,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/pci/controller/pcie-mediatek-gen3.c
 +++ b/drivers/pci/controller/pcie-mediatek-gen3.c
-@@ -925,6 +925,12 @@ static int mtk_pcie_en7581_power_up(stru
+@@ -932,6 +932,12 @@ static int mtk_pcie_en7581_power_up(stru
  	size = lower_32_bits(resource_size(entry->res));
  	regmap_write(pbus_regmap, args[1], GENMASK(31, __fls(size)));
  

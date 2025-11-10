@@ -30,7 +30,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/sound/soc/Kconfig
 +++ b/sound/soc/Kconfig
-@@ -86,6 +86,7 @@ config SND_SOC_ACPI
+@@ -78,6 +78,7 @@ config SND_SOC_ACPI
  
  # All the supported SoCs
  source "sound/soc/adi/Kconfig"
@@ -40,7 +40,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  source "sound/soc/atmel/Kconfig"
 --- a/sound/soc/Makefile
 +++ b/sound/soc/Makefile
-@@ -40,6 +40,7 @@ obj-$(CONFIG_SND_SOC)	+= codecs/
+@@ -36,6 +36,7 @@ obj-$(CONFIG_SND_SOC)	+= codecs/
  obj-$(CONFIG_SND_SOC)	+= generic/
  obj-$(CONFIG_SND_SOC)	+= apple/
  obj-$(CONFIG_SND_SOC)	+= adi/

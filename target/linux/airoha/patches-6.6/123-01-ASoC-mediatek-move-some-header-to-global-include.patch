@@ -62,7 +62,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  int mtk_afe_combine_sub_dai(struct mtk_base_afe *afe)
 --- a/sound/soc/mediatek/mt2701/mt2701-afe-pcm.c
 +++ b/sound/soc/mediatek/mt2701/mt2701-afe-pcm.c
-@@ -16,8 +16,8 @@
+@@ -18,8 +18,8 @@
  
  #include "mt2701-afe-common.h"
  #include "mt2701-afe-clock-ctrl.h"
@@ -233,7 +233,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +#include <sound/mediatek/mtk-afe-platform-driver.h>
  #include "../common/mtk-dsp-sof-common.h"
  #include "../common/mtk-soc-card.h"
- #include "../common/mtk-soundcard-driver.h"
+ #include "mt8195-afe-clk.h"
 --- /dev/null
 +++ b/include/sound/mediatek/mtk-afe-fe-dai.h
 @@ -0,0 +1,53 @@
