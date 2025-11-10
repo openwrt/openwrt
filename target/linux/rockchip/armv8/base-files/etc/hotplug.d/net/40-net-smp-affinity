@@ -53,7 +53,6 @@ friendlyarm,nanopi-r4s-enterprise|\
 friendlyarm,nanopi-r6c|\
 friendlyarm,nanopi-r76s|\
 friendlyarm,nanopc-t6|\
-radxa,e52c|\
 radxa,rock-5-itx|\
 radxa,rock-5t)
 	set_interface_core 10 "eth0"
@@ -73,6 +72,10 @@ radxa,rock-5a|\
 radxa,rock-5c)
 	set_interface_core 10 "eth1"
 	set_interface_core 20 "eth2"
+	;;
+radxa,e52c)
+	set_interface_core 10 "lan"
+	set_interface_core 20 "wan"
 	;;
 esac
 
