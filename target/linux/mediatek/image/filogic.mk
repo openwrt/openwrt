@@ -1616,6 +1616,32 @@ define Device/jdcloud_re-cp-03
 endef
 TARGET_DEVICES += jdcloud_re-cp-03
 
+define Device/keenetic_kn-1812-common
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7992-firmware kmod-usb3 \
+		mt7988-2p5g-phy-firmware mt7988-wo-firmware
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 6144k
+  IMAGE_SIZE := 229888k
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | \
+	append-squashfs4-fakeroot
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | \
+	append-ubi | check-size | zyimage -d $$(ZYIMAGE_ID) -v "$$(DEVICE_MODEL)"
+endef
+
+define Device/keenetic_kn-1812
+  DEVICE_VENDOR := Keenetic
+  DEVICE_MODEL := KN-1812
+  DEVICE_DTS := mt7988d-keenetic-kn-1812
+  ZYIMAGE_ID := 0x801812
+  $(call Device/keenetic_kn-1812-common)
+endef
+TARGET_DEVICES += keenetic_kn-1812
+
 define Device/keenetic_kn-3711
   DEVICE_VENDOR := Keenetic
   DEVICE_MODEL := KN-3711
@@ -2029,6 +2055,15 @@ define Device/netcore_n60-pro
   ARTIFACT/bl31-uboot.fip := mt7986-bl31-uboot netcore_n60-pro
 endef
 TARGET_DEVICES += netcore_n60-pro
+
+define Device/netcraze_nc-1812
+  DEVICE_VENDOR := Netcraze
+  DEVICE_MODEL := NC-1812
+  DEVICE_DTS := mt7988d-netcraze-nc-1812
+  ZYIMAGE_ID := 0xC01812
+  $(call Device/keenetic_kn-1812-common)
+endef
+TARGET_DEVICES += netcraze_nc-1812
 
 define Device/netgear_eax17
   DEVICE_VENDOR := NETGEAR
