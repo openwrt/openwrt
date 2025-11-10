@@ -174,7 +174,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		for (i = 1; i < num_ids; i++) {
 --- a/drivers/net/phy/realtek/realtek_main.c
 +++ b/drivers/net/phy/realtek/realtek_main.c
-@@ -1315,13 +1315,15 @@ static bool rtlgen_supports_mmd(struct p
+@@ -1320,13 +1320,15 @@ static bool rtlgen_supports_mmd(struct p
  	return val > 0;
  }
  
@@ -192,7 +192,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  {
  	return phydev->phy_id == RTL_GENERIC_PHYID &&
  	       rtlgen_supports_2_5gbps(phydev) &&
-@@ -1337,32 +1339,38 @@ static int rtlgen_is_c45_match(struct ph
+@@ -1342,32 +1344,38 @@ static int rtlgen_is_c45_match(struct ph
  		return !is_c45 && (id == phydev->phy_id);
  }
  
@@ -237,7 +237,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  {
  	if (phydev->is_c45)
  		return false;
-@@ -1381,7 +1389,8 @@ static int rtl_internal_nbaset_match_phy
+@@ -1386,7 +1394,8 @@ static int rtl_internal_nbaset_match_phy
  	return rtlgen_supports_2_5gbps(phydev) && !rtlgen_supports_mmd(phydev);
  }
  
