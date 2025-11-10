@@ -30,6 +30,7 @@ define Trusted-Firmware-A/Default
   BOOT_DEVICE:=
   DDR3_FLYBY:=
   DDR3_FREQ_1866:=
+  DDR4_4BG_MODE:=
   DDR_TYPE:=
   NAND_TYPE:=
   BOARD_QFN:=
@@ -410,6 +411,14 @@ define Trusted-Firmware-A/mt7987-emmc-comb
   DRAM_USE_COMB:=1
 endef
 
+define Trusted-Firmware-A/mt7987-emmc-ddr4-4bg
+  NAME:=MediaTek MT7987 (eMMC, DDR4 4GB)
+  BOOT_DEVICE:=emmc
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7987
+  DDR4_4BG_MODE:=1
+endef
+
 define Trusted-Firmware-A/mt7987-nor-comb
   NAME:=MediaTek MT7987 (NOR)
   BOOT_DEVICE:=nor
@@ -424,6 +433,14 @@ define Trusted-Firmware-A/mt7987-sdmmc-comb
   BUILD_SUBTARGET:=filogic
   PLAT:=mt7987
   DRAM_USE_COMB:=1
+endef
+
+define Trusted-Firmware-A/mt7987-sdmmc-ddr4-4bg
+  NAME:=MediaTek MT7987 (SD card, DDR4 4GB)
+  BOOT_DEVICE:=sdmmc
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7987
+  DDR4_4BG_MODE:=1
 endef
 
 define Trusted-Firmware-A/mt7987-spim-nand0-ubi-comb
@@ -670,8 +687,10 @@ TFA_TARGETS:= \
 	mt7986-spim-nand-ubi-ddr4 \
 	mt7986-spim-nand-4k-ddr4 \
 	mt7987-emmc-comb \
+	mt7987-emmc-ddr4-4bg \
 	mt7987-nor-comb \
 	mt7987-sdmmc-comb \
+	mt7987-sdmmc-ddr4-4bg \
 	mt7987-spim-nand0-ubi-comb \
 	mt7987-spim-nand2-ubi-comb \
 	mt7987-ram-comb \
@@ -705,6 +724,7 @@ TFA_MAKE_FLAGS += \
 	HAVE_DRAM_OBJ_FILE=yes \
 	$(if $(DDR3_FLYBY),DDR3_FLYBY=1) \
 	$(if $(DDR3_FREQ_1866),DDR3_FREQ_1866=1) \
+	$(if $(DDR4_4BG_MODE),DDR4_4BG_MODE=1) \
 	$(if $(DRAM_USE_COMB),DRAM_USE_COMB=1) \
 	$(if $(RAM_BOOT_UART_DL),RAM_BOOT_UART_DL=1) \
 	$(if $(USE_UBI),UBI=1 $(if $(findstring mt7622,$(PLAT)),OVERRIDE_UBI_START_ADDR=0x80000)) \
