@@ -103,6 +103,12 @@ iptime,ax3000sm)
 iptime,ax7800m-6e)
 	ucidef_set_led_netdev "wan" "wan" "mdio-bus:06:blue:wan" "eth1" "link tx rx"
 	;;
+keenetic,kn-1812|\
+netcraze,nc-1812)
+	ucidef_set_led_netdev "wlan2g" "WLAN2G" "green:indicator-1" "phy0.0-ap0"
+	ucidef_set_led_netdev "wlan5g" "WLAN5G" "green:wlan" "phy0.1-ap0"
+	ucidef_set_led_netdev "internet" "internet" "green:wan-online" "wan" "link"
+	;;
 mercusys,mr80x-v3)
 	ucidef_set_led_netdev "lan1" "lan-1" "green:lan-1" "lan1" "link tx rx"
 	ucidef_set_led_netdev "lan2" "lan-2" "green:lan-2" "lan2" "link tx rx"
