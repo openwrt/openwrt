@@ -3,6 +3,12 @@
 
 #include "ipq8174-mx4x00.dtsi"
 
+/ {
+	aliases {
+		label-mac-device = &dp2;
+	};
+};
+
 &tlmm {
 	iot_pins: iot-state {
 		recovery-pins {
@@ -238,23 +244,31 @@
 &dp2 {
 	status = "okay";
 	phy-handle = <&qca8075_1>;
+	nvmem-cells = <&hw_mac_addr 0>;
+	nvmem-cell-names = "mac-address";
 	label = "wan";
 };
 
 &dp3 {
 	status = "okay";
 	phy-handle = <&qca8075_2>;
+	nvmem-cells = <&hw_mac_addr 0>;
+	nvmem-cell-names = "mac-address";
 	label = "lan1";
 };
 
 &dp4 {
 	status = "okay";
 	phy-handle = <&qca8075_3>;
+	nvmem-cells = <&hw_mac_addr 0>;
+	nvmem-cell-names = "mac-address";
 	label = "lan2";
 };
 
 &dp5 {
 	status = "okay";
 	phy-handle = <&qca8075_4>;
+	nvmem-cells = <&hw_mac_addr 0>;
+	nvmem-cell-names = "mac-address";
 	label = "lan3";
 };
