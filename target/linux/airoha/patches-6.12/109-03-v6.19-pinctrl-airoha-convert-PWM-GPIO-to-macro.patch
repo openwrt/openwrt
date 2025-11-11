@@ -1,7 +1,7 @@
-From 83c79d127c610063e1b86c3f7f8d5e0145ffe9c6 Mon Sep 17 00:00:00 2001
+From 1552ad5d649cff9d170e5bc1d13ab1487333b4b7 Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
-Date: Sun, 25 May 2025 20:43:47 +0200
-Subject: [PATCH 4/5] pinctrl: airoha: convert PWM GPIO to macro
+Date: Fri, 7 Nov 2025 00:57:06 +0100
+Subject: [PATCH 3/5] pinctrl: airoha: convert PWM GPIO to macro
 
 The PWM GPIO struct definition follow the same pattern for every GPIO
 pin hence it can be converted to a macro.
@@ -10,6 +10,7 @@ Create 2 macro one for normal mux and one for ext mux and convert all
 the entry to these new macro to reduce code size.
 
 Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
 ---
  drivers/pinctrl/mediatek/pinctrl-airoha.c | 465 ++++------------------
  1 file changed, 68 insertions(+), 397 deletions(-)
@@ -488,4 +489,4 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +	AIROHA_PINCTRL_PWM_EXT("gpio47", GPIO47_FLASH_MODE_CFG),
  };
  
- #define AIROHA_PINCTRL_PHY_LED(gpio, mux_val, map_mask, map_val)	\
+ #define AIROHA_PINCTRL_PHY_LED0(gpio, mux_val, map_mask, map_val)	\
