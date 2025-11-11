@@ -2336,7 +2336,7 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_ctrl *ctrl, int sds,
 	 * For now disable all USXGMII SerDes handling and rely on U-Boot setup.
 	 */
 	if (mode == PHY_INTERFACE_MODE_USXGMII)
-		return -ENOTSUPP;
+		return 0;
 
 	pr_info("%s: set sds %d to mode %d\n", __func__, sds, mode);
 	val = rtpcs_sds_read_bits(ctrl, sds, 0x1F, 0x9, 11, 6);
