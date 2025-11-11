@@ -408,7 +408,6 @@ define Trusted-Firmware-A/mt7987-emmc-comb
   BOOT_DEVICE:=emmc
   BUILD_SUBTARGET:=filogic
   PLAT:=mt7987
-  DRAM_USE_COMB:=1
 endef
 
 define Trusted-Firmware-A/mt7987-emmc-ddr4-4bg
@@ -424,7 +423,6 @@ define Trusted-Firmware-A/mt7987-nor-comb
   BOOT_DEVICE:=nor
   BUILD_SUBTARGET:=filogic
   PLAT:=mt7987
-  DRAM_USE_COMB:=1
 endef
 
 define Trusted-Firmware-A/mt7987-sdmmc-comb
@@ -432,7 +430,6 @@ define Trusted-Firmware-A/mt7987-sdmmc-comb
   BOOT_DEVICE:=sdmmc
   BUILD_SUBTARGET:=filogic
   PLAT:=mt7987
-  DRAM_USE_COMB:=1
 endef
 
 define Trusted-Firmware-A/mt7987-sdmmc-ddr4-4bg
@@ -448,7 +445,6 @@ define Trusted-Firmware-A/mt7987-spim-nand0-ubi-comb
   BOOT_DEVICE:=spim-nand
   BUILD_SUBTARGET:=filogic
   PLAT:=mt7987
-  DRAM_USE_COMB:=1
   USE_UBI:=1
   SPIM_CTRL:=0
 endef
@@ -458,7 +454,6 @@ define Trusted-Firmware-A/mt7987-spim-nand2-ubi-comb
   BOOT_DEVICE:=spim-nand
   BUILD_SUBTARGET:=filogic
   PLAT:=mt7987
-  DRAM_USE_COMB:=1
   USE_UBI:=1
   SPIM_CTRL:=2
 endef
@@ -468,7 +463,6 @@ define Trusted-Firmware-A/mt7987-ram-comb
   BOOT_DEVICE:=ram
   BUILD_SUBTARGET:=filogic
   PLAT:=mt7987
-  DRAM_USE_COMB:=1
   RAM_BOOT_UART_DL:=1
   HIDDEN:=
   DEFAULT:=TARGET_mediatek_filogic
