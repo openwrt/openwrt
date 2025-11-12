@@ -649,7 +649,7 @@ define Device/bananapi_bpi-r4-lite
   DEVICE_DTC_FLAGS := --pad 4096
   DEVICE_DTS_DIR := ../dts
   DEVICE_DTS_LOADADDR := 0x4ff00000
-  DEVICE_PACKAGES := kmod-eeprom-at24 \
+  DEVICE_PACKAGES := mt7987-2p5g-phy-firmware kmod-eeprom-at24 \
 		     kmod-gpio-pca953x kmod-i2c-mux-pca954x kmod-rtc-pcf8563 \
 		     kmod-sfp e2fsprogs mkf2fs
   BLOCKSIZE := 128k
@@ -1740,7 +1740,7 @@ define Device/mediatek_mt7987a-rfb
   DEVICE_DTS_DIR := ../dts
   DEVICE_DTC_FLAGS := --pad 4096
   DEVICE_DTS_LOADADDR := 0x4ff00000
-  DEVICE_PACKAGES := kmod-sfp
+  DEVICE_PACKAGES := mt7987-2p5g-phy-firmware kmod-sfp
   KERNEL_LOADADDR := 0x40000000
   KERNEL := kernel-bin | gzip
   KERNEL_INITRAMFS := kernel-bin | lzma | \
