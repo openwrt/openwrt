@@ -30,7 +30,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #include <net/page_pool/helpers.h>
  
  #include "mtk_eth_soc.h"
-@@ -1404,119 +1407,244 @@ static void mtk_tx_set_dma_desc(struct n
+@@ -1404,119 +1407,251 @@ static void mtk_tx_set_dma_desc(struct n
  		mtk_tx_set_dma_desc_v1(dev, txd, info);
  }
  
@@ -148,9 +148,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	struct sk_buff *cur_skb, *next_skb;
  	int queue = skb_get_queue_mapping(skb);
 -	int k = 0;
++	int i, frag_size = skb_headlen(skb);
++	bool gso_v4, gso_fraglist;
 +	int offset = 0;
-+	int i, frag_size;
-+	bool gso_v4;
  
  	txq = netdev_get_tx_queue(dev, queue);
  	itxd = ring->next_free;
@@ -164,6 +164,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	next_skb = skb_shinfo(skb)->frag_list;
 +	mtk_tx_map_set_txd(&state, ring, soc, itxd);
 +	gso_v4 = skb_shinfo(skb)->gso_type & SKB_GSO_TCPV4;
++	gso_fraglist = skb_shinfo(skb)->gso_type & SKB_GSO_FRAGLIST;
  
 -	txd_info.addr = dma_map_single(eth->dma_dev, skb->data, txd_info.size,
 -				       DMA_TO_DEVICE);
@@ -180,17 +181,35 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	};
  
 -	mtk_tx_set_dma_desc(dev, itxd, &txd_info);
-+	offset = 0;
-+	frag_size = skb_headlen(cur_skb);
 +	if (cur_skb != skb) {
 +		struct tcphdr *th, *th2;
-+
+ 
+-	itx_buf->mac_id = mac->id;
+-	setup_tx_buf(eth, itx_buf, itxd_pdma, txd_info.addr, txd_info.size,
+-		     k++);
+-
+-	/* TX SG offload */
+-	txd = itxd;
+-	txd_pdma = qdma_to_pdma(ring, txd);
+-
+-	for (i = 0; i < skb_shinfo(skb)->nr_frags; i++) {
+-		skb_frag_t *frag = &skb_shinfo(skb)->frags[i];
+-		unsigned int offset = 0;
+-		int frag_size = skb_frag_size(frag);
 +		if (skb_cow_head(cur_skb, header_len))
 +			goto err_dma;
-+
+ 
+-		while (frag_size) {
+-			bool new_desc = true;
 +		memcpy(cur_skb->data - header_len, skb->data,
 +		       skb_network_offset(skb));
-+
+ 
+-			if (MTK_HAS_CAPS(soc->caps, MTK_QDMA) ||
+-			    (i & 0x1)) {
+-				txd = mtk_qdma_phys_to_virt(ring, txd->txd2);
+-				txd_pdma = qdma_to_pdma(ring, txd);
+-				if (txd == ring->last_free)
+-					goto err_dma;
 +		th = tcp_hdr(cur_skb);
 +		th2 = tcp_hdr(skb);
 +		if (gso_v4) {
@@ -205,47 +224,28 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +			struct ipv6hdr *iph = ipv6_hdr(cur_skb);
 +			struct ipv6hdr *iph2 = ipv6_hdr(skb);
  
--	itx_buf->mac_id = mac->id;
--	setup_tx_buf(eth, itx_buf, itxd_pdma, txd_info.addr, txd_info.size,
--		     k++);
--
--	/* TX SG offload */
--	txd = itxd;
--	txd_pdma = qdma_to_pdma(ring, txd);
--
--	for (i = 0; i < skb_shinfo(skb)->nr_frags; i++) {
--		skb_frag_t *frag = &skb_shinfo(skb)->frags[i];
--		unsigned int offset = 0;
--		int frag_size = skb_frag_size(frag);
+-				n_desc++;
+-			} else {
+-				new_desc = false;
+-			}
 +			mtk_tx_update_ip6addr(skb, iph, th, &iph->saddr,
 +					      &iph2->saddr);
 +			mtk_tx_update_ip6addr(skb, iph, th, &iph->daddr,
 +					      &iph2->daddr);
 +		}
- 
--		while (frag_size) {
--			bool new_desc = true;
++
 +		mtk_tx_update_port(skb, th, &th->source, th2->source);
 +		mtk_tx_update_port(skb, th, &th->dest, th2->dest);
- 
--			if (MTK_HAS_CAPS(soc->caps, MTK_QDMA) ||
--			    (i & 0x1)) {
--				txd = mtk_qdma_phys_to_virt(ring, txd->txd2);
--				txd_pdma = qdma_to_pdma(ring, txd);
--				if (txd == ring->last_free)
--					goto err_dma;
++
 +		offset = -header_len;
 +		frag_size += header_len;
-+	} else if (next_skb) {
++	} else if (next_skb && gso_fraglist) {
 +		unsigned int ip_len = skb_pagelen(skb) - skb_network_offset(skb);
 +		if (gso_v4) {
 +			struct iphdr *iph = ip_hdr(cur_skb);
 +			__be16 ip_len_val = cpu_to_be16(ip_len);
  
--				n_desc++;
--			} else {
--				new_desc = false;
--			}
+-			memset(&txd_info, 0, sizeof(struct mtk_tx_dma_desc_info));
 +			csum_replace2(&iph->check, iph->tot_len, ip_len_val);
 +			iph->tot_len = ip_len_val;
 +		} else {
@@ -255,8 +255,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +			iph->payload_len = ip_len_val;
 +		}
 +	}
- 
--			memset(&txd_info, 0, sizeof(struct mtk_tx_dma_desc_info));
++
++next_frag:
 +	while (frag_size) {
 +		txd_info.size = min_t(unsigned int, frag_size,
 +				      soc->tx.dma_max_len);
@@ -267,7 +267,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +
 +		frag_size -= txd_info.size;
 +		offset += txd_info.size;
-+		txd_info.last = !frag_size && !skb_shinfo(cur_skb)->nr_frags;
++		txd_info.last = !frag_size && !skb_shinfo(cur_skb)->nr_frags &&
++				(gso_fraglist || !next_skb);
 +		if (mtk_tx_map_info(eth, ring, dev, &state, &txd_info) < 0)
 +			goto err_dma;
 +	}
@@ -308,7 +309,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			frag_size -= txd_info.size;
  			offset += txd_info.size;
 +			txd_info.last = i == skb_shinfo(cur_skb)->nr_frags - 1 &&
-+					!frag_size;
++					!frag_size && (gso_fraglist || !next_skb);
 +			if (mtk_tx_map_info(eth, ring, dev, &state, &txd_info) < 0)
 +				goto err_dma;
  		}
@@ -317,12 +318,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -	/* store skb to cleanup */
 -	itx_buf->type = MTK_TYPE_SKB;
 -	itx_buf->data = skb;
--
- 	if (!MTK_HAS_CAPS(soc->caps, MTK_QDMA)) {
--		if (k & 0x1)
--			txd_pdma->txd2 |= TX_DMA_LS0;
--		else
--			txd_pdma->txd2 |= TX_DMA_LS1;
++	if (!MTK_HAS_CAPS(soc->caps, MTK_QDMA) &&
++	    (gso_fraglist || !next_skb)) {
 +		if (state.nbuf & 0x1) {
 +			state.txd_pdma->txd2 |= TX_DMA_LS0;
 +			state.nbuf++;
@@ -334,6 +331,16 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	if (next_skb) {
 +		cur_skb = next_skb;
 +		next_skb = cur_skb->next;
++		offset = 0;
++		frag_size = skb_headlen(cur_skb);
++		if (!gso_fraglist)
++			goto next_frag;
+ 
+-	if (!MTK_HAS_CAPS(soc->caps, MTK_QDMA)) {
+-		if (k & 0x1)
+-			txd_pdma->txd2 |= TX_DMA_LS0;
+-		else
+-			txd_pdma->txd2 |= TX_DMA_LS1;
 +		goto next;
  	}
  
@@ -351,7 +358,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	/* make sure that all changes to the dma ring are flushed before we
  	 * continue
-@@ -1525,11 +1653,11 @@ static int mtk_tx_map(struct sk_buff *sk
+@@ -1525,11 +1660,11 @@ static int mtk_tx_map(struct sk_buff *sk
  
  	if (MTK_HAS_CAPS(soc->caps, MTK_QDMA)) {
  		if (netif_xmit_stopped(txq) || !netdev_xmit_more())
@@ -365,7 +372,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  					 ring->dma_size);
  		mtk_w32(eth, next_idx, MT7628_TX_CTX_IDX0);
  	}
-@@ -1538,18 +1666,20 @@ static int mtk_tx_map(struct sk_buff *sk
+@@ -1538,18 +1673,20 @@ static int mtk_tx_map(struct sk_buff *sk
  
  err_dma:
  	do {
@@ -390,7 +397,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  	return -ENOMEM;
  }
-@@ -1569,6 +1699,9 @@ static int mtk_cal_txd_req(struct mtk_et
+@@ -1569,6 +1706,9 @@ static int mtk_cal_txd_req(struct mtk_et
  		nfrags += skb_shinfo(skb)->nr_frags;
  	}
  
@@ -400,7 +407,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	return nfrags;
  }
  
-@@ -1609,9 +1742,29 @@ static bool mtk_skb_has_small_frag(struc
+@@ -1609,9 +1749,29 @@ static bool mtk_skb_has_small_frag(struc
  		if (skb_frag_size(&skb_shinfo(skb)->frags[i]) < min_size)
  			return true;
  
@@ -430,7 +437,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static netdev_tx_t mtk_start_xmit(struct sk_buff *skb, struct net_device *dev)
  {
  	struct mtk_mac *mac = netdev_priv(dev);
-@@ -1619,6 +1772,7 @@ static netdev_tx_t mtk_start_xmit(struct
+@@ -1619,6 +1779,7 @@ static netdev_tx_t mtk_start_xmit(struct
  	struct mtk_tx_ring *ring = &eth->tx_ring;
  	struct net_device_stats *stats = &dev->stats;
  	struct sk_buff *segs, *next;
@@ -438,7 +445,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	bool gso = false;
  	int tx_num;
  
-@@ -1647,37 +1801,42 @@ static netdev_tx_t mtk_start_xmit(struct
+@@ -1647,37 +1808,42 @@ static netdev_tx_t mtk_start_xmit(struct
  		return NETDEV_TX_BUSY;
  	}
  
