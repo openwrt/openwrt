@@ -151,6 +151,8 @@ function config_init(uci)
 			if (mlo_vif && dev_name == dev_names[0]) {
 				let mlo_config = { ...config };
 
+				if (config.wds)
+					mlo_config['4addr'] = config.wds;
 				mlo_config.radio_config = radio_config;
 				ifname = config.ifname;
 				if (!ifname) {
