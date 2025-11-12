@@ -32,6 +32,7 @@ platform_do_upgrade() {
 		nand_do_upgrade "$1"
 		;;
 	buffalo,ls421de|\
+	wd,cloud-ex2-ultra|\
 	wd,cloud-mirror-gen2)
 		nand_do_upgrade "$1"
 		;;
