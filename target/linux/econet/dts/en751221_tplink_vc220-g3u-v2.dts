@@ -1,0 +1,79 @@
+// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+/dts-v1/;
+
+#include "en751221.dtsi"
+
+/ {
+	model = "TP-Link VC220-G3u";
+	compatible = "tplink,vc220-g3u", "econet,en751221";
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x8000000>;
+	};
+
+	chosen {
+		stdout-path = "/serial@1fbf0000:115200";
+		linux,usable-memory-range = <0x00020000 0x07fe0000>;
+	};
+};
+
+&nand {
+	status = "okay";
+	econet,bmt;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "boot";
+			reg = <0x0 0x20000>;
+			read-only;
+		};
+		partition@20000 {
+			label = "romfile";
+			reg = <0x20000 0x80000>;
+		};
+		partition@a0000 {
+			label = "config";
+			reg = <0xa0000 0x100000>;
+		};
+		partition@1a0000 {
+			label = "radio";
+			reg = <0x1a0000 0x40000>;
+		};
+		partition@1e0000 {
+			label = "kernel";
+			reg = <0x1e0000 0x200000>;
+		};
+		partition@3e0000 {
+			label = "rootfs";
+			reg = <0x3e0000 0x2000000>;
+			linux,rootfs;
+		};
+		partition@1e0000-ker_rofs {
+			/* Overlapping partition for full firmware */
+			label = "ker_rofs";
+			reg = <0x1e0000 0x2200000>;
+		};
+		partition@23e0000 {
+			label = "kernel_2";
+			reg = <0x23e0000 0x200000>;
+		};
+		partition@25e0000 {
+			label = "rootfs_2";
+			reg = <0x25e0000 0x2000000>;
+		};
+		partition@23e0000-ker_rofs_2 {
+			/* Overlapping partition for full factory firmware */
+			label = "ker_rofs_2";
+			reg = <0x23e0000 0x2200000>;
+		};
+		partition@45e0000 {
+			label = "openwrt_ubi"; /* "reserve_area" in log */
+			reg = <0x45e0000 0x2d20000>;
+		};
+	};
+};
