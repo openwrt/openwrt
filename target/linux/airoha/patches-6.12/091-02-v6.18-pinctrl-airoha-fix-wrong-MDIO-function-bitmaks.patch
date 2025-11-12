@@ -23,7 +23,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/pinctrl/mediatek/pinctrl-airoha.c
 +++ b/drivers/pinctrl/mediatek/pinctrl-airoha.c
-@@ -108,6 +108,9 @@
+@@ -103,6 +103,9 @@
  #define JTAG_UDI_EN_MASK			BIT(4)
  #define JTAG_DFD_EN_MASK			BIT(3)
  
@@ -33,7 +33,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  /* LED MAP */
  #define REG_LAN_LED0_MAPPING			0x027c
  #define REG_LAN_LED1_MAPPING			0x0280
-@@ -719,16 +722,16 @@ static const struct airoha_pinctrl_func_
+@@ -714,16 +717,16 @@ static const struct airoha_pinctrl_func_
  		.name = "mdio",
  		.regmap[0] = {
  			AIROHA_FUNC_MUX,
