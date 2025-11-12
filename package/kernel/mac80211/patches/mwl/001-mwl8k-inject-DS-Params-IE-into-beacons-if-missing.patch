@@ -1,0 +1,116 @@
+From f4e661a75cdfa7eb88ac0fa832edd4a90775805d Mon Sep 17 00:00:00 2001
+From: Pawel Dembicki <paweldembicki@gmail.com>
+Date: Fri, 7 Nov 2025 23:05:56 +0100
+Subject: [PATCH] mwl8k: inject DS Params IE into beacons if missing
+
+Some Marvell AP firmware used with mwl8k misbehaves when beacon frames
+do not contain a WLAN_EID_DS_PARAMS information element with the current
+channel. It was reported on OpenWrt Github issues [0].
+
+When hostapd/mac80211 omits DS Params from the beacon (which is valid on
+some bands), the firmware stops transmitting sane frames and RX status
+starts reporting bogus channel information. This makes AP mode unusable.
+
+Newer Marvell drivers (mwlwifi [1]) hard-code DS Params IE into AP beacons
+for all chips, which suggests this is a firmware requirement rather than
+a mwl8k-specific quirk.
+
+Mirror that behaviour in mwl8k: when setting the beacon, check if
+WLAN_EID_DS_PARAMS is present, and if not, extend the beacon and inject
+a DS Params IE at the beginning of the IE list, using the current
+channel from hw->conf.chandef.chan.
+
+Tested on Linksys EA4500 (88W8366).
+
+[0] https://github.com/openwrt/openwrt/issues/19088
+[1] https://github.com/kaloz/mwlwifi/blob/db97edf20fadea2617805006f5230665fadc6a8c/hif/fwcmd.c#L675
+
+Tested-by: Antony Kolitsos <zeusomighty@hotmail.com>
+Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
+---
+ drivers/net/wireless/marvell/mwl8k.c | 61 +++++++++++++++++++++++++---
+ 1 file changed, 56 insertions(+), 5 deletions(-)
+
+--- a/drivers/net/wireless/marvell/mwl8k.c
++++ b/drivers/net/wireless/marvell/mwl8k.c
+@@ -2966,6 +2966,42 @@ mwl8k_cmd_rf_antenna(struct ieee80211_hw
+ /*
+  * CMD_SET_BEACON.
+  */
++
++static bool mwl8k_beacon_has_ds_params(const u8 *buf, int len)
++{
++	const struct ieee80211_mgmt *mgmt = (const void *)buf;
++	int ies_len;
++
++	if (len <= offsetof(struct ieee80211_mgmt, u.beacon.variable))
++		return false;
++
++	ies_len = len - offsetof(struct ieee80211_mgmt, u.beacon.variable);
++
++	return cfg80211_find_ie(WLAN_EID_DS_PARAMS, mgmt->u.beacon.variable,
++				ies_len) != NULL;
++}
++
++static void mwl8k_beacon_copy_inject_ds_params(struct ieee80211_hw *hw,
++					       u8 *buf_dst, const u8 *buf_src,
++					       int src_len)
++{
++	const struct ieee80211_mgmt *mgmt = (const void *)buf_src;
++	const u8 *ies;
++	int hdr_len, left;
++
++	ies = mgmt->u.beacon.variable;
++	hdr_len = ies - buf_src;
++	left = src_len - hdr_len;
++
++	memcpy(buf_dst, buf_src, hdr_len);
++
++	/* Inject a DS Params IE at the beginning of the IE list */
++	buf_dst[hdr_len + 0] = WLAN_EID_DS_PARAMS;
++	buf_dst[hdr_len + 1] = 1;
++	buf_dst[hdr_len + 2] = hw->conf.chandef.chan->hw_value;
++
++	memcpy(buf_dst + hdr_len + 3, buf_src + hdr_len, left);
++}
+ struct mwl8k_cmd_set_beacon {
+ 	struct mwl8k_cmd_pkt_hdr header;
+ 	__le16 beacon_len;
+@@ -2975,17 +3011,32 @@ struct mwl8k_cmd_set_beacon {
+ static int mwl8k_cmd_set_beacon(struct ieee80211_hw *hw,
+ 				struct ieee80211_vif *vif, u8 *beacon, int len)
+ {
++	bool ds_params_present = mwl8k_beacon_has_ds_params(beacon, len);
+ 	struct mwl8k_cmd_set_beacon *cmd;
+-	int rc;
++	int rc, final_len = len;
++
++	if (!ds_params_present)
++		/*
++		 * mwl8k firmware requires a DS Params IE with the current
++		 * channel in AP beacons. If mac80211/hostapd does not
++		 * include it, inject one here. IE ID + length + channel
++		 * number = 3 bytes.
++		 */
++		final_len += 3;
+ 
+-	cmd = kzalloc(sizeof(*cmd) + len, GFP_KERNEL);
++	cmd = kzalloc(sizeof(*cmd) + final_len, GFP_KERNEL);
+ 	if (cmd == NULL)
+ 		return -ENOMEM;
+ 
+ 	cmd->header.code = cpu_to_le16(MWL8K_CMD_SET_BEACON);
+-	cmd->header.length = cpu_to_le16(sizeof(*cmd) + len);
+-	cmd->beacon_len = cpu_to_le16(len);
+-	memcpy(cmd->beacon, beacon, len);
++	cmd->header.length = cpu_to_le16(sizeof(*cmd) + final_len);
++	cmd->beacon_len = cpu_to_le16(final_len);
++
++	if (ds_params_present)
++		memcpy(cmd->beacon, beacon, len);
++	else
++		mwl8k_beacon_copy_inject_ds_params(hw, cmd->beacon, beacon,
++						   len);
+ 
+ 	rc = mwl8k_post_pervif_cmd(hw, vif, &cmd->header);
+ 	kfree(cmd);
