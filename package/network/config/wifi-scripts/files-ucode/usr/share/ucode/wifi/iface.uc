@@ -111,7 +111,7 @@ export function parse_encryption(config, dev_config) {
 		if (!wpa3_pairwise)
 			break;
 
-		if (config.rsn_override)
+		if (config.rsn_override && wpa3_pairwise != config.wpa_pairwise)
 			config.rsn_override_pairwise = wpa3_pairwise;
 		else
 			config.wpa_pairwise = wpa3_pairwise;
