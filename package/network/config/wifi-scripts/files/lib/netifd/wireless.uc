@@ -135,6 +135,7 @@ function config_init(uci)
 		radios = filter(radios, (v) => v != null);
 		let radio_config = map(dev_names, (v) => devices[v].config);
 		let ifname;
+		let mlo_created = false;
 
 		for (let dev_name in dev_names) {
 			let dev = devices[dev_name];
@@ -148,7 +149,7 @@ function config_init(uci)
 			let config = parse_attribute_list(data, handler.iface);
 			config.radios = radios;
 
-			if (mlo_vif && dev_name == dev_names[0]) {
+			if (mlo_vif && !mlo_created) {
 				let mlo_config = { ...config };
 
 				if (config.wds)
@@ -162,6 +163,7 @@ function config_init(uci)
 				}
 
 				mlo_vifs[ifname] = mlo_config;
+				mlo_created = true;
 			}
 
 			if (ifname)
