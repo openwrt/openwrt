@@ -1,0 +1,12 @@
+--- a/configure.ac
++++ b/configure.ac
+@@ -682,6 +682,9 @@ AC_COMPILE_IFELSE([AC_LANG_SOURCE([])],
+                   ac_cv_fno_addrsig=yes, ac_cv_fno_addrsig=no)
+ CFLAGS="$old_CFLAGS"])
+ AS_IF([test "x$ac_cv_fno_addrsig" = "xyes"], CFLAGS="$CFLAGS -fno-addrsig")
++
++dnl Initialize gnulib
++gl_INIT
+ 
+ saved_LIBS="$LIBS"
+ AC_SEARCH_LIBS([argp_parse], [argp])

@@ -3,12 +3,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=elfutils
-PKG_VERSION:=0.192
+PKG_VERSION:=0.194
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=https://sourceware.org/$(PKG_NAME)/ftp/$(PKG_VERSION)
-PKG_HASH:=616099beae24aba11f9b63d86ca6cc8d566d968b802391334c91df54eab416b4
+PKG_HASH:=09e2ff033d39baa8b388a2d7fbc5390bfde99ae3b7c67c7daaf7433fbcf0f01e
 
 PKG_LICENSE:=GPL-3.0-or-later
 PKG_LICENSE_FILES:=COPYING COPYING-GPLV2 COPYING-LGPLV3
@@ -27,6 +27,7 @@ PKG_SUBDIRS := \
 	libebl \
 	libdwelf \
 	libdwfl \
+	libdwfl_stacktrace \
 	libdw \
 	src
 
@@ -35,6 +36,7 @@ PKG_GNULIB_BASE:=libgnu
 PKG_GNULIB_ARGS = \
 	--dir=$(HOST_BUILD_DIR) \
 	--libtool \
+	--conditional-dependencies \
 	--avoid=reallocarray \
 	--import
 
@@ -130,6 +132,12 @@ endef
 define Host/Uninstall
 	-$(call Host/Compile/Default,uninstall)
 	-$(call Host/Compile/Default,maintainer-clean) # Clean bootstrap files from the release
+endef
+
+define Host/Install
+	$(foreach subdir,$(filter-out src,$(PKG_SUBDIRS)),$(MAKE) -C $(HOST_BUILD_DIR)/$(subdir) install;)
+	$(INSTALL_DIR) $(STAGING_DIR_HOST)/bin
+	$(foreach prog,$(PKG_PROGRAMS),$(INSTALL_BIN) $(HOST_BUILD_DIR)/src/$(prog) $(STAGING_DIR_HOST)/bin/eu-$(prog);)
 endef
 
 $(eval $(call HostBuild))

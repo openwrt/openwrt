@@ -1,0 +1,9 @@
+--- a/config/eu.am
++++ b/config/eu.am
+@@ -48,7 +48,7 @@
+ # various installed vs not-installed header files.
+-AM_CPPFLAGS = -iquote. -iquote$(srcdir) -I$(top_srcdir)/lib -I$(abs_top_builddir)
++AM_CPPFLAGS = -iquote. -iquote$(srcdir) -I. -I$(srcdir) -I$(top_srcdir)/lib -I$(top_srcdir)/libgnu -I$(abs_top_builddir)
+ 
+ # Drop the 'u' flag that automake adds by default. It is incompatible
+ # with deterministic archives.

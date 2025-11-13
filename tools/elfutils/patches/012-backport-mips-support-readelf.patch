@@ -780,59 +780,6 @@ Signed-off-by: Ying Huang <ying.huang@oss.cipunited.com>
  #endif  /* libelfP.h */
 --- a/src/readelf.c
 +++ b/src/readelf.c
-@@ -2219,17 +2219,41 @@ handle_relocs_rel (Ebl *ebl, GElf_Ehdr *
- 			(long int) GELF_R_SYM (rel->r_info));
- 	    }
- 	  else if (GELF_ST_TYPE (sym->st_info) != STT_SECTION)
--	    printf ("  %#0*" PRIx64 "  %-20s %#0*" PRIx64 "  %s\n",
--		    class == ELFCLASS32 ? 10 : 18, rel->r_offset,
--		    likely (ebl_reloc_type_check (ebl,
--						  GELF_R_TYPE (rel->r_info)))
--		    /* Avoid the leading R_ which isn't carrying any
--		       information.  */
--		    ? ebl_reloc_type_name (ebl, GELF_R_TYPE (rel->r_info),
--					   buf, sizeof (buf)) + 2
--		    : _("<INVALID RELOC>"),
--		    class == ELFCLASS32 ? 10 : 18, sym->st_value,
--		    elf_strptr (ebl->elf, symshdr->sh_link, sym->st_name));
-+	    {
-+	      unsigned long inf = rel->r_info;
-+	      printf ("  %#0*" PRIx64 "  %-20s %#0*" PRIx64 "  %s\n",
-+		      class == ELFCLASS32 ? 10 : 18, rel->r_offset,
-+		      likely (ebl_reloc_type_check (ebl,
-+						    GELF_R_TYPE (rel->r_info)))
-+		      /* Avoid the leading R_ which isn't carrying any
-+			information.  */
-+		      ? ebl_reloc_type_name (ebl, GELF_R_TYPE (rel->r_info),
-+					     buf, sizeof (buf)) + 2
-+		      : _("<INVALID RELOC>"),
-+		      class == ELFCLASS32 ? 10 : 18, sym->st_value,
-+		      elf_strptr (ebl->elf, symshdr->sh_link, sym->st_name));
-+
-+	      /* copy binutils-2.34/binutils/readelf.c dump_relocations+1753  */
-+	      if(ebl->elf->class == ELFCLASS64 && ebl->elf->state.elf64.ehdr->e_machine == EM_MIPS)
-+		{
-+		  unsigned int type2 = ELF64_MIPS_R_TYPE2 (inf);
-+		  unsigned int type3 = ELF64_MIPS_R_TYPE3 (inf);
-+		  const char * rtype2 = ebl_reloc_type_name (ebl, type2, buf, sizeof (buf)) + 2;
-+		  const char * rtype3 = ebl_reloc_type_name (ebl, type3, buf, sizeof (buf)) + 2;
-+		  printf("		      Type2: ");
-+		  if (rtype2 == NULL)
-+		    printf (_("unrecognized: %lx"), (unsigned long) type2 & 0xffffffff);
-+		  else
-+		    printf ("%s", rtype2);
-+
-+		  printf ("\n		      Type3: ");
-+		  if (rtype3 == NULL)
-+		    printf (_("unrecognized: %lx"), (unsigned long) type3 & 0xffffffff);
-+		  else
-+		    printf ("%s", rtype3);
-+		  printf("\n");
-+		}
-+	    }
- 	  else
- 	    {
- 	      /* This is a relocation against a STT_SECTION symbol.  */
 @@ -2253,16 +2277,40 @@ handle_relocs_rel (Ebl *ebl, GElf_Ehdr *
  			(long int) (sym->st_shndx == SHN_XINDEX
  				    ? xndx : sym->st_shndx));
@@ -884,62 +831,6 @@ Signed-off-by: Ying Huang <ying.huang@oss.cipunited.com>
  	    }
  	}
      }
-@@ -2410,19 +2458,43 @@ handle_relocs_rela (Ebl *ebl, GElf_Ehdr
- 			(long int) GELF_R_SYM (rel->r_info));
- 	    }
- 	  else if (GELF_ST_TYPE (sym->st_info) != STT_SECTION)
--	    printf ("\
-+	    {
-+	      unsigned long inf = rel->r_info;
-+	      printf ("\
-   %#0*" PRIx64 "  %-15s %#0*" PRIx64 "  %+6" PRId64 " %s\n",
--		    class == ELFCLASS32 ? 10 : 18, rel->r_offset,
--		    likely (ebl_reloc_type_check (ebl,
--						  GELF_R_TYPE (rel->r_info)))
--		    /* Avoid the leading R_ which isn't carrying any
--		       information.  */
--		    ? ebl_reloc_type_name (ebl, GELF_R_TYPE (rel->r_info),
--					   buf, sizeof (buf)) + 2
--		    : _("<INVALID RELOC>"),
--		    class == ELFCLASS32 ? 10 : 18, sym->st_value,
--		    rel->r_addend,
--		    elf_strptr (ebl->elf, symshdr->sh_link, sym->st_name));
-+		      class == ELFCLASS32 ? 10 : 18, rel->r_offset,
-+		      likely (ebl_reloc_type_check (ebl,
-+						    GELF_R_TYPE (rel->r_info)))
-+		      /* Avoid the leading R_ which isn't carrying any
-+			 information.  */
-+		      ? ebl_reloc_type_name (ebl, GELF_R_TYPE (rel->r_info),
-+					     buf, sizeof (buf)) + 2
-+		      : _("<INVALID RELOC>"),
-+		      class == ELFCLASS32 ? 10 : 18, sym->st_value,
-+		      rel->r_addend,
-+		      elf_strptr (ebl->elf, symshdr->sh_link, sym->st_name));
-+
-+	      /* copy binutils-2.34/binutils/readelf.c dump_relocations+1753  */
-+	      if(ebl->elf->class == ELFCLASS64 && ebl->elf->state.elf64.ehdr->e_machine == EM_MIPS)
-+		{
-+		  unsigned int type2 = ELF64_MIPS_R_TYPE2 (inf);
-+		  unsigned int type3 = ELF64_MIPS_R_TYPE3 (inf);
-+		  const char * rtype2 = ebl_reloc_type_name (ebl, type2, buf, sizeof (buf)) + 2;
-+		  const char * rtype3 = ebl_reloc_type_name (ebl, type3, buf, sizeof (buf)) + 2;
-+		  printf("		      Type2: ");
-+		  if (rtype2 == NULL)
-+		    printf (_("unrecognized: %lx"), (unsigned long) type2 & 0xffffffff);
-+		  else
-+		    printf ("%s", rtype2);
-+
-+		  printf ("\n		      Type3: ");
-+		  if (rtype3 == NULL)
-+		    printf (_("unrecognized: %lx"), (unsigned long) type3 & 0xffffffff);
-+		  else
-+		    printf ("%s", rtype3);
-+		  printf("\n");
-+		}
-+	    }
- 	  else
- 	    {
- 	      /* This is a relocation against a STT_SECTION symbol.  */
 @@ -2446,18 +2518,42 @@ handle_relocs_rela (Ebl *ebl, GElf_Ehdr
  			(long int) (sym->st_shndx == SHN_XINDEX
  				    ? xndx : sym->st_shndx));
@@ -1012,26 +903,6 @@ Signed-off-by: Ying Huang <ying.huang@oss.cipunited.com>
  	{
  	  static const struct
  	  {
---- a/tests/Makefile.am
-+++ b/tests/Makefile.am
-@@ -216,7 +216,7 @@ TESTS = run-arextract.sh run-arsymtest.s
- 	run-nvidia-extended-linemap-libdw.sh run-nvidia-extended-linemap-readelf.sh \
- 	run-readelf-dw-form-indirect.sh run-strip-largealign.sh \
- 	run-readelf-Dd.sh run-dwfl-core-noncontig.sh run-cu-dwp-section-info.sh \
--	run-declfiles.sh \
-+	run-declfiles.sh run-readelf-reloc.sh \
- 	run-sysroot.sh
- 
- if !BIARCH
-@@ -684,7 +684,7 @@ EXTRA_DIST = run-arextract.sh run-arsymt
- 	     testfile-dwp-4-cu-index-overflow.bz2 \
- 	     testfile-dwp-4-cu-index-overflow.dwp.bz2 \
- 	     testfile-dwp-cu-index-overflow.source \
--	     testfile-define-file.bz2 \
-+	     run-readelf-reloc.sh testfile-define-file.bz2 \
- 	     testfile-sysroot.tar.bz2 run-sysroot.sh run-debuginfod-seekable.sh
- 
- 
 --- /dev/null
 +++ b/tests/run-readelf-reloc.sh
 @@ -0,0 +1,42 @@

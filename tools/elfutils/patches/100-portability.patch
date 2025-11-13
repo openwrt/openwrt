@@ -8,13 +8,16 @@
  
  AC_COPYRIGHT([Copyright (C) 1996-2024 The elfutils developers.])
  AC_PREREQ(2.63)			dnl Minimum Autoconf version required.
-@@ -88,11 +89,14 @@ AS_IF([test "$use_locks" = yes],
+@@ -83,12 +84,15 @@ AS_IF([test "$use_locks" = yes],
  
  AH_TEMPLATE([USE_LOCKS], [Defined if libraries should be thread-safe.])
  
 +AC_USE_SYSTEM_EXTENSIONS()
 +
- m4_version_prereq([2.70], [AC_PROG_CC], [AC_PROG_CC_C99])
+ # Provided by gnulib's m4/std-gnu11.m4 for autoconf pre 2.70
+ AC_PROG_CC
+ AS_IF([test "x$ac_cv_prog_cc_c11" = "xno"],
+       [AC_MSG_ERROR([C11 support required])])
  AC_PROG_CXX
  AC_PROG_RANLIB
  AC_PROG_YACC
@@ -201,8 +204,8 @@
  #include <pthread.h>
  
 +#include <libeu.h>
- #include <libdw.h>
- #include <dwarf.h>
+ #include "libdw.h"
+ #include "dwarf.h"
  #include "eu-search.h"
 --- a/config/libdebuginfod.pc.in
 +++ b/config/libdebuginfod.pc.in
