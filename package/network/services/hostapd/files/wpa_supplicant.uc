@@ -179,6 +179,8 @@ function mld_add(data, phy_list)
 	}
 
 	let wdev_config = { ...data.config, radio_mask: data.radio_mask };
+	if (!wdev_config.macaddr)
+		wdev_config.macaddr = phydev.macaddr_next();
 	let ret = phydev.wdev_add(name, wdev_config);
 	if (ret)
 		wpas.printf(`Failed to create device ${name}: ${ret}`);
