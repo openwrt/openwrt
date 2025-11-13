@@ -81,6 +81,10 @@ case "$board" in
 		addr=$(mtd_get_mac_binary "Factory" 0x8000)
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr 1 > /sys${DEVPATH}/macaddress
 		;;
+	comfast,cf-wr633ax)
+		addr=$(mtd_get_mac_binary "Factory" 0x8000)
+		[ "$PHYNBR" = "1" ] && macaddr_add $addr 1 > /sys${DEVPATH}/macaddress
+		;;
 	cudy,ap3000outdoor-v1|\
 	cudy,ap3000-v1|\
 	cudy,m3000-v1|\
