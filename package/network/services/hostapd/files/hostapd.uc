@@ -177,7 +177,7 @@ function iface_update_supplicant_macaddr(phydev, config)
 	for (let bss in config.bss)
 		push(macaddr_list, bss.bssid);
 	ubus.defer("wpa_supplicant", "phy_set_macaddr_list", {
-		phy: phydev.name,
+		phy: phydev.phy,
 		radio: phydev.radio ?? -1,
 		macaddr: macaddr_list
 	});
