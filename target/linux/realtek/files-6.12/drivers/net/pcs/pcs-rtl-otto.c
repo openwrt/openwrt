@@ -213,27 +213,6 @@ static struct rtpcs_link *rtpcs_phylink_pcs_to_link(struct phylink_pcs *pcs)
 
 /* Variant-specific functions */
 
-/* RTL93XX */
-
-static int rtpcs_93xx_sds_set_polarity(struct rtpcs_ctrl *ctrl, u32 sds,
-				       bool tx_inv, bool rx_inv)
-{
-	u8 rx_val = rx_inv ? 1 : 0;
-	u8 tx_val = tx_inv ? 1 : 0;
-	u32 val;
-	int ret;
-
-	/* 10GR */
-	val = (tx_val << 1) | rx_val;
-	ret = rtpcs_sds_write_bits(ctrl, sds, 0x6, 0x2, 14, 13, val);
-	if (ret)
-		return ret;
-
-	/* 1G */
-	val = (rx_val << 1) | tx_val;
-	return rtpcs_sds_write_bits(ctrl, sds, 0x0, 0x0, 9, 8, val);
-}
-
 /* RTL930X */
 
 /* The access registers for SDS_MODE_SEL and the LSB for each SDS within */
@@ -1645,6 +1624,25 @@ static int rtpcs_930x_sds_10g_idle(struct rtpcs_ctrl *ctrl, int sds_num)
 	return -EIO;
 }
 
+static int rtpcs_930x_sds_set_polarity(struct rtpcs_ctrl *ctrl, u32 sds,
+				       bool tx_inv, bool rx_inv)
+{
+	u8 rx_val = rx_inv ? 1 : 0;
+	u8 tx_val = tx_inv ? 1 : 0;
+	u32 val;
+	int ret;
+
+	/* 10GR */
+	val = (tx_val << 1) | rx_val;
+	ret = rtpcs_sds_write_bits(ctrl, sds, 0x6, 0x2, 14, 13, val);
+	if (ret)
+		return ret;
+
+	/* 1G */
+	val = (rx_val << 1) | tx_val;
+	return rtpcs_sds_write_bits(ctrl, sds, 0x0, 0x0, 9, 8, val);
+}
+
 static const sds_config rtpcs_930x_sds_cfg_10gr_even[] =
 {
 	/* 1G */
@@ -1917,7 +1915,7 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_ctrl *ctrl, int sds,
 	pr_info("%s: Configuring RTL9300 SERDES %d\n", __func__, sds);
 
 	/* Set SDS polarity */
-	rtpcs_93xx_sds_set_polarity(ctrl, sds, ctrl->tx_pol_inv[sds],
+	rtpcs_930x_sds_set_polarity(ctrl, sds, ctrl->tx_pol_inv[sds],
 				    ctrl->rx_pol_inv[sds]);
 
 	/* Enable SDS in desired mode */
@@ -2275,6 +2273,29 @@ static int rtpcs_931x_sds_link_sts_get(struct rtpcs_ctrl *ctrl, u32 sds)
 	return sts1;
 }
 
+static int rtpcs_931x_sds_set_polarity(struct rtpcs_ctrl *ctrl, u32 sds,
+				       bool tx_inv, bool rx_inv)
+{
+	u8 rx_val = rx_inv ? 1 : 0;
+	u8 tx_val = tx_inv ? 1 : 0;
+	u32 val;
+	int ret;
+
+	/* 10gr_*_inv */
+	val = (tx_val << 1) | rx_val;
+	ret = rtpcs_sds_write_bits(ctrl, sds, 0x6, 0x2, 14, 13, val);
+	if (ret)
+		return ret;
+
+	/* xsg_*_inv */
+	val = (rx_val << 1) | tx_val;
+	ret = rtpcs_sds_write_bits(ctrl, sds, 0x40, 0x0, 9, 8, val);
+	if (ret)
+		return ret;
+
+	return rtpcs_sds_write_bits(ctrl, sds, 0x80, 0x0, 9, 8, val);
+}
+
 static sds_config sds_config_10p3125g_type1[] = {
 	{ 0x2E, 0x00, 0x0107 }, { 0x2E, 0x01, 0x01A3 }, { 0x2E, 0x02, 0x6A24 },
 	{ 0x2E, 0x03, 0xD10D }, { 0x2E, 0x04, 0x8000 }, { 0x2E, 0x05, 0xA17E },
@@ -2497,7 +2518,7 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_ctrl *ctrl, int sds,
 		}
 	}
 
-	rtpcs_93xx_sds_set_polarity(ctrl, sds, ctrl->tx_pol_inv[sds],
+	rtpcs_931x_sds_set_polarity(ctrl, sds, ctrl->tx_pol_inv[sds],
 				    ctrl->rx_pol_inv[sds]);
 
 	val = ori & ~BIT(sds);
