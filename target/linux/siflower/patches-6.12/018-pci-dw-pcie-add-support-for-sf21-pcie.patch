@@ -13,7 +13,7 @@ Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
 
 --- a/drivers/pci/controller/dwc/Kconfig
 +++ b/drivers/pci/controller/dwc/Kconfig
-@@ -317,6 +317,15 @@ config PCIE_FU740
+@@ -361,6 +361,15 @@ config PCIE_FU740
  	  Say Y here if you want PCIe controller support for the SiFive
  	  FU740.
  
@@ -31,7 +31,7 @@ Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
  	depends on ARCH_UNIPHIER || COMPILE_TEST
 --- a/drivers/pci/controller/dwc/Makefile
 +++ b/drivers/pci/controller/dwc/Makefile
-@@ -22,6 +22,7 @@ obj-$(CONFIG_PCIE_KEEMBAY) += pcie-keemb
+@@ -23,6 +23,7 @@ obj-$(CONFIG_PCIE_KEEMBAY) += pcie-keemb
  obj-$(CONFIG_PCIE_KIRIN) += pcie-kirin.o
  obj-$(CONFIG_PCIE_HISI_STB) += pcie-histb.o
  obj-$(CONFIG_PCI_MESON) += pci-meson.o

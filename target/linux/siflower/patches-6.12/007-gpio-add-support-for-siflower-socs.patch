@@ -15,7 +15,7 @@ Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
 
 --- a/drivers/gpio/Kconfig
 +++ b/drivers/gpio/Kconfig
-@@ -576,6 +576,14 @@ config GPIO_SIFIVE
+@@ -635,6 +635,14 @@ config GPIO_SIFIVE
  	help
  	  Say yes here to support the GPIO device on SiFive SoCs.
  
@@ -32,7 +32,7 @@ Signed-off-by: Chuanhong Guo <gch981213@gmail.com>
  	depends on SIOX
 --- a/drivers/gpio/Makefile
 +++ b/drivers/gpio/Makefile
-@@ -143,6 +143,7 @@ obj-$(CONFIG_GPIO_SAMA5D2_PIOBU)	+= gpio
+@@ -149,6 +149,7 @@ obj-$(CONFIG_GPIO_SAMA5D2_PIOBU)	+= gpio
  obj-$(CONFIG_GPIO_SCH311X)		+= gpio-sch311x.o
  obj-$(CONFIG_GPIO_SCH)			+= gpio-sch.o
  obj-$(CONFIG_GPIO_SIFIVE)		+= gpio-sifive.o

@@ -9,7 +9,7 @@ Subject: [PATCH 15/20] reset: add support for sf21a6826/sf21h8898
 
 --- a/drivers/reset/Kconfig
 +++ b/drivers/reset/Kconfig
-@@ -219,6 +219,11 @@ config RESET_SF19A2890_PERIPH
+@@ -250,6 +250,11 @@ config RESET_SF19A2890_PERIPH
  	  This enables reset controller driver for peripheral reset blocks
  	  found on Siflower SF19A2890 SoC.
  
@@ -20,10 +20,10 @@ Subject: [PATCH 15/20] reset: add support for sf21a6826/sf21h8898
 +
  config RESET_SIMPLE
  	bool "Simple Reset Controller Driver" if COMPILE_TEST || EXPERT
- 	default ARCH_ASPEED || ARCH_BCMBCA || ARCH_BITMAIN || ARCH_REALTEK || ARCH_STM32 || (ARCH_INTEL_SOCFPGA && ARM64) || ARCH_SUNXI || ARC
+ 	default ARCH_ASPEED || ARCH_BCMBCA || ARCH_BITMAIN || ARCH_REALTEK || ARCH_SOPHGO || ARCH_STM32 || (ARCH_INTEL_SOCFPGA && ARM64) || ARCH_SUNXI || ARC
 --- a/drivers/reset/Makefile
 +++ b/drivers/reset/Makefile
-@@ -30,6 +30,7 @@ obj-$(CONFIG_RESET_RASPBERRYPI) += reset
+@@ -33,6 +33,7 @@ obj-$(CONFIG_RESET_RASPBERRYPI) += reset
  obj-$(CONFIG_RESET_RZG2L_USBPHY_CTRL) += reset-rzg2l-usbphy-ctrl.o
  obj-$(CONFIG_RESET_SCMI) += reset-scmi.o
  obj-$(CONFIG_RESET_SF19A2890_PERIPH) += reset-sf19a2890-periph.o

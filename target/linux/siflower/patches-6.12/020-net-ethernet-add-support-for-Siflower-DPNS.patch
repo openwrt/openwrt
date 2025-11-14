@@ -11,7 +11,7 @@ Signed-off-by: haoming.chen <haoming.chen@siflower.com.cn>
 
 --- a/drivers/net/ethernet/Kconfig
 +++ b/drivers/net/ethernet/Kconfig
-@@ -192,5 +192,6 @@ source "drivers/net/ethernet/wangxun/Kco
+@@ -201,5 +201,6 @@ source "drivers/net/ethernet/wangxun/Kco
  source "drivers/net/ethernet/wiznet/Kconfig"
  source "drivers/net/ethernet/xilinx/Kconfig"
  source "drivers/net/ethernet/xircom/Kconfig"
@@ -20,8 +20,9 @@ Signed-off-by: haoming.chen <haoming.chen@siflower.com.cn>
  endif # ETHERNET
 --- a/drivers/net/ethernet/Makefile
 +++ b/drivers/net/ethernet/Makefile
-@@ -104,3 +104,4 @@ obj-$(CONFIG_NET_VENDOR_XILINX) += xilin
+@@ -105,4 +105,5 @@ obj-$(CONFIG_NET_VENDOR_XILINX) += xilin
  obj-$(CONFIG_NET_VENDOR_XIRCOM) += xircom/
  obj-$(CONFIG_NET_VENDOR_SYNOPSYS) += synopsys/
  obj-$(CONFIG_NET_VENDOR_PENSANDO) += pensando/
 +obj-$(CONFIG_NET_VENDOR_SIFLOWER) += siflower/
+ obj-$(CONFIG_OA_TC6) += oa_tc6.o
