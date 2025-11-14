@@ -1,0 +1,54 @@
+--- a/drivers/mtd/spi-nor/core.c	2025-01-13 00:03:29.956254613 +0800
++++ b/drivers/mtd/spi-nor/core.c	2025-01-13 00:09:47.061829016 +0800
+@@ -2019,6 +2019,7 @@
+ 	&spi_nor_xilinx,
+ 	&spi_nor_xmc,
+ 	&spi_nor_xtx,
++	&spi_nor_zbit,
+ };
+ 
+ static const struct flash_info spi_nor_generic_flash = {
+--- a/drivers/mtd/spi-nor/core.h	2025-01-13 00:03:29.955254595 +0800
++++ b/drivers/mtd/spi-nor/core.h	2025-01-13 00:10:27.872540504 +0800
+@@ -649,6 +649,7 @@
+ extern const struct spi_nor_manufacturer spi_nor_xilinx;
+ extern const struct spi_nor_manufacturer spi_nor_xmc;
+ extern const struct spi_nor_manufacturer spi_nor_xtx;
++extern const struct spi_nor_manufacturer spi_nor_zbit;
+ 
+ extern const struct attribute_group *spi_nor_sysfs_groups[];
+ 
+--- a/drivers/mtd/spi-nor/Makefile	2025-01-13 00:03:29.953254560 +0800
++++ b/drivers/mtd/spi-nor/Makefile	2025-01-13 00:10:04.332130103 +0800
+@@ -19,6 +19,7 @@
+ spi-nor-objs			+= xilinx.o
+ spi-nor-objs			+= xmc.o
+ spi-nor-objs			+= xtx.o
++spi-nor-objs			+= zbit.o
+ spi-nor-$(CONFIG_DEBUG_FS)	+= debugfs.o
+ obj-$(CONFIG_MTD_SPI_NOR)	+= spi-nor.o
+ 
+--- a/drivers/mtd/spi-nor/zbit.c	1970-01-01 08:00:00.000000000 +0800
++++ b/drivers/mtd/spi-nor/zbit.c	2025-01-13 00:03:36.512368910 +0800
+@@ -0,0 +1,21 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2021, Daniel Palmer<daniel@thingy.jp>
++ */
++
++#include <linux/mtd/spi-nor.h>
++
++#include "core.h"
++
++static const struct flash_info zbit_parts[] = {
++	/* zbit */
++	{ "zb25vq128", INFO(0x5e4018, 0, 64 * 1024, 256)
++		       FLAGS(SPI_NOR_HAS_LOCK | SPI_NOR_HAS_TB)
++		       NO_SFDP_FLAGS(SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ)},
++};
++
++const struct spi_nor_manufacturer spi_nor_zbit = {
++	.name = "zbit",
++	.parts = zbit_parts,
++	.nparts = ARRAY_SIZE(zbit_parts),
++};
