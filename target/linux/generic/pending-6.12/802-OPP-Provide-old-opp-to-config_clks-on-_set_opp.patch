@@ -74,7 +74,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  		}
 --- a/drivers/ufs/core/ufshcd.c
 +++ b/drivers/ufs/core/ufshcd.c
-@@ -1119,8 +1119,8 @@ out:
+@@ -1122,8 +1122,8 @@ out:
  }
  
  int ufshcd_opp_config_clks(struct device *dev, struct opp_table *opp_table,
@@ -121,7 +121,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  }
 --- a/include/ufs/ufshcd.h
 +++ b/include/ufs/ufshcd.h
-@@ -1326,8 +1326,8 @@ void ufshcd_mcq_enable(struct ufs_hba *h
+@@ -1333,8 +1333,8 @@ void ufshcd_mcq_enable(struct ufs_hba *h
  void ufshcd_mcq_config_esi(struct ufs_hba *hba, struct msi_msg *msg);
  
  int ufshcd_opp_config_clks(struct device *dev, struct opp_table *opp_table,

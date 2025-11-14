@@ -58,7 +58,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 +	  the phy interface, but actually requires internal delays enabled.
 --- a/drivers/net/dsa/b53/b53_common.c
 +++ b/drivers/net/dsa/b53/b53_common.c
-@@ -1426,6 +1426,16 @@ static void b53_adjust_531x5_rgmii(struc
+@@ -1435,6 +1435,16 @@ static void b53_adjust_531x5_rgmii(struc
  	else
  		off = B53_RGMII_CTRL_P(port);
  
@@ -75,7 +75,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  	/* Configure the port RGMII clock delay by DLL disabled and
  	 * tx_clk aligned timing (restoring to reset defaults)
  	 */
-@@ -1437,19 +1447,24 @@ static void b53_adjust_531x5_rgmii(struc
+@@ -1446,19 +1456,24 @@ static void b53_adjust_531x5_rgmii(struc
  	 * account for this internal delay that is inserted, otherwise
  	 * the switch won't be able to receive correctly.
  	 *

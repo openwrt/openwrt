@@ -37,7 +37,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static int m88e1111_config_aneg(struct phy_device *phydev)
  {
  	int extsr = phy_read(phydev, MII_M1111_PHY_EXT_SR);
-@@ -3667,6 +3681,7 @@ static struct phy_driver marvell_drivers
+@@ -3704,6 +3718,7 @@ static struct phy_driver marvell_drivers
  		.name = "Marvell 88E1112",
  		/* PHY_GBIT_FEATURES */
  		.probe = marvell_probe,
@@ -45,7 +45,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.config_init = m88e1112_config_init,
  		.config_aneg = marvell_config_aneg,
  		.config_intr = marvell_config_intr,
-@@ -3688,6 +3703,7 @@ static struct phy_driver marvell_drivers
+@@ -3725,6 +3740,7 @@ static struct phy_driver marvell_drivers
  		/* PHY_GBIT_FEATURES */
  		.flags = PHY_POLL_CABLE_TEST,
  		.probe = marvell_probe,
@@ -53,7 +53,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.config_init = m88e1111gbe_config_init,
  		.config_aneg = m88e1111_config_aneg,
  		.read_status = marvell_read_status,
-@@ -3711,6 +3727,7 @@ static struct phy_driver marvell_drivers
+@@ -3748,6 +3764,7 @@ static struct phy_driver marvell_drivers
  		.name = "Marvell 88E1111 (Finisar)",
  		/* PHY_GBIT_FEATURES */
  		.probe = marvell_probe,

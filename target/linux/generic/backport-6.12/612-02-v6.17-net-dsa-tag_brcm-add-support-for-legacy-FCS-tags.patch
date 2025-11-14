@@ -99,7 +99,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static struct sk_buff *brcm_leg_tag_rcv(struct sk_buff *skb,
  					struct net_device *dev)
  {
-@@ -244,7 +250,9 @@ static struct sk_buff *brcm_leg_tag_rcv(
+@@ -250,7 +256,9 @@ static struct sk_buff *brcm_leg_tag_rcv(
  
  	return skb;
  }
@@ -109,7 +109,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static struct sk_buff *brcm_leg_tag_xmit(struct sk_buff *skb,
  					 struct net_device *dev)
  {
-@@ -294,6 +302,66 @@ DSA_TAG_DRIVER(brcm_legacy_netdev_ops);
+@@ -300,6 +308,66 @@ DSA_TAG_DRIVER(brcm_legacy_netdev_ops);
  MODULE_ALIAS_DSA_TAG_DRIVER(DSA_TAG_PROTO_BRCM_LEGACY, BRCM_LEGACY_NAME);
  #endif /* CONFIG_NET_DSA_TAG_BRCM_LEGACY */
  
@@ -176,7 +176,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  #if IS_ENABLED(CONFIG_NET_DSA_TAG_BRCM_PREPEND)
  static struct sk_buff *brcm_tag_xmit_prepend(struct sk_buff *skb,
  					     struct net_device *dev)
-@@ -328,6 +396,9 @@ static struct dsa_tag_driver *dsa_tag_dr
+@@ -334,6 +402,9 @@ static struct dsa_tag_driver *dsa_tag_dr
  #if IS_ENABLED(CONFIG_NET_DSA_TAG_BRCM_LEGACY)
  	&DSA_TAG_DRIVER_NAME(brcm_legacy_netdev_ops),
  #endif

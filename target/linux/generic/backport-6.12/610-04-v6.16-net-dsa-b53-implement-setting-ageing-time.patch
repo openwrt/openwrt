@@ -40,7 +40,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	ret = b53_reset_switch(dev);
  	if (ret) {
  		dev_err(ds->dev, "failed to reset switch\n");
-@@ -2444,6 +2449,28 @@ static int b53_get_max_mtu(struct dsa_sw
+@@ -2463,6 +2468,28 @@ static int b53_get_max_mtu(struct dsa_sw
  	return B53_MAX_MTU;
  }
  
@@ -69,7 +69,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static const struct phylink_mac_ops b53_phylink_mac_ops = {
  	.mac_select_pcs	= b53_phylink_mac_select_pcs,
  	.mac_config	= b53_phylink_mac_config,
-@@ -2468,6 +2495,7 @@ static const struct dsa_switch_ops b53_s
+@@ -2487,6 +2514,7 @@ static const struct dsa_switch_ops b53_s
  	.support_eee		= b53_support_eee,
  	.get_mac_eee		= b53_get_mac_eee,
  	.set_mac_eee		= b53_set_mac_eee,
@@ -89,7 +89,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  void b53_br_leave(struct dsa_switch *ds, int port, struct dsa_bridge bridge);
 --- a/drivers/net/dsa/b53/b53_regs.h
 +++ b/drivers/net/dsa/b53/b53_regs.h
-@@ -225,6 +225,13 @@
+@@ -224,6 +224,13 @@
  #define   BRCM_HDR_P5_EN		BIT(1) /* Enable tagging on port 5 */
  #define   BRCM_HDR_P7_EN		BIT(2) /* Enable tagging on port 7 */
  
