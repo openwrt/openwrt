@@ -1,0 +1,66 @@
+From be7ca7c0792b185263ad86b961ea61129494a7f9 Mon Sep 17 00:00:00 2001
+From: Fei Lv <feilv@asrmicro.com>
+Date: Fri, 14 Nov 2025 15:31:22 +0800
+Subject: [PATCH] config: fix memleak during odhcpd reload
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+- The memset in close_interface reset the pios pointer before it
+  could be freed, causing a memory leak. Relocate the free call
+  to clean_interface to ensure proper deallocation.
+
+- Use realloc instead of malloc in config_load_ra_pio()
+  This function may be called multiple times during odhcpd reload,
+  and using malloc without freeing the previous allocation was
+  causing memory leaks.
+
+Signed-off-by: Fei Lv <feilv@asrmicro.com>
+Link: https://github.com/openwrt/odhcpd/pull/309
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+---
+ src/config.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+--- a/src/config.c
++++ b/src/config.c
+@@ -314,6 +314,7 @@ static void clean_interface(struct inter
+ 		free(iface->dnr[i].svc);
+ 	}
+ 	free(iface->dnr);
++	free(iface->pios);
+ 	memset(&iface->ra, 0, sizeof(*iface) - offsetof(struct interface, ra));
+ 	set_interface_defaults(iface);
+ }
+@@ -335,7 +336,6 @@ static void close_interface(struct inter
+ 	clean_interface(iface);
+ 	free(iface->addr4);
+ 	free(iface->addr6);
+-	free(iface->pios);
+ 	free(iface->ifname);
+ 	free(iface);
+ }
+@@ -1810,6 +1810,7 @@ static json_object *config_load_ra_pio_j
+ void config_load_ra_pio(struct interface *iface)
+ {
+ 	json_object *json, *slaac_json;
++	struct ra_pio *new_pios;
+ 	size_t pio_cnt;
+ 	time_t now;
+ 
+@@ -1829,12 +1830,13 @@ void config_load_ra_pio(struct interface
+ 	now = odhcpd_time();
+ 
+ 	pio_cnt = json_object_array_length(slaac_json);
+-	iface->pios = malloc(sizeof(struct ra_pio) * pio_cnt);
+-	if (!iface->pios) {
++	new_pios = realloc(iface->pios, sizeof(struct ra_pio) * pio_cnt);
++	if (!new_pios) {
+ 		json_object_put(json);
+ 		return;
+ 	}
+ 
++	iface->pios = new_pios;
+ 	iface->pio_cnt = 0;
+ 	for (size_t i = 0; i < pio_cnt; i++) {
+ 		json_object *cur_pio_json, *length_json, *prefix_json;
