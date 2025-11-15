@@ -1,0 +1,95 @@
+From patchwork Thu Nov 13 17:19:38 2025
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+X-Patchwork-Submitter: Lorenzo Bianconi <lorenzo@kernel.org>
+X-Patchwork-Id: 14313175
+X-Patchwork-Delegate: kuba@kernel.org
+Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org
+ [10.30.226.201])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 63C6F35CBD2
+	for <netdev@vger.kernel.org>; Thu, 13 Nov 2025 17:19:51 +0000 (UTC)
+Authentication-Results: smtp.subspace.kernel.org;
+ arc=none smtp.client-ip=10.30.226.201
+ARC-Seal: i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
+	t=1763054391; cv=none;
+ b=j9ZCiFO2VSooZ8EP+ULdsHWUH4+BGX2BMEAMmgfJRHDmckDLnq3rvIilhSZ5SnuJtBMRKxVg8nJa25AyrxaaJNzZ8Gp5JYm9+IQx2G56E2lxOt0c4opl93Ghyns++pV9+FbYuFZj1VDtJvh1dAhQfuIcQ13blDio0RQTV9cB8Kk=
+ARC-Message-Signature: i=1; a=rsa-sha256; d=subspace.kernel.org;
+	s=arc-20240116; t=1763054391; c=relaxed/simple;
+	bh=YgN1ZBq/zprMvZP9Ny3zoKp3YiLQvdalkDw2OGjAfhk=;
+	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:To:Cc;
+ b=ZXXAC6KbwTbZs+5ZRAiab2O7kGtGGqFHf220k9yCPxIv2h2Tb4D3jIFUG6Wxd1oTNlyb/tc3XNwaE2BOVsAZcPqCbQ8mDoeEVR2AQEtdHt9N7ecG3DnYoj0FXfADYOnU2kkjb/4F3lAAzu6L7x+IckCcuUtkTwGZtQgJHFI0esQ=
+ARC-Authentication-Results: i=1; smtp.subspace.kernel.org;
+ dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org
+ header.b=gEk3/99q; arc=none smtp.client-ip=10.30.226.201
+Authentication-Results: smtp.subspace.kernel.org;
+	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org
+ header.b="gEk3/99q"
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 7621FC4CEF5;
+	Thu, 13 Nov 2025 17:19:50 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1763054391;
+	bh=YgN1ZBq/zprMvZP9Ny3zoKp3YiLQvdalkDw2OGjAfhk=;
+	h=From:Date:Subject:To:Cc:From;
+	b=gEk3/99qvhItMDJFcO6s/DbvkfrTE+bK/hXx2ga16uTB4dKZb7ESUAWBcUJgqNT+b
+	 tq1cmgodEnrbDGvzdUHUDG2yNRvkcTJGe0JRrB9vtahinldZ0zNupKGsh2ohmkpxtq
+	 BGJew8PK6u4wcocyjYuJ3m/O/x2597arfVwiZnBGRARg2A0MLovNtLBOTb7LFVCnAj
+	 MywOH/o3MwQDnQC/k2x80K/eWDJyO0IvYu8XEMyMXYpt1yPTbkVKbUjmKXVSZcKMWL
+	 Dt610IRqeO/QlvyyKCBEEg6uf11XG9g3CfqTTqHt3Plpwj7wW1hL4sliMaBsV9gUFm
+	 ox3Q64+okmQyg==
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Thu, 13 Nov 2025 18:19:38 +0100
+Subject: [PATCH net] net: airoha: Do not loopback traffic to GDM2 if it is
+ available on the device
+Precedence: bulk
+X-Mailing-List: netdev@vger.kernel.org
+List-Id: <netdev.vger.kernel.org>
+List-Subscribe: <mailto:netdev+subscribe@vger.kernel.org>
+List-Unsubscribe: <mailto:netdev+unsubscribe@vger.kernel.org>
+MIME-Version: 1.0
+Message-Id: <20251113-airoha-hw-offload-gdm2-fix-v1-1-7e4ca300872f@kernel.org>
+X-B4-Tracking: v=1; b=H4sIACkTFmkC/x3MQQqAIBBA0avErBtIK6iuEi0sZ3KgMhQqkO6et
+ Hx/8RNECkIRhiJBoEui+CNDlQUszhwrodhs0JVulVI1GgneGXQ3eubNG4ur3TWyPKh7brizXLU
+ zQx6cgXL+5+P0vh8gh6zqbAAAAA==
+X-Change-ID: 20251113-airoha-hw-offload-gdm2-fix-29f4f8df05bf
+To: Andrew Lunn <andrew+netdev@lunn.ch>,
+ "David S. Miller" <davem@davemloft.net>, Eric Dumazet <edumazet@google.com>,
+ Jakub Kicinski <kuba@kernel.org>, Paolo Abeni <pabeni@redhat.com>
+Cc: linux-arm-kernel@lists.infradead.org,
+ linux-mediatek@lists.infradead.org, netdev@vger.kernel.org,
+ Lorenzo Bianconi <lorenzo@kernel.org>
+X-Mailer: b4 0.14.2
+X-Patchwork-Delegate: kuba@kernel.org
+
+Airoha_eth driver forwards offloaded uplink traffic (packets received on
+GDM1 and forwarded to GDM{3,4}) to GDM2 in order to apply hw QoS.
+This is correct if the device does not support a dedicated GDM2 port. In
+this case, in order to enable hw offloading for uplink traffic, the
+packets should be sent to GDM{3,4} directly.
+
+Fixes: 9cd451d414f6 ("net: airoha: Add loopback support for GDM2")
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+---
+ drivers/net/ethernet/airoha/airoha_ppe.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+
+---
+base-commit: f694d215d34035cc64b1d176fd82db0d1f2428d4
+change-id: 20251113-airoha-hw-offload-gdm2-fix-29f4f8df05bf
+
+Best regards,
+
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -308,7 +308,7 @@ static int airoha_ppe_foe_entry_prepare(
+ 			if (!airoha_is_valid_gdm_port(eth, port))
+ 				return -EINVAL;
+ 
+-			if (dsa_port >= 0)
++			if (dsa_port >= 0 || eth->ports[1])
+ 				pse_port = port->id == 4 ? FE_PSE_PORT_GDM4
+ 							 : port->id;
+ 			else
