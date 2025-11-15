@@ -78,7 +78,7 @@ define prepare_rootfs
 		cd $(1); \
 		if [ -n "$(CONFIG_USE_APK)" ]; then \
 			IPKG_POSTINST_PATH=./lib/apk/db/*.post-install; \
-			$(STAGING_DIR_HOST)/bin/tar -C ./lib/apk/db/ -xf ./lib/apk/db/scripts.tar --wildcards "*.post-install"; \
+			$(STAGING_DIR_HOST)/bin/tar -C ./lib/apk/db/ -xzf ./lib/apk/db/scripts.tar.gz --wildcards "*.post-install"; \
 		else \
 			IPKG_POSTINST_PATH=./usr/lib/opkg/info/*.postinst; \
 		fi; \
@@ -89,7 +89,7 @@ define prepare_rootfs
 				echo "postinst script $$script has failed with exit code $$ret" >&2; \
 				exit 1; \
 			fi; \
-			[ -n "$(CONFIG_USE_APK)" ] && $(STAGING_DIR_HOST)/bin/tar --delete -f ./lib/apk/db/scripts.tar $$(basename $$script); \
+			[ -n "$(CONFIG_USE_APK)" ] && $(STAGING_DIR_HOST)/bin/tar --delete -zf ./lib/apk/db/scripts.tar.gz $$(basename $$script); \
 		done; \
 		if [ -z "$(CONFIG_USE_APK)" ]; then \
 			$(if $(IB),,awk -i inplace \
