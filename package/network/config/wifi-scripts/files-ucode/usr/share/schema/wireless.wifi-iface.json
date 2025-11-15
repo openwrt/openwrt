@@ -165,6 +165,10 @@
 		"basic_rate": {
 			"type": "array"
 		},
+		"beacon_prot": {
+			"description": "Management frame protection for Beacon frames",
+			"type": "boolean"
+		},
 		"bss_load_update_period": {
 			"description": "BSS Load update period (in BUs)",
 			"type": "number",
@@ -992,6 +996,10 @@
 			"description": "The inactivity polling can be disabled to disconnect stations based on inactivity timeout so that idle stations are more likely to be disconnected even if they are still in range of the AP",
 			"type": "boolean",
 			"default": false
+		},
+		"spp_amsdu": {
+			"description": "Signaling and Payload Protected A-MSDU",
+			"type": "boolean"
 		},
 		"ssid": {
 			"type": "string"
