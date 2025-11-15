@@ -142,7 +142,6 @@ setup_interface () {
 	done
 
 	proto_add_data
-	[ -n "$CER" ] && json_add_string cer "$CER"
 	[ -n "$PASSTHRU" ] && json_add_string passthru "$PASSTHRU"
 	[ -n "$ZONE" ] && json_add_string zone "$ZONE"
 	proto_close_data
