@@ -53,6 +53,7 @@ platform_do_upgrade() {
 		legacy_sdcard_do_upgrade "$1"
 		;;
 	fortinet,fg-30e|\
+	fortinet,fwf-30e|\
 	fortinet,fg-50e|\
 	fortinet,fg-51e|\
 	fortinet,fg-52e|\
