@@ -587,6 +587,13 @@
 			"type": "number",
 			"default": 0
 		},
+		"rssi_reject_assoc_timeout": {
+			"description": "Association retry delay in seconds allowed by the STA if RSSI has not met the threshold",
+			"type": "number",
+			"default": 30,
+			"minimum": 0,
+			"maximum": 255
+		},
 		"rts": {
 			"description": "Override the RTS/CTS threshold",
 			"type": "number"

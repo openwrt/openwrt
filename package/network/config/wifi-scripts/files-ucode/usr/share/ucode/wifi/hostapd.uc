@@ -489,7 +489,7 @@ function generate(config) {
 		append_vars(config, [ 'airtime_mode' ]);
 
 	/* assoc/thresholds */
-	append_vars(config, [ 'rssi_reject_assoc_rssi', 'rssi_ignore_probe_request', 'iface_max_num_sta', 'no_probe_resp_if_max_sta' ]);
+	append_vars(config, [ 'rssi_reject_assoc_rssi', 'rssi_reject_assoc_timeout', 'rssi_ignore_probe_request', 'iface_max_num_sta', 'no_probe_resp_if_max_sta' ]);
 
 	/* ACS / Radar*/
 	if (!phy_features.radar_background || config.band != '5g')
