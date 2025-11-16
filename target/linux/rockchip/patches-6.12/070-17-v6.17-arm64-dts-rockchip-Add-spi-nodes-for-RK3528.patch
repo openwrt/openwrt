@@ -1,0 +1,51 @@
+From 2783335329e5762deb0dc5b6d634225d8613af16 Mon Sep 17 00:00:00 2001
+From: Chukun Pan <amadeus@jmu.edu.cn>
+Date: Tue, 20 May 2025 18:01:02 +0800
+Subject: [PATCH] arm64: dts: rockchip: Add spi nodes for RK3528
+
+There are 2 SPI controllers on the RK3528 SoC, describe it.
+
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+Link: https://lore.kernel.org/r/20250520100102.1226725-3-amadeus@jmu.edu.cn
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3528.dtsi | 28 ++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3528.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3528.dtsi
+@@ -455,6 +455,34 @@
+ 			reg = <0x0 0xff540000 0x0 0x40000>;
+ 		};
+ 
++		spi0: spi@ff9c0000 {
++			compatible = "rockchip,rk3528-spi",
++				     "rockchip,rk3066-spi";
++			reg = <0x0 0xff9c0000 0x0 0x1000>;
++			clocks = <&cru CLK_SPI0>, <&cru PCLK_SPI0>;
++			clock-names = "spiclk", "apb_pclk";
++			interrupts = <GIC_SPI 131 IRQ_TYPE_LEVEL_HIGH>;
++			dmas = <&dmac 25>, <&dmac 24>;
++			dma-names = "tx", "rx";
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "disabled";
++		};
++
++		spi1: spi@ff9d0000 {
++			compatible = "rockchip,rk3528-spi",
++				     "rockchip,rk3066-spi";
++			reg = <0x0 0xff9d0000 0x0 0x1000>;
++			clocks = <&cru CLK_SPI1>, <&cru PCLK_SPI1>;
++			clock-names = "spiclk", "apb_pclk";
++			interrupts = <GIC_SPI 132 IRQ_TYPE_LEVEL_HIGH>;
++			dmas = <&dmac 31>, <&dmac 30>;
++			dma-names = "tx", "rx";
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "disabled";
++		};
++
+ 		uart0: serial@ff9f0000 {
+ 			compatible = "rockchip,rk3528-uart", "snps,dw-apb-uart";
+ 			reg = <0x0 0xff9f0000 0x0 0x100>;

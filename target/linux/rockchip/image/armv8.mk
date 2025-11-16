@@ -17,6 +17,11 @@ define Device/rk3399
   KERNEL_LOADADDR := 0x03200000
 endef
 
+define Device/rk3528
+  SOC := rk3528
+  KERNEL_LOADADDR := 0x03000000
+endef
+
 define Device/rk3566
   SOC := rk3566
   KERNEL_LOADADDR := 0x03000000
@@ -216,6 +221,16 @@ define Device/radxa_cm3-io
 endef
 TARGET_DEVICES += radxa_cm3-io
 
+define Device/radxa_e20c
+  $(Device/rk3528)
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := E20C
+  DEVICE_DTS := rk3528-radxa-e20c
+  UBOOT_DEVICE_NAME := radxa-e20c-rk3528
+  DEVICE_PACKAGES := kmod-r8169
+endef
+TARGET_DEVICES += radxa_e20c
+
 define Device/radxa_e25
   $(Device/rk3568)
   DEVICE_VENDOR := Radxa
@@ -238,6 +253,22 @@ define Device/radxa_e52c
   DEVICE_COMPAT_MESSAGE := Network interface names have been changed
 endef
 TARGET_DEVICES += radxa_e52c
+
+define Device/radxa_rock-2a
+  $(Device/rk3528)
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := ROCK 2A
+  UBOOT_DEVICE_NAME := rock-2-rk3528
+endef
+TARGET_DEVICES += radxa_rock-2a
+
+define Device/radxa_rock-2f
+  $(Device/rk3528)
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := ROCK 2F
+  UBOOT_DEVICE_NAME := rock-2-rk3528
+endef
+TARGET_DEVICES += radxa_rock-2f
 
 define Device/radxa_rock-3a
   $(Device/rk3568)

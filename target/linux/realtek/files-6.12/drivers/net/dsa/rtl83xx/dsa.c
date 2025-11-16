@@ -16,17 +16,11 @@ static const u8 ipv6_all_hosts_mcast_addr_base[ETH_ALEN] =
 static const u8 ipv6_all_hosts_mcast_addr_mask[ETH_ALEN] =
 { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
-/* This interval needs to be short enough to prevent an undetected counter
- * overflow. The octet counters don't need to be considered for this, because
- * they are 64 bits on all platforms. Based on the possible packets per second
- * at the highest supported speeds, an interval of a minute is probably a safe
- * choice for the other counters.
- */
-#define RTLDSA_COUNTERS_POLL_INTERVAL	(60 * HZ)
-
 extern struct rtl83xx_soc_info soc_info;
 
 static void rtldsa_init_counters(struct rtl838x_switch_priv *priv);
+static void rtldsa_port_xstp_state_set(struct rtl838x_switch_priv *priv, int port,
+				       u8 state, u16 mst_slot);
 
 static void rtl83xx_init_stats(struct rtl838x_switch_priv *priv)
 {
@@ -322,6 +316,104 @@ const struct rtldsa_mib_desc rtldsa_930x_mib = {
 
 	.list_count = ARRAY_SIZE(rtldsa_930x_mib_list),
 	.list = rtldsa_930x_mib_list
+};
+
+const struct rtldsa_mib_list_item rtldsa_931x_mib_list[] = {
+	MIB_LIST_ITEM("ifOutDiscards", MIB_ITEM(MIB_TBL_STD, 36, 1)),
+	MIB_LIST_ITEM("dot1dTpPortInDiscards", MIB_ITEM(MIB_TBL_STD, 35, 1)),
+	MIB_LIST_ITEM("DropEvents", MIB_ITEM(MIB_TBL_STD, 25, 1)),
+	MIB_LIST_ITEM("tx_BroadcastPkts", MIB_ITEM(MIB_TBL_STD, 24, 1)),
+	MIB_LIST_ITEM("tx_MulticastPkts", MIB_ITEM(MIB_TBL_STD, 23, 1)),
+	MIB_LIST_ITEM("tx_CRCAlignErrors", MIB_ITEM(MIB_TBL_STD, 22, 1)),
+	MIB_LIST_ITEM("tx_UndersizePkts", MIB_ITEM(MIB_TBL_STD, 20, 1)),
+	MIB_LIST_ITEM("tx_OversizePkts", MIB_ITEM(MIB_TBL_STD, 18, 1)),
+	MIB_LIST_ITEM("tx_Fragments", MIB_ITEM(MIB_TBL_STD, 16, 1)),
+	MIB_LIST_ITEM("tx_Jabbers", MIB_ITEM(MIB_TBL_STD, 14, 1)),
+	MIB_LIST_ITEM("tx_Collisions", MIB_ITEM(MIB_TBL_STD, 12, 1)),
+
+	MIB_LIST_ITEM("rx_UndersizeDropPkts", MIB_ITEM(MIB_TBL_PRV, 27, 1)),
+	MIB_LIST_ITEM("tx_PktsFlexibleOctetsSet1", MIB_ITEM(MIB_TBL_PRV, 22, 1)),
+	MIB_LIST_ITEM("rx_PktsFlexibleOctetsSet1", MIB_ITEM(MIB_TBL_PRV, 21, 1)),
+	MIB_LIST_ITEM("tx_PktsFlexibleOctetsCRCSet1", MIB_ITEM(MIB_TBL_PRV, 28, 1)),
+	MIB_LIST_ITEM("rx_PktsFlexibleOctetsCRCSet1", MIB_ITEM(MIB_TBL_PRV, 27, 1)),
+	MIB_LIST_ITEM("tx_PktsFlexibleOctetsSet0", MIB_ITEM(MIB_TBL_PRV, 18, 1)),
+	MIB_LIST_ITEM("rx_PktsFlexibleOctetsSet0", MIB_ITEM(MIB_TBL_PRV, 17, 1)),
+	MIB_LIST_ITEM("tx_PktsFlexibleOctetsCRCSet0", MIB_ITEM(MIB_TBL_PRV, 16, 1)),
+	MIB_LIST_ITEM("rx_PktsFlexibleOctetsCRCSet0", MIB_ITEM(MIB_TBL_PRV, 15, 1)),
+	MIB_LIST_ITEM("LengthFieldError", MIB_ITEM(MIB_TBL_PRV, 14, 1)),
+	MIB_LIST_ITEM("FalseCarrierTimes", MIB_ITEM(MIB_TBL_PRV, 13, 1)),
+	MIB_LIST_ITEM("UndersizeOctets", MIB_ITEM(MIB_TBL_PRV, 12, 1)),
+	MIB_LIST_ITEM("FramingErrors", MIB_ITEM(MIB_TBL_PRV, 11, 1)),
+	MIB_LIST_ITEM("rx_MacDiscards", MIB_ITEM(MIB_TBL_PRV, 9, 1)),
+	MIB_LIST_ITEM("rx_MacIPGShortDrop", MIB_ITEM(MIB_TBL_PRV, 8, 1))
+};
+
+const struct rtldsa_mib_desc rtldsa_931x_mib = {
+	.symbol_errors = MIB_ITEM(MIB_TBL_STD, 29, 1),
+
+	.if_in_octets = MIB_ITEM(MIB_TBL_STD, 51, 2),
+	.if_out_octets = MIB_ITEM(MIB_TBL_STD, 49, 2),
+	.if_in_ucast_pkts = MIB_ITEM(MIB_TBL_STD, 47, 2),
+	.if_in_mcast_pkts = MIB_ITEM(MIB_TBL_STD, 45, 2),
+	.if_in_bcast_pkts = MIB_ITEM(MIB_TBL_STD, 43, 2),
+	.if_out_ucast_pkts = MIB_ITEM(MIB_TBL_STD, 41, 2),
+	.if_out_mcast_pkts = MIB_ITEM(MIB_TBL_STD, 39, 2),
+	.if_out_bcast_pkts = MIB_ITEM(MIB_TBL_STD, 37, 2),
+	.if_out_discards = MIB_ITEM(MIB_TBL_STD, 36, 1),
+	.single_collisions = MIB_ITEM(MIB_TBL_STD, 35, 1),
+	.multiple_collisions = MIB_ITEM(MIB_TBL_STD, 33, 1),
+	.deferred_transmissions = MIB_ITEM(MIB_TBL_STD, 32, 1),
+	.late_collisions = MIB_ITEM(MIB_TBL_STD, 31, 1),
+	.excessive_collisions = MIB_ITEM(MIB_TBL_STD, 30, 1),
+	.crc_align_errors = MIB_ITEM(MIB_TBL_STD, 21, 1),
+	.rx_pkts_over_max_octets = MIB_ITEM(MIB_TBL_PRV, 23, 1),
+
+	.unsupported_opcodes = MIB_ITEM(MIB_TBL_STD, 28, 1),
+
+	.rx_undersize_pkts = MIB_ITEM(MIB_TBL_STD, 19, 1),
+	.rx_oversize_pkts = MIB_ITEM(MIB_TBL_STD, 17, 1),
+	.rx_fragments = MIB_ITEM(MIB_TBL_STD, 15, 1),
+	.rx_jabbers = MIB_ITEM(MIB_TBL_STD, 13, 1),
+
+	.tx_pkts = {
+		MIB_ITEM(MIB_TBL_STD, 11, 1),
+		MIB_ITEM(MIB_TBL_STD, 9, 1),
+		MIB_ITEM(MIB_TBL_STD, 7, 1),
+		MIB_ITEM(MIB_TBL_STD, 5, 1),
+		MIB_ITEM(MIB_TBL_STD, 3, 1),
+		MIB_ITEM(MIB_TBL_STD, 1, 1),
+		MIB_ITEM(MIB_TBL_PRV, 26, 1),
+		MIB_ITEM(MIB_TBL_PRV, 24, 1)
+	},
+	.rx_pkts = {
+		MIB_ITEM(MIB_TBL_STD, 10, 1),
+		MIB_ITEM(MIB_TBL_STD, 8, 1),
+		MIB_ITEM(MIB_TBL_STD, 6, 1),
+		MIB_ITEM(MIB_TBL_STD, 4, 1),
+		MIB_ITEM(MIB_TBL_STD, 2, 1),
+		MIB_ITEM(MIB_TBL_STD, 0, 1),
+		MIB_ITEM(MIB_TBL_PRV, 25, 1),
+		MIB_ITEM(MIB_TBL_PRV, 23, 1),
+	},
+	.rmon_ranges = {
+		{ 0, 64 },
+		{ 65, 127 },
+		{ 128, 255 },
+		{ 256, 511 },
+		{ 512, 1023 },
+		{ 1024, 1518 },
+		{ 1519, 12288 },
+		{ 12289, 65535 }
+	},
+
+	.drop_events = MIB_ITEM(MIB_TBL_STD, 25, 1),
+	.collisions = MIB_ITEM(MIB_TBL_STD, 12, 1),
+
+	.rx_pause_frames = MIB_ITEM(MIB_TBL_STD, 27, 1),
+	.tx_pause_frames = MIB_ITEM(MIB_TBL_STD, 26, 1),
+
+	.list_count = ARRAY_SIZE(rtldsa_931x_mib_list),
+	.list = rtldsa_931x_mib_list
 };
 
 
@@ -857,6 +949,8 @@ static const struct rtldsa_mib_desc *rtldsa_get_mib_desc(struct rtl838x_switch_p
 		return &rtldsa_839x_mib;
 	case RTL9300_FAMILY_ID:
 		return &rtldsa_930x_mib;
+	case RTL9310_FAMILY_ID:
+		return &rtldsa_931x_mib;
 	default:
 		return NULL;
 	}
@@ -878,6 +972,15 @@ static bool rtldsa_read_mib_item(struct rtl838x_switch_priv *priv, int port,
 		reg = priv->r->stat_port_prv_mib;
 		reg_offset = 128;
 		break;
+	case MIB_TBL_STD:
+	case MIB_TBL_PRV:
+		if (!priv->r->stat_port_table_read)
+			return false;
+
+		*data = priv->r->stat_port_table_read(port, mib_item->size, mib_item->offset,
+						      mib_item->reg == MIB_TBL_PRV);
+
+		return true;
 	default:
 		return false;
 	}
@@ -918,6 +1021,40 @@ static void rtldsa_update_counter(struct rtl838x_switch_priv *priv, int port,
 		counter->val += diff;
 		counter->last = val32;
 	}
+}
+
+static void rtldsa_update_link_stat(struct rtnl_link_stats64 *s,
+				    const struct rtldsa_counter_state *counters)
+{
+	s->rx_packets = counters->if_in_ucast_pkts.val +
+			counters->if_in_mcast_pkts.val +
+			counters->if_in_bcast_pkts.val +
+			counters->rx_pkts_over_max_octets.val;
+
+	s->tx_packets = counters->if_out_ucast_pkts.val +
+			counters->if_out_mcast_pkts.val +
+			counters->if_out_bcast_pkts.val -
+			counters->if_out_discards.val;
+
+	/* Subtract FCS for each packet, and pause frames */
+	s->rx_bytes = counters->if_in_octets.val -
+		      4 * s->rx_packets -
+		      64 * counters->rx_pause_frames.val;
+	s->tx_bytes = counters->if_out_octets.val -
+		      4 * s->tx_packets -
+		      64 * counters->tx_pause_frames.val;
+
+	s->collisions = counters->collisions.val;
+
+	s->rx_dropped = counters->drop_events.val;
+	s->tx_dropped = counters->if_out_discards.val;
+
+	s->rx_crc_errors = counters->crc_align_errors.val;
+	s->rx_errors = s->rx_crc_errors;
+
+	s->tx_aborted_errors = counters->excessive_collisions.val;
+	s->tx_window_errors = counters->late_collisions.val;
+	s->tx_errors = s->tx_aborted_errors + s->tx_window_errors;
 }
 
 static void rtldsa_update_port_counters(struct rtl838x_switch_priv *priv, int port)
@@ -1011,6 +1148,45 @@ static void rtldsa_update_port_counters(struct rtl838x_switch_priv *priv, int po
 			      &mib_desc->rx_pause_frames);
 	rtldsa_update_counter(priv, port, &counters->tx_pause_frames,
 			      &mib_desc->tx_pause_frames);
+
+	/* prepare get_stats64 reply without requiring caller waiting for mutex */
+	spin_lock(&counters->link_stat_lock);
+	rtldsa_update_link_stat(&counters->link_stat, counters);
+	spin_unlock(&counters->link_stat_lock);
+}
+
+void rtldsa_counters_lock_register(struct rtl838x_switch_priv *priv, int port)
+	__acquires(&priv->ports[port].counters.lock)
+{
+	spin_lock(&priv->ports[port].counters.lock);
+}
+
+void rtldsa_counters_unlock_register(struct rtl838x_switch_priv *priv, int port)
+	__releases(&priv->ports[port].counters.lock)
+{
+	spin_unlock(&priv->ports[port].counters.lock);
+}
+
+void rtldsa_counters_lock_table(struct rtl838x_switch_priv *priv, int port __maybe_unused)
+	__acquires(&priv->counters_lock)
+{
+	mutex_lock(&priv->counters_lock);
+}
+
+void rtldsa_counters_unlock_table(struct rtl838x_switch_priv *priv, int port __maybe_unused)
+	__releases(&priv->ports[port].counters.lock)
+{
+	mutex_unlock(&priv->counters_lock);
+}
+
+static void rtldsa_counters_lock(struct rtl838x_switch_priv *priv, int port)
+{
+	priv->r->stat_counters_lock(priv, port);
+}
+
+static void rtldsa_counters_unlock(struct rtl838x_switch_priv *priv, int port)
+{
+	priv->r->stat_counters_unlock(priv, port);
 }
 
 static void rtldsa_poll_counters(struct work_struct *work)
@@ -1018,40 +1194,38 @@ static void rtldsa_poll_counters(struct work_struct *work)
 	struct rtl838x_switch_priv *priv = container_of(to_delayed_work(work),
 							struct rtl838x_switch_priv,
 							counters_work);
-	struct rtldsa_counter_state *counters;
 
-	for (int i = 0; i < priv->cpu_port; i++) {
-		if (!priv->ports[i].phy && !priv->pcs[i])
+	for (int port = 0; port < priv->cpu_port; port++) {
+		if (!priv->ports[port].phy && !priv->pcs[port])
 			continue;
 
-		counters = &priv->ports[i].counters;
-
-		spin_lock(&counters->lock);
-		rtldsa_update_port_counters(priv, i);
-		spin_unlock(&counters->lock);
+		rtldsa_counters_lock(priv, port);
+		rtldsa_update_port_counters(priv, port);
+		rtldsa_counters_unlock(priv, port);
 	}
 
 	queue_delayed_work(priv->wq, &priv->counters_work,
-			   RTLDSA_COUNTERS_POLL_INTERVAL);
+			   priv->r->stat_counter_poll_interval);
 }
 
 static void rtldsa_init_counters(struct rtl838x_switch_priv *priv)
 {
 	struct rtldsa_counter_state *counters;
 
-	for (int i = 0; i < priv->cpu_port; i++) {
-		if (!priv->ports[i].phy && !priv->pcs[i])
+	for (int port = 0; port < priv->cpu_port; port++) {
+		if (!priv->ports[port].phy && !priv->pcs[port])
 			continue;
 
-		counters = &priv->ports[i].counters;
+		counters = &priv->ports[port].counters;
 
 		memset(counters, 0, sizeof(*counters));
 		spin_lock_init(&counters->lock);
+		spin_lock_init(&counters->link_stat_lock);
 	}
 
 	INIT_DELAYED_WORK(&priv->counters_work, rtldsa_poll_counters);
 	queue_delayed_work(priv->wq, &priv->counters_work,
-			   RTLDSA_COUNTERS_POLL_INTERVAL);
+			   priv->r->stat_counter_poll_interval);
 }
 
 static void rtldsa_get_strings(struct dsa_switch *ds,
@@ -1125,13 +1299,13 @@ static void rtldsa_get_eth_phy_stats(struct dsa_switch *ds, int port,
 	if (!rtldsa_get_mib_desc(priv))
 		return;
 
-	spin_lock(&counters->lock);
+	rtldsa_counters_lock(priv, port);
 
 	rtldsa_update_port_counters(priv, port);
 
 	phy_stats->SymbolErrorDuringCarrier = counters->symbol_errors.val;
 
-	spin_unlock(&counters->lock);
+	rtldsa_counters_unlock(priv, port);
 }
 
 static void rtldsa_get_eth_mac_stats(struct dsa_switch *ds, int port,
@@ -1146,7 +1320,7 @@ static void rtldsa_get_eth_mac_stats(struct dsa_switch *ds, int port,
 	if (!rtldsa_get_mib_desc(priv))
 		return;
 
-	spin_lock(&counters->lock);
+	rtldsa_counters_lock(priv, port);
 
 	rtldsa_update_port_counters(priv, port);
 
@@ -1180,7 +1354,7 @@ static void rtldsa_get_eth_mac_stats(struct dsa_switch *ds, int port,
 
 	mac_stats->FrameCheckSequenceErrors = counters->crc_align_errors.val;
 
-	spin_unlock(&counters->lock);
+	rtldsa_counters_unlock(priv, port);
 }
 
 static void rtldsa_get_eth_ctrl_stats(struct dsa_switch *ds, int port,
@@ -1195,13 +1369,13 @@ static void rtldsa_get_eth_ctrl_stats(struct dsa_switch *ds, int port,
 	if (!rtldsa_get_mib_desc(priv))
 		return;
 
-	spin_lock(&counters->lock);
+	rtldsa_counters_lock(priv, port);
 
 	rtldsa_update_port_counters(priv, port);
 
 	ctrl_stats->UnsupportedOpcodesReceived = counters->unsupported_opcodes.val;
 
-	spin_unlock(&counters->lock);
+	rtldsa_counters_unlock(priv, port);
 }
 
 static void rtldsa_get_rmon_stats(struct dsa_switch *ds, int port,
@@ -1219,7 +1393,7 @@ static void rtldsa_get_rmon_stats(struct dsa_switch *ds, int port,
 	if (!mib_desc)
 		return;
 
-	spin_lock(&counters->lock);
+	rtldsa_counters_lock(priv, port);
 
 	rtldsa_update_port_counters(priv, port);
 
@@ -1245,7 +1419,14 @@ static void rtldsa_get_rmon_stats(struct dsa_switch *ds, int port,
 
 	*ranges = mib_desc->rmon_ranges;
 
-	spin_unlock(&counters->lock);
+	rtldsa_counters_unlock(priv, port);
+}
+
+void rtldsa_update_counters_atomically(struct rtl838x_switch_priv *priv, int port)
+{
+	rtldsa_counters_lock(priv, port);
+	rtldsa_update_port_counters(priv, port);
+	rtldsa_counters_unlock(priv, port);
 }
 
 static void rtldsa_get_stats64(struct dsa_switch *ds, int port,
@@ -1262,41 +1443,13 @@ static void rtldsa_get_stats64(struct dsa_switch *ds, int port,
 		return;
 	}
 
-	spin_lock(&counters->lock);
+	if (priv->r->stat_update_counters_atomically)
+		priv->r->stat_update_counters_atomically(priv, port);
 
-	rtldsa_update_port_counters(priv, port);
-
-	s->rx_packets = counters->if_in_ucast_pkts.val +
-			counters->if_in_mcast_pkts.val +
-			counters->if_in_bcast_pkts.val +
-			counters->rx_pkts_over_max_octets.val;
-
-	s->tx_packets = counters->if_out_ucast_pkts.val +
-			counters->if_out_mcast_pkts.val +
-			counters->if_out_bcast_pkts.val -
-			counters->if_out_discards.val;
-
-	/* Subtract FCS for each packet, and pause frames */
-	s->rx_bytes = counters->if_in_octets.val -
-		      4 * s->rx_packets -
-		      64 * counters->rx_pause_frames.val;
-	s->tx_bytes = counters->if_out_octets.val -
-		      4 * s->tx_packets -
-		      64 * counters->tx_pause_frames.val;
-
-	s->collisions = counters->collisions.val;
-
-	s->rx_dropped = counters->drop_events.val;
-	s->tx_dropped = counters->if_out_discards.val;
-
-	s->rx_crc_errors = counters->crc_align_errors.val;
-	s->rx_errors = s->rx_crc_errors;
-
-	s->tx_aborted_errors = counters->excessive_collisions.val;
-	s->tx_window_errors = counters->late_collisions.val;
-	s->tx_errors = s->tx_aborted_errors + s->tx_window_errors;
-
-	spin_unlock(&counters->lock);
+	/* retrieve prepared return data without potentially sleeping via mutex */
+	spin_lock(&counters->link_stat_lock);
+	memcpy(s, &counters->link_stat, sizeof(*s));
+	spin_unlock(&counters->link_stat_lock);
 }
 
 static void rtldsa_get_pause_stats(struct dsa_switch *ds, int port,
@@ -1311,14 +1464,14 @@ static void rtldsa_get_pause_stats(struct dsa_switch *ds, int port,
 	if (!rtldsa_get_mib_desc(priv))
 		return;
 
-	spin_lock(&counters->lock);
+	rtldsa_counters_lock(priv, port);
 
 	rtldsa_update_port_counters(priv, port);
 
 	pause_stats->tx_pause_frames = counters->tx_pause_frames.val;
 	pause_stats->rx_pause_frames = counters->rx_pause_frames.val;
 
-	spin_unlock(&counters->lock);
+	rtldsa_counters_unlock(priv, port);
 }
 
 static int rtl83xx_mc_group_alloc(struct rtl838x_switch_priv *priv, int port)
@@ -1377,11 +1530,6 @@ static int rtldsa_port_enable(struct dsa_switch *ds, int port, struct phy_device
 
 	/* add port to switch mask of CPU_PORT */
 	priv->r->traffic_enable(priv->cpu_port, port);
-
-	if (priv->lag_non_primary & BIT_ULL(port)) {
-		pr_debug("%s: %d is lag slave. ignore\n", __func__, port);
-		return 0;
-	}
 
 	/* add all other ports in the same bridge to switch mask of port */
 	priv->r->traffic_set(port, priv->ports[port].pm);
@@ -1456,6 +1604,217 @@ static int rtl83xx_set_ageing_time(struct dsa_switch *ds, unsigned int msec)
 	return 0;
 }
 
+/**
+ * rtldsa_mst_init() - Initialize newly "allocated" MST HW slot
+ * @priv: private data of rtldsa switch
+ * @mst_slot: MST slot of MSTI
+ */
+static void rtldsa_mst_init(struct rtl838x_switch_priv *priv, u16 mst_slot)
+			    __must_hold(&priv->reg_mutex)
+{
+	struct dsa_port *dp;
+	unsigned int port;
+	u8 state;
+
+	dsa_switch_for_each_user_port(dp, priv->ds) {
+		if (dp->bridge)
+			state = BR_STATE_DISABLED;
+		else
+			state = dp->stp_state;
+
+		port = dp->index;
+
+		rtldsa_port_xstp_state_set(priv, port, state, mst_slot);
+	}
+}
+
+/**
+ * rtldsa_mst_find() - Find HW MST slot for MSTI (without reference counting)
+ * @priv: private data of rtldsa switch
+ * @msti: MSTI to search
+ *
+ * Return: found HW slot (unmodified reference count) or negative encoded error value
+ */
+static int rtldsa_mst_find(struct rtl838x_switch_priv *priv, u16 msti)
+			   __must_hold(&priv->reg_mutex)
+{
+	unsigned int i;
+
+	/* CIST is always mapped to 0 */
+	if (msti == 0)
+		return 0;
+
+	if (msti > 4095)
+		return -EINVAL;
+
+	/* search for existing entry */
+	for (i = 0; i < priv->n_mst - 1; i++) {
+		if (priv->msts[i].msti != msti)
+			continue;
+
+		return i + 1;
+	}
+
+	return -ENOENT;
+}
+
+/**
+ * rtldsa_mst_get() - Get (or allocate) HW MST slot for MSTI
+ * @priv: private data of rtldsa switch
+ * @msti: MSTI for which a HW slot is needed
+ *
+ * Return: allocated slot (with increased reference count) or negative encoded error value
+ */
+static int rtldsa_mst_get(struct rtl838x_switch_priv *priv, u16 msti)
+			  __must_hold(&priv->reg_mutex)
+{
+	unsigned int i;
+	int ret;
+
+	ret = rtldsa_mst_find(priv, msti);
+
+	/* CIST doesn't need reference counting */
+	if (ret == 0)
+		return ret;
+
+	/* valid HW slot was found - refcount needs to be adjusted */
+	if (ret > 0) {
+		u16 index = ret - 1;
+
+		kref_get(&priv->msts[index].refcount);
+		return ret;
+	}
+
+	/* any error except "no entry found" cannot be handled */
+	if (ret != -ENOENT)
+		return ret;
+
+	/* search for free slot */
+	for (i = 0; i < priv->n_mst - 1; i++) {
+		if (priv->msts[i].msti != 0)
+			continue;
+
+		kref_init(&priv->msts[i].refcount);
+		priv->msts[i].msti = msti;
+
+		rtldsa_mst_init(priv, i + 1);
+		return i + 1;
+	}
+
+	return -ENOSPC;
+}
+
+/**
+ * rtldsa_mst_recycle_slot() - Try to recycle old MST slot in case of -ENOSPC of rtldsa_mst_get()
+ * @priv: private data of rtldsa switch
+ * @msti: MSTI for which a HW slot is needed
+ * @old_mst_slot: old mst slot which will be released "soon"
+ *
+ * If a VLAN should be moved from one MSTI to another one, it is possible that there are currently
+ * not enough slots still available to perform a get+put operation. But if this slot is used
+ * by a single VLAN anyway, it is not needed to really allocate a new slow - reassigning it to
+ * the new MSTI is good enough.
+ *
+ * This is only allowed when holding the reg_mutex over both calls rtldsa_mst_get() and
+ * rtldsa_mst_recycle(). After a rtldsa_mst_recycle() call, rtldsa_mst_put_slot() must no longer
+ * be called for @old_mst_slot.
+ *
+ * Return: allocated slot (with increased reference count) or negative encoded error value
+ */
+static int rtldsa_mst_recycle_slot(struct rtl838x_switch_priv *priv, u16 msti, u16 old_mst_slot)
+				   __must_hold(&priv->reg_mutex)
+{
+	u16 index;
+
+	/* CIST is always mapped to 0 */
+	if (msti == 0)
+		return 0;
+
+	if (old_mst_slot == 0)
+		return -ENOSPC;
+
+	if (msti > 4095)
+		return -EINVAL;
+
+	if (old_mst_slot >= priv->n_mst)
+		return -EINVAL;
+
+	index = old_mst_slot - 1;
+
+	/* this slot is unused - should not happen because rtldsa_mst_get() searches for it */
+	if (priv->msts[index].msti == 0)
+		return -EINVAL;
+
+	/* it is only allowed to swap when no other VLAN is using this MST slot */
+	if (kref_read(&priv->msts[index].refcount) != 1)
+		return -ENOSPC;
+
+	priv->msts[index].msti = msti;
+	return old_mst_slot;
+}
+
+static void rtldsa_mst_release_slot(struct kref *ref)
+{
+	struct rtldsa_mst *slot = container_of(ref, struct rtldsa_mst, refcount);
+
+	slot->msti = 0;
+}
+
+/**
+ * rtldsa_mst_put_slot() - Decrement VLAN use counter for MST slot
+ * @priv: private data of rtldsa switch
+ * @mst_slot: MST slot which should be put
+ *
+ * Return: false when MST slot reference counter was only decreased or an invalid @mst_slot was
+ * given, true when @mst_slot is now unused
+ */
+static bool rtldsa_mst_put_slot(struct rtl838x_switch_priv *priv, u16 mst_slot)
+			        __must_hold(&priv->reg_mutex)
+{
+	unsigned int index;
+
+	/* CIST is always mapped to 0 and cannot be put */
+	if (mst_slot == 0)
+		return 0;
+
+	if (mst_slot >= priv->n_mst)
+		return 0;
+
+	index = mst_slot - 1;
+
+	/* this slot is unused and must not release a reference */
+	if (priv->msts[index].msti == 0)
+		return 0;
+
+	return kref_put(&priv->msts[index].refcount, rtldsa_mst_release_slot);
+}
+
+/**
+ * rtldsa_mst_replace() - Get HW slot for @msti and drop old HW slot
+ * @priv: private data of rtldsa switch
+ * @msti: MSTI for which a HW slot is needed
+ * @old_mst_slot: old mst slot which will no longer be assigned to VLAN
+ *
+ * Return: allocated slot (with increased reference count) or negative encoded error value
+ */
+static int rtldsa_mst_replace(struct rtl838x_switch_priv *priv, u16 msti, u16 old_mst_slot)
+			      __must_hold(&priv->reg_mutex)
+{
+	int mst_slot_new;
+
+	mst_slot_new = rtldsa_mst_get(priv, msti);
+	if (mst_slot_new == -ENOSPC)
+		return rtldsa_mst_recycle_slot(priv, msti, old_mst_slot);
+
+	/* directly return errors and don't free old slot */
+	if (mst_slot_new < 0)
+		return mst_slot_new;
+
+	rtldsa_mst_put_slot(priv, old_mst_slot);
+
+	return mst_slot_new;
+}
+
 static void rtldsa_update_port_member(struct rtl838x_switch_priv *priv, int port,
 				      const struct net_device *bridge_dev, bool join)
 				      __must_hold(&priv->reg_mutex)
@@ -1477,9 +1836,6 @@ static void rtldsa_update_port_member(struct rtl838x_switch_priv *priv, int port
 			continue;
 
 		if (!dsa_port_offloads_bridge_dev(other_dp, bridge_dev))
-			continue;
-
-		if (join && priv->lag_non_primary & BIT_ULL(other_port))
 			continue;
 
 		isolated = p->isolated && other_p->isolated;
@@ -1505,13 +1861,9 @@ static int rtldsa_port_bridge_join(struct dsa_switch *ds, int port, struct dsa_b
 				   bool *tx_fwd_offload, struct netlink_ext_ack *extack)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
+	unsigned int i;
 
 	pr_debug("%s %x: %d", __func__, (u32)priv, port);
-
-	if (priv->lag_non_primary & BIT_ULL(port)) {
-		pr_debug("%s: %d is lag slave. ignore\n", __func__, port);
-		return 0;
-	}
 
 	/* reset to default flags for new net_bridge_port */
 	priv->ports[port].isolated = false;
@@ -1523,6 +1875,10 @@ static int rtldsa_port_bridge_join(struct dsa_switch *ds, int port, struct dsa_b
 	if (priv->r->set_static_move_action)
 		priv->r->set_static_move_action(port, false);
 
+	/* Set to disabled in all MSTs, common code will take care of CIST */
+	for (i = 1; i < priv->n_mst; i++)
+		rtldsa_port_xstp_state_set(priv, port, BR_STATE_DISABLED, i);
+
 	mutex_unlock(&priv->reg_mutex);
 
 	return 0;
@@ -1531,6 +1887,7 @@ static int rtldsa_port_bridge_join(struct dsa_switch *ds, int port, struct dsa_b
 static void rtldsa_port_bridge_leave(struct dsa_switch *ds, int port, struct dsa_bridge bridge)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
+	unsigned int i;
 
 	pr_debug("%s %x: %d", __func__, (u32)priv, port);
 
@@ -1541,23 +1898,25 @@ static void rtldsa_port_bridge_leave(struct dsa_switch *ds, int port, struct dsa
 	if (priv->r->set_static_move_action)
 		priv->r->set_static_move_action(port, true);
 
+	/* Set to forwarding in all MSTs, common code will take care of CIST */
+	for (i = 1; i < priv->n_mst; i++)
+		rtldsa_port_xstp_state_set(priv, port, BR_STATE_FORWARDING, i);
+
 	mutex_unlock(&priv->reg_mutex);
 }
 
-void rtl83xx_port_stp_state_set(struct dsa_switch *ds, int port, u8 state)
+static void rtldsa_port_xstp_state_set(struct rtl838x_switch_priv *priv, int port,
+				       u8 state, u16 mst_slot)
+				       __must_hold(&priv->reg_mutex)
 {
-	u32 msti = 0;
 	u32 port_state[4];
 	int index, bit;
 	int pos = port;
-	struct rtl838x_switch_priv *priv = ds->priv;
 	int n = priv->port_width << 1;
 
 	/* Ports above or equal CPU port can never be configured */
 	if (port >= priv->cpu_port)
 		return;
-
-	mutex_lock(&priv->reg_mutex);
 
 	/* For the RTL839x and following, the bits are left-aligned, 838x and 930x
 	 * have 64 bit fields, 839x and 931x have 128 bit fields
@@ -1572,7 +1931,7 @@ void rtl83xx_port_stp_state_set(struct dsa_switch *ds, int port, u8 state)
 	index = n - (pos >> 4) - 1;
 	bit = (pos << 1) % 32;
 
-	priv->r->stp_get(priv, msti, port_state);
+	priv->r->stp_get(priv, mst_slot, port_state);
 
 	pr_debug("Current state, port %d: %d\n", port, (port_state[index] >> bit) & 3);
 	port_state[index] &= ~(3 << bit);
@@ -1594,8 +1953,26 @@ void rtl83xx_port_stp_state_set(struct dsa_switch *ds, int port, u8 state)
 		break;
 	}
 
-	priv->r->stp_set(priv, msti, port_state);
+	priv->r->stp_set(priv, mst_slot, port_state);
+}
 
+void rtl83xx_port_stp_state_set(struct dsa_switch *ds, int port, u8 state)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	struct dsa_port *dp = dsa_to_port(ds, port);
+	unsigned int i;
+
+	mutex_lock(&priv->reg_mutex);
+	rtldsa_port_xstp_state_set(priv, port, state, 0);
+
+	if (dp->bridge)
+		goto unlock;
+
+	/* for unbridged ports, also force the same state to the MSTIs */
+	for (i = 1; i < priv->n_mst; i++)
+		rtldsa_port_xstp_state_set(priv, port, state, i);
+
+unlock:
 	mutex_unlock(&priv->reg_mutex);
 }
 
@@ -1660,6 +2037,26 @@ static void rtl930x_fast_age(struct dsa_switch *ds, int port)
 	do { } while (sw_r32(priv->r->l2_tbl_flush_ctrl) & BIT(30));
 
 	mutex_unlock(&priv->reg_mutex);
+}
+
+static int rtldsa_port_mst_state_set(struct dsa_switch *ds, int port,
+				     const struct switchdev_mst_state *st)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	int mst_slot;
+
+	mutex_lock(&priv->reg_mutex);
+
+	mst_slot = rtldsa_mst_find(priv, st->msti);
+	if (mst_slot < 0) {
+		mutex_unlock(&priv->reg_mutex);
+		return mst_slot;
+	}
+
+	rtldsa_port_xstp_state_set(priv, port, st->state, mst_slot);
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
 }
 
 static int rtl83xx_vlan_filtering(struct dsa_switch *ds, int port,
@@ -1832,6 +2229,14 @@ static int rtl83xx_vlan_del(struct dsa_switch *ds, int port,
 	info.untagged_ports &= (~BIT_ULL(port));
 	info.member_ports &= (~BIT_ULL(port));
 
+	/* VLANs without members are set back (implicitly) to CIST by DSA */
+	if (!info.member_ports) {
+		u16 mst = info.fid;
+		info.fid = 0;
+
+		rtldsa_mst_put_slot(priv, mst);
+	}
+
 	priv->r->vlan_set_untagged(vlan->vid, info.untagged_ports);
 	pr_debug("Untagged ports, VLAN %d: %llx\n", vlan->vid, info.untagged_ports);
 
@@ -1839,6 +2244,46 @@ static int rtl83xx_vlan_del(struct dsa_switch *ds, int port,
 	pr_debug("Member ports, VLAN %d: %llx\n", vlan->vid, info.member_ports);
 
 	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}
+
+static int rtldsa_port_vlan_fast_age(struct dsa_switch *ds, int port, u16 vid)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	int ret;
+
+	if (!priv->r->vlan_port_fast_age)
+		return -EOPNOTSUPP;
+
+	mutex_lock(&priv->reg_mutex);
+	ret = priv->r->vlan_port_fast_age(priv, port, vid);
+	mutex_unlock(&priv->reg_mutex);
+
+	return ret;
+}
+
+static int rtldsa_vlan_msti_set(struct dsa_switch *ds, struct dsa_bridge bridge,
+				const struct switchdev_vlan_msti *msti)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+	struct rtl838x_vlan_info info;
+	u16 mst_slot_old;
+	int mst_slot;
+
+	priv->r->vlan_tables_read(msti->vid, &info);
+	mst_slot_old = info.fid;
+
+	/* find HW slot for MSTI */
+	mutex_lock(&priv->reg_mutex);
+	mst_slot = rtldsa_mst_replace(priv, msti->msti, mst_slot_old);
+	mutex_unlock(&priv->reg_mutex);
+
+	if (mst_slot < 0)
+		return mst_slot;
+
+	info.fid = mst_slot;
+	priv->r->vlan_set_tagged(msti->vid, &info);
 
 	return 0;
 }
@@ -2632,10 +3077,12 @@ const struct dsa_switch_ops rtl83xx_switch_ops = {
 	.port_bridge_leave	= rtldsa_port_bridge_leave,
 	.port_stp_state_set	= rtl83xx_port_stp_state_set,
 	.port_fast_age		= rtl83xx_fast_age,
+	.port_mst_state_set	= rtldsa_port_mst_state_set,
 
 	.port_vlan_filtering	= rtl83xx_vlan_filtering,
 	.port_vlan_add		= rtl83xx_vlan_add,
 	.port_vlan_del		= rtl83xx_vlan_del,
+	.vlan_msti_set		= rtldsa_vlan_msti_set,
 
 	.port_fdb_add		= rtl83xx_port_fdb_add,
 	.port_fdb_del		= rtl83xx_port_fdb_del,
@@ -2689,10 +3136,13 @@ const struct dsa_switch_ops rtl93xx_switch_ops = {
 	.port_bridge_leave	= rtldsa_port_bridge_leave,
 	.port_stp_state_set	= rtl83xx_port_stp_state_set,
 	.port_fast_age		= rtl930x_fast_age,
+	.port_mst_state_set	= rtldsa_port_mst_state_set,
 
 	.port_vlan_filtering	= rtl83xx_vlan_filtering,
 	.port_vlan_add		= rtl83xx_vlan_add,
 	.port_vlan_del		= rtl83xx_vlan_del,
+	.port_vlan_fast_age	= rtldsa_port_vlan_fast_age,
+	.vlan_msti_set		= rtldsa_vlan_msti_set,
 
 	.port_fdb_add		= rtl83xx_port_fdb_add,
 	.port_fdb_del		= rtl83xx_port_fdb_del,

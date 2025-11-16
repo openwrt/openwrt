@@ -124,12 +124,12 @@ sub download_cmd {
 	my $filename = shift;
 
 	if ($download_tool eq "curl") {
-		return (qw(curl -f --connect-timeout 20 --retry 5 --location),
+		return (qw(curl -f --connect-timeout 5 --retry 3 --location),
 			$check_certificate ? () : '--insecure',
 			shellwords($ENV{CURL_OPTIONS} || ''),
 			$url);
 	} elsif ($download_tool eq "wget") {
-		return (qw(wget --tries=5 --timeout=20 --output-document=-),
+		return (qw(wget --tries=3 --timeout=5 --output-document=-),
 			$check_certificate ? () : '--no-check-certificate',
 			shellwords($ENV{WGET_OPTIONS} || ''),
 			$url);

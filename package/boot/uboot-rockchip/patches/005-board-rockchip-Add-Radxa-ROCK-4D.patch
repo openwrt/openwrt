@@ -1,13 +1,7 @@
+From 06cc02fe00d5a6d9ef51aa8852b891c0a5e3cf3e Mon Sep 17 00:00:00 2001
 From: Jonas Karlman <jonas@kwiboo.se>
-To: Kever Yang <kever.yang@rock-chips.com>,
-	Simon Glass <sjg@chromium.org>,
-	Philipp Tomsich <philipp.tomsich@vrull.eu>,
-	Tom Rini <trini@konsulko.com>, Jonas Karlman <jonas@kwiboo.se>
-Cc: Quentin Schulz <quentin.schulz@cherry.de>, u-boot@lists.denx.de
-Subject: [PATCH v3 10/10] board: rockchip: Add Radxa ROCK 4D
-Date: Sun, 31 Aug 2025 11:20:31 +0000	[thread overview]
-Message-ID: <20250831112046.2642363-11-jonas@kwiboo.se> (raw)
-In-Reply-To: <20250831112046.2642363-1-jonas@kwiboo.se>
+Date: Sun, 19 Oct 2025 15:47:19 +0000
+Subject: [PATCH] board: rockchip: Add Radxa ROCK 4D
 
 The Radxa ROCK 4D is a compact single-board computer (SBC) featuring
 numerous top-tier functions, features, and expansion options.
@@ -27,9 +21,7 @@ or directly from USB when the MASKROM button is pressed, booting
 directly from SD-card is not possible on these boards.
 
 Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
----
-v3: Drop the reset-gpios prop rename
-v2: Add comment about the reset-gpios prop rename
+Reviewed-by: Kever Yang <kever.yang@rock-chips.com>
 ---
  arch/arm/dts/rk3576-rock-4d-u-boot.dtsi   | 10 ++++
  arch/arm/mach-rockchip/rk3576/MAINTAINERS |  6 ++
@@ -297,7 +289,7 @@ v2: Add comment about the reset-gpios prop rename
 +CONFIG_ERRNO_STR=y
 --- a/doc/board/rockchip/rockchip.rst
 +++ b/doc/board/rockchip/rockchip.rst
-@@ -138,6 +138,7 @@ List of mainline supported Rockchip boar
+@@ -137,6 +137,7 @@ List of mainline supported Rockchip boar
       - ArmSoM Sige5 (sige5-rk3576)
       - Firefly ROC-RK3576-PC (roc-pc-rk3576)
       - Generic RK3576 (generic-rk3576)

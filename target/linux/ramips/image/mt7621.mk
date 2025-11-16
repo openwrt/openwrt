@@ -817,7 +817,7 @@ define Device/cudy_r700
   DEVICE_MODEL := R700
   IMAGE_SIZE := 15872k
   UIMAGE_NAME := R29
-  DEVICE_PACKAGES := -uboot-envtools
+  DEVICE_PACKAGES := -uboot-envtools -wpad-basic-mbedtls
 endef
 TARGET_DEVICES += cudy_r700
 

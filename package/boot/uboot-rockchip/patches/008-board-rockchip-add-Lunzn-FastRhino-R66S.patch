@@ -1,6 +1,6 @@
-From 03610008ce31b7a780b7864a0a916d945b7234ba Mon Sep 17 00:00:00 2001
+From 37a5383059d0c3d8a72394cbffef775042a40acd Mon Sep 17 00:00:00 2001
 From: Tianling Shen <cnsztl@gmail.com>
-Date: Mon, 8 Sep 2025 19:29:55 +0800
+Date: Mon, 8 Sep 2025 19:32:18 +0800
 Subject: [PATCH] board: rockchip: add Lunzn FastRhino R66S
 
 Lunzn Fastrhino R66S is a high-performance mini router.
@@ -14,6 +14,7 @@ Specification:
 - 12v DC Jack
 
 Signed-off-by: Tianling Shen <cnsztl@gmail.com>
+Reviewed-by: Kever Yang <kever.yang@rock-chips.com>
 ---
  .../arm/dts/rk3568-fastrhino-r66s-u-boot.dtsi |  3 +
  board/rockchip/evb_rk3568/MAINTAINERS         |  7 ++
@@ -114,7 +115,7 @@ Signed-off-by: Tianling Shen <cnsztl@gmail.com>
 +CONFIG_ERRNO_STR=y
 --- a/doc/board/rockchip/rockchip.rst
 +++ b/doc/board/rockchip/rockchip.rst
-@@ -128,6 +128,7 @@ List of mainline supported Rockchip boar
+@@ -129,6 +129,7 @@ List of mainline supported Rockchip boar
       - FriendlyElec NanoPi R5S (nanopi-r5s-rk3568)
       - Generic RK3566/RK3568 (generic-rk3568)
       - Hardkernel ODROID-M1 (odroid-m1-rk3568)

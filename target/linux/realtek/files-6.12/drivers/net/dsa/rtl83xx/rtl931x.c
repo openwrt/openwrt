@@ -1471,6 +1471,24 @@ static void rtl931x_vlan_port_pvid_set(int port, enum pbvlan_type type, int pvid
 		sw_w32_mask(0xfff << 14, pvid << 14, RTL931X_VLAN_PORT_IGR_CTRL + (port << 2));
 }
 
+static int rtldsa_931x_vlan_port_fast_age(struct rtl838x_switch_priv *priv, int port, u16 vid)
+{
+	u32 val;
+
+	sw_w32(vid << 20, RTL931X_L2_TBL_FLUSH_CTRL + 4);
+
+	val = 0;
+	val |= port << 11;
+	val |= BIT(24); /* compare port id */
+	val |= BIT(26); /* compare VID */
+	val |= BIT(28); /* status - trigger flush */
+	sw_w32(val, RTL931X_L2_TBL_FLUSH_CTRL);
+
+	do { } while (sw_r32(RTL931X_L2_TBL_FLUSH_CTRL) & BIT (28));
+
+	return 0;
+}
+
 static void rtl931x_set_igr_filter(int port, enum igr_filter state)
 {
 	sw_w32_mask(0x3 << ((port & 0xf)<<1), state << ((port & 0xf)<<1),
@@ -1644,6 +1662,108 @@ static void rtldsa_931x_led_init(struct rtl838x_switch_priv *priv)
 		dev_dbg(dev, "%08x: %08x\n", 0xbb000600 + i * 4, sw_r32(0x0600 + i * 4));
 }
 
+static u64 rtldsa_931x_stat_port_table_read(int port, unsigned int mib_size,
+					    unsigned int mib_offset, bool is_pvt)
+{
+	struct table_reg *r;
+	int field_offset;
+	u64 ret = 0;
+
+	if (is_pvt) {
+		r = rtl_table_get(RTL9310_TBL_5, 1);
+		field_offset = 27;
+	} else {
+		r = rtl_table_get(RTL9310_TBL_5, 0);
+		field_offset = 52;
+	}
+
+	rtl_table_read(r, port);
+
+	if (mib_size == 2) {
+		ret = sw_r32(rtl_table_data(r, field_offset - (mib_offset + 1)));
+		ret <<= 32;
+	}
+
+	ret |= sw_r32(rtl_table_data(r, field_offset - mib_offset));
+
+	rtl_table_release(r);
+
+	return ret;
+}
+
+static void rtldsa_931x_qos_set_group_selector(int port, int group)
+{
+	sw_w32_mask(RTL93XX_PORT_TBL_IDX_CTRL_IDX_MASK(port),
+		    group << RTL93XX_PORT_TBL_IDX_CTRL_IDX_OFFSET(port),
+		    RTL931X_PORT_TBL_IDX_CTRL(port));
+}
+
+static void rtldsa_931x_qos_setup_default_dscp2queue_map(void)
+{
+	u32 queue;
+
+	/* The default mapping between dscp and queue is based on
+	 * the first 3 bits indicate the precedence (prio = dscp >> 3).
+	 */
+	for (int i = 0; i < DSCP_MAP_MAX; i++) {
+		queue = (i >> 3) << RTL93XX_REMAP_DSCP_INTPRI_DSCP_OFFSET(i);
+		sw_w32_mask(RTL93XX_REMAP_DSCP_INTPRI_DSCP_MASK(i),
+			    queue, RTL931X_REMAP_DSCP(i));
+	}
+}
+
+static void rtldsa_931x_qos_prio2queue_matrix(int *min_queues)
+{
+	u32 v = 0;
+
+	for (int i = 0; i < MAX_PRIOS; i++)
+		v |= i << (min_queues[i] * 3);
+
+	sw_w32(v, RTL931X_QM_INTPRI2QID_CTRL);
+}
+
+static void rtldsa_931x_qos_set_scheduling_queue_weights(struct rtl838x_switch_priv *priv)
+{
+	struct dsa_port *dp;
+	u32 addr;
+
+	dsa_switch_for_each_user_port(dp, priv->ds) {
+		for (int q = 0; q < 8; q++) {
+			if (dp->index < 51)
+				addr = RTL931X_SCHED_PORT_Q_CTRL_SET0(dp->index, q);
+			else
+				addr = RTL931X_SCHED_PORT_Q_CTRL_SET1(dp->index, q);
+
+			sw_w32(rtldsa_default_queue_weights[q], addr);
+		}
+	}
+}
+
+static void rtldsa_931x_qos_init(struct rtl838x_switch_priv *priv)
+{
+	struct dsa_port *dp;
+	u32 v;
+
+	/* Assign all the ports to the Group-0 */
+	dsa_switch_for_each_user_port(dp, priv->ds)
+		rtldsa_931x_qos_set_group_selector(dp->index, 0);
+
+	rtldsa_931x_qos_prio2queue_matrix(rtldsa_max_available_queue);
+
+	/* configure priority weights */
+	v = 0;
+	v |= FIELD_PREP(RTL93XX_PRI_SEL_TBL_CTRL_PORT_MASK, 3);
+	v |= FIELD_PREP(RTL93XX_PRI_SEL_TBL_CTRL_DSCP_MASK, 5);
+	v |= FIELD_PREP(RTL93XX_PRI_SEL_TBL_CTRL_ITAG_MASK, 6);
+	v |= FIELD_PREP(RTL93XX_PRI_SEL_TBL_CTRL_OTAG_MASK, 7);
+
+	sw_w32(v, RTL931X_PRI_SEL_TBL_CTRL(0) + 4);
+	sw_w32(0, RTL931X_PRI_SEL_TBL_CTRL(0));
+
+	rtldsa_931x_qos_setup_default_dscp2queue_map();
+	rtldsa_931x_qos_set_scheduling_queue_weights(priv);
+}
+
 const struct rtl838x_reg rtl931x_reg = {
 	.mask_port_reg_be = rtl839x_mask_port_reg_be,
 	.set_port_reg_be = rtl839x_set_port_reg_be,
@@ -1654,6 +1774,10 @@ const struct rtl838x_reg rtl931x_reg = {
 	.stat_port_rst = RTL931X_STAT_PORT_RST,
 	.stat_rst = RTL931X_STAT_RST,
 	.stat_port_std_mib = 0,  /* Not defined */
+	.stat_port_table_read = rtldsa_931x_stat_port_table_read,
+	.stat_counters_lock = rtldsa_counters_lock_table,
+	.stat_counters_unlock = rtldsa_counters_unlock_table,
+	.stat_counter_poll_interval = RTLDSA_COUNTERS_FAST_POLL_INTERVAL,
 	.traffic_enable = rtl931x_traffic_enable,
 	.traffic_disable = rtl931x_traffic_disable,
 	.traffic_set = rtl931x_traffic_set,
@@ -1692,6 +1816,7 @@ const struct rtl838x_reg rtl931x_reg = {
 	.vlan_port_keep_tag_set = rtl931x_vlan_port_keep_tag_set,
 	.vlan_port_pvidmode_set = rtl931x_vlan_port_pvidmode_set,
 	.vlan_port_pvid_set = rtl931x_vlan_port_pvid_set,
+	.vlan_port_fast_age = rtldsa_931x_vlan_port_fast_age,
 	.trk_mbr_ctr = rtldsa_931x_trk_mbr_ctr,
 	.rma_bpdu_fld_pmask = RTL931X_RMA_BPDU_FLD_PMSK,
 	.set_vlan_igr_filter = rtl931x_set_igr_filter,
@@ -1710,4 +1835,5 @@ const struct rtl838x_reg rtl931x_reg = {
 	.enable_learning = rtldsa_931x_enable_learning,
 	.enable_flood = rtldsa_931x_enable_flood,
 	.set_receive_management_action = rtldsa_931x_set_receive_management_action,
+	.qos_init = rtldsa_931x_qos_init,
 };

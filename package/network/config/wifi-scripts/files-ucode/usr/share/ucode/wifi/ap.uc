@@ -135,11 +135,15 @@ function iface_auth_type(config) {
 			 netifd.setup_failed('INVALID_WPA_PSK');
 		}
 
-		set_default(config, 'wpa_psk_file', `/var/run/hostapd-${config.ifname}.psk`);
-		touch_file(config.wpa_psk_file);
+		if (config.auth_type in [ 'psk', 'psk-sae' ]) {
+			set_default(config, 'wpa_psk_file', `/var/run/hostapd-${config.ifname}.psk`);
+			touch_file(config.wpa_psk_file);
+		}
 
-		set_default(config, 'sae_password_file', `/var/run/hostapd-${config.ifname}.sae`);
-		touch_file(config.sae_password_file);
+		if (config.auth_type in [ 'sae', 'psk-sae' ]) {
+			set_default(config, 'sae_password_file', `/var/run/hostapd-${config.ifname}.sae`);
+			touch_file(config.sae_password_file);
+		}
 		break;
 
 	case 'eap':
@@ -464,9 +468,6 @@ function iface_interworking(config) {
 export function generate(interface, data, config, vlans, stas, phy_features) {
 	config.ctrl_interface = '/var/run/hostapd';
 
-	iface_wpa_stations(config, stas);
-	iface_sae_stations(config, stas);
-
 	config.start_disabled = data.ap_start_disabled;
 	iface_setup(config);
 
@@ -477,6 +478,11 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 		if (config.auth_type == 'eap-eap2')
 			config.auth_type = 'eap2';
 	}
+
+	if (config.auth_type in [ 'psk', 'psk-sae' ])
+		iface_wpa_stations(config, stas);
+	if (config.auth_type in [ 'sae', 'psk-sae' ])
+		iface_sae_stations(config, stas);
 
 	iface_auth_type(config);
 

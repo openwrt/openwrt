@@ -1,0 +1,60 @@
+From ad8afc8813567994164f2720189c819da8c22b99 Mon Sep 17 00:00:00 2001
+From: Jonas Karlman <jonas@kwiboo.se>
+Date: Tue, 4 Mar 2025 20:16:35 +0000
+Subject: [PATCH] arm64: dts: rockchip: Add user button to Radxa E20C
+
+Radxa E20C has two buttons, one SARADC maskrom button and one GPIO user
+button.
+
+Add support for the user button using a gpio-keys node.
+
+Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Link: https://lore.kernel.org/r/20250304201642.831218-3-jonas@kwiboo.se
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ .../boot/dts/rockchip/rk3528-radxa-e20c.dts   | 20 +++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3528-radxa-e20c.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3528-radxa-e20c.dts
+@@ -7,6 +7,7 @@
+ 
+ /dts-v1/;
+ 
++#include <dt-bindings/input/input.h>
+ #include <dt-bindings/leds/common.h>
+ #include "rk3528.dtsi"
+ 
+@@ -18,6 +19,19 @@
+ 		stdout-path = "serial0:1500000n8";
+ 	};
+ 
++	gpio-keys {
++		compatible = "gpio-keys";
++		pinctrl-names = "default";
++		pinctrl-0 = <&user_key>;
++
++		button-user {
++			gpios = <&gpio0 RK_PA0 GPIO_ACTIVE_LOW>;
++			label = "USER";
++			linux,code = <BTN_1>;
++			wakeup-source;
++		};
++	};
++
+ 	leds {
+ 		compatible = "gpio-leds";
+ 		pinctrl-names = "default";
+@@ -50,6 +64,12 @@
+ };
+ 
+ &pinctrl {
++	gpio-keys {
++		user_key: user-key {
++			rockchip,pins = <0 RK_PA0 RK_FUNC_GPIO &pcfg_pull_up>;
++		};
++	};
++
+ 	leds {
+ 		lan_led_g: lan-led-g {
+ 			rockchip,pins = <4 RK_PB5 RK_FUNC_GPIO &pcfg_pull_none>;

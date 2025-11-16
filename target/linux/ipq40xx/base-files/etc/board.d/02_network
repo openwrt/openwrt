@@ -17,6 +17,7 @@ ipq40xx_setup_interfaces()
 	asus,rt-ac58u|\
 	linksys,ea6350v3|\
 	linksys,ea8300|\
+	linksys,mr6350|\
 	linksys,mr8300|\
 	mikrotik,hap-ac2|\
 	mikrotik,hap-ac3|\
@@ -42,6 +43,7 @@ ipq40xx_setup_interfaces()
 	linksys,whw03v2|\
 	luma,wrtq-329acn|\
 	mikrotik,cap-ac|\
+	netgear,rbr20|\
 	netgear,wac510|\
 	sony,ncp-hg100-cellular|\
 	wallys,dr40x9|\
@@ -80,7 +82,8 @@ ipq40xx_setup_interfaces()
 		;;
 	avm,fritzrepeater-3000|\
 	cellc,rtl30vw|\
-	compex,wpj428)
+	compex,wpj428|\
+	netgear,rbs20)
 		ucidef_set_interface_lan "lan1 lan2"
 		;;
 	devolo,magic-2-wifi-next)
@@ -219,6 +222,7 @@ ipq40xx_setup_macs()
 		;;
 	linksys,ea6350v3|\
 	linksys,ea8300|\
+	linksys,mr6350|\
 	linksys,mr8300)
 		wan_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 		lan_mac=$(macaddr_add "$wan_mac" 1)

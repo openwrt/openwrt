@@ -1,0 +1,143 @@
+From d3a05f490d048808968df1e0d3240ab01fe82211 Mon Sep 17 00:00:00 2001
+From: Yao Zi <ziyao@disroot.org>
+Date: Thu, 17 Apr 2025 12:01:18 +0000
+Subject: [PATCH] arm64: dts: rockchip: Add I2C controllers for RK3528
+
+Describe I2C controllers shipped by RK3528 in devicetree. For I2C-2,
+I2C-4 and I2C-7 which come with only a set of possible pins, a default
+pin configuration is included.
+
+Signed-off-by: Yao Zi <ziyao@disroot.org>
+Reviewed-by: Jonas Karlman <jonas@kwiboo.se>
+Link: https://lore.kernel.org/r/20250417120118.17610-5-ziyao@disroot.org
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3528.dtsi | 110 +++++++++++++++++++++++
+ 1 file changed, 110 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3528.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3528.dtsi
+@@ -24,6 +24,14 @@
+ 		gpio2 = &gpio2;
+ 		gpio3 = &gpio3;
+ 		gpio4 = &gpio4;
++		i2c0 = &i2c0;
++		i2c1 = &i2c1;
++		i2c2 = &i2c2;
++		i2c3 = &i2c3;
++		i2c4 = &i2c4;
++		i2c5 = &i2c5;
++		i2c6 = &i2c6;
++		i2c7 = &i2c7;
+ 		serial0 = &uart0;
+ 		serial1 = &uart1;
+ 		serial2 = &uart2;
+@@ -465,6 +473,108 @@
+ 			status = "disabled";
+ 		};
+ 
++		i2c0: i2c@ffa50000 {
++			compatible = "rockchip,rk3528-i2c",
++				     "rockchip,rk3399-i2c";
++			reg = <0x0 0xffa50000 0x0 0x1000>;
++			clocks = <&cru CLK_I2C0>, <&cru PCLK_I2C0>;
++			clock-names = "i2c", "pclk";
++			interrupts = <GIC_SPI 61 IRQ_TYPE_LEVEL_HIGH>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "disabled";
++		};
++
++		i2c1: i2c@ffa58000 {
++			compatible = "rockchip,rk3528-i2c",
++				     "rockchip,rk3399-i2c";
++			reg = <0x0 0xffa58000 0x0 0x1000>;
++			clocks = <&cru CLK_I2C1>, <&cru PCLK_I2C1>;
++			clock-names = "i2c", "pclk";
++			interrupts = <GIC_SPI 62 IRQ_TYPE_LEVEL_HIGH>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "disabled";
++		};
++
++		i2c2: i2c@ffa60000 {
++			compatible = "rockchip,rk3528-i2c",
++				     "rockchip,rk3399-i2c";
++			reg = <0x0 0xffa60000 0x0 0x1000>;
++			clocks = <&cru CLK_I2C2>, <&cru PCLK_I2C2>;
++			clock-names = "i2c", "pclk";
++			interrupts = <GIC_SPI 63 IRQ_TYPE_LEVEL_HIGH>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&i2c2m1_xfer>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "disabled";
++		};
++
++		i2c3: i2c@ffa68000 {
++			compatible = "rockchip,rk3528-i2c",
++				     "rockchip,rk3399-i2c";
++			reg = <0x0 0xffa68000 0x0 0x1000>;
++			clocks = <&cru CLK_I2C3>, <&cru PCLK_I2C3>;
++			clock-names = "i2c", "pclk";
++			interrupts = <GIC_SPI 64 IRQ_TYPE_LEVEL_HIGH>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "disabled";
++		};
++
++		i2c4: i2c@ffa70000 {
++			compatible = "rockchip,rk3528-i2c",
++				     "rockchip,rk3399-i2c";
++			reg = <0x0 0xffa70000 0x0 0x1000>;
++			clocks = <&cru CLK_I2C4>, <&cru PCLK_I2C4>;
++			clock-names = "i2c", "pclk";
++			interrupts = <GIC_SPI 65 IRQ_TYPE_LEVEL_HIGH>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&i2c4_xfer>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "disabled";
++		};
++
++		i2c5: i2c@ffa78000 {
++			compatible = "rockchip,rk3528-i2c",
++				     "rockchip,rk3399-i2c";
++			reg = <0x0 0xffa78000 0x0 0x1000>;
++			clocks = <&cru CLK_I2C5>, <&cru PCLK_I2C5>;
++			clock-names = "i2c", "pclk";
++			interrupts = <GIC_SPI 66 IRQ_TYPE_LEVEL_HIGH>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "disabled";
++		};
++
++		i2c6: i2c@ffa80000 {
++			compatible = "rockchip,rk3528-i2c",
++				     "rockchip,rk3399-i2c";
++			reg = <0x0 0xffa80000 0x0 0x1000>;
++			clocks = <&cru CLK_I2C6>, <&cru PCLK_I2C6>;
++			clock-names = "i2c", "pclk";
++			interrupts = <GIC_SPI 67 IRQ_TYPE_LEVEL_HIGH>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "disabled";
++		};
++
++		i2c7: i2c@ffa88000 {
++			compatible = "rockchip,rk3528-i2c",
++				     "rockchip,rk3399-i2c";
++			reg = <0x0 0xffa88000 0x0 0x1000>;
++			clocks = <&cru CLK_I2C7>, <&cru PCLK_I2C7>;
++			clock-names = "i2c", "pclk";
++			interrupts = <GIC_SPI 68 IRQ_TYPE_LEVEL_HIGH>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&i2c7_xfer>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "disabled";
++		};
++
+ 		saradc: adc@ffae0000 {
+ 			compatible = "rockchip,rk3528-saradc";
+ 			reg = <0x0 0xffae0000 0x0 0x10000>;

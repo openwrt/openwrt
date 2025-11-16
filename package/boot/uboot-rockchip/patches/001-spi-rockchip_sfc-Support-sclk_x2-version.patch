@@ -1,27 +1,14 @@
-From: Jonas Karlman <jonas@kwiboo.se>
-To: Kever Yang <kever.yang@rock-chips.com>,
-	Simon Glass <sjg@chromium.org>,
-	Philipp Tomsich <philipp.tomsich@vrull.eu>,
-	Tom Rini <trini@konsulko.com>,
-	Jagan Teki <jagan@amarulasolutions.com>
-Cc: Quentin Schulz <quentin.schulz@cherry.de>,
-	u-boot@lists.denx.de, Jonas Karlman <jonas@kwiboo.se>,
-	Jon Lin <jon.lin@rock-chips.com>
-Subject: [PATCH v3 01/10] spi: rockchip_sfc: Support sclk_x2 version
-Date: Sun, 31 Aug 2025 11:20:22 +0000	[thread overview]
-Message-ID: <20250831112046.2642363-2-jonas@kwiboo.se> (raw)
-In-Reply-To: <20250831112046.2642363-1-jonas@kwiboo.se>
-
+From 193563a005edc4e54426458ee6e097c8e4b38874 Mon Sep 17 00:00:00 2001
 From: Jon Lin <jon.lin@rock-chips.com>
+Date: Sun, 19 Oct 2025 15:47:15 +0000
+Subject: [PATCH] spi: rockchip_sfc: Support sclk_x2 version
 
 SFC after version 8 supports dtr mode, so the IO is the binary output of
 the controller clock.
 
 Signed-off-by: Jon Lin <jon.lin@rock-chips.com>
 Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
----
-v3: No change
-v2: No change
+Reviewed-by: Kever Yang <kever.yang@rock-chips.com>
 ---
  drivers/spi/rockchip_sfc.c | 13 ++++++++++++-
  1 file changed, 12 insertions(+), 1 deletion(-)

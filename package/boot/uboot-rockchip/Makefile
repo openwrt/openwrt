@@ -165,6 +165,31 @@ define U-Boot/rockpro64-rk3399
 endef
 
 
+# RK3528 boards
+
+define U-Boot/rk3528/Default
+  BUILD_SUBTARGET:=armv8
+  DEPENDS:=+PACKAGE_u-boot-$(1):trusted-firmware-a-rk3528
+  ATF:=rk3528_bl31_v1.20.elf
+  TPL:=rk3528_ddr_1056MHz_v1.11.bin
+endef
+
+define U-Boot/radxa-e20c-rk3528
+  $(U-Boot/rk3528/Default)
+  NAME:=E20C
+  BUILD_DEVICES:= \
+    radxa_e20c
+endef
+
+define U-Boot/rock-2-rk3528
+  $(U-Boot/rk3528/Default)
+  NAME:=ROCK 2A/2F
+  BUILD_DEVICES:= \
+    radxa_rock-2a \
+    radxa_rock-2f
+endef
+
+
 # RK3566 boards
 
 define U-Boot/rk3566/Default
@@ -395,6 +420,8 @@ UBOOT_TARGETS := \
   rock64-rk3328 \
   rock-pi-e-rk3328 \
   rock-pi-e-v3-rk3328 \
+  radxa-e20c-rk3528 \
+  rock-2-rk3528 \
   nanopi-r3s-rk3566 \
   radxa-cm3-io-rk3566 \
   radxa-zero-3-rk3566 \
