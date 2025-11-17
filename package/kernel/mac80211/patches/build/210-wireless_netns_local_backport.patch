@@ -4,11 +4,10 @@
  	list_for_each_entry(wdev, &rdev->wiphy.wdev_list, list) {
  		if (!wdev->netdev)
  			continue;
--		wdev->netdev->netns_immutable = false;
 +#if LINUX_VERSION_IS_GEQ(6,15,0)
-+		wdev->netdev->netns_immutable = true;
+ 		wdev->netdev->netns_immutable = false;
 +#elif LINUX_VERSION_IS_GEQ(6,12,0)
-+		wdev->netdev->netns_local = true;
++		wdev->netdev->netns_local = false;
 +#endif
  		err = dev_change_net_namespace(wdev->netdev, net, "wlan%d");
  		if (err)
