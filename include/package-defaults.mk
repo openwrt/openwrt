@@ -125,13 +125,14 @@ define Build/Configure/Default
 endef
 
 MAKE_VARS = \
+	$(TARGET_CONFIGURE_OPTS) \
 	CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(TARGET_CPPFLAGS) $(EXTRA_CPPFLAGS)" \
 	CXXFLAGS="$(TARGET_CXXFLAGS) $(EXTRA_CXXFLAGS) $(TARGET_CPPFLAGS) $(EXTRA_CPPFLAGS)" \
 	LDFLAGS="$(TARGET_LDFLAGS) $(EXTRA_LDFLAGS)"
 
 MAKE_FLAGS = \
-	$(TARGET_CONFIGURE_OPTS) \
 	CROSS="$(TARGET_CROSS)" \
+	CROSS_COMPILE="$(TARGET_CROSS)" \
 	ARCH="$(ARCH)"
 
 MAKE_INSTALL_FLAGS = \
@@ -156,9 +157,9 @@ define Build/Install/Default
 endef
 
 define Build/Dist/Default
-	$(call Build/Compile/Default, DESTDIR="$(PKG_BUILD_DIR)/tmp" CC="$(TARGET_CC)" dist)
+	$(call Build/Compile/Default, DESTDIR="$(PKG_BUILD_DIR)/tmp" dist)
 endef
 
 define Build/DistCheck/Default
-	$(call Build/Compile/Default, DESTDIR="$(PKG_BUILD_DIR)/tmp" CC="$(TARGET_CC)" distcheck)
+	$(call Build/Compile/Default, DESTDIR="$(PKG_BUILD_DIR)/tmp" distcheck)
 endef

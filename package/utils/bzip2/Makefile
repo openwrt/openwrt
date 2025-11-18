@@ -58,13 +58,15 @@ endef
 TARGET_CFLAGS += \
 	$(FPIC)
 
-CONFIGURE_ARGS += --prefix=/usr
-
 MAKE_FLAGS += \
 	-f Makefile-libbz2_so \
+	$(TARGET_CONFIGURE_OPTS) \
 	CFLAGS="$(TARGET_CFLAGS)" \
 	LDFLAGS="$(TARGET_LDFLAGS)" \
 	all
+
+define Build/Configure
+endef
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
@@ -94,14 +96,15 @@ HOST_CFLAGS += \
 HOST_MAKE_FLAGS+= \
 	CFLAGS="$(HOST_CFLAGS)" \
 	LDFLAGS="$(HOST_LDFLAGS)" \
+	PREFIX="$(HOST_BUILD_PREFIX)/" \
 	all
 
-HOST_CONFIGURE_ARGS+= \
-	--prefix=$(STAGING_DIR_HOSTPKG)
+define Host/Configure
+endef
 
 define Host/Install
 	$(INSTALL_DIR) $(STAGING_DIR_HOSTPKG)/bin/
-	$(MAKE) -C $(HOST_BUILD_DIR) PREFIX=$(STAGING_DIR_HOSTPKG)/ install
+	$(Host/Install/Default)
 endef
 
 $(eval $(call HostBuild))
