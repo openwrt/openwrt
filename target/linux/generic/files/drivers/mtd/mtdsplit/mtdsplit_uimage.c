@@ -226,7 +226,7 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 
 	if (rootfs_size == 0) {
 		pr_debug("no rootfs found in \"%s\"\n", master->name);
-		ret = -ENODEV;
+		ret = -ENOENT;
 		goto err_free_buf;
 	}
 

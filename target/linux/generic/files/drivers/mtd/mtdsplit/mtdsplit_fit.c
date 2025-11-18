@@ -210,7 +210,7 @@ mtdsplit_fit_parse(struct mtd_info *mtd,
 
 	of_property_read_string(np, "openwrt,cmdline-match", &cmdline_match);
 	if (cmdline_match && !strstr(saved_command_line, cmdline_match))
-		return -ENODEV;
+		return -ENOENT;
 
 	of_property_read_u32(np, "openwrt,fit-offset", &offset_start);
 
@@ -247,7 +247,7 @@ mtdsplit_fit_parse(struct mtd_info *mtd,
 	if (fit_size == 0) {
 		pr_err("FIT image in \"%s\" at offset %llx has null size\n",
 		       mtd->name, (unsigned long long) fit_offset);
-		return -ENODEV;
+		return -ENOENT;
 	}
 
 	/*
@@ -304,7 +304,7 @@ mtdsplit_fit_parse(struct mtd_info *mtd,
 		if (images_noffset < 0) {
 			pr_err("Can't find images parent node '%s' (%s)\n",
 			FIT_IMAGES_PATH, fdt_strerror(images_noffset));
-			return -ENODEV;
+			return -ENOENT;
 		}
 
 		for (ndepth = 0,
