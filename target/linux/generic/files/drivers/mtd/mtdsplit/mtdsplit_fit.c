@@ -210,7 +210,7 @@ mtdsplit_fit_parse(struct mtd_info *mtd,
 
 	of_property_read_string(np, "openwrt,cmdline-match", &cmdline_match);
 	if (cmdline_match && !strstr(saved_command_line, cmdline_match))
-		return 0;
+		return -ENODEV;
 
 	of_property_read_u32(np, "openwrt,fit-offset", &offset_start);
 
@@ -222,12 +222,12 @@ mtdsplit_fit_parse(struct mtd_info *mtd,
 		if (ret) {
 			pr_err("read error in \"%s\" at offset 0x%llx\n",
 			       mtd->name, (unsigned long long) offset);
-			return 0;
+			return ret;
 		}
 
 		if (retlen != hdr_len) {
 			pr_err("short read in \"%s\"\n", mtd->name);
-			return 0;
+			return -EIO;
 		}
 
 		/* Check the magic - see if this is a FIT image */
@@ -247,7 +247,7 @@ mtdsplit_fit_parse(struct mtd_info *mtd,
 	if (fit_size == 0) {
 		pr_err("FIT image in \"%s\" at offset %llx has null size\n",
 		       mtd->name, (unsigned long long) fit_offset);
-		return 0;
+		return -ENODEV;
 	}
 
 	/*
@@ -267,14 +267,14 @@ mtdsplit_fit_parse(struct mtd_info *mtd,
 		if (ret) {
 			pr_info("no rootfs found after FIT image in \"%s\"\n",
 				mtd->name);
-			return 0;
+			return ret;
 		}
 
 		rootfs_size = mtd->size - rootfs_offset;
 
 		parts = kzalloc(2 * sizeof(*parts), GFP_KERNEL);
 		if (!parts)
-			return 0;
+			return -ENOMEM;
 
 		parts[0].name = KERNEL_PART_NAME;
 		parts[0].offset = fit_offset;
@@ -297,14 +297,14 @@ mtdsplit_fit_parse(struct mtd_info *mtd,
 		if (ret) {
 			pr_err("read error in \"%s\" at offset 0x%llx\n",
 			       mtd->name, (unsigned long long) offset);
-			return 0;
+			return ret;
 		}
 
 		images_noffset = fdt_path_offset(fit, FIT_IMAGES_PATH);
 		if (images_noffset < 0) {
 			pr_err("Can't find images parent node '%s' (%s)\n",
 			FIT_IMAGES_PATH, fdt_strerror(images_noffset));
-			return 0;
+			return -ENODEV;
 		}
 
 		for (ndepth = 0,
@@ -324,7 +324,7 @@ mtdsplit_fit_parse(struct mtd_info *mtd,
 
 		parts = kzalloc(sizeof(*parts), GFP_KERNEL);
 		if (!parts)
-			return 0;
+			return -ENOMEM;
 
 		parts[0].name = ROOTFS_SPLIT_NAME;
 		parts[0].offset = fit_offset + mtd_roundup_to_eb(max_size, mtd);
