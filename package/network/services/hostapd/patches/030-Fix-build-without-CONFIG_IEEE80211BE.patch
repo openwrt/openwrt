@@ -1,0 +1,61 @@
+From 9ecfc82a8880c58ba11d84f3d8edbb5390d4ea3f Mon Sep 17 00:00:00 2001
+From: Nick Hainke <vincent@systemli.org>
+Date: Sat, 7 Feb 2026 18:41:01 +0100
+Subject: [PATCH] Fix build without CONFIG_IEEE80211BE
+
+Building hostapd without IEEE 802.11be support fails due to undefined
+references.
+
+One call to clear_wpa_sm_for_all_sta() was not guarded by
+CONFIG_IEEE80211BE, and the first_sta_seen_mbssid callback pulled in
+functions that are only built when CONFIG_IEEE80211BE is enabled.
+
+Guard both the call site and the callback helper/registration with
+CONFIG_IEEE80211BE to restore successful builds when it is disabled.
+
+Signed-off-by: Nick Hainke <vincent@systemli.org>
+---
+ src/ap/ieee802_11.c    | 2 ++
+ src/ap/wpa_auth_glue.c | 4 ++++
+ 2 files changed, 6 insertions(+)
+
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
+@@ -4932,7 +4932,9 @@ out:
+ 	if (resp != WLAN_STATUS_SUCCESS || assoc_wpa_sm) {
+ 		struct wpa_state_machine *sm = sta->wpa_sm;
+ 
++#ifdef CONFIG_IEEE80211BE
+ 		clear_wpa_sm_for_all_sta(hapd, sm);
++#endif /* CONFIG_IEEE80211BE */
+ 		wpa_auth_sta_deinit(sm);
+ 
+ 		/* Only keep a reference to the main wpa_sm and drop the
+--- a/src/ap/wpa_auth_glue.c
++++ b/src/ap/wpa_auth_glue.c
+@@ -1670,6 +1670,7 @@ static int hostapd_set_ltf_keyseed(void
+ #endif /* CONFIG_PASN */
+ 
+ 
++#ifdef CONFIG_IEEE80211BE
+ static bool hostapd_first_sta_seen_mbssid(void *ctx, int vlan_id)
+ {
+ 	struct hostapd_data *hapd = ctx;
+@@ -1688,6 +1689,7 @@ static bool hostapd_first_sta_seen_mbssi
+ 
+ 	return false;
+ }
++#endif /* CONFIG_IEEE80211BE */
+ 
+ 
+ #ifdef CONFIG_IEEE80211BE
+@@ -1841,7 +1843,9 @@ int hostapd_setup_wpa(struct hostapd_dat
+ #endif /* CONFIG_IEEE80211BE */
+ 		.get_drv_flags = hostapd_wpa_auth_get_drv_flags,
+ 		.remove_pmkid = hostapd_wpa_auth_remove_pmkid,
++#ifdef CONFIG_IEEE80211BE
+ 		.first_sta_seen_mbssid = hostapd_first_sta_seen_mbssid,
++#endif /* CONFIG_IEEE80211BE */
+ 	};
+ 	const u8 *wpa_ie;
+ 	size_t wpa_ie_len;
