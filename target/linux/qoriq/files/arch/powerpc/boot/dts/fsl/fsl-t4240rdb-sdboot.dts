@@ -1,0 +1,21 @@
+/include/ "fsl-t4240rdb.dtsi"
+
+/ {
+	model = "NXP T4240RDB (SDCARD BOOT)";
+	compatible = "fsl,t4240rdb-sdboot", "fsl,T4240RDB";
+};
+
+&ifc {
+    nor@0,0 {
+        partitions {
+            compatible = "fixed-partitions";
+            #address-cells = <1>;
+            #size-cells = <1>;
+
+            partition@0 {
+                reg = <0x0 0x8000000>;
+                label = "nor";
+            };
+        };
+    };
+};
