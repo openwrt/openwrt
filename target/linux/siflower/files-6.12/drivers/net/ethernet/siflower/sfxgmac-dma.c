@@ -2,6 +2,7 @@
 #include <linux/debugfs.h>
 #include <linux/dma-mapping.h>
 #include <linux/if_ether.h>
+#include <linux/platform_device.h>
 #include <linux/of_platform.h>
 #include <linux/seq_file.h>
 #include <linux/tcp.h>
@@ -737,7 +738,7 @@ static int xgmac_dma_alloc_rx_descs(struct xgmac_dma_priv *priv)
 	int ret = -ENOMEM;
 	u32 i;
 
-	pp_params.flags = PP_FLAG_DMA_MAP | PP_FLAG_DMA_SYNC_DEV | PP_FLAG_PAGE_FRAG;
+	pp_params.flags = PP_FLAG_DMA_MAP | PP_FLAG_DMA_SYNC_DEV;
 	pp_params.pool_size = DMA_RX_SIZE;
 	pp_params.order = 0;
 	pp_params.max_len = PAGE_SIZE;
@@ -1116,7 +1117,7 @@ drop:
 }
 
 
-netdev_tx_t xgmac_dma_xmit(struct sk_buff *skb, struct xgmac_dma_priv *priv)
+static netdev_tx_t xgmac_dma_xmit(struct sk_buff *skb, struct xgmac_dma_priv *priv)
 {
 	u16 queue = skb_get_queue_mapping(skb);
 	u16 channel = queue;

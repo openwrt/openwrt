@@ -209,7 +209,7 @@ static unsigned long sf19a28_muxdiv_recalc_rate(struct clk_hw *hw,
 	return parent_rate / div;
 }
 
-int sf19a28_muxdiv_determine_rate(struct clk_hw *hw, struct clk_rate_request *req)
+static int sf19a28_muxdiv_determine_rate(struct clk_hw *hw, struct clk_rate_request *req)
 {
 	unsigned int div;
 

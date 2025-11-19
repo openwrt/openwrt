@@ -9,7 +9,6 @@
 #include <linux/bitfield.h>
 #include <linux/clk.h>
 #include <linux/delay.h>
-#include <linux/gpio.h>
 #include <linux/kernel.h>
 #include <linux/mfd/syscon.h>
 #include <linux/module.h>
@@ -221,7 +220,7 @@ static int sf_pcie_host_init(struct dw_pcie_rp *pp)
 	return 0;
 }
 
-void sf_pcie_host_deinit(struct dw_pcie_rp *pp) {
+static void sf_pcie_host_deinit(struct dw_pcie_rp *pp) {
 	struct dw_pcie *pci = to_dw_pcie_from_pp(pp);
 	struct sf_pcie *sf_pcie = to_sf_pcie(pci);
 
@@ -235,8 +234,8 @@ void sf_pcie_host_deinit(struct dw_pcie_rp *pp) {
 }
 
 static const struct dw_pcie_host_ops sf_pcie_host_ops = {
-	.host_init = sf_pcie_host_init,
-	.host_deinit = sf_pcie_host_deinit,
+	.init = sf_pcie_host_init,
+	.deinit = sf_pcie_host_deinit,
 };
 
 static int sf_pcie_start_link(struct dw_pcie *pci)

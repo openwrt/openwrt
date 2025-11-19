@@ -1,4 +1,4 @@
-#ifndef __XGMAC_EXT_H_
+#ifndef __XGMAC_EXT_H__
 #define __XGMAC_EXT_H__
 
 #include <linux/clk.h>
