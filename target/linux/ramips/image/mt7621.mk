@@ -2859,6 +2859,18 @@ define Device/tozed_zlt-s12-pro
 endef
 TARGET_DEVICES += tozed_zlt-s12-pro
 
+define Device/tplink_archer-ax21-v4
+  $(Device/dsa-migration)
+  $(Device/tplink-safeloader)
+  DEVICE_MODEL := Archer AX21
+  DEVICE_VARIANT := v4
+  DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
+  TPLINK_BOARD_ID := ARCHER-AX21-V4
+  KERNEL := $(KERNEL_DTB) | uImage lzma
+  IMAGE_SIZE := 15744k
+endef
+TARGET_DEVICES += tplink_archer-ax21-v4
+
 define Device/tplink_archer-ax23-v1
   $(Device/dsa-migration)
   $(Device/tplink-safeloader)
