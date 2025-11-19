@@ -1288,7 +1288,7 @@ MODULE_DEVICE_TABLE(of, xgmac_match);
 
 static struct platform_driver xgmac_driver = {
 	.probe	= xgmac_probe,
-	.remove_new	= xgmac_remove,
+	.remove	= xgmac_remove,
 	.driver	= {
 		.name		= "sfxgmac",
 		.of_match_table	= xgmac_match,

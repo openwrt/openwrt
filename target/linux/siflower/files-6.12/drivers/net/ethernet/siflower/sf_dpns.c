@@ -68,7 +68,7 @@ MODULE_DEVICE_TABLE(of, dpns_match);
 
 static struct platform_driver dpns_driver = {
 	.probe	= dpns_probe,
-	.remove_new = dpns_remove,
+	.remove = dpns_remove,
 	.driver	= {
 		.name		= "sfdpns",
 		.of_match_table	= dpns_match,

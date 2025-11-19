@@ -172,7 +172,7 @@ MODULE_DEVICE_TABLE(of, dwmac_sf19a2890_match);
 
 static struct platform_driver sf19a2890_gmac_driver = {
 	.probe  = sf19a2890_gmac_probe,
-	.remove_new = stmmac_pltfr_remove,
+	.remove = stmmac_pltfr_remove,
 	.driver = {
 		.name           = "sf19a2890-gmac",
 		.pm		= &stmmac_pltfr_pm_ops,

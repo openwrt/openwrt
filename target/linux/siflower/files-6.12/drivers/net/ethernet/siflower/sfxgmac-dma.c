@@ -1606,7 +1606,7 @@ MODULE_DEVICE_TABLE(of, xgmac_dma_match);
 
 static struct platform_driver xgmac_dma_driver = {
 	.probe	= xgmac_dma_probe,
-	.remove_new	= xgmac_dma_remove,
+	.remove	= xgmac_dma_remove,
 	.driver	= {
 		.name		= "sfxgmac_dma",
 		.of_match_table	= xgmac_dma_match,
