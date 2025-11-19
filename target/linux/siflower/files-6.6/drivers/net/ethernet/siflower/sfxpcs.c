@@ -592,12 +592,12 @@ static int xpcs_probe(struct platform_device *pdev)
 	return 0;
 }
 
-static int xpcs_remove(struct platform_device *pdev)
+static void xpcs_remove(struct platform_device *pdev)
 {
 	struct xpcs_priv *priv = platform_get_drvdata(pdev);
 
 	clk_bulk_disable_unprepare(XPCS_NUM_CLKS, priv->clks);
-	return regmap_clear_bits(priv->ethsys, ETHSYS_RST, BIT(5 + priv->id));
+	regmap_clear_bits(priv->ethsys, ETHSYS_RST, BIT(5 + priv->id));
 }
 
 static const struct of_device_id xpcs_match[] = {
@@ -608,7 +608,7 @@ MODULE_DEVICE_TABLE(of, xpcs_match);
 
 static struct platform_driver xpcs_driver = {
 	.probe	= xpcs_probe,
-	.remove	= xpcs_remove,
+	.remove_new	= xpcs_remove,
 	.driver	= {
 		.name		= "sfxpcs",
 		.of_match_table	= xpcs_match,

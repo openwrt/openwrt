@@ -332,13 +332,11 @@ static int sf_pcie_probe(struct platform_device *pdev)
 	return 0;
 }
 
-static int sf_pcie_remove(struct platform_device *pdev)
+static void sf_pcie_remove(struct platform_device *pdev)
 {
 	struct sf_pcie *pcie = platform_get_drvdata(pdev);
 
 	dw_pcie_host_deinit(&pcie->pci.pp);
-	return 0;
-
 }
 
 static const struct of_device_id sf_pcie_of_match[] = {
@@ -353,7 +351,7 @@ static struct platform_driver sf_pcie_driver = {
 		.probe_type = PROBE_PREFER_ASYNCHRONOUS,
 	},
 	.probe    = sf_pcie_probe,
-	.remove	  = sf_pcie_remove,
+	.remove_new = sf_pcie_remove,
 };
 
 module_platform_driver(sf_pcie_driver);
