@@ -12,17 +12,34 @@ endef
 define Device/fsl_t4240rdb-nor
   $(Device/fsl_t4240rdb)
   DEVICE_MODEL := T4240RDB (SDCARD BOOT)
-  IMAGES := sysupgrade.bin
+  IMAGES := factory.bin.gz sysupgrade.bin rcw.bin
+  IMAGE/factory.bin.gz := \
+    append-kernel | append-rootfs | pad-rootfs | pad-to 126M | \
+    pad-to 127M | \
+    ls-append fsl_t4240-rdb-fman.bin | pad-to 130176k | \
+    ls-append $(1)-uboot-env.bin | pad-to 130304k | \
+    ls-append $(1)-uboot.bin | gzip
   IMAGE/sysupgrade.bin := \
     append-kernel | append-rootfs | pad-rootfs | append-metadata
+  IMAGE/rcw.bin := \
+    ls-append $(1)-rcw.bin
 endef
 TARGET_DEVICES += fsl_t4240rdb-nor
 
 define Device/fsl_t4240rdb-sdboot
   $(Device/fsl_t4240rdb)
   DEVICE_MODEL := T4240RDB (NOR BOOT)
-  IMAGES := sysupgrade.bin
+  IMAGES := sdcard.img.gz sysupgrade.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/sdcard.img.gz := \
+    ls-clean | \
+    ls-append-sdhead $(1) | pad-to 4K | \
+    ls-append $(1)-uboot.bin | pad-to 1028k | \
+    ls-append $(1)-uboot-env.bin | pad-to 1040k | \
+    ls-append fsl_t4240-rdb-fman.bin | pad-to 2M | \
+    pad-to $(LS_SD_KERNELPART_OFFSET)M | \
+    ls-append-kernel | pad-to $(LS_SD_ROOTFSPART_OFFSET)M | \
+    append-rootfs | pad-to $(LS_SD_IMAGE_SIZE)M | gzip
 endef
 TARGET_DEVICES += fsl_t4240rdb-sdboot
 
