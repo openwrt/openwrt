@@ -1979,6 +1979,19 @@ define Device/keenetic_kn-3010
 endef
 TARGET_DEVICES += keenetic_kn-3010
 
+define Device/keenetic_kn-3013
+  $(Device/nand)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 26624k
+  DEVICE_VENDOR := Keenetic
+  DEVICE_MODEL := KN-3013
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7663-firmware-ap -uboot-envtools
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
+	check-size
+endef
+TARGET_DEVICES += keenetic_kn-3013
+
 define Device/keenetic_kn-3510
   $(Device/nand)
   $(Device/uimage-lzma-loader)
