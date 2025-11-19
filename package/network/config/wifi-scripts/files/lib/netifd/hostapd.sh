@@ -345,7 +345,7 @@ hostapd_common_add_bss_config() {
 
 	config_add_boolean ieee80211r pmk_r1_push ft_psk_generate_local ft_over_ds
 	config_add_int r0_key_lifetime reassociation_deadline
-	config_add_string mobility_domain r1_key_holder rxkh_file
+	config_add_string mobility_domain r1_key_holder rxkh_file ft_iface
 	config_add_array r0kh r1kh
 
 	config_add_int ieee80211w_max_timeout ieee80211w_retry_timeout
@@ -916,11 +916,12 @@ hostapd_set_bss_options() {
 
 	if [ "$wpa" -ge "2" ]; then
 		if [ "$ieee80211r" -gt "0" ]; then
-			json_get_vars mobility_domain ft_psk_generate_local ft_over_ds reassociation_deadline
+			json_get_vars mobility_domain ft_psk_generate_local ft_over_ds reassociation_deadline ft_iface
 
 			set_default mobility_domain "$(echo "$ssid" | md5sum | head -c 4)"
 			set_default ft_over_ds 0
 			set_default reassociation_deadline 20000
+			[ -n "$network_ifname" ] && set_default ft_iface "$network_ifname"
 
 			case "$auth_type" in
 				psk)
@@ -931,7 +932,7 @@ hostapd_set_bss_options() {
 				;;
 			esac
 
-			[ -n "$network_ifname" ] && append bss_conf "ft_iface=$network_ifname" "$N"
+			[ -n "$ft_iface" ] && append bss_conf "ft_iface=$ft_iface" "$N"
 			append bss_conf "mobility_domain=$mobility_domain" "$N"
 			append bss_conf "ft_psk_generate_local=$ft_psk_generate_local" "$N"
 			append bss_conf "ft_over_ds=$ft_over_ds" "$N"
