@@ -29,7 +29,7 @@ was provided by the config
  #define DYNAMIC_VLAN_NAMING_END 2
 --- a/src/ap/vlan_full.c
 +++ b/src/ap/vlan_full.c
-@@ -475,6 +475,9 @@ void vlan_newlink(const char *ifname, st
+@@ -483,6 +483,9 @@ void vlan_newlink(const char *ifname, st
  	if (!vlan)
  		return;
  
@@ -39,7 +39,7 @@ was provided by the config
  	vlan->configured = 1;
  
  	notempty = vlan->vlan_desc.notempty;
-@@ -506,6 +509,7 @@ void vlan_newlink(const char *ifname, st
+@@ -514,6 +517,7 @@ void vlan_newlink(const char *ifname, st
  				    ifname, br_name, tagged[i], hapd);
  	}
  

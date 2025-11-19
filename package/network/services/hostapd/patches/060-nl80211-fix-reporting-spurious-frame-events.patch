@@ -11,9 +11,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/src/drivers/driver_nl80211_event.c
 +++ b/src/drivers/driver_nl80211_event.c
-@@ -2789,7 +2789,7 @@ static void nl80211_spurious_frame(struc
- 	event.rx_from_unknown.addr = nla_data(tb[NL80211_ATTR_MAC]);
- 	event.rx_from_unknown.wds = wds;
+@@ -2798,7 +2798,7 @@ static void nl80211_spurious_frame(struc
+ 	event.rx_from_unknown.link_id = tb[NL80211_ATTR_MLO_LINK_ID] ?
+ 		nla_get_u8(tb[NL80211_ATTR_MLO_LINK_ID]) : -1;
  
 -	wpa_supplicant_event(drv->ctx, EVENT_RX_FROM_UNKNOWN, &event);
 +	wpa_supplicant_event(bss->ctx, EVENT_RX_FROM_UNKNOWN, &event);
