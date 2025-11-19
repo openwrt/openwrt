@@ -1,3 +1,31 @@
+define Device/fsl_t4240rdb
+  DEVICE_VENDOR := NXP
+  DEVICE_MODEL := T4240RDB
+  DEVICE_DTS_DIR := $(DTS_DIR)/fsl
+  DEVICE_PACKAGES := \
+    kmod-eeprom-at24 kmod-gpio-button-hotplug kmod-hwmon-w83793 kmod-leds-gpio \
+	  kmod-ptp-qoriq kmod-rtc-ds1374
+  FILESYSTEMS := squashfs
+  KERNEL := kernel-bin | gzip | fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+endef
+
+define Device/fsl_t4240rdb-nor
+  $(Device/fsl_t4240rdb)
+  DEVICE_MODEL := T4240RDB (SDCARD BOOT)
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := \
+    append-kernel | append-rootfs | pad-rootfs | append-metadata
+endef
+TARGET_DEVICES += fsl_t4240rdb-nor
+
+define Device/fsl_t4240rdb-sdboot
+  $(Device/fsl_t4240rdb)
+  DEVICE_MODEL := T4240RDB (NOR BOOT)
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += fsl_t4240rdb-sdboot
+
 define Device/watchguard_firebox-m300
   DEVICE_VENDOR := WatchGuard
   DEVICE_MODEL := Firebox M300
