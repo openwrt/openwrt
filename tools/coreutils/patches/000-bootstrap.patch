@@ -1,6 +1,6 @@
 --- a/bootstrap
 +++ b/bootstrap
-@@ -244,7 +244,7 @@ check_exists() {
+@@ -248,7 +248,7 @@ check_exists() {
        ($2 --version </dev/null)
      fi
    else
@@ -9,7 +9,7 @@
    fi
  
    test $? -lt 126
-@@ -309,7 +309,7 @@ p
+@@ -313,7 +313,7 @@ p
  q'
  
  get_version() {
@@ -18,7 +18,7 @@
  
    $app --version >/dev/null 2>&1 || { $app --version; return 1; }
  
-@@ -366,13 +366,13 @@ check_versions() {
+@@ -370,13 +370,13 @@ check_versions() {
      if [ "$req_ver" = "-" ]; then
        # Merely require app to exist; not all prereq apps are well-behaved
        # so we have to rely on $? rather than get_version.
@@ -34,7 +34,7 @@
        if [ ! "$inst_ver" ]; then
          warn_ "Error: '$app' not found"
          ret=1
-@@ -1205,7 +1205,7 @@ autogen()
+@@ -1223,7 +1223,7 @@ autogen()
    # two just-pre-run programs.
  
    # Import from gettext.
@@ -45,14 +45,14 @@
  
 --- a/bootstrap.conf
 +++ b/bootstrap.conf
-@@ -354,11 +354,8 @@ gnulib_tool_option_extras="--tests-base=
+@@ -377,11 +377,8 @@ gnulib_tool_option_extras="--tests-base=
  buildreq="\
  autoconf   2.64
  automake   1.11.2
 -autopoint  0.19.2
  bison      -
 -gettext    0.19.2
- git        1.4.4
+ git        1.5.5
 -gperf      -
  gzip       -
  m4         -

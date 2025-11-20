@@ -8,11 +8,11 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=coreutils
 PKG_CPE_ID:=cpe:/a:gnu:coreutils
-PKG_VERSION:=9.6
+PKG_VERSION:=9.9
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@GNU/coreutils
-PKG_HASH:=2bec616375002c92c1ed5ead32a092b174fe44c14bc736d32e5961053b821d84
+PKG_HASH:=91a719fcf923de686016f2c8d084a8be1f793f34173861273c4668f7c65af94a
 
 HOST_BUILD_PARALLEL := 1
 
@@ -39,6 +39,8 @@ HOST_MAKE_FLAGS += \
 	MAINTAINERCLEANFILES='$$$$(filter-out lib/iconv_open% %.texi,$$$$(BUILT_SOURCES))' \
 	PROGRAMS="$(patsubst %,src/%,$(PKG_PROGRAMS))" \
 	LIBRARIES= MANS= SUBDIRS=.
+
+TARGET_CFLAGS += -std=gnu17
 
 define Host/Bootstrap
 	( \
