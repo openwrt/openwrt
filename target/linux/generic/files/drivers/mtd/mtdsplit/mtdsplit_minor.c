@@ -71,17 +71,17 @@ static int mtdsplit_parse_minor(struct mtd_info *master,
 
 	/* match header */
 	if (hdr.yaffs_type != YAFFS_OBJECT_TYPE_FILE)
-		return -EINVAL;
+		return -ENOENT;
 
 	if (hdr.yaffs_obj_id != YAFFS_OBJECTID_ROOT)
-		return -EINVAL;
+		return -ENOENT;
 
 	if (hdr.yaffs_sum_unused != YAFFS_SUM_UNUSED)
-		return -EINVAL;
+		return -ENOENT;
 
 	if ((memcmp(hdr.yaffs_name, YAFFS_NAME_KERNEL, sizeof(YAFFS_NAME_KERNEL))) &&
 	    (memcmp(hdr.yaffs_name, YAFFS_NAME_BOOTIMAGE, sizeof(YAFFS_NAME_BOOTIMAGE))))
-		return -EINVAL;
+		return -ENOENT;
 
 	err = mtd_find_rootfs_from(master, master->erasesize, master->size,
 				   &rootfs_offset, NULL);
