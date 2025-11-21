@@ -280,8 +280,6 @@ endif
 		)
     endif
 
-	$(INSTALL_DIR) $$(PDIR_$(1))/tmp
-
 ifeq ($(CONFIG_USE_APK),)
 	mkdir -p $$(IDIR_$(1))/CONTROL
 	(cd $$(IDIR_$(1))/CONTROL; \
