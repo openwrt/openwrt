@@ -72,7 +72,7 @@ Link: https://patch.msgid.link/20250416081314.3929794-2-hongxing.zhu@nxp.com
  		}
  
  		/* Make sure link training is finished as well! */
-@@ -1546,7 +1540,7 @@ static const struct imx_pcie_drvdata drv
+@@ -1550,7 +1544,7 @@ static const struct imx_pcie_drvdata drv
  	[IMX6Q] = {
  		.variant = IMX6Q,
  		.flags = IMX_PCIE_FLAG_IMX_PHY |
@@ -81,7 +81,7 @@ Link: https://patch.msgid.link/20250416081314.3929794-2-hongxing.zhu@nxp.com
  			 IMX_PCIE_FLAG_BROKEN_SUSPEND |
  			 IMX_PCIE_FLAG_SUPPORTS_SUSPEND,
  		.dbi_length = 0x200,
-@@ -1564,7 +1558,7 @@ static const struct imx_pcie_drvdata drv
+@@ -1568,7 +1562,7 @@ static const struct imx_pcie_drvdata drv
  	[IMX6SX] = {
  		.variant = IMX6SX,
  		.flags = IMX_PCIE_FLAG_IMX_PHY |
@@ -90,7 +90,7 @@ Link: https://patch.msgid.link/20250416081314.3929794-2-hongxing.zhu@nxp.com
  			 IMX_PCIE_FLAG_SUPPORTS_SUSPEND,
  		.gpr = "fsl,imx6q-iomuxc-gpr",
  		.clk_names = imx6sx_clks,
-@@ -1580,7 +1574,7 @@ static const struct imx_pcie_drvdata drv
+@@ -1584,7 +1578,7 @@ static const struct imx_pcie_drvdata drv
  	[IMX6QP] = {
  		.variant = IMX6QP,
  		.flags = IMX_PCIE_FLAG_IMX_PHY |

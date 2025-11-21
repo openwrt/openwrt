@@ -92,6 +92,9 @@ huasifei,wh3000)
 iptime,ax3000q)
 	ucidef_set_led_netdev "wan" "WAN" "amber:wan" "wan" "link tx rx"
 	;;
+iptime,ax3000se)
+	ucidef_set_led_netdev "wlan" "WLAN" "blue:wlan" "phy1-ap0"
+	;;
 iptime,ax3000sm)
 	ucidef_set_led_netdev "wan" "wan" "amber:wan" "eth1" "link tx rx"
 	;;
@@ -125,6 +128,7 @@ netgear,wax220)
 netis,nx31)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "eth1" "link tx rx"
 	;;
+imou,hx21|\
 nokia,ea0326gmp)
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1" "link"
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "br-lan" "link"

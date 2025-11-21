@@ -19,7 +19,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
 
 --- a/drivers/pinctrl/mediatek/pinctrl-airoha.c
 +++ b/drivers/pinctrl/mediatek/pinctrl-airoha.c
-@@ -30,20 +30,20 @@
+@@ -30,15 +30,15 @@
  #include "../pinconf.h"
  #include "../pinmux.h"
  
@@ -31,23 +31,18 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
 -#define PINCTRL_FUNC_DESC(id)						\
 +#define PINCTRL_FUNC_DESC(id, table)					\
  	{								\
- 		.desc = {						\
- 			.func = {					\
- 				.name = #id,				\
--				.groups = id##_groups,			\
--				.ngroups = ARRAY_SIZE(id##_groups),	\
-+				.groups = table##_groups,		\
-+				.ngroups = ARRAY_SIZE(table##_groups),	\
- 			}						\
- 		},							\
+-		.desc = PINCTRL_PINFUNCTION(#id, id##_groups,		\
+-					    ARRAY_SIZE(id##_groups)),	\
 -		.groups = id##_func_group,				\
 -		.group_size = ARRAY_SIZE(id##_func_group),		\
++		.desc = PINCTRL_PINFUNCTION(#id, table##_groups,	\
++					    ARRAY_SIZE(table##_groups)),\
 +		.groups = table##_func_group,				\
 +		.group_size = ARRAY_SIZE(table##_func_group),		\
  	}
  
  #define PINCTRL_CONF_DESC(p, offset, mask)				\
-@@ -362,16 +362,46 @@ struct airoha_pinctrl_gpiochip {
+@@ -357,16 +357,46 @@ struct airoha_pinctrl_gpiochip {
  	u32 irq_type[AIROHA_NUM_PINS];
  };
  
@@ -95,7 +90,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  	PINCTRL_PIN(0, "uart1_txd"),
  	PINCTRL_PIN(1, "uart1_rxd"),
  	PINCTRL_PIN(2, "i2c_scl"),
-@@ -432,172 +462,172 @@ static struct pinctrl_pin_desc airoha_pi
+@@ -427,172 +457,172 @@ static struct pinctrl_pin_desc airoha_pi
  	PINCTRL_PIN(63, "pcie_reset2"),
  };
  
@@ -434,7 +429,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  };
  
  static const char *const pon_groups[] = { "pon" };
-@@ -1960,33 +1990,33 @@ static const struct airoha_pinctrl_func_
+@@ -1955,33 +1985,33 @@ static const struct airoha_pinctrl_func_
  	},
  };
  
@@ -493,7 +488,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  	PINCTRL_CONF_DESC(0, REG_I2C_SDA_PU, UART1_TXD_PU_MASK),
  	PINCTRL_CONF_DESC(1, REG_I2C_SDA_PU, UART1_RXD_PU_MASK),
  	PINCTRL_CONF_DESC(2, REG_I2C_SDA_PU, I2C_SDA_PU_MASK),
-@@ -2047,7 +2077,7 @@ static const struct airoha_pinctrl_conf
+@@ -2042,7 +2072,7 @@ static const struct airoha_pinctrl_conf
  	PINCTRL_CONF_DESC(63, REG_I2C_SDA_PU, PCIE2_RESET_PU_MASK),
  };
  
@@ -502,7 +497,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  	PINCTRL_CONF_DESC(0, REG_I2C_SDA_PD, UART1_TXD_PD_MASK),
  	PINCTRL_CONF_DESC(1, REG_I2C_SDA_PD, UART1_RXD_PD_MASK),
  	PINCTRL_CONF_DESC(2, REG_I2C_SDA_PD, I2C_SDA_PD_MASK),
-@@ -2108,7 +2138,7 @@ static const struct airoha_pinctrl_conf
+@@ -2103,7 +2133,7 @@ static const struct airoha_pinctrl_conf
  	PINCTRL_CONF_DESC(63, REG_I2C_SDA_PD, PCIE2_RESET_PD_MASK),
  };
  
@@ -511,7 +506,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  	PINCTRL_CONF_DESC(0, REG_I2C_SDA_E2, UART1_TXD_E2_MASK),
  	PINCTRL_CONF_DESC(1, REG_I2C_SDA_E2, UART1_RXD_E2_MASK),
  	PINCTRL_CONF_DESC(2, REG_I2C_SDA_E2, I2C_SDA_E2_MASK),
-@@ -2169,7 +2199,7 @@ static const struct airoha_pinctrl_conf
+@@ -2164,7 +2194,7 @@ static const struct airoha_pinctrl_conf
  	PINCTRL_CONF_DESC(63, REG_I2C_SDA_E2, PCIE2_RESET_E2_MASK),
  };
  
@@ -520,7 +515,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  	PINCTRL_CONF_DESC(0, REG_I2C_SDA_E4, UART1_TXD_E4_MASK),
  	PINCTRL_CONF_DESC(1, REG_I2C_SDA_E4, UART1_RXD_E4_MASK),
  	PINCTRL_CONF_DESC(2, REG_I2C_SDA_E4, I2C_SDA_E4_MASK),
-@@ -2230,7 +2260,7 @@ static const struct airoha_pinctrl_conf
+@@ -2225,7 +2255,7 @@ static const struct airoha_pinctrl_conf
  	PINCTRL_CONF_DESC(63, REG_I2C_SDA_E4, PCIE2_RESET_E4_MASK),
  };
  
@@ -529,7 +524,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  	PINCTRL_CONF_DESC(61, REG_PCIE_RESET_OD, PCIE0_RESET_OD_MASK),
  	PINCTRL_CONF_DESC(62, REG_PCIE_RESET_OD, PCIE1_RESET_OD_MASK),
  	PINCTRL_CONF_DESC(63, REG_PCIE_RESET_OD, PCIE2_RESET_OD_MASK),
-@@ -2552,12 +2582,17 @@ airoha_pinctrl_get_conf_reg(const struct
+@@ -2547,12 +2577,17 @@ airoha_pinctrl_get_conf_reg(const struct
  }
  
  static int airoha_pinctrl_get_conf(struct airoha_pinctrl *pinctrl,
@@ -550,7 +545,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  	if (!reg)
  		return -EINVAL;
  
-@@ -2570,12 +2605,17 @@ static int airoha_pinctrl_get_conf(struc
+@@ -2565,12 +2600,17 @@ static int airoha_pinctrl_get_conf(struc
  }
  
  static int airoha_pinctrl_set_conf(struct airoha_pinctrl *pinctrl,
@@ -571,7 +566,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  	if (!reg)
  		return -EINVAL;
  
-@@ -2588,44 +2628,34 @@ static int airoha_pinctrl_set_conf(struc
+@@ -2583,44 +2623,34 @@ static int airoha_pinctrl_set_conf(struc
  }
  
  #define airoha_pinctrl_get_pullup_conf(pinctrl, pin, val)			\
@@ -626,7 +621,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  				(pin), (val))
  
  static int airoha_pinconf_get_direction(struct pinctrl_dev *pctrl_dev, u32 p)
-@@ -2804,12 +2834,13 @@ static int airoha_pinconf_set(struct pin
+@@ -2799,12 +2829,13 @@ static int airoha_pinconf_set(struct pin
  static int airoha_pinconf_group_get(struct pinctrl_dev *pctrl_dev,
  				    unsigned int group, unsigned long *config)
  {
@@ -642,7 +637,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  				       config))
  			return -ENOTSUPP;
  
-@@ -2826,13 +2857,14 @@ static int airoha_pinconf_group_set(stru
+@@ -2821,13 +2852,14 @@ static int airoha_pinconf_group_set(stru
  				    unsigned int group, unsigned long *configs,
  				    unsigned int num_configs)
  {
@@ -659,7 +654,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  					 configs, num_configs);
  		if (err)
  			return err;
-@@ -2858,23 +2890,16 @@ static const struct pinctrl_ops airoha_p
+@@ -2853,23 +2885,16 @@ static const struct pinctrl_ops airoha_p
  	.dt_free_map = pinconf_generic_dt_free_map,
  };
  
@@ -686,7 +681,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  	pinctrl = devm_kzalloc(dev, sizeof(*pinctrl), GFP_KERNEL);
  	if (!pinctrl)
  		return -ENOMEM;
-@@ -2889,14 +2914,23 @@ static int airoha_pinctrl_probe(struct p
+@@ -2884,14 +2909,23 @@ static int airoha_pinctrl_probe(struct p
  
  	pinctrl->chip_scu = map;
  
@@ -713,7 +708,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  
  		err = pinctrl_generic_add_group(pinctrl->ctrl, grp->name,
  						grp->pins, grp->npins,
-@@ -2909,10 +2943,10 @@ static int airoha_pinctrl_probe(struct p
+@@ -2904,10 +2938,10 @@ static int airoha_pinctrl_probe(struct p
  	}
  
  	/* build functions */
@@ -724,9 +719,9 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
 -		func = &airoha_pinctrl_funcs[i];
 +		func = &data->funcs[i];
  		err = pinmux_generic_add_function(pinctrl->ctrl,
- 						  func->desc.func.name,
- 						  func->desc.func.groups,
-@@ -2925,6 +2959,10 @@ static int airoha_pinctrl_probe(struct p
+ 						  func->desc.name,
+ 						  func->desc.groups,
+@@ -2920,6 +2954,10 @@ static int airoha_pinctrl_probe(struct p
  		}
  	}
  
@@ -737,7 +732,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  	err = pinctrl_enable(pinctrl->ctrl);
  	if (err)
  		return err;
-@@ -2933,8 +2971,39 @@ static int airoha_pinctrl_probe(struct p
+@@ -2928,8 +2966,39 @@ static int airoha_pinctrl_probe(struct p
  	return airoha_pinctrl_add_gpiochip(pinctrl, pdev);
  }
  

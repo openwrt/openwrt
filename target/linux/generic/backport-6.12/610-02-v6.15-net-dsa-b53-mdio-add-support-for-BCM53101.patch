@@ -18,7 +18,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/dsa/b53/b53_common.c
 +++ b/drivers/net/dsa/b53/b53_common.c
-@@ -2584,6 +2584,19 @@ static const struct b53_chip_data b53_sw
+@@ -2603,6 +2603,19 @@ static const struct b53_chip_data b53_sw
  		.jumbo_size_reg = B53_JUMBO_MAX_SIZE,
  	},
  	{
@@ -38,7 +38,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.chip_id = BCM53115_DEVICE_ID,
  		.dev_name = "BCM53115",
  		.vlans = 4096,
-@@ -2964,6 +2977,7 @@ int b53_switch_detect(struct b53_device
+@@ -2983,6 +2996,7 @@ int b53_switch_detect(struct b53_device
  			return ret;
  
  		switch (id32) {

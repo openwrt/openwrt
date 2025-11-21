@@ -1006,6 +1006,9 @@ define Device/dlink_dir-2660-a1
   $(Device/dlink_dir_nand_128m)
   DEVICE_MODEL := DIR-2660
   DEVICE_VARIANT := A1
+  DEVICE_ALT0_VENDOR := D-Link
+  DEVICE_ALT0_MODEL := DIR-2660
+  DEVICE_ALT0_VARIANT := A2
 endef
 TARGET_DEVICES += dlink_dir-2660-a1
 
@@ -1860,6 +1863,27 @@ define Device/iptime_a8004t
   DEVICE_PACKAGES := kmod-mt7615-firmware kmod-usb3 -uboot-envtools
 endef
 TARGET_DEVICES += iptime_a8004t
+
+define Device/iptime_ax2002m
+  $(Device/nand)
+  IMAGE_SIZE := 121344k
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+ifeq ($(IB),)
+  ARTIFACTS := initramfs-factory.bin
+  ARTIFACT/initramfs-factory.bin := append-image-stage initramfs-kernel.bin | \
+	check-size | iptime-crc32 ax2002m
+endif
+  DEVICE_VENDOR := ipTIME
+  DEVICE_MODEL := AX2002MESH
+  DEVICE_PACKAGES := kmod-mt7915-firmware
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE := NMBM has been newly enabled, and its flash block \
+	mapping might be incompatible with existing installation. \
+	New installation with factory image via recovery mode is recommended.
+endef
+TARGET_DEVICES += iptime_ax2002m
 
 define Device/iptime_ax2004m
   $(Device/nand)

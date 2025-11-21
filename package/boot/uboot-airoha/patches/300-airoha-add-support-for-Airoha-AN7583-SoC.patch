@@ -19,9 +19,9 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  board/airoha/an7583/MAINTAINERS      |   5 +
  board/airoha/an7583/Makefile         |   3 +
  board/airoha/an7583/an7583_rfb.c     |  16 ++
- configs/an7583_evb_defconfig         |  83 ++++++
+ configs/an7583_evb_defconfig         |  81 ++++++
  include/configs/an7583.h             |  19 ++
- 11 files changed, 645 insertions(+)
+ 11 files changed, 643 insertions(+)
  create mode 100644 arch/arm/dts/an7583-evb.dts
  create mode 100644 arch/arm/dts/an7583.dtsi
  create mode 100644 arch/arm/mach-airoha/an7583/Makefile
@@ -667,7 +667,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +CONFIG_CMD_LOG=y
 +CONFIG_ENV_OVERWRITE=y
 +CONFIG_ENV_IS_IN_MMC=y
-+CONFIG_SYS_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_RELOC_GD_ENV_ADDR=y
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
 +CONFIG_NET_RANDOM_ETHADDR=y
 +CONFIG_REGMAP=y

@@ -362,6 +362,18 @@ define U-Boot/mt7981_h3c_magic-nx30-pro
   DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
 endef
 
+define U-Boot/mt7981_imou_hx21
+  NAME:=Imou HX21
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=imou_hx21
+  UBOOT_CONFIG:=mt7981_imou_hx21
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
+endef
+
 define U-Boot/mt7981_jcg_q30-pro
   NAME:=JCG Q30 PRO
   BUILD_SUBTARGET:=filogic
@@ -1072,6 +1084,7 @@ UBOOT_TARGETS := \
 	mt7981_glinet_gl-x3000 \
 	mt7981_glinet_gl-xe3000 \
 	mt7981_h3c_magic-nx30-pro \
+	mt7981_imou_hx21 \
 	mt7981_jcg_q30-pro \
 	mt7981_konka_komi-a31 \
 	mt7981_netis_nx31 \

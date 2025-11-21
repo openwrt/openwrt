@@ -39,7 +39,7 @@
 			linux,code = <KEY_WPS_BUTTON>;
 			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
 		};
-		
+
 	};
 
 	leds {
@@ -56,20 +56,20 @@
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_STATUS;
 		};
-		
+
 		led_status_blue: blue {
 			gpios = <&pio 11 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_STATUS;
 		};
-		
+
 		led_status_5g1: 5g1 {
 			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_USB;
 			function-enumerator = <0>;
 		};
-		
+
 		led_status_5g2: 5g2 {
 			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_BLUE>;
@@ -136,7 +136,7 @@
 			pause;
 		};
 	};
-	
+
 	gmac1: mac@1 {
 		compatible = "mediatek,eth-mac";
 		reg = <1>;
@@ -208,7 +208,7 @@
 
 			nand_rootfs: partition@580000 {
 				label = "ubi";
-				reg = <0x0580000 0x7220000>;
+				reg = <0x0580000 0x7280000>;
 			};
 		};
 	};

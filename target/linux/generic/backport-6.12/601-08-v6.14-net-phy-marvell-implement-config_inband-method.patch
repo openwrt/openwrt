@@ -51,7 +51,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static int m88e1111_config_aneg(struct phy_device *phydev)
  {
  	int extsr = phy_read(phydev, MII_M1111_PHY_EXT_SR);
-@@ -3682,6 +3710,7 @@ static struct phy_driver marvell_drivers
+@@ -3719,6 +3747,7 @@ static struct phy_driver marvell_drivers
  		/* PHY_GBIT_FEATURES */
  		.probe = marvell_probe,
  		.inband_caps = m88e1111_inband_caps,
@@ -59,7 +59,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.config_init = m88e1112_config_init,
  		.config_aneg = marvell_config_aneg,
  		.config_intr = marvell_config_intr,
-@@ -3704,6 +3733,7 @@ static struct phy_driver marvell_drivers
+@@ -3741,6 +3770,7 @@ static struct phy_driver marvell_drivers
  		.flags = PHY_POLL_CABLE_TEST,
  		.probe = marvell_probe,
  		.inband_caps = m88e1111_inband_caps,
@@ -67,7 +67,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.config_init = m88e1111gbe_config_init,
  		.config_aneg = m88e1111_config_aneg,
  		.read_status = marvell_read_status,
-@@ -3728,6 +3758,7 @@ static struct phy_driver marvell_drivers
+@@ -3765,6 +3795,7 @@ static struct phy_driver marvell_drivers
  		/* PHY_GBIT_FEATURES */
  		.probe = marvell_probe,
  		.inband_caps = m88e1111_inband_caps,

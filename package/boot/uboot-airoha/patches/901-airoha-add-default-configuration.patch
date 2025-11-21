@@ -7,28 +7,28 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 ---
  configs/an7581_evb_defconfig | 2 ++
  configs/an7583_evb_defconfig | 2 ++
- defenvs/an7581_rfb_env       | 3 +++
- defenvs/an7583_rfb_env       | 3 +++
- 4 files changed, 10 insertions(+)
+ defenvs/an7581_rfb_env       | 4 ++++
+ defenvs/an7583_rfb_env       | 4 ++++
+ 4 files changed, 12 insertions(+)
  create mode 100644 defenvs/an7581_rfb_env
  create mode 100644 defenvs/an7583_rfb_env
 
 --- a/configs/an7581_evb_defconfig
 +++ b/configs/an7581_evb_defconfig
-@@ -93,3 +93,5 @@ CONFIG_MTD_UBI_BEB_LIMIT=20
+@@ -94,3 +94,5 @@ CONFIG_MTD_UBI_BEB_LIMIT=20
  CONFIG_UBI_BLOCK=y
  # CONFIG_UBIFS_SILENCE_MSG is not set
  # CONFIG_UBIFS_SILENCE_DEBUG_DUMP is not set
-+CONFIG_USE_DEFAULT_ENV_FILE=y
-+CONFIG_DEFAULT_ENV_FILE="defenvs/an7581_rfb_env"
++CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/an7581_rfb_env"
 --- a/configs/an7583_evb_defconfig
 +++ b/configs/an7583_evb_defconfig
-@@ -95,3 +95,5 @@ CONFIG_MTD_UBI_BEB_LIMIT=20
+@@ -96,3 +96,5 @@ CONFIG_MTD_UBI_BEB_LIMIT=20
  CONFIG_UBI_BLOCK=y
  # CONFIG_UBIFS_SILENCE_MSG is not set
  # CONFIG_UBIFS_SILENCE_DEBUG_DUMP is not set
-+CONFIG_USE_DEFAULT_ENV_FILE=y
-+CONFIG_DEFAULT_ENV_FILE="defenvs/an7583_rfb_env"
++CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/an7583_rfb_env"
 --- /dev/null
 +++ b/defenvs/an7581_rfb_env
 @@ -0,0 +1,4 @@
