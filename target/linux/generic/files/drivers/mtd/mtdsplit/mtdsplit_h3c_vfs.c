@@ -98,10 +98,11 @@ static int mtdsplit_h3c_vfs_parse(struct mtd_info *mtd,
 	if (retlen != sizeof(format_flag))
 		return -EIO;
 
-	if (format_flag != FORMAT_FLAG)
+	if (format_flag != FORMAT_FLAG) {
 		pr_debug("mtdsplit_h3c_vfs: unexpected format flag %08x\n",
 			 format_flag);
 		return -ENOENT;
+	}
 
 	/* Check file entry */
 	err = mtd_read(mtd, FILE_ENTRY_OFFSET, sizeof(file_entry), &retlen,
