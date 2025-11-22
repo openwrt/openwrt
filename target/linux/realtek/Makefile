@@ -23,6 +23,12 @@ DEFAULT_PACKAGES += \
 	kmod-gpio-button-hotplug \
 	odhcp6c \
 	uboot-envtools \
-
+	kmod-phy-realtek \
+	kmod-rtl83xx-phy \
+	kmod-mdio-realtek-otto-serdes \
+	kmod-mdio-realtek-otto \
+	kmod-pcs-rtl-otto \
+	kmod-rtl838x_eth \
+	kmod-dsa_rtl83xx
 
 $(eval $(call BuildTarget))

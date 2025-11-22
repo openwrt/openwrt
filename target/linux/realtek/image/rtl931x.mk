@@ -6,7 +6,7 @@ define Device/plasmacloud-common
   DEVICE_VENDOR := Plasma Cloud
   IMAGE_SIZE := 13376k
   BLOCKSIZE := 64k
-  DEVICE_PACKAGES := kmod-hwmon-adt7475
+  DEVICE_PACKAGES := kmod-hwmon-adt7475 kmod-mdio-realtek-otto-aux
   KERNEL_INITRAMFS := \
     kernel-bin | \
     append-dtb | \

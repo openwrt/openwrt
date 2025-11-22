@@ -12,6 +12,7 @@ define Device/linksys_lgs328c
   BELKIN_MODEL := BKS-RTL93xx
   BELKIN_HEADER := 0x07600001
   LINKSYS_MODEL := 60412040
+  DEVICE_PACKAGES += kmod-mdio-realtek-otto-aux
   PAGESIZE := 2048
   BLOCKSIZE := 128k
   UBINIZE_OPTS := -E 5

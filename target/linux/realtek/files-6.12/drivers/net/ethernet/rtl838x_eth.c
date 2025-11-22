@@ -812,7 +812,7 @@ static int rtl838x_eth_open(struct net_device *ndev)
 		rtl839x_setup_notify_ring_buffer(priv);
 		/* Make sure the ring structure is visible to the ASIC */
 		mb();
-		flush_cache_all();
+		__flush_cache_all();
 	}
 
 	rtl838x_hw_ring_setup(priv);

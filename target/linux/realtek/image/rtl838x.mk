@@ -18,6 +18,7 @@ define Device/apresia_aplgs120gtss
   IMAGE_SIZE := 14848k
   DEVICE_VENDOR := APRESIA
   DEVICE_MODEL := ApresiaLightGS120GT-SS
+  DEVICE_PACKAGES += kmod-mdio-realtek-otto-aux
   UIMAGE_MAGIC := 0x12345000
   CAMEO_KERNEL_PART_SIZE := 1572864
   CAMEO_KERNEL_PART := 3
@@ -189,6 +190,7 @@ define Device/iodata_bsh-g24mb
   IMAGE_SIZE := 13696k
   DEVICE_VENDOR := I-O DATA
   DEVICE_MODEL := BSH-G24MB
+  DEVICE_PACKAGES += kmod-mdio-realtek-otto-aux
   UIMAGE_MAGIC := 0x83800013
 endef
 TARGET_DEVICES += iodata_bsh-g24mb
@@ -202,6 +204,7 @@ define Device/linksys_lgs310c
   BELKIN_MODEL := BKS-RTL83xx
   BELKIN_HEADER := 0x07800001
   LINKSYS_MODEL := 60402060
+  DEVICE_PACKAGES += kmod-mdio-realtek-otto-aux
   IMAGES += factory.imag
   IMAGE/factory.imag := \
 	append-kernel | \
@@ -218,6 +221,7 @@ TARGET_DEVICES += linksys_lgs310c
 # "NGE" refers to the uImage magic
 define Device/netgear_nge
   $(Device/uimage-rt-loader)
+  DEVICE_PACKAGES += kmod-mdio-realtek-otto-aux
   SOC := rtl8380
   IMAGE_SIZE := 14848k
   UIMAGE_MAGIC := 0x4e474520

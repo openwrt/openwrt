@@ -18,6 +18,7 @@
 #include <mach-rtl83xx.h>
 
 struct rtl83xx_soc_info soc_info;
+EXPORT_SYMBOL(soc_info);
 const void *fdt;
 
 static char soc_name[16];
