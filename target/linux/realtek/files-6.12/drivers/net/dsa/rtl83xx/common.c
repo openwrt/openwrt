@@ -273,6 +273,7 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 	struct mii_bus *bus;
 	int ret;
 	u32 pn;
+	bool has_serdes = false;
 
 	np = of_find_compatible_node(NULL, NULL, "realtek,otto-mdio");
 	if (!np) {
@@ -396,37 +397,20 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 			}
 		}
 
+		priv->ports[pn].active = true;
+
 		if (!phy_node) {
 			if (priv->pcs[pn])
 				priv->ports[pn].phy_is_integrated = true;
-
-			continue;
-		}
-
-		/* Check for the integrated SerDes of the RTL8380M first */
-		if (of_property_read_bool(phy_node, "phy-is-integrated")
-		    && priv->id == 0x8380 && pn >= 24) {
-			pr_debug("----> FOUND A SERDES\n");
-			priv->ports[pn].phy = PHY_RTL838X_SDS;
-			continue;
-		}
-
-		if (of_property_read_bool(phy_node, "phy-is-integrated") &&
-		    !of_property_read_bool(phy_node, "sfp")) {
-			priv->ports[pn].phy = PHY_RTL8218B_INT;
-			continue;
-		}
-
-		if (!of_property_read_bool(phy_node, "phy-is-integrated") &&
-		    of_property_read_bool(phy_node, "sfp")) {
-			priv->ports[pn].phy = PHY_RTL8214FC;
-			continue;
-		}
-
-		if (!of_property_read_bool(phy_node, "phy-is-integrated") &&
-		    !of_property_read_bool(phy_node, "sfp")) {
-			priv->ports[pn].phy = PHY_RTL8218B_EXT;
-			continue;
+		} else {
+			/* Check for the integrated SerDes of the RTL8380M */
+			if (of_property_read_bool(phy_node, "phy-is-integrated") &&
+			    priv->id == 0x8380 && pn >= 24)
+			{
+				pr_debug("----> FOUND A SERDES\n");
+				has_serdes = true;
+				continue;
+			}
 		}
 	}
 
@@ -443,7 +427,7 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 	}
 
 	/* Power on fibre ports and reset them if necessary */
-	if (priv->ports[24].phy == PHY_RTL838X_SDS) {
+	if (has_serdes) {
 		pr_debug("Powering on fibre ports & reset\n");
 		rtl8380_sds_power(24, 1);
 		rtl8380_sds_power(26, 1);

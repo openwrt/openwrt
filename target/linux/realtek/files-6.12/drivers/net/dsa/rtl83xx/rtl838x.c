@@ -639,7 +639,7 @@ static void rtl838x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 
 	/* Enable EEE MAC support on ports */
 	for (int i = 0; i < priv->cpu_port; i++) {
-		if (priv->ports[i].phy)
+		if (priv->ports[i].active)
 			priv->r->set_mac_eee(priv, i, enable);
 	}
 	priv->eee_enabled = enable;

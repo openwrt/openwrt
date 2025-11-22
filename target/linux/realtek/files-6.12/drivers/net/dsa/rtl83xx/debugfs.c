@@ -590,7 +590,7 @@ void rtl838x_dbgfs_init(struct rtl838x_switch_priv *priv)
 
 	/* Create one directory per port */
 	for (int i = 0; i < priv->cpu_port; i++) {
-		if (priv->ports[i].phy) {
+		if (priv->ports[i].active) {
 			ret = rtl838x_dbgfs_port_init(rtl838x_dir, priv, i);
 			if (ret)
 				goto err;

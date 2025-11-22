@@ -963,7 +963,7 @@ static void rtl930x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 
 	/* Setup EEE on all ports */
 	for (int i = 0; i < priv->cpu_port; i++) {
-		if (priv->ports[i].phy)
+		if (priv->ports[i].active)
 			priv->r->set_mac_eee(priv, i, enable);
 	}
 
@@ -2499,7 +2499,7 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 		sw_w32_mask(0x3 << pos, 0, RTL930X_LED_PORT_FIB_SET_SEL_CTRL(i));
 		sw_w32_mask(0x3 << pos, 0, RTL930X_LED_PORT_COPR_SET_SEL_CTRL(i));
 
-		if (!priv->ports[i].phy && !priv->pcs[i] && !forced_leds_per_port[i])
+		if (!priv->ports[i].active && !forced_leds_per_port[i])
 			continue;
 
 		if (forced_leds_per_port[i] > 0)
