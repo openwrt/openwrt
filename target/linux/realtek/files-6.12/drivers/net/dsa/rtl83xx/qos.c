@@ -6,7 +6,6 @@
 
 #include "rtl83xx.h"
 
-static struct rtl838x_switch_priv *switch_priv;
 extern struct rtl83xx_soc_info soc_info;
 
 enum scheduler_type {
@@ -490,10 +489,9 @@ static void rtl838x_config_qos(void)
 	sw_w32_mask(0, 7, RTL838X_QM_PKT2CPU_INTPRI_1);
 }
 
-static void rtl839x_config_qos(void)
+static void rtl839x_config_qos(struct rtl838x_switch_priv *priv)
 {
 	u32 v;
-	struct rtl838x_switch_priv *priv = switch_priv;
 
 	pr_info("Setting up RTL839X QoS\n");
 	pr_info("RTL839X_PRI_SEL_TBL_CTRL(i): %08x\n", sw_r32(RTL839X_PRI_SEL_TBL_CTRL(0)));
@@ -549,8 +547,6 @@ static void rtl839x_config_qos(void)
 
 void __init rtl83xx_setup_qos(struct rtl838x_switch_priv *priv)
 {
-	switch_priv = priv;
-
 	pr_info("In %s\n", __func__);
 
 	switch (priv->family_id) {
@@ -559,7 +555,7 @@ void __init rtl83xx_setup_qos(struct rtl838x_switch_priv *priv)
 		rtl838x_rate_control_init(priv);
 		break;
 	case RTL8390_FAMILY_ID:
-		rtl839x_config_qos();
+		rtl839x_config_qos(priv);
 		rtl839x_rate_control_init(priv);
 		break;
 	default:
