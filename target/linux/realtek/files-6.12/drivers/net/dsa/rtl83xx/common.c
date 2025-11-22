@@ -1561,8 +1561,8 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		return err;
 	}
 
-	priv->msts = devm_kcalloc(priv->dev,
-				  priv->n_mst - 1, sizeof(struct rtldsa_mst),
+	priv->msts = devm_kzalloc(priv->dev,
+				  priv->n_mst * sizeof(struct rtldsa_mst),
 				  GFP_KERNEL);
 	if (!priv->msts)
 		return -ENOMEM;
