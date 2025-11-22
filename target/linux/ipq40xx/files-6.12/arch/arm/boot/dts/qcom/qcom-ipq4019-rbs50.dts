@@ -26,3 +26,24 @@
 &usb2 {
 	status = "okay";
 };
+
+&pcie_bridge0 {
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x00010000 0 0 0 0>;
+		ieee80211-freq-limit = <5470000 5875000>;
+		qcom,ath10k-calibration-variant = "Netgear-Orbi-Pro-SRK60";
+	};
+};
+
+&wifi0 {
+	status = "okay";
+
+	qcom,ath10k-calibration-variant = "Netgear-Orbi-Pro-SRK60";
+};
+
+&wifi1 {
+	status = "okay";
+
+	qcom,ath10k-calibration-variant = "Netgear-Orbi-Pro-SRK60";
+};
