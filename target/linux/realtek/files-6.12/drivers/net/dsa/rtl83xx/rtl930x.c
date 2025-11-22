@@ -6,6 +6,8 @@
 
 #include "rtl83xx.h"
 
+extern struct rtl83xx_soc_info soc_info;
+
 #define RTL930X_VLAN_PORT_TAG_STS_INTERNAL			0x0
 #define RTL930X_VLAN_PORT_TAG_STS_UNTAG				0x1
 #define RTL930X_VLAN_PORT_TAG_STS_TAGGED			0x2
@@ -32,8 +34,6 @@
 
 /* get shift for given led in any set */
 #define RTL930X_LED_SET_LEDX_SHIFT(x) (16 * (x % 2))
-
-extern struct rtl83xx_soc_info soc_info;
 
 /* Definition of the RTL930X-specific template field IDs as used in the PIE */
 enum template_field_id {
@@ -1988,7 +1988,7 @@ static int rtl930x_pie_rule_add(struct rtl838x_switch_priv *priv, struct pie_rul
 /* Delete a range of Packet Inspection Engine rules */
 static int rtl930x_pie_rule_del(struct rtl838x_switch_priv *priv, int index_from, int index_to)
 {
-	u32 v = (index_from << 1)| (index_to << 12 ) | BIT(0);
+	u32 v = (index_from << 1) | (index_to << 12) | BIT(0);
 
 	pr_debug("%s: from %d to %d\n", __func__, index_from, index_to);
 	mutex_lock(&priv->reg_mutex);
@@ -2499,7 +2499,7 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 		sw_w32_mask(0x3 << pos, 0, RTL930X_LED_PORT_FIB_SET_SEL_CTRL(i));
 		sw_w32_mask(0x3 << pos, 0, RTL930X_LED_PORT_COPR_SET_SEL_CTRL(i));
 
-		if (!priv->ports[i].phy && !priv->pcs[i] && !(forced_leds_per_port[i]))
+		if (!priv->ports[i].phy && !priv->pcs[i] && !forced_leds_per_port[i])
 			continue;
 
 		if (forced_leds_per_port[i] > 0)

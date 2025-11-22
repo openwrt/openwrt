@@ -174,7 +174,7 @@ static int rtl83xx_add_flow(struct rtl838x_switch_priv *priv, struct flow_cls_of
 
 		case FLOW_ACTION_VLAN_PUSH:
 			pr_debug("%s: VLAN_PUSH\n", __func__);
-/*			TODO: act->vlan.proto */
+			/* TODO: act->vlan.proto */
 			flow->rule.ivid_act = PIE_ACT_VID_ASSIGN;
 			flow->rule.ivid_sel = true;
 			flow->rule.ivid_data = htons(act->vlan.vid);

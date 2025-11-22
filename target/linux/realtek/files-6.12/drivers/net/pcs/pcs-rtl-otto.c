@@ -2658,7 +2658,7 @@ struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int
 	struct device_node *pcs_np;
 	struct rtpcs_ctrl *ctrl;
 	struct rtpcs_link *link;
-	int sds;
+	int sds = -1;
 
 	/*
 	 * RTL838x devices have a built-in octa port RTL8218B PHY that is not attached via
@@ -2675,7 +2675,6 @@ struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int
 		pcs_np = of_get_parent(np);
 	} else {
 		pcs_np = of_find_compatible_node(NULL, NULL, "realtek,otto-pcs");
-		sds = -1;
 	}
 
 	if (!pcs_np)

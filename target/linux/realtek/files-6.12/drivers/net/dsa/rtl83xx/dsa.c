@@ -42,7 +42,6 @@ static void rtl83xx_enable_phy_polling(struct rtl838x_switch_priv *priv)
 {
 	u64 v = 0;
 
-	msleep(1000);
 	/* Enable all ports with a PHY, including the SFP-ports */
 	for (int i = 0; i < priv->cpu_port; i++) {
 		if (priv->ports[i].phy || priv->pcs[i])
