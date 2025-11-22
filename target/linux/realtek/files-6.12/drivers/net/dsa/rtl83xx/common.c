@@ -237,41 +237,10 @@ u64 rtl839x_get_port_reg_le(int reg)
 	return v;
 }
 
-static int rtldsa_bus_read(struct mii_bus *bus, int addr, int regnum)
-{
-	struct rtl838x_switch_priv *priv = bus->priv;
-
-	return mdiobus_read_nested(priv->parent_bus, addr, regnum);
-}
-
-static int rtldsa_bus_write(struct mii_bus *bus, int addr, int regnum, u16 val)
-{
-	struct rtl838x_switch_priv *priv = bus->priv;
-
-	return mdiobus_write_nested(priv->parent_bus, addr, regnum, val);
-}
-
-static int rtldsa_bus_c45_read(struct mii_bus *bus, int addr, int devad, int regnum)
-{
-	struct rtl838x_switch_priv *priv = bus->priv;
-
-	return mdiobus_c45_read_nested(priv->parent_bus, addr, devad, regnum);
-}
-
-static int rtldsa_bus_c45_write(struct mii_bus *bus, int addr, int devad, int regnum, u16 val)
-{
-	struct rtl838x_switch_priv *priv = bus->priv;
-
-	return mdiobus_c45_write_nested(priv->parent_bus, addr, devad, regnum, val);
-}
-
 static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 {
 	struct device_node *dn, *phy_node, *pcs_node, *led_node, *np, *mii_np;
 	struct platform_device *mido_pdev, *mido_bus_pdev;
-	struct device *dev = priv->dev;
-	struct mii_bus *bus;
-	int ret;
 	u32 pn;
 	bool has_serdes = false;
 
@@ -317,27 +286,7 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 		return -EPROBE_DEFER;
 	}
 
-	bus = devm_mdiobus_alloc(priv->ds->dev);
-	if (!bus)
-		return -ENOMEM;
-
-	bus->name = "rtldsa_mdio";
-	bus->read = rtldsa_bus_read;
-	bus->write = rtldsa_bus_write;
-	bus->read_c45 = rtldsa_bus_c45_read;
-	bus->write_c45 = rtldsa_bus_c45_write;
-	bus->phy_mask = priv->parent_bus->phy_mask;
-	snprintf(bus->id, MII_BUS_ID_SIZE, "%s-%d", bus->name, dev->id);
-
-	bus->parent = dev;
-	priv->ds->user_mii_bus = bus;
-	priv->ds->user_mii_bus->priv = priv;
-
-	ret = mdiobus_register(priv->ds->user_mii_bus);
-	if (ret && mii_np) {
-		of_node_put(dn);
-		return ret;
-	}
+	priv->ds->user_mii_bus = priv->parent_bus;
 
 	dn = of_find_compatible_node(NULL, NULL, "realtek,rtl83xx-switch");
 	if (!dn) {
