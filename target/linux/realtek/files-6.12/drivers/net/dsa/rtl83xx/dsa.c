@@ -3099,6 +3099,8 @@ const struct dsa_switch_ops rtl83xx_switch_ops = {
 
 	.port_pre_bridge_flags	= rtldsa_port_pre_bridge_flags,
 	.port_bridge_flags	= rtl83xx_port_bridge_flags,
+
+	.port_setup_tc		= rtl83xx_setup_tc,
 };
 
 const struct dsa_switch_ops rtl93xx_switch_ops = {
@@ -3162,4 +3164,6 @@ const struct dsa_switch_ops rtl93xx_switch_ops = {
 
 	.cls_flower_add		= rtldsa_cls_flower_add,
 	.cls_flower_del		= rtldsa_cls_flower_del,
+
+	.port_setup_tc		= rtl83xx_setup_tc,
 };
