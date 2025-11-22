@@ -268,6 +268,7 @@ static int rtldsa_bus_c45_write(struct mii_bus *bus, int addr, int devad, int re
 static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 {
 	struct device_node *dn, *phy_node, *pcs_node, *led_node, *np, *mii_np;
+	struct platform_device *mido_pdev, *mido_bus_pdev;
 	struct device *dev = priv->dev;
 	struct mii_bus *bus;
 	int ret;
@@ -279,19 +280,41 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 		return -ENODEV;
 	}
 
+	mido_pdev = of_find_device_by_node(np);
+	if (!mido_pdev) {
+		dev_err(priv->dev, "Deferring probe of mdio bus #1\n");
+		return -EPROBE_DEFER;
+	}
+
+	if (!device_is_bound(&mido_pdev->dev))
+	{
+		dev_err(priv->dev, "Deferring probe of mdio bus #2\n");
+		return -EPROBE_DEFER;
+	}
+
 	mii_np = of_get_child_by_name(np, "mdio-bus");
 	if (!mii_np) {
 		dev_err(priv->dev, "mdio-bus subnode not found");
 		return -ENODEV;
 	}
 
-	priv->parent_bus = of_mdio_find_bus(mii_np);
-	if (!priv->parent_bus) {
-		dev_dbg(priv->dev, "Deferring probe of mdio bus\n");
+	mido_bus_pdev = of_find_device_by_node(np);
+	if (!mido_bus_pdev) {
+		dev_err(priv->dev, "Deferring probe of mdio bus #3\n");
 		return -EPROBE_DEFER;
 	}
-	if (!of_device_is_available(mii_np))
-		ret = -ENODEV;
+
+	if (!device_is_bound(&mido_bus_pdev->dev))
+	{
+		dev_err(priv->dev, "Deferring probe of mdio bus #4\n");
+		return -EPROBE_DEFER;
+	}
+
+	priv->parent_bus = of_mdio_find_bus(mii_np);
+	if (!priv->parent_bus) {
+		dev_err(priv->dev, "Deferring probe of mdio bus #5\n");
+		return -EPROBE_DEFER;
+	}
 
 	bus = devm_mdiobus_alloc(priv->ds->dev);
 	if (!bus)
@@ -343,6 +366,8 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 
 		priv->pcs[pn] = rtpcs_create(priv->dev, pcs_node, pn);
 		if (IS_ERR(priv->pcs[pn])) {
+			if (priv->pcs[pn] == ERR_PTR(-EPROBE_DEFER))
+				return -EPROBE_DEFER;
 			dev_err(priv->dev, "port %u failed to create PCS instance: %ld\n",
 				pn, PTR_ERR(priv->pcs[pn]));
 			priv->pcs[pn] = NULL;
@@ -1404,8 +1429,14 @@ static int rtldsa_ethernet_loaded(struct platform_device *pdev)
 		if (!eth_pdev)
 			continue;
 
-		if (eth_pdev->dev.driver)
-			ret = 0;
+		if (!device_is_bound(&eth_pdev->dev))
+		{
+			dev_err(&pdev->dev, "ethernet is not bound yet\n");
+			continue;
+		}
+
+		ret = 0;
+		break;
 	}
 
 	of_node_put(ports);

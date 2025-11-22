@@ -442,8 +442,10 @@ static int rtsds_probe(struct platform_device *pdev)
 
 	ctrl = bus->priv;
 	ctrl->map = syscon_node_to_regmap(np->parent);
-	if (IS_ERR(ctrl->map))
+	if (IS_ERR(ctrl->map)) {
+		dev_err(dev, "syscon_node_to_regmap failed");
 		return PTR_ERR(ctrl->map);
+	}
 
 	ctrl->dev = dev;
 	ctrl->cfg = (const struct rtsds_config *)device_get_match_data(ctrl->dev);
@@ -457,8 +459,10 @@ static int rtsds_probe(struct platform_device *pdev)
 	bus->phy_mask = ~0ULL;
 
 	ret = devm_of_mdiobus_register(dev, bus, dev->of_node);
-	if (ret)
+	if (ret) {
+		dev_err(dev, "devm_of_mdiobus_register failed");
 		return ret;
+	}
 
 #ifdef CONFIG_DEBUG_FS
 	for (int sds = 0; sds < ctrl->cfg->sds_cnt; sds++)
