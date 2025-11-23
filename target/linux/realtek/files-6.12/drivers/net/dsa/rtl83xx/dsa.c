@@ -2141,7 +2141,8 @@ static int rtl83xx_vlan_add(struct dsa_switch *ds, int port,
 		__func__, port, vlan->vid, vlan->flags);
 
 	/* Let no one mess with our special VLAN 0 */
-	if (!vlan->vid) return 0;
+	if (!vlan->vid)
+		return 0;
 
 	if (vlan->vid > 4095) {
 		dev_err(priv->dev, "VLAN out of range: %d", vlan->vid);
@@ -2212,7 +2213,8 @@ static int rtl83xx_vlan_del(struct dsa_switch *ds, int port,
 		__func__, port, vlan->vid, vlan->flags);
 
 	/* Let no one mess with our special VLAN 0 */
-	if (!vlan->vid) return 0;
+	if (!vlan->vid)
+		return 0;
 
 	if (vlan->vid > 4095) {
 		dev_err(priv->dev, "VLAN out of range: %d", vlan->vid);
