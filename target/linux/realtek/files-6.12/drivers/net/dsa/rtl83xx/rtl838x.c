@@ -566,9 +566,9 @@ static void rtl838x_set_static_move_action(int port, bool forward)
 static void rtl838x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
 {
 	u32 cmd = 1 << 15 | /* Execute cmd */
-	          1 << 14 | /* Read */
-	          2 << 12 | /* Table type 0b10 */
-	          (msti & 0xfff);
+		  1 << 14 | /* Read */
+		  2 << 12 | /* Table type 0b10 */
+		  (msti & 0xfff);
 	priv->r->exec_tbl0_cmd(cmd);
 
 	for (int i = 0; i < 2; i++)
@@ -578,9 +578,9 @@ static void rtl838x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port
 static void rtl838x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
 {
 	u32 cmd = 1 << 15 | /* Execute cmd */
-	          0 << 14 | /* Write */
-	          2 << 12 | /* Table type 0b10 */
-	          (msti & 0xfff);
+		  0 << 14 | /* Write */
+		  2 << 12 | /* Table type 0b10 */
+		  (msti & 0xfff);
 
 	for (int i = 0; i < 2; i++)
 		sw_w32(port_state[i], priv->r->tbl_access_data_0(i));

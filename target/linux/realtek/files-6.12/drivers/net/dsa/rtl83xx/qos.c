@@ -21,27 +21,27 @@ int dot1p_priority_remapping[] = {0, 1, 2, 3, 4, 5, 6, 7};
 static void rtl839x_read_scheduling_table(int port)
 {
 	u32 cmd = 1 << 9 | /* Execute cmd */
-	          0 << 8 | /* Read */
-	          0 << 6 | /* Table type 0b00 */
-	          (port & 0x3f);
+		  0 << 8 | /* Read */
+		  0 << 6 | /* Table type 0b00 */
+		  (port & 0x3f);
 	rtl839x_exec_tbl2_cmd(cmd);
 }
 
 static void rtl839x_write_scheduling_table(int port)
 {
 	u32 cmd = 1 << 9 | /* Execute cmd */
-	          1 << 8 | /* Write */
-	          0 << 6 | /* Table type 0b00 */
-	          (port & 0x3f);
+		  1 << 8 | /* Write */
+		  0 << 6 | /* Table type 0b00 */
+		  (port & 0x3f);
 	rtl839x_exec_tbl2_cmd(cmd);
 }
 
 static void rtl839x_read_out_q_table(int port)
 {
 	u32 cmd = 1 << 9 | /* Execute cmd */
-	          0 << 8 | /* Read */
-	          2 << 6 | /* Table type 0b10 */
-	          (port & 0x3f);
+		  0 << 8 | /* Read */
+		  2 << 6 | /* Table type 0b10 */
+		  (port & 0x3f);
 	rtl839x_exec_tbl2_cmd(cmd);
 }
 

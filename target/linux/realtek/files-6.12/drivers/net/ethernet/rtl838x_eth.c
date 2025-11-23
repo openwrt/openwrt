@@ -323,13 +323,13 @@ static void rtl838x_fdb_sync(struct work_struct *work)
 	const struct fdb_update_work *uw = container_of(work, struct fdb_update_work, work);
 
 	for (int i = 0; uw->macs[i]; i++) {
-	        struct switchdev_notifier_fdb_info info;
-	        u8 addr[ETH_ALEN];
-	        int action;
+		struct switchdev_notifier_fdb_info info;
+		u8 addr[ETH_ALEN];
+		int action;
 
 		action = (uw->macs[i] & (1ULL << 63)) ?
-		         SWITCHDEV_FDB_ADD_TO_BRIDGE :
-		         SWITCHDEV_FDB_DEL_TO_BRIDGE;
+			 SWITCHDEV_FDB_ADD_TO_BRIDGE :
+			 SWITCHDEV_FDB_DEL_TO_BRIDGE;
 		u64_to_ether_addr(uw->macs[i] & 0xffffffffffffULL, addr);
 		info.addr = &addr[0];
 		info.vid = 0;
@@ -343,13 +343,13 @@ static void rtl838x_fdb_sync(struct work_struct *work)
 static void rtl839x_l2_notification_handler(struct rtl838x_eth_priv *priv)
 {
 	struct notify_b *nb = priv->membase + sizeof(struct ring_b);
-        u32 e = priv->lastEvent;
+	u32 e = priv->lastEvent;
 
 	while (!(nb->ring[e] & 1)) {
-                struct fdb_update_work *w;
-                struct n_event *event;
-                u64 mac;
-                int i;
+		struct fdb_update_work *w;
+		struct n_event *event;
+		u64 mac;
+		int i;
 
 		w = kzalloc(sizeof(*w), GFP_ATOMIC);
 		if (!w) {
@@ -443,7 +443,7 @@ static irqreturn_t rtl93xx_net_irq(int irq, void *dev_id)
 	/* RX buffer overrun */
 	if (status_rx_r) {
 		pr_debug("RX buffer overrun: status %x, mask: %x\n",
-		         status_rx_r, sw_r32(priv->r->dma_if_intr_rx_runout_msk));
+			 status_rx_r, sw_r32(priv->r->dma_if_intr_rx_runout_msk));
 		sw_w32(status_rx_r, priv->r->dma_if_intr_rx_runout_sts);
 	}
 
@@ -621,7 +621,7 @@ static void rtl838x_hw_reset(struct rtl838x_eth_priv *priv)
 
 			sw_w32_mask(0x3ff << pos, 0, priv->r->dma_if_rx_ring_size(i));
 			sw_w32_mask(0x3ff << pos, priv->rxringlen,
-			            priv->r->dma_if_rx_ring_cntr(i));
+				    priv->r->dma_if_rx_ring_cntr(i));
 		}
 	}
 
@@ -742,20 +742,20 @@ static void rtl93xx_hw_en_rxtx(struct rtl838x_eth_priv *priv)
 static void rtl838x_setup_ring_buffer(struct rtl838x_eth_priv *priv, struct ring_b *ring)
 {
 	for (int i = 0; i < priv->rxrings; i++) {
-	        struct p_hdr *h;
-                int j;
+		struct p_hdr *h;
+		int j;
 
 		for (j = 0; j < priv->rxringlen; j++) {
 			h = &ring->rx_header[i][j];
 			memset(h, 0, sizeof(struct p_hdr));
 			h->buf = (u8 *)KSEG1ADDR(ring->rx_space +
-			                         i * priv->rxringlen * RING_BUFFER +
-			                         j * RING_BUFFER);
+						 i * priv->rxringlen * RING_BUFFER +
+						 j * RING_BUFFER);
 			h->size = RING_BUFFER;
 			/* All rings owned by switch, last one wraps */
 			ring->rx_r[i][j] = KSEG1ADDR(h) | 1 | (j == (priv->rxringlen - 1) ?
-			                   WRAP :
-			                   0);
+					   WRAP :
+					   0);
 		}
 		ring->c_rx[i] = 0;
 	}
@@ -768,8 +768,8 @@ static void rtl838x_setup_ring_buffer(struct rtl838x_eth_priv *priv, struct ring
 			h = &ring->tx_header[i][j];
 			memset(h, 0, sizeof(struct p_hdr));
 			h->buf = (u8 *)KSEG1ADDR(ring->tx_space +
-			                         i * TXRINGLEN * RING_BUFFER +
-			                         j * RING_BUFFER);
+						 i * TXRINGLEN * RING_BUFFER +
+						 j * RING_BUFFER);
 			h->size = RING_BUFFER;
 			ring->tx_r[i][j] = KSEG1ADDR(&ring->tx_header[i][j]);
 		}
@@ -1256,8 +1256,8 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 		h->size = RING_BUFFER;
 
 		ring->rx_r[r][ring->c_rx[r]] = KSEG1ADDR(h) | 0x1 | (ring->c_rx[r] == (priv->rxringlen - 1) ?
-		                               WRAP :
-		                               0x1);
+					       WRAP :
+					       0x1);
 		ring->c_rx[r] = (ring->c_rx[r] + 1) % priv->rxringlen;
 		last = (u32 *)KSEG1ADDR(sw_r32(priv->r->dma_if_rx_cur + r * 4));
 	} while (&ring->rx_r[r][ring->c_rx[r]] != last && work_done < budget);
@@ -1695,8 +1695,8 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 
 	/* Allocate buffer memory */
 	priv->membase = dmam_alloc_coherent(&pdev->dev, rxrings * rxringlen * RING_BUFFER +
-	                                    sizeof(struct ring_b) + sizeof(struct notify_b),
-	                                    (void *)&dev->mem_start, GFP_KERNEL);
+					    sizeof(struct ring_b) + sizeof(struct notify_b),
+					    (void *)&dev->mem_start, GFP_KERNEL);
 	if (!priv->membase) {
 		dev_err(&pdev->dev, "cannot allocate DMA buffer\n");
 		return -ENOMEM;

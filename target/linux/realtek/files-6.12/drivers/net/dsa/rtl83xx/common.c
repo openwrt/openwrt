@@ -967,7 +967,7 @@ static int rtldsa_fib4_check(struct rtl838x_switch_priv *priv,
 	dev_info(priv->dev, "%s IPv4 route %pI4/%d %s(VLAN %d, MAC %pM)\n",
 		 event == FIB_EVENT_ENTRY_ADD ? "add" : "delete",
 		 &info->dst, info->dst_len, gw_message, vlan, ndev->dev_addr);
-		 
+
 	if ((info->type == RTN_BROADCAST) || ipv4_is_loopback(info->dst) || !info->dst) {
 		dev_warn(priv->dev, "skip loopback/broadcast addresses and default routes\n");
 		return -EINVAL;
@@ -1048,7 +1048,7 @@ static int rtl83xx_alloc_router_mac(struct rtl838x_switch_priv *priv, u64 mac)
 	m.p_id = 0x3f;			/* Listen on any port */
 	m.p_id_mask = 0;
 	m.vid = 0;			/* Listen on any VLAN... */
-	m.vid_mask = 0; 		/* ... so mask needs to be 0 */
+	m.vid_mask = 0;			/* ... so mask needs to be 0 */
 	m.mac_mask = 0xffffffffffffULL;	/* We want an exact match of the interface MAC */
 	m.action = L3_FORWARD;		/* Route the packet */
 	priv->r->set_l3_router_mac(free_mac, &m);
@@ -1410,7 +1410,7 @@ static int rtldsa_ethernet_loaded(struct platform_device *pdev)
 
 	of_node_put(ports);
 
-	return ret;	
+	return ret;
 }
 
 static int __init rtl83xx_sw_probe(struct platform_device *pdev)
@@ -1425,7 +1425,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		dev_err(dev, "No DT found\n");
 		return -EINVAL;
 	}
-	
+
 	err = rtldsa_ethernet_loaded(pdev);
 	if (err)
 		return err;
@@ -1582,11 +1582,11 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 	switch (priv->family_id) {
 	case RTL8380_FAMILY_ID:
 		err = request_irq(priv->link_state_irq, rtl838x_switch_irq,
-		                  IRQF_SHARED, "rtl838x-link-state", priv->ds);
+				  IRQF_SHARED, "rtl838x-link-state", priv->ds);
 		break;
 	case RTL8390_FAMILY_ID:
 		err = request_irq(priv->link_state_irq, rtl839x_switch_irq,
-		                  IRQF_SHARED, "rtl839x-link-state", priv->ds);
+				  IRQF_SHARED, "rtl839x-link-state", priv->ds);
 		break;
 	case RTL9300_FAMILY_ID:
 		err = request_irq(priv->link_state_irq, rtldsa_930x_switch_irq,
@@ -1594,7 +1594,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		break;
 	case RTL9310_FAMILY_ID:
 		err = request_irq(priv->link_state_irq, rtl931x_switch_irq,
-		                  IRQF_SHARED, "rtl931x-link-state", priv->ds);
+				  IRQF_SHARED, "rtl931x-link-state", priv->ds);
 		break;
 	}
 	if (err) {

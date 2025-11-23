@@ -35,9 +35,9 @@ rtcl_839x_dram_set_rate:
 #ifdef CONFIG_RTL839X
 
 	/* disable MIPS 34K branch and return prediction */
-        mfc0    rCP0, CP0_CONFIG, 7
-        ori     rTMP, rCP0, 0xc
-        mtc0    rTMP, CP0_CONFIG, 7
+	mfc0    rCP0, CP0_CONFIG, 7
+	ori     rTMP, rCP0, 0xc
+	mtc0    rTMP, CP0_CONFIG, 7
 
 	li	rCTR, RTL_SW_CORE_BASE
 	addiu	rGLB, rCTR, RTL839X_PLL_GLB_CTRL

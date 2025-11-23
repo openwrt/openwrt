@@ -1344,7 +1344,7 @@ static void rtldsa_get_eth_mac_stats(struct dsa_switch *ds, int port,
 	mac_stats->OctetsReceivedOK = counters->if_in_octets.val -
 				      18 * mac_stats->FramesReceivedOK;
 	mac_stats->OctetsTransmittedOK = counters->if_out_octets.val -
-				         18 * mac_stats->FramesTransmittedOK;
+					 18 * mac_stats->FramesTransmittedOK;
 
 	mac_stats->SingleCollisionFrames = counters->single_collisions.val;
 	mac_stats->MultipleCollisionFrames = counters->multiple_collisions.val;
@@ -1769,7 +1769,7 @@ static void rtldsa_mst_release_slot(struct kref *ref)
  * given, true when @mst_slot is now unused
  */
 static bool rtldsa_mst_put_slot(struct rtl838x_switch_priv *priv, u16 mst_slot)
-			        __must_hold(&priv->reg_mutex)
+				__must_hold(&priv->reg_mutex)
 {
 	unsigned int index;
 

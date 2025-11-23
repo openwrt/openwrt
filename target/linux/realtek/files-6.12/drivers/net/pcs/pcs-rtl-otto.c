@@ -1256,7 +1256,7 @@ static void rtpcs_930x_sds_do_rx_calibration_2_3(struct rtpcs_ctrl *ctrl,
 		fgcal_binary = rtpcs_sds_read_bits(ctrl, sds_num, 0x1f, 0x14, 5, 0);
 
 		pr_info("%s: fgcal_gray: %d, fgcal_binary %d\n",
-		        __func__, fgcal_gray, fgcal_binary);
+			__func__, fgcal_gray, fgcal_binary);
 
 		offset_range = rtpcs_sds_read_bits(ctrl, sds_num, 0x2e, 0x15, 15, 14);
 
@@ -2142,7 +2142,7 @@ static void rtpcs_931x_sds_cmu_type_set(struct rtpcs_ctrl *ctrl, u32 sds,
 	evenSds = sds - lane;
 
 	pr_info("%s: cmu_type %0d cmu_page %x frc_cmu_spd %d lane %d sds %d\n",
-	        __func__, cmu_type, cmu_page, frc_cmu_spd, lane, sds);
+		__func__, cmu_type, cmu_page, frc_cmu_spd, lane, sds);
 
 	if (cmu_type == 1) {
 		pr_info("%s A CMU page 0x28 0x7 %08x\n", __func__, rtpcs_sds_read(ctrl, sds, 0x28, 0x7));
@@ -2379,7 +2379,7 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_ctrl *ctrl, int sds,
 	}
 
 	pr_info("%s: 2.5gbit %08X", __func__,
-	        rtpcs_sds_read(ctrl, sds, 0x41, 0x14));
+		rtpcs_sds_read(ctrl, sds, 0x41, 0x14));
 
 	regmap_read(ctrl->map, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR, &ori);
 	pr_info("%s: RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR 0x%08X\n", __func__, ori);
@@ -2456,7 +2456,7 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_ctrl *ctrl, int sds,
 		break;
 
 	case PHY_INTERFACE_MODE_10GBASER: /* MII_10GR / MII_10GR1000BX_AUTO: */
-	                                  /* configure 10GR fiber mode=1 */
+					  /* configure 10GR fiber mode=1 */
 		rtpcs_sds_write_bits(ctrl, sds, 0x1f, 0xb, 1, 1, 1);
 
 		/* init fiber_1g */
@@ -2494,7 +2494,7 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_ctrl *ctrl, int sds,
 	case PHY_INTERFACE_MODE_QSGMII:
 	default:
 		pr_info("%s: PHY mode %s not supported by SerDes %d\n",
-		        __func__, phy_modes(mode), sds);
+			__func__, phy_modes(mode), sds);
 		return -ENOTSUPP;
 	}
 
