@@ -1,6 +1,6 @@
 --- a/extensions/GNUmakefile.in
 +++ b/extensions/GNUmakefile.in
-@@ -86,7 +86,7 @@ pfx_symlink_files := $(patsubst %,libxt_
+@@ -101,7 +101,7 @@ pfx_symlink_files := $(patsubst %,libxt_
  #
  # Building blocks
  #
@@ -9,52 +9,52 @@
  targets_install :=
  libext_objs := ${pfx_objs}
  libext_ebt_objs := ${pfb_objs}
-@@ -133,7 +133,7 @@ clean:
+@@ -148,7 +148,7 @@ clean:
  distclean: clean
  
  init%.o: init%.c
--	${AM_VERBOSE_CC} ${CC} ${AM_CPPFLAGS} ${AM_DEPFLAGS} ${AM_CFLAGS} -D_INIT=$*_init ${CFLAGS} -o $@ -c $<;
-+	${AM_VERBOSE_CC} ${CC} ${AM_CPPFLAGS} ${AM_DEPFLAGS} ${AM_CFLAGS} -D_INIT=$*_init  -DPIC -fPIC ${CFLAGS} -o $@ -c $<;
+-	${AM_V_CC} ${CC} ${AM_CPPFLAGS} ${AM_DEPFLAGS} ${AM_CFLAGS} -D_INIT=$*_init ${CFLAGS} -o $@ -c $<;
++	${AM_V_CC} ${CC} ${AM_CPPFLAGS} ${AM_DEPFLAGS} ${AM_CFLAGS} -D_INIT=$*_init -DPIC -fPIC ${CFLAGS} -o $@ -c $<;
  
  -include .*.d
  
-@@ -173,22 +173,22 @@ xt_connlabel_LIBADD = @libnetfilter_conn
+@@ -188,22 +188,22 @@ xt_connlabel_LIBADD = @libnetfilter_conn
  #	handling code in the Makefiles.
  #
  lib%.o: ${srcdir}/lib%.c
--	${AM_VERBOSE_CC} ${CC} ${AM_CPPFLAGS} ${AM_DEPFLAGS} ${AM_CFLAGS} -DNO_SHARED_LIBS=1 -D_INIT=lib$*_init ${CFLAGS} -o $@ -c $<;
-+	${AM_VERBOSE_CC} ${CC} ${AM_CPPFLAGS} ${AM_DEPFLAGS} ${AM_CFLAGS} -DNO_SHARED_LIBS=1 -D_INIT=lib$*_init -DPIC -fPIC ${CFLAGS} -o $@ -c $<;
+-	${AM_V_CC} ${CC} ${AM_CPPFLAGS} ${AM_DEPFLAGS} ${AM_CFLAGS} -DNO_SHARED_LIBS=1 -D_INIT=lib$*_init ${CFLAGS} -o $@ -c $<;
++	${AM_V_CC} ${CC} ${AM_CPPFLAGS} ${AM_DEPFLAGS} ${AM_CFLAGS} -DNO_SHARED_LIBS=1 -D_INIT=lib$*_init -DPIC -fPIC ${CFLAGS} -o $@ -c $<;
  
 -libext.a: initext.o ${libext_objs}
--	${AM_VERBOSE_AR} ${AR} crs $@ $^;
+-	${AM_V_AR} ${AR} crs $@ $^;
 +libiptext.so: initext.o ${libext_objs}
-+	${AM_VERBOSE_CCLD} ${CCLD} ${AM_LDFLAGS} -shared ${LDFLAGS} -o $@ $^ -L../libxtables/.libs -lxtables $(foreach obj,$^,${$(patsubst lib%.o,%,$(obj))_LIBADD});
++	${AM_V_CCLD} ${CCLD} ${AM_LDFLAGS} -shared ${LDFLAGS} -o $@ $^ -L../libxtables/.libs -lxtables $(foreach obj,$^,${$(patsubst lib%.o,%,$(obj))_LIBADD});
  
 -libext_ebt.a: initextb.o ${libext_ebt_objs}
--	${AM_VERBOSE_AR} ${AR} crs $@ $^;
+-	${AM_V_AR} ${AR} crs $@ $^;
 +libiptext_ebt.so: initextb.o ${libext_ebt_objs}
-+	${AM_VERBOSE_CCLD} ${CCLD} ${AM_LDFLAGS} -shared ${LDFLAGS} -o $@ $^ -L../libxtables/.libs -lxtables $(foreach obj,$^,${$(patsubst lib%.o,%,$(obj))_LIBADD});
++	${AM_V_CCLD} ${CCLD} ${AM_LDFLAGS} -shared ${LDFLAGS} -o $@ $^ -L../libxtables/.libs -lxtables $(foreach obj,$^,${$(patsubst lib%.o,%,$(obj))_LIBADD});
  
 -libext_arpt.a: initexta.o ${libext_arpt_objs}
--	${AM_VERBOSE_AR} ${AR} crs $@ $^;
+-	${AM_V_AR} ${AR} crs $@ $^;
 +libiptext_arpt.so: initexta.o ${libext_arpt_objs}
-+	${AM_VERBOSE_CCLD} ${CCLD} ${AM_LDFLAGS} -shared ${LDFLAGS} -o $@ $^ -L../libxtables/.libs -lxtables $(foreach obj,$^,${$(patsubst lib%.o,%,$(obj))_LIBADD});
++	${AM_V_CCLD} ${CCLD} ${AM_LDFLAGS} -shared ${LDFLAGS} -o $@ $^ -L../libxtables/.libs -lxtables $(foreach obj,$^,${$(patsubst lib%.o,%,$(obj))_LIBADD});
  
 -libext4.a: initext4.o ${libext4_objs}
--	${AM_VERBOSE_AR} ${AR} crs $@ $^;
+-	${AM_V_AR} ${AR} crs $@ $^;
 +libiptext4.so: initext4.o ${libext4_objs}
-+	${AM_VERBOSE_CCLD} ${CCLD} ${AM_LDFLAGS} -shared ${LDFLAGS} -o $@ $^ -L../libxtables/.libs -lxtables $(foreach obj,$^,${$(patsubst lib%.o,%,$(obj))_LIBADD});
++	${AM_V_CCLD} ${CCLD} ${AM_LDFLAGS} -shared ${LDFLAGS} -o $@ $^ -L../libxtables/.libs -lxtables $(foreach obj,$^,${$(patsubst lib%.o,%,$(obj))_LIBADD});
  
 -libext6.a: initext6.o ${libext6_objs}
--	${AM_VERBOSE_AR} ${AR} crs $@ $^;
+-	${AM_V_AR} ${AR} crs $@ $^;
 +libiptext6.so: initext6.o ${libext6_objs}
-+	${AM_VERBOSE_CCLD} ${CCLD} ${AM_LDFLAGS} -shared ${LDFLAGS} -o $@ $^ -L../libxtables/.libs -lxtables $(foreach obj,$^,${$(patsubst lib%.o,%,$(obj))_LIBADD});
++	${AM_V_CCLD} ${CCLD} ${AM_LDFLAGS} -shared ${LDFLAGS} -o $@ $^ -L../libxtables/.libs -lxtables $(foreach obj,$^,${$(patsubst lib%.o,%,$(obj))_LIBADD});
  
  initext_func  := $(addprefix xt_,${pfx_build_static})
  initextb_func := $(addprefix ebt_,${pfb_build_static})
 --- a/iptables/Makefile.am
 +++ b/iptables/Makefile.am
-@@ -7,7 +7,7 @@ AM_LDFLAGS       = ${regular_LDFLAGS}
+@@ -14,7 +14,7 @@ AM_LDFLAGS       = ${regular_LDFLAGS}
  BUILT_SOURCES =
  
  common_sources = iptables-xml.c xtables-multi.h xshared.c xshared.h
@@ -63,7 +63,7 @@
  common_cflags  = ${AM_CFLAGS}
  if ENABLE_STATIC
  common_cflags += -DALL_INCLUSIVE
-@@ -17,15 +17,18 @@ xtables_legacy_multi_SOURCES  = ${common
+@@ -24,15 +24,18 @@ xtables_legacy_multi_SOURCES  = ${common
  				iptables-restore.c iptables-save.c
  xtables_legacy_multi_CFLAGS   = ${common_cflags}
  xtables_legacy_multi_LDADD    = ${common_ldadd}
@@ -84,7 +84,7 @@
  endif
  
  # iptables using nf_tables api
-@@ -33,12 +36,9 @@ if ENABLE_NFTABLES
+@@ -40,12 +43,9 @@ if ENABLE_NFTABLES
  xtables_nft_multi_SOURCES  = ${common_sources} xtables-nft-multi.c
  xtables_nft_multi_CFLAGS   = ${common_cflags}
  xtables_nft_multi_LDADD    = ${common_ldadd} \

@@ -25,7 +25,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  #include <xtables.h>
  #include <linux/netfilter/xt_CONNMARK.h>
  
-@@ -49,6 +50,7 @@ enum {
+@@ -44,6 +45,7 @@ enum {
  	O_CTMASK,
  	O_NFMASK,
  	O_MASK,
@@ -33,7 +33,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  	F_SET_MARK         = 1 << O_SET_MARK,
  	F_SAVE_MARK        = 1 << O_SAVE_MARK,
  	F_RESTORE_MARK     = 1 << O_RESTORE_MARK,
-@@ -61,8 +63,10 @@ enum {
+@@ -56,8 +58,10 @@ enum {
  	F_CTMASK           = 1 << O_CTMASK,
  	F_NFMASK           = 1 << O_NFMASK,
  	F_MASK             = 1 << O_MASK,
@@ -45,7 +45,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  };
  
  static const char *const xt_connmark_shift_ops[] = {
-@@ -114,6 +118,8 @@ static const struct xt_option_entry conn
+@@ -109,6 +113,8 @@ static const struct xt_option_entry conn
  	 .excl = F_MASK, .flags = XTOPT_PUT, XTOPT_POINTER(s, nfmask)},
  	{.name = "mask", .id = O_MASK, .type = XTTYPE_UINT32,
  	 .excl = F_CTMASK | F_NFMASK},
@@ -54,7 +54,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  	XTOPT_TABLEEND,
  };
  #undef s
-@@ -148,6 +154,38 @@ static const struct xt_option_entry conn
+@@ -143,6 +149,38 @@ static const struct xt_option_entry conn
  };
  #undef s
  
@@ -93,7 +93,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  static void connmark_tg_help(void)
  {
  	printf(
-@@ -175,6 +213,15 @@ static void connmark_tg_help_v2(void)
+@@ -170,6 +208,15 @@ static void connmark_tg_help_v2(void)
  );
  }
  
@@ -109,7 +109,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  static void connmark_tg_init(struct xt_entry_target *target)
  {
  	struct xt_connmark_tginfo1 *info = (void *)target->data;
-@@ -199,6 +246,16 @@ static void connmark_tg_init_v2(struct x
+@@ -194,6 +241,16 @@ static void connmark_tg_init_v2(struct x
  	info->shift_bits = 0;
  }
  
@@ -126,7 +126,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  static void CONNMARK_parse(struct xt_option_call *cb)
  {
  	struct xt_connmark_target_info *markinfo = cb->data;
-@@ -253,6 +310,23 @@ static void connmark_tg_parse(struct xt_
+@@ -248,6 +305,23 @@ static void connmark_tg_parse(struct xt_
  		info->ctmark = cb->val.u32;
  		info->ctmask = 0;
  		break;
@@ -150,7 +150,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  	case O_SAVE_MARK:
  		info->mode = XT_CONNMARK_SAVE;
  		break;
-@@ -320,6 +394,78 @@ static void connmark_tg_parse_v2(struct
+@@ -315,6 +389,78 @@ static void connmark_tg_parse_v2(struct
  	}
  }
  
@@ -229,7 +229,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  static void connmark_tg_check(struct xt_fcheck_call *cb)
  {
  	if (!(cb->xflags & F_OP_ANY))
-@@ -463,6 +609,65 @@ connmark_tg_print_v2(const void *ip, con
+@@ -458,6 +604,65 @@ connmark_tg_print_v2(const void *ip, con
  	}
  }
  
@@ -295,7 +295,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  static void CONNMARK_save(const void *ip, const struct xt_entry_target *target)
  {
  	const struct xt_connmark_target_info *markinfo =
-@@ -548,6 +753,38 @@ connmark_tg_save_v2(const void *ip, cons
+@@ -543,6 +748,38 @@ connmark_tg_save_v2(const void *ip, cons
  	}
  }
  
@@ -334,7 +334,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  static int connmark_tg_xlate(struct xt_xlate *xl,
  			     const struct xt_xlate_tg_params *params)
  {
-@@ -644,6 +881,66 @@ static int connmark_tg_xlate_v2(struct x
+@@ -639,6 +876,66 @@ static int connmark_tg_xlate_v2(struct x
  
  	return 1;
  }
@@ -401,7 +401,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  static struct xtables_target connmark_tg_reg[] = {
  	{
  		.family        = NFPROTO_UNSPEC,
-@@ -692,6 +989,22 @@ static struct xtables_target connmark_tg
+@@ -687,6 +984,22 @@ static struct xtables_target connmark_tg
  		.x6_options    = connmark_tg_opts_v2,
  		.xlate         = connmark_tg_xlate_v2,
  	},
@@ -426,8 +426,8 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  void _init(void)
 --- a/include/linux/netfilter/xt_connmark.h
 +++ b/include/linux/netfilter/xt_connmark.h
-@@ -18,6 +18,11 @@ enum {
- 	XT_CONNMARK_RESTORE
+@@ -19,6 +19,11 @@ enum {
+ 	D_SHIFT_RIGHT,
  };
  
 +enum {
@@ -438,7 +438,7 @@ Signed-off-by: Kevin Darbyshire-Bryant <ldir@darbyshire-bryant.me.uk>
  struct xt_connmark_tginfo1 {
  	__u32 ctmark, ctmask, nfmask;
  	__u8 mode;
-@@ -28,6 +33,11 @@ struct xt_connmark_tginfo2 {
+@@ -29,6 +34,11 @@ struct xt_connmark_tginfo2 {
  	__u8 shift_dir, shift_bits, mode;
  };
  
