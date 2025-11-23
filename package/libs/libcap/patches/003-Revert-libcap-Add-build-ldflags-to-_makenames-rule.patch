@@ -1,0 +1,27 @@
+From 542d7d86ecd2129dd5fe7e5b31ba307304f5b319 Mon Sep 17 00:00:00 2001
+From: "Andrew G. Morgan" <morgan@kernel.org>
+Date: Mon, 10 Nov 2025 18:26:34 -0800
+Subject: [PATCH] Revert "libcap: Add build ldflags to _makenames rule"
+
+This reverts commit c3ddf45d9afaab85d3b7db0dc7bfd1aafb8fde50.
+
+The details of what this broke are here:
+
+  https://bugzilla.kernel.org/show_bug.cgi?id=220691#c2
+
+Signed-off-by: Andrew G. Morgan <morgan@kernel.org>
+---
+ libcap/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/libcap/Makefile
++++ b/libcap/Makefile
+@@ -80,7 +80,7 @@ $(PSXTITLE).pc: $(PSXTITLE).pc.in
+ 		$< >$@
+ 
+ _makenames: _makenames.c cap_names.list.h
+-	$(BUILD_CC) $(BUILD_CFLAGS) $(BUILD_CPPFLAGS) $< -o $@ $(BUILD_LDFLAGS)
++	$(BUILD_CC) $(BUILD_CFLAGS) $(BUILD_CPPFLAGS) $< -o $@
+ 
+ cap_names.h: _makenames
+ 	./_makenames > cap_names.h
