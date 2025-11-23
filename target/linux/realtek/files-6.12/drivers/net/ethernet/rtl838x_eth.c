@@ -1142,7 +1142,7 @@ txdone:
 static u16 rtl83xx_pick_tx_queue(struct net_device *dev, struct sk_buff *skb,
 			  struct net_device *sb_dev)
 {
-	static u8 last = 0;
+	static u8 last;
 
 	last++;
 	return last % TXRINGS;
