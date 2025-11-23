@@ -278,7 +278,7 @@ static int rtldsa_838x_get_mirror_config(struct rtldsa_mirror_config *config,
 	return 0;
 }
 
-inline static int rtl838x_trk_mbr_ctr(int group)
+static inline int rtl838x_trk_mbr_ctr(int group)
 {
 	return RTL838X_TRK_MBR_CTR + (group << 2);
 }

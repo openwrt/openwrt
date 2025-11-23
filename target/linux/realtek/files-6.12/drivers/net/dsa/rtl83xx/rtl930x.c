@@ -252,7 +252,7 @@ static int rtldsa_930x_port_rate_police_del(struct dsa_switch *ds, int port,
 	return 0;
 }
 
-inline static int rtl930x_trk_mbr_ctr(int group)
+static inline int rtl930x_trk_mbr_ctr(int group)
 {
 	return RTL930X_TRK_MBR_CTRL + (group << 2);
 }

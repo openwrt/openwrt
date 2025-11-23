@@ -178,7 +178,7 @@ static void rtl931x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, u32 port
 	priv->r->exec_tbl0_cmd(cmd);
 }
 
-inline static int rtldsa_931x_trk_mbr_ctr(int group)
+static inline int rtldsa_931x_trk_mbr_ctr(int group)
 {
 	return RTL931X_TRK_MBR_CTRL + (group << 3);
 }
