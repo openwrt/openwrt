@@ -1,12 +1,12 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-struct __attribute__ ((__packed__)) part {
+struct __packed part {
 	uint16_t start;
 	uint8_t wordsize;
 	uint8_t words;
 };
 
-struct __attribute__ ((__packed__)) fw_header {
+struct __packed fw_header {
 	uint32_t magic;
 	uint32_t phy;
 	uint32_t checksum;
