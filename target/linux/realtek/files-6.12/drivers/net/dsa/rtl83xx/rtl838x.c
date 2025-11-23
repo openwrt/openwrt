@@ -322,7 +322,7 @@ static void rtl838x_fill_l2_entry(u32 r[], struct rtl838x_l2_entry *e)
 			e->age = (r[0] >> 17) & 0x3;
 			e->valid = true;
 
-			/* A valid entry has one of mutli-cast, aging, sa/da-blocking,
+			/* A valid entry has one of multi-cast, aging, sa/da-blocking,
 			 * next-hop or static entry bit set
 			 */
 			if (!(r[0] & 0x007c0000) && !(r[1] & 0xd0000000))
