@@ -7,14 +7,21 @@
 
 #include "rtl83xx.h"
 
-static const u8 ipv4_ll_mcast_addr_base[ETH_ALEN] =
-{ 0x01, 0x00, 0x5e, 0x00, 0x00, 0x00 };
-static const u8 ipv4_ll_mcast_addr_mask[ETH_ALEN] =
-{ 0xff, 0xff, 0xff, 0xff, 0xff, 0x00 };
-static const u8 ipv6_all_hosts_mcast_addr_base[ETH_ALEN] =
-{ 0x33, 0x33, 0x00, 0x00, 0x00, 0x01 };
-static const u8 ipv6_all_hosts_mcast_addr_mask[ETH_ALEN] =
-{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+static const u8 ipv4_ll_mcast_addr_base[ETH_ALEN] = {
+	0x01, 0x00, 0x5e, 0x00, 0x00, 0x00
+};
+
+static const u8 ipv4_ll_mcast_addr_mask[ETH_ALEN] = {
+	0xff, 0xff, 0xff, 0xff, 0xff, 0x00
+};
+
+static const u8 ipv6_all_hosts_mcast_addr_base[ETH_ALEN] = {
+	0x33, 0x33, 0x00, 0x00, 0x00, 0x01
+};
+
+static const u8 ipv6_all_hosts_mcast_addr_mask[ETH_ALEN] = {
+	0xff, 0xff, 0xff, 0xff, 0xff, 0xff
+};
 
 static void rtldsa_init_counters(struct rtl838x_switch_priv *priv);
 static void rtldsa_port_xstp_state_set(struct rtl838x_switch_priv *priv, int port,

@@ -82,8 +82,8 @@ enum template_field_id {
  * TODO: See all src/app/diag_v2/src/diag_pie.c
  */
 #define N_FIXED_TEMPLATES 5
-static enum template_field_id fixed_templates[N_FIXED_TEMPLATES][N_FIXED_FIELDS] =
-{
+static enum template_field_id fixed_templates[N_FIXED_TEMPLATES][N_FIXED_FIELDS] = {
+
 	{
 	  TEMPLATE_FIELD_SPM0, TEMPLATE_FIELD_SPM1, TEMPLATE_FIELD_OTAG,
 	  TEMPLATE_FIELD_SMAC0, TEMPLATE_FIELD_SMAC1, TEMPLATE_FIELD_SMAC2,
