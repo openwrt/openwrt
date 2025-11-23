@@ -685,13 +685,14 @@ static int rtpcs_930x_sds_clock_wait(struct rtpcs_ctrl *ctrl, int timeout)
 {
 	u32 v;
 	unsigned long start = jiffies;
+	unsigned long end = start + (HZ / 1000) * timeout;
 
 	do {
 		rtpcs_sds_write_bits(ctrl, 2, 0x1f, 0x2, 15, 0, 53);
 		v = rtpcs_sds_read_bits(ctrl, 2, 0x1f, 20, 5, 4);
 		if (v == 3)
 			return 0;
-	} while (jiffies < start + (HZ / 1000) * timeout);
+	} while (time_before(jiffies, end));
 
 	return 1;
 }
