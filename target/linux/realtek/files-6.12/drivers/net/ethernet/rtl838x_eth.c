@@ -25,7 +25,7 @@
 
 extern struct rtl83xx_soc_info soc_info;
 
-extern int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type_data);
+int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type_data);
 
 /* Maximum number of RX rings is 8 on RTL83XX and 32 on the 93XX
  * The ring is assigned by switch based on packet/port priortity
