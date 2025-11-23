@@ -414,7 +414,7 @@ static irqreturn_t rtl93xx_net_irq(int irq, void *dev_id)
 	u32 status_tx = sw_r32(priv->r->dma_if_intr_tx_done_sts);
 
 	pr_debug("In %s, status_tx: %08x, status_rx: %08x, status_rx_r: %08x\n",
-		__func__, status_tx, status_rx, status_rx_r);
+		 __func__, status_tx, status_rx, status_rx_r);
 
 	/*  Ignore TX interrupt */
 	if (status_tx) {
@@ -802,7 +802,7 @@ static int rtl838x_eth_open(struct net_device *ndev)
 	struct ring_b *ring = priv->membase;
 
 	pr_debug("%s called: RX rings %d(length %d), TX rings %d(length %d)\n",
-		__func__, priv->rxrings, priv->rxringlen, TXRINGS, TXRINGLEN);
+		 __func__, priv->rxrings, priv->rxringlen, TXRINGS, TXRINGLEN);
 
 	spin_lock_irqsave(&priv->lock, flags);
 	rtl838x_hw_reset(priv);
@@ -1139,7 +1139,7 @@ txdone:
  * so we do round-robin
  */
 static u16 rtl83xx_pick_tx_queue(struct net_device *dev, struct sk_buff *skb,
-			  struct net_device *sb_dev)
+				 struct net_device *sb_dev)
 {
 	static u8 last;
 
@@ -1150,7 +1150,7 @@ static u16 rtl83xx_pick_tx_queue(struct net_device *dev, struct sk_buff *skb,
 /* Return queue number for TX. On the RTL93XX, queue 1 is the high priority queue
  */
 static u16 rtl93xx_pick_tx_queue(struct net_device *dev, struct sk_buff *skb,
-			  struct net_device *sb_dev)
+				 struct net_device *sb_dev)
 {
 	if (skb->priority >= TC_PRIO_CONTROL)
 		return 1;
@@ -1181,7 +1181,7 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 		if ((ring->rx_r[r][ring->c_rx[r]] & 0x1)) {
 			if (&ring->rx_r[r][ring->c_rx[r]] != last) {
 				netdev_warn(dev, "Ring contention: r: %x, last %x, cur %x\n",
-				    r, (u32)last, (u32) &ring->rx_r[r][ring->c_rx[r]]);
+					    r, (u32)last, (u32)&ring->rx_r[r][ring->c_rx[r]]);
 			}
 			break;
 		}
@@ -1388,9 +1388,9 @@ static void rtl838x_mac_link_down(struct phylink_config *config,
 }
 
 static void rtl838x_mac_link_up(struct phylink_config *config,
-			    struct phy_device *phy, unsigned int mode,
-			    phy_interface_t interface, int speed, int duplex,
-			    bool tx_pause, bool rx_pause)
+				struct phy_device *phy, unsigned int mode,
+				phy_interface_t interface, int speed, int duplex,
+				bool tx_pause, bool rx_pause)
 {
 	struct net_device *dev = container_of(config->dev, struct net_device, dev);
 	struct rtl838x_eth_priv *priv = netdev_priv(dev);
@@ -1527,7 +1527,7 @@ static int rtl931x_chip_init(struct rtl838x_eth_priv *priv)
 }
 
 static netdev_features_t rtl838x_fix_features(struct net_device *dev,
-					  netdev_features_t features)
+					      netdev_features_t features)
 {
 	return features;
 }
@@ -1655,7 +1655,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	struct ring_b *ring;
 
 	pr_info("Probing RTL838X eth device pdev: %x, dev: %x\n",
-		(u32)pdev, (u32)(&(pdev->dev)));
+		(u32)pdev, (u32)(&pdev->dev));
 
 	if (!dn) {
 		dev_err(&pdev->dev, "No DT found\n");
@@ -1678,7 +1678,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (res) {
 		mem = devm_request_mem_region(&pdev->dev, res->start,
-			resource_size(res), res->name);
+					      resource_size(res), res->name);
 		if (!mem) {
 			dev_err(&pdev->dev, "cannot request memory space\n");
 			return -ENXIO;
@@ -1762,7 +1762,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 			       IRQF_SHARED, dev->name, dev);
 	if (err) {
 		dev_err(&pdev->dev, "%s: could not acquire interrupt: %d\n",
-			   __func__, err);
+			__func__, err);
 		return err;
 	}
 
@@ -1798,7 +1798,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 			netdev_warn(dev, "Failed to set MAC address.\n");
 	}
 	pr_info("Using MAC %08x%08x\n", sw_r32(priv->r->mac),
-					sw_r32(priv->r->mac + 4));
+		sw_r32(priv->r->mac + 4));
 	strscpy(dev->name, "eth%d", sizeof(dev->name));
 
 	priv->pdev = pdev;

@@ -13,7 +13,7 @@
 
 /* Parse the flow rule for the matching conditions */
 static int rtl83xx_parse_flow_rule(struct rtl838x_switch_priv *priv,
-			      struct flow_rule *rule, struct rtl83xx_flow *flow)
+				   struct flow_rule *rule, struct rtl83xx_flow *flow)
 {
 	struct flow_dissector *dissector = rule->match.dissector;
 

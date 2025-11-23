@@ -79,7 +79,7 @@ int rtl838x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate
  * units of the rate is 16Kbps
  */
 void rtl838x_egress_rate_queue_limit(struct rtl838x_switch_priv *priv, int port,
-					    int queue, u32 rate)
+				     int queue, u32 rate)
 {
 	if (port > priv->cpu_port)
 		return;
@@ -188,7 +188,7 @@ int rtl839x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate
  * units of the rate is 16Kbps
  */
 static void rtl839x_egress_rate_queue_limit(struct rtl838x_switch_priv *priv, int port,
-					int queue, u32 rate)
+					    int queue, u32 rate)
 {
 	int lsb = 128 + queue * 20;
 	int low_byte = 8 - (lsb >> 5);
@@ -196,7 +196,7 @@ static void rtl839x_egress_rate_queue_limit(struct rtl838x_switch_priv *priv, in
 	u32 high_mask = 0xfffff	>> (32 - start_bit);
 
 	pr_debug("%s: Setting egress rate on port %d, queue %d to %d\n",
-		__func__, port, queue, rate);
+		 __func__, port, queue, rate);
 	if (port >= priv->cpu_port)
 		return;
 	if (queue > 7)
@@ -364,7 +364,7 @@ static int rtl839x_get_scheduling_algorithm(struct rtl838x_switch_priv *priv, in
 }
 
 static void rtl839x_set_scheduling_algorithm(struct rtl838x_switch_priv *priv, int port,
-				      enum scheduler_type sched)
+					     enum scheduler_type sched)
 {
 	enum scheduler_type t = rtl839x_get_scheduling_algorithm(priv, port);
 	u32 v, oam_state, oam_port_state;
@@ -422,7 +422,7 @@ static void rtl839x_set_scheduling_algorithm(struct rtl838x_switch_priv *priv, i
 }
 
 static void rtl839x_set_scheduling_queue_weights(struct rtl838x_switch_priv *priv, int port,
-					  int *queue_weights)
+						 int *queue_weights)
 {
 	mutex_lock(&priv->reg_mutex);
 
@@ -435,10 +435,10 @@ static void rtl839x_set_scheduling_queue_weights(struct rtl838x_switch_priv *pri
 		int high_mask = 0x3ff >> (32 - start_bit);
 
 		sw_w32_mask(0x3ff << start_bit, (queue_weights[i] & 0x3ff) << start_bit,
-				RTL839X_TBL_ACCESS_DATA_2(low_byte));
+			    RTL839X_TBL_ACCESS_DATA_2(low_byte));
 		if (high_mask)
 			sw_w32_mask(high_mask, (queue_weights[i] & 0x3ff) >> (32 - start_bit),
-					RTL839X_TBL_ACCESS_DATA_2(low_byte - 1));
+				    RTL839X_TBL_ACCESS_DATA_2(low_byte - 1));
 	}
 
 	rtl839x_write_scheduling_table(port);

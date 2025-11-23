@@ -124,7 +124,7 @@ void rtl839x_print_matrix(void)
 	ptr9 = RTL838X_SW_BASE + RTL839X_PORT_ISO_CTRL(0);
 	for (int i = 0; i < 52; i += 4)
 		pr_debug("> %16llx %16llx %16llx %16llx\n",
-			ptr9[i + 0], ptr9[i + 1], ptr9[i + 2], ptr9[i + 3]);
+			 ptr9[i + 0], ptr9[i + 1], ptr9[i + 2], ptr9[i + 3]);
 	pr_debug("CPU_PORT> %16llx\n", ptr9[52]);
 }
 
@@ -1215,9 +1215,9 @@ static void rtl839x_pie_rule_dump_raw(u32 r[])
 	pr_debug("Match  : %08x %08x %08x %08x %08x %08x\n", r[0], r[1], r[2], r[3], r[4], r[5]);
 	pr_debug("Fixed  : %06x\n", r[6] >> 8);
 	pr_debug("Match M: %08x %08x %08x %08x %08x %08x\n",
-		(r[6] << 24) | (r[7] >> 8), (r[7] << 24) | (r[8] >> 8), (r[8] << 24) | (r[9] >> 8),
-		(r[9] << 24) | (r[10] >> 8), (r[10] << 24) | (r[11] >> 8),
-		(r[11] << 24) | (r[12] >> 8));
+		 (r[6] << 24) | (r[7] >> 8), (r[7] << 24) | (r[8] >> 8), (r[8] << 24) | (r[9] >> 8),
+		 (r[9] << 24) | (r[10] >> 8), (r[10] << 24) | (r[11] >> 8),
+		 (r[11] << 24) | (r[12] >> 8));
 	pr_debug("R[13]:   %08x\n", r[13]);
 	pr_debug("Fixed M: %06x\n", ((r[12] << 16) | (r[13] >> 16)) & 0xffffff);
 	pr_debug("Valid / not / and1 / and2 : %1x\n", (r[13] >> 12) & 0xf);
@@ -1227,8 +1227,8 @@ static void rtl839x_pie_rule_dump_raw(u32 r[])
 void rtl839x_pie_rule_dump(struct  pie_rule *pr)
 {
 	pr_debug("Drop: %d, fwd: %d, ovid: %d, ivid: %d, flt: %d, log: %d, rmk: %d, meter: %d tagst: %d, mir: %d, nopri: %d, cpupri: %d, otpid: %d, itpid: %d, shape: %d\n",
-		pr->drop, pr->fwd_sel, pr->ovid_sel, pr->ivid_sel, pr->flt_sel, pr->log_sel, pr->rmk_sel, pr->log_sel, pr->tagst_sel, pr->mir_sel, pr->nopri_sel,
-		pr->cpupri_sel, pr->otpid_sel, pr->itpid_sel, pr->shaper_sel);
+		 pr->drop, pr->fwd_sel, pr->ovid_sel, pr->ivid_sel, pr->flt_sel, pr->log_sel, pr->rmk_sel, pr->log_sel, pr->tagst_sel, pr->mir_sel, pr->nopri_sel,
+		 pr->cpupri_sel, pr->otpid_sel, pr->itpid_sel, pr->shaper_sel);
 	if (pr->fwd_sel)
 		pr_debug("FWD: %08x\n", pr->fwd_data);
 	pr_debug("TID: %x, %x\n", pr->tid, pr->tid_m);
@@ -1596,14 +1596,14 @@ static int rtl839x_set_ageing_time(unsigned long msec)
 
 static void rtl839x_set_igr_filter(int port,  enum igr_filter state)
 {
-	sw_w32_mask(0x3 << ((port & 0xf)<<1), state << ((port & 0xf)<<1),
+	sw_w32_mask(0x3 << ((port & 0xf) << 1), state << ((port & 0xf) << 1),
 		    RTL839X_VLAN_PORT_IGR_FLTR + (((port >> 4) << 2)));
 }
 
 static void rtl839x_set_egr_filter(int port,  enum egr_filter state)
 {
 	sw_w32_mask(0x1 << (port % 0x20), state << (port % 0x20),
-			RTL839X_VLAN_PORT_EGR_FLTR + (((port >> 5) << 2)));
+		    RTL839X_VLAN_PORT_EGR_FLTR + (((port >> 5) << 2)));
 }
 
 static void rtl839x_set_distribution_algorithm(int group, int algoidx, u32 algomsk)

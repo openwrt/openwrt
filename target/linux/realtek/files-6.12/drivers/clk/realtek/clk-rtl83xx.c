@@ -571,7 +571,7 @@ static int rtcl_ccu_register_clocks(void)
 		ret = rtcl_register_clkhw(clk_idx);
 		if (ret) {
 			pr_err("%s: Couldn't register %s clock\n",
-				__func__, rtcl_clk_info[clk_idx].display_name);
+			       __func__, rtcl_clk_info[clk_idx].display_name);
 			goto err_hw_unregister;
 		}
 	}
@@ -579,7 +579,7 @@ static int rtcl_ccu_register_clocks(void)
 	ret = of_clk_add_hw_provider(rtcl_ccu->np, rtcl_get_clkhw, rtcl_ccu);
 	if (ret) {
 		pr_err("%s: Couldn't register clock provider of %s\n",
-			__func__, of_node_full_name(rtcl_ccu->np));
+		       __func__, of_node_full_name(rtcl_ccu->np));
 		goto err_hw_unregister;
 	}
 

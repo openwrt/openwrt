@@ -118,8 +118,8 @@ void rtl838x_print_matrix(void)
 	ptr8 = RTL838X_SW_BASE + RTL838X_PORT_ISO_CTRL(0);
 	for (int i = 0; i < 28; i += 8)
 		pr_debug("> %8x %8x %8x %8x %8x %8x %8x %8x\n",
-			ptr8[i + 0], ptr8[i + 1], ptr8[i + 2], ptr8[i + 3],
-			ptr8[i + 4], ptr8[i + 5], ptr8[i + 6], ptr8[i + 7]);
+			 ptr8[i + 0], ptr8[i + 1], ptr8[i + 2], ptr8[i + 3],
+			 ptr8[i + 4], ptr8[i + 5], ptr8[i + 6], ptr8[i + 7]);
 	pr_debug("CPU_PORT> %8x\n", ptr8[28]);
 }
 
@@ -1519,7 +1519,7 @@ static u32 rtl838x_packet_cntr_read(int counter)
 	rtl_table_read(r, counter / 2);
 
 	pr_debug("Registers: %08x %08x\n",
-		sw_r32(rtl_table_data(r, 0)), sw_r32(rtl_table_data(r, 1)));
+		 sw_r32(rtl_table_data(r, 0)), sw_r32(rtl_table_data(r, 1)));
 	/* The table has a size of 2 registers */
 	if (counter % 2)
 		v = sw_r32(rtl_table_data(r, 0));
@@ -1626,7 +1626,7 @@ static int rtl838x_set_ageing_time(unsigned long msec)
 
 static void rtl838x_set_igr_filter(int port, enum igr_filter state)
 {
-	sw_w32_mask(0x3 << ((port & 0xf)<<1), state << ((port & 0xf)<<1),
+	sw_w32_mask(0x3 << ((port & 0xf) << 1), state << ((port & 0xf) << 1),
 		    RTL838X_VLAN_PORT_IGR_FLTR + (((port >> 4) << 2)));
 }
 

@@ -690,7 +690,7 @@ static void rtl83xx_config_interface(int port, phy_interface_t interface)
 }
 
 static void rtldsa_83xx_phylink_get_caps(struct dsa_switch *ds, int port,
-				    struct phylink_config *config)
+					 struct phylink_config *config)
 {
 	/*
 	 * TODO: This needs to take into account the MAC to SERDES mapping and the
@@ -709,7 +709,7 @@ static void rtldsa_83xx_phylink_get_caps(struct dsa_switch *ds, int port,
 }
 
 static void rtldsa_93xx_phylink_get_caps(struct dsa_switch *ds, int port,
-				    struct phylink_config *config)
+					 struct phylink_config *config)
 {
 	/*
 	 * TODO: This needs to take into account the MAC to SERDES mapping and the
@@ -732,7 +732,7 @@ static void rtldsa_93xx_phylink_get_caps(struct dsa_switch *ds, int port,
 }
 
 static void rtl83xx_phylink_mac_config(struct dsa_switch *ds, int port,
-					unsigned int mode,
+				       unsigned int mode,
 					const struct phylink_link_state *state)
 {
 	struct dsa_port *dp = dsa_to_port(ds, port);
@@ -763,7 +763,7 @@ static void rtl83xx_phylink_mac_config(struct dsa_switch *ds, int port,
 }
 
 static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
-					unsigned int mode,
+				       unsigned int mode,
 					const struct phylink_link_state *state)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
@@ -779,7 +779,7 @@ static void rtl931x_phylink_mac_config(struct dsa_switch *ds, int port,
 }
 
 static void rtl93xx_phylink_mac_config(struct dsa_switch *ds, int port,
-					unsigned int mode,
+				       unsigned int mode,
 					const struct phylink_link_state *state)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
@@ -796,7 +796,7 @@ static void rtl93xx_phylink_mac_config(struct dsa_switch *ds, int port,
 }
 
 static void rtl83xx_phylink_mac_link_down(struct dsa_switch *ds, int port,
-				     unsigned int mode,
+					  unsigned int mode,
 				     phy_interface_t interface)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
@@ -811,7 +811,7 @@ static void rtl83xx_phylink_mac_link_down(struct dsa_switch *ds, int port,
 }
 
 static void rtl93xx_phylink_mac_link_down(struct dsa_switch *ds, int port,
-				     unsigned int mode,
+					  unsigned int mode,
 				     phy_interface_t interface)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
@@ -829,7 +829,7 @@ static void rtl93xx_phylink_mac_link_down(struct dsa_switch *ds, int port,
 }
 
 static void rtl83xx_phylink_mac_link_up(struct dsa_switch *ds, int port,
-				   unsigned int mode,
+					unsigned int mode,
 				   phy_interface_t interface,
 				   struct phy_device *phydev,
 				   int speed, int duplex,
@@ -884,7 +884,7 @@ static void rtl83xx_phylink_mac_link_up(struct dsa_switch *ds, int port,
 	}
 
 	pr_debug("%s port %d, mode %x, speed %d, duplex %d, txpause %d, rxpause %d: set mcr=%08x\n",
-		__func__, port, mode, speed, duplex, tx_pause, rx_pause, mcr);
+		 __func__, port, mode, speed, duplex, tx_pause, rx_pause, mcr);
 	sw_w32(mcr, priv->r->mac_force_mode_ctrl(port));
 
 	/* Restart TX/RX to port */
@@ -892,11 +892,11 @@ static void rtl83xx_phylink_mac_link_up(struct dsa_switch *ds, int port,
 }
 
 static void rtl93xx_phylink_mac_link_up(struct dsa_switch *ds, int port,
-				   unsigned int mode,
-				   phy_interface_t interface,
-				   struct phy_device *phydev,
-				   int speed, int duplex,
-				   bool tx_pause, bool rx_pause)
+					unsigned int mode,
+					phy_interface_t interface,
+					struct phy_device *phydev,
+					int speed, int duplex,
+					bool tx_pause, bool rx_pause)
 {
 	struct dsa_port *dp = dsa_to_port(ds, port);
 	struct rtl838x_switch_priv *priv = ds->priv;
@@ -936,7 +936,7 @@ static void rtl93xx_phylink_mac_link_up(struct dsa_switch *ds, int port,
 	}
 
 	pr_debug("%s port %d, mode %x, speed %d, duplex %d, txpause %d, rxpause %d: set mcr=%08x\n",
-		__func__, port, mode, speed, duplex, tx_pause, rx_pause, mcr);
+		 __func__, port, mode, speed, duplex, tx_pause, rx_pause, mcr);
 	sw_w32(mcr, priv->r->mac_force_mode_ctrl(port));
 
 	/* Restart TX/RX to port */
@@ -1520,7 +1520,7 @@ static int rtldsa_port_enable(struct dsa_switch *ds, int port, struct phy_device
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 
-	pr_debug("%s: %x %d", __func__, (u32) priv, port);
+	pr_debug("%s: %x %d", __func__, (u32)priv, port);
 	priv->ports[port].enable = true;
 
 	/* enable inner tagging on egress, do not keep any tags */
@@ -2109,13 +2109,13 @@ static int rtl83xx_vlan_prepare(struct dsa_switch *ds, int port,
 	priv->r->vlan_tables_read(0, &info);
 
 	pr_debug("VLAN 0: Member ports %llx, untag %llx, profile %d, MC# %d, UC# %d, FID %x\n",
-		info.member_ports, info.untagged_ports, info.profile_id,
-		info.hash_mc_fid, info.hash_uc_fid, info.fid);
+		 info.member_ports, info.untagged_ports, info.profile_id,
+		 info.hash_mc_fid, info.hash_uc_fid, info.fid);
 
 	priv->r->vlan_tables_read(1, &info);
 	pr_debug("VLAN 1: Member ports %llx, untag %llx, profile %d, MC# %d, UC# %d, FID %x\n",
-		info.member_ports, info.untagged_ports, info.profile_id,
-		info.hash_mc_fid, info.hash_uc_fid, info.fid);
+		 info.member_ports, info.untagged_ports, info.profile_id,
+		 info.hash_mc_fid, info.hash_uc_fid, info.fid);
 	priv->r->vlan_set_untagged(1, info.untagged_ports);
 	pr_debug("SET: Untagged ports, VLAN %d: %llx\n", 1, info.untagged_ports);
 
@@ -2134,7 +2134,7 @@ static int rtl83xx_vlan_add(struct dsa_switch *ds, int port,
 	int err;
 
 	pr_debug("%s port %d, vid %d, flags %x\n",
-		__func__, port, vlan->vid, vlan->flags);
+		 __func__, port, vlan->vid, vlan->flags);
 
 	/* Let no one mess with our special VLAN 0 */
 	if (!vlan->vid)
@@ -2206,7 +2206,7 @@ static int rtl83xx_vlan_del(struct dsa_switch *ds, int port,
 	u16 pvid;
 
 	pr_debug("%s: port %d, vid %d, flags %x\n",
-		__func__, port, vlan->vid, vlan->flags);
+		 __func__, port, vlan->vid, vlan->flags);
 
 	/* Let no one mess with our special VLAN 0 */
 	if (!vlan->vid)
@@ -2329,7 +2329,7 @@ static void rtl83xx_setup_l2_mc_entry(struct rtl838x_l2_entry *e, int vid, u64 m
  * when no slots are available returns -1
  */
 static int rtl83xx_find_l2_hash_entry(struct rtl838x_switch_priv *priv, u64 seed,
-				     bool must_exist, struct rtl838x_l2_entry *e)
+				      bool must_exist, struct rtl838x_l2_entry *e)
 {
 	int idx = -1;
 	u32 key = priv->r->l2_hash_key(priv, seed);
@@ -2550,7 +2550,7 @@ static int rtl83xx_port_mdb_add(struct dsa_switch *ds, int port,
 	if (idx >= 0) {
 		if (e.valid) {
 			pr_debug("Found an existing entry %016llx, mc_group %d\n",
-				ether_addr_to_u64(e.mac), e.mc_portmask_index);
+				 ether_addr_to_u64(e.mac), e.mc_portmask_index);
 			rtl83xx_mc_group_add_port(priv, e.mc_portmask_index, port);
 		} else {
 			pr_debug("New entry for seed %016llx\n", seed);
@@ -2597,7 +2597,7 @@ out:
 }
 
 static int rtl83xx_port_mdb_del(struct dsa_switch *ds, int port,
-			 const struct switchdev_obj_port_mdb *mdb,
+				const struct switchdev_obj_port_mdb *mdb,
 			 const struct dsa_db db)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
@@ -2816,8 +2816,8 @@ static int rtl83xx_port_bridge_flags(struct dsa_switch *ds, int port, struct swi
 }
 
 static bool rtl83xx_lag_can_offload(struct dsa_switch *ds,
-				      struct net_device *lag,
-				      struct netdev_lag_upper_info *info)
+				    struct net_device *lag,
+				    struct netdev_lag_upper_info *info)
 {
 	int id;
 
@@ -2843,10 +2843,10 @@ static int rtl83xx_port_lag_change(struct dsa_switch *ds, int port)
 }
 
 static int rtl83xx_port_lag_join(struct dsa_switch *ds,
-				  int port,
-				  struct dsa_lag lag,
-				  struct netdev_lag_upper_info *info,
-				  struct netlink_ext_ack *extack)
+				 int port,
+				 struct dsa_lag lag,
+				 struct netdev_lag_upper_info *info,
+				 struct netlink_ext_ack *extack)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	int err = 0;

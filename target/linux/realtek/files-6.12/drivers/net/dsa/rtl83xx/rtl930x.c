@@ -316,14 +316,14 @@ void rtl930x_vlan_profile_dump(int profile)
 	p[4] = sw_r32(RTL930X_VLAN_PROFILE_SET(profile) + 16) & 0x1FFFFFFF;
 
 	pr_debug("VLAN %d: L2 learn: %d; Unknown MC PMasks: L2 %0x, IPv4 %0x, IPv6: %0x",
-		profile, p[0] & (3 << 21), p[2], p[3], p[4]);
+		 profile, p[0] & (3 << 21), p[2], p[3], p[4]);
 	pr_debug("  Routing enabled: IPv4 UC %c, IPv6 UC %c, IPv4 MC %c, IPv6 MC %c\n",
-		p[0] & BIT(17) ? 'y' : 'n', p[0] & BIT(16) ? 'y' : 'n',
-		p[0] & BIT(13) ? 'y' : 'n', p[0] & BIT(12) ? 'y' : 'n');
+		 p[0] & BIT(17) ? 'y' : 'n', p[0] & BIT(16) ? 'y' : 'n',
+		 p[0] & BIT(13) ? 'y' : 'n', p[0] & BIT(12) ? 'y' : 'n');
 	pr_debug("  Bridge enabled: IPv4 MC %c, IPv6 MC %c,\n",
-		p[0] & BIT(15) ? 'y' : 'n', p[0] & BIT(14) ? 'y' : 'n');
+		 p[0] & BIT(15) ? 'y' : 'n', p[0] & BIT(14) ? 'y' : 'n');
 	pr_debug("VLAN profile %d: raw %08x %08x %08x %08x %08x\n",
-		profile, p[0], p[1], p[2], p[3], p[4]);
+		 profile, p[0], p[1], p[2], p[3], p[4]);
 }
 
 static void rtl930x_vlan_set_untagged(u32 vlan, u64 portmask)
@@ -661,7 +661,7 @@ static void rtl930x_write_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_
 
 	pr_debug("%s: hash %d, pos %d\n", __func__, hash, pos);
 	pr_debug("%s: index %d -> mac %02x:%02x:%02x:%02x:%02x:%02x\n", __func__, idx,
-		e->mac[0], e->mac[1], e->mac[2], e->mac[3], e->mac[4], e->mac[5]);
+		 e->mac[0], e->mac[1], e->mac[2], e->mac[3], e->mac[4], e->mac[5]);
 
 	rtl930x_fill_l2_row(r, e);
 
@@ -850,15 +850,15 @@ void rtl9300_dump_debug(void)
 
 	for (int i = 0; i < 10; i++) {
 		pr_debug("# %d %08x %08x %08x %08x %08x %08x %08x %08x\n", i * 8,
-			sw_r32(r), sw_r32(r + 4), sw_r32(r + 8), sw_r32(r + 12),
-			sw_r32(r + 16), sw_r32(r + 20), sw_r32(r + 24), sw_r32(r + 28));
+			 sw_r32(r), sw_r32(r + 4), sw_r32(r + 8), sw_r32(r + 12),
+			 sw_r32(r + 16), sw_r32(r + 20), sw_r32(r + 24), sw_r32(r + 28));
 		r += 32;
 	}
 	pr_debug("# %08x %08x %08x %08x %08x\n",
-		sw_r32(r), sw_r32(r + 4), sw_r32(r + 8), sw_r32(r + 12), sw_r32(r + 16));
+		 sw_r32(r), sw_r32(r + 4), sw_r32(r + 8), sw_r32(r + 12), sw_r32(r + 16));
 	rtl930x_print_matrix();
 	pr_debug("RTL930X_L2_PORT_SABLK_CTRL: %08x, RTL930X_L2_PORT_DABLK_CTRL %08x\n",
-		sw_r32(RTL930X_L2_PORT_SABLK_CTRL), sw_r32(RTL930X_L2_PORT_DABLK_CTRL)
+		 sw_r32(RTL930X_L2_PORT_SABLK_CTRL), sw_r32(RTL930X_L2_PORT_DABLK_CTRL)
 
 	);
 }
@@ -1099,7 +1099,7 @@ static void rtl930x_route_read(int idx, struct rtl83xx_route *rt)
 		rt->prefix_len = (rt->prefix_len < 0 && default_route) ? 0 : -1;
 		if (rt->prefix_len < 0)
 			rt->prefix_len = find_last_bit((unsigned long *)&ip6_m.s6_addr32,
-							 128);
+						       128);
 		break;
 	case 1: /* IPv4 Multicast route */
 	case 3: /* IPv6 Multicast route */
@@ -1117,8 +1117,8 @@ static void rtl930x_route_read(int idx, struct rtl83xx_route *rt)
 	rt->attr.qos_prio =  v & 0x7;
 	pr_debug("%s: index %d is valid: %d\n", __func__, idx, rt->attr.valid);
 	pr_debug("%s: next_hop: %d, hit: %d, action :%d, ttl_dec %d, ttl_check %d, dst_null %d\n",
-		__func__, rt->nh.id, rt->attr.hit, rt->attr.action,
-		rt->attr.ttl_dec, rt->attr.ttl_check, rt->attr.dst_null);
+		 __func__, rt->nh.id, rt->attr.hit, rt->attr.action,
+		 rt->attr.ttl_dec, rt->attr.ttl_check, rt->attr.dst_null);
 	pr_debug("%s: GW: %pI4, prefix_len: %d\n", __func__, &rt->dst_ip, rt->prefix_len);
 out:
 	rtl_table_release(r);
@@ -1178,8 +1178,8 @@ static void rtl930x_host_route_read(int idx, struct rtl83xx_route *rt)
 	rt->attr.qos_prio =  v & 0x7;
 	pr_debug("%s: index %d is valid: %d\n", __func__, idx, rt->attr.valid);
 	pr_debug("%s: next_hop: %d, hit: %d, action :%d, ttl_dec %d, ttl_check %d, dst_null %d\n",
-		__func__, rt->nh.id, rt->attr.hit, rt->attr.action, rt->attr.ttl_dec, rt->attr.ttl_check,
-		rt->attr.dst_null);
+		 __func__, rt->nh.id, rt->attr.hit, rt->attr.action, rt->attr.ttl_dec, rt->attr.ttl_check,
+		 rt->attr.dst_null);
 	pr_debug("%s: Destination: %pI4\n", __func__, &rt->dst_ip);
 
 out:
@@ -1200,8 +1200,8 @@ static void rtl930x_host_route_write(int idx, struct rtl83xx_route *rt)
 
 	pr_debug("%s: index %d is valid: %d\n", __func__, idx, rt->attr.valid);
 	pr_debug("%s: next_hop: %d, hit: %d, action :%d, ttl_dec %d, ttl_check %d, dst_null %d\n",
-		__func__, rt->nh.id, rt->attr.hit, rt->attr.action, rt->attr.ttl_dec, rt->attr.ttl_check,
-		rt->attr.dst_null);
+		 __func__, rt->nh.id, rt->attr.hit, rt->attr.action, rt->attr.ttl_dec, rt->attr.ttl_check,
+		 rt->attr.dst_null);
 	pr_debug("%s: GW: %pI4, prefix_len: %d\n", __func__, &rt->dst_ip, rt->prefix_len);
 
 	v = BIT(31); /* Entry is valid */
@@ -1308,7 +1308,7 @@ static int rtl930x_find_l3_slot(struct rtl83xx_route *rt, bool must_exist)
 
 			rtl930x_host_route_read(idx, &route_entry);
 			pr_debug("%s route valid %d, route dest: %pI4, hit %d\n", __func__,
-				rt->attr.valid, &rt->dst_ip, rt->attr.hit);
+				 rt->attr.valid, &rt->dst_ip, rt->attr.hit);
 			if (!must_exist && rt->attr.valid)
 				return idx;
 			if (must_exist && route_entry.dst_ip == rt->dst_ip)
@@ -1332,8 +1332,8 @@ static void rtl930x_route_write(int idx, struct rtl83xx_route *rt)
 
 	pr_debug("%s: index %d is valid: %d\n", __func__, idx, rt->attr.valid);
 	pr_debug("%s: nexthop: %d, hit: %d, action :%d, ttl_dec %d, ttl_check %d, dst_null %d\n",
-		__func__, rt->nh.id, rt->attr.hit, rt->attr.action,
-		rt->attr.ttl_dec, rt->attr.ttl_check, rt->attr.dst_null);
+		 __func__, rt->nh.id, rt->attr.hit, rt->attr.action,
+		 rt->attr.ttl_dec, rt->attr.ttl_check, rt->attr.dst_null);
 	pr_debug("%s: GW: %pI4, prefix_len: %d\n", __func__, &rt->dst_ip, rt->prefix_len);
 
 	v = rt->attr.valid ? BIT(31) : 0;
@@ -1391,10 +1391,10 @@ static void rtl930x_route_write(int idx, struct rtl83xx_route *rt)
 	sw_w32(v, rtl_table_data(r, 10));
 
 	pr_debug("%s: %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x\n", __func__,
-		sw_r32(rtl_table_data(r, 0)), sw_r32(rtl_table_data(r, 1)), sw_r32(rtl_table_data(r, 2)),
-		sw_r32(rtl_table_data(r, 3)), sw_r32(rtl_table_data(r, 4)), sw_r32(rtl_table_data(r, 5)),
-		sw_r32(rtl_table_data(r, 6)), sw_r32(rtl_table_data(r, 7)), sw_r32(rtl_table_data(r, 8)),
-		sw_r32(rtl_table_data(r, 9)), sw_r32(rtl_table_data(r, 10)));
+		 sw_r32(rtl_table_data(r, 0)), sw_r32(rtl_table_data(r, 1)), sw_r32(rtl_table_data(r, 2)),
+		 sw_r32(rtl_table_data(r, 3)), sw_r32(rtl_table_data(r, 4)), sw_r32(rtl_table_data(r, 5)),
+		 sw_r32(rtl_table_data(r, 6)), sw_r32(rtl_table_data(r, 7)), sw_r32(rtl_table_data(r, 8)),
+		 sw_r32(rtl_table_data(r, 9)), sw_r32(rtl_table_data(r, 10)));
 
 	rtl_table_write(r, idx);
 	rtl_table_release(r);
@@ -1515,7 +1515,7 @@ static void rtl930x_set_l3_nexthop(int idx, u16 dmac_id, u16 interface)
 	struct table_reg *r = rtl_table_get(RTL9300_TBL_1, 3);
 
 	pr_debug("%s: Writing to L3_NEXTHOP table, index %d, dmac_id %d, interface %d\n",
-		__func__, idx, dmac_id, interface);
+		 __func__, idx, dmac_id, interface);
 	sw_w32(((dmac_id & 0x7fff) << 7) | (interface & 0x7f), rtl_table_data(r, 0));
 
 	pr_debug("%s: %08x\n", __func__, sw_r32(rtl_table_data(r, 0)));
@@ -1826,16 +1826,16 @@ void rtl930x_pie_rule_dump_raw(u32 r[])
 {
 	pr_debug("Raw IACL table entry:\n");
 	pr_debug("r 0 - 7: %08x %08x %08x %08x %08x %08x %08x %08x\n",
-		r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7]);
+		 r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7]);
 	pr_debug("r 8 - 15: %08x %08x %08x %08x %08x %08x %08x %08x\n",
-		r[8], r[9], r[10], r[11], r[12], r[13], r[14], r[15]);
+		 r[8], r[9], r[10], r[11], r[12], r[13], r[14], r[15]);
 	pr_debug("r 16 - 18: %08x %08x %08x\n", r[16], r[17], r[18]);
 	pr_debug("Match  : %08x %08x %08x %08x %08x %08x\n", r[0], r[1], r[2], r[3], r[4], r[5]);
 	pr_debug("Fixed  : %06x\n", r[6] >> 8);
 	pr_debug("Match M: %08x %08x %08x %08x %08x %08x\n",
-		(r[6] << 24) | (r[7] >> 8), (r[7] << 24) | (r[8] >> 8), (r[8] << 24) | (r[9] >> 8),
-		(r[9] << 24) | (r[10] >> 8), (r[10] << 24) | (r[11] >> 8),
-		(r[11] << 24) | (r[12] >> 8));
+		 (r[6] << 24) | (r[7] >> 8), (r[7] << 24) | (r[8] >> 8), (r[8] << 24) | (r[9] >> 8),
+		 (r[9] << 24) | (r[10] >> 8), (r[10] << 24) | (r[11] >> 8),
+		 (r[11] << 24) | (r[12] >> 8));
 	pr_debug("R[13]:   %08x\n", r[13]);
 	pr_debug("Fixed M: %06x\n", ((r[12] << 16) | (r[13] >> 16)) & 0xffffff);
 	pr_debug("Valid / not / and1 / and2 : %1x\n", (r[13] >> 12) & 0xf);
@@ -1955,7 +1955,7 @@ static int rtl930x_pie_rule_add(struct rtl838x_switch_priv *priv, struct pie_rul
 			t = (sw_r32(RTL930X_PIE_BLK_TMPLTE_CTRL(block)) >> (j * 4)) & 0xf;
 			pr_debug("Testing block %d, template %d, template id %d\n", block, j, t);
 			pr_debug("%s: %08x\n",
-				__func__, sw_r32(RTL930X_PIE_BLK_TMPLTE_CTRL(block)));
+				 __func__, sw_r32(RTL930X_PIE_BLK_TMPLTE_CTRL(block)));
 			idx = rtl930x_pie_verify_template(priv, pr, t, block);
 			if (idx >= 0)
 				break;
@@ -2152,9 +2152,9 @@ static void rtl930x_set_l3_router_mac(u32 idx, struct rtl93xx_rt_mac *m)
 	sw_w32(m->action & 0x7, rtl_table_data(r, 6));
 
 	pr_debug("%s writing index %d: %08x %08x %08x %08x %08x %08x %08x\n", __func__, idx,
-		sw_r32(rtl_table_data(r, 0)), sw_r32(rtl_table_data(r, 1)), sw_r32(rtl_table_data(r, 2)),
-		sw_r32(rtl_table_data(r, 3)), sw_r32(rtl_table_data(r, 4)), sw_r32(rtl_table_data(r, 5)),
-		sw_r32(rtl_table_data(r, 6))
+		 sw_r32(rtl_table_data(r, 0)), sw_r32(rtl_table_data(r, 1)), sw_r32(rtl_table_data(r, 2)),
+		 sw_r32(rtl_table_data(r, 3)), sw_r32(rtl_table_data(r, 4)), sw_r32(rtl_table_data(r, 5)),
+		 sw_r32(rtl_table_data(r, 6))
 	);
 	rtl_table_write(r, idx);
 	rtl_table_release(r);
@@ -2232,8 +2232,8 @@ static int rtl930x_l3_setup(struct rtl838x_switch_priv *priv)
 	sw_w32_mask(0, BIT(3), RTL930X_L3_HOST_TBL_CTRL);  /* Algorithm selection 1 = 1 */
 
 	pr_debug("L3_IPUC_ROUTE_CTRL %08x, IPMC_ROUTE %08x, IP6UC_ROUTE %08x, IP6MC_ROUTE %08x\n",
-		sw_r32(RTL930X_L3_IPUC_ROUTE_CTRL), sw_r32(RTL930X_L3_IPMC_ROUTE_CTRL),
-		sw_r32(RTL930X_L3_IP6UC_ROUTE_CTRL), sw_r32(RTL930X_L3_IP6MC_ROUTE_CTRL));
+		 sw_r32(RTL930X_L3_IPUC_ROUTE_CTRL), sw_r32(RTL930X_L3_IPMC_ROUTE_CTRL),
+		 sw_r32(RTL930X_L3_IP6UC_ROUTE_CTRL), sw_r32(RTL930X_L3_IP6MC_ROUTE_CTRL));
 	sw_w32_mask(0, 1, RTL930X_L3_IPUC_ROUTE_CTRL);
 	sw_w32_mask(0, 1, RTL930X_L3_IP6UC_ROUTE_CTRL);
 	sw_w32_mask(0, 1, RTL930X_L3_IPMC_ROUTE_CTRL);
@@ -2245,8 +2245,8 @@ static int rtl930x_l3_setup(struct rtl838x_switch_priv *priv)
 	sw_w32(0x00012881, RTL930X_L3_IP6MC_ROUTE_CTRL);
 
 	pr_debug("L3_IPUC_ROUTE_CTRL %08x, IPMC_ROUTE %08x, IP6UC_ROUTE %08x, IP6MC_ROUTE %08x\n",
-		sw_r32(RTL930X_L3_IPUC_ROUTE_CTRL), sw_r32(RTL930X_L3_IPMC_ROUTE_CTRL),
-		sw_r32(RTL930X_L3_IP6UC_ROUTE_CTRL), sw_r32(RTL930X_L3_IP6MC_ROUTE_CTRL));
+		 sw_r32(RTL930X_L3_IPUC_ROUTE_CTRL), sw_r32(RTL930X_L3_IPMC_ROUTE_CTRL),
+		 sw_r32(RTL930X_L3_IP6UC_ROUTE_CTRL), sw_r32(RTL930X_L3_IP6MC_ROUTE_CTRL));
 
 	/* Trap non-ip traffic to the CPU-port (e.g. ARP so we stay reachable) */
 	sw_w32_mask(0x3 << 8, 0x1 << 8, RTL930X_L3_IP_ROUTE_CTRL);
@@ -2273,7 +2273,7 @@ static u32 rtl930x_packet_cntr_read(int counter)
 	rtl_table_read(r, counter / 2);
 
 	pr_debug("Registers: %08x %08x\n",
-		sw_r32(rtl_table_data(r, 0)), sw_r32(rtl_table_data(r, 1)));
+		 sw_r32(rtl_table_data(r, 0)), sw_r32(rtl_table_data(r, 1)));
 	/* The table has a size of 2 registers */
 	if (counter % 2)
 		v = sw_r32(rtl_table_data(r, 0));

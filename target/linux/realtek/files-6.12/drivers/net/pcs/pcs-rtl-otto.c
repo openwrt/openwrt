@@ -575,7 +575,7 @@ static void rtpcs_930x_sds_force_mode(struct rtpcs_ctrl *ctrl, int sds,
 
 	if (rtpcs_930x_sds_config_pll(ctrl, sds, interface))
 		pr_err("%s: SDS %d could not configure PLL for %s\n", __func__,
-			sds, phy_modes(interface));
+		       sds, phy_modes(interface));
 
 	rtpcs_930x_sds_set_internal_mode(ctrl, sds, mode);
 	if (rtpcs_930x_sds_wait_clock_ready(ctrl, sds))
@@ -2342,11 +2342,11 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_ctrl *ctrl, int sds,
 	val = rtpcs_sds_read_bits(ctrl, sds, 0x1F, 0x9, 11, 6);
 
 	pr_info("%s: fibermode %08X stored mode 0x%x", __func__,
-			rtpcs_sds_read(ctrl, sds, 0x1f, 0x9), val);
+		rtpcs_sds_read(ctrl, sds, 0x1f, 0x9), val);
 	pr_info("%s: SGMII mode %08X in 0x24 0x9", __func__,
-			rtpcs_sds_read(ctrl, sds, 0x24, 0x9));
+		rtpcs_sds_read(ctrl, sds, 0x24, 0x9));
 	pr_info("%s: CMU mode %08X stored even SDS %d", __func__,
-			rtpcs_sds_read(ctrl, sds & ~1, 0x20, 0x12), sds & ~1);
+		rtpcs_sds_read(ctrl, sds & ~1, 0x20, 0x12), sds & ~1);
 	pr_info("%s: serdes_mode_ctrl %08X", __func__,  RTL931X_SERDES_MODE_CTRL + 4 * (sds >> 2));
 	pr_info("%s CMU page 0x24 0x7 %08x\n", __func__, rtpcs_sds_read(ctrl, sds, 0x24, 0x7));
 	pr_info("%s CMU page 0x26 0x7 %08x\n", __func__, rtpcs_sds_read(ctrl, sds, 0x26, 0x7));

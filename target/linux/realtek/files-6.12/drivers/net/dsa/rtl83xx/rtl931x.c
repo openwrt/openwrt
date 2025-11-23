@@ -205,8 +205,8 @@ static void rtl931x_vlan_tables_read(u32 vlan, struct rtl838x_vlan_info *info)
 	else
 		info->l2_tunnel_list_id = -1;
 	pr_debug("%s read member %016llx, profile-id %d, uc %d, mc %d, intf-id %d\n", __func__,
-		info->member_ports, info->profile_id, info->hash_uc_fid, info->hash_mc_fid,
-		info->if_id);
+		 info->member_ports, info->profile_id, info->hash_uc_fid, info->hash_mc_fid,
+		 info->if_id);
 
 	/* Read UNTAG table via table register 3 */
 	r = rtl_table_get(RTL9310_TBL_3, 0);
@@ -754,7 +754,7 @@ static void rtl931x_write_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_
 
 	pr_debug("%s: hash %d, pos %d\n", __func__, hash, pos);
 	pr_debug("%s: index %d -> mac %02x:%02x:%02x:%02x:%02x:%02x\n", __func__, idx,
-		e->mac[0], e->mac[1], e->mac[2], e->mac[3], e->mac[4], e->mac[5]);
+		 e->mac[0], e->mac[1], e->mac[2], e->mac[3], e->mac[4], e->mac[5]);
 
 	if (idx < 0x4000)
 		hash_algo_id = sw_r32(RTL931X_L2_CTRL) & BIT(0);
@@ -1205,16 +1205,16 @@ static void rtl931x_pie_rule_dump_raw(u32 r[])
 {
 	pr_debug("Raw IACL table entry:\n");
 	pr_debug("r 0 - 7: %08x %08x %08x %08x %08x %08x %08x %08x\n",
-		r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7]);
+		 r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7]);
 	pr_debug("r 8 - 15: %08x %08x %08x %08x %08x %08x %08x %08x\n",
-		r[8], r[9], r[10], r[11], r[12], r[13], r[14], r[15]);
+		 r[8], r[9], r[10], r[11], r[12], r[13], r[14], r[15]);
 	pr_debug("r 16 - 18: %08x %08x %08x\n", r[16], r[17], r[18]);
 	pr_debug("Match  : %08x %08x %08x %08x %08x %08x\n", r[0], r[1], r[2], r[3], r[4], r[5]);
 	pr_debug("Fixed  : %06x\n", r[6] >> 8);
 	pr_debug("Match M: %08x %08x %08x %08x %08x %08x\n",
-		(r[6] << 24) | (r[7] >> 8), (r[7] << 24) | (r[8] >> 8), (r[8] << 24) | (r[9] >> 8),
-		(r[9] << 24) | (r[10] >> 8), (r[10] << 24) | (r[11] >> 8),
-		(r[11] << 24) | (r[12] >> 8));
+		 (r[6] << 24) | (r[7] >> 8), (r[7] << 24) | (r[8] >> 8), (r[8] << 24) | (r[9] >> 8),
+		 (r[9] << 24) | (r[10] >> 8), (r[10] << 24) | (r[11] >> 8),
+		 (r[11] << 24) | (r[12] >> 8));
 	pr_debug("R[13]:   %08x\n", r[13]);
 	pr_debug("Fixed M: %06x\n", ((r[12] << 16) | (r[13] >> 16)) & 0xffffff);
 	pr_debug("Valid / not / and1 / and2 : %1x\n", (r[13] >> 12) & 0xf);
@@ -1335,7 +1335,7 @@ static int rtl931x_pie_rule_add(struct rtl838x_switch_priv *priv, struct pie_rul
 
 			pr_debug("Testing block %d, template %d, template id %d\n", block, j, t);
 			pr_debug("%s: %08x\n",
-				__func__, sw_r32(RTL931X_PIE_BLK_TMPLTE_CTRL(block)));
+				 __func__, sw_r32(RTL931X_PIE_BLK_TMPLTE_CTRL(block)));
 			idx = rtl931x_pie_verify_template(priv, pr, t, block);
 			if (idx >= 0)
 				break;

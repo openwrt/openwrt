@@ -478,7 +478,7 @@ int rtl83xx_lag_add(struct dsa_switch *ds, int group, int port, struct netdev_la
 	priv->lags_port_members[group] |= BIT_ULL(port);
 
 	pr_info("%s: Added port %d to LAG %d. Members now %016llx.\n",
-		 __func__, port, group, priv->lags_port_members[group]);
+		__func__, port, group, priv->lags_port_members[group]);
 
 	return 0;
 }
@@ -503,7 +503,7 @@ int rtl83xx_lag_del(struct dsa_switch *ds, int group, int port)
 	priv->lags_port_members[group] &= ~BIT_ULL(port);
 
 	pr_info("%s: Removed port %d from LAG %d. Members now %016llx.\n",
-		 __func__, port, group, priv->lags_port_members[group]);
+		__func__, port, group, priv->lags_port_members[group]);
 
 	return 0;
 }
@@ -577,7 +577,7 @@ static int rtl83xx_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct rtl83
 	u64 entry;
 
 	pr_debug("%s searching for %08llx vid %d with key %d, seed: %016llx\n",
-		__func__, nh->mac, nh->rvid, key, seed);
+		 __func__, nh->mac, nh->rvid, key, seed);
 
 	e.type = L2_UNICAST;
 	u64_to_ether_addr(nh->mac, &e.mac[0]);
@@ -702,7 +702,7 @@ static int rtl83xx_l3_nexthop_update(struct rtl838x_switch_priv *priv,  __be32 i
 
 	rhl_for_each_entry_rcu(r, tmp, list, linkage) {
 		pr_debug("%s: Setting up fwding: ip %pI4, GW mac %016llx\n",
-			__func__, &ip_addr, mac);
+			 __func__, &ip_addr, mac);
 
 		/* Reads the ROUTING table entry associated with the route */
 		priv->r->route_read(r->id, r);
@@ -1091,7 +1091,7 @@ static int rtl83xx_alloc_egress_intf(struct rtl838x_switch_priv *priv, u64 mac, 
 }
 
 static int rtldsa_fib4_add(struct rtl838x_switch_priv *priv,
-			    struct fib_entry_notifier_info *info)
+			   struct fib_entry_notifier_info *info)
 {
 	struct net_device *ndev = fib_info_nh(info->fi, 0)->fib_nh_dev;
 	int vlan = is_vlan_dev(ndev) ? vlan_dev_vlan_id(ndev) : 0;
@@ -1193,7 +1193,7 @@ static void rtl83xx_net_event_work_do(struct work_struct *work)
 }
 
 static int rtl83xx_netevent_event(struct notifier_block *this,
-				 unsigned long event, void *ptr)
+				  unsigned long event, void *ptr)
 {
 	struct rtl838x_switch_priv *priv;
 	struct net_device *dev;
@@ -1229,7 +1229,7 @@ static int rtl83xx_netevent_event(struct notifier_block *this,
 		net_work->gw_addr = *(__be32 *)n->primary_key;
 
 		pr_debug("%s: updating neighbour on port %d, mac %016llx\n",
-			__func__, port, net_work->mac);
+			 __func__, port, net_work->mac);
 		queue_work(priv->wq, &net_work->work);
 		if (err)
 			netdev_warn(dev, "failed to handle neigh update (err %d)\n", err);
@@ -1332,7 +1332,7 @@ static int rtl83xx_fib_event(struct notifier_block *this, unsigned long event, v
 
 			if (fen_info->fi->fib_nh_is_v6) {
 				NL_SET_ERR_MSG_MOD(info->extack,
-					"IPv6 gateway with IPv4 route is not supported");
+						   "IPv6 gateway with IPv4 route is not supported");
 				kfree(fib_work);
 				return notifier_from_errno(-EINVAL);
 			}

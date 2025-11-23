@@ -990,7 +990,7 @@ static int rtmdio_931x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 	*val = (*val & 0xffff0000) >> 16;
 
 	pr_debug("%s: port %d, page: %d, reg: %x, val: %x, v: %08x\n",
-		__func__, port, page, reg, *val, v);
+		 __func__, port, page, reg, *val, v);
 
 	mutex_unlock(&rtmdio_lock);
 
