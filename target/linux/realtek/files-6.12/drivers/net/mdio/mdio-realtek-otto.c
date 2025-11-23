@@ -89,15 +89,6 @@
 #define sw_w32(val, reg)			writel(val, RTMDIO_SW_BASE + reg)
 #define sw_w32_mask(clear, set, reg)		sw_w32((sw_r32(reg) & ~(clear)) | (set), reg)
 
-int rtmdio_930x_read_sds_phy(int sds, int page, int regnum);
-int rtmdio_930x_write_sds_phy(int sds, int page, int regnum, u16 val);
-
-int rtsds_931x_read(int sds, int page, int regnum);
-int rtsds_931x_read_field(int sds, int page, int regnum, int end_bit, int start_bit);
-
-int rtsds_931x_write(int sds, int page, int regnum, u16 val);
-int rtsds_931x_write_field(int sds, int page, int regnum, int end_bit, int start_bit, u16 val);
-
 /*
  * On all Realtek switch platforms the hardware periodically reads the link status of all
  * PHYs. This is to some degree programmable, so that one can tell the hardware to read
@@ -622,7 +613,7 @@ errout:
  * - SerDes 10-11 are 10GBase-R capable
  */
 
-int rtmdio_930x_read_sds_phy(int sds, int page, int regnum)
+static int rtmdio_930x_read_sds_phy(int sds, int page, int regnum)
 {
 	int i, ret = -EIO;
 	u32 cmd;
@@ -649,7 +640,7 @@ int rtmdio_930x_read_sds_phy(int sds, int page, int regnum)
 	return ret;
 }
 
-int rtmdio_930x_write_sds_phy(int sds, int page, int regnum, u16 val)
+static int rtmdio_930x_write_sds_phy(int sds, int page, int regnum, u16 val)
 {
 	int i, ret = -EIO;
 	u32 cmd;
@@ -848,7 +839,7 @@ static int rtsds_931x_get_backing_sds(int sds, int page)
 	return back;
 }
 
-int rtsds_931x_read(int sds, int page, int regnum)
+static int rtsds_931x_read(int sds, int page, int regnum)
 {
 	int backsds, i, cmd, ret = -EIO;
 	int backpage = page & 0x3f;
@@ -878,7 +869,7 @@ int rtsds_931x_read(int sds, int page, int regnum)
 	return ret;
 }
 
-int rtsds_931x_write(int sds, int page, int regnum, u16 val)
+static int rtsds_931x_write(int sds, int page, int regnum, u16 val)
 {
 	int backsds, i, cmd, ret = -EIO;
 	int backpage = page & 0x3f;
@@ -909,7 +900,8 @@ int rtsds_931x_write(int sds, int page, int regnum, u16 val)
 	return ret;
 }
 
-int rtsds_931x_write_field(int sds, int page, int reg, int end_bit, int start_bit, u16 val)
+__always_unused
+static int rtsds_931x_write_field(int sds, int page, int reg, int end_bit, int start_bit, u16 val)
 {
 	int l = end_bit - start_bit + 1;
 	u32 data = val;
@@ -925,7 +917,8 @@ int rtsds_931x_write_field(int sds, int page, int reg, int end_bit, int start_bi
 	return rtsds_931x_write(sds, page, reg, data);
 }
 
-int rtsds_931x_read_field(int sds, int page, int reg, int end_bit, int start_bit)
+__always_unused
+static int rtsds_931x_read_field(int sds, int page, int reg, int end_bit, int start_bit)
 {
 	int l = end_bit - start_bit + 1;
 	u32 v = rtsds_931x_read(sds, page, reg);
