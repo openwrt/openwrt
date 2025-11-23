@@ -1993,8 +1993,6 @@ static void rtpcs_931x_sds_symerr_clear(struct rtpcs_ctrl *ctrl, u32 sds,
 	default:
 		break;
 	}
-
-	return;
 }
 
 __attribute__((unused))
@@ -2043,8 +2041,6 @@ static void rtpcs_931x_sds_fiber_mode_set(struct rtpcs_ctrl *ctrl, u32 sds,
 
 	pr_info("%s writing analog SerDes Mode value %02x\n", __func__, val);
 	rtpcs_sds_write_bits(ctrl, sds, 0x1F, 0x9, 11, 6, val);
-
-	return;
 }
 
 static int rtpcs_931x_sds_cmu_page_get(phy_interface_t mode)
@@ -2157,7 +2153,6 @@ static void rtpcs_931x_sds_cmu_type_set(struct rtpcs_ctrl *ctrl, u32 sds,
 	}
 
 	pr_info("%s CMU page 0x28 0x7 %08x\n", __func__, rtpcs_sds_read(ctrl, sds, 0x28, 0x7));
-	return;
 }
 
 static void rtpcs_931x_sds_rx_reset(struct rtpcs_ctrl *ctrl, u32 sds)
