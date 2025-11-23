@@ -174,7 +174,7 @@ static int rtl83xx_add_flow(struct rtl838x_switch_priv *priv, struct flow_cls_of
 
 		case FLOW_ACTION_VLAN_PUSH:
 			pr_debug("%s: VLAN_PUSH\n", __func__);
-/*			TODO: act->vlan.proto */
+			/* TODO: act->vlan.proto */
 			flow->rule.ivid_act = PIE_ACT_VID_ASSIGN;
 			flow->rule.ivid_sel = true;
 			flow->rule.ivid_data = htons(act->vlan.vid);
@@ -373,20 +373,15 @@ static int rtl83xx_setup_tc_block_cb(enum tc_setup_type type, void *type_data,
 
 static LIST_HEAD(rtl83xx_block_cb_list);
 
-int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type_data)
+int rtl83xx_setup_tc(struct dsa_switch *ds, int port,
+		     enum tc_setup_type type, void *type_data)
 {
-	struct rtl838x_switch_priv *priv;
+	struct rtl838x_switch_priv *priv = ds->priv;
 	struct flow_block_offload *f = type_data;
 	static bool first_time = true;
 	int err;
 
 	pr_debug("%s: %d\n", __func__, type);
-
-	if(!netdev_uses_dsa(dev)) {
-		pr_err("%s: no DSA\n", __func__);
-		return 0;
-	}
-	priv = dev->dsa_ptr->ds->priv;
 
 	switch (type) {
 	case TC_SETUP_BLOCK:

@@ -9,7 +9,7 @@ define Device/linksys_lgs352c
   KERNEL_SIZE := 10240k
   DEVICE_VENDOR := Linksys
   DEVICE_MODEL := LGS352C
-  DEVICE_PACKAGES += kmod-hwmon-lm63
+  DEVICE_PACKAGES += kmod-hwmon-lm63 kmod-mdio-realtek-otto-aux
   BELKIN_MODEL := BKS-RTL93xx
   BELKIN_HEADER := 0x07600001
   LINKSYS_MODEL := 60422050

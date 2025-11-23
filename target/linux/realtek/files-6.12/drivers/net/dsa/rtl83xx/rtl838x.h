@@ -702,15 +702,6 @@ typedef enum {
  */
 #define RTLDSA_COUNTERS_FAST_POLL_INTERVAL	(3 * HZ)
 
-enum phy_type {
-	PHY_NONE = 0,
-	PHY_RTL838X_SDS = 1,
-	PHY_RTL8218B_INT = 2,
-	PHY_RTL8218B_EXT = 3,
-	PHY_RTL8214FC = 4,
-	PHY_RTL839X_SDS = 5,
-};
-
 enum pbvlan_type {
 	PBVLAN_TYPE_INNER = 0,
 	PBVLAN_TYPE_OUTER,
@@ -779,6 +770,7 @@ struct rtldsa_counter_state {
 
 struct rtl838x_port {
 	bool enable:1;
+	bool active:1;
 	bool phy_is_integrated:1;
 	bool is10G:1;
 	bool is2G5:1;
@@ -788,7 +780,6 @@ struct rtl838x_port {
 	u64 pm;
 	u16 pvid;
 	bool eee_enabled;
-	enum phy_type phy;
 	int led_set;
 	int leds_on_this_port;
 	struct rtldsa_counter_state counters;

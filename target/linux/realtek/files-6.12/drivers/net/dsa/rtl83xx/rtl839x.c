@@ -5,6 +5,8 @@
 
 #include "rtl83xx.h"
 
+extern struct rtl83xx_soc_info soc_info;
+
 #define RTL839X_VLAN_PORT_TAG_STS_UNTAG				0x0
 #define RTL839X_VLAN_PORT_TAG_STS_TAGGED			0x1
 #define RTL839X_VLAN_PORT_TAG_STS_PRIORITY_TAGGED		0x2
@@ -19,8 +21,6 @@
 #define RTL839X_VLAN_PORT_TAG_STS_CTRL_EGR_P_ITAG_KEEP_MASK	GENMASK(2,2)
 #define RTL839X_VLAN_PORT_TAG_STS_CTRL_IGR_P_OTAG_KEEP_MASK	GENMASK(1,1)
 #define RTL839X_VLAN_PORT_TAG_STS_CTRL_IGR_P_ITAG_KEEP_MASK	GENMASK(0,0)
-
-extern struct rtl83xx_soc_info soc_info;
 
 /* Definition of the RTL839X-specific template field IDs as used in the PIE */
 enum template_field_id {
@@ -736,7 +736,7 @@ static void rtl839x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 
 	/* Setup EEE on all ports */
 	for (int i = 0; i < priv->cpu_port; i++) {
-		if (priv->ports[i].phy)
+		if (priv->ports[i].active)
 			priv->r->set_mac_eee(priv, i, enable);
 	}
 	priv->eee_enabled = enable;

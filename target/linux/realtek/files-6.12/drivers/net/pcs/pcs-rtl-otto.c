@@ -2658,7 +2658,7 @@ struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int
 	struct device_node *pcs_np;
 	struct rtpcs_ctrl *ctrl;
 	struct rtpcs_link *link;
-	int sds;
+	int sds = -1;
 
 	/*
 	 * RTL838x devices have a built-in octa port RTL8218B PHY that is not attached via
@@ -2675,7 +2675,6 @@ struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int
 		pcs_np = of_get_parent(np);
 	} else {
 		pcs_np = of_find_compatible_node(NULL, NULL, "realtek,otto-pcs");
-		sds = -1;
 	}
 
 	if (!pcs_np)
@@ -2689,16 +2688,23 @@ struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int
 	pdev = of_find_device_by_node(pcs_np);
 	of_node_put(pcs_np);
 	if (!pdev)
+	{
+		dev_err(dev, "rtpcs_create defer #1\n");
 		return ERR_PTR(-EPROBE_DEFER);
+	}
 
 	ctrl = platform_get_drvdata(pdev);
 	if (!ctrl) {
 		put_device(&pdev->dev);
+		dev_err(dev, "rtpcs_create defer #2\n");
 		return ERR_PTR(-EPROBE_DEFER);
 	}
 
 	if (port < 0 || port > ctrl->cfg->cpu_port)
 		return ERR_PTR(-EINVAL);
+
+	if (ctrl->link[port])
+		return &ctrl->link[port]->pcs;
 
 	if (sds !=-1 && rtpcs_sds_read(ctrl, sds, 0 , 0) < 0)
 		return ERR_PTR(-EINVAL);
@@ -2729,6 +2735,7 @@ static struct mii_bus *rtpcs_probe_serdes_bus(struct rtpcs_ctrl *ctrl)
 {
 	struct device_node *np;
 	struct mii_bus *bus;
+	struct platform_device *pdev;
 
 	np = of_find_compatible_node(NULL, NULL, "realtek,otto-serdes-mdio");
 	if (!np) {
@@ -2736,17 +2743,27 @@ static struct mii_bus *rtpcs_probe_serdes_bus(struct rtpcs_ctrl *ctrl)
 		return ERR_PTR(-ENODEV);
 	}
 
-	bus = of_mdio_find_bus(np);
-	of_node_put(np);
-	if (!bus) {
-		dev_warn(ctrl->dev, "SerDes mdio bus not (yet) active");
+	pdev = of_find_device_by_node(np);
+	if (!pdev) {
+		dev_warn(ctrl->dev, "SerDes mdio bus not (yet) active #1");
+		of_node_put(np);
 		return ERR_PTR(-EPROBE_DEFER);
 	}
 
-	if (!of_device_is_available(np)) {
-		dev_err(ctrl->dev, "SerDes mdio bus not usable");
-		return ERR_PTR(-ENODEV);
+	if (!device_is_bound(&pdev->dev)) {
+		dev_warn(ctrl->dev, "SerDes mdio bus not (yet) active #2");
+		of_node_put(np);
+		return ERR_PTR(-EPROBE_DEFER);
 	}
+
+	bus = of_mdio_find_bus(np);
+	if (!bus) {
+		dev_warn(ctrl->dev, "SerDes mdio bus not (yet) active #3");
+		of_node_put(np);
+		return ERR_PTR(-EPROBE_DEFER);
+	}
+
+	of_node_put(np);
 
 	return bus;
 }

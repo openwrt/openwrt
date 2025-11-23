@@ -24,6 +24,7 @@ define Device/d-link_dgs-1210
   $(Device/cameo-fw)
   IMAGE_SIZE := 13824k
   DEVICE_VENDOR := D-Link
+  DEVICE_PACKAGES += kmod-mdio-realtek-otto-aux
   CAMEO_KERNEL_PART_SIZE := 1572864
   CAMEO_KERNEL_PART := 2
   CAMEO_ROOTFS_PART := 3
@@ -36,6 +37,7 @@ endef
 define Device/engenius_ews2910p
   IMAGE_SIZE := 8192k
   DEVICE_VENDOR := EnGenius
+  DEVICE_PACKAGES += kmod-mdio-realtek-otto-aux
   KERNEL_INITRAMFS := \
 	kernel-bin | \
 	append-dtb | \
@@ -45,6 +47,7 @@ endef
 
 define Device/hpe_1920
   DEVICE_VENDOR := HPE
+  DEVICE_PACKAGES += kmod-mdio-realtek-otto-aux
   IMAGE_SIZE := 29632k
   BLOCKSIZE := 64k
   H3C_PRODUCT_ID := 0x3c010501
@@ -81,6 +84,7 @@ define Device/zyxel_gs1900
   DEVICE_COMPAT_MESSAGE := Dual firmware paritition merged due to size constraints. \
 	Upgrade requires a new factory install. Regular sysupgrade is not possible.
   DEVICE_VENDOR := Zyxel
+  DEVICE_PACKAGES += kmod-mdio-realtek-otto-aux
   IMAGE_SIZE := 13952k
   UIMAGE_MAGIC := 0x83800000
   KERNEL_INITRAMFS := \

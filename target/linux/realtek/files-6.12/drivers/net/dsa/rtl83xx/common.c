@@ -237,46 +237,29 @@ u64 rtl839x_get_port_reg_le(int reg)
 	return v;
 }
 
-static int rtldsa_bus_read(struct mii_bus *bus, int addr, int regnum)
-{
-	struct rtl838x_switch_priv *priv = bus->priv;
-
-	return mdiobus_read_nested(priv->parent_bus, addr, regnum);
-}
-
-static int rtldsa_bus_write(struct mii_bus *bus, int addr, int regnum, u16 val)
-{
-	struct rtl838x_switch_priv *priv = bus->priv;
-
-	return mdiobus_write_nested(priv->parent_bus, addr, regnum, val);
-}
-
-static int rtldsa_bus_c45_read(struct mii_bus *bus, int addr, int devad, int regnum)
-{
-	struct rtl838x_switch_priv *priv = bus->priv;
-
-	return mdiobus_c45_read_nested(priv->parent_bus, addr, devad, regnum);
-}
-
-static int rtldsa_bus_c45_write(struct mii_bus *bus, int addr, int devad, int regnum, u16 val)
-{
-	struct rtl838x_switch_priv *priv = bus->priv;
-
-	return mdiobus_c45_write_nested(priv->parent_bus, addr, devad, regnum, val);
-}
-
 static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 {
 	struct device_node *dn, *phy_node, *pcs_node, *led_node, *np, *mii_np;
-	struct device *dev = priv->dev;
-	struct mii_bus *bus;
-	int ret;
+	struct platform_device *mido_pdev, *mido_bus_pdev;
 	u32 pn;
+	bool has_serdes = false;
 
 	np = of_find_compatible_node(NULL, NULL, "realtek,otto-mdio");
 	if (!np) {
 		dev_err(priv->dev, "mdio controller node not found");
 		return -ENODEV;
+	}
+
+	mido_pdev = of_find_device_by_node(np);
+	if (!mido_pdev) {
+		dev_err(priv->dev, "Deferring probe of mdio bus #1\n");
+		return -EPROBE_DEFER;
+	}
+
+	if (!device_is_bound(&mido_pdev->dev))
+	{
+		dev_err(priv->dev, "Deferring probe of mdio bus #2\n");
+		return -EPROBE_DEFER;
 	}
 
 	mii_np = of_get_child_by_name(np, "mdio-bus");
@@ -285,35 +268,25 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 		return -ENODEV;
 	}
 
-	priv->parent_bus = of_mdio_find_bus(mii_np);
-	if (!priv->parent_bus) {
-		dev_dbg(priv->dev, "Deferring probe of mdio bus\n");
+	mido_bus_pdev = of_find_device_by_node(np);
+	if (!mido_bus_pdev) {
+		dev_err(priv->dev, "Deferring probe of mdio bus #3\n");
 		return -EPROBE_DEFER;
 	}
-	if (!of_device_is_available(mii_np))
-		ret = -ENODEV;
 
-	bus = devm_mdiobus_alloc(priv->ds->dev);
-	if (!bus)
-		return -ENOMEM;
-
-	bus->name = "rtldsa_mdio";
-	bus->read = rtldsa_bus_read;
-	bus->write = rtldsa_bus_write;
-	bus->read_c45 = rtldsa_bus_c45_read;
-	bus->write_c45 = rtldsa_bus_c45_write;
-	bus->phy_mask = priv->parent_bus->phy_mask;
-	snprintf(bus->id, MII_BUS_ID_SIZE, "%s-%d", bus->name, dev->id);
-
-	bus->parent = dev;
-	priv->ds->user_mii_bus = bus;
-	priv->ds->user_mii_bus->priv = priv;
-
-	ret = mdiobus_register(priv->ds->user_mii_bus);
-	if (ret && mii_np) {
-		of_node_put(dn);
-		return ret;
+	if (!device_is_bound(&mido_bus_pdev->dev))
+	{
+		dev_err(priv->dev, "Deferring probe of mdio bus #4\n");
+		return -EPROBE_DEFER;
 	}
+
+	priv->parent_bus = of_mdio_find_bus(mii_np);
+	if (!priv->parent_bus) {
+		dev_err(priv->dev, "Deferring probe of mdio bus #5\n");
+		return -EPROBE_DEFER;
+	}
+
+	priv->ds->user_mii_bus = priv->parent_bus;
 
 	dn = of_find_compatible_node(NULL, NULL, "realtek,rtl83xx-switch");
 	if (!dn) {
@@ -343,6 +316,8 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 
 		priv->pcs[pn] = rtpcs_create(priv->dev, pcs_node, pn);
 		if (IS_ERR(priv->pcs[pn])) {
+			if (priv->pcs[pn] == ERR_PTR(-EPROBE_DEFER))
+				return -EPROBE_DEFER;
 			dev_err(priv->dev, "port %u failed to create PCS instance: %ld\n",
 				pn, PTR_ERR(priv->pcs[pn]));
 			priv->pcs[pn] = NULL;
@@ -371,37 +346,20 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 			}
 		}
 
+		priv->ports[pn].active = true;
+
 		if (!phy_node) {
 			if (priv->pcs[pn])
 				priv->ports[pn].phy_is_integrated = true;
-
-			continue;
-		}
-
-		/* Check for the integrated SerDes of the RTL8380M first */
-		if (of_property_read_bool(phy_node, "phy-is-integrated")
-		    && priv->id == 0x8380 && pn >= 24) {
-			pr_debug("----> FOUND A SERDES\n");
-			priv->ports[pn].phy = PHY_RTL838X_SDS;
-			continue;
-		}
-
-		if (of_property_read_bool(phy_node, "phy-is-integrated") &&
-		    !of_property_read_bool(phy_node, "sfp")) {
-			priv->ports[pn].phy = PHY_RTL8218B_INT;
-			continue;
-		}
-
-		if (!of_property_read_bool(phy_node, "phy-is-integrated") &&
-		    of_property_read_bool(phy_node, "sfp")) {
-			priv->ports[pn].phy = PHY_RTL8214FC;
-			continue;
-		}
-
-		if (!of_property_read_bool(phy_node, "phy-is-integrated") &&
-		    !of_property_read_bool(phy_node, "sfp")) {
-			priv->ports[pn].phy = PHY_RTL8218B_EXT;
-			continue;
+		} else {
+			/* Check for the integrated SerDes of the RTL8380M */
+			if (of_property_read_bool(phy_node, "phy-is-integrated") &&
+			    priv->id == 0x8380 && pn >= 24)
+			{
+				pr_debug("----> FOUND A SERDES\n");
+				has_serdes = true;
+				continue;
+			}
 		}
 	}
 
@@ -418,7 +376,7 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 	}
 
 	/* Power on fibre ports and reset them if necessary */
-	if (priv->ports[24].phy == PHY_RTL838X_SDS) {
+	if (has_serdes) {
 		pr_debug("Powering on fibre ports & reset\n");
 		rtl8380_sds_power(24, 1);
 		rtl8380_sds_power(26, 1);
@@ -669,7 +627,7 @@ static int rtl83xx_l2_nexthop_rm(struct rtl838x_switch_priv *priv, struct rtl83x
 	return 0;
 }
 
-int rtl83xx_port_is_under(const struct net_device * dev, struct rtl838x_switch_priv *priv)
+int rtl83xx_port_is_under(const struct net_device *dev, struct rtl838x_switch_priv *priv)
 {
 	/* Is the lower network device a DSA user network device of our RTL930X-switch?
 	 * Unfortunately we cannot just follow dev->dsa_prt as this is only set for the
@@ -1404,8 +1362,14 @@ static int rtldsa_ethernet_loaded(struct platform_device *pdev)
 		if (!eth_pdev)
 			continue;
 
-		if (eth_pdev->dev.driver)
-			ret = 0;
+		if (!device_is_bound(&eth_pdev->dev))
+		{
+			dev_err(&pdev->dev, "ethernet is not bound yet\n");
+			continue;
+		}
+
+		ret = 0;
+		break;
 	}
 
 	of_node_put(ports);
@@ -1546,8 +1510,8 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 		return err;
 	}
 
-	priv->msts = devm_kcalloc(priv->dev,
-				  priv->n_mst - 1, sizeof(struct rtldsa_mst),
+	priv->msts = devm_kzalloc(priv->dev,
+				  priv->n_mst * sizeof(struct rtldsa_mst),
 				  GFP_KERNEL);
 	if (!priv->msts)
 		return -ENOMEM;
@@ -1698,7 +1662,7 @@ static void rtl83xx_sw_remove(struct platform_device *pdev)
 }
 
 static const struct of_device_id rtl83xx_switch_of_ids[] = {
-	{ .compatible = "realtek,rtl83xx-switch"},
+	{ .compatible = "realtek,rtl83xx-switch" },
 	{ /* sentinel */ }
 };
 

@@ -6,7 +6,6 @@
 
 #include "rtl83xx.h"
 
-static struct rtl838x_switch_priv *switch_priv;
 extern struct rtl83xx_soc_info soc_info;
 
 enum scheduler_type {
@@ -119,7 +118,7 @@ static void rtl838x_rate_control_init(struct rtl838x_switch_priv *priv)
 	 * for UC and MC for both known and unknown addresses
 	 */
 	for (int i = 0; i < priv->cpu_port; i++) {
-		if (priv->ports[i].phy) {
+		if (priv->ports[i].active) {
 			sw_w32((1 << 18) | 0x8000, RTL838X_STORM_CTRL_PORT_UC(i));
 			sw_w32((1 << 18) | 0x8000, RTL838X_STORM_CTRL_PORT_MC(i));
 			sw_w32(0x8000, RTL838X_STORM_CTRL_PORT_BC(i));
@@ -253,7 +252,7 @@ static void rtl839x_rate_control_init(struct rtl838x_switch_priv *priv)
 	 * For 1G port, the minimum burst rate is 1700, maximum 65535,
 	 * For 10G ports it is 2650 and 1048575 respectively */
 	for (int p = 0; p < priv->cpu_port; p++) {
-		if (priv->ports[p].phy && !priv->ports[p].is10G) {
+		if (priv->ports[p].active && !priv->ports[p].is10G) {
 			sw_w32_mask(0xffff, 0x8000, RTL839X_STORM_CTRL_PORT_UC_1(p));
 			sw_w32_mask(0xffff, 0x8000, RTL839X_STORM_CTRL_PORT_MC_1(p));
 			sw_w32_mask(0xffff, 0x8000, RTL839X_STORM_CTRL_PORT_BC_1(p));
@@ -262,7 +261,7 @@ static void rtl839x_rate_control_init(struct rtl838x_switch_priv *priv)
 
 	/* Setup ingress/egress per-port rate control */
 	for (int p = 0; p < priv->cpu_port; p++) {
-		if (!priv->ports[p].phy)
+		if (!priv->ports[p].active)
 			continue;
 
 		if (priv->ports[p].is10G)
@@ -490,10 +489,9 @@ static void rtl838x_config_qos(void)
 	sw_w32_mask(0, 7, RTL838X_QM_PKT2CPU_INTPRI_1);
 }
 
-static void rtl839x_config_qos(void)
+static void rtl839x_config_qos(struct rtl838x_switch_priv *priv)
 {
 	u32 v;
-	struct rtl838x_switch_priv *priv = switch_priv;
 
 	pr_info("Setting up RTL839X QoS\n");
 	pr_info("RTL839X_PRI_SEL_TBL_CTRL(i): %08x\n", sw_r32(RTL839X_PRI_SEL_TBL_CTRL(0)));
@@ -549,8 +547,6 @@ static void rtl839x_config_qos(void)
 
 void __init rtl83xx_setup_qos(struct rtl838x_switch_priv *priv)
 {
-	switch_priv = priv;
-
 	pr_info("In %s\n", __func__);
 
 	switch (priv->family_id) {
@@ -559,7 +555,7 @@ void __init rtl83xx_setup_qos(struct rtl838x_switch_priv *priv)
 		rtl838x_rate_control_init(priv);
 		break;
 	case RTL8390_FAMILY_ID:
-		rtl839x_config_qos();
+		rtl839x_config_qos(priv);
 		rtl839x_rate_control_init(priv);
 		break;
 	default:

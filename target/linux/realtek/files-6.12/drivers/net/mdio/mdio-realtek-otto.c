@@ -624,8 +624,8 @@ errout:
 
 int rtmdio_930x_read_sds_phy(int sds, int page, int regnum)
 {
-        int i, ret = -EIO;
-        u32 cmd;
+    int i, ret = -EIO;
+    u32 cmd;
 
 	if (sds < 0 || sds > 11 || page < 0 || page > 63 || regnum < 0 || regnum > 31)
 		return -EIO;
@@ -641,7 +641,7 @@ int rtmdio_930x_read_sds_phy(int sds, int page, int regnum)
 		mdelay(1);
 	}
 
-        if (i < 100)
+    if (i < 100)
 		ret = sw_r32(RTMDIO_930X_SDS_INDACS_DATA) & 0xffff;
 
 	mutex_unlock(&rtmdio_lock_sds);
@@ -1229,8 +1229,6 @@ static int rtmdio_838x_reset(struct mii_bus *bus)
 
 static int rtmdio_839x_reset(struct mii_bus *bus)
 {
-	return 0;
-
 	pr_debug("%s called\n", __func__);
 	/* BUG: The following does not work, but should! */
 	/* Disable MAC polling the PHY so that we can start configuration */

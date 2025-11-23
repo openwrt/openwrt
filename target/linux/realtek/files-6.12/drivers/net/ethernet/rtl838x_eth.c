@@ -25,8 +25,6 @@
 
 extern struct rtl83xx_soc_info soc_info;
 
-extern int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type_data);
-
 /* Maximum number of RX rings is 8 on RTL83XX and 32 on the 93XX
  * The ring is assigned by switch based on packet/port priortity
  * Maximum number of TX rings is 2, Ring 2 being the high priority
@@ -814,7 +812,7 @@ static int rtl838x_eth_open(struct net_device *ndev)
 		rtl839x_setup_notify_ring_buffer(priv);
 		/* Make sure the ring structure is visible to the ASIC */
 		mb();
-		flush_cache_all();
+		__flush_cache_all();
 	}
 
 	rtl838x_hw_ring_setup(priv);
@@ -1528,12 +1526,6 @@ static int rtl931x_chip_init(struct rtl838x_eth_priv *priv)
 	return 0;
 }
 
-static netdev_features_t rtl838x_fix_features(struct net_device *dev,
-					  netdev_features_t features)
-{
-	return features;
-}
-
 static int rtl83xx_set_features(struct net_device *dev, netdev_features_t features)
 {
 	struct rtl838x_eth_priv *priv = netdev_priv(dev);
@@ -1562,6 +1554,28 @@ static int rtl93xx_set_features(struct net_device *dev, netdev_features_t featur
 	return 0;
 }
 
+static netdev_features_t rtl838x_fix_features(struct net_device *dev,
+											  netdev_features_t features)
+{
+	return features;
+}
+
+static int rtl838x_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type_data)
+{
+	struct dsa_switch *ds;
+
+	pr_debug("%s: %d\n", __func__, type);
+
+	if (!netdev_uses_dsa(dev))
+	{
+		pr_err("%s: no DSA\n", __func__);
+		return 0;
+	}
+	ds = dev->dsa_ptr->ds;
+
+	return ds->ops->port_setup_tc(ds, 0, type, type_data);
+}
+
 static struct phylink_pcs *rtl838x_mac_select_pcs(struct phylink_config *config,
 						  phy_interface_t interface)
 {
@@ -1582,7 +1596,7 @@ static const struct net_device_ops rtl838x_eth_netdev_ops = {
 	.ndo_tx_timeout = rtl838x_eth_tx_timeout,
 	.ndo_set_features = rtl83xx_set_features,
 	.ndo_fix_features = rtl838x_fix_features,
-	.ndo_setup_tc = rtl83xx_setup_tc,
+	.ndo_setup_tc = rtl838x_setup_tc,
 };
 
 static const struct net_device_ops rtl839x_eth_netdev_ops = {
@@ -1596,7 +1610,7 @@ static const struct net_device_ops rtl839x_eth_netdev_ops = {
 	.ndo_tx_timeout = rtl838x_eth_tx_timeout,
 	.ndo_set_features = rtl83xx_set_features,
 	.ndo_fix_features = rtl838x_fix_features,
-	.ndo_setup_tc = rtl83xx_setup_tc,
+	.ndo_setup_tc = rtl838x_setup_tc,
 };
 
 static const struct net_device_ops rtl930x_eth_netdev_ops = {
@@ -1610,7 +1624,7 @@ static const struct net_device_ops rtl930x_eth_netdev_ops = {
 	.ndo_tx_timeout = rtl838x_eth_tx_timeout,
 	.ndo_set_features = rtl93xx_set_features,
 	.ndo_fix_features = rtl838x_fix_features,
-	.ndo_setup_tc = rtl83xx_setup_tc,
+	.ndo_setup_tc = rtl838x_setup_tc,
 };
 
 static const struct net_device_ops rtl931x_eth_netdev_ops = {
@@ -1624,6 +1638,7 @@ static const struct net_device_ops rtl931x_eth_netdev_ops = {
 	.ndo_tx_timeout = rtl838x_eth_tx_timeout,
 	.ndo_set_features = rtl93xx_set_features,
 	.ndo_fix_features = rtl838x_fix_features,
+	.ndo_setup_tc = rtl838x_setup_tc,
 };
 
 static const struct phylink_pcs_ops rtl838x_pcs_ops = {
