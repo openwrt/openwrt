@@ -321,7 +321,7 @@ static int rtl83xx_stats_flower(struct rtl838x_switch_priv *priv,
 	unsigned long lastused = 0;
 	int total_packets, new_packets;
 
-	pr_debug("%s: \n", __func__);
+	pr_debug("%s:\n", __func__);
 	flow = rhashtable_lookup_fast(&priv->tc_ht, &cls_flower->cookie, tc_ht_params);
 	if (!flow)
 		return -1;
