@@ -41,8 +41,9 @@ export function parse_encryption(config, dev_config) {
 		break;
 
 	case 'psk':
+	case 'psk2':
 	case 'psk-mixed':
-		config.auth_type = "psk";
+		config.auth_type = 'psk';
 		wpa3_pairwise = null;
 		break;
 
@@ -60,10 +61,6 @@ export function parse_encryption(config, dev_config) {
 	case 'wpa2':
 	case 'wpa-mixed':
 		config.auth_type = 'eap';
-		wpa3_pairwise = null;
-		break;
-
-	case 'psk2':
 		wpa3_pairwise = null;
 		break;
 
