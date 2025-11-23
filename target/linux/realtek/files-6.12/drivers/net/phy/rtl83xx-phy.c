@@ -217,7 +217,7 @@ static struct fw_header *rtl838x_request_fw(struct phy_device *phydev,
 		goto out;
 	}
 
-	h = (struct fw_header *) fw->data;
+	h = (struct fw_header *)fw->data;
 	pr_info("Firmware loaded. Size %d, magic: %08x\n", fw->size, h->magic);
 
 	if (h->magic != 0x83808380) {

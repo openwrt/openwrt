@@ -413,7 +413,7 @@ static u64 rtl838x_read_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2
 	if (!e->valid)
 		return 0;
 
-	return (((u64) r[1]) << 32) | (r[2]);  /* mac and vid concatenated as hash seed */
+	return (((u64)r[1]) << 32) | (r[2]);  /* mac and vid concatenated as hash seed */
 }
 
 static void rtl838x_write_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_l2_entry *e)
@@ -450,7 +450,7 @@ static u64 rtl838x_read_cam(int idx, struct rtl838x_l2_entry *e)
 	pr_debug("Found in CAM: R1 %x R2 %x R3 %x\n", r[0], r[1], r[2]);
 
 	/* Return MAC with concatenated VID ac concatenated ID */
-	return (((u64) r[1]) << 32) | r[2];
+	return (((u64)r[1]) << 32) | r[2];
 }
 
 static void rtl838x_write_cam(int idx, struct rtl838x_l2_entry *e)
@@ -1047,33 +1047,33 @@ static void rtl838x_read_pie_fixed_fields(u32 r[], struct pie_rule *pr)
 
 static void rtl838x_write_pie_fixed_fields(u32 r[],  struct pie_rule *pr)
 {
-	r[6] = ((u32) (pr->spmmask_fix & 0x3)) << 22;
-	r[6] |= ((u32) (pr->spn & 0x3f)) << 16;
+	r[6] = ((u32)(pr->spmmask_fix & 0x3)) << 22;
+	r[6] |= ((u32)(pr->spn & 0x3f)) << 16;
 	r[6] |= pr->mgnt_vlan ? BIT(15) : 0;
 	r[6] |= pr->dmac_hit_sw ? BIT(14) : 0;
 	r[6] |= pr->not_first_frag ? BIT(13) : 0;
-	r[6] |= ((u32) (pr->frame_type_l4 & 0x7)) << 10;
-	r[6] |= ((u32) (pr->frame_type & 0x3)) << 8;
+	r[6] |= ((u32)(pr->frame_type_l4 & 0x7)) << 10;
+	r[6] |= ((u32)(pr->frame_type & 0x3)) << 8;
 	r[6] |= pr->otag_fmt ? BIT(7) : 0;
 	r[6] |= pr->itag_fmt ? BIT(6) : 0;
 	r[6] |= pr->otag_exist ? BIT(5) : 0;
 	r[6] |= pr->itag_exist ? BIT(4) : 0;
-	r[6] |= ((u32) (pr->frame_type_l2 & 0x3)) << 2;
-	r[6] |= ((u32) (pr->tid & 0x3));
+	r[6] |= ((u32)(pr->frame_type_l2 & 0x3)) << 2;
+	r[6] |= ((u32)(pr->tid & 0x3));
 
-	r[13] = ((u32) (pr->spmmask_fix_m & 0x3)) << 22;
-	r[13] |= ((u32) (pr->spn_m & 0x3f)) << 16;
+	r[13] = ((u32)(pr->spmmask_fix_m & 0x3)) << 22;
+	r[13] |= ((u32)(pr->spn_m & 0x3f)) << 16;
 	r[13] |= pr->mgnt_vlan_m ? BIT(15) : 0;
 	r[13] |= pr->dmac_hit_sw_m ? BIT(14) : 0;
 	r[13] |= pr->not_first_frag_m ? BIT(13) : 0;
-	r[13] |= ((u32) (pr->frame_type_l4_m & 0x7)) << 10;
-	r[13] |= ((u32) (pr->frame_type_m & 0x3)) << 8;
+	r[13] |= ((u32)(pr->frame_type_l4_m & 0x7)) << 10;
+	r[13] |= ((u32)(pr->frame_type_m & 0x3)) << 8;
 	r[13] |= pr->otag_fmt_m ? BIT(7) : 0;
 	r[13] |= pr->itag_fmt_m ? BIT(6) : 0;
 	r[13] |= pr->otag_exist_m ? BIT(5) : 0;
 	r[13] |= pr->itag_exist_m ? BIT(4) : 0;
-	r[13] |= ((u32) (pr->frame_type_l2_m & 0x3)) << 2;
-	r[13] |= ((u32) (pr->tid_m & 0x3));
+	r[13] |= ((u32)(pr->frame_type_l2_m & 0x3)) << 2;
+	r[13] |= ((u32)(pr->tid_m & 0x3));
 
 	r[14] = pr->valid ? BIT(31) : 0;
 	r[14] |= pr->cond_not ? BIT(30) : 0;

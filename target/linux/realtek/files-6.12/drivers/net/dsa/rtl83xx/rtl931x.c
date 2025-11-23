@@ -148,7 +148,7 @@ static void rtl931x_vlan_profile_dump(int index)
 		     (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 24) & 0xFFFFFFFF);
 
 	pr_debug("VLAN %d: L2 learning: %d, L2 Unknown MultiCast Field %llx, IPv4 Unknown MultiCast Field %llx, IPv6 Unknown MultiCast Field: %llx\n",
-		 index, (u32) (profile[0] & (3 << 14)), profile[1], profile[2], profile[3]);
+		 index, (u32)(profile[0] & (3 << 14)), profile[1], profile[2], profile[3]);
 }
 
 static void rtl931x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
@@ -193,7 +193,7 @@ static void rtl931x_vlan_tables_read(u32 vlan, struct rtl838x_vlan_info *info)
 	rtl_table_release(r);
 
 	pr_debug("VLAN_READ %d: %08x %08x %08x %08x\n", vlan, v, w, x, y);
-	info->member_ports = ((u64) v) << 25 | (w >> 7);
+	info->member_ports = ((u64)v) << 25 | (w >> 7);
 	info->profile_id = (x >> 16) & 0xf;
 	info->fid = w & 0x7f;				/* AKA MSTI depending on context */
 	info->hash_uc_fid = !!(x & BIT(31));
@@ -1131,15 +1131,15 @@ static void rtl931x_write_pie_fixed_fields(u32 r[],  struct pie_rule *pr)
 	else
 		r[7] |= pr->content_too_deep ? BIT(30) : 0;
 	r[7] |= pr->not_first_frag ? BIT(29) : 0;
-	r[7] |= ((u32) (pr->frame_type_l4 & 0x7)) << 26;
-	r[7] |= ((u32) (pr->frame_type & 0x3)) << 24;
+	r[7] |= ((u32)(pr->frame_type_l4 & 0x7)) << 26;
+	r[7] |= ((u32)(pr->frame_type & 0x3)) << 24;
 	r[7] |= pr->otag_fmt ? BIT(23) : 0;
 	r[7] |= pr->itag_fmt ? BIT(22) : 0;
 	r[7] |= pr->otag_exist ? BIT(21) : 0;
 	r[7] |= pr->itag_exist ? BIT(20) : 0;
-	r[7] |= ((u32) (pr->frame_type_l2 & 0x3)) << 18;
+	r[7] |= ((u32)(pr->frame_type_l2 & 0x3)) << 18;
 	r[7] |= pr->igr_normal_port ? BIT(17) : 0;
-	r[7] |= ((u32) (pr->tid & 0x1)) << 16;
+	r[7] |= ((u32)(pr->tid & 0x1)) << 16;
 
 	r[14] |= pr->mgnt_vlan_m ? BIT(15) : 0;
 	if (pr->phase == PHASE_IACL)
@@ -1147,15 +1147,15 @@ static void rtl931x_write_pie_fixed_fields(u32 r[],  struct pie_rule *pr)
 	else
 		r[14] |= pr->content_too_deep_m ? BIT(14) : 0;
 	r[14] |= pr->not_first_frag_m ? BIT(13) : 0;
-	r[14] |= ((u32) (pr->frame_type_l4_m & 0x7)) << 10;
-	r[14] |= ((u32) (pr->frame_type_m & 0x3)) << 8;
+	r[14] |= ((u32)(pr->frame_type_l4_m & 0x7)) << 10;
+	r[14] |= ((u32)(pr->frame_type_m & 0x3)) << 8;
 	r[14] |= pr->otag_fmt_m ? BIT(7) : 0;
 	r[14] |= pr->itag_fmt_m ? BIT(6) : 0;
 	r[14] |= pr->otag_exist_m ? BIT(5) : 0;
 	r[14] |= pr->itag_exist_m ? BIT(4) : 0;
-	r[14] |= ((u32) (pr->frame_type_l2_m & 0x3)) << 2;
+	r[14] |= ((u32)(pr->frame_type_l2_m & 0x3)) << 2;
 	r[14] |= pr->igr_normal_port_m ? BIT(1) : 0;
-	r[14] |= (u32) (pr->tid_m & 0x1);
+	r[14] |= (u32)(pr->tid_m & 0x1);
 
 	r[15] |= pr->valid ? BIT(31) : 0;
 	r[15] |= pr->cond_not ? BIT(30) : 0;

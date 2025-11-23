@@ -1226,7 +1226,7 @@ static int rtl83xx_netevent_event(struct notifier_block *this,
 		net_work->priv = priv;
 
 		net_work->mac = ether_addr_to_u64(n->ha);
-		net_work->gw_addr = *(__be32 *) n->primary_key;
+		net_work->gw_addr = *(__be32 *)n->primary_key;
 
 		pr_debug("%s: updating neighbour on port %d, mac %016llx\n",
 			__func__, port, net_work->mac);

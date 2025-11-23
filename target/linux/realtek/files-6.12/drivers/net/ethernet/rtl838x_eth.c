@@ -783,7 +783,7 @@ static void rtl839x_setup_notify_ring_buffer(struct rtl838x_eth_priv *priv)
 	for (int i = 0; i < NOTIFY_BLOCKS; i++)
 		b->ring[i] = KSEG1ADDR(&b->blocks[i]) | 1 | (i == (NOTIFY_BLOCKS - 1) ? WRAP : 0);
 
-	sw_w32((u32) b->ring, RTL839X_DMA_IF_NBUF_BASE_DESC_ADDR_CTRL);
+	sw_w32((u32)b->ring, RTL839X_DMA_IF_NBUF_BASE_DESC_ADDR_CTRL);
 	sw_w32_mask(0x3ff << 2, 100 << 2, RTL839X_L2_NOTIFICATION_CTRL);
 
 	/* Setup notification events */
@@ -1427,7 +1427,7 @@ static int rtl838x_set_mac_address(struct net_device *dev, void *p)
 {
 	struct rtl838x_eth_priv *priv = netdev_priv(dev);
 	const struct sockaddr *addr = p;
-	u8 *mac = (u8 *) (addr->sa_data);
+	u8 *mac = (u8 *)(addr->sa_data);
 
 	if (!is_valid_ether_addr(addr->sa_data))
 		return -EADDRNOTAVAIL;

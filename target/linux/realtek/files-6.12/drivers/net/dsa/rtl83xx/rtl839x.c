@@ -1111,33 +1111,33 @@ static void rtl839x_read_pie_fixed_fields(u32 r[], struct pie_rule *pr)
 
 static void rtl839x_write_pie_fixed_fields(u32 r[],  struct pie_rule *pr)
 {
-	r[6] = ((u32) (pr->spmmask_fix & 0x3)) << 30;
-	r[6] |= ((u32) (pr->spn & 0x3f)) << 24;
+	r[6] = ((u32)(pr->spmmask_fix & 0x3)) << 30;
+	r[6] |= ((u32)(pr->spn & 0x3f)) << 24;
 	r[6] |= pr->mgnt_vlan ? BIT(23) : 0;
 	r[6] |= pr->dmac_hit_sw ? BIT(22) : 0;
 	r[6] |= pr->not_first_frag ? BIT(21) : 0;
-	r[6] |= ((u32) (pr->frame_type_l4 & 0x7)) << 18;
-	r[6] |= ((u32) (pr->frame_type & 0x3)) << 16;
+	r[6] |= ((u32)(pr->frame_type_l4 & 0x7)) << 18;
+	r[6] |= ((u32)(pr->frame_type & 0x3)) << 16;
 	r[6] |= pr->otag_fmt ? BIT(15) : 0;
 	r[6] |= pr->itag_fmt ? BIT(14) : 0;
 	r[6] |= pr->otag_exist ? BIT(13) : 0;
 	r[6] |= pr->itag_exist ? BIT(12) : 0;
-	r[6] |= ((u32) (pr->frame_type_l2 & 0x3)) << 10;
-	r[6] |= ((u32) (pr->tid & 0x3)) << 8;
+	r[6] |= ((u32)(pr->frame_type_l2 & 0x3)) << 10;
+	r[6] |= ((u32)(pr->tid & 0x3)) << 8;
 
-	r[12] |= ((u32) (pr->spmmask_fix_m & 0x3)) << 6;
-	r[12] |= (u32) (pr->spn_m & 0x3f);
+	r[12] |= ((u32)(pr->spmmask_fix_m & 0x3)) << 6;
+	r[12] |= (u32)(pr->spn_m & 0x3f);
 	r[13] |= pr->mgnt_vlan_m ? BIT(31) : 0;
 	r[13] |= pr->dmac_hit_sw_m ? BIT(30) : 0;
 	r[13] |= pr->not_first_frag_m ? BIT(29) : 0;
-	r[13] |= ((u32) (pr->frame_type_l4_m & 0x7)) << 26;
-	r[13] |= ((u32) (pr->frame_type_m & 0x3)) << 24;
+	r[13] |= ((u32)(pr->frame_type_l4_m & 0x7)) << 26;
+	r[13] |= ((u32)(pr->frame_type_m & 0x3)) << 24;
 	r[13] |= pr->otag_fmt_m ? BIT(23) : 0;
 	r[13] |= pr->itag_fmt_m ? BIT(22) : 0;
 	r[13] |= pr->otag_exist_m ? BIT(21) : 0;
 	r[13] |= pr->itag_exist_m ? BIT(20) : 0;
-	r[13] |= ((u32) (pr->frame_type_l2_m & 0x3)) << 18;
-	r[13] |= ((u32) (pr->tid_m & 0x3)) << 16;
+	r[13] |= ((u32)(pr->frame_type_l2_m & 0x3)) << 18;
+	r[13] |= ((u32)(pr->tid_m & 0x3)) << 16;
 
 	r[13] |= pr->valid ? BIT(15) : 0;
 	r[13] |= pr->cond_not ? BIT(14) : 0;
