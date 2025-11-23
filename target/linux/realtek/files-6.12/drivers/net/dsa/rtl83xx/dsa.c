@@ -2219,9 +2219,9 @@ static int rtl83xx_vlan_del(struct dsa_switch *ds, int port,
 	pvid = priv->ports[port].pvid;
 
 	/* Reset to default if removing the current PVID */
-	if (vlan->vid == pvid) {
+	if (vlan->vid == pvid)
 		rtl83xx_vlan_set_pvid(priv, port, 0);
-	}
+
 	/* Get port memberships of this vlan */
 	priv->r->vlan_tables_read(vlan->vid, &info);
 
@@ -2821,9 +2821,9 @@ static bool rtl83xx_lag_can_offload(struct dsa_switch *ds,
 	if (id < 0 || id >= ds->num_lag_ids)
 		return false;
 
-	if (info->tx_type != NETDEV_LAG_TX_TYPE_HASH) {
+	if (info->tx_type != NETDEV_LAG_TX_TYPE_HASH)
 		return false;
-	}
+
 	if (info->hash_type != NETDEV_LAG_HASH_L2 && info->hash_type != NETDEV_LAG_HASH_L23)
 		return false;
 

@@ -323,11 +323,11 @@ static void rtl83xx_setup_prio2queue_cpu_matrix(int *max_queues)
 
 static void rtl83xx_setup_default_prio2queue(void)
 {
-	if (soc_info.family == RTL8380_FAMILY_ID) {
+	if (soc_info.family == RTL8380_FAMILY_ID)
 		rtl838x_setup_prio2queue_matrix(rtldsa_max_available_queue);
-	} else {
+	else
 		rtl839x_setup_prio2queue_matrix(rtldsa_max_available_queue);
-	}
+
 	rtl83xx_setup_prio2queue_cpu_matrix(rtldsa_max_available_queue);
 }
 

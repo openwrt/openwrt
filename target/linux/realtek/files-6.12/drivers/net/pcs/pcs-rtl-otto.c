@@ -622,9 +622,8 @@ static void rtpcs_930x_sds_mode_set(struct rtpcs_ctrl *ctrl, int sds,
 	rtpcs_930x_sds_set(ctrl, sds, mode);
 
 	/* Set the submode if needed. */
-	if (phy_mode == PHY_INTERFACE_MODE_10G_QXGMII) {
+	if (phy_mode == PHY_INTERFACE_MODE_10G_QXGMII)
 		rtpcs_930x_sds_submode_set(ctrl, sds, submode);
-	}
 }
 
 
@@ -1844,9 +1843,8 @@ static void rtpcs_930x_sds_patch(struct rtpcs_ctrl *ctrl, int sds, phy_interface
 		return;
 	}
 
-	for (size_t i = 0; i < count; ++i) {
+	for (size_t i = 0; i < count; ++i)
 		rtpcs_sds_write(ctrl, sds, config[i].page, config[i].reg, config[i].data);
-	}
 
 	if (mode == PHY_INTERFACE_MODE_10G_QXGMII) {
 		/* Default configuration */
@@ -2148,9 +2146,8 @@ static void rtpcs_931x_sds_cmu_type_set(struct rtpcs_ctrl *ctrl, u32 sds,
 		pr_info("%s A CMU page 0x28 0x7 %08x\n", __func__, rtpcs_sds_read(ctrl, sds, 0x28, 0x7));
 		rtpcs_sds_write_bits(ctrl, sds, cmu_page, 0x7, 15, 15, 0);
 		pr_info("%s B CMU page 0x28 0x7 %08x\n", __func__, rtpcs_sds_read(ctrl, sds, 0x28, 0x7));
-		if (chiptype) {
+		if (chiptype)
 			rtpcs_sds_write_bits(ctrl, sds, cmu_page, 0xd, 14, 14, 0);
-		}
 
 		rtpcs_sds_write_bits(ctrl, evenSds, 0x20, 0x12, 3, 2, 0x3);
 		rtpcs_sds_write_bits(ctrl, evenSds, 0x20, 0x12, frc_lc_mode_bitnum, frc_lc_mode_bitnum, 1);
@@ -2507,12 +2504,12 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_ctrl *ctrl, int sds,
 			val = 0xa0000;
 			regmap_write(ctrl->map, RTL93XX_CHIP_INFO, val);
 			regmap_read(ctrl->map, RTL93XX_CHIP_INFO, &val);
+
 			if (val & BIT(28)) /* consider 9311 etc. RTL9313_CHIP_ID == HWP_CHIP_ID(unit)) */
-			{
 				rtpcs_sds_write(ctrl, sds, 0x2E, 0x1, board_sds_tx2[sds - 2]);
-			} else {
+			else
 				rtpcs_sds_write(ctrl, sds, 0x2E, 0x1, board_sds_tx[sds - 2]);
-			}
+
 			val = 0;
 			regmap_write(ctrl->map, RTL93XX_CHIP_INFO, val);
 		}
