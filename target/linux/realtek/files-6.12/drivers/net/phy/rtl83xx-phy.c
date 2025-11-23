@@ -205,7 +205,7 @@ static struct fw_header *rtl838x_request_fw(struct phy_device *phydev,
 	struct device *dev = &phydev->mdio.dev;
 	int err;
 	struct fw_header *h;
-	uint32_t checksum, my_checksum;
+	u32 checksum, my_checksum;
 
 	err = request_firmware(&fw, name, dev);
 	if (err < 0)

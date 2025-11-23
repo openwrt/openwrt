@@ -1,16 +1,16 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 struct __packed part {
-	uint16_t start;
-	uint8_t wordsize;
-	uint8_t words;
+	u16 start;
+	u8 wordsize;
+	u8 words;
 };
 
 struct __packed fw_header {
-	uint32_t magic;
-	uint32_t phy;
-	uint32_t checksum;
-	uint32_t version;
+	u32 magic;
+	u32 phy;
+	u32 checksum;
+	u32 version;
 	struct part parts[10];
 };
 

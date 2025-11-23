@@ -723,8 +723,8 @@ enum pbvlan_mode {
 };
 
 struct rtldsa_counter {
-	uint64_t val;
-	uint32_t last;
+	u64 val;
+	u32 last;
 };
 
 struct rtldsa_counter_state {

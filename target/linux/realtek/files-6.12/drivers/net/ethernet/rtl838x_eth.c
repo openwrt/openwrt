@@ -51,33 +51,33 @@ int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type
 #define RING_BUFFER	1600
 
 struct p_hdr {
-	uint8_t		*buf;
-	uint16_t	reserved;
-	uint16_t	size;		/* buffer size */
-	uint16_t	offset;
-	uint16_t	len;		/* pkt len */
-	/* cpu_tag[0] is a reserved uint16_t on RTL83xx */
-	uint16_t	cpu_tag[10];
+	u8	*buf;
+	u16	reserved;
+	u16	size;		/* buffer size */
+	u16	offset;
+	u16	len;		/* pkt len */
+	/* cpu_tag[0] is a reserved u16 on RTL83xx */
+	u16	cpu_tag[10];
 } __packed __aligned(1);
 
 struct n_event {
-	uint32_t	type:2;
-	uint32_t	fidVid:12;
-	uint64_t	mac:48;
-	uint32_t	slp:6;
-	uint32_t	valid:1;
-	uint32_t	reserved:27;
+	u32	type:2;
+	u32	fidVid:12;
+	u64	mac:48;
+	u32	slp:6;
+	u32	valid:1;
+	u32	reserved:27;
 } __packed __aligned(1);
 
 struct ring_b {
-	uint32_t	rx_r[MAX_RXRINGS][MAX_RXLEN];
-	uint32_t	tx_r[TXRINGS][TXRINGLEN];
+	u32	rx_r[MAX_RXRINGS][MAX_RXLEN];
+	u32	tx_r[TXRINGS][TXRINGLEN];
 	struct	p_hdr	rx_header[MAX_RXRINGS][MAX_RXLEN];
 	struct	p_hdr	tx_header[TXRINGS][TXRINGLEN];
-	uint32_t	c_rx[MAX_RXRINGS];
-	uint32_t	c_tx[TXRINGS];
-	uint8_t		tx_space[TXRINGS * TXRINGLEN * RING_BUFFER];
-	uint8_t		*rx_space;
+	u32	c_rx[MAX_RXRINGS];
+	u32	c_tx[TXRINGS];
+	u8		tx_space[TXRINGS * TXRINGLEN * RING_BUFFER];
+	u8		*rx_space;
 };
 
 struct notify_block {
@@ -1182,7 +1182,7 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 		if ((ring->rx_r[r][ring->c_rx[r]] & 0x1)) {
 			if (&ring->rx_r[r][ring->c_rx[r]] != last) {
 				netdev_warn(dev, "Ring contention: r: %x, last %x, cur %x\n",
-				    r, (uint32_t)last, (u32) &ring->rx_r[r][ring->c_rx[r]]);
+				    r, (u32)last, (u32) &ring->rx_r[r][ring->c_rx[r]]);
 			}
 			break;
 		}

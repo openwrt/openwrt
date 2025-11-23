@@ -963,9 +963,9 @@ static const struct rtldsa_mib_desc *rtldsa_get_mib_desc(struct rtl838x_switch_p
 
 static bool rtldsa_read_mib_item(struct rtl838x_switch_priv *priv, int port,
 				 const struct rtldsa_mib_item *mib_item,
-				 uint64_t *data)
+				 u64 *data)
 {
-	uint32_t high1, high2;
+	u32 high1, high2;
 	int reg, reg_offset, addr_low;
 
 	switch (mib_item->reg) {
@@ -1000,7 +1000,7 @@ static bool rtldsa_read_mib_item(struct rtl838x_switch_priv *priv, int port,
 			/* Low must have wrapped and overflowed into high, read again */
 			*data = sw_r32(addr_low);
 		}
-		*data |= (uint64_t)high2 << 32;
+		*data |= (u64)high2 << 32;
 	} else {
 		*data = sw_r32(addr_low);
 	}
@@ -1012,8 +1012,8 @@ static void rtldsa_update_counter(struct rtl838x_switch_priv *priv, int port,
 				  struct rtldsa_counter *counter,
 				  const struct rtldsa_mib_item *mib_item)
 {
-	uint64_t val;
-	uint32_t val32, diff;
+	u64 val;
+	u32 val32, diff;
 
 	if (!rtldsa_read_mib_item(priv, port, mib_item, &val))
 		return;
@@ -1021,7 +1021,7 @@ static void rtldsa_update_counter(struct rtl838x_switch_priv *priv, int port,
 	if (mib_item->size == 2) {
 		counter->val = val;
 	} else {
-		val32 = (uint32_t)val;
+		val32 = (u32)val;
 		diff = val32 - counter->last;
 		counter->val += diff;
 		counter->last = val32;
@@ -1254,7 +1254,7 @@ static void rtldsa_get_strings(struct dsa_switch *ds,
 }
 
 static void rtldsa_get_ethtool_stats(struct dsa_switch *ds, int port,
-				     uint64_t *data)
+				     u64 *data)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	const struct rtldsa_mib_desc *mib_desc;
