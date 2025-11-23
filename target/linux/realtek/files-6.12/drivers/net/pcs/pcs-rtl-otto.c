@@ -238,7 +238,7 @@ static void rtpcs_930x_sds_set(struct rtpcs_ctrl *ctrl, int sds_num, u32 mode)
 	mdelay(10);
 }
 
-__attribute__((unused))
+__always_unused
 static u32 rtpcs_930x_sds_mode_get(struct rtpcs_ctrl *ctrl, int sds_num)
 {
 	u32 v;
@@ -254,7 +254,7 @@ static u32 rtpcs_930x_sds_mode_get(struct rtpcs_ctrl *ctrl, int sds_num)
 	return v & RTL930X_SDS_MASK;
 }
 
-__attribute__((unused))
+__always_unused
 static u32 rtpcs_930x_sds_submode_get(struct rtpcs_ctrl *ctrl, int sds_num)
 {
 	u32 v;
@@ -680,7 +680,7 @@ static void rtpcs_930x_sds_tx_config(struct rtpcs_ctrl *ctrl, int sds,
 /* Wait for clock ready, this assumes the SerDes is in XGMII mode
  * timeout is in ms
  */
-__attribute__((unused))
+__always_unused
 static int rtpcs_930x_sds_clock_wait(struct rtpcs_ctrl *ctrl, int timeout)
 {
 	u32 v;
@@ -696,7 +696,7 @@ static int rtpcs_930x_sds_clock_wait(struct rtpcs_ctrl *ctrl, int timeout)
 	return 1;
 }
 
-__attribute__((unused))
+__always_unused
 static void rtpcs_930x_sds_rxcal_dcvs_manual(struct rtpcs_ctrl *ctrl, u32 sds_num,
 					     u32 dcvs_id, bool manual, u32 dvcs_list[])
 {
@@ -762,7 +762,7 @@ static void rtpcs_930x_sds_rxcal_dcvs_manual(struct rtpcs_ctrl *ctrl, u32 sds_nu
 	}
 }
 
-__attribute__((unused))
+__always_unused
 static void rtpcs_930x_sds_rxcal_dcvs_get(struct rtpcs_ctrl *ctrl, u32 sds_num,
 					  u32 dcvs_id, u32 dcvs_list[])
 {
@@ -1107,7 +1107,7 @@ static void rtpcs_930x_sds_rxcal_tap_get(struct rtpcs_ctrl *ctrl, u32 sds_num,
 	}
 }
 
-__attribute__((unused))
+__always_unused
 static void rtpcs_930x_sds_do_rx_calibration_1(struct rtpcs_ctrl *ctrl, int sds,
 					       phy_interface_t phy_mode)
 {
@@ -1275,7 +1275,7 @@ static void rtpcs_930x_sds_do_rx_calibration_2_3(struct rtpcs_ctrl *ctrl,
 	pr_info("%s: end_1.2.3\n", __func__);
 }
 
-__attribute__((unused))
+__always_unused
 static void rtpcs_930x_sds_do_rx_calibration_2(struct rtpcs_ctrl *ctrl, int sds)
 {
 	rtpcs_930x_sds_rx_reset(ctrl, sds, PHY_INTERFACE_MODE_10GBASER);
@@ -1367,7 +1367,7 @@ static void rtpcs_930x_sds_rxcal_3_2(struct rtpcs_ctrl *ctrl, int sds_num,
 	pr_info("end_1.3.2");
 }
 
-__attribute__((unused))
+__always_unused
 static void rtpcs_930x_sds_do_rx_calibration_3(struct rtpcs_ctrl *ctrl, int sds_num,
 					       phy_interface_t phy_mode)
 {
@@ -1852,7 +1852,7 @@ static void rtpcs_930x_sds_patch(struct rtpcs_ctrl *ctrl, int sds, phy_interface
 	}
 }
 
-__attribute__((unused))
+__always_unused
 static int rtpcs_930x_sds_cmu_band_get(struct rtpcs_ctrl *ctrl, int sds)
 {
 	u32 page;
@@ -1995,7 +1995,7 @@ static void rtpcs_931x_sds_symerr_clear(struct rtpcs_ctrl *ctrl, u32 sds,
 	}
 }
 
-__attribute__((unused))
+__always_unused
 static void rtpcs_931x_sds_fiber_disable(struct rtpcs_ctrl *ctrl, u32 sds)
 {
 	u32 v = 0x3F;
@@ -2243,7 +2243,7 @@ static int rtpcs_931x_sds_cmu_band_get(struct rtpcs_ctrl *ctrl, int sds,
 	return band;
 }
 
-__attribute__((unused))
+__always_unused
 static int rtpcs_931x_sds_link_sts_get(struct rtpcs_ctrl *ctrl, u32 sds)
 {
 	u32 sts, sts1, latch_sts, latch_sts1;
@@ -2312,7 +2312,6 @@ static sds_config sds_config_10p3125g_cmu_type1[] = {
 	{ 0x2F, 0x0F, 0xA470 }, { 0x2F, 0x10, 0x8000 }, { 0x2F, 0x11, 0x037B }
 };
 
-__attribute__((unused))
 static int rtpcs_931x_setup_serdes(struct rtpcs_ctrl *ctrl, int sds,
 				   phy_interface_t mode)
 {
