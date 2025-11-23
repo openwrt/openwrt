@@ -3,6 +3,7 @@
  * Copyright (C) 2020 B. Koblitz
  */
 
+#include <linux/cacheflush.h>
 #include <linux/dma-mapping.h>
 #include <linux/etherdevice.h>
 #include <linux/interrupt.h>
@@ -18,7 +19,6 @@
 #include <linux/pkt_sched.h>
 #include <net/dsa.h>
 #include <net/switchdev.h>
-#include <asm/cacheflush.h>
 
 #include <asm/mach-rtl838x/mach-rtl83xx.h>
 #include "rtl838x_eth.h"
