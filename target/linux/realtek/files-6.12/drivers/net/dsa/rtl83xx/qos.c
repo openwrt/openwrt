@@ -7,7 +7,6 @@
 #include "rtl83xx.h"
 
 static struct rtl838x_switch_priv *switch_priv;
-extern struct rtl83xx_soc_info soc_info;
 
 enum scheduler_type {
 	WEIGHTED_FAIR_QUEUE = 0,

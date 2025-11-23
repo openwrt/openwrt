@@ -23,8 +23,6 @@
 #include <asm/mach-rtl838x/mach-rtl83xx.h>
 #include "rtl838x_eth.h"
 
-extern struct rtl83xx_soc_info soc_info;
-
 int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type_data);
 
 /* Maximum number of RX rings is 8 on RTL83XX and 32 on the 93XX

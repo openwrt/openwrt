@@ -16,16 +16,6 @@
 
 #include "rtl83xx.h"
 
-extern struct rtl83xx_soc_info soc_info;
-
-extern const struct rtl838x_reg rtl838x_reg;
-extern const struct rtl838x_reg rtl839x_reg;
-extern const struct rtl838x_reg rtl930x_reg;
-extern const struct rtl838x_reg rtl931x_reg;
-
-extern const struct dsa_switch_ops rtl83xx_switch_ops;
-extern const struct dsa_switch_ops rtl93xx_switch_ops;
-
 struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int port);
 
 int rtl83xx_port_get_stp_state(struct rtl838x_switch_priv *priv, int port)

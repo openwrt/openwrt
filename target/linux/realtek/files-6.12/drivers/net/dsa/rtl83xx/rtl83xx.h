@@ -207,4 +207,15 @@ void rtl930x_pie_rule_dump_raw(u32 r[]);
 
 void rtl931x_print_matrix(void);
 
+extern const struct dsa_switch_ops rtl83xx_switch_ops;
+extern const struct dsa_switch_ops rtl93xx_switch_ops;
+
+extern const struct rtl838x_reg rtl838x_reg;
+extern const struct rtl838x_reg rtl839x_reg;
+extern const struct rtl838x_reg rtl930x_reg;
+extern const struct rtl838x_reg rtl931x_reg;
+
+/* TODO actually from arch/mips/rtl838x/prom.c */
+extern struct rtl83xx_soc_info soc_info;
+
 #endif /* _NET_DSA_RTL83XX_H */

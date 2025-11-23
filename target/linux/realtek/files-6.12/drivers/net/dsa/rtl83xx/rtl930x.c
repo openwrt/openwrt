@@ -33,8 +33,6 @@
 /* get shift for given led in any set */
 #define RTL930X_LED_SET_LEDX_SHIFT(x) (16 * (x % 2))
 
-extern struct rtl83xx_soc_info soc_info;
-
 /* Definition of the RTL930X-specific template field IDs as used in the PIE */
 enum template_field_id {
 	TEMPLATE_FIELD_SPM0 = 0,		/* Source portmask ports 0-15 */
