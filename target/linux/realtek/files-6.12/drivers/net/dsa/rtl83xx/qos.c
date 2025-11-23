@@ -251,7 +251,8 @@ static void rtl839x_rate_control_init(struct rtl838x_switch_priv *priv)
 	/* Set default burst rates on all ports (the same for 1G / 10G) with a PHY
 	 * for UC, MC and BC
 	 * For 1G port, the minimum burst rate is 1700, maximum 65535,
-	 * For 10G ports it is 2650 and 1048575 respectively */
+	 * For 10G ports it is 2650 and 1048575 respectively
+	 */
 	for (int p = 0; p < priv->cpu_port; p++) {
 		if (priv->ports[p].phy && !priv->ports[p].is10G) {
 			sw_w32_mask(0xffff, 0x8000, RTL839X_STORM_CTRL_PORT_UC_1(p));

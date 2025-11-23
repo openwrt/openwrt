@@ -885,7 +885,8 @@ enum egr_filter {
 /* Intermediate representation of a  Packet Inspection Engine Rule
  * as suggested by the Kernel's tc flower offload subsystem
  * Field meaning is universal across SoC families, but data content is specific
- * to SoC family (e.g. because of different port ranges) */
+ * to SoC family (e.g. because of different port ranges)
+ */
 struct pie_rule {
 	int id;
 	enum pie_phase phase;	/* Phase in which this template is applied */

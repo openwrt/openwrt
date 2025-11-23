@@ -1349,8 +1349,8 @@ static int rtl83xx_fib_event(struct notifier_block *this, unsigned long event, v
 
 			memcpy(&fib_work->fen_info, ptr, sizeof(fib_work->fen_info));
 			/* Take referece on fib_info to prevent it from being
-			* freed while work is queued. Release it afterwards.
-			*/
+			 * freed while work is queued. Release it afterwards.
+			 */
 			fib_info_hold(fib_work->fen_info.fi);
 
 		} else if (info->family == AF_INET6) {

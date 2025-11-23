@@ -1472,11 +1472,11 @@ static void rtl930x_get_l3_nexthop(int idx, u16 *dmac_id, u16 *interface)
 
 
 // Currently not used
-// /* Creates an interface for a route by setting up the HW tables in the SoC
+// /* Creates an interface for a route by setting up the HW tables in the SoC */
 // static int rtl930x_l3_intf_add(struct rtl838x_switch_priv *priv, struct rtl838x_l3_intf *intf)
 // {
 // 	int i, intf_id, mtu_id;
-// 	/* number of MTU-values < 16384 *\/
+// 	/* number of MTU-values < 16384 */
 
 // 	/* Use the same IPv6 mtu as the ip4 mtu for this route if unset */
 // 	intf->ip6_mtu = intf->ip6_mtu ? intf->ip6_mtu : intf->ip4_mtu;

@@ -511,11 +511,13 @@ static void rtl838x_l2_learning_setup(void)
 {
 	/* Set portmask for broadcast traffic and unknown unicast address flooding
 	 * to the reserved entry in the portmask table used also for
-	 * multicast flooding */
+	 * multicast flooding
+	 */
 	sw_w32(UNKNOWN_MC_PMASK << 9 | UNKNOWN_MC_PMASK, RTL838X_L2_FLD_PMSK);
 
 	/* Enable learning constraint system-wide (bit 0), per-port (bit 1)
-	 * and per vlan (bit 2) */
+	 * and per vlan (bit 2)
+	 */
 	sw_w32(0x7, RTL838X_L2_LRN_CONSTRT_EN);
 
 	/* Limit learning to maximum: 16k entries, after that just flood (bits 0-1) */
@@ -1115,7 +1117,8 @@ static int rtl838x_write_pie_action(u32 r[],  struct pie_rule *pr)
 	 * they have different precedence depending on their type and this precedence
 	 * defines which Action Information Field (0-4) in the IACL table stores
 	 * the additional data of the action (like e.g. the port number a packet is
-	 * forwarded to) */
+	 * forwarded to)
+	 */
 	/* TODO: count bits in selectors to limit to a maximum number of actions */
 	if (pr->fwd_sel) { /* Forwarding action */
 		data = pr->fwd_act << 13;

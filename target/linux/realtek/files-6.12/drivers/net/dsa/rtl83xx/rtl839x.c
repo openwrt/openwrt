@@ -556,7 +556,8 @@ static void rtl839x_l2_learning_setup(void)
 {
 	/* Set portmask for broadcast (offset bit 12) and unknown unicast (offset 0)
 	 * address flooding to the reserved entry in the portmask table used
-	 * also for multicast flooding */
+	 * also for multicast flooding
+	 */
 	sw_w32(UNKNOWN_MC_PMASK << 12 | UNKNOWN_MC_PMASK, RTL839X_L2_FLD_PMSK);
 
 	/* Limit learning to maximum: 32k entries, after that just flood (bits 0-1) */
