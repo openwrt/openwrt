@@ -658,7 +658,7 @@ typedef enum {
 #define RTL931X_LED_SETX_1_CTRL(x) (RTL931X_LED_SETX_0_CTRL(x) - 4)
 
 /* get register for given set and led in the set */
-#define RTL931X_LED_SETX_LEDY(x,y) (RTL931X_LED_SETX_0_CTRL(x) - 4 * (y / 2))
+#define RTL931X_LED_SETX_LEDY(x, y) (RTL931X_LED_SETX_0_CTRL(x) - 4 * (y / 2))
 
 /* get shift for given led in any set */
 #define RTL931X_LED_SET_LEDX_SHIFT(x) (16 * (x % 2))

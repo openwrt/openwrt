@@ -291,7 +291,7 @@ out:
 }
 
 static int rtl83xx_delete_flower(struct rtl838x_switch_priv *priv,
-				 struct flow_cls_offload * cls_flower)
+				 struct flow_cls_offload *cls_flower)
 {
 	struct rtl83xx_flow *flow;
 
@@ -315,7 +315,7 @@ static int rtl83xx_delete_flower(struct rtl838x_switch_priv *priv,
 }
 
 static int rtl83xx_stats_flower(struct rtl838x_switch_priv *priv,
-				struct flow_cls_offload * cls_flower)
+				struct flow_cls_offload *cls_flower)
 {
 	struct rtl83xx_flow *flow;
 	unsigned long lastused = 0;
@@ -382,7 +382,7 @@ int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type
 
 	pr_debug("%s: %d\n", __func__, type);
 
-	if(!netdev_uses_dsa(dev)) {
+	if (!netdev_uses_dsa(dev)) {
 		pr_err("%s: no DSA\n", __func__);
 		return 0;
 	}

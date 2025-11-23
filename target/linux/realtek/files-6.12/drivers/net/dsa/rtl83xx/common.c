@@ -89,7 +89,7 @@ struct table_reg *rtl_table_get(rtl838x_tbl_reg_t r, int t)
 	if (r >= RTL_TBL_END)
 		return NULL;
 
-	if (t >= BIT(rtl838x_tbl_regs[r].c_bit-rtl838x_tbl_regs[r].t_bit))
+	if (t >= BIT(rtl838x_tbl_regs[r].c_bit - rtl838x_tbl_regs[r].t_bit))
 		return NULL;
 
 	mutex_lock(&rtl838x_tbl_regs[r].lock);
@@ -451,7 +451,7 @@ int rtl83xx_lag_add(struct dsa_switch *ds, int group, int port, struct netdev_la
 		return -ENOSPC;
 	}
 
-	switch(info->hash_type) {
+	switch (info->hash_type) {
 	case NETDEV_LAG_HASH_L2:
 		algomsk |= TRUNK_DISTRIBUTION_ALGO_DMAC_BIT;
 		algomsk |= TRUNK_DISTRIBUTION_ALGO_SMAC_BIT;
@@ -659,7 +659,7 @@ static int rtl83xx_l2_nexthop_rm(struct rtl838x_switch_priv *priv, struct rtl83x
 	return 0;
 }
 
-int rtl83xx_port_is_under(const struct net_device * dev, struct rtl838x_switch_priv *priv)
+int rtl83xx_port_is_under(const struct net_device *dev, struct rtl838x_switch_priv *priv)
 {
 	/* Is the lower network device a DSA user network device of our RTL930X-switch?
 	 * Unfortunately we cannot just follow dev->dsa_prt as this is only set for the
@@ -1449,7 +1449,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 
 	priv->family_id = soc_info.family;
 	priv->id = soc_info.id;
-	switch(soc_info.family) {
+	switch (soc_info.family) {
 	case RTL8380_FAMILY_ID:
 		priv->ds->ops = &rtl83xx_switch_ops;
 		priv->cpu_port = RTL838X_CPU_PORT;

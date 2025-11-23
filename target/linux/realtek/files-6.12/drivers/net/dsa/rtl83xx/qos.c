@@ -209,7 +209,7 @@ static void rtl839x_egress_rate_queue_limit(struct rtl838x_switch_priv *priv, in
 	sw_w32_mask(0xfffff << start_bit, (rate & 0xfffff) << start_bit,
 		    RTL839X_TBL_ACCESS_DATA_2(low_byte));
 	if (high_mask)
-		sw_w32_mask(high_mask, (rate & 0xfffff) >> (32- start_bit),
+		sw_w32_mask(high_mask, (rate & 0xfffff) >> (32 - start_bit),
 			    RTL839X_TBL_ACCESS_DATA_2(low_byte - 1));
 
 	rtl839x_write_scheduling_table(port);
@@ -335,16 +335,16 @@ static void rtl83xx_setup_default_prio2queue(void)
 /* Sets the output queue assigned to a port, the port can be the CPU-port */
 void rtl839x_set_egress_queue(int port, int queue)
 {
-	sw_w32(queue << ((port % 10) *3), RTL839X_QM_PORT_QNUM(port));
+	sw_w32(queue << ((port % 10) * 3), RTL839X_QM_PORT_QNUM(port));
 }
 
 /* Sets the priority assigned of an ingress port, the port can be the CPU-port */
 static void rtl83xx_set_ingress_priority(int port, int priority)
 {
 	if (soc_info.family == RTL8380_FAMILY_ID)
-		sw_w32(priority << ((port % 10) *3), RTL838X_PRI_SEL_PORT_PRI(port));
+		sw_w32(priority << ((port % 10) * 3), RTL838X_PRI_SEL_PORT_PRI(port));
 	else
-		sw_w32(priority << ((port % 10) *3), RTL839X_PRI_SEL_PORT_PRI(port));
+		sw_w32(priority << ((port % 10) * 3), RTL839X_PRI_SEL_PORT_PRI(port));
 }
 
 static int rtl839x_get_scheduling_algorithm(struct rtl838x_switch_priv *priv, int port)
@@ -438,7 +438,7 @@ static void rtl839x_set_scheduling_queue_weights(struct rtl838x_switch_priv *pri
 		sw_w32_mask(0x3ff << start_bit, (queue_weights[i] & 0x3ff) << start_bit,
 				RTL839X_TBL_ACCESS_DATA_2(low_byte));
 		if (high_mask)
-			sw_w32_mask(high_mask, (queue_weights[i] & 0x3ff) >> (32- start_bit),
+			sw_w32_mask(high_mask, (queue_weights[i] & 0x3ff) >> (32 - start_bit),
 					RTL839X_TBL_ACCESS_DATA_2(low_byte - 1));
 	}
 
@@ -534,9 +534,9 @@ static void rtl839x_config_qos(void)
 	 * low threshold (bits 0-11) to 4095 and high threshold (bits 12-23) to 4095
 	 * Weighted Random Early Detection (WRED) is used
 	 */
-	sw_w32(4095 << 12| 4095, RTL839X_WRED_PORT_THR_CTRL(0));
-	sw_w32(4095 << 12| 4095, RTL839X_WRED_PORT_THR_CTRL(1));
-	sw_w32(4095 << 12| 4095, RTL839X_WRED_PORT_THR_CTRL(2));
+	sw_w32(4095 << 12 | 4095, RTL839X_WRED_PORT_THR_CTRL(0));
+	sw_w32(4095 << 12 | 4095, RTL839X_WRED_PORT_THR_CTRL(1));
+	sw_w32(4095 << 12 | 4095, RTL839X_WRED_PORT_THR_CTRL(2));
 
 	/* Set queue-based congestion avoidance properties, register fields are as
 	 * for forward RTL839X_WRED_PORT_THR_CTRL

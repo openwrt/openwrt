@@ -60,7 +60,7 @@ static void rtl83xx_enable_phy_polling(struct rtl838x_switch_priv *priv)
 	/* PHY update complete, there is no global PHY polling enable bit on the 93xx */
 	if (priv->family_id == RTL8390_FAMILY_ID)
 		sw_w32_mask(0, BIT(7), RTL839X_SMI_GLB_CTRL);
-	else if(priv->family_id == RTL8380_FAMILY_ID)
+	else if (priv->family_id == RTL8380_FAMILY_ID)
 		sw_w32_mask(0, BIT(15), RTL838X_SMI_GLB_CTRL);
 }
 
@@ -473,7 +473,7 @@ static void rtl83xx_vlan_setup(struct rtl838x_switch_priv *priv)
 	}
 
 	/* Initialize normal VLANs 1-4095 */
-	for (int i = 1; i < MAX_VLANS; i ++)
+	for (int i = 1; i < MAX_VLANS; i++)
 		priv->r->vlan_set_tagged(i, &info);
 
 	/*
@@ -2021,7 +2021,7 @@ static void rtldsa_931x_fast_age(struct dsa_switch *ds, int port)
 	val |= BIT(28); /* status - trigger flush */
 	sw_w32(val, RTL931X_L2_TBL_FLUSH_CTRL);
 
-	do { } while (sw_r32(RTL931X_L2_TBL_FLUSH_CTRL) & BIT (28));
+	do { } while (sw_r32(RTL931X_L2_TBL_FLUSH_CTRL) & BIT(28));
 
 	mutex_unlock(&priv->reg_mutex);
 }
@@ -2085,8 +2085,7 @@ static int rtl83xx_vlan_filtering(struct dsa_switch *ds, int port,
 		if (port != priv->cpu_port) {
 			priv->r->set_vlan_igr_filter(port, IGR_DROP);
 			priv->r->set_vlan_egr_filter(port, EGR_ENABLE);
-		}
-		else {
+		} else {
 			priv->r->set_vlan_igr_filter(port, IGR_TRAP);
 			priv->r->set_vlan_egr_filter(port, EGR_DISABLE);
 		}
@@ -2908,7 +2907,7 @@ static int rtl83xx_port_lag_leave(struct dsa_switch *ds, int port,
 		err = -EINVAL;
 		goto out;
 	}
-	pr_info("port_lag_del: group %d, port %d\n",group, port);
+	pr_info("port_lag_del: group %d, port %d\n", group, port);
 	priv->lagmembers &= ~BIT_ULL(port);
 	priv->lag_primary[group] = -1;
 	priv->lag_non_primary &= ~BIT_ULL(port);

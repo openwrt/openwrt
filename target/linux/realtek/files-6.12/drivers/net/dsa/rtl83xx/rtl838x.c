@@ -16,12 +16,12 @@
 #define RTL838X_VLAN_PORT_TAG_STS_CTRL(port) \
 	(RTL838X_VLAN_PORT_TAG_STS_CTRL_BASE + (port << 2))
 
-#define RTL838X_VLAN_PORT_TAG_STS_CTRL_EGR_P_OTAG_KEEP_MASK	GENMASK(11,10)
-#define RTL838X_VLAN_PORT_TAG_STS_CTRL_EGR_P_ITAG_KEEP_MASK	GENMASK(9,8)
-#define RTL838X_VLAN_PORT_TAG_STS_CTRL_IGR_P_OTAG_KEEP_MASK	GENMASK(7,6)
-#define RTL838X_VLAN_PORT_TAG_STS_CTRL_IGR_P_ITAG_KEEP_MASK	GENMASK(5,4)
-#define RTL838X_VLAN_PORT_TAG_STS_CTRL_OTAG_STS_MASK		GENMASK(3,2)
-#define RTL838X_VLAN_PORT_TAG_STS_CTRL_ITAG_STS_MASK		GENMASK(1,0)
+#define RTL838X_VLAN_PORT_TAG_STS_CTRL_EGR_P_OTAG_KEEP_MASK	GENMASK(11, 10)
+#define RTL838X_VLAN_PORT_TAG_STS_CTRL_EGR_P_ITAG_KEEP_MASK	GENMASK(9, 8)
+#define RTL838X_VLAN_PORT_TAG_STS_CTRL_IGR_P_OTAG_KEEP_MASK	GENMASK(7, 6)
+#define RTL838X_VLAN_PORT_TAG_STS_CTRL_IGR_P_ITAG_KEEP_MASK	GENMASK(5, 4)
+#define RTL838X_VLAN_PORT_TAG_STS_CTRL_OTAG_STS_MASK		GENMASK(3, 2)
+#define RTL838X_VLAN_PORT_TAG_STS_CTRL_ITAG_STS_MASK		GENMASK(1, 0)
 
 /* see_dal_maple_acl_log2PhyTmplteField and src/app/diag_v2/src/diag_acl.c */
 /* Definition of the RTL838X-specific template field IDs as used in the PIE */
@@ -91,7 +91,7 @@ static enum template_field_id fixed_templates[N_FIXED_TEMPLATES][N_FIXED_FIELDS]
 	  TEMPLATE_FIELD_ETHERTYPE, TEMPLATE_FIELD_ITAG, TEMPLATE_FIELD_RANGE_CHK
 	}, {
 	  TEMPLATE_FIELD_SIP0, TEMPLATE_FIELD_SIP1, TEMPLATE_FIELD_DIP0,
-	  TEMPLATE_FIELD_DIP1,TEMPLATE_FIELD_IP_TOS_PROTO, TEMPLATE_FIELD_L4_SPORT,
+	  TEMPLATE_FIELD_DIP1, TEMPLATE_FIELD_IP_TOS_PROTO, TEMPLATE_FIELD_L4_SPORT,
 	  TEMPLATE_FIELD_L4_DPORT, TEMPLATE_FIELD_ICMP_IGMP, TEMPLATE_FIELD_ITAG,
 	  TEMPLATE_FIELD_RANGE_CHK, TEMPLATE_FIELD_SPM0, TEMPLATE_FIELD_SPM1
 	}, {
@@ -661,7 +661,7 @@ static void rtl838x_pie_rule_del(struct rtl838x_switch_priv *priv, int index_fro
 {
 	int block_from = index_from / PIE_BLOCK_SIZE;
 	int block_to = index_to / PIE_BLOCK_SIZE;
-	u32 v = (index_from << 1)| (index_to << 12 ) | BIT(0);
+	u32 v = (index_from << 1) | (index_to << 12) | BIT(0);
 	u32 block_state;
 
 	pr_debug("%s: from %d to %d\n", __func__, index_from, index_to);
@@ -1232,7 +1232,7 @@ static void rtl838x_read_pie_action(u32 r[],  struct pie_rule *pr)
 	if (pr->drop)
 		pr_debug("%s: Action Drop: %d", __func__, pr->drop);
 
-	if (pr->fwd_sel){ /* Forwarding action */
+	if (pr->fwd_sel) { /* Forwarding action */
 		pr->fwd_act = *aif >> 13;
 		pr->fwd_data = *aif--;
 		pr->bypass_all = pr->fwd_data & BIT(12);
@@ -1649,7 +1649,7 @@ static void rtl838x_set_distribution_algorithm(int group, int algoidx, u32 algom
 
 static void rtl838x_set_receive_management_action(int port, rma_ctrl_t type, action_type_t action)
 {
-	switch(type) {
+	switch (type) {
 	case BPDU:
 		sw_w32_mask(3 << ((port & 0xf) << 1), (action & 0x3) << ((port & 0xf) << 1),
 			    RTL838X_RMA_BPDU_CTRL + ((port >> 4) << 2));

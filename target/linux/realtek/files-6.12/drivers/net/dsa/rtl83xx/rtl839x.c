@@ -13,12 +13,12 @@
 /* port 0-52 */
 #define RTL839X_VLAN_PORT_TAG_STS_CTRL(port) \
 	(RTL839X_VLAN_PORT_TAG_STS_CTRL_BASE + (port << 2))
-#define RTL839X_VLAN_PORT_TAG_STS_CTRL_OTAG_STS_MASK		GENMASK(7,6)
-#define RTL839X_VLAN_PORT_TAG_STS_CTRL_ITAG_STS_MASK		GENMASK(5,4)
-#define RTL839X_VLAN_PORT_TAG_STS_CTRL_EGR_P_OTAG_KEEP_MASK	GENMASK(3,3)
-#define RTL839X_VLAN_PORT_TAG_STS_CTRL_EGR_P_ITAG_KEEP_MASK	GENMASK(2,2)
-#define RTL839X_VLAN_PORT_TAG_STS_CTRL_IGR_P_OTAG_KEEP_MASK	GENMASK(1,1)
-#define RTL839X_VLAN_PORT_TAG_STS_CTRL_IGR_P_ITAG_KEEP_MASK	GENMASK(0,0)
+#define RTL839X_VLAN_PORT_TAG_STS_CTRL_OTAG_STS_MASK		GENMASK(7, 6)
+#define RTL839X_VLAN_PORT_TAG_STS_CTRL_ITAG_STS_MASK		GENMASK(5, 4)
+#define RTL839X_VLAN_PORT_TAG_STS_CTRL_EGR_P_OTAG_KEEP_MASK	GENMASK(3, 3)
+#define RTL839X_VLAN_PORT_TAG_STS_CTRL_EGR_P_ITAG_KEEP_MASK	GENMASK(2, 2)
+#define RTL839X_VLAN_PORT_TAG_STS_CTRL_IGR_P_OTAG_KEEP_MASK	GENMASK(1, 1)
+#define RTL839X_VLAN_PORT_TAG_STS_CTRL_IGR_P_ITAG_KEEP_MASK	GENMASK(0, 0)
 
 /* Definition of the RTL839X-specific template field IDs as used in the PIE */
 enum template_field_id {
@@ -97,7 +97,7 @@ static enum template_field_id fixed_templates[N_FIXED_TEMPLATES][N_FIXED_FIELDS]
 	  TEMPLATE_FIELD_ETHERTYPE, TEMPLATE_FIELD_SPM2, TEMPLATE_FIELD_SPM3
 	}, {
 	  TEMPLATE_FIELD_SIP0, TEMPLATE_FIELD_SIP1, TEMPLATE_FIELD_DIP0,
-	  TEMPLATE_FIELD_DIP1,TEMPLATE_FIELD_IP_TOS_PROTO, TEMPLATE_FIELD_L4_SPORT,
+	  TEMPLATE_FIELD_DIP1, TEMPLATE_FIELD_IP_TOS_PROTO, TEMPLATE_FIELD_L4_SPORT,
 	  TEMPLATE_FIELD_L4_DPORT, TEMPLATE_FIELD_ICMP_IGMP, TEMPLATE_FIELD_SPM0,
 	  TEMPLATE_FIELD_SPM1, TEMPLATE_FIELD_SPM2, TEMPLATE_FIELD_SPM3
 	}, {
@@ -726,7 +726,7 @@ static void rtl839x_init_eee(struct rtl838x_switch_priv *priv, bool enable)
 	pr_debug("Setting up EEE, state: %d\n", enable);
 
 	/* Set wake timer for TX and pause timer both to 0x21 */
-	sw_w32_mask(0xff << 20| 0xff, 0x21 << 20| 0x21, RTL839X_EEE_TX_TIMER_GELITE_CTRL);
+	sw_w32_mask(0xff << 20 | 0xff, 0x21 << 20 | 0x21, RTL839X_EEE_TX_TIMER_GELITE_CTRL);
 	/* Set pause wake timer for GIGA-EEE to 0x11 */
 	sw_w32_mask(0xff << 20, 0x11 << 20, RTL839X_EEE_TX_TIMER_GIGA_CTRL);
 	/* Set pause wake timer for 10GBit ports to 0x11 */
@@ -750,7 +750,7 @@ static void rtl839x_pie_lookup_enable(struct rtl838x_switch_priv *priv, int inde
 /* Delete a range of Packet Inspection Engine rules */
 static int rtl839x_pie_rule_del(struct rtl838x_switch_priv *priv, int index_from, int index_to)
 {
-	u32 v = (index_from << 1)| (index_to << 13 ) | BIT(0);
+	u32 v = (index_from << 1) | (index_to << 13) | BIT(0);
 
 	pr_debug("%s: from %d to %d\n", __func__, index_from, index_to);
 	mutex_lock(&priv->reg_mutex);
@@ -1618,7 +1618,7 @@ static void rtl839x_set_distribution_algorithm(int group, int algoidx, u32 algom
 
 static void rtl839x_set_receive_management_action(int port, rma_ctrl_t type, action_type_t action)
 {
-	switch(type) {
+	switch (type) {
 	case BPDU:
 		sw_w32_mask(3 << ((port & 0xf) << 1), (action & 0x3) << ((port & 0xf) << 1),
 			    RTL839X_RMA_BPDU_CTRL + ((port >> 4) << 2));

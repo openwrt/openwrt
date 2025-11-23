@@ -599,7 +599,7 @@ static void rtpcs_930x_sds_mode_set(struct rtpcs_ctrl *ctrl, int sds,
 		return;
 	}
 
-	switch(phy_mode) {
+	switch (phy_mode) {
 	case PHY_INTERFACE_MODE_SGMII:
 	case PHY_INTERFACE_MODE_1000BASEX:
 	case PHY_INTERFACE_MODE_2500BASEX:
@@ -639,7 +639,7 @@ static void rtpcs_930x_sds_tx_config(struct rtpcs_ctrl *ctrl, int sds,
 	int post_en = 0x1;
 	int page;
 
-	switch(phy_if) {
+	switch (phy_if) {
 	case PHY_INTERFACE_MODE_1000BASEX:
 	case PHY_INTERFACE_MODE_SGMII:
 		pre_amp = 0x1;
@@ -702,7 +702,7 @@ static void rtpcs_930x_sds_rxcal_dcvs_manual(struct rtpcs_ctrl *ctrl, u32 sds_nu
 					     u32 dcvs_id, bool manual, u32 dvcs_list[])
 {
 	if (manual) {
-		switch(dcvs_id) {
+		switch (dcvs_id) {
 		case 0:
 			rtpcs_sds_write_bits(ctrl, sds_num, 0x2e, 0x1e, 14, 14, 0x1);
 			rtpcs_sds_write_bits(ctrl, sds_num, 0x2f, 0x03,  5,  5, dvcs_list[0]);
@@ -737,7 +737,7 @@ static void rtpcs_930x_sds_rxcal_dcvs_manual(struct rtpcs_ctrl *ctrl, u32 sds_nu
 			break;
 		}
 	} else {
-		switch(dcvs_id) {
+		switch (dcvs_id) {
 		case 0:
 			rtpcs_sds_write_bits(ctrl, sds_num, 0x2e, 0x1e, 14, 14, 0x0);
 			break;
@@ -781,7 +781,7 @@ static void rtpcs_930x_sds_rxcal_dcvs_get(struct rtpcs_ctrl *ctrl, u32 sds_num,
 	/* ##Page0x21, Reg0x06[11 6], REG0_RX_DEBUG_SEL=[1 0 x x x x] */
 	rtpcs_sds_write_bits(ctrl, sds_num, 0x21, 0x06, 11, 6, 0x20);
 
-	switch(dcvs_id) {
+	switch (dcvs_id) {
 	case 0:
 		rtpcs_sds_write_bits(ctrl, sds_num, 0x2f, 0x0c, 5, 0, 0x22);
 		mdelay(1);
@@ -889,20 +889,20 @@ static u32 rtpcs_930x_sds_rxcal_gray_to_binary(u32 gray_code)
 	u32 c[GRAY_BITS];
 	u32 leq_binary = 0;
 
-	for(i = 0; i < GRAY_BITS; i++)
+	for (i = 0; i < GRAY_BITS; i++)
 		g[i] = (gray_code & BIT(i)) >> i;
 
 	m = GRAY_BITS - 1;
 
 	c[m] = g[m];
 
-	for(i = 0; i < m; i++) {
+	for (i = 0; i < m; i++) {
 		c[i] = g[i];
-		for(j  = i + 1; j < GRAY_BITS; j++)
+		for (j  = i + 1; j < GRAY_BITS; j++)
 			c[i] = c[i] ^ g[j];
 	}
 
-	for(i = 0; i < GRAY_BITS; i++)
+	for (i = 0; i < GRAY_BITS; i++)
 		leq_binary += c[i] << i;
 
 	return leq_binary;
@@ -985,7 +985,7 @@ static void rtpcs_930x_sds_rxcal_tap_manual(struct rtpcs_ctrl *ctrl, u32 sds_num
 					    int tap_id, bool manual, u32 tap_list[])
 {
 	if (manual) {
-		switch(tap_id) {
+		switch (tap_id) {
 		case 0:
 			/* ##REG0_LOAD_IN_INIT[0]=1; REG0_TAP0_INIT[5:0]=Tap0_Value */
 			rtpcs_sds_write_bits(ctrl, sds_num, 0x2e, 0x0f, tap_id + 7, tap_id + 7, 0x1);
@@ -1069,7 +1069,7 @@ static void rtpcs_930x_sds_rxcal_tap_get(struct rtpcs_ctrl *ctrl, u32 sds_num,
 		tap_list[1] = tap0_coef_bin;
 
 		tap_manual = !!rtpcs_sds_read_bits(ctrl, sds_num, 0x2e, 0x0f, 7, 7);
-		pr_info("tap0 manual = %u",tap_manual);
+		pr_info("tap0 manual = %u", tap_manual);
 	} else {
 		/* ##Page0x2F, Reg0x0C[5 0], REG0_COEF_SEL=[0 0 0 0 0 1] */
 		rtpcs_sds_write_bits(ctrl, sds_num, 0x2f, 0x0c, 5, 0, tap_id);
@@ -1096,7 +1096,7 @@ static void rtpcs_930x_sds_rxcal_tap_get(struct rtpcs_ctrl *ctrl, u32 sds_num,
 		else
 			pr_info("Tap %u odd sign: +", tap_id);
 
-		pr_info("Tap %u odd coefficient = %u", tap_id,tap_coef_bin_odd);
+		pr_info("Tap %u odd coefficient = %u", tap_id, tap_coef_bin_odd);
 
 		tap_list[0] = tap_sign_out_even;
 		tap_list[1] = tap_coef_bin_even;
@@ -1104,7 +1104,7 @@ static void rtpcs_930x_sds_rxcal_tap_get(struct rtpcs_ctrl *ctrl, u32 sds_num,
 		tap_list[3] = tap_coef_bin_odd;
 
 		tap_manual = rtpcs_sds_read_bits(ctrl, sds_num, 0x2e, 0x0f, tap_id + 7, tap_id + 7);
-		pr_info("tap %u manual = %d",tap_id, tap_manual);
+		pr_info("tap %u manual = %d", tap_id, tap_manual);
 	}
 }
 
@@ -1236,7 +1236,7 @@ static void rtpcs_930x_sds_do_rx_calibration_2_3(struct rtpcs_ctrl *ctrl,
 
 	pr_info("start_1.2.3 Foreground Calibration\n");
 
-	while(1) {
+	while (1) {
 		if (!(sds_num % 2))
 			rtpcs_sds_write(ctrl, sds_num, 0x1f, 0x2, 0x2f);
 		else
@@ -1326,7 +1326,7 @@ static void rtpcs_930x_sds_rxcal_3_2(struct rtpcs_ctrl *ctrl, int sds_num,
 
 	pr_info("start_1.3.2");
 
-	for(i = 0; i < 10; i++) {
+	for (i = 0; i < 10; i++) {
 		sum10 += rtpcs_930x_sds_rxcal_leq_read(ctrl, sds_num);
 		mdelay(10);
 	}
@@ -1362,7 +1362,7 @@ static void rtpcs_930x_sds_rxcal_3_2(struct rtpcs_ctrl *ctrl, int sds_num,
 		}
 	}
 
-	pr_info("Sds:%u LEQ = %u",sds_num, rtpcs_930x_sds_rxcal_leq_read(ctrl, sds_num));
+	pr_info("Sds:%u LEQ = %u", sds_num, rtpcs_930x_sds_rxcal_leq_read(ctrl, sds_num));
 
 	pr_info("end_1.3.2");
 }
@@ -1863,7 +1863,7 @@ static int rtpcs_930x_sds_cmu_band_get(struct rtpcs_ctrl *ctrl, int sds)
 	rtpcs_sds_write_bits(ctrl, sds + 1, page, 0x1c, 15, 15, 1);
 
 	en = rtpcs_sds_read_bits(ctrl, sds, page, 27, 1, 1);
-	if(!en) { /* Auto mode */
+	if (!en) { /* Auto mode */
 		rtpcs_sds_write(ctrl, sds, 0x1f, 0x02, 31);
 
 		cmu_band = rtpcs_sds_read_bits(ctrl, sds, 0x1f, 0x15, 5, 1);
@@ -2244,7 +2244,7 @@ static int rtpcs_931x_sds_link_sts_get(struct rtpcs_ctrl *ctrl, u32 sds)
 {
 	u32 sts, sts1, latch_sts, latch_sts1;
 
-	if (0){
+	if (0) {
 		sts = rtpcs_sds_read_bits(ctrl, sds, 0x41, 29, 8, 0);
 		sts1 = rtpcs_sds_read_bits(ctrl, sds, 0x81, 29, 8, 0);
 		latch_sts = rtpcs_sds_read_bits(ctrl, sds, 0x41, 30, 8, 0);
@@ -2688,7 +2688,7 @@ struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int
 	if (port < 0 || port > ctrl->cfg->cpu_port)
 		return ERR_PTR(-EINVAL);
 
-	if (sds !=-1 && rtpcs_sds_read(ctrl, sds, 0 , 0) < 0)
+	if (sds !=  -1 && rtpcs_sds_read(ctrl, sds, 0, 0) < 0)
 		return ERR_PTR(-EINVAL);
 
 	link = kzalloc(sizeof(*link), GFP_KERNEL);

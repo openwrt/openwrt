@@ -252,7 +252,7 @@ static void rtl821x_phy_setup_package_broadcast(struct phy_device *phydev, bool 
 	/* select page 0x266 */
 	phy_write_paged(phydev, RTL838X_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL821X_PAGE_PORT);
 	/* set phy id and target broadcast bitmap in register 0x16 on page 0x266 */
-	phy_write_paged(phydev, RTL838X_PAGE_RAW, 0x16, (enable?0xff00:0x00) | mac);
+	phy_write_paged(phydev, RTL838X_PAGE_RAW, 0x16, (enable ? 0xff00 : 0x00) | mac);
 	/* return to main page 0 */
 	phy_write_paged(phydev, RTL838X_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL8XXX_PAGE_MAIN);
 	/* write to 0x0 to register 0x1d on main page 0 */

@@ -905,9 +905,9 @@ static void rtl838x_hw_stop(struct rtl838x_eth_priv *priv)
 	if (priv->family_id == RTL8380_FAMILY_ID || priv->family_id == RTL8390_FAMILY_ID)
 		sw_w32(force_mac, priv->r->mac_force_mode_ctrl + priv->cpu_port * 4);
 	else if (priv->family_id == RTL9300_FAMILY_ID)
-		sw_w32_mask(0x3, 0, priv->r->mac_force_mode_ctrl + priv->cpu_port *4);
+		sw_w32_mask(0x3, 0, priv->r->mac_force_mode_ctrl + priv->cpu_port * 4);
 	else if (priv->family_id == RTL9310_FAMILY_ID)
-		sw_w32_mask(BIT(0) | BIT(9), 0, priv->r->mac_force_mode_ctrl + priv->cpu_port *4);
+		sw_w32_mask(BIT(0) | BIT(9), 0, priv->r->mac_force_mode_ctrl + priv->cpu_port * 4);
 	mdelay(100);
 
 	/* Disable all TX/RX interrupts */

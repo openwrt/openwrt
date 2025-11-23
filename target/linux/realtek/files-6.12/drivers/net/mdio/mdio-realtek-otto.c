@@ -716,7 +716,7 @@ static int rtmdio_930x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 
 	do {
 		v = sw_r32(RTMDIO_930X_SMI_ACCESS_PHY_CTRL_1);
-	} while ( v & 0x1);
+	} while (v & 0x1);
 
 	if (v & BIT(25)) {
 		pr_debug("Error reading phy %d, register %d\n", port, reg);
@@ -949,7 +949,7 @@ static int rtmdio_931x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 
 	sw_w32_mask(0xffff, val, RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_3);
 
-	v = reg << 6 | page << 11 ;
+	v = reg << 6 | page << 11;
 	sw_w32(v, RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_0);
 
 	sw_w32(0x1ff, RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_1);
@@ -1441,12 +1441,12 @@ static int rtmdio_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	priv = bus->priv;
-	for (i=0; i < RTMDIO_MAX_PORT; i++) {
+	for (i = 0; i < RTMDIO_MAX_PORT; i++) {
 		priv->page[i] = 0;
 		priv->raw[i] = false;
 	}
 
-	switch(family) {
+	switch (family) {
 	case RTMDIO_838X_FAMILY_ID:
 		bus->name = "rtl838x-eth-mdio";
 		bus->read = rtmdio_read;
@@ -1566,7 +1566,7 @@ static int rtmdio_probe(struct platform_device *pdev)
 		if (pcs_node)
 			of_property_read_u32(pcs_node, "reg", &priv->sds_id[pn]);
 		if (priv->phy_is_internal[pn] && priv->sds_id[pn] >= 0)
-			priv->smi_bus[pn]= -1;
+			priv->smi_bus[pn] = -1;
 		if (priv->sds_id[pn] >= 0)
 			dev_dbg(dev, "PHY %d has SDS %d\n", pn, priv->sds_id[pn]);
 	}

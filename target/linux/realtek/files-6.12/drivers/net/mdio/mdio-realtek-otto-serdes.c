@@ -449,7 +449,7 @@ static int rtsds_probe(struct platform_device *pdev)
 	ctrl->cfg = (const struct rtsds_config *)device_get_match_data(ctrl->dev);
 	ctrl->bus = bus;
 
-	snprintf(bus->id, MII_BUS_ID_SIZE, "realtek-serdes-mdio") ;
+	snprintf(bus->id, MII_BUS_ID_SIZE, "realtek-serdes-mdio");
 	bus->name = "Realtek SerDes MDIO bus";
 	bus->parent = dev;
 	bus->read_c45 = rtsds_read;

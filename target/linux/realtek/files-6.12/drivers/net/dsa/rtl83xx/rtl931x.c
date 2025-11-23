@@ -14,16 +14,16 @@
 /* port 0-56 */
 #define RTL931X_VLAN_PORT_TAG_CTRL(port) \
 	(RTL931X_VLAN_PORT_TAG_CTRL_BASE + (port << 2))
-#define RTL931X_VLAN_PORT_TAG_EGR_OTAG_STS_MASK			GENMASK(13,12)
-#define RTL931X_VLAN_PORT_TAG_EGR_ITAG_STS_MASK			GENMASK(11,10)
-#define RTL931X_VLAN_PORT_TAG_EGR_OTAG_KEEP_MASK		GENMASK(9,9)
-#define RTL931X_VLAN_PORT_TAG_EGR_ITAG_KEEP_MASK		GENMASK(8,8)
-#define RTL931X_VLAN_PORT_TAG_IGR_OTAG_KEEP_MASK		GENMASK(7,7)
-#define RTL931X_VLAN_PORT_TAG_IGR_ITAG_KEEP_MASK		GENMASK(6,6)
-#define RTL931X_VLAN_PORT_TAG_OTPID_IDX_MASK			GENMASK(5,4)
-#define RTL931X_VLAN_PORT_TAG_OTPID_KEEP_MASK			GENMASK(3,3)
-#define RTL931X_VLAN_PORT_TAG_ITPID_IDX_MASK			GENMASK(2,1)
-#define RTL931X_VLAN_PORT_TAG_ITPID_KEEP_MASK			GENMASK(0,0)
+#define RTL931X_VLAN_PORT_TAG_EGR_OTAG_STS_MASK			GENMASK(13, 12)
+#define RTL931X_VLAN_PORT_TAG_EGR_ITAG_STS_MASK			GENMASK(11, 10)
+#define RTL931X_VLAN_PORT_TAG_EGR_OTAG_KEEP_MASK		GENMASK(9, 9)
+#define RTL931X_VLAN_PORT_TAG_EGR_ITAG_KEEP_MASK		GENMASK(8, 8)
+#define RTL931X_VLAN_PORT_TAG_IGR_OTAG_KEEP_MASK		GENMASK(7, 7)
+#define RTL931X_VLAN_PORT_TAG_IGR_ITAG_KEEP_MASK		GENMASK(6, 6)
+#define RTL931X_VLAN_PORT_TAG_OTPID_IDX_MASK			GENMASK(5, 4)
+#define RTL931X_VLAN_PORT_TAG_OTPID_KEEP_MASK			GENMASK(3, 3)
+#define RTL931X_VLAN_PORT_TAG_ITPID_IDX_MASK			GENMASK(2, 1)
+#define RTL931X_VLAN_PORT_TAG_ITPID_KEEP_MASK			GENMASK(0, 0)
 
 /* Definition of the RTL931X-specific template field IDs as used in the PIE */
 enum template_field_id {
@@ -404,7 +404,7 @@ static void rtldsa_931x_set_receive_management_action(int port, rma_ctrl_t type,
 		return;
 	}
 
-	switch(action) {
+	switch (action) {
 	case FORWARD:
 		value = 0;
 		break;
@@ -424,7 +424,7 @@ static void rtldsa_931x_set_receive_management_action(int port, rma_ctrl_t type,
 		return;
 	}
 
-	switch(type) {
+	switch (type) {
 	case BPDU:
 		reg = RTL931X_RMA_BPDU_CTRL + (port / 10) * 4;
 		shift = (port % 10) * 3;
@@ -631,7 +631,7 @@ static void rtl931x_fill_l2_row(u32 r[], struct rtl838x_l2_entry *e)
 
 	r[0] |= e->is_open_flow ? BIT(30) : 0;
 	r[0] |= e->is_pe_forward ? BIT(29) : 0;
-	r[0] |= e->hash_msb ? BIT(28): 0;
+	r[0] |= e->hash_msb ? BIT(28) : 0;
 	r[2] = e->next_hop ? BIT(30) : 0;
 	r[0] |= (e->rvid & 0xfff) << 16;
 
@@ -721,7 +721,7 @@ static u64 rtl931x_read_cam(int idx, struct rtl838x_l2_entry *e)
 	struct table_reg *q = rtl_table_get(RTL9310_TBL_0, 1);
 
 	rtl_table_read(q, idx);
-	for ( int i = 0; i < 4; i++)
+	for (int i = 0; i < 4; i++)
 		r[i] = sw_r32(rtl_table_data(q, i));
 
 	rtl_table_release(q);
@@ -755,7 +755,7 @@ static void rtl931x_write_l2_entry_using_hash(u32 hash, u32 pos, struct rtl838x_
 
 	pr_debug("%s: hash %d, pos %d\n", __func__, hash, pos);
 	pr_debug("%s: index %d -> mac %02x:%02x:%02x:%02x:%02x:%02x\n", __func__, idx,
-		e->mac[0], e->mac[1], e->mac[2], e->mac[3],e->mac[4],e->mac[5]);
+		e->mac[0], e->mac[1], e->mac[2], e->mac[3], e->mac[4], e->mac[5]);
 
 	if (idx < 0x4000)
 		hash_algo_id = sw_r32(RTL931X_L2_CTRL) & BIT(0);
@@ -1370,7 +1370,7 @@ static int rtl931x_pie_rule_add(struct rtl838x_switch_priv *priv, struct pie_rul
 /* Delete a range of Packet Inspection Engine rules */
 static int rtl931x_pie_rule_del(struct rtl838x_switch_priv *priv, int index_from, int index_to)
 {
-	u32 v = (index_from << 1)| (index_to << 13 ) | BIT(0);
+	u32 v = (index_from << 1) | (index_to << 13) | BIT(0);
 
 	pr_debug("%s: from %d to %d\n", __func__, index_from, index_to);
 	mutex_lock(&priv->reg_mutex);
@@ -1487,14 +1487,14 @@ static int rtldsa_931x_vlan_port_fast_age(struct rtl838x_switch_priv *priv, int 
 	val |= BIT(28); /* status - trigger flush */
 	sw_w32(val, RTL931X_L2_TBL_FLUSH_CTRL);
 
-	do { } while (sw_r32(RTL931X_L2_TBL_FLUSH_CTRL) & BIT (28));
+	do { } while (sw_r32(RTL931X_L2_TBL_FLUSH_CTRL) & BIT(28));
 
 	return 0;
 }
 
 static void rtl931x_set_igr_filter(int port, enum igr_filter state)
 {
-	sw_w32_mask(0x3 << ((port & 0xf)<<1), state << ((port & 0xf)<<1),
+	sw_w32_mask(0x3 << ((port & 0xf) << 1), state << ((port & 0xf) << 1),
 		    RTL931X_VLAN_PORT_IGR_FLTR + (((port >> 4) << 2)));
 }
 
