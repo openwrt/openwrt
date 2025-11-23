@@ -1099,7 +1099,7 @@ static void rtl930x_route_read(int idx, struct rtl83xx_route *rt)
 		rt->prefix_len = host_route ? 128 : 0;
 		rt->prefix_len = (rt->prefix_len < 0 && default_route) ? 0 : -1;
 		if (rt->prefix_len < 0)
-			rt->prefix_len = find_last_bit((unsigned long int *)&ip6_m.s6_addr32,
+			rt->prefix_len = find_last_bit((unsigned long *)&ip6_m.s6_addr32,
 							 128);
 		break;
 	case 1: /* IPv4 Multicast route */
