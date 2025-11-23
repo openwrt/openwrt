@@ -1798,7 +1798,8 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	}
 	pr_info("Using MAC %08x%08x\n", sw_r32(priv->r->mac),
 					sw_r32(priv->r->mac + 4));
-	strcpy(dev->name, "eth%d");
+	strscpy(dev->name, "eth%d", sizeof(dev->name));
+
 	priv->pdev = pdev;
 	priv->netdev = dev;
 
