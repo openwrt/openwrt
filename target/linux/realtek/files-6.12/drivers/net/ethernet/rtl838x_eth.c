@@ -352,10 +352,9 @@ static void rtl839x_l2_notification_handler(struct rtl838x_eth_priv *priv)
 		int i;
 
 		w = kzalloc(sizeof(*w), GFP_ATOMIC);
-		if (!w) {
-			pr_err("Out of memory: %s", __func__);
+		if (!w)
 			return;
-		}
+
 		INIT_WORK(&w->work, rtl838x_fdb_sync);
 
 		for (i = 0; i < NOTIFY_EVENTS; i++) {
