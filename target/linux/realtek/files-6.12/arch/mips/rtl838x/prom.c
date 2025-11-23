@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * prom.c
- * Early intialization code for the Realtek RTL838X SoC
+ * Early initialization code for the Realtek RTL838X SoC
  *
  * based on the original BSP by
  * Copyright (C) 2006-2012 Tony Wu (tonywu@realtek.com)
