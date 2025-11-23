@@ -1004,7 +1004,7 @@ static int rtl931x_pie_data_fill(enum template_field_id field_type, struct pie_r
 			*data_m = pr->dip_m;
 		}
 		break;
-		case TEMPLATE_FIELD_DIP1:
+	case TEMPLATE_FIELD_DIP1:
 		if (pr->is_ipv6) {
 			*data = pr->dip6.s6_addr16[6];
 			*data_m = pr->dip6_m.s6_addr16[6];
