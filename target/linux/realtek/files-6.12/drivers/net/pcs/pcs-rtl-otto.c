@@ -2247,6 +2247,7 @@ __always_unused
 static int rtpcs_931x_sds_link_sts_get(struct rtpcs_ctrl *ctrl, u32 sds)
 {
 	u32 sts, sts1, latch_sts, latch_sts1;
+
 	if (0){
 		sts = rtpcs_sds_read_bits(ctrl, sds, 0x41, 29, 8, 0);
 		sts1 = rtpcs_sds_read_bits(ctrl, sds, 0x81, 29, 8, 0);

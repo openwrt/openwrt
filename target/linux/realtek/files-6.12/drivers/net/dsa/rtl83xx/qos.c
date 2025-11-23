@@ -304,6 +304,7 @@ static void rtl839x_setup_prio2queue_matrix(int *min_queues)
 	pr_info("Current Intprio2queue setting: %08x\n", sw_r32(RTL839X_QM_INTPRI2QID_CTRL(0)));
 	for (int i = 0; i < MAX_PRIOS; i++) {
 		int q = min_queues[i];
+
 		sw_w32(i << (q * 3), RTL839X_QM_INTPRI2QID_CTRL(q));
 	}
 }

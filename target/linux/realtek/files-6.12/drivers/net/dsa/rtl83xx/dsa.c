@@ -2230,6 +2230,7 @@ static int rtl83xx_vlan_del(struct dsa_switch *ds, int port,
 	/* VLANs without members are set back (implicitly) to CIST by DSA */
 	if (!info.member_ports) {
 		u16 mst = info.fid;
+
 		info.fid = 0;
 
 		rtldsa_mst_put_slot(priv, mst);
@@ -2763,6 +2764,7 @@ static int rtldsa_port_pre_bridge_flags(struct dsa_switch *ds, int port,
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
 	unsigned long features = BR_ISOLATED;
+
 	pr_debug("%s: %d %lX\n", __func__, port, flags.val);
 	if (priv->r->enable_learning)
 		features |= BR_LEARNING;

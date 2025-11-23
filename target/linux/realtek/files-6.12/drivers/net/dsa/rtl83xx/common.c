@@ -753,6 +753,7 @@ static int rtl83xx_l3_nexthop_update(struct rtl838x_switch_priv *priv,  __be32 i
 			priv->r->pie_rule_add(priv, &r->pr);
 		} else {
 			int pkts = priv->r->packet_cntr_read(r->pr.packet_cntr);
+
 			pr_debug("%s: total packets: %d\n", __func__, pkts);
 
 			priv->r->pie_rule_write(priv, r->pr.id, &r->pr);

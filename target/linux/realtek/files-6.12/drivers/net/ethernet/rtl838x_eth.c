@@ -1103,6 +1103,7 @@ static int rtl838x_eth_tx(struct sk_buff *skb, struct net_device *dev)
 		if (priv->family_id == RTL8380_FAMILY_ID) {
 			for (int i = 0; i < 10; i++) {
 				u32 val = sw_r32(priv->r->dma_if_ctrl);
+
 				if ((val & 0xc) == 0xc)
 					break;
 			}
@@ -1277,6 +1278,7 @@ static int rtl838x_poll_rx(struct napi_struct *napi, int budget)
 
 	while (work_done < budget) {
 		int work = rtl838x_hw_receive(priv->netdev, ring, budget - work_done);
+
 		if (!work)
 			break;
 		work_done += work;

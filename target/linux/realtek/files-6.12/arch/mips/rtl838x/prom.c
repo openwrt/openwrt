@@ -230,6 +230,7 @@ static void __init rtl83xx_set_system_type(void) {
 void __init prom_init(void)
 {
 	uint32_t model = read_model();
+
 	parse_model(model);
 	rtl83xx_set_system_type();
 

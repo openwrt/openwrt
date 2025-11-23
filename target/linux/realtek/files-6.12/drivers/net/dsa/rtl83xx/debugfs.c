@@ -176,6 +176,7 @@ static ssize_t stp_state_write(struct file *filp, const char __user *buffer,
 	struct rtl838x_port *p = filp->private_data;
 	u32 value;
 	size_t res = rtl838x_common_write(buffer, count, ppos, &value);
+
 	if (res < 0)
 		return res;
 
@@ -379,6 +380,7 @@ static ssize_t age_out_write(struct file *filp, const char __user *buffer,
 	struct rtl838x_port *p = filp->private_data;
 	u32 value;
 	size_t res = rtl838x_common_write(buffer, count, ppos, &value);
+
 	if (res < 0)
 		return res;
 
@@ -401,6 +403,7 @@ static ssize_t port_egress_rate_read(struct file *filp, char __user *buffer, siz
 	struct dsa_switch *ds = p->dp->ds;
 	struct rtl838x_switch_priv *priv = ds->priv;
 	int value;
+
 	if (priv->family_id == RTL8380_FAMILY_ID)
 		value = rtl838x_get_egress_rate(priv, p->dp->index);
 	else
@@ -420,6 +423,7 @@ static ssize_t port_egress_rate_write(struct file *filp, const char __user *buff
 	struct rtl838x_switch_priv *priv = ds->priv;
 	u32 value;
 	size_t res = rtl838x_common_write(buffer, count, ppos, &value);
+
 	if (res < 0)
 		return res;
 

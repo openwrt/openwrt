@@ -828,6 +828,7 @@ static void rtl930x_traffic_set(int source, u64 dest_matrix)
 static void rtl930x_traffic_enable(int source, int dest)
 {
 	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 6);
+
 	rtl_table_read(r, source);
 	sw_w32_mask(0, BIT(dest + 3), rtl_table_data(r, 0));
 	rtl_table_write(r, source);
@@ -837,6 +838,7 @@ static void rtl930x_traffic_enable(int source, int dest)
 static void rtl930x_traffic_disable(int source, int dest)
 {
 	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 6);
+
 	rtl_table_read(r, source);
 	sw_w32_mask(BIT(dest + 3), 0, rtl_table_data(r, 0));
 	rtl_table_write(r, source);
@@ -1882,6 +1884,7 @@ static bool rtl930x_pie_templ_has(int t, enum template_field_id field_type)
 {
 	for (int i = 0; i < N_FIXED_FIELDS; i++) {
 		enum template_field_id ft = fixed_templates[t][i];
+
 		if (field_type == ft)
 			return true;
 	}

@@ -1306,6 +1306,7 @@ static bool rtl839x_pie_templ_has(int t, enum template_field_id field_type)
 {
 	for (int i = 0; i < N_FIXED_FIELDS; i++) {
 		enum template_field_id ft = fixed_templates[t][i];
+
 		if (field_type == ft)
 			return true;
 	}

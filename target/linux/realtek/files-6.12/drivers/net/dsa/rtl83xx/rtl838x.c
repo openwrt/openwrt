@@ -1429,6 +1429,7 @@ static int rtl838x_pie_rule_add(struct rtl838x_switch_priv *priv, struct pie_rul
 	for (block = 0; block < priv->n_pie_blocks; block++) {
 		for (j = 0; j < 3; j++) {
 			int t = (sw_r32(RTL838X_ACL_BLK_TMPLTE_CTRL(block)) >> (j * 3)) & 0x7;
+
 			pr_debug("Testing block %d, template %d, template id %d\n", block, j, t);
 			idx = rtl838x_pie_verify_template(priv, pr, t, block);
 			if (idx >= 0)

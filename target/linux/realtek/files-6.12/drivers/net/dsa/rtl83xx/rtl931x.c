@@ -479,6 +479,7 @@ static void rtl931x_traffic_set(int source, u64 dest_matrix)
 static void rtl931x_traffic_enable(int source, int dest)
 {
 	struct table_reg *r = rtl_table_get(RTL9310_TBL_2, 1);
+
 	rtl_table_read(r, source);
 	sw_w32_mask(0, BIT((dest + 7) % 32), rtl_table_data(r, (dest + 7) / 32 ? 0 : 1));
 	rtl_table_write(r, source);
@@ -488,6 +489,7 @@ static void rtl931x_traffic_enable(int source, int dest)
 static void rtl931x_traffic_disable(int source, int dest)
 {
 	struct table_reg *r = rtl_table_get(RTL9310_TBL_2, 1);
+
 	rtl_table_read(r, source);
 	sw_w32_mask(BIT((dest + 7) % 32), 0, rtl_table_data(r, (dest + 7) / 32 ? 0 : 1));
 	rtl_table_write(r, source);
@@ -717,6 +719,7 @@ static u64 rtl931x_read_cam(int idx, struct rtl838x_l2_entry *e)
 {
 	u32 r[4];
 	struct table_reg *q = rtl_table_get(RTL9310_TBL_0, 1);
+
 	rtl_table_read(q, idx);
 	for ( int i = 0; i < 4; i++)
 		r[i] = sw_r32(rtl_table_data(q, i));
@@ -734,6 +737,7 @@ static void rtl931x_write_cam(int idx, struct rtl838x_l2_entry *e)
 {
 	u32 r[4];
 	struct table_reg *q = rtl_table_get(RTL9310_TBL_0, 1);
+
 	rtl931x_fill_l2_row(r, e);
 
 	for (int i = 0; i < 4; i++)
@@ -1259,6 +1263,7 @@ static bool rtl931x_pie_templ_has(int t, enum template_field_id field_type)
 {
 	for (int i = 0; i < N_FIXED_FIELDS_RTL931X; i++) {
 		enum template_field_id ft = fixed_templates[t][i];
+
 		if (field_type == ft)
 			return true;
 	}
@@ -1329,6 +1334,7 @@ static int rtl931x_pie_rule_add(struct rtl838x_switch_priv *priv, struct pie_rul
 	for (block = min_block; block < max_block; block++) {
 		for (j = 0; j < 2; j++) {
 			int t = (sw_r32(RTL931X_PIE_BLK_TMPLTE_CTRL(block)) >> (j * 4)) & 0xf;
+
 			pr_debug("Testing block %d, template %d, template id %d\n", block, j, t);
 			pr_debug("%s: %08x\n",
 				__func__, sw_r32(RTL931X_PIE_BLK_TMPLTE_CTRL(block)));
