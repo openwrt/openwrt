@@ -96,7 +96,6 @@ enum template_field_id {
 #define N_FIXED_TEMPLATES 5
 /* RTL9300 specific predefined templates */
 static enum template_field_id fixed_templates[N_FIXED_TEMPLATES][N_FIXED_FIELDS] = {
-
 	{
 	  TEMPLATE_FIELD_DMAC0, TEMPLATE_FIELD_DMAC1, TEMPLATE_FIELD_DMAC2,
 	  TEMPLATE_FIELD_SMAC0, TEMPLATE_FIELD_SMAC1, TEMPLATE_FIELD_SMAC2,
@@ -1401,7 +1400,6 @@ static void rtl930x_route_write(int idx, struct rtl83xx_route *rt)
 	rtl_table_release(r);
 }
 
-
 /* Get the destination MAC and L3 egress interface ID of a nexthop entry from
  * the SoC's L3_NEXTHOP table
  */
@@ -2052,7 +2050,6 @@ static void rtl930x_pie_init(struct rtl838x_switch_priv *priv)
 	template_selectors = 2 | (3 << 4);
 	for (int i = priv->n_pie_blocks * 3 / 4; i < priv->n_pie_blocks; i++)
 		sw_w32(template_selectors, RTL930X_PIE_BLK_TMPLTE_CTRL(i));
-
 }
 
 #ifdef CONFIG_NET_DSA_RTL83XX_RTL930X_L3_OFFLOAD

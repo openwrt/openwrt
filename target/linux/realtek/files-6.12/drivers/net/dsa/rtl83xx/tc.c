@@ -356,7 +356,6 @@ static int rtl83xx_setup_tc_cls_flower(struct rtl838x_switch_priv *priv,
 	}
 }
 
-
 static int rtl83xx_setup_tc_block_cb(enum tc_setup_type type, void *type_data,
 				     void *cb_priv)
 {

@@ -288,7 +288,6 @@ static void rtl839x_rate_control_init(struct rtl838x_switch_priv *priv)
 }
 
 
-
 static void rtl838x_setup_prio2queue_matrix(int *min_queues)
 {
 	u32 v = 0;

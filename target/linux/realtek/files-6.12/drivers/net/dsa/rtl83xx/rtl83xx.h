@@ -6,7 +6,6 @@
 #include <net/dsa.h>
 #include "rtl838x.h"
 
-
 #define RTL8380_VERSION_A 'A'
 #define RTL8390_VERSION_A 'A'
 #define RTL8380_VERSION_B 'B'

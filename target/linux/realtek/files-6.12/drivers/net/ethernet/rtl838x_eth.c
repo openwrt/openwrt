@@ -1077,7 +1077,6 @@ static int rtl838x_eth_tx(struct sk_buff *skb, struct net_device *dev)
 
 	/* We can send this packet if CPU owns the descriptor */
 	if (!(ring->tx_r[q][ring->c_tx[q]] & 0x1)) {
-
 		/* Set descriptor for tx */
 		h = &ring->tx_header[q][ring->c_tx[q]];
 		h->size = len;

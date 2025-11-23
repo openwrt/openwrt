@@ -626,7 +626,6 @@ static void rtpcs_930x_sds_mode_set(struct rtpcs_ctrl *ctrl, int sds,
 		rtpcs_930x_sds_submode_set(ctrl, sds, submode);
 }
 
-
 static void rtpcs_930x_sds_tx_config(struct rtpcs_ctrl *ctrl, int sds,
 				     phy_interface_t phy_if)
 {
@@ -1444,7 +1443,6 @@ static void rtpcs_930x_sds_do_rx_calibration_5(struct rtpcs_ctrl *ctrl, u32 sds_
 		rtpcs_930x_sds_do_rx_calibration_5_2(ctrl, sds_num);
 }
 
-
 static void rtpcs_930x_sds_do_rx_calibration_dfe_disable(struct rtpcs_ctrl *ctrl, u32 sds_num)
 {
 	u32 tap1_list[4] = {0};
@@ -1964,7 +1962,6 @@ static void rtpcs_931x_sds_disable(struct rtpcs_ctrl *ctrl, u32 sds)
 static void rtpcs_931x_sds_symerr_clear(struct rtpcs_ctrl *ctrl, u32 sds,
 					phy_interface_t mode)
 {
-
 	switch (mode) {
 	case PHY_INTERFACE_MODE_NA:
 		break;
@@ -2026,7 +2023,6 @@ static void rtpcs_931x_sds_fiber_mode_set(struct rtpcs_ctrl *ctrl, u32 sds,
 /*	case MII_10GR1000BX_AUTO:
 		val = 0x39;
 		break; */
-
 
 	case PHY_INTERFACE_MODE_USXGMII:
 		val = 0x1B;
@@ -2390,7 +2386,6 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_ctrl *ctrl, int sds,
 
 			rtpcs_sds_write_bits(ctrl, sds, 0x81, 0x1, 7, 4, 0xf);
 			rtpcs_sds_write_bits(ctrl, sds, 0x81, 0x1, 3, 0, 0xf);
-
 		}
 
 		rtpcs_sds_write_bits(ctrl, sds, 0x40, 0xE, 12, 12, 1);
@@ -2422,7 +2417,6 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_ctrl *ctrl, int sds,
 
 			rtpcs_sds_write_bits(ctrl, sds, 0x6, 0x2, 12, 12, 0);
 		} else {
-
 			rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0xd, 6, 0, 0x0);
 			rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0xd, 7, 7, 0x1);
 

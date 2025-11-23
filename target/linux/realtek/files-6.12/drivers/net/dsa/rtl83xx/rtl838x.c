@@ -83,7 +83,6 @@ enum template_field_id {
  */
 #define N_FIXED_TEMPLATES 5
 static enum template_field_id fixed_templates[N_FIXED_TEMPLATES][N_FIXED_FIELDS] = {
-
 	{
 	  TEMPLATE_FIELD_SPM0, TEMPLATE_FIELD_SPM1, TEMPLATE_FIELD_OTAG,
 	  TEMPLATE_FIELD_SMAC0, TEMPLATE_FIELD_SMAC1, TEMPLATE_FIELD_SMAC2,
@@ -548,12 +547,10 @@ static void rtl838x_enable_flood(int port, bool enable)
 
 static void rtl838x_enable_mcast_flood(int port, bool enable)
 {
-
 }
 
 static void rtl838x_enable_bcast_flood(int port, bool enable)
 {
-
 }
 
 static void rtl838x_set_static_move_action(int port, bool forward)

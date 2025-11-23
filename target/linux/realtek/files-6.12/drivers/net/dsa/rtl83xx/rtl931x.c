@@ -82,7 +82,6 @@ enum template_field_id {
 #define N_FIXED_TEMPLATES 5
 /* RTL931x specific predefined templates */
 static enum template_field_id fixed_templates[N_FIXED_TEMPLATES][N_FIXED_FIELDS_RTL931X] = {
-
 	{
 		TEMPLATE_FIELD_DMAC0, TEMPLATE_FIELD_DMAC1, TEMPLATE_FIELD_DMAC2,
 		TEMPLATE_FIELD_SMAC0, TEMPLATE_FIELD_SMAC1, TEMPLATE_FIELD_SMAC2,
@@ -878,7 +877,6 @@ static void rtl931x_write_mcast_pmask(int idx, u64 portmask)
 	rtl_table_release(q);
 }
 
-
 static int rtl931x_set_ageing_time(unsigned long msec)
 {
 	int t = sw_r32(RTL931X_L2_AGE_CTRL);
@@ -1446,7 +1444,6 @@ static void rtl931x_pie_init(struct rtl838x_switch_priv *priv)
 	template_selectors = 2 | (3 << 4);
 	for (int i = priv->n_pie_blocks * 3 / 4; i < priv->n_pie_blocks; i++)
 		sw_w32(template_selectors, RTL931X_PIE_BLK_TMPLTE_CTRL(i));
-
 }
 
 static void rtl931x_vlan_port_keep_tag_set(int port, bool keep_outer, bool keep_inner)

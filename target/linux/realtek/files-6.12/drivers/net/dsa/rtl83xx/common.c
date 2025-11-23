@@ -871,7 +871,6 @@ out_free:
 	return NULL;
 }
 
-
 static struct rtl83xx_route *rtl83xx_host_route_alloc(struct rtl838x_switch_priv *priv, u32 ip)
 {
 	struct rtl83xx_route *r;
@@ -1692,7 +1691,6 @@ static const struct of_device_id rtl83xx_switch_of_ids[] = {
 	{ .compatible = "realtek,rtl83xx-switch"},
 	{ /* sentinel */ }
 };
-
 
 MODULE_DEVICE_TABLE(of, rtl83xx_switch_of_ids);
 

@@ -421,9 +421,7 @@ const struct rtldsa_mib_desc rtldsa_931x_mib = {
 	.list = rtldsa_931x_mib_list
 };
 
-
 /* DSA callbacks */
-
 
 static enum dsa_tag_protocol rtl83xx_get_tag_protocol(struct dsa_switch *ds,
 						      int port,
@@ -1291,7 +1289,6 @@ static int rtldsa_get_sset_count(struct dsa_switch *ds, int port, int sset)
 	return mib_desc->list_count;
 }
 
-
 static void rtldsa_get_eth_phy_stats(struct dsa_switch *ds, int port,
 				     struct ethtool_eth_phy_stats *phy_stats)
 {
@@ -1413,7 +1410,6 @@ static void rtldsa_get_rmon_stats(struct dsa_switch *ds, int port,
 
 		rmon_stats->hist[i] = counters->rx_pkts[i].val;
 	}
-
 
 	for (int i = 0; i < ARRAY_SIZE(mib_desc->tx_pkts); i++) {
 		if (mib_desc->tx_pkts[i].reg == MIB_REG_INVALID)

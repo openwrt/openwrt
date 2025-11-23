@@ -89,7 +89,6 @@ enum template_field_id {
 /* Number of fixed templates predefined in the SoC */
 #define N_FIXED_TEMPLATES 5
 static enum template_field_id fixed_templates[N_FIXED_TEMPLATES][N_FIXED_FIELDS] = {
-
 	{
 	  TEMPLATE_FIELD_SPM0, TEMPLATE_FIELD_SPM1, TEMPLATE_FIELD_ITAG,
 	  TEMPLATE_FIELD_SMAC0, TEMPLATE_FIELD_SMAC1, TEMPLATE_FIELD_SMAC2,
@@ -586,12 +585,10 @@ static void rtl839x_enable_flood(int port, bool enable)
 
 static void rtl839x_enable_mcast_flood(int port, bool enable)
 {
-
 }
 
 static void rtl839x_enable_bcast_flood(int port, bool enable)
 {
-
 }
 
 static void rtl839x_set_static_move_action(int port, bool forward)

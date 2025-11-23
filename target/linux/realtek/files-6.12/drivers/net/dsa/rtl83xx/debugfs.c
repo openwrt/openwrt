@@ -442,7 +442,6 @@ static const struct file_operations port_egress_fops = {
 	.write = port_egress_rate_write,
 };
 
-
 static const struct debugfs_reg32 port_ctrl_regs[] = {
 	{ .name = "port_isolation", .offset = RTL838X_PORT_ISO_CTRL(0), },
 	{ .name = "mac_force_mode", .offset = RTL838X_MAC_FORCE_MODE_CTRL, },
