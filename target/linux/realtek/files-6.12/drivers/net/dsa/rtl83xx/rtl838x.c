@@ -1808,9 +1808,8 @@ void rtl838x_vlan_profile_dump(int profile)
 
 	p = sw_r32(RTL838X_VLAN_PROFILE(profile));
 
-	pr_debug("VLAN profile %d: L2 learning: %d, UNKN L2MC FLD PMSK %d, \
-		UNKN IPMC FLD PMSK %d, UNKN IPv6MC FLD PMSK: %d",
-		profile, p & 1, (p >> 1) & 0x1ff, (p >> 10) & 0x1ff, (p >> 19) & 0x1ff);
+	pr_debug("VLAN profile %d: L2 learning: %d, UNKN L2MC FLD PMSK %d, UNKN IPMC FLD PMSK %d, UNKN IPv6MC FLD PMSK: %d\n",
+		 profile, p & 1, (p >> 1) & 0x1ff, (p >> 10) & 0x1ff, (p >> 19) & 0x1ff);
 }
 
 void rtl8380_sds_rst(int mac)

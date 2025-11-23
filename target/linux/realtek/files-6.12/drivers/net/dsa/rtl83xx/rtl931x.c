@@ -148,9 +148,8 @@ static void rtl931x_vlan_profile_dump(int index)
 	profile[3] = (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 20) & 0x1FFFFFFFULL) << 32 |
 		     (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 24) & 0xFFFFFFFF);
 
-	pr_debug("VLAN %d: L2 learning: %d, L2 Unknown MultiCast Field %llx, \
-		IPv4 Unknown MultiCast Field %llx, IPv6 Unknown MultiCast Field: %llx",
-		index, (u32) (profile[0] & (3 << 14)), profile[1], profile[2], profile[3]);
+	pr_debug("VLAN %d: L2 learning: %d, L2 Unknown MultiCast Field %llx, IPv4 Unknown MultiCast Field %llx, IPv6 Unknown MultiCast Field: %llx\n",
+		 index, (u32) (profile[0] & (3 << 14)), profile[1], profile[2], profile[3]);
 }
 
 static void rtl931x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])

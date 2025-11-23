@@ -669,10 +669,9 @@ void rtl839x_vlan_profile_dump(int profile)
 	p[0] = sw_r32(RTL839X_VLAN_PROFILE(profile));
 	p[1] = sw_r32(RTL839X_VLAN_PROFILE(profile) + 4);
 
-	pr_debug("VLAN profile %d: L2 learning: %d, UNKN L2MC FLD PMSK %d, \
-		UNKN IPMC FLD PMSK %d, UNKN IPv6MC FLD PMSK: %d",
-		profile, p[1] & 1, (p[1] >> 1) & 0xfff, (p[1] >> 13) & 0xfff,
-		(p[0]) & 0xfff);
+	pr_debug("VLAN profile %d: L2 learning: %d, UNKN L2MC FLD PMSK %d, UNKN IPMC FLD PMSK %d, UNKN IPv6MC FLD PMSK: %d\n",
+		 profile, p[1] & 1, (p[1] >> 1) & 0xfff, (p[1] >> 13) & 0xfff,
+		 (p[0]) & 0xfff);
 	pr_debug("VLAN profile %d: raw %08x, %08x\n", profile, p[0], p[1]);
 }
 
