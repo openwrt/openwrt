@@ -1271,7 +1271,7 @@ static bool rtl931x_pie_templ_has(int t, enum template_field_id field_type)
 	return false;
 }
 
-/* Verify that the rule pr is compatible with a given template t in block block
+/* Verify that the rule pr is compatible with a given template t in block
  * Note that this function is SoC specific since the values of e.g. TEMPLATE_FIELD_SIP0
  * depend on the SoC
  */

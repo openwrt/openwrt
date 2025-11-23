@@ -1624,7 +1624,7 @@ static int __init rtl83xx_sw_probe(struct platform_device *pdev)
 	priv->fib_nb.notifier_call = rtl83xx_fib_event;
 
 	/* Register Forwarding Information Base notifier to offload routes where
-	 * where possible
+	 * possible
 	 * Only FIBs pointing to our own netdevs are programmed into
 	 * the device, so no need to pass a callback.
 	 */
