@@ -1,3 +1,44 @@
+From libressl  Sat Nov 22 17:17:06 2025
+From: Rosen Penev <rosenp () gmail ! com>
+Date: Sat, 22 Nov 2025 17:17:06 +0000
+To: libressl
+Subject: [PATCH] fix name collision when built as static
+Message-Id: <20251122171715.13972-1-rosenp () gmail ! com>
+X-MARC-Message: https://marc.info/?l=libressl&m=176383114121818
+
+Some projects such as UBoot use ecdsa_verify and ecdsa_sign as names for
+their own functions which clash with the LibreSSL ones when linking
+statically.
+
+Strictly speaking, these functions were prefixed with openssl_ back in
+the day. Use a libressl_ prefix to prevent linking errors.
+---
+ crypto/ec/ec_key.c         | 10 +++++-----
+ crypto/ec/ec_local.h       |  4 ++--
+ crypto/ecdsa/ecdsa.c       | 10 +++++-----
+ crypto/ecdsa/ecdsa_local.h |  6 +++---
+ 4 files changed, 15 insertions(+), 15 deletions(-)
+
+--- a/crypto/ec/ec_key.c
++++ b/crypto/ec/ec_key.c
+@@ -774,12 +774,12 @@ static const EC_KEY_METHOD openssl_ec_ke
+ 	.keygen = ec_key_gen,
+ 	.compute_key = ecdh_compute_key,
+ 
+-	.sign = ecdsa_sign,
+-	.sign_setup = ecdsa_sign_setup,
+-	.sign_sig = ecdsa_sign_sig,
++	.sign = libressl_ecdsa_sign,
++	.sign_setup = libressl_ecdsa_sign_setup,
++	.sign_sig = libress_ecdsa_sign_sig,
+ 
+-	.verify = ecdsa_verify,
+-	.verify_sig = ecdsa_verify_sig,
++	.verify = libressl_ecdsa_verify,
++	.verify_sig = libressl_ecdsa_verify_sig,
+ };
+ 
+ const EC_KEY_METHOD *
 --- a/crypto/ec/ec_local.h
 +++ b/crypto/ec/ec_local.h
 @@ -253,9 +253,9 @@ struct ec_key_st {
@@ -77,23 +118,3 @@
      const BIGNUM *in_kinv, const BIGNUM *in_r, EC_KEY *eckey);
  
  __END_HIDDEN_DECLS
---- a/crypto/ec/ec_key.c
-+++ b/crypto/ec/ec_key.c
-@@ -774,12 +774,12 @@ static const EC_KEY_METHOD openssl_ec_ke
- 	.keygen = ec_key_gen,
- 	.compute_key = ecdh_compute_key,
- 
--	.sign = ecdsa_sign,
--	.sign_setup = ecdsa_sign_setup,
--	.sign_sig = ecdsa_sign_sig,
-+	.sign = libressl_ecdsa_sign,
-+	.sign_setup = libressl_ecdsa_sign_setup,
-+	.sign_sig = libressl_ecdsa_sign_sig,
- 
--	.verify = ecdsa_verify,
--	.verify_sig = ecdsa_verify_sig,
-+	.verify = libressl_ecdsa_verify,
-+	.verify_sig = libressl_ecdsa_verify_sig,
- };
- 
- const EC_KEY_METHOD *
