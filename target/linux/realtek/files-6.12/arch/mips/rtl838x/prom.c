@@ -212,7 +212,8 @@ static void __init parse_model(uint32_t model)
 	soc_info.name = soc_name;
 }
 
-static void __init rtl83xx_set_system_type(void) {
+static void __init rtl83xx_set_system_type(void)
+{
 	char revision = '?';
 	char *es = "";
 
