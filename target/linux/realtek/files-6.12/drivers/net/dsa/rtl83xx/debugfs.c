@@ -205,22 +205,26 @@ static ssize_t drop_counter_read(struct file *filp, char __user *buffer, size_t 
 	case RTL8380_FAMILY_ID:
 		d = rtl838x_drop_cntr;
 		offset = RTL838X_STAT_PRVTE_DROP_COUNTERS;
-		num = 40;
+		num = ARRAY_SIZE(rtl838x_drop_cntr);
+		BUILD_BUG_ON(num != 40);
 		break;
 	case RTL8390_FAMILY_ID:
 		d = rtl839x_drop_cntr;
 		offset = RTL839X_STAT_PRVTE_DROP_COUNTERS;
-		num = 45;
+		num = ARRAY_SIZE(rtl839x_drop_cntr);
+		BUILD_BUG_ON(num != 45);
 		break;
 	case RTL9300_FAMILY_ID:
 		d = rtl930x_drop_cntr;
 		offset = RTL930X_STAT_PRVTE_DROP_COUNTERS;
-		num = 85;
+		num = ARRAY_SIZE(rtl930x_drop_cntr);
+		BUILD_BUG_ON(num != 85);
 		break;
 	case RTL9310_FAMILY_ID:
 		d = rtl931x_drop_cntr;
 		offset = RTL931X_STAT_PRVTE_DROP_COUNTERS;
-		num = 81;
+		num = ARRAY_SIZE(rtl931x_drop_cntr);
+		BUILD_BUG_ON(num != 81);
 		break;
 	}
 
