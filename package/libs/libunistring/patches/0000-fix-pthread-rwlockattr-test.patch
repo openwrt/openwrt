@@ -1,0 +1,20 @@
+--- a/tests/pthread-rwlock.c
++++ b/tests/pthread-rwlock.c
+@@ -49,7 +49,7 @@ pthread_rwlockattr_destroy (_GL_UNUSED p
+   return 0;
+ }
+ 
+-#elif PTHREAD_RWLOCK_BAD_WAITQUEUE
++#elif 0
+ 
+ /* Override pthread_rwlockattr_init, to use the kind PREFER_WRITER_NONRECURSIVE
+    (or possibly PREFER_WRITER) instead of the kind DEFAULT.  */
+@@ -388,7 +388,7 @@ pthread_rwlock_destroy (pthread_rwlock_t
+ 
+ # else
+ 
+-#  if PTHREAD_RWLOCK_BAD_WAITQUEUE
++#  if 0
+ 
+ /* Override pthread_rwlock_init, to use the kind PREFER_WRITER_NONRECURSIVE
+    (or possibly PREFER_WRITER) instead of the default, when no
