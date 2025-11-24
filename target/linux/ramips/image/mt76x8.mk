@@ -752,6 +752,23 @@ define Device/teltonika_rut9x6
 endef
 TARGET_DEVICES += teltonika_rut9x6
 
+define Device/teltonika_rut976
+  DEVICE_VENDOR := Teltonika
+  DEVICE_MODEL := RUT976
+  SUPPORTED_TELTONIKA_DEVICES := teltonika,rut976
+  SUPPORTED_TELTONIKA_HW_MODS := 2c7c_6005 TLA2021 CH343 esim ala440
+  IMAGE_SIZE := 31552k
+  BLOCKSIZE := 64k
+  DEVICE_PACKAGES := uqmi kmod-mt76x2 kmod-usb2 kmod-usb-ohci \
+	kmod-usb-serial-option kmod-spi-gpio kmod-gpio-nxp-74hc164 kmod-i2c-mt7628 \
+	kmod-hwmon-mcp3021 kmod-scsi-core kmod-usb-storage kmod-usb-acm kmod-usb-net-cdc-ether
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | check-size | append-teltonika-metadata
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-metadata
+endef
+TARGET_DEVICES += teltonika_rut976
+
 define Device/totolink_a3
   IMAGE_SIZE := 7936k
   UIMAGE_NAME := za3
