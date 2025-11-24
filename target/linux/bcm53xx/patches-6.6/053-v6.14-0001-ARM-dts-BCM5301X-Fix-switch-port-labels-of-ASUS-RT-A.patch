@@ -1,0 +1,48 @@
+From 56e12d0c8d395b6e48f128858d4f725c1ded6c95 Mon Sep 17 00:00:00 2001
+From: "Chester A. Unal" <chester.a.unal@arinc9.com>
+Date: Mon, 3 Mar 2025 13:06:50 +0000
+Subject: [PATCH 1/2] ARM: dts: BCM5301X: Fix switch port labels of ASUS
+ RT-AC5300
+
+After using the device for a while, Tom reports that he initially described
+the switch port labels incorrectly. Correct them.
+
+Reported-by: Tom Brautaset <tbrautaset@gmail.com>
+Fixes: 961dedc6b4e4 ("ARM: dts: BCM5301X: Add DT for ASUS RT-AC5300")
+Signed-off-by: Chester A. Unal <chester.a.unal@arinc9.com>
+Link: https://lore.kernel.org/r/20250303-for-broadcom-fix-rt-ac5300-switch-ports-v1-1-e058856ef4d3@arinc9.com
+Signed-off-by: Florian Fainelli <florian.fainelli@broadcom.com>
+---
+ arch/arm/boot/dts/broadcom/bcm47094-asus-rt-ac5300.dts | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/arch/arm/boot/dts/broadcom/bcm47094-asus-rt-ac5300.dts
++++ b/arch/arm/boot/dts/broadcom/bcm47094-asus-rt-ac5300.dts
+@@ -126,11 +126,11 @@
+ 
+ 	ports {
+ 		port@0 {
+-			label = "lan4";
++			label = "wan";
+ 		};
+ 
+ 		port@1 {
+-			label = "lan3";
++			label = "lan1";
+ 		};
+ 
+ 		port@2 {
+@@ -138,11 +138,11 @@
+ 		};
+ 
+ 		port@3 {
+-			label = "lan1";
++			label = "lan3";
+ 		};
+ 
+ 		port@4 {
+-			label = "wan";
++			label = "lan4";
+ 		};
+ 	};
+ };
