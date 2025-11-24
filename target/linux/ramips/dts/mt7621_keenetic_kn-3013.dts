@@ -3,6 +3,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "keenetic,kn-3013", "mediatek,mt7621-soc";
@@ -23,24 +24,28 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led_power: power {
-			label = "green:power";
+		led_power: led-0 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 45 GPIO_ACTIVE_HIGH>;
 		};
 
-		internet {
-			label = "green:internet";
+		led-1 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN;
 			gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
 		};
 
-		wifi2 {
-			label = "green:wifi2";
+		led-2 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_2GHZ;
 			gpios = <&gpio 47 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
 
-		wifi5 {
-			label = "green:wifi5";
+		led-3 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_5GHZ;
 			gpios = <&gpio 48 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy1tpt";
 		};
@@ -178,12 +183,6 @@
 	};
 };
 
-&mdio {
-	ethphy0: ethernet-phy@0 {
-		reg = <0>;
-	};
-};
-
 &gmac0 {
 	nvmem-cells = <&macaddr_factory_4 0>;
 	nvmem-cell-names = "mac-address";
@@ -192,7 +191,7 @@
 &gmac1 {
 	status = "okay";
 	label = "wan";
-	phy-handle = <&ethphy0>;
+	phy-handle = <&ethphy4>;
 
 	nvmem-cells = <&macaddr_factory_28>;
 	nvmem-cell-names = "mac-address";
@@ -200,24 +199,31 @@
 
 &switch0 {
 	ports {
-		port@1 {
+		port@0 {
 			status = "okay";
 			label = "lan1";
 		};
 
-		port@2 {
+		port@1 {
 			status = "okay";
 			label = "lan2";
 		};
 
-		port@3 {
+		port@2 {
 			status = "okay";
 			label = "lan3";
 		};
 
-		port@4 {
+		port@3 {
 			status = "okay";
 			label = "lan4";
+		};
+
+		port@4 {
+			status = "okay";
+			label = "wan";
+			nvmem-cells = <&macaddr_factory_28>;
+			nvmem-cell-names = "mac-address";
 		};
 	};
 };
@@ -249,4 +255,3 @@
 &xhci {
 	status = "disabled";
 };
-

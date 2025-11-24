@@ -2012,7 +2012,7 @@ define Device/keenetic_kn-3013
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt7663-firmware-ap -uboot-envtools
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
-	check-size
+	check-size | zyimage -d 0x803013 -v "KN-3013"
 endef
 TARGET_DEVICES += keenetic_kn-3013
 
