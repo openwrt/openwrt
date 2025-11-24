@@ -132,7 +132,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
  	return 0;
 --- a/drivers/net/phy/mdio_bus.c
 +++ b/drivers/net/phy/mdio_bus.c
-@@ -612,7 +612,7 @@ static int mdiobus_scan_bus_c22(struct m
+@@ -615,7 +615,7 @@ static int mdiobus_scan_bus_c22(struct m
  	int i;
  
  	for (i = 0; i < PHY_MAX_ADDR; i++) {
@@ -141,7 +141,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
  			struct phy_device *phydev;
  
  			phydev = mdiobus_scan_c22(bus, i);
-@@ -628,7 +628,7 @@ static int mdiobus_scan_bus_c45(struct m
+@@ -631,7 +631,7 @@ static int mdiobus_scan_bus_c45(struct m
  	int i;
  
  	for (i = 0; i < PHY_MAX_ADDR; i++) {
