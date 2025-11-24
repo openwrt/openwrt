@@ -25,7 +25,7 @@
 #define RTMDIO_931X_FAMILY_ID			0x9310
 
 /* Register base */
-#define RTMDIO_SW_BASE         			((volatile void *) 0xBB000000)
+#define RTMDIO_SW_BASE				((volatile void *) 0xBB000000)
 
 /* MDIO bus registers */
 #define RTMDIO_838X_SMI_GLB_CTRL		(0xa100)
@@ -85,8 +85,8 @@
 #define RTMDIO_839X_MODEL_NAME_INFO_REG		(0x0ff0)
 #define RTMDIO_93XX_MODEL_NAME_INFO_REG		(0x0004)
 
-#define sw_r32(reg)             		readl(RTMDIO_SW_BASE + reg)
-#define sw_w32(val, reg)        		writel(val, RTMDIO_SW_BASE + reg)
+#define sw_r32(reg)				readl(RTMDIO_SW_BASE + reg)
+#define sw_w32(val, reg)			writel(val, RTMDIO_SW_BASE + reg)
 #define sw_w32_mask(clear, set, reg)		sw_w32((sw_r32(reg) & ~(clear)) | (set), reg)
 
 int rtmdio_930x_read_sds_phy(int sds, int page, int regnum);
@@ -624,8 +624,8 @@ errout:
 
 int rtmdio_930x_read_sds_phy(int sds, int page, int regnum)
 {
-        int i, ret = -EIO;
-        u32 cmd;
+	int i, ret = -EIO;
+	u32 cmd;
 
 	if (sds < 0 || sds > 11 || page < 0 || page > 63 || regnum < 0 || regnum > 31)
 		return -EIO;
@@ -641,7 +641,7 @@ int rtmdio_930x_read_sds_phy(int sds, int page, int regnum)
 		mdelay(1);
 	}
 
-        if (i < 100)
+	if (i < 100)
 		ret = sw_r32(RTMDIO_930X_SDS_INDACS_DATA) & 0xffff;
 
 	mutex_unlock(&rtmdio_lock_sds);

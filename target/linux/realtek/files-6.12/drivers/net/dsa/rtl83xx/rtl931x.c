@@ -144,11 +144,11 @@ static void rtl931x_vlan_profile_dump(int index)
 
 	profile[0] = sw_r32(RTL931X_VLAN_PROFILE_SET(index));
 	profile[1] = (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 4) & 0x1FFFFFFFULL) << 32 |
-	             (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 8) & 0xFFFFFFFF);
+		     (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 8) & 0xFFFFFFFF);
 	profile[2] = (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 16) & 0x1FFFFFFFULL) << 32 |
-	             (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 12) & 0xFFFFFFFF);
+		     (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 12) & 0xFFFFFFFF);
 	profile[3] = (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 20) & 0x1FFFFFFFULL) << 32 |
-	             (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 24) & 0xFFFFFFFF);
+		     (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 24) & 0xFFFFFFFF);
 
 	pr_debug("VLAN %d: L2 learning: %d, L2 Unknown MultiCast Field %llx, \
 		IPv4 Unknown MultiCast Field %llx, IPv6 Unknown MultiCast Field: %llx",
@@ -158,9 +158,9 @@ static void rtl931x_vlan_profile_dump(int index)
 static void rtl931x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
 {
 	u32 cmd = 1 << 20 | /* Execute cmd */
-	          0 << 19 | /* Read */
-	          5 << 15 | /* Table type 0b101 */
-	          (msti & 0x3fff);
+		  0 << 19 | /* Read */
+		  5 << 15 | /* Table type 0b101 */
+		  (msti & 0x3fff);
 	priv->r->exec_tbl0_cmd(cmd);
 
 	for (int i = 0; i < 4; i++)
@@ -170,9 +170,9 @@ static void rtl931x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port
 static void rtl931x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
 {
 	u32 cmd = 1 << 20 | /* Execute cmd */
-	          1 << 19 | /* Write */
-	          5 << 15 | /* Table type 0b101 */
-	          (msti & 0x3fff);
+		  1 << 19 | /* Write */
+		  5 << 15 | /* Table type 0b101 */
+		  (msti & 0x3fff);
 	for (int i = 0; i < 4; i++)
 		sw_w32(port_state[i], priv->r->tbl_access_data_0(i));
 	priv->r->exec_tbl0_cmd(cmd);

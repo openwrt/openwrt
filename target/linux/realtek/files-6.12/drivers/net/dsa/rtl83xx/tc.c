@@ -335,7 +335,7 @@ static int rtl83xx_stats_flower(struct rtl838x_switch_priv *priv,
 
 	/* TODO: We need a second PIE rule to count the bytes */
 	flow_stats_update(&cls_flower->stats, 100 * new_packets, new_packets, 0, lastused,
-	                  FLOW_ACTION_HW_STATS_IMMEDIATE);
+			  FLOW_ACTION_HW_STATS_IMMEDIATE);
 
 	return 0;
 }

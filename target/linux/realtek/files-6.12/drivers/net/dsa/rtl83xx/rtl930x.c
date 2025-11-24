@@ -404,9 +404,9 @@ static void rtldsa_930x_enable_flood(int port, bool enable)
 static void rtl930x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
 {
 	u32 cmd = 1 << 17 | /* Execute cmd */
-	          0 << 16 | /* Read */
-	          4 << 12 | /* Table type 0b10 */
-	          (msti & 0xfff);
+		  0 << 16 | /* Read */
+		  4 << 12 | /* Table type 0b10 */
+		  (msti & 0xfff);
 	priv->r->exec_tbl0_cmd(cmd);
 
 	for (int i = 0; i < 2; i++)
@@ -417,9 +417,9 @@ static void rtl930x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port
 static void rtl930x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
 {
 	u32 cmd = 1 << 17 | /* Execute cmd */
-	          1 << 16 | /* Write */
-	          4 << 12 | /* Table type 4 */
-	          (msti & 0xfff);
+		  1 << 16 | /* Write */
+		  4 << 12 | /* Table type 4 */
+		  (msti & 0xfff);
 
 	for (int i = 0; i < 2; i++)
 		sw_w32(port_state[i], RTL930X_TBL_ACCESS_DATA_0(i));
@@ -455,12 +455,12 @@ static u32 rtl930x_l2_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
 {
 	u32 k0, k1, h1, h2, h;
 
-	k0 = (u32) (((seed >> 55) & 0x1f) ^
-	           ((seed >> 44) & 0x7ff) ^
-	           ((seed >> 33) & 0x7ff) ^
-	           ((seed >> 22) & 0x7ff) ^
-	           ((seed >> 11) & 0x7ff) ^
-	           (seed & 0x7ff));
+	k0 = (u32)(((seed >> 55) & 0x1f) ^
+		   ((seed >> 44) & 0x7ff) ^
+		   ((seed >> 33) & 0x7ff) ^
+		   ((seed >> 22) & 0x7ff) ^
+		   ((seed >> 11) & 0x7ff) ^
+		   (seed & 0x7ff));
 
 	h1 = (seed >> 11) & 0x7ff;
 	h1 = ((h1 & 0x1f) << 6) | ((h1 >> 5) & 0x3f);
@@ -468,12 +468,12 @@ static u32 rtl930x_l2_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
 	h2 = (seed >> 33) & 0x7ff;
 	h2 = ((h2 & 0x3f) << 5)| ((h2 >> 6) & 0x3f);
 
-	k1 = (u32) (((seed << 55) & 0x1f) ^
-	           ((seed >> 44) & 0x7ff) ^
-	           h2 ^
-	           ((seed >> 22) & 0x7ff) ^
-	           h1 ^
-	           (seed & 0x7ff));
+	k1 = (u32)(((seed << 55) & 0x1f) ^
+		   ((seed >> 44) & 0x7ff) ^
+		   h2 ^
+		   ((seed >> 22) & 0x7ff) ^
+		   h1 ^
+		   (seed & 0x7ff));
 
 	/* Algorithm choice for block 0 */
 	if (sw_r32(RTL930X_L2_CTRL) & BIT(0))
@@ -896,11 +896,11 @@ u32 rtl930x_hash(struct rtl838x_switch_priv *priv, u64 seed)
 	u32 k0, k1, h1, h2, h;
 
 	k0 = (u32) (((seed >> 55) & 0x1f) ^
-	            ((seed >> 44) & 0x7ff) ^
-	            ((seed >> 33) & 0x7ff) ^
-	            ((seed >> 22) & 0x7ff) ^
-	            ((seed >> 11) & 0x7ff) ^
-	            (seed & 0x7ff));
+		    ((seed >> 44) & 0x7ff) ^
+		    ((seed >> 33) & 0x7ff) ^
+		    ((seed >> 22) & 0x7ff) ^
+		    ((seed >> 11) & 0x7ff) ^
+		    (seed & 0x7ff));
 
 	h1 = (seed >> 11) & 0x7ff;
 	h1 = ((h1 & 0x1f) << 6) | ((h1 >> 5) & 0x3f);
@@ -909,11 +909,11 @@ u32 rtl930x_hash(struct rtl838x_switch_priv *priv, u64 seed)
 	h2 = ((h2 & 0x3f) << 5) | ((h2 >> 6) & 0x3f);
 
 	k1 = (u32) (((seed << 55) & 0x1f) ^
-	           ((seed >> 44) & 0x7ff) ^
-	           h2 ^
-	           ((seed >> 22) & 0x7ff) ^
-	           h1 ^
-	           (seed & 0x7ff));
+		    ((seed >> 44) & 0x7ff) ^
+		    h2 ^
+		    ((seed >> 22) & 0x7ff) ^
+		    h1 ^
+		    (seed & 0x7ff));
 
 	/* Algorithm choice for block 0 */
 	if (sw_r32(RTL930X_L2_CTRL) & BIT(0))
@@ -1020,14 +1020,14 @@ static u32 rtl930x_l3_hash4(u32 ip, int algorithm, bool move_dip)
 // 	rows[10] = (HASH_PICK(ip6->s6_addr[10], 0, 5) << 4) | HASH_PICK(ip6->s6_addr[11], 4, 4);
 // 	if (!algorithm) {
 // 		rows[11] = (HASH_PICK(ip6->s6_addr[11], 0, 4) << 5) |
-// 		           (HASH_PICK(ip6->s6_addr[12], 3, 5) << 0);
+// 			   (HASH_PICK(ip6->s6_addr[12], 3, 5) << 0);
 // 		rows[12] = (HASH_PICK(ip6->s6_addr[12], 0, 3) << 6) |
-// 		           (HASH_PICK(ip6->s6_addr[13], 2, 6) << 0);
+// 			   (HASH_PICK(ip6->s6_addr[13], 2, 6) << 0);
 // 		rows[13] = (HASH_PICK(ip6->s6_addr[13], 0, 2) << 7) |
-// 		           (HASH_PICK(ip6->s6_addr[14], 1, 7) << 0);
+// 			   (HASH_PICK(ip6->s6_addr[14], 1, 7) << 0);
 // 		if (!move_dip) {
 // 			rows[14] = (HASH_PICK(ip6->s6_addr[14], 0, 1) << 8) |
-// 			           (HASH_PICK(ip6->s6_addr[15], 0, 8) << 0);
+// 				   (HASH_PICK(ip6->s6_addr[15], 0, 8) << 0);
 // 		}
 // 		hash = rows[0] ^ rows[1] ^ rows[2] ^ rows[3] ^ rows[4] ^
 // 		       rows[5] ^ rows[6] ^ rows[7] ^ rows[8] ^ rows[9] ^
@@ -1036,12 +1036,12 @@ static u32 rtl930x_l3_hash4(u32 ip, int algorithm, bool move_dip)
 // 		rows[11] = (HASH_PICK(ip6->s6_addr[11], 0, 4) << 5);
 // 		rows[12] = (HASH_PICK(ip6->s6_addr[12], 3, 5) << 0);
 // 		rows[13] = (HASH_PICK(ip6->s6_addr[12], 0, 3) << 6) |
-// 		           HASH_PICK(ip6->s6_addr[13], 2, 6);
+// 			   HASH_PICK(ip6->s6_addr[13], 2, 6);
 // 		rows[14] = (HASH_PICK(ip6->s6_addr[13], 0, 2) << 7) |
-// 		           HASH_PICK(ip6->s6_addr[14], 1, 7);
+// 			   HASH_PICK(ip6->s6_addr[14], 1, 7);
 // 		if (!move_dip) {
 // 			rows[15] = (HASH_PICK(ip6->s6_addr[14], 0, 1) << 8) |
-// 			           (HASH_PICK(ip6->s6_addr[15], 0, 8) << 0);
+// 				   (HASH_PICK(ip6->s6_addr[15], 0, 8) << 0);
 // 		}
 // 		s0 = rows[12] + rows[13] + rows[14];
 // 		s1 = (s0 & 0x1ff) + ((s0 & (0x1ff << 9)) >> 9);
@@ -2113,9 +2113,9 @@ static void rtl930x_get_l3_router_mac(u32 idx, struct rtl93xx_rt_mac *m)
 	m->vid_mask = w & 0xfff;
 	m->action = sw_r32(rtl_table_data(r, 6)) & 0x7;
 	m->mac_mask = ((((u64)sw_r32(rtl_table_data(r, 5))) << 32) & 0xffffffffffffULL) |
-	              (sw_r32(rtl_table_data(r, 4)));
+		      (sw_r32(rtl_table_data(r, 4)));
 	m->mac = ((((u64)sw_r32(rtl_table_data(r, 1))) << 32) & 0xffffffffffffULL) |
-	         (sw_r32(rtl_table_data(r, 2)));
+		 (sw_r32(rtl_table_data(r, 2)));
 	/* Bits L3_INTF and BMSK_L3_INTF are 0 */
 
 out:

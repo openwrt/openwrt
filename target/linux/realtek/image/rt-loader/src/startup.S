@@ -140,7 +140,7 @@ _got_done:
 
 # Setup heap. It will start directly behind BSS
 
-	addiu 	$t3, MEMORY_ALIGNMENT
+	addiu	$t3, MEMORY_ALIGNMENT
 	li	$t4, ~(MEMORY_ALIGNMENT - 1)
 	and	$t3, $t4
 

@@ -189,6 +189,17 @@ platform_do_upgrade() {
 		CI_UBIPART="ubi0"
 		nand_do_upgrade "$1"
 		;;
+	netgear,eax17)
+		echo "UPGRADING SECOND SLOT"
+		CI_KERNPART="kernel2"
+		CI_ROOTPART="rootfs2"
+		nand_do_flash_file "$1" || nand_do_upgrade_failed
+		echo "UPGRADING PRIMARY SLOT"
+		CI_KERNPART="kernel"
+		CI_ROOTPART="rootfs"
+		nand_do_flash_file "$1" || nand_do_upgrade_failed
+		nand_do_upgrade_success
+		;;
 	tplink,fr365-v1)
 		CI_UBIPART="ubi"
 		CI_KERNPART="kernel"

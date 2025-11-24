@@ -12,7 +12,7 @@
 #			target device starting from this address.
 # KERNEL_IMG_OUT:	The filename of the kernel image with the rt-loader prepended.
 #			If not given it will be created as image.bin into the BUILD_DIR.
-# BUILD_DIR: 		The temporary build dir. If not given it will be set to "build".
+# BUILD_DIR:		The temporary build dir. If not given it will be set to "build".
 #
 # To add it into the OpenWrt toolchain just create the following new build commands
 #
@@ -64,14 +64,14 @@ ASFLAGS		= -fpic -msoft-float -Iinclude
 
 LDFLAGS		= -static -nostdlib -T linker/linker.ld --no-warn-mismatch
 
-O_FORMAT 	= $(shell $(OBJDUMP) -i | head -2 | grep elf32)
+O_FORMAT	= $(shell $(OBJDUMP) -i | head -2 | grep elf32)
 
 SOURCES		= src/startup.S src/main.c src/board.c src/memory.c src/unlzma.c
 
 BUILD_DIR	?= build
 
 IMAGE_OBJ	:= $(BUILD_DIR)/image.o
-IMAGE_ELF     	:= $(BUILD_DIR)/image.elf
+IMAGE_ELF	:= $(BUILD_DIR)/image.elf
 
 KERNEL_IMG_NONE	:= $(BUILD_DIR)/empty_kernel.bin
 KERNEL_IMG_IN	?= $(KERNEL_IMG_NONE)

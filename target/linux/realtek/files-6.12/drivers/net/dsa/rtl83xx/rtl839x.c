@@ -256,12 +256,12 @@ static u32 rtl839x_l2_hash_key(struct rtl838x_switch_priv *priv, u64 seed)
 	u32 h1, h2, h;
 
 	if (sw_r32(priv->r->l2_ctrl_0) & 1) {
-		h1 = (u32) (((seed >> 60) & 0x3f) ^ ((seed >> 54) & 0x3f) ^
-		           ((seed >> 36) & 0x3f) ^ ((seed >> 30) & 0x3f) ^
-		           ((seed >> 12) & 0x3f) ^ ((seed >> 6) & 0x3f));
-		h2 = (u32) (((seed >> 48) & 0x3f) ^ ((seed >> 42) & 0x3f) ^
-		           ((seed >> 24) & 0x3f) ^ ((seed >> 18) & 0x3f) ^
-		           (seed & 0x3f));
+		h1 = (u32)(((seed >> 60) & 0x3f) ^ ((seed >> 54) & 0x3f) ^
+			   ((seed >> 36) & 0x3f) ^ ((seed >> 30) & 0x3f) ^
+			   ((seed >> 12) & 0x3f) ^ ((seed >> 6) & 0x3f));
+		h2 = (u32)(((seed >> 48) & 0x3f) ^ ((seed >> 42) & 0x3f) ^
+			   ((seed >> 24) & 0x3f) ^ ((seed >> 18) & 0x3f) ^
+			   (seed & 0x3f));
 		h = (h1 << 6) | h2;
 	} else {
 		h = (seed >> 60) ^
@@ -680,9 +680,9 @@ void rtl839x_vlan_profile_dump(int profile)
 static void rtl839x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
 {
 	u32 cmd = 1 << 16 | /* Execute cmd */
-	          0 << 15 | /* Read */
-	          5 << 12 | /* Table type 0b101 */
-	          (msti & 0xfff);
+		  0 << 15 | /* Read */
+		  5 << 12 | /* Table type 0b101 */
+		  (msti & 0xfff);
 	priv->r->exec_tbl0_cmd(cmd);
 
 	for (int i = 0; i < 4; i++)
@@ -692,9 +692,9 @@ static void rtl839x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port
 static void rtl839x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
 {
 	u32 cmd = 1 << 16 | /* Execute cmd */
-	          1 << 15 | /* Write */
-	          5 << 12 | /* Table type 0b101 */
-	          (msti & 0xfff);
+		  1 << 15 | /* Write */
+		  5 << 12 | /* Table type 0b101 */
+		  (msti & 0xfff);
 	for (int i = 0; i < 4; i++)
 		sw_w32(port_state[i], priv->r->tbl_access_data_0(i));
 	priv->r->exec_tbl0_cmd(cmd);

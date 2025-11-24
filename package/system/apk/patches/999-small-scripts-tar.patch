@@ -1,8 +1,6 @@
-diff --git a/doc/apk.8.scd b/doc/apk.8.scd
-index bd15fe75d7a4..cbac8c6c8b7b 100644
 --- a/doc/apk.8.scd
 +++ b/doc/apk.8.scd
-@@ -461,7 +461,8 @@ timeout 120
+@@ -462,7 +462,8 @@ timeout 120
  */lib/apk/db/installed*
  	Database of installed packages and their contents.
  
@@ -12,11 +10,9 @@ index bd15fe75d7a4..cbac8c6c8b7b 100644
  	Collection of all package scripts from currently installed packages.
  
  */lib/apk/db/triggers*
-diff --git a/src/apk_database.h b/src/apk_database.h
-index 9f8670ac8ebb..10f1414c9e06 100644
 --- a/src/apk_database.h
 +++ b/src/apk_database.h
-@@ -202,6 +202,7 @@ struct apk_database {
+@@ -210,6 +210,7 @@ struct apk_database {
  	unsigned int compat_depversions : 1;
  	unsigned int sorted_names : 1;
  	unsigned int sorted_installed_packages : 1;
@@ -24,11 +20,9 @@ index 9f8670ac8ebb..10f1414c9e06 100644
  
  	struct apk_dependency_array *world;
  	struct apk_id_cache *id_cache;
-diff --git a/src/database.c b/src/database.c
-index cbe58ebbf885..cb1b709140af 100644
 --- a/src/database.c
 +++ b/src/database.c
-@@ -1255,8 +1255,11 @@ static int apk_db_read_layer(struct apk_database *db, unsigned layer)
+@@ -1338,8 +1338,11 @@ static int apk_db_read_layer(struct apk_
  	}
  
  	if (!(flags & APK_OPENF_NO_SCRIPTS)) {
@@ -42,7 +36,7 @@ index cbe58ebbf885..cb1b709140af 100644
  		if (!ret && r != -ENOENT) ret = r;
  	}
  
-@@ -2128,8 +2131,9 @@ static int apk_db_write_layers(struct apk_database *db)
+@@ -2214,8 +2217,9 @@ static int apk_db_write_layers(struct ap
  			continue;
  		}
  		ld->installed = apk_ostream_to_file(ld->fd, "installed", 0644);

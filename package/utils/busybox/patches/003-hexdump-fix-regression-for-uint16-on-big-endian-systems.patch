@@ -1,0 +1,41 @@
+From f5c7cae55fc3e19d074198bc12152486067ea8c7 Mon Sep 17 00:00:00 2001
+From: Radoslav Kolev <radoslav.kolev@suse.com>
+Date: Thu, 24 Apr 2025 00:45:25 +0300
+Subject: [PATCH] hexdump: fix regression for uint16 on big endian systems
+
+Commit 34751d8bf introduced a bug in the handling of uint16
+values on big endian systems not considered safe for unaligned
+access when falling back to memcpy.
+
+Signed-off-by: Radoslav Kolev <radoslav.kolev@suse.com>
+Signed-off-by: Denys Vlasenko <vda.linux@googlemail.com>
+---
+ libbb/dump.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+--- a/libbb/dump.c
++++ b/libbb/dump.c
+@@ -667,15 +667,21 @@ static NOINLINE void display(priv_dumper
+ 							conv_u(pr, bp);
+ 							break;
+ 						case F_UINT: {
++							union {
++								uint16_t uval16;
++								uint32_t uval32;
++							} u;
+ 							unsigned value = (unsigned char)*bp;
+ 							switch (pr->bcnt) {
+ 							case 1:
+ 								break;
+ 							case 2:
+-								move_from_unaligned16(value, bp);
++								move_from_unaligned16(u.uval16, bp);
++								value = u.uval16;
+ 								break;
+ 							case 4:
+-								move_from_unaligned32(value, bp);
++								move_from_unaligned32(u.uval32, bp);
++								value = u.uval32;
+ 								break;
+ 							/* case 8: no users yet */
+ 							}
