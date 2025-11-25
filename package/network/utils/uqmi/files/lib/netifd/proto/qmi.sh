@@ -270,10 +270,13 @@ proto_qmi_setup() {
 	echo "Waiting for network registration"
 	sleep 5
 	local registration_timeout=0
+	local serving_system=""
 	local registration_state=""
 	while true; do
-		registration_state=$(uqmi -s -d "$device" -t 1000 --get-serving-system 2>/dev/null | jsonfilter -e "@.registration" 2>/dev/null)
+		serving_system="$(uqmi -s -d "$device" -t 1000 --get-serving-system 2>/dev/null)"
+		registration_state=$(echo "$serving_system" | jsonfilter -e "@.registration" 2>/dev/null)
 
+		[ "$serving_system" = "\"Invalid QMI command\"" ] && break
 		[ "$registration_state" = "registered" ] && break
 
 		if [ "$registration_state" = "searching" ] || [ "$registration_state" = "not_registered" ]; then
