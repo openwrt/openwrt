@@ -64,7 +64,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
  
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -17723,6 +17723,7 @@ L:	netdev@vger.kernel.org
+@@ -17724,6 +17724,7 @@ L:	netdev@vger.kernel.org
  S:	Maintained
  F:	Documentation/devicetree/bindings/net/qcom,ipq4019-ess-edma.yaml
  F:	drivers/net/ethernet/qualcomm/ipqess/
@@ -136,7 +136,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
  #include <net/dst.h>
  #include <net/sock.h>
  #include <net/checksum.h>
-@@ -4823,6 +4827,9 @@ static const u8 skb_ext_type_len[] = {
+@@ -4827,6 +4831,9 @@ static const u8 skb_ext_type_len[] = {
  #if IS_ENABLED(CONFIG_MCTP_FLOWS)
  	[SKB_EXT_MCTP] = SKB_EXT_CHUNKSIZEOF(struct mctp_flow),
  #endif

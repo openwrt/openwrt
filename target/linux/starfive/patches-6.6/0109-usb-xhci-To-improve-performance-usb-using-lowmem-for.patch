@@ -143,7 +143,7 @@ Signed-off-by: minda.chen <minda.chen@starfivetech.com>
  	 * something other than the default (~1ms minimum between interrupts).
 --- a/drivers/usb/host/xhci-plat.c
 +++ b/drivers/usb/host/xhci-plat.c
-@@ -253,6 +253,14 @@ int xhci_plat_probe(struct platform_devi
+@@ -254,6 +254,14 @@ int xhci_plat_probe(struct platform_devi
  		if (device_property_read_bool(tmpdev, "xhci-sg-trb-cache-size-quirk"))
  			xhci->quirks |= XHCI_SG_TRB_CACHE_SIZE_QUIRK;
  

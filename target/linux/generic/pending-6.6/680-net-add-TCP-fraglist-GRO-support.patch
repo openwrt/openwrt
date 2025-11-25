@@ -21,7 +21,7 @@ Signe-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/include/net/gro.h
 +++ b/include/net/gro.h
-@@ -439,6 +439,7 @@ static inline __wsum ip6_gro_compute_pse
+@@ -442,6 +442,7 @@ static inline __wsum ip6_gro_compute_pse
  }
  
  int skb_gro_receive(struct sk_buff *p, struct sk_buff *skb);
@@ -45,7 +45,7 @@ Signe-off-by: Felix Fietkau <nbd@nbd.name>
  INDIRECT_CALLABLE_DECLARE(int tcp6_gro_complete(struct sk_buff *skb, int thoff));
 --- a/net/core/gro.c
 +++ b/net/core/gro.c
-@@ -228,6 +228,33 @@ done:
+@@ -225,6 +225,33 @@ done:
  	return 0;
  }
  

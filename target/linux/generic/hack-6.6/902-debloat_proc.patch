@@ -246,7 +246,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  				&vmalloc_op,
 --- a/mm/vmstat.c
 +++ b/mm/vmstat.c
-@@ -2136,10 +2136,12 @@ void __init init_mm_internals(void)
+@@ -2137,10 +2137,12 @@ void __init init_mm_internals(void)
  	start_shepherd_timer();
  #endif
  #ifdef CONFIG_PROC_FS
@@ -330,7 +330,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/core/sock.c
 +++ b/net/core/sock.c
-@@ -4165,6 +4165,8 @@ static __net_initdata struct pernet_oper
+@@ -4168,6 +4168,8 @@ static __net_initdata struct pernet_oper
  
  static int __init proto_init(void)
  {

@@ -104,7 +104,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static inline bool page_pool_put(struct page_pool *pool)
 --- a/net/core/page_pool.c
 +++ b/net/core/page_pool.c
-@@ -211,10 +211,6 @@ static int page_pool_init(struct page_po
+@@ -207,10 +207,6 @@ static int page_pool_init(struct page_po
  		 */
  	}
  
@@ -115,7 +115,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  #ifdef CONFIG_PAGE_POOL_STATS
  	pool->recycle_stats = alloc_percpu(struct page_pool_recycle_stats);
  	if (!pool->recycle_stats)
-@@ -363,12 +359,20 @@ static bool page_pool_dma_map(struct pag
+@@ -359,12 +355,20 @@ static bool page_pool_dma_map(struct pag
  	if (dma_mapping_error(pool->p.dev, dma))
  		return false;
  

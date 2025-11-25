@@ -956,7 +956,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  static int m88e1111_config_aneg(struct phy_device *phydev)
  {
  	int extsr = phy_read(phydev, MII_M1111_PHY_EXT_SR);
-@@ -3292,6 +3334,8 @@ static struct phy_driver marvell_drivers
+@@ -3329,6 +3371,8 @@ static struct phy_driver marvell_drivers
  		.name = "Marvell 88E1112",
  		/* PHY_GBIT_FEATURES */
  		.probe = marvell_probe,
@@ -965,7 +965,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  		.config_init = m88e1112_config_init,
  		.config_aneg = marvell_config_aneg,
  		.config_intr = marvell_config_intr,
-@@ -3312,6 +3356,8 @@ static struct phy_driver marvell_drivers
+@@ -3349,6 +3393,8 @@ static struct phy_driver marvell_drivers
  		.name = "Marvell 88E1111",
  		/* PHY_GBIT_FEATURES */
  		.probe = marvell_probe,
@@ -974,7 +974,7 @@ publishing the in-band capabilities from the BCM84881 PHY driver.
  		.config_init = m88e1111gbe_config_init,
  		.config_aneg = m88e1111_config_aneg,
  		.read_status = marvell_read_status,
-@@ -3333,6 +3379,8 @@ static struct phy_driver marvell_drivers
+@@ -3370,6 +3416,8 @@ static struct phy_driver marvell_drivers
  		.name = "Marvell 88E1111 (Finisar)",
  		/* PHY_GBIT_FEATURES */
  		.probe = marvell_probe,

@@ -88,7 +88,7 @@ Signed-off-by: Minda Chen <minda.chen@starfivetech.com>
  	/*
 --- a/drivers/usb/host/xhci-plat.c
 +++ b/drivers/usb/host/xhci-plat.c
-@@ -255,10 +255,11 @@ int xhci_plat_probe(struct platform_devi
+@@ -256,10 +256,11 @@ int xhci_plat_probe(struct platform_devi
  
  		if (device_property_read_bool(tmpdev, "xhci-lowmem-pool")) {
  			xhci->quirks |= XHCI_LOCAL_BUFFER;
