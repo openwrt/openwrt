@@ -1,13 +1,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ninja
-PKG_VERSION:=1.13.1
+PKG_VERSION:=1.13.2
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/ninja-build/ninja
 PKG_SOURCE_VERSION:=v$(PKG_VERSION)
-PKG_MIRROR_HASH:=6e8b53c51243fbd1243736b8ebdc90e942c7ba91bea57bbae650ea2de534a7de
+PKG_MIRROR_HASH:=592d95e3529d65bddd65a6f6ee831a762e3d7959d4ef64cd5f7e97c1becd2020
 
 include $(INCLUDE_DIR)/host-build.mk
 
