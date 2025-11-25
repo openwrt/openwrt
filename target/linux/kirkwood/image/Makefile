@@ -189,6 +189,18 @@ define Device/dlink_dns320l
 endef
 TARGET_DEVICES += dlink_dns320l
 
+define Device/dlink_dns-325-a1
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DNS-325
+  DEVICE_VARIANT := A1
+  DEVICE_DTS := kirkwood-dns325
+  DEVICE_PACKAGES := kmod-ata-marvell-sata kmod-hwmon-lm75 kmod-hwmon-gpiofan \
+	kmod-thermal kmod-usb-ledtrig-usbport kmod-gpio-button-hotplug block-mount \
+  mdadm kmod-md-linear kmod-usb-storage kmod-fs-ext4 e2fsprogs partx-utils \
+  fdisk kmod-rtc-mv
+endef
+TARGET_DEVICES += dlink_dns-325-a1
+
 define Device/endian_4i-edge-200
   DEVICE_VENDOR := Endian
   DEVICE_MODEL := 4i Edge 200
