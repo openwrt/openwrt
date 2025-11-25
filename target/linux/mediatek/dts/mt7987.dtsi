@@ -679,9 +679,14 @@
 				     "mediatek,mt6577-uart";
 			reg = <0 0x11000000 0 0x100>;
 			interrupts = <GIC_SPI 123 IRQ_TYPE_LEVEL_HIGH>;
-			clocks = <&topckgen CLK_TOP_UART_SEL>,
-				 <&infracfg CLK_INFRA_52M_UART0_CK>;
+			clocks = <&infracfg CLK_INFRA_52M_UART0_CK>,
+				 <&infracfg CLK_INFRA_66M_UART0_PCK>;
 			clock-names = "baud", "bus";
+			assigned-clocks = <&topckgen CLK_TOP_UART_SEL>,
+					  <&infracfg CLK_INFRA_MUX_UART0_SEL>;
+			assigned-clock-parents = <&topckgen
+						  CLK_TOP_CB_CKSQ_40M>,
+						  <&topckgen CLK_TOP_UART_SEL>;
 			status = "disabled";
 		};
 
