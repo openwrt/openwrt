@@ -1,0 +1,313 @@
+From dd9c5a74f5bfaa6b70f0ed15b4b58d1f09bf3c76 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Bal=C3=A1zs=20Triszka?= <info@balika011.hu>
+Date: Sat, 18 Oct 2025 23:09:23 +0200
+Subject: [PATCH] phy-realtek: cleanup phyids
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Balázs Triszka <info@balika011.hu>
+
+---
+ drivers/net/phy/realtek/realtek_main.c | 99 +++++++++++++++-----------
+ 1 file changed, 58 insertions(+), 41 deletions(-)
+
+--- a/drivers/net/phy/realtek/realtek_main.c
++++ b/drivers/net/phy/realtek/realtek_main.c
+@@ -183,13 +183,30 @@
+ #define	RTL_MDIO_AN_EEE_ADV2			0xa6d4
+ #define	RTL_MDIO_PCS_EEE_ABLE2			0xa6ec
+ 
+-#define RTL_GENERIC_PHYID			0x001cc800
+-#define RTL_8211FVD_PHYID			0x001cc878
+-#define RTL_8221B				0x001cc840
+-#define RTL_8221B_VB_CG				0x001cc849
+-#define RTL_8221B_VM_CG				0x001cc84a
+-#define RTL_8251B				0x001cc862
+-#define RTL_8261C				0x001cc890
++#define PHYID_RTL_GENERIC			0x001cc800
++#define PHYID_RTL8201CP				0x00008201
++#define PHYID_RTL8201F				0x001cc816
++#define PHYID_RTL8226				0x001cc838
++#define PHYID_RTL8221B				0x001cc840
++#define PHYID_RTL8125BP				0x001cc841
++#define PHYID_RTL8226B				0x001cc848
++#define PHYID_RTL8221B_VB			0x001cc849
++#define PHYID_RTL8221B_VM			0x001cc84a
++#define PHYID_RTL8251B				0x001cc862
++#define PHYID_RTL8211FVD			0x001cc878
++#define PHYID_RTL8208				0x001cc880
++#define PHYID_RTL8261C				0x001cc890
++#define PHYID_RTL8211				0x001cc910
++#define PHYID_RTL8211B				0x001cc912
++#define PHYID_RTL8211C				0x001cc913
++#define PHYID_RTL8211DN				0x001cc914
++#define PHYID_RTL8211E				0x001cc915
++#define PHYID_RTL8211F				0x001cc916
++#define PHYID_RTL8365MB_VC			0x001cc942
++#define PHYID_RTL8366S				0x001cc960
++#define PHYID_RTL8366RB				0x001cc961
++#define PHYID_RTL8224				0x001ccad0
++#define PHYID_RTL9000A				0x001ccb00
+ 
+ /* RTL8211E and RTL8211F support up to three LEDs */
+ #define RTL8211x_LED_COUNT			3
+@@ -270,7 +287,7 @@ static int rtl821x_probe(struct phy_devi
+ 	if (of_property_read_bool(dev->of_node, "realtek,aldps-enable"))
+ 		priv->phycr1 |= RTL8211F_ALDPS_PLL_OFF | RTL8211F_ALDPS_ENABLE | RTL8211F_ALDPS_XTAL_OFF;
+ 
+-	priv->has_phycr2 = !(phy_id == RTL_8211FVD_PHYID);
++	priv->has_phycr2 = !(phy_id == PHYID_RTL8211FVD);
+ 	if (priv->has_phycr2) {
+ 		ret = phy_read_paged(phydev, RTL8211F_PHYCR_PAGE, RTL8211F_PHYCR2);
+ 		if (ret < 0)
+@@ -1087,7 +1104,7 @@ static int rtl822x_write_mmd(struct phy_
+ static int rtl822x_probe(struct phy_device *phydev)
+ {
+ 	if (IS_ENABLED(CONFIG_REALTEK_PHY_HWMON) &&
+-	    phydev->phy_id != RTL_GENERIC_PHYID)
++	    phydev->phy_id != PHYID_RTL_GENERIC)
+ 		return rtl822x_hwmon_init(phydev);
+ 
+ 	return 0;
+@@ -1628,14 +1645,14 @@ static bool rtlgen_supports_mmd(struct p
+ static int rtlgen_match_phy_device(struct phy_device *phydev,
+ 				   const struct phy_driver *phydrv)
+ {
+-	return phydev->phy_id == RTL_GENERIC_PHYID &&
++	return phydev->phy_id == PHYID_RTL_GENERIC &&
+ 	       !rtlgen_supports_2_5gbps(phydev);
+ }
+ 
+ static int rtl8226_match_phy_device(struct phy_device *phydev,
+ 				    const struct phy_driver *phydrv)
+ {
+-	return phydev->phy_id == RTL_GENERIC_PHYID &&
++	return phydev->phy_id == PHYID_RTL_GENERIC &&
+ 	       rtlgen_supports_2_5gbps(phydev) &&
+ 	       rtlgen_supports_mmd(phydev);
+ }
+@@ -1674,31 +1691,31 @@ static int rtlgen_is_c45_match(struct ph
+ static int rtl8221b_match_phy_device(struct phy_device *phydev,
+ 				     const struct phy_driver *phydrv)
+ {
+-	return phydev->phy_id == RTL_8221B && rtlgen_supports_mmd(phydev);
++	return phydev->phy_id == PHYID_RTL8221B && rtlgen_supports_mmd(phydev);
+ }
+ 
+ static int rtl8221b_vb_cg_c22_match_phy_device(struct phy_device *phydev,
+ 					       const struct phy_driver *phydrv)
+ {
+-	return rtlgen_is_c45_match(phydev, RTL_8221B_VB_CG, false);
++	return rtlgen_is_c45_match(phydev, PHYID_RTL8221B_VB, false);
+ }
+ 
+ static int rtl8221b_vb_cg_c45_match_phy_device(struct phy_device *phydev,
+ 					       const struct phy_driver *phydrv)
+ {
+-	return rtlgen_is_c45_match(phydev, RTL_8221B_VB_CG, true);
++	return rtlgen_is_c45_match(phydev, PHYID_RTL8221B_VB, true);
+ }
+ 
+ static int rtl8221b_vm_cg_c22_match_phy_device(struct phy_device *phydev,
+ 					       const struct phy_driver *phydrv)
+ {
+-	return rtlgen_is_c45_match(phydev, RTL_8221B_VM_CG, false);
++	return rtlgen_is_c45_match(phydev, PHYID_RTL8221B_VM, false);
+ }
+ 
+ static int rtl8221b_vm_cg_c45_match_phy_device(struct phy_device *phydev,
+ 					       const struct phy_driver *phydrv)
+ {
+-	return rtlgen_is_c45_match(phydev, RTL_8221B_VM_CG, true);
++	return rtlgen_is_c45_match(phydev, PHYID_RTL8221B_VM, true);
+ }
+ 
+ static int rtl_internal_nbaset_match_phy_device(struct phy_device *phydev,
+@@ -1708,11 +1725,11 @@ static int rtl_internal_nbaset_match_phy
+ 		return false;
+ 
+ 	switch (phydev->phy_id) {
+-	case RTL_GENERIC_PHYID:
+-	case RTL_8221B:
+-	case RTL_8251B:
+-	case RTL_8261C:
+-	case 0x001cc841:
++	case PHYID_RTL_GENERIC:
++	case PHYID_RTL8125BP:
++	case PHYID_RTL8221B:
++	case PHYID_RTL8251B:
++	case PHYID_RTL8261C:
+ 		break;
+ 	default:
+ 		return false;
+@@ -1724,7 +1741,7 @@ static int rtl_internal_nbaset_match_phy
+ static int rtl8251b_c45_match_phy_device(struct phy_device *phydev,
+ 					 const struct phy_driver *phydrv)
+ {
+-	return rtlgen_is_c45_match(phydev, RTL_8251B, true);
++	return rtlgen_is_c45_match(phydev, PHYID_RTL8251B, true);
+ }
+ 
+ static int rtlgen_resume(struct phy_device *phydev)
+@@ -1911,12 +1928,12 @@ static irqreturn_t rtl8221b_handle_inter
+ 
+ static struct phy_driver realtek_drvs[] = {
+ 	{
+-		PHY_ID_MATCH_EXACT(0x00008201),
++		PHY_ID_MATCH_EXACT(PHYID_RTL8201CP),
+ 		.name           = "RTL8201CP Ethernet",
+ 		.read_page	= rtl821x_read_page,
+ 		.write_page	= rtl821x_write_page,
+ 	}, {
+-		PHY_ID_MATCH_EXACT(0x001cc816),
++		PHY_ID_MATCH_EXACT(PHYID_RTL8201F),
+ 		.name		= "RTL8201F Fast Ethernet",
+ 		.config_intr	= &rtl8201_config_intr,
+ 		.handle_interrupt = rtl8201_handle_interrupt,
+@@ -1925,7 +1942,7 @@ static struct phy_driver realtek_drvs[]
+ 		.read_page	= rtl821x_read_page,
+ 		.write_page	= rtl821x_write_page,
+ 	}, {
+-		PHY_ID_MATCH_MODEL(0x001cc880),
++		PHY_ID_MATCH_MODEL(PHYID_RTL8208),
+ 		.name		= "RTL8208 Fast Ethernet",
+ 		.read_mmd	= genphy_read_mmd_unsupported,
+ 		.write_mmd	= genphy_write_mmd_unsupported,
+@@ -1934,7 +1951,7 @@ static struct phy_driver realtek_drvs[]
+ 		.read_page	= rtl821x_read_page,
+ 		.write_page	= rtl821x_write_page,
+ 	}, {
+-		PHY_ID_MATCH_EXACT(0x001cc910),
++		PHY_ID_MATCH_EXACT(PHYID_RTL8211),
+ 		.name		= "RTL8211 Gigabit Ethernet",
+ 		.config_aneg	= rtl8211_config_aneg,
+ 		.read_mmd	= &genphy_read_mmd_unsupported,
+@@ -1942,7 +1959,7 @@ static struct phy_driver realtek_drvs[]
+ 		.read_page	= rtl821x_read_page,
+ 		.write_page	= rtl821x_write_page,
+ 	}, {
+-		PHY_ID_MATCH_EXACT(0x001cc912),
++		PHY_ID_MATCH_EXACT(PHYID_RTL8211B),
+ 		.name		= "RTL8211B Gigabit Ethernet",
+ 		.config_intr	= &rtl8211b_config_intr,
+ 		.handle_interrupt = rtl821x_handle_interrupt,
+@@ -1953,7 +1970,7 @@ static struct phy_driver realtek_drvs[]
+ 		.read_page	= rtl821x_read_page,
+ 		.write_page	= rtl821x_write_page,
+ 	}, {
+-		PHY_ID_MATCH_EXACT(0x001cc913),
++		PHY_ID_MATCH_EXACT(PHYID_RTL8211C),
+ 		.name		= "RTL8211C Gigabit Ethernet",
+ 		.config_init	= rtl8211c_config_init,
+ 		.read_mmd	= &genphy_read_mmd_unsupported,
+@@ -1961,7 +1978,7 @@ static struct phy_driver realtek_drvs[]
+ 		.read_page	= rtl821x_read_page,
+ 		.write_page	= rtl821x_write_page,
+ 	}, {
+-		PHY_ID_MATCH_EXACT(0x001cc914),
++		PHY_ID_MATCH_EXACT(PHYID_RTL8211DN),
+ 		.name		= "RTL8211DN Gigabit Ethernet",
+ 		.config_intr	= rtl8211e_config_intr,
+ 		.handle_interrupt = rtl821x_handle_interrupt,
+@@ -1970,7 +1987,7 @@ static struct phy_driver realtek_drvs[]
+ 		.read_page	= rtl821x_read_page,
+ 		.write_page	= rtl821x_write_page,
+ 	}, {
+-		PHY_ID_MATCH_EXACT(0x001cc915),
++		PHY_ID_MATCH_EXACT(PHYID_RTL8211E),
+ 		.name		= "RTL8211E Gigabit Ethernet",
+ 		.config_init	= &rtl8211e_config_init,
+ 		.config_intr	= &rtl8211e_config_intr,
+@@ -1983,7 +2000,7 @@ static struct phy_driver realtek_drvs[]
+ 		.led_hw_control_get = rtl8211e_led_hw_control_get,
+ 		.led_hw_control_set = rtl8211e_led_hw_control_set,
+ 	}, {
+-		PHY_ID_MATCH_EXACT(0x001cc916),
++		PHY_ID_MATCH_EXACT(PHYID_RTL8211F),
+ 		.name		= "RTL8211F Gigabit Ethernet",
+ 		.probe		= rtl821x_probe,
+ 		.config_init	= &rtl8211f_config_init,
+@@ -2001,7 +2018,7 @@ static struct phy_driver realtek_drvs[]
+ 		.led_hw_control_get = rtl8211f_led_hw_control_get,
+ 		.led_hw_control_set = rtl8211f_led_hw_control_set,
+ 	}, {
+-		PHY_ID_MATCH_EXACT(RTL_8211FVD_PHYID),
++		PHY_ID_MATCH_EXACT(PHYID_RTL8211FVD),
+ 		.name		= "RTL8211F-VD Gigabit Ethernet",
+ 		.probe		= rtl821x_probe,
+ 		.config_init	= &rtl8211f_config_init,
+@@ -2048,7 +2065,7 @@ static struct phy_driver realtek_drvs[]
+ 		.read_page	= rtl821x_read_page,
+ 		.write_page	= rtl821x_write_page,
+ 	}, {
+-		PHY_ID_MATCH_EXACT(0x001cc838),
++		PHY_ID_MATCH_EXACT(PHYID_RTL8226),
+ 		.name           = "RTL8226-CG 2.5Gbps PHY",
+ 		.soft_reset     = rtl822x_c45_soft_reset,
+ 		.get_features   = rtl822x_c45_get_features,
+@@ -2058,7 +2075,7 @@ static struct phy_driver realtek_drvs[]
+ 		.suspend        = genphy_c45_pma_suspend,
+ 		.resume         = rtlgen_c45_resume,
+ 	}, {
+-		PHY_ID_MATCH_EXACT(0x001cc848),
++		PHY_ID_MATCH_EXACT(PHYID_RTL8226B),
+ 		.name           = "RTL8226B-CG_RTL8221B-CG 2.5Gbps PHY",
+ 		.soft_reset     = genphy_soft_reset,
+ 		.get_features   = rtl822x_get_features,
+@@ -2152,7 +2169,7 @@ static struct phy_driver realtek_drvs[]
+ 		.read_mmd	= rtl822x_read_mmd,
+ 		.write_mmd	= rtl822x_write_mmd,
+ 	}, {
+-		PHY_ID_MATCH_EXACT(0x001ccad0),
++		PHY_ID_MATCH_EXACT(PHYID_RTL8224),
+ 		.name		= "RTL8224 2.5Gbps PHY",
+ 		.flags		= PHY_POLL_CABLE_TEST,
+ 		.get_features   = rtl822x_c45_get_features,
+@@ -2163,7 +2180,7 @@ static struct phy_driver realtek_drvs[]
+ 		.cable_test_start = rtl8224_cable_test_start,
+ 		.cable_test_get_status = rtl8224_cable_test_get_status,
+ 	}, {
+-		PHY_ID_MATCH_EXACT(0x001cc961),
++		PHY_ID_MATCH_EXACT(PHYID_RTL8366RB),
+ 		.name		= "RTL8366RB Gigabit Ethernet",
+ 		.config_init	= &rtl8366rb_config_init,
+ 		/* These interrupts are handled by the irq controller
+@@ -2176,8 +2193,8 @@ static struct phy_driver realtek_drvs[]
+ 		.suspend	= genphy_suspend,
+ 		.resume		= genphy_resume,
+ 	}, {
+-		PHY_ID_MATCH_EXACT(0x001ccb00),
+-		.name		= "RTL9000AA_RTL9000AN Ethernet",
++		PHY_ID_MATCH_EXACT(PHYID_RTL9000A),
++		.name		= "RTL9000AA/RTL9000AN Ethernet",
+ 		.features       = PHY_BASIC_T1_FEATURES,
+ 		.config_init	= rtl9000a_config_init,
+ 		.config_aneg	= rtl9000a_config_aneg,
+@@ -2189,7 +2206,7 @@ static struct phy_driver realtek_drvs[]
+ 		.read_page	= rtl821x_read_page,
+ 		.write_page	= rtl821x_write_page,
+ 	}, {
+-		PHY_ID_MATCH_EXACT(0x001cc942),
++		PHY_ID_MATCH_EXACT(PHYID_RTL8365MB_VC),
+ 		.name		= "RTL8365MB-VC Gigabit Ethernet",
+ 		/* Interrupt handling analogous to RTL8366RB */
+ 		.config_intr	= genphy_no_config_intr,
+@@ -2197,7 +2214,7 @@ static struct phy_driver realtek_drvs[]
+ 		.suspend	= genphy_suspend,
+ 		.resume		= genphy_resume,
+ 	}, {
+-		PHY_ID_MATCH_EXACT(0x001cc960),
++		PHY_ID_MATCH_EXACT(PHYID_RTL8366S),
+ 		.name		= "RTL8366S Gigabit Ethernet",
+ 		.suspend	= genphy_suspend,
+ 		.resume		= genphy_resume,
+@@ -2209,7 +2226,7 @@ static struct phy_driver realtek_drvs[]
+ module_phy_driver(realtek_drvs);
+ 
+ static const struct mdio_device_id __maybe_unused realtek_tbl[] = {
+-	{ PHY_ID_MATCH_VENDOR(0x001cc800) },
++	{ PHY_ID_MATCH_VENDOR(PHYID_RTL_GENERIC) },
+ 	{ }
+ };
+ 
