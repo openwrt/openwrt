@@ -1,0 +1,43 @@
+From 923a5117c262cc849cd6af2a1015c8ea50fced5a Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Tue, 30 Sep 2025 23:04:15 +0200
+Subject: [PATCH] configs: enable PCS for Airoha AN7581/AN7583
+
+Enable PCS config for Airoha AN7581/AN7583 SoC by default to enable
+support fo External PHY.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ configs/an7581_evb_defconfig | 2 ++
+ configs/an7583_evb_defconfig | 2 ++
+ 2 files changed, 4 insertions(+)
+
+diff --git a/configs/an7581_evb_defconfig b/configs/an7581_evb_defconfig
+index 73af30cd693..37786ace2b4 100644
+--- a/configs/an7581_evb_defconfig
++++ b/configs/an7581_evb_defconfig
+@@ -66,6 +66,8 @@ CONFIG_SPI_FLASH_STMICRO=y
+ CONFIG_SPI_FLASH_WINBOND=y
+ CONFIG_SPI_FLASH_MTD=y
+ CONFIG_AIROHA_ETH=y
++CONFIG_PCS_AIROHA_AN7581=y
++CONFIG_PHYLIB=y
+ CONFIG_PHY=y
+ CONFIG_PINCTRL=y
+ CONFIG_PINCONF=y
+diff --git a/configs/an7583_evb_defconfig b/configs/an7583_evb_defconfig
+index d1893fff398..ffbd3f47992 100644
+--- a/configs/an7583_evb_defconfig
++++ b/configs/an7583_evb_defconfig
+@@ -65,6 +65,8 @@ CONFIG_SPI_FLASH_STMICRO=y
+ CONFIG_SPI_FLASH_WINBOND=y
+ CONFIG_SPI_FLASH_MTD=y
+ CONFIG_AIROHA_ETH=y
++CONFIG_PCS_AIROHA_AN7583=y
++CONFIG_PHYLIB=y
+ CONFIG_PHY=y
+ CONFIG_PINCTRL=y
+ CONFIG_PINCONF=y
+-- 
+2.51.0
+

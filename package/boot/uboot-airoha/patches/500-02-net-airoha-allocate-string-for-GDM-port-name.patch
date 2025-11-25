@@ -1,0 +1,55 @@
+From e8005dd7ee82e4d1c646f5183ec30f7dad1226ee Mon Sep 17 00:00:00 2001
+From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Date: Wed, 15 Oct 2025 10:36:16 +0300
+Subject: [PATCH] net: airoha: allocate string for GDM port name
+
+Allocate string for GDM port. This have following benefits:
+ - avoid out of boundaries access to gdm_port_str[] array in
+   airoha_alloc_gdm_port()
+ - no entries for non-used GDM ports
+
+Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+---
+ drivers/net/airoha_eth.c | 16 ++++++++++++----
+ 1 file changed, 12 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/airoha_eth.c b/drivers/net/airoha_eth.c
+index 601777159f6..d95a90c1df0 100644
+--- a/drivers/net/airoha_eth.c
++++ b/drivers/net/airoha_eth.c
+@@ -349,7 +349,6 @@ struct airoha_eth {
+ 	struct airoha_eth_soc_data *soc;
+ 
+ 	struct airoha_qdma qdma[AIROHA_MAX_NUM_QDMA];
+-	char gdm_port_str[AIROHA_MAX_NUM_GDM_PORTS][AIROHA_GDM_PORT_STRING_LEN];
+ };
+ 
+ struct airoha_eth_soc_data {
+@@ -872,12 +871,21 @@ static int airoha_alloc_gdm_port(struct udevice *dev, ofnode node)
+ 	if (id > AIROHA_MAX_NUM_GDM_PORTS)
+ 		return -EINVAL;
+ 
+-	str = eth->gdm_port_str[id];
++	str = malloc(AIROHA_GDM_PORT_STRING_LEN);
++	if (!str)
++		return -ENOMEM;
++
+ 	snprintf(str, AIROHA_GDM_PORT_STRING_LEN,
+ 		 "airoha-gdm%d", id);
+ 
+-	return device_bind_with_driver_data(dev, &airoha_eth_port, str,
+-					    (ulong)eth, node, &gdm_dev);
++	ret = device_bind_with_driver_data(dev, &airoha_eth_port, str,
++					   (ulong)eth, node, &gdm_dev);
++	if (ret) {
++		free(str);
++		return ret;
++	}
++
++	return 0;
+ }
+ 
+ static int airoha_eth_probe(struct udevice *dev)
+-- 
+2.51.0
+

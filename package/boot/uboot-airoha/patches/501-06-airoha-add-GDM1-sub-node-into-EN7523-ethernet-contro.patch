@@ -1,0 +1,53 @@
+From 871cdeaa46dd597d87bf198c4fbe0ef429cde2e9 Mon Sep 17 00:00:00 2001
+From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Date: Sat, 1 Nov 2025 04:53:51 +0300
+Subject: [PATCH] airoha: add GDM1 sub-node into EN7523 ethernet
+ controller node
+
+This is required to make ethernet working after PCS support changes
+
+Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+---
+ arch/arm/dts/en7523-evb-u-boot.dtsi |  4 ++++
+ arch/arm/dts/en7523-u-boot.dtsi     | 13 +++++++++++++
+ 2 files changed, 17 insertions(+)
+
+diff --git a/arch/arm/dts/en7523-evb-u-boot.dtsi b/arch/arm/dts/en7523-evb-u-boot.dtsi
+index c109d6794fb..d6ab621d590 100644
+--- a/arch/arm/dts/en7523-evb-u-boot.dtsi
++++ b/arch/arm/dts/en7523-evb-u-boot.dtsi
+@@ -9,3 +9,7 @@
+ };
+ 
+ #include "en7523-u-boot.dtsi"
++
++&gdm1 {
++	status = "okay";
++};
+diff --git a/arch/arm/dts/en7523-u-boot.dtsi b/arch/arm/dts/en7523-u-boot.dtsi
+index f031f81515a..a403e684adc 100644
+--- a/arch/arm/dts/en7523-u-boot.dtsi
++++ b/arch/arm/dts/en7523-u-boot.dtsi
+@@ -37,6 +37,19 @@
+ 			 <&scu EN7523_HSI_MAC_RST>;
+ 		reset-names = "fe", "pdma", "qdma",
+ 			      "hsi0-mac", "hsi1-mac", "hsi-mac";
++
++		gdm1: ethernet@1 {
++			compatible = "airoha,eth-mac";
++			reg = <1>;
++			phy-mode = "internal";
++			status = "disabled";
++
++			fixed-link {
++				speed = <10000>;
++				full-duplex;
++				pause;
++			};
++		};
+ 	};
+ 
+ 	switch: switch@1fb58000 {
+-- 
+2.51.0
+

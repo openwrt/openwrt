@@ -1,0 +1,77 @@
+From 3287335eb2a3ed579375d48d82251a2066a554a1 Mon Sep 17 00:00:00 2001
+From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Date: Wed, 15 Oct 2025 10:36:16 +0300
+Subject: [PATCH] net: airoha: do not call airoha_fe_init() from GDM port
+ independent code
+
+We should not call airoha_fe_init() from GDM port independent code,
+because it do a GDM specific things.
+
+Makes airoha_fe_maccr_init() and airoha_fe_init() port dependent
+and call them from airoha_eth_port_probe()
+
+Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+---
+ drivers/net/airoha_eth.c | 28 ++++++++++++----------------
+ 1 file changed, 12 insertions(+), 16 deletions(-)
+
+diff --git a/drivers/net/airoha_eth.c b/drivers/net/airoha_eth.c
+index f21a4b822b0..70cb2c0a979 100644
+--- a/drivers/net/airoha_eth.c
++++ b/drivers/net/airoha_eth.c
+@@ -459,22 +459,18 @@ static int airoha_get_fe_port(struct airoha_gdm_port *port)
+ 	}
+ }
+ 
+-static void airoha_fe_maccr_init(struct airoha_eth *eth)
++static void airoha_fe_maccr_init(struct airoha_gdm_port *port)
+ {
+-	int p;
+-
+-	for (p = 1; p <= AIROHA_MAX_NUM_GDM_PORTS; p++) {
+-		/*
+-		 * Disable any kind of CRC drop or offload.
+-		 * Enable padding of short TX packets to 60 bytes.
+-		 */
+-		airoha_fe_wr(eth, REG_GDM_FWD_CFG(p), GDM_PAD_EN);
+-	}
++	/*
++	 * Disable any kind of CRC drop or offload.
++	 * Enable padding of short TX packets to 60 bytes.
++	 */
++	airoha_fe_wr(port->qdma->eth, REG_GDM_FWD_CFG(port->id), GDM_PAD_EN);
+ }
+ 
+-static int airoha_fe_init(struct airoha_eth *eth)
++static int airoha_fe_init(struct airoha_gdm_port *port)
+ {
+-	airoha_fe_maccr_init(eth);
++	airoha_fe_maccr_init(port);
+ 
+ 	return 0;
+ }
+@@ -746,10 +742,6 @@ static int airoha_hw_init(struct udevice *dev,
+ 
+ 	mdelay(20);
+ 
+-	ret = airoha_fe_init(eth);
+-	if (ret)
+-		return ret;
+-
+ 	for (i = 0; i < ARRAY_SIZE(eth->qdma); i++) {
+ 		ret = airoha_qdma_init(dev, eth, &eth->qdma[i]);
+ 		if (ret)
+@@ -979,6 +971,10 @@ static int airoha_eth_port_probe(struct udevice *dev)
+ 
+ 	port->qdma = &eth->qdma[0];
+ 
++	ret = airoha_fe_init(port);
++	if (ret)
++		return ret;
++
+ 	return 0;
+ }
+ 
+-- 
+2.51.0
+

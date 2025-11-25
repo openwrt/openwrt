@@ -1,0 +1,132 @@
+From 95b979c50c6fa64bd05953f5d195448e94ff7664 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Sat, 23 Aug 2025 01:07:29 +0200
+Subject: [PATCH] airoha: add PCS node for AN7581
+
+Add PCS node for Airoha AN7581 SoC to enable support for Serdes Ethernet
+and PON port.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ arch/arm/dts/an7581-u-boot.dtsi     | 71 +++++++++++++++++++++++++++++
+ arch/arm/dts/en7581-evb-u-boot.dtsi | 18 ++++++++
+ 2 files changed, 89 insertions(+)
+
+diff --git a/arch/arm/dts/an7581-u-boot.dtsi b/arch/arm/dts/an7581-u-boot.dtsi
+index a9297ca6503..9ee0f808660 100644
+--- a/arch/arm/dts/an7581-u-boot.dtsi
++++ b/arch/arm/dts/an7581-u-boot.dtsi
+@@ -35,6 +35,48 @@
+ 			reg = <0x0 0x1fa20000 0x0 0x388>;
+ 		};
+ 
++		pon_pcs: pcs@1fa08000 {
++			compatible = "airoha,an7581-pcs-pon";
++			reg = <0x0 0x1fa08000 0x0 0x1000>,
++			      <0x0 0x1fa80000 0x0 0x60>,
++			      <0x0 0x1fa80a00 0x0 0x164>,
++			      <0x0 0x1fa84000 0x0 0x450>,
++			      <0x0 0x1fa85900 0x0 0x338>,
++			      <0x0 0x1fa86000 0x0 0x300>,
++			      <0x0 0x1fa8a000 0x0 0x1000>,
++			      <0x0 0x1fa8b000 0x0 0x1000>;
++			reg-names = "xfi_mac", "hsgmii_an", "hsgmii_pcs",
++				    "multi_sgmii", "usxgmii",
++				    "hsgmii_rate_adp", "xfi_ana", "xfi_pma";
++
++			resets = <&scuclk EN7581_XPON_MAC_RST>,
++				 <&scuclk EN7581_XPON_PHY_RST>;
++			reset-names = "mac", "phy";
++
++			airoha,scu = <&scuclk>;
++		};
++
++		eth_pcs: pcs@1fa09000 {
++			compatible = "airoha,an7581-pcs-eth";
++			reg = <0x0 0x1fa09000 0x0 0x1000>,
++			      <0x0 0x1fa70000 0x0 0x60>,
++			      <0x0 0x1fa70a00 0x0 0x164>,
++			      <0x0 0x1fa74000 0x0 0x450>,
++			      <0x0 0x1fa75900 0x0 0x338>,
++			      <0x0 0x1fa76000 0x0 0x300>,
++			      <0x0 0x1fa7a000 0x0 0x1000>,
++			      <0x0 0x1fa7b000 0x0 0x1000>;
++			reg-names = "xfi_mac", "hsgmii_an", "hsgmii_pcs",
++				    "multi_sgmii", "usxgmii",
++				    "hsgmii_rate_adp", "xfi_ana", "xfi_pma";
++
++			resets = <&scuclk EN7581_XSI_MAC_RST>,
++				 <&scuclk EN7581_XSI_PHY_RST>;
++			reset-names = "mac", "phy";
++
++			airoha,scu = <&scuclk>;
++		};
++
+ 		eth: ethernet@1fb50000 {
+ 			compatible = "airoha,en7581-eth";
+ 			reg = <0 0x1fb50000 0 0x2600>,
+@@ -52,6 +94,35 @@
+ 			reset-names = "fe", "pdma", "qdma",
+ 				      "hsi0-mac", "hsi1-mac", "hsi-mac",
+ 				      "xfp-mac";
++
++			gdm1: ethernet@1 {
++				compatible = "airoha,eth-mac";
++				reg = <1>;
++				phy-mode = "internal";
++				status = "disabled";
++
++				fixed-link {
++					speed = <10000>;
++					full-duplex;
++					pause;
++				};
++			};
++
++			gdm2: ethernet@2 {
++				compatible = "airoha,eth-mac";
++				reg = <2>;
++				pcs = <&pon_pcs>;
++
++				status = "disabled";
++			};
++
++			gdm4: ethernet@4 {
++				compatible = "airoha,eth-mac";
++				reg = <4>;
++				pcs = <&eth_pcs>;
++
++				status = "disabled";
++			};
+ 		};
+ 
+ 		switch: switch@1fb58000 {
+diff --git a/arch/arm/dts/en7581-evb-u-boot.dtsi b/arch/arm/dts/en7581-evb-u-boot.dtsi
+index ebd3b8b4958..9a02122fbfa 100644
+--- a/arch/arm/dts/en7581-evb-u-boot.dtsi
++++ b/arch/arm/dts/en7581-evb-u-boot.dtsi
+@@ -9,3 +9,21 @@
+ };
+ 
+ #include "an7581-u-boot.dtsi"
++
++&gdm1 {
++	status = "okay";
++};
++
++&gdm2 {
++	status = "okay";
++
++	managed = "in-band-status";
++	phy-mode = "10gbase-r";
++};
++
++&gdm4 {
++	status = "okay";
++
++	managed = "in-band-status";
++	phy-mode = "usxgmii";
++};
+-- 
+2.51.0
+

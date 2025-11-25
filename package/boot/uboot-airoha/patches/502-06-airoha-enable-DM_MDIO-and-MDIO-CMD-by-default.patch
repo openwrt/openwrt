@@ -1,0 +1,60 @@
+From d588d987686adbcc237aee0457b6db3c5d20baf9 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Fri, 22 Aug 2025 15:43:56 +0200
+Subject: [PATCH] airoha: enable DM_MDIO and MDIO CMD by default
+
+Enable DM_MDIO and MDIO CMD in the default config.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ configs/an7581_evb_defconfig | 3 +++
+ configs/an7583_evb_defconfig | 4 ++++
+ configs/en7523_evb_defconfig | 3 +++
+ 3 files changed, 10 insertions(+)
+
+diff --git a/configs/an7581_evb_defconfig b/configs/an7581_evb_defconfig
+index 37786ace2b4..606689c829d 100644
+--- a/configs/an7581_evb_defconfig
++++ b/configs/an7581_evb_defconfig
+@@ -67,6 +67,9 @@ CONFIG_SPI_FLASH_WINBOND=y
+ CONFIG_SPI_FLASH_MTD=y
+ CONFIG_AIROHA_ETH=y
+ CONFIG_PCS_AIROHA_AN7581=y
++CONFIG_DM_MDIO=y
++CONFIG_CMD_MII=y
++CONFIG_CMD_MDIO=y
+ CONFIG_PHYLIB=y
+ CONFIG_PHY=y
+ CONFIG_PINCTRL=y
+diff --git a/configs/an7583_evb_defconfig b/configs/an7583_evb_defconfig
+index ffbd3f47992..fb04c463446 100644
+--- a/configs/an7583_evb_defconfig
++++ b/configs/an7583_evb_defconfig
+@@ -66,6 +66,10 @@ CONFIG_SPI_FLASH_WINBOND=y
+ CONFIG_SPI_FLASH_MTD=y
+ CONFIG_AIROHA_ETH=y
+ CONFIG_PCS_AIROHA_AN7583=y
++CONFIG_DM_MDIO=y
++CONFIG_CMD_MII=y
++CONFIG_CMD_MDIO=y
++CONFIG_MDIO_AIROHA=y
+ CONFIG_PHYLIB=y
+ CONFIG_PHY=y
+ CONFIG_PINCTRL=y
+diff --git a/configs/en7523_evb_defconfig b/configs/en7523_evb_defconfig
+index 113ddb46a7f..ebd99d133c9 100644
+--- a/configs/en7523_evb_defconfig
++++ b/configs/en7523_evb_defconfig
+@@ -51,6 +51,9 @@ CONFIG_MTD=y
+ CONFIG_DM_MTD=y
+ CONFIG_MTD_SPI_NAND=y
+ CONFIG_AIROHA_ETH=y
++CONFIG_DM_MDIO=y
++CONFIG_CMD_MII=y
++CONFIG_CMD_MDIO=y
+ CONFIG_PHY=y
+ CONFIG_PINCTRL=y
+ CONFIG_PINCONF=y
+-- 
+2.51.0
+
