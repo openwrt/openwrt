@@ -19,7 +19,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/include/net/gro.h
 +++ b/include/net/gro.h
-@@ -439,6 +439,7 @@ static inline __wsum ip6_gro_compute_pse
+@@ -442,6 +442,7 @@ static inline __wsum ip6_gro_compute_pse
  }
  
  int skb_gro_receive(struct sk_buff *p, struct sk_buff *skb);
@@ -29,7 +29,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  static inline void gro_normal_list(struct napi_struct *napi)
 --- a/net/core/gro.c
 +++ b/net/core/gro.c
-@@ -228,6 +228,33 @@ done:
+@@ -225,6 +225,33 @@ done:
  	return 0;
  }
  

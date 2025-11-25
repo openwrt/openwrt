@@ -108,7 +108,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  #endif
 --- a/net/core/skbuff.c
 +++ b/net/core/skbuff.c
-@@ -6863,8 +6863,8 @@ nodefer:	__kfree_skb(skb);
+@@ -6867,8 +6867,8 @@ nodefer:	__kfree_skb(skb);
  	/* Make sure to trigger NET_RX_SOFTIRQ on the remote CPU
  	 * if we are unlucky enough (this seems very unlikely).
  	 */

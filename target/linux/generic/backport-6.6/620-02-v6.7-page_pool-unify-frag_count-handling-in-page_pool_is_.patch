@@ -147,7 +147,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	page_pool_put_defragged_page(pool, page, dma_sync_size, allow_direct);
 --- a/net/core/page_pool.c
 +++ b/net/core/page_pool.c
-@@ -380,6 +380,14 @@ static void page_pool_set_pp_info(struct
+@@ -376,6 +376,14 @@ static void page_pool_set_pp_info(struct
  {
  	page->pp = pool;
  	page->pp_magic |= PP_SIGNATURE;
@@ -162,7 +162,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	if (pool->p.init_callback)
  		pool->p.init_callback(page, pool->p.init_arg);
  }
-@@ -676,7 +684,7 @@ void page_pool_put_page_bulk(struct page
+@@ -678,7 +686,7 @@ void page_pool_put_page_bulk(struct page
  		struct page *page = virt_to_head_page(data[i]);
  
  		/* It is not the last user for the page frag case */
@@ -171,7 +171,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  			continue;
  
  		page = __page_pool_put_page(pool, page, -1, false);
-@@ -752,8 +760,7 @@ struct page *page_pool_alloc_frag(struct
+@@ -754,8 +762,7 @@ struct page *page_pool_alloc_frag(struct
  	unsigned int max_size = PAGE_SIZE << pool->p.order;
  	struct page *page = pool->frag_page;
  
