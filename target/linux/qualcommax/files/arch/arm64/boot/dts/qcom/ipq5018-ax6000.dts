@@ -137,9 +137,6 @@
 	nand@0 {
 		compatible = "spi-nand";
 		reg = <0>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-
 		nand-ecc-engine = <&qpic_nand>;
 		nand-bus-width = <8>;
 

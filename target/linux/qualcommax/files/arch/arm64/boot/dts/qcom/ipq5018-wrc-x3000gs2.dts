@@ -161,9 +161,6 @@
 	flash@0 {
 		compatible = "spi-nand";
 		reg = <0>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-
 		nand-ecc-engine = <&qpic_nand>;
 
 		/* strength=8 breaks NAND I/O, use 4 instead */
