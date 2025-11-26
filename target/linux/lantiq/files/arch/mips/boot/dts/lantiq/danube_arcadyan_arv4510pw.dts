@@ -48,72 +48,72 @@
 		compatible = "gpio-leds";
 		power: power {
 			label = "power";
-			gpios = <&gpios 21 GPIO_ACTIVE_HIGH>;
+			gpios = <&stp0 21 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};
 		power2: power2 {
 			label = "power2";
-			gpios = <&gpios 20 GPIO_ACTIVE_HIGH>;
+			gpios = <&stp0 20 GPIO_ACTIVE_HIGH>;
 		};
 		lan1 {
 			label = "lan1";
-			gpios = <&gpios 19 GPIO_ACTIVE_HIGH>;
+			gpios = <&stp0 19 GPIO_ACTIVE_HIGH>;
 		};
 		lan2 {
 			label = "lan2";
-			gpios = <&gpios 18 GPIO_ACTIVE_HIGH>;
+			gpios = <&stp0 18 GPIO_ACTIVE_HIGH>;
 		};
 		lan3 {
 			label = "lan3";
-			gpios = <&gpios 17 GPIO_ACTIVE_HIGH>;
+			gpios = <&stp0 17 GPIO_ACTIVE_HIGH>;
 		};
 		lan4 {
 			label = "lan4";
-			gpios = <&gpios 16 GPIO_ACTIVE_HIGH>;
+			gpios = <&stp0 16 GPIO_ACTIVE_HIGH>;
 		};
 		wifi: wifi {
 			label = "wifi";
-			gpios = <&gpios 15 GPIO_ACTIVE_HIGH>;
+			gpios = <&stp0 15 GPIO_ACTIVE_HIGH>;
 		};
 		adsl: adsl {
 			label = "adsl";
-			gpios = <&gpios 14 GPIO_ACTIVE_HIGH>;
+			gpios = <&stp0 14 GPIO_ACTIVE_HIGH>;
 		};
 		internet: internet {
 			label = "internet";
-			gpios = <&gpios 13 GPIO_ACTIVE_HIGH>;
+			gpios = <&stp0 13 GPIO_ACTIVE_HIGH>;
 		};
 		internet2 {
 			label = "internet2";
-			gpios = <&gpios 12 GPIO_ACTIVE_HIGH>;
+			gpios = <&stp0 12 GPIO_ACTIVE_HIGH>;
 		};
 		voip {
 			label = "voip";
-			gpios = <&gpios 11 GPIO_ACTIVE_HIGH>;
+			gpios = <&stp0 11 GPIO_ACTIVE_HIGH>;
 		};
 		phone {
 			label = "phone";
-			gpios = <&gpios 10 GPIO_ACTIVE_HIGH>;
+			gpios = <&stp0 10 GPIO_ACTIVE_HIGH>;
 		};
 		phone2 {
 			label = "phone2";
-			gpios = <&gpios 9 GPIO_ACTIVE_HIGH>;
+			gpios = <&stp0 9 GPIO_ACTIVE_HIGH>;
 		};
 		led_usb: usb {
 			label = "usb";
-			gpios = <&gpios 8 GPIO_ACTIVE_HIGH>;
+			gpios = <&stp0 8 GPIO_ACTIVE_HIGH>;
 		};
 		led_usb2: usb2 {
 			label = "usb2";
-			gpios = <&gpios 7 GPIO_ACTIVE_HIGH>;
+			gpios = <&stp0 7 GPIO_ACTIVE_HIGH>;
 		};
 		usb3 {
 			label = "usb3";
-			gpios = <&gpios 6 GPIO_ACTIVE_HIGH>;
+			gpios = <&stp0 6 GPIO_ACTIVE_HIGH>;
 		};
 		unlabeled {
 			label = "unlabeled";
-			gpios = <&gpios 5 GPIO_ACTIVE_HIGH>;
+			gpios = <&stp0 5 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };
@@ -147,7 +147,7 @@
 	};
 };
 
-&gpios {
+&stp0 {
 	status = "okay";
 	lantiq,groups = <0x7>;
 };
