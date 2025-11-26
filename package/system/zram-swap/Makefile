@@ -20,6 +20,7 @@ define Package/zram-swap
 	+@BUSYBOX_CONFIG_MKSWAP \
 	+@BUSYBOX_CONFIG_SWAPOFF \
 	+@BUSYBOX_CONFIG_SWAPON \
+	+@KERNEL_SWAP \
 	+kmod-zram
   TITLE:=ZRAM swap scripts
   PKGARCH:=all
