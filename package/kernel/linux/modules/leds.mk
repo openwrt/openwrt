@@ -55,22 +55,6 @@ endef
 
 $(eval $(call KernelPackage,ledtrig-activity))
 
-define KernelPackage/ledtrig-audio
-  SUBMENU:=$(LEDS_MENU)
-  TITLE:=LED Audio Mute Trigger
-  DEPENDS:=@LINUX_6_6
-  KCONFIG:=CONFIG_LEDS_TRIGGER_AUDIO
-  FILES:=$(LED_TRIGGER_DIR)/ledtrig-audio.ko
-  AUTOLOAD:=$(call AutoLoad,50,ledtrig-audio)
-endef
-
-define KernelPackage/ledtrig-audio/description
- Kernel module that allows LEDs to be controlled by audio drivers
- to follow audio mute and mic-mute changes.
-endef
-
-$(eval $(call KernelPackage,ledtrig-audio))
-
 define KernelPackage/ledtrig-gpio
   SUBMENU:=$(LEDS_MENU)
   TITLE:=LED GPIO Trigger

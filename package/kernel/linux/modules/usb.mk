@@ -1489,7 +1489,7 @@ $(eval $(call KernelPackage,usb-net-rtl8150))
 
 define KernelPackage/usb-net-rtl8152
   TITLE:=Kernel module for USB-to-Ethernet Realtek convertors
-  DEPENDS:=+r8152-firmware +kmod-crypto-sha256 +kmod-mii +!LINUX_6_6:kmod-libphy
+  DEPENDS:=+r8152-firmware +kmod-crypto-sha256 +kmod-mii +kmod-libphy
   KCONFIG:=CONFIG_USB_RTL8152
   FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/r8152.ko
   AUTOLOAD:=$(call AutoProbe,r8152)
