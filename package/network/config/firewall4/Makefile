@@ -42,6 +42,9 @@ endef
 
 define Package/firewall4/install
 	$(CP) -a $(PKG_BUILD_DIR)/root/* $(1)/
+	$(if $(wildcard ./files/firewall.config),
+		$(INSTALL_CONF) ./files/firewall.config $(1)/etc/config/firewall
+	)
 endef
 
 define Build/Compile
