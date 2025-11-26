@@ -50,16 +50,20 @@
  #define UBI_VERSION 1
 --- a/ubifs-utils/common/compiler_attributes.h
 +++ b/ubifs-utils/common/compiler_attributes.h
-@@ -1,6 +1,8 @@
+@@ -1,6 +1,12 @@
  #ifndef __COMPILER_ATTRIBUTES_H__
  #define __COMPILER_ATTRIBUTES_H__
  
++#if HAVE_EXECINFO_H
 +#include <execinfo.h>
++#else
++#include "libmissing.h"
++#endif
 +
  #if __has_attribute(__fallthrough__)
  #define fallthrough	__attribute__((__fallthrough__))
  #else
-@@ -11,6 +13,7 @@
+@@ -11,6 +17,7 @@
  #define __unused	__attribute__((__unused__))
  #define __const		__attribute__((__const__))
  #define __must_check    __attribute__((__warn_unused_result__))
