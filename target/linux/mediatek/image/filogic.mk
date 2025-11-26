@@ -645,11 +645,7 @@ TARGET_DEVICES += bananapi_bpi-r4
 
 define Device/bananapi_bpi-r4-poe
   DEVICE_MODEL := BPi-R4 2.5GE
-ifneq ($(CONFIG_LINUX_6_6),)
-  DEVICE_DTS := mt7988a-bananapi-bpi-r4-poe
-else
   DEVICE_DTS := mt7988a-bananapi-bpi-r4-2g5
-endif
   DEVICE_DTS_CONFIG := config-mt7988a-bananapi-bpi-r4-poe
   $(call Device/bananapi_bpi-r4-common)
   DEVICE_PACKAGES += mt7988-2p5g-phy-firmware
