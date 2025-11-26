@@ -73,6 +73,7 @@ function setup_sta(data, config) {
 	set_default(config, 'multi_ap', 0);
 	set_default(config, 'multi_profile', 1);
 	set_default(config, 'default_disabled', 0);
+	set_default(config, 'bgscan_simple', 0);
 
 	config.scan_ssid = 1;
 
@@ -170,6 +171,10 @@ function setup_sta(data, config) {
 
 	config.key_mgmt ??= 'NONE';
 
+	if (config.bgscan_simple) {
+		config.bgscan = `"simple:${config.bgscan_simple_short_itv}:${bgscan_simple_rssi_thd}:${bgscan_simple_long_itv}"`;
+	}
+
 	config.basic_rate = ratelist(config.basic_rate);
 	config.mcast_rate = ratestr(config.mcast_rate);
 
@@ -183,7 +188,8 @@ function setup_sta(data, config) {
 		'bssid_blacklist', 'bssid_whitelist', 'erp', 'ca_cert', 'identity',
 		'anonymous_identity', 'client_cert', 'private_key', 'private_key_passwd',
 		'subject_match', 'altsubject_match', 'domain_match', 'domain_suffix_match',
-		'ca_cert2', 'client_cert2', 'private_key2', 'private_key2_passwd', 'password'
+		'ca_cert2', 'client_cert2', 'private_key2', 'private_key2_passwd', 'password',
+		'bgscan'
 	]);
 }
 

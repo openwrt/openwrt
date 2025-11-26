@@ -404,6 +404,12 @@ hostapd_common_add_bss_config() {
 
 	config_add_boolean apup
 	config_add_string apup_peer_ifname_prefix
+
+	config_add_boolean bgscan_simple
+	config_add_int \
+		bgscan_simple_short_itv \
+		bgscan_simple_long_itv \
+		bgscan_simple_rssi_thd
 }
 
 hostapd_set_vlan_file() {
@@ -1326,7 +1332,8 @@ wpa_supplicant_add_network() {
 		mcast_rate \
 		ieee80211w ieee80211r fils ocv \
 		multi_ap \
-		default_disabled
+		default_disabled \
+		bgscan_simple
 
 	json_get_values basic_rate_list basic_rate
 
@@ -1345,6 +1352,7 @@ wpa_supplicant_add_network() {
 	set_default multi_ap 0
 	set_default sae_pwe 2
 	set_default default_disabled 0
+	set_default bgscan_simple 0
 
 	local key_mgmt='NONE'
 	local network_data=
@@ -1620,6 +1628,21 @@ wpa_supplicant_add_network() {
 		local mc_rate=
 		wpa_supplicant_add_rate mc_rate "$mcast_rate"
 		append network_data "mcast_rate=$mc_rate" "$N$T"
+	}
+
+	[ "$bgscan_simple" = 1 ] && {
+		local bgscan_simple_short_itv \
+			bgscan_simple_long_itv \
+			bgscan_simple_rssi_thd
+		json_get_vars \
+			bgscan_simple_short_itv \
+			bgscan_simple_long_itv \
+			bgscan_simple_rssi_thd
+		set_default bgscan_simple_short_itv   30
+		set_default bgscan_simple_long_itv  3600
+		set_default bgscan_simple_rssi_thd   -70
+
+		append network_data "bgscan=\"simple:$bgscan_simple_short_itv:$bgscan_simple_rssi_thd:$bgscan_simple_long_itv\"" "$N$T"
 	}
 
 	if [ "$key_mgmt" = "WPS" ]; then
