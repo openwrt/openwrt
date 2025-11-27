@@ -1,0 +1,1037 @@
+--- a/drivers/leds/trigger/Kconfig
++++ b/drivers/leds/trigger/Kconfig
+@@ -129,6 +129,15 @@ config LEDS_TRIGGER_NETDEV
+ 	  This allows LEDs to be controlled by network device activity.
+ 	  If unsure, say Y.
+ 
++config LEDS_TRIGGER_NETWORK
++	tristate "LED trigger for network interfaces"
++	depends on NET
++	help
++	  Per-family network LED trigger: aggregates lan/wan/wlan stats;
++	  family from DT 'dev' or name; flags from DT 'mode';
++	  '-online' - online-only if mode absent.
++	  If unsure, say Y.
++
+ config LEDS_TRIGGER_PATTERN
+ 	tristate "LED Pattern Trigger"
+ 	help
+--- /dev/null
++++ b/drivers/leds/trigger/ledtrig-network.c
+@@ -0,0 +1,1009 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * LED trigger for network interfaces.
++ *
++ * - Aggregated per-family (lan/wan/wlan).
++ * - Family and flags are taken from device tree properties:
++ *     - "dev"  : simple family string "lan" | "wan" | "wlan"
++ *     - "mode" : any combination of "link", "tx", "rx" flags
++ *   Priority/combination:
++ *     * If "mode" present: flags come from "mode" and take precedence.
++ *       Family is taken from "dev" if present, otherwise from the LED name.
++ *     * If only "dev" present: use its family and default flags = link+tx+rx.
++ *     * If neither present: fall back to LED device name parsing.
++ *
++ * - Suffix "-online" is valid ONLY in the LED name (label), e.g. "green:wlan-online".
++ *   It indicates the online variant but is applied only when DT "mode" is absent.
++ *
++ * Behaviour:
++ * - wlan (normal): blink/solid driven by throughput table
++ * - lan/wan (normal): one-shot blink on TX/RX packet change
++ * - *-online variants: steady ON while any interface of the family has carrier
++ *
++ * Interfaces are auto-tracked by name match (lan0, wan1, wlan2, phy0, wl1, ath0, ra0…).
++ * Up to MAX_IFACES (16) interfaces per family.
++ */
++
++#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
++
++#include <linux/module.h>
++#include <linux/kernel.h>
++#include <linux/slab.h>
++#include <linux/jiffies.h>
++#include <linux/leds.h>
++#include <linux/mutex.h>
++#include <linux/netdevice.h>
++#include <linux/workqueue.h>
++#include <linux/of.h>
++#include <linux/list.h>
++#include <linux/atomic.h>
++#include <linux/compiler.h>
++#include <linux/string.h>
++#include <linux/sysfs.h>
++#include <linux/device.h>
++#include <linux/ctype.h>
++#include <linux/err.h>
++#include "../leds.h"
++
++#define MAX_IFACES 16
++#define DEFAULT_INTERVAL_MS 50
++
++enum net_trig_type {
++	NET_TRIG_LAN = 0,
++	NET_TRIG_WAN,
++	NET_TRIG_WLAN,
++	NET_TRIG_TYPE_MAX,
++};
++
++static const char * const type_names[] = {
++	[NET_TRIG_LAN] = "lan",
++	[NET_TRIG_WAN] = "wan",
++	[NET_TRIG_WLAN] = "wlan",
++};
++
++/* labels indexed by bitmask: (link<<2)|(tx<<1)|(rx<<0) */
++static const char *const labels[] = {
++	"",              /* 0 */
++	"(tx)",         /* 1 */
++	"(rx)",         /* 2 */
++	"(tx rx)",      /* 3 */
++	"(link)",       /* 4 */
++	"(link rx)",    /* 5 */
++	"(link tx)",    /* 6 */
++	"(link tx rx)", /* 7 */
++};
++
++/* wlan throughput table */
++static const struct {
++	u32 throughput;
++	unsigned long on_ms;
++	unsigned long off_ms;
++} wlan_tpt_table[] = {
++	{   64, 200, 800 },
++	{  512, 200, 300 },
++	{ 2048, 200, 150 },
++	{10000, 200,  50 },
++	{54000, 100,  50 },
++};
++
++struct net_mgr {
++	enum net_trig_type type; /* family: lan/wan/wlan */
++
++	struct mutex lock;
++	struct notifier_block notifier;
++	struct delayed_work work;
++
++	struct net_device *devs[MAX_IFACES];
++	int dev_slot_limit;
++
++	u64 agg_rx_packets;
++	u64 agg_tx_packets;
++	u64 agg_rx_bytes;
++	u64 agg_tx_bytes;
++
++	struct list_head leds;
++	atomic_t refcnt;
++};
++
++struct net_led {
++	struct list_head node;
++	struct led_classdev *led_cdev;
++	struct net_mgr *mgr;
++
++	u64 last_rx_packets;
++	u64 last_tx_packets;
++	u64 last_rx_bytes;
++	u64 last_tx_bytes;
++
++	bool link;
++	bool rx;
++	bool tx;
++};
++
++static DEFINE_MUTEX(managers_lock);
++static struct net_mgr *managers[NET_TRIG_TYPE_MAX];
++
++static ssize_t net_flag_show(struct device *dev, struct device_attribute *attr, char *buf);
++static ssize_t net_flag_store(struct device *dev, struct device_attribute *attr,
++			      const char *buf, size_t count);
++static ssize_t net_dev_show(struct device *dev, struct device_attribute *attr, char *buf);
++static ssize_t net_dev_store(struct device *dev, struct device_attribute *attr,
++			     const char *buf, size_t count);
++
++/* helpers */
++static inline void led_set_off_full(struct led_classdev *led, bool on)
++{
++	led_stop_software_blink(led);
++	led_set_brightness(led, on ? LED_FULL : LED_OFF);
++}
++
++static inline void led_set_oneshot_ms(struct led_classdev *led, unsigned long ms, bool invert)
++{
++	led_stop_software_blink(led);
++	led_blink_set_oneshot(led, &ms, &ms, invert);
++}
++
++/* helper: check that next char after prefix is digit, '-' or NUL */
++static inline bool next_char_ok(const char *s, size_t pos)
++{
++	char c = s[pos];
++	return c == '\0' || c == '-' || (c >= '0' && c <= '9');
++}
++
++/* name matching: lan/wan; wlan matched by various wifi prefixes with restriction
++ * additionally accept ath (Atheros) and ra/rai (Ralink/MediaTek) prefixes.
++ * For lan and wan require next char to be digit/'-' or end to avoid accidental matches.
++ */
++static bool name_matches_type(const char *name, enum net_trig_type type)
++{
++	if (!name)
++		return false;
++	switch (type) {
++
++	case NET_TRIG_LAN:
++		/* accept "lan", "lanX", "lan-X" */
++		if (!strncmp(name, "lan", 3))
++			return next_char_ok(name, 3);
++		return false;
++	case NET_TRIG_WAN:
++		/* accept "wan", "wanX", "wan-X" */
++		if (!strncmp(name, "wan", 3))
++			return next_char_ok(name, 3);
++		return false;
++	case NET_TRIG_WLAN:
++		/* accept "phyX", "wlX"/"wl-..." or "wlan" and common driver prefixes */
++		if (!strncmp(name, "phy", 3))
++			return next_char_ok(name, 3);
++		if (!strncmp(name, "wlan", 4))
++			return next_char_ok(name, 4);
++		if (!strncmp(name, "wl", 2))
++			return next_char_ok(name, 2);
++		/* Atheros (athX) */
++		if (!strncmp(name, "ath", 3))
++			return next_char_ok(name, 3);
++		/* Ralink/MediaTek: check "rai" (e.g. rai0) first, then "ra" (ra0) */
++		if (!strncmp(name, "rai", 3))
++			return next_char_ok(name, 3);
++		if (!strncmp(name, "ra", 2))
++			return next_char_ok(name, 2);
++		return false;
++	default:
++		return false;
++	}
++}
++
++/* Extract family type (lan/wan/wlan) from a string.
++ * If "online" is supplied, also detects and strips the "-online" suffix.
++ * Returns enum net_trig_type or -1 on error.
++ */
++static int parse_family_token(const char *fn, bool *online)
++{
++	size_t len;
++	const size_t sufflen = sizeof("-online") - 1;
++
++	if (!fn)
++		return -1;
++
++	len = strlen(fn);
++
++	if (online) {
++		*online = false;
++		if (len > sufflen && !strcmp(fn + len - sufflen, "-online")) {
++			*online = true;
++			len -= sufflen;
++		}
++	}
++
++	if (len == 3 && !strncmp(fn, "lan", 3))
++		return NET_TRIG_LAN;
++	if (len == 3 && !strncmp(fn, "wan", 3))
++		return NET_TRIG_WAN;
++	if (len == 4 && !strncmp(fn, "wlan", 4))
++		return NET_TRIG_WLAN;
++
++	return -1;
++}
++
++/* Parse only flags from a string: recognized tokens are "link", "tx", "rx".
++ * Any other token => -EINVAL. If no flags found, set all three true.
++ * Suitable for DT "mode" (strict) or parsing flags from name when no mode present.
++ */
++static int parse_flags_from_string(const char *fn, bool *link, bool *tx, bool *rx)
++{
++	size_t len;
++	const char *buf = NULL;
++	size_t buflen = 0;
++	size_t i;
++	bool found = false;
++
++	if (!fn || !link || !tx || !rx)
++		return -EINVAL;
++
++	*link = false;
++	*tx = false;
++	*rx = false;
++
++	len = strlen(fn);
++	for (i = 0; i < len; i++) {
++		if (fn[i] == ' ' || fn[i] == '\t' || fn[i] == ',') {
++			buf = NULL;
++			buflen = 0;
++			continue;
++		}
++
++		if (!buf) {
++			buf = fn + i;
++			buflen = 0;
++		}
++		buflen++;
++
++		if ((i + 1 == len) || fn[i + 1] == ' ' || fn[i + 1] == '\t' || fn[i + 1] == ',') {
++			if (buflen == 4 && !strncmp(buf, "link", 4)) {
++				*link = true;
++				found = true;
++			} else if (buflen == 2 && !strncmp(buf, "tx", 2)) {
++				*tx = true;
++				found = true;
++			} else if (buflen == 2 && !strncmp(buf, "rx", 2)) {
++				*rx = true;
++				found = true;
++			} else {
++				/* unknown token */
++				return -EINVAL;
++			}
++
++			buf = NULL;
++			buflen = 0;
++		}
++	}
++
++	/* default: if no flags found, set all true */
++	if (!found) {
++		*link = true;
++		*tx = true;
++		*rx = true;
++	}
++
++	return 0;
++}
++
++/* safe stats read wrapper */
++static void get_dev_stats_safe(struct net_device *dev, struct rtnl_link_stats64 *st)
++{
++	memset(st, 0, sizeof(*st));
++	dev_get_stats(dev, st);
++}
++
++/* Update single LED according to manager aggregates and per-LED flags.
++ * any_online indicates whether any tracked interface currently has carrier.
++ * If LED is online-only (link && !tx && !rx) it is driven directly by any_online.
++ */
++static void update_led(struct net_led *e, struct net_mgr *m, bool any_online)
++{
++	long unsigned int on_ms, off_ms;
++	struct led_classdev *led = e->led_cdev;
++
++	/* defensive: avoid deref if led unexpectedly NULL */
++	if (!led)
++		return;
++
++	/* If LED requested online-only, reflect any_online */
++	if (e->link && !e->tx && !e->rx) {
++		led_set_off_full(led, any_online);
++		return;
++	}
++
++	/* For non-online-only LEDs: if no tracked interface has carrier,
++	 * keep the LED off and reset history baseline to avoid spurious deltas
++	 * when carrier later returns.
++	 */
++	if (!any_online) {
++		led_set_off_full(led, false);
++
++		e->last_tx_packets = m->agg_tx_packets;
++		e->last_rx_packets = m->agg_rx_packets;
++		e->last_tx_bytes   = m->agg_tx_bytes;
++		e->last_rx_bytes   = m->agg_rx_bytes;
++
++		return;
++	}
++
++	/* non-online-only behaviour depends on family */
++	if (m->type == NET_TRIG_WLAN) {
++		/* throughput-driven */
++		u64 bytes_delta = 0;
++		const u64 mul = 8ULL * 1000ULL;
++		u64 bits_per_sec = 0;
++
++		if (e->tx)
++			bytes_delta += m->agg_tx_bytes - e->last_tx_bytes;
++		if (e->rx)
++			bytes_delta += m->agg_rx_bytes - e->last_rx_bytes;
++		
++		/* Avoid overflow when multiplying bytes_delta; cap to max u64. */
++		if (bytes_delta) {
++			if (bytes_delta > ((u64)-1) / mul)
++				bits_per_sec = (u64)-1;
++			else
++				bits_per_sec = div64_u64(bytes_delta * mul, 2 * DEFAULT_INTERVAL_MS);
++		}
++		u64 kbps = div64_u64(bits_per_sec, 1000ULL);
++
++		if (kbps == 0)
++			led_set_off_full(led, e->link);
++		else {
++			int idx = 0, t;
++			for (t = 0; t < ARRAY_SIZE(wlan_tpt_table); t++) {
++				if (kbps >= wlan_tpt_table[t].throughput)
++					idx = t;
++				else
++					break;
++			}
++
++			on_ms = wlan_tpt_table[idx].on_ms;
++			off_ms = wlan_tpt_table[idx].off_ms;
++			if (e->link)
++				led_blink_set(led, &on_ms, &off_ms);
++			else
++				led_blink_set(led, &off_ms, &on_ms);
++		}
++
++		e->last_tx_bytes = m->agg_tx_bytes;
++		e->last_rx_bytes = m->agg_rx_bytes;
++	} else {
++		/* LAN/WAN: oneshot on packet-count change */
++		u64 tx_sum = m->agg_tx_packets;
++		u64 rx_sum = m->agg_rx_packets;
++
++		if ((e->tx && tx_sum != e->last_tx_packets) || (e->rx && rx_sum != e->last_rx_packets)) {
++			unsigned long ms = DEFAULT_INTERVAL_MS;
++			led_set_oneshot_ms(led, ms, e->link);
++		} else {
++			led_set_off_full(led, e->link);
++		}
++		e->last_tx_packets = tx_sum;
++		e->last_rx_packets = rx_sum;
++	}
++}
++
++/* core work: aggregate + update LEDs */
++static void net_mgr_work(struct work_struct *work)
++{
++	struct net_mgr *m = container_of(work, struct net_mgr, work.work);
++	bool any_online = false;
++	int i;
++
++	mutex_lock(&m->lock);
++
++	if (m->dev_slot_limit == 0) {
++		struct net_led *e;
++		m->agg_tx_packets = m->agg_rx_packets = 0;
++		m->agg_tx_bytes = m->agg_rx_bytes = 0;
++		list_for_each_entry(e, &m->leds, node) {
++			led_set_off_full(e->led_cdev, false);
++			e->last_tx_packets = e->last_rx_packets = 0;
++			e->last_tx_bytes = e->last_rx_bytes = 0;
++		}
++		mutex_unlock(&m->lock);
++		schedule_delayed_work(&m->work, msecs_to_jiffies(2 * DEFAULT_INTERVAL_MS));
++		return;
++	}
++
++	/* aggregate */
++	m->agg_tx_packets = m->agg_rx_packets = 0;
++	m->agg_tx_bytes = m->agg_rx_bytes = 0;
++
++	/* detect any tracked-interface online (carrier) and sum stats */
++	for (i = 0; i < m->dev_slot_limit; i++) {
++		struct net_device *dev = m->devs[i];
++		struct rtnl_link_stats64 st;
++
++		if (!dev)
++			continue;
++
++		get_dev_stats_safe(dev, &st);
++		m->agg_tx_packets += st.tx_packets;
++		m->agg_rx_packets += st.rx_packets;
++		m->agg_tx_bytes += st.tx_bytes;
++		m->agg_rx_bytes += st.rx_bytes;
++
++		if (netif_running(dev) && netif_carrier_ok(dev))
++			any_online = true;
++	}
++
++	/* update each subscribed LED according to its flags and family */
++	{
++		struct net_led *e;
++		list_for_each_entry(e, &m->leds, node)
++			update_led(e, m, any_online);
++	}
++
++	mutex_unlock(&m->lock);
++	schedule_delayed_work(&m->work, msecs_to_jiffies(2 * DEFAULT_INTERVAL_MS));
++}
++
++/* notifier: manage tracked devices */
++static int net_mgr_notify(struct notifier_block *nb, unsigned long event, void *ptr)
++{
++	struct netdev_notifier_info *info = ptr;
++	struct net_device *tmp, *dev = NULL;
++	struct net_mgr *m = container_of(nb, struct net_mgr, notifier);
++	int i, id = -1, newid;
++
++	if (event != NETDEV_REGISTER && event != NETDEV_UNREGISTER &&
++	    event != NETDEV_CHANGENAME)
++		return NOTIFY_DONE;
++
++	if (!info)
++		return NOTIFY_DONE;
++
++	dev = info->dev;
++
++	if (!dev)
++		return NOTIFY_DONE;
++
++	mutex_lock(&m->lock);
++	for (i = 0; i < m->dev_slot_limit; i++) {
++		if (m->devs[i] && m->devs[i] == dev) {
++			id = i;
++			break;
++		}
++	}
++
++	switch (event) {
++	case NETDEV_UNREGISTER:
++		if (id >= 0) {
++			tmp = m->devs[id];
++			if (tmp) {
++				m->devs[id] = NULL;
++				pr_info("%s - interface %s unregistered\n", type_names[m->type], dev->name);
++				if (m->dev_slot_limit == id + 1)
++					m->dev_slot_limit--;
++				mutex_unlock(&m->lock);
++				dev_put(tmp);
++				mutex_lock(&m->lock);
++			}
++		}
++		break;
++	case NETDEV_CHANGENAME:
++		if (id >= 0 && !name_matches_type(dev->name, m->type)) {
++			tmp = m->devs[id];
++			if (tmp) {
++				m->devs[id] = NULL;
++				pr_info("%s - interface %s unregistered (name changed)\n",
++					type_names[m->type], dev->name);
++				if (m->dev_slot_limit == id + 1)
++					m->dev_slot_limit--;
++				mutex_unlock(&m->lock);
++				dev_put(tmp);
++				mutex_lock(&m->lock);
++			}
++			break;
++		}
++		fallthrough;
++	case NETDEV_REGISTER:
++		if (id < 0 && name_matches_type(dev->name, m->type)) {
++			newid = -1;
++			for (i = 0; i < m->dev_slot_limit; i++) {
++				if (!m->devs[i]) {
++					newid = i;
++					break;
++				}
++			}
++			if (newid < 0 && m->dev_slot_limit < MAX_IFACES)
++				newid = m->dev_slot_limit++;
++			if (newid >= 0) {
++				dev_hold(dev);
++				m->devs[newid] = dev;
++				pr_info("%s - interface %s registered\n", type_names[m->type], dev->name);
++			}
++		}
++		break;
++	}
++	mutex_unlock(&m->lock);
++	return NOTIFY_DONE;
++}
++
++/* find/create manager for base family */
++static struct net_mgr *net_mgr_get(enum net_trig_type type)
++{
++	struct net_mgr *m, *existing = NULL;
++
++	if (type >= NET_TRIG_TYPE_MAX)
++		return NULL;
++
++	/* fast-path: if already exists, bump ref and return */
++	mutex_lock(&managers_lock);
++	m = managers[type];
++	if (m) {
++		atomic_inc(&m->refcnt);
++		mutex_unlock(&managers_lock);
++		return m;
++	}
++	mutex_unlock(&managers_lock);
++
++	/* allocate and init (not yet published) */
++	m = kzalloc(sizeof(*m), GFP_KERNEL);
++	if (!m)
++		return NULL;
++
++	m->type = type;
++	mutex_init(&m->lock);
++	INIT_LIST_HEAD(&m->leds);
++	atomic_set(&m->refcnt, 1);
++	INIT_DELAYED_WORK(&m->work, net_mgr_work);
++
++	m->notifier.notifier_call = net_mgr_notify;
++	m->notifier.priority = 0;
++
++	/* try to register notifier; on failure clean up and return */
++	if (register_netdevice_notifier(&m->notifier)) {
++		kfree(m);
++		return NULL;
++	}
++
++	/* publish manager, but handle rare race where another thread created it */
++	mutex_lock(&managers_lock);
++	existing = managers[type];
++	if (existing) {
++		/* use existing one: increase refcount, drop our resources */
++		atomic_inc(&existing->refcnt);
++		mutex_unlock(&managers_lock);
++
++		unregister_netdevice_notifier(&m->notifier);
++		kfree(m);
++
++		return existing;
++	}
++
++	/* no existing manager -> publish ours */
++	managers[type] = m;
++	mutex_unlock(&managers_lock);
++
++	/* start background work */
++	schedule_delayed_work(&m->work, 0);
++
++	return m;
++}
++
++static void net_mgr_put(struct net_mgr *m)
++{
++	int i;
++	if (!m)
++		return;
++
++	if (atomic_dec_and_test(&m->refcnt)) {
++		mutex_lock(&managers_lock);
++		if (managers[m->type] == m)
++			managers[m->type] = NULL;
++		mutex_unlock(&managers_lock);
++
++		cancel_delayed_work_sync(&m->work);
++		unregister_netdevice_notifier(&m->notifier);
++
++		mutex_lock(&m->lock);
++		for (i = 0; i < m->dev_slot_limit; i++)
++			if (m->devs[i])
++				dev_put(m->devs[i]);
++		mutex_unlock(&m->lock);
++
++		kfree(m);
++	}
++}
++
++static DEVICE_ATTR(link, S_IRUGO | S_IWUSR, net_flag_show, net_flag_store);
++static DEVICE_ATTR(tx, S_IRUGO | S_IWUSR, net_flag_show, net_flag_store);
++static DEVICE_ATTR(rx, S_IRUGO | S_IWUSR, net_flag_show, net_flag_store);
++static DEVICE_ATTR(dev, S_IRUGO | S_IWUSR, net_dev_show, net_dev_store);
++
++/* sysfs attributes: link, tx, rx (per-LED) */
++
++static ssize_t net_flag_show(struct device *dev, struct device_attribute *attr, char *buf)
++{
++	struct led_classdev *led_cdev = dev_get_drvdata(dev);
++	struct net_led *entry;
++	int val;
++
++	if (!led_cdev || !led_cdev->trigger_data)
++		return -ENODEV;
++
++	entry = led_cdev->trigger_data;
++
++	if (attr == &dev_attr_link)
++		val = entry->link;
++	else if (attr == &dev_attr_tx)
++		val = entry->tx;
++	else if (attr == &dev_attr_rx)
++		val = entry->rx;
++	else
++		return -EINVAL;
++
++	return sprintf(buf, "%d\n", val);
++}
++
++static ssize_t net_flag_store(struct device *dev, struct device_attribute *attr,
++			      const char *buf, size_t count)
++{
++	struct led_classdev *led_cdev = dev_get_drvdata(dev);
++	struct net_led *entry;
++	bool val;
++	int ret;
++
++	if (!led_cdev || !led_cdev->trigger_data)
++		return -ENODEV;
++
++	entry = led_cdev->trigger_data;
++
++	ret = kstrtobool(buf, &val);
++	if (ret)
++		return ret;
++
++	if (attr == &dev_attr_link)
++		entry->link = val;
++	else if (attr == &dev_attr_tx)
++		entry->tx = val;
++	else if (attr == &dev_attr_rx)
++		entry->rx = val;
++	else
++		return -EINVAL;
++
++	/* request immediate update */
++	if (entry->mgr)
++		schedule_delayed_work(&entry->mgr->work, 0);
++
++	pr_info("LED %s - network trigger flags changed to %s%s%s\n",
++		dev_name(led_cdev->dev),
++		entry->link ? "link " : "",
++		entry->tx ? "tx " : "",
++		entry->rx ? "rx" : "");
++
++	return count;
++}
++
++static ssize_t net_dev_show(struct device *dev, struct device_attribute *attr, char *buf)
++{
++	struct led_classdev *led_cdev = dev_get_drvdata(dev);
++	struct net_led *entry;
++
++	if (!led_cdev || !led_cdev->trigger_data)
++		return -ENODEV;
++
++	entry = led_cdev->trigger_data;
++	if (!entry->mgr)
++		return -ENODEV;
++
++	if (entry->mgr->type < 0 || entry->mgr->type >= NET_TRIG_TYPE_MAX)
++		return -EINVAL;
++
++	return sprintf(buf, "%s\n", type_names[entry->mgr->type]);
++}
++
++static ssize_t net_dev_store(struct device *dev, struct device_attribute *attr,
++			     const char *buf, size_t count)
++{
++	char tmp[32];
++	size_t len = min(sizeof(tmp) - 1, count);
++	struct led_classdev *led_cdev = dev_get_drvdata(dev);
++	struct net_led *entry;
++	int parsed;
++	struct net_mgr *old_mgr, *new_mgr;
++	size_t i;
++
++	/* basic checks */
++	if (!led_cdev || !led_cdev->trigger_data)
++		return -ENODEV;
++	entry = led_cdev->trigger_data;
++	if (!entry->mgr)
++		return -ENODEV;
++
++	if (len == 0 || len >= sizeof(tmp))
++		return -EINVAL;
++
++	/* copy raw input (no trimming). allow optional terminal '\n' / '\r\n' only */
++	memcpy(tmp, buf, len);
++	tmp[len] = '\0';
++	/* Accept and strip one trailing LF and optional preceding CR, but reject spaces/tabs anywhere */
++	if (len > 0 && tmp[len - 1] == '\n') {
++		tmp[--len] = '\0';
++		if (len > 0 && tmp[len - 1] == '\r') {
++			tmp[--len] = '\0';
++		}
++	}
++	/* reject any spaces/tabs inside the token (no trimming) */
++	for (i = 0; i < len; i++) {
++		if (tmp[i] == ' ' || tmp[i] == '\t')
++			return -EINVAL;
++	}
++
++	parsed = parse_family_token(tmp, NULL);
++	if (parsed < 0)
++		return -EINVAL;
++
++	old_mgr = entry->mgr;
++	if (old_mgr->type == parsed)
++		return count; /* no change */
++
++	/* get or create new manager (increments refcnt) */
++	new_mgr = net_mgr_get(parsed);
++	if (!new_mgr)
++		return -ENOMEM;
++
++	/* Move entry between manager lists.
++	 * To avoid races, take managers_lock and both manager locks while
++	 * manipulating lists and updating history.
++	 */
++	mutex_lock(&managers_lock);
++	mutex_lock(&old_mgr->lock);
++	if (new_mgr != old_mgr)
++		mutex_lock(&new_mgr->lock);
++
++	/* remove from old manager list and add to new one */
++	list_del(&entry->node);
++	list_add_tail(&entry->node, &new_mgr->leds);
++	entry->mgr = new_mgr;
++
++	/* initialize history so future reads won't see a spurious delta */
++	entry->last_tx_packets = new_mgr->agg_tx_packets;
++	entry->last_rx_packets = new_mgr->agg_rx_packets;
++	entry->last_tx_bytes   = new_mgr->agg_tx_bytes;
++	entry->last_rx_bytes   = new_mgr->agg_rx_bytes;
++
++	if (new_mgr != old_mgr)
++		mutex_unlock(&new_mgr->lock);
++	mutex_unlock(&old_mgr->lock);
++	mutex_unlock(&managers_lock);
++
++	/* drop old manager reference */
++	net_mgr_put(old_mgr);
++
++	/* request immediate update */
++	if (entry->mgr)
++		schedule_delayed_work(&entry->mgr->work, 0);
++
++	pr_info("LED %s - network trigger family changed to %s\n",
++		dev_name(led_cdev->dev), type_names[parsed]);
++
++	return count;
++}
++
++/* deactivate: detach led from manager */
++static void net_deactivate(struct led_classdev *led_cdev)
++{
++	struct net_led *entry = led_cdev->trigger_data;
++	struct net_mgr *m;
++
++	if (!entry)
++		return;
++
++	m = entry->mgr;
++	if (!m) {
++		/* defensive: shouldn't happen, but avoid crash */
++		led_cdev->trigger_data = NULL;
++		kfree(entry);
++		return;
++	}
++	mutex_lock(&m->lock);
++	list_del(&entry->node);
++	mutex_unlock(&m->lock);
++
++	/* remove sysfs files */
++	device_remove_file(led_cdev->dev, &dev_attr_link);
++	device_remove_file(led_cdev->dev, &dev_attr_tx);
++	device_remove_file(led_cdev->dev, &dev_attr_rx);
++	device_remove_file(led_cdev->dev, &dev_attr_dev);
++
++	led_set_off_full(led_cdev, false);
++	led_cdev->trigger_data = NULL;
++
++	pr_info("LED %s - trigger %s%s detached\n",
++		dev_name(led_cdev->dev),
++		type_names[m->type],
++		labels[(entry->link << 2) | (entry->tx << 1) | (entry->rx << 0)]);
++
++	kfree(entry);
++	net_mgr_put(m);
++}
++
++/* activate/deactivate: attach led to manager and remember flags */
++static int net_activate(struct led_classdev *led_cdev)
++{
++	const char *fn = NULL;
++	const char *dt_dev = NULL;
++	const char *dt_mode = NULL;
++	int parsed = -1;
++	bool link = false;
++	bool tx = false;
++	bool rx = false;
++	bool online = false;
++	struct net_mgr *m;
++	struct net_led *entry;
++	const char *name;
++	const char *sep;
++	int ret;
++
++	if (!led_cdev) {
++		pr_err("network: net_activate called with NULL led_cdev\n");
++		return -EINVAL;
++	}
++	if (!led_cdev->dev) {
++		pr_err("network: LED device is NULL, aborting activate\n");
++		return -EINVAL;
++	}
++	name = dev_name(led_cdev->dev);
++	if (!name || !*name) {
++		pr_err("network: LED has no name, aborting activate\n");
++		return -EINVAL;
++	}
++	if (led_cdev->trigger_data) {
++		pr_warn("network: LED %s already has trigger_data set, refusing attach\n",
++			name);
++		return -EBUSY;
++	}
++
++	if (led_cdev->dev && led_cdev->dev->of_node) {
++		of_property_read_string(led_cdev->dev->of_node, "dev", &dt_dev);
++		of_property_read_string(led_cdev->dev->of_node, "mode", &dt_mode);
++	}
++
++	/* function part from name (after last ':') */
++	sep = strrchr(name, ':');
++	if (sep && sep[1] != '\0')
++		fn = sep + 1;
++	else
++		fn = name;
++
++	/* get family and online flag from name (family may be absent) */
++	parsed = parse_family_token(fn, &online);
++
++	if (dt_mode) {
++		/* DT "mode" present: flags come from mode and take precedence */
++		ret = parse_flags_from_string(dt_mode, &link, &tx, &rx);
++		if (ret)
++			return -EINVAL;
++
++		/* family: from dt_dev if present, otherwise from name */
++		if (dt_dev) {
++			parsed = parse_family_token(dt_dev, NULL);
++			if (parsed < 0) {
++				pr_info("network: invalid dev '%s' for LED %s\n", dt_dev, name);
++				return -EINVAL;
++			}
++		} else {
++			/* parsed already set from name above; require a valid family */
++			if (parsed < 0) {
++				pr_info("network: no family in name and no dev for LED %s\n", name);
++				return -EINVAL;
++			}
++		}
++	} else if (dt_dev) {
++		/* Only dt_dev present: use its family. Flags depend on name "-online" */
++		parsed = parse_family_token(dt_dev, NULL);
++		if (parsed < 0) {
++			pr_info("network: invalid dev '%s' for LED %s\n", dt_dev, name);
++			return -EINVAL;
++		}
++		if (online) {
++			/* name indicated online variant and no mode -> online-only */
++			link = true;
++			tx = false;
++			rx = false;
++		} else {
++			link = tx = rx = true;
++		}
++	} else {
++		/* No DT: family and flags from name.
++		 * If name had "-online" -> online-only.
++		 */
++		if (parsed < 0) {
++			pr_info("network: unknown function '%s' for LED %s\n", fn ?: "<NULL>", name);
++			return -EINVAL;
++		}
++		if (online) {
++			/* online variant in name => online-only */
++			link = true;
++			tx = false;
++			rx = false;
++		} else {
++			link = tx = rx = true;
++		}
++	}
++
++	m = net_mgr_get(parsed);
++	if (!m)
++		return -ENOMEM;
++
++	entry = kzalloc(sizeof(*entry), GFP_KERNEL);
++	if (!entry) {
++		net_mgr_put(m);
++		return -ENOMEM;
++	}
++
++	entry->led_cdev = led_cdev;
++	entry->mgr = m;
++	entry->last_tx_packets = entry->last_rx_packets = 0;
++	entry->last_tx_bytes = entry->last_rx_bytes = 0;
++	entry->link = link;
++	entry->tx = tx;
++	entry->rx = rx;
++
++	/* attach under manager lock and initialize history to current aggregates */
++	mutex_lock(&m->lock);
++	list_add_tail(&entry->node, &m->leds);
++
++	/* initialize history so future reads won't see a spurious delta */
++	entry->last_tx_packets = m->agg_tx_packets;
++	entry->last_rx_packets = m->agg_rx_packets;
++	entry->last_tx_bytes   = m->agg_tx_bytes;
++	entry->last_rx_bytes   = m->agg_rx_bytes;
++	mutex_unlock(&m->lock);
++
++	led_cdev->trigger_data = entry;
++
++	/* create per-LED sysfs files; on failure clean up */
++	ret = device_create_file(led_cdev->dev, &dev_attr_link);
++	if (ret)
++		goto err_create;
++	ret = device_create_file(led_cdev->dev, &dev_attr_tx);
++	if (ret)
++		goto err_create_tx;
++	ret = device_create_file(led_cdev->dev, &dev_attr_rx);
++	if (ret)
++		goto err_create_rx;
++	ret = device_create_file(led_cdev->dev, &dev_attr_dev);
++	if (ret)
++		goto err_create_dev;
++
++	pr_info("LED %s - trigger %s%s attached\n",
++		name,
++		type_names[m->type],
++		labels[(entry->link << 2) | (entry->tx << 1) | (entry->rx << 0)]);
++	return 0;
++
++err_create_dev:
++	device_remove_file(led_cdev->dev, &dev_attr_rx);
++err_create_rx:
++	device_remove_file(led_cdev->dev, &dev_attr_tx);
++err_create_tx:
++	device_remove_file(led_cdev->dev, &dev_attr_link);
++err_create:
++	/* detach and free */
++	mutex_lock(&m->lock);
++	list_del(&entry->node);
++	mutex_unlock(&m->lock);
++	led_cdev->trigger_data = NULL;
++	kfree(entry);
++	net_mgr_put(m);
++	return ret;
++}
++
++static struct led_trigger network_trigger = {
++	.name = "network",
++	.activate = net_activate,
++	.deactivate = net_deactivate,
++};
++
++module_led_trigger(network_trigger);
++
++MODULE_AUTHOR("Mieczyslaw Nalewaj <namiltd@yahoo.com>");
++MODULE_DESCRIPTION("LED trigger for network interfaces — aggregated by family; supports link/tx/rx and -online");
++MODULE_LICENSE("GPL v2");
+--- a/drivers/leds/trigger/Makefile
++++ b/drivers/leds/trigger/Makefile
+@@ -16,3 +16,4 @@ obj-$(CONFIG_LEDS_TRIGGER_NETDEV)	+= led
+ obj-$(CONFIG_LEDS_TRIGGER_PATTERN)	+= ledtrig-pattern.o
+ obj-$(CONFIG_LEDS_TRIGGER_TTY)		+= ledtrig-tty.o
+ obj-$(CONFIG_LEDS_TRIGGER_INPUT_EVENTS)	+= ledtrig-input-events.o
++obj-$(CONFIG_LEDS_TRIGGER_NETWORK)	+= ledtrig-network.o
