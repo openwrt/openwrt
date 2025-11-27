@@ -236,6 +236,19 @@ define Device/alcatel_hh40v
 endef
 TARGET_DEVICES += alcatel_hh40v
 
+define Device/alcatel_hh41v
+  SOC := qca9531
+  DEVICE_VENDOR := alcatel
+  DEVICE_ALT0_VENDOR := TCL
+  DEVICE_MODEL := HH41V
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-serial-option kmod-usb-net-rndis
+  IMAGE_SIZE := 14976k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs
+endef
+TARGET_DEVICES += alcatel_hh41v
+
 define Device/airtight_c-75
   SOC := qca9550
   DEVICE_VENDOR := AirTight Networks
