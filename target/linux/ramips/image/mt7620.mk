@@ -18,6 +18,11 @@ define Build/elecom-header
 		--owner=0 --group=0 -f $@ -C $(KDIR) v_0.0.0.bin v_0.0.0.md5
 endef
 
+define Device/dsa-migration
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
+endef
+
 define Device/aigale_ai-br100
   SOC := mt7620a
   IMAGE_SIZE := 7936k
@@ -1265,6 +1270,24 @@ define Device/tplink_archer-c5-v4
 	kmod-mt76x2 kmod-switch-rtl8367b
 endef
 TARGET_DEVICES += tplink_archer-c5-v4
+
+define Device/tplink_archer-c5-v4-dsa
+  $(Device/dsa-migration)
+  $(Device/tplink-v2)
+  SOC := mt7620a
+  IMAGE_SIZE := 7808k
+  TPLINK_FLASHLAYOUT := 8Mmtk
+  TPLINK_HWID := 0x04da857c
+  TPLINK_HWREV := 0x0c000600
+  TPLINK_HWREVADD := 0x04000000
+  IMAGES += tftp-recovery.bin
+  IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
+  DEVICE_MODEL := Archer C5
+  DEVICE_VARIANT := v4 (DSA)
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport \
+	kmod-mt76x2 kmod-dsa-rtl8365mb kmod-fixed-phy
+endef
+TARGET_DEVICES += tplink_archer-c5-v4-dsa
 
 define Device/tplink_archer-c50-v1
   $(Device/tplink-v2)
