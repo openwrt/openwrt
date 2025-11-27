@@ -22,6 +22,10 @@ ipq50xx_setup_interfaces()
 	xiaomi,ax6000)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
+	xiaomi,cr8818)
+		ucidef_set_interface "eth0sw" device "cpu wan" protocol none ipv6 0
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "eth0"
+		;;
 	yuncore,ax830|\
 	yuncore,ax850)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
