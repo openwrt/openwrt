@@ -8,7 +8,7 @@
  
  static int spinand_read_reg_op(struct spinand_device *spinand, u8 reg, u8 *val)
  {
-@@ -1352,6 +1353,7 @@ static int spinand_probe(struct spi_mem
+@@ -1353,6 +1354,7 @@ static int spinand_probe(struct spi_mem
  	if (ret)
  		return ret;
  
@@ -16,7 +16,7 @@
  	ret = mtd_device_register(mtd, NULL, 0);
  	if (ret)
  		goto err_spinand_cleanup;
-@@ -1359,6 +1361,7 @@ static int spinand_probe(struct spi_mem
+@@ -1360,6 +1362,7 @@ static int spinand_probe(struct spi_mem
  	return 0;
  
  err_spinand_cleanup:
@@ -24,7 +24,7 @@
  	spinand_cleanup(spinand);
  
  	return ret;
-@@ -1377,6 +1380,7 @@ static int spinand_remove(struct spi_mem
+@@ -1378,6 +1381,7 @@ static int spinand_remove(struct spi_mem
  	if (ret)
  		return ret;
  
