@@ -103,6 +103,7 @@ define Kernel/Patch/Default
 	$(call PatchDir,$(LINUX_DIR),$(GENERIC_PATCH_DIR),generic/)
 	$(call PatchDir,$(LINUX_DIR),$(GENERIC_HACK_DIR),generic-hack/)
 	$(call PatchDir,$(LINUX_DIR),$(PATCH_DIR),platform/)
+	$(if $(QUILT),touch $(LINUX_DIR)/.quilt_used)
 endef
 
 define Quilt/RefreshDir
