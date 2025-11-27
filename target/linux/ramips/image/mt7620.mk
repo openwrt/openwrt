@@ -1337,6 +1337,23 @@ define Device/tplink_ec220-g5-v2
 endef
 TARGET_DEVICES += tplink_ec220-g5-v2
 
+define Device/tplink_ec220-g5-v2-dsa
+  $(Device/dsa-migration)
+  $(Device/tplink-v2)
+  SOC := mt7620a
+  IMAGE_SIZE := 7808k
+  TPLINK_FLASHLAYOUT := 8Mmtk
+  TPLINK_HWID := 0x02015a15
+  TPLINK_HWREV := 0x55000600
+  TPLINK_HWREVADD := 0x03000000
+  IMAGES += tftp-recovery.bin
+  IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
+  DEVICE_MODEL := EC220-G5
+  DEVICE_VARIANT := v2 (DSA)
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-dsa-rtl8365mb kmod-fixed-phy
+endef
+TARGET_DEVICES += tplink_ec220-g5-v2-dsa
+
 define Device/tplink_re200-v1
   $(Device/tplink-v1-okli)
   SOC := mt7620a
