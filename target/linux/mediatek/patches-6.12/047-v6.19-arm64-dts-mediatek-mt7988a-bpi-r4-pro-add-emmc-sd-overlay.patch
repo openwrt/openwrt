@@ -1,0 +1,86 @@
+From a58c368067417f3d89b92ccc18fa0bb610b34349 Mon Sep 17 00:00:00 2001
+From: Frank Wunderlich <frank-w@public-files.de>
+Date: Wed, 5 Nov 2025 20:50:05 +0100
+Subject: [PATCH] arm64: dts: mediatek: mt7988a-bpi-r4pro: Add mmc overlays
+
+Add MMC overlays for BPI-R4 Pro.
+
+Signed-off-by: Frank Wunderlich <frank-w@public-files.de>
+Signed-off-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>
+---
+ .../mt7988a-bananapi-bpi-r4-pro-emmc.dtso     | 33 +++++++++++++++++++
+ .../mt7988a-bananapi-bpi-r4-pro-sd.dtso       | 31 +++++++++++++++++
+ 2 files changed, 64 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-emmc.dtso
+ create mode 100644 arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-sd.dtso
+
+--- /dev/null
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-emmc.dtso
+@@ -0,0 +1,33 @@
++// SPDX-License-Identifier: (GPL-2.0 OR MIT)
++/*
++ * Copyright (C) 2021 MediaTek Inc.
++ * Author: Frank Wunderlich <frank-w@public-files.de>
++ */
++
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "bananapi,bpi-r4-pro", "mediatek,mt7988a";
++};
++
++&{/soc/mmc@11230000} {
++	pinctrl-names = "default", "state_uhs";
++	pinctrl-0 = <&mmc0_pins_emmc_51>;
++	pinctrl-1 = <&mmc0_pins_emmc_51>;
++	bus-width = <8>;
++	max-frequency = <200000000>;
++	cap-mmc-highspeed;
++	mmc-hs200-1_8v;
++	mmc-hs400-1_8v;
++	hs400-ds-delay = <0x12814>;
++	vqmmc-supply = <&reg_1p8v>;
++	vmmc-supply = <&reg_3p3v>;
++	non-removable;
++	no-sd;
++	no-sdio;
++	#address-cells = <1>;
++	#size-cells = <0>;
++	status = "okay";
++};
++
+--- /dev/null
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-sd.dtso
+@@ -0,0 +1,31 @@
++// SPDX-License-Identifier: (GPL-2.0 OR MIT)
++/*
++ * Copyright (C) 2023 MediaTek Inc.
++ * Author: Frank Wunderlich <frank-w@public-files.de>
++ */
++
++/dts-v1/;
++/plugin/;
++
++#include <dt-bindings/gpio/gpio.h>
++
++/ {
++	compatible = "bananapi,bpi-r4-pro", "mediatek,mt7988a";
++};
++
++&{/soc/mmc@11230000} {
++	pinctrl-names = "default", "state_uhs";
++	pinctrl-0 = <&mmc0_pins_sdcard>;
++	pinctrl-1 = <&mmc0_pins_sdcard>;
++	cd-gpios = <&pio 12 GPIO_ACTIVE_LOW>;
++	bus-width = <4>;
++	max-frequency = <48000000>;
++	cap-sd-highspeed;
++	vmmc-supply = <&reg_3p3v>;
++	vqmmc-supply = <&reg_3p3v>;
++	no-mmc;
++	#address-cells = <1>;
++	#size-cells = <0>;
++	status = "okay";
++};
++
