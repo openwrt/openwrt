@@ -133,7 +133,6 @@ define Quilt/Refresh/Kernel
 	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(GENERIC_PATCH_DIR),generic/)
 	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(GENERIC_HACK_DIR),generic-hack/)
 	$(call Quilt/RefreshDir,$(PKG_BUILD_DIR),$(PATCH_DIR),platform/)
-	$(if $(QUILT),touch $(LINUX_DIR)/.quilt_used)
 endef
 
 define Quilt/Template
