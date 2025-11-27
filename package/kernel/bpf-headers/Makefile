@@ -67,6 +67,10 @@ define Build/Patch
 	$(Kernel/Patch/Default)
 endef
 
+define Quilt/Refresh/Package
+	$(Quilt/Refresh/Kernel)
+endef
+
 BPF_DOC = $(PKG_BUILD_DIR)/scripts/bpf_doc.py
 
 define Build/Configure/64
