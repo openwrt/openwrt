@@ -22,7 +22,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  #include <net/cfg80211.h>
  #include <net/netlink.h>
  #include <uapi/linux/if_arp.h>
-@@ -8223,31 +8224,45 @@ static void brcmf_cfg80211_reg_notifier(
+@@ -8270,31 +8271,45 @@ static void brcmf_cfg80211_reg_notifier(
  	struct brcmf_if *ifp = brcmf_get_ifp(cfg->pub, 0);
  	struct brcmf_pub *drvr = cfg->pub;
  	struct brcmf_fil_country_le ccreq;
@@ -99,8 +99,8 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  /**
   * struct nvram_parser - internal info for parser.
   *
-@@ -562,11 +565,27 @@ static int brcmf_fw_request_nvram_done(c
- 			goto fail;
+@@ -566,11 +569,27 @@ static int brcmf_fw_request_nvram_done(c
+ 		}
  	}
  
 -	if (data)

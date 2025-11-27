@@ -11,7 +11,7 @@
  	.llseek = generic_file_llseek,					\
  };
  
-@@ -141,9 +142,10 @@ static ssize_t aqm_write(struct file *fi
+@@ -139,9 +140,10 @@ static ssize_t aqm_write(struct file *fi
  	return -EINVAL;
  }
  
@@ -23,7 +23,7 @@
  	.llseek = default_llseek,
  };
  
-@@ -192,9 +194,10 @@ static ssize_t airtime_flags_write(struc
+@@ -190,9 +192,10 @@ static ssize_t airtime_flags_write(struc
  	return count;
  }
  
@@ -35,7 +35,7 @@
  	.llseek = default_llseek,
  };
  
-@@ -222,8 +225,9 @@ static ssize_t aql_pending_read(struct f
+@@ -220,8 +223,9 @@ static ssize_t aql_pending_read(struct f
  				       buf, len);
  }
  
@@ -46,7 +46,7 @@
  	.llseek = default_llseek,
  };
  
-@@ -301,9 +305,10 @@ static ssize_t aql_txq_limit_write(struc
+@@ -299,9 +303,10 @@ static ssize_t aql_txq_limit_write(struc
  	return count;
  }
  
@@ -58,7 +58,7 @@
  	.llseek = default_llseek,
  };
  
-@@ -350,9 +355,10 @@ static ssize_t aql_enable_write(struct f
+@@ -348,9 +353,10 @@ static ssize_t aql_enable_write(struct f
  	return count;
  }
  
@@ -70,7 +70,7 @@
  	.llseek = default_llseek,
  };
  
-@@ -400,9 +406,10 @@ static ssize_t force_tx_status_write(str
+@@ -398,9 +404,10 @@ static ssize_t force_tx_status_write(str
  	return count;
  }
  
@@ -82,7 +82,7 @@
  	.llseek = default_llseek,
  };
  
-@@ -427,8 +434,9 @@ static ssize_t reset_write(struct file *
+@@ -425,8 +432,9 @@ static ssize_t reset_write(struct file *
  	return count;
  }
  
@@ -93,7 +93,7 @@
  	.llseek = noop_llseek,
  };
  #endif
-@@ -656,8 +664,9 @@ static ssize_t stats_ ##name## _read(str
+@@ -653,8 +661,9 @@ static ssize_t stats_ ##name## _read(str
  				      print_devstats_##name);		\
  }									\
  									\
@@ -173,7 +173,7 @@
  	.llseek = generic_file_llseek,					\
  }
  
-@@ -442,8 +444,9 @@ STA_OPS_RW(agg_status);
+@@ -440,8 +442,9 @@ STA_OPS_RW(agg_status);
  
  /* link sta attributes */
  #define LINK_STA_OPS(name)						\
@@ -186,7 +186,7 @@
  
 --- a/net/mac80211/rate.c
 +++ b/net/mac80211/rate.c
-@@ -249,8 +249,9 @@ static ssize_t rcname_read(struct file *
+@@ -252,8 +252,9 @@ static ssize_t rcname_read(struct file *
  				       ref->ops->name, len);
  }
  

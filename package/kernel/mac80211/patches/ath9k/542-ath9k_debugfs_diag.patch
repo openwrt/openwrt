@@ -94,7 +94,7 @@
  struct ath_gen_timer *ath_gen_timer_alloc(struct ath_hw *ah,
 --- a/drivers/net/wireless/ath/ath9k/hw.c
 +++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -1872,6 +1872,20 @@ u32 ath9k_hw_get_tsf_offset(ktime_t last
+@@ -1873,6 +1873,20 @@ u32 ath9k_hw_get_tsf_offset(ktime_t last
  }
  EXPORT_SYMBOL(ath9k_hw_get_tsf_offset);
  
@@ -115,7 +115,7 @@
  int ath9k_hw_reset(struct ath_hw *ah, struct ath9k_channel *chan,
  		   struct ath9k_hw_cal_data *caldata, bool fastcc)
  {
-@@ -2080,6 +2094,7 @@ int ath9k_hw_reset(struct ath_hw *ah, st
+@@ -2081,6 +2095,7 @@ int ath9k_hw_reset(struct ath_hw *ah, st
  		ar9003_hw_disable_phy_restart(ah);
  
  	ath9k_hw_apply_gpio_override(ah);
