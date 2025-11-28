@@ -1276,7 +1276,7 @@ define Device/gatonetworks_gdsp
 endef
 TARGET_DEVICES += gatonetworks_gdsp
 
-define Device/glinet_gl-mt2500
+define Device/glinet_gl-mt2500-maxlinear
   DEVICE_VENDOR := GL.iNet
   DEVICE_MODEL := GL-MT2500
   DEVICE_VARIANT := MaxLinear PHY
@@ -1284,7 +1284,7 @@ define Device/glinet_gl-mt2500
   DEVICE_DTS_DIR := ../dts
   DEVICE_DTS_LOADADDR := 0x47000000
   DEVICE_PACKAGES := -wpad-basic-mbedtls e2fsprogs f2fsck mkf2fs kmod-usb3
-  SUPPORTED_DEVICES += glinet,mt2500-emmc glinet,gl-mt2500-airoha
+  SUPPORTED_DEVICES += glinet,mt2500-emmc glinet,gl-mt2500
   IMAGES := sysupgrade.bin factory.bin
   IMAGE/factory.bin := append-kernel | pad-to 32M | append-rootfs
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-gl-metadata
@@ -1292,7 +1292,7 @@ define Device/glinet_gl-mt2500
   ARTIFACT/emmc-preloader.bin := mt7981-bl2 emmc-ddr4
   ARTIFACT/emmc-bl31-uboot.fip := mt7981-bl31-uboot glinet_gl-mt2500
 endef
-TARGET_DEVICES += glinet_gl-mt2500
+TARGET_DEVICES += glinet_gl-mt2500-maxlinear
 
 define Device/glinet_gl-mt2500-airoha
   DEVICE_VENDOR := GL.iNet
@@ -1302,7 +1302,7 @@ define Device/glinet_gl-mt2500-airoha
   DEVICE_DTS_DIR := ../dts
   DEVICE_DTS_LOADADDR := 0x47000000
   DEVICE_PACKAGES := -wpad-basic-mbedtls e2fsprogs f2fsck mkf2fs kmod-usb3 kmod-phy-airoha-en8811h airoha-en8811h-firmware
-  SUPPORTED_DEVICES += glinet,mt2500-emmc glinet,gl-mt2500
+  SUPPORTED_DEVICES += glinet,mt2500-emmc
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-gl-metadata
 endef
