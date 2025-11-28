@@ -64,12 +64,12 @@
 &snand {
 	partitions {
 		/* Delete Kernel2 */
-		/delete-node/ partition@2FC0000;
+		/delete-node/ partition@2fc0000;
 
 		/* Override Kernel1 */
-		partition@2C0000 {
+		partition@2c0000 {
 			label = "Kernel1";
-			reg = <0x002C0000 0x05A00000>;
+			reg = <0x002c0000 0x05a00000>;
 
 			compatible = "denx,fit";
 			openwrt,cmdline-match = "boot_part=Kernel1";
