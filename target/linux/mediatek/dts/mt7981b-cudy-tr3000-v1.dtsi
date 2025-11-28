@@ -18,6 +18,16 @@
 		stdout-path = "serial0:115200n8";
 	};
 
+	gpio-export {
+		compatible = "gpio-export";
+
+		usb-power {
+			gpio-export,name = "usb_power";
+			gpio-export,output = <1>;
+			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
+		};
+	};
+
 	gpio-keys {
 		compatible = "gpio-keys";
 
@@ -50,15 +60,6 @@
 			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
 		};
-	};
-
-	usb_vbus: regulator-usb {
-		compatible = "regulator-fixed";
-		regulator-name = "usb-vbus";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		gpios = <&pio 9 GPIO_ACTIVE_LOW>;
-		regulator-boot-on;
 	};
 };
 
@@ -200,7 +201,6 @@
 
 &xhci {
 	status = "okay";
-	vbus-supply = <&usb_vbus>;
 };
 
 &wifi {
