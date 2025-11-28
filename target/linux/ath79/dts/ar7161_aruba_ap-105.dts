@@ -49,22 +49,6 @@
 		};
 	};
 
-	ath9k-leds {
-		compatible = "gpio-leds";
-
-		wifi_2g_green {
-			label = "green:wlan2g";
-			gpios = <&ath9k0 5 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
-		};
-
-		wifi_5g_green {
-			label = "green:wlan5g";
-			gpios = <&ath9k1 5 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
-		};
-	};
-
 	keys {
 		compatible = "gpio-keys";
 
@@ -97,22 +81,28 @@
 &pcie0 {
 	status = "okay";
 
-	ath9k0: wifi@11,0 { /* 2.4 GHz */
+	wifi@11,0 { /* 2.4 GHz */
 		compatible = "pci168c,0029";
+		reg = <0x8800 0 0 0 0>;
 		nvmem-cells = <&macaddr_hwinfo_1c 1>;
 		nvmem-cell-names = "mac-address";
-		reg = <0x8800 0 0 0 0>;
-		#gpio-cells = <2>;
-		gpio-controller;
+
+		led {
+			led-sources = <5>;
+			led-active-low;
+		};
 	};
 
-	ath9k1: wifi@12,0 { /* 5 GHz */
+	wifi@12,0 { /* 5 GHz */
 		compatible = "pci168c,0029";
+		reg = <0x9000 0 0 0 0>;
 		nvmem-cells = <&macaddr_hwinfo_1c 2>;
 		nvmem-cell-names = "mac-address";
-		reg = <0x9000 0 0 0 0>;
-		#gpio-cells = <2>;
-		gpio-controller;
+
+		led {
+			led-sources = <5>;
+			led-active-low;
+		};
 	};
 };
 
