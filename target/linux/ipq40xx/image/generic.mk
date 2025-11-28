@@ -904,7 +904,7 @@ define Device/netgear_orbi
 		append-rootfs | pad-rootfs | netgear-dni
 	IMAGE/sysupgrade.bin/squashfs := append-rootfs | pad-to 64k | \
 		sysupgrade-tar rootfs=$$$$@ | append-metadata
-	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct e2fsprogs kmod-fs-ext4 losetup
+	DEVICE_PACKAGES := e2fsprogs kmod-fs-ext4 losetup
 endef
 
 define Device/netgear_lbr20
@@ -967,6 +967,7 @@ define Device/netgear_rbx40
 	KERNEL_SIZE := 3932160
 	ROOTFS_SIZE := 32243712
 	IMAGE_SIZE := 36175872
+	DEVICE_PACKAGES += ipq-wifi-netgear_rbk40 ath10k-firmware-qca9888-ct
 endef
 
 define Device/netgear_rbr40
@@ -991,6 +992,7 @@ define Device/netgear_rbx50
 	KERNEL_SIZE := 3932160
 	ROOTFS_SIZE := 32243712
 	IMAGE_SIZE := 36175872
+	DEVICE_PACKAGES += ath10k-firmware-qca9984-ct
 endef
 
 define Device/netgear_rbr50
@@ -1015,6 +1017,7 @@ define Device/netgear_srx60
 	KERNEL_SIZE := 3932160
 	ROOTFS_SIZE := 32243712
 	IMAGE_SIZE := 36175872
+	DEVICE_PACKAGES += ath10k-firmware-qca9984-ct
 endef
 
 define Device/netgear_srr60
