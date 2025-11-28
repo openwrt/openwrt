@@ -1,0 +1,79 @@
+From 966b083adc94bb9dee248c96898a2f40fd72541d Mon Sep 17 00:00:00 2001
+From: Yousuk Seung <ysseung@google.com>
+Date: Wed, 23 May 2018 17:55:54 -0700
+Subject: [PATCH 09/19] net-tcp: add new ca opts flag TCP_CONG_WANTS_CE_EVENTS
+
+Add a a new ca opts flag TCP_CONG_WANTS_CE_EVENTS that allows a
+congestion control module to receive CE events.
+
+Currently congestion control modules have to set the TCP_CONG_NEEDS_ECN
+bit in opts flag to receive CE events but this may incur changes in ECN
+behavior elsewhere. This patch adds a new bit TCP_CONG_WANTS_CE_EVENTS
+that allows congestion control modules to receive CE events
+independently of TCP_CONG_NEEDS_ECN.
+
+Effort: net-tcp
+Origin-9xx-SHA1: 9f7e14716cde760bc6c67ef8ef7e1ee48501d95b
+Change-Id: I2255506985242f376d910c6fd37daabaf4744f24
+---
+ include/net/tcp.h    | 14 +++++++++++++-
+ net/ipv4/tcp_input.c |  4 ++--
+ 2 files changed, 15 insertions(+), 3 deletions(-)
+
+diff --git a/include/net/tcp.h b/include/net/tcp.h
+index 12c7d2f433fd..0cd5476bfe1e 100644
+--- a/include/net/tcp.h
++++ b/include/net/tcp.h
+@@ -1137,7 +1137,11 @@ enum tcp_ca_ack_event_flags {
+ #define TCP_CONG_NON_RESTRICTED 0x1
+ /* Requires ECN/ECT set on all packets */
+ #define TCP_CONG_NEEDS_ECN	0x2
+-#define TCP_CONG_MASK	(TCP_CONG_NON_RESTRICTED | TCP_CONG_NEEDS_ECN)
++/* Wants notification of CE events (CA_EVENT_ECN_IS_CE, CA_EVENT_ECN_NO_CE). */
++#define TCP_CONG_WANTS_CE_EVENTS	0x4
++#define TCP_CONG_MASK	(TCP_CONG_NON_RESTRICTED | \
++			 TCP_CONG_NEEDS_ECN | \
++			 TCP_CONG_WANTS_CE_EVENTS)
+ 
+ union tcp_cc_info;
+ 
+@@ -1269,6 +1273,14 @@ static inline char *tcp_ca_get_name_by_key(u32 key, char *buffer)
+ }
+ #endif
+ 
++static inline bool tcp_ca_wants_ce_events(const struct sock *sk)
++{
++	const struct inet_connection_sock *icsk = inet_csk(sk);
++
++	return icsk->icsk_ca_ops->flags & (TCP_CONG_NEEDS_ECN |
++					   TCP_CONG_WANTS_CE_EVENTS);
++}
++
+ static inline bool tcp_ca_needs_ecn(const struct sock *sk)
+ {
+ 	const struct inet_connection_sock *icsk = inet_csk(sk);
+diff --git a/net/ipv4/tcp_input.c b/net/ipv4/tcp_input.c
+index 4e142268b7ee..9bf8d4e43296 100644
+--- a/net/ipv4/tcp_input.c
++++ b/net/ipv4/tcp_input.c
+@@ -376,7 +376,7 @@ static void __tcp_ecn_check_ce(struct sock *sk, const struct sk_buff *skb)
+ 			tcp_enter_quickack_mode(sk, 2);
+ 		break;
+ 	case INET_ECN_CE:
+-		if (tcp_ca_needs_ecn(sk))
++		if (tcp_ca_wants_ce_events(sk))
+ 			tcp_ca_event(sk, CA_EVENT_ECN_IS_CE);
+ 
+ 		if (!(tp->ecn_flags & TCP_ECN_DEMAND_CWR)) {
+@@ -387,7 +387,7 @@ static void __tcp_ecn_check_ce(struct sock *sk, const struct sk_buff *skb)
+ 		tp->ecn_flags |= TCP_ECN_SEEN;
+ 		break;
+ 	default:
+-		if (tcp_ca_needs_ecn(sk))
++		if (tcp_ca_wants_ce_events(sk))
+ 			tcp_ca_event(sk, CA_EVENT_ECN_NO_CE);
+ 		tp->ecn_flags |= TCP_ECN_SEEN;
+ 		break;
+-- 
+2.43.0
+
