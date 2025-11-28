@@ -100,6 +100,13 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"4:lan" "6@eth0"
 		;;
+	cudy,lt400e-v1)
+		ucidef_add_switch "switch0" \
+			"3:lan:1" "2:lan:2" "1:lan:3" "0:lan:4" "6@eth0"
+		ucidef_set_interface "wwan" device "usb0" protocol "dhcp"
+		uci add_list firewall.@zone[1].network='wwan'
+		uci add_list firewall.@zone[1].network='wwan6'
+		;;
 	cudy,m1200-v1|\
 	cudy,tr1200-v1)
 		ucidef_add_switch "switch0" \
