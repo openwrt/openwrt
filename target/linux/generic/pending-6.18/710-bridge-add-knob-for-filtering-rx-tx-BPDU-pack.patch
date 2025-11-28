@@ -29,9 +29,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	      u16 vid)
  {
 +	const unsigned char *dest = eth_hdr(skb)->h_dest;
+ 	enum skb_drop_reason reason = SKB_DROP_REASON_NO_TX_TARGET;
  	struct net_bridge_port *prev = NULL;
  	struct net_bridge_port *p;
- 
 @@ -219,6 +220,10 @@ void br_flood(struct net_bridge *br, str
  		case BR_PKT_MULTICAST:
  			if (!(p->flags & BR_MCAST_FLOOD) && skb->dev != br->dev)

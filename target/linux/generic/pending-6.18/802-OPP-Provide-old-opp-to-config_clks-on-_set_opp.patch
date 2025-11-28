@@ -67,11 +67,11 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  		 * equivalent to a clk_set_rate()
  		 */
  		if (!_get_opp_count(opp_table)) {
--			ret = opp_table->config_clks(dev, opp_table, NULL,
-+			ret = opp_table->config_clks(dev, opp_table, NULL, NULL,
- 						     &target_freq, false);
- 			goto put_opp_table;
+-			return opp_table->config_clks(dev, opp_table, NULL,
++			return opp_table->config_clks(dev, opp_table, NULL, NULL,
+ 						      &target_freq, false);
  		}
+ 
 --- a/drivers/ufs/core/ufshcd.c
 +++ b/drivers/ufs/core/ufshcd.c
 @@ -1122,8 +1122,8 @@ out:

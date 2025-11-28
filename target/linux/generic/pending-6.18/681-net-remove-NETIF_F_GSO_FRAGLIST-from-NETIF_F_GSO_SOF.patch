@@ -47,9 +47,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 --- a/include/linux/netdev_features.h
 +++ b/include/linux/netdev_features.h
 @@ -211,13 +211,14 @@ static inline int find_next_netdev_featu
- 
  /* List of features with software fallbacks. */
- #define NETIF_F_GSO_SOFTWARE	(NETIF_F_ALL_TSO | NETIF_F_GSO_SCTP |	     \
+ #define NETIF_F_GSO_SOFTWARE	(NETIF_F_ALL_TSO | \
+				 NETIF_F_GSO_ACCECN | NETIF_F_GSO_SCTP | \
 -				 NETIF_F_GSO_UDP_L4 | NETIF_F_GSO_FRAGLIST)
 +				 NETIF_F_GSO_UDP_L4)
 +#define NETIF_F_GSO_SOFTWARE_ALL (NETIF_F_GSO_SOFTWARE | NETIF_F_GSO_FRAGLIST)

@@ -15,8 +15,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 --- a/init/Kconfig
 +++ b/init/Kconfig
 @@ -1534,6 +1534,17 @@ config SYSCTL_ARCH_UNALIGN_ALLOW
- 	  the unaligned access emulation.
- 	  see arch/parisc/kernel/unaligned.c for reference
+ 	  compatibility with some systems.
+ 
+ 	  If unsure say N here.
  
 +config KALLSYMS_UNCOMPRESSED
 +	bool "Keep kallsyms uncompressed"
@@ -76,9 +77,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static unsigned int table_size, table_cnt;
  static int all_symbols;
 +static int uncompressed;
- static int absolute_percpu;
  
  static int token_profit[0x10000];
+ 
 @@ -412,13 +413,17 @@ static void write_src(void)
  		for (k = 0; k < table[i]->len; k++)
  			printf(", 0x%02x", table[i]->sym[k]);
@@ -161,9 +162,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	 * fast string functions */
  	for (i = 255; i >= 0; i--) {
 @@ -763,6 +776,7 @@ int main(int argc, char **argv)
+ 	while (1) {
  		static const struct option long_options[] = {
  			{"all-symbols",     no_argument, &all_symbols,     1},
- 			{"absolute-percpu", no_argument, &absolute_percpu, 1},
 +			{"uncompressed",   no_argument, &uncompressed,   1},
  			{},
  		};
