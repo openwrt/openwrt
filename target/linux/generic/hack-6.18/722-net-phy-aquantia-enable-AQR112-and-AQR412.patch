@@ -98,18 +98,18 @@ Signed-off-by: Alex Marginean <alexandru.marginean@nxp.com>
  {
  	bool en = phydev->interrupts == PHY_INTERRUPT_ENABLED;
 @@ -972,7 +1040,7 @@ static struct phy_driver aqr_driver[] =
- 	PHY_ID_MATCH_MODEL(PHY_ID_AQR112),
  	.name		= "Aquantia AQR112",
  	.probe		= aqr107_probe,
+ 	.config_init	= aqr_gen3_config_init,
 -	.config_aneg    = aqr_config_aneg,
 +	.config_aneg    = aqr_config_aneg_set_prot,
  	.config_intr	= aqr_config_intr,
  	.handle_interrupt = aqr_handle_interrupt,
  	.get_tunable    = aqr107_get_tunable,
 @@ -995,7 +1063,7 @@ static struct phy_driver aqr_driver[] =
- 	PHY_ID_MATCH_MODEL(PHY_ID_AQR412),
  	.name		= "Aquantia AQR412",
  	.probe		= aqr107_probe,
+ 	.config_init	= aqr_gen3_config_init,
 -	.config_aneg    = aqr_config_aneg,
 +	.config_aneg    = aqr_config_aneg_set_prot,
  	.config_intr	= aqr_config_intr,

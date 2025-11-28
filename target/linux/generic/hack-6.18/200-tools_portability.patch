@@ -74,7 +74,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   */
  
 +#define generic_fls __linux_fls
- static __always_inline int generic_fls(unsigned int x)
+ static __always_inline __attribute_const__ int generic_fls(unsigned int x)
  {
  	int r = 32;
 --- a/tools/lib/string.c
@@ -111,7 +111,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 @@ -46,7 +46,17 @@
  #define ORC_TYPE_REGS_PARTIAL		4
  
- #ifndef __ASSEMBLY__
+ #ifndef __ASSEMBLER__
 +#ifdef __APPLE__
 +#include <endian.h>
 +

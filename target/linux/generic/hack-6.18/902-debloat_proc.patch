@@ -260,9 +260,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	}
  	proc_create_seq("vmstat", 0444, NULL, &vmstat_op);
 -	proc_create_seq("zoneinfo", 0444, NULL, &zoneinfo_op);
+	register_sysctl_init("vm", vmstat_table);
  #endif
  }
- 
 --- a/net/8021q/vlanproc.c
 +++ b/net/8021q/vlanproc.c
 @@ -93,6 +93,9 @@ void vlan_proc_cleanup(struct net *net)

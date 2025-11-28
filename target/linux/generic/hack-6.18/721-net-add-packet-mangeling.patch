@@ -112,9 +112,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 --- a/net/core/skbuff.c
 +++ b/net/core/skbuff.c
 @@ -64,6 +64,7 @@
- #include <linux/mpls.h>
  #include <linux/kcov.h>
  #include <linux/iov_iter.h>
+ #include <linux/crc32.h>
 +#include <linux/if.h>
  
  #include <net/protocol.h>
