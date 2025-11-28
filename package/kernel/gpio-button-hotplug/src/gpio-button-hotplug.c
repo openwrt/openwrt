@@ -463,13 +463,12 @@ static int gpio_keys_button_probe(struct platform_device *pdev,
 		return -EINVAL;
 	}
 
-	buttons = devm_kzalloc(dev, pdata->nbuttons * sizeof(struct gpio_keys_button),
+	buttons = devm_kmemdup_array(dev, pdata->buttons, pdata->nbuttons, sizeof(struct gpio_keys_button),
 		       GFP_KERNEL);
 	if (!buttons) {
 		dev_err(dev, "no memory for button data\n");
 		return -ENOMEM;
 	}
-	memcpy(buttons, pdata->buttons, pdata->nbuttons * sizeof(struct gpio_keys_button));
 
 	bdev = devm_kzalloc(dev, sizeof(struct gpio_keys_button_dev) +
 		       pdata->nbuttons * sizeof(struct gpio_keys_button_data),
