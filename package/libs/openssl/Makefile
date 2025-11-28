@@ -49,9 +49,11 @@ PKG_CONFIG_DEPENDS:= \
 	CONFIG_OPENSSL_WITH_EC2M \
 	CONFIG_OPENSSL_WITH_ERROR_MESSAGES \
 	CONFIG_OPENSSL_WITH_IDEA \
+	CONFIG_OPENSSL_WITH_KTLS \
 	CONFIG_OPENSSL_WITH_MDC2 \
 	CONFIG_OPENSSL_WITH_NPN \
 	CONFIG_OPENSSL_WITH_PSK \
+	CONFIG_OPENSSL_WITH_QUIC \
 	CONFIG_OPENSSL_WITH_RFC3779 \
 	CONFIG_OPENSSL_WITH_SEED \
 	CONFIG_OPENSSL_WITH_SM234 \
@@ -215,7 +217,8 @@ and https://openwrt.org/docs/techref/hardware/cryptographic.hardware.accelerator
 The engine_id is "padlock"
 endef
 
-OPENSSL_OPTIONS:= shared no-tests
+TARGET_LDFLAGS += -lpthread
+OPENSSL_OPTIONS := shared no-tests no-docs threads
 
 ifndef CONFIG_OPENSSL_WITH_BLAKE2
   OPENSSL_OPTIONS += no-blake2
@@ -350,6 +353,18 @@ ifdef CONFIG_i386
   ifndef CONFIG_OPENSSL_WITH_SSE2
     OPENSSL_OPTIONS += no-sse2
   endif
+endif
+
+ifndef CONFIG_OPENSSL_WITH_QUIC
+  OPENSSL_OPTIONS += no-quic
+else
+  OPENSSL_OPTIONS += enable-quic
+endif
+
+ifndef CONFIG_OPENSSL_WITH_KTLS
+  OPENSSL_OPTIONS += no-ktls
+else
+  OPENSSL_OPTIONS += enable-ktls
 endif
 
 OPENSSL_TARGET:=linux-$(call qstrip,$(CONFIG_ARCH))-openwrt
