@@ -55,7 +55,7 @@
 };
 
 &pcie_bridge0 {
-	wifi@1,0 {
+	wifi@0,0 {
 		compatible = "qcom,ath10k";
 		reg = <0x10000 0 0 0 0>;
 		nvmem-cells = <&precal_art_1000>;
@@ -68,7 +68,7 @@
 };
 
 &pcie_bridge1 {
-	wifi@1,0 {
+	wifi@0,0 {
 		compatible = "qcom,ath10k";
 		reg = <0x10000 0 0 0 0>;
 		nvmem-cells = <&precal_art_5000>;

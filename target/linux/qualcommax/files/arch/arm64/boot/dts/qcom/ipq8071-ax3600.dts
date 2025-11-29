@@ -51,7 +51,9 @@
 	perst-gpios = <&tlmm 52 GPIO_ACTIVE_HIGH>;
 
 	pcie@0 {
-		wifi@1,0 {
+		wifi0: wifi@0,0 {
+			status = "okay";
+
 			compatible = "qcom,ath10k";
 			reg = <0x00010000 0 0 0 0>;
 

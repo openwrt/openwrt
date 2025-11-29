@@ -517,7 +517,10 @@
 	perst-gpios = <&tlmm 61 GPIO_ACTIVE_LOW>;
 
 	pcie@0 {
-		wifi@1,0 {
+		wifi@0,0 {
+			status = "okay";
+
+			/* ath11k has no DT compatible for PCI cards */
 			compatible = "pci17cb,1104";
 			reg = <0x00010000 0 0 0 0>;
 

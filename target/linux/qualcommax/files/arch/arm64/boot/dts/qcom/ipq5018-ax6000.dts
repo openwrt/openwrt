@@ -529,9 +529,13 @@
 	perst-gpios = <&tlmm 15 GPIO_ACTIVE_LOW>;
 
 	pcie@0 {
-		wifi@1,0 {
+		wifi@0,0 {
+			status = "okay";
+
+			/* QCN9074: ath11k lacks DT compatible for PCI cards */
 			compatible = "pci17cb,1104";
 			reg = <0x00010000 0 0 0 0>;
+
 			qcom,ath11k-calibration-variant = "Xiaomi-AX6000";
 		};
 	};
@@ -551,9 +555,12 @@
 	perst-gpios = <&tlmm 18 GPIO_ACTIVE_LOW>;
 
 	pcie@0 {
-		wifi@1,0 {
+		wifi@0,0 {
+			status = "okay";
+
 			compatible = "qcom,ath10k";
 			reg = <0x00010000 0 0 0 0>;
+
 			qcom,ath10k-calibration-variant = "Xiaomi-AX6000";
 			nvmem-cell-names = "calibration";
 			nvmem-cells = <&caldata_qca9889>;
