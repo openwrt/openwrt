@@ -1,0 +1,24 @@
+--- a/mt7996/init.c
++++ b/mt7996/init.c
+@@ -1138,7 +1138,7 @@ static int mt7996_variant_fem_init(struct mt7996_dev *dev)
+ 		adie_idx = (val & MT_PAD_GPIO_ADIE_SINGLE) ? 0 : 1;
+ 		adie_comb = u32_get_bits(val, MT_PAD_GPIO_ADIE_COMB_7992);
+ 	} else {
+-		adie_idx = 0;
++		adie_idx = 1;
+ 		adie_comb = u32_get_bits(val, MT_PAD_GPIO_ADIE_COMB);
+ 	}
+ 
+@@ -1164,6 +1164,12 @@ static int mt7996_variant_fem_init(struct mt7996_dev *dev)
+ 	else
+ 		dev->var.fem = MT7996_FEM_EXT;
+ 
++	dev_info(dev->mt76.dev,
++		 "ADIE ID: 0x%04x, VER: 0x%04x, COMB: %d, FEM type: %s\n",
++		 adie_id, adie_ver, adie_comb,
++		 dev->var.fem == MT7996_FEM_INT ? "internal" :
++		 dev->var.fem == MT7996_FEM_MIX ? "mixed" : "external");
++
+ 	return 0;
+ }
+ 
