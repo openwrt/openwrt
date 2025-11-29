@@ -140,6 +140,8 @@
 		};
 
 		enet0: ethernet@b0000 {
+			reg = <0xb0000 0x1000>;
+
 			phy-connection-type = "rgmii-id";
 			phy-handle = <&phy0>;
 			nvmem-cells = <&macaddr_hwinfo_1f822 0>;
@@ -147,10 +149,14 @@
 		};
 
 		enet1: ethernet@b1000 {
+			reg = <0xb1000 0x1000>;
+
 			status = "disabled";
 		};
 
 		enet2: ethernet@b2000 {
+			reg = <0xb2000 0x1000>;
+
 			status = "disabled";
 		};
 
