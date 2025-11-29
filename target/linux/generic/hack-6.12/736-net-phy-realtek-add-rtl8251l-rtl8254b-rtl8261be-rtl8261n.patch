@@ -440,7 +440,7 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
 +{
 +	u32 data;
 +
-+	data = phy_read_mmd(phydev, MDIO_MMD_VEND2, 0xA43A);
++	data = phy_read_mmd(phydev, MDIO_MMD_VEND2, RTL826X_VND2_INSR);
 +	if (data < 0)
 +		return IRQ_NONE;
 +
