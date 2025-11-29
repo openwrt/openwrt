@@ -192,8 +192,9 @@ function config_init(uci)
 	}
 
 	for (let name, data in sections.vlan) {
+		let ifaces = parse_array(data.iface);
 		for (let iface, iface_vifs in vifs) {
-			if (data.iface && data.iface != iface)
+			if (length(ifaces) && index(ifaces, iface) < 0)
 				continue;
 
 			for (let vif in iface_vifs) {
@@ -214,8 +215,9 @@ function config_init(uci)
 	}
 
 	for (let name, data in sections.station) {
+		let ifaces = parse_array(data.iface);
 		for (let iface, iface_vifs in vifs) {
-			if (data.iface && data.iface != iface)
+			if (length(ifaces) && index(ifaces, iface) < 0)
 				continue;
 
 			for (let vif in iface_vifs) {
