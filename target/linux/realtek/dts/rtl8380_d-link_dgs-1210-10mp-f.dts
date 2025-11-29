@@ -84,9 +84,6 @@
 	INTERNAL_PHY(13)
 	INTERNAL_PHY(14)
 	INTERNAL_PHY(15)
-
-	INTERNAL_PHY(24)
-	INTERNAL_PHY(26)
 };
 
 &switch0 {
@@ -107,7 +104,6 @@
 			reg = <24>;
 			label = "lan9";
 			pcs-handle = <&serdes4>;
-			phy-handle = <&phy24>;
 			phy-mode = "1000base-x";
 			managed = "in-band-status";
 			sfp = <&sfp0>;
@@ -117,7 +113,6 @@
 			reg = <26>;
 			label = "lan10";
 			pcs-handle = <&serdes5>;
-			phy-handle = <&phy26>;
 			phy-mode = "1000base-x";
 			managed = "in-band-status";
 			sfp = <&sfp1>;
