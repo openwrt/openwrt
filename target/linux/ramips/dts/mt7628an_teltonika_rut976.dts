@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
-#include "mt7628an_teltonika_rut9m.dtsi"
+#include "mt7628an_teltonika_rut9xx.dtsi"
 
 / {
-	compatible = "teltonika,rut9x6", "mediatek,mt7628an-soc";
-	model = "Teltonika RUT956/RUT906";
+	compatible = "teltonika,rut976", "mediatek,mt7628an-soc";
+	model = "Teltonika RUT976";
 
 	gpio-export {
 		gpio_dcd {
@@ -23,12 +23,6 @@
 			gpio-export,name = "digital_output2";
 			gpio-export,output = <0>;
 			gpios = <&gpio_hc595 8 GPIO_ACTIVE_HIGH>;
-		};
-
-		gpio_adcin {
-			gpio-export,name = "adc_input";
-			gpio-export,input = <0>;
-			gpios = <&gpio 37 GPIO_ACTIVE_LOW>;
 		};
 
 		gpio_relay {
@@ -53,6 +47,73 @@
 			gpio-export,name = "isolated_input";
 			gpio-export,input = <0>;
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x40000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "config";
+				reg = <0x040000 0x010000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_config_0: macaddr@0 {
+						reg = <0x0 0x6>;
+						compatible = "mac-base";
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition@50000 {
+				label = "factory";
+				reg = <0x050000 0x030000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x20000 0x400>;
+					};
+				};
+			};
+
+			partition@80000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x080000 0x1ed0000>;
+			};
+
+			partition@1f50000 {
+				label = "event-log";
+				reg = <0x1f50000 0xb0000>;
+			};
 		};
 	};
 };
