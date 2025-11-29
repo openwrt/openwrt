@@ -19,7 +19,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/phy/realtek/realtek_main.c
 +++ b/drivers/net/phy/realtek/realtek_main.c
-@@ -648,7 +648,8 @@ static int rtl821x_resume(struct phy_dev
+@@ -755,7 +755,8 @@ static int rtl8211f_resume(struct phy_de
  static int rtl8211x_led_hw_is_supported(struct phy_device *phydev, u8 index,
  					unsigned long rules)
  {
@@ -29,7 +29,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  				   BIT(TRIGGER_NETDEV_LINK_100) |
  				   BIT(TRIGGER_NETDEV_LINK_1000) |
  				   BIT(TRIGGER_NETDEV_RX) |
-@@ -706,6 +707,12 @@ static int rtl8211f_led_hw_control_get(s
+@@ -813,6 +814,12 @@ static int rtl8211f_led_hw_control_get(s
  	if (val & RTL8211F_LEDCR_LINK_1000)
  		__set_bit(TRIGGER_NETDEV_LINK_1000, rules);
  
@@ -42,7 +42,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	if (val & RTL8211F_LEDCR_ACT_TXRX) {
  		__set_bit(TRIGGER_NETDEV_RX, rules);
  		__set_bit(TRIGGER_NETDEV_TX, rules);
-@@ -723,14 +730,20 @@ static int rtl8211f_led_hw_control_set(s
+@@ -830,14 +837,20 @@ static int rtl8211f_led_hw_control_set(s
  	if (index >= RTL8211x_LED_COUNT)
  		return -EINVAL;
  
@@ -66,7 +66,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  
  	if (test_bit(TRIGGER_NETDEV_RX, &rules) ||
  	    test_bit(TRIGGER_NETDEV_TX, &rules)) {
-@@ -778,6 +791,12 @@ static int rtl8211e_led_hw_control_get(s
+@@ -885,6 +898,12 @@ static int rtl8211e_led_hw_control_get(s
  	if (cr2 & RTL8211E_LEDCR2_LINK_1000)
  		__set_bit(TRIGGER_NETDEV_LINK_1000, rules);
  
@@ -79,7 +79,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	return ret;
  }
  
-@@ -805,14 +824,20 @@ static int rtl8211e_led_hw_control_set(s
+@@ -912,14 +931,20 @@ static int rtl8211e_led_hw_control_set(s
  	if (ret < 0)
  		return ret;
  
