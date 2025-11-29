@@ -1,4 +1,5 @@
 DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
+DEFAULT_SOC := vr9
 
 define Device/dsa-migration
   DEVICE_COMPAT_VERSION := 1.1
