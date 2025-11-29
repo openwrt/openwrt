@@ -161,6 +161,8 @@
 		};
 
 		enet0: ethernet@b0000 {
+			reg = <0xb0000 0x1000>;
+
 			phy-connection-type = "rgmii-id";
 
 			fixed-link {
@@ -170,6 +172,8 @@
 		};
 
 		enet1: ethernet@b1000 {
+			reg = <0xb1000 0x1000>;
+
 			phy-connection-type = "sgmii";
 			phy-handle = <&phy0>;
 
@@ -177,6 +181,8 @@
 		};
 
 		enet2: ethernet@b2000 {
+			reg = <0xb2000 0x1000>;
+
 			phy-connection-type = "sgmii";
 			phy-handle = <&phy1>;
 

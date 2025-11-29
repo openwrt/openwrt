@@ -12,7 +12,7 @@
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/gpio/gpio.h>
 
-/include/ "fsl/p1020si-pre.dtsi"
+/include/ "fsl/p1010si-pre.dtsi"
 
 / {
 	model = "Aerohive BR200-WP";
@@ -226,7 +226,6 @@
 		};
 
 		enet0: ethernet@b0000 {
-			status = "okay";
 			phy-connection-type = "rgmii-id";
 			nvmem-cells = <&macaddr_hwinfo_0 0>;
 			nvmem-cell-names = "mac-address";
@@ -259,6 +258,20 @@
 	};
 
 	pci0: pcie@ffe09000 {
+		reg = <0 0xffe09000 0 0x1000>;
+		ranges = <0x2000000 0x0 0xa0000000 0 0xa0000000 0x0 0x20000000
+				  0x1000000 0x0 0x00000000 0x0 0xffc10000 0x0 0x10000>;
+
+		pcie@0 {
+			ranges = <0x2000000 0x0 0xa0000000
+				  0x2000000 0x0 0xa0000000
+				  0x0 0x20000000
+
+				  0x1000000 0x0 0x0
+				  0x1000000 0x0 0x0
+				  0x0 0x100000>;
+		};
+
 		status = "disabled";
 	};
 
@@ -288,6 +301,10 @@
 		};
 	};
 
+	ifc: ifc@ffe1e000 {
+		status = "disabled";
+	};
+
 	leds {
 		compatible = "gpio-leds";
 
@@ -315,7 +332,7 @@
 	};
 };
 
-/include/ "fsl/p1020si-post.dtsi"
+/include/ "fsl/p1010si-post.dtsi"
 
 / {
 	chosen {
