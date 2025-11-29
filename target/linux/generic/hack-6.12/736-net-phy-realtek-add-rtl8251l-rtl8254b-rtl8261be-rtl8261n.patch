@@ -452,7 +452,7 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
 +		phy_mac_interrupt(phydev);
 +	}
 +
-+	if (data & BIT(7)) {
++	if (data & RTL826X_VND2_INER_PME) {
 +		phydev_dbg(phydev, "RTK_PHY_INTR_WOL\n");
 +
 +		if (phy_modify_mmd(phydev, MDIO_MMD_VEND2, 0xD8A2, BIT(15), 0) < 0)
