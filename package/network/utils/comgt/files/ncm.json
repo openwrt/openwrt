@@ -136,5 +136,20 @@
 		],
 		"connect": "AT+SPTZCMD=\\\"Y29ubm1hbmN0bCBuZGlzZGlhbCBBVF5ORElTRFVOPSJ1c2IwIiwxLDE=\\\"",
 		"disconnect": "AT+SPTZCMD=\\\"Y29ubm1hbmN0bCBuZGlzZGlhbCBBVF5ORElTRFVOPSJ1c2IwIiwwLDE=\\\""
+	},
+	"fibocom": {
+		"initialize": [
+			"AT+CFUN=1"
+		],
+		"configure": [
+			"AT+CGDCONT=${profile},\\\"${pdptype}\\\"${apn:+,\\\"$apn\\\"}"
+		],
+		"modes": {
+			"lte": "AT+GTRAT=3",
+			"umts": "AT+GTRAT=2",
+			"auto": "AT+GTRAT=10"
+		},
+		"connect": "AT+GTRNDIS=1,${profile}",
+		"disconnect": "AT+CFUN=4"
 	}
 }
