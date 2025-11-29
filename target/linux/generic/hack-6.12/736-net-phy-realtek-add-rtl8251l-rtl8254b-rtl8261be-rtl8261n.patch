@@ -447,7 +447,7 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
 +	if (phy_modify_mmd(phydev, MDIO_MMD_VEND1, 0x2DC, GENMASK(15, 0), 0xFF) < 0)
 +		return IRQ_NONE;
 +
-+	if (data & BIT(4)) {
++	if (data & RTL826X_VND2_INER_LINK_STATUS)) {
 +		phydev_dbg(phydev, "RTK_PHY_INTR_LINK_CHANGE\n");
 +		phy_mac_interrupt(phydev);
 +	}
