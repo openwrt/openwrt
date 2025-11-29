@@ -5,6 +5,14 @@
 # See /LICENSE for more information.
 #
 
+config EXTRA_IMAGE_NAME
+	string
+	prompt "Extra image filename" if IMAGEOPT
+	default ""
+	help
+		Add this to the output image filenames, to distinguish between
+		different builds for the same hardware type.
+
 config TARGET_DEFAULT_LAN_IP_FROM_PREINIT
 	bool "Use preinit IP configuration as default LAN IP" if IMAGEOPT
 	default n
