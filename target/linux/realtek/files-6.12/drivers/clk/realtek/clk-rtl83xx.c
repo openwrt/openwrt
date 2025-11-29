@@ -492,7 +492,7 @@ static int rtcl_ccu_create(struct device_node *np)
 		return -ENXIO;
 
 	rtcl_ccu = kzalloc(sizeof(*rtcl_ccu), GFP_KERNEL);
-	if (IS_ERR(rtcl_ccu))
+	if (!rtcl_ccu)
 		return -ENOMEM;
 
 	rtcl_ccu->np = np;
@@ -657,6 +657,7 @@ static int rtcl_init_sram(void)
 	rtcl_ccu->sram.pmark = (int *)((void *)sram_pbase + (dram_size - 4));
 	rtcl_ccu->sram.vbase = sram_vbase;
 
+	put_device(&pdev->dev);
 	return 0;
 
 err_put_device:

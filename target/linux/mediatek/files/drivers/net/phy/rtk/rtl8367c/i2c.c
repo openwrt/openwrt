@@ -215,7 +215,7 @@ rtk_api_ret_t rtk_i2c_data_read(rtk_uint8 deviceAddr, rtk_uint32 slaveRegAddr, r
 {
      rtk_uint32 retVal, counter=0;
      rtk_uint8 controlByte_W, controlByte_R;
-     rtk_uint8 slaveRegAddr_L, slaveRegAddr_H = 0x0, temp;
+     rtk_uint8 slaveRegAddr_L, slaveRegAddr_H = 0x0;
      rtk_uint8 regData_L, regData_H;
 
    /* control byte :deviceAddress + W,  deviceAddress + R   */
@@ -226,11 +226,7 @@ rtk_api_ret_t rtk_i2c_data_read(rtk_uint8 deviceAddr, rtk_uint32 slaveRegAddr, r
     slaveRegAddr_H = (rtk_uint8) (slaveRegAddr >>8) ;
 
     if( rtk_i2c_mode == I2C_70B_LSB_16BIT_MODE)
-    {
-        temp = slaveRegAddr_L ;
-        slaveRegAddr_L = slaveRegAddr_H;
-        slaveRegAddr_H = temp;
-    }
+	swap(slaveRegAddr_L, slaveRegAddr_H);
 
 
   /*check bus state: idle*/
@@ -339,7 +335,7 @@ rtk_api_ret_t rtk_i2c_data_write(rtk_uint8 deviceAddr, rtk_uint32 slaveRegAddr, 
 {
      rtk_uint32 retVal,counter;
      rtk_uint8 controlByte_W;
-     rtk_uint8 slaveRegAddr_L, slaveRegAddr_H = 0x0, temp;
+     rtk_uint8 slaveRegAddr_L, slaveRegAddr_H = 0x0;
      rtk_uint8 regData_L, regData_H;
 
   /* control byte :deviceAddress + W    */
@@ -352,11 +348,7 @@ rtk_api_ret_t rtk_i2c_data_write(rtk_uint8 deviceAddr, rtk_uint32 slaveRegAddr, 
     regData_L   = (rtk_uint8) (regData & 0x00FF);
 
     if( rtk_i2c_mode == I2C_70B_LSB_16BIT_MODE)
-    {
-        temp = slaveRegAddr_L ;
-        slaveRegAddr_L = slaveRegAddr_H;
-        slaveRegAddr_H = temp;
-    }
+        swap(slaveRegAddr_L, slaveRegAddr_H);
 
 
   /*check bus state: idle*/
