@@ -26,19 +26,6 @@
 		reg = <0x00000000 0x00000000 0x00000000 0x20000000>;
 	};
 
-	vcc_sd_reg1: regulator {
-		compatible = "regulator-gpio";
-		regulator-name = "vcc_sd1";
-		regulator-min-microvolt = <1800000>;
-		regulator-max-microvolt = <3300000>;
-		regulator-boot-on;
-
-		gpios-states = <0>;
-		states = <1800000 0x1
-			3300000 0x0>;
-		enable-active-high;
-	};
-
 	keys {
 		compatible = "gpio-keys";
 
@@ -149,7 +136,6 @@
 	cd-gpios = <&gpionb 17 GPIO_ACTIVE_LOW>;
 	marvell,pad-type = "sd";
 	no-1-8-v;
-	vqmmc-supply = <&vcc_sd_reg1>;
 	status = "okay";
 };
 
