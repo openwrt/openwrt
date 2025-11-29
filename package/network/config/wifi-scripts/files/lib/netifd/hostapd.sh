@@ -426,10 +426,13 @@ hostapd_set_psk_file() {
 	local vlan="$2"
 	local vlan_id=""
 
-	json_get_vars mac vid key
-	set_default mac "00:00:00:00:00:00"
+	json_get_vars vid key
+	json_get_values mac_list mac
+	set_default mac_list "00:00:00:00:00:00"
 	[ -n "$vid" ] && vlan_id="vlanid=$vid "
-	echo "${vlan_id} ${mac} ${key}" >> /var/run/hostapd-${ifname}.psk
+	for mac in $mac_list; do
+		echo "${vlan_id} ${mac} ${key}" >> /var/run/hostapd-${ifname}.psk
+	done
 }
 
 hostapd_set_psk() {
@@ -448,11 +451,14 @@ hostapd_set_sae_file() {
 	local vlan="$2"
 	local vlan_id=""
 
-	json_get_vars mac vid key
-	set_default mac "ff:ff:ff:ff:ff:ff"
-	[ -n "$mac" ] && mac="|mac=$mac"
+	json_get_vars vid key
+	json_get_values mac_list mac
+	set_default mac_list "ff:ff:ff:ff:ff:ff"
 	[ -n "$vid" ] && vlan_id="|vlanid=$vid"
-	printf '%s%s%s\n' "${key}" "${mac}" "${vlan_id}" >> /var/run/hostapd-${ifname}.sae
+	for mac in $mac_list; do
+		mac="|mac=$mac"
+		printf '%s%s%s\n' "${key}" "${mac}" "${vlan_id}" >> /var/run/hostapd-${ifname}.sae
+	done
 }
 
 hostapd_set_sae() {

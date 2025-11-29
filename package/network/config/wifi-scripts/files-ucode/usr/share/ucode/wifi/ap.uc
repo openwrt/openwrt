@@ -312,10 +312,12 @@ function iface_wpa_stations(config, stas) {
 	let file = fs.open(path, 'w');
 	for (let k, sta in stas)
 		if (sta.config.mac && sta.config.key) {
-			let station = `${sta.config.mac} ${sta.config.key}\n`;
-			if (sta.config.vid)
-				station = `vlanid=${sta.config.vid} ` + station;
-			file.write(station);
+			for (let mac in sta.config.mac) {
+				let station = `${mac} ${sta.config.key}\n`;
+				if (sta.config.vid)
+					station = `vlanid=${sta.config.vid} ` + station;
+				file.write(station);
+			}
 		}
 	file.close();
 
@@ -328,15 +330,16 @@ function iface_sae_stations(config, stas) {
 	let file = fs.open(path, 'w');
 	for (let k, sta in stas)
 		if (sta.config.mac && sta.config.key) {
-			let mac = sta.config.mac;
-			if (mac == '00:00:00:00:00:00')
-				mac = 'ff:ff:ff:ff:ff:ff';
+			for (let mac in sta.config.mac) {
+				if (mac == '00:00:00:00:00:00')
+					mac = 'ff:ff:ff:ff:ff:ff';
 
-			let station = `${sta.config.key}|mac=${mac}`;
-			if (sta.config.vid)
-				station = station + `|vlanid=${sta.config.vid}`;
-			station = station + '\n';
-			file.write(station);
+				let station = `${sta.config.key}|mac=${mac}`;
+				if (sta.config.vid)
+					station = station + `|vlanid=${sta.config.vid}`;
+				station = station + '\n';
+				file.write(station);
+			}
 		}
 	file.close();
 
