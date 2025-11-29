@@ -689,6 +689,16 @@ ucidef_set_country() {
 	json_select ..
 }
 
+ucidef_set_wireless_generate_ifaces() {
+	local generate="$1"
+
+	json_select_object wlan
+		json_select_object defaults
+			json_add_boolean generate_ifaces "$generate"
+		json_select ..
+	json_select ..
+}
+
 ucidef_set_wireless_mac_count() {
 	local band="$1"
 	local mac_count="$2"
