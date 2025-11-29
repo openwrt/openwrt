@@ -1,0 +1,31 @@
+From 189755ebda9163c7745be8b675672ca619f0f34e Mon Sep 17 00:00:00 2001
+From: David Bauer <mail@david-bauer.net>
+Date: Sat, 29 Nov 2025 03:36:32 +0100
+Subject: [PATCH mt76] wifi: mt76: mt76x02: wake queues after reconfig
+
+The shared reset procedure of MT7610 and MT7612 stop all queues before
+starting the reset sequence.
+
+They however never restart these like other supported mt76 chips
+do in the reconfig_complete call. This leads to TX not continuing
+after the reset.
+
+Restart queues in the reconfig_complete callback to restore
+functionality after the reset.
+
+Signed-off-by: David Bauer <mail@david-bauer.net>
+Link: https://patchwork.kernel.org/project/linux-wireless/patch/20251129023904.288484-1-mail@david-bauer.net/
+---
+ mt76x02_mmio.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/mt76x02_mmio.c
++++ b/mt76x02_mmio.c
+@@ -534,6 +534,7 @@ void mt76x02_reconfig_complete(struct ie
+ 		return;
+ 
+ 	clear_bit(MT76_RESTART, &dev->mphy.state);
++	ieee80211_wake_queues(hw);
+ }
+ EXPORT_SYMBOL_GPL(mt76x02_reconfig_complete);
+ 
