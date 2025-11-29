@@ -425,7 +425,7 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
 +		return ret;
 +
 +	/* init common link change & WOL*/
-+	ret = phy_modify_mmd(phydev, MDIO_MMD_VEND2, 0xA424, GENMASK(15, 0), BIT(4) | BIT(7));
++	ret = phy_write_mmd(phydev, MDIO_MMD_VEND2, RTL826X_VND2_INER, RTL826X_VND2_INER_LINK_STATUS | RTL826X_VND2_INER_PME);
 +	if (ret < 0)
 +		return ret;
 +
