@@ -455,7 +455,7 @@ Signed-off-by: Balázs Triszka <info@balika011.hu>
 +	if (data & BIT(7)) {
 +		phydev_dbg(phydev, "RTK_PHY_INTR_WOL\n");
 +
-+		if (phy_modify_mmd(phydev, MDIO_MMD_VEND2, 0xD8A2, GENMASK(15, 15), 0) < 0)
++		if (phy_modify_mmd(phydev, MDIO_MMD_VEND2, 0xD8A2, BIT(15), 0) < 0)
 +			return IRQ_NONE;
 +
 +		if (phy_modify_mmd(phydev, MDIO_MMD_VEND2, 0xD8A2, GENMASK(15, 15), 1 << 15) < 0)
