@@ -1,0 +1,94 @@
+From b0e57d474b4c3b43f02babcf9720f23e5fb40730 Mon Sep 17 00:00:00 2001
+From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Date: Mon, 15 Sep 2025 18:46:59 +0300
+Subject: [PATCH] net: airoha-pcs: an7581: sync with linux code a bit
+
+based on linux kernel patches from
+https://github.com/Ansuel/openwrt/commits/openwrt-24.10-airoha-an7581-stable/
+created by Christian Marangi <ansuelsmth@gmail.com>
+
+Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+---
+ drivers/net/airoha/pcs-airoha-common.c | 16 ++++++++++++++++
+ drivers/net/airoha/pcs-airoha.h        |  4 ++++
+ drivers/net/airoha/pcs-an7581.c        |  8 +++++++-
+ 3 files changed, 27 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/airoha/pcs-airoha-common.c b/drivers/net/airoha/pcs-airoha-common.c
+index 1a47cafbd34..bc64263fad9 100644
+--- a/drivers/net/airoha/pcs-airoha-common.c
++++ b/drivers/net/airoha/pcs-airoha-common.c
+@@ -782,6 +782,22 @@ static int airoha_pcs_probe(struct udevice *dev)
+ 
+ 	priv->xfi_rst = devm_reset_control_get_optional(dev, "xfi");
+ 
++	/* For Ethernet PCS, read the AN7581 SoC revision to check if
++	 * manual rx calibration is needed. This is only limited to
++	 * any SoC revision before E2.
++	 */
++	if (device_is_compatible(dev, "airoha,an7581-pcs-eth") &&
++	    priv->data->port_type == AIROHA_PCS_ETH) {
++		u32 val;
++
++		ret = regmap_read(priv->scu, AIROHA_SCU_PDIDR, &val);
++		if (ret)
++			return ret;
++
++		if (FIELD_GET(AIROHA_SCU_PRODUCT_ID, val) < 0x2)
++			priv->manual_rx_calib = true;
++	}
++
+ 	return 0;
+ }
+ 
+diff --git a/drivers/net/airoha/pcs-airoha.h b/drivers/net/airoha/pcs-airoha.h
+index 8d98240e440..fddeda5ca36 100644
+--- a/drivers/net/airoha/pcs-airoha.h
++++ b/drivers/net/airoha/pcs-airoha.h
+@@ -9,6 +9,8 @@
+ #include <reset.h>
+ 
+ /* SCU*/
++#define AIROHA_SCU_PDIDR			0x5c
++#define   AIROHA_SCU_PRODUCT_ID			GENMASK(15, 0)
+ #define AIROHA_SCU_WAN_CONF			0x70
+ #define   AIROHA_SCU_ETH_MAC_SEL		BIT(24)
+ #define   AIROHA_SCU_ETH_MAC_SEL_XFI		FIELD_PREP_CONST(AIROHA_SCU_ETH_MAC_SEL, 0x0)
+@@ -1173,6 +1175,8 @@ struct airoha_pcs_priv {
+ 
+ 	struct reset_ctl *xfi_rst;
+ 	struct reset_ctl_bulk rsts;
++
++	bool manual_rx_calib;
+ };
+ 
+ struct airoha_pcs_match_data {
+diff --git a/drivers/net/airoha/pcs-an7581.c b/drivers/net/airoha/pcs-an7581.c
+index a95eb8d54d1..746ff55d72f 100644
+--- a/drivers/net/airoha/pcs-an7581.c
++++ b/drivers/net/airoha/pcs-an7581.c
+@@ -1261,7 +1261,7 @@ static int an7581_pcs_phya_bringup(struct airoha_pcs_priv *priv,
+ 	udelay(100);
+ 
+ retry_calibration:
+-	an7581_pcs_cdr_reset(priv, interface, true);
++	an7581_pcs_cdr_reset(priv, interface, priv->manual_rx_calib);
+ 
+ 	/* Global reset clear */
+ 	regmap_update_bits(priv->xfi_pma, AIROHA_PCS_PMA_SW_RST_SET,
+@@ -1300,6 +1300,12 @@ retry_calibration:
+ 
+ 	an7581_pcs_cdr_reset(priv, interface, false);
+ 
++	/* Manual RX calibration is required only for SoC before E2
++	 * revision. E2+ SoC autocalibrate RX and only CDR reset is needed.
++	 */
++	if (!priv->manual_rx_calib)
++		return 0;
++
+ 	/* It was discovered that after a global reset and auto mode gets
+ 	 * actually enabled, the fl_out from calibration might change and
+ 	 * might deviates a lot from the expected value it was calibrated for.
+-- 
+2.51.0
+

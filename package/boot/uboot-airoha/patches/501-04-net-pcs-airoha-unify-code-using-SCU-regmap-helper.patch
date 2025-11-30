@@ -1,0 +1,37 @@
+From 4fe6933e86210cd1d30f3d96a3ebe07d1fd84eb5 Mon Sep 17 00:00:00 2001
+From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Date: Wed, 1 Oct 2025 16:38:37 +0300
+Subject: [PATCH] net: pcs-airoha: unify code using SCU regmap helper
+
+Use common code to get CHIP_SCU registers instead of driver one.
+
+Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+---
+ drivers/net/airoha/pcs-airoha-common.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/airoha/pcs-airoha-common.c b/drivers/net/airoha/pcs-airoha-common.c
+index 621667b46e7..1a47cafbd34 100644
+--- a/drivers/net/airoha/pcs-airoha-common.c
++++ b/drivers/net/airoha/pcs-airoha-common.c
+@@ -10,7 +10,7 @@
+ #include <net.h>
+ #include <regmap.h>
+ #include <reset.h>
+-#include <syscon.h>
++#include <asm/arch/scu-regmap.h>
+ 
+ #include "pcs-airoha.h"
+ 
+@@ -762,7 +762,7 @@ static int airoha_pcs_probe(struct udevice *dev)
+ 		return PTR_ERR(priv->xfi_ana);
+ 
+ 	/* SCU is used to toggle XFI or HSGMII in global SoC registers */
+-	priv->scu = syscon_regmap_lookup_by_phandle(dev, "airoha,scu");
++	priv->scu = airoha_get_scu_regmap();
+ 	if (IS_ERR(priv->scu))
+ 		return PTR_ERR(priv->scu);
+ 
+-- 
+2.51.0
+
