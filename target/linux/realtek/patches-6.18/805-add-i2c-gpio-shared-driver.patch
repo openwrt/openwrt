@@ -13,7 +13,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
 
 --- a/drivers/i2c/busses/Kconfig
 +++ b/drivers/i2c/busses/Kconfig
-@@ -683,6 +683,15 @@ config I2C_GPIO
+@@ -696,6 +696,15 @@ config I2C_GPIO
  	  This is a very simple bitbanging I2C driver utilizing the
  	  arch-neutral GPIO API to control the SCL and SDA lines.
  
@@ -31,7 +31,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
  	depends on I2C_GPIO
 --- a/drivers/i2c/busses/Makefile
 +++ b/drivers/i2c/busses/Makefile
-@@ -67,6 +67,7 @@ obj-$(CONFIG_I2C_EG20T)		+= i2c-eg20t.o
+@@ -66,6 +66,7 @@ obj-$(CONFIG_I2C_EG20T)		+= i2c-eg20t.o
  obj-$(CONFIG_I2C_EMEV2)		+= i2c-emev2.o
  obj-$(CONFIG_I2C_EXYNOS5)	+= i2c-exynos5.o
  obj-$(CONFIG_I2C_GPIO)		+= i2c-gpio.o
