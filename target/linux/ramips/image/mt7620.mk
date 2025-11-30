@@ -1305,6 +1305,7 @@ endef
 TARGET_DEVICES += tplink_archer-mr200
 
 define Device/tplink_ec220-g5-v2
+  $(Device/dsa-migration)
   $(Device/tplink-v2)
   SOC := mt7620a
   IMAGE_SIZE := 7808k
@@ -1316,7 +1317,7 @@ define Device/tplink_ec220-g5-v2
   IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
   DEVICE_MODEL := EC220-G5
   DEVICE_VARIANT := v2
-  DEVICE_PACKAGES := kmod-mt76x2 kmod-switch-rtl8367b
+  DEVICE_PACKAGES := kmod-mt76x2 kmod-dsa-rtl8365mb kmod-fixed-phy kmod-ledtrig-network -swconfig
 endef
 TARGET_DEVICES += tplink_ec220-g5-v2
 
