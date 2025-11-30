@@ -1211,6 +1211,7 @@ static void rteth_pcs_an_restart(struct phylink_pcs *pcs)
 }
 
 static void rteth_pcs_get_state(struct phylink_pcs *pcs,
+				unsigned int neg_mode,
 				struct phylink_link_state *state)
 {
 	u32 speed;
