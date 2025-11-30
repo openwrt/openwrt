@@ -1,6 +1,10 @@
 . /lib/functions.sh
 
 case "$(board_name)" in
+	tplink,archer-c5-v4)
+		uci set system.@system[0].compat_version="1.1"
+		uci commit system
+		;;
 	ravpower,rp-wd03)
 		uci set system.@system[0].compat_version="2.0"
 		uci commit system
