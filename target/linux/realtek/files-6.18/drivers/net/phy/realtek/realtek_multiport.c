@@ -14,6 +14,7 @@
 #include <linux/sfp.h>
 #include <linux/mii.h>
 #include <linux/mdio.h>
+#include "../phylib.h"
 
 /*
  * Realtek PHYs have three special page registers. Register 31 (page select) switches the
@@ -66,12 +67,6 @@ struct rtl821x_shared_priv {
 	int base_addr;
 	int ports;
 };
-
-/* TODO: for kernel 6.18 drop this function and use it from phy_package library instead */
-static void *phy_package_get_priv(struct phy_device *phydev)
-{
-	return phydev->shared->priv;
-}
 
 static int rtl821x_package_join(struct phy_device *phydev, int ports)
 {

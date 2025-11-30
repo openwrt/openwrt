@@ -16,12 +16,14 @@ Submitted-by: Birger Koblitz <mail@birger-koblitz.de>
 +obj-$(CONFIG_REALTEK_PHY_MULTIPORT) += realtek_multiport.o
 --- a/drivers/net/phy/realtek/Kconfig
 +++ b/drivers/net/phy/realtek/Kconfig
-@@ -4,6 +4,11 @@ config REALTEK_PHY
+@@ -4,6 +4,13 @@ config REALTEK_PHY
  	help
  	  Currently supports RTL821x/RTL822x and fast ethernet PHYs
  
 +config REALTEK_PHY_MULTIPORT
 +	tristate "Realtek multiport PHYs"
++	depends on PHYLIB
++	select PHY_PACKAGE
 +	help
 +	  Currently supports RTL8214x/RTL8218x gigabit multiport PHYs
 +
