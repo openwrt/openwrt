@@ -165,6 +165,25 @@
 		"basic_rate": {
 			"type": "array"
 		},
+		"bgscan_simple": {
+			"description": "Background Scan for stronger APs",
+			"type": "boolean"
+		},
+		"bgscan_simple_short_itv": {
+			"description": "Scan interval when RSSI with current AP is below treshold",
+			"type": "number",
+			"default": 30
+		},
+		"bgscan_simple_long_itv": {
+			"description": "Scan interval when RSSI with current AP is over treshold",
+			"type": "number",
+			"default": 3600
+		},
+		"bgscan_simple_rssi_thd": {
+			"description": "RSSI treshold to consider for short or long scanning intervals",
+			"type": "number",
+			"default": -70
+		},
 		"bss_load_update_period": {
 			"description": "BSS Load update period (in BUs)",
 			"type": "number",
