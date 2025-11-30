@@ -685,6 +685,9 @@ sub gen_image_cyclonedxsbom() {
 	foreach my $name (@abipkgs) {
 		my $pkg = $package{$name};
 		my $abipkg = $name . $pkg->{abi_version};
+		if ($name =~ /\d$/) {
+			$abipkg = $name . "-" . $pkg->{abi_version};
+		}
 		$abimap{$abipkg} = $name;
 	}
 
