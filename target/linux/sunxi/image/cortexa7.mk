@@ -92,6 +92,14 @@ define Device/lemaker_bananapi
 endef
 TARGET_DEVICES += lemaker_bananapi
 
+define Device/pinecube
+  $(call Device/FitImageGzip)
+  DEVICE_VENDOR := Pine64
+  DEVICE_MODEL := PineCube
+  SOC := sun8i-s3
+endef
+TARGET_DEVICES += pinecube
+
 define Device/sinovoip_bananapi-m2-berry
   $(call Device/FitImageGzip)
   DEVICE_VENDOR := Sinovoip
