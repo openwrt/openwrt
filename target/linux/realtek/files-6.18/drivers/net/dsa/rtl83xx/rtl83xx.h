@@ -206,6 +206,8 @@ void rtl931x_print_matrix(void);
 
 extern const struct dsa_switch_ops rtl83xx_switch_ops;
 extern const struct dsa_switch_ops rtl93xx_switch_ops;
+extern const struct phylink_mac_ops rtldsa_83xx_phylink_mac_ops;
+extern const struct phylink_mac_ops rtldsa_93xx_phylink_mac_ops;
 
 extern const struct rtl838x_reg rtl838x_reg;
 extern const struct rtl838x_reg rtl839x_reg;

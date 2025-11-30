@@ -1412,6 +1412,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 	switch (soc_info.family) {
 	case RTL8380_FAMILY_ID:
 		priv->ds->ops = &rtl83xx_switch_ops;
+		priv->ds->phylink_mac_ops = &rtldsa_83xx_phylink_mac_ops;
 		priv->cpu_port = RTL838X_CPU_PORT;
 		priv->port_mask = 0x1f;
 		priv->port_width = 1;
@@ -1429,6 +1430,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		break;
 	case RTL8390_FAMILY_ID:
 		priv->ds->ops = &rtl83xx_switch_ops;
+		priv->ds->phylink_mac_ops = &rtldsa_83xx_phylink_mac_ops;
 		priv->cpu_port = RTL839X_CPU_PORT;
 		priv->port_mask = 0x3f;
 		priv->port_width = 2;
@@ -1446,6 +1448,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		break;
 	case RTL9300_FAMILY_ID:
 		priv->ds->ops = &rtl93xx_switch_ops;
+		priv->ds->phylink_mac_ops = &rtldsa_93xx_phylink_mac_ops;
 		priv->cpu_port = RTL930X_CPU_PORT;
 		priv->port_mask = 0x1f;
 		priv->port_width = 1;
@@ -1467,6 +1470,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		break;
 	case RTL9310_FAMILY_ID:
 		priv->ds->ops = &rtl93xx_switch_ops;
+		priv->ds->phylink_mac_ops = &rtldsa_93xx_phylink_mac_ops;
 		priv->cpu_port = RTL931X_CPU_PORT;
 		priv->port_mask = 0x3f;
 		priv->port_width = 2;
