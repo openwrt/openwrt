@@ -1,0 +1,30 @@
+From 9a71901c1bd11c1f119754c9f57b8dff7738fb65 Mon Sep 17 00:00:00 2001
+From: Stefan Kalscheuer <stefan@stklcode.de>
+Date: Sun, 30 Nov 2025 13:37:08 +0100
+Subject: [PATCH] arm64: dts: marvell: add missing gpios to SD regulator for
+ GL-MV1000
+
+GL-MV1000 external SD controller is broken because the referenced
+regulator node is missing a required GPIO property:
+
+    "regulator-gpio" was defined without required "gpios" property
+
+Configure GPIO pin 4 active high as it can be found in various vendor
+firmwares, so the regulator is properly defined and the SD controller
+can be initialized.
+
+Signed-off-by: Stefan Kalscheuer <stefan@stklcode.de>
+---
+ arch/arm64/boot/dts/marvell/armada-3720-gl-mv1000.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/arm64/boot/dts/marvell/armada-3720-gl-mv1000.dts
++++ b/arch/arm64/boot/dts/marvell/armada-3720-gl-mv1000.dts
+@@ -33,6 +33,7 @@
+ 		regulator-max-microvolt = <3300000>;
+ 		regulator-boot-on;
+ 
++		gpios = <&gpionb 4 GPIO_ACTIVE_HIGH>;
+ 		gpios-states = <0>;
+ 		states = <1800000 0x1
+ 			3300000 0x0>;
