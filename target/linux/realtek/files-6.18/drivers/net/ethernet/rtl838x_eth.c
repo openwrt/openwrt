@@ -1325,6 +1325,7 @@ static void rtl838x_pcs_an_restart(struct phylink_pcs *pcs)
 }
 
 static void rtl838x_pcs_get_state(struct phylink_pcs *pcs,
+				  unsigned int neg_mode,
 				  struct phylink_link_state *state)
 {
 	u32 speed;
@@ -1850,7 +1851,7 @@ MODULE_DEVICE_TABLE(of, rtl838x_eth_of_ids);
 
 static struct platform_driver rtl838x_eth_driver = {
 	.probe = rtl838x_eth_probe,
-	.remove_new = rtl838x_eth_remove,
+	.remove = rtl838x_eth_remove,
 	.driver = {
 		.name = "rtl838x-eth",
 		.pm = NULL,
