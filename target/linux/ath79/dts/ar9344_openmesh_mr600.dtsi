@@ -138,13 +138,10 @@
 &pcie {
 	status = "okay";
 
-	ath9k: wifi@0,0 {
+	wifi@0,0 {
 		compatible = "pci168c,0030";
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&macaddr_art_0 8>, <&calibration_art_5000>;
 		nvmem-cell-names = "mac-address", "calibration";
-
-		gpio-controller;
-		#gpio-cells = <2>;
 	};
 };
