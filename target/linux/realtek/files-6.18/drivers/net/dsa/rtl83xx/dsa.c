@@ -638,13 +638,13 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 	return 0;
 }
 
-static struct phylink_pcs *rtldsa_phylink_mac_select_pcs(struct dsa_switch *ds,
-							 int port,
+static struct phylink_pcs *rtldsa_phylink_mac_select_pcs(struct phylink_config *config,
 							 phy_interface_t interface)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct dsa_port *dp = dsa_phylink_to_port(config);
+	struct rtl838x_switch_priv *priv = dp->ds->priv;
 
-	return priv->pcs[port];
+	return priv->pcs[dp->index];
 }
 
 static void rtldsa_83xx_phylink_get_caps(struct dsa_switch *ds, int port,
@@ -689,12 +689,13 @@ static void rtldsa_93xx_phylink_get_caps(struct dsa_switch *ds, int port,
 	__set_bit(PHY_INTERFACE_MODE_10G_QXGMII, config->supported_interfaces);
 }
 
-static void rtldsa_83xx_phylink_mac_config(struct dsa_switch *ds, int port,
+static void rtldsa_83xx_phylink_mac_config(struct phylink_config *config,
 					   unsigned int mode,
 					   const struct phylink_link_state *state)
 {
-	struct dsa_port *dp = dsa_to_port(ds, port);
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct dsa_port *dp = dsa_phylink_to_port(config);
+	struct rtl838x_switch_priv *priv = dp->ds->priv;
+	int port = dp->index;
 	u32 mcr;
 
 	pr_debug("%s port %d, mode %x\n", __func__, port, mode);
@@ -720,11 +721,13 @@ static void rtldsa_83xx_phylink_mac_config(struct dsa_switch *ds, int port,
 	sw_w32(mcr, priv->r->mac_force_mode_ctrl(port));
 }
 
-static void rtldsa_93xx_phylink_mac_config(struct dsa_switch *ds, int port,
+static void rtldsa_93xx_phylink_mac_config(struct phylink_config *config,
 					   unsigned int mode,
 					   const struct phylink_link_state *state)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct dsa_port *dp = dsa_phylink_to_port(config);
+	struct rtl838x_switch_priv *priv = dp->ds->priv;
+	int port = dp->index;
 
 	/* Nothing to be done for the CPU-port */
 	if (port == priv->cpu_port)
@@ -734,11 +737,13 @@ static void rtldsa_93xx_phylink_mac_config(struct dsa_switch *ds, int port,
 	sw_w32(0, priv->r->mac_force_mode_ctrl(port));
 }
 
-static void rtldsa_83xx_phylink_mac_link_down(struct dsa_switch *ds, int port,
+static void rtldsa_83xx_phylink_mac_link_down(struct phylink_config *config,
 					      unsigned int mode,
 					      phy_interface_t interface)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct dsa_port *dp = dsa_phylink_to_port(config);
+	struct rtl838x_switch_priv *priv = dp->ds->priv;
+	int port = dp->index;
 	int mask = 0;
 
 	/* Stop TX/RX to port */
@@ -749,11 +754,13 @@ static void rtldsa_83xx_phylink_mac_link_down(struct dsa_switch *ds, int port,
 	sw_w32_mask(mask, 0, priv->r->mac_force_mode_ctrl(port));
 }
 
-static void rtldsa_93xx_phylink_mac_link_down(struct dsa_switch *ds, int port,
+static void rtldsa_93xx_phylink_mac_link_down(struct phylink_config *config,
 					      unsigned int mode,
 					      phy_interface_t interface)
 {
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct dsa_port *dp = dsa_phylink_to_port(config);
+	struct rtl838x_switch_priv *priv = dp->ds->priv;
+	int port = dp->index;
 	u32 v = 0;
 
 	/* Stop TX/RX to port */
@@ -767,15 +774,16 @@ static void rtldsa_93xx_phylink_mac_link_down(struct dsa_switch *ds, int port,
 	sw_w32_mask(v, 0, priv->r->mac_force_mode_ctrl(port));
 }
 
-static void rtldsa_83xx_phylink_mac_link_up(struct dsa_switch *ds, int port,
+static void rtldsa_83xx_phylink_mac_link_up(struct phylink_config *config,
+					    struct phy_device *phydev,
 					    unsigned int mode,
 					    phy_interface_t interface,
-					    struct phy_device *phydev,
 					    int speed, int duplex,
 					    bool tx_pause, bool rx_pause)
 {
-	struct dsa_port *dp = dsa_to_port(ds, port);
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct dsa_port *dp = dsa_phylink_to_port(config);
+	struct rtl838x_switch_priv *priv = dp->ds->priv;
+	int port = dp->index;
 	u32 mcr, spdsel;
 
 	if (speed == SPEED_1000)
@@ -830,15 +838,16 @@ static void rtldsa_83xx_phylink_mac_link_up(struct dsa_switch *ds, int port,
 	sw_w32_mask(0, 0x3, priv->r->mac_port_ctrl(port));
 }
 
-static void rtldsa_93xx_phylink_mac_link_up(struct dsa_switch *ds, int port,
+static void rtldsa_93xx_phylink_mac_link_up(struct phylink_config *config,
+					    struct phy_device *phydev,
 					    unsigned int mode,
 					    phy_interface_t interface,
-					    struct phy_device *phydev,
 					    int speed, int duplex,
 					    bool tx_pause, bool rx_pause)
 {
-	struct dsa_port *dp = dsa_to_port(ds, port);
-	struct rtl838x_switch_priv *priv = ds->priv;
+	struct dsa_port *dp = dsa_phylink_to_port(config);
+	struct rtl838x_switch_priv *priv = dp->ds->priv;
+	int port = dp->index;
 	u32 mcr, spdsel;
 
 	if (speed == SPEED_10000)
@@ -1502,6 +1511,14 @@ static void rtldsa_port_disable(struct dsa_switch *ds, int port)
 	priv->ports[port].enable = false;
 }
 
+static bool rtldsa_support_eee(struct dsa_switch *ds, int port)
+{
+	struct rtl838x_switch_priv *priv = ds->priv;
+
+	/* TODO: do this better */
+	return (priv->ports[port].phy != 0);
+}
+
 static int rtldsa_set_mac_eee(struct dsa_switch *ds, int port, struct ethtool_keee *e)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
@@ -1517,20 +1534,6 @@ static int rtldsa_set_mac_eee(struct dsa_switch *ds, int port, struct ethtool_ke
 		pr_info("Enabled EEE for port %d\n", port);
 	else
 		pr_info("Disabled EEE for port %d\n", port);
-
-	return 0;
-}
-
-static int rtldsa_get_mac_eee(struct dsa_switch *ds, int port, struct ethtool_keee *eee)
-{
-	/*
-	 * Until kernel 6.6 the Realtek device specific get_mac_eee() functions filled many
-	 * fields of the eee structure manually. That came from the fact, that the phy
-	 * driver could not report EEE capabilities on its own. Upstream will replace this
-	 * function with a simple boolean support_eee() getter starting from 6.14. That only
-	 * checks if a port can provide EEE or not. In the best case it can be replaced with
-	 * dsa_supports_eee() in the future. For now align to other upstream DSA drivers.
-	 */
 
 	return 0;
 }
@@ -2989,6 +2992,13 @@ unlock:
 	return ret;
 }
 
+const struct phylink_mac_ops rtldsa_83xx_phylink_mac_ops = {
+	.mac_select_pcs		= rtldsa_phylink_mac_select_pcs,
+	.mac_config		= rtldsa_83xx_phylink_mac_config,
+	.mac_link_down		= rtldsa_83xx_phylink_mac_link_down,
+	.mac_link_up		= rtldsa_83xx_phylink_mac_link_up,
+};
+
 const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 	.get_tag_protocol	= rtldsa_get_tag_protocol,
 	.setup			= rtldsa_83xx_setup,
@@ -2997,10 +3007,6 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 	.phy_write		= rtldsa_phy_write,
 
 	.phylink_get_caps	= rtldsa_83xx_phylink_get_caps,
-	.phylink_mac_config	= rtldsa_83xx_phylink_mac_config,
-	.phylink_mac_link_down	= rtldsa_83xx_phylink_mac_link_down,
-	.phylink_mac_link_up	= rtldsa_83xx_phylink_mac_link_up,
-	.phylink_mac_select_pcs	= rtldsa_phylink_mac_select_pcs,
 
 	.get_strings		= rtldsa_get_strings,
 	.get_ethtool_stats	= rtldsa_get_ethtool_stats,
@@ -3015,7 +3021,7 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 	.port_enable		= rtldsa_port_enable,
 	.port_disable		= rtldsa_port_disable,
 
-	.get_mac_eee		= rtldsa_get_mac_eee,
+	.support_eee		= rtldsa_support_eee,
 	.set_mac_eee		= rtldsa_set_mac_eee,
 
 	.set_ageing_time	= rtldsa_set_ageing_time,
@@ -3048,6 +3054,13 @@ const struct dsa_switch_ops rtldsa_83xx_switch_ops = {
 	.port_bridge_flags	= rtldsa_port_bridge_flags,
 };
 
+const struct phylink_mac_ops rtldsa_93xx_phylink_mac_ops = {
+	.mac_select_pcs		= rtldsa_phylink_mac_select_pcs,
+	.mac_config		= rtldsa_93xx_phylink_mac_config,
+	.mac_link_down		= rtldsa_93xx_phylink_mac_link_down,
+	.mac_link_up		= rtldsa_93xx_phylink_mac_link_up,
+};
+
 const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 	.get_tag_protocol	= rtldsa_get_tag_protocol,
 	.setup			= rtldsa_93xx_setup,
@@ -3056,10 +3069,6 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 	.phy_write		= rtldsa_phy_write,
 
 	.phylink_get_caps	= rtldsa_93xx_phylink_get_caps,
-	.phylink_mac_config	= rtldsa_93xx_phylink_mac_config,
-	.phylink_mac_link_down	= rtldsa_93xx_phylink_mac_link_down,
-	.phylink_mac_link_up	= rtldsa_93xx_phylink_mac_link_up,
-	.phylink_mac_select_pcs	= rtldsa_phylink_mac_select_pcs,
 
 	.get_strings		= rtldsa_get_strings,
 	.get_ethtool_stats	= rtldsa_get_ethtool_stats,
@@ -3074,7 +3083,7 @@ const struct dsa_switch_ops rtldsa_93xx_switch_ops = {
 	.port_enable		= rtldsa_port_enable,
 	.port_disable		= rtldsa_port_disable,
 
-	.get_mac_eee		= rtldsa_get_mac_eee,
+	.support_eee		= rtldsa_support_eee,
 	.set_mac_eee		= rtldsa_set_mac_eee,
 
 	.set_ageing_time	= rtldsa_set_ageing_time,

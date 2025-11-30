@@ -197,6 +197,9 @@ void rtl930x_pie_rule_dump_raw(u32 r[]);
 extern const struct dsa_switch_ops rtldsa_83xx_switch_ops;
 extern const struct dsa_switch_ops rtldsa_93xx_switch_ops;
 
+extern const struct phylink_mac_ops rtldsa_83xx_phylink_mac_ops;
+extern const struct phylink_mac_ops rtldsa_93xx_phylink_mac_ops;
+
 extern const struct rtldsa_config rtldsa_838x_cfg;
 extern const struct rtldsa_config rtldsa_839x_cfg;
 extern const struct rtldsa_config rtldsa_930x_cfg;
