@@ -38,13 +38,6 @@
 			trigger-sources = <&gl850g_port1>, <&gl850g_port2>,
 					  <&gl850g_port3>, <&gl850g_port4>;
 		};
-
-		wlan {
-			function = LED_FUNCTION_WLAN;
-			color = <LED_COLOR_ID_BLUE>;
-			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
-		};
 	};
 };
 
@@ -55,6 +48,13 @@
 
 &eth1 {
 	compatible = "syscon", "simple-mfd";
+};
+
+&wmac {
+	led {
+		led-sources = <12>;
+		led-active-low;
+	};
 };
 
 &gpio_export {

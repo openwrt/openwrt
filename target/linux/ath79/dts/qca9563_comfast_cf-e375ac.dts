@@ -32,12 +32,6 @@
 			color = <LED_COLOR_ID_RED>;
 			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
 		};
-
-		wlan2g {
-			label = "blue:wlan2g";
-			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "phy1tpt";
-		};
 	};
 
 	keys {
@@ -166,4 +160,9 @@
 
 	nvmem-cells = <&macaddr_art_0 10>, <&cal_art_1000>;
 	nvmem-cell-names = "mac-address", "calibration";
+
+	led {
+		led-sources = <16>;
+		led-active-low;
+	};
 };

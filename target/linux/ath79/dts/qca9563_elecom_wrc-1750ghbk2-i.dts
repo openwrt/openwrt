@@ -17,12 +17,6 @@
 		default-state = "on";
 	};
 
-	wlan2g {
-		label = "blue:wlan2g";
-		gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
-		linux,default-trigger = "phy1tpt";
-	};
-
 	wlan5g {
 		label = "blue:wlan5g";
 		gpios = <&gpio 8 GPIO_ACTIVE_HIGH>;
@@ -89,4 +83,9 @@
 &wmac {
 	nvmem-cells = <&cal_art_1000>;
 	nvmem-cell-names = "calibration";
+
+	led {
+		led-sources = <7>;
+		led-active-low;
+	};
 };

@@ -74,13 +74,6 @@
 			label = "green:minipcie";
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
-
-		wlan {
-			function = LED_FUNCTION_WLAN;
-			color = <LED_COLOR_ID_GREEN>;
-			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
-		};
 	};
 
 	leds-pcf8574 {
@@ -116,6 +109,13 @@
 &eth1 {
 	nvmem-cells = <&macaddr_art_1002 (-1)>;
 	nvmem-cell-names = "mac-address";
+};
+
+&wmac {
+	led {
+		led-sources = <12>;
+		led-active-low;
+	};
 };
 
 &pcie0 {
