@@ -5,7 +5,8 @@
 board_config_update
 
 case "$(board_name)" in
-	tplink,archer-c5-v4)
+	tplink,archer-c5-v4|\
+	tplink,ec220-g5-v2)
 		ucidef_set_compat_version "1.1"
 		;;
 esac
