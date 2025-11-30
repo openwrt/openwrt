@@ -11,7 +11,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
 ---
 --- a/drivers/net/mdio/Makefile
 +++ b/drivers/net/mdio/Makefile
-@@ -22,6 +22,7 @@ obj-$(CONFIG_MDIO_OCTEON)		+= mdio-octeo
+@@ -24,6 +24,7 @@ obj-$(CONFIG_MDIO_REALTEK_RTL9300)	+= md
  obj-$(CONFIG_MDIO_REGMAP)		+= mdio-regmap.o
  obj-$(CONFIG_MDIO_REALTEK_OTTO)	+= mdio-realtek-otto.o
  obj-$(CONFIG_MDIO_REALTEK_OTTO_AUX)	+= mdio-realtek-otto-aux.o
@@ -21,7 +21,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
  obj-$(CONFIG_MDIO_THUNDER)		+= mdio-thunder.o
 --- a/drivers/net/mdio/Kconfig
 +++ b/drivers/net/mdio/Kconfig
-@@ -224,6 +224,13 @@ config MDIO_REALTEK_OTTO_AUX
+@@ -208,6 +208,13 @@ config MDIO_REALTEK_OTTO_AUX
  	  This driver supports the auxilairy MDIO bus on RTL838x SoCs. This bus
  	  is typically used to attach RTL8231 GPIO extenders.
  
