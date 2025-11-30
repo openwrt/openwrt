@@ -3798,7 +3798,8 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 
 /* Common functions */
 
-static void rtpcs_pcs_get_state(struct phylink_pcs *pcs, struct phylink_link_state *state)
+static void rtpcs_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mode,
+				struct phylink_link_state *state)
 {
 	struct rtpcs_link *link = rtpcs_phylink_pcs_to_link(pcs);
 	struct rtpcs_ctrl *ctrl = link->ctrl;
@@ -3970,7 +3971,6 @@ struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int
 	link->port = port;
 	link->sds = sds;
 	link->pcs.ops = ctrl->cfg->pcs_ops;
-	link->pcs.neg_mode = true;
 
 	ctrl->link[port] = link;
 
