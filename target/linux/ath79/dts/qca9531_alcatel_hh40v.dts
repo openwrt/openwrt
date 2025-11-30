@@ -63,12 +63,6 @@
 			color = <LED_COLOR_ID_ORANGE>;
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
-
-		wifi {
-			label = "blue:wifi";
-			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "phy0tpt";
-		};
 	};
 };
 
@@ -174,4 +168,8 @@
 
 	nvmem-cells = <&cal_art_1000>, <&macaddr_art_1002>;
 	nvmem-cell-names = "calibration", "mac-address";
+
+	led {
+		led-sources = <0>;
+	};
 };
