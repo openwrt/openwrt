@@ -149,7 +149,8 @@ case "$board" in
 		[ "$PHYNBR" = "1" ] && \
 			macaddr_setbit_la "$(mtd_get_mac_binary rf-eeprom 0x4)" > /sys${DEVPATH}/macaddress
 		;;
-	mercusys,mr80x-v3)
+	mercusys,mr80x-v3|\
+	mercusys,mr85x)
 		mac_dirty=$(cat "/tmp/tp_data/default-mac" | sed -n 's/^'"MAC"'://p')
 		label_mac=$(macaddr_canonicalize "$mac_dirty")
 		[ "$PHYNBR" = "0" ] && macaddr_add $label_mac -1 > /sys${DEVPATH}/macaddress

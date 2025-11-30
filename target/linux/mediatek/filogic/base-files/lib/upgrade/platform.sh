@@ -182,6 +182,7 @@ platform_do_upgrade() {
 		nand_do_upgrade "$1"
 		;;
 	mercusys,mr80x-v3|\
+	mercusys,mr85x|\
 	mercusys,mr90x-v1|\
 	tplink,archer-ax80-v1|\
 	tplink,be450|\
