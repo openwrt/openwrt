@@ -46,6 +46,24 @@ proto_dhcpv6_init_config() {
 	proto_config_add_boolean dynamic
 }
 
+proto_dhcpv6_add_ifaceid() {
+	local ifaceid="$1"
+	local ip6addr
+
+	if [ "$ifaceid" = "random" ]; then
+		local loop=1
+
+		while [ $loop -eq 1 ]; do
+			ip6addr=$(hexdump -vn 8 -e '"::" 3/2 "%x:" 1/2 "%x"' /dev/urandom)
+			( echo $ip6addr | grep -qE "::[0-9a-f]{0,4}:[0-9a-f]{0,2}ff:fe[0-9a-f]{2}:[0-9a-f]{0,4}" ) || loop=0
+		done
+	elif [ "$ifaceid" != "eui64" ]; then
+		ip6addr="$ifaceid"
+	fi
+
+	[ -n "$ip6addr" ] && append opts "-i$ip6addr"
+}
+
 proto_dhcpv6_add_prefix() {
 	append "$3" "$1"
 }
@@ -104,7 +122,7 @@ proto_dhcpv6_setup() {
 	[ "$noacceptreconfig" = "1" ] && append opts "-a"
 
 	[ -z "$ip6ifaceid" ] && json_get_var ip6ifaceid ifaceid
-	[ -n "$ip6ifaceid" ] && append opts "-i$ip6ifaceid"
+	[ -n "$ip6ifaceid" ] && proto_dhcpv6_add_ifaceid "$ip6ifaceid"
 
 	[ -n "$vendorclass" ] && append opts "-V$vendorclass"
 
