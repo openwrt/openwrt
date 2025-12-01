@@ -1,0 +1,29 @@
+--- a/drivers/leds/Kconfig
++++ b/drivers/leds/Kconfig
+@@ -987,6 +987,16 @@ source "drivers/leds/flash/Kconfig"
+ comment "RGB LED drivers"
+ source "drivers/leds/rgb/Kconfig"
+ 
++config LEDS_TLT_TSW
++	tristate "LED support for TSW2*|SWM* devices"
++	depends on LEDS_CLASS
++	select GPIO_SUPPORT
++	select LEDS_TRIGGERS
++	help
++	  This option enables support for ETH/SFP/POE port LED management for TSW2*|SWM*
++	  devices with additional centralized "master" control LED and specialized
++	  "hw" led-trigger.
++
+ comment "LED Triggers"
+ source "drivers/leds/trigger/Kconfig"
+ 
+--- a/drivers/leds/Makefile
++++ b/drivers/leds/Makefile
+@@ -89,6 +89,7 @@ obj-$(CONFIG_LEDS_SYSCON)		+= leds-sysco
+ obj-$(CONFIG_LEDS_TCA6507)		+= leds-tca6507.o
+ obj-$(CONFIG_LEDS_TI_LMU_COMMON)	+= leds-ti-lmu-common.o
+ obj-$(CONFIG_LEDS_TLC591XX)		+= leds-tlc591xx.o
++obj-$(CONFIG_LEDS_TLT_TSW)		+= leds-tlt-tsw.o
+ obj-$(CONFIG_LEDS_TPS6105X)		+= leds-tps6105x.o
+ obj-$(CONFIG_LEDS_TURRIS_OMNIA)		+= leds-turris-omnia.o
+ obj-$(CONFIG_LEDS_WM831X_STATUS)	+= leds-wm831x-status.o
