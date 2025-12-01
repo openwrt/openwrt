@@ -410,10 +410,10 @@ define Device/keenetic_kn-1710
   DEVICE_VENDOR := Keenetic
   DEVICE_MODEL := KN-1710
   DEVICE_PACKAGES := kmod-mt76x2 kmod-usb2 kmod-usb-ohci \
-        kmod-usb-ledtrig-usbport
+	kmod-usb-ledtrig-usbport
   IMAGES += factory.bin
   IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to $$$$(BLOCKSIZE) | \
-        check-size | zyimage -d 0x801710 -v "KN-1710"
+	check-size | zyimage -d 0x801710 -v "KN-1710"
 endef
 TARGET_DEVICES += keenetic_kn-1710
 
