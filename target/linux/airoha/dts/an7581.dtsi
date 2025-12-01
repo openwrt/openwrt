@@ -912,7 +912,7 @@
 			interrupt-controller;
 			#interrupt-cells = <1>;
 			interrupt-parent = <&gic>;
-			interrupts = <GIC_SPI 209 IRQ_TYPE_LEVEL_HIGH>;
+			interrupts = <GIC_SPI 31 IRQ_TYPE_LEVEL_HIGH>;
 
 			status = "disabled";
 
@@ -972,6 +972,7 @@
 				gsw_phy1: ethernet-phy@1 {
 					compatible = "ethernet-phy-ieee802.3-c22";
 					reg = <9>;
+					interrupts = <1>;
 					phy-mode = "internal";
 
 					leds {
@@ -995,6 +996,7 @@
 				gsw_phy2: ethernet-phy@2 {
 					compatible = "ethernet-phy-ieee802.3-c22";
 					reg = <10>;
+					interrupts = <2>;
 					phy-mode = "internal";
 
 					leds {
@@ -1018,6 +1020,7 @@
 				gsw_phy3: ethernet-phy@3 {
 					compatible = "ethernet-phy-ieee802.3-c22";
 					reg = <11>;
+					interrupts = <3>;
 					phy-mode = "internal";
 
 					leds {
@@ -1041,6 +1044,7 @@
 				gsw_phy4: ethernet-phy@4 {
 					compatible = "ethernet-phy-ieee802.3-c22";
 					reg = <12>;
+					interrupts = <4>;
 					phy-mode = "internal";
 
 					leds {
