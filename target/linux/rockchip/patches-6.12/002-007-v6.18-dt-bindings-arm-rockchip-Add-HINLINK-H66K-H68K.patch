@@ -1,0 +1,37 @@
+From 4bef07b79ab1ef7d963eaa2c37948030e418d538 Mon Sep 17 00:00:00 2001
+From: Chukun Pan <amadeus@jmu.edu.cn>
+Date: Mon, 18 Aug 2025 18:00:07 +0800
+Subject: [PATCH] dt-bindings: arm: rockchip: Add HINLINK H66K / H68K
+
+The HINLINK H66K/H68K are 2.5GbE SBC based on the RK3568 SoC.
+Add devicetree binding documentation for them.
+
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+Acked-by: Conor Dooley <conor.dooley@microchip.com>
+Link: https://lore.kernel.org/r/20250818100009.170202-3-amadeus@jmu.edu.cn
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ Documentation/devicetree/bindings/arm/rockchip.yaml | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/arm/rockchip.yaml b/Documentation/devicetree/bindings/arm/rockchip.yaml
+index 28db6bd6aa5b..870c318fc8d4 100644
+--- a/Documentation/devicetree/bindings/arm/rockchip.yaml
++++ b/Documentation/devicetree/bindings/arm/rockchip.yaml
+@@ -683,6 +683,13 @@ properties:
+           - const: hardkernel,odroid-m2
+           - const: rockchip,rk3588s
+ 
++      - description: HINLINK H66K / H68K
++        items:
++          - enum:
++              - hinlink,h66k
++              - hinlink,h68k
++          - const: rockchip,rk3568
++
+       - description: Hugsun X99 TV Box
+         items:
+           - const: hugsun,x99
+-- 
+2.43.0
+

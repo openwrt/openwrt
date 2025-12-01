@@ -1,0 +1,32 @@
+From 7d11b8c260ea68ce8f420ad467b04b21ea34b011 Mon Sep 17 00:00:00 2001
+From: Chukun Pan <amadeus@jmu.edu.cn>
+Date: Mon, 18 Aug 2025 18:00:06 +0800
+Subject: [PATCH] dt-bindings: vendor-prefixes: Add HINLINK
+
+Add vendor prefix for HINLINK, which is an SBC manufacturer.
+
+Link: https://www.hinlink.cn/
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+Acked-by: Conor Dooley <conor.dooley@microchip.com>
+Link: https://lore.kernel.org/r/20250818100009.170202-2-amadeus@jmu.edu.cn
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ Documentation/devicetree/bindings/vendor-prefixes.yaml | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/vendor-prefixes.yaml b/Documentation/devicetree/bindings/vendor-prefixes.yaml
+index 77160cd47f54..1305da271a68 100644
+--- a/Documentation/devicetree/bindings/vendor-prefixes.yaml
++++ b/Documentation/devicetree/bindings/vendor-prefixes.yaml
+@@ -646,6 +646,8 @@ patternProperties:
+     description: HiDeep Inc.
+   "^himax,.*":
+     description: Himax Technologies, Inc.
++  "^hinlink,.*":
++    description: Shenzhen HINLINK Technology Co., Ltd.
+   "^hirschmann,.*":
+     description: Hirschmann Automation and Control GmbH
+   "^hisi,.*":
+-- 
+2.43.0
+
