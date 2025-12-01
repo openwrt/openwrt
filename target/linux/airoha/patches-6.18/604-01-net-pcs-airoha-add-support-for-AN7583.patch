@@ -41,7 +41,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +endif
 --- a/drivers/net/pcs/airoha/pcs-airoha-common.c
 +++ b/drivers/net/pcs/airoha/pcs-airoha-common.c
-@@ -19,6 +19,7 @@
+@@ -20,6 +20,7 @@
  static void airoha_pcs_setup_scu_eth(struct airoha_pcs_priv *priv,
  				     phy_interface_t interface)
  {
@@ -49,7 +49,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	u32 xsi_sel;
  
  	switch (interface) {
-@@ -36,6 +37,12 @@ static void airoha_pcs_setup_scu_eth(str
+@@ -37,6 +38,12 @@ static void airoha_pcs_setup_scu_eth(str
  	regmap_update_bits(priv->scu, AIROHA_SCU_SSR3,
  			   AIROHA_SCU_ETH_XSI_SEL,
  			   xsi_sel);
@@ -62,7 +62,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  }
  
  static void airoha_pcs_setup_scu_pon(struct airoha_pcs_priv *priv,
-@@ -100,16 +107,24 @@ static int airoha_pcs_setup_scu(struct a
+@@ -101,16 +108,24 @@ static int airoha_pcs_setup_scu(struct a
  
  static void airoha_pcs_init_usxgmii(struct airoha_pcs_priv *priv)
  {
@@ -90,31 +90,21 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  }
  
  static void airoha_pcs_init_hsgmii(struct airoha_pcs_priv *priv)
-@@ -434,6 +449,13 @@ static int airoha_pcs_config(struct phyl
- 			regmap_clear_bits(priv->usxgmii_pcs,
- 					  AIROHA_PCS_USXGMII_PCS_AN_CONTROL_0,
- 					  AIROHA_PCS_USXGMII_AN_ENABLE);
+@@ -389,6 +404,13 @@ static int airoha_pcs_config(struct phyl
+ 		regmap_set_bits(priv->usxgmii_pcs,
+ 				AIROHA_PCS_USXGMII_PCS_AN_CONTROL_0,
+ 				AIROHA_PCS_USXGMII_AN_ENABLE);
 +
-+		if (data->usxgmii_xfi_mode_sel &&
-+		    neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED)
-+			regmap_set_bits(priv->usxgmii_pcs,
-+					AIROHA_PCS_USXGMII_PCS_AN_CONTROL_7,
-+					AIROHA_PCS_USXGMII_XFI_MODE_TX_SEL |
-+					AIROHA_PCS_USXGMII_XFI_MODE_RX_SEL);
++	if (data->usxgmii_xfi_mode_sel &&
++	    neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED)
++		regmap_set_bits(priv->usxgmii_pcs,
++			AIROHA_PCS_USXGMII_PCS_AN_CONTROL_7,
++			AIROHA_PCS_USXGMII_XFI_MODE_TX_SEL |
++			AIROHA_PCS_USXGMII_XFI_MODE_RX_SEL);
  	}
  
  	/* Clear any force bit that my be set by bootloader */
-@@ -985,7 +1007,8 @@ static int airoha_pcs_probe(struct platf
- 	 * manual rx calibration is needed. This is only limited to
- 	 * any SoC revision before E2.
- 	 */
--	if (data->port_type == AIROHA_PCS_ETH) {
-+	if (device_is_compatible(dev, "airoha,an7581-pcs-eth") &&
-+	    data->port_type == AIROHA_PCS_ETH) {
- 		u32 val;
- 
- 		ret = regmap_read(priv->scu, AIROHA_SCU_PDIDR, &val);
-@@ -1003,6 +1026,8 @@ static int airoha_pcs_probe(struct platf
+@@ -850,6 +872,8 @@ static void airoha_pcs_remove(struct pla
  
  static const struct airoha_pcs_match_data an7581_pcs_eth = {
  	.port_type = AIROHA_PCS_ETH,
@@ -123,7 +113,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	.bringup = an7581_pcs_bringup,
  	.link_up = an7581_pcs_phya_link_up,
  	.rxlock_workaround = an7581_pcs_rxlock_workaround,
-@@ -1010,13 +1035,33 @@ static const struct airoha_pcs_match_dat
+@@ -857,13 +881,33 @@ static const struct airoha_pcs_match_dat
  
  static const struct airoha_pcs_match_data an7581_pcs_pon = {
  	.port_type = AIROHA_PCS_PON,
@@ -765,7 +755,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  enum xfi_port_type {
  	AIROHA_PCS_ETH,
  	AIROHA_PCS_PON,
-@@ -790,6 +1198,11 @@ struct airoha_pcs_port {
+@@ -791,6 +1199,11 @@ static inline struct airoha_pcs_priv *ph
  struct airoha_pcs_match_data {
  	enum xfi_port_type port_type;
  
@@ -777,7 +767,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	int (*bringup)(struct airoha_pcs_priv *priv,
  			phy_interface_t interface);
  	void (*link_up)(struct airoha_pcs_priv *priv);
-@@ -820,3 +1233,20 @@ static inline int an7581_pcs_rxlock_work
+@@ -819,3 +1232,20 @@ static inline int an7581_pcs_rxlock_work
  	return 0;
  }
  #endif

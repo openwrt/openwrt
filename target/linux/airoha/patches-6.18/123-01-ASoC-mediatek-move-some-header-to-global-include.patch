@@ -114,7 +114,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
   *                  R E G I S T E R       D E F I N I T I O N
 --- a/sound/soc/mediatek/mt8183/mt8183-afe-pcm.c
 +++ b/sound/soc/mediatek/mt8183/mt8183-afe-pcm.c
-@@ -18,8 +18,8 @@
+@@ -19,8 +19,8 @@
  #include "mt8183-afe-clk.h"
  #include "mt8183-interconnection.h"
  #include "mt8183-reg.h"
@@ -323,7 +323,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +
 --- a/sound/soc/mediatek/common/mtk-afe-fe-dai.h
 +++ /dev/null
-@@ -1,53 +0,0 @@
+@@ -1,51 +0,0 @@
 -/* SPDX-License-Identifier: GPL-2.0 */
 -/*
 - * mtk-afe-fe-dais.h  --  Mediatek afe fe dai operator definition
@@ -368,8 +368,6 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 -		       size_t dma_bytes);
 -int mtk_memif_set_channel(struct mtk_base_afe *afe,
 -			  int id, unsigned int channel);
--int mtk_memif_set_rate(struct mtk_base_afe *afe,
--		       int id, unsigned int rate);
 -int mtk_memif_set_rate_substream(struct snd_pcm_substream *substream,
 -				 int id, unsigned int rate);
 -int mtk_memif_set_format(struct mtk_base_afe *afe,
