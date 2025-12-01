@@ -1,0 +1,117 @@
+From: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+Date: Fri, 17 Jan 2025 22:15:49 -0300
+Subject: [PATCH] net: dsa: realtek: rtl8365mb: initialize VLAN at setup
+
+dd the rtl8365mb_vlan_init() function to perform initial VLAN
+configuration on the RTL8365MB switch chip.
+
+Specifically:
+ - Reserve VLAN MC entry at index 0 for ports not belonging to any
+   VLAN (VID=0) to ensure proper frame forwarding to the CPU.
+ - Add the CPU port as a member of VLAN VID 0 in the Vlan4k table.
+ - Create a static VLAN MC entry at index 0.
+ - Enable VLAN support in the control register.
+
+This replaces the previous direct VLAN enablement in
+rtl8365mb_setup() with a call to the new VLAN initialization
+routine, ensuring consistent and predictable startup settings.
+
+Signed-off-by: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+---
+ drivers/net/dsa/realtek/rtl8365mb.c | 71 +++++++++++++++++++++++++++++++---
+ 1 file changed, 65 insertions(+), 6 deletion(-)
+
+--- a/drivers/net/dsa/realtek/rtl8365mb.c
++++ b/drivers/net/dsa/realtek/rtl8365mb.c
+@@ -1199,7 +1199,8 @@ static int rtl8365mb_vlanmc_set(struct d
+ 
+ 	mutex_lock(&mb->table_lock);
+ 	/* look for existing entry or an empty one */
+-	for (vlanmc_idx = 0; vlanmc_idx < RTL8365MB_VLAN_MC_CONF_SIZE; vlanmc_idx++) {
++	/* reserve vlanmc_idx=0 to the non-member (see rtl8365mb_vlan_init)  */
++	for (vlanmc_idx = 1; vlanmc_idx < RTL8365MB_VLAN_MC_CONF_SIZE; vlanmc_idx++) {
+ 		ret = regmap_bulk_read(priv->map,
+ 				       RTL8365MB_VLAN_MC_CONF_REG(vlanmc_idx),
+ 				       vlan_entry,
+@@ -2638,6 +2639,68 @@ static int rtl8365mb_reset_chip(struct r
+ 					20000, 1e6);
+ }
+ 
++/* VLAN support is always enabled in the switch.
++ *
++ * When a port is not a member of any VLANs (i.e. using a user port directly
++ * and not in a bridge), the PVID property still matters.  With the default
++ * PVID value of 0 (it is VlanMC index), forwarding to CPU will only work if
++ * the VLAN mentioned in the VID at VlanMC index 0 includes the CPU port as an
++ * untagged member. And the membership in the VlanMC does not matter as the
++ * switch only considers the Vlan4k membership.
++ *
++ * Vlan4k starts at index 0, which is equivalent to VID 0. Let's include the
++ * CPU port to that entry and create a static VlanMC entry at 0.
++ */
++static int rtl8365mb_vlan_init(struct dsa_switch *ds)
++{
++	u16 vlan_entry[RTL8365MB_VLAN_MC_CONF_ENTRY_SIZE] = {0};
++	struct realtek_priv *priv = ds->priv;
++	struct switchdev_obj_port_vlan vlan;
++	struct rtl8366_vlan_mc vlanmc = {0};
++	struct dsa_port *cpu_dp;
++	int vlanmc_idx;
++	int ret;
++
++	/* fake VID 0 for user ports that are not member of any VLAN */
++	/* vlanMC at idx 0 will be reserved for that */
++	vlan.vid = 0;
++	vlan.flags = BRIDGE_VLAN_INFO_UNTAGGED;
++
++	/* just to be clear we do want it to be zero */
++	vlanmc.vid = 0;
++	/* there is not need to set the vlanmc.member a vlan4k is enough */
++
++	/* and we do need it to be VlanMC at index 0 */
++	vlanmc_idx = 0;
++
++	dsa_switch_for_each_cpu_port(cpu_dp, ds) {
++		ret = rtl8365mb_vlan4k_set(ds, cpu_dp->index, &vlan, NULL,
++					   true);
++		if (ret) {
++			dev_err(priv->dev,
++				"Failed to init VLAN 0 (for non members)\n");
++			return ret;
++		}
++	}
++
++	rtl8365mb_vlanmc_buf(&vlanmc, vlan_entry);
++	ret = regmap_bulk_write(priv->map,
++		       RTL8365MB_VLAN_MC_CONF_REG(vlanmc_idx),
++		       vlan_entry,
++		       RTL8365MB_VLAN_MC_CONF_ENTRY_SIZE);
++	if (ret) {
++		dev_err(priv->dev, "Failed to write vlan MC entry (vlan 0)\n");
++		return ret;
++	}
++
++	/* VLAN is always enabled. */
++	ret = regmap_update_bits(priv->map,
++			 RTL8365MB_VLAN_CTRL_REG,
++			 RTL8365MB_VLAN_CTRL_EN_VLAN_MASK,
++			 FIELD_PREP(RTL8365MB_VLAN_CTRL_EN_VLAN_MASK, 1));
++	return ret;
++}
++
+ static int rtl8365mb_setup(struct dsa_switch *ds)
+ {
+ 	struct realtek_priv *priv = ds->priv;
+@@ -2726,11 +2789,7 @@ static int rtl8365mb_setup(struct dsa_sw
+ 	if (ret)
+ 		goto out_teardown_irq;
+ 
+-	/* Enable VLAN.*/
+-	ret = regmap_update_bits(priv->map,
+-			 RTL8365MB_VLAN_CTRL_REG,
+-			 RTL8365MB_VLAN_CTRL_EN_VLAN_MASK,
+-			 FIELD_PREP(RTL8365MB_VLAN_CTRL_EN_VLAN_MASK, 1));
++	ret = rtl8365mb_vlan_init(ds);
+ 	if (ret)
+ 		goto out_teardown_irq;
+ 
