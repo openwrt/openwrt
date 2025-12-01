@@ -1,0 +1,186 @@
+From: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+Date: Fri, 17 Jan 2025 22:15:49 -0300
+Subject: [PATCH] net: dsa: realtek: rtl8365mb: table access functions
+
+Add methods to read/write ACL, 4k vlan, L2 and igmp group tables.
+
+Co-authored-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Signed-off-by: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+---
+ drivers/net/dsa/realtek/rtl8365mb.c | 137 ++++++++++++++++++++++++++++
+ 1 file changed, 137 insertions(+)
+
+--- a/drivers/net/dsa/realtek/rtl8365mb.c
++++ b/drivers/net/dsa/realtek/rtl8365mb.c
+@@ -314,6 +314,48 @@
+  */
+ #define RTL8365MB_STATS_INTERVAL_JIFFIES	(3 * HZ)
+ 
++/* Table access registers */
++#define RTL8365MB_TABLE_CONTROL_REG		0x0500
++#define   RTL8365MB_TABLE_CONTROL_TABLE_MASK	GENMASK(2, 0)
++#define   RTL8365MB_TABLE_CONTROL_COMMAND_MASK	GENMASK(3, 3)
++#define   RTL8365MB_TABLE_CONTROL_METHOD_MASK	GENMASK(7, 4)
++#define   RTL8365MB_TABLE_CONTROL_SPA_MASK	GENMASK(11, 8)
++#define RTL8365MB_TABLE_ACCESS_ADDR_REG		0x0501
++#define  RTL8365MB_TABLE_ACCESS_ADDR_REG_MASK	GENMASK(13, 0)
++#define RTL8365MB_TABLE_LUT_REG			0x0502
++#define   RTL8365MB_TABLE_LUT_ADDR_MASK		GENMASK(10, 0)
++#define   RTL8365MB_TABLE_LUT_TYPE_MASK		GENMASK(11, 11)
++#define   RTL8365MB_TABLE_LUT_HIT_STATUS_MASK	GENMASK(12, 12)
++#define   RTL8365MB_TABLE_LUT_BUSY_FLAG_MASK	GENMASK(13, 13)
++#define   RTL8365MB_TABLE_LUT_ADDR2_MASK	GENMASK(14, 14)
++#define RTL8365MB_TABLE_WRITE_DATA_REG_BASE	0x0510 /* up to 0x0519 */
++#define RTL8365MB_TABLE_READ_DATA_REG_BASE	0x0520 /* up to 0x0529 */
++/* both last read/write register (10th) uses only the less 4 significant bits */
++#define   RTL8365MB_TABLE_10TH_DATA_REG_MASK	GENMASK(3, 0)
++
++enum rtl8365mb_table {
++	RTL8365MB_TABLE_ACL_RULE = 1,
++	RTL8365MB_TABLE_ACL_ACT,
++	RTL8365MB_TABLE_CVLAN, /* 4k vlan table */
++	RTL8365MB_TABLE_L2,
++	RTL8365MB_TABLE_IGMP_GROUP,
++
++	RTL8365MB_NUM_TABLES
++};
++
++enum rtl8365mb_table_op {
++	RTL8365MB_TABLE_READ = 0,
++	RTL8365MB_TABLE_WRITE
++};
++
++static const int rtl8365mb_table_entry_size[] = {
++	[RTL8365MB_TABLE_ACL_RULE] = 0,
++	[RTL8365MB_TABLE_ACL_ACT] = 0,
++	[RTL8365MB_TABLE_CVLAN] = 3,
++	[RTL8365MB_TABLE_L2] = 0,
++	[RTL8365MB_TABLE_IGMP_GROUP] = 0
++};
++
+ enum rtl8365mb_mib_counter_index {
+ 	RTL8365MB_MIB_ifInOctets,
+ 	RTL8365MB_MIB_dot3StatsFCSErrors,
+@@ -634,6 +676,7 @@ struct rtl8365mb_port {
+  * @chip_info: chip-specific info about the attached switch
+  * @cpu: CPU tagging and CPU port configuration for this chip
+  * @mib_lock: prevent concurrent reads of MIB counters
++ * @table_lock: prevent concurrent reads of tables
+  * @ports: per-port data
+  *
+  * Private data for this driver.
+@@ -644,6 +687,7 @@ struct rtl8365mb {
+ 	const struct rtl8365mb_chip_info *chip_info;
+ 	struct rtl8365mb_cpu cpu;
+ 	struct mutex mib_lock;
++	struct mutex table_lock;
+ 	struct rtl8365mb_port ports[RTL8365MB_MAX_NUM_PORTS];
+ };
+ 
+@@ -828,6 +872,96 @@ static int rtl8365mb_phy_write(struct re
+ 	return 0;
+ }
+ 
++static int rtl8365mb_table_access(struct realtek_priv *priv,
++				  enum rtl8365mb_table table,
++				  enum rtl8365mb_table_op op,
++				  u16 index, u16 *val)
++{
++	struct rtl8365mb *mb = priv->chip_data;
++	size_t val_size;
++	u32 lut;
++	int ret;
++
++	if (table >= RTL8365MB_NUM_TABLES)
++		return -EINVAL;
++
++	if (!FIELD_FIT(RTL8365MB_TABLE_ACCESS_ADDR_REG_MASK, index))
++		return -EINVAL;
++
++	val_size = rtl8365mb_table_entry_size[table];
++
++	mutex_lock(&mb->table_lock);
++	if (op == RTL8365MB_TABLE_WRITE) {
++		ret = regmap_bulk_write(priv->map,
++					RTL8365MB_TABLE_WRITE_DATA_REG_BASE,
++					val, val_size == 10 ? 9 : val_size);
++
++		if (ret)
++			goto out;
++
++		/* 10th register uses only 4 less significant bits (TODO: not tested) */
++		if (val_size == 10)
++			ret = regmap_update_bits(priv->map,
++					RTL8365MB_TABLE_WRITE_DATA_REG_BASE + 9,
++					RTL8365MB_TABLE_10TH_DATA_REG_MASK,
++					FIELD_PREP(RTL8365MB_TABLE_10TH_DATA_REG_MASK, val[9]));
++		if (ret)
++			goto out;
++
++	} else {
++		/* vendor driver checks busy flag only on read */
++		ret = regmap_read_poll_timeout(priv->map,
++				RTL8365MB_TABLE_LUT_REG, lut,
++				!FIELD_GET(RTL8365MB_TABLE_LUT_BUSY_FLAG_MASK, lut),
++				10, 100);
++		if (ret)
++			goto out;
++	}
++
++	ret = regmap_write(priv->map,
++			   RTL8365MB_TABLE_ACCESS_ADDR_REG,
++			   FIELD_PREP(RTL8365MB_TABLE_ACCESS_ADDR_REG_MASK, index));
++	if (ret)
++		goto out;
++
++	ret = regmap_update_bits(priv->map,
++			RTL8365MB_TABLE_CONTROL_REG,
++			RTL8365MB_TABLE_CONTROL_COMMAND_MASK |
++			RTL8365MB_TABLE_CONTROL_TABLE_MASK,
++			FIELD_PREP(RTL8365MB_TABLE_CONTROL_COMMAND_MASK, op) |
++			FIELD_PREP(RTL8365MB_TABLE_CONTROL_TABLE_MASK, table));
++	if (ret)
++		goto out;
++
++	if (op == RTL8365MB_TABLE_READ) {
++		ret = regmap_read(priv->map,
++				  RTL8365MB_TABLE_LUT_REG,
++				  &lut);
++
++		ret = regmap_read_poll_timeout(priv->map,
++				RTL8365MB_TABLE_LUT_REG, lut,
++				!FIELD_GET(RTL8365MB_TABLE_LUT_BUSY_FLAG_MASK,
++					    lut),
++				10, 100);
++		if (ret)
++			goto out;
++
++		ret = regmap_bulk_read(priv->map,
++				       RTL8365MB_TABLE_READ_DATA_REG_BASE,
++				       val, val_size);
++		if (ret)
++			goto out;
++
++		/* 10th register uses only 4 less significant bits (TODO: not tested) */
++		if (val_size == 10)
++			val[9] &= RTL8365MB_TABLE_10TH_DATA_REG_MASK;
++	}
++
++out:
++	mutex_unlock(&mb->table_lock);
++	return ret;
++}
++
+ static const struct rtl8365mb_extint *
+ rtl8365mb_get_port_extint(struct realtek_priv *priv, int port)
+ {
+@@ -1951,6 +2085,9 @@ static int rtl8365mb_setup(struct dsa_sw
+ 	mb = priv->chip_data;
+ 	cpu = &mb->cpu;
+ 
++	/* Table access mutex */
++	mutex_init(&mb->table_lock);
++
+ 	ret = rtl8365mb_reset_chip(priv);
+ 	if (ret) {
+ 		dev_err(priv->dev, "failed to reset chip: %d\n", ret);
