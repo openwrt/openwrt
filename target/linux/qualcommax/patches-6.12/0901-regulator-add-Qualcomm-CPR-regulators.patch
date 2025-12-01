@@ -7102,7 +7102,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +#endif /* __REGULATOR_CPR_REGULATOR_H__ */
 --- /dev/null
 +++ b/drivers/regulator/cpr3-util.c
-@@ -0,0 +1,2760 @@
+@@ -0,0 +1,2758 @@
 +/*
 + * Copyright (c) 2015-2017, The Linux Foundation. All rights reserved.
 + *
@@ -8009,8 +8009,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +		}
 +		vreg->aging_corner -= CPR3_CORNER_OFFSET;
 +
-+		if (of_property_present(vreg->of_node, "qcom,cpr-aging-derate",
-+					)) {
++		if (of_property_present(vreg->of_node, "qcom,cpr-aging-derate")) {
 +			rc = cpr3_parse_corner_array_property(vreg,
 +				"qcom,cpr-aging-derate", 1, temp);
 +			if (rc)
@@ -8152,8 +8151,8 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	int i, cpu;
 +	int len = 0;
 +
-+	if (!of_property_present(ctrl->dev->of_node, "qcom,cpr-interrupt-affinity",
-+				&len)) {
++	if (!of_find_property(ctrl->dev->of_node, "qcom,cpr-interrupt-affinity",
++			      &len)) {
 +		/* No IRQ affinity required */
 +		return 0;
 +	}
@@ -8660,7 +8659,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	const char prop_name_v2[] = "qcom,cpr-parts-voltage-v2";
 +
 +	soc_version_major = read_ipq_soc_version_major();
-+        BUG_ON(soc_version_major <= 0);
++	BUG_ON(soc_version_major <= 0);
 +
 +	if (of_property_read_u32(vreg->of_node, "qcom,cpr-part-types",
 +				  &vreg->part_type_supported))
@@ -8835,10 +8834,10 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +
 +	if (!of_property_present(vreg->of_node, prop_str)) {
 +		/* No adjustment required. */
-+                cpr3_err(vreg, "Missing %s required for %s\n",
++		cpr3_err(vreg, "Missing %s required for %s\n",
 +			prop_str, req_prop_str);
 +		return -EINVAL;
-+        }
++	}
 +
 +	rc = of_property_read_u32(vreg->of_node, prop_str, &temp);
 +	if (rc) {
@@ -9357,8 +9356,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +
 +	if (of_property_present(node, use_corner_band ?
 +			     "qcom,corner-band-allow-core-count-adjustment"
-+			     : "qcom,corner-allow-core-count-adjustment",
-+			     )) {
++			     : "qcom,corner-allow-core-count-adjustment")) {
 +		rc = of_property_read_u32(node, "qcom,max-core-count",
 +				&vreg->max_core_count);
 +		if (rc) {
