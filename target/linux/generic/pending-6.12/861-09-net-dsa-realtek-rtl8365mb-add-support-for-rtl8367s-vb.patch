@@ -1,0 +1,594 @@
+From: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Date: Sun, 30 Nov 2025 19:37:21 +0100
+Subject: [PATCH] net: dsa: realtek: rtl8365mb: add support for rtl8367s-vb
+
+Detect RTL8367S-VB as a variant of the RTL8367D family and add it
+to the supported chip list.
+
+Implement RTL8367D-family features:
+ - Detect RTL8367S‑VB
+ - Set port speed
+ - Set MC index
+ - Set and get 4K VLAN entries
+ - Set RGMII mode
+ - VLAN MC emulation
+
+These changes expand device coverage for the RTL8367D family and add
+VLAN/MC/RGMII functionality while clarifying documentation of family
+variants.
+
+Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+---
+ drivers/net/dsa/realtek/rtl8365mb.c | 313 ++++++++++++++++++++--------
+ 1 file changed, 231 insertions(+), 82 deletions(-)
+
+--- a/drivers/net/dsa/realtek/rtl8365mb.c
++++ b/drivers/net/dsa/realtek/rtl8365mb.c
+@@ -58,16 +58,21 @@
+  * number of similar switch controllers from Realtek, but the only hardware we
+  * have is the RTL8365MB-VC. Moreover, there does not seem to be any chip under
+  * the name RTL8367C. Although one wishes that the 'C' stood for some kind of
+- * common hardware revision, there exist examples of chips with the suffix -VC
+- * which are explicitly not supported by the rtl8367c driver and which instead
+- * require the rtl8367d vendor driver. With all this uncertainty, the driver has
+- * been modestly named rtl8365mb. Future implementors may wish to rename things
+- * accordingly.
+- *
+- * In the same family of chips, some carry up to 8 user ports and up to 2
+- * extension ports. Where possible this driver tries to make things generic, but
+- * more work must be done to support these configurations. According to
+- * documentation from Realtek, the family should include the following chips:
++ * common hardware revision, vendor naming is inconsistent across devices and
++ * drivers. In this driver we therefore preserve the original wording where
++ * possible but add a small clarification: "family C" in the code refers to
++ * devices that use the RTL8367C-style register layout (family_c == true).
++ * Other devices in the family use an alternate register layout (commonly
++ * handled by rtl8367d-style code paths); for those parts some tables (for
++ * example VLAN MC) are emulated in software rather than accessed directly in
++ * hardware. With all this uncertainty the driver has been modestly named
++ * rtl8365mb. Future implementors may wish to rename things accordingly.
++ * 
++ * In the rtl8367c and rtl8367d families of chips, some carry up to 8 user
++ * ports and up to 2 extension ports. Where possible this driver tries to make
++ * things generic, but more work must be done to support these configurations.
++ * According to documentation from Realtek, the family should include the
++ * following chips:
+  *
+  *  - RTL8363NB
+  *  - RTL8363NB-VB
+@@ -80,6 +85,7 @@
+  *  - RTL8367RB-VB
+  *  - RTL8367SB
+  *  - RTL8367S
++ *  - RTL8367S-VB
+  *  - RTL8370MB
+  *  - RTL8310SR
+  *
+@@ -236,6 +242,7 @@
+ #define RTL8365MB_PORT_SPEED_10M	0
+ #define RTL8365MB_PORT_SPEED_100M	1
+ #define RTL8365MB_PORT_SPEED_1000M	2
++#define RTL8367D_PORT_SPEED_2500M	5
+ 
+ /* External interface force configuration registers 0~2 */
+ #define RTL8365MB_DIGITAL_INTERFACE_FORCE_REG0		0x1310 /* EXT0 */
+@@ -253,6 +260,21 @@
+ #define   RTL8365MB_DIGITAL_INTERFACE_FORCE_LINK_MASK		0x0010
+ #define   RTL8365MB_DIGITAL_INTERFACE_FORCE_DUPLEX_MASK		0x0004
+ #define   RTL8365MB_DIGITAL_INTERFACE_FORCE_SPEED_MASK		0x0003
++#define   RTL8367D_DIGITAL_INTERFACE_FORCE_SPEED_MASK		0x3000
++
++#define RTL8367D_DIGITAL_INTERFACE_FORCE_REG0		0x12c0 /* EXT0 */
++#define RTL8367D_DIGITAL_INTERFACE_FORCE_REG1		0x12c1 /* EXT1 */
++#define RTL8367D_DIGITAL_INTERFACE_FORCE_REG(_extint) \
++		((_extint) == 0 ? RTL8367D_DIGITAL_INTERFACE_FORCE_REG0 : \
++		 (_extint) == 1 ? RTL8367D_DIGITAL_INTERFACE_FORCE_REG1 : \
++		 0x0)
++
++#define RTL8367D_DIGITAL_INTERFACE_FORCE_REG0_EN	0x12c8 /* EXT0 */
++#define RTL8367D_DIGITAL_INTERFACE_FORCE_REG1_EN	0x12c9 /* EXT1 */
++#define RTL8367D_DIGITAL_INTERFACE_FORCE_REG_EN(_extint) \
++		((_extint) == 0 ? RTL8367D_DIGITAL_INTERFACE_FORCE_REG0_EN : \
++		 (_extint) == 1 ? RTL8367D_DIGITAL_INTERFACE_FORCE_REG1_EN : \
++		 0x0)
+ 
+ /* CPU port mask register - controls which ports are treated as CPU ports */
+ #define RTL8365MB_CPU_PORT_MASK_REG	0x1219
+@@ -367,6 +389,11 @@
+ #define RTL8365MB_VLAN_PVID_CTRL_OFFSET(port) \
+ 	(((port) & 1) << 3)
+ 
++#define RTL8367D_VLAN_PVID_CTRL_BASE			0x0700
++#define RTL8367D_VLAN_PVID_CTRL_REG(port) \
++	(RTL8367D_VLAN_PVID_CTRL_BASE + (port))
++#define RTL8367D_VLAN_PVID_CTRL_MASK			0xFFF
++
+ /* VLAN 4k table entry */
+ #define RTL8365MB_VLAN_4K_ENTRY_SIZE			3 /* 48-bits */
+ #define RTL8365MB_VLAN_4K_CONF0_MEMBERS_LS_MASK		GENMASK(7, 0)
+@@ -380,6 +407,8 @@
+ #define RTL8365MB_VLAN_4K_CONF1_METER_IDX_LS_MASK	GENMASK(13, 9)
+ #define RTL8365MB_VLAN_4K_CONF2_METER_IDX_MS_MASK	GENMASK(6, 6)
+ 
++#define RTL8367D_VLAN_4K_CONF1_FID_MSI_MASK		GENMASK(1, 0)
++
+ /* VLAN MC registers */
+ #define RTL8365MB_VLAN_MC_CONF_BASE			0x0728
+ #define RTL8365MB_VLAN_MC_CONF_ENTRY_SIZE 		4 /* 64-bit */
+@@ -395,6 +424,18 @@
+ #define  RTL8365MB_VLAN_MC_CONF2_METER_IDX_MSK		GENMASK(10, 5)
+ #define  RTL8365MB_VLAN_MC_CONF3_EVID_MSK		GENMASK(12, 0)
+ 
++#define RTL8367D_REG_EXT_TXC_DLY			0x13f9
++#define RTL8367D_EXT1_RGMII_TX_DLY_MASK			0x38
++
++#define RTL8367D_REG_TOP_CON0				0x1d70
++#define  RTL8367D_MAC7_SEL_EXT1_MASK			0x2000
++#define  RTL8367D_MAC4_SEL_EXT1_MASK			0x1000
++
++#define RTL8367D_REG_SDS1_MISC0				0x1d78
++#define  RTL8367D_SDS1_MODE_MASK			0x1f
++#define  RTL8367D_PORT_SDS_MODE_DISABLE			0x1f
++
++
+ enum rtl8365mb_table {
+ 	RTL8365MB_TABLE_ACL_RULE = 1,
+ 	RTL8365MB_TABLE_ACL_ACT,
+@@ -667,6 +708,18 @@ static const struct rtl8365mb_chip_info
+ 		.jam_table = rtl8365mb_init_jam_8365mb_vc,
+ 		.jam_size = ARRAY_SIZE(rtl8365mb_init_jam_8365mb_vc),
+ 	},
++	{
++		.name = "RTL8367S-VB",
++		.chip_id = 0x6642,
++		.chip_ver = 0x0010,
++		.extints = {
++			{ 6, 0, PHY_INTF(SGMII) | PHY_INTF(HSGMII) },
++			{ 7, 1, PHY_INTF(MII) | PHY_INTF(TMII) |
++				PHY_INTF(RMII) | PHY_INTF(RGMII) },
++		},
++		.jam_table = rtl8365mb_init_jam_8365mb_vc,
++		.jam_size = ARRAY_SIZE(rtl8365mb_init_jam_8365mb_vc),
++	},
+ };
+ 
+ enum rtl8365mb_stp_state {
+@@ -742,10 +795,12 @@ struct rtl8365mb_port {
+  * @priv: pointer to parent realtek_priv data
+  * @irq: registered IRQ or zero
+  * @chip_info: chip-specific info about the attached switch
++ * @family_c: true for RTL8367C-compatible register layout (chip_id 0x6367)
+  * @cpu: CPU tagging and CPU port configuration for this chip
+  * @mib_lock: prevent concurrent reads of MIB counters
+  * @table_lock: prevent concurrent reads of tables
+  * @ports: per-port data
++ * @emu_vlanmc: vlanmc emulation table
+  *
+  * Private data for this driver.
+  */
+@@ -753,10 +808,12 @@ struct rtl8365mb {
+ 	struct realtek_priv *priv;
+ 	int irq;
+ 	const struct rtl8365mb_chip_info *chip_info;
++	bool family_c;
+ 	struct rtl8365mb_cpu cpu;
+ 	struct mutex mib_lock;
+ 	struct mutex table_lock;
+ 	struct rtl8365mb_port ports[RTL8365MB_MAX_NUM_PORTS];
++	struct rtl8366_vlan_mc emu_vlanmc[RTL8365MB_VLAN_MC_CONF_SIZE];
+ };
+ 
+ static int rtl8365mb_phy_poll_busy(struct realtek_priv *priv)
+@@ -958,6 +1015,7 @@ static int rtl8365mb_table_access(struct
+ 
+ 	val_size = rtl8365mb_table_entry_size[table];
+ 
++	/* table_lock protects concurrent table operations at driver level */
+ 	mutex_lock(&mb->table_lock);
+ 	if (op == RTL8365MB_TABLE_WRITE) {
+ 		ret = regmap_bulk_write(priv->map,
+@@ -1044,7 +1102,7 @@ static int rtl8365mb_vlan_filtering(stru
+ 				 BIT(port), vlan_filtering ? BIT(port) : 0);
+ }
+ 
+-static void rtl8365mb_buf_vlan4k(u16 *buf, struct rtl8366_vlan_4k *vlan4k)
++static void rtl8365mb_buf_vlan4k(u16 *buf, struct rtl8366_vlan_4k *vlan4k, bool family_c)
+ {
+ 	/* vlan4k.vid = vlan->vid; */
+ 	vlan4k->member = FIELD_GET(RTL8365MB_VLAN_4K_CONF0_MEMBERS_LS_MASK, buf[0]) |
+@@ -1054,7 +1112,8 @@ static void rtl8365mb_buf_vlan4k(u16 *bu
+ 		   (FIELD_GET(RTL8365MB_VLAN_4K_CONF2_UNTAG_MS_MASK, buf[2]) <<
+ 		    FIELD_WIDTH(RTL8365MB_VLAN_4K_CONF0_UNTAG_LS_MASK));
+ 
+-	vlan4k->fid = FIELD_GET(RTL8365MB_VLAN_4K_CONF1_FID_MSI_MASK, buf[1]);
++	vlan4k->fid = family_c ? FIELD_GET(RTL8365MB_VLAN_4K_CONF1_FID_MSI_MASK, buf[1])
++				: FIELD_GET(RTL8367D_VLAN_4K_CONF1_FID_MSI_MASK, buf[1]);
+ 	/* vlan4k->vlan_based_pri_enabled = FIELD_GET(RTL8365MB_VLAN_4K_CONF1_VBPEN_MASK, buf[1]); */
+ 	/* vlan4k->priority = FIELD_GET(RTL8365MB_VLAN_4K_CONF1_VBPRI_MASK, buf[1]); */
+ 	/* vlan4k->vlan_policy_enabled = FIELD_GET(RTL8365MB_VLAN_4K_CONF1_ENVLANPOL_MASK, buf[1]); */
+@@ -1064,7 +1123,7 @@ static void rtl8365mb_buf_vlan4k(u16 *bu
+ 	*/
+ }
+ 
+-static void rtl8365mb_vlan4k_buf(struct rtl8366_vlan_4k *vlan4k, u16 *buf)
++static void rtl8365mb_vlan4k_buf(struct rtl8366_vlan_4k *vlan4k, u16 *buf, bool family_c)
+ {
+ 	buf[0] &= ~RTL8365MB_VLAN_4K_CONF0_MEMBERS_LS_MASK;
+ 	buf[0] |= FIELD_PREP(RTL8365MB_VLAN_4K_CONF0_MEMBERS_LS_MASK,
+@@ -1073,9 +1132,16 @@ static void rtl8365mb_vlan4k_buf(struct
+ 	buf[2] |= FIELD_PREP(RTL8365MB_VLAN_4K_CONF2_MEMBERS_MS_MASK,
+ 				    vlan4k->member >> FIELD_WIDTH(RTL8365MB_VLAN_4K_CONF0_MEMBERS_LS_MASK));
+ 
+-	buf[1] &= ~RTL8365MB_VLAN_4K_CONF1_FID_MSI_MASK;
+-	buf[1] |= FIELD_PREP(RTL8365MB_VLAN_4K_CONF1_FID_MSI_MASK,
+-				    vlan4k->fid);
++	if (family_c) {
++		buf[1] &= ~RTL8365MB_VLAN_4K_CONF1_FID_MSI_MASK;
++		buf[1] |= FIELD_PREP(RTL8365MB_VLAN_4K_CONF1_FID_MSI_MASK,
++					vlan4k->fid);
++	} else {
++		buf[1] &= ~RTL8367D_VLAN_4K_CONF1_FID_MSI_MASK;
++		buf[1] |= FIELD_PREP(RTL8367D_VLAN_4K_CONF1_FID_MSI_MASK,
++					vlan4k->fid);
++		buf[1] |= 12; /* ivl_svl - BIT(3), svlan_chek_ivl_svl - BIT(2) */
++	}
+ 
+ 	/*buf[1] &= ~RTL8365MB_VLAN_4K_CONF1_VBPRI_MASK;
+ 	buf[1] |= FIELD_PREP(RTL8365MB_VLAN_4K_CONF1_VBPRI_MASK,
+@@ -1097,6 +1163,7 @@ static int rtl8365mb_vlan4k_set(struct d
+ 	struct realtek_priv *priv = ds->priv;
+ 	struct rtl8366_vlan_4k vlan4k = {0};
+ 	int ret;
++	struct rtl8365mb *mb = priv->chip_data;
+ 
+ 	dev_dbg(priv->dev, "%s VLAN %u 4K on port %d\n",
+ 		include?"add":"del",
+@@ -1121,7 +1188,7 @@ static int rtl8365mb_vlan4k_set(struct d
+ 	}
+ 
+ 	/* vlan4k.vid = vlan->vid; */
+-	rtl8365mb_buf_vlan4k(vlan_entry, &vlan4k);
++	rtl8365mb_buf_vlan4k(vlan_entry, &vlan4k, mb->family_c);
+ 
+ 	if (include)
+ 		vlan4k.member |= BIT(port);
+@@ -1134,7 +1201,7 @@ static int rtl8365mb_vlan4k_set(struct d
+ 		vlan4k.untag &= ~BIT(port);
+ 	}
+ 
+-	rtl8365mb_vlan4k_buf(&vlan4k, vlan_entry);
++	rtl8365mb_vlan4k_buf(&vlan4k, vlan_entry, mb->family_c);
+ 
+ 	ret = rtl8365mb_table_access(priv, RTL8365MB_TABLE_CVLAN,
+ 				     RTL8365MB_TABLE_WRITE, vlan->vid,
+@@ -1197,31 +1264,44 @@ static int rtl8365mb_vlanmc_set(struct d
+ 		return -EINVAL;
+ 	}
+ 
+-	mutex_lock(&mb->table_lock);
+-	/* look for existing entry or an empty one */
+-	/* reserve vlanmc_idx=0 to the non-member (see rtl8365mb_vlan_init)  */
+-	for (vlanmc_idx = 1; vlanmc_idx < RTL8365MB_VLAN_MC_CONF_SIZE; vlanmc_idx++) {
+-		ret = regmap_bulk_read(priv->map,
+-				       RTL8365MB_VLAN_MC_CONF_REG(vlanmc_idx),
+-				       vlan_entry,
+-				       RTL8365MB_VLAN_MC_CONF_ENTRY_SIZE);
+-		if (ret) {
+-			if (extack)
+-				NL_SET_ERR_MSG_MOD(extack,
+-						   "Failed to read vlan MC entry");
+-			mutex_unlock(&mb->table_lock);
+-			return ret;
+-		}
++	if (mb->family_c) {
++		mutex_lock(&mb->table_lock);
++		/* look for existing entry or an empty one */
++		/* reserve vlanmc_idx=0 to the non-member (see rtl8365mb_vlan_init)  */
++		for (vlanmc_idx = 1; vlanmc_idx < RTL8365MB_VLAN_MC_CONF_SIZE; vlanmc_idx++) {
++			ret = regmap_bulk_read(priv->map,
++					RTL8365MB_VLAN_MC_CONF_REG(vlanmc_idx),
++					vlan_entry,
++					RTL8365MB_VLAN_MC_CONF_ENTRY_SIZE);
++			if (ret) {
++				if (extack)
++					NL_SET_ERR_MSG_MOD(extack,
++							"Failed to read vlan MC entry");
++				mutex_unlock(&mb->table_lock);
++				return ret;
++			}
+ 
+-		evid = FIELD_GET(RTL8365MB_VLAN_MC_CONF3_EVID_MSK, vlan_entry[3]);
++			evid = FIELD_GET(RTL8365MB_VLAN_MC_CONF3_EVID_MSK, vlan_entry[3]);
+ 
+-		if (evid == vlan->vid)
+-			break;
++			if (evid == vlan->vid)
++				break;
+ 
+-		if (evid == 0x0 && first_unused < 0)
+-			first_unused = vlanmc_idx;
++			if (evid == 0x0 && first_unused < 0)
++				first_unused = vlanmc_idx;
++		}
++		mutex_unlock(&mb->table_lock);
++	} else {
++		mutex_lock(&mb->table_lock);
++		for (vlanmc_idx = 1; vlanmc_idx < RTL8365MB_VLAN_MC_CONF_SIZE; vlanmc_idx++) {
++			evid = mb->emu_vlanmc[vlanmc_idx].vid;
++			if (evid == vlan->vid) {
++				break;
++			}
++			if (evid == 0 && first_unused < 0)
++				first_unused = vlanmc_idx;
++		}
++		mutex_unlock(&mb->table_lock);
+ 	}
+-	mutex_unlock(&mb->table_lock);
+ 
+ 	if (vlanmc_idx == RTL8365MB_VLAN_MC_CONF_SIZE) {
+ 		/* clear last read vlan_entry */
+@@ -1256,14 +1336,14 @@ static int rtl8365mb_vlanmc_set(struct d
+ 				return ret;
+ 			}
+ 
+-			rtl8365mb_buf_vlan4k(vlan_entry, &vlan4k);
++			rtl8365mb_buf_vlan4k(vlan_entry, &vlan4k, mb->family_c);
+ 		}
+ 
+ 		vlanmc_idx = first_unused;
+ 	}
+ 
+ 	ret = regmap_read(priv->map,
+-			  RTL8365MB_VLAN_PVID_CTRL_REG(port),
++			  mb->family_c ? RTL8365MB_VLAN_PVID_CTRL_REG(port) : RTL8367D_VLAN_PVID_CTRL_REG(port),
+ 			  &data);
+ 	if (ret) {
+ 		if (extack)
+@@ -1272,8 +1352,12 @@ static int rtl8365mb_vlanmc_set(struct d
+ 		return ret;
+ 	}
+ 
+-	pvid_vlanmc_idx = (data & RTL8365MB_VLAN_PVID_CTRL_MASK(port))
+-			  >> RTL8365MB_VLAN_PVID_CTRL_OFFSET(port);
++	if (mb->family_c) {
++		pvid_vlanmc_idx = (data & RTL8365MB_VLAN_PVID_CTRL_MASK(port))
++				>> RTL8365MB_VLAN_PVID_CTRL_OFFSET(port);
++	} else {
++		pvid_vlanmc_idx = data & RTL8367D_VLAN_PVID_CTRL_MASK;
++	}
+ 
+ 	ret = regmap_read(priv->map,
+ 		RTL8365MB_VLAN_ACCEPT_FRAME_TYPE_REG(port),
+@@ -1319,18 +1403,31 @@ static int rtl8365mb_vlanmc_set(struct d
+ 		rtl8365mb_vlanmc_buf(&vlanmc, vlan_entry);
+ 	}
+ 
+-	mutex_lock(&mb->table_lock);
+-	ret = regmap_bulk_write(priv->map,
+-		       RTL8365MB_VLAN_MC_CONF_REG(vlanmc_idx),
+-		       vlan_entry,
+-		       RTL8365MB_VLAN_MC_CONF_ENTRY_SIZE);
+-	mutex_unlock(&mb->table_lock);
++	/* write back while holding lock */
++	if (mb->family_c) {
++		mutex_lock(&mb->table_lock);
++		ret = regmap_bulk_write(priv->map,
++				RTL8365MB_VLAN_MC_CONF_REG(vlanmc_idx),
++				vlan_entry,
++				RTL8365MB_VLAN_MC_CONF_ENTRY_SIZE);
++		mutex_unlock(&mb->table_lock);
+ 
+-	if (ret) {
+-		if (extack)
+-			NL_SET_ERR_MSG_MOD(extack,
+-				   "Failed to write vlan MC entry");
+-		return ret;
++		if (ret) {
++			if (extack)
++				NL_SET_ERR_MSG_MOD(extack,
++					   "Failed to write vlan MC entry");
++			return ret;
++		}
++	} else {
++		/* protect emulated table updates with table_lock */
++		mutex_lock(&mb->table_lock);
++		if (!include && !(vlanmc.member & ~dsa_cpu_ports(ds)))
++			mb->emu_vlanmc[vlanmc_idx] = (struct rtl8366_vlan_mc){0};
++		else {
++			vlanmc.member = vlanmc.member & FIELD_MAX(RTL8365MB_VLAN_MC_CONF0_MEMBERS_MSK);
++			mb->emu_vlanmc[vlanmc_idx] = vlanmc;
++		}
++		mutex_unlock(&mb->table_lock);
+ 	}
+ 
+ 	/* Adjust accepted frame types only when adding a PVID vlan and untagged
+@@ -1352,10 +1449,17 @@ static int rtl8365mb_vlanmc_set(struct d
+ 			dev_dbg(priv->dev, "Set port %d PVID to %d (@ %d idx)\n",
+ 				port, vlan->vid, vlanmc_idx);
+ 
+-			ret = regmap_update_bits(priv->map,
+-				 RTL8365MB_VLAN_PVID_CTRL_REG(port),
+-				 RTL8365MB_VLAN_PVID_CTRL_MASK(port),
+-				 vlanmc_idx << RTL8365MB_VLAN_PVID_CTRL_OFFSET(port));
++			if (mb->family_c) {
++				ret = regmap_update_bits(priv->map,
++					RTL8365MB_VLAN_PVID_CTRL_REG(port),
++					RTL8365MB_VLAN_PVID_CTRL_MASK(port),
++					vlanmc_idx << RTL8365MB_VLAN_PVID_CTRL_OFFSET(port));
++			} else {
++				ret = regmap_update_bits(priv->map,
++					RTL8367D_VLAN_PVID_CTRL_REG(port),
++					RTL8367D_VLAN_PVID_CTRL_MASK,
++					vlanmc_idx & RTL8367D_VLAN_PVID_CTRL_MASK);
++			}
+ 			if (ret) {
+ 				if (extack)
+ 					NL_SET_ERR_MSG_MOD(extack,
+@@ -1480,6 +1584,8 @@ static int rtl8365mb_ext_config_rgmii(st
+ 	int rx_delay = 0;
+ 	u32 val;
+ 	int ret;
++	struct rtl8365mb *mb = priv->chip_data;
++	u32 data;
+ 
+ 	if (!extint)
+ 		return -ENODEV;
+@@ -1547,6 +1653,22 @@ static int rtl8365mb_ext_config_rgmii(st
+ 	if (ret)
+ 		return ret;
+ 
++	if (!mb->family_c && (extint->id == 1)) {
++		regmap_update_bits(
++			priv->map, RTL8367D_REG_EXT_TXC_DLY,
++			RTL8367D_EXT1_RGMII_TX_DLY_MASK, 0);
++		/* Configure RGMII/MII mux to port 7 if UTP_PORT4 is not RGMII mode */
++		regmap_read(priv->map, RTL8367D_REG_TOP_CON0, &data);
++		data &= RTL8367D_MAC4_SEL_EXT1_MASK;
++		if (data == 0)
++			regmap_update_bits(
++				priv->map, RTL8367D_REG_TOP_CON0,
++				RTL8367D_MAC7_SEL_EXT1_MASK, RTL8367D_MAC7_SEL_EXT1_MASK);
++		regmap_update_bits(
++			priv->map, RTL8367D_REG_SDS1_MISC0,
++			RTL8367D_SDS1_MODE_MASK, RTL8367D_PORT_SDS_MODE_DISABLE);
++	}
++
+ 	return 0;
+ }
+ 
+@@ -1563,6 +1685,7 @@ static int rtl8365mb_ext_config_forcemod
+ 	u32 r_link;
+ 	int val;
+ 	int ret;
++	struct rtl8365mb *mb = priv->chip_data;
+ 
+ 	if (!extint)
+ 		return -ENODEV;
+@@ -1573,7 +1696,9 @@ static int rtl8365mb_ext_config_forcemod
+ 		r_rx_pause = rx_pause ? 1 : 0;
+ 		r_tx_pause = tx_pause ? 1 : 0;
+ 
+-		if (speed == SPEED_1000) {
++		if (!mb->family_c && (speed == SPEED_2500)) {
++			r_speed = RTL8367D_PORT_SPEED_2500M;
++		} else if (speed == SPEED_1000) {
+ 			r_speed = RTL8365MB_PORT_SPEED_1000M;
+ 		} else if (speed == SPEED_100) {
+ 			r_speed = RTL8365MB_PORT_SPEED_100M;
+@@ -1603,8 +1728,7 @@ static int rtl8365mb_ext_config_forcemod
+ 		r_duplex = 0;
+ 	}
+ 
+-	val = FIELD_PREP(RTL8365MB_DIGITAL_INTERFACE_FORCE_EN_MASK, 1) |
+-	      FIELD_PREP(RTL8365MB_DIGITAL_INTERFACE_FORCE_TXPAUSE_MASK,
++	val = FIELD_PREP(RTL8365MB_DIGITAL_INTERFACE_FORCE_TXPAUSE_MASK,
+ 			 r_tx_pause) |
+ 	      FIELD_PREP(RTL8365MB_DIGITAL_INTERFACE_FORCE_RXPAUSE_MASK,
+ 			 r_rx_pause) |
+@@ -1612,11 +1736,28 @@ static int rtl8365mb_ext_config_forcemod
+ 	      FIELD_PREP(RTL8365MB_DIGITAL_INTERFACE_FORCE_DUPLEX_MASK,
+ 			 r_duplex) |
+ 	      FIELD_PREP(RTL8365MB_DIGITAL_INTERFACE_FORCE_SPEED_MASK, r_speed);
+-	ret = regmap_write(priv->map,
++	if (mb->family_c) {
++		val |= FIELD_PREP(RTL8365MB_DIGITAL_INTERFACE_FORCE_EN_MASK, 1);
++		ret = regmap_write(priv->map,
+ 			   RTL8365MB_DIGITAL_INTERFACE_FORCE_REG(extint->id),
+ 			   val);
+-	if (ret)
+-		return ret;
++		if (ret)
++			return ret;
++	} else {
++		val |= FIELD_PREP(RTL8367D_DIGITAL_INTERFACE_FORCE_SPEED_MASK,
++			   r_speed/(RTL8365MB_DIGITAL_INTERFACE_FORCE_SPEED_MASK + 1));
++		ret = regmap_write(priv->map,
++			   RTL8367D_DIGITAL_INTERFACE_FORCE_REG(extint->id),
++			   val);
++		if (ret)
++			return ret;
++
++		ret = regmap_write(priv->map,
++			   RTL8367D_DIGITAL_INTERFACE_FORCE_REG_EN(extint->id),
++			   0xffff);
++		if (ret)
++			return ret;
++	}
+ 
+ 	return 0;
+ }
+@@ -2637,12 +2778,10 @@ static int rtl8365mb_reset_chip(struct r
+  */
+ static int rtl8365mb_vlan_init(struct dsa_switch *ds)
+ {
+-	u16 vlan_entry[RTL8365MB_VLAN_MC_CONF_ENTRY_SIZE] = {0};
+ 	struct realtek_priv *priv = ds->priv;
+ 	struct switchdev_obj_port_vlan vlan;
+-	struct rtl8366_vlan_mc vlanmc = {0};
+ 	struct dsa_port *cpu_dp;
+-	int vlanmc_idx;
++	struct rtl8365mb *mb = priv->chip_data;
+ 	int ret;
+ 
+ 	/* fake VID 0 for user ports that are not member of any VLAN */
+@@ -2650,13 +2789,6 @@ static int rtl8365mb_vlan_init(struct ds
+ 	vlan.vid = 0;
+ 	vlan.flags = BRIDGE_VLAN_INFO_UNTAGGED;
+ 
+-	/* just to be clear we do want it to be zero */
+-	vlanmc.vid = 0;
+-	/* there is not need to set the vlanmc.member a vlan4k is enough */
+-
+-	/* and we do need it to be VlanMC at index 0 */
+-	vlanmc_idx = 0;
+-
+ 	dsa_switch_for_each_cpu_port(cpu_dp, ds) {
+ 		ret = rtl8365mb_vlan4k_set(ds, cpu_dp->index, &vlan, NULL,
+ 					   true);
+@@ -2667,14 +2799,30 @@ static int rtl8365mb_vlan_init(struct ds
+ 		}
+ 	}
+ 
+-	rtl8365mb_vlanmc_buf(&vlanmc, vlan_entry);
+-	ret = regmap_bulk_write(priv->map,
+-		       RTL8365MB_VLAN_MC_CONF_REG(vlanmc_idx),
+-		       vlan_entry,
+-		       RTL8365MB_VLAN_MC_CONF_ENTRY_SIZE);
+-	if (ret) {
+-		dev_err(priv->dev, "Failed to write vlan MC entry (vlan 0)\n");
+-		return ret;
++	if (mb->family_c) {
++		u16 vlan_entry[RTL8365MB_VLAN_MC_CONF_ENTRY_SIZE] = {0};
++		int vlanmc_idx = 0;
++		struct rtl8366_vlan_mc vlanmc = {0};
++
++		rtl8365mb_vlanmc_buf(&vlanmc, vlan_entry);
++		ret = regmap_bulk_write(priv->map,
++			       RTL8365MB_VLAN_MC_CONF_REG(vlanmc_idx),
++			       vlan_entry,
++			       RTL8365MB_VLAN_MC_CONF_ENTRY_SIZE);
++		if (ret) {
++			dev_err(priv->dev, "Failed to write vlan MC entry (vlan 0)\n");
++			return ret;
++		}
++	} else {
++		mutex_lock(&mb->table_lock);
++		memset(mb->emu_vlanmc, 0, sizeof(mb->emu_vlanmc));
++		/* Reserve index 0 for VID 0 and include CPU ports as members so
++		 * default PVID 0 forwards to CPU for non-member ports.
++		 */
++		mb->emu_vlanmc[0].vid = 0;
++		mb->emu_vlanmc[0].member =
++			dsa_cpu_ports(ds) & FIELD_MAX(RTL8365MB_VLAN_MC_CONF0_MEMBERS_MSK);
++		mutex_unlock(&mb->table_lock);
+ 	}
+ 
+ 	/* VLAN is always enabled. */
+@@ -2850,6 +2998,7 @@ static int rtl8365mb_detect(struct realt
+ 
+ 		if (ci->chip_id == chip_id && ci->chip_ver == chip_ver) {
+ 			mb->chip_info = ci;
++			mb->family_c = (ci->chip_id == 0x6367U);
+ 			break;
+ 		}
+ 	}
