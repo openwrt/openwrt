@@ -298,7 +298,8 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:wan" "5:lan" "6@eth0"
 		;;
-	dell,apl26-0ae)
+	dell,apl26-0ae|\
+	dell,apl27-0b1)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan:1" "3:lan:2" "6@eth1"
 		;;
@@ -418,8 +419,9 @@ ath79_setup_interfaces()
 			"0@eth0" "5:wan" "6@eth1" "4:lan"
 		;;
 	longdata,aps256)
+		ucidef_set_interface_wan "eth1"
 		ucidef_add_switch "switch0" \
-			"0@eth0" "1:lan:2" "2:lan:1" "5:wan"
+			"0@eth0" "1:lan:2" "2:lan:1"
 		;;
 	meraki,mr12)
 		ucidef_set_interface_lan "eth0"
@@ -687,12 +689,6 @@ ath79_setup_macs()
 		plc_mac=$(mtd_get_mac_ascii art "protest_plc_mac")
 		[ -n "$plc_mac" ] && ucidef_set_interface_macaddr "plc" $plc_mac
 		;;
-	dlink,dap-1330-a1|\
-	dlink,dap-1365-a1|\
-	dlink,dch-g020-a1)
-		lan_mac=$(mtd_get_mac_text "mp" 0x1)
-		label_mac=$lan_mac
-		;;
 	dlink,dap-2230-a1|\
 	dlink,dap-2660-a1|\
 	dlink,dap-2680-a1|\
@@ -706,14 +702,6 @@ ath79_setup_macs()
 		;;
 	dlink,dir-629-a1)
 		wan_mac=$(mtd_get_mac_text "mfcdata" 0x6a)
-		;;
-	trendnet,tew-673gru)
-		lan_mac=$(mtd_get_mac_text "caldata" 0xffa0)
-		wan_mac=$(mtd_get_mac_text "caldata" 0xffb4)
-		label_mac=$wan_mac
-		;;
-	dlink,dir-505)
-		lan_mac=$(mtd_get_mac_text "mac" 0x4)
 		;;
 	dlink,dir-825-c1|\
 	dlink,dir-835-a1)
@@ -749,17 +737,7 @@ ath79_setup_macs()
 	engenius,esr1200|\
 	engenius,esr1750|\
 	engenius,esr900)
-		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
-		;;
-	engenius,ews511ap)
-		lan_mac=$(mtd_get_mac_text "u-boot-env" 0xe9)
-		eth1_mac=$(macaddr_add "$lan_mac" 1)
-		ucidef_set_interface "eth0" ifname "eth0" protocol "none" macaddr "$lan_mac"
-		ucidef_set_interface "eth1" ifname "eth1" protocol "none" macaddr "$eth1_mac"
-		;;
-	enterasys,ws-ap3705i)
-		label_mac=$(mtd_get_mac_ascii u-boot-env0 ethaddr)
 		;;
 	hak5,lan-turtle|\
 	hak5,packet-squirrel)
@@ -845,13 +823,6 @@ ath79_setup_macs()
 		base_mac=$(mtd_get_mac_binary info 0x8)
 		wan_mac=$(macaddr_add "$base_mac" 1)
 		;;
-	trendnet,tew-823dru)
-		lan_mac=$(mtd_get_mac_text mac 0x4)
-		wan_mac=$(mtd_get_mac_text mac 0x18)
-		label_mac=$wan_mac
-		;;
-	ubnt,powerbridge-m|\
-	ubnt,rocket-m|\
 	ubnt,unifi)
 		label_mac=$(cat /sys/class/ieee80211/phy0/macaddress)
 		;;

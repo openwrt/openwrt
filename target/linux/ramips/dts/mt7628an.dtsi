@@ -30,26 +30,20 @@
 		compatible = "mti,cpu-interrupt-controller";
 	};
 
-	mmc_reg_1v8: regulator-1v8 {
+	reg_vmmc: regulator-vmmc {
 		compatible = "regulator-fixed";
-
-		enable-active-high;
-
-		regulator-always-on;
-		regulator-max-microvolt = <1800000>;
-		regulator-min-microvolt = <1800000>;
-		regulator-name = "mmc_io";
-	};
-
-	mmc_reg_3v3: regulator-3v3 {
-		compatible = "regulator-fixed";
-
-		enable-active-high;
-
 		regulator-always-on;
 		regulator-max-microvolt = <3300000>;
 		regulator-min-microvolt = <3300000>;
 		regulator-name = "mmc_power";
+	};
+
+	reg_vqmmc: regulator-vqmmc {
+		compatible = "regulator-fixed";
+		regulator-always-on;
+		regulator-max-microvolt = <3300000>;
+		regulator-min-microvolt = <3300000>;
+		regulator-name = "mmc_io";
 	};
 
 	palmbus: palmbus@10000000 {
@@ -358,6 +352,13 @@
 			};
 		};
 
+		pcie_pins: pcie {
+			pcie_reset {
+				groups = "perst";
+				function = "perst";
+			};
+		};
+
 		refclk_pins: refclk {
 			refclk {
 				groups = "refclk";
@@ -382,19 +383,17 @@
 		reg = <0x10130000 0x4000>;
 
 		bus-width = <4>;
-
+		max-frequency = <48000000>;
 		cap-mmc-highspeed;
 		cap-sd-highspeed;
+		disable-wp;
+		no-1-8-v;
 
 		clocks = <&sysc 16>, <&sysc 16>;
 		clock-names = "source", "hclk";
 
-		disable-wp;
-
 		interrupt-parent = <&intc>;
 		interrupts = <14>;
-
-		max-frequency = <24000000>;
 
 		pinctrl-names = "default", "state_uhs";
 		pinctrl-0 = <&sdxc_pins>;
@@ -403,8 +402,8 @@
 		resets = <&sysc 30>;
 		reset-names = "hrst";
 
-		vmmc-supply = <&mmc_reg_3v3>;
-		vqmmc-supply = <&mmc_reg_1v8>;
+		vmmc-supply = <&reg_vmmc>;
+		vqmmc-supply = <&reg_vqmmc>;
 
 		status = "disabled";
 	};
@@ -472,13 +471,16 @@
 	pcie: pcie@10140000 {
 		compatible = "mediatek,mt7620-pci";
 		reg = <0x10140000 0x100
-			0x10142000 0x100>;
+		       0x10142000 0x8000>;
 
 		#address-cells = <3>;
 		#size-cells = <2>;
 
 		interrupt-parent = <&cpuintc>;
 		interrupts = <4>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&pcie_pins>;
 
 		resets = <&sysc 26>;
 		reset-names = "pcie0";

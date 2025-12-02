@@ -1,0 +1,60 @@
+From 24d8127d801560c8fa811d554e8ab5db7e51511c Mon Sep 17 00:00:00 2001
+From: Nicolas Frattaroli <nicolas.frattaroli@collabora.com>
+Date: Thu, 24 Apr 2025 20:52:23 +0200
+Subject: [PATCH] arm64: dts: rockchip: add SATA nodes to RK3576
+
+The Rockchip RK3576 features two SATA nodes. The first, sata0, is behind
+combphy0, which muxes between pcie0 and sata0.
+
+The second, sata1, is behind combphy1, which muxes between pcie1, sata1
+and usb_drd1_dwc3.
+
+I've only been able to test sata0 on my board, but it appears to work
+just fine.
+
+Signed-off-by: Nicolas Frattaroli <nicolas.frattaroli@collabora.com>
+Link: https://lore.kernel.org/r/20250424-rk3576-sata-v1-2-23ee89c939fe@collabora.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3576.dtsi | 30 ++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3576.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3576.dtsi
+@@ -1442,6 +1442,36 @@
+ 			};
+ 		};
+ 
++		sata0: sata@2a240000 {
++			compatible = "rockchip,rk3576-dwc-ahci", "snps,dwc-ahci";
++			reg = <0x0 0x2a240000 0x0 0x1000>;
++			clocks = <&cru ACLK_SATA0>, <&cru CLK_PMALIVE0>,
++				 <&cru CLK_RXOOB0>;
++			clock-names = "sata", "pmalive", "rxoob";
++			interrupts = <GIC_SPI 262 IRQ_TYPE_LEVEL_HIGH>;
++			power-domains = <&power RK3576_PD_SUBPHP>;
++			phys = <&combphy0_ps PHY_TYPE_SATA>;
++			phy-names = "sata-phy";
++			ports-implemented = <0x1>;
++			dma-coherent;
++			status = "disabled";
++		};
++
++		sata1: sata@2a250000 {
++			compatible = "rockchip,rk3576-dwc-ahci", "snps,dwc-ahci";
++			reg = <0x0 0x2a250000 0x0 0x1000>;
++			clocks = <&cru ACLK_SATA1>, <&cru CLK_PMALIVE1>,
++				 <&cru CLK_RXOOB1>;
++			clock-names = "sata", "pmalive", "rxoob";
++			interrupts = <GIC_SPI 263 IRQ_TYPE_LEVEL_HIGH>;
++			power-domains = <&power RK3576_PD_SUBPHP>;
++			phys = <&combphy1_psu PHY_TYPE_SATA>;
++			phy-names = "sata-phy";
++			ports-implemented = <0x1>;
++			dma-coherent;
++			status = "disabled";
++		};
++
+ 		ufshc: ufshc@2a2d0000 {
+ 			compatible = "rockchip,rk3576-ufshc";
+ 			reg = <0x0 0x2a2d0000 0x0 0x10000>,

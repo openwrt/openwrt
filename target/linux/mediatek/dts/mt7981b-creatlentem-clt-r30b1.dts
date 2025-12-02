@@ -1,0 +1,20 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7981b-creatlentem-clt-r30b1-common.dtsi"
+
+/ {
+	model = "CreatLentem CLT-R30B1";
+	compatible = "creatlentem,clt-r30b1", "mediatek,mt7981";
+};
+
+&partitions {
+	partition@580000 {
+		label = "ubi";
+		reg = <0x0580000 0x4000000>;
+	};
+	partition@4580000 {
+		label = "data";
+		reg = <0x4580000 0x2000000>;
+	};
+
+};

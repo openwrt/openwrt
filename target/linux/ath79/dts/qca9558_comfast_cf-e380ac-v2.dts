@@ -55,7 +55,7 @@
 
 	watchdog {
 		compatible = "linux,wdt-gpio";
-		
+
 		gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 		hw_algo = "toggle";
 		hw_margin_ms = <1200>;

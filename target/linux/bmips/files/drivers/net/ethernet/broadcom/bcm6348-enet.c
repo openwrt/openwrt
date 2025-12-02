@@ -285,7 +285,7 @@ MODULE_DEVICE_TABLE(of, bcm6348_emac_of_match);
 static struct platform_driver bcm6348_iudma_driver = {
 	.driver = {
 		.name = "bcm6348-iudma",
-		.of_match_table = of_match_ptr(bcm6348_iudma_of_match),
+		.of_match_table = bcm6348_iudma_of_match,
 	},
 	.probe	= bcm6348_iudma_probe,
 };
@@ -1610,7 +1610,7 @@ static int bcm6348_emac_probe(struct platform_device *pdev)
 					   GFP_KERNEL);
 		if (IS_ERR_OR_NULL(emac->reset))
 			return PTR_ERR(emac->reset);
-		
+
 	}
 	for (i = 0; i < emac->num_resets; i++) {
 		emac->reset[i] = devm_reset_control_get_by_index(dev, i);
@@ -1701,7 +1701,7 @@ MODULE_DEVICE_TABLE(of, bcm6348_emac_of_match);
 static struct platform_driver bcm6348_emac_driver = {
 	.driver = {
 		.name = "bcm6348-emac",
-		.of_match_table = of_match_ptr(bcm6348_emac_of_match),
+		.of_match_table = bcm6348_emac_of_match,
 	},
 	.probe	= bcm6348_emac_probe,
 	.remove_new	= bcm6348_emac_remove,

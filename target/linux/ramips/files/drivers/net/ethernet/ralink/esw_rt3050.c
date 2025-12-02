@@ -19,6 +19,7 @@
 #include <asm/mach-ralink/ralink_regs.h>
 #include <linux/of_device.h>
 #include <linux/of_irq.h>
+#include <linux/of_platform.h>
 
 #include <linux/switch.h>
 #include <linux/reset.h>
@@ -1457,7 +1458,7 @@ MODULE_DEVICE_TABLE(of, ralink_esw_match);
 int rt3050_esw_init(struct fe_priv *priv)
 {
 	struct device_node *np = priv->switch_np;
-	struct platform_device *pdev = of_find_device_by_node(np);
+	struct platform_device *pdev;
 	struct switch_dev *swdev;
 	struct rt305x_esw *esw;
 	const __be32 *rgmii;
@@ -1469,9 +1470,12 @@ int rt3050_esw_init(struct fe_priv *priv)
 	if (!of_device_is_compatible(np, ralink_esw_match->compatible))
 		return -EINVAL;
 
+	pdev = of_find_device_by_node(np);
 	esw = platform_get_drvdata(pdev);
-	if (!esw)
+	if (!esw) {
+		put_device(&pdev->dev);
 		return -EPROBE_DEFER;
+	}
 
 	priv->soc->swpriv = esw;
 	esw->priv = priv;
@@ -1487,6 +1491,7 @@ int rt3050_esw_init(struct fe_priv *priv)
 		dev_err(&pdev->dev, "RGMII mode, not exporting switch device.\n");
 		unregister_switch(&esw->swdev);
 		platform_set_drvdata(pdev, NULL);
+		put_device(&pdev->dev);
 		return -ENODEV;
 	}
 
@@ -1520,7 +1525,7 @@ int rt3050_esw_init(struct fe_priv *priv)
 
 static struct platform_driver esw_driver = {
 	.probe = esw_probe,
-	.remove_new = esw_remove,
+	.remove = esw_remove,
 	.driver = {
 		.name = "rt3050-esw",
 		.of_match_table = ralink_esw_match,

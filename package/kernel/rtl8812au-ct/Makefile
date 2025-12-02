@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=rtl8812au-ct
-PKG_RELEASE=1
+PKG_RELEASE=2
 
 PKG_LICENSE:=GPLv2
 PKG_LICENSE_FILES:=
@@ -41,6 +41,7 @@ NOSTDINC_FLAGS := \
 	-I$(STAGING_DIR)/usr/include/mac80211/uapi \
 	-include backport/backport.h \
 	-Wno-error=address \
+	-Wno-error=missing-prototypes \
 	-Wno-error=stringop-overread
 
 NOSTDINC_FLAGS+=-DCONFIG_IOCTL_CFG80211 -DRTW_USE_CFG80211_STA_EVENT -DBUILD_OPENWRT

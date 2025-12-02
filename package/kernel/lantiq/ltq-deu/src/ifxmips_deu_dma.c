@@ -29,7 +29,7 @@
 /*!
   \file	ifxmips_deu_dma.c
   \ingroup IFX_DEU
-  \brief DMA deu driver file 
+  \brief DMA deu driver file
 */
 
 /*!
@@ -38,5 +38,5 @@
  \brief deu-dma driver functions
 */
 
-/* Project header files */ 
+/* Project header files */
 

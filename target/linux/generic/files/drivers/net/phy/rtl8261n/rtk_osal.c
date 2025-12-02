@@ -7,6 +7,7 @@
 #include "type.h"
 #include "error.h"
 #include "rtk_phylib_def.h"
+#include "rtk_osal.h"
 
 #include <linux/version.h>
 #include <linux/jiffies.h>

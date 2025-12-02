@@ -110,8 +110,8 @@ static inline int danube_pp32_download_code(u32 *code_src, unsigned int code_dwo
 {
 	volatile u32 *dest;
 
-	if ( code_src == 0 || ((unsigned long)code_src & 0x03) != 0
-			|| data_src == 0 || ((unsigned long)data_src & 0x03) != 0 )
+	if (!code_src || ((unsigned long)code_src & 0x03) != 0
+			|| !data_src || ((unsigned long)data_src & 0x03) != 0 )
 		return -1;
 
 	if ( code_dword_len <= CDM_CODE_MEMORYn_DWLEN(0) )
@@ -198,7 +198,7 @@ static void danube_shutdown(void)
 {
 }
 
-int danube_start(int pp32)
+static int danube_start(int pp32)
 {
 	int ret;
 
@@ -218,7 +218,7 @@ int danube_start(int pp32)
 	return 0;
 }
 
-void danube_stop(int pp32)
+static void danube_stop(int pp32)
 {
 	IFX_REG_W32(DBG_CTRL_STOP_SET(1), PP32_DBG_CTRL);
 }

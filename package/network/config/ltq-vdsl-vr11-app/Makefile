@@ -9,7 +9,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ltq-vdsl-vr11-app
 PKG_VERSION:=4.23.1
-PKG_RELEASE:=6
+PKG_RELEASE:=7
 PKG_BASE_NAME:=dsl_cpe_control
 
 UGW_VERSION=8.5.2.10

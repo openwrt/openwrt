@@ -2,7 +2,7 @@
 
 /dts-v1/;
 
-#include "mt7981.dtsi"
+#include "mt7981b.dtsi"
 
 / {
 	model = "Keenetic KN-3811";
@@ -218,8 +218,6 @@
 
 	/* Winbond W25N02KV (256M) */
 	spi_nand@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "spi-nand";
 		reg = <0>;
 

@@ -278,12 +278,19 @@ PKG_CONFIG:=$(STAGING_DIR_HOST)/bin/pkg-config
 
 export PKG_CONFIG
 
+HOST_FLAGS_OPT:=$(if $(CONFIG_OPTIMIZE_HOST_TOOLS),$(call qstrip,$(CONFIG_HOST_FLAGS_OPT)),-O2)
+HOST_FLAGS_STRIP:=$(call qstrip,$(CONFIG_HOST_FLAGS_STRIP))
+HOST_EXTRA_CFLAGS:=$(call qstrip,$(CONFIG_HOST_EXTRA_CFLAGS))
+HOST_EXTRA_CXXFLAGS:=$(call qstrip,$(CONFIG_HOST_EXTRA_CXXFLAGS))
+HOST_EXTRA_CPPFLAGS:=$(call qstrip,$(CONFIG_HOST_EXTRA_CPPFLAGS))
+HOST_EXTRA_LDFLAGS:=$(call qstrip,$(CONFIG_HOST_EXTRA_LDFLAGS))
+
 HOSTCC:=$(STAGING_DIR_HOST)/bin/gcc
 HOSTCXX:=$(STAGING_DIR_HOST)/bin/g++
-HOST_CPPFLAGS:=-I$(STAGING_DIR_HOST)/include $(if $(IS_PACKAGE_BUILD),-I$(STAGING_DIR_HOSTPKG)/include -I$(STAGING_DIR)/host/include)
-HOST_CFLAGS:=-O2 $(HOST_CPPFLAGS)
-HOST_CXXFLAGS:=$(HOST_CFLAGS)
-HOST_LDFLAGS:=-L$(STAGING_DIR_HOST)/lib $(if $(IS_PACKAGE_BUILD),-L$(STAGING_DIR_HOSTPKG)/lib -L$(STAGING_DIR)/host/lib)
+HOST_CPPFLAGS:=$(strip -I$(STAGING_DIR_HOST)/include $(if $(IS_PACKAGE_BUILD),-I$(STAGING_DIR_HOSTPKG)/include -I$(STAGING_DIR)/host/include) $(HOST_EXTRA_CPPFLAGS))
+HOST_CFLAGS:=$(strip $(HOST_FLAGS_OPT) $(HOST_EXTRA_CFLAGS) $(HOST_CPPFLAGS) $(HOST_FLAGS_STRIP))
+HOST_CXXFLAGS:=$(strip $(HOST_CFLAGS) $(HOST_EXTRA_CXXFLAGS))
+HOST_LDFLAGS:=$(strip -L$(STAGING_DIR_HOST)/lib $(if $(IS_PACKAGE_BUILD),-L$(STAGING_DIR_HOSTPKG)/lib -L$(STAGING_DIR)/host/lib) $(HOST_EXTRA_LDFLAGS) $(HOST_FLAGS_STRIP))
 
 BUILD_KEY=$(TOPDIR)/key-build
 BUILD_KEY_APK_SEC=$(TOPDIR)/private-key.pem
@@ -342,7 +349,6 @@ ifneq ($(CONFIG_CCACHE),)
   TARGET_CXX:= ccache $(TARGET_CXX)
   HOSTCC:= ccache $(HOSTCC)
   HOSTCXX:= ccache $(HOSTCXX)
-  export CCACHE_NOHASHDIR:=true
   export CCACHE_NOCOMPRESS:=true
   export CCACHE_BASEDIR:=$(TOPDIR)
   export CCACHE_DIR:=$(if $(call qstrip,$(CONFIG_CCACHE_DIR)),$(call qstrip,$(CONFIG_CCACHE_DIR)),$(TOPDIR)/.ccache)
@@ -507,9 +513,10 @@ ext=$(word $(words $(subst ., ,$(1))),$(subst ., ,$(1)))
 ##
 define commitcount
 $(shell \
-  if git log -1 >/dev/null 2>/dev/null; then \
+  if git log -1 --no-show-signature >/dev/null 2>/dev/null; then \
     if [ -n "$(1)" ]; then \
-      last_bump="$$(git log --pretty=format:'%h %s' . | \
+      $(call ERROR_MESSAGE,DEPRECATION NOTICE: The use of AUTORELEASE has been deprecated. Fix your Makefile.); \
+      last_bump="$$(git log --no-show-signature --pretty=format:'%h %s' . | \
         grep -m 1 -e ': [uU]pdate to ' -e ': [bB]ump to ' | \
         cut -f 1 -d ' ')"; \
     fi; \

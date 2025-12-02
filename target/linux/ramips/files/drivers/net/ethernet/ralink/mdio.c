@@ -268,6 +268,6 @@ void fe_mdio_cleanup(struct fe_priv *priv)
 		return;
 
 	mdiobus_unregister(priv->mii_bus);
-	of_node_put(priv->mii_bus->dev.of_node);
+	put_device(&priv->mii_bus->dev);
 	kfree(priv->mii_bus);
 }

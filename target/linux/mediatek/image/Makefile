@@ -22,7 +22,7 @@ define Device/Default
   KERNEL_INITRAMFS = kernel-bin | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd
   KERNEL_LOADADDR = $(loadaddr-y)
-  FILESYSTEMS := squashfs
+  FILESYSTEMS := squashfs erofs
   DEVICE_DTS_DIR := $(DTS_DIR)
   NETGEAR_ENC_MODEL :=
   NETGEAR_ENC_REGION :=

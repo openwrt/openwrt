@@ -1,0 +1,1137 @@
+From 9a26e7043fa95b4c9ee4576ce8c0ac15668e695e Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Thu, 2 Jan 2025 13:54:54 +0100
+Subject: [PATCH] string-desc, xstring-desc, string-desc-quotearg: Rename
+ functions.
+
+* lib/string-desc.h (sd_equals): Renamed from string_desc_equals.
+(sd_startswith): Renamed from string_desc_startswith.
+(sd_endswith): Renamed from string_desc_endswith.
+(sd_cmp): Renamed from string_desc_cmp.
+(sd_c_casecmp): Renamed from string_desc_c_casecmp.
+(sd_index): Renamed from string_desc_index.
+(sd_last_index): Renamed from string_desc_last_index.
+(sd_contains): Renamed from string_desc_contains.
+(sd_new_empty): Renamed from string_desc_new_empty.
+(sd_new_addr): Renamed from string_desc_new_addr.
+(sd_from_c): Renamed from string_desc_from_c.
+(sd_substring): Renamed from string_desc_substring.
+(sd_write): Renamed from string_desc_write.
+(sd_fwrite): Renamed from string_desc_fwrite.
+(sd_new): Renamed from string_desc_new.
+(sd_new_filled): Renamed from string_desc_new_filled.
+(sd_copy): Renamed from string_desc_copy.
+(sd_concat): Renamed from string_desc_concat.
+(sd_c): Renamed from string_desc_c.
+(sd_set_char_at): Renamed from string_desc_set_char_at.
+(sd_fill): Renamed from string_desc_fill.
+(sd_overwrite): Renamed from string_desc_overwrite.
+(sd_free): Renamed from string_desc_free.
+(sd_length): Renamed from string_desc_length.
+(sd_char_at): Renamed from string_desc_char_at.
+(sd_data): Renamed from string_desc_data.
+(sd_is_empty): Renamed from string_desc_is_empty.
+* lib/string-desc.c (sd_equals): Renamed from string_desc_equals.
+(sd_startswith): Renamed from string_desc_startswith.
+(sd_endswith): Renamed from string_desc_endswith.
+(sd_cmp): Renamed from string_desc_cmp.
+(sd_c_casecmp): Renamed from string_desc_c_casecmp.
+(sd_index): Renamed from string_desc_index.
+(sd_last_index): Renamed from string_desc_last_index.
+(sd_new_empty): Renamed from string_desc_new_empty.
+(sd_new_addr): Renamed from string_desc_new_addr.
+(sd_from_c): Renamed from string_desc_from_c.
+(sd_substring): Renamed from string_desc_substring.
+(sd_write): Renamed from string_desc_write.
+(sd_fwrite): Renamed from string_desc_fwrite.
+(sd_new): Renamed from string_desc_new.
+(sd_new_filled): Renamed from string_desc_new_filled.
+(sd_copy): Renamed from string_desc_copy.
+(sd_concat): Renamed from string_desc_concat.
+(sd_c): Renamed from string_desc_c.
+(sd_set_char_at): Renamed from string_desc_set_char_at.
+(sd_fill): Renamed from string_desc_fill.
+(sd_overwrite): Renamed from string_desc_overwrite.
+(sd_free): Renamed from string_desc_free.
+* lib/xstring-desc.h (xsd_concat): Renamed from xstring_desc_concat.
+(xsd_new): Renamed from xstring_desc_new.
+(xsd_new_filled): Renamed from xstring_desc_new_filled.
+(xsd_copy): Renamed from xstring_desc_copy.
+(xsd_c): Renamed from xstring_desc_c.
+* lib/xstring-desc.c (xsd_concat): Renamed from xstring_desc_concat.
+* lib/string-desc-quotearg.h (sd_quotearg_buffer): Renamed from
+string_desc_quotearg_buffer.
+(sd_quotearg_alloc): Renamed from string_desc_quotearg_alloc.
+(sd_quotearg_n): Renamed from string_desc_quotearg_n.
+(sd_quotearg): Renamed from string_desc_quotearg.
+(sd_quotearg_n_style): Renamed from string_desc_quotearg_n_style.
+(sd_quotearg_style): Renamed from string_desc_quotearg_style.
+(sd_quotearg_char): Renamed from string_desc_quotearg_char.
+(sd_quotearg_colon): Renamed from string_desc_quotearg_colon.
+(sd_quotearg_n_custom): Renamed from string_desc_quotearg_n_custom.
+(sd_quotearg_custom): Renamed from sd_quotearg_n_custom.
+* lib/string-desc-contains.c (sd_contains): Renamed from
+string_desc_contains.
+* lib/string-buffer.h: Update.
+* lib/string-buffer.c (sb_append_desc, sb_contents, sb_dupfree): Update.
+* lib/xstring-buffer.c (sb_xdupfree): Update.
+* lib/sf-istream.c (sf_istream_init_from_string_desc): Update.
+* tests/test-string-desc.c (main): Update.
+* tests/test-string-desc.sh: Update.
+* tests/test-xstring-desc.c (main): Update.
+* tests/test-string-desc-quotearg.c (main): Update.
+* tests/test-string-buffer.c (main): Update.
+* tests/test-sf-istream.c (main): Update.
+* tests/test-sfl-istream.c (main): Update.
+* doc/string-desc.texi: Update.
+* doc/strings.texi: Update.
+* NEWS: Mention the change.
+---
+ ChangeLog                         |  86 +++++++++
+ NEWS                              |   4 +
+ doc/string-desc.texi              |   4 +-
+ doc/strings.texi                  |  18 +-
+ lib/sf-istream.c                  |   4 +-
+ lib/string-buffer.c               |  12 +-
+ lib/string-buffer.h               |   4 +-
+ lib/string-desc-contains.c        |   2 +-
+ lib/string-desc-quotearg.h        | 114 ++++++------
+ lib/string-desc.c                 |  52 +++---
+ lib/string-desc.h                 |  62 +++----
+ lib/xstring-buffer.c              |   4 +-
+ lib/xstring-desc.c                |   2 +-
+ lib/xstring-desc.h                |  26 +--
+ tests/test-sf-istream.c           |   4 +-
+ tests/test-sfl-istream.c          |   4 +-
+ tests/test-string-buffer.c        |  18 +-
+ tests/test-string-desc-quotearg.c |  44 ++---
+ tests/test-string-desc.c          | 296 +++++++++++++++---------------
+ tests/test-string-desc.sh         |   4 +-
+ tests/test-xstring-desc.c         |  68 +++----
+ 21 files changed, 461 insertions(+), 371 deletions(-)
+
+--- a/lib/sf-istream.c
++++ b/lib/sf-istream.c
+@@ -46,8 +46,8 @@ sf_istream_init_from_string_desc (sf_ist
+                                   string_desc_t input)
+ {
+   stream->fp = NULL;
+-  stream->input = string_desc_data (input);
+-  stream->input_end = stream->input + string_desc_length (input);
++  stream->input = sd_data (input);
++  stream->input_end = stream->input + sd_length (input);
+ }
+ 
+ int
+--- a/lib/string-buffer.c
++++ b/lib/string-buffer.c
+@@ -101,13 +101,13 @@ sb_append1 (struct string_buffer *buffer
+ int
+ sb_append_desc (struct string_buffer *buffer, string_desc_t s)
+ {
+-  size_t len = string_desc_length (s);
++  size_t len = sd_length (s);
+   if (sb_ensure_more_bytes (buffer, len) < 0)
+     {
+       buffer->error = true;
+       return -1;
+     }
+-  memcpy (buffer->data + buffer->length, string_desc_data (s), len);
++  memcpy (buffer->data + buffer->length, sd_data (s), len);
+   buffer->length += len;
+   return 0;
+ }
+@@ -136,7 +136,7 @@ sb_free (struct string_buffer *buffer)
+ string_desc_t
+ sb_contents (struct string_buffer *buffer)
+ {
+-  return string_desc_new_addr (buffer->length, buffer->data);
++  return sd_new_addr (buffer->length, buffer->data);
+ }
+ 
+ const char *
+@@ -162,7 +162,7 @@ sb_dupfree (struct string_buffer *buffer
+       if (copy == NULL)
+         goto fail;
+       memcpy (copy, buffer->data, length);
+-      return string_desc_new_addr (length, copy);
++      return sd_new_addr (length, copy);
+     }
+   else
+     {
+@@ -174,12 +174,12 @@ sb_dupfree (struct string_buffer *buffer
+           if (contents == NULL)
+             goto fail;
+         }
+-      return string_desc_new_addr (length, contents);
++      return sd_new_addr (length, contents);
+     }
+ 
+  fail:
+   sb_free (buffer);
+-  return string_desc_new_addr (0, NULL);
++  return sd_new_addr (0, NULL);
+ }
+ 
+ char *
+--- a/lib/string-buffer.h
++++ b/lib/string-buffer.h
+@@ -115,7 +115,7 @@ extern const char * sb_contents_c (struc
+ 
+ /* Returns the contents of BUFFER and frees all other memory held by BUFFER.
+    Returns NULL upon failure or if there was an error earlier.
+-   It is the responsibility of the caller to string_desc_free() the result.  */
++   It is the responsibility of the caller to sd_free() the result.  */
+ extern string_desc_t sb_dupfree (struct string_buffer *buffer)
+   _GL_ATTRIBUTE_RELEASE_CAPABILITY (buffer->data);
+ 
+@@ -182,7 +182,7 @@ extern const char * sb_xcontents_c (stru
+ 
+ /* Returns the contents of BUFFER and frees all other memory held by BUFFER.
+    Returns (0, NULL) if there was an error earlier.
+-   It is the responsibility of the caller to string_desc_free() the result.  */
++   It is the responsibility of the caller to sd_free() the result.  */
+ extern string_desc_t sb_xdupfree (struct string_buffer *buffer)
+   _GL_ATTRIBUTE_RELEASE_CAPABILITY (buffer->data);
+ 
+--- a/lib/string-desc-contains.c
++++ b/lib/string-desc-contains.c
+@@ -31,7 +31,7 @@
+    which — depending on platforms — costs up to 2 KB of binary code.  */
+ 
+ ptrdiff_t
+-string_desc_contains (string_desc_t haystack, string_desc_t needle)
++sd_contains (string_desc_t haystack, string_desc_t needle)
+ {
+   if (needle._nbytes == 0)
+     return 0;
+--- a/lib/string-desc-quotearg.h
++++ b/lib/string-desc-quotearg.h
+@@ -50,22 +50,22 @@ extern "C" {
+    does not use backslash escapes and the flags of O do not request
+    elision of null bytes.  */
+ #if 0
+-extern size_t string_desc_quotearg_buffer (char *restrict buffer,
+-                                           size_t buffersize,
+-                                           string_desc_t arg,
+-                                           struct quoting_options const *o);
++extern size_t sd_quotearg_buffer (char *restrict buffer,
++                                  size_t buffersize,
++                                  string_desc_t arg,
++                                  struct quoting_options const *o);
+ #endif
+ 
+-/* Like string_desc_quotearg_buffer, except return the result in a newly
++/* Like sd_quotearg_buffer, except return the result in a newly
+    allocated buffer and store its length, excluding the terminating null
+    byte, in *SIZE.  It is the caller's responsibility to free the result.
+    The result might contain embedded null bytes if the style of O does
+    not use backslash escapes and the flags of O do not request elision
+    of null bytes.  */
+ #if 0
+-extern char *string_desc_quotearg_alloc (string_desc_t arg,
+-                                         size_t *size,
+-                                         struct quoting_options const *o)
++extern char *sd_quotearg_alloc (string_desc_t arg,
++                                size_t *size,
++                                struct quoting_options const *o)
+   _GL_ATTRIBUTE_NONNULL ((2))
+   _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE
+   _GL_ATTRIBUTE_RETURNS_NONNULL;
+@@ -77,68 +77,68 @@ extern char *string_desc_quotearg_alloc
+    reused by the next call to this function with the same value of N.
+    N must be nonnegative.  */
+ #if 0
+-extern char *string_desc_quotearg_n (int n, string_desc_t arg);
++extern char *sd_quotearg_n (int n, string_desc_t arg);
+ #endif
+ 
+-/* Equivalent to string_desc_quotearg_n (0, ARG).  */
++/* Equivalent to sd_quotearg_n (0, ARG).  */
+ #if 0
+-extern char *string_desc_quotearg (string_desc_t arg);
++extern char *sd_quotearg (string_desc_t arg);
+ #endif
+ 
+ /* Use style S and storage slot N to return a quoted version of the string ARG.
+-   This is like string_desc_quotearg_n (N, ARG), except that it uses S
++   This is like sd_quotearg_n (N, ARG), except that it uses S
+    with no other options to specify the quoting method.  */
+ #if 0
+-extern char *string_desc_quotearg_n_style (int n, enum quoting_style s,
+-                                           string_desc_t arg);
++extern char *sd_quotearg_n_style (int n, enum quoting_style s,
++                                  string_desc_t arg);
+ #endif
+ 
+-/* Equivalent to string_desc_quotearg_n_style (0, S, ARG).  */
++/* Equivalent to sd_quotearg_n_style (0, S, ARG).  */
+ #if 0
+-extern char *string_desc_quotearg_style (enum quoting_style s,
+-                                         string_desc_t arg);
++extern char *sd_quotearg_style (enum quoting_style s,
++                                string_desc_t arg);
+ #endif
+ 
+-/* Like string_desc_quotearg (ARG), except also quote any instances of CH.
++/* Like sd_quotearg (ARG), except also quote any instances of CH.
+    See set_char_quoting for a description of acceptable CH values.  */
+ #if 0
+-extern char *string_desc_quotearg_char (string_desc_t arg, char ch);
++extern char *sd_quotearg_char (string_desc_t arg, char ch);
+ #endif
+ 
+-/* Equivalent to string_desc_quotearg_char (ARG, ':').  */
++/* Equivalent to sd_quotearg_char (ARG, ':').  */
+ #if 0
+-extern char *string_desc_quotearg_colon (string_desc_t arg);
++extern char *sd_quotearg_colon (string_desc_t arg);
+ #endif
+ 
+-/* Like string_desc_quotearg_n_style (N, S, ARG) but with S as
++/* Like sd_quotearg_n_style (N, S, ARG) but with S as
+    custom_quoting_style with left quote as LEFT_QUOTE and right quote
+    as RIGHT_QUOTE.  See set_custom_quoting for a description of acceptable
+    LEFT_QUOTE and RIGHT_QUOTE values.  */
+ #if 0
+-extern char *string_desc_quotearg_n_custom (int n,
+-                                            char const *left_quote,
+-                                            char const *right_quote,
+-                                            string_desc_t arg);
++extern char *sd_quotearg_n_custom (int n,
++                                   char const *left_quote,
++                                   char const *right_quote,
++                                   string_desc_t arg);
+ #endif
+ 
+ /* Equivalent to
+-   string_desc_quotearg_n_custom (0, LEFT_QUOTE, RIGHT_QUOTE, ARG).  */
++   sd_quotearg_n_custom (0, LEFT_QUOTE, RIGHT_QUOTE, ARG).  */
+ #if 0
+-extern char *string_desc_quotearg_custom (char const *left_quote,
+-                                          char const *right_quote,
+-                                          string_desc_t arg);
++extern char *sd_quotearg_custom (char const *left_quote,
++                                 char const *right_quote,
++                                 string_desc_t arg);
+ #endif
+ 
+ 
+ /* ==== Inline function definitions ==== */
+ 
+ GL_STRING_DESC_QUOTEARG_INLINE size_t
+-string_desc_quotearg_buffer (char *restrict buffer, size_t buffersize,
+-                             string_desc_t arg,
+-                             struct quoting_options const *o)
++sd_quotearg_buffer (char *restrict buffer, size_t buffersize,
++                    string_desc_t arg,
++                    struct quoting_options const *o)
+ {
+   return quotearg_buffer (buffer, buffersize,
+-                          string_desc_data (arg), string_desc_length (arg),
++                          sd_data (arg), sd_length (arg),
+                           o);
+ }
+ 
+@@ -147,69 +147,69 @@ _GL_ATTRIBUTE_NONNULL ((2))
+ _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE
+ _GL_ATTRIBUTE_RETURNS_NONNULL
+ char *
+-string_desc_quotearg_alloc (string_desc_t arg,
+-                            size_t *size,
+-                            struct quoting_options const *o)
++sd_quotearg_alloc (string_desc_t arg,
++                   size_t *size,
++                   struct quoting_options const *o)
+ {
+-  return quotearg_alloc_mem (string_desc_data (arg), string_desc_length (arg),
++  return quotearg_alloc_mem (sd_data (arg), sd_length (arg),
+                              size,
+                              o);
+ }
+ 
+ GL_STRING_DESC_QUOTEARG_INLINE char *
+-string_desc_quotearg_n (int n, string_desc_t arg)
++sd_quotearg_n (int n, string_desc_t arg)
+ {
+-  return quotearg_n_mem (n, string_desc_data (arg), string_desc_length (arg));
++  return quotearg_n_mem (n, sd_data (arg), sd_length (arg));
+ }
+ 
+ GL_STRING_DESC_QUOTEARG_INLINE char *
+-string_desc_quotearg (string_desc_t arg)
++sd_quotearg (string_desc_t arg)
+ {
+-  return quotearg_mem (string_desc_data (arg), string_desc_length (arg));
++  return quotearg_mem (sd_data (arg), sd_length (arg));
+ }
+ 
+ GL_STRING_DESC_QUOTEARG_INLINE char *
+-string_desc_quotearg_n_style (int n, enum quoting_style s, string_desc_t arg)
++sd_quotearg_n_style (int n, enum quoting_style s, string_desc_t arg)
+ {
+   return quotearg_n_style_mem (n, s,
+-                               string_desc_data (arg), string_desc_length (arg));
++                               sd_data (arg), sd_length (arg));
+ }
+ 
+ GL_STRING_DESC_QUOTEARG_INLINE char *
+-string_desc_quotearg_style (enum quoting_style s, string_desc_t arg)
++sd_quotearg_style (enum quoting_style s, string_desc_t arg)
+ {
+   return quotearg_style_mem (s,
+-                             string_desc_data (arg), string_desc_length (arg));
++                             sd_data (arg), sd_length (arg));
+ }
+ 
+ GL_STRING_DESC_QUOTEARG_INLINE char *
+-string_desc_quotearg_char (string_desc_t arg, char ch)
++sd_quotearg_char (string_desc_t arg, char ch)
+ {
+-  return quotearg_char_mem (string_desc_data (arg), string_desc_length (arg),
++  return quotearg_char_mem (sd_data (arg), sd_length (arg),
+                             ch);
+ }
+ 
+ GL_STRING_DESC_QUOTEARG_INLINE char *
+-string_desc_quotearg_colon (string_desc_t arg)
++sd_quotearg_colon (string_desc_t arg)
+ {
+-  return quotearg_colon_mem (string_desc_data (arg), string_desc_length (arg));
++  return quotearg_colon_mem (sd_data (arg), sd_length (arg));
+ }
+ 
+ GL_STRING_DESC_QUOTEARG_INLINE char *
+-string_desc_quotearg_n_custom (int n,
+-                               char const *left_quote, char const *right_quote,
+-                               string_desc_t arg)
++sd_quotearg_n_custom (int n,
++                      char const *left_quote, char const *right_quote,
++                      string_desc_t arg)
+ {
+   return quotearg_n_custom_mem (n, left_quote, right_quote,
+-                                string_desc_data (arg), string_desc_length (arg));
++                                sd_data (arg), sd_length (arg));
+ }
+ 
+ GL_STRING_DESC_QUOTEARG_INLINE char *
+-string_desc_quotearg_custom (char const *left_quote, char const *right_quote,
+-                             string_desc_t arg)
++sd_quotearg_custom (char const *left_quote, char const *right_quote,
++                    string_desc_t arg)
+ {
+   return quotearg_custom_mem (left_quote, right_quote,
+-                              string_desc_data (arg), string_desc_length (arg));
++                              sd_data (arg), sd_length (arg));
+ }
+ 
+ 
+--- a/lib/string-desc.c
++++ b/lib/string-desc.c
+@@ -39,14 +39,14 @@
+ 
+ /* Return true if A and B are equal.  */
+ bool
+-string_desc_equals (string_desc_t a, string_desc_t b)
++sd_equals (string_desc_t a, string_desc_t b)
+ {
+   return (a._nbytes == b._nbytes
+           && (a._nbytes == 0 || memcmp (a._data, b._data, a._nbytes) == 0));
+ }
+ 
+ bool
+-string_desc_startswith (string_desc_t s, string_desc_t prefix)
++sd_startswith (string_desc_t s, string_desc_t prefix)
+ {
+   return (s._nbytes >= prefix._nbytes
+           && (prefix._nbytes == 0
+@@ -54,7 +54,7 @@ string_desc_startswith (string_desc_t s,
+ }
+ 
+ bool
+-string_desc_endswith (string_desc_t s, string_desc_t suffix)
++sd_endswith (string_desc_t s, string_desc_t suffix)
+ {
+   return (s._nbytes >= suffix._nbytes
+           && (suffix._nbytes == 0
+@@ -63,7 +63,7 @@ string_desc_endswith (string_desc_t s, s
+ }
+ 
+ int
+-string_desc_cmp (string_desc_t a, string_desc_t b)
++sd_cmp (string_desc_t a, string_desc_t b)
+ {
+   if (a._nbytes > b._nbytes)
+     {
+@@ -86,14 +86,14 @@ string_desc_cmp (string_desc_t a, string
+ }
+ 
+ int
+-string_desc_c_casecmp (string_desc_t a, string_desc_t b)
++sd_c_casecmp (string_desc_t a, string_desc_t b)
+ {
+   /* Don't use memcasecmp here, since it uses the current locale, not the
+      "C" locale.  */
+-  idx_t an = string_desc_length (a);
+-  idx_t bn = string_desc_length (b);
+-  const char *ap = string_desc_data (a);
+-  const char *bp = string_desc_data (b);
++  idx_t an = sd_length (a);
++  idx_t bn = sd_length (b);
++  const char *ap = sd_data (a);
++  const char *bp = sd_data (b);
+   idx_t n = (an < bn ? an : bn);
+   idx_t i;
+   for (i = 0; i < n; i++)
+@@ -108,7 +108,7 @@ string_desc_c_casecmp (string_desc_t a,
+ }
+ 
+ ptrdiff_t
+-string_desc_index (string_desc_t s, char c)
++sd_index (string_desc_t s, char c)
+ {
+   if (s._nbytes > 0)
+     {
+@@ -120,7 +120,7 @@ string_desc_index (string_desc_t s, char
+ }
+ 
+ ptrdiff_t
+-string_desc_last_index (string_desc_t s, char c)
++sd_last_index (string_desc_t s, char c)
+ {
+   if (s._nbytes > 0)
+     {
+@@ -132,7 +132,7 @@ string_desc_last_index (string_desc_t s,
+ }
+ 
+ string_desc_t
+-string_desc_new_empty (void)
++sd_new_empty (void)
+ {
+   string_desc_t result;
+ 
+@@ -144,7 +144,7 @@ string_desc_new_empty (void)
+ }
+ 
+ string_desc_t
+-string_desc_new_addr (idx_t n, char *addr)
++sd_new_addr (idx_t n, char *addr)
+ {
+   string_desc_t result;
+ 
+@@ -158,7 +158,7 @@ string_desc_new_addr (idx_t n, char *add
+ }
+ 
+ string_desc_t
+-string_desc_from_c (const char *s)
++sd_from_c (const char *s)
+ {
+   string_desc_t result;
+ 
+@@ -169,7 +169,7 @@ string_desc_from_c (const char *s)
+ }
+ 
+ string_desc_t
+-string_desc_substring (string_desc_t s, idx_t start, idx_t end)
++sd_substring (string_desc_t s, idx_t start, idx_t end)
+ {
+   string_desc_t result;
+ 
+@@ -184,7 +184,7 @@ string_desc_substring (string_desc_t s,
+ }
+ 
+ int
+-string_desc_write (int fd, string_desc_t s)
++sd_write (int fd, string_desc_t s)
+ {
+   if (s._nbytes > 0)
+     if (full_write (fd, s._data, s._nbytes) != s._nbytes)
+@@ -194,7 +194,7 @@ string_desc_write (int fd, string_desc_t
+ }
+ 
+ int
+-string_desc_fwrite (FILE *fp, string_desc_t s)
++sd_fwrite (FILE *fp, string_desc_t s)
+ {
+   if (s._nbytes > 0)
+     if (fwrite (s._data, 1, s._nbytes, fp) != s._nbytes)
+@@ -206,7 +206,7 @@ string_desc_fwrite (FILE *fp, string_des
+ /* ==== Memory-allocating operations on string descriptors ==== */
+ 
+ int
+-string_desc_new (string_desc_t *resultp, idx_t n)
++sd_new (string_desc_t *resultp, idx_t n)
+ {
+   string_desc_t result;
+ 
+@@ -230,7 +230,7 @@ string_desc_new (string_desc_t *resultp,
+ }
+ 
+ int
+-string_desc_new_filled (string_desc_t *resultp, idx_t n, char c)
++sd_new_filled (string_desc_t *resultp, idx_t n, char c)
+ {
+   string_desc_t result;
+ 
+@@ -251,7 +251,7 @@ string_desc_new_filled (string_desc_t *r
+ }
+ 
+ int
+-string_desc_copy (string_desc_t *resultp, string_desc_t s)
++sd_copy (string_desc_t *resultp, string_desc_t s)
+ {
+   string_desc_t result;
+   idx_t n = s._nbytes;
+@@ -273,7 +273,7 @@ string_desc_copy (string_desc_t *resultp
+ }
+ 
+ int
+-string_desc_concat (string_desc_t *resultp, idx_t n, string_desc_t string1, ...)
++sd_concat (string_desc_t *resultp, idx_t n, string_desc_t string1, ...)
+ {
+   if (n <= 0)
+     /* Invalid argument.  */
+@@ -327,7 +327,7 @@ string_desc_concat (string_desc_t *resul
+ }
+ 
+ char *
+-string_desc_c (string_desc_t s)
++sd_c (string_desc_t s)
+ {
+   idx_t n = s._nbytes;
+   char *result = (char *) imalloc (n + 1);
+@@ -345,7 +345,7 @@ string_desc_c (string_desc_t s)
+ /* ==== Operations with side effects on string descriptors ==== */
+ 
+ void
+-string_desc_set_char_at (string_desc_t s, idx_t i, char c)
++sd_set_char_at (string_desc_t s, idx_t i, char c)
+ {
+   if (!(i >= 0 && i < s._nbytes))
+     /* Invalid argument.  */
+@@ -354,7 +354,7 @@ string_desc_set_char_at (string_desc_t s
+ }
+ 
+ void
+-string_desc_fill (string_desc_t s, idx_t start, idx_t end, char c)
++sd_fill (string_desc_t s, idx_t start, idx_t end, char c)
+ {
+   if (!(start >= 0 && start <= end))
+     /* Invalid arguments.  */
+@@ -365,7 +365,7 @@ string_desc_fill (string_desc_t s, idx_t
+ }
+ 
+ void
+-string_desc_overwrite (string_desc_t s, idx_t start, string_desc_t t)
++sd_overwrite (string_desc_t s, idx_t start, string_desc_t t)
+ {
+   if (!(start >= 0 && start + t._nbytes <= s._nbytes))
+     /* Invalid arguments.  */
+@@ -376,7 +376,7 @@ string_desc_overwrite (string_desc_t s,
+ }
+ 
+ void
+-string_desc_free (string_desc_t s)
++sd_free (string_desc_t s)
+ {
+   free (s._data);
+ }
+--- a/lib/string-desc.h
++++ b/lib/string-desc.h
+@@ -69,82 +69,82 @@ struct string_desc_t
+ 
+ /* Return the length of the string S.  */
+ #if 0 /* Defined inline below.  */
+-extern idx_t string_desc_length (string_desc_t s);
++extern idx_t sd_length (string_desc_t s);
+ #endif
+ 
+ /* Return the byte at index I of string S.
+    I must be < length(S).  */
+ #if 0 /* Defined inline below.  */
+-extern char string_desc_char_at (string_desc_t s, idx_t i);
++extern char sd_char_at (string_desc_t s, idx_t i);
+ #endif
+ 
+ /* Return a read-only view of the bytes of S.  */
+ #if 0 /* Defined inline below.  */
+-extern const char * string_desc_data (string_desc_t s);
++extern const char * sd_data (string_desc_t s);
+ #endif
+ 
+ /* Return true if S is the empty string.  */
+ #if 0 /* Defined inline below.  */
+-extern bool string_desc_is_empty (string_desc_t s);
++extern bool sd_is_empty (string_desc_t s);
+ #endif
+ 
+ /* Return true if A and B are equal.  */
+-extern bool string_desc_equals (string_desc_t a, string_desc_t b);
++extern bool sd_equals (string_desc_t a, string_desc_t b);
+ 
+ /* Return true if S starts with PREFIX.  */
+-extern bool string_desc_startswith (string_desc_t s, string_desc_t prefix);
++extern bool sd_startswith (string_desc_t s, string_desc_t prefix);
+ 
+ /* Return true if S ends with SUFFIX.  */
+-extern bool string_desc_endswith (string_desc_t s, string_desc_t suffix);
++extern bool sd_endswith (string_desc_t s, string_desc_t suffix);
+ 
+ /* Return > 0, == 0, or < 0 if A > B, A == B, A < B.
+    This uses a lexicographic ordering, where the bytes are compared as
+    'unsigned char'.  */
+-extern int string_desc_cmp (string_desc_t a, string_desc_t b);
++extern int sd_cmp (string_desc_t a, string_desc_t b);
+ 
+ /* Return > 0, == 0, or < 0 if A > B, A == B, A < B.
+    Either A or B must be entirely ASCII.
+    This uses a lexicographic ordering, where the bytes are compared as
+    'unsigned char', ignoring case, in the "C" locale.  */
+-extern int string_desc_c_casecmp (string_desc_t a, string_desc_t b);
++extern int sd_c_casecmp (string_desc_t a, string_desc_t b);
+ 
+ /* Return the index of the first occurrence of C in S,
+    or -1 if there is none.  */
+-extern ptrdiff_t string_desc_index (string_desc_t s, char c);
++extern ptrdiff_t sd_index (string_desc_t s, char c);
+ 
+ /* Return the index of the last occurrence of C in S,
+    or -1 if there is none.  */
+-extern ptrdiff_t string_desc_last_index (string_desc_t s, char c);
++extern ptrdiff_t sd_last_index (string_desc_t s, char c);
+ 
+ /* Return the index of the first occurrence of NEEDLE in HAYSTACK,
+    or -1 if there is none.  */
+-extern ptrdiff_t string_desc_contains (string_desc_t haystack, string_desc_t needle);
++extern ptrdiff_t sd_contains (string_desc_t haystack, string_desc_t needle);
+ 
+ /* Return an empty string.  */
+-extern string_desc_t string_desc_new_empty (void);
++extern string_desc_t sd_new_empty (void);
+ 
+ /* Construct and return a string of length N, at the given memory address.  */
+-extern string_desc_t string_desc_new_addr (idx_t n, char *addr);
++extern string_desc_t sd_new_addr (idx_t n, char *addr);
+ 
+ /* Return a string that represents the C string S, of length strlen (S).  */
+-extern string_desc_t string_desc_from_c (const char *s);
++extern string_desc_t sd_from_c (const char *s);
+ 
+ /* Return the substring of S, starting at offset START and ending at offset END.
+    START must be <= END.
+    The result is of length END - START.
+    The result must not be freed (since its storage is part of the storage
+    of S).  */
+-extern string_desc_t string_desc_substring (string_desc_t s, idx_t start, idx_t end);
++extern string_desc_t sd_substring (string_desc_t s, idx_t start, idx_t end);
+ 
+ /* Output S to the file descriptor FD.
+    Return 0 if successful.
+    Upon error, return -1 with errno set.  */
+-extern int string_desc_write (int fd, string_desc_t s);
++extern int sd_write (int fd, string_desc_t s);
+ 
+ /* Output S to the FILE stream FP.
+    Return 0 if successful.
+    Upon error, return -1.  */
+-extern int string_desc_fwrite (FILE *fp, string_desc_t s);
++extern int sd_fwrite (FILE *fp, string_desc_t s);
+ 
+ 
+ /* ==== Memory-allocating operations on string descriptors ==== */
+@@ -153,61 +153,61 @@ extern int string_desc_fwrite (FILE *fp,
+    Return 0 if successful.
+    Upon error, return -1 with errno set.  */
+ _GL_ATTRIBUTE_NODISCARD
+-extern int string_desc_new (string_desc_t *resultp, idx_t n);
++extern int sd_new (string_desc_t *resultp, idx_t n);
+ 
+ /* Construct a string of length N, filled with C.
+    Return 0 if successful.
+    Upon error, return -1 with errno set.  */
+ _GL_ATTRIBUTE_NODISCARD
+-extern int string_desc_new_filled (string_desc_t *resultp, idx_t n, char c);
++extern int sd_new_filled (string_desc_t *resultp, idx_t n, char c);
+ 
+ /* Construct a copy of string S.
+    Return 0 if successful.
+    Upon error, return -1 with errno set.  */
+ _GL_ATTRIBUTE_NODISCARD
+-extern int string_desc_copy (string_desc_t *resultp, string_desc_t s);
++extern int sd_copy (string_desc_t *resultp, string_desc_t s);
+ 
+ /* Construct the concatenation of N strings.  N must be > 0.
+    Return 0 if successful.
+    Upon error, return -1 with errno set.  */
+ _GL_ATTRIBUTE_NODISCARD
+-extern int string_desc_concat (string_desc_t *resultp, idx_t n, string_desc_t string1, ...);
++extern int sd_concat (string_desc_t *resultp, idx_t n, string_desc_t string1, ...);
+ 
+ /* Construct a copy of string S, as a NUL-terminated C string.
+    Return it is successful.
+    Upon error, return NULL with errno set.  */
+-extern char * string_desc_c (string_desc_t s) _GL_ATTRIBUTE_DEALLOC_FREE;
++extern char * sd_c (string_desc_t s) _GL_ATTRIBUTE_DEALLOC_FREE;
+ 
+ 
+ /* ==== Operations with side effects on string descriptors ==== */
+ 
+ /* Overwrite the byte at index I of string S with C.
+    I must be < length(S).  */
+-extern void string_desc_set_char_at (string_desc_t s, idx_t i, char c);
++extern void sd_set_char_at (string_desc_t s, idx_t i, char c);
+ 
+ /* Fill part of S, starting at offset START and ending at offset END,
+    with copies of C.
+    START must be <= END.  */
+-extern void string_desc_fill (string_desc_t s, idx_t start, idx_t end, char c);
++extern void sd_fill (string_desc_t s, idx_t start, idx_t end, char c);
+ 
+ /* Overwrite part of S with T, starting at offset START.
+    START + length(T) must be <= length (S).  */
+-extern void string_desc_overwrite (string_desc_t s, idx_t start, string_desc_t t);
++extern void sd_overwrite (string_desc_t s, idx_t start, string_desc_t t);
+ 
+ /* Free S.  */
+-extern void string_desc_free (string_desc_t s);
++extern void sd_free (string_desc_t s);
+ 
+ 
+ /* ==== Inline function definitions ==== */
+ 
+ GL_STRING_DESC_INLINE idx_t
+-string_desc_length (string_desc_t s)
++sd_length (string_desc_t s)
+ {
+   return s._nbytes;
+ }
+ 
+ GL_STRING_DESC_INLINE char
+-string_desc_char_at (string_desc_t s, idx_t i)
++sd_char_at (string_desc_t s, idx_t i)
+ {
+   if (!(i >= 0 && i < s._nbytes))
+     /* Invalid argument.  */
+@@ -216,13 +216,13 @@ string_desc_char_at (string_desc_t s, id
+ }
+ 
+ GL_STRING_DESC_INLINE const char *
+-string_desc_data (string_desc_t s)
++sd_data (string_desc_t s)
+ {
+   return s._data;
+ }
+ 
+ GL_STRING_DESC_INLINE bool
+-string_desc_is_empty (string_desc_t s)
++sd_is_empty (string_desc_t s)
+ {
+   return s._nbytes == 0;
+ }
+--- a/lib/xstring-buffer.c
++++ b/lib/xstring-buffer.c
+@@ -59,10 +59,10 @@ sb_xdupfree (struct string_buffer *buffe
+   if (buffer->error)
+     {
+       sb_free (buffer);
+-      return string_desc_new_addr (0, NULL);
++      return sd_new_addr (0, NULL);
+     }
+   string_desc_t contents = sb_dupfree (buffer);
+-  if (string_desc_data (contents) == NULL)
++  if (sd_data (contents) == NULL)
+     xalloc_die ();
+   return contents;
+ }
+--- a/lib/xstring-desc.c
++++ b/lib/xstring-desc.c
+@@ -22,7 +22,7 @@
+ #include "ialloc.h"
+ 
+ string_desc_t
+-xstring_desc_concat (idx_t n, string_desc_t string1, ...)
++xsd_concat (idx_t n, string_desc_t string1, ...)
+ {
+   if (n <= 0)
+     /* Invalid argument.  */
+--- a/lib/xstring-desc.h
++++ b/lib/xstring-desc.h
+@@ -43,53 +43,53 @@ extern "C" {
+ 
+ /* Return a string of length N, with uninitialized contents.  */
+ #if 0 /* Defined inline below.  */
+-extern string_desc_t xstring_desc_new (idx_t n);
++extern string_desc_t xsd_new (idx_t n);
+ #endif
+ 
+ /* Return a string of length N, filled with C.  */
+ #if 0 /* Defined inline below.  */
+-extern string_desc_t xstring_desc_new_filled (idx_t n, char c);
++extern string_desc_t xsd_new_filled (idx_t n, char c);
+ #endif
+ 
+ /* Return a copy of string S.  */
+ #if 0 /* Defined inline below.  */
+-extern string_desc_t xstring_desc_copy (string_desc_t s);
++extern string_desc_t xsd_copy (string_desc_t s);
+ #endif
+ 
+ /* Return the concatenation of N strings.  N must be > 0.  */
+-extern string_desc_t xstring_desc_concat (idx_t n, string_desc_t string1, ...);
++extern string_desc_t xsd_concat (idx_t n, string_desc_t string1, ...);
+ 
+ /* Construct and return a copy of string S, as a NUL-terminated C string.  */
+ #if 0 /* Defined inline below.  */
+-extern char * xstring_desc_c (string_desc_t s) _GL_ATTRIBUTE_DEALLOC_FREE;
++extern char * xsd_c (string_desc_t s) _GL_ATTRIBUTE_DEALLOC_FREE;
+ #endif
+ 
+ 
+ /* ==== Inline function definitions ==== */
+ 
+ GL_XSTRING_DESC_INLINE string_desc_t
+-xstring_desc_new (idx_t n)
++xsd_new (idx_t n)
+ {
+   string_desc_t result;
+-  if (string_desc_new (&result, n) < 0)
++  if (sd_new (&result, n) < 0)
+     xalloc_die ();
+   return result;
+ }
+ 
+ GL_XSTRING_DESC_INLINE string_desc_t
+-xstring_desc_new_filled (idx_t n, char c)
++xsd_new_filled (idx_t n, char c)
+ {
+   string_desc_t result;
+-  if (string_desc_new_filled (&result, n, c) < 0)
++  if (sd_new_filled (&result, n, c) < 0)
+     xalloc_die ();
+   return result;
+ }
+ 
+ GL_XSTRING_DESC_INLINE string_desc_t
+-xstring_desc_copy (string_desc_t s)
++xsd_copy (string_desc_t s)
+ {
+   string_desc_t result;
+-  if (string_desc_copy (&result, s) < 0)
++  if (sd_copy (&result, s) < 0)
+     xalloc_die ();
+   return result;
+ }
+@@ -97,9 +97,9 @@ xstring_desc_copy (string_desc_t s)
+ GL_XSTRING_DESC_INLINE
+ _GL_ATTRIBUTE_DEALLOC_FREE
+ char *
+-xstring_desc_c (string_desc_t s)
++xsd_c (string_desc_t s)
+ {
+-  char *result = string_desc_c (s);
++  char *result = sd_c (s);
+   if (result == NULL)
+     xalloc_die ();
+   return result;
+--- a/tests/test-string-desc-quotearg.c
++++ b/tests/test-string-desc-quotearg.c
+@@ -28,75 +28,75 @@
+ int
+ main (void)
+ {
+-  string_desc_t s1 = string_desc_from_c ("Hello world!");
+-  string_desc_t s2 = string_desc_new_addr (21, "The\0quick\0brown\0\0fox");
++  string_desc_t s1 = sd_from_c ("Hello world!");
++  string_desc_t s2 = sd_new_addr (21, "The\0quick\0brown\0\0fox");
+ 
+-  /* Test string_desc_quotearg_buffer.  */
++  /* Test sd_quotearg_buffer.  */
+   {
+     char buf[80];
+-    size_t n = string_desc_quotearg_buffer (buf, sizeof (buf), s2, NULL);
++    size_t n = sd_quotearg_buffer (buf, sizeof (buf), s2, NULL);
+     ASSERT (n == 21);
+     ASSERT (memcmp (buf, "The\0quick\0brown\0\0fox", n) == 0);
+   }
+ 
+-  /* Test string_desc_quotearg_alloc.  */
++  /* Test sd_quotearg_alloc.  */
+   {
+     size_t n;
+-    char *ret = string_desc_quotearg_alloc (s2, &n, NULL);
++    char *ret = sd_quotearg_alloc (s2, &n, NULL);
+     ASSERT (n == 21);
+     ASSERT (memcmp (ret, "The\0quick\0brown\0\0fox", n) == 0);
+     free (ret);
+   }
+ 
+-  /* Test string_desc_quotearg_n.  */
++  /* Test sd_quotearg_n.  */
+   {
+-    char *ret = string_desc_quotearg_n (1, s2);
++    char *ret = sd_quotearg_n (1, s2);
+     ASSERT (memcmp (ret, "Thequickbrownfox", 16 + 1) == 0);
+   }
+ 
+-  /* Test string_desc_quotearg.  */
++  /* Test sd_quotearg.  */
+   {
+-    char *ret = string_desc_quotearg (s2);
++    char *ret = sd_quotearg (s2);
+     ASSERT (memcmp (ret, "Thequickbrownfox", 16 + 1) == 0);
+   }
+ 
+-  /* Test string_desc_quotearg_n_style.  */
++  /* Test sd_quotearg_n_style.  */
+   {
+-    char *ret = string_desc_quotearg_n_style (1, clocale_quoting_style, s2);
++    char *ret = sd_quotearg_n_style (1, clocale_quoting_style, s2);
+     ASSERT (memcmp (ret, "\"The\\0quick\\0brown\\0\\0fox\\0\"", 28 + 1) == 0
+             || /* if the locale has UTF-8 encoding */
+                memcmp (ret, "\342\200\230The\\0quick\\0brown\\0\\0fox\\0\342\200\231", 32 + 1) == 0);
+   }
+ 
+-  /* Test string_desc_quotearg_style.  */
++  /* Test sd_quotearg_style.  */
+   {
+-    char *ret = string_desc_quotearg_style (clocale_quoting_style, s2);
++    char *ret = sd_quotearg_style (clocale_quoting_style, s2);
+     ASSERT (memcmp (ret, "\"The\\0quick\\0brown\\0\\0fox\\0\"", 28 + 1) == 0
+             || /* if the locale has UTF-8 encoding */
+                memcmp (ret, "\342\200\230The\\0quick\\0brown\\0\\0fox\\0\342\200\231", 32 + 1) == 0);
+   }
+ 
+-  /* Test string_desc_quotearg_char.  */
++  /* Test sd_quotearg_char.  */
+   {
+-    char *ret = string_desc_quotearg_char (s1, ' ');
++    char *ret = sd_quotearg_char (s1, ' ');
+     ASSERT (memcmp (ret, "Hello world!", 12 + 1) == 0); /* ' ' not quoted?! */
+   }
+ 
+-  /* Test string_desc_quotearg_colon.  */
++  /* Test sd_quotearg_colon.  */
+   {
+-    char *ret = string_desc_quotearg_colon (string_desc_from_c ("a:b"));
++    char *ret = sd_quotearg_colon (sd_from_c ("a:b"));
+     ASSERT (memcmp (ret, "a:b", 3 + 1) == 0); /* ':' not quoted?! */
+   }
+ 
+-  /* Test string_desc_quotearg_n_custom.  */
++  /* Test sd_quotearg_n_custom.  */
+   {
+-    char *ret = string_desc_quotearg_n_custom (2, "<", ">", s1);
++    char *ret = sd_quotearg_n_custom (2, "<", ">", s1);
+     ASSERT (memcmp (ret, "<Hello world!>", 14 + 1) == 0);
+   }
+ 
+-  /* Test string_desc_quotearg_n_custom.  */
++  /* Test sd_quotearg_n_custom.  */
+   {
+-    char *ret = string_desc_quotearg_custom ("[[", "]]", s1);
++    char *ret = sd_quotearg_custom ("[[", "]]", s1);
+     ASSERT (memcmp (ret, "[[Hello world!]]", 16 + 1) == 0);
+   }
+ 
+--- a/tests/test-string-desc.sh
++++ b/tests/test-string-desc.sh
+@@ -6,7 +6,7 @@ ${CHECKER} test-string-desc${EXEEXT} tes
+ printf 'Hello world!The\0quick\0brown\0\0fox\0' > test-string-desc.ok
+ 
+ : "${DIFF=diff}"
+-${DIFF} test-string-desc.ok test-string-desc-1.tmp || { echo "string_desc_fwrite KO" 1>&2; Exit 1; }
+-${DIFF} test-string-desc.ok test-string-desc-3.tmp || { echo "string_desc_write KO" 1>&2; Exit 1; }
++${DIFF} test-string-desc.ok test-string-desc-1.tmp || { echo "sd_fwrite KO" 1>&2; Exit 1; }
++${DIFF} test-string-desc.ok test-string-desc-3.tmp || { echo "sd_write KO" 1>&2; Exit 1; }
+ 
+ Exit 0
+--- a/tests/test-xstring-desc.c
++++ b/tests/test-xstring-desc.c
+@@ -28,53 +28,53 @@
+ int
+ main (void)
+ {
+-  string_desc_t s0 = string_desc_new_empty ();
+-  string_desc_t s1 = string_desc_from_c ("Hello world!");
+-  string_desc_t s2 = string_desc_new_addr (21, "The\0quick\0brown\0\0fox");
++  string_desc_t s0 = sd_new_empty ();
++  string_desc_t s1 = sd_from_c ("Hello world!");
++  string_desc_t s2 = sd_new_addr (21, "The\0quick\0brown\0\0fox");
+ 
+-  /* Test xstring_desc_new.  */
+-  string_desc_t s4 = xstring_desc_new (5);
+-  string_desc_set_char_at (s4, 0, 'H');
+-  string_desc_set_char_at (s4, 4, 'o');
+-  string_desc_set_char_at (s4, 1, 'e');
+-  string_desc_fill (s4, 2, 4, 'l');
+-  ASSERT (string_desc_length (s4) == 5);
+-  ASSERT (string_desc_startswith (s1, s4));
++  /* Test xsd_new.  */
++  string_desc_t s4 = xsd_new (5);
++  sd_set_char_at (s4, 0, 'H');
++  sd_set_char_at (s4, 4, 'o');
++  sd_set_char_at (s4, 1, 'e');
++  sd_fill (s4, 2, 4, 'l');
++  ASSERT (sd_length (s4) == 5);
++  ASSERT (sd_startswith (s1, s4));
+ 
+-  /* Test xstring_desc_new_filled.  */
+-  string_desc_t s5 = xstring_desc_new_filled (5, 'l');
+-  string_desc_set_char_at (s5, 0, 'H');
+-  string_desc_set_char_at (s5, 4, 'o');
+-  string_desc_set_char_at (s5, 1, 'e');
+-  ASSERT (string_desc_length (s5) == 5);
+-  ASSERT (string_desc_startswith (s1, s5));
++  /* Test xsd_new_filled.  */
++  string_desc_t s5 = xsd_new_filled (5, 'l');
++  sd_set_char_at (s5, 0, 'H');
++  sd_set_char_at (s5, 4, 'o');
++  sd_set_char_at (s5, 1, 'e');
++  ASSERT (sd_length (s5) == 5);
++  ASSERT (sd_startswith (s1, s5));
+ 
+-  /* Test xstring_desc_copy.  */
++  /* Test xsd_copy.  */
+   {
+-    string_desc_t s6 = xstring_desc_copy (s0);
+-    ASSERT (string_desc_is_empty (s6));
+-    string_desc_free (s6);
++    string_desc_t s6 = xsd_copy (s0);
++    ASSERT (sd_is_empty (s6));
++    sd_free (s6);
+   }
+   {
+-    string_desc_t s6 = xstring_desc_copy (s2);
+-    ASSERT (string_desc_equals (s6, s2));
+-    string_desc_free (s6);
++    string_desc_t s6 = xsd_copy (s2);
++    ASSERT (sd_equals (s6, s2));
++    sd_free (s6);
+   }
+ 
+-  /* Test xstring_desc_concat.  */
++  /* Test xsd_concat.  */
+   {
+     string_desc_t s8 =
+-      xstring_desc_concat (3, string_desc_new_addr (10, "The\0quick"),
+-                              string_desc_new_addr (7, "brown\0"),
+-                              string_desc_new_addr (4, "fox"),
+-                              string_desc_new_addr (7, "unused"));
+-    ASSERT (string_desc_equals (s8, s2));
+-    string_desc_free (s8);
++      xsd_concat (3, sd_new_addr (10, "The\0quick"),
++                     sd_new_addr (7, "brown\0"),
++                     sd_new_addr (4, "fox"),
++                     sd_new_addr (7, "unused"));
++    ASSERT (sd_equals (s8, s2));
++    sd_free (s8);
+   }
+ 
+-  /* Test xstring_desc_c.  */
++  /* Test xsd_c.  */
+   {
+-    char *ptr = xstring_desc_c (s2);
++    char *ptr = xsd_c (s2);
+     ASSERT (ptr != NULL);
+     ASSERT (memcmp (ptr, "The\0quick\0brown\0\0fox\0", 22) == 0);
+     free (ptr);

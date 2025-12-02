@@ -1,0 +1,28 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Fri, 9 May 2025 01:31:44 +0800
+Subject: [PATCH] fix unknown type name errors
+
+Fix compilation errors:
+
+/home/db/owrt/build_dir/target-mips_24kc_musl/linux-lantiq_xrx200/drv_vmmc-1.9.0/src/drv_vmmc_sig.h:41:45: error: unknown type name 'IFX_TAPI_DRV_CTX_SIG_t'
+   41 | extern IFX_void_t   VMMC_SIG_Func_Register (IFX_TAPI_DRV_CTX_SIG_t *pSig);
+      |                                             ^~~~~~~~~~~~~~~~~~~~~~
+/home/db/owrt/build_dir/target-mips_24kc_musl/linux-lantiq_xrx200/drv_vmmc-1.9.0/src/drv_vmmc_sig.h:43:54: error: unknown type name 'VMMC_CHANNEL'
+   43 | extern IFX_int32_t  VMMC_SIG_Allocate_Ch_Structures (VMMC_CHANNEL *pCh);
+      |                                                      ^~~~~~~~~~~~
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ src/drv_vmmc_sig.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/src/drv_vmmc_sig.h
++++ b/src/drv_vmmc_sig.h
+@@ -20,6 +20,7 @@
+ /* ============================= */
+ /* Includes                      */
+ /* ============================= */
++#include "drv_vmmc_api.h"
+ #include "ifx_types.h"
+ 
+ /* ============================= */

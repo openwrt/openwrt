@@ -1,0 +1,57 @@
+From 8a83b306db64d6f60186d4396b0b770163b85b6e Mon Sep 17 00:00:00 2001
+From: Ross Burton <ross.burton@arm.com>
+Date: Wed, 26 Feb 2025 18:24:00 +0000
+Subject: ubifs-utils: link libmissing.a in case execinfo.h isn't present
+
+On musl execinfo.h doesn't exist, but ubifs-utils uses backtrace() when
+reporting errors.  This results in build failures under musl.
+
+Handily, libmissing.a already exists with a stub implementation of
+backtrace().
+
+Guard the execinfo.h include and if it isn't available instead include
+libmissing.h, and link to libmissing.a to provide backtrace() if needed.
+
+Signed-off-by: Ross Burton <ross.burton@arm.com>
+Reviewed-by: Zhihao Cheng <chengzhihao1@huawei.com>
+Signed-off-by: David Oberhollenzer <david.oberhollenzer@sigma-star.at>
+---
+ ubifs-utils/Makemodule.am | 4 ++--
+ ubifs-utils/common/defs.h | 5 ++++-
+ 2 files changed, 6 insertions(+), 3 deletions(-)
+
+--- a/ubifs-utils/Makemodule.am
++++ b/ubifs-utils/Makemodule.am
+@@ -72,7 +72,7 @@ mkfs_ubifs_SOURCES = \
+ 	ubifs-utils/mkfs.ubifs/mkfs.ubifs.c
+ 
+ mkfs_ubifs_LDADD = libmtd.a libubi.a $(ZLIB_LIBS) $(LZO_LIBS) $(ZSTD_LIBS) $(UUID_LIBS) $(LIBSELINUX_LIBS) $(OPENSSL_LIBS) \
+-		   $(DUMP_STACK_LD) $(ASAN_LIBS) -lm -lpthread
++		   $(DUMP_STACK_LD) $(ASAN_LIBS) -lm -lpthread libmissing.a
+ mkfs_ubifs_CPPFLAGS = $(AM_CPPFLAGS) $(ZLIB_CFLAGS) $(LZO_CFLAGS) $(ZSTD_CFLAGS) $(UUID_CFLAGS) $(LIBSELINUX_CFLAGS) \
+ 	-I$(top_srcdir)/ubi-utils/include -I$(top_srcdir)/ubifs-utils/common -I $(top_srcdir)/ubifs-utils/libubifs
+ 
+@@ -90,7 +90,7 @@ fsck_ubifs_SOURCES = \
+ 	ubifs-utils/fsck.ubifs/handle_disconnected.c
+ 
+ fsck_ubifs_LDADD = libmtd.a libubi.a $(ZLIB_LIBS) $(LZO_LIBS) $(ZSTD_LIBS) $(UUID_LIBS) $(LIBSELINUX_LIBS) $(OPENSSL_LIBS) \
+-		   $(DUMP_STACK_LD) $(ASAN_LIBS) -lm -lpthread
++		   $(DUMP_STACK_LD) $(ASAN_LIBS) -lm -lpthread libmissing.a
+ fsck_ubifs_CPPFLAGS = $(AM_CPPFLAGS) $(ZLIB_CFLAGS) $(LZO_CFLAGS) $(ZSTD_CFLAGS) $(UUID_CFLAGS) $(LIBSELINUX_CFLAGS) \
+ 	-I$(top_srcdir)/ubi-utils/include -I$(top_srcdir)/ubifs-utils/common -I $(top_srcdir)/ubifs-utils/libubifs \
+ 	-I$(top_srcdir)/ubifs-utils/fsck.ubifs
+--- a/ubifs-utils/common/defs.h
++++ b/ubifs-utils/common/defs.h
+@@ -13,8 +13,11 @@
+ #include <errno.h>
+ #include <time.h>
+ #include <assert.h>
++#if HAVE_EXECINFO_H
+ #include <execinfo.h>
+-
++#else
++#include "libmissing.h"
++#endif
+ #include "ubifs.h"
+ 
+ /* common.h requires the PROGRAM_NAME macro */

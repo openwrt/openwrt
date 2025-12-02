@@ -29,7 +29,6 @@
 
 	gpio_export {
 		compatible = "gpio-export";
-		#size-cells = <0>;
 
 		bt_pwr {
 			gpio-export,name = "bt_pwr";
@@ -258,6 +257,15 @@
 				label = "devinfo";
 				reg = <0x1060000 0x20000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "ascii-eq-delim-env";
+
+					hw_mac_addr: hw_mac_addr {
+						compatible = "mac-base";
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@1080000 {
@@ -447,6 +455,8 @@
 	phy-mode = "qsgmii";
 	phy-handle = <&qca8075_0>;
 	label = "lan1";
+	nvmem-cells = <&hw_mac_addr 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &dp2 {
@@ -454,6 +464,8 @@
 	phy-mode = "qsgmii";
 	phy-handle = <&qca8075_1>;
 	label = "lan2";
+	nvmem-cells = <&hw_mac_addr 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &dp3 {
@@ -461,6 +473,8 @@
 	phy-mode = "qsgmii";
 	phy-handle = <&qca8075_2>;
 	label = "lan3";
+	nvmem-cells = <&hw_mac_addr 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &dp4 {
@@ -468,6 +482,8 @@
 	phy-mode = "qsgmii";
 	phy-handle = <&qca8075_3>;
 	label = "lan4";
+	nvmem-cells = <&hw_mac_addr 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &dp6_syn {
@@ -475,6 +491,8 @@
 	phy-mode = "usxgmii";
 	phy-handle = <&aqr114c>;
 	label = "wan";
+	nvmem-cells = <&hw_mac_addr 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &ssphy_0 {
@@ -496,15 +514,10 @@
 &pcie0 {
 	status = "okay";
 
-	perst-gpio = <&tlmm 61 GPIO_ACTIVE_LOW>;
+	perst-gpios = <&tlmm 61 GPIO_ACTIVE_LOW>;
 
-	bridge@0,0 {
-		reg = <0x00000000 0 0 0 0>;
-		#address-cells = <3>;
-		#size-cells = <2>;
-		ranges;
-
-		wifi@1,0 {
+	pcie@0 {
+		wifi@0,0 {
 			status = "okay";
 
 			/* ath11k has no DT compatible for PCI cards */

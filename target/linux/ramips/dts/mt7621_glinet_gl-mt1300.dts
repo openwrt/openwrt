@@ -101,6 +101,12 @@
 						reg = <0x0 0x4da8>;
 					};
 
+					macaddr_factory_4: macaddr@4 {
+						compatible = "mac-base";
+						reg = <0x4 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+
 					macaddr_factory_4000: macaddr@4000 {
 						compatible = "mac-base";
 						reg = <0x4000 0x6>;
@@ -128,6 +134,15 @@
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&eeprom_factory_0>;
 		nvmem-cell-names = "eeprom";
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		band@1 {
+			reg = <1>;
+			nvmem-cells = <&macaddr_factory_4 1>;
+			nvmem-cell-names = "mac-address";
+		};
 	};
 };
 

@@ -67,14 +67,8 @@
 &gmac1 {
 	status = "okay";
 	label = "wan";
-	phy-handle = <&ethphy4>;
-
 	nvmem-cells = <&macaddr_factory_8004 (-3)>;
 	nvmem-cell-names = "mac-address";
-};
-
-&ethphy4 {
-	/delete-property/ interrupts;
 };
 
 &nand {
@@ -101,7 +95,7 @@
 			reg = <0x0100000 0x0080000>;
 			read-only;
 
-			nvmem-layout {
+			nvmem_layout: nvmem-layout {
 				compatible = "fixed-layout";
 				#address-cells = <1>;
 				#size-cells = <1>;
@@ -166,7 +160,6 @@
 	ports {
 		port@1 {
 			status = "okay";
-			label = "lan3";
 		};
 
 		port@2 {
@@ -176,7 +169,6 @@
 
 		port@3 {
 			status = "okay";
-			label = "lan1";
 		};
 	};
 };

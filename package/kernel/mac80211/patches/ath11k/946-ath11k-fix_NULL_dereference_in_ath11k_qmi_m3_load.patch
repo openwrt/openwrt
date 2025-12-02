@@ -1,0 +1,40 @@
+From 888830b2cbc035838bebefe94502976da94332a5 Mon Sep 17 00:00:00 2001
+From: Matvey Kovalev <matvey.kovalev@ispras.ru>
+Date: Wed, 17 Sep 2025 22:20:01 +0300
+Subject: wifi: ath11k: fix NULL dereference in ath11k_qmi_m3_load()
+
+commit 3fd2ef2ae2b5c955584a3bee8e83ae7d7a98f782 upstream.
+
+If ab->fw.m3_data points to data, then fw pointer remains null.
+Further, if m3_mem is not allocated, then fw is dereferenced to be
+passed to ath11k_err function.
+
+Replace fw->size by m3_len.
+
+Found by Linux Verification Center (linuxtesting.org) with SVACE.
+
+Fixes: 7db88b962f06 ("wifi: ath11k: add firmware-2.bin support")
+Cc: stable@vger.kernel.org
+Signed-off-by: Matvey Kovalev <matvey.kovalev@ispras.ru>
+Reviewed-by: Baochen Qiang <baochen.qiang@oss.qualcomm.com>
+Reviewed-by: Vasanthakumar Thiagarajan <vasanthakumar.thiagarajan@oss.qualcomm.com>
+Link: https://patch.msgid.link/20250917192020.1340-1-matvey.kovalev@ispras.ru
+Signed-off-by: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/net/wireless/ath/ath11k/qmi.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+(limited to 'drivers/net/wireless/ath/ath11k')
+
+--- a/drivers/net/wireless/ath/ath11k/qmi.c
++++ b/drivers/net/wireless/ath/ath11k/qmi.c
+@@ -2576,7 +2576,7 @@ static int ath11k_qmi_m3_load(struct ath
+ 					   GFP_KERNEL);
+ 	if (!m3_mem->vaddr) {
+ 		ath11k_err(ab, "failed to allocate memory for M3 with size %zu\n",
+-			   fw->size);
++			   m3_len);
+ 		ret = -ENOMEM;
+ 		goto out;
+ 	}

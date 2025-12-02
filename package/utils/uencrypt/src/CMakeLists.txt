@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2022 Eneas Ulir de Queiroz
 
-cmake_minimum_required(VERSION 2.8.12 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.10)
 project(uencrypt LANGUAGES C)
 
 option(USE_WOLFSSL "Use WolfSSL as crypto provider" OFF)

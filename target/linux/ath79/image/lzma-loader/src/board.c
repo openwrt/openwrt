@@ -219,7 +219,9 @@ static inline void huawei_ap_init(void)
 static inline void huawei_ap_init(void) {}
 #endif
 
-#if defined(CONFIG_BOARD_NEC_WG1400HP) || \
+#if defined(CONFIG_BOARD_NEC_WF1200HP) || \
+    defined(CONFIG_BOARD_NEC_WF1200HP2) || \
+    defined(CONFIG_BOARD_NEC_WG1400HP) || \
     defined(CONFIG_BOARD_NEC_WG1800HP) || \
     defined(CONFIG_BOARD_NEC_WG1800HP2) || \
     defined(CONFIG_BOARD_NEC_WG2200HP) || \
@@ -262,7 +264,9 @@ static inline void nec_aterm_reset_common(void)
 }
 #endif
 
-#if defined(CONFIG_BOARD_NEC_WG600HP) || \
+#if defined(CONFIG_BOARD_NEC_WF1200HP) || \
+    defined(CONFIG_BOARD_NEC_WF1200HP2) || \
+    defined(CONFIG_BOARD_NEC_WG600HP) || \
     defined(CONFIG_BOARD_NEC_WR8750N) || \
     defined(CONFIG_BOARD_NEC_WR9500N)
 

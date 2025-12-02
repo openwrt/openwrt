@@ -1,0 +1,25 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Fri, 9 May 2025 20:01:14 +0800
+Subject: [PATCH] add missing header platform_device.h
+
+Fix compilation error:
+
+/home/db/owrt/build_dir/target-mips_24kc_musl/linux-lantiq_xway/ltq-dsl-danube/drv_dsl_cpe_api-3.24.4.4/src/common/drv_dsl_cpe_os_linux.c:1155:15: error: variable 'ltq_adsl_driver' has initializer but incomplete type
+ 1155 | static struct platform_driver ltq_adsl_driver = {
+      |               ^~~~~~~~~~~~~~~
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ src/common/drv_dsl_cpe_os_linux.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/src/common/drv_dsl_cpe_os_linux.c
++++ b/src/common/drv_dsl_cpe_os_linux.c
+@@ -13,6 +13,7 @@
+ #define DSL_INTERN
+ #include <linux/kthread.h>
+ #include <linux/of_platform.h>
++#include <linux/platform_device.h>
+ 
+ #include "drv_dsl_cpe_api.h"
+ #include "drv_dsl_cpe_api_ioctl.h"

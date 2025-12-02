@@ -63,7 +63,7 @@
 
 &leds {
 	status = "okay";
-	
+
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_leds>;
 
@@ -137,9 +137,6 @@
 		spi-rx-bus-width = <2>;
 		reg = <0>;
 
-		#address-cells = <1>;
-		#size-cells = <1>;
-
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
@@ -206,14 +203,15 @@
 		#size-cells = <2>;
 		#address-cells = <3>;
 		device_type = "pci";
+		ranges;
 
-		ath9k: wifi@168c,002e {
+		ath9k: wifi@0,0 {
 			compatible = "pci168c,002e";
 			reg = <0 0 0 0 0>;
 
 			nvmem-cells = <&macaddr_cfe_6a0 1>, <&cal_data_1000>;
 			nvmem-cell-names = "mac-address", "calibration";
-			
+
 			#gpio-cells = <2>;
 			gpio-controller;
 		};

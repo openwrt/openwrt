@@ -241,7 +241,7 @@ static int mtdsplit_parse_elf(struct mtd_info *mtd,
 
 	if (rootfs_offset == mtd->size) {
 		pr_debug("no rootfs found in \"%s\"\n", mtd->name);
-		return -ENODEV;
+		return -ENOENT;
 	}
 
 	parts = kzalloc(ELF_NR_PARTS * sizeof(*parts), GFP_KERNEL);

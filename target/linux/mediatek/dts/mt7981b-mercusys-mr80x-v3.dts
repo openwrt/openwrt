@@ -4,7 +4,7 @@
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/gpio/gpio.h>
 
-#include "mt7981.dtsi"
+#include "mt7981b.dtsi"
 / {
 	model = "MERCUSYS MR80X v3";
 	compatible = "mercusys,mr80x-v3", "mediatek,mt7981";
@@ -22,8 +22,9 @@
 		stdout-path = "serial0:115200n8";
 	};
 
-	memory {
+	memory@40000000 {
 		reg = <0 0x40000000 0 0x20000000>;
+		device_type = "memory";
 	};
 
 	keys {
@@ -161,8 +162,6 @@
 	status = "okay";
 
 	spi_nand: spi_nand@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "spi-nand";
 		reg = <0>;
 		spi-max-frequency = <52000000>;

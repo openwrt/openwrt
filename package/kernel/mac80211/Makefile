@@ -10,13 +10,13 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mac80211
 
-PKG_VERSION:=6.12.6
+PKG_VERSION:=6.16
 PKG_RELEASE:=1
 PKG_LICENSE:=GPL-2.0-only
 PKG_LICENSE_FILES:=COPYING
 
-PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources/
-PKG_HASH:=28ec39425a1b3270e1422d92a8131a6a3d8919cc13e8ee250c315e55d922ba68
+PKG_SOURCE_URL:=@OPENWRT
+PKG_HASH:=67f11320509dd18e5e2c58cb81e9f6c7d19b09f5229baa5880ed4dab71c19052
 
 PKG_SOURCE:=backports-$(PKG_VERSION).tar.xz
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(if $(BUILD_VARIANT),$(PKG_NAME)-$(BUILD_VARIANT)/)backports-$(PKG_VERSION)
@@ -95,6 +95,7 @@ include ralink.mk
 include realtek.mk
 
 PKG_CONFIG_DEPENDS += \
+	CONFIG_WIFI_SCRIPTS_UCODE \
 	$(patsubst %,CONFIG_PACKAGE_kmod-%,$(PKG_DRIVERS))
 
 define KernelPackage/cfg80211
@@ -334,7 +335,6 @@ ifeq ($(strip $(CONFIG_EXTERNAL_KERNEL_TREE)),"")
   ifeq ($(strip $(CONFIG_KERNEL_GIT_CLONE_URI)),"")
     define Build/Configure
 	  cmp $(PKG_BUILD_DIR)/include/linux/ath5k_platform.h $(LINUX_DIR)/include/linux/ath5k_platform.h
-	  cmp $(PKG_BUILD_DIR)/include/linux/rt2x00_platform.h $(LINUX_DIR)/include/linux/rt2x00_platform.h
     endef
   endif
 endif

@@ -99,4 +99,4 @@ method.
 +	hapd->openwrt_stats.wnm.bss_transition_request_tx++;
  	if (disassoc_timer) {
  #ifdef CONFIG_IEEE80211BE
- 		if (ap_sta_is_mld(hapd, sta)) {
+ 		/* Link removal is scheduled only when the Link Removal Imminent

@@ -108,8 +108,9 @@
 		};
 	};
 
-	memory {
+	memory@40000000 {
 		reg = <0 0x40000000 0 0x40000000>;
+		device_type = "memory";
 	};
 };
 
@@ -206,7 +207,8 @@
 			compatible = "ethernet-phy-ieee802.3-c45";
 			reg = <7>;
 			reset-gpios = <&pio 101 GPIO_ACTIVE_LOW>;
-			interrupts = <52 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&pio>;
+			interrupts = <77 IRQ_TYPE_LEVEL_LOW>;
 			reset-assert-us = <100000>;
 			reset-deassert-us = <100000>;
 		};

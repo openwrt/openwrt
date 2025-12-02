@@ -6,9 +6,9 @@
 
 board=$(board_name)
 
-dt_base64_extract() {
+base64_extract() {
 	local target_dir="/sys$DEVPATH"
-	local source="$target_dir/../../of_node/qcom,ath10k-calibration-data-base64"
+	local source="$1"
 
 	[ -e "$source" ] || caldata_die "cannot find base64 calibration data: $source"
 	[ -d "$target_dir" ] || \
@@ -28,9 +28,9 @@ dt_base64_extract() {
 case "$FIRMWARE" in
 "ath10k/cal-pci-0000:01:00.0.bin")
 	case "$board" in
-	asus,onhub |\
+	asus,onhub|\
 	tplink,onhub)
-		dt_base64_extract
+		base64_extract /sys/firmware/vpd/ro/wifi_base64_calibration0
 		;;
 	meraki,mr52)
 		CI_UBIPART=art
@@ -59,9 +59,9 @@ case "$FIRMWARE" in
 	;;
 "ath10k/cal-pci-0001:01:00.0.bin")
 	case "$board" in
-	asus,onhub |\
+	asus,onhub|\
 	tplink,onhub)
-		dt_base64_extract
+		base64_extract /sys/firmware/vpd/ro/wifi_base64_calibration1
 		;;
 	esac
 	;;
@@ -73,7 +73,7 @@ case "$FIRMWARE" in
 	edgecore,ecw5410)
 		caldata_extract "0:art" 0x1000 0x2f20
 		;;
-	meraki,mr42 |\
+	meraki,mr42|\
 	meraki,mr52)
 		CI_UBIPART=art
 		caldata_extract_ubi "ART" 0x5000 0x2f20
@@ -90,9 +90,9 @@ case "$FIRMWARE" in
 	;;
 "ath10k/cal-pci-0002:01:00.0.bin")
 	case "$board" in
-	asus,onhub |\
+	asus,onhub|\
 	tplink,onhub)
-		dt_base64_extract
+		base64_extract /sys/firmware/vpd/ro/wifi_base64_calibration2
 		;;
 	meraki,mr42)
 		CI_UBIPART=art

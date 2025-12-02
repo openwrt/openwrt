@@ -35,12 +35,6 @@
 			linux,default-trigger = "phy0tpt";
 		};
 
-		wlan2g {
-			label = "green:wlan2g";
-			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
-		};
-
 		notification {
 			label = "amber:notification";
 			gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
@@ -148,6 +142,10 @@
 					#address-cells = <1>;
 					#size-cells = <1>;
 
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+
 					cal_art_5000: calibration@5000 {
 						reg = <0x5000 0x844>;
 					};
@@ -181,7 +179,7 @@
 	status = "okay";
 
 	wifi@0,0 {
-		compatible = "pci168c,003c";
+		compatible = "qcom,ath10k";
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&cal_art_5000>;
 		nvmem-cell-names = "calibration";
@@ -199,5 +197,11 @@
 &wmac {
 	status = "okay";
 
-	qca,no-eeprom;
+	nvmem-cells = <&cal_art_1000>;
+	nvmem-cell-names = "calibration";
+
+	led {
+		led-sources = <22>;
+		led-active-low;
+	};
 };

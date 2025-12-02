@@ -1,0 +1,49 @@
+--- a/doc/apk.8.scd
++++ b/doc/apk.8.scd
+@@ -462,7 +462,8 @@ timeout 120
+ */lib/apk/db/installed*
+ 	Database of installed packages and their contents.
+ 
+-*/lib/apk/db/scripts.tar*
++*/lib/apk/db/scripts.tar*++
++*/lib/apk/db/scripts.tar.gz*
+ 	Collection of all package scripts from currently installed packages.
+ 
+ */lib/apk/db/triggers*
+--- a/src/apk_database.h
++++ b/src/apk_database.h
+@@ -210,6 +210,7 @@ struct apk_database {
+ 	unsigned int compat_depversions : 1;
+ 	unsigned int sorted_names : 1;
+ 	unsigned int sorted_installed_packages : 1;
++	unsigned int scripts_tar : 1;
+ 
+ 	struct apk_dependency_array *world;
+ 	struct apk_id_cache *id_cache;
+--- a/src/database.c
++++ b/src/database.c
+@@ -1338,8 +1338,11 @@ static int apk_db_read_layer(struct apk_
+ 	}
+ 
+ 	if (!(flags & APK_OPENF_NO_SCRIPTS)) {
+-		r = apk_tar_parse(apk_istream_from_file(fd, "scripts.tar"),
+-				  apk_read_script_archive_entry, db, db->id_cache);
++		struct apk_istream *is = apk_istream_from_file(fd, "scripts.tar");
++		if (!IS_ERR(is) || PTR_ERR(is) != -ENOENT) db->scripts_tar = 1;
++		else is = apk_istream_gunzip(apk_istream_from_file(fd, "scripts.tar.gz"));
++
++		r = apk_tar_parse(is, apk_read_script_archive_entry, db, db->id_cache);
+ 		if (!ret && r != -ENOENT) ret = r;
+ 	}
+ 
+@@ -2214,8 +2217,9 @@ static int apk_db_write_layers(struct ap
+ 			continue;
+ 		}
+ 		ld->installed = apk_ostream_to_file(ld->fd, "installed", 0644);
+-		ld->scripts   = apk_ostream_to_file(ld->fd, "scripts.tar", 0644);
+ 		ld->triggers  = apk_ostream_to_file(ld->fd, "triggers", 0644);
++		if (db->scripts_tar) ld->scripts = apk_ostream_to_file(ld->fd, "scripts.tar", 0644);
++		else ld->scripts = apk_ostream_gzip(apk_ostream_to_file(ld->fd, "scripts.tar.gz", 0644));
+ 
+ 		if (i == APK_DB_LAYER_ROOT)
+ 			os = apk_ostream_to_file(db->root_fd, apk_world_file, 0644);

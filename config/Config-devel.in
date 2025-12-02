@@ -62,6 +62,60 @@ menuconfig DEVEL
 		  Compile all host host tools even if not needed. This is needed to prepare a
 		  universal precompiled host tools archive to use in another buildroot.
 
+	menuconfig OPTIMIZE_HOST_TOOLS
+		bool "Host Tools compile options" if DEVEL
+
+		if OPTIMIZE_HOST_TOOLS
+
+		config HOST_FLAGS_OPT
+			string "Host Tools optimization flags"
+			default "-O2"
+			help
+			  Compiler flags which are used to build host tools.
+
+			  E.g.: "-O2", "-O3 -fno-tree-vectorize".
+
+			  Default is "-O2".
+
+		config HOST_TOOLS_STRIP
+			bool "Strip Host Tools"
+			help
+			  Instructs compiler/linker to use flags from HOST_FLAGS_STRIP
+			  in order to reduce binary size of host tools.
+
+		config HOST_FLAGS_STRIP
+			string "Host Tools compiler/linker flags for stripping symbols"
+			depends on HOST_TOOLS_STRIP
+			default "-Wl,-s"
+			help
+			  Compiler flags which are used to strip symbols from host tools.
+
+			  Each flag should be prefixed with "-Wl," string
+			  because compiler (GCC) passes this value to linker.
+
+			  Default is "-Wl,-s" which means "strip all symbols" - specifically,
+			  debug symbols and other symbols not needed for relocation processing.
+
+		comment "Host Tools miscellaneous flags"
+
+		config HOST_EXTRA_CFLAGS
+			string "Host Tools extra CFLAGS"
+			default ""
+
+		config HOST_EXTRA_CXXFLAGS
+			string "Host Tools extra CXXFLAGS"
+			default ""
+
+		config HOST_EXTRA_CPPFLAGS
+			string "Host Tools extra CPPFLAGS"
+			default ""
+
+		config HOST_EXTRA_LDFLAGS
+			string "Host Tools extra LDFLAGS"
+			default ""
+
+		endif
+
 	config BUILD_SUFFIX
 		string "Build suffix to append to the target BUILD_DIR variable" if DEVEL
 		default ""

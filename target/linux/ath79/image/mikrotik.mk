@@ -1,5 +1,16 @@
 include ./common-mikrotik.mk
 
+define Device/mikrotik_routerboard-2011uias-2hnd
+  $(Device/mikrotik_nand)
+  SOC := ar9344
+  DEVICE_MODEL := RouterBOARD 2011UiAS-2HnD
+  DEVICE_PACKAGES += kmod-usb2 kmod-i2c-gpio kmod-sfp kmod-gpio-beeper
+  SUPPORTED_DEVICES += rb-2011l rb-2011il rb-2011ils \
+	rb-2011uas rb-2011uas-2hnd rb-2011uias \
+	rb-2011uias-2hnd rb-2011uias-2hnd-r2
+endef
+TARGET_DEVICES += mikrotik_routerboard-2011uias-2hnd
+
 define Device/mikrotik_routerboard-493g
   $(Device/mikrotik_nand)
   SOC := ar7161

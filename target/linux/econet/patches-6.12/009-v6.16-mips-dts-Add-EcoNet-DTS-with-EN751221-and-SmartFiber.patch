@@ -1,0 +1,149 @@
+From 0ec4887009729297f7c10368084e41a8a9fbbd0e Mon Sep 17 00:00:00 2001
+From: Caleb James DeLisle <cjd@cjdns.fr>
+Date: Wed, 7 May 2025 13:44:59 +0000
+Subject: [PATCH] mips: dts: Add EcoNet DTS with EN751221 and SmartFiber
+ XP8421-B board
+
+Add DTS files in support of EcoNet platform, including SmartFiber XP8421-B,
+a low cost commercially available board based on EN751221.
+
+Signed-off-by: Caleb James DeLisle <cjd@cjdns.fr>
+Signed-off-by: Thomas Bogendoerfer <tsbogend@alpha.franken.de>
+---
+ arch/mips/boot/dts/Makefile                   |  1 +
+ arch/mips/boot/dts/econet/Makefile            |  2 +
+ arch/mips/boot/dts/econet/en751221.dtsi       | 67 +++++++++++++++++++
+ .../econet/en751221_smartfiber_xp8421-b.dts   | 19 ++++++
+ arch/mips/econet/Kconfig                      | 11 +++
+ 5 files changed, 100 insertions(+)
+ create mode 100644 arch/mips/boot/dts/econet/Makefile
+ create mode 100644 arch/mips/boot/dts/econet/en751221.dtsi
+ create mode 100644 arch/mips/boot/dts/econet/en751221_smartfiber_xp8421-b.dts
+
+--- a/arch/mips/boot/dts/Makefile
++++ b/arch/mips/boot/dts/Makefile
+@@ -1,6 +1,7 @@
+ # SPDX-License-Identifier: GPL-2.0
+ subdir-$(CONFIG_BMIPS_GENERIC)		+= brcm
+ subdir-$(CONFIG_CAVIUM_OCTEON_SOC)	+= cavium-octeon
++subdir-$(CONFIG_ECONET)			+= econet
+ subdir-$(CONFIG_EYEQ)			+= mobileye
+ subdir-$(CONFIG_FIT_IMAGE_FDT_MARDUK)   += img
+ subdir-$(CONFIG_FIT_IMAGE_FDT_BOSTON)	+= img
+--- /dev/null
++++ b/arch/mips/boot/dts/econet/Makefile
+@@ -0,0 +1,2 @@
++# SPDX-License-Identifier: GPL-2.0
++dtb-$(CONFIG_DTB_ECONET_SMARTFIBER_XP8421_B)	+= en751221_smartfiber_xp8421-b.dtb
+--- /dev/null
++++ b/arch/mips/boot/dts/econet/en751221.dtsi
+@@ -0,0 +1,67 @@
++// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++/dts-v1/;
++
++/ {
++	compatible = "econet,en751221";
++	#address-cells = <1>;
++	#size-cells = <1>;
++
++	hpt_clock: clock {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <200000000>;  /* 200 MHz */
++	};
++
++	cpus: cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		cpu@0 {
++			device_type = "cpu";
++			compatible = "mips,mips24KEc";
++			reg = <0>;
++		};
++	};
++
++	cpuintc: interrupt-controller {
++		compatible = "mti,cpu-interrupt-controller";
++		interrupt-controller;
++		#address-cells = <0>;
++		#interrupt-cells = <1>;
++	};
++
++	intc: interrupt-controller@1fb40000 {
++		compatible = "econet,en751221-intc";
++		reg = <0x1fb40000 0x100>;
++		interrupt-parent = <&cpuintc>;
++		interrupts = <2>;
++
++		interrupt-controller;
++		#interrupt-cells = <1>;
++		econet,shadow-interrupts = <7 2>, <8 3>, <13 12>, <30 29>;
++	};
++
++	uart: serial@1fbf0000 {
++		compatible = "ns16550";
++		reg = <0x1fbf0000 0x30>;
++		reg-io-width = <4>;
++		reg-shift = <2>;
++		interrupt-parent = <&intc>;
++		interrupts = <0>;
++		/*
++		 * Conversion of baud rate to clock frequency requires a
++		 * computation that is not in the ns16550 driver, so this
++		 * uart is fixed at 115200 baud.
++		 */
++		clock-frequency = <1843200>;
++	};
++
++	timer_hpt: timer@1fbf0400 {
++		compatible = "econet,en751221-timer";
++		reg = <0x1fbf0400 0x100>;
++
++		interrupt-parent = <&intc>;
++		interrupts = <30>;
++		clocks = <&hpt_clock>;
++	};
++};
+--- /dev/null
++++ b/arch/mips/boot/dts/econet/en751221_smartfiber_xp8421-b.dts
+@@ -0,0 +1,19 @@
++// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++/dts-v1/;
++
++#include "en751221.dtsi"
++
++/ {
++	model = "SmartFiber XP8421-B";
++	compatible = "smartfiber,xp8421-b", "econet,en751221";
++
++	memory@0 {
++		device_type = "memory";
++		reg = <0x00000000 0x1c000000>;
++	};
++
++	chosen {
++		stdout-path = "/serial@1fbf0000:115200";
++		linux,usable-memory-range = <0x00020000 0x1bfe0000>;
++	};
++};
+--- a/arch/mips/econet/Kconfig
++++ b/arch/mips/econet/Kconfig
+@@ -32,6 +32,17 @@ choice
+ 
+ 	config DTB_ECONET_NONE
+ 		bool "None"
++
++	config DTB_ECONET_SMARTFIBER_XP8421_B
++		bool "EN751221 SmartFiber XP8421-B"
++		depends on SOC_ECONET_EN751221
++		select BUILTIN_DTB
++		help
++		  The SmartFiber XP8421-B is a device based on the EN751221 SoC.
++		  It has 512MB of memory and 256MB of NAND flash. This kernel
++		  needs only an appended initramfs to boot. It can be loaded
++		  through XMODEM and booted from memory in the bootloader, or
++		  it can be packed in tclinux.trx format and written to flash.
+ endchoice
+ 
+ endif

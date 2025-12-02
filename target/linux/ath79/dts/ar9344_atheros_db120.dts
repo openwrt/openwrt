@@ -21,12 +21,6 @@
 	leds {
 		compatible = "gpio-leds";
 
-		wlan2g {
-			label = "green:wlan2g";
-			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
-		};
-
 		wlan5g {
 			label = "green:wlan5g";
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
@@ -45,16 +39,6 @@
 			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&hub_port>;
 			linux,default-trigger = "usbport";
-		};
-	};
-
-	leds-ath9k {
-		compatible = "gpio-leds";
-
-		wlan5g-ath {
-			label = "green:wlan5g-ath";
-			gpios = <&ath9k 0 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
 		};
 	};
 
@@ -225,14 +209,17 @@
 &pcie {
 	status = "okay";
 
-	ath9k: wifi@0,0 {
+	wifi@0,0 {
 		compatible = "pci168c,0030";
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&calibration_art_5000>;
 		nvmem-cell-names = "calibration";
 		ieee80211-freq-limit = <4900000 5990000>;
-		#gpio-cells = <2>;
-		gpio-controller;
+
+		led {
+			led-sources = <0>;
+			led-active-low;
+		};
 	};
 };
 
@@ -241,6 +228,11 @@
 
 	nvmem-cells = <&calibration_art_1000>;
 	nvmem-cell-names = "calibration";
+
+	led {
+		led-sources = <13>;
+		led-active-low;
+	};
 };
 
 &usb {

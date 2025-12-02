@@ -70,7 +70,8 @@ ifneq ($(CONFIG_USE_APK),)
 	(cd $(PACKAGE_DIR_ALL) && $(STAGING_DIR_HOST)/bin/apk mkndx \
 			--root $(TOPDIR) \
 			--keys-dir $(TOPDIR) \
-			--sign $(BUILD_KEY_APK_SEC) \
+			--allow-untrusted \
+			$(if $(CONFIG_SIGNED_PACKAGES),--sign $(BUILD_KEY_APK_SEC),) \
 			--output packages.adb \
 			*.apk; \
 	)
@@ -100,6 +101,7 @@ ifneq ($(CONFIG_USE_APK),)
 	    $(foreach pkg,$(shell cat $(PACKAGE_INSTALL_FILES) 2>/dev/null),$(pkg)$(call GetABISuffix,$(pkg))))
 	$(call apk,$(TARGET_DIR)) add --no-cache --initdb --no-scripts --arch $(ARCH_PACKAGES) \
 		--repositories-file /dev/null --repository file://$(PACKAGE_DIR_ALL)/packages.adb \
+		$(if $(CONFIG_SIGNED_PACKAGES),,--allow-untrusted) \
 		$$(cat $(TMP_DIR)/apk_install_list) \
 			"base-files=$(shell cat $(TMP_DIR)/base-files.version)" \
 			"libc=$(shell cat $(TMP_DIR)/libc.version)" \
@@ -133,14 +135,12 @@ ifneq ($(CONFIG_USE_APK),)
 		$(STAGING_DIR_HOST)/bin/apk mkndx \
 			--root $(TOPDIR) \
 			--keys-dir $(TOPDIR) \
-			--sign $(BUILD_KEY_APK_SEC) \
+			--allow-untrusted \
+			$(if $(CONFIG_SIGNED_PACKAGES),--sign $(BUILD_KEY_APK_SEC),) \
 			--output packages.adb \
 			*.apk; \
-		echo -n '{"architecture": "$(ARCH_PACKAGES)", "packages":{' > index.json; \
-		$(STAGING_DIR_HOST)/bin/apk adbdump packages.adb | \
-			awk '/- name: / {pkg = $$NF} ; / version: / {printf "\"%s\": \"%s\", ", pkg, $$NF}' | \
-			sed 's/, $$//' >> index.json; \
-		echo '}}' >> index.json; \
+		$(STAGING_DIR_HOST)/bin/apk adbdump --format json packages.adb | \
+			$(SCRIPT_DIR)/make-index-json.py -f apk -a "$(ARCH_PACKAGES)" - > index.json; \
 	done
 else
 	@for d in $(PACKAGE_SUBDIRS); do ( \
@@ -152,10 +152,7 @@ else
 			$(call ERROR_MESSAGE,WARNING: Applying padding in $$d/Packages to workaround usign SHA-512 bug!); \
 			{ echo ""; echo ""; } >> Packages;; \
 		esac; \
-		echo -n '{"architecture": "$(ARCH_PACKAGES)", "packages":{' > index.json; \
-		sed -n -e 's/^Package: \(.*\)$$/"\1":/p' -e 's/^Version: \(.*\)$$/"\1",/p' Packages | tr '\n' ' ' >> index.json; \
-		echo '}}' >> index.json; \
-		sed -i 's/, }}/}}/' index.json; \
+		$(SCRIPT_DIR)/make-index-json.py -f opkg -a "$(ARCH_PACKAGES)" Packages > index.json; \
 		gzip -9nc Packages > Packages.gz; \
 	); done
 ifdef CONFIG_SIGNED_PACKAGES
@@ -175,6 +172,7 @@ ifdef CONFIG_JSON_CYCLONEDX_SBOM
 	); done
 endif
 endif
+	$(call sha256sums,$(OUTPUT_DIR)/packages/$(ARCH_PACKAGES),1)
 
 $(curdir)/flags-install:= -j1
 

@@ -39,6 +39,42 @@ endef
 $(eval $(call KernelPackage,rp1-cfe))
 
 
+define KernelPackage/rpi-panel-attiny-regulator
+  TITLE:=Raspberry Pi 7-inch touchscreen panel ATTINY regulator
+  SUBMENU:=$(VIDEO_MENU)
+  KCONFIG:=CONFIG_REGULATOR_RASPBERRYPI_TOUCHSCREEN_ATTINY
+  FILES:=$(LINUX_DIR)/drivers/regulator/rpi-panel-attiny-regulator.ko
+  AUTOLOAD:=$(call AutoLoad,67,rpi-panel-attiny-regulator)
+  DEPENDS:=@TARGET_bcm27xx +kmod-regmap-i2c +kmod-backlight
+endef
+
+define KernelPackage/rpi-panel-attiny-regulator/description
+ Driver for the ATTINY regulator on the Raspberry Pi 7-inch
+ touchscreen unit. The regulator is used to enable power to the
+ TC358762, display and to control backlight.
+endef
+
+$(eval $(call KernelPackage,rpi-panel-attiny-regulator))
+
+
+define KernelPackage/rpi-panel-7inch-touchscreen
+  TITLE:=Raspberry Pi 7-inch touchscreen panel
+  SUBMENU:=$(VIDEO_MENU)
+  KCONFIG:= \
+    CONFIG_DRM_PANEL_RASPBERRYPI_TOUCHSCREEN
+    CONFIG_DRM_MIPI_DSI=y
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/panel/panel-raspberrypi-touchscreen.ko
+  AUTOLOAD:=$(call AutoProbe,panel-raspberrypi-touchscreen)
+  DEPENDS:=@TARGET_bcm27xx +kmod-drm
+endef
+
+define KernelPackage/rpi-panel-7inch-touchscreen/description
+ Driver for the Raspberry Pi 7" Touchscreen.
+endef
+
+$(eval $(call KernelPackage,rpi-panel-7inch-touchscreen))
+
+
 define KernelPackage/codec-bcm2835
   TITLE:=BCM2835 Video Codec
   KCONFIG:= \
@@ -55,6 +91,26 @@ define KernelPackage/codec-bcm2835/description
 endef
 
 $(eval $(call KernelPackage,codec-bcm2835))
+
+
+define KernelPackage/drm-v3d
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Broadcom V3D Graphics
+  DEPENDS:= \
+    @TARGET_bcm27xx_bcm2711||TARGET_bcm27xx_bcm2712 +kmod-drm \
+    +kmod-drm-shmem-helper +kmod-drm-sched
+  KCONFIG:=CONFIG_DRM_V3D
+  FILES:= \
+    $(LINUX_DIR)/drivers/gpu/drm/v3d/v3d.ko
+  AUTOLOAD:=$(call AutoProbe,v3d)
+endef
+
+define KernelPackage/drm-v3d/description
+  Broadcom V3D 3.x or newer GPUs. SoCs supported include the BCM2711,
+  BCM7268 and BCM7278.
+endef
+
+$(eval $(call KernelPackage,drm-v3d))
 
 
 define KernelPackage/drm-vc4
@@ -141,17 +197,13 @@ define KernelPackage/drm-rp1-dsi
   TITLE:=RP1 Display Serial Interface for Video
   KCONFIG:= \
     CONFIG_DRM_RP1_DSI \
-    CONFIG_DRM_GEM_DMA_HELPER \
-    CONFIG_DRM_KMS_HELPER \
     CONFIG_DRM_MIPI_DSI=y \
-    CONFIG_DRM_VRAM_HELPER=n \
-    CONFIG_DRM_TTM=n \
-    CONFIG_DRM_TTM_HELPER=n \
     CONFIG_GENERIC_PHY_MIPI_DPHY=n \
     CONFIG_DRM_WERROR=n
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/rp1/rp1-dsi/drm-rp1-dsi.ko
   AUTOLOAD:=$(call AutoLoad,67,drm-rp1-dsi)
-  DEPENDS:=@TARGET_bcm27xx_bcm2712 +kmod-drm-vc4
+  DEPENDS:=@TARGET_bcm27xx_bcm2712 +kmod-drm-vc4 \
+    +kmod-drm-dma-helper +kmod-drm-vram-helper
 endef
 
 define KernelPackage/drm-rp1-dsi/description
@@ -167,15 +219,12 @@ define KernelPackage/drm-rp1-dpi
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=RP1 Display Parallel Interface for Video
   KCONFIG:= \
-    CONFIG_DRM_RP1_DPI \
-    CONFIG_DRM_GEM_DMA_HELPER \
-    CONFIG_DRM_KMS_HELPER \
-    CONFIG_DRM_VRAM_HELPER=n \
-    CONFIG_DRM_TTM=n \
-    CONFIG_DRM_TTM_HELPER=n
+    CONFIG_DRM_RP1_DPI
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/rp1/rp1-dpi/drm-rp1-dpi.ko
   AUTOLOAD:=$(call AutoLoad,67,drm-rp1-dpi)
-  DEPENDS:=@TARGET_bcm27xx_bcm2712 +kmod-drm-vc4 +kmod-rp1-pio
+  DEPENDS:=@TARGET_bcm27xx_bcm2712 +kmod-drm-vc4 \
+    +kmod-drm-dma-helper +kmod-drm-vram-helper \
+    +kmod-rp1-pio
 endef
 
 define KernelPackage/drm-rp1-dpi/description
@@ -193,15 +242,11 @@ define KernelPackage/drm-rp1-vec
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=RP1 Display Composite Video
   KCONFIG:= \
-    CONFIG_DRM_RP1_VEC \
-    CONFIG_DRM_GEM_DMA_HELPER \
-    CONFIG_DRM_KMS_HELPER \
-    CONFIG_DRM_VRAM_HELPER=n \
-    CONFIG_DRM_TTM=n \
-    CONFIG_DRM_TTM_HELPER=n
+    CONFIG_DRM_RP1_VEC
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/rp1/rp1-vec/drm-rp1-vec.ko
   AUTOLOAD:=$(call AutoLoad,67,drm-rp1-vec)
-  DEPENDS:=@TARGET_bcm27xx_bcm2712 +kmod-drm-vc4
+  DEPENDS:=@TARGET_bcm27xx_bcm2712 +kmod-drm-vc4 \
+    +kmod-drm-dma-helper +kmod-drm-vram-helper
 endef
 
 define KernelPackage/drm-rp1-vec/description

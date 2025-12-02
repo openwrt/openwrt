@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/arch/arm/dts/mt7986a-glinet-gl-mt6000.dts
-@@ -0,0 +1,135 @@
+@@ -0,0 +1,131 @@
 +// SPDX-License-Identifier: GPL-2.0
 +
 +/dts-v1/;
@@ -46,7 +46,7 @@
 +
 +		wps {
 +			label = "reset";
-+			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
 +			linux,code = <KEY_RESTART>;
 +		};
 +	};
@@ -56,12 +56,12 @@
 +
 +		led_status_blue: green {
 +			label = "blue:status";
-+			gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 28 GPIO_ACTIVE_LOW>;
 +		};
 +
 +		led_status_white: blue {
 +			label = "white:status";
-+			gpios = <&gpio 27 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 27 GPIO_ACTIVE_LOW>;
 +		};
 +	};
 +
@@ -77,7 +77,7 @@
 +	mediatek,gmac-id = <0>;
 +	phy-mode = "2500base-x";
 +	mediatek,switch = "mt7531";
-+	reset-gpios = <&gpio 18 GPIO_ACTIVE_HIGH>;
++	reset-gpios = <&pio 18 GPIO_ACTIVE_HIGH>;
 +
 +	fixed-link {
 +		speed = <2500>;
@@ -85,7 +85,7 @@
 +	};
 +};
 +
-+&pinctrl {
++&pio {
 +	mmc0_pins_default: mmc0default {
 +		mux {
 +			function = "flash";
@@ -132,13 +132,9 @@
 +	non-removable;
 +	status = "okay";
 +};
-+
-+&wmcpu_emi {
-+	status = "disabled";
-+};
 --- /dev/null
 +++ b/configs/mt7986a_glinet_gl-mt6000_defconfig
-@@ -0,0 +1,104 @@
+@@ -0,0 +1,105 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -164,6 +160,7 @@
 +CONFIG_LOGLEVEL=7
 +CONFIG_PRE_CONSOLE_BUFFER=y
 +CONFIG_LOG=y
++# CONFIG_BOARD_INIT is not set
 +CONFIG_BOARD_LATE_INIT=y
 +CONFIG_HUSH_PARSER=y
 +CONFIG_SYS_PROMPT="MT7986> "
@@ -199,9 +196,9 @@
 +CONFIG_OF_EMBED=y
 +CONFIG_ENV_OVERWRITE=y
 +CONFIG_ENV_IS_IN_MMC=y
-+CONFIG_SYS_RELOC_GD_ENV_ADDR=y
-+CONFIG_USE_DEFAULT_ENV_FILE=y
-+CONFIG_DEFAULT_ENV_FILE="defenvs/glinet_gl-mt6000_env"
++CONFIG_ENV_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/glinet_gl-mt6000_env"
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
 +CONFIG_VERSION_VARIABLE=y
 +CONFIG_NETCONSOLE=y

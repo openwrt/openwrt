@@ -106,10 +106,10 @@ static int read_byte(void *object, unsigned char **buffer, UInt32 *bufferSize)
 		val = *(unsigned int *)data;
 		data += 4;
 	}
-	
+
 	*bufferSize = 1;
 	*buffer = ((unsigned char *)&val) + (offset++ & 3);
-	
+
 	return LZMA_RESULT_OK;
 }
 
@@ -117,12 +117,12 @@ static __inline__ unsigned char get_byte(void)
 {
 	unsigned char *buffer;
 	UInt32 fake;
-	
+
 	return read_byte(0, &buffer, &fake), *buffer;
 }
 
 /* should be the first function */
-void entry(unsigned long icache_size, unsigned long icache_lsize, 
+void entry(unsigned long icache_size, unsigned long icache_lsize,
 	unsigned long dcache_size, unsigned long dcache_lsize,
 	unsigned long fw_arg0, unsigned long fw_arg1,
 	unsigned long fw_arg2, unsigned long fw_arg3)
@@ -145,7 +145,7 @@ void entry(unsigned long icache_size, unsigned long icache_lsize,
 	if (((struct trx_header *)data)->magic == EDIMAX_PS_HEADER_MAGIC)
 		data += EDIMAX_PS_HEADER_LEN;
 	/* compressed kernel is in the partition 0 or 1 */
-	if (((struct trx_header *)data)->offsets[1] > 65536) 
+	if (((struct trx_header *)data)->offsets[1] > 65536)
 		data += ((struct trx_header *)data)->offsets[0];
 	else
 		data += ((struct trx_header *)data)->offsets[1];
@@ -168,7 +168,7 @@ void entry(unsigned long icache_size, unsigned long icache_lsize,
 		((unsigned int)get_byte() << 24);
 
 	/* skip rest of the header (upper half of uncompressed size) */
-	for (i = 0; i < 4; i++) 
+	for (i = 0; i < 4; i++)
 		get_byte();
 
 	/* decompress kernel */

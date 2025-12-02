@@ -69,6 +69,8 @@
 	pinctrl-0 = <&gphy0_led0_pins>, <&gphy0_led1_pins>, <&gphy0_led2_pins>,
 		    <&gphy1_led0_pins>, <&gphy1_led1_pins>, <&gphy1_led2_pins>;
 	pinctrl-names = "default";
+	nvmem-cells = <&macaddr_uboot_ethaddr 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &gswip_mdio {
@@ -79,14 +81,14 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			led-1 {
+			led@1 {
 				reg = <1>;
 				color = <LED_COLOR_ID_GREEN>;
 				function = LED_FUNCTION_LAN;
 
 			};
 
-			led-2 {
+			led@2 {
 				reg = <2>;
 				color = <LED_COLOR_ID_AMBER>;
 				function = LED_FUNCTION_LAN;
@@ -96,19 +98,19 @@
 	};
 	phy13: ethernet-phy@13 {
 		reg = <0x13>;
-	
+
 		leds {
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			led-1 {
+			led@1 {
 				reg = <1>;
 				color = <LED_COLOR_ID_GREEN>;
 				function = LED_FUNCTION_LAN;
 
 			};
 
-			led-2 {
+			led@2 {
 				reg = <2>;
 				color = <LED_COLOR_ID_AMBER>;
 				function = LED_FUNCTION_LAN;
@@ -157,6 +159,14 @@
 			partition@7f0000 {
 				label = "u-boot-env";
 				reg = <0x7f0000 0x10000>;
+
+				nvmem-layout {
+					compatible = "u-boot,env";
+
+					macaddr_uboot_ethaddr: ethaddr {
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 		};
 	};

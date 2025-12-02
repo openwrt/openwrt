@@ -14,7 +14,6 @@
 
 static uc_value_t *registry;
 static uc_vm_t vm;
-static struct uloop_timeout gc_timer;
 static struct udebug ud;
 static struct udebug_buf ud_log, ud_nl[3];
 static const struct udebug_buf_meta meta_log = {
@@ -70,11 +69,6 @@ static struct udebug_ubus_ring udebug_rings[] = {
 };
 char *udebug_service;
 struct udebug_ubus ud_ubus;
-
-static void uc_gc_timer(struct uloop_timeout *timeout)
-{
-	ucv_gc(&vm);
-}
 
 uc_value_t *uc_wpa_printf(uc_vm_t *vm, size_t nargs)
 {
@@ -254,7 +248,6 @@ uc_vm_t *wpa_ucode_create_vm(void)
 
 	uc_stdlib_load(uc_vm_scope_get(&vm));
 	eloop_add_uloop();
-	gc_timer.cb = uc_gc_timer;
 
 	return &vm;
 }
@@ -485,9 +478,6 @@ uc_value_t *wpa_ucode_call(size_t nargs)
 {
 	if (uc_vm_call(&vm, true, nargs) != EXCEPTION_NONE)
 		return NULL;
-
-	if (!gc_timer.pending)
-		uloop_timeout_set(&gc_timer, 10);
 
 	return uc_vm_stack_pop(&vm);
 }

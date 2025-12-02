@@ -11,8 +11,26 @@ let history = [];
 let history_edit;
 let history_idx = -1;
 let cur_line;
-let interactive;
-let script_mode;
+let interactive, script_mode, raw_mode;
+
+while (length(ARGV) > 0) {
+	let cmd = ARGV[0];
+	if (substr(cmd, 0, 1) != "-")
+		break;
+
+	shift(ARGV);
+	switch (cmd) {
+	case '-i':
+		interactive = true;
+		break;
+	case '-s':
+		script_mode = true;
+		break;
+	case '-R':
+		raw_mode = true;
+		break;
+	}
+}
 
 let el;
 let model = datamodel.new({
@@ -23,6 +41,7 @@ let model = datamodel.new({
 		warn(msg + "\n");
 		el.refresh_prompt();
 	},
+	opt_pretty_print: !raw_mode
 });
 let uloop = model.uloop;
 model.add_modules();
@@ -675,22 +694,6 @@ el = uline.new({
 	cb,
 	key_input_list: [ "?", "\t", "\x03", "\x12" ]
 });
-
-while (length(ARGV) > 0) {
-	let cmd = ARGV[0];
-	if (substr(cmd, 0, 1) != "-")
-		break;
-
-	shift(ARGV);
-	switch (cmd) {
-	case '-i':
-		interactive = true;
-		break;
-	case '-s':
-		script_mode = true;
-		break;
-	}
-}
 
 if (SCRIPT_NAME != "cli") {
 	let cur_ctx = ctx.select([ basename(SCRIPT_NAME) ]);

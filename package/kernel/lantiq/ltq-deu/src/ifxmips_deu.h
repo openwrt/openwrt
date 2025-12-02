@@ -96,8 +96,8 @@
         clc->DISR = 1;           \
     } while (0)
 
-/* 
- * Not used anymore in UEIP (use IFX_DES_CON, IFX_AES_CON, etc instead) 
+/*
+ * Not used anymore in UEIP (use IFX_DES_CON, IFX_AES_CON, etc instead)
  * #define DEU_BASE   (KSEG1+0x1E103100)
  * #define DES_CON		(DEU_BASE+0x10)
  * #define AES_CON		(DEU_BASE+0x50)
@@ -153,7 +153,7 @@ extern spinlock_t ltq_deu_hash_lock;
         set_bit((event), &(flags));                   \
         wake_up_interruptible(&(queue));              \
     }while (0)
-    
+
 #define DEU_WAIT_EVENT(queue, event, flags)           \
     do {                                              \
         wait_event_interruptible(queue,               \
@@ -184,7 +184,7 @@ typedef struct deu_drv_priv {
  *	@lock: spinlock lock
  *	@lock_flag: flag for spinlock activities
  *	@list: crypto queue API list
- *	@hw_status: DEU hw status flag 
+ *	@hw_status: DEU hw status flag
  *	@aes_wait_flag: flag for sleep queue
  *	@aes_wait_queue: queue attributes for aes
  *	@bytes_processed: number of bytes to process by DEU
@@ -230,7 +230,7 @@ typedef struct {
     struct tasklet_struct des_task;
 
 } des_priv_t;
-    
+
 #endif	/* IFXMIPS_DEU_H */
 
 

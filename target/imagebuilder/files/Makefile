@@ -168,7 +168,8 @@ _call_manifest: FORCE
 ifeq ($(CONFIG_USE_APK),)
 	$(OPKG) list-installed $(if $(STRIP_ABI),--strip-abi)
 else
-	$(APK) list --quiet --manifest --no-network
+	$(APK) query --format json --fields name,version,$(if $(STRIP_ABI),tags) --installed '*' | \
+		$(SCRIPT_DIR)/make-index-json.py -a $(ARCH_PACKAGES) -f apk --manifest -
 endif
 
 package_index: FORCE
@@ -193,7 +194,7 @@ ifeq ($(CONFIG_USE_APK),)
 	if [ -d "$(PACKAGE_DIR)" ] && ( \
 			[ ! -f "$(PACKAGE_DIR)/Packages" ] || \
 			[ ! -f "$(PACKAGE_DIR)/Packages.gz" ] || \
-			[ "`find $(PACKAGE_DIR) -cnewer $(PACKAGE_DIR)/Packages.gz`" ] ); then \
+			[ "`find $(PACKAGE_DIR) -cnewer $(PACKAGE_DIR)/Packages.gz ! -name Packages.sig`" ] ); then \
 		echo "Package list missing or not up-to-date, generating it." >&2 ;\
 		$(MAKE) package_index; \
 	else \

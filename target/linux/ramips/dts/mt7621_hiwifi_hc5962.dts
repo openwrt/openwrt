@@ -9,10 +9,11 @@
 	model = "HiWiFi HC5962";
 
 	aliases {
-		led-boot = &led_system;
-		led-failsafe = &led_system;
-		led-running = &led_status;
-		led-upgrade = &led_status;
+		label-mac-device = &gmac0;
+		led-boot = &led_status_red;
+		led-failsafe = &led_status_red;
+		led-running = &led_status_white;
+		led-upgrade = &led_status_white;
 	};
 
 	chosen {
@@ -22,14 +23,15 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led_status: status {
-			function = LED_FUNCTION_STATUS;
+		led_status_white: led-0 {
 			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 
-		led_system: system {
-			label = "red:system";
+		led_status_red: led-1 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
 			panic-indicator;
 		};
@@ -116,6 +118,18 @@
 			label = "bdinfo";
 			reg = <0x21c0000 0x80000>;
 			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_bdinfo_18a: macaddr@18a {
+					compatible = "mac-base";
+					reg = <0x18a 0x11>;
+					#nvmem-cell-cells = <1>;
+				};
+			};
 		};
 
 		ubiconcat1: partition@2240000 {
@@ -130,27 +144,37 @@
 };
 
 &pcie0 {
-	mt76@0,0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&eeprom_factory_0>;
-		nvmem-cell-names = "eeprom";
+		nvmem-cells = <&eeprom_factory_0>, <&macaddr_bdinfo_18a 0>;
+		nvmem-cell-names = "eeprom", "mac-address";
 		ieee80211-freq-limit = <2400000 2500000>;
 	};
 };
 
 &pcie1 {
-	mt76@0,0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&eeprom_factory_8000>;
-		nvmem-cell-names = "eeprom";
+		nvmem-cells = <&eeprom_factory_8000>, <&macaddr_bdinfo_18a 0>;
+		nvmem-cell-names = "eeprom", "mac-address";
 		ieee80211-freq-limit = <5000000 6000000>;
 	};
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_bdinfo_18a 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &gmac1 {
 	status = "okay";
 	label = "wan";
 	phy-handle = <&ethphy4>;
+
+	nvmem-cells = <&macaddr_bdinfo_18a 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &ethphy4 {

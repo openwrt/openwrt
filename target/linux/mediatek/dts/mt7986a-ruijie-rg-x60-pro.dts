@@ -4,6 +4,7 @@
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/leds/common.h>
+#include <dt-bindings/pinctrl/mt65xx.h>
 
 #include "mt7986a.dtsi"
 
@@ -25,6 +26,7 @@
 
 	memory@40000000 {
 		reg = <0 0x40000000 0 0x20000000>;
+		device_type = "memory";
 	};
 
 	gpio-keys {
@@ -116,13 +118,13 @@
 		};
 		conf-pu {
 			pins = "SPI2_CS", "SPI2_HOLD", "SPI2_WP";
-			drive-strength = <8>;
-			mediatek,pull-up-adv = <0>; /* bias-disable */
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-disable; /* bias-disable */
 		};
 		conf-pd {
 			pins = "SPI2_CLK", "SPI2_MOSI", "SPI2_MISO";
-			drive-strength = <8>;
-			mediatek,pull-down-adv = <0>; /* bias-disable */
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-disable; /* bias-disable */
 		};
 	};
 
@@ -139,7 +141,7 @@
 			       "WF1_HB2", "WF1_HB3", "WF1_HB4", "WF1_HB0",
 			       "WF1_HB5", "WF1_HB6", "WF1_HB7", "WF1_HB8",
 			       "WF1_TOP_CLK", "WF1_TOP_DATA";
-			drive-strength = <4>;
+			drive-strength = <MTK_DRIVE_4mA>;
 		};
 	};
 };
@@ -151,8 +153,6 @@
 
 	flash@0 {
 		compatible = "spi-nand";
-		#address-cells = <1>;
-		#size-cells = <1>;
 		reg = <0>;
 
 		spi-max-frequency = <20000000>;
@@ -230,21 +230,25 @@
 		port@0 {
 			reg = <0>;
 			label = "lan1";
+			phy-handle = <&swphy0>;
 		};
 
 		port@1 {
 			reg = <1>;
 			label = "lan2";
+			phy-handle = <&swphy1>;
 		};
 
 		port@2 {
 			reg = <2>;
 			label = "lan3";
+			phy-handle = <&swphy2>;
 		};
 
 		port@3 {
 			reg = <3>;
 			label = "lan4";
+			phy-handle = <&swphy3>;
 		};
 
 		port@6 {
@@ -258,6 +262,67 @@
 				full-duplex;
 				pause;
 			};
+		};
+	};
+
+	mdio {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		swphy0: phy@0 {
+			reg = <0>;
+
+			mediatek,led-config = <
+				0x21 0x8009 /* BASIC_CTRL */
+				0x22 0x0c00 /* ON_DURATION */
+				0x23 0x1400 /* BLINK_DURATION */
+				0x24 0x8000 /* LED0_ON_CTRL */
+				0x25 0x0000 /* LED0_BLINK_CTRL */
+				0x26 0xc007 /* LED1_ON_CTRL */
+				0x27 0x003f /* LED1_BLINK_CTRL */
+			>;
+		};
+
+		swphy1: phy@1 {
+			reg = <1>;
+
+			mediatek,led-config = <
+				0x21 0x8009 /* BASIC_CTRL */
+				0x22 0x0c00 /* ON_DURATION */
+				0x23 0x1400 /* BLINK_DURATION */
+				0x24 0x8000 /* LED0_ON_CTRL */
+				0x25 0x0000 /* LED0_BLINK_CTRL */
+				0x26 0xc007 /* LED1_ON_CTRL */
+				0x27 0x003f /* LED1_BLINK_CTRL */
+			>;
+		};
+
+		swphy2: phy@2 {
+			reg = <2>;
+
+			mediatek,led-config = <
+				0x21 0x8009 /* BASIC_CTRL */
+				0x22 0x0c00 /* ON_DURATION */
+				0x23 0x1400 /* BLINK_DURATION */
+				0x24 0x8000 /* LED0_ON_CTRL */
+				0x25 0x0000 /* LED0_BLINK_CTRL */
+				0x26 0xc007 /* LED1_ON_CTRL */
+				0x27 0x003f /* LED1_BLINK_CTRL */
+			>;
+		};
+
+		swphy3: phy@3 {
+			reg = <3>;
+
+			mediatek,led-config = <
+				0x21 0x8009 /* BASIC_CTRL */
+				0x22 0x0c00 /* ON_DURATION */
+				0x23 0x1400 /* BLINK_DURATION */
+				0x24 0x8000 /* LED0_ON_CTRL */
+				0x25 0x0000 /* LED0_BLINK_CTRL */
+				0x26 0xc007 /* LED1_ON_CTRL */
+				0x27 0x003f /* LED1_BLINK_CTRL */
+			>;
 		};
 	};
 };

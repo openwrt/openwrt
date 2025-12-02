@@ -35,6 +35,11 @@ yuncore,fap650)
 	ucidef_set_led_netdev "wlan5ghz" "WLAN 5GHz LED" "blue:wlan-5ghz" "wlan0" "tx rx"
 	ucidef_set_led_netdev "wlan2ghz" "WLAN 2.4GHz LED" "green:wlan-2ghz" "wlan1" "tx rx"
 	;;
+netgear,wax610|\
+netgear,wax610y)
+	ucidef_set_led_netdev "lan-port-link" "LAN-PORT-LINK" "green:lan-0" "lan" "link_10 link_100 link_1000 link_2500"
+	ucidef_set_led_netdev "lan-port-traffic" "LAN-PORT-TRAFFIC" "orange:lan-1" "lan" "tx rx link_10 link_100 link_1000 link_2500"
+	;;
 esac
 
 board_config_flush

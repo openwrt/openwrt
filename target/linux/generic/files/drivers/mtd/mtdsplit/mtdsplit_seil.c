@@ -112,7 +112,7 @@ static int mtdsplit_parse_seil_fw(struct mtd_info *master,
 	u64 id;
 
 	if (!seil_bootdev_is_active(np))
-		return -ENODEV;
+		return -ENOENT;
 
 	ret = of_property_read_u64(np, "iij,seil-id", &id);
 	if (ret) {
@@ -137,7 +137,7 @@ static int mtdsplit_parse_seil_fw(struct mtd_info *master,
 	if (be64_to_cpu(header.id) != id ||
 	    be32_to_cpu(header.vfmt) != SEIL_VFMT) {
 		pr_debug("no valid seil image found in \"%s\"\n", master->name);
-		ret = -ENODEV;
+		ret = -ENOENT;
 		goto err_free_parts;
 	}
 
@@ -154,7 +154,7 @@ static int mtdsplit_parse_seil_fw(struct mtd_info *master,
 	if (ret || (master->size - rootfs_offset) == 0) {
 		pr_debug("no rootfs after seil image in \"%s\"\n",
 			 master->name);
-		ret = -ENODEV;
+		ret = -ENOENT;
 		goto err_free_parts;
 	}
 

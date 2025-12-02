@@ -3,9 +3,12 @@ include ./common-tp-link.mk
 define Device/tplink_rex5x-v1
   $(Device/tplink-safeloader)
   SOC := qca9558
-  IMAGE_SIZE := 6016k
+  IMAGE_SIZE := 7680k
+  KERNEL_SIZE := 6016k
   DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct
-  DEFAULT := n
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE := Partition layout has changed compared to older versions by utilizing unused flash. \
+    Upgrade via sysupgrade mechanism (-F) will only work if flashed image still fits to the size of old partition (6016 KiB).
 endef
 
 define Device/tplink_re355-v1
@@ -29,13 +32,16 @@ TARGET_DEVICES += tplink_re450-v1
 define Device/tplink_re450-v2
   $(Device/tplink-safeloader)
   SOC := qca9563
-  IMAGE_SIZE := 6016k
+  IMAGE_SIZE := 7680k
+  KERNEL_SIZE := 6016k
   DEVICE_MODEL := RE450
   DEVICE_VARIANT := v2
   DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE := Partition layout has changed compared to older versions by utilizing unused flash. \
+    Upgrade via sysupgrade mechanism (-F) will only work if flashed image still fits to the size of old partition (6016 KiB).
   TPLINK_BOARD_ID := RE450-V2
   LOADER_TYPE := elf
-  DEFAULT := n
 endef
 TARGET_DEVICES += tplink_re450-v2
 
