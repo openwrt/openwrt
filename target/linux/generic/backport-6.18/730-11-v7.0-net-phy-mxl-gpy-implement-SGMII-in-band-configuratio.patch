@@ -19,7 +19,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/phy/mxl-gpy.c
 +++ b/drivers/net/phy/mxl-gpy.c
-@@ -568,20 +568,6 @@ static int gpy_update_interface(struct p
+@@ -562,20 +562,6 @@ static int gpy_update_interface(struct p
  	case SPEED_100:
  	case SPEED_10:
  		phydev->interface = PHY_INTERFACE_MODE_SGMII;
@@ -40,8 +40,8 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		break;
  	}
  
-@@ -1022,6 +1008,27 @@ static int gpy_led_polarity_set(struct p
- 	unreachable();
+@@ -1019,6 +1005,27 @@ static int gpy_led_polarity_set(struct p
+ 	return -EINVAL;
  }
  
 +static unsigned int gpy_inband_caps(struct phy_device *phydev,
@@ -68,7 +68,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static struct phy_driver gpy_drivers[] = {
  	{
  		PHY_ID_MATCH_MODEL(PHY_ID_GPY2xx),
-@@ -1029,6 +1036,8 @@ static struct phy_driver gpy_drivers[] =
+@@ -1026,6 +1033,8 @@ static struct phy_driver gpy_drivers[] =
  		.get_features	= genphy_c45_pma_read_abilities,
  		.config_init	= gpy_config_init,
  		.probe		= gpy_probe,
@@ -77,7 +77,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.suspend	= genphy_suspend,
  		.resume		= genphy_resume,
  		.config_aneg	= gpy_config_aneg,
-@@ -1052,6 +1061,8 @@ static struct phy_driver gpy_drivers[] =
+@@ -1049,6 +1058,8 @@ static struct phy_driver gpy_drivers[] =
  		.get_features	= genphy_c45_pma_read_abilities,
  		.config_init	= gpy_config_init,
  		.probe		= gpy_probe,
@@ -86,7 +86,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.suspend	= genphy_suspend,
  		.resume		= genphy_resume,
  		.config_aneg	= gpy_config_aneg,
-@@ -1074,6 +1085,8 @@ static struct phy_driver gpy_drivers[] =
+@@ -1071,6 +1082,8 @@ static struct phy_driver gpy_drivers[] =
  		.get_features	= genphy_c45_pma_read_abilities,
  		.config_init	= gpy_config_init,
  		.probe		= gpy_probe,
@@ -95,7 +95,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.suspend	= genphy_suspend,
  		.resume		= genphy_resume,
  		.config_aneg	= gpy_config_aneg,
-@@ -1097,6 +1110,8 @@ static struct phy_driver gpy_drivers[] =
+@@ -1094,6 +1107,8 @@ static struct phy_driver gpy_drivers[] =
  		.get_features	= genphy_c45_pma_read_abilities,
  		.config_init	= gpy21x_config_init,
  		.probe		= gpy_probe,
@@ -104,7 +104,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.suspend	= genphy_suspend,
  		.resume		= genphy_resume,
  		.config_aneg	= gpy_config_aneg,
-@@ -1119,6 +1134,8 @@ static struct phy_driver gpy_drivers[] =
+@@ -1116,6 +1131,8 @@ static struct phy_driver gpy_drivers[] =
  		.get_features	= genphy_c45_pma_read_abilities,
  		.config_init	= gpy21x_config_init,
  		.probe		= gpy_probe,
@@ -113,7 +113,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.suspend	= genphy_suspend,
  		.resume		= genphy_resume,
  		.config_aneg	= gpy_config_aneg,
-@@ -1141,6 +1158,8 @@ static struct phy_driver gpy_drivers[] =
+@@ -1138,6 +1155,8 @@ static struct phy_driver gpy_drivers[] =
  		.name		= "Maxlinear Ethernet GPY212B",
  		.get_features	= genphy_c45_pma_read_abilities,
  		.config_init	= gpy21x_config_init,
@@ -122,7 +122,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.probe		= gpy_probe,
  		.suspend	= genphy_suspend,
  		.resume		= genphy_resume,
-@@ -1164,6 +1183,8 @@ static struct phy_driver gpy_drivers[] =
+@@ -1161,6 +1180,8 @@ static struct phy_driver gpy_drivers[] =
  		.get_features	= genphy_c45_pma_read_abilities,
  		.config_init	= gpy21x_config_init,
  		.probe		= gpy_probe,
@@ -131,7 +131,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.suspend	= genphy_suspend,
  		.resume		= genphy_resume,
  		.config_aneg	= gpy_config_aneg,
-@@ -1187,6 +1208,8 @@ static struct phy_driver gpy_drivers[] =
+@@ -1184,6 +1205,8 @@ static struct phy_driver gpy_drivers[] =
  		.get_features	= genphy_c45_pma_read_abilities,
  		.config_init	= gpy21x_config_init,
  		.probe		= gpy_probe,
@@ -140,7 +140,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.suspend	= genphy_suspend,
  		.resume		= genphy_resume,
  		.config_aneg	= gpy_config_aneg,
-@@ -1209,6 +1232,8 @@ static struct phy_driver gpy_drivers[] =
+@@ -1206,6 +1229,8 @@ static struct phy_driver gpy_drivers[] =
  		.get_features	= genphy_c45_pma_read_abilities,
  		.config_init	= gpy21x_config_init,
  		.probe		= gpy_probe,
@@ -149,7 +149,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.suspend	= genphy_suspend,
  		.resume		= genphy_resume,
  		.config_aneg	= gpy_config_aneg,
-@@ -1231,6 +1256,8 @@ static struct phy_driver gpy_drivers[] =
+@@ -1228,6 +1253,8 @@ static struct phy_driver gpy_drivers[] =
  		.get_features	= genphy_c45_pma_read_abilities,
  		.config_init	= gpy_config_init,
  		.probe		= gpy_probe,
@@ -158,7 +158,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.suspend	= genphy_suspend,
  		.resume		= genphy_resume,
  		.config_aneg	= gpy_config_aneg,
-@@ -1248,6 +1275,8 @@ static struct phy_driver gpy_drivers[] =
+@@ -1245,6 +1272,8 @@ static struct phy_driver gpy_drivers[] =
  		.get_features	= genphy_c45_pma_read_abilities,
  		.config_init	= gpy_config_init,
  		.probe		= gpy_probe,
@@ -167,7 +167,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.suspend	= genphy_suspend,
  		.resume		= genphy_resume,
  		.config_aneg	= gpy_config_aneg,
-@@ -1265,6 +1294,8 @@ static struct phy_driver gpy_drivers[] =
+@@ -1262,6 +1291,8 @@ static struct phy_driver gpy_drivers[] =
  		.get_features	= genphy_c45_pma_read_abilities,
  		.config_init	= gpy_config_init,
  		.probe		= gpy_probe,
@@ -176,7 +176,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.suspend	= genphy_suspend,
  		.resume		= genphy_resume,
  		.config_aneg	= gpy_config_aneg,
-@@ -1282,6 +1313,8 @@ static struct phy_driver gpy_drivers[] =
+@@ -1279,6 +1310,8 @@ static struct phy_driver gpy_drivers[] =
  		.get_features	= genphy_c45_pma_read_abilities,
  		.config_init	= gpy_config_init,
  		.probe		= gpy_probe,
