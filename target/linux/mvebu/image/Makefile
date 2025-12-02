@@ -8,6 +8,12 @@ JFFS2_BLOCKSIZE = 128k
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+ifeq ($(CONFIG_TARGET_IMAGES_PIGZ),y)
+  GZIPCMD:=pigz
+else
+  GZIPCMD:=gzip
+endif
+
 DEVICE_VARS += BOOT_SCRIPT UBOOT
 KERNEL_LOADADDR := 0x00008000
 
@@ -44,7 +50,7 @@ define Build/buffalo-kernel-jffs2
 	mkdir -p $(KDIR)/kernel_jffs2
 	dd if=/dev/zero of=$@.fakerd bs=131008 count=1 conv=sync
 	$(STAGING_DIR_HOST)/bin/mkimage \
-		-T ramdisk -A $(LINUX_KARCH) -O linux -C gzip -n 'fake initrd' \
+		-T ramdisk -A $(LINUX_KARCH) -O linux -C $(GZIPCMD) -n 'fake initrd' \
 		-d $@.fakerd $(KDIR)/kernel_jffs2/initrd.buffalo
 	cp $@ $(KDIR)/kernel_jffs2/uImage.buffalo
 	$(STAGING_DIR_HOST)/bin/mkfs.jffs2 \
