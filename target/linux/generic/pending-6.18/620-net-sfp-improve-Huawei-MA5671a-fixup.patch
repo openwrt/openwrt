@@ -125,7 +125,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 
 --- a/drivers/net/phy/sfp.c
 +++ b/drivers/net/phy/sfp.c
-@@ -360,6 +360,12 @@ static void sfp_fixup_ignore_tx_fault(st
+@@ -367,6 +367,12 @@ static void sfp_fixup_ignore_tx_fault(st
  	sfp->state_ignore_mask |= SFP_F_TX_FAULT;
  }
  
@@ -138,7 +138,7 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  static void sfp_fixup_ignore_hw(struct sfp *sfp, unsigned int mask)
  {
  	sfp->state_hw_mask &= ~mask;
-@@ -523,7 +529,7 @@ static const struct sfp_quirk sfp_quirks
+@@ -530,7 +536,7 @@ static const struct sfp_quirk sfp_quirks
  	// Huawei MA5671A can operate at 2500base-X, but report 1.2GBd NRZ in
  	// their EEPROM
  	SFP_QUIRK("HUAWEI", "MA5671A", sfp_quirk_2500basex,
