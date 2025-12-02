@@ -9,7 +9,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 
 --- a/drivers/pci/Kconfig
 +++ b/drivers/pci/Kconfig
-@@ -118,6 +118,13 @@ config XEN_PCIDEV_FRONTEND
+@@ -119,6 +119,13 @@ config XEN_PCIDEV_FRONTEND
  	  The PCI device frontend driver allows the kernel to import arbitrary
  	  PCI devices from a PCI backend to support PCI driver domains.
  
@@ -25,7 +25,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  
 --- a/drivers/pci/quirks.c
 +++ b/drivers/pci/quirks.c
-@@ -313,6 +313,7 @@ static void quirk_mmio_always_on(struct
+@@ -316,6 +316,7 @@ static void quirk_mmio_always_on(struct
  DECLARE_PCI_FIXUP_CLASS_EARLY(PCI_ANY_ID, PCI_ANY_ID,
  				PCI_CLASS_BRIDGE_HOST, 8, quirk_mmio_always_on);
  
