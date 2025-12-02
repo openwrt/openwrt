@@ -11,7 +11,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
-@@ -153,7 +153,7 @@ cflags-$(CONFIG_CPU_R4300)	+= $(call cc-
+@@ -149,7 +149,7 @@ cflags-$(CONFIG_CPU_R4300)	+= $(call cc-
  cflags-$(CONFIG_CPU_R4X00)	+= $(call cc-option,-march=r4600,-march=mips3) -Wa,--trap
  cflags-$(CONFIG_CPU_TX49XX)	+= $(call cc-option,-march=r4600,-march=mips3) -Wa,--trap
  cflags-$(CONFIG_CPU_MIPS32_R1)	+= -march=mips32 -Wa,--trap
