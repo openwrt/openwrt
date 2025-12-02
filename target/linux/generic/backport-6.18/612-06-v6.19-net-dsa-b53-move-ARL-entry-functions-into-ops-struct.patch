@@ -76,7 +76,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  			ret = b53_fdb_copy(port, &results[1], cb, data);
  			if (ret)
  				break;
-@@ -2672,6 +2655,24 @@ static const struct dsa_switch_ops b53_s
+@@ -2665,6 +2648,24 @@ static const struct dsa_switch_ops b53_s
  	.port_change_mtu	= b53_change_mtu,
  };
  
@@ -101,7 +101,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  struct b53_chip_data {
  	u32 chip_id;
  	const char *dev_name;
-@@ -2685,6 +2686,7 @@ struct b53_chip_data {
+@@ -2678,6 +2679,7 @@ struct b53_chip_data {
  	u8 duplex_reg;
  	u8 jumbo_pm_reg;
  	u8 jumbo_size_reg;
@@ -109,7 +109,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  };
  
  #define B53_VTA_REGS	\
-@@ -2704,6 +2706,7 @@ static const struct b53_chip_data b53_sw
+@@ -2697,6 +2699,7 @@ static const struct b53_chip_data b53_sw
  		.arl_buckets = 1024,
  		.imp_port = 5,
  		.duplex_reg = B53_DUPLEX_STAT_FE,
@@ -117,7 +117,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	},
  	{
  		.chip_id = BCM5365_DEVICE_ID,
-@@ -2714,6 +2717,7 @@ static const struct b53_chip_data b53_sw
+@@ -2707,6 +2710,7 @@ static const struct b53_chip_data b53_sw
  		.arl_buckets = 1024,
  		.imp_port = 5,
  		.duplex_reg = B53_DUPLEX_STAT_FE,
@@ -125,7 +125,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	},
  	{
  		.chip_id = BCM5389_DEVICE_ID,
-@@ -2727,6 +2731,7 @@ static const struct b53_chip_data b53_sw
+@@ -2720,6 +2724,7 @@ static const struct b53_chip_data b53_sw
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
  		.jumbo_size_reg = B53_JUMBO_MAX_SIZE,
@@ -133,7 +133,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	},
  	{
  		.chip_id = BCM5395_DEVICE_ID,
-@@ -2740,6 +2745,7 @@ static const struct b53_chip_data b53_sw
+@@ -2733,6 +2738,7 @@ static const struct b53_chip_data b53_sw
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
  		.jumbo_size_reg = B53_JUMBO_MAX_SIZE,
@@ -141,7 +141,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	},
  	{
  		.chip_id = BCM5397_DEVICE_ID,
-@@ -2753,6 +2759,7 @@ static const struct b53_chip_data b53_sw
+@@ -2746,6 +2752,7 @@ static const struct b53_chip_data b53_sw
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
  		.jumbo_size_reg = B53_JUMBO_MAX_SIZE,
@@ -149,7 +149,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	},
  	{
  		.chip_id = BCM5398_DEVICE_ID,
-@@ -2766,6 +2773,7 @@ static const struct b53_chip_data b53_sw
+@@ -2759,6 +2766,7 @@ static const struct b53_chip_data b53_sw
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
  		.jumbo_size_reg = B53_JUMBO_MAX_SIZE,
@@ -157,7 +157,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	},
  	{
  		.chip_id = BCM53101_DEVICE_ID,
-@@ -2779,6 +2787,7 @@ static const struct b53_chip_data b53_sw
+@@ -2772,6 +2780,7 @@ static const struct b53_chip_data b53_sw
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
  		.jumbo_size_reg = B53_JUMBO_MAX_SIZE,
@@ -165,7 +165,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	},
  	{
  		.chip_id = BCM53115_DEVICE_ID,
-@@ -2792,6 +2801,7 @@ static const struct b53_chip_data b53_sw
+@@ -2785,6 +2794,7 @@ static const struct b53_chip_data b53_sw
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
  		.jumbo_size_reg = B53_JUMBO_MAX_SIZE,
@@ -173,7 +173,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	},
  	{
  		.chip_id = BCM53125_DEVICE_ID,
-@@ -2805,6 +2815,7 @@ static const struct b53_chip_data b53_sw
+@@ -2798,6 +2808,7 @@ static const struct b53_chip_data b53_sw
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
  		.jumbo_size_reg = B53_JUMBO_MAX_SIZE,
@@ -181,7 +181,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	},
  	{
  		.chip_id = BCM53128_DEVICE_ID,
-@@ -2818,6 +2829,7 @@ static const struct b53_chip_data b53_sw
+@@ -2811,6 +2822,7 @@ static const struct b53_chip_data b53_sw
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
  		.jumbo_size_reg = B53_JUMBO_MAX_SIZE,
@@ -189,7 +189,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	},
  	{
  		.chip_id = BCM63XX_DEVICE_ID,
-@@ -2831,6 +2843,7 @@ static const struct b53_chip_data b53_sw
+@@ -2824,6 +2836,7 @@ static const struct b53_chip_data b53_sw
  		.duplex_reg = B53_DUPLEX_STAT_63XX,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK_63XX,
  		.jumbo_size_reg = B53_JUMBO_MAX_SIZE_63XX,
@@ -197,7 +197,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	},
  	{
  		.chip_id = BCM53010_DEVICE_ID,
-@@ -2844,6 +2857,7 @@ static const struct b53_chip_data b53_sw
+@@ -2837,6 +2850,7 @@ static const struct b53_chip_data b53_sw
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
  		.jumbo_size_reg = B53_JUMBO_MAX_SIZE,
@@ -205,7 +205,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	},
  	{
  		.chip_id = BCM53011_DEVICE_ID,
-@@ -2857,6 +2871,7 @@ static const struct b53_chip_data b53_sw
+@@ -2850,6 +2864,7 @@ static const struct b53_chip_data b53_sw
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
  		.jumbo_size_reg = B53_JUMBO_MAX_SIZE,
@@ -213,7 +213,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	},
  	{
  		.chip_id = BCM53012_DEVICE_ID,
-@@ -2870,6 +2885,7 @@ static const struct b53_chip_data b53_sw
+@@ -2863,6 +2878,7 @@ static const struct b53_chip_data b53_sw
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
  		.jumbo_size_reg = B53_JUMBO_MAX_SIZE,
@@ -221,7 +221,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	},
  	{
  		.chip_id = BCM53018_DEVICE_ID,
-@@ -2883,6 +2899,7 @@ static const struct b53_chip_data b53_sw
+@@ -2876,6 +2892,7 @@ static const struct b53_chip_data b53_sw
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
  		.jumbo_size_reg = B53_JUMBO_MAX_SIZE,
@@ -229,7 +229,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	},
  	{
  		.chip_id = BCM53019_DEVICE_ID,
-@@ -2896,6 +2913,7 @@ static const struct b53_chip_data b53_sw
+@@ -2889,6 +2906,7 @@ static const struct b53_chip_data b53_sw
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
  		.jumbo_size_reg = B53_JUMBO_MAX_SIZE,
@@ -237,7 +237,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	},
  	{
  		.chip_id = BCM58XX_DEVICE_ID,
-@@ -2909,6 +2927,7 @@ static const struct b53_chip_data b53_sw
+@@ -2902,6 +2920,7 @@ static const struct b53_chip_data b53_sw
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
  		.jumbo_size_reg = B53_JUMBO_MAX_SIZE,
@@ -245,7 +245,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	},
  	{
  		.chip_id = BCM583XX_DEVICE_ID,
-@@ -2922,6 +2941,7 @@ static const struct b53_chip_data b53_sw
+@@ -2915,6 +2934,7 @@ static const struct b53_chip_data b53_sw
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
  		.jumbo_size_reg = B53_JUMBO_MAX_SIZE,
@@ -253,7 +253,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	},
  	/* Starfighter 2 */
  	{
-@@ -2936,6 +2956,7 @@ static const struct b53_chip_data b53_sw
+@@ -2929,6 +2949,7 @@ static const struct b53_chip_data b53_sw
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
  		.jumbo_size_reg = B53_JUMBO_MAX_SIZE,
@@ -261,7 +261,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	},
  	{
  		.chip_id = BCM7445_DEVICE_ID,
-@@ -2949,6 +2970,7 @@ static const struct b53_chip_data b53_sw
+@@ -2942,6 +2963,7 @@ static const struct b53_chip_data b53_sw
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
  		.jumbo_size_reg = B53_JUMBO_MAX_SIZE,
@@ -269,7 +269,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	},
  	{
  		.chip_id = BCM7278_DEVICE_ID,
-@@ -2962,6 +2984,7 @@ static const struct b53_chip_data b53_sw
+@@ -2955,6 +2977,7 @@ static const struct b53_chip_data b53_sw
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
  		.jumbo_size_reg = B53_JUMBO_MAX_SIZE,
@@ -277,7 +277,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	},
  	{
  		.chip_id = BCM53134_DEVICE_ID,
-@@ -2976,6 +2999,7 @@ static const struct b53_chip_data b53_sw
+@@ -2969,6 +2992,7 @@ static const struct b53_chip_data b53_sw
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
  		.jumbo_size_reg = B53_JUMBO_MAX_SIZE,
@@ -285,7 +285,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	},
  };
  
-@@ -3004,6 +3028,7 @@ static int b53_switch_init(struct b53_de
+@@ -2997,6 +3021,7 @@ static int b53_switch_init(struct b53_de
  			dev->num_vlans = chip->vlans;
  			dev->num_arl_bins = chip->arl_bins;
  			dev->num_arl_buckets = chip->arl_buckets;

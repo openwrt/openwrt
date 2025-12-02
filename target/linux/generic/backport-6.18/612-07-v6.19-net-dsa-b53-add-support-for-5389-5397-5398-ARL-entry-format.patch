@@ -91,7 +91,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static void b53_arl_search_read_95(struct b53_device *dev, u8 idx,
  				   struct b53_arl_entry *ent)
  {
-@@ -2667,6 +2708,12 @@ static const struct b53_arl_ops b53_arl_
+@@ -2660,6 +2701,12 @@ static const struct b53_arl_ops b53_arl_
  	.arl_search_read = b53_arl_search_read_65,
  };
  
@@ -104,7 +104,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static const struct b53_arl_ops b53_arl_ops_95 = {
  	.arl_read_entry = b53_arl_read_entry_95,
  	.arl_write_entry = b53_arl_write_entry_95,
-@@ -2731,7 +2778,7 @@ static const struct b53_chip_data b53_sw
+@@ -2724,7 +2771,7 @@ static const struct b53_chip_data b53_sw
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
  		.jumbo_size_reg = B53_JUMBO_MAX_SIZE,
@@ -113,7 +113,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	},
  	{
  		.chip_id = BCM5395_DEVICE_ID,
-@@ -2759,7 +2806,7 @@ static const struct b53_chip_data b53_sw
+@@ -2752,7 +2799,7 @@ static const struct b53_chip_data b53_sw
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
  		.jumbo_size_reg = B53_JUMBO_MAX_SIZE,
@@ -122,7 +122,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	},
  	{
  		.chip_id = BCM5398_DEVICE_ID,
-@@ -2773,7 +2820,7 @@ static const struct b53_chip_data b53_sw
+@@ -2766,7 +2813,7 @@ static const struct b53_chip_data b53_sw
  		.duplex_reg = B53_DUPLEX_STAT_GE,
  		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
  		.jumbo_size_reg = B53_JUMBO_MAX_SIZE,
