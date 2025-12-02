@@ -363,38 +363,34 @@ static irqreturn_t button_handle_irq(int irq, void *_bdata)
 static struct gpio_keys_platform_data *
 gpio_keys_get_devtree_pdata(struct device *dev)
 {
-	struct device_node *node, *pp;
+	struct device_node *node = dev->of_node;
 	struct gpio_keys_platform_data *pdata;
-	struct gpio_keys_button *button;
 	int nbuttons;
 	int i = 0;
-
-	node = dev->of_node;
-	if (!node)
-		return NULL;
 
 	nbuttons = of_get_available_child_count(node);
 	if (nbuttons == 0)
 		return ERR_PTR(-EINVAL);
 
-	pdata = devm_kzalloc(dev, sizeof(*pdata) + nbuttons * (sizeof *button),
-		GFP_KERNEL);
+	pdata = devm_kzalloc(dev, sizeof(struct gpio_keys_platform_data), GFP_KERNEL);
 	if (!pdata)
 		return ERR_PTR(-ENOMEM);
 
-	pdata->buttons = (struct gpio_keys_button *)(pdata + 1);
+	pdata->buttons = devm_kmalloc_array(dev, nbuttons, sizeof(struct gpio_keys_button), GFP_KERNEL);
+	if (!pdata->buttons)
+		return ERR_PTR(-ENOMEM);
+
 	pdata->nbuttons = nbuttons;
 
-	pdata->rep = !!of_get_property(node, "autorepeat", NULL);
+	pdata->rep = of_property_present(node, "autorepeat");
 	of_property_read_u32(node, "poll-interval", &pdata->poll_interval);
 
-	for_each_available_child_of_node(node, pp) {
-		button = (struct gpio_keys_button *)(&pdata->buttons[i++]);
+	for_each_available_child_of_node_scoped(node, pp) {
+		struct gpio_keys_button *button = (struct gpio_keys_button *)&pdata->buttons[i++];
 
 		if (of_property_read_u32(pp, "linux,code", &button->code)) {
 			dev_err(dev, "Button node '%s' without keycode\n",
 				pp->full_name);
-			of_node_put(pp);
 			return ERR_PTR(-EINVAL);
 		}
 
@@ -403,7 +399,7 @@ gpio_keys_get_devtree_pdata(struct device *dev)
 		if (of_property_read_u32(pp, "linux,input-type", &button->type))
 			button->type = EV_KEY;
 
-		button->wakeup = !!of_get_property(pp, "gpio-key,wakeup", NULL);
+		button->wakeup = of_property_present(pp, "gpio-key,wakeup");
 
 		if (of_property_read_u32(pp, "debounce-interval",
 					&button->debounce_interval))
@@ -470,9 +466,7 @@ static int gpio_keys_button_probe(struct platform_device *pdev,
 		return -ENOMEM;
 	}
 
-	bdev = devm_kzalloc(dev, sizeof(struct gpio_keys_button_dev) +
-		       pdata->nbuttons * sizeof(struct gpio_keys_button_data),
-		       GFP_KERNEL);
+	bdev = devm_kzalloc(dev, struct_size(bdev, data, pdata->nbuttons), GFP_KERNEL);
 	if (!bdev) {
 		dev_err(dev, "no memory for private data\n");
 		return -ENOMEM;
