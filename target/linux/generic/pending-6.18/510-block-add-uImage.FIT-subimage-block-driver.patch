@@ -36,7 +36,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -23668,6 +23668,12 @@ F:	Documentation/filesystems/ubifs-authe
+@@ -26266,6 +26266,12 @@ F:	Documentation/filesystems/ubifs-authe
  F:	Documentation/filesystems/ubifs.rst
  F:	fs/ubifs/
  
@@ -51,9 +51,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  L:	linux-block@vger.kernel.org
 --- a/drivers/block/Kconfig
 +++ b/drivers/block/Kconfig
-@@ -363,6 +363,18 @@ config BLK_DEV_RUST_NULL
- 
- 	  If unsure, say N.
+@@ -312,6 +312,18 @@ config VIRTIO_BLK
+ 	  This is the virtual block driver for virtio.  It can be used with
+           QEMU based VMMs (like KVM or Xen).  Say Y or M.
  
 +config UIMAGE_FIT_BLK
 +	bool "uImage.FIT block driver"
@@ -72,9 +72,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	depends on INET && BLOCK
 --- a/drivers/block/Makefile
 +++ b/drivers/block/Makefile
-@@ -42,4 +42,6 @@ obj-$(CONFIG_BLK_DEV_NULL_BLK)	+= null_b
- 
+@@ -40,4 +40,6 @@ obj-$(CONFIG_BLK_DEV_RUST_NULL) += rnull
  obj-$(CONFIG_BLK_DEV_UBLK)			+= ublk_drv.o
+ obj-$(CONFIG_BLK_DEV_ZONED_LOOP) += zloop.o
  
 +obj-$(CONFIG_UIMAGE_FIT_BLK)	+= fitblk.o
 +
