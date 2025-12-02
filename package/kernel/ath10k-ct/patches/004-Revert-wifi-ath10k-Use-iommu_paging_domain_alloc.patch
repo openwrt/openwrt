@@ -7,12 +7,12 @@ IPQ4019 wireless can't start after upstream commit d5b7485588df[1].
 [1] https://github.com/torvalds/linux/commit/d5b7485588dffb39c5687e965623124ab7ebcd51
 Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
 ---
- ath10k-6.14/snoc.c | 6 +++---
+ ath10k-6.18/snoc.c | 6 +++---
  1 file changed, 3 insertions(+), 3 deletions(-)
 
---- a/ath10k-6.14/snoc.c
-+++ b/ath10k-6.14/snoc.c
-@@ -1635,10 +1635,10 @@ static int ath10k_fw_init(struct ath10k
+--- a/ath10k-6.18/snoc.c
++++ b/ath10k-6.18/snoc.c
+@@ -1630,10 +1630,10 @@ static int ath10k_fw_init(struct ath10k
  
  	ar_snoc->fw.dev = &pdev->dev;
  
