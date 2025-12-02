@@ -79,7 +79,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #include <linux/raid/detect.h>
  #include "check.h"
  
-@@ -290,7 +291,8 @@ static const DEVICE_ATTR(whole_disk, 044
+@@ -292,7 +293,8 @@ static const DEVICE_ATTR(whole_disk, 044
   */
  static struct block_device *add_partition(struct gendisk *disk, int partno,
  				sector_t start, sector_t len, int flags,
@@ -89,7 +89,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  {
  	dev_t devt = MKDEV(0, 0);
  	struct device *ddev = disk_to_dev(disk);
-@@ -339,6 +341,7 @@ static struct block_device *add_partitio
+@@ -341,6 +343,7 @@ static struct block_device *add_partitio
  	pdev->class = &block_class;
  	pdev->type = &part_type;
  	pdev->parent = ddev;
@@ -97,7 +97,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	/* in consecutive minor range? */
  	if (bdev_partno(bdev) < disk->minors) {
-@@ -445,7 +448,7 @@ int bdev_add_partition(struct gendisk *d
+@@ -447,7 +450,7 @@ int bdev_add_partition(struct gendisk *d
  	}
  
  	part = add_partition(disk, partno, start, length,
@@ -106,7 +106,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	ret = PTR_ERR_OR_ZERO(part);
  out:
  	mutex_unlock(&disk->open_mutex);
-@@ -559,8 +562,13 @@ static bool blk_add_partition(struct gen
+@@ -561,8 +564,13 @@ static bool blk_add_partition(struct gen
  		size = get_capacity(disk) - from;
  	}
  

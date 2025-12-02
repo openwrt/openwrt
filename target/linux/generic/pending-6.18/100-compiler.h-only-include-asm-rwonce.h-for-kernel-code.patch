@@ -11,16 +11,16 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/include/linux/compiler.h
 +++ b/include/linux/compiler.h
-@@ -191,6 +191,8 @@ void ftrace_likely_update(struct ftrace_
- 	__v;								\
- })
+@@ -246,6 +246,8 @@ void ftrace_likely_update(struct ftrace_
+ # define TYPEOF_UNQUAL(exp) __typeof__(exp)
+ #endif
  
 +#include <asm/rwonce.h>
 +
  #endif /* __KERNEL__ */
  
- /**
-@@ -298,6 +300,4 @@ static inline void *offset_to_ptr(const
+ #if defined(CONFIG_CFI) && !defined(__DISABLE_EXPORTS) && !defined(BUILD_VDSO)
+@@ -379,6 +381,4 @@ static inline void *offset_to_ptr(const
   */
  #define prevent_tail_call_optimization()	mb()
  
