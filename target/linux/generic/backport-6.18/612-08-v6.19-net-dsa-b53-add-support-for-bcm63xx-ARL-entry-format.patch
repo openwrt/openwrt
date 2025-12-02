@@ -90,7 +90,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static void b53_arl_search_read_95(struct b53_device *dev, u8 idx,
  				   struct b53_arl_entry *ent)
  {
-@@ -2714,6 +2738,12 @@ static const struct b53_arl_ops b53_arl_
+@@ -2707,6 +2731,12 @@ static const struct b53_arl_ops b53_arl_
  	.arl_search_read = b53_arl_search_read_89,
  };
  
@@ -103,7 +103,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static const struct b53_arl_ops b53_arl_ops_95 = {
  	.arl_read_entry = b53_arl_read_entry_95,
  	.arl_write_entry = b53_arl_write_entry_95,
-@@ -2883,14 +2913,14 @@ static const struct b53_chip_data b53_sw
+@@ -2876,14 +2906,14 @@ static const struct b53_chip_data b53_sw
  		.dev_name = "BCM63xx",
  		.vlans = 4096,
  		.enabled_ports = 0, /* pdata must provide them */
