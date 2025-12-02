@@ -1753,10 +1753,8 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 
 	/* Obtain device IRQ number */
 	dev->irq = platform_get_irq(pdev, 0);
-	if (dev->irq < 0) {
-		dev_err(&pdev->dev, "cannot obtain network-device IRQ\n");
-		return err;
-	}
+	if (dev->irq < 0)
+		return -ENODEV;
 
 	err = devm_request_irq(&pdev->dev, dev->irq, priv->r->net_irq,
 			       IRQF_SHARED, dev->name, dev);

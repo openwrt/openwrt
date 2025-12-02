@@ -1360,14 +1360,9 @@ static INLINE void clear_priv_data(void)
         }
     }
 
-    if ( g_ptm_priv_data.rx_desc_base != NULL )
-        kfree(g_ptm_priv_data.rx_desc_base);
-
-    if ( g_ptm_priv_data.tx_desc_base != NULL )
-        kfree(g_ptm_priv_data.tx_desc_base);
-
-    if ( g_ptm_priv_data.tx_skb_base != NULL )
-        kfree(g_ptm_priv_data.tx_skb_base);
+    kfree(g_ptm_priv_data.rx_desc_base);
+    kfree(g_ptm_priv_data.tx_desc_base);
+    kfree(g_ptm_priv_data.tx_skb_base);
 }
 
 static INLINE void init_tables(void)
