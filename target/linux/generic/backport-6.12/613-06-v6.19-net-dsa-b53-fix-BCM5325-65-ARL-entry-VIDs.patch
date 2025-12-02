@@ -1,6 +1,6 @@
-From d41f2d5f1c9c6d492ccd3ffdd09e064e70ebc934 Mon Sep 17 00:00:00 2001
+From d39514e6a2d14f57830d649e2bf03b49612c2f73 Mon Sep 17 00:00:00 2001
 From: Jonas Gorski <jonas.gorski@gmail.com>
-Date: Tue, 25 Nov 2025 08:51:49 +0100
+Date: Fri, 28 Nov 2025 09:06:24 +0100
 Subject: [PATCH] net: dsa: b53: fix BCM5325/65 ARL entry VIDs
 
 BCM5325/65's ARL entry registers do not contain the VID, only the search
@@ -12,6 +12,9 @@ move the VLAN ID field definition to the search register definition.
 
 Fixes: c45655386e53 ("net: dsa: b53: add support for FDB operations on 5325/5365")
 Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
+Reviewed-by: Florian Fainelli <florian.fainelli@broadcom.com>
+Link: https://patch.msgid.link/20251128080625.27181-7-jonas.gorski@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 ---
  drivers/net/dsa/b53/b53_common.c |  9 +++++++--
  drivers/net/dsa/b53/b53_priv.h   | 12 ++++++------
@@ -60,7 +63,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  	ent->is_valid = !!(mac_vid & ARLTBL_VALID_25);
 @@ -352,7 +352,7 @@ static inline void b53_arl_to_entry_25(s
  		     ARLTBL_DATA_PORT_ID_S_25;
- 	if (!is_multicast_ether_addr(ent->mac) && ent->port == B53_CPU_PORT)
+ 	if (is_unicast_ether_addr(ent->mac) && ent->port == B53_CPU_PORT)
  		ent->port = B53_CPU_PORT_25;
 -	ent->vid = (mac_vid >> ARLTBL_VID_S_65) & ARLTBL_VID_MASK_25;
 +	ent->vid = vid_entry;

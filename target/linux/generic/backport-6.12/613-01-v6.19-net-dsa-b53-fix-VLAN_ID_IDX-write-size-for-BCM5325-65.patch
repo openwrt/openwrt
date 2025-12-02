@@ -1,13 +1,20 @@
-From 36ee43df98b0ac16bb73e62fa8cffcdf710c37e4 Mon Sep 17 00:00:00 2001
+From 6f268e275c74dae0536e0b61982a8db25bcf4f16 Mon Sep 17 00:00:00 2001
 From: Jonas Gorski <jonas.gorski@gmail.com>
-Date: Tue, 25 Nov 2025 08:51:44 +0100
+Date: Fri, 28 Nov 2025 09:06:19 +0100
 Subject: [PATCH] net: dsa: b53: fix VLAN_ID_IDX write size for BCM5325/65
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
 Since BCM5325 and BCM5365 only support up to 256 VLANs, the VLAN_ID_IDX
 register is only 8 bit wide, not 16 bit, so use an appropriate accessor.
 
 Fixes: c45655386e53 ("net: dsa: b53: add support for FDB operations on 5325/5365")
+Reviewed-by: Florian Fainelli <florian.fainelli@broadcom.com>
+Tested-by: Álvaro Fernández Rojas <noltari@gmail.com>
 Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
+Link: https://patch.msgid.link/20251128080625.27181-2-jonas.gorski@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 ---
  drivers/net/dsa/b53/b53_common.c | 8 ++++++--
  1 file changed, 6 insertions(+), 2 deletions(-)
