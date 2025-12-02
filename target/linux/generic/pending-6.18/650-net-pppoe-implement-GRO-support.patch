@@ -212,7 +212,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	unregister_pernet_device(&pppoe_net_ops);
 --- a/net/ipv4/af_inet.c
 +++ b/net/ipv4/af_inet.c
-@@ -1546,6 +1546,7 @@ out:
+@@ -1531,6 +1531,7 @@ out:
  
  	return pp;
  }
@@ -220,7 +220,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  static struct sk_buff *ipip_gro_receive(struct list_head *head,
  					struct sk_buff *skb)
-@@ -1631,6 +1632,7 @@ int inet_gro_complete(struct sk_buff *sk
+@@ -1616,6 +1617,7 @@ int inet_gro_complete(struct sk_buff *sk
  out:
  	return err;
  }
