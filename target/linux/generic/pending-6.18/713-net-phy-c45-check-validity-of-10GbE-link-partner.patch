@@ -11,7 +11,7 @@ unless both of them are set.
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 --- a/include/linux/mdio.h
 +++ b/include/linux/mdio.h
-@@ -323,8 +323,14 @@ static inline u32 linkmode_adv_to_mii_10
+@@ -303,8 +303,14 @@ static inline u32 linkmode_adv_to_mii_10
   * to linkmode advertisement settings. Other bits in advertising aren't changed.
   */
  static inline void mii_10gbt_stat_mod_linkmode_lpa_t(unsigned long *advertising,
