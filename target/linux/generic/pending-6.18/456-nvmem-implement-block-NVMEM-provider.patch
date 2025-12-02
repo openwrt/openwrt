@@ -18,9 +18,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/nvmem/Kconfig
 +++ b/drivers/nvmem/Kconfig
-@@ -40,6 +40,17 @@ config NVMEM_APPLE_EFUSES
- 	  This driver can also be built as a module. If so, the module will
- 	  be called nvmem-apple-efuses.
+@@ -63,6 +63,17 @@ config NVMEM_APPLE_SPMI
+ 	  This driver can also be built as a module. If so, the module
+ 	  will be called apple-nvmem-spmi.
  
 +config NVMEM_BLOCK
 +	tristate "Block device NVMEM provider"
@@ -38,8 +38,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	depends on ARCH_BCM_IPROC || COMPILE_TEST
 --- a/drivers/nvmem/Makefile
 +++ b/drivers/nvmem/Makefile
-@@ -14,6 +14,8 @@ obj-$(CONFIG_NVMEM_APPLE_EFUSES)	+= nvme
- nvmem-apple-efuses-y 			:= apple-efuses.o
+@@ -18,6 +18,8 @@ obj-$(CONFIG_NVMEM_APPLE_SPMI)		+= apple
+ apple_nvmem_spmi-y			:= apple-spmi-nvmem.o
  obj-$(CONFIG_NVMEM_BCM_OCOTP)		+= nvmem-bcm-ocotp.o
  nvmem-bcm-ocotp-y			:= bcm-ocotp.o
 +obj-$(CONFIG_NVMEM_BLOCK)		+= nvmem-block.o
