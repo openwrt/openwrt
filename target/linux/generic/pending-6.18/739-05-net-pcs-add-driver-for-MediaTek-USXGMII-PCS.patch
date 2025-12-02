@@ -19,7 +19,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -14419,7 +14419,9 @@ M:	Daniel Golle <daniel@makrotopia.org>
+@@ -15783,7 +15783,9 @@ M:	Daniel Golle <daniel@makrotopia.org>
  L:	netdev@vger.kernel.org
  S:	Maintained
  F:	drivers/net/pcs/pcs-mtk-lynxi.c
@@ -47,8 +47,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	  differential pairs via an embedded LynxI PHY.
 +
  config PCS_RZN1_MIIC
- 	tristate "Renesas RZ/N1 MII converter"
- 	depends on OF && (ARCH_RZN1 || COMPILE_TEST)
+ 	tristate "Renesas RZ/N1, RZ/N2H, RZ/T2H MII converter"
+ 	depends on OF
 --- a/drivers/net/pcs/Makefile
 +++ b/drivers/net/pcs/Makefile
 @@ -8,3 +8,4 @@ obj-$(CONFIG_PCS_XPCS)		+= pcs_xpcs.o
