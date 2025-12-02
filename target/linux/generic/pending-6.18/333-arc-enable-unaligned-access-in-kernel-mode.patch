@@ -13,8 +13,8 @@ Signed-off-by: Alexey Brodkin <abrodkin@synopsys.com>
 
 --- a/arch/arc/kernel/unaligned.c
 +++ b/arch/arc/kernel/unaligned.c
-@@ -203,7 +203,7 @@ int misaligned_fixup(unsigned long addre
- 	char buf[TASK_COMM_LEN];
+@@ -202,7 +202,7 @@ int misaligned_fixup(unsigned long addre
+ 	struct disasm_state state;
  
  	/* handle user mode only and only if enabled by sysadmin */
 -	if (!user_mode(regs) || !unaligned_enabled)
