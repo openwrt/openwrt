@@ -13,9 +13,9 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -1888,6 +1888,15 @@ config ARCH_HAS_MEMBARRIER_CALLBACKS
- config ARCH_HAS_MEMBARRIER_SYNC_CORE
- 	bool
+@@ -2012,6 +2012,15 @@ config ARCH_SUPPORTS_MSEAL_SYSTEM_MAPPIN
+ 	  For complete descriptions of memory sealing, please see
+ 	  Documentation/userspace-api/mseal.rst
  
 +config MANGLE_BOOTARGS
 +	bool "Rename offending bootargs"
@@ -31,7 +31,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  	help
 --- a/init/main.c
 +++ b/init/main.c
-@@ -633,6 +633,29 @@ static inline void setup_nr_cpu_ids(void
+@@ -635,6 +635,29 @@ static inline void setup_nr_cpu_ids(void
  static inline void smp_prepare_cpus(unsigned int maxcpus) { }
  #endif
  
@@ -61,7 +61,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  /*
   * We need to store the untouched command line for future reference.
   * We also need to store the touched command line since the parameter
-@@ -939,6 +962,7 @@ void start_kernel(void)
+@@ -934,6 +957,7 @@ void start_kernel(void)
  	jump_label_init();
  	static_call_init();
  	early_security_init();
