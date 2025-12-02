@@ -81,6 +81,9 @@
 };
 
 &eth {
+	pinctrl-names = "default";
+	pinctrl-0 = <&mdio_pins>;
+
 	status = "okay";
 
 	gmac0: mac@0 {
@@ -112,10 +115,6 @@
 		compatible = "mediatek,mt7531";
 		reg = <31>;
 		reset-gpios = <&pio 39 GPIO_ACTIVE_HIGH>;
-		interrupt-controller;
-		#interrupt-cells = <1>;
-		interrupt-parent = <&pio>;
-		interrupts = <38 IRQ_TYPE_LEVEL_HIGH>;
 	};
 };
 
@@ -134,9 +133,9 @@
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 
-		spi-max-frequency = <25000000>;
-		spi-tx-bus-width = <4>;
-		spi-rx-bus-width = <4>;
+		spi-max-frequency = <50000000>;
+		spi-tx-bus-width = <2>;
+		spi-rx-bus-width = <2>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -165,10 +164,8 @@
 					#address-cells = <1>;
 					#size-cells = <1>;
 
-					macaddr_factory_4: macaddr@4 {
-						compatible = "mac-base";
-						reg = <0x4 0x6>;
-						#nvmem-cell-cells = <1>;
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x1000>;
 					};
 				};
 			};
@@ -263,7 +260,6 @@
 
 &wifi {
 	status = "okay";
-	mediatek,mtd-eeprom = <&factory 0x0>;
-	nvmem-cells = <&macaddr_factory_4 0>;
-	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
 };
