@@ -12,7 +12,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -77,6 +77,80 @@ config SFP
+@@ -82,6 +82,80 @@ config SFP
  	depends on HWMON || HWMON=n
  	select MDIO_I2C
  
@@ -95,9 +95,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  config AS21XXX_PHY
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -27,6 +27,21 @@ libphy-$(CONFIG_OPEN_ALLIANCE_HELPERS) +
- obj-$(CONFIG_PHYLINK)		+= phylink.o
- obj-$(CONFIG_PHYLIB)		+= libphy.o
+@@ -21,6 +21,21 @@ obj-$(CONFIG_PHYLIB)		+= libphy.o
+ obj-$(CONFIG_PHYLIB)		+= mdio_devres.o
+ obj-$(CONFIG_PHY_PACKAGE)	+= phy_package.o
  
 +obj-$(CONFIG_SWCONFIG)		+= swconfig.o
 +obj-$(CONFIG_ADM6996_PHY)	+= adm6996.o
