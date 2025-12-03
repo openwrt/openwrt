@@ -621,7 +621,7 @@ ar8327_hw_config_of(struct ar8xxx_priv *priv, struct device_node *np)
 	const __be32 *paddr;
 	int len;
 	int i;
-	struct device_node *leds, *child;
+	struct device_node *leds;
 
 	paddr = of_get_property(np, "qca,ar8327-initvals", &len);
 	if (!paddr || len < (2 * sizeof(*paddr)))
@@ -658,7 +658,7 @@ ar8327_hw_config_of(struct ar8xxx_priv *priv, struct device_node *np)
 	if (!data->leds)
 		return -ENOMEM;
 
-	for_each_available_child_of_node(leds, child) {
+	for_each_available_child_of_node_scoped(leds, child) {
 		u32 reg = 0, mode = 0;
 		struct ar8327_led_info info;
 		int ret;

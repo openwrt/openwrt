@@ -727,7 +727,7 @@ static int rtpcs_838x_sds_patch(struct rtpcs_serdes *sds,
 	default:
 		break;
 	}
-	
+
 	return 0;
 }
 
@@ -763,7 +763,7 @@ static int rtpcs_838x_setup_serdes(struct rtpcs_serdes *sds,
 
 	rtpcs_838x_sds_patch(sds, hw_mode);
 	rtpcs_838x_sds_reset(sds);
-	
+
 	/* release reset */
 	rtpcs_sds_write(sds, 0, 3, 0x7106);
 
@@ -1054,7 +1054,7 @@ static int rtpcs_93xx_init_serdes_common(struct rtpcs_ctrl *ctrl)
 
 /* RTL930X */
 
-/* 
+/*
  * RTL930X needs a special mapping from logic SerDes ID to physical SerDes ID,
  * which takes the page into account. This applies to most of read/write calls.
  */
@@ -3366,7 +3366,7 @@ static int rtpcs_931x_sds_config_cmu(struct rtpcs_serdes *sds, enum rtpcs_sds_mo
 	if (cmu_page < 0)
 		return -EINVAL;
 
-	if (sds == even_sds) { 
+	if (sds == even_sds) {
 		force_lc_mode_bit = 4;
 		force_lc_mode_val_bit = 5;
 	} else {
@@ -3987,7 +3987,6 @@ static int rtpcs_probe(struct platform_device *pdev)
 {
 	struct device_node *np = pdev->dev.of_node;
 	struct device *dev = &pdev->dev;
-	struct device_node *child;
 	struct rtpcs_serdes *sds;
 	struct rtpcs_ctrl *ctrl;
 	u32 sds_id;
@@ -4018,7 +4017,7 @@ static int rtpcs_probe(struct platform_device *pdev)
 		sds->ops = ctrl->cfg->sds_ops;
 	}
 
-	for_each_child_of_node(dev->of_node, child) {
+	for_each_child_of_node_scoped(dev->of_node, child) {
 		ret = of_property_read_u32(child, "reg", &sds_id);
 		if (ret)
 			return ret;

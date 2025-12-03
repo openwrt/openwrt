@@ -1060,12 +1060,10 @@ static struct genl_family switch_fam = {
 static void
 of_switch_load_portmap(struct switch_dev *dev)
 {
-	struct device_node *port;
-
 	if (!dev->of_node)
 		return;
 
-	for_each_child_of_node(dev->of_node, port) {
+	for_each_child_of_node_scoped(dev->of_node, port) {
 		const __be32 *prop;
 		const char *segment;
 		int size, phys;

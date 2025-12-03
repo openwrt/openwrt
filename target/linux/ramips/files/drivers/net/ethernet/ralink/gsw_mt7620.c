@@ -204,7 +204,7 @@ MODULE_DEVICE_TABLE(of, mediatek_gsw_match);
 int mtk_gsw_init(struct fe_priv *priv)
 {
 	struct device_node *eth_node = priv->dev->of_node;
-	struct device_node *phy_node, *mdiobus_node;
+	struct device_node *mdiobus_node;
 	struct device_node *np = priv->switch_np;
 	struct platform_device *pdev;
 	struct mt7620_gsw *gsw;
@@ -226,7 +226,7 @@ int mtk_gsw_init(struct fe_priv *priv)
 
 	mdiobus_node = of_get_child_by_name(eth_node, "mdio-bus");
 	if (mdiobus_node) {
-		for_each_child_of_node(mdiobus_node, phy_node) {
+		for_each_child_of_node_scoped(mdiobus_node, phy_node) {
 			id = of_get_property(phy_node, "reg", NULL);
 			if (id && (be32_to_cpu(*id) == 0x1f))
 				gsw->ephy_disable = true;

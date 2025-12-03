@@ -1346,7 +1346,6 @@ static void fe_reset_phy(struct fe_priv *priv)
 static int __init fe_init(struct net_device *dev)
 {
 	struct fe_priv *priv = netdev_priv(dev);
-	struct device_node *port;
 	int err;
 
 	fe_reset_fe(priv);
@@ -1364,7 +1363,7 @@ static int __init fe_init(struct net_device *dev)
 		return err;
 
 	if (priv->soc->port_init)
-		for_each_child_of_node(priv->dev->of_node, port)
+		for_each_child_of_node_scoped(priv->dev->of_node, port)
 			if (of_device_is_compatible(port, "mediatek,eth-port") &&
 			    of_device_is_available(port))
 				priv->soc->port_init(priv, port);

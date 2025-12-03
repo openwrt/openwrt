@@ -488,12 +488,12 @@ static void b53_switch_reset_gpio(struct b53_device *dev)
 
 static int b53_configure_ports_of(struct b53_device *dev)
 {
-	struct device_node *dn, *pn;
+	struct device_node *dn;
 	u32 port_num;
 
 	dn = of_get_child_by_name(dev_of_node(dev->dev), "ports");
 
-	for_each_available_child_of_node(dn, pn) {
+	for_each_available_child_of_node_scoped(dn, pn) {
 		struct device_node *fixed_link;
 
 		if (of_property_read_u32(pn, "reg", &port_num))
@@ -1479,7 +1479,7 @@ static const struct b53_chip_data b53_switch_chips[] = {
 
 static int b53_switch_init_of(struct b53_device *dev)
 {
-	struct device_node *dn, *pn;
+	struct device_node *dn;
 	const char *alias;
 	u32 port_num;
 	u16 ports = 0;
@@ -1488,7 +1488,7 @@ static int b53_switch_init_of(struct b53_device *dev)
 	if (!dn)
 		return -EINVAL;
 
-	for_each_available_child_of_node(dn, pn) {
+	for_each_available_child_of_node_scoped(dn, pn) {
 		const char *label;
 		int len;
 
