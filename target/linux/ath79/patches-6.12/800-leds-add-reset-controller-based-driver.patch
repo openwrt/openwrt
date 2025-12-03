@@ -33,7 +33,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  
 --- /dev/null
 +++ b/drivers/leds/leds-reset.c
-@@ -0,0 +1,140 @@
+@@ -0,0 +1,133 @@
 +/*
 + * Copyright (C) 2018 John Crispin <john@phrozen.org>
 + *
@@ -75,51 +75,44 @@ Signed-off-by: John Crispin <john@phrozen.org>
 +
 +struct reset_leds_priv {
 +	int num_leds;
-+	struct reset_led_data leds[];
++	struct reset_led_data leds[] __counted_by(num_leds);
 +};
-+
-+static inline int sizeof_reset_leds_priv(int num_leds)
-+{
-+	return sizeof(struct reset_leds_priv) +
-+		(sizeof(struct reset_led_data) * num_leds);
-+}
 +
 +static struct reset_leds_priv *reset_leds_create(struct platform_device *pdev)
 +{
 +	struct device *dev = &pdev->dev;
-+	struct fwnode_handle *child;
++	struct device_node *np = dev->of_node;
 +	struct reset_leds_priv *priv;
 +	int count, ret;
 +
-+	count = device_get_child_node_count(dev);
++	count = of_get_child_count(np);
 +	if (!count)
 +		return ERR_PTR(-ENODEV);
 +
-+	priv = devm_kzalloc(dev, sizeof_reset_leds_priv(count), GFP_KERNEL);
++	priv = devm_kzalloc(dev, struct_size(priv, leds, count), GFP_KERNEL);
 +	if (!priv)
 +		return ERR_PTR(-ENOMEM);
 +
-+	device_for_each_child_node(dev, child) {
++	for_each_child_of_node_scoped(np, child) {
 +		struct reset_led_data *led = &priv->leds[priv->num_leds];
-+		struct device_node *np = to_of_node(child);
 +
-+		ret = fwnode_property_read_string(child, "label", &led->cdev.name);
-+		if (!led->cdev.name) {
-+			fwnode_handle_put(child);
-+			return ERR_PTR(-EINVAL);
-+		}
-+		led->rst = __of_reset_control_get(np, NULL, 0, 0, 0, true);
++		ret = of_property_read_string(child, "label", &led->cdev.name);
++		if (ret)
++			return ERR_PTR(ret);
++
++		led->rst = __of_reset_control_get(child, NULL, 0, 0, 0, true);
 +		if (IS_ERR(led->rst))
 +			return ERR_PTR(-EINVAL);
 +
-+		fwnode_property_read_string(child, "linux,default-trigger",
++		of_property_read_string(child, "linux,default-trigger",
 +						&led->cdev.default_trigger);
 +
 +		led->cdev.brightness_set = reset_led_set;
-+		ret = devm_led_classdev_register(&pdev->dev, &led->cdev);
++		ret = devm_led_classdev_register(dev, &led->cdev);
 +		if (ret < 0)
 +			return ERR_PTR(ret);
-+		led->cdev.dev->of_node = np;
++
++		led->cdev.dev->of_node = child;
 +		priv->num_leds++;
 +	}
 +
