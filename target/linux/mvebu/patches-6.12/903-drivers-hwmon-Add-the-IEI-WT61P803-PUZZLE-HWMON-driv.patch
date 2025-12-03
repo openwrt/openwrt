@@ -53,7 +53,7 @@ Cc: Robert Marko <robert.marko@sartura.hr>
  obj-$(CONFIG_SENSORS_IBMPOWERNV)+= ibmpowernv.o
 --- /dev/null
 +++ b/drivers/hwmon/iei-wt61p803-puzzle-hwmon.c
-@@ -0,0 +1,447 @@
+@@ -0,0 +1,445 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/* IEI WT61P803 PUZZLE MCU HWMON Driver
 + *
@@ -447,7 +447,6 @@ Cc: Robert Marko <robert.marko@sartura.hr>
 +	struct device *dev = &pdev->dev;
 +	struct iei_wt61p803_puzzle *mcu = dev_get_drvdata(dev->parent);
 +	struct iei_wt61p803_puzzle_hwmon *mcu_hwmon;
-+	struct fwnode_handle *child;
 +	struct device *hwmon_dev;
 +	int ret;
 +
@@ -470,11 +469,10 @@ Cc: Robert Marko <robert.marko@sartura.hr>
 +
 +	/* Control fans via PWM lines via Linux Kernel */
 +	if (IS_ENABLED(CONFIG_THERMAL)) {
-+		device_for_each_child_node(dev, child) {
++		device_for_each_child_node_scoped(dev, child) {
 +			ret = iei_wt61p803_puzzle_enable_thermal_cooling_dev(dev, child, mcu_hwmon);
 +			if (ret) {
 +				dev_err(dev, "Enabling the PWM fan failed\n");
-+				fwnode_handle_put(child);
 +				return ret;
 +			}
 +		}
