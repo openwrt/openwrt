@@ -32,7 +32,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  #include <linux/bcm47xx_nvram.h>
  #include <linux/phy.h>
  #include <linux/phy_fixed.h>
-@@ -1408,6 +1409,17 @@ static const struct ethtool_ops bgmac_et
+@@ -1407,6 +1408,17 @@ static const struct ethtool_ops bgmac_et
  	.set_link_ksettings     = phy_ethtool_set_link_ksettings,
  };
  
@@ -50,7 +50,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  /**************************************************
   * MII
   **************************************************/
-@@ -1546,6 +1558,14 @@ int bgmac_enet_probe(struct bgmac *bgmac
+@@ -1545,6 +1557,14 @@ int bgmac_enet_probe(struct bgmac *bgmac
  
  	bgmac->in_init = false;
  
@@ -65,7 +65,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	err = register_netdev(bgmac->net_dev);
  	if (err) {
  		dev_err(bgmac->dev, "Cannot register net device\n");
-@@ -1568,6 +1588,10 @@ EXPORT_SYMBOL_GPL(bgmac_enet_probe);
+@@ -1567,6 +1587,10 @@ EXPORT_SYMBOL_GPL(bgmac_enet_probe);
  
  void bgmac_enet_remove(struct bgmac *bgmac)
  {
