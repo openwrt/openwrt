@@ -92,7 +92,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	bool
 --- a/lib/Kconfig
 +++ b/lib/Kconfig
-@@ -457,16 +457,16 @@ config BCH_CONST_T
+@@ -320,16 +320,16 @@ config BCH_CONST_T
  # Textsearch support is select'ed if needed
  #
  config TEXTSEARCH
@@ -142,11 +142,11 @@ Signed-off-by: John Crispin <john@phrozen.org>
 -	tristate
 +	tristate "Compression offloading support"
  
- config SND_JACK
+ config SND_COMPRESS_ACCEL
  	bool
 --- a/net/Kconfig
 +++ b/net/Kconfig
-@@ -484,7 +484,7 @@ config NET_DEVLINK
+@@ -492,7 +492,7 @@ config NET_DEVLINK
  	default n
  
  config PAGE_POOL
