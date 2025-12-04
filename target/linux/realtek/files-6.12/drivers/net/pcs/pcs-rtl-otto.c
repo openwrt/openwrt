@@ -96,37 +96,6 @@
 #define RTL931X_MAC_SERDES_MODE_CTRL(sds)	(0x136C + (((sds) << 2)))
 #define RTPCS_931X_ISR_SERDES_RXIDLE		0x12f8
 
-struct rtpcs_ctrl {
-	struct device *dev;
-	struct regmap *map;
-	struct mii_bus *bus;
-	const struct rtpcs_config *cfg;
-	struct rtpcs_link *link[RTPCS_PORT_CNT];
-	bool rx_pol_inv[RTPCS_SDS_CNT];
-	bool tx_pol_inv[RTPCS_SDS_CNT];
-	struct mutex lock;
-};
-
-struct rtpcs_link {
-	struct rtpcs_ctrl *ctrl;
-	struct phylink_pcs pcs;
-	int sds;
-	int port;
-};
-
-struct rtpcs_config {
-	int cpu_port;
-	int mac_link_dup_sts;
-	int mac_link_spd_bits;
-	int mac_link_spd_sts;
-	int mac_link_sts;
-	int mac_rx_pause_sts;
-	int mac_tx_pause_sts;
-	const struct phylink_pcs_ops *pcs_ops;
-	int (*set_autoneg)(struct rtpcs_ctrl *ctrl, int sds, unsigned int neg_mode);
-	int (*setup_serdes)(struct rtpcs_ctrl *ctrl, int sds, phy_interface_t mode);
-};
-
 enum rtpcs_sds_mode {
 	RTPCS_SDS_MODE_OFF = 0,
 
@@ -160,10 +129,68 @@ enum rtpcs_port_media {
 	RTPCS_PORT_MEDIA_DAC_500CM,
 };
 
+struct rtpcs_ctrl {
+	struct device *dev;
+	struct regmap *map;
+	struct mii_bus *bus;
+	const struct rtpcs_config *cfg;
+	struct rtpcs_link *link[RTPCS_PORT_CNT];
+	bool rx_pol_inv[RTPCS_SDS_CNT];
+	bool tx_pol_inv[RTPCS_SDS_CNT];
+	struct mutex lock;
+};
+
+struct rtpcs_link {
+	struct rtpcs_ctrl *ctrl;
+	struct phylink_pcs pcs;
+	int sds;
+	int port;
+	enum rtpcs_sds_mode sds_mode;
+};
+
+struct rtpcs_config {
+	int cpu_port;
+	int mac_link_dup_sts;
+	int mac_link_spd_bits;
+	int mac_link_spd_sts;
+	int mac_link_sts;
+	int mac_rx_pause_sts;
+	int mac_tx_pause_sts;
+	const struct phylink_pcs_ops *pcs_ops;
+	void (*link_down)(struct rtpcs_ctrl *ctrl, int sds, int port);
+	void (*link_up)(struct rtpcs_ctrl *ctrl, int sds, int port);
+	int (*set_autoneg)(struct rtpcs_ctrl *ctrl, int sds, unsigned int neg_mode);
+	int (*setup_serdes)(struct rtpcs_ctrl *ctrl, int sds, phy_interface_t mode);
+};
+
 enum rtpcs_sds_cmu_type {
 	RTPCS_SDS_CMU_NONE = 0,
 	RTPCS_SDS_CMU_LC,
 	RTPCS_SDS_CMU_RING,
+};
+
+enum rtpcs_931x_dfe_type {
+	RTPCS_931X_DFE_VTH,
+	RTPCS_931X_DFE_TAP0,
+	RTPCS_931X_DFE_TAP1EVEN,
+	RTPCS_931X_DFE_TAP1ODD,
+	RTPCS_931X_DFE_TAP2EVEN,
+	RTPCS_931X_DFE_TAP2ODD,
+	RTPCS_931X_DFE_TAP3EVEN,
+	RTPCS_931X_DFE_TAP3ODD,
+	RTPCS_931X_DFE_TAP4EVEN,
+	RTPCS_931X_DFE_TAP4ODD,
+	RTPCS_931X_DFE_FGCAL_OFST,
+	RTPCS_931X_DFE_END,
+};
+
+struct rtpcs_931x_dfe {
+	u32 coefNum;
+	u32 endBit, startBit;
+	u32 signBit;
+	s32 val;
+	enum rtpcs_931x_dfe_type type;
+	char name[16];
 };
 
 typedef struct {
@@ -2534,6 +2561,199 @@ static int rtpcs_931x_sds_set_media(struct rtpcs_ctrl *ctrl, u32 sds,
 	return 0;
 }
 
+static int rtpcs_931x_sds_set_debug(struct rtpcs_ctrl *ctrl, u32 sds, u32 dbg_sel)
+{
+	u32 even_sds = sds & ~1;
+	u32 dbg_sel_rx = 75;
+
+	dbg_sel_rx += (sds % 2);
+	rtpcs_sds_write(ctrl, even_sds, 0x1f, 0x02, dbg_sel_rx);
+
+	rtpcs_sds_write_bits(ctrl, sds, 0x21, 0x0, 2, 2, 0x1);
+	rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0x15, 11, 10, dbg_sel);
+
+	return 0;
+}
+
+static int rtpcs_931x_sds_disable_dfe(struct rtpcs_ctrl *ctrl, u32 sds)
+{
+	return rtpcs_sds_write_bits(ctrl, sds, 0x2a, 0xf, 12, 6, 0x7f);
+}
+
+static int rtpcs_931x_sds_dump_dfe(struct rtpcs_ctrl *ctrl, u32 sds,
+				   struct rtpcs_931x_dfe *dfe)
+{
+	rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0x14, 10, 5, dfe->coefNum);
+	dfe->val = rtpcs_sds_read_bits(ctrl, sds, 0x1f, 0x14, dfe->endBit, dfe->startBit);
+
+	return 0;
+}
+
+static int rtpcs_931x_sds_set_dfe(struct rtpcs_ctrl *ctrl, u32 sds, enum rtpcs_931x_dfe_type type, s32 val)
+{
+	switch (type) {
+	case RTPCS_931X_DFE_VTH:
+		rtpcs_sds_write_bits(ctrl, sds, 0x2f, 0x12, 11, 4, val);
+		rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0xf, 12, 12, 1);
+		break;
+	case RTPCS_931X_DFE_TAP0:
+		rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0x1c, 5, 5, 0);
+		rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0x1c, 4, 0, val);
+		rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0xf, 6, 6, 1);
+		break;
+	case RTPCS_931X_DFE_TAP1EVEN:
+		rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0x1d, 5, 0, val);
+		rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0xf, 7, 7, 1);
+		break;
+	case RTPCS_931X_DFE_TAP1ODD:
+		rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0x1d, 11, 6, val);
+		rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0xf, 7, 7, 1);
+		break;
+	case RTPCS_931X_DFE_TAP2EVEN:
+		rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0x1f, 5, 0, val);
+		rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0xf, 8, 8, 1);
+		break;
+	case RTPCS_931X_DFE_TAP2ODD:
+		rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0x1f, 11, 6, val);
+		rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0xf, 8, 8, 1);
+		break;
+	case RTPCS_931X_DFE_TAP3EVEN:
+		rtpcs_sds_write_bits(ctrl, sds, 0x2f, 0x0, 5, 0, val);
+		rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0xf, 9, 9, 1);
+		break;
+	case RTPCS_931X_DFE_TAP3ODD:
+		rtpcs_sds_write_bits(ctrl, sds, 0x2f, 0x0, 11, 6, val);
+		rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0xf, 9, 9, 1);
+		break;
+	case RTPCS_931X_DFE_TAP4EVEN:
+		rtpcs_sds_write_bits(ctrl, sds, 0x2f, 0x1, 5, 0, val);
+		rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0xf, 10, 10, 1);
+		break;
+	case RTPCS_931X_DFE_TAP4ODD:
+		rtpcs_sds_write_bits(ctrl, sds, 0x2f, 0x1, 11, 6, val);
+		rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0xf, 10, 10, 1);
+		break;
+	case RTPCS_931X_DFE_FGCAL_OFST:
+		rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0x19, 14, 7, val);
+		rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0x19, 6, 6, 1);
+		break;
+	default:
+		break;
+	}
+
+	return 0;
+}
+
+static int rtpcs_931x_sds_adapt_leq(struct rtpcs_ctrl *ctrl, u32 sds)
+{
+	if (sds < 2)
+		return -EINVAL;
+
+	rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0xd, 6, 0, 0x0);
+	rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0xd, 13, 13, 0x0);
+	rtpcs_931x_sds_disable_dfe(ctrl, sds);
+
+	rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0xd, 7, 7, 0x1);
+	rtpcs_931x_sds_rx_reset(ctrl, sds);
+	mdelay(10);
+	rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0xd, 7, 7, 0x1);
+	mdelay(100);
+
+	return 0;
+}
+
+static int rtpcs_931x_sds_adapt_fiber(struct rtpcs_ctrl *ctrl, u32 sds,
+				      enum rtpcs_sds_mode mode)
+{
+	struct rtpcs_931x_dfe sds_dfe[] = {
+		{0x0f, 7, 0, 32, 0, RTPCS_931X_DFE_END, "FGCAL_OFST_BIN"},
+		{0x00, 5, 0, 5, 0, RTPCS_931X_DFE_TAP0, "TAP0"},
+		{0x0c, 7, 0, 32, 0, RTPCS_931X_DFE_VTH, "VTH_BIN"},
+	};
+	__always_unused struct rtpcs_931x_dfe sds_dfe2[] = {
+		{0x01, 5, 0, 5, 0, RTPCS_931X_DFE_TAP1EVEN, "TAP1_EVEN"},
+		{0x06, 5, 0, 5, 0, RTPCS_931X_DFE_TAP1ODD, "TAP1_ODD"},
+		{0x02, 5, 0, 5, 0, RTPCS_931X_DFE_TAP2EVEN, "TAP2_EVEN"},
+		{0x07, 5, 0, 5, 0, RTPCS_931X_DFE_TAP2ODD, "TAP2_ODD"},
+		{0x03, 5, 0, 5, 0, RTPCS_931X_DFE_TAP3EVEN, "TAP3_EVEN"},
+		{0x08, 5, 0, 5, 0, RTPCS_931X_DFE_TAP3ODD, "TAP3_ODD"},
+		{0x04, 5, 0, 5, 0, RTPCS_931X_DFE_TAP4EVEN, "TAP4_EVEN"},
+		{0x09, 5, 0, 5, 0, RTPCS_931X_DFE_TAP4ODD, "TAP4_ODD"},
+	};
+	int i, symerr;
+
+	if (sds < 2)
+		return -EINVAL;
+
+	rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0xc, 14, 10, 0x0);
+
+	pr_info("SDS %u RX calibration\n", sds);
+
+	rtpcs_931x_sds_init_leq_dfe(ctrl, sds);
+
+	rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0xf, 6, 6, 0x0);
+	rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0xf, 12, 12, 0x0);
+	mdelay(200);
+	rtpcs_931x_sds_set_debug(ctrl, sds, 0x2);
+
+	for (i = 0; i < sizeof(sds_dfe) / sizeof(struct rtpcs_931x_dfe); i++) {
+		rtpcs_931x_sds_dump_dfe(ctrl, sds, &sds_dfe[i]);
+	}
+
+	for (i = 0; i < sizeof(sds_dfe) / sizeof(struct rtpcs_931x_dfe); i++) {
+		if (sds_dfe[i].type == RTPCS_931X_DFE_END)
+			break;
+
+		if (sds_dfe[i].type == RTPCS_931X_DFE_TAP0)
+			sds_dfe[i].val = 31;
+
+		rtpcs_931x_sds_set_dfe(ctrl, sds, sds_dfe[i].type, sds_dfe[i].val);
+	}
+
+	rtpcs_931x_sds_rx_reset(ctrl, sds);
+	rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0xf, 7, 7, 0x0);
+	rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0xf, 8, 8, 0x0);
+	rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0xf, 9, 9, 0x0);
+	rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0xf, 10, 10, 0x0);
+
+	// handle dfeAuto == DISABLED, assume always enabled for now
+
+	for (i = 0; i < 3; i++) {
+		rtpcs_931x_sds_clear_symerr(ctrl, sds, mode);
+		mdelay(150);
+
+		symerr = rtpcs_931x_sds_fiber_get_symerr(ctrl, sds, mode);
+		if (symerr == 0)
+			break;
+	}
+
+	return (symerr != 0) ? -EIO : 0;
+}
+
+static int rtpcs_931x_sds_calibrate_rx(struct rtpcs_ctrl *ctrl, u32 sds,
+				       enum rtpcs_sds_mode mode /*,enum rtpcs_port_media media */)
+{
+	switch (mode) {
+	case RTPCS_SDS_MODE_1000BASEX:
+	case RTPCS_SDS_MODE_2500BASEX:
+	case RTPCS_SDS_MODE_10GBASER:
+		// if media fiber_10g/fiber_1g
+		rtpcs_sds_write_bits(ctrl, sds, 0x2e, 0xe, 13, 11, 1);
+		return rtpcs_931x_sds_adapt_fiber(ctrl, sds, mode);
+		// if media DAC
+		// 	rtpcs_sds_write_bits(ctrl, sds, 0x2e, 13, 11, 2);
+		// 	rtl9310_dfe_leq_adapt
+		break;
+	case RTPCS_SDS_MODE_SGMII ... RTPCS_SDS_MODE_USXGMII_2_5GSXGMII:
+		return rtpcs_931x_sds_adapt_leq(ctrl, sds);
+		break;
+	default:
+		return 0;
+	}
+
+	return 0;
+}
+
 static int rtpcs_931x_sds_config_fiber_10g(struct rtpcs_ctrl *ctrl, u32 sds)
 {
 	return rtpcs_sds_write_bits(ctrl, sds, 0x1f, 0xb, 1, 1, 0x1);
@@ -2775,6 +2995,9 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_ctrl *ctrl, int sds,
 	mdelay(10);
 	rtpcs_sds_write_bits(ctrl, sds, 0x20, 0x0, 11, 10, 0x1);
 	rtpcs_sds_write_bits(ctrl, sds, 0x20, 0x0, 11, 10, 0x3);
+
+	/* TODO: this should run in link_up */
+	rtpcs_931x_sds_calibrate_rx(ctrl, sds, sds_mode);
 
 	return 0;
 }
