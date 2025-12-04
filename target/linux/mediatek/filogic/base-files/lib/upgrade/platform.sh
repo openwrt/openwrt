@@ -122,6 +122,7 @@ platform_do_upgrade() {
 	asus,rt-ax52|\
 	asus,rt-ax59u|\
 	asus,tuf-ax4200|\
+	asus,tuf-ax4200q|\
 	asus,tuf-ax6000)
 		CI_UBIPART="UBI_DEV"
 		CI_KERNPART="linux"
@@ -256,6 +257,7 @@ platform_pre_upgrade() {
 	asus,rt-ax52|\
 	asus,rt-ax59u|\
 	asus,tuf-ax4200|\
+	asus,tuf-ax4200q|\
 	asus,tuf-ax6000)
 		asus_initial_setup
 		;;
