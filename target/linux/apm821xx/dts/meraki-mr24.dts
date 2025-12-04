@@ -64,12 +64,20 @@
 				 * blocks (64KiB) in order to have spares
 				 * around for bad block management
 				 */
+				compatible = "fixed-partitions";
 				label = "u-boot-env";
 				reg = <0x00150000 0x00010000>;
-				read-only;
+				#address-cells = <1>;
+				#size-cells = <1>;
 
-				nvmem-layout {
-					compatible = "u-boot,env";
+				partition@0 {
+					reg = <0x0 0x10000>;
+					label = "u-boot-env-main";
+					status = "disabled";
+
+					nvmem-layout {
+						compatible = "u-boot,env-redundant-count";
+					};
 				};
 			};
 
@@ -79,9 +87,21 @@
 				 * has to be kept it in sync with the
 				 * data in "u-boot-env".
 				 */
+				compatible = "fixed-partitions";
 				label = "u-boot-env-redundant";
 				reg = <0x00160000 0x00010000>;
-				read-only;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					reg = <0x0 0x10000>;
+					label = "u-boot-env-redundant";
+					status = "disabled";
+
+					nvmem-layout {
+						compatible = "u-boot,env-redundant-count";
+					};
+				};
 			};
 
 			partition@170000 {
