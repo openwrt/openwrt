@@ -1464,13 +1464,13 @@ int rt3050_esw_init(struct fe_priv *priv)
 	const __be32 *rgmii;
 	int ret;
 
-	if (!pdev)
-		return -ENODEV;
-
 	if (!of_device_is_compatible(np, ralink_esw_match->compatible))
 		return -EINVAL;
 
 	pdev = of_find_device_by_node(np);
+	if (!pdev)
+		return -ENODEV;
+
 	esw = platform_get_drvdata(pdev);
 	if (!esw) {
 		put_device(&pdev->dev);
