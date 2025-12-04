@@ -1,0 +1,14 @@
+Fixes leaking the ethernet FCS into the frame payload on the RX
+path.
+
+--- a/dcdp/ptm_tc.c
++++ b/dcdp/ptm_tc.c
+@@ -923,7 +923,7 @@ static void ptm_fw_init(struct ptm_ep_pr
+ 	rx_gitf_cfg.rx_inserted_bytes_1h = 0;
+ 	rx_gitf_cfg.rx_inserted_bytes_2l = 0;
+ 	rx_gitf_cfg.rx_inserted_bytes_2h = 0;
+-	rx_gitf_cfg.rx_len_adj		= -2;
++	rx_gitf_cfg.rx_len_adj		= is_bonding ? -2 : -6;
+ 	for (i = 0; i < 4; i++) {
+ 		dst_addr = __RX_GIF0_CFG_STATS_CFG +
+ 			(i * DW_SZ(rx_gitf_cfg));
