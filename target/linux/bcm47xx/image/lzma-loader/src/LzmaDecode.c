@@ -185,6 +185,7 @@ int RangeDecoderReverseBitTreeDecode(CProb *probs, int numLevels, CRangeDecoder 
 {
   int mi = 1;
   int i;
+  int symbol = 0;
   #ifdef _LZMA_LOC_OPT
   RC_INIT_VAR
   #endif
@@ -202,7 +203,7 @@ int RangeDecoderReverseBitTreeDecode(CProb *probs, int numLevels, CRangeDecoder 
   #ifdef _LZMA_LOC_OPT
   RC_FLUSH_VAR
   #endif
-  return 0;
+  return symbol;
 }
 
 Byte LzmaLiteralDecode(CProb *probs, CRangeDecoder *rd)
