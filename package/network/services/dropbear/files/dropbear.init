@@ -330,7 +330,7 @@ dropbear_instance()
 		  "Auto-transition 'option rsakeyfile' => 'list keyfile' in /etc/config/${NAME} is done, please verify your configuration"
 		hk_config 'rsakeyfile' "${rsakeyfile}"
 	fi
-	[ -n "${BannerFile}" ] && procd_append_param command -b "${BannerFile}"
+	[ -n "${BannerFile}" -a -f "${BannerFile}" ] && procd_append_param command -b "${BannerFile}"
 	[ "${IdleTimeout}" -ne 0 ] && procd_append_param command -I "${IdleTimeout}"
 	[ "${SSHKeepAlive}" -ne 0 ] && procd_append_param command -K "${SSHKeepAlive}"
 	[ "${MaxAuthTries}" -ne 0 ] && procd_append_param command -T "${MaxAuthTries}"
