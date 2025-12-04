@@ -97,7 +97,7 @@ Reviewed-by: Simon Horman <simon.horman@corigine.com>
 
 --- a/drivers/net/dsa/b53/b53_common.c
 +++ b/drivers/net/dsa/b53/b53_common.c
-@@ -1256,8 +1256,12 @@ static void b53_adjust_63xx_rgmii(struct
+@@ -1281,8 +1281,12 @@ static void b53_adjust_63xx_rgmii(struct
  		break;
  	}
  
@@ -113,7 +113,7 @@ Reviewed-by: Simon Horman <simon.horman@corigine.com>
  
 --- a/drivers/net/dsa/b53/b53_regs.h
 +++ b/drivers/net/dsa/b53/b53_regs.h
-@@ -138,6 +138,7 @@
+@@ -140,6 +140,7 @@
  
  #define B53_RGMII_CTRL_IMP		0x60
  #define   RGMII_CTRL_ENABLE_GMII	BIT(7)

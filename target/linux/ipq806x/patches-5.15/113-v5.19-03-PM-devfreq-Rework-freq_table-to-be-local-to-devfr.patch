@@ -156,7 +156,7 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
  			sizeof(*devfreq->stats.time_in_state),
  			GFP_KERNEL);
  	if (!devfreq->stats.time_in_state) {
-@@ -1658,9 +1657,9 @@ static ssize_t available_frequencies_sho
+@@ -1654,9 +1653,9 @@ static ssize_t available_frequencies_sho
  
  	mutex_lock(&df->lock);
  
@@ -168,7 +168,7 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
  
  	mutex_unlock(&df->lock);
  	/* Truncate the trailing space */
-@@ -1683,7 +1682,7 @@ static ssize_t trans_stat_show(struct de
+@@ -1679,7 +1678,7 @@ static ssize_t trans_stat_show(struct de
  
  	if (!df->profile)
  		return -EINVAL;
@@ -177,7 +177,7 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
  
  	if (max_state == 0)
  		return scnprintf(buf, PAGE_SIZE, "Not Supported.\n");
-@@ -1702,7 +1701,7 @@ static ssize_t trans_stat_show(struct de
+@@ -1698,7 +1697,7 @@ static ssize_t trans_stat_show(struct de
  		if (len >= PAGE_SIZE - 1)
  			break;
  		len += scnprintf(buf + len, PAGE_SIZE - len, "%10lu",
@@ -186,7 +186,7 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
  	}
  	if (len >= PAGE_SIZE - 1)
  		return PAGE_SIZE - 1;
-@@ -1712,7 +1711,7 @@ static ssize_t trans_stat_show(struct de
+@@ -1708,7 +1707,7 @@ static ssize_t trans_stat_show(struct de
  	for (i = 0; i < max_state; i++) {
  		if (len >= PAGE_SIZE - 1)
  			break;
@@ -195,7 +195,7 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
  					== df->previous_freq) {
  			len += scnprintf(buf + len, PAGE_SIZE - len, "*");
  		} else {
-@@ -1722,7 +1721,7 @@ static ssize_t trans_stat_show(struct de
+@@ -1718,7 +1717,7 @@ static ssize_t trans_stat_show(struct de
  			break;
  
  		len += scnprintf(buf + len, PAGE_SIZE - len, "%10lu:",
@@ -204,7 +204,7 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
  		for (j = 0; j < max_state; j++) {
  			if (len >= PAGE_SIZE - 1)
  				break;
-@@ -1757,7 +1756,7 @@ static ssize_t trans_stat_store(struct d
+@@ -1753,7 +1752,7 @@ static ssize_t trans_stat_store(struct d
  	if (!df->profile)
  		return -EINVAL;
  
@@ -213,7 +213,7 @@ Signed-off-by: Christian 'Ansuel' Marangi <ansuelsmth@gmail.com>
  		return count;
  
  	err = kstrtoint(buf, 10, &value);
-@@ -1765,11 +1764,11 @@ static ssize_t trans_stat_store(struct d
+@@ -1761,11 +1760,11 @@ static ssize_t trans_stat_store(struct d
  		return -EINVAL;
  
  	mutex_lock(&df->lock);
