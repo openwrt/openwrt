@@ -499,6 +499,10 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +	if (!afe->platform_priv)
 +		return -ENOMEM;
 +
++	afe_priv = afe->platform_priv;
++	afe->dev = &pdev->dev;
++	dev = afe->dev;
++
 +	reset = devm_reset_control_get_exclusive(dev, NULL);
 +	if (IS_ERR(reset))
 +		return PTR_ERR(reset);
@@ -507,10 +511,6 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +	reset_control_assert(reset);
 +	usleep_range(10, 20);
 +	reset_control_deassert(reset);
-+
-+	afe_priv = afe->platform_priv;
-+	afe->dev = &pdev->dev;
-+	dev = afe->dev;
 +
 +	afe->base_addr = devm_platform_ioremap_resource(pdev, 0);
 +	if (IS_ERR(afe->base_addr))
