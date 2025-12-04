@@ -13,7 +13,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/media/usb/uvc/uvc_driver.c
 +++ b/drivers/media/usb/uvc/uvc_driver.c
-@@ -3231,6 +3231,18 @@ static const struct usb_device_id uvc_id
+@@ -3234,6 +3234,18 @@ static const struct usb_device_id uvc_id
  	  .bInterfaceSubClass	= 1,
  	  .bInterfaceProtocol	= 0,
  	  .driver_info		= UVC_INFO_META(V4L2_META_FMT_D4XX) },
@@ -64,7 +64,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  #include <media/v4l2-common.h>
  
-@@ -1243,9 +1248,149 @@ static void uvc_video_decode_data(struct
+@@ -1252,9 +1257,149 @@ static void uvc_video_decode_data(struct
  	uvc_urb->async_operations++;
  }
  
@@ -214,7 +214,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	/* Mark the buffer as done if the EOF marker is set. */
  	if (data[1] & UVC_STREAM_EOF && buf->bytesused != 0) {
  		uvc_dbg(stream->dev, FRAME, "Frame complete (EOF found)\n");
-@@ -1830,6 +1975,8 @@ static int uvc_init_video_isoc(struct uv
+@@ -1839,6 +1984,8 @@ static int uvc_init_video_isoc(struct uv
  	if (npackets == 0)
  		return -ENOMEM;
  

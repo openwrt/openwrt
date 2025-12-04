@@ -138,7 +138,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  	}
 --- a/include/linux/mm.h
 +++ b/include/linux/mm.h
-@@ -1093,6 +1093,8 @@ vm_fault_t finish_mkwrite_fault(struct v
+@@ -1104,6 +1104,8 @@ vm_fault_t finish_mkwrite_fault(struct v
  #define ZONES_PGOFF		(NODES_PGOFF - ZONES_WIDTH)
  #define LAST_CPUPID_PGOFF	(ZONES_PGOFF - LAST_CPUPID_WIDTH)
  #define KASAN_TAG_PGOFF		(LAST_CPUPID_PGOFF - KASAN_TAG_WIDTH)

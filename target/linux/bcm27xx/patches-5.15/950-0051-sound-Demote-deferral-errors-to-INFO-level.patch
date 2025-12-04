@@ -15,7 +15,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
 
 --- a/sound/soc/soc-core.c
 +++ b/sound/soc/soc-core.c
-@@ -1017,7 +1017,7 @@ int snd_soc_add_pcm_runtime(struct snd_s
+@@ -1020,7 +1020,7 @@ int snd_soc_add_pcm_runtime(struct snd_s
  	for_each_link_cpus(dai_link, i, cpu) {
  		asoc_rtd_to_cpu(rtd, i) = snd_soc_find_dai(cpu);
  		if (!asoc_rtd_to_cpu(rtd, i)) {
@@ -24,7 +24,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.org>
  				 cpu->dai_name);
  			goto _err_defer;
  		}
-@@ -1028,7 +1028,7 @@ int snd_soc_add_pcm_runtime(struct snd_s
+@@ -1031,7 +1031,7 @@ int snd_soc_add_pcm_runtime(struct snd_s
  	for_each_link_codecs(dai_link, i, codec) {
  		asoc_rtd_to_codec(rtd, i) = snd_soc_find_dai(codec);
  		if (!asoc_rtd_to_codec(rtd, i)) {

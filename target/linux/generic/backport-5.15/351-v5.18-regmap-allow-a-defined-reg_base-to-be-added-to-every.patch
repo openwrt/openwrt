@@ -42,7 +42,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  	map->format.reg_bytes = DIV_ROUND_UP(config->reg_bits, 8);
  	map->format.pad_bytes = config->pad_bits / 8;
  	map->format.reg_downshift = config->reg_downshift;
-@@ -1763,6 +1765,7 @@ static int _regmap_raw_write_impl(struct
+@@ -1765,6 +1767,7 @@ static int _regmap_raw_write_impl(struct
  			return ret;
  	}
  
@@ -50,7 +50,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  	reg >>= map->format.reg_downshift;
  	map->format.format_reg(map->work_buf, reg, map->reg_shift);
  	regmap_set_work_buf_flag_mask(map, map->format.reg_bytes,
-@@ -1934,6 +1937,7 @@ static int _regmap_bus_formatted_write(v
+@@ -1936,6 +1939,7 @@ static int _regmap_bus_formatted_write(v
  			return ret;
  	}
  
@@ -58,7 +58,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  	reg >>= map->format.reg_downshift;
  	map->format.format_write(map, reg, val);
  
-@@ -2375,6 +2379,7 @@ static int _regmap_raw_multi_reg_write(s
+@@ -2377,6 +2381,7 @@ static int _regmap_raw_multi_reg_write(s
  		unsigned int reg = regs[i].reg;
  		unsigned int val = regs[i].def;
  		trace_regmap_hw_write_start(map, reg, 1);
@@ -66,7 +66,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  		reg >>= map->format.reg_downshift;
  		map->format.format_reg(u8, reg, map->reg_shift);
  		u8 += reg_bytes + pad_bytes;
-@@ -2701,6 +2706,7 @@ static int _regmap_raw_read(struct regma
+@@ -2703,6 +2708,7 @@ static int _regmap_raw_read(struct regma
  			return ret;
  	}
  

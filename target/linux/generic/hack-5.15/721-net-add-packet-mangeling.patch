@@ -19,7 +19,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -1682,6 +1682,10 @@ enum netdev_priv_flags {
+@@ -1691,6 +1691,10 @@ enum netdev_priv_flags {
  	IFF_TX_SKB_NO_LINEAR		= BIT_ULL(31),
  };
  
@@ -30,7 +30,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #define IFF_802_1Q_VLAN			IFF_802_1Q_VLAN
  #define IFF_EBRIDGE			IFF_EBRIDGE
  #define IFF_BONDING			IFF_BONDING
-@@ -1713,6 +1717,7 @@ enum netdev_priv_flags {
+@@ -1722,6 +1726,7 @@ enum netdev_priv_flags {
  #define IFF_FAILOVER_SLAVE		IFF_FAILOVER_SLAVE
  #define IFF_L3MDEV_RX_HANDLER		IFF_L3MDEV_RX_HANDLER
  #define IFF_TX_SKB_NO_LINEAR		IFF_TX_SKB_NO_LINEAR
@@ -38,7 +38,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  /* Specifies the type of the struct net_device::ml_priv pointer */
  enum netdev_ml_priv_type {
-@@ -2013,6 +2018,7 @@ struct net_device {
+@@ -2022,6 +2027,7 @@ struct net_device {
  	/* Read-mostly cache-line for fast-path access */
  	unsigned int		flags;
  	unsigned int		priv_flags;
@@ -46,7 +46,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	const struct net_device_ops *netdev_ops;
  	int			ifindex;
  	unsigned short		gflags;
-@@ -2073,6 +2079,11 @@ struct net_device {
+@@ -2082,6 +2088,11 @@ struct net_device {
  	const struct tlsdev_ops *tlsdev_ops;
  #endif
  
@@ -58,7 +58,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	const struct header_ops *header_ops;
  
  	unsigned char		operstate;
-@@ -2144,6 +2155,10 @@ struct net_device {
+@@ -2153,6 +2164,10 @@ struct net_device {
  	struct mctp_dev __rcu	*mctp_ptr;
  #endif
  
@@ -71,7 +71,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   */
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
-@@ -2867,6 +2867,10 @@ static inline int pskb_trim(struct sk_bu
+@@ -2890,6 +2890,10 @@ static inline int pskb_trim(struct sk_bu
  	return (len < skb->len) ? __pskb_trim(skb, len) : 0;
  }
  
@@ -82,7 +82,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /**
   *	pskb_trim_unique - remove end from a paged unique (not cloned) buffer
   *	@skb: buffer to alter
-@@ -3017,16 +3021,6 @@ static inline struct sk_buff *dev_alloc_
+@@ -3040,16 +3044,6 @@ static inline struct sk_buff *dev_alloc_
  }
  
  

@@ -26,7 +26,7 @@ Signed-off-by: John Cox <jc@kynesim.co.uk>
  	case V4L2_CTRL_TYPE_HEVC_DECODE_PARAMS:
  		p_hevc_decode_params = p;
  
-@@ -1250,6 +1253,9 @@ static struct v4l2_ctrl *v4l2_ctrl_new(s
+@@ -1249,6 +1252,9 @@ static struct v4l2_ctrl *v4l2_ctrl_new(s
  	case V4L2_CTRL_TYPE_HEVC_SLICE_PARAMS:
  		elem_size = sizeof(struct v4l2_ctrl_hevc_slice_params);
  		break;

@@ -312,7 +312,7 @@ Signed-off-by: Wolfram Sang <wsa@kernel.org>
  	i2c->adap.algo = &meson_i2c_algorithm;
 --- a/drivers/i2c/busses/i2c-mt65xx.c
 +++ b/drivers/i2c/busses/i2c-mt65xx.c
-@@ -1432,7 +1432,7 @@ static int mtk_i2c_probe(struct platform
+@@ -1435,7 +1435,7 @@ static int mtk_i2c_probe(struct platform
  		speed_clk = I2C_MT65XX_CLK_MAIN;
  	}
  
@@ -425,7 +425,7 @@ Signed-off-by: Wolfram Sang <wsa@kernel.org>
  	if (ret)
 --- a/drivers/i2c/busses/i2c-qup.c
 +++ b/drivers/i2c/busses/i2c-qup.c
-@@ -1921,7 +1921,7 @@ nodma:
+@@ -1923,7 +1923,7 @@ nodma:
  	qup->adap.dev.of_node = pdev->dev.of_node;
  	qup->is_last = true;
  

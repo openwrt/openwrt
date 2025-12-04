@@ -47,8 +47,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	writel(value, chip->regs + chip->soc->reg_offset[num] + offset);
  }
  
- static int pwm_mediatek_config(struct pwm_chip *chip, struct pwm_device *pwm,
-@@ -277,48 +282,63 @@ static const struct pwm_mediatek_of_data
+ static void pwm_mediatek_enable(struct pwm_chip *chip, struct pwm_device *pwm)
+@@ -303,48 +308,63 @@ static const struct pwm_mediatek_of_data
  	.num_pwms = 8,
  	.pwm45_fixup = false,
  	.has_ck_26m_sel = false,
@@ -112,7 +112,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  };
  
  static const struct of_device_id pwm_mediatek_of_match[] = {
-@@ -327,6 +347,7 @@ static const struct of_device_id pwm_med
+@@ -353,6 +373,7 @@ static const struct of_device_id pwm_med
  	{ .compatible = "mediatek,mt7623-pwm", .data = &mt7623_pwm_data },
  	{ .compatible = "mediatek,mt7628-pwm", .data = &mt7628_pwm_data },
  	{ .compatible = "mediatek,mt7629-pwm", .data = &mt7629_pwm_data },

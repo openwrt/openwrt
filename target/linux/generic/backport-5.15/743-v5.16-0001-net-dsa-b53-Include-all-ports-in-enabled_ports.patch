@@ -22,7 +22,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/dsa/b53/b53_common.c
 +++ b/drivers/net/dsa/b53/b53_common.c
-@@ -2334,7 +2334,7 @@ static const struct b53_chip_data b53_sw
+@@ -2365,7 +2365,7 @@ static const struct b53_chip_data b53_sw
  		.chip_id = BCM5325_DEVICE_ID,
  		.dev_name = "BCM5325",
  		.vlans = 16,
@@ -31,7 +31,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.arl_bins = 2,
  		.arl_buckets = 1024,
  		.imp_port = 5,
-@@ -2345,7 +2345,7 @@ static const struct b53_chip_data b53_sw
+@@ -2376,7 +2376,7 @@ static const struct b53_chip_data b53_sw
  		.chip_id = BCM5365_DEVICE_ID,
  		.dev_name = "BCM5365",
  		.vlans = 256,
@@ -40,7 +40,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.arl_bins = 2,
  		.arl_buckets = 1024,
  		.imp_port = 5,
-@@ -2356,7 +2356,7 @@ static const struct b53_chip_data b53_sw
+@@ -2387,7 +2387,7 @@ static const struct b53_chip_data b53_sw
  		.chip_id = BCM5389_DEVICE_ID,
  		.dev_name = "BCM5389",
  		.vlans = 4096,
@@ -49,7 +49,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.arl_bins = 4,
  		.arl_buckets = 1024,
  		.imp_port = 8,
-@@ -2370,7 +2370,7 @@ static const struct b53_chip_data b53_sw
+@@ -2401,7 +2401,7 @@ static const struct b53_chip_data b53_sw
  		.chip_id = BCM5395_DEVICE_ID,
  		.dev_name = "BCM5395",
  		.vlans = 4096,
@@ -58,7 +58,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.arl_bins = 4,
  		.arl_buckets = 1024,
  		.imp_port = 8,
-@@ -2384,7 +2384,7 @@ static const struct b53_chip_data b53_sw
+@@ -2415,7 +2415,7 @@ static const struct b53_chip_data b53_sw
  		.chip_id = BCM5397_DEVICE_ID,
  		.dev_name = "BCM5397",
  		.vlans = 4096,
@@ -67,7 +67,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.arl_bins = 4,
  		.arl_buckets = 1024,
  		.imp_port = 8,
-@@ -2398,7 +2398,7 @@ static const struct b53_chip_data b53_sw
+@@ -2429,7 +2429,7 @@ static const struct b53_chip_data b53_sw
  		.chip_id = BCM5398_DEVICE_ID,
  		.dev_name = "BCM5398",
  		.vlans = 4096,
@@ -76,7 +76,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.arl_bins = 4,
  		.arl_buckets = 1024,
  		.imp_port = 8,
-@@ -2412,7 +2412,7 @@ static const struct b53_chip_data b53_sw
+@@ -2443,7 +2443,7 @@ static const struct b53_chip_data b53_sw
  		.chip_id = BCM53115_DEVICE_ID,
  		.dev_name = "BCM53115",
  		.vlans = 4096,
@@ -85,7 +85,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.arl_bins = 4,
  		.arl_buckets = 1024,
  		.vta_regs = B53_VTA_REGS,
-@@ -2426,7 +2426,7 @@ static const struct b53_chip_data b53_sw
+@@ -2457,7 +2457,7 @@ static const struct b53_chip_data b53_sw
  		.chip_id = BCM53125_DEVICE_ID,
  		.dev_name = "BCM53125",
  		.vlans = 4096,
@@ -94,7 +94,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.arl_bins = 4,
  		.arl_buckets = 1024,
  		.imp_port = 8,
-@@ -2468,7 +2468,7 @@ static const struct b53_chip_data b53_sw
+@@ -2499,7 +2499,7 @@ static const struct b53_chip_data b53_sw
  		.chip_id = BCM53010_DEVICE_ID,
  		.dev_name = "BCM53010",
  		.vlans = 4096,
@@ -103,7 +103,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.arl_bins = 4,
  		.arl_buckets = 1024,
  		.imp_port = 8,
-@@ -2510,7 +2510,7 @@ static const struct b53_chip_data b53_sw
+@@ -2541,7 +2541,7 @@ static const struct b53_chip_data b53_sw
  		.chip_id = BCM53018_DEVICE_ID,
  		.dev_name = "BCM53018",
  		.vlans = 4096,
@@ -112,7 +112,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.arl_bins = 4,
  		.arl_buckets = 1024,
  		.imp_port = 8,
-@@ -2524,7 +2524,7 @@ static const struct b53_chip_data b53_sw
+@@ -2555,7 +2555,7 @@ static const struct b53_chip_data b53_sw
  		.chip_id = BCM53019_DEVICE_ID,
  		.dev_name = "BCM53019",
  		.vlans = 4096,
@@ -121,7 +121,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.arl_bins = 4,
  		.arl_buckets = 1024,
  		.imp_port = 8,
-@@ -2666,7 +2666,6 @@ static int b53_switch_init(struct b53_de
+@@ -2697,7 +2697,6 @@ static int b53_switch_init(struct b53_de
  			dev->cpu_port = 5;
  	}
  
