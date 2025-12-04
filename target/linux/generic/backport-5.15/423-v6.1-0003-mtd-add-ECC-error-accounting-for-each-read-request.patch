@@ -128,7 +128,7 @@ Link: https://lore.kernel.org/linux-mtd/20220629125737.14418-4-kernel@kempniu.pl
  }
 --- a/drivers/mtd/nand/spi/core.c
 +++ b/drivers/mtd/nand/spi/core.c
-@@ -629,6 +629,7 @@ static int spinand_mtd_read(struct mtd_i
+@@ -632,6 +632,7 @@ static int spinand_mtd_read(struct mtd_i
  {
  	struct spinand_device *spinand = mtd_to_spinand(mtd);
  	struct nand_device *nand = mtd_to_nanddev(mtd);
@@ -136,7 +136,7 @@ Link: https://lore.kernel.org/linux-mtd/20220629125737.14418-4-kernel@kempniu.pl
  	unsigned int max_bitflips = 0;
  	struct nand_io_iter iter;
  	bool disable_ecc = false;
-@@ -640,6 +641,8 @@ static int spinand_mtd_read(struct mtd_i
+@@ -643,6 +644,8 @@ static int spinand_mtd_read(struct mtd_i
  
  	mutex_lock(&spinand->lock);
  
@@ -145,7 +145,7 @@ Link: https://lore.kernel.org/linux-mtd/20220629125737.14418-4-kernel@kempniu.pl
  	nanddev_io_for_each_page(nand, NAND_PAGE_READ, from, ops, &iter) {
  		if (disable_ecc)
  			iter.req.mode = MTD_OPS_RAW;
-@@ -662,6 +665,13 @@ static int spinand_mtd_read(struct mtd_i
+@@ -665,6 +668,13 @@ static int spinand_mtd_read(struct mtd_i
  		ops->oobretlen += iter.req.ooblen;
  	}
  

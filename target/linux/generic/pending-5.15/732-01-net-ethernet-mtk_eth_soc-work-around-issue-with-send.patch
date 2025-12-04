@@ -45,7 +45,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	bool gso = false;
  	int tx_num;
  
-@@ -1552,6 +1568,18 @@ static netdev_tx_t mtk_start_xmit(struct
+@@ -1559,6 +1575,18 @@ static netdev_tx_t mtk_start_xmit(struct
  		return NETDEV_TX_BUSY;
  	}
  
@@ -64,7 +64,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	/* TSO: fill MSS info in tcp checksum field */
  	if (skb_is_gso(skb)) {
  		if (skb_cow_head(skb, 0)) {
-@@ -1567,8 +1595,14 @@ static netdev_tx_t mtk_start_xmit(struct
+@@ -1574,8 +1602,14 @@ static netdev_tx_t mtk_start_xmit(struct
  		}
  	}
  
