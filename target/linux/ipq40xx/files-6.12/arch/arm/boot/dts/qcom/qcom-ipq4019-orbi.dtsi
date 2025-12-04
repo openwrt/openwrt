@@ -204,49 +204,65 @@
 		reg = <0x27>;
 
 		led0@0 {
-			label = "rgb:led0";
+			function = LED_FUNCTION_BACKLIGHT;
+			function-enumerator = <0>;
+			color = <LED_COLOR_ID_WHITE>;
 			reg = <0x0>;
 			linux,default-trigger = "default-on";
 		};
 
 		led1@1 {
-			label = "rgb:led1";
+			function = LED_FUNCTION_BACKLIGHT;
+			function-enumerator = <1>;
+			color = <LED_COLOR_ID_WHITE>;
 			reg = <0x1>;
 			linux,default-trigger = "default-on";
 		};
 
 		led2@2 {
-			label = "rgb:led2";
+			function = LED_FUNCTION_BACKLIGHT;
+			function-enumerator = <2>;
+			color = <LED_COLOR_ID_WHITE>;
 			reg = <0x2>;
 			linux,default-trigger = "default-on";
 		};
 
 		led3@3 {
-			label = "rgb:led3";
+			function = LED_FUNCTION_BACKLIGHT;
+			function-enumerator = <3>;
+			color = <LED_COLOR_ID_WHITE>;
 			reg = <0x3>;
 			linux,default-trigger = "default-on";
 		};
 
 		led4@4 {
-			label = "rgb:led4";
+			function = LED_FUNCTION_BACKLIGHT;
+			function-enumerator = <4>;
+			color = <LED_COLOR_ID_WHITE>;
 			reg = <0x4>;
 			linux,default-trigger = "default-on";
 		};
 
 		led5@5 {
-			label = "rgb:led5";
+			function = LED_FUNCTION_BACKLIGHT;
+			function-enumerator = <5>;
+			color = <LED_COLOR_ID_WHITE>;
 			reg = <0x5>;
 			linux,default-trigger = "default-on";
 		};
 
 		led6@6 {
-			label = "rgb:led6";
+			function = LED_FUNCTION_BACKLIGHT;
+			function-enumerator = <6>;
+			color = <LED_COLOR_ID_WHITE>;
 			reg = <0x6>;
 			linux,default-trigger = "default-on";
 		};
 
 		led7@7 {
-			label = "rgb:led7";
+			function = LED_FUNCTION_BACKLIGHT;
+			function-enumerator = <7>;
+			color = <LED_COLOR_ID_WHITE>;
 			reg = <0x7>;
 			linux,default-trigger = "default-on";
 		};
@@ -278,30 +294,6 @@
 	status = "okay";
 };
 
-&swport1 {
-	status = "okay";
-
-	label = "wan";
-};
-
-&swport2 {
-	status = "okay";
-
-	label = "lan1";
-};
-
-&swport3 {
-	status = "okay";
-
-	label = "lan2";
-};
-
-&swport4 {
-	status = "okay";
-
-	label = "lan3";
-};
-
 &ethphy4 {
 	status = "disabled";
 };
@@ -311,25 +303,4 @@
 
 	perst-gpios = <&tlmm 38 GPIO_ACTIVE_LOW>;
 	wake-gpios = <&tlmm 50 GPIO_ACTIVE_LOW>;
-};
-
-&pcie_bridge0 {
-	wifi@0,0 {
-		compatible = "qcom,ath10k";
-		reg = <0x00010000 0 0 0 0>;
-		ieee80211-freq-limit = <5470000 5875000>;
-		qcom,ath10k-calibration-variant = "Netgear-Orbi-Pro-SRK60";
-	};
-};
-
-&wifi0 {
-	status = "okay";
-
-	qcom,ath10k-calibration-variant = "Netgear-Orbi-Pro-SRK60";
-};
-
-&wifi1 {
-	status = "okay";
-
-	qcom,ath10k-calibration-variant = "Netgear-Orbi-Pro-SRK60";
 };
