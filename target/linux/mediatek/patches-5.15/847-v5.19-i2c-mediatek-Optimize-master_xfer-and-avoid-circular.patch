@@ -46,8 +46,8 @@ Signed-off-by: Wolfram Sang <wsa@kernel.org>
 
 --- a/drivers/i2c/busses/i2c-mt65xx.c
 +++ b/drivers/i2c/busses/i2c-mt65xx.c
-@@ -1177,7 +1177,7 @@ static int mtk_i2c_transfer(struct i2c_a
- 	int left_num = num;
+@@ -1178,7 +1178,7 @@ static int mtk_i2c_transfer(struct i2c_a
+ 	bool write_then_read_en = false;
  	struct mtk_i2c *i2c = i2c_get_adapdata(adap);
  
 -	ret = clk_bulk_prepare_enable(I2C_MT65XX_CLK_MAX, i2c->clocks);
@@ -55,7 +55,7 @@ Signed-off-by: Wolfram Sang <wsa@kernel.org>
  	if (ret)
  		return ret;
  
-@@ -1231,7 +1231,7 @@ static int mtk_i2c_transfer(struct i2c_a
+@@ -1234,7 +1234,7 @@ static int mtk_i2c_transfer(struct i2c_a
  	ret = num;
  
  err_exit:
@@ -64,7 +64,7 @@ Signed-off-by: Wolfram Sang <wsa@kernel.org>
  	return ret;
  }
  
-@@ -1412,7 +1412,7 @@ static int mtk_i2c_probe(struct platform
+@@ -1415,7 +1415,7 @@ static int mtk_i2c_probe(struct platform
  		return ret;
  	}
  	mtk_i2c_init_hw(i2c);
@@ -73,7 +73,7 @@ Signed-off-by: Wolfram Sang <wsa@kernel.org>
  
  	ret = devm_request_irq(&pdev->dev, irq, mtk_i2c_irq,
  			       IRQF_NO_SUSPEND | IRQF_TRIGGER_NONE,
-@@ -1439,6 +1439,8 @@ static int mtk_i2c_remove(struct platfor
+@@ -1442,6 +1442,8 @@ static int mtk_i2c_remove(struct platfor
  
  	i2c_del_adapter(&i2c->adap);
  
@@ -82,7 +82,7 @@ Signed-off-by: Wolfram Sang <wsa@kernel.org>
  	return 0;
  }
  
-@@ -1448,6 +1450,7 @@ static int mtk_i2c_suspend_noirq(struct
+@@ -1451,6 +1453,7 @@ static int mtk_i2c_suspend_noirq(struct
  	struct mtk_i2c *i2c = dev_get_drvdata(dev);
  
  	i2c_mark_adapter_suspended(&i2c->adap);
@@ -90,7 +90,7 @@ Signed-off-by: Wolfram Sang <wsa@kernel.org>
  
  	return 0;
  }
-@@ -1465,7 +1468,7 @@ static int mtk_i2c_resume_noirq(struct d
+@@ -1468,7 +1471,7 @@ static int mtk_i2c_resume_noirq(struct d
  
  	mtk_i2c_init_hw(i2c);
  

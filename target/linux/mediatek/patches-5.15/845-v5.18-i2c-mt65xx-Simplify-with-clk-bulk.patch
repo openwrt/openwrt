@@ -111,8 +111,8 @@ Signed-off-by: Wolfram Sang <wsa@kernel.org>
  static void mtk_i2c_init_hw(struct mtk_i2c *i2c)
  {
  	u16 control_reg;
-@@ -1191,7 +1163,7 @@ static int mtk_i2c_transfer(struct i2c_a
- 	int left_num = num;
+@@ -1192,7 +1164,7 @@ static int mtk_i2c_transfer(struct i2c_a
+ 	bool write_then_read_en = false;
  	struct mtk_i2c *i2c = i2c_get_adapdata(adap);
  
 -	ret = mtk_i2c_clock_enable(i2c);
@@ -120,7 +120,7 @@ Signed-off-by: Wolfram Sang <wsa@kernel.org>
  	if (ret)
  		return ret;
  
-@@ -1245,7 +1217,7 @@ static int mtk_i2c_transfer(struct i2c_a
+@@ -1248,7 +1220,7 @@ static int mtk_i2c_transfer(struct i2c_a
  	ret = num;
  
  err_exit:
@@ -129,7 +129,7 @@ Signed-off-by: Wolfram Sang <wsa@kernel.org>
  	return ret;
  }
  
-@@ -1323,9 +1295,8 @@ static int mtk_i2c_probe(struct platform
+@@ -1326,9 +1298,8 @@ static int mtk_i2c_probe(struct platform
  {
  	int ret = 0;
  	struct mtk_i2c *i2c;
@@ -140,7 +140,7 @@ Signed-off-by: Wolfram Sang <wsa@kernel.org>
  
  	i2c = devm_kzalloc(&pdev->dev, sizeof(*i2c), GFP_KERNEL);
  	if (!i2c)
-@@ -1371,35 +1342,42 @@ static int mtk_i2c_probe(struct platform
+@@ -1374,35 +1345,42 @@ static int mtk_i2c_probe(struct platform
  	if (i2c->have_pmic && !i2c->dev_comp->pmic_i2c)
  		return -EINVAL;
  
@@ -198,7 +198,7 @@ Signed-off-by: Wolfram Sang <wsa@kernel.org>
  	if (ret) {
  		dev_err(&pdev->dev, "Failed to set the speed.\n");
  		return -EINVAL;
-@@ -1414,13 +1392,13 @@ static int mtk_i2c_probe(struct platform
+@@ -1417,13 +1395,13 @@ static int mtk_i2c_probe(struct platform
  		}
  	}
  
@@ -214,7 +214,7 @@ Signed-off-by: Wolfram Sang <wsa@kernel.org>
  
  	ret = devm_request_irq(&pdev->dev, irq, mtk_i2c_irq,
  			       IRQF_NO_SUSPEND | IRQF_TRIGGER_NONE,
-@@ -1465,7 +1443,7 @@ static int mtk_i2c_resume_noirq(struct d
+@@ -1468,7 +1446,7 @@ static int mtk_i2c_resume_noirq(struct d
  	int ret;
  	struct mtk_i2c *i2c = dev_get_drvdata(dev);
  
@@ -223,7 +223,7 @@ Signed-off-by: Wolfram Sang <wsa@kernel.org>
  	if (ret) {
  		dev_err(dev, "clock enable failed!\n");
  		return ret;
-@@ -1473,7 +1451,7 @@ static int mtk_i2c_resume_noirq(struct d
+@@ -1476,7 +1454,7 @@ static int mtk_i2c_resume_noirq(struct d
  
  	mtk_i2c_init_hw(i2c);
  

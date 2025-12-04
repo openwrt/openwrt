@@ -21,7 +21,7 @@ Signed-off-by: Wolfram Sang <wsa@kernel.org>
 
 --- a/drivers/i2c/busses/i2c-mt65xx.c
 +++ b/drivers/i2c/busses/i2c-mt65xx.c
-@@ -1420,17 +1420,22 @@ static int mtk_i2c_probe(struct platform
+@@ -1423,17 +1423,22 @@ static int mtk_i2c_probe(struct platform
  	if (ret < 0) {
  		dev_err(&pdev->dev,
  			"Request I2C IRQ %d fail\n", irq);

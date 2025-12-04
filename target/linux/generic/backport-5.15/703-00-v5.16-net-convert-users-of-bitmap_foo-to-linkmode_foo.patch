@@ -289,7 +289,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/drivers/net/dsa/b53/b53_common.c
 +++ b/drivers/net/dsa/b53/b53_common.c
-@@ -1365,10 +1365,8 @@ void b53_phylink_validate(struct dsa_swi
+@@ -1390,10 +1390,8 @@ void b53_phylink_validate(struct dsa_swi
  		phylink_set(mask, 100baseT_Full);
  	}
  
@@ -343,7 +343,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static int
 --- a/drivers/net/dsa/lantiq_gswip.c
 +++ b/drivers/net/dsa/lantiq_gswip.c
-@@ -1452,10 +1452,8 @@ static void gswip_phylink_set_capab(unsi
+@@ -1454,10 +1454,8 @@ static void gswip_phylink_set_capab(unsi
  	phylink_set(mask, 100baseT_Half);
  	phylink_set(mask, 100baseT_Full);
  
@@ -356,7 +356,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  }
  
  static void gswip_xrx200_phylink_validate(struct dsa_switch *ds, int port,
-@@ -1483,7 +1481,7 @@ static void gswip_xrx200_phylink_validat
+@@ -1485,7 +1483,7 @@ static void gswip_xrx200_phylink_validat
  			goto unsupported;
  		break;
  	default:
@@ -365,7 +365,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		dev_err(ds->dev, "Unsupported port: %i\n", port);
  		return;
  	}
-@@ -1493,7 +1491,7 @@ static void gswip_xrx200_phylink_validat
+@@ -1495,7 +1493,7 @@ static void gswip_xrx200_phylink_validat
  	return;
  
  unsupported:
@@ -374,7 +374,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	dev_err(ds->dev, "Unsupported interface '%s' for port %d\n",
  		phy_modes(state->interface), port);
  }
-@@ -1523,7 +1521,7 @@ static void gswip_xrx300_phylink_validat
+@@ -1525,7 +1523,7 @@ static void gswip_xrx300_phylink_validat
  			goto unsupported;
  		break;
  	default:
@@ -383,7 +383,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		dev_err(ds->dev, "Unsupported port: %i\n", port);
  		return;
  	}
-@@ -1533,7 +1531,7 @@ static void gswip_xrx300_phylink_validat
+@@ -1535,7 +1533,7 @@ static void gswip_xrx300_phylink_validat
  	return;
  
  unsupported:

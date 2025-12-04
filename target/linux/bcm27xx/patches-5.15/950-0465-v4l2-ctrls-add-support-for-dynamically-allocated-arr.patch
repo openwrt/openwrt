@@ -401,7 +401,7 @@ Signed-off-by: Hans Verkuil <hverkuil-cisco@xs4all.nl>
  		kvfree(ctrl);
  	}
  	kvfree(hdl->buckets);
-@@ -1105,7 +1187,7 @@ int handler_new_ref(struct v4l2_ctrl_han
+@@ -1104,7 +1186,7 @@ int handler_new_ref(struct v4l2_ctrl_han
  	if (hdl->error)
  		return hdl->error;
  
@@ -410,7 +410,7 @@ Signed-off-by: Hans Verkuil <hverkuil-cisco@xs4all.nl>
  		size_extra_req = ctrl->elems * ctrl->elem_size;
  	new_ref = kzalloc(sizeof(*new_ref) + size_extra_req, GFP_KERNEL);
  	if (!new_ref)
-@@ -1273,7 +1355,6 @@ static struct v4l2_ctrl *v4l2_ctrl_new(s
+@@ -1272,7 +1354,6 @@ static struct v4l2_ctrl *v4l2_ctrl_new(s
  			elem_size = sizeof(s32);
  		break;
  	}
@@ -418,7 +418,7 @@ Signed-off-by: Hans Verkuil <hverkuil-cisco@xs4all.nl>
  
  	/* Sanity checks */
  	if (id == 0 || name == NULL || !elem_size ||
-@@ -1294,17 +1375,33 @@ static struct v4l2_ctrl *v4l2_ctrl_new(s
+@@ -1293,17 +1374,33 @@ static struct v4l2_ctrl *v4l2_ctrl_new(s
  		handler_set_err(hdl, -EINVAL);
  		return NULL;
  	}
@@ -456,7 +456,7 @@ Signed-off-by: Hans Verkuil <hverkuil-cisco@xs4all.nl>
  		sz_extra += 2 * tot_ctrl_size;
  
  	if (type >= V4L2_CTRL_COMPOUND_TYPES && p_def.p_const)
-@@ -1333,7 +1430,9 @@ static struct v4l2_ctrl *v4l2_ctrl_new(s
+@@ -1332,7 +1429,9 @@ static struct v4l2_ctrl *v4l2_ctrl_new(s
  	ctrl->is_ptr = is_array || type >= V4L2_CTRL_COMPOUND_TYPES || ctrl->is_string;
  	ctrl->is_int = !ctrl->is_ptr && type != V4L2_CTRL_TYPE_INTEGER64;
  	ctrl->is_array = is_array;
@@ -466,7 +466,7 @@ Signed-off-by: Hans Verkuil <hverkuil-cisco@xs4all.nl>
  	ctrl->nr_of_dims = nr_of_dims;
  	if (nr_of_dims)
  		memcpy(ctrl->dims, dims, nr_of_dims * sizeof(dims[0]));
-@@ -1346,6 +1445,16 @@ static struct v4l2_ctrl *v4l2_ctrl_new(s
+@@ -1345,6 +1444,16 @@ static struct v4l2_ctrl *v4l2_ctrl_new(s
  	ctrl->cur.val = ctrl->val = def;
  	data = &ctrl[1];
  
@@ -483,7 +483,7 @@ Signed-off-by: Hans Verkuil <hverkuil-cisco@xs4all.nl>
  	if (!ctrl->is_int) {
  		ctrl->p_new.p = data;
  		ctrl->p_cur.p = data + tot_ctrl_size;
-@@ -1355,7 +1464,10 @@ static struct v4l2_ctrl *v4l2_ctrl_new(s
+@@ -1354,7 +1463,10 @@ static struct v4l2_ctrl *v4l2_ctrl_new(s
  	}
  
  	if (type >= V4L2_CTRL_COMPOUND_TYPES && p_def.p_const) {
@@ -495,7 +495,7 @@ Signed-off-by: Hans Verkuil <hverkuil-cisco@xs4all.nl>
  		memcpy(ctrl->p_def.p, p_def.p_const, elem_size);
  	}
  
-@@ -1365,6 +1477,7 @@ static struct v4l2_ctrl *v4l2_ctrl_new(s
+@@ -1364,6 +1476,7 @@ static struct v4l2_ctrl *v4l2_ctrl_new(s
  	}
  
  	if (handler_new_ref(hdl, ctrl, NULL, false, false)) {
@@ -503,7 +503,7 @@ Signed-off-by: Hans Verkuil <hverkuil-cisco@xs4all.nl>
  		kvfree(ctrl);
  		return NULL;
  	}
-@@ -1702,6 +1815,9 @@ static int cluster_changed(struct v4l2_c
+@@ -1701,6 +1814,9 @@ static int cluster_changed(struct v4l2_c
  			continue;
  		}
  

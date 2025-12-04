@@ -47,7 +47,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  struct gswip_hw_info {
  	int max_ports;
  	int cpu_port;
-@@ -846,10 +856,6 @@ static int gswip_setup(struct dsa_switch
+@@ -847,10 +857,6 @@ static int gswip_setup(struct dsa_switch
  	gswip_switch_mask(priv, 0, GSWIP_PCE_PCTRL_0_INGRESS,
  			  GSWIP_PCE_PCTRL_0p(cpu_port));
  
@@ -58,7 +58,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	gswip_switch_mask(priv, 0, GSWIP_BM_QUEUE_GCTRL_GL_MOD,
  			  GSWIP_BM_QUEUE_GCTRL);
  
-@@ -866,6 +872,8 @@ static int gswip_setup(struct dsa_switch
+@@ -867,6 +873,8 @@ static int gswip_setup(struct dsa_switch
  		return err;
  	}
  
@@ -67,7 +67,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	gswip_port_enable(ds, cpu_port, NULL);
  
  	ds->configure_vlan_while_not_filtering = false;
-@@ -1456,6 +1464,39 @@ static void gswip_phylink_set_capab(unsi
+@@ -1458,6 +1466,39 @@ static void gswip_phylink_set_capab(unsi
  	linkmode_and(state->advertising, state->advertising, mask);
  }
  
@@ -107,7 +107,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static void gswip_xrx200_phylink_validate(struct dsa_switch *ds, int port,
  					  unsigned long *supported,
  					  struct phylink_link_state *state)
-@@ -1812,6 +1853,8 @@ static const struct dsa_switch_ops gswip
+@@ -1815,6 +1856,8 @@ static const struct dsa_switch_ops gswip
  	.port_fdb_add		= gswip_port_fdb_add,
  	.port_fdb_del		= gswip_port_fdb_del,
  	.port_fdb_dump		= gswip_port_fdb_dump,
@@ -116,7 +116,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	.phylink_validate	= gswip_xrx200_phylink_validate,
  	.phylink_mac_config	= gswip_phylink_mac_config,
  	.phylink_mac_link_down	= gswip_phylink_mac_link_down,
-@@ -1836,6 +1879,8 @@ static const struct dsa_switch_ops gswip
+@@ -1839,6 +1882,8 @@ static const struct dsa_switch_ops gswip
  	.port_fdb_add		= gswip_port_fdb_add,
  	.port_fdb_del		= gswip_port_fdb_del,
  	.port_fdb_dump		= gswip_port_fdb_dump,
