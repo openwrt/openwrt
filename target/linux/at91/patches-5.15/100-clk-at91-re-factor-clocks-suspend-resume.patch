@@ -630,7 +630,7 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  static void clk_sam9x5_peripheral_disable(struct clk_hw *hw)
  {
  	struct clk_sam9x5_peripheral *periph = to_clk_sam9x5_peripheral(hw);
-@@ -393,6 +401,23 @@ static int clk_sam9x5_peripheral_set_rat
+@@ -396,6 +404,23 @@ static int clk_sam9x5_peripheral_set_rat
  	return -EINVAL;
  }
  
@@ -654,7 +654,7 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  static const struct clk_ops sam9x5_peripheral_ops = {
  	.enable = clk_sam9x5_peripheral_enable,
  	.disable = clk_sam9x5_peripheral_disable,
-@@ -400,6 +425,8 @@ static const struct clk_ops sam9x5_perip
+@@ -403,6 +428,8 @@ static const struct clk_ops sam9x5_perip
  	.recalc_rate = clk_sam9x5_peripheral_recalc_rate,
  	.round_rate = clk_sam9x5_peripheral_round_rate,
  	.set_rate = clk_sam9x5_peripheral_set_rate,
@@ -663,7 +663,7 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  };
  
  static const struct clk_ops sam9x5_peripheral_chg_ops = {
-@@ -409,6 +436,8 @@ static const struct clk_ops sam9x5_perip
+@@ -412,6 +439,8 @@ static const struct clk_ops sam9x5_perip
  	.recalc_rate = clk_sam9x5_peripheral_recalc_rate,
  	.determine_rate = clk_sam9x5_peripheral_determine_rate,
  	.set_rate = clk_sam9x5_peripheral_set_rate,
@@ -672,7 +672,7 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  };
  
  struct clk_hw * __init
-@@ -460,7 +489,6 @@ at91_clk_register_sam9x5_peripheral(stru
+@@ -463,7 +492,6 @@ at91_clk_register_sam9x5_peripheral(stru
  		hw = ERR_PTR(ret);
  	} else {
  		clk_sam9x5_peripheral_autodiv(periph);
