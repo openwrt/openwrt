@@ -37,6 +37,7 @@ netcore,n60|\
 netcore,n60-pro|\
 netis,nx31|\
 nokia,ea0326gmp|\
+openwrt,one|\
 qihoo,360t7|\
 routerich,ax3000-ubootmod|\
 snr,snr-cpe-ax2|\
@@ -60,6 +61,15 @@ glinet,gl-xe3000|\
 huasifei,wh3000|\
 nradio,c8-668gl)
 	ubootenv_add_mmc "u-boot-env" "" "0x0" "0x80000"
+	;;
+asiarf,ap7986-003|\
+cetron,ct3003|\
+comfast,cf-wr632ax|\
+edgecore,eap111|\
+netgear,wax220|\
+zbtlink,zbt-z8102ax|\
+zbtlink,zbt-z8103ax)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
 	;;
 asus,rt-ax59u)
 	ubootenv_add_uci_config "/dev/mtd0" "0x100000" "0x20000" "0x20000"
@@ -100,15 +110,6 @@ comfast,cf-e393ax|\
 iptime,ax3000m)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x80000"
 	;;
-asiarf,ap7986-003|\
-cetron,ct3003|\
-comfast,cf-wr632ax|\
-edgecore,eap111|\
-netgear,wax220|\
-zbtlink,zbt-z8102ax|\
-zbtlink,zbt-z8103ax)
-	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
-	;;
 dlink,aquila-pro-ai-m30-a1|\
 dlink,aquila-pro-ai-m60-a1)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x40000" "0x40000"
@@ -123,13 +124,13 @@ openembed,som7981)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x80000" "0x80000"
 	ubootenv_add_uci_sys_config "/dev/mtd3" "0x0" "0x100000" "0x100000"
 	;;
-openwrt,one)
-	ubootenv_add_ubi_default
-	;;
 smartrg,sdg-8733|\
 smartrg,sdg-8733a|\
 smartrg,sdg-8734)
 	ubootenv_add_mmc "u-boot-env" "mmcblk0" "0x0" "0x8000" "0x8000"
+	;;
+teltonika,rutc50)
+	ubootenv_add_mtd "u-boot-env" "0x0" "0x10000" "0x10000"
 	;;
 tplink,archer-ax80-v1|\
 tplink,be450)
@@ -137,9 +138,6 @@ tplink,be450)
 	;;
 ubnt,unifi-6-plus)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x80000" "0x10000"
-	;;
-teltonika,rutc50)
-	ubootenv_add_mtd "u-boot-env" "0x0" "0x10000" "0x10000"
 	;;
 xiaomi,mi-router-ax3000t|\
 xiaomi,mi-router-wr30u-stock|\
