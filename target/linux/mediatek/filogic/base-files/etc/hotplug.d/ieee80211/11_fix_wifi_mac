@@ -78,8 +78,7 @@ case "$board" in
 		addr=$(cat /sys/class/net/eth0/address)
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr -1 > /sys${DEVPATH}/macaddress
 		;;
-	comfast,cf-e393ax|\
-	comfast,cf-wr633ax)
+	comfast,cf-e393ax)
 		addr=$(mtd_get_mac_binary "Factory" 0x8000)
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr 1 > /sys${DEVPATH}/macaddress
 		;;
