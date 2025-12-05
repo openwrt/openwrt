@@ -232,9 +232,10 @@ proto_qmi_setup() {
 	# Set IP format
 	uqmi -s -d "$device" -t 1000 --set-data-format 802.3 > /dev/null 2>&1
 	uqmi -s -d "$device" -t 1000 --wda-set-data-format 802.3 > /dev/null 2>&1
-	dataformat="$(uqmi -s -d "$device" -t 1000 --wda-get-data-format)"
+	json_load "$(uqmi -s -d "$device" -t 1000 --wda-get-data-format)"
+	json_get_var dataformat link-layer-protocol
 
-	if [ "$dataformat" = '"raw-ip"' ]; then
+	if [ "$dataformat" = "raw-ip" ]; then
 
 		[ -f /sys/class/net/$ifname/qmi/raw_ip ] || {
 			echo "Device only supports raw-ip mode but is missing this required driver attribute: /sys/class/net/$ifname/qmi/raw_ip"
@@ -269,10 +270,13 @@ proto_qmi_setup() {
 	echo "Waiting for network registration"
 	sleep 5
 	local registration_timeout=0
+	local serving_system=""
 	local registration_state=""
 	while true; do
-		registration_state=$(uqmi -s -d "$device" -t 1000 --get-serving-system 2>/dev/null | jsonfilter -e "@.registration" 2>/dev/null)
+		serving_system="$(uqmi -s -d "$device" -t 1000 --get-serving-system 2>/dev/null)"
+		registration_state=$(echo "$serving_system" | jsonfilter -e "@.registration" 2>/dev/null)
 
+		[ "$serving_system" = "\"Invalid QMI command\"" ] && break
 		[ "$registration_state" = "registered" ] && break
 
 		if [ "$registration_state" = "searching" ] || [ "$registration_state" = "not_registered" ]; then

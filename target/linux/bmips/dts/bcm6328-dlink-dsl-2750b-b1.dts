@@ -137,9 +137,6 @@
 		spi-rx-bus-width = <2>;
 		reg = <0>;
 
-		#address-cells = <1>;
-		#size-cells = <1>;
-
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
@@ -206,8 +203,9 @@
 		#size-cells = <2>;
 		#address-cells = <3>;
 		device_type = "pci";
+		ranges;
 
-		ath9k: wifi@168c,002e {
+		ath9k: wifi@0,0 {
 			compatible = "pci168c,002e";
 			reg = <0 0 0 0 0>;
 

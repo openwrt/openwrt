@@ -102,6 +102,7 @@ platform_pre_upgrade() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
+	cmcc,pz-l8|\
 	elecom,wrc-x3000gs2|\
 	iodata,wn-dax3000gr)
 		local delay
@@ -145,7 +146,8 @@ platform_do_upgrade() {
 		CI_ROOT_UBIPART="rootfs"
 		nand_do_upgrade "$1"
 		;;
-	yuncore,ax830)
+	yuncore,ax830|\
+	yuncore,ax850)
 		CI_UBIPART="rootfs"
 		remove_oem_ubi_volume ubi_rootfs
 		remove_oem_ubi_volume bt_fw

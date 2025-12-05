@@ -52,6 +52,7 @@
 #define RTL83XX_DMA_IF_INTR_RX_DONE_MASK	GENMASK(15, 8)
 #define RTL83XX_DMA_IF_INTR_RX_RUN_OUT_MASK	GENMASK(7, 0)
 #define RTL83XX_DMA_IF_INTR_RX_MASK(ring)	(BIT(ring) | BIT(ring + 8))
+#define RTL93XX_DMA_IF_INTR_RX_MASK(ring)	(BIT(ring))
 
 /* MAC address settings */
 #define RTL838X_MAC				(0xa9ec)
@@ -150,12 +151,12 @@
 #define RTL930X_L2_PORT_DABLK_CTRL		(0x9060)
 
 /* MAC link state bits */
-#define FORCE_EN				(1 << 0)
-#define FORCE_LINK_EN				(1 << 1)
-#define NWAY_EN					(1 << 2)
-#define DUPLX_MODE				(1 << 3)
-#define TX_PAUSE_EN				(1 << 6)
-#define RX_PAUSE_EN				(1 << 7)
+#define FORCE_EN				BIT(0)
+#define FORCE_LINK_EN				BIT(1)
+#define NWAY_EN					BIT(2)
+#define DUPLX_MODE				BIT(3)
+#define TX_PAUSE_EN				BIT(6)
+#define RX_PAUSE_EN				BIT(7)
 
 /* L2 Notification DMA interface */
 #define RTL839X_DMA_IF_NBUF_BASE_DESC_ADDR_CTRL	(0x785C)
@@ -220,6 +221,21 @@
 
 /* Registers of the internal Serdes of the 8380 */
 #define RTL838X_SDS4_FIB_REG0			(0xF800)
+
+/* shared CPU tag definitions for RTL930X/RTL931X */
+#define RTL93XX_CPU_TAG1_FWD_MASK		GENMASK(11, 8)
+
+#define RTL93XX_CPU_TAG1_FWD_ALE		0
+#define RTL93XX_CPU_TAG1_FWD_PHYSICAL		1
+#define RTL93XX_CPU_TAG1_FWD_LOGICAL		2
+#define RTL93XX_CPU_TAG1_FWD_TRUNK		3
+#define RTL93XX_CPU_TAG1_FWD_ONE_HOP		4
+#define RTL93XX_CPU_TAG1_FWD_LOGICAL_ONE_HOP	5
+#define RTL93XX_CPU_TAG1_FWD_UCST_CPU_MIN_PORT	6
+#define RTL93XX_CPU_TAG1_FWD_UCST_CPU		7
+#define RTL93XX_CPU_TAG1_FWD_BCST_CPU		8
+
+#define RTL93XX_CPU_TAG1_IGNORE_STP_MASK	GENMASK(2, 2)
 
 /* Default MTU with jumbo frames support */
 #define DEFAULT_MTU 9000
@@ -358,7 +374,6 @@ inline u32 rtl839x_get_mac_link_spd_sts(int port)
 	return (speed & 0x3);
 }
 
-
 inline u32 rtl930x_get_mac_link_spd_sts(int port)
 {
 	int r = RTL930X_MAC_LINK_SPD_STS + ((port >> 3) << 2);
@@ -453,20 +468,7 @@ struct rtl838x_eth_reg {
 	bool (*decode_tag)(struct p_hdr *h, struct dsa_tag *tag);
 };
 
-int phy_package_port_read_paged(struct phy_device *phydev, int port, int page, u32 regnum);
-int phy_package_port_write_paged(struct phy_device *phydev, int port, int page, u32 regnum, u16 val);
-int phy_package_read_paged(struct phy_device *phydev, int page, u32 regnum);
-int phy_package_write_paged(struct phy_device *phydev, int page, u32 regnum, u16 val);
-int phy_port_read_paged(struct phy_device *phydev, int port, int page, u32 regnum);
-int phy_port_write_paged(struct phy_device *phydev, int port, int page, u32 regnum, u16 val);
-
-int rtmdio_838x_read_phy(u32 port, u32 page, u32 reg, u32 *val);
-int rtmdio_838x_write_phy(u32 port, u32 page, u32 reg, u32 val);
-
-int rtmdio_930x_read_sds_phy(int sds, int page, int regnum);
-int rtmdio_930x_write_sds_phy(int sds, int page, int regnum, u16 val);
-
-int rtmdio_931x_read_sds_phy(int sds, int page, int regnum);
-int rtmdio_931x_write_sds_phy(int sds, int page, int regnum, u16 val);
+/* TODO actually from arch/mips/rtl838x/prom.c */
+extern struct rtl83xx_soc_info soc_info;
 
 #endif /* _RTL838X_ETH_H */

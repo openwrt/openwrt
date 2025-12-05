@@ -563,6 +563,7 @@ mac80211_hostapd_setup_bss() {
 $hostapd_cfg
 bssid=$macaddr
 ${default_macaddr:+#default_macaddr}
+${random_macaddr:+#random_macaddr}
 ${dtim_period:+dtim_period=$dtim_period}
 ${max_listen_int:+max_listen_interval=$max_listen_int}
 EOF
@@ -691,12 +692,14 @@ mac80211_prepare_vif() {
 	json_add_string _ifname "$ifname"
 
 	default_macaddr=
+	random_macaddr=
 	if [ -z "$macaddr" ]; then
 		macaddr="$(mac80211_generate_mac $phy)"
 		macidx="$(($macidx + 1))"
 		default_macaddr=1
 	elif [ "$macaddr" = 'random' ]; then
 		macaddr="$(macaddr_random)"
+		random_macaddr=1
 	fi
 	json_add_string _macaddr "$macaddr"
 	json_add_string _default_macaddr "$default_macaddr"

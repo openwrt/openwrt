@@ -18,6 +18,7 @@ SCAN_DEPS=modules/*.mk $(SUBTARGET_MODULES) $(TOPDIR)/include/netfilter.mk
 
 PKG_LICENSE:=GPL-2.0-only
 PKG_LICENSE_FILES:=COPYING
+PKG_CPE_ID:=cpe:/o:linux:linux_kernel
 
 export SHELL:=/bin/sh
 .ONESHELL:

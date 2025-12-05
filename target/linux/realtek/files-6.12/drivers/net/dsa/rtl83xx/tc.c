@@ -13,7 +13,7 @@
 
 /* Parse the flow rule for the matching conditions */
 static int rtl83xx_parse_flow_rule(struct rtl838x_switch_priv *priv,
-			      struct flow_rule *rule, struct rtl83xx_flow *flow)
+				   struct flow_rule *rule, struct rtl83xx_flow *flow)
 {
 	struct flow_dissector *dissector = rule->match.dissector;
 
@@ -291,7 +291,7 @@ out:
 }
 
 static int rtl83xx_delete_flower(struct rtl838x_switch_priv *priv,
-				 struct flow_cls_offload * cls_flower)
+				 struct flow_cls_offload *cls_flower)
 {
 	struct rtl83xx_flow *flow;
 
@@ -315,13 +315,13 @@ static int rtl83xx_delete_flower(struct rtl838x_switch_priv *priv,
 }
 
 static int rtl83xx_stats_flower(struct rtl838x_switch_priv *priv,
-				struct flow_cls_offload * cls_flower)
+				struct flow_cls_offload *cls_flower)
 {
 	struct rtl83xx_flow *flow;
 	unsigned long lastused = 0;
 	int total_packets, new_packets;
 
-	pr_debug("%s: \n", __func__);
+	pr_debug("%s:\n", __func__);
 	flow = rhashtable_lookup_fast(&priv->tc_ht, &cls_flower->cookie, tc_ht_params);
 	if (!flow)
 		return -1;
@@ -335,7 +335,7 @@ static int rtl83xx_stats_flower(struct rtl838x_switch_priv *priv,
 
 	/* TODO: We need a second PIE rule to count the bytes */
 	flow_stats_update(&cls_flower->stats, 100 * new_packets, new_packets, 0, lastused,
-	                  FLOW_ACTION_HW_STATS_IMMEDIATE);
+			  FLOW_ACTION_HW_STATS_IMMEDIATE);
 
 	return 0;
 }
@@ -355,7 +355,6 @@ static int rtl83xx_setup_tc_cls_flower(struct rtl838x_switch_priv *priv,
 		return -EOPNOTSUPP;
 	}
 }
-
 
 static int rtl83xx_setup_tc_block_cb(enum tc_setup_type type, void *type_data,
 				     void *cb_priv)
@@ -382,7 +381,7 @@ int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type
 
 	pr_debug("%s: %d\n", __func__, type);
 
-	if(!netdev_uses_dsa(dev)) {
+	if (!netdev_uses_dsa(dev)) {
 		pr_err("%s: no DSA\n", __func__);
 		return 0;
 	}

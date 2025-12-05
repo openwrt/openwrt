@@ -5,6 +5,8 @@
  */
 
 /dts-v1/;
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/pinctrl/mt65xx.h>
 #include "mt7986a.dtsi"
 
 / {
@@ -19,8 +21,9 @@
 		stdout-path = "serial0:115200n8";
 	};
 
-	memory {
+	memory@40000000 {
 		reg = <0 0x40000000 0 0x40000000>;
+		device_type = "memory";
 	};
 
 	reg_1p8v: regulator-1p8v {
@@ -90,7 +93,7 @@
 		compatible = "ethernet-phy-id67c9.de0a";
 		reg = <5>;
 
-		reset-gpios = <&pio 6 1>;
+		reset-gpios = <&pio 6 GPIO_ACTIVE_LOW>;
 		reset-deassert-us = <20000>;
 	};
 
@@ -102,7 +105,7 @@
 	switch: switch@1f {
 		compatible = "mediatek,mt7531";
 		reg = <31>;
-		reset-gpios = <&pio 5 0>;
+		reset-gpios = <&pio 5 GPIO_ACTIVE_HIGH>;
 	};
 };
 
@@ -149,22 +152,22 @@
 			       "EMMC_DATA_3", "EMMC_DATA_4", "EMMC_DATA_5",
 			       "EMMC_DATA_6", "EMMC_DATA_7", "EMMC_CMD";
 			input-enable;
-			drive-strength = <4>;
-			mediatek,pull-up-adv = <1>;	/* pull-up 10K */
+			drive-strength = <MTK_DRIVE_4mA>;
+			bias-pull-up = <MTK_PUPD_SET_R1R0_01>;	/* pull-up 10K */
 		};
 		conf-clk {
 			pins = "EMMC_CK";
-			drive-strength = <6>;
-			mediatek,pull-down-adv = <2>;	/* pull-down 50K */
+			drive-strength = <MTK_DRIVE_6mA>;
+			bias-pull-down = <MTK_PUPD_SET_R1R0_10>;	/* pull-down 50K */
 		};
 		conf-ds {
 			pins = "EMMC_DSL";
-			mediatek,pull-down-adv = <2>;	/* pull-down 50K */
+			bias-pull-down = <MTK_PUPD_SET_R1R0_10>;	/* pull-down 50K */
 		};
 		conf-rst {
 			pins = "EMMC_RSTB";
-			drive-strength = <4>;
-			mediatek,pull-up-adv = <1>;	/* pull-up 10K */
+			drive-strength = <MTK_DRIVE_4mA>;
+			bias-pull-up = <MTK_PUPD_SET_R1R0_01>;	/* pull-up 10K */
 		};
 	};
 
@@ -178,22 +181,22 @@
 			       "EMMC_DATA_3", "EMMC_DATA_4", "EMMC_DATA_5",
 			       "EMMC_DATA_6", "EMMC_DATA_7", "EMMC_CMD";
 			input-enable;
-			drive-strength = <4>;
-			mediatek,pull-up-adv = <1>;	/* pull-up 10K */
+			drive-strength = <MTK_DRIVE_4mA>;
+			bias-pull-up = <MTK_PUPD_SET_R1R0_01>;	/* pull-up 10K */
 		};
 		conf-clk {
 			pins = "EMMC_CK";
-			drive-strength = <6>;
-			mediatek,pull-down-adv = <2>;	/* pull-down 50K */
+			drive-strength = <MTK_DRIVE_6mA>;
+			bias-pull-down = <MTK_PUPD_SET_R1R0_10>;	/* pull-down 50K */
 		};
 		conf-ds {
 			pins = "EMMC_DSL";
-			mediatek,pull-down-adv = <2>;	/* pull-down 50K */
+			bias-pull-down = <MTK_PUPD_SET_R1R0_10>;	/* pull-down 50K */
 		};
 		conf-rst {
 			pins = "EMMC_RSTB";
-			drive-strength = <4>;
-			mediatek,pull-up-adv = <1>;	/* pull-up 10K */
+			drive-strength = <MTK_DRIVE_4mA>;
+			bias-pull-up = <MTK_PUPD_SET_R1R0_01>;	/* pull-up 10K */
 		};
 	};
 
@@ -218,13 +221,13 @@
 		};
 		conf-pu {
 			pins = "SPI2_CS", "SPI2_HOLD", "SPI2_WP";
-			drive-strength = <8>;
-			mediatek,pull-up-adv = <0>;	/* bias-disable */
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-disable;	/* bias-disable */
 		};
 		conf-pd {
 			pins = "SPI2_CLK", "SPI2_MOSI", "SPI2_MISO";
-			drive-strength = <8>;
-			mediatek,pull-down-adv = <0>;	/* bias-disable */
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-disable;	/* bias-disable */
 		};
 	};
 
@@ -255,7 +258,7 @@
 			       "WF1_HB2", "WF1_HB3", "WF1_HB4", "WF1_HB0",
 			       "WF1_HB5", "WF1_HB6", "WF1_HB7", "WF1_HB8",
 			       "WF1_TOP_CLK", "WF1_TOP_DATA";
-			drive-strength = <4>;
+			drive-strength = <MTK_DRIVE_4mA>;
 		};
 	};
 
@@ -272,7 +275,7 @@
 			       "WF1_HB2", "WF1_HB3", "WF1_HB4", "WF1_HB0",
 			       "WF1_HB5", "WF1_HB6", "WF1_HB7", "WF1_HB8",
 			       "WF1_TOP_CLK", "WF1_TOP_DATA";
-			drive-strength = <4>;
+			drive-strength = <MTK_DRIVE_4mA>;
 		};
 	};
 };
@@ -280,7 +283,6 @@
 &spi0 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&spi_flash_pins>;
-	cs-gpios = <0>, <0>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 	status = "disabled";
@@ -299,7 +301,7 @@
 		spi-cpol = <1>;
 		channel_count = <1>;
 		debug_level = <4>;       /* 1 = TRC, 2 = DBG, 4 = ERR */
-		reset_gpio = <&pio 7 0>;
+		reset-gpios = <&pio 7 GPIO_ACTIVE_HIGH>;
 		ig,enable-spi = <1>;     /* 1: Enable, 0: Disable */
 	};
 };

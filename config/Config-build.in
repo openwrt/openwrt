@@ -108,6 +108,7 @@ menu "Global build settings"
 	config CLEAN_IPKG
 		bool
 		prompt "Remove ipkg/opkg status data files in final images"
+		depends on !USE_APK
 		help
 		  This removes all ipkg/opkg status data files from the target directory
 		  before building the root filesystem.
@@ -250,6 +251,15 @@ menu "Global build settings"
 
 	comment "Hardening build options"
 
+	config PKG_FANALYZER
+		bool
+		prompt "Enable gcc fanalyzer"
+		default n
+		help
+		  Add -fanalyzer to the CFLAGS. As a result of this option, a static analysis
+		  of the program flow is conducted, allowing interprocedural paths to be
+		  identified and warnings to be issued if problems are identified.
+
 	config PKG_CHECK_FORMAT_SECURITY
 		bool
 		prompt "Enable gcc format-security"
@@ -358,9 +368,11 @@ menu "Global build settings"
 		config PKG_FORTIFY_SOURCE_NONE
 			bool "None"
 		config PKG_FORTIFY_SOURCE_1
-			bool "Conservative"
+			bool "Conservative Level 1"
 		config PKG_FORTIFY_SOURCE_2
-			bool "Aggressive"
+			bool "Aggressive Level 2"
+		config PKG_FORTIFY_SOURCE_3
+			bool "Aggressive Level 3"
 	endchoice
 
 	choice
@@ -380,6 +392,15 @@ menu "Global build settings"
 		config PKG_RELRO_FULL
 			bool "Full"
 	endchoice
+
+	config PKG_DT_RELR
+		bool "Link with relative relocations (RELR)"
+		depends on (aarch64 || i386 || loongarch64 || x86_64)
+		default y
+		help
+		  Link all applications with -Wl,-z,pack-relative-relocs.
+		  This will reduce the size of many applications.
+		  This is only supported on a limited number of architectures.
 
 	config TARGET_ROOTFS_SECURITY_LABELS
 		bool

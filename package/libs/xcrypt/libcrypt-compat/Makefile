@@ -1,6 +1,7 @@
 include $(TOPDIR)/rules.mk
 include ../libxcrypt-common.mk
 
+PKG_NAME:=libcrypt-compat
 PKG_INSTALL:=1
 PKG_BUILD_PARALLEL:=1
 PKG_BUILD_DIR:=$(BUILD_DIR)/libcrypt-compat/$(PKG_SOURCE_NAME)-$(PKG_VERSION)

@@ -56,9 +56,9 @@
 	sfp0: sfp-p1 {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c0>;
-		los-gpio = <&gpio1 0 GPIO_ACTIVE_HIGH>;
+		los-gpio = <&gpio1 2 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpio = <&gpio1 1 GPIO_ACTIVE_LOW>;
-		tx-disable-gpio = <&gpio1 2 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpio = <&gpio1 0 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <2900>;
 		#thermal-sensor-cells = <0>;
 	};
@@ -66,9 +66,9 @@
 	sfp1: sfp-p2 {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c1>;
-		los-gpio = <&gpio1 3 GPIO_ACTIVE_HIGH>;
+		los-gpio = <&gpio1 5 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpio = <&gpio1 4 GPIO_ACTIVE_LOW>;
-		tx-disable-gpio = <&gpio1 5 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpio = <&gpio1 3 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <1500>;
 		#thermal-sensor-cells = <0>;
 	};
@@ -76,9 +76,9 @@
 	sfp2: sfp-p3 {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c2>;
-		los-gpio = <&gpio1 6 GPIO_ACTIVE_HIGH>;
+		los-gpio = <&gpio1 8 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpio = <&gpio1 7 GPIO_ACTIVE_LOW>;
-		tx-disable-gpio = <&gpio1 8 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpio = <&gpio1 6 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <1500>;
 		#thermal-sensor-cells = <0>;
 	};
@@ -86,9 +86,9 @@
 	sfp3: sfp-p4 {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c3>;
-		los-gpio = <&gpio1 9 GPIO_ACTIVE_HIGH>;
+		los-gpio = <&gpio1 11 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpio = <&gpio1 10 GPIO_ACTIVE_LOW>;
-		tx-disable-gpio = <&gpio1 11 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpio = <&gpio1 9 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <2000>;
 		#thermal-sensor-cells = <0>;
 	};
@@ -96,9 +96,9 @@
 	sfp4: sfp-p5 {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c4>;
-		los-gpio = <&gpio1 12 GPIO_ACTIVE_HIGH>;
+		los-gpio = <&gpio1 14 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpio = <&gpio1 13 GPIO_ACTIVE_LOW>;
-		tx-disable-gpio = <&gpio1 14 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpio = <&gpio1 12 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <2000>;
 		#thermal-sensor-cells = <0>;
 	};
@@ -106,9 +106,9 @@
 	sfp5: sfp-p6 {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c5>;
-		los-gpio = <&gpio1 21 GPIO_ACTIVE_HIGH>;
+		los-gpio = <&gpio1 23 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpio = <&gpio1 22 GPIO_ACTIVE_LOW>;
-		tx-disable-gpio = <&gpio1 23 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpio = <&gpio1 21 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <1500>;
 		#thermal-sensor-cells = <0>;
 	};
@@ -116,9 +116,9 @@
 	sfp6: sfp-p7 {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c6>;
-		los-gpio = <&gpio1 24 GPIO_ACTIVE_HIGH>;
+		los-gpio = <&gpio1 26 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpio = <&gpio1 25 GPIO_ACTIVE_LOW>;
-		tx-disable-gpio = <&gpio1 26 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpio = <&gpio1 24 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <1500>;
 		#thermal-sensor-cells = <0>;
 	};
@@ -126,9 +126,9 @@
 	sfp7: sfp-p8 {
 		compatible = "sff,sfp";
 		i2c-bus = <&i2c7>;
-		los-gpio = <&gpio1 27 GPIO_ACTIVE_HIGH>;
+		los-gpio = <&gpio1 29 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpio = <&gpio1 28 GPIO_ACTIVE_LOW>;
-		tx-disable-gpio = <&gpio1 29 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpio = <&gpio1 27 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <2900>;
 		#thermal-sensor-cells = <0>;
 	};
@@ -240,24 +240,6 @@
 	};
 };
 
-&ethernet0 {
-	mdio: mdio-bus {
-		compatible = "realtek,rtl838x-mdio";
-		regmap = <&ethernet0>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		INTERNAL_PHY_SDS(0, 2)
-		INTERNAL_PHY_SDS(8, 3)
-		INTERNAL_PHY_SDS(16, 4)
-		INTERNAL_PHY_SDS(20, 5)
-		INTERNAL_PHY_SDS(24, 6)
-		INTERNAL_PHY_SDS(25, 7)
-		INTERNAL_PHY_SDS(26, 8)
-		INTERNAL_PHY_SDS(27, 9)
-	};
-};
-
 &switch0 {
 	ports {
 		#address-cells = <1>;
@@ -266,7 +248,7 @@
 		port@0 {
 			reg = <0>;
 			label = "lan1";
-			phy-handle = <&phy0>;
+			pcs-handle = <&serdes2>;
 			phy-mode = "1000base-x";
 			sfp = <&sfp0>;
 			managed = "in-band-status";
@@ -276,7 +258,7 @@
 		port@8 {
 			reg = <8>;
 			label = "lan2";
-			phy-handle = <&phy8>;
+			pcs-handle = <&serdes3>;
 			phy-mode = "1000base-x";
 			sfp = <&sfp1>;
 			managed = "in-band-status";
@@ -286,7 +268,7 @@
 		port@10 {
 			reg = <16>;
 			label = "lan3";
-			phy-handle = <&phy16>;
+			pcs-handle = <&serdes4>;
 			phy-mode = "1000base-x";
 			sfp = <&sfp2>;
 			managed = "in-band-status";
@@ -296,7 +278,7 @@
 		port@14 {
 			reg = <20>;
 			label = "lan4";
-			phy-handle = <&phy20>;
+			pcs-handle = <&serdes5>;
 			phy-mode = "1000base-x";
 			sfp = <&sfp3>;
 			managed = "in-band-status";
@@ -306,7 +288,7 @@
 		port@18 {
 			reg = <24>;
 			label = "lan5";
-			phy-handle = <&phy24>;
+			pcs-handle = <&serdes6>;
 			phy-mode = "1000base-x";
 			sfp = <&sfp4>;
 			managed = "in-band-status";
@@ -316,7 +298,7 @@
 		port@19 {
 			reg = <25>;
 			label = "lan6";
-			phy-handle = <&phy25>;
+			pcs-handle = <&serdes7>;
 			phy-mode = "1000base-x";
 			sfp = <&sfp5>;
 			managed = "in-band-status";
@@ -326,7 +308,7 @@
 		port@1a {
 			reg = <26>;
 			label = "lan7";
-			phy-handle = <&phy26>;
+			pcs-handle = <&serdes8>;
 			phy-mode = "1000base-x";
 			sfp = <&sfp6>;
 			managed = "in-band-status";
@@ -336,7 +318,7 @@
 		port@1b {
 			reg = <27>;
 			label = "lan8";
-			phy-handle = <&phy27>;
+			pcs-handle = <&serdes9>;
 			phy-mode = "1000base-x";
 			sfp = <&sfp7>;
 			managed = "in-band-status";

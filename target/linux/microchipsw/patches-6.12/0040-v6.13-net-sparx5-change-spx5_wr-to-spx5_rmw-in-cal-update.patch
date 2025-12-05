@@ -1,0 +1,48 @@
+From 4feb1d4bb1cc58d86ef8c19091ba4b2785784e08 Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Thu, 24 Oct 2024 00:01:21 +0200
+Subject: [PATCH 45/82] net: sparx5: change spx5_wr to spx5_rmw in cal update()
+
+In preparation for lan969x, use spx5_rmw() for enabling the update of
+the calendar. This is required to not overwrite the DSM_TAXI_CAL_CFG
+register, as an additional write will be added before this one, in a
+subsequent patch.
+
+Reviewed-by: Steen Hegelund <Steen.Hegelund@microchip.com>
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Link: https://patch.msgid.link/20241024-sparx5-lan969x-switch-driver-2-v2-2-a0b5fae88a0f@microchip.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ .../ethernet/microchip/sparx5/sparx5_calendar.c    | 14 ++++++++------
+ 1 file changed, 8 insertions(+), 6 deletions(-)
+
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_calendar.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_calendar.c
+@@ -546,9 +546,10 @@ static int sparx5_dsm_calendar_update(st
+ 	u32 idx;
+ 	u32 cal_len = sparx5_dsm_cal_len(data->schedule), len;
+ 
+-	spx5_wr(DSM_TAXI_CAL_CFG_CAL_PGM_ENA_SET(1),
+-		sparx5,
+-		DSM_TAXI_CAL_CFG(taxi));
++	spx5_rmw(DSM_TAXI_CAL_CFG_CAL_PGM_ENA_SET(1),
++		 DSM_TAXI_CAL_CFG_CAL_PGM_ENA,
++		 sparx5,
++		 DSM_TAXI_CAL_CFG(taxi));
+ 	for (idx = 0; idx < cal_len; idx++) {
+ 		spx5_rmw(DSM_TAXI_CAL_CFG_CAL_IDX_SET(idx),
+ 			 DSM_TAXI_CAL_CFG_CAL_IDX,
+@@ -559,9 +560,10 @@ static int sparx5_dsm_calendar_update(st
+ 			 sparx5,
+ 			 DSM_TAXI_CAL_CFG(taxi));
+ 	}
+-	spx5_wr(DSM_TAXI_CAL_CFG_CAL_PGM_ENA_SET(0),
+-		sparx5,
+-		DSM_TAXI_CAL_CFG(taxi));
++	spx5_rmw(DSM_TAXI_CAL_CFG_CAL_PGM_ENA_SET(0),
++		 DSM_TAXI_CAL_CFG_CAL_PGM_ENA,
++		 sparx5,
++		 DSM_TAXI_CAL_CFG(taxi));
+ 	len = DSM_TAXI_CAL_CFG_CAL_CUR_LEN_GET(spx5_rd(sparx5,
+ 						       DSM_TAXI_CAL_CFG(taxi)));
+ 	if (len != cal_len - 1)

@@ -1,0 +1,149 @@
+From 376cb9696298df2028afb620a9dc6c4b10a18605 Mon Sep 17 00:00:00 2001
+From: Sebastian Reichel <sebastian.reichel@collabora.com>
+Date: Thu, 8 May 2025 19:48:53 +0200
+Subject: arm64: dts: rockchip: add Rock 5B+
+
+Add ROCK 5B+, which is an improved version of the ROCK 5B with the
+following changes:
+
+ * Memory LPDDR4X -> LPDDR5
+ * HDMI input connector size
+ * eMMC socket -> onboard
+ * M.2 E-Key is replaced by onboard RTL8852BE WLAN/BT
+ * M.2 M-Key 1x4 lanes is replaced by 2x2 lanes
+ * Added M.2 B-Key for USB connected WWAN modules (untested)
+ * Add second camera port (not yet supported in upstream Linux)
+ * Add dedicated USB-C port for device power (no impact in DT;
+   the existing port has not been changed and the new port is
+   handled by CH224D standalone chip)
+
+Signed-off-by: Sebastian Reichel <sebastian.reichel@collabora.com>
+Link: https://lore.kernel.org/r/20250508-rock5bp-for-upstream-v2-4-677033cc1ac2@kernel.org
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+
+--- a/arch/arm64/boot/dts/rockchip/Makefile
++++ b/arch/arm64/boot/dts/rockchip/Makefile
+@@ -142,6 +142,7 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-ro
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-rock-5b.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-rock-5b-pcie-ep.dtbo
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-rock-5b-pcie-srns.dtbo
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-rock-5b-plus.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-tiger-haikou.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-toybrick-x0.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-turing-rk1.dtb
+--- /dev/null
++++ b/arch/arm64/boot/dts/rockchip/rk3588-rock-5b-plus.dts
+@@ -0,0 +1,113 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++
++/dts-v1/;
++
++#include "rk3588-rock-5b.dtsi"
++
++/ {
++	model = "Radxa ROCK 5B+";
++	compatible = "radxa,rock-5b-plus", "rockchip,rk3588";
++
++	rfkill-wwan {
++		compatible = "rfkill-gpio";
++		label = "rfkill-m2-wwan";
++		radio-type = "wwan";
++		shutdown-gpios = <&gpio3 RK_PA6 GPIO_ACTIVE_HIGH>;
++	};
++
++	vcc3v3_4g: regulator-vcc3v3-4g {
++		compatible = "regulator-fixed";
++		enable-active-high;
++		gpios = <&gpio1 RK_PD2 GPIO_ACTIVE_HIGH>;
++		/* pinctrl for the GPIO is requested by vcc3v3_pcie2x1l0 */
++		regulator-name = "vcc3v3_4g";
++		regulator-always-on;
++		regulator-boot-on;
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		startup-delay-us = <50000>;
++		vin-supply = <&vcc5v0_sys>;
++	};
++
++	vcc3v3_wwan_pwr: regulator-vcc3v3-wwan {
++		compatible = "regulator-fixed";
++		enable-active-high;
++		gpios = <&gpio2 RK_PB1 GPIO_ACTIVE_HIGH>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&wwan_power_en>;
++		regulator-name = "vcc3v3_wwan_pwr";
++		regulator-always-on;
++		regulator-boot-on;
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		vin-supply = <&vcc3v3_4g>;
++	};
++};
++
++&gpio0 {
++	wwan-disable2-n-hog {
++		gpios = <RK_PB2 GPIO_ACTIVE_LOW>;
++		output-low;
++		line-name = "M.2 B-key W_DISABLE2#";
++		gpio-hog;
++	};
++};
++
++&gpio2 {
++	wwan-reset-n-hog {
++		gpios = <RK_PB3 GPIO_ACTIVE_LOW>;
++		output-low;
++		line-name = "M.2 B-key RESET#";
++		gpio-hog;
++	};
++
++	wwan-wake-n-hog {
++		gpios = <RK_PB2 GPIO_ACTIVE_LOW>;
++		input;
++		line-name = "M.2 B-key WoWWAN#";
++		gpio-hog;
++	};
++};
++
++&pcie30phy {
++	data-lanes = <1 1 2 2>;
++};
++
++&pcie3x2 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pcie3x2_rst>;
++	reset-gpios = <&gpio4 RK_PB0 GPIO_ACTIVE_HIGH>;
++	vpcie3v3-supply = <&vcc3v3_pcie30>;
++	status = "okay";
++};
++
++&pcie3x4 {
++	num-lanes = <2>;
++};
++
++&pinctrl {
++	wwan {
++		wwan_power_en: wwan-pwr-en {
++			rockchip,pins = <2 RK_PB1 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
++
++	pcie3 {
++		pcie3x2_rst: pcie3x2-rst {
++			rockchip,pins = <4 RK_PB0 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
++
++	usb {
++		vcc5v0_host_en: vcc5v0-host-en {
++			rockchip,pins = <1 RK_PA1 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
++};
++
++&vcc5v0_host {
++	enable-active-high;
++	gpio = <&gpio1 RK_PA1 GPIO_ACTIVE_HIGH>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&vcc5v0_host_en>;
++};

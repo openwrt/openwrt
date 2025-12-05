@@ -24,7 +24,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/thermal/gov_step_wise.c
 +++ b/drivers/thermal/gov_step_wise.c
-@@ -74,19 +74,28 @@ static void thermal_zone_trip_update(str
+@@ -87,19 +87,28 @@ static void thermal_zone_trip_update(str
  	int trip_id = thermal_zone_trip_id(tz, trip);
  	struct thermal_instance *instance;
  	bool throttle = false;

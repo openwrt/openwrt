@@ -41,7 +41,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +#if IS_ENABLED(CONFIG_MTD)
  static int rt2800lib_read_eeprom_mtd(struct rt2x00_dev *rt2x00dev)
  {
- 	int ret = -EINVAL;
+ 	struct device_node *np = rt2x00dev->dev->of_node, *mtd_np = NULL;
 @@ -86,6 +87,40 @@ static int rt2800lib_read_eeprom_mtd(str
  }
  #endif

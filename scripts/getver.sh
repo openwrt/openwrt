@@ -43,7 +43,7 @@ try_git() {
 			REV="${UPSTREAM_REV}+$((REV - UPSTREAM_REV))"
 		fi
 
-		REV="${REV:+r$REV-$(git log -n 1 --format="%h" $UPSTREAM_BASE)}"
+		REV="${REV:+r$REV-$(git log -n 1 --no-show-signature --format="%h" $UPSTREAM_BASE)}"
 
 		;;
 	esac

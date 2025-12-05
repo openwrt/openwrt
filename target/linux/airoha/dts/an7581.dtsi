@@ -3,6 +3,9 @@
 #include <dt-bindings/interrupt-controller/irq.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/clock/en7523-clk.h>
+#include <dt-bindings/phy/phy.h>
+#include <dt-bindings/phy/airoha,an7581-usb-phy.h>
+#include <dt-bindings/soc/airoha,scu-ssr.h>
 #include <dt-bindings/reset/airoha,en7581-reset.h>
 #include <dt-bindings/leds/common.h>
 #include <dt-bindings/thermal/thermal.h>
@@ -17,29 +20,39 @@
 		#size-cells = <2>;
 		ranges;
 
-		npu-binary@84000000 {
+		atf@80000000 {
+			no-map;
+			reg = <0x0 0x80000000 0x0 0x200000>;
+		};
+
+		npu_binary: npu-binary@84000000 {
 			no-map;
 			reg = <0x0 0x84000000 0x0 0xa00000>;
 		};
 
-		npu-flag@84b0000 {
+		qdma0_buf: qdma0-buf@87000000 {
 			no-map;
-			reg = <0x0 0x84b00000 0x0 0x100000>;
+			reg = <0x0 0x87000000 0x0 0x2000000>;
 		};
 
-		npu-pkt@85000000 {
+		qdma1_buf: qdma1-buf@89000000 {
 			no-map;
-			reg = <0x0 0x85000000 0x0 0x1a00000>;
+			reg = <0x0 0x89000000 0x0 0x1000000>;
 		};
 
-		npu-phyaddr@86b00000 {
+		npu_pkt: npu-pkt@8a000000 {
 			no-map;
-			reg = <0x0 0x86b00000 0x0 0x100000>;
+			reg = <0x0 0x8a000000 0x0 0x2c00000>;
 		};
 
-		npu-rxdesc@86d00000 {
+		npu_txpkt: npu-txpkt@8cc00000 {
 			no-map;
-			reg = <0x0 0x86d00000 0x0 0x100000>;
+			reg = <0x0 0x8cc00000 0x0 0x4000000>;
+		};
+
+		npu_txbufid: npu-txbufid@90c00000 {
+			no-map;
+			reg = <0x0 0x90c00000 0x0 0x6800>;
 		};
 	};
 
@@ -347,6 +360,16 @@
 		regulator-always-on;
 	};
 
+	sound: sound {
+		compatible = "airoha,an7581-wm8960-sound";
+
+		status = "disabled";
+
+		platform {
+			sound-dai = <&afe>;
+		};
+	};
+
 	soc {
 		compatible = "simple-bus";
 		#address-cells = <2>;
@@ -406,6 +429,13 @@
 			status = "disabled";
 		};
 
+		afe: afe@1fbe2200 {
+			compatible = "airoha,an7581-afe";
+			reg = <0x0 0x1fbe2200 0x0 0x9000>;
+
+			interrupts = <GIC_SPI 48 IRQ_TYPE_LEVEL_HIGH>;
+		};
+
 		uart4: serial@1fbf0600 {
 			compatible = "airoha,en7523-uart";
 			reg = <0x0 0x1fbf0600 0x0 0x30>;
@@ -428,6 +458,48 @@
 			status = "disabled";
 		};
 
+		pon_pcs: pcs@1fa08000 {
+			compatible = "airoha,an7581-pcs-pon";
+			reg = <0x0 0x1fa08000 0x0 0x1000>,
+			      <0x0 0x1fa80000 0x0 0x60>,
+			      <0x0 0x1fa80a00 0x0 0x164>,
+			      <0x0 0x1fa84000 0x0 0x450>,
+			      <0x0 0x1fa85900 0x0 0x338>,
+			      <0x0 0x1fa86000 0x0 0x300>,
+			      <0x0 0x1fa8a000 0x0 0x1000>,
+			      <0x0 0x1fa8b000 0x0 0x1000>;
+			reg-names = "xfi_mac", "hsgmii_an", "hsgmii_pcs",
+				    "multi_sgmii", "usxgmii",
+				    "hsgmii_rate_adp", "xfi_ana", "xfi_pma";
+
+			resets = <&scuclk EN7581_XPON_MAC_RST>,
+				 <&scuclk EN7581_XPON_PHY_RST>;
+			reset-names = "mac", "phy";
+
+			airoha,scu = <&scuclk>;
+		};
+
+		eth_pcs: pcs@1fa09000 {
+			compatible = "airoha,an7581-pcs-eth";
+			reg = <0x0 0x1fa09000 0x0 0x1000>,
+			      <0x0 0x1fa70000 0x0 0x60>,
+			      <0x0 0x1fa70a00 0x0 0x164>,
+			      <0x0 0x1fa74000 0x0 0x450>,
+			      <0x0 0x1fa75900 0x0 0x338>,
+			      <0x0 0x1fa76000 0x0 0x300>,
+			      <0x0 0x1fa7a000 0x0 0x1000>,
+			      <0x0 0x1fa7b000 0x0 0x1000>;
+			reg-names = "xfi_mac", "hsgmii_an", "hsgmii_pcs",
+				    "multi_sgmii", "usxgmii",
+				    "hsgmii_rate_adp", "xfi_ana", "xfi_pma";
+
+			resets = <&scuclk EN7581_XSI_MAC_RST>,
+				 <&scuclk EN7581_XSI_PHY_RST>;
+			reset-names = "mac", "phy";
+
+			airoha,scu = <&scuclk>;
+		};
+
 		chip_scu: syscon@1fa20000 {
 			compatible = "airoha,en7581-chip-scu", "syscon";
 			reg = <0x0 0x1fa20000 0x0 0x388>;
@@ -438,8 +510,8 @@
 			reg = <0x0 0x1fbe3400 0x0 0xff>;
 		};
 
-		scuclk: clock-controller@1fa20000 {
-			compatible = "airoha,en7581-scu";
+		scuclk: clock-controller@1fb00000 {
+			compatible = "airoha,en7581-scu", "syscon";
 			reg = <0x0 0x1fb00000 0x0 0x970>;
 			#clock-cells = <1>;
 			#reset-cells = <1>;
@@ -449,6 +521,52 @@
 			compatible = "airoha,en7581-trng";
 			reg = <0x0 0x1faa1000 0x0 0xc04>;
 			interrupts = <GIC_SPI 35 IRQ_TYPE_LEVEL_HIGH>;
+		};
+
+		usb0: usb@1fab0000 {
+			compatible = "mediatek,mtk-xhci";
+			reg = <0x0 0x1fab0000 0x0 0x3e00>,
+				<0x0 0x1fab3e00 0x0 0x100>;
+			reg-names = "mac", "ippc";
+			interrupts = <GIC_SPI 33 IRQ_TYPE_LEVEL_HIGH>;
+
+			phys = <&usb0_phy PHY_TYPE_USB2>, <&usb0_phy PHY_TYPE_USB3>;
+
+			status = "disabled";
+		};
+
+		usb0_phy: phy@1fac0000 {
+			compatible = "airoha,an7581-usb-phy";
+			reg = <0x0 0x1fac0000 0x0 0x10000>;
+
+			airoha,scu = <&scuclk>;
+			airoha,usb2-monitor-clk-sel = <AIROHA_USB2_MONCLK_SEL1>;
+			airoha,serdes-port = <AIROHA_SCU_SERDES_USB1>;
+
+			#phy-cells = <1>;
+		};
+
+		usb1: usb@1fad0000 {
+			compatible = "mediatek,mtk-xhci";
+			reg = <0x0 0x1fad0000 0x0 0x3e00>,
+				<0x0 0x1fad3e00 0x0 0x100>;
+			reg-names = "mac", "ippc";
+			interrupts = <GIC_SPI 150 IRQ_TYPE_LEVEL_HIGH>;
+
+			phys = <&usb1_phy PHY_TYPE_USB2>, <&usb1_phy PHY_TYPE_USB3>;
+
+			status = "disabled";
+		};
+
+		usb1_phy: phy@1fae0000 {
+			compatible = "airoha,an7581-usb-phy";
+			reg = <0x0 0x1fae0000 0x0 0x10000>;
+
+			airoha,scu = <&scuclk>;
+			airoha,usb2-monitor-clk-sel = <AIROHA_USB2_MONCLK_SEL2>;
+			airoha,serdes-port = <AIROHA_SCU_SERDES_USB2>;
+
+			#phy-cells = <1>;
 		};
 
 		crypto@1e004000 {
@@ -510,7 +628,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			status = "disable";
+			status = "disabled";
 		};
 
 		i2c1: i2c1@1fbf8100 {
@@ -524,7 +642,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			status = "disable";
+			status = "disabled";
 		};
 
 		snfi: spi@1fa10000 {
@@ -666,6 +784,73 @@
 			};
 		};
 
+		pcie2: pcie@1fc40000 {
+			compatible = "airoha,en7581-pcie";
+			device_type = "pci";
+			linux,pci-domain = <2>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+
+			reg = <0x0 0x1fc40000 0x0 0x1670>;
+			reg-names = "pcie-mac";
+
+			clocks = <&scuclk EN7523_CLK_PCIE>;
+			clock-names = "sys-ck";
+
+			phys = <&usb1_phy PHY_TYPE_USB3>;
+			phy-names = "pcie-phy";
+
+			ranges = <0x02000000 0 0x28000000 0x0 0x28000000 0 0x4000000>;
+
+			resets = <&scuclk EN7581_PCIE0_RST>,
+				 <&scuclk EN7581_PCIE1_RST>,
+				 <&scuclk EN7581_PCIE2_RST>;
+			reset-names = "phy-lane0", "phy-lane1", "phy-lane2";
+
+			mediatek,pbus-csr = <&pbus_csr 0x10 0x14>;
+
+			interrupts = <GIC_SPI 41 IRQ_TYPE_LEVEL_HIGH>;
+			bus-range = <0x00 0xff>;
+			#interrupt-cells = <1>;
+			interrupt-map-mask = <0 0 0 7>;
+			interrupt-map = <0 0 0 1 &pcie_intc2 0>,
+					<0 0 0 2 &pcie_intc2 1>,
+					<0 0 0 3 &pcie_intc2 2>,
+					<0 0 0 4 &pcie_intc2 3>;
+
+			status = "disabled";
+
+			pcie_intc2: interrupt-controller {
+				interrupt-controller;
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+			};
+		};
+
+		npu: npu@1e900000 {
+			compatible = "airoha,en7581-npu";
+			reg = <0x0 0x1e900000 0x0 0x313000>;
+			interrupts = <GIC_SPI 125 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 103 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 109 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 113 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 117 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 134 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 135 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 136 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 137 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 118 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 119 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 120 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 121 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 122 IRQ_TYPE_LEVEL_HIGH>,
+				     <GIC_SPI 123 IRQ_TYPE_LEVEL_HIGH>;
+			memory-region = <&npu_binary>, <&npu_pkt>, <&npu_txpkt>,
+					<&npu_txbufid>;
+			memory-region-names = "binary", "pkt", "tx-pkt",
+					      "tx-bufid";
+		};
+
 		eth: ethernet@1fb50000 {
 			compatible = "airoha,en7581-eth";
 			reg = <0 0x1fb50000 0 0x2600>,
@@ -696,6 +881,11 @@
 				     <GIC_SPI 49 IRQ_TYPE_LEVEL_HIGH>,
 				     <GIC_SPI 64 IRQ_TYPE_LEVEL_HIGH>;
 
+			memory-region = <&qdma0_buf>, <&qdma1_buf>;
+			memory-region-names = "qdma0-buf", "qdma1-buf";
+
+			airoha,npu = <&npu>;
+
 			status = "disabled";
 
 			#address-cells = <1>;
@@ -712,6 +902,22 @@
 					full-duplex;
 					pause;
 				};
+			};
+
+			gdm2: ethernet@2 {
+				compatible = "airoha,eth-mac";
+				reg = <2>;
+				pcs = <&pon_pcs>;
+
+				status = "disabled";
+			};
+
+			gdm4: ethernet@4 {
+				compatible = "airoha,eth-mac";
+				reg = <4>;
+				pcs = <&eth_pcs>;
+
+				status = "disabled";
 			};
 		};
 
@@ -776,7 +982,7 @@
 				};
 			};
 
-			mdio {
+			mdio: mdio {
 				#address-cells = <1>;
 				#size-cells = <0>;
 

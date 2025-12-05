@@ -7,41 +7,40 @@
 #include "rtl83xx.h"
 
 static struct rtl838x_switch_priv *switch_priv;
-extern struct rtl83xx_soc_info soc_info;
 
 enum scheduler_type {
 	WEIGHTED_FAIR_QUEUE = 0,
 	WEIGHTED_ROUND_ROBIN,
 };
 
-int max_available_queue[] = {0, 1, 2, 3, 4, 5, 6, 7};
-int default_queue_weights[] = {1, 1, 1, 1, 1, 1, 1, 1};
+int rtldsa_max_available_queue[] = {0, 1, 2, 3, 4, 5, 6, 7};
+int rtldsa_default_queue_weights[] = {1, 1, 1, 1, 1, 1, 1, 1};
 int dot1p_priority_remapping[] = {0, 1, 2, 3, 4, 5, 6, 7};
 
 static void rtl839x_read_scheduling_table(int port)
 {
 	u32 cmd = 1 << 9 | /* Execute cmd */
-	          0 << 8 | /* Read */
-	          0 << 6 | /* Table type 0b00 */
-	          (port & 0x3f);
+		  0 << 8 | /* Read */
+		  0 << 6 | /* Table type 0b00 */
+		  (port & 0x3f);
 	rtl839x_exec_tbl2_cmd(cmd);
 }
 
 static void rtl839x_write_scheduling_table(int port)
 {
 	u32 cmd = 1 << 9 | /* Execute cmd */
-	          1 << 8 | /* Write */
-	          0 << 6 | /* Table type 0b00 */
-	          (port & 0x3f);
+		  1 << 8 | /* Write */
+		  0 << 6 | /* Table type 0b00 */
+		  (port & 0x3f);
 	rtl839x_exec_tbl2_cmd(cmd);
 }
 
 static void rtl839x_read_out_q_table(int port)
 {
 	u32 cmd = 1 << 9 | /* Execute cmd */
-	          0 << 8 | /* Read */
-	          2 << 6 | /* Table type 0b10 */
-	          (port & 0x3f);
+		  0 << 8 | /* Read */
+		  2 << 6 | /* Table type 0b10 */
+		  (port & 0x3f);
 	rtl839x_exec_tbl2_cmd(cmd);
 }
 
@@ -80,7 +79,7 @@ int rtl838x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate
  * units of the rate is 16Kbps
  */
 void rtl838x_egress_rate_queue_limit(struct rtl838x_switch_priv *priv, int port,
-					    int queue, u32 rate)
+				     int queue, u32 rate)
 {
 	if (port > priv->cpu_port)
 		return;
@@ -189,7 +188,7 @@ int rtl839x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate
  * units of the rate is 16Kbps
  */
 static void rtl839x_egress_rate_queue_limit(struct rtl838x_switch_priv *priv, int port,
-					int queue, u32 rate)
+					    int queue, u32 rate)
 {
 	int lsb = 128 + queue * 20;
 	int low_byte = 8 - (lsb >> 5);
@@ -197,7 +196,7 @@ static void rtl839x_egress_rate_queue_limit(struct rtl838x_switch_priv *priv, in
 	u32 high_mask = 0xfffff	>> (32 - start_bit);
 
 	pr_debug("%s: Setting egress rate on port %d, queue %d to %d\n",
-		__func__, port, queue, rate);
+		 __func__, port, queue, rate);
 	if (port >= priv->cpu_port)
 		return;
 	if (queue > 7)
@@ -210,7 +209,7 @@ static void rtl839x_egress_rate_queue_limit(struct rtl838x_switch_priv *priv, in
 	sw_w32_mask(0xfffff << start_bit, (rate & 0xfffff) << start_bit,
 		    RTL839X_TBL_ACCESS_DATA_2(low_byte));
 	if (high_mask)
-		sw_w32_mask(high_mask, (rate & 0xfffff) >> (32- start_bit),
+		sw_w32_mask(high_mask, (rate & 0xfffff) >> (32 - start_bit),
 			    RTL839X_TBL_ACCESS_DATA_2(low_byte - 1));
 
 	rtl839x_write_scheduling_table(port);
@@ -251,7 +250,8 @@ static void rtl839x_rate_control_init(struct rtl838x_switch_priv *priv)
 	/* Set default burst rates on all ports (the same for 1G / 10G) with a PHY
 	 * for UC, MC and BC
 	 * For 1G port, the minimum burst rate is 1700, maximum 65535,
-	 * For 10G ports it is 2650 and 1048575 respectively */
+	 * For 10G ports it is 2650 and 1048575 respectively
+	 */
 	for (int p = 0; p < priv->cpu_port; p++) {
 		if (priv->ports[p].phy && !priv->ports[p].is10G) {
 			sw_w32_mask(0xffff, 0x8000, RTL839X_STORM_CTRL_PORT_UC_1(p));
@@ -288,7 +288,6 @@ static void rtl839x_rate_control_init(struct rtl838x_switch_priv *priv)
 }
 
 
-
 static void rtl838x_setup_prio2queue_matrix(int *min_queues)
 {
 	u32 v = 0;
@@ -304,6 +303,7 @@ static void rtl839x_setup_prio2queue_matrix(int *min_queues)
 	pr_info("Current Intprio2queue setting: %08x\n", sw_r32(RTL839X_QM_INTPRI2QID_CTRL(0)));
 	for (int i = 0; i < MAX_PRIOS; i++) {
 		int q = min_queues[i];
+
 		sw_w32(i << (q * 3), RTL839X_QM_INTPRI2QID_CTRL(q));
 	}
 }
@@ -323,27 +323,27 @@ static void rtl83xx_setup_prio2queue_cpu_matrix(int *max_queues)
 
 static void rtl83xx_setup_default_prio2queue(void)
 {
-	if (soc_info.family == RTL8380_FAMILY_ID) {
-		rtl838x_setup_prio2queue_matrix(max_available_queue);
-	} else {
-		rtl839x_setup_prio2queue_matrix(max_available_queue);
-	}
-	rtl83xx_setup_prio2queue_cpu_matrix(max_available_queue);
+	if (soc_info.family == RTL8380_FAMILY_ID)
+		rtl838x_setup_prio2queue_matrix(rtldsa_max_available_queue);
+	else
+		rtl839x_setup_prio2queue_matrix(rtldsa_max_available_queue);
+
+	rtl83xx_setup_prio2queue_cpu_matrix(rtldsa_max_available_queue);
 }
 
 /* Sets the output queue assigned to a port, the port can be the CPU-port */
 void rtl839x_set_egress_queue(int port, int queue)
 {
-	sw_w32(queue << ((port % 10) *3), RTL839X_QM_PORT_QNUM(port));
+	sw_w32(queue << ((port % 10) * 3), RTL839X_QM_PORT_QNUM(port));
 }
 
 /* Sets the priority assigned of an ingress port, the port can be the CPU-port */
 static void rtl83xx_set_ingress_priority(int port, int priority)
 {
 	if (soc_info.family == RTL8380_FAMILY_ID)
-		sw_w32(priority << ((port % 10) *3), RTL838X_PRI_SEL_PORT_PRI(port));
+		sw_w32(priority << ((port % 10) * 3), RTL838X_PRI_SEL_PORT_PRI(port));
 	else
-		sw_w32(priority << ((port % 10) *3), RTL839X_PRI_SEL_PORT_PRI(port));
+		sw_w32(priority << ((port % 10) * 3), RTL839X_PRI_SEL_PORT_PRI(port));
 }
 
 static int rtl839x_get_scheduling_algorithm(struct rtl838x_switch_priv *priv, int port)
@@ -364,7 +364,7 @@ static int rtl839x_get_scheduling_algorithm(struct rtl838x_switch_priv *priv, in
 }
 
 static void rtl839x_set_scheduling_algorithm(struct rtl838x_switch_priv *priv, int port,
-				      enum scheduler_type sched)
+					     enum scheduler_type sched)
 {
 	enum scheduler_type t = rtl839x_get_scheduling_algorithm(priv, port);
 	u32 v, oam_state, oam_port_state;
@@ -422,7 +422,7 @@ static void rtl839x_set_scheduling_algorithm(struct rtl838x_switch_priv *priv, i
 }
 
 static void rtl839x_set_scheduling_queue_weights(struct rtl838x_switch_priv *priv, int port,
-					  int *queue_weights)
+						 int *queue_weights)
 {
 	mutex_lock(&priv->reg_mutex);
 
@@ -435,10 +435,10 @@ static void rtl839x_set_scheduling_queue_weights(struct rtl838x_switch_priv *pri
 		int high_mask = 0x3ff >> (32 - start_bit);
 
 		sw_w32_mask(0x3ff << start_bit, (queue_weights[i] & 0x3ff) << start_bit,
-				RTL839X_TBL_ACCESS_DATA_2(low_byte));
+			    RTL839X_TBL_ACCESS_DATA_2(low_byte));
 		if (high_mask)
-			sw_w32_mask(high_mask, (queue_weights[i] & 0x3ff) >> (32- start_bit),
-					RTL839X_TBL_ACCESS_DATA_2(low_byte - 1));
+			sw_w32_mask(high_mask, (queue_weights[i] & 0x3ff) >> (32 - start_bit),
+				    RTL839X_TBL_ACCESS_DATA_2(low_byte - 1));
 	}
 
 	rtl839x_write_scheduling_table(port);
@@ -508,7 +508,7 @@ static void rtl839x_config_qos(void)
 	for (int port = 0; port <= soc_info.cpu_port; port++) {
 		rtl83xx_set_ingress_priority(port, 0);
 		rtl839x_set_scheduling_algorithm(priv, port, WEIGHTED_FAIR_QUEUE);
-		rtl839x_set_scheduling_queue_weights(priv, port, default_queue_weights);
+		rtl839x_set_scheduling_queue_weights(priv, port, rtldsa_default_queue_weights);
 		/* Do re-marking based on outer tag */
 		sw_w32_mask(0, BIT(port % 32), RTL839X_RMK_PORT_DEI_TAG_CTRL(port));
 	}
@@ -533,9 +533,9 @@ static void rtl839x_config_qos(void)
 	 * low threshold (bits 0-11) to 4095 and high threshold (bits 12-23) to 4095
 	 * Weighted Random Early Detection (WRED) is used
 	 */
-	sw_w32(4095 << 12| 4095, RTL839X_WRED_PORT_THR_CTRL(0));
-	sw_w32(4095 << 12| 4095, RTL839X_WRED_PORT_THR_CTRL(1));
-	sw_w32(4095 << 12| 4095, RTL839X_WRED_PORT_THR_CTRL(2));
+	sw_w32(4095 << 12 | 4095, RTL839X_WRED_PORT_THR_CTRL(0));
+	sw_w32(4095 << 12 | 4095, RTL839X_WRED_PORT_THR_CTRL(1));
+	sw_w32(4095 << 12 | 4095, RTL839X_WRED_PORT_THR_CTRL(2));
 
 	/* Set queue-based congestion avoidance properties, register fields are as
 	 * for forward RTL839X_WRED_PORT_THR_CTRL
@@ -553,13 +553,18 @@ void __init rtl83xx_setup_qos(struct rtl838x_switch_priv *priv)
 
 	pr_info("In %s\n", __func__);
 
-	if (priv->family_id == RTL8380_FAMILY_ID)
-		return rtl838x_config_qos();
-	else if (priv->family_id == RTL8390_FAMILY_ID)
-		return rtl839x_config_qos();
-
-	if (priv->family_id == RTL8380_FAMILY_ID)
+	switch (priv->family_id) {
+	case RTL8380_FAMILY_ID:
+		rtl838x_config_qos();
 		rtl838x_rate_control_init(priv);
-	else if (priv->family_id == RTL8390_FAMILY_ID)
+		break;
+	case RTL8390_FAMILY_ID:
+		rtl839x_config_qos();
 		rtl839x_rate_control_init(priv);
+		break;
+	default:
+		if (priv->r->qos_init)
+			priv->r->qos_init(priv);
+		break;
+	}
 }

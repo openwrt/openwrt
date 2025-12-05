@@ -51,7 +51,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  obj-$(CONFIG_PHY_LPC18XX_USB_OTG)	+= phy-lpc18xx-usb-otg.o
 --- /dev/null
 +++ b/drivers/phy/phy-ar7100-usb.c
-@@ -0,0 +1,117 @@
+@@ -0,0 +1,115 @@
 +/*
 + * Copyright (C) 2018 John Crispin <john@phrozen.org>
 + *
@@ -66,7 +66,6 @@ Signed-off-by: John Crispin <john@phrozen.org>
 +#include <linux/phy/phy.h>
 +#include <linux/delay.h>
 +#include <linux/reset.h>
-+#include <linux/of_gpio.h>
 +
 +#include <asm/mach-ath79/ath79.h>
 +#include <asm/mach-ath79/ar71xx_regs.h>
@@ -77,7 +76,6 @@ Signed-off-by: John Crispin <john@phrozen.org>
 +	struct reset_control	*rst_ohci_dll;
 +	void __iomem		*io_base;
 +	struct phy		*phy;
-+	int			gpio;
 +};
 +
 +static int ar7100_usb_phy_power_off(struct phy *phy)
@@ -171,7 +169,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
 +MODULE_LICENSE("GPL");
 --- /dev/null
 +++ b/drivers/phy/phy-ar7200-usb.c
-@@ -0,0 +1,111 @@
+@@ -0,0 +1,109 @@
 +/*
 + * Copyright (C) 2015 Alban Bedel <albeu@free.fr>
 + *
@@ -185,14 +183,12 @@ Signed-off-by: John Crispin <john@phrozen.org>
 +#include <linux/platform_device.h>
 +#include <linux/phy/phy.h>
 +#include <linux/reset.h>
-+#include <linux/of_gpio.h>
 +
 +struct ar7200_usb_phy {
 +	struct reset_control	*rst_phy;
 +	struct reset_control	*rst_phy_analog;
 +	struct reset_control	*suspend_override;
 +	struct phy		*phy;
-+	int			gpio;
 +};
 +
 +static int ar7200_usb_phy_power_on(struct phy *phy)

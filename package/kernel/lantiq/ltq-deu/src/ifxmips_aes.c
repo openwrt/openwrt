@@ -276,7 +276,7 @@ void ifx_deu_aes (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
         aes->IV2R = DEU_ENDIAN_SWAP(*((u32 *) iv_arg + 1));
         aes->IV1R = DEU_ENDIAN_SWAP(*((u32 *) iv_arg + 2));
         aes->IV0R = DEU_ENDIAN_SWAP(*((u32 *) iv_arg + 3));
-    };
+    }
 
 
     i = 0;
@@ -1529,7 +1529,7 @@ static int aes_cbcmac_init_tfm(struct crypto_tfm *tfm)
 {
     struct aes_ctx *mctx = crypto_tfm_ctx(tfm);
     mctx->temp = kzalloc(AES_BLOCK_SIZE * AES_CBCMAC_DBN_TEMP_SIZE, GFP_KERNEL);
-    if (IS_ERR(mctx->temp)) return PTR_ERR(mctx->temp);
+    if (!mctx->temp) return -ENOMEM;
 
     return 0;
 }

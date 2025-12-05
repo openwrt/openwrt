@@ -19,7 +19,7 @@
 		regulator-name = "usb_vbus";
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
-		gpio = <&gpio 37 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 37 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
 
@@ -28,7 +28,7 @@
 		regulator-name = "m2keyb_pwren";
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
-		gpio = <&gpio 38 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 38 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 		regulator-always-on;
 	};
@@ -122,7 +122,7 @@
 };
 
 &mdio0 {
-	reset-gpios = <&gpio 30 GPIO_ACTIVE_LOW>;
+	reset-gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
 	reset-delay-us = <10000>;
 	reset-post-delay-us = <100000>;
 

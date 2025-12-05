@@ -6,6 +6,7 @@
 #include "wpa_supplicant_i.h"
 #include "wps_supplicant.h"
 #include "ctrl_iface.h"
+#include "config.h"
 #include "bss.h"
 #include "ucode.h"
 
@@ -41,6 +42,21 @@ wpas_ucode_update_interfaces(void)
 	ucv_object_add(ucv_prototype_get(global), "interfaces", ifs);
 }
 
+static uc_value_t *
+wpas_ucode_bss_get_uval(struct wpa_bss *bss)
+{
+	uc_value_t *val;
+
+	val = ucv_object_new(vm);
+	ucv_object_add(val, "freq", ucv_int64_new(bss->freq));
+	ucv_object_add(val, "ssid", ucv_string_new_length(bss->ssid, bss->ssid_len));
+	ucv_object_add(val, "snr", ucv_int64_new(bss->snr));
+	ucv_object_add(val, "signal", ucv_int64_new(bss->level));
+	ucv_object_add(val, "noise", ucv_int64_new(bss->noise));
+
+	return val;
+}
+
 void wpas_ucode_add_bss(struct wpa_supplicant *wpa_s)
 {
 	uc_value_t *val;
@@ -69,6 +85,25 @@ void wpas_ucode_free_bss(struct wpa_supplicant *wpa_s)
 	uc_value_push(ucv_get(val));
 	ucv_put(wpa_ucode_call(2));
 	ucv_put(val);
+}
+
+bool wpas_ucode_bss_allowed(struct wpa_supplicant *wpa_s, struct wpa_bss *bss)
+{
+	uc_value_t *val;
+	bool ret = true;
+
+	if (wpa_ucode_call_prepare("bss_allowed"))
+		return true;
+
+	uc_value_push(ucv_string_new(wpa_s->ifname));
+	uc_value_push(wpas_ucode_bss_get_uval(bss));
+	val = wpa_ucode_call(2);
+
+	if (ucv_type(val) == UC_BOOLEAN)
+		ret = ucv_boolean_get(val);
+	ucv_put(val);
+
+	return ret;
 }
 
 void wpas_ucode_update_state(struct wpa_supplicant *wpa_s)
@@ -120,6 +155,85 @@ void wpas_ucode_event(struct wpa_supplicant *wpa_s, int event, union wpa_event_d
 	}
 
 	ucv_put(wpa_ucode_call(4));
+}
+
+void wpas_ucode_ctrl_event(struct wpa_supplicant *wpa_s, const char *str, size_t len)
+{
+	uc_value_t *val;
+
+#define _EV_PREFIX "CTRL-EVENT-"
+	if (strncmp(str, _EV_PREFIX, sizeof(_EV_PREFIX) - 1) != 0)
+		return;
+
+	val = wpa_ucode_registry_get(iface_registry, wpa_s->ucode.idx);
+	if (!val)
+		return;
+
+	if (wpa_ucode_call_prepare("ctrl_event"))
+		return;
+
+	uc_value_push(ucv_string_new(wpa_s->ifname));
+	uc_value_push(ucv_get(val));
+	uc_value_push(ucv_string_new_length(str, len));
+	ucv_put(wpa_ucode_call(3));
+}
+
+void wpas_ucode_wps_complete(struct wpa_supplicant *wpa_s,
+			     const struct wps_credential *cred)
+{
+#ifdef CONFIG_WPS
+	uc_value_t *val;
+	char *ifname, *encryption, *ssid, *key;
+	size_t ifname_len;
+
+	if (!cred)
+		return;
+
+	switch (cred->auth_type) {
+	case WPS_AUTH_WPAPSK | WPS_AUTH_WPA2PSK:
+	case WPS_AUTH_WPA2PSK:
+		encryption = "psk2";
+		break;
+	case WPS_AUTH_WPAPSK:
+		encryption = "psk";
+		break;
+	case WPS_AUTH_OPEN:
+		encryption = "none";
+		break;
+	default:
+		wpa_printf(MSG_DEBUG, "WPS: Ignored credentials for "
+			   "unsupported authentication type 0x%x",
+			   cred->auth_type);
+		return;
+	}
+
+	if (cred->auth_type != WPS_AUTH_OPEN &&
+	    (cred->key_len < 8 || cred->key_len > 2 * PMK_LEN)) {
+		wpa_printf(MSG_ERROR, "WPS: Reject PSK credential with "
+			   "invalid Network Key length %lu",
+			   (unsigned long) cred->key_len);
+		return;
+	}
+
+	val = wpa_ucode_registry_get(iface_registry, wpa_s->ucode.idx);
+	if (!val)
+		return;
+
+	if (wpa_ucode_call_prepare("wps_credentials"))
+		return;
+
+	uc_value_push(ucv_string_new(wpa_s->ifname));
+	uc_value_push(ucv_get(val));
+
+	val = ucv_object_new(vm);
+	uc_value_push(val);
+
+	ucv_object_add(val, "encryption", ucv_string_new(encryption));
+	ucv_object_add(val, "ssid", ucv_string_new_length(cred->ssid, cred->ssid_len));
+	ucv_object_add(val, "key", ucv_string_new_length(cred->key, cred->key_len));
+
+	ucv_put(wpa_ucode_call(3));
+#endif /* CONFIG_WPS */
 }
 
 static const char *obj_stringval(uc_value_t *obj, const char *name)
@@ -203,6 +317,46 @@ out:
 	return ucv_int64_new(ret);
 }
 
+static void
+uc_wpas_iface_status_bss(uc_value_t *ret, struct wpa_bss *bss)
+{
+	int sec_chan = 0;
+	const u8 *ie;
+
+	ie = wpa_bss_get_ie(bss, WLAN_EID_HT_OPERATION);
+	if (ie && ie[1] >= 2) {
+		const struct ieee80211_ht_operation *ht_oper;
+		int sec;
+
+		ht_oper = (const void *) (ie + 2);
+		sec = ht_oper->ht_param & HT_INFO_HT_PARAM_SECONDARY_CHNL_OFF_MASK;
+		if (sec == HT_INFO_HT_PARAM_SECONDARY_CHNL_ABOVE)
+			sec_chan = 1;
+		else if (sec == HT_INFO_HT_PARAM_SECONDARY_CHNL_BELOW)
+			sec_chan = -1;
+	}
+
+	ucv_object_add(ret, "sec_chan_offset", ucv_int64_new(sec_chan));
+	ucv_object_add(ret, "frequency", ucv_int64_new(bss->freq));
+}
+
+static void
+uc_wpas_iface_status_multi_ap(uc_vm_t *vm, uc_value_t *ret, struct wpa_supplicant *wpa_s)
+{
+	struct multi_ap_params *multi_ap = &wpa_s->multi_ap;
+	uc_value_t *obj;
+
+	if (!wpa_s->multi_ap_ie)
+		return;
+
+	obj = ucv_object_new(vm);
+	ucv_object_add(ret, "multi_ap", obj);
+
+	ucv_object_add(obj, "profile", ucv_int64_new(multi_ap->profile));
+	ucv_object_add(obj, "capability", ucv_int64_new(multi_ap->capability));
+	ucv_object_add(obj, "vlanid", ucv_int64_new(multi_ap->vlanid));
+}
+
 static uc_value_t *
 uc_wpas_iface_status(uc_vm_t *vm, size_t nargs)
 {
@@ -218,26 +372,33 @@ uc_wpas_iface_status(uc_vm_t *vm, size_t nargs)
 	ucv_object_add(ret, "state", ucv_string_new(wpa_supplicant_state_txt(wpa_s->wpa_state)));
 
 	bss = wpa_s->current_bss;
-	if (bss) {
-		int sec_chan = 0;
-		const u8 *ie;
+	if (bss)
+		uc_wpas_iface_status_bss(ret, bss);
 
-		ie = wpa_bss_get_ie(bss, WLAN_EID_HT_OPERATION);
-		if (ie && ie[1] >= 2) {
-			const struct ieee80211_ht_operation *ht_oper;
-			int sec;
+	if (wpa_s->valid_links) {
+		unsigned int valid_links = wpa_s->valid_links;
+		uc_value_t *link, *links;
 
-			ht_oper = (const void *) (ie + 2);
-			sec = ht_oper->ht_param & HT_INFO_HT_PARAM_SECONDARY_CHNL_OFF_MASK;
-			if (sec == HT_INFO_HT_PARAM_SECONDARY_CHNL_ABOVE)
-				sec_chan = 1;
-			else if (sec == HT_INFO_HT_PARAM_SECONDARY_CHNL_BELOW)
-				sec_chan = -1;
+		links = ucv_array_new(vm);
+
+		for (size_t i = 0;
+		     valid_links && i < ARRAY_SIZE(wpa_s->links);
+			 i++, valid_links >>= 1) {
+			bss = wpa_s->links[i].bss;
+
+			if (!(valid_links & 1) || !bss)
+				continue;
+
+			link = ucv_object_new(vm);
+			uc_wpas_iface_status_bss(link, bss);
+			ucv_array_set(links, i, link);
 		}
 
-		ucv_object_add(ret, "sec_chan_offset", ucv_int64_new(sec_chan));
-		ucv_object_add(ret, "frequency", ucv_int64_new(bss->freq));
+		ucv_object_add(ret, "links", links);
 	}
+
+	if (wpa_s->wpa_state == WPA_COMPLETED)
+		uc_wpas_iface_status_multi_ap(vm, ret, wpa_s);
 
 #ifdef CONFIG_MESH
 	if (wpa_s->ifmsh) {
@@ -276,6 +437,58 @@ uc_wpas_iface_ctrl(uc_vm_t *vm, size_t nargs)
 	return ret;
 }
 
+static uc_value_t *
+uc_wpas_iface_config(uc_vm_t *vm, size_t nargs)
+{
+	struct wpa_supplicant *wpa_s = uc_fn_thisval("wpas.iface");
+	uc_value_t *arg = uc_fn_arg(0);
+	uc_value_t *val = uc_fn_arg(1);
+	uc_value_t *ret = NULL;
+	bool get = nargs == 1;
+	const char *name;
+	size_t len = 0;
+
+	if (!wpa_s || ucv_type(arg) != UC_STRING)
+		return NULL;
+
+	name = ucv_string_get(arg);
+	if (!strcmp(name, "freq_list")) {
+		if (get) {
+			int *cur = wpa_s->conf->freq_list;
+			if (!cur)
+				return NULL;
+
+			ret = ucv_array_new(vm);
+			while (*cur)
+				ucv_array_set(ret, len++, ucv_int64_new(*(cur++)));
+		} else {
+			size_t len = ucv_array_length(val);
+			int *freq_list;
+
+			if (ucv_type(val) != UC_ARRAY)
+				return NULL;
+
+			freq_list = calloc(len + 1, sizeof(*freq_list));
+			for (size_t i = 0; i < len; i++) {
+				uc_value_t *cur = ucv_array_get(val, i);
+
+				if (ucv_type(cur) != UC_INTEGER) {
+					free(freq_list);
+					return NULL;
+				}
+
+				freq_list[i] = ucv_int64_get(cur);
+			}
+
+			free(wpa_s->conf->freq_list);
+			wpa_s->conf->freq_list = freq_list;
+			ret = ucv_boolean_new(true);
+		}
+	}
+
+	return ret;
+}
+
 int wpas_ucode_init(struct wpa_global *gl)
 {
 	static const uc_function_list_t global_fns[] = {
@@ -288,6 +501,7 @@ int wpas_ucode_init(struct wpa_global *gl)
 	static const uc_function_list_t iface_fns[] = {
 		{ "status", uc_wpas_iface_status },
 		{ "ctrl", uc_wpas_iface_ctrl },
+		{ "config", uc_wpas_iface_config },
 	};
 	uc_value_t *data, *proto;
 
@@ -304,6 +518,8 @@ int wpas_ucode_init(struct wpa_global *gl)
 
 	if (wpa_ucode_run(HOSTAPD_UC_PATH "wpa_supplicant.uc"))
 		goto free_vm;
+
+	wpas_ucode_update_interfaces();
 
 	return 0;
 

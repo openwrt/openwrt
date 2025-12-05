@@ -15,3 +15,14 @@ endif
 endef
 
 $(eval $(call BuildPackage,airoha-en8811h-firmware))
+
+Package/airoha-en7581-npu-firmware = $(call Package/firmware-default,Airoha EN7581 NPU firmware,,LICENSE.airoha)
+define Package/airoha-en7581-npu-firmware/install
+	$(INSTALL_DIR) $(1)/lib/firmware/airoha
+	$(CP) \
+		$(PKG_BUILD_DIR)/airoha/en7581_npu_data.bin \
+		$(PKG_BUILD_DIR)/airoha/en7581_npu_rv32.bin \
+		$(1)/lib/firmware/airoha
+endef
+
+$(eval $(call BuildPackage,airoha-en7581-npu-firmware))

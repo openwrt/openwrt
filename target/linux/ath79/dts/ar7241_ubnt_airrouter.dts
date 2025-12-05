@@ -33,10 +33,25 @@
 	};
 };
 
+&art {
+	cal_art_1000: calibration@1000 {
+		reg = <0x1000 0x200>;
+	};
+};
+
 &usb_phy {
 	status = "okay";
 };
 
 &usb {
 	status = "okay";
+};
+
+&pcie {
+	wifi: wifi@0,0 {
+		compatible = "pci168c,002b";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&cal_art_1000>;
+		nvmem-cell-names = "calibration";
+	};
 };

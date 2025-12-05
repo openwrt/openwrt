@@ -30,14 +30,12 @@
 	pinctrl-0 = <&spi_0_pins>;
 	pinctrl-names = "default";
 	status = "okay";
-	cs-gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>,
-		   <&tlmm 59 GPIO_ACTIVE_HIGH>,
-		   <&tlmm 1 GPIO_ACTIVE_HIGH>;
+	cs-gpios = <&tlmm 54 GPIO_ACTIVE_LOW>,
+		   <&tlmm 59 GPIO_ACTIVE_LOW>,
+		   <&tlmm 1 GPIO_ACTIVE_LOW>;
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
-		#address-cells = <1>;
-		#size-cells = <1>;
 		reg = <0>;
 		spi-max-frequency = <24000000>;
 

@@ -1,0 +1,36 @@
+From bdd92b59fe63553712fba57cc64cf8fe6e3e824a Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Tue, 25 Nov 2025 13:25:28 +0100
+Subject: [PATCH] tests: pthread-rwlock: better support MUSL
+
+MUSL doesn't provide PTHREAD_RWLOCK_PREFER_WRITER_NONRECURSIVE_NP as
+it's only glibc and as the MACRO say, it's NP (not portable).
+
+Check for the presence of it and disable overwriting the function
+accordingly.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ tests/pthread-rwlock.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/tests/pthread-rwlock.c
++++ b/tests/pthread-rwlock.c
+@@ -49,7 +49,7 @@ pthread_rwlockattr_destroy (_GL_UNUSED p
+   return 0;
+ }
+ 
+-#elif PTHREAD_RWLOCK_BAD_WAITQUEUE
++#elif PTHREAD_RWLOCK_BAD_WAITQUEUE && defined PTHREAD_RWLOCK_PREFER_WRITER_NONRECURSIVE_NP
+ 
+ /* Override pthread_rwlockattr_init, to use the kind PREFER_WRITER_NONRECURSIVE
+    (or possibly PREFER_WRITER) instead of the kind DEFAULT.  */
+@@ -388,7 +388,7 @@ pthread_rwlock_destroy (pthread_rwlock_t
+ 
+ # else
+ 
+-#  if PTHREAD_RWLOCK_BAD_WAITQUEUE
++#  if PTHREAD_RWLOCK_BAD_WAITQUEUE && defined PTHREAD_RWLOCK_PREFER_WRITER_NONRECURSIVE_NP
+ 
+ /* Override pthread_rwlock_init, to use the kind PREFER_WRITER_NONRECURSIVE
+    (or possibly PREFER_WRITER) instead of the default, when no

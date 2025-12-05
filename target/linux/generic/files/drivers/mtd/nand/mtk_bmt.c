@@ -385,8 +385,7 @@ void mtk_bmt_detach(struct mtd_info *mtd)
 	if (bmtd.mtd != mtd)
 		return;
 
-	if (bmtd.debugfs_dir)
-		debugfs_remove_recursive(bmtd.debugfs_dir);
+	debugfs_remove_recursive(bmtd.debugfs_dir);
 	bmtd.debugfs_dir = NULL;
 
 	kfree(bmtd.bbt_buf);

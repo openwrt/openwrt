@@ -1,8 +1,9 @@
-// SPDX-License-Identifier: GPL-2.0-or-later OR MIT 
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
 /dts-v1/;
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/pinctrl/mt65xx.h>
 
 #include "mt7981b.dtsi"
 
@@ -38,7 +39,7 @@
 			linux,code = <KEY_WPS_BUTTON>;
 			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
 		};
-		
+
 	};
 
 	leds {
@@ -55,20 +56,20 @@
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_STATUS;
 		};
-		
+
 		led_status_blue: blue {
 			gpios = <&pio 11 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_STATUS;
 		};
-		
+
 		led_status_5g1: 5g1 {
 			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_USB;
 			function-enumerator = <0>;
 		};
-		
+
 		led_status_5g2: 5g2 {
 			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_BLUE>;
@@ -135,7 +136,7 @@
 			pause;
 		};
 	};
-	
+
 	gmac1: mac@1 {
 		compatible = "mediatek,eth-mac";
 		reg = <1>;
@@ -165,8 +166,6 @@
 
 	spi_nand@0 {
 		compatible = "spi-nand";
-		#address-cells = <1>;
-		#size-cells = <1>;
 		reg = <0>;
 
 		spi-max-frequency = <52000000>;
@@ -207,7 +206,7 @@
 
 			nand_rootfs: partition@580000 {
 				label = "ubi";
-				reg = <0x0580000 0x7220000>;
+				reg = <0x0580000 0x7280000>;
 			};
 		};
 	};
@@ -262,7 +261,7 @@
 };
 
 &pio {
-	gpio-line-names = 
+	gpio-line-names =
 			"wps",
 			"reset",
 			"watchdog",
@@ -286,14 +285,14 @@
 
 		conf-pu {
 			pins = "SPI0_CS", "SPI0_HOLD", "SPI0_WP";
-			drive-strength = <8>;
-			mediatek,pull-up-adv = <0>; /* bias-disable */
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-disable; /* bias-disable */
 		};
 
 		conf-pd {
 			pins = "SPI0_CLK", "SPI0_MOSI", "SPI0_MISO";
-			drive-strength = <8>;
-			mediatek,pull-up-adv = <0>; /* bias-disable */
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-disable; /* bias-disable */
 		};
 	};
 };
@@ -316,8 +315,8 @@
 
 &wifi {
 	status = "okay";
-        nvmem-cells = <&eeprom_factory>;
-        nvmem-cell-names = "eeprom";
+	nvmem-cells = <&eeprom_factory>;
+	nvmem-cell-names = "eeprom";
 };
 
 &factory {
@@ -325,13 +324,13 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
-	macaddr_factory_004: macaddr@004 {
-		reg = <0x004 0x6>;
+	macaddr_factory_004: macaddr@4 {
+		reg = <0x4 0x6>;
 	};
-	macaddr_factory_02a: macaddr@02a {
-		reg = <0x02a 0x6>;
+	macaddr_factory_02a: macaddr@2a {
+		reg = <0x2a 0x6>;
 	};
-        eeprom_factory: eeprom@0 {
+	eeprom_factory: eeprom@0 {
 		reg = <0x0 0x1000>;
 	};
 };

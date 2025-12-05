@@ -86,6 +86,11 @@
 	nvmem-cell-names = "mac-address";
 };
 
+&ppe {
+	nvmem-cells = <&macaddr_urlader_a91 1>;
+	nvmem-cell-names = "mac-address";
+};
+
 &phy0 {
 	reset-gpios = <&gpio 37 GPIO_ACTIVE_LOW>;
 };

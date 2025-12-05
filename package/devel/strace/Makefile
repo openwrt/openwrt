@@ -9,12 +9,12 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=strace
-PKG_VERSION:=6.15
+PKG_VERSION:=6.17
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=https://strace.io/files/$(PKG_VERSION)
-PKG_HASH:=8552dfab08abc22a0f2048c98fd9541fd4d71b6882507952780dab7c7c512f51
+PKG_HASH:=0a7c7bedc7efc076f3242a0310af2ae63c292a36dd4236f079e88a93e98cb9c0
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=LGPL-2.1-or-later

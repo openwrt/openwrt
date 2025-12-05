@@ -9,5 +9,13 @@
 };
 
 &tricolor {
-	enable-gpio = <&tlmm 48 GPIO_ACTIVE_HIGH>;
+	enable-gpios = <&tlmm 48 GPIO_ACTIVE_HIGH>;
+};
+
+&wifi0 {
+	qcom,ath10k-calibration-variant = "Meraki-MR33";
+};
+
+&wifi1 {
+	qcom,ath10k-calibration-variant = "Meraki-MR33";
 };

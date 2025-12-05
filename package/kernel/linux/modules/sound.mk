@@ -361,7 +361,6 @@ $(eval $(call KernelPackage,sound-dummy))
 define KernelPackage/sound-hda-core
   SUBMENU:=$(SOUND_MENU)
   TITLE:=HD Audio Sound Core Support
-  DEPENDS:=+LINUX_6_6:kmod-ledtrig-audio
   KCONFIG:= \
 	CONFIG_SND_HDA_CORE \
 	CONFIG_SND_HDA_HWDEP=y \
@@ -386,7 +385,6 @@ $(eval $(call KernelPackage,sound-hda-core))
 define KernelPackage/snd-hda-scodec-component
   SUBMENU:=$(SOUND_MENU)
   TITLE:= HD Audio Codec Component
-  DEPENDS:=@!LINUX_6_6
   KCONFIG:= \
 	CONFIG_SND_HDA_SCODEC_COMPONENT
   FILES:= \
@@ -405,7 +403,7 @@ define KernelPackage/sound-hda-codec-realtek
   FILES:= \
 	$(LINUX_DIR)/sound/pci/hda/snd-hda-codec-realtek.ko
   AUTOLOAD:=$(call AutoProbe,snd-hda-codec-realtek)
-  $(call AddDepends/sound,kmod-sound-hda-core +!LINUX_6_6:kmod-snd-hda-scodec-component)
+  $(call AddDepends/sound,kmod-sound-hda-core +kmod-snd-hda-scodec-component)
 endef
 
 define KernelPackage/sound-hda-codec-realtek/description
@@ -604,3 +602,55 @@ define KernelPackage/sound-hda-intel/description
 endef
 
 $(eval $(call KernelPackage,sound-hda-intel))
+
+
+define KernelPackage/sound-midi2
+  TITLE:=MIDI 2.0 and UMP Support
+  KCONFIG:= \
+	CONFIG_SND_UMP=y  \
+	CONFIG_SND_UMP_LEGACY_RAWMIDI=y
+  FILES:=$(LINUX_DIR)/sound/core/snd-ump.ko
+  AUTOLOAD:=$(call AutoProbe,snd-ump)
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-midi2/description
+ Kernel module for MIDI 2.0: sequencer, rawmidi, and USB-MIDI 2.0 support.
+endef
+
+$(eval $(call KernelPackage,sound-midi2))
+
+define KernelPackage/sound-midi2-seq
+  TITLE:=MIDI 2.0 and UMP Support for Sequencer
+  KCONFIG:= \
+	CONFIG_SND_SEQ_UMP=y \
+	CONFIG_SND_SEQ_UMP_CLIENT=y
+  DEPENDS:=+kmod-sound-midi2 +kmod-sound-seq
+  $(call AddDepends/sound)
+endef
+
+$(eval $(call KernelPackage,sound-midi2-seq))
+
+
+define KernelPackage/sound-midi2-usb
+  TITLE:=MIDI 2.0 and UMP Support for USB-MIDI
+  KCONFIG:=CONFIG_SND_USB_AUDIO_MIDI_V2=y
+  DEPENDS:=+kmod-sound-midi2 +kmod-usb-audio
+  $(call AddDepends/sound)
+endef
+
+$(eval $(call KernelPackage,sound-midi2-usb))
+
+
+define KernelPackage/sound-dynamic-minors
+  TITLE:=Support more than 8 audio and MIDI devices
+  KCONFIG:=CONFIG_SND_DYNAMIC_MINORS=y
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-dynamic-minors/description
+ Kernel module for dynamic minor device support.
+ Required for using more than 8 audio and MIDI devices.
+endef
+
+$(eval $(call KernelPackage,sound-dynamic-minors))

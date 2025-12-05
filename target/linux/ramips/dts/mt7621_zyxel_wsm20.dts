@@ -121,7 +121,9 @@
 				};
 
 				macaddr_factory_1fdfa: macaddr@1fdfa {
+					compatible = "mac-base";
 					reg = <0x1fdfa 0x6>;
+					#nvmem-cell-cells = <1>;
 				};
 
 				macaddr_factory_1fdf4: macaddr@1fdf4 {
@@ -180,7 +182,7 @@
 };
 
 &gmac0 {
-	nvmem-cells = <&macaddr_factory_1fdfa>;
+	nvmem-cells = <&macaddr_factory_1fdfa 0>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -208,6 +210,21 @@
 		nvmem-cells = <&eeprom_factory_0>, <&precal_factory_e10>;
 		nvmem-cell-names = "eeprom", "precal";
 		mediatek,disable-radar-background;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		band@0 {
+			reg = <0>;
+			nvmem-cells = <&macaddr_factory_1fdfa 1>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		band@1 {
+			reg = <1>;
+			nvmem-cells = <&macaddr_factory_1fdfa 2>;
+			nvmem-cell-names = "mac-address";
+		};
 	};
 };
 

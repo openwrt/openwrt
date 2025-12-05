@@ -12,6 +12,7 @@ define Device/nec-netbsd-aterm
   KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | uImage none
   KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-kernel | uImage none
   ARTIFACTS := uboot.bin
+ifeq ($(IB),)
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
   COMPILE := loader-$(1).bin
   COMPILE/loader-$(1).bin := loader-okli-compile
@@ -19,6 +20,7 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
   ARTIFACT/initramfs-factory.bin := append-image-stage initramfs-kernel.bin | \
 	pad-to 4 skip=16 | \
 	nec-usbaterm-fw -f 0x0003 -d $$(KDIR)/loader-$(1).bin -d $$$$@ | check-size
+endif
 endif
   UBOOT_PATH := $$(STAGING_DIR_IMAGE)/$$(SOC)_nec_aterm-u-boot.bin
   ARTIFACT/uboot.bin := append-uboot | check-size 128k

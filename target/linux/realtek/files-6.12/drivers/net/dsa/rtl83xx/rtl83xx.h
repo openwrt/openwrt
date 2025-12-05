@@ -6,7 +6,6 @@
 #include <net/dsa.h>
 #include "rtl838x.h"
 
-
 #define RTL8380_VERSION_A 'A'
 #define RTL8390_VERSION_A 'A'
 #define RTL8380_VERSION_B 'B'
@@ -20,7 +19,9 @@ struct fdb_update_work {
 enum mib_reg {
 	MIB_REG_INVALID = 0,
 	MIB_REG_STD,
-	MIB_REG_PRV
+	MIB_REG_PRV,
+	MIB_TBL_STD,
+	MIB_TBL_PRV,
 };
 
 #define MIB_ITEM(_reg, _offset, _size) \
@@ -135,7 +136,7 @@ void __init rtl83xx_setup_qos(struct rtl838x_switch_priv *priv);
 void rtl83xx_fast_age(struct dsa_switch *ds, int port);
 int rtl83xx_packet_cntr_alloc(struct rtl838x_switch_priv *priv);
 int rtl83xx_port_get_stp_state(struct rtl838x_switch_priv *priv, int port);
-int rtl83xx_port_is_under(const struct net_device * dev, struct rtl838x_switch_priv *priv);
+int rtl83xx_port_is_under(const struct net_device *dev, struct rtl838x_switch_priv *priv);
 void rtl83xx_port_stp_state_set(struct dsa_switch *ds, int port, u8 state);
 int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type_data);
 
@@ -178,15 +179,10 @@ u32 rtl930x_hash(struct rtl838x_switch_priv *priv, u64 seed);
 irqreturn_t rtldsa_930x_switch_irq(int irq, void *dev_id);
 irqreturn_t rtl839x_switch_irq(int irq, void *dev_id);
 void rtl930x_vlan_profile_dump(int index);
-int rtl9300_sds_power(int mac, int val);
-extern int rtl9300_serdes_setup(int port, int sds_num, phy_interface_t phy_mode);
 void rtl930x_print_matrix(void);
 
 /* RTL931x-specific */
 irqreturn_t rtl931x_switch_irq(int irq, void *dev_id);
-int rtl931x_sds_cmu_band_get(int sds, phy_interface_t mode);
-int rtl931x_sds_cmu_band_set(int sds, bool enable, u32 band, phy_interface_t mode);
-extern void rtl931x_sds_init(u32 sds, phy_interface_t mode);
 void rtl931x_print_matrix(void);
 
 int rtl83xx_lag_add(struct dsa_switch *ds, int group, int port, struct netdev_lag_upper_info *info);
@@ -209,7 +205,16 @@ void rtl9300_dump_debug(void);
 void rtl930x_pie_rule_dump_raw(u32 r[]);
 
 void rtl931x_print_matrix(void);
-void rtl931x_set_receive_management_action(int port, rma_ctrl_t type, action_type_t action);
-void rtl931x_sw_init(struct rtl838x_switch_priv *priv);
+
+extern const struct dsa_switch_ops rtl83xx_switch_ops;
+extern const struct dsa_switch_ops rtl93xx_switch_ops;
+
+extern const struct rtl838x_reg rtl838x_reg;
+extern const struct rtl838x_reg rtl839x_reg;
+extern const struct rtl838x_reg rtl930x_reg;
+extern const struct rtl838x_reg rtl931x_reg;
+
+/* TODO actually from arch/mips/rtl838x/prom.c */
+extern struct rtl83xx_soc_info soc_info;
 
 #endif /* _NET_DSA_RTL83XX_H */

@@ -2,6 +2,7 @@
 
 /dts-v1/;
 #include "mt7981b.dtsi"
+#include <dt-bindings/pinctrl/mt65xx.h>
 
 / {
 	model = "GL.iNet GL-MT2500";
@@ -84,12 +85,12 @@
 				"SPI1_CLK", "SPI1_MOSI", "SPI1_MISO";
 			input-enable;
 			drive-strength = <MTK_DRIVE_12mA>;
-			mediatek,pull-up-adv = <1>;
+			bias-pull-up = <MTK_PUPD_SET_R1R0_01>;
 		};
 		conf-clk {
 			pins = "SPI1_CS";
 			drive-strength = <MTK_DRIVE_12mA>;
-			mediatek,pull-down-adv = <2>;
+			bias-pull-down = <MTK_PUPD_SET_R1R0_10>;
 		};
 	};
 	mmc0_pins_uhs: mmc0-pins-uhs {
@@ -103,12 +104,12 @@
 				"SPI1_CLK", "SPI1_MOSI", "SPI1_MISO";
 			input-enable;
 			drive-strength = <MTK_DRIVE_12mA>;
-			mediatek,pull-up-adv = <1>;
+			bias-pull-up = <MTK_PUPD_SET_R1R0_01>;
 		};
 		conf-clk {
 			pins = "SPI1_CS";
 			drive-strength = <MTK_DRIVE_12mA>;
-			mediatek,pull-down-adv = <2>;
+			bias-pull-down = <MTK_PUPD_SET_R1R0_10>;
 		};
 	};
 };

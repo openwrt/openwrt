@@ -1,0 +1,39 @@
+From ede1fa1384c230c9823f6bf1849cf50c5fc8a83e Mon Sep 17 00:00:00 2001
+From: Sebastian Reichel <sebastian.reichel@collabora.com>
+Date: Tue, 20 May 2025 13:14:27 +0200
+Subject: [PATCH] arm64: dts: rockchip: Add missing SFC power-domains to rk3576
+
+Add the power-domains for the RK3576 SFC nodes according to the
+TRM part 1. This fixes potential SErrors when accessing the SFC
+registers without other peripherals (e.g. eMMC) doing a prior
+power-domain enable. For example this is easy to trigger on the
+Rock 4D, which enables the SFC0 interface, but does not enable
+the eMMC interface at the moment.
+
+Cc: stable@vger.kernel.org
+Fixes: 36299757129c8 ("arm64: dts: rockchip: Add SFC nodes for rk3576")
+Signed-off-by: Sebastian Reichel <sebastian.reichel@collabora.com>
+Link: https://lore.kernel.org/r/20250520-rk3576-fix-fspi-pmdomain-v1-1-f07c6e62dadd@kernel.org
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3576.dtsi | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3576.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3576.dtsi
+@@ -1605,6 +1605,7 @@
+ 			interrupts = <GIC_SPI 255 IRQ_TYPE_LEVEL_HIGH>;
+ 			clocks = <&cru SCLK_FSPI1_X2>, <&cru HCLK_FSPI1>;
+ 			clock-names = "clk_sfc", "hclk_sfc";
++			power-domains = <&power RK3576_PD_SDGMAC>;
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+ 			status = "disabled";
+@@ -1655,6 +1656,7 @@
+ 			interrupts = <GIC_SPI 254 IRQ_TYPE_LEVEL_HIGH>;
+ 			clocks = <&cru SCLK_FSPI_X2>, <&cru HCLK_FSPI>;
+ 			clock-names = "clk_sfc", "hclk_sfc";
++			power-domains = <&power RK3576_PD_NVM>;
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+ 			status = "disabled";

@@ -6,12 +6,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=refpolicy
-PKG_VERSION:=2.20200229
-PKG_RELEASE:=3
+PKG_VERSION:=2.20250923
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=https://github.com/SELinuxProject/refpolicy/releases/download/RELEASE_2_20200229
-PKG_HASH:=dec854512ed00cd057408f330c2cea4de7a4405f7a147458f59c994bf578e4b0
+PKG_SOURCE_URL:=https://github.com/SELinuxProject/refpolicy/releases/download/RELEASE_2_20250923
+PKG_HASH:=e5b435c934048d01ca4415a1f2670a51e113f26f5d01ad4227c98fbe8dea8d5b
 PKG_INSTALL:=1
 PKG_BUILD_DEPENDS:=checkpolicy/host policycoreutils/host
 

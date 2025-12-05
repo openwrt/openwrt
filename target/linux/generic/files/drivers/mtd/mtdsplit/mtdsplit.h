@@ -45,7 +45,7 @@ static inline int mtd_get_squashfs_len(struct mtd_info *master,
 				       size_t offset,
 				       size_t *squashfs_len)
 {
-	return -ENODEV;
+	return -ENOENT;
 }
 
 static inline int mtd_check_rootfs_magic(struct mtd_info *mtd, size_t offset,
@@ -60,7 +60,7 @@ static inline int mtd_find_rootfs_from(struct mtd_info *mtd,
 				       size_t *ret_offset,
 				       enum mtdsplit_part_type *type)
 {
-	return -ENODEV;
+	return -ENOENT;
 }
 #endif /* CONFIG_MTD_SPLIT */
 

@@ -133,7 +133,7 @@ $(curdir)/quilt/compile := $(curdir)/autoconf/compile $(curdir)/findutils/compil
 $(curdir)/sdcc/compile := $(curdir)/bison/compile
 $(curdir)/squashfs3-lzma/compile := $(curdir)/lzma-old/compile
 $(curdir)/squashfs4/compile := $(curdir)/xz/compile $(curdir)/zlib/compile
-$(curdir)/util-linux/compile := $(curdir)/bison/compile $(curdir)/automake/compile
+$(curdir)/util-linux/compile := $(curdir)/bison/compile $(curdir)/meson/compile
 $(curdir)/yafut/compile := $(curdir)/cmake/compile
 
 ifneq ($(HOST_OS),Linux)

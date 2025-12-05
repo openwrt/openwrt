@@ -40,7 +40,7 @@
 		led-upgrade = &led_info;
 	};
 
-	memory@00000000 {
+	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x0 0x0 0x80000000>;
 	};
@@ -255,8 +255,6 @@
 	      <0x2000000 0x1000000>;    /* CS0 */
 	status = "okay";
 	spi-flash@0 {
-		#address-cells = <0x1>;
-		#size-cells = <0x1>;
 		compatible = "jedec,spi-nor";
 		reg = <0x0>;
 		spi-max-frequency = <40000000>;

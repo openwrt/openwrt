@@ -12,7 +12,7 @@ Subject: [PATCH] board: mediatek: wire-up NMBM support
 
 --- a/board/mediatek/mt7622/mt7622_rfb.c
 +++ b/board/mediatek/mt7622/mt7622_rfb.c
-@@ -9,9 +9,47 @@
+@@ -9,4 +9,42 @@
  #include <init.h>
  #include <asm/global_data.h>
  
@@ -22,11 +22,6 @@ Subject: [PATCH] board: mediatek: wire-up NMBM support
 +#include <nmbm/nmbm-mtd.h>
 +
  DECLARE_GLOBAL_DATA_PTR;
- 
- int board_init(void)
- {
- 	return 0;
- }
 +
 +int board_nmbm_init(void)
 +{
@@ -113,33 +108,14 @@ Subject: [PATCH] board: mediatek: wire-up NMBM support
 +}
 --- a/board/mediatek/mt7981/mt7981_rfb.c
 +++ b/board/mediatek/mt7981/mt7981_rfb.c
-@@ -4,7 +4,57 @@
+@@ -4,3 +4,38 @@
   * Author: Sam Shih <sam.shih@mediatek.com>
   */
  
-+#include <config.h>
-+#include <env.h>
-+#include <init.h>
-+#include <asm/global_data.h>
-+
 +#include <mtd.h>
 +#include <linux/mtd/mtd.h>
 +#include <nmbm/nmbm.h>
 +#include <nmbm/nmbm-mtd.h>
-+
-+DECLARE_GLOBAL_DATA_PTR;
-+
- int board_init(void)
- {
- 	return 0;
- }
-+
-+int board_late_init(void)
-+{
-+	gd->env_valid = 1; //to load environment variable from persistent store
-+	env_relocate();
-+	return 0;
-+}
 +
 +int board_nmbm_init(void)
 +{
@@ -173,33 +149,14 @@ Subject: [PATCH] board: mediatek: wire-up NMBM support
 +}
 --- a/board/mediatek/mt7986/mt7986_rfb.c
 +++ b/board/mediatek/mt7986/mt7986_rfb.c
-@@ -4,7 +4,59 @@
+@@ -4,3 +4,40 @@
   * Author: Sam Shih <sam.shih@mediatek.com>
   */
  
-+#include <config.h>
-+#include <env.h>
-+#include <init.h>
-+#include <asm/global_data.h>
-+
 +#include <mtd.h>
 +#include <linux/mtd/mtd.h>
 +#include <nmbm/nmbm.h>
 +#include <nmbm/nmbm-mtd.h>
-+
-+DECLARE_GLOBAL_DATA_PTR;
-+
- int board_init(void)
- {
- 	return 0;
- }
-+
-+int board_late_init(void)
-+{
-+	gd->env_valid = 1; //to load environment variable from persistent store
-+	env_relocate();
-+	return 0;
-+}
 +
 +int board_nmbm_init(void)
 +{

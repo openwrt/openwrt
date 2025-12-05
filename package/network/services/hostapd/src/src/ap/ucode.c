@@ -381,6 +381,35 @@ uc_hostapd_bss_delete(uc_vm_t *vm, size_t nargs)
 }
 
 static uc_value_t *
+uc_hostapd_iface_state(uc_vm_t *vm, size_t nargs)
+{
+#define hapd_state(name) [HAPD_IFACE_##name] = #name
+	static const char * const hapd_state_name[] = {
+		hapd_state(UNINITIALIZED),
+		hapd_state(DISABLED),
+		hapd_state(COUNTRY_UPDATE),
+		hapd_state(ACS),
+		hapd_state(HT_SCAN),
+		hapd_state(DFS),
+		hapd_state(NO_IR),
+		hapd_state(ENABLED),
+	};
+	struct hostapd_iface *iface = uc_fn_thisval("hostapd.iface");
+	const char *state = NULL;
+
+	if (!iface)
+		return NULL;
+
+	if (iface->state < ARRAY_SIZE(hapd_state_name))
+		state = hapd_state_name[iface->state];
+	if (!state)
+		state = "unknown";
+
+	return ucv_string_new(state);
+}
+
+
+static uc_value_t *
 uc_hostapd_iface_add_bss(uc_vm_t *vm, size_t nargs)
 {
 	struct hostapd_iface *iface = uc_fn_thisval("hostapd.iface");
@@ -582,10 +611,8 @@ uc_hostapd_iface_start(uc_vm_t *vm, size_t nargs)
 	if (!iface)
 		return NULL;
 
-	if (!info) {
-		iface->freq = 0;
+	if (!info)
 		goto out;
-	}
 
 	if (ucv_type(info) != UC_OBJECT)
 		return NULL;
@@ -932,6 +959,7 @@ int hostapd_ucode_init(struct hapd_interfaces *ifaces)
 		{ "delete", uc_hostapd_bss_delete },
 	};
 	static const uc_function_list_t iface_fns[] = {
+		{ "state", uc_hostapd_iface_state },
 		{ "set_bss_order", uc_hostapd_iface_set_bss_order },
 		{ "add_bss", uc_hostapd_iface_add_bss },
 		{ "stop", uc_hostapd_iface_stop },

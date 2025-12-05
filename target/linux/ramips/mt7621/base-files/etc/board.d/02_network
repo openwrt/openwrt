@@ -13,6 +13,8 @@ ramips_setup_interfaces()
 	buffalo,wsr-2533dhpl2|\
 	buffalo,wsr-2533dhpls|\
 	confiabits,mt7621-v1|\
+	dlink,dir-x1860-b1|\
+	edup,ep-rt2960s|\
 	gehua,ghl-r-001|\
 	h3c,tx1800-plus|\
 	h3c,tx1801-plus|\
@@ -41,6 +43,7 @@ ramips_setup_interfaces()
 	arcadyan,we410443|\
 	asus,rp-ac56|\
 	asus,rp-ac87|\
+	cudy,ap1300-outdoor-v1|\
 	dlink,dap-1620-b1|\
 	dlink,dap-x1860-a1|\
 	dlink,dra-1360-a1|\
@@ -51,6 +54,7 @@ ramips_setup_interfaces()
 	netgear,eax12|\
 	netgear,ex6150|\
 	netgear,wax214v2|\
+	plasmacloud,pax1800-lite|\
 	sercomm,na502|\
 	sercomm,na502s|\
 	thunder,timecloud|\
@@ -97,6 +101,7 @@ ramips_setup_interfaces()
 	glinet,gl-mt1300|\
 	iodata,wn-deax1800gr|\
 	iptime,a3002mesh|\
+	iptime,ax2002m|\
 	jcg,q20|\
 	jdcloud,re-sp-01b|\
 	lenovo,newifi-d1|\
@@ -118,6 +123,11 @@ ramips_setup_interfaces()
 		uci add_list firewall.@zone[1].network='eth_data'
 		uci add_list firewall.@zone[1].network='eth_om'
 		;;
+	cudy,c200p|\
+	cudy,r700|\
+	mikrotik,routerboard-750gr3)
+		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan"
+		;;
 	dlink,covr-x1860-a1)
 		ucidef_set_interfaces_lan_wan "ethernet" "internet"
 		;;
@@ -135,9 +145,6 @@ ramips_setup_interfaces()
 		;;
 	gnubee,gb-pc2)
 		ucidef_set_interface_lan "ethblack ethblue ethyellow"
-		;;
-	mikrotik,routerboard-750gr3)
-		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan"
 		;;
 	mikrotik,routerboard-760igs)
 		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan sfp"
@@ -203,6 +210,7 @@ ramips_setup_macs()
 	wavlink,wl-wn533a8|\
 	winstars,ws-wn583a6|\
 	zbtlink,zbt-we1326|\
+	zbtlink,zbt-wg108|\
 	zbtlink,zbt-wg3526-16m|\
 	zbtlink,zbt-wg3526-32m)
 		label_mac=$(mtd_get_mac_binary factory 0x4)
@@ -241,11 +249,6 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii board_data "mac")
 		lan_mac=$wan_mac
 		label_mac=$wan_mac
-		;;
-	comfast,cf-e390ax)
-		lan_mac=$(cat /sys/class/net/eth0/address)
-		label_mac=$lan_mac
-		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
 	dlink,covr-x1860-a1)
 		label_mac=$(mtd_get_mac_ascii config2 factory_mac)

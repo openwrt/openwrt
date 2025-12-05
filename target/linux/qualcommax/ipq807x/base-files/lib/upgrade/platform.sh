@@ -184,7 +184,8 @@ platform_do_upgrade() {
 	netgear,sxs80|\
 	netgear,wax218|\
 	netgear,wax620|\
-	netgear,wax630)
+	netgear,wax630|\
+	zyxel,nwa210ax)
 		nand_do_upgrade "$1"
 		;;
 	asus,rt-ax89x)

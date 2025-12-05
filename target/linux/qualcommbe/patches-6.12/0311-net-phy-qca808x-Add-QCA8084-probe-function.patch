@@ -1,4 +1,4 @@
-From 485f973c5b1d889bd1f48a188137d80d45004991 Mon Sep 17 00:00:00 2001
+From a7fe2c13f3188bf01b60fb15063d028c76dd2f1a Mon Sep 17 00:00:00 2001
 From: Luo Jie <quic_luoj@quicinc.com>
 Date: Mon, 29 Jan 2024 10:51:38 +0800
 Subject: [PATCH] net: phy: qca808x: Add QCA8084 probe function
@@ -13,22 +13,45 @@ accessed, and the features of PHY can be acquired.
 
 Change-Id: I2251b9c5c398a21a4ef547a727189a934ad3a44c
 Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
----
- drivers/net/phy/qcom/qca808x.c | 91 ++++++++++++++++++++++++++++++++++
- 1 file changed, 91 insertions(+)
+Alex G: include <linux/reset.h>
+        include "phylib.h" for phy_package_*() declarations
+        select PHY_PACKAGE in Kconfig
+        use phy_package_get_node() instead of phylib->shared->np
+Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 
+freckup c89414adf2ec7c
+
+Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
+---
+ drivers/net/phy/qcom/Kconfig   |  1 +
+ drivers/net/phy/qcom/qca808x.c | 92 ++++++++++++++++++++++++++++++++++
+ 2 files changed, 93 insertions(+)
+
+--- a/drivers/net/phy/qcom/Kconfig
++++ b/drivers/net/phy/qcom/Kconfig
+@@ -18,6 +18,7 @@ config QCA83XX_PHY
+ config QCA808X_PHY
+ 	tristate "Qualcomm QCA808x PHYs"
+ 	select QCOM_NET_PHYLIB
++	select PHY_PACKAGE
+ 	help
+ 	  Currently supports the QCA8081 model
+ 
 --- a/drivers/net/phy/qcom/qca808x.c
 +++ b/drivers/net/phy/qcom/qca808x.c
-@@ -2,6 +2,8 @@
+@@ -2,7 +2,11 @@
  
  #include <linux/phy.h>
  #include <linux/module.h>
 +#include <linux/of.h>
++#include <linux/reset.h>
 +#include <linux/clk.h>
  
++#include "../phylib.h"
  #include "qcom.h"
  
-@@ -127,6 +129,21 @@
+ /* ADC threshold */
+@@ -127,6 +131,21 @@
  #define QCA8084_MII_SW_ADDR_MASK		GENMASK(31, 24)
  #define QCA8084_MII_REG_DATA_UPPER_16_BITS	BIT(1)
  
@@ -50,21 +73,20 @@ Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
  MODULE_DESCRIPTION("Qualcomm Atheros QCA808X PHY driver");
  MODULE_AUTHOR("Matus Ujhelyi, Luo Jie");
  MODULE_LICENSE("GPL");
-@@ -836,6 +853,79 @@ static void qca8084_link_change_notify(s
+@@ -839,6 +858,78 @@ static void qca8084_link_change_notify(s
  			       QCA8084_IPG_10_TO_11_EN : 0);
  }
  
 +static int qca8084_phy_package_probe_once(struct phy_device *phydev)
 +{
 +	int addr[QCA8084_MDIO_DEVICE_NUM] = {0, 1, 2, 3, 4, 5, 6};
-+	struct phy_package_shared *shared = phydev->shared;
++	struct device_node *np = phy_package_get_node(phydev);
 +	int ret, clear, set;
 +
 +	/* Program the MDIO address of PHY and PCS optionally, the MDIO
 +	 * address 0-6 is used for PHY and PCS MDIO devices by default.
 +	 */
-+	ret = of_property_read_u32_array(shared->np,
-+					 "qcom,phy-addr-fixup",
++	ret = of_property_read_u32_array(np, "qcom,phy-addr-fixup",
 +					 addr, ARRAY_SIZE(addr));
 +	if (ret && ret != -EINVAL)
 +		return ret;
@@ -130,7 +152,7 @@ Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
  static struct phy_driver qca808x_driver[] = {
  {
  	/* Qualcomm QCA8081 */
-@@ -886,6 +976,7 @@ static struct phy_driver qca808x_driver[
+@@ -889,6 +980,7 @@ static struct phy_driver qca808x_driver[
  	.cable_test_get_status	= qca808x_cable_test_get_status,
  	.config_init		= qca8084_config_init,
  	.link_change_notify	= qca8084_link_change_notify,

@@ -15,13 +15,15 @@ ipq50xx_setup_interfaces()
 	glinet,gl-b3000)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
 		;;
+	cmcc,pz-l8|\
 	linksys,mx2000|\
 	linksys,mx5500|\
 	linksys,spnmx56|\
 	xiaomi,ax6000)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
-	yuncore,ax830)
+	yuncore,ax830|\
+	yuncore,ax850)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
 	esac

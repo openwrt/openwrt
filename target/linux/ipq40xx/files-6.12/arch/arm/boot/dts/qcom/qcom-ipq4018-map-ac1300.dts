@@ -1,0 +1,405 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qcom-ipq4019.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/soc/qcom,tcsr.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "ASUS Lyra Mini MAP-AC1300";
+	compatible = "asus,map-ac1300";
+
+	aliases {
+		led-boot = &led_blue0;
+		led-failsafe = &led_red0;
+		led-running = &led_blue0;
+		led-upgrade = &led_red0;
+		ethernet1 = &swport4;
+		label-mac-device = &wifi0;
+	};
+
+	soc {
+		tcsr@1949000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1949000 0x100>;
+			qcom,wifi_glb_cfg = <TCSR_WIFI_GLB_CFG>;
+		};
+
+		tcsr@194b000 {
+			compatible = "qcom,tcsr";
+			reg = <0x194b000 0x100>;
+			qcom,usb-hsphy-mode-select = <TCSR_USB_HSPHY_HOST_MODE>;
+		};
+
+		ess_tcsr@1953000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1953000 0x1000>;
+			qcom,ess-interface-select = <TCSR_ESS_PSGMII>;
+		};
+
+		tcsr@1957000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1957000 0x100>;
+			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&tlmm 0 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&tlmm 63 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+	};
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&prng {
+	status = "okay";
+};
+
+&crypto {
+	status = "okay";
+};
+
+&blsp1_spi1 {
+	status = "okay";
+
+	pinctrl-0 = <&spi_0_pins>;
+	pinctrl-names = "default";
+	cs-gpios = <&tlmm 54 GPIO_ACTIVE_LOW>,
+		   <&tlmm 1 GPIO_ACTIVE_LOW>;
+
+	flash@0 {
+		/*
+		 * U-boot looks for "n25q128a11" node,
+		 * if we don't have it, it will spit out the following warning:
+		 * "ipq: fdt fixup unable to find compatible node".
+		 */
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		linux,modalias = "m25p80", "mx25l1606e", "n25q128a11";
+		spi-max-frequency = <24000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "SBL1";
+				reg = <0x00000000 0x00040000>;
+				read-only;
+			};
+			partition@40000 {
+				label = "MIBIB";
+				reg = <0x00040000 0x00020000>;
+				read-only;
+			};
+			partition@60000 {
+				label = "QSEE";
+				reg = <0x00060000 0x00060000>;
+				read-only;
+			};
+			partition@c0000 {
+				label = "CDT";
+				reg = <0x000c0000 0x00010000>;
+				read-only;
+			};
+			partition@d0000 {
+				label = "DDRPARAMS";
+				reg = <0x000d0000 0x00010000>;
+				read-only;
+			};
+			partition@e0000 {
+				label = "APPSBLENV"; /* uboot env*/
+				reg = <0x000e0000 0x00010000>;
+				read-only;
+			};
+			partition@f0000 {
+				label = "APPSBL"; /* uboot */
+				reg = <0x000f0000 0x00080000>;
+				read-only;
+			};
+			partition@170000 {
+				label = "ART";
+				reg = <0x00170000 0x00010000>;
+				read-only;
+			};
+			/* 0x00180000 - 0x00200000 unused */
+		};
+	};
+
+	spi-nand@1 {
+		compatible = "spi-nand";
+		reg = <1>;
+		spi-max-frequency = <24000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				compatible = "linux,ubi";
+				reg = <0x00000000 0x08000000>;
+				label = "ubi";
+
+				volumes {
+					ubi_factory: ubi-volume-factory {
+						volname = "Factory";
+					};
+				};
+			};
+		};
+	};
+};
+
+&ubi_factory {
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		precal_factory_1000: precal@1000 {
+			reg = <0x1000 0x2f20>;
+		};
+
+		macaddr_factory_1006: macaddr@1006 {
+			reg = <0x1006 0x6>;
+		};
+
+		precal_factory_5000: precal@5000 {
+			reg = <0x5000 0x2f20>;
+		};
+
+		macaddr_factory_5006: macaddr@5006 {
+			reg = <0x5006 0x6>;
+		};
+	};
+};
+
+&tlmm {
+	i2c_0_pins: i2c_0_pinmux {
+		pinmux {
+			function = "blsp_i2c0";
+			pins = "gpio58", "gpio59";
+			drive-strength = <16>;
+			bias-disable;
+		};
+	};
+
+	serial_pins: serial_pinmux {
+		mux {
+			pins = "gpio60", "gpio61";
+			function = "blsp_uart0";
+			bias-disable;
+		};
+	};
+
+	spi_0_pins: spi_0_pinmux {
+		mux {
+			function = "blsp_spi0";
+			pins = "gpio55", "gpio56", "gpio57";
+			drive-strength = <12>;
+			bias-disable;
+		};
+
+		mux_cs {
+			function = "gpio";
+			pins = "gpio54", "gpio1";
+			drive-strength = <2>;
+			bias-disable;
+			output-high;
+		};
+	};
+};
+
+&cryptobam {
+	status = "okay";
+};
+
+&blsp_dma {
+	status = "okay";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&wifi0 {
+	status = "okay";
+
+	nvmem-cell-names = "pre-calibration";
+	nvmem-cells = <&precal_factory_1000>;
+	qcom,ath10k-calibration-variant = "ASUS-MAP-AC1300";
+};
+
+&wifi1 {
+	status = "okay";
+
+	nvmem-cell-names = "pre-calibration";
+	nvmem-cells = <&precal_factory_5000>;
+	qcom,ath10k-calibration-variant = "ASUS-MAP-AC1300";
+};
+
+&usb2_hs_phy {
+	/* Bluetooth module attached via USB */
+	status = "okay";
+};
+
+&usb2 {
+	status = "okay";
+};
+
+&blsp1_i2c3 {
+	status = "okay";
+
+	pinctrl-0 = <&i2c_0_pins>;
+	pinctrl-names = "default";
+
+	led-controller@32 {
+		/* 9-channel RGB LED controller */
+		compatible = "national,lp5523";
+		reg = <0x32>;
+		clock-mode = /bits/ 8 <1>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/*
+		 * There is only one single extremely bright RGB-LED.
+		 * The RGB-color channels are running in parallel to
+		 * increase the current delivery capabilities beyond
+		 * what a single PWM-output of the controller can do.
+		 */
+
+		led_blue0: led@0 {
+			chan-name = "blue-0";
+			led-cur = /bits/ 8 <0x80>;
+			max-cur = /bits/ 8 <0xff>;
+			reg = <0>;
+			color = <LED_COLOR_ID_BLUE>;
+			function-enumerator = <0>;
+		};
+
+		led@1 {
+			chan-name = "blue-1";
+			led-cur = /bits/ 8 <0x80>;
+			max-cur = /bits/ 8 <0xff>;
+			reg = <1>;
+			color = <LED_COLOR_ID_BLUE>;
+			function-enumerator = <1>;
+		};
+
+		led@2 {
+			chan-name = "blue-2";
+			led-cur = /bits/ 8 <0x80>;
+			max-cur = /bits/ 8 <0xff>;
+			reg = <2>;
+			color = <LED_COLOR_ID_BLUE>;
+			function-enumerator = <2>;
+		};
+
+		led_green0: led@3 {
+			chan-name = "green-0";
+			led-cur = /bits/ 8 <0x80>;
+			max-cur = /bits/ 8 <0xff>;
+			reg = <3>;
+			color = <LED_COLOR_ID_GREEN>;
+			function-enumerator = <0>;
+		};
+
+		led@4 {
+			chan-name = "green-1";
+			led-cur = /bits/ 8 <0x80>;
+			max-cur = /bits/ 8 <0xff>;
+			reg = <4>;
+			color = <LED_COLOR_ID_GREEN>;
+			function-enumerator = <1>;
+		};
+
+		led@5 {
+			chan-name = "green-2";
+			led-cur = /bits/ 8 <0x80>;
+			max-cur = /bits/ 8 <0xff>;
+			reg = <5>;
+			color = <LED_COLOR_ID_GREEN>;
+			function-enumerator = <2>;
+		};
+
+		led_red0: led@6 {
+			chan-name = "red-0";
+			led-cur = /bits/ 8 <0x80>;
+			max-cur = /bits/ 8 <0xff>;
+			reg = <6>;
+			color = <LED_COLOR_ID_RED>;
+			function-enumerator = <0>;
+		};
+
+		led@7 {
+			chan-name = "red-1";
+			led-cur = /bits/ 8 <0x80>;
+			max-cur = /bits/ 8 <0xff>;
+			reg = <7>;
+			color = <LED_COLOR_ID_RED>;
+			function-enumerator = <1>;
+		};
+
+		led@8 {
+			chan-name = "red-2";
+			led-cur = /bits/ 8 <0x80>;
+			max-cur = /bits/ 8 <0xff>;
+			reg = <8>;
+			color = <LED_COLOR_ID_RED>;
+			function-enumerator = <2>;
+		};
+	};
+};
+
+&blsp1_uart1 {
+	status = "okay";
+
+	pinctrl-0 = <&serial_pins>;
+	pinctrl-names = "default";
+};
+
+&mdio {
+	status = "okay";
+};
+
+&gmac {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_factory_1006 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport4 {
+	status = "okay";
+
+	label = "wan";
+	nvmem-cells = <&macaddr_factory_1006 3>;
+	nvmem-cell-names = "mac-address";
+};
+
+&swport5 {
+	status = "okay";
+
+	label = "lan";
+};

@@ -21,7 +21,7 @@ endef
 
 define Device/bananapi_bpi-rv2
   DEVICE_VENDOR := Bananapi
-  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-phy-sf21-usb kmod-phy-airoha-en8811h kmod-rtc-pcf8563
+  DEVICE_PACKAGES := kmod-usb-dwc2 kmod-phy-sf21-usb kmod-phy-airoha-en8811h kmod-rtc-pcf8563 kmod-i2c-designware-platform
 endef
 
 define Device/bananapi_bpi-rv2-nand

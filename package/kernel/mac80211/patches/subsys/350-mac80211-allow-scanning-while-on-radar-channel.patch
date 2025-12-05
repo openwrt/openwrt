@@ -77,7 +77,7 @@
  
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -1975,6 +1975,12 @@ int ieee80211_mesh_finish_csa(struct iee
+@@ -1988,6 +1988,12 @@ int ieee80211_mesh_finish_csa(struct iee
  			      u64 *changed);
  
  /* scan/BSS handling */
@@ -90,7 +90,7 @@
  void ieee80211_scan_work(struct wiphy *wiphy, struct wiphy_work *work);
  int ieee80211_request_ibss_scan(struct ieee80211_sub_if_data *sdata,
  				const u8 *ssid, u8 ssid_len,
-@@ -2013,6 +2019,7 @@ void ieee80211_sched_scan_stopped_work(s
+@@ -2026,6 +2032,7 @@ void ieee80211_sched_scan_stopped_work(s
  /* off-channel/mgmt-tx */
  void ieee80211_offchannel_stop_vifs(struct ieee80211_local *local);
  void ieee80211_offchannel_return(struct ieee80211_local *local);
@@ -98,7 +98,7 @@
  void ieee80211_roc_setup(struct ieee80211_local *local);
  void ieee80211_start_next_roc(struct ieee80211_local *local);
  void ieee80211_reconfig_roc(struct ieee80211_local *local);
-@@ -2660,6 +2667,8 @@ bool ieee80211_chandef_s1g_oper(const st
+@@ -2673,6 +2680,8 @@ bool ieee80211_chandef_s1g_oper(const st
  				struct cfg80211_chan_def *chandef);
  void ieee80211_chandef_downgrade(struct cfg80211_chan_def *chandef,
  				 struct ieee80211_conn_settings *conn);
@@ -107,7 +107,7 @@
  static inline void
  ieee80211_chanreq_downgrade(struct ieee80211_chan_req *chanreq,
  			    struct ieee80211_conn_settings *conn)
-@@ -2716,7 +2725,7 @@ void ieee80211_recalc_chanctx_min_def(st
+@@ -2729,7 +2738,7 @@ void ieee80211_recalc_chanctx_min_def(st
  				      struct ieee80211_chanctx *ctx,
  				      struct ieee80211_link_data *rsvd_for,
  				      bool check_reserved);

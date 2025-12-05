@@ -145,24 +145,24 @@
 						#address-cells = <1>;
 						#size-cells = <1>;
 
-						partition@00000000 {
+						partition@0 {
 							label = "U-Boot";
 							reg = <0x00000000 0x00500000>;    /*   5 MB */
 							read-only;
 						};
 
-						partition@00500000 {
+						partition@500000 {
 							label = "kernel";
 							reg = <0x00500000 0x00500000>;    /*   5 MB */
 						};
 
-						partition@00a00000 {
+						partition@a00000 {
 							label = "uRamdisk";
 							reg = <0x00a00000 0x00500000>;    /*   5 MB */
 							read-only;
 						};
 
-						partition@00f00000 {
+						partition@f00000 {
 							label = "ubi";
 							reg = <0x00f00000 0x0b900000>;    /* 185 MB */
 						};
@@ -264,7 +264,7 @@
 		regulator-max-microvolt = <5000000>;
 		enable-active-high;
 		regulator-always-on;
-		gpio = <&gpio0 26 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio0 26 GPIO_ACTIVE_HIGH>;
 	};
 
 	reg_usb3_1_vbus: usb3-vbus1 {
@@ -276,7 +276,7 @@
 		regulator-max-microvolt = <5000000>;
 		enable-active-high;
 		regulator-always-on;
-		gpio = <&gpio0 27 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio0 27 GPIO_ACTIVE_HIGH>;
 	};
 
 	reg_sata0: pwr-sata0 {
@@ -286,7 +286,7 @@
 		regulator-max-microvolt = <12000000>;
 		enable-active-high;
 		regulator-boot-on;
-		gpio = <&gpio1 23 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio1 23 GPIO_ACTIVE_HIGH>;
 	};
 
 	reg_5v_sata0: v5-sata0 {
@@ -312,7 +312,7 @@
 		regulator-max-microvolt = <12000000>;
 		enable-active-high;
 		regulator-boot-on;
-		gpio = <&gpio1 24 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio1 24 GPIO_ACTIVE_HIGH>;
 	};
 
 	reg_5v_sata1: v5-sata1 {

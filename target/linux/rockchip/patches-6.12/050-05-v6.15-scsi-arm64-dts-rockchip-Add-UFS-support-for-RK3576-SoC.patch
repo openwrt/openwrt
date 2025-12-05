@@ -1,0 +1,48 @@
+From c75e5e010fef2a62e6f2fe00ee8584e7b3ec82a6 Mon Sep 17 00:00:00 2001
+From: Shawn Lin <shawn.lin@rock-chips.com>
+Date: Wed, 5 Feb 2025 14:15:56 +0800
+Subject: [PATCH] scsi: arm64: dts: rockchip: Add UFS support for RK3576 SoC
+
+Add ufshc node to rk3576.dtsi, so the board using UFS could enable it.
+
+Acked-by: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
+Signed-off-by: Shawn Lin <shawn.lin@rock-chips.com>
+Link: https://lore.kernel.org/r/1738736156-119203-8-git-send-email-shawn.lin@rock-chips.com
+Signed-off-by: Martin K. Petersen <martin.petersen@oracle.com>
+---
+ arch/arm64/boot/dts/rockchip/rk3576.dtsi | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3576.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3576.dtsi
+@@ -1221,6 +1221,30 @@
+ 			};
+ 		};
+ 
++		ufshc: ufshc@2a2d0000 {
++			compatible = "rockchip,rk3576-ufshc";
++			reg = <0x0 0x2a2d0000 0x0 0x10000>,
++			      <0x0 0x2b040000 0x0 0x10000>,
++			      <0x0 0x2601f000 0x0 0x1000>,
++			      <0x0 0x2603c000 0x0 0x1000>,
++			      <0x0 0x2a2e0000 0x0 0x10000>;
++			reg-names = "hci", "mphy", "hci_grf", "mphy_grf", "hci_apb";
++			clocks = <&cru ACLK_UFS_SYS>, <&cru PCLK_USB_ROOT>, <&cru PCLK_MPHY>,
++				 <&cru CLK_REF_UFS_CLKOUT>;
++			clock-names = "core", "pclk", "pclk_mphy", "ref_out";
++			assigned-clocks = <&cru CLK_REF_OSC_MPHY>;
++			assigned-clock-parents = <&cru CLK_REF_MPHY_26M>;
++			interrupts = <GIC_SPI 361 IRQ_TYPE_LEVEL_HIGH>;
++			power-domains = <&power RK3576_PD_USB>;
++			pinctrl-0 = <&ufs_refclk>;
++			pinctrl-names = "default";
++			resets = <&cru SRST_A_UFS_BIU>, <&cru SRST_A_UFS_SYS>,
++				 <&cru SRST_A_UFS>, <&cru SRST_P_UFS_GRF>;
++			reset-names = "biu", "sys", "ufs", "grf";
++			reset-gpios = <&gpio4 RK_PD0 GPIO_ACTIVE_LOW>;
++			status = "disabled";
++		};
++
+ 		sdmmc: mmc@2a310000 {
+ 			compatible = "rockchip,rk3576-dw-mshc";
+ 			reg = <0x0 0x2a310000 0x0 0x4000>;

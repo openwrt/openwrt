@@ -1,15 +1,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libxml2
-PKG_VERSION:=2.14.5
+PKG_VERSION:=2.15.1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNOME/libxml2/$(basename $(PKG_VERSION))
-PKG_HASH:=03d006f3537616833c16c53addcdc32a0eb20e55443cba4038307e3fa7d8d44b
+PKG_HASH:=c008bac08fd5c7b4a87f7b8a71f283fa581d80d80ff8d2efd3b26224c39bc54c
 
 PKG_LICENSE:=MIT
-PKG_LICENSE_FILES:=COPYING
+PKG_LICENSE_FILES:=Copyright
 PKG_CPE_ID:=cpe:/a:xmlsoft:libxml2
 HOST_BUILD_DEPENDS := libiconv-full/host
 
@@ -24,6 +24,7 @@ define Package/libxml2
   TITLE:=Gnome XML library
   URL:=http://xmlsoft.org/
   DEPENDS:=+libpthread +zlib $(ICONV_DEPENDS)
+  ABI_VERSION:=16
 endef
 
 define Package/libxml2/description
@@ -155,7 +156,7 @@ define Build/InstallDev
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libxml2.so* $(1)/usr/lib/
 
 	$(INSTALL_DIR) $(1)/usr/lib/cmake/libxml2
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/cmake/libxml2-$(PKG_VERSION)/*.cmake \
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/cmake/libxml2/*.cmake \
 		$(1)/usr/lib/cmake/libxml2
 
 	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig

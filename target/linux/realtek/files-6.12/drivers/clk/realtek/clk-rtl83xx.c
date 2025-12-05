@@ -470,9 +470,9 @@ static long rtcl_round_rate(struct clk_hw *hw, unsigned long rate, unsigned long
  */
 
 #define RTCL_SRAM_FUNC(SOC, PBASE, FN) ({				\
-        rtcl_##SOC##_sram_##FN = ((void *)&rtcl_##SOC##_dram_##FN -	\
-                                  (void *)&rtcl_##SOC##_dram_start) +	\
-                                  (void *)PBASE; })
+	rtcl_##SOC##_sram_##FN = ((void *)&rtcl_##SOC##_dram_##FN -	\
+				  (void *)&rtcl_##SOC##_dram_start) +	\
+				  (void *)PBASE; })
 
 static const struct clk_ops rtcl_clk_ops = {
 	.set_rate = rtcl_set_rate,
@@ -492,7 +492,7 @@ static int rtcl_ccu_create(struct device_node *np)
 		return -ENXIO;
 
 	rtcl_ccu = kzalloc(sizeof(*rtcl_ccu), GFP_KERNEL);
-	if (IS_ERR(rtcl_ccu))
+	if (!rtcl_ccu)
 		return -ENOMEM;
 
 	rtcl_ccu->np = np;
@@ -571,7 +571,7 @@ static int rtcl_ccu_register_clocks(void)
 		ret = rtcl_register_clkhw(clk_idx);
 		if (ret) {
 			pr_err("%s: Couldn't register %s clock\n",
-				__func__, rtcl_clk_info[clk_idx].display_name);
+			       __func__, rtcl_clk_info[clk_idx].display_name);
 			goto err_hw_unregister;
 		}
 	}
@@ -579,7 +579,7 @@ static int rtcl_ccu_register_clocks(void)
 	ret = of_clk_add_hw_provider(rtcl_ccu->np, rtcl_get_clkhw, rtcl_ccu);
 	if (ret) {
 		pr_err("%s: Couldn't register clock provider of %s\n",
-			__func__, of_node_full_name(rtcl_ccu->np));
+		       __func__, of_node_full_name(rtcl_ccu->np));
 		goto err_hw_unregister;
 	}
 
@@ -657,6 +657,7 @@ static int rtcl_init_sram(void)
 	rtcl_ccu->sram.pmark = (int *)((void *)sram_pbase + (dram_size - 4));
 	rtcl_ccu->sram.vbase = sram_vbase;
 
+	put_device(&pdev->dev);
 	return 0;
 
 err_put_device:

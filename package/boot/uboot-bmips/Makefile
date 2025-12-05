@@ -2,7 +2,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_VERSION:=2024.04
 PKG_HASH:=18a853fe39fad7ad03a90cc2d4275aeaed6da69735defac3492b80508843dd4a
-PKG_RELEASE:=$(AUTORELEASE)
+PKG_RELEASE:=1
 
 include $(INCLUDE_DIR)/u-boot.mk
 include $(INCLUDE_DIR)/package.mk

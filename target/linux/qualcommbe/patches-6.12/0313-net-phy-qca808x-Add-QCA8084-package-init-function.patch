@@ -1,4 +1,4 @@
-From bf779b10b00fd79267d0ef625ae246df59ee23bd Mon Sep 17 00:00:00 2001
+From d39dc53424bcc778f1e468015490577e7bf0c7b6 Mon Sep 17 00:00:00 2001
 From: Luo Jie <quic_luoj@quicinc.com>
 Date: Thu, 25 Jan 2024 17:13:24 +0800
 Subject: [PATCH] net: phy: qca808x: Add QCA8084 package init function
@@ -10,9 +10,12 @@ The PHY package level clocks are enabled and their rates configured.
 
 Change-Id: I63d4b22d2a70ee713cc6a6818b0f3c7aa098a5f5
 Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
+Alex G: Use phy_package_get_*() accessors
+        Update to match the patches that will be upstream.
+Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 ---
- drivers/net/phy/qcom/qca808x.c | 115 +++++++++++++++++++++++++++++++++
- 1 file changed, 115 insertions(+)
+ drivers/net/phy/qcom/qca808x.c | 118 +++++++++++++++++++++++++++++++++
+ 1 file changed, 118 insertions(+)
 
 --- a/drivers/net/phy/qcom/qca808x.c
 +++ b/drivers/net/phy/qcom/qca808x.c
@@ -23,21 +26,20 @@ Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
  #include <linux/phy.h>
  #include <linux/module.h>
  #include <linux/of.h>
-@@ -145,6 +146,13 @@
+@@ -146,6 +147,12 @@
  #define QCA8084_EPHY_ADDR3_MASK			GENMASK(19, 15)
  #define QCA8084_EPHY_LDO_EN			GENMASK(21, 20)
  
 +#define QCA8084_WORK_MODE_CFG			0xc90f030
 +#define QCA8084_WORK_MODE_MASK			GENMASK(5, 0)
 +#define QCA8084_WORK_MODE_QXGMII		(BIT(5) | GENMASK(3, 0))
-+#define QCA8084_WORK_MODE_QXGMII_PORT4_SGMII	(BIT(5) | GENMASK(2, 0))
 +#define QCA8084_WORK_MODE_SWITCH		BIT(4)
 +#define QCA8084_WORK_MODE_SWITCH_PORT4_SGMII	BIT(5)
 +
  MODULE_DESCRIPTION("Qualcomm Atheros QCA808X PHY driver");
  MODULE_AUTHOR("Matus Ujhelyi, Luo Jie");
  MODULE_LICENSE("GPL");
-@@ -165,6 +173,7 @@ struct qca808x_priv {
+@@ -168,6 +175,7 @@ struct qca808x_priv {
  };
  
  struct qca808x_shared_priv {
@@ -45,7 +47,7 @@ Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
  	struct clk *clk[PACKAGE_CLK_MAX];
  };
  
-@@ -808,10 +817,107 @@ static int qca808x_led_polarity_set(stru
+@@ -816,10 +824,111 @@ static int qca808x_led_polarity_set(stru
  			      active_low ? 0 : QCA808X_LED_ACTIVE_HIGH);
  }
  
@@ -57,6 +59,10 @@ Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
 +	 * APB bridge clock tree.
 +	 */
 +	ret = clk_set_rate(shared_priv->clk[APB_BRIDGE_CLK], 312500000);
++	if (ret)
++		return ret;
++
++	ret = clk_prepare_enable(shared_priv->clk[SWITCH_CORE_CLK]);
 +	if (ret)
 +		return ret;
 +
@@ -91,16 +97,19 @@ Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
 +	if (ret)
 +		return ret;
 +
++	ret = clk_prepare_enable(shared_priv->clk[MDIO_MASTER_AHB_CLK]);
++	if (ret)
++		return ret;
++
 +	return clk_prepare_enable(shared_priv->clk[MDIO_AHB_CLK]);
 +}
 +
 +static int qca8084_phy_package_config_init_once(struct phy_device *phydev)
 +{
-+	struct phy_package_shared *shared = phydev->shared;
 +	struct qca808x_shared_priv *shared_priv;
 +	int ret, mode;
 +
-+	shared_priv = shared->priv;
++	shared_priv = phy_package_get_priv(phydev);
 +	switch (shared_priv->package_mode) {
 +	case QCA808X_PCS1_10G_QXGMII_PCS0_UNUNSED:
 +		mode = QCA8084_WORK_MODE_QXGMII;
@@ -123,13 +132,6 @@ Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
 +	if (ret)
 +		return ret;
 +
-+	/* Initialize the PHY package clock and reset, which is the
-+	 * necessary config sequence after GPIO reset on the PHY package.
-+	 */
-+	ret = qca8084_package_clock_init(shared_priv);
-+	if (ret)
-+		return ret;
-+
 +	/* Enable efuse loading into analog circuit */
 +	ret = qca8084_mii_modify(phydev, QCA8084_EPHY_CFG,
 +				 QCA8084_EPHY_LDO_EN, 0);
@@ -137,7 +139,11 @@ Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
 +		return ret;
 +
 +	usleep_range(10000, 11000);
-+	return ret;
++
++	/* Initialize the PHY package clock and reset, which is the
++	 * necessary config sequence after GPIO reset on the PHY package.
++	 */
++	return qca8084_package_clock_init(shared_priv);
 +}
 +
  static int qca8084_config_init(struct phy_device *phydev)
@@ -153,19 +159,19 @@ Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
  	if (phydev->interface == PHY_INTERFACE_MODE_10G_QXGMII)
  		__set_bit(PHY_INTERFACE_MODE_10G_QXGMII,
  			  phydev->possible_interfaces);
-@@ -948,6 +1054,15 @@ static int qca8084_phy_package_probe_onc
- 		return dev_err_probe(&phydev->mdio.dev, PTR_ERR(rstc),
- 				     "package reset not ready\n");
+@@ -954,6 +1063,15 @@ static int qca8084_phy_package_probe_onc
+ 		shared_priv->clk[i] = clk;
+ 	}
  
 +	/* The package mode 10G-QXGMII of PCS1 is used for Quad PHY and
 +	 * PCS0 is unused by default.
 +	 */
 +	shared_priv->package_mode = QCA808X_PCS1_10G_QXGMII_PCS0_UNUNSED;
-+	ret = of_property_read_u32(shared->np, "qcom,package-mode",
++	ret = of_property_read_u32(np, "qcom,package-mode",
 +				   &shared_priv->package_mode);
 +	if (ret && ret != -EINVAL)
 +		return ret;
 +
- 	/* Deassert PHY package. */
- 	return reset_control_deassert(rstc);
- }
+ 	rstc = of_reset_control_get_exclusive(np, NULL);
+ 	if (IS_ERR(rstc))
+ 		return dev_err_probe(&phydev->mdio.dev, PTR_ERR(rstc),

@@ -156,6 +156,11 @@
 	nvmem-cell-names = "mac-address";
 };
 
+&ppe {
+	nvmem-cells = <&macaddr_caldata_110c 4>;
+	nvmem-cell-names = "mac-address";
+};
+
 &gswip {
 	pinctrl-0 = <&mdio_pins>;
 	pinctrl-names = "default";
@@ -222,7 +227,7 @@
 };
 
 &ppe {
-	nvmem-cells = <&macaddr_caldata_110c 5>;
+	nvmem-cells = <&macaddr_caldata_110c 4>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -302,7 +307,7 @@
 	status = "okay";
 	reset-gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 
-	wifi@0,0 {
+	wifi@e,0 {
 		compatible = "pci168c,002d";
 		reg = <0x7000 0 0 0 0>;
 		nvmem-cells = <&cal_caldata_1000>, <&macaddr_caldata_110c 2>;

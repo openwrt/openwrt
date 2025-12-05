@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * prom.c
- * Early intialization code for the Realtek RTL838X SoC
+ * Early initialization code for the Realtek RTL838X SoC
  *
  * based on the original BSP by
  * Copyright (C) 2006-2012 Tony Wu (tonywu@realtek.com)
@@ -102,9 +102,9 @@ const char *get_system_type(void)
 	return rtl83xx_system_type;
 }
 
-static void __init rtl838x_read_details(uint32_t model)
+static void __init rtl838x_read_details(u32 model)
 {
-	uint32_t chip_info, ext_version, tmp;
+	u32 chip_info, ext_version, tmp;
 
 	sw_w32(0x3, RTL838X_INT_RW_CTRL);
 	sw_w32(0xa << 28, RTL838X_CHIP_INFO);
@@ -128,9 +128,9 @@ static void __init rtl838x_read_details(uint32_t model)
 	}
 }
 
-static void __init rtl839x_read_details(uint32_t model)
+static void __init rtl839x_read_details(u32 model)
 {
-	uint32_t chip_info;
+	u32 chip_info;
 
 	sw_w32(0xa << 28, RTL839X_CHIP_INFO);
 
@@ -143,9 +143,9 @@ static void __init rtl839x_read_details(uint32_t model)
 		soc_info.testchip = true;
 }
 
-static void __init rtl93xx_read_details(uint32_t model)
+static void __init rtl93xx_read_details(u32 model)
 {
-	uint32_t chip_info;
+	u32 chip_info;
 
 	sw_w32(0xa << 16, RTL93XX_CHIP_INFO);
 
@@ -158,9 +158,9 @@ static void __init rtl93xx_read_details(uint32_t model)
 		soc_info.testchip = true;
 }
 
-static uint32_t __init read_model(void)
+static u32 __init read_model(void)
 {
-	uint32_t model, id;
+	u32 model, id;
 
 	model = sw_r32(RTL838X_MODEL_NAME_INFO);
 	id = model >> 16 & 0xffff;
@@ -197,7 +197,7 @@ static uint32_t __init read_model(void)
 	return 0;
 }
 
-static void __init parse_model(uint32_t model)
+static void __init parse_model(u32 model)
 {
 	int val;
 	char suffix = 0;
@@ -212,7 +212,8 @@ static void __init parse_model(uint32_t model)
 	soc_info.name = soc_name;
 }
 
-static void __init rtl83xx_set_system_type(void) {
+static void __init rtl83xx_set_system_type(void)
+{
 	char revision = '?';
 	char *es = "";
 
@@ -229,7 +230,8 @@ static void __init rtl83xx_set_system_type(void) {
 
 void __init prom_init(void)
 {
-	uint32_t model = read_model();
+	u32 model = read_model();
+
 	parse_model(model);
 	rtl83xx_set_system_type();
 

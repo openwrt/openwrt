@@ -55,11 +55,6 @@
 			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
 		};
 
-		wlan2g {
-			label = "blue:wlan2g";
-			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
-		};
-
 		wlan5g {
 			label = "blue:wlan5g";
 			gpios = <&gpio 2 GPIO_ACTIVE_HIGH>;
@@ -117,6 +112,10 @@
 						reg = <0x0 0x6>;
 					};
 
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+
 					macaddr_art_1002: macaddr@1002 {
 						reg = <0x1002 0x6>;
 					};
@@ -153,5 +152,11 @@
 &wmac {
 	status = "okay";
 
-	qca,no-eeprom;
+	nvmem-cells = <&cal_art_1000>;
+	nvmem-cell-names = "calibration";
+
+	led {
+		led-sources = <16>;
+		led-active-low;
+	};
 };

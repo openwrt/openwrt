@@ -1,0 +1,45 @@
+From 249b07e24d3d1d47b7ec23d5f09a56837b66d7f5 Mon Sep 17 00:00:00 2001
+From: Jonas Karlman <jonas@kwiboo.se>
+Date: Sun, 16 Mar 2025 00:05:45 +0000
+Subject: [PATCH] nvmem: rockchip-otp: Add support for RK3528
+
+Add support for the OTP controller in RK3528. The OTPC is similar to the
+OTPC in RK3562 and RK3568, exept for a missing phy clock and reset.
+
+Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+---
+ drivers/nvmem/rockchip-otp.c | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+--- a/drivers/nvmem/rockchip-otp.c
++++ b/drivers/nvmem/rockchip-otp.c
+@@ -333,6 +333,18 @@ static const struct rockchip_data px30_d
+ 	.reg_read = px30_otp_read,
+ };
+ 
++static const char * const rk3528_otp_clocks[] = {
++	"otp", "apb_pclk", "sbpi",
++};
++
++static const struct rockchip_data rk3528_data = {
++	.size = 0x80,
++	.word_size = sizeof(u16),
++	.clks = rk3528_otp_clocks,
++	.num_clks = ARRAY_SIZE(rk3528_otp_clocks),
++	.reg_read = rk3568_otp_read,
++};
++
+ static const char * const rk3568_otp_clocks[] = {
+ 	"otp", "apb_pclk", "phy", "sbpi",
+ };
+@@ -377,6 +389,10 @@ static const struct of_device_id rockchi
+ 		.data = &px30_data,
+ 	},
+ 	{
++		.compatible = "rockchip,rk3528-otp",
++		.data = &rk3528_data,
++	},
++	{
+ 		.compatible = "rockchip,rk3568-otp",
+ 		.data = &rk3568_data,
+ 	},

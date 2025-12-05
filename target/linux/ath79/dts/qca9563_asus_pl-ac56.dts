@@ -48,11 +48,6 @@
 			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 
-		wlan2g {
-			label = "green:wlan2g";
-			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
-		};
-
 		wlan5g {
 			label = "green:wlan5g";
 			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
@@ -105,6 +100,10 @@
 					compatible = "fixed-layout";
 					#address-cells = <1>;
 					#size-cells = <1>;
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
 
 					macaddr_art_1002: macaddr@1002 {
 						reg = <0x1002 0x6>;
@@ -168,5 +167,11 @@
 &wmac {
 	status = "okay";
 
-	qca,no-eeprom;
+	nvmem-cells = <&cal_art_1000>;
+	nvmem-cell-names = "calibration";
+
+	led {
+		led-sources = <19>;
+		led-active-low;
+	};
 };

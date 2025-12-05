@@ -184,15 +184,12 @@
 
 	pinctrl-0 = <&spi_0_pins>;
 	pinctrl-names = "default";
-	cs-gpios = <&tlmm 12 GPIO_ACTIVE_HIGH>;
+	cs-gpios = <&tlmm 12 GPIO_ACTIVE_LOW>;
 
 	flash@0 {
 		reg = <0>;
 		compatible = "jedec,spi-nor";
 		spi-max-frequency = <10000000>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-
 
 		partitions {
 			compatible = "fixed-partitions";

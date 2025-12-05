@@ -231,8 +231,8 @@
 &pcie0 {
 	status = "okay";
 
-	perst-gpio = <&tlmm 35 GPIO_ACTIVE_LOW>;
-	wake-gpio = <&tlmm 50 GPIO_ACTIVE_LOW>;
+	perst-gpios = <&tlmm 35 GPIO_ACTIVE_LOW>;
+	wake-gpios = <&tlmm 50 GPIO_ACTIVE_LOW>;
 };
 
 &pcie_bridge0 {

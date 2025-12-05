@@ -22,8 +22,9 @@
 		rootdisk = <&firmware>;
 	};
 
-	memory {
+	memory@40000000 {
 		reg = <0 0x40000000 0 0x10000000>;
+		device_type = "memory";
 	};
 
 	reg_3p3v: regulator-3p3v {
@@ -169,7 +170,7 @@
 		switch@1f {
 			compatible = "mediatek,mt7531";
 			reg = <31>;
-			reset-gpios = <&pio 39 0>;
+			reset-gpios = <&pio 39 GPIO_ACTIVE_HIGH>;
 			interrupt-controller;
 			#interrupt-cells = <1>;
 			interrupt-parent = <&pio>;
@@ -281,8 +282,6 @@
 	status = "okay";
 
 	flash@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <52000000>;

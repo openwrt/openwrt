@@ -60,7 +60,7 @@ define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
-		LDFLAGS="" \
+		LDFLAGS="$(TARGET_LDFLAGS)" \
 		comgt
 endef
 

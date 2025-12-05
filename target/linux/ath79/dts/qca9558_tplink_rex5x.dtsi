@@ -98,6 +98,21 @@
 			reset-gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
 		};
 	};
+
+	virtual_flash {
+		compatible = "mtd-concat";
+		devices = <&fwconcat0>, <&fwconcat1>;
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			partition@0 {
+				compatible = "tplink,firmware";
+				label = "firmware";
+				reg = <0x0 0x0>;
+			};
+		};
+	};
 };
 
 &pcie0 {
@@ -130,9 +145,8 @@
 				read-only;
 			};
 
-			partition@20000 {
-				compatible = "tplink,firmware";
-				label = "firmware";
+			fwconcat0: partition@20000 {
+				label = "fwconcat0";
 				reg = <0x020000 0x5e0000>;
 			};
 
@@ -162,8 +176,13 @@
 
 			partition@630000 {
 				label = "config";
-				reg = <0x630000 0x1c0000>;
+				reg = <0x630000 0x020000>;
 				read-only;
+			};
+
+			fwconcat1: partition@650000 {
+				label = "fwconcat1";
+				reg = <0x650000 0x1a0000>;
 			};
 
 			partition@7f0000 {

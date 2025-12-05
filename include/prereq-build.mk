@@ -9,11 +9,11 @@ SHELL:=sh
 PKG_NAME:=Build dependency
 
 $(eval $(call TestHostCommand,true, \
-	Please install GNU 'coreutils', \
+	Please install 'coreutils', \
 	$(TRUE)))
 
 $(eval $(call TestHostCommand,false, \
-	Please install GNU 'coreutils', \
+	Please install 'coreutils', \
 	$(FALSE); [ $$$$$$$$? = 1 ] && $(TRUE)))
 
 # Required for the toolchain
@@ -178,15 +178,16 @@ $(eval $(call SetupHostCommand,bzip2,Please install 'bzip2', \
 $(eval $(call SetupHostCommand,wget,Please install GNU 'wget', \
 	wget --version | grep GNU))
 
-$(eval $(call SetupHostCommand,install,Please install GNU 'install', \
+$(eval $(call SetupHostCommand,install,Please install 'install', \
 	$(TOPDIR)/staging_dir/host/bin/ginstall --version | grep GNU, \
-	install --version | grep GNU, \
+	install --version | grep 'GNU\|uutils', \
 	ginstall --version | grep GNU))
 
 $(eval $(call SetupHostCommand,perl,Please install Perl 5.x, \
 	perl --version | grep "perl.*v5"))
 
 $(eval $(call SetupHostCommand,python,Please install Python >= 3.7, \
+	python3.13 -V 2>&1 | grep 'Python 3', \
 	python3.12 -V 2>&1 | grep 'Python 3', \
 	python3.11 -V 2>&1 | grep 'Python 3', \
 	python3.10 -V 2>&1 | grep 'Python 3', \
@@ -196,6 +197,7 @@ $(eval $(call SetupHostCommand,python,Please install Python >= 3.7, \
 	python3 -V 2>&1 | grep -E 'Python 3\.([7-9]|[0-9][0-9])\.?'))
 
 $(eval $(call SetupHostCommand,python3,Please install Python >= 3.7, \
+	python3.13 -V 2>&1 | grep 'Python 3', \
 	python3.12 -V 2>&1 | grep 'Python 3', \
 	python3.11 -V 2>&1 | grep 'Python 3', \
 	python3.10 -V 2>&1 | grep 'Python 3', \
@@ -237,7 +239,7 @@ endif
 
 $(STAGING_DIR_HOST)/bin/mkhash: $(SCRIPT_DIR)/mkhash.c
 	mkdir -p $(dir $@)
-	$(CC) -O2 -I$(TOPDIR)/tools/include -o $@ $<
+	$(STAGING_DIR_HOST)/bin/gcc -O2 -I$(TOPDIR)/tools/include -o $@ $<
 
 $(STAGING_DIR_HOST)/bin/xxd: $(SCRIPT_DIR)/xxdi.pl
 	$(LN) $< $@

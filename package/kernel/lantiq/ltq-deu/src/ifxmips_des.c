@@ -229,7 +229,7 @@ void ifx_deu_des (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
         if (mode > 0) {
                 des->IVHR = DEU_ENDIAN_SWAP(*(u32 *) iv_arg);
                 des->IVLR = DEU_ENDIAN_SWAP(*((u32 *) iv_arg + 1));
-        };
+        }
 
         nblocks = nbytes / 4;
 
@@ -260,7 +260,7 @@ void ifx_deu_des (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
     if (mode > 0) {
         *(u32 *) iv_arg = DEU_ENDIAN_SWAP(des->IVHR);
         *((u32 *) iv_arg + 1) = DEU_ENDIAN_SWAP(des->IVLR);
-    };
+    }
 
     CRTCL_SECT_END;
 }

@@ -1,0 +1,53 @@
+From 08ef15e57709d2560b570ced9bc309ea2340d736 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Mon, 13 Oct 2025 14:00:55 +0200
+Subject: [PATCH 1/2] interpreter: move can_run_host_binaries() to environment
+
+To permit usage of can_run_host_binaries() in other location, move it to
+environment. This will be needed in linker to decide if external library
+should be included in RPATH entry.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ mesonbuild/environment.py           |  7 +++++++
+ mesonbuild/interpreter/mesonmain.py | 11 ++---------
+ 2 files changed, 9 insertions(+), 9 deletions(-)
+
+--- a/mesonbuild/environment.py
++++ b/mesonbuild/environment.py
+@@ -999,3 +999,10 @@ class Environment:
+ 
+     def has_exe_wrapper(self) -> bool:
+         return self.exe_wrapper and self.exe_wrapper.found()
++
++    def can_run_host_binaries(self) -> bool:
++        return not (
++            self.is_cross_build() and
++            self.need_exe_wrapper() and
++            self.exe_wrapper is None
++        )
+--- a/mesonbuild/interpreter/mesonmain.py
++++ b/mesonbuild/interpreter/mesonmain.py
+@@ -277,20 +277,13 @@ class MesonMain(MesonInterpreterObject):
+     @noKwargs
+     @FeatureDeprecated('meson.has_exe_wrapper', '0.55.0', 'use meson.can_run_host_binaries instead.')
+     def has_exe_wrapper_method(self, args: T.List['TYPE_var'], kwargs: 'TYPE_kwargs') -> bool:
+-        return self._can_run_host_binaries_impl()
++        return self.build.environment.can_run_host_binaries()
+ 
+     @noPosargs
+     @noKwargs
+     @FeatureNew('meson.can_run_host_binaries', '0.55.0')
+     def can_run_host_binaries_method(self, args: T.List['TYPE_var'], kwargs: 'TYPE_kwargs') -> bool:
+-        return self._can_run_host_binaries_impl()
+-
+-    def _can_run_host_binaries_impl(self) -> bool:
+-        return not (
+-            self.build.environment.is_cross_build() and
+-            self.build.environment.need_exe_wrapper() and
+-            self.build.environment.exe_wrapper is None
+-        )
++        return self.build.environment.can_run_host_binaries()
+ 
+     @noPosargs
+     @noKwargs

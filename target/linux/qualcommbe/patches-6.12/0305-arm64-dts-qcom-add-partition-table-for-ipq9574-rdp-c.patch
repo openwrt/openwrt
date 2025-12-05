@@ -12,7 +12,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/arch/arm64/boot/dts/qcom/ipq9574-rdp-common.dtsi
 +++ b/arch/arm64/boot/dts/qcom/ipq9574-rdp-common.dtsi
-@@ -74,11 +74,155 @@
+@@ -74,11 +74,158 @@
  	status = "okay";
  
  	flash@0 {
@@ -125,12 +125,15 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +			};
 +
 +			partition@530000 {
-+				compatible = "u-boot,env";
 +				label = "0:appsblenv";
 +				reg = <0x530000 0x10000>;
 +
-+				macaddr_lan: ethaddr {
-+					#nvmem-cell-cells = <1>;
++				nvmem-layout {
++					compatible = "u-boot,env";
++
++					macaddr_lan: ethaddr {
++						#nvmem-cell-cells = <1>;
++					};
 +				};
 +			};
 +

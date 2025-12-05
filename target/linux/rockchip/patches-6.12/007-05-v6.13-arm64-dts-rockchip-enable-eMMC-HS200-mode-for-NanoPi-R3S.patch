@@ -1,0 +1,26 @@
+From 1b5365034410f1ca21adadadd492b99bdf4f2c55 Mon Sep 17 00:00:00 2001
+From: Tianling Shen <cnsztl@gmail.com>
+Date: Wed, 23 Oct 2024 03:35:29 +0800
+Subject: [PATCH] arm64: dts: rockchip: enable eMMC HS200 mode for NanoPi R3S
+
+It is required to boot from eMMC without additional patch in u-boot.
+
+Fixes: 50decd493c83 ("arm64: dts: rockchip: Add FriendlyARM NanoPi R3S board")
+Suggested-by: Jonas Karlman <jonas@kwiboo.se>
+Signed-off-by: Tianling Shen <cnsztl@gmail.com>
+Link: https://lore.kernel.org/r/20241022193537.1117919-5-cnsztl@gmail.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3566-nanopi-r3s.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3566-nanopi-r3s.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3566-nanopi-r3s.dts
+@@ -491,6 +491,7 @@
+ &sdhci {
+ 	bus-width = <8>;
+ 	max-frequency = <200000000>;
++	mmc-hs200-1_8v;
+ 	non-removable;
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&emmc_bus8 &emmc_clk &emmc_cmd &emmc_datastrobe>;

@@ -147,13 +147,11 @@
 	pinctrl-0 = <&spi_0_pins>;
 	pinctrl-names = "default";
 	status = "okay";
-	cs-gpios = <&tlmm 12 GPIO_ACTIVE_HIGH>;
+	cs-gpios = <&tlmm 12 GPIO_ACTIVE_LOW>;
 
 	flash@0 {
 		/* u-boot is looking for "n25q128a11" property */
 		compatible = "jedec,spi-nor", "n25q128a11";
-		#address-cells = <1>;
-		#size-cells = <1>;
 		reg = <0>;
 		spi-max-frequency = <24000000>;
 
@@ -469,14 +467,14 @@
 //* This node is used for 5Ghz on QCA9982 */
 &pcie0 {
 	status = "okay";
-	perst-gpio = <&tlmm 38 GPIO_ACTIVE_LOW>;
-	wake-gpio = <&tlmm 40 GPIO_ACTIVE_LOW>;
-	clkreq-gpio = <&tlmm 39 GPIO_ACTIVE_LOW>;
+	perst-gpios = <&tlmm 38 GPIO_ACTIVE_LOW>;
+	wake-gpios = <&tlmm 40 GPIO_ACTIVE_LOW>;
+	clkreq-gpios = <&tlmm 39 GPIO_ACTIVE_LOW>;
 };
 
 &pcie_bridge0 {
 	wifi@0,0 {
-		compatible = "pci168c,0040";
+		compatible = "qcom,ath10k";
 		reg = <0x00010000 0 0 0 0>;
 		nvmem-cell-names = "pre-calibration", "mac-address";
 		nvmem-cells = <&precal_art_9000>, <&macaddr_config_0 3>;

@@ -6,6 +6,13 @@ import { find_phy } from 'wifi.utils';
 import * as uci from 'uci';
 import * as iwinfo from 'iwinfo';
 
+function normalize_ssid(ssid) {
+	if (!ssid)
+		return 'unknown';
+	return '"' + replace(ssid, /[[:cntrl:]]/g,
+			     function(c) { return '\\x' + hexenc(c); }) + '"'
+}
+
 function print_assoclist(stations) {
 	for (let mac, station in stations) {
 		printf(`${station.mac}  ${station.signal} dBm / ${station.noise} dBm (SNR ${station.snr})  ${station.inactive_time} ms ago\n`);
@@ -44,7 +51,7 @@ function print_info(list) {
 	let padding = '         ';
 
 	for (let bss in list) {
-		printf(`${bss.iface} ESSID: "${bss.ssid}"\n`);
+		printf(`${bss.iface} ESSID: ${normalize_ssid(bss.ssid)}\n`);
 		printf(`${padding}Access Point: ${bss.mac}\n`);
 		printf(`${padding}Mode: ${bss.mode}  Channel: ${bss.channel} (${bss.freq} GHz)  HT Mode: ${bss.htmode}\n`);
 		printf(`${padding}Center Channel 1: ${bss.center_freq1} 2: ${bss.center_freq2}\n`);
@@ -69,10 +76,11 @@ function print_scan(cells) {
 
 	for (let cell in cells) {
 		printf('Cell %02d - Address: %s\n', idx++, cell.bssid);
+		printf('\t  ESSID: %s\n', normalize_ssid(cell.ssid));
 		printf('\t  Mode: %s  Frequency: %s GHz  Band: %s GHz  Channel: %d\n', cell.mode, cell.frequency, cell.band, cell.channel);
 		printf('\t  Signal: %d dBm  Quality: %2d/70\n', cell.dbm, cell.quality);
 
-		if (!length(cell.crypto.key_mgmt))
+		if (!cell.crypto || !length(cell.crypto.key_mgmt))
 			printf('\t  Encryption: NONE\n');
 		else
 			printf('\t  Encryption: %s (%s)\n', join(' / ', cell.crypto.key_mgmt), join(' / ', cell.crypto.pair));
@@ -89,6 +97,20 @@ function print_scan(cells) {
 			printf('\t\tCenter Frequency 1: %d\n', cell.vht.center_chan_1);
 			printf('\t\tCenter Frequency 2: %s\n', cell.vht.center_chan_2);
 			printf('\t\tChannel Width: %s\n', cell.vht.chan_width);
+		}
+
+		if (cell.he) {
+			printf('\t  HE Operation:\n');
+			printf('\t\tCenter Frequency 1: %d\n', cell.he.center_chan_1);
+			printf('\t\tCenter Frequency 2: %s\n', cell.he.center_chan_2);
+			printf('\t\tChannel Width: %s\n', cell.he.chan_width);
+		}
+
+		if (cell.eht) {
+			printf('\t  EHT Operation:\n');
+			printf('\t\tCenter Frequency 1: %d\n', cell.eht.center_chan_1);
+			printf('\t\tCenter Frequency 2: %s\n', cell.eht.center_chan_2);
+			printf('\t\tChannel Width: %s\n', cell.eht.chan_width);
 		}
 
 		printf('\n'); 

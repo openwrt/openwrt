@@ -71,6 +71,9 @@ ipq807x_setup_interfaces()
 	zyxel,nbg7815)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 10g" "wan"
 		;;
+	zyxel,nwa210ax)
+		ucidef_set_interface_lan "uplink lan1" "dhcp"
+		;;
 	*)
 		echo "Unsupported hardware. Network interfaces not initialized"
 		;;
@@ -90,17 +93,6 @@ ipq807x_setup_macs()
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		label_mac="$wan_mac"
 		;;
-	linksys,mx4200v2|\
-	linksys,mx4300)
-		label_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
-		[ "$(mtd_get_mac_ascii u_env eth1addr)" != "$label_mac" ] && wan_mac=$label_mac
-		[ "$(mtd_get_mac_ascii u_env eth2addr)" != "$label_mac" ] && lan_mac=$label_mac
-		;;
-	linksys,mx8500)
-		label_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
-		lan_mac=$(macaddr_add $label_mac 1)
-		wan_mac=$label_mac
-		;;
 	tplink,deco-x80-5g)
 		label_mac=$(get_mac_binary /tmp/factory_data/default-mac 0)
 		lan_mac=$(macaddr_add $label_mac 1)
@@ -109,6 +101,10 @@ ipq807x_setup_macs()
 	tplink,eap620hd-v1|\
 	tplink,eap660hd-v1)
 		label_mac=$(get_mac_binary /tmp/factory_data/default-mac 0)
+		lan_mac=$label_mac
+		;;
+	zyxel,nwa210ax)
+		label_mac=$(get_mac_label_dt)
 		lan_mac=$label_mac
 		;;
 	esac

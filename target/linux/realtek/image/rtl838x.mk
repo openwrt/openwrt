@@ -345,105 +345,118 @@ define Device/tplink_t1600g-28ts-v3
 endef
 TARGET_DEVICES += tplink_t1600g-28ts-v3
 
-define Device/zyxel_gs1900-10hp
+define Device/zyxel_gs1900-10hp-a1
   $(Device/zyxel_gs1900)
   SOC := rtl8380
   DEVICE_MODEL := GS1900-10HP
+  DEVICE_VARIANT := A1
   ZYXEL_VERS := AAZI
   DEVICE_PACKAGES += realtek-poe
+  SUPPORTED_DEVICES += zyxel,gs1900-10hp
 endef
-TARGET_DEVICES += zyxel_gs1900-10hp
+TARGET_DEVICES += zyxel_gs1900-10hp-a1
 
-define Device/zyxel_gs1900-16
+define Device/zyxel_gs1900-16-a1
   $(Device/zyxel_gs1900)
   SOC := rtl8382
   DEVICE_MODEL := GS1900-16
+  DEVICE_VARIANT := A1
   ZYXEL_VERS := AAHJ
+  SUPPORTED_DEVICES += zyxel,gs1900-16
 endef
-TARGET_DEVICES += zyxel_gs1900-16
+TARGET_DEVICES += zyxel_gs1900-16-a1
 
-define Device/zyxel_gs1900-8-v1
+define Device/zyxel_gs1900-8-a1
   $(Device/zyxel_gs1900)
   SOC := rtl8380
   DEVICE_MODEL := GS1900-8
-  DEVICE_VARIANT := v1
+  DEVICE_VARIANT := A1
   ZYXEL_VERS := AAHH
-  SUPPORTED_DEVICES += zyxel,gs1900-8
+  SUPPORTED_DEVICES += zyxel,gs1900-8 zyxel,gs1900-8-v1
 endef
-TARGET_DEVICES += zyxel_gs1900-8-v1
+TARGET_DEVICES += zyxel_gs1900-8-a1
 
-define Device/zyxel_gs1900-8-v2
+define Device/zyxel_gs1900-8-b1
   $(Device/zyxel_gs1900)
   SOC := rtl8380
   DEVICE_MODEL := GS1900-8
-  DEVICE_VARIANT := v2
+  DEVICE_VARIANT := B1
   ZYXEL_VERS := AAHH
-  SUPPORTED_DEVICES += zyxel,gs1900-8
+  SUPPORTED_DEVICES += zyxel,gs1900-8 zyxel,gs1900-8-v2
 endef
-TARGET_DEVICES += zyxel_gs1900-8-v2
+TARGET_DEVICES += zyxel_gs1900-8-b1
 
-define Device/zyxel_gs1900-8hp-v1
+define Device/zyxel_gs1900-8hp-a1
   $(Device/zyxel_gs1900)
   SOC := rtl8380
   DEVICE_MODEL := GS1900-8HP
-  DEVICE_VARIANT := v1
+  DEVICE_VARIANT := A1
   ZYXEL_VERS := AAHI
+  SUPPORTED_DEVICES += zyxel,gs1900-8hp-v1
   DEVICE_PACKAGES += realtek-poe
 endef
-TARGET_DEVICES += zyxel_gs1900-8hp-v1
+TARGET_DEVICES += zyxel_gs1900-8hp-a1
 
-define Device/zyxel_gs1900-8hp-v2
+define Device/zyxel_gs1900-8hp-b1
   $(Device/zyxel_gs1900)
   SOC := rtl8380
   DEVICE_MODEL := GS1900-8HP
-  DEVICE_VARIANT := v2
+  DEVICE_VARIANT := B1
   ZYXEL_VERS := AAHI
+  SUPPORTED_DEVICES += zyxel,gs1900-8hp-v2
   DEVICE_PACKAGES += realtek-poe
 endef
-TARGET_DEVICES += zyxel_gs1900-8hp-v2
+TARGET_DEVICES += zyxel_gs1900-8hp-b1
 
-define Device/zyxel_gs1900-24-v1
+define Device/zyxel_gs1900-24-a1
   $(Device/zyxel_gs1900)
   SOC := rtl8382
   DEVICE_MODEL := GS1900-24
-  DEVICE_VARIANT := v1
+  DEVICE_VARIANT := A1
   ZYXEL_VERS := AAHL
+  SUPPORTED_DEVICES += zyxel,gs1900-24-v1
 endef
-TARGET_DEVICES += zyxel_gs1900-24-v1
+TARGET_DEVICES += zyxel_gs1900-24-a1
 
-define Device/zyxel_gs1900-24e
+define Device/zyxel_gs1900-24e-a1
   $(Device/zyxel_gs1900)
   SOC := rtl8382
   DEVICE_MODEL := GS1900-24E
+  DEVICE_VARIANT := A1
   ZYXEL_VERS := AAHK
+  SUPPORTED_DEVICES += zyxel,gs1900-24e
 endef
-TARGET_DEVICES += zyxel_gs1900-24e
+TARGET_DEVICES += zyxel_gs1900-24e-a1
 
-define Device/zyxel_gs1900-24ep
+define Device/zyxel_gs1900-24ep-a1
   $(Device/zyxel_gs1900)
   SOC := rtl8382
   DEVICE_MODEL := GS1900-24EP
+  DEVICE_VARIANT := A1
   ZYXEL_VERS := ABTO
+  SUPPORTED_DEVICES += zyxel,gs1900-24ep
   DEVICE_PACKAGES += realtek-poe
 endef
-TARGET_DEVICES += zyxel_gs1900-24ep
+TARGET_DEVICES += zyxel_gs1900-24ep-a1
 
-define Device/zyxel_gs1900-24hp-v1
+define Device/zyxel_gs1900-24hp-a1
   $(Device/zyxel_gs1900)
   SOC := rtl8382
   DEVICE_MODEL := GS1900-24HP
-  DEVICE_VARIANT := v1
+  DEVICE_VARIANT := A1
   ZYXEL_VERS := AAHM
+  SUPPORTED_DEVICES += zyxel,gs1900-24hp-v1
   DEVICE_PACKAGES += realtek-poe
 endef
-TARGET_DEVICES += zyxel_gs1900-24hp-v1
+TARGET_DEVICES += zyxel_gs1900-24hp-a1
 
-define Device/zyxel_gs1900-24hp-v2
+define Device/zyxel_gs1900-24hp-b1
   $(Device/zyxel_gs1900)
   SOC := rtl8382
   DEVICE_MODEL := GS1900-24HP
-  DEVICE_VARIANT := v2
+  DEVICE_VARIANT := B1
   ZYXEL_VERS := ABTP
+  SUPPORTED_DEVICES += zyxel,gs1900-24hp-v2
   DEVICE_PACKAGES += realtek-poe
 endef
-TARGET_DEVICES += zyxel_gs1900-24hp-v2
+TARGET_DEVICES += zyxel_gs1900-24hp-b1

@@ -1,0 +1,134 @@
+From 0ea651de9b79a17cbe410a69399877805c136b76 Mon Sep 17 00:00:00 2001
+From: Nicolas Frattaroli <nicolas.frattaroli@collabora.com>
+Date: Tue, 20 May 2025 20:50:11 +0200
+Subject: arm64: dts: rockchip: add ROCK 5T device tree
+
+The RADXA ROCK 5T is a single board computer quite similar to the ROCK
+5B+, except it has one more PCIe-to-Ethernet controller (at the expense
+of a USB3 port) and a barrel jack for power input instead. Some pins are
+shuffled around as well.
+
+Add a device tree for it.
+
+Signed-off-by: Nicolas Frattaroli <nicolas.frattaroli@collabora.com>
+Link: https://lore.kernel.org/r/20250520-add-rock5t-v2-4-1f1971850a20@collabora.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+
+--- a/arch/arm64/boot/dts/rockchip/Makefile
++++ b/arch/arm64/boot/dts/rockchip/Makefile
+@@ -143,6 +143,7 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-ro
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-rock-5b-pcie-ep.dtbo
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-rock-5b-pcie-srns.dtbo
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-rock-5b-plus.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-rock-5t.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-tiger-haikou.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-toybrick-x0.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588-turing-rk1.dtb
+--- /dev/null
++++ b/arch/arm64/boot/dts/rockchip/rk3588-rock-5t.dts
+@@ -0,0 +1,105 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++
++/dts-v1/;
++
++#include "rk3588-rock-5b-5bp-5t.dtsi"
++
++/ {
++	model = "Radxa ROCK 5T";
++	compatible = "radxa,rock-5t", "rockchip,rk3588";
++
++	analog-sound {
++		compatible = "audio-graph-card";
++		label = "rk3588-es8316";
++
++		widgets = "Microphone", "Mic Jack",
++		"Headphone", "Headphones";
++
++		routing = "MIC2", "Mic Jack",
++		"Headphones", "HPOL",
++		"Headphones", "HPOR";
++
++		dais = <&i2s0_8ch_p0>;
++		hp-det-gpios = <&gpio4 RK_PC3 GPIO_ACTIVE_HIGH>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&hp_detect>;
++	};
++
++	leds {
++		compatible = "gpio-leds";
++		pinctrl-names = "default";
++		pinctrl-0 = <&led_rgb_b>;
++
++		led_rgb_b {
++			function = LED_FUNCTION_STATUS;
++			color = <LED_COLOR_ID_BLUE>;
++			gpios = <&gpio0 RK_PA0 GPIO_ACTIVE_HIGH>;
++			linux,default-trigger = "heartbeat";
++		};
++	};
++
++	rfkill {
++		compatible = "rfkill-gpio";
++		label = "rfkill-m2-wlan";
++		radio-type = "wlan";
++		shutdown-gpios = <&gpio1 RK_PB0 GPIO_ACTIVE_HIGH>;
++	};
++
++	vcc3v3_pcie2x1l1: regulator-vcc3v3-pcie2x1l2 {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc3v3_pcie2x1l1";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		startup-delay-us = <5000>;
++		vin-supply = <&vcc_3v3_s3>;
++	};
++};
++
++&hdmi_receiver {
++	hpd-gpios = <&gpio2 RK_PB7 GPIO_ACTIVE_LOW>;
++	status = "okay";
++};
++
++&pcie2x1l1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pcie2_1_rst>;
++	reset-gpios = <&gpio4 RK_PA2 GPIO_ACTIVE_HIGH>;
++	vpcie3v3-supply = <&vcc3v3_pcie2x1l1>;
++	status = "okay";
++};
++
++&pinctrl {
++	hdmirx {
++		hdmirx_hpd: hdmirx-5v-detection {
++			rockchip,pins = <2 RK_PB7 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
++
++	leds {
++		led_rgb_b: led-rgb-b {
++			rockchip,pins = <0 RK_PA0 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
++
++	pcie2 {
++		pcie2_1_rst: pcie2-1-rst {
++			rockchip,pins = <4 RK_PA2 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++		pcie2_0_vcc3v3_en: pcie2-0-vcc-en {
++			rockchip,pins = <2 RK_PC0 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
++
++	sound {
++		hp_detect: hp-detect {
++			rockchip,pins = <4 RK_PC3 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
++};
++
++&vcc3v3_pcie2x1l0 {
++	gpios = <&gpio2 RK_PC0 GPIO_ACTIVE_HIGH>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pcie2_0_vcc3v3_en>;
++	status = "okay";
++};

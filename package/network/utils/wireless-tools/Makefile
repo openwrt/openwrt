@@ -60,6 +60,7 @@ define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS) -I." \
+		LDFLAGS="$(TARGET_LDFLAGS)" \
 		BUILD_WE_ESSENTIAL=y \
 		LIBS="-lm -Wl,--gc-sections" \
 		libiw.so.$(PKG_VERSION) iwmulticall

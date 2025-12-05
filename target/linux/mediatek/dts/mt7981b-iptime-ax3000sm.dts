@@ -120,8 +120,6 @@
 	status = "okay";
 
 	spi_nand@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "spi-nand";
 		reg = <0>;
 
@@ -262,6 +260,8 @@
 
 &wifi {
 	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
 	nvmem-cell-names = "eeprom";
 	nvmem-cells = <&eeprom_factory_0>;
 

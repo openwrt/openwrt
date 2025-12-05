@@ -71,7 +71,7 @@
 
 		phy-handle = <&phy0>;
 
-		nvmem-cells = <&macaddr_mrd_1fff8>;
+		nvmem-cells = <&macaddr_mrd_1fff8 0>;
 		nvmem-cell-names = "mac-address";
 	};
 };
@@ -110,8 +110,6 @@
 	status = "okay";
 
 	spi_nand: flash@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "spi-nand";
 		reg = <0>;
 		spi-max-frequency = <52000000>;
@@ -155,8 +153,12 @@
 					#address-cells = <1>;
 					#size-cells = <1>;
 
-					macaddr: macaddr@a {
-						reg = <0xa 0x6>;
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x1000>;
+					};
+
+					precal_factory_1010: precal@1010 {
+						reg = <0x1010 0x6f010>;
 					};
 				};
 			};
@@ -212,7 +214,9 @@
 					#size-cells = <1>;
 
 					macaddr_mrd_1fff8: macaddr@1fff8 {
+						compatible = "mac-base";
 						reg = <0x1fff8 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 				};
 			};
@@ -237,7 +241,21 @@
 };
 
 &wifi {
+	nvmem-cells = <&eeprom_factory_0>, <&precal_factory_1010>;
+	nvmem-cell-names = "eeprom", "precal";
+	#address-cells = <1>;
+	#size-cells = <0>;
 	status = "okay";
 
-	mediatek,mtd-eeprom = <&factory 0x0>;
+	band@0 {
+		reg = <0>;
+		nvmem-cells = <&macaddr_mrd_1fff8 1>;
+		nvmem-cell-names = "mac-address";
+	};
+
+	band@1 {
+		reg = <1>;
+		nvmem-cells = <&macaddr_mrd_1fff8 2>;
+		nvmem-cell-names = "mac-address";
+	};
 };
