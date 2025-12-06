@@ -171,6 +171,10 @@ define Build/iodata-mstc-header2
 	mv $@.new $@
 endef
 
+define Build/uboot-bin
+	cat $(STAGING_DIR_IMAGE)/mt7621_$1-u-boot-mt7621.bin >> $@
+endef
+
 define Build/znet-header
 	$(eval version=$(word 1,$(1)))
 	$(eval magic=$(if $(word 2,$(1)),$(word 2,$(1)),ZNET))
@@ -3143,6 +3147,23 @@ define Device/ubnt_edgerouter-x
   SUPPORTED_DEVICES += ubnt-erx ubiquiti,edgerouterx
 endef
 TARGET_DEVICES += ubnt_edgerouter-x
+
+define Device/ubnt_edgerouter-x-fit
+  $(Device/nand)
+  KERNEL_SIZE :=
+  IMAGE_SIZE := 250248k
+  DEVICE_VENDOR := Ubiquiti
+  DEVICE_MODEL := EdgeRouter X (FIT)
+  DEVICE_PACKAGES += fitblk
+  KERNEL := kernel-bin | gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  IMAGES := sysupgrade.itb
+  IMAGE/sysupgrade.itb := append-kernel | fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | append-metadata
+  ARTIFACTS := u-boot-mt7621.bin
+  ARTIFACT/u-boot-mt7621.bin := uboot-bin ubnt_edgerouter-x
+endef
+TARGET_DEVICES += ubnt_edgerouter-x-fit
 
 define Device/ubnt_edgerouter-x-sfp
   $(Device/ubnt_edgerouter_common)

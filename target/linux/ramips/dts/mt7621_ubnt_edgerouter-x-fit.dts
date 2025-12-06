@@ -1,0 +1,103 @@
+#include "mt7621_ubnt_edgerouter-x.dtsi"
+
+/ {
+	model = "Ubiquiti EdgeRouter X (FIT)";
+	compatible = "ubnt,edgerouter-x-fit", "mediatek,mt7621-soc";
+
+	chosen {
+		rootdisk = <&ubi_rootfs>;
+		bootargs = "console=ttyS0,115200 ubi.block=0,fit root=/dev/fit0 rootwait";
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		ramoops@8d000000 {
+			compatible = "ramoops";
+			reg = <0x8d000000 0x00010000>;
+			record-size = <0x1000>;
+			no-map;
+		};
+	};
+};
+
+&gmac1 {
+	status = "okay";
+	openwrt,netdev-name = "eth0";
+	phy-handle = <&ethphy0>;
+
+	nvmem-cells = <&macaddr_factory_22 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&ethphy0 {
+	/delete-property/ interrupts;
+};
+
+&switch0 {
+	ports {
+		port@0 {
+			status = "disabled";
+		};
+	};
+};
+
+&nand {
+	status = "okay";
+
+	/delete-node/ partitions;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			reg = <0x00 0x100000>;
+			label = "uboot";
+			read-only;
+		};
+
+		partition@100000 {
+			label = "ubi";
+			reg = <0x100000 0xf7c0000>;
+
+			volumes {
+				ubi-env1 {
+					volname = "env1";
+				};
+
+				ubi-env2 {
+					volname = "env2";
+				};
+
+				ubi_factory: ubi-factory {
+					volname = "factory";
+				};
+
+				ubi-recovery {
+					volname = "recovery";
+				};
+
+				ubi_rootfs: ubi-fit {
+					volname = "fit";
+				};
+			};
+		};
+	};
+};
+
+&ubi_factory {
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		macaddr_factory_22: macaddr@22 {
+			reg = <0x22 0x6>;
+			#nvmem-cell-cells = <1>;
+		};
+	};
+};
