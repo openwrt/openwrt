@@ -22,7 +22,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 ---
  .../net/wireless/ralink/rt2x00/rt2800lib.c    | 58 +++++++++++++++++++
  drivers/net/wireless/ralink/rt2x00/rt2x00.h   |  5 ++
- .../net/wireless/ralink/rt2x00/rt2x00soc.c    | 15 +++++
+ .../net/wireless/ralink/rt2x00/rt2800soc.c    | 15 +++++
  3 files changed, 78 insertions(+)
 
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
@@ -95,11 +95,11 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  };
  
  struct rt2x00_bar_list_entry {
---- a/drivers/net/wireless/ralink/rt2x00/rt2x00soc.c
-+++ b/drivers/net/wireless/ralink/rt2x00/rt2x00soc.c
-@@ -97,6 +97,21 @@ int rt2x00soc_probe(struct platform_devi
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800soc.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800soc.c
+@@ -298,6 +298,21 @@ static int rt2x00soc_probe(struct platfo
  	if (retval)
- 		goto exit_free_reg;
+ 		goto exit_free_device;
  
 +	rt2x00dev->pinctrl = devm_pinctrl_get(&pdev->dev);
 +	if (IS_ERR(rt2x00dev->pinctrl)) {
@@ -118,4 +118,4 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
  	return 0;
  
- exit_free_reg:
+ exit_free_device:
