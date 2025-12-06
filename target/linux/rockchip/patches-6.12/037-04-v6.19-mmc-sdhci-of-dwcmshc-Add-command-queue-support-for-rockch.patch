@@ -48,7 +48,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  	int (*init)(struct device *dev, struct sdhci_host *host, struct dwcmshc_priv *dwc_priv);
  	void (*postinit)(struct sdhci_host *host, struct dwcmshc_priv *dwc_priv);
  };
-@@ -603,6 +607,68 @@ static void dwcmshc_cqhci_dumpregs(struc
+@@ -616,6 +620,68 @@ static void dwcmshc_cqhci_dumpregs(struc
  	sdhci_dumpregs(mmc_priv(mmc));
  }
  
@@ -117,7 +117,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  static void dwcmshc_rk3568_set_clock(struct sdhci_host *host, unsigned int clock)
  {
  	struct sdhci_pltfm_host *pltfm_host = sdhci_priv(host);
-@@ -721,6 +787,10 @@ static void rk35xx_sdhci_reset(struct sd
+@@ -734,6 +800,10 @@ static void rk35xx_sdhci_reset(struct sd
  	struct sdhci_pltfm_host *pltfm_host = sdhci_priv(host);
  	struct dwcmshc_priv *dwc_priv = sdhci_pltfm_priv(pltfm_host);
  	struct rk35xx_priv *priv = dwc_priv->priv;
@@ -128,7 +128,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  
  	if (mask & SDHCI_RESET_ALL && priv->reset) {
  		reset_control_assert(priv->reset);
-@@ -729,6 +799,9 @@ static void rk35xx_sdhci_reset(struct sd
+@@ -742,6 +812,9 @@ static void rk35xx_sdhci_reset(struct sd
  	}
  
  	sdhci_reset(host, mask);
@@ -138,7 +138,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  }
  
  static int dwcmshc_rk35xx_init(struct device *dev, struct sdhci_host *host,
-@@ -1230,6 +1303,15 @@ static const struct dwcmshc_pltfm_data s
+@@ -1235,6 +1308,15 @@ static const struct dwcmshc_pltfm_data s
  };
  #endif
  
@@ -154,7 +154,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  static const struct dwcmshc_pltfm_data sdhci_dwcmshc_rk35xx_pdata = {
  	.pdata = {
  		.ops = &sdhci_dwcmshc_rk35xx_ops,
-@@ -1238,6 +1320,7 @@ static const struct dwcmshc_pltfm_data s
+@@ -1243,6 +1325,7 @@ static const struct dwcmshc_pltfm_data s
  		.quirks2 = SDHCI_QUIRK2_PRESET_VALUE_BROKEN |
  			   SDHCI_QUIRK2_CLOCK_DIV_ZERO_BROKEN,
  	},
@@ -162,7 +162,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  	.init = dwcmshc_rk35xx_init,
  	.postinit = dwcmshc_rk35xx_postinit,
  };
-@@ -1287,7 +1370,8 @@ static const struct cqhci_host_ops dwcms
+@@ -1292,7 +1375,8 @@ static const struct cqhci_host_ops dwcms
  	.set_tran_desc	= dwcmshc_set_tran_desc,
  };
  
@@ -172,7 +172,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  {
  	struct cqhci_host *cq_host;
  	struct sdhci_pltfm_host *pltfm_host = sdhci_priv(host);
-@@ -1317,7 +1401,10 @@ static void dwcmshc_cqhci_init(struct sd
+@@ -1322,7 +1406,10 @@ static void dwcmshc_cqhci_init(struct sd
  	}
  
  	cq_host->mmio = host->ioaddr + priv->vendor_specific_area2;
@@ -184,7 +184,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  
  	/* Enable using of 128-bit task descriptors */
  	dma64 = host->flags & SDHCI_USE_64_BIT_DMA;
-@@ -1486,7 +1573,7 @@ static int dwcmshc_probe(struct platform
+@@ -1491,7 +1578,7 @@ static int dwcmshc_probe(struct platform
  		priv->vendor_specific_area2 =
  			sdhci_readw(host, DWCMSHC_P_VENDOR_AREA2);
  
