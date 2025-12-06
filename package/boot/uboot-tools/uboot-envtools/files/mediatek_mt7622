@@ -20,10 +20,6 @@ case "$board" in
 asiarf,ap7622-wh1)
 	ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x1000" "0x10000"
 	;;
-dlink,eagle-pro-ai-m32-a1|\
-dlink,eagle-pro-ai-r32-a1)
-	ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x2000" "0x2000"
-	;;
 bananapi,bpi-r64|\
 linksys,e8450-ubi)
 	. /lib/upgrade/fit.sh
@@ -40,6 +36,10 @@ linksys,e8450-ubi)
 	;;
 buffalo,wsr-2533dhp2)
 	ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x1000" "0x20000"
+	;;
+dlink,eagle-pro-ai-m32-a1|\
+dlink,eagle-pro-ai-r32-a1)
+	ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x2000" "0x2000"
 	;;
 ruijie,rg-ew3200gx-pro)
 	ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x20000" "0x20000"
