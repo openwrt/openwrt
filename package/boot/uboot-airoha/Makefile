@@ -1,8 +1,8 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_VERSION:=2025.10
-PKG_HASH:=b4f032848e56cc8f213ad59f9132c084dbbb632bc29176d024e58220e0efdf4a
+PKG_VERSION:=2026.01-rc3
+PKG_HASH:=fe26d29ef4ef2fcf4a54b1c7d7280adc6f15755354a9ced85f5677b17fb17bbc
 PKG_BUILD_DEPENDS:=arm-trusted-firmware-tools/host
 
 UBOOT_USE_INTREE_DTC:=1

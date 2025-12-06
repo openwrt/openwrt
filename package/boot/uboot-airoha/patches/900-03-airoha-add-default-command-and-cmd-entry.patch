@@ -1,0 +1,215 @@
+From ac1a60ea638b79f3d933fee079bd90abefa3795c Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Thu, 5 Jun 2025 20:07:48 +0200
+Subject: [PATCH 34/36] airoha: add default command and cmd entry
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ configs/an7581_evb_defconfig |  4 ++++
+ configs/an7583_evb_defconfig |  4 ++++
+ configs/en7523_evb_defconfig |  5 +++++
+ defenvs/an7581_rfb_env       | 33 +++++++++++++++++++++++++++++++++
+ defenvs/an7583_rfb_env       | 33 +++++++++++++++++++++++++++++++++
+ defenvs/en7523_rfb_env       | 25 +++++++++++++++++++++++++
+ 6 files changed, 104 insertions(+)
+
+diff --git a/configs/an7581_evb_defconfig b/configs/an7581_evb_defconfig
+index 2c4f632a459..96e9910232b 100644
+--- a/configs/an7581_evb_defconfig
++++ b/configs/an7581_evb_defconfig
+@@ -1,6 +1,8 @@
+ CONFIG_ARM=y
+ CONFIG_ARCH_AIROHA=y
+ CONFIG_TARGET_AN7581=y
++CONFIG_AUTOBOOT_USE_MENUKEY=y
++CONFIG_AUTOBOOT_MENU_SHOW=y
+ CONFIG_TEXT_BASE=0x81E00000
+ CONFIG_SYS_MALLOC_F_LEN=0x4000
+ CONFIG_NR_DRAM_BANKS=1
+@@ -21,11 +23,13 @@ CONFIG_SYS_CONSOLE_IS_IN_ENV=y
+ CONFIG_HUSH_PARSER=y
+ CONFIG_SYS_PROMPT="U-Boot> "
+ CONFIG_SYS_MAXARGS=8
++CONFIG_CMD_ASKENV=y
+ CONFIG_CMD_BOOTZ=y
+ CONFIG_CMD_BOOTMENU=y
+ # CONFIG_CMD_ELF is not set
+ # CONFIG_CMD_XIMG is not set
+ CONFIG_CMD_BIND=y
++CONFIG_CMD_ERASEENV=y
+ CONFIG_CMD_GPIO=y
+ CONFIG_CMD_MMC=y
+ CONFIG_CMD_MTD=y
+diff --git a/configs/an7583_evb_defconfig b/configs/an7583_evb_defconfig
+index 2f77fb9d422..f00eb071a94 100644
+--- a/configs/an7583_evb_defconfig
++++ b/configs/an7583_evb_defconfig
+@@ -1,6 +1,8 @@
+ CONFIG_ARM=y
+ CONFIG_ARCH_AIROHA=y
+ CONFIG_TARGET_AN7583=y
++CONFIG_AUTOBOOT_USE_MENUKEY=y
++CONFIG_AUTOBOOT_MENU_SHOW=y
+ CONFIG_TEXT_BASE=0x81E00000
+ CONFIG_SYS_MALLOC_F_LEN=0x4000
+ CONFIG_NR_DRAM_BANKS=1
+@@ -21,11 +23,13 @@ CONFIG_SYS_CONSOLE_IS_IN_ENV=y
+ CONFIG_HUSH_PARSER=y
+ CONFIG_SYS_PROMPT="U-Boot> "
+ CONFIG_SYS_MAXARGS=8
++CONFIG_CMD_ASKENV=y
+ CONFIG_CMD_BOOTZ=y
+ CONFIG_CMD_BOOTMENU=y
+ # CONFIG_CMD_ELF is not set
+ # CONFIG_CMD_XIMG is not set
+ CONFIG_CMD_BIND=y
++CONFIG_CMD_ERASEENV=y
+ CONFIG_CMD_GPIO=y
+ CONFIG_CMD_MMC=y
+ CONFIG_CMD_MTD=y
+diff --git a/configs/en7523_evb_defconfig b/configs/en7523_evb_defconfig
+index 8febb6cabdd..71b8668b1fd 100644
+--- a/configs/en7523_evb_defconfig
++++ b/configs/en7523_evb_defconfig
+@@ -1,6 +1,9 @@
+ CONFIG_ARM=y
+ CONFIG_SYS_ARCH_TIMER=y
+ CONFIG_ARCH_AIROHA=y
++CONFIG_TARGET_EN7523=y
++CONFIG_AUTOBOOT_USE_MENUKEY=y
++CONFIG_AUTOBOOT_MENU_SHOW=y
+ CONFIG_TEXT_BASE=0x81E00000
+ CONFIG_SYS_MALLOC_F_LEN=0x4000
+ CONFIG_NR_DRAM_BANKS=1
+@@ -19,11 +22,13 @@ CONFIG_SYS_CONSOLE_IS_IN_ENV=y
+ CONFIG_HUSH_PARSER=y
+ CONFIG_SYS_PROMPT="U-Boot> "
+ CONFIG_SYS_MAXARGS=8
++CONFIG_CMD_ASKENV=y
+ CONFIG_CMD_BOOTZ=y
+ CONFIG_CMD_BOOTMENU=y
+ # CONFIG_CMD_ELF is not set
+ # CONFIG_CMD_XIMG is not set
+ CONFIG_CMD_BIND=y
++CONFIG_CMD_ERASEENV=y
+ CONFIG_CMD_GPIO=y
+ CONFIG_CMD_MTD=y
+ # CONFIG_CMD_SETEXPR is not set
+diff --git a/defenvs/an7581_rfb_env b/defenvs/an7581_rfb_env
+index 716ddc321e2..9c6b6e14d94 100644
+--- a/defenvs/an7581_rfb_env
++++ b/defenvs/an7581_rfb_env
+@@ -2,3 +2,36 @@ loadaddr=0x81800000
+ ipaddr=192.168.1.1
+ serverip=192.168.1.10
+ bootargs=ubi.mtd=ubi root=/dev/ubiblock0_5 rootwait
++snand_bootfile_bl2=openwrt-airoha-an7581-airoha_an7581-evb-preloader.bin
++snand_bootfile_fip=openwrt-airoha-an7581-airoha_an7581-evb-bl31-uboot.fip
++emmc_bootfile_bl2=openwrt-airoha-an7581-airoha_an7581-evb-emmc-preloader.bin
++emmc_bootfile_fip=openwrt-airoha-an7581-airoha_an7581-evb-emmc-bl31-uboot.fip
++bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 60
++bootmenu_default=0
++bootmenu_delay=0
++bootmenu_title=      [0;34m( ( ( [1;39mOpenWrt[0;34m ) ) )  [0;36m[EMMC/SNAND][0m
++bootmenu_0=Initialize environment.=run _firstboot
++bootmenu_0d=Run default boot command.=run boot_default
++bootmenu_1=[31mLoad BL31+U-Boot FIP via TFTP then write to eMMC.[0m=run emmc_boot_tftp_write_fip ; run bootmenu_confirm_return
++bootmenu_2=[31mLoad BL2 preloader via TFTP then write to eMMC.[0m=run emmc_boot_tftp_write_bl2 ; run bootmenu_confirm_return
++bootmenu_3=[31mLoad BL31+U-Boot FIP via TFTP then write to UBI.[0m=run snand_boot_tftp_write_fip ; run bootmenu_confirm_return
++bootmenu_4=[31mLoad BL2 preloader via TFTP then write to SNAND.[0m=run snand_boot_tftp_write_bl2 ; run bootmenu_confirm_return
++bootmenu_5=Reboot.=reset
++bootmenu_6=Reset all settings to factory defaults.=run reset_factory ; reset
++boot_default=bootm
++reset_factory=eraseenv && reset
++snand_reset_factory=mw $loadaddr 0xff 0x1f000 ; ubi write $loadaddr ubootenv 0x1f000 ; ubi write $loadaddr ubootenv2 0x1f000
++emmc_boot_tftp_write_fip=tftpboot $loadaddr $emmc_bootfile_fip && run emmc_write_fip
++emmc_boot_tftp_write_bl2=tftpboot $loadaddr $emmc_bootfile_bl2 && run emmc_write_bl2
++snand_boot_tftp_write_fip=tftpboot $loadaddr $snand_bootfile_fip && run ubi_write_fip && run snand_reset_factory
++snand_boot_tftp_write_bl2=tftpboot $loadaddr $snand_bootfile_bl2 && run snand_write_bl2
++emmc_write_bl2=mmc erase 0x4 0xfc && mmc write $fileaddr 0x4 0xfc
++emmc_write_fip=mmc erase 0x100 0x700 && mmc write $fileaddr 0x100 0x700 && mmc erase 0x800 0x20
++snand_write_bl2=mtd erase spi-nand0 0x0 0x20000 && mtd write bl2 $fileaddr 0x800 $filesize
++ubi_create_env=ubi check ubootenv || ubi create ubootenv 0x4000 dynamic 1 ; ubi check ubootenv2 || ubi create ubootenv2 0x4000 dynamic 2
++ubi_write_fip=ubi check fip && ubi remove fip ; ubi create fip 0x100000 static 0 && ubi write $fileaddr fip $filesize
++_init_env=setenv _init_env ; setenv _create_env ; saveenv ; saveenv
++_firstboot=setenv _firstboot ; run _switch_to_menu ; run _init_env ; bootmenu
++_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
++_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
++_init_ubi_volumes=ubi check art || ubi create art 0x400000 dynamic 3 ; ubi check kernel || ubi create kernel 0xa00000 dynamic 4 ; ubi check rootfs || ubi create rootfs 0x2800000 dynamic 5 ; ubi check kernel_alt || ubi create kernel_alt 0xa00000 dynamic 6 ; ubi check rootfs_alt || ubi create rootfs_alt 0x2800000 dynamic 7 ; ubi check rootfs_data || ubi create rootfs_data - dynamic 8
+diff --git a/defenvs/an7583_rfb_env b/defenvs/an7583_rfb_env
+index 716ddc321e2..42de6056ad4 100644
+--- a/defenvs/an7583_rfb_env
++++ b/defenvs/an7583_rfb_env
+@@ -2,3 +2,36 @@ loadaddr=0x81800000
+ ipaddr=192.168.1.1
+ serverip=192.168.1.10
+ bootargs=ubi.mtd=ubi root=/dev/ubiblock0_5 rootwait
++snand_bootfile_bl2=openwrt-airoha-an7583-airoha_an7583-evb-preloader.bin
++snand_bootfile_fip=openwrt-airoha-an7583-airoha_an7583-evb-bl31-uboot.fip
++emmc_bootfile_bl2=openwrt-airoha-an7583-airoha_an7583-evb-emmc-preloader.bin
++emmc_bootfile_fip=openwrt-airoha-an7583-airoha_an7583-evb-emmc-bl31-uboot.fip
++bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 60
++bootmenu_default=0
++bootmenu_delay=0
++bootmenu_title=      [0;34m( ( ( [1;39mOpenWrt[0;34m ) ) )  [0;36m[EMMC/SNAND][0m
++bootmenu_0=Initialize environment.=run _firstboot
++bootmenu_0d=Run default boot command.=run boot_default
++bootmenu_1=[31mLoad BL31+U-Boot FIP via TFTP then write to eMMC.[0m=run emmc_boot_tftp_write_fip ; run bootmenu_confirm_return
++bootmenu_2=[31mLoad BL2 preloader via TFTP then write to eMMC.[0m=run emmc_boot_tftp_write_bl2 ; run bootmenu_confirm_return
++bootmenu_3=[31mLoad BL31+U-Boot FIP via TFTP then write to UBI.[0m=run snand_boot_tftp_write_fip ; run bootmenu_confirm_return
++bootmenu_4=[31mLoad BL2 preloader via TFTP then write to SNAND.[0m=run snand_boot_tftp_write_bl2 ; run bootmenu_confirm_return
++bootmenu_5=Reboot.=reset
++bootmenu_6=Reset all settings to factory defaults.=run reset_factory ; reset
++boot_default=bootm
++reset_factory=eraseenv && reset
++snand_reset_factory=mw $loadaddr 0xff 0x1f000 ; ubi write $loadaddr ubootenv 0x1f000 ; ubi write $loadaddr ubootenv2 0x1f000
++emmc_boot_tftp_write_fip=tftpboot $loadaddr $emmc_bootfile_fip && run emmc_write_fip
++emmc_boot_tftp_write_bl2=tftpboot $loadaddr $emmc_bootfile_bl2 && run emmc_write_bl2
++snand_boot_tftp_write_fip=tftpboot $loadaddr $snand_bootfile_fip && run ubi_write_fip && run snand_reset_factory
++snand_boot_tftp_write_bl2=tftpboot $loadaddr $snand_bootfile_bl2 && run snand_write_bl2
++emmc_write_bl2=mmc erase 0x4 0xfc && mmc write $fileaddr 0x4 0xfc
++emmc_write_fip=mmc erase 0x100 0x700 && mmc write $fileaddr 0x100 0x700 && mmc erase 0x800 0x20
++snand_write_bl2=mtd erase spi-nand0 0x0 0x20000 && mtd write bl2 $fileaddr 0x800 $filesize
++ubi_create_env=ubi check ubootenv || ubi create ubootenv 0x4000 dynamic 1 ; ubi check ubootenv2 || ubi create ubootenv2 0x4000 dynamic 2
++ubi_write_fip=ubi check fip && ubi remove fip ; ubi create fip 0x100000 static 0 && ubi write $fileaddr fip $filesize
++_init_env=setenv _init_env ; setenv _create_env ; saveenv ; saveenv
++_firstboot=setenv _firstboot ; run _switch_to_menu ; run _init_env ; bootmenu
++_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
++_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
++_init_ubi_volumes=ubi check art || ubi create art 0x400000 dynamic 3 ; ubi check kernel || ubi create kernel 0xa00000 dynamic 4 ; ubi check rootfs || ubi create rootfs 0x2800000 dynamic 5 ; ubi check kernel_alt || ubi create kernel_alt 0xa00000 dynamic 6 ; ubi check rootfs_alt || ubi create rootfs_alt 0x2800000 dynamic 7 ; ubi check rootfs_data || ubi create rootfs_data - dynamic 8
+diff --git a/defenvs/en7523_rfb_env b/defenvs/en7523_rfb_env
+index 716ddc321e2..c4c1459aeaa 100644
+--- a/defenvs/en7523_rfb_env
++++ b/defenvs/en7523_rfb_env
+@@ -2,3 +2,28 @@ loadaddr=0x81800000
+ ipaddr=192.168.1.1
+ serverip=192.168.1.10
+ bootargs=ubi.mtd=ubi root=/dev/ubiblock0_5 rootwait
++snand_bootfile_bl2=openwrt-airoha-en7523-airoha_en7523-evb-preloader.bin
++snand_bootfile_fip=openwrt-airoha-en7523-airoha_en7523-evb-bl31-uboot.fip
++bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 60
++bootmenu_default=0
++bootmenu_delay=0
++bootmenu_title=      [0;34m( ( ( [1;39mOpenWrt[0;34m ) ) )  [0;36m[SNAND][0m
++bootmenu_0=Initialize environment.=run _firstboot
++bootmenu_0d=Run default boot command.=run boot_default
++bootmenu_1=[31mLoad BL31+U-Boot FIP via TFTP then write to UBI.[0m=run snand_boot_tftp_write_fip ; run bootmenu_confirm_return
++bootmenu_2=[31mLoad BL2 preloader via TFTP then write to SNAND.[0m=run snand_boot_tftp_write_bl2 ; run bootmenu_confirm_return
++bootmenu_3=Reboot.=reset
++bootmenu_4=Reset all settings to factory defaults.=run reset_factory ; reset
++boot_default=bootm
++reset_factory=eraseenv && reset
++snand_reset_factory=mw $loadaddr 0xff 0x1f000 ; ubi write $loadaddr ubootenv 0x1f000 ; ubi write $loadaddr ubootenv2 0x1f000
++snand_boot_tftp_write_fip=tftpboot $loadaddr $snand_bootfile_fip && run ubi_write_fip && run snand_reset_factory
++snand_boot_tftp_write_bl2=tftpboot $loadaddr $snand_bootfile_bl2 && run snand_write_bl2
++snand_write_bl2=mtd erase spi-nand0 0x0 0x20000 && mtd write bl2 $fileaddr 0x800 $filesize
++ubi_create_env=ubi check ubootenv || ubi create ubootenv 0x4000 dynamic 1 ; ubi check ubootenv2 || ubi create ubootenv2 0x4000 dynamic 2
++ubi_write_fip=ubi check fip && ubi remove fip ; ubi create fip 0x100000 static 0 && ubi write $fileaddr fip $filesize
++_init_env=setenv _init_env ; setenv _create_env ; saveenv ; saveenv
++_firstboot=setenv _firstboot ; run _switch_to_menu ; run _init_env ; bootmenu
++_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
++_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
++_init_ubi_volumes=ubi check art || ubi create art 0x400000 dynamic 3 ; ubi check kernel || ubi create kernel 0xa00000 dynamic 4 ; ubi check rootfs || ubi create rootfs 0x2800000 dynamic 5 ; ubi check kernel_alt || ubi create kernel_alt 0xa00000 dynamic 6 ; ubi check rootfs_alt || ubi create rootfs_alt 0x2800000 dynamic 7 ; ubi check rootfs_data || ubi create rootfs_data - dynamic 8
+-- 
+2.51.0
+

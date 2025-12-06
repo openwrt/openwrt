@@ -1,0 +1,63 @@
+From 4df67ab5e0cef66d51797bb4660671caa41e0e3b Mon Sep 17 00:00:00 2001
+From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Date: Wed, 15 Oct 2025 10:36:16 +0300
+Subject: [PATCH] net: airoha: declare airoha_eth_port as U_BOOT_DRIVER()
+
+Declare airoha_eth_port as U_BOOT_DRIVER(), fix airoha_alloc_gdm_port()
+to lookup a driver instead of direct airoha_eth_port usage.
+
+Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+---
+ drivers/net/airoha_eth.c | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/airoha_eth.c b/drivers/net/airoha_eth.c
+index d95a90c1df0..f21a4b822b0 100644
+--- a/drivers/net/airoha_eth.c
++++ b/drivers/net/airoha_eth.c
+@@ -424,8 +424,6 @@ static u32 airoha_rmw(void __iomem *base, u32 offset, u32 mask, u32 val)
+ #define airoha_switch_rmw(eth, offset, mask, val)		\
+ 	airoha_rmw((eth)->switch_regs, (offset), (mask), (val))
+ 
+-static struct driver airoha_eth_port;
+-
+ static inline dma_addr_t dma_map_unaligned(void *vaddr, size_t len,
+ 					   enum dma_data_direction dir)
+ {
+@@ -860,10 +858,15 @@ static int airoha_alloc_gdm_port(struct udevice *dev, ofnode node)
+ {
+ 	struct airoha_eth *eth = dev_get_priv(dev);
+ 	struct udevice *gdm_dev;
++	struct driver *gdm_drv;
+ 	char *str;
+ 	int ret;
+ 	u32 id;
+ 
++	gdm_drv = lists_driver_lookup_name("airoha-eth-port");
++	if (!gdm_drv)
++		return -ENOENT;
++
+ 	ret = ofnode_read_u32(node, "reg", &id);
+ 	if (ret)
+ 		return ret;
+@@ -878,7 +881,7 @@ static int airoha_alloc_gdm_port(struct udevice *dev, ofnode node)
+ 	snprintf(str, AIROHA_GDM_PORT_STRING_LEN,
+ 		 "airoha-gdm%d", id);
+ 
+-	ret = device_bind_with_driver_data(dev, &airoha_eth_port, str,
++	ret = device_bind_with_driver_data(dev, gdm_drv, str,
+ 					   (ulong)eth, node, &gdm_dev);
+ 	if (ret) {
+ 		free(str);
+@@ -1219,7 +1222,7 @@ static const struct eth_ops airoha_eth_ops = {
+ 	.write_hwaddr = arht_eth_write_hwaddr,
+ };
+ 
+-static struct driver airoha_eth_port = {
++U_BOOT_DRIVER(airoha_eth_port) = {
+ 	.name = "airoha-eth-port",
+ 	.id = UCLASS_ETH,
+ 	.of_to_plat = airoha_eth_port_of_to_plat,
+-- 
+2.51.0
+
