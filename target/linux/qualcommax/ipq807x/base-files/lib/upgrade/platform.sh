@@ -87,22 +87,45 @@ tplink_get_boot_part() {
 }
 
 tplink_do_upgrade() {
+	local current_boot
 	local new_boot_part
+	local boot_var
 
-	case $(tplink_get_boot_part) in
-	rootfs)
-		CI_UBIPART="rootfs_1"
-		new_boot_part=1
-	;;
-	rootfs_1)
-		CI_UBIPART="rootfs"
-		new_boot_part=0
-	;;
-	esac
+	# Detect which U-Boot variable this device uses
+	if fw_printenv partition >/dev/null 2>&1; then
+		# X80-5G uses 'partition' variable
+		boot_var="partition"
+		current_boot=$(fw_printenv -n partition)
 
-	fw_setenv -s - <<-EOF
-		tp_boot_idx $new_boot_part
-	EOF
+		case "$current_boot" in
+		nand0,0)
+			CI_UBIPART="rootfs_1"
+			new_boot_part="nand0,1"
+		;;
+		nand0,1)
+			CI_UBIPART="rootfs"
+			new_boot_part="nand0,0"
+		;;
+		esac
+
+		fw_setenv "$boot_var" "$new_boot_part"
+	else
+		# EAP devices use 'tp_boot_idx' variable
+		case $(tplink_get_boot_part) in
+		rootfs)
+			CI_UBIPART="rootfs_1"
+			new_boot_part=1
+		;;
+		rootfs_1)
+			CI_UBIPART="rootfs"
+			new_boot_part=0
+		;;
+		esac
+
+		fw_setenv -s - <<-EOF
+			tp_boot_idx $new_boot_part
+		EOF
+	fi
 
 	remove_oem_ubi_volume ubi_rootfs
 	nand_do_upgrade "$1"
