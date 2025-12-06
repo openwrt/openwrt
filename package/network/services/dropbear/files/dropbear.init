@@ -178,6 +178,8 @@ validate_section_dropbear()
 		'IdleTimeout:uinteger:0' \
 		'MaxAuthTries:uinteger:3' \
 		'RecvWindowSize:uinteger:0' \
+		'LocalPortForward:bool:1' \
+		'RemotePortForward:bool:1' \
 		'mdns:bool:1'
 }
 
@@ -317,6 +319,8 @@ dropbear_instance()
 	fi
 	[ "${PasswordAuth}" -eq 0 ] && procd_append_param command -s
 	[ "${GatewayPorts}" -eq 1 ] && procd_append_param command -a
+	[ "${LocalPortForward}" -eq 0 ] && procd_append_param command -j
+	[ "${RemotePortForward}" -eq 0 ] && procd_append_param command -k
 	[ -n "${ForceCommand}" ] && procd_append_param command -c "${ForceCommand}"
 	[ "${RootPasswordAuth}" -eq 0 ] && procd_append_param command -g
 	[ "${RootLogin}" -eq 0 ] && procd_append_param command -w
