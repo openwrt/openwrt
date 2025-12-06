@@ -68,7 +68,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  static int spinand_id_detect(struct spinand_device *spinand)
  {
  	u8 *id = spinand->id.data;
-@@ -1452,6 +1502,10 @@ static int spinand_init(struct spinand_d
+@@ -1454,6 +1504,10 @@ static int spinand_init(struct spinand_d
  	if (!spinand->scratchbuf)
  		return -ENOMEM;
  

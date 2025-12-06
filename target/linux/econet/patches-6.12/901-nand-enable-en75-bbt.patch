@@ -29,7 +29,7 @@ Signed-off-by: Caleb James DeLisle <cjd@cjdns.fr>
  {
 --- a/drivers/mtd/nand/mtk_bmt.c
 +++ b/drivers/mtd/nand/mtk_bmt.c
-@@ -422,6 +422,8 @@ int mtk_bmt_attach(struct mtd_info *mtd)
+@@ -421,6 +421,8 @@ int mtk_bmt_attach(struct mtd_info *mtd)
  		bmtd.ops = &mtk_bmt_nmbm_ops;
  	else if (of_property_read_bool(np, "mediatek,bbt"))
  		bmtd.ops = &mtk_bmt_bbt_ops;
