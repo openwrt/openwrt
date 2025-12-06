@@ -102,7 +102,7 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
 +
 +#include <linux/clk.h>
 +#include <linux/of_net.h>
-+#include <linux/pcs/pcs-qcom-ipq-uniphy.h>
++#include <linux/pcs/pcs-qcom-ipq9574.h>
 +#include <linux/phylink.h>
 +#include <linux/reset.h>
 +#include <linux/regmap.h>
@@ -494,7 +494,7 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
 +	if (!pcs_node)
 +		return -ENODEV;
 +
-+	ppe_port->pcs = ipq_unipcs_create(pcs_node);
++	ppe_port->pcs = ipq_pcs_get(pcs_node);
 +	of_node_put(pcs_node);
 +	if (IS_ERR(ppe_port->pcs)) {
 +		dev_err(ppe_dev->dev, "%s: port %d failed to create PCS\n",
@@ -551,7 +551,7 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
 +	phylink_destroy(ppe_port->phylink);
 +	ppe_port->phylink = NULL;
 +err_free_pcs:
-+	ipq_unipcs_destroy(ppe_port->pcs);
++	ipq_pcs_put(ppe_port->pcs);
 +	ppe_port->pcs = NULL;
 +	return ret;
 +}
@@ -576,7 +576,7 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
 +
 +	/* Destroy PCS */
 +	if (ppe_port->pcs) {
-+		ipq_unipcs_destroy(ppe_port->pcs);
++		ipq_pcs_put(ppe_port->pcs);
 +		ppe_port->pcs = NULL;
 +	}
 +}

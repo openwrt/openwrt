@@ -62,13 +62,6 @@
 			max-brightness = <255>;
 		};
 	};
-
-	reserved-memory {
-		q6_mem_regions: q6_mem_regions@4b000000 {
-			no-map;
-			reg = <0x0 0x4b000000 0x0 0x3000000>;
-		};
-	};
 };
 
 &sleep_clk {
@@ -127,9 +120,6 @@
 	nand@0 {
 		compatible = "spi-nand";
 		reg = <0>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-
 		nand-ecc-engine = <&qpic_nand>;
 		nand-bus-width = <8>;
 

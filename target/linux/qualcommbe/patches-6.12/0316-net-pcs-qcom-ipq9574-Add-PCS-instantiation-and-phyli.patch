@@ -1,4 +1,4 @@
-From 240ae5e0ca2ed858e25d7da6d5291d9c1f2c660a Mon Sep 17 00:00:00 2001
+From 10b609ddbf4d369c80098efa39451ef3973759b5 Mon Sep 17 00:00:00 2001
 From: Lei Wei <quic_leiwei@quicinc.com>
 Date: Fri, 7 Feb 2025 23:53:14 +0800
 Subject: [PATCH] net: pcs: qcom-ipq9574: Add PCS instantiation and phylink
@@ -14,10 +14,12 @@ MAC.
 c.) PCS phylink operations for SGMII/QSGMII interface modes.
 
 Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
+Alex G: remove phylink_pcs .neg_mode boolean
+Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 ---
- drivers/net/pcs/pcs-qcom-ipq9574.c   | 469 +++++++++++++++++++++++++++
+ drivers/net/pcs/pcs-qcom-ipq9574.c   | 468 +++++++++++++++++++++++++++
  include/linux/pcs/pcs-qcom-ipq9574.h |  15 +
- 2 files changed, 484 insertions(+)
+ 2 files changed, 483 insertions(+)
  create mode 100644 include/linux/pcs/pcs-qcom-ipq9574.h
 
 --- a/drivers/net/pcs/pcs-qcom-ipq9574.c
@@ -88,7 +90,7 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
  /* PCS private data */
  struct ipq_pcs {
  	struct device *dev;
-@@ -31,8 +77,359 @@ struct ipq_pcs {
+@@ -31,8 +77,358 @@ struct ipq_pcs {
  	struct clk_hw rx_hw;
  	/* TX clock supplied to NSSCC */
  	struct clk_hw tx_hw;
@@ -310,7 +312,7 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
 +	clk_disable_unprepare(qpcs_mii->tx_clk);
 +}
 +
-+static void ipq_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mode,
++static void ipq_pcs_get_state(struct phylink_pcs *pcs,
 +			      struct phylink_link_state *state)
 +{
 +	struct ipq_pcs_mii *qpcs_mii = phylink_pcs_to_qpcs_mii(pcs);
@@ -422,7 +424,6 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
 +		qpcs_mii->qpcs = qpcs;
 +		qpcs_mii->index = index;
 +		qpcs_mii->pcs.ops = &ipq_pcs_phylink_ops;
-+		qpcs_mii->pcs.neg_mode = true;
 +		qpcs_mii->pcs.poll = true;
 +
 +		qpcs_mii->rx_clk = devm_get_clk_from_child(dev, mii_np, "rx");
@@ -448,7 +449,7 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
  static unsigned long ipq_pcs_clk_rate_get(struct ipq_pcs *qpcs)
  {
  	switch (qpcs->interface) {
-@@ -219,6 +616,10 @@ static int ipq9574_pcs_probe(struct plat
+@@ -219,6 +615,10 @@ static int ipq9574_pcs_probe(struct plat
  	if (ret)
  		return ret;
  
@@ -459,7 +460,7 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
  	platform_set_drvdata(pdev, qpcs);
  
  	return 0;
-@@ -230,6 +631,74 @@ static const struct of_device_id ipq9574
+@@ -230,6 +630,74 @@ static const struct of_device_id ipq9574
  };
  MODULE_DEVICE_TABLE(of, ipq9574_pcs_of_mtable);
  

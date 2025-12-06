@@ -13,6 +13,9 @@ hongdian,h7920-v40)
 	ucidef_add_gpio_switch "modem_enable" "Modem power" "modem_power" "1"
 	ucidef_add_gpio_switch "switch_serial_mode" "Switch RS232 to RS485" "serial_rs485_mode" "0"
 	;;
+hongdian,h8850-v20)
+	ucidef_add_gpio_switch "modem_enable" "Modem power" "modem_power" "1"
+	;;
 teltonika,rut200|\
 teltonika,rut241)
 	ucidef_add_gpio_switch "digital_output" "Digital output" "digital_output" "0"
@@ -26,6 +29,7 @@ teltonika,rut9x1)
 	ucidef_add_gpio_switch "sim_sel" "SIM select" "sim_sel" "0"
 	ucidef_add_gpio_switch "esim_sel" "eSIM select" "esim_sel" "0"
 	;;
+teltonika,rut976|\
 teltonika,rut9x6)
 	ucidef_add_gpio_switch "digital_output" "Digital output 1" "digital_output1" "0"
 	ucidef_add_gpio_switch "digital_output" "Digital output 2" "digital_output2" "0"

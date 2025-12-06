@@ -155,6 +155,16 @@
 	};
 };
 
+&eth0 {
+	nvmem-cells = <&macaddr_uboot_ethaddr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&ppe {
+	nvmem-cells = <&macaddr_uboot_ethaddr 1>;
+	nvmem-cell-names = "mac-address";
+};
+
 &gphy0 {
 	lantiq,gphy-mode = <GPHY_MODE_FE>;
 };
@@ -267,6 +277,14 @@
 			partition@ff0000 {
 				reg = <0xff0000 0x2000>;
 				label = "u-boot-env";
+
+				nvmem-layout {
+					compatible = "u-boot,env";
+
+					macaddr_uboot_ethaddr: ethaddr {
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@ff3000 {

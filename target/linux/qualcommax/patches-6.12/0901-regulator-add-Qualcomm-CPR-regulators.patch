@@ -7102,7 +7102,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +#endif /* __REGULATOR_CPR_REGULATOR_H__ */
 --- /dev/null
 +++ b/drivers/regulator/cpr3-util.c
-@@ -0,0 +1,2760 @@
+@@ -0,0 +1,2758 @@
 +/*
 + * Copyright (c) 2015-2017, The Linux Foundation. All rights reserved.
 + *
@@ -7883,7 +7883,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	}
 +
 +	/* Load optional system-supply voltages */
-+	if (of_find_property(vreg->of_node, "qcom,system-voltage", NULL)) {
++	if (of_property_present(vreg->of_node, "qcom,system-voltage")) {
 +		rc = cpr3_parse_corner_array_property(vreg,
 +			"qcom,system-voltage", 1, temp);
 +		if (rc)
@@ -7959,8 +7959,8 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +		}
 +	}
 +
-+	if (of_find_property(vreg->of_node,
-+				"qcom,allow-aging-voltage-adjustment", NULL)) {
++	if (of_property_present(vreg->of_node,
++				"qcom,allow-aging-voltage-adjustment")) {
 +		rc = cpr3_parse_array_property(vreg,
 +			"qcom,allow-aging-voltage-adjustment",
 +			1, &aging_allowed);
@@ -7970,8 +7970,8 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +		vreg->aging_allowed = aging_allowed;
 +	}
 +
-+	if (of_find_property(vreg->of_node,
-+		       "qcom,allow-aging-open-loop-voltage-adjustment", NULL)) {
++	if (of_property_present(vreg->of_node,
++		       "qcom,allow-aging-open-loop-voltage-adjustment")) {
 +		rc = cpr3_parse_array_property(vreg,
 +			"qcom,allow-aging-open-loop-voltage-adjustment",
 +			1, &aging_allowed);
@@ -8009,8 +8009,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +		}
 +		vreg->aging_corner -= CPR3_CORNER_OFFSET;
 +
-+		if (of_find_property(vreg->of_node, "qcom,cpr-aging-derate",
-+					NULL)) {
++		if (of_property_present(vreg->of_node, "qcom,cpr-aging-derate")) {
 +			rc = cpr3_parse_corner_array_property(vreg,
 +				"qcom,cpr-aging-derate", 1, temp);
 +			if (rc)
@@ -8153,7 +8152,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	int len = 0;
 +
 +	if (!of_find_property(ctrl->dev->of_node, "qcom,cpr-interrupt-affinity",
-+				&len)) {
++			      &len)) {
 +		/* No IRQ affinity required */
 +		return 0;
 +	}
@@ -8199,7 +8198,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +		return -EINVAL;
 +	}
 +
-+	if (!of_find_property(node, "qcom,cpr-panic-reg-name-list", NULL)) {
++	if (!of_property_present(node, "qcom,cpr-panic-reg-name-list")) {
 +		cpr3_err(ctrl, "property qcom,cpr-panic-reg-name-list not specified\n");
 +		return -EINVAL;
 +	}
@@ -8348,7 +8347,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +			return rc;
 +	}
 +
-+	if (of_find_property(ctrl->dev->of_node, "clock-names", NULL)) {
++	if (of_property_present(ctrl->dev->of_node, "clock-names")) {
 +		ctrl->core_clk = devm_clk_get(ctrl->dev, "core_clk");
 +		if (IS_ERR(ctrl->core_clk)) {
 +			rc = PTR_ERR(ctrl->core_clk);
@@ -8363,7 +8362,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	if (rc)
 +		return rc;
 +
-+	if (of_find_property(ctrl->dev->of_node, "vdd-supply", NULL)) {
++	if (of_property_present(ctrl->dev->of_node, "vdd-supply")) {
 +		ctrl->vdd_regulator = devm_regulator_get(ctrl->dev, "vdd");
 +		if (IS_ERR(ctrl->vdd_regulator)) {
 +			rc = PTR_ERR(ctrl->vdd_regulator);
@@ -8429,7 +8428,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +		return -EINVAL;
 +	}
 +
-+	if (of_find_property(ctrl->dev->of_node, "vdd-supply", NULL)) {
++	if (of_property_present(ctrl->dev->of_node, "vdd-supply")) {
 +		ctrl->vdd_regulator = devm_regulator_get(ctrl->dev, "vdd");
 +		if (IS_ERR(ctrl->vdd_regulator)) {
 +			rc = PTR_ERR(ctrl->vdd_regulator);
@@ -8547,7 +8546,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	u32 *floor_range;
 +	int rc = 0;
 +
-+	if (!of_find_property(vreg->of_node, prop, NULL))
++	if (!of_property_present(vreg->of_node, prop))
 +		goto enforce_monotonicity;
 +
 +	floor_range = kcalloc(vreg->corner_count, sizeof(*floor_range),
@@ -8660,7 +8659,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	const char prop_name_v2[] = "qcom,cpr-parts-voltage-v2";
 +
 +	soc_version_major = read_ipq_soc_version_major();
-+        BUG_ON(soc_version_major <= 0);
++	BUG_ON(soc_version_major <= 0);
 +
 +	if (of_property_read_u32(vreg->of_node, "qcom,cpr-part-types",
 +				  &vreg->part_type_supported))
@@ -8722,7 +8721,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +			sizeof(prop_str));
 +	}
 +
-+	if (!of_find_property(vreg->of_node, prop_str, NULL)) {
++	if (!of_property_present(vreg->of_node, prop_str)) {
 +		/* No adjustment required. */
 +		cpr3_info(vreg, "No cold temperature adjustment required.\n");
 +		return 0;
@@ -8779,7 +8778,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +		strscpy(prop_str, "qcom,cpr-cold-temp-threshold",
 +			sizeof(prop_str));
 +
-+	if (!of_find_property(vreg->of_node, prop_str, NULL)) {
++	if (!of_property_present(vreg->of_node, prop_str)) {
 +		/* No adjustment required. */
 +		return false;
 +	} else
@@ -8827,18 +8826,18 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +		strscpy(prop_str, "qcom,cpr-cold-temp-threshold",
 +			sizeof(prop_str));
 +
-+	if (!of_find_property(vreg->of_node, req_prop_str, NULL)) {
++	if (!of_property_present(vreg->of_node, req_prop_str)) {
 +		/* No adjustment required. */
 +		cpr3_info(vreg, "Cold temperature adjustment not required.\n");
 +		return 0;
 +	}
 +
-+	if (!of_find_property(vreg->of_node, prop_str, NULL)) {
++	if (!of_property_present(vreg->of_node, prop_str)) {
 +		/* No adjustment required. */
-+                cpr3_err(vreg, "Missing %s required for %s\n",
++		cpr3_err(vreg, "Missing %s required for %s\n",
 +			prop_str, req_prop_str);
 +		return -EINVAL;
-+        }
++	}
 +
 +	rc = of_property_read_u32(vreg->of_node, prop_str, &temp);
 +	if (rc) {
@@ -8886,7 +8885,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +			sizeof(prop_str));
 +	}
 +
-+	if (!of_find_property(vreg->of_node, prop_str, NULL)) {
++	if (!of_property_present(vreg->of_node, prop_str)) {
 +		/* No adjustment required. */
 +		return 0;
 +	}
@@ -8930,8 +8929,8 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	int i, rc, prev_volt, min_volt;
 +	int *volt_adjust, *volt_diff;
 +
-+	if (!of_find_property(vreg->of_node,
-+			"qcom,cpr-open-loop-voltage-adjustment", NULL)) {
++	if (!of_property_present(vreg->of_node,
++			"qcom,cpr-open-loop-voltage-adjustment")) {
 +		/* No adjustment required. */
 +		return 0;
 +	}
@@ -8961,8 +8960,8 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +		}
 +	}
 +
-+	if (of_find_property(vreg->of_node,
-+			"qcom,cpr-open-loop-voltage-min-diff", NULL)) {
++	if (of_property_present(vreg->of_node,
++			"qcom,cpr-open-loop-voltage-min-diff")) {
 +		rc = cpr3_parse_corner_array_property(vreg,
 +			"qcom,cpr-open-loop-voltage-min-diff", 1, volt_diff);
 +		if (rc) {
@@ -9089,12 +9088,12 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	char volt_fuse_adj[] = "qcom,cpr-closed-loop-voltage-fuse-adjustment";
 +	char ro_scaling[] = "qcom,cpr-ro-scaling-factor";
 +
-+	if (!of_find_property(vreg->of_node, volt_adj, NULL)
-+	    && !of_find_property(vreg->of_node, volt_fuse_adj, NULL)
++	if (!of_property_present(vreg->of_node, volt_adj)
++	    && !of_property_present(vreg->of_node, volt_fuse_adj)
 +	    && !vreg->aging_allowed) {
 +		/* No adjustment required. */
 +		return 0;
-+	} else if (!of_find_property(vreg->of_node, ro_scaling, NULL)) {
++	} else if (!of_property_present(vreg->of_node, ro_scaling)) {
 +		cpr3_err(vreg, "Missing %s required for closed-loop voltage adjustment.\n",
 +				ro_scaling);
 +		return -EINVAL;
@@ -9121,7 +9120,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +		 &ro_all_scale[vreg->corner[i].cpr_fuse_corner * CPR3_RO_COUNT],
 +		 sizeof(*ro_all_scale) * CPR3_RO_COUNT);
 +
-+	if (of_find_property(vreg->of_node, volt_fuse_adj, NULL)) {
++	if (of_property_present(vreg->of_node, volt_fuse_adj)) {
 +		rc = cpr3_parse_array_property(vreg, volt_fuse_adj,
 +			vreg->fuse_corner_count, volt_adjust_fuse);
 +		if (rc) {
@@ -9131,7 +9130,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +		}
 +	}
 +
-+	if (of_find_property(vreg->of_node, volt_adj, NULL)) {
++	if (of_property_present(vreg->of_node, volt_adj)) {
 +		rc = cpr3_parse_corner_array_property(vreg, volt_adj,
 +			1, volt_adjust);
 +		if (rc) {
@@ -9161,7 +9160,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	struct device_node *node = ctrl->dev->of_node;
 +	int rc;
 +
-+	if (!of_find_property(node, "qcom,apm-ctrl", NULL)) {
++	if (!of_property_present(node, "qcom,apm-ctrl")) {
 +		/* No APM used */
 +		return 0;
 +	}
@@ -9344,9 +9343,9 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	int *allow_core_count_adj = NULL, *allow_temp_adj = NULL;
 +	char prop_str[75];
 +
-+	if (of_find_property(node, use_corner_band ?
++	if (of_property_present(node, use_corner_band ?
 +			     "qcom,corner-band-allow-temp-adjustment"
-+			     : "qcom,corner-allow-temp-adjustment", NULL)) {
++			     : "qcom,corner-allow-temp-adjustment")) {
 +		if (!ctrl->allow_temp_adj) {
 +			cpr3_err(ctrl, "Temperature adjustment configurations missing\n");
 +			return -EINVAL;
@@ -9355,10 +9354,9 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +		vreg->allow_temp_adj = true;
 +	}
 +
-+	if (of_find_property(node, use_corner_band ?
++	if (of_property_present(node, use_corner_band ?
 +			     "qcom,corner-band-allow-core-count-adjustment"
-+			     : "qcom,corner-allow-core-count-adjustment",
-+			     NULL)) {
++			     : "qcom,corner-allow-core-count-adjustment")) {
 +		rc = of_property_read_u32(node, "qcom,max-core-count",
 +				&vreg->max_core_count);
 +		if (rc) {
@@ -9627,8 +9625,8 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	u32 *corner_map;
 +	int rc = 0, i;
 +
-+	if (!of_find_property(vreg->of_node,
-+		"qcom,cpr-fused-closed-loop-voltage-adjustment-map", NULL)) {
++	if (!of_property_present(vreg->of_node,
++		"qcom,cpr-fused-closed-loop-voltage-adjustment-map")) {
 +		/* No closed-loop offset required. */
 +		return 0;
 +	}
@@ -9788,16 +9786,16 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	int *volt_adjust, *ro_scale;
 +	bool explicit_adjustment, fused_adjustment, is_increasing;
 +
-+	explicit_adjustment = of_find_property(vreg->of_node,
-+		"qcom,cpr-closed-loop-voltage-adjustment", NULL);
-+	fused_adjustment = of_find_property(vreg->of_node,
-+		"qcom,cpr-fused-closed-loop-voltage-adjustment-map", NULL);
++	explicit_adjustment = of_property_present(vreg->of_node,
++		"qcom,cpr-closed-loop-voltage-adjustment");
++	fused_adjustment = of_property_present(vreg->of_node,
++		"qcom,cpr-fused-closed-loop-voltage-adjustment-map");
 +
 +	if (!explicit_adjustment && !fused_adjustment && !vreg->aging_allowed) {
 +		/* No adjustment required. */
 +		return 0;
-+	} else if (!of_find_property(vreg->of_node,
-+			"qcom,cpr-ro-scaling-factor", NULL)) {
++	} else if (!of_property_present(vreg->of_node,
++			"qcom,cpr-ro-scaling-factor")) {
 +		cpr3_err(vreg, "qcom,cpr-ro-scaling-factor is required for closed-loop voltage adjustment, but is missing\n");
 +		return -EINVAL;
 +	}
@@ -10446,7 +10444,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	 * entry with RO select values other than zero, then dtsi values will
 +	 * be used.
 +	 */
-+	if (of_find_property(node, "qcom,cpr-ro-sel", NULL)) {
++	if (of_property_present(node, "qcom,cpr-ro-sel")) {
 +		temp = kcalloc(vreg->fuse_corner_count, sizeof(*temp),
 +				GFP_KERNEL);
 +		if (!temp)
@@ -10674,9 +10672,9 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +			cpr3_err(vreg, "open-loop voltage adjustment failed, rc=%d\n",
 +				rc);
 +
-+		if (of_find_property(node,
-+			"qcom,cpr-misc-fuse-voltage-adjustment",
-+			NULL)) {
++		if (of_property_present(node,
++			"qcom,cpr-misc-fuse-voltage-adjustment"
++			)) {
 +			misc_adj_volt = kcalloc(vreg->corner_count,
 +					sizeof(*misc_adj_volt), GFP_KERNEL);
 +			if (!misc_adj_volt) {
@@ -10819,8 +10817,8 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +		goto done;
 +	}
 +
-+	if (of_find_property(vreg->of_node,
-+		"qcom,cpr-misc-fuse-voltage-adjustment", NULL)) {
++	if (of_property_present(vreg->of_node,
++		"qcom,cpr-misc-fuse-voltage-adjustment")) {
 +		voltage_adj_misc = kcalloc(vreg->corner_count,
 +				sizeof(*voltage_adj_misc), GFP_KERNEL);
 +		if (!voltage_adj_misc) {
@@ -11117,7 +11115,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +		/* Voltage boost is disabled in fuse */
 +		return 0;
 +
-+	if (of_find_property(vreg->of_node, "qcom,allow-boost", NULL)) {
++	if (of_property_present(vreg->of_node, "qcom,allow-boost")) {
 +		rc = cpr3_parse_array_property(vreg, "qcom,allow-boost", 1,
 +				&boost_allowed);
 +		if (rc)
@@ -11138,8 +11136,8 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	/* Log boost voltage value for debugging purposes. */
 +	cpr3_info(vreg, "Boost open-loop=%7d uV\n", boost_voltage);
 +
-+	if (of_find_property(vreg->of_node,
-+			"qcom,cpr-boost-voltage-fuse-adjustment", NULL)) {
++	if (of_property_present(vreg->of_node,
++			"qcom,cpr-boost-voltage-fuse-adjustment")) {
 +		rc = cpr3_parse_array_property(vreg,
 +			"qcom,cpr-boost-voltage-fuse-adjustment",
 +			1, &boost_voltage_adjust);
@@ -11199,8 +11197,8 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	if (!boost_table)
 +		return -ENOMEM;
 +
-+	if (of_find_property(vreg->of_node,
-+				"qcom,cpr-boost-temp-adjustment", NULL)) {
++	if (of_property_present(vreg->of_node,
++				"qcom,cpr-boost-temp-adjustment")) {
 +		boost_temp_adj = kcalloc(corner->sdelta->temp_band_count,
 +					sizeof(*boost_temp_adj), GFP_KERNEL);
 +		if (!boost_temp_adj)
@@ -11390,7 +11388,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +			"qcom,cpr-voltage-settling-time",
 +			&ctrl->voltage_settling_time);
 +
-+	if (of_find_property(ctrl->dev->of_node, "vdd-limit-supply", NULL)) {
++	if (of_property_present(ctrl->dev->of_node, "vdd-limit-supply")) {
 +		ctrl->vdd_limit_regulator =
 +			devm_regulator_get(ctrl->dev, "vdd-limit");
 +		if (IS_ERR(ctrl->vdd_limit_regulator)) {

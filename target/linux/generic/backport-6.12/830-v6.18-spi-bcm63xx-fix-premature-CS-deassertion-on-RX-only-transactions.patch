@@ -1,0 +1,59 @@
+From fd9862f726aedbc2f29a29916cabed7bcf5cadb6 Mon Sep 17 00:00:00 2001
+From: Hang Zhou <929513338@qq.com>
+Date: Mon, 17 Nov 2025 01:08:35 +1100
+Subject: [PATCH] spi: bcm63xx: fix premature CS deassertion on RX-only
+ transactions
+
+On BCM6358 (and also observed on BCM6368) the controller appears to
+only generate as many SPI clocks as bytes that have been written into
+the TX FIFO. For RX-only transfers the driver programs the transfer
+length in SPI_MSG_CTL but does not write anything into the FIFO, so
+chip select is deasserted early and the RX transfer segment is never
+fully clocked in.
+
+A concrete failing case is a three-transfer MAC address read from
+SPI-NOR:
+  - TX 0x03 (read command)
+  - TX 3-byte address
+  - RX 6 bytes (MAC)
+
+In contrast, a two-transfer JEDEC-ID read (0x9f + 6-byte RX) works
+because the driver uses prepend_len and writes dummy bytes into the
+TX FIFO for the RX part.
+
+Fix this by writing 0xff dummy bytes into the TX FIFO for RX-only
+segments so that the number of bytes written to the FIFO matches the
+total message length seen by the controller.
+
+Fixes: b17de076062a ("spi/bcm63xx: work around inability to keep CS up")
+
+Signed-off-by: Hang Zhou <929513338@qq.com>
+Link: https://patch.msgid.link/tencent_7AC88FCB3076489A4A7E6C2163DF1ACF8D06@qq.com
+Signed-off-by: Mark Brown <broonie@kernel.org>
+---
+ drivers/spi/spi-bcm63xx.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+--- a/drivers/spi/spi-bcm63xx.c
++++ b/drivers/spi/spi-bcm63xx.c
+@@ -247,6 +247,20 @@ static int bcm63xx_txrx_bufs(struct spi_
+ 
+ 		if (t->rx_buf) {
+ 			do_rx = true;
++
++			/*
++			 * In certain hardware implementations, there appears to be a
++			 * hidden accumulator that tracks the number of bytes written into
++			 * the hardware FIFO, and this accumulator overrides the length in
++			 * the SPI_MSG_CTL register.
++			 *
++			 * Therefore, for read-only transfers, we need to write some dummy
++			 * value into the FIFO to keep the accumulator tracking the correct
++			 * length.
++			 */
++			if (!t->tx_buf)
++				memset_io(bs->tx_io + len, 0xFF, t->len);
++
+ 			/* prepend is half-duplex write only */
+ 			if (t == first)
+ 				prepend_len = 0;

@@ -11,6 +11,7 @@
 	compatible = "sitecom,wlr-7100", "qca,ar9344";
 
 	aliases {
+		label-mac-device = &eth0;
 		led-boot = &led_power;
 		led-failsafe = &led_power;
 		led-running = &led_power;
@@ -47,12 +48,6 @@
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
-
-		wlan2g {
-			label = "blue:wlan2g";
-			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
-		};
 	};
 };
 
@@ -63,6 +58,9 @@
 
 	phy-mode = "rgmii";
 	phy-handle = <&phy0>;
+
+	nvmem-cells = <&macaddr_uboot_ethaddr 0>;
+	nvmem-cell-names = "mac-address";
 
 	gmac-config {
 		device = <&gmac>;
@@ -95,8 +93,8 @@
 	wifi@0,0 {
 		compatible = "qcom,ath10k";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&cal_art_5000>;
-		nvmem-cell-names = "calibration";
+		nvmem-cells = <&cal_art_5000>, <&macaddr_uboot_ethaddr 1>;
+		nvmem-cell-names = "calibration", "mac-address";
 	};
 };
 
@@ -127,6 +125,14 @@
 				label = "u-boot-env";
 				reg = <0x030000 0x010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "u-boot,env";
+
+					macaddr_uboot_ethaddr: ethaddr {
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@40000 {
@@ -157,6 +163,10 @@
 					#address-cells = <1>;
 					#size-cells = <1>;
 
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+
 					cal_art_5000: calibration@5000 {
 						reg = <0x5000 0x844>;
 					};
@@ -177,5 +187,11 @@
 &wmac {
 	status = "okay";
 
-	qca,no-eeprom;
+	nvmem-cells = <&cal_art_1000>, <&macaddr_uboot_ethaddr 0>;
+	nvmem-cell-names = "calibration", "mac-address";
+
+	led {
+		led-sources = <14>;
+		led-active-low;
+	};
 };

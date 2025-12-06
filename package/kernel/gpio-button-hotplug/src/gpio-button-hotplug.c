@@ -72,7 +72,7 @@ extern u64 uevent_next_seqnum(void);
 		.name = (_name),	\
 	}
 
-static struct bh_map button_map[] = {
+static const struct bh_map button_map[] = {
 	BH_MAP(BTN_0,			"BTN_0"),
 	BH_MAP(BTN_1,			"BTN_1"),
 	BH_MAP(BTN_2,			"BTN_2"),
@@ -463,13 +463,12 @@ static int gpio_keys_button_probe(struct platform_device *pdev,
 		return -EINVAL;
 	}
 
-	buttons = devm_kzalloc(dev, pdata->nbuttons * sizeof(struct gpio_keys_button),
+	buttons = devm_kmemdup_array(dev, pdata->buttons, pdata->nbuttons, sizeof(struct gpio_keys_button),
 		       GFP_KERNEL);
 	if (!buttons) {
 		dev_err(dev, "no memory for button data\n");
 		return -ENOMEM;
 	}
-	memcpy(buttons, pdata->buttons, pdata->nbuttons * sizeof(struct gpio_keys_button));
 
 	bdev = devm_kzalloc(dev, sizeof(struct gpio_keys_button_dev) +
 		       pdata->nbuttons * sizeof(struct gpio_keys_button_data),

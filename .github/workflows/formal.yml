@@ -5,8 +5,14 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   build:
     name: Test Formalities
     uses: openwrt/actions-shared-workflows/.github/workflows/formal.yml@main
+    # with:
+    #   # Post formality check summaries to the PR.
+    #   # Repo's permissions need to be updated for actions to modify PRs:
+    #   # https://docs.github.com/en/rest/issues/comments?apiVersion=2022-11-28#create-an-issue-comment
+    #   post_comment: true

@@ -27,6 +27,7 @@ snr,snr-cpe-ax2)
 asus,tuf-ax4200)
 	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:06:white:wan" "eth1" "link tx rx"
 	;;
+asus,tuf-ax4200q|\
 asus,tuf-ax6000)
 	ucidef_set_led_netdev "lan5" "LAN5" "mdio-bus:05:white:lan" "lan5" "link tx rx"
 	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:06:white:wan" "eth1" "link tx rx"
@@ -60,7 +61,8 @@ cudy,re3000-v1|\
 wavlink,wl-wn573hx3)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0" "link tx rx"
 	;;
-cudy,wr3000-v1)
+cudy,wr3000-v1|\
+cudy,wr3000e-v1)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan"
 	;;
 cudy,wr3000h-v1|\
@@ -106,6 +108,12 @@ mercusys,mr80x-v3)
 	ucidef_set_led_netdev "lan2" "lan-2" "green:lan-2" "lan2" "link tx rx"
 	ucidef_set_led_netdev "lan3" "lan-3" "green:lan-3" "lan3" "link tx rx"
 	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan" "link tx rx"
+	;;
+mercusys,mr85x)
+	ucidef_set_led_switch "lan0" "lan-0" "green:lan-0" "switch0" "0x01"
+	ucidef_set_led_switch "lan1" "lan-1" "green:lan-1" "switch0" "0x02"
+	ucidef_set_led_switch "lan2" "lan-2" "green:lan-2" "switch0" "0x04"
+	ucidef_set_led_netdev "wan" "wan" "green:wan" "eth1" "link tx rx"
 	;;
 mercusys,mr90x-v1|\
 mercusys,mr90x-v1-ubi)

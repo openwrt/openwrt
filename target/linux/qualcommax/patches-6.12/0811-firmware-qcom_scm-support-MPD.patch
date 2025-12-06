@@ -28,7 +28,7 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  
 --- a/drivers/firmware/qcom/qcom_scm.c
 +++ b/drivers/firmware/qcom/qcom_scm.c
-@@ -807,6 +807,85 @@ bool qcom_scm_pas_supported(u32 peripher
+@@ -808,6 +808,85 @@ bool qcom_scm_pas_supported(u32 peripher
  EXPORT_SYMBOL_GPL(qcom_scm_pas_supported);
  
  /**
@@ -117,9 +117,9 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 --- a/drivers/firmware/qcom/qcom_scm.h
 +++ b/drivers/firmware/qcom/qcom_scm.h
 @@ -102,6 +102,9 @@ struct qcom_tzmem_pool *qcom_scm_get_tzm
- #define QCOM_SCM_PIL_PAS_SHUTDOWN	0x06
  #define QCOM_SCM_PIL_PAS_IS_SUPPORTED	0x07
  #define QCOM_SCM_PIL_PAS_MSS_RESET	0x0a
+ #define QCOM_SCM_PIL_PAS_INIT_IMAGE_V2	0x1a
 +#define QCOM_SCM_INTERNAL_WIFI_POWERUP	0x17
 +#define QCOM_SCM_INTERNAL_WIFI_SHUTDOWN	0x18
 +#define QCOM_SCM_PIL_PAS_LOAD_SEG	0x19

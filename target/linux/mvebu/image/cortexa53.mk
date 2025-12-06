@@ -1,3 +1,13 @@
+define Device/cznic_turris-mox
+  $(call Device/Default-arm64)
+  DEVICE_VENDOR := CZ.NIC
+  DEVICE_MODEL := Turris MOX
+  DEVICE_PACKAGES := kmod-usb2 kmod-gpio-button-hotplug kmod-rtc-ds1307 kmod-i2c-pxa
+  SOC := armada-3720
+  BOOT_SCRIPT := turris-mox
+endef
+TARGET_DEVICES += cznic_turris-mox
+
 define Device/glinet_gl-mv1000
   $(call Device/Default-arm64)
   DEVICE_VENDOR := GL.iNet

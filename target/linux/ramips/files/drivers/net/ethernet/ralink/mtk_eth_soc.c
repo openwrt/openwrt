@@ -1555,10 +1555,8 @@ static int fe_probe(struct platform_device *pdev)
 	netdev->base_addr = (unsigned long)fe_base;
 
 	netdev->irq = platform_get_irq(pdev, 0);
-	if (netdev->irq < 0) {
-		dev_err(&pdev->dev, "no IRQ resource found\n");
+	if (netdev->irq < 0)
 		return -ENXIO;
-	}
 
 	priv = netdev_priv(netdev);
 	spin_lock_init(&priv->page_lock);

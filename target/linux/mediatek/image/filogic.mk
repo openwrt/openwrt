@@ -428,6 +428,28 @@ endif
 endef
 TARGET_DEVICES += asus_tuf-ax4200
 
+define Device/asus_tuf-ax4200q
+  DEVICE_VENDOR := ASUS
+  DEVICE_MODEL := TUF-AX4200Q
+  DEVICE_DTS := mt7986a-asus-tuf-ax4200q
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
+  IMAGES := sysupgrade.bin
+  KERNEL := kernel-bin | lzma | \
+        fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+        fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+ifeq ($(IB),)
+ifeq ($(CONFIG_TARGET_INITRAMFS_FORCE),y)
+  ARTIFACTS := initramfs.trx
+  ARTIFACT/initramfs.trx := append-image-stage initramfs-kernel.bin | \
+	uImage none | asus-trx -v 3 -n TUF-AX4200
+endif
+endif
+endef
+TARGET_DEVICES += asus_tuf-ax4200q
+
 define Device/asus_tuf-ax6000
   DEVICE_VENDOR := ASUS
   DEVICE_MODEL := TUF-AX6000
@@ -645,11 +667,7 @@ TARGET_DEVICES += bananapi_bpi-r4
 
 define Device/bananapi_bpi-r4-poe
   DEVICE_MODEL := BPi-R4 2.5GE
-ifneq ($(CONFIG_LINUX_6_6),)
-  DEVICE_DTS := mt7988a-bananapi-bpi-r4-poe
-else
   DEVICE_DTS := mt7988a-bananapi-bpi-r4-2g5
-endif
   DEVICE_DTS_CONFIG := config-mt7988a-bananapi-bpi-r4-poe
   $(call Device/bananapi_bpi-r4-common)
   DEVICE_PACKAGES += mt7988-2p5g-phy-firmware
@@ -1909,6 +1927,19 @@ define Device/mercusys_mr80x-v3
 endef
 TARGET_DEVICES += mercusys_mr80x-v3
 
+define Device/mercusys_mr85x
+  DEVICE_VENDOR := MERCUSYS
+  DEVICE_MODEL := MR85X
+  DEVICE_DTS := mt7981b-mercusys-mr85x
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-phy-airoha-en8811h swconfig kmod-switch-rtl8367s
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += mercusys_mr85x
+
 define Device/mercusys_mr90x-v1
   DEVICE_VENDOR := MERCUSYS
   DEVICE_MODEL := MR90X v1
@@ -2618,6 +2649,21 @@ define Device/wavlink_wl-wn573hx3
   IMAGE/WN573HX3-sysupgrade.bin := append-kernel | pad-to 128k | append-rootfs | pad-rootfs | check-size | append-metadata
 endef
 TARGET_DEVICES += wavlink_wl-wn573hx3
+
+define Device/widelantech_wap430x
+  DEVICE_VENDOR := Widelantech
+  DEVICE_MODEL := WAP430X
+  DEVICE_ALT1_VENDOR := Widelantech
+  DEVICE_ALT1_MODEL := AX3000AM
+  DEVICE_ALT1_VENDOR := UeeVii
+  DEVICE_ALT1_MODEL := UAP200
+  DEVICE_DTS := mt7981b-widelantech-wap430x
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  IMAGE_SIZE := 14784k
+  SUPPORTED_DEVICES += UAP200 AX3000AM # allow upgrade via GECOOS UART menu
+endef
+TARGET_DEVICES += widelantech_wap430x
 
 define Device/xiaomi_mi-router-ax3000t
   DEVICE_VENDOR := Xiaomi

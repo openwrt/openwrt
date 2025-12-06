@@ -193,8 +193,6 @@
 	flash@0 {
 		/*"n25q128a11" is required for proper nand recognition in u-boot. */
 		compatible = "jedec,spi-nor", "n25q128a11";
-		#address-cells = <1>;
-		#size-cells = <1>;
 		reg = <0>;
 		spi-max-frequency = <24000000>;
 
@@ -269,8 +267,6 @@
 		 * nand recognition in u-boot.
 		 */
 		compatible = "spi-nand","spinand,mt29f";
-		#address-cells = <1>;
-		#size-cells = <0>;
 		reg = <1>;
 		spi-max-frequency = <24000000>;
 

@@ -14,6 +14,7 @@ PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/meson.mk
 
 define Package/libtraceevent
   SECTION:=libs
@@ -32,28 +33,27 @@ define Package/libtraceevent-extra
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Extra plugins for libtraceevent
-  DEPENDS:=
+  DEPENDS:=+libtraceevent
 endef
 
-CONFIGURE_ARGS+= \
-	--enable-shared \
-	--enable-static
+MESON_ARGS += \
+        -Ddoc=false
 
-PLUGINS_DIR := $(PKG_BUILD_DIR)/plugins
+PLUGINS_DIR := $(PKG_INSTALL_DIR)/usr/lib/traceevent/plugins
 PLUGINS_MAIN := function hrtimer mac80211 sched_switch
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
-	$(CP) $(PKG_BUILD_DIR)/include/traceevent $(1)/usr/include/
+	$(CP) $(PKG_INSTALL_DIR)/usr/include/traceevent $(1)/usr/include/
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_BUILD_DIR)/lib/libtraceevent.{a,so*} $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libtraceevent.{a,so*} $(1)/usr/lib/
 	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
-	$(CP) $(PKG_BUILD_DIR)/libtraceevent.pc $(1)/usr/lib/pkgconfig/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/libtraceevent.pc $(1)/usr/lib/pkgconfig/
 endef
 
 define Package/libtraceevent/install
 	$(INSTALL_DIR) $(1)/usr/lib/traceevent/plugins
-	$(CP) $(PKG_BUILD_DIR)/lib/libtraceevent.so.* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libtraceevent.so.* $(1)/usr/lib/
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) \
 		$(patsubst %,$(PLUGINS_DIR)/plugin_%.so,$(PLUGINS_MAIN)) \

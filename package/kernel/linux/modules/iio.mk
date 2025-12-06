@@ -9,7 +9,7 @@ IIO_MENU:=Industrial I/O Modules
 define KernelPackage/iio-core
   SUBMENU:=$(IIO_MENU)
   TITLE:=Industrial IO core
-  DEPENDS:=+!LINUX_6_6:kmod-dma-buf
+  DEPENDS:=+kmod-dma-buf
   KCONFIG:= \
 	CONFIG_IIO \
 	CONFIG_IIO_BUFFER=y \
@@ -287,7 +287,7 @@ $(eval $(call KernelPackage,iio-bme680-spi))
 
 define KernelPackage/iio-bmp280
   TITLE:=BMP180/BMP280/BME280 pressure/temperatur sensor
-  DEPENDS:=+kmod-regmap-core +!LINUX_6_6:kmod-industrialio-triggered-buffer
+  DEPENDS:=+kmod-regmap-core +kmod-industrialio-triggered-buffer
   KCONFIG:=CONFIG_BMP280
   FILES:=$(LINUX_DIR)/drivers/iio/pressure/bmp280.ko
   $(call AddDepends/iio)

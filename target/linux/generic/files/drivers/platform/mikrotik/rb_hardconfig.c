@@ -549,7 +549,7 @@ static int hc_wlan_data_unpack_lzor_lz77(const u16 tag_id, const u8 *inbuf, size
 			ret = -ENODATA;
 			goto fail;
 		}
-	};
+	}
 	templen -= (u8 *)needle - tempbuf;
 
 	/* Past magic. Look for tag node */

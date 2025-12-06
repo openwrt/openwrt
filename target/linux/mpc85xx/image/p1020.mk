@@ -96,6 +96,8 @@ define Device/hpe_msm460
   DEVICE_MODEL := MSM460
   DEVICE_ALT0_VENDOR := Hewlett-Packard
   DEVICE_ALT0_MODEL := MSM430
+  DEVICE_ALT1_VENDOR := Hewlett-Packard
+  DEVICE_ALT1_MODEL := MSM466
   KERNEL = kernel-bin | fit none $(KDIR)/image-$$(DEVICE_DTS).dtb
   KERNEL_NAME := zImage.la3000000
   KERNEL_ENTRY := 0x3000000

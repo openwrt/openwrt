@@ -2,6 +2,7 @@
 
 #include "ipq5018.dtsi"
 #include "ipq5018-ess.dtsi"
+#include "ipq5018-qcn6122.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
@@ -53,13 +54,6 @@
 			color = <LED_COLOR_ID_WHITE>;
 			function = LED_FUNCTION_STATUS;
 			gpios = <&tlmm 23 GPIO_ACTIVE_HIGH>;
-		};
-	};
-
-	reserved-memory {
-		q6_mem_regions: q6_mem_regions@4b000000 {
-			no-map;
-			reg = <0x0 0x4b000000 0x0 0x3000000>;
 		};
 	};
 };
@@ -219,9 +213,6 @@
 	nand@0 {
 		compatible = "spi-nand";
 		reg = <0>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-
 		nand-ecc-engine = <&qpic_nand>;
 		nand-bus-width = <8>;
 
@@ -311,13 +302,6 @@
 };
 
 &q6v5_wcss {
-	status = "okay";
-
-	memory-region = <&q6_mem_regions>;
-	firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt",
-			"ath11k/IPQ5018/hw1.0/m3_fw.mdt",
-			"ath11k/QCN6122/hw1.0/m3_fw.mdt";
-
 	/* B3000 currently doesn't support passing bootargs */
 	/*boot-args = <					*/
 			/*       type:	0x1  PCIE0	*/
@@ -325,79 +309,9 @@
 			/*      PD id:	3		*/
 			/* reset GPIO:	15		*/
 			/*   reserved:	0 0>;		*/
-
-	// IPQ5018
-	q6_wcss_pd1: pd-1 {
-		firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt";
-
-		resets =
-			<&gcc GCC_WCSSAON_RESET>,
-			<&gcc GCC_WCSS_BCR>,
-			<&gcc GCC_CE_BCR>;
-		reset-names =
-			"wcss_aon_reset",
-			"wcss_reset",
-			"ce_reset";
-
-		clocks =
-			<&gcc GCC_WCSS_AHB_S_CLK>,
-			<&gcc GCC_WCSS_ACMT_CLK>,
-			<&gcc GCC_WCSS_AXI_M_CLK>;
-		clock-names =
-			"gcc_wcss_ahb_s_clk",
-			"gcc_wcss_acmt_clk",
-			"gcc_wcss_axi_m_clk";
-
-		// qcom,halt-regs = <&tcsr_q6_block 0xa000 0xd000 0x0>;
-		interrupts-extended =
-			<&wcss_smp2p_in 8 IRQ_TYPE_NONE>,
-			<&wcss_smp2p_in 9 IRQ_TYPE_NONE>,
-			<&wcss_smp2p_in 12 IRQ_TYPE_NONE>,
-			<&wcss_smp2p_in 11 IRQ_TYPE_NONE>;
-		interrupt-names =
-			"fatal",
-			"ready",
-			"spawn-ack",
-			"stop-ack";
-
-		qcom,smem-states =
-			<&wcss_smp2p_out 8>,
-			<&wcss_smp2p_out 9>,
-			<&wcss_smp2p_out 10>;
-		qcom,smem-state-names =
-			"shutdown",
-			"stop",
-			"spawn";
-	};
-
-	// QCN6102 5G
-	q6_wcss_pd3: pd-3 {
-		firmware-name = "ath11k/IPQ5018/hw1.0/q6_fw.mdt";
-
-		interrupts-extended =
-			<&wcss_smp2p_in 24 IRQ_TYPE_NONE>,
-			<&wcss_smp2p_in 25 IRQ_TYPE_NONE>,
-			<&wcss_smp2p_in 28 IRQ_TYPE_NONE>,
-			<&wcss_smp2p_in 27 IRQ_TYPE_NONE>;
-		interrupt-names =
-			"fatal",
-			"ready",
-			"spawn-ack",
-			"stop-ack";
-
-		qcom,smem-states =
-			<&wcss_smp2p_out 24>,
-			<&wcss_smp2p_out 25>,
-			<&wcss_smp2p_out 26>;
-		qcom,smem-state-names =
-			"shutdown",
-			"stop",
-			"spawn";
-	};
 };
 
-&wifi0 {
-	// IPQ5018
+&wifi {
 	status = "okay";
 
 	qcom,rproc = <&q6_wcss_pd1>;
@@ -408,7 +322,6 @@
 };
 
 &wifi1 {
-	// QCN6102 5G
 	status = "okay";
 
 	qcom,rproc = <&q6_wcss_pd3>;

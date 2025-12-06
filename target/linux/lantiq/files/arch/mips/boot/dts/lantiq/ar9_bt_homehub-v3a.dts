@@ -121,6 +121,14 @@
 
 &gsw {
 	phy-mode = "rgmii";
+
+	nvmem-cells = <&macaddr_uboot_ethaddr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&ppe {
+	nvmem-cells = <&macaddr_uboot_ethaddr 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &localbus {
@@ -154,6 +162,14 @@
 			partition@64000 {
 				label = "u-boot-env";
 				reg = <0x64000 0x004000>;
+
+				nvmem-layout {
+					compatible = "u-boot,env";
+
+					macaddr_uboot_ethaddr: ethaddr {
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 			ath9k_cal: partition@68000 {
 				label = "art-copy";
@@ -182,6 +198,8 @@
 	wifi@e,0 {
 		reg = <0x7000 0 0 0 0>;
 		qca,no-eeprom; /* load from ath9k-eeprom-pci-0000:00:0e.0.bin */
+		nvmem-cells = <&macaddr_uboot_ethaddr 2>;
+		nvmem-cell-names = "mac-address";
 	};
 };
 

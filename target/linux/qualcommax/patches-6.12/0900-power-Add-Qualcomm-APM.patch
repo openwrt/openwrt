@@ -321,7 +321,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	regval = readl_relaxed(ctrl->reg_base + MSM8953_APM_DLY_CNTR);
 +	val = regval;
 +
-+	if (of_find_property(dev->of_node, "qcom,apm-post-halt-delay", NULL)) {
++	if (of_property_present(dev->of_node, "qcom,apm-post-halt-delay")) {
 +		rc = of_property_read_u32(dev->of_node,
 +				"qcom,apm-post-halt-delay", &delay_counter);
 +		if (rc < 0) {
@@ -335,7 +335,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +			& APM_CTL_POST_HALT_DLY_MASK;
 +	}
 +
-+	if (of_find_property(dev->of_node, "qcom,apm-halt-clk-delay", NULL)) {
++	if (of_property_present(dev->of_node, "qcom,apm-halt-clk-delay")) {
 +		rc = of_property_read_u32(dev->of_node,
 +				"qcom,apm-halt-clk-delay", &delay_counter);
 +		if (rc < 0) {
@@ -349,7 +349,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +			& APM_CTL_HALT_CLK_DLY_MASK;
 +	}
 +
-+	if (of_find_property(dev->of_node, "qcom,apm-resume-clk-delay", NULL)) {
++	if (of_property_present(dev->of_node, "qcom,apm-resume-clk-delay")) {
 +		rc = of_property_read_u32(dev->of_node,
 +				"qcom,apm-resume-clk-delay", &delay_counter);
 +		if (rc < 0) {
@@ -363,7 +363,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +			& APM_CTL_RESUME_CLK_DLY_MASK;
 +	}
 +
-+	if (of_find_property(dev->of_node, "qcom,apm-sel-switch-delay", NULL)) {
++	if (of_property_present(dev->of_node, "qcom,apm-sel-switch-delay")) {
 +		rc = of_property_read_u32(dev->of_node,
 +				"qcom,apm-sel-switch-delay", &delay_counter);
 +		if (rc < 0) {

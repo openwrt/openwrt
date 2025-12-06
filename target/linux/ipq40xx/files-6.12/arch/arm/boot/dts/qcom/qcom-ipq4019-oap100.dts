@@ -168,8 +168,6 @@
 	cs-gpios = <&tlmm 12 GPIO_ACTIVE_LOW>;
 
 	flash@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		linux,modalias = "m25p80", "gd25q256";

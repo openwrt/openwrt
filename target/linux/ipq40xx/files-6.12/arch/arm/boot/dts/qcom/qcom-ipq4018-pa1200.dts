@@ -134,8 +134,6 @@
 	cs-gpios = <&tlmm 54 GPIO_ACTIVE_LOW>;
 
 	flash@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <24000000>;

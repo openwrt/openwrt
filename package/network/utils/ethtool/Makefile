@@ -58,9 +58,7 @@ CONFIGURE_ARGS += --disable-netlink --disable-pretty-dump
 endif
 
 # enable support for input_xfrm with kernels newer than 6.6
-ifeq ($(CONFIG_LINUX_6_6),)
 CONFIGURE_ARGS += --enable-rss-input-xfrm
-endif
 
 define Package/ethtool/install
 	$(INSTALL_DIR) $(1)/usr/sbin

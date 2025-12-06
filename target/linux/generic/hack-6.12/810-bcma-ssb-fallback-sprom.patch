@@ -51,7 +51,7 @@ Subject: [PATCH] ssb_sprom: add generic kernel support for Broadcom  Fallback SP
  	dev_err((bus)->dev, "bus%d: " fmt, (bus)->num, ##__VA_ARGS__)
 --- a/drivers/bcma/main.c
 +++ b/drivers/bcma/main.c
-@@ -671,6 +671,14 @@ static int __init bcma_modinit(void)
+@@ -677,6 +677,14 @@ static int __init bcma_modinit(void)
  {
  	int err;
  

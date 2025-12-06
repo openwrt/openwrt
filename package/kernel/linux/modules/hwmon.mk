@@ -9,7 +9,7 @@ HWMON_MENU:=Hardware Monitoring Support
 
 define KernelPackage/hwmon-core
   SUBMENU:=$(HWMON_MENU)
-  DEPENDS:=+!LINUX_6_6:kmod-i2c-core
+  DEPENDS:=+kmod-i2c-core
   TITLE:=Hardware monitoring support
   KCONFIG:= \
 	CONFIG_HWMON \
@@ -362,7 +362,7 @@ define KernelPackage/hwmon-lm92
   KCONFIG:=CONFIG_SENSORS_LM92
   FILES:=$(LINUX_DIR)/drivers/hwmon/lm92.ko
   AUTOLOAD:=$(call AutoProbe,lm92)
-  $(call AddDepends/hwmon,+kmod-i2c-core +!LINUX_6_6:kmod-regmap-core)
+  $(call AddDepends/hwmon,+kmod-i2c-core +kmod-regmap-core)
 endef
 
 define KernelPackage/hwmon-lm92/description
@@ -402,27 +402,12 @@ endef
 $(eval $(call KernelPackage,hwmon-ltc4151))
 
 
-define KernelPackage/hwmon-max6642
-  TITLE:=MAX6642 monitoring support
-  KCONFIG:=CONFIG_SENSORS_MAX6642
-  FILES:=$(LINUX_DIR)/drivers/hwmon/max6642.ko
-  AUTOLOAD:=$(call AutoLoad,60,max6642 max6642)
-  $(call AddDepends/hwmon,@LINUX_6_6 +kmod-i2c-core)
-endef
-
-define KernelPackage/hwmon-max6642/description
- Kernel module for Maxim MAX6642 temperature monitor
-endef
-
-$(eval $(call KernelPackage,hwmon-max6642))
-
-
 define KernelPackage/hwmon-max6697
   TITLE:=MAX6697 monitoring support
   KCONFIG:=CONFIG_SENSORS_MAX6697
   FILES:=$(LINUX_DIR)/drivers/hwmon/max6697.ko
   AUTOLOAD:=$(call AutoProbe,max6697)
-  $(call AddDepends/hwmon,+kmod-i2c-core +!LINUX_6_6:kmod-regmap-i2c)
+  $(call AddDepends/hwmon,+kmod-i2c-core +kmod-regmap-i2c)
 endef
 
 define KernelPackage/hwmon-max6697/description
@@ -548,7 +533,7 @@ define KernelPackage/hwmon-sch5627
 	$(LINUX_DIR)/drivers/hwmon/sch5627.ko \
 	$(LINUX_DIR)/drivers/hwmon/sch56xx-common.ko
   AUTOLOAD:=$(call AutoProbe,sch5627)
-  $(call AddDepends/hwmon,+kmod-i2c-core +!LINUX_6_6:kmod-regmap-core)
+  $(call AddDepends/hwmon,+kmod-i2c-core +kmod-regmap-core)
 endef
 
 define KernelPackage/hwmon-sch5627/description

@@ -134,8 +134,6 @@
 	flash@0 {
 		/* u-boot is looking for "n25q128a11" property */
 		compatible = "jedec,spi-nor", "n25q128a11";
-		#address-cells = <1>;
-		#size-cells = <1>;
 		reg = <0>;
 		spi-max-frequency = <24000000>;
 

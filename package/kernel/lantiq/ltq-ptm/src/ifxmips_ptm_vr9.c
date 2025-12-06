@@ -202,13 +202,13 @@ static inline void clear_share_buffer(void)
  *    int       --- 0:    Success
  *                  else:           Error Code
  */
-static inline int pp32_download_code(int pp32, u32 *code_src, unsigned int code_dword_len, u32 *data_src, unsigned int data_dword_len)
+static inline int pp32_download_code(int pp32, const u32 *code_src, unsigned int code_dword_len, const u32 *data_src, unsigned int data_dword_len)
 {
     unsigned int clr, set;
     volatile u32 *dest;
 
-    if ( code_src == 0 || ((unsigned long)code_src & 0x03) != 0
-        || data_src == 0 || ((unsigned long)data_src & 0x03) != 0 )
+    if (!code_src || ((unsigned long)code_src & 0x03) != 0
+        || !data_src || ((unsigned long)data_src & 0x03) != 0 )
         return -1;
 
     clr = pp32 ? 0xF0 : 0x0F;
