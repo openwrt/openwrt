@@ -716,6 +716,16 @@ define Device/cudy_ap1300-outdoor-v1
 endef
 TARGET_DEVICES += cudy_ap1300-outdoor-v1
 
+define Device/cudy_c200p
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := C200P
+  IMAGE_SIZE := 15872k
+  UIMAGE_NAME := R74
+  DEVICE_PACKAGES := -uboot-envtools -wpad-basic-mbedtls kmod-usb3
+endef
+TARGET_DEVICES += cudy_c200p
+
 define Device/cudy_m1300-v2
   $(Device/dsa-migration)
   IMAGE_SIZE := 15872k
