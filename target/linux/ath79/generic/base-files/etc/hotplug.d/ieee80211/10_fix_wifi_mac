@@ -80,6 +80,10 @@ case "$board" in
 		# which would allow to patch the macaddress
 		macaddr_add "$(mtd_get_mac_ascii u-boot-env ethaddr)" $PHYNBR > /sys${DEVPATH}/macaddress
 		;;
+	moxa,awk-1137c)
+		[ "$PHYNBR" -eq 0 ] && \
+			mtd_get_mac_ascii u-boot-env mac_addr > /sys${DEVPATH}/macaddress
+		;;
 	dlink,dir-842-c1|\
 	dlink,dir-842-c2|\
 	dlink,dir-842-c3|\
