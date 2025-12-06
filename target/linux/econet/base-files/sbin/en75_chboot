@@ -3,6 +3,8 @@
 
 set -e
 
+. /lib/functions.sh
+
 part=
 offset_blocks=
 block_size=
@@ -99,8 +101,8 @@ switch() {
 }
 
 main() {
-    machine=$(sed -n -e 's/^machine\s\+:\s\+//p' < /proc/cpuinfo)
-    if [ "$machine" = "TP-Link Archer VR1200v (v2)" ]; then
+    case "$(board_name)" in
+    tplink,archer-vr1200v-v2)
         # 03fe0000
         part=$(part_named '"reserve"')
         offset_blocks=0
@@ -108,7 +110,8 @@ main() {
         code_offset=0
         code_openwrt=0000000101000002
         code_factory=0000000101010003
-    elif [ "$machine" = "Nokia G-240G-E" ]; then
+        ;;
+    nokia,g240g-e)
         part=$(part_named '"flag"')
         offset_blocks=0
         block_size=$((1024 * 128))
@@ -116,7 +119,8 @@ main() {
         code_openwrt=000000000000000000000001000000010000000000000000
         code_factory=000000000000000100000001000000010000000000000000
            read_mask=000000000000000X00000000000000000000000000000000
-    elif [ "$machine" = "SmartFiber XP8421-B" ]; then
+        ;;
+    smartfiber,xp8421-b)
         # 0dfc0000
         part=$(part_named '"reservearea"')
         offset_blocks=12
@@ -124,7 +128,8 @@ main() {
         code_offset=0
         code_openwrt=30000000
         code_factory=31000000
-    elif [ "$machine" = "Zyxel PMG5617GA" ]; then
+        ;;
+    zyxel,pmg5617ga)
         # 00060fff
         part=$(part_named '"reservearea"')
         offset_blocks=3
@@ -132,10 +137,12 @@ main() {
         code_offset=4095
         code_openwrt=30
         code_factory=31
-    else
+        ;;
+    *)
         echo "Unsupported machine: $machine"
         exit 1
-    fi
+        ;;
+    esac
 
     if [ "$1" = "factory" ]; then
         switch factory
