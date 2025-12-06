@@ -147,7 +147,8 @@ platform_do_upgrade() {
 		nand_do_upgrade "$1"
 		;;
 	yuncore,ax830|\
-	yuncore,ax850)
+	yuncore,ax850|\
+	zyxel,scr50axe)
 		CI_UBIPART="rootfs"
 		remove_oem_ubi_volume ubi_rootfs
 		remove_oem_ubi_volume bt_fw
