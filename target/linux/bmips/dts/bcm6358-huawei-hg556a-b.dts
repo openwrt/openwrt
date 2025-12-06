@@ -5,17 +5,6 @@
 / {
 	model = "Huawei EchoLife HG556a (version B)";
 	compatible = "huawei,hg556a-b", "brcm,bcm6358";
-
-	ath9k-leds {
-		compatible = "gpio-leds";
-
-		led-2 {
-			function = LED_FUNCTION_WLAN;
-			color = <LED_COLOR_ID_RED>;
-			gpios = <&ath9k 2 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "phy0tpt";
-		};
-	};
 };
 
 &gpio_keys {
@@ -58,7 +47,7 @@
 &pci {
 	status = "okay";
 
-	ath9k: wifi@1,0 {
+	wifi@1,0 {
 		compatible = "pci168c,0029";
 		reg = <0x0800 0 0 0 0>;
 
@@ -67,7 +56,8 @@
 		nvmem-cells = <&macaddr_cfe_6a0 1>;
 		nvmem-cell-names = "mac-address";
 
-		#gpio-cells = <2>;
-		gpio-controller;
+		led {
+			led-sources = <2>;
+		};
 	};
 };
