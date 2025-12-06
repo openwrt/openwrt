@@ -1,0 +1,342 @@
+/dts-v1/;
+
+#include "ipq5018.dtsi"
+#include "ipq5018-ess.dtsi"
+#include "ipq5018-qcn6122.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "Linksys MX6200";
+	compatible = "linksys,mx6200", "qcom,ipq5018";
+
+	aliases {
+		led-boot = &led_system_blue;
+		led-failsafe = &led_system_red;
+		led-running = &led_system_blue;
+		led-upgrade = &led_system_red;
+		serial0 = &blsp1_uart1;
+	};
+
+	chosen {
+		bootargs-append = " root=/dev/ubiblock0_1 coherent_pool=2M";
+		stdout-path = "serial0:115200n8";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		wps-button {
+			label = "wps";
+			gpios = <&tlmm 27 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+
+		reset-button {
+			label = "reset";
+			gpios = <&tlmm 28 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "pwm-leds";
+
+		led_system_red: red {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
+			pwms = <&pwm 3 1250000>;
+			max-brightness = <255>;
+		};
+
+		green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			pwms = <&pwm 0 1250000>;
+			max-brightness = <255>;
+		};
+
+		led_system_blue: blue {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_POWER;
+			pwms = <&pwm 1 1250000>;
+			max-brightness = <255>;
+		};
+	};
+};
+
+&sleep_clk {
+	clock-frequency = <32000>;
+};
+
+&xo_board_clk {
+	clock-div = <4>;
+	clock-mult = <1>;
+};
+
+&blsp1_uart1 {
+	status = "okay";
+
+	pinctrl-0 = <&serial_0_pins>;
+	pinctrl-names = "default";
+};
+
+&crypto {
+	status = "okay";
+};
+
+&cryptobam {
+	status = "okay";
+};
+
+&prng {
+	status = "okay";
+};
+
+&pwm {
+	status = "okay";
+
+	#pwm-cells = <2>;
+	pinctrl-0 = <&pwm_pins>;
+	pinctrl-names = "default";
+};
+
+&qfprom {
+	status = "okay";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	pinctrl-0 = <&qpic_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	nand@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+		nand-ecc-engine = <&qpic_nand>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "qcom,smem-part";
+
+			partition-devinfo {
+				label = "devinfo";
+				read-only;
+
+				nvmem-layout {
+					compatible = "ascii-eq-delim-env";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					hw_mac_addr: hw_mac_addr {
+						compatible = "mac-base";
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&tlmm {
+	button_pins: button-state {
+		pins = "gpio27", "gpio28";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-up;
+	};
+
+	mdio1_pins: mdio-state {
+		mdc-pins {
+			pins = "gpio36";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio-pins {
+			pins = "gpio37";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	pwm_pins: pwm-state {
+		mux_1 {
+			pins = "gpio1";
+			function = "pwm1";
+			drive-strength = <8>;
+		};
+
+		mux_2 {
+			pins = "gpio30";
+			function = "pwm3";
+			drive-strength = <8>;
+		};
+
+		mux_3 {
+			pins = "gpio46";
+			function = "pwm0";
+			drive-strength = <8>;
+		};
+	};
+
+	qpic_pins: qpic-state {
+		clock-pins {
+			pins = "gpio9";
+			function = "qspi_clk";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		cs-pins {
+			pins = "gpio8";
+			function = "qspi_cs";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		data-pins {
+			pins = "gpio4", "gpio5", "gpio6", "gpio7";
+			function = "qspi_data";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
+
+	serial_0_pins: uart0-state {
+		pins = "gpio20", "gpio21";
+		function = "blsp0_uart0";
+		bias-disable;
+	};
+};
+
+&tsens {
+	status = "okay";
+};
+
+/*
+* =================================================================
+*     _______________________             ____________
+*    |        IPQ5018        |           |            |
+*    | +------+   +--------+ |           | +--------+ |
+*    | | MAC0 |---| GE Phy |-+--- MDI ---+ | RJ45   | +
+*    | +------+   +--------+ |           | +--------+ |
+*    |                       |           |____________|
+*    |                       |            _______________________
+*    |                       |           |    MXL GPY115C Phy    |
+*    | +------+   +--------+ |           | +--------+   +------+ |
+*    | | MAC1 |---| Uniphy |-+-- SGMII---+ | Phy    |---| RJ45 | |
+*    | +------+   +--------+ |           | +--------+   +------+ |
+*    |_______________________|           |_______________________|
+*
+* =================================================================
+ */
+
+&switch {
+	status = "okay";
+
+	switch_mac_mode = <MAC_MODE_SGMII_CHANNEL0>;
+
+	qcom,port_phyinfo {
+		// MAC0 -> GE Phy -> MDI --> RJ45
+		port@0 {
+			port_id = <1>;
+			mdiobus = <&mdio0>;
+			phy_address = <7>;
+		};
+
+		// MAC1 ---SGMII---> MaxLinear PHY -> RJ45
+		port@1 {
+			port_id = <2>;
+			mdiobus = <&mdio1>;
+			phy_address = <15>;
+			port_mac_sel = "QGMAC_PORT";
+		};
+	};
+};
+
+// MAC0 ---MDI---> IPQ5018 GE PHY
+&dp1 {
+	status = "okay";
+
+	label = "lan";
+	phy-handle = <&ge_phy>;
+	nvmem-cells = <&hw_mac_addr 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+// MAC1 ---SGMII---> MXL Phy
+&dp2 {
+	status = "okay";
+
+	label = "wan";
+	phy-handle = <&gpy115c>;
+	nvmem-cells = <&hw_mac_addr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&mdio0 {
+	status = "okay";
+};
+
+&mdio1 {
+	status = "okay";
+
+	pinctrl-0 = <&mdio1_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 24 GPIO_ACTIVE_LOW>;
+
+	// Maxlinear Ethernet GPY115C
+	gpy115c: ethernet-phy@f {
+		compatible = "ethernet-phy-id67c9.df10";
+		reg = <15>;
+	};
+};
+
+&q6_region {
+	reg = <0x0 0x4b000000 0x0 0x4d00000>;
+};
+
+&wifi {
+	status = "okay";
+
+	qcom,rproc = <&q6_wcss_pd1>;
+	qcom,ath11k-calibration-variant = "Linksys-MX6200";
+	qcom,ath11k-fw-memory-mode = <1>;
+	qcom,bdf-addr = <0x4c400000>;
+};
+
+&wifi1 {
+	status = "okay";
+
+	qcom,rproc = <&q6_wcss_pd2>;
+	qcom,userpd-subsys-name = "q6v5_wcss_userpd2";
+	qcom,ath11k-calibration-variant = "Linksys-MX6200-5G";
+	qcom,ath11k-fw-memory-mode = <1>;
+	qcom,m3-dump-addr = <0x4df00000>;
+
+	ieee80211-freq-limit = <5150000 5710000>;
+};
+
+&wifi2 {
+	status = "okay";
+
+	qcom,rproc = <&q6_wcss_pd3>;
+	qcom,userpd-subsys-name = "q6v5_wcss_userpd3";
+	qcom,ath11k-calibration-variant = "Linksys-MX6200-6G";
+	qcom,ath11k-fw-memory-mode = <1>;
+	qcom,bdf-addr = <0x4e500000>;
+	qcom,m3-dump-addr = <0x4f200000>;
+
+	ieee80211-freq-limit = <5945000 6425000>;
+};
