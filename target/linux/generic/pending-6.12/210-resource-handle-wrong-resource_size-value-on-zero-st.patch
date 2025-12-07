@@ -1,0 +1,80 @@
+From 7e1241396c241f9b4fff2ff133806fef4ddd9ecc Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Sun, 7 Dec 2025 22:18:11 +0100
+Subject: [PATCH] resource: handle wrong resource_size value on zero start/end
+ resource
+
+Commit 900730dc4705 ("wifi: ath: Use
+of_reserved_mem_region_to_resource() for "memory-region"") uncovered a
+massive problem with the usage of resource_size() helper.
+
+The reported commit caused a regression with ath11k WiFi firmware
+loading and the change was just a simple replacement of duplicate code
+with a new helper of_reserved_mem_region_to_resource().
+
+On reworking this, in the commit also a check for the presence of the
+node was replaced with resource_size(&res). This was done following the
+logic that if the node wasn't present then it's expected that also the
+resource_size is zero, mimicking the same if-else logic.
+
+This was also the reason the regression was mostly hard to catch at
+first sight as the rework is correctly done given the assumption on the
+used helpers.
+
+BUT this is actually not the case. On further inspection on
+resource_size() it was found that it NEVER actually returns 0.
+
+Even if the resource value of start and end are 0, the return value of
+resource_size() will ALWAYS be 1, resulting in the broken if-else
+condition ALWAYS going in the first if condition.
+
+This was simply confirmed by reading the resource_size() logic:
+
+	return res->end - res->start + 1;
+
+Given the confusion, also other case of such usage were searched in the
+kernel and with great suprise it seems LOTS of place assume
+resource_size() should return zero in the context of the resource start
+and end set to 0.
+
+Quoting for example comments in drivers/vfio/pci/vfio_pci_core.c:
+
+		/*
+		 * The PCI core shouldn't set up a resource with a
+		 * type but zero size. But there may be bugs that
+		 * cause us to do that.
+		 */
+		if (!resource_size(res))
+			goto no_mmap;
+
+It really seems resource_size() was tought with the assumption that
+resource struct was always correctly initialized before calling it and
+never set to zero.
+
+But across the year this got lost and now there are lots of driver that
+assume resource_size() returns 0 if start and end are also 0.
+
+To better handle this and make resource_size() returns correct value in
+such case, add a simple check and return 0 if both resource start and
+resource end are zero.
+
+Cc: Rob Herring (Arm) <robh@kernel.org>
+Cc: stable@vger.kernel.org
+Fixes: 1a4e564b7db9 ("resource: add resource_size()")
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ include/linux/ioport.h | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/include/linux/ioport.h
++++ b/include/linux/ioport.h
+@@ -283,6 +283,9 @@ static inline void resource_set_range(st
+ 
+ static inline resource_size_t resource_size(const struct resource *res)
+ {
++	if (!res->start && !res->end)
++		return 0;
++
+ 	return res->end - res->start + 1;
+ }
+ static inline unsigned long resource_type(const struct resource *res)
