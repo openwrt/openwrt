@@ -10,7 +10,7 @@ Signed-off-by: Abhimanyu Vishwakarma <Abhimanyu.Vishwakarma@imgtec.com>
 
 --- a/drivers/spi/spi-mem.c
 +++ b/drivers/spi/spi-mem.c
-@@ -846,7 +846,9 @@ static int spi_mem_probe(struct spi_devi
+@@ -883,7 +883,9 @@ static int spi_mem_probe(struct spi_devi
  {
  	struct spi_mem_driver *memdrv = to_spi_mem_drv(spi->dev.driver);
  	struct spi_controller *ctlr = spi->controller;
@@ -20,7 +20,7 @@ Signed-off-by: Abhimanyu Vishwakarma <Abhimanyu.Vishwakarma@imgtec.com>
  
  	mem = devm_kzalloc(&spi->dev, sizeof(*mem), GFP_KERNEL);
  	if (!mem)
-@@ -854,10 +856,15 @@ static int spi_mem_probe(struct spi_devi
+@@ -891,10 +893,15 @@ static int spi_mem_probe(struct spi_devi
  
  	mem->spi = spi;
  
