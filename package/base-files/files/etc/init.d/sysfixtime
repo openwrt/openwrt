@@ -1,5 +1,5 @@
 #!/bin/sh /etc/rc.common
-# Copyright (C) 2013-2014 OpenWrt.org
+# Copyright (C) 2013-2024 OpenWrt.org
 
 START=00
 STOP=90
@@ -9,12 +9,9 @@ HWCLOCK=/sbin/hwclock
 
 boot() {
 	hwclock_load
-	local maxtime="$(find_max_time)"
+	local maxtime="$(find_maxtime)"
 	local curtime="$(date +%s)"
-	if [ $curtime -lt $maxtime ]; then
-		date -s @$maxtime
-		hwclock_save
-	fi
+	[ $maxtime -gt $curtime ] && date -s @$maxtime && hwclock_save
 }
 
 start() {
@@ -26,19 +23,19 @@ stop() {
 }
 
 hwclock_load() {
-	[ -e "$RTC_DEV" ] && [ -e "$HWCLOCK" ] && $HWCLOCK -s -u -f $RTC_DEV
+	[ -c "$RTC_DEV" -a -x "$HWCLOCK" ] && $HWCLOCK -u -s -f $RTC_DEV
 }
 
 hwclock_save(){
-	[ -e "$RTC_DEV" ] && [ -e "$HWCLOCK" ] && $HWCLOCK -w -u -f $RTC_DEV && \
+	[ -c "$RTC_DEV" -a -x "$HWCLOCK" ] && $HWCLOCK -u -w -f $RTC_DEV && \
 		logger -t sysfixtime "saved '$(date)' to $RTC_DEV"
 }
 
-find_max_time() {
-	local file newest
+find_maxtime() {
+	local file newest IFS=$'\n'
 
-	for file in $( find /etc -type f ) ; do
-		[ -z "$newest" -o "$newest" -ot "$file" ] && newest=$file
+	for file in $(find /etc); do
+		[ -z "$newest" -o "$file" -nt "$newest" ] && newest="$file"
 	done
 	[ "$newest" ] && date -r "$newest" +%s
 }
