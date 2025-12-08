@@ -1,0 +1,66 @@
+From a1eb56723b3203d366d2293a368b8bc8ef8894cd Mon Sep 17 00:00:00 2001
+From: Sarika Sharma <quic_sarishar@quicinc.com>
+Date: Fri, 11 Apr 2025 11:45:23 +0530
+Subject: [PATCH] wifi: ath12k: correctly handle mcast packets for clients
+
+commit 4541b0c8c3c1b85564971d497224e57cf8076a02 upstream.
+
+Currently, RX is_mcbc bit is set for packets sent from client as
+destination address (DA) is multicast/broadcast address, but packets
+are actually unicast as receiver address (RA) is not multicast address.
+Hence, packets are not handled properly due to this is_mcbc bit.
+
+Therefore, reset the is_mcbc bit if interface type is AP.
+
+Tested-on: QCN9274 hw2.0 PCI WLAN.WBE.1.4.1-00199-QCAHKSWPL_SILICONZ-1
+
+Signed-off-by: Sarika Sharma <quic_sarishar@quicinc.com>
+Reviewed-by: Vasanthakumar Thiagarajan <vasanthakumar.thiagarajan@oss.qualcomm.com>
+Link: https://patch.msgid.link/20250411061523.859387-3-quic_sarishar@quicinc.com
+Signed-off-by: Jeff Johnson <jeff.johnson@oss.qualcomm.com>
+[ Adjust context ]
+Signed-off-by: Oliver Sedlbauer <os@dev.tdt.de>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/net/wireless/ath/ath12k/dp_rx.c | 5 +++++
+ drivers/net/wireless/ath/ath12k/peer.c  | 3 +++
+ drivers/net/wireless/ath/ath12k/peer.h  | 2 ++
+ 3 files changed, 10 insertions(+)
+
+--- a/drivers/net/wireless/ath/ath12k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath12k/dp_rx.c
+@@ -2214,6 +2214,11 @@ static void ath12k_dp_rx_h_mpdu(struct a
+ 	spin_lock_bh(&ar->ab->base_lock);
+ 	peer = ath12k_dp_rx_h_find_peer(ar->ab, msdu);
+ 	if (peer) {
++		/* resetting mcbc bit because mcbc packets are unicast
++		 * packets only for AP as STA sends unicast packets.
++		 */
++		rxcb->is_mcbc = rxcb->is_mcbc && !peer->ucast_ra_only;
++
+ 		if (rxcb->is_mcbc)
+ 			enctype = peer->sec_type_grp;
+ 		else
+--- a/drivers/net/wireless/ath/ath12k/peer.c
++++ b/drivers/net/wireless/ath/ath12k/peer.c
+@@ -331,6 +331,9 @@ int ath12k_peer_create(struct ath12k *ar
+ 		arvif->ast_idx = peer->hw_peer_id;
+ 	}
+ 
++	if (arvif->vif->type == NL80211_IFTYPE_AP)
++		peer->ucast_ra_only = true;
++
+ 	peer->sec_type = HAL_ENCRYPT_TYPE_OPEN;
+ 	peer->sec_type_grp = HAL_ENCRYPT_TYPE_OPEN;
+ 
+--- a/drivers/net/wireless/ath/ath12k/peer.h
++++ b/drivers/net/wireless/ath/ath12k/peer.h
+@@ -47,6 +47,8 @@ struct ath12k_peer {
+ 
+ 	/* protected by ab->data_lock */
+ 	bool dp_setup_done;
++
++	bool ucast_ra_only;
+ };
+ 
+ void ath12k_peer_unmap_event(struct ath12k_base *ab, u16 peer_id);
