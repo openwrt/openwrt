@@ -508,7 +508,7 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  };
  
  static struct clk_hw * __init
-@@ -539,20 +682,21 @@ static int clk_sama7g5_master_set_parent
+@@ -542,20 +685,21 @@ static int clk_sama7g5_master_set_parent
  	return 0;
  }
  
@@ -534,7 +534,7 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  			   (master->div << MASTER_DIV_SHIFT) |
  			   PMC_MCR_CMD | PMC_MCR_ID(master->id));
  
-@@ -563,6 +707,13 @@ static int clk_sama7g5_master_enable(str
+@@ -566,6 +710,13 @@ static int clk_sama7g5_master_enable(str
  		cpu_relax();
  
  	spin_unlock_irqrestore(master->lock, flags);
@@ -548,7 +548,7 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  
  	return 0;
  }
-@@ -620,6 +771,23 @@ static int clk_sama7g5_master_set_rate(s
+@@ -623,6 +774,23 @@ static int clk_sama7g5_master_set_rate(s
  	return 0;
  }
  
@@ -572,7 +572,7 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  static const struct clk_ops sama7g5_master_ops = {
  	.enable = clk_sama7g5_master_enable,
  	.disable = clk_sama7g5_master_disable,
-@@ -629,6 +797,8 @@ static const struct clk_ops sama7g5_mast
+@@ -632,6 +800,8 @@ static const struct clk_ops sama7g5_mast
  	.set_rate = clk_sama7g5_master_set_rate,
  	.get_parent = clk_sama7g5_master_get_parent,
  	.set_parent = clk_sama7g5_master_set_parent,
