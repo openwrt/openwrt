@@ -213,3 +213,87 @@ Subject: [PATCH] hostapd: add configurable debug message minimum priority to
  
  /**
   * wpa_msg_global - Global printf for ctrl_iface monitors
+--- a/hostapd/ctrl_iface.c
++++ b/hostapd/ctrl_iface.c
+@@ -3203,6 +3203,16 @@ static int hostapd_ctrl_iface_log_level(
+ 		int level = str_to_debug_level(cmd);
+ 		if (level < 0)
+ 			return -1;
++
++#ifdef CONFIG_MSG_MIN_PRIORITY
++		if (wpa_debug_level < CONFIG_MSG_MIN_PRIORITY) {
++			wpa_printf(MSG_WARNING, "refusing to set wpa_debug_level (%d)"
++				" below compile-time limit: %d",
++				wpa_debug_level, CONFIG_MSG_MIN_PRIORITY);
++			return -1;
++		}
++#endif
++
+ 		wpa_debug_level = level;
+ 	}
+ 
+--- a/hostapd/main.c
++++ b/hostapd/main.c
+@@ -950,6 +950,13 @@ int main(int argc, char *argv[])
+ 		}
+ 	}
+ 
++#ifdef CONFIG_MSG_MIN_PRIORITY
++	if (wpa_debug_level < CONFIG_MSG_MIN_PRIORITY) {
++		wpa_printf(MSG_WARNING, "clamping wpa_debug_level (%d) to compile-time limit: %d", wpa_debug_level, CONFIG_MSG_MIN_PRIORITY);
++		wpa_debug_level = CONFIG_MSG_MIN_PRIORITY;
++	}
++#endif
++
+ 	if (optind == argc && interfaces.global_iface_path == NULL &&
+ 	    num_bss_configs == 0)
+ 		usage();
+--- a/hostapd/radius.c
++++ b/hostapd/radius.c
+@@ -640,6 +640,11 @@ int radius_main(int argc, char **argv)
+ 			break;
+ 		case 'l':
+ 			wpa_debug_level = atoi(optarg);
++
++#ifdef CONFIG_MSG_MIN_PRIORITY
++	if (wpa_debug_level < CONFIG_MSG_MIN_PRIORITY)
++		wpa_printf(MSG_WARNING, "wpa_debug_level (%d) below compile-time limit: %d", wpa_debug_level, CONFIG_MSG_MIN_PRIORITY);
++#endif
+ 			break;
+ 		case 'C':
+ 			config.tls.ca_cert = optarg;
+--- a/wpa_supplicant/ctrl_iface.c
++++ b/wpa_supplicant/ctrl_iface.c
+@@ -2765,6 +2765,16 @@ static int wpa_supplicant_ctrl_iface_log
+ 		int level = str_to_debug_level(cmd);
+ 		if (level < 0)
+ 			return -1;
++
++#ifdef CONFIG_MSG_MIN_PRIORITY
++		if (wpa_debug_level < CONFIG_MSG_MIN_PRIORITY) {
++			wpa_printf(MSG_WARNING, "refusing to set wpa_debug_level (%d)"
++				" below compile-time limit: %d",
++				wpa_debug_level, CONFIG_MSG_MIN_PRIORITY);
++			return -1;
++		}
++#endif
++
+ 		wpa_debug_level = level;
+ 	}
+ 
+--- a/wpa_supplicant/main.c
++++ b/wpa_supplicant/main.c
+@@ -344,6 +344,13 @@ int main(int argc, char *argv[])
+ 		}
+ 	}
+ 
++#ifdef CONFIG_MSG_MIN_PRIORITY
++	if (wpa_debug_level < CONFIG_MSG_MIN_PRIORITY) {
++		wpa_printf(MSG_WARNING, "clamping wpa_debug_level (%d) to compile-time limit: %d", wpa_debug_level, CONFIG_MSG_MIN_PRIORITY);
++		wpa_debug_level = CONFIG_MSG_MIN_PRIORITY;
++	}
++#endif
++
+ 	exitcode = 0;
+ 	global = wpa_supplicant_init(&params);
+ 	if (global == NULL) {
