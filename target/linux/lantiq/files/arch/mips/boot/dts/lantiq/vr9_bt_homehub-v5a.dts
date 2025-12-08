@@ -226,11 +226,6 @@
 	};
 };
 
-&ppe {
-	nvmem-cells = <&macaddr_caldata_110c 4>;
-	nvmem-cell-names = "mac-address";
-};
-
 &localbus {
 	flash@1 {
 		compatible = "lantiq,nand-xway";
