@@ -91,7 +91,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +						  gchip);
 +	struct ath_hw *ah = gc->sc->sc_ah;
 +
-+	return !((REG_READ(ah, AR_GPIO_OE_OUT) >> (offset * 2)) & 3);
++	return !((REG_READ(ah, AR_GPIO_OE_OUT(ah)) >> (offset * 2)) & 3);
 +}
 +
 +/* gpio_chip handler : get GPIO pin value */
