@@ -35,7 +35,7 @@ Signed-off-by: Uwe Kleine-König <ukleinek@kernel.org>
 
 --- a/drivers/pwm/Kconfig
 +++ b/drivers/pwm/Kconfig
-@@ -54,6 +54,16 @@ config PWM_ADP5585
+@@ -63,6 +63,16 @@ config PWM_ADP5585
  	  This option enables support for the PWM function found in the Analog
  	  Devices ADP5585.
  
@@ -60,8 +60,8 @@ Signed-off-by: Uwe Kleine-König <ukleinek@kernel.org>
  obj-$(CONFIG_PWM_ADP5585)	+= pwm-adp5585.o
 +obj-$(CONFIG_PWM_AIROHA)	+= pwm-airoha.o
  obj-$(CONFIG_PWM_APPLE)		+= pwm-apple.o
+ obj-$(CONFIG_PWM_ARGON_FAN_HAT)	+= pwm-argon-fan-hat.o
  obj-$(CONFIG_PWM_ATMEL)		+= pwm-atmel.o
- obj-$(CONFIG_PWM_ATMEL_HLCDC_PWM)	+= pwm-atmel-hlcdc.o
 --- /dev/null
 +++ b/drivers/pwm/pwm-airoha.c
 @@ -0,0 +1,622 @@

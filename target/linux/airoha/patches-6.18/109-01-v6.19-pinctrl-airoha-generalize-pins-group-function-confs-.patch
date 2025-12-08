@@ -1,8 +1,131 @@
-From 4043b0c45f8555a079bdac69a19ed08695a47a7b Mon Sep 17 00:00:00 2001
+From patchwork Thu Nov  6 23:57:04 2025
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+X-Patchwork-Submitter: Christian Marangi <ansuelsmth@gmail.com>
+X-Patchwork-Id: 14303209
+Return-Path: 
+ <linux-mediatek-bounces+linux-mediatek=archiver.kernel.org@lists.infradead.org>
+X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
+	aws-us-west-2-korg-lkml-1.web.codeaurora.org
+Received: from bombadil.infradead.org (bombadil.infradead.org
+ [198.137.202.133])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by smtp.lore.kernel.org (Postfix) with ESMTPS id A66C8CCFA05
+	for <linux-mediatek@archiver.kernel.org>;
+ Thu,  6 Nov 2025 23:57:28 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=lists.infradead.org; s=bombadil.20210309; h=Sender:List-Subscribe:List-Help
+	:List-Post:List-Archive:List-Unsubscribe:List-Id:Content-Transfer-Encoding:
+	MIME-Version:References:In-Reply-To:Message-ID:Date:Subject:Cc:To:From:
+	Reply-To:Content-Type:Content-ID:Content-Description:Resent-Date:Resent-From:
+	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Owner;
+	bh=hx0foA8BPqRUiZZHrNy69yLT2g6yRFzpphoIbc6lNgE=; b=gF9slf83PJEhipdbxVAY3wxqy8
+	8y5Psg2TpGLOiVjCUtdphi65CHKRJaHr/55Mr9cB2HHcsA5ifuPX7kJteV8WQ9Kh0bdficGKuN+G4
+	n029dvFZRee8sB5nGvEIavYfQ7pwVwXJXqB6DWEa9qhGJCR/PldT9mZmTNwd79oC4F142XaX35qCE
+	1r0WiPKkFuAEmSqePwE9nQSDemIPcKJ0ch76MkxK6ux3/mWqt6y+cI1WjcF9Z+ZNZQV6UjgJsLk+L
+	7OxTpoEadOoDUtV6xtzoSvKWB0MleqXuhGWnOzoWJRCvyDUq34lxuexZEJO3GCx6apXxEwlQMmwZX
+	vInp6eEg==;
+Received: from localhost ([::1] helo=bombadil.infradead.org)
+	by bombadil.infradead.org with esmtp (Exim 4.98.2 #2 (Red Hat Linux))
+	id 1vH9r5-0000000GQAb-2dw0;
+	Thu, 06 Nov 2025 23:57:27 +0000
+Received: from mail-wm1-x331.google.com ([2a00:1450:4864:20::331])
+	by bombadil.infradead.org with esmtps (Exim 4.98.2 #2 (Red Hat Linux))
+	id 1vH9r1-0000000GQ6T-1M82
+	for linux-mediatek@lists.infradead.org;
+	Thu, 06 Nov 2025 23:57:25 +0000
+Received: by mail-wm1-x331.google.com with SMTP id
+ 5b1f17b1804b1-47721743fd0so616385e9.2
+        for <linux-mediatek@lists.infradead.org>;
+ Thu, 06 Nov 2025 15:57:22 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1762473441; x=1763078241;
+ darn=lists.infradead.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:from:to:cc:subject:date
+         :message-id:reply-to;
+        bh=hx0foA8BPqRUiZZHrNy69yLT2g6yRFzpphoIbc6lNgE=;
+        b=I3HwO4M4B88QezArnmjXNRwwbymHccyPkGFirWqauZy46D1sbMvbggfYt4ZnNA3k/D
+         YZoSx1QE7R8unYYOfHOZdSz50W3u6ZRFxZA89hNIxfZacWsLNZoDEqKEp2V4V41+miRw
+         fcOHTPRBupK/r/zXzF0Oh0mv0IJLqXSFpf6WNvceId79j/OkvVYBBx19uRwD4Qncm4Ux
+         iEdwO7NbiP5q/3mjwzFVYlo+vkEraW3FO/xoSVryf7FaBXHJ13WNDtfZ9mdcOUDkiyHG
+         jp2mr6ocns3ttqLWTHXfdjrRojt5mJcwXZPG3jmwq2U0MlP6VQO3oxPfeW2wXNSn1KdI
+         oEDQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1762473441; x=1763078241;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:cc:to:from:x-gm-gg:x-gm-message-state:from
+         :to:cc:subject:date:message-id:reply-to;
+        bh=hx0foA8BPqRUiZZHrNy69yLT2g6yRFzpphoIbc6lNgE=;
+        b=w0aXZXfGks0/8jMo3Y1Jft6+7R3naekEzMOR5iicSU8eyaWAB9KNRIdUQBdhmi+GWi
+         ZlIByaYY2EPNi9MePDGIwZ5z4dIdZ/AUwRqxVTqimYE3kNL5brPXOfByeBvAToIUEm7p
+         n2U3u0T69BzIu5xVkYFeNpg8flKqrEU9KdP4G7C6N+cfzz7r+4wNf2VkrbgbbSpbKYZ+
+         P6ZwcymK17btZPiE2EgXjpvBGgoe80yrEdoA9F9jGi7Zte6UhU51CRLUiGPaoOAmPp8i
+         OsJyxkPQJ+JNCbw6qSrqIAHmWzWeZ+UfCwybP45P61LgH/6p+gnDB1LJXzPOcM5mjDsj
+         ruMQ==
+X-Forwarded-Encrypted: i=1;
+ AJvYcCUu8xzA0rySIcZa1eYFgTkUg4z3MVGis5pIC2kfBf0g19S9sipJ9Ab1kquVgbRWyOpx8yA4qw7cWEMIFBNreA==@lists.infradead.org
+X-Gm-Message-State: AOJu0Yxfc5rosQ/ZBhZQsT3wbQa2B8FVzUmGig4nzn+WXj+YWbZDMIM2
+	GFfdCcEXxSY74ylfp8soTuiv/OvsENWGbk1FZNjB6yEliR7WfukGDkii
+X-Gm-Gg: ASbGncsYH3SMOtiduo7YJZki4vaPBSpk+P8eAFkEknwYECedIrgNpn6AjWdSfOoj7lg
+	d0LF7+gDTvkhuhtvZ4EpJCW25GkMNBCLIb/ZxvJqizvoN2HxrsUk2ZUxCKHSo+GqzAjdhIvsjgE
+	EWffOvuUZV+xAoiRepXWPHaA5t3PIjrarJ78Pqo/PEM6iEJaAx1Emmp6GliDFDD//kXYqTIYMFA
+	M36/yj18uR0KaBl19l5XXWxjl9GD6ezuPAWB2UYfyGWvQqRmQPJfip6BbcZMPTvvzldxAcADmo9
+	IEk+dTNswsA30BkqIFaXfWSROv/zmnMI3Rb0nGYZmcfNWVZ058jkj/itpfuQl81REyjH1AGVPkK
+	SOewdypXDdHGlCkR4VJFILnSiqQwFyUoO+ZugXfR7Legg33Jq6h38ZHNPRArQm4SBCit2EP6teE
+	3DXspYkdxfhV+f/5OhRjLUVKYhRxhv4ggQF0HKwI/1
+X-Google-Smtp-Source: 
+ AGHT+IEPriwDx7a3qMTtHvxVwJwRY8ulKcZ1YO24psD1p28Iq171kNMpQ/jT2KS+ocRGiOT0lx4Dpw==
+X-Received: by 2002:a05:600c:4695:b0:477:54cd:202f with SMTP id
+ 5b1f17b1804b1-4776bc86533mr8693025e9.3.1762473441287;
+        Thu, 06 Nov 2025 15:57:21 -0800 (PST)
+Received: from Ansuel-XPS24 (93-34-90-37.ip49.fastwebnet.it. [93.34.90.37])
+        by smtp.googlemail.com with ESMTPSA id
+ 5b1f17b1804b1-4775cd45466sm129470525e9.0.2025.11.06.15.57.19
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Thu, 06 Nov 2025 15:57:20 -0800 (PST)
 From: Christian Marangi <ansuelsmth@gmail.com>
-Date: Fri, 7 Nov 2025 00:57:04 +0100
-Subject: [PATCH 1/5] pinctrl: airoha: generalize pins/group/function/confs
+To: Linus Walleij <linus.walleij@linaro.org>,
+	Rob Herring <robh@kernel.org>,
+	Krzysztof Kozlowski <krzk+dt@kernel.org>,
+	Conor Dooley <conor+dt@kernel.org>,
+	Lorenzo Bianconi <lorenzo@kernel.org>,
+	Sean Wang <sean.wang@kernel.org>,
+	Matthias Brugger <matthias.bgg@gmail.com>,
+	AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>,
+	linux-gpio@vger.kernel.org,
+	devicetree@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	linux-mediatek@lists.infradead.org,
+	linux-arm-kernel@lists.infradead.org
+Cc: Christian Marangi <ansuelsmth@gmail.com>
+Subject: [PATCH v2 1/5] pinctrl: airoha: generalize pins/group/function/confs
  handling
+Date: Fri,  7 Nov 2025 00:57:04 +0100
+Message-ID: <20251106235713.1794668-2-ansuelsmth@gmail.com>
+X-Mailer: git-send-email 2.51.0
+In-Reply-To: <20251106235713.1794668-1-ansuelsmth@gmail.com>
+References: <20251106235713.1794668-1-ansuelsmth@gmail.com>
+MIME-Version: 1.0
+X-CRM114-Version: 20100106-BlameMichelson ( TRE 0.8.0 (BSD) ) MR-646709E3 
+X-CRM114-CacheID: sfid-20251106_155723_575311_9A17706A 
+X-CRM114-Status: GOOD (  13.42  )
+X-BeenThere: linux-mediatek@lists.infradead.org
+X-Mailman-Version: 2.1.34
+Precedence: list
+List-Id: <linux-mediatek.lists.infradead.org>
+List-Unsubscribe: <http://lists.infradead.org/mailman/options/linux-mediatek>,
+ <mailto:linux-mediatek-request@lists.infradead.org?subject=unsubscribe>
+List-Archive: <http://lists.infradead.org/pipermail/linux-mediatek/>
+List-Post: <mailto:linux-mediatek@lists.infradead.org>
+List-Help: <mailto:linux-mediatek-request@lists.infradead.org?subject=help>
+List-Subscribe: <http://lists.infradead.org/mailman/listinfo/linux-mediatek>,
+ <mailto:linux-mediatek-request@lists.infradead.org?subject=subscribe>
+Sender: "Linux-mediatek" <linux-mediatek-bounces@lists.infradead.org>
+Errors-To: 
+ linux-mediatek-bounces+linux-mediatek=archiver.kernel.org@lists.infradead.org
 
 In preparation for support of Airoha AN7583, generalize
 pins/group/function/confs handling and move them in match_data.
@@ -12,7 +135,6 @@ relying on hardcoded struct.
 This permits to use different PIN data while keeping the same logic.
 
 Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
-Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
 ---
  drivers/pinctrl/mediatek/pinctrl-airoha.c | 567 ++++++++++++----------
  1 file changed, 318 insertions(+), 249 deletions(-)
@@ -524,7 +646,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  	PINCTRL_CONF_DESC(61, REG_PCIE_RESET_OD, PCIE0_RESET_OD_MASK),
  	PINCTRL_CONF_DESC(62, REG_PCIE_RESET_OD, PCIE1_RESET_OD_MASK),
  	PINCTRL_CONF_DESC(63, REG_PCIE_RESET_OD, PCIE2_RESET_OD_MASK),
-@@ -2547,12 +2577,17 @@ airoha_pinctrl_get_conf_reg(const struct
+@@ -2546,12 +2576,17 @@ airoha_pinctrl_get_conf_reg(const struct
  }
  
  static int airoha_pinctrl_get_conf(struct airoha_pinctrl *pinctrl,
@@ -545,7 +667,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  	if (!reg)
  		return -EINVAL;
  
-@@ -2565,12 +2600,17 @@ static int airoha_pinctrl_get_conf(struc
+@@ -2564,12 +2599,17 @@ static int airoha_pinctrl_get_conf(struc
  }
  
  static int airoha_pinctrl_set_conf(struct airoha_pinctrl *pinctrl,
@@ -566,7 +688,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  	if (!reg)
  		return -EINVAL;
  
-@@ -2583,44 +2623,34 @@ static int airoha_pinctrl_set_conf(struc
+@@ -2582,44 +2622,34 @@ static int airoha_pinctrl_set_conf(struc
  }
  
  #define airoha_pinctrl_get_pullup_conf(pinctrl, pin, val)			\
@@ -621,7 +743,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  				(pin), (val))
  
  static int airoha_pinconf_get_direction(struct pinctrl_dev *pctrl_dev, u32 p)
-@@ -2799,12 +2829,13 @@ static int airoha_pinconf_set(struct pin
+@@ -2796,12 +2826,13 @@ static int airoha_pinconf_set(struct pin
  static int airoha_pinconf_group_get(struct pinctrl_dev *pctrl_dev,
  				    unsigned int group, unsigned long *config)
  {
@@ -637,7 +759,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  				       config))
  			return -ENOTSUPP;
  
-@@ -2821,13 +2852,14 @@ static int airoha_pinconf_group_set(stru
+@@ -2818,13 +2849,14 @@ static int airoha_pinconf_group_set(stru
  				    unsigned int group, unsigned long *configs,
  				    unsigned int num_configs)
  {
@@ -654,11 +776,11 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  					 configs, num_configs);
  		if (err)
  			return err;
-@@ -2853,23 +2885,16 @@ static const struct pinctrl_ops airoha_p
+@@ -2850,23 +2882,16 @@ static const struct pinctrl_ops airoha_p
  	.dt_free_map = pinconf_generic_dt_free_map,
  };
  
--static struct pinctrl_desc airoha_pinctrl_desc = {
+-static const struct pinctrl_desc airoha_pinctrl_desc = {
 -	.name = KBUILD_MODNAME,
 -	.owner = THIS_MODULE,
 -	.pctlops = &airoha_pctlops,
@@ -681,7 +803,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  	pinctrl = devm_kzalloc(dev, sizeof(*pinctrl), GFP_KERNEL);
  	if (!pinctrl)
  		return -ENOMEM;
-@@ -2884,14 +2909,23 @@ static int airoha_pinctrl_probe(struct p
+@@ -2881,14 +2906,23 @@ static int airoha_pinctrl_probe(struct p
  
  	pinctrl->chip_scu = map;
  
@@ -708,7 +830,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  
  		err = pinctrl_generic_add_group(pinctrl->ctrl, grp->name,
  						grp->pins, grp->npins,
-@@ -2904,10 +2938,10 @@ static int airoha_pinctrl_probe(struct p
+@@ -2901,10 +2935,10 @@ static int airoha_pinctrl_probe(struct p
  	}
  
  	/* build functions */
@@ -718,10 +840,10 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  
 -		func = &airoha_pinctrl_funcs[i];
 +		func = &data->funcs[i];
- 		err = pinmux_generic_add_function(pinctrl->ctrl,
- 						  func->desc.name,
- 						  func->desc.groups,
-@@ -2920,6 +2954,10 @@ static int airoha_pinctrl_probe(struct p
+ 		err = pinmux_generic_add_pinfunction(pinctrl->ctrl,
+ 						     &func->desc,
+ 						     (void *)func);
+@@ -2915,6 +2949,10 @@ static int airoha_pinctrl_probe(struct p
  		}
  	}
  
@@ -732,7 +854,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  	err = pinctrl_enable(pinctrl->ctrl);
  	if (err)
  		return err;
-@@ -2928,8 +2966,39 @@ static int airoha_pinctrl_probe(struct p
+@@ -2923,8 +2961,39 @@ static int airoha_pinctrl_probe(struct p
  	return airoha_pinctrl_add_gpiochip(pinctrl, pdev);
  }
  

@@ -40,7 +40,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 #  M:	Lorenzo Bianconi <lorenzo@kernel.org>
 --- a/drivers/phy/Kconfig
 +++ b/drivers/phy/Kconfig
-@@ -72,16 +72,7 @@ config PHY_CAN_TRANSCEIVER
+@@ -80,16 +80,6 @@ config PHY_CAN_TRANSCEIVER
  	  functional modes using gpios and sets the attribute max link
  	  rate, for CAN drivers.
  
@@ -54,17 +54,25 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 -	  This driver create the basic PHY instance and provides initialize
 -	  callback for PCIe GEN3 port.
 -
+ config PHY_NXP_PTN3222
+ 	tristate "NXP PTN3222 1-port eUSB2 to USB2 redriver"
+ 	depends on I2C
+@@ -101,6 +91,7 @@ config PHY_NXP_PTN3222
+ 	  schemes. It supports all three USB 2.0 data rates: Low Speed, Full
+ 	  Speed and High Speed.
+ 
 +source "drivers/phy/airoha/Kconfig"
  source "drivers/phy/allwinner/Kconfig"
  source "drivers/phy/amlogic/Kconfig"
  source "drivers/phy/broadcom/Kconfig"
 --- a/drivers/phy/Makefile
 +++ b/drivers/phy/Makefile
-@@ -10,8 +10,8 @@ obj-$(CONFIG_PHY_LPC18XX_USB_OTG)	+= phy
- obj-$(CONFIG_PHY_XGENE)			+= phy-xgene.o
+@@ -11,9 +11,9 @@ obj-$(CONFIG_PHY_XGENE)			+= phy-xgene.o
  obj-$(CONFIG_PHY_PISTACHIO_USB)		+= phy-pistachio-usb.o
+ obj-$(CONFIG_PHY_SNPS_EUSB2)		+= phy-snps-eusb2.o
  obj-$(CONFIG_USB_LGM_PHY)		+= phy-lgm-usb.o
 -obj-$(CONFIG_PHY_AIROHA_PCIE)		+= phy-airoha-pcie.o
+ obj-$(CONFIG_PHY_NXP_PTN3222)		+= phy-nxp-ptn3222.o
 -obj-y					+= allwinner/	\
 +obj-y					+= airoha/	\
 +					   allwinner/	\

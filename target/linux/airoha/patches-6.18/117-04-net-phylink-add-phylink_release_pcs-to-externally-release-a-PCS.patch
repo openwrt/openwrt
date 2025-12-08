@@ -1,0 +1,267 @@
+From patchwork Sun May 11 20:12:30 2025
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+X-Patchwork-Submitter: Christian Marangi <ansuelsmth@gmail.com>
+X-Patchwork-Id: 14084278
+Return-Path: 
+ <linux-mediatek-bounces+linux-mediatek=archiver.kernel.org@lists.infradead.org>
+X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
+	aws-us-west-2-korg-lkml-1.web.codeaurora.org
+Received: from bombadil.infradead.org (bombadil.infradead.org
+ [198.137.202.133])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by smtp.lore.kernel.org (Postfix) with ESMTPS id E45C9C3ABC3
+	for <linux-mediatek@archiver.kernel.org>;
+ Sun, 11 May 2025 20:23:43 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=lists.infradead.org; s=bombadil.20210309; h=Sender:List-Subscribe:List-Help
+	:List-Post:List-Archive:List-Unsubscribe:List-Id:Content-Transfer-Encoding:
+	MIME-Version:References:In-Reply-To:Message-ID:Date:Subject:To:From:Reply-To:
+	Cc:Content-Type:Content-ID:Content-Description:Resent-Date:Resent-From:
+	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Owner;
+	bh=0mejOF2mYhTEXxWVOimbjN00Vr4yLk+E8aCpQ2xV2aM=; b=GXLt3Zslo29A0i9EUEe5zsG1HE
+	NL/PTwefiAJAoTYsmgK/UKD9PG4vpR0Lrf3pNplb1/X3xeBVAa0ErrJUlU/22sP593VgEk87+8nxI
+	BhaVi7fUOniLkvIv2hxtOKzoRKCtHGE8uDlHNtkXTarPpxk0uJjaPEoHQv9yIwi0IWf9MCWLQcsRU
+	oFvKeoVOHKJp5KmvpNgw89GzewpF/3VfTe2WdC82n1LYROOShty+0/EYDnnNwwZM7T9Ki2CiGED6D
+	r/adk8JRgtWaVqmdansQIIKdRU+GK+/SB+Wupc8I+rSs3kPtmdY2u5hHY6lpGqjWEySN1CPRScaeP
+	CciInAkQ==;
+Received: from localhost ([::1] helo=bombadil.infradead.org)
+	by bombadil.infradead.org with esmtp (Exim 4.98.2 #2 (Red Hat Linux))
+	id 1uEDD4-00000007o5c-3juh;
+	Sun, 11 May 2025 20:23:42 +0000
+Received: from mail-wr1-x434.google.com ([2a00:1450:4864:20::434])
+	by bombadil.infradead.org with esmtps (Exim 4.98.2 #2 (Red Hat Linux))
+	id 1uED3A-00000007moE-2bhu;
+	Sun, 11 May 2025 20:13:29 +0000
+Received: by mail-wr1-x434.google.com with SMTP id
+ ffacd0b85a97d-3a0b308856fso2760096f8f.2;
+        Sun, 11 May 2025 13:13:28 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1746994407; x=1747599207;
+ darn=lists.infradead.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=0mejOF2mYhTEXxWVOimbjN00Vr4yLk+E8aCpQ2xV2aM=;
+        b=MRc0jmjIZE7mfcjWBywg6JKPxXM7CFyQ6vO9jWGHkKkhEbB8FzOKZ8tobEGXXUruqc
+         7dHJn7btA4cN6SBqjS5WpXYSj34RUxcgKU+PyNJJ37M1xGYGqE3cuH8/B9d8onxQpPJV
+         bE8pyzuRm5RcDJH4mPxz2ulXYeLc2GZxZ7inccZ8uHAtFU1CCoXtXFv1jAhpq/jZ/ADA
+         ypN4OpJ5iWyWuLn1ZOs43SMHMpk2AGijv7hYVNxj3Z23XizWsWwZKcHQJDfx5ZA1Lu5u
+         wSb+vig8mK7NOyDc8lQIjjhfCmNAff+rJWfoiMYwTUdnrjR7OiMirQJHeQROCcKNHlPu
+         caVA==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1746994407; x=1747599207;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=0mejOF2mYhTEXxWVOimbjN00Vr4yLk+E8aCpQ2xV2aM=;
+        b=lF2lHXXkos5Kas9SQ9U4olosN9h4ZBTZcH7wMWG1xffIFzh09m2AytQQPvbwHua+I1
+         mC+CBlF8WoOvh18vCnth4yx724UAxBesY9n2lwT63e2+XOvv9V9kpDWatOYVJFl6nceS
+         ux1RlTW2nQTGL+ayyWba8L+hL+VpognbN9fGCsQFrKgGbBSFFEFsbSDwTRjCEM0cyZ38
+         +i24feKv6MnYpPuu7RzAqVDaFXeDai6jjVh+4D5GeL3lQ84QY0Mxn8mExn5jDBv8HLy+
+         H0k6YyoWuspRKchDraBkTaHtYQv35b1uZEf4zO9s4dgCekeHNHQc4AJ0TBqBcN/RxsMY
+         4wqw==
+X-Forwarded-Encrypted: i=1;
+ AJvYcCWELUQCpOL99CiPKS1pkiWx8omWTV3qRj7Zo3BgviQGi3gI0cO92eCaDDF713Q2RtURSBjUFPMXMWErv4Y13rU=@lists.infradead.org,
+ AJvYcCXL8EpnTgp2gm67JuqBs1ew1kCXKmSJ25eppvh9+nduOLbune8IK8Mk28i0qKdQY9pZgXia6ClBLSobosFnu1Co@lists.infradead.org
+X-Gm-Message-State: AOJu0YwbDCuROOd+MrXg9FnG/9X504X47UjxlOLCFNm0sgkYdPysaEmN
+	1zeLPmTkobt5ebEuP2wfUU/doJ+vB0ict86Pg3VGcMX/PjpI0sDx
+X-Gm-Gg: ASbGncvuQthmP6y1RsCY1iOMU407pxgnvxgTJPH49R3WWteQTIcy/Qj4rBnV4/sqIHr
+	9dLV90P5zUtnqvzB9JGnLR3ONNbHRKbe0xYjJcdRDGcu8VThlmLYsnqBfceBGjKgJjz2vpE2ZXB
+	80JhbsAsA6vutNDkZIc4Avq4LGGTM3sg0lxhPo/AtzjLPtrkZYGPfd11NNOtl+bjNt1SwTfrrZy
+	+XZCbdbB5sF7E0g+IQEtPyXaPHP5yKx7b2iBwfPI8Ut+yAHPv+m3p/JAPPwzvH/P4dSm6Cv+wu8
+	lryfX/Hbysp0IexCwmJf7PMZB2Lc2xwymfAZ3IQmfgjA2xJ/KH+Fu8sQDWiA4LCUfEudiVkhy4e
+	Woe72sNjWIzAdq70FObvvHNwnJcvj2GM=
+X-Google-Smtp-Source: 
+ AGHT+IFXCPvOH+Bl0GOCcZZfsHkVWH8TlBB8Wsfu39SLQaVZ3YE4Fzkrf4cNMCkqAZKJSKwW3S53LQ==
+X-Received: by 2002:a05:6000:18ae:b0:3a0:831d:267c with SMTP id
+ ffacd0b85a97d-3a1f6433a0bmr9412917f8f.18.1746994406860;
+        Sun, 11 May 2025 13:13:26 -0700 (PDT)
+Received: from localhost.localdomain (93-34-88-225.ip49.fastwebnet.it.
+ [93.34.88.225])
+        by smtp.googlemail.com with ESMTPSA id
+ 5b1f17b1804b1-442d67ee275sm100615165e9.19.2025.05.11.13.13.25
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sun, 11 May 2025 13:13:26 -0700 (PDT)
+From: Christian Marangi <ansuelsmth@gmail.com>
+To: Andrew Lunn <andrew+netdev@lunn.ch>,
+	"David S. Miller" <davem@davemloft.net>,
+	Eric Dumazet <edumazet@google.com>,
+	Jakub Kicinski <kuba@kernel.org>,
+	Paolo Abeni <pabeni@redhat.com>,
+	Rob Herring <robh@kernel.org>,
+	Krzysztof Kozlowski <krzk+dt@kernel.org>,
+	Conor Dooley <conor+dt@kernel.org>,
+	Lorenzo Bianconi <lorenzo@kernel.org>,
+	Heiner Kallweit <hkallweit1@gmail.com>,
+	Russell King <linux@armlinux.org.uk>,
+	Philipp Zabel <p.zabel@pengutronix.de>,
+	Nathan Chancellor <nathan@kernel.org>,
+	Nick Desaulniers <nick.desaulniers+lkml@gmail.com>,
+	Bill Wendling <morbo@google.com>,
+	Justin Stitt <justinstitt@google.com>,
+	Christian Marangi <ansuelsmth@gmail.com>,
+	Daniel Golle <daniel@makrotopia.org>,
+	netdev@vger.kernel.org,
+	devicetree@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	linux-arm-kernel@lists.infradead.org,
+	linux-mediatek@lists.infradead.org,
+	llvm@lists.linux.dev
+Subject: [net-next PATCH v4 04/11] net: phylink: add phylink_release_pcs() to
+ externally release a PCS
+Date: Sun, 11 May 2025 22:12:30 +0200
+Message-ID: <20250511201250.3789083-5-ansuelsmth@gmail.com>
+X-Mailer: git-send-email 2.48.1
+In-Reply-To: <20250511201250.3789083-1-ansuelsmth@gmail.com>
+References: <20250511201250.3789083-1-ansuelsmth@gmail.com>
+MIME-Version: 1.0
+X-CRM114-Version: 20100106-BlameMichelson ( TRE 0.8.0 (BSD) ) MR-646709E3 
+X-CRM114-CacheID: sfid-20250511_131328_652981_86C5362A 
+X-CRM114-Status: GOOD (  25.47  )
+X-BeenThere: linux-mediatek@lists.infradead.org
+X-Mailman-Version: 2.1.34
+Precedence: list
+List-Id: <linux-mediatek.lists.infradead.org>
+List-Unsubscribe: <http://lists.infradead.org/mailman/options/linux-mediatek>,
+ <mailto:linux-mediatek-request@lists.infradead.org?subject=unsubscribe>
+List-Archive: <http://lists.infradead.org/pipermail/linux-mediatek/>
+List-Post: <mailto:linux-mediatek@lists.infradead.org>
+List-Help: <mailto:linux-mediatek-request@lists.infradead.org?subject=help>
+List-Subscribe: <http://lists.infradead.org/mailman/listinfo/linux-mediatek>,
+ <mailto:linux-mediatek-request@lists.infradead.org?subject=subscribe>
+Sender: "Linux-mediatek" <linux-mediatek-bounces@lists.infradead.org>
+Errors-To: 
+ linux-mediatek-bounces+linux-mediatek=archiver.kernel.org@lists.infradead.org
+
+Add phylink_release_pcs() to externally release a PCS from a phylink
+instance. This can be used to handle case when a single PCS needs to be
+removed and the phylink instance needs to be refreshed.
+
+On calling phylink_release_pcs(), the PCS will be removed from the
+phylink internal PCS list and the phylink supported_interfaces value is
+reparsed with the remaining PCS interfaces.
+
+Also a phylink resolve is triggered to handle the PCS removal.
+
+A flag to make phylink resolve reconfigure the interface (even if it
+didn't change) is also added. This is needed to handle the special
+case when the current PCS used by phylink is removed and a major_config
+is needed to propagae the configuration change. With this option
+enabled we also force mac_config even if the PHY link is not up for
+the in-band case.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/net/phy/phylink.c | 58 ++++++++++++++++++++++++++++++++++++++-
+ include/linux/phylink.h   |  2 ++
+ 2 files changed, 59 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/phy/phylink.c
++++ b/drivers/net/phy/phylink.c
+@@ -86,6 +86,7 @@ struct phylink {
+ 	bool link_failed;
+ 	bool suspend_link_up;
+ 	bool major_config_failed;
++	bool reconfig_interface;
+ 	bool mac_supports_eee_ops;
+ 	bool mac_supports_eee;
+ 	bool phy_enable_tx_lpi;
+@@ -917,6 +918,55 @@ static void phylink_resolve_an_pause(str
+ 	}
+ }
+ 
++/**
++ * phylink_release_pcs - Removes a PCS from the phylink PCS available list
++ * @pcs: a pointer to the phylink_pcs struct to be released
++ *
++ * This function release a PCS from the phylink PCS available list if
++ * actually in use. It also refreshes the supported interfaces of the
++ * phylink instance by copying the supported interfaces from the phylink
++ * conf and merging the supported interfaces of the remaining available PCS
++ * in the list and trigger a resolve.
++ */
++void phylink_release_pcs(struct phylink_pcs *pcs)
++{
++	struct phylink *pl;
++
++	ASSERT_RTNL();
++
++	pl = pcs->phylink;
++	if (!pl)
++		return;
++
++	list_del(&pcs->list);
++	pcs->phylink = NULL;
++
++	/* Check if we are removing the PCS currently
++	 * in use by phylink. If this is the case,
++	 * force phylink resolve to reconfigure the interface
++	 * mode and set the phylink PCS to NULL.
++	 */
++	if (pl->pcs == pcs) {
++		mutex_lock(&pl->state_mutex);
++
++		pl->reconfig_interface = true;
++		pl->pcs = NULL;
++
++		mutex_unlock(&pl->state_mutex);
++	}
++
++	/* Refresh supported interfaces */
++	phy_interface_copy(pl->supported_interfaces,
++			   pl->config->supported_interfaces);
++	list_for_each_entry(pcs, &pl->pcs_list, list)
++		phy_interface_or(pl->supported_interfaces,
++				 pl->supported_interfaces,
++				 pcs->supported_interfaces);
++
++	phylink_run_resolve(pl);
++}
++EXPORT_SYMBOL_GPL(phylink_release_pcs);
++
+ static unsigned int phylink_pcs_inband_caps(struct phylink_pcs *pcs,
+ 				    phy_interface_t interface)
+ {
+@@ -1729,6 +1779,10 @@ static void phylink_resolve(struct work_
+ 		if (phy)
+ 			link_state.link &= pl->phy_state.link;
+ 
++		/* Force mac_config if we need to reconfig the interface */
++		if (pl->reconfig_interface)
++			mac_config = true;
++
+ 		/* Only update if the PHY link is up */
+ 		if (phy && pl->phy_state.link) {
+ 			/* If the interface has changed, force a link down
+@@ -1763,7 +1817,8 @@ static void phylink_resolve(struct work_
+ 		phylink_apply_manual_flow(pl, &link_state);
+ 
+ 	if (mac_config) {
+-		if (link_state.interface != pl->link_config.interface) {
++		if (link_state.interface != pl->link_config.interface ||
++		    pl->reconfig_interface) {
+ 			/* The interface has changed, force the link down and
+ 			 * then reconfigure.
+ 			 */
+@@ -1773,6 +1828,7 @@ static void phylink_resolve(struct work_
+ 			}
+ 			phylink_major_config(pl, false, &link_state);
+ 			pl->link_config.interface = link_state.interface;
++			pl->reconfig_interface = false;
+ 		}
+ 	}
+ 
+--- a/include/linux/phylink.h
++++ b/include/linux/phylink.h
+@@ -716,6 +716,8 @@ void phylink_disconnect_phy(struct phyli
+ int phylink_set_fixed_link(struct phylink *,
+ 			   const struct phylink_link_state *);
+ 
++void phylink_release_pcs(struct phylink_pcs *pcs);
++
+ void phylink_mac_change(struct phylink *, bool up);
+ void phylink_pcs_change(struct phylink_pcs *, bool up);
+ 
