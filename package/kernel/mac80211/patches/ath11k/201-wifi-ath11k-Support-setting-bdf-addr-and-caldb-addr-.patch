@@ -11,8 +11,8 @@ Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
 --- a/drivers/net/wireless/ath/ath11k/qmi.c
 +++ b/drivers/net/wireless/ath/ath11k/qmi.c
 @@ -2042,6 +2042,7 @@ static int ath11k_qmi_assign_target_mem_
+ 	struct resource res = DEFINE_RES_NAMED(0, 0, NULL, IORESOURCE_UNSET);
  	struct device *dev = ab->dev;
- 	struct resource res = {};
  	u32 host_ddr_sz;
 +	u32 addr;
  	int i, idx, ret;
