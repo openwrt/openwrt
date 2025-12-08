@@ -70,7 +70,8 @@ MESON_HOST_ARGS += \
 
 MESON_ARGS += \
 	$(MESON_COMMON_ARGS) \
-	-Dcrypto_backend=$(BUILD_VARIANT)
+	-Dcrypto_backend=$(BUILD_VARIANT) \
+	-Dminimal=true
 
 define Package/apk/conffiles
 /etc/apk/repositories.d/customfeeds.list
