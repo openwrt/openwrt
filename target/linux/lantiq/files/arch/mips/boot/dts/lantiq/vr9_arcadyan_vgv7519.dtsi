@@ -216,6 +216,8 @@
 		label = "wan";
 		phy-mode = "rgmii";
 		phy-handle = <&phy5>;
+		nvmem-cells = <&macaddr_boardconfig_16 0>;
+		nvmem-cell-names = "mac-address";
 	};
 };
 
