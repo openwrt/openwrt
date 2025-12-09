@@ -7,6 +7,11 @@
 	model = "Linksys MR5500";
 	compatible = "linksys,mr5500", "qcom,ipq5018";
 
+	chosen {
+		bootargs-append = " root=/dev/ubiblock0_0 coherent_pool=2M";
+		stdout-path = "serial0:115200n8";
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 
