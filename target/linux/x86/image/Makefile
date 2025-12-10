@@ -93,7 +93,7 @@ define Build/iso
 			$(STAGING_DIR_IMAGE)/grub2/iso-boot$(if $(CONFIG_x86_64),x64,ia32).efi \
 			::/efi/boot/boot$(if $(CONFIG_x86_64),x64,ia32).efi
 	)
-	mkisofs -R -c boot.cat \
+	mkisofs -R -uid 0 -gid 0 -c boot.cat \
 		-b boot/grub/eltorito.img -no-emul-boot -boot-load-size 4 -boot-info-table \
 		$(if $(filter $(1),efi),-eltorito-platform efi -b boot/grub/isoboot.img -no-emul-boot) \
 		-o $@ $@.boot $(TARGET_DIR)
