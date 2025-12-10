@@ -78,7 +78,12 @@ define Device/watchguard_firebox-t10
   DEVICE_VENDOR := Watchguard
   DEVICE_MODEL := Firebox T10
   DEVICE_PACKAGES := kmod-rtc-s35390a kmod-eeprom-at24
+  # This boot loader doesn't reliably boot an uncompressed image,
+  # therefore resort to gzipping the already compressed zImage
   KERNEL = kernel-bin | gzip | fit gzip $(KDIR)/image-$$(DEVICE_DTS).dtb
+  KERNEL_NAME := zImage.la3000000
+  KERNEL_ENTRY := 0x3000000
+  KERNEL_LOADADDR := 0x3000000
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
