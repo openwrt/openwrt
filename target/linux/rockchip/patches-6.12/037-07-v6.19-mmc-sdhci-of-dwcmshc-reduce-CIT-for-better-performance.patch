@@ -30,7 +30,7 @@ Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
  #define CQHCI_SSC2			0x44
 --- a/drivers/mmc/host/sdhci-of-dwcmshc.c
 +++ b/drivers/mmc/host/sdhci-of-dwcmshc.c
-@@ -614,6 +614,11 @@ static void rk35xx_sdhci_cqe_pre_enable(
+@@ -627,6 +627,11 @@ static void rk35xx_sdhci_cqe_pre_enable(
  	struct dwcmshc_priv *dwc_priv = sdhci_pltfm_priv(pltfm_host);
  	u32 reg;
  
