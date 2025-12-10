@@ -39,6 +39,10 @@ friendlyarm,nanopi-r76s)
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1"
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "eth0"
 	;;
+hinlink,h28k)
+	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "eth1"
+	ucidef_set_led_netdev "lan" "LAN" "amber:lan" "eth0"
+	;;
 radxa,e20c)
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "eth0"
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1"
