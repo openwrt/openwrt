@@ -962,7 +962,7 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
  L:	linux-spi@vger.kernel.org
 --- a/drivers/staging/Kconfig
 +++ b/drivers/staging/Kconfig
-@@ -64,4 +64,6 @@ source "drivers/staging/fieldbus/Kconfig
+@@ -62,4 +62,6 @@ source "drivers/staging/fieldbus/Kconfig
  
  source "drivers/staging/vme_user/Kconfig"
  
@@ -971,7 +971,7 @@ Signed-off-by: Dong Aisheng <aisheng.dong@nxp.com>
  endif # STAGING
 --- a/drivers/staging/Makefile
 +++ b/drivers/staging/Makefile
-@@ -21,3 +21,4 @@ obj-$(CONFIG_GREYBUS)		+= greybus/
+@@ -20,3 +20,4 @@ obj-$(CONFIG_GREYBUS)		+= greybus/
  obj-$(CONFIG_BCM2835_VCHIQ)	+= vc04_services/
  obj-$(CONFIG_XIL_AXIS_FIFO)	+= axis-fifo/
  obj-$(CONFIG_FIELDBUS_DEV)     += fieldbus/
