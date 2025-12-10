@@ -102,6 +102,10 @@ switch() {
 
 main() {
     case "$(board_name)" in
+    genexis,platinum-4410)
+        echo "Genexis Platinum 4410 does not support multiboot because of a bootloader bug"
+        exit 1
+        ;;
     tplink,archer-vr1200v-v2)
         # 03fe0000
         part=$(part_named '"reserve"')
