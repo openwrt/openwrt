@@ -135,6 +135,9 @@ struct rtpcs_serdes {
 	struct rtpcs_ctrl *ctrl;
 	u8 id;
 	enum rtpcs_sds_mode mode;
+
+	bool rx_pol_inv;
+	bool tx_pol_inv;
 };
 
 struct rtpcs_ctrl {
@@ -144,8 +147,6 @@ struct rtpcs_ctrl {
 	const struct rtpcs_config *cfg;
 	struct rtpcs_serdes serdes[RTPCS_SDS_CNT];
 	struct rtpcs_link *link[RTPCS_PORT_CNT];
-	bool rx_pol_inv[RTPCS_SDS_CNT];
-	bool tx_pol_inv[RTPCS_SDS_CNT];
 	struct mutex lock;
 };
 
@@ -2242,8 +2243,7 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 	pr_info("%s: Configuring RTL9300 SERDES %d\n", __func__, sds->id);
 
 	/* Set SDS polarity */
-	rtpcs_930x_sds_set_polarity(sds, sds->ctrl->tx_pol_inv[sds->id],
-				    sds->ctrl->rx_pol_inv[sds->id]);
+	rtpcs_930x_sds_set_polarity(sds, sds->tx_pol_inv, sds->rx_pol_inv);
 
 	/* Enable SDS in desired mode */
 	rtpcs_930x_sds_mode_set(sds, phy_mode);
@@ -2831,8 +2831,7 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 		}
 	}
 
-	rtpcs_931x_sds_set_polarity(sds, ctrl->tx_pol_inv[sds_id],
-				    ctrl->rx_pol_inv[sds_id]);
+	rtpcs_931x_sds_set_polarity(sds, sds->tx_pol_inv, sds->rx_pol_inv);
 
 	val = ori & ~BIT(sds_id);
 	regmap_write(ctrl->map, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR, val);
@@ -3090,8 +3089,9 @@ static int rtpcs_probe(struct platform_device *pdev)
 		if (sds_id >= ctrl->cfg->serdes_count)
 			return -EINVAL;
 
-		ctrl->rx_pol_inv[sds_id] = of_property_read_bool(child, "realtek,pnswap-rx");
-		ctrl->tx_pol_inv[sds_id] = of_property_read_bool(child, "realtek,pnswap-tx");
+		sds = &ctrl->serdes[sds_id];
+		sds->rx_pol_inv = of_property_read_bool(child, "realtek,pnswap-rx");
+		sds->tx_pol_inv = of_property_read_bool(child, "realtek,pnswap-tx");
 	}
 
 	if (ctrl->cfg->init_serdes_common) {
