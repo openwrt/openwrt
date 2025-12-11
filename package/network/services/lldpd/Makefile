@@ -26,28 +26,66 @@ PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/lldpd
+define Package/lldpd/default
   SECTION:=net
   CATEGORY:=Network
   SUBMENU:=Routing and Redirection
   TITLE:=Link Layer Discovery Protocol daemon
   URL:=https://lldpd.github.io/
-  DEPENDS:=+libcap +libevent2 +USE_GLIBC:libbsd +LLDPD_WITH_JSON:libjson-c +LLDPD_WITH_SNMP:libnetsnmp
+  DEPENDS:=+libcap +libevent2 +USE_GLIBC:libbsd +LLDPD_WITH_JSON:libjson-c
   USERID:=lldp=121:lldp=129
   MENU:=1
 endef
 
-define Package/lldpd/config
-source "$(SOURCE)/Config.in"
-endef
-
-define Package/lldpd/description
+define Package/lldpd/default/description
 	LLDP (Link Layer Discovery Protocol) is an industry standard protocol designed
 	to supplant proprietary Link-Layer protocols such as
 	Extreme's EDP (Extreme Discovery Protocol) and
 	CDP (Cisco Discovery Protocol).
 	The goal of LLDP is to provide an inter-vendor compatible mechanism to deliver
 	Link-Layer notifications to adjacent network devices.
+endef
+
+define Package/lldpd
+  $(call Package/lldpd/default)
+  VARIANT:=nosnmp
+  DEFAULT_VARIANT:=1
+  PROVIDES:=lldpd
+  CONFLICTS:=lldpd-snmp
+endef
+
+define Package/lldpd/description
+  $(call Package/lldpd/default/description)
+
+  The lldpd daemon.
+endef
+
+define Package/lldpd/config
+	menu "Configuration"
+		depends on PACKAGE_lldpd
+		source "$(SOURCE)/Config.in"
+	endmenu
+endef
+
+define Package/lldpd-snmp
+  $(call Package/lldpd/default)
+  TITLE+= (with SNMP support)
+  DEPENDS+= +libnetsnmp
+  VARIANT:=snmp
+  PROVIDES:=lldpd
+endef
+
+define Package/lldpd-snmp/description
+  $(call Package/lldpd/default/description)
+
+  The lldpd daemon with Net-SNMP AgentX support.
+endef
+
+define Package/lldpd-snmp/config
+	menu "Configuration"
+		depends on PACKAGE_lldpd-snmp
+		source "$(SOURCE)/Config.in"
+	endmenu
 endef
 
 define Build/InstallDev
@@ -83,10 +121,6 @@ ifneq ($(CONFIG_LLDPD_WITH_SONMP),y)
 	sed -i -e 's/CONFIG_LLDPD_WITH_SONMP=y/CONFIG_LLDPD_WITH_SONMP=n/g' $(1)/etc/init.d/lldpd
 	sed -i -e '/sonmp/d' $(1)/etc/config/lldpd
 endif
-ifneq ($(CONFIG_LLDPD_WITH_SNMP),y)
-	sed -i -e 's/CONFIG_LLDPD_WITH_SNMP=y/CONFIG_LLDPD_WITH_SNMP=n/g' $(1)/etc/init.d/lldpd
-	sed -i -e '/agentxsocket/d' $(1)/etc/config/lldpd
-endif
 ifneq ($(CONFIG_LLDPD_WITH_LLDPMED),y)
 	sed -i -e 's/CONFIG_LLDPD_WITH_LLDPMED=y/CONFIG_LLDPD_WITH_LLDPMED=n/g' $(1)/etc/init.d/lldpd
 	sed -i -e '/agentxsocket/d' $(1)/etc/config/lldpd
@@ -95,9 +129,17 @@ ifneq ($(CONFIG_LLDPD_WITH_LLDPMED),y)
 endif
 endef
 
+define Package/lldpd-snmp/install
+	$(call Package/lldpd/install,$(1))
+	sed -i -e 's/CONFIG_LLDPD_WITH_SNMP=y/CONFIG_LLDPD_WITH_SNMP=n/g' $(1)/etc/init.d/lldpd
+	sed -i -e '/agentxsocket/d' $(1)/etc/config/lldpd
+endef
+
 define Package/lldpd/conffiles
 /etc/config/lldpd
 endef
+
+Package/lldpd-snmp/conffiles = $(Package/lldpd/conffiles)
 
 CONFIGURE_ARGS += \
 	$(if $(CONFIG_LLDPD_WITH_PRIVSEP), \
@@ -120,9 +162,13 @@ CONFIGURE_ARGS += \
 	$(if $(CONFIG_LLDPD_WITH_CUSTOM),,--disable-custom) \
 	$(if $(CONFIG_LLDPD_WITH_SONMP),,--disable-sonmp) \
 	$(if $(CONFIG_LLDPD_WITH_JSON),--enable-json0,) \
-	$(if $(CONFIG_LLDPD_WITH_SNMP),--with-snmp,) \
-	$(if $(CONFIG_USE_GLIBC),,--without-libbsd)
+	$(if $(CONFIG_USE_GLIBC),,--without-libbsd) \
+
+ifeq ($(BUILD_VARIANT),snmp)
+CONFIGURE_ARGS+= --with-snmp
+endif
 
 TARGET_LDFLAGS += -Wl,--gc-sections,--as-needed
 
 $(eval $(call BuildPackage,lldpd))
+$(eval $(call BuildPackage,lldpd-snmp))
