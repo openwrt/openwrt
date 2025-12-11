@@ -60,7 +60,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		ieee80211_set_mu_mimo_follow(monitor_sdata, params);
  
  	if (params->flags) {
-@@ -889,22 +894,25 @@ static int ieee80211_set_monitor_channel
+@@ -903,22 +908,25 @@ static int ieee80211_set_monitor_channel
  
  	lockdep_assert_wiphy(local->hw.wiphy);
  
@@ -95,7 +95,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (ret)
  		return ret;
  done:
-@@ -3050,7 +3058,8 @@ static int ieee80211_set_tx_power(struct
+@@ -3064,7 +3072,8 @@ static int ieee80211_set_tx_power(struct
  	if (wdev) {
  		sdata = IEEE80211_WDEV_TO_SUB_IF(wdev);
  
@@ -105,7 +105,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			if (!ieee80211_hw_check(&local->hw, WANT_MONITOR_VIF))
  				return -EOPNOTSUPP;
  
-@@ -3098,7 +3107,8 @@ static int ieee80211_set_tx_power(struct
+@@ -3112,7 +3121,8 @@ static int ieee80211_set_tx_power(struct
  	}
  
  	list_for_each_entry(sdata, &local->interfaces, list) {
@@ -115,7 +115,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			has_monitor = true;
  			continue;
  		}
-@@ -3108,7 +3118,8 @@ static int ieee80211_set_tx_power(struct
+@@ -3122,7 +3132,8 @@ static int ieee80211_set_tx_power(struct
  		sdata->vif.bss_conf.txpower_type = txp_type;
  	}
  	list_for_each_entry(sdata, &local->interfaces, list) {
@@ -125,7 +125,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			continue;
  		ieee80211_recalc_txpower(sdata, update_txp_type);
  	}
-@@ -4303,7 +4314,8 @@ static int ieee80211_cfg_get_channel(str
+@@ -4317,7 +4328,8 @@ static int ieee80211_cfg_get_channel(str
  	if (chanctx_conf) {
  		*chandef = link->conf->chanreq.oper;
  		ret = 0;
@@ -201,7 +201,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
-@@ -279,8 +279,13 @@ static int _ieee80211_change_mac(struct
+@@ -296,8 +296,13 @@ static int _ieee80211_change_mac(struct
  	ret = eth_mac_addr(sdata->dev, sa);
  
  	if (ret == 0) {
@@ -217,7 +217,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  
  	/* Regardless of eth_mac_addr() return we still want to add the
-@@ -705,9 +710,11 @@ static void ieee80211_do_stop(struct iee
+@@ -722,9 +727,11 @@ static void ieee80211_do_stop(struct iee
  		ieee80211_recalc_idle(local);
  		ieee80211_recalc_offload(local);
  
@@ -230,7 +230,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		fallthrough;
  	default:
  		if (!going_down)
-@@ -1140,7 +1147,8 @@ int ieee80211_add_virtual_monitor(struct
+@@ -1157,7 +1164,8 @@ int ieee80211_add_virtual_monitor(struct
  	ASSERT_RTNL();
  	lockdep_assert_wiphy(local->hw.wiphy);
  
@@ -240,7 +240,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		return 0;
  
  	sdata = kzalloc(sizeof(*sdata) + local->hw.vif_data_size, GFP_KERNEL);
-@@ -1202,6 +1210,9 @@ void ieee80211_del_virtual_monitor(struc
+@@ -1219,6 +1227,9 @@ void ieee80211_del_virtual_monitor(struc
  {
  	struct ieee80211_sub_if_data *sdata;
  
@@ -250,7 +250,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	ASSERT_RTNL();
  	lockdep_assert_wiphy(local->hw.wiphy);
  
-@@ -1345,7 +1356,8 @@ int ieee80211_do_open(struct wireless_de
+@@ -1362,7 +1373,8 @@ int ieee80211_do_open(struct wireless_de
  			break;
  		}
  

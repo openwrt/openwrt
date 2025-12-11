@@ -23,7 +23,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/include/net/cfg80211.h
 +++ b/include/net/cfg80211.h
-@@ -6274,6 +6274,7 @@ enum ieee80211_ap_reg_power {
+@@ -6352,6 +6352,7 @@ enum ieee80211_ap_reg_power {
   *	entered.
   * @links.cac_time_ms: CAC time in ms
   * @valid_links: bitmap describing what elements of @links are valid
@@ -31,7 +31,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   */
  struct wireless_dev {
  	struct wiphy *wiphy;
-@@ -6386,6 +6387,8 @@ struct wireless_dev {
+@@ -6464,6 +6465,8 @@ struct wireless_dev {
  		unsigned int cac_time_ms;
  	} links[IEEE80211_MLD_MAX_NUM_LINKS];
  	u16 valid_links;
@@ -40,7 +40,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  };
  
  static inline const u8 *wdev_address(struct wireless_dev *wdev)
-@@ -6572,6 +6575,17 @@ bool cfg80211_radio_chandef_valid(const
+@@ -6650,6 +6653,17 @@ bool cfg80211_radio_chandef_valid(const
  				  const struct cfg80211_chan_def *chandef);
  
  /**
