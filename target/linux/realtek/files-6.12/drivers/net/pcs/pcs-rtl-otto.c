@@ -2930,26 +2930,12 @@ struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int
 	struct device_node *pcs_np;
 	struct rtpcs_ctrl *ctrl;
 	struct rtpcs_link *link;
-	int sds;
+	u32 sds;
 
-	/*
-	 * RTL838x devices have a built-in octa port RTL8218B PHY that is not attached via
-	 * a SerDes. Allow to be called with an empty SerDes device node. In this case lookup
-	 * the parent/driver node directly.
-	 */
-	if (np) {
-		if (!of_device_is_available(np))
-			return ERR_PTR(-ENODEV);
+	if (!np || !of_device_is_available(np))
+		return ERR_PTR(-ENODEV);
 
-		if (of_property_read_u32(np, "reg", &sds))
-			return ERR_PTR(-EINVAL);
-
-		pcs_np = of_get_parent(np);
-	} else {
-		pcs_np = of_find_compatible_node(NULL, NULL, "realtek,otto-pcs");
-		sds = -1;
-	}
-
+	pcs_np = of_get_parent(np);
 	if (!pcs_np)
 		return ERR_PTR(-ENODEV);
 
@@ -2972,7 +2958,9 @@ struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int
 	if (port < 0 || port > ctrl->cfg->cpu_port)
 		return ERR_PTR(-EINVAL);
 
-	if (sds !=  -1 && rtpcs_sds_read(ctrl, sds, 0, 0) < 0)
+	if (of_property_read_u32(np, "reg", &sds))
+		return ERR_PTR(-EINVAL);
+	if (rtpcs_sds_read(ctrl, sds, 0, 0) < 0)
 		return ERR_PTR(-EINVAL);
 
 	link = kzalloc(sizeof(*link), GFP_KERNEL);
