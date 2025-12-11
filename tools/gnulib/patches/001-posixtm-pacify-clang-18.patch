@@ -1,0 +1,46 @@
+From 67c298c36f69b6906840b7584be06b7b5f33f829 Mon Sep 17 00:00:00 2001
+From: Paul Eggert <eggert@cs.ucla.edu>
+Date: Tue, 16 Jan 2024 17:21:08 -0800
+Subject: [PATCH] posixtm: pacify clang 18
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Problem reported by Khem Raj in:
+https://lists.gnu.org/r/bug-gnulib/2024-01/msg00045.html
+* lib/posixtm.c (posixtime): Pacify clang 18 by converting bool to int.
+Arguably this is a bug in draft C2x, since the non-pointer args to
+ckd_add should promote just like any other expressions do;
+but that’s not clang’s fault.
+---
+ ChangeLog     | 10 ++++++++++
+ lib/posixtm.c |  2 +-
+ 2 files changed, 11 insertions(+), 1 deletion(-)
+
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -1,3 +1,13 @@
++2024-01-16  Paul Eggert  <eggert@cs.ucla.edu>
++
++	posixtm: pacify clang 18
++	Problem reported by Khem Raj in:
++	https://lists.gnu.org/r/bug-gnulib/2024-01/msg00045.html
++	* lib/posixtm.c (posixtime): Pacify clang 18 by converting bool to int.
++	Arguably this is a bug in draft C2x, since the non-pointer args to
++	ckd_add should promote just like any other expressions do;
++	but that’s not clang’s fault.
++
+ 2023-03-23  Bruno Haible  <bruno@clisp.org>
+ 
+ 	printf-posix tests: Fix compilation error (regression 2021-08-28).
+--- a/lib/posixtm.c
++++ b/lib/posixtm.c
+@@ -191,7 +191,7 @@ posixtime (time_t *p, const char *s, uns
+              | (tm0.tm_min ^ tm1.tm_min)
+              | (tm0.tm_sec ^ tm1.tm_sec)))
+         {
+-          if (ckd_add (&t, t, leapsec))
++          if (ckd_add (&t, t, +leapsec))
+             return false;
+           *p = t;
+           return true;
