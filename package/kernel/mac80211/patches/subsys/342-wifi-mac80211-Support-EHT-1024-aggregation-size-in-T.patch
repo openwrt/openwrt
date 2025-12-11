@@ -284,7 +284,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  				       sta->ampdu_mlme.tid_rx_manage_offl))
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -2131,14 +2131,19 @@ int ieee80211_send_smps_action(struct ie
+@@ -2133,14 +2133,19 @@ int ieee80211_send_smps_action(struct ie
  			       const u8 *bssid, int link_id);
  bool ieee80211_smps_is_restrictive(enum ieee80211_smps_mode smps_mode_old,
  				   enum ieee80211_smps_mode smps_mode_new);

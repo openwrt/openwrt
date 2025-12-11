@@ -36,7 +36,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	u8 cab_queue;
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
-@@ -279,13 +279,8 @@ static int _ieee80211_change_mac(struct
+@@ -296,13 +296,8 @@ static int _ieee80211_change_mac(struct
  	ret = eth_mac_addr(sdata->dev, sa);
  
  	if (ret == 0) {
@@ -52,7 +52,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	}
  
  	/* Regardless of eth_mac_addr() return we still want to add the
-@@ -1336,6 +1331,8 @@ int ieee80211_do_open(struct wireless_de
+@@ -1353,6 +1348,8 @@ int ieee80211_do_open(struct wireless_de
  		}
  	}
  
