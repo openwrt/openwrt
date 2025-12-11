@@ -176,6 +176,22 @@ define Device/asus_rt-ac3100
 endef
 TARGET_DEVICES += asus_rt-ac3100
 
+define Device/asus_rt-ac3200
+  $(call Device/asus)
+  DEVICE_MODEL := RT-AC3200
+  DEVICE_PACKAGES := $(BRCMFMAC_43602A1) $(USB3_PACKAGES)
+  ASUS_PRODUCTID := RT-AC3200
+endef
+TARGET_DEVICES += asus_rt-ac3200
+
+define Device/asus_rt-ac5300
+  $(call Device/asus)
+  DEVICE_MODEL := RT-AC5300
+  DEVICE_PACKAGES := $(BRCMFMAC_4366C0) $(USB3_PACKAGES)
+  ASUS_PRODUCTID := RT-AC5300
+endef
+TARGET_DEVICES += asus_rt-ac5300
+
 define Device/asus_rt-ac56u
   $(call Device/asus)
   DEVICE_MODEL := RT-AC56U
