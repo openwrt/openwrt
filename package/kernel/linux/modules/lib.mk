@@ -72,8 +72,8 @@ define KernelPackage/lib-crc16
   SUBMENU:=$(LIB_MENU)
   TITLE:=CRC16 support
   KCONFIG:=CONFIG_CRC16
-  FILES:=$(LINUX_DIR)/lib/crc16.ko
-  AUTOLOAD:=$(call AutoLoad,20,crc16,1)
+  FILES:=$(LINUX_DIR)/lib/crc16.ko@lt6.18
+  AUTOLOAD:=$(call AutoLoad,20,!LINUX_6_18:crc16,1)
 endef
 
 define KernelPackage/lib-crc16/description
