@@ -580,10 +580,12 @@ define KernelPackage/crypto-lib-chacha20
 endef
 
 ifndef CONFIG_TARGET_uml
+ifndef CONFIG_LINUX_6_18
 define KernelPackage/crypto-lib-chacha20/x86_64
   KCONFIG+=CONFIG_CRYPTO_CHACHA20_X86_64
   FILES+=$(LINUX_DIR)/arch/x86/crypto/chacha-x86_64.ko
 endef
+endif
 endif
 
 # Note that a non-neon fallback implementation is available on arm32 when
@@ -642,10 +644,12 @@ define KernelPackage/crypto-lib-curve25519
 endef
 
 ifndef CONFIG_TARGET_uml
+ifndef CONFIG_LINUX_6_18
 define KernelPackage/crypto-lib-curve25519/x86_64
   KCONFIG+=CONFIG_CRYPTO_CURVE25519_X86
   FILES+=$(LINUX_DIR)/arch/x86/crypto/curve25519-x86_64.ko
 endef
+endif
 endif
 
 define KernelPackage/crypto-lib-curve25519/arm-neon
@@ -675,10 +679,12 @@ define KernelPackage/crypto-lib-poly1305
 endef
 
 ifndef CONFIG_TARGET_uml
+ifndef CONFIG_LINUX_6_18
 define KernelPackage/crypto-lib-poly1305/x86_64
   KCONFIG+=CONFIG_CRYPTO_POLY1305_X86_64
   FILES+=$(LINUX_DIR)/arch/x86/crypto/poly1305-x86_64.ko
 endef
+endif
 endif
 
 define KernelPackage/crypto-lib-poly1305/arm
@@ -1030,10 +1036,12 @@ define KernelPackage/crypto-sha1/mpc85xx
 endef
 
 ifndef CONFIG_TARGET_uml
+ifndef CONFIG_LINUX_6_18
 define KernelPackage/crypto-sha1/x86_64
   FILES+=$(LINUX_DIR)/arch/x86/crypto/sha1-ssse3.ko
   AUTOLOAD+=$(call AutoLoad,09,sha1-ssse3)
 endef
+endif
 endif
 
 ifdef KernelPackage/crypto-sha1/$(ARCH)
@@ -1096,10 +1104,12 @@ define KernelPackage/crypto-sha256/mpc85xx
 endef
 
 ifndef CONFIG_TARGET_uml
+ifndef CONFIG_LINUX_6_18
 define KernelPackage/crypto-sha256/x86_64
   FILES+=$(LINUX_DIR)/arch/x86/crypto/sha256-ssse3.ko
   AUTOLOAD+=$(call AutoLoad,09,sha256-ssse3)
 endef
+endif
 endif
 
 KernelPackage/crypto-sha256/mediatek/filogic=$(KernelPackage/crypto-sha256/aarch64-ce)
@@ -1156,10 +1166,12 @@ endef
 KernelPackage/crypto-sha512/tegra=$(KernelPackage/crypto-sha512/arm)
 
 ifndef CONFIG_TARGET_uml
+ifndef CONFIG_LINUX_6_18
 define KernelPackage/crypto-sha512/x86_64
   FILES+=$(LINUX_DIR)/arch/x86/crypto/sha512-ssse3.ko
   AUTOLOAD+=$(call AutoLoad,09,sha512-ssse3)
 endef
+endif
 endif
 
 ifdef KernelPackage/crypto-sha512/$(ARCH)
