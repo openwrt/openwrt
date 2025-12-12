@@ -14,15 +14,15 @@
 #include <linux/init.h>
 #include <linux/device.h>
 #include <linux/of.h>
-#include <linux/of_platform.h>
+#include <linux/platform_device.h>
 #include <linux/delay.h>
 #include <linux/skbuff.h>
-#include <linux/rtl8366.h>
 
 #include "rtl8366_smi.h"
 
 #define RTL8366S_DRIVER_DESC	"Realtek RTL8366S ethernet switch driver"
 #define RTL8366S_DRIVER_VER	"0.2.2"
+#define RTL8366S_DRIVER_NAME	"rtl8366s"
 
 #define RTL8366S_PHY_NO_MAX	4
 #define RTL8366S_PHY_PAGE_MAX	7
@@ -375,25 +375,11 @@ static int rtl8366s_set_green(struct rtl8366_smi *smi, int enable)
 
 static int rtl8366s_setup(struct rtl8366_smi *smi)
 {
-	struct rtl8366_platform_data *pdata;
 	int err;
 	unsigned i;
-#ifdef CONFIG_OF
-	struct device_node *np;
 	unsigned num_initvals;
 	const __be32 *paddr;
-#endif
-
-	pdata = smi->parent->platform_data;
-	if (pdata && pdata->num_initvals && pdata->initvals) {
-		dev_info(smi->parent, "applying initvals\n");
-		for (i = 0; i < pdata->num_initvals; i++)
-			REG_WR(smi, pdata->initvals[i].reg,
-			       pdata->initvals[i].val);
-	}
-
-#ifdef CONFIG_OF
-	np = smi->parent->of_node;
+	struct device_node *np = smi->parent->of_node;
 
 	paddr = of_get_property(np, "realtek,initvals", &num_initvals);
 	if (paddr) {
@@ -425,7 +411,6 @@ static int rtl8366s_setup(struct rtl8366_smi *smi)
 				return err;
 		}
 	}
-#endif
 
 	/* set maximum packet length to 1536 bytes */
 	REG_RMW(smi, RTL8366S_SGCR, RTL8366S_SGCR_MAX_LENGTH_MASK,
@@ -1278,20 +1263,16 @@ static void rtl8366s_remove(struct platform_device *pdev)
 	}
 }
 
-#ifdef CONFIG_OF
 static const struct of_device_id rtl8366s_match[] = {
 	{ .compatible = "realtek,rtl8366s" },
 	{},
 };
 MODULE_DEVICE_TABLE(of, rtl8366s_match);
-#endif
 
 static struct platform_driver rtl8366s_driver = {
 	.driver = {
 		.name		= RTL8366S_DRIVER_NAME,
-#ifdef CONFIG_OF
-		.of_match_table = of_match_ptr(rtl8366s_match),
-#endif
+		.of_match_table = rtl8366s_match,
 	},
 	.probe		= rtl8366s_probe,
 	.remove_new	= rtl8366s_remove,
