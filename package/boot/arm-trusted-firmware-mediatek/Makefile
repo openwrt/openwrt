@@ -262,8 +262,8 @@ define Trusted-Firmware-A/mt7981-spim-nand-ubi-ddr4
   USE_UBI:=1
 endef
 
-define Trusted-Firmware-A/mt7981-cudy-tr3000-v1
-  NAME:=Cudy TR3000 v1 (SPI-NAND via SPIM, DDR3)
+define Trusted-Firmware-A/mt7981-cudy-ddr3
+  NAME:=Cudy (SPI-NAND via SPIM, DDR3)
   BOOT_DEVICE:=spim-nand
   BUILD_SUBTARGET:=filogic
   PLAT:=mt7981
@@ -664,7 +664,7 @@ TFA_TARGETS:= \
 	mt7981-emmc-ddr4 \
 	mt7981-sdmmc-ddr4 \
 	mt7981-spim-nand-ddr4 \
-	mt7981-cudy-tr3000-v1 \
+	mt7981-cudy-ddr3 \
 	mt7986-ram-ddr3 \
 	mt7986-emmc-ddr3 \
 	mt7986-nor-ddr3 \

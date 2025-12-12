@@ -75,6 +75,10 @@ cudy,wr3000p-v1)
 	ucidef_set_led_netdev "wan" "wan" "white:wan" "wan" "link tx rx"
 	ucidef_set_led_netdev "internet" "internet" "white:wan-online" "wan" "link"
 	;;
+cudy,wbr3000uax-v1-ubootmod)
+	ucidef_set_led_netdev "LAN" "LAN" "blue:lan" "br-lan" "link tx rx"
+	ucidef_set_led_netdev "WAN" "WAN" "blue:wan" "wan" "link tx rx"
+	;;
 elecom,wrc-x3000gs3)
 	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan"
 	;;
