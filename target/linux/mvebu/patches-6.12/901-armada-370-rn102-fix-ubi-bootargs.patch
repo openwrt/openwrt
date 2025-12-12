@@ -1,6 +1,7 @@
 --- a/arch/arm/boot/dts/marvell/armada-370-netgear-rn102.dts
 +++ b/arch/arm/boot/dts/marvell/armada-370-netgear-rn102.dts
-@@ -17,5 +17,6 @@
+@@ -17,6 +17,7 @@
+ 
  	chosen {
  		stdout-path = "serial0:115200n8";
 +		bootargs = "console=ttyS0,115200 ubi.mtd=4 root=ubi0:rootfs rootfstype=squashfs ";
