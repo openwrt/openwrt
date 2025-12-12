@@ -78,12 +78,18 @@ for (let phy_name, phy in board.wlan) {
 
 		band_name = lc(band_name);
 
+		let generate_ifaces = true;
 		let country, defaults, num_global_macaddr;
 		if (board.wlan.defaults) {
 			defaults = board.wlan.defaults.ssids?.[band_name]?.ssid ? board.wlan.defaults.ssids?.[band_name] : board.wlan.defaults.ssids?.all;
 			country = board.wlan.defaults.country;
 			if (!country && band_name != '2g')
 				defaults = null;
+
+			generate_ifaces = board.wlan.defaults.generate_ifaces !== false;
+			if (!generate_ifaces)
+				defaults = null;
+
 			num_global_macaddr = board.wlan.defaults.ssids?.[band_name]?.mac_count;
 		}
 
@@ -100,7 +106,10 @@ set ${s}.country='${country || ''}'
 set ${s}.num_global_macaddr='${num_global_macaddr || ''}'
 set ${s}.disabled='${defaults ? 0 : 1}'
 
-set ${si}=wifi-iface
+`);
+
+		if (generate_ifaces){
+			print(`set ${si}=wifi-iface
 set ${si}.device='${name}'
 set ${si}.network='lan'
 set ${si}.mode='ap'
@@ -109,6 +118,7 @@ set ${si}.encryption='${defaults?.encryption || "none"}'
 set ${si}.key='${defaults?.key || ""}'
 
 `);
+		}
 		config[name] = {};
 		commit = true;
 	}
