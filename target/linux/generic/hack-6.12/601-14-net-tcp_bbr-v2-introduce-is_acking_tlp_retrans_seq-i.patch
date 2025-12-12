@@ -1,0 +1,79 @@
+From 351c8bac9728eee4218f0be69d6a827f347c3fdf Mon Sep 17 00:00:00 2001
+From: Neal Cardwell <ncardwell@google.com>
+Date: Mon, 21 Sep 2020 14:46:26 -0400
+Subject: [PATCH 14/19] net-tcp_bbr: v2: introduce is_acking_tlp_retrans_seq
+ into rate_sample
+
+Introduce is_acking_tlp_retrans_seq into rate_sample. This bool will
+export to the CC module the knowledge of whether the current ACK
+matched a TLP retransmit.
+
+Note that when this bool is true, we cannot yet tell (in general) whether
+this ACK is for the original or the TLP retransmit.
+
+Effort: net-tcp_bbr
+Change-Id: I2e6494332167e75efcbdc99bd5c119034e9c39b4
+---
+ include/net/tcp.h    |  1 +
+ net/ipv4/tcp_input.c | 12 +++++++++---
+ 2 files changed, 10 insertions(+), 3 deletions(-)
+
+diff --git a/include/net/tcp.h b/include/net/tcp.h
+index 6e2c3ca32a61..1fe30e760e8b 100644
+--- a/include/net/tcp.h
++++ b/include/net/tcp.h
+@@ -1179,6 +1179,7 @@ struct rate_sample {
+ 	u32  last_end_seq;	/* end_seq of most recently ACKed packet */
+ 	bool is_app_limited;	/* is sample from packet with bubble in pipe? */
+ 	bool is_retrans;	/* is sample from retransmission? */
++	bool is_acking_tlp_retrans_seq;  /* ACKed a TLP retransmit sequence? */
+ 	bool is_ack_delayed;	/* is this (likely) a delayed ACK? */
+ 	bool is_ece;		/* did this ACK have ECN marked? */
+ };
+diff --git a/net/ipv4/tcp_input.c b/net/ipv4/tcp_input.c
+index a67b146f73e7..7640f4c2551a 100644
+--- a/net/ipv4/tcp_input.c
++++ b/net/ipv4/tcp_input.c
+@@ -3848,7 +3848,8 @@ static void tcp_replace_ts_recent(struct tcp_sock *tp, u32 seq)
+ /* This routine deals with acks during a TLP episode and ends an episode by
+  * resetting tlp_high_seq. Ref: TLP algorithm in draft-ietf-tcpm-rack
+  */
+-static void tcp_process_tlp_ack(struct sock *sk, u32 ack, int flag)
++static void tcp_process_tlp_ack(struct sock *sk, u32 ack, int flag,
++				struct rate_sample *rs)
+ {
+ 	struct tcp_sock *tp = tcp_sk(sk);
+ 
+@@ -3876,6 +3877,11 @@ static void tcp_process_tlp_ack(struct sock *sk, u32 ack, int flag)
+ 			     FLAG_NOT_DUP | FLAG_DATA_SACKED))) {
+ 		/* Pure dupack: original and TLP probe arrived; no loss */
+ 		tp->tlp_high_seq = 0;
++	} else {
++		/* This ACK matches a TLP retransmit. We cannot yet tell if
++		 * this ACK is for the original or the TLP retransmit.
++		 */
++		rs->is_acking_tlp_retrans_seq = 1;
+ 	}
+ }
+ 
+@@ -4059,7 +4065,7 @@ static int tcp_ack(struct sock *sk, const struct sk_buff *skb, int flag)
+ 	tcp_rack_update_reo_wnd(sk, &rs);
+ 
+ 	if (tp->tlp_high_seq)
+-		tcp_process_tlp_ack(sk, ack, flag);
++		tcp_process_tlp_ack(sk, ack, flag, &rs);
+ 
+ 	if (tcp_ack_is_dubious(sk, flag)) {
+ 		if (!(flag & (FLAG_SND_UNA_ADVANCED |
+@@ -4103,7 +4109,7 @@ static int tcp_ack(struct sock *sk, const struct sk_buff *skb, int flag)
+ 	tcp_ack_probe(sk);
+ 
+ 	if (tp->tlp_high_seq)
+-		tcp_process_tlp_ack(sk, ack, flag);
++		tcp_process_tlp_ack(sk, ack, flag, &rs);
+ 	return 1;
+ 
+ old_ack:
+-- 
+2.43.0
+
