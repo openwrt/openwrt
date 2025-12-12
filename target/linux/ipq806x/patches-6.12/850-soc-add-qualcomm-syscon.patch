@@ -28,7 +28,7 @@ Subject: SoC: add qualcomm syscon
  	depends on ARCH_QCOM || COMPILE_TEST
 --- /dev/null
 +++ b/drivers/soc/qcom/qcom_tcsr.c
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,60 @@
 +/*
 + * Copyright (c) 2014, The Linux foundation. All rights reserved.
 + *
@@ -47,7 +47,6 @@ Subject: SoC: add qualcomm syscon
 +#include <linux/io.h>
 +#include <linux/module.h>
 +#include <linux/of.h>
-+#include <linux/of_platform.h>
 +#include <linux/platform_device.h>
 +
 +#define TCSR_USB_PORT_SEL	0xb0
