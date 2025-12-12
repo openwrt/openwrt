@@ -7,8 +7,19 @@ do_sysinfo_bcm47xx() {
 	[ -z "$boardtype" ] && boardtype="unknown"
 
 	[ -e "/tmp/sysinfo/" ] || mkdir -p "/tmp/sysinfo/"
-	echo "$boardtype${boardnum:+:$boardnum}" > /tmp/sysinfo/board_name
+	echo "$boardtype${boardnum:+:$boardnum}" > /tmp/sysinfo/boardtype
 	echo "$model" > /tmp/sysinfo/model
+	# Generate board_name in the form vendor,device for ASU sysupgrades
+	printf '%s' "$model" | awk '{
+		$0 = tolower($0);
+		if (NF>=2) {
+			printf "%s,%s", $1, $2;
+			for (i=3; i<=NF; i++) {
+				printf "-%s" $i;
+			}
+		}
+		else printf "%s", $1
+	}' > /tmp/sysinfo/board_name
 }
 
 boot_hook_add preinit_main do_sysinfo_bcm47xx

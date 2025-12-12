@@ -211,6 +211,7 @@ define Device/linksys_e1000
   $(Device/linksys)
   DEVICE_ID := E100
   VERSION := 1.1.3
+  SUPPORTED_DEVICES := linksys,e1000-v1 linksys,e1000-v2 linksys,e1000-v2.1
   DEFAULT := n
 endef
 TARGET_DEVICES += linksys_e1000
@@ -336,7 +337,7 @@ define Device/netgear_r6200-v1
 endef
 TARGET_DEVICES += netgear_r6200-v1
 
-define Device/netgear_wgr614-v10-na
+define Device/netgear_wgr614-v10na
   DEVICE_MODEL := WGR614
   DEVICE_VARIANT := v10 (NA)
   $(Device/netgear)
@@ -344,7 +345,7 @@ define Device/netgear_wgr614-v10-na
   NETGEAR_REGION := 2
   DEFAULT := n
 endef
-TARGET_DEVICES += netgear_wgr614-v10-na
+TARGET_DEVICES += netgear_wgr614-v10na
 
 define Device/netgear_wgr614-v10
   DEVICE_MODEL := WGR614
@@ -405,16 +406,6 @@ define Device/netgear_wndr3400-v3
 endef
 TARGET_DEVICES += netgear_wndr3400-v3
 
-define Device/netgear_wndr3700-v3
-  DEVICE_MODEL := WNDR3700
-  DEVICE_VARIANT := v3
-  DEVICE_PACKAGES := kmod-b43 $(USB2_PACKAGES)
-  $(Device/netgear)
-  NETGEAR_BOARD_ID := U12H194T00_NETGEAR
-  NETGEAR_REGION := 2
-endef
-TARGET_DEVICES += netgear_wndr3700-v3
-
 define Device/netgear_wndr3400-vcna
   DEVICE_MODEL := WNDR3400
   DEVICE_VARIANT := vcna
@@ -425,6 +416,16 @@ define Device/netgear_wndr3400-vcna
   DEFAULT := n
 endef
 TARGET_DEVICES += netgear_wndr3400-vcna
+
+define Device/netgear_wndr3700-v3
+  DEVICE_MODEL := WNDR3700
+  DEVICE_VARIANT := v3
+  DEVICE_PACKAGES := kmod-b43 $(USB2_PACKAGES)
+  $(Device/netgear)
+  NETGEAR_BOARD_ID := U12H194T00_NETGEAR
+  NETGEAR_REGION := 2
+endef
+TARGET_DEVICES += netgear_wndr3700-v3
 
 define Device/netgear_wndr4000
   DEVICE_MODEL := WNDR4000
@@ -446,7 +447,7 @@ define Device/netgear_wnr1000-v3
 endef
 TARGET_DEVICES += netgear_wnr1000-v3
 
-define Device/netgear_wnr2000v2
+define Device/netgear_wnr2000-v2
   DEVICE_MODEL := WNR2000
   DEVICE_VARIANT := v2
   DEVICE_PACKAGES := kmod-b43
@@ -455,9 +456,9 @@ define Device/netgear_wnr2000v2
   NETGEAR_REGION := 2
   DEFAULT := n
 endef
-TARGET_DEVICES += netgear_wnr2000v2
+TARGET_DEVICES += netgear_wnr2000-v2
 
-define Device/netgear_wnr3500l-v1-na
+define Device/netgear_wnr3500l-v1na
   DEVICE_MODEL := WNR3500L
   DEVICE_VARIANT := v1 (NA)
   DEVICE_PACKAGES := kmod-b43 $(USB2_PACKAGES)
@@ -465,7 +466,7 @@ define Device/netgear_wnr3500l-v1-na
   NETGEAR_BOARD_ID := U12H136T99_NETGEAR
   NETGEAR_REGION := 2
 endef
-TARGET_DEVICES += netgear_wnr3500l-v1-na
+TARGET_DEVICES += netgear_wnr3500l-v1na
 
 define Device/netgear_wnr3500l-v1
   DEVICE_MODEL := WNR3500L
@@ -474,6 +475,7 @@ define Device/netgear_wnr3500l-v1
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H136T99_NETGEAR
   NETGEAR_REGION := 1
+  SUPPORTED_DEVICES := netgear,wnr3500l
 endef
 TARGET_DEVICES += netgear_wnr3500l-v1
 
@@ -510,7 +512,7 @@ define Device/netgear_wnr3500-v2
 endef
 TARGET_DEVICES += netgear_wnr3500-v2
 
-define Device/netgear_wnr3500-v2-vc
+define Device/netgear_wnr3500-v2vc
   DEVICE_MODEL := WNR3500
   DEVICE_VARIANT := v2 (VC)
   DEVICE_PACKAGES := kmod-b43
@@ -519,6 +521,6 @@ define Device/netgear_wnr3500-v2-vc
   NETGEAR_REGION := 2
   DEFAULT := n
 endef
-TARGET_DEVICES += netgear_wnr3500-v2-vc
+TARGET_DEVICES += netgear_wnr3500-v2vc
 
 TARGET_DEVICES += standard standard-noloader-nodictionarylzma
