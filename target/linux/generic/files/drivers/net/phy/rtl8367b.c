@@ -15,11 +15,11 @@
 #include <linux/init.h>
 #include <linux/device.h>
 #include <linux/of.h>
-#include <linux/of_platform.h>
+#include <linux/platform_device.h>
 #include <linux/delay.h>
 #include <linux/skbuff.h>
-#include <linux/rtl8367.h>
 
+#include "rtl8367.h"
 #include "rtl8366_smi.h"
 
 #define RTL8367B_RESET_DELAY	1000	/* msecs*/
@@ -765,7 +765,6 @@ static int rtl8367b_extif_init(struct rtl8366_smi *smi, int id,
 	return 0;
 }
 
-#ifdef CONFIG_OF
 static int rtl8367b_extif_init_of(struct rtl8366_smi *smi,
 				  const char *name)
 {
@@ -842,40 +841,20 @@ err_init:
 
 	return err;
 }
-#else
-static int rtl8367b_extif_init_of(struct rtl8366_smi *smi,
-				  const char *name)
-{
-	return -EINVAL;
-}
-#endif
 
 static int rtl8367b_setup(struct rtl8366_smi *smi)
 {
-	struct rtl8367_platform_data *pdata;
 	int err;
 	int i;
-
-	pdata = smi->parent->platform_data;
 
 	err = rtl8367b_init_regs(smi);
 	if (err)
 		return err;
 
 	/* initialize external interfaces */
-	if (smi->parent->of_node) {
-		err = rtl8367b_extif_init_of(smi, "realtek,extif");
-		if (err)
-			return err;
-	} else {
-		err = rtl8367b_extif_init(smi, 0, pdata->extif0_cfg);
-		if (err)
-			return err;
-
-		err = rtl8367b_extif_init(smi, 1, pdata->extif1_cfg);
-		if (err)
-			return err;
-	}
+	err = rtl8367b_extif_init_of(smi, "realtek,extif");
+	if (err)
+		return err;
 
 	/* set maximum packet length to 1536 bytes */
 	REG_RMW(smi, RTL8367B_SWC0_REG, RTL8367B_SWC0_MAX_LENGTH_MASK,
@@ -1619,20 +1598,16 @@ static void rtl8367b_shutdown(struct platform_device *pdev)
 		rtl8367b_reset_chip(smi);
 }
 
-#ifdef CONFIG_OF
 static const struct of_device_id rtl8367b_match[] = {
 	{ .compatible = "realtek,rtl8367b" },
 	{},
 };
 MODULE_DEVICE_TABLE(of, rtl8367b_match);
-#endif
 
 static struct platform_driver rtl8367b_driver = {
 	.driver = {
 		.name		= RTL8367B_DRIVER_NAME,
-#ifdef CONFIG_OF
-		.of_match_table = of_match_ptr(rtl8367b_match),
-#endif
+		.of_match_table = rtl8367b_match,
 	},
 	.probe		= rtl8367b_probe,
 	.remove_new	= rtl8367b_remove,

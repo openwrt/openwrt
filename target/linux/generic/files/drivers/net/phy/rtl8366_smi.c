@@ -16,11 +16,10 @@
 #include <linux/spinlock.h>
 #include <linux/skbuff.h>
 #include <linux/of.h>
-#include <linux/of_platform.h>
 #include <linux/of_gpio.h>
-#include <linux/rtl8366.h>
 #include <linux/version.h>
 #include <linux/of_mdio.h>
+#include <linux/platform_device.h>
 
 #ifdef CONFIG_RTL8366_SMI_DEBUG_FS
 #include <linux/debugfs.h>
@@ -1011,12 +1010,7 @@ static inline void rtl8366_debugfs_remove(struct rtl8366_smi *smi) {}
 static int rtl8366_smi_mii_init(struct rtl8366_smi *smi)
 {
 	int ret;
-
-#ifdef CONFIG_OF
 	struct device_node *np = NULL;
-
-	np = of_get_child_by_name(smi->parent->of_node, "mdio-bus");
-#endif
 
 	smi->mii_bus = mdiobus_alloc();
 	if (smi->mii_bus == NULL) {
@@ -1033,11 +1027,10 @@ static int rtl8366_smi_mii_init(struct rtl8366_smi *smi)
 	smi->mii_bus->parent = smi->parent;
 	smi->mii_bus->phy_mask = ~(0x1f);
 
-#ifdef CONFIG_OF
+	np = of_get_child_by_name(smi->parent->of_node, "mdio-bus");
 	if (np)
 		ret = of_mdiobus_register(smi->mii_bus, np);
 	else
-#endif
 		ret = mdiobus_register(smi->mii_bus);
 
 	if (ret)
@@ -1412,45 +1405,6 @@ static void __rtl8366_smi_cleanup(struct rtl8366_smi *smi)
 	}
 }
 
-enum rtl8366_type rtl8366_smi_detect(struct rtl8366_platform_data *pdata)
-{
-	static struct rtl8366_smi smi;
-	enum rtl8366_type type = RTL8366_TYPE_UNKNOWN;
-	u32 reg = 0;
-
-	memset(&smi, 0, sizeof(smi));
-	smi.gpio_sda = pdata->gpio_sda;
-	smi.gpio_sck = pdata->gpio_sck;
-	smi.clk_delay = 10;
-	smi.cmd_read  = 0xa9;
-	smi.cmd_write = 0xa8;
-
-	if (__rtl8366_smi_init(&smi, "rtl8366"))
-		goto out;
-
-	if (rtl8366_smi_read_reg(&smi, 0x5c, &reg))
-		goto cleanup;
-
-	switch(reg) {
-	case 0x6027:
-		printk("Found an RTL8366S switch\n");
-		type = RTL8366_TYPE_S;
-		break;
-	case 0x5937:
-		printk("Found an RTL8366RB switch\n");
-		type = RTL8366_TYPE_RB;
-		break;
-	default:
-		printk("Found an Unknown RTL8366 switch (id=0x%04x)\n", reg);
-		break;
-	}
-
-cleanup:
-	__rtl8366_smi_cleanup(&smi);
-out:
-	return type;
-}
-
 int rtl8366_smi_init(struct rtl8366_smi *smi)
 {
 	int err;
@@ -1518,7 +1472,6 @@ void rtl8366_smi_cleanup(struct rtl8366_smi *smi)
 }
 EXPORT_SYMBOL_GPL(rtl8366_smi_cleanup);
 
-#ifdef CONFIG_OF
 static void rtl8366_smi_reset(struct rtl8366_smi *smi, bool active)
 {
 	if (active)
@@ -1570,30 +1523,6 @@ try_gpio:
 
 	return 0;
 }
-#else
-static inline int rtl8366_smi_probe_of(struct platform_device *pdev, struct rtl8366_smi *smi)
-{
-	return -ENODEV;
-}
-#endif
-
-static int rtl8366_smi_probe_plat(struct platform_device *pdev, struct rtl8366_smi *smi)
-{
-	struct rtl8366_platform_data *pdata = pdev->dev.platform_data;
-
-	if (!pdev->dev.platform_data) {
-		dev_err(&pdev->dev, "no platform data specified\n");
-		return -EINVAL;
-	}
-
-	smi->gpio_sda = pdata->gpio_sda;
-	smi->gpio_sck = pdata->gpio_sck;
-	smi->hw_reset = pdata->hw_reset;
-	smi->phy_id = MDC_REALTEK_PHY_ADDR;
-
-	return 0;
-}
-
 
 struct rtl8366_smi *rtl8366_smi_probe(struct platform_device *pdev)
 {
@@ -1604,11 +1533,7 @@ struct rtl8366_smi *rtl8366_smi_probe(struct platform_device *pdev)
 	if (!smi)
 		return NULL;
 
-	if (pdev->dev.of_node)
-		err = rtl8366_smi_probe_of(pdev, smi);
-	else
-		err = rtl8366_smi_probe_plat(pdev, smi);
-
+	err = rtl8366_smi_probe_of(pdev, smi);
 	if (err)
 		goto free_smi;
 
