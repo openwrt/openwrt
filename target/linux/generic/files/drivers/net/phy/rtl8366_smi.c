@@ -1489,7 +1489,7 @@ static int rtl8366_smi_probe_of(struct platform_device *pdev, struct rtl8366_smi
 
 	mdio_node = of_parse_phandle(np, "mii-bus", 0);
 	if (!mdio_node) {
-		dev_err(&pdev->dev, "cannot find mdio node phandle");
+		dev_info(&pdev->dev, "cannot find mdio node phandle");
 		goto try_gpio;
 	}
 
