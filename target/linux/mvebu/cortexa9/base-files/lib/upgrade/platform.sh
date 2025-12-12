@@ -86,6 +86,11 @@ platform_do_upgrade() {
 	linksys,wrt32x)
 		platform_do_upgrade_linksys "$1"
 		;;
+	netgear,readynas-102)
+		CI_UBIPART="ubifs"
+		CI_KERNPART="uImage"
+		nand_do_upgrade "$1"
+		;;
 	*)
 		default_do_upgrade "$1"
 		;;
