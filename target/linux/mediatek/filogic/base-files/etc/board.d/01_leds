@@ -76,7 +76,8 @@ cudy,wr3000p-v1)
 	ucidef_set_led_netdev "wan" "wan" "white:wan" "wan" "link tx rx"
 	ucidef_set_led_netdev "internet" "internet" "white:wan-online" "wan" "link"
 	;;
-cudy,wbr3000uax-v1)
+cudy,wbr3000uax-v1|\
+cudy,wbr3000uax-v1-ubootmod)
 	ucidef_set_led_default "internet_off" "internet_off" "red:fault" "1"
 	ucidef_set_led_netdev "internet" "internet" "blue:wan-online" "wan" "link"
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan" "tx rx"
