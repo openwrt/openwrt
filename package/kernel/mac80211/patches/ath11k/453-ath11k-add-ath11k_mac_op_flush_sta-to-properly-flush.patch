@@ -31,7 +31,7 @@ Signed-off-by: Florian Maurer <f.maurer@outlook.de>
 
 --- a/drivers/net/wireless/ath/ath11k/mac.c
 +++ b/drivers/net/wireless/ath/ath11k/mac.c
-@@ -8278,6 +8278,23 @@ static void ath11k_mac_op_flush(struct i
+@@ -8327,6 +8327,23 @@ static void ath11k_mac_op_flush(struct i
  	ath11k_mac_flush_tx_complete(ar);
  }
  
@@ -55,7 +55,7 @@ Signed-off-by: Florian Maurer <f.maurer@outlook.de>
  static bool
  ath11k_mac_has_single_legacy_rate(struct ath11k *ar,
  				  enum nl80211_band band,
-@@ -9910,6 +9927,7 @@ static const struct ieee80211_ops ath11k
+@@ -9959,6 +9976,7 @@ static const struct ieee80211_ops ath11k
  	.set_bitrate_mask		= ath11k_mac_op_set_bitrate_mask,
  	.get_survey			= ath11k_mac_op_get_survey,
  	.flush				= ath11k_mac_op_flush,
