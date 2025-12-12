@@ -192,8 +192,8 @@
 	switch: switch {
 		status = "disabled";
 
-		gpio-sda = <&gpio 19 GPIO_ACTIVE_HIGH>;
-		gpio-sck = <&gpio 20 GPIO_ACTIVE_HIGH>;
+		sda-gpios = <&gpio 19 GPIO_ACTIVE_HIGH>;
+		sck-gpios = <&gpio 20 GPIO_ACTIVE_HIGH>;
 
 		mdio-bus {
 			status = "okay";

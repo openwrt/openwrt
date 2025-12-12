@@ -101,8 +101,8 @@
 	rtl8366s {
 		compatible = "realtek,rtl8366s";
 
-		gpio-sda = <&gpio 5 GPIO_ACTIVE_HIGH>;
-		gpio-sck = <&gpio 7 GPIO_ACTIVE_HIGH>;
+		sda-gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
+		sck-gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
 
 		mdio-bus {
 			#address-cells = <1>;
