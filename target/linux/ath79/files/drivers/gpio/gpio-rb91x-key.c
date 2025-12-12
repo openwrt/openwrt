@@ -19,7 +19,6 @@
 #include <linux/gpio/consumer.h>
 #include <linux/gpio/driver.h>
 #include <linux/platform_device.h>
-#include <linux/of_platform.h>
 #include <linux/delay.h>
 
 #define GPIO_RB91X_KEY_DRIVER_NAME  "gpio-rb91x-key"
