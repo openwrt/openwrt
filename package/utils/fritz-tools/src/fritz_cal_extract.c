@@ -68,10 +68,10 @@ static void buffer_reverse(unsigned char *data, unsigned int top)
  * or Z_OK if data was retrieved up to limit (*limit == original value).
  *
  * Return values (failure):
- * Z_MEM_ERROR if memory could not be allocated for processing, 
- * Z_DATA_ERROR if the deflate data is invalid or incomplete, 
- * Z_VERSION_ERROR if the version of zlib.h and the version of the 
- * library linked do not match, or 
+ * Z_MEM_ERROR if memory could not be allocated for processing,
+ * Z_DATA_ERROR if the deflate data is invalid or incomplete,
+ * Z_VERSION_ERROR if the version of zlib.h and the version of the
+ * library linked do not match, or
  * Z_ERRNO if there is an error reading or writing the files.
  */
 static int inflate_to_buffer(FILE *source, unsigned char *buf, size_t *limit)
@@ -305,7 +305,7 @@ int main(int argc, char **argv)
 		buffer_reverse(buf, datasize - 1);
 
 	if (datasize <= skip) {
-		fprintf(stderr, "Failed to skip %u bytes, total data size is %u!\n", 
+		fprintf(stderr, "Failed to skip %u bytes, total data size is %u!\n",
 				(unsigned int)skip, (unsigned int)datasize);
 		goto out_bad;
 	}

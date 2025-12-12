@@ -83,7 +83,7 @@ int mtd_resetbc(const char *mtd)
 
 	DLOG_OPEN();
 
-	fd = mtd_check_open(mtd);
+	fd = mtd_check_open(mtd, true);
 
 	if (ioctl(fd, MEMGETINFO, &mtd_info) < 0) {
 		DLOG_ERR("Unable to obtain mtd_info for given partition name.");

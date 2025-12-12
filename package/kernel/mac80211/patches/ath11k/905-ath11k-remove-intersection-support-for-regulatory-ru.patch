@@ -23,7 +23,7 @@ Signed-off-by: Aditya Kumar Singh <quic_adisi@quicinc.com>
 
 --- a/drivers/net/wireless/ath/ath11k/reg.c
 +++ b/drivers/net/wireless/ath/ath11k/reg.c
-@@ -361,134 +361,6 @@ static u32 ath11k_map_fw_phy_flags(u32 p
+@@ -353,134 +353,6 @@ static u32 ath11k_map_fw_phy_flags(u32 p
  	return flags;
  }
  
@@ -158,7 +158,7 @@ Signed-off-by: Aditya Kumar Singh <quic_adisi@quicinc.com>
  static const char *
  ath11k_reg_get_regdom_str(enum nl80211_dfs_regions dfs_region)
  {
-@@ -639,11 +511,11 @@ ath11k_reg_ap_pwr_convert(enum ieee80211
+@@ -631,11 +503,11 @@ ath11k_reg_ap_pwr_convert(enum ieee80211
  
  struct ieee80211_regdomain *
  ath11k_reg_build_regd(struct ath11k_base *ab,
@@ -172,7 +172,7 @@ Signed-off-by: Aditya Kumar Singh <quic_adisi@quicinc.com>
  	struct cur_reg_rule *reg_rule, *reg_rule_6ghz;
  	u8 i = 0, j = 0, k = 0;
  	u8 num_rules;
-@@ -686,26 +558,26 @@ ath11k_reg_build_regd(struct ath11k_base
+@@ -678,26 +550,26 @@ ath11k_reg_build_regd(struct ath11k_base
  	}
  
  	if (!num_rules)
@@ -206,7 +206,7 @@ Signed-off-by: Aditya Kumar Singh <quic_adisi@quicinc.com>
  		   reg_info->dfs_region, num_rules);
  	/* Update reg_rules[] below. Firmware is expected to
  	 * send these rules in order(2 GHz rules first and then 5 GHz)
-@@ -744,7 +616,7 @@ ath11k_reg_build_regd(struct ath11k_base
+@@ -736,7 +608,7 @@ ath11k_reg_build_regd(struct ath11k_base
  		flags |= ath11k_map_fw_reg_flags(reg_rule->flags);
  		flags |= ath11k_map_fw_phy_flags(reg_info->phybitmap);
  
@@ -215,7 +215,7 @@ Signed-off-by: Aditya Kumar Singh <quic_adisi@quicinc.com>
  				       reg_rule->start_freq,
  				       reg_rule->end_freq, max_bw,
  				       reg_rule->ant_gain, reg_rule->reg_power,
-@@ -759,7 +631,7 @@ ath11k_reg_build_regd(struct ath11k_base
+@@ -751,7 +623,7 @@ ath11k_reg_build_regd(struct ath11k_base
  		    reg_info->dfs_region == ATH11K_DFS_REG_ETSI &&
  		    (reg_rule->end_freq > ETSI_WEATHER_RADAR_BAND_LOW &&
  		    reg_rule->start_freq < ETSI_WEATHER_RADAR_BAND_HIGH)){
@@ -224,7 +224,7 @@ Signed-off-by: Aditya Kumar Singh <quic_adisi@quicinc.com>
  							     reg_rule, &i,
  							     flags, max_bw);
  			continue;
-@@ -770,51 +642,23 @@ ath11k_reg_build_regd(struct ath11k_base
+@@ -762,37 +634,20 @@ ath11k_reg_build_regd(struct ath11k_base
  				   "\t%d. (%d - %d @ %d) (%d, %d) (%d ms) (FLAGS %d) (%d, %d)\n",
  				   i + 1, reg_rule->start_freq, reg_rule->end_freq,
  				   max_bw, reg_rule->ant_gain, reg_rule->reg_power,
@@ -265,6 +265,10 @@ Signed-off-by: Aditya Kumar Singh <quic_adisi@quicinc.com>
  	return new_regd;
  }
  
+@@ -844,17 +699,6 @@ void ath11k_regd_update_chan_list_work(s
+ 	}
+ }
+ 
 -static bool ath11k_reg_is_world_alpha(char *alpha)
 -{
 -	if (alpha[0] == '0' && alpha[1] == '0')
@@ -279,7 +283,7 @@ Signed-off-by: Aditya Kumar Singh <quic_adisi@quicinc.com>
  static enum wmi_vdev_type ath11k_reg_get_ar_vdev_type(struct ath11k *ar)
  {
  	struct ath11k_vif *arvif;
-@@ -837,7 +681,6 @@ int ath11k_reg_handle_chan_list(struct a
+@@ -877,7 +721,6 @@ int ath11k_reg_handle_chan_list(struct a
  				enum ieee80211_ap_reg_power power_type)
  {
  	struct ieee80211_regdomain *regd;
@@ -287,7 +291,7 @@ Signed-off-by: Aditya Kumar Singh <quic_adisi@quicinc.com>
  	int pdev_idx;
  	struct ath11k *ar;
  	enum wmi_vdev_type vdev_type;
-@@ -889,24 +732,14 @@ int ath11k_reg_handle_chan_list(struct a
+@@ -929,24 +772,14 @@ int ath11k_reg_handle_chan_list(struct a
  		    (char *)reg_info->alpha2, 2))
  		goto retfail;
  
@@ -317,8 +321,8 @@ Signed-off-by: Aditya Kumar Singh <quic_adisi@quicinc.com>
  		goto fallback;
 --- a/drivers/net/wireless/ath/ath11k/reg.h
 +++ b/drivers/net/wireless/ath/ath11k/reg.h
-@@ -35,7 +35,7 @@ void ath11k_reg_free(struct ath11k_base
- void ath11k_regd_update_work(struct work_struct *work);
+@@ -36,7 +36,7 @@ void ath11k_regd_update_work(struct work
+ void ath11k_regd_update_chan_list_work(struct work_struct *work);
  struct ieee80211_regdomain *
  ath11k_reg_build_regd(struct ath11k_base *ab,
 -		      struct cur_regulatory_info *reg_info, bool intersect,

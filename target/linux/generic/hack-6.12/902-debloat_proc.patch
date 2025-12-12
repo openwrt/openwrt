@@ -235,15 +235,16 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!pe)
 --- a/mm/vmalloc.c
 +++ b/mm/vmalloc.c
-@@ -5034,6 +5034,8 @@ static int __init proc_vmalloc_init(void
- {
- 	void *priv_data = NULL;
+@@ -5074,6 +5074,9 @@ static int vmalloc_info_show(struct seq_
  
+ static int __init proc_vmalloc_init(void)
+ {
 +	if (IS_ENABLED(CONFIG_PROC_STRIPPED))
 +		return 0;
- 	if (IS_ENABLED(CONFIG_NUMA))
- 		priv_data = kmalloc(nr_node_ids * sizeof(unsigned int), GFP_KERNEL);
- 
++
+ 	proc_create_single("vmallocinfo", 0400, NULL, vmalloc_info_show);
+ 	return 0;
+ }
 --- a/mm/vmstat.c
 +++ b/mm/vmstat.c
 @@ -2195,10 +2195,12 @@ void __init init_mm_internals(void)
@@ -330,7 +331,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/core/sock.c
 +++ b/net/core/sock.c
-@@ -4256,6 +4256,8 @@ static __net_initdata struct pernet_oper
+@@ -4280,6 +4280,8 @@ static __net_initdata struct pernet_oper
  
  static int __init proto_init(void)
  {
@@ -341,7 +342,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/ipv4/fib_trie.c
 +++ b/net/ipv4/fib_trie.c
-@@ -3037,11 +3037,13 @@ static const struct seq_operations fib_r
+@@ -3015,11 +3015,13 @@ static const struct seq_operations fib_r
  
  int __net_init fib_proc_init(struct net *net)
  {
@@ -357,7 +358,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			fib_triestat_seq_show, NULL))
  		goto out2;
  
-@@ -3052,17 +3054,21 @@ int __net_init fib_proc_init(struct net
+@@ -3030,17 +3032,21 @@ int __net_init fib_proc_init(struct net
  	return 0;
  
  out3:
@@ -396,7 +397,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
 --- a/net/ipv4/route.c
 +++ b/net/ipv4/route.c
-@@ -378,6 +378,9 @@ static struct pernet_operations ip_rt_pr
+@@ -382,6 +382,9 @@ static struct pernet_operations ip_rt_pr
  
  static int __init ip_rt_proc_init(void)
  {

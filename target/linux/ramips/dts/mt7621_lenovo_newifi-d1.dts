@@ -58,23 +58,6 @@
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
-
-	gpio_export {
-		compatible = "gpio-export";
-		#size-cells = <0>;
-
-		usb2power {
-			gpio-export,name = "usb2power";
-			gpio-export,output = <1>;
-			gpios = <&gpio 9 GPIO_ACTIVE_HIGH>;
-		};
-
-		usb3power {
-			gpio-export,name = "usb3power";
-			gpio-export,output = <1>;
-			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
-		};
-	};
 };
 
 &sdhci {
@@ -149,7 +132,8 @@
 };
 
 &pcie0 {
-	mt76@0,0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&eeprom_factory_8000>;
 		nvmem-cell-names = "eeprom";
@@ -158,7 +142,8 @@
 };
 
 &pcie1 {
-	mt76@0,0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&eeprom_factory_0>;
 		nvmem-cell-names = "eeprom";
@@ -181,6 +166,18 @@
 
 &ethphy4 {
 	/delete-property/ interrupts;
+};
+
+&reg_vbus {
+	/delete-property/ regulator-always-on;
+	gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
+	enable-active-high;
+};
+
+&reg_vusb33 {
+	/delete-property/ regulator-always-on;
+	gpios = <&gpio 9 GPIO_ACTIVE_HIGH>;
+	enable-active-high;
 };
 
 &switch0 {

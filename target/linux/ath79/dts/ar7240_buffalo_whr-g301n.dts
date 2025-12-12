@@ -96,17 +96,6 @@
 			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 		};
 	};
-
-	ath9k-leds {
-		compatible = "gpio-leds";
-
-		wlan {
-			function = LED_FUNCTION_WLAN;
-			color = <LED_COLOR_ID_GREEN>;
-			gpios = <&ath9k 1 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
-		};
-	};
 };
 
 &spi {
@@ -156,6 +145,10 @@
 					#address-cells = <1>;
 					#size-cells = <1>;
 
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0xeb8>;
+					};
+
 					macaddr_art_120c: macaddr@120c {
 						compatible = "mac-base";
 						reg = <0x120c 0x6>;
@@ -182,14 +175,16 @@
 &pcie {
 	status = "okay";
 
-	ath9k: wifi@0,0 {
+	wifi@0,0 {
 		compatible = "pci168c,002a";
 		reg = <0x0000 0 0 0 0>;
-		qca,no-eeprom;
-		nvmem-cells = <&macaddr_art_120c 0>;
-		nvmem-cell-names = "mac-address";
-		#gpio-cells = <2>;
-		gpio-controller;
+		nvmem-cells = <&cal_art_1000>, <&macaddr_art_120c 0>;
+		nvmem-cell-names = "calibration", "mac-address";
+
+		led {
+			led-sources = <1>;
+			led-active-low;
+		};
 	};
 };
 

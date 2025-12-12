@@ -7,12 +7,12 @@ frames from the hardware queue. Only developers need to care about it.
 
 Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
 ---
- ath10k-6.14/mac.c | 8 ++++----
+ ath10k-6.18/mac.c | 8 ++++----
  1 file changed, 4 insertions(+), 4 deletions(-)
 
---- a/ath10k-6.14/mac.c
-+++ b/ath10k-6.14/mac.c
-@@ -9081,12 +9081,12 @@ static void ath10k_flush(struct ieee8021
+--- a/ath10k-6.18/mac.c
++++ b/ath10k-6.18/mac.c
+@@ -9112,12 +9112,12 @@ static void ath10k_flush(struct ieee8021
          if (vif) {
                  arvif = (void *)vif->drv_priv;
                  vid = arvif->vdev_id;

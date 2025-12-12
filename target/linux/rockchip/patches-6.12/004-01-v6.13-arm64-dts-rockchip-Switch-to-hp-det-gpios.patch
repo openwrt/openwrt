@@ -1,0 +1,24 @@
+From 3ca743f8a5b568dc5e5d5f1bab0298a4a43c2360 Mon Sep 17 00:00:00 2001
+From: Geert Uytterhoeven <geert+renesas@glider.be>
+Date: Fri, 27 Sep 2024 14:42:22 +0200
+Subject: arm64: dts: rockchip: Switch to hp-det-gpios
+
+Replace the deprecated "hp-det-gpio" property by "hp-det-gpios" in Audio
+Graph Card and Realtek RT5651 Audio Codec device nodes.
+
+Signed-off-by: Geert Uytterhoeven <geert+renesas@glider.be>
+Reviewed-by: Krzysztof Kozlowski <krzk@kernel.org>
+Link: https://lore.kernel.org/r/717e7c9527139c3a3e5246dd367a3ad98c5c81b6.1727438777.git.geert+renesas@glider.be
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588-rock-5-itx.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3588-rock-5-itx.dts
+@@ -46,7 +46,7 @@
+ 		compatible = "audio-graph-card";
+ 		label = "rk3588-es8316";
+ 		dais = <&i2s0_8ch_p0>;
+-		hp-det-gpio = <&gpio1 RK_PD5 GPIO_ACTIVE_HIGH>;
++		hp-det-gpios = <&gpio1 RK_PD5 GPIO_ACTIVE_HIGH>;
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&hp_detect>;
+ 		routing = "MIC2", "Mic Jack",

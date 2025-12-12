@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iproute2
-PKG_VERSION:=6.14.0
+PKG_VERSION:=6.18.0
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/utils/net/iproute2
-PKG_HASH:=a6d23588150096591c3d00fc27a324a82ee71d7a1a9eea78df5df17ad9b8461f
+PKG_HASH:=6ba520e1975e4c50dc931eeae91ea37c198b8a173744885f8895b84325f9d456
 PKG_BUILD_PARALLEL:=1
 PKG_BUILD_DEPENDS:=iptables
 PKG_LICENSE:=GPL-2.0
@@ -161,24 +161,24 @@ ifdef CONFIG_PACKAGE_rdma
   HAVE_MNL:=y
 endif
 
-define Build/Configure
-	echo "static const char SNAPSHOT[] = \"$(PKG_VERSION)-$(PKG_RELEASE)-openwrt\";" \
-		> $(PKG_BUILD_DIR)/include/SNAPSHOT.h
-endef
-
 TARGET_LDFLAGS += -Wl,--as-needed
 TARGET_CPPFLAGS += -I$(STAGING_DIR)/usr/include/libnl-tiny
 
-MAKE_FLAGS += \
-	KERNEL_INCLUDE="$(LINUX_DIR)/include/uapi" \
-	SHARED_LIBS=$(SHARED_LIBS) \
-	IP_CONFIG_TINY=$(IP_CONFIG_TINY) \
-	BUILD_VARIANT=$(BUILD_VARIANT) \
-	LIBBPF_FORCE=$(LIBBPF_FORCE) \
+CONFIGURE_VARS += \
 	HAVE_ELF=$(HAVE_ELF) \
 	HAVE_MNL=$(HAVE_MNL) \
 	HAVE_CAP=$(HAVE_CAP) \
-	HAVE_TIRPC=n \
+	HAVE_TIRPC=n
+
+CONFIGURE_ARGS += \
+	--include_dir="$(TOOLCHAIN_ROOT_DIR)/usr/include" \
+	--libbpf_force=$(LIBBPF_FORCE) \
+	--color=auto
+
+MAKE_FLAGS += \
+	SHARED_LIBS=$(SHARED_LIBS) \
+	IP_CONFIG_TINY=$(IP_CONFIG_TINY) \
+	BUILD_VARIANT=$(BUILD_VARIANT) \
 	IPT_LIB_DIR=/usr/lib/iptables \
 	XT_LIB_DIR=/usr/lib/iptables \
 	TC_CONFIG_XT=$(TC_CONFIG_XT) \

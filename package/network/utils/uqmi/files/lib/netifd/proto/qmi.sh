@@ -107,7 +107,7 @@ proto_qmi_setup() {
 	# Check if UIM application is stuck in illegal state
 	local uim_state_timeout=0
 	while true; do
-		json_load "$(uqmi -s -d "$device" -t 1000 --uim-get-sim-state)"
+		json_load "$(uqmi -s -d "$device" -t 2000 --uim-get-sim-state)"
 		json_get_var card_application_state card_application_state
 
 		# SIM card is either completely absent or state is labeled as illegal
@@ -122,7 +122,7 @@ proto_qmi_setup() {
 
 			if [ "$uim_state_timeout" -lt "$timeout" ] || [ "$timeout" = "0" ]; then
 				let uim_state_timeout++
-				sleep 1
+				sleep 5
 				continue
 			fi
 
@@ -232,9 +232,10 @@ proto_qmi_setup() {
 	# Set IP format
 	uqmi -s -d "$device" -t 1000 --set-data-format 802.3 > /dev/null 2>&1
 	uqmi -s -d "$device" -t 1000 --wda-set-data-format 802.3 > /dev/null 2>&1
-	dataformat="$(uqmi -s -d "$device" -t 1000 --wda-get-data-format)"
+	json_load "$(uqmi -s -d "$device" -t 1000 --wda-get-data-format)"
+	json_get_var dataformat link-layer-protocol
 
-	if [ "$dataformat" = '"raw-ip"' ]; then
+	if [ "$dataformat" = "raw-ip" ]; then
 
 		[ -f /sys/class/net/$ifname/qmi/raw_ip ] || {
 			echo "Device only supports raw-ip mode but is missing this required driver attribute: /sys/class/net/$ifname/qmi/raw_ip"
@@ -269,10 +270,13 @@ proto_qmi_setup() {
 	echo "Waiting for network registration"
 	sleep 5
 	local registration_timeout=0
+	local serving_system=""
 	local registration_state=""
 	while true; do
-		registration_state=$(uqmi -s -d "$device" -t 1000 --get-serving-system 2>/dev/null | jsonfilter -e "@.registration" 2>/dev/null)
+		serving_system="$(uqmi -s -d "$device" -t 1000 --get-serving-system 2>/dev/null)"
+		registration_state=$(echo "$serving_system" | jsonfilter -e "@.registration" 2>/dev/null)
 
+		[ "$serving_system" = "\"Invalid QMI command\"" ] && break
 		[ "$registration_state" = "registered" ] && break
 
 		if [ "$registration_state" = "searching" ] || [ "$registration_state" = "not_registered" ]; then

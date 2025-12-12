@@ -7,49 +7,22 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=util-linux
-PKG_VERSION:=2.41
+PKG_VERSION:=2.41.2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.41
-PKG_HASH:=81ee93b3cfdfeb7d7c4090cedeba1d7bbce9141fd0b501b686b3fe475ddca4c6
+PKG_HASH:=6062a1d89b571a61932e6fc0211f36060c4183568b81ee866cf363bce9f6583e
 PKG_CPE_ID:=cpe:/a:kernel:util-linux
 
-PKG_FIXUP:=autoreconf
-
-HOST_BUILD_PARALLEL:=1
-
 include $(INCLUDE_DIR)/host-build.mk
+include $(INCLUDE_DIR)/meson.mk
 
-HOST_CONFIGURE_ARGS += \
-	--with-pic \
-	--disable-shared \
-	--disable-nls \
-	--disable-all-programs \
-	--enable-hexdump \
-	--enable-libuuid \
-	--without-util \
-	--without-selinux \
-	--without-audit \
-	--without-udev \
-	--without-ncursesw \
-	--without-ncurses \
-	--without-slang \
-	--without-tinfo \
-	--without-readline \
-	--without-utempter \
-	--without-cap-ng \
-	--without-libz \
-	--without-libmagic \
-	--without-user \
-	--without-btrfs \
-	--without-systemd \
-	--without-smack \
-	--without-econf \
-	--without-python \
-	--without-cryptsetup
-
-define Host/Uninstall
-	-$(call Host/Compile/Default,uninstall)
-endef
+MESON_HOST_ARGS += \
+	$(if $(findstring y,$(YEAR_2038)),,-Dallow-32bit-time=true) \
+	-Dauto_features=disabled \
+	-Dbuild-hexdump=enabled \
+	-Dbuild-libuuid=enabled \
+	-Dncurses=enabled \
+	-Dprogram-tests=false
 
 $(eval $(call HostBuild))

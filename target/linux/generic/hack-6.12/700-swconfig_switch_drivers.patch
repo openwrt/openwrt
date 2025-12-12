@@ -85,14 +85,14 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	select SWCONFIG
 +
 +config RTL8367B_PHY
-+	tristate "Driver fot the Realtek RTL8367R-VB switch"
++	tristate "Driver for the Realtek RTL8367R-VB switch"
 +	select SWCONFIG
 +
 +endif # RTL8366_SMI
 +
  comment "MII PHY device drivers"
  
- config AIR_EN8811H_PHY
+ config AS21XXX_PHY
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
 @@ -27,6 +27,21 @@ libphy-$(CONFIG_OPEN_ALLIANCE_HELPERS) +

@@ -4,7 +4,7 @@ import * as libuci from 'uci';
 import { md5 } from 'digest';
 import * as fs from 'fs';
 
-import { append, append_raw, append_value, append_vars, comment, push_config, set_default, touch_file } from 'wifi.common';
+import { append, append_raw, append_value, append_vars, append_string_vars, comment, push_config, set_default, touch_file } from 'wifi.common';
 import * as netifd from 'wifi.netifd';
 import * as iface from 'wifi.iface';
 
@@ -43,18 +43,24 @@ function iface_setup(config) {
 	if (config.multicast_to_unicast || config.proxy_arp)
 		config.ap_isolate = 1;
 
-	append('bssid', config.macaddr);
+	if (config.proxy_arp)
+		set_default(config, 'na_mcast_to_ucast', true);
 
-append_vars(config, [
+	append('bssid', config.macaddr);
+	config.ssid2 = config.ssid;
+	config.wmm_enabled = 1;
+	append_string_vars(config, [ 'ssid2' ]);
+
+	append_vars(config, [
 		'ctrl_interface', 'ap_isolate', 'max_num_sta', 'ap_max_inactivity', 'airtime_bss_weight',
 		'airtime_bss_limit', 'airtime_sta_weight', 'bss_load_update_period', 'chan_util_avg_period',
 		'disassoc_low_ack', 'skip_inactivity_poll', 'ignore_broadcast_ssid', 'uapsd_advertisement_enabled',
-		'utf8_ssid', 'multi_ap', 'ssid', 'tdls_prohibit', 'bridge', 'wds_sta', 'wds_bridge',
-		'snoop_iface', 'vendor_elements', 'nas_identifier', 'radius_acct_interim_interval',
-		'ocv', 'multicast_to_unicast', 'preamble', 'wmm_enabled', 'proxy_arp', 'per_sta_vif', 'mbo',
+		'utf8_ssid', 'multi_ap', 'multi_ap_vlanid', 'multi_ap_profile', 'tdls_prohibit', 'bridge',
+		'wds_sta', 'wds_bridge', 'snoop_iface', 'vendor_elements', 'nas_identifier', 'radius_acct_interim_interval',
+		'ocv', 'beacon_prot', 'spp_amsdu', 'multicast_to_unicast', 'preamble', 'proxy_arp', 'per_sta_vif', 'mbo',
 		'bss_transition', 'wnm_sleep_mode', 'wnm_sleep_mode_no_keys', 'qos_map_set', 'max_listen_int',
-		'dtim_period',
-	 ]);
+		'dtim_period', 'wmm_enabled', 'start_disabled', 'na_mcast_to_ucast',
+	]);
 }
 
 function iface_authentication_server(config) {
@@ -76,18 +82,20 @@ function iface_accounting_server(config) {
 }
 
 function iface_auth_type(config) {
-	iface.parse_encryption(config);
-
 	if (config.auth_type in [ 'sae', 'owe', 'eap2', 'eap192' ]) {
 		config.ieee80211w = 2;
 		config.sae_require_mfp = 1;
-		config.sae_pwe = 2;
+		if (!config.ppsk)
+			config.sae_pwe = 2;
 	}
 
 	if (config.auth_type in [ 'psk-sae', 'eap-eap2' ]) {
 		config.ieee80211w = 1;
+		if (config.rsn_override)
+			config.rsn_override_mfp = 2;
 		config.sae_require_mfp = 1;
-		config.sae_pwe = 2;
+		if (!config.ppsk)
+			config.sae_pwe = 2;
 	}
 
 	if (config.own_ip_addr)
@@ -102,11 +110,9 @@ function iface_auth_type(config) {
 		config.wps_possible = 1;
 		config.wps_state = 1;
 
-		if (config.owe_transition_ssid)
-			config.owe_transition_ssid = `"${config.owe_transition_ssid}"`;
-
+		append_string_vars(config, [ 'owe_transition_ssid' ]);
 		append_vars(config, [
-			'owe_transition_ssid', 'owe_transition_bssid', 'owe_transition_ifname',
+			'owe_transition_bssid', 'owe_transition_ifname',
 		]);
 		break;
 
@@ -117,21 +123,27 @@ function iface_auth_type(config) {
 		config.vlan_possible = 1;
 		config.wps_possible = 1;
 
-		if (config.auth_type == 'psk' && config.ppsk) {
+		if (config.ppsk) {
 			iface_authentication_server(config);
 			config.macaddr_acl = 2;
 			config.wpa_psk_radius = 2;
 		} else if (length(config.key) == 64) {
 			config.wpa_psk = key;
-		} else if (length(config.key) >= 8) {
+		} else if (length(config.key) >= 8 && length(config.key) <= 63) {
 			config.wpa_passphrase = config.key;
-		} else if (!config.wpa_psk_file) {
+		} else if (config.key) {
 			 netifd.setup_failed('INVALID_WPA_PSK');
 		}
 
-		set_default(config, 'wpa_psk_file', `/var/run/hostapd-${config.ifname}.psk`);
-		touch_file(config.wpa_psk_file);
-		set_default(config, 'dynamic_vlan', 0);
+		if (config.auth_type in [ 'psk', 'psk-sae' ]) {
+			set_default(config, 'wpa_psk_file', `/var/run/hostapd-${config.ifname}.psk`);
+			touch_file(config.wpa_psk_file);
+		}
+
+		if (config.auth_type in [ 'sae', 'psk-sae' ]) {
+			set_default(config, 'sae_password_file', `/var/run/hostapd-${config.ifname}.sae`);
+			touch_file(config.sae_password_file);
+		}
 		break;
 
 	case 'eap':
@@ -167,7 +179,7 @@ function iface_auth_type(config) {
 	}
 
 	append_vars(config, [
-		'sae_require_mfp', 'sae_pwe', 'time_advertisement', 'time_zone',
+		'sae_require_mfp', 'sae_password_file', 'sae_pwe', 'sae_track_password', 'time_advertisement', 'time_zone',
 		'wpa_group_rekey', 'wpa_ptk_rekey', 'wpa_gmk_rekey', 'wpa_strict_rekey',
 		'macaddr_acl', 'wpa_psk_radius', 'wpa_psk', 'wpa_passphrase', 'wpa_psk_file',
 		'eapol_version', 'dynamic_vlan', 'radius_request_cui', 'eap_reauth_period',
@@ -200,7 +212,7 @@ function iface_wps(config) {
 			set_default(config, 'upnp_iface', config.network_bridge);
 
 		if (config.multi_ap && config.multi_ap_backhaul_ssid) {
-			append_vars(config, [ 'multi_ap_backhaul_ssid' ]);
+			append_string_vars(config, [ 'multi_ap_backhaul_ssid' ]);
 			if (length(config.multi_ap_backhaul_key) == 64)
 				append('multi_ap_backhaul_wpa_psk', config.multi_ap_backhaul_key);
 			else if (length(config.multi_ap_backhaul_key) > 8)
@@ -276,7 +288,7 @@ function iface_vlan(interface, config, vlans) {
 		if (vlan.config.name && vlan.config.vid) {
 			let ifname = `${config.ifname}-${vlan.config.name}`;
 			file.write(`${vlan.config.vid} ${ifname}\n`);
-			netifd.set_vlan(interface, k, ifname);
+			netifd.set_vlan(interface, ifname, k);
 		}
 	file.close();
 
@@ -294,23 +306,44 @@ function iface_vlan(interface, config, vlans) {
 	]);
 }
 
-function iface_stations(config, stas) {
-	if (!length(stas))
-		return;
-
+function iface_wpa_stations(config, stas) {
 	let path = `/var/run/hostapd-${config.ifname}.psk`;
 
 	let file = fs.open(path, 'w');
 	for (let k, sta in stas)
 		if (sta.config.mac && sta.config.key) {
-			let station = `${sta.config.mac} ${sta.config.key}\n`;
-			if (sta.config.vid)
-				station = `vlanid=${sta.config.vid} ` + station;
-			file.write(station);
+			for (let mac in sta.config.mac) {
+				let station = `${mac} ${sta.config.key}\n`;
+				if (sta.config.vid)
+					station = `vlanid=${sta.config.vid} ` + station;
+				file.write(station);
+			}
 		}
 	file.close();
 
 	set_default(config, 'wpa_psk_file', path);
+}
+
+function iface_sae_stations(config, stas) {
+	let path = `/var/run/hostapd-${config.ifname}.sae`;
+
+	let file = fs.open(path, 'w');
+	for (let k, sta in stas)
+		if (sta.config.mac && sta.config.key) {
+			for (let mac in sta.config.mac) {
+				if (mac == '00:00:00:00:00:00')
+					mac = 'ff:ff:ff:ff:ff:ff';
+
+				let station = `${sta.config.key}|mac=${mac}`;
+				if (sta.config.vid)
+					station = station + `|vlanid=${sta.config.vid}`;
+				station = station + '\n';
+				file.write(station);
+			}
+		}
+	file.close();
+
+	set_default(config, 'sae_password_file', path);
 }
 
 function iface_eap_server(config) {
@@ -341,12 +374,16 @@ function iface_roaming(config) {
 
 			let ft_key = md5(`${config.mobility_domain}/${config.auth_secret ?? config.key}`);
 
-			set_default(config, 'r0kh', 'ff:ff:ff:ff:ff:ff * ' + ft_key);
-			set_default(config, 'r1kh', '00:00:00:00:00:00 00:00:00:00:00:00 ' + ft_key);
+			set_default(config, 'r0kh', [ 'ff:ff:ff:ff:ff:ff,*,' + ft_key ]);
+			set_default(config, 'r1kh', [ '00:00:00:00:00:00,00:00:00:00:00:00,' + ft_key ]);
 		}
 
+		for (let name in [ 'r0kh', 'r1kh' ])
+			for (let val in config[name])
+				append(name, join(' ', split(val, ',', 3)));
+
 		append_vars(config, [
-			'r0kh', 'r1kh', 'r1_key_holder', 'r0_key_lifetime', 'pmk_r1_push'
+			'r1_key_holder', 'r0_key_lifetime', 'pmk_r1_push'
 		]);
 	}
 
@@ -398,18 +435,11 @@ function iface_key_caching(config) {
 function iface_hs20(config) {
 	if (!config.hs20)
 		return;
-	
-	let uci = libuci.cursor();
-	let icons = uci.get_all('wireless');
-	for (let k, icon in icons)
-		if (icon['.type'] == 'hs20-icon')
-			append('hs20_icon', `${icon.width}:${icon.heigth}:${icon.lang}:${icon.type}:${k}:${icon.path}`);
 
 	append_vars(config, [
-		'hs20', 'disable_dgaf', 'osen', 'anqp_domain_id', 'hs20_deauth_req_timeout', 'osu_ssid', 
+		'hs20', 'disable_dgaf', 'anqp_domain_id', 'hs20_deauth_req_timeout',
 		'hs20_wan_metrics', 'hs20_operating_class', 'hs20_t_c_filename', 'hs20_t_c_timestamp',
-		'hs20_t_c_server_url', 'hs20_oper_friendly_name', 'hs20_conn_capab', 'osu_provider',
-		'operator_icon'
+		'hs20_t_c_server_url', 'hs20_conn_capab'
 	]);
 }
 
@@ -432,12 +462,24 @@ function iface_interworking(config) {
 	]);
 }
 
-export function generate(interface, config, vlans, stas, phy_features) {
+export function generate(interface, data, config, vlans, stas, phy_features) {
 	config.ctrl_interface = '/var/run/hostapd';
 
-	iface_stations(config, stas);
-
+	config.start_disabled = data.ap_start_disabled;
 	iface_setup(config);
+
+	iface.parse_encryption(config, data.config);
+	if (data.config.band == '6g') {
+		if (config.auth_type == 'psk-sae')
+			config.auth_type = 'sae';
+		if (config.auth_type == 'eap-eap2')
+			config.auth_type = 'eap2';
+	}
+
+	if (config.auth_type in [ 'psk', 'psk-sae' ])
+		iface_wpa_stations(config, stas);
+	if (config.auth_type in [ 'sae', 'psk-sae' ])
+		iface_sae_stations(config, stas);
 
 	iface_auth_type(config);
 
@@ -469,13 +511,44 @@ export function generate(interface, config, vlans, stas, phy_features) {
 
 	iface.wpa_key_mgmt(config);
 	append_vars(config, [
-		'wpa_key_mgmt'
+		'wpa_key_mgmt',
 	]);
 
+	if (config.rsn_override_key_mgmt || config.rsn_override_pairwise) {
+		config.rsn_override_mfp ??= config.ieee80211w;
+		config.rsn_override_key_mgmt ??= config.wpa_key_mgmt;
+		config.rsn_override_pairwise ??= config.wpa_pairwise;
+		append_vars(config, [
+			'rsn_override_key_mgmt',
+			'rsn_override_pairwise',
+			'rsn_override_mfp'
+		]);
+
+		if (config.mlo) {
+			config.rsn_override_mfp_2 ??= config.rsn_override_mfp;
+			config.rsn_override_key_mgmt_2 ??= config.rsn_override_key_mgmt;
+			config.rsn_override_pairwise_2 ??= config.rsn_override_pairwise;
+
+			append_vars(config, [
+				'rsn_override_key_mgmt_2',
+				'rsn_override_pairwise_2',
+				'rsn_override_mfp_2'
+			]);
+		}
+	}
+
 	/* raw options */
-	for (let raw in config.hostapd_options)
+	for (let raw in config.hostapd_bss_options)
 		append_raw(raw);
+
+	if (config.mlo) {
+		append_raw('mld_ap=1');
+		if (data.config.radio != null)
+			append_raw('mld_link_id=' + data.config.radio);
+	}
 
 	if (config.default_macaddr)
 		append_raw('#default_macaddr');
+	else if (config.random_macaddr)
+		append_raw('#random_macaddr');
 };

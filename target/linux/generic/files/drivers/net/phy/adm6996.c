@@ -84,7 +84,7 @@ struct adm6996_priv {
 	u16 vlan_id[ADM_NUM_VLANS];
 	u8 vlan_table[ADM_NUM_VLANS];	/* bitmap, 1 = port is member */
 	u8 vlan_tagged[ADM_NUM_VLANS];	/* bitmap, 1 = tagged member */
-	
+
 	struct mutex mib_lock;
 	char buf[2048];
 
@@ -805,12 +805,12 @@ adm6996_get_port_link(struct switch_dev *dev, int port,
 		struct switch_port_link *link)
 {
 	struct adm6996_priv *priv = to_adm(dev);
-	
+
 	u16 reg = 0;
-	
+
 	if (port >= ADM_NUM_PORTS)
 		return -EINVAL;
-	
+
 	switch (port) {
 	case 0:
 		reg = r16(priv, ADM_PS0);
@@ -838,7 +838,7 @@ adm6996_get_port_link(struct switch_dev *dev, int port,
 	default:
 		return -EINVAL;
 	}
-	
+
 	link->link = reg & ADM_PS_LS;
 	if (!link->link)
 		return 0;
@@ -1003,9 +1003,9 @@ static int adm6996_switch_init(struct adm6996_priv *priv, const char *alias, str
 		w16(priv, ADM_VID_CHECK, test);
 		test ^= r16(priv, ADM_VID_CHECK);
 		if (test & (1 << 12)) {
-			/* 
-			 * Bit 12 of this register is read-only. 
-			 * This is the FC model. 
+			/*
+			 * Bit 12 of this register is read-only.
+			 * This is the FC model.
 			 */
 			priv->model = ADM6996FC;
 		} else {

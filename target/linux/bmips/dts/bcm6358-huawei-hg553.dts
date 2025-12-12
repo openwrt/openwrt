@@ -1,0 +1,226 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "bcm6358.dtsi"
+
+/ {
+	model = "Huawei EchoLife HG553";
+	compatible = "huawei,hg553", "brcm,bcm6358";
+
+	aliases {
+		led-boot = &led_power_blue;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_blue;
+		led-upgrade = &led_power_blue;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		rfkill {
+			label = "rfkill";
+			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
+			debounce-interval = <60>;
+		};
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 37 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power_blue: led-4 {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_red: led-5 {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
+		};
+
+		led-12 {
+			label = "red:hspa";
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+		};
+
+		led-13 {
+			label = "blue:hspa";
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		led-22 {
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
+		};
+
+		led-23 {
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
+		};
+
+		led-25 {
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 25 GPIO_ACTIVE_LOW>;
+		};
+
+		led-34 {
+			label = "red:dsl";
+			gpios = <&gpio 34 GPIO_ACTIVE_LOW>;
+		};
+
+		led-35 {
+			label = "blue:dsl";
+			gpios = <&gpio 35 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	bcm4318-sprom {
+		compatible = "brcm,ssb-sprom";
+
+		pci-bus = <0>;
+		pci-dev = <1>;
+
+		nvmem-cells = <&macaddr_cfe_6a0 1>;
+		nvmem-cell-names = "mac-address";
+
+		brcm,sprom = "brcm/bcm4318-sprom.bin";
+	};
+};
+
+&ehci {
+	status = "okay";
+};
+
+&ethernet1 {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_cfe_6a0 0>;
+	nvmem-cell-names = "mac-address";
+
+	phy-mode = "mii";
+
+	fixed-link {
+		speed = <100>;
+		full-duplex;
+	};
+};
+
+&iudma {
+	status = "okay";
+};
+
+&mdio1 {
+	switch@1e {
+		compatible = "brcm,bcm5325";
+		reg = <30>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "lan1";
+
+				phy-mode = "mii";
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan2";
+
+				phy-mode = "mii";
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan3";
+
+				phy-mode = "mii";
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan4";
+
+				phy-mode = "mii";
+			};
+
+			port@5 {
+				reg = <5>;
+				label = "cpu";
+
+				phy-mode = "internal";
+				ethernet = <&ethernet1>;
+
+				fixed-link {
+					speed = <100>;
+					full-duplex;
+				};
+			};
+		};
+	};
+};
+
+&ohci {
+	status = "okay";
+};
+
+&pflash {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "cfe";
+			reg = <0x000000 0x020000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_cfe_6a0: macaddr@6a0 {
+					compatible = "mac-base";
+					reg = <0x6a0 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+			};
+		};
+
+		partition@20000 {
+			label = "firmware";
+			reg = <0x020000 0xfc0000>;
+			compatible = "brcm,bcm963xx-imagetag";
+		};
+
+		partition@fe0000 {
+			label = "nvram";
+			reg = <0xfe0000 0x020000>;
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&usbh {
+	status = "okay";
+};

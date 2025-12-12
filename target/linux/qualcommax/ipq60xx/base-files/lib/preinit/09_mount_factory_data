@@ -8,7 +8,8 @@ preinit_mount_factory_data() {
 
 	case $(board_name) in
 	tplink,eap610-outdoor|\
-	tplink,eap623od-hd-v1)
+	tplink,eap623od-hd-v1|\
+	tplink,eap625-outdoor-hd-v1)
 		mtd_path=$(find_mtd_chardev "factory_data")
 		ubiattach --dev-path="$mtd_path" --devn=1
 		mkdir /tmp/factory_data

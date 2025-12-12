@@ -41,7 +41,7 @@
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
-		
+
 		led_power_red: power-red {
 			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_RED>;
@@ -113,7 +113,7 @@
 	 *
 	 * We can not support this with OpenWrt, as this
 	 * would require us to influence the pinmux based on the CS.
-	 * 
+	 *
 	 * We force-select Bank 1. Remember to blame Aruba for that.
 	 */
 	cs0_pin5: spi-cs0-pin5 {

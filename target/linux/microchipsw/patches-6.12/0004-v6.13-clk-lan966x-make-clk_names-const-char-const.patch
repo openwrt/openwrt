@@ -1,0 +1,26 @@
+From 60b15ad144394ef5da427160fd947af93affef72 Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Mon, 16 Sep 2024 11:49:20 +0200
+Subject: [PATCH 04/25] clk: lan966x: make clk_names const char * const
+
+Change clk_names to const char * const to silence checkpatch in
+subsequent patches.
+
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Link: https://lore.kernel.org/r/20240916-lan969x-clock-v1-2-0e150336074d@microchip.com
+Signed-off-by: Claudiu Beznea <claudiu.beznea@tuxon.dev>
+---
+ drivers/clk/clk-lan966x.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/clk/clk-lan966x.c
++++ b/drivers/clk/clk-lan966x.c
+@@ -24,7 +24,7 @@
+ 
+ #define DIV_MAX		255
+ 
+-static const char *clk_names[N_CLOCKS] = {
++static const char * const clk_names[N_CLOCKS] = {
+ 	"qspi0", "qspi1", "qspi2", "sdmmc0",
+ 	"pi", "mcan0", "mcan1", "flexcom0",
+ 	"flexcom1", "flexcom2", "flexcom3",

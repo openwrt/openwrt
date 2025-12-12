@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/configs/mt7986_netcore_n60-pro_defconfig
-@@ -0,0 +1,128 @@
+@@ -0,0 +1,129 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -26,6 +26,7 @@
 +CONFIG_LOGLEVEL=7
 +CONFIG_PRE_CONSOLE_BUFFER=y
 +CONFIG_LOG=y
++# CONFIG_BOARD_INIT is not set
 +CONFIG_BOARD_LATE_INIT=y
 +CONFIG_HUSH_PARSER=y
 +CONFIG_SYS_PROMPT="MT7986> "
@@ -69,13 +70,13 @@
 +CONFIG_OF_EMBED=y
 +CONFIG_ENV_OVERWRITE=y
 +CONFIG_ENV_IS_IN_UBI=y
-+CONFIG_SYS_REDUNDAND_ENVIRONMENT=y
++CONFIG_ENV_REDUNDANT=y
 +CONFIG_ENV_UBI_PART="ubi"
 +CONFIG_ENV_UBI_VOLUME="ubootenv"
 +CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
-+CONFIG_SYS_RELOC_GD_ENV_ADDR=y
-+CONFIG_USE_DEFAULT_ENV_FILE=y
-+CONFIG_DEFAULT_ENV_FILE="defenvs/netcore_n60-pro_env"
++CONFIG_ENV_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/netcore_n60-pro_env"
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
 +CONFIG_VERSION_VARIABLE=y
 +CONFIG_NETCONSOLE=y
@@ -165,13 +166,13 @@
 +		button-reset {
 +			label = "reset";
 +			linux,code = <KEY_RESTART>;
-+			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
 +		};
 +
 +		button-mesh {
 +			label = "mesh";
 +			linux,code = <KEY_WPS_BUTTON>;
-+			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
 +		};
 +	};
 +
@@ -180,27 +181,27 @@
 +
 +		led-0 {
 +			label = "blue:wlan";
-+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
 +		};
 +
 +		power_led: led-1 {
 +			label = "blue:power";
-+			gpios = <&gpio 29 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 29 GPIO_ACTIVE_LOW>;
 +		};
 +
 +		led-2 {
 +			label = "blue:status";
-+			gpios = <&gpio 30 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 30 GPIO_ACTIVE_LOW>;
 +		};
 +
 +		led-3 {
 +			label = "blue:mesh";
-+			gpios = <&gpio 31 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 31 GPIO_ACTIVE_LOW>;
 +		};
 +
 +		led-4 {
 +			label = "blue:wan";
-+			gpios = <&gpio 32 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 32 GPIO_ACTIVE_LOW>;
 +		};
 +	};
 +};
@@ -221,7 +222,7 @@
 +	mediatek,gmac-id = <0>;
 +	phy-mode = "2500base-x";
 +	mediatek,switch = "mt7531";
-+	reset-gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
++	reset-gpios = <&pio 5 GPIO_ACTIVE_HIGH>;
 +
 +	fixed-link {
 +		speed = <2500>;
@@ -229,7 +230,7 @@
 +	};
 +};
 +
-+&pinctrl {
++&pio {
 +	spi_flash_pins: spi0-pins-func-1 {
 +		mux {
 +			function = "flash";

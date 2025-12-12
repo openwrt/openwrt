@@ -54,9 +54,9 @@ int lzma_inflate(unsigned char *source, int s_len, unsigned char *dest, int *d_l
   UInt32 outSizeHigh = 0;
   SizeT outSizeFull;
   unsigned char *outStream;
-  
-  int waitEOS = 1; 
-  /* waitEOS = 1, if there is no uncompressed size in headers, 
+
+  int waitEOS = 1;
+  /* waitEOS = 1, if there is no uncompressed size in headers,
    so decoder will wait EOS (End of Stream Marker) in compressed stream */
 
   SizeT compressedSize;
@@ -119,7 +119,7 @@ int lzma_inflate(unsigned char *source, int s_len, unsigned char *dest, int *d_l
       else
         outSizeHigh += (UInt32)(b) << ((i - 4) * 8);
     }
-    
+
     if (waitEOS)
     {
 #if defined(DEBUG_ENABLE_BOOTSTRAP_PRINTF) || !defined(CFG_BOOTSTRAP_CODE)
@@ -169,7 +169,7 @@ int lzma_inflate(unsigned char *source, int s_len, unsigned char *dest, int *d_l
       inStream = source + rpos;
   }
 
-  if (state.Probs == 0 
+  if (state.Probs == 0
     || (outStream == 0 && outSizeFull != 0)
     || (inStream == 0 && compressedSize != 0)
     )

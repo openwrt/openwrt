@@ -58,18 +58,31 @@ const types = {
 			return;
 		}
 	},
+	json: {
+		parse: function(ctx, name, val) {
+			try {
+				val = json(val);
+			} catch (e) {
+				return ctx.invalid_argument('Invalid JSON data');
+			}
+			if (this.data_type != null && type(val) != this.data_type)
+				ctx.invalid_argument(`Invalid data type: %s, expected: %s`, type(val), this.data_type);
+			return val;
+		}
+	},
 	enum: {
 		parse: function(ctx, name, val) {
 			if (this.no_validate)
 				return val;
 
 			let list = this.value;
+			if (type(list) == "object")
+				list = keys(list);
 			if (this.ignore_case) {
 				val = lc(val);
 				val = filter(list, (v) => val == lc(v))[0];
 			} else {
-				if (index(list, val) < 0)
-					val = null;
+				val = filter(list, (v) => val == v)[0];
 			}
 
 			if (val == null)

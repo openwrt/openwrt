@@ -29,6 +29,8 @@ endif
 ifdef UBOOT_USE_INTREE_DTC
   $(eval $(call TestHostCommand,python3-dev, \
     Please install the python3-dev package, \
+    python3.13-config --includes 2>&1 | grep 'python3', \
+    python3.12-config --includes 2>&1 | grep 'python3', \
     python3.11-config --includes 2>&1 | grep 'python3', \
     python3.10-config --includes 2>&1 | grep 'python3', \
     python3.9-config --includes 2>&1 | grep 'python3', \
@@ -78,6 +80,7 @@ UBOOT_MAKE_FLAGS = \
 	PKG_CONFIG_PATH="$(STAGING_DIR_HOST)/lib/pkgconfig" \
 	PKG_CONFIG_LIBDIR="$(STAGING_DIR_HOST)/lib/pkgconfig" \
 	PKG_CONFIG_EXTRAARGS="--static" \
+	$(if $(KBUILD_CFLAGS),KCFLAGS="$(KBUILD_CFLAGS)") \
 	$(if $(findstring c,$(OPENWRT_VERBOSE)),V=1,V='')
 
 define Build/U-Boot/Target
@@ -110,7 +113,11 @@ define Build/U-Boot/Target
 endef
 
 define Build/Configure/U-Boot
-	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) CROSS_COMPILE=$(TARGET_CROSS) $(UBOOT_CONFIGURE_VARS) $(UBOOT_CONFIG)_config
+	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
+		CROSS_COMPILE=$(TARGET_CROSS) \
+		$(UBOOT_CONFIGURE_VARS) \
+		$(firstword $(UBOOT_CONFIG))_config \
+		$(wordlist 2,$(words $(UBOOT_CONFIG)),$(UBOOT_CONFIG:%=%.config))
 	$(if $(strip $(UBOOT_CUSTOMIZE_CONFIG)),
 		$(PKG_BUILD_DIR)/scripts/config --file $(PKG_BUILD_DIR)/.config $(UBOOT_CUSTOMIZE_CONFIG)
 		+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) CROSS_COMPILE=$(TARGET_CROSS) $(UBOOT_CONFIGURE_VARS) oldconfig)

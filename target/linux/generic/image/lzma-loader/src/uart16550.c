@@ -52,12 +52,12 @@ void Uart16550Init(uint32 baud, uint8 data, uint8 parity, uint8 stop)
     UART16550_WRITE(OFS_INTR_ENABLE, 0);
 
     /* set up buad rate */
-    { 
+    {
         uint32 divisor;
-       
+
         /* set DIAB bit */
         UART16550_WRITE(OFS_LINE_CONTROL, 0x80);
-        
+
         /* set divisor */
         divisor = MAX_BAUD / baud;
         UART16550_WRITE(OFS_DIVISOR_LSB, divisor & 0xff);

@@ -1610,7 +1610,7 @@ static int bcm6348_emac_probe(struct platform_device *pdev)
 					   GFP_KERNEL);
 		if (IS_ERR_OR_NULL(emac->reset))
 			return PTR_ERR(emac->reset);
-		
+
 	}
 	for (i = 0; i < emac->num_resets; i++) {
 		emac->reset[i] = devm_reset_control_get_by_index(dev, i);

@@ -85,7 +85,7 @@ void	LED_blink(unsigned int led)
 		for(j= 0; j < 200000; j++);
 		LED_set(0);
 		for(j= 0; j < 200000; j++);
-	}		
+	}
 }
 
 

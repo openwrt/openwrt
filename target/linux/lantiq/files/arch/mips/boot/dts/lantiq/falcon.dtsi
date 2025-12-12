@@ -172,7 +172,8 @@
 			reg = <0x200000 0x10000>;
 			interrupt-parent = <&icu0>;
 			interrupts = <18 19 20 21>;
-			gpios = <&gpio1 7 0 &gpio1 8 0>;
+			gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>,
+				<&gpio1 8 GPIO_ACTIVE_HIGH>;
 			pinctrl-names = "default";
 			pinctrl-0 = <&i2c_pins>;
 			clocks = <&clock_sys1 14>;

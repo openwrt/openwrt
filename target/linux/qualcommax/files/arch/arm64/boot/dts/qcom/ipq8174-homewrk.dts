@@ -9,6 +9,8 @@
 	compatible = "linksys,homewrk", "qcom,ipq8074";
 
 	aliases {
+		ethernet1 = &dp2;
+		ethernet2 = &dp3;
 		ethernet3 = &dp4;
 		ethernet4 = &dp5;
 	};
@@ -24,7 +26,7 @@
 	nand@0 {
 		reg = <0>;
 		/*
-		 * Some devices use Micron NAND with with 8 bit ECC 
+		 * Some devices use Micron NAND with with 8 bit ECC
 		 * other AMD/Spansion NAND with 4 bit ECC
 		 *nand-ecc-strength = <4>;
 		 *nand-ecc-step-size = <512>;

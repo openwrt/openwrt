@@ -1,0 +1,49 @@
+From 8358102806c619d8d6c814010173617fb374b77e Mon Sep 17 00:00:00 2001
+From: Jonas Karlman <jonas@kwiboo.se>
+Date: Sun, 18 May 2025 22:06:48 +0000
+Subject: [PATCH] dt-bindings: power: rockchip: Add support for RK3528
+
+Add the compatible string and power domains for RK3528 SoC.
+
+Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Acked-by: Conor Dooley <conor.dooley@microchip.com>
+Link: https://lore.kernel.org/r/20250518220707.669515-2-jonas@kwiboo.se
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+---
+ .../power/rockchip,power-controller.yaml      |  1 +
+ .../dt-bindings/power/rockchip,rk3528-power.h | 19 +++++++++++++++++++
+ 2 files changed, 20 insertions(+)
+ create mode 100644 include/dt-bindings/power/rockchip,rk3528-power.h
+
+--- a/Documentation/devicetree/bindings/power/rockchip,power-controller.yaml
++++ b/Documentation/devicetree/bindings/power/rockchip,power-controller.yaml
+@@ -40,6 +40,7 @@ properties:
+       - rockchip,rk3366-power-controller
+       - rockchip,rk3368-power-controller
+       - rockchip,rk3399-power-controller
++      - rockchip,rk3528-power-controller
+       - rockchip,rk3568-power-controller
+       - rockchip,rk3576-power-controller
+       - rockchip,rk3588-power-controller
+--- /dev/null
++++ b/include/dt-bindings/power/rockchip,rk3528-power.h
+@@ -0,0 +1,19 @@
++/* SPDX-License-Identifier: (GPL-2.0+ OR MIT) */
++#ifndef __DT_BINDINGS_POWER_RK3528_POWER_H__
++#define __DT_BINDINGS_POWER_RK3528_POWER_H__
++
++#define RK3528_PD_PMU		0
++#define RK3528_PD_BUS		1
++#define RK3528_PD_DDR		2
++#define RK3528_PD_MSCH		3
++
++/* VD_GPU */
++#define RK3528_PD_GPU		4
++
++/* VD_LOGIC */
++#define RK3528_PD_RKVDEC	5
++#define RK3528_PD_RKVENC	6
++#define RK3528_PD_VO		7
++#define RK3528_PD_VPU		8
++
++#endif

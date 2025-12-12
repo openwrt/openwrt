@@ -109,8 +109,6 @@
 	status = "okay";
 
 	flash@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		reg = <0>;
 		compatible = "jedec,spi-nor";
 		spi-max-frequency = <25000000>;
@@ -338,7 +336,7 @@
 
 &pcie0 {
 	status = "okay";
-	perst-gpio = <&tlmm 60 GPIO_ACTIVE_LOW>;
+	perst-gpios = <&tlmm 60 GPIO_ACTIVE_LOW>;
 };
 
 &wifi {

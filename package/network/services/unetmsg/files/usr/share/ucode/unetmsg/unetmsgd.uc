@@ -62,9 +62,14 @@ function pubsub_del(kind, name, data)
 		remote.pubsub_set(kind, name, length(list) > 0);
 }
 
-function get_handles(handle, local, remote)
+function get_handles(handle, local, remote, host)
 {
 	let handles = [];
+
+	if (host == "")
+		remote = {};
+	else if (host != null)
+		local = {};
 
 	for (let cur_id, cur in local) {
 		if (handle) {
@@ -80,19 +85,22 @@ function get_handles(handle, local, remote)
 	if (!remote)
 		return handles;
 
-	for (let cur_id, cur in remote)
+	for (let cur_id, cur in remote) {
+		if (host != null && cur.name != host)
+			continue;
 		push(handles, cur);
+	}
 
 	return handles;
 }
 
-function handle_request(handle, req, data, remote)
+function handle_request(handle, req, data, remote, host)
 {
 	let name = data.name;
 	let local = this.publish[name];
 	if (remote)
 		remote = this.remote_publish[name];
-	let handles = get_handles(handle, local, remote);
+	let handles = get_handles(handle, local, remote, host);
 
 	let context = {
 		pending: length(handles),
@@ -123,7 +131,7 @@ function handle_request(handle, req, data, remote)
 		let cur_handle = cur;
 		let data_cb = (msg) => {
 			if (cur_handle.get_response_data)
-				msg = cur.get_response_data(msg);
+				msg = cur_handle.get_response_data(msg);
 			req.reply(msg, -1);
 		};
 
@@ -134,13 +142,13 @@ function handle_request(handle, req, data, remote)
 	}
 }
 
-function handle_message(handle, data, remote)
+function handle_message(handle, data, remote, host)
 {
 	let name = data.name;
 	let local = this.subscribe[name];
 	if (remote)
 		remote = this.remote_subscribe[name];
-	let handles = get_handles(handle, local, remote);
+	let handles = get_handles(handle, local, remote, host);
 	for (let cur in handles) {
 		if (!cur || !cur.get_channel)
 			continue;

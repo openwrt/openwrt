@@ -34,6 +34,14 @@
 			partition@100000 {
 				label = "u-boot-env";
 				reg = <0x100000 0x40000>; /* 256 KB */
+
+				nvmem-layout {
+					compatible = "u-boot,env";
+
+					macaddr_uboot_ethaddr: ethaddr {
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@140000 {

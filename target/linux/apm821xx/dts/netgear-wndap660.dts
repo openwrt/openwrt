@@ -48,13 +48,13 @@
 	 *
 	 */
 
-	bridge@64,0 {
+	bridge@0,0 {
 		reg = <0x00400000 0 0 0 0>;
 		#address-cells = <3>;
 		#size-cells = <2>;
 		ranges;
 
-		bridge@65,0 {
+		bridge@0,0 {
 			/* IDT PES3T3 PCI Express Switch */
 			compatible = "pci111d,8039";
 			reg = <0x00410000 0 0 0 0>;
@@ -62,14 +62,14 @@
 			#size-cells = <2>;
 			ranges;
 
-			bridge@66,2 {
+			bridge@2,0 {
 				compatible = "pci111d,8039";
 				reg = <0x00421000 0 0 0 0>;
 				#address-cells = <3>;
 				#size-cells = <2>;
 				ranges;
 
-				wifi0: wifi@67,0 {
+				wifi0: wifi@0,0 {
 					/* Atheros AR9380 2.4/5GHz */
 					compatible = "pci168c,0030";
 					reg = <0x00430000 0 0 0 0>;
@@ -77,14 +77,14 @@
 				};
 			};
 
-			bridge@66,3 {
+			bridge@3,0 {
 				compatible = "pci111d,8039";
 				reg = <0x00421800 0 0 0 0>;
 				#address-cells = <3>;
 				#size-cells = <2>;
 				ranges;
 
-		                wifi1: wifi@68,0 {
+		                wifi1: wifi@0,0 {
 					/* Atheros AR9380 2.4/5GHz */
 					compatible = "pci168c,0030";
 					reg = <0x00440000 0 0 0 0>;

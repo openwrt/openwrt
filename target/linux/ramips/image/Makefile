@@ -163,7 +163,8 @@ define Build/umedia-header
 endef
 
 define Build/wrg-header
-	mkwrgimg -i $@ -d "/dev/mtdblock/2" -s $(1) -o $@.new
+	-[ -f "$@" ] && \
+	mkwrgimg -i $@ -d "/dev/mtdblock/2" -s $(1) -o $@.new && \
 	mv $@.new $@
 endef
 

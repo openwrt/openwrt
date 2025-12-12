@@ -45,8 +45,9 @@
 		};
 	};
 
-	memory {
+	memory@40000000 {
 		reg = <0 0x40000000 0 0x40000000>;
+		device_type = "memory";
 	};
 };
 
@@ -83,9 +84,12 @@
 			#interrupt-cells = <1>;
 			interrupt-parent = <&pio>;
 			interrupts = <53 IRQ_TYPE_LEVEL_HIGH>;
-			reset-gpios = <&pio 54 0>;
+			reset-gpios = <&pio 54 GPIO_ACTIVE_HIGH>;
 
 			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
 				wan: port@4 {
 					reg = <4>;
 					label = "wan";
@@ -263,6 +267,8 @@
 				read-only;
 				odm_partition: nvmem-layout {
 					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
 				};
 			};
 
@@ -279,11 +285,13 @@
 			};
 
 			partition@2C0000 {
-				label = "Kernel1";
-				reg = <0x002C0000 0x02D00000>;
-
 				compatible = "denx,fit";
+				reg = <0x002C0000 0x02D00000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				label = "Kernel1";
 				openwrt,cmdline-match = "boot_part=Kernel1";
+
 				partition@0 {
 					label = "kernel";
 					reg = <0x00000000 0x00800000>;
@@ -296,11 +304,13 @@
 			};
 
 			partition@2FC0000 {
-				label = "Kernel2";
-				reg = <0x02FC0000 0x02D00000>;
-
 				compatible = "denx,fit";
+				reg = <0x02FC0000 0x02D00000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				label = "Kernel2";
 				openwrt,cmdline-match = "boot_part=Kernel2";
+
 				partition@0 {
 					label = "kernel";
 					reg = <0x00000000 0x00800000>;

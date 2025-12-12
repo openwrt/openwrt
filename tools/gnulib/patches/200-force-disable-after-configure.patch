@@ -20,8 +20,8 @@
  {
 --- a/lib/stdlib.in.h
 +++ b/lib/stdlib.in.h
-@@ -1447,10 +1447,16 @@ _GL_FUNCDECL_RPL (reallocarray, void *,
-                   (void *ptr, size_t nmemb, size_t size));
+@@ -1549,11 +1549,17 @@ _GL_FUNCDECL_RPL (reallocarray, void *,
+                   _GL_ATTRIBUTE_NODISCARD);
  _GL_CXXALIAS_RPL (reallocarray, void *,
                    (void *ptr, size_t nmemb, size_t size));
 +#  if !GNULIB_defined_rpl_reallocarray
@@ -30,7 +30,8 @@
  # else
  #  if ! @HAVE_REALLOCARRAY@
  _GL_FUNCDECL_SYS (reallocarray, void *,
-                   (void *ptr, size_t nmemb, size_t size));
+                   (void *ptr, size_t nmemb, size_t size),
+                   _GL_ATTRIBUTE_NODISCARD);
 +#   if !GNULIB_defined_reallocarray
 +#    define GNULIB_defined_reallocarray 1
 +#   endif
@@ -49,7 +50,7 @@
  reallocarray (void *ptr, size_t nmemb, size_t size)
  {
 @@ -36,3 +38,5 @@ reallocarray (void *ptr, size_t nmemb, s
-   /* Rely on the semantics of GNU realloc.  */
+   /* Call realloc, setting errno to ENOMEM on failure.  */
    return realloc (ptr, nbytes);
  }
 +

@@ -1,0 +1,47 @@
+From 91877a0337f432fd29bb1041be5599ea706e5de6 Mon Sep 17 00:00:00 2001
+From: Konstantin Demin <rockdrilla@gmail.com>
+Date: Thu, 31 Jul 2025 14:13:35 +0300
+Subject: fix build without pubkey options
+
+fixes:
+- 98ef42a856 "Don't set pubkey_info directly in checkpubkey_line"
+- 62ea53c1e5 "Implement no-touch-required and verify-requred for authorized_keys file"
+
+Signed-off-by: Konstantin Demin <rockdrilla@gmail.com>
+Forwarded: https://github.com/mkj/dropbear/pull/374
+---
+ src/svr-authpubkey.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+--- a/src/svr-authpubkey.c
++++ b/src/svr-authpubkey.c
+@@ -186,12 +186,14 @@ void svr_auth_pubkey(int valid_user) {
+ 
+ #if DROPBEAR_SK_ECDSA || DROPBEAR_SK_ED25519
+ 	key->sk_flags_mask = SSH_SK_USER_PRESENCE_REQD;
++#if DROPBEAR_SVR_PUBKEY_OPTIONS_BUILT
+ 	if (ses.authstate.pubkey_options && ses.authstate.pubkey_options->no_touch_required_flag) {
+ 		key->sk_flags_mask &= ~SSH_SK_USER_PRESENCE_REQD;
+ 	}
+ 	if (ses.authstate.pubkey_options && ses.authstate.pubkey_options->verify_required_flag) {
+ 		key->sk_flags_mask |= SSH_SK_USER_VERIFICATION_REQD;
+ 	}
++#endif /* DROPBEAR_SVR_PUBKEY_OPTIONS */
+ #endif
+ 
+ 	/* create the data which has been signed - this a string containing
+@@ -513,7 +515,13 @@ static int checkpubkey(const char* keyal
+ 		line_num++;
+ 
+ 		ret = checkpubkey_line(line, line_num, filename, keyalgo, keyalgolen,
+-			keyblob, keybloblen, &ses.authstate.pubkey_info);
++			keyblob, keybloblen,
++#if DROPBEAR_SVR_PUBKEY_OPTIONS_BUILT
++			&ses.authstate.pubkey_info
++#else
++			NULL
++#endif
++		);
+ 		if (ret == DROPBEAR_SUCCESS) {
+ 			break;
+ 		}

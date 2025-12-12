@@ -1,0 +1,56 @@
+From 20c950de5e0431464b7068fdb2c6ec4ead3940ad Mon Sep 17 00:00:00 2001
+From: Jonas Karlman <jonas@kwiboo.se>
+Date: Sun, 19 Oct 2025 15:47:16 +0000
+Subject: [PATCH] rockchip: spl: Add a read_brom_bootsource_id() helper
+
+The bootsource ids reported by BootROM of RK3528 and RK3576 for e.g.
+SPI NOR and USB differs slightly compared to prior SoCs:
+
+- Booting from sfc0 (ROCK 4D) report the normal bootsource id 0x3.
+- Booting from sfc1 M1 (NanoPi M5) report a new bootsource id 0x23.
+- Booting from sfc1 M0 has not been tested (no board using this config).
+- Booting from USB report a new bootsource id 0x81 on RK3528 and RK3576.
+
+Add a helper function to read the bootsource id. This helper function
+will be used to translate the new values to the common BROM_BOOTSOURCE
+enum values on RK3528 and RK3576.
+
+Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Reviewed-by: Kever Yang <kever.yang@rock-chips.com>
+---
+ arch/arm/include/asm/arch-rockchip/bootrom.h | 2 ++
+ arch/arm/mach-rockchip/spl.c                 | 7 ++++++-
+ 2 files changed, 8 insertions(+), 1 deletion(-)
+
+--- a/arch/arm/include/asm/arch-rockchip/bootrom.h
++++ b/arch/arm/include/asm/arch-rockchip/bootrom.h
+@@ -64,4 +64,6 @@ extern const char * const boot_devices[B
+  */
+ #define BROM_BOOTSOURCE_ID_ADDR   (CFG_IRAM_BASE + 0x10)
+ 
++u32 read_brom_bootsource_id(void);
++
+ #endif
+--- a/arch/arm/mach-rockchip/spl.c
++++ b/arch/arm/mach-rockchip/spl.c
+@@ -31,6 +31,11 @@ int board_return_to_bootrom(struct spl_i
+ __weak const char * const boot_devices[BROM_LAST_BOOTSOURCE + 1] = {
+ };
+ 
++__weak u32 read_brom_bootsource_id(void)
++{
++	return readl(BROM_BOOTSOURCE_ID_ADDR);
++}
++
+ const char *board_spl_was_booted_from(void)
+ {
+ 	static u32 brom_bootsource_id_cache = BROM_BOOTSOURCE_UNKNOWN;
+@@ -40,7 +45,7 @@ const char *board_spl_was_booted_from(vo
+ 	if (brom_bootsource_id_cache != BROM_BOOTSOURCE_UNKNOWN)
+ 		bootdevice_brom_id = brom_bootsource_id_cache;
+ 	else
+-		bootdevice_brom_id = readl(BROM_BOOTSOURCE_ID_ADDR);
++		bootdevice_brom_id = read_brom_bootsource_id();
+ 
+ 	if (bootdevice_brom_id < ARRAY_SIZE(boot_devices))
+ 		bootdevice_ofpath = boot_devices[bootdevice_brom_id];

@@ -108,7 +108,7 @@ do { \
 } while (0)
 #endif /* end of +++ */
 
-#define N_MSG(evt, fmt, args...)
+#define N_MSG(evt, fmt, args...) do {} while (0)
 /*
 do {    \
     if ((DBG_EVT_##evt) & sd_debug_zone[host->id]) { \
@@ -122,25 +122,25 @@ do {    \
 do { \
 	printk(KERN_ERR TAG"%d -> "fmt" <- %s() : L<%d> PID<%s><0x%x>\n", \
 	       host->id,  ##args, __FUNCTION__, __LINE__, current->comm, current->pid); \
-} while (0);
+} while (0)
 
 #if 1
 //defined CONFIG_MTK_MMC_CD_POLL
-#define INIT_MSG(fmt, args...)
-#define IRQ_MSG(fmt, args...)
+#define INIT_MSG(fmt, args...) do {} while (0)
+#define IRQ_MSG(fmt, args...) do {} while (0)
 #else
 #define INIT_MSG(fmt, args...) \
 do { \
 	printk(KERN_ERR TAG"%d -> "fmt" <- %s() : L<%d> PID<%s><0x%x>\n", \
 	       host->id,  ##args, __FUNCTION__, __LINE__, current->comm, current->pid); \
-} while (0);
+} while (0)
 
 /* PID in ISR in not corrent */
 #define IRQ_MSG(fmt, args...) \
 do { \
 	printk(KERN_ERR TAG"%d -> "fmt" <- %s() : L<%d>\n",	\
 	       host->id,  ##args, __FUNCTION__, __LINE__);	\
-} while (0);
+} while (0)
 #endif
 
 void msdc_debug_proc_init(void);

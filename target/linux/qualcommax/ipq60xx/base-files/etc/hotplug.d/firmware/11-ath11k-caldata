@@ -12,6 +12,13 @@ case "$FIRMWARE" in
 	8devices,mango-dvk)
 		caldata_extract "0:ART" 0x1000 0x20000
 		;;
+	alfa-network,ap120c-ax)
+		caldata_extract "0:ART" 0x1000 0x20000
+		label_mac=$(mtd_get_mac_binary 0:ART 12)
+		ath11k_patch_mac $label_mac 1
+		ath11k_patch_mac $(macaddr_add $label_mac 1) 0
+		ath11k_set_macflag
+		;;
 	cambiumnetworks,xe3-4)
 		caldata_extract "0:ART" 0x1000 0x10000
 		;;
@@ -51,7 +58,8 @@ case "$FIRMWARE" in
 		ath11k_set_macflag
 		;;
 	tplink,eap610-outdoor|\
-	tplink,eap623od-hd-v1)
+	tplink,eap623od-hd-v1|\
+	tplink,eap625-outdoor-hd-v1)
 		caldata_from_file "/tmp/factory_data/radio" 0 0x10000
 		label_mac=$(get_mac_binary /tmp/factory_data/default-mac 0)
 		ath11k_patch_mac $label_mac 1

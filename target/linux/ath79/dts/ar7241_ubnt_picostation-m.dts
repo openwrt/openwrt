@@ -12,3 +12,18 @@
 &eth1 {
 	compatible = "syscon", "simple-mfd";
 };
+
+&art {
+	cal_art_1000: calibration@1000 {
+		reg = <0x1000 0xeb8>;
+	};
+};
+
+&pcie {
+	wifi: wifi@0,0 {
+		compatible = "pci168c,002a";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&cal_art_1000>;
+		nvmem-cell-names = "calibration";
+	};
+};

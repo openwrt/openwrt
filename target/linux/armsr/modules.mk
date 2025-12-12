@@ -15,7 +15,7 @@ $(eval $(call KernelPackage,acpi-mdio))
 
 define KernelPackage/bcmgenet
   SUBMENU=$(NETWORK_DEVICES_MENU)
-  DEPENDS:=@TARGET_armsr +kmod-mdio-bcm-unimac
+  DEPENDS:=@TARGET_armsr +kmod-mdio-bcm-unimac +kmod-phy-bcm7xxx
   TITLE:=Broadcom GENET internal MAC (Raspberry Pi 4)
   KCONFIG:=CONFIG_BCMGENET
   FILES=$(LINUX_DIR)/drivers/net/ethernet/broadcom/genet/genet.ko
@@ -190,6 +190,7 @@ $(eval $(call KernelPackage,mvpp2))
 define KernelPackage/imx2-wdt
   SUBMENU:=$(OTHER_MENU)
   TITLE:=NXP (Freescale) i.MX2+ and Layerscape watchdog driver
+  DEPENDS:=@TARGET_armsr
   KCONFIG:=CONFIG_IMX2_WDT
   FILES=$(LINUX_DIR)/drivers/watchdog/imx2_wdt.ko
   AUTOLOAD=$(call AutoLoad,60,imx2_wdt)
@@ -200,6 +201,7 @@ $(eval $(call KernelPackage,imx2-wdt))
 define KernelPackage/imx7-ulp-wdt
   SUBMENU:=$(OTHER_MENU)
   TITLE:=NXP (Freescale) i.MX7ULP and later watchdog
+  DEPENDS:=@TARGET_armsr
   KCONFIG:=CONFIG_IMX7ULP_WDT
   FILES=$(LINUX_DIR)/drivers/watchdog/imx7ulp_wdt.ko
   AUTOLOAD=$(call AutoLoad,60,imx7ulp_wdt)
@@ -307,6 +309,7 @@ $(eval $(call KernelPackage,renesas-net-avb))
 define KernelPackage/wdt-sp805
   SUBMENU:=$(OTHER_MENU)
   TITLE:=ARM SP805 Watchdog
+  DEPENDS:=@TARGET_armsr
   KCONFIG:=CONFIG_ARM_SP805_WATCHDOG
   FILES=$(LINUX_DIR)/drivers/watchdog/sp805_wdt.ko
   AUTOLOAD=$(call AutoLoad,50,sp805_wdt)

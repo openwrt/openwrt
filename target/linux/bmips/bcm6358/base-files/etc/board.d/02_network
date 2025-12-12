@@ -5,8 +5,11 @@
 board_config_update
 
 case "$(board_name)" in
-huawei,hg556a-b)
-	ucidef_set_interface_lan "eth0"
+huawei,hg553 |\
+huawei,hg556a-a |\
+huawei,hg556a-b |\
+huawei,hg556a-c)
+	ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 	;;
 esac
 

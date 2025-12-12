@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
 # Copyright (C) 2024 Olliver Schinagl <oliver@schinagl.nl>
+#
+# This script was implemented from scratch -- inspired by ideas shared
+# with the OpenWrt project by Elliott Mitchell <ehem+openwrt@m5p.com>
 
 set -eu
 if [ -n "${DEBUG_TRACE_SH:-}" ] && \
@@ -159,14 +162,14 @@ bump_kernel()
 
 	git commit \
 		--signoff \
-		--message "kernel/${platform_name}: Create kernel files for v${target_version} (from v${source_version})" \
+		--message "kernel/${platform_name}: create files for v${target_version} (from v${source_version})" \
 		--message 'This is an automatically generated commit.' \
 		--message 'When doing `git bisect`, consider `git bisect --skip`.'
 
 	git checkout 'HEAD~' "${_target_dir}"
 	git commit \
 		--signoff \
-		--message "kernel/${platform_name}: Restore kernel files for v${source_version}" \
+		--message "kernel/${platform_name}: restore files for v${source_version}" \
 		--message "$(printf "This is an automatically generated commit which aids following Kernel patch\nhistory, as git will see the move and copy as a rename thus defeating the\npurpose.\n\nFor the original discussion see:\nhttps://lists.openwrt.org/pipermail/openwrt-devel/2023-October/041673.html")"
 	git switch "${initial_branch:?Unable to switch back to original branch. Quitting.}"
 	GIT_EDITOR=true git merge --no-ff '__openwrt_kernel_files_mover'

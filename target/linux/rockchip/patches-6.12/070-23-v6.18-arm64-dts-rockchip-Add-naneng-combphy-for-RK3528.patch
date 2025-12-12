@@ -1,0 +1,55 @@
+From 70bb21cbc8c704c664b5d3ea417f3e35376fc229 Mon Sep 17 00:00:00 2001
+From: Yao Zi <ziyao@disroot.org>
+Date: Mon, 28 Jul 2025 10:29:48 +0000
+Subject: [PATCH] arm64: dts: rockchip: Add naneng-combphy for RK3528
+
+Rockchip RK3528 ships a naneng-combphy that is shared by PCIe and USB
+3.0 controllers. Describe it and the pipe-phy grf which it depends on.
+
+Signed-off-by: Yao Zi <ziyao@disroot.org>
+Link: https://lore.kernel.org/r/20250728102947.38984-8-ziyao@disroot.org
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3528.dtsi | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3528.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3528.dtsi
+@@ -433,6 +433,11 @@
+ 			reg = <0x0 0xff340000 0x0 0x8000>;
+ 		};
+ 
++		pipe_phy_grf: syscon@ff348000 {
++			compatible = "rockchip,rk3528-pipe-phy-grf", "syscon";
++			reg = <0x0 0xff348000 0x0 0x8000>;
++		};
++
+ 		vo_grf: syscon@ff360000 {
+ 			compatible = "rockchip,rk3528-vo-grf", "syscon";
+ 			reg = <0x0 0xff360000 0x0 0x10000>;
+@@ -1101,6 +1106,25 @@
+ 			#dma-cells = <1>;
+ 			arm,pl330-periph-burst;
+ 		};
++
++		combphy: phy@ffdc0000 {
++			compatible = "rockchip,rk3528-naneng-combphy";
++			reg = <0x0 0xffdc0000 0x0 0x10000>;
++			assigned-clocks = <&cru CLK_REF_PCIE_INNER_PHY>;
++			assigned-clock-rates = <100000000>;
++			clocks = <&cru CLK_REF_PCIE_INNER_PHY>,
++				 <&cru PCLK_PCIE_PHY>,
++				 <&cru PCLK_PIPE_GRF>;
++			clock-names = "ref", "apb", "pipe";
++			power-domains = <&power RK3528_PD_VPU>;
++			resets = <&cru SRST_PCIE_PIPE_PHY>,
++				 <&cru SRST_P_PCIE_PHY>;
++			reset-names = "phy", "apb";
++			#phy-cells = <1>;
++			rockchip,pipe-grf = <&vpu_grf>;
++			rockchip,pipe-phy-grf = <&pipe_phy_grf>;
++			status = "disabled";
++		};
+ 	};
+ };
+ 

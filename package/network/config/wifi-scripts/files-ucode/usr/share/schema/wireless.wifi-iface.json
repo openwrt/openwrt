@@ -165,6 +165,10 @@
 		"basic_rate": {
 			"type": "array"
 		},
+		"beacon_prot": {
+			"description": "Management frame protection for Beacon frames",
+			"type": "boolean"
+		},
 		"bss_load_update_period": {
 			"description": "BSS Load update period (in BUs)",
 			"type": "number",
@@ -222,6 +226,13 @@
 		"default_disabled": {
 			"type": "alias",
 			"default": "disabled"
+		},
+		"device": {
+			"description": "Devices to enable this interface on (wifi-device section names)",
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
 		},
 		"device_name": {
 			"description": "Primary Device Name used by WPS",
@@ -286,8 +297,10 @@
 			"type": "boolean"
 		},
 		"dynamic_vlan": {
-			"description": "Allow RADIUS authentication server to decide which VLAN is used for the stations",
-			"type": "boolean"
+			"description": "Allow RADIUS authentication server to decide which VLAN is used for the stations (0 = disabled, 1 = optional, 2 = required)",
+			"type": "number",
+			"enum": [ 0, 1, 2 ],
+			"default": 0
 		},
 		"eap_reauth_period": {
 			"description": "EAP reauthentication period in seconds",
@@ -332,6 +345,10 @@
 		},
 		"fils_dhcp": {
 			"description": "DHCP server for FILS HLP. Set to '*' for automatic lookup.",
+			"type": "string"
+		},
+		"ft_iface": {
+			"description": "Inter-AP communication interface for 802.11r",
 			"type": "string"
 		},
 		"ft_over_ds": {
@@ -380,13 +397,6 @@
 			"description": "Deauthentication request timeout",
 			"type": "number",
 			"default": 60
-		},
-		"hs20_oper_friendly_name": {
-			"description": "Operator Friendly Name",
-			"type": "array",
-			"items": {
-				"type": "string"
-			}
 		},
 		"hs20_operating_class": {
 			"description": "Operating Class Indication",
@@ -617,6 +627,10 @@
 			"description": "Enable 802.11s layer-2 routing and forwarding",
 			"type": "boolean"
 		},
+		"mesh_nolearn": {
+			"description": "Disable 802.11s path discovery",
+			"type": "boolean"
+		},
 		"mesh_gate_announcements": {
 			"type": "number"
 		},
@@ -683,6 +697,10 @@
 		"mesh_ttl": {
 			"type": "number"
 		},
+		"mlo": {
+			"description": "Multi-Link Operation",
+			"type": "boolean"
+		},
 		"mobility_domain": {
 			"description": "DID is used to indicate a group of APs between which a STA can use Fast BSS Transition.",
 			"type": "string"
@@ -692,6 +710,14 @@
 		},
 		"multi_ap": {
 			"description": "Enable Multi-AP functionality",
+			"type": "number"
+		},
+		"multi_ap_vlanid": {
+			"description": "Multi-AP Default VLAN ID",
+			"type": "number"
+		},
+		"multi_ap_profile": {
+			"description": "Multi-AP Profile",
 			"type": "number"
 		},
 		"multi_ap_backhaul_key": {
@@ -709,6 +735,10 @@
 			"type": "alias",
 			"default": "multicast_to_unicast"
 		},
+		"na_mcast_to_ucast": {
+			"description": "IPv6 Neighbor Advertisement multicast-to-unicast conversion",
+			"type": "boolean"
+		},
 		"nas_identifier": {
 			"description": "NAS-Identifier string for RADIUS messages",
 			"type": "string"
@@ -724,6 +754,13 @@
 			"type": "alias",
 			"default": "nas_identifier"
 		},
+		"network": {
+			"description": "Specifies one or multiple logical network interfaces declared in the network configuration, each one should be a L3 bridge to be able to attach this L2 wireless interface.",
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
 		"network_auth_type": {
 			"description": "Network Authentication Type",
 			"type": "string"
@@ -737,23 +774,6 @@
 		"okc": {
 			"description": "PMKSA and Opportunistic Key Caching",
 			"type": "boolean"
-		},
-		"operator_icon": {
-			"type": "array"
-		},
-		"osen": {
-			"description": "OSU Server-Only Authenticated L2 Encryption Network",
-			"type": "boolean",
-			"default": false
-		},
-		"osu_provider": {
-			"type": "array",
-			"items": {
-				"type": "string"
-			}
-		},
-		"osu_ssid": {
-			"type": "string"
 		},
 		"owe_transition": {
 			"description": "Indicate that an OWE BSS shall automatically add an unencrypted transition interface",
@@ -855,6 +875,12 @@
 				"type": "string"
 			}
 		},
+		"radios": {
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
 		"radius_acct_interim_interval": {
 			"description": "Interim accounting update interval",
 			"type": "number"
@@ -898,7 +924,7 @@
 			"type": "number",
 			"minimum": 1000,
 			"maximum": 65535,
-			"default": 1000
+			"default": 20000
 		},
 		"request_cui": {
 			"type": "alias",
@@ -929,6 +955,15 @@
 		"rsn_preauth": {
 			"type": "boolean"
 		},
+		"rsn_override": {
+			"type": "number",
+			"description": "Use RSNE override IE WPA3 compatibility (0: disabled, 1: enabled, 2:force WPA2 for older devices)",
+			"default": 1
+		},
+		"sae_password_file": {
+			"description": "External file containing VLAN SAE MAC address triplets",
+			"type": "string"
+		},
 		"sae_pwe": {
 			"description": "SAE mechanism for PWE derivation",
 			"type": "number",
@@ -937,6 +972,10 @@
 		"sae_require_mfp": {
 			"description": "Require MFP for all associations using SAE",
 			"type": "boolean"
+		},
+		"sae_track_password": {
+			"description": "Tracking of SAE password use",
+			"type": "number"
 		},
 		"server:host": {
 			"type": "string"
@@ -957,6 +996,10 @@
 			"description": "The inactivity polling can be disabled to disconnect stations based on inactivity timeout so that idle stations are more likely to be disconnected even if they are still in range of the AP",
 			"type": "boolean",
 			"default": false
+		},
+		"spp_amsdu": {
+			"description": "Signaling and Payload Protected A-MSDU",
+			"type": "boolean"
 		},
 		"ssid": {
 			"type": "string"
@@ -1065,15 +1108,6 @@
 		"wds_sta": {
 			"description": "If bridge parameter is set, the WDS STA interface will be added to the same bridge by default",
 			"type": "boolean"
-		},
-		"wmm": {
-			"type": "alias",
-			"default": "wmm_enabled"
-		},
-		"wmm_enabled": {
-			"description": "Default WMM parameters (IEEE 802.11 draft; 11-03-0504-03-000e)",
-			"type": "boolean",
-			"default": true
 		},
 		"wnm_sleep_mode": {
 			"description": "WNM-Sleep Mode (extended sleep mode for stations)",

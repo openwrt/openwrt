@@ -127,7 +127,7 @@
 			"type": "string"
 		},
 		"country_code": {
-			"description": "Specifies the country code, affects the available channels and transmission powers. For types mac80211 and broadcom a two letter country code is used (EN or DE). The madwifi driver expects a numeric code",
+			"description": "Specifies the two-letter country code (e.g. EN or DE), affects the available channels and transmission powers",
 			"type": "string"
 		},
 		"country_ie": {
@@ -567,7 +567,7 @@
 		"require_mode": {
 			"description": "Sets the minimum client capability level mode that connecting clients must support to be allowed to connect",
 			"type": "string",
-			"enum": [ "ht", "ac", "ax" ]
+			"enum": [ "n", "ac", "ax" ]
 		},
 		"rnr_beacon": {
 			"description": "",
@@ -586,6 +586,13 @@
 			"description": "Reject STA association if RSSI is below given threshold (in dBm)",
 			"type": "number",
 			"default": 0
+		},
+		"rssi_reject_assoc_timeout": {
+			"description": "Association retry delay in seconds allowed by the STA if RSSI has not met the threshold",
+			"type": "number",
+			"default": 30,
+			"minimum": 0,
+			"maximum": 255
 		},
 		"rts": {
 			"description": "Override the RTS/CTS threshold",
@@ -617,6 +624,13 @@
 			"description": "Supports receiving LDPC coded pkts",
 			"type": "boolean",
 			"default": true
+		},
+		"scan_list": {
+			"description": "List of frequencies (in MHz) to scan when looking for networks in client mode",
+			"type": "array",
+			"items": {
+				"type": "number"
+			}
 		},
 		"short_gi_160": {
 			"description": "Short GI for 160 MHz",
@@ -695,6 +709,10 @@
 		"txpower": {
 			"description": "Specifies the maximum desired transmission power in dBm. The actual txpower used depends on regulatory requirements",
 			"type": "number"
+		},
+		"type": {
+			"description": "Device type (only mac80211 supported)",
+			"type": "string"
 		},
 		"vht160": {
 			"description": "Supported channel widths. 0 == 160MHz and 80+80 MHz not supported, 1 == 160 MHz supported, 2 == 160MHz and 80+80 MHz supported",

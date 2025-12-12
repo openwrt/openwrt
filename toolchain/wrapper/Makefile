@@ -42,7 +42,7 @@ define Host/SetToolchainInfo
 	if [ -f $(CONFIG_TOOLCHAIN_ROOT)/info.mk ]; then \
 		$(CP) $(CONFIG_TOOLCHAIN_ROOT)/info.mk $(TOOLCHAIN_DIR)/; \
 	else \
-		$(SED) 's,GCC_VERSION=.*,GCC_VERSION=$(CONFIG_GCC_VERSION),' $(TOOLCHAIN_DIR)/info.mk; \
+		$(SED) 's,GCC_VERSION=.*,GCC_VERSION=$(call qstrip,$(CONFIG_GCC_VERSION)),' $(TOOLCHAIN_DIR)/info.mk; \
 	fi
 endef
 

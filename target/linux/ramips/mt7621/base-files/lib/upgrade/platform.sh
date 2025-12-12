@@ -45,6 +45,7 @@ platform_do_upgrade() {
 			fw_setenv --lock / bootImage 0 || exit 1
 		fi
 		;;
+	iptime,ax2002m|\
 	iptime,ax2004m)
 		if [ "$(fw_printenv -n boot_from 2>/dev/null)" != "firmware1" ]; then
 			fw_setenv boot_from firmware1 || exit 1
@@ -84,7 +85,7 @@ platform_do_upgrade() {
 	dlink,covr-x1860-a1|\
 	dlink,dap-x1860-a1|\
 	dlink,dir-1960-a1|\
-        dlink,dir-2055-a1|\
+	dlink,dir-2055-a1|\
 	dlink,dir-2150-a1|\
 	dlink,dir-2150-r1|\
 	dlink,dir-2640-a1|\
@@ -92,6 +93,8 @@ platform_do_upgrade() {
 	dlink,dir-3040-a1|\
 	dlink,dir-3060-a1|\
 	dlink,dir-853-a3|\
+	dlink,dir-x1860-b1|\
+	edup,ep-rt2960s|\
 	elecom,wmc-x1800gst|\
 	elecom,wsc-x1800gs|\
 	etisalat,s3|\
@@ -103,6 +106,7 @@ platform_do_upgrade() {
 	gemtek,wvrtm-127acn|\
 	gemtek,wvrtm-130acn|\
 	iptime,a3004t|\
+	iptime,ax2002m|\
 	iptime,ax2004m|\
 	iptime,t5004|\
 	jcg,q20|\
@@ -138,6 +142,7 @@ platform_do_upgrade() {
 	sercomm,na502|\
 	sercomm,na502s|\
 	sim,simax1800t|\
+	sim,simax1800u|\
 	tplink,ec330-g5u-v1|\
 	wifire,s1500-nbn|\
 	xiaomi,mi-router-3g|\
@@ -183,6 +188,9 @@ platform_do_upgrade() {
 		iodata_mstc_set_flag "debugflag" "factory" "0x1fe75" "0,1" "1"
 		iodata_mstc_set_flag "bootnum" "persist" "0x4" "1,2" "1"
 		nand_do_upgrade "$1"
+		;;
+	plasmacloud,pax1800-lite)
+		platform_do_upgrade_dualboot_datachk "$1"
 		;;
 	tplink,er605-v2)
 		echo "Upgrading tplink,er605-v2"

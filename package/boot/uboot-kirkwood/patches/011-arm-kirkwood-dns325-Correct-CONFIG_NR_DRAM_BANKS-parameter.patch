@@ -1,0 +1,27 @@
+From e7e650e8bdb09ac46da017250394f8c589df10bb Mon Sep 17 00:00:00 2001
+From: Tom Rini <trini@konsulko.com>
+Date: Mon, 14 Sep 2020 15:48:47 -0400
+Subject: [PATCH] arm: kirkwood: dns325: Correct CONFIG_NR_DRAM_BANKS parameter
+
+Testing on a DNS-325 NAS has shown that in order for the device to work
+we need to set CONFIG_NR_DRAM_BANKS to 1 and not 2.
+
+Tested-by: Dmitry N. Kolesnikov <dk.diklab@gmail.com>
+Reported-by: Dmitry N. Kolesnikov <dk.diklab@gmail.com>
+Cc: Stefan Herbrechtsmeier <stefan@herbrechtsmeier.net>
+Signed-off-by: Tom Rini <trini@konsulko.com>
+---
+ configs/dns325_defconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/configs/dns325_defconfig
++++ b/configs/dns325_defconfig
+@@ -6,7 +6,7 @@ CONFIG_SYS_TEXT_BASE=0x600000
+ CONFIG_TARGET_DNS325=y
+ CONFIG_ENV_SIZE=0x20000
+ CONFIG_ENV_OFFSET=0xE0000
+-CONFIG_NR_DRAM_BANKS=2
++CONFIG_NR_DRAM_BANKS=1
+ CONFIG_IDENT_STRING="\nD-Link DNS-325"
+ # CONFIG_SYS_MALLOC_F is not set
+ CONFIG_BOOTDELAY=3

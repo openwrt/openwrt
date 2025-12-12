@@ -72,9 +72,9 @@ define Device/buffalo_ls421de
   KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none
   DEVICE_DTS := armada-370-buffalo-ls421de
   DEVICE_PACKAGES :=  \
-    kmod-rtc-rs5c372a kmod-hwmon-gpiofan kmod-hwmon-drivetemp kmod-usb3 \
-    kmod-linkstation-poweroff kmod-md-raid0 kmod-md-raid1 kmod-md-mod \
-    kmod-fs-xfs mkf2fs e2fsprogs partx-utils
+    kmod-rtc-rs5c372a kmod-hwmon-gpiofan kmod-hwmon-drivetemp \
+    kmod-usb-xhci-pci-renesas kmod-linkstation-poweroff kmod-md-raid0 \
+    kmod-md-raid1 kmod-md-mod kmod-fs-xfs mkf2fs e2fsprogs partx-utils
 endef
 TARGET_DEVICES += buffalo_ls421de
 
@@ -91,7 +91,7 @@ define Device/ctera_c200-v2
   KERNEL_SUFFIX := -factory.firm
   DEVICE_PACKAGES :=  \
     kmod-gpio-button-hotplug kmod-hwmon-drivetemp kmod-hwmon-nct7802 \
-    kmod-rtc-s35390a kmod-usb3 kmod-usb-ledtrig-usbport
+    kmod-rtc-s35390a kmod-usb-xhci-pci-renesas kmod-usb-ledtrig-usbport
   IMAGES := sysupgrade.bin
 endef
 TARGET_DEVICES += ctera_c200-v2
@@ -134,6 +134,16 @@ define Device/fortinet_fg-30e
     gzip-filename FGT30E
 endef
 TARGET_DEVICES += fortinet_fg-30e
+
+define Device/fortinet_fwf-30e
+  $(Device/fortinet)
+  DEVICE_MODEL := FortiWiFi 30E
+  DEVICE_DTS := armada-385-fortinet-fwf-30e
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | fortigate-header | \
+    gzip-filename FWF30E
+  DEVICE_PACKAGES += kmod-ath9k wpad-basic-mbedtls
+endef
+TARGET_DEVICES += fortinet_fwf-30e
 
 define Device/fortinet_fg-50e
   $(Device/fortinet)
@@ -209,7 +219,8 @@ TARGET_DEVICES += iij_sa-w2
 define Device/iptime_nas1dual
   DEVICE_VENDOR := ipTIME
   DEVICE_MODEL := NAS1dual
-  DEVICE_PACKAGES := kmod-hwmon-drivetemp kmod-hwmon-gpiofan kmod-usb3
+  DEVICE_PACKAGES := kmod-hwmon-drivetemp kmod-hwmon-gpiofan \
+    kmod-usb-xhci-pci-renesas
   SOC := armada-385
   KERNEL := kernel-bin | append-dtb | iptime-naspkg nas1dual
   KERNEL_SIZE := 6144k

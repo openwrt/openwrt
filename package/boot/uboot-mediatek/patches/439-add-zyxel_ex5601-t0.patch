@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/configs/mt7986_zyxel_ex5601-t0_defconfig
-@@ -0,0 +1,128 @@
+@@ -0,0 +1,129 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -26,6 +26,7 @@
 +CONFIG_LOGLEVEL=7
 +CONFIG_PRE_CONSOLE_BUFFER=y
 +CONFIG_LOG=y
++# CONFIG_BOARD_INIT is not set
 +CONFIG_BOARD_LATE_INIT=y
 +CONFIG_HUSH_PARSER=y
 +CONFIG_SYS_PROMPT="EX5601> "
@@ -69,13 +70,13 @@
 +CONFIG_OF_EMBED=y
 +CONFIG_ENV_OVERWRITE=y
 +CONFIG_ENV_IS_IN_UBI=y
-+CONFIG_SYS_REDUNDAND_ENVIRONMENT=y
++CONFIG_ENV_REDUNDANT=y
 +CONFIG_ENV_UBI_PART="ubi"
 +CONFIG_ENV_UBI_VOLUME="ubootenv"
 +CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
-+CONFIG_SYS_RELOC_GD_ENV_ADDR=y
-+CONFIG_USE_DEFAULT_ENV_FILE=y
-+CONFIG_DEFAULT_ENV_FILE="defenvs/zyxel_ex5601-t0_env"
++CONFIG_ENV_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/zyxel_ex5601-t0_env"
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
 +CONFIG_VERSION_VARIABLE=y
 +CONFIG_NETCONSOLE=y
@@ -163,13 +164,13 @@
 +		compatible = "gpio-keys";
 +		factory {
 +			label = "reset";
-+			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 21 GPIO_ACTIVE_LOW>;
 +			linux,code = <KEY_RESTART>;
 +		};
 +
 +		wps {
 +			label = "wps";
-+			gpios = <&gpio 56 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 56 GPIO_ACTIVE_LOW>;
 +			linux,code = <KEY_WPS_BUTTON>;
 +		};
 +	};
@@ -179,13 +180,13 @@
 +
 +		led_status_green: pwr {
 +			label = "green:status";
-+			gpios = <&gpio 13 GPIO_ACTIVE_HIGH>;
++			gpios = <&pio 13 GPIO_ACTIVE_HIGH>;
 +			default-state = "off";
 +		};
 +
 +		led_sfp_green: sfp {
 +			label = "green:sfp";
-+			gpios = <&gpio 24 GPIO_ACTIVE_HIGH>;
++			gpios = <&pio 24 GPIO_ACTIVE_HIGH>;
 +			default-state = "off";
 +		};
 +	};
@@ -207,7 +208,7 @@
 +	mediatek,gmac-id = <0>;
 +	phy-mode = "2500base-x";
 +	mediatek,switch = "mt7531";
-+	reset-gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
++	reset-gpios = <&pio 5 GPIO_ACTIVE_HIGH>;
 +
 +	fixed-link {
 +		speed = <2500>;
@@ -215,7 +216,7 @@
 +	};
 +};
 +
-+&pinctrl {
++&pio {
 +	spic_pins: spi1-pins-func-1 {
 +		mux {
 +			function = "spi";
@@ -315,7 +316,7 @@
 +
 --- /dev/null
 +++ b/defenvs/zyxel_ex5601-t0_env
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,57 @@
 +ethaddr_factory=mtd read Factory 0x40080000 0x0 0x20000 && env readmem -b ethaddr 0x4008002A 0x6 ; setenv ethaddr_factory
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
@@ -336,14 +337,15 @@
 +bootmenu_0=Initialize environment.=run _firstboot
 +bootmenu_0d=Run default boot command.=run boot_default
 +bootmenu_1=Boot system via TFTP.=run boot_tftp ; run bootmenu_confirm_return
-+bootmenu_2=Boot production system from NAND.=run boot_production ; run bootmenu_confirm_return
-+bootmenu_3=Boot recovery system from NAND.=run boot_recovery ; run bootmenu_confirm_return
-+bootmenu_4=Load production system via TFTP then write to NAND.=setenv noboot 1 ; setenv replacevol 1 ; run boot_tftp_production ; setenv noboot ; setenv replacevol ; run bootmenu_confirm_return
-+bootmenu_5=Load recovery system via TFTP then write to NAND.=setenv noboot 1 ; setenv replacevol 1 ; run boot_tftp_recovery ; setenv noboot ; setenv replacevol ; run bootmenu_confirm_return
-+bootmenu_6=[31mLoad BL31+U-Boot FIP via TFTP then write to NAND.[0m=run boot_tftp_write_fip ; run bootmenu_confirm_return
-+bootmenu_7=[31mLoad BL2 preloader via TFTP then write to NAND.[0m=run boot_tftp_write_bl2 ; run bootmenu_confirm_return
-+bootmenu_8=Reboot.=reset
-+bootmenu_9=Reset all settings to factory defaults.=run reset_factory ; reset
++bootmenu_2=Boot system from USB.=run boot_usb ; run bootmenu_confirm_return
++bootmenu_3=Boot production system from NAND.=run boot_production ; run bootmenu_confirm_return
++bootmenu_4=Boot recovery system from NAND.=run boot_recovery ; run bootmenu_confirm_return
++bootmenu_5=Load production system via TFTP then write to NAND.=setenv noboot 1 ; setenv replacevol 1 ; run boot_tftp_production ; setenv noboot ; setenv replacevol ; run bootmenu_confirm_return
++bootmenu_6=Load recovery system via TFTP then write to NAND.=setenv noboot 1 ; setenv replacevol 1 ; run boot_tftp_recovery ; setenv noboot ; setenv replacevol ; run bootmenu_confirm_return
++bootmenu_7=[31mLoad BL31+U-Boot FIP via TFTP then write to NAND.[0m=run boot_tftp_write_fip ; run bootmenu_confirm_return
++bootmenu_8=[31mLoad BL2 preloader via TFTP then write to NAND.[0m=run boot_tftp_write_bl2 ; run bootmenu_confirm_return
++bootmenu_9=Reboot.=reset
++bootmenu_10=Reset all settings to factory defaults.=run reset_factory ; reset
 +boot_first=if button reset ; then run boot_tftp_recovery ; setenv flag_recover 1 ; run boot_default ; fi ; bootmenu
 +boot_default=if env exists flag_recover ; then else run bootcmd ; fi ; run boot_recovery ; setenv replacevol 1 ; run boot_tftp_forever
 +boot_production=run ubi_read_production && bootm $loadaddr#$bootconf
@@ -355,6 +357,7 @@
 +boot_tftp=tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
 +boot_tftp_write_fip=tftpboot $loadaddr $bootfile_fip && run mtd_write_fip && run reset_factory
 +boot_tftp_write_bl2=tftpboot $loadaddr $bootfile_bl2 && run mtd_write_bl2
++boot_usb=usb start && usbboot $loadaddr 0 && bootm $loadaddr#$bootconf
 +part_fit=fit
 +reset_factory=ubi part ubi ; mw $loadaddr 0x0 0x800 ; ubi write $loadaddr ubootenv 0x800 ; ubi write $loadaddr ubootenv2 0x800
 +mtd_write_fip=mtd erase fip && mtd write fip $loadaddr

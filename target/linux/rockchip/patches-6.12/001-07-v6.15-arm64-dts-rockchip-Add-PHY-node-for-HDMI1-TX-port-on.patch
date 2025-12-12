@@ -1,0 +1,52 @@
+From ea97212a0f66b7bd71c23c12f781f1770dd6fcff Mon Sep 17 00:00:00 2001
+From: Cristian Ciocaltea <cristian.ciocaltea@collabora.com>
+Date: Wed, 11 Dec 2024 01:06:15 +0200
+Subject: arm64: dts: rockchip: Add PHY node for HDMI1 TX port on RK3588
+
+In preparation to enable the second HDMI output port found on RK3588
+SoC, add the related PHY node.  This requires a GRF, hence add the
+dependent node as well.
+
+Signed-off-by: Cristian Ciocaltea <cristian.ciocaltea@collabora.com>
+Tested-by: Jagan Teki <jagan@edgeble.ai> # edgeble-6tops-modules
+Tested-by: Alexandre ARNOUD <aarnoud@me.com>
+Link: https://lore.kernel.org/r/20241211-rk3588-hdmi1-v2-2-02cdca22ff68@collabora.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588-extra.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588-extra.dtsi
+@@ -67,6 +67,11 @@
+ 		};
+ 	};
+ 
++	hdptxphy1_grf: syscon@fd5e4000 {
++		compatible = "rockchip,rk3588-hdptxphy-grf", "syscon";
++		reg = <0x0 0xfd5e4000 0x0 0x100>;
++	};
++
+ 	i2s8_8ch: i2s@fddc8000 {
+ 		compatible = "rockchip,rk3588-i2s-tdm";
+ 		reg = <0x0 0xfddc8000 0x0 0x1000>;
+@@ -395,6 +400,22 @@
+ 		};
+ 	};
+ 
++	hdptxphy1: phy@fed70000 {
++		compatible = "rockchip,rk3588-hdptx-phy";
++		reg = <0x0 0xfed70000 0x0 0x2000>;
++		clocks = <&cru CLK_USB2PHY_HDPTXRXPHY_REF>, <&cru PCLK_HDPTX1>;
++		clock-names = "ref", "apb";
++		#phy-cells = <0>;
++		resets = <&cru SRST_HDPTX1>, <&cru SRST_P_HDPTX1>,
++			 <&cru SRST_HDPTX1_INIT>, <&cru SRST_HDPTX1_CMN>,
++			 <&cru SRST_HDPTX1_LANE>, <&cru SRST_HDPTX1_ROPLL>,
++			 <&cru SRST_HDPTX1_LCPLL>;
++		reset-names = "phy", "apb", "init", "cmn", "lane", "ropll",
++			      "lcpll";
++		rockchip,grf = <&hdptxphy1_grf>;
++		status = "disabled";
++	};
++
+ 	usbdp_phy1: phy@fed90000 {
+ 		compatible = "rockchip,rk3588-usbdp-phy";
+ 		reg = <0x0 0xfed90000 0x0 0x10000>;

@@ -141,7 +141,8 @@
 
 &pcie0 {
 	wifi@0,0 {
-		reg = <0x0 0 0 0 0>;
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
 		// On newer devices there is a MediaTek MAC in the above
 		// device EEPROM, so override it with a calculated one.
 		nvmem-cells = <&eeprom_factory_0>, <&macaddr_eeprom_0 1>;
@@ -151,7 +152,8 @@
 
 &pcie1 {
 	wifi@0,0 {
-		reg = <0x0 0 0 0 0>;
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
 		// On newer devices there is a MediaTek MAC in the above
 		// device EEPROM, so override it with a calculated one.
 		nvmem-cells = <&eeprom_factory_8000>, <&macaddr_eeprom_0 2>;
@@ -167,8 +169,8 @@
 		compatible = "ubnt,ledbar";
 		reg = <0x30>;
 
-		enable-gpio = <&gpio 44 GPIO_ACTIVE_HIGH>;
-		reset-gpio = <&gpio 41 GPIO_ACTIVE_LOW>;
+		enable-gpios = <&gpio 44 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio 41 GPIO_ACTIVE_LOW>;
 		led-count = <8>;
 
 		red {

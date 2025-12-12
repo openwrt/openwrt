@@ -4,7 +4,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=adb
 PKG_SOURCE_VERSION:=6fe92d1a3fb17545d82d020a3c995f32e6b71f9d
 PKG_VERSION:=5.0.2~$(call version_abbrev,$(PKG_SOURCE_VERSION))
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://android.googlesource.com/platform/system/core
@@ -25,7 +25,7 @@ define Package/adb
   CATEGORY:=Utilities
   TITLE:=Android Debug Bridge CLI tool
   URL:=http://tools.android.com/
-  DEPENDS:=+zlib +libopenssl +libpthread
+  DEPENDS:=+zlib +libmbedtls +libpthread
 endef
 
 define Package/adb/description

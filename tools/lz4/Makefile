@@ -8,11 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lz4
-PKG_VERSION:=1.9.4
+PKG_VERSION:=1.10.0
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://codeload.github.com/lz4/lz4/tar.gz/v$(PKG_VERSION)?
-PKG_HASH:=0b0e3aa07c8c063ddf40b082bdf7e37a1562bda40a0ff5272957f3e987e0e54b
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_URL:=https://github.com/lz4/lz4.git
+PKG_SOURCE_VERSION:=ebb370ca83af193212df4dcbadcc5d87bc0de2f0
+PKG_MIRROR_HASH:=b168683fbeee4182f6f64bc216ad23f3b94edefbca9b8792dcd99ecd0a49f20f
 
 PKG_LICENSE:=BSD-2-Clause
 PKG_LICENSE_FILES:=LICENSE lib/LICENSE
@@ -21,7 +22,7 @@ PKG_CPE_ID:=cpe:/a:lz4_project:lz4
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/meson.mk
 
-MESON_HOST_BUILD_DIR:=$(HOST_BUILD_DIR)/contrib/meson/openwrt-build
+MESON_HOST_BUILD_DIR:=$(HOST_BUILD_DIR)/build/meson/openwrt-build
 
 # Always optimize for speed
 HOST_CFLAGS := $(filter-out -O%,$(HOST_CFLAGS)) -O3

@@ -31,7 +31,7 @@ define KernelPackage/fs-afs
   SUBMENU:=$(FS_MENU)
   TITLE:=Andrew FileSystem client
   DEFAULT:=n
-  DEPENDS:=+kmod-rxrpc +kmod-dnsresolver +LINUX_6_6:kmod-fs-fscache +!LINUX_6_6:kmod-fs-netfs
+  DEPENDS:=+kmod-rxrpc +kmod-dnsresolver +kmod-fs-netfs
   KCONFIG:=\
 	CONFIG_AFS_FS=m \
 	CONFIG_AFS_DEBUG=n \
@@ -86,7 +86,7 @@ $(eval $(call KernelPackage,fs-btrfs))
 define KernelPackage/fs-cachefiles
   SUBMENU:=$(FS_MENU)
   TITLE:=Filesystem caching on files
-  DEPENDS:=LINUX_6_6:kmod-fs-fscache !LINUX_6_6:kmod-fs-netfs
+  DEPENDS:=kmod-fs-netfs
   KCONFIG:=\
 	CONFIG_CACHEFILES \
 	CONFIG_CACHEFILES_DEBUG=n \
@@ -275,21 +275,6 @@ endef
 $(eval $(call KernelPackage,fs-f2fs))
 
 
-define KernelPackage/fs-fscache
-  SUBMENU:=$(FS_MENU)
-  TITLE:=General filesystem local cache manager
-  DEPENDS:=@LINUX_6_6 +kmod-fs-netfs
-  KCONFIG:=\
-	CONFIG_FSCACHE \
-	CONFIG_FSCACHE_STATS=y \
-	CONFIG_FSCACHE_DEBUG=n
-  FILES:= $(LINUX_DIR)/fs/fscache/fscache.ko
-  AUTOLOAD:=$(call AutoLoad,29,fscache)
-endef
-
-$(eval $(call KernelPackage,fs-fscache))
-
-
 define KernelPackage/fs-hfs
   SUBMENU:=$(FS_MENU)
   TITLE:=HFS filesystem support
@@ -431,13 +416,29 @@ define KernelPackage/fs-netfs
   TITLE:=Network Filesystems support
   KCONFIG:= \
 	CONFIG_NETFS_SUPPORT \
-	CONFIG_FSCACHE=y@ge6.12 \
-	CONFIG_FSCACHE_STATS=y@ge6.12
+	CONFIG_FSCACHE=y \
+	CONFIG_FSCACHE_STATS=y
   FILES:=$(LINUX_DIR)/fs/netfs/netfs.ko
   AUTOLOAD:=$(call AutoLoad,28,netfs)
 endef
 
 $(eval $(call KernelPackage,fs-netfs))
+
+
+define KernelPackage/fs-nilfs2
+  SUBMENU:=$(FS_MENU)
+  TITLE:=NILFS2 filesystem support
+  KCONFIG:=CONFIG_NILFS2_FS
+  FILES:=$(LINUX_DIR)/fs/nilfs2/nilfs2.ko
+  AUTOLOAD:=$(call AutoLoad,30,nilfs2)
+  $(call AddDepends/nls)
+endef
+
+define KernelPackage/fs-nilfs2/description
+ Kernel module for NILFS2 filesystem support
+endef
+
+$(eval $(call KernelPackage,fs-nilfs2))
 
 
 define KernelPackage/fs-nfs
@@ -536,7 +537,9 @@ define KernelPackage/fs-nfs-v4
   KCONFIG:= \
 	CONFIG_NFS_V4=y
   FILES:= \
-	$(LINUX_DIR)/fs/nfs/nfsv4.ko
+	$(LINUX_DIR)/fs/nfs/nfsv4.ko \
+	$(LINUX_DIR)/fs/nfs/flexfilelayout/nfs_layout_flexfiles.ko \
+	$(LINUX_DIR)/fs/nfs/filelayout/nfs_layout_nfsv41_files.ko
   AUTOLOAD:=$(call AutoLoad,41,nfsv4)
 endef
 
@@ -569,24 +572,6 @@ define KernelPackage/fs-nfsd/description
 endef
 
 $(eval $(call KernelPackage,fs-nfsd))
-
-
-define KernelPackage/fs-ntfs
-  SUBMENU:=$(FS_MENU)
-  TITLE:=NTFS filesystem read-only (old driver) support
-  DEPENDS:=@LINUX_6_6
-  KCONFIG:=CONFIG_NTFS_FS
-  FILES:=$(LINUX_DIR)/fs/ntfs/ntfs.ko
-  AUTOLOAD:=$(call AutoLoad,30,ntfs)
-  $(call AddDepends/nls)
-endef
-
-define KernelPackage/fs-ntfs/description
- Kernel module for limited NTFS filesystem support. Support for writing
- is extremely limited and disabled as a result.
-endef
-
-$(eval $(call KernelPackage,fs-ntfs))
 
 
 define KernelPackage/fs-ntfs3

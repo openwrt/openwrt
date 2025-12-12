@@ -45,7 +45,7 @@
 	status = "okay";
 };
 
-&mdio {
+&mdio_bus0 {
 	EXTERNAL_PHY(16)
 	EXTERNAL_PHY(24)
 };
@@ -53,6 +53,18 @@
 &switch0 {
 	ports {
 		SWITCH_PORT(16, 9, qsgmii)
-		SWITCH_SFP_PORT(24, 10, rgmii-id)
+
+		/* TODO: fixed link SFP is not right */
+		port24: port@24 {
+			reg = <24>;
+			label = SWITCH_PORT_LABEL(10);
+			pcs-handle = <&serdes4>;
+			phy-handle = <&phy24>;
+			phy-mode = "1000base-x";
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
 	};
 };

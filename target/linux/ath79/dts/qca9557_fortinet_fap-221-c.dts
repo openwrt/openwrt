@@ -89,7 +89,7 @@
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 		};
 	};
-	
+
 	virtual_flash {
 		compatible = "mtd-concat";
 
@@ -197,7 +197,7 @@
 
 &wmac {
 	status = "okay";
-	
+
 	nvmem-cells = <&calibration_wmac>, <&macaddr_uboot_3ff80 1>;
 	nvmem-cell-names = "calibration", "mac-address";
 };
@@ -205,7 +205,7 @@
 &pcie0 {
 	status = "okay";
 
-	wifi@0,0,0 {
+	wifi@0,0 {
 		compatible = "qcom,ath10k";
 		reg = <0x0 0 0 0 0>;
 		nvmem-cells = <&calibration_pcie>, <&macaddr_uboot_3ff80 2>;
