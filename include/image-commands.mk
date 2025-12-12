@@ -875,3 +875,10 @@ define Build/zyxel-ras-image
 			$(if $(findstring separate-kernel,$(word 1,$(1))),-k $(IMAGE_KERNEL)) \
 		&& mv $@.new $@
 endef
+
+define Build/tenda-mkdualimageheader
+	printf '%b' "\x47\x6f\x64\x31\x00\x00\x00\x00" >"$@.new"
+	gzip -c "$@" | tail -c8 >>"$@.new"
+	cat "$@" >>"$@.new"
+	mv "$@.new" "$@"
+endef
