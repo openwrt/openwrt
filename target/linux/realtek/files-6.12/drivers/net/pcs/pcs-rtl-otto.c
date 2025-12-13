@@ -129,11 +129,20 @@ enum rtpcs_sds_mode {
 	RTPCS_SDS_MODE_USXGMII_2_5GSXGMII,
 };
 
+struct rtpcs_ctrl;
+
+struct rtpcs_serdes {
+	struct rtpcs_ctrl *ctrl;
+	u8 id;
+	enum rtpcs_sds_mode mode;
+};
+
 struct rtpcs_ctrl {
 	struct device *dev;
 	struct regmap *map;
 	struct mii_bus *bus;
 	const struct rtpcs_config *cfg;
+	struct rtpcs_serdes serdes[RTPCS_SDS_CNT];
 	struct rtpcs_link *link[RTPCS_PORT_CNT];
 	bool rx_pol_inv[RTPCS_SDS_CNT];
 	bool tx_pol_inv[RTPCS_SDS_CNT];
@@ -3025,9 +3034,10 @@ static int rtpcs_probe(struct platform_device *pdev)
 	struct device_node *np = pdev->dev.of_node;
 	struct device *dev = &pdev->dev;
 	struct device_node *child;
+	struct rtpcs_serdes *sds;
 	struct rtpcs_ctrl *ctrl;
-	u32 sds;
-	int ret;
+	u32 sds_id;
+	int i, ret;
 
 	ctrl = devm_kzalloc(dev, sizeof(*ctrl), GFP_KERNEL);
 	if (!ctrl)
@@ -3045,15 +3055,21 @@ static int rtpcs_probe(struct platform_device *pdev)
 	if (IS_ERR(ctrl->bus))
 		return PTR_ERR(ctrl->bus);
 
+	for (i = 0; i < ctrl->cfg->serdes_count; i++) {
+		sds = &ctrl->serdes[i];
+		sds->ctrl = ctrl;
+		sds->id = i;
+	}
+
 	for_each_child_of_node(dev->of_node, child) {
-		ret = of_property_read_u32(child, "reg", &sds);
+		ret = of_property_read_u32(child, "reg", &sds_id);
 		if (ret)
 			return ret;
 		if (sds >= ctrl->cfg->serdes_count)
 			return -EINVAL;
 
-		ctrl->rx_pol_inv[sds] = of_property_read_bool(child, "realtek,pnswap-rx");
-		ctrl->tx_pol_inv[sds] = of_property_read_bool(child, "realtek,pnswap-tx");
+		ctrl->rx_pol_inv[sds_id] = of_property_read_bool(child, "realtek,pnswap-rx");
+		ctrl->tx_pol_inv[sds_id] = of_property_read_bool(child, "realtek,pnswap-tx");
 	}
 
 	if (ctrl->cfg->init_serdes_common) {
