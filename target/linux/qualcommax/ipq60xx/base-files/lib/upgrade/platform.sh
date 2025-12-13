@@ -1,3 +1,5 @@
+. /lib/functions/bootconfig.sh
+
 PART_NAME=firmware
 REQUIRE_IMAGE_METADATA=1
 
@@ -25,6 +27,43 @@ remove_oem_ubi_volume() {
 		oem_ubivol=$(nand_find_volume "$ubidev" "$oem_volume_name")
 		[ "$oem_ubivol" ] && ubirmvol "/dev/$ubidev" --name="$oem_volume_name"
 	fi
+}
+
+qihoo_bootconfig_toggle_rootfs() {
+	local partname=$1
+	local tempfile
+	local mtdidx
+
+	mtdidx=$(find_mtd_index "$partname")
+	[ ! "$mtdidx" ] && {
+		echo "cannot find mtd index for $partname"
+		return 1
+	}
+
+	tempfile=/tmp/mtd"$mtdidx".bin
+	dd if=/dev/mtd"$mtdidx" of="$tempfile" bs=1 count=336 2>/dev/null
+	[ $? -ne 0 ] || [ ! -f "$tempfile" ] && {
+		echo "failed to create a temp copy of /dev/mtd$mtdidx"
+		return 1
+	}
+
+	toggle_bootconfig_primaryboot "$tempfile" "rootfs"
+	[ $? -ne 0 ] && {
+		echo "failed to toggle primaryboot for rootfs partition"
+		return 1
+	}
+
+	mtd write "$tempfile" /dev/mtd"$mtdidx" 2>/dev/null
+	[ $? -ne 0 ] && {
+		echo "failed to write temp copy back to /dev/mtd$mtdidx"
+		return 1
+	}
+
+	# Update bootconfig1 if exists
+	local mtdidx1=$(find_mtd_index "${partname}1")
+	[ -n "$mtdidx1" ] && mtd write "$tempfile" /dev/mtd"$mtdidx1" 2>/dev/null
+
+	return 0
 }
 
 tplink_get_boot_part() {
@@ -117,8 +156,14 @@ platform_do_upgrade() {
 		;;
 	glinet,gl-ax1800|\
 	glinet,gl-axt1800|\
-	netgear,wax214|\
+	netgear,wax214)
+		nand_do_upgrade "$1"
+		;;
 	qihoo,360v6)
+		CI_UBIPART="rootfs_1"
+		qihoo_bootconfig_toggle_rootfs "0:bootconfig"
+		remove_oem_ubi_volume wifi_fw
+		remove_oem_ubi_volume ubi_rootfs
 		nand_do_upgrade "$1"
 		;;
 	netgear,wax610|\
