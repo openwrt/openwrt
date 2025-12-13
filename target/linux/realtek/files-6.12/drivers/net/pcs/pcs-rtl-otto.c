@@ -153,7 +153,6 @@ struct rtpcs_link {
 	struct rtpcs_ctrl *ctrl;
 	struct phylink_pcs pcs;
 	struct rtpcs_serdes *sds;
-	int sds_id;
 	int port;
 };
 
@@ -2920,7 +2919,7 @@ static void rtpcs_pcs_an_restart(struct phylink_pcs *pcs)
 	struct rtpcs_ctrl *ctrl = link->ctrl;
 
 	dev_warn(ctrl->dev, "an_restart() for port %d and sds %d not yet implemented\n",
-		 link->port, link->sds_id);
+		 link->port, link->sds->id);
 }
 
 static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
@@ -2931,7 +2930,7 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 	struct rtpcs_ctrl *ctrl = link->ctrl;
 	int ret = 0;
 
-	if (link->sds_id < 0)
+	if (link->sds->id < 0)
 		return 0;
 
 	/*
@@ -2941,18 +2940,18 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 	 */
 
 	dev_warn(ctrl->dev, "pcs_config(%s) for port %d and sds %d not yet fully implemented\n",
-		 phy_modes(interface), link->port, link->sds_id);
+		 phy_modes(interface), link->port, link->sds->id);
 
 	mutex_lock(&ctrl->lock);
 
 	if (ctrl->cfg->setup_serdes) {
-		ret = ctrl->cfg->setup_serdes(ctrl, link->sds_id, interface);
+		ret = ctrl->cfg->setup_serdes(ctrl, link->sds->id, interface);
 		if (ret < 0)
 			goto out;
 	}
 
 	if (ctrl->cfg->set_autoneg) {
-		ret = ctrl->cfg->set_autoneg(ctrl, link->sds_id, neg_mode);
+		ret = ctrl->cfg->set_autoneg(ctrl, link->sds->id, neg_mode);
 		if (ret < 0)
 			goto out;
 	}
@@ -3016,7 +3015,6 @@ struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int
 	link->ctrl = ctrl;
 	link->port = port;
 	link->sds = &ctrl->serdes[sds_id];
-	link->sds_id = sds_id;
 	link->pcs.ops = ctrl->cfg->pcs_ops;
 	link->pcs.neg_mode = true;
 
