@@ -227,7 +227,7 @@ static void b53_mmap_remove(struct platform_device *pdev)
 
 static struct platform_driver b53_mmap_driver = {
 	.probe = b53_mmap_probe,
-	.remove_new = b53_mmap_remove,
+	.remove = b53_mmap_remove,
 	.driver = {
 		.name = "b53-switch",
 	},
