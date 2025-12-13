@@ -75,12 +75,20 @@ define U-Boot/rb5009
   UBOOT_IMAGE:=u-boot.elf
 endef
 
+define U-Boot/atlas
+  NAME:=RIPE Atlas Probe v5
+  BUILD_DEVICES:=ripe_atlas-v5
+  BUILD_SUBTARGET:=cortexa53
+  UBOOT_CONFIG:=turris_mox
+endef
+
 UBOOT_TARGETS:= \
 	mox \
 	clearfog \
 	helios4 \
 	omnia \
 	espressobin \
+	atlas \
 	uDPU \
 	eDPU \
 	rb5009
