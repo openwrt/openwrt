@@ -153,7 +153,6 @@ struct rtpcs_link {
 	struct rtpcs_ctrl *ctrl;
 	struct phylink_pcs pcs;
 	struct rtpcs_serdes *sds;
-	int sds_id;
 	int port;
 };
 
@@ -3057,7 +3056,6 @@ struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int
 	link->ctrl = ctrl;
 	link->port = port;
 	link->sds = &ctrl->serdes[sds_id];
-	link->sds_id = sds_id;
 	link->pcs.ops = ctrl->cfg->pcs_ops;
 	link->pcs.neg_mode = true;
 
