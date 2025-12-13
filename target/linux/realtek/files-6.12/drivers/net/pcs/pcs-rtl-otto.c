@@ -152,7 +152,8 @@ struct rtpcs_ctrl {
 struct rtpcs_link {
 	struct rtpcs_ctrl *ctrl;
 	struct phylink_pcs pcs;
-	int sds;
+	struct rtpcs_serdes *sds;
+	int sds_id;
 	int port;
 };
 
@@ -2919,7 +2920,7 @@ static void rtpcs_pcs_an_restart(struct phylink_pcs *pcs)
 	struct rtpcs_ctrl *ctrl = link->ctrl;
 
 	dev_warn(ctrl->dev, "an_restart() for port %d and sds %d not yet implemented\n",
-		 link->port, link->sds);
+		 link->port, link->sds_id);
 }
 
 static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
@@ -2930,7 +2931,7 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 	struct rtpcs_ctrl *ctrl = link->ctrl;
 	int ret = 0;
 
-	if (link->sds < 0)
+	if (link->sds_id < 0)
 		return 0;
 
 	/*
@@ -2940,18 +2941,18 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 	 */
 
 	dev_warn(ctrl->dev, "pcs_config(%s) for port %d and sds %d not yet fully implemented\n",
-		 phy_modes(interface), link->port, link->sds);
+		 phy_modes(interface), link->port, link->sds_id);
 
 	mutex_lock(&ctrl->lock);
 
 	if (ctrl->cfg->setup_serdes) {
-		ret = ctrl->cfg->setup_serdes(ctrl, link->sds, interface);
+		ret = ctrl->cfg->setup_serdes(ctrl, link->sds_id, interface);
 		if (ret < 0)
 			goto out;
 	}
 
 	if (ctrl->cfg->set_autoneg) {
-		ret = ctrl->cfg->set_autoneg(ctrl, link->sds, neg_mode);
+		ret = ctrl->cfg->set_autoneg(ctrl, link->sds_id, neg_mode);
 		if (ret < 0)
 			goto out;
 	}
@@ -2969,7 +2970,7 @@ struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int
 	struct device_node *pcs_np;
 	struct rtpcs_ctrl *ctrl;
 	struct rtpcs_link *link;
-	u32 sds;
+	u32 sds_id;
 
 	if (!np || !of_device_is_available(np))
 		return ERR_PTR(-ENODEV);
@@ -2997,9 +2998,11 @@ struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int
 	if (port < 0 || port > ctrl->cfg->cpu_port)
 		return ERR_PTR(-EINVAL);
 
-	if (of_property_read_u32(np, "reg", &sds))
+	if (of_property_read_u32(np, "reg", &sds_id))
 		return ERR_PTR(-EINVAL);
-	if (rtpcs_sds_read(ctrl, sds, 0, 0) < 0)
+	if (sds_id >= ctrl->cfg->serdes_count)
+		return ERR_PTR(-EINVAL);
+	if (rtpcs_sds_read(ctrl, sds_id, 0, 0) < 0)
 		return ERR_PTR(-EINVAL);
 
 	link = kzalloc(sizeof(*link), GFP_KERNEL);
@@ -3012,13 +3015,14 @@ struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int
 
 	link->ctrl = ctrl;
 	link->port = port;
-	link->sds = sds;
+	link->sds = &ctrl->serdes[sds_id];
+	link->sds_id = sds_id;
 	link->pcs.ops = ctrl->cfg->pcs_ops;
 	link->pcs.neg_mode = true;
 
 	ctrl->link[port] = link;
 
-	dev_dbg(ctrl->dev, "phylink_pcs created, port %d, sds %d\n", port, sds);
+	dev_dbg(ctrl->dev, "phylink_pcs created, port %d, sds %d\n", port, sds_id);
 
 	return &link->pcs;
 }
@@ -3086,7 +3090,7 @@ static int rtpcs_probe(struct platform_device *pdev)
 		ret = of_property_read_u32(child, "reg", &sds_id);
 		if (ret)
 			return ret;
-		if (sds >= ctrl->cfg->serdes_count)
+		if (sds_id >= ctrl->cfg->serdes_count)
 			return -EINVAL;
 
 		ctrl->rx_pol_inv[sds_id] = of_property_read_bool(child, "realtek,pnswap-rx");
