@@ -18,7 +18,6 @@
 
 		led-dsl = &led_dsl;
 		led-internet = &led_internet;
-		led-wifi = &led_wifi;
 	};
 
 	memory@0 {
@@ -87,17 +86,6 @@
 			gpios = <&gpio 37 GPIO_ACTIVE_HIGH>;
 		};
 	};
-
-	ath9k-leds {
-		compatible = "gpio-leds";
-
-		led_wifi: wifi {
-			label = "green:wifi";
-			gpios = <&ath9k 0 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "phy0tpt";
-		};
-	};
-
 
 	usb_vbus: regulator-usb-vbus {
 		compatible = "regulator-fixed";
@@ -207,9 +195,11 @@
 
 		ath9k: wifi@0,0 {
 			reg = <0 0 0 0 0>;
-			#gpio-cells = <2>;
-			gpio-controller;
 			ieee80211-freq-limit = <2402000 2482000>;
+
+			led {
+				led-sources = <0>;
+			};
 		};
 	};
 };

@@ -1,0 +1,28 @@
+From e761a7b6753f3d4db9fde26dacab5ecff3b5d0e8 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Wed, 13 Aug 2025 19:44:42 +0200
+Subject: [PATCH 22/25] spi: atmel: make it selectable for ARCH_MICROCHIP
+
+LAN969x uses the Atmel SPI, so make it selectable for ARCH_MICROCHIP to
+avoid needing to update depends in future if other Microchip SoC-s use it
+as well.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+Acked-by: Mark Brown <broonie@kernel.org>
+Acked-by: Daniel Machon <daniel.machon@microchip.com>
+Signed-off-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+---
+ drivers/spi/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -131,7 +131,7 @@ config SPI_ASPEED_SMC
+ 
+ config SPI_ATMEL
+ 	tristate "Atmel SPI Controller"
+-	depends on ARCH_AT91 || COMPILE_TEST
++	depends on ARCH_MICROCHIP || COMPILE_TEST
+ 	depends on OF
+ 	help
+ 	  This selects a driver for the Atmel SPI Controller, present on

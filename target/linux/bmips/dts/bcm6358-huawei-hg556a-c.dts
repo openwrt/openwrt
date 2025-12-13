@@ -38,16 +38,26 @@
 	};
 };
 
+&cal_data {
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		cal_data_1fe00: calibration@1fe00 {
+			reg = <0x1fe00 0x200>;
+		};
+	};
+};
+
 &pci {
 	status = "okay";
 
 	wifi@1,0 {
-		compatible = "pci0,0";
+		compatible = "pci1814,3062";
 		reg = <0x0800 0 0 0 0>;
 
-		ralink,mtd-eeprom = <&cal_data 0x1fe00>;
-
-		nvmem-cells = <&macaddr_cfe_6a0 1>;
-		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&cal_data_1fe00>, <&macaddr_cfe_6a0 1>;
+		nvmem-cell-names = "calibration", "mac-address";
 	};
 };

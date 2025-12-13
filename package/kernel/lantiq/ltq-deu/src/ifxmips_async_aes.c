@@ -234,7 +234,7 @@ static int lq_deu_aes_core (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
         aes->IV2R = DEU_ENDIAN_SWAP(*((u32 *) iv_arg + 1));
         aes->IV1R = DEU_ENDIAN_SWAP(*((u32 *) iv_arg + 2));
         aes->IV0R = DEU_ENDIAN_SWAP(*((u32 *) iv_arg + 3));
-    };
+    }
 
 
     /* Prepare Rx buf length used in dma psuedo interrupt */
@@ -251,7 +251,7 @@ static int lq_deu_aes_core (void *ctx_arg, u8 *out_arg, const u8 *in_arg,
 
     while (aes->controlr.BUS) {
          // wait for AES to be ready
-    };
+    }
 
     deu_priv->outcopy = (u32 *) DEU_DWORD_REORDERING(out_arg, aes_buff_out, BUFFER_OUT, nbytes);
     deu_priv->event_src = AES_ASYNC_EVENT;
@@ -576,10 +576,7 @@ static int lq_aes_queue_mgr(struct aes_ctx *ctx, struct ablkcipher_request *areq
     u32 remain, inc, nbytes = areq->nbytes;
     u32 chunk_bytes = src->length;
 
-
-    aes_con = (struct aes_container *)kmalloc(sizeof(struct aes_container),
-    	                                       GFP_KERNEL);
-
+    aes_con = kmalloc(sizeof(struct aes_container), GFP_KERNEL);
     if (!(aes_con)) {
         printk("Cannot allocate memory for AES container, fn %s, ln %d\n",
 		__func__, __LINE__);
@@ -959,7 +956,7 @@ struct lq_aes_alg {
 };
 
 /* AES supported algo array */
-static struct lq_aes_alg aes_drivers_alg[] = {
+static const struct lq_aes_alg aes_drivers_alg[] = {
      {
          .alg = {
            .cra_name 	    = "aes",

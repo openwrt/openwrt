@@ -229,14 +229,14 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		SWITCH_PORT(0, 1, qsgmii)
-		SWITCH_PORT(1, 2, qsgmii)
-		SWITCH_PORT(2, 3, qsgmii)
-		SWITCH_PORT(3, 4, qsgmii)
-		SWITCH_PORT(4, 5, qsgmii)
-		SWITCH_PORT(5, 6, qsgmii)
-		SWITCH_PORT(6, 7, qsgmii)
-		SWITCH_PORT(7, 8, qsgmii)
+		SWITCH_PORT_SDS(0, 1, 0, qsgmii)
+		SWITCH_PORT_SDS(1, 2, 0, qsgmii)
+		SWITCH_PORT_SDS(2, 3, 0, qsgmii)
+		SWITCH_PORT_SDS(3, 4, 0, qsgmii)
+		SWITCH_PORT_SDS(4, 5, 1, qsgmii)
+		SWITCH_PORT_SDS(5, 6, 1, qsgmii)
+		SWITCH_PORT_SDS(6, 7, 1, qsgmii)
+		SWITCH_PORT_SDS(7, 8, 1, qsgmii)
 
 		SWITCH_PORT(8, 9, internal)
 		SWITCH_PORT(9, 10, internal)
@@ -247,10 +247,10 @@
 		SWITCH_PORT(14, 15, internal)
 		SWITCH_PORT(15, 16, internal)
 
-		SWITCH_PORT(24, 17, qsgmii)
-		SWITCH_PORT(25, 18, qsgmii)
-		SWITCH_PORT(26, 19, qsgmii)
-		SWITCH_PORT(27, 20, qsgmii)
+		SWITCH_PORT_SDS(24, 17, 4, qsgmii)
+		SWITCH_PORT_SDS(25, 18, 4, qsgmii)
+		SWITCH_PORT_SDS(26, 19, 4, qsgmii)
+		SWITCH_PORT_SDS(27, 20, 4, qsgmii)
 
 		port@28 {
 			ethernet = <&ethernet0>;

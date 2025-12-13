@@ -35,7 +35,7 @@ Signed-off-by: Coia Prant <coiaprant@gmail.com>
 
 --- a/drivers/net/wireless/ralink/rt2x00/rt2x00eeprom.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2x00eeprom.c
-@@ -33,6 +33,27 @@ static void rt2800lib_eeprom_swap(struct
+@@ -32,6 +32,27 @@ static void rt2800lib_eeprom_swap(struct
  		rt2x00dev->eeprom[i] = swab16(rt2x00dev->eeprom[i]);
  }
  
@@ -63,7 +63,7 @@ Signed-off-by: Coia Prant <coiaprant@gmail.com>
  #if IS_ENABLED(CONFIG_MTD)
  static int rt2800lib_read_eeprom_mtd(struct rt2x00_dev *rt2x00dev)
  {
-@@ -182,6 +203,10 @@ int rt2x00lib_read_eeprom(struct rt2x00_
+@@ -181,6 +202,10 @@ int rt2x00lib_read_eeprom(struct rt2x00_
  {
  	int ret;
  

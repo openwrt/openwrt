@@ -13,7 +13,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/net/phy/realtek/realtek_main.c
 +++ b/drivers/net/phy/realtek/realtek_main.c
-@@ -156,6 +156,10 @@
+@@ -162,6 +162,10 @@
  
  #define RTL8224_SRAM_RTCT_LEN(pair)		(0x8028 + (pair) * 4)
  
@@ -24,7 +24,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #define RTL8366RB_POWER_SAVE			0x15
  #define RTL8366RB_POWER_SAVE_ON			BIT(12)
  
-@@ -1152,6 +1156,15 @@ static int rtl822x_set_serdes_option_mod
+@@ -1305,6 +1309,15 @@ static int rtl822x_set_serdes_option_mod
  			return ret;
  	}
  

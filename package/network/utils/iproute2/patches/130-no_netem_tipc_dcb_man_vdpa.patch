@@ -7,7 +7,7 @@
 -SUBDIRS=lib ip tc bridge misc netem genl man
 +SUBDIRS=lib ip tc bridge misc genl
  ifeq ($(HAVE_MNL),y)
--SUBDIRS += tipc devlink rdma dcb vdpa
+-SUBDIRS += tipc devlink rdma dcb vdpa netshaper
 +SUBDIRS += devlink rdma
  endif
  

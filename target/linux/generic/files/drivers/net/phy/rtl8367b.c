@@ -1594,8 +1594,7 @@ static int  rtl8367b_probe(struct platform_device *pdev)
 	platform_set_drvdata(pdev, NULL);
 	rtl8366_smi_cleanup(smi);
  err_free_smi:
-	if (smi->emu_vlanmc)
-		kfree(smi->emu_vlanmc);
+	kfree(smi->emu_vlanmc);
 	kfree(smi);
 	return err;
 }

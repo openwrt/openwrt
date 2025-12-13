@@ -208,9 +208,13 @@ static int rtldsa_930x_port_rate_police_add(struct dsa_switch *ds, int port,
 	if (ingress) {
 		burst = min_t(u32, act->police.burst, RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_MAX);
 
-		/* set burst high on/off the same to avoid TCP oscillation */
+		/* the linux kernel only provides a single burst value. But the
+		 * realtek HW needs two. And to get flow control correctly
+		 * working, the realtek default ratio of 1:2 seems to work
+		 * reasonable well
+		 */
 		sw_w32(burst, RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_HIGH_ON(port));
-		sw_w32(burst, RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_HIGH_OFF(port));
+		sw_w32(burst / 2, RTL930X_BANDWIDTH_CTRL_INGRESS_BURST_HIGH_OFF(port));
 
 		/* Enable ingress bandwidth flow control to improve TCP throughput and avoid
 		 * the drops behavior of the RTL930x ingress rate limiter which seem to not

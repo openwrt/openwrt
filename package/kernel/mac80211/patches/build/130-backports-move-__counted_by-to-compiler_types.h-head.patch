@@ -1,0 +1,64 @@
+From b63f79524e6f30e58692bc9ee57c6e6e0dd10de4 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Wed, 10 Dec 2025 22:37:03 +0100
+Subject: [PATCH] backports: move __counted_by to compiler_types.h header
+
+Port f06e108a3dc5 ("Compiler Attributes: disable __counted_by for clang
+< 19.1.3") changes to align with new kernel version that moved the
+__counted_by to a new header file.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ .../linux/compiler_attributes.h               | 15 ------------
+ .../backport-include/linux/compiler_types.h   | 23 +++++++++++++++++++
+ 2 files changed, 23 insertions(+), 15 deletions(-)
+ create mode 100644 backport-include/linux/compiler_types.h
+
+--- a/backport-include/linux/compiler_attributes.h
++++ b/backport-include/linux/compiler_attributes.h
+@@ -31,19 +31,4 @@
+ #endif
+ #endif /* fallthrough */
+ 
+-#ifndef __counted_by
+-/*
+- * Optional: only supported since gcc >= 14
+- * Optional: only supported since clang >= 17
+- *
+- *   gcc: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108896
+- * clang: https://reviews.llvm.org/D148381
+- */
+-#if __has_attribute(__element_count__)
+-# define __counted_by(member)		__attribute__((__element_count__(#member)))
+-#else
+-# define __counted_by(member)
+-#endif
+-#endif
+-
+ #endif /* _BACKPORTS_LINUX_COMPILER_ATTRIBUTES_H */
+--- /dev/null
++++ b/backport-include/linux/compiler_types.h
+@@ -0,0 +1,23 @@
++#ifndef _BACKPORTS_LINUX_COMPILER_TYPES_H
++#define _BACKPORTS_LINUX_COMPILER_TYPES_H 1
++
++#if LINUX_VERSION_IS_GEQ(6,12,1)
++#include_next <linux/compiler_types.h>
++#endif
++
++#ifndef __counted_by
++/*
++ * Optional: only supported since gcc >= 14
++ * Optional: only supported since clang >= 17
++ *
++ *   gcc: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108896
++ * clang: https://reviews.llvm.org/D148381
++ */
++#if __has_attribute(__element_count__)
++# define __counted_by(member)		__attribute__((__element_count__(#member)))
++#else
++# define __counted_by(member)
++#endif
++#endif
++
++#endif /* _BACKPORTS_LINUX_COMPILER_TYPES_H */

@@ -1,0 +1,26 @@
+From f7a517f6f1c0ac240e2a2b2bae9c7efb4a92430a Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Tue, 5 Nov 2024 13:36:21 +0100
+Subject: [PATCH] reset: sparx5: add LAN969x support
+
+LAN969x uses the same reset configuration as LAN966x, but we need to
+allow compiling it when ARCH_LAN969X is selected.
+
+A fallback compatible to LAN966x will be used.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+---
+ drivers/reset/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/reset/Kconfig
++++ b/drivers/reset/Kconfig
+@@ -147,7 +147,7 @@ config RESET_LPC18XX
+ 
+ config RESET_MCHP_SPARX5
+ 	bool "Microchip Sparx5 reset driver"
+-	depends on ARCH_SPARX5 || SOC_LAN966 || COMPILE_TEST
++	depends on ARCH_SPARX5 || ARCH_LAN969X || SOC_LAN966 || COMPILE_TEST
+ 	default y if SPARX5_SWITCH
+ 	select MFD_SYSCON
+ 	help

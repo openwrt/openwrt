@@ -1,0 +1,28 @@
+From 32fa920f5dd8ba4b4ea79f2e9729bd57bed3db1b Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Fri, 3 Jul 2020 10:42:37 +0300
+Subject: [PATCH 089/110] mmc: sdhci-of-at91: perform a hardware reset at probe
+ time
+
+For eMMC, it may happen that the memory is left by the bootloader in a bad state.
+We need to perform a hardware reset by asserting/deasserting the RSTN line.
+This will ensure the memory comes out in a clean state.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+(cherry picked from linux-6.1-trunk/at91/mmc)
+Signed-off-by: Andrei Simion <andrei.simion@microchip.com>
+---
+ drivers/mmc/host/sdhci-of-at91.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/mmc/host/sdhci-of-at91.c
++++ b/drivers/mmc/host/sdhci-of-at91.c
+@@ -419,6 +419,8 @@ static int sdhci_at91_probe(struct platf
+ 
+ 	/* Perform a software reset before using the IP */
+ 	sdhci_at91_reset(host, SDHCI_RESET_ALL);
++	/* Perform a hardware reset before using the IP */
++	sdhci_at91_hw_reset(host);
+ 
+ 	priv->mainck = devm_clk_get(&pdev->dev, "baseclk");
+ 	if (IS_ERR(priv->mainck)) {

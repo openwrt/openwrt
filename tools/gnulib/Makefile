@@ -13,10 +13,17 @@ include $(INCLUDE_DIR)/host-build.mk
 define Host/Configure
 endef
 
+# On installing the .m4 files, we add a gl_ prefix to prevent any conflict with
+# automake. It was found that there is currently a conflict for the cond.m4 that
+# is also shipped by automake, making the gnulib one having priority causing
+# problem with finding AM_CONDITIONAL macro.
 define Host/Install
 	$(call Host/Uninstall)
 	$(INSTALL_DIR) $(1)/share/aclocal
-	$(INSTALL_DATA) $(HOST_BUILD_DIR)/m4/*.m4 $(1)/share/aclocal/
+	for m4 in $(HOST_BUILD_DIR)/m4/*.m4; do \
+		$(INSTALL_DATA) $(HOST_BUILD_DIR)/m4/$$$$(basename $$$$m4) \
+				$(1)/share/aclocal/gl_$$$$(basename $$$$m4); \
+	done
 	$(CP) $(HOST_BUILD_DIR)/ $(1)/share/gnulib/
 	ln -sf ../share/gnulib/gnulib-tool $(STAGING_DIR_HOST)/bin/gnulib-tool
 endef

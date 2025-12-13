@@ -14,8 +14,8 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  drivers/net/wireless/ralink/rt2x00/rt2x00.h   |  1 +
  .../net/wireless/ralink/rt2x00/rt2x00dev.c    |  9 +++
  .../net/wireless/ralink/rt2x00/rt2x00eeprom.c | 75 +++++++++++++++++++
- .../net/wireless/ralink/rt2x00/rt2x00soc.c    |  1 +
- .../net/wireless/ralink/rt2x00/rt2x00soc.h    |  9 +++
+ .../net/wireless/ralink/rt2x00/rt2800soc.c    |  1 +
+ .../net/wireless/ralink/rt2x00/rt2800soc.h    |  9 +++
  8 files changed, 102 insertions(+), 14 deletions(-)
  create mode 100644 drivers/net/wireless/ralink/rt2x00/rt2x00eeprom.c
 
@@ -37,9 +37,9 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	select RT2X00_LIB_FIRMWARE
 +	select RT2X00_LIB_EEPROM
  	select RT2X00_LIB_CRYPTO
- 	depends on CRC_CCITT
  	depends on EEPROM_93CX6
-@@ -216,6 +217,7 @@ config RT2800SOC
+ 	help
+@@ -213,6 +214,7 @@ config RT2800SOC
  	select RT2X00_LIB_MMIO
  	select RT2X00_LIB_CRYPTO
  	select RT2X00_LIB_FIRMWARE
@@ -47,7 +47,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	select RT2800_LIB
  	select RT2800_LIB_MMIO
  	help
-@@ -266,6 +268,9 @@ config RT2X00_LIB_FIRMWARE
+@@ -259,6 +261,9 @@ config RT2X00_LIB_FIRMWARE
  config RT2X00_LIB_CRYPTO
  	bool
  
@@ -89,7 +89,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  /* Firmware functions */
  static char *rt2800soc_get_firmware_name(struct rt2x00_dev *rt2x00dev)
  {
-@@ -172,7 +159,7 @@ static const struct rt2800_ops rt2800soc
+@@ -190,7 +177,7 @@ static const struct rt2800_ops rt2800soc
  	.register_multiread	= rt2x00mmio_register_multiread,
  	.register_multiwrite	= rt2x00mmio_register_multiwrite,
  	.regbusy_read		= rt2x00mmio_regbusy_read,
@@ -98,6 +98,14 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	.hwcrypt_disabled	= rt2800soc_hwcrypt_disabled,
  	.drv_write_firmware	= rt2800soc_write_firmware,
  	.drv_init_registers	= rt2800mmio_init_registers,
+@@ -304,6 +291,7 @@ static int rt2x00soc_probe(struct platfo
+ 	rt2x00dev->name = pdev->dev.driver->name;
+ 	rt2x00dev->csr.base = mem;
+ 
++	set_bit(REQUIRE_EEPROM_FILE, &rt2x00dev->cap_flags);
+ 	rt2x00_set_chip_intf(rt2x00dev, RT2X00_CHIP_INTF_SOC);
+ 
+ 	retval = rt2x00lib_probe_dev(rt2x00dev);
 --- a/drivers/net/wireless/ralink/rt2x00/rt2x00.h
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2x00.h
 @@ -692,6 +692,7 @@ enum rt2x00_capability_flags {
@@ -108,7 +116,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  	/*
  	 * Capabilities
-@@ -1504,4 +1505,13 @@ void rt2x00lib_remove_dev(struct rt2x00_
+@@ -1506,4 +1507,13 @@ void rt2x00lib_remove_dev(struct rt2x00_
  int rt2x00lib_suspend(struct rt2x00_dev *rt2x00dev);
  int rt2x00lib_resume(struct rt2x00_dev *rt2x00dev);
  
@@ -124,7 +132,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  #endif /* RT2X00_H */
 --- /dev/null
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2x00eeprom.c
-@@ -0,0 +1,79 @@
+@@ -0,0 +1,78 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later
 +/*	Copyright (C) 2004 - 2009 Ivo van Doorn <IvDoorn@gmail.com>
 + *	Copyright (C) 2004 - 2009 Gertjan van Wingerde <gwingerde@gmail.com>
@@ -140,7 +148,6 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +#include <linux/of.h>
 +
 +#include "rt2x00.h"
-+#include "rt2x00soc.h"
 +
 +static const char *
 +rt2x00lib_get_eeprom_file_name(struct rt2x00_dev *rt2x00dev)
@@ -204,16 +211,6 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +	return rt2x00lib_read_eeprom_file(rt2x00dev);
 +}
 +EXPORT_SYMBOL_GPL(rt2x00lib_read_eeprom);
---- a/drivers/net/wireless/ralink/rt2x00/rt2x00soc.c
-+++ b/drivers/net/wireless/ralink/rt2x00/rt2x00soc.c
-@@ -86,6 +86,7 @@ int rt2x00soc_probe(struct platform_devi
- 	if (IS_ERR(rt2x00dev->clk))
- 		rt2x00dev->clk = NULL;
- 
-+	set_bit(REQUIRE_EEPROM_FILE, &rt2x00dev->cap_flags);
- 	rt2x00_set_chip_intf(rt2x00dev, RT2X00_CHIP_INTF_SOC);
- 
- 	retval = rt2x00soc_alloc_reg(rt2x00dev);
 --- a/drivers/net/wireless/ralink/rt2x00/rt2800pci.c
 +++ b/drivers/net/wireless/ralink/rt2x00/rt2800pci.c
 @@ -278,6 +278,9 @@ static int rt2800pci_read_eeprom(struct
