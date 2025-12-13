@@ -117,8 +117,12 @@ platform_do_upgrade() {
 		;;
 	glinet,gl-ax1800|\
 	glinet,gl-axt1800|\
-	netgear,wax214|\
+	netgear,wax214)
+		nand_do_upgrade "$1"
+		;;
 	qihoo,360v6)
+		CI_UBIPART="rootfs_1"
+		alfa_bootconfig_rootfs_rotate "0:bootconfig" "148"
 		nand_do_upgrade "$1"
 		;;
 	netgear,wax610|\
