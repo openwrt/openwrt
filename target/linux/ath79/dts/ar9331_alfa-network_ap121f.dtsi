@@ -45,13 +45,6 @@
 			label = "green:vpn";
 			gpios = <&gpio 27 GPIO_ACTIVE_LOW>;
 		};
-
-		wlan {
-			function = LED_FUNCTION_WLAN;
-			color = <LED_COLOR_ID_GREEN>;
-			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "phy0tpt";
-		};
 	};
 };
 
@@ -141,4 +134,8 @@
 
 	nvmem-cells = <&cal_art_1000>;
 	nvmem-cell-names = "calibration";
+
+	led {
+		led-sources = <0>;
+	};
 };

@@ -79,3 +79,10 @@
 		line-name = "phy-reset";
 	};
 };
+
+&wmac {
+	led {
+		led-sources = <15>;
+		led-active-low;
+	};
+};
