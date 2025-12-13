@@ -570,7 +570,7 @@ endef
 ifndef CONFIG_TARGET_uml
 define KernelPackage/crypto-lib-chacha20/x86_64
   KCONFIG+=CONFIG_CRYPTO_CHACHA20_X86_64
-  FILES+=$(LINUX_DIR)/arch/x86/crypto/chacha-x86_64.ko@lt6.18
+  FILES+=$(LINUX_DIR)/arch/x86/crypto/chacha-x86_64.ko@lt6.18 $(wildcard $(LINUX_DIR)/arch/x86/crypto/chacha-x86_64.ko)@ge6.18
 endef
 endif
 
@@ -623,7 +623,7 @@ define KernelPackage/crypto-lib-curve25519
   HIDDEN:=1
   FILES:= \
 	$(LINUX_DIR)/lib/crypto/libcurve25519.ko \
-	$(LINUX_DIR)/lib/crypto/libcurve25519-generic.ko@lt6.18
+	$(LINUX_DIR)/lib/crypto/libcurve25519-generic.ko@lt6.18 $(wildcard$(LINUX_DIR)/lib/crypto/libcurve25519-generic.ko)@ge6.18
   $(call AddDepends/crypto,+PACKAGE_kmod-crypto-kpp:kmod-crypto-kpp)
 endef
 
@@ -634,7 +634,7 @@ endef
 ifndef CONFIG_TARGET_uml
 define KernelPackage/crypto-lib-curve25519/x86_64
   KCONFIG+=CONFIG_CRYPTO_CURVE25519_X86
-  FILES+=$(LINUX_DIR)/arch/x86/crypto/curve25519-x86_64.ko@lt6.18
+  FILES+=$(LINUX_DIR)/arch/x86/crypto/curve25519-x86_64.ko@lt6.18 $(wildcard$(LINUX_DIR)/lib/crypto/curve25519-x86_64.ko)@ge6.18
 endef
 endif
 
@@ -671,7 +671,7 @@ endef
 ifndef CONFIG_TARGET_uml
 define KernelPackage/crypto-lib-poly1305/x86_64
   KCONFIG+=$(if $(CONFIG_LINUX_6_18),,CONFIG_CRYPTO_POLY1305_X86_64)
-  FILES+=$(LINUX_DIR)/arch/x86/crypto/poly1305-x86_64.ko@le6.12
+  FILES+=$(LINUX_DIR)/arch/x86/crypto/poly1305-x86_64.ko@lt6.18 $(wildcard $(LINUX_DIR)/arch/x86/crypto/poly1305-x86_64.ko)@ge6.18
 endef
 endif
 
@@ -1031,7 +1031,7 @@ endef
 
 ifndef CONFIG_TARGET_uml
 define KernelPackage/crypto-sha1/x86_64
-  FILES+=$(LINUX_DIR)/arch/x86/crypto/sha1-ssse3.ko@lt6.18
+  FILES+=$(LINUX_DIR)/arch/x86/crypto/sha1-ssse3.ko@lt6.18 $(wildcard $(LINUX_DIR)/arch/x86/crypto/sha1-ssse3.ko)@ge6.18
   AUTOLOAD+=$(call AutoLoad,09,!LINUX_6_18:sha1-ssse3)
 endef
 endif
@@ -1097,7 +1097,7 @@ endef
 
 ifndef CONFIG_TARGET_uml
 define KernelPackage/crypto-sha256/x86_64
-  FILES+=$(LINUX_DIR)/arch/x86/crypto/sha256-ssse3.ko@lt6.18
+  FILES+=$(LINUX_DIR)/arch/x86/crypto/sha256-ssse3.ko@lt6.18 $(wildcard $(LINUX_DIR)/arch/x86/crypto/sha256-ssse3.ko)@ge6.18
   AUTOLOAD+=$(call AutoLoad,09,!LINUX_6_18:sha256-ssse3)
 endef
 endif
@@ -1157,7 +1157,7 @@ KernelPackage/crypto-sha512/tegra=$(KernelPackage/crypto-sha512/arm)
 
 ifndef CONFIG_TARGET_uml
 define KernelPackage/crypto-sha512/x86_64
-  FILES+=$(LINUX_DIR)/arch/x86/crypto/sha512-ssse3.ko@lt6.18
+  FILES+=$(LINUX_DIR)/arch/x86/crypto/sha512-ssse3.ko@lt6.18 $(wildcard $(LINUX_DIR)/arch/x86/crypto/sha512-ssse3.ko)@ge6.18
   AUTOLOAD+=$(call AutoLoad,09,!LINUX_6_18:sha512-ssse3)
 endef
 endif
