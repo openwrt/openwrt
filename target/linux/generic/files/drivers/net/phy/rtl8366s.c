@@ -1275,7 +1275,7 @@ static struct platform_driver rtl8366s_driver = {
 		.of_match_table = rtl8366s_match,
 	},
 	.probe		= rtl8366s_probe,
-	.remove_new	= rtl8366s_remove,
+	.remove		= rtl8366s_remove,
 };
 
 static int __init rtl8366s_module_init(void)
