@@ -120,6 +120,38 @@ endef
 $(eval $(call KernelPackage,atl1e))
 
 
+define KernelPackage/libie-adminq
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Intel Ethernet common library - adminq helpers
+  DEPENDS:=@LINUX_6_18 +kmod-libie
+  KCONFIG:=CONFIG_LIBIE_ADMINQ
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/libie/libie_adminq.ko@ge6.18
+endef
+
+define KernelPackage/libie-adminq/description
+ Intel Ethernet common library - adminq helpers
+endef
+
+$(eval $(call KernelPackage,libie-adminq))
+
+
+define KernelPackage/libie-fwlog
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Intel Ethernet library fw log
+  DEPENDS:=@LINUX_6_18 +kmod-libie
+  KCONFIG:=CONFIG_LIBIE_FWLOG
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/libie/libie_fwlog.ko@ge6.18
+endef
+
+define KernelPackage/libie-fwlog/description
+ Intel Ethernet library FW Log
+endef
+
+$(eval $(call KernelPackage,libie-fwlog))
+
+
 define KernelPackage/libie
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel Ethernet library
@@ -201,7 +233,7 @@ $(eval $(call KernelPackage,mii))
 define KernelPackage/mdio-devres
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Supports MDIO device registration
-  DEPENDS:=+kmod-libphy +(TARGET_armsr||TARGET_bcm27xx_bcm2708||TARGET_loongarch64||TARGET_malta||TARGET_tegra):kmod-of-mdio
+  DEPENDS:=@!LINUX_6_18 +kmod-libphy +(TARGET_armsr||TARGET_bcm27xx_bcm2708||TARGET_loongarch64||TARGET_malta||TARGET_tegra):kmod-of-mdio
   KCONFIG:=CONFIG_MDIO_DEVRES
   HIDDEN:=1
   FILES:=$(LINUX_DIR)/drivers/net/phy/mdio_devres.ko
@@ -1326,7 +1358,7 @@ $(eval $(call KernelPackage,igbvf))
 define KernelPackage/ixgbe
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel(R) 82598/82599 PCI-Express 10 Gigabit Ethernet support
-  DEPENDS:=@PCI_SUPPORT +kmod-mdio +kmod-ptp +kmod-hwmon-core +kmod-libphy +kmod-mdio-devres
+  DEPENDS:=@PCI_SUPPORT +kmod-mdio +kmod-ptp +kmod-hwmon-core +kmod-libphy +kmod-mdio-devres +LINUX_6_18:kmod-libie-fwlog
   KCONFIG:=CONFIG_IXGBE \
     CONFIG_IXGBE_HWMON=y \
     CONFIG_IXGBE_DCA=n \
@@ -1363,7 +1395,7 @@ $(eval $(call KernelPackage,ixgbevf))
 define KernelPackage/i40e
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel(R) Ethernet Controller XL710 Family support
-  DEPENDS:=@PCI_SUPPORT +kmod-ptp +kmod-libie
+  DEPENDS:=@PCI_SUPPORT +kmod-ptp +kmod-libie +LINUX_6_18:kmod-libie-adminq
   KCONFIG:=CONFIG_I40E \
     CONFIG_I40E_DCB=y
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/i40e/i40e.ko
@@ -1399,7 +1431,7 @@ $(eval $(call KernelPackage,ice))
 define KernelPackage/iavf
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel(R) Ethernet Adaptive Virtual Function support
-  DEPENDS:=@PCI_SUPPORT +kmod-libie
+  DEPENDS:=@PCI_SUPPORT +kmod-libie +LINUX_6_18:kmod-libie-adminq
   KCONFIG:= \
        CONFIG_I40EVF \
        CONFIG_IAVF
