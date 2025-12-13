@@ -168,7 +168,7 @@ struct rtpcs_config {
 
 	const struct phylink_pcs_ops *pcs_ops;
 	int (*init_serdes_common)(struct rtpcs_ctrl *ctrl);
-	int (*set_autoneg)(struct rtpcs_ctrl *ctrl, int sds, unsigned int neg_mode);
+	int (*set_autoneg)(struct rtpcs_serdes *sds, unsigned int neg_mode);
 	int (*setup_serdes)(struct rtpcs_serdes *sds, phy_interface_t mode);
 };
 
@@ -232,12 +232,12 @@ static int rtpcs_sds_write_bits(struct rtpcs_serdes *sds, int page,
 	return rtpcs_sds_write(sds, page, regnum, reg);
 }
 
-static int rtpcs_sds_modify(struct rtpcs_ctrl *ctrl, int sds, int page, int regnum,
+static int rtpcs_sds_modify(struct rtpcs_serdes *sds, int page, int regnum,
 			    u16 mask, u16 set)
 {
 	int mmd_regnum = rtpcs_sds_to_mmd(page, regnum);
 
-	return mdiobus_c45_modify(ctrl->bus, sds, MDIO_MMD_VEND1,
+	return mdiobus_c45_modify(sds->ctrl->bus, sds->id, MDIO_MMD_VEND1,
 				  mmd_regnum, mask, set);
 }
 
@@ -2975,7 +2975,7 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 	}
 
 	if (ctrl->cfg->set_autoneg) {
-		ret = ctrl->cfg->set_autoneg(ctrl, link->sds->id, neg_mode);
+		ret = ctrl->cfg->set_autoneg(link->sds, neg_mode);
 		if (ret < 0)
 			goto out;
 	}
@@ -3136,12 +3136,11 @@ static int rtpcs_probe(struct platform_device *pdev)
 	return 0;
 }
 
-static int rtpcs_93xx_set_autoneg(struct rtpcs_ctrl *ctrl, int sds,
-				  unsigned int neg_mode)
+static int rtpcs_93xx_set_autoneg(struct rtpcs_serdes *sds, unsigned int neg_mode)
 {
 	u16 bmcr = neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED ? BMCR_ANENABLE : 0;
 
-	return rtpcs_sds_modify(ctrl, sds, 2, MII_BMCR, BMCR_ANENABLE, bmcr);
+	return rtpcs_sds_modify(sds, 2, MII_BMCR, BMCR_ANENABLE, bmcr);
 }
 
 static const struct phylink_pcs_ops rtpcs_838x_pcs_ops = {
