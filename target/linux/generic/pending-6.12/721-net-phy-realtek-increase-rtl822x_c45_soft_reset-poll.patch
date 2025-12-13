@@ -1,0 +1,27 @@
+From abf33cfc1ae463270c1a13be67b276ce5200e7af Mon Sep 17 00:00:00 2001
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Sat, 13 Dec 2025 23:16:37 +0800
+Subject: [PATCH net-next] net: phy: realtek: increase rtl822x_c45_soft_reset() poll
+ timeout
+
+It's noticed that sometimes RTL8221B-VB-CG cannot be reset properly.
+Increase the polling timeout value to fix this issue. The generic
+phy reset function genphy_soft_reset() also uses 600ms as the timeout
+threshold.
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ drivers/net/phy/realtek/realtek_main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/phy/realtek/realtek_main.c
++++ b/drivers/net/phy/realtek/realtek_main.c
+@@ -1570,7 +1570,7 @@ static int rtl822x_c45_soft_reset(struct
+ 	return phy_read_mmd_poll_timeout(phydev, MDIO_MMD_PMAPMD,
+ 					 MDIO_CTRL1, val,
+ 					 !(val & MDIO_CTRL1_RESET),
+-					 5000, 100000, true);
++					 5000, 600000, true);
+ }
+ 
+ static int rtl822xb_c45_read_status(struct phy_device *phydev)
