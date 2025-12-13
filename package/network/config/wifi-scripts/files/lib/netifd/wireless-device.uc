@@ -488,7 +488,11 @@ function wdev_set_data(wdev, vif, vlan, data)
 		cur_type = "vlan";
 	}
 
-	wdev.handler_data[cur.name] = {
+	let key = cur.name;
+	if (cur_type == "vlan")
+		key = vif.name + "/" + vlan.name;
+
+	wdev.handler_data[key] = {
 		...cur,
 		...data,
 		type: cur_type,
@@ -545,9 +549,13 @@ function hotplug(name, add)
 	}
 }
 
-function get_status_data(wdev, vif)
+function get_status_data(wdev, vif, parent_vif)
 {
-	let hdata = wdev.handler_data[vif.name];
+	let key = vif.name;
+	if (parent_vif)
+		key = parent_vif.name + "/" + vif.name;
+
+	let hdata = wdev.handler_data[key];
 	let data = {
 		section: vif.name,
 		config: vif.config
@@ -561,7 +569,7 @@ function get_status_vlans(wdev, vif)
 {
 	let vlans = [];
 	for (let vlan in vif.vlan)
-		push(vlans, get_status_data(wdev, vlan));
+		push(vlans, get_status_data(wdev, vlan, vif));
 	return vlans;
 }
 
