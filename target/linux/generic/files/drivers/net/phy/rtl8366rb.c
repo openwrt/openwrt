@@ -1504,7 +1504,7 @@ static struct platform_driver rtl8366rb_driver = {
 		.of_match_table = of_match_ptr(rtl8366rb_match),
 	},
 	.probe		= rtl8366rb_probe,
-	.remove_new		= rtl8366rb_remove,
+	.remove		= rtl8366rb_remove,
 };
 
 static int __init rtl8366rb_module_init(void)
