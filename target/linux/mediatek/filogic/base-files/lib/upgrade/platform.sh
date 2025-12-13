@@ -189,6 +189,7 @@ platform_do_upgrade() {
 	mercusys,mr85x|\
 	mercusys,mr90x-v1|\
 	tplink,archer-ax80-v1|\
+	tplink,archer-ax80-v1-eu|\
 	tplink,be450|\
 	tplink,re6000xd)
 		CI_UBIPART="ubi0"
