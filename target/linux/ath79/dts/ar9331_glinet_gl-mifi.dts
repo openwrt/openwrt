@@ -17,13 +17,6 @@
 	leds {
 		compatible = "gpio-leds";
 
-		wlan {
-			function = LED_FUNCTION_WLAN;
-			color = <LED_COLOR_ID_GREEN>;
-			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "phy0tpt";
-		};
-
 		lan {
 			function = LED_FUNCTION_LAN;
 			color = <LED_COLOR_ID_GREEN>;
@@ -162,4 +155,8 @@
 
 	nvmem-cells = <&cal_art_1000>;
 	nvmem-cell-names = "calibration";
+
+	led {
+		led-sources = <1>;
+	};
 };
