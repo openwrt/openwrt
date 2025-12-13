@@ -544,8 +544,6 @@ static int rtpcs_838x_setup_serdes(struct rtpcs_serdes *sds,
 {
 	int ret;
 
-	if (sds->id > 5)
-		return -EINVAL;
 	if (!rtpcs_838x_sds_is_mode_supported(sds, mode))
 		return -EINVAL;
 
@@ -585,10 +583,6 @@ static void rtpcs_930x_sds_set(struct rtpcs_serdes *sds, u32 mode)
 	u8 sds_id = sds->id;
 
 	pr_info("%s %d\n", __func__, mode);
-	if (sds_id < 0 || sds_id > 11) {
-		pr_err("Wrong SerDes number: %d\n", sds_id);
-		return;
-	}
 
 	regmap_write_bits(sds->ctrl->map, rtpcs_930x_sds_regs[sds_id],
 			  RTL930X_SDS_MASK << rtpcs_930x_sds_lsb[sds_id],
@@ -601,11 +595,6 @@ static u32 rtpcs_930x_sds_mode_get(struct rtpcs_serdes *sds)
 {
 	u8 sds_id = sds->id;
 	u32 v;
-
-	if (sds_id < 0 || sds_id > 11) {
-		pr_err("Wrong SerDes number: %d\n", sds_id);
-		return 0;
-	}
 
 	regmap_read(sds->ctrl->map, rtpcs_930x_sds_regs[sds_id], &v);
 	v >>= rtpcs_930x_sds_lsb[sds_id];
@@ -958,11 +947,6 @@ static void rtpcs_930x_sds_mode_set(struct rtpcs_serdes *sds,
 {
 	u32 mode;
 	u32 submode;
-
-	if (sds->id < 0 || sds->id > 11) {
-		pr_err("%s: invalid SerDes number: %d\n", __func__, sds->id);
-		return;
-	}
 
 	switch (phy_mode) {
 	case PHY_INTERFACE_MODE_SGMII:
@@ -2231,9 +2215,6 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 {
 	int calib_tries = 0;
 
-	if (sds->id < 0 || sds->id > 11)
-		return -EINVAL;
-
 	/* Rely on setup from U-boot for some modes, e.g. USXGMII */
 	switch (phy_mode) {
 	case PHY_INTERFACE_MODE_1000BASEX:
@@ -2680,9 +2661,6 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 	u32 sds_id = sds->id;
 	int chiptype = 0;
 
-	if (sds_id < 0 || sds_id > 13)
-		return -EINVAL;
-
 	/*
 	 * TODO: USXGMII is currently the swiss army knife to declare 10G
 	 * multi port PHYs. Real devices use other modes instead. Especially
@@ -2835,7 +2813,7 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 
 	rtpcs_931x_sds_cmu_type_set(sds, mode, chiptype);
 
-	if (sds_id >= 2 && sds_id <= 13) {
+	if (sds_id >= 2) {
 		if (chiptype)
 			rtpcs_sds_write(sds, 0x2E, 0x1, board_sds_tx_type1[sds_id - 2]);
 		else {
@@ -2953,9 +2931,6 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 	struct rtpcs_link *link = rtpcs_phylink_pcs_to_link(pcs);
 	struct rtpcs_ctrl *ctrl = link->ctrl;
 	int ret = 0;
-
-	if (link->sds->id < 0)
-		return 0;
 
 	/*
 	 * TODO: This (or copies of this) will be the central function for configuring the
