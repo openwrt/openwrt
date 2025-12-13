@@ -22,6 +22,7 @@
 #define RTPCS_SPEED_5000			6
 
 #define RTPCS_838X_CPU_PORT			28
+#define RTPCS_838X_SERDES_CNT			6
 #define RTPCS_838X_MAC_LINK_DUP_STS		0xa19c
 #define RTPCS_838X_MAC_LINK_SPD_STS		0xa190
 #define RTPCS_838X_MAC_LINK_STS			0xa188
@@ -29,6 +30,7 @@
 #define RTPCS_838X_MAC_TX_PAUSE_STS		0xa1a0
 
 #define RTPCS_839X_CPU_PORT			52
+#define RTPCS_839X_SERDES_CNT			14
 #define RTPCS_839X_MAC_LINK_DUP_STS		0x03b0
 #define RTPCS_839X_MAC_LINK_SPD_STS		0x03a0
 #define RTPCS_839X_MAC_LINK_STS			0x0390
@@ -38,6 +40,7 @@
 #define RTPCS_83XX_MAC_LINK_SPD_BITS		2
 
 #define RTPCS_930X_CPU_PORT			28
+#define RTPCS_930X_SERDES_CNT			12
 #define RTPCS_930X_MAC_LINK_DUP_STS		0xcb28
 #define RTPCS_930X_MAC_LINK_SPD_STS		0xcb18
 #define RTPCS_930X_MAC_LINK_STS			0xcb10
@@ -45,6 +48,7 @@
 #define RTPCS_930X_MAC_TX_PAUSE_STS		0xcb2c
 
 #define RTPCS_931X_CPU_PORT			56
+#define RTPCS_931X_SERDES_CNT			14
 #define RTPCS_931X_MAC_LINK_DUP_STS		0x0ef0
 #define RTPCS_931X_MAC_LINK_SPD_STS		0x0ed0
 #define RTPCS_931X_MAC_LINK_STS			0x0ec0
@@ -151,6 +155,8 @@ struct rtpcs_config {
 	int mac_link_sts;
 	int mac_rx_pause_sts;
 	int mac_tx_pause_sts;
+	u8 serdes_count;
+
 	const struct phylink_pcs_ops *pcs_ops;
 	int (*init_serdes_common)(struct rtpcs_ctrl *ctrl);
 	int (*set_autoneg)(struct rtpcs_ctrl *ctrl, int sds, unsigned int neg_mode);
@@ -3043,7 +3049,7 @@ static int rtpcs_probe(struct platform_device *pdev)
 		ret = of_property_read_u32(child, "reg", &sds);
 		if (ret)
 			return ret;
-		if (sds >= RTPCS_SDS_CNT)
+		if (sds >= ctrl->cfg->serdes_count)
 			return -EINVAL;
 
 		ctrl->rx_pol_inv[sds] = of_property_read_bool(child, "realtek,pnswap-rx");
@@ -3089,6 +3095,7 @@ static const struct rtpcs_config rtpcs_838x_cfg = {
 	.mac_link_sts		= RTPCS_838X_MAC_LINK_STS,
 	.mac_rx_pause_sts	= RTPCS_838X_MAC_RX_PAUSE_STS,
 	.mac_tx_pause_sts	= RTPCS_838X_MAC_TX_PAUSE_STS,
+	.serdes_count		= RTPCS_838X_SERDES_CNT,
 	.pcs_ops		= &rtpcs_838x_pcs_ops,
 	.init_serdes_common	= rtpcs_838x_init_serdes_common,
 	.setup_serdes		= rtpcs_838x_setup_serdes,
@@ -3108,6 +3115,7 @@ static const struct rtpcs_config rtpcs_839x_cfg = {
 	.mac_link_sts		= RTPCS_839X_MAC_LINK_STS,
 	.mac_rx_pause_sts	= RTPCS_839X_MAC_RX_PAUSE_STS,
 	.mac_tx_pause_sts	= RTPCS_839X_MAC_TX_PAUSE_STS,
+	.serdes_count		= RTPCS_839X_SERDES_CNT,
 	.pcs_ops		= &rtpcs_839x_pcs_ops,
 };
 
@@ -3125,6 +3133,7 @@ static const struct rtpcs_config rtpcs_930x_cfg = {
 	.mac_link_sts		= RTPCS_930X_MAC_LINK_STS,
 	.mac_rx_pause_sts	= RTPCS_930X_MAC_RX_PAUSE_STS,
 	.mac_tx_pause_sts	= RTPCS_930X_MAC_TX_PAUSE_STS,
+	.serdes_count		= RTPCS_930X_SERDES_CNT,
 	.pcs_ops		= &rtpcs_930x_pcs_ops,
 	.set_autoneg		= rtpcs_93xx_set_autoneg,
 	.setup_serdes		= rtpcs_930x_setup_serdes,
@@ -3144,6 +3153,7 @@ static const struct rtpcs_config rtpcs_931x_cfg = {
 	.mac_link_sts		= RTPCS_931X_MAC_LINK_STS,
 	.mac_rx_pause_sts	= RTPCS_931X_MAC_RX_PAUSE_STS,
 	.mac_tx_pause_sts	= RTPCS_931X_MAC_TX_PAUSE_STS,
+	.serdes_count		= RTPCS_931X_SERDES_CNT,
 	.pcs_ops		= &rtpcs_931x_pcs_ops,
 	.set_autoneg		= rtpcs_93xx_set_autoneg,
 	.setup_serdes		= rtpcs_931x_setup_serdes,
