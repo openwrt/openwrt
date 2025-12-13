@@ -239,6 +239,27 @@ static int rtpcs_sds_modify(struct rtpcs_ctrl *ctrl, int sds, int page, int regn
 				  mask, set);
 }
 
+__maybe_unused
+static struct rtpcs_serdes *rtpcs_sds_get_even(struct rtpcs_serdes *sds)
+{
+	u32 even_sds = sds->id & ~1;
+	return &sds->ctrl->serdes[even_sds];
+}
+
+__maybe_unused
+static struct rtpcs_serdes *rtpcs_sds_get_odd(struct rtpcs_serdes *sds)
+{
+	u32 odd_sds = sds->id | 1;
+	return &sds->ctrl->serdes[odd_sds];
+}
+
+__maybe_unused
+static struct rtpcs_serdes *rtpcs_sds_get_neighbor(struct rtpcs_serdes *sds)
+{
+	u32 nb_sds = sds->id ^ 1;
+	return &sds->ctrl->serdes[nb_sds];
+}
+
 static int rtpcs_regmap_read_bits(struct rtpcs_ctrl *ctrl, int base, int bithigh, int bitlow)
 {
 	int offset = base + (bitlow / 32) * 4;
