@@ -1,5 +1,5 @@
 /*
- * Platform data definition for the Realtek RTL8367 ethernet switch driver
+ * Realtek RTL8367 ethernet switch driver
  *
  * Copyright (C) 2011 Gabor Juhos <juhosg@openwrt.org>
  *
@@ -49,15 +49,6 @@ struct rtl8367_extif_config {
 	unsigned int rxdelay;
 	enum rtl8367_extif_mode mode;
 	struct rtl8367_port_ability ability;
-};
-
-struct rtl8367_platform_data {
-	unsigned gpio_sda;
-	unsigned gpio_sck;
-	void (*hw_reset)(bool active);
-
-	struct rtl8367_extif_config *extif0_cfg;
-	struct rtl8367_extif_config *extif1_cfg;
 };
 
 #endif /*  _RTL8367_H */
