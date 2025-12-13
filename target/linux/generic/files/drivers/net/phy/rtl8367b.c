@@ -1635,7 +1635,7 @@ static struct platform_driver rtl8367b_driver = {
 #endif
 	},
 	.probe		= rtl8367b_probe,
-	.remove_new	= rtl8367b_remove,
+	.remove		= rtl8367b_remove,
 	.shutdown	= rtl8367b_shutdown,
 };
 
