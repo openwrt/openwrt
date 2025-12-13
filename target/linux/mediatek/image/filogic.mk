@@ -851,11 +851,11 @@ define Device/cmcc_rax3000m
 	nand-ddr4-bl31-uboot.fip nand-ddr4-preloader.bin
   ARTIFACT/emmc-gpt.bin := mt798x-gpt emmc
   ARTIFACT/emmc-ddr3-bl31-uboot.fip := mt7981-bl31-uboot cmcc_rax3000m-emmc-ddr3
-  ARTIFACT/emmc-ddr3-preloader.bin  := mt7981-bl2 emmc-ddr3-1866mhz
+  ARTIFACT/emmc-ddr3-preloader.bin  := mt7981-bl2 emmc-ddr3-1866
   ARTIFACT/emmc-ddr4-bl31-uboot.fip := mt7981-bl31-uboot cmcc_rax3000m-emmc-ddr4
   ARTIFACT/emmc-ddr4-preloader.bin  := mt7981-bl2 emmc-ddr4
   ARTIFACT/nand-ddr3-bl31-uboot.fip := mt7981-bl31-uboot cmcc_rax3000m-nand-ddr3
-  ARTIFACT/nand-ddr3-preloader.bin  := mt7981-bl2 spim-nand-ddr3-1866mhz
+  ARTIFACT/nand-ddr3-preloader.bin  := mt7981-bl2 spim-nand-ddr3-1866
   ARTIFACT/nand-ddr4-bl31-uboot.fip := mt7981-bl31-uboot cmcc_rax3000m-nand-ddr4
   ARTIFACT/nand-ddr4-preloader.bin  := mt7981-bl2 spim-nand-ddr4
 endef
