@@ -1406,6 +1406,45 @@ endef
 
 $(eval $(call KernelPackage,video-gspca-konica))
 
+
+define KernelPackage/video-sun6i-csi
+  SUBMENU:=$(VIDEO_MENU)
+  DEPENDS:=@TARGET_sunxi +kmod-video-fwnode +kmod-video-async +kmod-video-videobuf2 +kmod-video-dma-contig
+  TITLE:=Allwinner A31 Camera Sensor Interface (CSI)
+  KCONFIG:=CONFIG_VIDEO_SUN6I_CSI
+  FILES:=$(LINUX_DIR)/drivers/media/platform/sunxi/sun6i-csi/sun6i-csi.ko
+  AUTOLOAD:=$(call AutoProbe,sun6i-csi)
+  $(call AddDepends/video)
+endef
+
+define KernelPackage/video-sun6i-csi/description
+  Support for the Allwinner A31 Camera Sensor Interface (CSI)
+  controller, also found on other platforms such as the A83T, H3,
+  V3/V3s or A64.
+endef
+
+$(eval $(call KernelPackage,video-sun6i-csi))
+
+define KernelPackage/video-ov5640
+  SUBMENU:=$(VIDEO_MENU)
+  DEPENDS:=+kmod-video-fwnode +kmod-video-async
+  TITLE:=OmniVision OV5640 sensor support
+  KCONFIG:= \
+	CONFIG_VIDEO_CAMERA_SENSOR=y \
+	CONFIG_VIDEO_OV5640
+  FILES:=$(LINUX_DIR)/drivers/media/i2c/ov5640.ko
+  AUTOLOAD:=$(call AutoProbe,ov5640)
+  $(call AddDepends/video)
+endef
+
+define KernelPackage/video-ov5640/description
+  This is a Video4Linux2 sensor driver for the Omnivision
+  OV5640 camera sensor with a MIPI CSI-2 interface.
+endef
+
+$(eval $(call KernelPackage,video-ov5640))
+
+
 #
 # Video Processing
 #
