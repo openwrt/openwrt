@@ -134,17 +134,17 @@ define U-Boot/Mele_M9
   BUILD_DEVICES:=mele_m9
 endef
 
-define U-Boot/OLIMEX_A13_SOM
+define U-Boot/a13-som
   BUILD_SUBTARGET:=cortexa8
   NAME:=Olimex A13 SOM
-  BUILD_DEVICES:=olimex_a13-olimex-som
+  BUILD_DEVICES:=olimex_a13-olinuxino
 endef
 
 define U-Boot/licheepi_nano
   BUILD_SUBTARGET:=arm926ejs
   NAME:=LicheePi Nano
   UENV:=f1c
-  BUILD_DEVICES:=licheepi-nano
+  BUILD_DEVICES:=licheepi_licheepi-nano
 endef
 
 define U-Boot/Linksprite_pcDuino
@@ -268,7 +268,7 @@ define U-Boot/popstick
   BUILD_SUBTARGET:=arm926ejs
   NAME:=PopStick
   UENV:=f1c
-  BUILD_DEVICES:=popstick-v1.1
+  BUILD_DEVICES:=sourceparts_popstick-v1.1
 endef
 
 define U-Boot/libretech_all_h3_cc_h5
@@ -316,16 +316,16 @@ define U-Boot/pine64_plus
   ATF:=a64
 endef
 
-define U-Boot/bananapi_m2_plus_h3
+define U-Boot/bpi_m2_plus_h3
   BUILD_SUBTARGET:=cortexa7
   NAME:=Bananapi M2 Plus H3
-  BUILD_DEVICES:=sinovoip_bananapi-m2-plus
+  BUILD_DEVICES:=sinovoip_bpi-m2-plus
 endef
 
-define U-Boot/Sinovoip_BPI_M3
+define U-Boot/bpi_m3
   BUILD_SUBTARGET:=cortexa7
   NAME:=Bananapi M3
-  BUILD_DEVICES:=sinovoip_bananapi-m3
+  BUILD_DEVICES:=sinovoip_bpi-m3
 endef
 
 define U-Boot/sopine_baseboard
@@ -382,22 +382,22 @@ define U-Boot/orangepi_zero3
   ATF:=h616
 endef
 
-define U-Boot/Bananapi_M2_Ultra
+define U-Boot/bpi_m2_ultra
   BUILD_SUBTARGET:=cortexa7
   NAME:=Bananapi M2 Ultra
-  BUILD_DEVICES:=sinovoip_bananapi-m2-ultra
+  BUILD_DEVICES:=sinovoip_bpi-m2-ultra
 endef
 
-define U-Boot/bananapi_m2_berry
+define U-Boot/bpi_m2_berry
   BUILD_SUBTARGET:=cortexa7
   NAME:=Bananapi M2 Berry
-  BUILD_DEVICES:=sinovoip_bananapi-m2-berry
+  BUILD_DEVICES:=sinovoip_bpi-m2-berry
 endef
 
-define U-Boot/bananapi_p2_zero
+define U-Boot/bpi_p2_zero
   BUILD_SUBTARGET:=cortexa7
   NAME:=Bananapi P2 Zero
-  BUILD_DEVICES:=sinovoip_bananapi-p2-zero
+  BUILD_DEVICES:=sinovoip_bpi-p2-zero
 endef
 
 
@@ -406,24 +406,25 @@ UBOOT_TARGETS := \
 	a64-olinuxino-emmc \
 	A10-OLinuXino-Lime \
 	A13-OLinuXino \
+	a13-som \
 	A20-OLinuXino-Lime \
 	A20-OLinuXino-Lime2 \
 	A20-OLinuXino-Lime2-eMMC \
 	A20-OLinuXino_MICRO \
-	bananapi_m2_plus_h3 \
-	Bananapi \
-	bananapi_m2_berry \
-	bananapi_p2_zero \
-	Bananapi_M2_Ultra \
-	Bananapro \
 	beelink_x2 \
+	bpi_m2_berry \
+	bpi_m2_plus_h3 \
+	bpi_m2_ultra \
+	bpi_m3 \
+	bpi_p2_zero \
+	Bananapi \
+	Bananapro \
 	Cubieboard \
 	Cubieboard2 \
 	Cubietruck \
 	Hummingbird_A31 \
 	Marsboard_A10 \
 	Mele_M9 \
-	OLIMEX_A13_SOM \
 	licheepi_nano \
 	LicheePi_Zero \
 	Linksprite_pcDuino \
@@ -453,7 +454,6 @@ UBOOT_TARGETS := \
 	pangolin \
 	popstick \
 	pine64_plus \
-	Sinovoip_BPI_M3 \
 	sopine_baseboard \
 	orangepi_zero_plus \
 	libretech_all_h3_cc_h5
