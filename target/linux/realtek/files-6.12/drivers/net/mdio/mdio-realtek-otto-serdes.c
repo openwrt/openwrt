@@ -155,9 +155,9 @@ static int rtsds_debug_init(struct rtsds_ctrl *ctrl, u32 sds)
 	dbg_info->ctrl = ctrl;
 	dbg_info->sds = sds;
 
-	root = debugfs_lookup(RTSDS_DBG_ROOT_DIR, NULL);
-	if (!root)
-		root = debugfs_create_dir(RTSDS_DBG_ROOT_DIR, NULL);
+	root = debugfs_create_dir(RTSDS_DBG_ROOT_DIR, NULL);
+	if (IS_ERR(root))
+		return PTR_ERR(root);
 
 	snprintf(dirname, sizeof(dirname), "serdes.%d", sds);
 	dir = debugfs_create_dir(dirname, root);
