@@ -2676,6 +2676,17 @@ static sds_config sds_config_10p3125g_cmu_type1[] = {
 	{ 0x2F, 0x0F, 0xA470 }, { 0x2F, 0x10, 0x8000 }, { 0x2F, 0x11, 0x037B }
 };
 
+static int rtpcs_931x_sds_config_fiber_1g(struct rtpcs_serdes *sds)
+{
+	rtpcs_sds_write_bits(sds, 0x43, 0x12, 15, 14, 0x0);
+
+	rtpcs_sds_write_bits(sds, 0x42, 0x0, 12, 12, 0x1);
+	rtpcs_sds_write_bits(sds, 0x42, 0x0, 6, 6, 0x1);
+	rtpcs_sds_write_bits(sds, 0x42, 0x0, 13, 13, 0x0);
+
+	return 0;
+}
+
 static int rtpcs_931x_sds_config_mode(struct rtpcs_serdes *sds,
 				      enum rtpcs_sds_mode hw_mode, int chiptype)
 {
@@ -2686,11 +2697,7 @@ static int rtpcs_931x_sds_config_mode(struct rtpcs_serdes *sds,
 		break;
 
 	case RTPCS_SDS_MODE_1000BASEX:
-		rtpcs_sds_write_bits(sds, 0x43, 0x13, 15, 14, 0);
-
-		rtpcs_sds_write_bits(sds, 0x42, 0x0, 12, 12, 1);
-		rtpcs_sds_write_bits(sds, 0x42, 0x0, 6, 6, 1);
-		rtpcs_sds_write_bits(sds, 0x42, 0x0, 13, 13, 0);
+		rtpcs_931x_sds_config_fiber_1g(sds);
 		break;
 
 	case RTPCS_SDS_MODE_2500BASEX:
@@ -2701,12 +2708,7 @@ static int rtpcs_931x_sds_config_mode(struct rtpcs_serdes *sds,
 		/* configure 10GR fiber mode=1 */
 		rtpcs_sds_write_bits(sds, 0x1f, 0xb, 1, 1, 1);
 
-		/* init fiber_1g */
-		rtpcs_sds_write_bits(sds, 0x43, 0x13, 15, 14, 0);
-
-		rtpcs_sds_write_bits(sds, 0x42, 0x0, 12, 12, 1);
-		rtpcs_sds_write_bits(sds, 0x42, 0x0, 6, 6, 1);
-		rtpcs_sds_write_bits(sds, 0x42, 0x0, 13, 13, 0);
+		rtpcs_931x_sds_config_fiber_1g(sds);
 
 		/* init auto */
 		rtpcs_sds_write_bits(sds, 0x1f, 13, 15, 0, 0x109e);
