@@ -9,6 +9,7 @@ define Device/tplink_rex5x-v1
   DEVICE_COMPAT_VERSION := 2.0
   DEVICE_COMPAT_MESSAGE := Partition layout has changed compared to older versions by utilizing unused flash. \
     Upgrade via sysupgrade mechanism (-F) will only work if flashed image still fits to the size of old partition (6016 KiB).
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size | append-metadata
 endef
 
 define Device/tplink_re355-v1
@@ -40,6 +41,7 @@ define Device/tplink_re450-v2
   DEVICE_COMPAT_VERSION := 2.0
   DEVICE_COMPAT_MESSAGE := Partition layout has changed compared to older versions by utilizing unused flash. \
     Upgrade via sysupgrade mechanism (-F) will only work if flashed image still fits to the size of old partition (6016 KiB).
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size | append-metadata
   TPLINK_BOARD_ID := RE450-V2
   LOADER_TYPE := elf
 endef
