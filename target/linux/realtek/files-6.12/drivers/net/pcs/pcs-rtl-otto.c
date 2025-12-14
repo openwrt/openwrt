@@ -2677,72 +2677,10 @@ static sds_config sds_config_10p3125g_cmu_type1[] = {
 	{ 0x2F, 0x0F, 0xA470 }, { 0x2F, 0x10, 0x8000 }, { 0x2F, 0x11, 0x037B }
 };
 
-static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
-				   phy_interface_t mode)
+static int rtpcs_931x_sds_config_mode(struct rtpcs_serdes *sds,
+				      phy_interface_t mode, int chiptype)
 {
-	u32 board_sds_tx_type1[] = {
-		0x01c3, 0x01c3, 0x01c3, 0x01a3, 0x01a3, 0x01a3,
-		0x0143, 0x0143, 0x0143, 0x0143, 0x0163, 0x0163,
-	};
-	u32 board_sds_tx[] = {
-		0x1a00, 0x1a00, 0x0200, 0x0200, 0x0200, 0x0200,
-		0x01a3, 0x01a3, 0x01a3, 0x01a3, 0x01e3, 0x01e3
-	};
-	u32 board_sds_tx2[] = {
-		0x0dc0, 0x01c0, 0x0200, 0x0180, 0x0160, 0x0123,
-		0x0123, 0x0163, 0x01a3, 0x01a0, 0x01c3, 0x09c3,
-	};
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
-	struct rtpcs_ctrl *ctrl = sds->ctrl;
-	u32 band, ori, model_info, val;
-	u32 sds_id = sds->id;
-	int chiptype = 0;
-
-	/*
-	 * TODO: USXGMII is currently the swiss army knife to declare 10G
-	 * multi port PHYs. Real devices use other modes instead. Especially
-	 *
-	 * - RTL8224 is driven in 10G_QXGMII
-	 * - RTL8218D/E are driven in (Realtek proprietary) XSGMII (10G SGMII)
-	 *
-	 * For now disable all USXGMII SerDes handling and rely on U-Boot setup.
-	 */
-	if (mode == PHY_INTERFACE_MODE_USXGMII)
-		return 0;
-
-	pr_info("%s: set sds %d to mode %d\n", __func__, sds_id, mode);
-	val = rtpcs_sds_read_bits(sds, 0x1F, 0x9, 11, 6);
-
-	pr_info("%s: fibermode %08X stored mode 0x%x", __func__,
-		rtpcs_sds_read(sds, 0x1f, 0x9), val);
-	pr_info("%s: SGMII mode %08X in 0x24 0x9", __func__,
-		rtpcs_sds_read(sds, 0x24, 0x9));
-	pr_info("%s: CMU mode %08X stored even SDS %d", __func__,
-		rtpcs_sds_read(even_sds, 0x20, 0x12), even_sds->id);
-	pr_info("%s: serdes_mode_ctrl %08X", __func__,  RTL931X_SERDES_MODE_CTRL + 4 * (sds_id >> 2));
-	pr_info("%s CMU page 0x24 0x7 %08x\n", __func__, rtpcs_sds_read(sds, 0x24, 0x7));
-	pr_info("%s CMU page 0x26 0x7 %08x\n", __func__, rtpcs_sds_read(sds, 0x26, 0x7));
-	pr_info("%s CMU page 0x28 0x7 %08x\n", __func__, rtpcs_sds_read(sds, 0x28, 0x7));
-	pr_info("%s XSG page 0x0 0xe %08x\n", __func__, rtpcs_sds_read(sds, 0x40, 0xe));
-	pr_info("%s XSG2 page 0x0 0xe %08x\n", __func__, rtpcs_sds_read(sds, 0x80, 0xe));
-
-	regmap_read(ctrl->map, RTL93XX_MODEL_NAME_INFO, &model_info);
-	if ((model_info >> 4) & 0x1) {
-		pr_info("detected chiptype 1\n");
-		chiptype = 1;
-	} else {
-		pr_info("detected chiptype 0\n");
-	}
-
-	pr_info("%s: 2.5gbit %08X", __func__, rtpcs_sds_read(sds, 0x41, 0x14));
-
-	regmap_read(ctrl->map, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR, &ori);
-	pr_info("%s: RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR 0x%08X\n", __func__, ori);
-	val = ori | (1 << sds_id);
-	regmap_write(ctrl->map, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR, val);
-
-	/* this was in rtl931x_phylink_mac_config in dsa/rtl83xx/dsa.c before */
-	band = rtpcs_931x_sds_cmu_band_get(sds, mode);
 
 	switch (mode) {
 	case PHY_INTERFACE_MODE_NA:
@@ -2834,7 +2772,7 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 		rtpcs_sds_write_bits(sds, 0x24, 0x9, 15, 15, 0);
 
 		/* this was in rtl931x_phylink_mac_config in dsa/rtl83xx/dsa.c before */
-		band = rtpcs_931x_sds_cmu_band_set(sds, true, 62, PHY_INTERFACE_MODE_SGMII);
+		rtpcs_931x_sds_cmu_band_set(sds, true, 62, PHY_INTERFACE_MODE_SGMII);
 		break;
 
 	case PHY_INTERFACE_MODE_2500BASEX:
@@ -2843,10 +2781,82 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 
 	case PHY_INTERFACE_MODE_QSGMII:
 	default:
-		pr_info("%s: PHY mode %s not supported by SerDes %d\n",
-			__func__, phy_modes(mode), sds_id);
 		return -ENOTSUPP;
 	}
+
+	return 0;
+}
+
+static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
+				   phy_interface_t mode)
+{
+	u32 board_sds_tx_type1[] = {
+		0x01c3, 0x01c3, 0x01c3, 0x01a3, 0x01a3, 0x01a3,
+		0x0143, 0x0143, 0x0143, 0x0143, 0x0163, 0x0163,
+	};
+	u32 board_sds_tx[] = {
+		0x1a00, 0x1a00, 0x0200, 0x0200, 0x0200, 0x0200,
+		0x01a3, 0x01a3, 0x01a3, 0x01a3, 0x01e3, 0x01e3
+	};
+	u32 board_sds_tx2[] = {
+		0x0dc0, 0x01c0, 0x0200, 0x0180, 0x0160, 0x0123,
+		0x0123, 0x0163, 0x01a3, 0x01a0, 0x01c3, 0x09c3,
+	};
+	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
+	struct rtpcs_ctrl *ctrl = sds->ctrl;
+	u32 band, ori, model_info, val;
+	u32 sds_id = sds->id;
+	int ret, chiptype = 0;
+
+	/*
+	 * TODO: USXGMII is currently the swiss army knife to declare 10G
+	 * multi port PHYs. Real devices use other modes instead. Especially
+	 *
+	 * - RTL8224 is driven in 10G_QXGMII
+	 * - RTL8218D/E are driven in (Realtek proprietary) XSGMII (10G SGMII)
+	 *
+	 * For now disable all USXGMII SerDes handling and rely on U-Boot setup.
+	 */
+	if (mode == PHY_INTERFACE_MODE_USXGMII)
+		return 0;
+
+	pr_info("%s: set sds %d to mode %d\n", __func__, sds_id, mode);
+	val = rtpcs_sds_read_bits(sds, 0x1F, 0x9, 11, 6);
+
+	pr_info("%s: fibermode %08X stored mode 0x%x", __func__,
+		rtpcs_sds_read(sds, 0x1f, 0x9), val);
+	pr_info("%s: SGMII mode %08X in 0x24 0x9", __func__,
+		rtpcs_sds_read(sds, 0x24, 0x9));
+	pr_info("%s: CMU mode %08X stored even SDS %d", __func__,
+		rtpcs_sds_read(even_sds, 0x20, 0x12), even_sds->id);
+	pr_info("%s: serdes_mode_ctrl %08X", __func__,  RTL931X_SERDES_MODE_CTRL + 4 * (sds_id >> 2));
+	pr_info("%s CMU page 0x24 0x7 %08x\n", __func__, rtpcs_sds_read(sds, 0x24, 0x7));
+	pr_info("%s CMU page 0x26 0x7 %08x\n", __func__, rtpcs_sds_read(sds, 0x26, 0x7));
+	pr_info("%s CMU page 0x28 0x7 %08x\n", __func__, rtpcs_sds_read(sds, 0x28, 0x7));
+	pr_info("%s XSG page 0x0 0xe %08x\n", __func__, rtpcs_sds_read(sds, 0x40, 0xe));
+	pr_info("%s XSG2 page 0x0 0xe %08x\n", __func__, rtpcs_sds_read(sds, 0x80, 0xe));
+
+	regmap_read(ctrl->map, RTL93XX_MODEL_NAME_INFO, &model_info);
+	if ((model_info >> 4) & 0x1) {
+		pr_info("detected chiptype 1\n");
+		chiptype = 1;
+	} else {
+		pr_info("detected chiptype 0\n");
+	}
+
+	pr_info("%s: 2.5gbit %08X", __func__, rtpcs_sds_read(sds, 0x41, 0x14));
+
+	regmap_read(ctrl->map, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR, &ori);
+	pr_info("%s: RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR 0x%08X\n", __func__, ori);
+	val = ori | (1 << sds_id);
+	regmap_write(ctrl->map, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR, val);
+
+	/* this was in rtl931x_phylink_mac_config in dsa/rtl83xx/dsa.c before */
+	band = rtpcs_931x_sds_cmu_band_get(sds, mode);
+
+	ret = rtpcs_931x_sds_config_mode(sds, mode, chiptype);
+	if (ret < 0)
+		return ret;
 
 	rtpcs_931x_sds_cmu_type_set(sds, mode, chiptype);
 
