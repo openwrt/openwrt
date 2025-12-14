@@ -695,7 +695,7 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 
 module_phy_driver(rtl83xx_phy_driver);
 
-static struct mdio_device_id __maybe_unused rtl83xx_tbl[] = {
+static const struct mdio_device_id __maybe_unused rtl83xx_tbl[] = {
 	{ PHY_ID_MATCH_MODEL(PHY_ID_RTL8214_OR_8218) },
 	{ }
 };
