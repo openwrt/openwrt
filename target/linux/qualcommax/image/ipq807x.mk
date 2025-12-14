@@ -46,6 +46,51 @@ define Device/aliyun_ap8220
 endef
 TARGET_DEVICES += aliyun_ap8220
 
+define Build/netgear-rbx-fit
+	( \
+		set -e; \
+		TMP=$$(mktemp -d $(KDIR)/tmp/netgear-rbx.XXXXXX); \
+		cp $@ $$TMP/ubi.bin; \
+		UBI_HASH=$$(sha1sum $$TMP/ubi.bin | cut -d' ' -f1); \
+		UBI_NODE=ubi-$$UBI_HASH; \
+		UBI_SIZE=$$(stat -c '%s' $$TMP/ubi.bin); \
+		UBI_SIZE_HEX=$$(printf '0x%x' $$UBI_SIZE); \
+		UBI_SIZE_TXT=$$(printf '%x' $$UBI_SIZE); \
+		BUILD_STAMP=$$(date -u '+%Y-%m-%d %H:%M:%S UTC'); \
+		sed -e "s/__UBI_NODE__/$$UBI_NODE/g" \
+		    -e "s/__UBI_SIZE_HEX__/$$UBI_SIZE_HEX/g" \
+		    -e "s/__UBI_SIZE_TXT__/$$UBI_SIZE_TXT/g" \
+		    -e "s/__BUILD_STAMP__/$$BUILD_STAMP/g" \
+		    $(TOPDIR)/target/linux/qualcommax/image/netgear-rbx-flash.scr > $$TMP/flash.scr; \
+		{ \
+			printf "MODEL_ID : %s\n" "$(DEVICE_MODEL)"; \
+			printf "HW_ID : %s\n" "$(NETGEAR_HW_ID)"; \
+			printf "IMAGE : %s\n" "OpenWrt $(VERSION_DIST_SANITIZED).$(firstword $(subst -, ,$(REVISION)))"; \
+		} > $$TMP/metadata.txt; \
+		cp $(TOPDIR)/target/linux/qualcommax/image/netgear-rbx-factory.its $$TMP/factory.its; \
+		sed -i "s/__UBI_NODE__/$$UBI_NODE/g" $$TMP/factory.its; \
+		( cd $$TMP; PATH=$(LINUX_DIR)/scripts/dtc:$$PATH $(STAGING_DIR_HOST)/bin/mkimage -f factory.its factory.fit ); \
+		mv $$TMP/factory.fit $@; \
+		rm -rf $$TMP; \
+	)
+endef
+
+# Custom UBI layout for RBS850 to mirror stock volume sizes.
+# Volumes: kernel (6 MiB -> ~50 PEB), rootfs (30 MiB -> ~240 PEB),
+# rootfs_data (autoresize, added automatically for squashfs by ubinize-image.sh).
+define Build/netgear-rbs850-ubi
+	sh $(TOPDIR)/scripts/ubinize-image.sh \
+		--kernel $(IMAGE_KERNEL) \
+		--rootfs $(IMAGE_ROOTFS) \
+		$@.tmp \
+		-p $(BLOCKSIZE:%k=%KiB) -m $(PAGESIZE) \
+		$(if $(SUBPAGESIZE),-s $(SUBPAGESIZE)) \
+		$(if $(VID_HDR_OFFSET),-O $(VID_HDR_OFFSET)) \
+		$(UBINIZE_OPTS)
+	cat $@.tmp >> $@
+	rm $@.tmp
+endef
+
 define Device/arcadyan_aw1000
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
@@ -301,6 +346,39 @@ define Device/netgear_sxs80
 	NETGEAR_BOARD_ID := SXS80
 endef
 TARGET_DEVICES += netgear_sxs80
+
+define Device/netgear_rbx850
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_PACKAGES += ipq-wifi-netgear_rbx850
+	DEVICE_VENDOR := Netgear
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@hk01
+	SOC := ipq8074
+	KERNEL_SIZE := 6272k
+	NETGEAR_HW_ID := 000DE0E157530002
+	IMAGES += factory.chk
+	IMAGE/factory.chk := append-ubi | netgear-rbx-fit | netgear-chk
+endef
+
+define Device/netgear_rbr850
+	$(call Device/netgear_rbx850)
+	DEVICE_MODEL := RBR850
+	DEVICE_DTS := ipq8074-rbr850
+	NETGEAR_BOARD_ID := U12H404T00_NETGEAR
+endef
+TARGET_DEVICES += netgear_rbr850
+
+define Device/netgear_rbs850
+	$(call Device/netgear_rbx850)
+	DEVICE_MODEL := RBS850
+	DEVICE_DTS := ipq8074-rbs850
+	NETGEAR_BOARD_ID := U12H403T00_NETGEAR
+	IMAGE/factory.ubi := netgear-rbs850-ubi
+	IMAGE/factory.chk := netgear-rbs850-ubi | netgear-rbx-fit | netgear-chk
+endef
+TARGET_DEVICES += netgear_rbs850
 
 define Device/netgear_wax218
 	$(call Device/FitImage)

@@ -1,0 +1,39 @@
+/dts-v1/;
+/ {
+	description = "Flashing nand 800 20000";
+	#address-cells = <1>;
+	images {
+		metadata@1 {
+			description = "metadata.txt";
+			data = /incbin/("metadata.txt");
+			type = "firmware";
+			arch = "arm";
+			os = "linux";
+			compression = "none";
+			hash@1 { algo = "crc32"; };
+		};
+		script@1 {
+			description = "flash.scr";
+			data = /incbin/("flash.scr");
+			type = "script";
+			compression = "none";
+			hash@1 { algo = "crc32"; };
+		};
+		__UBI_NODE__ {
+			description = "openwrt-ubi-root";
+			data = /incbin/("ubi.bin");
+			type = "firmware";
+			arch = "arm";
+			os = "linux";
+			compression = "none";
+			hash@1 { algo = "crc32"; };
+		};
+	};
+	configurations {
+		default = "config@1";
+		config@1 {
+			description = "config";
+			firmware = "__UBI_NODE__";
+		};
+	};
+};
