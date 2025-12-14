@@ -148,7 +148,7 @@ static int rtsds_debug_init(struct rtsds_ctrl *ctrl, u32 sds)
 	struct dentry *dir, *root;
 	char dirname[32];
 
-	dbg_info = kzalloc(sizeof(*dbg_info), GFP_KERNEL);
+	dbg_info = devm_kzalloc(ctrl->dev, sizeof(*dbg_info), GFP_KERNEL);
 	if (!dbg_info)
 		return -ENOMEM;
 
