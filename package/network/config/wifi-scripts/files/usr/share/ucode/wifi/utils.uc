@@ -57,6 +57,11 @@ function rename_phy_by_name(phys, name, rename) {
 		wiphy: idx,
 		wiphy_name: name
 	});
+
+	let prev_idx = index(phys, prev_name);
+	if (prev_idx >= 0)
+		phys[prev_idx] = name;
+
 	return true;
 }
 
