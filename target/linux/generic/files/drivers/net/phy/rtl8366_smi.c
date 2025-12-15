@@ -1497,7 +1497,7 @@ static int rtl8366_smi_probe_of(struct platform_device *pdev, struct rtl8366_smi
 	if (!smi->ext_mbus) {
 		dev_info(&pdev->dev,
 			"cannot find mdio bus from bus handle (yet)");
-		goto try_gpio;
+		return -EPROBE_DEFER;
 	}
 
 	if (of_property_read_u32(np, "phy-id", &smi->phy_id))
@@ -1507,12 +1507,8 @@ static int rtl8366_smi_probe_of(struct platform_device *pdev, struct rtl8366_smi
 
 try_gpio:
 	if (!gpio_is_valid(sck) || !gpio_is_valid(sda)) {
-		if (!mdio_node) {
-			dev_err(&pdev->dev, "gpios missing in devictree\n");
-			return -EINVAL;
-		} else {
-			return -EPROBE_DEFER;
-		}
+		dev_err(&pdev->dev, "gpios missing in devictree\n");
+		return -EINVAL;
 	}
 
 	smi->gpio_sda = sda;
