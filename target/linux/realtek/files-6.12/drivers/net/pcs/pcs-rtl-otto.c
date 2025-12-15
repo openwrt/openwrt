@@ -2305,18 +2305,25 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 
 /* RTL931X */
 
+static int rtpcs_931x_sds_power(struct rtpcs_serdes *sds, bool power_on)
+{
+	u32 en_val = power_on ? 0 : BIT(sds->id);
+
+	return regmap_write_bits(sds->ctrl->map,
+				 RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR,
+				 BIT(sds->id), en_val);
+}
+
 static void rtpcs_931x_sds_reset(struct rtpcs_serdes *sds)
 {
 	struct rtpcs_ctrl *ctrl = sds->ctrl;
 	u32 sds_id = sds->id;
-	u32 o, v, o_mode;
+	u32 v, o_mode;
 	int shift = ((sds_id & 0x3) << 3);
 
 	/* TODO: We need to lock this! */
 
-	regmap_read(ctrl->map, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR, &o);
-	v = o | BIT(sds_id);
-	regmap_write(ctrl->map, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR, v);
+	rtpcs_931x_sds_power(sds, false);
 
 	regmap_read(ctrl->map, RTL931X_SERDES_MODE_CTRL + 4 * (sds_id >> 2), &o_mode);
 	v = BIT(7) | 0x1F;
@@ -2324,7 +2331,7 @@ static void rtpcs_931x_sds_reset(struct rtpcs_serdes *sds)
 			  0xff << shift, v << shift);
 	regmap_write(ctrl->map, RTL931X_SERDES_MODE_CTRL + 4 * (sds_id >> 2), o_mode);
 
-	regmap_write(ctrl->map, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR, o);
+	rtpcs_931x_sds_power(sds, true);
 }
 
 static void rtpcs_931x_sds_disable(struct rtpcs_serdes *sds)
@@ -2809,8 +2816,8 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 	};
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
 	struct rtpcs_ctrl *ctrl = sds->ctrl;
-	u32 band, ori, model_info, val;
 	enum rtpcs_sds_mode hw_mode;
+	u32 band, model_info, val;
 	u32 sds_id = sds->id;
 	int ret, chiptype = 0;
 
@@ -2852,10 +2859,7 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 
 	pr_info("%s: 2.5gbit %08X", __func__, rtpcs_sds_read(sds, 0x41, 0x14));
 
-	regmap_read(ctrl->map, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR, &ori);
-	pr_info("%s: RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR 0x%08X\n", __func__, ori);
-	val = ori | (1 << sds_id);
-	regmap_write(ctrl->map, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR, val);
+	rtpcs_931x_sds_power(sds, false);
 
 	/* this was in rtl931x_phylink_mac_config in dsa/rtl83xx/dsa.c before */
 	band = rtpcs_931x_sds_cmu_band_get(sds, mode);
@@ -2893,10 +2897,7 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 
 	rtpcs_931x_sds_set_polarity(sds, sds->tx_pol_inv, sds->rx_pol_inv);
 
-	val = ori & ~BIT(sds_id);
-	regmap_write(ctrl->map, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR, val);
-	regmap_read(ctrl->map, RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR, &val);
-	pr_debug("%s: RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR 0x%08X\n", __func__, val);
+	rtpcs_931x_sds_power(sds, true);
 
 	if (mode == PHY_INTERFACE_MODE_XGMII ||
 	    mode == PHY_INTERFACE_MODE_QSGMII ||
