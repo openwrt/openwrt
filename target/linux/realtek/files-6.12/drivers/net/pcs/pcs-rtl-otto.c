@@ -2685,8 +2685,43 @@ static int rtpcs_931x_sds_config_mode(struct rtpcs_serdes *sds,
 	case RTPCS_SDS_MODE_OFF:
 		break;
 
-	case RTPCS_SDS_MODE_XSGMII:
+	case RTPCS_SDS_MODE_1000BASEX:
+		rtpcs_sds_write_bits(sds, 0x43, 0x13, 15, 14, 0);
 
+		rtpcs_sds_write_bits(sds, 0x42, 0x0, 12, 12, 1);
+		rtpcs_sds_write_bits(sds, 0x42, 0x0, 6, 6, 1);
+		rtpcs_sds_write_bits(sds, 0x42, 0x0, 13, 13, 0);
+		break;
+
+	case RTPCS_SDS_MODE_2500BASEX:
+		rtpcs_sds_write_bits(sds, 0x41, 0x14, 8, 8, 1);
+		break;
+
+	case RTPCS_SDS_MODE_10GBASER: /* 10GR1000BX_AUTO */
+		/* configure 10GR fiber mode=1 */
+		rtpcs_sds_write_bits(sds, 0x1f, 0xb, 1, 1, 1);
+
+		/* init fiber_1g */
+		rtpcs_sds_write_bits(sds, 0x43, 0x13, 15, 14, 0);
+
+		rtpcs_sds_write_bits(sds, 0x42, 0x0, 12, 12, 1);
+		rtpcs_sds_write_bits(sds, 0x42, 0x0, 6, 6, 1);
+		rtpcs_sds_write_bits(sds, 0x42, 0x0, 13, 13, 0);
+
+		/* init auto */
+		rtpcs_sds_write_bits(sds, 0x1f, 13, 15, 0, 0x109e);
+		rtpcs_sds_write_bits(sds, 0x1f, 0x6, 14, 10, 0x8);
+		rtpcs_sds_write_bits(sds, 0x1f, 0x7, 10, 4, 0x7f);
+		break;
+
+	case RTPCS_SDS_MODE_SGMII:
+		rtpcs_sds_write_bits(sds, 0x24, 0x9, 15, 15, 0);
+
+		/* this was in rtl931x_phylink_mac_config in dsa/rtl83xx/dsa.c before */
+		rtpcs_931x_sds_cmu_band_set(sds, true, 62, PHY_INTERFACE_MODE_SGMII);
+		break;
+
+	case RTPCS_SDS_MODE_XSGMII:
 		if (chiptype) {
 			/* fifo inv clk */
 			rtpcs_sds_write_bits(sds, 0x41, 0x1, 7, 4, 0xf);
@@ -2745,42 +2780,6 @@ static int rtpcs_931x_sds_config_mode(struct rtpcs_serdes *sds,
 			rtpcs_sds_write(sds, 0x6, 0x1d, 0x0480);
 			rtpcs_sds_write(sds, 0x6, 0xe, 0x0400);
 		}
-		break;
-
-	case RTPCS_SDS_MODE_10GBASER: /* 10GR1000BX_AUTO */
-		/* configure 10GR fiber mode=1 */
-		rtpcs_sds_write_bits(sds, 0x1f, 0xb, 1, 1, 1);
-
-		/* init fiber_1g */
-		rtpcs_sds_write_bits(sds, 0x43, 0x13, 15, 14, 0);
-
-		rtpcs_sds_write_bits(sds, 0x42, 0x0, 12, 12, 1);
-		rtpcs_sds_write_bits(sds, 0x42, 0x0, 6, 6, 1);
-		rtpcs_sds_write_bits(sds, 0x42, 0x0, 13, 13, 0);
-
-		/* init auto */
-		rtpcs_sds_write_bits(sds, 0x1f, 13, 15, 0, 0x109e);
-		rtpcs_sds_write_bits(sds, 0x1f, 0x6, 14, 10, 0x8);
-		rtpcs_sds_write_bits(sds, 0x1f, 0x7, 10, 4, 0x7f);
-		break;
-
-	case RTPCS_SDS_MODE_1000BASEX:
-		rtpcs_sds_write_bits(sds, 0x43, 0x13, 15, 14, 0);
-
-		rtpcs_sds_write_bits(sds, 0x42, 0x0, 12, 12, 1);
-		rtpcs_sds_write_bits(sds, 0x42, 0x0, 6, 6, 1);
-		rtpcs_sds_write_bits(sds, 0x42, 0x0, 13, 13, 0);
-		break;
-
-	case RTPCS_SDS_MODE_SGMII:
-		rtpcs_sds_write_bits(sds, 0x24, 0x9, 15, 15, 0);
-
-		/* this was in rtl931x_phylink_mac_config in dsa/rtl83xx/dsa.c before */
-		rtpcs_931x_sds_cmu_band_set(sds, true, 62, PHY_INTERFACE_MODE_SGMII);
-		break;
-
-	case RTPCS_SDS_MODE_2500BASEX:
-		rtpcs_sds_write_bits(sds, 0x41, 0x14, 8, 8, 1);
 		break;
 
 	case RTPCS_SDS_MODE_QSGMII:
