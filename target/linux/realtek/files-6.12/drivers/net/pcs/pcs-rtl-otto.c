@@ -278,7 +278,6 @@ static struct rtpcs_link *rtpcs_phylink_pcs_to_link(struct phylink_pcs *pcs)
 	return container_of(pcs, struct rtpcs_link, pcs);
 }
 
-__maybe_unused
 static int rtpcs_sds_determine_hw_mode(struct rtpcs_serdes *sds,
                                        phy_interface_t if_mode,
                                        enum rtpcs_sds_mode *hw_mode)
@@ -2805,6 +2804,7 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
 	struct rtpcs_ctrl *ctrl = sds->ctrl;
 	u32 band, ori, model_info, val;
+	enum rtpcs_sds_mode hw_mode;
 	u32 sds_id = sds->id;
 	int ret, chiptype = 0;
 
@@ -2854,6 +2854,13 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 	/* this was in rtl931x_phylink_mac_config in dsa/rtl83xx/dsa.c before */
 	band = rtpcs_931x_sds_cmu_band_get(sds, mode);
 
+	ret = rtpcs_sds_determine_hw_mode(sds, mode, &hw_mode);
+	if (ret < 0) {
+		dev_err(ctrl->dev, "SerDes %u doesn't support %s mode\n", sds_id,
+			phy_modes(mode));
+		return -ENOTSUPP;
+	}
+
 	ret = rtpcs_931x_sds_config_mode(sds, mode, chiptype);
 	if (ret < 0)
 		return ret;
@@ -2894,6 +2901,7 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 		else
 			rtpcs_931x_sds_fiber_mode_set(sds, mode);
 	}
+	sds->hw_mode = hw_mode;
 
 	return 0;
 }
