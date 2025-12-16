@@ -134,7 +134,7 @@ define U-Boot/Mele_M9
   BUILD_DEVICES:=mele_m9
 endef
 
-define U-Boot/a13-som
+define U-Boot/OLIMEX_A13_SOM
   BUILD_SUBTARGET:=cortexa8
   NAME:=Olimex A13 SOM
   BUILD_DEVICES:=olimex_a13-olinuxino
@@ -316,13 +316,13 @@ define U-Boot/pine64_plus
   ATF:=a64
 endef
 
-define U-Boot/bpi_m2_plus_h3
+define U-Boot/bananapi_m2_plus_h3
   BUILD_SUBTARGET:=cortexa7
   NAME:=Bananapi M2 Plus H3
   BUILD_DEVICES:=sinovoip_bpi-m2-plus
 endef
 
-define U-Boot/bpi_m3
+define U-Boot/Sinovoip_BPI_M3
   BUILD_SUBTARGET:=cortexa7
   NAME:=Bananapi M3
   BUILD_DEVICES:=sinovoip_bpi-m3
@@ -382,19 +382,19 @@ define U-Boot/orangepi_zero3
   ATF:=h616
 endef
 
-define U-Boot/bpi_m2_ultra
+define U-Boot/Bananapi_M2_Ultra
   BUILD_SUBTARGET:=cortexa7
   NAME:=Bananapi M2 Ultra
   BUILD_DEVICES:=sinovoip_bpi-m2-ultra
 endef
 
-define U-Boot/bpi_m2_berry
+define U-Boot/bananapi_m2_berry
   BUILD_SUBTARGET:=cortexa7
   NAME:=Bananapi M2 Berry
   BUILD_DEVICES:=sinovoip_bpi-m2-berry
 endef
 
-define U-Boot/bpi_p2_zero
+define U-Boot/bananapi_p2_zero
   BUILD_SUBTARGET:=cortexa7
   NAME:=Bananapi P2 Zero
   BUILD_DEVICES:=sinovoip_bpi-p2-zero
@@ -406,25 +406,24 @@ UBOOT_TARGETS := \
 	a64-olinuxino-emmc \
 	A10-OLinuXino-Lime \
 	A13-OLinuXino \
-	a13-som \
 	A20-OLinuXino-Lime \
 	A20-OLinuXino-Lime2 \
 	A20-OLinuXino-Lime2-eMMC \
 	A20-OLinuXino_MICRO \
-	beelink_x2 \
-	bpi_m2_berry \
-	bpi_m2_plus_h3 \
-	bpi_m2_ultra \
-	bpi_m3 \
-	bpi_p2_zero \
+	bananapi_m2_plus_h3 \
 	Bananapi \
+	bananapi_m2_berry \
+	bananapi_p2_zero \
+	Bananapi_M2_Ultra \
 	Bananapro \
+	beelink_x2 \
 	Cubieboard \
 	Cubieboard2 \
 	Cubietruck \
 	Hummingbird_A31 \
 	Marsboard_A10 \
 	Mele_M9 \
+	OLIMEX_A13_SOM \
 	licheepi_nano \
 	LicheePi_Zero \
 	Linksprite_pcDuino \
@@ -454,6 +453,7 @@ UBOOT_TARGETS := \
 	pangolin \
 	popstick \
 	pine64_plus \
+	Sinovoip_BPI_M3 \
 	sopine_baseboard \
 	orangepi_zero_plus \
 	libretech_all_h3_cc_h5
