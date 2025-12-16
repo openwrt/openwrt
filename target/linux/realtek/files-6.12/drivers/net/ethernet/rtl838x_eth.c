@@ -1647,7 +1647,6 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	struct net_device *dev;
 	struct device_node *dn = pdev->dev.of_node;
 	struct rtl838x_eth_priv *priv;
-	struct resource *res, *mem;
 	phy_interface_t phy_mode;
 	struct phylink *phylink;
 	u8 mac_addr[ETH_ALEN];
@@ -1673,23 +1672,6 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 		return -ENOMEM;
 	SET_NETDEV_DEV(dev, &pdev->dev);
 	priv = netdev_priv(dev);
-
-	/* obtain buffer memory space */
-	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	if (res) {
-		mem = devm_request_mem_region(&pdev->dev, res->start,
-					      resource_size(res), res->name);
-		if (!mem) {
-			dev_err(&pdev->dev, "cannot request memory space\n");
-			return -ENXIO;
-		}
-
-		dev->mem_start = mem->start;
-		dev->mem_end   = mem->end;
-	} else {
-		dev_err(&pdev->dev, "cannot request IO resource\n");
-		return -ENXIO;
-	}
 
 	/* Allocate buffer memory */
 	priv->membase = dmam_alloc_coherent(&pdev->dev, rxrings * rxringlen * RING_BUFFER +
