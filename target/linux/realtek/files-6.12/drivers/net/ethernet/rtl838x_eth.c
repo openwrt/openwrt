@@ -1856,7 +1856,10 @@ static void rtl838x_eth_remove(struct platform_device *pdev)
 }
 
 static const struct of_device_id rtl838x_eth_of_ids[] = {
-	{ .compatible = "realtek,rtl838x-eth"},
+	{ .compatible = "realtek,rtl8380-eth" },
+	{ .compatible = "realtek,rtl8392-eth" },
+	{ .compatible = "realtek,rtl9301-eth" },
+	{ .compatible = "realtek,rtl9311-eth" },
 	{ /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, rtl838x_eth_of_ids);
