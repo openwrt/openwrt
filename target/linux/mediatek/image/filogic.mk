@@ -1013,11 +1013,9 @@ define Device/cudy_ap3000-v1
 endef
 TARGET_DEVICES += cudy_ap3000-v1
 
-define Device/cudy_m3000-v1
+define Device/cudy_m3000
   DEVICE_VENDOR := Cudy
   DEVICE_MODEL := M3000
-  DEVICE_VARIANT := v1
-  DEVICE_DTS := mt7981b-cudy-m3000-v1
   DEVICE_DTS_DIR := ../dts
   SUPPORTED_DEVICES += R37
   DEVICE_DTS_LOADADDR := 0x44000000
@@ -1033,7 +1031,21 @@ define Device/cudy_m3000-v1
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
 endef
+
+define Device/cudy_m3000-v1
+  DEVICE_VARIANT := v1
+  DEVICE_DTS := mt7981b-cudy-m3000-v1
+  $(call Device/cudy_m3000)
+endef
 TARGET_DEVICES += cudy_m3000-v1
+
+define Device/cudy_m3000-v2
+  DEVICE_VARIANT := v2
+  DEVICE_DTS := mt7981b-cudy-m3000-v2
+  $(call Device/cudy_m3000)
+  DEVICE_PACKAGES += kmod-phy-motorcomm
+endef
+TARGET_DEVICES += cudy_m3000-v2
 
 define Device/cudy_re3000-v1
   DEVICE_VENDOR := Cudy
