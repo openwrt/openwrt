@@ -194,7 +194,6 @@ struct rtl838x_eth_priv {
 	struct phylink_config phylink_config;
 	struct phylink_pcs pcs;
 	u16 id;
-	u16 family_id;
 	const struct rtl838x_eth_reg *r;
 	u8 cpu_port;
 	u32 lastEvent;
@@ -568,12 +567,12 @@ static void rtl838x_hw_reset(struct rtl838x_eth_priv *priv)
 	u32 int_saved, nbuf;
 	u32 reset_mask;
 
-	pr_info("RESETTING %x, CPU_PORT %d\n", priv->family_id, priv->cpu_port);
+	pr_info("RESETTING %x, CPU_PORT %d\n", priv->r->family_id, priv->cpu_port);
 	sw_w32_mask(0x3, 0, priv->r->mac_port_ctrl(priv->cpu_port));
 	mdelay(100);
 
 	/* Disable and clear interrupts */
-	if (priv->family_id == RTL9300_FAMILY_ID || priv->family_id == RTL9310_FAMILY_ID) {
+	if (priv->r->family_id == RTL9300_FAMILY_ID || priv->r->family_id == RTL9310_FAMILY_ID) {
 		sw_w32(0x00000000, priv->r->dma_if_intr_rx_runout_msk);
 		sw_w32(0xffffffff, priv->r->dma_if_intr_rx_runout_sts);
 		sw_w32(0x00000000, priv->r->dma_if_intr_rx_done_msk);
@@ -585,7 +584,7 @@ static void rtl838x_hw_reset(struct rtl838x_eth_priv *priv)
 		sw_w32(0xffffffff, priv->r->dma_if_intr_sts);
 	}
 
-	if (priv->family_id == RTL8390_FAMILY_ID) {
+	if (priv->r->family_id == RTL8390_FAMILY_ID) {
 		/* Preserve L2 notification and NBUF settings */
 		int_saved = sw_r32(priv->r->dma_if_intr_msk);
 		nbuf = sw_r32(RTL839X_DMA_IF_NBUF_BASE_DESC_ADDR_CTRL);
@@ -599,7 +598,7 @@ static void rtl838x_hw_reset(struct rtl838x_eth_priv *priv)
 	}
 
 	/* Reset NIC (SW_NIC_RST) and queues (SW_Q_RST) */
-	if (priv->family_id == RTL9300_FAMILY_ID || priv->family_id == RTL9310_FAMILY_ID)
+	if (priv->r->family_id == RTL9300_FAMILY_ID || priv->r->family_id == RTL9310_FAMILY_ID)
 		reset_mask = 0x6;
 	else
 		reset_mask = 0xc;
@@ -612,11 +611,11 @@ static void rtl838x_hw_reset(struct rtl838x_eth_priv *priv)
 	mdelay(100);
 
 	/* Setup Head of Line */
-	if (priv->family_id == RTL8380_FAMILY_ID)
+	if (priv->r->family_id == RTL8380_FAMILY_ID)
 		sw_w32(0, RTL838X_DMA_IF_RX_RING_SIZE);  /* Disabled on RTL8380 */
-	if (priv->family_id == RTL8390_FAMILY_ID)
+	if (priv->r->family_id == RTL8390_FAMILY_ID)
 		sw_w32(0xffffffff, RTL839X_DMA_IF_RX_RING_CNTR);
-	if (priv->family_id == RTL9300_FAMILY_ID || priv->family_id == RTL9310_FAMILY_ID) {
+	if (priv->r->family_id == RTL9300_FAMILY_ID || priv->r->family_id == RTL9310_FAMILY_ID) {
 		for (int i = 0; i < priv->rxrings; i++) {
 			int pos = (i % 3) * 10;
 
@@ -627,7 +626,7 @@ static void rtl838x_hw_reset(struct rtl838x_eth_priv *priv)
 	}
 
 	/* Re-enable link change interrupt */
-	if (priv->family_id == RTL8390_FAMILY_ID) {
+	if (priv->r->family_id == RTL8390_FAMILY_ID) {
 		sw_w32(0xffffffff, RTL839X_ISR_PORT_LINK_STS_CHG);
 		sw_w32(0xffffffff, RTL839X_ISR_PORT_LINK_STS_CHG + 4);
 		sw_w32(0xffffffff, RTL839X_IMR_PORT_LINK_STS_CHG);
@@ -729,12 +728,12 @@ static void rtl93xx_hw_en_rxtx(struct rtl838x_eth_priv *priv)
 	/* Restart TX/RX to CPU port, enable CRC checking */
 	sw_w32_mask(0x0, 0x3 | BIT(4), priv->r->mac_port_ctrl(priv->cpu_port));
 
-	if (priv->family_id == RTL9300_FAMILY_ID)
+	if (priv->r->family_id == RTL9300_FAMILY_ID)
 		sw_w32_mask(0, BIT(priv->cpu_port), RTL930X_L2_UNKN_UC_FLD_PMSK);
 	else
 		sw_w32_mask(0, BIT(priv->cpu_port), RTL931X_L2_UNKN_UC_FLD_PMSK);
 
-	if (priv->family_id == RTL9300_FAMILY_ID)
+	if (priv->r->family_id == RTL9300_FAMILY_ID)
 		sw_w32(0x217, priv->r->mac_force_mode_ctrl + priv->cpu_port * 4);
 	else
 		sw_w32(0x2a1d, priv->r->mac_force_mode_ctrl + priv->cpu_port * 4);
@@ -811,7 +810,7 @@ static int rtl838x_eth_open(struct net_device *ndev)
 	spin_lock_irqsave(&priv->lock, flags);
 	rtl838x_hw_reset(priv);
 	rtl838x_setup_ring_buffer(priv, ring);
-	if (priv->family_id == RTL8390_FAMILY_ID) {
+	if (priv->r->family_id == RTL8390_FAMILY_ID) {
 		rtl839x_setup_notify_ring_buffer(priv);
 		/* Make sure the ring structure is visible to the ASIC */
 		mb();
@@ -824,7 +823,7 @@ static int rtl838x_eth_open(struct net_device *ndev)
 	for (int i = 0; i < priv->rxrings; i++)
 		napi_enable(&priv->rx_qs[i].napi);
 
-	switch (priv->family_id) {
+	switch (priv->r->family_id) {
 	case RTL8380_FAMILY_ID:
 		rtl838x_hw_en_rxtx(priv);
 		/* Trap IGMP/MLD traffic to CPU-Port */
@@ -869,35 +868,35 @@ static int rtl838x_eth_open(struct net_device *ndev)
 
 static void rtl838x_hw_stop(struct rtl838x_eth_priv *priv)
 {
-	u32 force_mac = priv->family_id == RTL8380_FAMILY_ID ? 0x6192C : 0x75;
-	u32 clear_irq = priv->family_id == RTL8380_FAMILY_ID ? 0x000fffff : 0x007fffff;
+	u32 force_mac = priv->r->family_id == RTL8380_FAMILY_ID ? 0x6192C : 0x75;
+	u32 clear_irq = priv->r->family_id == RTL8380_FAMILY_ID ? 0x000fffff : 0x007fffff;
 
 	/* Disable RX/TX from/to CPU-port */
 	sw_w32_mask(0x3, 0, priv->r->mac_port_ctrl(priv->cpu_port));
 
 	/* Disable traffic */
-	if (priv->family_id == RTL9300_FAMILY_ID || priv->family_id == RTL9310_FAMILY_ID)
+	if (priv->r->family_id == RTL9300_FAMILY_ID || priv->r->family_id == RTL9310_FAMILY_ID)
 		sw_w32_mask(RX_EN_93XX | TX_EN_93XX, 0, priv->r->dma_if_ctrl);
 	else
 		sw_w32_mask(RX_EN | TX_EN, 0, priv->r->dma_if_ctrl);
 	mdelay(200); /* Test, whether this is needed */
 
 	/* Block all ports */
-	if (priv->family_id == RTL8380_FAMILY_ID) {
+	if (priv->r->family_id == RTL8380_FAMILY_ID) {
 		sw_w32(0x03000000, RTL838X_TBL_ACCESS_DATA_0(0));
 		sw_w32(0x00000000, RTL838X_TBL_ACCESS_DATA_0(1));
 		sw_w32(1 << 15 | 2 << 12, RTL838X_TBL_ACCESS_CTRL_0);
 	}
 
 	/* Flush L2 address cache */
-	if (priv->family_id == RTL8380_FAMILY_ID) {
+	if (priv->r->family_id == RTL8380_FAMILY_ID) {
 		/* Disable FAST_AGE_OUT otherwise flush will hang */
 		sw_w32_mask(BIT(23), 0, RTL838X_L2_CTRL_1);
 		for (int i = 0; i <= priv->cpu_port; i++) {
 			sw_w32(BIT(26) | BIT(23) | i << 5, priv->r->l2_tbl_flush_ctrl);
 			do { } while (sw_r32(priv->r->l2_tbl_flush_ctrl) & BIT(26));
 		}
-	} else if (priv->family_id == RTL8390_FAMILY_ID) {
+	} else if (priv->r->family_id == RTL8390_FAMILY_ID) {
 		for (int i = 0; i <= priv->cpu_port; i++) {
 			sw_w32(BIT(28) | BIT(25) | i << 5, priv->r->l2_tbl_flush_ctrl);
 			do { } while (sw_r32(priv->r->l2_tbl_flush_ctrl) & BIT(28));
@@ -906,16 +905,16 @@ static void rtl838x_hw_stop(struct rtl838x_eth_priv *priv)
 	/* TODO: L2 flush register is 64 bit on RTL931X and 930X */
 
 	/* CPU-Port: Link down */
-	if (priv->family_id == RTL8380_FAMILY_ID || priv->family_id == RTL8390_FAMILY_ID)
+	if (priv->r->family_id == RTL8380_FAMILY_ID || priv->r->family_id == RTL8390_FAMILY_ID)
 		sw_w32(force_mac, priv->r->mac_force_mode_ctrl + priv->cpu_port * 4);
-	else if (priv->family_id == RTL9300_FAMILY_ID)
+	else if (priv->r->family_id == RTL9300_FAMILY_ID)
 		sw_w32_mask(0x3, 0, priv->r->mac_force_mode_ctrl + priv->cpu_port * 4);
-	else if (priv->family_id == RTL9310_FAMILY_ID)
+	else if (priv->r->family_id == RTL9310_FAMILY_ID)
 		sw_w32_mask(BIT(0) | BIT(9), 0, priv->r->mac_force_mode_ctrl + priv->cpu_port * 4);
 	mdelay(100);
 
 	/* Disable all TX/RX interrupts */
-	if (priv->family_id == RTL9300_FAMILY_ID || priv->family_id == RTL9310_FAMILY_ID) {
+	if (priv->r->family_id == RTL9300_FAMILY_ID || priv->r->family_id == RTL9310_FAMILY_ID) {
 		sw_w32(0x00000000, priv->r->dma_if_intr_rx_runout_msk);
 		sw_w32(0xffffffff, priv->r->dma_if_intr_rx_runout_sts);
 		sw_w32(0x00000000, priv->r->dma_if_intr_rx_done_msk);
@@ -1086,7 +1085,7 @@ static int rtl838x_eth_tx(struct sk_buff *skb, struct net_device *dev)
 		h->size = len;
 		h->len = len;
 		/* On RTL8380 SoCs, small packet lengths being sent need adjustments */
-		if (priv->family_id == RTL8380_FAMILY_ID) {
+		if (priv->r->family_id == RTL8380_FAMILY_ID) {
 			if (len < ETH_ZLEN - 4)
 				h->len -= 4;
 		}
@@ -1103,7 +1102,7 @@ static int rtl838x_eth_tx(struct sk_buff *skb, struct net_device *dev)
 		ring->tx_r[q][ring->c_tx[q]] |= 1;
 
 		/* Before starting TX, prevent a Lextra bus bug on RTL8380 SoCs */
-		if (priv->family_id == RTL8380_FAMILY_ID) {
+		if (priv->r->family_id == RTL8380_FAMILY_ID) {
 			for (int i = 0; i < 10; i++) {
 				u32 val = sw_r32(priv->r->dma_if_ctrl);
 
@@ -1113,7 +1112,7 @@ static int rtl838x_eth_tx(struct sk_buff *skb, struct net_device *dev)
 		}
 
 		/* Tell switch to send data */
-		if (priv->family_id == RTL9310_FAMILY_ID || priv->family_id == RTL9300_FAMILY_ID) {
+		if (priv->r->family_id == RTL9310_FAMILY_ID || priv->r->family_id == RTL9300_FAMILY_ID) {
 			/* Ring ID q == 0: Low priority, Ring ID = 1: High prio queue */
 			if (!q)
 				sw_w32_mask(0, BIT(2), priv->r->dma_if_ctrl);
@@ -1205,7 +1204,7 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 		skb = netdev_alloc_skb_ip_align(dev, len);
 		if (likely(skb)) {
 			/* BUG: Prevent bug on RTL838x SoCs */
-			if (priv->family_id == RTL8380_FAMILY_ID) {
+			if (priv->r->family_id == RTL8380_FAMILY_ID) {
 				sw_w32(0xffffffff, priv->r->dma_if_rx_ring_size(0));
 				for (int i = 0; i < priv->rxrings; i++) {
 					unsigned int val;
@@ -1290,7 +1289,7 @@ static int rtl838x_poll_rx(struct napi_struct *napi, int budget)
 	if (work_done < budget && napi_complete_done(napi, work_done)) {
 		/* Re-enable rx interrupts */
 		spin_lock_irqsave(&priv->lock, flags);
-		if (priv->family_id == RTL9300_FAMILY_ID || priv->family_id == RTL9310_FAMILY_ID)
+		if (priv->r->family_id == RTL9300_FAMILY_ID || priv->r->family_id == RTL9310_FAMILY_ID)
 			sw_w32_mask(0, RTL93XX_DMA_IF_INTR_RX_MASK(ring), priv->r->dma_if_intr_rx_done_msk);
 		else
 			sw_w32_mask(0, RTL83XX_DMA_IF_INTR_RX_MASK(ring), priv->r->dma_if_intr_msk);
@@ -1316,7 +1315,7 @@ static void rtl838x_pcs_an_restart(struct phylink_pcs *pcs)
 	struct rtl838x_eth_priv *priv = container_of(pcs, struct rtl838x_eth_priv, pcs);
 
 	/* This works only on RTL838x chips */
-	if (priv->family_id != RTL8380_FAMILY_ID)
+	if (priv->r->family_id != RTL8380_FAMILY_ID)
 		return;
 
 	pr_debug("In %s\n", __func__);
@@ -1414,7 +1413,7 @@ static void rtl838x_set_mac_hw(struct net_device *dev, u8 *mac)
 	sw_w32((mac[0] << 8) | mac[1], priv->r->mac);
 	sw_w32((mac[2] << 24) | (mac[3] << 16) | (mac[4] << 8) | mac[5], priv->r->mac + 4);
 
-	if (priv->family_id == RTL8380_FAMILY_ID) {
+	if (priv->r->family_id == RTL8380_FAMILY_ID) {
 		/* 2 more registers, ALE/MAC block */
 		sw_w32((mac[0] << 8) | mac[1], RTL838X_MAC_ALE);
 		sw_w32((mac[2] << 24) | (mac[3] << 16) | (mac[4] << 8) | mac[5],
@@ -1452,11 +1451,11 @@ static int rtl8390_init_mac(struct rtl838x_eth_priv *priv)
 
 static int rtl8380_init_mac(struct rtl838x_eth_priv *priv)
 {
-	if (priv->family_id == 0x8390)
+	if (priv->r->family_id == RTL8390_FAMILY_ID)
 		return rtl8390_init_mac(priv);
 
 	/* At present we do not know how to set up EEE on any other SoC than RTL8380 */
-	if (priv->family_id != 0x8380)
+	if (priv->r->family_id != RTL8380_FAMILY_ID)
 		return 0;
 
 	pr_info("%s\n", __func__);
@@ -1703,16 +1702,15 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	dev->hw_features = NETIF_F_RXCSUM;
 
 	priv->id = soc_info.id;
-	priv->family_id = soc_info.family;
 	if (priv->id) {
 		pr_info("Found SoC ID: %4x: %s, family %x\n",
-			priv->id, soc_info.name, priv->family_id);
+			priv->id, soc_info.name, priv->r->family_id);
 	} else {
 		pr_err("Unknown chip id (%04x)\n", priv->id);
 		return -ENODEV;
 	}
 
-	switch (priv->family_id) {
+	switch (priv->r->family_id) {
 	case RTL8380_FAMILY_ID:
 		priv->cpu_port = RTL838X_CPU_PORT;
 		dev->netdev_ops = &rtl838x_eth_netdev_ops;
