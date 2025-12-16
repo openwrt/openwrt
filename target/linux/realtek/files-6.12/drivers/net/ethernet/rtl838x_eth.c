@@ -1651,6 +1651,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	struct net_device *dev;
 	struct device_node *dn = pdev->dev.of_node;
 	struct rtl838x_eth_priv *priv;
+	const struct rtl838x_eth_reg *matchdata;
 	phy_interface_t phy_mode;
 	struct phylink *phylink;
 	u8 mac_addr[ETH_ALEN];
@@ -1665,8 +1666,10 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 		return -EINVAL;
 	}
 
-	rxrings = (soc_info.family == RTL8380_FAMILY_ID
-			|| soc_info.family == RTL8390_FAMILY_ID) ? 8 : 32;
+	matchdata = (const struct rtl838x_eth_reg *)device_get_match_data(&pdev->dev);
+
+	rxrings = (matchdata->family_id == RTL8380_FAMILY_ID ||
+		   matchdata->family_id == RTL8390_FAMILY_ID) ? 8 : 32;
 	rxrings = rxrings > MAX_RXRINGS ? MAX_RXRINGS : rxrings;
 	rxringlen = MAX_ENTRIES / rxrings;
 	rxringlen = rxringlen > MAX_RXLEN ? MAX_RXLEN : rxringlen;
@@ -1676,6 +1679,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 		return -ENOMEM;
 	SET_NETDEV_DEV(dev, &pdev->dev);
 	priv = netdev_priv(dev);
+	priv->r = matchdata;
 
 	/* Allocate buffer memory */
 	priv->membase = dmam_alloc_coherent(&pdev->dev, rxrings * rxringlen * RING_BUFFER +
@@ -1711,22 +1715,18 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	switch (priv->family_id) {
 	case RTL8380_FAMILY_ID:
 		priv->cpu_port = RTL838X_CPU_PORT;
-		priv->r = &rtl838x_reg;
 		dev->netdev_ops = &rtl838x_eth_netdev_ops;
 		break;
 	case RTL8390_FAMILY_ID:
 		priv->cpu_port = RTL839X_CPU_PORT;
-		priv->r = &rtl839x_reg;
 		dev->netdev_ops = &rtl839x_eth_netdev_ops;
 		break;
 	case RTL9300_FAMILY_ID:
 		priv->cpu_port = RTL930X_CPU_PORT;
-		priv->r = &rtl930x_reg;
 		dev->netdev_ops = &rtl930x_eth_netdev_ops;
 		break;
 	case RTL9310_FAMILY_ID:
 		priv->cpu_port = RTL931X_CPU_PORT;
-		priv->r = &rtl931x_reg;
 		dev->netdev_ops = &rtl931x_eth_netdev_ops;
 		rtl931x_chip_init(priv);
 		break;
@@ -1842,10 +1842,22 @@ static void rtl838x_eth_remove(struct platform_device *pdev)
 }
 
 static const struct of_device_id rtl838x_eth_of_ids[] = {
-	{ .compatible = "realtek,rtl8380-eth" },
-	{ .compatible = "realtek,rtl8392-eth" },
-	{ .compatible = "realtek,rtl9301-eth" },
-	{ .compatible = "realtek,rtl9311-eth" },
+	{
+		.compatible = "realtek,rtl8380-eth",
+		.data = &rtl838x_reg,
+	},
+	{
+		.compatible = "realtek,rtl8392-eth",
+		.data = &rtl839x_reg,
+	},
+	{
+		.compatible = "realtek,rtl9301-eth",
+		.data = &rtl930x_reg,
+	},
+	{
+		.compatible = "realtek,rtl9311-eth",
+		.data = &rtl931x_reg,
+	},
 	{ /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, rtl838x_eth_of_ids);
