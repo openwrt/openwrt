@@ -436,6 +436,7 @@ struct p_hdr;
 struct dsa_tag;
 
 struct rtl838x_eth_reg {
+	int family_id;
 	irqreturn_t (*net_irq)(int irq, void *dev_id);
 	int (*mac_port_ctrl)(int port);
 	int dma_if_intr_sts;

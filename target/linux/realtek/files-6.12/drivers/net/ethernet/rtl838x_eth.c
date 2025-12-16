@@ -448,6 +448,7 @@ static irqreturn_t rtl93xx_net_irq(int irq, void *dev_id)
 }
 
 static const struct rtl838x_eth_reg rtl838x_reg = {
+	.family_id = RTL8380_FAMILY_ID,
 	.net_irq = rtl83xx_net_irq,
 	.mac_port_ctrl = rtl838x_mac_port_ctrl,
 	.dma_if_intr_sts = RTL838X_DMA_IF_INTR_STS,
@@ -473,6 +474,7 @@ static const struct rtl838x_eth_reg rtl838x_reg = {
 };
 
 static const struct rtl838x_eth_reg rtl839x_reg = {
+	.family_id = RTL8390_FAMILY_ID,
 	.net_irq = rtl83xx_net_irq,
 	.mac_port_ctrl = rtl839x_mac_port_ctrl,
 	.dma_if_intr_sts = RTL839X_DMA_IF_INTR_STS,
@@ -498,6 +500,7 @@ static const struct rtl838x_eth_reg rtl839x_reg = {
 };
 
 static const struct rtl838x_eth_reg rtl930x_reg = {
+	.family_id = RTL9300_FAMILY_ID,
 	.net_irq = rtl93xx_net_irq,
 	.mac_port_ctrl = rtl930x_mac_port_ctrl,
 	.dma_if_intr_rx_runout_sts = RTL930X_DMA_IF_INTR_RX_RUNOUT_STS,
@@ -529,6 +532,7 @@ static const struct rtl838x_eth_reg rtl930x_reg = {
 };
 
 static const struct rtl838x_eth_reg rtl931x_reg = {
+	.family_id = RTL9310_FAMILY_ID,
 	.net_irq = rtl93xx_net_irq,
 	.mac_port_ctrl = rtl931x_mac_port_ctrl,
 	.dma_if_intr_rx_runout_sts = RTL931X_DMA_IF_INTR_RX_RUNOUT_STS,
