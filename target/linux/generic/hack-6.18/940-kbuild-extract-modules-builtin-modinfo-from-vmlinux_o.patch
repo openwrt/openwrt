@@ -1,0 +1,11 @@
+--- a/scripts/Makefile.vmlinux
++++ b/scripts/Makefile.vmlinux
+@@ -118,7 +118,7 @@ quiet_cmd_modules_builtin_modinfo = GEN
+ OBJCOPYFLAGS_modules.builtin.modinfo := -j .modinfo -O binary
+ 
+ targets += modules.builtin.modinfo
+-modules.builtin.modinfo: vmlinux.unstripped FORCE
++modules.builtin.modinfo: vmlinux.o FORCE
+ 	$(call if_changed,modules_builtin_modinfo)
+ 
+ # modules.builtin
