@@ -193,7 +193,6 @@ struct rtl838x_eth_priv {
 	struct phylink *phylink;
 	struct phylink_config phylink_config;
 	struct phylink_pcs pcs;
-	u16 id;
 	const struct rtl838x_eth_reg *r;
 	u8 cpu_port;
 	u32 lastEvent;
@@ -1464,12 +1463,8 @@ static int rtl8380_init_mac(struct rtl838x_eth_priv *priv)
 	sw_w32(0x5001417, RTL838X_EEE_TX_TIMER_GELITE_CTRL);
 
 	/* Init VLAN. TODO: Understand what is being done, here */
-	if (priv->id == 0x8382) {
+	if (priv->r->family_id == RTL8380_FAMILY_ID) {
 		for (int i = 0; i <= 28; i++)
-			sw_w32(0, 0xd57c + i * 0x80);
-	}
-	if (priv->id == 0x8380) {
-		for (int i = 8; i <= 28; i++)
 			sw_w32(0, 0xd57c + i * 0x80);
 	}
 
@@ -1701,14 +1696,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	dev->features = NETIF_F_RXCSUM | NETIF_F_HW_CSUM;
 	dev->hw_features = NETIF_F_RXCSUM;
 
-	priv->id = soc_info.id;
-	if (priv->id) {
-		pr_info("Found SoC ID: %4x: %s, family %x\n",
-			priv->id, soc_info.name, priv->r->family_id);
-	} else {
-		pr_err("Unknown chip id (%04x)\n", priv->id);
-		return -ENODEV;
-	}
+	pr_info("Found SoC family %x\n", priv->r->family_id);
 
 	switch (priv->r->family_id) {
 	case RTL8380_FAMILY_ID:

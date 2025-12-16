@@ -469,7 +469,4 @@ struct rtl838x_eth_reg {
 	bool (*decode_tag)(struct p_hdr *h, struct dsa_tag *tag);
 };
 
-/* TODO actually from arch/mips/rtl838x/prom.c */
-extern struct rtl83xx_soc_info soc_info;
-
 #endif /* _RTL838X_ETH_H */
