@@ -142,27 +142,30 @@ static int rtsds_dbg_registers_show(struct seq_file *seqf, void *unused)
 }
 DEFINE_SHOW_ATTRIBUTE(rtsds_dbg_registers);
 
-static int rtsds_debug_init(struct rtsds_ctrl *ctrl, u32 sds)
+static int rtsds_debug_init(struct rtsds_ctrl *ctrl)
 {
 	struct rtsds_debug_info *dbg_info;
 	struct dentry *dir, *root;
 	char dirname[32];
 
-	dbg_info = devm_kzalloc(ctrl->dev, sizeof(*dbg_info), GFP_KERNEL);
-	if (!dbg_info)
-		return -ENOMEM;
-
-	dbg_info->ctrl = ctrl;
-	dbg_info->sds = sds;
-
 	root = debugfs_create_dir(RTSDS_DBG_ROOT_DIR, NULL);
 	if (IS_ERR(root))
 		return PTR_ERR(root);
 
-	snprintf(dirname, sizeof(dirname), "serdes.%d", sds);
-	dir = debugfs_create_dir(dirname, root);
+	for (int sds = 0; sds < ctrl->cfg->sds_cnt; sds++) {
+		dbg_info = devm_kzalloc(ctrl->dev, sizeof(*dbg_info), GFP_KERNEL);
+		if (!dbg_info)
+			return -ENOMEM;
 
-	debugfs_create_file("registers", 0600, dir, dbg_info, &rtsds_dbg_registers_fops);
+		dbg_info->ctrl = ctrl;
+		dbg_info->sds = sds;
+
+		snprintf(dirname, sizeof(dirname), "serdes.%d", sds);
+		dir = debugfs_create_dir(dirname, root);
+
+		debugfs_create_file("registers", 0600, dir, dbg_info,
+				    &rtsds_dbg_registers_fops);
+	}
 
 	return 0;
 }
@@ -461,8 +464,7 @@ static int rtsds_probe(struct platform_device *pdev)
 		return ret;
 
 #ifdef CONFIG_DEBUG_FS
-	for (int sds = 0; sds < ctrl->cfg->sds_cnt; sds++)
-		rtsds_debug_init(ctrl, sds);
+	rtsds_debug_init(ctrl);
 #endif
 
 	dev_info(dev, "Realtek SerDes mdio bus initialized, %d SerDes, %d pages, %d registers\n",
