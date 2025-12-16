@@ -507,6 +507,22 @@ endef
 $(eval $(call KernelPackage,phy-micrel))
 
 
+define KernelPackage/phy-motorcomm
+   SUBMENU:=$(NETWORK_DEVICES_MENU)
+   TITLE:=Motorcomm Ethernet PHY driver
+   KCONFIG:=CONFIG_MOTORCOMM_PHY
+   DEPENDS:=+kmod-libphy
+   FILES:=$(LINUX_DIR)/drivers/net/phy/motorcomm.ko
+   AUTOLOAD:=$(call AutoLoad,18,motorcomm,1)
+endef
+
+define KernelPackage/phy-motorcomm/description
+   Supports the Motorcomm YT85xx/YT88xx PHY.
+endef
+
+$(eval $(call KernelPackage,phy-motorcomm))
+
+
 define KernelPackage/phy-realtek
    SUBMENU:=$(NETWORK_DEVICES_MENU)
    TITLE:=Realtek Ethernet PHY driver
