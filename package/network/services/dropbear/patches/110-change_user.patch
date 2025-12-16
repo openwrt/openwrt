@@ -1,6 +1,6 @@
---- a/src/svr-chansession.c
-+++ b/src/svr-chansession.c
-@@ -984,12 +984,12 @@ static void execchild(const void *user_d
+--- a/src/svr-auth.c
++++ b/src/svr-auth.c
+@@ -510,9 +510,9 @@ void svr_switch_user(void) {
  	/* We can only change uid/gid as root ... */
  	if (getuid() == 0) {
  
@@ -11,6 +11,11 @@
 +						ses.authstate.pw_gid) < 0))) {
  			dropbear_exit("Error changing user group");
  		}
+ 
+@@ -534,7 +534,7 @@ void svr_switch_user(void) {
+ 		}
+ #endif
+ 
 -		if (setuid(ses.authstate.pw_uid) < 0) {
 +		if ((ses.authstate.pw_uid != 0) && (setuid(ses.authstate.pw_uid) < 0)) {
  			dropbear_exit("Error changing user");
