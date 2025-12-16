@@ -528,7 +528,7 @@ static const struct of_device_id rtsds_of_match[] = {
 	},
 	{ /* sentinel */ }
 };
-MODULE_DEVICE_TABLE(of, rtsds_mdio_of_match);
+MODULE_DEVICE_TABLE(of, rtsds_of_match);
 
 static struct platform_driver rtsds_mdio_driver = {
 	.driver = {
