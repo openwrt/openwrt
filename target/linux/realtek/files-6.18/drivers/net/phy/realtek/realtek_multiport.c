@@ -397,13 +397,12 @@ static int rtl8214fc_write_mmd(struct phy_device *phydev, int devnum, u16 regnum
 
 static int rtl8214fc_sfp_insert(void *upstream, const struct sfp_eeprom_id *id)
 {
-	__ETHTOOL_DECLARE_LINK_MODE_MASK(support) = { 0, };
-	DECLARE_PHY_INTERFACE_MASK(interfaces);
 	struct phy_device *phydev = upstream;
+	const struct sfp_module_caps *caps;
 	phy_interface_t iface;
 
-	sfp_parse_support(phydev->sfp_bus, id, support, interfaces);
-	iface = sfp_select_interface(phydev->sfp_bus, support);
+	caps = sfp_get_module_caps(phydev->sfp_bus);
+	iface = sfp_select_interface(phydev->sfp_bus, caps->link_modes);
 
 	phydev_info(phydev, "%s SFP module inserted\n", phy_modes(iface));
 
