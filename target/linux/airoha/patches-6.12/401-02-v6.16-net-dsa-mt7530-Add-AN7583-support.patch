@@ -1,6 +1,6 @@
-From 7e112e51d48db09739dd73c90411fc8a5635747f Mon Sep 17 00:00:00 2001
+From d76556db10bf41cd3ae1ad1d705245afe077a701 Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
-Date: Thu, 22 May 2025 15:13:10 +0200
+Date: Thu, 22 May 2025 18:53:10 +0200
 Subject: [PATCH 2/3] net: dsa: mt7530: Add AN7583 support
 
 Add Airoha AN7583 Switch support. This is based on Airoha EN7581 that is
@@ -10,6 +10,9 @@ Airoha AN7583 require additional tweak to the GEPHY_CONN_CFG register to
 make the internal PHY work.
 
 Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Link: https://patch.msgid.link/20250522165313.6411-3-ansuelsmth@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 ---
  drivers/net/dsa/mt7530-mmio.c |  1 +
  drivers/net/dsa/mt7530.c      | 24 ++++++++++++++++++++++--
