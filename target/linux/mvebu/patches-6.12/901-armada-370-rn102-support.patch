@@ -1,0 +1,53 @@
+Index: linux-6.12.60/arch/arm/boot/dts/marvell/armada-370-netgear-rn102.dts
+===================================================================
+--- linux-6.12.60.orig/arch/arm/boot/dts/marvell/armada-370-netgear-rn102.dts
++++ linux-6.12.60/arch/arm/boot/dts/marvell/armada-370-netgear-rn102.dts
+@@ -15,8 +15,18 @@
+ 	model = "NETGEAR ReadyNAS 102";
+ 	compatible = "netgear,readynas-102", "marvell,armada370", "marvell,armada-370-xp";
+ 
++	aliases {
++		ethernet0 = &eth0;
++		label-mac-device = &eth0;
++		led-boot = &led_power;
++		led-failsafe = &led_power;
++		led-running = &led_power;
++		led-upgrade = &led_power;
++	};
++
+ 	chosen {
+ 		stdout-path = "serial0:115200n8";
++		bootargs = "console=ttyS0,115200";
+ 	};
+ 
+ 	memory@0 {
+@@ -52,6 +62,9 @@
+ 				status = "okay";
+ 				phy = <&phy0>;
+ 				phy-mode = "rgmii-id";
++
++				nvmem-cells = <&ethaddr>;
++				nvmem-cell-names = "mac-address";
+ 			};
+ 
+ 			usb@50000 {
+@@ -100,7 +113,7 @@
+ 			     &backup_led_pin>;
+ 		pinctrl-names = "default";
+ 
+-		blue-power-led {
++		led_power: blue-power-led {
+ 			label = "rn102:blue:pwr";
+ 			gpios = <&gpio1 25 GPIO_ACTIVE_LOW>;
+ 			default-state = "keep";
+@@ -254,6 +267,10 @@
+ 				label = "u-boot-env";
+ 				reg = <0x180000 0x20000>;    /* 128KB */
+ 				read-only;
++
++				nvmem-layout {
++					compatible = "u-boot,env";
++				};
+ 			};
+ 
+ 			partition@200000 {

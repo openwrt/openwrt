@@ -54,6 +54,10 @@ linksys,wrt32x)
 	ucidef_set_led_usbport "usb2" "USB 2" "pca963x:venom:blue:usb3_1" "usb2-port1" "usb3-port1"
 	ucidef_set_led_usbport "usb2_ss" "USB 2 SS" "pca963x:venom:blue:usb3_2" "usb3-port1"
 	;;
+netgear,readynas-102)
+	ucidef_set_led_netdev "activity" "Activity" "rn102:blue:pwr" "eth0"
+	ucidef_set_led_default "backup" "Backup" "rn102:blue:backup" "0"
+	;;
 esac
 
 board_config_flush
