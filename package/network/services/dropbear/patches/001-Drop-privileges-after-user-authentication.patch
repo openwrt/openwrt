@@ -1,0 +1,262 @@
+From 61cfbc66aefcb047534210713f3aac097100e5f5 Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Tue, 9 Dec 2025 15:08:06 +0900
+Subject: Drop privileges after user authentication
+
+Instead of switching user privileges after forking to a shell, switch
+to the user immediately upon successful authentication.
+
+This will require further commits to fix utmp and hostkey handling.
+
+The DROPBEAR_SVR_DROP_PRIVS configuration option controls this
+behaviour.  This should generally be enabled, but can be set to 0 for
+incompatible platforms.  In future it may become non-optional, those
+platforms should be investigated.
+
+Most uses of DROPBEAR_SVR_MULTIUSER have been replaced by
+!DROPBEAR_SVR_DROP_PRIVS.
+
+(cherry picked from commit e0251be2354e1a5c6eccfc2cf4b64243625dafcc)
+---
+ .github/workflows/build.yml |  2 ++
+ src/auth.h                  |  1 +
+ src/default_options.h       |  6 +++++
+ src/svr-agentfwd.c          | 14 ++++++++----
+ src/svr-auth.c              | 45 +++++++++++++++++++++++++++++++++++++
+ src/svr-authpubkey.c        |  6 +++--
+ src/svr-chansession.c       | 26 ++-------------------
+ src/sysoptions.h            |  3 +++
+ 8 files changed, 73 insertions(+), 30 deletions(-)
+
+--- a/.github/workflows/build.yml
++++ b/.github/workflows/build.yml
+@@ -217,6 +217,8 @@ jobs:
+           echo "#define DROPBEAR_SVR_PASSWORD_AUTH 0" >> localoptions.h
+           # 1 second timeout is too short
+           sed -i "s/DEFAULT_IDLE_TIMEOUT 1/DEFAULT_IDLE_TIMEOUT 99/" localoptions.h
++          # DROPBEAR_SVR_DROP_PRIVS is on by default, turn it off
++          echo "#define DROPBEAR_SVR_DROP_PRIVS 0" >> localoptions.h
+ 
+       - name: make
+         run: |
+--- a/src/auth.h
++++ b/src/auth.h
+@@ -40,6 +40,7 @@ void send_msg_userauth_banner(const buff
+ void svr_auth_password(int valid_user);
+ void svr_auth_pubkey(int valid_user);
+ void svr_auth_pam(int valid_user);
++void svr_switch_user(void);
+ 
+ #if DROPBEAR_SVR_PUBKEY_OPTIONS_BUILT
+ int svr_pubkey_allows_agentfwd(void);
+--- a/src/default_options.h
++++ b/src/default_options.h
+@@ -297,6 +297,12 @@ group1 in Dropbear server too */
+ /* -T server option overrides */
+ #define MAX_AUTH_TRIES 10
+ 
++/* Change server process to user privileges after authentication. */
++#ifndef DROPBEAR_SVR_DROP_PRIVS
++/* Default is enabled. Should only be disabled if platforms are incompatible */
++#define DROPBEAR_SVR_DROP_PRIVS DROPBEAR_SVR_MULTIUSER
++#endif
++
+ /* Delay introduced before closing an unauthenticated session (seconds).
+    Disabled by default, can be set to say 30 seconds to reduce the speed
+    of password brute forcing. Note that there is a risk of denial of
+--- a/src/svr-agentfwd.c
++++ b/src/svr-agentfwd.c
+@@ -151,7 +151,7 @@ void svr_agentcleanup(struct ChanSess *
+ 
+ 	if (chansess->agentfile != NULL && chansess->agentdir != NULL) {
+ 
+-#if DROPBEAR_SVR_MULTIUSER
++#if !DROPBEAR_SVR_DROP_PRIVS
+ 		/* Remove the dir as the user. That way they can't cause problems except
+ 		 * for themselves */
+ 		uid = getuid();
+@@ -160,6 +160,9 @@ void svr_agentcleanup(struct ChanSess *
+ 			(seteuid(ses.authstate.pw_uid)) < 0) {
+ 			dropbear_exit("Failed to set euid");
+ 		}
++#else
++		(void)uid;
++		(void)gid;
+ #endif
+ 
+ 		/* 2 for "/" and "\0" */
+@@ -172,7 +175,7 @@ void svr_agentcleanup(struct ChanSess *
+ 
+ 		rmdir(chansess->agentdir);
+ 
+-#if DROPBEAR_SVR_MULTIUSER
++#if !DROPBEAR_SVR_DROP_PRIVS
+ 		if ((seteuid(uid)) < 0 ||
+ 			(setegid(gid)) < 0) {
+ 			dropbear_exit("Failed to revert euid");
+@@ -219,7 +222,7 @@ static int bindagent(int fd, struct Chan
+ 	gid_t gid;
+ 	int ret = DROPBEAR_FAILURE;
+ 
+-#if DROPBEAR_SVR_MULTIUSER
++#if !DROPBEAR_SVR_DROP_PRIVS
+ 	/* drop to user privs to make the dir/file */
+ 	uid = getuid();
+ 	gid = getgid();
+@@ -227,6 +230,9 @@ static int bindagent(int fd, struct Chan
+ 		(seteuid(ses.authstate.pw_uid)) < 0) {
+ 		dropbear_exit("Failed to set euid");
+ 	}
++#else
++		(void)uid;
++		(void)gid;
+ #endif
+ 
+ 	memset((void*)&addr, 0x0, sizeof(addr));
+@@ -267,7 +273,7 @@ bindsocket:
+ 
+ 
+ out:
+-#if DROPBEAR_SVR_MULTIUSER
++#if !DROPBEAR_SVR_DROP_PRIVS
+ 	if ((seteuid(uid)) < 0 ||
+ 		(setegid(gid)) < 0) {
+ 		dropbear_exit("Failed to revert euid");
+--- a/src/svr-auth.c
++++ b/src/svr-auth.c
+@@ -456,12 +456,22 @@ void send_msg_userauth_success() {
+ 	/* authdone must be set after encrypt_packet() for 
+ 	 * delayed-zlib mode */
+ 	ses.authstate.authdone = 1;
++
++#if DROPBEAR_DROP_PRIVS
++	svr_switch_user();
++#endif
+ 	ses.connect_time = 0;
+ 
+ 
++#if DROPBEAR_DROP_PRIVS
++	/* If running as the user, we can rely on the OS
++	 * to limit allowed ports */
++	ses.allowprivport = 1;
++#else
+ 	if (ses.authstate.pw_uid == 0) {
+ 		ses.allowprivport = 1;
+ 	}
++#endif
+ 
+ 	/* Remove from the list of pre-auth sockets. Should be m_close(), since if
+ 	 * we fail, we might end up leaking connection slots, and disallow new
+@@ -471,3 +481,38 @@ void send_msg_userauth_success() {
+ 	TRACE(("leave send_msg_userauth_success"))
+ 
+ }
++
++/* Switch to the ses.authstate user.
++ * Fails if not running as root and the user differs.
++ *
++ * This may be called either after authentication, or 
++ * after shell/command fork if DROPBEAR_SVR_DROP_PRIVS is unset.
++ */
++void svr_switch_user(void) {
++	assert(ses.authstate.authdone);
++
++	/* We can only change uid/gid as root ... */
++	if (getuid() == 0) {
++
++		if ((setgid(ses.authstate.pw_gid) < 0) ||
++			(initgroups(ses.authstate.pw_name, 
++						ses.authstate.pw_gid) < 0)) {
++			dropbear_exit("Error changing user group");
++		}
++		if (setuid(ses.authstate.pw_uid) < 0) {
++			dropbear_exit("Error changing user");
++		}
++	} else {
++		/* ... but if the daemon is the same uid as the requested uid, we don't
++		 * need to */
++
++		/* XXX - there is a minor issue here, in that if there are multiple
++		 * usernames with the same uid, but differing groups, then the
++		 * differing groups won't be set (as with initgroups()). The solution
++		 * is for the sysadmin not to give out the UID twice */
++		if (getuid() != ses.authstate.pw_uid) {
++			dropbear_exit("Couldn't	change user as non-root");
++		}
++	}
++}
++
+--- a/src/svr-authpubkey.c
++++ b/src/svr-authpubkey.c
+@@ -444,12 +444,14 @@ static int checkpubkey(const char* keyal
+ 	buffer * line = NULL;
+ 	unsigned int len;
+ 	int line_num;
++#if !DROPBEAR_SVR_DROP_PRIVS
+ 	uid_t origuid;
+ 	gid_t origgid;
++#endif
+ 
+ 	TRACE(("enter checkpubkey"))
+ 
+-#if DROPBEAR_SVR_MULTIUSER
++#if !DROPBEAR_SVR_DROP_PRIVS
+ 	/* access the file as the authenticating user. */
+ 	origuid = getuid();
+ 	origgid = getgid();
+@@ -476,7 +478,7 @@ static int checkpubkey(const char* keyal
+ 			TRACE(("checkpubkey: failed opening %s: %s", filename, strerror(errno)))
+ 		}
+ 	}
+-#if DROPBEAR_SVR_MULTIUSER
++#if !DROPBEAR_SVR_DROP_PRIVS
+ 	if ((seteuid(origuid)) < 0 ||
+ 		(setegid(origgid)) < 0) {
+ 		dropbear_exit("Failed to revert euid");
+--- a/src/svr-chansession.c
++++ b/src/svr-chansession.c
+@@ -980,30 +980,8 @@ static void execchild(const void *user_d
+ #endif /* DEBUG_VALGRIND */
+ 	}
+ 
+-#if DROPBEAR_SVR_MULTIUSER
+-	/* We can only change uid/gid as root ... */
+-	if (getuid() == 0) {
+-
+-		if ((setgid(ses.authstate.pw_gid) < 0) ||
+-			(initgroups(ses.authstate.pw_name, 
+-						ses.authstate.pw_gid) < 0)) {
+-			dropbear_exit("Error changing user group");
+-		}
+-		if (setuid(ses.authstate.pw_uid) < 0) {
+-			dropbear_exit("Error changing user");
+-		}
+-	} else {
+-		/* ... but if the daemon is the same uid as the requested uid, we don't
+-		 * need to */
+-
+-		/* XXX - there is a minor issue here, in that if there are multiple
+-		 * usernames with the same uid, but differing groups, then the
+-		 * differing groups won't be set (as with initgroups()). The solution
+-		 * is for the sysadmin not to give out the UID twice */
+-		if (getuid() != ses.authstate.pw_uid) {
+-			dropbear_exit("Couldn't	change user as non-root");
+-		}
+-	}
++#if !DROPBEAR_SVR_DROP_PRIVS
++	svr_switch_user();
+ #endif
+ 
+ 	/* set env vars */
+--- a/src/sysoptions.h
++++ b/src/sysoptions.h
+@@ -403,6 +403,9 @@
+ #define DROPBEAR_MULTI 0
+ #endif
+ 
++#if !DROPBEAR_SVR_MULTIUSER && DROPBEAR_SVR_DROP_PRIVS
++#error DROPBEAR_SVR_DROP_PRIVS needs DROPBEAR_SVR_MULTIUSER
++#endif
+ /* Fuzzing expects all key types to be enabled */
+ #if DROPBEAR_FUZZ
+ #if defined(DROPBEAR_DSS)

@@ -1,0 +1,91 @@
+From febe8493782965b05025b016091a8bffa5d03563 Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Tue, 9 Dec 2025 09:04:04 +0900
+Subject: Remove return code from login_login
+
+Previously this was always 0, so not useful.
+
+(cherry picked from commit b47fe5df58f0b459bb49accdd8cb961d969209fb)
+---
+ src/loginrec.c | 19 +++++--------------
+ src/loginrec.h |  6 +++---
+ 2 files changed, 8 insertions(+), 17 deletions(-)
+
+--- a/src/loginrec.c
++++ b/src/loginrec.c
+@@ -193,32 +193,24 @@ int wtmpx_get_entry(struct logininfo *li
+  *
+  * Call with a pointer to a struct logininfo initialised with
+  * login_init_entry() or login_alloc_entry()
+- *
+- * Returns:
+- *  >0 if successful
+- *  0  on failure (will use OpenSSH's logging facilities for diagnostics)
+  */
+-int
++void
+ login_login (struct logininfo *li)
+ {
+ 	li->type = LTYPE_LOGIN;
+-	return login_write(li);
++	login_write(li);
+ }
+ 
+ 
+ /* login_logout(struct logininfo *)     - Record a logout
+  *
+  * Call as with login_login()
+- *
+- * Returns:
+- *  >0 if successful
+- *  0  on failure (will use OpenSSH's logging facilities for diagnostics)
+  */
+-int
++void
+ login_logout(struct logininfo *li)
+ {
+ 	li->type = LTYPE_LOGOUT;
+-	return login_write(li);
++	login_write(li);
+ }
+ 
+ 
+@@ -309,7 +301,7 @@ login_set_current_time(struct logininfo
+  ** login_write: Call low-level recording functions based on autoconf
+  ** results
+  **/
+-int
++void
+ login_write (struct logininfo *li)
+ {
+ #ifndef HAVE_CYGWIN
+@@ -340,7 +332,6 @@ login_write (struct logininfo *li)
+ #ifdef USE_WTMPX
+ 	wtmpx_write_entry(li);
+ #endif
+-	return 0;
+ }
+ 
+ #ifdef LOGIN_NEEDS_UTMPX
+--- a/src/loginrec.h
++++ b/src/loginrec.h
+@@ -161,8 +161,8 @@ int login_init_entry(struct logininfo *l
+ void login_set_current_time(struct logininfo *li);
+ 
+ /* record the entry */
+-int login_login (struct logininfo *li);
+-int login_logout(struct logininfo *li);
++void login_login (struct logininfo *li);
++void login_logout(struct logininfo *li);
+ #ifdef LOGIN_NEEDS_UTMPX
+ int login_utmp_only(struct logininfo *li);
+ #endif
+@@ -170,7 +170,7 @@ int login_utmp_only(struct logininfo *li
+ /** End of public functions */
+ 
+ /* record the entry */
+-int login_write (struct logininfo *li);
++void login_write (struct logininfo *li);
+ int login_log_entry(struct logininfo *li);
+ 
+ /* produce various forms of the line filename */

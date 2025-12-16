@@ -1,0 +1,260 @@
+From b20e7823a0c6a4480aa473e0a46d3ccab4b9b102 Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Tue, 9 Dec 2025 09:05:30 +0900
+Subject: Retain utmp saved group when dropping privileges
+
+utmp is required to record logout. The saved group
+is reset by the OS for the executed user shell.
+
+This requires setresgid() function which is not available on all
+platforms. Notable platforms are netbsd and macos. Those platforms will
+have to set DROPBEAR_SVR_DROP_PRIVS 0 unless an alternative approach is
+found.
+
+(cherry picked from commit 73e4e70ea8e6b890c3918b52bb2e647313a09faa)
+---
+ .github/workflows/build.yml |  6 ++++
+ configure                   |  7 +++++
+ configure.ac                |  1 +
+ src/auth.h                  |  2 ++
+ src/config.h.in             |  3 ++
+ src/loginrec.c              |  6 ----
+ src/session.h               |  6 ++++
+ src/svr-auth.c              | 61 +++++++++++++++++++++++++++++++++++--
+ src/svr-chansession.c       |  8 +++++
+ src/sysoptions.h            |  4 +++
+ 10 files changed, 96 insertions(+), 8 deletions(-)
+
+--- a/.github/workflows/build.yml
++++ b/.github/workflows/build.yml
+@@ -72,6 +72,9 @@ jobs:
+             # fails with:
+             # .../ranlib: file: libtomcrypt.a(cbc_setiv.o) has no symbols
+             ranlib: ranlib -no_warning_for_no_symbols
++            # macos doesn't have setresgid
++            localoptions: |
++              #define DROPBEAR_SVR_DROP_PRIVS 0
+ 
+           - name: macos 15
+             os: macos-15
+@@ -84,6 +87,9 @@ jobs:
+             # fails with:
+             # .../ranlib: file: libtomcrypt.a(cbc_setiv.o) has no symbols
+             ranlib: ranlib -no_warning_for_no_symbols
++            # macos doesn't have setresgid
++            localoptions: |
++              #define DROPBEAR_SVR_DROP_PRIVS 0
+ 
+           # Check that debug code doesn't bitrot
+           - name: DEBUG_TRACE
+--- a/configure
++++ b/configure
+@@ -7597,6 +7597,13 @@ then :
+ 
+ fi
+ 
++ac_fn_c_check_func "$LINENO" "setresgid" "ac_cv_func_setresgid"
++if test "x$ac_cv_func_setresgid" = xyes
++then :
++  printf "%s\n" "#define HAVE_SETRESGID 1" >>confdefs.h
++
++fi
++
+ 
+ # POSIX monotonic time
+ ac_fn_c_check_func "$LINENO" "clock_gettime" "ac_cv_func_clock_gettime"
+--- a/configure.ac
++++ b/configure.ac
+@@ -545,6 +545,7 @@ AC_CHECK_FUNCS(utmpname)
+ AC_CHECK_FUNCS(endutxent getutxent getutxid getutxline pututxline )
+ AC_CHECK_FUNCS(setutxent utmpxname)
+ AC_CHECK_FUNCS(logout updwtmp logwtmp)
++AC_CHECK_FUNCS(setresgid)
+ 
+ # POSIX monotonic time
+ AC_CHECK_FUNCS(clock_gettime)
+--- a/src/auth.h
++++ b/src/auth.h
+@@ -41,6 +41,8 @@ void svr_auth_password(int valid_user);
+ void svr_auth_pubkey(int valid_user);
+ void svr_auth_pam(int valid_user);
+ void svr_switch_user(void);
++void svr_raise_gid_utmp(void);
++void svr_restore_gid(void);
+ 
+ #if DROPBEAR_SVR_PUBKEY_OPTIONS_BUILT
+ int svr_pubkey_allows_agentfwd(void);
+--- a/src/config.h.in
++++ b/src/config.h.in
+@@ -222,6 +222,9 @@
+ /* Define to 1 if you have the <security/pam_appl.h> header file. */
+ #undef HAVE_SECURITY_PAM_APPL_H
+ 
++/* Define to 1 if you have the `setresgid' function. */
++#undef HAVE_SETRESGID
++
+ /* Define to 1 if you have the `setutent' function. */
+ #undef HAVE_SETUTENT
+ 
+--- a/src/loginrec.c
++++ b/src/loginrec.c
+@@ -304,12 +304,6 @@ login_set_current_time(struct logininfo
+ void
+ login_write (struct logininfo *li)
+ {
+-#ifndef HAVE_CYGWIN
+-	if ((int)geteuid() != 0) {
+-	  return 1;
+-	}
+-#endif
+-
+ 	/* set the timestamp */
+ 	login_set_current_time(li);
+ #ifdef USE_LOGIN
+--- a/src/session.h
++++ b/src/session.h
+@@ -271,6 +271,12 @@ struct serversession {
+ 	/* The instance created by the plugin_new function */
+ 	struct PluginInstance *plugin_instance;
+ #endif
++
++#if DROPBEAR_SVR_DROP_PRIVS
++	/* Set to 1 when utmp_gid is valid */
++	int have_utmp_gid;
++	gid_t utmp_gid;
++#endif
+ };
+ 
+ typedef enum {
+--- a/src/svr-auth.c
++++ b/src/svr-auth.c
+@@ -457,13 +457,14 @@ void send_msg_userauth_success() {
+ 	 * delayed-zlib mode */
+ 	ses.authstate.authdone = 1;
+ 
+-#if DROPBEAR_DROP_PRIVS
++#if DROPBEAR_SVR_DROP_PRIVS
++	/* Drop privileges as soon as authentication has happened. */
+ 	svr_switch_user();
+ #endif
+ 	ses.connect_time = 0;
+ 
+ 
+-#if DROPBEAR_DROP_PRIVS
++#if DROPBEAR_SVR_DROP_PRIVS
+ 	/* If running as the user, we can rely on the OS
+ 	 * to limit allowed ports */
+ 	ses.allowprivport = 1;
+@@ -482,6 +483,20 @@ void send_msg_userauth_success() {
+ 
+ }
+ 
++#if DROPBEAR_SVR_DROP_PRIVS
++/* Returns DROPBEAR_SUCCESS or DROPBEAR_FAILURE */
++static int utmp_gid(gid_t *ret_gid) {
++	struct group *utmp_gr = getgrnam("utmp");
++	if (!utmp_gr) {
++		TRACE(("No utmp group"));
++		return DROPBEAR_FAILURE;
++	}
++
++	*ret_gid = utmp_gr->gr_gid;
++	return DROPBEAR_SUCCESS;
++}
++#endif
++
+ /* Switch to the ses.authstate user.
+  * Fails if not running as root and the user differs.
+  *
+@@ -499,6 +514,25 @@ void svr_switch_user(void) {
+ 						ses.authstate.pw_gid) < 0)) {
+ 			dropbear_exit("Error changing user group");
+ 		}
++
++#if DROPBEAR_SVR_DROP_PRIVS
++		/* Retain utmp saved group so that wtmp/utmp can be written */
++		int ret = utmp_gid(&svr_ses.utmp_gid);
++		if (ret == DROPBEAR_SUCCESS) {
++			/* Set saved gid to utmp so that it can be
++			 * restored for login_logout() etc. This saved
++			 * group is cleared by the OS on execve() */
++			int rc = setresgid(-1, -1, svr_ses.utmp_gid);
++			if (rc == 0) {
++				svr_ses.have_utmp_gid = 1;
++			} else {
++				/* Will not attempt to switch to utmp gid.
++				 * login() etc may fail. */
++				TRACE(("utmp setresgid failed"));
++			}
++		}
++#endif
++
+ 		if (setuid(ses.authstate.pw_uid) < 0) {
+ 			dropbear_exit("Error changing user");
+ 		}
+@@ -516,3 +550,26 @@ void svr_switch_user(void) {
+ 	}
+ }
+ 
++void svr_raise_gid_utmp(void) {
++#if DROPBEAR_SVR_DROP_PRIVS
++	if (!svr_ses.have_utmp_gid) {
++		return;
++	}
++
++	if (setegid(svr_ses.utmp_gid) != 0) {
++		dropbear_log(LOG_WARNING, "failed setegid");
++	}
++#endif
++}
++
++void svr_restore_gid(void) {
++#if DROPBEAR_SVR_DROP_PRIVS
++	if (!svr_ses.have_utmp_gid) {
++		return;
++	}
++
++	if (setegid(getgid()) != 0) {
++		dropbear_log(LOG_WARNING, "failed setegid");
++	}
++#endif
++}
+--- a/src/svr-chansession.c
++++ b/src/svr-chansession.c
+@@ -326,7 +326,11 @@ static void cleanupchansess(const struct
+ 	if (chansess->tty) {
+ 		/* write the utmp/wtmp login record */
+ 		li = chansess_login_alloc(chansess);
++
++		svr_raise_gid_utmp();
+ 		login_logout(li);
++		svr_restore_gid();
++
+ 		login_free_entry(li);
+ 
+ 		pty_release(chansess->tty);
+@@ -847,7 +851,11 @@ static int ptycommand(struct Channel *ch
+ 		 * terminal used for stdout with the dup2 above, otherwise
+ 		 * the wtmp login will not be recorded */
+ 		li = chansess_login_alloc(chansess);
++
++		svr_raise_gid_utmp();
+ 		login_login(li);
++		svr_restore_gid();
++
+ 		login_free_entry(li);
+ 
+ 		/* Can now dup2 stderr. Messages from login_login() have gone
+--- a/src/sysoptions.h
++++ b/src/sysoptions.h
+@@ -318,6 +318,10 @@
+ 	#error "At least one hostkey or public-key algorithm must be enabled; RSA is recommended."
+ #endif
+ 
++#if DROPBEAR_SVR_DROP_PRIVS && !defined(HAVE_SETRESGID)
++	#error "DROPBEAR_SVR_DROP_PRIVS requires setresgid()."
++#endif
++
+ /* Source for randomness. This must be able to provide hundreds of bytes per SSH
+  * connection without blocking. */
+ #ifndef DROPBEAR_URANDOM_DEV

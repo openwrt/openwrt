@@ -1,0 +1,41 @@
+From 3e487854fcf09a5ef57a620ebe606f586a6efdc3 Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Fri, 12 Dec 2025 12:31:40 +0900
+Subject: Restore seteuid for authorized_keys
+
+Authorized_keys reading is pre-authentication so should not be
+modified in the post-auth drop-privilege change.
+
+Fixes: e0251be2354e ("Drop privileges after user authentication")
+(cherry picked from commit d193731630a62482855b450daa1d5a5e13a90125)
+---
+ src/svr-authpubkey.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+--- a/src/svr-authpubkey.c
++++ b/src/svr-authpubkey.c
+@@ -444,14 +444,12 @@ static int checkpubkey(const char* keyal
+ 	buffer * line = NULL;
+ 	unsigned int len;
+ 	int line_num;
+-#if !DROPBEAR_SVR_DROP_PRIVS
+ 	uid_t origuid;
+ 	gid_t origgid;
+-#endif
+ 
+ 	TRACE(("enter checkpubkey"))
+ 
+-#if !DROPBEAR_SVR_DROP_PRIVS
++#if DROPBEAR_SVR_MULTIUSER
+ 	/* access the file as the authenticating user. */
+ 	origuid = getuid();
+ 	origgid = getgid();
+@@ -478,7 +476,7 @@ static int checkpubkey(const char* keyal
+ 			TRACE(("checkpubkey: failed opening %s: %s", filename, strerror(errno)))
+ 		}
+ 	}
+-#if !DROPBEAR_SVR_DROP_PRIVS
++#if DROPBEAR_SVR_MULTIUSER
+ 	if ((seteuid(origuid)) < 0 ||
+ 		(setegid(origgid)) < 0) {
+ 		dropbear_exit("Failed to revert euid");

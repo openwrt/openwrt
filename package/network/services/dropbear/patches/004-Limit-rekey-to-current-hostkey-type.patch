@@ -1,0 +1,64 @@
+From ae7f99902161237542f2c71089ff68b8f694006b Mon Sep 17 00:00:00 2001
+From: Matt Johnston <matt@ucc.asn.au>
+Date: Tue, 9 Dec 2025 09:08:37 +0900
+Subject: Limit rekey to current hostkey type
+
+During rekey dropbear process may be running with user privileges, that
+can't write a new hostkey when auto-generating keys.
+Only offer the original hostkey when rekeying, also for non-autogenerate
+case.
+
+(cherry picked from commit a4043dac4e0e0237255200603672ddb0122017a4)
+---
+ src/runopts.h     |  1 +
+ src/svr-kex.c     |  8 ++++++++
+ src/svr-runopts.c | 11 +++++++++++
+ 3 files changed, 20 insertions(+)
+
+--- a/src/runopts.h
++++ b/src/runopts.h
+@@ -66,6 +66,7 @@ extern runopts opts;
+ int readhostkey(const char * filename, sign_key * hostkey,
+ 	enum signkey_type *type);
+ void load_all_hostkeys(void);
++void disable_sig_except(enum signature_type sig_type);
+ 
+ typedef struct svr_runopts {
+ 
+--- a/src/svr-kex.c
++++ b/src/svr-kex.c
+@@ -96,6 +96,14 @@ void recv_msg_kexdh_init() {
+ 	}
+ #endif
+ 
++	if (!ses.kexstate.donesecondkex) {
++		/* Disable other signature types.
++		 * During future rekeying, privileges may have been dropped
++		 * so other keys won't be loadable.
++		 * This must occur after send_msg_ext_info() which uses the hostkey list */
++		disable_sig_except(ses.newkeys->algo_signature);
++	}
++
+ 	ses.requirenext = SSH_MSG_NEWKEYS;
+ 	TRACE(("leave recv_msg_kexdh_init"))
+ }
+--- a/src/svr-runopts.c
++++ b/src/svr-runopts.c
+@@ -502,6 +502,17 @@ static void disablekey(enum signature_ty
+ 	}
+ }
+ 
++void disable_sig_except(enum signature_type allow_type) {
++	int i;
++	TRACE(("Disabling other sigs except %d", allow_type));
++	for (i = 0; sigalgs[i].name != NULL; i++) {
++		enum signature_type sig_type = sigalgs[i].val;
++		if (sig_type != allow_type) {
++			sigalgs[i].usable = 0;
++		}
++	}
++}
++
+ static void loadhostkey_helper(const char *name, void** src, void** dst, int fatal_duplicate) {
+ 	if (*dst) {
+ 		if (fatal_duplicate) {
