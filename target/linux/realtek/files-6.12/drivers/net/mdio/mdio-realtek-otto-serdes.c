@@ -52,7 +52,7 @@ struct rtsds_config {
 	int sds_cnt;
 	int page_cnt;
 	int base;
-	int (*get_backing_sds)(struct rtsds_ctrl *ctrl, int sds, int page);
+	int (*get_backing_sds)(int sds, int page);
 	int (*read)(struct rtsds_ctrl *ctrl, int sds, int page, int regnum);
 	int (*write)(struct rtsds_ctrl *ctrl, int sds, int page, int regnum, u16 value);
 };
@@ -120,7 +120,7 @@ static int rtsds_dbg_registers_show(struct seq_file *seqf, void *unused)
 	do {
 		subpage = RTSDS_SUBPAGE(page);
 		if (!subpage) {
-			seq_printf(seqf, "Back SDS %02d:", ctrl->cfg->get_backing_sds(ctrl, sds, page));
+			seq_printf(seqf, "Back SDS %02d:", ctrl->cfg->get_backing_sds(sds, page));
 			for (regnum = 0; regnum < RTSDS_REG_CNT; regnum++)
 				seq_printf(seqf, "   %02X", regnum);
 			seq_puts(seqf, "\n");
@@ -148,16 +148,16 @@ static int rtsds_debug_init(struct rtsds_ctrl *ctrl, u32 sds)
 	struct dentry *dir, *root;
 	char dirname[32];
 
-	dbg_info = kzalloc(sizeof(*dbg_info), GFP_KERNEL);
+	dbg_info = devm_kzalloc(ctrl->dev, sizeof(*dbg_info), GFP_KERNEL);
 	if (!dbg_info)
 		return -ENOMEM;
 
 	dbg_info->ctrl = ctrl;
 	dbg_info->sds = sds;
 
-	root = debugfs_lookup(RTSDS_DBG_ROOT_DIR, NULL);
-	if (!root)
-		root = debugfs_create_dir(RTSDS_DBG_ROOT_DIR, NULL);
+	root = debugfs_create_dir(RTSDS_DBG_ROOT_DIR, NULL);
+	if (IS_ERR(root))
+		return PTR_ERR(root);
 
 	snprintf(dirname, sizeof(dirname), "serdes.%d", sds);
 	dir = debugfs_create_dir(dirname, root);
@@ -285,7 +285,7 @@ static int rtsds_839x_write(struct rtsds_ctrl *ctrl, int sds, int page, int regn
 	return regmap_write(ctrl->map, ctrl->cfg->base + offset, write_value);
 }
 
-static int rtsds_83xx_get_backing_sds(struct rtsds_ctrl *ctrl, int sds, int page)
+static int rtsds_83xx_get_backing_sds(int sds, int page)
 {
 	return sds;
 }
@@ -321,7 +321,7 @@ static int rtsds_rt93xx_io(struct rtsds_ctrl *ctrl, int sds, int page, int regnu
  * - SerDes 2-9 are USXGMII capabable with either quad or single configuration
  * - SerDes 10-11 are 10GBase-R capable
  */
-static int rtsds_930x_get_backing_sds(struct rtsds_ctrl *ctrl, int sds, int page)
+static int rtsds_930x_get_backing_sds(int sds, int page)
 {
 	if (sds == 3 && page < 4)
 		return 10;
@@ -360,7 +360,7 @@ static int rtsds_930x_get_backing_sds(struct rtsds_ctrl *ctrl, int sds, int page
  * page 0x40-0x7f (digi 1):	page 0x00-0x3f back SDS		page 0x00-0x3f back SDS+1
  * page 0x80-0xbf (digi 2):	page 0x00-0x3f back SDS+1	page 0x00-0x3f back SDS+2
  */
-static int rtsds_931x_get_backing_sds(struct rtsds_ctrl *ctrl, int sds, int page)
+static int rtsds_931x_get_backing_sds(int sds, int page)
 {
 	int map[] = { 0, 1, 2, 3, 6, 7, 10, 11, 14, 15, 18, 19, 22, 23 };
 	int backsds;
@@ -383,7 +383,7 @@ static int rtsds_93xx_read(struct rtsds_ctrl *ctrl, int sds, int page, int regnu
 	int subpage = RTSDS_SUBPAGE(page);
 	int ret, backsds, value;
 
-	backsds = ctrl->cfg->get_backing_sds(ctrl, sds, page);
+	backsds = ctrl->cfg->get_backing_sds(sds, page);
 	ret = rtsds_rt93xx_io(ctrl, backsds, subpage, regnum, RTSDS_93XX_CMD_READ);
 	if (ret)
 		return ret;
@@ -398,7 +398,7 @@ static int rtsds_93xx_write(struct rtsds_ctrl *ctrl, int sds, int page, int regn
 	int subpage = RTSDS_SUBPAGE(page);
 	int ret, backsds;
 
-	backsds = ctrl->cfg->get_backing_sds(ctrl, sds, page);
+	backsds = ctrl->cfg->get_backing_sds(sds, page);
 	ret = regmap_write(ctrl->map, ctrl->cfg->base + 4, value);
 	if (ret)
 		return ret;
