@@ -49,6 +49,9 @@ mvebu_setup_interfaces()
 	marvell,axp-gp)
 		ucidef_set_interface_lan "eth0 eth1 eth2 eth3"
 		;;
+	netgear,readynas-102)
+		ucidef_set_interface_lan "eth0" "dhcp"
+		;;
 	solidrun,clearfog-base-a1)
 		# eth0 is standalone ethernet
 		# eth1 is standalone ethernet
@@ -95,6 +98,12 @@ mvebu_setup_macs()
 		label_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 		lan_mac=$label_mac
 		wan_mac=$label_mac
+		;;
+	netgear,readynas-102)
+		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
+		if [ -z "$lan_mac" ]; then
+		lan_mac=$(mtd_get_mac_ascii u-boot-env eth1addr)
+		fi
 		;;
 	wd,cloud-mirror-gen2)
 		# mac address is on ubi "config" or ubi "reserve2" in text file.

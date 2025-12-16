@@ -398,6 +398,19 @@ define Device/marvell_axp-gp
 endef
 TARGET_DEVICES += marvell_axp-gp
 
+define Device/netgear_rn102
+  $(Device/NAND-128K)
+  DEVICE_VENDOR := Netgear
+  DEVICE_MODEL := ReadyNAS 102
+  DEVICE_DTS := armada-370-netgear-rn102
+  KERNEL := kernel-bin | append-dtb | uImage none
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  SUPPORTED_DEVICES := netgear,readynas-102
+  DEVICE_PACKAGES := kmod-usb3 kmod-r8169 uboot-envtools kmod-ata-ahci block-mount
+endef
+TARGET_DEVICES += netgear_rn102
+
 define Device/plathome_openblocks-ax3-4
   DEVICE_VENDOR := Plat'Home
   DEVICE_MODEL := OpenBlocks AX3

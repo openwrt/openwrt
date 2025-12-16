@@ -1,0 +1,38 @@
+[33mcommit a8e15494e38b74b04b93e603c70174be29416bfd[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfresh-start[m[33m)[m
+Author: Rylee Dunn <ryleedunn111@gmail.com>
+Date:   Tue Dec 16 14:33:27 2025 -0500
+
+    mvebu: add support for Netgear ReadyNAS 102
+    
+    The Netgear ReadyNAS 102 is a 2-bay NAS based on the Marvell
+    Armada 370 SoC.
+    
+    Specification:
+    - SoC: Marvell Armada 370 (88F6707) @ 1.2 GHz
+    - RAM: 512 MB DDR3
+    - Flash: 128 MB NAND (Samsung K9F1G08U0D)
+    - Storage: 2x SATA 3.0 (Marvell 88SE9170 via PCIe)
+    - Network: 1x Gigabit Ethernet (Marvell NETA)
+    - USB: 2x USB 3.0 (Rear), 1x USB 2.0 (Front)
+    
+    Installation:
+    1. Connect via Serial Console (115200 8N1).
+    2. Interrupt U-Boot and TFTP boot the initramfs image.
+    3. Use sysupgrade to install the squashfs-sysupgrade.bin image.
+    
+    Verified working:
+    - Booting (Kernel 6.12)
+    - Ethernet (with correct MAC address from u-boot-env)
+    - SATA Ports (both bays detected via AHCI)
+    - USB 3.0 Ports
+    - LEDs and Buttons
+    - Sysupgrade (NAND/UBI preservation)
+    
+    Signed-off-by: Rylee Dunn <ryleedunn111@gmail.com>
+
+ target/linux/mvebu/cortexa9/base-files/etc/board.d/01_leds                  |  4 [32m++++[m
+ target/linux/mvebu/cortexa9/base-files/etc/board.d/02_network               |  9 [32m+++++++++[m
+ target/linux/mvebu/cortexa9/base-files/lib/upgrade/platform.sh              |  5 [32m+++++[m
+ target/linux/mvebu/image/cortexa9.mk                                        | 14 [32m++++++++++++++[m
+ target/linux/mvebu/patches-6.12/901-armada-370-rn102-fix-ubi-bootargs.patch | 10 [32m++++++++++[m
+ 5 files changed, 42 insertions(+)
