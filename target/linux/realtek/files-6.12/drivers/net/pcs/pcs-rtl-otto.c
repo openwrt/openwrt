@@ -134,7 +134,7 @@ struct rtpcs_ctrl;
 struct rtpcs_serdes {
 	struct rtpcs_ctrl *ctrl;
 	u8 id;
-	enum rtpcs_sds_mode mode;
+	enum rtpcs_sds_mode hw_mode;
 
 	bool rx_pol_inv;
 	bool tx_pol_inv;
