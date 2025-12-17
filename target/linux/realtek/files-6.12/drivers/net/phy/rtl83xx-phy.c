@@ -53,13 +53,51 @@ extern struct rtl83xx_soc_info soc_info;
 #define RTL821X_MEDIA_PAGE_FIBRE	3
 #define RTL821X_MEDIA_PAGE_INTERNAL	8
 
+#define RTL821X_JOIN_FIRST		0
+#define RTL821X_JOIN_LAST		1
+#define RTL821X_JOIN_OTHER		2
+
 static const struct firmware rtl838x_8380_fw;
 static const struct firmware rtl838x_8214fc_fw;
 static const struct firmware rtl838x_8218b_fw;
 
+struct rtl821x_shared_priv {
+	int base_addr;
+	int ports;
+};
+
+/* TODO: for kernel 6.18 drop this function and use it from phy_package library instead */
+static void *phy_package_get_priv(struct phy_device *phydev)
+{
+	return phydev->shared->priv;
+}
+
+static int rtl821x_package_join(struct phy_device *phydev, int ports)
+{
+	struct rtl821x_shared_priv *shared_priv;
+	int base_addr = phydev->mdio.addr & ~(ports - 1);
+
+	devm_phy_package_join(&phydev->mdio.dev, phydev, base_addr,
+			      sizeof(struct rtl821x_shared_priv));
+
+	shared_priv = phy_package_get_priv(phydev);
+	shared_priv->base_addr = base_addr;
+	shared_priv->ports++;
+
+	if (shared_priv->ports == 1)
+		return RTL821X_JOIN_FIRST;
+
+	if (shared_priv->ports == ports)
+		return RTL821X_JOIN_LAST;
+
+	return RTL821X_JOIN_OTHER;
+}
+
 static inline struct phy_device *get_package_phy(struct phy_device *phydev, int port)
 {
-	return mdiobus_get_phy(phydev->mdio.bus, phydev->shared->base_addr + port);
+	struct rtl821x_shared_priv *shared_priv = phy_package_get_priv(phydev);
+
+	return mdiobus_get_phy(phydev->mdio.bus, shared_priv->base_addr + port);
 }
 
 static inline struct phy_device *get_base_phy(struct phy_device *phydev)
@@ -839,11 +877,9 @@ static const struct sfp_upstream_ops rtl8214fc_sfp_ops = {
 
 static int rtl8214fc_phy_probe(struct phy_device *phydev)
 {
-	int base_addr = phydev->mdio.addr & ~3;
 	int ret = 0;
 
-	devm_phy_package_join(&phydev->mdio.dev, phydev, base_addr, 0);
-	if (phydev->mdio.addr == base_addr + 3) {
+	if (rtl821x_package_join(phydev, 4) == RTL821X_JOIN_LAST) {
 		if (soc_info.family == RTL8380_FAMILY_ID)
 			ret = rtl8380_configure_rtl8214fc(get_base_phy(phydev));
 		if (ret)
@@ -855,10 +891,7 @@ static int rtl8214fc_phy_probe(struct phy_device *phydev)
 
 static int rtl8214c_phy_probe(struct phy_device *phydev)
 {
-	int base_addr = phydev->mdio.addr & ~3;
-
-	devm_phy_package_join(&phydev->mdio.dev, phydev, base_addr, 0);
-	if (phydev->mdio.addr == base_addr + 3)
+	if (rtl821x_package_join(phydev, 4) == RTL821X_JOIN_LAST)
 		return rtl8380_configure_rtl8214c(get_base_phy(phydev));
 
 	return 0;
@@ -866,10 +899,7 @@ static int rtl8214c_phy_probe(struct phy_device *phydev)
 
 static int rtl8218b_ext_phy_probe(struct phy_device *phydev)
 {
-	int base_addr = phydev->mdio.addr & ~7;
-
-	devm_phy_package_join(&phydev->mdio.dev, phydev, base_addr, 0);
-	if (phydev->mdio.addr == base_addr + 7) {
+	if (rtl821x_package_join(phydev, 8) == RTL821X_JOIN_LAST) {
 		if (soc_info.family == RTL8380_FAMILY_ID)
 			return rtl8380_configure_ext_rtl8218b(get_base_phy(phydev));
 	}
@@ -879,15 +909,12 @@ static int rtl8218b_ext_phy_probe(struct phy_device *phydev)
 
 static int rtl8218b_int_phy_probe(struct phy_device *phydev)
 {
-	int base_addr = phydev->mdio.addr & ~7;
-
 	if (soc_info.family != RTL8380_FAMILY_ID)
 		return -ENODEV;
-	if (base_addr >= 24)
+	if (phydev->mdio.addr >= 24)
 		return -ENODEV;
 
-	devm_phy_package_join(&phydev->mdio.dev, phydev, base_addr, 0);
-	if (phydev->mdio.addr == base_addr + 7)
+	if (rtl821x_package_join(phydev, 8) == RTL821X_JOIN_LAST)
 		return rtl8380_configure_int_rtl8218b(get_base_phy(phydev));
 
 	return 0;
@@ -895,9 +922,7 @@ static int rtl8218b_int_phy_probe(struct phy_device *phydev)
 
 static int rtl8218x_phy_probe(struct phy_device *phydev)
 {
-	int base_addr = phydev->mdio.addr & ~7;
-
-	devm_phy_package_join(&phydev->mdio.dev, phydev, base_addr, 0);
+	rtl821x_package_join(phydev, 8);
 
 	return 0;
 }
