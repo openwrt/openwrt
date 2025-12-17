@@ -12,6 +12,8 @@ DEVICE_VARS += EDIMAX_HEADER_MAGIC EDIMAX_HEADER_MODEL
 DEVICE_VARS += ELECOM_HWID
 DEVICE_VARS += MOXA_MAGIC MOXA_HWID
 DEVICE_VARS += OPENMESH_CE_TYPE ZYXEL_MODEL_STRING
+DEVICE_VARS += SERCOMM_COMPANY_CODE SERCOMM_FUNCTION_CODE
+DEVICE_VARS += SERCOMM_HWID SERCOMM_HWREV SERCOMM_KERNEL_SPLIT
 DEVICE_VARS += SUPPORTED_TELTONIKA_DEVICES
 DEVICE_VARS += SUPPORTED_TELTONIKA_HW_MODS
 
@@ -2025,6 +2027,60 @@ define Device/librerouter_librerouter-v1
   DEVICE_PACKAGES := kmod-usb2
 endef
 TARGET_DEVICES += librerouter_librerouter-v1
+
+define Device/linksys_lapac_common
+  $(Device/loader-okli-uimage)
+  DEVICE_VENDOR := Linksys
+  DEVICE_PACKAGES := -uboot-envtools -swconfig \
+	kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  IMAGE_SIZE := 7100k
+  LOADER_FLASH_OFFS := 0x60000
+  SERCOMM_HWID := 415546955810
+  SERCOMM_HWREV := 1
+  SERCOMM_COMPANY_CODE := 0
+  SERCOMM_KERNEL_SPLIT := 0x12ff00
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49
+  IMAGES += factory.bin
+  IMAGE/default := append-loader-okli-uimage $(1) | pad-to 65280 | \
+	append-kernel | pad-offset $$$$(BLOCKSIZE) 256 | append-rootfs
+  IMAGE/factory.bin := $$(IMAGE/default) | \
+	sercomm-factory-wrap --header-offset=0x10000
+  IMAGE/sysupgrade.bin := $$(IMAGE/default) | \
+	sercomm-factory-wrap --no-pid --header-offset=0x50000 | append-metadata
+  SUPPORTED_DEVICES += linksys,lapac1200
+endef
+
+define Device/linksys_lapac1200
+  $(Device/linksys_lapac_common)
+  SOC := qca9557
+  DEVICE_MODEL := LAPAC1200
+  SERCOMM_FUNCTION_CODE := 7
+endef
+TARGET_DEVICES += linksys_lapac1200
+
+define Device/linksys_lapac1750
+  $(Device/linksys_lapac_common)
+  SOC := qca9558
+  DEVICE_MODEL := LAPAC1750
+  SERCOMM_FUNCTION_CODE := 7
+endef
+TARGET_DEVICES += linksys_lapac1750
+
+define Device/linksys_lapac1200c
+  $(Device/linksys_lapac_common)
+  SOC := qca9557
+  DEVICE_MODEL := LAPAC1200C
+  SERCOMM_FUNCTION_CODE := 8
+endef
+TARGET_DEVICES += linksys_lapac1200c
+
+define Device/linksys_lapac1750c
+  $(Device/linksys_lapac_common)
+  SOC := qca9558
+  DEVICE_MODEL := LAPAC1750C
+  SERCOMM_FUNCTION_CODE := 8
+endef
+TARGET_DEVICES += linksys_lapac1750c
 
 define Device/longdata_aps256
   SOC := ar9344
