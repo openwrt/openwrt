@@ -39,12 +39,6 @@
 			default-state = "on";
 		};
 
-		wan_blue {
-			function = LED_FUNCTION_WAN;
-			color = <LED_COLOR_ID_BLUE>;
-			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
-		};
-
 		wan_red {
 			function = LED_FUNCTION_WAN;
 			color = <LED_COLOR_ID_RED>;
@@ -180,4 +174,9 @@
 
 	nvmem-cells = <&macaddr_config_8 0>, <&cal_art_1000>;
 	nvmem-cell-names = "mac-address", "calibration";
+
+	led {
+		led-sources = <14>;
+		led-active-low;
+	};
 };

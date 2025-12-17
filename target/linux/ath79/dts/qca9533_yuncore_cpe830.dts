@@ -38,13 +38,6 @@
 			default-state = "on";
 		};
 
-		wlan {
-			function = LED_FUNCTION_WLAN;
-			color = <LED_COLOR_ID_GREEN>;
-			gpios = <&gpio 12 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "phy0tpt";
-		};
-
 		link1 {
 			label = "green:signal0";
 			color = <LED_COLOR_ID_GREEN>;
@@ -150,4 +143,8 @@
 	status = "okay";
 	nvmem-cells = <&cal_art_1000>;
 	nvmem-cell-names = "calibration";
+
+	led {
+		led-sources = <12>;
+	};
 };
