@@ -297,6 +297,11 @@ kuwfi,c910)
 	ucidef_set_led_switch "lan1" "LAN1" "white:lan1" "switch0" "0x10"
 	ucidef_set_led_switch "lan2" "LAN2" "white:lan2" "switch0" "0x02"
 	;;
+linksys,lapac1750)
+	ucidef_set_led_netdev "lan" "LAN" "green:lan" "eth0"
+	ucidef_set_led_wlan "wlan2g" "WLAN2G" "blue:wlan2g" "phy1tpt"
+	ucidef_set_led_wlan "wlan5g" "WLAN5G" "red:wlan5g" "phy0tpt"
+	;;
 longdata,aps256)
 	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "eth1"
 	ucidef_set_led_switch "lan1" "LAN1" "blue:lan-1" "switch0" "0x04"
