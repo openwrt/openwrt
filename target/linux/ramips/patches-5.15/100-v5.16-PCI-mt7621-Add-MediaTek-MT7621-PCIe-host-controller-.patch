@@ -60,7 +60,7 @@ Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  obj-y				+= mobiveil/
 --- a/drivers/staging/Kconfig
 +++ b/drivers/staging/Kconfig
-@@ -86,8 +86,6 @@ source "drivers/staging/vc04_services/Kc
+@@ -84,8 +84,6 @@ source "drivers/staging/vc04_services/Kc
  
  source "drivers/staging/pi433/Kconfig"
  
@@ -71,7 +71,7 @@ Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  source "drivers/staging/ralink-gdma/Kconfig"
 --- a/drivers/staging/Makefile
 +++ b/drivers/staging/Makefile
-@@ -33,7 +33,6 @@ obj-$(CONFIG_KS7010)		+= ks7010/
+@@ -32,7 +32,6 @@ obj-$(CONFIG_KS7010)		+= ks7010/
  obj-$(CONFIG_GREYBUS)		+= greybus/
  obj-$(CONFIG_BCM2835_VCHIQ)	+= vc04_services/
  obj-$(CONFIG_PI433)		+= pi433/

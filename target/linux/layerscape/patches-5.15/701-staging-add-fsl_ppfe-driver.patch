@@ -871,7 +871,7 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
  L:	linux-spi@vger.kernel.org
 --- a/drivers/staging/Kconfig
 +++ b/drivers/staging/Kconfig
-@@ -102,4 +102,6 @@ source "drivers/staging/qlge/Kconfig"
+@@ -100,4 +100,6 @@ source "drivers/staging/qlge/Kconfig"
  
  source "drivers/staging/wfx/Kconfig"
  
@@ -880,7 +880,7 @@ Signed-off-by: Pawel Dembicki <paweldembicki@gmail.com>
  endif # STAGING
 --- a/drivers/staging/Makefile
 +++ b/drivers/staging/Makefile
-@@ -41,3 +41,4 @@ obj-$(CONFIG_XIL_AXIS_FIFO)	+= axis-fifo
+@@ -40,3 +40,4 @@ obj-$(CONFIG_XIL_AXIS_FIFO)	+= axis-fifo
  obj-$(CONFIG_FIELDBUS_DEV)     += fieldbus/
  obj-$(CONFIG_QLGE)		+= qlge/
  obj-$(CONFIG_WFX)		+= wfx/

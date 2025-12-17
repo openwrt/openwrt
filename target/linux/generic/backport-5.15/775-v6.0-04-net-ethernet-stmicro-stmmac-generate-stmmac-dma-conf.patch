@@ -1157,5 +1157,5 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 -	stmmac_clear_descriptors(priv);
 +	stmmac_clear_descriptors(priv, &priv->dma_conf);
  
- 	stmmac_hw_setup(ndev, false);
- 	stmmac_init_coalesce(priv);
+ 	ret = stmmac_hw_setup(ndev, false);
+ 	if (ret < 0) {
