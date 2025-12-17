@@ -76,6 +76,33 @@ config OPENSSL_WITH_ERROR_MESSAGES
 
 comment "Protocol Support"
 
+config OPENSSL_WITH_SSL3
+	bool
+	default n
+	prompt "Enable support for SSLv3"
+	help
+		SSLv3 has been deprecated. This option aims to provide
+		support for earlier versions of the standard for compatibility.
+		You should enable this option only if you need it.
+
+config OPENSSL_WITH_TLS10
+	bool
+	default n
+	prompt "Enable support for TLS 1"
+	help
+		TLS v1 (1.0) has been deprecated. This option aims to provide
+		support for earlier versions of the standard for compatibility.
+		You should enable this option only if you need it.
+
+config OPENSSL_WITH_TLS11
+	bool
+	default n
+	prompt "Enable support for TLS 1.1"
+	help
+		TLS v1.1 has been deprecated. This option aims to provide
+		support for earlier versions of the standard for compatibility.
+		You should enable this option only if you need it.
+
 config OPENSSL_WITH_TLS13
 	bool
 	default y
