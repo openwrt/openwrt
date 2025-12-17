@@ -365,7 +365,9 @@ function iface_roaming(config) {
 
 	set_default(config, 'mobility_domain', substr(md5(config.ssid), 0, 4));
 	set_default(config, 'ft_psk_generate_local', config.auth_type == 'psk');
+	set_default(config, 'ft_over_ds', 0);
 	set_default(config, 'ft_iface', config.network_ifname);
+	set_default(config, 'reassociation_deadline', 20000);
 
 	if (!config.ft_psk_generate_local) {
 		if (!config.r0kh || !config.r1kh) {
