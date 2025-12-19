@@ -1139,7 +1139,7 @@ define Device/cudy_tr3000-v1-ubootmod
   IMAGE/sysupgrade.itb := append-kernel | \
 	fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | append-metadata
   ARTIFACTS := preloader.bin bl31-uboot.fip
-  ARTIFACT/preloader.bin := mt7981-bl2 cudy-tr3000-v1
+  ARTIFACT/preloader.bin := mt7981-bl2 cudy-ddr3
   ARTIFACT/bl31-uboot.fip := mt7981-bl31-uboot cudy_tr3000-v1
 endef
 TARGET_DEVICES += cudy_tr3000-v1-ubootmod
