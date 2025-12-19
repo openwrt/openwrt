@@ -55,8 +55,8 @@
 +MODULE_DEVICE_TABLE(of, ltq_adsl_match);
 +
 +static struct platform_driver ltq_adsl_driver = {
-+	.probe = ltq_adsl_probe,
-+	.remove_new = ltq_adsl_remove,
++	.probe  = ltq_adsl_probe,
++	.remove = ltq_adsl_remove,
 +	.driver = {
 +		.name = "adsl",
 +		.of_match_table = ltq_adsl_match,

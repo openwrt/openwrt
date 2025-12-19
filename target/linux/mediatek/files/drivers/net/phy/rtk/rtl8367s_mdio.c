@@ -281,8 +281,8 @@ static void rtk_gsw_remove(struct platform_device *pdev)
 }
 
 static struct platform_driver gsw_driver = {
-	.probe = rtk_gsw_probe,
-	.remove_new = rtk_gsw_remove,
+	.probe  = rtk_gsw_probe,
+	.remove = rtk_gsw_remove,
 	.driver = {
 		.name = "rtk-gsw",
 		.of_match_table = rtk_gsw_match,

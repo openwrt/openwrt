@@ -1884,8 +1884,8 @@ static void ltq_atm_remove(struct platform_device *pdev)
 }
 
 static struct platform_driver ltq_atm_driver = {
-	.probe = ltq_atm_probe,
-	.remove_new = ltq_atm_remove,
+	.probe  = ltq_atm_probe,
+	.remove = ltq_atm_remove,
 	.driver = {
 		.name = "atm",
 		.of_match_table = ltq_atm_match,

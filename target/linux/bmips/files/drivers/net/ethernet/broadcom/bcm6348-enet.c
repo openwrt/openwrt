@@ -1704,7 +1704,7 @@ static struct platform_driver bcm6348_emac_driver = {
 		.of_match_table = bcm6348_emac_of_match,
 	},
 	.probe	= bcm6348_emac_probe,
-	.remove_new	= bcm6348_emac_remove,
+	.remove	= bcm6348_emac_remove,
 };
 
 int bcm6348_iudma_drivers_register(struct platform_device *pdev)
