@@ -1470,8 +1470,8 @@ static const struct of_device_id ar934x_nfc_match[] = {
 MODULE_DEVICE_TABLE(of, ar934x_nfc_match);
 
 static struct platform_driver ar934x_nfc_driver = {
-	.probe		= ar934x_nfc_probe,
-	.remove_new	= ar934x_nfc_remove,
+	.probe	= ar934x_nfc_probe,
+	.remove	= ar934x_nfc_remove,
 	.driver = {
 		.name	= AR934X_NFC_DRIVER_NAME,
 		.of_match_table = ar934x_nfc_match,

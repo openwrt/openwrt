@@ -351,7 +351,7 @@ MODULE_DEVICE_TABLE(of, rb91x_nand_match);
 
 static struct platform_driver rb91x_nand_driver = {
 	.probe	= rb91x_nand_probe,
-	.remove_new	= rb91x_nand_remove,
+	.remove	= rb91x_nand_remove,
 	.driver	= {
 		.name	= "rb91x-nand",
 		.of_match_table = rb91x_nand_match,

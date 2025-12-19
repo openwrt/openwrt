@@ -1136,7 +1136,7 @@ static struct platform_driver bcm6368_enetsw_driver = {
 		.of_match_table = bcm6368_enetsw_of_match,
 	},
 	.probe	= bcm6368_enetsw_probe,
-	.remove_new	= bcm6368_enetsw_remove,
+	.remove	= bcm6368_enetsw_remove,
 };
 module_platform_driver(bcm6368_enetsw_driver);
 
