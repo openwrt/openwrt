@@ -356,7 +356,7 @@
 			reg = <0x0 0x1fbe3400 0x0 0xff>;
 		};
 
-		scuclk: system-controller@1fa20000 {
+		scuclk: system-controller@1fb00000 {
 			compatible = "airoha,an7583-scu", "syscon";
 			reg = <0x0 0x1fb00000 0x0 0x970>;
 
@@ -422,7 +422,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			status = "disable";
+			status = "disabled";
 		};
 
 		i2c1: i2c1@1fbf8100 {
@@ -436,7 +436,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			status = "disable";
+			status = "disabled";
 		};
 
 		mmc0: mmc@1fa0e000 {
