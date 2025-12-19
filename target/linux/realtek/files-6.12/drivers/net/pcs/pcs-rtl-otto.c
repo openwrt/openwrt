@@ -278,6 +278,43 @@ static struct rtpcs_link *rtpcs_phylink_pcs_to_link(struct phylink_pcs *pcs)
 	return container_of(pcs, struct rtpcs_link, pcs);
 }
 
+__maybe_unused
+static int rtpcs_sds_determine_hw_mode(struct rtpcs_serdes *sds,
+                                       phy_interface_t if_mode,
+                                       enum rtpcs_sds_mode *hw_mode)
+{
+	switch (if_mode) {
+	case PHY_INTERFACE_MODE_NA:
+		*hw_mode = RTPCS_SDS_MODE_OFF;
+		break;
+	case PHY_INTERFACE_MODE_1000BASEX:
+		*hw_mode = RTPCS_SDS_MODE_1000BASEX;
+		break;
+	case PHY_INTERFACE_MODE_2500BASEX:
+		*hw_mode = RTPCS_SDS_MODE_2500BASEX;
+		break;
+	case PHY_INTERFACE_MODE_10GBASER:
+		*hw_mode = RTPCS_SDS_MODE_10GBASER;
+		break;
+	case PHY_INTERFACE_MODE_SGMII:
+		*hw_mode = RTPCS_SDS_MODE_SGMII;
+		break;
+	case PHY_INTERFACE_MODE_QSGMII:
+		*hw_mode = RTPCS_SDS_MODE_QSGMII;
+		break;
+	case PHY_INTERFACE_MODE_USXGMII:
+		/* TODO: set this depending on number of links on SerDes */
+		*hw_mode = RTPCS_SDS_MODE_USXGMII_10GSXGMII;
+		break;
+	default:
+		return -ENOTSUPP;
+	}
+
+	/* TODO: check if the particular SerDes supports the mode */
+
+	return 0;
+}
+
 /* Variant-specific functions */
 
 /* RTL838X */
