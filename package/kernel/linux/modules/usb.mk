@@ -154,6 +154,24 @@ endef
 
 $(eval $(call KernelPackage,usb-gadget-hid))
 
+define KernelPackage/usb-gadget-fs
+  TITLE:=USB FunctionFS Gadget Support
+  KCONFIG:=CONFIG_USB_FUNCTIONFS \
+    CONFIG_USB_FUNCTIONFS_ETH=n \
+    CONFIG_USB_FUNCTIONFS_RNDIS=n
+  FILES:= \
+	  $(LINUX_DIR)/drivers/usb/gadget/legacy/g_ffs.ko \
+	  $(LINUX_DIR)/drivers/usb/gadget/function/usb_f_fs.ko
+  AUTOLOAD:=$(call AutoLoad,52,usb_f_fs)
+  $(call AddDepends/usbgadget,+kmod-usb-lib-composite +kmod-dma-buf)
+endef
+
+define KernelPackage/usb-gadget-fs/description
+  Kernel support for USB FunctionFS Gadget.
+endef
+
+$(eval $(call KernelPackage,usb-gadget-fs))
+
 define KernelPackage/usb-gadget-ehci-debug
   TITLE:=USB EHCI debug port Gadget support
   KCONFIG:=\
