@@ -2410,7 +2410,7 @@ MODULE_DEVICE_TABLE(of, mt7620_sdhci_match);
 
 static struct platform_driver mt_msdc_driver = {
 	.probe   = msdc_drv_probe,
-	.remove_new  = msdc_drv_remove,
+	.remove  = msdc_drv_remove,
 #ifdef CONFIG_PM
 	.suspend = msdc_drv_suspend,
 	.resume  = msdc_drv_resume,
