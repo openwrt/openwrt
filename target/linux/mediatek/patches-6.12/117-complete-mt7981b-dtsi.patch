@@ -304,7 +304,7 @@ working:
  		};
  
  		efuse@11f20000 {
-@@ -211,17 +387,300 @@
+@@ -211,17 +387,301 @@
  			reg = <0 0x11f20000 0 0x1000>;
  			#address-cells = <1>;
  			#size-cells = <1>;
@@ -395,6 +395,7 @@ working:
 +			mediatek,sgmiisys = <&sgmiisys0>, <&sgmiisys1>;
 +			mediatek,infracfg = <&topmisc>;
 +			mediatek,wed = <&wed>;
++			mediatek,wed-pcie = <&wed_pcie>;
 +			status = "disabled";
 +
 +			mdio_bus: mdio-bus {
@@ -510,7 +511,7 @@ working:
 +		};
 +
 +		wed_pcie: wed_pcie@10003000 {
-+			compatible = "mediatek,wed_pcie";
++			compatible = "mediatek,wed_pcie", "syscon";
 +			reg = <0 0x10003000 0 0x10>;
 +		};
 +
@@ -607,7 +608,7 @@ working:
  			reg = <0 0x18000000 0 0x1000000>,
  			      <0 0x10003000 0 0x1000>,
  			      <0 0x11d10000 0 0x1000>;
-@@ -234,6 +693,67 @@
+@@ -234,6 +694,67 @@
  			clock-names = "mcu", "ap2conn";
  			resets = <&watchdog MT7986_TOPRGU_CONSYS_SW_RST>;
  			reset-names = "consys";
@@ -675,7 +676,7 @@ working:
  		};
  	};
  
-@@ -245,4 +765,8 @@
+@@ -245,4 +766,8 @@
  			     <GIC_PPI 11 IRQ_TYPE_LEVEL_LOW>,
  			     <GIC_PPI 10 IRQ_TYPE_LEVEL_LOW>;
  	};
