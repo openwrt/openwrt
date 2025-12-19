@@ -280,6 +280,23 @@ endef
 $(eval $(call KernelPackage,fb-tft-ili9486))
 
 
+define KernelPackage/cec-core
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=CEC framework
+  HIDDEN:=1
+  KCONFIG:=CONFIG_CEC_CORE
+  DEPENDS:=@LINUX_6_18
+  FILES:=$(LINUX_DIR)/drivers/media/cec/core/cec.ko
+  AUTOLOAD:=$(call AutoProbe,cec)
+endef
+
+define KernelPackage/cec-core/description
+  CEC framework.
+endef
+
+$(eval $(call KernelPackage,cec-core))
+
+
 define KernelPackage/drm
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Direct Rendering Manager (DRM) support
@@ -315,10 +332,11 @@ endef
 
 $(eval $(call KernelPackage,drm-buddy))
 
+
 define KernelPackage/drm-display-helper
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=DRM helpers for display adapters drivers
-  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm-kms-helper
+  DEPENDS:=@DISPLAY_SUPPORT +kmod-drm-kms-helper +LINUX_6_18:kmod-cec-core
   HIDDEN:=1
   KCONFIG:=CONFIG_DRM_DISPLAY_HELPER
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/display/drm_display_helper.ko
@@ -438,7 +456,8 @@ define KernelPackage/drm-ttm-helper
   TITLE:=Helpers for ttm-based gem objects
   HIDDEN:=1
   DEPENDS:=@DISPLAY_SUPPORT +kmod-drm-ttm +kmod-drm-kms-helper
-  KCONFIG:=CONFIG_DRM_TTM_HELPER
+  KCONFIG:=CONFIG_DRM_TTM_HELPER \
+	   CONFIG_DRM_DISPLAY_HELPER_CEC=n
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/drm_ttm_helper.ko
   AUTOLOAD:=$(call AutoProbe,drm_ttm_helper)
 endef
@@ -503,7 +522,7 @@ define KernelPackage/drm-amdgpu
   DEPENDS:=@TARGET_x86||TARGET_loongarch64 @DISPLAY_SUPPORT +kmod-backlight +kmod-drm-ttm \
 	+kmod-drm-ttm-helper +kmod-drm-kms-helper +kmod-i2c-algo-bit +amdgpu-firmware \
 	+kmod-drm-display-helper +kmod-drm-buddy +kmod-acpi-video \
-	+kmod-drm-exec +kmod-drm-suballoc-helper
+	+kmod-drm-exec +kmod-drm-suballoc-helper +kmod-drm +kmod-drm-panel-backlight-quirks
   KCONFIG:=CONFIG_DRM_AMDGPU \
 	CONFIG_DRM_AMDGPU_SI=y \
 	CONFIG_DRM_AMDGPU_CIK=y \
@@ -680,6 +699,23 @@ endef
 $(eval $(call KernelPackage,drm-panel-mipi-dbi))
 
 
+define KernelPackage/drm-panel-backlight-quirks
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Panel backlight quirks
+  HIDDEN:=1
+  KCONFIG:=CONFIG_DRM_PANEL_BACKLIGHT_QUIRKS
+  DEPENDS:=+kmod-backlight
+  FILES:=$(LINUX_DIR)/drivers/gpu/drm/drm_panel_backlight_quirks.ko
+  AUTOLOAD:=$(call AutoProbe,panel-backlight-quirks)
+endef
+
+define KernelPackage/drm-panel-backlight-quirks/description
+  Panel backlight quirks
+endef
+
+$(eval $(call KernelPackage,drm-panel-backlight-quirks))
+
+
 define KernelPackage/drm-panel-simple
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Simple (non-eDP) TFT panels
@@ -724,7 +760,7 @@ define KernelPackage/drm-radeon
   DEPENDS:=@TARGET_x86 @DISPLAY_SUPPORT +kmod-backlight +kmod-drm-kms-helper \
 	+kmod-drm-ttm +kmod-drm-ttm-helper +kmod-i2c-algo-bit +radeon-firmware \
 	+kmod-drm-display-helper +kmod-acpi-video +kmod-drm-suballoc-helper \
-	+kmod-fb-io-fops
+	+kmod-fb-io-fops +kmod-drm-exec
   KCONFIG:=CONFIG_DRM_RADEON
   FILES:=$(LINUX_DIR)/drivers/gpu/drm/radeon/radeon.ko
   AUTOLOAD:=$(call AutoProbe,radeon)
