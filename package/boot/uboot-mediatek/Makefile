@@ -311,7 +311,7 @@ define U-Boot/mt7981_cudy_tr3000-v1
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=cudy-tr3000-v1
   BL2_SOC:=mt7981
-  DEPENDS:=+trusted-firmware-a-mt7981-cudy-tr3000-v1
+  DEPENDS:=+trusted-firmware-a-mt7981-cudy-ddr3
 endef
 
 define U-Boot/mt7981_glinet_gl-mt2500
