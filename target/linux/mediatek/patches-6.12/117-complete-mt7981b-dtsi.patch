@@ -304,7 +304,7 @@ working:
  		};
  
  		efuse@11f20000 {
-@@ -211,17 +387,296 @@
+@@ -211,17 +387,300 @@
  			reg = <0 0x11f20000 0 0x1000>;
  			#address-cells = <1>;
  			#size-cells = <1>;
@@ -564,6 +564,10 @@ working:
 +				clock-names = "ref";
 +				#phy-cells = <1>;
 +				mediatek,syscon-type = <&topmisc 0x218 0>;
++				nvmem-cells = <&comb_intr_p0>,
++					      <&comb_rx_imp_p0>,
++					      <&comb_tx_imp_p0>;
++				nvmem-cell-names = "intr", "rx_imp", "tx_imp";
 +				status = "okay";
 +			};
 +		};
@@ -603,7 +607,7 @@ working:
  			reg = <0 0x18000000 0 0x1000000>,
  			      <0 0x10003000 0 0x1000>,
  			      <0 0x11d10000 0 0x1000>;
-@@ -234,6 +689,67 @@
+@@ -234,6 +693,67 @@
  			clock-names = "mcu", "ap2conn";
  			resets = <&watchdog MT7986_TOPRGU_CONSYS_SW_RST>;
  			reset-names = "consys";
@@ -671,7 +675,7 @@ working:
  		};
  	};
  
-@@ -245,4 +761,8 @@
+@@ -245,4 +765,8 @@
  			     <GIC_PPI 11 IRQ_TYPE_LEVEL_LOW>,
  			     <GIC_PPI 10 IRQ_TYPE_LEVEL_LOW>;
  	};
