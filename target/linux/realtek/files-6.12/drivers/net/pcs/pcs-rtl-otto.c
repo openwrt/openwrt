@@ -2305,41 +2305,6 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 
 /* RTL931X */
 
-static int rtpcs_931x_sds_power(struct rtpcs_serdes *sds, bool power_on)
-{
-	u32 en_val = power_on ? 0 : BIT(sds->id);
-
-	return regmap_write_bits(sds->ctrl->map,
-				 RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR,
-				 BIT(sds->id), en_val);
-}
-
-static void rtpcs_931x_sds_reset(struct rtpcs_serdes *sds)
-{
-	struct rtpcs_ctrl *ctrl = sds->ctrl;
-	u32 sds_id = sds->id;
-	u32 v, o_mode;
-	int shift = ((sds_id & 0x3) << 3);
-
-	/* TODO: We need to lock this! */
-
-	rtpcs_931x_sds_power(sds, false);
-
-	regmap_read(ctrl->map, RTL931X_SERDES_MODE_CTRL + 4 * (sds_id >> 2), &o_mode);
-	v = BIT(7) | 0x1F;
-	regmap_write_bits(ctrl->map, RTL931X_SERDES_MODE_CTRL + 4 * (sds_id >> 2),
-			  0xff << shift, v << shift);
-	regmap_write(ctrl->map, RTL931X_SERDES_MODE_CTRL + 4 * (sds_id >> 2), o_mode);
-
-	rtpcs_931x_sds_power(sds, true);
-}
-
-static void rtpcs_931x_sds_disable(struct rtpcs_serdes *sds)
-{
-	regmap_write(sds->ctrl->map,
-		     RTL931X_SERDES_MODE_CTRL + (sds->id >> 2) * 4, 0x9f);
-}
-
 __maybe_unused
 static int rtpcs_931x_sds_fiber_get_symerr(struct rtpcs_serdes *sds,
 					   phy_interface_t mode)
@@ -2403,12 +2368,48 @@ static void rtpcs_931x_sds_clear_symerr(struct rtpcs_serdes *sds,
 	}
 }
 
-__always_unused
-static void rtpcs_931x_sds_fiber_disable(struct rtpcs_serdes *sds)
+static int rtpcs_931x_sds_power(struct rtpcs_serdes *sds, bool power_on)
 {
-	u32 v = 0x3F;
+	u32 en_val = power_on ? 0 : BIT(sds->id);
 
-	rtpcs_sds_write_bits(sds, 0x1F, 0x9, 11, 6, v);
+	return regmap_write_bits(sds->ctrl->map,
+				 RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR,
+				 BIT(sds->id), en_val);
+}
+
+static void rtpcs_931x_sds_mii_mode_set(struct rtpcs_serdes *sds,
+					phy_interface_t mode)
+{
+	u32 val;
+
+	switch (mode) {
+	case PHY_INTERFACE_MODE_QSGMII:
+		val = 0x6;
+		break;
+	case PHY_INTERFACE_MODE_XGMII:
+		val = 0x10; /* serdes mode XSGMII */
+		break;
+	case PHY_INTERFACE_MODE_USXGMII:
+	case PHY_INTERFACE_MODE_2500BASEX:
+		val = 0xD;
+		break;
+	case PHY_INTERFACE_MODE_SGMII:
+		val = 0x2;
+		break;
+	default:
+		return;
+	}
+
+	val |= (1 << 7);
+
+	regmap_write(sds->ctrl->map,
+		     RTL931X_SERDES_MODE_CTRL + 4 * (sds->id >> 2), val);
+}
+
+static void rtpcs_931x_sds_disable(struct rtpcs_serdes *sds)
+{
+	regmap_write(sds->ctrl->map,
+		     RTL931X_SERDES_MODE_CTRL + (sds->id >> 2) * 4, 0x9f);
 }
 
 static void rtpcs_931x_sds_fiber_mode_set(struct rtpcs_serdes *sds,
@@ -2435,9 +2436,9 @@ static void rtpcs_931x_sds_fiber_mode_set(struct rtpcs_serdes *sds,
 	case PHY_INTERFACE_MODE_10GKR:
 		val = 0x35;
 		break;
-/*	case MII_10GR1000BX_AUTO:
-		val = 0x39;
-		break; */
+/*      case MII_10GR1000BX_AUTO:
+                val = 0x39;
+                break; */
 
 	case PHY_INTERFACE_MODE_USXGMII:
 		val = 0x1B;
@@ -2448,6 +2449,52 @@ static void rtpcs_931x_sds_fiber_mode_set(struct rtpcs_serdes *sds,
 
 	pr_info("%s writing analog SerDes Mode value %02x\n", __func__, val);
 	rtpcs_sds_write_bits(sds, 0x1F, 0x9, 11, 6, val);
+}
+
+static void rtpcs_931x_sds_reset(struct rtpcs_serdes *sds)
+{
+	struct rtpcs_ctrl *ctrl = sds->ctrl;
+	u32 sds_id = sds->id;
+	u32 v, o_mode;
+	int shift = ((sds_id & 0x3) << 3);
+
+	/* TODO: We need to lock this! */
+
+	rtpcs_931x_sds_power(sds, false);
+
+	regmap_read(ctrl->map, RTL931X_SERDES_MODE_CTRL + 4 * (sds_id >> 2), &o_mode);
+	v = BIT(7) | 0x1F;
+	regmap_write_bits(ctrl->map, RTL931X_SERDES_MODE_CTRL + 4 * (sds_id >> 2),
+			  0xff << shift, v << shift);
+	regmap_write(ctrl->map, RTL931X_SERDES_MODE_CTRL + 4 * (sds_id >> 2), o_mode);
+
+	rtpcs_931x_sds_power(sds, true);
+}
+
+static void rtpcs_931x_sds_rx_reset(struct rtpcs_serdes *sds)
+{
+	if (sds->id < 2)
+		return;
+
+	rtpcs_sds_write(sds, 0x2e, 0x12, 0x2740);
+	rtpcs_sds_write(sds, 0x2f, 0x0, 0x0);
+	rtpcs_sds_write(sds, 0x2f, 0x2, 0x2010);
+	rtpcs_sds_write(sds, 0x20, 0x0, 0xc10);
+
+	rtpcs_sds_write(sds, 0x2e, 0x12, 0x27c0);
+	rtpcs_sds_write(sds, 0x2f, 0x0, 0xc000);
+	rtpcs_sds_write(sds, 0x2f, 0x2, 0x6010);
+	rtpcs_sds_write(sds, 0x20, 0x0, 0xc30);
+
+	mdelay(50);
+}
+
+__always_unused
+static void rtpcs_931x_sds_fiber_disable(struct rtpcs_serdes *sds)
+{
+	u32 v = 0x3F;
+
+	rtpcs_sds_write_bits(sds, 0x1F, 0x9, 11, 6, v);
 }
 
 static int rtpcs_931x_sds_cmu_page_get(phy_interface_t mode)
@@ -2557,53 +2604,6 @@ static void rtpcs_931x_sds_cmu_type_set(struct rtpcs_serdes *sds,
 	}
 
 	pr_info("%s CMU page 0x28 0x7 %08x\n", __func__, rtpcs_sds_read(sds, 0x28, 0x7));
-}
-
-static void rtpcs_931x_sds_rx_reset(struct rtpcs_serdes *sds)
-{
-	if (sds->id < 2)
-		return;
-
-	rtpcs_sds_write(sds, 0x2e, 0x12, 0x2740);
-	rtpcs_sds_write(sds, 0x2f, 0x0, 0x0);
-	rtpcs_sds_write(sds, 0x2f, 0x2, 0x2010);
-	rtpcs_sds_write(sds, 0x20, 0x0, 0xc10);
-
-	rtpcs_sds_write(sds, 0x2e, 0x12, 0x27c0);
-	rtpcs_sds_write(sds, 0x2f, 0x0, 0xc000);
-	rtpcs_sds_write(sds, 0x2f, 0x2, 0x6010);
-	rtpcs_sds_write(sds, 0x20, 0x0, 0xc30);
-
-	mdelay(50);
-}
-
-static void rtpcs_931x_sds_mii_mode_set(struct rtpcs_serdes *sds,
-					phy_interface_t mode)
-{
-	u32 val;
-
-	switch (mode) {
-	case PHY_INTERFACE_MODE_QSGMII:
-		val = 0x6;
-		break;
-	case PHY_INTERFACE_MODE_XGMII:
-		val = 0x10; /* serdes mode XSGMII */
-		break;
-	case PHY_INTERFACE_MODE_USXGMII:
-	case PHY_INTERFACE_MODE_2500BASEX:
-		val = 0xD;
-		break;
-	case PHY_INTERFACE_MODE_SGMII:
-		val = 0x2;
-		break;
-	default:
-		return;
-	}
-
-	val |= (1 << 7);
-
-	regmap_write(sds->ctrl->map,
-		     RTL931X_SERDES_MODE_CTRL + 4 * (sds->id >> 2), val);
 }
 
 static int rtpcs_931x_sds_cmu_band_set(struct rtpcs_serdes *sds,
