@@ -2307,15 +2307,15 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 
 __maybe_unused
 static int rtpcs_931x_sds_fiber_get_symerr(struct rtpcs_serdes *sds,
-					   phy_interface_t mode)
+					   enum rtpcs_sds_mode hw_mode)
 {
 	int symerr, val, val2;
 
-	switch (mode) {
-	case PHY_INTERFACE_MODE_10GBASER:
+	switch (hw_mode) {
+	case RTPCS_SDS_MODE_10GBASER:
 		symerr = rtpcs_sds_read_bits(sds, 0x5, 0x1, 7, 0);
 		break;
-	case PHY_INTERFACE_MODE_1000BASEX:
+	case RTPCS_SDS_MODE_1000BASEX:
 		rtpcs_sds_write_bits(sds, 0x41, 0x18, 2, 0, 0x0);
 
 		val = rtpcs_sds_read_bits(sds, 0x41, 0x3, 15, 8);
@@ -2330,12 +2330,12 @@ static int rtpcs_931x_sds_fiber_get_symerr(struct rtpcs_serdes *sds,
 }
 
 static void rtpcs_931x_sds_clear_symerr(struct rtpcs_serdes *sds,
-					phy_interface_t mode)
+					enum rtpcs_sds_mode hw_mode)
 {
-	switch (mode) {
-	case PHY_INTERFACE_MODE_SGMII:
-	case PHY_INTERFACE_MODE_HISGMII:
-	case PHY_INTERFACE_MODE_XGMII:
+	switch (hw_mode) {
+	case RTPCS_SDS_MODE_SGMII:
+	case RTPCS_SDS_MODE_HISGMII:
+	case RTPCS_SDS_MODE_XSGMII:
 		for (int i = 0; i < 4; ++i) {
 			rtpcs_sds_write_bits(sds, 0x41, 0x18, 2, 0, i);
 			rtpcs_sds_write_bits(sds, 0x41, 0x3, 15, 8, 0x0);
@@ -2353,16 +2353,16 @@ static void rtpcs_931x_sds_clear_symerr(struct rtpcs_serdes *sds,
 		rtpcs_sds_write_bits(sds, 0x81, 0x0, 15, 0, 0x0);
 		rtpcs_sds_write_bits(sds, 0x81, 0x1, 15, 8, 0x0);
 		break;
-	case PHY_INTERFACE_MODE_1000BASEX:
+	case RTPCS_SDS_MODE_1000BASEX:
 		rtpcs_sds_write_bits(sds, 0x41, 0x18, 2, 0, 0x0);
 		rtpcs_sds_write_bits(sds, 0x41, 0x3, 15, 8, 0x0);
 		rtpcs_sds_write_bits(sds, 0x41, 0x2, 15, 0, 0x0);
 		break;
-	case PHY_INTERFACE_MODE_10GBASER:
+	case RTPCS_SDS_MODE_10GBASER:
 		/* to be verified: clear on read? */
 		rtpcs_sds_read_bits(sds, 0x5, 0x1, 7, 0);
 		break;
-	case PHY_INTERFACE_MODE_NA:
+	case RTPCS_SDS_MODE_OFF:
 	default:
 		break;
 	}
@@ -2378,26 +2378,30 @@ static int rtpcs_931x_sds_power(struct rtpcs_serdes *sds, bool power_on)
 }
 
 static void rtpcs_931x_sds_mii_mode_set(struct rtpcs_serdes *sds,
-					phy_interface_t mode)
+					enum rtpcs_sds_mode hw_mode)
 {
 	u32 val;
 	int shift = ((sds->id & 0x3) << 3);
 
-	switch (mode) {
-	case PHY_INTERFACE_MODE_NA:
+	switch (hw_mode) {
+	case RTPCS_SDS_MODE_OFF:
 		val = 0x1f;
 		break;
-	case PHY_INTERFACE_MODE_QSGMII:
+	case RTPCS_SDS_MODE_QSGMII:
 		val = 0x6;
 		break;
-	case PHY_INTERFACE_MODE_XGMII:
-		val = 0x10; /* serdes mode XSGMII */
+	case RTPCS_SDS_MODE_XSGMII:
+		val = 0x10;
 		break;
-	case PHY_INTERFACE_MODE_USXGMII:
-	case PHY_INTERFACE_MODE_2500BASEX:
+	case RTPCS_SDS_MODE_USXGMII_10GSXGMII:
+	case RTPCS_SDS_MODE_USXGMII_10GDXGMII:
+	case RTPCS_SDS_MODE_USXGMII_10GQXGMII:
+	case RTPCS_SDS_MODE_USXGMII_5GSXGMII:
+	case RTPCS_SDS_MODE_USXGMII_5GDXGMII:
+	case RTPCS_SDS_MODE_USXGMII_2_5GSXGMII:
 		val = 0xD;
 		break;
-	case PHY_INTERFACE_MODE_SGMII:
+	case RTPCS_SDS_MODE_SGMII:
 		val = 0x2;
 		break;
 	default:
@@ -2411,33 +2415,37 @@ static void rtpcs_931x_sds_mii_mode_set(struct rtpcs_serdes *sds,
 }
 
 static void rtpcs_931x_sds_fiber_mode_set(struct rtpcs_serdes *sds,
-					  phy_interface_t mode)
+					  enum rtpcs_sds_mode hw_mode)
 {
 	u32 val;
 
 	/* clear symbol error count before changing mode */
-	rtpcs_931x_sds_clear_symerr(sds, mode);
-	rtpcs_931x_sds_mii_mode_set(sds, PHY_INTERFACE_MODE_NA);
+	rtpcs_931x_sds_clear_symerr(sds, hw_mode);
+	rtpcs_931x_sds_mii_mode_set(sds, RTPCS_SDS_MODE_OFF);
 
-	switch (mode) {
-	case PHY_INTERFACE_MODE_SGMII:
+	switch (hw_mode) {
+	case RTPCS_SDS_MODE_SGMII:
 		val = 0x5;
 		break;
 
-	case PHY_INTERFACE_MODE_1000BASEX:
+	case RTPCS_SDS_MODE_1000BASEX:
 		/* serdes mode FIBER1G */
 		val = 0x9;
 		break;
 
-	case PHY_INTERFACE_MODE_10GBASER:
-	case PHY_INTERFACE_MODE_10GKR:
+	case RTPCS_SDS_MODE_10GBASER:
 		val = 0x35;
 		break;
 /*      case MII_10GR1000BX_AUTO:
                 val = 0x39;
                 break; */
 
-	case PHY_INTERFACE_MODE_USXGMII:
+	case RTPCS_SDS_MODE_USXGMII_10GSXGMII:
+	case RTPCS_SDS_MODE_USXGMII_10GDXGMII:
+	case RTPCS_SDS_MODE_USXGMII_10GQXGMII:
+	case RTPCS_SDS_MODE_USXGMII_5GSXGMII:
+	case RTPCS_SDS_MODE_USXGMII_5GDXGMII:
+	case RTPCS_SDS_MODE_USXGMII_2_5GSXGMII:
 		val = 0x1B;
 		break;
 	default:
@@ -2935,9 +2943,9 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 	    mode == PHY_INTERFACE_MODE_SGMII ||
 	    mode == PHY_INTERFACE_MODE_USXGMII) {
 		if (mode == PHY_INTERFACE_MODE_XGMII)
-			rtpcs_931x_sds_mii_mode_set(sds, mode);
+			rtpcs_931x_sds_mii_mode_set(sds, hw_mode);
 		else
-			rtpcs_931x_sds_fiber_mode_set(sds, mode);
+			rtpcs_931x_sds_fiber_mode_set(sds, hw_mode);
 	}
 	sds->hw_mode = hw_mode;
 
