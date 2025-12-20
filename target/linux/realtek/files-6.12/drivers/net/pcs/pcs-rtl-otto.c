@@ -2424,6 +2424,10 @@ static void rtpcs_931x_sds_fiber_mode_set(struct rtpcs_serdes *sds,
 	rtpcs_931x_sds_mii_mode_set(sds, RTPCS_SDS_MODE_OFF);
 
 	switch (hw_mode) {
+	case RTPCS_SDS_MODE_OFF:
+		val = 0x3f;
+		break;
+
 	case RTPCS_SDS_MODE_SGMII:
 		val = 0x5;
 		break;
@@ -2492,14 +2496,6 @@ static void rtpcs_931x_sds_rx_reset(struct rtpcs_serdes *sds)
 	rtpcs_sds_write(sds, 0x20, 0x0, 0xc30);
 
 	mdelay(50);
-}
-
-__always_unused
-static void rtpcs_931x_sds_fiber_disable(struct rtpcs_serdes *sds)
-{
-	u32 v = 0x3F;
-
-	rtpcs_sds_write_bits(sds, 0x1F, 0x9, 11, 6, v);
 }
 
 static int rtpcs_931x_sds_cmu_page_get(phy_interface_t mode)
