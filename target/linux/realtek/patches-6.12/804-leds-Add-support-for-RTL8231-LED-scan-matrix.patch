@@ -50,7 +50,7 @@ Signed-off-by: Sander Vanheule <sander@svanheule.net>
  obj-$(CONFIG_LEDS_ST1202)		+= leds-st1202.o
 --- /dev/null
 +++ b/drivers/leds/leds-rtl8231.c
-@@ -0,0 +1,285 @@
+@@ -0,0 +1,284 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +
 +#include <linux/device.h>
@@ -288,7 +288,6 @@ Signed-off-by: Sander Vanheule <sander@svanheule.net>
 +{
 +	struct device *dev = &pdev->dev;
 +	const unsigned int *port_counts;
-+	struct fwnode_handle *child;
 +	struct regmap *map;
 +	int err;
 +
@@ -309,7 +308,7 @@ Signed-off-by: Sander Vanheule <sander@svanheule.net>
 +		return -EINVAL;
 +	}
 +
-+	fwnode_for_each_available_child_node(dev->fwnode, child) {
++	fwnode_for_each_available_child_node_scoped(dev->fwnode, child) {
 +		err = rtl8231_led_probe_single(dev, map, port_counts, child);
 +		if (err)
 +			dev_warn(dev, "failed to register LED %pfwP", child);
