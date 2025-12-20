@@ -2476,6 +2476,15 @@ static int rtpcs_931x_sds_set_ip_mode(struct rtpcs_serdes *sds,
 	return rtpcs_sds_write_bits(sds, 0x1f, 0x9, 11, 6, mode_val);
 }
 
+static int rtpcs_931x_sds_set_mode(struct rtpcs_serdes *sds,
+				   enum rtpcs_sds_mode hw_mode)
+{
+	if (hw_mode == RTPCS_SDS_MODE_XSGMII)
+		return rtpcs_931x_sds_set_mac_mode(sds, hw_mode);
+	else
+		return rtpcs_931x_sds_set_ip_mode(sds, hw_mode);
+}
+
 static void rtpcs_931x_sds_reset(struct rtpcs_serdes *sds)
 {
 	struct rtpcs_ctrl *ctrl = sds->ctrl;
@@ -2951,16 +2960,7 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 
 	rtpcs_931x_sds_power(sds, true);
 
-	if (mode == PHY_INTERFACE_MODE_XGMII ||
-	    mode == PHY_INTERFACE_MODE_QSGMII ||
-	    mode == PHY_INTERFACE_MODE_SGMII ||
-	    mode == PHY_INTERFACE_MODE_USXGMII) {
-		if (mode == PHY_INTERFACE_MODE_XGMII)
-			ret = rtpcs_931x_sds_set_mac_mode(sds, hw_mode);
-		else
-			ret = rtpcs_931x_sds_set_ip_mode(sds, hw_mode);
-	}
-
+	ret = rtpcs_931x_sds_set_mode(sds, hw_mode);
 	if (ret < 0)
 		return ret;
 
