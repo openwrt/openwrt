@@ -2377,7 +2377,12 @@ static int rtpcs_931x_sds_power(struct rtpcs_serdes *sds, bool power_on)
 				 BIT(sds->id), en_val);
 }
 
-static int rtpcs_931x_sds_mii_mode_set(struct rtpcs_serdes *sds,
+/*
+ * rtpcs_931x_sds_set_mac_mode
+ *
+ * Set the SerDes mode in the MAC's registers.
+ */
+static int rtpcs_931x_sds_set_mac_mode(struct rtpcs_serdes *sds,
 				       enum rtpcs_sds_mode hw_mode)
 {
 	u32 mode_val;
@@ -2417,14 +2422,19 @@ static int rtpcs_931x_sds_mii_mode_set(struct rtpcs_serdes *sds,
 				 0xff << shift, mode_val << shift);
 }
 
-static int rtpcs_931x_sds_fiber_mode_set(struct rtpcs_serdes *sds,
-					 enum rtpcs_sds_mode hw_mode)
+/*
+ * rtpcs_931x_sds_set_ip_mode
+ *
+ * Set the SerDes mode in the SerDes IP block's registers.
+ */
+static int rtpcs_931x_sds_set_ip_mode(struct rtpcs_serdes *sds,
+				      enum rtpcs_sds_mode hw_mode)
 {
 	u32 mode_val;
 
 	/* clear symbol error count before changing mode */
 	rtpcs_931x_sds_clear_symerr(sds, hw_mode);
-	rtpcs_931x_sds_mii_mode_set(sds, RTPCS_SDS_MODE_OFF);
+	rtpcs_931x_sds_set_mac_mode(sds, RTPCS_SDS_MODE_OFF);
 
 	switch (hw_mode) {
 	case RTPCS_SDS_MODE_OFF:
@@ -2735,8 +2745,9 @@ static int rtpcs_931x_sds_config_fiber_1g(struct rtpcs_serdes *sds)
 	return 0;
 }
 
-static int rtpcs_931x_sds_config_mode(struct rtpcs_serdes *sds,
-				      enum rtpcs_sds_mode hw_mode, int chiptype)
+static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
+					 enum rtpcs_sds_mode hw_mode,
+					 int chiptype)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
 
@@ -2912,7 +2923,7 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 		return -ENOTSUPP;
 	}
 
-	ret = rtpcs_931x_sds_config_mode(sds, hw_mode, chiptype);
+	ret = rtpcs_931x_sds_config_hw_mode(sds, hw_mode, chiptype);
 	if (ret < 0)
 		return ret;
 
@@ -2945,9 +2956,9 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 	    mode == PHY_INTERFACE_MODE_SGMII ||
 	    mode == PHY_INTERFACE_MODE_USXGMII) {
 		if (mode == PHY_INTERFACE_MODE_XGMII)
-			ret = rtpcs_931x_sds_mii_mode_set(sds, hw_mode);
+			ret = rtpcs_931x_sds_set_mac_mode(sds, hw_mode);
 		else
-			ret = rtpcs_931x_sds_fiber_mode_set(sds, hw_mode);
+			ret = rtpcs_931x_sds_set_ip_mode(sds, hw_mode);
 	}
 
 	if (ret < 0)
