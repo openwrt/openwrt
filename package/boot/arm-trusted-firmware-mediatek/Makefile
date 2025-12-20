@@ -440,6 +440,14 @@ define Trusted-Firmware-A/mt7987-sdmmc-ddr4-4bg
   DDR4_4BG_MODE:=1
 endef
 
+define Trusted-Firmware-A/mt7987-spim-nand0
+  NAME:=MediaTek MT7987 (SPI-NAND via SPIM)
+  BOOT_DEVICE:=spim-nand
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7987
+  SPIM_CTRL:=0
+endef
+
 define Trusted-Firmware-A/mt7987-spim-nand0-ubi-comb
   NAME:=MediaTek MT7987 (SPI-NAND via SPIM, UBI)
   BOOT_DEVICE:=spim-nand
@@ -685,6 +693,7 @@ TFA_TARGETS:= \
 	mt7987-nor-comb \
 	mt7987-sdmmc-comb \
 	mt7987-sdmmc-ddr4-4bg \
+	mt7987-spim-nand0 \
 	mt7987-spim-nand0-ubi-comb \
 	mt7987-spim-nand2-ubi-comb \
 	mt7987-ram-comb \
