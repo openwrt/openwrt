@@ -2381,6 +2381,7 @@ static void rtpcs_931x_sds_mii_mode_set(struct rtpcs_serdes *sds,
 					phy_interface_t mode)
 {
 	u32 val;
+	int shift = ((sds->id & 0x3) << 3);
 
 	switch (mode) {
 	case PHY_INTERFACE_MODE_QSGMII:
@@ -2400,10 +2401,10 @@ static void rtpcs_931x_sds_mii_mode_set(struct rtpcs_serdes *sds,
 		return;
 	}
 
-	val |= (1 << 7);
-
-	regmap_write(sds->ctrl->map,
-		     RTL931X_SERDES_MODE_CTRL + 4 * (sds->id >> 2), val);
+	val |= BIT(7); /* force mode bit */
+	regmap_write_bits(sds->ctrl->map,
+			  RTL931X_SERDES_MODE_CTRL + 4 * (sds->id >> 2),
+			  0xff << shift, val << shift);
 }
 
 static void rtpcs_931x_sds_disable(struct rtpcs_serdes *sds)
