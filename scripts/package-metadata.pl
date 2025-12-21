@@ -545,6 +545,7 @@ sub gen_package_auxiliary() {
 		my @depends = sort keys %depends;
 		if (@depends > 0) {
 			foreach my $n (@{$pkg->{provides}}) {
+				next if $package{$n} && $package{$n}->{name} eq $n && $package{$n} != $pkg;
 				print "Package/$n/depends = @depends\n";
 			}
 		}
