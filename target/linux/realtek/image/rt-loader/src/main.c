@@ -168,6 +168,7 @@ void main(unsigned long reg_a0, unsigned long reg_a1,
 	  unsigned long reg_a2, unsigned long reg_a3)
 {
 	void *flash_start = (void *)FLASH_ADDR; /* from makefile */
+	void *kernel_addr = (void *)KERNEL_ADDR; /* from makefile */
 	entry_func_t fn;
 
 	/*
@@ -188,6 +189,8 @@ void main(unsigned long reg_a0, unsigned long reg_a1,
 	 */
 	if (flash_start)
 		load_kernel(flash_start);
+	else if (kernel_addr)
+		_kernel_load_addr = kernel_addr;
 
 	/*
 	 * Finally extract the attached kernel image to the load address. This is
