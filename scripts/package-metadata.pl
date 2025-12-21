@@ -205,7 +205,15 @@ sub mconf_depends {
 			# thus if FOO depends on other config options, these dependencies
 			# will not be checked. To fix this, we simply emit all of FOO's
 			# depends here as well.
-			$package{$depend} and push @t_depends, [ $package{$depend}->{depends}, $condition ];
+			#
+			# When there are multiple variants, don't propagate the variant
+			# selection condition to the transitive dependencies - that
+			# creates circular deps
+			if ($vdep && @{$vdep} > 1) {
+				$package{$depend} and push @t_depends, [ $package{$depend}->{depends}, $parent_condition ];
+			} else {
+				$package{$depend} and push @t_depends, [ $package{$depend}->{depends}, $condition ];
+			}
 
 			$m = "select";
 			next if $only_dep;
