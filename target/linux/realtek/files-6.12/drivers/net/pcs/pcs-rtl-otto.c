@@ -106,6 +106,7 @@
 #define RTL931X_SERDES_MODE_CTRL		(0x13cc)
 #define RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR	(0x13F4)
 #define RTL931X_MAC_SERDES_MODE_CTRL(sds)	(0x136C + (((sds) << 2)))
+#define RTPCS_931X_ISR_SERDES_RXIDLE		(0x12f8)
 
 enum rtpcs_sds_mode {
 	RTPCS_SDS_MODE_OFF = 0,
@@ -2402,6 +2403,23 @@ static void rtpcs_931x_sds_clear_symerr(struct rtpcs_serdes *sds,
 	}
 }
 
+static int rtpcs_931x_sds_init_leq_dfe(struct rtpcs_serdes *sds)
+{
+	rtpcs_sds_write_bits(sds, 0x2e, 0xd, 6, 0, 0x0);
+	rtpcs_sds_write_bits(sds, 0x2e, 0xd, 7, 7, 0x1);
+
+	rtpcs_sds_write_bits(sds, 0x2e, 0x1c, 5, 0, 0x1e);
+	rtpcs_sds_write_bits(sds, 0x2e, 0x1d, 11, 0, 0x0);
+	rtpcs_sds_write_bits(sds, 0x2e, 0x1f, 11, 0, 0x0);
+	rtpcs_sds_write_bits(sds, 0x2f, 0x0, 11, 0, 0x0);
+	rtpcs_sds_write_bits(sds, 0x2f, 0x1, 11, 0, 0x0);
+
+	rtpcs_sds_write_bits(sds, 0x2e, 0xf, 12, 6, 0x7f);
+	rtpcs_sds_write(sds, 0x2f, 0x12, 0xaaa);
+
+	return 0;
+}
+
 static int rtpcs_931x_sds_power(struct rtpcs_serdes *sds, bool power_on)
 {
 	u32 en_val = power_on ? 0 : BIT(sds->id);
@@ -2753,6 +2771,128 @@ static int rtpcs_931x_sds_set_polarity(struct rtpcs_serdes *sds,
 	return rtpcs_sds_write_bits(sds, 0x80, 0x0, 9, 8, val);
 }
 
+static int rtpcs_931x_sds_set_port_media(struct rtpcs_serdes *sds,
+					 enum rtpcs_port_media port_media)
+{
+	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
+	bool is_10g = false;
+
+	/*
+	 * SDK identifies this as some kind of gating. It's enabled
+	 * here and later deactivated for non-10G.
+	 * (from DMS1250 SDK)
+	 */
+	rtpcs_sds_write_bits(sds, 0x5f, 0x1, 0, 0, 0x1);
+	rtpcs_931x_sds_init_leq_dfe(sds);
+
+	/* media none behavior */
+	rtpcs_sds_write(sds, 0x2e, 0x12, 0x2740);
+	rtpcs_sds_write(sds, 0x2f, 0x0, 0x0);
+	rtpcs_sds_write(sds, 0x2f, 0x2, 0x2010);
+	rtpcs_sds_write(sds, 0x20, 0x0, 0xcd1);
+	rtpcs_sds_write_bits(sds, 0x2e, 0xf, 5, 0, 0x4);
+
+	rtpcs_sds_write_bits(sds, 0x2a, 0x12, 7, 6, 0x1);
+	rtpcs_931x_sds_set_mode(sds, RTPCS_SDS_MODE_OFF);
+
+	rtpcs_sds_write(sds, 0x21, 0x19, 0xf0f0); /* from XS1930-10 SDK */
+	rtpcs_sds_write(even_sds, 0x2e, 0x8, 0x0294);
+
+	/* from _phy_rtl9310_sds_init, DMS1250 SDK */
+	rtpcs_sds_write_bits(sds, 0x2e, 0xe, 13, 11, 0x0);
+	rtpcs_931x_sds_rx_reset(sds);
+	rtpcs_931x_sds_init_leq_dfe(sds);
+
+	switch (port_media) {
+	case RTPCS_PORT_MEDIA_NONE:
+		return 0;
+
+	case RTPCS_PORT_MEDIA_DAC_50CM:
+	case RTPCS_PORT_MEDIA_DAC_100CM:
+		is_10g = true;
+
+		rtpcs_sds_write_bits(sds, 0x20, 0x0, 11, 10, 0x0);
+		rtpcs_sds_write_bits(sds, 0x2a, 0x7, 15, 15, 0x1);
+		rtpcs_sds_write_bits(sds, 0x20, 0x0, 11, 10, 0x3);
+
+		rtpcs_sds_write_bits(sds, 0x2e, 0x1, 15, 0, 0x1340);
+		rtpcs_sds_write(sds, 0x21, 0x19, 0xf0a5); /* from XS1930-10 SDK */
+		rtpcs_sds_write(even_sds, 0x2e, 0x8, 0x02a0);
+		rtpcs_sds_write_bits(sds, 0x6, 0xd, 6, 6, 0x0); /* from DMS1250 SDK */
+		break;
+
+	case RTPCS_PORT_MEDIA_DAC_300CM:
+	case RTPCS_PORT_MEDIA_DAC_500CM:
+		is_10g = true;
+
+		rtpcs_sds_write_bits(sds, 0x20, 0x0, 11, 10, 0x0);
+		rtpcs_sds_write_bits(sds, 0x2a, 0x7, 15, 15, 0x1);
+		rtpcs_sds_write_bits(sds, 0x20, 0x0, 11, 10, 0x3);
+
+		rtpcs_sds_write_bits(sds, 0x2e, 0x1, 15, 0, 0x5200);
+		rtpcs_sds_write(sds, 0x21, 0x19, 0xf0a5); /* from XS1930-10 SDK */
+		rtpcs_sds_write(even_sds, 0x2e, 0x8, 0x02a0);
+		rtpcs_sds_write_bits(sds, 0x6, 0xd, 6, 6, 0x0); /* from DMS1250 SDK */
+		break;
+
+	case RTPCS_PORT_MEDIA_FIBER_10G:
+		is_10g = true;
+
+		rtpcs_sds_write_bits(sds, 0x20, 0x0, 11, 10, 0x0);
+		rtpcs_sds_write_bits(sds, 0x2a, 0x7, 15, 15, 0x1);
+		rtpcs_sds_write_bits(sds, 0x20, 0x0, 11, 10, 0x3);
+
+		/*
+		 * TODO: this would need to be saved during early init, before
+		 * actually changing any SerDes settings. Then restored here.
+		 * see phy_rtl9310_init in SDK
+		 */
+		// rtpcs_sds_write(sds, 0x2e, 0x1, phy_rtl9310_10g_tx[unit][sds]);
+		rtpcs_sds_write_bits(sds, 0x2e, 0xf, 5, 0, 0x2); /* from DMS1250 SDK */
+		rtpcs_sds_write_bits(sds, 0x6, 0xd, 6, 6, 0x1); /* from DMS1250 SDK */
+		break;
+
+	case RTPCS_PORT_MEDIA_FIBER_2_5G:
+	case RTPCS_PORT_MEDIA_FIBER_1G:
+		rtpcs_sds_write_bits(sds, 0x20, 0x0, 11, 10, 0x0);
+		rtpcs_sds_write_bits(sds, 0x2a, 0x7, 15, 15, 0x0);
+		rtpcs_sds_write_bits(sds, 0x20, 0x0, 11, 10, 0x3);
+
+		rtpcs_sds_write_bits(sds, 0x6, 0xd, 6, 6, 0x1); /* from DMS1250 SDK */
+		break;
+
+	case RTPCS_PORT_MEDIA_FIBER_100M:
+		rtpcs_sds_write_bits(sds, 0x6, 0xd, 6, 6, 0x1);
+		break;
+
+	default:
+		return -ENOTSUPP;
+	}
+
+	if (is_10g) {
+		rtpcs_sds_write(sds, 0x2e, 0x12, 0x27c0);
+		rtpcs_sds_write(sds, 0x2f, 0x0, 0xc000);
+		rtpcs_sds_write(sds, 0x2f, 0x2, 0x6010);
+	}
+
+	/* FIXME: is this redundant with the writes below? */
+	rtpcs_sds_write(sds, 0x20, 0x0, 0xc30);
+	rtpcs_sds_write_bits(sds, 0x20, 0x0, 9, 0, 0x30);
+	rtpcs_sds_write_bits(sds, 0x2a, 0x12, 7, 6, 0x3);
+
+	rtpcs_sds_write_bits(sds, 0x20, 0x0, 11, 10, 0x1);
+	rtpcs_sds_write_bits(sds, 0x20, 0x0, 11, 10, 0x3);
+
+	regmap_write_bits(sds->ctrl->map, RTPCS_931X_ISR_SERDES_RXIDLE,
+			  BIT(sds->id - 2), BIT(sds->id - 2));
+
+	/* Gating as mentioned above, deactivated here for non-10G */
+	if (!is_10g)
+		rtpcs_sds_write_bits(sds, 0x5f, 0x1, 0, 0, 0x0);
+
+	return 0;
+}
+
 static const struct rtpcs_sds_config rtpcs_931x_sds_cfg_10p3125g_type1[] = {
 	{ 0x2E, 0x00, 0x0107 }, { 0x2E, 0x01, 0x01A3 }, { 0x2E, 0x02, 0x6A24 },
 	{ 0x2E, 0x03, 0xD10D }, { 0x2E, 0x04, 0x8000 }, { 0x2E, 0x05, 0xA17E },
@@ -2972,6 +3112,24 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 	ret = rtpcs_931x_sds_config_hw_mode(sds, hw_mode, chiptype);
 	if (ret < 0)
 		return ret;
+
+	switch (hw_mode) {
+	case RTPCS_SDS_MODE_OFF:
+		ret = rtpcs_931x_sds_set_port_media(sds, RTPCS_PORT_MEDIA_NONE);
+		break;
+	case RTPCS_SDS_MODE_2500BASEX:
+		ret = rtpcs_931x_sds_set_port_media(sds, RTPCS_PORT_MEDIA_FIBER_2_5G);
+		break;
+	case RTPCS_SDS_MODE_10GBASER:
+		ret = rtpcs_931x_sds_set_port_media(sds, RTPCS_PORT_MEDIA_FIBER_10G);
+		break;
+	case RTPCS_SDS_MODE_SGMII:
+	case RTPCS_SDS_MODE_1000BASEX:
+		ret = rtpcs_931x_sds_set_port_media(sds, RTPCS_PORT_MEDIA_FIBER_1G);
+		break;
+	default:
+		break;
+	}
 
 	rtpcs_931x_sds_cmu_type_set(sds, mode, chiptype);
 
