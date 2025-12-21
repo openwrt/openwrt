@@ -11,8 +11,6 @@
 	model = "SKSpruce WIA3300-20";
 
 	aliases {
-		// TODO: Verify if the ethernet0 alias is needed
-		ethernet0 = &gmac;
 		label-mac-device = &gmac;
 		led-boot = &led_status_red;
 		led-failsafe = &led_status_lime;
@@ -126,8 +124,6 @@
 	pinctrl-0 = <&spi0_pins>;
 	pinctrl-names = "default";
 
-	cs-gpios = <&tlmm 12 GPIO_ACTIVE_LOW>;
-
 	flash@0 {
 		compatible = "jedec,spi-nor";
 		spi-max-frequency = <24000000>;
@@ -169,7 +165,6 @@
 			};
 
 			partition@e0000 {
-				compatible = "u-boot,env";
 				label = "0:APPSBLENV";
 				reg = <0x000e0000 0x00010000>;
 			};
@@ -399,18 +394,10 @@
 
 	spi0_pins: spi0_pinmux {
 		blsp_spi0 {
-			pins = "gpio13", "gpio14", "gpio15";
+			pins = "gpio12", "gpio13", "gpio14", "gpio15";
 			function = "blsp_spi0";
 			drive-strength = <4>;
 			bias-disable;
-		};
-
-		gpio {
-			pins = "gpio12";
-			function = "gpio";
-			drive-strength = <4>;
-			bias-disable;
-			output-high;
 		};
 	};
 };

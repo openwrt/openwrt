@@ -742,6 +742,16 @@ define Device/cudy_ap1300-outdoor-v1
 endef
 TARGET_DEVICES += cudy_ap1300-outdoor-v1
 
+define Device/cudy_c200p
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := C200P
+  IMAGE_SIZE := 15872k
+  UIMAGE_NAME := R74
+  DEVICE_PACKAGES := -uboot-envtools -wpad-basic-mbedtls kmod-usb3
+endef
+TARGET_DEVICES += cudy_c200p
+
 define Device/cudy_m1300-v2
   $(Device/dsa-migration)
   IMAGE_SIZE := 15872k
@@ -764,6 +774,16 @@ define Device/cudy_m1800
   DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
 endef
 TARGET_DEVICES += cudy_m1800
+
+define Device/cudy_r700
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := R700
+  IMAGE_SIZE := 15872k
+  UIMAGE_NAME := R29
+  DEVICE_PACKAGES := -uboot-envtools -wpad-basic-mbedtls
+endef
+TARGET_DEVICES += cudy_r700
 
 define Device/cudy_wr1300-v1
   $(Device/dsa-migration)
@@ -810,26 +830,6 @@ define Device/cudy_wr2100
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware -uboot-envtools
 endef
 TARGET_DEVICES += cudy_wr2100
-
-define Device/cudy_r700
-  $(Device/dsa-migration)
-  DEVICE_VENDOR := Cudy
-  DEVICE_MODEL := R700
-  IMAGE_SIZE := 15872k
-  UIMAGE_NAME := R29
-  DEVICE_PACKAGES := -uboot-envtools -wpad-basic-mbedtls
-endef
-TARGET_DEVICES += cudy_r700
-
-define Device/cudy_c200p
-  $(Device/dsa-migration)
-  DEVICE_VENDOR := Cudy
-  DEVICE_MODEL := C200P
-  IMAGE_SIZE := 15872k
-  UIMAGE_NAME := R74
-  DEVICE_PACKAGES := -uboot-envtools -wpad-basic-mbedtls kmod-usb3
-endef
-TARGET_DEVICES += cudy_c200p
 
 define Device/cudy_x6-v1
   $(Device/dsa-migration)
@@ -2858,6 +2858,18 @@ define Device/tozed_zlt-s12-pro
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt76x2 kmod-usb3 comgt-ncm -uboot-envtools
 endef
 TARGET_DEVICES += tozed_zlt-s12-pro
+
+define Device/tplink_archer-ax21-v4
+  $(Device/dsa-migration)
+  $(Device/tplink-safeloader)
+  DEVICE_MODEL := Archer AX21
+  DEVICE_VARIANT := v4
+  DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
+  TPLINK_BOARD_ID := ARCHER-AX21-V4
+  KERNEL := $(KERNEL_DTB) | uImage lzma
+  IMAGE_SIZE := 15744k
+endef
+TARGET_DEVICES += tplink_archer-ax21-v4
 
 define Device/tplink_archer-ax23-v1
   $(Device/dsa-migration)

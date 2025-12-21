@@ -1,0 +1,64 @@
+/* SPDX-License-Identifier: (GPL-2.0-only OR MIT) */
+
+/dts-v1/;
+#include "mt7981b-netis-common.dtsi"
+
+/ {
+	compatible = "netis,nx30v2", "mediatek,mt7981";
+
+	aliases {
+		label-mac-device = &gmac0;
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_wps;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: power {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&pio 4 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		internet {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WAN_ONLINE;
+			gpios = <&pio 7 GPIO_ACTIVE_LOW>;
+		};
+
+		led_wps: wps {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WPS;
+			gpios = <&pio 5 GPIO_ACTIVE_LOW>;
+		};
+
+		wan {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&switch {
+	ports {
+		port@0 {
+			reg = <1>;
+			label = "lan1";
+		};
+
+		port@1 {
+			reg = <2>;
+			label = "lan2";
+		};
+
+		port@2 {
+			reg = <3>;
+			label = "lan3";
+		};
+	};
+};

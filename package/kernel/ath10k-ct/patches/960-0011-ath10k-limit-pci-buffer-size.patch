@@ -1,6 +1,6 @@
---- a/ath10k-6.14/pci.c
-+++ b/ath10k-6.14/pci.c
-@@ -132,7 +132,11 @@ static const struct ce_attr pci_host_ce_
+--- a/ath10k-6.18/pci.c
++++ b/ath10k-6.18/pci.c
+@@ -133,7 +133,11 @@ static const struct ce_attr pci_host_ce_
  		.flags = CE_ATTR_FLAGS,
  		.src_nentries = 0,
  		.src_sz_max = 2048,
@@ -12,7 +12,7 @@
  		.recv_cb = ath10k_pci_htt_htc_rx_cb,
  	},
  
-@@ -141,7 +145,11 @@ static const struct ce_attr pci_host_ce_
+@@ -142,7 +146,11 @@ static const struct ce_attr pci_host_ce_
  		.flags = CE_ATTR_FLAGS,
  		.src_nentries = 0,
  		.src_sz_max = 2048,
@@ -24,7 +24,7 @@
  		.recv_cb = ath10k_pci_htc_rx_cb,
  	},
  
-@@ -168,7 +176,11 @@ static const struct ce_attr pci_host_ce_
+@@ -169,7 +177,11 @@ static const struct ce_attr pci_host_ce_
  		.flags = CE_ATTR_FLAGS,
  		.src_nentries = 0,
  		.src_sz_max = 512,
@@ -36,7 +36,7 @@
  		.recv_cb = ath10k_pci_htt_rx_cb,
  	},
  
-@@ -193,7 +205,11 @@ static const struct ce_attr pci_host_ce_
+@@ -194,7 +206,11 @@ static const struct ce_attr pci_host_ce_
  		.flags = CE_ATTR_FLAGS,
  		.src_nentries = 0,
  		.src_sz_max = 2048,

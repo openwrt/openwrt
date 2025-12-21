@@ -24,7 +24,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
 ---
 --- a/drivers/net/wireless/ath/ath11k/core.c
 +++ b/drivers/net/wireless/ath/ath11k/core.c
-@@ -727,6 +727,7 @@ static struct ath11k_hw_params ath11k_hw
+@@ -729,6 +729,7 @@ static struct ath11k_hw_params ath11k_hw
  		.support_fw_mac_sequence = false,
  		.support_dual_stations = false,
  		.pdev_suspend = false,
@@ -34,7 +34,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  		.name = "qca2066 hw2.1",
 --- a/drivers/net/wireless/ath/ath11k/dp.c
 +++ b/drivers/net/wireless/ath/ath11k/dp.c
-@@ -348,12 +348,66 @@ void ath11k_dp_stop_shadow_timers(struct
+@@ -350,12 +350,66 @@ void ath11k_dp_stop_shadow_timers(struct
  	ath11k_dp_shadow_stop_timer(ab, &ab->dp.reo_cmd_timer);
  }
  
@@ -101,7 +101,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  	ath11k_dp_srng_cleanup(ab, &dp->wbm_desc_rel_ring);
  	ath11k_dp_srng_cleanup(ab, &dp->tcl_cmd_ring);
  	ath11k_dp_srng_cleanup(ab, &dp->tcl_status_ring);
-@@ -375,6 +429,8 @@ static int ath11k_dp_srng_common_setup(s
+@@ -377,6 +431,8 @@ static int ath11k_dp_srng_common_setup(s
  	int i, ret;
  	u8 tcl_num, wbm_num;
  
@@ -141,7 +141,7 @@ Signed-off-by: Sriram R <srirrama@codeaurora.org>
  #endif
 --- a/drivers/net/wireless/ath/ath11k/dp_tx.c
 +++ b/drivers/net/wireless/ath/ath11k/dp_tx.c
-@@ -787,6 +787,10 @@ int ath11k_dp_tx_send_reo_cmd(struct ath
+@@ -788,6 +788,10 @@ int ath11k_dp_tx_send_reo_cmd(struct ath
  	if (cmd_num == 0)
  		return -EINVAL;
  

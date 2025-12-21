@@ -13,7 +13,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 
 PKG_NAME:=linux
-PKG_PATCHVER:=6.6
+PKG_PATCHVER:=6.12
 
 # Manually include kernel version and hash from kernel details file
 GENERIC_PLATFORM_DIR := $(CURDIR)/../../../target/linux/generic
@@ -65,6 +65,10 @@ KERNEL_MAKE := \
 
 define Build/Patch
 	$(Kernel/Patch/Default)
+endef
+
+define Quilt/Refresh/Package
+	$(Quilt/Refresh/Kernel)
 endef
 
 BPF_DOC = $(PKG_BUILD_DIR)/scripts/bpf_doc.py

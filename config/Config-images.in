@@ -18,6 +18,7 @@ menu "Target Images"
 			default TARGET_INITRAMFS_COMPRESSION_LZMA if TARGET_mpc85xx
 			default TARGET_INITRAMFS_COMPRESSION_LZMA if TARGET_ramips
 			default TARGET_INITRAMFS_COMPRESSION_ZSTD if TARGET_qualcommax
+			default TARGET_INITRAMFS_COMPRESSION_ZSTD if TARGET_microchipsw
 			default TARGET_INITRAMFS_COMPRESSION_XZ if USES_SEPARATE_INITRAMFS
 			default TARGET_INITRAMFS_COMPRESSION_NONE
 			depends on TARGET_ROOTFS_INITRAMFS
@@ -335,7 +336,7 @@ menu "Target Images"
 		int "Root filesystem partition size (in MiB)"
 		depends on USES_ROOTFS_PART || TARGET_ROOTFS_EXT4FS
 		default 232 if TARGET_loongarch64
-		default 448 if TARGET_mediatek
+		default 448 if TARGET_mediatek || TARGET_microchipsw
 		default 104
 		help
 		  Select the root filesystem partition size.

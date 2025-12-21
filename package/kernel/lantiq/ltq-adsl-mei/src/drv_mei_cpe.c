@@ -1286,8 +1286,7 @@ IFX_MEI_RunAdslModem (DSL_DEV_Device_t *pDev)
 //	DSL_DEV_WinHost_Message_t m;
 
 	if (mei_arc_swap_buff == NULL) {
-		mei_arc_swap_buff =
-			(u32 *) kmalloc (MAXSWAPSIZE * 4, GFP_KERNEL);
+		mei_arc_swap_buff = kmalloc (MAXSWAPSIZE * 4, GFP_KERNEL);
 		if (mei_arc_swap_buff == NULL) {
 			IFX_MEI_EMSG (">>> malloc fail for codeswap buff!!! <<<\n");
 			return DSL_DEV_MEI_ERR_FAILURE;

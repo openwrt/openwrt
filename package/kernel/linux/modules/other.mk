@@ -737,49 +737,46 @@ endef
 
 define KernelPackage/zram/config
   if PACKAGE_kmod-zram
-    if !LINUX_6_6
-        config KERNEL_ZRAM_BACKEND_LZO
-                bool "lzo and lzo-rle compression support"
+    config KERNEL_ZRAM_BACKEND_LZO
+            bool "lzo and lzo-rle compression support"
 
-        config KERNEL_ZRAM_BACKEND_LZ4
-                bool "lz4 compression support"
+    config KERNEL_ZRAM_BACKEND_LZ4
+            bool "lz4 compression support"
 
-        config KERNEL_ZRAM_BACKEND_LZ4HC
-                bool "lz4hc compression support"
+    config KERNEL_ZRAM_BACKEND_LZ4HC
+            bool "lz4hc compression support"
 
-        config KERNEL_ZRAM_BACKEND_ZSTD
-                bool "zstd compression support"
+    config KERNEL_ZRAM_BACKEND_ZSTD
+            bool "zstd compression support"
 
-        config KERNEL_ZRAM_BACKEND_FORCE_LZO
-                def_bool !KERNEL_ZRAM_BACKEND_LZ4 && \
-                         !KERNEL_ZRAM_BACKEND_LZ4HC && \
-                         !KERNEL_ZRAM_BACKEND_ZSTD
-                select KERNEL_ZRAM_BACKEND_LZO
-
-    endif
+    config KERNEL_ZRAM_BACKEND_FORCE_LZO
+            def_bool !KERNEL_ZRAM_BACKEND_LZ4 && \
+                     !KERNEL_ZRAM_BACKEND_LZ4HC && \
+                     !KERNEL_ZRAM_BACKEND_ZSTD
+            select KERNEL_ZRAM_BACKEND_LZO
     choice
       prompt "ZRAM Default compressor"
       default KERNEL_ZRAM_DEF_COMP_LZORLE
 
     config KERNEL_ZRAM_DEF_COMP_LZORLE
             bool "lzo-rle"
-            depends on KERNEL_ZRAM_BACKEND_LZO || LINUX_6_6
+            depends on KERNEL_ZRAM_BACKEND_LZO
 
     config KERNEL_ZRAM_DEF_COMP_LZO
             bool "lzo"
-            depends on KERNEL_ZRAM_BACKEND_LZO || LINUX_6_6
+            depends on KERNEL_ZRAM_BACKEND_LZO
 
     config KERNEL_ZRAM_DEF_COMP_LZ4
             bool "lz4"
-            depends on KERNEL_ZRAM_BACKEND_LZ4 || LINUX_6_6
+            depends on KERNEL_ZRAM_BACKEND_LZ4
 
     config KERNEL_ZRAM_DEF_COMP_LZ4HC
             bool "lz4-hc"
-            depends on KERNEL_ZRAM_BACKEND_LZ4HC || LINUX_6_6
+            depends on KERNEL_ZRAM_BACKEND_LZ4HC
 
     config KERNEL_ZRAM_DEF_COMP_ZSTD
             bool "zstd"
-            depends on KERNEL_ZRAM_BACKEND_ZSTD || LINUX_6_6
+            depends on KERNEL_ZRAM_BACKEND_ZSTD
 
     endchoice
   endif

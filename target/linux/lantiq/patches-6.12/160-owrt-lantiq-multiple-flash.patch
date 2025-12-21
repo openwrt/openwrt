@@ -96,7 +96,7 @@ Signed-off-by: Maikel Bloemendal <openwrt@maikelenyvonne.nl>
 -	if (!ltq_mtd->map)
 -		return -ENOMEM;
 -
--	if (of_find_property(pdev->dev.of_node, "lantiq,noxip", NULL))
+-	if (of_property_present(pdev->dev.of_node, "lantiq,noxip"))
 -		ltq_mtd->map->phys = NO_XIP;
 -	else
 -		ltq_mtd->map->phys = ltq_mtd->res->start;
@@ -137,7 +137,7 @@ Signed-off-by: Maikel Bloemendal <openwrt@maikelenyvonne.nl>
 +		ltq_mtd->map[i].copy_from = ltq_copy_from;
 +		ltq_mtd->map[i].copy_to = ltq_copy_to;
 +
-+		if (of_find_property(pdev->dev.of_node, "lantiq,noxip", NULL))
++		if (of_property_present(pdev->dev.of_node, "lantiq,noxip"))
 +			ltq_mtd->map[i].phys = NO_XIP;
 +		else
 +			ltq_mtd->map[i].phys = pdev->resource[i].start;

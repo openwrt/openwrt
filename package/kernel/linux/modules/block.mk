@@ -418,21 +418,6 @@ endef
 $(eval $(call KernelPackage,md-raid456))
 
 
-define KernelPackage/md-multipath
-$(call KernelPackage/md/Depends,@LINUX_6_6)
-  TITLE:=MD Multipath Module
-  KCONFIG:=CONFIG_MD_MULTIPATH
-  FILES:=$(LINUX_DIR)/drivers/md/multipath.ko
-  AUTOLOAD:=$(call AutoLoad,29,multipath)
-endef
-
-define KernelPackage/md-multipath/description
- Multipath driver module (multipath.ko)
-endef
-
-$(eval $(call KernelPackage,md-multipath))
-
-
 define KernelPackage/libsas
   SUBMENU:=$(BLOCK_MENU)
   DEPENDS:=@TARGET_x86

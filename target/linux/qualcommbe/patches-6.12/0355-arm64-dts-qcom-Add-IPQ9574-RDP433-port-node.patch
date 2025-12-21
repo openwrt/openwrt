@@ -79,7 +79,7 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
 +			phy-mode = "qsgmii";
 +			managed = "in-band-status";
 +			phy-handle = <&phy0>;
-+			pcs-handle = <&pcsuniphy0_ch0>;
++			pcs-handle = <&pcs0_ch0>;
 +			clocks = <&nsscc NSS_CC_PORT1_MAC_CLK>,
 +				 <&nsscc NSS_CC_PORT1_RX_CLK>,
 +				 <&nsscc NSS_CC_PORT1_TX_CLK>;
@@ -99,7 +99,7 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
 +			phy-mode = "qsgmii";
 +			managed = "in-band-status";
 +			phy-handle = <&phy1>;
-+			pcs-handle = <&pcsuniphy0_ch1>;
++			pcs-handle = <&pcs0_ch1>;
 +			clocks = <&nsscc NSS_CC_PORT2_MAC_CLK>,
 +				 <&nsscc NSS_CC_PORT2_RX_CLK>,
 +				 <&nsscc NSS_CC_PORT2_TX_CLK>;
@@ -119,7 +119,7 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
 +			phy-mode = "qsgmii";
 +			managed = "in-band-status";
 +			phy-handle = <&phy2>;
-+			pcs-handle = <&pcsuniphy0_ch2>;
++			pcs-handle = <&pcs0_ch2>;
 +			clocks = <&nsscc NSS_CC_PORT3_MAC_CLK>,
 +				 <&nsscc NSS_CC_PORT3_RX_CLK>,
 +				 <&nsscc NSS_CC_PORT3_TX_CLK>;
@@ -139,7 +139,7 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
 +			phy-mode = "qsgmii";
 +			managed = "in-band-status";
 +			phy-handle = <&phy3>;
-+			pcs-handle = <&pcsuniphy0_ch3>;
++			pcs-handle = <&pcs0_ch3>;
 +			clocks = <&nsscc NSS_CC_PORT4_MAC_CLK>,
 +				 <&nsscc NSS_CC_PORT4_RX_CLK>,
 +				 <&nsscc NSS_CC_PORT4_TX_CLK>;
@@ -159,7 +159,7 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
 +			phy-mode = "usxgmii";
 +			managed = "in-band-status";
 +			phy-handle = <&phy4>;
-+			pcs-handle = <&pcsuniphy1_ch0>;
++			pcs-handle = <&pcs1_ch0>;
 +			clocks = <&nsscc NSS_CC_PORT5_MAC_CLK>,
 +				 <&nsscc NSS_CC_PORT5_RX_CLK>,
 +				 <&nsscc NSS_CC_PORT5_TX_CLK>;
@@ -179,7 +179,7 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
 +			phy-mode = "usxgmii";
 +			managed = "in-band-status";
 +			phy-handle = <&phy5>;
-+			pcs-handle = <&pcsuniphy2_ch0>;
++			pcs-handle = <&pcs2_ch0>;
 +			clocks = <&nsscc NSS_CC_PORT6_MAC_CLK>,
 +				 <&nsscc NSS_CC_PORT6_RX_CLK>,
 +				 <&nsscc NSS_CC_PORT6_TX_CLK>;

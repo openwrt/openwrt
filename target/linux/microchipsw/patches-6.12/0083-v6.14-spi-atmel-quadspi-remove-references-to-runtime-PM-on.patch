@@ -1,0 +1,41 @@
+From 74a3cec06e0d0604d9e075e4976a9f434f112488 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Fri, 7 Feb 2025 13:21:45 +0100
+Subject: [PATCH 103/112] spi: atmel-quadspi: remove references to runtime PM
+ on error path
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+There is no need to call runtime PM put APIs on error path of
+`atmel_qspi_sama7g5_transfer()` as the caller (`atmel_qspi_exec_op()`)
+of it will take care of this if needed.
+
+Fixes: 5af42209a4d2 ("spi: atmel-quadspi: Add support for sama7g5 QSPI")
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Signed-off-by: Durai Manickam KR <durai.manickamkr@microchip.com>
+Reported-by: Alexander Dahl <ada@thorsis.com>
+Closes: https://lore.kernel.org/linux-spi/20250109-carat-festivity-5f088e1add3c@thorsis.com/
+[ csokas.bence: Rebase and clarify msg, fix/add tags ]
+Signed-off-by: Bence Csókás <csokas.bence@prolan.hu>
+Link: https://patch.msgid.link/20250207122145.162183-2-csokas.bence@prolan.hu
+Signed-off-by: Mark Brown <broonie@kernel.org>
+---
+ drivers/spi/atmel-quadspi.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+--- a/drivers/spi/atmel-quadspi.c
++++ b/drivers/spi/atmel-quadspi.c
+@@ -930,11 +930,8 @@ static int atmel_qspi_sama7g5_transfer(s
+ 
+ 	/* Release the chip-select. */
+ 	ret = atmel_qspi_reg_sync(aq);
+-	if (ret) {
+-		pm_runtime_mark_last_busy(&aq->pdev->dev);
+-		pm_runtime_put_autosuspend(&aq->pdev->dev);
++	if (ret)
+ 		return ret;
+-	}
+ 	atmel_qspi_write(QSPI_CR_LASTXFER, aq, QSPI_CR);
+ 
+ 	return atmel_qspi_wait_for_completion(aq, QSPI_SR_CSRA);

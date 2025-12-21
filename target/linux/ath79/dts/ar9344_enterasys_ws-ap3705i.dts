@@ -127,12 +127,15 @@
 			};
 
 			partition@80000 {
-				compatible = "u-boot,env";
 				label = "u-boot-env0";
 				reg = <0x80000 0x10000>;
 				read-only;
 
-				macaddr_uboot_ethaddr: ethaddr {
+				nvmem-layout {
+					compatible = "u-boot,env";
+
+					macaddr_uboot_ethaddr: ethaddr {
+					};
 				};
 			};
 

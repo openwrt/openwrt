@@ -1503,17 +1503,10 @@ static inline void clear_priv_data(void)
 		}
 	}
 
-	if ( g_atm_priv_data.tx_skb_base != NULL )
-		kfree(g_atm_priv_data.tx_skb_base);
-
-	if ( g_atm_priv_data.tx_desc_base != NULL )
-		kfree(g_atm_priv_data.tx_desc_base);
-
-	if ( g_atm_priv_data.oam_buf_base != NULL )
-		kfree(g_atm_priv_data.oam_buf_base);
-
-	if ( g_atm_priv_data.oam_desc_base != NULL )
-		kfree(g_atm_priv_data.oam_desc_base);
+	kfree(g_atm_priv_data.tx_skb_base);
+	kfree(g_atm_priv_data.tx_desc_base);
+	kfree(g_atm_priv_data.oam_buf_base);
+	kfree(g_atm_priv_data.oam_desc_base);
 
 	if ( g_atm_priv_data.aal_desc_base != NULL ) {
 		for ( i = 0; i < dma_rx_descriptor_length; i++ ) {
@@ -1522,8 +1515,9 @@ static inline void clear_priv_data(void)
 				dev_kfree_skb_any(skb);
 			}
 		}
-		kfree(g_atm_priv_data.aal_desc_base);
 	}
+
+	kfree(g_atm_priv_data.aal_desc_base);
 }
 
 static inline void init_rx_tables(void)

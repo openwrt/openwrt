@@ -90,17 +90,6 @@
 			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
 		};
 	};
-
-	ath9k-leds {
-		compatible = "gpio-leds";
-
-		wlan {
-			function = LED_FUNCTION_WLAN;
-			color = <LED_COLOR_ID_GREEN>;
-			gpios = <&ath9k 1 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
-		};
-	};
 };
 
 &spi {
@@ -160,13 +149,16 @@
 &pcie {
 	status = "okay";
 
-	ath9k: wifi@0,0 {
+	wifi@0,0 {
 		compatible = "pci168c,002e";
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&cal_art_1000>;
 		nvmem-cell-names = "calibration";
-		#gpio-cells = <2>;
-		gpio-controller;
+
+		led {
+			led-sources = <1>;
+			led-actice-low;
+		};
 	};
 };
 

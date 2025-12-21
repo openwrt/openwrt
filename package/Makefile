@@ -105,7 +105,7 @@ ifneq ($(CONFIG_USE_APK),)
 		$$(cat $(TMP_DIR)/apk_install_list) \
 			"base-files=$(shell cat $(TMP_DIR)/base-files.version)" \
 			"libc=$(shell cat $(TMP_DIR)/libc.version)" \
-			"kernel=$(shell cat $(TMP_DIR)/kernel.version)"
+			"kernel=$(subst -rc,_rc,$(shell cat $(TMP_DIR)/kernel.version))"
 
 	rm -rf $(TARGET_DIR)/run
 else

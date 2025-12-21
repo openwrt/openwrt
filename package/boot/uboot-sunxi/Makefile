@@ -137,14 +137,14 @@ endef
 define U-Boot/OLIMEX_A13_SOM
   BUILD_SUBTARGET:=cortexa8
   NAME:=Olimex A13 SOM
-  BUILD_DEVICES:=olimex_a13-olimex-som
+  BUILD_DEVICES:=olimex_a13-olinuxino
 endef
 
 define U-Boot/licheepi_nano
   BUILD_SUBTARGET:=arm926ejs
   NAME:=LicheePi Nano
   UENV:=f1c
-  BUILD_DEVICES:=licheepi-nano
+  BUILD_DEVICES:=licheepi_licheepi-nano
 endef
 
 define U-Boot/Linksprite_pcDuino
@@ -268,7 +268,7 @@ define U-Boot/popstick
   BUILD_SUBTARGET:=arm926ejs
   NAME:=PopStick
   UENV:=f1c
-  BUILD_DEVICES:=popstick-v1.1
+  BUILD_DEVICES:=sourceparts_popstick-v1.1
 endef
 
 define U-Boot/libretech_all_h3_cc_h5
@@ -319,13 +319,13 @@ endef
 define U-Boot/bananapi_m2_plus_h3
   BUILD_SUBTARGET:=cortexa7
   NAME:=Bananapi M2 Plus H3
-  BUILD_DEVICES:=sinovoip_bananapi-m2-plus
+  BUILD_DEVICES:=sinovoip_bpi-m2-plus
 endef
 
 define U-Boot/Sinovoip_BPI_M3
   BUILD_SUBTARGET:=cortexa7
   NAME:=Bananapi M3
-  BUILD_DEVICES:=sinovoip_bananapi-m3
+  BUILD_DEVICES:=sinovoip_bpi-m3
 endef
 
 define U-Boot/sopine_baseboard
@@ -385,19 +385,19 @@ endef
 define U-Boot/Bananapi_M2_Ultra
   BUILD_SUBTARGET:=cortexa7
   NAME:=Bananapi M2 Ultra
-  BUILD_DEVICES:=sinovoip_bananapi-m2-ultra
+  BUILD_DEVICES:=sinovoip_bpi-m2-ultra
 endef
 
 define U-Boot/bananapi_m2_berry
   BUILD_SUBTARGET:=cortexa7
   NAME:=Bananapi M2 Berry
-  BUILD_DEVICES:=sinovoip_bananapi-m2-berry
+  BUILD_DEVICES:=sinovoip_bpi-m2-berry
 endef
 
 define U-Boot/bananapi_p2_zero
   BUILD_SUBTARGET:=cortexa7
   NAME:=Bananapi P2 Zero
-  BUILD_DEVICES:=sinovoip_bananapi-p2-zero
+  BUILD_DEVICES:=sinovoip_bpi-p2-zero
 endef
 
 

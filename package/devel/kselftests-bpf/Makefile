@@ -24,7 +24,7 @@ define Package/kselftests-bpf
   SECTION:=devel
   CATEGORY:=Development
   DEPENDS:= \
-	+libelf +zlib +libpthread +librt +!LINUX_6_6:libpcap @!IN_SDK \
+	+libelf +zlib +libpthread +librt +libpcap @!IN_SDK \
 	@KERNEL_DEBUG_FS @KERNEL_DEBUG_INFO_BTF @KERNEL_BPF_EVENTS
   TITLE:=Linux Kernel Selftests (BPF)
   URL:=http://www.kernel.org

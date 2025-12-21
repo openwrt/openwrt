@@ -597,14 +597,12 @@ choice
 
 	config KERNEL_TRANSPARENT_HUGEPAGE_NEVER
 		bool "never"
-		depends on !LINUX_6_6
 endchoice
 
 config KERNEL_ARM64_CONTPTE
 	bool "Compile the kernel with Contiguous PTE mappings for user memory"
 	depends on aarch64
 	depends on KERNEL_TRANSPARENT_HUGEPAGE
-	depends on !LINUX_6_6
 	default y
 
 config KERNEL_HUGETLBFS
@@ -862,7 +860,6 @@ if KERNEL_CGROUPS
 	config KERNEL_CPUSETS_V1
 		bool "Legacy cgroup v1 cpusets controller"
 		depends on KERNEL_CPUSETS
-		depends on !LINUX_6_6
 		default n
 		help
 		  Legacy cgroup v1 cpusets controller which has been deprecated by
@@ -921,7 +918,6 @@ if KERNEL_CGROUPS
 		bool "Legacy cgroup v1 memory controller"
 		default n
 		depends on KERNEL_MEMCG
-		depends on !LINUX_6_6
 		help
 		  Legacy cgroup v1 memory controller which has been deprecated by
 		  cgroup v2 implementation. The v1 is there for legacy applications

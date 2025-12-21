@@ -25,7 +25,8 @@ function print_assoclist(stations) {
 				printf(', %s', flags);
 			printf('%10d Pkts.\n', bitrate.packets);
 		}
-		printf(`\texpected throughput: ${station.expected_throughput}\n\n`);
+		let expected_throughput = station.expected_throughput;
+		printf(`\texpected throughput: ${expected_throughput == 'unknown' ? 'unknown' : expected_throughput + ' MBit/s'}\n\n`);
 	}
 }
 

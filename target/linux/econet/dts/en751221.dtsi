@@ -56,6 +56,93 @@
 		econet,shadow-interrupts = <7 2>, <8 3>, <13 12>, <30 29>;
 	};
 
+	ethernet: ethernet@1fb50000 {
+		compatible = "econet,en751221-eth";
+		reg = <0x1fb50000 0x10000>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		interrupt-parent = <&intc>;
+		interrupts = <21>, <22>;
+
+		gmac0: mac@0 {
+			compatible = "econet,eth-mac";
+			reg = <0>;
+			phy-mode = "trgmii";
+			status = "disabled";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+				pause;
+			};
+		};
+
+		gmac1: mac@1 {
+			compatible = "econet,eth-mac";
+			reg = <1>;
+			status = "disabled";
+			phy-mode = "rgmii-rxid";
+		};
+
+		 mdio: mdio-bus {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			switch0: switch@1f {
+				compatible = "mediatek,mt7530";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0x1f>;
+				mediatek,mcm;
+				reset-names = "mcm";
+
+				ports {
+					#address-cells = <1>;
+					#size-cells = <0>;
+					reg = <0>;
+
+					port@0 {
+						status = "disabled";
+						reg = <0>;
+						label = "lan0";
+					};
+
+					port@1 {
+						status = "disabled";
+						reg = <1>;
+						label = "lan1";
+					};
+
+					port@2 {
+						status = "disabled";
+						reg = <2>;
+						label = "lan2";
+					};
+
+					port@3 {
+						status = "disabled";
+						reg = <3>;
+						label = "lan3";
+					};
+
+					port@6 {
+						reg = <6>;
+						label = "cpu";
+						ethernet = <&gmac0>;
+						phy-mode = "trgmii";
+
+						fixed-link {
+							speed = <1000>;
+							full-duplex;
+						};
+					};
+				};
+			};
+		};
+	};
+
     usb: usb@1fb90000 {
             compatible = "mediatek,mt8173-xhci", "mediatek,mtk-xhci";
             reg = <0x1fb90000 0x4000>,
