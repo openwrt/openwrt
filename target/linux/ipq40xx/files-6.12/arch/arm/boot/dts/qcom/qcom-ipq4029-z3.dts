@@ -1,11 +1,25 @@
 // SPDX-License-Identifier: GPL-2.0-only
 // Device Tree Source for Meraki Z3 (Fuzzy Cricket)
 
-#include "qcom-ipq4029-wired-qca-common.dtsi"
+#include "qcom-ipq4029-meraki-insect.dtsi"
 
 / {
 	model = "Meraki Z3 Router";
 	compatible = "meraki,z3";
+
+	soc {
+		ess_tcsr@1953000 {
+			qcom,ess-interface-select = <TCSR_ESS_PSGMII>;
+		};
+
+		tcsr@194b000 {
+			/* select hostmode */
+			compatible = "qcom,tcsr";
+			reg = <0x194b000 0x100>;
+			qcom,usb-hsphy-mode-select = <TCSR_USB_HSPHY_HOST_MODE>;
+			status = "okay";
+		};
+	};
 
 	leds {
 		compatible = "gpio-leds";
@@ -97,6 +111,55 @@
 			gpios = <&tlmm 32 GPIO_ACTIVE_LOW>;
 		};
 	};
+};
+
+&tricolor {
+	enable-gpio = <&tlmm 48 GPIO_ACTIVE_HIGH>;
+};
+
+&usb2_hs_phy {
+	status = "okay";
+};
+
+&usb2 {
+	status = "okay";
+};
+
+&usb3_hs_phy {
+	status = "okay";
+};
+
+&usb3_ss_phy {
+	status = "okay";
+};
+
+&usb3 {
+	status = "okay";
+};
+
+&swport1 {
+	label = "wan";
+	status = "okay";
+};
+
+&swport2 {
+	label = "lan2";
+	status = "okay";
+};
+
+&swport3 {
+	label = "lan3";
+	status = "okay";
+};
+
+&swport4 {
+	label = "lan4";
+	status = "okay";
+};
+
+&swport5 {
+	label = "lan5";
+	status = "okay";
 };
 
 &wifi0 {

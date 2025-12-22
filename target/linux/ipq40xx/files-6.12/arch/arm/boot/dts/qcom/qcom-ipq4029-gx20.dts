@@ -1,11 +1,25 @@
 // SPDX-License-Identifier: GPL-2.0-only
 // Device Tree Source for Meraki Go GX20 (Fairyfly)
 
-#include "qcom-ipq4029-wired-qca-common.dtsi"
+#include "qcom-ipq4029-meraki-insect.dtsi"
 
 / {
 	model = "Meraki Go GX20 Router";
 	compatible = "meraki,gx20";
+
+	soc {
+		ess_tcsr@1953000 {
+			qcom,ess-interface-select = <TCSR_ESS_PSGMII>;
+		};
+
+		tcsr@194b000 {
+			/* select hostmode */
+			compatible = "qcom,tcsr";
+			reg = <0x194b000 0x100>;
+			qcom,usb-hsphy-mode-select = <TCSR_USB_HSPHY_HOST_MODE>;
+			status = "okay";
+		};
+	};
 
 	leds {
 		compatible = "gpio-leds";
@@ -99,11 +113,51 @@
 	};
 };
 
-/* GX20 does not have WiFi radios */
-&wifi0 {
-	status = "disabled";
+&tricolor {
+	enable-gpio = <&tlmm 48 GPIO_ACTIVE_HIGH>;
 };
 
-&wifi1 {
-	status = "disabled";
+&usb2_hs_phy {
+		status = "okay";
+};
+
+&usb2 {
+		status = "okay";
+};
+
+&usb3_hs_phy {
+		status = "okay";
+};
+
+&usb3_ss_phy {
+		status = "okay";
+};
+
+&usb3 {
+		status = "okay";
+};
+
+&swport1 {
+	label = "wan";
+	status = "okay";
+};
+
+&swport2 {
+	label = "lan2";
+	status = "okay";
+};
+
+&swport3 {
+	label = "lan3";
+	status = "okay";
+};
+
+&swport4 {
+	label = "lan4";
+	status = "okay";
+};
+
+&swport5 {
+	label = "lan5";
+	status = "okay";
 };
