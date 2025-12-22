@@ -26,7 +26,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  
 --- a/drivers/mtd/spi-nor/core.c
 +++ b/drivers/mtd/spi-nor/core.c
-@@ -3441,6 +3441,18 @@ static const struct flash_info *spi_nor_
+@@ -3462,6 +3462,18 @@ static const struct flash_info *spi_nor_
  	return NULL;
  }
  
@@ -45,7 +45,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  static const struct flash_info *spi_nor_get_flash_info(struct spi_nor *nor,
  						       const char *name)
  {
-@@ -3615,6 +3627,9 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -3636,6 +3648,9 @@ int spi_nor_scan(struct spi_nor *nor, co
  	if (ret)
  		return ret;
  
