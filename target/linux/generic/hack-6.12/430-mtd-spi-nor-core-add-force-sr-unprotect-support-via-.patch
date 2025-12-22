@@ -1,0 +1,69 @@
+From 0deed4a3423b8d95cff6e079548c0bce311ce131 Mon Sep 17 00:00:00 2001
+From: Chen Minqiang <ptpt52@gmail.com>
+Date: Mon, 22 Dec 2025 14:07:57 +0800
+Subject: [PATCH] mtd: spi-nor: core: add force-sr-unprotect support via DT
+
+Some SPI-NOR flash chips may have their block protection (BP) bits set
+in the status register by the bootloader or factory default, which
+effectively makes the flash or certain regions of it read-only.
+
+While the MTD layer might report success on erase or write operations,
+the actual data remains unchanged because the hardware-level protection
+silently ignores these commands.
+
+This patch introduces a new DT property "force-sr-unprotect":
+1. Add SNOR_F_SR_UNPROTECT flag to spi_nor_option_flags.
+2. Read "force-sr-unprotect" from Device Tree to enable this flag.
+3. During spi_nor_init(), if the flag is set, explicitly clear the
+   BP0-BP2 and SRWD bits in the Status Register to ensure the flash
+   is writable.
+
+Signed-off-by: Chen Minqiang <ptpt52@gmail.com>
+---
+ drivers/mtd/spi-nor/core.c | 18 ++++++++++++++++++
+ drivers/mtd/spi-nor/core.h |  1 +
+ 2 files changed, 19 insertions(+)
+
+--- a/drivers/mtd/spi-nor/core.c
++++ b/drivers/mtd/spi-nor/core.c
+@@ -2768,6 +2768,9 @@ static void spi_nor_init_flags(struct sp
+ 	if (of_property_read_bool(np, "broken-flash-reset"))
+ 		nor->flags |= SNOR_F_BROKEN_RESET;
+ 
++	if (of_property_read_bool(np, "force-sr-unprotect"))
++		nor->flags |= SNOR_F_SR_UNPROTECT;
++
+ 	if (of_property_read_bool(np, "no-wp"))
+ 		nor->flags |= SNOR_F_NO_WP;
+ 
+@@ -3119,6 +3122,20 @@ static int spi_nor_init(struct spi_nor *
+ {
+ 	int err;
+ 
++	if (nor->flags & SNOR_F_SR_UNPROTECT) {
++		u8 status_old, status_new;
++		err = spi_nor_read_sr(nor, nor->bouncebuf);
++		if (err)
++			return err;
++		status_old = nor->bouncebuf[0];
++		status_new = status_old & ~(SR_BP0 | SR_BP1 | SR_BP2 | SR_SRWD);
++		if (status_new != status_old)
++		{
++			spi_nor_write_enable(nor);
++			spi_nor_write_sr_and_check(nor, status_new);
++		}
++	}
++
+ 	err = spi_nor_set_octal_dtr(nor, true);
+ 	if (err) {
+ 		dev_dbg(nor->dev, "octal mode not supported\n");
+--- a/drivers/mtd/spi-nor/core.h
++++ b/drivers/mtd/spi-nor/core.h
+@@ -140,6 +140,7 @@ enum spi_nor_option_flags {
+ 	SNOR_F_RWW		= BIT(14),
+ 	SNOR_F_ECC		= BIT(15),
+ 	SNOR_F_NO_WP		= BIT(16),
++	SNOR_F_SR_UNPROTECT	= BIT(17),
+ };
+ 
+ struct spi_nor_read_command {
