@@ -1,0 +1,101 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Device Tree Source for Meraki devices
+ *
+ * Copyright (C) 2017 Chris Blake <chrisrblake93@gmail.com>
+ * Copyright (C) 2017 Christian Lamparter <chunkeey@googlemail.com>
+ * Copyright (C) 2025 Hal Martin <halmartin@googlemail.com>
+ *
+ * Based on Cisco Meraki DTS from GPL release r25-linux-3.14-20170427
+ *
+ * This file is licensed under the terms of the GNU General Public
+ * License version 2.  This program is licensed "as is" without
+ * any warranty of any kind, whether express or implied.
+ */
+
+#include "qcom-ipq4029-meraki-common.dtsi"
+
+/ {
+	aliases {
+		led-boot = &status_green;
+		led-failsafe = &status_red;
+		led-running = &status_green;
+		led-upgrade = &power_orange;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		power_orange: power {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_ORANGE>;
+			gpios = <&tlmm 49 GPIO_ACTIVE_HIGH>;
+			panic-indicator;
+		};
+	};
+};
+
+&blsp1_i2c3 {
+	eeprom@56 {
+		compatible = "atmel,24c64";
+		pagesize = <32>;
+		reg = <0x56>;
+		read-only; /* This holds our MAC & Meraki board-data */
+
+		nvmem-layout {
+			compatible = "fixed-layout";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mac_address: mac-address@66 {
+				compatible = "mac-base";
+				reg = <0x66 0x6>;
+				#nvmem-cell-cells = <1>;
+			};
+		};
+	};
+};
+
+&tlmm {
+	i2c_0_pins: i2c_0_pinmux {
+		function = "blsp_i2c0";
+		pins = "gpio10", "gpio11";
+		drive-strength = <16>;
+		bias-disable;
+	};
+};
+
+&mdio {
+	ethernet-phy-package@0 {
+		status = "disabled";
+	};
+};
+
+&switch {
+	/delete-property/ psgmii-ethphy;
+};
+
+&ethphy0 {
+	status = "disabled";
+};
+
+&ethphy1 {
+	status = "disabled";
+};
+
+&ethphy2 {
+	status = "disabled";
+};
+
+&ethphy3 {
+	status = "disabled";
+};
+
+&ethphy4 {
+	status = "disabled";
+};
+
+&psgmiiphy {
+	status = "disabled";
+};
+
