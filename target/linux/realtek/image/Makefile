@@ -30,6 +30,13 @@ define Build/rt-loader
 	mv "$@.new" "$@"
 endef
 
+define Build/rt-loader-no-uimage
+        $(MAKE) all clean -C rt-loader CROSS_COMPILE="$(TARGET_CROSS)" \
+                KERNEL_ADDR="$(KERNEL_LOADADDR)" KERNEL_IMG_IN="$@" \
+                KERNEL_IMG_OUT="$@.new" BUILD_DIR="$@.build"
+        mv "$@.new" "$@"
+endef
+
 define Build/zyxel-vers
        ( echo VERS;\
        for hw in $(ZYXEL_VERS); do\
