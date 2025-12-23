@@ -1,4 +1,4 @@
-From 7dffd83ae4ae02a43d61b15af6edb199fcc7ebb3 Mon Sep 17 00:00:00 2001
+From 334fd8a6295e82c16b3120d29213ca02947d3ebb Mon Sep 17 00:00:00 2001
 From: Robert Marko <robert.marko@sartura.hr>
 Date: Tue, 5 Nov 2024 12:08:06 +0100
 Subject: [PATCH] include: dt-bindings: add LAN969x clock bindings
@@ -7,17 +7,17 @@ Add the required LAN969x clock bindings.
 
 Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 ---
- include/dt-bindings/clock/microchip,lan969x.h | 24 +++++++++++++++++++
+ include/dt-bindings/clock/microchip,lan9691.h | 24 +++++++++++++++++++
  1 file changed, 24 insertions(+)
- create mode 100644 include/dt-bindings/clock/microchip,lan969x.h
+ create mode 100644 include/dt-bindings/clock/microchip,lan9691.h
 
 --- /dev/null
-+++ b/include/dt-bindings/clock/microchip,lan969x.h
++++ b/include/dt-bindings/clock/microchip,lan9691.h
 @@ -0,0 +1,24 @@
 +/* SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) */
 +
-+#ifndef _DT_BINDINGS_CLK_LAN969X_H
-+#define _DT_BINDINGS_CLK_LAN969X_H
++#ifndef _DT_BINDINGS_CLK_LAN9691_H
++#define _DT_BINDINGS_CLK_LAN9691_H
 +
 +#define GCK_ID_QSPI0		0
 +#define GCK_ID_QSPI2		1
