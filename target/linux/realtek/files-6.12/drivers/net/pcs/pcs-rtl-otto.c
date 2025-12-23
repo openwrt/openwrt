@@ -101,6 +101,10 @@
 #define RTSDS_930X_PLL_LC		0x3
 #define RTSDS_930X_PLL_RING		0x1
 
+/* LEQ/DFE media type configuration (0x2e:0x16[3:2]) */
+#define RTSDS_930X_MEDIA_DAC			0x1	/* Direct Attach Copper cable */
+#define RTSDS_930X_MEDIA_FIBER			0x2	/* Fiber or PHY-based connection */
+
 /* Registers of the internal SerDes of the 9310 */
 #define RTL931X_SERDES_MODE_CTRL		(0x13cc)
 #define RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR	(0x13F4)
@@ -1553,17 +1557,13 @@ static void rtpcs_930x_sds_do_rx_calibration_1(struct rtpcs_serdes *sds,
 
 	pr_info("start_1.1.5 LEQ and DFE setting\n");
 
-	/* TODO: make this work for DAC cables of different lengths */
-	/* For a 10GBit serdes wit Fibre, SDS 8 or 9 */
-	if (phy_mode == PHY_INTERFACE_MODE_10GBASER ||
-	    phy_mode == PHY_INTERFACE_MODE_1000BASEX ||
-	    phy_mode == PHY_INTERFACE_MODE_SGMII)
-		rtpcs_sds_write_bits(sds, 0x2e, 0x16,  3,  2, 0x02);
-	else
-		pr_err("%s not PHY-based or SerDes, implement DAC!\n", __func__);
-
-	/* No serdes, check for Aquantia PHYs */
-	rtpcs_sds_write_bits(sds, 0x2e, 0x16,  3,  2, 0x02);
+	/*
+	 * Configure LEQ/DFE based on media type:
+	 * 0x1 = DAC (Direct Attach Copper) cable on SDS 8/9
+	 * 0x2 = Fiber or PHY-based connection
+	 * TODO: DAC detection not implemented, always use fiber/PHY setting
+	 */
+	rtpcs_sds_write_bits(sds, 0x2e, 0x16,  3,  2, RTSDS_930X_MEDIA_FIBER);
 
 	rtpcs_sds_write_bits(sds, 0x2e, 0x0f,  6,  0, 0x5f);
 	rtpcs_sds_write_bits(sds, 0x2f, 0x05,  7,  2, 0x1f);
