@@ -725,13 +725,15 @@ static int rtpcs_930x_sds_set_pll_data(struct rtpcs_serdes *sds,
 
 	/*
 	 * A SerDes clock can either be taken from the low speed ring PLL or the high speed
-	 * LC PLL. As it is unclear if disabling PLLs has any positive or negative effect,
-	 * always activate both.
+	 * LC PLL. Initialize CMU reset control bits to enable subsequent CMU toggle.
 	 */
 
 	rtpcs_sds_write_bits(even_sds, 0x20, 0x12, 3, 0, 0xf);
 	rtpcs_sds_write_bits(even_sds, 0x20, 0x12, pbit + 1, pbit, pll);
 	rtpcs_sds_write_bits(even_sds, 0x20, 0x12, sbit + 3, sbit, speed);
+
+	/* Initialize CMU reset control bits for subsequent toggle in clock ready loop */
+	rtpcs_sds_write_bits(even_sds, 0x21, 0x0b, 3, 0, 0xf);
 
 	return 0;
 }
