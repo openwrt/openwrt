@@ -828,7 +828,6 @@ static int rtpcs_930x_sds_config_pll(struct rtpcs_serdes *sds,
 {
 	struct rtpcs_serdes *nb_sds = rtpcs_sds_get_neighbor(sds);
 	int neighbor_speed, neighbor_mode, neighbor_pll;
-	bool speed_changed = true;
 	int pll, speed;
 
 	/*
@@ -863,25 +862,25 @@ static int rtpcs_930x_sds_config_pll(struct rtpcs_serdes *sds,
 	else
 		return -ENOTSUPP;
 
-	if (!neighbor_mode)
-		pll = speed == RTSDS_930X_PLL_10000 ? RTSDS_930X_PLL_LC : RTSDS_930X_PLL_RING;
-	else if (speed == neighbor_speed) {
-		speed_changed = false;
-		pll = neighbor_pll;
-	} else if (neighbor_pll == RTSDS_930X_PLL_RING)
+	/* 10GBASE-R always requires LC PLL */
+	if (speed == RTSDS_930X_PLL_10000) {
 		pll = RTSDS_930X_PLL_LC;
-	else if (speed == RTSDS_930X_PLL_10000) {
-		pr_info("%s: SDS %d needs LC PLL, reconfigure SDS %d to use ring PLL\n",
-			__func__, sds->id, nb_sds->id);
-		rtpcs_930x_sds_reconfigure_pll(nb_sds, RTSDS_930X_PLL_RING);
+		if (neighbor_mode && neighbor_pll == RTSDS_930X_PLL_LC &&
+		    neighbor_speed != RTSDS_930X_PLL_10000) {
+			pr_info("%s: SDS %d needs LC PLL, reconfigure SDS %d to use ring PLL\n",
+				__func__, sds->id, nb_sds->id);
+			rtpcs_930x_sds_reconfigure_pll(nb_sds, RTSDS_930X_PLL_RING);
+		}
+	} else if (!neighbor_mode) {
+		pll = RTSDS_930X_PLL_RING;
+	} else if (neighbor_pll == RTSDS_930X_PLL_RING) {
 		pll = RTSDS_930X_PLL_LC;
 	} else
 		pll = RTSDS_930X_PLL_RING;
 
 	rtpcs_930x_sds_set_pll_data(sds, pll, speed);
 
-	if (speed_changed)
-		rtpcs_930x_sds_reset_cmu(sds);
+	rtpcs_930x_sds_reset_cmu(sds);
 
 	pr_info("%s: SDS %d using %s PLL for %s\n", __func__, sds->id,
 		pll == RTSDS_930X_PLL_LC ? "LC" : "ring", phy_modes(interface));
