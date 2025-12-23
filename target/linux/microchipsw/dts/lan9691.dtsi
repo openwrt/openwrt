@@ -3,7 +3,7 @@
  * Copyright (c) 2025 Microchip Technology Inc. and its subsidiaries.
  */
 
-#include <dt-bindings/clock/microchip,lan969x.h>
+#include <dt-bindings/clock/microchip,lan9691.h>
 #include <dt-bindings/dma/at91.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/mfd/at91-usart.h>
@@ -14,13 +14,8 @@
 	#size-cells = <1>;
 
 	model = "Microchip LAN969x";
-	compatible = "microchip,lan969x";
+	compatible = "microchip,lan9691";
 	interrupt-parent = <&gic>;
-
-	psci {
-		compatible = "arm,psci-1.0";
-		method = "smc";
-	};
 
 	clocks {
 		fx100_clk: fx100-clk {
@@ -66,6 +61,11 @@
 		};
 	};
 
+	psci {
+		compatible = "arm,psci-1.0";
+		method = "smc";
+	};
+
 	pmu {
 		compatible = "arm,cortex-a53-pmu";
 		interrupts = <GIC_SPI 77 IRQ_TYPE_LEVEL_HIGH>;
@@ -105,18 +105,17 @@
 		};
 
 		flx0: flexcom@e0040000 {
-			compatible = "atmel,sama5d2-flexcom";
+			compatible = "microchip,lan9691-flexcom", "atmel,sama5d2-flexcom";
 			reg = <0xe0040000 0x100>;
+			ranges = <0x0 0xe0040000 0x800>;
 			clocks = <&clks GCK_ID_FLEXCOM0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0xe0040000 0x800>;
 			status = "disabled";
 
 			usart0: serial@200 {
-				compatible = "atmel,at91sam9260-usart";
+				compatible = "microchip,lan9691-usart", "atmel,at91sam9260-usart";
 				reg = <0x200 0x200>;
-				atmel,usart-mode = <AT91_USART_MODE_SERIAL>;
 				interrupts = <GIC_SPI 46 IRQ_TYPE_LEVEL_HIGH>;
 				dmas = <&dma AT91_XDMAC_DT_PERID(3)>,
 				       <&dma AT91_XDMAC_DT_PERID(2)>;
@@ -124,11 +123,12 @@
 				clocks = <&fabric_clk>;
 				clock-names = "usart";
 				atmel,fifo-size = <32>;
+				atmel,usart-mode = <AT91_USART_MODE_SERIAL>;
 				status = "disabled";
 			};
 
 			spi0: spi@400 {
-				compatible = "atmel,at91rm9200-spi";
+				compatible = "microchip,lan9691-spi", "atmel,at91rm9200-spi";
 				reg = <0x400 0x200>;
 				interrupts = <GIC_SPI 46 IRQ_TYPE_LEVEL_HIGH>;
 				dmas = <&dma AT91_XDMAC_DT_PERID(3)>,
@@ -136,14 +136,14 @@
 				dma-names = "tx", "rx";
 				clocks = <&fabric_clk>;
 				clock-names = "spi_clk";
-				atmel,fifo-size = <32>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				atmel,fifo-size = <32>;
 				status = "disabled";
 			};
 
 			i2c0: i2c@600 {
-				compatible = "microchip,sam9x60-i2c";
+				compatible = "microchip,lan9691-i2c", "microchip,sam9x60-i2c";
 				reg = <0x600 0x200>;
 				interrupts = <GIC_SPI 46 IRQ_TYPE_LEVEL_HIGH>;
 				dmas = <&dma AT91_XDMAC_DT_PERID(3)>,
@@ -157,18 +157,17 @@
 		};
 
 		flx1: flexcom@e0044000 {
-			compatible = "atmel,sama5d2-flexcom";
+			compatible = "microchip,lan9691-flexcom", "atmel,sama5d2-flexcom";
 			reg = <0xe0044000 0x100>;
+			ranges = <0x0 0xe0044000 0x800>;
 			clocks = <&clks GCK_ID_FLEXCOM1>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0xe0044000 0x800>;
 			status = "disabled";
 
 			usart1: serial@200 {
-				compatible = "atmel,at91sam9260-usart";
+				compatible = "microchip,lan9691-usart", "atmel,at91sam9260-usart";
 				reg = <0x200 0x200>;
-				atmel,usart-mode = <AT91_USART_MODE_SERIAL>;
 				interrupts = <GIC_SPI 47 IRQ_TYPE_LEVEL_HIGH>;
 				dmas = <&dma AT91_XDMAC_DT_PERID(3)>,
 				       <&dma AT91_XDMAC_DT_PERID(2)>;
@@ -176,11 +175,12 @@
 				clocks = <&fabric_clk>;
 				clock-names = "usart";
 				atmel,fifo-size = <32>;
+				atmel,usart-mode = <AT91_USART_MODE_SERIAL>;
 				status = "disabled";
 			};
 
 			spi1: spi@400 {
-				compatible = "atmel,at91rm9200-spi";
+				compatible = "microchip,lan9691-spi", "atmel,at91rm9200-spi";
 				reg = <0x400 0x200>;
 				interrupts = <GIC_SPI 47 IRQ_TYPE_LEVEL_HIGH>;
 				dmas = <&dma AT91_XDMAC_DT_PERID(3)>,
@@ -188,14 +188,14 @@
 				dma-names = "tx", "rx";
 				clocks = <&fabric_clk>;
 				clock-names = "spi_clk";
-				atmel,fifo-size = <32>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				atmel,fifo-size = <32>;
 				status = "disabled";
 			};
 
 			i2c1: i2c@600 {
-				compatible = "microchip,sam9x60-i2c";
+				compatible = "microchip,lan9691-i2c", "microchip,sam9x60-i2c";
 				reg = <0x600 0x200>;
 				interrupts = <GIC_SPI 47 IRQ_TYPE_LEVEL_HIGH>;
 				dmas = <&dma AT91_XDMAC_DT_PERID(3)>,
@@ -209,14 +209,14 @@
 		};
 
 		trng: rng@e0048000 {
-			compatible = "atmel,at91sam9g45-trng";
+			compatible = "microchip,lan9691-trng", "atmel,at91sam9g45-trng";
 			reg = <0xe0048000 0x100>;
 			clocks = <&fabric_clk>;
 			status = "disabled";
 		};
 
 		aes: crypto@e004c000 {
-			compatible = "atmel,at91sam9g46-aes";
+			compatible = "microchip,lan9691-aes", "atmel,at91sam9g46-aes";
 			reg = <0xe004c000 0x100>;
 			interrupts = <GIC_SPI 51 IRQ_TYPE_LEVEL_HIGH>;
 			dmas = <&dma AT91_XDMAC_DT_PERID(12)>,
@@ -228,18 +228,17 @@
 		};
 
 		flx2: flexcom@e0060000 {
-			compatible = "atmel,sama5d2-flexcom";
+			compatible = "microchip,lan9691-flexcom", "atmel,sama5d2-flexcom";
 			reg = <0xe0060000 0x100>;
+			ranges = <0x0 0xe0060000 0x800>;
 			clocks = <&clks GCK_ID_FLEXCOM2>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0xe0060000 0x800>;
 			status = "disabled";
 
 			usart2: serial@200 {
-				compatible = "atmel,at91sam9260-usart";
+				compatible = "microchip,lan9691-usart", "atmel,at91sam9260-usart";
 				reg = <0x200 0x200>;
-				atmel,usart-mode = <AT91_USART_MODE_SERIAL>;
 				interrupts = <GIC_SPI 48 IRQ_TYPE_LEVEL_HIGH>;
 				dmas = <&dma AT91_XDMAC_DT_PERID(7)>,
 				       <&dma AT91_XDMAC_DT_PERID(6)>;
@@ -247,11 +246,12 @@
 				clocks = <&fabric_clk>;
 				clock-names = "usart";
 				atmel,fifo-size = <32>;
+				atmel,usart-mode = <AT91_USART_MODE_SERIAL>;
 				status = "disabled";
 			};
 
 			spi2: spi@400 {
-				compatible = "atmel,at91rm9200-spi";
+				compatible = "microchip,lan9691-spi", "atmel,at91rm9200-spi";
 				reg = <0x400 0x200>;
 				interrupts = <GIC_SPI 48 IRQ_TYPE_LEVEL_HIGH>;
 				dmas = <&dma AT91_XDMAC_DT_PERID(7)>,
@@ -259,16 +259,19 @@
 				dma-names = "tx", "rx";
 				clocks = <&fabric_clk>;
 				clock-names = "spi_clk";
-				atmel,fifo-size = <32>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				atmel,fifo-size = <32>;
 				status = "disabled";
 			};
 
 			i2c2: i2c@600 {
-				compatible = "microchip,sam9x60-i2c";
+				compatible = "microchip,lan9691-i2c", "microchip,sam9x60-i2c";
 				reg = <0x600 0x200>;
 				interrupts = <GIC_SPI 48 IRQ_TYPE_LEVEL_HIGH>;
+				dmas = <&dma AT91_XDMAC_DT_PERID(7)>,
+				       <&dma AT91_XDMAC_DT_PERID(6)>;
+				dma-names = "tx", "rx";
 				clocks = <&fabric_clk>;
 				#address-cells = <1>;
 				#size-cells = <0>;
@@ -277,18 +280,17 @@
 		};
 
 		flx3: flexcom@e0064000 {
-			compatible = "atmel,sama5d2-flexcom";
+			compatible = "microchip,lan9691-flexcom", "atmel,sama5d2-flexcom";
 			reg = <0xe0064000 0x100>;
+			ranges = <0x0 0xe0064000 0x800>;
 			clocks = <&clks GCK_ID_FLEXCOM3>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0xe0064000 0x800>;
 			status = "disabled";
 
 			usart3: serial@200 {
-				compatible = "atmel,at91sam9260-usart";
+				compatible = "microchip,lan9691-usart", "atmel,at91sam9260-usart";
 				reg = <0x200 0x200>;
-				atmel,usart-mode = <AT91_USART_MODE_SERIAL>;
 				interrupts = <GIC_SPI 49 IRQ_TYPE_LEVEL_HIGH>;
 				dmas = <&dma AT91_XDMAC_DT_PERID(9)>,
 				       <&dma AT91_XDMAC_DT_PERID(8)>;
@@ -296,11 +298,12 @@
 				clocks = <&fabric_clk>;
 				clock-names = "usart";
 				atmel,fifo-size = <32>;
+				atmel,usart-mode = <AT91_USART_MODE_SERIAL>;
 				status = "disabled";
 			};
 
 			spi3: spi@400 {
-				compatible = "atmel,at91rm9200-spi";
+				compatible = "microchip,lan9691-spi", "atmel,at91rm9200-spi";
 				reg = <0x400 0x200>;
 				interrupts = <GIC_SPI 49 IRQ_TYPE_LEVEL_HIGH>;
 				dmas = <&dma AT91_XDMAC_DT_PERID(9)>,
@@ -308,14 +311,14 @@
 				dma-names = "tx", "rx";
 				clocks = <&fabric_clk>;
 				clock-names = "spi_clk";
-				atmel,fifo-size = <32>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				atmel,fifo-size = <32>;
 				status = "disabled";
 			};
 
 			i2c3: i2c@600 {
-				compatible = "microchip,sam9x60-i2c";
+				compatible = "microchip,lan9691-i2c", "microchip,sam9x60-i2c";
 				reg = <0x600 0x200>;
 				interrupts = <GIC_SPI 49 IRQ_TYPE_LEVEL_HIGH>;
 				dmas = <&dma AT91_XDMAC_DT_PERID(9)>,
@@ -329,7 +332,7 @@
 		};
 
 		dma: dma-controller@e0068000 {
-			compatible = "microchip,sama7g5-dma";
+			compatible = "microchip,lan9691-dma", "microchip,sama7g5-dma";
 			reg = <0xe0068000 0x1000>;
 			interrupts = <GIC_SPI 44 IRQ_TYPE_LEVEL_HIGH>;
 			dma-channels = <16>;
@@ -339,7 +342,7 @@
 		};
 
 		sha: crypto@e006c000 {
-			compatible = "atmel,at91sam9g46-sha";
+			compatible = "microchip,lan9691-sha", "atmel,at91sam9g46-sha";
 			reg = <0xe006c000 0xec>;
 			interrupts = <GIC_SPI 55 IRQ_TYPE_LEVEL_HIGH>;
 			dmas = <&dma AT91_XDMAC_DT_PERID(14)>;
@@ -386,10 +389,10 @@
 
 		clks: clock-controller@e00c00b4 {
 			compatible = "microchip,lan9691-gck";
+			reg = <0xe00c00b4 0x30>, <0xe00c0308 0x4>;
 			#clock-cells = <1>;
 			clocks = <&cpu_clk>, <&ddr_clk>, <&fx100_clk>;
 			clock-names = "cpu", "ddr", "sys";
-			reg = <0xe00c00b4 0x30>, <0xe00c0308 0x4>;
 		};
 
 		qspi0: spi@e0804000 {
@@ -445,7 +448,8 @@
 		};
 
 		reset: reset-controller@e201000c {
-			compatible = "microchip,lan9691-switch-reset", "microchip,lan966x-switch-reset";
+			compatible = "microchip,lan9691-switch-reset",
+				     "microchip,lan966x-switch-reset";
 			reg = <0xe201000c 0x4>;
 			reg-names = "gcb";
 			#reset-cells = <1>;
@@ -465,25 +469,25 @@
 		};
 
 		mdio0: mdio@e20101a8 {
-			compatible = "mscc,ocelot-miim";
+			compatible = "microchip,lan9691-miim", "mscc,ocelot-miim";
+			reg = <0xe20101a8 0x24>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0xe20101a8 0x24>;
 			clocks = <&fx100_clk>;
 			status = "disabled";
 		};
 
 		mdio1: mdio@e20101cc {
-			compatible = "mscc,ocelot-miim";
+			compatible = "microchip,lan9691-miim", "mscc,ocelot-miim";
+			reg = <0xe20101cc 0x24>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0xe20101cc 0x24>;
 			clocks = <&fx100_clk>;
 			status = "disabled";
 		};
 
 		sgpio: gpio@e2010230 {
-			compatible = "microchip,sparx5-sgpio";
+			compatible = "microchip,lan9691-sgpio", "microchip,sparx5-sgpio";
 			reg = <0xe2010230 0x118>;
 			clocks = <&fx100_clk>;
 			resets = <&reset 0>;
@@ -493,7 +497,8 @@
 			status = "disabled";
 
 			sgpio_in: gpio@0 {
-				compatible = "microchip,sparx5-sgpio-bank";
+				compatible = "microchip,lan9691-sgpio-bank",
+					     "microchip,sparx5-sgpio-bank";
 				reg = <0>;
 				gpio-controller;
 				#gpio-cells = <3>;
@@ -503,7 +508,8 @@
 			};
 
 			sgpio_out: gpio@1 {
-				compatible = "microchip,sparx5-sgpio-bank";
+				compatible = "microchip,lan9691-sgpio-bank",
+					     "microchip,sparx5-sgpio-bank";
 				reg = <1>;
 				gpio-controller;
 				#gpio-cells = <3>;
@@ -511,7 +517,7 @@
 		};
 
 		tmon: hwmon@e2020100 {
-			compatible = "microchip,sparx5-temp";
+			compatible = "microchip,lan9691-temp", "microchip,sparx5-temp";
 			reg = <0xe2020100 0xc>;
 			clocks = <&fx100_clk>;
 			#thermal-sensor-cells = <0>;
@@ -519,19 +525,19 @@
 
 		serdes: serdes@e3410000 {
 			compatible = "microchip,lan9691-serdes";
+			reg = <0xe3410000 0x150000>;
 			#phy-cells = <1>;
 			clocks = <&fabric_clk>;
-			reg = <0xe3410000 0x150000>;
 		};
 
 		gic: interrupt-controller@e8c11000 {
 			compatible = "arm,gic-400";
-			#interrupt-cells = <3>;
-			interrupt-controller;
 			reg = <0xe8c11000 0x1000>, /* Distributor GICD_ */
 			      <0xe8c12000 0x2000>, /* CPU interface GICC_ */
 			      <0xe8c14000 0x2000>, /* Virt interface control */
 			      <0xe8c16000 0x2000>; /* Virt CPU interface */
+			#interrupt-cells = <3>;
+			interrupt-controller;
 			interrupts = <GIC_PPI 9 IRQ_TYPE_LEVEL_HIGH>;
 		};
 	};
