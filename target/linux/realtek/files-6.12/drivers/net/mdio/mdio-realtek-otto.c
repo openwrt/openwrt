@@ -1440,8 +1440,6 @@ static int rtmdio_probe(struct platform_device *pdev)
 	switch (family) {
 	case RTMDIO_838X_FAMILY_ID:
 		bus->name = "rtl838x-eth-mdio";
-		bus->read = rtmdio_read;
-		bus->write = rtmdio_write;
 		bus->reset = rtmdio_838x_reset;
 		priv->read_sds_phy = rtmdio_838x_read_sds_phy;
 		priv->write_sds_phy = rtmdio_838x_write_sds_phy;
@@ -1452,8 +1450,6 @@ static int rtmdio_probe(struct platform_device *pdev)
 		break;
 	case RTMDIO_839X_FAMILY_ID:
 		bus->name = "rtl839x-eth-mdio";
-		bus->read = rtmdio_read;
-		bus->write = rtmdio_write;
 		bus->reset = rtmdio_839x_reset;
 		priv->read_sds_phy = rtmdio_839x_read_sds_phy;
 		priv->write_sds_phy = rtmdio_839x_write_sds_phy;
@@ -1464,8 +1460,6 @@ static int rtmdio_probe(struct platform_device *pdev)
 		break;
 	case RTMDIO_930X_FAMILY_ID:
 		bus->name = "rtl930x-eth-mdio";
-		bus->read = rtmdio_read;
-		bus->write = rtmdio_write;
 		bus->reset = rtmdio_930x_reset;
 		priv->read_sds_phy = rtmdio_930x_read_sds_phy;
 		priv->write_sds_phy = rtmdio_930x_write_sds_phy;
@@ -1476,8 +1470,6 @@ static int rtmdio_probe(struct platform_device *pdev)
 		break;
 	case RTMDIO_931X_FAMILY_ID:
 		bus->name = "rtl931x-eth-mdio";
-		bus->read = rtmdio_read;
-		bus->write = rtmdio_write;
 		bus->reset = rtmdio_931x_reset;
 		priv->read_sds_phy = rtsds_931x_read;
 		priv->write_sds_phy = rtsds_931x_write;
@@ -1487,6 +1479,9 @@ static int rtmdio_probe(struct platform_device *pdev)
 		priv->write_phy = rtmdio_931x_write_phy;
 		break;
 	}
+
+	bus->read = rtmdio_read;
+	bus->write = rtmdio_write;
 	bus->read_c45 = rtmdio_read_c45;
 	bus->write_c45 = rtmdio_write_c45;
 	bus->parent = dev;
