@@ -171,6 +171,7 @@ struct rtmdio_config {
 	int (*read_mmd_phy)(u32 port, u32 addr, u32 reg, u32 *val);
 	int (*read_phy)(u32 port, u32 page, u32 reg, u32 *val);
 	int (*read_sds_phy)(int sds, int page, int regnum);
+	int (*reset)(struct mii_bus *bus);
 	int (*write_mmd_phy)(u32 port, u32 addr, u32 reg, u32 val);
 	int (*write_phy)(u32 port, u32 page, u32 reg, u32 val);
 	int (*write_sds_phy)(int sds, int page, int regnum, u16 val);
@@ -1382,6 +1383,13 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 	return 0;
 }
 
+static int rtmdio_reset(struct mii_bus *bus)
+{
+	struct rtmdio_bus_priv *priv = bus->priv;
+
+	return priv->cfg->reset(bus);
+}
+
 /*
  * TODO: This is a tiny leftover from the central SoC include. For now try to detect the
  * Realtek SoC automatically. This needs to be changed to a proper DTS compatible in a
@@ -1437,22 +1445,8 @@ static int rtmdio_probe(struct platform_device *pdev)
 
 	priv->cfg = (const struct rtmdio_config *)device_get_match_data(dev);
 
-	switch (family) {
-	case RTMDIO_838X_FAMILY_ID:
-		bus->reset = rtmdio_838x_reset;
-		break;
-	case RTMDIO_839X_FAMILY_ID:
-		bus->reset = rtmdio_839x_reset;
-		break;
-	case RTMDIO_930X_FAMILY_ID:
-		bus->reset = rtmdio_930x_reset;
-		break;
-	case RTMDIO_931X_FAMILY_ID:
-		bus->reset = rtmdio_931x_reset;
-		break;
-	}
-
 	bus->name = "Realtek MDIO bus";
+	bus->reset = rtmdio_reset;
 	bus->read = rtmdio_read;
 	bus->write = rtmdio_write;
 	bus->read_c45 = rtmdio_read_c45;
@@ -1533,6 +1527,7 @@ static const struct rtmdio_config rtmdio_838x_cfg = {
 	.read_mmd_phy	= rtmdio_838x_read_mmd_phy,
 	.read_phy	= rtmdio_838x_read_phy,
 	.read_sds_phy	= rtmdio_838x_read_sds_phy,
+	.reset		= rtmdio_838x_reset,
 	.write_mmd_phy	= rtmdio_838x_write_mmd_phy,
 	.write_phy	= rtmdio_838x_write_phy,
 	.write_sds_phy	= rtmdio_838x_write_sds_phy,
@@ -1544,6 +1539,7 @@ static const struct rtmdio_config rtmdio_839x_cfg = {
 	.read_mmd_phy	= rtmdio_839x_read_mmd_phy,
 	.read_phy	= rtmdio_839x_read_phy,
 	.read_sds_phy	= rtmdio_839x_read_sds_phy,
+	.reset		= rtmdio_839x_reset,
 	.write_mmd_phy	= rtmdio_839x_write_mmd_phy,
 	.write_phy	= rtmdio_839x_write_phy,
 	.write_sds_phy	= rtmdio_839x_write_sds_phy,
@@ -1555,6 +1551,7 @@ static const struct rtmdio_config rtmdio_930x_cfg = {
 	.read_mmd_phy	= rtmdio_930x_read_mmd_phy,
 	.read_phy	= rtmdio_930x_read_phy,
 	.read_sds_phy	= rtmdio_930x_read_sds_phy,
+	.reset		= rtmdio_930x_reset,
 	.write_mmd_phy	= rtmdio_930x_write_mmd_phy,
 	.write_phy	= rtmdio_930x_write_phy,
 	.write_sds_phy	= rtmdio_930x_write_sds_phy,
@@ -1566,6 +1563,7 @@ static const struct rtmdio_config rtmdio_931x_cfg = {
 	.read_mmd_phy	= rtmdio_931x_read_mmd_phy,
 	.read_phy	= rtmdio_931x_read_phy,
 	.read_sds_phy	= rtsds_931x_read,
+	.reset		= rtmdio_931x_reset,
 	.write_mmd_phy	= rtmdio_931x_write_mmd_phy,
 	.write_phy	= rtmdio_931x_write_phy,
 	.write_sds_phy	= rtsds_931x_write,
