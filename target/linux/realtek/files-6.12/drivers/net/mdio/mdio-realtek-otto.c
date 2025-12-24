@@ -159,9 +159,9 @@ DEFINE_MUTEX(rtmdio_lock);
 DEFINE_MUTEX(rtmdio_lock_sds);
 
 struct rtmdio_bus_priv {
+	const struct rtmdio_config *cfg;
 	u16 id;
 	u16 family_id;
-	int rawpage;
 	int cpu_port;
 	int page[RTMDIO_MAX_PORT];
 	bool raw[RTMDIO_MAX_PORT];
@@ -177,6 +177,10 @@ struct rtmdio_bus_priv {
 	int (*write_phy)(u32 port, u32 page, u32 reg, u32 val);
 	int (*read_sds_phy)(int sds, int page, int regnum);
 	int (*write_sds_phy)(int sds, int page, int regnum, u16 val);
+};
+
+struct rtmdio_config {
+	int raw_page;
 };
 
 /* SerDes reader/writer functions for the ports without external phy. */
@@ -1150,10 +1154,10 @@ static int rtmdio_read(struct mii_bus *bus, int addr, int regnum)
 	if (addr >= priv->cpu_port)
 		return -ENODEV;
 
-	if (regnum == RTMDIO_PAGE_SELECT && priv->page[addr] != priv->rawpage)
+	if (regnum == RTMDIO_PAGE_SELECT && priv->page[addr] != priv->cfg->raw_page)
 		return priv->page[addr];
 
-	priv->raw[addr] = (priv->page[addr] == priv->rawpage);
+	priv->raw[addr] = (priv->page[addr] == priv->cfg->raw_page);
 	if ((priv->phy_is_internal[addr]) && (priv->sds_id[addr] >= 0))
 		return rtmdio_read_sds_phy(priv, priv->sds_id[addr],
 					   priv->page[addr], regnum);
@@ -1191,8 +1195,8 @@ static int rtmdio_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 	if (regnum == RTMDIO_PAGE_SELECT)
 		priv->page[addr] = val;
 
-	if (!priv->raw[addr] && (regnum != RTMDIO_PAGE_SELECT || page == priv->rawpage)) {
-		priv->raw[addr] = (page == priv->rawpage);
+	if (!priv->raw[addr] && (regnum != RTMDIO_PAGE_SELECT || page == priv->cfg->raw_page)) {
+		priv->raw[addr] = (page == priv->cfg->raw_page);
 		if (priv->phy_is_internal[addr] && priv->sds_id[addr] >= 0)
 			return rtmdio_write_sds_phy(priv, priv->sds_id[addr],
 						    priv->page[addr], regnum, val);
@@ -1446,6 +1450,8 @@ static int rtmdio_probe(struct platform_device *pdev)
 		priv->raw[i] = false;
 	}
 
+	priv->cfg = (const struct rtmdio_config *)device_get_match_data(dev);
+
 	switch (family) {
 	case RTMDIO_838X_FAMILY_ID:
 		bus->name = "rtl838x-eth-mdio";
@@ -1459,7 +1465,6 @@ static int rtmdio_probe(struct platform_device *pdev)
 		priv->read_phy = rtmdio_838x_read_phy;
 		priv->write_phy = rtmdio_838x_write_phy;
 		priv->cpu_port = RTMDIO_838X_CPU_PORT;
-		priv->rawpage = 0xfff;
 		break;
 	case RTMDIO_839X_FAMILY_ID:
 		bus->name = "rtl839x-eth-mdio";
@@ -1473,7 +1478,6 @@ static int rtmdio_probe(struct platform_device *pdev)
 		priv->read_phy = rtmdio_839x_read_phy;
 		priv->write_phy = rtmdio_839x_write_phy;
 		priv->cpu_port = RTMDIO_839X_CPU_PORT;
-		priv->rawpage = 0x1fff;
 		break;
 	case RTMDIO_930X_FAMILY_ID:
 		bus->name = "rtl930x-eth-mdio";
@@ -1487,7 +1491,6 @@ static int rtmdio_probe(struct platform_device *pdev)
 		priv->read_phy = rtmdio_930x_read_phy;
 		priv->write_phy = rtmdio_930x_write_phy;
 		priv->cpu_port = RTMDIO_930X_CPU_PORT;
-		priv->rawpage = 0xfff;
 		break;
 	case RTMDIO_931X_FAMILY_ID:
 		bus->name = "rtl931x-eth-mdio";
@@ -1501,7 +1504,6 @@ static int rtmdio_probe(struct platform_device *pdev)
 		priv->read_phy = rtmdio_931x_read_phy;
 		priv->write_phy = rtmdio_931x_write_phy;
 		priv->cpu_port = RTMDIO_931X_CPU_PORT;
-		priv->rawpage = 0x1fff;
 		break;
 	}
 	bus->read_c45 = rtmdio_read_c45;
@@ -1576,12 +1578,40 @@ static int rtmdio_probe(struct platform_device *pdev)
 	return devm_of_mdiobus_register(dev, bus, mii_np);
 }
 
+static const struct rtmdio_config rtmdio_838x_cfg = {
+	.raw_page	= 4095,
+};
+
+static const struct rtmdio_config rtmdio_839x_cfg = {
+	.raw_page	= 8191,
+};
+
+static const struct rtmdio_config rtmdio_930x_cfg = {
+	.raw_page	= 4095,
+};
+
+static const struct rtmdio_config rtmdio_931x_cfg = {
+	.raw_page	= 8191,
+};
+
 static const struct of_device_id rtmdio_ids[] = {
-	{ .compatible = "realtek,rtl8380-mdio" },
-	{ .compatible = "realtek,rtl8392-mdio" },
-	{ .compatible = "realtek,rtl9301-mdio" },
-	{ .compatible = "realtek,rtl9311-mdio" },
-	{}
+	{
+		.compatible = "realtek,rtl8380-mdio",
+		.data = &rtmdio_838x_cfg,
+	},
+	{
+		.compatible = "realtek,rtl8392-mdio",
+		.data = &rtmdio_839x_cfg,
+	},
+	{
+		.compatible = "realtek,rtl9301-mdio",
+		.data = &rtmdio_930x_cfg,
+	},
+	{
+		.compatible = "realtek,rtl9311-mdio",
+		.data = &rtmdio_931x_cfg,
+	},
+	{ /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, rtmdio_ids);
 
