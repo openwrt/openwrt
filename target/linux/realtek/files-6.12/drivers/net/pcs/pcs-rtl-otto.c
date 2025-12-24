@@ -110,6 +110,7 @@ enum rtpcs_sds_mode {
 	RTPCS_SDS_MODE_OFF = 0,
 
 	/* fiber modes */
+	RTPCS_SDS_MODE_100BASEX,
 	RTPCS_SDS_MODE_1000BASEX,
 	RTPCS_SDS_MODE_2500BASEX,
 	RTPCS_SDS_MODE_10GBASER,
@@ -286,6 +287,9 @@ static int rtpcs_sds_determine_hw_mode(struct rtpcs_serdes *sds,
 	case PHY_INTERFACE_MODE_NA:
 		*hw_mode = RTPCS_SDS_MODE_OFF;
 		break;
+	case PHY_INTERFACE_MODE_100BASEX:
+		*hw_mode = RTPCS_SDS_MODE_100BASEX;
+		break;
 	case PHY_INTERFACE_MODE_1000BASEX:
 		*hw_mode = RTPCS_SDS_MODE_1000BASEX;
 		break;
@@ -304,6 +308,9 @@ static int rtpcs_sds_determine_hw_mode(struct rtpcs_serdes *sds,
 	case PHY_INTERFACE_MODE_USXGMII:
 		/* TODO: set this depending on number of links on SerDes */
 		*hw_mode = RTPCS_SDS_MODE_USXGMII_10GSXGMII;
+		break;
+	case PHY_INTERFACE_MODE_10G_QXGMII:
+		*hw_mode = RTPCS_SDS_MODE_USXGMII_10GQXGMII;
 		break;
 	default:
 		return -ENOTSUPP;
