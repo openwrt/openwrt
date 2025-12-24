@@ -12,11 +12,6 @@
 #define RTMDIO_MAX_SMI_BUS			4
 #define RTMDIO_PAGE_SELECT			0x1f
 
-#define RTMDIO_838X_FAMILY_ID			0x8380
-#define RTMDIO_839X_FAMILY_ID			0x8390
-#define RTMDIO_930X_FAMILY_ID			0x9300
-#define RTMDIO_931X_FAMILY_ID			0x9310
-
 /* Register base */
 #define RTMDIO_SW_BASE				((volatile void *) 0xBB000000)
 
@@ -73,10 +68,6 @@
 
 #define RTMDIO_931X_SERDES_INDRT_ACCESS_CTRL	(0x5638)
 #define RTMDIO_931X_SERDES_INDRT_DATA_CTRL	(0x563C)
-
-/* Other registers */
-#define RTMDIO_839X_MODEL_NAME_INFO_REG		(0x0ff0)
-#define RTMDIO_93XX_MODEL_NAME_INFO_REG		(0x0004)
 
 #define sw_r32(reg)				readl(RTMDIO_SW_BASE + reg)
 #define sw_w32(val, reg)			writel(val, RTMDIO_SW_BASE + reg)
@@ -153,8 +144,6 @@ DEFINE_MUTEX(rtmdio_lock_sds);
 
 struct rtmdio_bus_priv {
 	const struct rtmdio_config *cfg;
-	u16 id;
-	u16 family_id;
 	int page[RTMDIO_MAX_PORT];
 	bool raw[RTMDIO_MAX_PORT];
 	int smi_bus[RTMDIO_MAX_PORT];
@@ -1390,39 +1379,14 @@ static int rtmdio_reset(struct mii_bus *bus)
 	return priv->cfg->reset(bus);
 }
 
-/*
- * TODO: This is a tiny leftover from the central SoC include. For now try to detect the
- * Realtek SoC automatically. This needs to be changed to a proper DTS compatible in a
- * future driver version.
- */
-static int rtmdio_get_family(void)
-{
-	unsigned int val;
-
-	val = sw_r32(RTMDIO_93XX_MODEL_NAME_INFO_REG);
-	if ((val & 0xfffc0000) == 0x93000000)
-		return RTMDIO_930X_FAMILY_ID;
-	if ((val & 0xfffc0000) == 0x93100000)
-		return RTMDIO_931X_FAMILY_ID;
-
-	val = sw_r32(RTMDIO_839X_MODEL_NAME_INFO_REG);
-	if ((val & 0xfff80000) == 0x83900000)
-		return RTMDIO_839X_FAMILY_ID;
-
-	return RTMDIO_838X_FAMILY_ID;
-}
-
 static int rtmdio_probe(struct platform_device *pdev)
 {
 	struct device_node *dn, *mii_np, *pcs_node;
 	struct device *dev = &pdev->dev;
 	struct rtmdio_bus_priv *priv;
 	struct mii_bus *bus;
-	int i, family;
 	u32 pn;
-
-	family = rtmdio_get_family();
-	dev_info(dev, "probing RTL%04x family mdio bus\n", family);
+	int i;
 
 	mii_np = of_get_child_by_name(dev->of_node, "mdio-bus");
 	if (!mii_np)
