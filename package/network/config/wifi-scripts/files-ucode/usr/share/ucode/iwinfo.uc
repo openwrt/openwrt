@@ -316,7 +316,7 @@ function dbm2quality(dbm) {
 }
 
 function hwmodelist(name) {
-	const mode = { 'HT*': 'n', 'VHT*': 'ac', 'HE*': 'ax' };
+	const mode = { 'HT*': 'n', 'VHT*': 'ac', 'HE*': 'ax', 'EHT*': 'be' };
 	let iface = ifaces[name];
 	let phy = board_data.wlan?.['phy' + iface.wiphy];
 	if (!phy || !iface.radio?.band)
