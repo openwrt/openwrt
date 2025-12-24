@@ -20,7 +20,7 @@ function radio_exists(path, macaddr, phy, radio) {
 			continue;
 		if (radio != null && int(s.radio) != radio)
 			continue;
-		if (s.macaddr & lc(s.macaddr) == lc(macaddr))
+		if (s.macaddr && lc(s.macaddr) == lc(macaddr))
 			return true;
 		if (s.phy == phy)
 			return true;
