@@ -14,10 +14,50 @@ die() {
     exit 1
 }
 
-[ $# -eq 3 ] || die "SYNTAX: $0 <kernel lzma> <rootfs squashfs> <version string>"
-kernel=$1
-rootfs=$2
-version=$3
+usage() {
+    die "SYNTAX: $0 --kernel <file> --rootfs <file> --version <string> [--model <string>] [--loadaddr <hex>]"
+}
+
+# Parse named parameters
+kernel=""
+rootfs=""
+version=""
+model=""
+loadaddr="80020000"
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --kernel)
+            kernel="$2"
+            shift 2
+            ;;
+        --rootfs)
+            rootfs="$2"
+            shift 2
+            ;;
+        --version)
+            version="$2"
+            shift 2
+            ;;
+        --model)
+            model="$2"
+            shift 2
+            ;;
+        --loadaddr)
+            loadaddr="$2"
+            shift 2
+            ;;
+        *)
+            die "Unknown option: $1"
+            ;;
+    esac
+done
+
+# Validate required parameters
+[ -n "$kernel" ] || usage
+[ -n "$rootfs" ] || usage
+[ -n "$version" ] || usage
+
 which zytrx >/dev/null || die "zytrx not found in PATH $PATH"
 [ -f "$kernel" ] || die "Kernel file not found: $kernel"
 [ -f "$rootfs" ] || die "Rootfs file not found: $rootfs"
@@ -105,11 +145,17 @@ tclinux_trx_hdr() {
     # "model" (32 bytes of zeros)
     head -c 32 /dev/zero | to_hex
 
-    # Load address (CONFIG_ZBOOT_LOAD_ADDRESS)
-    printf '80020000\n'
+    # Load address
+    printf '%s\n' "$loadaddr"
 
-    # "reserved" 128 bytes of zeros
-    head -c 128 /dev/zero | to_hex
+    # "reserved" 128 bytes - some devices' webui factory update expects
+    # the model string as the first sequence in this reserved area
+    if [ -n "$model" ]; then
+        printf '%b' "$model" | to_hex
+        head -c "$((128 - $(printf '%b' "$model" | wc -c)))" /dev/zero | to_hex
+    else
+        head -c 128 /dev/zero | to_hex
+    fi
 }
 
 tclinux_trx_hdr | from_hex
