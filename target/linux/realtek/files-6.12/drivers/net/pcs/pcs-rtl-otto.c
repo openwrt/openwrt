@@ -12,6 +12,7 @@
 
 #define RTPCS_SDS_CNT				14
 #define RTPCS_PORT_CNT				57
+#define RTPCS_MAX_LINKS_PER_SDS			8
 
 #define RTPCS_SPEED_10				0
 #define RTPCS_SPEED_100				1
@@ -134,8 +135,9 @@ struct rtpcs_ctrl;
 
 struct rtpcs_serdes {
 	struct rtpcs_ctrl *ctrl;
-	u8 id;
 	enum rtpcs_sds_mode hw_mode;
+	u8 id;
+	u8 num_of_links;
 
 	bool rx_pol_inv;
 	bool tx_pol_inv;
@@ -3090,6 +3092,7 @@ struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int
 {
 	struct platform_device *pdev;
 	struct device_node *pcs_np;
+	struct rtpcs_serdes *sds;
 	struct rtpcs_ctrl *ctrl;
 	struct rtpcs_link *link;
 	u32 sds_id;
@@ -3124,8 +3127,12 @@ struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int
 		return ERR_PTR(-EINVAL);
 	if (sds_id >= ctrl->cfg->serdes_count)
 		return ERR_PTR(-EINVAL);
-	if (rtpcs_sds_read(&ctrl->serdes[sds_id], 0, 0) < 0)
+
+	sds = &ctrl->serdes[sds_id];
+	if (rtpcs_sds_read(sds, 0, 0) < 0)
 		return ERR_PTR(-EINVAL);
+	if (sds->num_of_links >= RTPCS_MAX_LINKS_PER_SDS)
+		return ERR_PTR(-ERANGE);
 
 	link = kzalloc(sizeof(*link), GFP_KERNEL);
 	if (!link) {
@@ -3135,9 +3142,10 @@ struct phylink_pcs *rtpcs_create(struct device *dev, struct device_node *np, int
 
 	device_link_add(dev, ctrl->dev, DL_FLAG_AUTOREMOVE_CONSUMER);
 
+	sds->num_of_links++;
 	link->ctrl = ctrl;
 	link->port = port;
-	link->sds = &ctrl->serdes[sds_id];
+	link->sds = sds;
 	link->pcs.ops = ctrl->cfg->pcs_ops;
 	link->pcs.neg_mode = true;
 
