@@ -163,17 +163,17 @@ struct rtmdio_bus_priv {
 	bool smi_bus_isc45[RTMDIO_MAX_SMI_BUS];
 	bool phy_is_internal[RTMDIO_MAX_PORT];
 	phy_interface_t interfaces[RTMDIO_MAX_PORT];
-	int (*read_mmd_phy)(u32 port, u32 addr, u32 reg, u32 *val);
-	int (*write_mmd_phy)(u32 port, u32 addr, u32 reg, u32 val);
-	int (*read_phy)(u32 port, u32 page, u32 reg, u32 *val);
-	int (*write_phy)(u32 port, u32 page, u32 reg, u32 val);
-	int (*read_sds_phy)(int sds, int page, int regnum);
-	int (*write_sds_phy)(int sds, int page, int regnum, u16 val);
 };
 
 struct rtmdio_config {
 	int cpu_port;
 	int raw_page;
+	int (*read_mmd_phy)(u32 port, u32 addr, u32 reg, u32 *val);
+	int (*read_phy)(u32 port, u32 page, u32 reg, u32 *val);
+	int (*read_sds_phy)(int sds, int page, int regnum);
+	int (*write_mmd_phy)(u32 port, u32 addr, u32 reg, u32 val);
+	int (*write_phy)(u32 port, u32 page, u32 reg, u32 val);
+	int (*write_sds_phy)(int sds, int page, int regnum, u16 val);
 };
 
 /* SerDes reader/writer functions for the ports without external phy. */
@@ -1073,7 +1073,7 @@ static int rtmdio_read_c45(struct mii_bus *bus, int addr, int devnum, int regnum
 	if (addr >= priv->cfg->cpu_port)
 		return -ENODEV;
 
-	err = (*priv->read_mmd_phy)(addr, devnum, regnum, &val);
+	err = (*priv->cfg->read_mmd_phy)(addr, devnum, regnum, &val);
 	pr_debug("rd_MMD(adr=%d, dev=%d, reg=%d) = %d, err = %d\n",
 		 addr, devnum, regnum, val, err);
 	return err ? err : val;
@@ -1113,7 +1113,7 @@ static int rtmdio_read_sds_phy(struct rtmdio_bus_priv *priv, int sds, int page, 
 
 	ret = rtmdio_map_sds_register(page, regnum, &sds_page, &sds_regnum);
 	if (ret)
-		ret = priv->read_sds_phy(sds, sds_page, sds_regnum);
+		ret = priv->cfg->read_sds_phy(sds, sds_page, sds_regnum);
 	pr_debug("rd_SDS(sds=%d, pag=%d, reg=%d) = %d\n", sds, page, regnum, ret);
 
 	return ret;
@@ -1125,7 +1125,7 @@ static int rtmdio_write_sds_phy(struct rtmdio_bus_priv *priv, int sds, int page,
 
 	ret = rtmdio_map_sds_register(page, regnum, &sds_page, &sds_regnum);
 	if (ret)
-		ret = priv->write_sds_phy(sds, sds_page, sds_regnum, val);
+		ret = priv->cfg->write_sds_phy(sds, sds_page, sds_regnum, val);
 	pr_debug("wr_SDS(sds=%d, pag=%d, reg=%d, val=%d) err = %d\n", sds, page, regnum, val, ret);
 
 	return ret;
@@ -1147,7 +1147,7 @@ static int rtmdio_read(struct mii_bus *bus, int addr, int regnum)
 		return rtmdio_read_sds_phy(priv, priv->sds_id[addr],
 					   priv->page[addr], regnum);
 
-	err = (*priv->read_phy)(addr, priv->page[addr], regnum, &val);
+	err = (*priv->cfg->read_phy)(addr, priv->page[addr], regnum, &val);
 	pr_debug("rd_PHY(adr=%d, pag=%d, reg=%d) = %d, err = %d\n",
 		 addr, priv->page[addr], regnum, val, err);
 	return err ? err : val;
@@ -1161,7 +1161,7 @@ static int rtmdio_write_c45(struct mii_bus *bus, int addr, int devnum, int regnu
 	if (addr >= priv->cfg->cpu_port)
 		return -ENODEV;
 
-	err = (*priv->write_mmd_phy)(addr, devnum, regnum, val);
+	err = (*priv->cfg->write_mmd_phy)(addr, devnum, regnum, val);
 	pr_debug("wr_MMD(adr=%d, dev=%d, reg=%d, val=%d) err = %d\n",
 		 addr, devnum, regnum, val, err);
 	return err;
@@ -1186,7 +1186,7 @@ static int rtmdio_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 			return rtmdio_write_sds_phy(priv, priv->sds_id[addr],
 						    priv->page[addr], regnum, val);
 
-		err = (*priv->write_phy)(addr, page, regnum, val);
+		err = (*priv->cfg->write_phy)(addr, page, regnum, val);
 		pr_debug("wr_PHY(adr=%d, pag=%d, reg=%d, val=%d) err = %d\n",
 			 addr, page, regnum, val, err);
 		return err;
@@ -1441,42 +1441,18 @@ static int rtmdio_probe(struct platform_device *pdev)
 	case RTMDIO_838X_FAMILY_ID:
 		bus->name = "rtl838x-eth-mdio";
 		bus->reset = rtmdio_838x_reset;
-		priv->read_sds_phy = rtmdio_838x_read_sds_phy;
-		priv->write_sds_phy = rtmdio_838x_write_sds_phy;
-		priv->read_mmd_phy = rtmdio_838x_read_mmd_phy;
-		priv->write_mmd_phy = rtmdio_838x_write_mmd_phy;
-		priv->read_phy = rtmdio_838x_read_phy;
-		priv->write_phy = rtmdio_838x_write_phy;
 		break;
 	case RTMDIO_839X_FAMILY_ID:
 		bus->name = "rtl839x-eth-mdio";
 		bus->reset = rtmdio_839x_reset;
-		priv->read_sds_phy = rtmdio_839x_read_sds_phy;
-		priv->write_sds_phy = rtmdio_839x_write_sds_phy;
-		priv->read_mmd_phy = rtmdio_839x_read_mmd_phy;
-		priv->write_mmd_phy = rtmdio_839x_write_mmd_phy;
-		priv->read_phy = rtmdio_839x_read_phy;
-		priv->write_phy = rtmdio_839x_write_phy;
 		break;
 	case RTMDIO_930X_FAMILY_ID:
 		bus->name = "rtl930x-eth-mdio";
 		bus->reset = rtmdio_930x_reset;
-		priv->read_sds_phy = rtmdio_930x_read_sds_phy;
-		priv->write_sds_phy = rtmdio_930x_write_sds_phy;
-		priv->read_mmd_phy = rtmdio_930x_read_mmd_phy;
-		priv->write_mmd_phy = rtmdio_930x_write_mmd_phy;
-		priv->read_phy = rtmdio_930x_read_phy;
-		priv->write_phy = rtmdio_930x_write_phy;
 		break;
 	case RTMDIO_931X_FAMILY_ID:
 		bus->name = "rtl931x-eth-mdio";
 		bus->reset = rtmdio_931x_reset;
-		priv->read_sds_phy = rtsds_931x_read;
-		priv->write_sds_phy = rtsds_931x_write;
-		priv->read_mmd_phy = rtmdio_931x_read_mmd_phy;
-		priv->write_mmd_phy = rtmdio_931x_write_mmd_phy;
-		priv->read_phy = rtmdio_931x_read_phy;
-		priv->write_phy = rtmdio_931x_write_phy;
 		break;
 	}
 
@@ -1557,21 +1533,45 @@ static int rtmdio_probe(struct platform_device *pdev)
 static const struct rtmdio_config rtmdio_838x_cfg = {
 	.cpu_port	= 28,
 	.raw_page	= 4095,
+	.read_mmd_phy	= rtmdio_838x_read_mmd_phy,
+	.read_phy	= rtmdio_838x_read_phy,
+	.read_sds_phy	= rtmdio_838x_read_sds_phy,
+	.write_mmd_phy	= rtmdio_838x_write_mmd_phy,
+	.write_phy	= rtmdio_838x_write_phy,
+	.write_sds_phy	= rtmdio_838x_write_sds_phy,
 };
 
 static const struct rtmdio_config rtmdio_839x_cfg = {
 	.cpu_port	= 52,
 	.raw_page	= 8191,
+	.read_mmd_phy	= rtmdio_839x_read_mmd_phy,
+	.read_phy	= rtmdio_839x_read_phy,
+	.read_sds_phy	= rtmdio_839x_read_sds_phy,
+	.write_mmd_phy	= rtmdio_839x_write_mmd_phy,
+	.write_phy	= rtmdio_839x_write_phy,
+	.write_sds_phy	= rtmdio_839x_write_sds_phy,
 };
 
 static const struct rtmdio_config rtmdio_930x_cfg = {
 	.cpu_port	= 28,
 	.raw_page	= 4095,
+	.read_mmd_phy	= rtmdio_930x_read_mmd_phy,
+	.read_phy	= rtmdio_930x_read_phy,
+	.read_sds_phy	= rtmdio_930x_read_sds_phy,
+	.write_mmd_phy	= rtmdio_930x_write_mmd_phy,
+	.write_phy	= rtmdio_930x_write_phy,
+	.write_sds_phy	= rtmdio_930x_write_sds_phy,
 };
 
 static const struct rtmdio_config rtmdio_931x_cfg = {
 	.cpu_port	= 56,
 	.raw_page	= 8191,
+	.read_mmd_phy	= rtmdio_931x_read_mmd_phy,
+	.read_phy	= rtmdio_931x_read_phy,
+	.read_sds_phy	= rtsds_931x_read,
+	.write_mmd_phy	= rtmdio_931x_write_mmd_phy,
+	.write_phy	= rtmdio_931x_write_phy,
+	.write_sds_phy	= rtsds_931x_write,
 };
 
 static const struct of_device_id rtmdio_ids[] = {
