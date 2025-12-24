@@ -12,16 +12,9 @@
 #define RTMDIO_MAX_SMI_BUS			4
 #define RTMDIO_PAGE_SELECT			0x1f
 
-#define RTMDIO_838X_CPU_PORT			28
 #define RTMDIO_838X_FAMILY_ID			0x8380
-
-#define RTMDIO_839X_CPU_PORT			52
 #define RTMDIO_839X_FAMILY_ID			0x8390
-
-#define RTMDIO_930X_CPU_PORT			28
 #define RTMDIO_930X_FAMILY_ID			0x9300
-
-#define RTMDIO_931X_CPU_PORT			56
 #define RTMDIO_931X_FAMILY_ID			0x9310
 
 /* Register base */
@@ -162,7 +155,6 @@ struct rtmdio_bus_priv {
 	const struct rtmdio_config *cfg;
 	u16 id;
 	u16 family_id;
-	int cpu_port;
 	int page[RTMDIO_MAX_PORT];
 	bool raw[RTMDIO_MAX_PORT];
 	int smi_bus[RTMDIO_MAX_PORT];
@@ -180,6 +172,7 @@ struct rtmdio_bus_priv {
 };
 
 struct rtmdio_config {
+	int cpu_port;
 	int raw_page;
 };
 
@@ -472,7 +465,7 @@ static int rtmdio_839x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 	int err = 0;
 	u32 v;
 
-	if (port >= RTMDIO_839X_CPU_PORT || page > 8191 || reg > 31)
+	if (page > 8191 || reg > 31)
 		return -ENOTSUPP;
 
 	mutex_lock(&rtmdio_lock);
@@ -504,7 +497,7 @@ static int rtmdio_839x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 	u32 v;
 
 	val &= 0xffff;
-	if (port >= RTMDIO_839X_CPU_PORT || page > 8191 || reg > 31)
+	if (page > 8191 || reg > 31)
 		return -ENOTSUPP;
 
 	mutex_lock(&rtmdio_lock);
@@ -542,10 +535,6 @@ static int rtmdio_839x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
 	int err = 0;
 	u32 v;
 
-	/* Take bug on RTL839x Rev <= C into account */
-	if (port >= RTMDIO_839X_CPU_PORT)
-		return -EIO;
-
 	mutex_lock(&rtmdio_lock);
 
 	/* Set PHY to access */
@@ -576,10 +565,6 @@ static int rtmdio_839x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
 {
 	int err = 0;
 	u32 v;
-
-	/* Take bug on RTL839x Rev <= C into account */
-	if (port >= RTMDIO_839X_CPU_PORT)
-		return -EIO;
 
 	mutex_lock(&rtmdio_lock);
 
@@ -709,7 +694,7 @@ static int rtmdio_930x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 	u32 v;
 	int err = 0;
 
-	if (port > 63 || page > 4095 || reg > 31)
+	if (page > 4095 || reg > 31)
 		return -ENOTSUPP;
 
 	mutex_lock(&rtmdio_lock);
@@ -976,7 +961,7 @@ static int rtmdio_931x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 {
 	u32 v;
 
-	if (port > 63 || page > 4095 || reg > 31)
+	if (page > 4095 || reg > 31)
 		return -ENOTSUPP;
 
 	mutex_lock(&rtmdio_lock);
@@ -1085,7 +1070,7 @@ static int rtmdio_read_c45(struct mii_bus *bus, int addr, int devnum, int regnum
 	struct rtmdio_bus_priv *priv = bus->priv;
 	int err, val;
 
-	if (addr >= priv->cpu_port)
+	if (addr >= priv->cfg->cpu_port)
 		return -ENODEV;
 
 	err = (*priv->read_mmd_phy)(addr, devnum, regnum, &val);
@@ -1151,7 +1136,7 @@ static int rtmdio_read(struct mii_bus *bus, int addr, int regnum)
 	struct rtmdio_bus_priv *priv = bus->priv;
 	int err, val;
 
-	if (addr >= priv->cpu_port)
+	if (addr >= priv->cfg->cpu_port)
 		return -ENODEV;
 
 	if (regnum == RTMDIO_PAGE_SELECT && priv->page[addr] != priv->cfg->raw_page)
@@ -1173,7 +1158,7 @@ static int rtmdio_write_c45(struct mii_bus *bus, int addr, int devnum, int regnu
 	struct rtmdio_bus_priv *priv = bus->priv;
 	int err;
 
-	if (addr >= priv->cpu_port)
+	if (addr >= priv->cfg->cpu_port)
 		return -ENODEV;
 
 	err = (*priv->write_mmd_phy)(addr, devnum, regnum, val);
@@ -1187,7 +1172,7 @@ static int rtmdio_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 	struct rtmdio_bus_priv *priv = bus->priv;
 	int err, page;
 
-	if (addr >= priv->cpu_port)
+	if (addr >= priv->cfg->cpu_port)
 		return -ENODEV;
 
 	page = priv->page[addr];
@@ -1240,8 +1225,8 @@ static int rtmdio_839x_reset(struct mii_bus *bus)
 	return 0;
 }
 
-u8 mac_type_bit[RTMDIO_930X_CPU_PORT] = {0, 0, 0, 0, 2, 2, 2, 2, 4, 4, 4, 4, 6, 6, 6, 6,
-					 8, 8, 8, 8, 10, 10, 10, 10, 12, 15, 18, 21};
+u8 mac_type_bit[RTMDIO_MAX_PORT] = {0, 0, 0, 0, 2, 2, 2, 2, 4, 4, 4, 4, 6, 6, 6, 6,
+				    8, 8, 8, 8, 10, 10, 10, 10, 12, 15, 18, 21};
 
 static int rtmdio_930x_reset(struct mii_bus *bus)
 {
@@ -1255,7 +1240,7 @@ static int rtmdio_930x_reset(struct mii_bus *bus)
 	u32 v;
 
 	/* Mapping of port to phy-addresses on an SMI bus */
-	for (int i = 0; i < RTMDIO_930X_CPU_PORT; i++) {
+	for (int i = 0; i < priv->cfg->cpu_port; i++) {
 		int pos;
 
 		if (priv->smi_bus[i] < 0)
@@ -1288,7 +1273,7 @@ static int rtmdio_930x_reset(struct mii_bus *bus)
 	/* Set the MAC type of each port according to the PHY-interface */
 	/* Values are FE: 2, GE: 3, XGE/2.5G: 0(SERDES) or 1(otherwise), SXGE: 0 */
 	v = 0;
-	for (int i = 0; i < RTMDIO_930X_CPU_PORT; i++) {
+	for (int i = 0; i < priv->cfg->cpu_port; i++) {
 		switch (priv->interfaces[i]) {
 		case PHY_INTERFACE_MODE_10GBASER:
 			break;			/* Serdes: Value = 0 */
@@ -1358,7 +1343,7 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 	msleep(100);
 
 	/* Mapping of port to phy-addresses on an SMI bus */
-	for (int i = 0; i < RTMDIO_931X_CPU_PORT; i++) {
+	for (int i = 0; i < priv->cfg->cpu_port; i++) {
 		u32 pos;
 
 		if (priv->smi_bus[i] < 0)
@@ -1464,7 +1449,6 @@ static int rtmdio_probe(struct platform_device *pdev)
 		priv->write_mmd_phy = rtmdio_838x_write_mmd_phy;
 		priv->read_phy = rtmdio_838x_read_phy;
 		priv->write_phy = rtmdio_838x_write_phy;
-		priv->cpu_port = RTMDIO_838X_CPU_PORT;
 		break;
 	case RTMDIO_839X_FAMILY_ID:
 		bus->name = "rtl839x-eth-mdio";
@@ -1477,7 +1461,6 @@ static int rtmdio_probe(struct platform_device *pdev)
 		priv->write_mmd_phy = rtmdio_839x_write_mmd_phy;
 		priv->read_phy = rtmdio_839x_read_phy;
 		priv->write_phy = rtmdio_839x_write_phy;
-		priv->cpu_port = RTMDIO_839X_CPU_PORT;
 		break;
 	case RTMDIO_930X_FAMILY_ID:
 		bus->name = "rtl930x-eth-mdio";
@@ -1490,7 +1473,6 @@ static int rtmdio_probe(struct platform_device *pdev)
 		priv->write_mmd_phy = rtmdio_930x_write_mmd_phy;
 		priv->read_phy = rtmdio_930x_read_phy;
 		priv->write_phy = rtmdio_930x_write_phy;
-		priv->cpu_port = RTMDIO_930X_CPU_PORT;
 		break;
 	case RTMDIO_931X_FAMILY_ID:
 		bus->name = "rtl931x-eth-mdio";
@@ -1503,13 +1485,12 @@ static int rtmdio_probe(struct platform_device *pdev)
 		priv->write_mmd_phy = rtmdio_931x_write_mmd_phy;
 		priv->read_phy = rtmdio_931x_read_phy;
 		priv->write_phy = rtmdio_931x_write_phy;
-		priv->cpu_port = RTMDIO_931X_CPU_PORT;
 		break;
 	}
 	bus->read_c45 = rtmdio_read_c45;
 	bus->write_c45 = rtmdio_write_c45;
 	bus->parent = dev;
-	bus->phy_mask = ~(BIT_ULL(priv->cpu_port) - 1ULL);
+	bus->phy_mask = ~(BIT_ULL(priv->cfg->cpu_port) - 1ULL);
 
 	for_each_node_by_name(dn, "ethernet-phy") {
 		u32 smi_addr[2];
@@ -1551,7 +1532,7 @@ static int rtmdio_probe(struct platform_device *pdev)
 		if (of_property_read_u32(dn, "reg", &pn))
 			continue;
 		dev_dbg(dev, "Looking at port %d\n", pn);
-		if (pn > priv->cpu_port)
+		if (pn > priv->cfg->cpu_port)
 			continue;
 		if (of_get_phy_mode(dn, &priv->interfaces[pn]))
 			priv->interfaces[pn] = PHY_INTERFACE_MODE_NA;
@@ -1579,18 +1560,22 @@ static int rtmdio_probe(struct platform_device *pdev)
 }
 
 static const struct rtmdio_config rtmdio_838x_cfg = {
+	.cpu_port	= 28,
 	.raw_page	= 4095,
 };
 
 static const struct rtmdio_config rtmdio_839x_cfg = {
+	.cpu_port	= 52,
 	.raw_page	= 8191,
 };
 
 static const struct rtmdio_config rtmdio_930x_cfg = {
+	.cpu_port	= 28,
 	.raw_page	= 4095,
 };
 
 static const struct rtmdio_config rtmdio_931x_cfg = {
+	.cpu_port	= 56,
 	.raw_page	= 8191,
 };
 
