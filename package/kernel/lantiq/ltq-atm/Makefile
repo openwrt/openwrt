@@ -19,7 +19,6 @@ define KernelPackage/ltq-atm-template
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=atm driver for $(1)
-  URL:=http://www.lantiq.com/
   VARIANT:=$(1)
   DEPENDS:=@$(2) +kmod-atm +br2684ctl
 ifeq ($(1),vr9)
