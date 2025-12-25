@@ -46,8 +46,8 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +  endif
 +endif
  
- ifeq ($(CONFIG_RELOCATABLE),y)
- LDFLAGS_vmlinux			+= --emit-relocs
+ cflags-y += -ffreestanding
+ 
 --- a/arch/mips/include/asm/module.h
 +++ b/arch/mips/include/asm/module.h
 @@ -12,6 +12,11 @@ struct mod_arch_specific {
@@ -177,7 +177,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +
 +	/* mark all pages except for the last one */
 +	for (p = page; p + 1 < page + (size >> PAGE_SHIFT); ++p)
-+		set_bit(PG_owner_priv_1, &p->flags);
++		set_bit(PG_owner_priv_1, &p->flags.f);
 +
 +	for (p = page + (size >> PAGE_SHIFT); p < page + (1 << order); ++p)
 +		__free_page(p);
@@ -192,7 +192,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +
 +	page = virt_to_page(ptr);
 +	do {
-+		free = test_and_clear_bit(PG_owner_priv_1, &page->flags);
++		free = test_and_clear_bit(PG_owner_priv_1, &page->flags.f);
 +		__free_page(page);
 +		page++;
 +	} while (free);
