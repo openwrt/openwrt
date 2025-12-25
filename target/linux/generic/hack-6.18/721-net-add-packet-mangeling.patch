@@ -19,7 +19,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -1687,6 +1687,7 @@ enum netdev_priv_flags {
+@@ -1743,6 +1743,7 @@ enum netdev_priv_flags {
  	IFF_L3MDEV_RX_HANDLER		= 1<<29,
  	IFF_NO_ADDRCONF			= BIT_ULL(30),
  	IFF_TX_SKB_NO_LINEAR		= BIT_ULL(31),
@@ -27,7 +27,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  };
  
  /* Specifies the type of the struct net_device::ml_priv pointer */
-@@ -2168,6 +2169,11 @@ struct net_device {
+@@ -2239,6 +2240,11 @@ struct net_device {
  	const struct tlsdev_ops *tlsdev_ops;
  #endif
  
@@ -39,8 +39,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	unsigned int		operstate;
  	unsigned char		link_mode;
  
-@@ -2237,6 +2243,10 @@ struct net_device {
- 	struct mctp_dev __rcu	*mctp_ptr;
+@@ -2315,6 +2321,10 @@ struct net_device {
+ 	struct psp_dev __rcu	*psp_dev;
  #endif
  
 +#ifdef CONFIG_ETHERNET_PACKET_MANGLE
@@ -52,7 +52,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   */
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
-@@ -3242,6 +3242,10 @@ static inline int pskb_trim(struct sk_bu
+@@ -3333,6 +3333,10 @@ static inline int pskb_trim(struct sk_bu
  	return (len < skb->len) ? __pskb_trim(skb, len) : 0;
  }
  
@@ -63,7 +63,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /**
   *	pskb_trim_unique - remove end from a paged unique (not cloned) buffer
   *	@skb: buffer to alter
-@@ -3407,16 +3411,6 @@ static inline struct sk_buff *dev_alloc_
+@@ -3498,16 +3502,6 @@ static inline struct sk_buff *dev_alloc_
  }
  
  
@@ -97,8 +97,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	help
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -3671,6 +3671,11 @@ static int xmit_one(struct sk_buff *skb,
- 	if (dev_nit_active(dev))
+@@ -3853,6 +3853,11 @@ static int xmit_one(struct sk_buff *skb,
+ 	if (dev_nit_active_rcu(dev))
  		dev_queue_xmit_nit(skb, dev);
  
 +#ifdef CONFIG_ETHERNET_PACKET_MANGLE
@@ -111,15 +111,15 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	rc = netdev_start_xmit(skb, dev, txq, more);
 --- a/net/core/skbuff.c
 +++ b/net/core/skbuff.c
-@@ -64,6 +64,7 @@
- #include <linux/mpls.h>
+@@ -65,6 +65,7 @@
  #include <linux/kcov.h>
  #include <linux/iov_iter.h>
+ #include <linux/crc32.h>
 +#include <linux/if.h>
  
  #include <net/protocol.h>
  #include <net/dst.h>
-@@ -326,6 +327,22 @@ void *__napi_alloc_frag_align(unsigned i
+@@ -254,6 +255,22 @@ void *__napi_alloc_frag_align(unsigned i
  }
  EXPORT_SYMBOL(__napi_alloc_frag_align);
  

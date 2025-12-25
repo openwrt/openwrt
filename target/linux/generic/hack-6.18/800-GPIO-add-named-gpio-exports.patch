@@ -15,9 +15,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  #include "gpiolib.h"
  #include "gpiolib-of.h"
-@@ -1198,3 +1200,73 @@ void of_gpiochip_remove(struct gpio_chip
- {
- 	of_node_put(dev_of_node(&chip->gpiodev->dev));
+@@ -1295,3 +1297,73 @@ bool of_gpiochip_instance_match(struct g
+ 
+ 	return false;
  }
 +
 +#ifdef CONFIG_GPIO_SYSFS
@@ -56,9 +56,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +				return PTR_ERR(desc);
 +			gpio = desc_to_gpio(desc);
 +
-+			if (of_flags & OF_GPIO_ACTIVE_LOW)
-+				flags |= GPIOF_ACTIVE_LOW;
-+
 +			if (!of_property_read_u32(cnp, "gpio-export,output", &val))
 +				flags |= val ? GPIOF_OUT_INIT_HIGH : GPIOF_OUT_INIT_LOW;
 +			else
@@ -66,6 +63,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +			if (devm_gpio_request_one(&pdev->dev, gpio, flags, name ? name : of_node_full_name(np)))
 +				continue;
++
++			if (of_flags & OF_GPIO_ACTIVE_LOW)
++				gpiod_toggle_active_low(gpio_to_desc(gpio));
 +
 +			dmc = of_property_read_bool(cnp, "gpio-export,direction_may_change");
 +			gpio_export_with_name(gpio_to_desc(gpio), dmc, name);
@@ -91,7 +91,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#endif
 --- a/include/linux/gpio/consumer.h
 +++ b/include/linux/gpio/consumer.h
-@@ -628,7 +628,10 @@ static inline int devm_acpi_dev_add_driv
+@@ -651,18 +651,35 @@ static inline int devm_acpi_dev_add_driv
  
  #if IS_ENABLED(CONFIG_GPIOLIB) && IS_ENABLED(CONFIG_GPIO_SYSFS)
  
@@ -102,9 +102,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  int gpiod_export_link(struct device *dev, const char *name,
  		      struct gpio_desc *desc);
  void gpiod_unexport(struct gpio_desc *desc);
-@@ -637,11 +640,25 @@ void gpiod_unexport(struct gpio_desc *de
  
- #include <asm/errno.h>
+ #else  /* CONFIG_GPIOLIB && CONFIG_GPIO_SYSFS */
  
 +static inline int __gpiod_export(struct gpio_desc *desc,
 +			       bool direction_may_change,
@@ -130,25 +129,25 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  				    struct gpio_desc *desc)
 --- a/drivers/gpio/gpiolib-sysfs.c
 +++ b/drivers/gpio/gpiolib-sysfs.c
-@@ -571,7 +571,7 @@ static struct class gpio_class = {
+@@ -724,7 +724,7 @@ static void gpiod_attr_init(struct devic
   * Returns:
   * 0 on success, or negative errno on failure.
   */
 -int gpiod_export(struct gpio_desc *desc, bool direction_may_change)
 +int __gpiod_export(struct gpio_desc *desc, bool direction_may_change, const char *name)
  {
- 	const char *ioname = NULL;
- 	struct gpio_device *gdev;
-@@ -629,6 +629,8 @@ int gpiod_export(struct gpio_desc *desc,
- 	offset = gpio_chip_hwgpio(desc);
- 	if (guard.gc->names && guard.gc->names[offset])
- 		ioname = guard.gc->names[offset];
-+	if (name)
-+		ioname = name;
- 
- 	dev = device_create_with_groups(&gpio_class, &gdev->dev,
- 					MKDEV(0, 0), data, gpio_groups,
-@@ -650,8 +652,21 @@ err_unlock:
+ 	char *path __free(kfree) = NULL;
+ 	struct gpiodev_data *gdev_data;
+@@ -801,7 +801,7 @@ int gpiod_export(struct gpio_desc *desc,
+ 	desc_data->dev = device_create_with_groups(&gpio_class, &gdev->dev,
+ 						   MKDEV(0, 0), desc_data,
+ 						   desc_data->class_attr_groups,
+-						   "gpio%u",
++						   name ? name : "gpio%u",
+ 						   desc_to_gpio(desc));
+ 	if (IS_ERR(desc_data->dev)) {
+ 		status = PTR_ERR(desc_data->dev);
+@@ -870,8 +870,21 @@ err_clear_bit:
  	gpiod_dbg(desc, "%s: status %d\n", __func__, status);
  	return status;
  }
@@ -167,6 +166,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +}
 +EXPORT_SYMBOL_GPL(gpio_export_with_name);
 +
+ #if IS_ENABLED(CONFIG_GPIO_SYSFS_LEGACY)
  static int match_export(struct device *dev, const void *desc)
  {
- 	struct gpiod_data *data = dev_get_drvdata(dev);
