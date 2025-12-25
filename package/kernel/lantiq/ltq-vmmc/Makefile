@@ -25,7 +25,6 @@ include $(INCLUDE_DIR)/package.mk
 define KernelPackage/ltq-vmmc
   SUBMENU:=Voice over IP
   TITLE:=TAPI LL driver for Voice Macro
-  URL:=http://www.lantiq.com/
   DEPENDS:=@(TARGET_lantiq_xway||TARGET_lantiq_xrx200) +kmod-ltq-tapi
   FILES:=$(PKG_BUILD_DIR)/src/drv_vmmc.ko
   AUTOLOAD:=$(call AutoProbe,drv_vmmc)
