@@ -3,7 +3,7 @@
  * SPI-NAND Flash driver for EcoNet EN751221 SoC
  *
  * Minimal read-only implementation for lzma-loader boot support.
- * Supports Dosilicon, MXIC, and Toshiba SPI-NAND chips.
+ * Supports Dosilicon, MXIC, Toshiba, and Winbond SPI-NAND chips.
  *
  * Copyright (C) 2025 Ahmed Naseef <naseefkm@gmail.com>
  */
@@ -32,6 +32,9 @@ static const struct spinand_device supported_devices[] = {
 
     /* Toshiba */
     { 0x98, 0xCB, "Toshiba TC58CVG1S3H", 2048, 64, 64, 2048, 1 },
+
+    /* Winbond */
+    { 0xEF, 0xAA, "Winbond W25N01GV", 2048, 64, 64, 1024, 1 },
 
     /* Terminator */
     { 0, 0, NULL, 0, 0, 0, 0, 0 }
