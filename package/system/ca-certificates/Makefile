@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ca-certificates
 PKG_VERSION:=20250419
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_MAINTAINER:=
 
 PKG_LICENSE:=GPL-2.0-or-later MPL-2.0
@@ -24,12 +24,14 @@ include $(INCLUDE_DIR)/package.mk
 TAR_OPTIONS+= --strip-components 1
 TAR_CMD=$(HOST_TAR) -C $(1) $(TAR_OPTIONS)
 
+# ca-certs is deprecated and new packages should use ca-certificates-any if
+# they don't need a specific package
 define Package/ca-certificates
   SECTION:=base
   CATEGORY:=Base system
   TITLE:=System CA certificates
   PKGARCH:=all
-  PROVIDES:=ca-certs
+  PROVIDES:=@ca-certs
 endef
 
 define Package/ca-bundle
@@ -37,7 +39,7 @@ define Package/ca-bundle
   CATEGORY:=Base system
   TITLE:=System CA certificates as a bundle
   PKGARCH:=all
-  PROVIDES:=ca-certs
+  PROVIDES:=@ca-certs @ca-certificates-any
 endef
 
 define Build/Install
