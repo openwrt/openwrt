@@ -21,10 +21,10 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 -	bool
 -	default y if (REGMAP_I2C || REGMAP_SPI || REGMAP_SPMI || REGMAP_W1 || REGMAP_AC97 || REGMAP_MMIO || REGMAP_IRQ || REGMAP_SOUNDWIRE || REGMAP_SOUNDWIRE_MBQ || REGMAP_SCCB || REGMAP_I3C || REGMAP_SPI_AVMM || REGMAP_MDIO || REGMAP_FSI)
 +	tristate
- 	select IRQ_DOMAIN if REGMAP_IRQ
- 	select MDIO_BUS if REGMAP_MDIO
  	help
-@@ -19,7 +18,7 @@ config REGMAP
+ 	  Enable support for the Register Map (regmap) access API.
+ 
+@@ -17,7 +16,7 @@ config REGMAP
  
  config REGMAP_KUNIT
  	tristate "KUnit tests for regmap"
@@ -33,7 +33,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	default KUNIT_ALL_TESTS
  	select REGMAP_RAM
  
-@@ -34,60 +33,76 @@ config REGMAP_BUILD
+@@ -32,62 +31,78 @@ config REGMAP_BUILD
  	  normally enabled.
  
  config REGMAP_AC97
@@ -68,6 +68,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  config REGMAP_MDIO
 +	select REGMAP
  	tristate
+ 	select MDIO_BUS
  
  config REGMAP_MMIO
 +	select REGMAP
@@ -76,6 +77,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  config REGMAP_IRQ
 +	select REGMAP
  	bool
+ 	select IRQ_DOMAIN
  
  config REGMAP_RAM
 +	select REGMAP
@@ -137,7 +139,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #include <linux/mutex.h>
  #include <linux/err.h>
  #include <linux/property.h>
-@@ -3523,3 +3524,5 @@ static int __init regmap_initcall(void)
+@@ -3525,3 +3526,5 @@ static int __init regmap_initcall(void)
  	return 0;
  }
  postcore_initcall(regmap_initcall);
@@ -145,7 +147,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +MODULE_LICENSE("GPL");
 --- a/include/linux/regmap.h
 +++ b/include/linux/regmap.h
-@@ -197,7 +197,7 @@ struct reg_sequence {
+@@ -204,7 +204,7 @@ struct reg_sequence {
  	__ret ?: __tmp; \
  })
  
