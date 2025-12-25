@@ -27,7 +27,6 @@ define KernelPackage/ltq-adsl-template
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=adsl driver for $(1)
-  URL:=http://www.lantiq.com/
   VARIANT:=$(1)
   DEPENDS:=@$(2) +kmod-ltq-adsl-$(1)-mei
   FILES:=$(PKG_BUILD_DIR)/src/drv_dsl_cpe_api.ko
