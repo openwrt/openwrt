@@ -30,7 +30,7 @@ define Package/ethtool
   SECTION:=net
   CATEGORY:=Network
   TITLE:=Display or change ethernet card settings
-  URL:=http://www.kernel.org/pub/software/network/ethtool/
+  URL:=https://www.kernel.org/pub/software/network/ethtool/
   VARIANT:=tiny
   CONFLICTS:=ethtool-full
   DEFAULT_VARIANT:=1

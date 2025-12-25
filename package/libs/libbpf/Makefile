@@ -33,7 +33,7 @@ define Package/libbpf
   TITLE:=libbpf - eBPF helper library
   LICENSE:=LGPL-2.1 OR BSD-2-Clause
   ABI_VERSION:=$(PKG_ABI_VERSION)
-  URL:=http://www.kernel.org
+  URL:=https://www.kernel.org
   DEPENDS:=+libelf
 endef
 
