@@ -4,6 +4,9 @@ import { append_value, log } from 'wifi.common';
 import * as fs from 'fs';
 
 export function parse_encryption(config, dev_config) {
+	if (!config.encryption)
+		return;
+
 	let encryption = split(config.encryption, '+', 2);
 
 	config.wpa = 0;
