@@ -78,6 +78,25 @@ define FixupDependencies
   $(call AddDependency,$(1),$$(DEPS))
 endef
 
+# Format provide and add ABI and version if it's not a virtual provide marked
+# with an @.
+#
+# 1: provide name
+# 2: provide version
+# 3: (optional) ABI preformatted by FormatABISuffix
+define AddProvide
+$(if $(filter @%,$(1)),$(patsubst @%,%,$(1)),$(1)$(3)=$(2))
+endef
+
+# Remove virtual provides prefix and self. apk doesn't like it when packages
+# specify a redundant provide pointing to self.
+#
+# 1: package name
+# 2: list of provides
+define SanitizeProvides
+$(filter-out $(1),$(patsubst @%,%,$(2)))
+endef
+
 # Format provides both for apk and control
 #
 # - If ABI version is defined:
@@ -108,16 +127,33 @@ endef
 #       this implies that only one version of a provide can be installed at the
 #       same time
 #
+# - Both with and without an ABI, if a provide starts with an @, treat it as a
+#   virtual provide, that doesn't own the name by not appending version.
+#   Multiple packages with the same virtual provides can be installed
+#   side-by-side.
+#
+# - apk doesn't like it when packages specify a redundant provide pointing to
+#   self. Filter it out, but keep virtual self provides, in the form of
+#   @${package_name}-any.
+#
+# - Packages implicitly add a virtual @${package_name}-any provide in Package.
+#
 # 1: package name
 # 2: package version
 # 3: list of provides
 # 4: list of alternatives
 define FormatProvides
 $(strip $(if $(ABIV_$(1)), \
-  $(1) $(foreach provide,$(3), $(provide)$(ABIV_$(1))=$(2)), \
+  $(1) $(foreach provide, \
+    $(filter-out $(1),$(3)), \
+    $(call AddProvide,$(provide),$(2),$(ABIV_$(1))) \
+  ), \
   $(if $(4), \
-    $(3), \
-    $(foreach provide,$(3), $(provide)=$(2)) \
+    $(filter-out $(1),$(3)), \
+    $(foreach provide, \
+      $(filter-out $(1),$(3)), \
+      $(call AddProvide,$(provide),$(2)) \
+    ) \
   ) \
 ))
 endef
@@ -237,7 +273,7 @@ endif
 	$(if $(ABI_VERSION),echo '$(ABI_VERSION)' | cmp -s - $(PKG_INFO_DIR)/$(1).version || { \
 		mkdir -p $(PKG_INFO_DIR); \
 		echo '$(ABI_VERSION)' > $(PKG_INFO_DIR)/$(1).version; \
-		$(foreach pkg,$(filter-out $(1),$(PROVIDES)), \
+		$(foreach pkg,$(call SanitizeProvides,$(1),$(PROVIDES)), \
 			cp $(PKG_INFO_DIR)/$(1).version $(PKG_INFO_DIR)/$(pkg).version; \
 		) \
 	} )
@@ -336,7 +372,7 @@ endif
 			fi; \
 		done; $(Package/$(1)/extra_provides) \
 	) | sort -u > $(PKG_INFO_DIR)/$(1).provides
-	$(if $(PROVIDES),@for pkg in $(filter-out $(1),$(PROVIDES)); do cp $(PKG_INFO_DIR)/$(1).provides $(PKG_INFO_DIR)/$$$$pkg.provides; done)
+	$(if $(PROVIDES),@for pkg in $(call SanitizeProvides,$(1),$(PROVIDES)); do cp $(PKG_INFO_DIR)/$(1).provides $(PKG_INFO_DIR)/$$$$pkg.provides; done)
 	$(CheckDependencies)
 
 	$(RSTRIP) $$(IDIR_$(1))
