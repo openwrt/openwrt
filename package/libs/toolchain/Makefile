@@ -26,7 +26,7 @@ endif
 define Package/gcc/Default
   SECTION:=libs
   CATEGORY:=Base system
-  URL:=http://gcc.gnu.org/
+  URL:=https://gcc.gnu.org/
   VERSION:=$(LIBGCC_VERSION)-r$(PKG_RELEASE)
 endef
 

@@ -35,7 +35,7 @@ define Package/valgrind
   CATEGORY:=Development
   DEPENDS:=@mips||mipsel||mips64||mips64el||i386||x86_64||powerpc||arm_v7||aarch64||riscv64 +libpthread +librt
   TITLE:=debugging and profiling tools for Linux
-  URL:=http://www.valgrind.org
+  URL:=https://valgrind.org
 endef
 
 define Package/valgrind/default
