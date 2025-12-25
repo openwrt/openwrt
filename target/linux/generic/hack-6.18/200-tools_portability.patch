@@ -26,8 +26,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  # Some tools require Clang, LLC and/or LLVM utils
  CLANG		?= clang
  LLC		?= llc
-@@ -92,8 +93,9 @@ LLVM_OBJCOPY	?= llvm-objcopy
- LLVM_STRIP	?= llvm-strip
+@@ -95,8 +96,9 @@ LLVM_STRIP	?= llvm-strip
+ SYSTEM_BPFTOOL	?= bpftool
  
  ifeq ($(CC_NO_CLANG), 1)
 -EXTRA_WARNINGS += -Wstrict-aliasing=3
@@ -40,7 +40,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  # sysroots and flags or to avoid the GCC call in pure Clang builds.
 --- a/tools/include/linux/types.h
 +++ b/tools/include/linux/types.h
-@@ -56,6 +56,7 @@ typedef __s8  s8;
+@@ -58,6 +58,7 @@ typedef unsigned long long	ullong;
  #define __user
  #endif
  #define __must_check
@@ -74,7 +74,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   */
  
 +#define generic_fls __linux_fls
- static __always_inline int generic_fls(unsigned int x)
+ static __always_inline __attribute_const__ int generic_fls(unsigned int x)
  {
  	int r = 32;
 --- a/tools/lib/string.c
@@ -111,7 +111,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 @@ -46,7 +46,17 @@
  #define ORC_TYPE_REGS_PARTIAL		4
  
- #ifndef __ASSEMBLY__
+ #ifndef __ASSEMBLER__
 +#ifdef __APPLE__
 +#include <endian.h>
 +
@@ -151,8 +151,8 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  static const char *argv0_path;
 --- a/tools/objtool/Makefile
 +++ b/tools/objtool/Makefile
-@@ -39,6 +39,8 @@ OBJTOOL_LDFLAGS := $(LIBELF_LIBS) $(LIBS
- elfshdr := $(shell echo '$(pound)include <libelf.h>' | $(HOSTCC) $(OBJTOOL_CFLAGS) -x c -E - | grep elf_getshdr)
+@@ -40,6 +40,8 @@ OBJTOOL_LDFLAGS := $(LIBELF_LIBS) $(LIBS
+ elfshdr := $(shell echo '$(pound)include <libelf.h>' | $(HOSTCC) $(OBJTOOL_CFLAGS) -x c -E - 2>/dev/null | grep elf_getshdr)
  OBJTOOL_CFLAGS += $(if $(elfshdr),,-DLIBELF_USE_DEPRECATED)
  
 +OBJTOOL_CFLAGS += $(HOST_EXTRACFLAGS)
