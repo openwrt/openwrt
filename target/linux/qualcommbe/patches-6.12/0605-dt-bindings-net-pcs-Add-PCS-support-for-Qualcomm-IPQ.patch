@@ -1,0 +1,29 @@
+From 32e3d5fe3bb32233cf6356948ff4af9a027455c8 Mon Sep 17 00:00:00 2001
+From: Lei Wei <quic_leiwei@quicinc.com>
+Date: Tue, 18 Feb 2025 16:46:39 +0800
+Subject: [PATCH 605/636] dt-bindings: net: pcs: Add PCS support for Qualcomm
+ IPQ5424 SoC.
+
+Extend compatible property to support IPQ5424 PCS.
+
+Change-Id: I92711e658d164e22506f5e1d26136ad4b5ae1dce
+Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
+---
+ Documentation/devicetree/bindings/net/pcs/qcom,ipq9574-pcs.yaml | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Documentation/devicetree/bindings/net/pcs/qcom,ipq9574-pcs.yaml b/Documentation/devicetree/bindings/net/pcs/qcom,ipq9574-pcs.yaml
+index b8049542530e..9dbf137aade1 100644
+--- a/Documentation/devicetree/bindings/net/pcs/qcom,ipq9574-pcs.yaml
++++ b/Documentation/devicetree/bindings/net/pcs/qcom,ipq9574-pcs.yaml
+@@ -77,6 +77,7 @@ description:
+ properties:
+   compatible:
+     enum:
++      - qcom,ipq5424-pcs
+       - qcom,ipq9574-pcs
+ 
+   reg:
+-- 
+2.34.1
+
