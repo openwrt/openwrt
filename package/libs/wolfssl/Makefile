@@ -60,7 +60,7 @@ define Package/libwolfssl/Default
   SECTION:=libs
   SUBMENU:=SSL
   CATEGORY:=Libraries
-  URL:=http://www.wolfssl.com/
+  URL:=https://www.wolfssl.com/
 endef
 
 define Package/libwolfssl
