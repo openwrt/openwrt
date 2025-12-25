@@ -78,6 +78,50 @@ define FixupDependencies
   $(call AddDependency,$(1),$$(DEPS))
 endef
 
+# Format provides both for apk and control
+#
+# - If ABI version is defined:
+#   - package is named `${package_name}${ABI_version}`
+#     if a `package_name` ends in a number, the `ABI_version` will be prefixed
+#     with a - sign, e.g.: libsqlite3-0
+#   - package implicitly provides
+#     `${package_name}${ABI_version}=${package_version}`
+#     this implies that only one version of a package per ABI can be installed
+#     at the same time
+#   - additionally provide `${package_name}` so multiple packages can be looked
+#     up by its base name
+#   - for each `provides`, provide `${provide}${ABI_version}=${package_version}`
+#     this implies that only one version of a provide can be installed at the
+#     same time
+#
+# - else if ABI version is _not_ defined
+#   - package is named `${package_name}`
+#   - package implicitly provides `${package_name}=${package_version}`
+#     this implies that only one version of a package can be installed at the
+#     same time
+#   - if `alternatives` is defined
+#     - for each `provides`, provide `${provide}`
+#       this implies that multiple versions of a provide can be installed at the
+#       same time
+#   - else if `alternatives` is _not_ defined
+#     - for each `provides`, provide `${provide}=${package_version}`
+#       this implies that only one version of a provide can be installed at the
+#       same time
+#
+# 1: package name
+# 2: package version
+# 3: list of provides
+# 4: list of alternatives
+define FormatProvides
+$(strip $(if $(ABIV_$(1)), \
+  $(1) $(foreach provide,$(3), $(provide)$(ABIV_$(1))=$(2)), \
+  $(if $(4), \
+    $(3), \
+    $(foreach provide,$(3), $(provide)=$(2)) \
+  ) \
+))
+endef
+
 ifneq ($(PKG_NAME),toolchain)
   define CheckDependencies
 	@( \
@@ -241,14 +285,14 @@ endif
       Package/$(1)/DEPENDS := $$(call mergelist,$$(Package/$(1)/DEPENDS))
     endif
 
-    $$(info $(1) fused dependencies: $$(Package/$(1)/DEPENDS))
+    Package/$(1)/PROVIDES := $$(call FormatProvides,$(1),$(VERSION),$(PROVIDES),$(ALTERNATIVES))
 
 $(_define) Package/$(1)/CONTROL
 Package: $(1)$$(ABIV_$(1))
 Version: $(VERSION)
 $$(call addfield,Depends,$$(Package/$(1)/DEPENDS)
 )$$(call addfield,Conflicts,$$(call mergelist,$(CONFLICTS))
-)$$(call addfield,Provides,$$(call mergelist,$$(filter-out $(1)$$(ABIV_$(1)),$(PROVIDES)$$(if $$(ABIV_$(1)), $(1) $(foreach provide,$(PROVIDES),$(provide)$$(ABIV_$(1))))))
+)$$(call addfield,Provides,$$(call mergelist,$$(Package/$(1)/PROVIDES))
 )$$(call addfield,Alternatives,$$(call mergelist,$(ALTERNATIVES))
 )$$(call addfield,Source,$(SOURCE)
 )$$(call addfield,SourceName,$(PKG_NAME)
@@ -433,13 +477,7 @@ else
 	  --info "origin:$(SOURCE)" \
 	  --info "url:$(URL)" \
 	  --info "maintainer:$(MAINTAINER)" \
-	  --info "provides:$$(if $$(ABIV_$(1)), \
-	    $(1) $(foreach provide,$(PROVIDES), $(provide)$$(ABIV_$(1))=$(VERSION)), \
-	    $(if $(ALTERNATIVES), \
-	      $(PROVIDES), \
-	      $(foreach provide,$(PROVIDES), $(provide)=$(VERSION)) \
-	    ) \
-	  )" \
+	  $$(if $$(Package/$(1)/PROVIDES),--info "provides:$$(Package/$(1)/PROVIDES)") \
 	  $(if $(DEFAULT_VARIANT),--info "provider-priority:100",$(if $(PROVIDES),--info "provider-priority:1")) \
 	  $$(APK_SCRIPTS_$(1)) \
 	  --info "depends:$$(foreach depends,$$(subst $$(comma),$$(space),$$(subst $$(space),,$$(subst $$(paren_right),,$$(subst $$(paren_left),,$$(Package/$(1)/DEPENDS))))),$$(depends))" \
