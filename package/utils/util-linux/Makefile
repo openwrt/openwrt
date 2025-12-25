@@ -26,7 +26,7 @@ define Package/util-linux/Default
   SECTION:=utils
   CATEGORY:=Utilities
   DEPENDS:= +librt
-  URL:=http://www.kernel.org/pub/linux/utils/util-linux/
+  URL:=https://www.kernel.org/pub/linux/utils/util-linux/
 endef
 
 define Package/libblkid
