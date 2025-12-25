@@ -23,7 +23,7 @@ define Package/gperf
   SECTION:=devel
   CATEGORY:=Development
   TITLE:=GNU gperf
-  URL:=http://www.gnu.org/software/gperf
+  URL:=https://www.gnu.org/software/gperf
 endef
 
 define Package/gperf/description

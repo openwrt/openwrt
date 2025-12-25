@@ -65,7 +65,7 @@ define Package/libintl-full
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=GNU Internationalization library
-  URL:=http://www.gnu.org/software/gettext/
+  URL:=https://www.gnu.org/software/gettext/
   ABI_VERSION:=8
 endef
 
