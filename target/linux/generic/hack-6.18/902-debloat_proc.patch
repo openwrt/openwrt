@@ -29,7 +29,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/fs/locks.c
 +++ b/fs/locks.c
-@@ -2971,6 +2971,8 @@ static const struct seq_operations locks
+@@ -2966,6 +2966,8 @@ static const struct seq_operations locks
  
  static int __init proc_locks_init(void)
  {
@@ -40,7 +40,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	return 0;
 --- a/fs/proc/Kconfig
 +++ b/fs/proc/Kconfig
-@@ -101,6 +101,11 @@ config PROC_CHILDREN
+@@ -120,6 +120,11 @@ config PROC_CHILDREN
  	  Say Y if you are running any user-space software which takes benefit from
  	  this interface. For example, rkt is such a piece of software.
  
@@ -100,7 +100,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	proc_mkdir("tty/ldisc", NULL);	/* Preserved: it's userspace visible */
 --- a/include/net/snmp.h
 +++ b/include/net/snmp.h
-@@ -124,6 +124,21 @@ struct linux_tls_mib {
+@@ -119,6 +119,21 @@ struct linux_tls_mib {
  #define DECLARE_SNMP_STAT(type, name)	\
  	extern __typeof__(type) __percpu *name
  
@@ -122,7 +122,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  #define __SNMP_INC_STATS(mib, field)	\
  			__this_cpu_inc(mib->mibs[field])
  
-@@ -154,8 +169,9 @@ struct linux_tls_mib {
+@@ -149,8 +164,9 @@ struct linux_tls_mib {
  		__this_cpu_add(ptr[basefield##OCTETS], addend);	\
  	} while (0)
  
@@ -158,7 +158,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  				IPC_SEM_IDS, sysvipc_sem_proc_show);
 --- a/ipc/shm.c
 +++ b/ipc/shm.c
-@@ -155,6 +155,8 @@ pure_initcall(ipc_ns_init);
+@@ -157,6 +157,8 @@ pure_initcall(ipc_ns_init);
  
  void __init shm_init(void)
  {
@@ -192,7 +192,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
 --- a/kernel/irq/proc.c
 +++ b/kernel/irq/proc.c
-@@ -339,6 +339,9 @@ void register_irq_proc(unsigned int irq,
+@@ -331,6 +331,9 @@ void register_irq_proc(unsigned int irq,
  	void __maybe_unused *irqp = (void *)(unsigned long) irq;
  	char name [MAX_NAMELEN];
  
@@ -202,7 +202,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!root_irq_dir || (desc->irq_data.chip == &no_irq_chip))
  		return;
  
-@@ -397,6 +400,9 @@ void unregister_irq_proc(unsigned int ir
+@@ -384,6 +387,9 @@ void unregister_irq_proc(unsigned int ir
  {
  	char name [MAX_NAMELEN];
  
@@ -212,7 +212,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!root_irq_dir || !desc->dir)
  		return;
  #ifdef CONFIG_SMP
-@@ -435,6 +441,9 @@ void init_irq_proc(void)
+@@ -422,6 +428,9 @@ void init_irq_proc(void)
  	unsigned int irq;
  	struct irq_desc *desc;
  
@@ -224,7 +224,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!root_irq_dir)
 --- a/kernel/time/timer_list.c
 +++ b/kernel/time/timer_list.c
-@@ -354,6 +354,8 @@ static int __init init_timer_list_procfs
+@@ -352,6 +352,8 @@ static int __init init_timer_list_procfs
  {
  	struct proc_dir_entry *pe;
  
@@ -235,7 +235,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	if (!pe)
 --- a/mm/vmalloc.c
 +++ b/mm/vmalloc.c
-@@ -5074,6 +5074,9 @@ static int vmalloc_info_show(struct seq_
+@@ -5128,6 +5128,9 @@ static int vmalloc_info_show(struct seq_
  
  static int __init proc_vmalloc_init(void)
  {
@@ -247,7 +247,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
 --- a/mm/vmstat.c
 +++ b/mm/vmstat.c
-@@ -2195,10 +2195,12 @@ void __init init_mm_internals(void)
+@@ -2286,10 +2286,12 @@ void __init init_mm_internals(void)
  	start_shepherd_timer();
  #endif
  #ifdef CONFIG_PROC_FS
@@ -260,9 +260,9 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	}
  	proc_create_seq("vmstat", 0444, NULL, &vmstat_op);
 -	proc_create_seq("zoneinfo", 0444, NULL, &zoneinfo_op);
+ 	register_sysctl_init("vm", vmstat_table);
  #endif
  }
- 
 --- a/net/8021q/vlanproc.c
 +++ b/net/8021q/vlanproc.c
 @@ -93,6 +93,9 @@ void vlan_proc_cleanup(struct net *net)
@@ -287,7 +287,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		goto err;
 --- a/net/core/net-procfs.c
 +++ b/net/core/net-procfs.c
-@@ -295,10 +295,12 @@ static int __net_init dev_proc_net_init(
+@@ -311,10 +311,12 @@ static int __net_init dev_proc_net_init(
  	if (!proc_create_net("dev", 0444, net->proc_net, &dev_seq_ops,
  			sizeof(struct seq_net_private)))
  		goto out;
@@ -302,7 +302,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			sizeof(struct seq_net_private)))
  		goto out_softnet;
  
-@@ -308,9 +310,11 @@ static int __net_init dev_proc_net_init(
+@@ -324,9 +326,11 @@ static int __net_init dev_proc_net_init(
  out:
  	return rc;
  out_ptype:
@@ -316,7 +316,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  out_dev:
  	remove_proc_entry("dev", net->proc_net);
  	goto out;
-@@ -320,8 +324,10 @@ static void __net_exit dev_proc_net_exit
+@@ -336,8 +340,10 @@ static void __net_exit dev_proc_net_exit
  {
  	wext_proc_exit(net);
  
@@ -331,7 +331,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/core/sock.c
 +++ b/net/core/sock.c
-@@ -4280,6 +4280,8 @@ static __net_initdata struct pernet_oper
+@@ -4348,6 +4348,8 @@ static __net_initdata struct pernet_oper
  
  static int __init proto_init(void)
  {
@@ -342,7 +342,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/ipv4/fib_trie.c
 +++ b/net/ipv4/fib_trie.c
-@@ -3015,11 +3015,13 @@ static const struct seq_operations fib_r
+@@ -3009,11 +3009,13 @@ static const struct seq_operations fib_r
  
  int __net_init fib_proc_init(struct net *net)
  {
@@ -358,7 +358,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			fib_triestat_seq_show, NULL))
  		goto out2;
  
-@@ -3030,17 +3032,21 @@ int __net_init fib_proc_init(struct net
+@@ -3024,17 +3026,21 @@ int __net_init fib_proc_init(struct net
  	return 0;
  
  out3:
@@ -386,7 +386,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/ipv4/proc.c
 +++ b/net/ipv4/proc.c
-@@ -563,5 +563,8 @@ static __net_initdata struct pernet_oper
+@@ -568,5 +568,8 @@ static __net_initdata struct pernet_oper
  
  int __init ip_misc_proc_init(void)
  {
@@ -397,7 +397,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  }
 --- a/net/ipv4/route.c
 +++ b/net/ipv4/route.c
-@@ -382,6 +382,9 @@ static struct pernet_operations ip_rt_pr
+@@ -383,6 +383,9 @@ static struct pernet_operations ip_rt_pr
  
  static int __init ip_rt_proc_init(void)
  {
@@ -409,7 +409,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/net/ipv4/inet_timewait_sock.c
 +++ b/net/ipv4/inet_timewait_sock.c
-@@ -285,7 +285,7 @@ void __inet_twsk_schedule(struct inet_ti
+@@ -301,7 +301,7 @@ void __inet_twsk_schedule(struct inet_ti
  	 */
  
  	if (!rearm) {
