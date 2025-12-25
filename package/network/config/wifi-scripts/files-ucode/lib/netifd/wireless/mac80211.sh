@@ -294,7 +294,15 @@ function setup() {
 	if (fs.access('/usr/sbin/hostapd', 'x'))
 		hostapd.setup(data);
 
-	system(`ucode /usr/share/hostap/wdev.uc ${data.phy}${data.phy_suffix} set_config '${printf("%J", wdev_data)}' ${join(' ', active_ifnames)}`);
+	for (let ifname in active_ifnames) {
+		if (!wdev_data[ifname])
+			continue;
+
+		let if_config = {
+			[ifname]: wdev_data[ifname]
+		};
+		system(`ucode /usr/share/hostap/wdev.uc ${data.phy}${data.phy_suffix} set_config '${if_config}'`);
+	}
 
 	if (length(supplicant_data) > 0)
 		supplicant.start(data);
