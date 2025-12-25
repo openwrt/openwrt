@@ -31,7 +31,7 @@ define Package/f2fs-tools/Default
   CATEGORY:=Utilities
   SUBMENU:=Filesystem
   DEPENDS:=+libf2fs
-  URL:=http://git.kernel.org/cgit/linux/kernel/git/jaegeuk/f2fs-tools.git
+  URL:=https://git.kernel.org/pub/scm/linux/kernel/git/jaegeuk/f2fs-tools.git
   VARIANT:=default
 endef
 
@@ -40,7 +40,7 @@ define Package/f2fs-tools/SELinux
   CATEGORY:=Utilities
   SUBMENU:=Filesystem
   DEPENDS:=+libf2fs-selinux +libselinux
-  URL:=http://git.kernel.org/cgit/linux/kernel/git/jaegeuk/f2fs-tools.git
+  URL:=https://git.kernel.org/pub/scm/linux/kernel/git/jaegeuk/f2fs-tools.git
   VARIANT:=selinux
 endef
 
