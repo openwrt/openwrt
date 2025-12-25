@@ -24,7 +24,7 @@ define Package/adb
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=Android Debug Bridge CLI tool
-  URL:=http://tools.android.com/
+  URL:=https://developer.android.com/tools/adb
   DEPENDS:=+zlib +libmbedtls +libpthread
 endef
 
