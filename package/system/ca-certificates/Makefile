@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ca-certificates
 PKG_VERSION:=20250419
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_MAINTAINER:=
 
 PKG_LICENSE:=GPL-2.0-or-later MPL-2.0
@@ -29,7 +29,7 @@ define Package/ca-certificates
   CATEGORY:=Base system
   TITLE:=System CA certificates
   PKGARCH:=all
-  PROVIDES:=ca-certs
+  PROVIDES:=@ca-certs
 endef
 
 define Package/ca-bundle
@@ -37,7 +37,7 @@ define Package/ca-bundle
   CATEGORY:=Base system
   TITLE:=System CA certificates as a bundle
   PKGARCH:=all
-  PROVIDES:=ca-certs
+  PROVIDES:=@ca-certs
 endef
 
 define Build/Install
