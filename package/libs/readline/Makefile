@@ -32,7 +32,7 @@ define Package/libreadline
   CATEGORY:=Libraries
   TITLE:=Command lines edition library
   DEPENDS:=+libncursesw
-  URL:=http://cnswww.cns.cwru.edu/php/chet/readline/rltop.html
+  URL:=https://tiswww.case.edu/php/chet/readline/rltop.html
   ABI_VERSION:=8
 endef
 
