@@ -24,7 +24,7 @@ define Package/ead
   SECTION:=net
   CATEGORY:=Base system
   TITLE:=Emergency Access Daemon
-  URL:=http://bridge.sourceforge.net/
+  URL:=https://bridge.sourceforge.net/
 endef
 
 define Package/ead/description
