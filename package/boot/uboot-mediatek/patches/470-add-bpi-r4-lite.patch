@@ -648,8 +648,8 @@
 +bootdelay=0
 +bootfile=openwrt-mediatek-filogic-bananapi_bpi-r4-lite-initramfs-recovery.itb
 +bootfile_upg=openwrt-mediatek-filogic-bananapi_bpi-r4-lite-squashfs-sysupgrade.itb
-+bootled_pwr=green:status
-+bootled_rec=blue:status
++bootled_pwr=blue:act
++bootled_rec=blue:act
 +bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 60
 +bootmenu_default=0
 +bootmenu_delay=0
@@ -733,8 +733,8 @@
 +bootfile_bl2=openwrt-mediatek-filogic-bananapi_bpi-r4-lite-nor-preloader.bin
 +bootfile_fip=openwrt-mediatek-filogic-bananapi_bpi-r4-lite-nor-bl31-uboot.fip
 +bootfile_upg=openwrt-mediatek-filogic-bananapi_bpi-r4-lite-squashfs-sysupgrade.itb
-+bootled_pwr=green:status
-+bootled_rec=blue:status
++bootled_pwr=blue:act
++bootled_rec=blue:act
 +bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 60
 +bootmenu_default=0
 +bootmenu_delay=0
@@ -795,8 +795,8 @@
 +bootfile_bl2=openwrt-mediatek-filogic-bananapi_bpi-r4-lite-snand-preloader.bin
 +bootfile_fip=openwrt-mediatek-filogic-bananapi_bpi-r4-lite-snand-bl31-uboot.fip
 +bootfile_upg=openwrt-mediatek-filogic-bananapi_bpi-r4-lite-squashfs-sysupgrade.itb
-+bootled_pwr=green:status
-+bootled_rec=blue:status
++bootled_pwr=blue:act
++bootled_rec=blue:act
 +bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 60
 +bootmenu_default=0
 +bootmenu_delay=0
@@ -870,8 +870,8 @@
 +bootfile_bl2=openwrt-mediatek-filogic-bananapi_bpi-r4-lite-emmc-preloader.bin
 +bootfile_fip=openwrt-mediatek-filogic-bananapi_bpi-r4-lite-emmc-bl31-uboot.fip
 +bootfile_upg=openwrt-mediatek-filogic-bananapi_bpi-r4-lite-squashfs-sysupgrade.itb
-+bootled_pwr=green:status
-+bootled_rec=blue:status
++bootled_pwr=blue:act
++bootled_rec=blue:act
 +bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 60
 +bootmenu_default=0
 +bootmenu_delay=0
@@ -915,19 +915,16 @@
 +_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- /dev/null
-+++ b/arch/arm/dts/mt7987a-bpi-r4-lite-sd.dts
-@@ -0,0 +1,30 @@
++++ b/arch/arm/dts/mt7987a-bpi-r4-lite.dtsi
+@@ -0,0 +1,36 @@
 +// SPDX-License-Identifier: (GPL-2.0 OR MIT)
 +
-+/dts-v1/;
 +#include "mt7987a.dtsi"
-+#include "mt7987-sd.dtsi"
 +#include <dt-bindings/input/input.h>
 +
 +/ {
 +	model = "BananaPi BPi-R4 Lite";
-+	compatible = "mediatek,mt7987a-sd",
-+		     "mediatek,mt7987a", "mediatek,mt7987";
++	compatible = "mediatek,mt7987a", "mediatek,mt7987";
 +
 +	gpio-keys {
 +		compatible = "gpio-keys";
@@ -946,73 +943,40 @@
 +			debounce-interval = <10>;
 +		};
 +	};
++
++	gpio-leds {
++		compatible = "gpio-leds";
++
++		act {
++			label = "blue:act";
++			gpios = <&pio 13 GPIO_ACTIVE_HIGH>;
++		};
++	};
 +};
+--- /dev/null
++++ b/arch/arm/dts/mt7987a-bpi-r4-lite-sd.dts
+@@ -0,0 +1,5 @@
++// SPDX-License-Identifier: (GPL-2.0 OR MIT)
++
++/dts-v1/;
++#include "mt7987a-bpi-r4-lite.dtsi"
++#include "mt7987-sd.dtsi"
 --- /dev/null
 +++ b/arch/arm/dts/mt7987a-bpi-r4-lite-spim-nand.dts
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,5 @@
 +// SPDX-License-Identifier: (GPL-2.0 OR MIT)
 +
 +/dts-v1/;
-+#include "mt7987a.dtsi"
++#include "mt7987a-bpi-r4-lite.dtsi"
 +#include "mt7987-emmc.dtsi"
-+#include <dt-bindings/input/input.h>
-+
-+/ {
-+	model = "BananaPi BPi-R4 Lite";
-+	compatible = "mediatek,mt7987a-emmc",
-+		     "mediatek,mt7987a", "mediatek,mt7987";
-+
-+	gpio-keys {
-+		compatible = "gpio-keys";
-+
-+		reset {
-+			label = "reset";
-+			linux,code = <KEY_RESTART>;
-+			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
-+			debounce-interval = <10>;
-+		};
-+
-+		wps {
-+			label = "wps";
-+			linux,code = <KEY_WPS_BUTTON>;
-+			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
-+			debounce-interval = <10>;
-+		};
-+	};
-+};
 --- /dev/null
 +++ b/arch/arm/dts/mt7987a-bpi-r4-lite-emmc.dts
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,5 @@
 +// SPDX-License-Identifier: (GPL-2.0 OR MIT)
 +
 +/dts-v1/;
-+#include "mt7987a.dtsi"
++#include "mt7987a-bpi-r4-lite.dtsi"
 +#include "mt7987-emmc.dtsi"
-+#include <dt-bindings/input/input.h>
-+
-+/ {
-+	model = "BananaPi BPi-R4 Lite";
-+	compatible = "mediatek,mt7987a-emmc",
-+		     "mediatek,mt7987a", "mediatek,mt7987";
-+
-+	gpio-keys {
-+		compatible = "gpio-keys";
-+
-+		reset {
-+			label = "reset";
-+			linux,code = <KEY_RESTART>;
-+			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
-+			debounce-interval = <10>;
-+		};
-+
-+		wps {
-+			label = "wps";
-+			linux,code = <KEY_WPS_BUTTON>;
-+			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
-+			debounce-interval = <10>;
-+		};
-+	};
-+};
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
 @@ -1136,6 +1136,9 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
