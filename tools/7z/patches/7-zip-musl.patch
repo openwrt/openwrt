@@ -1,6 +1,6 @@
 --- a/C/Threads.c
 +++ b/C/Threads.c
-@@ -265,7 +265,7 @@ WRes Thread_Create_With_CpuSet(CThread *
+@@ -472,7 +472,7 @@ WRes Thread_Create_With_CpuSet(CThread *
        */
  
        // ret2 =
@@ -9,7 +9,7 @@
        // if (ret2) ret = ret2;
  #endif
      }
-@@ -275,14 +275,12 @@ WRes Thread_Create_With_CpuSet(CThread *
+@@ -482,14 +482,12 @@ WRes Thread_Create_With_CpuSet(CThread *
      if (!ret)
      {
        p->_created = 1;
