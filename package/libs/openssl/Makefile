@@ -241,6 +241,18 @@ ifndef CONFIG_OPENSSL_WITH_ERROR_MESSAGES
   OPENSSL_OPTIONS += no-err
 endif
 
+ifndef CONFIG_OPENSSL_WITH_SSL3
+  OPENSSL_OPTIONS += no-ssl3 no-ssl3-method
+endif
+
+ifndef CONFIG_OPENSSL_WITH_TLS10
+  OPENSSL_OPTIONS += no-tls1 no-tls1-method
+endif
+
+ifndef CONFIG_OPENSSL_WITH_TLS11
+  OPENSSL_OPTIONS += no-tls1_1 no-tls1_1-method
+endif
+
 ifndef CONFIG_OPENSSL_WITH_TLS13
   OPENSSL_OPTIONS += no-tls1_3
 endif
