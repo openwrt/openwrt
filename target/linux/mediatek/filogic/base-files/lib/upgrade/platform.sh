@@ -317,6 +317,11 @@ platform_check_image() {
 
 		return 0
 		;;
+	glinet,gl-mt2500|\
+	glinet,gl-mt2500-airoha)
+		# delegate on fwtool for image checks to allow cross sysupgrades
+		return 0
+		;;
 	*)
 		nand_do_platform_check "$board" "$1"
 		return $?
