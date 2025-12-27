@@ -53,7 +53,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
 
 --- a/drivers/net/phy/phy_device.c
 +++ b/drivers/net/phy/phy_device.c
-@@ -1684,8 +1684,6 @@ int phy_attach_direct(struct net_device
+@@ -1751,8 +1751,6 @@ int phy_attach_direct(struct net_device
  		goto error;
  
  	phy_resume(phydev);
@@ -62,8 +62,8 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  
  	/**
  	 * If the external phy used by current mac interface is managed by
-@@ -2058,9 +2056,6 @@ void phy_detach(struct phy_device *phyde
- 	}
+@@ -1870,9 +1868,6 @@ void phy_detach(struct phy_device *phyde
+ 	phydev->phy_link_change = NULL;
  	phydev->phylink = NULL;
  
 -	if (!phydev->is_on_sfp_module)
@@ -72,7 +72,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  	if (phydev->mdio.dev.driver)
  		module_put(phydev->mdio.dev.driver->owner);
  
-@@ -3691,17 +3686,28 @@ static int phy_probe(struct device *dev)
+@@ -3503,16 +3498,27 @@ static int phy_probe(struct device *dev)
  	/* Set the state to READY by default */
  	phydev->state = PHY_READY;
  
@@ -83,9 +83,8 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  	/* Get the LEDs from the device tree, and instantiate standard
  	 * LEDs for them.
  	 */
- 	if (IS_ENABLED(CONFIG_PHYLIB_LEDS) && !phy_driver_is_genphy(phydev) &&
--	    !phy_driver_is_genphy_10g(phydev))
-+	    !phy_driver_is_genphy_10g(phydev)) {
+-	if (IS_ENABLED(CONFIG_PHYLIB_LEDS) && !phy_driver_is_genphy(phydev))
++	if (IS_ENABLED(CONFIG_PHYLIB_LEDS) && !phy_driver_is_genphy(phydev)) {
  		err = of_phy_leds(phydev);
 +		if (err)
 +			goto out;
@@ -104,8 +103,8 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  
  	return err;
  }
-@@ -3716,6 +3722,9 @@ static int phy_remove(struct device *dev
- 	    !phy_driver_is_genphy_10g(phydev))
+@@ -3526,6 +3532,9 @@ static int phy_remove(struct device *dev
+ 	if (IS_ENABLED(CONFIG_PHYLIB_LEDS) && !phy_driver_is_genphy(phydev))
  		phy_leds_unregister(phydev);
  
 +	if (!phydev->is_on_sfp_module)

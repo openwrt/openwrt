@@ -321,7 +321,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +	#include <stdlib.h>
 +	#include <stdio.h>
 +	#include <unistd.h>
-+	#include <string.h>
++	#include <linux/string.h>
 +	#include <asm/types.h>
 +	#include <errno.h>
 +	#include <linux/jffs2.h>
@@ -336,8 +336,8 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +	#define STATIC
 +#endif
 +
-+#include "lzma/LzmaDec.h"
-+#include "lzma/LzmaEnc.h"
++#include <linux/lzma/LzmaDec.h>
++#include <linux/lzma/LzmaEnc.h>
 +
 +#define LZMA_BEST_LEVEL (9)
 +#define LZMA_BEST_LC    (0)
@@ -858,14 +858,15 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +#endif
 --- /dev/null
 +++ b/include/linux/lzma/Types.h
-@@ -0,0 +1,226 @@
+@@ -0,0 +1,227 @@
 +/* Types.h -- Basic types
 +2009-11-23 : Igor Pavlov : Public domain */
 +
 +#ifndef __7Z_TYPES_H
 +#define __7Z_TYPES_H
 +
-+#include <stddef.h>
++#include <linux/types.h>
++#include <linux/stddef.h>
 +
 +#ifdef _WIN32
 +#include <windows.h>
@@ -1097,7 +1098,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
  #define JFFS2_NODE_ACCURATE 0x2000
 --- a/lib/Kconfig
 +++ b/lib/Kconfig
-@@ -353,6 +353,12 @@ config ZSTD_DECOMPRESS
+@@ -216,6 +216,12 @@ config ZSTD_DECOMPRESS
  
  source "lib/xz/Kconfig"
  
@@ -1112,7 +1113,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
  # ZLIB_INFLATE; DECOMPRESS_GZIP is just a wrapper.)
 --- a/lib/Makefile
 +++ b/lib/Makefile
-@@ -126,6 +126,16 @@ CFLAGS_kobject.o += -DDEBUG
+@@ -117,6 +117,16 @@ CFLAGS_kobject.o += -DDEBUG
  CFLAGS_kobject_uevent.o += -DDEBUG
  endif
  
@@ -1129,7 +1130,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
  obj-$(CONFIG_DEBUG_INFO_REDUCED) += debug_info.o
  CFLAGS_debug_info.o += $(call cc-option, -femit-struct-debug-detailed=any)
  
-@@ -185,6 +195,8 @@ obj-$(CONFIG_ZSTD_COMPRESS) += zstd/
+@@ -165,6 +175,8 @@ obj-$(CONFIG_ZSTD_COMPRESS) += zstd/
  obj-$(CONFIG_ZSTD_DECOMPRESS) += zstd/
  obj-$(CONFIG_XZ_DEC) += xz/
  obj-$(CONFIG_RAID6_PQ) += raid6/
@@ -1144,10 +1145,10 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +/* LzFind.c -- Match finder for LZ algorithms
 +2009-04-22 : Igor Pavlov : Public domain */
 +
-+#include <string.h>
++#include <linux/string.h>
 +
-+#include "LzFind.h"
-+#include "LzHash.h"
++#include <linux/lzma/LzFind.h>
++#include <linux/lzma/LzHash.h>
 +
 +#define kEmptyHashValue 0
 +#define kMaxValForNormalize ((UInt32)0xFFFFFFFF)
@@ -1908,9 +1909,9 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +/* LzmaDec.c -- LZMA Decoder
 +2009-09-20 : Igor Pavlov : Public domain */
 +
-+#include "LzmaDec.h"
++#include <linux/lzma/LzmaDec.h>
 +
-+#include <string.h>
++#include <linux/string.h>
 +
 +#define kNumTopBits 24
 +#define kTopValue ((UInt32)1 << kNumTopBits)
@@ -2910,7 +2911,7 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +/* LzmaEnc.c -- LZMA Encoder
 +2009-11-24 : Igor Pavlov : Public domain */
 +
-+#include <string.h>
++#include <linux/string.h>
 +
 +/* #define SHOW_STAT */
 +/* #define SHOW_STAT2 */
@@ -2919,12 +2920,12 @@ Signed-off-by: Alexandros C. Couloumbis <alex@ozo.com>
 +#include <stdio.h>
 +#endif
 +
-+#include "LzmaEnc.h"
++#include <linux/lzma/LzmaEnc.h>
 +
 +/* disable MT */
 +#define _7ZIP_ST
 +
-+#include "LzFind.h"
++#include <linux/lzma/LzFind.h>
 +#ifndef _7ZIP_ST
 +#include "LzFindMt.h"
 +#endif
