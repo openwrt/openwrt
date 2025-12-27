@@ -80,6 +80,24 @@
 			gpios = <&tlmm 22 GPIO_ACTIVE_LOW>;
 		};
 	};
+
+        gpio_export {
+                compatible = "gpio-export";
+                #size-cells = <0>;
+
+                pse_en {
+                        gpio-export,name = "pse_en";
+                        gpio-export,output = <1>;
+                        gpios = <&tlmm 28 GPIO_ACTIVE_LOW>;
+                };
+
+                poeaf_det {
+                        gpio-export,name = "poeaf_det";
+                        gpio-export,input = <0>;
+                        gpios = <&tlmm 29 GPIO_ACTIVE_HIGH>;
+                };
+
+        };
 };
 
 &usb2_hs_phy {
