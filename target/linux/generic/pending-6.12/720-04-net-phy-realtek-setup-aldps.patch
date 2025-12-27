@@ -1,0 +1,42 @@
+From 9155098547fb1172d4fa536f3f6bc9d42f59d08c Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Sat, 22 Apr 2023 03:26:01 +0100
+Subject: [PATCH] net: phy: realtek: setup ALDPS on RTL822x
+
+Setup Link Down Power Saving Mode according the DTS property
+just like for RTL821x 1GE PHYs.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/net/phy/realtek/realtek_main.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+--- a/drivers/net/phy/realtek/realtek_main.c
++++ b/drivers/net/phy/realtek/realtek_main.c
+@@ -162,6 +162,10 @@
+ 
+ #define RTL8224_SRAM_RTCT_LEN(pair)		(0x8028 + (pair) * 4)
+ 
++#define RTL8221B_PHYCR1				0xa430
++#define RTL8221B_PHYCR1_ALDPS_EN		BIT(2)
++#define RTL8221B_PHYCR1_ALDPS_XTAL_OFF_EN	BIT(12)
++
+ #define RTL8366RB_POWER_SAVE			0x15
+ #define RTL8366RB_POWER_SAVE_ON			BIT(12)
+ 
+@@ -1305,6 +1309,15 @@ static int rtl822x_set_serdes_option_mod
+ 			return ret;
+ 	}
+ 
++	if (of_property_read_bool(phydev->mdio.dev.of_node, "realtek,aldps-enable"))
++		ret = phy_set_bits_mmd(phydev, MDIO_MMD_VEND1, RTL8221B_PHYCR1,
++				 RTL8221B_PHYCR1_ALDPS_EN | RTL8221B_PHYCR1_ALDPS_XTAL_OFF_EN);
++	else
++		ret = phy_clear_bits_mmd(phydev, MDIO_MMD_VEND1, RTL8221B_PHYCR1,
++				   RTL8221B_PHYCR1_ALDPS_EN | RTL8221B_PHYCR1_ALDPS_XTAL_OFF_EN);
++	if (ret < 0)
++		return ret;
++
+ 	/* Disable SGMII AN */
+ 	ret = phy_write_mmd(phydev, MDIO_MMD_VEND1, 0x7588, 0x2);
+ 	if (ret < 0)
