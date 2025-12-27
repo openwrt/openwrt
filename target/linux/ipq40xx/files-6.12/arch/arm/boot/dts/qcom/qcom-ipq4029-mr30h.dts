@@ -1,18 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 // Device Tree Source for Meraki MR30H (Noisy Cricket)
 
-#include "qcom-ipq4029-wired-qca-common.dtsi"
+#include "qcom-ipq4029-meraki-insect.dtsi"
 
 / {
 	model = "Meraki MR30H";
 	compatible = "meraki,mr30h";
-
-	soc {
-		/* for USB PHY, device has no USB port */
-		tcsr@194b000 {
-			status = "disabled";
-		};
-	};
 
 	leds {
 		compatible = "gpio-leds";
@@ -80,26 +73,16 @@
 			gpios = <&tlmm 22 GPIO_ACTIVE_LOW>;
 		};
 	};
+
+	soc {
+		ess_tcsr@1953000 {
+			qcom,ess-interface-select = <TCSR_ESS_PSGMII>;
+		};
+	};
 };
 
-&usb2_hs_phy {
-	status = "disabled";
-};
-
-&usb2 {
-	status = "disabled";
-};
-
-&usb3_hs_phy {
-	status = "disabled";
-};
-
-&usb3_ss_phy {
-	status = "disabled";
-};
-
-&usb3 {
-	status = "disabled";
+&tricolor {
+	enable-gpio = <&tlmm 48 GPIO_ACTIVE_HIGH>;
 };
 
 &pcie0 {
@@ -109,7 +92,7 @@
 };
 
 &pcie_bridge0 {
-	wifi2: wifi@1,0 {
+	wifi2: wifi@0,0 {
 		compatible = "qcom,ath10k";
 		reg = <0x00010000 0 0 0 0>;
 		nvmem-cells = <&cal_factory_9000>;
@@ -126,7 +109,6 @@
 	status = "okay";
 	qcom,ath10k-calibration-variant = "Meraki-MR30H";
 };
-
 
 &swport1 {
 	label = "lan4";
