@@ -1,0 +1,30 @@
+From 746495d8bf2a294ae33b4b4aa5f7c1ccdf7a27ab Mon Sep 17 00:00:00 2001
+From: Jan Hoffmann <jan@3e8.eu>
+Date: Tue, 23 Dec 2025 20:02:27 +0100
+Subject: [PATCH] dt-bindings: net: realtek,rtl82xx: document mdi-swap-enable
+ property
+
+Some Realtek PHYs support swapping the order of the MDI pairs to
+simplify board layout. Depending on the device, this may be configured
+using strapping pins or manually. The new property allows to indicate
+that manual swapping by the driver is needed.
+
+Signed-off-by: Jan Hoffmann <jan@3e8.eu>
+---
+ Documentation/devicetree/bindings/net/realtek,rtl82xx.yaml | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/Documentation/devicetree/bindings/net/realtek,rtl82xx.yaml
++++ b/Documentation/devicetree/bindings/net/realtek,rtl82xx.yaml
+@@ -51,6 +51,11 @@ properties:
+     description:
+       Enable ALDPS mode, ALDPS mode default is disabled after hardware reset.
+ 
++  realtek,mdi-swap-enable:
++    type: boolean
++    description:
++      Enable MDI port order swapping (ABCD->DCBA).
++
+ unevaluatedProperties: false
+ 
+ allOf:
