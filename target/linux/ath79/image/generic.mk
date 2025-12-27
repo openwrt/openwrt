@@ -2026,6 +2026,30 @@ define Device/librerouter_librerouter-v1
 endef
 TARGET_DEVICES += librerouter_librerouter-v1
 
+define Device/linksys_lapac1750
+  $(Device/loader-okli-uimage)
+  SOC := qca9558
+  DEVICE_VENDOR := Linksys
+  DEVICE_MODEL := LAPAC1750
+  DEVICE_PACKAGES := -uboot-envtools kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  IMAGE_SIZE := 7100k
+  LOADER_FLASH_OFFS := 0x60000
+  SERCOMM_HWID := 415546955810
+  SERCOMM_HWREV := 1
+  SERCOMM_FUNCTION_CODE := 7
+  SERCOMM_COMPANY_CODE := 0
+  SERCOMM_KERNEL_SPLIT := 0x12ff00
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49
+  IMAGES += factory.bin
+  IMAGE/default := append-loader-okli-uimage $(1) | pad-to 65280 | \
+	append-kernel | pad-offset $$$$(BLOCKSIZE) 256 | append-rootfs
+  IMAGE/factory.bin := $$(IMAGE/default) | \
+	sercomm-factory-wrap --header-offset=0x10000
+  IMAGE/sysupgrade.bin := $$(IMAGE/default) | \
+	sercomm-factory-wrap --no-pid --header-offset=0x50000 | append-metadata
+endef
+TARGET_DEVICES += linksys_lapac1750
+
 define Device/longdata_aps256
   SOC := ar9344
   DEVICE_VENDOR := LONGDATA
