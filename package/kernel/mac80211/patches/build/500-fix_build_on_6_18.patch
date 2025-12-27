@@ -1,0 +1,18 @@
+--- a/backport-include/linux/net.h
++++ b/backport-include/linux/net.h
+@@ -3,12 +3,14 @@
+ #include_next <linux/net.h>
+ #include <linux/static_key.h>
+ 
+-
++/* Linux ≥ 6.7 removed SOCK_ASYNC_* */
++#if defined(SOCK_ASYNC_NOSPACE) && defined(SOCK_ASYNC_WAITDATA)
+ #ifndef SOCKWQ_ASYNC_NOSPACE
+ #define SOCKWQ_ASYNC_NOSPACE   SOCK_ASYNC_NOSPACE
+ #endif
+ #ifndef SOCKWQ_ASYNC_WAITDATA
+ #define SOCKWQ_ASYNC_WAITDATA   SOCK_ASYNC_WAITDATA
+ #endif
++#endif
+ 
+ #endif /* __BACKPORT_LINUX_NET_H */
