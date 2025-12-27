@@ -124,6 +124,7 @@ platform_do_upgrade() {
 	acer,vero-w6m|\
 	arcadyan,mozart|\
 	glinet,gl-mt2500|\
+	glinet,gl-mt2500-airoha|\
 	glinet,gl-mt6000|\
 	glinet,gl-x3000|\
 	glinet,gl-xe3000|\
@@ -316,6 +317,11 @@ platform_check_image() {
 
 		return 0
 		;;
+	glinet,gl-mt2500|\
+	glinet,gl-mt2500-airoha)
+		# delegate on fwtool for image checks to allow cross sysupgrades
+		return 0
+		;;
 	*)
 		nand_do_platform_check "$board" "$1"
 		return $?
@@ -345,6 +351,7 @@ platform_copy_config() {
 	acer,vero-w6m|\
 	arcadyan,mozart|\
 	glinet,gl-mt2500|\
+	glinet,gl-mt2500-airoha|\
 	glinet,gl-mt6000|\
 	glinet,gl-x3000|\
 	glinet,gl-xe3000|\
