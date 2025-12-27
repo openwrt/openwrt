@@ -156,7 +156,7 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  	.supports_op = airoha_snand_supports_op,
  	.exec_op = airoha_snand_exec_op,
  	.dirmap_create = airoha_snand_dirmap_create,
-@@ -1105,36 +1030,6 @@ static int airoha_snand_setup(struct spi
+@@ -1110,36 +1035,6 @@ static int airoha_snand_setup(struct spi
  	return 0;
  }
  
@@ -193,7 +193,7 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  static const struct regmap_config spi_ctrl_regmap_config = {
  	.name		= "ctrl",
  	.reg_bits	= 32,
-@@ -1208,7 +1103,7 @@ static int airoha_snand_probe(struct pla
+@@ -1231,7 +1126,7 @@ static int airoha_snand_probe(struct pla
  	ctrl->setup = airoha_snand_setup;
  	device_set_node(&ctrl->dev, dev_fwnode(dev));
  
