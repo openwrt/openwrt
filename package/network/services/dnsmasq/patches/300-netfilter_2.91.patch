@@ -1,0 +1,19 @@
+diff --git a/src/cache.c b/src/cache.c
+--- a/src/cache.c
++++ b/src/cache.c
+@@ -856,6 +856,15 @@ void cache_end_insert(void)
+   new_chain = NULL;
+ }
+
++#if defined(HAVE_IPSET) || defined(HAVE_NFTSET)
++void cache_send_ipset(unsigned char op, struct ipsets *sets, int flags, union all_addr *addr)
++{
++  read_write(daemon->pipe_to_parent, &op, sizeof(op), RW_WRITE);
++  read_write(daemon->pipe_to_parent, (unsigned char *)&sets, sizeof(sets), RW_WRITE);
++  read_write(daemon->pipe_to_parent, (unsigned char *)&flags, sizeof(flags), RW_WRITE);
++  read_write(daemon->pipe_to_parent, (unsigned char *)addr, sizeof(*addr), RW_WRITE);
++}
++#endif
+
+ /* A marshalled cache entry arrives on fd, read, unmarshall and insert into cache of master process. */
+ int cache_recv_insert(time_t now, int fd)
