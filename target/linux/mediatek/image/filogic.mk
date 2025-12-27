@@ -2541,7 +2541,8 @@ define Device/tplink_be450
   DEVICE_DTS := mt7988d-tplink-be450
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7992-firmware kmod-usb3 \
-	    mt7988-2p5g-phy-firmware mt7988-wo-firmware
+	    mt7988-2p5g-phy-firmware mt7988-wo-firmware \
+	    kmod-phy-realtek rtl8261n-firmware
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k
   PAGESIZE := 2048
