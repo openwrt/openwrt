@@ -1209,7 +1209,7 @@ static void adm6996_gpio_remove(struct platform_device *pdev)
 
 static struct platform_driver adm6996_gpio_driver = {
 	.probe = adm6996_gpio_probe,
-	.remove_new = adm6996_gpio_remove,
+	.remove = adm6996_gpio_remove,
 	.driver = {
 		.name = "adm6996_gpio",
 	},
@@ -1219,14 +1219,14 @@ static int __init adm6996_init(void)
 {
 	int err;
 
-	phy_register_fixup_for_id(PHY_ANY_ID, adm6996_fixup);
-	err = phy_driver_register(&adm6996_phy_driver, THIS_MODULE);
+	phy_register_fixup_for_id("MATCH ANY PHY", adm6996_fixup);
+	err = phy_drivers_register(&adm6996_phy_driver, 1, THIS_MODULE);
 	if (err)
 		return err;
 
 	err = platform_driver_register(&adm6996_gpio_driver);
 	if (err)
-		phy_driver_unregister(&adm6996_phy_driver);
+		phy_drivers_unregister(&adm6996_phy_driver, 1);
 
 	return err;
 }
@@ -1234,7 +1234,7 @@ static int __init adm6996_init(void)
 static void __exit adm6996_exit(void)
 {
 	platform_driver_unregister(&adm6996_gpio_driver);
-	phy_driver_unregister(&adm6996_phy_driver);
+	phy_drivers_unregister(&adm6996_phy_driver, 1);
 }
 
 module_init(adm6996_init);
