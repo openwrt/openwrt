@@ -1,0 +1,24 @@
+From 565bf5bece731d2896e71170131e403c883cee98 Mon Sep 17 00:00:00 2001
+From: Aleksander Jan Bajkowski <olek2@wp.pl>
+Date: Mon, 1 Dec 2025 22:56:14 +0100
+Subject: [PATCH] net: phy: mediatek: enable interrupts on AN7581
+
+Interrupts work just like on MT7988.
+
+Suggested-by: Benjamin Larsson <benjamin.larsson@genexis.eu>
+Signed-off-by: Aleksander Jan Bajkowski <olek2@wp.pl>
+---
+ drivers/net/phy/mediatek/mtk-ge-soc.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/net/phy/mediatek/mtk-ge-soc.c
++++ b/drivers/net/phy/mediatek/mtk-ge-soc.c
+@@ -1492,6 +1492,8 @@ static struct phy_driver mtk_socphy_driv
+ 	{
+ 		PHY_ID_MATCH_EXACT(MTK_GPHY_ID_AN7581),
+ 		.name		= "Airoha AN7581 PHY",
++		.config_intr	= genphy_no_config_intr,
++		.handle_interrupt = genphy_handle_interrupt_no_ack,
+ 		.probe		= an7581_phy_probe,
+ 		.led_blink_set	= mt798x_phy_led_blink_set,
+ 		.led_brightness_set = mt798x_phy_led_brightness_set,
