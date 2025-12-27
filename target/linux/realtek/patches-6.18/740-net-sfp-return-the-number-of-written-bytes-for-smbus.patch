@@ -1,0 +1,29 @@
+From 13ff3e724207f579d3c814ee05516fefcb4f32e8 Mon Sep 17 00:00:00 2001
+From: Maxime Chevallier <maxime.chevallier@bootlin.com>
+Date: Mon, 5 Jan 2026 16:18:39 +0100
+Subject: [PATCH] net: sfp: return the number of written bytes for smbus single
+ byte access
+
+We expect the SFP write accessors to return the number of written bytes.
+We fail to do so for single-byte smbus accesses, which may cause errors
+when setting a module's high-power state and for some cotsworks modules.
+
+Let's return the amount of written bytes, as expected.
+
+Fixes: 7662abf4db94 ("net: phy: sfp: Add support for SMBus module access")
+Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Link: https://patch.msgid.link/20260105151840.144552-1-maxime.chevallier@bootlin.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+
+--- a/drivers/net/phy/sfp.c
++++ b/drivers/net/phy/sfp.c
+@@ -763,7 +763,7 @@ static int sfp_smbus_byte_write(struct s
+ 		dev_addr++;
+ 	}
+ 
+-	return 0;
++	return data - (u8 *)buf;
+ }
+ 
+ static int sfp_i2c_configure(struct sfp *sfp, struct i2c_adapter *i2c)
