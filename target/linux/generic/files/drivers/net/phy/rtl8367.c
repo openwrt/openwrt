@@ -1812,7 +1812,7 @@ static struct platform_driver rtl8367_driver = {
 		.of_match_table = rtl8367_match,
 	},
 	.probe		= rtl8367_probe,
-	.remove_new	= rtl8367_remove,
+	.remove		= rtl8367_remove,
 	.shutdown	= rtl8367_shutdown,
 };
 
