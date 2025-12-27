@@ -5,6 +5,18 @@
 
 /* Register definition */
 
+/*
+ * Reset
+ */
+#define RTL838X_RST_GLB_CTRL_0			(0x003c)
+#define RTL839X_RST_GLB_CTRL			(0x0014)
+#define RTL930X_RST_GLB_CTRL_0			(0x000c)
+#define RTL931X_RST_GLB_CTRL			(0x0400)
+
+/* Switch interrupts */
+#define RTL839X_IMR_PORT_LINK_STS_CHG		(0x0068)
+#define RTL839X_ISR_PORT_LINK_STS_CHG		(0x00a0)
+
 /* Per port MAC control */
 #define RTL838X_MAC_PORT_CTRL			(0xd560)
 #define RTL839X_MAC_PORT_CTRL			(0x8004)
