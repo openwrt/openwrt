@@ -78,6 +78,98 @@ define FixupDependencies
   $(call AddDependency,$(1),$$(DEPS))
 endef
 
+# Fixup kmod version to match that of the kernel by stripping the kmod version
+# suffix if present, e.g.:
+#   6.12.62.11.015.00-r1 -> 6.12.62-r1
+#   6.12.62-r2           -> 6.12.62-r2
+#
+# 1: provide version
+define FixupKmodVersion
+$(subst $(space),.,$(wordlist 1,3,$(subst .,$(space),$(firstword $(subst -,$(space),$(1))))))-$(lastword $(subst -,$(space),$(1)))
+endef
+
+# Format provide and add ABI and version if it's not a virtual provide marked
+# with an @.
+#
+# Format kmod provide using FixupKmodVersion
+#
+# 1: provide name
+# 2: provide version
+# 3: (optional) ABI preformatted by FormatABISuffix
+define AddProvide
+$(if $(filter kmod-%,$(1)), \
+  $(1)=$(call FixupKmodVersion,$(2)), \
+  $(if $(filter @%,$(1)),$(patsubst @%,%,$(1)),$(1)$(3)=$(2)) \
+)
+endef
+
+# Remove virtual provides prefix and self. apk doesn't like it when packages
+# specify a redundant provide pointing to self.
+#
+# 1: package name
+# 2: list of provides
+define SanitizeProvides
+$(filter-out $(1),$(patsubst @%,%,$(2)))
+endef
+
+# Format provides both for apk and control
+#
+# - If ABI version is defined:
+#   - package is named `${package_name}${ABI_version}`
+#     if a `package_name` ends in a number, the `ABI_version` will be prefixed
+#     with a - sign, e.g.: libsqlite3-0
+#   - package implicitly provides
+#     `${package_name}${ABI_version}=${package_version}`
+#     this implies that only one version of a package per ABI can be installed
+#     at the same time
+#   - additionally provide `${package_name}` so multiple packages can be looked
+#     up by its base name
+#   - for each `provides`, provide `${provide}${ABI_version}=${package_version}`
+#     this implies that only one version of a provide can be installed at the
+#     same time
+#
+# - else if ABI version is _not_ defined
+#   - package is named `${package_name}`
+#   - package implicitly provides `${package_name}=${package_version}`
+#     this implies that only one version of a package can be installed at the
+#     same time
+#   - if `alternatives` is defined
+#     - for each `provides`, provide `${provide}`
+#       this implies that multiple versions of a provide can be installed at the
+#       same time
+#   - else if `alternatives` is _not_ defined
+#     - for each `provides`, provide `${provide}=${package_version}`
+#       this implies that only one version of a provide can be installed at the
+#       same time
+#
+# - Both with and without an ABI, if a provide starts with an @, treat it as a
+#   virtual provide, that doesn't own the name by not appending version.
+#   Multiple packages with the same virtual provides can be installed
+#   side-by-side.
+#
+# - apk doesn't like it when packages specify a redundant provide pointing to
+#   self. Filter it out.
+#
+# 1: package name
+# 2: package version
+# 3: list of provides
+# 4: list of alternatives
+define FormatProvides
+$(strip $(if $(ABIV_$(1)), \
+  $(1) $(foreach provide, \
+    $(filter-out $(1),$(3)), \
+    $(call AddProvide,$(provide),$(2),$(ABIV_$(1))) \
+  ), \
+  $(if $(4), \
+    $(filter-out $(1),$(3)), \
+    $(foreach provide, \
+      $(filter-out $(1),$(3)), \
+      $(call AddProvide,$(provide),$(2)) \
+    ) \
+  ) \
+))
+endef
+
 ifneq ($(PKG_NAME),toolchain)
   define CheckDependencies
 	@( \
@@ -193,7 +285,7 @@ endif
 	$(if $(ABI_VERSION),echo '$(ABI_VERSION)' | cmp -s - $(PKG_INFO_DIR)/$(1).version || { \
 		mkdir -p $(PKG_INFO_DIR); \
 		echo '$(ABI_VERSION)' > $(PKG_INFO_DIR)/$(1).version; \
-		$(foreach pkg,$(filter-out $(1),$(PROVIDES)), \
+		$(foreach pkg,$(call SanitizeProvides,$(1),$(PROVIDES)), \
 			cp $(PKG_INFO_DIR)/$(1).version $(PKG_INFO_DIR)/$(pkg).version; \
 		) \
 	} )
@@ -241,14 +333,14 @@ endif
       Package/$(1)/DEPENDS := $$(call mergelist,$$(Package/$(1)/DEPENDS))
     endif
 
-    $$(info $(1) fused dependencies: $$(Package/$(1)/DEPENDS))
+    Package/$(1)/PROVIDES := $$(call FormatProvides,$(1),$(VERSION),$(PROVIDES),$(ALTERNATIVES))
 
 $(_define) Package/$(1)/CONTROL
 Package: $(1)$$(ABIV_$(1))
 Version: $(VERSION)
 $$(call addfield,Depends,$$(Package/$(1)/DEPENDS)
 )$$(call addfield,Conflicts,$$(call mergelist,$(CONFLICTS))
-)$$(call addfield,Provides,$$(call mergelist,$$(filter-out $(1)$$(ABIV_$(1)),$(PROVIDES)$$(if $$(ABIV_$(1)), $(1) $(foreach provide,$(PROVIDES),$(provide)$$(ABIV_$(1))))))
+)$$(call addfield,Provides,$$(call mergelist,$$(Package/$(1)/PROVIDES))
 )$$(call addfield,Alternatives,$$(call mergelist,$(ALTERNATIVES))
 )$$(call addfield,Source,$(SOURCE)
 )$$(call addfield,SourceName,$(PKG_NAME)
@@ -292,7 +384,7 @@ endif
 			fi; \
 		done; $(Package/$(1)/extra_provides) \
 	) | sort -u > $(PKG_INFO_DIR)/$(1).provides
-	$(if $(PROVIDES),@for pkg in $(filter-out $(1),$(PROVIDES)); do cp $(PKG_INFO_DIR)/$(1).provides $(PKG_INFO_DIR)/$$$$pkg.provides; done)
+	$(if $(PROVIDES),@for pkg in $(call SanitizeProvides,$(1),$(PROVIDES)); do cp $(PKG_INFO_DIR)/$(1).provides $(PKG_INFO_DIR)/$$$$pkg.provides; done)
 	$(CheckDependencies)
 
 	$(RSTRIP) $$(IDIR_$(1))
@@ -433,13 +525,7 @@ else
 	  --info "origin:$(SOURCE)" \
 	  --info "url:$(URL)" \
 	  --info "maintainer:$(MAINTAINER)" \
-	  --info "provides:$$(if $$(ABIV_$(1)), \
-	    $(1) $(foreach provide,$(PROVIDES), $(provide)$$(ABIV_$(1))=$(VERSION)), \
-	    $(if $(ALTERNATIVES), \
-	      $(PROVIDES), \
-	      $(foreach provide,$(PROVIDES), $(provide)=$(VERSION)) \
-	    ) \
-	  )" \
+	  $$(if $$(Package/$(1)/PROVIDES),--info "provides:$$(Package/$(1)/PROVIDES)") \
 	  $(if $(DEFAULT_VARIANT),--info "provider-priority:100",$(if $(PROVIDES),--info "provider-priority:1")) \
 	  $$(APK_SCRIPTS_$(1)) \
 	  --info "depends:$$(foreach depends,$$(subst $$(comma),$$(space),$$(subst $$(space),,$$(subst $$(paren_right),,$$(subst $$(paren_left),,$$(Package/$(1)/DEPENDS))))),$$(depends))" \
