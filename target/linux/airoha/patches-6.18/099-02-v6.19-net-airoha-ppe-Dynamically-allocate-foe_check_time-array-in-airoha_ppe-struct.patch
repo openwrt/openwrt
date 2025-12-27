@@ -1,0 +1,127 @@
+From patchwork Fri Oct 17 09:06:11 2025
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+X-Patchwork-Submitter: Lorenzo Bianconi <lorenzo@kernel.org>
+X-Patchwork-Id: 14271894
+Return-Path: 
+ <linux-mediatek-bounces+linux-mediatek=archiver.kernel.org@lists.infradead.org>
+X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
+	aws-us-west-2-korg-lkml-1.web.codeaurora.org
+Received: from bombadil.infradead.org (bombadil.infradead.org
+ [198.137.202.133])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by smtp.lore.kernel.org (Postfix) with ESMTPS id 86072CCD1A2
+	for <linux-mediatek@archiver.kernel.org>;
+ Fri, 17 Oct 2025 09:06:42 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=lists.infradead.org; s=bombadil.20210309; h=Sender:List-Subscribe:List-Help
+	:List-Post:List-Archive:List-Unsubscribe:List-Id:Cc:To:In-Reply-To:References
+	:Message-Id:Content-Transfer-Encoding:Content-Type:MIME-Version:Subject:Date:
+	From:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
+	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Owner;
+	bh=60OMG9Bfq33niR17566RVtcrhuSDxGciFB7xICFJWP8=; b=XZxRVbQomervxuVIPwfXj7tHVT
+	4MdHo4crpM7xMc7afDyUjwDXa6R5e1R8DLDP2XYOW98fIQNLj4TUfD1ri96QzqanWWwLqD0Y/I2I9
+	jR8m5+93Dmquin0R52Qt1f5jyVOh7sa/Xd8NKc+bgOlMovvMcunDfnYt0Pujfle2uwAU5LUwfJQ0/
+	0Ab4rHURJVFOhIHyiGa7KP7zMw+aOV3JHdOHvJNQQeySL/iiT855R35DvHcALEfbtUnUYfn27iOzH
+	E4l2hVaCC7fE/kcP6jOY5CoU7O3h2TRIxkN3qxDKLe5YAZkNYcrYeIQKYWxP39z+yHNBxQgLY14It
+	vhon+76w==;
+Received: from localhost ([::1] helo=bombadil.infradead.org)
+	by bombadil.infradead.org with esmtp (Exim 4.98.2 #2 (Red Hat Linux))
+	id 1v9gQ5-00000007Bol-33vD;
+	Fri, 17 Oct 2025 09:06:41 +0000
+Received: from sea.source.kernel.org ([2600:3c0a:e001:78e:0:1991:8:25])
+	by bombadil.infradead.org with esmtps (Exim 4.98.2 #2 (Red Hat Linux))
+	id 1v9gQ1-00000007BjR-16rI;
+	Fri, 17 Oct 2025 09:06:38 +0000
+Received: from smtp.kernel.org (transwarp.subspace.kernel.org [100.75.92.58])
+	by sea.source.kernel.org (Postfix) with ESMTP id 92FD14ADCD;
+	Fri, 17 Oct 2025 09:06:36 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id E640DC4CEF9;
+	Fri, 17 Oct 2025 09:06:35 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1760691996;
+	bh=NITHiO1A/cRdExkggxIIRs5P2A4dim+V/Z/R+2/59Zw=;
+	h=From:Date:Subject:References:In-Reply-To:To:Cc:From;
+	b=FQRlR/t1DYlWIGETDPrEEbEKgHOSo/HveKwQP+/yGIROiN7BOdFDqhH6OcSXl5VFn
+	 9OG5yhoqecHo/zX5c+3tNMct2o2WBJyhxkmsZyRHl1Kr9JRHriFZV3nH3DixA2n7uC
+	 mLQ7TKMKPcfp3tFsmzqXTN8IntEGF2WW/liitnqP8xluqmq1jDptWc2bBD5d7H1SPO
+	 u5s5eaNWZbkSLcVP59w/x+cTJDS3QhZWDeSpu4u2VI3AyPt1p7d0x2t9B0ZIhHUE3F
+	 gg4+mKmrTpRHtVs3GbGcGT4k+Lab8YnzjLQdyMVjZftj9isWjD7lBhiRU1IpPtBwTJ
+	 s7i45dYiXPSkA==
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Fri, 17 Oct 2025 11:06:11 +0200
+Subject: [PATCH net-next v3 02/13] net: airoha: ppe: Dynamically allocate
+ foe_check_time array in airoha_ppe struct
+MIME-Version: 1.0
+Message-Id: <20251017-an7583-eth-support-v3-2-f28319666667@kernel.org>
+References: <20251017-an7583-eth-support-v3-0-f28319666667@kernel.org>
+In-Reply-To: <20251017-an7583-eth-support-v3-0-f28319666667@kernel.org>
+To: Andrew Lunn <andrew+netdev@lunn.ch>,
+ "David S. Miller" <davem@davemloft.net>, Eric Dumazet <edumazet@google.com>,
+ Jakub Kicinski <kuba@kernel.org>, Paolo Abeni <pabeni@redhat.com>,
+ Rob Herring <robh@kernel.org>, Krzysztof Kozlowski <krzk+dt@kernel.org>,
+ Conor Dooley <conor+dt@kernel.org>, Philipp Zabel <p.zabel@pengutronix.de>,
+ Lorenzo Bianconi <lorenzo@kernel.org>
+Cc: linux-arm-kernel@lists.infradead.org,
+ linux-mediatek@lists.infradead.org, netdev@vger.kernel.org,
+ devicetree@vger.kernel.org, Simon Horman <horms@kernel.org>
+X-Mailer: b4 0.14.2
+X-CRM114-Version: 20100106-BlameMichelson ( TRE 0.8.0 (BSD) ) MR-646709E3 
+X-CRM114-CacheID: sfid-20251017_020637_332327_4E1DB497 
+X-CRM114-Status: GOOD (  11.74  )
+X-BeenThere: linux-mediatek@lists.infradead.org
+X-Mailman-Version: 2.1.34
+Precedence: list
+List-Id: <linux-mediatek.lists.infradead.org>
+List-Unsubscribe: <http://lists.infradead.org/mailman/options/linux-mediatek>,
+ <mailto:linux-mediatek-request@lists.infradead.org?subject=unsubscribe>
+List-Archive: <http://lists.infradead.org/pipermail/linux-mediatek/>
+List-Post: <mailto:linux-mediatek@lists.infradead.org>
+List-Help: <mailto:linux-mediatek-request@lists.infradead.org?subject=help>
+List-Subscribe: <http://lists.infradead.org/mailman/listinfo/linux-mediatek>,
+ <mailto:linux-mediatek-request@lists.infradead.org?subject=subscribe>
+Sender: "Linux-mediatek" <linux-mediatek-bounces@lists.infradead.org>
+Errors-To: 
+ linux-mediatek-bounces+linux-mediatek=archiver.kernel.org@lists.infradead.org
+
+This is a preliminary patch to properly enable PPE support for AN7583
+SoC.
+
+Reviewed-by: Simon Horman <horms@kernel.org>
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+---
+ drivers/net/ethernet/airoha/airoha_eth.h | 2 +-
+ drivers/net/ethernet/airoha/airoha_ppe.c | 5 +++++
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.h b/drivers/net/ethernet/airoha/airoha_eth.h
+index cd13c1c1224f64b63d455b24ce722c33c2fa7125..4330b672d99e1e190efa5ad75d13fb35e77d070e 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -554,7 +554,7 @@ struct airoha_ppe {
+ 	struct rhashtable l2_flows;
+ 
+ 	struct hlist_head *foe_flow;
+-	u16 foe_check_time[PPE_NUM_ENTRIES];
++	u16 *foe_check_time;
+ 
+ 	struct airoha_foe_stats *foe_stats;
+ 	dma_addr_t foe_stats_dma;
+diff --git a/drivers/net/ethernet/airoha/airoha_ppe.c b/drivers/net/ethernet/airoha/airoha_ppe.c
+index 691361b254075555549ee80a4ed358c52e8e00b2..8d1dceadce0becb2b1ce656d64ab77bd3c2f914a 100644
+--- a/drivers/net/ethernet/airoha/airoha_ppe.c
++++ b/drivers/net/ethernet/airoha/airoha_ppe.c
+@@ -1440,6 +1440,11 @@ int airoha_ppe_init(struct airoha_eth *eth)
+ 			return -ENOMEM;
+ 	}
+ 
++	ppe->foe_check_time = devm_kzalloc(eth->dev, PPE_NUM_ENTRIES,
++					   GFP_KERNEL);
++	if (!ppe->foe_check_time)
++		return -ENOMEM;
++
+ 	err = rhashtable_init(&eth->flow_table, &airoha_flow_table_params);
+ 	if (err)
+ 		return err;

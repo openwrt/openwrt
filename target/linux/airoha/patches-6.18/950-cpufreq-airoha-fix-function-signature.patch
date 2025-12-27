@@ -1,0 +1,10 @@
+--- a/drivers/cpufreq/airoha-cpufreq.c
++++ b/drivers/cpufreq/airoha-cpufreq.c
+@@ -22,6 +22,7 @@ static struct platform_device *cpufreq_p
+ static int airoha_cpufreq_config_clks_nop(struct device *dev,
+ 					  struct opp_table *opp_table,
+ 					  struct dev_pm_opp *opp,
++					  struct dev_pm_opp *target_opp,
+ 					  void *data, bool scaling_down)
+ {
+ 	return 0;
