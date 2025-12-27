@@ -78,14 +78,29 @@ define FixupDependencies
   $(call AddDependency,$(1),$$(DEPS))
 endef
 
+# Fixup kmod version to match that of the kernel by stripping the kmod version
+# suffix if present, e.g.:
+#   6.12.62.11.015.00-r1 -> 6.12.62-r1
+#   6.12.62-r2           -> 6.12.62-r2
+#
+# 1: provide version
+define FixupKmodVersion
+$(subst $(space),.,$(wordlist 1,3,$(subst .,$(space),$(firstword $(subst -,$(space),$(1))))))-$(lastword $(subst -,$(space),$(1)))
+endef
+
 # Format provide and add ABI and version if it's not a virtual provide marked
 # with an @.
+#
+# Format kmod provide using FixupKmodVersion
 #
 # 1: provide name
 # 2: provide version
 # 3: (optional) ABI preformatted by FormatABISuffix
 define AddProvide
-$(if $(filter @%,$(1)),$(patsubst @%,%,$(1)),$(1)$(3)=$(2))
+$(if $(filter kmod-%,$(1)), \
+  $(1)=$(call FixupKmodVersion,$(2)), \
+  $(if $(filter @%,$(1)),$(patsubst @%,%,$(1)),$(1)$(3)=$(2)) \
+)
 endef
 
 # Remove virtual provides prefix and self. apk doesn't like it when packages
