@@ -20,10 +20,10 @@ Signed-off-by: Nick Hainke <vincent@systemli.org>
 
 --- a/drivers/mtd/spi-nor/macronix.c
 +++ b/drivers/mtd/spi-nor/macronix.c
-@@ -195,6 +195,7 @@ static int macronix_nor_late_init(struct
- {
+@@ -323,6 +323,7 @@ static int macronix_nor_late_init(struct
  	if (!nor->params->set_4byte_addr_mode)
  		nor->params->set_4byte_addr_mode = spi_nor_set_4byte_addr_mode_en4b_ex4b;
+ 	nor->params->set_octal_dtr = macronix_nor_set_octal_dtr;
 +	nor->flags &= ~SNOR_F_HAS_16BIT_SR;
  	nor->flags |= SNOR_F_HAS_LOCK;
  
