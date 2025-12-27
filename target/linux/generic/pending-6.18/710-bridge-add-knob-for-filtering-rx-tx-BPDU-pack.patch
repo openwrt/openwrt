@@ -29,10 +29,10 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	      u16 vid)
  {
 +	const unsigned char *dest = eth_hdr(skb)->h_dest;
+ 	enum skb_drop_reason reason = SKB_DROP_REASON_NO_TX_TARGET;
  	struct net_bridge_port *prev = NULL;
  	struct net_bridge_port *p;
- 
-@@ -219,6 +220,10 @@ void br_flood(struct net_bridge *br, str
+@@ -220,6 +221,10 @@ void br_flood(struct net_bridge *br, str
  		case BR_PKT_MULTICAST:
  			if (!(p->flags & BR_MCAST_FLOOD) && skb->dev != br->dev)
  				continue;
@@ -45,7 +45,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			if (!(p->flags & BR_BCAST_FLOOD) && skb->dev != br->dev)
 --- a/net/bridge/br_input.c
 +++ b/net/bridge/br_input.c
-@@ -368,6 +368,8 @@ static rx_handler_result_t br_handle_fra
+@@ -384,6 +384,8 @@ static rx_handler_result_t br_handle_fra
  		fwd_mask |= p->group_fwd_mask;
  		switch (dest[5]) {
  		case 0x00:	/* Bridge Group Address */
@@ -106,7 +106,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
 --- a/include/uapi/linux/if_link.h
 +++ b/include/uapi/linux/if_link.h
-@@ -1094,6 +1094,7 @@ enum {
+@@ -1098,6 +1098,7 @@ enum {
  	IFLA_BRPORT_MCAST_MAX_GROUPS,
  	IFLA_BRPORT_NEIGH_VLAN_SUPPRESS,
  	IFLA_BRPORT_BACKUP_NHID,
@@ -152,7 +152,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	    (!(p->flags & BR_PORT_LOCKED) || !(p->flags & BR_LEARNING))) {
 --- a/net/core/rtnetlink.c
 +++ b/net/core/rtnetlink.c
-@@ -62,7 +62,7 @@
+@@ -63,7 +63,7 @@
  #include "dev.h"
  
  #define RTNL_MAX_TYPE		50
@@ -161,7 +161,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  struct rtnl_link {
  	rtnl_doit_func		doit;
-@@ -5009,7 +5009,9 @@ int ndo_dflt_bridge_getlink(struct sk_bu
+@@ -5295,7 +5295,9 @@ int ndo_dflt_bridge_getlink(struct sk_bu
  	    brport_nla_put_flag(skb, flags, mask,
  				IFLA_BRPORT_MCAST_FLOOD, BR_MCAST_FLOOD) ||
  	    brport_nla_put_flag(skb, flags, mask,
