@@ -1,12 +1,14 @@
-From 995b1a65206ee28d5403db0518cb230f2ce429ef Mon Sep 17 00:00:00 2001
+From 233a22687411ea053a4b169c07324ee6aa33bf38 Mon Sep 17 00:00:00 2001
 From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
-Date: Mon, 11 Aug 2025 19:57:43 +0300
-Subject: [PATCH v6 07/13] spi: airoha: unify dirmap read/write code
+Date: Sun, 12 Oct 2025 15:16:58 +0300
+Subject: [PATCH 07/14] spi: airoha: unify dirmap read/write code
 
 Makes dirmap writing looks similar to dirmap reading. Just a minor
 refactoring, no behavior change is expected.
 
 Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Link: https://patch.msgid.link/20251012121707.2296160-8-mikhail.kshevetskiy@iopsys.eu
+Signed-off-by: Mark Brown <broonie@kernel.org>
 ---
  drivers/spi/spi-airoha-snfi.c | 50 ++++++++++++++++++++++-------------
  1 file changed, 32 insertions(+), 18 deletions(-)

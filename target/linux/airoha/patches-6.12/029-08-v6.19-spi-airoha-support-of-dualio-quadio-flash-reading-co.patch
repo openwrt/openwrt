@@ -1,7 +1,7 @@
-From baaba9b8d3d907575323cbb7fabeae23db2a542b Mon Sep 17 00:00:00 2001
+From 80b09137aeab27e59004383058f8cc696a9ee048 Mon Sep 17 00:00:00 2001
 From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
-Date: Mon, 11 Aug 2025 20:52:34 +0300
-Subject: [PATCH v6 08/13] spi: airoha: support of dualio/quadio flash reading
+Date: Sun, 12 Oct 2025 15:16:59 +0300
+Subject: [PATCH 08/14] spi: airoha: support of dualio/quadio flash reading
  commands
 
 Airoha snfi spi controller supports acceleration of DUAL/QUAD
@@ -12,6 +12,8 @@ DUAL_IO/QUAD_IO one.
 
 Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
 Reviewed-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>
+Link: https://patch.msgid.link/20251012121707.2296160-9-mikhail.kshevetskiy@iopsys.eu
+Signed-off-by: Mark Brown <broonie@kernel.org>
 ---
  drivers/spi/spi-airoha-snfi.c | 28 ++++++++++++++++++++++------
  1 file changed, 22 insertions(+), 6 deletions(-)
