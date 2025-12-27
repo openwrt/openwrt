@@ -30,7 +30,7 @@ define Package/libltdl
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=A generic dynamic object loading library
-  URL:=http://www.gnu.org/software/libtool/
+  URL:=https://www.gnu.org/software/libtool/
   ABI_VERSION:=7
 endef
 

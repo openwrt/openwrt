@@ -33,7 +33,6 @@ define Package/ltq-vdsl-vr11-app
   SECTION:=net
   CATEGORY:=Network
   TITLE:=Lantiq VDSL userland tool
-  URL:=http://www.lantiq.com/
   DEPENDS:=@TARGET_ipq40xx +libpthread +librt +libubox +libubus +ltq-dsl-base +kmod-ltq-vdsl-vr11
   PROVIDES:=ltq-dsl-app
 endef

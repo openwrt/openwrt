@@ -15,7 +15,7 @@ define Package/gnulib-l10n
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=GNU Gnulib localization translation files
-  URL:=http://www.gnu.org/software/gnulib/
+  URL:=https://www.gnu.org/software/gnulib/
 endef
 
 define Package/gnulib-l10n/description

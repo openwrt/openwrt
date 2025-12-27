@@ -28,7 +28,7 @@ include $(INCLUDE_DIR)/nls.mk
 define Package/iproute2/Default
   SECTION:=net
   CATEGORY:=Network
-  URL:=http://www.linuxfoundation.org/collaborate/workgroups/networking/iproute2
+  URL:=https://wiki.linuxfoundation.org/networking/iproute2
   SUBMENU:=Routing and Redirection
   MAINTAINER:=Russell Senior <russell@personaltelco.net>
 endef

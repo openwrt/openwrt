@@ -54,7 +54,7 @@ define Package/kernel
   DEFAULT:=y
   TITLE:=Virtual kernel package
   VERSION:=$(subst -rc,_rc,$(LINUX_VERSION))~$(LINUX_VERMAGIC)-r$(LINUX_RELEASE)
-  URL:=http://www.kernel.org/
+  URL:=https://www.kernel.org/
   PKG_FLAGS:=nonshared
 endef
 
