@@ -6,6 +6,11 @@
 / {
 	model = "Linksys MX5500";
 	compatible = "linksys,mx5500", "qcom,ipq5018";
+
+	chosen {
+		bootargs-append = " root=/dev/ubiblock0_0 coherent_pool=2M";
+		stdout-path = "serial0:115200n8";
+	};
 };
 
 /*
