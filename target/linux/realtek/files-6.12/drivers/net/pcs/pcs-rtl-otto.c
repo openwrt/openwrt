@@ -725,13 +725,15 @@ static int rtpcs_930x_sds_set_pll_data(struct rtpcs_serdes *sds,
 
 	/*
 	 * A SerDes clock can either be taken from the low speed ring PLL or the high speed
-	 * LC PLL. As it is unclear if disabling PLLs has any positive or negative effect,
-	 * always activate both.
+	 * LC PLL. Initialize CMU reset control bits to enable subsequent CMU toggle.
 	 */
 
 	rtpcs_sds_write_bits(even_sds, 0x20, 0x12, 3, 0, 0xf);
 	rtpcs_sds_write_bits(even_sds, 0x20, 0x12, pbit + 1, pbit, pll);
 	rtpcs_sds_write_bits(even_sds, 0x20, 0x12, sbit + 3, sbit, speed);
+
+	/* Initialize CMU reset control bits for subsequent toggle in clock ready loop */
+	rtpcs_sds_write_bits(even_sds, 0x21, 0x0b, 3, 0, 0xf);
 
 	return 0;
 }
@@ -861,20 +863,22 @@ static int rtpcs_930x_sds_config_pll(struct rtpcs_serdes *sds,
 	else
 		return -ENOTSUPP;
 
-	if (!neighbor_mode)
-		pll = speed == RTSDS_930X_PLL_10000 ? RTSDS_930X_PLL_LC : RTSDS_930X_PLL_RING;
-	else if (speed == neighbor_speed) {
-		speed_changed = false;
-		pll = neighbor_pll;
-	} else if (neighbor_pll == RTSDS_930X_PLL_RING)
+	/* 10GBASE-R always requires LC PLL */
+	if (speed == RTSDS_930X_PLL_10000) {
 		pll = RTSDS_930X_PLL_LC;
-	else if (speed == RTSDS_930X_PLL_10000) {
-		pr_info("%s: SDS %d needs LC PLL, reconfigure SDS %d to use ring PLL\n",
-			__func__, sds->id, nb_sds->id);
-		rtpcs_930x_sds_reconfigure_pll(nb_sds, RTSDS_930X_PLL_RING);
-		pll = RTSDS_930X_PLL_LC;
-	} else
+		if (neighbor_mode && neighbor_pll == RTSDS_930X_PLL_LC &&
+		    neighbor_speed != RTSDS_930X_PLL_10000) {
+			pr_info("%s: SDS %d needs LC PLL, reconfigure SDS %d to use ring PLL\n",
+				__func__, sds->id, nb_sds->id);
+			rtpcs_930x_sds_reconfigure_pll(nb_sds, RTSDS_930X_PLL_RING);
+		}
+	} else if (!neighbor_mode) {
 		pll = RTSDS_930X_PLL_RING;
+	} else if (neighbor_pll == RTSDS_930X_PLL_RING) {
+		pll = RTSDS_930X_PLL_LC;
+	} else {
+		pll = RTSDS_930X_PLL_RING;
+	}
 
 	rtpcs_930x_sds_set_pll_data(sds, pll, speed);
 
@@ -1552,16 +1556,12 @@ static void rtpcs_930x_sds_do_rx_calibration_1(struct rtpcs_serdes *sds,
 
 	pr_info("start_1.1.5 LEQ and DFE setting\n");
 
-	/* TODO: make this work for DAC cables of different lengths */
-	/* For a 10GBit serdes wit Fibre, SDS 8 or 9 */
-	if (phy_mode == PHY_INTERFACE_MODE_10GBASER ||
-	    phy_mode == PHY_INTERFACE_MODE_1000BASEX ||
-	    phy_mode == PHY_INTERFACE_MODE_SGMII)
-		rtpcs_sds_write_bits(sds, 0x2e, 0x16,  3,  2, 0x02);
-	else
-		pr_err("%s not PHY-based or SerDes, implement DAC!\n", __func__);
-
-	/* No serdes, check for Aquantia PHYs */
+	/*
+	 * Configure LEQ/DFE based on media type:
+	 * 0x1 = DAC (Direct Attach Copper) cable on SDS 8/9
+	 * 0x2 = Fiber or PHY-based connection
+	 * TODO: DAC detection not implemented, always use fiber/PHY setting
+	 */
 	rtpcs_sds_write_bits(sds, 0x2e, 0x16,  3,  2, 0x02);
 
 	rtpcs_sds_write_bits(sds, 0x2e, 0x0f,  6,  0, 0x5f);
