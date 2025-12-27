@@ -283,7 +283,7 @@
 +bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 60
 +bootmenu_default=0
 +bootmenu_delay=0
-+bootmenu_title=      [0;34m( ( ( [1;39mOpenWrt[0;34m ) ) )
++bootmenu_title=      [0;34m( ( ( [1;39mOpenWrt[0;34m ) ) )
 +bootmenu_0=Initialize environment.=run _firstboot
 +bootmenu_0d=Run default boot command.=run boot_default
 +bootmenu_1=Boot system via TFTP.=run boot_tftp ; run bootmenu_confirm_return
@@ -291,8 +291,8 @@
 +bootmenu_3=Boot recovery system from NAND.=run boot_recovery ; run bootmenu_confirm_return
 +bootmenu_4=Load production system via TFTP then write to NAND.=setenv noboot 1 ; setenv replacevol 1 ; run boot_tftp_production ; setenv noboot ; setenv replacevol ; run bootmenu_confirm_return
 +bootmenu_5=Load recovery system via TFTP then write to NAND.=setenv noboot 1 ; setenv replacevol 1 ; run boot_tftp_recovery ; setenv noboot ; setenv replacevol ; run bootmenu_confirm_return
-+bootmenu_6=[31mLoad BL31+U-Boot FIP via TFTP then write to NAND.[0m=run boot_tftp_write_fip ; run bootmenu_confirm_return
-+bootmenu_7=[31mLoad BL2 preloader via TFTP then write to NAND.[0m=run boot_tftp_write_bl2 ; run bootmenu_confirm_return
++bootmenu_6=[31mLoad BL31+U-Boot FIP via TFTP then write to NAND.[0m=run boot_tftp_write_fip ; run bootmenu_confirm_return
++bootmenu_7=[31mLoad BL2 preloader via TFTP then write to NAND.[0m=run boot_tftp_write_bl2 ; run bootmenu_confirm_return
 +bootmenu_8=Reboot.=reset
 +bootmenu_9=Reset all settings to factory defaults.=run reset_factory ; reset
 +boot_first=if button reset ; then led $bootled_rec on ; run boot_tftp_recovery ; setenv flag_recover 1 ; run boot_default ; fi ; bootmenu
