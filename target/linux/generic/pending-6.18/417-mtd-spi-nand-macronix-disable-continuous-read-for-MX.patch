@@ -17,23 +17,19 @@ Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
 
 --- a/drivers/mtd/nand/spi/macronix.c
 +++ b/drivers/mtd/nand/spi/macronix.c
-@@ -167,8 +167,7 @@ static const struct spinand_info macroni
- 					      &update_cache_variants),
+@@ -187,7 +187,6 @@ static const struct spinand_info macroni
  		     SPINAND_HAS_QE_BIT,
  		     SPINAND_ECCINFO(&mx35lfxge4ab_ooblayout,
--				     macronix_ecc_get_status),
--		     SPINAND_CONT_READ(macronix_set_cont_read)),
-+				     macronix_ecc_get_status)),
+ 				     macronix_ecc_get_status),
+-		     SPINAND_CONT_READ(macronix_set_cont_read),
+ 		     SPINAND_READ_RETRY(MACRONIX_NUM_READ_RETRY_MODES,
+ 					macronix_set_read_retry)),
  	SPINAND_INFO("MX35LF4GE4AD",
- 		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0x37, 0x03),
- 		     NAND_MEMORG(1, 4096, 128, 64, 2048, 40, 1, 1, 1),
-@@ -178,8 +177,7 @@ static const struct spinand_info macroni
- 					      &update_cache_variants),
+@@ -200,7 +199,6 @@ static const struct spinand_info macroni
  		     SPINAND_HAS_QE_BIT,
  		     SPINAND_ECCINFO(&mx35lfxge4ab_ooblayout,
--				     macronix_ecc_get_status),
--		     SPINAND_CONT_READ(macronix_set_cont_read)),
-+				     macronix_ecc_get_status)),
+ 				     macronix_ecc_get_status),
+-		     SPINAND_CONT_READ(macronix_set_cont_read),
+ 		     SPINAND_READ_RETRY(MACRONIX_NUM_READ_RETRY_MODES,
+ 					macronix_set_read_retry)),
  	SPINAND_INFO("MX35LF1G24AD",
- 		     SPINAND_ID(SPINAND_READID_METHOD_OPCODE_DUMMY, 0x14, 0x03),
- 		     NAND_MEMORG(1, 2048, 128, 64, 1024, 20, 1, 1, 1),
