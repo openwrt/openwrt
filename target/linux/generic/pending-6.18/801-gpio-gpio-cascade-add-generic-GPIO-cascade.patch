@@ -70,7 +70,7 @@ v1 -> v2:
 
 --- a/drivers/gpio/Kconfig
 +++ b/drivers/gpio/Kconfig
-@@ -1929,4 +1929,19 @@ config GPIO_VIRTUSER
+@@ -2050,6 +2050,21 @@ config GPIO_VIRTUSER
  
  endmenu
  
@@ -90,16 +90,18 @@ v1 -> v2:
 +	  will be called 'gpio-cascade'.
 +
  endif
+ 
+ config DEV_SYNC_PROBE
 --- a/drivers/gpio/Makefile
 +++ b/drivers/gpio/Makefile
-@@ -46,6 +46,7 @@ obj-$(CONFIG_GPIO_BD9571MWV)		+= gpio-bd
+@@ -50,6 +50,7 @@ obj-$(CONFIG_GPIO_BLZP1600)		+= gpio-blz
  obj-$(CONFIG_GPIO_BRCMSTB)		+= gpio-brcmstb.o
  obj-$(CONFIG_GPIO_BT8XX)		+= gpio-bt8xx.o
  obj-$(CONFIG_GPIO_CADENCE)		+= gpio-cadence.o
 +obj-$(CONFIG_GPIO_CASCADE)		+= gpio-cascade.o
+ obj-$(CONFIG_GPIO_CGBC)			+= gpio-cgbc.o
  obj-$(CONFIG_GPIO_CLPS711X)		+= gpio-clps711x.o
  obj-$(CONFIG_GPIO_SNPS_CREG)		+= gpio-creg-snps.o
- obj-$(CONFIG_GPIO_CROS_EC)		+= gpio-cros-ec.o
 --- /dev/null
 +++ b/drivers/gpio/gpio-cascade.c
 @@ -0,0 +1,112 @@
