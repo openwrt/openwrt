@@ -1,7 +1,7 @@
-From 6ca9cd453cb5d8a6411791295771b4dbd1c623de Mon Sep 17 00:00:00 2001
+From 0743acf746a81e0460a56fd5ff847d97fa7eb370 Mon Sep 17 00:00:00 2001
 From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
-Date: Mon, 11 Aug 2025 21:18:04 +0300
-Subject: [PATCH v6 09/13] spi: airoha: buffer must be 0xff-ed before writing
+Date: Sun, 12 Oct 2025 15:17:04 +0300
+Subject: [PATCH 13/14] spi: airoha: buffer must be 0xff-ed before writing
 
 During writing, the entire flash page (including OOB) will be updated
 with the values from the temporary buffer, so we need to fill the
@@ -9,13 +9,16 @@ untouched areas of the buffer with 0xff value to prevent accidental
 data overwriting.
 
 Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Reviewed-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>
+Link: https://patch.msgid.link/20251012121707.2296160-14-mikhail.kshevetskiy@iopsys.eu
+Signed-off-by: Mark Brown <broonie@kernel.org>
 ---
  drivers/spi/spi-airoha-snfi.c | 4 ++++
  1 file changed, 4 insertions(+)
 
 --- a/drivers/spi/spi-airoha-snfi.c
 +++ b/drivers/spi/spi-airoha-snfi.c
-@@ -847,7 +847,11 @@ static ssize_t airoha_snand_dirmap_write
+@@ -776,7 +776,11 @@ static ssize_t airoha_snand_dirmap_write
  		return -EOPNOTSUPP;
  	}
  

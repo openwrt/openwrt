@@ -1,8 +1,7 @@
-From fb41a3e3bc357592b28a8abb504df99dad642588 Mon Sep 17 00:00:00 2001
+From 7350f8dc15bfbb7abf1ce4babea6fcace1c574c5 Mon Sep 17 00:00:00 2001
 From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
-Date: Mon, 11 Aug 2025 13:09:51 +0300
-Subject: [PATCH v6 04/13] spi: airoha: remove unnecessary switch to non-dma
- mode
+Date: Sun, 12 Oct 2025 15:16:55 +0300
+Subject: [PATCH 06/14] spi: airoha: remove unnecessary switch to non-dma mode
 
 The code switches to dma at the start of dirmap operation and returns
 to non-dma at the end of dirmap operation, so an additional switch to
@@ -11,6 +10,8 @@ non-dma at the start of dirmap write is not required.
 Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
 Acked-by: Lorenzo Bianconi <lorenzo@kernel.org>
 Reviewed-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>
+Link: https://patch.msgid.link/20251012121707.2296160-5-mikhail.kshevetskiy@iopsys.eu
+Signed-off-by: Mark Brown <broonie@kernel.org>
 ---
  drivers/spi/spi-airoha-snfi.c | 3 ---
  1 file changed, 3 deletions(-)
