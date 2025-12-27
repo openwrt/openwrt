@@ -1,8 +1,8 @@
-From 893ee23d650ca9ee36541b9a5ae0bc18be01a11f Mon Sep 17 00:00:00 2001
+From fb81b5cecb8553e3ca2b45288cf340d43c9c2991 Mon Sep 17 00:00:00 2001
 From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
-Date: Thu, 14 Aug 2025 22:47:17 +0300
-Subject: [PATCH v6 12/13] spi: airoha: set custom sector size equal to flash
- page size
+Date: Sun, 12 Oct 2025 15:17:02 +0300
+Subject: [PATCH 11/14] spi: airoha: set custom sector size equal to flash page
+ size
 
 Set custom sector size equal to flash page size including oob. Thus we
 will always read a single sector. The maximum custom sector size is
@@ -13,6 +13,8 @@ from SNFI registers during driver startup.
 
 Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
 Reviewed-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>
+Link: https://patch.msgid.link/20251012121707.2296160-12-mikhail.kshevetskiy@iopsys.eu
+Signed-off-by: Mark Brown <broonie@kernel.org>
 ---
  drivers/spi/spi-airoha-snfi.c | 35 +++++++++++++++++++----------------
  1 file changed, 19 insertions(+), 16 deletions(-)
@@ -102,7 +104,7 @@ Reviewed-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com
  	opcode = desc->info.op_tmpl.cmd.opcode;
  	switch (opcode) {
  	case SPI_NAND_OP_PROGRAM_LOAD_SINGLE:
-@@ -884,18 +889,17 @@ static ssize_t airoha_snand_dirmap_write
+@@ -880,18 +885,17 @@ static ssize_t airoha_snand_dirmap_write
  		goto error_dma_mode_off;
  
  	/* Set number of sector will be written */
@@ -124,7 +126,7 @@ Reviewed-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com
  				 SPI_NFI_CUS_SEC_SIZE_EN);
  	if (err)
  		goto error_dma_mode_off;
-@@ -920,11 +924,10 @@ static ssize_t airoha_snand_dirmap_write
+@@ -916,11 +920,10 @@ static ssize_t airoha_snand_dirmap_write
  	 *        = NFI_SNF_MISC_CTL2.write_data_byte_number =
  	 *        = NFI_CON.sector_number * NFI_SECCUS.custom_sector_size
  	 */
