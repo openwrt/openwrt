@@ -57,10 +57,10 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  #include <linux/bitfield.h>
 +#include <linux/completion.h>
+ #include <linux/cleanup.h>
  #include <linux/kernel.h>
  #include <linux/sched.h>
- #include <linux/pci.h>
-@@ -36,6 +37,7 @@
+@@ -38,6 +39,7 @@
  #endif
  
  static int sysfs_initialized;	/* = 0 */
@@ -68,7 +68,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
  /* show configuration fields */
  #define pci_config_attr(field, format_string)				\
-@@ -1551,12 +1553,32 @@ static const struct attribute_group pci_
+@@ -1701,12 +1703,32 @@ static const struct attribute_group pci_
  	.is_visible = resource_resize_is_visible,
  };
  
@@ -102,7 +102,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  }
  
  /**
-@@ -1577,21 +1599,23 @@ static int __init pci_sysfs_init(void)
+@@ -1727,21 +1749,23 @@ static int __init pci_sysfs_init(void)
  {
  	struct pci_dev *pdev = NULL;
  	struct pci_bus *pbus = NULL;
@@ -132,8 +132,8 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  
 --- a/include/linux/pci.h
 +++ b/include/linux/pci.h
-@@ -484,6 +484,7 @@ struct pci_dev {
- 	unsigned int	rom_attr_enabled:1;	/* Display of ROM attribute enabled? */
+@@ -489,6 +489,7 @@ struct pci_dev {
+ 	unsigned int	non_mappable_bars:1;	/* BARs can't be mapped to user-space  */
  	pci_dev_flags_t dev_flags;
  	atomic_t	enable_cnt;	/* pci_enable_device has been called */
 +	bool		sysfs_init;	/* sysfs entry has been created */

@@ -18,12 +18,12 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/net/netfilter/nf_tables_api.c
 +++ b/net/netfilter/nf_tables_api.c
-@@ -8718,7 +8718,7 @@ static int nft_register_flowtable_net_ho
- 		err = flowtable->data.type->setup(&flowtable->data,
- 						  hook->ops.dev,
- 						  FLOW_BLOCK_BIND);
--		if (err < 0)
-+		if (err < 0 && err != -EOPNOTSUPP)
- 			goto err_unregister_net_hooks;
+@@ -9076,7 +9076,7 @@ static int nft_register_flowtable_ops(st
  
- 		err = nf_register_net_hook(net, &hook->ops);
+ 	err = flowtable->data.type->setup(&flowtable->data,
+ 					  ops->dev, FLOW_BLOCK_BIND);
+-	if (err < 0)
++	if (err < 0 && err != -EOPNOTSUPP)
+ 		return err;
+ 
+ 	err = nf_register_net_hook(net, ops);
