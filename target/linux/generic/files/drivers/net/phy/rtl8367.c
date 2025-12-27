@@ -1811,9 +1811,9 @@ static struct platform_driver rtl8367_driver = {
 		.name		= RTL8367_DRIVER_NAME,
 		.of_match_table = rtl8367_match,
 	},
-	.probe		= rtl8367_probe,
-	.remove_new	= rtl8367_remove,
-	.shutdown	= rtl8367_shutdown,
+	.probe	  = rtl8367_probe,
+	.remove	  = rtl8367_remove,
+	.shutdown = rtl8367_shutdown,
 };
 
 static int __init rtl8367_module_init(void)
