@@ -265,7 +265,7 @@ This module adds support for wireless adapters based on
 Atheros USB AR9271 and AR7010 family of chipsets.
 endef
 
-define KernelPackage/ath10k
+define KernelPackage/ath10k/Default
   $(call KernelPackage/mac80211/Default)
   TITLE:=Atheros 802.11ac wireless cards support
   URL:=https://wireless.wiki.kernel.org/en/users/drivers/ath10k
@@ -276,7 +276,12 @@ define KernelPackage/ath10k
 	$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath10k/ath10k_pci.ko
   AUTOLOAD:=$(call AutoProbe,ath10k_core ath10k_pci)
   MODPARAMS.ath10k_core:=frame_mode=2
+endef
+
+define KernelPackage/ath10k
+  $(call KernelPackage/ath10k/Default)
   VARIANT:=regular
+  DEFAULT_VARIANT:=1
 endef
 
 define KernelPackage/ath10k/description
@@ -299,9 +304,10 @@ define KernelPackage/ath10k/config
 endef
 
 define KernelPackage/ath10k-smallbuffers
-  $(call KernelPackage/ath10k)
+  $(call KernelPackage/ath10k/Default)
   TITLE+= (small buffers for low-RAM devices)
   VARIANT:=smallbuffers
+  PROVIDES:=@kmod-ath10k-any
 endef
 
 define KernelPackage/ath11k

@@ -34,7 +34,7 @@ define KernelPackage/ath10k-ct
 	$(PKG_BUILD_DIR)/ath10k$(CT_KVER)/ath10k_pci.ko \
 	$(PKG_BUILD_DIR)/ath10k$(CT_KVER)/ath10k_core.ko
   AUTOLOAD:=$(call AutoProbe,ath10k_pci)
-  PROVIDES:=kmod-ath10k
+  PROVIDES:=@kmod-ath10k-any
   VARIANT:=regular
 endef
 
