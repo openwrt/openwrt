@@ -2097,10 +2097,13 @@ static void rtpcs_930x_sds_do_rx_calibration_2_3(struct rtpcs_serdes *sds)
 		pr_info("%s: fgcal_gray: %d, fgcal_binary %d\n",
 			__func__, fgcal_gray, fgcal_binary);
 
-		offset_range = rtpcs_sds_read_bits(sds, 0x2e, 0x15, 15, 14);
-
 		if (fgcal_binary <= 60 && fgcal_binary >= 3)
 			break;
+
+		offset_range = rtpcs_sds_read_bits(sds, 0x2e, 0x15, 15, 14);
+
+		pr_info("%s: offset_range: %d\n",
+			__func__, offset_range);
 
 		if (offset_range == 3) {
 			pr_info("%s: Foreground Calibration result marginal!", __func__);
