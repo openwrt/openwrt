@@ -21,7 +21,7 @@ define KernelPackage/r8101
   DEPENDS:=@PCI_SUPPORT +kmod-libphy
   FILES:=$(PKG_BUILD_DIR)/src/r8101.ko
   AUTOLOAD:=$(call AutoProbe,r8101,1)
-  PROVIDES:=kmod-r8169
+  PROVIDES:=@kmod-r8169-any
 endef
 
 define Build/Compile

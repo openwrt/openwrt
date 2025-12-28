@@ -21,7 +21,7 @@ define KernelPackage/r8125
   DEPENDS:=@PCI_SUPPORT +kmod-libphy
   FILES:=$(PKG_BUILD_DIR)/src/r8125.ko
   AUTOLOAD:=$(call AutoProbe,r8125,1)
-  PROVIDES:=kmod-r8169
+  PROVIDES:=@kmod-r8169-any
   VARIANT:=regular
   PKG_MAKE_FLAGS += CONFIG_ASPM=n
 endef
