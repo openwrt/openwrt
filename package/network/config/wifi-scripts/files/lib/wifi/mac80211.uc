@@ -78,7 +78,13 @@ for (let phy_name, phy in board.wlan) {
 
 		band_name = lc(band_name);
 
-		let country, defaults, num_global_macaddr;
+		let country, encryption, defaults, num_global_macaddr;
+		if (band_name == '6g') {
+			country = '00';
+			encryption = 'owe';
+		} else {
+			encryption = 'open';
+		}
 		if (board.wlan.defaults) {
 			defaults = board.wlan.defaults.ssids?.[band_name]?.ssid ? board.wlan.defaults.ssids?.[band_name] : board.wlan.defaults.ssids?.all;
 			country = board.wlan.defaults.country;
@@ -105,7 +111,7 @@ set ${si}.device='${name}'
 set ${si}.network='lan'
 set ${si}.mode='ap'
 set ${si}.ssid='${defaults?.ssid || "OpenWrt"}'
-set ${si}.encryption='${defaults?.encryption || "none"}'
+set ${si}.encryption='${defaults?.encryption || encryption}'
 set ${si}.key='${defaults?.key || ""}'
 
 `);
