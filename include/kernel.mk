@@ -219,6 +219,15 @@ define KernelPackage
     $(call KernelPackage/$(1))
     $(call KernelPackage/$(1)/$(BOARD))
     $(call KernelPackage/$(1)/$(BOARD)/$(SUBTARGET))
+
+    # Add an implicit self-provide. apk can't handle self provides, be it
+    # versioned or virtual, so opt for a prefix and a suffix instead. Package
+    # name without a prefix/suffix is too generic and might conflict with other
+    # packages, e.g. wireguard. This allows several variants to provide the same
+    # virtual package without adding extra provides to the default one, e.g.
+    # r8169 implicitly provides kmod-r8169-any and is marked as default, so
+    # r8125 can explicitly provide @kmod-r8169-any as well.
+    PROVIDES+=@kmod-$(1)-any
   endef
 
   ifdef KernelPackage/$(1)/conffiles
@@ -306,4 +315,3 @@ kernel_patchver_ge=$(call kernel_version_cmp,-ge,$(KERNEL_PATCHVER),$(1))
 kernel_patchver_eq=$(call kernel_version_cmp,-eq,$(KERNEL_PATCHVER),$(1))
 kernel_patchver_le=$(call kernel_version_cmp,-le,$(KERNEL_PATCHVER),$(1))
 kernel_patchver_lt=$(call kernel_version_cmp,-lt,$(KERNEL_PATCHVER),$(1))
-
