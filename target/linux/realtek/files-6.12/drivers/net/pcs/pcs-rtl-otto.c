@@ -1815,11 +1815,11 @@ static void rtpcs_930x_sds_rxcal_vth_get(struct rtpcs_serdes *sds,
 	vth_list[0] = rtpcs_sds_read_bits(sds, 0x1f, 0x14, 2, 0); /* v_thp set bin */
 	vth_list[1] = rtpcs_sds_read_bits(sds, 0x1f, 0x14, 5, 3); /* v_thn set bin */
 
-	pr_info("vth_set_bin = %d", vth_list[0]);
-	pr_info("vth_set_bin = %d", vth_list[1]);
+	pr_info("vthp_set_bin = %d", vth_list[0]);
+	pr_info("vthn_set_bin = %d", vth_list[1]);
 
 	vth_manual = !!rtpcs_sds_read_bits(sds, 0x2e, 0x0f, 13, 13);
-	pr_info("Vth Maunal = %d", vth_manual);
+	pr_info("vth_manual = %d", vth_manual);
 }
 
 static void rtpcs_930x_sds_rxcal_tap_manual(struct rtpcs_serdes *sds,
@@ -1901,9 +1901,9 @@ static void rtpcs_930x_sds_rxcal_tap_get(struct rtpcs_serdes *sds,
 		tap0_coef_bin = rtpcs_sds_read_bits(sds, 0x1f, 0x14, 4, 0);
 
 		if (tap0_sign_out == 1)
-			pr_info("Tap0 Sign : -");
+			pr_info("tap0_sign_out : -");
 		else
-			pr_info("Tap0 Sign : +");
+			pr_info("tap0_sign_out : +");
 
 		pr_info("tap0_coef_bin = %d", tap0_coef_bin);
 
