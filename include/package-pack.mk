@@ -134,9 +134,12 @@ endef
 #
 # - apk doesn't like it when packages specify a redundant provide pointing to
 #   self. Filter it out, but keep virtual self provides, in the form of
-#   @${package_name}-any.
+#   @(kmod-)?${package_name}-any.
 #
 # - Packages implicitly add a virtual @${package_name}-any provide in Package.
+#
+# - kmods implicitly add a virtual @kmod-${package_name}-any provide in
+#   KernelPackage.
 #
 # 1: package name
 # 2: package version
