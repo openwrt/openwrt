@@ -1955,7 +1955,7 @@ static void rtpcs_930x_sds_do_rx_calibration_1(struct rtpcs_serdes *sds,
 {
 	/* From both rtl9300_rxCaliConf_serdes_myParam and rtl9300_rxCaliConf_phy_myParam */
 	int tap0_init_val = 0x1f; /* Initial Decision Fed Equalizer 0 tap */
-	int vth_min       = 0x0;
+	int vth_min       = 0x1;
 
 	pr_info("start_1.1.1 initial value for sds %d\n", sds->id);
 	rtpcs_sds_write(sds, 6,  0, 0);
