@@ -130,7 +130,6 @@
 	pinctrl-0 = <&spi_0_pins>;
 	pinctrl-names = "default";
 	status = "okay";
-	cs-gpios = <&tlmm 54 GPIO_ACTIVE_LOW>;
 
 	mx25l25635f@0 {
 		compatible = "jedec,spi-nor";
@@ -244,7 +243,7 @@
 			pins = "gpio55", "gpio56", "gpio57";
 		};
 		pinmux_cs {
-			function = "gpio";
+			function = "blsp_spi0";
 			pins = "gpio54";
 		};
 		pinconf {
