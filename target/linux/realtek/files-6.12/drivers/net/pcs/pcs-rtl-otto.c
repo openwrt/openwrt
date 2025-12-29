@@ -641,6 +641,60 @@ static int rtpcs_838x_setup_serdes(struct rtpcs_serdes *sds,
 	return 0;
 }
 
+/* RTL839X */
+
+__maybe_unused
+static void rtpcs_839x_sds_reset(struct rtpcs_serdes *sds)
+{
+	u32 sdsReg[] = {0xA328, 0xA728, 0xAB28, 0xAF28, 0xB320, 0xB728, 0xBB20};
+	struct rtpcs_ctrl *ctrl = sds->ctrl;
+	u32 addr_ofst = 0x400;
+	u32 ofst, sdsAddr;
+
+	ofst = addr_ofst * (sds->id / 2);
+	sdsAddr = sdsReg[sds->id / 2] + (0x80 * (sds->id % 2));
+	if (sds->id < 8 || sds->id == 10 || sds->id == 11) {
+		regmap_write_bits(ctrl->map, 0xa3c0 + ofst, 0xffff << 16, 0x0050);	// Serdes_set(unit, 0xa3c0 + ofst,  31 , 16 , 0x0050);
+		regmap_write_bits(ctrl->map, 0xa3c0 + ofst, 0xffff << 16, 0x00f0);	// Serdes_set(unit, 0xa3c0 + ofst,  31 , 16 , 0x00f0);
+		regmap_write_bits(ctrl->map, 0xa3c0 + ofst, 0xffff << 16, 0x0000);	// Serdes_set(unit, 0xa3c0 + ofst,  31 , 16 , 0x0);
+
+		regmap_write_bits(ctrl->map, sdsAddr, BIT(0), 0x0);	// Serdes_set(unit, sdsAddr,  0 , 0 , 0x0);
+		regmap_write_bits(ctrl->map, sdsAddr, BIT(9), BIT(9));	// Serdes_set(unit, sdsAddr,  9 , 9 , 0x1);
+		msleep(100);
+		regmap_write_bits(ctrl->map, sdsAddr, BIT(9), 0x0);	// Serdes_set(unit, sdsAddr,  9 , 9 , 0x0);
+	} else if (sds->id == 8 || sds->id == 9) {
+		regmap_write_bits(ctrl->map, 0xb3f8, 0xf << 16, 0x5);	// Serdes_set(unit, 0xb3f8,  19 , 16 , 0x5);
+		msleep(500);
+		regmap_write_bits(ctrl->map, 0xb3f8, 0xf << 16, 0xf);	// Serdes_set(unit, 0xb3f8,  19 , 16 , 0xf);
+		regmap_write_bits(ctrl->map, 0xb3f8, 0xf << 16, 0x0);	// Serdes_set(unit, 0xb3f8,  19 , 16 , 0x0);
+
+		regmap_write_bits(ctrl->map, 0xb320, BIT(3), 0x0);	// Serdes_set(unit, 0xb320,  3 , 3 , 0x0);
+		regmap_write_bits(ctrl->map, 0xb340, BIT(15), BIT(15));	// Serdes_set(unit, 0xb340,  15 , 15 , 0x1);
+		msleep(100);
+		regmap_write_bits(ctrl->map, 0xb340, BIT(15), 0x0);	// Serdes_set(unit, 0xb340,  15 , 15 , 0x0);
+	} else if (sds->id == 12 || sds->id == 13) {
+		regmap_write_bits(ctrl->map, 0xbbf8, 0xf << 16, 0x5);	// Serdes_set(unit, 0xbbf8,  19 , 16 , 0x5);
+		msleep(500);
+		regmap_write_bits(ctrl->map, 0xbbf8, 0xf << 16, 0xf);	// Serdes_set(unit, 0xbbf8,  19 , 16 , 0xf);
+		regmap_write_bits(ctrl->map, 0xbbf8, 0xf << 16, 0x0);	// Serdes_set(unit, 0xbbf8,  19 , 16 , 0x0);
+
+		regmap_write_bits(ctrl->map, 0xbb20, BIT(3), 0x0);	// Serdes_set(unit, 0xbb20,  3 , 3 , 0x0);
+		regmap_write_bits(ctrl->map, 0xbb40, BIT(15), BIT(15));	// Serdes_set(unit, 0xbb40,  15 , 15 , 0x1);
+		msleep(100);
+		regmap_write_bits(ctrl->map, 0xbb40, BIT(15), 0x0);	// Serdes_set(unit, 0xbb40,  15 , 15 , 0x0);
+	} else {
+		pr_err("sds number doesn't exist\n");
+		return;
+	}
+
+	regmap_write_bits(ctrl->map, 0xa004 + ofst, 0xffff << 16, 0x7146);	// Serdes_set(unit, 0xa004 + ofst,  31 , 16 , 0x7146);
+	msleep(100);
+	regmap_write_bits(ctrl->map, 0xa004 + ofst, 0xffff << 16, 0x7106);	// Serdes_set(unit, 0xa004 + ofst,  31 , 16 , 0x7106);
+	regmap_write_bits(ctrl->map, 0xa004 + ofst + 0x100, 0xffff << 16, 0x7146);	// Serdes_set(unit, 0xa004 + ofst + 0x100,  31 , 16 , 0x7146);
+	msleep(100);
+	regmap_write_bits(ctrl->map, 0xa0004 + ofst + 0x100, 0xffff << 16, 0x7106);	// Serdes_set(unit, 0xa004 + ofst + 0x100,  31 , 16 , 0x7106);
+}
+
 /* RTL930X */
 
 /* The access registers for SDS_MODE_SEL and the LSB for each SDS within */
