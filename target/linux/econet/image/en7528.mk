@@ -1,3 +1,5 @@
+TRX_ENDIAN := le
+
 define Device/en7528_generic
   DEVICE_VENDOR := EN7528
   DEVICE_MODEL := Generic
