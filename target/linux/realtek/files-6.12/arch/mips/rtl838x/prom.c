@@ -18,7 +18,20 @@
 #include <mach-rtl83xx.h>
 
 #define RTL_SOC_BASE			((volatile void *) 0xB8000000)
+
 #define RTL83XX_DRAM_CONFIG		0x1004
+
+#define RTL9300_SRAMSAR0		0x4000
+#define RTL9300_SRAMSAR1		0x4010
+#define RTL9300_SRAMSAR2		0x4020
+#define RTL9300_SRAMSAR3		0x4030
+#define RTL9300_UMSAR0			0x1300
+#define RTL9300_UMSAR1			0x1310
+#define RTL9300_UMSAR2			0x1320
+#define RTL9300_UMSAR3			0x1330
+#define RTL9300_O0DOR2			0x4220
+#define RTL9300_O0DMAR2			0x4224
+
 #define RTL931X_DRAM_CONFIG		0x14304c
 
 #define soc_r32(reg)			readl(RTL_SOC_BASE + reg)
@@ -251,6 +264,39 @@ static void get_system_memory(void)
 	soc_info.memory_size = 1 << bits;
 }
 
+static void prepare_highmem(void)
+{
+	if ((soc_info.family != RTL9300_FAMILY_ID) ||
+	    (soc_info.memory_size <= 256 * 1024 * 1024) ||
+	    !IS_ENABLED(CONFIG_HIGHMEM))
+		return;
+
+	/*
+	 * To use highmem on RTL930x, SRAM must be deactivated and the highmem mapping
+	 * registers must be setup properly. The hardcoded 0x70000000 might be strange
+	 * but at least it conforms somehow to the RTL931x devices.
+	 *
+	 * - RTL930x: highmem start 0x20000000 + offset 0x70000000 = 0x90000000
+	 * - RTL931x: highmem start 0x90000000 + no offset at all  = 0x90000000
+	 */
+
+	pr_info("highmem kernel on RTL930x with > 256 MB RAM, adapt SoC memory mapping\n");
+
+	soc_w32(0, RTL9300_UMSAR0);
+	soc_w32(0, RTL9300_UMSAR1);
+	soc_w32(0, RTL9300_UMSAR2);
+	soc_w32(0, RTL9300_UMSAR3);
+	soc_w32(0, RTL9300_SRAMSAR0);
+	soc_w32(0, RTL9300_SRAMSAR1);
+	soc_w32(0, RTL9300_SRAMSAR2);
+	soc_w32(0, RTL9300_SRAMSAR3);
+	__sync();
+
+	soc_w32(0x70000000, RTL9300_O0DOR2);
+	soc_w32(0x7fffffff, RTL9300_O0DMAR2);
+	__sync();
+}
+
 void __init prom_init(void)
 {
 	u32 model = read_model();
@@ -260,6 +306,8 @@ void __init prom_init(void)
 	get_system_memory();
 
 	pr_info("%s SoC with %d MB\n", get_system_type(), soc_info.memory_size >> 20);
+
+	prepare_highmem();
 
 	/*
 	 * fw_arg2 is be the pointer to the environment. Some devices (e.g. HP JG924A) hand
