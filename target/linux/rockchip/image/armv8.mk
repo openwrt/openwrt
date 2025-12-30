@@ -180,15 +180,6 @@ define Device/friendlyarm_nanopi-r76s
 endef
 TARGET_DEVICES += friendlyarm_nanopi-r76s
 
-define Device/hinlink-h68k
-  $(Device/rk3568) 
-  DEVICE_VENDOR := Hinlink/Seeed
-  DEVICE_MODEL := H68K
-  BOOT_SCRIPT := hinlink-h68k
-  DEVICE_PACKAGES := kmod-ata-ahci-dwc kmod-mt7921e kmod-r8125
-endef
-TARGET_DEVICES += hinlink-h68k
-
 define Device/linkease_easepi-r1
   $(Device/rk3568)
   DEVICE_VENDOR := LinkEase

@@ -23,9 +23,11 @@ Signed-off-by: Heiko Stuebner <heiko@sntech.de>
  2 files changed, 11 insertions(+)
  create mode 100644 arch/arm64/boot/dts/rockchip/rk3568-hinlink-h66k.dts
 
+diff --git a/arch/arm64/boot/dts/rockchip/Makefile b/arch/arm64/boot/dts/rockchip/Makefile
+index 09c810cb64a4..93e547a1c77b 100644
 --- a/arch/arm64/boot/dts/rockchip/Makefile
 +++ b/arch/arm64/boot/dts/rockchip/Makefile
-@@ -111,6 +111,7 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3568-bp
+@@ -130,6 +130,7 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3568-bpi-r2-pro.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3568-evb1-v10.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3568-fastrhino-r66s.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3568-fastrhino-r68s.dtb
@@ -33,6 +35,9 @@ Signed-off-by: Heiko Stuebner <heiko@sntech.de>
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3568-hinlink-h68k.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3568-lubancat-2.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3568-mecsbc.dtb
+diff --git a/arch/arm64/boot/dts/rockchip/rk3568-hinlink-h66k.dts b/arch/arm64/boot/dts/rockchip/rk3568-hinlink-h66k.dts
+new file mode 100644
+index 000000000000..bc51123d53f5
 --- /dev/null
 +++ b/arch/arm64/boot/dts/rockchip/rk3568-hinlink-h66k.dts
 @@ -0,0 +1,10 @@
@@ -46,3 +51,6 @@ Signed-off-by: Heiko Stuebner <heiko@sntech.de>
 +	model = "HINLINK H66K";
 +	compatible = "hinlink,h66k", "rockchip,rk3568";
 +};
+-- 
+2.43.0
+

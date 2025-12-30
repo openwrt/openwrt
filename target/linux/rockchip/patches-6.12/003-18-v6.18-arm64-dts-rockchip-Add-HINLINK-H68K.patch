@@ -26,9 +26,11 @@ Signed-off-by: Heiko Stuebner <heiko@sntech.de>
  create mode 100644 arch/arm64/boot/dts/rockchip/rk3568-hinlink-h68k.dts
  create mode 100644 arch/arm64/boot/dts/rockchip/rk3568-hinlink-opc.dtsi
 
+diff --git a/arch/arm64/boot/dts/rockchip/Makefile b/arch/arm64/boot/dts/rockchip/Makefile
+index 099520962ffb..09c810cb64a4 100644
 --- a/arch/arm64/boot/dts/rockchip/Makefile
 +++ b/arch/arm64/boot/dts/rockchip/Makefile
-@@ -111,6 +111,7 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3568-bp
+@@ -130,6 +130,7 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3568-bpi-r2-pro.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3568-evb1-v10.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3568-fastrhino-r66s.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3568-fastrhino-r68s.dtb
@@ -36,6 +38,9 @@ Signed-off-by: Heiko Stuebner <heiko@sntech.de>
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3568-lubancat-2.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3568-mecsbc.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3568-nanopi-r5c.dtb
+diff --git a/arch/arm64/boot/dts/rockchip/rk3568-hinlink-h68k.dts b/arch/arm64/boot/dts/rockchip/rk3568-hinlink-h68k.dts
+new file mode 100644
+index 000000000000..793ee651b868
 --- /dev/null
 +++ b/arch/arm64/boot/dts/rockchip/rk3568-hinlink-h68k.dts
 @@ -0,0 +1,83 @@
@@ -122,6 +127,9 @@ Signed-off-by: Heiko Stuebner <heiko@sntech.de>
 +		};
 +	};
 +};
+diff --git a/arch/arm64/boot/dts/rockchip/rk3568-hinlink-opc.dtsi b/arch/arm64/boot/dts/rockchip/rk3568-hinlink-opc.dtsi
+new file mode 100644
+index 000000000000..14f3839ca091
 --- /dev/null
 +++ b/arch/arm64/boot/dts/rockchip/rk3568-hinlink-opc.dtsi
 @@ -0,0 +1,666 @@
@@ -791,3 +799,6 @@ Signed-off-by: Heiko Stuebner <heiko@sntech.de>
 +		remote-endpoint = <&hdmi_in_vp0>;
 +	};
 +};
+-- 
+2.43.0
+
