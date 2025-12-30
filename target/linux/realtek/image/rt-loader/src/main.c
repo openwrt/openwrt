@@ -144,10 +144,14 @@ void search_image(void **image_addr, int *image_size, void **load_addr)
 	}
 }
 
-void load_kernel(void *flash_start)
+void load_uimage_from_flash(void *flash_start)
 {
 	void *flash_addr = flash_start;
 
+	/*
+	 * Loader has been started standalone. So no piggy backed kernel. Search
+	 * flash for kernel uImage and copy it to memory before the loader.
+	 */
 	printf("Searching for uImage starting at 0x%08x ...\n", flash_addr);
 
 	search_image(&flash_addr, &_kernel_data_size, &_kernel_load_addr);
@@ -186,11 +190,11 @@ void main(unsigned long reg_a0, unsigned long reg_a1,
 	}
 
 	/*
-	 * Check if we have been started standalone. So no piggy backed kernel.
-	 * Search flash for kernel uImage and copy it to memory before the loader.
+	 * Usually the loader expects a piggy-backed lzma compressed kernel stream.
+	 * Evaluate alternative configurations for kernel loading and decompression.
 	 */
 	if (flash_start)
-		load_kernel(flash_start);
+		load_uimage_from_flash(flash_start);
 	else if (kernel_addr)
 		_kernel_load_addr = kernel_addr;
 
