@@ -41,10 +41,19 @@ typedef void (*entry_func_t)(unsigned long reg_a0, unsigned long reg_a1,
 			     unsigned long reg_a2, unsigned long reg_a3);
 
 
-static bool is_uimage(void *m)
+static bool is_uimage(unsigned char *m)
 {
 	unsigned int data[UIMAGE_HDR_SIZE / sizeof(int)];
 	unsigned int image_crc;
+
+	/*
+	 * The most basic way to find a uImage is to lookup the operating system
+	 * opcode (for Linux it is 5). Then verify the header checksum. This is
+	 * reasonably fast and all other magic value or constants can be avoided.
+	 */
+
+	if (m[28] != UIMAGE_OS_LINUX)
+		return false;
 
 	memcpy(data, m, UIMAGE_HDR_SIZE);
 	image_crc = data[1];
@@ -127,14 +136,9 @@ void search_image(void **flash_addr, int *flash_size, void **load_addr)
 
 	printf("Searching for uImage starting at 0x%08x ...\n", addr);
 
-	/*
-	 * The most basic way to find a uImage is to lookup the operating system
-	 * opcode (for Linux it is 5). Then verify the header checksum. This is
-	 * reasonably fast and all other magic value or constants can be avoided.
-	 */
 	*flash_addr = NULL;
 	for (int i = 0; i < 256 * 1024; i += 4, addr += 4) {
-		if ((addr[28] == UIMAGE_OS_LINUX) && is_uimage(addr)) {
+		if (is_uimage(addr)) {
 			*flash_addr = addr;
 			*flash_size = *(int *)(addr + 12);
 			*load_addr = *(void **)(addr + 16);
