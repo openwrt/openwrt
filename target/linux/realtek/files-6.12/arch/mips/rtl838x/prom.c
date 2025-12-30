@@ -187,6 +187,7 @@ static u32 __init read_model(void)
 	if ((id >= 0x8380 && id <= 0x8382) || id == 0x8330 || id == 0x8332) {
 		soc_info.id = id;
 		soc_info.family = RTL8380_FAMILY_ID;
+		soc_info.cpu_port = RTL838X_CPU_PORT;
 		rtl838x_read_details(model);
 		return model;
 	}
@@ -196,6 +197,7 @@ static u32 __init read_model(void)
 	if ((id >= 0x8391 && id <= 0x8396) || (id >= 0x8351 && id <= 0x8353)) {
 		soc_info.id = id;
 		soc_info.family = RTL8390_FAMILY_ID;
+		soc_info.cpu_port = RTL839X_CPU_PORT;
 		rtl839x_read_details(model);
 		return model;
 	}
@@ -205,11 +207,13 @@ static u32 __init read_model(void)
 	if (id >= 0x9301 && id <= 0x9303) {
 		soc_info.id = id;
 		soc_info.family = RTL9300_FAMILY_ID;
+		soc_info.cpu_port = RTL930X_CPU_PORT;
 		rtl93xx_read_details(model);
 		return model;
 	} else if (id >= 0x9311 && id <= 0x9313) {
 		soc_info.id = id;
 		soc_info.family = RTL9310_FAMILY_ID;
+		soc_info.cpu_port = RTL931X_CPU_PORT;
 		rtl93xx_read_details(model);
 		return model;
 	}
