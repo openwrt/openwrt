@@ -170,6 +170,27 @@ void load_uimage_from_flash(void *flash_start)
 	memcpy(_kernel_data_addr, flash_addr + UIMAGE_HDR_SIZE, _kernel_data_size);
 }
 
+bool search_piggy_backed_uimage(void)
+{
+	void *addr = _kernel_data_addr;
+
+	/*
+	 * Piggy-backed data might be an uImage or not. Run a lazy uImage check.
+	 * In case it fails it should be safe to assume an lzma data stream.
+	 */
+	search_image(&addr, &_kernel_data_size, &_kernel_load_addr);
+
+	if (!addr)
+		return false;
+
+	printf("piggy-backed uImage '%s' found at 0x%08x with load address 0x%08x\n",
+	       (char *)(addr + 32), addr, _kernel_load_addr);
+
+	_kernel_data_addr = addr + UIMAGE_HDR_SIZE;
+
+	return true;
+}
+
 void main(unsigned long reg_a0, unsigned long reg_a1,
 	  unsigned long reg_a2, unsigned long reg_a3)
 {
@@ -195,7 +216,7 @@ void main(unsigned long reg_a0, unsigned long reg_a1,
 	 */
 	if (flash_start)
 		load_uimage_from_flash(flash_start);
-	else if (kernel_addr)
+	else if (!search_piggy_backed_uimage() && kernel_addr)
 		_kernel_load_addr = kernel_addr;
 
 	/*
