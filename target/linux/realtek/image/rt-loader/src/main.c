@@ -128,19 +128,15 @@ void *decompress(void *out, void *in, int len)
 	return out;
 }
 
-void search_image(void **flash_addr, int *flash_size, void **load_addr)
+void search_image(void **image_addr, int *image_size, void **load_addr)
 {
-	unsigned char *addr = *flash_addr;
-	unsigned int image_size = 0;
-	unsigned int *maxaddr;
+	unsigned char *addr = *image_addr;
 
-	printf("Searching for uImage starting at 0x%08x ...\n", addr);
-
-	*flash_addr = NULL;
-	for (int i = 0; i < 256 * 1024; i += 4, addr += 4) {
+	*image_addr = NULL;
+	for (int i = 0; i < 256 * 1024; i += 1, addr += 1) {
 		if (is_uimage(addr)) {
-			*flash_addr = addr;
-			*flash_size = *(int *)(addr + 12);
+			*image_addr = addr;
+			*image_size = *(int *)(addr + 12);
 			*load_addr = *(void **)(addr + 16);
 			_kernel_comp_type = addr[31];
 			break;
@@ -151,6 +147,8 @@ void search_image(void **flash_addr, int *flash_size, void **load_addr)
 void load_kernel(void *flash_start)
 {
 	void *flash_addr = flash_start;
+
+	printf("Searching for uImage starting at 0x%08x ...\n", flash_addr);
 
 	search_image(&flash_addr, &_kernel_data_size, &_kernel_load_addr);
 	_kernel_data_addr = _my_load_addr - _kernel_data_size - 1024;
