@@ -1,0 +1,177 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+#include "rtl8380_teltonika_tsw.dtsi"
+#include <dt-bindings/interrupt-controller/irq.h>
+
+/ {
+	compatible = "teltonika,tsw202", "realtek,rtl838x-soc";
+	model = "Teltonika TSW202 Switch";
+
+	/* i2c of the left SFP cage: port 9 */
+	i2c0: i2c-gpio-0 {
+		compatible = "i2c-gpio";
+		sda-gpios = <&gpio0 3 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio0 2 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <2>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	sfp0: sfp-p9 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c0>;
+		mod-def0-gpio = <&gpio0 13 GPIO_ACTIVE_LOW>;
+		tx-disable-gpio =  <&gpio0 10 GPIO_ACTIVE_HIGH>;
+	};
+
+	/* i2c of the right SFP cage: port 10 */
+	i2c1: i2c-gpio-1 {
+		compatible = "i2c-gpio";
+		sda-gpios = <&gpio0 14 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio0 12 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <2>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	sfp1: sfp-p10 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c1>;
+		mod-def0-gpio = <&gpio0 11 GPIO_ACTIVE_LOW>;
+		tx-disable-gpio = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+	};
+
+	/* i2c for poe */
+	i2c2: i2c-gpio-2 {
+		compatible = "i2c-gpio";
+		sda-gpios = <&gpio0 5 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio0 4 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <2>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	port_leds {
+		compatible = "leds-tlt-tsw";
+	};
+
+	leds {
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinmux_disable_sys_led>;
+		compatible = "gpio-leds";
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <20>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot: partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x80000>;
+				read-only;
+			};
+
+			partition@80000 {
+				label = "u-boot-env";
+				reg = <0x80000 0x10000>;
+				read-only;
+			};
+
+			config: partition@90000 {
+				compatible = "nvmem-cells";
+				label = "config";
+				reg = <0x90000 0x10000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				read-only;
+
+				macaddr_config_0: macaddr@0 {
+					reg = <0x0 0x6>;
+				};
+			};
+
+			partition@a00000 {
+				label = "firmware";
+				reg = <0xa0000 0xed0000>;
+				compatible = "denx,uimage";
+			};
+
+			partition@f70000 {
+				label = "event-log";
+				reg = <0xf70000 0x90000>;
+			};
+		};
+	};
+};
+
+&uart1 {
+	status = "okay";
+};
+
+&ethernet0 {
+	nvmem-cells = <&macaddr_config_0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&mdio_bus0 {
+	INTERNAL_PHY(8)
+	INTERNAL_PHY(9)
+	INTERNAL_PHY(10)
+	INTERNAL_PHY(11)
+	INTERNAL_PHY(12)
+	INTERNAL_PHY(13)
+	INTERNAL_PHY(14)
+	INTERNAL_PHY(15)
+};
+
+&switch0 {
+	ports {
+
+		SWITCH_PORT(8, 1, internal)
+		SWITCH_PORT(9, 2, internal)
+		SWITCH_PORT(10, 3, internal)
+		SWITCH_PORT(11, 4, internal)
+		SWITCH_PORT(12, 5, internal)
+		SWITCH_PORT(13, 6, internal)
+		SWITCH_PORT(14, 7, internal)
+		SWITCH_PORT(15, 8, internal)
+
+		port@24 {
+			reg = <24>;
+			label = "lan9";
+			pcs-handle = <&serdes4>;
+			phy-mode = "1000base-x";
+			managed = "in-band-status";
+			sfp = <&sfp0>;
+		};
+
+		port@26 {
+			reg = <26>;
+			label = "lan10";
+			pcs-handle = <&serdes5>;
+			phy-mode = "1000base-x";
+			managed = "in-band-status";
+			sfp = <&sfp1>;
+		};
+	};
+};

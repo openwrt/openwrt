@@ -6,6 +6,27 @@ board=$(board_name)
 board_config_update
 
 case $board in
+teltonika,tsw202)
+	ucidef_set_led_switch "lan1green" "LAN1" "eth_g_1" "hw"
+	ucidef_set_led_switch "lan2green" "LAN2" "eth_g_2" "hw"
+	ucidef_set_led_switch "lan3green" "LAN3" "eth_g_3" "hw"
+	ucidef_set_led_switch "lan4green" "LAN4" "eth_g_4" "hw"
+	ucidef_set_led_switch "lan5green" "LAN5" "eth_g_5" "hw"
+	ucidef_set_led_switch "lan6green" "LAN6" "eth_g_6" "hw"
+	ucidef_set_led_switch "lan7green" "LAN7" "eth_g_7" "hw"
+	ucidef_set_led_switch "lan8green" "LAN8" "eth_g_8" "hw"
+	ucidef_set_led_switch "lan1green" "LAN1" "eth_y_1" "hw"
+	ucidef_set_led_switch "lan2yelow" "LAN2" "eth_y_2" "hw"
+	ucidef_set_led_switch "lan3yelow" "LAN3" "eth_y_3" "hw"
+	ucidef_set_led_switch "lan4yelow" "LAN4" "eth_y_4" "hw"
+	ucidef_set_led_switch "lan5yelow" "LAN5" "eth_y_5" "hw"
+	ucidef_set_led_switch "lan6yelow" "LAN6" "eth_y_6" "hw"
+	ucidef_set_led_switch "lan7yelow" "LAN7" "eth_y_7" "hw"
+	ucidef_set_led_switch "lan8yelow" "LAN8" "eth_y_8" "hw"
+	ucidef_set_led_switch "lan9yelow" "LAN9" "sfp_y_1" "hw"
+	ucidef_set_led_switch "lan10yelow" "LAN10" "sfp_y_2" "hw"
+	ucidef_set_led_switch "main" "SWITCH" "master" "hw"
+;;
 esac
 
 board_config_flush
