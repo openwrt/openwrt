@@ -17,6 +17,13 @@
 
 #include <mach-rtl83xx.h>
 
+#define RTL_SOC_BASE			((volatile void *) 0xB8000000)
+#define RTL83XX_DRAM_CONFIG		0x1004
+#define RTL931X_DRAM_CONFIG		0x14304c
+
+#define soc_r32(reg)			readl(RTL_SOC_BASE + reg)
+#define soc_w32(val, reg)		writel(val, RTL_SOC_BASE + reg)
+
 struct rtl83xx_soc_info soc_info;
 const void *fdt;
 
@@ -228,14 +235,31 @@ static void __init set_system_type(void)
 		 soc_info.name, es, revision, soc_info.cpu);
 }
 
+static void get_system_memory(void)
+{
+	unsigned int dcr, bits;
+
+	if (soc_info.family == RTL9310_FAMILY_ID) {
+		dcr = soc_r32(RTL931X_DRAM_CONFIG);
+		bits = (dcr >> 12) + ((dcr >> 6) & 0x3f) + (dcr & 0x3f);
+	} else {
+		dcr = soc_r32(RTL83XX_DRAM_CONFIG);
+		bits = ((dcr >> 28) & 0x3) + ((dcr >> 24) & 0x3) +
+		       ((dcr >> 20) & 0xf) + ((dcr >> 16) & 0xf) + 20;
+	}
+
+	soc_info.memory_size = 1 << bits;
+}
+
 void __init prom_init(void)
 {
 	u32 model = read_model();
 
 	parse_model(model);
 	set_system_type();
+	get_system_memory();
 
-	pr_info("SoC Type: %s\n", get_system_type());
+	pr_info("%s SoC with %d MB\n", get_system_type(), soc_info.memory_size >> 20);
 
 	/*
 	 * fw_arg2 is be the pointer to the environment. Some devices (e.g. HP JG924A) hand

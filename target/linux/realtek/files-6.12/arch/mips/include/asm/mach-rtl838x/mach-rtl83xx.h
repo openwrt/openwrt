@@ -48,8 +48,8 @@ struct rtl83xx_soc_info {
 	unsigned int revision;
 	unsigned int cpu;
 	bool testchip;
-	unsigned char *compatible;
 	int cpu_port;
+	int memory_size;
 };
 
 #endif /* _MACH_RTL838X_H_ */
