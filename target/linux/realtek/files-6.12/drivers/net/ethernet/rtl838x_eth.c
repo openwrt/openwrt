@@ -1450,7 +1450,7 @@ static struct phylink_pcs *rtl838x_mac_select_pcs(struct phylink_config *config,
 	return &priv->pcs;
 }
 
-static const struct net_device_ops rtl838x_eth_netdev_ops = {
+static const struct net_device_ops rteth_838x_netdev_ops = {
 	.ndo_open = rtl838x_eth_open,
 	.ndo_stop = rtl838x_eth_stop,
 	.ndo_start_xmit = rtl838x_eth_tx,
@@ -1489,9 +1489,10 @@ static const struct rteth_config rteth_838x_cfg = {
 	.update_cntr = rtl838x_update_cntr,
 	.create_tx_header = rtl838x_create_tx_header,
 	.decode_tag = rtl838x_decode_tag,
+	.netdev_ops = &rteth_838x_netdev_ops,
 };
 
-static const struct net_device_ops rtl839x_eth_netdev_ops = {
+static const struct net_device_ops rteth_839x_netdev_ops = {
 	.ndo_open = rtl838x_eth_open,
 	.ndo_stop = rtl838x_eth_stop,
 	.ndo_start_xmit = rtl838x_eth_tx,
@@ -1530,9 +1531,10 @@ static const struct rteth_config rteth_839x_cfg = {
 	.update_cntr = rtl839x_update_cntr,
 	.create_tx_header = rtl839x_create_tx_header,
 	.decode_tag = rtl839x_decode_tag,
+	.netdev_ops = &rteth_839x_netdev_ops,
 };
 
-static const struct net_device_ops rtl930x_eth_netdev_ops = {
+static const struct net_device_ops rteth_930x_netdev_ops = {
 	.ndo_open = rtl838x_eth_open,
 	.ndo_stop = rtl838x_eth_stop,
 	.ndo_start_xmit = rtl838x_eth_tx,
@@ -1577,9 +1579,10 @@ static const struct rteth_config rteth_930x_cfg = {
 	.update_cntr = rtl930x_update_cntr,
 	.create_tx_header = rtl930x_create_tx_header,
 	.decode_tag = rtl930x_decode_tag,
+	.netdev_ops = &rteth_930x_netdev_ops,
 };
 
-static const struct net_device_ops rtl931x_eth_netdev_ops = {
+static const struct net_device_ops rteth_931x_netdev_ops = {
 	.ndo_open = rtl838x_eth_open,
 	.ndo_stop = rtl838x_eth_stop,
 	.ndo_start_xmit = rtl838x_eth_tx,
@@ -1623,6 +1626,7 @@ static const struct rteth_config rteth_931x_cfg = {
 	.update_cntr = rtl931x_update_cntr,
 	.create_tx_header = rtl931x_create_tx_header,
 	.decode_tag = rtl931x_decode_tag,
+	.netdev_ops = &rteth_931x_netdev_ops,
 };
 
 static const struct phylink_pcs_ops rtl838x_pcs_ops = {
@@ -1698,27 +1702,11 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	dev->max_mtu = DEFAULT_MTU;
 	dev->features = NETIF_F_RXCSUM | NETIF_F_HW_CSUM;
 	dev->hw_features = NETIF_F_RXCSUM;
+	dev->netdev_ops = priv->r->netdev_ops;
 
-	pr_info("Found SoC family %x\n", priv->r->family_id);
-
-	switch (priv->r->family_id) {
-	case RTL8380_FAMILY_ID:
-		dev->netdev_ops = &rtl838x_eth_netdev_ops;
-		break;
-	case RTL8390_FAMILY_ID:
-		dev->netdev_ops = &rtl839x_eth_netdev_ops;
-		break;
-	case RTL9300_FAMILY_ID:
-		dev->netdev_ops = &rtl930x_eth_netdev_ops;
-		break;
-	case RTL9310_FAMILY_ID:
-		dev->netdev_ops = &rtl931x_eth_netdev_ops;
+	if (priv->r->family_id == RTL9310_FAMILY_ID)
 		rtl931x_chip_init(priv);
-		break;
-	default:
-		pr_err("Unknown SoC family\n");
-		return -ENODEV;
-	}
+
 	priv->rxringlen = rxringlen;
 	priv->rxrings = rxrings;
 
