@@ -1429,7 +1429,7 @@ static int rtmdio_probe(struct platform_device *pdev)
 			return -ENODEV;
 		}
 
-		if (of_property_read_u32_array(dn, "rtl9300,smi-address", &smi_addr[0], 2)) {
+		if (of_property_read_u32_array(dn, "realtek,smi-address", &smi_addr[0], 2)) {
 			priv->smi_bus[pn] = 0;
 			priv->smi_addr[pn] = pn;
 		} else {
