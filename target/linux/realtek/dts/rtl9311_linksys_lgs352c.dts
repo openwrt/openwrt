@@ -7,6 +7,12 @@
 / {
 	compatible = "linksys,lgs352c", "realtek,rtl9311-soc";
 	model = "Linksys LGS352C";
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x10000000>, /* 256 MiB lowmem */
+		      <0x90000000 0x10000000>; /* 256 MiB highmem */
+	};
 };
 
 &i2c_mst1 {

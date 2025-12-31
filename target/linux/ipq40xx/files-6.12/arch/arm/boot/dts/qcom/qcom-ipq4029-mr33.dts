@@ -1,21 +1,88 @@
 // SPDX-License-Identifier: GPL-2.0-only
 // Device Tree Source for Meraki MR33 (Stinkbug)
 
-#include "qcom-ipq4029-insect-common.dtsi"
+#include "qcom-ipq4029-meraki-insect.dtsi"
 
 / {
 	model = "Meraki MR33 Access Point";
 	compatible = "meraki,mr33";
+
+	soc {
+		ess_tcsr@1953000 {
+			qcom,ess-interface-select = <TCSR_ESS_PSGMII_RGMII5>;
+		};
+	};
 };
 
 &tricolor {
 	enable-gpios = <&tlmm 48 GPIO_ACTIVE_HIGH>;
 };
 
+&pcie0 {
+	status = "okay";
+};
+
+&pcie_bridge0 {
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x00010000 0 0 0 0>;
+		nvmem-cells = <&mac_address 1>, <&cal_factory_9000>;
+		nvmem-cell-names = "mac-address", "calibration";
+	};
+};
+
 &wifi0 {
+	status = "okay";
 	qcom,ath10k-calibration-variant = "Meraki-MR33";
 };
 
 &wifi1 {
+	status = "okay";
 	qcom,ath10k-calibration-variant = "Meraki-MR33";
+};
+
+&mdio {
+	ar8035: ethernet-phy@1 {
+		reg = <1>;
+	};
+
+	ethernet-phy-package@0 {
+		status = "disabled";
+	};
+};
+
+&switch {
+	/delete-property/ psgmii-ethphy;
+};
+
+&swport5 {
+	status = "okay";
+
+	label = "lan";
+	phy-handle = <&ar8035>;
+	phy-mode = "rgmii-rxid";
+};
+
+&ethphy0 {
+	status = "disabled";
+};
+
+&ethphy1 {
+	status = "disabled";
+};
+
+&ethphy2 {
+	status = "disabled";
+};
+
+&ethphy3 {
+	status = "disabled";
+};
+
+&ethphy4 {
+	status = "disabled";
+};
+
+&psgmiiphy {
+	status = "disabled";
 };

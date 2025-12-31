@@ -1,7 +1,7 @@
-From 0d8f58869192df0acdba286d233b57a4feeaf94b Mon Sep 17 00:00:00 2001
+From d1ff30df1d9a4eb4c067795abb5e2a66910fd108 Mon Sep 17 00:00:00 2001
 From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
-Date: Thu, 14 Aug 2025 18:49:34 +0300
-Subject: [PATCH v6 11/13] spi: airoha: reduce the number of modification of
+Date: Sun, 12 Oct 2025 15:17:01 +0300
+Subject: [PATCH 10/14] spi: airoha: reduce the number of modification of
  REG_SPI_NFI_CNFG and REG_SPI_NFI_SECCUS_SIZE registers
 
 This just reduce the number of modification of REG_SPI_NFI_CNFG and
@@ -12,6 +12,8 @@ from SNFI registers during driver startup.
 
 Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
 Reviewed-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>
+Link: https://patch.msgid.link/20251012121707.2296160-11-mikhail.kshevetskiy@iopsys.eu
+Signed-off-by: Mark Brown <broonie@kernel.org>
 ---
  drivers/spi/spi-airoha-snfi.c | 135 +++++++++++++++++++++++++---------
  1 file changed, 102 insertions(+), 33 deletions(-)
@@ -103,7 +105,7 @@ Reviewed-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com
  	err = regmap_write(as_ctrl->regmap_nfi, REG_SPI_NFI_CMD, 0x0);
  	if (err)
  		goto error_dma_unmap;
-@@ -819,7 +855,48 @@ static ssize_t airoha_snand_dirmap_write
+@@ -815,7 +851,48 @@ static ssize_t airoha_snand_dirmap_write
  	if (err < 0)
  		return err;
  
@@ -153,7 +155,7 @@ Reviewed-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com
  	if (err)
  		goto error_dma_mode_off;
  
-@@ -835,8 +912,16 @@ static ssize_t airoha_snand_dirmap_write
+@@ -831,8 +908,16 @@ static ssize_t airoha_snand_dirmap_write
  	if (err)
  		goto error_dma_unmap;
  
@@ -172,7 +174,7 @@ Reviewed-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com
  	err = regmap_update_bits(as_ctrl->regmap_nfi,
  				 REG_SPI_NFI_SNF_MISC_CTL2,
  				 SPI_NFI_PROG_LOAD_BYTE_NUM, val);
-@@ -861,22 +946,6 @@ static ssize_t airoha_snand_dirmap_write
+@@ -857,22 +942,6 @@ static ssize_t airoha_snand_dirmap_write
  	if (err)
  		goto error_dma_unmap;
  

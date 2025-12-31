@@ -1,7 +1,7 @@
-From 64a4d6e84145227211485067022cd4e5cf052e04 Mon Sep 17 00:00:00 2001
+From 902c0ea18a97b1a6eeee5799cb1fd9a79ef9208e Mon Sep 17 00:00:00 2001
 From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
-Date: Thu, 14 Aug 2025 23:56:24 +0300
-Subject: [PATCH v6 13/13] spi: airoha: avoid reading flash page settings from
+Date: Sun, 12 Oct 2025 15:17:03 +0300
+Subject: [PATCH 12/14] spi: airoha: avoid reading flash page settings from
  SNFI registers during driver startup
 
 The spinand driver do 3 type of dirmap requests:
@@ -25,6 +25,8 @@ SNFI registers during driver startup. Also airoha_snand_adjust_op_size()
 function becomes unnecessary.
 
 Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Link: https://patch.msgid.link/20251012121707.2296160-13-mikhail.kshevetskiy@iopsys.eu
+Signed-off-by: Mark Brown <broonie@kernel.org>
 ---
  drivers/spi/spi-airoha-snfi.c | 115 ++--------------------------------
  1 file changed, 5 insertions(+), 110 deletions(-)
@@ -148,7 +150,7 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  
  	opcode = desc->info.op_tmpl.cmd.opcode;
  	switch (opcode) {
-@@ -1080,7 +1006,6 @@ static int airoha_snand_exec_op(struct s
+@@ -1076,7 +1002,6 @@ static int airoha_snand_exec_op(struct s
  }
  
  static const struct spi_controller_mem_ops airoha_snand_mem_ops = {
@@ -156,7 +158,7 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  	.supports_op = airoha_snand_supports_op,
  	.exec_op = airoha_snand_exec_op,
  	.dirmap_create = airoha_snand_dirmap_create,
-@@ -1105,36 +1030,6 @@ static int airoha_snand_setup(struct spi
+@@ -1101,36 +1026,6 @@ static int airoha_snand_setup(struct spi
  	return 0;
  }
  
@@ -193,7 +195,7 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  static const struct regmap_config spi_ctrl_regmap_config = {
  	.name		= "ctrl",
  	.reg_bits	= 32,
-@@ -1208,7 +1103,7 @@ static int airoha_snand_probe(struct pla
+@@ -1204,7 +1099,7 @@ static int airoha_snand_probe(struct pla
  	ctrl->setup = airoha_snand_setup;
  	device_set_node(&ctrl->dev, dev_fwnode(dev));
  

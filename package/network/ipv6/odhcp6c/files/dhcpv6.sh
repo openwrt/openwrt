@@ -42,7 +42,7 @@ proto_dhcpv6_init_config() {
 	proto_config_add_boolean sourcefilter
 	proto_config_add_boolean keep_ra_dnslifetime
 	proto_config_add_int "ra_holdoff"
-	proto_config_add_boolean verbose
+	proto_config_add_int 'verbose:range(0, 7)'
 	proto_config_add_boolean dynamic
 }
 
@@ -116,7 +116,7 @@ proto_dhcpv6_setup() {
 
 	[ -n "$ra_holdoff" ] && append opts "-m$ra_holdoff"
 
-	[ "$verbose" = "1" ] && append opts "-v"
+	[ -n "$verbose" ] && append opts "-l$verbose"
 
 	json_for_each_item proto_dhcpv6_add_sendopts sendopts opts
 
