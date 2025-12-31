@@ -1181,9 +1181,9 @@ static int rtl838x_poll_rx(struct napi_struct *napi, int budget)
 	return work_done;
 }
 
-static void rtl838x_mac_config(struct phylink_config *config,
-			       unsigned int mode,
-			       const struct phylink_link_state *state)
+static void rteth_mac_config(struct phylink_config *config,
+			     unsigned int mode,
+			     const struct phylink_link_state *state)
 {
 	/* This is only being called for the master device,
 	 * i.e. the CPU-Port. We don't need to do anything.
@@ -1192,7 +1192,7 @@ static void rtl838x_mac_config(struct phylink_config *config,
 	pr_info("In %s, mode %x\n", __func__, mode);
 }
 
-static void rtl838x_pcs_an_restart(struct phylink_pcs *pcs)
+static void rteth_pcs_an_restart(struct phylink_pcs *pcs)
 {
 	struct rtl838x_eth_priv *priv = container_of(pcs, struct rtl838x_eth_priv, pcs);
 
@@ -1207,8 +1207,8 @@ static void rtl838x_pcs_an_restart(struct phylink_pcs *pcs)
 	sw_w32(0x6192F, priv->r->mac_force_mode_ctrl + priv->r->cpu_port * 4);
 }
 
-static void rtl838x_pcs_get_state(struct phylink_pcs *pcs,
-				  struct phylink_link_state *state)
+static void rteth_pcs_get_state(struct phylink_pcs *pcs,
+				struct phylink_link_state *state)
 {
 	u32 speed;
 	struct rtl838x_eth_priv *priv = container_of(pcs, struct rtl838x_eth_priv, pcs);
@@ -1252,17 +1252,17 @@ static void rtl838x_pcs_get_state(struct phylink_pcs *pcs,
 		state->pause |= MLO_PAUSE_TX;
 }
 
-static int rtl838x_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
-			      phy_interface_t interface,
-			      const unsigned long *advertising,
-			      bool permit_pause_to_mac)
+static int rteth_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+			    phy_interface_t interface,
+			    const unsigned long *advertising,
+			    bool permit_pause_to_mac)
 {
 	return 0;
 }
 
-static void rtl838x_mac_link_down(struct phylink_config *config,
-				  unsigned int mode,
-				  phy_interface_t interface)
+static void rteth_mac_link_down(struct phylink_config *config,
+				unsigned int mode,
+				phy_interface_t interface)
 {
 	struct net_device *dev = container_of(config->dev, struct net_device, dev);
 	struct rtl838x_eth_priv *priv = netdev_priv(dev);
@@ -1272,10 +1272,10 @@ static void rtl838x_mac_link_down(struct phylink_config *config,
 	sw_w32_mask(0x03, 0, priv->r->mac_port_ctrl(priv->r->cpu_port));
 }
 
-static void rtl838x_mac_link_up(struct phylink_config *config,
-				struct phy_device *phy, unsigned int mode,
-				phy_interface_t interface, int speed, int duplex,
-				bool tx_pause, bool rx_pause)
+static void rteth_mac_link_up(struct phylink_config *config,
+			      struct phy_device *phy, unsigned int mode,
+			      phy_interface_t interface, int speed, int duplex,
+			      bool tx_pause, bool rx_pause)
 {
 	struct net_device *dev = container_of(config->dev, struct net_device, dev);
 	struct rtl838x_eth_priv *priv = netdev_priv(dev);
@@ -1354,8 +1354,8 @@ static int rtl8380_init_mac(struct rtl838x_eth_priv *priv)
 	return 0;
 }
 
-static int rtl838x_get_link_ksettings(struct net_device *ndev,
-				      struct ethtool_link_ksettings *cmd)
+static int rteth_get_link_ksettings(struct net_device *ndev,
+				    struct ethtool_link_ksettings *cmd)
 {
 	struct rtl838x_eth_priv *priv = netdev_priv(ndev);
 
@@ -1364,8 +1364,8 @@ static int rtl838x_get_link_ksettings(struct net_device *ndev,
 	return phylink_ethtool_ksettings_get(priv->phylink, cmd);
 }
 
-static int rtl838x_set_link_ksettings(struct net_device *ndev,
-				      const struct ethtool_link_ksettings *cmd)
+static int rteth_set_link_ksettings(struct net_device *ndev,
+				    const struct ethtool_link_ksettings *cmd)
 {
 	struct rtl838x_eth_priv *priv = netdev_priv(ndev);
 
@@ -1441,8 +1441,8 @@ static int rtl93xx_set_features(struct net_device *dev, netdev_features_t featur
 	return 0;
 }
 
-static struct phylink_pcs *rtl838x_mac_select_pcs(struct phylink_config *config,
-						  phy_interface_t interface)
+static struct phylink_pcs *rteth_mac_select_pcs(struct phylink_config *config,
+						phy_interface_t interface)
 {
 	struct net_device *dev = to_net_dev(config->dev);
 	struct rtl838x_eth_priv *priv = netdev_priv(dev);
@@ -1629,22 +1629,22 @@ static const struct rteth_config rteth_931x_cfg = {
 	.netdev_ops = &rteth_931x_netdev_ops,
 };
 
-static const struct phylink_pcs_ops rtl838x_pcs_ops = {
-	.pcs_get_state = rtl838x_pcs_get_state,
-	.pcs_an_restart = rtl838x_pcs_an_restart,
-	.pcs_config = rtl838x_pcs_config,
+static const struct phylink_pcs_ops rteth_pcs_ops = {
+	.pcs_get_state = rteth_pcs_get_state,
+	.pcs_an_restart = rteth_pcs_an_restart,
+	.pcs_config = rteth_pcs_config,
 };
 
-static const struct phylink_mac_ops rtl838x_phylink_ops = {
-	.mac_select_pcs = rtl838x_mac_select_pcs,
-	.mac_config = rtl838x_mac_config,
-	.mac_link_down = rtl838x_mac_link_down,
-	.mac_link_up = rtl838x_mac_link_up,
+static const struct phylink_mac_ops rteth_mac_ops = {
+	.mac_select_pcs = rteth_mac_select_pcs,
+	.mac_config = rteth_mac_config,
+	.mac_link_down = rteth_mac_link_down,
+	.mac_link_up = rteth_mac_link_up,
 };
 
-static const struct ethtool_ops rtl838x_ethtool_ops = {
-	.get_link_ksettings     = rtl838x_get_link_ksettings,
-	.set_link_ksettings     = rtl838x_set_link_ksettings,
+static const struct ethtool_ops rteth_ethtool_ops = {
+	.get_link_ksettings = rteth_get_link_ksettings,
+	.set_link_ksettings = rteth_set_link_ksettings,
 };
 
 static int __init rtl838x_eth_probe(struct platform_device *pdev)
@@ -1697,7 +1697,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 
 	spin_lock_init(&priv->lock);
 
-	dev->ethtool_ops = &rtl838x_ethtool_ops;
+	dev->ethtool_ops = &rteth_ethtool_ops;
 	dev->min_mtu = ETH_ZLEN;
 	dev->max_mtu = DEFAULT_MTU;
 	dev->features = NETIF_F_RXCSUM | NETIF_F_HW_CSUM;
@@ -1780,7 +1780,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 		return -EINVAL;
 	}
 
-	priv->pcs.ops = &rtl838x_pcs_ops;
+	priv->pcs.ops = &rteth_pcs_ops;
 	priv->phylink_config.dev = &dev->dev;
 	priv->phylink_config.type = PHYLINK_NETDEV;
 	priv->phylink_config.mac_capabilities =
@@ -1789,7 +1789,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	__set_bit(PHY_INTERFACE_MODE_INTERNAL, priv->phylink_config.supported_interfaces);
 
 	phylink = phylink_create(&priv->phylink_config, pdev->dev.fwnode,
-				 phy_mode, &rtl838x_phylink_ops);
+				 phy_mode, &rteth_mac_ops);
 
 	if (IS_ERR(phylink))
 		return PTR_ERR(phylink);
