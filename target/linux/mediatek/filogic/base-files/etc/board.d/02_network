@@ -106,6 +106,9 @@ mediatek_setup_interfaces()
 	comfast,cf-e393ax)
 		ucidef_set_interfaces_lan_wan "lan1" eth1
 		;;
+	cudy,ap3000wall-v1)
+		ucidef_set_interface_lan "lan1 lan2 lan3 lan4 lan5"
+		;;
 	cudy,ap3000outdoor-v1|\
 	cudy,ap3000-v1|\
 	cudy,re3000-v1|\
