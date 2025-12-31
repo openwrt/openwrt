@@ -47,24 +47,19 @@
 
 &mdio_bus0 {
 	EXTERNAL_PHY(16)
-	EXTERNAL_PHY(24)
 };
 
 &switch0 {
 	ports {
-		SWITCH_PORT(16, 9, qsgmii)
+		SWITCH_PORT_SDS(16, 9, 2, qsgmii)
 
-		/* TODO: fixed link SFP is not right */
-		port24: port@24 {
+		port@24 {
 			reg = <24>;
-			label = SWITCH_PORT_LABEL(10);
+			label = "lan10";
 			pcs-handle = <&serdes4>;
-			phy-handle = <&phy24>;
 			phy-mode = "1000base-x";
-			fixed-link {
-				speed = <1000>;
-				full-duplex;
-			};
+			managed = "in-band-status";
+			/* i2c and gpios not yet identified */
 		};
 	};
 };
