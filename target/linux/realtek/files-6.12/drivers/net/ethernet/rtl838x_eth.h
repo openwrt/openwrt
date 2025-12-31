@@ -449,6 +449,7 @@ struct dsa_tag;
 
 struct rteth_config {
 	int family_id;
+	int cpu_port;
 	irqreturn_t (*net_irq)(int irq, void *dev_id);
 	int (*mac_port_ctrl)(int port);
 	int dma_if_intr_sts;
