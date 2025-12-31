@@ -130,7 +130,7 @@ endif
 	$(SED) 's,^# LIBC_VERSION:=.*,LIBC_VERSION:=$(shell cat $(STAGING_DIR)/libc.version),g' $(PKG_BUILD_DIR)/include/version.mk
 	$(SED) 's,^# KERNEL_VERSION:=.*,KERNEL_VERSION:=$(shell cat $(STAGING_DIR)/kernel.version),g' $(PKG_BUILD_DIR)/include/version.mk
 	$(SED) '/LINUX_VERMAGIC:=/ { s,unknown,$(LINUX_VERMAGIC),g }' $(PKG_BUILD_DIR)/include/kernel.mk
-	find $(PKG_BUILD_DIR) -name CVS -o -name .git -o -name .svn \
+	find $(PKG_BUILD_DIR) -name .git -o -name .svn \
 	  | $(XARGS) rm -rf
 	$(INSTALL_DIR) $(IB_IDIR)
 	-$(CP) $(STAGING_DIR_IMAGE)/* $(IB_IDIR)/
