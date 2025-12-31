@@ -193,7 +193,7 @@ struct rtl838x_eth_priv {
 	struct phylink *phylink;
 	struct phylink_config phylink_config;
 	struct phylink_pcs pcs;
-	const struct rtl838x_eth_reg *r;
+	const struct rteth_config *r;
 	u8 cpu_port;
 	u32 lastEvent;
 	u16 rxrings;
@@ -445,7 +445,7 @@ static irqreturn_t rtl93xx_net_irq(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-static const struct rtl838x_eth_reg rtl838x_reg = {
+static const struct rteth_config rteth_838x_cfg = {
 	.family_id = RTL8380_FAMILY_ID,
 	.net_irq = rtl83xx_net_irq,
 	.mac_port_ctrl = rtl838x_mac_port_ctrl,
@@ -471,7 +471,7 @@ static const struct rtl838x_eth_reg rtl838x_reg = {
 	.decode_tag = rtl838x_decode_tag,
 };
 
-static const struct rtl838x_eth_reg rtl839x_reg = {
+static const struct rteth_config rteth_839x_cfg = {
 	.family_id = RTL8390_FAMILY_ID,
 	.net_irq = rtl83xx_net_irq,
 	.mac_port_ctrl = rtl839x_mac_port_ctrl,
@@ -497,7 +497,7 @@ static const struct rtl838x_eth_reg rtl839x_reg = {
 	.decode_tag = rtl839x_decode_tag,
 };
 
-static const struct rtl838x_eth_reg rtl930x_reg = {
+static const struct rteth_config rteth_930x_cfg = {
 	.family_id = RTL9300_FAMILY_ID,
 	.net_irq = rtl93xx_net_irq,
 	.mac_port_ctrl = rtl930x_mac_port_ctrl,
@@ -529,7 +529,7 @@ static const struct rtl838x_eth_reg rtl930x_reg = {
 	.decode_tag = rtl930x_decode_tag,
 };
 
-static const struct rtl838x_eth_reg rtl931x_reg = {
+static const struct rteth_config rteth_931x_cfg = {
 	.family_id = RTL9310_FAMILY_ID,
 	.net_irq = rtl93xx_net_irq,
 	.mac_port_ctrl = rtl931x_mac_port_ctrl,
@@ -1645,7 +1645,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	struct net_device *dev;
 	struct device_node *dn = pdev->dev.of_node;
 	struct rtl838x_eth_priv *priv;
-	const struct rtl838x_eth_reg *matchdata;
+	const struct rteth_config *matchdata;
 	phy_interface_t phy_mode;
 	struct phylink *phylink;
 	u8 mac_addr[ETH_ALEN];
@@ -1660,7 +1660,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 		return -EINVAL;
 	}
 
-	matchdata = (const struct rtl838x_eth_reg *)device_get_match_data(&pdev->dev);
+	matchdata = (const struct rteth_config *)device_get_match_data(&pdev->dev);
 
 	rxrings = (matchdata->family_id == RTL8380_FAMILY_ID ||
 		   matchdata->family_id == RTL8390_FAMILY_ID) ? 8 : 32;
@@ -1830,19 +1830,19 @@ static void rtl838x_eth_remove(struct platform_device *pdev)
 static const struct of_device_id rtl838x_eth_of_ids[] = {
 	{
 		.compatible = "realtek,rtl8380-eth",
-		.data = &rtl838x_reg,
+		.data = &rteth_838x_cfg,
 	},
 	{
 		.compatible = "realtek,rtl8392-eth",
-		.data = &rtl839x_reg,
+		.data = &rteth_839x_cfg,
 	},
 	{
 		.compatible = "realtek,rtl9301-eth",
-		.data = &rtl930x_reg,
+		.data = &rteth_930x_cfg,
 	},
 	{
 		.compatible = "realtek,rtl9311-eth",
-		.data = &rtl931x_reg,
+		.data = &rteth_931x_cfg,
 	},
 	{ /* sentinel */ }
 };
