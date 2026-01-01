@@ -474,6 +474,10 @@ define Device/asus_rt-ax53u
   DEVICE_MODEL := RT-AX53U
   DEVICE_ALT0_VENDOR := ASUS
   DEVICE_ALT0_MODEL := RT-AX1800U
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE := Partition table has been changed. \
+	Follow instructions in the OpenWRT Wiki to migrate to the new layout: \
+	https://openwrt.org/toh/asus/rt-ax53u
   IMAGE_SIZE := 51200k
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
