@@ -1,0 +1,25 @@
+--- a/os_dep/linux/os_intfs.c
++++ b/os_dep/linux/os_intfs.c
+@@ -1956,6 +1956,13 @@ void rtw_os_ndev_unregister(_adapter *ad
+ 
+ 	netdev = adapter->pnetdev;
+ 
++#if defined(RTW_SINGLE_WIPHY)
++/*
++  For concurrent mode deleting interface make kernel hangs.
++  OpenWRT deletes the interface on every start and create again.
++  Do nothing to let wlan0 and wlan1 be configured successfully.
++*/
++
+ #if defined(CONFIG_IOCTL_CFG80211)
+ 	rtw_cfg80211_ndev_res_unregister(adapter);
+ #endif
+@@ -1977,6 +1984,8 @@ void rtw_os_ndev_unregister(_adapter *ad
+ 	rtw_wiphy_unregister(adapter_to_wiphy(adapter));
+ #endif
+ 
++#endif /* defined(RTW_SINGLE_WIPHY) */
++
+ #ifdef CONFIG_RTW_NAPI
+ 	if (adapter->napi_state == NAPI_ENABLE) {
+ 		napi_disable(&adapter->napi);

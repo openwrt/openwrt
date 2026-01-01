@@ -1,0 +1,280 @@
+Add NXP Semiconductors TFA9882 DAC with amplifier support
+for Xiaomi Lumi Gateway MIEU01.
+
+Signed-off-by: Alexey Sadkov <alx.v.sadkov@gmail.com>
+
+--- a/sound/soc/codecs/Kconfig
++++ b/sound/soc/codecs/Kconfig
+@@ -250,6 +250,7 @@ config SND_SOC_ALL_CODECS
+ 	imply SND_SOC_TAS6424
+ 	imply SND_SOC_TDA7419
+ 	imply SND_SOC_TFA9879
++	imply SND_SOC_TFA9882
+ 	imply SND_SOC_TFA989X
+ 	imply SND_SOC_TLV320ADC3XXX
+ 	imply SND_SOC_TLV320ADCX140
+@@ -1864,6 +1865,10 @@ config SND_SOC_TLV320ADC3XXX
+ 	 Enable support for Texas Instruments TLV320ADC3001 and TLV320ADC3101
+ 	 ADCs.
+ 
++config SND_SOC_TFA9882
++	tristate "NXP Semiconductors TFA9882 DAC with amplifier"
++
++
+ config SND_SOC_TLV320AIC23
+ 	tristate
+ 
+--- a/sound/soc/codecs/Makefile
++++ b/sound/soc/codecs/Makefile
+@@ -281,6 +281,7 @@ snd-soc-tas2781-comlib-objs := tas2781-c
+ snd-soc-tas2781-fmwlib-objs := tas2781-fmwlib.o
+ snd-soc-tas2781-i2c-objs := tas2781-i2c.o
+ snd-soc-tfa9879-objs := tfa9879.o
++snd-soc-tfa9882-objs := tfa9882.o
+ snd-soc-tfa989x-objs := tfa989x.o
+ snd-soc-tlv320adc3xxx-objs := tlv320adc3xxx.o
+ snd-soc-tlv320aic23-objs := tlv320aic23.o
+@@ -664,6 +665,7 @@ obj-$(CONFIG_SND_SOC_TAS6424)	+= snd-soc
+ obj-$(CONFIG_SND_SOC_TDA7419)	+= snd-soc-tda7419.o
+ obj-$(CONFIG_SND_SOC_TAS2770) += snd-soc-tas2770.o
+ obj-$(CONFIG_SND_SOC_TFA9879)	+= snd-soc-tfa9879.o
++obj-$(CONFIG_SND_SOC_TFA9882)	+= snd-soc-tfa9882.o
+ obj-$(CONFIG_SND_SOC_TFA989X)	+= snd-soc-tfa989x.o
+ obj-$(CONFIG_SND_SOC_TLV320ADC3XXX)	+= snd-soc-tlv320adc3xxx.o
+ obj-$(CONFIG_SND_SOC_TLV320AIC23)	+= snd-soc-tlv320aic23.o
+--- /dev/null
++++ b/sound/soc/codecs/tfa9882.c
+@@ -0,0 +1,233 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * tfa9882.c  --  TFA9882 ALSA SoC Audio driver
++ *
++ * Copyright 2009 Wolfson Microelectronics plc
++ * Copyright 2017 NXP
++ *
++ * Based on WM8524 ALSA SoC Audio driver written by Mihai Serban
++ */
++
++#include <linux/module.h>
++#include <linux/moduleparam.h>
++#include <linux/init.h>
++#include <linux/delay.h>
++#include <linux/slab.h>
++#include <linux/gpio/consumer.h>
++#include <linux/of_device.h>
++#include <sound/core.h>
++#include <sound/pcm.h>
++#include <sound/pcm_params.h>
++#include <sound/soc.h>
++#include <sound/initval.h>
++
++#define TFA9882_NUM_RATES 7
++
++/* codec private data */
++struct tfa9882_priv {
++	struct gpio_desc *mute;
++	unsigned int sysclk;
++	unsigned int rate_constraint_list[TFA9882_NUM_RATES];
++	struct snd_pcm_hw_constraint_list rate_constraint;
++};
++
++
++static const struct snd_soc_dapm_widget tfa9882_dapm_widgets[] = {
++SND_SOC_DAPM_DAC("DAC", "Playback", SND_SOC_NOPM, 0, 0),
++SND_SOC_DAPM_OUTPUT("LINEVOUTL"),
++SND_SOC_DAPM_OUTPUT("LINEVOUTR"),
++};
++
++static const struct snd_soc_dapm_route tfa9882_dapm_routes[] = {
++	{ "LINEVOUTL", NULL, "DAC" },
++	{ "LINEVOUTR", NULL, "DAC" },
++};
++
++static const struct {
++	int value;
++	int ratio;
++} lrclk_ratios[TFA9882_NUM_RATES] = {
++	{ 1, 128 },
++	{ 2, 192 },
++	{ 3, 256 },
++	{ 4, 384 },
++	{ 5, 512 },
++	{ 6, 768 },
++	{ 7, 1152 },
++};
++
++static int tfa9882_startup(struct snd_pcm_substream *substream,
++			  struct snd_soc_dai *dai)
++{
++	struct snd_soc_component *component = dai->component;
++	struct tfa9882_priv *tfa9882 = snd_soc_component_get_drvdata(component);
++	struct snd_soc_pcm_runtime *rtd = substream->private_data;
++
++	/* The set of sample rates that can be supported depends on the
++	 * MCLK supplied to the CODEC - enforce this.
++	 */
++	if (!tfa9882->sysclk) {
++		dev_err(component->dev,
++			"No MCLK configured, call set_sysclk() on init\n");
++		return -EINVAL;
++	}
++
++	if (!rtd->dai_link->be_hw_params_fixup)
++		snd_pcm_hw_constraint_list(substream->runtime, 0,
++					   SNDRV_PCM_HW_PARAM_RATE,
++					   &tfa9882->rate_constraint);
++
++	return 0;
++}
++
++static void tfa9882_shutdown(struct snd_pcm_substream *substream,
++			  struct snd_soc_dai *dai)
++{
++	//struct snd_soc_component *component = dai->component;
++	//struct tfa9882_priv *tfa9882 = snd_soc_component_get_drvdata(component);
++
++}
++
++static int tfa9882_set_dai_sysclk(struct snd_soc_dai *codec_dai,
++		int clk_id, unsigned int freq, int dir)
++{
++	struct snd_soc_component *component = codec_dai->component;
++	struct tfa9882_priv *tfa9882 = snd_soc_component_get_drvdata(component);
++	unsigned int val;
++	int i, j = 0;
++
++	tfa9882->sysclk = freq;
++
++	tfa9882->rate_constraint.count = 0;
++	for (i = 0; i < ARRAY_SIZE(lrclk_ratios); i++) {
++		val = freq / lrclk_ratios[i].ratio;
++		/* Check that it's a standard rate since core can't
++		 * cope with others and having the odd rates confuses
++		 * constraint matching.
++		 */
++		switch (val) {
++		case 8000:
++		case 32000:
++		case 44100:
++		case 48000:
++		case 88200:
++		case 96000:
++		case 176400:
++		case 192000:
++			dev_dbg(component->dev, "Supported sample rate: %dHz\n",
++				val);
++			tfa9882->rate_constraint_list[j++] = val;
++			tfa9882->rate_constraint.count++;
++			break;
++		default:
++			dev_dbg(component->dev, "Skipping sample rate: %dHz\n",
++				val);
++		}
++	}
++
++	/* Need at least one supported rate... */
++	if (tfa9882->rate_constraint.count == 0)
++		return -EINVAL;
++
++	return 0;
++}
++
++static int tfa9882_set_fmt(struct snd_soc_dai *codec_dai, unsigned int fmt)
++{
++	fmt &= (SND_SOC_DAIFMT_FORMAT_MASK | SND_SOC_DAIFMT_INV_MASK |
++		SND_SOC_DAIFMT_MASTER_MASK);
++
++	if (fmt != (SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF |
++		    SND_SOC_DAIFMT_CBS_CFS)) {
++		dev_err(codec_dai->dev, "Invalid DAI format\n");
++		return -EINVAL;
++	}
++
++	return 0;
++}
++
++#define TFA9882_RATES SNDRV_PCM_RATE_8000_192000
++
++#define TFA9882_FORMATS (SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S24_LE |\
++			SNDRV_PCM_FMTBIT_S32_LE)
++
++static const struct snd_soc_dai_ops tfa9882_dai_ops = {
++	.startup	= tfa9882_startup,
++	.shutdown	= tfa9882_shutdown,
++	.set_sysclk	= tfa9882_set_dai_sysclk,
++	.set_fmt	= tfa9882_set_fmt,
++};
++
++static struct snd_soc_dai_driver tfa9882_dai = {
++	.name = "tfa9882-hifi",
++	.playback = {
++		.stream_name = "Playback",
++		.channels_min = 2,
++		.channels_max = 2,
++		.rates = TFA9882_RATES,
++		.formats = TFA9882_FORMATS,
++	},
++	.ops = &tfa9882_dai_ops,
++};
++
++static int tfa9882_probe(struct snd_soc_component *component)
++{
++	struct tfa9882_priv *tfa9882 = snd_soc_component_get_drvdata(component);
++
++	tfa9882->rate_constraint.list = &tfa9882->rate_constraint_list[0];
++	tfa9882->rate_constraint.count =
++		ARRAY_SIZE(tfa9882->rate_constraint_list);
++
++	return 0;
++}
++
++static const struct snd_soc_component_driver soc_component_dev_tfa9882 = {
++	.probe			= tfa9882_probe,
++	.dapm_widgets		= tfa9882_dapm_widgets,
++	.num_dapm_widgets	= ARRAY_SIZE(tfa9882_dapm_widgets),
++	.dapm_routes		= tfa9882_dapm_routes,
++	.num_dapm_routes	= ARRAY_SIZE(tfa9882_dapm_routes),
++	.idle_bias_on		= 1,
++	.use_pmdown_time	= 1,
++	.endianness		= 1,
++};
++
++static const struct of_device_id tfa9882_of_match[] = {
++	{ .compatible = "fsl,tfa9882" },
++	{ /* sentinel*/ }
++};
++MODULE_DEVICE_TABLE(of, tfa9882_of_match);
++
++static int tfa9882_codec_probe(struct platform_device *pdev)
++{
++	struct tfa9882_priv *tfa9882;
++	int ret;
++
++	tfa9882 = devm_kzalloc(&pdev->dev, sizeof(struct tfa9882_priv),
++						  GFP_KERNEL);
++	if (tfa9882 == NULL)
++		return -ENOMEM;
++
++	platform_set_drvdata(pdev, tfa9882);
++
++	ret = devm_snd_soc_register_component(&pdev->dev,
++			&soc_component_dev_tfa9882, &tfa9882_dai, 1);
++	if (ret < 0)
++		dev_err(&pdev->dev, "Failed to register component: %d\n", ret);
++
++	return ret;
++}
++
++static struct platform_driver tfa9882_codec_driver = {
++	.probe		= tfa9882_codec_probe,
++	.driver		= {
++		.name	= "tfa9882-codec",
++		.of_match_table = tfa9882_of_match,
++	},
++};
++module_platform_driver(tfa9882_codec_driver);
++
++MODULE_DESCRIPTION("ASoC tfa9882 driver");
++MODULE_AUTHOR("-=Alx=- <alx.v.sadkov@gmail.com>");
++MODULE_ALIAS("platform:tfa9882-codec");
++MODULE_LICENSE("GPL");
