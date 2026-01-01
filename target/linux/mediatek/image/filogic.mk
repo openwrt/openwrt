@@ -139,6 +139,20 @@ define Build/cetron-header
 	rm $@.tmp
 endef
 
+define Build/huasifei-ws1610-header
+	# Stock upgrade expects a 64KiB header with model tag "M01K45" at offset 0.
+	rm -f $@.hdr
+	if [ -n "$(WS1610_HEADER)" ] && [ -f "$(WS1610_HEADER)" ]; then \
+		dd if=/dev/zero bs=1 count=65536 of=$@.hdr 2>/dev/null; \
+		dd if="$(WS1610_HEADER)" of=$@.hdr conv=notrunc 2>/dev/null; \
+	else \
+		dd if=/dev/zero bs=1 count=65536 of=$@.hdr 2>/dev/null; \
+		printf 'M01K45' | dd of=$@.hdr bs=1 conv=notrunc 2>/dev/null; \
+	fi
+	cat $@.hdr > $@
+	rm -f $@.hdr
+endef
+
 define Device/abt_asr3000
   DEVICE_VENDOR := ABT
   DEVICE_MODEL := ASR3000
@@ -1517,6 +1531,26 @@ define Device/huasifei_wh3000-pro
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += huasifei_wh3000-pro
+
+define Device/huasifei_ws1610
+  DEVICE_VENDOR := Huasifei
+  DEVICE_MODEL := WS1610
+  DEVICE_DTS += mt7981b-huasifei-ws1610
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-usb3 \
+	kmod-usb-net-qmi-wwan kmod-usb-net-cdc-ether kmod-usb-net-cdc-ncm kmod-usb-serial-option \
+  kmod-usbmon mdio-tools uqmi
+  SUPPORTED_DEVICES := huasifei,ws1610
+  KERNEL_IN_UBI := 1
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 114688k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := huasifei-ws1610-header | append-ubi | check-size $$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += huasifei_ws1610
 
 define Device/imou_hx21
   DEVICE_VENDOR := Imou

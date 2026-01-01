@@ -101,6 +101,10 @@ glinet,gl-xe3000)
 huasifei,wh3000)
 	ucidef_set_led_netdev "wan" "WAN" "red:wan" "eth1" "link tx rx"
 	;;
+huasifei,ws1610)
+	ucidef_set_led_netdev "lan" "LAN" "ws1610:green:lan" "lan" "link tx rx"
+	ucidef_set_led_netdev "wifi" "WIFI" "ws1610:green:wifi" "phy1-ap0"
+	;;
 iptime,ax3000q)
 	ucidef_set_led_netdev "wan" "WAN" "amber:wan" "wan" "link tx rx"
 	;;

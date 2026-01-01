@@ -92,6 +92,9 @@ mediatek_setup_interfaces()
 	huasifei,wh3000-pro)
 		ucidef_set_interfaces_lan_wan eth0 eth1
 		;;
+	huasifei,ws1610)
+		ucidef_set_interfaces_lan_wan lan wan
+		;;	
 	bananapi,bpi-r4)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 sfp-lan" "wan sfp-wan"
 		;;
