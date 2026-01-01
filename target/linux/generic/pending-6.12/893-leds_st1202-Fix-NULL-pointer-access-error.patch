@@ -1,18 +1,21 @@
-From e3da313ebcace17f1227566fe1b0d0c3883061f9 Mon Sep 17 00:00:00 2001
+From c72e455b89f216b43cd0dbb518036ec4c98f5c46 Mon Sep 17 00:00:00 2001
 From: Manuel Fombuena <fombuena@outlook.com>
-Date: Fri, 17 Jan 2025 12:31:49 +0000
-Subject: [PATCH 1/5] leds: leds-st1202: fix NULL pointer access on race
- condition
+Date: Tue, 25 Feb 2025 22:01:02 +0000
+Subject: leds: leds-st1202: Fix NULL pointer access on race condition
 
 st1202_dt_init() calls devm_led_classdev_register_ext() before the
-internal data structures are properly setup, so the leds become visible
+internal data structures are properly set up, so the LEDs become visible
 to user space while being partially initialized, leading to a window
 where trying to access them causes a NULL pointer access.
 
-This change moves devm_led_classdev_register_ext() to the last thing to
-happen during initialization to eliminate it.
+Move devm_led_classdev_register_ext() from DT initialization
+to the end of the probe function when DT and hardware are fully
+initialized and ready to interact with user space.
 
+Fixes: 259230378c65 ("leds: Add LED1202 I2C driver")
 Signed-off-by: Manuel Fombuena <fombuena@outlook.com>
+Link: https://lore.kernel.org/r/CWLP123MB54732771AC0CE5491B3C84DCC5C32@CWLP123MB5473.GBRP123.PROD.OUTLOOK.COM
+Signed-off-by: Lee Jones <lee@kernel.org>
 ---
  drivers/leds/leds-st1202.c | 21 ++++++++++-----------
  1 file changed, 10 insertions(+), 11 deletions(-)
