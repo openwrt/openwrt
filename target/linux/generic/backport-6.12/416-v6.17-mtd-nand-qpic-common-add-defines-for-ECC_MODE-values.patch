@@ -52,7 +52,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  				host->ecc_bytes_hw = 8;
 --- a/drivers/spi/spi-qpic-snand.c
 +++ b/drivers/spi/spi-qpic-snand.c
-@@ -349,7 +349,7 @@ static int qcom_spi_ecc_init_ctx_pipelin
+@@ -365,7 +365,7 @@ static int qcom_spi_ecc_init_ctx_pipelin
  			       FIELD_PREP(ECC_SW_RESET, 0) |
  			       FIELD_PREP(ECC_NUM_DATA_BYTES_MASK, ecc_cfg->cw_data) |
  			       FIELD_PREP(ECC_FORCE_CLK_OPEN, 1) |
