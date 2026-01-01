@@ -1,16 +1,7 @@
+From 939757aafeb9c266dda37657ee5f7a73ffd35ae2 Mon Sep 17 00:00:00 2001
 From: Vicentiu Galanopulo <vicentiu.galanopulo@remote-tech.co.uk>
-To: Pavel Machek <pavel@ucw.cz>, Lee Jones <lee@kernel.org>,
-	Rob Herring <robh@kernel.org>,
-	Krzysztof Kozlowski <krzk+dt@kernel.org>,
-	Conor Dooley <conor+dt@kernel.org>,
-	Jonathan Corbet <corbet@lwn.net>,
-	Vicentiu Galanopulo <vicentiu.galanopulo@remote-tech.co.uk>,
-	linux-leds@vger.kernel.org, devicetree@vger.kernel.org,
-	linux-kernel@vger.kernel.org, linux-doc@vger.kernel.org
-Subject: [PATCH v11 3/3] leds: Add LED1202 I2C driver
-Date: Wed, 18 Dec 2024 18:33:59 +0000	[thread overview]
-Message-ID: <20241218183401.41687-4-vicentiu.galanopulo@remote-tech.co.uk> (raw)
-In-Reply-To: <20241218183401.41687-1-vicentiu.galanopulo@remote-tech.co.uk>
+Date: Wed, 18 Dec 2024 18:33:59 +0000
+Subject: leds: Add LED1202 I2C driver
 
 The output current can be adjusted separately for each channel by 8-bit
 analog (current sink input) and 12-bit digital (PWM) dimming control. The
@@ -25,38 +16,9 @@ corresponds to the per channel analog dimming, while the patterns[1-8] to the
 PWM dimming control.
 
 Signed-off-by: Vicentiu Galanopulo <vicentiu.galanopulo@remote-tech.co.uk>
+Link: https://lore.kernel.org/r/20241218183401.41687-4-vicentiu.galanopulo@remote-tech.co.uk
+Signed-off-by: Lee Jones <lee@kernel.org>
 ---
-    Changes in v10:
-      - update description help in Kconfig
-      - move st1202_led and st1202_chip into one line, declaration and definition
-    Changes in v9:
-      - log errors directly in st1202_write_reg and st1202_read_reg
-      - use mutex guards instead of lock/unlock
-      - remove i2c_set_clientdata
-    Changes in v7:
-      - fix st1202_brightness_get() error: uninitialized symbol 'value'
-    Changes in v6:
-      - fix build error
-    Changes in v5:
-      - remove unused macros
-      - switch to using devm_led_classdev_register_ext (struct st1202_led update)
-      - add prescalar_to_milliseconds (convert [22..5660]ms to [0..255] reg value)
-      - remove register range check in dt_init (range protected by yaml)
-      - address all review comments in v4
-    Changes in v4:
-      - Remove attributes/extended attributes implementation
-      - Use /sys/class/leds/<led>/hw_pattern (Pavel suggestion)
-      - Implement review findings of Christophe JAILLET
-    Changes in v3:
-      - Rename all ll1202 to st1202, including driver file name
-      - Convert all magic numbers to defines
-      - Refactor the show/store callbacks as per Lee's and Thomas's review
-      - Remove ll1202_get_channel and use dev_ext_attributes instead
-      - Log all error values for all the functions
-      - Use sysfs_emit for show callbacks
-    Changes in v2:
-      - Fix build error for device_attribute modes
-
  drivers/leds/Kconfig       |  10 +
  drivers/leds/Makefile      |   1 +
  drivers/leds/leds-st1202.c | 416 +++++++++++++++++++++++++++++++++++++
@@ -84,14 +46,14 @@ Signed-off-by: Vicentiu Galanopulo <vicentiu.galanopulo@remote-tech.co.uk>
  	depends on LEDS_CLASS
 --- a/drivers/leds/Makefile
 +++ b/drivers/leds/Makefile
-@@ -82,6 +82,7 @@ obj-$(CONFIG_LEDS_PWM)			+= leds-pwm.o
+@@ -81,6 +81,7 @@ obj-$(CONFIG_LEDS_POWERNV)		+= leds-powe
+ obj-$(CONFIG_LEDS_PWM)			+= leds-pwm.o
  obj-$(CONFIG_LEDS_REGULATOR)		+= leds-regulator.o
  obj-$(CONFIG_LEDS_SC27XX_BLTC)		+= leds-sc27xx-bltc.o
- obj-$(CONFIG_LEDS_SUN50I_A100)		+= leds-sun50i-a100.o
 +obj-$(CONFIG_LEDS_ST1202)		+= leds-st1202.o
+ obj-$(CONFIG_LEDS_SUN50I_A100)		+= leds-sun50i-a100.o
  obj-$(CONFIG_LEDS_SUNFIRE)		+= leds-sunfire.o
  obj-$(CONFIG_LEDS_SYSCON)		+= leds-syscon.o
- obj-$(CONFIG_LEDS_TCA6507)		+= leds-tca6507.o
 --- /dev/null
 +++ b/drivers/leds/leds-st1202.c
 @@ -0,0 +1,416 @@
