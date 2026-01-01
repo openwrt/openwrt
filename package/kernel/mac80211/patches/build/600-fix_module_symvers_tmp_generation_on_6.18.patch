@@ -1,0 +1,13 @@
+--- a/Makefile.build
++++ b/Makefile.build
+@@ -11,6 +11,10 @@
+ .PHONY: modules
+ modules:
+ 	@$(MAKE) -C $(KLIB_BUILD) M=$(BACKPORT_DIR) modules
++	@if [ -f "$(BACKPORT_DIR)/Module.symvers" ] && [ -f "$(KLIB_BUILD)/.config" ] && grep -q "6\.18" "$(KLIB_BUILD)/.config"; then \
++		echo "Creating Module.symvers.tmp from Module.symvers... "; \
++		cp -f $(BACKPORT_DIR)/Module.symvers $(BACKPORT_DIR)/Module.symvers.tmp; \
++	fi
+ 
+ .PHONY: clean
+ clean:
