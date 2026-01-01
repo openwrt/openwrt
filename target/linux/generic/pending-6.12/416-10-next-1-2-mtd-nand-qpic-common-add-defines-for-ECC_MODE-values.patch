@@ -1,7 +1,7 @@
+From 0dc7e656ddd54c3267b7cc18c1ac8ec1297ed02f Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <j4g8y7@gmail.com>
-Date: Fri, 02 May 2025 21:31:16 +0200
-Subject: [PATCH next 1/2] mtd: nand: qpic-common: add defines for ECC_MODE
- values
+Date: Wed, 2 Jul 2025 14:35:23 +0200
+Subject: mtd: nand: qpic-common: add defines for ECC_MODE values
 
 Add defines for the values of the ECC_MODE field of the NAND_DEV0_ECC_CFG
 register and change both the 'qcom-nandc' and 'spi-qpic-snand' drivers to
@@ -10,7 +10,11 @@ use those instead of magic numbers.
 No functional changes. This is in preparation for adding 8 bit ECC strength
 support for the 'spi-qpic-snand' driver.
 
+Reviewed-by: Md Sadre Alam <quic_mdalam@quicinc.com>
 Signed-off-by: Gabor Juhos <j4g8y7@gmail.com>
+Acked-by: Miquel Raynal <miquel.raynal@bootlin.com>
+Link: https://patch.msgid.link/20250702-qpic-snand-8bit-ecc-v2-1-ae2c17a30bb7@gmail.com
+Signed-off-by: Mark Brown <broonie@kernel.org>
 ---
  drivers/mtd/nand/raw/qcom_nandc.c    | 6 +++---
  drivers/spi/spi-qpic-snand.c         | 2 +-
