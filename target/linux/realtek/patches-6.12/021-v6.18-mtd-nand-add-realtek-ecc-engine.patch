@@ -51,7 +51,7 @@ Signed-off-by: Miquel Raynal <miquel.raynal@bootlin.com>
 +obj-$(CONFIG_MTD_NAND_ECC_REALTEK) += ecc-realtek.o
  obj-$(CONFIG_MTD_NAND_ECC_MEDIATEK) += ecc-mtk.o
  obj-$(CONFIG_MTD_NAND_MTK_BMT)	+= mtk_bmt.o mtk_bmt_v2.o mtk_bmt_bbt.o mtk_bmt_nmbm.o
- ifeq ($(CONFIG_SPI_QPIC_SNAND),y)
+ obj-$(CONFIG_SPI_QPIC_SNAND) += qpic_common.o
 --- /dev/null
 +++ b/drivers/mtd/nand/ecc-realtek.c
 @@ -0,0 +1,464 @@
