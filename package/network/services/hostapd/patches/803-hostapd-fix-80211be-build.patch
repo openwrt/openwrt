@@ -1,6 +1,6 @@
 --- a/src/ap/sta_info.c
 +++ b/src/ap/sta_info.c
-@@ -1981,3 +1981,22 @@ void ap_sta_free_sta_profile(struct mld_
+@@ -2077,3 +2077,22 @@ void ap_sta_free_sta_profile(struct mld_
  	}
  }
  #endif /* CONFIG_IEEE80211BE */
@@ -25,7 +25,7 @@
 +
 --- a/src/ap/sta_info.h
 +++ b/src/ap/sta_info.h
-@@ -412,23 +412,8 @@ int ap_sta_re_add(struct hostapd_data *h
+@@ -419,23 +419,8 @@ int ap_sta_re_add(struct hostapd_data *h
  
  void ap_free_sta_pasn(struct hostapd_data *hapd, struct sta_info *sta);
  
