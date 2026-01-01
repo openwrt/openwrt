@@ -1,7 +1,7 @@
+From 65cb56d49f6edea409600a3c61effc70ee5d43d8 Mon Sep 17 00:00:00 2001
 From: Gabor Juhos <j4g8y7@gmail.com>
-Date: Thu, 01 May 2025 18:19:16 +0200
-Subject: [PATCH next] spi: spi-qpic-snand: validate user/chip specific ECC
- properties
+Date: Thu, 1 May 2025 18:19:16 +0200
+Subject: spi: spi-qpic-snand: validate user/chip specific ECC properties
 
 The driver only supports 512 bytes ECC step size and 4 bit ECC strength
 at the moment, however it does not reject unsupported step/strength
@@ -81,19 +81,11 @@ strength gets implemented.
 
 Fixes: 7304d1909080 ("spi: spi-qpic: add driver for QCOM SPI NAND flash Interface")
 Signed-off-by: Gabor Juhos <j4g8y7@gmail.com>
+Link: https://patch.msgid.link/20250501-qpic-snand-validate-ecc-v1-1-532776581a66@gmail.com
+Signed-off-by: Mark Brown <broonie@kernel.org>
 ---
-Marked for next because it depends on commit f48d80503504 ("spi: spi-qpic-snand:
-use kmalloc() for OOB buffer allocation").
----
- drivers/spi/spi-qpic-snand.c | 42 +++++++++++++++++++++++++++++++++++++-----
+ drivers/spi/spi-qpic-snand.c | 42 +++++++++++++++++++++++++++++++-----
  1 file changed, 37 insertions(+), 5 deletions(-)
-
-
----
-base-commit: a7f035c2c72496cf7ac34bfaa8c289e0d4c45836
-change-id: 20250501-qpic-snand-validate-ecc-383b3e33e238
-
-Best regards,
 
 --- a/drivers/spi/spi-qpic-snand.c
 +++ b/drivers/spi/spi-qpic-snand.c

@@ -1,17 +1,7 @@
+From 599b92fd0efa8b7c43e7f58c9dd0f7951f7cbf09 Mon Sep 17 00:00:00 2001
 From: Vicentiu Galanopulo <vicentiu.galanopulo@remote-tech.co.uk>
-To: Pavel Machek <pavel@ucw.cz>, Lee Jones <lee@kernel.org>,
-	Rob Herring <robh@kernel.org>,
-	Krzysztof Kozlowski <krzk+dt@kernel.org>,
-	Conor Dooley <conor+dt@kernel.org>,
-	Jonathan Corbet <corbet@lwn.net>,
-	Vicentiu Galanopulo <vicentiu.galanopulo@remote-tech.co.uk>,
-	linux-leds@vger.kernel.org, devicetree@vger.kernel.org,
-	linux-kernel@vger.kernel.org, linux-doc@vger.kernel.org
-Cc: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
-Subject: [PATCH v11 2/3] dt-bindings: leds: Add LED1202 LED Controller
-Date: Wed, 18 Dec 2024 18:33:58 +0000	[thread overview]
-Message-ID: <20241218183401.41687-3-vicentiu.galanopulo@remote-tech.co.uk> (raw)
-In-Reply-To: <20241218183401.41687-1-vicentiu.galanopulo@remote-tech.co.uk>
+Date: Wed, 18 Dec 2024 18:33:58 +0000
+Subject: dt-bindings: leds: Add LED1202 LED Controller
 
 The LED1202 is a 12-channel low quiescent current LED driver with:
   * Supply range from 2.6 V to 5 V
@@ -26,20 +16,9 @@ set to active.
 
 Signed-off-by: Vicentiu Galanopulo <vicentiu.galanopulo@remote-tech.co.uk>
 Reviewed-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Link: https://lore.kernel.org/r/20241218183401.41687-3-vicentiu.galanopulo@remote-tech.co.uk
+Signed-off-by: Lee Jones <lee@kernel.org>
 ---
-    v1: https://lore.kernel.org/lkml/ZnCnnQfwuRueCIQ0@admins-Air/T/
-    v2: https://lore.kernel.org/all/ZniNdGgKyUMV-hjq@admins-Air/T/
-    v3: https://lore.kernel.org/all/ZniNdGgKyUMV-hjq@admins-Air/T/
-    
-    Changes in v4:
-      - remove label property, use devm_led_classdev_register_ext instead
-    Changes in v3:
-      - remove active property
-    Changes in v2:
-      - renamed label to remove color from it
-      - add color property for each node
-      - add function and function-enumerator property for each node
-
  .../devicetree/bindings/leds/st,led1202.yaml  | 132 ++++++++++++++++++
  1 file changed, 132 insertions(+)
  create mode 100644 Documentation/devicetree/bindings/leds/st,led1202.yaml

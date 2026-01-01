@@ -1,16 +1,14 @@
-To: Miquel Raynal <miquel.raynal@bootlin.com>,
- Richard Weinberger <richard@nod.at>, Vignesh Raghavendra <vigneshr@ti.com>,
- Tudor Ambarus <tudor.ambarus@linaro.org>, Mark Brown <broonie@kernel.org>
-Cc: linux-kernel@vger.kernel.org, linux-mtd@lists.infradead.org
+From f6dffe2a9ed1bdcee1879e2728310fb1e08602cf Mon Sep 17 00:00:00 2001
 From: Mikhail Zhilkin <csharper2005@gmail.com>
-Subject: [PATCH] mtd: spinand: add support for FudanMicro FM25S01BI3
+Date: Thu, 27 Nov 2025 22:59:00 +0300
+Subject: mtd: spinand: add support for FudanMicro FM25S01BI3
 
 Add support for FudanMicro FM25S01BI3 SPI NAND.
 
 Link: https://www.fmsh.com/nvm/FM25S01BI3_ds_eng.pdf
 
 Signed-off-by: Mikhail Zhilkin <csharper2005@gmail.com>
-Link: https://lore.kernel.org/linux-mtd/130e0f3f-93e4-47cf-82f0-93ba58a3a670@gmail.com
+Signed-off-by: Miquel Raynal <miquel.raynal@bootlin.com>
 ---
  drivers/mtd/nand/spi/fmsh.c | 72 +++++++++++++++++++++++++++++++++++++
  1 file changed, 72 insertions(+)
