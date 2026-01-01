@@ -21,7 +21,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	if (phydev->mii_ts && phydev->mii_ts->link_state)
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -675,6 +675,7 @@ struct phy_device {
+@@ -680,6 +680,7 @@ struct phy_device {
  	unsigned downshifted_rate:1;
  	unsigned is_on_sfp_module:1;
  	unsigned mac_managed_pm:1;

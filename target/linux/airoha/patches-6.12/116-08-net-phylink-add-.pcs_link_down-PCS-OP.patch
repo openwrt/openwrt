@@ -35,7 +35,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  static void phylink_pcs_poll_stop(struct phylink *pl)
  {
  	if (pl->cfg_link_an_mode == MLO_AN_INBAND)
-@@ -1642,6 +1648,8 @@ static void phylink_link_down(struct phy
+@@ -1651,6 +1657,8 @@ static void phylink_link_down(struct phy
  
  	if (ndev)
  		netif_carrier_off(ndev);
