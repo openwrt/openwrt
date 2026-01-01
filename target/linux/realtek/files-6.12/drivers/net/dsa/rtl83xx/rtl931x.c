@@ -25,6 +25,11 @@
 #define RTL931X_VLAN_PORT_TAG_ITPID_IDX_MASK			GENMASK(2, 1)
 #define RTL931X_VLAN_PORT_TAG_ITPID_KEEP_MASK			GENMASK(0, 0)
 
+#define RTLDSA_931X_SMI_PHY_ABLTY_GET_SEL			0x0cac
+#define  RTLDSA_931X_PHY_ABLTY_OUTBAND_MDIO			0x0
+#define  RTLDSA_931X_PHY_ABLTY_INBAND_SDS_POLL			0x1
+#define  RTLDSA_931X_PHY_ABLTY_SDS_ABLTY_BUS			0x2
+
 /* Definition of the RTL931X-specific template field IDs as used in the PIE */
 enum template_field_id {
 	TEMPLATE_FIELD_SPM0 = 1,
@@ -1762,6 +1767,30 @@ static void rtldsa_931x_qos_init(struct rtl838x_switch_priv *priv)
 
 	rtldsa_931x_qos_setup_default_dscp2queue_map();
 	rtldsa_931x_qos_set_scheduling_queue_weights(priv);
+}
+
+void rtldsa_931x_config_phy_ability_source(struct rtl838x_switch_priv *priv)
+{
+	u32 phy_ablty_sel[4] = {0};
+
+	for (int port = 0; port < priv->cpu_port; port++) {
+		u32 val = RTLDSA_931X_PHY_ABLTY_OUTBAND_MDIO;
+
+		/* port driven by SerDes */
+		if (!priv->ports[port].phy && priv->pcs[port])
+			val = RTLDSA_931X_PHY_ABLTY_SDS_ABLTY_BUS;
+
+		phy_ablty_sel[port / 16] |= (val & 0x3) << ((port % 16) * 2);
+	}
+
+	pr_debug("%s: phy_ablty_sel [0] %x [1] %x [2] %x [3] %x\n", __func__,
+		 phy_ablty_sel[0], phy_ablty_sel[1], phy_ablty_sel[2],
+		 phy_ablty_sel[3]);
+
+	sw_w32(phy_ablty_sel[0], RTLDSA_931X_SMI_PHY_ABLTY_GET_SEL);
+	sw_w32(phy_ablty_sel[1], RTLDSA_931X_SMI_PHY_ABLTY_GET_SEL + 0x4);
+	sw_w32(phy_ablty_sel[2], RTLDSA_931X_SMI_PHY_ABLTY_GET_SEL + 0x8);
+	sw_w32(phy_ablty_sel[3], RTLDSA_931X_SMI_PHY_ABLTY_GET_SEL + 0xc);
 }
 
 const struct rtl838x_reg rtl931x_reg = {

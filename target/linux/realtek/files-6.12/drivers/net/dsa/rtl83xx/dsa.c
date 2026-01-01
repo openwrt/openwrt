@@ -614,6 +614,10 @@ static int rtl93xx_setup(struct dsa_switch *ds)
 	}
 	priv->r->traffic_set(priv->cpu_port, BIT_ULL(priv->cpu_port));
 
+	/* Configure how MAC gets PHY ability for each port */
+	if (priv->family_id == RTL9310_FAMILY_ID)
+		rtldsa_931x_config_phy_ability_source(priv);
+
 	if (priv->family_id == RTL9300_FAMILY_ID)
 		rtl930x_print_matrix();
 	else if (priv->family_id == RTL9310_FAMILY_ID)
