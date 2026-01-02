@@ -285,6 +285,8 @@ static int rtpcs_sds_determine_hw_mode(struct rtpcs_serdes *sds,
                                        phy_interface_t if_mode,
                                        enum rtpcs_sds_mode *hw_mode)
 {
+	u8 n_links = sds->num_of_links;
+
 	switch (if_mode) {
 	case PHY_INTERFACE_MODE_NA:
 		*hw_mode = RTPCS_SDS_MODE_OFF;
@@ -308,8 +310,15 @@ static int rtpcs_sds_determine_hw_mode(struct rtpcs_serdes *sds,
 		*hw_mode = RTPCS_SDS_MODE_QSGMII;
 		break;
 	case PHY_INTERFACE_MODE_USXGMII:
-		/* TODO: set this depending on number of links on SerDes */
-		*hw_mode = RTPCS_SDS_MODE_USXGMII_10GSXGMII;
+		if (n_links == 1)
+			*hw_mode = RTPCS_SDS_MODE_USXGMII_10GSXGMII;
+		else if (n_links == 2)
+			*hw_mode = RTPCS_SDS_MODE_USXGMII_10GDXGMII;
+		else if (n_links <= 4)
+			*hw_mode = RTPCS_SDS_MODE_USXGMII_10GQXGMII;
+		else if (n_links <= 8)
+			*hw_mode = RTPCS_SDS_MODE_XSGMII;
+
 		break;
 	case PHY_INTERFACE_MODE_10G_QXGMII:
 		*hw_mode = RTPCS_SDS_MODE_USXGMII_10GQXGMII;
