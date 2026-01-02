@@ -33,6 +33,7 @@ define Package/ethtool
   URL:=http://www.kernel.org/pub/software/network/ethtool/
   VARIANT:=tiny
   CONFLICTS:=ethtool-full
+  DEFAULT_VARIANT:=1
 endef
 
 define Package/ethtool-full
