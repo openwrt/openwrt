@@ -479,18 +479,19 @@ static void rtpcs_838x_sds_reset(struct rtpcs_serdes *sds)
 	dev_info(sds->ctrl->dev, "SerDes %d reset\n", sds->id);
 }
 
-static bool rtpcs_838x_sds_is_mode_supported(struct rtpcs_serdes *sds, phy_interface_t mode)
+static bool rtpcs_838x_sds_is_hw_mode_supported(struct rtpcs_serdes *sds,
+						enum rtpcs_sds_mode hw_mode)
 {
 	switch (sds->id) {
 	case 0 ... 3:
-		return mode == PHY_INTERFACE_MODE_QSGMII;
+		return hw_mode == RTPCS_SDS_MODE_QSGMII;
 	case 4:
-		return mode == PHY_INTERFACE_MODE_QSGMII ||
-		       mode == PHY_INTERFACE_MODE_SGMII ||
-		       mode == PHY_INTERFACE_MODE_1000BASEX;
+		return hw_mode == RTPCS_SDS_MODE_QSGMII ||
+		       hw_mode == RTPCS_SDS_MODE_SGMII ||
+		       hw_mode == RTPCS_SDS_MODE_1000BASEX;
 	case 5:
-		return mode == PHY_INTERFACE_MODE_SGMII ||
-		       mode == PHY_INTERFACE_MODE_1000BASEX;
+		return hw_mode == RTPCS_SDS_MODE_SGMII ||
+		       hw_mode == RTPCS_SDS_MODE_1000BASEX;
 	default:
 		return false;
 	}
@@ -516,21 +517,21 @@ static int rtpcs_838x_sds_power(struct rtpcs_serdes *sds, bool power_on)
 }
 
 static int rtpcs_838x_sds_set_mode(struct rtpcs_serdes *sds,
-				   phy_interface_t mode)
+				   enum rtpcs_sds_mode hw_mode)
 {
 	u8 sds_mode_shift, int_mode_shift;
 	u32 sds_mode_val, int_mode_val;
 
-	switch (mode) {
-	case PHY_INTERFACE_MODE_1000BASEX:
+	switch (hw_mode) {
+	case RTPCS_SDS_MODE_1000BASEX:
 		sds_mode_val = 0x4;
 		int_mode_val = 0x1;
 		break;
-	case PHY_INTERFACE_MODE_SGMII:
+	case RTPCS_SDS_MODE_SGMII:
 		sds_mode_val = 0x2;
 		int_mode_val = 0x2;
 		break;
-	case PHY_INTERFACE_MODE_QSGMII:
+	case RTPCS_SDS_MODE_QSGMII:
 		sds_mode_val = 0x6;
 		int_mode_val = 0x5;
 		break;
@@ -554,7 +555,7 @@ static int rtpcs_838x_sds_set_mode(struct rtpcs_serdes *sds,
 }
 
 static int rtpcs_838x_sds_patch(struct rtpcs_serdes *sds,
-				phy_interface_t mode)
+				enum rtpcs_sds_mode hw_mode)
 {
 	struct rtpcs_ctrl *ctrl = sds->ctrl;
 	u8 sds_id = sds->id;
@@ -571,15 +572,15 @@ static int rtpcs_838x_sds_patch(struct rtpcs_serdes *sds,
 		mdelay(1);
 	}
 
-	switch (mode) {
-	case PHY_INTERFACE_MODE_1000BASEX:
+	switch (hw_mode) {
+	case RTPCS_SDS_MODE_1000BASEX:
 		if (sds_id == 4)
 			rtpcs_838x_sds_patch_4_fiber_6275b(ctrl);
 		else if (sds_id == 5)
 			rtpcs_838x_sds_patch_5_fiber_6275b(ctrl);
 
 		break;
-	case PHY_INTERFACE_MODE_QSGMII:
+	case RTPCS_SDS_MODE_QSGMII:
 		if (sds_id == 0 || sds_id == 1)
 			rtpcs_838x_sds_patch_01_qsgmii_6275b(ctrl);
 		else if (sds_id == 2 || sds_id == 3)
@@ -618,10 +619,15 @@ static int rtpcs_838x_init_serdes_common(struct rtpcs_ctrl *ctrl)
 static int rtpcs_838x_setup_serdes(struct rtpcs_serdes *sds,
 				   phy_interface_t mode)
 {
+	enum rtpcs_sds_mode hw_mode;
 	int ret;
 
-	if (!rtpcs_838x_sds_is_mode_supported(sds, mode))
-		return -EINVAL;
+	ret = rtpcs_sds_determine_hw_mode(sds, mode, &hw_mode);
+	if (ret < 0)
+		return -ENOTSUPP;
+
+	if (!rtpcs_838x_sds_is_hw_mode_supported(sds, hw_mode))
+		return -ENOTSUPP;
 
 	rtpcs_838x_sds_power(sds, false);
 
@@ -629,11 +635,13 @@ static int rtpcs_838x_setup_serdes(struct rtpcs_serdes *sds,
 	rtpcs_sds_write(sds, 0x0, 0x0, 0xc00);
 	rtpcs_sds_write(sds, 0x0, 0x3, 0x7146);
 
-	ret = rtpcs_838x_sds_set_mode(sds, mode);
+	ret = rtpcs_838x_sds_set_mode(sds, hw_mode);
 	if (ret)
 		return ret;
 
-	rtpcs_838x_sds_patch(sds, mode);
+	sds->hw_mode = hw_mode;
+
+	rtpcs_838x_sds_patch(sds, hw_mode);
 	rtpcs_838x_sds_reset(sds);
 	
 	/* release reset */
