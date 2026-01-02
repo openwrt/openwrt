@@ -2906,6 +2906,13 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 	u32 sds_id = sds->id;
 	int ret, chiptype = 0;
 
+	ret = rtpcs_sds_determine_hw_mode(sds, mode, &hw_mode);
+	if (ret < 0) {
+		dev_err(ctrl->dev, "SerDes %u doesn't support %s mode\n", sds_id,
+			phy_modes(mode));
+		return -ENOTSUPP;
+	}
+
 	/*
 	 * TODO: USXGMII is currently the swiss army knife to declare 10G
 	 * multi port PHYs. Real devices use other modes instead. Especially
@@ -2913,9 +2920,12 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 	 * - RTL8224 is driven in 10G_QXGMII
 	 * - RTL8218D/E are driven in (Realtek proprietary) XSGMII (10G SGMII)
 	 *
-	 * For now disable all USXGMII SerDes handling and rely on U-Boot setup.
+	 * For now, disable "USXGMII" modes we cannot configure properly. Only
+	 * USXGMII_10GSXGMII is configured properly for now.
 	 */
-	if (mode == PHY_INTERFACE_MODE_USXGMII)
+	if (hw_mode == RTPCS_SDS_MODE_USXGMII_10GDXGMII ||
+	    hw_mode == RTPCS_SDS_MODE_USXGMII_10GQXGMII ||
+	    hw_mode == RTPCS_SDS_MODE_XSGMII)
 		return 0;
 
 	pr_info("%s: set sds %d to mode %d\n", __func__, sds_id, mode);
@@ -2948,13 +2958,6 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 
 	/* this was in rtl931x_phylink_mac_config in dsa/rtl83xx/dsa.c before */
 	band = rtpcs_931x_sds_cmu_band_get(sds, mode);
-
-	ret = rtpcs_sds_determine_hw_mode(sds, mode, &hw_mode);
-	if (ret < 0) {
-		dev_err(ctrl->dev, "SerDes %u doesn't support %s mode\n", sds_id,
-			phy_modes(mode));
-		return -ENOTSUPP;
-	}
 
 	ret = rtpcs_931x_sds_config_hw_mode(sds, hw_mode, chiptype);
 	if (ret < 0)
