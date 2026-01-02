@@ -1,0 +1,426 @@
+--- /dev/null
++++ b/configs/mt7986_tplink_archer-ax80-v1-ubi_defconfig
+@@ -0,0 +1,123 @@
++CONFIG_ARM=y
++CONFIG_SYS_HAS_NONCACHED_MEMORY=y
++CONFIG_POSITION_INDEPENDENT=y
++CONFIG_ARCH_MEDIATEK=y
++CONFIG_TEXT_BASE=0x41e00000
++CONFIG_SYS_MALLOC_F_LEN=0x4000
++CONFIG_NR_DRAM_BANKS=1
++CONFIG_DEFAULT_DEVICE_TREE="mt7986a-tplink_archer-ax80-v1-ubi"
++CONFIG_OF_LIBFDT_OVERLAY=y
++CONFIG_TARGET_MT7986=y
++CONFIG_PRE_CON_BUF_ADDR=0x4007EF00
++CONFIG_DEBUG_UART_BASE=0x11002000
++CONFIG_DEBUG_UART_CLOCK=40000000
++CONFIG_SYS_LOAD_ADDR=0x46000000
++CONFIG_DEBUG_UART=y
++CONFIG_FIT=y
++CONFIG_BOOTDELAY=30
++CONFIG_AUTOBOOT_KEYED=y
++CONFIG_AUTOBOOT_MENU_SHOW=y
++CONFIG_DEFAULT_FDT_FILE="mediatek/mt7986a-tplink_archer-ax80-v1-ubi.dtb"
++# CONFIG_BOARD_INIT is not set
++CONFIG_LOGLEVEL=7
++CONFIG_PRE_CONSOLE_BUFFER=y
++CONFIG_LOG=y
++CONFIG_BOARD_LATE_INIT=y
++CONFIG_HUSH_PARSER=y
++CONFIG_SYS_PROMPT="mt7986> "
++CONFIG_CMD_CPU=y
++CONFIG_CMD_LICENSE=y
++CONFIG_CMD_BOOTMENU=y
++CONFIG_CMD_ASKENV=y
++CONFIG_CMD_ERASEENV=y
++CONFIG_CMD_ENV_FLAGS=y
++CONFIG_CMD_STRINGS=y
++CONFIG_CMD_DM=y
++CONFIG_CMD_GPIO=y
++CONFIG_CMD_I2C=y
++CONFIG_CMD_MTD=y
++CONFIG_CMD_DHCP=y
++CONFIG_CMD_TFTPSRV=y
++CONFIG_CMD_RARP=y
++CONFIG_CMD_PING=y
++CONFIG_CMD_CDP=y
++CONFIG_CMD_SNTP=y
++CONFIG_CMD_DNS=y
++CONFIG_CMD_LINK_LOCAL=y
++CONFIG_CMD_PXE=y
++CONFIG_CMD_CACHE=y
++CONFIG_CMD_PSTORE=y
++CONFIG_CMD_PSTORE_MEM_ADDR=0x42ff0000
++CONFIG_CMD_UUID=y
++CONFIG_RANDOM_UUID=y
++CONFIG_CMD_HASH=y
++CONFIG_CMD_SMC=y
++CONFIG_CMD_UBI=y
++CONFIG_CMD_UBI_RENAME=y
++CONFIG_OF_EMBED=y
++CONFIG_ENV_OVERWRITE=y
++CONFIG_ENV_IS_IN_UBI=y
++CONFIG_ENV_REDUNDANT=y
++CONFIG_ENV_UBI_PART="ubi"
++CONFIG_ENV_UBI_VOLUME="ubootenv"
++CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
++CONFIG_ENV_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/tplink_archer-ax80-v1-ubi_env"
++CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
++CONFIG_VERSION_VARIABLE=y
++CONFIG_NET_RANDOM_ETHADDR=y
++CONFIG_NETCONSOLE=y
++CONFIG_USE_IPADDR=y
++CONFIG_IPADDR="192.168.1.1"
++CONFIG_USE_SERVERIP=y
++CONFIG_SERVERIP="192.168.1.254"
++CONFIG_REGMAP=y
++CONFIG_SYSCON=y
++CONFIG_BUTTON=y
++CONFIG_BUTTON_GPIO=y
++CONFIG_CLK=y
++CONFIG_GPIO_HOG=y
++CONFIG_DM_I2C=y
++CONFIG_SYS_I2C_MTK=y
++CONFIG_DM_I2C_GPIO=y
++CONFIG_I2C_MUX=y
++CONFIG_I2C_MUX_GPIO=y
++CONFIG_LED=y
++CONFIG_LED_BLINK=y
++CONFIG_LED_GPIO=y
++CONFIG_MTD=y
++CONFIG_DM_MTD=y
++CONFIG_MTD_SPI_NAND=y
++CONFIG_MTD_UBI_FASTMAP=y
++CONFIG_PHY_FIXED=y
++CONFIG_MEDIATEK_ETH=y
++CONFIG_PCIE_MEDIATEK=y
++CONFIG_PHY=y
++CONFIG_PHY_MTK_TPHY=y
++CONFIG_PINCTRL=y
++CONFIG_PINCONF=y
++CONFIG_PINCTRL_MT7622=y
++CONFIG_PINCTRL_MT7986=y
++CONFIG_POWER_DOMAIN=y
++CONFIG_MTK_POWER_DOMAIN=y
++CONFIG_DM_REGULATOR=y
++CONFIG_DM_REGULATOR_FIXED=y
++CONFIG_DM_REGULATOR_GPIO=y
++CONFIG_DM_PWM=y
++CONFIG_PWM_MTK=y
++CONFIG_RAM=y
++CONFIG_SCSI=y
++CONFIG_DM_SERIAL=y
++CONFIG_SERIAL_RX_BUFFER=y
++CONFIG_MTK_SERIAL=y
++CONFIG_SPI=y
++CONFIG_DM_SPI=y
++CONFIG_MTK_SPIM=y
++CONFIG_USB=y
++CONFIG_USB_XHCI_HCD=y
++CONFIG_USB_XHCI_MTK=y
++CONFIG_USB_STORAGE=y
++CONFIG_ZSTD=y
++CONFIG_HEXDUMP=y
++CONFIG_LMB_MAX_REGIONS=64
+--- /dev/null
++++ b/arch/arm/dts/mt7986a-tplink_archer-ax80-v1-ubi.dts
+@@ -0,0 +1,198 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (c) 2025
++ * Author: Sergey Shlukov <ichizakurain@gmail.com>
++ */
++
++/dts-v1/;
++#include "mt7986.dtsi"
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/linux-event-codes.h>
++
++/ {
++	#address-cells = <1>;
++	#size-cells = <1>;
++	model = "TP-Link Archer AX80 v1";
++	compatible = "mediatek,mt7986", "mediatek,mt7986-rfb";
++
++	chosen {
++		stdout-path = &uart0;
++		tick-timer = &timer0;
++	};
++
++	memory@40000000 {
++		device_type = "memory";
++		reg = <0x40000000 0x20000000>;
++	};
++
++	keys {
++		compatible = "gpio-keys";
++
++		reset {
++			label = "reset";
++			linux,code = <KEY_RESTART>;
++			gpios = <&pio 7 GPIO_ACTIVE_LOW>;
++		};
++	};
++
++	reg_3p3v: regulator-3p3v {
++		compatible = "regulator-fixed";
++		regulator-name = "fixed-3.3V";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++
++	reg_5v: regulator-5v {
++		compatible = "regulator-fixed";
++		regulator-name = "fixed-5V";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++
++	i2c0: i2c@11008000 {
++		compatible = "mediatek,mt7986-i2c";
++		reg = <0x11008000 0x90>,
++			<0x10217080 0x80>;
++		interrupts = <GIC_SPI 136 IRQ_TYPE_LEVEL_HIGH>;
++		clock-div = <16>;
++		clocks = <&infracfg CLK_INFRA_I2C0_CK>,
++			<&infracfg CLK_INFRA_AP_DMA_CK>;
++		clock-names = "main", "dma";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&i2c_pins>;
++		status = "okay";
++	};
++};
++
++&uart0 {
++	mediatek,force-highspeed;
++	status = "okay";
++};
++
++&uart1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart1_pins>;
++	status = "disabled";
++};
++
++&eth {
++	status = "okay";
++	mediatek,gmac-id = <0>;
++	phy-mode = "2500base-x";
++	mediatek,switch = "mt7531";
++	reset-gpios = <&pio 5 GPIO_ACTIVE_HIGH>;
++
++	fixed-link {
++		speed = <2500>;
++		full-duplex;
++	};
++};
++
++&pio {
++	spi_flash_pins: spi0-pins-func-1 {
++		mux {
++			function = "flash";
++			groups = "spi0", "spi0_wp_hold";
++		};
++
++		conf-pu {
++			pins = "SPI2_CS", "SPI2_HOLD", "SPI2_WP";
++			drive-strength = <MTK_DRIVE_4mA>;
++			bias-pull-up = <MTK_PUPD_SET_R1R0_11>;
++		};
++
++		conf-pd {
++			pins = "SPI2_CLK", "SPI2_MOSI", "SPI2_MISO";
++			drive-strength = <MTK_DRIVE_4mA>;
++			bias-pull-down = <MTK_PUPD_SET_R1R0_11>;
++		};
++	};
++
++	spic_pins: spi1-pins-func-1 {
++		mux {
++			function = "spi";
++			groups = "spi1_2";
++		};
++	};
++
++	uart1_pins: spi1-pins-func-3 {
++		mux {
++			function = "uart";
++			groups = "uart1_2";
++		};
++	};
++
++	pwm_pins: pwm0-pins-func-1 {
++		mux {
++			function = "pwm";
++			groups = "pwm0";
++		};
++	};
++
++	i2c_pins: i2c-pins-3-4 {
++		mux {
++			function = "i2c";
++			groups = "i2c";
++		};
++	};
++};
++
++&pwm {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pwm_pins>;
++	status = "okay";
++};
++
++&spi0 {
++	#address-cells = <1>;
++	#size-cells = <0>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi_flash_pins>;
++	status = "okay";
++	must_tx;
++	enhance_timing;
++	dma_ext;
++	ipm_design;
++	support_quad;
++	tick_dly = <1>;
++	sample_sel = <0>;
++
++	spi_nand@0 {
++		compatible = "spi-nand";
++		reg = <0>;
++		spi-max-frequency = <52000000>;
++		spi-tx-bus-width = <4>;
++		spi-rx-bus-width = <4>;
++
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			partition@0 {
++				reg = <0x0 0x100000>;
++				label = "bl2";
++			};
++
++			partition@100000 {
++				reg = <0x100000 0x100000>;
++				label = "factory";
++			};
++
++			partition@200000 {
++				reg = <0x200000 0x7e00000>;
++				label = "ubi";
++			};
++		};
++	};
++};
++
++&watchdog {
++	status = "disabled";
++};
+--- /dev/null
++++ b/defenvs/tplink_archer-ax80-v1-ubi_env
+@@ -0,0 +1,92 @@
++ipaddr=192.168.1.1
++serverip=192.168.1.254
++loadaddr=0x46000000
++console=earlycon=uart8250,mmio32,0x11002000 console=ttyS0
++bootargs=console=ttyS0,115200n8 console_msg_format=syslog
++bootcmd=run led_red_static ; run check_buttons ; run boot_production ; run boot_recovery
++bootconf=config-1
++bootdelay=2
++bootfile=openwrt-mediatek-filogic-tplink_archer-ax80-v1-ubi-initramfs-recovery.itb
++bootfile_bl2=openwrt-mediatek-filogic-tplink_archer-ax80-v1-ubi-preloader.bin
++bootfile_fip=openwrt-mediatek-filogic-tplink_archer-ax80-v1-ubi-bl31-uboot.fip
++bootfile_upg=openwrt-mediatek-filogic-tplink_archer-ax80-v1-ubi-squashfs-sysupgrade.itb
++bootmenu_confirm_return=askenv - Press ENTER to return to menu ; bootmenu 60
++bootmenu_default=0
++bootmenu_delay=2
++bootmenu_title=<<< OpenWrt Recovery Menu >>>
++bootmenu_0=Initialize environment.=run _firstboot
++bootmenu_0d=Run default boot command.=run boot_default
++bootmenu_1=Boot system via TFTP.=run boot_tftp ; run bootmenu_confirm_return
++bootmenu_2=Boot production system from NAND.=run boot_production ; run bootmenu_confirm_return
++bootmenu_3=Boot recovery system from NAND.=run led_green_blink; run boot_recovery ; run bootmenu_confirm_return
++bootmenu_4=Load production system via TFTP then write to NAND.=noboot=1 ; replacevol=1 ; run boot_tftp_production ; noboot= ; replacevol= ; run bootmenu_confirm_return
++bootmenu_5=Load recovery system via TFTP then write to NAND.=noboot=1 ; replacevol=1 ; run boot_tftp_recovery ; noboot= ; replacevol= ; run bootmenu_confirm_return
++bootmenu_6=Load BL31+U-Boot FIP via TFTP then write to NAND.=run boot_tftp_write_fip ; run bootmenu_confirm_return
++bootmenu_7=Load BL2 preloader via TFTP then write to NAND.=run boot_tftp_write_bl2 ; run bootmenu_confirm_return
++bootmenu_8=Reboot.=reset
++bootmenu_9=Reset all settings to factory defaults.=run reset_factory ; reset
++
++boot_default=run bootcmd ; run boot_recovery ; replacevol=1 ; run boot_tftp_forever
++boot_production=run ubi_read_production && bootm $loadaddr#$bootconf || run led_red_static
++boot_recovery=run ubi_read_recovery && bootm $loadaddr#$bootconf || run led_red_static
++
++boot_tftp=run led_tftp_start ; tftpboot $loadaddr $bootfile && (test $? -eq 0) && run led_tftp_success && bootm $loadaddr#$bootconf || run led_tftp_fail
++
++boot_tftp_forever=for i in 1 2 3 4 5 6 7 8 9 10; do run boot_tftp ; sleep 1 ; done ; echo "TFTP retry limit reached" ; run led_red_static
++
++boot_tftp_production=run led_tftp_start ; tftpboot $loadaddr $bootfile_upg && (test $? -eq 0) && test $replacevol = 1 && iminfo $loadaddr && run ubi_write_production ; if test $noboot = 1 ; then run led_tftp_success ; else run led_tftp_success && bootm $loadaddr#$bootconf ; fi || run led_tftp_fail
++
++boot_tftp_recovery=run led_tftp_start ; tftpboot $loadaddr $bootfile && (test $? -eq 0) && test $replacevol = 1 && iminfo $loadaddr && run ubi_write_recovery ; if test $noboot = 1 ; then run led_tftp_success ; else run led_tftp_success && bootm $loadaddr#$bootconf ; fi || run led_tftp_fail
++
++boot_tftp_write_fip=run led_tftp_start ; tftpboot $loadaddr $bootfile_fip && (test $? -eq 0) && run ubi_write_fip && run reset_factory || run led_tftp_fail
++
++boot_tftp_write_bl2=run led_tftp_start ; tftpboot $loadaddr $bootfile_bl2 && (test $? -eq 0) && run snand_write_bl2 || run led_tftp_fail
++
++check_buttons=if button reset ; then run boot_tftp ; fi
++
++ethaddr_factory=mtd read factory 0x40080000 0x0 0x20000 && env readmem -b ethaddr 0x40088000 0x6 || setenv ethaddr 00:11:22:33:44:55
++
++reset_factory=askenv - Confirm factory reset (y/n)? && mw $loadaddr 0xff 0x1f000 ; ubi write $loadaddr ubootenv 0x1f000 ; ubi write $loadaddr ubootenv2 0x1f000 ; ubi remove rootfs_data
++
++snand_write_bl2=mtd erase bl2 && mtd write bl2 $loadaddr 0x0 0x40000
++
++ubi_create_env=ubi check ubootenv || (ubi create ubootenv 0x1f000 dynamic && test $? -eq 0) ; ubi check ubootenv2 || (ubi create ubootenv2 0x1f000 dynamic && test $? -eq 0)
++
++ubi_prepare_rootfs=if ubi check rootfs_data ; then else if env exists rootfs_data_max ; then ubi create rootfs_data $rootfs_data_max dynamic || ubi create rootfs_data - dynamic ; else ubi create rootfs_data - dynamic ; fi ; fi
++
++ubi_read_production=ubi read $loadaddr fit && iminfo $loadaddr && run ubi_prepare_rootfs
++
++ubi_read_recovery=ubi check recovery && ubi read $loadaddr recovery
++
++ubi_remove_rootfs=ubi check rootfs_data && ubi remove rootfs_data
++
++ubi_write_fip=run ubi_remove_rootfs ; ubi check fip && ubi remove fip ; test -n "$filesize" && ubi create fip $filesize static && ubi write $loadaddr fip $filesize
++
++ubi_write_production=ubi check fit && ubi remove fit ; run ubi_remove_rootfs ; test -n "$filesize" && ubi create fit $filesize dynamic && ubi write $loadaddr fit $filesize
++
++ubi_write_recovery=ubi check recovery && ubi remove recovery ; run ubi_remove_rootfs ; test -n "$filesize" && ubi create recovery $filesize dynamic && ubi write $loadaddr recovery $filesize
++
++_init_env=run ubi_create_env ; saveenv ; saveenv
++_firstboot=run ethaddr_factory ; run _switch_to_menu ; run _init_env ; bootmenu
++_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 2 ; setenv bootmenu_delay 2 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
++_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title"
++
++led_addr=0x32
++led_bus=0
++led_enable=0x40
++led_misc=0x5b
++led_pwm_red=0x1c
++led_pwm_green=0x19
++led_pwm_blue=0x16
++led_curr_red=0x2c
++led_curr_green=0x29
++led_curr_blue=0x26
++
++led_off=i2c dev $led_bus ; i2c probe $led_addr && for reg in 0x16 0x17 0x18 0x19 0x1a 0x1b 0x1c 0x1d 0x1e ; do i2c mw $led_addr $reg 0x00 1 ; done ; i2c mw $led_addr 0x00 0x00 1 ; i2c mw $led_addr 0x01 0x00 1 ; i2c mw $led_addr 0x36 0x00 1 || echo "LED I2C failed"
++
++led_red_static=i2c dev $led_bus ; i2c mw $led_addr 0x00 $led_enable 1 ; i2c mw $led_addr 0x36 $led_misc 1 ; i2c mw $led_addr $led_curr_red 0x14 1 ; i2c mw $led_addr $led_pwm_red 0xff 1 ; i2c mw $led_addr $led_pwm_green 0x00 1 ; i2c mw $led_addr $led_pwm_blue 0x00 1
++
++led_green_static=run led_off ; i2c dev $led_bus ; i2c mw $led_addr 0x00 $led_enable 1 ; i2c mw $led_addr 0x36 $led_misc 1 ; i2c mw $led_addr $led_curr_green 0x14 1 ; i2c mw $led_addr $led_pwm_red 0x00 1 ; i2c mw $led_addr $led_pwm_green 0xff 1 ; i2c mw $led_addr $led_pwm_blue 0x00 1
++
++led_green_blink=for i in 1 2 3 4 5; do run led_green_static; sleep 1; run led_off; sleep 1; done
++
++led_tftp_start=run led_off ; setenv tftp_active ; for i in 1 2 3 4 5 6 7 8 9 10; do run led_green_static; sleep 0.5; run led_off; sleep 0.5; if test -n "$tftp_active"; then break; fi; done ; if test -z "$tftp_active"; then echo "TFTP start timeout"; run led_red_static; fi
++
++led_tftp_success=setenv tftp_active 1; run led_green_static
++led_tftp_fail=setenv tftp_active 1; run led_red_static
