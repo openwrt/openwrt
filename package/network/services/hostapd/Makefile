@@ -248,6 +248,7 @@ $(call Package/hostapd/Default,$(1))
   TITLE+= (WPA-PSK, 11r and 11w)
   VARIANT:=basic-mbedtls
   DEPENDS+=+PACKAGE_hostapd-basic-mbedtls:libmbedtls
+  DEFAULT_VARIANT:=1
 endef
 
 define Package/hostapd-basic-mbedtls/description
