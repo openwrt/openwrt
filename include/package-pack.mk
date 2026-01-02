@@ -118,14 +118,8 @@ endef
 #   - package implicitly provides `${package_name}=${package_version}`
 #     this implies that only one version of a package can be installed at the
 #     same time
-#   - if `alternatives` is defined
-#     - for each `provides`, provide `${provide}`
-#       this implies that multiple versions of a provide can be installed at the
-#       same time
-#   - else if `alternatives` is _not_ defined
-#     - for each `provides`, provide `${provide}=${package_version}`
-#       this implies that only one version of a provide can be installed at the
-#       same time
+#   - for each `provides`, provide `${provide}=${package_version}` this implies
+#     that only one version of a provide can be installed at the same time
 #
 # - Both with and without an ABI, if a provide starts with an @, treat it as a
 #   virtual provide, that doesn't own the name by not appending version.
@@ -141,24 +135,49 @@ endef
 # - kmods implicitly add a virtual @kmod-${package_name}-any provide in
 #   KernelPackage.
 #
+# - Aside from the two aforementioned implicit provides, packages are expected
+#   to manage their provides themselves.
+#
+# - When multiple variants inside the same package have the same provide, a
+#   default variant must be set using DEFAULT_VARIANT:=1.
+#
+# - Cross-package provides must be virtual and a default variant must be set. If
+#   different packages provide the same versioned (i.e. non-virtual) provide the
+#   package with a higher version will be preferred, which results in unintended
+#   behavior, because the order might change with package updates.
+#
+#   Example:
+#   - both uclient-fetch and wget provide wget
+#   - wget doesn't have a default variant called wget that would provide an
+#     implicit @wget-any
+#     - add wget to PROVIDES for both wget-ssl and wget-nossl variants so they
+#       can't be installed at the same time
+#     - add @wget-any to both packages so packages outside of wget can provide
+#       it
+#   - uclient-fetch has only one variant
+#     - add @wget-any to PROVIDES
+#     - mark uclient-fetch as the default variant using DEFAULT_VARIANT:=1
+#   - switch wget consumer that don't depend on a specific version like apk to
+#     depend on @wget-any
+#
+# - Alternatives don't affect the packaging.
+#
 # 1: package name
 # 2: package version
 # 3: list of provides
-# 4: list of alternatives
 define FormatProvides
-$(strip $(if $(ABIV_$(1)), \
-  $(1) $(foreach provide, \
-    $(filter-out $(1),$(3)), \
-    $(call AddProvide,$(provide),$(2),$(ABIV_$(1))) \
-  ), \
-  $(if $(4), \
-    $(filter-out $(1),$(3)), \
-    $(foreach provide, \
-      $(filter-out $(1),$(3)), \
-      $(call AddProvide,$(provide),$(2)) \
-    ) \
-  ) \
-))
+$(strip
+  $(if $(ABIV_$(1)),
+    $(1) $(foreach provide,
+      $(filter-out $(1),$(3)),
+      $(call AddProvide,$(provide),$(2),$(ABIV_$(1)))
+    ),
+    $(foreach provide,
+      $(filter-out $(1),$(3)),
+      $(call AddProvide,$(provide),$(2))
+    )
+  )
+)
 endef
 
 ifneq ($(PKG_NAME),toolchain)
@@ -328,7 +347,7 @@ endif
       Package/$(1)/PROVIDES := $$(patsubst @%,%,$(PROVIDES))
       Package/$(1)/PROVIDES := $$(filter-out $(1)$$(ABIV_$(1)),$$(Package/$(1)/PROVIDES)$$(if $$(ABIV_$(1)), $(1) $$(foreach provide,$$(Package/$(1)/PROVIDES),$$(provide)$$(ABIV_$(1)))))
     else
-      Package/$(1)/PROVIDES := $$(call FormatProvides,$(1),$(VERSION),$(PROVIDES),$(ALTERNATIVES))
+      Package/$(1)/PROVIDES := $$(call FormatProvides,$(1),$(VERSION),$(PROVIDES))
     endif
 
 $(_define) Package/$(1)/CONTROL
