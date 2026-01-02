@@ -43,6 +43,7 @@ define Package/ethtool-full
   PROVIDES:=ethtool
   DEPENDS:=+libmnl
   CONFLICTS:=
+  DEFAULT_VARIANT:=
 endef
 
 define Package/ethtool/description
