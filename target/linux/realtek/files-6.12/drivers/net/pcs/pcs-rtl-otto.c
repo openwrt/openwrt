@@ -287,6 +287,12 @@ static int rtpcs_sds_determine_hw_mode(struct rtpcs_serdes *sds,
 {
 	u8 n_links = sds->num_of_links;
 
+	/* turn off SerDes when there are no links */
+	if (!n_links) {
+		*hw_mode = RTPCS_SDS_MODE_OFF;
+		return 0;
+	}
+
 	switch (if_mode) {
 	case PHY_INTERFACE_MODE_NA:
 		*hw_mode = RTPCS_SDS_MODE_OFF;
