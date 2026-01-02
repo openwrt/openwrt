@@ -48,6 +48,7 @@ define Package/mkf2fs
   $(Package/f2fs-tools/Default)
   TITLE:=Utility for creating a Flash-Friendly File System (F2FS)
   CONFLICTS:=mkf2fs-selinux
+  DEFAULT_VARIANT:=1
 endef
 
 define Package/mkf2fs-selinux
@@ -87,6 +88,7 @@ define Package/libf2fs
   ABI_VERSION:=6
   CONFLICTS:=libf2fs-selinux
   VARIANT:=default
+  DEFAULT_VARIANT:=1
 endef
 
 define Package/libf2fs-selinux
