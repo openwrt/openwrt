@@ -173,8 +173,6 @@
 };
 
 &eth {
-	pinctrl-names = "default";
-	pinctrl-0 = <&gbe_led0_pins>, <&gbe_led1_pins>;
 	status = "okay";
 
 	gmac0: mac@0 {
@@ -200,6 +198,11 @@
 		nvmem-cells = <&macaddr_config_0 1>;
 		nvmem-cell-names = "mac-address";
 	};
+};
+
+&int_gbe_phy {
+	pinctrl-names = "default";
+	pinctrl-0 = <&gbe_led0_pins>, <&gbe_led1_pins>;
 };
 
 &int_gbe_phy_led0{
@@ -447,6 +450,20 @@
 };
 
 &pio {
+	gbe_led0_pins: gbe-led0-pins {
+		mux {
+			function = "led";
+			groups = "gbe_led0";
+		};
+	};
+
+	gbe_led1_pins: gbe-led1-pins {
+		mux {
+			function = "led";
+			groups = "gbe_led1";
+		};
+	};
+
 	spi0_flash_pins: spi0-pins {
 		mux {
 			function = "spi";
