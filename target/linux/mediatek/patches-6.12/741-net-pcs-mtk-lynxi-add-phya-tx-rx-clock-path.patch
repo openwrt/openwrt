@@ -28,7 +28,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  
  /* Register to reset SGMII design */
  #define SGMSYS_RESERVED_0		0x34
-@@ -166,7 +169,7 @@ static int mtk_pcs_lynxi_config(struct p
+@@ -167,7 +170,7 @@ static int mtk_pcs_lynxi_config(struct p
  {
  	struct mtk_pcs_lynxi *mpcs = pcs_to_mtk_pcs_lynxi(pcs);
  	bool mode_changed = false, changed;
@@ -37,7 +37,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  	int advertise, link_timer;
  
  	advertise = phylink_mii_c22_pcs_encode_advertisement(interface,
-@@ -193,6 +196,12 @@ static int mtk_pcs_lynxi_config(struct p
+@@ -194,6 +197,12 @@ static int mtk_pcs_lynxi_config(struct p
  			bmcr = BMCR_ANENABLE;
  	}
  
@@ -50,7 +50,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  	if (mpcs->interface != interface) {
  		link_timer = phylink_get_link_timer_ns(interface);
  		if (link_timer < 0)
-@@ -235,12 +244,14 @@ static int mtk_pcs_lynxi_config(struct p
+@@ -236,12 +245,14 @@ static int mtk_pcs_lynxi_config(struct p
  
  	/* Update the sgmsys mode register */
  	regmap_update_bits(mpcs->regmap, SGMSYS_SGMII_MODE,
@@ -67,7 +67,7 @@ Signed-off-by: Bo-Cun Chen <bc-bocun.chen@mediatek.com>
  
  	/* Release PHYA power down state
  	 * Only removing bit SGMII_PHYA_PWD isn't enough.
-@@ -413,6 +424,9 @@ static int mtk_pcs_lynxi_probe(struct pl
+@@ -414,6 +425,9 @@ static int mtk_pcs_lynxi_probe(struct pl
  	if (of_property_read_bool(np->parent, "mediatek,pnswap"))
  		flags |= MTK_SGMII_FLAG_PN_SWAP;
  
