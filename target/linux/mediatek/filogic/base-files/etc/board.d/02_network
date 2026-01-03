@@ -88,12 +88,6 @@ mediatek_setup_interfaces()
 	bananapi,bpi-r3)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 sfp2" "sfp1 wan"
 		;;
-	bananapi,bpi-r3-mini|\
-	edgecore,eap111|\
-	huasifei,wh3000|\
-	huasifei,wh3000-pro)
-		ucidef_set_interfaces_lan_wan eth0 eth1
-		;;
 	bananapi,bpi-r4)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 sfp-lan" "wan sfp-wan"
 		;;
@@ -122,6 +116,13 @@ mediatek_setup_interfaces()
 	widelantech,wap430x|\
 	zyxel,nwa50ax-pro)
 		ucidef_set_interface_lan "eth0"
+		;;
+	airpi,ap3000m|\
+	bananapi,bpi-r3-mini|\
+	edgecore,eap111|\
+	huasifei,wh3000|\
+	huasifei,wh3000-pro)
+		ucidef_set_interfaces_lan_wan eth0 eth1
 		;;
 	cudy,m3000-v1|\
 	cudy,tr3000-256mb-v1|\
@@ -210,6 +211,11 @@ mediatek_setup_macs()
 	local label_mac=""
 
 	case $board in
+	airpi,ap3000m)
+		base_mac=$(macaddr_generate_from_mmc_cid mmcblk0)
+		lan_mac="$base_mac"
+		wan_mac="$(macaddr_add "$base_mac" 1)"
+		;;
 	acer,predator-w6|\
 	acer,predator-w6d|\
 	acer,vero-w6m)
