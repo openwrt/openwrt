@@ -2499,7 +2499,7 @@ define Device/routerich_be7200
   IMAGE/sysupgrade.itb := append-kernel | \
 	fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-with-rootfs | \
 	pad-rootfs | append-metadata
-  DEVICE_PACKAGES := mt7987-2p5g-phy-firmware kmod-mt7992-firmware | \
+  DEVICE_PACKAGES := mt7987-2p5g-phy-firmware kmod-mt7992-firmware \
 	 kmod-regulator-userspace-consumer kmod-usb3
   ARTIFACTS := preloader.bin bl31-uboot.fip
   ARTIFACT/preloader.bin := mt7987-bl2 spim-nand0
