@@ -1,0 +1,19 @@
+#
+# Copyright (C) 2015 OpenWrt.org
+#
+
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+board=$(board_name)
+
+case "$board" in
+xiaomi,be7000)
+        ucidef_set_led_netdev "wan" "WAN" "white:network" "eth0"
+        ;;
+esac
+
+board_config_flush
+
+exit 0
