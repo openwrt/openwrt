@@ -348,6 +348,20 @@ $(call Device/adtran_smartrg)
 endef
 TARGET_DEVICES += smartrg_sdg-8734
 
+define Device/airpi_ap3000m
+  DEVICE_VENDOR := Airpi
+  DEVICE_MODEL := AP3000M
+  DEVICE_DTS := mt7981b-airpi-ap3000m
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware \
+  	kmod-hwmon-pwmfan kmod-usb3 f2fsck mkf2fs
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+        fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += airpi_ap3000m
+
 define Device/arcadyan_mozart
   DEVICE_VENDOR := Arcadyan
   DEVICE_MODEL := Mozart
