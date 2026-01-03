@@ -1,0 +1,146 @@
+From 43a4dfb71e2d23bae10ae13b7314d0641321d35e Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Sat, 3 Jan 2026 02:53:59 +0000
+Subject: [PATCH 2/2] net: phy: realtek: implement configuring in-band an
+
+Implement the inband_caps() and config_inband() PHY driver methods to
+allow configuring the use of in-band-status with SGMII and 2500Base-X on
+RTL8226 and RTL8221B 2.5GE PHYs.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ drivers/net/phy/realtek/realtek_main.c | 67 ++++++++++++++++++++++++++
+ 1 file changed, 67 insertions(+)
+
+--- a/drivers/net/phy/realtek/realtek_main.c
++++ b/drivers/net/phy/realtek/realtek_main.c
+@@ -135,6 +135,15 @@
+ #define RTL822X_VND2_TO_PAGE_REG(reg)		(16 + (((reg) & GENMASK(3, 0)) >> 1))
+ #define RTL822X_VND2_C22_REG(reg)		(0xa400 + 2 * (reg))
+ 
++#define RTL822X_VND1_SERDES_CMD			0x7587
++#define  RTL822X_VND1_SERDES_CMD_WRITE		BIT(1)
++#define  RTL822X_VND1_SERDES_CMD_BUSY		BIT(0)
++#define RTL822X_VND1_SERDES_ADDR		0x7588
++#define  RTL822X_VND1_SERDES_ADDR_AUTONEG	0x2
++#define   RTL822X_VND1_SERDES_INBAND_DISABLE	0x71d0
++#define   RTL822X_VND1_SERDES_INBAND_ENABLE	0x70d0
++#define RTL822X_VND1_SERDES_DATA		0x7589
++
+ #define RTL8221B_VND2_INER			0xa4d2
+ #define RTL8221B_VND2_INER_LINK_STATUS		BIT(4)
+ 
+@@ -1381,6 +1390,50 @@ static int rtl822xb_config_init(struct p
+ 	return rtl822x_set_serdes_option_mode(phydev, false);
+ }
+ 
++static int rtl822x_serdes_write(struct phy_device *phydev, u16 reg, u16 val)
++{
++	int ret, poll;
++
++	ret = phy_write_mmd(phydev, MDIO_MMD_VEND1, RTL822X_VND1_SERDES_ADDR, reg);
++	if (ret < 0)
++		return ret;
++
++	ret = phy_write_mmd(phydev, MDIO_MMD_VEND1, RTL822X_VND1_SERDES_DATA, val);
++	if (ret < 0)
++		return ret;
++
++	ret = phy_write_mmd(phydev, MDIO_MMD_VEND1, RTL822X_VND1_SERDES_CMD,
++			    RTL822X_VND1_SERDES_CMD_WRITE |
++			    RTL822X_VND1_SERDES_CMD_BUSY);
++	if (ret < 0)
++		return ret;
++
++	return phy_read_mmd_poll_timeout(phydev, MDIO_MMD_VEND1,
++					 RTL822X_VND1_SERDES_CMD, poll,
++					 !(poll & RTL822X_VND1_SERDES_CMD_BUSY),
++					 500, 100000, false);
++}
++
++static int rtl822x_config_inband(struct phy_device *phydev, unsigned int modes)
++{
++	return rtl822x_serdes_write(phydev, RTL822X_VND1_SERDES_ADDR_AUTONEG,
++				    (modes != LINK_INBAND_DISABLE) ?
++				    RTL822X_VND1_SERDES_INBAND_ENABLE :
++				    RTL822X_VND1_SERDES_INBAND_DISABLE);
++}
++
++static unsigned int rtl822x_inband_caps(struct phy_device *phydev,
++					 phy_interface_t interface)
++{
++	switch (interface) {
++	case PHY_INTERFACE_MODE_2500BASEX:
++	case PHY_INTERFACE_MODE_SGMII:
++		return LINK_INBAND_DISABLE | LINK_INBAND_ENABLE;
++	default:
++		return 0;
++	}
++}
++
+ static int rtl822xb_get_rate_matching(struct phy_device *phydev,
+ 				      phy_interface_t iface)
+ {
+@@ -2180,6 +2233,8 @@ static struct phy_driver realtek_drvs[]
+ 		.get_features	= rtl822x_get_features,
+ 		.config_aneg	= rtl822x_config_aneg,
+ 		.config_init    = rtl822xb_config_init,
++		.inband_caps	= rtl822x_inband_caps,
++		.config_inband	= rtl822x_config_inband,
+ 		.get_rate_matching = rtl822xb_get_rate_matching,
+ 		.read_status	= rtl822xb_read_status,
+ 		.suspend	= genphy_suspend,
+@@ -2195,6 +2250,8 @@ static struct phy_driver realtek_drvs[]
+ 		.get_features   = rtl822x_c45_get_features,
+ 		.config_aneg    = rtl822x_c45_config_aneg,
+ 		.config_init    = rtl822x_config_init,
++		.inband_caps	= rtl822x_inband_caps,
++		.config_inband	= rtl822x_config_inband,
+ 		.read_status    = rtl822xb_c45_read_status,
+ 		.suspend        = genphy_c45_pma_suspend,
+ 		.resume         = rtlgen_c45_resume,
+@@ -2207,6 +2264,8 @@ static struct phy_driver realtek_drvs[]
+ 		.get_features   = rtl822x_get_features,
+ 		.config_aneg    = rtl822x_config_aneg,
+ 		.config_init    = rtl822xb_config_init,
++		.inband_caps	= rtl822x_inband_caps,
++		.config_inband	= rtl822x_config_inband,
+ 		.get_rate_matching = rtl822xb_get_rate_matching,
+ 		.read_status    = rtl822xb_read_status,
+ 		.suspend        = genphy_suspend,
+@@ -2223,6 +2282,8 @@ static struct phy_driver realtek_drvs[]
+ 		.get_features   = rtl822x_get_features,
+ 		.config_aneg    = rtl822x_config_aneg,
+ 		.config_init    = rtl822xb_config_init,
++		.inband_caps	= rtl822x_inband_caps,
++		.config_inband	= rtl822x_config_inband,
+ 		.get_rate_matching = rtl822xb_get_rate_matching,
+ 		.read_status    = rtl822xb_read_status,
+ 		.suspend        = genphy_suspend,
+@@ -2239,6 +2300,8 @@ static struct phy_driver realtek_drvs[]
+ 		.soft_reset     = rtl822x_c45_soft_reset,
+ 		.probe		= rtl822x_probe,
+ 		.config_init    = rtl822xb_config_init,
++		.inband_caps	= rtl822x_inband_caps,
++		.config_inband	= rtl822x_config_inband,
+ 		.get_rate_matching = rtl822xb_get_rate_matching,
+ 		.get_features   = rtl822x_c45_get_features,
+ 		.config_aneg    = rtl822x_c45_config_aneg,
+@@ -2253,6 +2316,8 @@ static struct phy_driver realtek_drvs[]
+ 		.get_features   = rtl822x_get_features,
+ 		.config_aneg    = rtl822x_config_aneg,
+ 		.config_init    = rtl822xb_config_init,
++		.inband_caps	= rtl822x_inband_caps,
++		.config_inband	= rtl822x_config_inband,
+ 		.get_rate_matching = rtl822xb_get_rate_matching,
+ 		.read_status    = rtl822xb_read_status,
+ 		.suspend        = genphy_suspend,
+@@ -2269,6 +2334,8 @@ static struct phy_driver realtek_drvs[]
+ 		.soft_reset     = rtl822x_c45_soft_reset,
+ 		.probe		= rtl822x_probe,
+ 		.config_init    = rtl822xb_config_init,
++		.inband_caps	= rtl822x_inband_caps,
++		.config_inband	= rtl822x_config_inband,
+ 		.get_rate_matching = rtl822xb_get_rate_matching,
+ 		.get_features   = rtl822x_c45_get_features,
+ 		.config_aneg    = rtl822x_c45_config_aneg,
