@@ -1,0 +1,16 @@
+#
+# Copyright (C) 2025 openwrt.org
+#
+
+. /lib/functions.sh
+
+board=$(board_name)
+
+case "$board" in
+gemtek,w1700k)
+    # Enable automatic fan control
+    echo 2 > /sys/class/hwmon/hwmon5/pwm1_enable
+    ;;
+esac
+
+exit 0
