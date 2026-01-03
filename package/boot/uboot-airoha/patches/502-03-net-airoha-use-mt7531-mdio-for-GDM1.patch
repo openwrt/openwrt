@@ -1,0 +1,120 @@
+From 3f700e1a5c67ba0349c013c797b33f449149aa3c Mon Sep 17 00:00:00 2001
+From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Date: Thu, 23 Oct 2025 02:58:17 +0200
+Subject: [PATCH] net: airoha: use mt7531 mdio for GDM1
+
+Current code just bind mt7531 mdio with it's driver, so mdio device may
+not be probed and hense not usable.
+
+This patch
+ * use mt7531 mdio for GDM1 port
+ * set mdio bus for the GDM port (if corresponding mdio/phydev is available)
+
+Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+---
+ drivers/net/airoha_eth.c | 40 ++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 36 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/airoha_eth.c b/drivers/net/airoha_eth.c
+index 15c95aec24b..e6523c05596 100644
+--- a/drivers/net/airoha_eth.c
++++ b/drivers/net/airoha_eth.c
+@@ -12,6 +12,7 @@
+ #include <dm/device-internal.h>
+ #include <dm/devres.h>
+ #include <dm/lists.h>
++#include <eth_phy.h>
+ #include <mapmem.h>
+ #include <miiphy.h>
+ #include <net.h>
+@@ -353,6 +354,7 @@ struct airoha_gdm_port {
+ struct airoha_eth {
+ 	void __iomem *fe_regs;
+ 	void __iomem *switch_regs;
++	struct udevice *switch_mdio_dev;
+ 
+ 	struct reset_ctl_bulk rsts;
+ 	struct reset_ctl_bulk xsi_rsts;
+@@ -1022,6 +1024,8 @@ static int airoha_eth_port_probe(struct udevice *dev)
+ {
+ 	struct airoha_eth *eth = (void *)dev_get_driver_data(dev);
+ 	struct airoha_gdm_port *port = dev_get_priv(dev);
++	struct mdio_perdev_priv *pdata;
++	struct mii_dev *mdio_bus;
+ 	int ret;
+ 
+ 	port->qdma = &eth->qdma[0];
+@@ -1030,6 +1034,7 @@ static int airoha_eth_port_probe(struct udevice *dev)
+ 	if (ret)
+ 		return ret;
+ 
++	mdio_bus = NULL;
+ 	if (port->id > 1) {
+ #if defined(CONFIG_PCS_AIROHA)
+ 		ret = airoha_pcs_init(dev);
+@@ -1037,11 +1042,24 @@ static int airoha_eth_port_probe(struct udevice *dev)
+ 			return ret;
+ 
+ 		port->phydev = dm_eth_phy_connect(dev);
++		if (port->phydev)
++			mdio_bus = port->phydev->bus;
+ #else
+ 		return -EINVAL;
+ #endif
++	} else {
++		if (eth->switch_mdio_dev &&
++		    !device_probe(eth->switch_mdio_dev)) {
++			pdata = dev_get_uclass_priv(eth->switch_mdio_dev);
++			mdio_bus = pdata->mii_bus;
++		}
+ 	}
+ 
++#ifdef CONFIG_DM_ETH_PHY
++	if (!IS_ERR_OR_NULL(mdio_bus))
++		eth_phy_set_mdio_bus(dev, mdio_bus);
++#endif
++
+ 	return 0;
+ }
+ 
+@@ -1286,8 +1304,10 @@ static int arht_eth_write_hwaddr(struct udevice *dev)
+ static int airoha_eth_bind(struct udevice *dev)
+ {
+ 	struct airoha_eth_soc_data *data = (void *)dev_get_driver_data(dev);
++	struct airoha_eth *eth = dev_get_priv(dev);
+ 	ofnode switch_node, mdio_node;
+-	struct udevice *mdio_dev;
++	const char *name;
++	char *mdio_name;
+ 	int ret;
+ 
+ 	/*
+@@ -1312,10 +1332,22 @@ static int airoha_eth_bind(struct udevice *dev)
+ 		return 0;
+ 	}
+ 
+-	ret = device_bind_driver_to_node(dev, "mt7531-mdio-mmio", "mdio",
+-					 mdio_node, &mdio_dev);
+-	if (ret)
++	name = strchr(data->switch_compatible, ',');
++	name = name ? name + 1 : data->switch_compatible;
++	mdio_name = malloc(strlen(name) + strlen("-mdio") + 1);
++	if (!mdio_name) {
++		debug("Warning: no memory for mdio bus name\n");
++		return 0;
++	}
++
++	sprintf(mdio_name, "%s-mdio", name);
++	ret = device_bind_driver_to_node(dev, "mt7531-mdio-mmio", mdio_name,
++					 mdio_node, &eth->switch_mdio_dev);
++	if (ret) {
+ 		debug("Warning: failed to bind mdio controller\n");
++		free(mdio_name);
++		return 0;
++	}
+ 
+ 	return 0;
+ }
+-- 
+2.51.0
+
