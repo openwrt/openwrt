@@ -13,7 +13,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/net/phy/realtek/realtek_main.c
 +++ b/drivers/net/phy/realtek/realtek_main.c
-@@ -162,6 +162,10 @@
+@@ -171,6 +171,10 @@
  
  #define RTL8224_SRAM_RTCT_LEN(pair)		(0x8028 + (pair) * 4)
  
@@ -24,7 +24,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #define RTL8366RB_POWER_SAVE			0x15
  #define RTL8366RB_POWER_SAVE_ON			BIT(12)
  
-@@ -208,6 +212,10 @@ struct rtl821x_priv {
+@@ -217,6 +221,10 @@ struct rtl821x_priv {
  	u16 iner;
  };
  
@@ -35,7 +35,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static int rtl821x_read_page(struct phy_device *phydev)
  {
  	return __phy_read(phydev, RTL821x_PAGE_SELECT);
-@@ -1231,6 +1239,18 @@ static int rtl822x_write_mmd(struct phy_
+@@ -1240,6 +1248,18 @@ static int rtl822x_write_mmd(struct phy_
  
  static int rtl822x_probe(struct phy_device *phydev)
  {
@@ -54,7 +54,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (IS_ENABLED(CONFIG_REALTEK_PHY_HWMON) &&
  	    phydev->phy_id != RTL_GENERIC_PHYID)
  		return rtl822x_hwmon_init(phydev);
-@@ -1238,6 +1258,19 @@ static int rtl822x_probe(struct phy_devi
+@@ -1247,6 +1267,19 @@ static int rtl822x_probe(struct phy_devi
  	return 0;
  }
  
@@ -74,10 +74,11 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static int rtl822x_set_serdes_option_mode(struct phy_device *phydev, bool gen1)
  {
  	bool has_2500, has_sgmii;
-@@ -1319,6 +1352,14 @@ static int rtl822x_set_serdes_option_mod
+@@ -1304,7 +1337,15 @@ static int rtl822x_set_serdes_option_mod
  	if (ret < 0)
  		return ret;
  
+-	return phy_write_mmd(phydev, MDIO_MMD_VEND1, 0x6f11, 0x8020);
 +	ret = phy_write_mmd(phydev, MDIO_MMD_VEND1, 0x6f11, 0x8020);
 +	if (ret < 0)
 +		return ret;
@@ -86,6 +87,38 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	if (ret < 0)
 +		return ret;
 +
- 	return 0;
++	return 0;
  }
  
+ static int rtl822x_config_init(struct phy_device *phydev)
+@@ -1343,10 +1384,26 @@ static int rtl822x_serdes_write(struct p
+ 
+ static int rtl822x_config_inband(struct phy_device *phydev, unsigned int modes)
+ {
+-	return rtl822x_serdes_write(phydev, RTL822X_VND1_SERDES_ADDR_AUTONEG,
+-				    (modes != LINK_INBAND_DISABLE) ?
+-				    RTL822X_VND1_SERDES_INBAND_ENABLE :
+-				    RTL822X_VND1_SERDES_INBAND_DISABLE);
++	int ret, phycr1_changed;
++
++	phycr1_changed = rtl822x_init_phycr1(phydev, true);
++	if (phycr1_changed < 0)
++		return phycr1_changed;
++
++	ret = rtl822x_serdes_write(phydev, RTL822X_VND1_SERDES_ADDR_AUTONEG,
++				   (modes != LINK_INBAND_DISABLE) ?
++				   RTL822X_VND1_SERDES_INBAND_ENABLE :
++				   RTL822X_VND1_SERDES_INBAND_DISABLE);
++	if (ret < 0)
++		return ret;
++
++	if (phycr1_changed)
++		ret = rtl822x_init_phycr1(phydev, false);
++
++	if (ret < 0)
++		return ret;
++
++	return 0;
+ }
+ 
+ static unsigned int rtl822x_inband_caps(struct phy_device *phydev,
