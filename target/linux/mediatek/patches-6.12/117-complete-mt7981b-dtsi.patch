@@ -254,7 +254,7 @@ working:
  		pio: pinctrl@11d00000 {
  			compatible = "mediatek,mt7981-pinctrl";
  			reg = <0 0x11d00000 0 0x1000>,
-@@ -204,6 +337,49 @@
+@@ -204,6 +337,35 @@
  			gpio-controller;
  			#gpio-cells = <2>;
  			#interrupt-cells = <2>;
@@ -287,24 +287,10 @@ working:
 +					drive-strength = <MTK_DRIVE_4mA>;
 +				};
 +			};
-+
-+			gbe_led0_pins: gbe-led0-pins {
-+				mux {
-+					function = "led";
-+					groups = "gbe_led0";
-+				};
-+			};
-+
-+			gbe_led1_pins: gbe-led1-pins {
-+				mux {
-+					function = "led";
-+					groups = "gbe_led1";
-+				};
-+			};
  		};
  
  		efuse@11f20000 {
-@@ -211,17 +387,301 @@
+@@ -211,17 +373,297 @@
  			reg = <0 0x11f20000 0 0x1000>;
  			#address-cells = <1>;
  			#size-cells = <1>;
@@ -417,16 +403,12 @@ working:
 +						int_gbe_phy_led0: int-gbe-phy-led0@0 {
 +							reg = <0>;
 +							function = LED_FUNCTION_LAN;
-+							pinctrl-0 = <&gbe_led0_pins>;
-+							pinctrl-names = "default";
 +							status = "disabled";
 +						};
 +
 +						int_gbe_phy_led1: int-gbe-phy-led1@1 {
 +							reg = <1>;
 +							function = LED_FUNCTION_LAN;
-+							pinctrl-0 = <&gbe_led1_pins>;
-+							pinctrl-names = "default";
 +							status = "disabled";
 +						};
 +					};
@@ -608,7 +590,7 @@ working:
  			reg = <0 0x18000000 0 0x1000000>,
  			      <0 0x10003000 0 0x1000>,
  			      <0 0x11d10000 0 0x1000>;
-@@ -234,6 +694,67 @@
+@@ -234,6 +676,67 @@
  			clock-names = "mcu", "ap2conn";
  			resets = <&watchdog MT7986_TOPRGU_CONSYS_SW_RST>;
  			reset-names = "consys";
@@ -676,7 +658,7 @@ working:
  		};
  	};
  
-@@ -245,4 +766,8 @@
+@@ -245,4 +748,8 @@
  			     <GIC_PPI 11 IRQ_TYPE_LEVEL_LOW>,
  			     <GIC_PPI 10 IRQ_TYPE_LEVEL_LOW>;
  	};
