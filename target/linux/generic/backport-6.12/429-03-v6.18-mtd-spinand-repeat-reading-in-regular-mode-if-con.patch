@@ -1,8 +1,8 @@
-From 6ffbbe473b98e3944d4cb9379bf725b374e587a9 Mon Sep 17 00:00:00 2001
+From 010dc7f2dd6a0078ade3f88f627ed5fbf45ceb94 Mon Sep 17 00:00:00 2001
 From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
-Date: Sun, 3 Aug 2025 17:54:17 +0300
-Subject: [PATCH RESEND v5 3/3] mtd: spinand: repeat reading in regular mode if
- continuous reading fails
+Date: Thu, 18 Sep 2025 00:54:01 +0300
+Subject: mtd: spinand: repeat reading in regular mode if continuous reading
+ fails
 
 Continuous reading may result in multiple flash pages reading in one
 operation. Unfortunately, not all spinand controllers support such
@@ -14,6 +14,7 @@ In this case:
  * repeat reading in regular mode.
 
 Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Signed-off-by: Miquel Raynal <miquel.raynal@bootlin.com>
 ---
  drivers/mtd/nand/spi/core.c | 25 +++++++++++++++++++++----
  1 file changed, 21 insertions(+), 4 deletions(-)
