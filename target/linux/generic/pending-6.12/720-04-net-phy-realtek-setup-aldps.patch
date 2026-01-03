@@ -13,7 +13,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/net/phy/realtek/realtek_main.c
 +++ b/drivers/net/phy/realtek/realtek_main.c
-@@ -162,6 +162,10 @@
+@@ -170,6 +170,10 @@
  
  #define RTL8224_SRAM_RTCT_LEN(pair)		(0x8028 + (pair) * 4)
  
@@ -24,7 +24,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  #define RTL8366RB_POWER_SAVE			0x15
  #define RTL8366RB_POWER_SAVE_ON			BIT(12)
  
-@@ -208,6 +212,10 @@ struct rtl821x_priv {
+@@ -216,6 +220,10 @@ struct rtl821x_priv {
  	u16 iner;
  };
  
@@ -35,7 +35,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static int rtl821x_read_page(struct phy_device *phydev)
  {
  	return __phy_read(phydev, RTL821x_PAGE_SELECT);
-@@ -1231,6 +1239,18 @@ static int rtl822x_write_mmd(struct phy_
+@@ -1239,6 +1247,18 @@ static int rtl822x_write_mmd(struct phy_
  
  static int rtl822x_probe(struct phy_device *phydev)
  {
@@ -54,9 +54,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	if (IS_ENABLED(CONFIG_REALTEK_PHY_HWMON) &&
  	    phydev->phy_id != RTL_GENERIC_PHYID)
  		return rtl822x_hwmon_init(phydev);
-@@ -1342,6 +1362,19 @@ static int rtl822xb_write_mmd(struct phy
- 	return write_ret;
+@@ -1320,6 +1340,19 @@ static int rtl822xb_write_mmd(struct phy
  }
+ 
  
 +static int rtl822x_init_phycr1(struct phy_device *phydev, bool no_aldps)
 +{
@@ -74,10 +74,11 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static int rtl822x_set_serdes_option_mode(struct phy_device *phydev, bool gen1)
  {
  	bool has_2500, has_sgmii;
-@@ -1423,6 +1456,14 @@ static int rtl822x_set_serdes_option_mod
+@@ -1377,7 +1410,15 @@ static int rtl822x_set_serdes_option_mod
  	if (ret < 0)
  		return ret;
  
+-	return phy_write_mmd(phydev, MDIO_MMD_VEND1, 0x6f11, 0x8020);
 +	ret = phy_write_mmd(phydev, MDIO_MMD_VEND1, 0x6f11, 0x8020);
 +	if (ret < 0)
 +		return ret;
@@ -86,6 +87,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	if (ret < 0)
 +		return ret;
 +
- 	return 0;
++	return 0;
  }
  
+ static int rtl822x_config_init(struct phy_device *phydev)
