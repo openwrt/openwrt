@@ -155,7 +155,8 @@ platform_do_upgrade() {
 		;;
 	buffalo,wsr-6000ax8|\
 	cudy,wr3000h-v1|\
-	cudy,wr3000p-v1)
+	cudy,wr3000p-v1|\
+	huasifei,ws1610)
 		CI_UBIPART="ubi"
 		nand_do_upgrade "$1"
 		;;
