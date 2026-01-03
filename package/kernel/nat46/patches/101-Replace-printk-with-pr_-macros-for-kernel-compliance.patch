@@ -1,0 +1,255 @@
+From 7ab287f6dc6dfb516d7045d9c7dc353eae51567e Mon Sep 17 00:00:00 2001
+From: graysky <therealgraysky AT proton DOT me>
+Date: Fri, 2 Jan 2026 13:01:08 -0500
+Subject: [PATCH] Replace printk with pr_* macros for kernel compliance
+
+Update all printk() calls to use appropriate pr_* logging macros
+to comply with modern kernel coding standards and ensure proper
+log level semantics across the nat46 module.
+
+Changes:
+- nat46-glue.c: Replace printk with pr_err() for errors and
+  pr_info() for informational messages in instance allocation
+  and release functions
+
+- nat46-glue.h: Update assert macro to use pr_emerg() instead
+  of printk for critical assertion failures
+
+- nat46-module.c: Replace all printk(KERN_INFO ...) and
+  printk() calls with pr_info() for informational messages
+  and pr_err() for error conditions in module initialization,
+  proc filesystem operations, and device management functions
+
+- nat46-netdev.c: Replace printk with pr_err() for error
+  conditions (allocation failures, device operations) and
+  pr_info() for informational messages (device creation,
+  destruction, and debug output)
+
+This ensures consistent logging behavior, improves compatibility
+with newer kernel versions, and follows kernel development best
+practices for message severity classification.
+---
+ nat46/modules/nat46-glue.c   |  8 ++++----
+ nat46/modules/nat46-glue.h   |  3 +--
+ nat46/modules/nat46-module.c | 21 +++++++++------------
+ nat46/modules/nat46-netdev.c | 22 +++++++++++-----------
+ 4 files changed, 25 insertions(+), 29 deletions(-)
+
+--- a/nat46/modules/nat46-glue.c
++++ b/nat46/modules/nat46-glue.c
+@@ -26,10 +26,10 @@ static int is_valid_nat46(nat46_instance_t *nat46) {
+ nat46_instance_t *alloc_nat46_instance(int npairs, nat46_instance_t *old, int from_ipair, int to_ipair, int remove_ipair) {
+   nat46_instance_t *nat46 = kzalloc(sizeof(nat46_instance_t) + npairs*sizeof(nat46_xlate_rulepair_t), GFP_KERNEL);
+   if (!nat46) {
+-    printk("[nat46] make_nat46_instance: can not alloc a nat46 instance with %d pairs\n", npairs);
++    pr_err("[nat46] make_nat46_instance: can not alloc a nat46 instance with %d pairs\n", npairs);
+     return NULL;
+   } else {
+-    printk("[nat46] make_nat46_instance: allocated nat46 instance with %d pairs\n", npairs);
++    pr_info("[nat46] make_nat46_instance: allocated nat46 instance with %d pairs\n", npairs);
+   }
+   nat46->sig = NAT46_SIGNATURE;
+   nat46->npairs = npairs;
+@@ -56,7 +56,7 @@ nat46_instance_t *get_nat46_instance(struct sk_buff *sk) {
+     mutex_unlock(&ref_lock);
+     return nat46;
+   } else {
+-    printk("[nat46] get_nat46_instance: Could not find a valid NAT46 instance!");
++    pr_err("[nat46] get_nat46_instance: Could not find a valid NAT46 instance!");
+     mutex_unlock(&ref_lock);
+     return NULL;
+   }
+@@ -66,7 +66,7 @@ void release_nat46_instance(nat46_instance_t *nat46) {
+   mutex_lock(&ref_lock);
+   nat46->refcount--;
+   if(0 == nat46->refcount) {
+-    printk("[nat46] release_nat46_instance: freeing nat46 instance with %d pairs\n", nat46->npairs);
++    pr_info("[nat46] release_nat46_instance: freeing nat46 instance with %d pairs\n", nat46->npairs);
+     nat46->sig = FREED_NAT46_SIGNATURE;
+     kfree(nat46);
+   }
+--- a/nat46/modules/nat46-glue.h
++++ b/nat46/modules/nat46-glue.h
+@@ -28,5 +28,4 @@
+ #define IP6_OFFSET      0xFFF8
+ #endif
+ 
+-#define assert(x) printk("Assertion failed: %s", #x)
+-
++#define assert(x) pr_emerg("Assertion failed: %s", #x)
+--- a/nat46/modules/nat46-module.c
++++ b/nat46/modules/nat46-module.c
+@@ -115,8 +115,7 @@ static char *get_devname(char **ptail)
+ 	const int maxlen = IFNAMSIZ-1;
+ 	char *devname = get_next_arg(ptail);
+ 	if(devname && (strlen(devname) > maxlen)) {
+-		printk(KERN_INFO "nat46: '%s' is "
+-			"longer than %d chars, truncating\n", devname, maxlen);
++		pr_info("nat46: '%s' is longer than %d chars, truncating\n", devname, maxlen);
+ 		devname[maxlen] = 0;
+ 	}
+ 	return devname;
+@@ -152,31 +151,31 @@ static ssize_t nat46_proc_write(struct file *file, const char __user *buffer,
+ 	while (NULL != (arg_name = get_next_arg(&tail))) {
+ 		if (0 == strcmp(arg_name, "add")) {
+ 			devname = get_devname(&tail);
+-			printk(KERN_INFO "nat46: adding device (%s)\n", devname);
++			pr_info("nat46: adding device (%s)\n", devname);
+ 			mutex_lock(&add_del_lock);
+ 			nat46_create(net, devname);
+ 			mutex_unlock(&add_del_lock);
+ 		} else if (0 == strcmp(arg_name, "del")) {
+ 			devname = get_devname(&tail);
+-			printk(KERN_INFO "nat46: deleting device (%s)\n", devname);
++			pr_info("nat46: deleting device (%s)\n", devname);
+ 			mutex_lock(&add_del_lock);
+ 			nat46_destroy(net, devname);
+ 			mutex_unlock(&add_del_lock);
+ 		} else if (0 == strcmp(arg_name, "config")) {
+ 			devname = get_devname(&tail);
+-			printk(KERN_INFO "nat46: configure device (%s) with '%s'\n", devname, tail);
++			pr_info("nat46: configure device (%s) with '%s'\n", devname, tail);
+ 			mutex_lock(&add_del_lock);
+ 			nat46_configure(net, devname, tail);
+ 			mutex_unlock(&add_del_lock);
+ 		} else if (0 == strcmp(arg_name, "insert")) {
+ 			devname = get_devname(&tail);
+-			printk(KERN_INFO "nat46: insert new rule into device (%s) with '%s'\n", devname, tail);
++			pr_info("nat46: insert new rule into device (%s) with '%s'\n", devname, tail);
+ 			mutex_lock(&add_del_lock);
+ 			nat46_insert(net, devname, tail);
+ 			mutex_unlock(&add_del_lock);
+ 		} else if (0 == strcmp(arg_name, "remove")) {
+ 			devname = get_devname(&tail);
+-			printk(KERN_INFO "nat46: remove a rule from the device (%s) with '%s'\n", devname, tail);
++			pr_info("nat46: remove a rule from the device (%s) with '%s'\n", devname, tail);
+ 			mutex_lock(&add_del_lock);
+ 			nat46_remove(net, devname, tail);
+ 			mutex_unlock(&add_del_lock);
+@@ -218,7 +217,7 @@ static int __net_init nat46_ns_init(struct net *net)
+ 		if(!nsdata->proc_entry) {
+ 			remove_proc_entry(NAT46_PROC_NAME, net->proc_net);
+ 			nsdata->proc_parent = NULL;
+-			printk(KERN_INFO "Error creating proc entry");
++			pr_err("Error creating proc entry");
+ 			return -ENOMEM;
+ 		}
+ 	}
+@@ -251,7 +250,7 @@ static int __init nat46_init(void)
+ {
+ 	int ret = 0;
+ 
+-	printk("nat46: module (version %s) loaded.\n", NAT46_VERSION);
++	pr_info("nat46: module (version %s) loaded.\n", NAT46_VERSION);
+ 	ret = register_pernet_subsys(&nat46_net_ops);
+ 	if(ret) {
+ 		goto error;
+@@ -265,10 +264,8 @@ error:
+ static void __exit nat46_exit(void)
+ {
+ 	unregister_pernet_subsys(&nat46_net_ops);
+-	printk("nat46: module unloaded.\n");
++	pr_info("nat46: module unloaded.\n");
+ }
+ 
+ module_init(nat46_init);
+ module_exit(nat46_exit);
+-
+-
+--- a/nat46/modules/nat46-netdev.c
++++ b/nat46/modules/nat46-netdev.c
+@@ -141,7 +141,7 @@ static int nat46_netdev_create(struct net *net, char *basename, struct net_devic
+ 		automatic_name = 1;
+ 	}
+ 	if (!devname) {
+-		printk("nat46: can not allocate memory to store device name.\n");
++		pr_err("nat46: can not allocate memory to store device name.\n");
+ 		ret = -ENOMEM;
+ 		goto err;
+ 	}
+@@ -158,7 +158,7 @@ static int nat46_netdev_create(struct net *net, char *basename, struct net_devic
+ 	*dev = alloc_netdev(sizeof(nat46_instance_t), devname, NET_NAME_UNKNOWN, nat46_netdev_setup);
+ #endif
+ 	if (!*dev) {
+-		printk("nat46: Unable to allocate nat46 device '%s'.\n", devname);
++		pr_err("nat46: Unable to allocate nat46 device '%s'.\n", devname);
+ 		ret = -ENOMEM;
+ 		goto err_alloc_dev;
+ 	}
+@@ -166,12 +166,12 @@ static int nat46_netdev_create(struct net *net, char *basename, struct net_devic
+ 	dev_net_set(*dev, net);
+ 	ret = register_netdev(*dev);
+ 	if(ret) {
+-		printk("nat46: Unable to register nat46 device.\n");
++		pr_err("nat46: Unable to register nat46 device.\n");
+ 		ret = -ENOMEM;
+ 		goto err_register_dev;
+ 	}
+ 
+-	printk("nat46: netdevice nat46 '%s' created successfully.\n", devname);
++	pr_info("nat46: netdevice nat46 '%s' created successfully.\n", devname);
+ 	kfree(devname);
+ 
+ 	return 0;
+@@ -191,7 +191,7 @@ static void nat46_netdev_destroy(struct net_device *dev)
+ 	netdev_nat46_set_instance(dev, NULL);
+ 	unregister_netdev(dev);
+ 	free_netdev(dev);
+-	printk("nat46: Destroying nat46 device.\n");
++	pr_info("nat46: Destroying nat46 device.\n");
+ }
+ 
+ static int is_nat46(struct net_device *dev) {
+@@ -212,7 +212,7 @@ static struct net_device *find_dev(struct net *net, char *name) {
+ 	while (dev) {
+ 		if((0 == strcmp(dev->name, name)) && is_nat46(dev)) {
+ 			if(debug) {
+-				printk(KERN_INFO "found [%s]\n", dev->name);
++				pr_info("found [%s]\n", dev->name);
+ 			}
+ 			out = dev;
+ 			break;
+@@ -227,7 +227,7 @@ int nat46_create(struct net *net, char *devname) {
+ 	int ret = 0;
+ 	struct net_device *dev = find_dev(net, devname);
+ 	if (dev) {
+-		printk("Can not add: device '%s' already exists!\n", devname);
++		pr_err("Can not add: device '%s' already exists!\n", devname);
+ 		return -1;
+ 	}
+ 	ret = nat46_netdev_create(net, devname, &dev);
+@@ -237,11 +237,11 @@ int nat46_create(struct net *net, char *devname) {
+ int nat46_destroy(struct net *net, char *devname) {
+ 	struct net_device *dev = find_dev(net, devname);
+ 	if(dev) {
+-		printk("Destroying '%s'\n", devname);
++		pr_info("Destroying '%s'\n", devname);
+ 		nat46_netdev_destroy(dev);
+ 		return 0;
+ 	} else {
+-		printk("Could not find device '%s'\n", devname);
++		pr_err("Could not find device '%s'\n", devname);
+ 		return -1;
+ 	}
+ }
+@@ -256,7 +256,7 @@ int nat46_insert(struct net *net, char *devname, char *buf) {
+ 			netdev_nat46_set_instance(dev, nat46_new);
+ 			ret = nat46_set_ipair_config(nat46_new, 0, buf, strlen(buf));
+ 		} else {
+-			printk("Could not insert a new rule on device %s\n", devname);
++			pr_err("Could not insert a new rule on device %s\n", devname);
+ 		}
+ 	}
+ 	return ret;
+@@ -303,7 +303,7 @@ int nat46_remove(struct net *net, char *devname, char *buf) {
+ 				netdev_nat46_set_instance(dev, nat46_new);
+ 				ret = 0;
+ 			} else {
+-				printk("Could not remove the rule from device %s\n", devname);
++				pr_err("Could not remove the rule from device %s\n", devname);
+ 			}
+ 			break;
+ 		}
+-- 
+2.52.0
+
