@@ -624,25 +624,6 @@ irqreturn_t rtl839x_switch_irq(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-/* TODO: unused */
-int rtl8390_sds_power(int mac, int val)
-{
-	u32 offset = (mac == 48) ? 0x0 : 0x100;
-	u32 mode = val ? 0 : 1;
-
-	pr_debug("In %s: mac %d, set %d\n", __func__, mac, val);
-
-	if ((mac != 48) && (mac != 49)) {
-		pr_err("%s: not an SFP port: %d\n", __func__, mac);
-		return -1;
-	}
-
-	/* Set bit 1003. 1000 starts at 7c */
-	sw_w32_mask(BIT(11), mode << 11, RTL839X_SDS12_13_PWR0 + offset);
-
-	return 0;
-}
-
 void rtl8390_get_version(struct rtl838x_switch_priv *priv)
 {
 	u32 info, model;

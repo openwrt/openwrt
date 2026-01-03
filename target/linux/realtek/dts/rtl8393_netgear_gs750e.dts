@@ -165,10 +165,6 @@
 	EXTERNAL_PHY(45)
 	EXTERNAL_PHY(46)
 	EXTERNAL_PHY(47)
-
-	/* RTL8393 Internal SerDes */
-	INTERNAL_PHY(48)
-	INTERNAL_PHY(49)
 };
 
 &switch0 {
@@ -231,8 +227,26 @@
 		SWITCH_PORT(47, 48, qsgmii)
 
 		/* TODO: fixed link SFP is not right */
-		SWITCH_SFP_PORT(48, 49, sgmii)
-		SWITCH_SFP_PORT(49, 50, sgmii)
+		port@48 {
+			reg = <48>;
+			label = "lan49";
+			pcs-handle = <&serdes12>;
+			phy-mode = "sgmii";
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+		port@49 {
+			reg = <49>;
+			label = "lan50";
+			pcs-handle = <&serdes13>;
+			phy-mode = "sgmii";
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
 
 		/* CPU-Port */
 		port@52 {
