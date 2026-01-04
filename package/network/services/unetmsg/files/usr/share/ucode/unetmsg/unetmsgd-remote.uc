@@ -350,6 +350,11 @@ function network_open_channel(net, name, peer)
 
 	let disconnect_cb = (req) => {
 		let net = networks[sock_data.network];
+		if (!net) {
+			network_tx_socket_close(sock_data);
+			return;
+		}
+
 		let cur_data = net.tx_channels[sock_data.name];
 		if (cur_data == sock_data)
 			delete net.tx_channels[sock_data.name];
