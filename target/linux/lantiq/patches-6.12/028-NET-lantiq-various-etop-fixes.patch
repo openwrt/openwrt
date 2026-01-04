@@ -33,7 +33,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#include <linux/clk.h>
 +#include <linux/of_net.h>
 +#include <linux/of_irq.h>
-+#include <linux/of_platform.h>
++#include <linux/platform_device.h>
  
  #include <asm/checksum.h>
  
@@ -82,12 +82,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  #define ETOP_PLEN_UNDER		0x40
 -#define ETOP_CGEN		0x800
 +#define ETOP_CFG_MII0		0x01
- 
--/* use 2 static channels for TX/RX */
--#define LTQ_ETOP_TX_CHANNEL	1
--#define LTQ_ETOP_RX_CHANNEL	6
--#define IS_TX(x)		((x) == LTQ_ETOP_TX_CHANNEL)
--#define IS_RX(x)		((x) == LTQ_ETOP_RX_CHANNEL)
++
 +#define ETOP_CFG_MASK           0xfff
 +#define ETOP_CFG_FEN0		BIT(8)
 +#define ETOP_CFG_SEN0		BIT(6)
@@ -126,9 +121,14 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#define MDIO_XR9_ADDR_OFFSET	5
 +#define MDIO_XR9_WR_OFFSET	16
  
+-/* use 2 static channels for TX/RX */
+-#define LTQ_ETOP_TX_CHANNEL	1
+-#define LTQ_ETOP_RX_CHANNEL	6
+-#define IS_TX(x)		((x) == LTQ_ETOP_TX_CHANNEL)
+-#define IS_RX(x)		((x) == LTQ_ETOP_RX_CHANNEL)
 +#define LTQ_DMA_ETOP	((of_machine_is_compatible("lantiq,ase")) ? \
 +			(INT_NUM_IM3_IRL0) : (INT_NUM_IM2_IRL0))
-+
+ 
 +/* the newer xway socks have a embedded 3/7 port gbit multiplexer */
  #define ltq_etop_r32(x)		ltq_r32(ltq_etop_membase + (x))
  #define ltq_etop_w32(x, y)	ltq_w32(x, ltq_etop_membase + (y))

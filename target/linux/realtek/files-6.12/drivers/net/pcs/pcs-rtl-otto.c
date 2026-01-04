@@ -576,7 +576,7 @@ static int rtpcs_838x_sds_patch(struct rtpcs_serdes *sds,
 	default:
 		break;
 	}
-	
+
 	return 0;
 }
 
@@ -620,7 +620,7 @@ static int rtpcs_838x_setup_serdes(struct rtpcs_serdes *sds,
 
 	rtpcs_838x_sds_patch(sds, mode);
 	rtpcs_838x_sds_reset(sds);
-	
+
 	/* release reset */
 	rtpcs_sds_write(sds, 0, 3, 0x7106);
 
@@ -2627,7 +2627,7 @@ static void rtpcs_931x_sds_cmu_type_set(struct rtpcs_serdes *sds,
 	if (cmu_type == 1)
 		cmu_page = rtpcs_931x_sds_cmu_page_get(mode);
 
-	if (sds == even_sds) { 
+	if (sds == even_sds) {
 		frc_lc_mode_bitnum = 4;
 		frc_lc_mode_val_bitnum = 5;
 	} else {
