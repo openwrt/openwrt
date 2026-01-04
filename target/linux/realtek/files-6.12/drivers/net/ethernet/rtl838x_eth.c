@@ -1345,6 +1345,11 @@ static int rtl8390_init_mac(struct rtl838x_eth_priv *priv)
 	return 0;
 }
 
+static int rteth_930x_init_mac(struct rtl838x_eth_priv *priv)
+{
+	return 0;
+}
+
 static int rtl931x_chip_init(struct rtl838x_eth_priv *priv)
 {
 	pr_info("In %s\n", __func__);
@@ -1715,6 +1720,8 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 		rtl8380_init_mac(priv);
 	else if (priv->r->family_id == RTL8390_FAMILY_ID)
 		rtl8390_init_mac(priv);
+	else if (priv->r->family_id == RTL9300_FAMILY_ID)
+		rteth_930x_init_mac(priv);
 	else if (priv->r->family_id == RTL9310_FAMILY_ID)
 		rtl931x_chip_init(priv);
 
