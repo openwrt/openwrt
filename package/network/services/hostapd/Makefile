@@ -544,6 +544,7 @@ define Package/eapol-test
   $(call Package/eapol-test/Default,$(1))
   TITLE+= (built-in full)
   VARIANT:=supplicant-full-internal
+  DEFAULT_VARIANT:=1
 endef
 
 define Package/eapol-test-openssl
