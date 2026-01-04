@@ -25,6 +25,25 @@ meraki,gx20|\
 meraki,z3)
 	ucidef_add_gpio_switch "lan5_poe_disable" "LAN5 PoE disable" "540" "0"
 	;;
+cradlepoint,ibr1700)
+	ucidef_add_gpio_switch "pwr_en_int1" "Internal Modem Power" "576" "1"
+	ucidef_add_gpio_switch "pwr_en_usb1" "USB Power" "625" "1"
+	ucidef_add_gpio_switch "pwr_en_mdm1" "Secondary Modem Bay Power" "630" "1"
+	ucidef_add_gpio_switch "2g_antenna_toggle" "2GHz Antenna Switch" "581" "0"
+	
+	# figure out if we are on a snapshot build; if so the mux should default to the header
+	version=$(cat /etc/openwrt_release | grep "DISTRIB_RELEASE" | cut -d "=" -f 2 | tr -d "'")
+
+	if [ $version = "SNAPSHOT" ]; then
+		ucidef_add_gpio_switch "uart_mux" "GPS UART Mux" "549" "0"
+	else
+		ucidef_add_gpio_switch "uart_mux" "GPS UART Mux" "549" "1"
+		# silence kernel logs as it will clog the GPS chip (they are muxed)
+		uci set system.@system[0].kconloglevel=3
+		uci set system.@system[0].conloglevel=3
+
+	fi
+	;;
 mikrotik,cap-ac)
 	ucidef_add_gpio_switch "poe_passtrough" "POE passtrough enable" "514" "0"
 	;;
