@@ -1704,9 +1704,6 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	dev->hw_features = NETIF_F_RXCSUM;
 	dev->netdev_ops = priv->r->netdev_ops;
 
-	if (priv->r->family_id == RTL9310_FAMILY_ID)
-		rtl931x_chip_init(priv);
-
 	priv->rxringlen = rxringlen;
 	priv->rxrings = rxrings;
 
@@ -1723,7 +1720,12 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 		return err;
 	}
 
-	rtl8380_init_mac(priv);
+	if (priv->r->family_id == RTL8380_FAMILY_ID)
+		rtl8380_init_mac(priv);
+	else if (priv->r->family_id == RTL8390_FAMILY_ID)
+		rtl8390_init_mac(priv);
+	else if (priv->r->family_id == RTL9310_FAMILY_ID)
+		rtl931x_chip_init(priv);
 
 	/* Try to get mac address in the following order:
 	 * 1) from device tree data
