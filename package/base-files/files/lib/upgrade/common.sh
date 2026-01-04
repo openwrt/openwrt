@@ -165,63 +165,50 @@ part_magic_fat() {
 	[ "$magic" = "FAT" ] || [ "$magic_fat32" = "FAT32" ]
 }
 
+#
+# SAFE BOOT DEVICE RESOLUTION
+# Derive the boot device from the mounted root filesystem.
+#
 export_bootdevice() {
-	local cmdline uuid blockdev uevent line class
+	local src dev uevent line
 	local MAJOR MINOR DEVNAME DEVTYPE
-	local rootpart="$(cmdline_get_var root)"
 
-	case "$rootpart" in
-		PARTUUID=[a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9]-[a-f0-9][a-f0-9])
-			uuid="${rootpart#PARTUUID=}"
-			uuid="${uuid%-[a-f0-9][a-f0-9]}"
-			for blockdev in $(find /dev -type b); do
-				set -- $(dd if=$blockdev bs=1 skip=440 count=4 2>/dev/null | hexdump -v -e '4/1 "%02x "')
-				if [ "$4$3$2$1" = "$uuid" ]; then
-					uevent="/sys/class/block/${blockdev##*/}/uevent"
-					break
-				fi
-			done
-		;;
-		PARTUUID=????????-????-????-????-??????????0?/PARTNROFF=1 | \
-		PARTUUID=????????-????-????-????-??????????02)
-			uuid="${rootpart#PARTUUID=}"
-			uuid="${uuid%/PARTNROFF=1}"
-			uuid="${uuid%0?}00"
-			for disk in $(find /dev -type b); do
-				set -- $(dd if=$disk bs=1 skip=568 count=16 2>/dev/null | hexdump -v -e '8/1 "%02x "" "2/1 "%02x""-"6/1 "%02x"')
-				if [ "$4$3$2$1-$6$5-$8$7-$9" = "$uuid" ]; then
-					uevent="/sys/class/block/${disk##*/}/uevent"
-					break
-				fi
-			done
-		;;
-		/dev/*)
-			uevent="/sys/class/block/${rootpart##*/}/../uevent"
-		;;
-		0x[a-f0-9][a-f0-9][a-f0-9] | 0x[a-f0-9][a-f0-9][a-f0-9][a-f0-9] | \
-		[a-f0-9][a-f0-9][a-f0-9] | [a-f0-9][a-f0-9][a-f0-9][a-f0-9])
-			rootpart=0x${rootpart#0x}
-			for class in /sys/class/block/*; do
-				while read line; do
-					export -n "$line"
-				done < "$class/uevent"
-				if [ $((rootpart/256)) = $MAJOR -a $((rootpart%256)) = $MINOR ]; then
-					uevent="$class/../uevent"
-				fi
-			done
-		;;
-	esac
+	# Get source backing /
+	src="$(awk '$2 == "/" { print $1 }' /proc/self/mounts)" || return 1
 
-	if [ -e "$uevent" ]; then
-		while read line; do
-			export -n "$line"
-		done < "$uevent"
-		export BOOTDEV_MAJOR=$MAJOR
-		export BOOTDEV_MINOR=$MINOR
-		return 0
+	# Handle overlayfs
+	if [ "$src" = "overlay" ]; then
+		src="$(awk '$2 == "/" && $1 == "overlay" {
+			for (i=1;i<=NF;i++)
+				if ($i ~ /^lowerdir=/) {
+					sub(/^lowerdir=/,"",$i)
+					split($i,a,":")
+					print a[1]
+				}
+		}' /proc/self/mounts)"
 	fi
 
-	return 1
+	src="$(readlink -f "$src" 2>/dev/null)" || return 1
+	[ -b "$src" ] || return 1
+
+	# Resolve mapper devices to physical parent (fail if ambiguous)
+	if [ -d "/sys/class/block/$(basename "$src")/slaves" ]; then
+		set -- /sys/class/block/$(basename "$src")/slaves/*
+		[ "$#" -eq 1 ] || return 1
+		dev="$(basename "$1")"
+		src="/dev/$dev"
+	fi
+
+	uevent="/sys/class/block/${src##*/}/uevent"
+	[ -e "$uevent" ] || return 1
+
+	while read line; do
+		export -n "$line"
+	done < "$uevent"
+
+	export BOOTDEV_MAJOR=$MAJOR
+	export BOOTDEV_MINOR=$MINOR
+	return 0
 }
 
 export_partdevice() {
@@ -266,8 +253,6 @@ get_partitions() { # <device> <filename>
 
 		local part
 		part_magic_efi "$disk" && {
-			#export_partdevice will fail when partition number is greater than 15, as
-			#the partition major device number is not equal to the disk major device number
 			for part in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
 				set -- $(hexdump -v -n 48 -s "$((0x380 + $part * 0x80))" -e '4/4 "%08x"" "4/4 "%08x"" "4/4 "0x%08X "' "$disk")
 
