@@ -1,8 +1,8 @@
-From 9d13b7857de8834c6246fa5bc83f767675360240 Mon Sep 17 00:00:00 2001
+From 004f8ea0d9917398aabff7388b3bf62a84a4088b Mon Sep 17 00:00:00 2001
 From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
-Date: Sun, 3 Aug 2025 19:06:40 +0300
-Subject: [PATCH RESEND v5 2/3] mtd: spinand: try a regular dirmap if creating
- a dirmap for continuous reading fails
+Date: Thu, 18 Sep 2025 00:54:00 +0300
+Subject: mtd: spinand: try a regular dirmap if creating a dirmap for
+ continuous reading fails
 
 Continuous reading may result in multiple flash pages reading in one
 operation. Typically only one flash page has read/written (a little bit
@@ -22,6 +22,7 @@ This patch tries to create dirmap for continuous reading first and
 fallback to regular reading if spi controller refuses to create it.
 
 Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Signed-off-by: Miquel Raynal <miquel.raynal@bootlin.com>
 ---
  drivers/mtd/nand/spi/core.c | 43 ++++++++++++++++++++++++++++++-------
  1 file changed, 35 insertions(+), 8 deletions(-)
