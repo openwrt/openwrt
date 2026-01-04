@@ -307,6 +307,8 @@ function network_open_channel(net, name, peer)
 		if (!network_auth_valid(sock_data.name, sock_data.id, msg.token))
 			return;
 
+		if (sock_data.timer)
+			sock_data.timer.cancel();
 		sock_data.auth = true;
 		core.dbg(`Outgoing connection to ${name} established\n`);
 
@@ -343,6 +345,9 @@ function network_open_channel(net, name, peer)
 			data: { token },
 			data_cb: auth_data_cb,
 			cb: auth_cb,
+		});
+		sock_data.timer = uloop.timer(10 * 1000, () => {
+			network_tx_socket_close(sock_data);
 		});
 
 		return 0;
