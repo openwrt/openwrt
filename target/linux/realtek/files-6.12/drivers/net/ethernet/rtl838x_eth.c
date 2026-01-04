@@ -1333,23 +1333,14 @@ static int rtl8390_init_mac(struct rtl838x_eth_priv *priv)
 
 static int rtl8380_init_mac(struct rtl838x_eth_priv *priv)
 {
-	if (priv->r->family_id == RTL8390_FAMILY_ID)
-		return rtl8390_init_mac(priv);
-
-	/* At present we do not know how to set up EEE on any other SoC than RTL8380 */
-	if (priv->r->family_id != RTL8380_FAMILY_ID)
-		return 0;
-
 	pr_info("%s\n", __func__);
 	/* fix timer for EEE */
 	sw_w32(0x5001411, RTL838X_EEE_TX_TIMER_GIGA_CTRL);
 	sw_w32(0x5001417, RTL838X_EEE_TX_TIMER_GELITE_CTRL);
 
 	/* Init VLAN. TODO: Understand what is being done, here */
-	if (priv->r->family_id == RTL8380_FAMILY_ID) {
-		for (int i = 0; i <= 28; i++)
-			sw_w32(0, 0xd57c + i * 0x80);
-	}
+	for (int i = 0; i <= 28; i++)
+		sw_w32(0, 0xd57c + i * 0x80);
 
 	return 0;
 }
