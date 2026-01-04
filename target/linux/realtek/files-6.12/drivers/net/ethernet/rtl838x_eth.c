@@ -1325,7 +1325,7 @@ static int rtl838x_set_mac_address(struct net_device *dev, void *p)
 	return 0;
 }
 
-static int rtl8380_init_mac(struct rtl838x_eth_priv *priv)
+static int rteth_838x_init_mac(struct rtl838x_eth_priv *priv)
 {
 	pr_info("%s\n", __func__);
 	/* fix timer for EEE */
@@ -1339,7 +1339,7 @@ static int rtl8380_init_mac(struct rtl838x_eth_priv *priv)
 	return 0;
 }
 
-static int rtl8390_init_mac(struct rtl838x_eth_priv *priv)
+static int rteth_839x_init_mac(struct rtl838x_eth_priv *priv)
 {
 	/* We will need to set-up EEE and the egress-rate limitation */
 	return 0;
@@ -1350,7 +1350,7 @@ static int rteth_930x_init_mac(struct rtl838x_eth_priv *priv)
 	return 0;
 }
 
-static int rtl931x_chip_init(struct rtl838x_eth_priv *priv)
+static int rteth_931x_init_mac(struct rtl838x_eth_priv *priv)
 {
 	pr_info("In %s\n", __func__);
 
@@ -1485,6 +1485,7 @@ static const struct rteth_config rteth_838x_cfg = {
 	.update_cntr = rtl838x_update_cntr,
 	.create_tx_header = rtl838x_create_tx_header,
 	.decode_tag = rtl838x_decode_tag,
+	.init_mac = &rteth_838x_init_mac,
 	.netdev_ops = &rteth_838x_netdev_ops,
 };
 
@@ -1527,6 +1528,7 @@ static const struct rteth_config rteth_839x_cfg = {
 	.update_cntr = rtl839x_update_cntr,
 	.create_tx_header = rtl839x_create_tx_header,
 	.decode_tag = rtl839x_decode_tag,
+	.init_mac = &rteth_839x_init_mac,
 	.netdev_ops = &rteth_839x_netdev_ops,
 };
 
@@ -1575,6 +1577,7 @@ static const struct rteth_config rteth_930x_cfg = {
 	.update_cntr = rtl930x_update_cntr,
 	.create_tx_header = rtl930x_create_tx_header,
 	.decode_tag = rtl930x_decode_tag,
+	.init_mac = &rteth_930x_init_mac,
 	.netdev_ops = &rteth_930x_netdev_ops,
 };
 
@@ -1622,6 +1625,7 @@ static const struct rteth_config rteth_931x_cfg = {
 	.update_cntr = rtl931x_update_cntr,
 	.create_tx_header = rtl931x_create_tx_header,
 	.decode_tag = rtl931x_decode_tag,
+	.init_mac = &rteth_931x_init_mac,
 	.netdev_ops = &rteth_931x_netdev_ops,
 };
 
@@ -1716,14 +1720,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 		return err;
 	}
 
-	if (priv->r->family_id == RTL8380_FAMILY_ID)
-		rtl8380_init_mac(priv);
-	else if (priv->r->family_id == RTL8390_FAMILY_ID)
-		rtl8390_init_mac(priv);
-	else if (priv->r->family_id == RTL9300_FAMILY_ID)
-		rteth_930x_init_mac(priv);
-	else if (priv->r->family_id == RTL9310_FAMILY_ID)
-		rtl931x_chip_init(priv);
+	priv->r->init_mac(priv);
 
 	/* Try to get mac address in the following order:
 	 * 1) from device tree data
