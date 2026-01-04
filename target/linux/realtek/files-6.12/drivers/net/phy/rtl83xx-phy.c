@@ -436,14 +436,16 @@ static bool __rtl8214fc_media_is_fibre(struct phy_device *phydev)
 	struct phy_device *basephy = get_base_phy(phydev);
 	static int regs[] = {16, 19, 20, 21};
 	int reg = regs[phydev->mdio.addr & 3];
-	int oldpage, val;
+	int oldpage, oldxpage, val;
 
-	/* The fiber status is a package "global" in the first phy. */
 	oldpage = __phy_read(basephy, RTL8XXX_PAGE_SELECT);
-	__phy_write(basephy, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
+	oldxpage = __phy_read(basephy, RTL821XEXT_MEDIA_PAGE_SELECT);
+
+	__phy_write(basephy, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
 	__phy_write(basephy, RTL8XXX_PAGE_SELECT, RTL821X_PAGE_PORT);
 	val = __phy_read(basephy, reg);
-	__phy_write(basephy, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
+
+	__phy_write(basephy, RTL821XEXT_MEDIA_PAGE_SELECT, oldxpage);
 	__phy_write(basephy, RTL8XXX_PAGE_SELECT, oldpage);
 
 	return !(val & BMCR_PDOWN);
