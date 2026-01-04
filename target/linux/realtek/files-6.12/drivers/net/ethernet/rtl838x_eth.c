@@ -1325,12 +1325,6 @@ static int rtl838x_set_mac_address(struct net_device *dev, void *p)
 	return 0;
 }
 
-static int rtl8390_init_mac(struct rtl838x_eth_priv *priv)
-{
-	/* We will need to set-up EEE and the egress-rate limitation */
-	return 0;
-}
-
 static int rtl8380_init_mac(struct rtl838x_eth_priv *priv)
 {
 	pr_info("%s\n", __func__);
@@ -1345,24 +1339,10 @@ static int rtl8380_init_mac(struct rtl838x_eth_priv *priv)
 	return 0;
 }
 
-static int rteth_get_link_ksettings(struct net_device *ndev,
-				    struct ethtool_link_ksettings *cmd)
+static int rtl8390_init_mac(struct rtl838x_eth_priv *priv)
 {
-	struct rtl838x_eth_priv *priv = netdev_priv(ndev);
-
-	pr_debug("%s called\n", __func__);
-
-	return phylink_ethtool_ksettings_get(priv->phylink, cmd);
-}
-
-static int rteth_set_link_ksettings(struct net_device *ndev,
-				    const struct ethtool_link_ksettings *cmd)
-{
-	struct rtl838x_eth_priv *priv = netdev_priv(ndev);
-
-	pr_debug("%s called\n", __func__);
-
-	return phylink_ethtool_ksettings_set(priv->phylink, cmd);
+	/* We will need to set-up EEE and the egress-rate limitation */
+	return 0;
 }
 
 static int rtl931x_chip_init(struct rtl838x_eth_priv *priv)
@@ -1396,6 +1376,26 @@ static int rtl931x_chip_init(struct rtl838x_eth_priv *priv)
 	sw_w32(0x1, RTL931X_MDX_CTRL_RSVD);
 
 	return 0;
+}
+
+static int rteth_get_link_ksettings(struct net_device *ndev,
+				    struct ethtool_link_ksettings *cmd)
+{
+	struct rtl838x_eth_priv *priv = netdev_priv(ndev);
+
+	pr_debug("%s called\n", __func__);
+
+	return phylink_ethtool_ksettings_get(priv->phylink, cmd);
+}
+
+static int rteth_set_link_ksettings(struct net_device *ndev,
+				    const struct ethtool_link_ksettings *cmd)
+{
+	struct rtl838x_eth_priv *priv = netdev_priv(ndev);
+
+	pr_debug("%s called\n", __func__);
+
+	return phylink_ethtool_ksettings_set(priv->phylink, cmd);
 }
 
 static netdev_features_t rtl838x_fix_features(struct net_device *dev,
