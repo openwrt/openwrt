@@ -98,7 +98,7 @@ export const callctx_error_proto = {
 		return this.error("NOT_FOUND", msg ?? "Not found", ...args);
 	},
 	command_failed: function(msg, ...args) {
-		return this.error("COMMAND_FAILEDu", msg ?? "Command failed", ...args);
+		return this.error("COMMAND_FAILED", msg ?? "Command failed", ...args);
 	},
 };
 
