@@ -26,24 +26,25 @@ PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/ethtool
+define Package/ethtool/Default
   SECTION:=net
   CATEGORY:=Network
   TITLE:=Display or change ethernet card settings
   URL:=https://www.kernel.org/pub/software/network/ethtool/
+endef
+
+define Package/ethtool
+$(call Package/ethtool/Default)
   VARIANT:=tiny
-  CONFLICTS:=ethtool-full
   DEFAULT_VARIANT:=1
 endef
 
 define Package/ethtool-full
-  $(Package/ethtool)
+$(call Package/ethtool/Default)
   TITLE += (full)
   VARIANT:=full
   PROVIDES:=ethtool
   DEPENDS:=+libmnl
-  CONFLICTS:=
-  DEFAULT_VARIANT:=
 endef
 
 define Package/ethtool/description
