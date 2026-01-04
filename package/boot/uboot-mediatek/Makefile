@@ -881,6 +881,17 @@ define U-Boot/mt7987_bananapi_bpi-r4-lite-nor
   FIP_COMPRESS:=1
 endef
 
+define U-Boot/mt7987_routerich_be7200
+  NAME:=Routerich BE7200
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=routerich_be7200
+  UBOOT_CONFIG:=mt7987a_routerich_be7200
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand0
+  BL2_SOC:=mt7987
+  DEPENDS:=+trusted-firmware-a-mt7987-spim-nand0
+endef
+
 define U-Boot/mt7988_arcadyan_mozart
   NAME:=Arcadyan Mozart
   BUILD_SUBTARGET:=filogic
@@ -1152,6 +1163,7 @@ UBOOT_TARGETS := \
 	mt7987_rfb-emmc \
 	mt7987_rfb-sd \
 	mt7987_rfb-spim-nand \
+	mt7987_routerich_be7200 \
 	mt7988_arcadyan_mozart \
 	mt7988_asus_zenwifi-bt8 \
 	mt7988_bananapi_bpi-r4-emmc \

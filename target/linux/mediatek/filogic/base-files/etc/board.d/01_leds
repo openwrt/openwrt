@@ -205,6 +205,14 @@ routerich,ax3000-v1)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "eth1" "link tx rx"
 	ucidef_set_led_netdev "wan-off" "wan-off" "red:wan" "eth1" "link"
 	;;
+routerich,be7200)
+	ucidef_set_led_netdev "lan-1" "lan-1" "blue:lan-1" "lan1" "link tx rx"
+	ucidef_set_led_netdev "lan-2" "lan-2" "blue:lan-2" "lan2" "link tx rx"
+	ucidef_set_led_netdev "lan-3" "lan-3" "blue:lan-3" "lan3" "link tx rx"
+	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan" "link tx rx"
+	ucidef_set_led_netdev "wan-off" "wan-off" "red:wan" "wan" "link"
+	ucidef_set_led_netdev "wlan5g" "wlan-5ghz" "blue:wlan-5ghz" "phy0.1-ap0" "link tx rx"
+	;;
 smartrg,sdg-8612)
 	ucidef_set_led_netdev "lan4" "LAN4" "mdio-bus:05:amber:lan" "lan4" "link_10 link_100"
 	ucidef_set_led_netdev "lan4" "LAN4" "mdio-bus:05:green:lan-0" "lan4" "link_1000"
