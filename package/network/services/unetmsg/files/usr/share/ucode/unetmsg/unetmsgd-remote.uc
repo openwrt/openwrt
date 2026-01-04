@@ -44,7 +44,6 @@ function network_socket_close(data)
 	if (data.timer)
 		data.timer.cancel();
 	data.channel.disconnect();
-	data.socket.close();
 }
 
 function network_rx_cleanup_state(name)
