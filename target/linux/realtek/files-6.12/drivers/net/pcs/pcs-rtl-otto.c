@@ -3378,5 +3378,6 @@ static struct platform_driver rtpcs_driver = {
 module_platform_driver(rtpcs_driver);
 
 MODULE_AUTHOR("Markus Stockhausen <markus.stockhausen@gmx.de>");
+MODULE_AUTHOR("Jonas Jelonek <jelonek.jonas@gmail.com>");
 MODULE_DESCRIPTION("Realtek Otto SerDes PCS driver");
 MODULE_LICENSE("GPL v2");
