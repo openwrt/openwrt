@@ -505,21 +505,21 @@ else
 		echo 'export pkgname="$(1)$$(ABIV_$(1))"'; \
 		echo "add_group_and_user"; \
 		echo "default_postinst"; \
-		[ ! -f $$(ADIR_$(1))/postinst-pkg ] || sed -z 's/^\s*#!/#!/' "$$(ADIR_$(1))/postinst-pkg"; \
+		[ ! -f $$(ADIR_$(1))/postinst-pkg ] || sed '/^\s*#!/d' "$$(ADIR_$(1))/postinst-pkg"; \
 	) > $$(ADIR_$(1))/post-install;
 
     ifdef Package/$(1)/preinst
 	( \
 		echo "#!/bin/sh"; \
 		echo 'export PKG_UPGRADE=1'; \
-		[ ! -f $$(ADIR_$(1))/preinst ] || sed -z 's/^\s*#!/#!/' "$$(ADIR_$(1))/preinst"; \
+		[ ! -f $$(ADIR_$(1))/preinst ] || sed '/^\s*#!/d' "$$(ADIR_$(1))/preinst"; \
 	) > $$(ADIR_$(1))/pre-upgrade;
     endif
 
 	( \
 		echo "#!/bin/sh"; \
 		echo 'export PKG_UPGRADE=1'; \
-		[ ! -f $$(ADIR_$(1))/post-install ] || sed -z 's/^\s*#!/#!/' "$$(ADIR_$(1))/post-install"; \
+		[ ! -f $$(ADIR_$(1))/post-install ] || sed '/^\s*#!/d' "$$(ADIR_$(1))/post-install"; \
 	) > $$(ADIR_$(1))/post-upgrade;
 
 	( \
@@ -529,7 +529,7 @@ else
 		echo 'export root="$$$${IPKG_INSTROOT}"'; \
 		echo 'export pkgname="$(1)$$(ABIV_$(1))"'; \
 		echo "default_prerm"; \
-		[ ! -f $$(ADIR_$(1))/prerm-pkg ] || sed -z 's/^\s*#!/#!/' "$$(ADIR_$(1))/prerm-pkg"; \
+		[ ! -f $$(ADIR_$(1))/prerm-pkg ] || sed '/^\s*#!/d' "$$(ADIR_$(1))/prerm-pkg"; \
 	) > $$(ADIR_$(1))/pre-deinstall;
 
 	[ ! -f $$(ADIR_$(1))/postrm ] || sed -zi 's/^\s*#!/#!/' "$$(ADIR_$(1))/postrm";
