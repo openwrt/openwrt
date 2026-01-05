@@ -2840,14 +2840,14 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 		if (chiptype) {
 			rtpcs_sds_write_bits(sds, 0x6, 0x2, 12, 12, 1);
 
-			for (int i = 0; i < sizeof(sds_config_10p3125g_type1) / sizeof(struct rtpcs_sds_config); ++i) {
+			for (int i = 0; i < ARRAY_SIZE(sds_config_10p3125g_type1); ++i) {
 				rtpcs_sds_write(sds,
 						sds_config_10p3125g_type1[i].page - 0x4,
 						sds_config_10p3125g_type1[i].reg,
 						sds_config_10p3125g_type1[i].data);
 			}
 
-			for (int i = 0; i < sizeof(sds_config_10p3125g_cmu_type1) / sizeof(struct rtpcs_sds_config); ++i) {
+			for (int i = 0; i < ARRAY_SIZE(sds_config_10p3125g_cmu_type1); ++i) {
 				rtpcs_sds_write(even_sds,
 						sds_config_10p3125g_cmu_type1[i].page - 0x4,
 						sds_config_10p3125g_cmu_type1[i].reg,
