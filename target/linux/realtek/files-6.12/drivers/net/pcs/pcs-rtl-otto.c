@@ -2743,7 +2743,7 @@ static int rtpcs_931x_sds_set_polarity(struct rtpcs_serdes *sds,
 	return rtpcs_sds_write_bits(sds, 0x80, 0x0, 9, 8, val);
 }
 
-static const struct rtpcs_sds_config sds_config_10p3125g_type1[] = {
+static const struct rtpcs_sds_config rtpcs_931x_sds_cfg_10p3125g_type1[] = {
 	{ 0x2E, 0x00, 0x0107 }, { 0x2E, 0x01, 0x01A3 }, { 0x2E, 0x02, 0x6A24 },
 	{ 0x2E, 0x03, 0xD10D }, { 0x2E, 0x04, 0x8000 }, { 0x2E, 0x05, 0xA17E },
 	{ 0x2E, 0x06, 0xE31D }, { 0x2E, 0x07, 0x800E }, { 0x2E, 0x08, 0x0294 },
@@ -2759,7 +2759,7 @@ static const struct rtpcs_sds_config sds_config_10p3125g_type1[] = {
 	{ 0x2F, 0x13, 0x0000 }
 };
 
-static const struct rtpcs_sds_config sds_config_10p3125g_cmu_type1[] = {
+static const struct rtpcs_sds_config rtpcs_931x_sds_cfg_10p3125g_cmu_type1[] = {
 	{ 0x2F, 0x03, 0x4210 }, { 0x2F, 0x04, 0x0000 }, { 0x2F, 0x05, 0x0019 },
 	{ 0x2F, 0x06, 0x18A6 }, { 0x2F, 0x07, 0x2990 }, { 0x2F, 0x08, 0xFFF4 },
 	{ 0x2F, 0x09, 0x1F08 }, { 0x2F, 0x0A, 0x0000 }, { 0x2F, 0x0B, 0x8000 },
@@ -2840,18 +2840,18 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 		if (chiptype) {
 			rtpcs_sds_write_bits(sds, 0x6, 0x2, 12, 12, 1);
 
-			for (int i = 0; i < ARRAY_SIZE(sds_config_10p3125g_type1); ++i) {
+			for (int i = 0; i < ARRAY_SIZE(rtpcs_931x_sds_cfg_10p3125g_type1); ++i) {
 				rtpcs_sds_write(sds,
-						sds_config_10p3125g_type1[i].page - 0x4,
-						sds_config_10p3125g_type1[i].reg,
-						sds_config_10p3125g_type1[i].data);
+						rtpcs_931x_sds_cfg_10p3125g_type1[i].page - 0x4,
+						rtpcs_931x_sds_cfg_10p3125g_type1[i].reg,
+						rtpcs_931x_sds_cfg_10p3125g_type1[i].data);
 			}
 
-			for (int i = 0; i < ARRAY_SIZE(sds_config_10p3125g_cmu_type1); ++i) {
+			for (int i = 0; i < ARRAY_SIZE(rtpcs_931x_sds_cfg_10p3125g_cmu_type1); ++i) {
 				rtpcs_sds_write(even_sds,
-						sds_config_10p3125g_cmu_type1[i].page - 0x4,
-						sds_config_10p3125g_cmu_type1[i].reg,
-						sds_config_10p3125g_cmu_type1[i].data);
+						rtpcs_931x_sds_cfg_10p3125g_cmu_type1[i].page - 0x4,
+						rtpcs_931x_sds_cfg_10p3125g_cmu_type1[i].reg,
+						rtpcs_931x_sds_cfg_10p3125g_cmu_type1[i].data);
 			}
 
 			rtpcs_sds_write_bits(sds, 0x6, 0x2, 12, 12, 0);
