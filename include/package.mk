@@ -337,7 +337,7 @@ define BuildPackage
   # variants to provide the same virtual package without adding extra provides
   # to the default one, e.g. wget implicitly provides wget-any and is marked as
   # default, so wget-ssl can explicitly provide @wget-any as well.
-  PROVIDES+=@$(1)-any
+  $(eval PROVIDES:=$(strip @$(1)-any $(PROVIDES)))
 
 ifdef DESCRIPTION
 $$(error DESCRIPTION:= is obsolete, use Package/PKG_NAME/description)
