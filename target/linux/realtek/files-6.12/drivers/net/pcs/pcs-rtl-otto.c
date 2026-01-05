@@ -1500,7 +1500,6 @@ static void rtpcs_930x_sds_rxcal_tap_get(struct rtpcs_serdes *sds,
 	}
 }
 
-__always_unused
 static void rtpcs_930x_sds_do_rx_calibration_1(struct rtpcs_serdes *sds,
 					       phy_interface_t phy_mode)
 {
@@ -1665,7 +1664,6 @@ static void rtpcs_930x_sds_do_rx_calibration_2_3(struct rtpcs_serdes *sds)
 	pr_info("%s: end_1.2.3\n", __func__);
 }
 
-__always_unused
 static void rtpcs_930x_sds_do_rx_calibration_2(struct rtpcs_serdes *sds)
 {
 	rtpcs_930x_sds_rx_reset(sds, PHY_INTERFACE_MODE_10GBASER);
