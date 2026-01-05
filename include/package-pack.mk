@@ -195,10 +195,9 @@ endef
 #   self. Filter it out, but keep virtual self provides, in the form of
 #   @(kmod-)?${package_name}-any.
 #
-# - Packages implicitly add a virtual @${package_name}-any provide in Package.
-#
-# - kmods implicitly add a virtual @kmod-${package_name}-any provide in
-#   KernelPackage.
+# - Packages implicitly add a virtual @${package_name}-any provide in Package,
+#   which implies that kmods, which are also packages, will have a virtual
+#   @kmod-${package_name}-any provide.
 #
 # - Aside from the two aforementioned implicit provides, packages are expected
 #   to manage their provides themselves.
