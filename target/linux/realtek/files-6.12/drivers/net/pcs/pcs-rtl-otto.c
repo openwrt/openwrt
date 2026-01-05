@@ -176,11 +176,11 @@ struct rtpcs_config {
 	int (*setup_serdes)(struct rtpcs_serdes *sds, phy_interface_t mode);
 };
 
-typedef struct {
+struct rtpcs_sds_config {
 	u8 page;
 	u8 reg;
 	u16 data;
-} sds_config;
+};
 
 static int rtpcs_sds_to_mmd(int sds_page, int sds_regnum)
 {
@@ -2034,7 +2034,7 @@ static int rtpcs_930x_sds_set_polarity(struct rtpcs_serdes *sds,
 	return rtpcs_sds_write_bits(sds, 0x0, 0x0, 9, 8, val);
 }
 
-static const sds_config rtpcs_930x_sds_cfg_10gr_even[] = {
+static const struct rtpcs_sds_config rtpcs_930x_sds_cfg_10gr_even[] = {
 	/* 1G */
 	{0x00, 0x0E, 0x3053}, {0x01, 0x14, 0x0100}, {0x21, 0x03, 0x8206},
 	{0x21, 0x05, 0x40B0}, {0x21, 0x06, 0x0010}, {0x21, 0x07, 0xF09F},
@@ -2081,7 +2081,7 @@ static const sds_config rtpcs_930x_sds_cfg_10gr_even[] = {
 	{0x2F, 0x19, 0x4902}, {0x2F, 0x1D, 0x76E1},
 };
 
-static const sds_config rtpcs_930x_sds_cfg_10gr_odd[] = {
+static const struct rtpcs_sds_config rtpcs_930x_sds_cfg_10gr_odd[] = {
 	/* 1G */
 	{0x00, 0x0E, 0x3053}, {0x01, 0x14, 0x0100}, {0x21, 0x03, 0x8206},
 	{0x21, 0x06, 0x0010}, {0x21, 0x07, 0xF09F}, {0x21, 0x0A, 0x0003},
@@ -2123,7 +2123,7 @@ static const sds_config rtpcs_930x_sds_cfg_10gr_odd[] = {
 	{0x2B, 0x14, 0x3108}, {0x2D, 0x13, 0x3C87}, {0x2D, 0x14, 0x1808},
 };
 
-static const sds_config rtpcs_930x_sds_cfg_10g_2500bx_even[] = {
+static const struct rtpcs_sds_config rtpcs_930x_sds_cfg_10g_2500bx_even[] = {
 	{0x00, 0x0E, 0x3053}, {0x01, 0x14, 0x0100},
 	{0x21, 0x03, 0x8206}, {0x21, 0x05, 0x40B0}, {0x21, 0x06, 0x0010}, {0x21, 0x07, 0xF09F},
 	{0x21, 0x0C, 0x0007}, {0x21, 0x0D, 0x6009}, {0x21, 0x0E, 0x0000}, {0x21, 0x0F, 0x0008},
@@ -2145,7 +2145,7 @@ static const sds_config rtpcs_930x_sds_cfg_10g_2500bx_even[] = {
 	{0x2F, 0x13, 0x0050}, {0x2F, 0x18, 0x8E88}, {0x2F, 0x19, 0x4902}, {0x2F, 0x1D, 0x66E1},
 };
 
-static const sds_config rtpcs_930x_sds_cfg_10g_2500bx_odd[] = {
+static const struct rtpcs_sds_config rtpcs_930x_sds_cfg_10g_2500bx_odd[] = {
 	{0x00, 0x0E, 0x3053}, {0x01, 0x14, 0x0100},
 	{0x21, 0x03, 0x8206}, {0x21, 0x06, 0x0010}, {0x21, 0x07, 0xF09F}, {0x21, 0x0A, 0x0003},
 	{0x21, 0x0B, 0x0005}, {0x21, 0x0C, 0x0007}, {0x21, 0x0D, 0x6009}, {0x21, 0x0E, 0x0000},
@@ -2197,7 +2197,7 @@ static void rtpcs_930x_sds_usxgmii_config(struct rtpcs_serdes *sds, int nway_en,
 static void rtpcs_930x_sds_patch(struct rtpcs_serdes *sds, phy_interface_t mode)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
-	const sds_config *config;
+	const struct rtpcs_sds_config *config;
 	bool is_even_sds;
 	size_t count;
 
@@ -2743,7 +2743,7 @@ static int rtpcs_931x_sds_set_polarity(struct rtpcs_serdes *sds,
 	return rtpcs_sds_write_bits(sds, 0x80, 0x0, 9, 8, val);
 }
 
-static sds_config sds_config_10p3125g_type1[] = {
+static const struct rtpcs_sds_config sds_config_10p3125g_type1[] = {
 	{ 0x2E, 0x00, 0x0107 }, { 0x2E, 0x01, 0x01A3 }, { 0x2E, 0x02, 0x6A24 },
 	{ 0x2E, 0x03, 0xD10D }, { 0x2E, 0x04, 0x8000 }, { 0x2E, 0x05, 0xA17E },
 	{ 0x2E, 0x06, 0xE31D }, { 0x2E, 0x07, 0x800E }, { 0x2E, 0x08, 0x0294 },
@@ -2759,7 +2759,7 @@ static sds_config sds_config_10p3125g_type1[] = {
 	{ 0x2F, 0x13, 0x0000 }
 };
 
-static sds_config sds_config_10p3125g_cmu_type1[] = {
+static const struct rtpcs_sds_config sds_config_10p3125g_cmu_type1[] = {
 	{ 0x2F, 0x03, 0x4210 }, { 0x2F, 0x04, 0x0000 }, { 0x2F, 0x05, 0x0019 },
 	{ 0x2F, 0x06, 0x18A6 }, { 0x2F, 0x07, 0x2990 }, { 0x2F, 0x08, 0xFFF4 },
 	{ 0x2F, 0x09, 0x1F08 }, { 0x2F, 0x0A, 0x0000 }, { 0x2F, 0x0B, 0x8000 },
@@ -2840,14 +2840,14 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 		if (chiptype) {
 			rtpcs_sds_write_bits(sds, 0x6, 0x2, 12, 12, 1);
 
-			for (int i = 0; i < sizeof(sds_config_10p3125g_type1) / sizeof(sds_config); ++i) {
+			for (int i = 0; i < sizeof(sds_config_10p3125g_type1) / sizeof(struct rtpcs_sds_config); ++i) {
 				rtpcs_sds_write(sds,
 						sds_config_10p3125g_type1[i].page - 0x4,
 						sds_config_10p3125g_type1[i].reg,
 						sds_config_10p3125g_type1[i].data);
 			}
 
-			for (int i = 0; i < sizeof(sds_config_10p3125g_cmu_type1) / sizeof(sds_config); ++i) {
+			for (int i = 0; i < sizeof(sds_config_10p3125g_cmu_type1) / sizeof(struct rtpcs_sds_config); ++i) {
 				rtpcs_sds_write(even_sds,
 						sds_config_10p3125g_cmu_type1[i].page - 0x4,
 						sds_config_10p3125g_cmu_type1[i].reg,
