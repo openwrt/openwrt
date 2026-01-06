@@ -93,6 +93,7 @@ define KernelPackage/fsl-enetc-net
   FILES:= \
     $(LINUX_DIR)/drivers/net/ethernet/freescale/enetc/fsl-enetc.ko \
     $(LINUX_DIR)/drivers/net/ethernet/freescale/enetc/fsl-enetc-core.ko \
+    $(LINUX_DIR)/drivers/net/ethernet/freescale/enetc/nxp-enetc-pf-common.ko@ge6.18 \
     $(LINUX_DIR)/drivers/net/ethernet/freescale/enetc/fsl-enetc-vf.ko \
     $(LINUX_DIR)/drivers/net/ethernet/freescale/enetc/fsl-enetc-mdio.ko \
     $(LINUX_DIR)/drivers/net/ethernet/freescale/enetc/fsl-enetc-ierb.ko
