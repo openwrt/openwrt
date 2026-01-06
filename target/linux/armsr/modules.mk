@@ -221,6 +221,17 @@ endef
 
 $(eval $(call KernelPackage,dwmac-imx))
 
+define KernelPackage/dwmac-sun55i
+  SUBMENU=$(NETWORK_DEVICES_MENU)
+  TITLE:=Allwinner A523 (sun55i) Ethernet
+  DEPENDS:=@LINUX_6_18 +kmod-stmmac-core +kmod-of-mdio +kmod-mdio-bus-mux
+  KCONFIG:=CONFIG_DWMAC_SUN55I
+FILES=$(LINUX_DIR)/drivers/net/ethernet/stmicro/stmmac/dwmac-sun55i.ko
+  AUTOLOAD=$(call AutoLoad,45,dwmac-sun55i)
+endef
+
+$(eval $(call KernelPackage,dwmac-sun55i))
+
 define KernelPackage/dwmac-sun8i
   SUBMENU=$(NETWORK_DEVICES_MENU)
   TITLE:=Allwinner H3/A83T/A64 (sun8i) Ethernet
@@ -242,6 +253,17 @@ define KernelPackage/dwmac-rockchip
 endef
 
 $(eval $(call KernelPackage,dwmac-rockchip))
+
+define KernelPackage/dwmac-renesas-gbeth
+  SUBMENU=$(NETWORK_DEVICES_MENU)
+  TITLE:=Renesas GBETH Ethernet
+  DEPENDS:=@LINUX_6_18 +kmod-stmmac-core +kmod-of-mdio +LINUX_6_18:kmod-renesas-rzn-pcs
+  KCONFIG:=CONFIG_DWMAC_RENESAS_GBETH
+  FILES=$(LINUX_DIR)/drivers/net/ethernet/stmicro/stmmac/dwmac-renesas-gbeth.ko
+  AUTOLOAD=$(call AutoLoad,45,dwmac-renesas-gbeth)
+endef
+
+$(eval $(call KernelPackage,dwmac-renesas-gbeth))
 
 define KernelPackage/mdio-thunder
   SUBMENU:=$(NETWORK_DEVICES_MENU)
@@ -306,6 +328,17 @@ define KernelPackage/renesas-net-avb/description
 endef
  
 $(eval $(call KernelPackage,renesas-net-avb))
+
+define KernelPackage/renesas-rzn-pcs
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Renesas RZ/N and RZ/T2H MII controller
+  DEPENDS:=@LINUX_6_18
+  KCONFIG:=CONFIG_PCS_RZN1_MIIC
+  FILES=$(LINUX_DIR)/drivers/net/pcs/pcs-rzn1-miic.ko
+  AUTOLOAD:=$(call AutoProbe,pcs-rzn1-miic)
+endef
+
+$(eval $(call KernelPackage,renesas-rzn-pcs))
 
 define KernelPackage/wdt-sp805
   SUBMENU:=$(OTHER_MENU)
