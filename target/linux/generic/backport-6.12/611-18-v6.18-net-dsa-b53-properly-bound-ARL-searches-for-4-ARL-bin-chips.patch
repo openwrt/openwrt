@@ -23,7 +23,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 
 --- a/drivers/net/dsa/b53/b53_common.c
 +++ b/drivers/net/dsa/b53/b53_common.c
-@@ -2087,13 +2087,16 @@ static int b53_fdb_copy(int port, const
+@@ -2090,13 +2090,16 @@ static int b53_fdb_copy(int port, const
  int b53_fdb_dump(struct dsa_switch *ds, int port,
  		 dsa_fdb_dump_cb_t *cb, void *data)
  {
@@ -41,7 +41,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	mutex_lock(&priv->arl_mutex);
  
  	if (is5325(priv) || is5365(priv))
-@@ -2115,7 +2118,7 @@ int b53_fdb_dump(struct dsa_switch *ds,
+@@ -2118,7 +2121,7 @@ int b53_fdb_dump(struct dsa_switch *ds,
  		if (ret)
  			break;
  
@@ -50,7 +50,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  			b53_arl_search_rd(priv, 1, &results[1]);
  			ret = b53_fdb_copy(port, &results[1], cb, data);
  			if (ret)
-@@ -2125,7 +2128,7 @@ int b53_fdb_dump(struct dsa_switch *ds,
+@@ -2128,7 +2131,7 @@ int b53_fdb_dump(struct dsa_switch *ds,
  				break;
  		}
  

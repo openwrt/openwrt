@@ -41,7 +41,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  #include <linux/delay.h>
  #include <linux/init.h>
  #include <linux/interrupt.h>
-@@ -62,6 +63,34 @@
+@@ -65,6 +66,34 @@
  #define  PCIE_RC_PL_PHY_CTL_15_DIS_PLL_PD_MASK		0x400000
  #define  PCIE_RC_PL_PHY_CTL_15_PM_CLK_PERIOD_MASK	0xff
  
@@ -76,7 +76,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  #define PCIE_MISC_MISC_CTRL				0x4008
  #define  PCIE_MISC_MISC_CTRL_PCIE_RCB_64B_MODE_MASK	0x80
  #define  PCIE_MISC_MISC_CTRL_PCIE_RCB_MPS_MODE_MASK	0x400
-@@ -296,6 +325,91 @@ struct inbound_win {
+@@ -299,6 +328,91 @@ struct inbound_win {
  	u64 cpu_addr;
  };
  
@@ -168,7 +168,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  /*
   * The RESCAL block is tied to PCIe controller #1, regardless of the number of
   * controllers, and turning off PCIe controller #1 prevents access to the RESCAL
-@@ -366,6 +480,21 @@ struct brcm_pcie {
+@@ -369,6 +483,21 @@ struct brcm_pcie {
  	bool			ep_wakeup_capable;
  	const struct pcie_cfg_data	*cfg;
  	u32			tperst_clk_ms;
@@ -190,7 +190,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  };
  
  static inline bool is_bmips(const struct brcm_pcie *pcie)
-@@ -1495,6 +1624,133 @@ static void brcm_config_clkreq(struct br
+@@ -1521,6 +1650,133 @@ static void brcm_config_clkreq(struct br
  	dev_info(pcie->dev, "clkreq-mode set to %s\n", mode);
  }
  
@@ -324,7 +324,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  static int brcm_pcie_start_link(struct brcm_pcie *pcie)
  {
  	struct device *dev = pcie->dev;
-@@ -1508,6 +1764,8 @@ static int brcm_pcie_start_link(struct b
+@@ -1534,6 +1790,8 @@ static int brcm_pcie_start_link(struct b
  	if (pcie->gen)
  		brcm_pcie_set_gen(pcie, pcie->gen);
  
@@ -333,7 +333,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	/* Unassert the fundamental reset */
  	if (pcie->tperst_clk_ms) {
  		/*
-@@ -1531,6 +1789,8 @@ static int brcm_pcie_start_link(struct b
+@@ -1557,6 +1815,8 @@ static int brcm_pcie_start_link(struct b
  	if (ret)
  		return ret;
  
@@ -342,7 +342,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	/*
  	 * Wait for 100ms after PERST# deassertion; see PCIe CEM specification
  	 * sections 2.2, PCIe r5.0, 6.6.1.
-@@ -1567,6 +1827,9 @@ static int brcm_pcie_start_link(struct b
+@@ -1593,6 +1853,9 @@ static int brcm_pcie_start_link(struct b
  		 pci_speed_string(pcie_link_speed[cls]), nlw,
  		 ssc_good ? "(SSC)" : "(!SSC)");
  
@@ -352,7 +352,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	/*
  	 * RootCtl bits are reset by perst_n, which undoes pci_enable_crs()
  	 * called prior to pci_add_new_bus() during probe. Re-enable here.
-@@ -1898,6 +2161,7 @@ err_disable_clk:
+@@ -1924,6 +2187,7 @@ err_disable_clk:
  
  static void __brcm_pcie_remove(struct brcm_pcie *pcie)
  {
@@ -360,7 +360,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	brcm_msi_remove(pcie);
  	brcm_pcie_turn_off(pcie);
  	if (brcm_phy_stop(pcie))
-@@ -2054,6 +2318,98 @@ static struct pci_ops brcm7425_pcie_ops
+@@ -2080,6 +2344,98 @@ static struct pci_ops brcm7425_pcie_ops
  	.remove_bus = brcm_pcie_remove_bus,
  };
  
@@ -459,7 +459,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  static int brcm_pcie_probe(struct platform_device *pdev)
  {
  	struct device_node *np = pdev->dev.of_node;
-@@ -2076,6 +2432,19 @@ static int brcm_pcie_probe(struct platfo
+@@ -2102,6 +2458,19 @@ static int brcm_pcie_probe(struct platfo
  	pcie->dev = &pdev->dev;
  	pcie->np = np;
  	pcie->cfg = data;
