@@ -184,6 +184,10 @@ $(eval $(call UcodeModule, \
 	digest, DIGEST_SUPPORT, , \
 	The digest module allows ucode scripts to use libmd digests.))
 
+$(eval $(call UcodeModule, \
+	io, IO_SUPPORT, , \
+	The io module allows direct file descriptor read/write (including non-blocking).))
+
 $(eval $(call BuildPackage,libucode))
 $(eval $(call BuildPackage,ucode))
 
