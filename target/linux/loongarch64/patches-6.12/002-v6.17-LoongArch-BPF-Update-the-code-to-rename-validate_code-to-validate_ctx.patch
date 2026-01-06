@@ -26,7 +26,7 @@ Signed-off-by: Huacai Chen <chenhuacai@loongson.cn>
 
 --- a/arch/loongarch/net/bpf_jit.c
 +++ b/arch/loongarch/net/bpf_jit.c
-@@ -1170,6 +1170,14 @@ static int validate_code(struct jit_ctx
+@@ -1188,6 +1188,14 @@ static int validate_code(struct jit_ctx
  			return -1;
  	}
  
@@ -41,7 +41,7 @@ Signed-off-by: Huacai Chen <chenhuacai@loongson.cn>
  	if (WARN_ON_ONCE(ctx->num_exentries != ctx->prog->aux->num_exentries))
  		return -1;
  
-@@ -1278,7 +1286,7 @@ skip_init_ctx:
+@@ -1296,7 +1304,7 @@ skip_init_ctx:
  	build_epilogue(&ctx);
  
  	/* 3. Extra pass to validate JITed code */
