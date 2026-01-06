@@ -16,7 +16,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
 
 --- a/drivers/mmc/host/mtk-sd.c
 +++ b/drivers/mmc/host/mtk-sd.c
-@@ -75,8 +75,13 @@
+@@ -77,8 +77,13 @@
  #define MSDC_PATCH_BIT   0xb0
  #define MSDC_PATCH_BIT1  0xb4
  #define MSDC_PATCH_BIT2  0xb8
@@ -30,15 +30,15 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  #define PAD_DS_TUNE      0x188
  #define PAD_CMD_TUNE     0x18c
  #define EMMC51_CFG0	 0x204
-@@ -408,6 +413,7 @@ struct mtk_mmc_compatible {
- 	bool enhance_rx;
- 	bool support_64g;
+@@ -448,6 +453,7 @@ struct mtk_mmc_compatible {
  	bool use_internal_cd;
+ 	bool support_new_tx;
+ 	bool support_new_rx;
 +	bool mips_mt762x;
  };
  
  struct msdc_tune_para {
-@@ -547,6 +553,7 @@ static const struct mtk_mmc_compatible m
+@@ -589,6 +595,7 @@ static const struct mtk_mmc_compatible m
  	.stop_clk_fix = false,
  	.enhance_rx = false,
  	.use_internal_cd = true,
@@ -46,7 +46,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  };
  
  static const struct mtk_mmc_compatible mt7622_compat = {
-@@ -975,7 +982,12 @@ static void msdc_set_mclk(struct msdc_ho
+@@ -1083,7 +1090,12 @@ static void msdc_set_mclk(struct msdc_ho
  	 * mmc_select_hs400() will drop to 50Mhz and High speed mode,
  	 * tune result of hs200/200Mhz is not suitable for 50Mhz
  	 */
@@ -60,7 +60,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  		writel(host->def_tune_para.iocon, host->base + MSDC_IOCON);
  		if (host->top_base) {
  			writel(host->def_tune_para.emmc_top_control,
-@@ -1856,6 +1868,18 @@ static void msdc_init_hw(struct msdc_hos
+@@ -2032,6 +2044,18 @@ static void msdc_init_hw(struct msdc_hos
  				     MSDC_PAD_TUNE_RXDLYSEL);
  	}
  
