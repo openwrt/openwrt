@@ -439,8 +439,8 @@ else
 	      $(foreach provide,$(filter-out $(1),$(PROVIDES)),$(if $(findstring kmod-,$(provide)), $(provide), $(provide)=$(VERSION))), \
 	      $(PROVIDES) \
 	    ))) \
-		$(if $(CONFLICTS),$(foreach conflict,$(CONFLICTS),$(if $(findstring $(conflict),$(PROVIDES)),, $(conflict)=0.0.0)))" \
-	  $(if $(DEFAULT_VARIANT),--info "provider-priority:100",$(if $(PROVIDES),--info "provider-priority:1")) \
+	    $(if $(CONFLICTS),$(foreach conflict,$(CONFLICTS),$(if $(findstring $(conflict),$(PROVIDES)),, $(conflict)=0.0.0)))" \
+	  $(if $(DEFAULT_VARIANT),--info "provider-priority:100",$(if $(findstring linux,$(SOURCE)),--info "provider-priority:50",--info "provider-priority:1")) \
 	  $$(APK_SCRIPTS_$(1)) \
 	  --info "depends:$$(foreach depends,$$(subst $$(comma),$$(space),$$(subst $$(space),,$$(subst $$(paren_right),,$$(subst $$(paren_left),,$$(Package/$(1)/DEPENDS))))),$$(depends))" \
 	  --files "$$(IDIR_$(1))" \
