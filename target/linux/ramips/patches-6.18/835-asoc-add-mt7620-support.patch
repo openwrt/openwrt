@@ -19,23 +19,23 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/sound/soc/Kconfig
 +++ b/sound/soc/Kconfig
-@@ -107,6 +107,7 @@ source "sound/soc/mxs/Kconfig"
- source "sound/soc/pxa/Kconfig"
+@@ -125,6 +125,7 @@ source "sound/soc/pxa/Kconfig"
  source "sound/soc/qcom/Kconfig"
+ source "sound/soc/renesas/Kconfig"
  source "sound/soc/rockchip/Kconfig"
 +source "sound/soc/ralink/Kconfig"
  source "sound/soc/samsung/Kconfig"
- source "sound/soc/sh/Kconfig"
- source "sound/soc/sof/Kconfig"
+ source "sound/soc/sdca/Kconfig"
+ source "sound/soc/spear/Kconfig"
 --- a/sound/soc/Makefile
 +++ b/sound/soc/Makefile
-@@ -60,6 +60,7 @@ obj-$(CONFIG_SND_SOC)	+= kirkwood/
- obj-$(CONFIG_SND_SOC)	+= pxa/
+@@ -67,6 +67,7 @@ obj-$(CONFIG_SND_SOC)	+= pxa/
  obj-$(CONFIG_SND_SOC)	+= qcom/
+ obj-$(CONFIG_SND_SOC)	+= renesas/
  obj-$(CONFIG_SND_SOC)	+= rockchip/
 +obj-$(CONFIG_SND_SOC)	+= ralink/
  obj-$(CONFIG_SND_SOC)	+= samsung/
- obj-$(CONFIG_SND_SOC)	+= sh/
+ obj-$(CONFIG_SND_SOC)	+= sdca/
  obj-$(CONFIG_SND_SOC)	+= sof/
 --- /dev/null
 +++ b/sound/soc/ralink/Kconfig
@@ -234,7 +234,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +	/* disable clock at slave mode */
 +	if ((i2s->fmt & SND_SOC_DAIFMT_MASTER_MASK) ==
-+			SND_SOC_DAIFMT_CBM_CFM) {
++			SND_SOC_DAIFMT_CBP_CFP) {
 +		regmap_update_bits(i2s->regmap, I2S_REG_CFG0,
 +				I2S_REG_CFG0_CLK_DIS,
 +				I2S_REG_CFG0_CLK_DIS);
@@ -266,7 +266,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +	/* disable clock at slave mode */
 +	if ((i2s->fmt & SND_SOC_DAIFMT_MASTER_MASK) ==
-+			SND_SOC_DAIFMT_CBM_CFM) {
++			SND_SOC_DAIFMT_CBP_CFP) {
 +		regmap_update_bits(i2s->regmap, I2S_REG_DIVCMP,
 +				I2S_REG_DIVCMP_CLKEN, 0);
 +		return 0;
@@ -303,13 +303,13 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +	/* set master/slave audio interface */
 +	switch (fmt & SND_SOC_DAIFMT_MASTER_MASK) {
-+	case SND_SOC_DAIFMT_CBM_CFM:
++	case SND_SOC_DAIFMT_CBP_CFP:
 +		if (i2s->flags & RALINK_FLAGS_TXONLY)
 +			cfg0 |= I2S_REG_CFG0_SLAVE_EN;
 +		else
 +			cfg0 |= I2S_REG_CFG0_SLAVE;
 +		break;
-+	case SND_SOC_DAIFMT_CBS_CFS:
++	case SND_SOC_DAIFMT_CBC_CFC:
 +		break;
 +	default:
 +		return -EINVAL;
@@ -969,7 +969,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +static struct platform_driver ralink_i2s_driver = {
 +	.probe = ralink_i2s_probe,
-+	.remove_new = ralink_i2s_remove,
++	.remove = ralink_i2s_remove,
 +	.driver = {
 +		.name = DRV_NAME,
 +		.of_match_table = ralink_i2s_match_table,
