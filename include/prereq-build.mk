@@ -158,7 +158,7 @@ $(eval $(call SetupHostCommand,python,Please install Python >= 3.5, \
 	python3.7 -V 2>&1 | grep 'Python 3', \
 	python3.6 -V 2>&1 | grep 'Python 3', \
 	python3.5 -V 2>&1 | grep 'Python 3', \
-	python3 -V 2>&1 | grep -E 'Python 3\.[5-9]\.?'))
+	python3 -V 2>&1 | grep -E 'Python 3\.(1[0-9]|[5-9])\.?'))
 
 $(eval $(call SetupHostCommand,python3,Please install Python >= 3.5, \
 	python3.9 -V 2>&1 | grep 'Python 3', \
@@ -166,11 +166,11 @@ $(eval $(call SetupHostCommand,python3,Please install Python >= 3.5, \
 	python3.7 -V 2>&1 | grep 'Python 3', \
 	python3.6 -V 2>&1 | grep 'Python 3', \
 	python3.5 -V 2>&1 | grep 'Python 3', \
-	python3 -V 2>&1 | grep -E 'Python 3\.[5-9]\.?'))
+	python3 -V 2>&1 | grep -E 'Python 3\.(1[0-9]|[5-9])\.?'))
 
 $(eval $(call TestHostCommand,python3-distutils, \
 	Please install the Python3 distutils module, \
-	$(STAGING_DIR_HOST)/bin/python3 -c 'import distutils'))
+	python3 -c 'import distutils' 2>/dev/null || python3.10 -c 'import distutils' 2>/dev/null || python3.9 -c 'import distutils' 2>/dev/null || python3.8 -c 'import distutils' 2>/dev/null || python3.7 -c 'import distutils' 2>/dev/null || python3.6 -c 'import distutils' 2>/dev/null || python3.5 -c 'import distutils'))
 
 $(eval $(call SetupHostCommand,git,Please install Git (git-core) >= 1.7.12.2, \
 	git --exec-path | xargs -I % -- grep -q -- --recursive %/git-submodule))
