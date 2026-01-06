@@ -1,0 +1,31 @@
+
+
+--- a/drivers/mfd/Kconfig
++++ b/drivers/mfd/Kconfig
+@@ -546,6 +546,17 @@ config MFD_MX25_TSADC
+ 	  i.MX25 processors. They consist of a conversion queue for general
+ 	  purpose ADC and a queue for Touchscreens.
+ 
++config MFD_HASIVO_STC8
++	tristate "Hasivo STC8 Multifunction Device"
++	select MFD_CORE
++	select REGMAP_I2C
++	depends on I2C
++	help
++	  Support for the Hasivo STC8 multifunction device over I2C.
++	  This driver provides common support for accessing the device,
++	  additional drivers must be enabled in order to use the
++	  functionality of the device.
++
+ config MFD_HI6421_PMIC
+ 	tristate "HiSilicon Hi6421 PMU/Codec IC"
+ 	depends on OF
+--- a/drivers/mfd/Makefile
++++ b/drivers/mfd/Makefile
+@@ -289,3 +289,5 @@ obj-$(CONFIG_MFD_ATC260X_I2C)	+= atc260x
+ 
+ obj-$(CONFIG_MFD_RSMU_I2C)	+= rsmu_i2c.o rsmu_core.o
+ obj-$(CONFIG_MFD_RSMU_SPI)	+= rsmu_spi.o rsmu_core.o
++
++obj-$(CONFIG_MFD_HASIVO_STC8) += hasivo-stc8-mfd.o
+\ No newline at end of file
