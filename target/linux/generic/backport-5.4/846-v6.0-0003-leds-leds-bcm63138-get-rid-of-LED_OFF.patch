@@ -1,0 +1,30 @@
+From 92cfc71ee2ddfb499ed53e21b28bdf8739bc70bc Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Sun, 17 Jul 2022 14:42:48 +0200
+Subject: [PATCH] leds: leds-bcm63138: get rid of LED_OFF
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The whole "enum led_brightness" is marked as obsolete. Replace it with a
+(non-)zero check.
+
+Reported-by: Pavel Machek <pavel@ucw.cz>
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Signed-off-by: Pavel Machek <pavel@ucw.cz>
+---
+ drivers/leds/blink/leds-bcm63138.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/drivers/leds/blink/leds-bcm63138.c
++++ b/drivers/leds/blink/leds-bcm63138.c
+@@ -113,8 +113,7 @@ static void bcm63138_leds_enable_led(str
+ {
+ 	u32 bit = BIT(led->pin);
+ 
+-	bcm63138_leds_update_bits(leds, BCM63138_SW_DATA, bit,
+-				  value == LED_OFF ? 0 : bit);
++	bcm63138_leds_update_bits(leds, BCM63138_SW_DATA, bit, value ? bit : 0);
+ }
+ 
+ /*

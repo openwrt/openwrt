@@ -28,7 +28,7 @@ This reverts commit 63d1a3488ff58e094a7f517cf93c0250f0a3f6be.
  static int fsl_sai_set_dai_sysclk_tr(struct snd_soc_dai *cpu_dai,
  		int clk_id, unsigned int freq, int fsl_dir)
  {
-@@ -433,14 +423,8 @@ static int fsl_sai_hw_params(struct snd_
+@@ -434,14 +424,8 @@ static int fsl_sai_hw_params(struct snd_
  		slot_width = sai->slot_width;
  
  	if (!sai->is_slave_mode) {
@@ -45,7 +45,7 @@ This reverts commit 63d1a3488ff58e094a7f517cf93c0250f0a3f6be.
  		if (ret)
  			return ret;
  
-@@ -646,7 +630,6 @@ static void fsl_sai_shutdown(struct snd_
+@@ -647,7 +631,6 @@ static void fsl_sai_shutdown(struct snd_
  }
  
  static const struct snd_soc_dai_ops fsl_sai_pcm_dai_ops = {

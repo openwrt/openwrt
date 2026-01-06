@@ -28,8 +28,9 @@
  
  		partition@200000 {
 -			label = "kernel";
+-			reg = <0x200000 0x2A0000>;
 +			label = "kernel1";
- 			reg = <0x200000 0x2A0000>;
++			reg = <0x200000 0x1A00000>;
  		};
  
  		partition@4a0000 {
@@ -40,8 +41,9 @@
  
  		partition@1c00000 {
 -			label = "alt_kernel";
+-			reg = <0x1C00000 0x2A0000>;
 +			label = "kernel2";
- 			reg = <0x1C00000 0x2A0000>;
++			reg = <0x1C00000 0x1A00000>;
  		};
  
  		partition@1ea0000 {

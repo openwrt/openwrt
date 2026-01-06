@@ -82,7 +82,7 @@ Cc: linux-rockchip@lists.infradead.org
  
 --- a/drivers/pci/controller/pci-aardvark.c
 +++ b/drivers/pci/controller/pci-aardvark.c
-@@ -1060,7 +1060,8 @@ static int advk_pcie_probe(struct platfo
+@@ -1521,7 +1521,8 @@ static int advk_pcie_probe(struct platfo
  		return ret;
  	}
  
@@ -249,7 +249,7 @@ Cc: linux-rockchip@lists.infradead.org
  
 --- a/drivers/pci/controller/pcie-xilinx-nwl.c
 +++ b/drivers/pci/controller/pcie-xilinx-nwl.c
-@@ -845,8 +845,8 @@ static int nwl_pcie_probe(struct platfor
+@@ -857,8 +857,8 @@ static int nwl_pcie_probe(struct platfor
  		return err;
  	}
  
@@ -382,7 +382,7 @@ Cc: linux-rockchip@lists.infradead.org
  
 --- a/drivers/pci/pci.h
 +++ b/drivers/pci/pci.h
-@@ -643,11 +643,15 @@ static inline void pci_release_bus_of_no
+@@ -634,11 +634,15 @@ static inline void pci_release_bus_of_no
  #if defined(CONFIG_OF_ADDRESS)
  int devm_of_pci_get_host_bridge_resources(struct device *dev,
  			unsigned char busno, unsigned char bus_max,
@@ -402,7 +402,7 @@ Cc: linux-rockchip@lists.infradead.org
  }
 --- a/include/linux/pci.h
 +++ b/include/linux/pci.h
-@@ -2278,6 +2278,7 @@ struct irq_domain;
+@@ -2282,6 +2282,7 @@ struct irq_domain;
  struct irq_domain *pci_host_bridge_of_msi_domain(struct pci_bus *bus);
  int pci_parse_request_of_pci_ranges(struct device *dev,
  				    struct list_head *resources,
@@ -410,7 +410,7 @@ Cc: linux-rockchip@lists.infradead.org
  				    struct resource **bus_range);
  
  /* Arch may override this (weak) */
-@@ -2286,9 +2287,11 @@ struct device_node *pcibios_get_phb_of_n
+@@ -2290,9 +2291,11 @@ struct device_node *pcibios_get_phb_of_n
  #else	/* CONFIG_OF */
  static inline struct irq_domain *
  pci_host_bridge_of_msi_domain(struct pci_bus *bus) { return NULL; }

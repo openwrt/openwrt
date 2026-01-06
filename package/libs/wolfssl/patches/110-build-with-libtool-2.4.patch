@@ -1,0 +1,11 @@
+--- a/configure.ac
++++ b/configure.ac
+@@ -32,7 +32,7 @@ AC_ARG_PROGRAM
+ 
+ AC_CONFIG_HEADERS([config.h:config.in])
+ 
+-LT_PREREQ([2.4.2])
++LT_PREREQ([2.4])
+ LT_INIT([disable-static win32-dll])
+ 
+ AC_ARG_VAR(EXTRA_CFLAGS, [Extra CFLAGS to add to autoconf-computed arg list.  Can also supply directly to make.])

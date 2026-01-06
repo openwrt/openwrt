@@ -1,0 +1,11 @@
+--- a/config.sub	2022-01-29 02:09:42.943549003 +0000
++++ b/config.sub	2022-01-29 02:04:23.172378567 +0000
+@@ -118,7 +118,7 @@
+ # Here we must recognize all the valid KERNEL-OS combinations.
+ maybe_os=`echo $1 | sed 's/^\(.*\)-\([^-]*-[^-]*\)$/\2/'`
+ case $maybe_os in
+-  nto-qnx* | linux-gnu* | linux-dietlibc | linux-uclibc* | uclinux-uclibc* | uclinux-gnu* | \
++  nto-qnx* | linux-gnu* | linux-dietlibc | linux-uclibc* | linux-musl | uclinux-uclibc* | uclinux-gnu* | \
+   kfreebsd*-gnu* | knetbsd*-gnu* | netbsd*-gnu* | storm-chaos* | os2-emx* | rtmk-nova*)
+     os=-$maybe_os
+     basic_machine=`echo $1 | sed 's/^\(.*\)-\([^-]*-[^-]*\)$/\1/'`

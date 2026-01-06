@@ -16,7 +16,7 @@ Signed-off-by: Viorel Suman <viorel.suman@nxp.com>
 
 --- a/sound/soc/fsl/fsl_sai.c
 +++ b/sound/soc/fsl/fsl_sai.c
-@@ -300,7 +300,7 @@ static int fsl_sai_set_dai_fmt_tr(struct
+@@ -301,7 +301,7 @@ static int fsl_sai_set_dai_fmt_tr(struct
  		return -EINVAL;
  	}
  
@@ -25,7 +25,7 @@ Signed-off-by: Viorel Suman <viorel.suman@nxp.com>
  
  	/* DAI clock master masks */
  	switch (fmt & SND_SOC_DAIFMT_MASTER_MASK) {
-@@ -310,7 +310,7 @@ static int fsl_sai_set_dai_fmt_tr(struct
+@@ -311,7 +311,7 @@ static int fsl_sai_set_dai_fmt_tr(struct
  		sai->is_slave_mode = false;
  		break;
  	case SND_SOC_DAIFMT_CBM_CFM:
@@ -34,7 +34,7 @@ Signed-off-by: Viorel Suman <viorel.suman@nxp.com>
  		break;
  	case SND_SOC_DAIFMT_CBS_CFM:
  		val_cr2 |= FSL_SAI_CR2_BCD_MSTR;
-@@ -318,7 +318,7 @@ static int fsl_sai_set_dai_fmt_tr(struct
+@@ -319,7 +319,7 @@ static int fsl_sai_set_dai_fmt_tr(struct
  		break;
  	case SND_SOC_DAIFMT_CBM_CFS:
  		val_cr4 |= FSL_SAI_CR4_FSD_MSTR;
@@ -43,7 +43,7 @@ Signed-off-by: Viorel Suman <viorel.suman@nxp.com>
  		break;
  	default:
  		return -EINVAL;
-@@ -359,7 +359,7 @@ static int fsl_sai_set_bclk(struct snd_s
+@@ -360,7 +360,7 @@ static int fsl_sai_set_bclk(struct snd_s
  	int ret = 0;
  
  	/* Don't apply to slave mode */
@@ -52,7 +52,7 @@ Signed-off-by: Viorel Suman <viorel.suman@nxp.com>
  		return 0;
  
  	for (id = 0; id < FSL_SAI_MCLK_MAX; id++) {
-@@ -454,7 +454,7 @@ static int fsl_sai_hw_params(struct snd_
+@@ -455,7 +455,7 @@ static int fsl_sai_hw_params(struct snd_
  	if (sai->slot_width)
  		slot_width = sai->slot_width;
  
@@ -61,7 +61,7 @@ Signed-off-by: Viorel Suman <viorel.suman@nxp.com>
  		ret = fsl_sai_set_bclk(cpu_dai, tx,
  				slots * slot_width * params_rate(params));
  		if (ret)
-@@ -490,7 +490,7 @@ static int fsl_sai_hw_params(struct snd_
+@@ -491,7 +491,7 @@ static int fsl_sai_hw_params(struct snd_
  	 * error.
  	 */
  
@@ -70,7 +70,7 @@ Signed-off-by: Viorel Suman <viorel.suman@nxp.com>
  		if (!sai->synchronous[TX] && sai->synchronous[RX] && !tx) {
  			regmap_update_bits(sai->regmap, FSL_SAI_TCR4,
  				FSL_SAI_CR4_SYWD_MASK | FSL_SAI_CR4_FRSZ_MASK,
-@@ -519,7 +519,7 @@ static int fsl_sai_hw_params(struct snd_
+@@ -520,7 +520,7 @@ static int fsl_sai_hw_params(struct snd_
  	 * error.
  	 */
  
@@ -79,7 +79,7 @@ Signed-off-by: Viorel Suman <viorel.suman@nxp.com>
  		if (!sai->synchronous[TX] && sai->synchronous[RX] && !tx) {
  			regmap_update_bits(sai->regmap, FSL_SAI_TCR4,
  				FSL_SAI_CR4_SYWD_MASK | FSL_SAI_CR4_FRSZ_MASK,
-@@ -577,7 +577,7 @@ static int fsl_sai_hw_free(struct snd_pc
+@@ -578,7 +578,7 @@ static int fsl_sai_hw_free(struct snd_pc
  	struct fsl_sai *sai = snd_soc_dai_get_drvdata(cpu_dai);
  	bool tx = substream->stream == SNDRV_PCM_STREAM_PLAYBACK;
  
@@ -88,7 +88,7 @@ Signed-off-by: Viorel Suman <viorel.suman@nxp.com>
  			sai->mclk_streams & BIT(substream->stream)) {
  		clk_disable_unprepare(sai->mclk_clk[sai->mclk_id[tx]]);
  		sai->mclk_streams &= ~BIT(substream->stream);
-@@ -672,7 +672,7 @@ static int fsl_sai_trigger(struct snd_pc
+@@ -673,7 +673,7 @@ static int fsl_sai_trigger(struct snd_pc
  			 * This is a hardware bug, and will be fix in the
  			 * next sai version.
  			 */

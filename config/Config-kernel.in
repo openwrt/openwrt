@@ -436,34 +436,22 @@ config KERNEL_PROVE_LOCKING
 	select KERNEL_DEBUG_KERNEL
 	default n
 
-config KERNEL_LOCKUP_DETECTOR
-	bool "Compile the kernel with detect Hard and Soft Lockups"
+config KERNEL_SOFTLOCKUP_DETECTOR
+	bool "Compile the kernel with detect Soft Lockups"
 	depends on KERNEL_DEBUG_KERNEL
 	help
 	  Say Y here to enable the kernel to act as a watchdog to detect
-	  hard and soft lockups.
+	  soft lockups.
 
 	  Softlockups are bugs that cause the kernel to loop in kernel
 	  mode for more than 20 seconds, without giving other tasks a
 	  chance to run.  The current stack trace is displayed upon
 	  detection and the system will stay locked up.
 
-	  Hardlockups are bugs that cause the CPU to loop in kernel mode
-	  for more than 10 seconds, without letting other interrupts have a
-	  chance to run.  The current stack trace is displayed upon detection
-	  and the system will stay locked up.
-
-	  The overhead should be minimal.  A periodic hrtimer runs to
-	  generate interrupts and kick the watchdog task every 4 seconds.
-	  An NMI is generated every 10 seconds or so to check for hardlockups.
-
-	  The frequency of hrtimer and NMI events and the soft and hard lockup
-	  thresholds can be controlled through the sysctl watchdog_thresh.
-
 config KERNEL_DETECT_HUNG_TASK
 	bool "Compile the kernel with detect Hung Tasks"
 	depends on KERNEL_DEBUG_KERNEL
-	default KERNEL_LOCKUP_DETECTOR
+	default KERNEL_SOFTLOCKUP_DETECTOR
 	help
 	  Say Y here to enable the kernel to detect "hung tasks",
 	  which are bugs that cause the task to be stuck in

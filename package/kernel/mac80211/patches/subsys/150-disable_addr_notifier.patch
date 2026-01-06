@@ -52,7 +52,7 @@
   fail_ifa:
  #endif
  	wiphy_unregister(local->hw.wiphy);
-@@ -1365,10 +1365,10 @@ void ieee80211_unregister_hw(struct ieee
+@@ -1367,10 +1367,10 @@ void ieee80211_unregister_hw(struct ieee
  	tasklet_kill(&local->tx_pending_tasklet);
  	tasklet_kill(&local->tasklet);
  

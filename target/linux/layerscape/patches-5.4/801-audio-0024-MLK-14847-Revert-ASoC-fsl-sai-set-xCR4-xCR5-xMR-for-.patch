@@ -21,7 +21,7 @@ Signed-off-by: Mihai Serban <mihai.serban@nxp.com>
 
 --- a/sound/soc/fsl/fsl_sai.c
 +++ b/sound/soc/fsl/fsl_sai.c
-@@ -507,35 +507,6 @@ static int fsl_sai_hw_params(struct snd_
+@@ -508,35 +508,6 @@ static int fsl_sai_hw_params(struct snd_
  			regmap_update_bits(sai->regmap, FSL_SAI_TCR5,
  				FSL_SAI_CR5_WNW_MASK | FSL_SAI_CR5_W0W_MASK |
  				FSL_SAI_CR5_FBT_MASK, val_cr5);

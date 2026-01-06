@@ -31,7 +31,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
  		container_of(hw, struct raspberrypi_clk_data, hw);
 @@ -118,21 +118,27 @@ static unsigned long raspberrypi_fw_pll_
  	if (ret)
- 		return ret;
+ 		return 0;
  
 -	return val * RPI_FIRMWARE_PLLB_ARM_DIV_RATE;
 +	return val;

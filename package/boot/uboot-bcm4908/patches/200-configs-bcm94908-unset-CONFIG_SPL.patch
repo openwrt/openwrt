@@ -1,0 +1,50 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Fri, 4 Mar 2022 09:21:32 +0100
+Subject: [PATCH] configs: bcm94908: unset CONFIG_SPL
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Compiling SPL is always tricky as it needs to fit limited resources.
+Fortunately in most cases there is no need to replace SPL or TPL while
+flashing a new firmware.
+
+Compiling SPL for BCM4908 seems to fail with non-Broadcom toolchain:
+aarch64-openwrt-linux-musl-ld.bfd: u-boot-spl section `.u_boot_list' will not fit in region `.sram'
+aarch64-openwrt-linux-musl-ld.bfd: section .bss VMA [00000000822b9000,00000000822b93ef] overlaps section .u_boot_list VMA [00000000822b8f60,00000000822b9a87]
+aarch64-openwrt-linux-musl-ld.bfd: region `.sram' overflowed by 2696 bytes
+
+It also requires hashtable.h which has to be generated using some
+Broadcom's custom perl script that isn't integrated as this point.
+
+For now just disable SPL and use only last-stage U-Boot that must be
+shipped with every firmware.
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+---
+ configs/bcm94908_defconfig | 2 +-
+ configs/bcm94912_defconfig | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/configs/bcm94908_defconfig
++++ b/configs/bcm94908_defconfig
+@@ -21,7 +21,7 @@ CONFIG_SPL_SERIAL_SUPPORT=y
+ CONFIG_TPL_LIBCOMMON_SUPPORT=y
+ CONFIG_TPL_LIBGENERIC_SUPPORT=y
+ CONFIG_NR_DRAM_BANKS=1
+-CONFIG_SPL=y
++# CONFIG_SPL is not set
+ CONFIG_SPL_LIBDISK_SUPPORT=y
+ CONFIG_ENV_VARS_UBOOT_CONFIG=y
+ CONFIG_TPL_SYS_MALLOC_F_LEN=0x11000
+--- a/configs/bcm94912_defconfig
++++ b/configs/bcm94912_defconfig
+@@ -22,7 +22,7 @@ CONFIG_TPL_LIBCOMMON_SUPPORT=y
+ CONFIG_TPL_LIBGENERIC_SUPPORT=y
+ CONFIG_SPL_SYS_MALLOC_F_LEN=0x2000
+ CONFIG_NR_DRAM_BANKS=2
+-CONFIG_SPL=y
++# CONFIG_SPL is not set
+ CONFIG_SPL_LIBDISK_SUPPORT=y
+ CONFIG_ENV_VARS_UBOOT_CONFIG=y
+ CONFIG_TPL_SYS_MALLOC_F_LEN=0x10000

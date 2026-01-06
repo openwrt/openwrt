@@ -1,0 +1,34 @@
+From 62a3106697f3c6f9af64a2cd0f9ff58552010dc8 Mon Sep 17 00:00:00 2001
+From: Colin Ian King <colin.i.king@gmail.com>
+Date: Wed, 22 Dec 2021 00:39:37 +0000
+Subject: [PATCH] net: broadcom: bcm4908enet: remove redundant variable bytes
+
+The variable bytes is being used to summate slot lengths,
+however the value is never used afterwards. The summation
+is redundant so remove variable bytes.
+
+Signed-off-by: Colin Ian King <colin.i.king@gmail.com>
+Link: https://lore.kernel.org/r/20211222003937.727325-1-colin.i.king@gmail.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/ethernet/broadcom/bcm4908_enet.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+--- a/drivers/net/ethernet/broadcom/bcm4908_enet.c
++++ b/drivers/net/ethernet/broadcom/bcm4908_enet.c
+@@ -634,7 +634,6 @@ static int bcm4908_enet_poll_tx(struct n
+ 	struct bcm4908_enet_dma_ring_bd *buf_desc;
+ 	struct bcm4908_enet_dma_ring_slot *slot;
+ 	struct device *dev = enet->dev;
+-	unsigned int bytes = 0;
+ 	int handled = 0;
+ 
+ 	while (handled < weight && tx_ring->read_idx != tx_ring->write_idx) {
+@@ -645,7 +644,6 @@ static int bcm4908_enet_poll_tx(struct n
+ 
+ 		dma_unmap_single(dev, slot->dma_addr, slot->len, DMA_TO_DEVICE);
+ 		dev_kfree_skb(slot->skb);
+-		bytes += slot->len;
+ 		if (++tx_ring->read_idx == tx_ring->length)
+ 			tx_ring->read_idx = 0;
+ 

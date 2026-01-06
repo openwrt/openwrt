@@ -1,0 +1,26 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Tue, 3 Jan 2023 07:19:26 +0000
+Subject: [PATCH] net: dsa: felix: update .get_tag_protocol CB to the changed
+ API
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+(cherry picked from commit 4d776482ecc689bdd68627985ac4cb5a6f325953)
+---
+ drivers/net/dsa/ocelot/felix.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/ocelot/felix.c
++++ b/drivers/net/dsa/ocelot/felix.c
+@@ -48,7 +48,8 @@ const struct tsn_ops switch_tsn_ops = {
+ #endif
+ 
+ static enum dsa_tag_protocol felix_get_tag_protocol(struct dsa_switch *ds,
+-						    int port)
++						    int port,
++						    enum dsa_tag_protocol mp)
+ {
+ 	return DSA_TAG_PROTO_OCELOT;
+ }

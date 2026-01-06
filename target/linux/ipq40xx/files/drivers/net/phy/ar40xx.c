@@ -935,6 +935,7 @@ ar40xx_malibu_psgmii_ess_reset(struct ar40xx_priv *priv)
 		  */
 		mdelay(2);
 	}
+	mdelay(50);
 
 	/*check malibu psgmii calibration done end..*/
 
@@ -953,6 +954,7 @@ ar40xx_malibu_psgmii_ess_reset(struct ar40xx_priv *priv)
 		/* Polling interval to check PSGMII PLL in ESS is ready */
 		mdelay(2);
 	}
+	mdelay(50);
 
 	/* check dakota psgmii calibration done end..*/
 
@@ -960,6 +962,7 @@ ar40xx_malibu_psgmii_ess_reset(struct ar40xx_priv *priv)
 	mdiobus_write(bus, 5, 0x1a, 0x3230);
 	/* release phy psgmii RX 20bit */
 	mdiobus_write(bus, 5, 0x0, 0x005f);
+	mdelay(200);
 }
 
 static void
@@ -1198,8 +1201,7 @@ ar40xx_init_port(struct ar40xx_priv *priv, int port)
 {
 	u32 t;
 
-	ar40xx_rmw(priv, AR40XX_REG_PORT_STATUS(port),
-			AR40XX_PORT_AUTO_LINK_EN, 0);
+	ar40xx_write(priv, AR40XX_REG_PORT_STATUS(port), 0);
 
 	ar40xx_write(priv, AR40XX_REG_PORT_HEADER(port), 0);
 

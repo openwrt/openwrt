@@ -96,7 +96,7 @@ generate_network() {
 
 	json_select network
 		json_select "$1"
-			json_get_vars device macaddr protocol ipaddr netmask vlan
+			json_get_vars device macaddr metric protocol ipaddr netmask vlan
 			json_get_values ports ports
 		json_select ..
 	json_select ..
@@ -154,6 +154,7 @@ generate_network() {
 		set network.$1='interface'
 		set network.$1.type='$type'
 		set network.$1.device='$device'
+		set network.$1.metric='$metric'
 		set network.$1.proto='none'
 	EOF
 

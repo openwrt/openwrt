@@ -9,12 +9,12 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	gpio-keys {
  		compatible = "gpio-keys";
  
-+		power {
++		button-power {
 +			label = "Power";
 +			linux,code = <KEY_POWER>;
 +			gpios = <&chipcommon 1 GPIO_ACTIVE_LOW>;
 +		};
 +
- 		restart {
+ 		button-restart {
  			label = "Reset";
  			linux,code = <KEY_RESTART>;

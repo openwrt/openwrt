@@ -1,0 +1,33 @@
+From 5ae8c0d51ace3bdbfb89c27e7661f081cc9287de Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <f.fainelli@gmail.com>
+Date: Mon, 30 Mar 2020 14:38:51 -0700
+Subject: [PATCH] net: dsa: bcm_sf2: Check earlier for FLOW_EXT and
+ FLOW_MAC_EXT
+
+We do not currently support matching on FLOW_EXT or FLOW_MAC_EXT, but we
+were not checking for those bits being set in the flow specification.
+
+The check for FLOW_EXT and FLOW_MAC_EXT are separated out because a
+subsequent commit will add support for matching VLAN TCI which are
+covered by FLOW_EXT.
+
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/dsa/bcm_sf2_cfp.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/dsa/bcm_sf2_cfp.c
++++ b/drivers/net/dsa/bcm_sf2_cfp.c
+@@ -878,8 +878,9 @@ static int bcm_sf2_cfp_rule_set(struct d
+ 	int ret = -EINVAL;
+ 
+ 	/* Check for unsupported extensions */
+-	if ((fs->flow_type & FLOW_EXT) && (fs->m_ext.vlan_etype ||
+-	     fs->m_ext.data[1]))
++	if ((fs->flow_type & FLOW_EXT) ||
++	    (fs->flow_type & FLOW_MAC_EXT) ||
++	    fs->m_ext.data[1])
+ 		return -EINVAL;
+ 
+ 	if (fs->location != RX_CLS_LOC_ANY &&

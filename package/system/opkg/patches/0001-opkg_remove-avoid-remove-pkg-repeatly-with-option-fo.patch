@@ -1,0 +1,36 @@
+From 1026cbe58f6ee78fd9e00e9f72a965727414e155 Mon Sep 17 00:00:00 2001
+From: Hongxu Jia <hongxu.jia@windriver.com>
+Date: Tue, 7 Sep 2021 18:42:45 -0400
+Subject: [PATCH] opkg_remove: avoid remove pkg repeatly with option
+ --force-removal-of-dependent-packages
+
+While remove pkg with '--force-removal-of-dependent-packages',
+pkg may be added to pkgs remove list multiple times, add status
+check to make sure pkg only be removed once.
+
+Signed-off-by: Hongxu Jia <hongxu.jia@windriver.com>
+Signed-off-by: Paul Barker <paul@paulbarker.me.uk>
+(Cherry picked from https://git.yoctoproject.org/cgit/cgit.cgi/opkg/commit/?id=e8996180833aa35d101fbeadec3d787ce0bbda5c)
+(Fixes https://dev.archive.openwrt.org/ticket/18320 and openwrt/packages CI)
+(cherry picked from commit 9c44557a776da993c2ab80cfac4dbd8d59807d01)
+---
+ libopkg/opkg_remove.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/libopkg/opkg_remove.c
++++ b/libopkg/opkg_remove.c
+@@ -249,6 +249,14 @@ int opkg_remove_pkg(pkg_t * pkg, int fro
+ 	if ((parent_pkg = pkg->parent) == NULL)
+ 		return 0;
+ 
++	/* While remove pkg with '--force-removal-of-dependent-packages',
++	   pkg may be added to remove list multiple times, add status
++	   check to make sure pkg only be removed once. */
++	if (conf->force_removal_of_dependent_packages &&
++	        pkg->state_flag & SF_FILELIST_CHANGED &&
++	        pkg->state_status == SS_NOT_INSTALLED)
++		return 0;
++
+ 	/* only attempt to remove dependent installed packages if
+ 	 * force_depends is not specified or the package is being
+ 	 * replaced.

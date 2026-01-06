@@ -1,0 +1,65 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/include/ "bootfs.itsi"
+
+/ {
+	images {
+		uboot {
+			data = /incbin/("${images_dir}/u-boot/u-boot-bcm4912.bin");
+		};
+
+		fdt_uboot {
+			data = /incbin/("${images_dir}/u-boot/u-boot-bcm4912.dtb");
+		};
+
+		fdt_uboot_GTAX6000 {
+			description = "dtb";
+			data = /incbin/("${images_dir}/u-boot/GTAX6000.dtb");
+			arch = "arm64";
+			type = "flat_dt";
+			compression = "none";
+
+			hash-1 {
+				algo = "sha256";
+			};
+		};
+
+		fdt_linux_GTAX6000 {
+			description = "dtb";
+			data = /incbin/("${dts_dir}/broadcom/bcmbca/bcm4912-asus-gt-ax6000.dtb");
+			arch = "arm64";
+			type = "flat_dt";
+			compression = "none";
+
+			hash-1 {
+				algo = "sha256";
+			};
+		};
+	};
+
+	configurations {
+		conf_ub_GTAX6000 {
+			description = "GTAX6000";
+			fdt = "fdt_uboot_GTAX6000";
+			loadables = "atf", "uboot";
+		};
+
+		conf_lx_GTAX6000 {
+			description = "BRCM 63xxx linux";
+			kernel = "kernel";
+			fdt = "fdt_linux_GTAX6000";
+		};
+
+		conf_ub_GTAX6000_50991 {
+			description = "GTAX6000_50991";
+			fdt = "fdt_uboot_GTAX6000";
+			loadables = "atf", "uboot";
+		};
+
+		conf_lx_GTAX6000_50991 {
+			description = "BRCM 63xxx linux";
+			kernel = "kernel";
+			fdt = "fdt_linux_GTAX6000";
+		};
+	};
+};

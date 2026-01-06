@@ -16,7 +16,7 @@ Signed-off-by: Thibaut VARÈNE <hacks@slashdirt.org>
 
 --- a/drivers/mtd/parsers/Kconfig
 +++ b/drivers/mtd/parsers/Kconfig
-@@ -195,3 +195,12 @@ config MTD_REDBOOT_PARTS_READONLY
+@@ -210,3 +210,12 @@ config MTD_REDBOOT_PARTS_READONLY
  	  'FIS directory' images, enable this option.
  
  endif # MTD_REDBOOT_PARTS
@@ -31,7 +31,7 @@ Signed-off-by: Thibaut VARÈNE <hacks@slashdirt.org>
 +	 formatted DTS.
 --- a/drivers/mtd/parsers/Makefile
 +++ b/drivers/mtd/parsers/Makefile
-@@ -13,3 +13,4 @@ obj-$(CONFIG_MTD_AFS_PARTS)		+= afs.o
+@@ -14,3 +14,4 @@ obj-$(CONFIG_MTD_PARSER_TPLINK_SAFELOADE
  obj-$(CONFIG_MTD_PARSER_TRX)		+= parser_trx.o
  obj-$(CONFIG_MTD_SHARPSL_PARTS)		+= sharpslpart.o
  obj-$(CONFIG_MTD_REDBOOT_PARTS)		+= redboot.o

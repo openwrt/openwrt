@@ -45,12 +45,17 @@ void hostapd_ubus_add_bss(struct hostapd_data *hapd);
 void hostapd_ubus_free_bss(struct hostapd_data *hapd);
 
 int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct hostapd_ubus_request *req);
+void hostapd_ubus_handle_link_measurement(struct hostapd_data *hapd, const u8 *data, size_t len);
 void hostapd_ubus_notify(struct hostapd_data *hapd, const char *type, const u8 *mac);
 void hostapd_ubus_notify_beacon_report(struct hostapd_data *hapd,
 				       const u8 *addr, u8 token, u8 rep_mode,
 				       struct rrm_measurement_beacon_report *rep,
 				       size_t len);
 
+void hostapd_ubus_notify_bss_transition_response(
+	struct hostapd_data *hapd, const u8 *addr, u8 dialog_token, u8 status_code,
+	u8 bss_termination_delay, const u8 *target_bssid,
+	const u8 *candidate_list, u16 candidate_list_len);
 void hostapd_ubus_add(struct hapd_interfaces *interfaces);
 void hostapd_ubus_free(struct hapd_interfaces *interfaces);
 
@@ -79,6 +84,10 @@ static inline int hostapd_ubus_handle_event(struct hostapd_data *hapd, struct ho
 	return 0;
 }
 
+static inline void hostapd_ubus_handle_link_measurement(struct hostapd_data *hapd, const u8 *data, size_t len)
+{
+}
+
 static inline void hostapd_ubus_notify(struct hostapd_data *hapd, const char *type, const u8 *mac)
 {
 }
@@ -88,6 +97,13 @@ static inline void hostapd_ubus_notify_beacon_report(struct hostapd_data *hapd,
 						     u8 rep_mode,
 						     struct rrm_measurement_beacon_report *rep,
 						     size_t len)
+{
+}
+
+static inline void hostapd_ubus_notify_bss_transition_response(
+	struct hostapd_data *hapd, const u8 *addr, u8 dialog_token, u8 status_code,
+	u8 bss_termination_delay, const u8 *target_bssid,
+	const u8 *candidate_list, u16 candidate_list_len)
 {
 }
 

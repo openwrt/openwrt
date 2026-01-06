@@ -1,0 +1,30 @@
+From eab167f4851a19c514469dfa81147f77e17b5b20 Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <f.fainelli@gmail.com>
+Date: Mon, 20 Apr 2020 20:26:52 -0700
+Subject: [PATCH] net: dsa: b53: Fix valid setting for MDB entries
+
+When support for the MDB entries was added, the valid bit was correctly
+changed to be assigned depending on the remaining port bitmask, that is,
+if there were no more ports added to the entry's port bitmask, the entry
+now becomes invalid. There was another assignment a few lines below that
+would override this which would invalidate entries even when there were
+still multiple ports left in the MDB entry.
+
+Fixes: 5d65b64a3d97 ("net: dsa: b53: Add support for MDB")
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/dsa/b53/b53_common.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -1600,7 +1600,6 @@ static int b53_arl_op(struct b53_device
+ 		ent.is_valid = !!(ent.port);
+ 	}
+ 
+-	ent.is_valid = is_valid;
+ 	ent.vid = vid;
+ 	ent.is_static = true;
+ 	ent.is_age = false;

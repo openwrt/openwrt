@@ -269,6 +269,15 @@ define Device/mercury_mac1200r-v2
 endef
 TARGET_DEVICES += mercury_mac1200r-v2
 
+define Device/minew_g1-c
+  IMAGE_SIZE := 15744k
+  DEVICE_VENDOR := Minew
+  DEVICE_MODEL := G1-C
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport kmod-usb-serial-cp210x
+  SUPPORTED_DEVICES += minew-g1c
+endef
+TARGET_DEVICES += minew_g1-c
+
 define Device/netgear_r6020
   $(Device/netgear_sercomm_nor)
   IMAGE_SIZE := 7104k

@@ -1,0 +1,31 @@
+From 90103611d573c5c238350f9b1d7cb682c62f5681 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Ar=C4=B1n=C3=A7=20=C3=9CNAL?= <arinc.unal@arinc9.com>
+Date: Fri, 1 Apr 2022 13:19:58 +0300
+Subject: [PATCH] ARM: dts: BCM5301X: Fix DTC warning for NAND node
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Remove the unnecessary #address-cells and #size-cells properties on the
+nand@0 node to fix the warning below.
+
+Warning (avoid_unnecessary_addr_size): /nand-controller@18028000/nand@0: unnecessary #address-cells/#size-cells without "ranges" or child "reg" property
+
+Signed-off-by: Arınç ÜNAL <arinc.unal@arinc9.com>
+Acked-by: Rafał Miłecki <rafal@milecki.pl>
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+---
+ arch/arm/boot/dts/bcm5301x-nand-cs0.dtsi | 2 --
+ 1 file changed, 2 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm5301x-nand-cs0.dtsi
++++ b/arch/arm/boot/dts/bcm5301x-nand-cs0.dtsi
+@@ -10,8 +10,6 @@
+ 		nandcs: nand@0 {
+ 			compatible = "brcm,nandcs";
+ 			reg = <0>;
+-			#address-cells = <1>;
+-			#size-cells = <1>;
+ 
+ 			partitions {
+ 				compatible = "brcm,bcm947xx-cfe-partitions";

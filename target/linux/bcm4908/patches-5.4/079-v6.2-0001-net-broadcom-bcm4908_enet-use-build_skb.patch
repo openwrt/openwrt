@@ -1,0 +1,152 @@
+From 3a1cc23a75abcd9cea585eb84846507363d58397 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Tue, 25 Oct 2022 15:22:45 +0200
+Subject: [PATCH] net: broadcom: bcm4908_enet: use build_skb()
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+RX code can be more efficient with the build_skb(). Allocating actual
+SKB around eth packet buffer - right before passing it up - results in
+a better cache usage.
+
+Without RPS (echo 0 > rps_cpus) BCM4908 NAT masq performance "jumps"
+between two speeds: ~900 Mbps and 940 Mbps (it's a 4 CPUs SoC). This
+change bumps the lower speed from 905 Mb/s to 918 Mb/s (tested using
+single stream iperf 2.0.5 traffic).
+
+There are more optimizations to consider. One obvious to try is GRO
+however as BCM4908 doesn't do hw csum is may actually lower performance.
+Sometimes. Some early testing:
+
+┌─────────────────────────────────┬─────────────────────┬────────────────────┐
+│                                 │ netif_receive_skb() │ napi_gro_receive() │
+├─────────────────────────────────┼─────────────────────┼────────────────────┤
+│ netdev_alloc_skb()              │            905 Mb/s │           892 Mb/s │
+│ napi_alloc_frag() + build_skb() │            918 Mb/s │           917 Mb/s │
+└─────────────────────────────────┴─────────────────────┴────────────────────┘
+
+Another ideas:
+1. napi_build_skb()
+2. skb_copy_from_linear_data() for small packets
+
+Those need proper testing first though. That can be done later.
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Link: https://lore.kernel.org/r/20221025132245.22871-1-zajec5@gmail.com
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/ethernet/broadcom/bcm4908_enet.c | 53 +++++++++++++-------
+ 1 file changed, 36 insertions(+), 17 deletions(-)
+
+--- a/drivers/net/ethernet/broadcom/bcm4908_enet.c
++++ b/drivers/net/ethernet/broadcom/bcm4908_enet.c
+@@ -36,13 +36,24 @@
+ #define ENET_MAX_ETH_OVERHEAD			(ETH_HLEN + BRCM_MAX_TAG_LEN + VLAN_HLEN + \
+ 						 ETH_FCS_LEN + 4) /* 32 */
+ 
++#define ENET_RX_SKB_BUF_SIZE			(NET_SKB_PAD + NET_IP_ALIGN + \
++						 ETH_HLEN + BRCM_MAX_TAG_LEN + VLAN_HLEN + \
++						 ENET_MTU_MAX + ETH_FCS_LEN + 4)
++#define ENET_RX_SKB_BUF_ALLOC_SIZE		(SKB_DATA_ALIGN(ENET_RX_SKB_BUF_SIZE) + \
++						 SKB_DATA_ALIGN(sizeof(struct skb_shared_info)))
++#define ENET_RX_BUF_DMA_OFFSET			(NET_SKB_PAD + NET_IP_ALIGN)
++#define ENET_RX_BUF_DMA_SIZE			(ENET_RX_SKB_BUF_SIZE - ENET_RX_BUF_DMA_OFFSET)
++
+ struct bcm4908_enet_dma_ring_bd {
+ 	__le32 ctl;
+ 	__le32 addr;
+ } __packed;
+ 
+ struct bcm4908_enet_dma_ring_slot {
+-	struct sk_buff *skb;
++	union {
++		void *buf;			/* RX */
++		struct sk_buff *skb;		/* TX */
++	};
+ 	unsigned int len;
+ 	dma_addr_t dma_addr;
+ };
+@@ -259,22 +270,21 @@ static int bcm4908_enet_dma_alloc_rx_buf
+ 	u32 tmp;
+ 	int err;
+ 
+-	slot->len = ENET_MTU_MAX + ENET_MAX_ETH_OVERHEAD;
+-
+-	slot->skb = netdev_alloc_skb(enet->netdev, slot->len);
+-	if (!slot->skb)
++	slot->buf = napi_alloc_frag(ENET_RX_SKB_BUF_ALLOC_SIZE);
++	if (!slot->buf)
+ 		return -ENOMEM;
+ 
+-	slot->dma_addr = dma_map_single(dev, slot->skb->data, slot->len, DMA_FROM_DEVICE);
++	slot->dma_addr = dma_map_single(dev, slot->buf + ENET_RX_BUF_DMA_OFFSET,
++					ENET_RX_BUF_DMA_SIZE, DMA_FROM_DEVICE);
+ 	err = dma_mapping_error(dev, slot->dma_addr);
+ 	if (err) {
+ 		dev_err(dev, "Failed to map DMA buffer: %d\n", err);
+-		kfree_skb(slot->skb);
+-		slot->skb = NULL;
++		skb_free_frag(slot->buf);
++		slot->buf = NULL;
+ 		return err;
+ 	}
+ 
+-	tmp = slot->len << DMA_CTL_LEN_DESC_BUFLENGTH_SHIFT;
++	tmp = ENET_RX_BUF_DMA_SIZE << DMA_CTL_LEN_DESC_BUFLENGTH_SHIFT;
+ 	tmp |= DMA_CTL_STATUS_OWN;
+ 	if (idx == enet->rx_ring.length - 1)
+ 		tmp |= DMA_CTL_STATUS_WRAP;
+@@ -314,11 +324,11 @@ static void bcm4908_enet_dma_uninit(stru
+ 
+ 	for (i = rx_ring->length - 1; i >= 0; i--) {
+ 		slot = &rx_ring->slots[i];
+-		if (!slot->skb)
++		if (!slot->buf)
+ 			continue;
+ 		dma_unmap_single(dev, slot->dma_addr, slot->len, DMA_FROM_DEVICE);
+-		kfree_skb(slot->skb);
+-		slot->skb = NULL;
++		skb_free_frag(slot->buf);
++		slot->buf = NULL;
+ 	}
+ }
+ 
+@@ -574,6 +584,7 @@ static int bcm4908_enet_poll_rx(struct n
+ 	while (handled < weight) {
+ 		struct bcm4908_enet_dma_ring_bd *buf_desc;
+ 		struct bcm4908_enet_dma_ring_slot slot;
++		struct sk_buff *skb;
+ 		u32 ctl;
+ 		int len;
+ 		int err;
+@@ -597,16 +608,24 @@ static int bcm4908_enet_poll_rx(struct n
+ 
+ 		if (len < ETH_ZLEN ||
+ 		    (ctl & (DMA_CTL_STATUS_SOP | DMA_CTL_STATUS_EOP)) != (DMA_CTL_STATUS_SOP | DMA_CTL_STATUS_EOP)) {
+-			kfree_skb(slot.skb);
++			skb_free_frag(slot.buf);
+ 			enet->netdev->stats.rx_dropped++;
+ 			break;
+ 		}
+ 
+-		dma_unmap_single(dev, slot.dma_addr, slot.len, DMA_FROM_DEVICE);
++		dma_unmap_single(dev, slot.dma_addr, ENET_RX_BUF_DMA_SIZE, DMA_FROM_DEVICE);
++
++		skb = build_skb(slot.buf, ENET_RX_SKB_BUF_ALLOC_SIZE);
++		if (unlikely(!skb)) {
++			skb_free_frag(slot.buf);
++			enet->netdev->stats.rx_dropped++;
++			break;
++		}
++		skb_reserve(skb, ENET_RX_BUF_DMA_OFFSET);
++		skb_put(skb, len - ETH_FCS_LEN);
++		skb->protocol = eth_type_trans(skb, enet->netdev);
+ 
+-		skb_put(slot.skb, len - ETH_FCS_LEN);
+-		slot.skb->protocol = eth_type_trans(slot.skb, enet->netdev);
+-		netif_receive_skb(slot.skb);
++		netif_receive_skb(skb);
+ 
+ 		enet->netdev->stats.rx_packets++;
+ 		enet->netdev->stats.rx_bytes += len;

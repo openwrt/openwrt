@@ -1,0 +1,28 @@
+From 9f01a71c5cbec10b851588457089d17c20dc5a40 Mon Sep 17 00:00:00 2001
+From: Colin Ian King <colin.king@canonical.com>
+Date: Wed, 27 May 2020 13:01:29 +0100
+Subject: [PATCH] net: dsa: b53: remove redundant premature assignment to
+ new_pvid
+
+Variable new_pvid is being assigned with a value that is never read,
+the following if statement updates new_pvid with a new value in both
+of the if paths. The assignment is redundant and can be removed.
+
+Addresses-Coverity: ("Unused value")
+Signed-off-by: Colin Ian King <colin.king@canonical.com>
+Acked-by: Florian Fainelli <f.fainelli@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/dsa/b53/b53_common.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -1336,7 +1336,6 @@ int b53_vlan_filtering(struct dsa_switch
+ 	u16 pvid, new_pvid;
+ 
+ 	b53_read16(dev, B53_VLAN_PAGE, B53_VLAN_PORT_DEF_TAG(port), &pvid);
+-	new_pvid = pvid;
+ 	if (!vlan_filtering) {
+ 		/* Filtering is currently enabled, use the default PVID since
+ 		 * the bridge does not expect tagging anymore

@@ -1,0 +1,249 @@
+From b3b3cd885ed39cb4b38319a1c4fa4e41db6fee72 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Mon, 15 May 2023 17:19:20 +0200
+Subject: [PATCH] ARM: dts: BCM5301X: Relicense Hauke's code to the GPL 2.0+ /
+ MIT
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Move code added by Hauke to the bcm-ns.dtsi which uses dual licensing.
+That syncs more Northstar code to be based on the same licensing schema.
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Cc: Hauke Mehrtens <hauke@hauke-m.de>
+Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
+Link: https://lore.kernel.org/r/20230515151921.25021-1-zajec5@gmail.com
+Signed-off-by: Florian Fainelli <florian.fainelli@broadcom.com>
+---
+ arch/arm/boot/dts/bcm-ns.dtsi   | 90 +++++++++++++++++++++++++++++++++
+ arch/arm/boot/dts/bcm5301x.dtsi | 85 -------------------------------
+ 2 files changed, 90 insertions(+), 85 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm-ns.dtsi
++++ b/arch/arm/boot/dts/bcm-ns.dtsi
+@@ -1,4 +1,7 @@
+ // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
++/*
++ * Copyright 2013-2014 Hauke Mehrtens <hauke@hauke-m.de>
++ */
+ 
+ #include <dt-bindings/clock/bcm-nsp.h>
+ #include <dt-bindings/gpio/gpio.h>
+@@ -7,6 +10,81 @@
+ #include <dt-bindings/interrupt-controller/arm-gic.h>
+ 
+ / {
++	interrupt-parent = <&gic>;
++	#address-cells = <1>;
++	#size-cells = <1>;
++
++	chipcommon-a-bus@18000000 {
++		compatible = "simple-bus";
++		ranges = <0x00000000 0x18000000 0x00001000>;
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		uart0: serial@300 {
++			compatible = "ns16550";
++			reg = <0x0300 0x100>;
++			interrupts = <GIC_SPI 85 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&iprocslow>;
++			status = "disabled";
++		};
++
++		uart1: serial@400 {
++			compatible = "ns16550";
++			reg = <0x0400 0x100>;
++			interrupts = <GIC_SPI 85 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&iprocslow>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&pinmux_uart1>;
++			status = "disabled";
++		};
++	};
++
++	mpcore-bus@19000000 {
++		compatible = "simple-bus";
++		ranges = <0x00000000 0x19000000 0x00023000>;
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		scu@20000 {
++			compatible = "arm,cortex-a9-scu";
++			reg = <0x20000 0x100>;
++		};
++
++		timer@20200 {
++			compatible = "arm,cortex-a9-global-timer";
++			reg = <0x20200 0x100>;
++			interrupts = <GIC_PPI 11 IRQ_TYPE_EDGE_RISING>;
++			clocks = <&periph_clk>;
++		};
++
++		timer@20600 {
++			compatible = "arm,cortex-a9-twd-timer";
++			reg = <0x20600 0x20>;
++			interrupts = <GIC_PPI 13 (GIC_CPU_MASK_SIMPLE(2) |
++						  IRQ_TYPE_EDGE_RISING)>;
++			clocks = <&periph_clk>;
++		};
++
++		gic: interrupt-controller@21000 {
++			compatible = "arm,cortex-a9-gic";
++			#interrupt-cells = <3>;
++			#address-cells = <0>;
++			interrupt-controller;
++			reg = <0x21000 0x1000>,
++			      <0x20100 0x100>;
++		};
++
++		L2: cache-controller@22000 {
++			compatible = "arm,pl310-cache";
++			reg = <0x22000 0x1000>;
++			cache-unified;
++			arm,shared-override;
++			prefetch-data = <1>;
++			prefetch-instr = <1>;
++			cache-level = <2>;
++		};
++	};
++
+ 	axi@18000000 {
+ 		compatible = "brcm,bus-axi";
+ 		reg = <0x18000000 0x1000>;
+@@ -216,6 +294,18 @@
+ 		};
+ 	};
+ 
++	nand_controller: nand-controller@18028000 {
++		compatible = "brcm,nand-iproc", "brcm,brcmnand-v6.1", "brcm,brcmnand";
++		reg = <0x18028000 0x600>, <0x1811a408 0x600>, <0x18028f00 0x20>;
++		reg-names = "nand", "iproc-idm", "iproc-ext";
++		interrupts = <GIC_SPI 68 IRQ_TYPE_LEVEL_HIGH>;
++
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		brcm,nand-has-wp;
++	};
++
+ 	thermal-zones {
+ 		cpu_thermal: cpu-thermal {
+ 			polling-delay-passive = <0>;
+--- a/arch/arm/boot/dts/bcm5301x.dtsi
++++ b/arch/arm/boot/dts/bcm5301x.dtsi
+@@ -11,41 +11,7 @@
+ #include "bcm-ns.dtsi"
+ 
+ / {
+-	#address-cells = <1>;
+-	#size-cells = <1>;
+-	interrupt-parent = <&gic>;
+-
+-	chipcommon-a-bus@18000000 {
+-		compatible = "simple-bus";
+-		ranges = <0x00000000 0x18000000 0x00001000>;
+-		#address-cells = <1>;
+-		#size-cells = <1>;
+-
+-		uart0: serial@300 {
+-			compatible = "ns16550";
+-			reg = <0x0300 0x100>;
+-			interrupts = <GIC_SPI 85 IRQ_TYPE_LEVEL_HIGH>;
+-			clocks = <&iprocslow>;
+-			status = "disabled";
+-		};
+-
+-		uart1: serial@400 {
+-			compatible = "ns16550";
+-			reg = <0x0400 0x100>;
+-			interrupts = <GIC_SPI 85 IRQ_TYPE_LEVEL_HIGH>;
+-			clocks = <&iprocslow>;
+-			pinctrl-names = "default";
+-			pinctrl-0 = <&pinmux_uart1>;
+-			status = "disabled";
+-		};
+-	};
+-
+ 	mpcore-bus@19000000 {
+-		compatible = "simple-bus";
+-		ranges = <0x00000000 0x19000000 0x00023000>;
+-		#address-cells = <1>;
+-		#size-cells = <1>;
+-
+ 		a9pll: arm_clk@0 {
+ 			#clock-cells = <0>;
+ 			compatible = "brcm,nsp-armpll";
+@@ -53,26 +19,6 @@
+ 			reg = <0x00000 0x1000>;
+ 		};
+ 
+-		scu@20000 {
+-			compatible = "arm,cortex-a9-scu";
+-			reg = <0x20000 0x100>;
+-		};
+-
+-		timer@20200 {
+-			compatible = "arm,cortex-a9-global-timer";
+-			reg = <0x20200 0x100>;
+-			interrupts = <GIC_PPI 11 IRQ_TYPE_EDGE_RISING>;
+-			clocks = <&periph_clk>;
+-		};
+-
+-		timer@20600 {
+-			compatible = "arm,cortex-a9-twd-timer";
+-			reg = <0x20600 0x20>;
+-			interrupts = <GIC_PPI 13 (GIC_CPU_MASK_SIMPLE(2) |
+-						  IRQ_TYPE_EDGE_RISING)>;
+-			clocks = <&periph_clk>;
+-		};
+-
+ 		watchdog@20620 {
+ 			compatible = "arm,cortex-a9-twd-wdt";
+ 			reg = <0x20620 0x20>;
+@@ -80,25 +26,6 @@
+ 						  IRQ_TYPE_EDGE_RISING)>;
+ 			clocks = <&periph_clk>;
+ 		};
+-
+-		gic: interrupt-controller@21000 {
+-			compatible = "arm,cortex-a9-gic";
+-			#interrupt-cells = <3>;
+-			#address-cells = <0>;
+-			interrupt-controller;
+-			reg = <0x21000 0x1000>,
+-			      <0x20100 0x100>;
+-		};
+-
+-		L2: cache-controller@22000 {
+-			compatible = "arm,pl310-cache";
+-			reg = <0x22000 0x1000>;
+-			cache-unified;
+-			arm,shared-override;
+-			prefetch-data = <1>;
+-			prefetch-instr = <1>;
+-			cache-level = <2>;
+-		};
+ 	};
+ 
+ 	pmu {
+@@ -301,18 +228,6 @@
+ 		};
+ 	};
+ 
+-	nand_controller: nand-controller@18028000 {
+-		compatible = "brcm,nand-iproc", "brcm,brcmnand-v6.1", "brcm,brcmnand";
+-		reg = <0x18028000 0x600>, <0x1811a408 0x600>, <0x18028f00 0x20>;
+-		reg-names = "nand", "iproc-idm", "iproc-ext";
+-		interrupts = <GIC_SPI 68 IRQ_TYPE_LEVEL_HIGH>;
+-
+-		#address-cells = <1>;
+-		#size-cells = <0>;
+-
+-		brcm,nand-has-wp;
+-	};
+-
+ 	spi@18029200 {
+ 		compatible = "brcm,spi-nsp-qspi", "brcm,spi-bcm-qspi";
+ 		reg = <0x18029200 0x184>,

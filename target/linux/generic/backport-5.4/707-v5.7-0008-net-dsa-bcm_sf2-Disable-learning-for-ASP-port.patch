@@ -1,0 +1,36 @@
+From 8b6b208b69917d88bb3e087f8c9e61c6b05ed571 Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <f.fainelli@gmail.com>
+Date: Mon, 30 Mar 2020 14:38:50 -0700
+Subject: [PATCH] net: dsa: bcm_sf2: Disable learning for ASP port
+
+We don't want to enable learning for the ASP port since it only receives
+directed traffic, this allows us to bypass ARL-driven forwarding rules
+which could conflict with Broadcom tags and/or CFP forwarding.
+
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/dsa/bcm_sf2.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/bcm_sf2.c
++++ b/drivers/net/dsa/bcm_sf2.c
+@@ -173,9 +173,17 @@ static int bcm_sf2_port_setup(struct dsa
+ 	core_writel(priv, reg, CORE_MEM_PSM_VDD_CTRL);
+ 
+ 	/* Enable Broadcom tags for that port if requested */
+-	if (priv->brcm_tag_mask & BIT(port))
++	if (priv->brcm_tag_mask & BIT(port)) {
+ 		b53_brcm_hdr_setup(ds, port);
+ 
++		/* Disable learning on ASP port */
++		if (port == 7) {
++			reg = core_readl(priv, CORE_DIS_LEARN);
++			reg |= BIT(port);
++			core_writel(priv, reg, CORE_DIS_LEARN);
++		}
++	}
++
+ 	/* Configure Traffic Class to QoS mapping, allow each priority to map
+ 	 * to a different queue number
+ 	 */

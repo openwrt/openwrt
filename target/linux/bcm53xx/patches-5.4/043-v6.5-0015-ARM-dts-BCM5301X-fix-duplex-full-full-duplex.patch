@@ -1,0 +1,44 @@
+From fd274b733bfdde3ca72f0fa2a37f032f3a8c402c Mon Sep 17 00:00:00 2001
+From: Christian Lamparter <chunkeey@gmail.com>
+Date: Thu, 8 Jun 2023 17:36:29 +0200
+Subject: [PATCH] ARM: dts: BCM5301X: fix duplex-full => full-duplex
+
+this typo was found by the dtbs_check
+| ports:port@5:fixed-link: 'oneOf' conditional failed,
+|  {'speed': [[1000]], 'duplex-full': True} is not of type 'array'
+| 'duplex-full' does not match any of the regexes: 'pinctrl-[0-]..."
+
+this should have been full-duplex;
+
+Fixes: 935327a73553 ("ARM: dts: BCM5301X: Add DT for Meraki MR26")
+Fixes: ec88a9c344d9 ("ARM: BCM5301X: Add DT for Meraki MR32")
+Signed-off-by: Christian Lamparter <chunkeey@gmail.com>
+Link: https://lore.kernel.org/r/50522f45566951a9eabd22820647924cc6b4a264.1686238550.git.chunkeey@gmail.com
+Signed-off-by: Florian Fainelli <florian.fainelli@broadcom.com>
+---
+ arch/arm/boot/dts/bcm53015-meraki-mr26.dts | 2 +-
+ arch/arm/boot/dts/bcm53016-meraki-mr32.dts | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm53015-meraki-mr26.dts
++++ b/arch/arm/boot/dts/bcm53015-meraki-mr26.dts
+@@ -121,7 +121,7 @@
+ 
+ 			fixed-link {
+ 				speed = <1000>;
+-				duplex-full;
++				full-duplex;
+ 			};
+ 		};
+ 	};
+--- a/arch/arm/boot/dts/bcm53016-meraki-mr32.dts
++++ b/arch/arm/boot/dts/bcm53016-meraki-mr32.dts
+@@ -182,7 +182,7 @@
+ 
+ 			fixed-link {
+ 				speed = <1000>;
+-				duplex-full;
++				full-duplex;
+ 			};
+ 		};
+ 	};

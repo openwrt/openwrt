@@ -57,7 +57,7 @@ Signed-off-by: Maxime Ripard <maxime@cerno.tech>
 +	ret = raspberrypi_clock_property(rpi->firmware, data,
 +					 RPI_FIRMWARE_GET_CLOCK_RATE, &val);
  	if (ret)
- 		return ret;
+ 		return 0;
  
 @@ -131,9 +130,9 @@ static int raspberrypi_fw_pll_set_rate(s
  	u32 new_rate = rate / RPI_FIRMWARE_PLLB_ARM_DIV_RATE;

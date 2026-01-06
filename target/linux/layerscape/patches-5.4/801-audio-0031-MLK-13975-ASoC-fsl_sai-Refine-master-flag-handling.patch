@@ -16,7 +16,7 @@ Signed-off-by: Viorel Suman <viorel.suman@nxp.com>
 
 --- a/sound/soc/fsl/fsl_sai.c
 +++ b/sound/soc/fsl/fsl_sai.c
-@@ -368,9 +368,9 @@ static int fsl_sai_set_dai_fmt(struct sn
+@@ -369,9 +369,9 @@ static int fsl_sai_set_dai_fmt(struct sn
  	struct fsl_sai *sai = snd_soc_dai_get_drvdata(cpu_dai);
  	int ret;
  
@@ -29,7 +29,7 @@ Signed-off-by: Viorel Suman <viorel.suman@nxp.com>
  
  	ret = fsl_sai_set_dai_fmt_tr(cpu_dai, fmt, FSL_FMT_TRANSMITTER);
  	if (ret) {
-@@ -378,9 +378,9 @@ static int fsl_sai_set_dai_fmt(struct sn
+@@ -379,9 +379,9 @@ static int fsl_sai_set_dai_fmt(struct sn
  		return ret;
  	}
  
@@ -42,7 +42,7 @@ Signed-off-by: Viorel Suman <viorel.suman@nxp.com>
  
  	ret = fsl_sai_set_dai_fmt_tr(cpu_dai, fmt, FSL_FMT_RECEIVER);
  	if (ret)
-@@ -1022,8 +1022,19 @@ static int fsl_sai_probe(struct platform
+@@ -1023,8 +1023,19 @@ static int fsl_sai_probe(struct platform
  		return -EINVAL;
  	}
  

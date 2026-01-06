@@ -15,7 +15,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
 
 --- a/sound/soc/fsl/fsl_sai.c
 +++ b/sound/soc/fsl/fsl_sai.c
-@@ -527,8 +527,6 @@ static int fsl_sai_hw_params(struct snd_
+@@ -528,8 +528,6 @@ static int fsl_sai_hw_params(struct snd_
  			regmap_update_bits(sai->regmap, FSL_SAI_TCR5,
  				FSL_SAI_CR5_WNW_MASK | FSL_SAI_CR5_W0W_MASK |
  				FSL_SAI_CR5_FBT_MASK, val_cr5);
@@ -24,7 +24,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
  		} else if (!sai->synchronous[RX] && sai->synchronous[TX] && tx) {
  			regmap_update_bits(sai->regmap, FSL_SAI_RCR4,
  				FSL_SAI_CR4_SYWD_MASK | FSL_SAI_CR4_FRSZ_MASK,
-@@ -536,8 +534,6 @@ static int fsl_sai_hw_params(struct snd_
+@@ -537,8 +535,6 @@ static int fsl_sai_hw_params(struct snd_
  			regmap_update_bits(sai->regmap, FSL_SAI_RCR5,
  				FSL_SAI_CR5_WNW_MASK | FSL_SAI_CR5_W0W_MASK |
  				FSL_SAI_CR5_FBT_MASK, val_cr5);
@@ -33,7 +33,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@freescale.com>
  		}
  	}
  
-@@ -626,12 +622,17 @@ static int fsl_sai_trigger(struct snd_pc
+@@ -627,12 +623,17 @@ static int fsl_sai_trigger(struct snd_pc
  		if (tx)
  			udelay(10);
  

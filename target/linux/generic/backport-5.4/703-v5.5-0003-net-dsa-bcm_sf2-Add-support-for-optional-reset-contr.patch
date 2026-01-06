@@ -1,0 +1,81 @@
+From eee87e4377a4b86dc2eea0ade162b0dc33f40576 Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <f.fainelli@gmail.com>
+Date: Mon, 4 Nov 2019 13:51:39 -0800
+Subject: [PATCH] net: dsa: bcm_sf2: Add support for optional reset controller
+ line
+
+Grab an optional and exclusive reset controller line for the switch and
+manage it during probe/remove functions accordingly. For 7278 devices we
+change bcm_sf2_sw_rst() to use the reset controller line since the
+WATCHDOG_CTRL register does not reset the switch contrary to stated
+documentation.
+
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/dsa/bcm_sf2.c | 19 +++++++++++++++++++
+ drivers/net/dsa/bcm_sf2.h |  3 +++
+ 2 files changed, 22 insertions(+)
+
+--- a/drivers/net/dsa/bcm_sf2.c
++++ b/drivers/net/dsa/bcm_sf2.c
+@@ -346,6 +346,18 @@ static int bcm_sf2_sw_rst(struct bcm_sf2
+ {
+ 	unsigned int timeout = 1000;
+ 	u32 reg;
++	int ret;
++
++	/* The watchdog reset does not work on 7278, we need to hit the
++	 * "external" reset line through the reset controller.
++	 */
++	if (priv->type == BCM7278_DEVICE_ID && !IS_ERR(priv->rcdev)) {
++		ret = reset_control_assert(priv->rcdev);
++		if (ret)
++			return ret;
++
++		return reset_control_deassert(priv->rcdev);
++	}
+ 
+ 	reg = core_readl(priv, CORE_WATCHDOG_CTRL);
+ 	reg |= SOFTWARE_RESET | EN_CHIP_RST | EN_SW_RESET;
+@@ -1099,6 +1111,11 @@ static int bcm_sf2_sw_probe(struct platf
+ 	priv->core_reg_align = data->core_reg_align;
+ 	priv->num_cfp_rules = data->num_cfp_rules;
+ 
++	priv->rcdev = devm_reset_control_get_optional_exclusive(&pdev->dev,
++								"switch");
++	if (PTR_ERR(priv->rcdev) == -EPROBE_DEFER)
++		return PTR_ERR(priv->rcdev);
++
+ 	/* Auto-detection using standard registers will not work, so
+ 	 * provide an indication of what kind of device we are for
+ 	 * b53_common to work with
+@@ -1237,6 +1254,8 @@ static int bcm_sf2_sw_remove(struct plat
+ 	dsa_unregister_switch(priv->dev->ds);
+ 	bcm_sf2_cfp_exit(priv->dev->ds);
+ 	bcm_sf2_mdio_unregister(priv);
++	if (priv->type == BCM7278_DEVICE_ID && !IS_ERR(priv->rcdev))
++		reset_control_assert(priv->rcdev);
+ 
+ 	return 0;
+ }
+--- a/drivers/net/dsa/bcm_sf2.h
++++ b/drivers/net/dsa/bcm_sf2.h
+@@ -18,6 +18,7 @@
+ #include <linux/types.h>
+ #include <linux/bitops.h>
+ #include <linux/if_vlan.h>
++#include <linux/reset.h>
+ 
+ #include <net/dsa.h>
+ 
+@@ -64,6 +65,8 @@ struct bcm_sf2_priv {
+ 	void __iomem			*fcb;
+ 	void __iomem			*acb;
+ 
++	struct reset_control		*rcdev;
++
+ 	/* Register offsets indirection tables */
+ 	u32 				type;
+ 	const u16			*reg_offsets;

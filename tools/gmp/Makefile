@@ -12,6 +12,7 @@ PKG_VERSION:=6.2.1
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/gmp/
 PKG_HASH:=fd4829912cddd12f84181c3451cc752be224643e87fac497b69edddadc49b4f2
+PKG_CPE_ID:=cpe:/a:gmplib:gmp
 
 HOST_FIXUP:=autoreconf
 

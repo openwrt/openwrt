@@ -12,7 +12,7 @@ This reverts commit 5f0ac20ed6db1d6da2eea8b862cf3d54fdfb5830.
 
 --- a/sound/soc/fsl/fsl_sai.c
 +++ b/sound/soc/fsl/fsl_sai.c
-@@ -685,14 +685,7 @@ static struct reg_default fsl_sai_reg_de
+@@ -686,14 +686,7 @@ static struct reg_default fsl_sai_reg_de
  	{FSL_SAI_TCR3, 0},
  	{FSL_SAI_TCR4, 0},
  	{FSL_SAI_TCR5, 0},
@@ -28,7 +28,7 @@ This reverts commit 5f0ac20ed6db1d6da2eea8b862cf3d54fdfb5830.
  	{FSL_SAI_TMR,  0},
  	{FSL_SAI_RCR1, 0},
  	{FSL_SAI_RCR2, 0},
-@@ -711,14 +704,7 @@ static bool fsl_sai_readable_reg(struct
+@@ -712,14 +705,7 @@ static bool fsl_sai_readable_reg(struct
  	case FSL_SAI_TCR3:
  	case FSL_SAI_TCR4:
  	case FSL_SAI_TCR5:
@@ -44,7 +44,7 @@ This reverts commit 5f0ac20ed6db1d6da2eea8b862cf3d54fdfb5830.
  	case FSL_SAI_TMR:
  	case FSL_SAI_RCSR:
  	case FSL_SAI_RCR1:
-@@ -726,22 +712,8 @@ static bool fsl_sai_readable_reg(struct
+@@ -727,22 +713,8 @@ static bool fsl_sai_readable_reg(struct
  	case FSL_SAI_RCR3:
  	case FSL_SAI_RCR4:
  	case FSL_SAI_RCR5:
@@ -69,7 +69,7 @@ This reverts commit 5f0ac20ed6db1d6da2eea8b862cf3d54fdfb5830.
  	case FSL_SAI_RMR:
  		return true;
  	default:
-@@ -754,30 +726,9 @@ static bool fsl_sai_volatile_reg(struct
+@@ -755,30 +727,9 @@ static bool fsl_sai_volatile_reg(struct
  	switch (reg) {
  	case FSL_SAI_TCSR:
  	case FSL_SAI_RCSR:
@@ -103,7 +103,7 @@ This reverts commit 5f0ac20ed6db1d6da2eea8b862cf3d54fdfb5830.
  		return true;
  	default:
  		return false;
-@@ -793,14 +744,7 @@ static bool fsl_sai_writeable_reg(struct
+@@ -794,14 +745,7 @@ static bool fsl_sai_writeable_reg(struct
  	case FSL_SAI_TCR3:
  	case FSL_SAI_TCR4:
  	case FSL_SAI_TCR5:
@@ -119,7 +119,7 @@ This reverts commit 5f0ac20ed6db1d6da2eea8b862cf3d54fdfb5830.
  	case FSL_SAI_TMR:
  	case FSL_SAI_RCSR:
  	case FSL_SAI_RCR1:
-@@ -942,8 +886,8 @@ static int fsl_sai_probe(struct platform
+@@ -943,8 +887,8 @@ static int fsl_sai_probe(struct platform
  				   MCLK_DIR(index));
  	}
  

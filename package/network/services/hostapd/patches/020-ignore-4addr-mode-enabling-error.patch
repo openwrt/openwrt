@@ -18,8 +18,6 @@ Signed-off-by: Jouni Malinen <j@w1.fi>
  src/drivers/driver_nl80211.c | 23 +++++++++++++++++++++++
  1 file changed, 23 insertions(+)
 
-diff --git a/src/drivers/driver_nl80211.c b/src/drivers/driver_nl80211.c
-index 72189da24..011a15e68 100644
 --- a/src/drivers/driver_nl80211.c
 +++ b/src/drivers/driver_nl80211.c
 @@ -617,6 +617,7 @@ struct wiphy_idx_data {
@@ -30,7 +28,7 @@ index 72189da24..011a15e68 100644
  };
  
  
-@@ -639,6 +640,9 @@ static int netdev_info_handler(struct nl_msg *msg, void *arg)
+@@ -639,6 +640,9 @@ static int netdev_info_handler(struct nl
  		os_memcpy(info->macaddr, nla_data(tb[NL80211_ATTR_MAC]),
  			  ETH_ALEN);
  
@@ -40,7 +38,7 @@ index 72189da24..011a15e68 100644
  	return NL_SKIP;
  }
  
-@@ -691,6 +695,20 @@ static int nl80211_get_macaddr(struct i802_bss *bss)
+@@ -691,6 +695,20 @@ static int nl80211_get_macaddr(struct i8
  }
  
  
@@ -61,7 +59,7 @@ index 72189da24..011a15e68 100644
  static int nl80211_register_beacons(struct wpa_driver_nl80211_data *drv,
  				    struct nl80211_wiphy_data *w)
  {
-@@ -11482,6 +11500,11 @@ static int nl80211_set_4addr_mode(void *priv, const char *bridge_ifname,
+@@ -11508,6 +11526,11 @@ static int nl80211_set_4addr_mode(void *
  
  	ret = send_and_recv_msgs(drv, msg, NULL, NULL);
  	msg = NULL;
@@ -73,6 +71,3 @@ index 72189da24..011a15e68 100644
  	if (!ret) {
  		if (bridge_ifname[0] && val &&
  		    i802_check_bridge(drv, bss, bridge_ifname, bss->ifname) < 0)
--- 
-2.29.2
-

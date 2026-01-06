@@ -31,7 +31,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  
  /* Specifies the type of the struct net_device::ml_priv pointer */
  enum netdev_ml_priv_type {
-@@ -1889,6 +1891,11 @@ struct net_device {
+@@ -1891,6 +1893,11 @@ struct net_device {
  	const struct tlsdev_ops *tlsdev_ops;
  #endif
  
@@ -43,7 +43,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	const struct header_ops *header_ops;
  
  	unsigned int		flags;
-@@ -1971,6 +1978,10 @@ struct net_device {
+@@ -1973,6 +1980,10 @@ struct net_device {
  	struct mpls_dev __rcu	*mpls_ptr;
  #endif
  
@@ -56,7 +56,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   */
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
-@@ -2684,6 +2684,10 @@ static inline int pskb_trim(struct sk_bu
+@@ -2694,6 +2694,10 @@ static inline int pskb_trim(struct sk_bu
  	return (len < skb->len) ? __pskb_trim(skb, len) : 0;
  }
  
@@ -67,7 +67,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  /**
   *	pskb_trim_unique - remove end from a paged unique (not cloned) buffer
   *	@skb: buffer to alter
-@@ -2815,16 +2819,6 @@ static inline struct sk_buff *dev_alloc_
+@@ -2825,16 +2829,6 @@ static inline struct sk_buff *dev_alloc_
  }
  
  
@@ -101,7 +101,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	help
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -3192,10 +3192,20 @@ static int xmit_one(struct sk_buff *skb,
+@@ -3223,10 +3223,20 @@ static int xmit_one(struct sk_buff *skb,
  	if (dev_nit_active(dev))
  		dev_queue_xmit_nit(skb, dev);
  

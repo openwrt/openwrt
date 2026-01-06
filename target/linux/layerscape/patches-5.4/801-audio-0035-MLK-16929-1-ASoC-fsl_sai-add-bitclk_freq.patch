@@ -30,7 +30,7 @@ Signed-off-by: Adrian Alonso <adrian.alonso@nxp.com>
  	ret = fsl_sai_set_dai_sysclk_tr(cpu_dai, clk_id, freq,
  					FSL_FMT_TRANSMITTER);
  	if (ret) {
-@@ -499,7 +502,11 @@ static int fsl_sai_hw_params(struct snd_
+@@ -500,7 +503,11 @@ static int fsl_sai_hw_params(struct snd_
  		slot_width = sai->slot_width;
  
  	if (!sai->slave_mode[tx]) {

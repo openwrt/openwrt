@@ -1,0 +1,31 @@
+From 31bfc2d42cae6e8b1440fc5db3f0aba6c5d7e602 Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <f.fainelli@gmail.com>
+Date: Mon, 30 Mar 2020 14:38:49 -0700
+Subject: [PATCH] net: dsa: b53: Deny enslaving port 7 for 7278 into a bridge
+
+On 7278, port 7 connects to the ASP which should only receive frames
+through the use of CFP rules, it is not desirable to have it be part of
+a bridge at all since that would make it pick up unwanted traffic that
+it may not even be able to filter or sustain.
+
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/dsa/b53/b53_common.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -1770,6 +1770,12 @@ int b53_br_join(struct dsa_switch *ds, i
+ 	u16 pvlan, reg;
+ 	unsigned int i;
+ 
++	/* On 7278, port 7 which connects to the ASP should only receive
++	 * traffic from matching CFP rules.
++	 */
++	if (dev->chip_id == BCM7278_DEVICE_ID && port == 7)
++		return -EINVAL;
++
+ 	/* Make this port leave the all VLANs join since we will have proper
+ 	 * VLAN entries from now on
+ 	 */

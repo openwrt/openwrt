@@ -1,0 +1,30 @@
+From f16a8294dd7a02c7ad042cd2e3acc5ea06698dc1 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Tue, 28 Feb 2023 15:44:00 +0100
+Subject: [PATCH] arm64: dts: broadcom: bcmbca: bcm4908: fix procmon nodename
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This fixes:
+arch/arm64/boot/dts/broadcom/bcmbca/bcm94908.dtb: syscon@280000: $nodename:0: 'syscon@280000' does not match '^([a-z][a-z0-9\\-]+-bus|bus|localbus|soc|axi|ahb|apb)(@.+)?$'
+        From schema: schemas/simple-bus.yaml
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Link: https://lore.kernel.org/all/20230228144400.21689-3-zajec5@gmail.com/
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+---
+ arch/arm64/boot/dts/broadcom/bcmbca/bcm4908.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm64/boot/dts/broadcom/bcmbca/bcm4908.dtsi
++++ b/arch/arm64/boot/dts/broadcom/bcmbca/bcm4908.dtsi
+@@ -260,7 +260,7 @@
+ 			};
+ 		};
+ 
+-		procmon: syscon@280000 {
++		procmon: bus@280000 {
+ 			compatible = "simple-bus";
+ 			reg = <0x280000 0x1000>;
+ 			ranges;

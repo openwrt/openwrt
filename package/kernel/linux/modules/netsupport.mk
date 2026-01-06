@@ -162,38 +162,6 @@ endef
 $(eval $(call KernelPackage,misdn))
 
 
-define KernelPackage/isdn4linux
-  SUBMENU:=$(NETWORK_SUPPORT_MENU)
-  TITLE:=Old ISDN4Linux (deprecated)
-  DEPENDS:=+kmod-ppp
-  KCONFIG:= \
-	CONFIG_ISDN=y \
-    CONFIG_ISDN_I4L \
-    CONFIG_ISDN_PPP=y \
-    CONFIG_ISDN_PPP_VJ=y \
-    CONFIG_ISDN_MPP=y \
-    CONFIG_IPPP_FILTER=y \
-    CONFIG_ISDN_PPP_BSDCOMP \
-    CONFIG_ISDN_CAPI_MIDDLEWARE=y \
-    CONFIG_ISDN_CAPI_CAPIFS_BOOL=y \
-    CONFIG_ISDN_AUDIO=y \
-    CONFIG_ISDN_TTY_FAX=y \
-    CONFIG_ISDN_X25=y \
-    CONFIG_ISDN_DIVERSION
-  FILES:= \
-    $(LINUX_DIR)/drivers/isdn/divert/dss1_divert.ko \
-	$(LINUX_DIR)/drivers/isdn/i4l/isdn.ko \
-	$(LINUX_DIR)/drivers/isdn/i4l/isdn_bsdcomp.ko
-  AUTOLOAD:=$(call AutoLoad,40,isdn isdn_bsdcomp dss1_divert)
-endef
-
-define KernelPackage/isdn4linux/description
-  This driver allows you to use an ISDN adapter for networking
-endef
-
-$(eval $(call KernelPackage,isdn4linux))
-
-
 define KernelPackage/ipip
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IP-in-IP encapsulation
@@ -721,7 +689,7 @@ $(eval $(call KernelPackage,mppe))
 
 
 SCHED_MODULES = $(patsubst $(LINUX_DIR)/net/sched/%.ko,%,$(wildcard $(LINUX_DIR)/net/sched/*.ko))
-SCHED_MODULES_CORE = sch_ingress sch_fq_codel sch_hfsc sch_htb sch_tbf cls_basic cls_fw cls_route cls_flow cls_tcindex cls_u32 em_u32 act_gact act_mirred act_skbedit cls_matchall
+SCHED_MODULES_CORE = sch_ingress sch_fq_codel sch_hfsc sch_htb sch_tbf cls_basic cls_fw cls_route cls_flow cls_u32 em_u32 act_gact act_mirred act_skbedit cls_matchall
 SCHED_MODULES_FILTER = $(SCHED_MODULES_CORE) act_connmark act_ctinfo sch_cake sch_netem sch_mqprio em_ipset cls_bpf cls_flower act_bpf act_vlan
 SCHED_MODULES_EXTRA = $(filter-out $(SCHED_MODULES_FILTER),$(SCHED_MODULES))
 SCHED_FILES = $(patsubst %,$(LINUX_DIR)/net/sched/%.ko,$(filter $(SCHED_MODULES_CORE),$(SCHED_MODULES)))
@@ -743,7 +711,6 @@ define KernelPackage/sched-core
 	CONFIG_NET_CLS_FLOW \
 	CONFIG_NET_CLS_FW \
 	CONFIG_NET_CLS_ROUTE4 \
-	CONFIG_NET_CLS_TCINDEX \
 	CONFIG_NET_CLS_U32 \
 	CONFIG_NET_ACT_GACT \
 	CONFIG_NET_ACT_MIRRED \
@@ -1263,7 +1230,6 @@ define KernelPackage/wireguard
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=WireGuard secure network tunnel
   DEPENDS:= \
-	  +kmod-crypto-lib-blake2s \
 	  +kmod-crypto-lib-chacha20poly1305 \
 	  +kmod-crypto-lib-curve25519 \
 	  +kmod-udptunnel4 \

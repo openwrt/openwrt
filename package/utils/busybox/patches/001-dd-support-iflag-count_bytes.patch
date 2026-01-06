@@ -1,0 +1,140 @@
+From 4eb46e1be6d88eaf077252ce93127ebf00aa8ef2 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Wed, 24 Mar 2021 16:01:42 +0100
+Subject: [PATCH] dd: support iflag=count_bytes
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+It allows passing amount of bytes in the count=
+
+function                                             old     new   delta
+packed_usage                                       33599   33617     +18
+static.iflag_words                                    29      41     +12
+dd_main                                             1601    1607      +6
+------------------------------------------------------------------------------
+(add/remove: 0/0 grow/shrink: 3/0 up/down: 36/0)               Total: 36 bytes
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Signed-off-by: Denys Vlasenko <vda.linux@googlemail.com>
+---
+ coreutils/dd.c              | 50 ++++++++++++++++++++++++-------------
+ testsuite/dd/dd-count-bytes |  1 +
+ 2 files changed, 33 insertions(+), 18 deletions(-)
+ create mode 100644 testsuite/dd/dd-count-bytes
+
+--- a/coreutils/dd.c
++++ b/coreutils/dd.c
+@@ -59,7 +59,7 @@
+ //usage:       "[if=FILE] [of=FILE] [" IF_FEATURE_DD_IBS_OBS("ibs=N obs=N/") "bs=N] [count=N] [skip=N] [seek=N]\n"
+ //usage:	IF_FEATURE_DD_IBS_OBS(
+ //usage:       "	[conv=notrunc|noerror|sync|fsync]\n"
+-//usage:       "	[iflag=skip_bytes|fullblock|direct] [oflag=seek_bytes|append|direct]"
++//usage:       "	[iflag=skip_bytes|count_bytes|fullblock|direct] [oflag=seek_bytes|append|direct]"
+ //usage:	)
+ //usage:#define dd_full_usage "\n\n"
+ //usage:       "Copy a file with converting and formatting\n"
+@@ -82,6 +82,7 @@
+ //usage:     "\n	conv=fsync	Physically write data out before finishing"
+ //usage:     "\n	conv=swab	Swap every pair of bytes"
+ //usage:     "\n	iflag=skip_bytes	skip=N is in bytes"
++//usage:     "\n	iflag=count_bytes	count=N is in bytes"
+ //usage:     "\n	oflag=seek_bytes	seek=N is in bytes"
+ //usage:     "\n	iflag=direct	O_DIRECT input"
+ //usage:     "\n	oflag=direct	O_DIRECT output"
+@@ -136,21 +137,22 @@ enum {
+ 	FLAG_SWAB    = (1 << 4) * ENABLE_FEATURE_DD_IBS_OBS,
+ 	/* end of conv flags */
+ 	/* start of input flags */
+-	FLAG_IFLAG_SHIFT = 5,
+-	FLAG_SKIP_BYTES = (1 << 5) * ENABLE_FEATURE_DD_IBS_OBS,
+-	FLAG_FULLBLOCK = (1 << 6) * ENABLE_FEATURE_DD_IBS_OBS,
+-	FLAG_IDIRECT = (1 << 7) * ENABLE_FEATURE_DD_IBS_OBS,
++	FLAG_IFLAG_SHIFT   = 5,
++	FLAG_SKIP_BYTES    = (1 << 5) * ENABLE_FEATURE_DD_IBS_OBS,
++	FLAG_COUNT_BYTES   = (1 << 6) * ENABLE_FEATURE_DD_IBS_OBS,
++	FLAG_FULLBLOCK     = (1 << 7) * ENABLE_FEATURE_DD_IBS_OBS,
++	FLAG_IDIRECT       = (1 << 8) * ENABLE_FEATURE_DD_IBS_OBS,
+ 	/* end of input flags */
+ 	/* start of output flags */
+-	FLAG_OFLAG_SHIFT = 8,
+-	FLAG_SEEK_BYTES = (1 << 8) * ENABLE_FEATURE_DD_IBS_OBS,
+-	FLAG_APPEND = (1 << 9) * ENABLE_FEATURE_DD_IBS_OBS,
+-	FLAG_ODIRECT = (1 << 10) * ENABLE_FEATURE_DD_IBS_OBS,
++	FLAG_OFLAG_SHIFT   = 9,
++	FLAG_SEEK_BYTES    = (1 << 9) * ENABLE_FEATURE_DD_IBS_OBS,
++	FLAG_APPEND        = (1 << 10) * ENABLE_FEATURE_DD_IBS_OBS,
++	FLAG_ODIRECT       = (1 << 11) * ENABLE_FEATURE_DD_IBS_OBS,
+ 	/* end of output flags */
+-	FLAG_TWOBUFS = (1 << 11) * ENABLE_FEATURE_DD_IBS_OBS,
+-	FLAG_COUNT   = 1 << 12,
+-	FLAG_STATUS_NONE = 1 << 13,
+-	FLAG_STATUS_NOXFER = 1 << 14,
++	FLAG_TWOBUFS       = (1 << 12) * ENABLE_FEATURE_DD_IBS_OBS,
++	FLAG_COUNT         = 1 << 13,
++	FLAG_STATUS_NONE   = 1 << 14,
++	FLAG_STATUS_NOXFER = 1 << 15,
+ };
+ 
+ static void dd_output_status(int UNUSED_PARAM cur_signal)
+@@ -175,8 +177,9 @@ static void dd_output_status(int UNUSED_
+ 	//So far we react to it (we print the stats),
+ 	//status=none only suppresses final, non-USR1 generated status message.
+ # endif
+-	fprintf(stderr, "%llu bytes (%sB) copied, ",
+-			G.total_bytes,
++	fprintf(stderr, /*G.total_bytes < 1024
++				? "%llu bytes copied, " : */ "%llu bytes (%sB) copied, "
++			, G.total_bytes,
+ 			/* show fractional digit, use suffixes */
+ 			make_human_readable_str(G.total_bytes, 1, 0)
+ 	);
+@@ -317,7 +320,7 @@ int dd_main(int argc UNUSED_PARAM, char
+ 	static const char conv_words[] ALIGN1 =
+ 		"notrunc\0""sync\0""noerror\0""fsync\0""swab\0";
+ 	static const char iflag_words[] ALIGN1 =
+-		"skip_bytes\0""fullblock\0""direct\0";
++		"skip_bytes\0""count_bytes\0""fullblock\0""direct\0";
+ 	static const char oflag_words[] ALIGN1 =
+ 		"seek_bytes\0append\0""direct\0";
+ #endif
+@@ -359,6 +362,7 @@ int dd_main(int argc UNUSED_PARAM, char
+ 	/* Partially implemented: */
+ 	//swab          swap every pair of input bytes: will abort on non-even reads
+ 		OP_iflag_skip_bytes,
++		OP_iflag_count_bytes,
+ 		OP_iflag_fullblock,
+ 		OP_iflag_direct,
+ 		OP_oflag_seek_bytes,
+@@ -551,8 +555,17 @@ int dd_main(int argc UNUSED_PARAM, char
+ 			goto die_outfile;
+ 	}
+ 
+-	while (!(G.flags & FLAG_COUNT) || (G.in_full + G.in_part != count)) {
+-		ssize_t n = dd_read(ibuf, ibs);
++	while (1) {
++		ssize_t n = ibs;
++
++		if (G.flags & FLAG_COUNT) {
++			if (count == 0)
++				break;
++			if ((G.flags & FLAG_COUNT_BYTES) && count < ibs)
++				n = count;
++		}
++
++		n = dd_read(ibuf, n);
+ 		if (n == 0)
+ 			break;
+ 		if (n < 0) {
+@@ -587,6 +600,7 @@ int dd_main(int argc UNUSED_PARAM, char
+ 				p16++;
+ 			}
+ 		}
++		count -= (G.flags & FLAG_COUNT_BYTES) ? n : 1;
+ 		if ((size_t)n == ibs)
+ 			G.in_full++;
+ 		else {
+--- /dev/null
++++ b/testsuite/dd/dd-count-bytes
+@@ -0,0 +1 @@
++test "$(echo I WANT | busybox dd count=3 iflag=count_bytes 2>/dev/null)" = "I W"

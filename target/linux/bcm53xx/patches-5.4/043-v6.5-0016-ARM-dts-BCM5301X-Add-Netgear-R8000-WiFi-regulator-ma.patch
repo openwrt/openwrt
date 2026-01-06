@@ -1,0 +1,61 @@
+From 752a63b8dbe6cc6900efd1035bea427a778a4b55 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Fri, 2 Jun 2023 15:59:25 +0200
+Subject: [PATCH] ARM: dts: BCM5301X: Add Netgear R8000 WiFi regulator mappings
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This allows setting FullMAC firmware regulatory domain.
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Link: https://lore.kernel.org/r/20230602135925.14143-3-zajec5@gmail.com
+Signed-off-by: Florian Fainelli <florian.fainelli@broadcom.com>
+---
+ arch/arm/boot/dts/bcm4709-netgear-r8000.dts | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+--- a/arch/arm/boot/dts/bcm4709-netgear-r8000.dts
++++ b/arch/arm/boot/dts/bcm4709-netgear-r8000.dts
+@@ -137,8 +137,10 @@
+ 		#size-cells = <2>;
+ 
+ 		wifi@0,1,0 {
++			compatible = "brcm,bcm4366-fmac", "brcm,bcm4329-fmac";
+ 			reg = <0x0000 0 0 0 0>;
+ 			ieee80211-freq-limit = <5735000 5835000>;
++			brcm,ccode-map = "JP-JP-78", "US-Q2-86";
+ 		};
+ 	};
+ };
+@@ -159,6 +161,19 @@
+ 			#address-cells = <3>;
+ 			#size-cells = <2>;
+ 
++			bridge@1,0 {
++				reg = <0x800 0 0 0 0>;
++
++				#address-cells = <3>;
++				#size-cells = <2>;
++
++				wifi@0,0 {
++					compatible = "brcm,bcm4366-fmac", "brcm,bcm4329-fmac";
++					reg = <0x0000 0 0 0 0>;
++					brcm,ccode-map = "JP-JP-78", "US-Q2-86";
++				};
++			};
++
+ 			bridge@1,2,2 {
+ 				reg = <0x1000 0 0 0 0>;
+ 
+@@ -166,8 +181,10 @@
+ 				#size-cells = <2>;
+ 
+ 				wifi@1,4,0 {
++					compatible = "brcm,bcm4366-fmac", "brcm,bcm4329-fmac";
+ 					reg = <0x0000 0 0 0 0>;
+ 					ieee80211-freq-limit = <5170000 5730000>;
++					brcm,ccode-map = "JP-JP-78", "US-Q2-86";
+ 				};
+ 			};
+ 		};

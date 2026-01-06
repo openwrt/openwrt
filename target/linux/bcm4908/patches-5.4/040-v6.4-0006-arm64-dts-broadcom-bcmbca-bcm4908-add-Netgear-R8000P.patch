@@ -1,0 +1,38 @@
+From 889e53ccccc29ff4bf8d4c89cca34e8768845747 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Tue, 28 Feb 2023 15:45:19 +0100
+Subject: [PATCH] arm64: dts: broadcom: bcmbca: bcm4908: add Netgear R8000P USB
+ LED triggers
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This device has 2 USB LEDs meant to be triggered by devices in relevant
+USB ports.
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+Link: https://lore.kernel.org/all/20230228144520.21816-2-zajec5@gmail.com/
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+---
+ .../arm64/boot/dts/broadcom/bcmbca/bcm4906-netgear-r8000p.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/arch/arm64/boot/dts/broadcom/bcmbca/bcm4906-netgear-r8000p.dts
++++ b/arch/arm64/boot/dts/broadcom/bcmbca/bcm4906-netgear-r8000p.dts
+@@ -58,12 +58,16 @@
+ 			function = "usb2";
+ 			color = <LED_COLOR_ID_WHITE>;
+ 			gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
++			trigger-sources = <&ohci_port1>, <&ehci_port1>;
++			linux,default-trigger = "usbport";
+ 		};
+ 
+ 		led-usb3 {
+ 			function = "usb3";
+ 			color = <LED_COLOR_ID_WHITE>;
+ 			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
++			trigger-sources = <&ohci_port2>, <&ehci_port2>, <&xhci_port2>;
++			linux,default-trigger = "usbport";
+ 		};
+ 
+ 		led-wifi {

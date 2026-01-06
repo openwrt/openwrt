@@ -19,11 +19,10 @@ Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
 
 --- a/drivers/nvmem/Kconfig
 +++ b/drivers/nvmem/Kconfig
-@@ -230,4 +230,13 @@ config NVMEM_ZYNQMP
+@@ -243,4 +243,12 @@ config NVMEM_U_BOOT_ENV
  
- 	  If sure, say yes. If unsure, say no.
+ 	  If compiled as module it will be called nvmem_u-boot-env.
  
-+
 +config NVMEM_BRCM_NVRAM
 +	tristate "Broadcom's NVRAM support"
 +	depends on ARCH_BCM_5301X || COMPILE_TEST
@@ -35,10 +34,10 @@ Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
  endif
 --- a/drivers/nvmem/Makefile
 +++ b/drivers/nvmem/Makefile
-@@ -50,3 +50,5 @@ obj-$(CONFIG_SC27XX_EFUSE)	+= nvmem-sc27
- nvmem-sc27xx-efuse-y		:= sc27xx-efuse.o
- obj-$(CONFIG_NVMEM_ZYNQMP)	+= nvmem_zynqmp_nvmem.o
+@@ -52,3 +52,5 @@ obj-$(CONFIG_NVMEM_ZYNQMP)	+= nvmem_zynq
  nvmem_zynqmp_nvmem-y		:= zynqmp_nvmem.o
+ obj-$(CONFIG_NVMEM_U_BOOT_ENV)	+= nvmem_u-boot-env.o
+ nvmem_u-boot-env-y		:= u-boot-env.o
 +obj-$(CONFIG_NVMEM_BRCM_NVRAM)	+= nvmem_brcm_nvram.o
 +nvmem_brcm_nvram-y		:= brcm_nvram.o
 --- /dev/null

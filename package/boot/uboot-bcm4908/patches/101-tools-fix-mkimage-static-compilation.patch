@@ -1,0 +1,24 @@
+From 8efe417aa9de654425cc01d0fc93be355a3f648d Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Wed, 13 Oct 2021 11:04:45 +0200
+Subject: [PATCH] tools: fix mkimage static compilation
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+---
+ tools/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/tools/Makefile
++++ b/tools/Makefile
+@@ -157,7 +157,7 @@ ifneq ($(CONFIG_MX23)$(CONFIG_MX28)$(CON
+ HOSTCFLAGS_kwbimage.o += \
+ 	$(shell pkg-config --cflags libssl libcrypto 2> /dev/null || echo "")
+ HOSTLOADLIBES_mkimage += \
+-	$(shell pkg-config --libs libssl libcrypto 2> /dev/null || echo "-lssl -lcrypto")
++	$(shell pkg-config --libs --static libssl libcrypto 2> /dev/null || echo "-lssl -lcrypto -lpthread")
+ 
+ # OS X deprecate openssl in favour of CommonCrypto, supress deprecation
+ # warnings on those systems

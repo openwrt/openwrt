@@ -11,7 +11,7 @@ This reverts commit e75f4940e8ad0dd76527302a10c06b58bf7eb590.
 
 --- a/sound/soc/fsl/fsl_sai.c
 +++ b/sound/soc/fsl/fsl_sai.c
-@@ -628,16 +628,6 @@ static int fsl_sai_startup(struct snd_pc
+@@ -629,16 +629,6 @@ static int fsl_sai_startup(struct snd_pc
  			   FSL_SAI_CR3_TRCE_MASK,
  			   FSL_SAI_CR3_TRCE);
  
@@ -28,7 +28,7 @@ This reverts commit e75f4940e8ad0dd76527302a10c06b58bf7eb590.
  	ret = snd_pcm_hw_constraint_list(substream->runtime, 0,
  			SNDRV_PCM_HW_PARAM_RATE, &fsl_sai_rate_constraints);
  
-@@ -1052,35 +1042,30 @@ static int fsl_sai_remove(struct platfor
+@@ -1053,35 +1043,30 @@ static int fsl_sai_remove(struct platfor
  
  static const struct fsl_sai_soc_data fsl_sai_vf610_data = {
  	.use_imx_pcm = false,

@@ -1,0 +1,198 @@
+From e3da4038f4ca1094596a7604c6edac4a6a4f6ee9 Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <f.fainelli@gmail.com>
+Date: Thu, 30 Apr 2020 11:49:09 -0700
+Subject: [PATCH] net: dsa: b53: Provide number of ARL buckets
+
+In preparation for doing proper upper bound checking of FDB/MDB entries
+being added to the ARL, provide the number of ARL buckets for each
+switch chip we support. All chips have 1024 buckets, except 7278 which
+has only 256.
+
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/dsa/b53/b53_common.c | 21 +++++++++++++++++++++
+ drivers/net/dsa/b53/b53_priv.h   |  1 +
+ 2 files changed, 22 insertions(+)
+
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -2180,6 +2180,7 @@ struct b53_chip_data {
+ 	u8 cpu_port;
+ 	u8 vta_regs[3];
+ 	u8 arl_bins;
++	u16 arl_buckets;
+ 	u8 duplex_reg;
+ 	u8 jumbo_pm_reg;
+ 	u8 jumbo_size_reg;
+@@ -2199,6 +2200,7 @@ static const struct b53_chip_data b53_sw
+ 		.vlans = 16,
+ 		.enabled_ports = 0x1f,
+ 		.arl_bins = 2,
++		.arl_buckets = 1024,
+ 		.cpu_port = B53_CPU_PORT_25,
+ 		.duplex_reg = B53_DUPLEX_STAT_FE,
+ 	},
+@@ -2208,6 +2210,7 @@ static const struct b53_chip_data b53_sw
+ 		.vlans = 256,
+ 		.enabled_ports = 0x1f,
+ 		.arl_bins = 2,
++		.arl_buckets = 1024,
+ 		.cpu_port = B53_CPU_PORT_25,
+ 		.duplex_reg = B53_DUPLEX_STAT_FE,
+ 	},
+@@ -2217,6 +2220,7 @@ static const struct b53_chip_data b53_sw
+ 		.vlans = 4096,
+ 		.enabled_ports = 0x1f,
+ 		.arl_bins = 4,
++		.arl_buckets = 1024,
+ 		.cpu_port = B53_CPU_PORT,
+ 		.vta_regs = B53_VTA_REGS,
+ 		.duplex_reg = B53_DUPLEX_STAT_GE,
+@@ -2229,6 +2233,7 @@ static const struct b53_chip_data b53_sw
+ 		.vlans = 4096,
+ 		.enabled_ports = 0x1f,
+ 		.arl_bins = 4,
++		.arl_buckets = 1024,
+ 		.cpu_port = B53_CPU_PORT,
+ 		.vta_regs = B53_VTA_REGS,
+ 		.duplex_reg = B53_DUPLEX_STAT_GE,
+@@ -2241,6 +2246,7 @@ static const struct b53_chip_data b53_sw
+ 		.vlans = 4096,
+ 		.enabled_ports = 0x1f,
+ 		.arl_bins = 4,
++		.arl_buckets = 1024,
+ 		.cpu_port = B53_CPU_PORT,
+ 		.vta_regs = B53_VTA_REGS_9798,
+ 		.duplex_reg = B53_DUPLEX_STAT_GE,
+@@ -2253,6 +2259,7 @@ static const struct b53_chip_data b53_sw
+ 		.vlans = 4096,
+ 		.enabled_ports = 0x7f,
+ 		.arl_bins = 4,
++		.arl_buckets = 1024,
+ 		.cpu_port = B53_CPU_PORT,
+ 		.vta_regs = B53_VTA_REGS_9798,
+ 		.duplex_reg = B53_DUPLEX_STAT_GE,
+@@ -2265,6 +2272,7 @@ static const struct b53_chip_data b53_sw
+ 		.vlans = 4096,
+ 		.enabled_ports = 0x1f,
+ 		.arl_bins = 4,
++		.arl_buckets = 1024,
+ 		.vta_regs = B53_VTA_REGS,
+ 		.cpu_port = B53_CPU_PORT,
+ 		.duplex_reg = B53_DUPLEX_STAT_GE,
+@@ -2277,6 +2285,7 @@ static const struct b53_chip_data b53_sw
+ 		.vlans = 4096,
+ 		.enabled_ports = 0xff,
+ 		.arl_bins = 4,
++		.arl_buckets = 1024,
+ 		.cpu_port = B53_CPU_PORT,
+ 		.vta_regs = B53_VTA_REGS,
+ 		.duplex_reg = B53_DUPLEX_STAT_GE,
+@@ -2289,6 +2298,7 @@ static const struct b53_chip_data b53_sw
+ 		.vlans = 4096,
+ 		.enabled_ports = 0x1ff,
+ 		.arl_bins = 4,
++		.arl_buckets = 1024,
+ 		.cpu_port = B53_CPU_PORT,
+ 		.vta_regs = B53_VTA_REGS,
+ 		.duplex_reg = B53_DUPLEX_STAT_GE,
+@@ -2301,6 +2311,7 @@ static const struct b53_chip_data b53_sw
+ 		.vlans = 4096,
+ 		.enabled_ports = 0, /* pdata must provide them */
+ 		.arl_bins = 4,
++		.arl_buckets = 1024,
+ 		.cpu_port = B53_CPU_PORT,
+ 		.vta_regs = B53_VTA_REGS_63XX,
+ 		.duplex_reg = B53_DUPLEX_STAT_63XX,
+@@ -2313,6 +2324,7 @@ static const struct b53_chip_data b53_sw
+ 		.vlans = 4096,
+ 		.enabled_ports = 0x1f,
+ 		.arl_bins = 4,
++		.arl_buckets = 1024,
+ 		.cpu_port = B53_CPU_PORT_25, /* TODO: auto detect */
+ 		.vta_regs = B53_VTA_REGS,
+ 		.duplex_reg = B53_DUPLEX_STAT_GE,
+@@ -2325,6 +2337,7 @@ static const struct b53_chip_data b53_sw
+ 		.vlans = 4096,
+ 		.enabled_ports = 0x1bf,
+ 		.arl_bins = 4,
++		.arl_buckets = 1024,
+ 		.cpu_port = B53_CPU_PORT_25, /* TODO: auto detect */
+ 		.vta_regs = B53_VTA_REGS,
+ 		.duplex_reg = B53_DUPLEX_STAT_GE,
+@@ -2337,6 +2350,7 @@ static const struct b53_chip_data b53_sw
+ 		.vlans = 4096,
+ 		.enabled_ports = 0x1bf,
+ 		.arl_bins = 4,
++		.arl_buckets = 1024,
+ 		.cpu_port = B53_CPU_PORT_25, /* TODO: auto detect */
+ 		.vta_regs = B53_VTA_REGS,
+ 		.duplex_reg = B53_DUPLEX_STAT_GE,
+@@ -2349,6 +2363,7 @@ static const struct b53_chip_data b53_sw
+ 		.vlans = 4096,
+ 		.enabled_ports = 0x1f,
+ 		.arl_bins = 4,
++		.arl_buckets = 1024,
+ 		.cpu_port = B53_CPU_PORT_25, /* TODO: auto detect */
+ 		.vta_regs = B53_VTA_REGS,
+ 		.duplex_reg = B53_DUPLEX_STAT_GE,
+@@ -2361,6 +2376,7 @@ static const struct b53_chip_data b53_sw
+ 		.vlans = 4096,
+ 		.enabled_ports = 0x1f,
+ 		.arl_bins = 4,
++		.arl_buckets = 1024,
+ 		.cpu_port = B53_CPU_PORT_25, /* TODO: auto detect */
+ 		.vta_regs = B53_VTA_REGS,
+ 		.duplex_reg = B53_DUPLEX_STAT_GE,
+@@ -2373,6 +2389,7 @@ static const struct b53_chip_data b53_sw
+ 		.vlans	= 4096,
+ 		.enabled_ports = 0x1ff,
+ 		.arl_bins = 4,
++		.arl_buckets = 1024,
+ 		.cpu_port = B53_CPU_PORT,
+ 		.vta_regs = B53_VTA_REGS,
+ 		.duplex_reg = B53_DUPLEX_STAT_GE,
+@@ -2385,6 +2402,7 @@ static const struct b53_chip_data b53_sw
+ 		.vlans = 4096,
+ 		.enabled_ports = 0x103,
+ 		.arl_bins = 4,
++		.arl_buckets = 1024,
+ 		.cpu_port = B53_CPU_PORT,
+ 		.vta_regs = B53_VTA_REGS,
+ 		.duplex_reg = B53_DUPLEX_STAT_GE,
+@@ -2397,6 +2415,7 @@ static const struct b53_chip_data b53_sw
+ 		.vlans	= 4096,
+ 		.enabled_ports = 0x1ff,
+ 		.arl_bins = 4,
++		.arl_buckets = 1024,
+ 		.cpu_port = B53_CPU_PORT,
+ 		.vta_regs = B53_VTA_REGS,
+ 		.duplex_reg = B53_DUPLEX_STAT_GE,
+@@ -2409,6 +2428,7 @@ static const struct b53_chip_data b53_sw
+ 		.vlans = 4096,
+ 		.enabled_ports = 0x1ff,
+ 		.arl_bins = 4,
++		.arl_buckets = 256,
+ 		.cpu_port = B53_CPU_PORT,
+ 		.vta_regs = B53_VTA_REGS,
+ 		.duplex_reg = B53_DUPLEX_STAT_GE,
+@@ -2437,6 +2457,7 @@ static int b53_switch_init(struct b53_de
+ 			dev->cpu_port = chip->cpu_port;
+ 			dev->num_vlans = chip->vlans;
+ 			dev->num_arl_bins = chip->arl_bins;
++			dev->num_arl_buckets = chip->arl_buckets;
+ 			break;
+ 		}
+ 	}
+--- a/drivers/net/dsa/b53/b53_priv.h
++++ b/drivers/net/dsa/b53/b53_priv.h
+@@ -118,6 +118,7 @@ struct b53_device {
+ 	u8 jumbo_size_reg;
+ 	int reset_gpio;
+ 	u8 num_arl_bins;
++	u16 num_arl_buckets;
+ 	enum dsa_tag_protocol tag_protocol;
+ 
+ 	/* used ports mask */

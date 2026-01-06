@@ -1,0 +1,37 @@
+From 7458bd540fa0a90220b9e8c349d910d9dde9caf8 Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <f.fainelli@gmail.com>
+Date: Fri, 14 Feb 2020 16:32:29 -0800
+Subject: [PATCH] net: dsa: bcm_sf2: Also configure Port 5 for 2Gb/sec on 7278
+
+Either port 5 or port 8 can be used on a 7278 device, make sure that
+port 5 also gets configured properly for 2Gb/sec in that case.
+
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/dsa/bcm_sf2.c      | 3 +++
+ drivers/net/dsa/bcm_sf2_regs.h | 1 +
+ 2 files changed, 4 insertions(+)
+
+--- a/drivers/net/dsa/bcm_sf2.c
++++ b/drivers/net/dsa/bcm_sf2.c
+@@ -620,6 +620,9 @@ force_link:
+ 		reg |= RXFLOW_CNTL;
+ 	}
+ 
++	if (priv->type == BCM7278_DEVICE_ID && dsa_is_cpu_port(ds, port))
++		reg |= GMIIP_SPEED_UP_2G;
++
+ 	core_writel(priv, reg, offset);
+ }
+ 
+--- a/drivers/net/dsa/bcm_sf2_regs.h
++++ b/drivers/net/dsa/bcm_sf2_regs.h
+@@ -178,6 +178,7 @@ enum bcm_sf2_reg_offs {
+ #define  RXFLOW_CNTL			(1 << 4)
+ #define  TXFLOW_CNTL			(1 << 5)
+ #define  SW_OVERRIDE			(1 << 6)
++#define  GMIIP_SPEED_UP_2G		(1 << 7)
+ 
+ #define CORE_WATCHDOG_CTRL		0x001e4
+ #define  SOFTWARE_RESET			(1 << 7)

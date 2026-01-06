@@ -18,6 +18,7 @@ PKG_MAINTAINER:=Hauke Mehrtens <hauke@hauke-m.de>
 HOST_BUILD_DEPENDS:=bzip2/host
 
 PKG_LICENSE:=BSD-2-Clause
+PKG_CPE_ID:=cpe:/a:daemonology:bsdiff
 
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk

@@ -150,16 +150,27 @@
 
 	phy0: ethernet-phy@0 {
 		reg = <0>;
+		eee-broken-100tx;
+		eee-broken-1000t;
 	};
 };
 
 &eth0 {
 	status = "okay";
 
-	pll-data = <0x06000000 0x00000101 0x00001313>;
+	pll-data = <0x02000000 0x00000101 0x00001313>;
 
 	mtd-mac-address = <&art 0x0>;
 
 	phy-mode = "rgmii-id";
 	phy-handle = <&phy0>;
+
+	gmac-config {
+		device = <&gmac>;
+		rgmii-gmac0 = <1>;
+		rxdv-delay = <3>;
+		rxd-delay = <3>;
+		txen-delay = <0>;
+		txd-delay = <0>;
+	};
 };

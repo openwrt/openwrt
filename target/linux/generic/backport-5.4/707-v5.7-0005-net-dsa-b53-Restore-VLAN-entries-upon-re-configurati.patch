@@ -1,0 +1,48 @@
+From d7a0b1f7652f9f6b7ba0c9d8ad8edd6b8c0c1511 Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <f.fainelli@gmail.com>
+Date: Mon, 30 Mar 2020 14:38:47 -0700
+Subject: [PATCH] net: dsa: b53: Restore VLAN entries upon (re)configuration
+
+The first time b53_configure_vlan() is called we have not configured any
+VLAN entries yet, since that happens later when interfaces get brought
+up. When b53_configure_vlan() is called again from suspend/resume we
+need to restore all VLAN entries though.
+
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/dsa/b53/b53_common.c | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+--- a/drivers/net/dsa/b53/b53_common.c
++++ b/drivers/net/dsa/b53/b53_common.c
+@@ -696,7 +696,9 @@ int b53_configure_vlan(struct dsa_switch
+ {
+ 	struct b53_device *dev = ds->priv;
+ 	struct b53_vlan vl = { 0 };
++	struct b53_vlan *v;
+ 	int i, def_vid;
++	u16 vid;
+ 
+ 	def_vid = b53_default_pvid(dev);
+ 
+@@ -717,6 +719,19 @@ int b53_configure_vlan(struct dsa_switch
+ 	if (!is5325(dev) && !is5365(dev))
+ 		b53_set_jumbo(dev, dev->enable_jumbo, false);
+ 
++	/* Upon initial call we have not set-up any VLANs, but upon
++	 * system resume, we need to restore all VLAN entries.
++	 */
++	for (vid = def_vid; vid < dev->num_vlans; vid++) {
++		v = &dev->vlans[vid];
++
++		if (!v->members)
++			continue;
++
++		b53_set_vlan_entry(dev, vid, v);
++		b53_fast_age_vlan(dev, vid);
++	}
++
+ 	return 0;
+ }
+ EXPORT_SYMBOL(b53_configure_vlan);

@@ -11,7 +11,7 @@ This reverts commit b84f50b0fcb497a62068926fca793d2d213c7dbd.
 
 --- a/sound/soc/fsl/fsl_sai.c
 +++ b/sound/soc/fsl/fsl_sai.c
-@@ -599,8 +599,7 @@ static int fsl_sai_startup(struct snd_pc
+@@ -600,8 +600,7 @@ static int fsl_sai_startup(struct snd_pc
  	bool tx = substream->stream == SNDRV_PCM_STREAM_PLAYBACK;
  	int ret;
  
@@ -21,7 +21,7 @@ This reverts commit b84f50b0fcb497a62068926fca793d2d213c7dbd.
  			   FSL_SAI_CR3_TRCE);
  
  	ret = snd_pcm_hw_constraint_list(substream->runtime, 0,
-@@ -615,8 +614,7 @@ static void fsl_sai_shutdown(struct snd_
+@@ -616,8 +615,7 @@ static void fsl_sai_shutdown(struct snd_
  	struct fsl_sai *sai = snd_soc_dai_get_drvdata(cpu_dai);
  	bool tx = substream->stream == SNDRV_PCM_STREAM_PLAYBACK;
  

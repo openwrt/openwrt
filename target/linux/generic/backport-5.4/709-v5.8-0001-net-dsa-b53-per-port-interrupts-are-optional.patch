@@ -1,0 +1,25 @@
+From 007fc3c0ca478f3a8ad687cf9ecbe672d3a64700 Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <f.fainelli@gmail.com>
+Date: Fri, 17 Apr 2020 11:33:41 -0700
+Subject: [PATCH] net: dsa: b53: per-port interrupts are optional
+
+Make use of platform_get_irq_byname_optional() to avoid printing
+messages on the kernel console that interrupts cannot be found.
+
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/dsa/b53/b53_srab.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/dsa/b53/b53_srab.c
++++ b/drivers/net/dsa/b53/b53_srab.c
+@@ -524,7 +524,7 @@ static void b53_srab_prepare_irq(struct
+ 
+ 		port->num = i;
+ 		port->dev = dev;
+-		port->irq = platform_get_irq_byname(pdev, name);
++		port->irq = platform_get_irq_byname_optional(pdev, name);
+ 		kfree(name);
+ 	}
+ 

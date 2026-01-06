@@ -1,0 +1,47 @@
+From 859bd2e0c0052967536f3f902716f204d5a978b1 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jonas.gorski@gmail.com>
+Date: Fri, 8 Sep 2023 22:48:33 +0200
+Subject: [PATCH] hwrng: geode: fix accessing registers
+
+When the membase and pci_dev pointer were moved to a new struct in priv,
+the actual membase users were left untouched, and they started reading
+out arbitrary memory behind the struct instead of registers. This
+unfortunately turned the RNG into a constant number generator, depending
+on the content of what was at that offset.
+
+To fix this, update geode_rng_data_{read,present}() to also get the
+membase via amd_geode_priv, and properly read from the right addresses
+again.
+
+Fixes: 9f6ec8dc574e ("hwrng: geode - Fix PCI device refcount leak")
+Reported-by: Timur I. Davletshin <timur.davletshin@gmail.com>
+Closes: https://bugzilla.kernel.org/show_bug.cgi?id=217882
+Tested-by: Timur I. Davletshin <timur.davletshin@gmail.com>
+Suggested-by: Jo-Philipp Wich <jo@mein.io>
+Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
+---
+ drivers/char/hw_random/geode-rng.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+--- a/drivers/char/hw_random/geode-rng.c
++++ b/drivers/char/hw_random/geode-rng.c
+@@ -58,7 +58,8 @@ struct amd_geode_priv {
+ 
+ static int geode_rng_data_read(struct hwrng *rng, u32 *data)
+ {
+-	void __iomem *mem = (void __iomem *)rng->priv;
++	struct amd_geode_priv *priv = (struct amd_geode_priv *)rng->priv;
++	void __iomem *mem = priv->membase;
+ 
+ 	*data = readl(mem + GEODE_RNG_DATA_REG);
+ 
+@@ -67,7 +68,8 @@ static int geode_rng_data_read(struct hw
+ 
+ static int geode_rng_data_present(struct hwrng *rng, int wait)
+ {
+-	void __iomem *mem = (void __iomem *)rng->priv;
++	struct amd_geode_priv *priv = (struct amd_geode_priv *)rng->priv;
++	void __iomem *mem = priv->membase;
+ 	int data, i;
+ 
+ 	for (i = 0; i < 20; i++) {

@@ -72,7 +72,7 @@ Reviewed-by: Shengjiu Wang <shengjiu.wang@nxp.com>
  };
  
  static const unsigned int fsl_sai_rates[] = {
-@@ -692,6 +707,13 @@ static int fsl_sai_startup(struct snd_pc
+@@ -693,6 +708,13 @@ static int fsl_sai_startup(struct snd_pc
  			   FSL_SAI_CR3_TRCE_MASK,
  			   FSL_SAI_CR3_TRCE(sai->dataline[tx]));
  
@@ -86,7 +86,7 @@ Reviewed-by: Shengjiu Wang <shengjiu.wang@nxp.com>
  	ret = snd_pcm_hw_constraint_list(substream->runtime, 0,
  			SNDRV_PCM_HW_PARAM_RATE, &fsl_sai_rate_constraints);
  
-@@ -914,6 +936,7 @@ static const struct of_device_id fsl_sai
+@@ -915,6 +937,7 @@ static const struct of_device_id fsl_sai
  	{ .compatible = "fsl,imx6ul-sai", .data = &fsl_sai_imx6ul },
  	{ .compatible = "fsl,imx7ulp-sai", .data = &fsl_sai_imx7ulp },
  	{ .compatible = "fsl,imx8mq-sai", .data = &fsl_sai_imx8mq },

@@ -169,7 +169,7 @@ Signed-off-by: Mauro Carvalho Chehab <mchehab+samsung@kernel.org>
  
 --- a/include/media/v4l2-common.h
 +++ b/include/media/v4l2-common.h
-@@ -457,8 +457,24 @@ int v4l2_s_parm_cap(struct video_device
+@@ -458,8 +458,24 @@ int v4l2_s_parm_cap(struct video_device
  /* Pixel format and FourCC helpers */
  
  /**
@@ -194,7 +194,7 @@ Signed-off-by: Mauro Carvalho Chehab <mchehab+samsung@kernel.org>
   * @mem_planes: Number of memory planes, which includes the alpha plane (1 to 4).
   * @comp_planes: Number of component planes, which includes the alpha plane (1 to 4).
   * @bpp: Array of per-plane bytes per pixel
-@@ -469,6 +485,7 @@ int v4l2_s_parm_cap(struct video_device
+@@ -470,6 +486,7 @@ int v4l2_s_parm_cap(struct video_device
   */
  struct v4l2_format_info {
  	u32 format;
@@ -202,7 +202,7 @@ Signed-off-by: Mauro Carvalho Chehab <mchehab+samsung@kernel.org>
  	u8 mem_planes;
  	u8 comp_planes;
  	u8 bpp[4];
-@@ -478,8 +495,22 @@ struct v4l2_format_info {
+@@ -479,8 +496,22 @@ struct v4l2_format_info {
  	u8 block_h[4];
  };
  

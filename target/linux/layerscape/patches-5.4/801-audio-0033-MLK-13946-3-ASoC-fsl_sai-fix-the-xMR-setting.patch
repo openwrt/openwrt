@@ -24,7 +24,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@nxp.com>
  	.fifos = 1,
  	.fifo_depth = 64,
  	.flags = 0,
-@@ -571,7 +571,7 @@ static int fsl_sai_hw_params(struct snd_
+@@ -572,7 +572,7 @@ static int fsl_sai_hw_params(struct snd_
  	regmap_update_bits(sai->regmap, FSL_SAI_xCR5(tx, offset),
  			   FSL_SAI_CR5_WNW_MASK | FSL_SAI_CR5_W0W_MASK |
  			   FSL_SAI_CR5_FBT_MASK, val_cr5);
@@ -33,7 +33,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@nxp.com>
  
  	return 0;
  }
-@@ -858,11 +858,23 @@ static bool fsl_sai_readable_reg(struct
+@@ -859,11 +859,23 @@ static bool fsl_sai_readable_reg(struct
  	switch (reg) {
  	case FSL_SAI_TFR0:
  	case FSL_SAI_TFR1:
@@ -57,7 +57,7 @@ Signed-off-by: Shengjiu Wang <shengjiu.wang@nxp.com>
  	case FSL_SAI_RMR:
  		return true;
  	default:
-@@ -881,8 +893,20 @@ static bool fsl_sai_volatile_reg(struct
+@@ -882,8 +894,20 @@ static bool fsl_sai_volatile_reg(struct
  	switch (reg) {
  	case FSL_SAI_TFR0:
  	case FSL_SAI_TFR1:

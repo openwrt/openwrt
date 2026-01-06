@@ -1,0 +1,36 @@
+From 2ddf0005298e08ba1e358d95be6b826c56a7d1fc Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Tue, 29 Nov 2022 16:33:23 +0100
+Subject: [PATCH] uxc: fix compilation error caused by unused variable
+
+Fix compilation error caused by unused verbose variable.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ uxc.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/uxc.c b/uxc.c
+index eb40eb2..b22d838 100644
+--- a/uxc.c
++++ b/uxc.c
+@@ -80,6 +80,8 @@ static struct blob_buf conf;
+ static struct blob_buf state;
+ static struct ubus_context *ctx;
+ 
++static bool verbose = false;
++
+ static int usage(void) {
+ 	printf("syntax: uxc <command> [parameters ...]\n");
+ 	printf("commands:\n");
+@@ -724,7 +726,6 @@ int main(int argc, char **argv)
+ 	char *pidfile = NULL;
+ 	bool autostart = false;
+ 	bool force = false;
+-	bool verbose = false;
+ 	int signal = SIGTERM;
+ 	int c;
+ 
+-- 
+2.37.2
+

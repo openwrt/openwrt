@@ -74,9 +74,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	if (ret)
  		return ret;
  
-@@ -966,21 +964,8 @@ static int rtl8366rb_setup(struct dsa_sw
- static enum dsa_tag_protocol rtl8366_get_tag_protocol(struct dsa_switch *ds,
- 						      int port)
+@@ -967,21 +965,8 @@ static enum dsa_tag_protocol rtl8366_get
+ 						      int port,
+ 						      enum dsa_tag_protocol mp)
  {
 -	/* For now, the RTL switches are handled without any custom tags.
 -	 *

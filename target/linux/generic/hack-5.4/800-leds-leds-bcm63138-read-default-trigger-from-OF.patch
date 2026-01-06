@@ -1,0 +1,26 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Tue, 28 Feb 2023 23:38:30 +0100
+Subject: [PATCH] leds: leds-bcm63138: read default trigger from OF
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+It's needed in kernels older than 5.10 due to the missing commit
+c49d6cab0d7f ("leds: parse linux,default-trigger DT property in LED
+core").
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+---
+ drivers/leds/blink/leds-bcm63138.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/leds/blink/leds-bcm63138.c
++++ b/drivers/leds/blink/leds-bcm63138.c
+@@ -228,6 +228,7 @@ static void bcm63138_leds_create_led(str
+ 	led->cdev.max_brightness = BCM63138_MAX_BRIGHTNESS;
+ 	led->cdev.brightness_set = bcm63138_leds_brightness_set;
+ 	led->cdev.blink_set = bcm63138_leds_blink_set;
++	led->cdev.default_trigger = of_get_property(np, "linux,default-trigger", NULL);
+ 
+ 	err = devm_led_classdev_register_ext(dev, &led->cdev, &init_data);
+ 	if (err) {
