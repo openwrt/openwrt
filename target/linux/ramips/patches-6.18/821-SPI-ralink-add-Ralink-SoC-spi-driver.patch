@@ -16,7 +16,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -932,6 +932,12 @@ config SPI_QCOM_GENI
+@@ -999,6 +999,12 @@ config SPI_QCOM_GENI
  	  This driver can also be built as a module.  If so, the module
  	  will be called spi-geni-qcom.
  
@@ -31,14 +31,14 @@ Acked-by: John Crispin <blogic@openwrt.org>
  	depends on (PLAT_SAMSUNG || ARCH_S5PV210 || ARCH_EXYNOS || COMPILE_TEST)
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -122,6 +122,7 @@ obj-$(CONFIG_SPI_RB4XX)			+= spi-rb4xx.o
- obj-$(CONFIG_MACH_REALTEK_RTL)		+= spi-realtek-rtl.o
+@@ -128,6 +128,7 @@ obj-$(CONFIG_MACH_REALTEK_RTL)		+= spi-r
+ obj-$(CONFIG_SPI_REALTEK_SNAND)		+= spi-realtek-rtl-snand.o
  obj-$(CONFIG_SPI_RPCIF)			+= spi-rpc-if.o
  obj-$(CONFIG_SPI_RSPI)			+= spi-rspi.o
 +obj-$(CONFIG_SPI_RT2880)		+= spi-rt2880.o
+ obj-$(CONFIG_SPI_RZV2H_RSPI)		+= spi-rzv2h-rspi.o
  obj-$(CONFIG_SPI_RZV2M_CSI)		+= spi-rzv2m-csi.o
  obj-$(CONFIG_SPI_S3C64XX)		+= spi-s3c64xx.o
- obj-$(CONFIG_SPI_SC18IS602)		+= spi-sc18is602.o
 --- /dev/null
 +++ b/drivers/spi/spi-rt2880.c
 @@ -0,0 +1,473 @@
@@ -464,7 +464,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +	if (IS_ERR(clk))
 +		return dev_err_probe(dev, PTR_ERR(clk), "unable to get SYS clock");
 +
-+	master = devm_spi_alloc_master(dev, sizeof(*rs));
++	master = devm_spi_alloc_host(dev, sizeof(*rs));
 +	if (!master) {
 +		dev_err(dev, "master allocation failed\n");
 +		return -ENOMEM;
