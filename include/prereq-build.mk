@@ -160,11 +160,7 @@ $(eval $(call SetupHostCommand,python,Please install Python >= 3.5, \
 	python3.7 -V 2>&1 | grep 'Python 3', \
 	python3.6 -V 2>&1 | grep 'Python 3', \
 	python3.5 -V 2>&1 | grep 'Python 3', \
-<<<<<<< HEAD
 	python3 -V 2>&1 | grep -E 'Python 3\.(1[0-9]|[5-9])\.?'))
-=======
-	python3 -V 2>&1 | grep -E 'Python 3\.([5-9]|[0-9][0-9])\.?'))
->>>>>>> origin/openwrt-21.02
 
 $(eval $(call SetupHostCommand,python3,Please install Python >= 3.5, \
 	python3.11 -V 2>&1 | grep 'Python 3', \
@@ -174,11 +170,7 @@ $(eval $(call SetupHostCommand,python3,Please install Python >= 3.5, \
 	python3.7 -V 2>&1 | grep 'Python 3', \
 	python3.6 -V 2>&1 | grep 'Python 3', \
 	python3.5 -V 2>&1 | grep 'Python 3', \
-<<<<<<< HEAD
 	python3 -V 2>&1 | grep -E 'Python 3\.(1[0-9]|[5-9])\.?'))
-=======
-	python3 -V 2>&1 | grep -E 'Python 3\.([5-9]|[0-9][0-9])\.?'))
->>>>>>> origin/openwrt-21.02
 
 $(eval $(call TestHostCommand,python3-distutils, \
 	Please install the Python3 distutils module, \
@@ -194,19 +186,15 @@ $(eval $(call SetupHostCommand,rsync,Please install 'rsync', \
 	rsync --version </dev/null))
 
 $(eval $(call SetupHostCommand,which,Please install 'which', \
-	/usr/bin/which which, \
-	/bin/which which, \
-	which which))
+	which which | grep which))
 
 $(STAGING_DIR_HOST)/bin/mkhash: $(SCRIPT_DIR)/mkhash.c
 	mkdir -p $(dir $@)
 	$(CC) -O2 -I$(TOPDIR)/tools/include -o $@ $<
 
-$(STAGING_DIR_HOST)/bin/xxd: $(SCRIPT_DIR)/xxdi.pl
-	$(LN) $< $@
-
-prereq: $(STAGING_DIR_HOST)/bin/mkhash $(STAGING_DIR_HOST)/bin/xxd
+prereq: $(STAGING_DIR_HOST)/bin/mkhash
 
 # Install ldconfig stub
 $(eval $(call TestHostCommand,ldconfig-stub,Failed to install stub, \
-	$(LN) /bin/true $(STAGING_DIR_HOST)/bin/ldconfig))
+	touch $(STAGING_DIR_HOST)/bin/ldconfig && \
+	chmod +x $(STAGING_DIR_HOST)/bin/ldconfig))
