@@ -27,7 +27,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		rgmii_ctrl |= RGMII_CTRL_MII_OVERRIDE;
  
  	rgmii_ctrl |= RGMII_CTRL_ENABLE_GMII;
-@@ -2801,19 +2801,6 @@ static const struct b53_chip_data b53_sw
+@@ -2804,19 +2804,6 @@ static const struct b53_chip_data b53_sw
  		.jumbo_size_reg = B53_JUMBO_MAX_SIZE_63XX,
  	},
  	{
@@ -47,7 +47,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		.chip_id = BCM53010_DEVICE_ID,
  		.dev_name = "BCM53010",
  		.vlans = 4096,
-@@ -2962,13 +2949,17 @@ static const struct b53_chip_data b53_sw
+@@ -2965,13 +2952,17 @@ static const struct b53_chip_data b53_sw
  
  static int b53_switch_init(struct b53_device *dev)
  {
