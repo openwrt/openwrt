@@ -581,6 +581,7 @@ define KernelPackage/crypto-lib-chacha20/x86_64
 endef
 endif
 
+ifeq ($(KERNEL_PATCHVER),6.12)
 # Note that a non-neon fallback implementation is available on arm32 when
 # NEON is not supported, hence all arm targets can utilize lib-chacha20/arm
 define KernelPackage/crypto-lib-chacha20/arm
@@ -595,7 +596,6 @@ define KernelPackage/crypto-lib-chacha20/aarch64
   FILES+=$(LINUX_DIR)/arch/arm64/crypto/chacha-neon.ko
 endef
 
-ifeq ($(KERNEL_PATCHVER),6.12)
 define KernelPackage/crypto-lib-chacha20/mips32r2
   KCONFIG+=CONFIG_CRYPTO_CHACHA_MIPS
   FILES:=$(LINUX_DIR)/arch/mips/crypto/chacha-mips.ko
@@ -676,6 +676,7 @@ define KernelPackage/crypto-lib-poly1305/x86_64
 endef
 endif
 
+ifeq ($(KERNEL_PATCHVER),6.12)
 define KernelPackage/crypto-lib-poly1305/arm
   KCONFIG+=CONFIG_CRYPTO_POLY1305_ARM
   FILES:=$(LINUX_DIR)/arch/arm/crypto/poly1305-arm.ko
@@ -688,7 +689,6 @@ define KernelPackage/crypto-lib-poly1305/aarch64
   FILES:=$(LINUX_DIR)/arch/arm64/crypto/poly1305-neon.ko
 endef
 
-ifeq ($(KERNEL_PATCHVER),6.12)
 define KernelPackage/crypto-lib-poly1305/mips
   KCONFIG+=CONFIG_CRYPTO_POLY1305_MIPS
   FILES:=$(LINUX_DIR)/arch/mips/crypto/poly1305-mips.ko
@@ -985,6 +985,7 @@ define KernelPackage/crypto-sha1
   $(call AddDepends/crypto)
 endef
 
+ifeq ($(KERNEL_PATCHVER),6.12)
 define KernelPackage/crypto-sha1/arm
   FILES+=$(LINUX_DIR)/arch/arm/crypto/sha1-arm.ko
   AUTOLOAD+=$(call AutoLoad,09,sha1-arm)
@@ -1011,6 +1012,7 @@ KernelPackage/crypto-sha1/mvebu/cortexa53=$(KernelPackage/crypto-sha1/aarch64-ce
 KernelPackage/crypto-sha1/mvebu/cortexa72=$(KernelPackage/crypto-sha1/aarch64-ce)
 KernelPackage/crypto-sha1/qualcommax=$(KernelPackage/crypto-sha1/aarch64-ce)
 KernelPackage/crypto-sha1/rockchip/armv8=$(KernelPackage/crypto-sha1/aarch64-ce)
+endif
 
 define KernelPackage/crypto-sha1/octeon
   FILES+=$(LINUX_DIR)/arch/mips/cavium-octeon/crypto/octeon-sha1.ko
@@ -1069,6 +1071,7 @@ define KernelPackage/crypto-sha256
   $(call AddDepends/crypto)
 endef
 
+ifeq ($(filter 6.18,$(KERNEL_PATCHVER)),)
 define KernelPackage/crypto-sha256/aarch64
   FILES+=$(LINUX_DIR)/arch/arm64/crypto/sha256-arm64.ko
   AUTOLOAD+=$(call AutoLoad,09,sha256-arm64)
@@ -1108,6 +1111,7 @@ ifdef KernelPackage/crypto-sha256/$(ARCH)
   KernelPackage/crypto-sha256/$(CRYPTO_TARGET)=\
 	  $(KernelPackage/crypto-sha256/$(ARCH))
 endif
+endif # 6.18
 
 $(eval $(call KernelPackage,crypto-sha256))
 
@@ -1128,6 +1132,7 @@ define KernelPackage/crypto-sha512
   $(call AddDepends/crypto)
 endef
 
+ifeq ($(filter 6.18,$(KERNEL_PATCHVER)),)
 define KernelPackage/crypto-sha512/arm
   FILES+=$(LINUX_DIR)/arch/arm/crypto/sha512-arm.ko
   AUTOLOAD+=$(call AutoLoad,09,sha512-arm)
@@ -1149,6 +1154,7 @@ define KernelPackage/crypto-sha512/octeon
 endef
 
 KernelPackage/crypto-sha512/tegra=$(KernelPackage/crypto-sha512/arm)
+endif # 6.18
 
 ifndef CONFIG_TARGET_uml
 define KernelPackage/crypto-sha512/x86_64
