@@ -15,6 +15,7 @@ define Device/hasivo_s1100wp-8gt-se
   SOC := rtl9303
   DEVICE_VENDOR := Hasivo
   DEVICE_MODEL := S1100WP-8GT-SE
+  DEVICE_PACKAGES := mfd-hasivo-stc8
   IMAGE_SIZE := 12288k
   $(Device/kernel-lzma)
 endef
