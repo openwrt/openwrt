@@ -1836,8 +1836,8 @@ static const struct of_device_id rtl838x_eth_of_ids[] = {
 MODULE_DEVICE_TABLE(of, rtl838x_eth_of_ids);
 
 static struct platform_driver rtl838x_eth_driver = {
-	.probe = rtl838x_eth_probe,
-	.remove_new = rtl838x_eth_remove,
+	.probe  = rtl838x_eth_probe,
+	.remove = rtl838x_eth_remove,
 	.driver = {
 		.name = "rtl838x-eth",
 		.pm = NULL,

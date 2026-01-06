@@ -1683,8 +1683,8 @@ static const struct of_device_id rtl83xx_switch_of_ids[] = {
 MODULE_DEVICE_TABLE(of, rtl83xx_switch_of_ids);
 
 static struct platform_driver rtl83xx_switch_driver = {
-	.probe = rtl83xx_sw_probe,
-	.remove_new = rtl83xx_sw_remove,
+	.probe  = rtl83xx_sw_probe,
+	.remove = rtl83xx_sw_remove,
 	.driver = {
 		.name = "rtl83xx-switch",
 		.pm = NULL,
