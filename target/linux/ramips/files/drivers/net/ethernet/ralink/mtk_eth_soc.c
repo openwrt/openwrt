@@ -34,6 +34,7 @@
 #include <net/netfilter/nf_flow_table.h>
 #include <linux/gpio.h>
 #include <linux/gpio/consumer.h>
+#include <linux/version.h>
 
 #include <asm/mach-ralink/ralink_regs.h>
 
@@ -243,10 +244,18 @@ static void fe_clean_rx(struct fe_priv *priv)
 		ring->rx_dma = NULL;
 	}
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,13,0)
+	void *vaddr = (void *)(ring->frag_cache.encoded_page & PAGE_MASK);
+	if (!vaddr)
+		return;
+
+	page = virt_to_page(vaddr);
+#else
 	if (!ring->frag_cache.va)
 	    return;
 
 	page = virt_to_page(ring->frag_cache.va);
+#endif
 	__page_frag_cache_drain(page, ring->frag_cache.pagecnt_bias);
 	memset(&ring->frag_cache, 0, sizeof(ring->frag_cache));
 }
