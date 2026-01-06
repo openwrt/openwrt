@@ -447,8 +447,9 @@ inline u32 rtl931x_get_mac_tx_pause_sts(int p)
 struct p_hdr;
 struct dsa_tag;
 
-struct rtl838x_eth_reg {
+struct rteth_config {
 	int family_id;
+	int cpu_port;
 	irqreturn_t (*net_irq)(int irq, void *dev_id);
 	int (*mac_port_ctrl)(int port);
 	int dma_if_intr_sts;
@@ -479,6 +480,7 @@ struct rtl838x_eth_reg {
 	void (*update_cntr)(int r, int work_done);
 	void (*create_tx_header)(struct p_hdr *h, unsigned int dest_port, int prio);
 	bool (*decode_tag)(struct p_hdr *h, struct dsa_tag *tag);
+	const struct net_device_ops *netdev_ops;
 };
 
 #endif /* _RTL838X_ETH_H */

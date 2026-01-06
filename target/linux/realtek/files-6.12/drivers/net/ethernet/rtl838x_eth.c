@@ -193,8 +193,7 @@ struct rtl838x_eth_priv {
 	struct phylink *phylink;
 	struct phylink_config phylink_config;
 	struct phylink_pcs pcs;
-	const struct rtl838x_eth_reg *r;
-	u8 cpu_port;
+	const struct rteth_config *r;
 	u32 lastEvent;
 	u16 rxrings;
 	u16 rxringlen;
@@ -445,129 +444,13 @@ static irqreturn_t rtl93xx_net_irq(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-static const struct rtl838x_eth_reg rtl838x_reg = {
-	.family_id = RTL8380_FAMILY_ID,
-	.net_irq = rtl83xx_net_irq,
-	.mac_port_ctrl = rtl838x_mac_port_ctrl,
-	.dma_if_intr_sts = RTL838X_DMA_IF_INTR_STS,
-	.dma_if_intr_msk = RTL838X_DMA_IF_INTR_MSK,
-	.dma_if_ctrl = RTL838X_DMA_IF_CTRL,
-	.mac_force_mode_ctrl = RTL838X_MAC_FORCE_MODE_CTRL,
-	.dma_rx_base = RTL838X_DMA_RX_BASE,
-	.dma_tx_base = RTL838X_DMA_TX_BASE,
-	.dma_if_rx_ring_size = rtl838x_dma_if_rx_ring_size,
-	.dma_if_rx_ring_cntr = rtl838x_dma_if_rx_ring_cntr,
-	.dma_if_rx_cur = RTL838X_DMA_IF_RX_CUR,
-	.rst_glb_ctrl = RTL838X_RST_GLB_CTRL_0,
-	.get_mac_link_sts = rtl838x_get_mac_link_sts,
-	.get_mac_link_dup_sts = rtl838x_get_mac_link_dup_sts,
-	.get_mac_link_spd_sts = rtl838x_get_mac_link_spd_sts,
-	.get_mac_rx_pause_sts = rtl838x_get_mac_rx_pause_sts,
-	.get_mac_tx_pause_sts = rtl838x_get_mac_tx_pause_sts,
-	.mac = RTL838X_MAC,
-	.l2_tbl_flush_ctrl = RTL838X_L2_TBL_FLUSH_CTRL,
-	.update_cntr = rtl838x_update_cntr,
-	.create_tx_header = rtl838x_create_tx_header,
-	.decode_tag = rtl838x_decode_tag,
-};
-
-static const struct rtl838x_eth_reg rtl839x_reg = {
-	.family_id = RTL8390_FAMILY_ID,
-	.net_irq = rtl83xx_net_irq,
-	.mac_port_ctrl = rtl839x_mac_port_ctrl,
-	.dma_if_intr_sts = RTL839X_DMA_IF_INTR_STS,
-	.dma_if_intr_msk = RTL839X_DMA_IF_INTR_MSK,
-	.dma_if_ctrl = RTL839X_DMA_IF_CTRL,
-	.mac_force_mode_ctrl = RTL839X_MAC_FORCE_MODE_CTRL,
-	.dma_rx_base = RTL839X_DMA_RX_BASE,
-	.dma_tx_base = RTL839X_DMA_TX_BASE,
-	.dma_if_rx_ring_size = rtl839x_dma_if_rx_ring_size,
-	.dma_if_rx_ring_cntr = rtl839x_dma_if_rx_ring_cntr,
-	.dma_if_rx_cur = RTL839X_DMA_IF_RX_CUR,
-	.rst_glb_ctrl = RTL839X_RST_GLB_CTRL,
-	.get_mac_link_sts = rtl839x_get_mac_link_sts,
-	.get_mac_link_dup_sts = rtl839x_get_mac_link_dup_sts,
-	.get_mac_link_spd_sts = rtl839x_get_mac_link_spd_sts,
-	.get_mac_rx_pause_sts = rtl839x_get_mac_rx_pause_sts,
-	.get_mac_tx_pause_sts = rtl839x_get_mac_tx_pause_sts,
-	.mac = RTL839X_MAC,
-	.l2_tbl_flush_ctrl = RTL839X_L2_TBL_FLUSH_CTRL,
-	.update_cntr = rtl839x_update_cntr,
-	.create_tx_header = rtl839x_create_tx_header,
-	.decode_tag = rtl839x_decode_tag,
-};
-
-static const struct rtl838x_eth_reg rtl930x_reg = {
-	.family_id = RTL9300_FAMILY_ID,
-	.net_irq = rtl93xx_net_irq,
-	.mac_port_ctrl = rtl930x_mac_port_ctrl,
-	.dma_if_intr_rx_runout_sts = RTL930X_DMA_IF_INTR_RX_RUNOUT_STS,
-	.dma_if_intr_rx_done_sts = RTL930X_DMA_IF_INTR_RX_DONE_STS,
-	.dma_if_intr_tx_done_sts = RTL930X_DMA_IF_INTR_TX_DONE_STS,
-	.dma_if_intr_rx_runout_msk = RTL930X_DMA_IF_INTR_RX_RUNOUT_MSK,
-	.dma_if_intr_rx_done_msk = RTL930X_DMA_IF_INTR_RX_DONE_MSK,
-	.dma_if_intr_tx_done_msk = RTL930X_DMA_IF_INTR_TX_DONE_MSK,
-	.l2_ntfy_if_intr_sts = RTL930X_L2_NTFY_IF_INTR_STS,
-	.l2_ntfy_if_intr_msk = RTL930X_L2_NTFY_IF_INTR_MSK,
-	.dma_if_ctrl = RTL930X_DMA_IF_CTRL,
-	.mac_force_mode_ctrl = RTL930X_MAC_FORCE_MODE_CTRL,
-	.dma_rx_base = RTL930X_DMA_RX_BASE,
-	.dma_tx_base = RTL930X_DMA_TX_BASE,
-	.dma_if_rx_ring_size = rtl930x_dma_if_rx_ring_size,
-	.dma_if_rx_ring_cntr = rtl930x_dma_if_rx_ring_cntr,
-	.dma_if_rx_cur = RTL930X_DMA_IF_RX_CUR,
-	.rst_glb_ctrl = RTL930X_RST_GLB_CTRL_0,
-	.get_mac_link_sts = rtl930x_get_mac_link_sts,
-	.get_mac_link_dup_sts = rtl930x_get_mac_link_dup_sts,
-	.get_mac_link_spd_sts = rtl930x_get_mac_link_spd_sts,
-	.get_mac_rx_pause_sts = rtl930x_get_mac_rx_pause_sts,
-	.get_mac_tx_pause_sts = rtl930x_get_mac_tx_pause_sts,
-	.mac = RTL930X_MAC_L2_ADDR_CTRL,
-	.l2_tbl_flush_ctrl = RTL930X_L2_TBL_FLUSH_CTRL,
-	.update_cntr = rtl930x_update_cntr,
-	.create_tx_header = rtl930x_create_tx_header,
-	.decode_tag = rtl930x_decode_tag,
-};
-
-static const struct rtl838x_eth_reg rtl931x_reg = {
-	.family_id = RTL9310_FAMILY_ID,
-	.net_irq = rtl93xx_net_irq,
-	.mac_port_ctrl = rtl931x_mac_port_ctrl,
-	.dma_if_intr_rx_runout_sts = RTL931X_DMA_IF_INTR_RX_RUNOUT_STS,
-	.dma_if_intr_rx_done_sts = RTL931X_DMA_IF_INTR_RX_DONE_STS,
-	.dma_if_intr_tx_done_sts = RTL931X_DMA_IF_INTR_TX_DONE_STS,
-	.dma_if_intr_rx_runout_msk = RTL931X_DMA_IF_INTR_RX_RUNOUT_MSK,
-	.dma_if_intr_rx_done_msk = RTL931X_DMA_IF_INTR_RX_DONE_MSK,
-	.dma_if_intr_tx_done_msk = RTL931X_DMA_IF_INTR_TX_DONE_MSK,
-	.l2_ntfy_if_intr_sts = RTL931X_L2_NTFY_IF_INTR_STS,
-	.l2_ntfy_if_intr_msk = RTL931X_L2_NTFY_IF_INTR_MSK,
-	.dma_if_ctrl = RTL931X_DMA_IF_CTRL,
-	.mac_force_mode_ctrl = RTL931X_MAC_FORCE_MODE_CTRL,
-	.dma_rx_base = RTL931X_DMA_RX_BASE,
-	.dma_tx_base = RTL931X_DMA_TX_BASE,
-	.dma_if_rx_ring_size = rtl931x_dma_if_rx_ring_size,
-	.dma_if_rx_ring_cntr = rtl931x_dma_if_rx_ring_cntr,
-	.dma_if_rx_cur = RTL931X_DMA_IF_RX_CUR,
-	.rst_glb_ctrl = RTL931X_RST_GLB_CTRL,
-	.get_mac_link_sts = rtldsa_931x_get_mac_link_sts,
-	.get_mac_link_dup_sts = rtl931x_get_mac_link_dup_sts,
-	.get_mac_link_spd_sts = rtl931x_get_mac_link_spd_sts,
-	.get_mac_rx_pause_sts = rtl931x_get_mac_rx_pause_sts,
-	.get_mac_tx_pause_sts = rtl931x_get_mac_tx_pause_sts,
-	.mac = RTL931X_MAC_L2_ADDR_CTRL,
-	.l2_tbl_flush_ctrl = RTL931X_L2_TBL_FLUSH_CTRL,
-	.update_cntr = rtl931x_update_cntr,
-	.create_tx_header = rtl931x_create_tx_header,
-	.decode_tag = rtl931x_decode_tag,
-};
-
 static void rtl838x_hw_reset(struct rtl838x_eth_priv *priv)
 {
 	u32 int_saved, nbuf;
 	u32 reset_mask;
 
-	pr_info("RESETTING %x, CPU_PORT %d\n", priv->r->family_id, priv->cpu_port);
-	sw_w32_mask(0x3, 0, priv->r->mac_port_ctrl(priv->cpu_port));
+	pr_info("RESETTING %x, CPU_PORT %d\n", priv->r->family_id, priv->r->cpu_port);
+	sw_w32_mask(0x3, 0, priv->r->mac_port_ctrl(priv->r->cpu_port));
 	mdelay(100);
 
 	/* Disable and clear interrupts */
@@ -663,16 +546,16 @@ static void rtl838x_hw_en_rxtx(struct rtl838x_eth_priv *priv)
 	sw_w32_mask(0, RX_EN | TX_EN, priv->r->dma_if_ctrl);
 
 	/* Restart TX/RX to CPU port */
-	sw_w32_mask(0x0, 0x3, priv->r->mac_port_ctrl(priv->cpu_port));
+	sw_w32_mask(0x0, 0x3, priv->r->mac_port_ctrl(priv->r->cpu_port));
 	/* Set Speed, duplex, flow control
 	 * FORCE_EN | LINK_EN | NWAY_EN | DUP_SEL
 	 * | SPD_SEL = 0b10 | FORCE_FC_EN | PHY_MASTER_SLV_MANUAL_EN
 	 * | MEDIA_SEL
 	 */
-	sw_w32(0x6192F, priv->r->mac_force_mode_ctrl + priv->cpu_port * 4);
+	sw_w32(0x6192F, priv->r->mac_force_mode_ctrl + priv->r->cpu_port * 4);
 
 	/* Enable CRC checks on CPU-port */
-	sw_w32_mask(0, BIT(3), priv->r->mac_port_ctrl(priv->cpu_port));
+	sw_w32_mask(0, BIT(3), priv->r->mac_port_ctrl(priv->r->cpu_port));
 }
 
 static void rtl839x_hw_en_rxtx(struct rtl838x_eth_priv *priv)
@@ -687,7 +570,7 @@ static void rtl839x_hw_en_rxtx(struct rtl838x_eth_priv *priv)
 	sw_w32_mask(0, RX_EN | TX_EN, priv->r->dma_if_ctrl);
 
 	/* Restart TX/RX to CPU port, enable CRC checking */
-	sw_w32_mask(0x0, 0x3 | BIT(3), priv->r->mac_port_ctrl(priv->cpu_port));
+	sw_w32_mask(0x0, 0x3 | BIT(3), priv->r->mac_port_ctrl(priv->r->cpu_port));
 
 	/* CPU port joins Lookup Miss Flooding Portmask */
 	/* TODO: The code below should also work for the RTL838x */
@@ -696,7 +579,7 @@ static void rtl839x_hw_en_rxtx(struct rtl838x_eth_priv *priv)
 	sw_w32(0x38000, RTL839X_TBL_ACCESS_L2_CTRL);
 
 	/* Force CPU port link up */
-	sw_w32_mask(0, 3, priv->r->mac_force_mode_ctrl + priv->cpu_port * 4);
+	sw_w32_mask(0, 3, priv->r->mac_force_mode_ctrl + priv->r->cpu_port * 4);
 }
 
 static void rtl93xx_hw_en_rxtx(struct rtl838x_eth_priv *priv)
@@ -725,17 +608,17 @@ static void rtl93xx_hw_en_rxtx(struct rtl838x_eth_priv *priv)
 	sw_w32_mask(0, RX_EN_93XX | TX_EN_93XX, priv->r->dma_if_ctrl);
 
 	/* Restart TX/RX to CPU port, enable CRC checking */
-	sw_w32_mask(0x0, 0x3 | BIT(4), priv->r->mac_port_ctrl(priv->cpu_port));
+	sw_w32_mask(0x0, 0x3 | BIT(4), priv->r->mac_port_ctrl(priv->r->cpu_port));
 
 	if (priv->r->family_id == RTL9300_FAMILY_ID)
-		sw_w32_mask(0, BIT(priv->cpu_port), RTL930X_L2_UNKN_UC_FLD_PMSK);
+		sw_w32_mask(0, BIT(priv->r->cpu_port), RTL930X_L2_UNKN_UC_FLD_PMSK);
 	else
-		sw_w32_mask(0, BIT(priv->cpu_port), RTL931X_L2_UNKN_UC_FLD_PMSK);
+		sw_w32_mask(0, BIT(priv->r->cpu_port), RTL931X_L2_UNKN_UC_FLD_PMSK);
 
 	if (priv->r->family_id == RTL9300_FAMILY_ID)
-		sw_w32(0x217, priv->r->mac_force_mode_ctrl + priv->cpu_port * 4);
+		sw_w32(0x217, priv->r->mac_force_mode_ctrl + priv->r->cpu_port * 4);
 	else
-		sw_w32(0x2a1d, priv->r->mac_force_mode_ctrl + priv->cpu_port * 4);
+		sw_w32(0x2a1d, priv->r->mac_force_mode_ctrl + priv->r->cpu_port * 4);
 }
 
 static void rtl838x_setup_ring_buffer(struct rtl838x_eth_priv *priv, struct ring_b *ring)
@@ -871,7 +754,7 @@ static void rtl838x_hw_stop(struct rtl838x_eth_priv *priv)
 	u32 clear_irq = priv->r->family_id == RTL8380_FAMILY_ID ? 0x000fffff : 0x007fffff;
 
 	/* Disable RX/TX from/to CPU-port */
-	sw_w32_mask(0x3, 0, priv->r->mac_port_ctrl(priv->cpu_port));
+	sw_w32_mask(0x3, 0, priv->r->mac_port_ctrl(priv->r->cpu_port));
 
 	/* Disable traffic */
 	if (priv->r->family_id == RTL9300_FAMILY_ID || priv->r->family_id == RTL9310_FAMILY_ID)
@@ -891,12 +774,12 @@ static void rtl838x_hw_stop(struct rtl838x_eth_priv *priv)
 	if (priv->r->family_id == RTL8380_FAMILY_ID) {
 		/* Disable FAST_AGE_OUT otherwise flush will hang */
 		sw_w32_mask(BIT(23), 0, RTL838X_L2_CTRL_1);
-		for (int i = 0; i <= priv->cpu_port; i++) {
+		for (int i = 0; i <= priv->r->cpu_port; i++) {
 			sw_w32(BIT(26) | BIT(23) | i << 5, priv->r->l2_tbl_flush_ctrl);
 			do { } while (sw_r32(priv->r->l2_tbl_flush_ctrl) & BIT(26));
 		}
 	} else if (priv->r->family_id == RTL8390_FAMILY_ID) {
-		for (int i = 0; i <= priv->cpu_port; i++) {
+		for (int i = 0; i <= priv->r->cpu_port; i++) {
 			sw_w32(BIT(28) | BIT(25) | i << 5, priv->r->l2_tbl_flush_ctrl);
 			do { } while (sw_r32(priv->r->l2_tbl_flush_ctrl) & BIT(28));
 		}
@@ -905,11 +788,11 @@ static void rtl838x_hw_stop(struct rtl838x_eth_priv *priv)
 
 	/* CPU-Port: Link down */
 	if (priv->r->family_id == RTL8380_FAMILY_ID || priv->r->family_id == RTL8390_FAMILY_ID)
-		sw_w32(force_mac, priv->r->mac_force_mode_ctrl + priv->cpu_port * 4);
+		sw_w32(force_mac, priv->r->mac_force_mode_ctrl + priv->r->cpu_port * 4);
 	else if (priv->r->family_id == RTL9300_FAMILY_ID)
-		sw_w32_mask(0x3, 0, priv->r->mac_force_mode_ctrl + priv->cpu_port * 4);
+		sw_w32_mask(0x3, 0, priv->r->mac_force_mode_ctrl + priv->r->cpu_port * 4);
 	else if (priv->r->family_id == RTL9310_FAMILY_ID)
-		sw_w32_mask(BIT(0) | BIT(9), 0, priv->r->mac_force_mode_ctrl + priv->cpu_port * 4);
+		sw_w32_mask(BIT(0) | BIT(9), 0, priv->r->mac_force_mode_ctrl + priv->r->cpu_port * 4);
 	mdelay(100);
 
 	/* Disable all TX/RX interrupts */
@@ -1061,7 +944,7 @@ static int rtl838x_eth_tx(struct sk_buff *skb, struct net_device *dev)
 	/* Check for DSA tagging at the end of the buffer */
 	if (netdev_uses_dsa(dev) &&
 	    skb->data[len - 4] == 0x80 &&
-	    skb->data[len - 3] < priv->cpu_port &&
+	    skb->data[len - 3] < priv->r->cpu_port &&
 	    skb->data[len - 2] == 0x10 &&
 	    skb->data[len - 1] == 0x00) {
 		/* Reuse tag space for CRC if possible */
@@ -1298,9 +1181,9 @@ static int rtl838x_poll_rx(struct napi_struct *napi, int budget)
 	return work_done;
 }
 
-static void rtl838x_mac_config(struct phylink_config *config,
-			       unsigned int mode,
-			       const struct phylink_link_state *state)
+static void rteth_mac_config(struct phylink_config *config,
+			     unsigned int mode,
+			     const struct phylink_link_state *state)
 {
 	/* This is only being called for the master device,
 	 * i.e. the CPU-Port. We don't need to do anything.
@@ -1309,7 +1192,7 @@ static void rtl838x_mac_config(struct phylink_config *config,
 	pr_info("In %s, mode %x\n", __func__, mode);
 }
 
-static void rtl838x_pcs_an_restart(struct phylink_pcs *pcs)
+static void rteth_pcs_an_restart(struct phylink_pcs *pcs)
 {
 	struct rtl838x_eth_priv *priv = container_of(pcs, struct rtl838x_eth_priv, pcs);
 
@@ -1319,17 +1202,17 @@ static void rtl838x_pcs_an_restart(struct phylink_pcs *pcs)
 
 	pr_debug("In %s\n", __func__);
 	/* Restart by disabling and re-enabling link */
-	sw_w32(0x6192D, priv->r->mac_force_mode_ctrl + priv->cpu_port * 4);
+	sw_w32(0x6192D, priv->r->mac_force_mode_ctrl + priv->r->cpu_port * 4);
 	mdelay(20);
-	sw_w32(0x6192F, priv->r->mac_force_mode_ctrl + priv->cpu_port * 4);
+	sw_w32(0x6192F, priv->r->mac_force_mode_ctrl + priv->r->cpu_port * 4);
 }
 
-static void rtl838x_pcs_get_state(struct phylink_pcs *pcs,
-				  struct phylink_link_state *state)
+static void rteth_pcs_get_state(struct phylink_pcs *pcs,
+				struct phylink_link_state *state)
 {
 	u32 speed;
 	struct rtl838x_eth_priv *priv = container_of(pcs, struct rtl838x_eth_priv, pcs);
-	int port = priv->cpu_port;
+	int port = priv->r->cpu_port;
 
 	pr_info("In %s\n", __func__);
 
@@ -1369,37 +1252,37 @@ static void rtl838x_pcs_get_state(struct phylink_pcs *pcs,
 		state->pause |= MLO_PAUSE_TX;
 }
 
-static int rtl838x_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
-			      phy_interface_t interface,
-			      const unsigned long *advertising,
-			      bool permit_pause_to_mac)
+static int rteth_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
+			    phy_interface_t interface,
+			    const unsigned long *advertising,
+			    bool permit_pause_to_mac)
 {
 	return 0;
 }
 
-static void rtl838x_mac_link_down(struct phylink_config *config,
-				  unsigned int mode,
-				  phy_interface_t interface)
+static void rteth_mac_link_down(struct phylink_config *config,
+				unsigned int mode,
+				phy_interface_t interface)
 {
 	struct net_device *dev = container_of(config->dev, struct net_device, dev);
 	struct rtl838x_eth_priv *priv = netdev_priv(dev);
 
 	pr_debug("In %s\n", __func__);
 	/* Stop TX/RX to port */
-	sw_w32_mask(0x03, 0, priv->r->mac_port_ctrl(priv->cpu_port));
+	sw_w32_mask(0x03, 0, priv->r->mac_port_ctrl(priv->r->cpu_port));
 }
 
-static void rtl838x_mac_link_up(struct phylink_config *config,
-				struct phy_device *phy, unsigned int mode,
-				phy_interface_t interface, int speed, int duplex,
-				bool tx_pause, bool rx_pause)
+static void rteth_mac_link_up(struct phylink_config *config,
+			      struct phy_device *phy, unsigned int mode,
+			      phy_interface_t interface, int speed, int duplex,
+			      bool tx_pause, bool rx_pause)
 {
 	struct net_device *dev = container_of(config->dev, struct net_device, dev);
 	struct rtl838x_eth_priv *priv = netdev_priv(dev);
 
 	pr_debug("In %s\n", __func__);
 	/* Restart TX/RX to port */
-	sw_w32_mask(0, 0x03, priv->r->mac_port_ctrl(priv->cpu_port));
+	sw_w32_mask(0, 0x03, priv->r->mac_port_ctrl(priv->r->cpu_port));
 }
 
 static void rtl838x_set_mac_hw(struct net_device *dev, u8 *mac)
@@ -1471,8 +1354,8 @@ static int rtl8380_init_mac(struct rtl838x_eth_priv *priv)
 	return 0;
 }
 
-static int rtl838x_get_link_ksettings(struct net_device *ndev,
-				      struct ethtool_link_ksettings *cmd)
+static int rteth_get_link_ksettings(struct net_device *ndev,
+				    struct ethtool_link_ksettings *cmd)
 {
 	struct rtl838x_eth_priv *priv = netdev_priv(ndev);
 
@@ -1481,8 +1364,8 @@ static int rtl838x_get_link_ksettings(struct net_device *ndev,
 	return phylink_ethtool_ksettings_get(priv->phylink, cmd);
 }
 
-static int rtl838x_set_link_ksettings(struct net_device *ndev,
-				      const struct ethtool_link_ksettings *cmd)
+static int rteth_set_link_ksettings(struct net_device *ndev,
+				    const struct ethtool_link_ksettings *cmd)
 {
 	struct rtl838x_eth_priv *priv = netdev_priv(ndev);
 
@@ -1536,9 +1419,9 @@ static int rtl83xx_set_features(struct net_device *dev, netdev_features_t featur
 
 	if ((features ^ dev->features) & NETIF_F_RXCSUM) {
 		if (!(features & NETIF_F_RXCSUM))
-			sw_w32_mask(BIT(3), 0, priv->r->mac_port_ctrl(priv->cpu_port));
+			sw_w32_mask(BIT(3), 0, priv->r->mac_port_ctrl(priv->r->cpu_port));
 		else
-			sw_w32_mask(0, BIT(3), priv->r->mac_port_ctrl(priv->cpu_port));
+			sw_w32_mask(0, BIT(3), priv->r->mac_port_ctrl(priv->r->cpu_port));
 	}
 
 	return 0;
@@ -1550,16 +1433,16 @@ static int rtl93xx_set_features(struct net_device *dev, netdev_features_t featur
 
 	if ((features ^ dev->features) & NETIF_F_RXCSUM) {
 		if (!(features & NETIF_F_RXCSUM))
-			sw_w32_mask(BIT(4), 0, priv->r->mac_port_ctrl(priv->cpu_port));
+			sw_w32_mask(BIT(4), 0, priv->r->mac_port_ctrl(priv->r->cpu_port));
 		else
-			sw_w32_mask(0, BIT(4), priv->r->mac_port_ctrl(priv->cpu_port));
+			sw_w32_mask(0, BIT(4), priv->r->mac_port_ctrl(priv->r->cpu_port));
 	}
 
 	return 0;
 }
 
-static struct phylink_pcs *rtl838x_mac_select_pcs(struct phylink_config *config,
-						  phy_interface_t interface)
+static struct phylink_pcs *rteth_mac_select_pcs(struct phylink_config *config,
+						phy_interface_t interface)
 {
 	struct net_device *dev = to_net_dev(config->dev);
 	struct rtl838x_eth_priv *priv = netdev_priv(dev);
@@ -1567,7 +1450,7 @@ static struct phylink_pcs *rtl838x_mac_select_pcs(struct phylink_config *config,
 	return &priv->pcs;
 }
 
-static const struct net_device_ops rtl838x_eth_netdev_ops = {
+static const struct net_device_ops rteth_838x_netdev_ops = {
 	.ndo_open = rtl838x_eth_open,
 	.ndo_stop = rtl838x_eth_stop,
 	.ndo_start_xmit = rtl838x_eth_tx,
@@ -1581,7 +1464,35 @@ static const struct net_device_ops rtl838x_eth_netdev_ops = {
 	.ndo_setup_tc = rtl83xx_setup_tc,
 };
 
-static const struct net_device_ops rtl839x_eth_netdev_ops = {
+static const struct rteth_config rteth_838x_cfg = {
+	.family_id = RTL8380_FAMILY_ID,
+	.cpu_port = 28,
+	.net_irq = rtl83xx_net_irq,
+	.mac_port_ctrl = rtl838x_mac_port_ctrl,
+	.dma_if_intr_sts = RTL838X_DMA_IF_INTR_STS,
+	.dma_if_intr_msk = RTL838X_DMA_IF_INTR_MSK,
+	.dma_if_ctrl = RTL838X_DMA_IF_CTRL,
+	.mac_force_mode_ctrl = RTL838X_MAC_FORCE_MODE_CTRL,
+	.dma_rx_base = RTL838X_DMA_RX_BASE,
+	.dma_tx_base = RTL838X_DMA_TX_BASE,
+	.dma_if_rx_ring_size = rtl838x_dma_if_rx_ring_size,
+	.dma_if_rx_ring_cntr = rtl838x_dma_if_rx_ring_cntr,
+	.dma_if_rx_cur = RTL838X_DMA_IF_RX_CUR,
+	.rst_glb_ctrl = RTL838X_RST_GLB_CTRL_0,
+	.get_mac_link_sts = rtl838x_get_mac_link_sts,
+	.get_mac_link_dup_sts = rtl838x_get_mac_link_dup_sts,
+	.get_mac_link_spd_sts = rtl838x_get_mac_link_spd_sts,
+	.get_mac_rx_pause_sts = rtl838x_get_mac_rx_pause_sts,
+	.get_mac_tx_pause_sts = rtl838x_get_mac_tx_pause_sts,
+	.mac = RTL838X_MAC,
+	.l2_tbl_flush_ctrl = RTL838X_L2_TBL_FLUSH_CTRL,
+	.update_cntr = rtl838x_update_cntr,
+	.create_tx_header = rtl838x_create_tx_header,
+	.decode_tag = rtl838x_decode_tag,
+	.netdev_ops = &rteth_838x_netdev_ops,
+};
+
+static const struct net_device_ops rteth_839x_netdev_ops = {
 	.ndo_open = rtl838x_eth_open,
 	.ndo_stop = rtl838x_eth_stop,
 	.ndo_start_xmit = rtl838x_eth_tx,
@@ -1595,7 +1506,35 @@ static const struct net_device_ops rtl839x_eth_netdev_ops = {
 	.ndo_setup_tc = rtl83xx_setup_tc,
 };
 
-static const struct net_device_ops rtl930x_eth_netdev_ops = {
+static const struct rteth_config rteth_839x_cfg = {
+	.family_id = RTL8390_FAMILY_ID,
+	.cpu_port = 52,
+	.net_irq = rtl83xx_net_irq,
+	.mac_port_ctrl = rtl839x_mac_port_ctrl,
+	.dma_if_intr_sts = RTL839X_DMA_IF_INTR_STS,
+	.dma_if_intr_msk = RTL839X_DMA_IF_INTR_MSK,
+	.dma_if_ctrl = RTL839X_DMA_IF_CTRL,
+	.mac_force_mode_ctrl = RTL839X_MAC_FORCE_MODE_CTRL,
+	.dma_rx_base = RTL839X_DMA_RX_BASE,
+	.dma_tx_base = RTL839X_DMA_TX_BASE,
+	.dma_if_rx_ring_size = rtl839x_dma_if_rx_ring_size,
+	.dma_if_rx_ring_cntr = rtl839x_dma_if_rx_ring_cntr,
+	.dma_if_rx_cur = RTL839X_DMA_IF_RX_CUR,
+	.rst_glb_ctrl = RTL839X_RST_GLB_CTRL,
+	.get_mac_link_sts = rtl839x_get_mac_link_sts,
+	.get_mac_link_dup_sts = rtl839x_get_mac_link_dup_sts,
+	.get_mac_link_spd_sts = rtl839x_get_mac_link_spd_sts,
+	.get_mac_rx_pause_sts = rtl839x_get_mac_rx_pause_sts,
+	.get_mac_tx_pause_sts = rtl839x_get_mac_tx_pause_sts,
+	.mac = RTL839X_MAC,
+	.l2_tbl_flush_ctrl = RTL839X_L2_TBL_FLUSH_CTRL,
+	.update_cntr = rtl839x_update_cntr,
+	.create_tx_header = rtl839x_create_tx_header,
+	.decode_tag = rtl839x_decode_tag,
+	.netdev_ops = &rteth_839x_netdev_ops,
+};
+
+static const struct net_device_ops rteth_930x_netdev_ops = {
 	.ndo_open = rtl838x_eth_open,
 	.ndo_stop = rtl838x_eth_stop,
 	.ndo_start_xmit = rtl838x_eth_tx,
@@ -1609,7 +1548,41 @@ static const struct net_device_ops rtl930x_eth_netdev_ops = {
 	.ndo_setup_tc = rtl83xx_setup_tc,
 };
 
-static const struct net_device_ops rtl931x_eth_netdev_ops = {
+static const struct rteth_config rteth_930x_cfg = {
+	.family_id = RTL9300_FAMILY_ID,
+	.cpu_port = 28,
+	.net_irq = rtl93xx_net_irq,
+	.mac_port_ctrl = rtl930x_mac_port_ctrl,
+	.dma_if_intr_rx_runout_sts = RTL930X_DMA_IF_INTR_RX_RUNOUT_STS,
+	.dma_if_intr_rx_done_sts = RTL930X_DMA_IF_INTR_RX_DONE_STS,
+	.dma_if_intr_tx_done_sts = RTL930X_DMA_IF_INTR_TX_DONE_STS,
+	.dma_if_intr_rx_runout_msk = RTL930X_DMA_IF_INTR_RX_RUNOUT_MSK,
+	.dma_if_intr_rx_done_msk = RTL930X_DMA_IF_INTR_RX_DONE_MSK,
+	.dma_if_intr_tx_done_msk = RTL930X_DMA_IF_INTR_TX_DONE_MSK,
+	.l2_ntfy_if_intr_sts = RTL930X_L2_NTFY_IF_INTR_STS,
+	.l2_ntfy_if_intr_msk = RTL930X_L2_NTFY_IF_INTR_MSK,
+	.dma_if_ctrl = RTL930X_DMA_IF_CTRL,
+	.mac_force_mode_ctrl = RTL930X_MAC_FORCE_MODE_CTRL,
+	.dma_rx_base = RTL930X_DMA_RX_BASE,
+	.dma_tx_base = RTL930X_DMA_TX_BASE,
+	.dma_if_rx_ring_size = rtl930x_dma_if_rx_ring_size,
+	.dma_if_rx_ring_cntr = rtl930x_dma_if_rx_ring_cntr,
+	.dma_if_rx_cur = RTL930X_DMA_IF_RX_CUR,
+	.rst_glb_ctrl = RTL930X_RST_GLB_CTRL_0,
+	.get_mac_link_sts = rtl930x_get_mac_link_sts,
+	.get_mac_link_dup_sts = rtl930x_get_mac_link_dup_sts,
+	.get_mac_link_spd_sts = rtl930x_get_mac_link_spd_sts,
+	.get_mac_rx_pause_sts = rtl930x_get_mac_rx_pause_sts,
+	.get_mac_tx_pause_sts = rtl930x_get_mac_tx_pause_sts,
+	.mac = RTL930X_MAC_L2_ADDR_CTRL,
+	.l2_tbl_flush_ctrl = RTL930X_L2_TBL_FLUSH_CTRL,
+	.update_cntr = rtl930x_update_cntr,
+	.create_tx_header = rtl930x_create_tx_header,
+	.decode_tag = rtl930x_decode_tag,
+	.netdev_ops = &rteth_930x_netdev_ops,
+};
+
+static const struct net_device_ops rteth_931x_netdev_ops = {
 	.ndo_open = rtl838x_eth_open,
 	.ndo_stop = rtl838x_eth_stop,
 	.ndo_start_xmit = rtl838x_eth_tx,
@@ -1622,22 +1595,56 @@ static const struct net_device_ops rtl931x_eth_netdev_ops = {
 	.ndo_fix_features = rtl838x_fix_features,
 };
 
-static const struct phylink_pcs_ops rtl838x_pcs_ops = {
-	.pcs_get_state = rtl838x_pcs_get_state,
-	.pcs_an_restart = rtl838x_pcs_an_restart,
-	.pcs_config = rtl838x_pcs_config,
+static const struct rteth_config rteth_931x_cfg = {
+	.family_id = RTL9310_FAMILY_ID,
+	.cpu_port = 56,
+	.net_irq = rtl93xx_net_irq,
+	.mac_port_ctrl = rtl931x_mac_port_ctrl,
+	.dma_if_intr_rx_runout_sts = RTL931X_DMA_IF_INTR_RX_RUNOUT_STS,
+	.dma_if_intr_rx_done_sts = RTL931X_DMA_IF_INTR_RX_DONE_STS,
+	.dma_if_intr_tx_done_sts = RTL931X_DMA_IF_INTR_TX_DONE_STS,
+	.dma_if_intr_rx_runout_msk = RTL931X_DMA_IF_INTR_RX_RUNOUT_MSK,
+	.dma_if_intr_rx_done_msk = RTL931X_DMA_IF_INTR_RX_DONE_MSK,
+	.dma_if_intr_tx_done_msk = RTL931X_DMA_IF_INTR_TX_DONE_MSK,
+	.l2_ntfy_if_intr_sts = RTL931X_L2_NTFY_IF_INTR_STS,
+	.l2_ntfy_if_intr_msk = RTL931X_L2_NTFY_IF_INTR_MSK,
+	.dma_if_ctrl = RTL931X_DMA_IF_CTRL,
+	.mac_force_mode_ctrl = RTL931X_MAC_FORCE_MODE_CTRL,
+	.dma_rx_base = RTL931X_DMA_RX_BASE,
+	.dma_tx_base = RTL931X_DMA_TX_BASE,
+	.dma_if_rx_ring_size = rtl931x_dma_if_rx_ring_size,
+	.dma_if_rx_ring_cntr = rtl931x_dma_if_rx_ring_cntr,
+	.dma_if_rx_cur = RTL931X_DMA_IF_RX_CUR,
+	.rst_glb_ctrl = RTL931X_RST_GLB_CTRL,
+	.get_mac_link_sts = rtldsa_931x_get_mac_link_sts,
+	.get_mac_link_dup_sts = rtl931x_get_mac_link_dup_sts,
+	.get_mac_link_spd_sts = rtl931x_get_mac_link_spd_sts,
+	.get_mac_rx_pause_sts = rtl931x_get_mac_rx_pause_sts,
+	.get_mac_tx_pause_sts = rtl931x_get_mac_tx_pause_sts,
+	.mac = RTL931X_MAC_L2_ADDR_CTRL,
+	.l2_tbl_flush_ctrl = RTL931X_L2_TBL_FLUSH_CTRL,
+	.update_cntr = rtl931x_update_cntr,
+	.create_tx_header = rtl931x_create_tx_header,
+	.decode_tag = rtl931x_decode_tag,
+	.netdev_ops = &rteth_931x_netdev_ops,
 };
 
-static const struct phylink_mac_ops rtl838x_phylink_ops = {
-	.mac_select_pcs = rtl838x_mac_select_pcs,
-	.mac_config = rtl838x_mac_config,
-	.mac_link_down = rtl838x_mac_link_down,
-	.mac_link_up = rtl838x_mac_link_up,
+static const struct phylink_pcs_ops rteth_pcs_ops = {
+	.pcs_get_state = rteth_pcs_get_state,
+	.pcs_an_restart = rteth_pcs_an_restart,
+	.pcs_config = rteth_pcs_config,
 };
 
-static const struct ethtool_ops rtl838x_ethtool_ops = {
-	.get_link_ksettings     = rtl838x_get_link_ksettings,
-	.set_link_ksettings     = rtl838x_set_link_ksettings,
+static const struct phylink_mac_ops rteth_mac_ops = {
+	.mac_select_pcs = rteth_mac_select_pcs,
+	.mac_config = rteth_mac_config,
+	.mac_link_down = rteth_mac_link_down,
+	.mac_link_up = rteth_mac_link_up,
+};
+
+static const struct ethtool_ops rteth_ethtool_ops = {
+	.get_link_ksettings = rteth_get_link_ksettings,
+	.set_link_ksettings = rteth_set_link_ksettings,
 };
 
 static int __init rtl838x_eth_probe(struct platform_device *pdev)
@@ -1645,7 +1652,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	struct net_device *dev;
 	struct device_node *dn = pdev->dev.of_node;
 	struct rtl838x_eth_priv *priv;
-	const struct rtl838x_eth_reg *matchdata;
+	const struct rteth_config *matchdata;
 	phy_interface_t phy_mode;
 	struct phylink *phylink;
 	u8 mac_addr[ETH_ALEN];
@@ -1660,7 +1667,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 		return -EINVAL;
 	}
 
-	matchdata = (const struct rtl838x_eth_reg *)device_get_match_data(&pdev->dev);
+	matchdata = (const struct rteth_config *)device_get_match_data(&pdev->dev);
 
 	rxrings = (matchdata->family_id == RTL8380_FAMILY_ID ||
 		   matchdata->family_id == RTL8390_FAMILY_ID) ? 8 : 32;
@@ -1690,36 +1697,16 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 
 	spin_lock_init(&priv->lock);
 
-	dev->ethtool_ops = &rtl838x_ethtool_ops;
+	dev->ethtool_ops = &rteth_ethtool_ops;
 	dev->min_mtu = ETH_ZLEN;
 	dev->max_mtu = DEFAULT_MTU;
 	dev->features = NETIF_F_RXCSUM | NETIF_F_HW_CSUM;
 	dev->hw_features = NETIF_F_RXCSUM;
+	dev->netdev_ops = priv->r->netdev_ops;
 
-	pr_info("Found SoC family %x\n", priv->r->family_id);
-
-	switch (priv->r->family_id) {
-	case RTL8380_FAMILY_ID:
-		priv->cpu_port = RTL838X_CPU_PORT;
-		dev->netdev_ops = &rtl838x_eth_netdev_ops;
-		break;
-	case RTL8390_FAMILY_ID:
-		priv->cpu_port = RTL839X_CPU_PORT;
-		dev->netdev_ops = &rtl839x_eth_netdev_ops;
-		break;
-	case RTL9300_FAMILY_ID:
-		priv->cpu_port = RTL930X_CPU_PORT;
-		dev->netdev_ops = &rtl930x_eth_netdev_ops;
-		break;
-	case RTL9310_FAMILY_ID:
-		priv->cpu_port = RTL931X_CPU_PORT;
-		dev->netdev_ops = &rtl931x_eth_netdev_ops;
+	if (priv->r->family_id == RTL9310_FAMILY_ID)
 		rtl931x_chip_init(priv);
-		break;
-	default:
-		pr_err("Unknown SoC family\n");
-		return -ENODEV;
-	}
+
 	priv->rxringlen = rxringlen;
 	priv->rxrings = rxrings;
 
@@ -1793,7 +1780,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 		return -EINVAL;
 	}
 
-	priv->pcs.ops = &rtl838x_pcs_ops;
+	priv->pcs.ops = &rteth_pcs_ops;
 	priv->phylink_config.dev = &dev->dev;
 	priv->phylink_config.type = PHYLINK_NETDEV;
 	priv->phylink_config.mac_capabilities =
@@ -1802,7 +1789,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	__set_bit(PHY_INTERFACE_MODE_INTERNAL, priv->phylink_config.supported_interfaces);
 
 	phylink = phylink_create(&priv->phylink_config, pdev->dev.fwnode,
-				 phy_mode, &rtl838x_phylink_ops);
+				 phy_mode, &rteth_mac_ops);
 
 	if (IS_ERR(phylink))
 		return PTR_ERR(phylink);
@@ -1830,19 +1817,19 @@ static void rtl838x_eth_remove(struct platform_device *pdev)
 static const struct of_device_id rtl838x_eth_of_ids[] = {
 	{
 		.compatible = "realtek,rtl8380-eth",
-		.data = &rtl838x_reg,
+		.data = &rteth_838x_cfg,
 	},
 	{
 		.compatible = "realtek,rtl8392-eth",
-		.data = &rtl839x_reg,
+		.data = &rteth_839x_cfg,
 	},
 	{
 		.compatible = "realtek,rtl9301-eth",
-		.data = &rtl930x_reg,
+		.data = &rteth_930x_cfg,
 	},
 	{
 		.compatible = "realtek,rtl9311-eth",
-		.data = &rtl931x_reg,
+		.data = &rteth_931x_cfg,
 	},
 	{ /* sentinel */ }
 };
