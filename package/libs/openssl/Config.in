@@ -103,6 +103,26 @@ config OPENSSL_WITH_TLS11
 		support for earlier versions of the standard for compatibility.
 		You should enable this option only if you need it.
 
+config OPENSSL_WITH_TLS12
+	bool
+	default y
+	prompt "Enable support for TLS 1.2"
+	help
+		TLS 1.2 is a widely deployed and secure version of the TLS
+		protocol and remains required for compatibility with many
+		existing servers, clients, and embedded systems.
+
+		While TLS 1.3 is preferred when available, TLS 1.2 support
+		is still necessary for interoperability, including in
+		environments where TLS 1.3 is not yet supported or enabled.
+
+		Disabling TLS 1.2 removes protocol support entirely and may
+		cause TLS connections to fail when communicating with peers
+		that do not support TLS 1.3.
+
+		This option should only be disabled in controlled environments
+		where all communicating endpoints are known to support TLS 1.3.
+
 config OPENSSL_WITH_TLS13
 	bool
 	default y
