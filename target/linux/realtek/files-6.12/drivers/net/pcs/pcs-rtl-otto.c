@@ -653,6 +653,13 @@ static void rtpcs_839x_sds_reset(struct rtpcs_serdes *sds)
 	bool is_10g_sds = (sds->id == 8 || sds->id == 9 || sds->id == 12 ||
 			   sds->id == 13);
 
+	/* FIXME: The reset sequence seems to break some of the 5G SerDes
+	 * though the SDK is calling it for all SerDes during init. Until
+	 * this is solved, skip reset.
+	 */
+	if (!is_10g_sds)
+		return;
+
 	if (is_10g_sds) {
 		rtpcs_sds_write_bits(odd_sds, 0xb, 0x1d, 3, 0, 0x5);
 		msleep(500);
@@ -714,9 +721,130 @@ static int rtpcs_839x_sds_set_mode(struct rtpcs_serdes *sds,
 				 mode_val << shift);
 }
 
+static void rtpcs_839x_sds_init(struct rtpcs_serdes *sds)
+{
+	bool is_even = sds->id % 2 == 0;
+
+	/*
+	 * This function is quite "mystic". It has been taken over from the vendor SDK function
+	 * rtl839x_serdes_patch_init(). There is not much documentation about it but one could
+	 * lookup the fields from the field headers. The 5G SerDes seem to work out of the box
+	 * so only setup the 10G SerDes for now.
+	 */
+	if (sds->id != 8 && sds->id != 9 && sds->id != 12 && sds->id != 13)
+		return;
+
+	/* Part 1: register setup */
+	rtpcs_sds_write(sds, 0xa, 0x0, 0x5800);
+	rtpcs_sds_write(sds, 0xa, 0x1, 0x4000);
+	rtpcs_sds_write(sds, 0xa, 0x2, is_even ? 0x5400 : 0x5000);
+	rtpcs_sds_write(sds, 0xa, 0x3, 0x0000);
+	rtpcs_sds_write(sds, 0xa, 0x4, 0x0000);
+	rtpcs_sds_write(sds, 0xa, 0x5, 0x4000);
+	rtpcs_sds_write(sds, 0xa, 0x6, 0x4000);
+	rtpcs_sds_write(sds, 0xa, 0x7, 0xffff);
+	rtpcs_sds_write(sds, 0xa, 0x8, 0xffff);
+	rtpcs_sds_write(sds, 0xa, 0x9, 0x806f);
+	rtpcs_sds_write(sds, 0xa, 0xa, 0x0004);
+	rtpcs_sds_write(sds, 0xa, 0xb, 0x0000);
+	rtpcs_sds_write(sds, 0xa, 0xc, 0x0000);
+	rtpcs_sds_write(sds, 0xa, 0xd, 0x0000);
+	rtpcs_sds_write(sds, 0xa, 0xe, 0x0a00);
+	rtpcs_sds_write(sds, 0xa, 0xf, 0x2000);
+	rtpcs_sds_write(sds, 0xa, 0x10, 0xf00e);
+	rtpcs_sds_write(sds, 0xa, 0x11, is_even ? 0xf04a : 0xfdab);
+	rtpcs_sds_write(sds, 0xa, 0x12, is_even ? 0x97b3 : 0x96ea);
+	rtpcs_sds_write(sds, 0xa, 0x13, 0x5318);
+	rtpcs_sds_write(sds, 0xa, 0x14, 0x0f03);
+	rtpcs_sds_write(sds, 0xa, 0x15, 0x0000);
+	rtpcs_sds_write(sds, 0xa, 0x16, 0x0000);
+	rtpcs_sds_write(sds, 0xa, 0x17, 0x0000);
+	rtpcs_sds_write(sds, 0xa, 0x18, 0x0000);
+	rtpcs_sds_write(sds, 0xa, 0x19, 0x0000);
+	rtpcs_sds_write(sds, 0xa, 0x1a, 0xffff);
+	rtpcs_sds_write(sds, 0xa, 0x1b, 0x0000);
+	rtpcs_sds_write(sds, 0xa, 0x1c, 0x1203);
+	rtpcs_sds_write(sds, 0xa, 0x1d, 0x0000);
+	rtpcs_sds_write(sds, 0xa, 0x1e, 0xa052);
+	rtpcs_sds_write(sds, 0xa, 0x1f, 0x9a00);
+	rtpcs_sds_write(sds, 0xb, 0x0, 0x00f5);
+	rtpcs_sds_write(sds, 0xb, 0x1, 0xf000);
+	rtpcs_sds_write(sds, 0xb, 0x2, is_even ? 0x41ff : 0x4079);
+	rtpcs_sds_write(sds, 0xb, 0x3, 0x0000);
+	rtpcs_sds_write(sds, 0xb, 0x4, is_even ? 0x39ff : 0x93fa);
+	rtpcs_sds_write(sds, 0xb, 0x5, 0x3340);
+	rtpcs_sds_write(sds, 0xb, 0x6, is_even ? 0x40aa : 0x4280);
+	rtpcs_sds_write(sds, 0xb, 0x7, 0x0000);
+	rtpcs_sds_write(sds, 0xb, 0x8, 0x801f);
+	rtpcs_sds_write(sds, 0xb, 0x9, 0x0000);
+	rtpcs_sds_write(sds, 0xb, 0xa, 0x619c);
+	rtpcs_sds_write(sds, 0xb, 0xb, 0xffed);
+	rtpcs_sds_write(sds, 0xb, 0xc, 0x29ff);
+	rtpcs_sds_write(sds, 0xb, 0xd, 0x29ff);
+	rtpcs_sds_write(sds, 0xb, 0xe, is_even ? 0x4e10 : 0x4c50);
+	rtpcs_sds_write(sds, 0xb, 0xf, is_even ? 0x4e10 : 0x4c50);
+	rtpcs_sds_write(sds, 0xb, 0x10, 0x0000);
+	rtpcs_sds_write(sds, 0xb, 0x11, 0x0000);
+	rtpcs_sds_write(sds, 0x0, 0xc, 0x08ec);
+	if (!is_even)
+		rtpcs_sds_write(sds, 0xb, 0x1f, 0x003f);
+
+	/* Part 2: register bit patching (contains some "reset flips") */
+	rtpcs_sds_write_bits(sds, 0x0, 0x7, 14, 14, 0x0001);
+	rtpcs_sds_write_bits(sds, 0xb, 0x9, 15, 0, 0x417f);
+	rtpcs_sds_write_bits(sds, 0xa, 0x1c, 9, 9, 0x0000);
+	rtpcs_sds_write_bits(sds, 0xa, 0x1c, 12, 10, 0x0000);
+	rtpcs_sds_write_bits(sds, 0xa, 0x1c, 5, 3, 0x0005);
+	rtpcs_sds_write_bits(sds, 0xa, 0x1c, 8, 6, 0x0000);
+	rtpcs_sds_write_bits(sds, 0xa, 0x1c, 2, 0, 0x0002);
+	rtpcs_sds_write_bits(sds, 0xb, 0x1, 15, 0, 0xc440);
+	if (is_even)
+		rtpcs_sds_write_bits(sds, 0xb, 0x6, 3, 3, 0x0000);
+	rtpcs_sds_write_bits(sds, 0xa, 0x5, 15, 0, 0x8000);
+	rtpcs_sds_write_bits(sds, 0xa, 0x6, 15, 0, 0x8000);
+	rtpcs_sds_write_bits(sds, 0xa, 0xa, 15, 0, 0x0000);
+	rtpcs_sds_write_bits(sds, 0xa, 0x1e, 15, 0, 0x0002);
+	rtpcs_sds_write_bits(sds, 0xa, 0x1f, 15, 0, 0xbe00);
+	if (is_even) {
+		rtpcs_sds_write_bits(sds, 0xb, 0xe, 10, 10, 0x0000);
+		rtpcs_sds_write_bits(sds, 0xb, 0xf, 10, 10, 0x0000);
+		rtpcs_sds_write_bits(sds, 0xb, 0xe, 14, 14, 0x0000);
+		rtpcs_sds_write_bits(sds, 0xb, 0xf, 14, 14, 0x0000);
+	}
+	rtpcs_sds_write_bits(sds, 0xa, 0x10, 5, 5, 0x0000);
+	rtpcs_sds_write_bits(sds, 0xb, 0x9, 8, 8, 0x0000);
+	rtpcs_sds_write_bits(sds, 0xa, 0x3, 15, 12, 0x000f);
+	rtpcs_sds_write_bits(sds, 0xa, 0x1f, 13, 12, 0x0003);
+	rtpcs_sds_write_bits(sds, 0xa, 0x1f, 11, 9, 0x0007);
+	rtpcs_sds_write_bits(sds, 0xb, 0x1, 15, 15, 0x0001);
+	rtpcs_sds_write_bits(sds, 0xb, 0x1, 14, 14, 0x0001);
+	rtpcs_sds_write_bits(sds, 0xb, 0x1, 13, 13, 0x0000);
+	rtpcs_sds_write_bits(sds, 0xb, 0x1, 12, 12, 0x0000);
+	rtpcs_sds_write_bits(sds, 0xb, 0x1, 11, 9, 0x0002);
+	rtpcs_sds_write_bits(sds, 0xb, 0x1, 8, 6, 0x0002);
+	rtpcs_sds_write_bits(sds, 0xb, 0x1, 5, 3, 0x0000);
+	rtpcs_sds_write_bits(sds, 0xb, 0x1, 2, 0, 0x0000);
+	rtpcs_sds_write_bits(sds, 0xb, 0xc, 9, 9, 0x0001);
+	rtpcs_sds_write_bits(sds, 0xb, 0xd, 9, 9, 0x0001);
+	rtpcs_sds_write_bits(sds, 0xb, 0x8, 5, 5, 0x0001);
+	rtpcs_sds_write_bits(sds, 0xb, 0x8, 6, 6, 0x0000);
+	rtpcs_sds_write_bits(sds, 0xa, 0x1c, 15, 15, 0x0000);
+	rtpcs_sds_write_bits(sds, 0xa, 0x10, 15, 12, 0x0000);
+	rtpcs_sds_write_bits(sds, 0xa, 0x13, 4, 4, 0x0000);
+	rtpcs_sds_write_bits(sds, 0xa, 0x13, 9, 9, 0x0000);
+	rtpcs_sds_write_bits(sds, 0xa, 0x13, 3, 0, 0x0008);
+	rtpcs_sds_write_bits(sds, 0xa, 0x13, 8, 5, 0x0008);
+}
+
 __maybe_unused
 static int rtpcs_839x_init_serdes_common(struct rtpcs_ctrl *ctrl)
 {
+	for (int sds_id = 0; sds_id < ctrl->cfg->serdes_count; sds_id++)
+		rtpcs_839x_sds_init(&ctrl->serdes[sds_id]);
+
+	for (int sds_id = 0; sds_id < ctrl->cfg->serdes_count; sds_id++)
+		rtpcs_839x_sds_reset(&ctrl->serdes[sds_id]);
+
 	return 0;
 }
 
