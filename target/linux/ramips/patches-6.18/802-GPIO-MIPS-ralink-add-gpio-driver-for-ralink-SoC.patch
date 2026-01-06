@@ -15,7 +15,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/gpio/Kconfig
 +++ b/drivers/gpio/Kconfig
-@@ -555,6 +555,14 @@ config GPIO_PXA
+@@ -583,6 +583,14 @@ config GPIO_PXA
  	help
  	  Say yes here to support the PXA GPIO device.
  
@@ -32,9 +32,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	depends on ARCH_RENESAS || COMPILE_TEST
 --- a/drivers/gpio/Makefile
 +++ b/drivers/gpio/Makefile
-@@ -136,6 +136,7 @@ obj-$(CONFIG_GPIO_PISOSR)		+= gpio-pisos
- obj-$(CONFIG_GPIO_PL061)		+= gpio-pl061.o
+@@ -147,6 +147,7 @@ obj-$(CONFIG_GPIO_PL061)		+= gpio-pl061.
  obj-$(CONFIG_GPIO_PMIC_EIC_SPRD)	+= gpio-pmic-eic-sprd.o
+ obj-$(CONFIG_GPIO_POLARFIRE_SOC)	+= gpio-mpfs.o
  obj-$(CONFIG_GPIO_PXA)			+= gpio-pxa.o
 +obj-$(CONFIG_GPIO_RALINK)		+= gpio-ralink.o
  obj-$(CONFIG_GPIO_RASPBERRYPI_EXP)	+= gpio-raspberrypi-exp.o
@@ -42,7 +42,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_GPIO_RCAR)			+= gpio-rcar.o
 --- /dev/null
 +++ b/drivers/gpio/gpio-ralink.c
-@@ -0,0 +1,230 @@
+@@ -0,0 +1,316 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify it
 + * under the terms of the GNU General Public License version 2 as published
@@ -59,6 +59,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#include <linux/module.h>
 +#include <linux/platform_device.h>
 +#include <linux/spinlock.h>
++
++#define MAX_NGPIOS 95
 +
 +enum ralink_gpio_reg {
 +	GPIO_REG_INT = 0,
@@ -182,11 +184,77 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	GPIOCHIP_IRQ_RESOURCE_HELPERS,
 +};
 +
++static int ralink_get_direction(struct gpio_chip *gc, unsigned offset)
++{
++	struct ralink_gpio_chip *rg = gpiochip_get_data(gc);
++
++	return !(rt_gpio_r32(rg, GPIO_REG_DIR) & BIT(offset));
++}
++
++static int ralink_direction_input(struct gpio_chip *gc, unsigned offset)
++{
++	struct ralink_gpio_chip *rg = gpiochip_get_data(gc);
++	u32 val = rt_gpio_r32(rg, GPIO_REG_DIR);
++	rt_gpio_w32(rg, GPIO_REG_DIR, val & ~BIT(offset));
++
++	return 0;
++}
++
++static int ralink_direction_output(struct gpio_chip *gc, unsigned offset, int val)
++{
++	struct ralink_gpio_chip *rg = gpiochip_get_data(gc);
++	rt_gpio_w32(rg, val ? GPIO_REG_SET : GPIO_REG_RESET, BIT(offset));
++	rt_gpio_w32(rg, GPIO_REG_DIR, rt_gpio_r32(rg, GPIO_REG_DIR) | BIT(offset));
++
++	return 0;
++}
++
++static int ralink_get(struct gpio_chip *gc, unsigned offset)
++{
++	struct ralink_gpio_chip *rg = gpiochip_get_data(gc);
++
++	return !!(rt_gpio_r32(rg, GPIO_REG_DATA) & BIT(offset));
++}
++
++static int ralink_set(struct gpio_chip *gc, unsigned offset, int val)
++{
++	struct ralink_gpio_chip *rg = gpiochip_get_data(gc);
++	rt_gpio_w32(rg, val ? GPIO_REG_SET : GPIO_REG_RESET, BIT(offset));
++
++	return 0;
++}
++
++static int ralink_set_multiple(struct gpio_chip *gc, unsigned long *mask,
++				     unsigned long *bits)
++{
++	struct ralink_gpio_chip *rg = gpiochip_get_data(gc);
++	unsigned long set = *mask & *bits;
++	unsigned long reset = *mask & ~*bits;
++
++	if (set)
++		rt_gpio_w32(rg, GPIO_REG_SET, set);
++	if (reset)
++		rt_gpio_w32(rg, GPIO_REG_RESET, reset);
++
++	return 0;
++}
++
++static int ralink_get_multiple(struct gpio_chip *gc, unsigned long *mask,
++				     unsigned long *bits)
++{
++	struct ralink_gpio_chip *rg = gpiochip_get_data(gc);
++	*bits = rt_gpio_r32(rg, GPIO_REG_DATA) & *mask;
++
++	return 0;
++}
++
 +static int ralink_gpio_probe(struct platform_device *pdev)
 +{
 +	struct device *dev = &pdev->dev;
 +	struct device_node *np = dev->of_node;
 +	struct ralink_gpio_chip *rg;
++	struct of_phandle_args args;
++	u32 ngpios = 0;
 +	int ret;
 +
 +	rg = devm_kzalloc(dev, sizeof(struct ralink_gpio_chip), GFP_KERNEL);
@@ -203,16 +271,34 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		return -EINVAL;
 +	}
 +
++	if (of_property_read_u32(np, "ngpios", &ngpios) < 0)
++		ngpios = 0;
++
++	if (ngpios == 0) {
++		if (of_parse_phandle_with_args(np, "gpio-ranges", "#gpio-cells", 0, &args) == 0) {
++			if (args.args_count > 0)
++				ngpios = args.args[args.args_count - 1];
++			of_node_put(args.np);
++		}
++	}
++
++	if (ngpios == 0 || ngpios > MAX_NGPIOS)
++		ngpios = MAX_NGPIOS;
++
 +	spin_lock_init(&rg->lock);
 +
-+	ret = bgpio_init(&rg->chip, dev, 4,
-+			rg->membase + rg->regs[GPIO_REG_DATA],
-+			rg->membase + rg->regs[GPIO_REG_SET],
-+			rg->membase + rg->regs[GPIO_REG_RESET],
-+			rg->membase + rg->regs[GPIO_REG_DIR],
-+			NULL, 0);
-+	if (ret)
-+		return dev_err_probe(dev, ret, "bgpio_init() failed\n");
++	rg->chip.label           = dev_name(dev);
++	rg->chip.parent          = dev;
++	rg->chip.owner           = THIS_MODULE;
++	rg->chip.base            = -1;
++	rg->chip.ngpio           = ngpios;
++	rg->chip.get_direction   = ralink_get_direction;
++	rg->chip.direction_input = ralink_direction_input;
++	rg->chip.direction_output= ralink_direction_output;
++	rg->chip.get             = ralink_get;
++	rg->chip.set             = ralink_set;
++	rg->chip.get_multiple    = ralink_get_multiple;
++	rg->chip.set_multiple    = ralink_set_multiple;
 +
 +	/* set polarity to low for all lines */
 +	rt_gpio_w32(rg, GPIO_REG_POL, 0);
