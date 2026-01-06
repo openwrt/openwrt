@@ -245,6 +245,29 @@ $(strip
 )
 endef
 
+# Get apk provider priority
+#
+# - if a package is marked as a default variant, set it to 100.
+#
+# - if a package has an ABI version defined, set it to 10.
+#   The enables packages with an ABI version to be installed by their base name
+#   instead of a name and an ABI version, e.g.:
+#   libfoo3, where 3 is the ABI version can be installed by just libfoo.
+#   This affects manual installation only, as the dependency resolution takes
+#   care of ABI versions.
+#
+# - otherwise return nothing, i.e. package will have the default priority 0.
+#
+# 1: Default variant
+# 2: ABI version
+define GetProviderPriority
+$(strip
+  $(if $(1),100,
+    $(if $(2),10)
+  )
+)
+endef
+
 ifneq ($(PKG_NAME),toolchain)
   define CheckDependencies
 	@( \
@@ -384,6 +407,7 @@ endif
       Package/$(1)/PROVIDES := $$(filter-out $(1)$$(ABIV_$(1)),$$(Package/$(1)/PROVIDES)$$(if $$(ABIV_$(1)), $(1) $$(foreach provide,$$(Package/$(1)/PROVIDES),$$(provide)$$(ABIV_$(1)))))
     else
       Package/$(1)/PROVIDES := $$(call FormatProvides,$(1),$(VERSION),$(ABI_VERSION),$(PROVIDES))
+      Package/$(1)/PRIORITY := $$(call GetProviderPriority,$(DEFAULT_VARIANT),$(ABI_VERSION))
     endif
 
 $(_define) Package/$(1)/CONTROL
@@ -577,7 +601,7 @@ else
 	  --info "url:$(URL)" \
 	  --info "maintainer:$(MAINTAINER)" \
 	  $$(if $$(Package/$(1)/PROVIDES),--info "provides:$$(Package/$(1)/PROVIDES)") \
-	  $(if $(DEFAULT_VARIANT),--info "provider-priority:100") \
+	  $$(if $$(Package/$(1)/PRIORITY),--info "provider-priority:$$(Package/$(1)/PRIORITY)") \
 	  $$(APK_SCRIPTS_$(1)) \
 	  --info "depends:$$(foreach depends,$$(subst $$(comma),$$(space),$$(subst $$(space),,$$(subst $$(paren_right),,$$(subst $$(paren_left),,$$(Package/$(1)/DEPENDS))))),$$(depends))" \
 	  --files "$$(IDIR_$(1))" \
