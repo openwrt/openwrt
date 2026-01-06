@@ -2367,7 +2367,7 @@ $(eval $(call KernelPackage,lan743x))
 define KernelPackage/amazon-ena
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Elastic Network Adapter (for Amazon AWS)
-  DEPENDS:=@TARGET_x86_64||TARGET_armsr
+  DEPENDS:=@TARGET_x86_64||TARGET_armsr +LINUX_6_18:kmod-ptp
   KCONFIG:=CONFIG_ENA_ETHERNET
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/amazon/ena/ena.ko
   AUTOLOAD:=$(call AutoLoad,12,ena)
