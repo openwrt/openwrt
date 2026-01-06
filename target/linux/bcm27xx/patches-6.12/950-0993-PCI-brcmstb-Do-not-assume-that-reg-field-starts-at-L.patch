@@ -20,7 +20,7 @@ Reviewed-by: Florian Fainelli <florian.fainelli@broadcom.com>
 
 --- a/drivers/pci/controller/pcie-brcmstb.c
 +++ b/drivers/pci/controller/pcie-brcmstb.c
-@@ -610,10 +610,10 @@ static void brcm_pcie_set_gen(struct brc
+@@ -613,10 +613,10 @@ static void brcm_pcie_set_gen(struct brc
  	u16 lnkctl2 = readw(pcie->base + BRCM_PCIE_CAP_REGS + PCI_EXP_LNKCTL2);
  	u32 lnkcap = readl(pcie->base + PCIE_RC_CFG_PRIV1_LINK_CAPABILITY);
  
