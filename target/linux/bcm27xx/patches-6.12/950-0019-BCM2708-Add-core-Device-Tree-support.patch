@@ -47279,7 +47279,7 @@ index 0000000000000..ded08646b6f66
  #
  # Rule to compile a set of .o files into one .a file (with symbol table)
  #
-@@ -432,26 +450,15 @@ intermediate_targets = $(foreach sfx, $(
+@@ -432,22 +450,15 @@ intermediate_targets = $(foreach sfx, $(
  				$(patsubst %$(strip $(1)),%$(sfx), \
  					$(filter %$(strip $(1)), $(targets))))
  # %.asn1.o <- %.asn1.[ch] <- %.asn1
@@ -47299,10 +47299,6 @@ index 0000000000000..ded08646b6f66
 -ifneq ($(userprogs),)
 -include $(srctree)/scripts/Makefile.userprogs
 -endif
--
--ifneq ($(need-dtbslist)$(dtb-y)$(dtb-)$(filter %.dtb %.dtb.o %.dtbo.o,$(targets)),)
--include $(srctree)/scripts/Makefile.dtbs
--endif
 +# %.dtb.o <- %.dtb.S <- %.dtb <- %.dts
 +# %.dtbo.o <- %.dtbo.S <- %.dtbo <- %.dtso
 +# %.lex.o <- %.lex.c <- %.l
@@ -47313,7 +47309,19 @@ index 0000000000000..ded08646b6f66
 +	   $(call intermediate_targets, .lex.o, .lex.c) \
 +	   $(call intermediate_targets, .tab.o, .tab.c .tab.h)
  
+ # Single targets
+ # ---------------------------------------------------------------------------
+@@ -478,11 +489,6 @@ FORCE:
+ targets += $(filter-out $(single-subdir-goals), $(MAKECMDGOALS))
+ targets := $(filter-out $(PHONY), $(targets))
+ 
+-# Now that targets is fully known, include dtb rules if needed
+-ifneq ($(need-dtbslist)$(dtb-y)$(dtb-)$(filter %.dtb %.dtb.o %.dtbo.o,$(targets)),)
+-include $(srctree)/scripts/Makefile.dtbs
+-endif
+-
  # Build
+ # Needs to be after the include of Makefile.dtbs, which updates always-y
  # ---------------------------------------------------------------------------
 --- a/scripts/Makefile.dtbinst
 +++ b/scripts/Makefile.dtbinst
