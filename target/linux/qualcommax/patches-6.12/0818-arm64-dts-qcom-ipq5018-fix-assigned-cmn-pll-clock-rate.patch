@@ -1,0 +1,34 @@
+From 5b00a1e17e98e99cc31b4dc6584b9ef93b8a62c4 Mon Sep 17 00:00:00 2001
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Wed, 07 Jan 2026 18:21:49 +0400
+Subject: [PATCH] arm64: dts: qcom: ipq5018: fix assigned cmn-pll clock rate
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+Message-Id: <20260107-ipq5018-cmn-pll-rate-v1-6-9ab50c40cb32@outlook.com>
+
+In IPQ5018, the reference clock to the CMN PLL block from the on-board
+Wi-Fi has its divider set to 2. This divider wasn't taken into
+consideration when calculating the CMN PLL clock rate which meant the
+resulting clock rate was doubled.
+
+With the reference clock divider being accounted for in the driver,
+correct the assigned clock rate to 4.8GHz.
+
+Fixes: c006b249c544 ("arm64: dts: ipq5018: Add CMN PLL node")
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+ arch/arm64/boot/dts/qcom/ipq5018.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm64/boot/dts/qcom/ipq5018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
+@@ -266,7 +266,7 @@
+ 				      "sys";
+ 			#clock-cells = <1>;
+ 			assigned-clocks = <&cmn_pll IPQ5018_CMN_PLL_CLK>;
+-			assigned-clock-rates-u64 = /bits/ 64 <9600000000>;
++			assigned-clock-rates-u64 = /bits/ 64 <4800000000>;
+ 		};
+ 
+ 		qfprom: qfprom@a0000 {
