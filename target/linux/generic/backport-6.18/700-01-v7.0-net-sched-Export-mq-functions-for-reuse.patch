@@ -27,7 +27,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -22541,6 +22541,7 @@ L:	netdev@vger.kernel.org
+@@ -25056,6 +25056,7 @@ L:	netdev@vger.kernel.org
  S:	Maintained
  F:	include/net/pkt_cls.h
  F:	include/net/pkt_sched.h
@@ -99,7 +99,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		qdisc_put(priv->qdiscs[ntx]);
  	kfree(priv->qdiscs);
  }
-+EXPORT_SYMBOL_NS_GPL(mq_destroy_common, NET_SCHED_INTERNAL);
++EXPORT_SYMBOL_NS_GPL(mq_destroy_common, "NET_SCHED_INTERNAL");
  
 -static int mq_init(struct Qdisc *sch, struct nlattr *opt,
 -		   struct netlink_ext_ack *extack)
@@ -131,7 +131,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	sch->flags |= TCQ_F_MQROOT;
 +	return 0;
 +}
-+EXPORT_SYMBOL_NS_GPL(mq_init_common, NET_SCHED_INTERNAL);
++EXPORT_SYMBOL_NS_GPL(mq_init_common, "NET_SCHED_INTERNAL");
 +
 +static int mq_init(struct Qdisc *sch, struct nlattr *opt,
 +		   struct netlink_ext_ack *extack)
@@ -155,7 +155,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	kfree(priv->qdiscs);
  	priv->qdiscs = NULL;
  }
-+EXPORT_SYMBOL_NS_GPL(mq_attach, NET_SCHED_INTERNAL);
++EXPORT_SYMBOL_NS_GPL(mq_attach, "NET_SCHED_INTERNAL");
  
 -static int mq_dump(struct Qdisc *sch, struct sk_buff *skb)
 +void mq_dump_common(struct Qdisc *sch, struct sk_buff *skb)
@@ -167,7 +167,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		spin_unlock_bh(qdisc_lock(qdisc));
  	}
 +}
-+EXPORT_SYMBOL_NS_GPL(mq_dump_common, NET_SCHED_INTERNAL);
++EXPORT_SYMBOL_NS_GPL(mq_dump_common, "NET_SCHED_INTERNAL");
  
 +static int mq_dump(struct Qdisc *sch, struct sk_buff *skb)
 +{
@@ -186,7 +186,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  {
  	return mq_queue_get(sch, TC_H_MIN(tcm->tcm_parent));
  }
-+EXPORT_SYMBOL_NS_GPL(mq_select_queue, NET_SCHED_INTERNAL);
++EXPORT_SYMBOL_NS_GPL(mq_select_queue, "NET_SCHED_INTERNAL");
  
  static int mq_graft(struct Qdisc *sch, unsigned long cl, struct Qdisc *new,
  		    struct Qdisc **old, struct netlink_ext_ack *extack)
@@ -201,7 +201,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
  	return rtnl_dereference(dev_queue->qdisc_sleeping);
  }
-+EXPORT_SYMBOL_NS_GPL(mq_leaf, NET_SCHED_INTERNAL);
++EXPORT_SYMBOL_NS_GPL(mq_leaf, "NET_SCHED_INTERNAL");
  
 -static unsigned long mq_find(struct Qdisc *sch, u32 classid)
 +unsigned long mq_find(struct Qdisc *sch, u32 classid)
@@ -212,7 +212,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		return 0;
  	return ntx;
  }
-+EXPORT_SYMBOL_NS_GPL(mq_find, NET_SCHED_INTERNAL);
++EXPORT_SYMBOL_NS_GPL(mq_find, "NET_SCHED_INTERNAL");
  
 -static int mq_dump_class(struct Qdisc *sch, unsigned long cl,
 -			 struct sk_buff *skb, struct tcmsg *tcm)
@@ -225,7 +225,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	tcm->tcm_info = rtnl_dereference(dev_queue->qdisc_sleeping)->handle;
  	return 0;
  }
-+EXPORT_SYMBOL_NS_GPL(mq_dump_class, NET_SCHED_INTERNAL);
++EXPORT_SYMBOL_NS_GPL(mq_dump_class, "NET_SCHED_INTERNAL");
  
 -static int mq_dump_class_stats(struct Qdisc *sch, unsigned long cl,
 -			       struct gnet_dump *d)
@@ -238,7 +238,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		return -1;
  	return 0;
  }
-+EXPORT_SYMBOL_NS_GPL(mq_dump_class_stats, NET_SCHED_INTERNAL);
++EXPORT_SYMBOL_NS_GPL(mq_dump_class_stats, "NET_SCHED_INTERNAL");
  
 -static void mq_walk(struct Qdisc *sch, struct qdisc_walker *arg)
 +void mq_walk(struct Qdisc *sch, struct qdisc_walker *arg)
@@ -249,7 +249,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  			break;
  	}
  }
-+EXPORT_SYMBOL_NS_GPL(mq_walk, NET_SCHED_INTERNAL);
++EXPORT_SYMBOL_NS_GPL(mq_walk, "NET_SCHED_INTERNAL");
  
  static const struct Qdisc_class_ops mq_class_ops = {
  	.select_queue	= mq_select_queue,
