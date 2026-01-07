@@ -1,0 +1,57 @@
+From: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Date: Wed, 7 Jan 2026 01:56:24 +0100
+Subject: [PATCH] ramips: fix unused function warnings in mtk_eth_soc
+
+Fix compiler warnings for unused functions by marking them with
+__maybe_unused attribute: 
+ - mtk_check_gmac23_idle
+ - mtk_mac_config
+ - mtk_eth_set_dma_device
+
+Additionally, move MODULE_IMPORT_NS declaration before module_platform_driver
+macro to follow the conventional module declaration ordering.
+
+Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+---
+
+--- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
++++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
+@@ -528,7 +528,7 @@ static void mtk_setup_bridge_switch(stru
+ 		MTK_GSW_CFG);
+ }
+ 
+-static bool mtk_check_gmac23_idle(struct mtk_mac *mac)
++static bool __maybe_unused mtk_check_gmac23_idle(struct mtk_mac *mac)
+ {
+ 	u32 mac_fsm, gdm_fsm;
+ 
+@@ -598,7 +598,7 @@ static int mtk_mac_prepare(struct phylin
+ 	return 0;
+ }
+ 
+-static void mtk_mac_config(struct phylink_config *config, unsigned int mode,
++static void __maybe_unused mtk_mac_config(struct phylink_config *config, unsigned int mode,
+ 			   const struct phylink_link_state *state)
+ {
+ 	struct mtk_mac *mac = container_of(config, struct mtk_mac,
+@@ -5334,7 +5334,7 @@ static int mtk_mac_assign_address(struct
+ 	return 0;
+ }
+ 
+-void mtk_eth_set_dma_device(struct mtk_eth *eth, struct device *dma_dev)
++void __maybe_unused mtk_eth_set_dma_device(struct mtk_eth *eth, struct device *dma_dev)
+ {
+ 	struct net_device *dev, *tmp;
+ 	LIST_HEAD(dev_list);
+@@ -6018,9 +6018,10 @@ static struct platform_driver mtk_driver
+ 	},
+ };
+ 
++MODULE_IMPORT_NS("NETDEV_INTERNAL");
+ module_platform_driver(mtk_driver);
+ 
+ MODULE_LICENSE("GPL");
+ MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
+ MODULE_DESCRIPTION("Ethernet driver for MediaTek SoC");
+-MODULE_IMPORT_NS("NETDEV_INTERNAL");
++
