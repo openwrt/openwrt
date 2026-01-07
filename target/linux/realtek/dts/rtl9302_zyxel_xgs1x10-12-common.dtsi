@@ -130,14 +130,18 @@
 		compatible = "ethernet-phy-ieee802.3-c22";
 		realtek,smi-address = <0 7>;
 	};
+};
 
+&mdio_bus1 {
 	phy24: ethernet-phy@24 {
 		reg = <24>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		// Disabled because we do not know how to bring up again
 		// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 	};
+};
 
+&mdio_bus2 {
 	phy25: ethernet-phy@25 {
 		reg = <25>;
 		compatible = "ethernet-phy-ieee802.3-c45";

@@ -311,7 +311,9 @@
 		compatible = "ethernet-phy-ieee802.3-c45";
 		realtek,smi-address = <0 11>;
 	};
+};
 
+&mdio_bus1 {
 	phy24: ethernet-phy@24 {
 		reg = <24>;
 		compatible = "ethernet-phy-ieee802.3-c45";
