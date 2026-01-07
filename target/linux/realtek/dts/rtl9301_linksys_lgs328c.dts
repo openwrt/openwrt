@@ -105,7 +105,10 @@
 		reg = <7>;
 		compatible = "ethernet-phy-ieee802.3-c22";
 		realtek,smi-address = <0 7>;
-	};		
+	};
+};
+
+&mdio_bus1 {
 	phy8: ethernet-phy@8 {
 		reg = <8>;
 		compatible = "ethernet-phy-ieee802.3-c22";
@@ -146,6 +149,9 @@
 		compatible = "ethernet-phy-ieee802.3-c22";
 		realtek,smi-address = <1 15>;
 	};
+};
+
+&mdio_bus2 {
 	phy16: ethernet-phy@16 {
 		reg = <16>;
 		compatible = "ethernet-phy-ieee802.3-c22";
