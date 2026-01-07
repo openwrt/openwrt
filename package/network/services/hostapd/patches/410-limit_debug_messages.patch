@@ -5,7 +5,7 @@ Subject: [PATCH] hostapd: add configurable debug message minimum priority to
 
 --- a/src/utils/wpa_debug.c
 +++ b/src/utils/wpa_debug.c
-@@ -206,7 +206,7 @@ void wpa_debug_close_linux_tracing(void)
+@@ -217,7 +217,7 @@ void wpa_debug_close_linux_tracing(void)
   *
   * Note: New line '\n' is added to the end of the text when printing to stdout.
   */
@@ -14,7 +14,7 @@ Subject: [PATCH] hostapd: add configurable debug message minimum priority to
  {
  	va_list ap;
  
-@@ -255,7 +255,7 @@ void wpa_printf(int level, const char *f
+@@ -266,7 +266,7 @@ void wpa_printf(int level, const char *f
  }
  
  
@@ -23,7 +23,7 @@ Subject: [PATCH] hostapd: add configurable debug message minimum priority to
  			 size_t len, int show, int only_syslog)
  {
  	size_t i;
-@@ -382,19 +382,7 @@ static void _wpa_hexdump(int level, cons
+@@ -393,19 +393,7 @@ static void _wpa_hexdump(int level, cons
  #endif /* CONFIG_ANDROID_LOG */
  }
  
@@ -44,7 +44,7 @@ Subject: [PATCH] hostapd: add configurable debug message minimum priority to
  			       size_t len, int show)
  {
  	size_t i, llen;
-@@ -507,20 +495,6 @@ file_done:
+@@ -518,20 +506,6 @@ file_done:
  }
  
  
@@ -65,7 +65,7 @@ Subject: [PATCH] hostapd: add configurable debug message minimum priority to
  #ifdef CONFIG_DEBUG_FILE
  static char *last_path = NULL;
  #endif /* CONFIG_DEBUG_FILE */
-@@ -644,7 +618,7 @@ void wpa_msg_register_ifname_cb(wpa_msg_
+@@ -655,7 +629,7 @@ void wpa_msg_register_ifname_cb(wpa_msg_
  }
  
  
@@ -74,7 +74,7 @@ Subject: [PATCH] hostapd: add configurable debug message minimum priority to
  {
  	va_list ap;
  	char *buf;
-@@ -682,7 +656,7 @@ void wpa_msg(void *ctx, int level, const
+@@ -693,7 +667,7 @@ void wpa_msg(void *ctx, int level, const
  }
  
  
