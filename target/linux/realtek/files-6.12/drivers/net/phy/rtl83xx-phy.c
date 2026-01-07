@@ -453,12 +453,11 @@ static bool __rtl8214fc_media_is_fibre(struct phy_device *phydev)
 
 static bool rtl8214fc_media_is_fibre(struct phy_device *phydev)
 {
-	struct mii_bus *bus = phydev->mdio.bus;
 	int ret;
 
-	mutex_lock(&bus->mdio_lock);
+	phy_lock_mdio_bus(phydev);
 	ret = __rtl8214fc_media_is_fibre(phydev);
-	mutex_unlock(&bus->mdio_lock);
+	phy_unlock_mdio_bus(phydev);
 
 	return ret;
 }
