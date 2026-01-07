@@ -904,9 +904,19 @@ static int rtl8218b_config_init(struct phy_device *phydev)
 	phy_modify_paged(phydev, RTL821X_MAC_SDS_PAGE(0, 1), 0x14, 0, BIT(3));
 	/* magic CMU setting for stable connectivity of first MAC serdes */
 	phy_write_paged(phydev, 0x462, 0x15, 0x6e58);
+	/* magic setting for rate select 10G full */
+	phy_write_paged(phydev, 0x464, 0x15, 0x202a);
+	/* magic setting for variable gain amplifier */
+	phy_modify_paged(phydev, 0x464, 0x12, 0, 0x1f80);
+	/* magic setting for equalizer of second MAC serdes */
+	phy_write_paged(phydev, RTL821X_MAC_SDS_PAGE(1, 8), 0x12, 0x2020);
+	/* unknown magic for second MAC serdes */
+	phy_write_paged(phydev, RTL821X_MAC_SDS_PAGE(1, 9), 0x11, 0xc014);
 	rtl8218b_cmu_reset(phydev, 0);
 
 	for (int sds = 0; sds < 2; sds++) {
+		/* disable ring PLL for serdes 2+3 */
+		phy_modify_paged(phydev, RTL821X_MAC_SDS_PAGE(sds + 1, 8), 0x11, BIT(15), 0);
 		/* force negative clock edge */
 		phy_modify_paged(phydev, RTL821X_MAC_SDS_PAGE(sds, 0), 0x17, 0, BIT(14));
 		rtl8218b_cmu_reset(phydev, 5 + sds);
