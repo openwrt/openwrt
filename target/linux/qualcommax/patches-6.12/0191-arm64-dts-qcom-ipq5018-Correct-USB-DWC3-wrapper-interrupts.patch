@@ -1,0 +1,103 @@
+From: Krzysztof Kozlowski <krzysztof.kozlowski@oss.qualcomm.com>
+To: Bjorn Andersson <andersson@kernel.org>,
+        Konrad Dybcio <konradybcio@kernel.org>, Rob Herring <robh@kernel.org>,
+        Krzysztof Kozlowski <krzk+dt@kernel.org>,
+        Conor Dooley <conor+dt@kernel.org>, linux-arm-msm@vger.kernel.org,
+        devicetree@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: Krzysztof Kozlowski <krzysztof.kozlowski@oss.qualcomm.com>
+Subject: [RFT PATCH 1/2] arm64: dts: qcom: ipq5018: Correct USB DWC3 wrapper
+ interrupts
+Date: Tue,  6 Jan 2026 19:51:24 +0100
+Message-ID: <20260106185123.19929-3-krzysztof.kozlowski@oss.qualcomm.com>
+X-Mailer: git-send-email 2.51.0
+Precedence: bulk
+X-Mailing-List: linux-arm-msm@vger.kernel.org
+List-Id: <linux-arm-msm.vger.kernel.org>
+List-Subscribe: <mailto:linux-arm-msm+subscribe@vger.kernel.org>
+List-Unsubscribe: <mailto:linux-arm-msm+unsubscribe@vger.kernel.org>
+MIME-Version: 1.0
+X-Developer-Signature: v=1; a=openpgp-sha256; l=1855;
+ i=krzysztof.kozlowski@oss.qualcomm.com;
+ h=from:subject; bh=Xuo83gqJRGnpPAOs6iQzERsKv6wSsG/YRYnYXPqa/Sg=;
+ b=owEBbQKS/ZANAwAKAcE3ZuaGi4PXAcsmYgBpXVmsP2NQodDkckFfKenEt59tQ2tP8tDhpIVRp
+ RZ7+KF/hJmJAjMEAAEKAB0WIQTd0mIoPREbIztuuKjBN2bmhouD1wUCaV1ZrAAKCRDBN2bmhouD
+ 1+5QEACJ2Y4HPEMWYNgLDF6qOtlvm/KD0Jr4Ucwt4ZWau3y1XLDxmlTX/3iErYwirq+3qbqwkAQ
+ 0a2ah57InLXR8ZNccHZs+WIaLgD5r8Q6rAwzJZ36hqG1F4GP8+Z7X9irzMoNCvoM0TwI8rBRvfo
+ 3Vt7nRS+0rUfDSED4SrfqaISrf0UY/qmx+fM1uI0DcVNio5Q4eRx9g2i7lz9eP/Z3pVKxds+Vwr
+ 9lgSPsPjvmGTKpAOTGYm1YTQ6INTFjYCyVJHqN2OIQB+A5JDgDAuvny0AFJYNl245JkGCzWAqJ9
+ QJLhwXaYHW2x7SjMrb23u05sqZDZ4zBPcwL19BK4YnHvqr9wpeVHbfp3kt3CG3WBQLtRofy7XFN
+ E7/U4xjLMrgY7OIWB7x5jKCkGOvvuvDt1Fjj1QcTIlqRRRJixA9LOi2lPI3LimfmB0WdkRe/t0L
+ yY6AaMXBPLF8sBB4IRVRqgd2fH9levrKGNSIq/2eLKfzo534rP+xeq2vkcYjxvKWxRQTl4WIcoW
+ n7AMCwVcvlo7BSNmG08tUWy0dh3q05G6UTbOCI3k5yA2HXUuDvCqwQrjjqoiK3AJJJzmofdo4Ia
+ uMKgpt4F8WhXpm3ZIbhUTXPVkUIlCw0J5i17RY8874CE7RDkD2D7x2o8rDvTKYF4mgtZJdDvwEA
+ fsTV1kd7IuAITAw==
+X-Developer-Key: i=krzysztof.kozlowski@oss.qualcomm.com; a=openpgp;
+ fpr=9BD07E0E0C51F8D59677B7541B93437D3B41629B
+X-Proofpoint-Spam-Details-Enc: AW1haW4tMjYwMTA2MDE2MyBTYWx0ZWRfX3U5gQ09Eg4P5
+ J+JTXpD+8wsrl6S+zqont1G2wbGC0taXnQymgx0Mca7cBzRBLFhiLv38Vm4+5EIgjyQYZDjjeRP
+ /DJtM8Zfyayy8WGYlNnzBf244C4ZMQe0dpdE9M5NdDcuT84qJ1UzQNoKMu4L/c//Z2M138Z7EOa
+ dsChxclJ1draFJ4GkKiGeVI/aKGjvWkGTWCUHyzGNDuTAgUsb03BOUqvi8siW2nSOcQsVsAFmvH
+ keTOGsrziZDYvBVyKBCxOErzILrtBmqImp/Csijw9koYz25bgToQ1q0w9o/fZk32ObzcsHqMB9p
+ mt1r2EcJkarxlXwkTHRIl8vAjlt606HkmIxFbAWkcg1vGIgJuAb52FwROPsy47PWjtx7YD/isIP
+ zStXHg08BYnrAVmziHIJBzS8/PFBW4nUyHWAjcAy3Pjm5HHXoWAquM6fBrYPsN9zbeK5xBT8g/h
+ +GKEmVx+WHxL0zw4VzA==
+X-Authority-Analysis: v=2.4 cv=YqIChoYX c=1 sm=1 tr=0 ts=695d59b1 cx=c_pps
+ a=EVbN6Ke/fEF3bsl7X48z0g==:117 a=Eb9f15NH/cHKzfGOmZSO4Q==:17
+ a=vUbySO9Y5rIA:10 a=s4-Qcg_JpJYA:10 a=VkNPw1HP01LnGYTKEx00:22
+ a=EUspDBNiAAAA:8 a=VwQbUJbxAAAA:8 a=L4kx1223G2YaxeqoHsIA:9
+ a=a_PwQJl-kcHnX1M80qC6:22
+X-Proofpoint-GUID: UmSF8BMpS-2X6JM4bvdJU0HFOuucl8G2
+X-Proofpoint-ORIG-GUID: UmSF8BMpS-2X6JM4bvdJU0HFOuucl8G2
+X-Proofpoint-Virus-Version: vendor=baseguard
+ engine=ICAP:2.0.293,Aquarius:18.0.1121,Hydra:6.1.9,FMLib:17.12.100.49
+ definitions=2026-01-06_01,2026-01-06_01,2025-10-01_01
+X-Proofpoint-Spam-Details: rule=outbound_notspam policy=outbound score=0
+ priorityscore=1501 suspectscore=0 impostorscore=0 bulkscore=0 malwarescore=0
+ phishscore=0 adultscore=0 clxscore=1015 lowpriorityscore=0 spamscore=0
+ classifier=typeunknown authscore=0 authtc= authcc= route=outbound adjust=0
+ reason=mlx scancount=1 engine=8.22.0-2512120000 definitions=main-2601060163
+
+Interrupts for DWC3 node were completely mixed up - SPI interrupt 62 is
+not listed in reference manual at all.  It was also causing dtbs_check
+warnings:
+
+  ipq5018-rdp432-c2.dtb: usb@8af8800 (qcom,ipq5018-dwc3): interrupt-names:0: 'pwr_event' was expected
+  ipq5018-rdp432-c2.dtb: usb@8af8800 (qcom,ipq5018-dwc3): interrupt-names: ['hs_phy_irq'] is too short
+
+Warning itself was introduced by commit 53c6d854be4e ("dt-bindings: usb:
+dwc3: Clean up hs_phy_irq in binding"), but this was trying to bring
+sanity to the interrupts overall, although did a mistake for IPQ5018.
+IPQ5018 does not have QUSB2 PHY and its interrupts should rather match
+ones used in IPQ5332.
+
+Correct it by using interrupts matching the bindings and reference
+manual.
+
+Signed-off-by: Krzysztof Kozlowski <krzysztof.kozlowski@oss.qualcomm.com>
+---
+
+Not tested on hardware.
+
+Bindings for this change:
+lore.kernel.org/r/20260106185012.19551-3-krzysztof.kozlowski@oss.qualcomm.com
+---
+ arch/arm64/boot/dts/qcom/ipq5018.dtsi | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+--- a/arch/arm64/boot/dts/qcom/ipq5018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
+@@ -576,8 +576,12 @@
+ 			compatible = "qcom,ipq5018-dwc3", "qcom,dwc3";
+ 			reg = <0x08af8800 0x400>;
+ 
+-			interrupts = <GIC_SPI 62 IRQ_TYPE_LEVEL_HIGH>;
+-			interrupt-names = "hs_phy_irq";
++			interrupts = <GIC_SPI 134 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 121 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 120 IRQ_TYPE_LEVEL_HIGH>;
++			interrupt-names = "pwr_event",
++					  "dp_hs_phy_irq",
++					  "dm_hs_phy_irq";
+ 
+ 			clocks = <&gcc GCC_USB0_MASTER_CLK>,
+ 				 <&gcc GCC_SYS_NOC_USB0_AXI_CLK>,
