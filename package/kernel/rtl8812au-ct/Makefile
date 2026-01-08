@@ -28,7 +28,7 @@ define KernelPackage/rtl8812au-ct
   FILES:=\
 	$(PKG_BUILD_DIR)/rtl8812au.ko
   AUTOLOAD:=$(call AutoProbe,rtl8812au)
-  PROVIDES:=@kmod-rtl8812au-any
+  PROVIDES:=kmod-rtl8812au
 endef
 
 NOSTDINC_FLAGS := \
