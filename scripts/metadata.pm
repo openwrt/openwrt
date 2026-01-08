@@ -263,9 +263,6 @@ sub parse_package_metadata($) {
 		/^Default: \s*(.+)\s*$/ and $pkg->{default} = $1;
 		/^Provides: \s*(.+)\s*$/ and do {
 			my @vpkg = split /\s+/, $1;
-			foreach (@vpkg) {
-				s/^@//;
-			}
 			@{$pkg->{provides}} = ($pkg->{name}, @vpkg);
 			foreach my $vpkg (@vpkg) {
 				next if ($vpkg eq $pkg->{name});
