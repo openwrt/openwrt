@@ -1,0 +1,101 @@
+From 767d44ceff8fc8e1e7a47a0bcafdcc40eaeb6503 Mon Sep 17 00:00:00 2001
+From: Phillip Lougher <phillip@squashfs.org.uk>
+Date: Thu, 8 Jan 2026 01:20:40 +0000
+Subject: [PATCH] mksquashfs: don't create duplicate virtual -> real disk
+ mappings
+
+This bug is caused by commit 472588dc40292fa3d047369f1e758016a6b26e70,
+but it is exposed by commit 078529915caab11e85299aac1304671151d507a3.
+
+The first commit adds a virtual -> real disk mapping in cases where a
+multi-block file contains all sparse blocks.   In this case no data
+block has been written for this file, and it may mean no virtual -> real
+disk mapping will exist otherwise.
+
+However, a side effect of this is two duplicate virtual -> real disk
+mappings may be created, with different values.
+
+Now previously before commit 078529915caab11e85299aac1304671151d507a3,
+Mksquashfs waited for all outstanding data blocks to be processed by the
+orderer thread before creating the metadata.  At this point all the
+duplicate virtual -> real disk mappings will exist, and the lookup
+routine will return the last one created - which happens to be the
+correct one.
+
+After commit  078529915caab11e85299aac1304671151d507a3, Mksquashfs no
+longer waits for all outstanding data blocks to be processed by the
+orderer thread, which means when the lookup takes place in metadata
+creation, there may exist only the first wrong duplicate, which will be
+returned.  Obviously there may exist both duplicate values in which case
+the correct one will be returned.   In other words this is a race
+condition,  and it is highly dependent on hardware and input data
+whether it triggers.
+
+The fix is to increment the virtual disk position after creating a
+mapping when a multi-block file contains all sparse blocks.  This
+obviously prevents duplicate mappings from being created.
+
+Fixes https://github.com/plougher/squashfs-tools/issues/339
+
+Signed-off-by: Phillip Lougher <phillip@squashfs.org.uk>
+---
+ squashfs-tools/mksquashfs.c    | 12 +++++++++---
+ squashfs-tools/virt_disk_pos.h |  9 +++++++++
+ 2 files changed, 18 insertions(+), 3 deletions(-)
+
+--- a/squashfs-tools/mksquashfs.c
++++ b/squashfs-tools/mksquashfs.c
+@@ -2923,8 +2923,10 @@ static struct file_info *write_file_proc
+ 			fragment_buffer ?  fragment_buffer->checksum : 0, FALSE,
+ 			TRUE);
+ 
+-	if(!is_vpos_marked())
++	if(!is_vpos_marked()) {
+ 		send_orderer_create_map(get_marked_vpos());
++		inc_vpos();
++	}
+ 
+ 	gen_cache_block_put(fragment_buffer);
+ 	file_count ++;
+@@ -3027,8 +3029,10 @@ static struct file_info *write_file_bloc
+ 			if(buffer_list[block])
+ 				put_write_buffer_hash(buffer_list[block]);
+ 
+-		if(!is_vpos_marked())
++		if(!is_vpos_marked()) {
+ 			send_orderer_create_map(get_marked_vpos());
++			inc_vpos();
++		}
+ 	} else {
+ 		for(block = thresh; block < blocks; block ++)
+ 			gen_cache_block_put(buffer_list[block]);
+@@ -3140,8 +3144,10 @@ static struct file_info *write_file_bloc
+ 			block_list, get_marked_vpos(), fragment, 0, fragment_buffer ?
+ 			fragment_buffer->checksum : 0, FALSE, TRUE);
+ 
+-	if(!is_vpos_marked())
++	if(!is_vpos_marked()) {
+ 		send_orderer_create_map(get_marked_vpos());
++		inc_vpos();
++	}
+ 
+ 	gen_cache_block_put(fragment_buffer);
+ 	file_count ++;
+--- a/squashfs-tools/virt_disk_pos.h
++++ b/squashfs-tools/virt_disk_pos.h
+@@ -96,6 +96,15 @@ static inline long long get_and_inc_vpos
+ }
+ 
+ 
++static inline void inc_vpos()
++{
++	if(marked_vpos == 0)
++		BAD_ERROR("BUG: Saved write position is empty!\n");
++
++	vpos ++;
++}
++
++
+ static inline int reset_vpos(void)
+ {
+ 	if(marked_vpos == 0)
