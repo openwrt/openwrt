@@ -43,6 +43,18 @@ define Download/kernel
   HASH:=$(LINUX_KERNEL_HASH)
 endef
 
+# Download signature file if signature verification is enabled
+ifeq ($(KERNEL_VERIFY_SIG),1)
+  # Signature is for the uncompressed tar, so strip compression extension
+  LINUX_SOURCE_SIG:=$(basename $(LINUX_SOURCE)).sign
+
+  define Download/kernel-sig
+    URL:=$(LINUX_SITE)
+    FILE:=$(LINUX_SOURCE_SIG)
+    HASH:=skip
+  endef
+endif
+
 KERNEL_GIT_OPTS:=
 ifneq ($(strip $(CONFIG_KERNEL_GIT_LOCAL_REPOSITORY)),"")
   KERNEL_GIT_OPTS+=--reference $(CONFIG_KERNEL_GIT_LOCAL_REPOSITORY)
@@ -84,14 +96,22 @@ endif
 define BuildKernel
   $(if $(QUILT),$(Build/Quilt))
   $(if $(LINUX_SITE),$(call Download,kernel))
+  $(if $(KERNEL_VERIFY_SIG),$(call Download,kernel-sig))
   $(if $(call qstrip,$(CONFIG_KERNEL_GIT_CLONE_URI)),$(call Download,git-kernel))
 
   .NOTPARALLEL:
 
   $(Kernel/Autoclean)
   $(STAMP_PREPARED): $(if $(LINUX_SITE),$(DL_DIR)/$(LINUX_SOURCE))
+  $(STAMP_PREPARED): $(if $(KERNEL_VERIFY_SIG),$(DL_DIR)/$(LINUX_SOURCE_SIG))
 	-rm -rf $(KERNEL_BUILD_DIR)
 	-mkdir -p $(KERNEL_BUILD_DIR)
+ifeq ($(KERNEL_VERIFY_SIG),1)
+	@echo "Verifying kernel signature..."
+	$(SCRIPT_DIR)/verify-kernel-tar-signature.sh \
+		$(DL_DIR)/$(LINUX_SOURCE) \
+		$(DL_DIR)/$(LINUX_SOURCE_SIG)
+endif
 	$(Kernel/Prepare)
 	touch $$@
 
@@ -152,6 +172,7 @@ define BuildKernel
   endef
 
   download: $(if $(LINUX_SITE),$(DL_DIR)/$(LINUX_SOURCE))
+  download: $(if $(KERNEL_VERIFY_SIG),$(DL_DIR)/$(LINUX_SOURCE_SIG))
   prepare: $(STAMP_PREPARED)
   compile: $(LINUX_DIR)/.modules
 	+$(MAKE) -C image compile TARGET_BUILD=
