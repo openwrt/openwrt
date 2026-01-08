@@ -1,16 +1,20 @@
+From 65de36f5eae1c540115bf8f705f853718e9b6451 Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
-Date: Mon, 5 Jan 2026 14:51:47 +0000
-Subject: [PATCH] net: phy: export mmd_phy_read and mmd_phy_write to phylib.h
+Date: Mon, 5 Jan 2026 16:38:29 +0000
+Subject: [PATCH 3/5] net: phy: move mmd_phy_read and mmd_phy_write to phylib.h
 
 Helper functions mmd_phy_read and mmd_phy_write are useful for PHYs
 which require custom MMD access functions for some but not all MMDs.
+Move mmd_phy_read and mmd_phy_write function prototypes from
+phylib-internal.h to phylib.h to make them available for PHY drivers.
 
-This patch replaces pending upstream patch
-"net: phy: move mmd_phy_read and mmd_phy_write to phylib.h"
-for Linux 6.12.
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Link: https://patch.msgid.link/79169cd624a3572d426e42c7b13cd2654a35d0cb.1767630451.git.daniel@makrotopia.org
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
 
-See also
-https://patchwork.kernel.org/project/netdevbpf/patch/79169cd624a3572d426e42c7b13cd2654a35d0cb.1767630451.git.daniel@makrotopia.org/
+Note that this patch replaces the commit above as neither phylink.h nor
+phylink-internal.h exist in Linux 6.12.
 --- a/drivers/net/phy/phy-core.c
 +++ b/drivers/net/phy/phy-core.c
 @@ -542,8 +542,8 @@ static void mmd_phy_indirect(struct mii_
@@ -47,7 +51,7 @@ https://patchwork.kernel.org/project/netdevbpf/patch/79169cd624a3572d426e42c7b13
   * __phy_read_mmd - Convenience function for reading a register
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -2054,6 +2054,11 @@ extern struct phy_driver genphy_c45_driv
+@@ -2027,6 +2027,11 @@ extern struct phy_driver genphy_c45_driv
  /* The gen10g_* functions are the old Clause 45 stub */
  int gen10g_config_aneg(struct phy_device *phydev);
  
