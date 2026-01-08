@@ -1291,7 +1291,7 @@ static void rtpcs_930x_sds_mode_set(struct rtpcs_serdes *sds,
 }
 
 static void rtpcs_930x_sds_tx_config(struct rtpcs_serdes *sds,
-				     phy_interface_t phy_if)
+				     enum rtpcs_sds_mode hw_mode)
 {
 	/* parameters: rtl9303_80G_txParam_s2 */
 	int impedance = 0x8;
@@ -1302,24 +1302,24 @@ static void rtpcs_930x_sds_tx_config(struct rtpcs_serdes *sds,
 	int post_en = 0x1;
 	int page;
 
-	switch (phy_if) {
-	case PHY_INTERFACE_MODE_1000BASEX:
-	case PHY_INTERFACE_MODE_SGMII:
+	switch (hw_mode) {
+	case RTPCS_SDS_MODE_1000BASEX:
+	case RTPCS_SDS_MODE_SGMII:
 		pre_amp = 0x1;
 		main_amp = 0x9;
 		post_amp = 0x1;
 		page = 0x25;
 		break;
-	case PHY_INTERFACE_MODE_2500BASEX:
+	case RTPCS_SDS_MODE_2500BASEX:
 		pre_amp = 0;
 		post_amp = 0x8;
 		pre_en = 0;
 		page = 0x29;
 		break;
-	case PHY_INTERFACE_MODE_10GBASER:
-	case PHY_INTERFACE_MODE_USXGMII:
-	case PHY_INTERFACE_MODE_10G_QXGMII:
-	case PHY_INTERFACE_MODE_XGMII:
+	case RTPCS_SDS_MODE_10GBASER:
+	case RTPCS_SDS_MODE_USXGMII_10GSXGMII:
+	case RTPCS_SDS_MODE_USXGMII_10GQXGMII:
+	case RTPCS_SDS_MODE_XSGMII:
 		pre_en = 0;
 		pre_amp = 0;
 		main_amp = 0x10;
@@ -1328,7 +1328,7 @@ static void rtpcs_930x_sds_tx_config(struct rtpcs_serdes *sds,
 		page = 0x2f;
 		break;
 	default:
-		pr_err("%s: unsupported PHY mode\n", __func__);
+		pr_err("%s: unsupported SerDes hw mode\n", __func__);
 		return;
 	}
 
@@ -2576,7 +2576,7 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 		pr_warn("%s: SerDes RX calibration failed\n", __func__);
 
 	/* Leave loopback mode */
-	rtpcs_930x_sds_tx_config(sds, if_mode);
+	rtpcs_930x_sds_tx_config(sds, hw_mode);
 
 	return 0;
 }
