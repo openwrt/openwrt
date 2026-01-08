@@ -480,6 +480,23 @@ define Device/wd_cloud-ex2-ultra
 endef
 TARGET_DEVICES += wd_cloud-ex2-ultra
 
+define Device/wd_cloud-gen2
+  DEVICE_VENDOR := Western Digital
+  DEVICE_MODEL := MyCloud Gen 2 (WD_Glacier)
+  DEVICE_PACKAGES += mkf2fs e2fsprogs badblocks partx-utils \
+	kmod-hwmon-drivetemp kmod-fs-vfat fdisk -ppp -dnsmasq \
+	-kmod-nft-offload -odhcpd-ipv6only -uboot-envtools
+  DEVICE_DTS := armada-375-wd_cloud-gen2
+  KERNEL := kernel-bin | append-dtb | uImage none
+  KERNEL_SIZE := 5120k
+  KERNEL_INSTALL := 1
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none
+  IMAGES := uRamdisk firmware.tgz
+  IMAGE/uRamdisk := pad-extra 8 | uImage gzip -T ramdisk -a 0xe00000 -e 0 -n 'DUMMY'
+  IMAGE/firmware.tgz := wdcg2-firmware | append-metadata
+endef
+TARGET_DEVICES += wd_cloud-gen2
+
 define Device/wd_cloud-mirror-gen2
   $(Device/NAND-128K)
   DEVICE_VENDOR := Western Digital
