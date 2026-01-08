@@ -2446,7 +2446,8 @@ static void rtpcs_930x_sds_usxgmii_config(struct rtpcs_serdes *sds, int nway_en,
 	rtpcs_sds_write_bits(sds, 0x6, 0x1d, 11, 10, sync_bit);
 }
 
-static void rtpcs_930x_sds_patch(struct rtpcs_serdes *sds, phy_interface_t mode)
+static void rtpcs_930x_sds_patch(struct rtpcs_serdes *sds,
+				 enum rtpcs_sds_mode hw_mode)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
 	const struct rtpcs_sds_config *config;
@@ -2455,10 +2456,10 @@ static void rtpcs_930x_sds_patch(struct rtpcs_serdes *sds, phy_interface_t mode)
 
 	is_even_sds = (sds == even_sds);
 
-	switch (mode) {
-	case PHY_INTERFACE_MODE_1000BASEX:
-	case PHY_INTERFACE_MODE_SGMII:
-	case PHY_INTERFACE_MODE_10GBASER:
+	switch (hw_mode) {
+	case RTPCS_SDS_MODE_1000BASEX:
+	case RTPCS_SDS_MODE_SGMII:
+	case RTPCS_SDS_MODE_10GBASER:
 		if (is_even_sds) {
 			config = rtpcs_930x_sds_cfg_10gr_even;
 			count = ARRAY_SIZE(rtpcs_930x_sds_cfg_10gr_even);
@@ -2468,7 +2469,7 @@ static void rtpcs_930x_sds_patch(struct rtpcs_serdes *sds, phy_interface_t mode)
 		}
 		break;
 
-	case PHY_INTERFACE_MODE_2500BASEX:
+	case RTPCS_SDS_MODE_2500BASEX:
 		if (is_even_sds) {
 			config = rtpcs_930x_sds_cfg_10g_2500bx_even;
 			count = ARRAY_SIZE(rtpcs_930x_sds_cfg_10g_2500bx_even);
@@ -2478,19 +2479,15 @@ static void rtpcs_930x_sds_patch(struct rtpcs_serdes *sds, phy_interface_t mode)
 		}
 		break;
 
-	case PHY_INTERFACE_MODE_10G_QXGMII:
-		return;
-
+	case RTPCS_SDS_MODE_USXGMII_10GQXGMII:
 	default:
-		pr_warn("%s: unsupported mode %s on serdes %d\n", __func__, phy_modes(mode),
-			sds->id);
 		return;
 	}
 
 	for (size_t i = 0; i < count; ++i)
 		rtpcs_sds_write(sds, config[i].page, config[i].reg, config[i].data);
 
-	if (mode == PHY_INTERFACE_MODE_10G_QXGMII) {
+	if (hw_mode == RTPCS_SDS_MODE_USXGMII_10GQXGMII) {
 		/* Default configuration */
 		rtpcs_930x_sds_usxgmii_config(sds, 1, 0xaa, 0x5078, 0, 1, 0x1);
 	}
@@ -2549,7 +2546,7 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 	rtpcs_930x_sds_set(sds, RTL930X_SDS_OFF);
 
 	/* Apply serdes patches */
-	rtpcs_930x_sds_patch(sds, if_mode);
+	rtpcs_930x_sds_patch(sds, hw_mode);
 
 	/* Maybe use dal_longan_sds_init */
 
