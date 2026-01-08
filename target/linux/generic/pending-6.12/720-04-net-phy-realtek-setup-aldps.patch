@@ -35,7 +35,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static int rtl821x_read_page(struct phy_device *phydev)
  {
  	return __phy_read(phydev, RTL821x_PAGE_SELECT);
-@@ -1239,6 +1247,18 @@ static int rtl822x_write_mmd(struct phy_
+@@ -1240,6 +1248,18 @@ static int rtl822x_write_mmd(struct phy_
  
  static int rtl822x_probe(struct phy_device *phydev)
  {
@@ -55,8 +55,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	    phydev->phy_id != RTL_GENERIC_PHYID)
  		return rtl822x_hwmon_init(phydev);
 @@ -1320,6 +1340,19 @@ static int rtl822xb_write_mmd(struct phy
+ 	return write_ret;
  }
- 
  
 +static int rtl822x_init_phycr1(struct phy_device *phydev, bool no_aldps)
 +{
