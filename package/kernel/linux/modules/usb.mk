@@ -1860,6 +1860,7 @@ define KernelPackage/usb3
   TITLE:=Support for USB3 controllers
   DEPENDS:= \
 	+kmod-usb-xhci-hcd \
+	+TARGET_airoha_an7581:kmod-usb-xhci-mtk \
 	+TARGET_bcm53xx:kmod-usb-bcma \
 	+TARGET_bcm53xx:kmod-phy-bcm-ns-usb3 \
 	+TARGET_ramips_mt7621:kmod-usb-xhci-mtk \
