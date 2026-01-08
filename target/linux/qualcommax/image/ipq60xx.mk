@@ -188,7 +188,7 @@ define Device/tplink_eap623od-hd-v1
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	SOC := ipq6018
-	DEVICE_PACKAGES := ipq-wifi-tplink_eap623od-hd-v1 kmod-phy-realtek
+	DEVICE_PACKAGES := ipq-wifi-tplink_eap623-outdoor-hd-v1 kmod-phy-realtek
 	IMAGES += web-ui-factory.bin
 	IMAGE/web-ui-factory.bin := append-ubi | tplink-image-2022
 	TPLINK_SUPPORT_STRING := SupportList:\r\nEAP623-Outdoor HD(TP-Link|UN|AX1800-D):1.0\r\n
