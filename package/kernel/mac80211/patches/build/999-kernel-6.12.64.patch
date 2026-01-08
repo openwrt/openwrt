@@ -1,0 +1,19 @@
+diff --git a/backport-include/linux/hrtimer.h b/backport-include/linux/hrtimer.h
+index 3c351922c81d..d865dbf42e9b 100644
+--- a/backport-include/linux/hrtimer.h
++++ b/backport-include/linux/hrtimer.h
+@@ -17,12 +17,14 @@ static inline enum hrtimer_restart hrtimer_dummy_timeout(struct hrtimer *unused)
+ 	return HRTIMER_NORESTART;
+ }
+ 
++#if LINUX_VERSION_IS_LESS(6,12,64)
+ static inline void
+ hrtimer_update_function(struct hrtimer *timer,
+ 			enum hrtimer_restart (*function)(struct hrtimer *))
+ {
+ 	timer->function = function;
+ }
++#endif /* < 6.12.64 */
+ 
+ static inline void
+ hrtimer_setup(struct hrtimer *timer, enum hrtimer_restart (*function)(struct hrtimer *),
