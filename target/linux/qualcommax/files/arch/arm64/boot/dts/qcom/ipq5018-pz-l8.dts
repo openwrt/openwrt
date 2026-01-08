@@ -143,14 +143,14 @@
 
 	qcom,port_phyinfo {
 		// MAC0 -> GE Phy --- MDI --- QCA8337 Phy4(Port5)
-		port@0 {
+		port@1 {
 			port_id = <1>;
 			mdiobus = <&mdio0>;
 			phy_address = <7>;
 		};
 
 		// MAC1 -> Uniphy --- SGMII --- QCA8337 SerDes(Port6)
-		port@1 {
+		port@2 {
 			port_id = <2>;
 			mdiobus = <&mdio1>;
 			forced-speed = <1000>;
