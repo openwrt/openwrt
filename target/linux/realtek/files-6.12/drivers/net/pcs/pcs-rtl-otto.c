@@ -2524,17 +2524,22 @@ static int rtpcs_930x_sds_cmu_band_get(struct rtpcs_serdes *sds)
 }
 
 static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
-				   phy_interface_t phy_mode)
+				   phy_interface_t if_mode)
 {
-	int calib_tries = 0;
+	enum rtpcs_sds_mode hw_mode;
+	int calib_tries = 0, ret;
+
+	ret = rtpcs_sds_determine_hw_mode(sds, if_mode, &hw_mode);
+	if (ret < 0)
+		return -ENOTSUPP;
 
 	/* Rely on setup from U-boot for some modes, e.g. USXGMII */
-	switch (phy_mode) {
-	case PHY_INTERFACE_MODE_1000BASEX:
-	case PHY_INTERFACE_MODE_SGMII:
-	case PHY_INTERFACE_MODE_2500BASEX:
-	case PHY_INTERFACE_MODE_10GBASER:
-	case PHY_INTERFACE_MODE_10G_QXGMII:
+	switch (hw_mode) {
+	case RTPCS_SDS_MODE_1000BASEX:
+	case RTPCS_SDS_MODE_SGMII:
+	case RTPCS_SDS_MODE_2500BASEX:
+	case RTPCS_SDS_MODE_10GBASER:
+	case RTPCS_SDS_MODE_USXGMII_10GQXGMII:
 		break;
 	default:
 		return 0;
@@ -2544,7 +2549,7 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 	rtpcs_930x_sds_set(sds, RTL930X_SDS_OFF);
 
 	/* Apply serdes patches */
-	rtpcs_930x_sds_patch(sds, phy_mode);
+	rtpcs_930x_sds_patch(sds, if_mode);
 
 	/* Maybe use dal_longan_sds_init */
 
@@ -2558,7 +2563,7 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 	rtpcs_930x_sds_set_polarity(sds, sds->tx_pol_inv, sds->rx_pol_inv);
 
 	/* Enable SDS in desired mode */
-	rtpcs_930x_sds_mode_set(sds, phy_mode);
+	rtpcs_930x_sds_mode_set(sds, if_mode);
 
 	/* Enable Fiber RX */
 	rtpcs_sds_write_bits(sds, 0x20, 2, 12, 12, 0);
@@ -2566,15 +2571,15 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 	/* Calibrate SerDes receiver in loopback mode */
 	rtpcs_930x_sds_10g_idle(sds);
 	do {
-		rtpcs_930x_sds_do_rx_calibration(sds, phy_mode);
+		rtpcs_930x_sds_do_rx_calibration(sds, if_mode);
 		calib_tries++;
 		mdelay(50);
-	} while (rtpcs_930x_sds_check_calibration(sds, phy_mode) && calib_tries < 3);
+	} while (rtpcs_930x_sds_check_calibration(sds, if_mode) && calib_tries < 3);
 	if (calib_tries >= 3)
 		pr_warn("%s: SerDes RX calibration failed\n", __func__);
 
 	/* Leave loopback mode */
-	rtpcs_930x_sds_tx_config(sds, phy_mode);
+	rtpcs_930x_sds_tx_config(sds, if_mode);
 
 	return 0;
 }
