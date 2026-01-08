@@ -434,12 +434,12 @@ else
 	  --info "url:$(URL)" \
 	  --info "maintainer:$(MAINTAINER)" \
 	  --info "provides:$$(if $$(ABIV_$(1)), \
-	    $(1) $(foreach provide,$(PROVIDES), $(provide)$$(ABIV_$(1))=$(VERSION)), \
-	    $(if $(ALTERNATIVES), \
-	      $(PROVIDES), \
-	      $(foreach provide,$(PROVIDES), $(provide)=$(VERSION)) \
-	    ) \
-	  )" \
+	    $(1)$(foreach provide,$(PROVIDES),$(if $$(filter $(1)$$(ABIV_$(1)),$(provide)),, $(provide) $(provide)$$(ABIV_$(1))=$(VERSION))), \
+	    $(if $(ALTERNATIVES),$(PROVIDES), $(if $(VARIANT), \
+	      $(foreach provide,$(filter-out $(1),$(PROVIDES)),$(if $(findstring kmod-,$(provide)), $(provide), $(provide)=$(VERSION))), \
+	      $(PROVIDES) \
+	    ))) \
+		$(if $(CONFLICTS),$(foreach conflict,$(CONFLICTS),$(if $(findstring $(conflict),$(PROVIDES)),, $(conflict)=0.0.0)))" \
 	  $(if $(DEFAULT_VARIANT),--info "provider-priority:100",$(if $(PROVIDES),--info "provider-priority:1")) \
 	  $$(APK_SCRIPTS_$(1)) \
 	  --info "depends:$$(foreach depends,$$(subst $$(comma),$$(space),$$(subst $$(space),,$$(subst $$(paren_right),,$$(subst $$(paren_left),,$$(Package/$(1)/DEPENDS))))),$$(depends))" \
