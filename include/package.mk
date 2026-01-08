@@ -332,13 +332,6 @@ define BuildPackage
   $(eval $(Package/Default))
   $(eval $(Package/$(1)))
 
-  # Add an implicit self-provide. apk can't handle self provides, be it
-  # versioned or virtual, so opt for a suffix instead. This allows several
-  # variants to provide the same virtual package without adding extra provides
-  # to the default one, e.g. wget implicitly provides wget-any and is marked as
-  # default, so wget-ssl can explicitly provide @wget-any as well.
-  PROVIDES+=@$(1)-any
-
 ifndef Package/$(1)/description
 define Package/$(1)/description
 	$(TITLE)
