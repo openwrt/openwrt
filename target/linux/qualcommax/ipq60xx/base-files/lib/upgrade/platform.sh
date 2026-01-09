@@ -235,6 +235,7 @@ platform_do_upgrade() {
 		nand_do_upgrade "$1"
 		;;
 	tplink,eap610-outdoor|\
+	tplink,eap620-hd-v2|\
 	tplink,eap620-hd-v3|\
 	tplink,eap623-outdoor-hd-v1|\
 	tplink,eap625-outdoor-hd-v1)

@@ -86,6 +86,7 @@ case "$FIRMWARE" in
 		ath11k_patch_mac $(macaddr_add $label_mac 1) 0
 		ath11k_set_macflag
 		;;
+	tplink,eap620-hd-v2|\
 	tplink,eap620-hd-v3)
 		caldata_from_file "/tmp/factory_data/radio" 0 0x20000
 		label_mac=$(get_mac_binary /tmp/factory_data/default-mac 0)
