@@ -16,7 +16,13 @@ ipq50xx_setup_interfaces()
 	glinet,gl-b3000)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
 		;;
-	cmcc,pz-l8|\
+	cmcc,pz-l8)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+		ucidef_set_network_device_conduit "lan1" "eth1"
+		ucidef_set_network_device_conduit "lan2" "eth1"
+		ucidef_set_network_device_conduit "lan3" "eth1"
+		ucidef_set_network_device_conduit "wan" "eth0"
+		;;
 	linksys,mx2000|\
 	linksys,mx5500|\
 	linksys,spnmx56|\
