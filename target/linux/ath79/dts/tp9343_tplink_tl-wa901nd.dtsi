@@ -41,16 +41,16 @@
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
 		};
-
-		wlan {
-			function = LED_FUNCTION_WLAN;
-			color = <LED_COLOR_ID_GREEN>;
-			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
-		};
 	};
 };
 
 &eth1 {
 	compatible = "syscon", "simple-mfd";
+};
+
+&wmac {
+	led {
+		led-sources = <8>;
+		led-active-low;
+	};
 };

@@ -29,13 +29,6 @@
 			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
 		};
 
-		wlan {
-			function = LED_FUNCTION_WLAN;
-			color = <LED_COLOR_ID_GREEN>;
-			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
-		};
-
 		led_system: system {
 			label = "green:system";
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
@@ -138,4 +131,9 @@
 
 	nvmem-cells = <&macaddr_uboot_1fc00>, <&cal_art_1000>;
 	nvmem-cell-names = "mac-address", "calibration";
+
+	led {
+		led-sources = <12>;
+		led-active-low;
+	};
 };
