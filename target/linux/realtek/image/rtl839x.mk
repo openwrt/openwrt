@@ -97,3 +97,29 @@ define Device/zyxel_gs1900-48-a1
   SUPPORTED_DEVICES += zyxel,gs1900-48
 endef
 TARGET_DEVICES += zyxel_gs1900-48-a1
+
+define Device/zyxel_gs1920-24hp-v1
+  FLASH_ADDR := 0xb40c0000
+  ARTIFACTS := loader.bin
+  ARTIFACT/loader.bin := \
+    rt-loader-standalone | \
+    zynsig
+  SOC := rtl8392
+  IMAGE_SIZE := 12144k
+  DEVICE_VENDOR := Zyxel
+  DEVICE_MODEL := GS1920-24HP
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := \
+	  kmod-hwmon-lm85
+  KERNEL := \
+    kernel-bin | \
+    append-dtb | \
+    rt-compress | \
+    uImage lzma
+  KERNEL_INITRAMFS := \
+    kernel-bin | \
+    append-dtb | \
+    rt-compress | \
+    rt-loader
+endef
+TARGET_DEVICES += zyxel_gs1920-24hp-v1
