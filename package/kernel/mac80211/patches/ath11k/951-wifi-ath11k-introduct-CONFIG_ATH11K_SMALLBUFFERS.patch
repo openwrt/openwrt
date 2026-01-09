@@ -1,0 +1,43 @@
+From 4032fbc94b8cde0ff761b6dd6a278420e6f052b4 Mon Sep 17 00:00:00 2001
+From: Ziyang Huang <hzyitc@outlook.com>
+Date: Sun, 8 Sep 2024 16:52:04 +0800
+Subject: [PATCH 1/1] wifi: ath11k: introduct CONFIG_ATH11K_SMALLBUFFERS
+
+Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
+---
+ drivers/net/wireless/ath/ath11k/dp.h | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath11k/dp.h b/drivers/net/wireless/ath/ath11k/dp.h
+index 7a55afd33be8..d3d3b2aa800c 100644
+--- a/drivers/net/wireless/ath/ath11k/dp.h
++++ b/drivers/net/wireless/ath/ath11k/dp.h
+@@ -206,7 +206,7 @@ struct ath11k_pdev_dp {
+ #define DP_WBM_RELEASE_RING_SIZE	64
+ #define DP_TCL_DATA_RING_SIZE		512
+ #define DP_TCL_DATA_RING_SIZE_WCN6750	2048
+-#define DP_TX_COMP_RING_SIZE		32768
++#define DP_TX_COMP_RING_SIZE		(!IS_ENABLED(CONFIG_ATH11K_SMALLBUFFERS) ? 32768 : 2048)
+ #define DP_TX_IDR_SIZE			DP_TX_COMP_RING_SIZE
+ #define DP_TCL_CMD_RING_SIZE		32
+ #define DP_TCL_STATUS_RING_SIZE		32
+@@ -217,12 +217,12 @@ struct ath11k_pdev_dp {
+ #define DP_REO_EXCEPTION_RING_SIZE	128
+ #define DP_REO_CMD_RING_SIZE		256
+ #define DP_REO_STATUS_RING_SIZE		2048
+-#define DP_RXDMA_BUF_RING_SIZE		4096
++#define DP_RXDMA_BUF_RING_SIZE		(!IS_ENABLED(CONFIG_ATH11K_SMALLBUFFERS) ? 4096 : 1024)
+ #define DP_RXDMA_REFILL_RING_SIZE	2048
+ #define DP_RXDMA_ERR_DST_RING_SIZE	1024
+-#define DP_RXDMA_MON_STATUS_RING_SIZE	1024
+-#define DP_RXDMA_MONITOR_BUF_RING_SIZE	4096
+-#define DP_RXDMA_MONITOR_DST_RING_SIZE	2048
++#define DP_RXDMA_MON_STATUS_RING_SIZE	(!IS_ENABLED(CONFIG_ATH11K_SMALLBUFFERS) ? 1024 : 512)
++#define DP_RXDMA_MONITOR_BUF_RING_SIZE	(!IS_ENABLED(CONFIG_ATH11K_SMALLBUFFERS) ? 4096 : 128)
++#define DP_RXDMA_MONITOR_DST_RING_SIZE	(!IS_ENABLED(CONFIG_ATH11K_SMALLBUFFERS) ? 2048 : 128)
+ #define DP_RXDMA_MONITOR_DESC_RING_SIZE	4096
+ 
+ #define DP_RX_RELEASE_RING_NUM	3
+-- 
+2.40.1
+
