@@ -29,6 +29,7 @@ define Device/cmcc_pz-l8
 	PAGESIZE := 2048
 	IMAGE_SIZE := 59392k
 	NAND_SIZE := 128m
+	DEVICE_PACKAGES := kmod-ath11k-smallbuffers ath11k-firmware-ipq5018-qcn6122 ipq-wifi-cmcc_pz-l8
 endef
 TARGET_DEVICES += cmcc_pz-l8
 
