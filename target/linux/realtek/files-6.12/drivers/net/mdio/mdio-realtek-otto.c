@@ -150,7 +150,6 @@ struct rtmdio_bus_priv {
 	int smi_bus[RTMDIO_MAX_PORT];
 	u8 smi_addr[RTMDIO_MAX_PORT];
 	bool smi_bus_isc45[RTMDIO_MAX_SMI_BUS];
-	phy_interface_t interfaces[RTMDIO_MAX_PORT];
 };
 
 struct rtmdio_config {
@@ -1079,17 +1078,6 @@ static int rtmdio_probe(struct platform_device *pdev)
 	if (!dn) {
 		dev_err(dev, "No RTL switch node in DTS\n");
 		return -ENODEV;
-	}
-
-	for_each_node_by_name(dn, "port") {
-		if (of_property_read_u32(dn, "reg", &pn))
-			continue;
-		dev_dbg(dev, "Looking at port %d\n", pn);
-		if (pn > priv->cfg->cpu_port)
-			continue;
-		if (of_get_phy_mode(dn, &priv->interfaces[pn]))
-			priv->interfaces[pn] = PHY_INTERFACE_MODE_NA;
-		dev_dbg(dev, "phy mode of port %d is %s\n", pn, phy_modes(priv->interfaces[pn]));
 	}
 
 	snprintf(bus->id, MII_BUS_ID_SIZE, "%s-mii", dev_name(dev));
