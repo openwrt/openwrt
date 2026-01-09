@@ -103,14 +103,6 @@
 #define RTL838X_DMA_IF_TX_CUR_DESC_ADDR_CTRL	(0x9F48)
 #define RTL930X_DMA_IF_TX_CUR_DESC_ADDR_CTRL	(0xE008)
 
-#define RTL838X_DMY_REG31			(0x3b28)
-#define RTL838X_SDS_MODE_SEL			(0x0028)
-#define RTL838X_SDS_CFG_REG			(0x0034)
-#define RTL838X_INT_MODE_CTRL			(0x005c)
-#define RTL838X_SDS4_REG28			(0xef80)
-#define RTL838X_SDS4_DUMMY0			(0xef8c)
-#define RTL838X_SDS5_EXT_REG6			(0xf18c)
-
 /* L2 features */
 #define RTL839X_TBL_ACCESS_L2_CTRL		(0x1180)
 #define RTL839X_TBL_ACCESS_L2_DATA(idx)		(0x1184 + ((idx) << 2))
@@ -215,9 +207,6 @@
 #define RTL930X_SMI_10GPHY_POLLING_REG10_CFG	(0xCBBC)
 #define RTL930X_SMI_PRVTE_POLLING_CTRL		(0xCA10)
 
-/* Registers of the internal Serdes of the 8390 */
-#define RTL839X_SDS12_13_XSG0			(0xB800)
-
 /* Chip configuration registers of the RTL9310 */
 #define RTL931X_MEM_ENCAP_INIT			(0x4854)
 #define RTL931X_MEM_MIB_INIT			(0x7E18)
@@ -230,9 +219,6 @@
 #define RTL931X_SMI_10GPHY_POLLING_SEL2		(0xCF8)
 #define RTL931X_SMI_10GPHY_POLLING_SEL3		(0xCFC)
 #define RTL931X_SMI_10GPHY_POLLING_SEL4		(0xD00)
-
-/* Registers of the internal Serdes of the 8380 */
-#define RTL838X_SDS4_FIB_REG0			(0xF800)
 
 /* shared CPU tag definitions for RTL930X/RTL931X */
 #define RTL93XX_CPU_TAG1_FWD_MASK		GENMASK(11, 8)
