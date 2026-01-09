@@ -15,7 +15,14 @@ struct __packed fw_header {
 };
 
 /* TODO: fixed path? */
+/* NOTE: This firmware file contains both patch values for SerDes
+ * configuration and for the internal RTL8218B PHY of RTL838x. Because
+ * the SerDes setup has been moved to the PCS driver and the firmware
+ * file isn't used there, this was only kept for the PHY. As soon as
+ * this has been changed, this firmware file can be dropped completely.
+ */
 #define FIRMWARE_838X_8380_1			"rtl838x_phy/rtl838x_8380.fw"
+
 #define FIRMWARE_838X_8214FC_1			"rtl838x_phy/rtl838x_8214fc.fw"
 #define FIRMWARE_838X_8218b_1			"rtl838x_phy/rtl838x_8218b.fw"
 
