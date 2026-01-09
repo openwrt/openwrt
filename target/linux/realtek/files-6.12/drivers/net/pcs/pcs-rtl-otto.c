@@ -3456,14 +3456,8 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 	struct rtpcs_ctrl *ctrl = link->ctrl;
 	int ret = 0;
 
-	/*
-	 * TODO: This (or copies of this) will be the central function for configuring the
-	 * link between PHY and SerDes. As of now a lot of the code is scattered throughout
-	 * all the other Realtek drivers. Maybe some day this will live up to the expectations.
-	 */
-
-	dev_warn(ctrl->dev, "pcs_config(%s) for port %d and sds %d not yet fully implemented\n",
-		 phy_modes(interface), link->port, link->sds->id);
+	dev_info(ctrl->dev, "configure SerDes %u for mode %s\n", link->sds->id,
+		 phy_modes(interface));
 
 	mutex_lock(&ctrl->lock);
 
