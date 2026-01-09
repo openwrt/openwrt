@@ -324,6 +324,17 @@ define Device/tplink_sg2008p-v1
 endef
 TARGET_DEVICES += tplink_sg2008p-v1
 
+define Device/tplink_sg2008p-v3
+  SOC := rtl8380
+  KERNEL_SIZE := 6m
+  IMAGE_SIZE := 26m
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := SG2008P
+  DEVICE_VARIANT := v3
+  DEVICE_PACKAGES := i2c-tools
+endef
+TARGET_DEVICES += tplink_sg2008p-v3
+
 define Device/tplink_sg2210p-v3
   SOC := rtl8380
   KERNEL_SIZE := 6m
