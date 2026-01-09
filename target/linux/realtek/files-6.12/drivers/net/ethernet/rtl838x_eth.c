@@ -830,7 +830,7 @@ static int rtl838x_eth_stop(struct net_device *ndev)
 	return 0;
 }
 
-static void rtl838x_eth_set_multicast_list(struct net_device *ndev)
+static void rteth_838x_set_rx_mode(struct net_device *ndev)
 {
 	/* Flood all classes of RMA addresses (01-80-C2-00-00-{01..2F})
 	 * CTRL_0_FULL = GENMASK(21, 0) = 0x3FFFFF
@@ -847,7 +847,7 @@ static void rtl838x_eth_set_multicast_list(struct net_device *ndev)
 	}
 }
 
-static void rtl839x_eth_set_multicast_list(struct net_device *ndev)
+static void rteth_839x_set_rx_mode(struct net_device *ndev)
 {
 	/* Flood all classes of RMA addresses (01-80-C2-00-00-{01..2F})
 	 * CTRL_0_FULL = GENMASK(31, 2) = 0xFFFFFFFC
@@ -873,7 +873,7 @@ static void rtl839x_eth_set_multicast_list(struct net_device *ndev)
 	}
 }
 
-static void rtl930x_eth_set_multicast_list(struct net_device *ndev)
+static void rteth_930x_set_rx_mode(struct net_device *ndev)
 {
 	/* Flood all classes of RMA addresses (01-80-C2-00-00-{01..2F})
 	 * CTRL_0_FULL = GENMASK(31, 2) = 0xFFFFFFFC
@@ -1403,13 +1403,13 @@ static int rteth_set_link_ksettings(struct net_device *ndev,
 	return phylink_ethtool_ksettings_set(ctrl->phylink, cmd);
 }
 
-static netdev_features_t rtl838x_fix_features(struct net_device *dev,
+static netdev_features_t rteth_fix_features(struct net_device *dev,
 					      netdev_features_t features)
 {
 	return features;
 }
 
-static int rtl83xx_set_features(struct net_device *dev, netdev_features_t features)
+static int rteth_83xx_set_features(struct net_device *dev, netdev_features_t features)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
 
@@ -1423,7 +1423,7 @@ static int rtl83xx_set_features(struct net_device *dev, netdev_features_t featur
 	return 0;
 }
 
-static int rtl93xx_set_features(struct net_device *dev, netdev_features_t features)
+static int rteth_93xx_set_features(struct net_device *dev, netdev_features_t features)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
 
@@ -1453,10 +1453,10 @@ static const struct net_device_ops rteth_838x_netdev_ops = {
 	.ndo_select_queue = rteth_83xx_pick_tx_queue,
 	.ndo_set_mac_address = rteth_set_mac_address,
 	.ndo_validate_addr = eth_validate_addr,
-	.ndo_set_rx_mode = rtl838x_eth_set_multicast_list,
+	.ndo_set_rx_mode = rteth_838x_set_rx_mode,
 	.ndo_tx_timeout = rteth_tx_timeout,
-	.ndo_set_features = rtl83xx_set_features,
-	.ndo_fix_features = rtl838x_fix_features,
+	.ndo_set_features = rteth_83xx_set_features,
+	.ndo_fix_features = rteth_fix_features,
 	.ndo_setup_tc = rtl83xx_setup_tc,
 };
 
@@ -1496,10 +1496,10 @@ static const struct net_device_ops rteth_839x_netdev_ops = {
 	.ndo_select_queue = rteth_83xx_pick_tx_queue,
 	.ndo_set_mac_address = rteth_set_mac_address,
 	.ndo_validate_addr = eth_validate_addr,
-	.ndo_set_rx_mode = rtl839x_eth_set_multicast_list,
+	.ndo_set_rx_mode = rteth_839x_set_rx_mode,
 	.ndo_tx_timeout = rteth_tx_timeout,
-	.ndo_set_features = rtl83xx_set_features,
-	.ndo_fix_features = rtl838x_fix_features,
+	.ndo_set_features = rteth_83xx_set_features,
+	.ndo_fix_features = rteth_fix_features,
 	.ndo_setup_tc = rtl83xx_setup_tc,
 };
 
@@ -1539,10 +1539,10 @@ static const struct net_device_ops rteth_930x_netdev_ops = {
 	.ndo_select_queue = rteth_93xx_pick_tx_queue,
 	.ndo_set_mac_address = rteth_set_mac_address,
 	.ndo_validate_addr = eth_validate_addr,
-	.ndo_set_rx_mode = rtl930x_eth_set_multicast_list,
+	.ndo_set_rx_mode = rteth_930x_set_rx_mode,
 	.ndo_tx_timeout = rteth_tx_timeout,
-	.ndo_set_features = rtl93xx_set_features,
-	.ndo_fix_features = rtl838x_fix_features,
+	.ndo_set_features = rteth_93xx_set_features,
+	.ndo_fix_features = rteth_fix_features,
 	.ndo_setup_tc = rtl83xx_setup_tc,
 };
 
@@ -1590,8 +1590,8 @@ static const struct net_device_ops rteth_931x_netdev_ops = {
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_set_rx_mode = rtl931x_eth_set_multicast_list,
 	.ndo_tx_timeout = rteth_tx_timeout,
-	.ndo_set_features = rtl93xx_set_features,
-	.ndo_fix_features = rtl838x_fix_features,
+	.ndo_set_features = rteth_93xx_set_features,
+	.ndo_fix_features = rteth_fix_features,
 };
 
 static const struct rteth_config rteth_931x_cfg = {
