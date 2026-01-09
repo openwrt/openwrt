@@ -91,7 +91,7 @@ struct notify_b {
 	u32			reserved2[8];
 };
 
-static void rtl838x_create_tx_header(struct p_hdr *h, unsigned int dest_port, int prio)
+static void rteth_838x_create_tx_header(struct p_hdr *h, unsigned int dest_port, int prio)
 {
 	/* cpu_tag[0] is reserved on the RTL83XX SoCs */
 	h->cpu_tag[1] = 0x0400;  /* BIT 10: RTL8380_CPU_TAG */
@@ -105,7 +105,7 @@ static void rtl838x_create_tx_header(struct p_hdr *h, unsigned int dest_port, in
 		h->cpu_tag[2] |= ((prio & 0x7) | BIT(3)) << 12;
 }
 
-static void rtl839x_create_tx_header(struct p_hdr *h, unsigned int dest_port, int prio)
+static void rteth_839x_create_tx_header(struct p_hdr *h, unsigned int dest_port, int prio)
 {
 	/* cpu_tag[0] is reserved on the RTL83XX SoCs */
 	h->cpu_tag[1] = 0x0100; /* RTL8390_CPU_TAG marker */
@@ -126,7 +126,7 @@ static void rtl839x_create_tx_header(struct p_hdr *h, unsigned int dest_port, in
 		h->cpu_tag[2] |= ((prio & 0x7) | BIT(3)) << 8;
 }
 
-static void rtl930x_create_tx_header(struct p_hdr *h, unsigned int dest_port, int prio)
+static void rteth_930x_create_tx_header(struct p_hdr *h, unsigned int dest_port, int prio)
 {
 	h->cpu_tag[0] = 0x8000;  /* CPU tag marker */
 
@@ -145,7 +145,7 @@ static void rtl930x_create_tx_header(struct p_hdr *h, unsigned int dest_port, in
 		h->cpu_tag[2] = (BIT(5) | (prio & 0x1f)) << 8;
 }
 
-static void rtl931x_create_tx_header(struct p_hdr *h, unsigned int dest_port, int prio)
+static void rteth_931x_create_tx_header(struct p_hdr *h, unsigned int dest_port, int prio)
 {
 	h->cpu_tag[0] = 0x8000;  /* CPU tag marker */
 
@@ -239,7 +239,7 @@ struct dsa_tag {
 	bool	crc_error;
 };
 
-static bool rtl838x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
+static bool rteth_838x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 {
 	/* cpu_tag[0] is reserved. Fields are off-by-one */
 	t->reason = h->cpu_tag[4] & 0xf;
@@ -256,7 +256,7 @@ static bool rtl838x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 	return t->l2_offloaded;
 }
 
-static bool rtl839x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
+static bool rteth_839x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 {
 	/* cpu_tag[0] is reserved. Fields are off-by-one */
 	t->reason = h->cpu_tag[5] & 0x1f;
@@ -274,7 +274,7 @@ static bool rtl839x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 	return t->l2_offloaded;
 }
 
-static bool rtl930x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
+static bool rteth_930x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 {
 	t->reason = h->cpu_tag[7] & 0x3f;
 	t->queue =  (h->cpu_tag[2] >> 11) & 0x1f;
@@ -290,7 +290,7 @@ static bool rtl930x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 	return t->l2_offloaded;
 }
 
-static bool rtl931x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
+static bool rteth_931x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 {
 	t->reason = h->cpu_tag[7] & 0x3f;
 	t->queue =  (h->cpu_tag[2] >> 11) & 0x1f;
@@ -1483,8 +1483,8 @@ static const struct rteth_config rteth_838x_cfg = {
 	.mac = RTL838X_MAC,
 	.l2_tbl_flush_ctrl = RTL838X_L2_TBL_FLUSH_CTRL,
 	.update_cntr = rtl838x_update_cntr,
-	.create_tx_header = rtl838x_create_tx_header,
-	.decode_tag = rtl838x_decode_tag,
+	.create_tx_header = rteth_838x_create_tx_header,
+	.decode_tag = rteth_838x_decode_tag,
 	.init_mac = &rteth_838x_init_mac,
 	.netdev_ops = &rteth_838x_netdev_ops,
 };
@@ -1526,8 +1526,8 @@ static const struct rteth_config rteth_839x_cfg = {
 	.mac = RTL839X_MAC,
 	.l2_tbl_flush_ctrl = RTL839X_L2_TBL_FLUSH_CTRL,
 	.update_cntr = rtl839x_update_cntr,
-	.create_tx_header = rtl839x_create_tx_header,
-	.decode_tag = rtl839x_decode_tag,
+	.create_tx_header = rteth_839x_create_tx_header,
+	.decode_tag = rteth_839x_decode_tag,
 	.init_mac = &rteth_839x_init_mac,
 	.netdev_ops = &rteth_839x_netdev_ops,
 };
@@ -1575,8 +1575,8 @@ static const struct rteth_config rteth_930x_cfg = {
 	.mac = RTL930X_MAC_L2_ADDR_CTRL,
 	.l2_tbl_flush_ctrl = RTL930X_L2_TBL_FLUSH_CTRL,
 	.update_cntr = rtl930x_update_cntr,
-	.create_tx_header = rtl930x_create_tx_header,
-	.decode_tag = rtl930x_decode_tag,
+	.create_tx_header = rteth_930x_create_tx_header,
+	.decode_tag = rteth_930x_decode_tag,
 	.init_mac = &rteth_930x_init_mac,
 	.netdev_ops = &rteth_930x_netdev_ops,
 };
@@ -1623,8 +1623,8 @@ static const struct rteth_config rteth_931x_cfg = {
 	.mac = RTL931X_MAC_L2_ADDR_CTRL,
 	.l2_tbl_flush_ctrl = RTL931X_L2_TBL_FLUSH_CTRL,
 	.update_cntr = rtl931x_update_cntr,
-	.create_tx_header = rtl931x_create_tx_header,
-	.decode_tag = rtl931x_decode_tag,
+	.create_tx_header = rteth_931x_create_tx_header,
+	.decode_tag = rteth_931x_decode_tag,
 	.init_mac = &rteth_931x_init_mac,
 	.netdev_ops = &rteth_931x_netdev_ops,
 };
