@@ -180,6 +180,18 @@ define Device/friendlyarm_nanopi-r76s
 endef
 TARGET_DEVICES += friendlyarm_nanopi-r76s
 
+define Device/hinlink_opc-h28k
+  $(Device/rk3528)
+  DEVICE_VENDOR := HINLINK
+  DEVICE_MODEL := OPC-H28K
+  DEVICE_ALT0_VENDOR := LinkStar
+  DEVICE_ALT0_MODEL := H28K
+  DEVICE_DTS := rk3528-opc-h28k
+  UBOOT_DEVICE_NAME := generic-rk3528
+  DEVICE_PACKAGES := kmod-r8169
+endef
+TARGET_DEVICES += hinlink_opc-h28k
+
 define Device/linkease_easepi-r1
   $(Device/rk3568)
   DEVICE_VENDOR := LinkEase
