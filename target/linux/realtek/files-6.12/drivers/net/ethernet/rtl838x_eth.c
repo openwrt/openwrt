@@ -1285,7 +1285,7 @@ static void rteth_mac_link_up(struct phylink_config *config,
 	sw_w32_mask(0, 0x03, ctrl->r->mac_port_ctrl(ctrl->r->cpu_port));
 }
 
-static void rtl838x_set_mac_hw(struct net_device *dev, u8 *mac)
+static void rteth_set_mac_hw(struct net_device *dev, u8 *mac)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
 	unsigned long flags;
@@ -1308,7 +1308,7 @@ static void rtl838x_set_mac_hw(struct net_device *dev, u8 *mac)
 	spin_unlock_irqrestore(&ctrl->lock, flags);
 }
 
-static int rtl838x_set_mac_address(struct net_device *dev, void *p)
+static int rteth_set_mac_address(struct net_device *dev, void *p)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
 	const struct sockaddr *addr = p;
@@ -1318,7 +1318,7 @@ static int rtl838x_set_mac_address(struct net_device *dev, void *p)
 		return -EADDRNOTAVAIL;
 
 	dev_addr_set(dev, addr->sa_data);
-	rtl838x_set_mac_hw(dev, mac);
+	rteth_set_mac_hw(dev, mac);
 
 	pr_info("Using MAC %08x%08x\n", sw_r32(ctrl->r->mac), sw_r32(ctrl->r->mac + 4));
 
@@ -1451,7 +1451,7 @@ static const struct net_device_ops rteth_838x_netdev_ops = {
 	.ndo_stop = rtl838x_eth_stop,
 	.ndo_start_xmit = rtl838x_eth_tx,
 	.ndo_select_queue = rtl83xx_pick_tx_queue,
-	.ndo_set_mac_address = rtl838x_set_mac_address,
+	.ndo_set_mac_address = rteth_set_mac_address,
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_set_rx_mode = rtl838x_eth_set_multicast_list,
 	.ndo_tx_timeout = rtl838x_eth_tx_timeout,
@@ -1494,7 +1494,7 @@ static const struct net_device_ops rteth_839x_netdev_ops = {
 	.ndo_stop = rtl838x_eth_stop,
 	.ndo_start_xmit = rtl838x_eth_tx,
 	.ndo_select_queue = rtl83xx_pick_tx_queue,
-	.ndo_set_mac_address = rtl838x_set_mac_address,
+	.ndo_set_mac_address = rteth_set_mac_address,
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_set_rx_mode = rtl839x_eth_set_multicast_list,
 	.ndo_tx_timeout = rtl838x_eth_tx_timeout,
@@ -1537,7 +1537,7 @@ static const struct net_device_ops rteth_930x_netdev_ops = {
 	.ndo_stop = rtl838x_eth_stop,
 	.ndo_start_xmit = rtl838x_eth_tx,
 	.ndo_select_queue = rtl93xx_pick_tx_queue,
-	.ndo_set_mac_address = rtl838x_set_mac_address,
+	.ndo_set_mac_address = rteth_set_mac_address,
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_set_rx_mode = rtl930x_eth_set_multicast_list,
 	.ndo_tx_timeout = rtl838x_eth_tx_timeout,
@@ -1586,7 +1586,7 @@ static const struct net_device_ops rteth_931x_netdev_ops = {
 	.ndo_stop = rtl838x_eth_stop,
 	.ndo_start_xmit = rtl838x_eth_tx,
 	.ndo_select_queue = rtl93xx_pick_tx_queue,
-	.ndo_set_mac_address = rtl838x_set_mac_address,
+	.ndo_set_mac_address = rteth_set_mac_address,
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_set_rx_mode = rtl931x_eth_set_multicast_list,
 	.ndo_tx_timeout = rtl838x_eth_tx_timeout,
@@ -1731,7 +1731,7 @@ static int rtl838x_eth_probe(struct platform_device *pdev)
 		return err;
 
 	if (is_valid_ether_addr(mac_addr)) {
-		rtl838x_set_mac_hw(dev, mac_addr);
+		rteth_set_mac_hw(dev, mac_addr);
 	} else {
 		mac_addr[0] = (sw_r32(ctrl->r->mac) >> 8) & 0xff;
 		mac_addr[1] = sw_r32(ctrl->r->mac) & 0xff;
@@ -1748,7 +1748,7 @@ static int rtl838x_eth_probe(struct platform_device *pdev)
 		netdev_warn(dev, "Invalid MAC address, using random\n");
 		eth_hw_addr_random(dev);
 		memcpy(sa.sa_data, dev->dev_addr, ETH_ALEN);
-		if (rtl838x_set_mac_address(dev, &sa))
+		if (rteth_set_mac_address(dev, &sa))
 			netdev_warn(dev, "Failed to set MAC address.\n");
 	}
 	pr_info("Using MAC %08x%08x\n", sw_r32(ctrl->r->mac),
