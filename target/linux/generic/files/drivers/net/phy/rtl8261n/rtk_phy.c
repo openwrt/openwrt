@@ -310,7 +310,7 @@ static struct phy_driver rtk_phy_drivers[] = {
 module_phy_driver(rtk_phy_drivers);
 
 
-static struct mdio_device_id __maybe_unused rtk_phy_tbl[] = {
+static const struct mdio_device_id __maybe_unused rtk_phy_tbl[] = {
     { PHY_ID_MATCH_EXACT(REALTEK_PHY_ID_RTL8261N) },
     { PHY_ID_MATCH_EXACT(REALTEK_PHY_ID_RTL8264B) },
     { PHY_ID_MATCH_EXACT(REALTEK_PHY_ID_RTL8264) },
