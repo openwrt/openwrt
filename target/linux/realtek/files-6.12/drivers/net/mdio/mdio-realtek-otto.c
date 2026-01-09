@@ -788,7 +788,6 @@ static int rtmdio_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 	return 0;
 }
 
-__maybe_unused
 static void rtmdio_get_phy_info(struct mii_bus *bus, int addr, struct rtmdio_phy_info *phyinfo)
 {
 	struct rtmdio_bus_priv *priv = bus->priv;
@@ -868,89 +867,68 @@ static int rtmdio_839x_reset(struct mii_bus *bus)
 	return 0;
 }
 
-u8 mac_type_bit[RTMDIO_MAX_PORT] = {0, 0, 0, 0, 2, 2, 2, 2, 4, 4, 4, 4, 6, 6, 6, 6,
-				    8, 8, 8, 8, 10, 10, 10, 10, 12, 15, 18, 21};
-
 static int rtmdio_930x_reset(struct mii_bus *bus)
 {
 	struct rtmdio_bus_priv *priv = bus->priv;
-	bool uses_usxgmii = false; /* For the Aquantia PHYs */
-	bool uses_hisgmii = false; /* For the RTL8221/8226 */
-	u32 private_poll_mask = 0;
-	u32 poll_sel[2] = { 0 };
-	u32 poll_ctrl = 0;
-	u32 c45_mask = 0;
-	u32 v = 0;
+	struct rtmdio_phy_info phyinfo;
+	unsigned int reg, mask, val;
 
 	/* Define bus topology */
 	for (int addr = 0; addr < priv->cfg->cpu_port; addr++) {
-		int pos;
-
 		if (priv->smi_bus[addr] < 0)
 			continue;
 
-		pos = (addr % 6) * 5;
-		sw_w32_mask(0x1f << pos, priv->smi_addr[addr] << pos,
-			    RTMDIO_930X_SMI_PORT0_5_ADDR + (addr / 6) * 4);
+		reg = (addr / 6) * 4;
+		mask = 0x1f << ((addr % 6) * 5);
+		val = priv->smi_addr[addr] << (ffs(mask) - 1);
+		sw_w32_mask(mask, val, RTMDIO_930X_SMI_PORT0_5_ADDR + reg);
 
-		pos = (addr * 2) % 32;
-		poll_sel[addr / 16] |= priv->smi_bus[addr] << pos;
-		poll_ctrl |= BIT(20 + priv->smi_bus[addr]);
+		reg = (addr / 16) * 4;
+		mask = 0x3 << ((addr % 16) * 2);
+		val = priv->smi_bus[addr] << (ffs(mask) - 1);
+		sw_w32_mask(mask, val, RTMDIO_930X_SMI_PORT0_15_POLLING_SEL + reg);
 	}
 
-	/* Configure which SMI bus is behind which port number */
-	sw_w32(poll_sel[0], RTMDIO_930X_SMI_PORT0_15_POLLING_SEL);
-	sw_w32(poll_sel[1], RTMDIO_930X_SMI_PORT16_27_POLLING_SEL);
-
-	/* Disable POLL_SEL for any SMI bus with a normal PHY (not RTL8295R for SFP+) */
-	sw_w32_mask(poll_ctrl, 0, RTMDIO_930X_SMI_GLB_CTRL);
-
 	/* Define c22/c45 bus polling */
-	for (int addr = 0; addr < RTMDIO_MAX_SMI_BUS; addr++)
-		if (priv->smi_bus_isc45[addr])
-			c45_mask |= BIT(addr + 16);
-
-	pr_info("c45_mask: %08x\n", c45_mask);
-	sw_w32_mask(GENMASK(19, 16), c45_mask, RTMDIO_930X_SMI_GLB_CTRL);
+	for (int addr = 0; addr < RTMDIO_MAX_SMI_BUS; addr++) {
+		mask = BIT(16 + addr);
+		val = priv->smi_bus_isc45[addr] ? mask : 0;
+		sw_w32_mask(mask, val, RTMDIO_930X_SMI_GLB_CTRL);
+	}
 
 	/* Define PHY specific polling parameters */
 	for (int addr = 0; addr < priv->cfg->cpu_port; addr++) {
 		if (priv->smi_bus[addr] < 0)
 			continue;
 
-		switch (priv->interfaces[addr]) {
-		case PHY_INTERFACE_MODE_10GBASER:
-			break;			/* Serdes: Value = 0 */
-		case PHY_INTERFACE_MODE_USXGMII:
-			v |= BIT(mac_type_bit[addr]);
-			uses_usxgmii = true;
-			break;
-		case PHY_INTERFACE_MODE_QSGMII:
-			private_poll_mask |= BIT(addr);
-			v |= 3 << mac_type_bit[addr];
-			break;
-		default:
-			break;
+		rtmdio_get_phy_info(bus, addr, &phyinfo);
+		if (phyinfo.phy_unknown) {
+			pr_warn("skip polling setup for unknown PHY %08x on port %d\n",
+				phyinfo.phy_id, addr);
+			continue;
 		}
-	}
-	sw_w32(v, RTMDIO_930X_SMI_MAC_TYPE_CTRL);
 
-	/* Set the private polling mask for all Realtek PHYs (i.e. not the 10GBit Aquantia ones) */
-	sw_w32(private_poll_mask, RTMDIO_930X_SMI_PRVTE_POLLING_CTRL);
+		/* port MAC type */
+		mask = addr > 23 ? 0x7 << ((addr - 24) * 3 + 12): 0x3 << ((addr / 4) * 2);
+		val = phyinfo.mac_type << (ffs(mask) - 1);
+		sw_w32_mask(mask, val, RTMDIO_930X_SMI_MAC_TYPE_CTRL);
 
-	/* The following magic values are found in the port configuration, they seem to
-	 * define different ways of polling a PHY. The below is for the Aquantia PHYs of
-	 * the XGS1250 and the RTL8226 of the XGS1210
-	 */
-	if (uses_usxgmii) {
-		sw_w32(0x01010000, RTMDIO_930X_SMI_10G_POLLING_REG0_CFG);
-		sw_w32(0x01E7C400, RTMDIO_930X_SMI_10G_POLLING_REG9_CFG);
-		sw_w32(0x01E7E820, RTMDIO_930X_SMI_10G_POLLING_REG10_CFG);
-	}
-	if (uses_hisgmii) {
-		sw_w32(0x011FA400, RTMDIO_930X_SMI_10G_POLLING_REG0_CFG);
-		sw_w32(0x013FA412, RTMDIO_930X_SMI_10G_POLLING_REG9_CFG);
-		sw_w32(0x017FA414, RTMDIO_930X_SMI_10G_POLLING_REG10_CFG);
+		/* polling via standard or resolution register */
+		mask = BIT(20 + priv->smi_bus[addr]);
+		val = phyinfo.has_res_reg ? mask : 0;
+		sw_w32_mask(mask, val, RTMDIO_930X_SMI_GLB_CTRL);
+
+		/* proprietary Realtek 1G/2.5 lite polling */
+		mask = BIT(addr);
+		val = phyinfo.has_giga_lite ? mask : 0;
+		sw_w32_mask(mask, val, RTMDIO_930X_SMI_PRVTE_POLLING_CTRL);
+
+		/* special duplex/advertisement polling registers */
+		if (phyinfo.poll_duplex || phyinfo.poll_adv_1000 || phyinfo.poll_lpa_1000) {
+			sw_w32(phyinfo.poll_duplex, RTMDIO_930X_SMI_10G_POLLING_REG0_CFG);
+			sw_w32(phyinfo.poll_adv_1000, RTMDIO_930X_SMI_10G_POLLING_REG9_CFG);
+			sw_w32(phyinfo.poll_lpa_1000, RTMDIO_930X_SMI_10G_POLLING_REG10_CFG);
+		}
 	}
 
 	pr_debug("%s: RTMDIO_930X_SMI_GLB_CTRL %08x\n", __func__,
