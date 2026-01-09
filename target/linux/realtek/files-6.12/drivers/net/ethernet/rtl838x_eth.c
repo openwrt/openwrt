@@ -909,7 +909,7 @@ static void rtl931x_eth_set_multicast_list(struct net_device *ndev)
 	}
 }
 
-static void rtl838x_eth_tx_timeout(struct net_device *ndev, unsigned int txqueue)
+static void rteth_tx_timeout(struct net_device *ndev, unsigned int txqueue)
 {
 	unsigned long flags;
 	struct rteth_ctrl *ctrl = netdev_priv(ndev);
@@ -924,7 +924,7 @@ static void rtl838x_eth_tx_timeout(struct net_device *ndev, unsigned int txqueue
 	spin_unlock_irqrestore(&ctrl->lock, flags);
 }
 
-static int rtl838x_eth_tx(struct sk_buff *skb, struct net_device *dev)
+static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	int len;
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
@@ -1023,7 +1023,7 @@ txdone:
 /* Return queue number for TX. On the RTL83XX, these queues have equal priority
  * so we do round-robin
  */
-static u16 rtl83xx_pick_tx_queue(struct net_device *dev, struct sk_buff *skb,
+static u16 rteth_83xx_pick_tx_queue(struct net_device *dev, struct sk_buff *skb,
 				 struct net_device *sb_dev)
 {
 	static u8 last;
@@ -1034,7 +1034,7 @@ static u16 rtl83xx_pick_tx_queue(struct net_device *dev, struct sk_buff *skb,
 
 /* Return queue number for TX. On the RTL93XX, queue 1 is the high priority queue
  */
-static u16 rtl93xx_pick_tx_queue(struct net_device *dev, struct sk_buff *skb,
+static u16 rteth_93xx_pick_tx_queue(struct net_device *dev, struct sk_buff *skb,
 				 struct net_device *sb_dev)
 {
 	if (skb->priority >= TC_PRIO_CONTROL)
@@ -1449,12 +1449,12 @@ static struct phylink_pcs *rteth_mac_select_pcs(struct phylink_config *config,
 static const struct net_device_ops rteth_838x_netdev_ops = {
 	.ndo_open = rtl838x_eth_open,
 	.ndo_stop = rtl838x_eth_stop,
-	.ndo_start_xmit = rtl838x_eth_tx,
-	.ndo_select_queue = rtl83xx_pick_tx_queue,
+	.ndo_start_xmit = rteth_start_xmit,
+	.ndo_select_queue = rteth_83xx_pick_tx_queue,
 	.ndo_set_mac_address = rteth_set_mac_address,
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_set_rx_mode = rtl838x_eth_set_multicast_list,
-	.ndo_tx_timeout = rtl838x_eth_tx_timeout,
+	.ndo_tx_timeout = rteth_tx_timeout,
 	.ndo_set_features = rtl83xx_set_features,
 	.ndo_fix_features = rtl838x_fix_features,
 	.ndo_setup_tc = rtl83xx_setup_tc,
@@ -1492,12 +1492,12 @@ static const struct rteth_config rteth_838x_cfg = {
 static const struct net_device_ops rteth_839x_netdev_ops = {
 	.ndo_open = rtl838x_eth_open,
 	.ndo_stop = rtl838x_eth_stop,
-	.ndo_start_xmit = rtl838x_eth_tx,
-	.ndo_select_queue = rtl83xx_pick_tx_queue,
+	.ndo_start_xmit = rteth_start_xmit,
+	.ndo_select_queue = rteth_83xx_pick_tx_queue,
 	.ndo_set_mac_address = rteth_set_mac_address,
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_set_rx_mode = rtl839x_eth_set_multicast_list,
-	.ndo_tx_timeout = rtl838x_eth_tx_timeout,
+	.ndo_tx_timeout = rteth_tx_timeout,
 	.ndo_set_features = rtl83xx_set_features,
 	.ndo_fix_features = rtl838x_fix_features,
 	.ndo_setup_tc = rtl83xx_setup_tc,
@@ -1535,12 +1535,12 @@ static const struct rteth_config rteth_839x_cfg = {
 static const struct net_device_ops rteth_930x_netdev_ops = {
 	.ndo_open = rtl838x_eth_open,
 	.ndo_stop = rtl838x_eth_stop,
-	.ndo_start_xmit = rtl838x_eth_tx,
-	.ndo_select_queue = rtl93xx_pick_tx_queue,
+	.ndo_start_xmit = rteth_start_xmit,
+	.ndo_select_queue = rteth_93xx_pick_tx_queue,
 	.ndo_set_mac_address = rteth_set_mac_address,
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_set_rx_mode = rtl930x_eth_set_multicast_list,
-	.ndo_tx_timeout = rtl838x_eth_tx_timeout,
+	.ndo_tx_timeout = rteth_tx_timeout,
 	.ndo_set_features = rtl93xx_set_features,
 	.ndo_fix_features = rtl838x_fix_features,
 	.ndo_setup_tc = rtl83xx_setup_tc,
@@ -1584,12 +1584,12 @@ static const struct rteth_config rteth_930x_cfg = {
 static const struct net_device_ops rteth_931x_netdev_ops = {
 	.ndo_open = rtl838x_eth_open,
 	.ndo_stop = rtl838x_eth_stop,
-	.ndo_start_xmit = rtl838x_eth_tx,
-	.ndo_select_queue = rtl93xx_pick_tx_queue,
+	.ndo_start_xmit = rteth_start_xmit,
+	.ndo_select_queue = rteth_93xx_pick_tx_queue,
 	.ndo_set_mac_address = rteth_set_mac_address,
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_set_rx_mode = rtl931x_eth_set_multicast_list,
-	.ndo_tx_timeout = rtl838x_eth_tx_timeout,
+	.ndo_tx_timeout = rteth_tx_timeout,
 	.ndo_set_features = rtl93xx_set_features,
 	.ndo_fix_features = rtl838x_fix_features,
 };
