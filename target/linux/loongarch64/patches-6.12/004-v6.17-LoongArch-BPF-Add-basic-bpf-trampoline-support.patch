@@ -61,7 +61,7 @@ Signed-off-by: Huacai Chen <chenhuacai@loongson.cn>
  #define REG_TCC		LOONGARCH_GPR_A6
  #define TCC_SAVED	LOONGARCH_GPR_S5
  
-@@ -1222,6 +1228,11 @@ static int emit_jump_or_nops(void *targe
+@@ -1240,6 +1246,11 @@ static int emit_jump_or_nops(void *targe
  	return emit_jump_and_link(&ctx, is_call ? LOONGARCH_GPR_T0 : LOONGARCH_GPR_ZERO, (u64)target);
  }
  
@@ -73,7 +73,7 @@ Signed-off-by: Huacai Chen <chenhuacai@loongson.cn>
  void *bpf_arch_text_copy(void *dst, void *src, size_t len)
  {
  	int ret;
-@@ -1287,6 +1298,372 @@ int bpf_arch_text_invalidate(void *dst,
+@@ -1305,6 +1316,372 @@ int bpf_arch_text_invalidate(void *dst,
  	return ret;
  }
  
@@ -456,7 +456,7 @@ Signed-off-by: Huacai Chen <chenhuacai@loongson.cn>
  	u32 stack_size;
  };
  
-@@ -308,3 +309,8 @@ static inline int emit_tailcall_jmp(stru
+@@ -334,3 +335,8 @@ static inline int emit_tailcall_jmp(stru
  
  	return -EINVAL;
  }
