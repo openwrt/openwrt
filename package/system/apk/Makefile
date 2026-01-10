@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=apk
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_URL=https://gitlab.alpinelinux.org/alpine/apk-tools.git
 PKG_SOURCE_PROTO:=git
@@ -26,7 +26,7 @@ define Package/apk/default
   SECTION:=base
   CATEGORY:=Base system
   TITLE:=apk package manager
-  DEPENDS:=+zlib +wget
+  DEPENDS:=+zlib +wget-any
   URL:=$(PKG_SOURCE_URL)
   PROVIDES:=apk
 endef
