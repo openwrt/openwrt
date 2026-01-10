@@ -801,6 +801,7 @@ static int rtmdio_930x_reset(struct mii_bus *bus)
 	struct rtmdio_bus_priv *priv = bus->priv;
 	bool uses_usxgmii = false; /* For the Aquantia PHYs */
 	bool uses_hisgmii = false; /* For the RTL8221/8226 */
+	bool uses_10g_qxgmii = false; /* For the RTL8224 */
 	u32 private_poll_mask = 0;
 	u32 poll_sel[2] = { 0 };
 	u32 poll_ctrl = 0;
@@ -849,6 +850,11 @@ static int rtmdio_930x_reset(struct mii_bus *bus)
 			v |= BIT(mac_type_bit[i]);
 			uses_usxgmii = true;
 			break;
+		case PHY_INTERFACE_MODE_10G_QXGMII:
+			private_poll_mask |= BIT(i);
+			v |= BIT(mac_type_bit[i]);
+			uses_10g_qxgmii = true;
+			break;
 		case PHY_INTERFACE_MODE_QSGMII:
 			private_poll_mask |= BIT(i);
 			v |= 3 << mac_type_bit[i];
@@ -864,14 +870,14 @@ static int rtmdio_930x_reset(struct mii_bus *bus)
 
 	/* The following magic values are found in the port configuration, they seem to
 	 * define different ways of polling a PHY. The below is for the Aquantia PHYs of
-	 * the XGS1250 and the RTL8226 of the XGS1210
+	 * the XGS1250, the RTL8226 of the XGS1210 and the RTL8224 of the XMG1915.
 	 */
 	if (uses_usxgmii) {
 		sw_w32(0x01010000, RTMDIO_930X_SMI_10G_POLLING_REG0_CFG);
 		sw_w32(0x01E7C400, RTMDIO_930X_SMI_10G_POLLING_REG9_CFG);
 		sw_w32(0x01E7E820, RTMDIO_930X_SMI_10G_POLLING_REG10_CFG);
 	}
-	if (uses_hisgmii) {
+	if (uses_hisgmii | uses_10g_qxgmii) {
 		sw_w32(0x011FA400, RTMDIO_930X_SMI_10G_POLLING_REG0_CFG);
 		sw_w32(0x013FA412, RTMDIO_930X_SMI_10G_POLLING_REG9_CFG);
 		sw_w32(0x017FA414, RTMDIO_930X_SMI_10G_POLLING_REG10_CFG);
