@@ -3,6 +3,7 @@
 [ -x /sbin/udhcpc ] || exit 0
 
 . /lib/functions.sh
+. /lib/functions/network.sh
 . ../netifd-proto.sh
 . /lib/config/uci.sh
 init_proto "$@"
@@ -37,11 +38,11 @@ proto_dhcp_get_default_clientid() {
 
 	local iface="$1"
 	local duid
-	local iaid="0"
+	local iaid
 
-        [ -e "/sys/class/net/$iface/ifindex" ] && iaid="$(cat "/sys/class/net/$iface/ifindex")"
-        duid="$(uci_get network @globals[0] dhcp_default_duid)"
-        [ -n "$duid" ] && printf "ff%08x%s" "$iaid" "$duid"
+	network_generate_iface_iaid iaid "$iface"
+	duid="$(uci_get network @globals[0] dhcp_default_duid)"
+	[ -n "$duid" ] && printf "ff%s%s" "$iaid" "$duid"
 }
 
 proto_dhcp_setup() {
