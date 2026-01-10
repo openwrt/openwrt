@@ -1,4 +1,4 @@
-From d137b725f8f4a7d49a809dcd73c5b836495ec44d Mon Sep 17 00:00:00 2001
+From 94540ce4131c873e9294088f29230fdac8e97081 Mon Sep 17 00:00:00 2001
 From: Luo Jie <quic_luoj@quicinc.com>
 Date: Mon, 23 Sep 2024 20:59:40 +0800
 Subject: [PATCH] net: phy: qca808x: Add QCA8084 SerDes init function
@@ -419,7 +419,7 @@ Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
  #endif /* _QCA8084_SERDES_H_ */
 --- a/drivers/net/phy/qcom/qca808x.c
 +++ b/drivers/net/phy/qcom/qca808x.c
-@@ -926,6 +926,14 @@ static int qca8084_phy_package_config_in
+@@ -947,6 +947,14 @@ static int qca8084_phy_package_config_in
  
  	usleep_range(10000, 11000);
  
@@ -434,7 +434,7 @@ Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
  	/* Initialize the PHY package clock and reset, which is the
  	 * necessary config sequence after GPIO reset on the PHY package.
  	 */
-@@ -1164,6 +1172,9 @@ static int qca8084_probe(struct phy_devi
+@@ -1185,6 +1193,9 @@ static int qca8084_probe(struct phy_devi
  
  static void qca8084_remove(struct phy_device *phydev)
  {

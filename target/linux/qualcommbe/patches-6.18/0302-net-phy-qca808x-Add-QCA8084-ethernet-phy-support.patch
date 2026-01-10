@@ -1,4 +1,4 @@
-From 60c44842f9611be237ab3f68afe8ebf2d9595fb2 Mon Sep 17 00:00:00 2001
+From a4466aa8e02626f95910e0ef1484e62e57317e4e Mon Sep 17 00:00:00 2001
 From: Luo Jie <quic_luoj@quicinc.com>
 Date: Thu, 6 Apr 2023 18:09:07 +0800
 Subject: [PATCH] net: phy: qca808x: Add QCA8084 ethernet phy support
@@ -46,7 +46,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  MODULE_LICENSE("GPL");
  
  struct qca808x_priv {
-@@ -153,13 +160,18 @@ static bool qca808x_is_prefer_master(str
+@@ -154,13 +161,18 @@ static bool qca808x_is_prefer_master(str
  
  static bool qca808x_has_fast_retrain_or_slave_seed(struct phy_device *phydev)
  {
@@ -66,7 +66,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  	ret = phy_read_mmd(phydev, MDIO_MMD_AN, QCA808X_PHY_MMD7_CHIP_TYPE);
  	if (ret < 0)
  		return true;
-@@ -273,6 +285,23 @@ static int qca808x_read_status(struct ph
+@@ -278,6 +290,23 @@ static int qca808x_read_status(struct ph
  		return ret;
  
  	if (phydev->link) {
@@ -90,7 +90,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  		if (phydev->speed == SPEED_2500)
  			phydev->interface = PHY_INTERFACE_MODE_2500BASEX;
  		else
-@@ -352,6 +381,18 @@ static int qca808x_cable_test_start(stru
+@@ -357,6 +386,18 @@ static int qca808x_cable_test_start(stru
  	phy_write_mmd(phydev, MDIO_MMD_PCS, 0x807a, 0xc060);
  	phy_write_mmd(phydev, MDIO_MMD_PCS, 0x807e, 0xb060);
  
@@ -109,10 +109,10 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  	return 0;
  }
  
-@@ -651,12 +692,32 @@ static struct phy_driver qca808x_driver[
- 	.led_hw_control_set	= qca808x_led_hw_control_set,
- 	.led_hw_control_get	= qca808x_led_hw_control_get,
+@@ -674,12 +715,32 @@ static struct phy_driver qca808x_driver[
  	.led_polarity_set	= qca808x_led_polarity_set,
+ 	.update_stats		= qca808x_update_stats,
+ 	.get_phy_stats		= qca808x_get_phy_stats,
 +}, {
 +	/* Qualcomm QCA8084 */
 +	PHY_ID_MATCH_MODEL(QCA8084_PHY_ID),
