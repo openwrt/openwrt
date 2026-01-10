@@ -1,0 +1,170 @@
+From 4e9b12d87c4a58f557f2b91cbf3a672ed04b9614 Mon Sep 17 00:00:00 2001
+From: Lei Wei <quic_leiwei@quicinc.com>
+Date: Wed, 5 Mar 2025 22:50:23 +0800
+Subject: [PATCH 619/636] arm64: dts: qcom: ipq5424: Add PCS device tree
+ support
+
+There are three PCS instances available in the IPQ5424 SoC. Each PCS
+enables one MII and connects with one PPE MAC port.
+
+Change-Id: I362fd7436dec97c4fdf5fd41c52c336f7e0c376b
+Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
+---
+ arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts | 36 ++++++++++
+ arch/arm64/boot/dts/qcom/ipq5424.dtsi       | 73 +++++++++++++++++++--
+ 2 files changed, 102 insertions(+), 7 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts b/arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts
+index 0705cbe33f25..00ea225f6f5e 100644
+--- a/arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts
++++ b/arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts
+@@ -79,6 +79,42 @@
+ 	status = "okay";
+ };
+ 
++&pcs0 {
++	 status = "okay";
++};
++
++&pcs0_mii0 {
++	clocks = <&nsscc NSS_CC_UNIPHY_PORT1_RX_CLK>,
++		 <&nsscc NSS_CC_UNIPHY_PORT1_TX_CLK>;
++	clock-names = "rx",
++		      "tx";
++	status = "okay";
++};
++
++&pcs1 {
++	status = "okay";
++};
++
++&pcs1_mii0 {
++	clocks = <&nsscc NSS_CC_UNIPHY_PORT2_RX_CLK>,
++		 <&nsscc NSS_CC_UNIPHY_PORT2_TX_CLK>;
++	clock-names = "rx",
++		      "tx";
++	status = "okay";
++};
++
++&pcs2 {
++	status = "okay";
++};
++
++&pcs2_mii0 {
++	clocks = <&nsscc NSS_CC_UNIPHY_PORT3_RX_CLK>,
++		 <&nsscc NSS_CC_UNIPHY_PORT3_TX_CLK>;
++	clock-names = "rx",
++		      "tx";
++	status = "okay";
++};
++
+ &qusb_phy_0 {
+ 	vdd-supply = <&vreg_misc_0p925>;
+ 	vdda-pll-supply = <&vreg_misc_1p8>;
+diff --git a/arch/arm64/boot/dts/qcom/ipq5424.dtsi b/arch/arm64/boot/dts/qcom/ipq5424.dtsi
+index 9d7fb5fcc12d..3670f19dd7dc 100644
+--- a/arch/arm64/boot/dts/qcom/ipq5424.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5424.dtsi
+@@ -9,6 +9,8 @@
+ #include <dt-bindings/interrupt-controller/arm-gic.h>
+ #include <dt-bindings/clock/qcom,ipq5424-cmn-pll.h>
+ #include <dt-bindings/clock/qcom,ipq5424-gcc.h>
++#include <dt-bindings/clock/qcom,ipq5424-nsscc.h>
++#include <dt-bindings/net/qcom,ipq9574-pcs.h>
+ #include <dt-bindings/reset/qcom,ipq5424-gcc.h>
+ #include <dt-bindings/interconnect/qcom,ipq5424.h>
+ #include <dt-bindings/gpio/gpio.h>
+@@ -484,6 +486,63 @@
+ 			};
+ 		};
+ 
++		pcs0: ethernet-pcs@7a00000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "qcom,ipq5424-pcs";
++			reg = <0 0x7a00000 0 0x10000>;
++			clocks = <&gcc GCC_UNIPHY0_SYS_CLK>,
++				 <&gcc GCC_UNIPHY0_AHB_CLK>;
++			clock-names = "sys",
++				      "ahb";
++			resets = <&gcc GCC_UNIPHY0_XPCS_ARES>;
++			#clock-cells = <1>;
++			status = "disabled";
++
++			pcs0_mii0: pcs-mii@0 {
++				reg = <0>;
++				status = "disabled";
++			};
++		};
++
++		pcs1: ethernet-pcs@7a10000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "qcom,ipq5424-pcs";
++			reg = <0 0x7a10000 0 0x10000>;
++			clocks = <&gcc GCC_UNIPHY1_SYS_CLK>,
++				 <&gcc GCC_UNIPHY1_AHB_CLK>;
++			clock-names = "sys",
++				      "ahb";
++			resets = <&gcc GCC_UNIPHY1_XPCS_ARES>;
++			#clock-cells = <1>;
++			status = "disabled";
++
++			pcs1_mii0: pcs-mii@0 {
++				reg = <0>;
++				status = "disabled";
++			};
++		};
++
++		pcs2: ethernet-pcs@7a20000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			compatible = "qcom,ipq5424-pcs";
++			reg = <0 0x7a20000 0 0x10000>;
++			clocks = <&gcc GCC_UNIPHY2_SYS_CLK>,
++				 <&gcc GCC_UNIPHY2_AHB_CLK>;
++			clock-names = "sys",
++				      "ahb";
++			resets = <&gcc GCC_UNIPHY2_XPCS_ARES>;
++			#clock-cells = <1>;
++			status = "disabled";
++
++			pcs2_mii0: pcs-mii@0 {
++				reg = <0>;
++				status = "disabled";
++			};
++		};
++
+ 		qusb_phy_0: phy@7b000 {
+ 			compatible = "qcom,ipq5424-qusb2-phy";
+ 			reg = <0 0x0007b000 0 0x180>;
+@@ -636,19 +695,19 @@
+ 			};
+ 		};
+ 
+-		clock-controller@39b00000 {
++		nsscc: clock-controller@39b00000 {
+ 			compatible = "qcom,ipq5424-nsscc";
+ 			reg = <0 0x39b00000 0 0x100000>;
+ 			clocks = <&cmn_pll IPQ5424_XO_24MHZ_CLK>,
+ 				 <&cmn_pll IPQ5424_NSS_300MHZ_CLK>,
+ 				 <&cmn_pll IPQ5424_PPE_375MHZ_CLK>,
+ 				 <&gcc GPLL0_OUT_AUX>,
+-				 <0>,
+-				 <0>,
+-				 <0>,
+-				 <0>,
+-				 <0>,
+-				 <0>,
++				 <&pcs0 PCS_RX_CLK>,
++				 <&pcs0 PCS_TX_CLK>,
++				 <&pcs1 PCS_RX_CLK>,
++				 <&pcs1 PCS_TX_CLK>,
++				 <&pcs2 PCS_RX_CLK>,
++				 <&pcs2 PCS_TX_CLK>,
+ 				 <&gcc GCC_NSSCC_CLK>;
+ 			clock-names = "xo",
+ 				      "nss",
+-- 
+2.34.1
+
