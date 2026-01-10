@@ -1,4 +1,4 @@
-From 57379fe257895b374d35ce6578ecd62ce1cc1a4d Mon Sep 17 00:00:00 2001
+From 3d5e5c940f98e6c627afe57123c4765c9306ca50 Mon Sep 17 00:00:00 2001
 From: Luo Jie <quic_luoj@quicinc.com>
 Date: Tue, 9 Apr 2024 16:30:55 +0800
 Subject: [PATCH] net: phy: qca808x: Add package clocks and resets for QCA8084
@@ -21,7 +21,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 
 --- a/drivers/net/phy/qcom/qca808x.c
 +++ b/drivers/net/phy/qcom/qca808x.c
-@@ -150,10 +150,39 @@ MODULE_DESCRIPTION("Qualcomm Atheros QCA
+@@ -150,11 +150,40 @@ MODULE_DESCRIPTION("Qualcomm Atheros QCA
  MODULE_AUTHOR("Matus Ujhelyi, Luo Jie");
  MODULE_LICENSE("GPL");
  
@@ -40,6 +40,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 +
  struct qca808x_priv {
  	int led_polarity_mode;
+ 	struct qcom_phy_hw_stats hw_stats;
  };
  
 +struct qca808x_shared_priv {
@@ -61,7 +62,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  static int __qca8084_set_page(struct mii_bus *bus, u16 sw_addr, u16 page)
  {
  	return __mdiobus_write(bus, QCA8084_HIGH_ADDR_PREFIX | (sw_addr >> 5),
-@@ -858,11 +887,24 @@ static void qca8084_link_change_notify(s
+@@ -879,11 +908,24 @@ static void qca8084_link_change_notify(s
  			       QCA8084_IPG_10_TO_11_EN : 0);
  }
  
@@ -87,7 +88,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  
  	/* Program the MDIO address of PHY and PCS optionally, the MDIO
  	 * address 0-6 is used for PHY and PCS MDIO devices by default.
-@@ -893,17 +935,43 @@ static int qca8084_phy_package_probe_onc
+@@ -914,17 +956,43 @@ static int qca8084_phy_package_probe_onc
  	set |= FIELD_PREP(QCA8084_PCS_ADDR1_MASK, addr[5]);
  	set |= FIELD_PREP(QCA8084_PCS_ADDR2_MASK, addr[6]);
  

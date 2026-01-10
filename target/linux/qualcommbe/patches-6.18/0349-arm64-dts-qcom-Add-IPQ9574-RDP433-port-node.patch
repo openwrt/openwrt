@@ -1,4 +1,4 @@
-From 001b663ecc5f838dac143623badae0e472749d8a Mon Sep 17 00:00:00 2001
+From c5a3d88f12a7ac9546f5ead061212f06ebaab740 Mon Sep 17 00:00:00 2001
 From: Lei Wei <quic_leiwei@quicinc.com>
 Date: Tue, 14 May 2024 10:53:27 +0800
 Subject: [PATCH] arm64: dts: qcom: Add IPQ9574 RDP433 port node
@@ -11,6 +11,8 @@ channel0.
 
 Change-Id: Ic16efdef2fe2cff7b1e80245619c0f82afb24cb9
 Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
+Alex G: Use "pcs<n>_ch0" labels instead of "pcsuniphy<n>_ch0"
+Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 ---
  arch/arm64/boot/dts/qcom/ipq9574-rdp433.dts | 167 ++++++++++++++++++++
  1 file changed, 167 insertions(+)
@@ -64,7 +66,7 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
  &tlmm {
  
  	pcie1_default: pcie1-default-state {
-@@ -161,3 +201,130 @@
+@@ -129,3 +169,130 @@
  		};
  	};
  };
@@ -83,15 +85,15 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
 +			clocks = <&nsscc NSS_CC_PORT1_MAC_CLK>,
 +				 <&nsscc NSS_CC_PORT1_RX_CLK>,
 +				 <&nsscc NSS_CC_PORT1_TX_CLK>;
-+			clock-names = "port_mac",
-+				      "port_rx",
-+				      "port_tx";
++			clock-names = "mac",
++				      "rx",
++				      "tx";
 +			resets = <&nsscc PORT1_MAC_ARES>,
 +				 <&nsscc PORT1_RX_ARES>,
 +				 <&nsscc PORT1_TX_ARES>;
-+			reset-names = "port_mac",
-+				      "port_rx",
-+				      "port_tx";
++			reset-names = "mac",
++				      "rx",
++				      "tx";
 +		};
 +
 +		port@2 {
@@ -103,15 +105,15 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
 +			clocks = <&nsscc NSS_CC_PORT2_MAC_CLK>,
 +				 <&nsscc NSS_CC_PORT2_RX_CLK>,
 +				 <&nsscc NSS_CC_PORT2_TX_CLK>;
-+			clock-names = "port_mac",
-+				      "port_rx",
-+				      "port_tx";
++			clock-names = "mac",
++				      "rx",
++				      "tx";
 +			resets = <&nsscc PORT2_MAC_ARES>,
 +				 <&nsscc PORT2_RX_ARES>,
 +				 <&nsscc PORT2_TX_ARES>;
-+			reset-names = "port_mac",
-+				      "port_rx",
-+				      "port_tx";
++			reset-names = "mac",
++				      "rx",
++				      "tx";
 +		};
 +
 +		port@3 {
@@ -123,15 +125,15 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
 +			clocks = <&nsscc NSS_CC_PORT3_MAC_CLK>,
 +				 <&nsscc NSS_CC_PORT3_RX_CLK>,
 +				 <&nsscc NSS_CC_PORT3_TX_CLK>;
-+			clock-names = "port_mac",
-+				      "port_rx",
-+				      "port_tx";
++			clock-names = "mac",
++				      "rx",
++				      "tx";
 +			resets = <&nsscc PORT3_MAC_ARES>,
 +				 <&nsscc PORT3_RX_ARES>,
 +				 <&nsscc PORT3_TX_ARES>;
-+			reset-names = "port_mac",
-+				      "port_rx",
-+				      "port_tx";
++			reset-names = "mac",
++				      "rx",
++				      "tx";
 +		};
 +
 +		port@4 {
@@ -143,15 +145,15 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
 +			clocks = <&nsscc NSS_CC_PORT4_MAC_CLK>,
 +				 <&nsscc NSS_CC_PORT4_RX_CLK>,
 +				 <&nsscc NSS_CC_PORT4_TX_CLK>;
-+			clock-names = "port_mac",
-+				      "port_rx",
-+				      "port_tx";
++			clock-names = "mac",
++				      "rx",
++				      "tx";
 +			resets = <&nsscc PORT4_MAC_ARES>,
 +				 <&nsscc PORT4_RX_ARES>,
 +				 <&nsscc PORT4_TX_ARES>;
-+			reset-names = "port_mac",
-+				      "port_rx",
-+				      "port_tx";
++			reset-names = "mac",
++				      "rx",
++				      "tx";
 +		};
 +
 +		port@5 {
@@ -163,15 +165,15 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
 +			clocks = <&nsscc NSS_CC_PORT5_MAC_CLK>,
 +				 <&nsscc NSS_CC_PORT5_RX_CLK>,
 +				 <&nsscc NSS_CC_PORT5_TX_CLK>;
-+			clock-names = "port_mac",
-+				      "port_rx",
-+				      "port_tx";
++			clock-names = "mac",
++				      "rx",
++				      "tx";
 +			resets = <&nsscc PORT5_MAC_ARES>,
 +				 <&nsscc PORT5_RX_ARES>,
 +				 <&nsscc PORT5_TX_ARES>;
-+			reset-names = "port_mac",
-+				      "port_rx",
-+				      "port_tx";
++			reset-names = "mac",
++				      "rx",
++				      "tx";
 +		};
 +
 +		port@6 {
@@ -183,15 +185,15 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
 +			clocks = <&nsscc NSS_CC_PORT6_MAC_CLK>,
 +				 <&nsscc NSS_CC_PORT6_RX_CLK>,
 +				 <&nsscc NSS_CC_PORT6_TX_CLK>;
-+			clock-names = "port_mac",
-+				      "port_rx",
-+				      "port_tx";
++			clock-names = "mac",
++				      "rx",
++				      "tx";
 +			resets = <&nsscc PORT6_MAC_ARES>,
 +				 <&nsscc PORT6_RX_ARES>,
 +				 <&nsscc PORT6_TX_ARES>;
-+			reset-names = "port_mac",
-+				      "port_rx",
-+				      "port_tx";
++			reset-names = "mac",
++				      "rx",
++				      "tx";
 +		};
 +	};
 +};

@@ -1,4 +1,4 @@
-From dbcc0d01241a1353d8e11e764cf7fcd390ae3f1f Mon Sep 17 00:00:00 2001
+From 9ecd759aafd85b92ac2865748ea62af8211bce74 Mon Sep 17 00:00:00 2001
 From: Lei Wei <quic_leiwei@quicinc.com>
 Date: Thu, 29 Feb 2024 20:16:14 +0800
 Subject: [PATCH] net: ethernet: qualcomm: Add PPE port MAC MIB statistics
@@ -140,9 +140,9 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
 +
  /* PPE port clock and reset name */
  static const char * const ppe_port_clk_rst_name[] = {
- 	[PPE_PORT_CLK_RST_MAC] = "port_mac",
+ 	[PPE_PORT_CLK_RST_MAC] = "mac",
 @@ -30,6 +146,322 @@ static const char * const ppe_port_clk_r
- 	[PPE_PORT_CLK_RST_TX] = "port_tx",
+ 	[PPE_PORT_CLK_RST_TX] = "tx",
  };
  
 +/* PPE GMAC MIB statistics description information */
@@ -617,7 +617,7 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
  /* XGMAC TX configuration register */
  #define XGMAC_TX_CONFIG_ADDR			0x0
  #define XGMAC_SPEED_M				GENMASK(31, 29)
-@@ -680,4 +722,53 @@
+@@ -680,6 +722,55 @@
  #define XGMAC_MCF				BIT(3)
  #define XGMAC_CNTRST				BIT(0)
  
@@ -670,4 +670,6 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
 +#define XGMAC_RXDISCARD_GB_ADDR			0x9AC
 +#define XGMAC_RXDISCARDBYTE_GB_ADDR		0x9B4
 +
- #endif
+ /* Unicast drop count includes the possible drops with WRED for the green,
+  * yellow and red categories.
+  */

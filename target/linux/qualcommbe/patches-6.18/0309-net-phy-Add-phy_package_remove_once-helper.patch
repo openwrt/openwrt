@@ -1,4 +1,4 @@
-From d11eba3e178a9d42a579c656b2c9b643f4ce3e1e Mon Sep 17 00:00:00 2001
+From f3b0ae884a0b7e0a1e15fe188da278ed69a87b7c Mon Sep 17 00:00:00 2001
 From: Luo Jie <quic_luoj@quicinc.com>
 Date: Mon, 23 Sep 2024 18:46:34 +0800
 Subject: [PATCH] net: phy: Add phy_package_remove_once helper
@@ -8,29 +8,52 @@ add phy_package_remove_once helper to support.
 
 Change-Id: I3cd73bc7be1b1d531435ef72f48db0682548decf
 Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
+Alex G: Move phy_package_remove_once() to phy_package,c
+        Update to match the patches that will be upstream.
+Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 ---
- include/linux/phy.h | 6 ++++++
- 1 file changed, 6 insertions(+)
+ drivers/net/phy/phy_package.c  | 6 ++++++
+ drivers/net/phy/phylib.h       | 1 +
+ drivers/net/phy/qcom/qca808x.c | 2 +-
+ 3 files changed, 8 insertions(+), 1 deletion(-)
 
---- a/include/linux/phy.h
-+++ b/include/linux/phy.h
-@@ -366,6 +366,7 @@ struct phy_package_shared {
- /* used as bit number in atomic bitops */
- #define PHY_SHARED_F_INIT_DONE  0
- #define PHY_SHARED_F_PROBE_DONE 1
-+#define PHY_SHARED_F_REMOVE_DONE 2
- 
- /**
-  * struct mii_bus - Represents an MDIO bus
-@@ -2245,6 +2246,11 @@ static inline bool phy_package_probe_onc
- 	return __phy_package_set_once(phydev, PHY_SHARED_F_PROBE_DONE);
+--- a/drivers/net/phy/phy_package.c
++++ b/drivers/net/phy/phy_package.c
+@@ -178,6 +178,12 @@ bool phy_package_probe_once(struct phy_d
  }
+ EXPORT_SYMBOL_GPL(phy_package_probe_once);
  
-+static inline bool phy_package_remove_once(struct phy_device *phydev)
++bool phy_package_remove_once(struct phy_device *phydev)
 +{
-+	return __phy_package_set_once(phydev, PHY_SHARED_F_REMOVE_DONE);
++	return __phy_package_set_once(phydev, 2);
 +}
++EXPORT_SYMBOL_GPL(phy_package_remove_once);
 +
- extern const struct bus_type mdio_bus_type;
+ /**
+  * phy_package_join - join a common PHY group
+  * @phydev: target phy_device struct
+--- a/drivers/net/phy/phylib.h
++++ b/drivers/net/phy/phylib.h
+@@ -23,6 +23,7 @@ int __phy_package_write_mmd(struct phy_d
+ 			    u32 regnum, u16 val);
+ bool phy_package_init_once(struct phy_device *phydev);
+ bool phy_package_probe_once(struct phy_device *phydev);
++bool phy_package_remove_once(struct phy_device *phydev);
+ int phy_package_join(struct phy_device *phydev, int base_addr, size_t priv_size);
+ int of_phy_package_join(struct phy_device *phydev, size_t priv_size);
+ void phy_package_leave(struct phy_device *phydev);
+--- a/drivers/net/phy/qcom/qca808x.c
++++ b/drivers/net/phy/qcom/qca808x.c
+@@ -1,11 +1,11 @@
+ // SPDX-License-Identifier: GPL-2.0+
  
- struct mdio_board_info {
+-#include <dt-bindings/net/qcom,qca808x.h>
+ #include <linux/phy.h>
+ #include <linux/module.h>
+ #include <linux/of.h>
+ #include <linux/reset.h>
+ #include <linux/clk.h>
++#include <dt-bindings/net/qcom,qca808x.h>
+ 
+ #include "../phylib.h"
+ #include "qcom.h"

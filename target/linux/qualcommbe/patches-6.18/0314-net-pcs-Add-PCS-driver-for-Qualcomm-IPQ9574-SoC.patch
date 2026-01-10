@@ -1,4 +1,4 @@
-From e404519d9f3e5e7d661cb105d3766d87e37e4ef5 Mon Sep 17 00:00:00 2001
+From c03b5a514b319c03a1883142694afa5deb69af6f Mon Sep 17 00:00:00 2001
 From: Lei Wei <quic_leiwei@quicinc.com>
 Date: Fri, 7 Feb 2025 23:53:13 +0800
 Subject: [PATCH] net: pcs: Add PCS driver for Qualcomm IPQ9574 SoC
@@ -40,8 +40,8 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
 +	  to support different interface modes for MAC to PHY connections.
 +
  config PCS_RZN1_MIIC
- 	tristate "Renesas RZ/N1 MII converter"
- 	depends on OF && (ARCH_RZN1 || COMPILE_TEST)
+ 	tristate "Renesas RZ/N1, RZ/N2H, RZ/T2H MII converter"
+ 	depends on OF
 --- a/drivers/net/pcs/Makefile
 +++ b/drivers/net/pcs/Makefile
 @@ -7,5 +7,6 @@ pcs_xpcs-$(CONFIG_PCS_XPCS)	:= pcs-xpcs.

@@ -1,4 +1,4 @@
-From b5c8c5d3888328321e8be1db50b75dff8f514e51 Mon Sep 17 00:00:00 2001
+From 6b1bc69249055b08cbe3fae9530288246af52e73 Mon Sep 17 00:00:00 2001
 From: Suruchi Agarwal <quic_suruchia@quicinc.com>
 Date: Thu, 21 Mar 2024 16:21:19 -0700
 Subject: [PATCH] net: ethernet: qualcomm: Add Rx Ethernet DMA support
@@ -13,6 +13,7 @@ Signed-off-by: Suruchi Agarwal <quic_suruchia@quicinc.com>
 Alex G: add missing functions that were previously in ppe_api.c:
         - ppe_edma_queue_resource_get()
         - ppe_edma_ring_to_queues_config()
+        Use rxdesc_* for IRQ name instead of edma_rxdesc_*
 Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 ---
  drivers/net/ethernet/qualcomm/ppe/Makefile    |   2 +-
@@ -40,7 +41,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 +qcom-ppe-objs += edma.o edma_cfg_rx.o edma_port.o edma_rx.o
 --- a/drivers/net/ethernet/qualcomm/ppe/edma.c
 +++ b/drivers/net/ethernet/qualcomm/ppe/edma.c
-@@ -18,12 +18,23 @@
+@@ -18,6 +18,7 @@
  #include <linux/reset.h>
  
  #include "edma.h"
@@ -48,6 +49,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  #include "ppe_regs.h"
  
  #define EDMA_IRQ_NAME_SIZE		32
+@@ -25,6 +26,16 @@
  
  /* Global EDMA context. */
  struct edma_context *edma_ctx;
@@ -64,7 +66,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  
  /* Priority to multi-queue mapping. */
  static u8 edma_pri_map[PPE_QUEUE_INTER_PRI_NUM] = {
-@@ -178,6 +189,59 @@ static int edma_configure_ucast_prio_map
+@@ -179,6 +190,59 @@ static int edma_configure_ucast_prio_map
  	return ret;
  }
  
@@ -89,7 +91,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 +			goto rxdesc_irq_name_alloc_fail;
 +		}
 +
-+		snprintf(edma_rxdesc_irq_name[i], 20, "edma_rxdesc_%d",
++		snprintf(edma_rxdesc_irq_name[i], 20, "rxdesc_%d",
 +			 rx->ring_start + i);
 +
 +		irq_set_status_flags(edma_ctx->intr_info.intr_rx[i], IRQ_DISABLE_UNLAZY);
@@ -124,7 +126,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  static int edma_irq_init(void)
  {
  	struct edma_hw_info *hw_info = edma_ctx->hw_info;
-@@ -260,6 +324,16 @@ static int edma_irq_init(void)
+@@ -261,6 +325,16 @@ static int edma_irq_init(void)
  	return 0;
  }
  
@@ -141,7 +143,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  static int edma_hw_reset(void)
  {
  	struct ppe_device *ppe_dev = edma_ctx->ppe_dev;
-@@ -343,6 +417,40 @@ static int edma_hw_configure(void)
+@@ -344,6 +418,40 @@ static int edma_hw_configure(void)
  	if (!edma_ctx->netdev_arr)
  		return -ENOMEM;
  
@@ -182,7 +184,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  	/* Configure DMA request priority, DMA read burst length,
  	 * and AXI write size.
  	 */
-@@ -376,6 +484,10 @@ static int edma_hw_configure(void)
+@@ -377,6 +485,10 @@ static int edma_hw_configure(void)
  	data |= EDMA_MISC_TX_TIMEOUT_MASK;
  	edma_ctx->intr_info.intr_mask_misc = data;
  
@@ -193,7 +195,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  	/* Global EDMA enable and padding enable. */
  	data = EDMA_PORT_PAD_EN | EDMA_PORT_EDMA_EN;
  
-@@ -389,11 +501,32 @@ static int edma_hw_configure(void)
+@@ -390,11 +502,32 @@ static int edma_hw_configure(void)
  	if (ret) {
  		pr_err("Failed to initialize unicast priority map table: %d\n",
  		       ret);
@@ -228,7 +230,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  }
  
  /**
-@@ -404,8 +537,31 @@ static int edma_hw_configure(void)
+@@ -405,8 +538,31 @@ static int edma_hw_configure(void)
   */
  void edma_destroy(struct ppe_device *ppe_dev)
  {
@@ -260,7 +262,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  	kfree(edma_ctx->netdev_arr);
  }
  
-@@ -428,6 +584,7 @@ int edma_setup(struct ppe_device *ppe_de
+@@ -429,6 +585,7 @@ int edma_setup(struct ppe_device *ppe_de
  
  	edma_ctx->hw_info = &ipq9574_hw_info;
  	edma_ctx->ppe_dev = ppe_dev;
@@ -268,7 +270,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  
  	/* Configure the EDMA common clocks. */
  	ret = edma_clock_init();
-@@ -450,6 +607,16 @@ int edma_setup(struct ppe_device *ppe_de
+@@ -451,6 +608,16 @@ int edma_setup(struct ppe_device *ppe_de
  		return ret;
  	}
  
@@ -285,7 +287,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  	dev_info(dev, "EDMA configuration successful\n");
  
  	return 0;
-@@ -478,3 +645,46 @@ int ppe_edma_queue_offset_config(struct
+@@ -479,3 +646,46 @@ int ppe_edma_queue_offset_config(struct
  	return ppe_queue_ucast_offset_hash_set(ppe_dev, 0,
  					       index, queue_offset);
  }

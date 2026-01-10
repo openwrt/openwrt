@@ -1,4 +1,4 @@
-From 8a924457c0b71acee96c8f78ef386e2a354a2aca Mon Sep 17 00:00:00 2001
+From 3a189759d41467c33ab2353da24ce42bc630afad Mon Sep 17 00:00:00 2001
 From: Suruchi Agarwal <quic_suruchia@quicinc.com>
 Date: Thu, 21 Mar 2024 16:31:04 -0700
 Subject: [PATCH] net: ethernet: qualcomm: Add miscellaneous error interrupts
@@ -11,13 +11,15 @@ Change-Id: I7da8b978a7e93947b03a45269a81b401f35da31c
 Co-developed-by: Pavithra R <quic_pavir@quicinc.com>
 Signed-off-by: Pavithra R <quic_pavir@quicinc.com>
 Signed-off-by: Suruchi Agarwal <quic_suruchia@quicinc.com>
+Alex G: Use "misc" for IRQ name instead of "edma_misc"
+Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 ---
  drivers/net/ethernet/qualcomm/ppe/Makefile    |   2 +-
  drivers/net/ethernet/qualcomm/ppe/edma.c      | 162 ++++++++
  drivers/net/ethernet/qualcomm/ppe/edma.h      |  30 ++
  .../net/ethernet/qualcomm/ppe/edma_debugfs.c  | 370 ++++++++++++++++++
- .../net/ethernet/qualcomm/ppe/ppe_debugfs.c   |  17 +
- 5 files changed, 580 insertions(+), 1 deletion(-)
+ .../net/ethernet/qualcomm/ppe/ppe_debugfs.c   |  15 +-
+ 5 files changed, 577 insertions(+), 2 deletions(-)
  create mode 100644 drivers/net/ethernet/qualcomm/ppe/edma_debugfs.c
 
 --- a/drivers/net/ethernet/qualcomm/ppe/Makefile
@@ -30,7 +32,7 @@ Signed-off-by: Suruchi Agarwal <quic_suruchia@quicinc.com>
 +qcom-ppe-objs += edma.o edma_cfg_rx.o edma_cfg_tx.o edma_debugfs.o edma_port.o edma_rx.o edma_tx.o
 --- a/drivers/net/ethernet/qualcomm/ppe/edma.c
 +++ b/drivers/net/ethernet/qualcomm/ppe/edma.c
-@@ -152,6 +152,42 @@ static int edma_clock_init(void)
+@@ -153,6 +153,42 @@ static int edma_clock_init(void)
  }
  
  /**
@@ -73,7 +75,7 @@ Signed-off-by: Suruchi Agarwal <quic_suruchia@quicinc.com>
   * edma_configure_ucast_prio_map_tbl - Configure unicast priority map table.
   *
   * Map int_priority values to priority class and initialize
-@@ -191,11 +227,113 @@ static int edma_configure_ucast_prio_map
+@@ -192,11 +228,113 @@ static int edma_configure_ucast_prio_map
  	return ret;
  }
  
@@ -187,13 +189,13 @@ Signed-off-by: Suruchi Agarwal <quic_suruchia@quicinc.com>
  	int ret;
  	u32 i;
  
-@@ -270,8 +408,25 @@ static int edma_irq_register(void)
+@@ -271,8 +409,25 @@ static int edma_irq_register(void)
  			 edma_rxdesc_irq_name[i]);
  	}
  
 +	/* Request Misc IRQ */
 +	ret = request_irq(edma_ctx->intr_info.intr_misc, edma_misc_handle_irq,
-+			  IRQF_SHARED, "edma_misc",
++			  IRQF_SHARED, "misc",
 +			  (void *)dev);
 +	if (ret) {
 +		pr_err("MISC IRQ:%d request failed\n",
@@ -213,7 +215,7 @@ Signed-off-by: Suruchi Agarwal <quic_suruchia@quicinc.com>
  rx_desc_ring_intr_req_fail:
  	for (i = 0; i < rx->num_rings; i++)
  		kfree(edma_rxdesc_irq_name[i]);
-@@ -503,6 +658,7 @@ static int edma_hw_configure(void)
+@@ -504,6 +659,7 @@ static int edma_hw_configure(void)
  		edma_cfg_tx_disable_interrupts(i);
  
  	edma_cfg_rx_disable_interrupts();
@@ -221,7 +223,7 @@ Signed-off-by: Suruchi Agarwal <quic_suruchia@quicinc.com>
  
  	edma_cfg_rx_rings_disable();
  
-@@ -614,6 +770,7 @@ void edma_destroy(struct ppe_device *ppe
+@@ -615,6 +771,7 @@ void edma_destroy(struct ppe_device *ppe
  		edma_cfg_tx_disable_interrupts(i);
  
  	edma_cfg_rx_disable_interrupts();
@@ -229,7 +231,7 @@ Signed-off-by: Suruchi Agarwal <quic_suruchia@quicinc.com>
  
  	/* Free IRQ for TXCMPL rings. */
  	for (i = 0; i < txcmpl->num_rings; i++) {
-@@ -634,6 +791,10 @@ void edma_destroy(struct ppe_device *ppe
+@@ -635,6 +792,10 @@ void edma_destroy(struct ppe_device *ppe
  	}
  	kfree(edma_rxdesc_irq_name);
  
@@ -240,7 +242,7 @@ Signed-off-by: Suruchi Agarwal <quic_suruchia@quicinc.com>
  	kfree(edma_ctx->intr_info.intr_rx);
  	kfree(edma_ctx->intr_info.intr_txcmpl);
  
-@@ -699,6 +860,7 @@ int edma_setup(struct ppe_device *ppe_de
+@@ -700,6 +861,7 @@ int edma_setup(struct ppe_device *ppe_de
  	}
  
  	edma_cfg_rx_enable_interrupts();
@@ -685,10 +687,10 @@ Signed-off-by: Suruchi Agarwal <quic_suruchia@quicinc.com>
 +}
 --- a/drivers/net/ethernet/qualcomm/ppe/ppe_debugfs.c
 +++ b/drivers/net/ethernet/qualcomm/ppe/ppe_debugfs.c
-@@ -7,9 +7,11 @@
- 
- #include <linux/bitfield.h>
+@@ -9,9 +9,11 @@
  #include <linux/debugfs.h>
+ #include <linux/dev_printk.h>
+ #include <linux/device.h>
 +#include <linux/netdevice.h>
  #include <linux/regmap.h>
  #include <linux/seq_file.h>
@@ -697,23 +699,28 @@ Signed-off-by: Suruchi Agarwal <quic_suruchia@quicinc.com>
  #include "ppe.h"
  #include "ppe_config.h"
  #include "ppe_debugfs.h"
-@@ -678,15 +680,30 @@ static const struct file_operations ppe_
- 
+@@ -820,11 +822,14 @@ DEFINE_SHOW_STORE_ATTRIBUTE(ppe_packet_c
  void ppe_debugfs_setup(struct ppe_device *ppe_dev)
  {
+ 	struct ppe_debugfs_entry *entry;
 +	int ret;
-+
+ 	int i;
+ 
  	ppe_dev->debugfs_root = debugfs_create_dir("ppe", NULL);
- 	debugfs_create_file("packet_counters", 0444,
- 			    ppe_dev->debugfs_root,
- 			    ppe_dev,
- 			    &ppe_debugfs_packet_counter_fops);
-+
-+	if (!ppe_dev->debugfs_root) {
+-	if (IS_ERR(ppe_dev->debugfs_root))
++	if (IS_ERR(ppe_dev->debugfs_root)) {
 +		dev_err(ppe_dev->dev, "Error in PPE debugfs setup\n");
-+		return;
+ 		return;
 +	}
+ 
+ 	for (i = 0; i < ARRAY_SIZE(debugfs_files); i++) {
+ 		entry = devm_kzalloc(ppe_dev->dev, sizeof(*entry), GFP_KERNEL);
+@@ -838,6 +843,14 @@ void ppe_debugfs_setup(struct ppe_device
+ 				    ppe_dev->debugfs_root, entry,
+ 				    &ppe_packet_counter_fops);
+ 	}
 +
++	/* TODO: Do we have to be so agressive and remove __all__ debugfs entries? */
 +	ret = edma_debugfs_setup(ppe_dev);
 +	if (ret) {
 +		dev_err(ppe_dev->dev, "Error in EDMA debugfs setup API. ret: %d\n", ret);
@@ -723,8 +730,3 @@ Signed-off-by: Suruchi Agarwal <quic_suruchia@quicinc.com>
  }
  
  void ppe_debugfs_teardown(struct ppe_device *ppe_dev)
- {
-+	edma_debugfs_teardown();
- 	debugfs_remove_recursive(ppe_dev->debugfs_root);
- 	ppe_dev->debugfs_root = NULL;
- }

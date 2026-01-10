@@ -1,4 +1,4 @@
-From 2ecec7e47e269e05cdd393c34aae51d4866070c6 Mon Sep 17 00:00:00 2001
+From eda6fa4f6044cc55dcb4fd6ea384bf2680602667 Mon Sep 17 00:00:00 2001
 From: Pavithra R <quic_pavir@quicinc.com>
 Date: Tue, 11 Jun 2024 00:00:46 +0530
 Subject: [PATCH] net: ethernet: qualcomm: Add module parameters for driver
@@ -21,7 +21,7 @@ Signed-off-by: Pavithra R <quic_pavir@quicinc.com>
 
 --- a/drivers/net/ethernet/qualcomm/ppe/edma.c
 +++ b/drivers/net/ethernet/qualcomm/ppe/edma.c
-@@ -38,6 +38,38 @@ static int rx_buff_size;
+@@ -39,6 +39,38 @@ static int rx_buff_size;
  module_param(rx_buff_size, int, 0640);
  MODULE_PARM_DESC(rx_buff_size, "Rx Buffer size for Jumbo MRU value (default:0)");
  
@@ -60,7 +60,7 @@ Signed-off-by: Pavithra R <quic_pavir@quicinc.com>
  /* Priority to multi-queue mapping. */
  static u8 edma_pri_map[PPE_QUEUE_INTER_PRI_NUM] = {
  	0, 1, 2, 3, 4, 5, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7};
-@@ -828,7 +860,10 @@ int edma_setup(struct ppe_device *ppe_de
+@@ -829,7 +861,10 @@ int edma_setup(struct ppe_device *ppe_de
  	edma_ctx->hw_info = &ipq9574_hw_info;
  	edma_ctx->ppe_dev = ppe_dev;
  	edma_ctx->rx_buf_size = rx_buff_size;
