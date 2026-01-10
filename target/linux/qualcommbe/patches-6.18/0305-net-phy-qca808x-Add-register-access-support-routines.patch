@@ -1,4 +1,4 @@
-From cea8043def0c0867370c2efd5a1cd73bf4d3e5ba Mon Sep 17 00:00:00 2001
+From d6f61665d97cf1077ccbfff19c0df509b7c26aae Mon Sep 17 00:00:00 2001
 From: Luo Jie <quic_luoj@quicinc.com>
 Date: Wed, 29 Nov 2023 15:21:22 +0800
 Subject: [PATCH] net: phy: qca808x: Add register access support routines for
@@ -44,8 +44,8 @@ Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
  MODULE_DESCRIPTION("Qualcomm Atheros QCA808X PHY driver");
  MODULE_AUTHOR("Matus Ujhelyi, Luo Jie");
  MODULE_LICENSE("GPL");
-@@ -119,6 +135,78 @@ struct qca808x_priv {
- 	int led_polarity_mode;
+@@ -120,6 +136,78 @@ struct qca808x_priv {
+ 	struct qcom_phy_hw_stats hw_stats;
  };
  
 +static int __qca8084_set_page(struct mii_bus *bus, u16 sw_addr, u16 page)

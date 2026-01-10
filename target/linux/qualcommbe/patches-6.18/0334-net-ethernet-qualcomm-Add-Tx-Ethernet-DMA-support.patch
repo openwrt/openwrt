@@ -1,4 +1,4 @@
-From 339d3a5365f150a78ed405684e379fee3acdbe90 Mon Sep 17 00:00:00 2001
+From c5b1699a62ce8df5680db0bad0d748fe4018f3b0 Mon Sep 17 00:00:00 2001
 From: Suruchi Agarwal <quic_suruchia@quicinc.com>
 Date: Thu, 21 Mar 2024 16:26:29 -0700
 Subject: [PATCH] net: ethernet: qualcomm: Add Tx Ethernet DMA support
@@ -10,6 +10,8 @@ Change-Id: Idfb0e1fe5ac494d614097d6c97dd15d63bbce8e6
 Co-developed-by: Pavithra R <quic_pavir@quicinc.com>
 Signed-off-by: Pavithra R <quic_pavir@quicinc.com>
 Signed-off-by: Suruchi Agarwal <quic_suruchia@quicinc.com>
+Alex G: Use txcompl_* for IRQ name instead of edma_txcompl_*
+Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 ---
  drivers/net/ethernet/qualcomm/ppe/Makefile    |   2 +-
  drivers/net/ethernet/qualcomm/ppe/edma.c      |  97 ++-
@@ -44,7 +46,7 @@ Signed-off-by: Suruchi Agarwal <quic_suruchia@quicinc.com>
  #include "edma_cfg_rx.h"
  #include "ppe_regs.h"
  
-@@ -25,6 +26,7 @@
+@@ -26,6 +27,7 @@
  
  /* Global EDMA context. */
  struct edma_context *edma_ctx;
@@ -52,7 +54,7 @@ Signed-off-by: Suruchi Agarwal <quic_suruchia@quicinc.com>
  static char **edma_rxdesc_irq_name;
  
  /* Module params. */
-@@ -192,22 +194,59 @@ static int edma_configure_ucast_prio_map
+@@ -193,22 +195,59 @@ static int edma_configure_ucast_prio_map
  static int edma_irq_register(void)
  {
  	struct edma_hw_info *hw_info = edma_ctx->hw_info;
@@ -74,7 +76,7 @@ Signed-off-by: Suruchi Agarwal <quic_suruchia@quicinc.com>
 +			goto txcmpl_ring_irq_name_alloc_fail;
 +		}
 +
-+		snprintf(edma_txcmpl_irq_name[i], EDMA_IRQ_NAME_SIZE, "edma_txcmpl_%d",
++		snprintf(edma_txcmpl_irq_name[i], EDMA_IRQ_NAME_SIZE, "txcmpl_%d",
 +			 txcmpl->ring_start + i);
 +
 +		irq_set_status_flags(edma_ctx->intr_info.intr_txcmpl[i], IRQ_DISABLE_UNLAZY);
@@ -114,8 +116,8 @@ Signed-off-by: Suruchi Agarwal <quic_suruchia@quicinc.com>
 +			goto rxdesc_ring_irq_name_alloc_fail;
  		}
  
- 		snprintf(edma_rxdesc_irq_name[i], 20, "edma_rxdesc_%d",
-@@ -236,8 +275,19 @@ static int edma_irq_register(void)
+ 		snprintf(edma_rxdesc_irq_name[i], 20, "rxdesc_%d",
+@@ -237,8 +276,19 @@ static int edma_irq_register(void)
  rx_desc_ring_intr_req_fail:
  	for (i = 0; i < rx->num_rings; i++)
  		kfree(edma_rxdesc_irq_name[i]);
@@ -136,7 +138,7 @@ Signed-off-by: Suruchi Agarwal <quic_suruchia@quicinc.com>
  
  	return ret;
  }
-@@ -326,12 +376,22 @@ static int edma_irq_init(void)
+@@ -327,12 +377,22 @@ static int edma_irq_init(void)
  
  static int edma_alloc_rings(void)
  {
@@ -160,7 +162,7 @@ Signed-off-by: Suruchi Agarwal <quic_suruchia@quicinc.com>
  }
  
  static int edma_hw_reset(void)
-@@ -389,7 +449,7 @@ static int edma_hw_configure(void)
+@@ -390,7 +450,7 @@ static int edma_hw_configure(void)
  	struct edma_hw_info *hw_info = edma_ctx->hw_info;
  	struct ppe_device *ppe_dev = edma_ctx->ppe_dev;
  	struct regmap *regmap = ppe_dev->regmap;
@@ -169,7 +171,7 @@ Signed-off-by: Suruchi Agarwal <quic_suruchia@quicinc.com>
  	int ret;
  
  	reg = EDMA_BASE_OFFSET + EDMA_REG_MAS_CTRL_ADDR;
-@@ -439,11 +499,17 @@ static int edma_hw_configure(void)
+@@ -440,11 +500,17 @@ static int edma_hw_configure(void)
  	}
  
  	/* Disable interrupts. */
@@ -187,7 +189,7 @@ Signed-off-by: Suruchi Agarwal <quic_suruchia@quicinc.com>
  
  	ret = edma_cfg_rx_rings();
  	if (ret) {
-@@ -520,6 +586,7 @@ configure_ucast_prio_map_tbl_failed:
+@@ -521,6 +587,7 @@ configure_ucast_prio_map_tbl_failed:
  	edma_cfg_rx_napi_delete();
  	edma_cfg_rx_rings_disable();
  edma_cfg_rx_rings_failed:
@@ -195,7 +197,7 @@ Signed-off-by: Suruchi Agarwal <quic_suruchia@quicinc.com>
  	edma_cfg_rx_rings_cleanup();
  edma_alloc_rings_failed:
  	free_netdev(edma_ctx->dummy_dev);
-@@ -538,13 +605,27 @@ dummy_dev_alloc_failed:
+@@ -539,13 +606,27 @@ dummy_dev_alloc_failed:
  void edma_destroy(struct ppe_device *ppe_dev)
  {
  	struct edma_hw_info *hw_info = edma_ctx->hw_info;
@@ -224,7 +226,7 @@ Signed-off-by: Suruchi Agarwal <quic_suruchia@quicinc.com>
  	for (i = 0; i < rx->num_rings; i++) {
  		synchronize_irq(edma_ctx->intr_info.intr_rx[i]);
  		free_irq(edma_ctx->intr_info.intr_rx[i],
-@@ -560,6 +641,7 @@ void edma_destroy(struct ppe_device *ppe
+@@ -561,6 +642,7 @@ void edma_destroy(struct ppe_device *ppe
  	edma_cfg_rx_napi_delete();
  	edma_cfg_rx_rings_disable();
  	edma_cfg_rx_rings_cleanup();
@@ -232,7 +234,7 @@ Signed-off-by: Suruchi Agarwal <quic_suruchia@quicinc.com>
  
  	free_netdev(edma_ctx->dummy_dev);
  	kfree(edma_ctx->netdev_arr);
-@@ -585,6 +667,7 @@ int edma_setup(struct ppe_device *ppe_de
+@@ -586,6 +668,7 @@ int edma_setup(struct ppe_device *ppe_de
  	edma_ctx->hw_info = &ipq9574_hw_info;
  	edma_ctx->ppe_dev = ppe_dev;
  	edma_ctx->rx_buf_size = rx_buff_size;

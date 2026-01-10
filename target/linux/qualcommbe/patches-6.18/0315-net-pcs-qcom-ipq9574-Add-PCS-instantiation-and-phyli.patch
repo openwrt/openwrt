@@ -1,4 +1,4 @@
-From 10b609ddbf4d369c80098efa39451ef3973759b5 Mon Sep 17 00:00:00 2001
+From 58403accdc0c62dbba55befe607051a0ef68d64a Mon Sep 17 00:00:00 2001
 From: Lei Wei <quic_leiwei@quicinc.com>
 Date: Fri, 7 Feb 2025 23:53:14 +0800
 Subject: [PATCH] net: pcs: qcom-ipq9574: Add PCS instantiation and phylink
@@ -312,7 +312,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 +	clk_disable_unprepare(qpcs_mii->tx_clk);
 +}
 +
-+static void ipq_pcs_get_state(struct phylink_pcs *pcs,
++static void ipq_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mode,
 +			      struct phylink_link_state *state)
 +{
 +	struct ipq_pcs_mii *qpcs_mii = phylink_pcs_to_qpcs_mii(pcs);

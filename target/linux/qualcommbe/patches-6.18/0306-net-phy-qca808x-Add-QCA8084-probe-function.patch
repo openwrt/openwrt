@@ -1,4 +1,4 @@
-From a7fe2c13f3188bf01b60fb15063d028c76dd2f1a Mon Sep 17 00:00:00 2001
+From 5f58d9c84d96c6427e31373fe2b13eb8f6975769 Mon Sep 17 00:00:00 2001
 From: Luo Jie <quic_luoj@quicinc.com>
 Date: Mon, 29 Jan 2024 10:51:38 +0800
 Subject: [PATCH] net: phy: qca808x: Add QCA8084 probe function
@@ -73,7 +73,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  MODULE_DESCRIPTION("Qualcomm Atheros QCA808X PHY driver");
  MODULE_AUTHOR("Matus Ujhelyi, Luo Jie");
  MODULE_LICENSE("GPL");
-@@ -839,6 +858,78 @@ static void qca8084_link_change_notify(s
+@@ -860,6 +879,78 @@ static void qca8084_link_change_notify(s
  			       QCA8084_IPG_10_TO_11_EN : 0);
  }
  
@@ -152,7 +152,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  static struct phy_driver qca808x_driver[] = {
  {
  	/* Qualcomm QCA8081 */
-@@ -889,6 +980,7 @@ static struct phy_driver qca808x_driver[
+@@ -912,6 +1003,7 @@ static struct phy_driver qca808x_driver[
  	.cable_test_get_status	= qca808x_cable_test_get_status,
  	.config_init		= qca8084_config_init,
  	.link_change_notify	= qca8084_link_change_notify,

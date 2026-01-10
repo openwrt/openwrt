@@ -1,4 +1,4 @@
-From c12b79af730116936504afe97234f9afb6ac8fc0 Mon Sep 17 00:00:00 2001
+From bc9732a26a25719475f2c6babb6968842cf97108 Mon Sep 17 00:00:00 2001
 From: Luo Jie <quic_luoj@quicinc.com>
 Date: Mon, 23 Sep 2024 20:28:24 +0800
 Subject: [PATCH] net: phy: qca808x: Add QCA8084 SerDes probe and remove
@@ -308,18 +308,19 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 --- a/drivers/net/phy/qcom/qca808x.c
 +++ b/drivers/net/phy/qcom/qca808x.c
 @@ -8,6 +8,7 @@
- #include <linux/clk.h>
+ #include <dt-bindings/net/qcom,qca808x.h>
  
  #include "../phylib.h"
 +#include "qca8084_serdes.h"
  #include "qcom.h"
  
  /* ADC threshold */
-@@ -172,11 +173,13 @@ enum {
+@@ -172,12 +173,14 @@ enum {
  
  struct qca808x_priv {
  	int led_polarity_mode;
 +	int channel_id;
+ 	struct qcom_phy_hw_stats hw_stats;
  };
  
  struct qca808x_shared_priv {
@@ -329,7 +330,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  };
  
  static const char *const qca8084_package_clk_name[PACKAGE_CLK_MAX] = {
-@@ -354,6 +357,8 @@ static int qca808x_probe(struct phy_devi
+@@ -355,6 +358,8 @@ static int qca808x_probe(struct phy_devi
  {
  	struct device *dev = &phydev->mdio.dev;
  	struct qca808x_priv *priv;
@@ -338,7 +339,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  
  	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
  	if (!priv)
-@@ -362,6 +367,14 @@ static int qca808x_probe(struct phy_devi
+@@ -363,6 +368,14 @@ static int qca808x_probe(struct phy_devi
  	/* Init LED polarity mode to -1 */
  	priv->led_polarity_mode = -1;
  
@@ -353,7 +354,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  	phydev->priv = priv;
  
  	return 0;
-@@ -1012,6 +1025,7 @@ static int qca8084_phy_package_probe_onc
+@@ -1033,6 +1046,7 @@ static int qca8084_phy_package_probe_onc
  	struct device_node *np = phy_package_get_node(phydev);
  	struct qca808x_shared_priv *shared_priv;
  	struct reset_control *rstc;
@@ -361,7 +362,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  	int i, ret, clear, set;
  	struct clk *clk;
  
-@@ -1072,6 +1086,26 @@ static int qca8084_phy_package_probe_onc
+@@ -1093,6 +1107,26 @@ static int qca8084_phy_package_probe_onc
  	if (ret && ret != -EINVAL)
  		return ret;
  
@@ -388,7 +389,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  	rstc = of_reset_control_get_exclusive(np, NULL);
  	if (IS_ERR(rstc))
  		return dev_err_probe(&phydev->mdio.dev, PTR_ERR(rstc),
-@@ -1081,6 +1115,14 @@ static int qca8084_phy_package_probe_onc
+@@ -1102,6 +1136,14 @@ static int qca8084_phy_package_probe_onc
  	return reset_control_deassert(rstc);
  }
  
@@ -403,7 +404,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  static int qca8084_probe(struct phy_device *phydev)
  {
  	struct qca808x_shared_priv *shared_priv;
-@@ -1099,6 +1141,10 @@ static int qca8084_probe(struct phy_devi
+@@ -1120,6 +1162,10 @@ static int qca8084_probe(struct phy_devi
  			return ret;
  	}
  
@@ -414,7 +415,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  	/* Enable clock of PHY device, so that the PHY register
  	 * can be accessed to get PHY features.
  	 */
-@@ -1116,6 +1162,12 @@ static int qca8084_probe(struct phy_devi
+@@ -1137,6 +1183,12 @@ static int qca8084_probe(struct phy_devi
  	return reset_control_deassert(rstc);
  }
  
@@ -427,7 +428,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  static struct phy_driver qca808x_driver[] = {
  {
  	/* Qualcomm QCA8081 */
-@@ -1167,6 +1219,7 @@ static struct phy_driver qca808x_driver[
+@@ -1190,6 +1242,7 @@ static struct phy_driver qca808x_driver[
  	.config_init		= qca8084_config_init,
  	.link_change_notify	= qca8084_link_change_notify,
  	.probe			= qca8084_probe,

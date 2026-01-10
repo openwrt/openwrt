@@ -1,4 +1,4 @@
-From 47c7ae9715d76054d98e8407dbb8ca1cf42fd587 Mon Sep 17 00:00:00 2001
+From 7e6bf071e4efa66e24feba27619e17eb3c71251d Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
 Date: Mon, 9 Dec 2024 17:50:31 +0100
 Subject: [PATCH] arm64: dts: qcom: add partition table for ipq9574 rdp common
@@ -12,7 +12,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/arch/arm64/boot/dts/qcom/ipq9574-rdp-common.dtsi
 +++ b/arch/arm64/boot/dts/qcom/ipq9574-rdp-common.dtsi
-@@ -74,11 +74,158 @@
+@@ -74,11 +74,155 @@
  	status = "okay";
  
  	flash@0 {
@@ -125,15 +125,12 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +			};
 +
 +			partition@530000 {
++				compatible = "u-boot,env";
 +				label = "0:appsblenv";
 +				reg = <0x530000 0x10000>;
 +
-+				nvmem-layout {
-+					compatible = "u-boot,env";
-+
-+					macaddr_lan: ethaddr {
-+						#nvmem-cell-cells = <1>;
-+					};
++				macaddr_lan: ethaddr {
++					#nvmem-cell-cells = <1>;
 +				};
 +			};
 +

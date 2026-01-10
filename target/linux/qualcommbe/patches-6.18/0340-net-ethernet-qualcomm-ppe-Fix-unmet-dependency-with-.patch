@@ -1,4 +1,4 @@
-From 9c4ad75f17788a64c1e37d0b9e19ca157e01c80a Mon Sep 17 00:00:00 2001
+From 7e872efc79091d4b43983d10a28ba322195f9d76 Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
 Date: Mon, 9 Dec 2024 18:19:06 +0100
 Subject: [PATCH] net: ethernet: qualcomm: ppe: Fix unmet dependency with
@@ -20,7 +20,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/net/ethernet/qualcomm/Kconfig
 +++ b/drivers/net/ethernet/qualcomm/Kconfig
-@@ -68,7 +68,6 @@ config QCOM_PPE
+@@ -67,7 +67,6 @@ config QCOM_PPE
  	select REGMAP_MMIO
  	select PHYLINK
  	select PCS_QCOM_IPQ_UNIPHY

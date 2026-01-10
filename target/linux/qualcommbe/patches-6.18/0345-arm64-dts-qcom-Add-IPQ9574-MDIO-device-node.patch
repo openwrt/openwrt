@@ -1,4 +1,4 @@
-From 657833a74f532262d415fa2ca354b69f4a97353c Mon Sep 17 00:00:00 2001
+From 77b24a2ce99bc8d23aacbd101b28e57b7b79f406 Mon Sep 17 00:00:00 2001
 From: Luo Jie <quic_luoj@quicinc.com>
 Date: Thu, 23 Nov 2023 15:41:20 +0800
 Subject: [PATCH] arm64: dts: qcom: Add IPQ9574 MDIO device node
@@ -15,16 +15,16 @@ Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
 
 --- a/arch/arm64/boot/dts/qcom/ipq9574.dtsi
 +++ b/arch/arm64/boot/dts/qcom/ipq9574.dtsi
-@@ -295,6 +295,8 @@
+@@ -297,6 +297,8 @@
  		mdio: mdio@90000 {
- 			compatible =  "qcom,ipq9574-mdio", "qcom,ipq4019-mdio";
+ 			compatible = "qcom,ipq9574-mdio", "qcom,ipq4019-mdio";
  			reg = <0x00090000 0x64>;
 +			pinctrl-0 = <&mdio_pins>;
 +			pinctrl-names = "default";
  			#address-cells = <1>;
  			#size-cells = <0>;
  			clocks = <&gcc GCC_MDIO_AHB_CLK>;
-@@ -414,6 +416,22 @@
+@@ -416,6 +418,22 @@
  			interrupt-controller;
  			#interrupt-cells = <2>;
  

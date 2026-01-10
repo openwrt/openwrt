@@ -1,4 +1,4 @@
-From 00d4f3cb4f5d1e6924151a4551f06b6a82bf0146 Mon Sep 17 00:00:00 2001
+From 56df33745951d0a8f57e697f6d38fd69760ce2ee Mon Sep 17 00:00:00 2001
 From: Pavithra R <quic_pavir@quicinc.com>
 Date: Wed, 28 Feb 2024 11:25:15 +0530
 Subject: [PATCH] net: ethernet: qualcomm: Add EDMA support for QCOM IPQ9574
@@ -15,14 +15,15 @@ Alex G: use "ppe_config.h" header instead of "ppe_api.h"
         add missing definitions and functions from ppe_api:
         - enum ppe_queue_class_type {}
         - ppe_edma_queue_offset_config()
+        use new devicetree prpoerty names as suggested by Luo Jie
 Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 ---
  drivers/net/ethernet/qualcomm/ppe/Makefile   |   3 +
- drivers/net/ethernet/qualcomm/ppe/edma.c     | 480 +++++++++++++++++++
+ drivers/net/ethernet/qualcomm/ppe/edma.c     | 481 +++++++++++++++++++
  drivers/net/ethernet/qualcomm/ppe/edma.h     | 113 +++++
  drivers/net/ethernet/qualcomm/ppe/ppe.c      |  10 +-
  drivers/net/ethernet/qualcomm/ppe/ppe_regs.h | 253 ++++++++++
- 5 files changed, 858 insertions(+), 1 deletion(-)
+ 5 files changed, 859 insertions(+), 1 deletion(-)
  create mode 100644 drivers/net/ethernet/qualcomm/ppe/edma.c
  create mode 100644 drivers/net/ethernet/qualcomm/ppe/edma.h
 
@@ -37,7 +38,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 +qcom-ppe-objs += edma.o
 --- /dev/null
 +++ b/drivers/net/ethernet/qualcomm/ppe/edma.c
-@@ -0,0 +1,480 @@
+@@ -0,0 +1,481 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 + /* Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
 +  */
@@ -61,6 +62,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 +#include "ppe_regs.h"
 +
 +#define EDMA_IRQ_NAME_SIZE		32
++#define EDMA_NODE_NAME			"ethernet-dma"
 +
 +/* Global EDMA context. */
 +struct edma_context *edma_ctx;
@@ -70,14 +72,14 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 +	0, 1, 2, 3, 4, 5, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7};
 +
 +enum edma_clk_id {
-+	EDMA_CLK,
-+	EDMA_CFG_CLK,
++	EDMA_SYS_CLK,
++	EDMA_APB_CLK,
 +	EDMA_CLK_MAX
 +};
 +
 +static const char * const clock_name[EDMA_CLK_MAX] = {
-+	[EDMA_CLK] = "edma",
-+	[EDMA_CFG_CLK] = "edma-cfg",
++	[EDMA_SYS_CLK] = "sys",
++	[EDMA_APB_CLK] = "apb",
 +};
 +
 +/* Rx Fill ring info for IPQ9574. */
@@ -126,7 +128,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 +	struct clk *clk = NULL;
 +	int ret;
 +
-+	edma_np = of_get_child_by_name(dev->of_node, "edma");
++	edma_np = of_get_child_by_name(dev->of_node, EDMA_NODE_NAME);
 +
 +	clk = devm_get_clk_from_child(dev, edma_np, id);
 +	if (IS_ERR(clk)) {
@@ -165,12 +167,12 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 +
 +	ppe_rate = ppe_dev->clk_rate;
 +
-+	ret = edma_clock_set_and_enable(dev, clock_name[EDMA_CLK],
++	ret = edma_clock_set_and_enable(dev, clock_name[EDMA_SYS_CLK],
 +					ppe_rate);
 +	if (ret)
 +		return ret;
 +
-+	ret = edma_clock_set_and_enable(dev, clock_name[EDMA_CFG_CLK],
++	ret = edma_clock_set_and_enable(dev, clock_name[EDMA_APB_CLK],
 +					ppe_rate);
 +	if (ret)
 +		return ret;
@@ -231,7 +233,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 +	u32 i;
 +
 +	pdev = to_platform_device(dev);
-+	edma_np = of_get_child_by_name(dev->of_node, "edma");
++	edma_np = of_get_child_by_name(dev->of_node, EDMA_NODE_NAME);
 +	edma_ctx->intr_info.intr_txcmpl = kzalloc((sizeof(*edma_ctx->intr_info.intr_txcmpl) *
 +						  txcmpl->num_rings), GFP_KERNEL);
 +	if (!edma_ctx->intr_info.intr_txcmpl) {
@@ -241,7 +243,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 +
 +	/* Get TXCMPL rings IRQ numbers. */
 +	for (i = 0; i < txcmpl->num_rings; i++) {
-+		snprintf(edma_irq_name, sizeof(edma_irq_name), "edma_txcmpl_%d",
++		snprintf(edma_irq_name, sizeof(edma_irq_name), "txcmpl_%d",
 +			 txcmpl->ring_start + i);
 +		edma_ctx->intr_info.intr_txcmpl[i] = of_irq_get_byname(edma_np, edma_irq_name);
 +		if (edma_ctx->intr_info.intr_txcmpl[i] < 0) {
@@ -266,7 +268,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 +
 +	/* Get RXDESC rings IRQ numbers. */
 +	for (i = 0; i < rx->num_rings; i++) {
-+		snprintf(edma_irq_name, sizeof(edma_irq_name), "edma_rxdesc_%d",
++		snprintf(edma_irq_name, sizeof(edma_irq_name), "rxdesc_%d",
 +			 rx->ring_start + i);
 +		edma_ctx->intr_info.intr_rx[i] = of_irq_get_byname(edma_np, edma_irq_name);
 +		if (edma_ctx->intr_info.intr_rx[i] < 0) {
@@ -283,7 +285,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 +	}
 +
 +	/* Get misc IRQ number. */
-+	edma_ctx->intr_info.intr_misc = of_irq_get_byname(edma_np, "edma_misc");
++	edma_ctx->intr_info.intr_misc = of_irq_get_byname(edma_np, "misc");
 +	if (edma_ctx->intr_info.intr_misc < 0) {
 +		dev_err(dev, "%s: misc_intr irq get failed\n", edma_np->name);
 +		of_node_put(edma_np);
@@ -311,7 +313,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 +	int ret;
 +
 +	/* Count and parse reset names from DTSI. */
-+	edma_np = of_get_child_by_name(dev->of_node, "edma");
++	edma_np = of_get_child_by_name(dev->of_node, EDMA_NODE_NAME);
 +	count = of_property_count_strings(edma_np, "reset-names");
 +	if (count < 0) {
 +		dev_err(dev, "EDMA reset entry not found\n");
@@ -644,7 +646,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  #include "ppe.h"
  #include "ppe_config.h"
  #include "ppe_debugfs.h"
-@@ -201,10 +202,16 @@ static int qcom_ppe_probe(struct platfor
+@@ -206,10 +207,16 @@ static int qcom_ppe_probe(struct platfor
  	if (ret)
  		return dev_err_probe(dev, ret, "PPE HW config failed\n");
  
@@ -662,7 +664,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  
  	ppe_debugfs_setup(ppe_dev);
  	platform_set_drvdata(pdev, ppe_dev);
-@@ -219,6 +226,7 @@ static void qcom_ppe_remove(struct platf
+@@ -224,6 +231,7 @@ static void qcom_ppe_remove(struct platf
  	ppe_dev = platform_get_drvdata(pdev);
  	ppe_debugfs_teardown(ppe_dev);
  	ppe_port_mac_deinit(ppe_dev);
@@ -672,7 +674,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  }
 --- a/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
 +++ b/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
-@@ -800,4 +800,257 @@
+@@ -800,6 +800,259 @@
  #define XGMAC_RXDISCARD_GB_ADDR			0x9AC
  #define XGMAC_RXDISCARDBYTE_GB_ADDR		0x9B4
  
@@ -929,4 +931,6 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 +/* EDMA rxdesc2fill map */
 +#define EDMA_RXDESC2FILL_MAP_RXDESC_MASK	0x7
 +
- #endif
+ /* Unicast drop count includes the possible drops with WRED for the green,
+  * yellow and red categories.
+  */

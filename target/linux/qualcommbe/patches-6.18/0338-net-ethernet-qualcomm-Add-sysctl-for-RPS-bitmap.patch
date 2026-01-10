@@ -1,4 +1,4 @@
-From dcac735a715c13a817d65ae371564cf2793330b2 Mon Sep 17 00:00:00 2001
+From 16a5c5c6725c07dcd4af0d565c2110a3d6264e8b Mon Sep 17 00:00:00 2001
 From: Pavithra R <quic_pavir@quicinc.com>
 Date: Tue, 11 Jun 2024 01:43:22 +0530
 Subject: [PATCH] net: ethernet: qualcomm: Add sysctl for RPS bitmap
@@ -20,7 +20,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 
 --- a/drivers/net/ethernet/qualcomm/ppe/edma.c
 +++ b/drivers/net/ethernet/qualcomm/ppe/edma.c
-@@ -797,6 +797,11 @@ void edma_destroy(struct ppe_device *ppe
+@@ -798,6 +798,11 @@ void edma_destroy(struct ppe_device *ppe
  	struct edma_ring_info *rx = hw_info->rx;
  	u32 i;
  
@@ -32,7 +32,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  	/* Disable interrupts. */
  	for (i = 1; i <= hw_info->max_ports; i++)
  		edma_cfg_tx_disable_interrupts(i);
-@@ -840,6 +845,17 @@ void edma_destroy(struct ppe_device *ppe
+@@ -841,6 +846,17 @@ void edma_destroy(struct ppe_device *ppe
  	kfree(edma_ctx->netdev_arr);
  }
  
@@ -50,7 +50,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  /**
   * edma_setup - EDMA Setup.
   * @ppe_dev: PPE device
-@@ -865,6 +881,13 @@ int edma_setup(struct ppe_device *ppe_de
+@@ -866,6 +882,13 @@ int edma_setup(struct ppe_device *ppe_de
  	if (tx_requeue_stop != 0)
  		edma_ctx->tx_requeue_stop = true;
  

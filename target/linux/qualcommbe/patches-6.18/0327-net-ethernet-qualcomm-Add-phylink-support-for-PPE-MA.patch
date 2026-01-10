@@ -1,4 +1,4 @@
-From dbb3711ab25ea410ad5286b2f39dccd954cda225 Mon Sep 17 00:00:00 2001
+From 54bae579f3e6bea90322412a473e00d6815567de Mon Sep 17 00:00:00 2001
 From: Lei Wei <quic_leiwei@quicinc.com>
 Date: Thu, 29 Feb 2024 16:59:53 +0800
 Subject: [PATCH] net: ethernet: qualcomm: Add phylink support for PPE MAC
@@ -8,6 +8,9 @@ Add MAC initialization and phylink functions for PPE MAC ports.
 
 Change-Id: I39dcba671732392bcfa2e734473fd083989bfbec
 Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
+Alex G: Use ipq_pcs_get/put() instead of ipq_unipcs_create/destroy()
+        Drop "port_" prefix from devicetree clock and reset names
+Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 ---
  drivers/net/ethernet/qualcomm/Kconfig        |   3 +
  drivers/net/ethernet/qualcomm/ppe/Makefile   |   2 +-
@@ -15,16 +18,16 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
  drivers/net/ethernet/qualcomm/ppe/ppe.h      |   2 +
  drivers/net/ethernet/qualcomm/ppe/ppe_port.c | 728 +++++++++++++++++++
  drivers/net/ethernet/qualcomm/ppe/ppe_port.h |  76 ++
- drivers/net/ethernet/qualcomm/ppe/ppe_regs.h | 124 ++++
- 7 files changed, 943 insertions(+), 1 deletion(-)
+ drivers/net/ethernet/qualcomm/ppe/ppe_regs.h | 126 ++++
+ 7 files changed, 945 insertions(+), 1 deletion(-)
  create mode 100644 drivers/net/ethernet/qualcomm/ppe/ppe_port.c
  create mode 100644 drivers/net/ethernet/qualcomm/ppe/ppe_port.h
 
 --- a/drivers/net/ethernet/qualcomm/Kconfig
 +++ b/drivers/net/ethernet/qualcomm/Kconfig
-@@ -66,6 +66,9 @@ config QCOM_PPE
- 	depends on HAS_IOMEM && OF
- 	depends on COMMON_CLK
+@@ -65,6 +65,9 @@ config QCOM_PPE
+ 	depends on COMMON_CLK && HAS_IOMEM && OF
+ 	depends on ARCH_QCOM || COMPILE_TEST
  	select REGMAP_MMIO
 +	select PHYLINK
 +	select PCS_QCOM_IPQ_UNIPHY
@@ -50,7 +53,7 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
  
  #define PPE_PORT_MAX		8
  #define PPE_CLK_RATE		353000000
-@@ -200,6 +201,11 @@ static int qcom_ppe_probe(struct platfor
+@@ -205,6 +206,11 @@ static int qcom_ppe_probe(struct platfor
  	if (ret)
  		return dev_err_probe(dev, ret, "PPE HW config failed\n");
  
@@ -62,7 +65,7 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
  	ppe_debugfs_setup(ppe_dev);
  	platform_set_drvdata(pdev, ppe_dev);
  
-@@ -212,6 +218,9 @@ static void qcom_ppe_remove(struct platf
+@@ -217,6 +223,9 @@ static void qcom_ppe_remove(struct platf
  
  	ppe_dev = platform_get_drvdata(pdev);
  	ppe_debugfs_teardown(ppe_dev);
@@ -120,9 +123,9 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
 +
 +/* PPE port clock and reset name */
 +static const char * const ppe_port_clk_rst_name[] = {
-+	[PPE_PORT_CLK_RST_MAC] = "port_mac",
-+	[PPE_PORT_CLK_RST_RX] = "port_rx",
-+	[PPE_PORT_CLK_RST_TX] = "port_tx",
++	[PPE_PORT_CLK_RST_MAC] = "mac",
++	[PPE_PORT_CLK_RST_RX] = "rx",
++	[PPE_PORT_CLK_RST_TX] = "tx",
 +};
 +
 +/* PPE port and MAC reset */
@@ -920,11 +923,20 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
  /* PPE scheduler configurations for buffer manager block. */
  #define PPE_BM_SCH_CTRL_ADDR			0xb000
  #define PPE_BM_SCH_CTRL_INC			4
-@@ -556,4 +567,117 @@
- #define PPE_ENQ_OPR_TBL_ENTRIES			300
+@@ -26,6 +37,9 @@
+ #define PPE_DROP_STAT_TBL_ENTRIES		30
+ #define PPE_DROP_STAT_TBL_INC			0x10
+ 
++#define PPE_EPE_DBG_IN_CNT_ADDR			0x26054
++#define PPE_EPE_DBG_OUT_CNT_ADDR		0x26070
++
+ /* Egress VLAN counters. */
+ #define PPE_EG_VSI_COUNTER_TBL_ADDR		0x41000
+ #define PPE_EG_VSI_COUNTER_TBL_ENTRIES		64
+@@ -554,6 +568,118 @@
  #define PPE_ENQ_OPR_TBL_INC			0x10
  #define PPE_ENQ_OPR_TBL_ENQ_DISABLE		BIT(0)
-+
+ 
 +/* PPE GMAC and XGMAC register base address */
 +#define PPE_PORT_GMAC_ADDR(x)			(0x001000 + ((x) - 1) * 0x200)
 +#define PPE_PORT_XGMAC_ADDR(x)			(0x500000 + ((x) - 1) * 0x4000)
@@ -1037,4 +1049,6 @@ Signed-off-by: Lei Wei <quic_leiwei@quicinc.com>
 +#define XGMAC_MCF				BIT(3)
 +#define XGMAC_CNTRST				BIT(0)
 +
- #endif
+ /* Unicast drop count includes the possible drops with WRED for the green,
+  * yellow and red categories.
+  */

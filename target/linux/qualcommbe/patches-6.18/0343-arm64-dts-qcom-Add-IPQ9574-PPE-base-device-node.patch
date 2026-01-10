@@ -1,4 +1,4 @@
-From bbf706ecfd4295d73c8217d5220573dd51d7a081 Mon Sep 17 00:00:00 2001
+From 2f31a177b001b99234b373afd2f8ba2d65b4c852 Mon Sep 17 00:00:00 2001
 From: Luo Jie <quic_luoj@quicinc.com>
 Date: Fri, 1 Mar 2024 14:46:45 +0800
 Subject: [PATCH] arm64: dts: qcom: Add IPQ9574 PPE base device node
@@ -10,6 +10,7 @@ the UNIPHY (PCS).
 Change-Id: I254bd48c218aa4eab54f697a2ad149f5a93b682c
 Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
 Alex G: Add "qcom_ppe" label to PPE node
+        Also include <qcom,ipq9574-nsscc.h> bindings
 Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 ---
  arch/arm64/boot/dts/qcom/ipq9574.dtsi | 39 +++++++++++++++++++++++++++
@@ -25,7 +26,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  #include <dt-bindings/thermal/thermal.h>
  
  / {
-@@ -1271,6 +1272,44 @@
+@@ -1277,6 +1278,44 @@
  			#interconnect-cells = <1>;
  		};
  
@@ -40,9 +41,9 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 +				 <&nsscc NSS_CC_PPE_SWITCH_IPE_CLK>,
 +				 <&nsscc NSS_CC_PPE_SWITCH_BTQ_CLK>;
 +			clock-names = "ppe",
-+				      "ppe_cfg",
-+				      "ppe_ipe",
-+				      "ppe_btq";
++				      "apb",
++				      "ipe",
++				      "btq";
 +			resets = <&nsscc PPE_FULL_RESET>;
 +			interconnects = <&nsscc MASTER_NSSNOC_PPE
 +					 &nsscc SLAVE_NSSNOC_PPE>,
