@@ -145,6 +145,19 @@ endef
 define DownloadMethod/default
 	$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(FILE)" "$(HASH)" "$(URL_FILE)" $(foreach url,$(URL),"$(url)") \
 	$(if $(filter check,$(1)), \
+		$(if $(PKG_SOURCE_SIG), \
+			$(if $(word 2,$(URL)), \
+				$(error PKG_SOURCE_SIG does not support multiple sources) \
+			) \
+			$(if $(PKG_GPG_KEYS_DIR),, \
+				$(error PKG_GPG_KEYS_DIR must be set when PKG_SOURCE_SIG is defined) \
+			) \
+			$(if $(PKG_VALIDPGPKEYS),, \
+				$(error PKG_VALIDPGPKEYS must be set when PKG_SOURCE_SIG is defined) \
+			) \
+			echo "Downloading GPG signature file..."; \
+			$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(PKG_SOURCE_SIG)" "skip" "$(PKG_SOURCE_SIG)" $(foreach url,$(URL),"$(url)") || exit $$?; \
+		) \
 		$(call check_hash,$(FILE),$(HASH),$(2)$(call hash_var,$(MD5SUM))) \
 		$(call check_md5,$(MD5SUM),$(2)MD5SUM,$(2)HASH) \
 	)
@@ -365,5 +378,22 @@ define Download
 			$(DownloadMethod/unknown) \
 		),\
 		$(FILE))
+
+  ifneq ($(filter default,$(1)),)
+    ifneq ($(PKG_SOURCE_SIG),)
+      $(foreach dep,$(DOWNLOAD_RDEP),
+        $(dep): | verify_gpg_$(subst .,_,$(subst -,_,$(FILE)))
+      )
+.PHONY: verify_gpg_$(subst .,_,$(subst -,_,$(FILE)))
+verify_gpg_$(subst .,_,$(subst -,_,$(FILE))): $(DL_DIR)/$(FILE)
+	@echo "Verifying GPG signature for $(FILE)..."; \
+	GPGV="$(STAGING_DIR_HOST)/bin/gpgv" \
+	$(SCRIPT_DIR)/verify-gpgv.sh \
+		"$(DL_DIR)/$(FILE)" \
+		"$(DL_DIR)/$(PKG_SOURCE_SIG)" \
+		"$(PKG_GPG_KEYS_DIR)" \
+		"$(PKG_VALIDPGPKEYS)" || { rm -f $(DL_DIR)/$(FILE) $(DL_DIR)/$(PKG_SOURCE_SIG); exit 1; }
+    endif
+  endif
 
 endef
