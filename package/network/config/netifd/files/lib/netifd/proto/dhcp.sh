@@ -66,6 +66,7 @@ proto_dhcp_setup() {
 	[ "$norelease" = 1 ] && norelease="" || norelease="-R"
 	[ -z "$clientid" ] && clientid="$(proto_dhcp_get_default_clientid "$iface")"
 	[ -n "$clientid" ] && clientid="-x 0x3d:${clientid//:/}"
+	[ -n "$vendorid" ] && append dhcpopts "-x 0x3c:$(echo -n "$vendorid" | hexdump -ve '1/1 "%02x"')"
 	[ -n "$iface6rd" ] && proto_export "IFACE6RD=$iface6rd"
 	[ "$iface6rd" != 0 -a -f /lib/netifd/proto/6rd.sh ] && append dhcpopts "-O 212"
 	[ -n "$zone6rd" ] && proto_export "ZONE6RD=$zone6rd"
@@ -76,6 +77,16 @@ proto_dhcp_setup() {
 	# Request classless route option (see RFC 3442) by default
 	[ "$classlessroute" = "0" ] || append dhcpopts "-O 121"
 
+	# Avoid sending duplicate Option 60 values
+	local emptyvendorid
+	case "$dhcpopts" in
+		*"-x 0"[xX]*"3"[cC]":"* |\
+		*"-x 60:"* |\
+		*"-x vendor:"*)
+			emptyvendorid=1
+			;;
+	esac
+
 	proto_export "INTERFACE=$config"
 	proto_run_command "$config" udhcpc \
 		-p /var/run/udhcpc-$iface.pid \
@@ -83,7 +94,7 @@ proto_dhcp_setup() {
 		-f -t 0 -i "$iface" \
 		${ipaddr:+-r ${ipaddr/\/*/}} \
 		${hostname:+-x "hostname:$hostname"} \
-		${vendorid:+-V "$vendorid"} \
+		${emptyvendorid:+-V ""} \
 		$clientid $defaultreqopts $broadcast $norelease $dhcpopts
 }
 
