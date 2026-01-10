@@ -1,0 +1,25 @@
+From 84ef80dffb4139c3dc5f59ed2f006838b38e4a1d Mon Sep 17 00:00:00 2001
+From: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Date: Tue, 16 Dec 2025 20:18:18 +0100
+Subject: [PATCH] kbuild: extract modules.builtin.modinfo from vmlinux.o
+
+Partially reverse https://web.git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/commit/?h=linux-6.18.y&id=39cfd5b12160be4f57df1c3ba60139741c827616
+to prevent generation of empty modules.builtin.modinfo and modules.builtin
+files that cause modules compilation errors.
+
+Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+---
+ scripts/Makefile.vmlinux | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/scripts/Makefile.vmlinux
++++ b/scripts/Makefile.vmlinux
+@@ -118,7 +118,7 @@ quiet_cmd_modules_builtin_modinfo = GEN
+ OBJCOPYFLAGS_modules.builtin.modinfo := -j .modinfo -O binary
+ 
+ targets += modules.builtin.modinfo
+-modules.builtin.modinfo: vmlinux.unstripped FORCE
++modules.builtin.modinfo: vmlinux.o FORCE
+ 	$(call if_changed,modules_builtin_modinfo)
+ 
+ # modules.builtin
