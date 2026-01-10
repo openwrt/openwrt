@@ -453,12 +453,11 @@ static bool __rtl8214fc_media_is_fibre(struct phy_device *phydev)
 
 static bool rtl8214fc_media_is_fibre(struct phy_device *phydev)
 {
-	struct mii_bus *bus = phydev->mdio.bus;
 	int ret;
 
-	mutex_lock(&bus->mdio_lock);
+	phy_lock_mdio_bus(phydev);
 	ret = __rtl8214fc_media_is_fibre(phydev);
-	mutex_unlock(&bus->mdio_lock);
+	phy_unlock_mdio_bus(phydev);
 
 	return ret;
 }
@@ -812,20 +811,6 @@ static const struct sfp_upstream_ops rtl8214fc_sfp_ops = {
 	.module_remove = rtl8214fc_sfp_remove,
 };
 
-static int rtl8214fc_phy_probe(struct phy_device *phydev)
-{
-	int ret = 0;
-
-	if (rtl821x_package_join(phydev, 4) == RTL821X_JOIN_LAST) {
-		if (soc_info.family == RTL8380_FAMILY_ID)
-			ret = rtl8380_configure_rtl8214fc(get_base_phy(phydev));
-		if (ret)
-			return ret;
-	}
-
-	return phy_sfp_probe(phydev, &rtl8214fc_sfp_ops);
-}
-
 static int rtl8214c_phy_probe(struct phy_device *phydev)
 {
 	if (rtl821x_package_join(phydev, 4) == RTL821X_JOIN_LAST)
@@ -905,9 +890,19 @@ static int rtl8218b_config_init(struct phy_device *phydev)
 	phy_modify_paged(phydev, RTL821X_MAC_SDS_PAGE(0, 1), 0x14, 0, BIT(3));
 	/* magic CMU setting for stable connectivity of first MAC serdes */
 	phy_write_paged(phydev, 0x462, 0x15, 0x6e58);
+	/* magic setting for rate select 10G full */
+	phy_write_paged(phydev, 0x464, 0x15, 0x202a);
+	/* magic setting for variable gain amplifier */
+	phy_modify_paged(phydev, 0x464, 0x12, 0, 0x1f80);
+	/* magic setting for equalizer of second MAC serdes */
+	phy_write_paged(phydev, RTL821X_MAC_SDS_PAGE(1, 8), 0x12, 0x2020);
+	/* unknown magic for second MAC serdes */
+	phy_write_paged(phydev, RTL821X_MAC_SDS_PAGE(1, 9), 0x11, 0xc014);
 	rtl8218b_cmu_reset(phydev, 0);
 
 	for (int sds = 0; sds < 2; sds++) {
+		/* disable ring PLL for serdes 2+3 */
+		phy_modify_paged(phydev, RTL821X_MAC_SDS_PAGE(sds + 1, 8), 0x11, BIT(15), 0);
 		/* force negative clock edge */
 		phy_modify_paged(phydev, RTL821X_MAC_SDS_PAGE(sds, 0), 0x17, 0, BIT(14));
 		rtl8218b_cmu_reset(phydev, 5 + sds);
@@ -920,6 +915,58 @@ static int rtl8218b_config_init(struct phy_device *phydev)
 	phy_write(phydev, RTL8XXX_PAGE_SELECT, oldpage);
 
 	return 0;
+}
+
+static int rtl8214fc_config_init(struct phy_device *phydev)
+{
+	static int regs[] = {16, 19, 20, 21};
+	struct phy_device *portphy;
+	int port;
+
+	/* Hardware is similar to RTL8218B reuse coding for serdes and copper init */
+	rtl8218b_config_init(phydev);
+
+	if (phydev->mdio.addr % 8)
+		return 0;
+
+	for (port = 0; port < 4; port++) {
+		portphy = get_package_phy(phydev, port);
+
+		phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, 0x8);
+		/* setup basic fiber control in base phy and default to copper */
+		phy_write_paged(phydev, 0x266, regs[port], 0x0f95);
+		phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, 0x0);
+
+		phy_write(portphy, RTL821XEXT_MEDIA_PAGE_SELECT, 0x3);
+		/* set fiber SerDes RX to negative edge */
+		phy_modify_paged(portphy, 0x8, 0x17, 0, BIT(14));
+		/* auto negotiation disable link on */
+		phy_modify_paged(portphy, 0x8, 0x14, 0, BIT(2));
+		/* disable fiber 100MBit */
+		phy_modify_paged(portphy, 0x8, 0x11, BIT(5), 0);
+		phy_write(portphy, RTL821XEXT_MEDIA_PAGE_SELECT, 0x0);
+
+		/* Disable EEE. 0xa5d/0x10 is the same as MDIO_MMD_AN / MDIO_AN_EEE_ADV */
+		phy_write_paged(portphy, 0xa5d, 0x10, 0x0000);
+	}
+
+	return 0;
+}
+
+static int rtl8214fc_phy_probe(struct phy_device *phydev)
+{
+	int ret = 0;
+
+	if (rtl821x_package_join(phydev, 4) == RTL821X_JOIN_LAST) {
+		if (soc_info.family == RTL8380_FAMILY_ID)
+			ret = rtl8380_configure_rtl8214fc(get_base_phy(phydev));
+		else if (soc_info.family == RTL8390_FAMILY_ID)
+			ret = rtl8214fc_config_init(get_base_phy(phydev));
+		if (ret)
+			return ret;
+	}
+
+	return phy_sfp_probe(phydev, &rtl8214fc_sfp_ops);
 }
 
 static struct phy_driver rtl83xx_phy_driver[] = {
