@@ -1,0 +1,36 @@
+From d11eba3e178a9d42a579c656b2c9b643f4ce3e1e Mon Sep 17 00:00:00 2001
+From: Luo Jie <quic_luoj@quicinc.com>
+Date: Mon, 23 Sep 2024 18:46:34 +0800
+Subject: [PATCH] net: phy: Add phy_package_remove_once helper
+
+QCA8084 PHY package needs to do the PHY package clean up,
+add phy_package_remove_once helper to support.
+
+Change-Id: I3cd73bc7be1b1d531435ef72f48db0682548decf
+Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
+---
+ include/linux/phy.h | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/include/linux/phy.h
++++ b/include/linux/phy.h
+@@ -366,6 +366,7 @@ struct phy_package_shared {
+ /* used as bit number in atomic bitops */
+ #define PHY_SHARED_F_INIT_DONE  0
+ #define PHY_SHARED_F_PROBE_DONE 1
++#define PHY_SHARED_F_REMOVE_DONE 2
+ 
+ /**
+  * struct mii_bus - Represents an MDIO bus
+@@ -2245,6 +2246,11 @@ static inline bool phy_package_probe_onc
+ 	return __phy_package_set_once(phydev, PHY_SHARED_F_PROBE_DONE);
+ }
+ 
++static inline bool phy_package_remove_once(struct phy_device *phydev)
++{
++	return __phy_package_set_once(phydev, PHY_SHARED_F_REMOVE_DONE);
++}
++
+ extern const struct bus_type mdio_bus_type;
+ 
+ struct mdio_board_info {
