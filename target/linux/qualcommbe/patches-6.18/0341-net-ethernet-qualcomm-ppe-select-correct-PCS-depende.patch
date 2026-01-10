@@ -1,4 +1,4 @@
-From ac41b401d274a4004027fa4000d801cd28c51f4c Mon Sep 17 00:00:00 2001
+From e913a488e9c8f338488eaa5b3a88e10dffb4e7ee Mon Sep 17 00:00:00 2001
 From: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 Date: Tue, 13 May 2025 13:41:37 -0500
 Subject: [PATCH] net: ethernet: qualcomm: ppe: select correct PCS dependency
@@ -13,8 +13,8 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 
 --- a/drivers/net/ethernet/qualcomm/Kconfig
 +++ b/drivers/net/ethernet/qualcomm/Kconfig
-@@ -67,7 +67,7 @@ config QCOM_PPE
- 	depends on COMMON_CLK
+@@ -66,7 +66,7 @@ config QCOM_PPE
+ 	depends on ARCH_QCOM || COMPILE_TEST
  	select REGMAP_MMIO
  	select PHYLINK
 -	select PCS_QCOM_IPQ_UNIPHY

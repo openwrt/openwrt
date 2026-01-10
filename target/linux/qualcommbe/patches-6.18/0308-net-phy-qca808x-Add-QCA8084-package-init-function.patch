@@ -1,4 +1,4 @@
-From d39dc53424bcc778f1e468015490577e7bf0c7b6 Mon Sep 17 00:00:00 2001
+From 7da15e71be92f1db476f631642cd1eb590102a43 Mon Sep 17 00:00:00 2001
 From: Luo Jie <quic_luoj@quicinc.com>
 Date: Thu, 25 Jan 2024 17:13:24 +0800
 Subject: [PATCH] net: phy: qca808x: Add QCA8084 package init function
@@ -39,7 +39,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  MODULE_DESCRIPTION("Qualcomm Atheros QCA808X PHY driver");
  MODULE_AUTHOR("Matus Ujhelyi, Luo Jie");
  MODULE_LICENSE("GPL");
-@@ -168,6 +175,7 @@ struct qca808x_priv {
+@@ -169,6 +176,7 @@ struct qca808x_priv {
  };
  
  struct qca808x_shared_priv {
@@ -47,8 +47,8 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  	struct clk *clk[PACKAGE_CLK_MAX];
  };
  
-@@ -816,10 +824,111 @@ static int qca808x_led_polarity_set(stru
- 			      active_low ? 0 : QCA808X_LED_ACTIVE_HIGH);
+@@ -837,10 +845,111 @@ static void qca808x_get_phy_stats(struct
+ 	qcom_phy_get_stats(stats, priv->hw_stats);
  }
  
 +static int qca8084_package_clock_init(struct qca808x_shared_priv *shared_priv)
@@ -159,7 +159,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  	if (phydev->interface == PHY_INTERFACE_MODE_10G_QXGMII)
  		__set_bit(PHY_INTERFACE_MODE_10G_QXGMII,
  			  phydev->possible_interfaces);
-@@ -954,6 +1063,15 @@ static int qca8084_phy_package_probe_onc
+@@ -975,6 +1084,15 @@ static int qca8084_phy_package_probe_onc
  		shared_priv->clk[i] = clk;
  	}
  
