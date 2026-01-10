@@ -805,22 +805,22 @@ static int rtmdio_930x_reset(struct mii_bus *bus)
 	u32 poll_sel[2] = { 0 };
 	u32 poll_ctrl = 0;
 	u32 c45_mask = 0;
-	u32 v;
+	u32 v = 0;
 
-	/* Mapping of port to phy-addresses on an SMI bus */
-	for (int i = 0; i < priv->cfg->cpu_port; i++) {
+	/* Define bus topology */
+	for (int addr = 0; addr < priv->cfg->cpu_port; addr++) {
 		int pos;
 
-		if (priv->smi_bus[i] < 0)
+		if (priv->smi_bus[addr] < 0)
 			continue;
 
-		pos = (i % 6) * 5;
-		sw_w32_mask(0x1f << pos, priv->smi_addr[i] << pos,
-			    RTMDIO_930X_SMI_PORT0_5_ADDR + (i / 6) * 4);
+		pos = (addr % 6) * 5;
+		sw_w32_mask(0x1f << pos, priv->smi_addr[addr] << pos,
+			    RTMDIO_930X_SMI_PORT0_5_ADDR + (addr / 6) * 4);
 
-		pos = (i * 2) % 32;
-		poll_sel[i / 16] |= priv->smi_bus[i] << pos;
-		poll_ctrl |= BIT(20 + priv->smi_bus[i]);
+		pos = (addr * 2) % 32;
+		poll_sel[addr / 16] |= priv->smi_bus[addr] << pos;
+		poll_ctrl |= BIT(20 + priv->smi_bus[addr]);
 	}
 
 	/* Configure which SMI bus is behind which port number */
@@ -830,28 +830,29 @@ static int rtmdio_930x_reset(struct mii_bus *bus)
 	/* Disable POLL_SEL for any SMI bus with a normal PHY (not RTL8295R for SFP+) */
 	sw_w32_mask(poll_ctrl, 0, RTMDIO_930X_SMI_GLB_CTRL);
 
-	/* Configure which SMI busses are polled in c45 based on a c45 PHY being on that bus */
-	for (int i = 0; i < RTMDIO_MAX_SMI_BUS; i++)
-		if (priv->smi_bus_isc45[i])
-			c45_mask |= BIT(i + 16);
+	/* Define c22/c45 bus polling */
+	for (int addr = 0; addr < RTMDIO_MAX_SMI_BUS; addr++)
+		if (priv->smi_bus_isc45[addr])
+			c45_mask |= BIT(addr + 16);
 
 	pr_info("c45_mask: %08x\n", c45_mask);
 	sw_w32_mask(GENMASK(19, 16), c45_mask, RTMDIO_930X_SMI_GLB_CTRL);
 
-	/* Set the MAC type of each port according to the PHY-interface */
-	/* Values are FE: 2, GE: 3, XGE/2.5G: 0(SERDES) or 1(otherwise), SXGE: 0 */
-	v = 0;
-	for (int i = 0; i < priv->cfg->cpu_port; i++) {
-		switch (priv->interfaces[i]) {
+	/* Define PHY specific polling parameters */
+	for (int addr = 0; addr < priv->cfg->cpu_port; addr++) {
+		if (priv->smi_bus[addr] < 0)
+			continue;
+
+		switch (priv->interfaces[addr]) {
 		case PHY_INTERFACE_MODE_10GBASER:
 			break;			/* Serdes: Value = 0 */
 		case PHY_INTERFACE_MODE_USXGMII:
-			v |= BIT(mac_type_bit[i]);
+			v |= BIT(mac_type_bit[addr]);
 			uses_usxgmii = true;
 			break;
 		case PHY_INTERFACE_MODE_QSGMII:
-			private_poll_mask |= BIT(i);
-			v |= 3 << mac_type_bit[i];
+			private_poll_mask |= BIT(addr);
+			v |= 3 << mac_type_bit[addr];
 			break;
 		default:
 			break;
@@ -911,17 +912,17 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 	msleep(100);
 
 	/* Mapping of port to phy-addresses on an SMI bus */
-	for (int i = 0; i < priv->cfg->cpu_port; i++) {
+	for (int addr = 0; addr < priv->cfg->cpu_port; addr++) {
 		u32 pos;
 
-		if (priv->smi_bus[i] < 0)
+		if (priv->smi_bus[addr] < 0)
 			continue;
 
-		pos = (i % 6) * 5;
-		sw_w32_mask(0x1f << pos, priv->smi_addr[i] << pos, RTMDIO_931X_SMI_PORT_ADDR + (i / 6) * 4);
-		pos = (i * 2) % 32;
-		poll_sel[i / 16] |= priv->smi_bus[i] << pos;
-		poll_ctrl |= BIT(20 + priv->smi_bus[i]);
+		pos = (addr % 6) * 5;
+		sw_w32_mask(0x1f << pos, priv->smi_addr[addr] << pos, RTMDIO_931X_SMI_PORT_ADDR + (addr / 6) * 4);
+		pos = (addr * 2) % 32;
+		poll_sel[addr / 16] |= priv->smi_bus[addr] << pos;
+		poll_ctrl |= BIT(20 + priv->smi_bus[addr]);
 	}
 
 	/* Configure which SMI bus is behind which port number */
@@ -964,7 +965,6 @@ static int rtmdio_probe(struct platform_device *pdev)
 	struct rtmdio_bus_priv *priv;
 	struct mii_bus *bus;
 	u32 pn;
-	int i;
 
 	mii_np = of_get_child_by_name(dev->of_node, "mdio-bus");
 	if (!mii_np)
@@ -980,10 +980,8 @@ static int rtmdio_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	priv = bus->priv;
-	for (i = 0; i < RTMDIO_MAX_PORT; i++) {
-		priv->page[i] = 0;
-		priv->raw[i] = false;
-	}
+	for (int addr = 0; addr < RTMDIO_MAX_PORT; addr++)
+		priv->smi_bus[addr] = -1;
 
 	priv->cfg = (const struct rtmdio_config *)device_get_match_data(dev);
 
