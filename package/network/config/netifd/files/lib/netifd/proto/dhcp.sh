@@ -32,16 +32,34 @@ proto_dhcp_add_sendopts() {
 	[ -n "$1" ] && append "$3" "-x $1"
 }
 
+proto_dhcp_get_iaid() {
+	local iface="$1"
+
+	echo $iface | awk '
+	BEGIN {
+		FS=""
+		for(n=0;n<256;n++)
+			ord[sprintf("%c",n)]=n
+	}
+	{
+		iaid=0
+		for (i=1;i<=NF;i++) {
+			iaid=and(ord[$i]+iaid*31,0xFFFFFFFF)
+		}
+		printf("%08x\n",iaid)
+	}'
+}
+
 proto_dhcp_get_default_clientid() {
 	[ -z "$1" ] && return
 
 	local iface="$1"
 	local duid
-	local iaid="0"
+	local iaid
 
-        [ -e "/sys/class/net/$iface/ifindex" ] && iaid="$(cat "/sys/class/net/$iface/ifindex")"
-        duid="$(uci_get network @globals[0] dhcp_default_duid)"
-        [ -n "$duid" ] && printf "ff%08x%s" "$iaid" "$duid"
+	iaid="$(proto_dhcp_get_iaid $iface)"
+	duid="$(uci_get network @globals[0] dhcp_default_duid)"
+	[ -n "$duid" ] && printf "ff%s%s" "$iaid" "$duid"
 }
 
 proto_dhcp_setup() {
