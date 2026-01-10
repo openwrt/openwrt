@@ -84,6 +84,7 @@ case "$board" in
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr 1 > /sys${DEVPATH}/macaddress
 		;;
 	cudy,ap3000outdoor-v1|\
+	cudy,ap3000wall-v1|\
 	cudy,ap3000-v1|\
 	cudy,m3000-v1|\
 	cudy,re3000-v1|\
@@ -218,8 +219,7 @@ case "$board" in
 	routerich,ax3000|\
 	routerich,ax3000-ubootmod|\
 	zbtlink,zbt-z8102ax|\
-	zbtlink,zbt-z8102ax-v2|\
-	zbtlink,zbt-z8103ax)
+	zbtlink,zbt-z8102ax-v2)
 		addr=$(mtd_get_mac_binary "Factory" 0x4)
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr 1 > /sys${DEVPATH}/macaddress
 		;;

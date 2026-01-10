@@ -1041,6 +1041,23 @@ define Device/cudy_ap3000outdoor-v1
 endef
 TARGET_DEVICES += cudy_ap3000outdoor-v1
 
+define Device/cudy_ap3000wall-v1
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := AP3000 Wall
+  DEVICE_VARIANT := v1
+  DEVICE_DTS := mt7981b-cudy-ap3000wall-v1
+  DEVICE_DTS_DIR := ../dts
+  SUPPORTED_DEVICES += R68
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 65536k
+  KERNEL_IN_UBI := 1
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+endef
+TARGET_DEVICES += cudy_ap3000wall-v1
+
 define Device/cudy_ap3000-v1
   DEVICE_VENDOR := Cudy
   DEVICE_MODEL := AP3000
@@ -2496,6 +2513,34 @@ define Device/routerich_ax3000-v1
 endef
 TARGET_DEVICES += routerich_ax3000-v1
 
+define Device/routerich_be7200
+  DEVICE_VENDOR := Routerich
+  DEVICE_MODEL := BE7200
+  DEVICE_DTS := mt7987a-routerich-be7200
+  DEVICE_DTS_DIR := ../dts
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_IN_UBI := 1
+  UBOOTENV_IN_UBI := 1
+  IMAGES := sysupgrade.itb
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  KERNEL_LOADADDR := 0x40000000
+  KERNEL := kernel-bin | gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | \
+	pad-to 64k
+  IMAGE/sysupgrade.itb := append-kernel | \
+	fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-with-rootfs | \
+	pad-rootfs | append-metadata
+  DEVICE_PACKAGES := mt7987-2p5g-phy-firmware kmod-mt7992-firmware \
+	 kmod-regulator-userspace-consumer kmod-usb3
+  ARTIFACTS := preloader.bin bl31-uboot.fip
+  ARTIFACT/preloader.bin := mt7987-bl2 spim-nand0
+  ARTIFACT/bl31-uboot.fip := mt7987-bl31-uboot routerich_be7200
+endef
+TARGET_DEVICES += routerich_be7200
+
 define Device/ruijie_rg-x60-pro
   DEVICE_VENDOR := Ruijie
   DEVICE_MODEL := RG-X60 Pro
@@ -3062,6 +3107,23 @@ define Device/zbtlink_zbt-z8103ax
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += zbtlink_zbt-z8103ax
+
+define Device/zbtlink_zbt-z8103ax-c
+  DEVICE_VENDOR := Zbtlink
+  DEVICE_MODEL := ZBT-Z8103AX-C
+  DEVICE_DTS := mt7981b-zbtlink-zbt-z8103ax-c
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  KERNEL_IN_UBI := 1
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 65536k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-ubi | check-size $$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += zbtlink_zbt-z8103ax-c
 
 define Device/zyxel_ex5601-t0-stock
   DEVICE_VENDOR := Zyxel

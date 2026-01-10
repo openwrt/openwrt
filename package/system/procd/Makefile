@@ -50,6 +50,7 @@ define Package/procd
   $(call Package/procd/Default)
   VARIANT:=default
   CONFLICTS:=procd-selinux
+  DEFAULT_VARIANT:=1
 endef
 
 define Package/procd-selinux

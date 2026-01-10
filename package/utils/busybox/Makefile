@@ -47,7 +47,7 @@ define Package/busybox/Default
   CATEGORY:=Base system
   MAINTAINER:=Felix Fietkau <nbd@nbd.name>
   TITLE:=Core utilities for embedded Linux
-  URL:=http://busybox.net/
+  URL:=https://busybox.net/
   DEPENDS:= +USE_GLIBC:libcrypt-compat +BUSYBOX_CONFIG_PAM:libpam +BUSYBOX_CONFIG_NTPD:jsonfilter +(USE_GLIBC&&BUSYBOX_CONFIG_FEATURE_MOUNT_NFS)||(USE_GLIBC&&BUSYBOX_CONFIG_FEATURE_INETD_RPC):libtirpc
   USERID:=ntp=123:ntp=123
 endef
@@ -56,6 +56,7 @@ define Package/busybox
   $(call Package/busybox/Default)
   CONFLICTS:=busybox-selinux
   VARIANT:=default
+  DEFAULT_VARIANT:=1
 endef
 
 define Package/busybox-selinux

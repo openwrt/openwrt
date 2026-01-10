@@ -39,3 +39,26 @@ define Device/microchip_ev23x71a
 		gzip
 endef
 TARGET_DEVICES += microchip_ev23x71a
+
+define Device/novarq_tactical-1000
+	$(call Device/FitImage)
+	DEVICE_VENDOR := Novarq
+	DEVICE_MODEL := Tactical 1000
+	SOC := lan9696
+	DEVICE_PACKAGES := kmod-i2c-mux-gpio \
+		kmod-gpio-pwm kmod-hwmon-pwmfan kmod-hwmon-gpiofan \
+		kmod-rtc-ds1307 kmod-hwmon-lm75
+	IMAGES += emmc-atf-gpt.gz emmc-gpt.img.gz
+	IMAGE/emmc-atf-gpt.gz := lan969x-gpt-emmc |\
+		pad-to 1M | lan969x-fip tactical-1000 |\
+		pad-to 9M | lan969x-fip tactical-1000 |\
+		gzip
+	IMAGE/emmc-gpt.img.gz := lan969x-gpt-emmc flash |\
+		pad-to 1M | lan969x-fip tactical-1000 |\
+		pad-to 9M | lan969x-fip tactical-1000 |\
+		pad-to 19M | append-kernel-part |\
+		append-rootfs |\
+		gzip
+	SUPPORTED_DEVICES += novarq,tactical-1000-v3
+endef
+TARGET_DEVICES += novarq_tactical-1000

@@ -27,7 +27,7 @@ define Package/kselftests-bpf
 	+libelf +zlib +libpthread +librt +libpcap @!IN_SDK \
 	@KERNEL_DEBUG_FS @KERNEL_DEBUG_INFO_BTF @KERNEL_BPF_EVENTS
   TITLE:=Linux Kernel Selftests (BPF)
-  URL:=http://www.kernel.org
+  URL:=https://www.kernel.org
 endef
 
 define Package/kselftests-bpf/description
