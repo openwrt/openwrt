@@ -1,4 +1,4 @@
-From 93cf3297818ee61607f0a8d1d34e4fb7fcde3cdf Mon Sep 17 00:00:00 2001
+From cd111b91e3cc1d6955dd116bec697f3d909fb419 Mon Sep 17 00:00:00 2001
 From: Luo Jie <quic_luoj@quicinc.com>
 Date: Tue, 26 Dec 2023 20:18:09 +0800
 Subject: [PATCH] net: ethernet: qualcomm: Add PPE scheduler config
@@ -23,7 +23,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 
 --- a/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
 +++ b/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
-@@ -864,6 +864,51 @@ static int ppe_scheduler_l0_queue_map_se
+@@ -889,6 +889,51 @@ static int ppe_scheduler_l0_queue_map_se
  				  val);
  }
  
@@ -75,7 +75,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  /* Set the PPE flow level scheduler configuration. */
  static int ppe_scheduler_l1_queue_map_set(struct ppe_device *ppe_dev,
  					  int node_id, int port,
-@@ -916,6 +961,50 @@ static int ppe_scheduler_l1_queue_map_se
+@@ -941,6 +986,50 @@ static int ppe_scheduler_l1_queue_map_se
  	return regmap_update_bits(ppe_dev->regmap, reg, PPE_L1_COMP_CFG_TBL_NODE_METER_LEN, val);
  }
  
@@ -126,7 +126,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  /**
   * ppe_queue_scheduler_set - Configure scheduler for PPE hardware queue
   * @ppe_dev: PPE device
-@@ -942,6 +1031,58 @@ int ppe_queue_scheduler_set(struct ppe_d
+@@ -967,6 +1056,58 @@ int ppe_queue_scheduler_set(struct ppe_d
  }
  
  /**

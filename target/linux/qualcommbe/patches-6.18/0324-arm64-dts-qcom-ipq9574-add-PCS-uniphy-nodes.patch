@@ -1,4 +1,4 @@
-From d6f184181b076cbb54f152994f5bc73ce524a67e Mon Sep 17 00:00:00 2001
+From bfd4347fe459ab763044656cbf3227703d9c3b7b Mon Sep 17 00:00:00 2001
 From: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 Date: Sun, 11 May 2025 18:21:00 -0500
 Subject: [PATCH] arm64: dts: qcom: ipq9574: add PCS uniphy nodes
@@ -24,7 +24,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  #include <dt-bindings/interconnect/qcom,ipq9574.h>
  #include <dt-bindings/interrupt-controller/arm-gic.h>
  #include <dt-bindings/reset/qcom,ipq9574-gcc.h>
-@@ -1247,12 +1248,12 @@
+@@ -1253,12 +1254,12 @@
  				 <&cmn_pll NSS_1200MHZ_CLK>,
  				 <&cmn_pll PPE_353MHZ_CLK>,
  				 <&gcc GPLL0_OUT_AUX>,
@@ -43,7 +43,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  				 <&gcc GCC_NSSCC_CLK>;
  			clock-names = "xo",
  				      "nss_1200",
-@@ -1269,6 +1270,93 @@
+@@ -1275,6 +1276,93 @@
  			#reset-cells = <1>;
  			#interconnect-cells = <1>;
  		};
@@ -93,7 +93,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 +			};
 +		};
 +
-+		pcs1: ethernet-pcs@7a10000 {
++		pcs1: ethernet-uniphy@7a10000 {
 +			#address-cells = <1>;
 +			#size-cells = <0>;
 +			compatible = "qcom,ipq9574-pcs";
@@ -105,7 +105,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
 +			resets = <&gcc GCC_UNIPHY1_XPCS_RESET>;
 +			#clock-cells = <1>;
 +
-+			pcs1_ch0: pcs-mii@0 {
++			pcs1_ch0: uniphy-ch@0 {
 +				reg = <0>;
 +				clocks = <&nsscc NSS_CC_UNIPHY_PORT5_RX_CLK>,
 +					 <&nsscc NSS_CC_UNIPHY_PORT5_TX_CLK>;

@@ -1,4 +1,4 @@
-From 2f5b7e167d847a5b5b74a91f991d48635453c55f Mon Sep 17 00:00:00 2001
+From c2d664e748ce7b96dbd07f79091527aaf1725165 Mon Sep 17 00:00:00 2001
 From: Luo Jie <quic_luoj@quicinc.com>
 Date: Mon, 23 Sep 2024 21:24:56 +0800
 Subject: [PATCH] net: phy: qca808x: Add QCA8084 SerDes speed config
@@ -214,7 +214,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  #endif /* _QCA8084_SERDES_H_ */
 --- a/drivers/net/phy/qcom/qca808x.c
 +++ b/drivers/net/phy/qcom/qca808x.c
-@@ -976,6 +976,7 @@ static int qca8084_config_init(struct ph
+@@ -997,6 +997,7 @@ static int qca8084_config_init(struct ph
  
  static void qca8084_link_change_notify(struct phy_device *phydev)
  {
@@ -222,7 +222,7 @@ Signed-off-by: Alexandru Gagniuc <mr.nuke.me@gmail.com>
  	int ret;
  
  	/* Assert the FIFO between PHY and MAC. */
-@@ -1007,14 +1008,24 @@ static void qca8084_link_change_notify(s
+@@ -1028,14 +1029,24 @@ static void qca8084_link_change_notify(s
  		}
  	}
  
