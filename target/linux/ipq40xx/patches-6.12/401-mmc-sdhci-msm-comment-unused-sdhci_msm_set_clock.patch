@@ -13,7 +13,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/mmc/host/sdhci-msm.c
 +++ b/drivers/mmc/host/sdhci-msm.c
-@@ -1833,49 +1833,49 @@ static unsigned int sdhci_msm_get_min_cl
+@@ -1835,51 +1835,49 @@ static unsigned int sdhci_msm_get_min_cl
  	return SDHCI_MSM_MIN_CLOCK;
  }
  
@@ -48,6 +48,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 -{
 -	struct sdhci_pltfm_host *pltfm_host = sdhci_priv(host);
 -	struct sdhci_msm_host *msm_host = sdhci_pltfm_priv(pltfm_host);
+-	struct mmc_ios ios = host->mmc->ios;
 -
 -	if (!clock) {
 -		host->mmc->actual_clock = msm_host->clk_rate = 0;
@@ -56,10 +57,11 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 -
 -	sdhci_msm_hc_select_mode(host);
 -
--	msm_set_clock_rate_for_bus_mode(host, clock);
+-	msm_set_clock_rate_for_bus_mode(host, ios.clock, ios.timing);
 -out:
 -	__sdhci_msm_set_clock(host, clock);
 -}
+-
 +// /*
 +//  * __sdhci_msm_set_clock - sdhci_msm clock control.
 +//  *
@@ -99,10 +101,10 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +
 +// 	sdhci_msm_hc_select_mode(host);
 +
-+// 	msm_set_clock_rate_for_bus_mode(host, clock);
++// 	msm_set_clock_rate_for_bus_mode(host, ios.clock, ios.timing);
 +// out:
 +// 	__sdhci_msm_set_clock(host, clock);
 +// }
- 
  /*****************************************************************************\
   *                                                                           *
+  * Inline Crypto Engine (ICE) support                                        *
