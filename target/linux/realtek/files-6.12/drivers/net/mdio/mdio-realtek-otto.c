@@ -12,6 +12,19 @@
 #define RTMDIO_MAX_SMI_BUS			4
 #define RTMDIO_PAGE_SELECT			0x1f
 
+#define RTMDIO_PHY_AQR113C			0x31c31c12
+#define RTMDIO_PHY_RTL8221B_VB_CG		0x001cc849
+#define RTMDIO_PHY_RTL8221B_VM_CG		0x001cc84a
+#define RTMDIO_PHY_RTL8224			0x001ccad0
+#define RTMDIO_PHY_RTL8226			0x001cc838
+#define RTMDIO_PHY_RTL8218D			0x001cc983
+#define RTMDIO_PHY_RTL8218E			0x001cc984
+
+#define RTMDIO_PHY_MAC_1G			3
+#define RTMDIO_PHY_MAC_2G_PLUS			1
+
+#define RTMDIO_PHY_POLL_MMD(dev, reg, bit)	((bit << 21) | (dev << 16) | reg)
+
 /* Register base */
 #define RTMDIO_SW_BASE				((volatile void *) 0xBB000000)
 
@@ -137,7 +150,6 @@ struct rtmdio_bus_priv {
 	int smi_bus[RTMDIO_MAX_PORT];
 	u8 smi_addr[RTMDIO_MAX_PORT];
 	bool smi_bus_isc45[RTMDIO_MAX_SMI_BUS];
-	phy_interface_t interfaces[RTMDIO_MAX_PORT];
 };
 
 struct rtmdio_config {
@@ -148,6 +160,17 @@ struct rtmdio_config {
 	int (*reset)(struct mii_bus *bus);
 	int (*write_mmd_phy)(u32 port, u32 addr, u32 reg, u32 val);
 	int (*write_phy)(u32 port, u32 page, u32 reg, u32 val);
+};
+
+struct rtmdio_phy_info {
+	unsigned int phy_id;
+	bool phy_unknown;
+	int mac_type;
+	bool has_giga_lite;
+	bool has_res_reg;
+	unsigned int poll_duplex;
+	unsigned int poll_adv_1000;
+	unsigned int poll_lpa_1000;
 };
 
 /* RTL838x specific MDIO functions */
@@ -764,6 +787,56 @@ static int rtmdio_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 	return 0;
 }
 
+static void rtmdio_get_phy_info(struct mii_bus *bus, int addr, struct rtmdio_phy_info *phyinfo)
+{
+	struct rtmdio_bus_priv *priv = bus->priv;
+
+	/*
+	 * Depending on the attached PHY the polling mechanism must be fine tuned. Basically
+	 * this boils down to which registers must be read and if there are any special
+	 * features.
+	 */
+	memset(phyinfo, 0, sizeof(*phyinfo));
+	if (priv->smi_bus[addr] < 0) {
+		phyinfo->phy_unknown = true;
+		return;
+	}
+
+	if (priv->smi_bus_isc45[priv->smi_bus[addr]])
+		phyinfo->phy_id = (rtmdio_read_c45(bus, addr, 31, 2) << 16) +
+				 rtmdio_read_c45(bus, addr, 31, 3);
+	else
+		phyinfo->phy_id = (rtmdio_read(bus, addr, 2) << 16) +
+				 rtmdio_read(bus, addr, 3);
+
+	switch(phyinfo->phy_id) {
+	case RTMDIO_PHY_AQR113C:
+		phyinfo->mac_type = RTMDIO_PHY_MAC_2G_PLUS;
+		phyinfo->poll_duplex = RTMDIO_PHY_POLL_MMD(1, 0x0000, 8);
+		phyinfo->poll_adv_1000 = RTMDIO_PHY_POLL_MMD(7, 0xc400, 15);
+		phyinfo->poll_lpa_1000 = RTMDIO_PHY_POLL_MMD(7, 0xe820, 15);
+		break;
+	case RTMDIO_PHY_RTL8218D:
+	case RTMDIO_PHY_RTL8218E:
+		phyinfo->mac_type = RTMDIO_PHY_MAC_1G;
+		phyinfo->has_giga_lite = true;
+		break;
+	case RTMDIO_PHY_RTL8226:
+	case RTMDIO_PHY_RTL8221B_VB_CG:
+	case RTMDIO_PHY_RTL8221B_VM_CG:
+	case RTMDIO_PHY_RTL8224:
+		phyinfo->mac_type = RTMDIO_PHY_MAC_2G_PLUS;
+		phyinfo->has_giga_lite = true;
+		phyinfo->poll_duplex = RTMDIO_PHY_POLL_MMD(31, 0xa400, 8);
+		phyinfo->poll_adv_1000 = RTMDIO_PHY_POLL_MMD(31, 0xa412, 9);
+		phyinfo->poll_lpa_1000 = RTMDIO_PHY_POLL_MMD(31, 0xa414, 11);
+		break;
+	default:
+		phyinfo->phy_unknown = true;
+		break;
+	}
+}
+
 static int rtmdio_838x_reset(struct mii_bus *bus)
 {
 	pr_debug("%s called\n", __func__);
@@ -793,88 +866,68 @@ static int rtmdio_839x_reset(struct mii_bus *bus)
 	return 0;
 }
 
-u8 mac_type_bit[RTMDIO_MAX_PORT] = {0, 0, 0, 0, 2, 2, 2, 2, 4, 4, 4, 4, 6, 6, 6, 6,
-				    8, 8, 8, 8, 10, 10, 10, 10, 12, 15, 18, 21};
-
 static int rtmdio_930x_reset(struct mii_bus *bus)
 {
 	struct rtmdio_bus_priv *priv = bus->priv;
-	bool uses_usxgmii = false; /* For the Aquantia PHYs */
-	bool uses_hisgmii = false; /* For the RTL8221/8226 */
-	u32 private_poll_mask = 0;
-	u32 poll_sel[2] = { 0 };
-	u32 poll_ctrl = 0;
-	u32 c45_mask = 0;
-	u32 v;
+	struct rtmdio_phy_info phyinfo;
+	unsigned int reg, mask, val;
 
-	/* Mapping of port to phy-addresses on an SMI bus */
-	for (int i = 0; i < priv->cfg->cpu_port; i++) {
-		int pos;
-
-		if (priv->smi_bus[i] < 0)
+	/* Define bus topology */
+	for (int addr = 0; addr < priv->cfg->cpu_port; addr++) {
+		if (priv->smi_bus[addr] < 0)
 			continue;
 
-		pos = (i % 6) * 5;
-		sw_w32_mask(0x1f << pos, priv->smi_addr[i] << pos,
-			    RTMDIO_930X_SMI_PORT0_5_ADDR + (i / 6) * 4);
+		reg = (addr / 6) * 4;
+		mask = 0x1f << ((addr % 6) * 5);
+		val = priv->smi_addr[addr] << (ffs(mask) - 1);
+		sw_w32_mask(mask, val, RTMDIO_930X_SMI_PORT0_5_ADDR + reg);
 
-		pos = (i * 2) % 32;
-		poll_sel[i / 16] |= priv->smi_bus[i] << pos;
-		poll_ctrl |= BIT(20 + priv->smi_bus[i]);
+		reg = (addr / 16) * 4;
+		mask = 0x3 << ((addr % 16) * 2);
+		val = priv->smi_bus[addr] << (ffs(mask) - 1);
+		sw_w32_mask(mask, val, RTMDIO_930X_SMI_PORT0_15_POLLING_SEL + reg);
 	}
 
-	/* Configure which SMI bus is behind which port number */
-	sw_w32(poll_sel[0], RTMDIO_930X_SMI_PORT0_15_POLLING_SEL);
-	sw_w32(poll_sel[1], RTMDIO_930X_SMI_PORT16_27_POLLING_SEL);
+	/* Define c22/c45 bus polling */
+	for (int addr = 0; addr < RTMDIO_MAX_SMI_BUS; addr++) {
+		mask = BIT(16 + addr);
+		val = priv->smi_bus_isc45[addr] ? mask : 0;
+		sw_w32_mask(mask, val, RTMDIO_930X_SMI_GLB_CTRL);
+	}
 
-	/* Disable POLL_SEL for any SMI bus with a normal PHY (not RTL8295R for SFP+) */
-	sw_w32_mask(poll_ctrl, 0, RTMDIO_930X_SMI_GLB_CTRL);
+	/* Define PHY specific polling parameters */
+	for (int addr = 0; addr < priv->cfg->cpu_port; addr++) {
+		if (priv->smi_bus[addr] < 0)
+			continue;
 
-	/* Configure which SMI busses are polled in c45 based on a c45 PHY being on that bus */
-	for (int i = 0; i < RTMDIO_MAX_SMI_BUS; i++)
-		if (priv->smi_bus_isc45[i])
-			c45_mask |= BIT(i + 16);
-
-	pr_info("c45_mask: %08x\n", c45_mask);
-	sw_w32_mask(GENMASK(19, 16), c45_mask, RTMDIO_930X_SMI_GLB_CTRL);
-
-	/* Set the MAC type of each port according to the PHY-interface */
-	/* Values are FE: 2, GE: 3, XGE/2.5G: 0(SERDES) or 1(otherwise), SXGE: 0 */
-	v = 0;
-	for (int i = 0; i < priv->cfg->cpu_port; i++) {
-		switch (priv->interfaces[i]) {
-		case PHY_INTERFACE_MODE_10GBASER:
-			break;			/* Serdes: Value = 0 */
-		case PHY_INTERFACE_MODE_USXGMII:
-			v |= BIT(mac_type_bit[i]);
-			uses_usxgmii = true;
-			break;
-		case PHY_INTERFACE_MODE_QSGMII:
-			private_poll_mask |= BIT(i);
-			v |= 3 << mac_type_bit[i];
-			break;
-		default:
-			break;
+		rtmdio_get_phy_info(bus, addr, &phyinfo);
+		if (phyinfo.phy_unknown) {
+			pr_warn("skip polling setup for unknown PHY %08x on port %d\n",
+				phyinfo.phy_id, addr);
+			continue;
 		}
-	}
-	sw_w32(v, RTMDIO_930X_SMI_MAC_TYPE_CTRL);
 
-	/* Set the private polling mask for all Realtek PHYs (i.e. not the 10GBit Aquantia ones) */
-	sw_w32(private_poll_mask, RTMDIO_930X_SMI_PRVTE_POLLING_CTRL);
+		/* port MAC type */
+		mask = addr > 23 ? 0x7 << ((addr - 24) * 3 + 12): 0x3 << ((addr / 4) * 2);
+		val = phyinfo.mac_type << (ffs(mask) - 1);
+		sw_w32_mask(mask, val, RTMDIO_930X_SMI_MAC_TYPE_CTRL);
 
-	/* The following magic values are found in the port configuration, they seem to
-	 * define different ways of polling a PHY. The below is for the Aquantia PHYs of
-	 * the XGS1250 and the RTL8226 of the XGS1210
-	 */
-	if (uses_usxgmii) {
-		sw_w32(0x01010000, RTMDIO_930X_SMI_10G_POLLING_REG0_CFG);
-		sw_w32(0x01E7C400, RTMDIO_930X_SMI_10G_POLLING_REG9_CFG);
-		sw_w32(0x01E7E820, RTMDIO_930X_SMI_10G_POLLING_REG10_CFG);
-	}
-	if (uses_hisgmii) {
-		sw_w32(0x011FA400, RTMDIO_930X_SMI_10G_POLLING_REG0_CFG);
-		sw_w32(0x013FA412, RTMDIO_930X_SMI_10G_POLLING_REG9_CFG);
-		sw_w32(0x017FA414, RTMDIO_930X_SMI_10G_POLLING_REG10_CFG);
+		/* polling via standard or resolution register */
+		mask = BIT(20 + priv->smi_bus[addr]);
+		val = phyinfo.has_res_reg ? mask : 0;
+		sw_w32_mask(mask, val, RTMDIO_930X_SMI_GLB_CTRL);
+
+		/* proprietary Realtek 1G/2.5 lite polling */
+		mask = BIT(addr);
+		val = phyinfo.has_giga_lite ? mask : 0;
+		sw_w32_mask(mask, val, RTMDIO_930X_SMI_PRVTE_POLLING_CTRL);
+
+		/* special duplex/advertisement polling registers */
+		if (phyinfo.poll_duplex || phyinfo.poll_adv_1000 || phyinfo.poll_lpa_1000) {
+			sw_w32(phyinfo.poll_duplex, RTMDIO_930X_SMI_10G_POLLING_REG0_CFG);
+			sw_w32(phyinfo.poll_adv_1000, RTMDIO_930X_SMI_10G_POLLING_REG9_CFG);
+			sw_w32(phyinfo.poll_lpa_1000, RTMDIO_930X_SMI_10G_POLLING_REG10_CFG);
+		}
 	}
 
 	pr_debug("%s: RTMDIO_930X_SMI_GLB_CTRL %08x\n", __func__,
@@ -911,17 +964,17 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 	msleep(100);
 
 	/* Mapping of port to phy-addresses on an SMI bus */
-	for (int i = 0; i < priv->cfg->cpu_port; i++) {
+	for (int addr = 0; addr < priv->cfg->cpu_port; addr++) {
 		u32 pos;
 
-		if (priv->smi_bus[i] < 0)
+		if (priv->smi_bus[addr] < 0)
 			continue;
 
-		pos = (i % 6) * 5;
-		sw_w32_mask(0x1f << pos, priv->smi_addr[i] << pos, RTMDIO_931X_SMI_PORT_ADDR + (i / 6) * 4);
-		pos = (i * 2) % 32;
-		poll_sel[i / 16] |= priv->smi_bus[i] << pos;
-		poll_ctrl |= BIT(20 + priv->smi_bus[i]);
+		pos = (addr % 6) * 5;
+		sw_w32_mask(0x1f << pos, priv->smi_addr[addr] << pos, RTMDIO_931X_SMI_PORT_ADDR + (addr / 6) * 4);
+		pos = (addr * 2) % 32;
+		poll_sel[addr / 16] |= priv->smi_bus[addr] << pos;
+		poll_ctrl |= BIT(20 + priv->smi_bus[addr]);
 	}
 
 	/* Configure which SMI bus is behind which port number */
@@ -964,7 +1017,6 @@ static int rtmdio_probe(struct platform_device *pdev)
 	struct rtmdio_bus_priv *priv;
 	struct mii_bus *bus;
 	u32 pn;
-	int i;
 
 	mii_np = of_get_child_by_name(dev->of_node, "mdio-bus");
 	if (!mii_np)
@@ -980,10 +1032,8 @@ static int rtmdio_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	priv = bus->priv;
-	for (i = 0; i < RTMDIO_MAX_PORT; i++) {
-		priv->page[i] = 0;
-		priv->raw[i] = false;
-	}
+	for (int addr = 0; addr < RTMDIO_MAX_PORT; addr++)
+		priv->smi_bus[addr] = -1;
 
 	priv->cfg = (const struct rtmdio_config *)device_get_match_data(dev);
 
@@ -1028,17 +1078,6 @@ static int rtmdio_probe(struct platform_device *pdev)
 	if (!dn) {
 		dev_err(dev, "No RTL switch node in DTS\n");
 		return -ENODEV;
-	}
-
-	for_each_node_by_name(dn, "port") {
-		if (of_property_read_u32(dn, "reg", &pn))
-			continue;
-		dev_dbg(dev, "Looking at port %d\n", pn);
-		if (pn > priv->cfg->cpu_port)
-			continue;
-		if (of_get_phy_mode(dn, &priv->interfaces[pn]))
-			priv->interfaces[pn] = PHY_INTERFACE_MODE_NA;
-		dev_dbg(dev, "phy mode of port %d is %s\n", pn, phy_modes(priv->interfaces[pn]));
 	}
 
 	snprintf(bus->id, MII_BUS_ID_SIZE, "%s-mii", dev_name(dev));
