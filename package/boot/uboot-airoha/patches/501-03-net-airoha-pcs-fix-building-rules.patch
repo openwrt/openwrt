@@ -1,0 +1,29 @@
+From 341f24937a097619dd1a27b274db3cdbadfc3a8a Mon Sep 17 00:00:00 2001
+From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Date: Sat, 18 Oct 2025 21:12:24 +0300
+Subject: [PATCH] net: airoha: pcs: fix building rules
+
+---
+ drivers/net/airoha/Makefile | 10 +++-------
+ 1 file changed, 3 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/net/airoha/Makefile b/drivers/net/airoha/Makefile
+index c52688c9cb9..a3b84518129 100644
+--- a/drivers/net/airoha/Makefile
++++ b/drivers/net/airoha/Makefile
+@@ -1,9 +1,5 @@
+ # SPDX-License-Identifier: GPL-2.0
+ 
+-obj-y				+= pcs-airoha-common.o
+-ifdef CONFIG_PCS_AIROHA_AN7581
+-obj-y				+= pcs-an7581.o
+-endif
+-ifdef CONFIG_PCS_AIROHA_AN7583
+-obj-y				+= pcs-an7583.o
+-endif
++obj-$(CONFIG_PCS_AIROHA)	+= pcs-airoha-common.o
++obj-$(CONFIG_PCS_AIROHA_AN7581)	+= pcs-an7581.o
++obj-$(CONFIG_PCS_AIROHA_AN7583)	+= pcs-an7583.o
+-- 
+2.51.0
+
