@@ -12,6 +12,19 @@
 #define RTMDIO_MAX_SMI_BUS			4
 #define RTMDIO_PAGE_SELECT			0x1f
 
+#define RTMDIO_PHY_AQR113C			0x31c31c12
+#define RTMDIO_PHY_RTL8221B_VB_CG		0x001cc849
+#define RTMDIO_PHY_RTL8221B_VM_CG		0x001cc84a
+#define RTMDIO_PHY_RTL8224			0x001ccad0
+#define RTMDIO_PHY_RTL8226			0x001cc838
+#define RTMDIO_PHY_RTL8218D			0x001cc983
+#define RTMDIO_PHY_RTL8218E			0x001cc984
+
+#define RTMDIO_PHY_MAC_1G			3
+#define RTMDIO_PHY_MAC_2G_PLUS			1
+
+#define RTMDIO_PHY_POLL_MMD(dev, reg, bit)	((bit << 21) | (dev << 16) | reg)
+
 /* Register base */
 #define RTMDIO_SW_BASE				((volatile void *) 0xBB000000)
 
@@ -148,6 +161,17 @@ struct rtmdio_config {
 	int (*reset)(struct mii_bus *bus);
 	int (*write_mmd_phy)(u32 port, u32 addr, u32 reg, u32 val);
 	int (*write_phy)(u32 port, u32 page, u32 reg, u32 val);
+};
+
+struct rtmdio_phy_info {
+	unsigned int phy_id;
+	bool phy_unknown;
+	int mac_type;
+	bool has_giga_lite;
+	bool has_res_reg;
+	unsigned int poll_duplex;
+	unsigned int poll_adv_1000;
+	unsigned int poll_lpa_1000;
 };
 
 /* RTL838x specific MDIO functions */
@@ -762,6 +786,57 @@ static int rtmdio_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 
 	priv->raw[addr] = false;
 	return 0;
+}
+
+__maybe_unused
+static void rtmdio_get_phy_info(struct mii_bus *bus, int addr, struct rtmdio_phy_info *phyinfo)
+{
+	struct rtmdio_bus_priv *priv = bus->priv;
+
+	/*
+	 * Depending on the attached PHY the polling mechanism must be fine tuned. Basically
+	 * this boils down to which registers must be read and if there are any special
+	 * features.
+	 */
+	memset(phyinfo, 0, sizeof(*phyinfo));
+	if (priv->smi_bus[addr] < 0) {
+		phyinfo->phy_unknown = true;
+		return;
+	}
+
+	if (priv->smi_bus_isc45[priv->smi_bus[addr]])
+		phyinfo->phy_id = (rtmdio_read_c45(bus, addr, 31, 2) << 16) +
+				 rtmdio_read_c45(bus, addr, 31, 3);
+	else
+		phyinfo->phy_id = (rtmdio_read(bus, addr, 2) << 16) +
+				 rtmdio_read(bus, addr, 3);
+
+	switch(phyinfo->phy_id) {
+	case RTMDIO_PHY_AQR113C:
+		phyinfo->mac_type = RTMDIO_PHY_MAC_2G_PLUS;
+		phyinfo->poll_duplex = RTMDIO_PHY_POLL_MMD(1, 0x0000, 8);
+		phyinfo->poll_adv_1000 = RTMDIO_PHY_POLL_MMD(7, 0xc400, 15);
+		phyinfo->poll_lpa_1000 = RTMDIO_PHY_POLL_MMD(7, 0xe820, 15);
+		break;
+	case RTMDIO_PHY_RTL8218D:
+	case RTMDIO_PHY_RTL8218E:
+		phyinfo->mac_type = RTMDIO_PHY_MAC_1G;
+		phyinfo->has_giga_lite = true;
+		break;
+	case RTMDIO_PHY_RTL8226:
+	case RTMDIO_PHY_RTL8221B_VB_CG:
+	case RTMDIO_PHY_RTL8221B_VM_CG:
+	case RTMDIO_PHY_RTL8224:
+		phyinfo->mac_type = RTMDIO_PHY_MAC_2G_PLUS;
+		phyinfo->has_giga_lite = true;
+		phyinfo->poll_duplex = RTMDIO_PHY_POLL_MMD(31, 0xa400, 8);
+		phyinfo->poll_adv_1000 = RTMDIO_PHY_POLL_MMD(31, 0xa412, 9);
+		phyinfo->poll_lpa_1000 = RTMDIO_PHY_POLL_MMD(31, 0xa414, 11);
+		break;
+	default:
+		phyinfo->phy_unknown = true;
+		break;
+	}
 }
 
 static int rtmdio_838x_reset(struct mii_bus *bus)
