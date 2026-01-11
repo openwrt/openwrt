@@ -14,9 +14,9 @@ Signed-off-by: Caleb James DeLisle <cjd@cjdns.fr>
  obj-$(CONFIG_MTD_NAND_ECC_MEDIATEK) += ecc-mtk.o
 -obj-$(CONFIG_MTD_NAND_MTK_BMT)	+= mtk_bmt.o mtk_bmt_v2.o mtk_bmt_bbt.o mtk_bmt_nmbm.o
 +obj-$(CONFIG_MTD_NAND_MTK_BMT)	+= mtk_bmt.o mtk_bmt_v2.o mtk_bmt_bbt.o mtk_bmt_nmbm.o en75_bmt.o
- ifeq ($(CONFIG_SPI_QPIC_SNAND),y)
  obj-$(CONFIG_SPI_QPIC_SNAND) += qpic_common.o
- else
+ obj-$(CONFIG_MTD_NAND_QCOM) += qpic_common.o
+ obj-y	+= onenand/
 --- a/drivers/mtd/nand/mtk_bmt.h
 +++ b/drivers/mtd/nand/mtk_bmt.h
 @@ -77,6 +77,7 @@ extern struct bmt_desc bmtd;
