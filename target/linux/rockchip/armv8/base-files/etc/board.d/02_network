@@ -23,6 +23,7 @@ rockchip_setup_interfaces()
 	friendlyarm,nanopc-t6|\
 	friendlyarm,nanopi-r5c|\
 	friendlyarm,nanopi-r76s|\
+	hinlink,opc-h28k|\
 	lunzn,fastrhino-r66s|\
 	radxa,e20c|\
 	radxa,e25|\
@@ -99,6 +100,14 @@ rockchip_setup_macs()
 	friendlyarm,nanopi-r4s-enterprise)
 		wan_mac=$(get_mac_binary "/sys/bus/i2c/devices/2-0051/eeprom" 0xfa)
 		lan_mac=$(macaddr_setbit_la "$wan_mac")
+		;;
+	hinlink,opc-h28k)
+		for mmcdev in /sys/devices/platform/soc/ffbf0000.mmc/mmc_host/*/*/block/*; do
+			mmcdev=${mmcdev##*/}
+			wan_mac=$(macaddr_generate_from_mmc_cid $mmcdev)
+			lan_mac=$(macaddr_add "$wan_mac" 1)
+			break
+		done
 		;;
 	xunlong,orangepi-r1-plus|\
 	xunlong,orangepi-r1-plus-lts)
