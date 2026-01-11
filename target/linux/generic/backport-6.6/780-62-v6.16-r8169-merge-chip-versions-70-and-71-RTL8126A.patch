@@ -37,7 +37,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	{ 0x7cf, 0x649,	RTL_GIGA_MAC_VER_70, "RTL8126A", FIRMWARE_8126A_2 },
  
  	/* 8125BP family. */
-@@ -2943,7 +2943,6 @@ static void rtl_hw_aspm_clkreq_enable(st
+@@ -2940,7 +2940,6 @@ static void rtl_hw_aspm_clkreq_enable(st
  		rtl_mod_config5(tp, 0, ASPM_en);
  		switch (tp->mac_version) {
  		case RTL_GIGA_MAC_VER_70:
@@ -45,7 +45,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  			val8 = RTL_R8(tp, INT_CFG0_8125) | INT_CFG0_CLKREQEN;
  			RTL_W8(tp, INT_CFG0_8125, val8);
  			break;
-@@ -2975,7 +2974,6 @@ static void rtl_hw_aspm_clkreq_enable(st
+@@ -2972,7 +2971,6 @@ static void rtl_hw_aspm_clkreq_enable(st
  
  		switch (tp->mac_version) {
  		case RTL_GIGA_MAC_VER_70:
@@ -53,7 +53,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  			val8 = RTL_R8(tp, INT_CFG0_8125) & ~INT_CFG0_CLKREQEN;
  			RTL_W8(tp, INT_CFG0_8125, val8);
  			break;
-@@ -3695,12 +3693,10 @@ static void rtl_hw_start_8125_common(str
+@@ -3692,12 +3690,10 @@ static void rtl_hw_start_8125_common(str
  	/* disable new tx descriptor format */
  	r8168_mac_ocp_modify(tp, 0xeb58, 0x0001, 0x0000);
  
@@ -68,7 +68,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		r8168_mac_ocp_modify(tp, 0xe614, 0x0700, 0x0400);
  	else if (tp->mac_version == RTL_GIGA_MAC_VER_63)
  		r8168_mac_ocp_modify(tp, 0xe614, 0x0700, 0x0200);
-@@ -3718,8 +3714,7 @@ static void rtl_hw_start_8125_common(str
+@@ -3715,8 +3711,7 @@ static void rtl_hw_start_8125_common(str
  	r8168_mac_ocp_modify(tp, 0xe056, 0x00f0, 0x0000);
  	r8168_mac_ocp_modify(tp, 0xe040, 0x1000, 0x0000);
  	r8168_mac_ocp_modify(tp, 0xea1c, 0x0003, 0x0001);
@@ -78,7 +78,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		r8168_mac_ocp_modify(tp, 0xea1c, 0x0300, 0x0000);
  	else
  		r8168_mac_ocp_modify(tp, 0xea1c, 0x0004, 0x0000);
-@@ -3842,7 +3837,6 @@ static void rtl_hw_config(struct rtl8169
+@@ -3839,7 +3834,6 @@ static void rtl_hw_config(struct rtl8169
  		[RTL_GIGA_MAC_VER_65] = rtl_hw_start_8125d,
  		[RTL_GIGA_MAC_VER_66] = rtl_hw_start_8125d,
  		[RTL_GIGA_MAC_VER_70] = rtl_hw_start_8126a,
@@ -86,7 +86,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  	};
  
  	if (hw_configs[tp->mac_version])
-@@ -3866,7 +3860,6 @@ static void rtl_hw_start_8125(struct rtl
+@@ -3863,7 +3857,6 @@ static void rtl_hw_start_8125(struct rtl
  		break;
  	case RTL_GIGA_MAC_VER_63:
  	case RTL_GIGA_MAC_VER_70:

@@ -19,7 +19,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 
 --- a/drivers/pci/controller/pcie-brcmstb.c
 +++ b/drivers/pci/controller/pcie-brcmstb.c
-@@ -336,6 +336,7 @@ struct brcm_pcie {
+@@ -335,6 +335,7 @@ struct brcm_pcie {
  	struct device_node	*np;
  	bool			ssc;
  	bool			l1ss;
@@ -27,7 +27,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	int			gen;
  	u64			msi_target_addr;
  	struct brcm_msi		*msi;
-@@ -1196,14 +1197,14 @@ static int brcm_pcie_setup(struct brcm_p
+@@ -1195,14 +1196,14 @@ static int brcm_pcie_setup(struct brcm_p
  
  	/*
  	 * Set SCB_MAX_BURST_SIZE, CFG_READ_UR_MODE, SCB_ACCESS_EN,
@@ -45,7 +45,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	writel(tmp, base + PCIE_MISC_MISC_CTRL);
  
  	brcm_pcie_set_tc_qos(pcie);
-@@ -1918,6 +1919,7 @@ static int brcm_pcie_probe(struct platfo
+@@ -1914,6 +1915,7 @@ static int brcm_pcie_probe(struct platfo
  
  	pcie->ssc = of_property_read_bool(np, "brcm,enable-ssc");
  	pcie->l1ss = of_property_read_bool(np, "brcm,enable-l1ss");

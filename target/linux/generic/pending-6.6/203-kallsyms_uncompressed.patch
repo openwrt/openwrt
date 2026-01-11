@@ -54,7 +54,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +#endif
  	/*
  	 * Get just the first code, look it up in the token table,
- 	 * and return the first char from this token.
+ 	 * and return the first char from this token. If MSB of length
 --- a/scripts/kallsyms.c
 +++ b/scripts/kallsyms.c
 @@ -62,6 +62,7 @@ static struct addr_range percpu_range =

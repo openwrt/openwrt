@@ -15,7 +15,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
 
 --- a/drivers/pci/controller/pcie-brcmstb.c
 +++ b/drivers/pci/controller/pcie-brcmstb.c
-@@ -140,6 +140,7 @@
+@@ -139,6 +139,7 @@
  
  #define PCIE_MISC_HARD_PCIE_HARD_DEBUG	pcie->reg_offsets[PCIE_HARD_DEBUG]
  #define  PCIE_MISC_HARD_PCIE_HARD_DEBUG_CLKREQ_DEBUG_ENABLE_MASK	0x2
@@ -23,7 +23,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  #define  PCIE_MISC_HARD_PCIE_HARD_DEBUG_SERDES_IDDQ_MASK		0x08000000
  #define  PCIE_BMIPS_MISC_HARD_PCIE_HARD_DEBUG_SERDES_IDDQ_MASK		0x00800000
  #define  PCIE_MISC_HARD_PCIE_HARD_DEBUG_CLKREQ_L1SS_ENABLE_MASK		0x00200000
-@@ -354,6 +355,7 @@ struct brcm_pcie {
+@@ -353,6 +354,7 @@ struct brcm_pcie {
  	bool			(*rc_mode)(struct brcm_pcie *pcie);
  	struct subdev_regulators *sr;
  	bool			ep_wakeup_capable;
@@ -31,7 +31,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  };
  
  static inline bool is_bmips(const struct brcm_pcie *pcie)
-@@ -1386,9 +1388,28 @@ static int brcm_pcie_start_link(struct b
+@@ -1382,9 +1384,28 @@ static int brcm_pcie_start_link(struct b
  	u16 nlw, cls, lnksta;
  	bool ssc_good = false;
  	int ret, i;
@@ -61,7 +61,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  
  	/*
  	 * Wait for 100ms after PERST# deassertion; see PCIe CEM specification
-@@ -1920,6 +1941,7 @@ static int brcm_pcie_probe(struct platfo
+@@ -1916,6 +1937,7 @@ static int brcm_pcie_probe(struct platfo
  	pcie->ssc = of_property_read_bool(np, "brcm,enable-ssc");
  	pcie->l1ss = of_property_read_bool(np, "brcm,enable-l1ss");
  	pcie->rcb_mps_mode = of_property_read_bool(np, "brcm,enable-mps-rcb");
