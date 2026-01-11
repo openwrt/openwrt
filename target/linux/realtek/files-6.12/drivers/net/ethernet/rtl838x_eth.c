@@ -1647,7 +1647,7 @@ static const struct ethtool_ops rteth_ethtool_ops = {
 	.set_link_ksettings = rteth_set_link_ksettings,
 };
 
-static int __init rtl838x_eth_probe(struct platform_device *pdev)
+static int rtl838x_eth_probe(struct platform_device *pdev)
 {
 	struct net_device *dev;
 	struct device_node *dn = pdev->dev.of_node;
