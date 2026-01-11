@@ -131,8 +131,9 @@
 		};
 
 		gpio0: gpio-controller@3300 {
-			compatible = "realtek,rtl9300-gpio", "realtek,otto-gpio";
+			compatible = "realtek,rtl9300-gpio";
 			reg = <0x3300 0x1c>, <0x3338 0x8>;
+			enable-reg = <0x1b000038 0x4>;
 
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -142,6 +143,36 @@
 			#interrupt-cells = <2>;
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SHARED 21 IRQ_TYPE_LEVEL_HIGH>;
+		};
+
+		gpio1: gpio-controller@331c {
+			compatible = "realtek,rtl9607-gpio";
+			reg = <0x331c 0x1c>;
+			enable-reg = <0x1b00003c 0x4>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <32>;
+
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SHARED 22 IRQ_TYPE_LEVEL_HIGH>;
+		};
+
+		gpio2: gpio-controller@3340 {
+			compatible = "realtek,rtl9607-gpio";
+			reg = <0x3340 0x1c>;
+			enable-reg = <0x1b000040 0x4>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <32>;
+
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SHARED 18 IRQ_TYPE_LEVEL_HIGH>;
 		};
 
 		timer0: timer@3200 {
