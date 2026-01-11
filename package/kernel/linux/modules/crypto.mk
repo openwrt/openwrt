@@ -1138,8 +1138,8 @@ define KernelPackage/crypto-sha512/arm
 endef
 
 define KernelPackage/crypto-sha512/aarch64
-  FILES+=$(LINUX_DIR)/arch/arm64/crypto/sha512-arm64.ko
-  AUTOLOAD+=$(call AutoLoad,09,sha512-arm64)
+  FILES+=$(LINUX_DIR)/arch/arm64/crypto/sha512-arm64.ko@lt6.18
+  AUTOLOAD+=$(call AutoLoad,09,!LINUX_6_18:sha512-arm64)
 endef
 
 KernelPackage/crypto-sha512/imx/cortexa7=$(KernelPackage/crypto-sha512/arm)
