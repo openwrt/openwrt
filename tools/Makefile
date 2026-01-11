@@ -48,6 +48,7 @@ tools-y += firmware-utils
 tools-y += flex
 tools-y += gengetopt
 tools-y += gnulib
+tools-y += gpgv2
 tools-y += libressl
 tools-y += libtool
 tools-y += lzma
