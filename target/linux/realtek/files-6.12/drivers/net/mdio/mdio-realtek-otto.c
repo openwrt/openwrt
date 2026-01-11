@@ -532,6 +532,52 @@ static int rtmdio_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 	return 0;
 }
 
+static int rtmdio_read_phy_id(struct mii_bus *bus, u8 addr, unsigned int *phy_id)
+{
+	static const int common_mmds[] = {
+		MDIO_MMD_PMAPMD, MDIO_MMD_PCS, MDIO_MMD_AN,
+		MDIO_MMD_VEND1, MDIO_MMD_VEND2
+	};
+	struct rtmdio_bus_priv *priv = bus->priv;
+	int devid1 = 0, devid2 = 0;
+	unsigned int id = 0;
+
+	/* Clause 22 */
+	if (!priv->smi_bus_isc45[priv->smi_bus[addr]]) {
+		devid1 = rtmdio_read(bus, addr, MDIO_DEVID1);
+		devid2 = rtmdio_read(bus, addr, MDIO_DEVID2);
+		if (devid1 < 0 || devid2 < 0)
+			return -EIO;
+
+		id = (devid1 << 16) | devid2;
+		if (!id || (id & 0x1fffffff) == 0x1fffffff)
+			return -ENODEV;
+
+		*phy_id = id;
+		return 0;
+	}
+
+
+	/* Clause 45
+	 * only scan some MMDs which can be considered as common i.e.
+	 * implemented by most PHYs.
+	 */
+	for (int i = 0; i < ARRAY_SIZE(common_mmds); i++) {
+		devid1 = rtmdio_read_c45(bus, addr, common_mmds[i], MDIO_DEVID1);
+		devid2 = rtmdio_read_c45(bus, addr, common_mmds[i], MDIO_DEVID2);
+		if (devid1 < 0 || devid2 < 0)
+			continue;
+
+		id = (devid1 << 16) | devid2;
+		if (id && id != 0xffffffff) {
+			*phy_id = id;
+			return 0;
+		}
+	}
+
+	return -ENODEV;
+}
+
 static void rtmdio_get_phy_info(struct mii_bus *bus, int addr, struct rtmdio_phy_info *phyinfo)
 {
 	struct rtmdio_bus_priv *priv = bus->priv;
@@ -547,12 +593,10 @@ static void rtmdio_get_phy_info(struct mii_bus *bus, int addr, struct rtmdio_phy
 		return;
 	}
 
-	if (priv->smi_bus_isc45[priv->smi_bus[addr]])
-		phyinfo->phy_id = (rtmdio_read_c45(bus, addr, 31, 2) << 16) +
-				 rtmdio_read_c45(bus, addr, 31, 3);
-	else
-		phyinfo->phy_id = (rtmdio_read(bus, addr, 2) << 16) +
-				 rtmdio_read(bus, addr, 3);
+	if (rtmdio_read_phy_id(bus, addr, &phyinfo->phy_id) < 0) {
+		phyinfo->phy_unknown = true;
+		return;
+	}
 
 	switch(phyinfo->phy_id) {
 	case RTMDIO_PHY_AQR113C:
