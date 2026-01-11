@@ -160,9 +160,9 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  #include <linux/list.h>
  #include <linux/log2.h>
  #include <linux/module.h>
-@@ -48,10 +49,23 @@
+@@ -47,10 +48,23 @@
+ 
  #define PCIE_RC_CFG_PRIV1_LINK_CAPABILITY			0x04dc
- #define  PCIE_RC_CFG_PRIV1_LINK_CAPABILITY_ASPM_SUPPORT_MASK	0xc00
  
 +#define PCIE_RC_TL_VDM_CTL0				0x0a20
 +#define  PCIE_RC_TL_VDM_CTL0_VDM_ENABLED_MASK		0x10000
@@ -184,7 +184,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  #define PCIE_MISC_MISC_CTRL				0x4008
  #define  PCIE_MISC_MISC_CTRL_PCIE_RCB_64B_MODE_MASK	0x80
  #define  PCIE_MISC_MISC_CTRL_PCIE_RCB_MPS_MODE_MASK	0x400
-@@ -74,6 +88,7 @@
+@@ -73,6 +87,7 @@
  
  #define PCIE_MISC_RC_BAR1_CONFIG_LO			0x402c
  #define  PCIE_MISC_RC_BAR1_CONFIG_LO_SIZE_MASK		0x1f
@@ -192,7 +192,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  
  #define PCIE_MISC_RC_BAR2_CONFIG_LO			0x4034
  #define  PCIE_MISC_RC_BAR2_CONFIG_LO_SIZE_MASK		0x1f
-@@ -81,6 +96,7 @@
+@@ -80,6 +95,7 @@
  
  #define PCIE_MISC_RC_BAR3_CONFIG_LO			0x403c
  #define  PCIE_MISC_RC_BAR3_CONFIG_LO_SIZE_MASK		0x1f
@@ -200,7 +200,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  
  #define PCIE_MISC_MSI_BAR_CONFIG_LO			0x4044
  #define PCIE_MISC_MSI_BAR_CONFIG_HI			0x4048
-@@ -89,12 +105,15 @@
+@@ -88,12 +104,15 @@
  #define  PCIE_MISC_MSI_DATA_CONFIG_VAL_32		0xffe06540
  #define  PCIE_MISC_MSI_DATA_CONFIG_VAL_8		0xfff86540
  
@@ -216,7 +216,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  #define  PCIE_MISC_PCIE_STATUS_PCIE_DL_ACTIVE_MASK	0x20
  #define  PCIE_MISC_PCIE_STATUS_PCIE_PHYLINKUP_MASK	0x10
  #define  PCIE_MISC_PCIE_STATUS_PCIE_LINK_IN_L23_MASK	0x40
-@@ -119,14 +138,73 @@
+@@ -118,14 +137,73 @@
  #define PCIE_MEM_WIN0_LIMIT_HI(win)	\
  		PCIE_MISC_CPU_2_PCIE_MEM_WIN0_LIMIT_HI + ((win) * 8)
  
@@ -292,7 +292,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  #define PCIE_MSI_INTR2_BASE		0x4500
  /* Offsets from PCIE_INTR2_CPU_BASE and PCIE_MSI_INTR2_BASE */
  #define  MSI_INT_STATUS			0x0
-@@ -200,6 +278,8 @@ enum {
+@@ -199,6 +277,8 @@ enum {
  	RGR1_SW_INIT_1,
  	EXT_CFG_INDEX,
  	EXT_CFG_DATA,
@@ -301,7 +301,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  };
  
  enum {
-@@ -214,6 +294,7 @@ enum pcie_type {
+@@ -213,6 +293,7 @@ enum pcie_type {
  	BCM4908,
  	BCM7278,
  	BCM2711,
@@ -309,7 +309,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  };
  
  struct pcie_cfg_data {
-@@ -221,6 +302,7 @@ struct pcie_cfg_data {
+@@ -220,6 +301,7 @@ struct pcie_cfg_data {
  	const enum pcie_type type;
  	void (*perst_set)(struct brcm_pcie *pcie, u32 val);
  	void (*bridge_sw_init_set)(struct brcm_pcie *pcie, u32 val);
@@ -317,7 +317,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  };
  
  struct subdev_regulators {
-@@ -237,7 +319,7 @@ struct brcm_msi {
+@@ -236,7 +318,7 @@ struct brcm_msi {
  	struct mutex		lock; /* guards the alloc/free operations */
  	u64			target_addr;
  	int			irq;
@@ -326,7 +326,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	bool			legacy;
  	/* Some chips have MSIs in bits [31..24] of a shared register. */
  	int			legacy_shift;
-@@ -261,11 +343,14 @@ struct brcm_pcie {
+@@ -260,11 +342,14 @@ struct brcm_pcie {
  	enum pcie_type		type;
  	struct reset_control	*rescal;
  	struct reset_control	*perst_reset;
@@ -341,7 +341,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	struct subdev_regulators *sr;
  	bool			ep_wakeup_capable;
  };
-@@ -376,6 +461,35 @@ static int brcm_pcie_set_ssc(struct brcm
+@@ -375,6 +460,35 @@ static int brcm_pcie_set_ssc(struct brcm
  	return ssc && pll ? 0 : -EIO;
  }
  
@@ -377,7 +377,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  /* Limits operation to a specific generation (1, 2, or 3) */
  static void brcm_pcie_set_gen(struct brcm_pcie *pcie, int gen)
  {
-@@ -433,6 +547,97 @@ static void brcm_pcie_set_outbound_win(s
+@@ -432,6 +546,97 @@ static void brcm_pcie_set_outbound_win(s
  	writel(tmp, pcie->base + PCIE_MEM_WIN0_LIMIT_HI(win));
  }
  
@@ -475,7 +475,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  static struct irq_chip brcm_msi_irq_chip = {
  	.name            = "BRCM STB PCIe MSI",
  	.irq_ack         = irq_chip_ack_parent,
-@@ -449,7 +654,7 @@ static struct msi_domain_info brcm_msi_d
+@@ -448,7 +653,7 @@ static struct msi_domain_info brcm_msi_d
  static void brcm_pcie_msi_isr(struct irq_desc *desc)
  {
  	struct irq_chip *chip = irq_desc_get_chip(desc);
@@ -484,7 +484,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	struct brcm_msi *msi;
  	struct device *dev;
  	u32 bit;
-@@ -461,10 +666,22 @@ static void brcm_pcie_msi_isr(struct irq
+@@ -460,10 +665,22 @@ static void brcm_pcie_msi_isr(struct irq
  	status = readl(msi->intr_base + MSI_INT_STATUS);
  	status >>= msi->legacy_shift;
  
@@ -511,7 +511,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  			dev_dbg(dev, "unexpected MSI\n");
  	}
  
-@@ -477,7 +694,7 @@ static void brcm_msi_compose_msi_msg(str
+@@ -476,7 +693,7 @@ static void brcm_msi_compose_msi_msg(str
  
  	msg->address_lo = lower_32_bits(msi->target_addr);
  	msg->address_hi = upper_32_bits(msi->target_addr);
@@ -520,7 +520,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  }
  
  static int brcm_msi_set_affinity(struct irq_data *irq_data,
-@@ -489,7 +706,7 @@ static int brcm_msi_set_affinity(struct
+@@ -488,7 +705,7 @@ static int brcm_msi_set_affinity(struct
  static void brcm_msi_ack_irq(struct irq_data *data)
  {
  	struct brcm_msi *msi = irq_data_get_irq_chip_data(data);
@@ -529,7 +529,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  
  	writel(1 << shift_amt, msi->intr_base + MSI_INT_CLR);
  }
-@@ -650,7 +867,7 @@ static int brcm_pcie_enable_msi(struct b
+@@ -649,7 +866,7 @@ static int brcm_pcie_enable_msi(struct b
  		msi->legacy_shift = 24;
  	} else {
  		msi->intr_base = msi->base + PCIE_MSI_INTR2_BASE;
@@ -538,7 +538,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  		msi->legacy_shift = 0;
  	}
  
-@@ -667,7 +884,7 @@ static int brcm_pcie_enable_msi(struct b
+@@ -666,7 +883,7 @@ static int brcm_pcie_enable_msi(struct b
  }
  
  /* The controller is capable of serving in both RC and EP roles */
@@ -547,7 +547,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  {
  	void __iomem *base = pcie->base;
  	u32 val = readl(base + PCIE_MISC_PCIE_STATUS);
-@@ -675,6 +892,14 @@ static bool brcm_pcie_rc_mode(struct brc
+@@ -674,6 +891,14 @@ static bool brcm_pcie_rc_mode(struct brc
  	return !!FIELD_GET(PCIE_MISC_PCIE_STATUS_PCIE_PORT_MASK, val);
  }
  
@@ -562,7 +562,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  static bool brcm_pcie_link_up(struct brcm_pcie *pcie)
  {
  	u32 val = readl(pcie->base + PCIE_MISC_PCIE_STATUS);
-@@ -746,6 +971,18 @@ static void brcm_pcie_bridge_sw_init_set
+@@ -745,6 +970,18 @@ static void brcm_pcie_bridge_sw_init_set
  	writel(tmp, pcie->base + PCIE_RGR1_SW_INIT_1(pcie));
  }
  
@@ -581,7 +581,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  static void brcm_pcie_perst_set_4908(struct brcm_pcie *pcie, u32 val)
  {
  	if (WARN_ONCE(!pcie->perst_reset, "missing PERST# reset controller\n"))
-@@ -767,6 +1004,16 @@ static void brcm_pcie_perst_set_7278(str
+@@ -766,6 +1003,16 @@ static void brcm_pcie_perst_set_7278(str
  	writel(tmp, pcie->base +  PCIE_MISC_PCIE_CTRL);
  }
  
@@ -598,7 +598,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  static void brcm_pcie_perst_set_generic(struct brcm_pcie *pcie, u32 val)
  {
  	u32 tmp;
-@@ -793,6 +1040,8 @@ static int brcm_pcie_get_rc_bar2_size_an
+@@ -792,6 +1039,8 @@ static int brcm_pcie_get_rc_bar2_size_an
  		size += entry->res->end - entry->res->start + 1;
  		if (pcie_beg < lowest_pcie_addr)
  			lowest_pcie_addr = pcie_beg;
@@ -607,7 +607,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	}
  
  	if (lowest_pcie_addr == ~(u64)0) {
-@@ -863,6 +1112,30 @@ static int brcm_pcie_get_rc_bar2_size_an
+@@ -862,6 +1111,30 @@ static int brcm_pcie_get_rc_bar2_size_an
  	return 0;
  }
  
@@ -638,16 +638,16 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  static int brcm_pcie_setup(struct brcm_pcie *pcie)
  {
  	u64 rc_bar2_offset, rc_bar2_size;
-@@ -871,7 +1144,7 @@ static int brcm_pcie_setup(struct brcm_p
+@@ -870,7 +1143,7 @@ static int brcm_pcie_setup(struct brcm_p
  	struct resource_entry *entry;
- 	u32 tmp, burst, aspm_support;
+ 	u32 tmp, burst;
  	int num_out_wins = 0;
 -	int ret, memc;
 +	int ret, memc, count, i;
  
  	/* Reset the bridge */
  	pcie->bridge_sw_init_set(pcie, 1);
-@@ -894,6 +1167,17 @@ static int brcm_pcie_setup(struct brcm_p
+@@ -893,6 +1166,17 @@ static int brcm_pcie_setup(struct brcm_p
  	/* Wait for SerDes to be stable */
  	usleep_range(100, 200);
  
@@ -665,7 +665,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	/*
  	 * SCB_MAX_BURST_SIZE is a two bit field.  For GENERIC chips it
  	 * is encoded as 0=128, 1=256, 2=512, 3=Rsvd, for BCM7278 it
-@@ -903,6 +1187,8 @@ static int brcm_pcie_setup(struct brcm_p
+@@ -902,6 +1186,8 @@ static int brcm_pcie_setup(struct brcm_p
  		burst = 0x1; /* 256 bytes */
  	else if (pcie->type == BCM2711)
  		burst = 0x0; /* 128 bytes */
@@ -674,7 +674,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	else if (pcie->type == BCM7278)
  		burst = 0x3; /* 512 bytes */
  	else
-@@ -920,6 +1206,8 @@ static int brcm_pcie_setup(struct brcm_p
+@@ -919,6 +1205,8 @@ static int brcm_pcie_setup(struct brcm_p
  	u32p_replace_bits(&tmp, 1, PCIE_MISC_MISC_CTRL_PCIE_RCB_64B_MODE_MASK);
  	writel(tmp, base + PCIE_MISC_MISC_CTRL);
  
@@ -683,7 +683,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	ret = brcm_pcie_get_rc_bar2_size_and_offset(pcie, &rc_bar2_size,
  						    &rc_bar2_offset);
  	if (ret)
-@@ -932,7 +1220,11 @@ static int brcm_pcie_setup(struct brcm_p
+@@ -931,7 +1219,11 @@ static int brcm_pcie_setup(struct brcm_p
  	writel(upper_32_bits(rc_bar2_offset),
  	       base + PCIE_MISC_RC_BAR2_CONFIG_HI);
  
@@ -695,7 +695,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	for (memc = 0; memc < pcie->num_memc; memc++) {
  		u32 scb_size_val = ilog2(pcie->memc_size[memc]) - 15;
  
-@@ -943,8 +1235,32 @@ static int brcm_pcie_setup(struct brcm_p
+@@ -942,8 +1234,32 @@ static int brcm_pcie_setup(struct brcm_p
  		else if (memc == 2)
  			u32p_replace_bits(&tmp, scb_size_val, SCB_SIZE_MASK(2));
  	}
@@ -728,7 +728,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	/*
  	 * We ideally want the MSI target address to be located in the 32bit
  	 * addressable memory area. Some devices might depend on it. This is
-@@ -957,7 +1273,7 @@ static int brcm_pcie_setup(struct brcm_p
+@@ -956,7 +1272,7 @@ static int brcm_pcie_setup(struct brcm_p
  	else
  		pcie->msi_target_addr = BRCM_MSI_TARGET_ADDR_GT_4GB;
  
@@ -737,8 +737,8 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  		dev_err(pcie->dev, "PCIe RC controller misconfigured as Endpoint\n");
  		return -EINVAL;
  	}
-@@ -981,6 +1297,38 @@ static int brcm_pcie_setup(struct brcm_p
- 		PCIE_RC_CFG_PRIV1_LINK_CAPABILITY_ASPM_SUPPORT_MASK);
+@@ -977,6 +1293,38 @@ static int brcm_pcie_setup(struct brcm_p
+ 		tmp &= ~PCI_EXP_LNKCAP_ASPM_L0S;
  	writel(tmp, base + PCIE_RC_CFG_PRIV1_LINK_CAPABILITY);
  
 +	/* program additional inbound windows (RC_BAR4..RC_BAR10) */
@@ -776,7 +776,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	/*
  	 * For config space accesses on the RC, show the right class for
  	 * a PCIe-PCIe bridge (the default setting is to be EP mode).
-@@ -1036,7 +1384,6 @@ static int brcm_pcie_start_link(struct b
+@@ -1032,7 +1380,6 @@ static int brcm_pcie_start_link(struct b
  	void __iomem *base = pcie->base;
  	u16 nlw, cls, lnksta;
  	bool ssc_good = false;
@@ -784,7 +784,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	int ret, i;
  
  	/* Unassert the fundamental reset */
-@@ -1072,6 +1419,7 @@ static int brcm_pcie_start_link(struct b
+@@ -1068,6 +1415,7 @@ static int brcm_pcie_start_link(struct b
  			dev_err(dev, "failed attempt to enter ssc mode\n");
  	}
  
@@ -792,7 +792,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	lnksta = readw(base + BRCM_PCIE_CAP_REGS + PCI_EXP_LNKSTA);
  	cls = FIELD_GET(PCI_EXP_LNKSTA_CLS, lnksta);
  	nlw = FIELD_GET(PCI_EXP_LNKSTA_NLW, lnksta);
-@@ -1079,27 +1427,6 @@ static int brcm_pcie_start_link(struct b
+@@ -1075,27 +1423,6 @@ static int brcm_pcie_start_link(struct b
  		 pci_speed_string(pcie_link_speed[cls]), nlw,
  		 ssc_good ? "(SSC)" : "(!SSC)");
  
@@ -820,7 +820,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	return 0;
  }
  
-@@ -1208,6 +1535,7 @@ static void brcm_pcie_enter_l23(struct b
+@@ -1204,6 +1531,7 @@ static void brcm_pcie_enter_l23(struct b
  
  static int brcm_phy_cntl(struct brcm_pcie *pcie, const int start)
  {
@@ -828,7 +828,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	static const u32 shifts[PCIE_DVT_PMU_PCIE_PHY_CTRL_DAST_NFLDS] = {
  		PCIE_DVT_PMU_PCIE_PHY_CTRL_DAST_PWRDN_SHIFT,
  		PCIE_DVT_PMU_PCIE_PHY_CTRL_DAST_RESET_SHIFT,
-@@ -1240,6 +1568,9 @@ static int brcm_phy_cntl(struct brcm_pci
+@@ -1236,6 +1564,9 @@ static int brcm_phy_cntl(struct brcm_pci
  		dev_err(pcie->dev, "failed to %s phy\n", (start ? "start" : "stop"));
  
  	return ret;
@@ -838,7 +838,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  }
  
  static inline int brcm_phy_start(struct brcm_pcie *pcie)
-@@ -1272,6 +1603,12 @@ static void brcm_pcie_turn_off(struct br
+@@ -1268,6 +1599,12 @@ static void brcm_pcie_turn_off(struct br
  	u32p_replace_bits(&tmp, 1, PCIE_MISC_HARD_PCIE_HARD_DEBUG_SERDES_IDDQ_MASK);
  	writel(tmp, base + PCIE_MISC_HARD_PCIE_HARD_DEBUG);
  
@@ -851,7 +851,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	/* Shutdown PCIe bridge */
  	pcie->bridge_sw_init_set(pcie, 1);
  }
-@@ -1302,9 +1639,9 @@ static int brcm_pcie_suspend_noirq(struc
+@@ -1298,9 +1635,9 @@ static int brcm_pcie_suspend_noirq(struc
  	if (brcm_phy_stop(pcie))
  		dev_err(dev, "Could not stop phy for suspend\n");
  
@@ -863,7 +863,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  		return ret;
  	}
  
-@@ -1399,7 +1736,7 @@ err_regulator:
+@@ -1395,7 +1732,7 @@ err_regulator:
  	if (pcie->sr)
  		regulator_bulk_disable(pcie->sr->num_supplies, pcie->sr->supplies);
  err_reset:
@@ -872,7 +872,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  err_disable_clk:
  	clk_disable_unprepare(pcie->clk);
  	return ret;
-@@ -1411,8 +1748,8 @@ static void __brcm_pcie_remove(struct br
+@@ -1407,8 +1744,8 @@ static void __brcm_pcie_remove(struct br
  	brcm_pcie_turn_off(pcie);
  	if (brcm_phy_stop(pcie))
  		dev_err(pcie->dev, "Could not stop phy\n");
@@ -883,7 +883,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	clk_disable_unprepare(pcie->clk);
  }
  
-@@ -1430,12 +1767,16 @@ static const int pcie_offsets[] = {
+@@ -1426,12 +1763,16 @@ static const int pcie_offsets[] = {
  	[RGR1_SW_INIT_1] = 0x9210,
  	[EXT_CFG_INDEX]  = 0x9000,
  	[EXT_CFG_DATA]   = 0x9004,
@@ -900,7 +900,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  };
  
  static const struct pcie_cfg_data generic_cfg = {
-@@ -1443,6 +1784,7 @@ static const struct pcie_cfg_data generi
+@@ -1439,6 +1780,7 @@ static const struct pcie_cfg_data generi
  	.type		= GENERIC,
  	.perst_set	= brcm_pcie_perst_set_generic,
  	.bridge_sw_init_set = brcm_pcie_bridge_sw_init_set_generic,
@@ -908,7 +908,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  };
  
  static const struct pcie_cfg_data bcm7425_cfg = {
-@@ -1450,6 +1792,7 @@ static const struct pcie_cfg_data bcm742
+@@ -1446,6 +1788,7 @@ static const struct pcie_cfg_data bcm742
  	.type		= BCM7425,
  	.perst_set	= brcm_pcie_perst_set_generic,
  	.bridge_sw_init_set = brcm_pcie_bridge_sw_init_set_generic,
@@ -916,7 +916,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  };
  
  static const struct pcie_cfg_data bcm7435_cfg = {
-@@ -1464,12 +1807,15 @@ static const struct pcie_cfg_data bcm490
+@@ -1460,12 +1803,15 @@ static const struct pcie_cfg_data bcm490
  	.type		= BCM4908,
  	.perst_set	= brcm_pcie_perst_set_4908,
  	.bridge_sw_init_set = brcm_pcie_bridge_sw_init_set_generic,
@@ -932,7 +932,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  };
  
  static const struct pcie_cfg_data bcm7278_cfg = {
-@@ -1477,6 +1823,7 @@ static const struct pcie_cfg_data bcm727
+@@ -1473,6 +1819,7 @@ static const struct pcie_cfg_data bcm727
  	.type		= BCM7278,
  	.perst_set	= brcm_pcie_perst_set_7278,
  	.bridge_sw_init_set = brcm_pcie_bridge_sw_init_set_7278,
@@ -940,7 +940,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  };
  
  static const struct pcie_cfg_data bcm2711_cfg = {
-@@ -1484,10 +1831,27 @@ static const struct pcie_cfg_data bcm271
+@@ -1480,10 +1827,27 @@ static const struct pcie_cfg_data bcm271
  	.type		= BCM2711,
  	.perst_set	= brcm_pcie_perst_set_generic,
  	.bridge_sw_init_set = brcm_pcie_bridge_sw_init_set_generic,
@@ -968,7 +968,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	{ .compatible = "brcm,bcm4908-pcie", .data = &bcm4908_cfg },
  	{ .compatible = "brcm,bcm7211-pcie", .data = &generic_cfg },
  	{ .compatible = "brcm,bcm7278-pcie", .data = &bcm7278_cfg },
-@@ -1528,7 +1892,7 @@ static int brcm_pcie_probe(struct platfo
+@@ -1524,7 +1888,7 @@ static int brcm_pcie_probe(struct platfo
  
  	data = of_device_get_match_data(&pdev->dev);
  	if (!data) {
@@ -977,7 +977,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  		return -EINVAL;
  	}
  
-@@ -1539,6 +1903,7 @@ static int brcm_pcie_probe(struct platfo
+@@ -1535,6 +1899,7 @@ static int brcm_pcie_probe(struct platfo
  	pcie->type = data->type;
  	pcie->perst_set = data->perst_set;
  	pcie->bridge_sw_init_set = data->bridge_sw_init_set;
@@ -985,7 +985,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  
  	pcie->base = devm_platform_ioremap_resource(pdev, 0);
  	if (IS_ERR(pcie->base))
-@@ -1569,14 +1934,20 @@ static int brcm_pcie_probe(struct platfo
+@@ -1565,14 +1930,20 @@ static int brcm_pcie_probe(struct platfo
  		clk_disable_unprepare(pcie->clk);
  		return PTR_ERR(pcie->perst_reset);
  	}
@@ -1008,7 +1008,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  		clk_disable_unprepare(pcie->clk);
  		return ret;
  	}
-@@ -1595,8 +1966,38 @@ static int brcm_pcie_probe(struct platfo
+@@ -1591,8 +1962,38 @@ static int brcm_pcie_probe(struct platfo
  	if (pci_msi_enabled()) {
  		struct device_node *msi_np = of_parse_phandle(pcie->np, "msi-parent", 0);
  
@@ -1048,7 +1048,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  
  		of_node_put(msi_np);
  
-@@ -1620,6 +2021,8 @@ static int brcm_pcie_probe(struct platfo
+@@ -1616,6 +2017,8 @@ static int brcm_pcie_probe(struct platfo
  		return ret;
  	}
  

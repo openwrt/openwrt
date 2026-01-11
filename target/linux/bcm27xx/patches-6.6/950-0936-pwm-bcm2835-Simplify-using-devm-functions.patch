@@ -26,7 +26,7 @@ Signed-off-by: Thierry Reding <thierry.reding@gmail.com>
 
 --- a/drivers/pwm/pwm-bcm2835.c
 +++ b/drivers/pwm/pwm-bcm2835.c
-@@ -147,39 +147,21 @@ static int bcm2835_pwm_probe(struct plat
+@@ -125,39 +125,21 @@ static int bcm2835_pwm_probe(struct plat
  	if (IS_ERR(pc->base))
  		return PTR_ERR(pc->base);
  
@@ -70,7 +70,7 @@ Signed-off-by: Thierry Reding <thierry.reding@gmail.com>
  }
  
  static const struct of_device_id bcm2835_pwm_of_match[] = {
-@@ -194,7 +176,6 @@ static struct platform_driver bcm2835_pw
+@@ -172,7 +154,6 @@ static struct platform_driver bcm2835_pw
  		.of_match_table = bcm2835_pwm_of_match,
  	},
  	.probe = bcm2835_pwm_probe,

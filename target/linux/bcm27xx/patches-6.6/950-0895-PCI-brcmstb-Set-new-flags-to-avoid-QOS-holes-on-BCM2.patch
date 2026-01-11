@@ -18,7 +18,7 @@ Signed-off-by: Nick Hollinghurst <nick.hollinghurst@raspberrypi.com>
 
 --- a/drivers/pci/controller/pcie-brcmstb.c
 +++ b/drivers/pci/controller/pcie-brcmstb.c
-@@ -199,6 +199,9 @@
+@@ -198,6 +198,9 @@
  #define  VDM_PRIORITY_TO_QOS_MAP_MASK			0xf
  
  #define PCIE_MISC_AXI_INTF_CTRL 0x416C
@@ -28,7 +28,7 @@ Signed-off-by: Nick Hollinghurst <nick.hollinghurst@raspberrypi.com>
  #define  AXI_REQFIFO_EN_QOS_PROPAGATION			BIT(7)
  #define  AXI_BRIDGE_LOW_LATENCY_MODE			BIT(6)
  #define  AXI_MASTER_MAX_OUTSTANDING_REQUESTS_MASK	0x3f
-@@ -558,9 +561,11 @@ static void brcm_pcie_set_tc_qos(struct
+@@ -557,9 +560,11 @@ static void brcm_pcie_set_tc_qos(struct
  	if (pcie->type != BCM2712)
  		return;
  

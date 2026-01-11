@@ -21,7 +21,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
 
 --- a/drivers/pci/controller/pcie-brcmstb.c
 +++ b/drivers/pci/controller/pcie-brcmstb.c
-@@ -568,6 +568,18 @@ static void brcm_pcie_set_tc_qos(struct
+@@ -567,6 +567,18 @@ static void brcm_pcie_set_tc_qos(struct
  		AXI_DIS_QOS_GATING_IN_MASTER;
  	writel(reg, pcie->base + PCIE_MISC_AXI_INTF_CTRL);
  

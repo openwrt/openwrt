@@ -21,7 +21,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
 
 --- a/drivers/pci/controller/pcie-brcmstb.c
 +++ b/drivers/pci/controller/pcie-brcmstb.c
-@@ -1385,7 +1385,7 @@ static int brcm_pcie_start_link(struct b
+@@ -1381,7 +1381,7 @@ static int brcm_pcie_start_link(struct b
  {
  	struct device *dev = pcie->dev;
  	void __iomem *base = pcie->base;
@@ -30,7 +30,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	bool ssc_good = false;
  	int ret, i;
  	u32 tmp;
-@@ -1449,6 +1449,16 @@ static int brcm_pcie_start_link(struct b
+@@ -1445,6 +1445,16 @@ static int brcm_pcie_start_link(struct b
  		 pci_speed_string(pcie_link_speed[cls]), nlw,
  		 ssc_good ? "(SSC)" : "(!SSC)");
  
