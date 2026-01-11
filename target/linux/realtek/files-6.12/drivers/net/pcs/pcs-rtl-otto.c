@@ -1754,7 +1754,7 @@ static void rtpcs_930x_sds_rxcal_tap_get(struct rtpcs_serdes *sds,
 }
 
 static void rtpcs_930x_sds_do_rx_calibration_1(struct rtpcs_serdes *sds,
-					       phy_interface_t phy_mode)
+					       enum rtpcs_sds_mode hw_mode)
 {
 	/* From both rtl9300_rxCaliConf_serdes_myParam and rtl9300_rxCaliConf_phy_myParam */
 	int tap0_init_val = 0x1f; /* Initial Decision Fed Equalizer 0 tap */
@@ -1830,9 +1830,9 @@ static void rtpcs_930x_sds_do_rx_calibration_1(struct rtpcs_serdes *sds,
 
 	/* TODO: make this work for DAC cables of different lengths */
 	/* For a 10GBit serdes wit Fibre, SDS 8 or 9 */
-	if (phy_mode == PHY_INTERFACE_MODE_10GBASER ||
-	    phy_mode == PHY_INTERFACE_MODE_1000BASEX ||
-	    phy_mode == PHY_INTERFACE_MODE_SGMII)
+	if (hw_mode == RTPCS_SDS_MODE_10GBASER ||
+	    hw_mode == RTPCS_SDS_MODE_1000BASEX ||
+	    hw_mode == RTPCS_SDS_MODE_SGMII)
 		rtpcs_sds_write_bits(sds, 0x2e, 0x16,  3,  2, 0x02);
 	else
 		pr_err("%s not PHY-based or SerDes, implement DAC!\n", __func__);
@@ -1926,14 +1926,14 @@ static void rtpcs_930x_sds_do_rx_calibration_2(struct rtpcs_serdes *sds)
 }
 
 static void rtpcs_930x_sds_rxcal_3_1(struct rtpcs_serdes *sds,
-				     phy_interface_t phy_mode)
+				     enum rtpcs_sds_mode hw_mode)
 {
 	pr_info("start_1.3.1");
 
 	/* ##1.3.1 */
-	if (phy_mode != PHY_INTERFACE_MODE_10GBASER &&
-	    phy_mode != PHY_INTERFACE_MODE_1000BASEX &&
-	    phy_mode != PHY_INTERFACE_MODE_SGMII)
+	if (hw_mode != RTPCS_SDS_MODE_10GBASER &&
+	    hw_mode != RTPCS_SDS_MODE_1000BASEX &&
+	    hw_mode != RTPCS_SDS_MODE_SGMII)
 		rtpcs_sds_write_bits(sds, 0x2e, 0xc, 8, 8, 0);
 
 	rtpcs_sds_write_bits(sds, 0x2e, 0x17, 7, 7, 0x0);
@@ -1943,16 +1943,16 @@ static void rtpcs_930x_sds_rxcal_3_1(struct rtpcs_serdes *sds,
 }
 
 static void rtpcs_930x_sds_rxcal_3_2(struct rtpcs_serdes *sds,
-				     phy_interface_t phy_mode)
+				     enum rtpcs_sds_mode hw_mode)
 {
 	u32 sum10 = 0, avg10, int10;
 	int dac_long_cable_offset;
 	bool eq_hold_enabled;
 	int i;
 
-	if (phy_mode == PHY_INTERFACE_MODE_10GBASER ||
-	    phy_mode == PHY_INTERFACE_MODE_1000BASEX ||
-	    phy_mode == PHY_INTERFACE_MODE_SGMII) {
+	if (hw_mode == RTPCS_SDS_MODE_10GBASER ||
+	    hw_mode == RTPCS_SDS_MODE_1000BASEX ||
+	    hw_mode == RTPCS_SDS_MODE_SGMII) {
 		/* rtl9300_rxCaliConf_serdes_myParam */
 		dac_long_cable_offset = 3;
 		eq_hold_enabled = true;
@@ -1962,7 +1962,7 @@ static void rtpcs_930x_sds_rxcal_3_2(struct rtpcs_serdes *sds,
 		eq_hold_enabled = false;
 	}
 
-	if (phy_mode != PHY_INTERFACE_MODE_10GBASER)
+	if (hw_mode != RTPCS_SDS_MODE_10GBASER)
 		pr_warn("%s: LEQ only valid for 10GR!\n", __func__);
 
 	pr_info("start_1.3.2");
@@ -1977,27 +1977,27 @@ static void rtpcs_930x_sds_rxcal_3_2(struct rtpcs_serdes *sds,
 
 	pr_info("sum10:%u, avg10:%u, int10:%u", sum10, avg10, int10);
 
-	if (phy_mode == PHY_INTERFACE_MODE_10GBASER ||
-	    phy_mode == PHY_INTERFACE_MODE_1000BASEX ||
-	    phy_mode == PHY_INTERFACE_MODE_SGMII) {
+	if (hw_mode == RTPCS_SDS_MODE_10GBASER ||
+	    hw_mode == RTPCS_SDS_MODE_1000BASEX ||
+	    hw_mode == RTPCS_SDS_MODE_SGMII) {
 		if (dac_long_cable_offset) {
 			rtpcs_930x_sds_rxcal_leq_offset_manual(sds, 1,
 							       dac_long_cable_offset);
 			rtpcs_sds_write_bits(sds, 0x2e, 0x17, 7, 7,
 					     eq_hold_enabled);
-			if (phy_mode == PHY_INTERFACE_MODE_10GBASER)
+			if (hw_mode == RTPCS_SDS_MODE_10GBASER)
 				rtpcs_930x_sds_rxcal_leq_manual(sds,
 								true, avg10);
 		} else {
 			if (sum10 >= 5) {
 				rtpcs_930x_sds_rxcal_leq_offset_manual(sds, 1, 3);
 				rtpcs_sds_write_bits(sds, 0x2e, 0x17, 7, 7, 0x1);
-				if (phy_mode == PHY_INTERFACE_MODE_10GBASER)
+				if (hw_mode == RTPCS_SDS_MODE_10GBASER)
 					rtpcs_930x_sds_rxcal_leq_manual(sds, true, avg10);
 			} else {
 				rtpcs_930x_sds_rxcal_leq_offset_manual(sds, 1, 0);
 				rtpcs_sds_write_bits(sds, 0x2e, 0x17, 7, 7, 0x1);
-				if (phy_mode == PHY_INTERFACE_MODE_10GBASER)
+				if (hw_mode == RTPCS_SDS_MODE_10GBASER)
 					rtpcs_930x_sds_rxcal_leq_manual(sds, true, avg10);
 			}
 		}
@@ -2010,14 +2010,14 @@ static void rtpcs_930x_sds_rxcal_3_2(struct rtpcs_serdes *sds,
 
 __always_unused
 static void rtpcs_930x_sds_do_rx_calibration_3(struct rtpcs_serdes *sds,
-					       phy_interface_t phy_mode)
+					       enum rtpcs_sds_mode hw_mode)
 {
-	rtpcs_930x_sds_rxcal_3_1(sds, phy_mode);
+	rtpcs_930x_sds_rxcal_3_1(sds, hw_mode);
 
-	if (phy_mode == PHY_INTERFACE_MODE_10GBASER ||
-	    phy_mode == PHY_INTERFACE_MODE_1000BASEX ||
-	    phy_mode == PHY_INTERFACE_MODE_SGMII)
-		rtpcs_930x_sds_rxcal_3_2(sds, phy_mode);
+	if (hw_mode == RTPCS_SDS_MODE_10GBASER ||
+	    hw_mode == RTPCS_SDS_MODE_1000BASEX ||
+	    hw_mode == RTPCS_SDS_MODE_SGMII)
+		rtpcs_930x_sds_rxcal_3_2(sds, hw_mode);
 }
 
 static void rtpcs_930x_sds_do_rx_calibration_4_1(struct rtpcs_serdes *sds)
@@ -2079,9 +2079,9 @@ static void rtpcs_930x_sds_do_rx_calibration_5_2(struct rtpcs_serdes *sds)
 }
 
 static void rtpcs_930x_sds_do_rx_calibration_5(struct rtpcs_serdes *sds,
-					       phy_interface_t phy_mode)
+					       enum rtpcs_sds_mode hw_mode)
 {
-	if (phy_mode == PHY_INTERFACE_MODE_10GBASER) /* dfeTap1_4Enable true */
+	if (hw_mode == RTPCS_SDS_MODE_10GBASER) /* dfeTap1_4Enable true */
 		rtpcs_930x_sds_do_rx_calibration_5_2(sds);
 }
 
@@ -2101,14 +2101,14 @@ static void rtpcs_930x_sds_do_rx_calibration_dfe_disable(struct rtpcs_serdes *sd
 }
 
 static void rtpcs_930x_sds_do_rx_calibration(struct rtpcs_serdes *sds,
-					     phy_interface_t phy_mode)
+					     enum rtpcs_sds_mode hw_mode)
 {
 	u32 latch_sts;
 
-	rtpcs_930x_sds_do_rx_calibration_1(sds, phy_mode);
+	rtpcs_930x_sds_do_rx_calibration_1(sds, hw_mode);
 	rtpcs_930x_sds_do_rx_calibration_2(sds);
 	rtpcs_930x_sds_do_rx_calibration_4(sds);
-	rtpcs_930x_sds_do_rx_calibration_5(sds, phy_mode);
+	rtpcs_930x_sds_do_rx_calibration_5(sds, hw_mode);
 	mdelay(20);
 
 	/* Do this only for 10GR mode, SDS active in mode 0x1a */
@@ -2120,27 +2120,27 @@ static void rtpcs_930x_sds_do_rx_calibration(struct rtpcs_serdes *sds,
 		if (latch_sts) {
 			rtpcs_930x_sds_do_rx_calibration_dfe_disable(sds);
 			rtpcs_930x_sds_do_rx_calibration_4(sds);
-			rtpcs_930x_sds_do_rx_calibration_5(sds, phy_mode);
+			rtpcs_930x_sds_do_rx_calibration_5(sds, hw_mode);
 		}
 	}
 }
 
 static int rtpcs_930x_sds_sym_err_reset(struct rtpcs_serdes *sds,
-					phy_interface_t phy_mode)
+					enum rtpcs_sds_mode hw_mode)
 {
-	switch (phy_mode) {
-	case PHY_INTERFACE_MODE_XGMII:
+	switch (hw_mode) {
+	case RTPCS_SDS_MODE_XSGMII:
 		break;
 
-	case PHY_INTERFACE_MODE_10GBASER:
+	case RTPCS_SDS_MODE_10GBASER:
 		/* Read twice to clear */
 		rtpcs_sds_read(sds, 5, 1);
 		rtpcs_sds_read(sds, 5, 1);
 		break;
 
-	case PHY_INTERFACE_MODE_1000BASEX:
-	case PHY_INTERFACE_MODE_SGMII:
-	case PHY_INTERFACE_MODE_10G_QXGMII:
+	case RTPCS_SDS_MODE_1000BASEX:
+	case RTPCS_SDS_MODE_SGMII:
+	case RTPCS_SDS_MODE_USXGMII_10GQXGMII:
 		rtpcs_sds_write_bits(sds, 0x1, 24, 2, 0, 0);
 		rtpcs_sds_write_bits(sds, 0x1, 3, 15, 8, 0);
 		rtpcs_sds_write_bits(sds, 0x1, 2, 15, 0, 0);
@@ -2155,18 +2155,18 @@ static int rtpcs_930x_sds_sym_err_reset(struct rtpcs_serdes *sds,
 }
 
 static u32 rtpcs_930x_sds_sym_err_get(struct rtpcs_serdes *sds,
-				      phy_interface_t phy_mode)
+				      enum rtpcs_sds_mode hw_mode)
 {
 	u32 v = 0;
 
-	switch (phy_mode) {
-	case PHY_INTERFACE_MODE_XGMII:
-	case PHY_INTERFACE_MODE_10G_QXGMII:
+	switch (hw_mode) {
+	case RTPCS_SDS_MODE_XSGMII:
+	case RTPCS_SDS_MODE_USXGMII_10GQXGMII:
 		break;
 
-	case PHY_INTERFACE_MODE_1000BASEX:
-	case PHY_INTERFACE_MODE_SGMII:
-	case PHY_INTERFACE_MODE_10GBASER:
+	case RTPCS_SDS_MODE_1000BASEX:
+	case RTPCS_SDS_MODE_SGMII:
+	case RTPCS_SDS_MODE_10GBASER:
 		v = rtpcs_sds_read(sds, 5, 1);
 		return v & 0xff;
 
@@ -2178,32 +2178,32 @@ static u32 rtpcs_930x_sds_sym_err_get(struct rtpcs_serdes *sds,
 }
 
 static int rtpcs_930x_sds_check_calibration(struct rtpcs_serdes *sds,
-					    phy_interface_t phy_mode)
+					    enum rtpcs_sds_mode hw_mode)
 {
 	u32 errors1, errors2;
 
-	rtpcs_930x_sds_sym_err_reset(sds, phy_mode);
-	rtpcs_930x_sds_sym_err_reset(sds, phy_mode);
+	rtpcs_930x_sds_sym_err_reset(sds, hw_mode);
+	rtpcs_930x_sds_sym_err_reset(sds, hw_mode);
 
 	/* Count errors during 1ms */
-	errors1 = rtpcs_930x_sds_sym_err_get(sds, phy_mode);
+	errors1 = rtpcs_930x_sds_sym_err_get(sds, hw_mode);
 	mdelay(1);
-	errors2 = rtpcs_930x_sds_sym_err_get(sds, phy_mode);
+	errors2 = rtpcs_930x_sds_sym_err_get(sds, hw_mode);
 
-	switch (phy_mode) {
-	case PHY_INTERFACE_MODE_1000BASEX:
-	case PHY_INTERFACE_MODE_SGMII:
-	case PHY_INTERFACE_MODE_XGMII:
+	switch (hw_mode) {
+	case RTPCS_SDS_MODE_1000BASEX:
+	case RTPCS_SDS_MODE_SGMII:
+	case RTPCS_SDS_MODE_XSGMII:
 		if ((errors2 - errors1 > 100) ||
 		    (errors1 >= 0xffff00) || (errors2 >= 0xffff00)) {
 			pr_info("%s XSGMII error rate too high\n", __func__);
 			return 1;
 		}
 		break;
-	case PHY_INTERFACE_MODE_10GBASER:
-	case PHY_INTERFACE_MODE_10G_QXGMII:
+	case RTPCS_SDS_MODE_10GBASER:
+	case RTPCS_SDS_MODE_USXGMII_10GQXGMII:
 		if (errors2 > 0) {
-			pr_info("%s: %s error rate too high\n", __func__, phy_modes(phy_mode));
+			pr_info("%s: 10G error rate too high\n", __func__);
 			return 1;
 		}
 		break;
@@ -2567,10 +2567,10 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 	/* Calibrate SerDes receiver in loopback mode */
 	rtpcs_930x_sds_10g_idle(sds);
 	do {
-		rtpcs_930x_sds_do_rx_calibration(sds, if_mode);
+		rtpcs_930x_sds_do_rx_calibration(sds, hw_mode);
 		calib_tries++;
 		mdelay(50);
-	} while (rtpcs_930x_sds_check_calibration(sds, if_mode) && calib_tries < 3);
+	} while (rtpcs_930x_sds_check_calibration(sds, hw_mode) && calib_tries < 3);
 	if (calib_tries >= 3)
 		pr_warn("%s: SerDes RX calibration failed\n", __func__);
 
