@@ -64,14 +64,14 @@
 
 	qcom,port_phyinfo {
 		// MAC0 -> GE Phy -> QCA8337 Phy2
-		port@0 {
+		port@1 {
 			port_id = <1>;
 			mdiobus = <&mdio0>;
 			phy_address = <7>;
 		};
 
 		// MAC1 ---SGMII---> QCA8337 SerDes
-		port@1 {
+		port@2 {
 			port_id = <2>;
 			forced-speed = <1000>;
 			forced-duplex = <1>;
