@@ -39,6 +39,7 @@ case "$FIRMWARE" in
 		ath11k_remove_regdomain
 		ath11k_set_macflag
 		;;
+	cmcc,pz-l8|\
 	xiaomi,ax6000)
 		caldata_extract "0:art" 0x1000 0x20000
 		;;
@@ -87,6 +88,9 @@ case "$FIRMWARE" in
 		ath11k_patch_mac $(macaddr_add $label_mac 3) 0
 		ath11k_remove_regdomain
 		ath11k_set_macflag
+		;;
+	cmcc,pz-l8)
+		caldata_extract "0:art" 0x1000 0x20000
 		;;
 	esac
 	;;
