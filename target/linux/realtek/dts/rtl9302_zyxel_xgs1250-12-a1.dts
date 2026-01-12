@@ -13,7 +13,7 @@
 	phy24: ethernet-phy@24 {
 		reg = <24>;
 		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <1 8>;
+		realtek,smi-address = <8>;
 		// Disabled because we do not know how to bring up again
 		// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 		#thermal-sensor-cells = <0>;
@@ -24,7 +24,7 @@
 	phy25: ethernet-phy@25 {
 		reg = <25>;
 		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <2 8>;
+		realtek,smi-address = <8>;
 		// Disabled because we do not know how to bring up again
 		// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 		#thermal-sensor-cells = <0>;
@@ -35,7 +35,7 @@
 	phy26: ethernet-phy@26 {
 		reg = <26>;
 		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <3 8>;
+		realtek,smi-address = <8>;
 		// Disabled because we do not know how to bring up again
 		// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 		#thermal-sensor-cells = <0>;
