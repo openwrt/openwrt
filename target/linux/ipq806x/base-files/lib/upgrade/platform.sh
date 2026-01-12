@@ -27,14 +27,17 @@ platform_do_upgrade() {
 		nand_do_upgrade "$1"
 		;;
 	aruba,ap-325)
-		part="$(awk -F 'ubi.mtd=' '{printf $2}' /proc/cmdline | sed -e 's/ .*$//')"
-		if [ "$part" = "aos0" ]; then
-			fw_setenv os_partition 1 || exit 1
-			CI_UBIPART="aos1"
-		else
-			fw_setenv os_partition 0 || exit 1
-			CI_UBIPART="aos0"
-		fi
+		# The bootloader on this device unfortunately enforces a particular set of UBI volumes,
+		# and will mess with the partitioning if it doesn't find it.
+		# Therefore, we have to make do with the stock layout, which is a set of three
+		# MTD partitions, each containing a single UBI volume with the same name.
+		CI_KERNPART="aos0"
+		CI_ROOTPART="aos1"
+		CI_DATAPART="ubifs"
+		CI_KERN_UBIPART="aos0"
+		CI_ROOT_UBIPART="aos1"
+		CI_DATA_UBIPART="ubifs"
+		CI_SKIP_KERNEL_MTD=1
 		nand_do_upgrade "$1"
 		;;
 	asrock,g10)

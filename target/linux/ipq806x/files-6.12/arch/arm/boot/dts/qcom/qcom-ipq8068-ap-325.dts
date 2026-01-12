@@ -15,6 +15,17 @@
 		device_type = "memory";
 	};
 
+	reserved-memory {
+		ramoops@42100000 {
+			compatible = "ramoops";
+			reg = <0x42100000 0x80000>;
+			record-size = <0x10000>;
+			console-size = <0x10000>;
+			ftrace-size = <0x10000>;
+			pmsg-size = <0x10000>;
+		};
+	};
+
 	aliases {
 		serial0 = &gsbi4_serial;
 		serial1 = &gsbi2_serial;
@@ -22,16 +33,17 @@
 		ethernet0 = &gmac2;
 		ethernet1 = &gmac3;
 
-		led-boot = &led_power_green;
+		led-boot = &led_power_orange;
 		led-failsafe = &led_power_red;
 		led-running = &led_power_green;
-		led-upgrade = &led_power_green;
+		led-upgrade = &led_power_orange;
+
+		label-mac-device = &gmac2;
 	};
 
 	chosen {
 		stdout-path = "serial0:115200n8";
-		find-rootblock = "ubi.mtd=";
-		append-rootblock = "ubi.mtd=aos";
+		bootargs-append = "ubi.mtd=aos1 ubi.block=0,aos1 root=/dev/ubiblock0_0";
 	};
 
 	keys {
@@ -155,7 +167,7 @@
 			bias-disable;
 		};
 	};
-	// Used for USB over-current detection instead.
+	/* used for USB over-current detection instead */
 	/delete-node/ pcie2_pins;
 };
 
@@ -185,7 +197,7 @@
 	qcom,mode = <GSBI_PROT_SPI>;
 	status = "okay";
 
-	spi4: spi@1a280000 {
+	spi@1a280000 {
 		status = "okay";
 		spi-max-frequency = <50000000>;
 
@@ -218,6 +230,18 @@
 						reg = <0x5000 0x2f20>;
 					};
 				};
+
+				partition-appsblenv {
+					label = "0:appsblenv";
+
+					nvmem-layout {
+						compatible = "u-boot,env";
+
+						macaddr_lan: ethaddr {
+							#nvmem-cell-cells = <1>;
+						};
+					};
+				};
 			};
 		};
 	};
@@ -231,7 +255,7 @@
 	wifi@0,0 {
 		compatible = "qcom,ath10k";
 		status = "okay";
-		reg = <0x00010000 0 0 0 0>;
+		reg = <0x10000 0 0 0 0>;
 
 		nvmem-cells = <&precal_art_1000>;
 		nvmem-cell-names = "pre-calibration";
@@ -246,7 +270,7 @@
 	wifi@0,0 {
 		compatible = "qcom,ath10k";
 		status = "okay";
-		reg = <0x00010000 0 0 0 0>;
+		reg = <0x10000 0 0 0 0>;
 
 		nvmem-cells = <&precal_art_5000>;
 		nvmem-cell-names = "pre-calibration";
@@ -270,13 +294,18 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			aos0@0000000 {
+			aos0@0 {
 				label = "aos0";
-				reg = <0x0000000 0x4000000>;
+				reg = <0x0 0x2000000>;
 			};
 
-			aos1@4000000 {
+			aos1@2000000 {
 				label = "aos1";
+				reg = <0x2000000 0x2000000>;
+			};
+
+			ubifs@4000000 {
+				label = "ubifs";
 				reg = <0x4000000 0x4000000>;
 			};
 		};
@@ -306,6 +335,9 @@
 
 	phy-mode = "sgmii";
 	phy-handle = <&phy0>;
+
+	nvmem-cells = <&macaddr_lan 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &gmac3 {
@@ -316,6 +348,9 @@
 
 	phy-mode = "sgmii";
 	phy-handle = <&phy1>;
+
+	nvmem-cells = <&macaddr_lan 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &adm_dma {

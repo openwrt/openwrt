@@ -80,14 +80,6 @@ ipq806x_setup_macs()
 	local board="$1"
 
 	case "$board" in
-	aruba,ap-325)
-		# Ideally this should be read from the inventory TLVs on 0:mfginfo,
-		# but parsing those from a shell script is tricky.
-		hw_mac_addr=$(mtd_get_mac_ascii 0:appsblenv ethaddr)
-		ucidef_set_interface_macaddr "lan" "$hw_mac_addr"
-		ucidef_set_interface_macaddr "wan" "$(macaddr_add $hw_mac_addr 1)"
-		ucidef_set_label_macaddr "$hw_mac_addr"
-		;;
 	asrock,g10)
 		hw_mac_addr=$(mtd_get_mac_ascii hwconfig HW.LAN.MAC.Address)
 		ucidef_set_interface_macaddr "lan" "$hw_mac_addr"
