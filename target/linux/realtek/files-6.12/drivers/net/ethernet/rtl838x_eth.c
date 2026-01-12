@@ -1655,7 +1655,7 @@ static int rtl838x_eth_probe(struct platform_device *pdev)
 	const struct rteth_config *matchdata;
 	phy_interface_t phy_mode;
 	struct phylink *phylink;
-	u8 mac_addr[ETH_ALEN];
+	u8 mac_addr[ETH_ALEN] = {0};
 	int err = 0, rxrings, rxringlen;
 	struct ring_b *ring;
 
