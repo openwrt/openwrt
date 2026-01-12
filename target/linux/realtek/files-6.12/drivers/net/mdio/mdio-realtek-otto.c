@@ -1012,20 +1012,11 @@ static int rtmdio_reset(struct mii_bus *bus)
 
 static int rtmdio_probe(struct platform_device *pdev)
 {
-	struct device_node *dn, *mii_np;
+	struct device_node *dn;
 	struct device *dev = &pdev->dev;
 	struct rtmdio_bus_priv *priv;
 	struct mii_bus *bus;
 	u32 pn;
-
-	mii_np = of_get_child_by_name(dev->of_node, "mdio-bus");
-	if (!mii_np)
-		return -ENODEV;
-
-	if (!of_device_is_available(mii_np)) {
-		of_node_put(mii_np);
-		return -ENODEV;
-	}
 
 	bus = devm_mdiobus_alloc_size(dev, sizeof(*priv));
 	if (!bus)
@@ -1082,7 +1073,7 @@ static int rtmdio_probe(struct platform_device *pdev)
 
 	snprintf(bus->id, MII_BUS_ID_SIZE, "%s-mii", dev_name(dev));
 
-	return devm_of_mdiobus_register(dev, bus, mii_np);
+	return devm_of_mdiobus_register(dev, bus, dev->of_node);
 }
 
 static const struct rtmdio_config rtmdio_838x_cfg = {
