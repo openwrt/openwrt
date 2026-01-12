@@ -1650,7 +1650,7 @@ static int __init rtl838x_eth_probe(struct platform_device *pdev)
 	struct resource *res, *mem;
 	phy_interface_t phy_mode;
 	struct phylink *phylink;
-	u8 mac_addr[ETH_ALEN];
+	u8 mac_addr[ETH_ALEN] = {0};
 	int err = 0, rxrings, rxringlen;
 	struct ring_b *ring;
 
