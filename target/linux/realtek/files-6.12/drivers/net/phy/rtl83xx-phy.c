@@ -661,6 +661,7 @@ static int rtl8380_configure_rtl8214c(struct phy_device *phydev)
 	return 0;
 }
 
+__maybe_unused
 static int rtl8380_configure_rtl8214fc(struct phy_device *phydev)
 {
 	u32 *rtl8380_rtl8214fc_perchip;
@@ -958,10 +959,7 @@ static int rtl8214fc_phy_probe(struct phy_device *phydev)
 	int ret = 0;
 
 	if (rtl821x_package_join(phydev, 4) == RTL821X_JOIN_LAST) {
-		if (soc_info.family == RTL8380_FAMILY_ID)
-			ret = rtl8380_configure_rtl8214fc(get_base_phy(phydev));
-		else if (soc_info.family == RTL8390_FAMILY_ID)
-			ret = rtl8214fc_config_init(get_base_phy(phydev));
+		ret = rtl8214fc_config_init(get_base_phy(phydev));
 		if (ret)
 			return ret;
 	}
