@@ -71,6 +71,25 @@ define Device/vimin_vm-s100-0800ms
 endef
 TARGET_DEVICES += vimin_vm-s100-0800ms
 
+define Device/xikestor_sks8300-8t
+  SOC := rtl9303
+  UIMAGE_MAGIC := 0x93000000
+  DEVICE_VENDOR := XikeStor
+  DEVICE_MODEL := SKS8300-8T
+  DEVICE_PACKAGES := kmod-hwmon-lm75
+  IMAGE_SIZE := 20480k
+  $(Device/kernel-lzma)
+  IMAGE/sysupgrade.bin := \
+    pad-extra 16 | \
+    append-kernel | \
+    pad-to 64k | \
+    append-rootfs | \
+    pad-rootfs | \
+    check-size | \
+    append-metadata
+endef
+TARGET_DEVICES += xikestor_sks8300-8t
+
 define Device/xikestor_sks8300-8x
   SOC := rtl9303
   DEVICE_VENDOR := XikeStor
