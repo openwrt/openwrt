@@ -53,7 +53,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  static struct phy_driver xway_gphy[] = {
 --- a/drivers/net/phy/mxl-gpy.c
 +++ b/drivers/net/phy/mxl-gpy.c
-@@ -1019,7 +1019,7 @@ static int gpy_led_polarity_set(struct p
+@@ -1005,7 +1005,7 @@ static int gpy_led_polarity_set(struct p
  	if (force_active_high)
  		return phy_clear_bits(phydev, PHY_LED, PHY_LED_POLARITY(index));
  
@@ -61,4 +61,4 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 +	return -EINVAL;
  }
  
- static struct phy_driver gpy_drivers[] = {
+ static unsigned int gpy_inband_caps(struct phy_device *phydev,
