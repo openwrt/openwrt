@@ -1,16 +1,18 @@
-From aaf0094daf0d7a0e4599280341710c98ba1e9d35 Mon Sep 17 00:00:00 2001
+From 9da9633f2f02df7da67ab3b6f84eda4956ae1c5a Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
-Date: Wed, 7 Jan 2026 13:48:16 +0000
+Date: Wed, 7 Jan 2026 15:39:16 +0000
 Subject: [PATCH] net: phy: mxl-gpy: implement SGMII in-band configuration
 
 SGMII in-band autonegotiation was previously kept untouched (and restored
 after switching back from 2500Base-X to SGMII). Now that the kernel offers
-a way to announce in-band capabilities and enable/disable in-band AN,
+a way to announce in-band capabilities and nable/disable in-band AN,
 implement the .inband_caps and .config_inband driver ops.
 This moves the responsibility to configure SGMII in-band AN from the PHY
 driver to phylink.
 
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Link: https://patch.msgid.link/70f07e46dd96e239a9711e6073e8c04c1d8672d4.1767800226.git.daniel@makrotopia.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 ---
  drivers/net/phy/mxl-gpy.c | 61 ++++++++++++++++++++++++++++++---------
  1 file changed, 47 insertions(+), 14 deletions(-)
@@ -39,7 +41,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  	}
  
 @@ -1022,6 +1008,27 @@ static int gpy_led_polarity_set(struct p
- 	return -EINVAL;
+ 	unreachable();
  }
  
 +static unsigned int gpy_inband_caps(struct phy_device *phydev,
