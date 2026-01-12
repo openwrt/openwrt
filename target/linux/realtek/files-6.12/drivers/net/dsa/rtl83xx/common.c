@@ -241,31 +241,22 @@ static int rtldsa_bus_c45_write(struct mii_bus *bus, int addr, int devad, int re
 
 static int rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 {
-	struct device_node *dn, *phy_node, *pcs_node, *led_node, *np, *mii_np;
+	struct device_node *dn, *phy_node, *pcs_node, *led_node;
 	struct device *dev = priv->dev;
 	struct mii_bus *bus;
 	int ret;
 	u32 pn;
 
-	np = of_find_compatible_node(NULL, NULL, "realtek,otto-mdio");
-	if (!np) {
-		dev_err(priv->dev, "mdio controller node not found");
+	dn = of_find_compatible_node(NULL, NULL, "realtek,otto-mdio");
+	if (!dn)
 		return -ENODEV;
-	}
 
-	mii_np = of_get_child_by_name(np, "mdio-bus");
-	if (!mii_np) {
-		dev_err(priv->dev, "mdio-bus subnode not found");
-		return -ENODEV;
-	}
-
-	priv->parent_bus = of_mdio_find_bus(mii_np);
-	if (!priv->parent_bus) {
-		dev_dbg(priv->dev, "Deferring probe of mdio bus\n");
-		return -EPROBE_DEFER;
-	}
-	if (!of_device_is_available(mii_np))
+	if (!of_device_is_available(dn))
 		ret = -ENODEV;
+
+	priv->parent_bus = of_mdio_find_bus(dn);
+	if (!priv->parent_bus)
+		return -EPROBE_DEFER;
 
 	bus = devm_mdiobus_alloc(priv->ds->dev);
 	if (!bus)
@@ -284,10 +275,8 @@ static int rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 	priv->ds->user_mii_bus->priv = priv;
 
 	ret = mdiobus_register(priv->ds->user_mii_bus);
-	if (ret && mii_np) {
-		of_node_put(dn);
+	if (ret)
 		return ret;
-	}
 
 	dn = of_find_compatible_node(NULL, NULL, "realtek,rtl83xx-switch");
 	if (!dn) {
