@@ -166,7 +166,7 @@ function iface_auth_type(config) {
 
 		if (config.radius_das_client && config.radius_das_secret) {
 			set_default(config, 'radius_das_port', 3799);
-			set_default(config, 'radius_das_client', `${config.radius_das_client} ${config.radius_das_secret}`);
+			config.radius_das_client = config.radius_das_client + ' ' + config.radius_das_secret;
 		}
 
 		set_default(config, 'eapol_version', config.wpa & 1);
