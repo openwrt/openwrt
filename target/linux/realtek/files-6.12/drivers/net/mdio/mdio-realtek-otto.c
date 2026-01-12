@@ -1016,14 +1016,14 @@ static int rtmdio_probe(struct platform_device *pdev)
 	struct device *dev = &pdev->dev;
 	struct rtmdio_bus_priv *priv;
 	struct mii_bus *bus;
-	u32 pn;
+	int addr;
 
 	bus = devm_mdiobus_alloc_size(dev, sizeof(*priv));
 	if (!bus)
 		return -ENOMEM;
 
 	priv = bus->priv;
-	for (int addr = 0; addr < RTMDIO_MAX_PORT; addr++)
+	for (addr = 0; addr < RTMDIO_MAX_PORT; addr++)
 		priv->smi_bus[addr] = -1;
 
 	priv->cfg = (const struct rtmdio_config *)device_get_match_data(dev);
@@ -1040,29 +1040,29 @@ static int rtmdio_probe(struct platform_device *pdev)
 	for_each_node_by_name(dn, "ethernet-phy") {
 		u32 smi_addr[2];
 
-		if (of_property_read_u32(dn, "reg", &pn))
+		if (of_property_read_u32(dn, "reg", &addr))
 			continue;
 
-		if (pn >= RTMDIO_MAX_PORT) {
-			pr_err("%s: illegal port number %d\n", __func__, pn);
+		if (addr >= priv->cfg->cpu_port) {
+			pr_err("%s: illegal port number %d\n", __func__, addr);
 			return -ENODEV;
 		}
 
 		if (of_property_read_u32_array(dn, "realtek,smi-address", &smi_addr[0], 2)) {
-			priv->smi_bus[pn] = 0;
-			priv->smi_addr[pn] = pn;
+			priv->smi_bus[addr] = 0;
+			priv->smi_addr[addr] = addr;
 		} else {
-			priv->smi_bus[pn] = smi_addr[0];
-			priv->smi_addr[pn] = smi_addr[1];
+			priv->smi_bus[addr] = smi_addr[0];
+			priv->smi_addr[addr] = smi_addr[1];
 		}
 
-		if (priv->smi_bus[pn] >= RTMDIO_MAX_SMI_BUS) {
-			pr_err("%s: illegal SMI bus number %d\n", __func__, priv->smi_bus[pn]);
+		if (priv->smi_bus[addr] >= RTMDIO_MAX_SMI_BUS) {
+			pr_err("%s: illegal SMI bus number %d\n", __func__, priv->smi_bus[addr]);
 			return -ENODEV;
 		}
 
 		if (of_device_is_compatible(dn, "ethernet-phy-ieee802.3-c45"))
-			priv->smi_bus_isc45[priv->smi_bus[pn]] = true;
+			priv->smi_bus_isc45[priv->smi_bus[addr]] = true;
 	}
 
 	dn = of_find_compatible_node(NULL, NULL, "realtek,rtl83xx-switch");
