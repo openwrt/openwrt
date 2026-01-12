@@ -63,6 +63,21 @@ endef
 $(eval $(call KernelPackage,hwmon-adt7410))
 
 
+define KernelPackage/hwmon-adt7470
+  TITLE:=ADT7470 monitoring support
+  KCONFIG:=CONFIG_SENSORS_ADT7470
+  FILES:=$(LINUX_DIR)/drivers/hwmon/adt7470.ko
+  AUTOLOAD:=$(call AutoProbe,adt7470)
+  $(call AddDepends/hwmon,+kmod-i2c-core +kmod-regmap-i2c)
+endef
+
+define KernelPackage/hwmon-adt7470/description
+ Kernel module for ADT7470 thermal monitor chip
+endef
+
+$(eval $(call KernelPackage,hwmon-adt7470))
+
+
 define KernelPackage/hwmon-adt7475
   TITLE:=ADT7473/7475/7476/7490 monitoring support
   KCONFIG:=CONFIG_SENSORS_ADT7475
