@@ -4,7 +4,7 @@ define Device/fsl_T4240RDB
   DEVICE_DTS_DIR := $(DTS_DIR)/fsl
   DEVICE_PACKAGES := \
     kmod-eeprom-at24 kmod-gpio-button-hotplug kmod-hwmon-w83793 kmod-leds-gpio \
-	  kmod-ptp-qoriq kmod-rtc-ds1374 u-boot-fsl_T4240RDB-nor u-boot-fsl_T4240RDB-sdboot
+	  kmod-ptp-qoriq kmod-rtc-ds1374
   FILESYSTEMS := squashfs
   KERNEL := kernel-bin | gzip | fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   IMAGES := factory-nor.bin.gz sdcard.img.gz rcw.bin sysupgrade.bin

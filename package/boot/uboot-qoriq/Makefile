@@ -36,12 +36,14 @@ endef
 
 define U-Boot/fsl_T4240RDB-nor
   NAME:=NXP T4240RDB NOR Boot
+  BUILD_DEVICES:=fsl_T4240RDB
   UBOOT_CONFIG:=T4240RDB
   UBOOT_IMAGE:=u-boot-dtb.bin
 endef
 
 define U-Boot/fsl_T4240RDB-sdboot
   NAME:=NXP T4240RDB SD Card Boot
+  BUILD_DEVICES:=fsl_T4240RDB
   UBOOT_CONFIG:=T4240RDB_SDCARD
   UBOOT_IMAGE:=u-boot-with-spl-pbl.bin
 endef
