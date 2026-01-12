@@ -149,7 +149,7 @@ struct rtmdio_bus_priv {
 	int page[RTMDIO_MAX_PORT];
 	bool raw[RTMDIO_MAX_PORT];
 	int smi_bus[RTMDIO_MAX_PORT];
-	u8 smi_addr[RTMDIO_MAX_PORT];
+	int smi_addr[RTMDIO_MAX_PORT];
 	struct device_node *dn[RTMDIO_MAX_PORT];
 	bool smi_bus_isc45[RTMDIO_MAX_SMI_BUS];
 };
@@ -1030,8 +1030,6 @@ static int rtmdio_probe(struct platform_device *pdev)
 		priv->smi_bus[addr] = -1;
 
 	for_each_node_by_name(dn, "ethernet-phy") {
-		u32 smi_addr[2];
-
 		if (of_property_read_u32(dn, "reg", &addr))
 			continue;
 
@@ -1040,14 +1038,10 @@ static int rtmdio_probe(struct platform_device *pdev)
 			return -ENODEV;
 		}
 
-		if (of_property_read_u32_array(dn, "realtek,smi-address", &smi_addr[0], 2)) {
-			priv->smi_bus[addr] = 0;
+		of_property_read_u32(dn->parent, "reg", &priv->smi_bus[addr]);
+		if (of_property_read_u32(dn, "realtek,smi-address", &priv->smi_addr[addr]))
 			priv->smi_addr[addr] = addr;
-		} else {
-			priv->smi_bus[addr] = smi_addr[0];
-			priv->smi_addr[addr] = smi_addr[1];
-		}
-
+		
 		if (priv->smi_bus[addr] >= RTMDIO_MAX_SMI_BUS) {
 			pr_err("%s: illegal SMI bus number %d\n", __func__, priv->smi_bus[addr]);
 			return -ENODEV;
