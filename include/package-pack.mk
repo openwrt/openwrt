@@ -130,22 +130,11 @@ endef
 # Format provide and add ABI and version if it's not a virtual provide marked
 # with an @.
 #
-# Same as for the base package name, if ABI version is set, provide both
-# unversioned provide and one with ABI version and version.
-#
 # 1: provide name
 # 2: provide version
-# 3: (optional) ABI version
+# 3: (optional) ABI preformatted by FormatABISuffix
 define AddProvide
-$(strip
-  $(if $(filter @%,$(1)),
-    $(patsubst @%,%,$(1)),
-    $(if $(3),
-      $(1) $(1)$(call FormatABISuffix,$(1),$(3))=$(2),
-      $(1)=$(2)
-    )
-  )
-)
+$(if $(filter @%,$(1)),$(patsubst @%,%,$(1)),$(1)$(3)=$(2))
 endef
 
 # Remove virtual provides prefix and self. apk doesn't like it when packages
@@ -169,14 +158,9 @@ endef
 #     at the same time
 #   - additionally provide `${package_name}` so multiple packages can be looked
 #     up by its base name
-#   - for each `provides`:
-#     - provide `${provide}${ABI_version}=${package_version}`
-#       this implies that only one version of a provide can be installed at the
-#       same time
-#     - if a `provide` ends in a number, the `ABI_version` will be prefixed with
-#       a - sign, e.g.: provide1-0
-#     - additionally provide `${provide}` so multiple packages can be looked up
-#       by its base name
+#   - for each `provides`, provide `${provide}${ABI_version}=${package_version}`
+#     this implies that only one version of a provide can be installed at the
+#     same time
 #
 # - else if ABI version is _not_ defined
 #   - package is named `${package_name}`
@@ -229,17 +213,16 @@ endef
 #
 # 1: package name
 # 2: package version
-# 3: ABI version
-# 4: list of provides
+# 3: list of provides
 define FormatProvides
 $(strip
-  $(if $(call FormatABISuffix,$(1),$(3)),
+  $(if $(ABIV_$(1)),
     $(1) $(foreach provide,
-      $(filter-out $(1),$(4)),
-      $(call AddProvide,$(provide),$(2),$(3))
+      $(filter-out $(1),$(3)),
+      $(call AddProvide,$(provide),$(2),$(ABIV_$(1)))
     ),
     $(foreach provide,
-      $(filter-out $(1),$(4)),
+      $(filter-out $(1),$(3)),
       $(call AddProvide,$(provide),$(2))
     )
   )
@@ -384,7 +367,7 @@ endif
       Package/$(1)/PROVIDES := $$(patsubst @%,%,$(PROVIDES))
       Package/$(1)/PROVIDES := $$(filter-out $(1)$$(ABIV_$(1)),$$(Package/$(1)/PROVIDES)$$(if $$(ABIV_$(1)), $(1) $$(foreach provide,$$(Package/$(1)/PROVIDES),$$(provide)$$(ABIV_$(1)))))
     else
-      Package/$(1)/PROVIDES := $$(call FormatProvides,$(1),$(VERSION),$(ABI_VERSION),$(PROVIDES))
+      Package/$(1)/PROVIDES := $$(call FormatProvides,$(1),$(VERSION),$(PROVIDES))
     endif
 
 $(_define) Package/$(1)/CONTROL
