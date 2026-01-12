@@ -58,7 +58,6 @@ extern struct rtl83xx_soc_info soc_info;
 #define RTL821X_JOIN_OTHER		2
 
 static const struct firmware rtl838x_8380_fw;
-static const struct firmware rtl838x_8214fc_fw;
 static const struct firmware rtl838x_8218b_fw;
 
 struct rtl821x_shared_priv {
@@ -657,126 +656,6 @@ static int rtl8380_configure_rtl8214c(struct phy_device *phydev)
 
 	/* GPHY auto conf */
 	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
-
-	return 0;
-}
-
-__maybe_unused
-static int rtl8380_configure_rtl8214fc(struct phy_device *phydev)
-{
-	u32 *rtl8380_rtl8214fc_perchip;
-	u32 *rtl8380_rtl8214fc_perport;
-	struct phy_device *patchphy;
-	struct fw_header *h;
-	u32 val;
-	int ret;
-
-	/* Read internal PHY id */
-	phy_write_paged(phydev, 0, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
-	phy_write_paged(phydev, 0x1f, 0x1b, 0x0002);
-	val = phy_read_paged(phydev, 0x1f, 0x1c);
-	if (val != RTL821X_CHIP_ID) {
-		phydev_err(phydev, "Expected external RTL8214FC, found PHY-ID %x\n", val);
-		return -1;
-	}
-
-	h = rtl838x_request_fw(phydev, &rtl838x_8214fc_fw, FIRMWARE_838X_8214FC_1);
-	if (!h)
-		return -1;
-
-	if (h->phy != 0x8214fc00) {
-		phydev_err(phydev, "Wrong firmware file: PHY mismatch.\n");
-		return -1;
-	}
-
-	phydev_info(phydev, "patch\n");
-
-	rtl8380_rtl8214fc_perchip = (void *)h + sizeof(struct fw_header) + h->parts[0].start;
-	rtl8380_rtl8214fc_perport = (void *)h + sizeof(struct fw_header) + h->parts[1].start;
-
-	/* detect phy version */
-	phy_write_paged(phydev, RTL838X_PAGE_RAW, 27, 0x0004);
-	val = phy_read_paged(phydev, RTL838X_PAGE_RAW, 28);
-
-	val = phy_read(phydev, 16);
-	if (val & BMCR_PDOWN) {
-		rtl8214fc_power_set(phydev, PORT_MII, true);
-		rtl8214fc_power_set(phydev, PORT_FIBRE, true);
-	} else
-		rtl8380_phy_reset(phydev);
-
-	msleep(100);
-	phy_write_paged(phydev, 0, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
-
-	for (int i = 0; rtl8380_rtl8214fc_perchip[i * 3] &&
-			rtl8380_rtl8214fc_perchip[i * 3 + 1]; i++) {
-		u32 page = 0;
-
-		if (rtl8380_rtl8214fc_perchip[i * 3 + 1] == 0x1f)
-			page = rtl8380_rtl8214fc_perchip[i * 3 + 2];
-		if (rtl8380_rtl8214fc_perchip[i * 3 + 1] == 0x13 && page == 0x260) {
-			val = phy_read_paged(phydev, 0x260, 13);
-			val = (val & 0x1f00) | (rtl8380_rtl8214fc_perchip[i * 3 + 2] & 0xe0ff);
-			phy_write_paged(phydev, RTL838X_PAGE_RAW,
-					rtl8380_rtl8214fc_perchip[i * 3 + 1], val);
-		} else {
-			phy_write_paged(phydev, RTL838X_PAGE_RAW,
-					rtl8380_rtl8214fc_perchip[i * 3 + 1],
-					rtl8380_rtl8214fc_perchip[i * 3 + 2]);
-		}
-	}
-
-	/* Force copper medium */
-	for (int port = 0; port < 4; port++) {
-		patchphy = get_package_phy(phydev, port);
-		phy_write_paged(patchphy, RTL838X_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL8XXX_PAGE_MAIN);
-		phy_write_paged(patchphy, RTL838X_PAGE_RAW, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_COPPER);
-	}
-
-	/* Enable PHY */
-	for (int port = 0; port < 4; port++) {
-		patchphy = get_package_phy(phydev, port);
-		phy_write_paged(patchphy, RTL838X_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL8XXX_PAGE_MAIN);
-		phy_write_paged(patchphy, RTL838X_PAGE_RAW, 0x00, 0x1140);
-	}
-	mdelay(100);
-
-	/* Disable Autosensing */
-	for (int port = 0; port < 4; port++) {
-		int i;
-
-		patchphy = get_package_phy(phydev, port);
-		for (i = 0; i < 100; i++) {
-			val = phy_read_paged(patchphy, RTL821X_PAGE_GPHY, 0x10);
-			if ((val & 0x7) >= 3)
-				break;
-		}
-		if (i >= 100) {
-			phydev_err(phydev, "Could not disable autosensing\n");
-			return -1;
-		}
-	}
-
-	ret = rtl821x_prepare_patch(phydev, 4);
-	if (ret)
-		return ret;
-
-	/* Use Broadcast ID method for patching */
-	rtl821x_phy_setup_package_broadcast(phydev, true);
-
-	for (int i = 0; rtl8380_rtl8214fc_perport[i * 2]; i++) {
-		phy_write_paged(phydev, RTL838X_PAGE_RAW, rtl8380_rtl8214fc_perport[i * 2],
-				rtl8380_rtl8214fc_perport[i * 2 + 1]);
-	}
-
-	/* Disable broadcast ID */
-	rtl821x_phy_setup_package_broadcast(phydev, false);
-
-	/* Auto medium selection */
-	for (int i = 0; i < 4; i++) {
-		phy_write_paged(phydev, RTL838X_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL8XXX_PAGE_MAIN);
-		phy_write_paged(phydev, RTL838X_PAGE_RAW, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
-	}
 
 	return 0;
 }
