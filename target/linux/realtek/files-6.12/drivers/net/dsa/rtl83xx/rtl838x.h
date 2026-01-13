@@ -1226,7 +1226,7 @@ struct rtl838x_reg {
 	void (*enable_mcast_flood)(int port, bool enable);
 	void (*enable_bcast_flood)(int port, bool enable);
 	void (*set_static_move_action)(int port, bool forward);
-	void (*stp_get)(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[]);
+	int (*stp_get)(struct rtl838x_switch_priv *priv, u16 msti, int port, u32 port_state[]);
 	void (*stp_set)(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[]);
 	int  (*mac_force_mode_ctrl)(int port);
 	int  (*mac_port_ctrl)(int port);
