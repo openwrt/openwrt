@@ -43,7 +43,7 @@ int rtl83xx_port_get_stp_state(struct rtl838x_switch_priv *priv, int port)
 	index = n - (pos >> 4) - 1;
 	bit = (pos << 1) % 32;
 
-	priv->r->stp_get(priv, msti, port_state);
+	priv->r->stp_get(priv, msti, port, port_state);
 
 	mutex_unlock(&priv->reg_mutex);
 
