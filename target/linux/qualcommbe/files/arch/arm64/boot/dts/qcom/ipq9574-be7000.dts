@@ -1,18 +1,13 @@
 // SPDX-License-Identifier: (GPL-2.0+ OR BSD-3-Clause)
-/*
- * IPQ9574 RDP board common device tree source
- *
- * Copyright (c) 2020-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2023, Qualcomm Innovation Center, Inc. All rights reserved.
- */
 
 /dts-v1/;
 
+#include "ipq9574.dtsi"
+
+#include <dt-bindings/clock/qcom,ipq-cmn-pll.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/leds/common.h>
-#include "ipq9574.dtsi"
-
 #include <dt-bindings/clock/qcom,qca8k-nsscc.h>
 #include <dt-bindings/net/qcom,qca808x.h>
 #include <dt-bindings/reset/qcom,qca8k-nsscc.h>
@@ -54,7 +49,7 @@
 
 	gpio-keys {
 		compatible = "gpio-keys";
-		pinctrl-0 = <&gpio_keys>;
+		pinctrl-0 = <&gpio_keys_default>;
 		pinctrl-names = "default";
 
 		reset {
@@ -68,7 +63,7 @@
 
 	leds {
 		compatible = "gpio-leds";
-		pinctrl-0 = <&gpio_leds>;
+		pinctrl-0 = <&gpio_leds_default>;
 		pinctrl-names = "default";
 
 		aiot-white {
@@ -163,8 +158,8 @@
 
 		port@1 {
 			reg = <1>;
-			phy-mode = "qsgmii";
-			label = "wan";
+			phy-mode = "2500base-x";
+			label = "lan1";
 			phy-handle = <&phy0>;
 			pcs-handle = <&pcsuniphy0_ch0>;
 			local-mac-address = [00 00 00 00 00 00];
@@ -181,10 +176,11 @@
 				      "port_rx",
 				      "port_tx";
 		};
+
 		port@2 {
 			reg = <2>;
-			phy-mode = "qsgmii";
-			label = "lan1";
+			phy-mode = "2500base-x";
+			label = "lan2";
 			phy-handle = <&phy1>;
 			pcs-handle = <&pcsuniphy0_ch1>;
 			local-mac-address = [00 00 00 00 00 00];
@@ -192,19 +188,20 @@
 				 <&nsscc NSS_CC_PORT2_RX_CLK>,
 				 <&nsscc NSS_CC_PORT2_TX_CLK>;
 			clock-names = "port_mac",
-				"port_rx",
-				"port_tx";
+				      "port_rx",
+				      "port_tx";
 			resets = <&nsscc PORT2_MAC_ARES>,
 				 <&nsscc PORT2_RX_ARES>,
 				 <&nsscc PORT2_TX_ARES>;
 			reset-names = "port_mac",
-				"port_rx",
-				"port_tx";
+				      "port_rx",
+				      "port_tx";
 		};
+
 		port@3 {
 			reg = <3>;
-			phy-mode = "qsgmii";
-			label = "lan2";
+			phy-mode = "2500base-x";
+			label = "lan3";
 			phy-handle = <&phy2>;
 			pcs-handle = <&pcsuniphy0_ch2>;
 			local-mac-address = [00 00 00 00 00 00];
@@ -212,19 +209,20 @@
 				 <&nsscc NSS_CC_PORT3_RX_CLK>,
 				 <&nsscc NSS_CC_PORT3_TX_CLK>;
 			clock-names = "port_mac",
-				"port_rx",
-				"port_tx";
+				      "port_rx",
+				      "port_tx";
 			resets = <&nsscc PORT3_MAC_ARES>,
 				 <&nsscc PORT3_RX_ARES>,
 				 <&nsscc PORT3_TX_ARES>;
 			reset-names = "port_mac",
-				"port_rx",
-				"port_tx";
+				      "port_rx",
+				      "port_tx";
 		};
+
 		port@4 {
 			reg = <4>;
-			phy-mode = "qsgmii";
-			label = "lan3";
+			phy-mode = "2500base-x";
+			label = "lan4";
 			phy-handle = <&phy3>;
 			pcs-handle = <&pcsuniphy0_ch3>;
 			local-mac-address = [00 00 00 00 00 00];
@@ -232,14 +230,14 @@
 				 <&nsscc NSS_CC_PORT4_RX_CLK>,
 				 <&nsscc NSS_CC_PORT4_TX_CLK>;
 			clock-names = "port_mac",
-				"port_rx",
-				"port_tx";
+				      "port_rx",
+				      "port_tx";
 			resets = <&nsscc PORT4_MAC_ARES>,
 				 <&nsscc PORT4_RX_ARES>,
 				 <&nsscc PORT4_TX_ARES>;
 			reset-names = "port_mac",
-				"port_rx",
-				"port_tx";
+				      "port_rx",
+				      "port_tx";
 		};
 	};
 };
@@ -289,24 +287,49 @@
 		bias-disable;
 	};
 
-	gpio_keys: gpio-keys-state {
+	gpio_keys_default: gpio-keys-default-state {
 		pins = "gpio44";
 		function = "gpio";
 		drive-strength = <8>;
 		bias-pull-up;
 	};
 
-	gpio_leds: gpio-leds-state {
+	gpio_leds_default: gpio-leds-default-state {
 		pins = "gpio8", "gpio40", "gpio41", "gpio42", "gpio43";
 		function = "gpio";
 		drive-strength = <8>;
 		bias-pull-up;
 	};
+
+	qpic_snand_default_state: qpic-snand-default-state {
+		clock-pins {
+			pins = "gpio5";
+			function = "qspi_clk";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		cs-pins {
+			pins = "gpio4";
+			function = "qspi_cs";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		data-pins {
+			pins = "gpio0", "gpio1", "gpio2", "gpio3";
+			function = "qspi_data";
+			drive-strength = <8>;
+			bias-disable;
+		};
+	};
 };
 
 &mdio {
 	status = "okay";
-	phy-reset-gpio = <&tlmm 60 0>;
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	phy-reset-gpio = <&tlmm 60 GPIO_ACTIVE_LOW>;
 
 	qca8k_nsscc: clock-controller@18 {
 		compatible = "qcom,qca8084-nsscc";
@@ -348,31 +371,73 @@
 		qcom,package-mode = <QCA808X_PCS1_10G_QXGMII_PCS0_UNUNSED>;
 
 	    phy0: ethernet-phy@1 {
-			compatible = "ethernet-phy-id004d.d101", "ethernet-phy-ieee802.3-c22";
+			compatible = "ethernet-phy-id004d.d180", "ethernet-phy-id004d.d101", "ethernet-phy-ieee802.3-c22";
 			reg = <1>;
 			clocks = <&qca8k_nsscc NSS_CC_GEPHY0_SYS_CLK>;
 			resets = <&qca8k_nsscc NSS_CC_GEPHY0_SYS_ARES>;
+			qcom,xpcs-channel = <0>;
 		};
 
 	    phy1: ethernet-phy@2 {
-			compatible = "ethernet-phy-id004d.d101", "ethernet-phy-ieee802.3-c22";
+			compatible = "ethernet-phy-id004d.d180", "ethernet-phy-id004d.d101", "ethernet-phy-ieee802.3-c22";
 			reg = <2>;
 			clocks = <&qca8k_nsscc NSS_CC_GEPHY1_SYS_CLK>;
 			resets = <&qca8k_nsscc NSS_CC_GEPHY1_SYS_ARES>;
+			qcom,xpcs-channel = <1>;
 		};
 
 	    phy2: ethernet-phy@3 {
-			compatible = "ethernet-phy-id004d.d101", "ethernet-phy-ieee802.3-c22";
+			compatible = "ethernet-phy-id004d.d180", "ethernet-phy-id004d.d101", "ethernet-phy-ieee802.3-c22";
 			reg = <3>;
 			clocks = <&qca8k_nsscc NSS_CC_GEPHY2_SYS_CLK>;
 			resets = <&qca8k_nsscc NSS_CC_GEPHY2_SYS_ARES>;
+			qcom,xpcs-channel = <2>;
 		};
 
 	    phy3: ethernet-phy@4 {
-			compatible = "ethernet-phy-id004d.d101", "ethernet-phy-ieee802.3-c22";
+			compatible = "ethernet-phy-id004d.d180", "ethernet-phy-id004d.d101", "ethernet-phy-ieee802.3-c22";
 			reg = <4>;
 			clocks = <&qca8k_nsscc NSS_CC_GEPHY3_SYS_CLK>;
 			resets = <&qca8k_nsscc NSS_CC_GEPHY3_SYS_ARES>;
+			qcom,xpcs-channel = <3>;
+		};
+	};
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	pinctrl-0 = <&qpic_snand_default_state>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	flash@0 {
+		reg = <0>;
+		compatible = "spi-nand";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		nand-ecc-strength = <8>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <0x08>;
+		nand-ecc-engine = <&qpic_nand>;
+		partitions {
+			compatible = "qcom,smem-part";
+			partition-0-ethphyfw {
+				label = "0:ethphyfw";
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					aqr_fw: aqr-fw@0 {
+						reg = <0x28 0x60002>;
+					};
+				};
+			};
 		};
 	};
 };
@@ -382,7 +447,7 @@
 };
 
 &usb_0_qmpphy {
-	vdda-pll-supply = <&mp5496_l5>;
+	/*vdda-pll-supply = <&mp5496_l5>;*/
 	vdda-phy-supply = <&regulator_fixed_0p925>;
 
 	status = "okay";
@@ -390,7 +455,7 @@
 
 &usb_0_qusbphy {
 	vdd-supply = <&regulator_fixed_0p925>;
-	vdda-pll-supply = <&mp5496_l5>;
+	/*vdda-pll-supply = <&mp5496_l5>;*/
 	vdda-phy-dpdm-supply = <&regulator_fixed_3p3>;
 
 	status = "okay";
@@ -400,10 +465,26 @@
 	status = "okay";
 };
 
-&sleep_clk {
-	clock-frequency = <32000>;
+/*
+ * The bootstrap pins for the board select the XO clock frequency
+ * (48 MHZ or 96 MHZ used for different RDP type board). This setting
+ * automatically enables the right dividers, to ensure the reference
+ * clock output from WiFi to the CMN PLL is 48 MHZ.
+ */
+&ref_48mhz_clk {
+	clock-div = <1>;
+	clock-mult = <1>;
 };
 
+/*
+ * The frequency of xo_board_clk is fixed to 24 MHZ, which is routed
+ * from WiFi output clock 48 MHZ divided by 2.
+ */
 &xo_board_clk {
-	clock-frequency = <24000000>;
+	clock-div = <2>;
+	clock-mult = <1>;
+};
+
+&xo_clk {
+	clock-frequency = <48000000>;
 };
