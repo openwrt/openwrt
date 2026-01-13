@@ -655,16 +655,18 @@ void rtl839x_vlan_profile_dump(int profile)
 
 static int rtldsa_839x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, int port, u32 port_state[])
 {
+	int idx = 3 - ((port + 12) / 16);
+	int bit = 2 * ((port + 12) % 16);
 	u32 cmd = 1 << 16 | /* Execute cmd */
 		  0 << 15 | /* Read */
 		  5 << 12 | /* Table type 0b101 */
 		  (msti & 0xfff);
-	priv->r->exec_tbl0_cmd(cmd);
 
+	priv->r->exec_tbl0_cmd(cmd);
 	for (int i = 0; i < 4; i++)
 		port_state[i] = sw_r32(priv->r->tbl_access_data_0(i));
 
-	return 0;
+	return (port_state[idx] >> bit) & 3;
 }
 
 static void rtl839x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])

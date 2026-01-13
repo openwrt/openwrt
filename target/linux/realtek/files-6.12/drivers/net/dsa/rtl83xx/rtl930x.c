@@ -404,17 +404,18 @@ static void rtldsa_930x_enable_flood(int port, bool enable)
 
 static int rtldsa_930x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, int port, u32 port_state[])
 {
+	int idx = 1 - ((port + 3) / 16);
+	int bit = 2 * ((port + 3) % 16);
 	u32 cmd = 1 << 17 | /* Execute cmd */
 		  0 << 16 | /* Read */
 		  4 << 12 | /* Table type 0b10 */
 		  (msti & 0xfff);
+
 	priv->r->exec_tbl0_cmd(cmd);
-
 	for (int i = 0; i < 2; i++)
-		port_state[i] = sw_r32(RTL930X_TBL_ACCESS_DATA_0(i));
-	pr_debug("MSTI: %d STATE: %08x, %08x\n", msti, port_state[0], port_state[1]);
+		port_state[i] = sw_r32(priv->r->tbl_access_data_0(i));
 
-	return 0;
+	return (port_state[idx] >> bit) & 3;
 }
 
 static void rtl930x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
