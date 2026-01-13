@@ -18,6 +18,10 @@ PKG_SOURCE_URL:=https://mirror.ox.ac.uk/pub/OpenBSD/LibreSSL \
 	http://ftp.jaist.ac.jp/pub/OpenBSD/LibreSSL \
 	https://ftp.openbsd.org/pub/OpenBSD/LibreSSL
 
+PKG_GPG_KEYS_DIR:=$(CURDIR)/keys
+PKG_SOURCE_SIG:=$(PKG_SOURCE).asc
+PKG_VALIDPGPKEYS:=6F67522EC596C025B24549911FFAA0B24B708F96
+
 HOST_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/host-build.mk
