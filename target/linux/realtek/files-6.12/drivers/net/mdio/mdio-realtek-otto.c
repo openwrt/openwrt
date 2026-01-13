@@ -43,6 +43,12 @@
 #define RTMDIO_838X_SMI_ACCESS_PHY_CTRL_3	(0xa1c4)
 #define RTMDIO_838X_SMI_POLL_CTRL		(0xa17c)
 
+#define RTMDIO_839X_CMD_FAIL			BIT(1)
+#define RTMDIO_839X_CMD_READ_C22		0
+#define RTMDIO_839X_CMD_READ_C45		BIT(2)
+#define RTMDIO_839X_CMD_WRITE_C22		BIT(3)
+#define RTMDIO_839X_CMD_WRITE_C45		BIT(2) | BIT(3)
+#define RTMDIO_839X_CMD_MASK			BIT(1) | BIT(2) | BIT(3)
 #define RTMDIO_839X_PHYREG_CTRL			(0x03E0)
 #define RTMDIO_839X_PHYREG_PORT_CTRL		(0x03E4)
 #define RTMDIO_839X_PHYREG_ACCESS_CTRL		(0x03DC)
@@ -281,45 +287,27 @@ static int rtmdio_838x_write_mmd_phy(u32 port, u32 addr, u32 reg, u32 val)
 
 /* RTL839x specific MDIO functions */
 
-static int rtmdio_839x_smi_wait_op(int timeout)
+static int rtmdio_839x_run_cmd(int cmd)
 {
-	int ret = 0;
-	u32 val;
-
-	ret = readx_poll_timeout(sw_r32, RTMDIO_839X_PHYREG_ACCESS_CTRL,
-				 val, !(val & 0x1), 20, timeout);
-	if (ret)
-		pr_err("%s: timeout\n", __func__);
-
-	return ret;
+	return rtmdio_run_cmd(cmd, RTMDIO_839X_CMD_MASK,
+			      RTMDIO_839X_PHYREG_ACCESS_CTRL, RTMDIO_839X_CMD_FAIL);
 }
 
 static int rtmdio_839x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 {
-	int err = 0;
+	int err;
 	u32 v;
-
-	if (page > 8191 || reg > 31)
-		return -ENOTSUPP;
 
 	mutex_lock(&rtmdio_lock);
 
 	sw_w32_mask(0xffff0000, port << 16, RTMDIO_839X_PHYREG_DATA_CTRL);
 	v = reg << 5 | page << 10 | ((page == 0x1fff) ? 0x1f : 0) << 23;
 	sw_w32(v, RTMDIO_839X_PHYREG_ACCESS_CTRL);
-
 	sw_w32(0x1ff, RTMDIO_839X_PHYREG_CTRL);
+	err = rtmdio_839x_run_cmd(RTMDIO_839X_CMD_READ_C22);
+	if (!err)
+		*val = sw_r32(RTMDIO_839X_PHYREG_DATA_CTRL) & 0xffff;
 
-	v |= 1;
-	sw_w32(v, RTMDIO_839X_PHYREG_ACCESS_CTRL);
-
-	err = rtmdio_839x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	*val = sw_r32(RTMDIO_839X_PHYREG_DATA_CTRL) & 0xffff;
-
-errout:
 	mutex_unlock(&rtmdio_lock);
 
 	return err;
@@ -327,37 +315,19 @@ errout:
 
 static int rtmdio_839x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 {
-	int err = 0;
+	int err;
 	u32 v;
-
-	val &= 0xffff;
-	if (page > 8191 || reg > 31)
-		return -ENOTSUPP;
 
 	mutex_lock(&rtmdio_lock);
 
-	/* Set PHY to access */
 	sw_w32(BIT_ULL(port), RTMDIO_839X_PHYREG_PORT_CTRL);
 	sw_w32(BIT_ULL(port) >> 32, RTMDIO_839X_PHYREG_PORT_CTRL + 4);
-
 	sw_w32_mask(0xffff0000, val << 16, RTMDIO_839X_PHYREG_DATA_CTRL);
-
 	v = reg << 5 | page << 10 | ((page == 0x1fff) ? 0x1f : 0) << 23;
 	sw_w32(v, RTMDIO_839X_PHYREG_ACCESS_CTRL);
-
 	sw_w32(0x1ff, RTMDIO_839X_PHYREG_CTRL);
+	err = rtmdio_839x_run_cmd(RTMDIO_839X_CMD_WRITE_C22);
 
-	v |= BIT(3) | 1; /* Write operation and execute */
-	sw_w32(v, RTMDIO_839X_PHYREG_ACCESS_CTRL);
-
-	err = rtmdio_839x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	if (sw_r32(RTMDIO_839X_PHYREG_ACCESS_CTRL) & 0x2)
-		err = -EIO;
-
-errout:
 	mutex_unlock(&rtmdio_lock);
 
 	return err;
@@ -366,29 +336,16 @@ errout:
 /* Read an mmd register of the PHY */
 static int rtmdio_839x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
 {
-	int err = 0;
-	u32 v;
+	int err;
 
 	mutex_lock(&rtmdio_lock);
 
-	/* Set PHY to access */
 	sw_w32_mask(0xffff << 16, port << 16, RTMDIO_839X_PHYREG_DATA_CTRL);
-
-	/* Set MMD device number and register to write to */
 	sw_w32(devnum << 16 | (regnum & 0xffff), RTMDIO_839X_PHYREG_MMD_CTRL);
+	err = rtmdio_839x_run_cmd(RTMDIO_839X_CMD_READ_C45);
+	if (!err)
+		*val = sw_r32(RTMDIO_839X_PHYREG_DATA_CTRL) & 0xffff;
 
-	v = BIT(2) | BIT(0); /* MMD-access | EXEC */
-	sw_w32(v, RTMDIO_839X_PHYREG_ACCESS_CTRL);
-
-	err = rtmdio_839x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	/* There is no error-checking via BIT 1 of v, as it does not seem to be set correctly */
-	*val = (sw_r32(RTMDIO_839X_PHYREG_DATA_CTRL) & 0xffff);
-	pr_debug("%s: port %d, regnum: %x, val: %x (err %d)\n", __func__, port, regnum, *val, err);
-
-errout:
 	mutex_unlock(&rtmdio_lock);
 
 	return err;
@@ -397,31 +354,16 @@ errout:
 /* Write to an mmd register of the PHY */
 static int rtmdio_839x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
 {
-	int err = 0;
-	u32 v;
+	int err;
 
 	mutex_lock(&rtmdio_lock);
 
-	/* Set PHY to access */
 	sw_w32(BIT_ULL(port), RTMDIO_839X_PHYREG_PORT_CTRL);
 	sw_w32(BIT_ULL(port) >> 32, RTMDIO_839X_PHYREG_PORT_CTRL + 4);
-
-	/* Set data to write */
 	sw_w32_mask(0xffff << 16, val << 16, RTMDIO_839X_PHYREG_DATA_CTRL);
-
-	/* Set MMD device number and register to write to */
 	sw_w32(devnum << 16 | (regnum & 0xffff), RTMDIO_839X_PHYREG_MMD_CTRL);
+	err = rtmdio_839x_run_cmd(RTMDIO_839X_CMD_WRITE_C45);
 
-	v = BIT(3) | BIT(2) | BIT(0); /* WRITE | MMD-access | EXEC */
-	sw_w32(v, RTMDIO_839X_PHYREG_ACCESS_CTRL);
-
-	err = rtmdio_839x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	pr_debug("%s: port %d, regnum: %x, val: %x (err %d)\n", __func__, port, regnum, val, err);
-
-errout:
 	mutex_unlock(&rtmdio_lock);
 
 	return err;
