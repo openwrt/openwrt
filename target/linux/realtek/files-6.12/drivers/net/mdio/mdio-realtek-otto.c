@@ -30,6 +30,12 @@
 #define RTMDIO_SW_BASE				((volatile void *) 0xBB000000)
 
 /* MDIO bus registers */
+#define RTMDIO_838X_CMD_FAIL			0
+#define RTMDIO_838X_CMD_READ_C22		0
+#define RTMDIO_838X_CMD_READ_C45		BIT(1)
+#define RTMDIO_838X_CMD_WRITE_C22		BIT(2)
+#define RTMDIO_838X_CMD_WRITE_C45		BIT(1) | BIT(2)
+#define RTMDIO_838X_CMD_MASK			BIT(1) | BIT(2)
 #define RTMDIO_838X_SMI_GLB_CTRL		(0xa100)
 #define RTMDIO_838X_SMI_ACCESS_PHY_CTRL_0	(0xa1b8)
 #define RTMDIO_838X_SMI_ACCESS_PHY_CTRL_1	(0xa1bc)
@@ -175,48 +181,44 @@ struct rtmdio_phy_info {
 	unsigned int poll_lpa_1000;
 };
 
-/* RTL838x specific MDIO functions */
-
-static int rtmdio_838x_smi_wait_op(int timeout)
+static int rtmdio_run_cmd(int cmd, int mask, int regnum, int fail)
 {
-	int ret = 0;
-	u32 val;
+	int ret, val;
 
-	ret = readx_poll_timeout(sw_r32, RTMDIO_838X_SMI_ACCESS_PHY_CTRL_1,
-				 val, !(val & 0x1), 20, timeout);
+	sw_w32_mask(mask, cmd | 1, regnum);
+	ret = readx_poll_timeout(sw_r32, regnum, val, !(val & 1), 20, 500000);
 	if (ret)
-		pr_err("%s: timeout\n", __func__);
+		WARN_ONCE(1, "mdio bus access timed out\n");
+	else if (val & fail) {
+		WARN_ONCE(1, "mdio bus access failed\n");
+		ret = -EIO;
+	}
 
 	return ret;
+}
+
+/* RTL838x specific MDIO functions */
+
+static int rtmdio_838x_run_cmd(int cmd)
+{
+	return rtmdio_run_cmd(cmd, RTMDIO_838X_CMD_MASK,
+			      RTMDIO_838X_SMI_ACCESS_PHY_CTRL_1, RTMDIO_838X_CMD_FAIL);
 }
 
 /* Reads a register in a page from the PHY */
 static int rtmdio_838x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 {
-	u32 v, park_page = 0x1f << 15;
+	u32 park_page = 0x1f;
 	int err;
-
-	if (port > 31) {
-		*val = 0xffff;
-		return 0;
-	}
-
-	if (page > 4095 || reg > 31)
-		return -ENOTSUPP;
 
 	mutex_lock(&rtmdio_lock);
 
 	sw_w32_mask(0xffff0000, port << 16, RTMDIO_838X_SMI_ACCESS_PHY_CTRL_2);
-	v = reg << 20 | page << 3;
-	sw_w32(v | park_page, RTMDIO_838X_SMI_ACCESS_PHY_CTRL_1);
-	sw_w32_mask(0, 1, RTMDIO_838X_SMI_ACCESS_PHY_CTRL_1);
+	sw_w32(reg << 20 | page << 3 | park_page << 15, RTMDIO_838X_SMI_ACCESS_PHY_CTRL_1);
+	err = rtmdio_838x_run_cmd(RTMDIO_838X_CMD_READ_C22);
+	if (!err)
+		*val = sw_r32(RTMDIO_838X_SMI_ACCESS_PHY_CTRL_2) & 0xffff;
 
-	err = rtmdio_838x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	*val = sw_r32(RTMDIO_838X_SMI_ACCESS_PHY_CTRL_2) & 0xffff;
-errout:
 	mutex_unlock(&rtmdio_lock);
 
 	return err;
@@ -225,23 +227,16 @@ errout:
 /* Write to a register in a page of the PHY */
 static int rtmdio_838x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 {
-	u32 v, park_page = 0x1f << 15;
+	u32 park_page = 0x1f;
 	int err;
-
-	val &= 0xffff;
-	if (port > 31 || page > 4095 || reg > 31)
-		return -ENOTSUPP;
 
 	mutex_lock(&rtmdio_lock);
 
 	sw_w32(BIT(port), RTMDIO_838X_SMI_ACCESS_PHY_CTRL_0);
 	sw_w32_mask(0xffff0000, val << 16, RTMDIO_838X_SMI_ACCESS_PHY_CTRL_2);
+	sw_w32(reg << 20 | page << 3 | park_page << 15, RTMDIO_838X_SMI_ACCESS_PHY_CTRL_1);
+	err = rtmdio_838x_run_cmd(RTMDIO_838X_CMD_WRITE_C22);
 
-	v = reg << 20 | page << 3 | 0x4;
-	sw_w32(v | park_page, RTMDIO_838X_SMI_ACCESS_PHY_CTRL_1);
-	sw_w32_mask(0, 1, RTMDIO_838X_SMI_ACCESS_PHY_CTRL_1);
-
-	err = rtmdio_838x_smi_wait_op(100000);
 	mutex_unlock(&rtmdio_lock);
 
 	return err;
@@ -251,26 +246,16 @@ static int rtmdio_838x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 static int rtmdio_838x_read_mmd_phy(u32 port, u32 addr, u32 reg, u32 *val)
 {
 	int err;
-	u32 v;
 
 	mutex_lock(&rtmdio_lock);
 
 	sw_w32(1 << port, RTMDIO_838X_SMI_ACCESS_PHY_CTRL_0);
 	sw_w32_mask(0xffff0000, port << 16, RTMDIO_838X_SMI_ACCESS_PHY_CTRL_2);
+	sw_w32(addr << 16 | reg, RTMDIO_838X_SMI_ACCESS_PHY_CTRL_3);
+	err = rtmdio_838x_run_cmd(RTMDIO_838X_CMD_READ_C45);
+	if (!err)
+		*val = sw_r32(RTMDIO_838X_SMI_ACCESS_PHY_CTRL_2) & 0xffff;
 
-	v = addr << 16 | reg;
-	sw_w32(v, RTMDIO_838X_SMI_ACCESS_PHY_CTRL_3);
-
-	/* mmd-access | read | cmd-start */
-	v = 1 << 1 | 0 << 2 | 1;
-	sw_w32(v, RTMDIO_838X_SMI_ACCESS_PHY_CTRL_1);
-
-	err = rtmdio_838x_smi_wait_op(100000);
-	if (err)
-		goto errout;
-
-	*val = sw_r32(RTMDIO_838X_SMI_ACCESS_PHY_CTRL_2) & 0xffff;
-errout:
 	mutex_unlock(&rtmdio_lock);
 
 	return err;
@@ -280,21 +265,15 @@ errout:
 static int rtmdio_838x_write_mmd_phy(u32 port, u32 addr, u32 reg, u32 val)
 {
 	int err;
-	u32 v;
 
-	pr_debug("MMD write: port %d, dev %d, reg %d, val %x\n", port, addr, reg, val);
-	val &= 0xffff;
 	mutex_lock(&rtmdio_lock);
 
 	sw_w32(1 << port, RTMDIO_838X_SMI_ACCESS_PHY_CTRL_0);
 	sw_w32_mask(0xffff0000, val << 16, RTMDIO_838X_SMI_ACCESS_PHY_CTRL_2);
 	sw_w32_mask(0x1f << 16, addr << 16, RTMDIO_838X_SMI_ACCESS_PHY_CTRL_3);
 	sw_w32_mask(0xffff, reg, RTMDIO_838X_SMI_ACCESS_PHY_CTRL_3);
-	/* mmd-access | write | cmd-start */
-	v = 1 << 1 | 1 << 2 | 1;
-	sw_w32(v, RTMDIO_838X_SMI_ACCESS_PHY_CTRL_1);
+	err = rtmdio_838x_run_cmd(RTMDIO_838X_CMD_WRITE_C45);
 
-	err = rtmdio_838x_smi_wait_op(100000);
 	mutex_unlock(&rtmdio_lock);
 
 	return err;
