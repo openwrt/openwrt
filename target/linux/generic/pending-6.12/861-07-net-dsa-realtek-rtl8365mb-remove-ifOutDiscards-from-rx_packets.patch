@@ -1,0 +1,32 @@
+From: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Date: Sun, 30 Nov 2025 19:28:23 +0100
+Subject: [PATCH] net: dsa: realtek: rtl8365mb: remove ifOutDiscards from rx_packets
+
+rx_packets should report the number of frames successfully received:
+unicast + multicast + broadcast. Subtracting ifOutDiscards (a TX
+counter) is incorrect and can undercount RX packets. RX drops are
+already reported via rx_dropped (e.g. etherStatsDropEvents), so
+there is no need to adjust rx_packets.
+
+This patch removes the subtraction of ifOutDiscards from rx_packets
+in rtl8365mb_stats_update().
+
+Fixes: 4af2950c50c8 ("net: dsa: realtek-smi: add rtl8365mb subdriver for RTL8365MB-VC")
+
+Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+---
+ drivers/net/dsa/realtek/rtl8365mb.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/drivers/net/dsa/realtek/rtl8365mb.c
++++ b/drivers/net/dsa/realtek/rtl8365mb.c
+@@ -2180,8 +2180,7 @@ static void rtl8365mb_stats_update(struc
+ 
+ 	stats->rx_packets = cnt[RTL8365MB_MIB_ifInUcastPkts] +
+ 			    cnt[RTL8365MB_MIB_ifInMulticastPkts] +
+-			    cnt[RTL8365MB_MIB_ifInBroadcastPkts] -
+-			    cnt[RTL8365MB_MIB_ifOutDiscards];
++			    cnt[RTL8365MB_MIB_ifInBroadcastPkts];
+ 
+ 	stats->tx_packets = cnt[RTL8365MB_MIB_ifOutUcastPkts] +
+ 			    cnt[RTL8365MB_MIB_ifOutMulticastPkts] +
