@@ -7,12 +7,16 @@
 CI_KERNPART="${CI_KERNPART:-kernel}"
 
 # 'ubi' partition on NAND contains UBI
-# There are also CI_KERN_UBIPART and CI_ROOT_UBIPART if kernel
-# and rootfs are on separated UBIs.
+# If individual UBI volumes are on different partitions,
+# they can be set with CI_KERN_UBIPART, CI_ROOT_UBIPART and/or
+# CI_DATA_UBIPART.
 CI_UBIPART="${CI_UBIPART:-ubi}"
 
 # 'rootfs' UBI volume on NAND contains the rootfs
 CI_ROOTPART="${CI_ROOTPART:-rootfs}"
+
+# 'rootfs_data' UBI volume on NAND contains the rootfs_data
+CI_DATAPART="${CI_DATAPART:-rootfs_data}"
 
 ubi_mknod() {
 	local dir="$1"
@@ -77,9 +81,10 @@ identify_if_gzip() {
 }
 
 nand_restore_config() {
-	local ubidev=$( nand_find_ubi "${CI_ROOT_UBIPART:-$CI_UBIPART}" )
-	local ubivol="$( nand_find_volume $ubidev rootfs_data )"
+	local ubidev=$( nand_find_ubi "${CI_DATA_UBIPART:-$CI_UBIPART}" )
+	local ubivol="$( nand_find_volume $ubidev "$CI_DATAPART" )"
 	if [ ! "$ubivol" ]; then
+		local ubidev=$( nand_find_ubi "${CI_ROOT_UBIPART:-$CI_UBIPART}" )
 		ubivol="$( nand_find_volume $ubidev "$CI_ROOTPART" )"
 		if [ ! "$ubivol" ]; then
 			echo "cannot find ubifs data volume"
@@ -191,20 +196,17 @@ nand_upgrade_prepare_ubi() {
 
 	[ -n "$rootfs_length" -o -n "$kernel_length" ] || return 1
 
-	if [ -n "$CI_KERN_UBIPART" -a -n "$CI_ROOT_UBIPART" ]; then
-		kern_ubidev="$( nand_attach_ubi "$CI_KERN_UBIPART" "$has_env" )"
-		[ -n "$kern_ubidev" ] || return 1
-		root_ubidev="$( nand_attach_ubi "$CI_ROOT_UBIPART" )"
-		[ -n "$root_ubidev" ] || return 1
-	else
-		kern_ubidev="$( nand_attach_ubi "$CI_UBIPART" "$has_env" )"
-		[ -n "$kern_ubidev" ] || return 1
-		root_ubidev="$kern_ubidev"
-	fi
+	# Attach UBI partitions (might be identical, but nand_attach_ubi handles that)
+	kern_ubidev="$( nand_attach_ubi "${CI_KERN_UBIPART:-$CI_UBIPART}" "$has_env" )"
+	[ -n "$kern_ubidev" ] || return 1
+	root_ubidev="$( nand_attach_ubi "${CI_ROOT_UBIPART:-$CI_UBIPART}" )"
+	[ -n "$root_ubidev" ] || return 1
+	data_ubidev="$( nand_attach_ubi "${CI_DATA_UBIPART:-$CI_UBIPART}" )"
+	[ -n "$data_ubidev" ] || return 1
 
 	local kern_ubivol="$( nand_find_volume $kern_ubidev "$CI_KERNPART" )"
 	local root_ubivol="$( nand_find_volume $root_ubidev "$CI_ROOTPART" )"
-	local data_ubivol="$( nand_find_volume $root_ubidev rootfs_data )"
+	local data_ubivol="$( nand_find_volume $data_ubidev "$CI_DATAPART" )"
 	[ "$root_ubivol" = "$kern_ubivol" ] && root_ubivol=
 
 	# remove ubiblocks
@@ -215,7 +217,7 @@ nand_upgrade_prepare_ubi() {
 	# kill volumes
 	[ "$kern_ubivol" ] && ubirmvol /dev/$kern_ubidev -N "$CI_KERNPART" || :
 	[ "$root_ubivol" ] && ubirmvol /dev/$root_ubidev -N "$CI_ROOTPART" || :
-	[ "$data_ubivol" ] && ubirmvol /dev/$root_ubidev -N rootfs_data || :
+	[ "$data_ubivol" ] && ubirmvol /dev/$data_ubidev -N "$CI_DATAPART" || :
 
 	# create provisioning vol
 	if [ "${UPGRADE_OPT_ADD_PROVISIONING:-0}" -gt 0 ]; then
@@ -255,8 +257,8 @@ nand_upgrade_prepare_ubi() {
 		if [ -n "$rootfs_data_max" ]; then
 			rootfs_data_size_param="-s $rootfs_data_max"
 		fi
-		if ! ubimkvol /dev/$root_ubidev -N rootfs_data $rootfs_data_size_param; then
-			if ! ubimkvol /dev/$root_ubidev -N rootfs_data -m; then
+		if ! ubimkvol /dev/$data_ubidev -N "$CI_DATAPART" $rootfs_data_size_param; then
+			if ! ubimkvol /dev/$data_ubidev -N "$CI_DATAPART" -m; then
 				echo "cannot initialize rootfs_data volume"
 				return 1
 			fi
@@ -288,8 +290,8 @@ nand_upgrade_ubifs() {
 
 	nand_upgrade_prepare_ubi "$ubifs_length" "ubifs" "" "" || return 1
 
-	local ubidev="$( nand_find_ubi "$CI_UBIPART" )"
-	local root_ubivol="$(nand_find_volume $ubidev "$CI_ROOTPART")"
+	local root_ubidev="$( nand_find_ubi "${CI_ROOT_UBIPART:-$CI_UBIPART}" )"
+	local root_ubivol="$(nand_find_volume $root_ubidev "$CI_ROOTPART")"
 	$cmd < "$ubifs_file" | ubiupdatevol /dev/$root_ubivol -s "$ubifs_length" -
 }
 
@@ -302,7 +304,7 @@ nand_upgrade_fit() {
 
 	nand_upgrade_prepare_ubi "" "" "$fit_length" "1" || return 1
 
-	local fit_ubidev="$(nand_find_ubi "$CI_UBIPART")"
+	local fit_ubidev="$(nand_find_ubi "${CI_KERN_UBIPART:-$CI_UBIPART}")"
 	local fit_ubivol="$(nand_find_volume $fit_ubidev "$CI_KERNPART")"
 	$cmd < "$fit_file" | ubiupdatevol /dev/$fit_ubivol -s "$fit_length" -
 }
@@ -327,6 +329,10 @@ nand_upgrade_tar() {
 	[ "$rootfs_length" = 0 ] && rootfs_length=
 	local rootfs_type
 	[ "$rootfs_length" ] && rootfs_type="$(identify_tar "$tar_file" "$cmd" "$board_dir/root")"
+
+	# If CI_SKIP_KERNEL_MTD is set, ignore any potential kernel MTD partition that was found.
+	# This is needed if there's an MTD partition with the same name as the kernel's UBI volume.
+	[ "${CI_SKIP_KERNEL_MTD:-}" ] && kernel_mtd=
 
 	local ubi_kernel_length
 	if [ "$kernel_length" ]; then
