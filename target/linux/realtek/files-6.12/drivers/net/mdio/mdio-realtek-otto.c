@@ -77,6 +77,12 @@
 #define RTMDIO_930X_SMI_10G_POLLING_REG10_CFG	(0xCBBC)
 #define RTMDIO_930X_SMI_PORT0_5_ADDR		(0xCB80)
 
+#define RTMDIO_931X_CMD_FAIL			BIT(1)
+#define RTMDIO_931X_CMD_READ_C22		0
+#define RTMDIO_931X_CMD_READ_C45		BIT(3)
+#define RTMDIO_931X_CMD_WRITE_C22		BIT(4)
+#define RTMDIO_931X_CMD_WRITE_C45		BIT(3) | BIT(4)
+#define RTMDIO_931X_CMD_MASK			BIT(1) | BIT(2) | BIT(3) | BIT(4)
 #define RTMDIO_931X_SMI_PORT_POLLING_CTRL	(0x0CCC)
 #define RTMDIO_931X_SMI_INDRT_ACCESS_BC_CTRL	(0x0C14)
 #define RTMDIO_931X_SMI_GLB_CTRL0		(0x0CC0)
@@ -457,37 +463,24 @@ static int rtmdio_930x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
 
 /* RTL931x specific MDIO functions */
 
+static int rtmdio_931x_run_cmd(int cmd)
+{
+	return rtmdio_run_cmd(cmd, RTMDIO_931X_CMD_MASK,
+			      RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_0, RTMDIO_931X_CMD_FAIL);
+}
+
 static int rtmdio_931x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 {
-	u32 v;
-	int err = 0;
-
-	val &= 0xffff;
-	if (port > 63 || page > 4095 || reg > 31)
-		return -ENOTSUPP;
+	int err;
 
 	mutex_lock(&rtmdio_lock);
-	pr_debug("%s: writing to phy %d %d %d %d\n", __func__, port, page, reg, val);
-	/* Clear both port registers */
 	sw_w32(0, RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_2);
 	sw_w32(0, RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_2 + 4);
 	sw_w32_mask(0, BIT(port % 32), RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_2 + (port / 32) * 4);
-
 	sw_w32_mask(0xffff, val, RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_3);
-
-	v = reg << 6 | page << 11;
-	sw_w32(v, RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_0);
-
+	sw_w32(reg << 6 | page << 11, RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_0);
 	sw_w32(0x1ff, RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_1);
-
-	v |= BIT(4) | 1; /* Write operation and execute */
-	sw_w32(v, RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_0);
-
-	do {
-	} while (sw_r32(RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_0) & 0x1);
-
-	if (sw_r32(RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_0) & 0x2)
-		err = -EIO;
+	err = rtmdio_931x_run_cmd(RTMDIO_931X_CMD_WRITE_C22);
 
 	mutex_unlock(&rtmdio_lock);
 
@@ -496,69 +489,33 @@ static int rtmdio_931x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 
 static int rtmdio_931x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 {
-	u32 v;
-
-	if (page > 4095 || reg > 31)
-		return -ENOTSUPP;
+	int err;
 
 	mutex_lock(&rtmdio_lock);
 
 	sw_w32(port << 5, RTMDIO_931X_SMI_INDRT_ACCESS_BC_CTRL);
-
-	v = reg << 6 | page << 11 | 1;
-	sw_w32(v, RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_0);
-
-	do {
-	} while (sw_r32(RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_0) & 0x1);
-
-	v = sw_r32(RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_0);
-	*val = sw_r32(RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_3);
-	*val = (*val & 0xffff0000) >> 16;
-
-	pr_debug("%s: port %d, page: %d, reg: %x, val: %x, v: %08x\n",
-		 __func__, port, page, reg, *val, v);
+	sw_w32(reg << 6 | page << 11, RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_0);
+	err = rtmdio_931x_run_cmd(RTMDIO_931X_CMD_READ_C22);
+	if (!err)
+		*val = sw_r32(RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_3) >> 16;
 
 	mutex_unlock(&rtmdio_lock);
 
-	return 0;
+	return err;
 }
 
 /* Read an mmd register of the PHY */
 static int rtmdio_931x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
 {
-	int err = 0;
-	u32 v;
-	/* Select PHY register type
-	 * If select 1G/10G MMD register type, registers EXT_PAGE, MAIN_PAGE and REG settings are don’t care.
-	 * 0x0  Normal register (Clause 22)
-	 * 0x1: 1G MMD register (MMD via Clause 22 registers 13 and 14)
-	 * 0x2: 10G MMD register (MMD via Clause 45)
-	 */
-	int type = 2;
+	int err;
 
 	mutex_lock(&rtmdio_lock);
 
-	/* Set PHY to access via port-number */
 	sw_w32(port << 5, RTMDIO_931X_SMI_INDRT_ACCESS_BC_CTRL);
-
-	/* Set MMD device number and register to write to */
 	sw_w32(devnum << 16 | regnum, RTMDIO_931X_SMI_INDRT_ACCESS_MMD_CTRL);
-
-	v = type << 2 | BIT(0); /* MMD-access-type | EXEC */
-	sw_w32(v, RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_0);
-
-	do {
-		v = sw_r32(RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_0);
-	} while (v & BIT(0));
-
-	/* Check for error condition */
-	if (v & BIT(1))
-		err = -EIO;
-
-	*val = sw_r32(RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_3) >> 16;
-
-	pr_debug("%s: port %d, dev: %x, regnum: %x, val: %x (err %d)\n", __func__,
-		 port, devnum, regnum, *val, err);
+	err = rtmdio_931x_run_cmd(RTMDIO_931X_CMD_READ_C45);
+	if (!err)
+		*val = sw_r32(RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_3) >> 16;
 
 	mutex_unlock(&rtmdio_lock);
 
@@ -568,33 +525,18 @@ static int rtmdio_931x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
 /* Write to an mmd register of the PHY */
 static int rtmdio_931x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
 {
-	int err = 0;
-	u32 v;
-	int type = 2;
-	u64 pm;
+	u64 mask;
+	int err;
 
 	mutex_lock(&rtmdio_lock);
 
-	/* Set PHY to access via port-mask */
-	pm = (u64)1 << port;
-	sw_w32((u32)pm, RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_2);
-	sw_w32((u32)(pm >> 32), RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_2 + 4);
-
-	/* Set data to write */
+	mask = BIT_ULL(port);
+	sw_w32((u32)mask, RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_2);
+	sw_w32((u32)(mask >> 32), RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_2 + 4);
 	sw_w32_mask(0xffff, val, RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_3);
-
-	/* Set MMD device number and register to write to */
 	sw_w32(devnum << 16 | regnum, RTMDIO_931X_SMI_INDRT_ACCESS_MMD_CTRL);
+	err = rtmdio_931x_run_cmd(RTMDIO_931X_CMD_WRITE_C45);
 
-	v = BIT(4) | type << 2 | BIT(0); /* WRITE | MMD-access-type | EXEC */
-	sw_w32(v, RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_0);
-
-	do {
-		v = sw_r32(RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_0);
-	} while (v & BIT(0));
-
-	pr_debug("%s: port %d, dev: %x, regnum: %x, val: %x (err %d)\n", __func__,
-		 port, devnum, regnum, val, err);
 	mutex_unlock(&rtmdio_lock);
 
 	return err;
