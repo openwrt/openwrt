@@ -1,0 +1,88 @@
+From 217460544a1b9741874dab826eb614e8c006f8a8 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Sun, 16 Feb 2025 00:36:18 +0100
+Subject: [PATCH] crypto: inside-secure/eip93 - Correctly handle return of for
+ sg_nents_for_len
+
+Fix smatch warning for sg_nents_for_len return value in Inside Secure
+EIP93 driver.
+
+The return value of sg_nents_for_len was assigned to an u32 and the
+error was ignored and converted to a positive integer.
+
+Rework the code to correctly handle the error from sg_nents_for_len to
+mute smatch warning.
+
+Fixes: 9739f5f93b78 ("crypto: eip93 - Add Inside Secure SafeXcel EIP-93 crypto engine support")
+Reported-by: Dan Carpenter <dan.carpenter@linaro.org>
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+---
+ .../crypto/inside-secure/eip93/eip93-common.c | 25 ++++++++++++++-----
+ 1 file changed, 19 insertions(+), 6 deletions(-)
+
+--- a/drivers/crypto/inside-secure/eip93/eip93-common.c
++++ b/drivers/crypto/inside-secure/eip93/eip93-common.c
+@@ -202,7 +202,6 @@ int check_valid_request(struct eip93_cip
+ {
+ 	struct scatterlist *src = rctx->sg_src;
+ 	struct scatterlist *dst = rctx->sg_dst;
+-	u32 src_nents, dst_nents;
+ 	u32 textsize = rctx->textsize;
+ 	u32 authsize = rctx->authsize;
+ 	u32 blksize = rctx->blksize;
+@@ -210,6 +209,7 @@ int check_valid_request(struct eip93_cip
+ 	u32 totlen_dst = rctx->assoclen + rctx->textsize;
+ 	u32 copy_len;
+ 	bool src_align, dst_align;
++	int src_nents, dst_nents;
+ 	int err = -EINVAL;
+ 
+ 	if (!IS_CTR(rctx->flags)) {
+@@ -225,19 +225,24 @@ int check_valid_request(struct eip93_cip
+ 	}
+ 
+ 	src_nents = sg_nents_for_len(src, totlen_src);
++	if (src_nents < 0)
++		return src_nents;
++
+ 	dst_nents = sg_nents_for_len(dst, totlen_dst);
++	if (dst_nents < 0)
++		return dst_nents;
+ 
+ 	if (src == dst) {
+ 		src_nents = max(src_nents, dst_nents);
+ 		dst_nents = src_nents;
+-		if (unlikely((totlen_src || totlen_dst) && src_nents <= 0))
++		if (unlikely((totlen_src || totlen_dst) && !src_nents))
+ 			return err;
+ 
+ 	} else {
+-		if (unlikely(totlen_src && src_nents <= 0))
++		if (unlikely(totlen_src && !src_nents))
+ 			return err;
+ 
+-		if (unlikely(totlen_dst && dst_nents <= 0))
++		if (unlikely(totlen_dst && !dst_nents))
+ 			return err;
+ 	}
+ 
+@@ -273,8 +278,16 @@ int check_valid_request(struct eip93_cip
+ 			return err;
+ 	}
+ 
+-	rctx->src_nents = sg_nents_for_len(rctx->sg_src, totlen_src);
+-	rctx->dst_nents = sg_nents_for_len(rctx->sg_dst, totlen_dst);
++	src_nents = sg_nents_for_len(rctx->sg_src, totlen_src);
++	if (src_nents < 0)
++		return src_nents;
++
++	dst_nents = sg_nents_for_len(rctx->sg_dst, totlen_dst);
++	if (dst_nents < 0)
++		return dst_nents;
++
++	rctx->src_nents = src_nents;
++	rctx->dst_nents = dst_nents;
+ 
+ 	return 0;
+ }
