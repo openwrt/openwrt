@@ -16,6 +16,10 @@ PKG_SOURCE_URL:=https://github.com/tukaani-project/xz/releases/download/v$(PKG_V
 PKG_HASH:=33bf69c0d6c698e83a68f77e6c1f465778e418ca0b3d59860d3ab446f4ac99a6
 PKG_CPE_ID:=cpe:/a:tukaani:xz
 
+PKG_GPG_KEYS_DIR:=$(CURDIR)/keys
+PKG_SOURCE_SIG:=$(PKG_SOURCE).sig
+PKG_VALIDPGPKEYS:=3690C240CE51B4670D30AD1C38EE757D69184620
+
 HOST_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/host-build.mk
