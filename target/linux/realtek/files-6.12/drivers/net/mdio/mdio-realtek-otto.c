@@ -166,7 +166,6 @@
  * reimplemented. For now it should be sufficient.
  */
 
-DEFINE_MUTEX(rtmdio_lock);
 
 struct rtmdio_bus_priv {
 	const struct rtmdio_config *cfg;
@@ -229,15 +228,11 @@ static int rtmdio_838x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 	u32 park_page = 0x1f;
 	int err;
 
-	mutex_lock(&rtmdio_lock);
-
 	sw_w32_mask(0xffff0000, port << 16, RTMDIO_838X_SMI_ACCESS_PHY_CTRL_2);
 	sw_w32(reg << 20 | page << 3 | park_page << 15, RTMDIO_838X_SMI_ACCESS_PHY_CTRL_1);
 	err = rtmdio_838x_run_cmd(RTMDIO_838X_CMD_READ_C22);
 	if (!err)
 		*val = sw_r32(RTMDIO_838X_SMI_ACCESS_PHY_CTRL_2) & 0xffff;
-
-	mutex_unlock(&rtmdio_lock);
 
 	return err;
 }
@@ -246,26 +241,18 @@ static int rtmdio_838x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 static int rtmdio_838x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 {
 	u32 park_page = 0x1f;
-	int err;
-
-	mutex_lock(&rtmdio_lock);
 
 	sw_w32(BIT(port), RTMDIO_838X_SMI_ACCESS_PHY_CTRL_0);
 	sw_w32_mask(0xffff0000, val << 16, RTMDIO_838X_SMI_ACCESS_PHY_CTRL_2);
 	sw_w32(reg << 20 | page << 3 | park_page << 15, RTMDIO_838X_SMI_ACCESS_PHY_CTRL_1);
-	err = rtmdio_838x_run_cmd(RTMDIO_838X_CMD_WRITE_C22);
 
-	mutex_unlock(&rtmdio_lock);
-
-	return err;
+	return rtmdio_838x_run_cmd(RTMDIO_838X_CMD_WRITE_C22);
 }
 
 /* Read an mmd register of a PHY */
 static int rtmdio_838x_read_mmd_phy(u32 port, u32 addr, u32 reg, u32 *val)
 {
 	int err;
-
-	mutex_lock(&rtmdio_lock);
 
 	sw_w32(1 << port, RTMDIO_838X_SMI_ACCESS_PHY_CTRL_0);
 	sw_w32_mask(0xffff0000, port << 16, RTMDIO_838X_SMI_ACCESS_PHY_CTRL_2);
@@ -274,27 +261,18 @@ static int rtmdio_838x_read_mmd_phy(u32 port, u32 addr, u32 reg, u32 *val)
 	if (!err)
 		*val = sw_r32(RTMDIO_838X_SMI_ACCESS_PHY_CTRL_2) & 0xffff;
 
-	mutex_unlock(&rtmdio_lock);
-
 	return err;
 }
 
 /* Write to an mmd register of a PHY */
 static int rtmdio_838x_write_mmd_phy(u32 port, u32 addr, u32 reg, u32 val)
 {
-	int err;
-
-	mutex_lock(&rtmdio_lock);
-
 	sw_w32(1 << port, RTMDIO_838X_SMI_ACCESS_PHY_CTRL_0);
 	sw_w32_mask(0xffff0000, val << 16, RTMDIO_838X_SMI_ACCESS_PHY_CTRL_2);
 	sw_w32_mask(0x1f << 16, addr << 16, RTMDIO_838X_SMI_ACCESS_PHY_CTRL_3);
 	sw_w32_mask(0xffff, reg, RTMDIO_838X_SMI_ACCESS_PHY_CTRL_3);
-	err = rtmdio_838x_run_cmd(RTMDIO_838X_CMD_WRITE_C45);
 
-	mutex_unlock(&rtmdio_lock);
-
-	return err;
+	return rtmdio_838x_run_cmd(RTMDIO_838X_CMD_WRITE_C45);
 }
 
 /* RTL839x specific MDIO functions */
@@ -310,8 +288,6 @@ static int rtmdio_839x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 	int err;
 	u32 v;
 
-	mutex_lock(&rtmdio_lock);
-
 	sw_w32_mask(0xffff0000, port << 16, RTMDIO_839X_PHYREG_DATA_CTRL);
 	v = reg << 5 | page << 10 | ((page == 0x1fff) ? 0x1f : 0) << 23;
 	sw_w32(v, RTMDIO_839X_PHYREG_ACCESS_CTRL);
@@ -320,17 +296,12 @@ static int rtmdio_839x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 	if (!err)
 		*val = sw_r32(RTMDIO_839X_PHYREG_DATA_CTRL) & 0xffff;
 
-	mutex_unlock(&rtmdio_lock);
-
 	return err;
 }
 
 static int rtmdio_839x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 {
-	int err;
 	u32 v;
-
-	mutex_lock(&rtmdio_lock);
 
 	sw_w32(BIT_ULL(port), RTMDIO_839X_PHYREG_PORT_CTRL);
 	sw_w32(BIT_ULL(port) >> 32, RTMDIO_839X_PHYREG_PORT_CTRL + 4);
@@ -338,11 +309,8 @@ static int rtmdio_839x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 	v = reg << 5 | page << 10 | ((page == 0x1fff) ? 0x1f : 0) << 23;
 	sw_w32(v, RTMDIO_839X_PHYREG_ACCESS_CTRL);
 	sw_w32(0x1ff, RTMDIO_839X_PHYREG_CTRL);
-	err = rtmdio_839x_run_cmd(RTMDIO_839X_CMD_WRITE_C22);
 
-	mutex_unlock(&rtmdio_lock);
-
-	return err;
+	return rtmdio_839x_run_cmd(RTMDIO_839X_CMD_WRITE_C22);
 }
 
 /* Read an mmd register of the PHY */
@@ -350,15 +318,11 @@ static int rtmdio_839x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
 {
 	int err;
 
-	mutex_lock(&rtmdio_lock);
-
 	sw_w32_mask(0xffff << 16, port << 16, RTMDIO_839X_PHYREG_DATA_CTRL);
 	sw_w32(devnum << 16 | (regnum & 0xffff), RTMDIO_839X_PHYREG_MMD_CTRL);
 	err = rtmdio_839x_run_cmd(RTMDIO_839X_CMD_READ_C45);
 	if (!err)
 		*val = sw_r32(RTMDIO_839X_PHYREG_DATA_CTRL) & 0xffff;
-
-	mutex_unlock(&rtmdio_lock);
 
 	return err;
 }
@@ -366,19 +330,12 @@ static int rtmdio_839x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
 /* Write to an mmd register of the PHY */
 static int rtmdio_839x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
 {
-	int err;
-
-	mutex_lock(&rtmdio_lock);
-
 	sw_w32(BIT_ULL(port), RTMDIO_839X_PHYREG_PORT_CTRL);
 	sw_w32(BIT_ULL(port) >> 32, RTMDIO_839X_PHYREG_PORT_CTRL + 4);
 	sw_w32_mask(0xffff << 16, val << 16, RTMDIO_839X_PHYREG_DATA_CTRL);
 	sw_w32(devnum << 16 | (regnum & 0xffff), RTMDIO_839X_PHYREG_MMD_CTRL);
-	err = rtmdio_839x_run_cmd(RTMDIO_839X_CMD_WRITE_C45);
 
-	mutex_unlock(&rtmdio_lock);
-
-	return err;
+	return rtmdio_839x_run_cmd(RTMDIO_839X_CMD_WRITE_C45);
 }
 
 /* RTL930x specific MDIO functions */
@@ -391,28 +348,20 @@ static int rtmdio_930x_run_cmd(int cmd)
 
 static int rtmdio_930x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 {
-	int err;
 	u32 v;
-
-	mutex_lock(&rtmdio_lock);
 
 	sw_w32(BIT(port), RTMDIO_930X_SMI_ACCESS_PHY_CTRL_0);
 	sw_w32_mask(0xffff << 16, val << 16, RTMDIO_930X_SMI_ACCESS_PHY_CTRL_2);
 	v = reg << 20 | page << 3 | 0x1f << 15 | BIT(2);
 	sw_w32(v, RTMDIO_930X_SMI_ACCESS_PHY_CTRL_1);
-	err = rtmdio_930x_run_cmd(RTMDIO_930X_CMD_WRITE_C22);
 
-	mutex_unlock(&rtmdio_lock);
-
-	return err;
+	return rtmdio_930x_run_cmd(RTMDIO_930X_CMD_WRITE_C22);
 }
 
 static int rtmdio_930x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 {
 	int err;
 	u32 v;
-
-	mutex_lock(&rtmdio_lock);
 
 	sw_w32_mask(0xffff << 16, port << 16, RTMDIO_930X_SMI_ACCESS_PHY_CTRL_2);
 	v = reg << 20 | page << 3 | 0x1f << 15;
@@ -421,26 +370,17 @@ static int rtmdio_930x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 	if (!err)
 		*val = (sw_r32(RTMDIO_930X_SMI_ACCESS_PHY_CTRL_2) & 0xffff);
 
-	mutex_unlock(&rtmdio_lock);
-
 	return err;
 }
 
 /* Write to an mmd register of the PHY */
 static int rtmdio_930x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
 {
-	int err;
-
-	mutex_lock(&rtmdio_lock);
-
 	sw_w32(BIT(port), RTMDIO_930X_SMI_ACCESS_PHY_CTRL_0);
 	sw_w32_mask(0xffff << 16, val << 16, RTMDIO_930X_SMI_ACCESS_PHY_CTRL_2);
 	sw_w32(devnum << 16 | (regnum & 0xffff), RTMDIO_930X_SMI_ACCESS_PHY_CTRL_3);
-	err = rtmdio_930x_run_cmd(RTMDIO_930X_CMD_WRITE_C45);
 
-	mutex_unlock(&rtmdio_lock);
-
-	return err;
+	return rtmdio_930x_run_cmd(RTMDIO_930X_CMD_WRITE_C45);
 }
 
 /* Read an mmd register of the PHY */
@@ -448,15 +388,11 @@ static int rtmdio_930x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
 {
 	int err ;
 
-	mutex_lock(&rtmdio_lock);
-
 	sw_w32_mask(0xffff << 16, port << 16, RTMDIO_930X_SMI_ACCESS_PHY_CTRL_2);
 	sw_w32(devnum << 16 | (regnum & 0xffff), RTMDIO_930X_SMI_ACCESS_PHY_CTRL_3);
 	err = rtmdio_930x_run_cmd(RTMDIO_930X_CMD_READ_C45);
 	if (!err)
 		*val = (sw_r32(RTMDIO_930X_SMI_ACCESS_PHY_CTRL_2) & 0xffff);
-
-	mutex_unlock(&rtmdio_lock);
 
 	return err;
 }
@@ -471,35 +407,25 @@ static int rtmdio_931x_run_cmd(int cmd)
 
 static int rtmdio_931x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 {
-	int err;
-
-	mutex_lock(&rtmdio_lock);
 	sw_w32(0, RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_2);
 	sw_w32(0, RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_2 + 4);
 	sw_w32_mask(0, BIT(port % 32), RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_2 + (port / 32) * 4);
 	sw_w32_mask(0xffff, val, RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_3);
 	sw_w32(reg << 6 | page << 11, RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_0);
 	sw_w32(0x1ff, RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_1);
-	err = rtmdio_931x_run_cmd(RTMDIO_931X_CMD_WRITE_C22);
 
-	mutex_unlock(&rtmdio_lock);
-
-	return err;
+	return rtmdio_931x_run_cmd(RTMDIO_931X_CMD_WRITE_C22);
 }
 
 static int rtmdio_931x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 {
 	int err;
 
-	mutex_lock(&rtmdio_lock);
-
 	sw_w32(port << 5, RTMDIO_931X_SMI_INDRT_ACCESS_BC_CTRL);
 	sw_w32(reg << 6 | page << 11, RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_0);
 	err = rtmdio_931x_run_cmd(RTMDIO_931X_CMD_READ_C22);
 	if (!err)
 		*val = sw_r32(RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_3) >> 16;
-
-	mutex_unlock(&rtmdio_lock);
 
 	return err;
 }
@@ -509,15 +435,11 @@ static int rtmdio_931x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
 {
 	int err;
 
-	mutex_lock(&rtmdio_lock);
-
 	sw_w32(port << 5, RTMDIO_931X_SMI_INDRT_ACCESS_BC_CTRL);
 	sw_w32(devnum << 16 | regnum, RTMDIO_931X_SMI_INDRT_ACCESS_MMD_CTRL);
 	err = rtmdio_931x_run_cmd(RTMDIO_931X_CMD_READ_C45);
 	if (!err)
 		*val = sw_r32(RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_3) >> 16;
-
-	mutex_unlock(&rtmdio_lock);
 
 	return err;
 }
@@ -525,21 +447,14 @@ static int rtmdio_931x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
 /* Write to an mmd register of the PHY */
 static int rtmdio_931x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
 {
-	u64 mask;
-	int err;
+	u64 mask = BIT_ULL(port);
 
-	mutex_lock(&rtmdio_lock);
-
-	mask = BIT_ULL(port);
 	sw_w32((u32)mask, RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_2);
 	sw_w32((u32)(mask >> 32), RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_2 + 4);
 	sw_w32_mask(0xffff, val, RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_3);
 	sw_w32(devnum << 16 | regnum, RTMDIO_931X_SMI_INDRT_ACCESS_MMD_CTRL);
-	err = rtmdio_931x_run_cmd(RTMDIO_931X_CMD_WRITE_C45);
 
-	mutex_unlock(&rtmdio_lock);
-
-	return err;
+	return rtmdio_931x_run_cmd(RTMDIO_931X_CMD_WRITE_C45);
 }
 
 /* These are the core functions of our new Realtek SoC MDIO bus. */
