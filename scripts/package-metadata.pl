@@ -255,6 +255,52 @@ sub mconf_conflicts {
 	return $res;
 }
 
+sub add_implicit_provides_conflicts {
+	foreach my $provide (keys %vpackage) {
+		next if $provide =~ /-any$/;
+
+		my $providers = $vpackage{$provide};
+		next unless $providers && @$providers > 1;
+
+		my $default_pkg;
+		my @non_defaults;
+
+		foreach my $pkg (@$providers) {
+			next if $pkg->{buildonly};
+			if ($pkg->{variant_default}) {
+				$default_pkg = $pkg;
+			} else {
+				push @non_defaults, $pkg;
+			}
+		}
+
+		next unless $default_pkg && @non_defaults;
+
+		my %existing_conflicts;
+		if ($default_pkg->{conflicts}) {
+			%existing_conflicts = map { $_ => 1 } @{$default_pkg->{conflicts}};
+		}
+
+		foreach my $non_default (@non_defaults) {
+			next if $existing_conflicts{$non_default->{name}};
+
+			my $already_conflicts = 0;
+			if ($non_default->{conflicts}) {
+				foreach my $c (@{$non_default->{conflicts}}) {
+					if ($c eq $default_pkg->{name}) {
+						$already_conflicts = 1;
+						last;
+					}
+				}
+			}
+			next if $already_conflicts;
+
+			$default_pkg->{conflicts} ||= [];
+			push @{$default_pkg->{conflicts}}, $non_default->{name};
+		}
+	}
+}
+
 sub print_package_config_category($) {
 	my $cat = shift;
 	my %menus;
@@ -350,6 +396,7 @@ sub print_package_overrides() {
 
 sub gen_package_config() {
 	parse_package_metadata($ARGV[0]) or exit 1;
+	add_implicit_provides_conflicts();
 	print "menuconfig IMAGEOPT\n\tbool \"Image configuration\"\n\tdefault n\n";
 	print "source \"package/*/image-config.in\"\n";
 	if (scalar glob "package/feeds/*/*/image-config.in") {
