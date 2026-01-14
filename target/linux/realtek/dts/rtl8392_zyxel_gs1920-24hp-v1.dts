@@ -253,6 +253,9 @@
 
 &switch0 {
 	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
 		SWITCH_PORT_SDS(0, 1, 0, qsgmii)
 		SWITCH_PORT_SDS(1, 2, 0, qsgmii)
 		SWITCH_PORT_SDS(2, 3, 0, qsgmii)
