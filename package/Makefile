@@ -103,9 +103,9 @@ ifneq ($(CONFIG_USE_APK),)
 		--repositories-file /dev/null --repository file://$(PACKAGE_DIR_ALL)/packages.adb \
 		$(if $(CONFIG_SIGNED_PACKAGES),,--allow-untrusted) \
 		$$(cat $(TMP_DIR)/apk_install_list) \
-			"base-files=$(shell cat $(TMP_DIR)/base-files.version)" \
-			"libc=$(shell cat $(TMP_DIR)/libc.version)" \
-			"kernel=$(subst -rc,_rc,$(shell cat $(TMP_DIR)/kernel.version))"
+			"base-files=$(shell cat $(STAGING_DIR)/base-files.version)" \
+			"libc=$(shell cat $(STAGING_DIR)/libc.version)" \
+			"kernel=$(subst -rc,_rc,$(shell cat $(STAGING_DIR)/kernel.version))"
 
 	rm -rf $(TARGET_DIR)/run
 else
