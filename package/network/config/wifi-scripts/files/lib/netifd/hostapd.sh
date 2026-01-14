@@ -262,10 +262,7 @@ hostapd_prepare_device_config() {
 	set_default stationary_ap 1
 	append base_cfg "stationary_ap=$stationary_ap" "$N"
 
-	json_get_values opts hostapd_options
-	for val in $opts; do
-		append base_cfg "$val" "$N"
-	done
+	json_for_each_item hostapd_append_generic_option hostapd_options base_cfg
 
 	cat > "$config" <<EOF
 driver=$driver
@@ -471,6 +468,47 @@ hostapd_set_sae() {
 		*) return ;;
 	esac
 	for_each_station hostapd_set_sae_file ${ifname}
+}
+
+# hostapd_get_option <var> <option>
+hostapd_get_option() {
+	eval "local _cfg=\"\$N\$$1\$N\""
+	local _val="${_cfg##*$N$2=}"
+	[ "$_val" != "$_cfg" ] && echo -n "${_val%%$N*}"
+}
+
+# hostapd_override_option <var> <option>
+hostapd_override_option() {
+	eval "$1=\"\$N\${$1}\""
+	eval "$1=\"\${$1//\$N\$2=/\$N#\$2=}\""
+	eval "$1=\"\${$1#\$N}\""
+}
+
+hostapd_append_generic_option() {
+	local line="$1"
+	local var="$3"
+
+	case "$line" in
+		\#*)
+			append "$var" "$line" "$N"
+		;;
+		*:=*)
+			local opt="${line%%:=*}" val="${line#*:=}"
+			hostapd_override_option "$var" "$opt"
+			[ -n "$val" ] && append "$var" "$opt=$val" "$N"
+		;;
+		*+=*)
+			local opt="${line%%+=*}" val="${line#*+=}"
+			if [ -n "$val" ]; then
+				val="$(hostapd_get_option "$var" "$opt")$val"
+				hostapd_override_option "$var" "$opt"
+				append "$var" "$opt=$val" "$N"
+			fi
+		;;
+		*)
+			append "$var" "$line" "$N"
+		;;
+	esac
 }
 
 append_iw_roaming_consortium() {
@@ -1193,10 +1231,7 @@ hostapd_set_bss_options() {
 		fi
 	fi
 
-	json_get_values opts hostapd_bss_options
-	for val in $opts; do
-		append bss_conf "$val" "$N"
-	done
+	json_for_each_item hostapd_append_generic_option hostapd_bss_options bss_conf
 
 	append "$var" "$bss_conf" "$N"
 	return 0
