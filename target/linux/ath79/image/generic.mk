@@ -3249,6 +3249,24 @@ define Device/watchguard_ap300
 endef
 TARGET_DEVICES += watchguard_ap300
 
+define Device/waveshare_ws431e
+  $(Device/qca_ap143)
+  DEVICE_VENDOR := Waveshare
+  DEVICE_MODEL := WS-431E
+  DEVICE_DTS := qca9533_waveshare_ws431e
+  DEVICE_PACKAGES += \
+	kmod-ath9k wpad-basic-mbedtls \
+	kmod-gpio-button-hotplug kmod-gpio-wdt \
+	kmod-leds-gpio kmod-ledtrig-default-on kmod-ledtrig-timer \
+	kmod-usb2 kmod-usb-ohci \
+	kmod-usb-net kmod-usb-net-qmi-wwan cdc-wdm \
+	kmod-usb-serial-option kmod-usb-serial-wwan uqmi
+  IMAGES += sysupgrade.bin
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-kernel | uImage none
+endef
+TARGET_DEVICES += waveshare_ws431e
+
 define Device/wd_mynet-n600
   $(Device/seama)
   SOC := ar9344
