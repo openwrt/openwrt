@@ -33,13 +33,6 @@
 			gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
 		};
 
-		wlan {
-			function = LED_FUNCTION_WLAN;
-			color = <LED_COLOR_ID_GREEN>;
-			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "phy0tpt";
-		};
-
 		led_user: user {
 			label = "green:user";
 			gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
@@ -51,6 +44,10 @@
 	status = "okay";
 
 	qca,no-eeprom;
+
+	led {
+		led-sources = <11>;
+	};
 };
 
 &eth0 {
