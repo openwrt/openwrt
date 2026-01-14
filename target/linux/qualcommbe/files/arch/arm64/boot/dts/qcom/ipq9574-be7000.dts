@@ -2,12 +2,12 @@
 
 /dts-v1/;
 
-#include "ipq9574.dtsi"
 
-#include <dt-bindings/clock/qcom,ipq-cmn-pll.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/leds/common.h>
+#include "ipq9574.dtsi"
+
 #include <dt-bindings/clock/qcom,qca8k-nsscc.h>
 #include <dt-bindings/net/qcom,qca808x.h>
 #include <dt-bindings/reset/qcom,qca8k-nsscc.h>
@@ -102,23 +102,6 @@
 		};
 	};
 
-	reserved-memory {
-		tzapp:tzapp@49B00000 {  /* TZAPPS */
-			no-map;
-			reg = <0x0 0x49B00000 0x0 0x00600000>;
-		};
-
-		rsvd1@4FA00000 {
-			no-map;
-			reg = <0x00 0x4FA00000 0x00 0x40000>;
-		};
-
-		rsvd2@4FB00000 {
-			no-map;
-			reg = <0x00 0x4FB00000 0x00 0x40000>;
-		};
-	};
-
 	clocks {
 		qca8k_uniphy1_rx312p5m: qca8k-uniphy1-rx312p5m {
 			compatible = "fixed-clock";
@@ -158,7 +141,7 @@
 
 		port@1 {
 			reg = <1>;
-			phy-mode = "2500base-x";
+			phy-mode = "sgmii";
 			label = "lan1";
 			phy-handle = <&phy0>;
 			pcs-handle = <&pcsuniphy0_ch0>;
@@ -179,7 +162,7 @@
 
 		port@2 {
 			reg = <2>;
-			phy-mode = "2500base-x";
+			phy-mode = "sgmii";
 			label = "lan2";
 			phy-handle = <&phy1>;
 			pcs-handle = <&pcsuniphy0_ch1>;
@@ -200,7 +183,7 @@
 
 		port@3 {
 			reg = <3>;
-			phy-mode = "2500base-x";
+			phy-mode = "sgmii";
 			label = "lan3";
 			phy-handle = <&phy2>;
 			pcs-handle = <&pcsuniphy0_ch2>;
@@ -221,7 +204,7 @@
 
 		port@4 {
 			reg = <4>;
-			phy-mode = "2500base-x";
+			phy-mode = "sgmii";
 			label = "lan4";
 			phy-handle = <&phy3>;
 			pcs-handle = <&pcsuniphy0_ch3>;
@@ -279,6 +262,32 @@
 	clock-frequency = <32000>;
 };
 
+&pcie2_phy {
+	status = "okay";
+};
+
+&pcie2 {
+	pinctrl-0 = <&pcie2_default>;
+	pinctrl-names = "default";
+
+	perst-gpios = <&tlmm 29 GPIO_ACTIVE_LOW>;
+	wake-gpios = <&tlmm 30 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&pcie3_phy {
+	status = "okay";
+};
+
+&pcie3 {
+	pinctrl-0 = <&pcie3_default>;
+	pinctrl-names = "default";
+
+	perst-gpios = <&tlmm 32 GPIO_ACTIVE_LOW>;
+	wake-gpios = <&tlmm 33 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
 &tlmm {
 	i2c1_pins: i2c1-state {
 		pins = "gpio36", "gpio37";
@@ -323,6 +332,54 @@
 			bias-disable;
 		};
 	};
+
+	pcie2_default: pcie2-default-state {
+		clkreq-n-pins {
+			pins = "gpio28";
+			function = "pcie2_clk";
+			drive-strength = <6>;
+			bias-pull-up;
+		};
+
+		perst-n-pins {
+			pins = "gpio29";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-down;
+			output-low;
+		};
+
+		wake-n-pins {
+			pins = "gpio30";
+			function = "pcie2_wake";
+			drive-strength = <6>;
+			bias-pull-up;
+		};
+	};
+
+	pcie3_default: pcie3-default-state {
+		clkreq-n-pins {
+			pins = "gpio31";
+			function = "pcie3_clk";
+			drive-strength = <6>;
+			bias-pull-up;
+		};
+
+		perst-n-pins {
+			pins = "gpio32";
+			function = "gpio";
+			drive-strength = <8>;
+			bias-pull-up;
+			output-low;
+		};
+
+		wake-n-pins {
+			pins = "gpio33";
+			function = "pcie3_wake";
+			drive-strength = <6>;
+			bias-pull-up;
+		};
+	};
 };
 
 &mdio {
@@ -333,24 +390,25 @@
 
 	qca8k_nsscc: clock-controller@18 {
 		compatible = "qcom,qca8084-nsscc";
-			reg = <0x18>;
-			clocks = <&cmn_pll ETH0_50MHZ_CLK>,
+		reg = <0x18>;
+		reset-gpios = <&tlmm 51 GPIO_ACTIVE_LOW>;
+		clocks = <&cmn_pll ETH0_50MHZ_CLK>,
 				<0>,
 				<0>,
 				<0>,
 				<0>,
 				<&qca8k_uniphy1_rx312p5m>,
 				<&qca8k_uniphy1_tx312p5m>;
-			#clock-cells = <1>;
-			#reset-cells = <1>;
-			#power-domain-cells = <1>;
+		#clock-cells = <1>;
+		#reset-cells = <1>;
+		#power-domain-cells = <1>;
 	};
 
 	ethernet-phy-package@0 {
 		#address-cells = <1>;
 		#size-cells = <0>;
 		compatible = "qcom,qca8084-package";
-		reg = <0>;
+		reg = <1>;
 		clocks = <&qca8k_nsscc NSS_CC_APB_BRIDGE_CLK>,
 					<&qca8k_nsscc NSS_CC_AHB_CLK>,
 					<&qca8k_nsscc NSS_CC_SEC_CTRL_AHB_CLK>,
@@ -368,38 +426,34 @@
 		resets = <&qca8k_nsscc NSS_CC_GEPHY_FULL_ARES>;
 		qcom,phy-addr-fixup = <1 2 3 4 5 6 7>;
 
-		qcom,package-mode = <QCA808X_PCS1_10G_QXGMII_PCS0_UNUNSED>;
+		qcom,package-mode = <QCA808X_PCS1_SGMII_MAC_PCS0_SGMII_PHY>;
 
-	    phy0: ethernet-phy@1 {
-			compatible = "ethernet-phy-id004d.d180", "ethernet-phy-id004d.d101", "ethernet-phy-ieee802.3-c22";
+		phy0: ethernet-phy@1 {
+			compatible = "ethernet-phy-id004d.d180";
 			reg = <1>;
 			clocks = <&qca8k_nsscc NSS_CC_GEPHY0_SYS_CLK>;
 			resets = <&qca8k_nsscc NSS_CC_GEPHY0_SYS_ARES>;
-			qcom,xpcs-channel = <0>;
 		};
 
-	    phy1: ethernet-phy@2 {
-			compatible = "ethernet-phy-id004d.d180", "ethernet-phy-id004d.d101", "ethernet-phy-ieee802.3-c22";
+		phy1: ethernet-phy@2 {
+			compatible = "ethernet-phy-id004d.d180";
 			reg = <2>;
 			clocks = <&qca8k_nsscc NSS_CC_GEPHY1_SYS_CLK>;
 			resets = <&qca8k_nsscc NSS_CC_GEPHY1_SYS_ARES>;
-			qcom,xpcs-channel = <1>;
 		};
 
-	    phy2: ethernet-phy@3 {
-			compatible = "ethernet-phy-id004d.d180", "ethernet-phy-id004d.d101", "ethernet-phy-ieee802.3-c22";
+		phy2: ethernet-phy@3 {
+			compatible = "ethernet-phy-id004d.d180";
 			reg = <3>;
 			clocks = <&qca8k_nsscc NSS_CC_GEPHY2_SYS_CLK>;
 			resets = <&qca8k_nsscc NSS_CC_GEPHY2_SYS_ARES>;
-			qcom,xpcs-channel = <2>;
 		};
 
-	    phy3: ethernet-phy@4 {
-			compatible = "ethernet-phy-id004d.d180", "ethernet-phy-id004d.d101", "ethernet-phy-ieee802.3-c22";
+		phy3: ethernet-phy@4 {
+			compatible = "ethernet-phy-id004d.d180";
 			reg = <4>;
 			clocks = <&qca8k_nsscc NSS_CC_GEPHY3_SYS_CLK>;
 			resets = <&qca8k_nsscc NSS_CC_GEPHY3_SYS_ARES>;
-			qcom,xpcs-channel = <3>;
 		};
 	};
 };
