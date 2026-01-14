@@ -391,7 +391,7 @@ define Download
 verify_gpg_$(subst .,_,$(subst -,_,$(FILE))): $(DL_STATE_DIR)/$(FILE).sig_downloaded $(DL_STATE_DIR)/$(FILE).downloaded
 	@echo " >>> Verifying GPG signature for $(FILE)..."; \
 	GPGV="$(STAGING_DIR_HOST)/bin/gpgv" \
-	$(SCRIPT_DIR)/verify-gpgv.sh \
+	$(SCRIPT_DIR)/verify-sig.sh \
 		"$(DL_DIR)/$(FILE)" \
 		"$(DL_DIR)/$(PKG_SOURCE_SIG)" \
 		"$(PKG_GPG_KEYS_DIR)" \
