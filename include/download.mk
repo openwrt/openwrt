@@ -18,6 +18,9 @@ endif
 
 DOWNLOAD_RDEP=$(STAMP_PREPARED) $(HOST_STAMP_PREPARED)
 
+# Download state directory - separates state files from downloaded content
+DL_STATE_DIR ?= $(DL_DIR)/.state
+
 # Export options for download.pl
 export DOWNLOAD_CHECK_CERTIFICATE:=$(CONFIG_DOWNLOAD_CHECK_CERTIFICATE)
 export DOWNLOAD_TOOL_CUSTOM:=$(CONFIG_DOWNLOAD_TOOL_CUSTOM)
@@ -357,13 +360,48 @@ define Download
   )
   download: $(DL_DIR)/$(FILE)
 
-  $(DL_DIR)/$(FILE):
-	mkdir -p $(DL_DIR)
+  ifneq ($(PKG_SOURCE_SIG),)
+  $(DL_STATE_DIR)/$(FILE).sig_downloaded:
+	mkdir -p $(DL_STATE_DIR)
+	@echo "Downloading GPG signature file for $(FILE)..."
+	$(call locked, \
+		$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(PKG_SOURCE_SIG)" "skip" "$(PKG_SOURCE_SIG)" $(foreach url,$(URL),"$(url)"), \
+		$(PKG_SOURCE_SIG))
+	@touch $(DL_STATE_DIR)/$(FILE).sig_downloaded
+  endif
+
+  $(DL_STATE_DIR)/$(FILE).downloaded: $(if $(PKG_SOURCE_SIG),$(DL_STATE_DIR)/$(FILE).sig_downloaded)
+	mkdir -p $(DL_STATE_DIR)
 	$(call locked, \
 		$(if $(DownloadMethod/$(call dl_method,$(URL),$(PROTO))), \
 			$(call DownloadMethod/$(call dl_method,$(URL),$(PROTO)),check,$(if $(filter default,$(1)),PKG_,Download/$(1):)), \
 			$(DownloadMethod/unknown) \
 		),\
 		$(FILE))
+	@touch $(DL_STATE_DIR)/$(FILE).downloaded
+
+  $(DL_DIR)/$(FILE): $(DL_STATE_DIR)/$(FILE).downloaded $(if $(PKG_SOURCE_SIG),| verify_gpg_$(subst .,_,$(subst -,_,$(FILE))))
+	@[ -f $(DL_DIR)/$(FILE) ] || touch $(DL_DIR)/$(FILE)
+
+  ifneq ($(PKG_SOURCE_SIG),)
+    $(foreach dep,$(DOWNLOAD_RDEP),
+      $(dep): | verify_gpg_$(subst .,_,$(subst -,_,$(FILE)))
+    )
+.PHONY: verify_gpg_$(subst .,_,$(subst -,_,$(FILE)))
+verify_gpg_$(subst .,_,$(subst -,_,$(FILE))): $(DL_STATE_DIR)/$(FILE).sig_downloaded $(DL_STATE_DIR)/$(FILE).downloaded
+	@echo " >>> Verifying GPG signature for $(FILE)..."; \
+	GPGV="$(STAGING_DIR_HOST)/bin/gpgv" \
+	$(SCRIPT_DIR)/verify-gpgv.sh \
+		"$(DL_DIR)/$(FILE)" \
+		"$(DL_DIR)/$(PKG_SOURCE_SIG)" \
+		"$(PKG_GPG_KEYS_DIR)" \
+		"$(PKG_VALIDPGPKEYS)" || { \
+			rm -f \
+			"$(DL_DIR)/$(FILE)" \
+			"$(DL_DIR)/$(PKG_SOURCE_SIG)" \
+			"$(DL_STATE_DIR)/$(FILE).downloaded" \
+			"$(DL_STATE_DIR)/$(FILE).sig_downloaded"; \
+		exit 1; }
+  endif
 
 endef
