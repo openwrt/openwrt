@@ -92,7 +92,6 @@
 &blsp1_spi1 {
 	status = "okay";
 
-	cs-gpios = <&tlmm 54 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&spi_0_pins>;
 	pinctrl-names = "default";
 
@@ -257,7 +256,7 @@
 		};
 
 		mux_cs {
-			function = "gpio";
+			function = "blsp_spi0";
 			pins = "gpio54";
 			bias-disable;
 			drive-strength = <2>;
