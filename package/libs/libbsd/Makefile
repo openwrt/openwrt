@@ -23,6 +23,7 @@ define Package/libbsd
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=common BSD library
+  CONFLICTS:=libobsd
   ABI_VERSION:=0
 endef
 
