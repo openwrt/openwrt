@@ -31,7 +31,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
 
 --- a/drivers/pci/controller/pcie-brcmstb.c
 +++ b/drivers/pci/controller/pcie-brcmstb.c
-@@ -213,6 +213,22 @@
+@@ -216,6 +216,22 @@
  #define  PCIE_DVT_PMU_PCIE_PHY_CTRL_DAST_PWRDN_SHIFT		0x0
  
  /* BCM7712/2712-specific registers */
@@ -54,7 +54,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  #define PCIE_MISC_UBUS_CTRL	0x40a4
  #define  PCIE_MISC_UBUS_CTRL_UBUS_PCIE_REPLY_ERR_DIS_MASK	BIT(13)
  #define  PCIE_MISC_UBUS_CTRL_UBUS_PCIE_REPLY_DECERR_DIS_MASK	BIT(19)
-@@ -221,6 +237,31 @@
+@@ -224,6 +240,31 @@
  
  #define PCIE_MISC_RC_CONFIG_RETRY_TIMEOUT	0x405c
  
@@ -86,7 +86,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  #define PCIE_MISC_AXI_READ_ERROR_DATA		0x4170
  
  /* Forward declarations */
-@@ -856,6 +897,7 @@ static int brcm_pcie_post_setup_bcm2712(
+@@ -859,6 +900,7 @@ static int brcm_pcie_post_setup_bcm2712(
  	const u8 regs[] = { 0x16, 0x17, 0x18, 0x19, 0x1b, 0x1c, 0x1e };
  	int ret, i;
  	u32 tmp;
@@ -94,7 +94,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  
  	/* Allow a 54MHz (xosc) refclk source */
  	ret = brcm_pcie_mdio_write(pcie->base, MDIO_PORT0, SET_ADDR_OFFSET, 0x1600);
-@@ -903,6 +945,84 @@ static int brcm_pcie_post_setup_bcm2712(
+@@ -906,6 +948,84 @@ static int brcm_pcie_post_setup_bcm2712(
  	writel(0xB2D0000, pcie->base + PCIE_MISC_UBUS_TIMEOUT);
  	writel(0xABA0000, pcie->base + PCIE_MISC_RC_CONFIG_RETRY_TIMEOUT);
  

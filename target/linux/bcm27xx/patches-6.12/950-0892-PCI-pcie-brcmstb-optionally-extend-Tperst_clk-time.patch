@@ -28,7 +28,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
 
 --- a/drivers/pci/controller/pcie-brcmstb.c
 +++ b/drivers/pci/controller/pcie-brcmstb.c
-@@ -134,6 +134,7 @@
+@@ -137,6 +137,7 @@
  		PCIE_MISC_CPU_2_PCIE_MEM_WIN0_LIMIT_HI + ((win) * 8)
  
  #define  PCIE_MISC_HARD_PCIE_HARD_DEBUG_CLKREQ_DEBUG_ENABLE_MASK	0x2
@@ -36,7 +36,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  #define  PCIE_MISC_HARD_PCIE_HARD_DEBUG_L1SS_ENABLE_MASK		0x200000
  #define  PCIE_MISC_HARD_PCIE_HARD_DEBUG_SERDES_IDDQ_MASK		0x08000000
  #define  PCIE_BMIPS_MISC_HARD_PCIE_HARD_DEBUG_SERDES_IDDQ_MASK		0x00800000
-@@ -360,6 +361,7 @@ struct brcm_pcie {
+@@ -363,6 +364,7 @@ struct brcm_pcie {
  	struct subdev_regulators *sr;
  	bool			ep_wakeup_capable;
  	const struct pcie_cfg_data	*cfg;
@@ -44,7 +44,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  };
  
  static inline bool is_bmips(const struct brcm_pcie *pcie)
-@@ -1487,13 +1489,32 @@ static int brcm_pcie_start_link(struct b
+@@ -1513,13 +1515,32 @@ static int brcm_pcie_start_link(struct b
  	u16 nlw, cls, lnksta, tmp16;
  	bool ssc_good = false;
  	int ret, i;
@@ -78,7 +78,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	if (ret)
  		return ret;
  
-@@ -2057,6 +2078,8 @@ static int brcm_pcie_probe(struct platfo
+@@ -2083,6 +2104,8 @@ static int brcm_pcie_probe(struct platfo
  	pcie->ssc = !(pcie->cfg->quirks & CFG_QUIRK_NO_SSC) &&
  		    of_property_read_bool(np, "brcm,enable-ssc");
  
