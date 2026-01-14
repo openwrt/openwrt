@@ -152,7 +152,8 @@ xiaomi,redmi-router-ax6000-stock)
 zyxel,ex5601-t0)
 	ubootenv_add_mtd "u-boot-env" "0x0" "0x20000" "0x40000" "2"
 	;;
-zyxel,ex5700-telenor)
+zyxel,ex5700-telenor|\
+zyxel,wx3600-telenor)
 	ubootenv_add_uci_config "/dev/ubootenv" "0x0" "0x4000" "0x4000" "1"
 	;;
 esac
