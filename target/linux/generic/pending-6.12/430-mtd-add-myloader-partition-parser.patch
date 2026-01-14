@@ -149,8 +149,8 @@ Signed-off-by: Adrian Schmutzler <freifunk@adrianschmutzler.de>
 +		num_parts++;
 +	}
 +
-+	mtd_parts = kzalloc((num_parts * sizeof(*mtd_part) +
-+				num_parts * PART_NAME_LEN), GFP_KERNEL);
++	mtd_parts = kzalloc(array3_size(num_parts, sizeof(*mtd_part),
++				PART_NAME_LEN), GFP_KERNEL);
 +
 +	if (!mtd_parts) {
 +		ret = -ENOMEM;
