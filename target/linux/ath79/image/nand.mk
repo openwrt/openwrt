@@ -104,6 +104,9 @@ define Device/dongwon_dw02-412h
   DEVICE_ALT0_VENDOR := KT
   DEVICE_ALT0_MODEL := GiGA WiFi home
   DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca988x-ct
+  DEVICE_PACKAGES += -swconfig
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
   KERNEL_SIZE := 8192k
   BLOCKSIZE := 128k
   PAGESIZE := 2048

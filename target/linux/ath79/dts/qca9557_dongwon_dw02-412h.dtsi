@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+// Abdulkader Alrezej , alrazj.abdulkader@gmail.com
 
 #include "qca955x.dtsi"
 
@@ -184,17 +185,99 @@
 &mdio0 {
 	status = "okay";
 
-	phy0: ethernet-phy@0 {
+	switch@0 {
+		compatible = "qca,qca8337";
 		reg = <0>;
 
-		qca,ar8327-initvals = <
-			0x04 0x07600000 /* PORT0 PAD MODE CTRL */
-			0x50 0xcf37cf37 /* LED Control Register 0 */
-			0x54 0x00000000 /* LED Control Register 1 */
-			0x58 0x00000000 /* LED Control Register 2 */
-			0x5c 0x0030c300 /* LED Control Register 3 */
-			0x7c 0x0000007e /* PORT0_STATUS */
-		>;
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+
+				ethernet = <&eth0>;
+				phy-mode = "rgmii-id";
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "wan";
+				phy-mode = "internal";
+				phy-handle = <&phy4>;
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan4";
+				phy-mode = "internal";
+				phy-handle = <&phy3>;
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan3";
+				phy-mode = "internal";
+				phy-handle = <&phy2>;
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "lan2";
+				phy-mode = "internal";
+				phy-handle = <&phy1>;
+			};
+
+			port@5 {
+				reg = <5>;
+				label = "lan1";
+				phy-mode = "internal";
+				phy-handle = <&phy0>;
+			};
+
+			port@6 {
+				reg = <6>;
+
+				ethernet = <&eth1>;
+				phy-mode = "sgmii";
+				qca,sgmii-enable-pll;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			phy0: ethernet-phy@0 {
+				reg = <0>;
+			};
+
+			phy1: ethernet-phy@1 {
+				reg = <1>;
+			};
+
+			phy2: ethernet-phy@2 {
+				reg = <2>;
+			};
+
+			phy3: ethernet-phy@3 {
+				reg = <3>;
+			};
+
+			phy4: ethernet-phy@4 {
+				reg = <4>;
+			};
+		};
 	};
 };
 
@@ -203,11 +286,20 @@
 
 	nvmem-cells = <&macaddr_art_0 1>;
 	nvmem-cell-names = "mac-address";
-	phy-handle = <&phy0>;
 	pll-data = <0xa6000000 0x00000101 0x00001616>;
 
 	gmac-config {
 		device = <&gmac>;
 		rgmii-enabled = <1>;
 	};
+};
+
+&eth1 {
+	status = "okay";
+
+	qca955x-sgmii-fixup;
+	pll-data = <0x03000101 0x00000101 0x00001616>;
+
+	nvmem-cells = <&macaddr_art_0 2>;
+	nvmem-cell-names = "mac-address";
 };

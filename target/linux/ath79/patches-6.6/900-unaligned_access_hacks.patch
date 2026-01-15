@@ -579,7 +579,7 @@ SVN-Revision: 35130
  			goto next_ht;
 --- a/net/ipv6/ip6_offload.c
 +++ b/net/ipv6/ip6_offload.c
-@@ -275,7 +275,7 @@ INDIRECT_CALLABLE_SCOPE struct sk_buff *
+@@ -273,7 +273,7 @@ INDIRECT_CALLABLE_SCOPE struct sk_buff *
  			continue;
  
  		iph2 = (struct ipv6hdr *)(p->data + off);
@@ -751,7 +751,7 @@ SVN-Revision: 35130
  EXPORT_SYMBOL(xfrm_parse_spi);
 --- a/net/ipv4/tcp_input.c
 +++ b/net/ipv4/tcp_input.c
-@@ -4283,14 +4283,16 @@ static bool tcp_parse_aligned_timestamp(
+@@ -4276,14 +4276,16 @@ static bool tcp_parse_aligned_timestamp(
  {
  	const __be32 *ptr = (const __be32 *)(th + 1);
  
@@ -785,7 +785,7 @@ SVN-Revision: 35130
  
 --- a/include/net/neighbour.h
 +++ b/include/net/neighbour.h
-@@ -287,8 +287,10 @@ static inline bool neigh_key_eq128(const
+@@ -286,8 +286,10 @@ static inline bool neigh_key_eq128(const
  	const u32 *n32 = (const u32 *)n->primary_key;
  	const u32 *p32 = pkey;
  
