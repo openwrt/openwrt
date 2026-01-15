@@ -100,10 +100,12 @@ TARGET_DEVICES += zyxel_gs1900-48-a1
 
 define Device/zyxel_gs1920-24hp-v1
   FLASH_ADDR := 0xb40c0000
+ifeq ($(IB),)
   ARTIFACTS := loader.bin
   ARTIFACT/loader.bin := \
     rt-loader-standalone | \
     zynsig
+endif
   SOC := rtl8392
   IMAGE_SIZE := 12144k
   DEVICE_VENDOR := Zyxel
