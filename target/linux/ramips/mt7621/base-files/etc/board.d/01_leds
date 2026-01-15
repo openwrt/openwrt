@@ -99,6 +99,10 @@ dlink,dap-x1860-a1)
 	ucidef_set_led_rssi "rssimediumhigh" "RSSIMEDIUMHIGH" "green:rssimedium" "wlan1" "51" "100"
 	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "green:rssihigh" "wlan1" "76" "100"
 	;;
+dlink,dir-1360-a1)
+	ucidef_set_led_default "power" "Power" "white:power" "1"
+	ucidef_set_led_netdev "internet" "Internet" "white:wan" "wan"
+	;;
 dlink,dir-1960-a1|\
 dlink,dir-2055-a1|\
 dlink,dir-2150-a1|\
