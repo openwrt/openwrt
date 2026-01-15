@@ -202,53 +202,91 @@ static int rtpcs_sds_to_mmd(int sds_page, int sds_regnum)
 	return (sds_page << 8) + sds_regnum;
 }
 
-static int rtpcs_sds_read(struct rtpcs_serdes *sds, int page, int regnum)
+/* NOTE: The read/write helpers with '__rtpcs' prefix work with the plain
+ * SerDes id while the normal helpers work on a reference to 'struct
+ * rtpcs_serdes'. Thus, the former are unsafer versions of the latter.
+ *
+ * If possible, always use the latter/safer versions. They exist for a reason.
+ * The unsafe helpers are provided just for some corner cases where this is
+ * needed, usually to work around some quirks.
+ */
+
+/* Read helpers */
+
+static int __rtpcs_sds_read(struct rtpcs_ctrl *ctrl, int sds_id, int page, int regnum)
 {
 	int mmd_regnum = rtpcs_sds_to_mmd(page, regnum);
 
-	return mdiobus_c45_read(sds->ctrl->bus, sds->id, MDIO_MMD_VEND1,
-				mmd_regnum);
+	return mdiobus_c45_read(ctrl->bus, sds_id, MDIO_MMD_VEND1, mmd_regnum);
 }
 
-static int rtpcs_sds_read_bits(struct rtpcs_serdes *sds, int page,
-			       int regnum, int bithigh, int bitlow)
+static int __rtpcs_sds_read_bits(struct rtpcs_ctrl *ctrl, int sds_id, int page,
+				 int regnum, int bithigh, int bitlow)
 {
 	int mask, val;
 
 	WARN_ON(bithigh < bitlow);
 
 	mask = GENMASK(bithigh, bitlow);
-	val = rtpcs_sds_read(sds, page, regnum);
+	val = __rtpcs_sds_read(ctrl, sds_id, page, regnum);
 	if (val < 0)
 		return val;
 
 	return (val & mask) >> bitlow;
 }
 
-static int rtpcs_sds_write(struct rtpcs_serdes *sds, int page, int regnum, u16 value)
+static int rtpcs_sds_read(struct rtpcs_serdes *sds, int page, int regnum)
+{
+	return __rtpcs_sds_read(sds->ctrl, sds->id, page, regnum);
+}
+
+static int rtpcs_sds_read_bits(struct rtpcs_serdes *sds, int page, int regnum,
+			       int bithigh, int bitlow)
+{
+	return __rtpcs_sds_read_bits(sds->ctrl, sds->id, page, regnum, bithigh, bitlow);
+}
+
+/* Write helpers */
+
+static int __rtpcs_sds_write(struct rtpcs_ctrl *ctrl, int sds_id, int page, int regnum,
+			     u16 value)
 {
 	int mmd_regnum = rtpcs_sds_to_mmd(page, regnum);
 
-	return mdiobus_c45_write(sds->ctrl->bus, sds->id, MDIO_MMD_VEND1,
+	return mdiobus_c45_write(ctrl->bus, sds_id, MDIO_MMD_VEND1,
 				 mmd_regnum, value);
 }
 
-static int rtpcs_sds_write_bits(struct rtpcs_serdes *sds, int page,
-				int regnum, int bithigh, int bitlow, u16 value)
+static int __rtpcs_sds_write_bits(struct rtpcs_ctrl *ctrl, int sds_id, int page,
+				  int regnum, int bithigh, int bitlow, u16 value)
 {
 	int mask, reg;
 
 	WARN_ON(bithigh < bitlow);
 
+	if (bithigh == 15 && bitlow == 0)
+		return __rtpcs_sds_write(ctrl, sds_id, page, regnum, value);
+
 	mask = GENMASK(bithigh, bitlow);
-	reg = rtpcs_sds_read(sds, page, regnum);
+	reg = __rtpcs_sds_read(ctrl, sds_id, page, regnum);
 	if (reg < 0)
 		return reg;
 
 	reg = (reg & ~mask);
 	reg |= (value << bitlow) & mask;
 
-	return rtpcs_sds_write(sds, page, regnum, reg);
+	return __rtpcs_sds_write(ctrl, sds_id, page, regnum, reg);
+}
+
+static int rtpcs_sds_write(struct rtpcs_serdes *sds, int page, int regnum, u16 value)
+{
+	return __rtpcs_sds_write(sds->ctrl, sds->id, page, regnum, value);
+}
+
+static int rtpcs_sds_write_bits(struct rtpcs_serdes *sds, int page, int regnum,
+				int bithigh, int bitlow, u16 value)
+{
+	return __rtpcs_sds_write_bits(sds->ctrl, sds->id, page, regnum, bithigh, bitlow, value);
 }
 
 static int rtpcs_sds_modify(struct rtpcs_serdes *sds, int page, int regnum,
