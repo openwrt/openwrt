@@ -948,6 +948,20 @@ define Device/dlink_dir_nand_128m
 	check-size
 endef
 
+define Device/dlink_dir-1360-a1
+  $(Device/dlink_dir_nand_128m)
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DIR-1360
+  DEVICE_VARIANT := A1
+  DLK_HWID := DLK6E5101001
+  IMAGE_SIZE := 120832k
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7615-firmware kmod-usb3 kmod-usb-dwc3-mtk luci ubi-utils
+  IMAGES := factory.bin sysupgrade.bin
+  IMAGE/factory.bin := $$(IMAGE/recovery.bin)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += dlink_dir-1360-a1
+
 define Device/dlink_dir-1935-a1
   $(Device/dlink_dir-8xx-a1)
   DEVICE_MODEL := DIR-1935

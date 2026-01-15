@@ -99,6 +99,13 @@ dlink,dap-x1860-a1)
 	ucidef_set_led_rssi "rssimediumhigh" "RSSIMEDIUMHIGH" "green:rssimedium" "wlan1" "51" "100"
 	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "green:rssihigh" "wlan1" "76" "100"
 	;;
+dlink,dir-1360-a1)
+	ucidef_set_led_default "power" "Power" "white:power" "1"
+	ucidef_set_led_netdev "internet" "Internet" "white:internet" "eth1"
+	ucidef_set_led_wlan "wlan2g" "WLAN2G" "white:wlan2g" "phy0radio"
+	ucidef_set_led_wlan "wlan5g" "WLAN5G" "white:wlan5g" "phy1radio"
+	ucidef_set_led_usbport "usb" "USB" "white:usb" "usb1-port1" "usb2-port1"
+	;;
 dlink,dir-1960-a1|\
 dlink,dir-2055-a1|\
 dlink,dir-2150-a1|\
