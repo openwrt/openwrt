@@ -521,7 +521,7 @@ $(eval $(call KernelPackage,crypto-hw-talitos))
 
 define KernelPackage/crypto-hw-eip93
   TITLE:=MTK EIP93 crypto module
-  DEPENDS:=@TARGET_ramips_mt7621 \
+  DEPENDS:=@(TARGET_ramips_mt7621||TARGET_airoha) \
 	+kmod-crypto-authenc \
 	+kmod-crypto-des \
 	+kmod-crypto-md5 \
@@ -530,21 +530,26 @@ define KernelPackage/crypto-hw-eip93
   KCONFIG:= \
 	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_EIP93 \
-	CONFIG_CRYPTO_DEV_EIP93_AES=y \
-	CONFIG_CRYPTO_DEV_EIP93_DES=y \
-	CONFIG_CRYPTO_DEV_EIP93_AEAD=y \
+	CONFIG_CRYPTO_DEV_EIP93_AES=y@lt6.18 \
+	CONFIG_CRYPTO_DEV_EIP93_DES=y@lt6.18 \
+	CONFIG_CRYPTO_DEV_EIP93_AEAD=y@lt6.18 \
 	CONFIG_CRYPTO_DEV_EIP93_GENERIC_SW_MAX_LEN=256 \
 	CONFIG_CRYPTO_DEV_EIP93_AES_128_SW_MAX_LEN=512
-  FILES:=$(LINUX_DIR)/drivers/crypto/mtk-eip93/crypto-hw-eip93.ko
+  FILES:=$(LINUX_DIR)/drivers/crypto/mtk-eip93/crypto-hw-eip93.ko@lt6.18 \
+    $(LINUX_DIR)/drivers/crypto/inside-secure/eip93/crypto-hw-eip93.ko@ge6.18
   AUTOLOAD:=$(call AutoLoad,09,crypto-hw-eip93)
   $(call AddDepends/crypto)
 endef
 
 define KernelPackage/crypto-hw-eip93/description
 Kernel module to enable EIP-93 Crypto engine as found
-in the Mediatek MT7621 SoC.
+in Mediatek MT7621 and Airoha SoCs.
 It enables DES/3DES/AES ECB/CBC/CTR and
 IPSEC offload with authenc(hmac(sha1/sha256), aes/cbc/rfc3686)
+endef
+
+define KernelPackage/crypto-hw-eip93/airoha
+  FILES:=$(LINUX_DIR)/drivers/crypto/inside-secure/eip93/crypto-hw-eip93.ko
 endef
 
 $(eval $(call KernelPackage,crypto-hw-eip93))
