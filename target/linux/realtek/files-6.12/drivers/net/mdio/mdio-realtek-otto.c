@@ -12,7 +12,9 @@
 #define RTMDIO_MAX_SMI_BUS			4
 #define RTMDIO_PAGE_SELECT			0x1f
 
-#define RTMDIO_PHY_AQR113C			0x31c31c12
+#define RTMDIO_PHY_AQR113C_A			0x31c31c12
+#define RTMDIO_PHY_AQR113C_B			0x31c31c13
+#define RTMDIO_PHY_AQR813			0x31c31cb2
 #define RTMDIO_PHY_RTL8221B_VB_CG		0x001cc849
 #define RTMDIO_PHY_RTL8221B_VM_CG		0x001cc84a
 #define RTMDIO_PHY_RTL8224			0x001ccad0
@@ -70,6 +72,11 @@
 #define RTMDIO_931X_MAC_L2_GLOBAL_CTRL2		(0x1358)
 #define RTMDIO_931X_SMI_PORT_POLLING_SEL	(0x0C9C)
 #define RTMDIO_931X_SMI_PORT_ADDR		(0x0C74)
+#define RTMDIO_931X_SMI_10GPHY_POLLING_SEL0	(0x0CF0)
+#define RTMDIO_931X_SMI_10GPHY_POLLING_SEL1	(0x0CF4)
+#define RTMDIO_931X_SMI_10GPHY_POLLING_SEL2	(0x0CF8)
+#define RTMDIO_931X_SMI_10GPHY_POLLING_SEL3	(0x0CFC)
+#define RTMDIO_931X_SMI_10GPHY_POLLING_SEL4	(0x0D00)
 
 #define sw_r32(reg)				readl(RTMDIO_SW_BASE + reg)
 #define sw_w32(val, reg)			writel(val, RTMDIO_SW_BASE + reg)
@@ -168,6 +175,7 @@ struct rtmdio_phy_info {
 	int mac_type;
 	bool has_giga_lite;
 	bool has_res_reg;
+	bool force_res;
 	unsigned int poll_duplex;
 	unsigned int poll_adv_1000;
 	unsigned int poll_lpa_1000;
@@ -787,6 +795,52 @@ static int rtmdio_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 	return 0;
 }
 
+static int rtmdio_read_phy_id(struct mii_bus *bus, u8 addr, unsigned int *phy_id)
+{
+	static const int common_mmds[] = {
+		MDIO_MMD_PMAPMD, MDIO_MMD_PCS, MDIO_MMD_AN,
+		MDIO_MMD_VEND1, MDIO_MMD_VEND2
+	};
+	struct rtmdio_bus_priv *priv = bus->priv;
+	int devid1 = 0, devid2 = 0;
+	unsigned int id = 0;
+
+	/* Clause 22 */
+	if (!priv->smi_bus_isc45[priv->smi_bus[addr]]) {
+		devid1 = rtmdio_read(bus, addr, MDIO_DEVID1);
+		devid2 = rtmdio_read(bus, addr, MDIO_DEVID2);
+		if (devid1 < 0 || devid2 < 0)
+			return -EIO;
+
+		id = (devid1 << 16) | devid2;
+		if (!id || (id & 0x1fffffff) == 0x1fffffff)
+			return -ENODEV;
+
+		*phy_id = id;
+		return 0;
+	}
+
+
+	/* Clause 45
+	 * only scan some MMDs which can be considered as common i.e.
+	 * implemented by most PHYs.
+	 */
+	for (int i = 0; i < ARRAY_SIZE(common_mmds); i++) {
+		devid1 = rtmdio_read_c45(bus, addr, common_mmds[i], MDIO_DEVID1);
+		devid2 = rtmdio_read_c45(bus, addr, common_mmds[i], MDIO_DEVID2);
+		if (devid1 < 0 || devid2 < 0)
+			continue;
+
+		id = (devid1 << 16) | devid2;
+		if (id && id != 0xffffffff) {
+			*phy_id = id;
+			return 0;
+		}
+	}
+
+	return -ENODEV;
+}
+
 static void rtmdio_get_phy_info(struct mii_bus *bus, int addr, struct rtmdio_phy_info *phyinfo)
 {
 	struct rtmdio_bus_priv *priv = bus->priv;
@@ -802,15 +856,15 @@ static void rtmdio_get_phy_info(struct mii_bus *bus, int addr, struct rtmdio_phy
 		return;
 	}
 
-	if (priv->smi_bus_isc45[priv->smi_bus[addr]])
-		phyinfo->phy_id = (rtmdio_read_c45(bus, addr, 31, 2) << 16) +
-				 rtmdio_read_c45(bus, addr, 31, 3);
-	else
-		phyinfo->phy_id = (rtmdio_read(bus, addr, 2) << 16) +
-				 rtmdio_read(bus, addr, 3);
+	if (rtmdio_read_phy_id(bus, addr, &phyinfo->phy_id) < 0) {
+		phyinfo->phy_unknown = true;
+		return;
+	}
 
 	switch(phyinfo->phy_id) {
-	case RTMDIO_PHY_AQR113C:
+	case RTMDIO_PHY_AQR113C_A:
+	case RTMDIO_PHY_AQR113C_B:
+	case RTMDIO_PHY_AQR813:
 		phyinfo->mac_type = RTMDIO_PHY_MAC_2G_PLUS;
 		phyinfo->poll_duplex = RTMDIO_PHY_POLL_MMD(1, 0x0000, 8);
 		phyinfo->poll_adv_1000 = RTMDIO_PHY_POLL_MMD(7, 0xc400, 15);
@@ -953,6 +1007,7 @@ static int rtmdio_930x_reset(struct mii_bus *bus)
 static int rtmdio_931x_reset(struct mii_bus *bus)
 {
 	struct rtmdio_bus_priv *priv = bus->priv;
+	struct rtmdio_phy_info phyinfo;
 	u32 poll_sel[4] = { 0 };
 	u32 poll_ctrl = 0;
 	u32 c45_mask = 0;
@@ -983,22 +1038,90 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 		sw_w32(poll_sel[i], RTMDIO_931X_SMI_PORT_POLLING_SEL + (i * 4));
 	}
 
-	/* Configure which SMI busses */
-	pr_info("c45_mask: %08x, RTMDIO_931X_SMI_GLB_CTRL0 was %X", c45_mask, sw_r32(RTMDIO_931X_SMI_GLB_CTRL0));
+	/* Configure c22/c45 polling (bit 1 of SMI_SETX_FMT_SEL)
+	 *
+	 * NOTE: this seems to be needed before accessing the bus though
+	 * it should only apply to the SMI polling. Not setting c22/c45 here
+	 * apparently causes garbage being read below.
+	 */
 	for (int i = 0; i < RTMDIO_MAX_SMI_BUS; i++) {
 		/* bus is polled in c45 */
 		if (priv->smi_bus_isc45[i])
 			c45_mask |= 0x2 << (i * 2);  /* Std. C45, non-standard is 0x3 */
 	}
-
-	pr_info("c45_mask: %08x, RTL931X_SMI_GLB_CTRL0 was %X", c45_mask, sw_r32(RTMDIO_931X_SMI_GLB_CTRL0));
-
-	/* We have a 10G PHY enable polling
-	 * sw_w32(0x01010000, RTL931X_SMI_10GPHY_POLLING_SEL2);
-	 * sw_w32(0x01E7C400, RTL931X_SMI_10GPHY_POLLING_SEL3);
-	 * sw_w32(0x01E7E820, RTL931X_SMI_10GPHY_POLLING_SEL4);
-	 */
+	pr_info("%s: c45_mask: %08x", __func__, c45_mask);
 	sw_w32_mask(GENMASK(7, 0), c45_mask, RTMDIO_931X_SMI_GLB_CTRL1);
+
+	/* Define PHY specific polling parameters
+	 *
+	 * Those are applied per port here but the SoC only supports them
+	 * per SMI bus or for all GPHY/10GPHY. This should be guarded by
+	 * the existing hardware designs (i.e. only equally polled PHYs on
+	 * the same SMI bus or kind of PHYs).
+	 */
+	for (int addr = 0; addr < priv->cfg->cpu_port; addr++) {
+		unsigned int mask, val;
+		int smi = priv->smi_bus[addr];
+		
+		if (smi < 0)
+			continue;
+
+		rtmdio_get_phy_info(bus, addr, &phyinfo);
+		if (phyinfo.phy_unknown) {
+			pr_warn("skip polling setup for unknown PHY %08x on port %d\n",
+				phyinfo.phy_id, addr);
+			continue;
+		}
+
+		mask = val = 0;
+
+		/* PRVTE0 polling */
+		mask |= BIT(20 + smi);
+		if (phyinfo.has_res_reg)
+			val |= BIT(20 + smi);
+
+		/* PRVTE1 polling */
+		mask |= BIT(24 + smi);
+		if (phyinfo.force_res)
+			val |= BIT(24 + smi);
+
+		sw_w32_mask(mask, val, RTMDIO_931X_SMI_GLB_CTRL0);
+
+		/* polling std. or proprietary format (bit 0 of SMI_SETX_FMT_SEL) */
+		mask = BIT(smi * 2);
+		val = phyinfo.force_res ? mask : 0;
+		sw_w32_mask(mask, val, RTMDIO_931X_SMI_GLB_CTRL1);
+
+		/* special polling registers */
+		if (phyinfo.poll_duplex || phyinfo.poll_adv_1000 || phyinfo.poll_lpa_1000) {
+			sw_w32(phyinfo.poll_duplex, RTMDIO_931X_SMI_10GPHY_POLLING_SEL2);
+			sw_w32(phyinfo.poll_adv_1000, RTMDIO_931X_SMI_10GPHY_POLLING_SEL3);
+			sw_w32(phyinfo.poll_lpa_1000, RTMDIO_931X_SMI_10GPHY_POLLING_SEL4);
+		}
+	}
+
+	pr_debug("%s: RTMDIO_931X_SMI_GLB_CTRL0 %08x\n", __func__,
+		 sw_r32(RTMDIO_931X_SMI_GLB_CTRL0));
+	pr_debug("%s: RTMDIO_931X_SMI_GLB_CTRL1 %08x\n", __func__,
+		 sw_r32(RTMDIO_931X_SMI_GLB_CTRL1));
+	pr_debug("%s: RTMDIO_931X_SMI_PORT_POLLING_SEL_0_15 %08x\n", __func__,
+		 sw_r32(RTMDIO_931X_SMI_PORT_POLLING_SEL));
+	pr_debug("%s: RTMDIO_931X_SMI_PORT_POLLING_SEL_16_27 %08x\n", __func__,
+		 sw_r32(RTMDIO_931X_SMI_PORT_POLLING_SEL + 4));
+	pr_debug("%s: RTMDIO_931X_SMI_PORT_POLLING_SEL_28_43 %08x\n", __func__,
+		 sw_r32(RTMDIO_931X_SMI_PORT_POLLING_SEL + 8));
+	pr_debug("%s: RTMDIO_931X_SMI_PORT_POLLING_SEL_44_55 %08x\n", __func__,
+		 sw_r32(RTMDIO_931X_SMI_PORT_POLLING_SEL + 12));
+	pr_debug("%s: RTMDIO_931X_SMI_10GPHY_POLLING_SEL0 %08x\n", __func__,
+		 sw_r32(RTMDIO_931X_SMI_10GPHY_POLLING_SEL0));
+	pr_debug("%s: RTMDIO_931X_SMI_10GPHY_POLLING_SEL1 %08x\n", __func__,
+		 sw_r32(RTMDIO_931X_SMI_10GPHY_POLLING_SEL1));
+	pr_debug("%s: RTMDIO_931X_SMI_10GPHY_POLLING_SEL2 %08x\n", __func__,
+		 sw_r32(RTMDIO_931X_SMI_10GPHY_POLLING_SEL2));
+	pr_debug("%s: RTMDIO_931X_SMI_10GPHY_POLLING_SEL3 %08x\n", __func__,
+		 sw_r32(RTMDIO_931X_SMI_10GPHY_POLLING_SEL3));
+	pr_debug("%s: RTMDIO_931X_SMI_10GPHY_POLLING_SEL4 %08x\n", __func__,
+		 sw_r32(RTMDIO_931X_SMI_10GPHY_POLLING_SEL4));
 
 	return 0;
 }
