@@ -204,17 +204,17 @@ struct rteth_ctrl {
  * When the content reaches the ring size, the ASIC no longer adds
  * packets to this receive queue.
  */
-static void rtl838x_update_cntr(int r, int released)
+static void rteth_838x_update_counter(int r, int released)
 {
 	/* This feature is not available on RTL838x SoCs */
 }
 
-static void rtl839x_update_cntr(int r, int released)
+static void rteth_839x_update_counter(int r, int released)
 {
 	/* This feature is not available on RTL839x SoCs */
 }
 
-static void rtl930x_update_cntr(int r, int released)
+static void rteth_930x_update_counter(int r, int released)
 {
 	u32 reg = rtl930x_dma_if_rx_ring_cntr(r);
 	int pos = (r % 3) * 10;
@@ -222,7 +222,7 @@ static void rtl930x_update_cntr(int r, int released)
 	sw_w32(released << pos, reg);
 }
 
-static void rtl931x_update_cntr(int r, int released)
+static void rteth_931x_update_counter(int r, int released)
 {
 	u32 reg = rtl931x_dma_if_rx_ring_cntr(r);
 	int pos = (r % 3) * 10;
@@ -373,7 +373,7 @@ static void rtl839x_l2_notification_handler(struct rteth_ctrl *ctrl)
 	ctrl->lastEvent = e;
 }
 
-static irqreturn_t rtl83xx_net_irq(int irq, void *dev_id)
+static irqreturn_t rteth_83xx_net_irq(int irq, void *dev_id)
 {
 	struct net_device *ndev = dev_id;
 	struct rteth_ctrl *ctrl = netdev_priv(ndev);
@@ -402,7 +402,7 @@ static irqreturn_t rtl83xx_net_irq(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-static irqreturn_t rtl93xx_net_irq(int irq, void *dev_id)
+static irqreturn_t rteth_93xx_net_irq(int irq, void *dev_id)
 {
 	struct net_device *dev = dev_id;
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
@@ -1148,7 +1148,7 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 	} while (&ring->rx_r[r][ring->c_rx[r]] != last && work_done < budget);
 
 	/* Update counters */
-	ctrl->r->update_cntr(r, work_done);
+	ctrl->r->update_counter(r, work_done);
 
 	spin_unlock_irqrestore(&ctrl->lock, flags);
 
@@ -1466,7 +1466,7 @@ static const struct net_device_ops rteth_838x_netdev_ops = {
 static const struct rteth_config rteth_838x_cfg = {
 	.family_id = RTL8380_FAMILY_ID,
 	.cpu_port = 28,
-	.net_irq = rtl83xx_net_irq,
+	.net_irq = rteth_83xx_net_irq,
 	.mac_port_ctrl = rtl838x_mac_port_ctrl,
 	.dma_if_intr_sts = RTL838X_DMA_IF_INTR_STS,
 	.dma_if_intr_msk = RTL838X_DMA_IF_INTR_MSK,
@@ -1485,7 +1485,7 @@ static const struct rteth_config rteth_838x_cfg = {
 	.get_mac_tx_pause_sts = rtl838x_get_mac_tx_pause_sts,
 	.mac = RTL838X_MAC,
 	.l2_tbl_flush_ctrl = RTL838X_L2_TBL_FLUSH_CTRL,
-	.update_cntr = rtl838x_update_cntr,
+	.update_counter = rteth_838x_update_counter,
 	.create_tx_header = rteth_838x_create_tx_header,
 	.decode_tag = rteth_838x_decode_tag,
 	.hw_reset = &rteth_838x_hw_reset,
@@ -1510,7 +1510,7 @@ static const struct net_device_ops rteth_839x_netdev_ops = {
 static const struct rteth_config rteth_839x_cfg = {
 	.family_id = RTL8390_FAMILY_ID,
 	.cpu_port = 52,
-	.net_irq = rtl83xx_net_irq,
+	.net_irq = rteth_83xx_net_irq,
 	.mac_port_ctrl = rtl839x_mac_port_ctrl,
 	.dma_if_intr_sts = RTL839X_DMA_IF_INTR_STS,
 	.dma_if_intr_msk = RTL839X_DMA_IF_INTR_MSK,
@@ -1529,7 +1529,7 @@ static const struct rteth_config rteth_839x_cfg = {
 	.get_mac_tx_pause_sts = rtl839x_get_mac_tx_pause_sts,
 	.mac = RTL839X_MAC,
 	.l2_tbl_flush_ctrl = RTL839X_L2_TBL_FLUSH_CTRL,
-	.update_cntr = rtl839x_update_cntr,
+	.update_counter = rteth_839x_update_counter,
 	.create_tx_header = rteth_839x_create_tx_header,
 	.decode_tag = rteth_839x_decode_tag,
 	.hw_reset = &rteth_839x_hw_reset,
@@ -1554,7 +1554,7 @@ static const struct net_device_ops rteth_930x_netdev_ops = {
 static const struct rteth_config rteth_930x_cfg = {
 	.family_id = RTL9300_FAMILY_ID,
 	.cpu_port = 28,
-	.net_irq = rtl93xx_net_irq,
+	.net_irq = rteth_93xx_net_irq,
 	.mac_port_ctrl = rtl930x_mac_port_ctrl,
 	.dma_if_intr_rx_runout_sts = RTL930X_DMA_IF_INTR_RX_RUNOUT_STS,
 	.dma_if_intr_rx_done_sts = RTL930X_DMA_IF_INTR_RX_DONE_STS,
@@ -1579,7 +1579,7 @@ static const struct rteth_config rteth_930x_cfg = {
 	.get_mac_tx_pause_sts = rtl930x_get_mac_tx_pause_sts,
 	.mac = RTL930X_MAC_L2_ADDR_CTRL,
 	.l2_tbl_flush_ctrl = RTL930X_L2_TBL_FLUSH_CTRL,
-	.update_cntr = rtl930x_update_cntr,
+	.update_counter = rteth_930x_update_counter,
 	.create_tx_header = rteth_930x_create_tx_header,
 	.decode_tag = rteth_930x_decode_tag,
 	.hw_reset = &rteth_93xx_hw_reset,
@@ -1603,7 +1603,7 @@ static const struct net_device_ops rteth_931x_netdev_ops = {
 static const struct rteth_config rteth_931x_cfg = {
 	.family_id = RTL9310_FAMILY_ID,
 	.cpu_port = 56,
-	.net_irq = rtl93xx_net_irq,
+	.net_irq = rteth_93xx_net_irq,
 	.mac_port_ctrl = rtl931x_mac_port_ctrl,
 	.dma_if_intr_rx_runout_sts = RTL931X_DMA_IF_INTR_RX_RUNOUT_STS,
 	.dma_if_intr_rx_done_sts = RTL931X_DMA_IF_INTR_RX_DONE_STS,
@@ -1628,7 +1628,7 @@ static const struct rteth_config rteth_931x_cfg = {
 	.get_mac_tx_pause_sts = rtl931x_get_mac_tx_pause_sts,
 	.mac = RTL931X_MAC_L2_ADDR_CTRL,
 	.l2_tbl_flush_ctrl = RTL931X_L2_TBL_FLUSH_CTRL,
-	.update_cntr = rtl931x_update_cntr,
+	.update_counter = rteth_931x_update_counter,
 	.create_tx_header = rteth_931x_create_tx_header,
 	.decode_tag = rteth_931x_decode_tag,
 	.hw_reset = &rteth_93xx_hw_reset,
