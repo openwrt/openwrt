@@ -893,7 +893,7 @@ u16 rtpcs_930x_sds_submode_regs[] = { 0x1cc, 0x1cc, 0x2d8, 0x2d8, 0x2d8, 0x2d8,
 				      0x2d8, 0x2d8};
 u8  rtpcs_930x_sds_submode_lsb[]  = { 0, 5, 0, 5, 10, 15, 20, 25 };
 
-static void rtpcs_930x_sds_set(struct rtpcs_serdes *sds, u32 mode)
+static void __rtpcs_930x_sds_set_mac_mode(struct rtpcs_serdes *sds, u32 mode)
 {
 	u8 sds_id = sds->id;
 
@@ -906,7 +906,7 @@ static void rtpcs_930x_sds_set(struct rtpcs_serdes *sds, u32 mode)
 }
 
 __always_unused
-static u32 rtpcs_930x_sds_mode_get(struct rtpcs_serdes *sds)
+static u32 __rtpcs_930x_sds_get_mac_mode(struct rtpcs_serdes *sds)
 {
 	u8 sds_id = sds->id;
 	u32 v;
@@ -918,7 +918,7 @@ static u32 rtpcs_930x_sds_mode_get(struct rtpcs_serdes *sds)
 }
 
 __always_unused
-static u32 rtpcs_930x_sds_submode_get(struct rtpcs_serdes *sds)
+static u32 __rtpcs_930x_sds_get_usxgmii_submode(struct rtpcs_serdes *sds)
 {
 	u8 sds_id = sds->id;
 	u32 v;
@@ -934,8 +934,8 @@ static u32 rtpcs_930x_sds_submode_get(struct rtpcs_serdes *sds)
 	return v & RTL930X_SDS_MASK;
 }
 
-static void rtpcs_930x_sds_submode_set(struct rtpcs_serdes *sds,
-				       u32 submode)
+static void __rtpcs_930x_sds_set_usxgmii_submode(struct rtpcs_serdes *sds,
+						 u32 submode)
 {
 	u8 sds_id = sds->id;
 
@@ -1059,12 +1059,12 @@ static int rtpcs_930x_sds_wait_clock_ready(struct rtpcs_serdes *sds)
 	return -EBUSY;
 }
 
-static int rtpcs_930x_sds_get_internal_mode(struct rtpcs_serdes *sds)
+static int __rtpcs_930x_sds_get_ip_mode(struct rtpcs_serdes *sds)
 {
 	return rtpcs_sds_read_bits(sds, 0x1f, 0x09, 11, 7);
 }
 
-static void rtpcs_930x_sds_set_internal_mode(struct rtpcs_serdes *sds, int mode)
+static void __rtpcs_930x_sds_set_ip_mode(struct rtpcs_serdes *sds, int mode)
 {
 	rtpcs_sds_write_bits(sds, 0x1f, 0x09, 6, 6, 0x1); /* Force mode enable */
 	rtpcs_sds_write_bits(sds, 0x1f, 0x09, 11, 7, mode);
@@ -1083,16 +1083,16 @@ static void rtpcs_930x_sds_reconfigure_pll(struct rtpcs_serdes *sds, int pll)
 {
 	int mode, tmp, speed;
 
-	mode = rtpcs_930x_sds_get_internal_mode(sds);
+	mode = __rtpcs_930x_sds_get_ip_mode(sds);
 	rtpcs_930x_sds_get_pll_data(sds, &tmp, &speed);
 
 	rtpcs_930x_sds_set_power(sds, false);
-	rtpcs_930x_sds_set_internal_mode(sds, RTL930X_SDS_OFF);
+	__rtpcs_930x_sds_set_ip_mode(sds, RTL930X_SDS_OFF);
 
 	rtpcs_930x_sds_set_pll_data(sds, pll, speed);
 	rtpcs_930x_sds_reset_cmu(sds);
 
-	rtpcs_930x_sds_set_internal_mode(sds, mode);
+	__rtpcs_930x_sds_set_ip_mode(sds, mode);
 	if (rtpcs_930x_sds_wait_clock_ready(sds))
 		pr_err("%s: SDS %d could not sync clock\n", __func__, sds->id);
 
@@ -1126,7 +1126,7 @@ static int rtpcs_930x_sds_config_pll(struct rtpcs_serdes *sds,
 	 * the state of a SerDes back to RTL930X_SDS_OFF is not (yet) implemented.
 	 */
 
-	neighbor_mode = rtpcs_930x_sds_get_internal_mode(nb_sds);
+	neighbor_mode = __rtpcs_930x_sds_get_ip_mode(nb_sds);
 	rtpcs_930x_sds_get_pll_data(nb_sds, &neighbor_pll, &neighbor_speed);
 
 	if ((hw_mode == RTPCS_SDS_MODE_1000BASEX) ||
@@ -1237,7 +1237,7 @@ static void rtpcs_930x_sds_force_mode(struct rtpcs_serdes *sds,
 	}
 
 	rtpcs_930x_sds_set_power(sds, false);
-	rtpcs_930x_sds_set_internal_mode(sds, RTL930X_SDS_OFF);
+	__rtpcs_930x_sds_set_ip_mode(sds, RTL930X_SDS_OFF);
 	if (hw_mode == RTPCS_SDS_MODE_OFF)
 		return;
 
@@ -1245,7 +1245,7 @@ static void rtpcs_930x_sds_force_mode(struct rtpcs_serdes *sds,
 		pr_err("%s: SDS %d could not configure PLL for mode %d\n", __func__,
 		       sds->id, hw_mode);
 
-	rtpcs_930x_sds_set_internal_mode(sds, mode_val);
+	__rtpcs_930x_sds_set_ip_mode(sds, mode_val);
 	if (rtpcs_930x_sds_wait_clock_ready(sds))
 		pr_err("%s: SDS %d could not sync clock\n", __func__, sds->id);
 
@@ -1279,14 +1279,14 @@ static void rtpcs_930x_sds_mode_set(struct rtpcs_serdes *sds,
 	}
 
 	/* SerDes off first. */
-	rtpcs_930x_sds_set(sds, RTL930X_SDS_OFF);
+	__rtpcs_930x_sds_set_mac_mode(sds, RTL930X_SDS_OFF);
 
 	/* Set the mode. */
-	rtpcs_930x_sds_set(sds, mode_val);
+	__rtpcs_930x_sds_set_mac_mode(sds, mode_val);
 
 	/* Set the submode if needed. */
 	if (hw_mode == RTPCS_SDS_MODE_USXGMII_10GQXGMII)
-		rtpcs_930x_sds_submode_set(sds, submode_val);
+		__rtpcs_930x_sds_set_usxgmii_submode(sds, submode_val);
 }
 
 static void rtpcs_930x_sds_tx_config(struct rtpcs_serdes *sds,
@@ -2542,7 +2542,7 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 	}
 
 	/* Turn Off Serdes */
-	rtpcs_930x_sds_set(sds, RTL930X_SDS_OFF);
+	__rtpcs_930x_sds_set_mac_mode(sds, RTL930X_SDS_OFF);
 
 	/* Apply serdes patches */
 	rtpcs_930x_sds_patch(sds, hw_mode);
