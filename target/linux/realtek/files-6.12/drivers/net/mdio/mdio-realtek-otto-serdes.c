@@ -12,6 +12,15 @@
 #include <linux/regmap.h>
 
 #define RTSDS_REG_CNT			32
+
+/* Reserve some bits to pass additional information from the user
+ * to this driver which cannot be done with regular API.
+ */
+#define RTSDS_ADDR_MASK			GENMASK(27, 0)
+#define RTSDS_ADDR_SDS_ID(addr)		(addr & RTSDS_ADDR_MASK)
+/* Raw SDS access without any front->back SDS mapping */
+#define RTSDS_ADDR_RAW_ACCESS		BIT(31)
+
 #define RTSDS_VAL_MASK			GENMASK(15, 0)
 #define RTSDS_SUBPAGE(page)		(page % 64)
 
@@ -62,6 +71,7 @@ static bool rtsds_mmd_to_sds(struct rtsds_ctrl *ctrl, int addr, int devad, int m
 {
 	*sds_page = FIELD_GET(RTSDS_MMD_PAGE_MASK, mmd_regnum);
 	*sds_regnum = FIELD_GET(RTSDS_MMD_REG_MASK, mmd_regnum);
+	addr = RTSDS_ADDR_SDS_ID(addr);
 
 	return !(addr < 0 || addr >= ctrl->cfg->sds_cnt ||
 		 *sds_page < 0 || *sds_page >= ctrl->cfg->page_cnt ||
@@ -386,7 +396,11 @@ static int rtsds_93xx_read(struct rtsds_ctrl *ctrl, int sds, int page, int regnu
 	int subpage = RTSDS_SUBPAGE(page);
 	int ret, backsds, value;
 
-	backsds = ctrl->cfg->get_backing_sds(sds, page);
+	if (sds & RTSDS_ADDR_RAW_ACCESS)
+		backsds = RTSDS_ADDR_SDS_ID(sds);
+	else
+		backsds = ctrl->cfg->get_backing_sds(RTSDS_ADDR_SDS_ID(sds), page);
+
 	ret = rtsds_rt93xx_io(ctrl, backsds, subpage, regnum, RTSDS_93XX_CMD_READ);
 	if (ret)
 		return ret;
@@ -401,7 +415,11 @@ static int rtsds_93xx_write(struct rtsds_ctrl *ctrl, int sds, int page, int regn
 	int subpage = RTSDS_SUBPAGE(page);
 	int ret, backsds;
 
-	backsds = ctrl->cfg->get_backing_sds(sds, page);
+	if (sds & RTSDS_ADDR_RAW_ACCESS)
+		backsds = RTSDS_ADDR_SDS_ID(sds);
+	else
+		backsds = ctrl->cfg->get_backing_sds(RTSDS_ADDR_SDS_ID(sds), page);
+
 	ret = regmap_write(ctrl->map, ctrl->cfg->base + 4, value);
 	if (ret)
 		return ret;
