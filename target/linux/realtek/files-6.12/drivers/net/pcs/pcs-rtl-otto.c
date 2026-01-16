@@ -22,6 +22,8 @@
 #define RTPCS_SPEED_2500			5
 #define RTPCS_SPEED_5000			6
 
+#define RTPCS_SDS_RAW_ACCESS			BIT(31)
+
 #define RTPCS_838X_CPU_PORT			28
 #define RTPCS_838X_SERDES_CNT			6
 #define RTPCS_838X_MAC_LINK_DUP_STS		0xa19c
@@ -935,6 +937,49 @@ static const u16 rtpcs_930x_sds_submode_regs[] = {
 	0x2d8, 0x2d8, 0x2d8, 0x2d8,0x2d8, 0x2d8 /* SDS_SUBMODE_CTRL1 */
 };
 static const u8 rtpcs_930x_sds_submode_lsb[] = { 0, 5, 0, 5, 10, 15, 20, 25 };
+
+/*
+ * Realtek uses some nasty logic for digital parts of SerDes 2 and 3.
+ *
+ * a) If a page is digital (aka < 4), SerDes 3 is mapped to SerDes 10.
+ *    This is already handled in the SerDes MDIO driver.
+ * b) Some operations need explicit digital writes which implicate dual-write, i.e.:
+ *      - SDS 2: write to SDS 2 + SDS 3
+ *      - SDS 3: write to SDS 10 + SDS 11
+ *
+ * There's no way elegant way to pass that to the SerDes MDIO driver so raw access
+ * is used. In this case, MDIO driver won't do any front-to-back SerDes mapping.
+ *
+ * This implements 'dal_longan_sds_xsg_field_write' and a combination of
+ * '_rtl9300_serdes_index_to_physical' and '_rtl9300_serdes_reg_write' from the SDK.
+ */
+
+static int rtpcs_930x_sds_xsg_write_bits(struct rtpcs_serdes *sds, int page, int regnum,
+					 int bithigh, int bitlow, u16 value)
+{
+	int ret, sds_id;
+
+	if (sds->id != 2 && sds->id != 3)
+		return -ENOTSUPP;
+
+	if (page >= 4)
+		return rtpcs_sds_write_bits(sds, page, regnum, bithigh, bitlow, value);
+
+	sds_id = (sds->id == 3) ? 10 : 2;
+	sds_id |= RTPCS_SDS_RAW_ACCESS;
+
+	ret = __rtpcs_sds_write_bits(sds->ctrl, sds_id, page, regnum, bithigh, bitlow, value);
+	if (ret)
+		return ret;
+
+	return __rtpcs_sds_write_bits(sds->ctrl, sds_id + 1, page, regnum, bithigh, bitlow, value);
+}
+
+__maybe_unused
+static int rtpcs_930x_sds_xsg_write(struct rtpcs_serdes *sds, int page, int regnum, u16 value)
+{
+	return rtpcs_930x_sds_xsg_write_bits(sds, page, regnum, 15, 0, value);
+}
 
 __always_unused
 static int __rtpcs_930x_sds_get_mac_mode(struct rtpcs_serdes *sds)
