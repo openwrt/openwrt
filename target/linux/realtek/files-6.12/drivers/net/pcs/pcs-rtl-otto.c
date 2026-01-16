@@ -159,6 +159,10 @@ struct rtpcs_serdes_ops {
 	int (*read)(struct rtpcs_serdes *sds, int page, int regnum, int bithigh, int bitlow);
 	int (*write)(struct rtpcs_serdes *sds, int page, int regnum, int bithigh, int bitlow,
 		     u16 value);
+
+	/* optional */
+	int (*xsg_write)(struct rtpcs_serdes *sds, int page, int regnum, int bithigh, int bitlow,
+			 u16 value);
 };
 
 struct rtpcs_serdes {
@@ -295,6 +299,25 @@ static int rtpcs_sds_read(struct rtpcs_serdes *sds, int page, int regnum)
 static int rtpcs_sds_write(struct rtpcs_serdes *sds, int page, int regnum, u16 value)
 {
 	return sds->ops->write(sds, page, regnum, 15, 0, value);
+}
+
+__maybe_unused
+static int rtpcs_sds_xsg_write_bits(struct rtpcs_serdes *sds, int page, int regnum, int bithigh,
+				    int bitlow, u16 value)
+{
+	if (!sds->ops->xsg_write)
+		return -ENOTSUPP;
+
+	return sds->ops->xsg_write(sds, page, regnum, bithigh, bitlow, value);
+}
+
+__maybe_unused
+static int rtpcs_sds_xsg_write(struct rtpcs_serdes *sds, int page, int regnum, u16 value)
+{
+	if (!sds->ops->xsg_write)
+		return -ENOTSUPP;
+
+	return sds->ops->xsg_write(sds, page, regnum, 15, 0, value);
 }
 
 /* Other helpers */
@@ -958,6 +981,39 @@ static int rtpcs_930x_sds_op_write(struct rtpcs_serdes *sds, int page, int regnu
 	int sds_id = rtpcs_930x_sds_get_phys_sds_id(sds->id, page);
 
 	return __rtpcs_sds_write_raw(sds->ctrl, sds_id, page, regnum, bithigh, bitlow, value);
+}
+
+/*
+ * Realtek uses some nasty logic for digital parts of SerDes 2 and 3.
+ *
+ * This implements 'dal_longan_sds_xsg_field_write' and a combination of
+ * '_rtl9300_serdes_index_to_physical' and '_rtl9300_serdes_reg_write' from the SDK.
+ */
+static int rtpcs_930x_sds_op_xsg_write(struct rtpcs_serdes *sds, int page, int regnum,
+				       int bithigh, int bitlow, u16 value)
+{
+	int phys_sds_id, ret;
+
+	switch (sds->id) {
+	case 2:
+		phys_sds_id = 2;
+		break;
+	case 3:
+		phys_sds_id = 10;
+		break;
+	default:
+		return -ENOTSUPP;
+	}
+
+	if (page >= 4)
+		return sds->ops->write(sds, page, regnum, bithigh, bitlow, value);
+
+	ret = __rtpcs_sds_write_raw(sds->ctrl, phys_sds_id, page, regnum, bithigh, bitlow, value);
+	if (ret)
+		return ret;
+
+	return __rtpcs_sds_write_raw(sds->ctrl, phys_sds_id + 1, page, regnum, bithigh, bitlow,
+				     value);
 }
 
 static const u16 rtpcs_930x_sds_regs[] = {
@@ -2742,6 +2798,29 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 
 /* RTL931X */
 
+/*
+ * The SerDes MDIO driver maps page regions to different background SerDes.
+ * 0x00 - 0x3f	analog SDS
+ * 0x40 - 0x7f	digital SDS 1
+ * 0x80 - 0xbf	digital SDS 2
+ *
+ * An XSG write operates on digital SDS 1 and digital SDS 2. Map that to the
+ * page ranges accordingly.
+ */
+static int rtpcs_931x_sds_op_xsg_write(struct rtpcs_serdes *sds, int page, int regnum,
+                                       int bithigh, int bitlow, u16 value)
+{
+        int ret;
+
+        ret = __rtpcs_sds_write_raw(sds->ctrl, sds->id, page + 0x40, regnum, bithigh, bitlow,
+				    value);
+        if (ret)
+                return ret;
+
+        return __rtpcs_sds_write_raw(sds->ctrl, sds->id, page + 0x80, regnum, bithigh, bitlow,
+				     value);
+}
+
 __maybe_unused
 static int rtpcs_931x_sds_fiber_get_symerr(struct rtpcs_serdes *sds,
 					   enum rtpcs_sds_mode hw_mode)
@@ -3887,6 +3966,7 @@ static const struct phylink_pcs_ops rtpcs_930x_pcs_ops = {
 static const struct rtpcs_serdes_ops rtpcs_930x_sds_ops = {
 	.read			= rtpcs_930x_sds_op_read,
 	.write			= rtpcs_930x_sds_op_write,
+	.xsg_write		= rtpcs_930x_sds_op_xsg_write,
 };
 
 static const struct rtpcs_config rtpcs_930x_cfg = {
@@ -3913,6 +3993,7 @@ static const struct phylink_pcs_ops rtpcs_931x_pcs_ops = {
 static const struct rtpcs_serdes_ops rtpcs_931x_sds_ops = {
 	.read			= rtpcs_generic_sds_op_read,
 	.write			= rtpcs_generic_sds_op_write,
+	.xsg_write		= rtpcs_931x_sds_op_xsg_write,
 };
 
 static const struct rtpcs_config rtpcs_931x_cfg = {
