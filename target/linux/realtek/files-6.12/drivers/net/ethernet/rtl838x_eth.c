@@ -444,79 +444,82 @@ static irqreturn_t rtl93xx_net_irq(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-static void rtl838x_hw_reset(struct rteth_ctrl *ctrl)
+static void rteth_nic_reset(struct rteth_ctrl *ctrl, int reset_mask)
 {
-	u32 int_saved, nbuf;
-	u32 reset_mask;
-
-	pr_info("RESETTING %x, CPU_PORT %d\n", ctrl->r->family_id, ctrl->r->cpu_port);
+	pr_info("RESETTING CPU_PORT %d\n", ctrl->r->cpu_port);
 	sw_w32_mask(0x3, 0, ctrl->r->mac_port_ctrl(ctrl->r->cpu_port));
 	mdelay(100);
 
-	/* Disable and clear interrupts */
-	if (ctrl->r->family_id == RTL9300_FAMILY_ID || ctrl->r->family_id == RTL9310_FAMILY_ID) {
-		sw_w32(0x00000000, ctrl->r->dma_if_intr_rx_runout_msk);
-		sw_w32(0xffffffff, ctrl->r->dma_if_intr_rx_runout_sts);
-		sw_w32(0x00000000, ctrl->r->dma_if_intr_rx_done_msk);
-		sw_w32(0xffffffff, ctrl->r->dma_if_intr_rx_done_sts);
-		sw_w32(0x00000000, ctrl->r->dma_if_intr_tx_done_msk);
-		sw_w32(0x0000000f, ctrl->r->dma_if_intr_tx_done_sts);
-	} else {
-		sw_w32(0x00000000, ctrl->r->dma_if_intr_msk);
-		sw_w32(0xffffffff, ctrl->r->dma_if_intr_sts);
-	}
-
-	if (ctrl->r->family_id == RTL8390_FAMILY_ID) {
-		/* Preserve L2 notification and NBUF settings */
-		int_saved = sw_r32(ctrl->r->dma_if_intr_msk);
-		nbuf = sw_r32(RTL839X_DMA_IF_NBUF_BASE_DESC_ADDR_CTRL);
-
-		/* Disable link change interrupt on RTL839x */
-		sw_w32(0, RTL839X_IMR_PORT_LINK_STS_CHG);
-		sw_w32(0, RTL839X_IMR_PORT_LINK_STS_CHG + 4);
-
-		sw_w32(0x00000000, ctrl->r->dma_if_intr_msk);
-		sw_w32(0xffffffff, ctrl->r->dma_if_intr_sts);
-	}
-
 	/* Reset NIC (SW_NIC_RST) and queues (SW_Q_RST) */
-	if (ctrl->r->family_id == RTL9300_FAMILY_ID || ctrl->r->family_id == RTL9310_FAMILY_ID)
-		reset_mask = 0x6;
-	else
-		reset_mask = 0xc;
-
 	sw_w32_mask(0, reset_mask, ctrl->r->rst_glb_ctrl);
-
-	do { /* Wait for reset of NIC and Queues done */
+	while (sw_r32(ctrl->r->rst_glb_ctrl) & reset_mask)
 		udelay(20);
-	} while (sw_r32(ctrl->r->rst_glb_ctrl) & reset_mask);
+
 	mdelay(100);
+}
+
+static void rteth_838x_hw_reset(struct rteth_ctrl *ctrl)
+{
+	/* Disable and clear interrupts */
+	sw_w32(0x00000000, ctrl->r->dma_if_intr_msk);
+	sw_w32(0xffffffff, ctrl->r->dma_if_intr_sts);
+
+	rteth_nic_reset(ctrl, 0xc);
 
 	/* Setup Head of Line */
-	if (ctrl->r->family_id == RTL8380_FAMILY_ID)
-		sw_w32(0, RTL838X_DMA_IF_RX_RING_SIZE);  /* Disabled on RTL8380 */
-	if (ctrl->r->family_id == RTL8390_FAMILY_ID)
-		sw_w32(0xffffffff, RTL839X_DMA_IF_RX_RING_CNTR);
-	if (ctrl->r->family_id == RTL9300_FAMILY_ID || ctrl->r->family_id == RTL9310_FAMILY_ID) {
-		for (int i = 0; i < ctrl->rxrings; i++) {
-			int pos = (i % 3) * 10;
+	sw_w32(0, RTL838X_DMA_IF_RX_RING_SIZE);  /* Disabled on RTL8380 */
+}
 
-			sw_w32_mask(0x3ff << pos, 0, ctrl->r->dma_if_rx_ring_size(i));
-			sw_w32_mask(0x3ff << pos, ctrl->rxringlen,
-				    ctrl->r->dma_if_rx_ring_cntr(i));
-		}
-	}
+static void rteth_839x_hw_reset(struct rteth_ctrl *ctrl)
+{
+	u32 int_saved, nbuf;
+
+	/* Disable and clear interrupts */
+	sw_w32(0x00000000, ctrl->r->dma_if_intr_msk);
+	sw_w32(0xffffffff, ctrl->r->dma_if_intr_sts);
+
+	/* Preserve L2 notification and NBUF settings */
+	int_saved = sw_r32(ctrl->r->dma_if_intr_msk);
+	nbuf = sw_r32(RTL839X_DMA_IF_NBUF_BASE_DESC_ADDR_CTRL);
+
+	/* Disable link change interrupt on RTL839x */
+	sw_w32(0, RTL839X_IMR_PORT_LINK_STS_CHG);
+	sw_w32(0, RTL839X_IMR_PORT_LINK_STS_CHG + 4);
+
+	rteth_nic_reset(ctrl, 0xc);
+
+	/* Setup Head of Line */
+	sw_w32(0xffffffff, RTL839X_DMA_IF_RX_RING_CNTR);
 
 	/* Re-enable link change interrupt */
-	if (ctrl->r->family_id == RTL8390_FAMILY_ID) {
-		sw_w32(0xffffffff, RTL839X_ISR_PORT_LINK_STS_CHG);
-		sw_w32(0xffffffff, RTL839X_ISR_PORT_LINK_STS_CHG + 4);
-		sw_w32(0xffffffff, RTL839X_IMR_PORT_LINK_STS_CHG);
-		sw_w32(0xffffffff, RTL839X_IMR_PORT_LINK_STS_CHG + 4);
+	sw_w32(0xffffffff, RTL839X_ISR_PORT_LINK_STS_CHG);
+	sw_w32(0xffffffff, RTL839X_ISR_PORT_LINK_STS_CHG + 4);
+	sw_w32(0xffffffff, RTL839X_IMR_PORT_LINK_STS_CHG);
+	sw_w32(0xffffffff, RTL839X_IMR_PORT_LINK_STS_CHG + 4);
 
-		/* Restore notification settings: on RTL838x these bits are null */
-		sw_w32_mask(7 << 20, int_saved & (7 << 20), ctrl->r->dma_if_intr_msk);
-		sw_w32(nbuf, RTL839X_DMA_IF_NBUF_BASE_DESC_ADDR_CTRL);
+	/* Restore notification settings: on RTL838x these bits are null */
+	sw_w32_mask(7 << 20, int_saved & (7 << 20), ctrl->r->dma_if_intr_msk);
+	sw_w32(nbuf, RTL839X_DMA_IF_NBUF_BASE_DESC_ADDR_CTRL);
+}
+
+static void rteth_93xx_hw_reset(struct rteth_ctrl *ctrl)
+{
+	/* Disable and clear interrupts */
+	sw_w32(0x00000000, ctrl->r->dma_if_intr_rx_runout_msk);
+	sw_w32(0xffffffff, ctrl->r->dma_if_intr_rx_runout_sts);
+	sw_w32(0x00000000, ctrl->r->dma_if_intr_rx_done_msk);
+	sw_w32(0xffffffff, ctrl->r->dma_if_intr_rx_done_sts);
+	sw_w32(0x00000000, ctrl->r->dma_if_intr_tx_done_msk);
+	sw_w32(0x0000000f, ctrl->r->dma_if_intr_tx_done_sts);
+
+	rteth_nic_reset(ctrl, 0x6);
+
+	/* Setup Head of Line */
+	for (int i = 0; i < ctrl->rxrings; i++) {
+		int pos = (i % 3) * 10;
+
+		sw_w32_mask(0x3ff << pos, 0, ctrl->r->dma_if_rx_ring_size(i));
+		sw_w32_mask(0x3ff << pos, ctrl->rxringlen, ctrl->r->dma_if_rx_ring_cntr(i));
 	}
 }
 
@@ -690,7 +693,7 @@ static int rtl838x_eth_open(struct net_device *ndev)
 		 __func__, ctrl->rxrings, ctrl->rxringlen, TXRINGS, TXRINGLEN);
 
 	spin_lock_irqsave(&ctrl->lock, flags);
-	rtl838x_hw_reset(ctrl);
+	ctrl->r->hw_reset(ctrl);
 	rtl838x_setup_ring_buffer(ctrl, ring);
 	if (ctrl->r->family_id == RTL8390_FAMILY_ID) {
 		rtl839x_setup_notify_ring_buffer(ctrl);
@@ -1485,6 +1488,7 @@ static const struct rteth_config rteth_838x_cfg = {
 	.update_cntr = rtl838x_update_cntr,
 	.create_tx_header = rteth_838x_create_tx_header,
 	.decode_tag = rteth_838x_decode_tag,
+	.hw_reset = &rteth_838x_hw_reset,
 	.init_mac = &rteth_838x_init_mac,
 	.netdev_ops = &rteth_838x_netdev_ops,
 };
@@ -1528,6 +1532,7 @@ static const struct rteth_config rteth_839x_cfg = {
 	.update_cntr = rtl839x_update_cntr,
 	.create_tx_header = rteth_839x_create_tx_header,
 	.decode_tag = rteth_839x_decode_tag,
+	.hw_reset = &rteth_839x_hw_reset,
 	.init_mac = &rteth_839x_init_mac,
 	.netdev_ops = &rteth_839x_netdev_ops,
 };
@@ -1577,6 +1582,7 @@ static const struct rteth_config rteth_930x_cfg = {
 	.update_cntr = rtl930x_update_cntr,
 	.create_tx_header = rteth_930x_create_tx_header,
 	.decode_tag = rteth_930x_decode_tag,
+	.hw_reset = &rteth_93xx_hw_reset,
 	.init_mac = &rteth_930x_init_mac,
 	.netdev_ops = &rteth_930x_netdev_ops,
 };
@@ -1625,6 +1631,7 @@ static const struct rteth_config rteth_931x_cfg = {
 	.update_cntr = rtl931x_update_cntr,
 	.create_tx_header = rteth_931x_create_tx_header,
 	.decode_tag = rteth_931x_decode_tag,
+	.hw_reset = &rteth_93xx_hw_reset,
 	.init_mac = &rteth_931x_init_mac,
 	.netdev_ops = &rteth_931x_netdev_ops,
 };
