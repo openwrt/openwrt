@@ -83,6 +83,7 @@
  */
 #define RTPCS_930X_SDS_MODE_SGMII	0x02
 #define RTPCS_930X_SDS_MODE_1000BASEX	0x04
+#define RTPCS_930X_SDS_MODE_QSGMII	0x06
 #define RTPCS_930X_SDS_MODE_USXGMII	0x0d
 #define RTPCS_930X_SDS_MODE_XSGMII	0x10
 #define RTPCS_930X_SDS_MODE_2500BASEX	0x16
@@ -1462,6 +1463,8 @@ static int rtpcs_930x_sds_get_hw_mode_val(enum rtpcs_sds_mode hw_mode)
 		return RTPCS_930X_SDS_MODE_2500BASEX;
 	case RTPCS_SDS_MODE_10GBASER:
 		return RTPCS_930X_SDS_MODE_10GBASER;
+	case RTPCS_SDS_MODE_QSGMII:
+		return RTPCS_930X_SDS_MODE_QSGMII;
 	case RTPCS_SDS_MODE_XSGMII:
 		return RTPCS_930X_SDS_MODE_XSGMII;
 	case RTPCS_SDS_MODE_USXGMII_10GSXGMII:
@@ -1621,6 +1624,8 @@ static void rtpcs_930x_sds_tx_config(struct rtpcs_serdes *sds,
 		post_en	= 0;
 		page = 0x2f;
 		break;
+	case RTPCS_SDS_MODE_QSGMII:
+		return;
 	default:
 		pr_err("%s: unsupported SerDes hw mode\n", __func__);
 		return;
@@ -2473,6 +2478,7 @@ static u32 rtpcs_930x_sds_sym_err_get(struct rtpcs_serdes *sds,
 	u32 v = 0;
 
 	switch (hw_mode) {
+	case RTPCS_SDS_MODE_QSGMII:
 	case RTPCS_SDS_MODE_XSGMII:
 		v = rtpcs_sds_read_bits(sds, 0x1, 0x1, 15, 8) << 16;
 		v |= rtpcs_sds_read_bits(sds, 0x1, 0x0, 15, 0);
@@ -2810,6 +2816,13 @@ static const struct rtpcs_sds_config rtpcs_930x_sds_cfg_usxgmii_sx_odd[] =
 	{0x06, 0x03, 0xc45c},
 };
 
+static const struct rtpcs_sds_config rtpcs_930x_sds_cfg_5g_qsgmii[] =
+{
+	{0x00, 0x0E, 0x3053},
+	{0x21, 0x00, 0x3C91},{0x21, 0x02, 0xB602},{0x21, 0x07, 0xFA66},{0x21, 0x0A, 0xDF40},
+	{0x2A, 0x02, 0x35A1},{0x2A, 0x03, 0x6960},
+};
+
 static void rtpcs_930x_sds_usxgmii_config(struct rtpcs_serdes *sds, int nway_en,
 					  u32 opcode, u32 am_period,
 					  u32 all_am_markers, u32 an_table,
@@ -2868,6 +2881,12 @@ static void rtpcs_930x_sds_patch(struct rtpcs_serdes *sds,
 			config = rtpcs_930x_sds_cfg_10g_2500bx_odd;
 			count = ARRAY_SIZE(rtpcs_930x_sds_cfg_10g_2500bx_odd);
 		}
+		break;
+
+	case RTPCS_SDS_MODE_QSGMII:
+		/* only QSGMII on 5G SerDes (0 + 1) for now */
+		config = rtpcs_930x_sds_cfg_5g_qsgmii;
+		count = ARRAY_SIZE(rtpcs_930x_sds_cfg_5g_qsgmii);
 		break;
 
 	case RTPCS_SDS_MODE_XSGMII:
@@ -2949,6 +2968,7 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 	case RTPCS_SDS_MODE_10GBASER:
 	case RTPCS_SDS_MODE_USXGMII_10GSXGMII:
 	case RTPCS_SDS_MODE_USXGMII_10GQXGMII:
+	case RTPCS_SDS_MODE_QSGMII:
 	case RTPCS_SDS_MODE_XSGMII:
 		break;
 	default:
@@ -2984,6 +3004,9 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 	/* Enable Fiber RX */
 	rtpcs_sds_write_bits(sds, 0x20, 2, 12, 12, 0);
 
+	if (hw_mode == RTPCS_SDS_MODE_QSGMII)
+		goto skip_cali;
+
 	/* Calibrate SerDes receiver in loopback mode */
 	rtpcs_930x_sds_10g_idle(sds);
 	do {
@@ -2994,6 +3017,7 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 	if (calib_tries >= 3)
 		pr_warn("%s: SerDes RX calibration failed\n", __func__);
 
+skip_cali:
 	/* Leave loopback mode */
 	rtpcs_930x_sds_tx_config(sds, hw_mode);
 
