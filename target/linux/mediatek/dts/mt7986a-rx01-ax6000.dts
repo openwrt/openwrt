@@ -1,0 +1,32 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+/dts-v1/;
+#include "mt7986a-rx01-common.dtsi"
+
+/ {
+	model = "Rx01 AX6000";
+	compatible = "rx01-ax6000", "mediatek,mt7986a";
+};
+
+&chosen {
+	bootargs = "dm-mod.create=''";
+};
+
+&spi_nand_flash {
+	mediatek,nmbm;
+	mediatek,bmt-max-ratio = <1>;
+	mediatek,bmt-max-reserved-blocks = <64>;
+};
+
+&partitions {
+
+	partition@580000 {
+		label = "ubi_kernel";
+		reg = <0x580000 0x9180000>;
+	};
+
+	partition@9180000 {
+		label = "ubi";
+		reg = <0x9180000 0xeb80000>;
+	};
+};
