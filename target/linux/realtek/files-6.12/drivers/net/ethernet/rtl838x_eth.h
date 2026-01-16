@@ -453,6 +453,7 @@ struct rteth_config {
 	void (*update_cntr)(int r, int work_done);
 	void (*create_tx_header)(struct p_hdr *h, unsigned int dest_port, int prio);
 	bool (*decode_tag)(struct p_hdr *h, struct dsa_tag *tag);
+	void (*hw_reset)(struct rteth_ctrl *ctrl);
 	int (*init_mac)(struct rteth_ctrl *ctrl);
 	const struct net_device_ops *netdev_ops;
 };
