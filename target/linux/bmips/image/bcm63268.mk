@@ -78,6 +78,44 @@ define Device/sagem_fast-3864-op
 endef
 TARGET_DEVICES += sagem_fast-3864-op
 
+define Device/sagem_fast-4353-uboot-nand
+# The stock uboot does not work with gzip if the image size is greater than 8mb
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | libdeflate-gzip | uImage gzip
+#  KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none
+  KERNEL_INITRAMFS_SUFFIX := .bin
+  DEVICE_VENDOR := Sagemcom
+  DEVICE_MODEL := F@ST 4353
+  DEVICE_VARIANT := U-Boot NAND Flash
+  CHIP_ID := 63268
+  SOC := bcm63167
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  SUBPAGESIZE := 512
+  VID_HDR_OFFSET := 2048
+  DEVICE_PACKAGES += $(USB2_PACKAGES) \
+    kmod-leds-bcm6328
+endef
+TARGET_DEVICES += sagem_fast-4353-uboot-nand
+
+define Device/sagem_fast-4353-cfe-spi-nor
+  $(Device/bcm63xx-cfe-legacy)
+  DEVICE_VENDOR := Sagemcom
+  DEVICE_MODEL := F@ST 4353
+  DEVICE_VARIANT := CFE Spi Nor Flash
+  CHIP_ID := 63268
+  SOC := bcm63167
+  CFE_BOARD_ID := 963268SV2_EXTSW
+  CFE_EXTRAS += --tag-version=7
+  CFE_LOADADDR := 0x80000000
+  CFE_ENTRY := 0x80010000
+  FLASH_MB := 16
+  BLOCKSIZE := 0x10000
+  IMAGE_OFFSET := 0x30000
+  DEVICE_PACKAGES += $(USB2_PACKAGES) \
+    kmod-leds-bcm6328
+endef
+TARGET_DEVICES += sagem_fast-4353-cfe-spi-nor
+
 define Device/sercomm_h500-s-lowi
   $(Device/sercomm-nand)
   DEVICE_VENDOR := Sercomm

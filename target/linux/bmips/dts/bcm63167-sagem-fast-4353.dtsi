@@ -1,0 +1,305 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "bcm63268.dtsi"
+
+/ {
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+
+		led-dsl = &led_dsl_green;
+		led-internet = &led_internet_green;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 32 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&gpio 35 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+			debounce-interval = <60>;
+		};
+
+		wlan {
+			label = "wlan";
+			gpios = <&gpio 33 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WLAN>;
+			debounce-interval = <60>;
+		};
+	};
+};
+
+&ehci {
+	status = "okay";
+};
+
+&ethernet {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_cferom_6a0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&leds {
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_leds>;
+
+	led@0 {
+		reg = <0>;
+		function = LED_FUNCTION_WAN;
+		color = <LED_COLOR_ID_AMBER>;
+		active-low;
+	};
+
+	led_internet_green: led@8 {
+		reg = <8>;
+		label = "green:internet";
+		active-low;
+	};
+
+	led@9 {
+		reg = <9>;
+		label = "green:lan";
+		active-low;
+	};
+
+	wan_green@12 {
+		/* GPHY0 Act */
+		reg = <12>;
+		brcm,hardware-controlled;
+	};
+
+	led@13 {
+		reg = <13>;
+		label = "red:internet";
+	};
+
+	led@15 {
+		reg = <15>;
+		function = LED_FUNCTION_WPS;
+		color = <LED_COLOR_ID_GREEN>;
+		active-low;
+	};
+
+	led@17 {
+		reg = <17>;
+		function = LED_FUNCTION_WLAN;
+		color = <LED_COLOR_ID_GREEN>;
+	};
+
+	led_dsl_green: led@18 {
+		reg = <18>;
+		label = "green:sync";
+		active-low;
+	};
+
+	led_power_green: led@20 {
+		reg = <20>;
+		function = LED_FUNCTION_POWER;
+		color = <LED_COLOR_ID_GREEN>;
+		active-low;
+	};
+
+	led_power_red: led@21 {
+		reg = <21>;
+		function = LED_FUNCTION_POWER;
+		color = <LED_COLOR_ID_RED>;
+		panic-indicator;
+	};
+};
+
+&pinctrl {
+	pinctrl_leds: leds {
+		function = "led";
+		pins = "gpio0",  "gpio8",  "gpio9", "gpio12",
+		       "gpio13", "gpio15", "gpio17", "gpio18",
+		       "gpio20", "gpio21";
+	};
+};
+
+&mdio_ext {
+	switch@1e {
+		compatible = "brcm,bcm53125";
+		reg = <0x1e>;
+
+		dsa,member = <1 0>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "lan1";
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan2";
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan3";
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan4";
+			};
+
+			port@8 {
+				reg = <8>;
+
+				phy-mode = "rgmii";
+				ethernet = <&switch0port4>;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+					asym-pause;
+					pause;
+				};
+			};
+		};
+	};
+};
+
+&nflash {
+	status = "okay";
+
+	nandcs@0 {
+		compatible = "brcm,nandcs";
+		reg = <0>;
+		nand-ecc-step-size = <512>;
+		nand-ecc-strength = <4>;
+		nand-on-flash-bbt;
+		brcm,nand-oob-sector-size = <64>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			nand_bcmfs:partition@0 {
+				label = "bcmfs";
+				reg = <0x00000000 0x00020000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_cferom_6a0: macaddr@6a0 {
+						reg = <0x6a0 0x6>;
+					};
+				};
+			};
+
+			nand_bcmfs_update:partition@20000 {
+				label = "bcmfs_update";
+				reg = <0x00020000 0x000a0000>;
+				read-only;
+			};
+
+			nand_ubi:partition@c0000 {
+				label = "ubi";
+				reg = <0x000c0000 0x0fa40000>;
+				read-only;
+			};
+
+			nand_data:partition@fb00000 {
+				label = "stock_data";
+				reg = <0x0fb00000 0x0400000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&ohci {
+	status = "okay";
+};
+
+&pcie {
+	status = "okay";
+};
+
+&switch0 {
+	dsa,member = <0 0>;
+
+	ports {
+		port@3 {
+			reg = <3>;
+			label = "wan";
+
+			phy-handle = <&phy4>;
+		};
+
+		switch0port4: port@4 {
+			reg = <4>;
+			label = "extsw";
+
+			phy-mode = "rgmii";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&usbh {
+	status = "okay";
+};
+
+&hsspi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		spi-max-frequency = <16666667>;
+		spi-tx-bus-width = <2>;
+		spi-rx-bus-width = <2>;
+		reg = <0>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "cfe";
+				reg = <0x000000 0x030000>;
+			};
+
+			partition@30000 {
+				compatible = "brcm,bcm963xx-imagetag";
+				label = "firmware";
+				reg = <0x030000 0xfd0000>;
+			};
+		};
+	};
+};
