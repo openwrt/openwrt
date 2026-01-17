@@ -809,15 +809,6 @@ static int rtl8214fc_config_init(struct phy_device *phydev)
 	if (ret)
 		return ret;
 
-	if (phydev->mdio.addr % 8 == 0) {
-		for (int port = 0; port < 4; port++) {
-			phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, 0x8);
-			/* setup basic fiber control in base phy and default to copper */
-			phy_write_paged(phydev, 0x266, regs[port], 0x0f95);
-			phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, 0x0);
-		}
-	}
-
 	/* Step 2 - port setup */
 	phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, 0x3);
 	/* set fiber SerDes RX to negative edge */
