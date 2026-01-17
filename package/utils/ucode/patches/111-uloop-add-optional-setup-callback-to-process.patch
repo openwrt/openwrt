@@ -10,7 +10,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/lib/uloop.c
 +++ b/lib/uloop.c
-@@ -961,8 +961,9 @@ uc_uloop_process_cb(struct uloop_process
+@@ -968,8 +968,9 @@ uc_uloop_process_cb(struct uloop_process
   *
   * This function creates a process instance for executing external programs.
   * It takes the executable path string, an optional string array as the argument
@@ -22,7 +22,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   *
   * @function module:uloop#process
   *
-@@ -979,6 +980,11 @@ uc_uloop_process_cb(struct uloop_process
+@@ -986,6 +987,11 @@ uc_uloop_process_cb(struct uloop_process
   * @param {Function} callback
   * The callback function to be invoked when the invoked process ends.
   *
@@ -34,7 +34,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   * @returns {?module:uloop.process}
   * Returns a process instance for executing external programs.
   * Returns `null` on error, e.g. due to `exec()` failure or invalid arguments.
-@@ -988,6 +994,16 @@ uc_uloop_process_cb(struct uloop_process
+@@ -995,6 +1001,16 @@ uc_uloop_process_cb(struct uloop_process
   * const myProcess = uloop.process("/bin/ls", ["-l", "/tmp"], null, (code) => {
   *     printf(`Process exited with code ${code}\n`);
   * });
@@ -51,7 +51,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
   */
  static uc_value_t *
  uc_uloop_process(uc_vm_t *vm, size_t nargs)
-@@ -996,6 +1012,7 @@ uc_uloop_process(uc_vm_t *vm, size_t nar
+@@ -1003,6 +1019,7 @@ uc_uloop_process(uc_vm_t *vm, size_t nar
  	uc_value_t *arguments = uc_fn_arg(1);
  	uc_value_t *env_arg = uc_fn_arg(2);
  	uc_value_t *callback = uc_fn_arg(3);
@@ -59,7 +59,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	uc_uloop_process_t *process;
  	uc_stringbuf_t *buf;
  	char **argp, **envp;
-@@ -1005,7 +1022,8 @@ uc_uloop_process(uc_vm_t *vm, size_t nar
+@@ -1012,7 +1029,8 @@ uc_uloop_process(uc_vm_t *vm, size_t nar
  	if (ucv_type(executable) != UC_STRING ||
  	    (arguments && ucv_type(arguments) != UC_ARRAY) ||
  	    (env_arg && ucv_type(env_arg) != UC_OBJECT) ||
@@ -69,7 +69,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  		err_return(EINVAL);
  	}
  
-@@ -1015,6 +1033,13 @@ uc_uloop_process(uc_vm_t *vm, size_t nar
+@@ -1022,6 +1040,13 @@ uc_uloop_process(uc_vm_t *vm, size_t nar
  		err_return(errno);
  
  	if (pid == 0) {
