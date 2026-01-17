@@ -1,0 +1,88 @@
+--- a/drivers/net/phy/realtek/realtek_main.c
++++ b/drivers/net/phy/realtek/realtek_main.c
+@@ -170,6 +170,8 @@
+ 
+ #define RTL8224_SRAM_RTCT_LEN(pair)		(0x8028 + (pair) * 4)
+ 
++#define RTL8224_VND1_MDI_REVERSE		0xa90
++
+ #define RTL8221B_PHYCR1				0xa430
+ #define RTL8221B_PHYCR1_ALDPS_EN		BIT(2)
+ #define RTL8221B_PHYCR1_ALDPS_XTAL_OFF_EN	BIT(12)
+@@ -225,6 +227,11 @@ struct rtl822x_priv {
+ 	bool enable_aldps;
+ };
+ 
++struct rtl8224_priv {
++	bool set_reverse;
++	bool mdi_reverse;
++};
++
+ static int rtl821x_read_page(struct phy_device *phydev)
+ {
+ 	return __phy_read(phydev, RTL821x_PAGE_SELECT);
+@@ -1855,6 +1862,55 @@ static int rtl8224_cable_test_get_status
+ 	return rtl8224_cable_test_report(phydev, finished);
+ }
+ 
++static void rtl8224_mdi_reverse(struct phy_device *phydev, bool reverse)
++{
++	u32 val;
++	u8 port_offset;
++
++	port_offset = phydev->mdio.addr & 3;
++	val = phy_package_read_mmd(phydev, 0, MDIO_MMD_VEND1,
++				   RTL8224_VND1_MDI_REVERSE);
++	if (reverse) {
++		val |= (1 << port_offset);
++	} else {
++		val &= ~(1 << port_offset);
++	}
++	phy_package_write_mmd(phydev, 0, MDIO_MMD_VEND1,
++			      RTL8224_VND1_MDI_REVERSE, val);
++}
++
++static int rtl8224_config_init(struct phy_device *phydev)
++{
++	struct rtl8224_priv *priv = phydev->priv;
++
++	if (priv->set_reverse) {
++		rtl8224_mdi_reverse(phydev, priv->mdi_reverse);
++	}
++	return 0;
++}
++
++static int rtl8224_probe(struct phy_device *phydev)
++{
++	struct device *dev = &phydev->mdio.dev;
++	struct rtl8224_priv *priv;
++	u32 val;
++
++	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++	phydev->priv = priv;
++
++	if (!of_property_read_u32(dev->of_node, "mdi-reverse", &val)) {
++		priv->set_reverse = true;
++		priv->mdi_reverse = (val != 0);
++	}
++
++	/* Device has 4 ports */
++	devm_phy_package_join(dev, phydev, phydev->mdio.addr & (~3), 0);
++
++	return 0;
++}
++
+ static bool rtlgen_supports_2_5gbps(struct phy_device *phydev)
+ {
+ 	int val;
+@@ -2445,6 +2501,8 @@ static struct phy_driver realtek_drvs[]
+ 		PHY_ID_MATCH_EXACT(0x001ccad0),
+ 		.name		= "RTL8224 2.5Gbps PHY",
+ 		.flags		= PHY_POLL_CABLE_TEST,
++		.probe		= rtl8224_probe,
++		.config_init	= rtl8224_config_init,
+ 		.get_features	= rtl822x_c45_get_features,
+ 		.config_aneg	= rtl822x_c45_config_aneg,
+ 		.read_status	= rtl822x_c45_read_status,
