@@ -83,7 +83,7 @@
 		compatible = "mediatek,eth-mac";
 		reg = <0>;
 		phy-mode = "2500base-x";
-		phy-handle = <&rtl8221b_phy>;
+		phy-handle = <&wan_phy>;
 
 		nvmem-cell-names = "mac-address";
 		nvmem-cells = <&macaddr_bdinfo_de00 0>;
@@ -101,12 +101,16 @@
 };
 
 &mdio_bus {
-	rtl8221b_phy: ethernet-phy@1 {
+	/* We need to have the reset GPIO on the MDIO bus node,
+	 * otherwise the PHY would be held in reset during PHY detection */
+	reset-gpios = <&pio 39 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <100000>;
+	reset-post-delay-us = <100000>;
+
+	wan_phy: ethernet-phy@1 {
+		/* Either Realtek RTL8221B-VB-CG or Motorcomm YT8821 */
 		compatible = "ethernet-phy-ieee802.3-c45";
 		reg = <1>;
-		reset-assert-us = <100000>;
-		reset-deassert-us = <100000>;
-		reset-gpios = <&pio 39 GPIO_ACTIVE_LOW>;
 		interrupts = <38 IRQ_TYPE_LEVEL_LOW>;
 		interrupt-parent = <&pio>;
 	};
