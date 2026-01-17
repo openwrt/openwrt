@@ -63,7 +63,7 @@ Sighed-off-by: Philip Prindeville <philipp@redfish-solutions.com>
  
 --- a/drivers/platform/x86/Kconfig
 +++ b/drivers/platform/x86/Kconfig
-@@ -754,7 +754,7 @@ config XO1_RFKILL
+@@ -573,7 +573,7 @@ config XO1_RFKILL
  	  laptop.
  
  config PCENGINES_APU2
@@ -72,7 +72,7 @@ Sighed-off-by: Philip Prindeville <philipp@redfish-solutions.com>
  	depends on INPUT && INPUT_KEYBOARD && GPIOLIB
  	depends on LEDS_CLASS
  	select GPIO_AMD_FCH
-@@ -762,7 +762,7 @@ config PCENGINES_APU2
+@@ -581,7 +581,7 @@ config PCENGINES_APU2
  	select LEDS_GPIO
  	help
  	  This driver provides support for the front button and LEDs on
@@ -159,9 +159,9 @@ Sighed-off-by: Philip Prindeville <philipp@redfish-solutions.com>
 +#define APU5_GPIO_LINE_SIMSWAP1		7
 +#define APU5_GPIO_LINE_SIMSWAP2		8
 +#define APU5_GPIO_LINE_SIMSWAP3		9
-+
  
 -/* GPIO device */
++
 +/* GPIO device - APU2/3/4/6 */
  
  static int apu2_gpio_regs[] = {
@@ -189,8 +189,8 @@ Sighed-off-by: Philip Prindeville <philipp@redfish-solutions.com>
  };
  
  static const struct amd_fch_gpio_pdata board_apu2 = {
-@@ -72,6 +106,40 @@ static const struct amd_fch_gpio_pdata b
- 	.gpio_names	= apu2_gpio_names,
+@@ -76,6 +110,40 @@ static const struct software_node apu2_g
+ 	.name = AMD_FCH_GPIO_DRIVER_NAME,
  };
  
 +/* GPIO device - APU5 */
@@ -228,9 +228,9 @@ Sighed-off-by: Philip Prindeville <philipp@redfish-solutions.com>
 +};
 +
  /* GPIO LEDs device */
- 
- static const struct gpio_led apu2_leds[] = {
-@@ -215,6 +283,24 @@ static const struct dmi_system_id apu_gp
+ static const struct software_node apu2_leds_node = {
+ 	.name = "apu2-leds",
+@@ -246,6 +314,24 @@ static const struct dmi_system_id apu_gp
  		},
  		.driver_data = (void *)&board_apu2,
  	},
@@ -255,7 +255,7 @@ Sighed-off-by: Philip Prindeville <philipp@redfish-solutions.com>
  	{}
  };
  
-@@ -249,7 +335,7 @@ static int __init apu_board_init(void)
+@@ -283,7 +369,7 @@ static int __init apu_board_init(void)
  
  	id = dmi_first_match(apu_gpio_dmi_table);
  	if (!id) {
@@ -264,7 +264,7 @@ Sighed-off-by: Philip Prindeville <philipp@redfish-solutions.com>
  		return -ENODEV;
  	}
  
-@@ -288,7 +374,7 @@ module_init(apu_board_init);
+@@ -332,7 +418,7 @@ module_init(apu_board_init);
  module_exit(apu_board_exit);
  
  MODULE_AUTHOR("Enrico Weigelt, metux IT consult <info@metux.net>");
