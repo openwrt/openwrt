@@ -34,7 +34,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  #if defined(CONFIG_CMD_ONENAND)
  /* go init the NAND */
  static int initr_onenand(void)
-@@ -713,6 +727,9 @@ static void initcall_run_r(void)
+@@ -706,6 +720,9 @@ static void initcall_run_r(void)
  #if CONFIG_IS_ENABLED(CMD_ONENAND)
  	INITCALL(initr_onenand);
  #endif
