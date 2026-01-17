@@ -1,0 +1,117 @@
+From 15e6c4b26397d43b7703cd3321c0da33820aa324 Mon Sep 17 00:00:00 2001
+From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Date: Wed, 15 Oct 2025 10:36:16 +0300
+Subject: [PATCH 26/36] net: airoha: makes PCS support optional
+
+It's not possible to disable PCS support just now, an7581 u-boot will not
+compile. This patch fixes an issue.
+
+Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+---
+ drivers/net/Kconfig      |  1 +
+ drivers/net/airoha_eth.c | 17 ++++++++++++++++-
+ 2 files changed, 17 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/Kconfig b/drivers/net/Kconfig
+index e300ff3bd52..1356ca36722 100644
+--- a/drivers/net/Kconfig
++++ b/drivers/net/Kconfig
+@@ -126,6 +126,7 @@ source "drivers/net/airoha/Kconfig"
+ config AIROHA_ETH
+ 	bool "Airoha Ethernet QDMA Driver"
+ 	depends on ARCH_AIROHA
++	select MISC
+ 	select PHYLIB
+ 	select DM_ETH_PHY
+ 	select DM_RESET
+diff --git a/drivers/net/airoha_eth.c b/drivers/net/airoha_eth.c
+index 5b721908bc4..1283abe8b2e 100644
+--- a/drivers/net/airoha_eth.c
++++ b/drivers/net/airoha_eth.c
+@@ -730,6 +730,7 @@ static int airoha_qdma_init(struct udevice *dev,
+ 	return airoha_qdma_hw_init(qdma);
+ }
+ 
++#if defined(CONFIG_PCS_AIROHA)
+ static int airoha_pcs_init(struct udevice *dev)
+ {
+ 	struct airoha_gdm_port *port = dev_get_priv(dev);
+@@ -757,6 +758,7 @@ static int airoha_pcs_init(struct udevice *dev)
+ 	return airoha_pcs_config(pcs_dev, port->neg_mode,
+ 				 port->mode, NULL, true);
+ }
++#endif
+ 
+ static int airoha_hw_init(struct udevice *dev,
+ 			  struct airoha_eth *eth)
+@@ -908,6 +910,11 @@ static int airoha_alloc_gdm_port(struct udevice *dev, ofnode node)
+ 	if (id > AIROHA_MAX_NUM_GDM_PORTS)
+ 		return -EINVAL;
+ 
++#if !defined(CONFIG_PCS_AIROHA)
++	if (id != 1)
++		return -ENOTSUPP;
++#endif
++
+ 	str = malloc(AIROHA_GDM_PORT_STRING_LEN);
+ 	if (!str)
+ 		return -ENOMEM;
+@@ -996,7 +1003,7 @@ static int airoha_eth_probe(struct udevice *dev)
+ 			continue;
+ 
+ 		ret = airoha_alloc_gdm_port(dev, node);
+-		if (ret)
++		if (ret && ret != -ENOTSUPP)
+ 			return ret;
+ 	}
+ 
+@@ -1023,11 +1030,15 @@ static int airoha_eth_port_probe(struct udevice *dev)
+ 		return ret;
+ 
+ 	if (port->id > 1) {
++#if defined(CONFIG_PCS_AIROHA)
+ 		ret = airoha_pcs_init(dev);
+ 		if (ret)
+ 			return ret;
+ 
+ 		port->phydev = dm_eth_phy_connect(dev);
++#else
++		return -EINVAL;
++#endif
+ 	}
+ 
+ 	return 0;
+@@ -1049,6 +1060,7 @@ static int airoha_eth_init(struct udevice *dev)
+ 			GLOBAL_CFG_TX_DMA_EN_MASK |
+ 			GLOBAL_CFG_RX_DMA_EN_MASK);
+ 
++#if defined(CONFIG_PCS_AIROHA)
+ 	if (port->id > 1) {
+ 		struct phy_device *phydev = port->phydev;
+ 		int speed, duplex;
+@@ -1089,6 +1101,7 @@ static int airoha_eth_init(struct udevice *dev)
+ 		airoha_pcs_link_up(port->pcs_dev, port->neg_mode, port->mode,
+ 				   speed, duplex);
+ 	}
++#endif
+ 
+ 	return 0;
+ }
+@@ -1098,12 +1111,14 @@ static void airoha_eth_stop(struct udevice *dev)
+ 	struct airoha_gdm_port *port = dev_get_priv(dev);
+ 	struct airoha_qdma *qdma = port->qdma;
+ 
++#if defined(CONFIG_PCS_AIROHA)
+ 	if (port->id > 1) {
+ 		if (port->phydev)
+ 			phy_shutdown(port->phydev);
+ 
+ 		airoha_pcs_link_down(port->pcs_dev);
+ 	}
++#endif
+ 
+ 	airoha_qdma_clear(qdma, REG_QDMA_GLOBAL_CFG,
+ 			  GLOBAL_CFG_TX_DMA_EN_MASK |
+-- 
+2.51.0
+
