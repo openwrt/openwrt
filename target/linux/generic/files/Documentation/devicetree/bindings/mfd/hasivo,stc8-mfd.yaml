@@ -1,0 +1,96 @@
+# SPDX-License-Identifier: GPL-2.0
+# STC8 MFD binding for Hasivo STC8 microcontroller used in managed switches
+
+title: "STC8 multi-function device"
+description: |
+  This binding describes the Hasivo STC8 multi-function device.
+  This is an STC8 microcontroller with custom firmware used by Hasivo to
+  provide various functions on their managed switch products.
+  The main known functionality currently is to allow for discrete GPIO control
+  which turns on/off LEDs and controls PWM for fan speed.
+  It is known that for the discrete IO however, the host must send an execute
+  flag (0x40) along with the register write to have the STC8 apply the change.
+  This binding allows for specifying which registers require this execute flag
+  to be set automatically by the MFD driver.
+
+maintainers:
+  - bevan.weiss@gmail.com
+
+properties:
+  compatible:
+    description: >
+      Must be "hasivo,stc8-mfd" for the MFD driver to bind.
+      Some child devices may require that this also expose the "syscon" binding.
+    type: string
+    required: true
+
+  reg:
+    description: >
+      I2C address of the STC8 device on the bus.
+    type: integer
+    required: true
+
+  hasivo,execute-bit:
+    description: >
+      The mask that will be automatically ORd on writes to the registers
+      specified in hasivo,execute-bit-regs.
+      If not specified, defaults to 0x40.
+    type: unsigned integer
+    defaults: 0x40
+    required: false
+
+  hasivo,execute-bit-regs:
+    description: >
+      Array of registers for which the execute-bit mask should be
+      automatically ORed on writes.
+      If not specified, no registers will have the execute bit set.
+    type: array of unsigned integers
+    required: false
+
+required:
+  - compatible
+  - reg
+
+children:
+
+examples:
+  - |
+    &i2c0 {
+        status = "okay";
+
+        stc8: stc8-mfd@0x4d {
+            compatible = "hasivo,stc8-mfd", "syscon";
+            reg = <0x4d>;
+            hasivo,execute-bit = <0x40>;
+            hasivo,execute-bit-regs = <0x01 0x02>;
+
+            poe_led_lan1: led@1,1 {
+                compatible = "register-bit-led";
+                offset = <0x01>;
+                mask = <0x01>;
+                label = "orange:poe_led_lan1";
+                default-state = "off";
+            };
+            poe_led_lan2: led@1,2 {
+                compatible = "register-bit-led";
+                offset = <0x01>;
+                mask = <0x02>;
+                label = "orange:poe_led_lan2";
+                default-state = "off";
+            };
+            poe_led_lan3: led@1,3 {
+                compatible = "register-bit-led";
+                offset = <0x01>;
+                mask = <0x04>;
+                label = "orange:poe_led_lan3";
+                default-state = "off";
+            };
+            poe_led_lan4: led@1,4 {
+                compatible = "register-bit-led";
+                offset = <0x01>;
+                mask = <0x08>;
+                label = "orange:poe_led_lan4";
+                default-state = "off";
+            };
+        };
+    };
