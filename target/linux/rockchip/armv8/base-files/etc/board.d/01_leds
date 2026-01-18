@@ -35,10 +35,19 @@ friendlyarm,nanopi-r6s)
 	ucidef_set_led_netdev "lan1" "LAN1" "green:lan-1" "eth2"
 	ucidef_set_led_netdev "lan2" "LAN2" "green:lan-2" "eth0"
 	;;
-friendlyarm,nanopi-r76s|\
-radxa,e20c)
+friendlyarm,nanopi-r76s)
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1"
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "eth0"
+	;;
+hinlink,h28k)
+	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "eth1"
+	ucidef_set_led_netdev "lan" "LAN" "amber:lan" "eth0"
+	;;
+radxa,e20c)
+	ucidef_set_led_netdev "lan" "LAN" "green:lan" "eth0"
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1"
+	ucidef_set_led_netdev "wan-0" "WAN-0" "eth1-0::lan" "eth1" "link_100"
+	ucidef_set_led_netdev "wan-1" "WAN-1" "eth1-1::lan" "eth1" "link_1000"
 	;;
 radxa,e52c)
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
