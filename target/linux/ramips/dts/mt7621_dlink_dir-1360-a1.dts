@@ -10,7 +10,6 @@
 	compatible = "dlink,dir-1360-a1", "mediatek,mt7621-soc";
 	model = "D-Link DIR-1360 A1";
 
-	/* 1. Updated for 256MB RAM */
 	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x10000000>;
@@ -24,7 +23,6 @@
 		led-upgrade = &led_internet_orange;
 	};
 
-	/* 2. Updated Keys for DIR-1360 */
 	keys {
 		compatible = "gpio-keys";
 
@@ -41,7 +39,6 @@
 		};
 	};
 
-	/* 3. Updated LEDs for DIR-1360 */
 	leds {
 		compatible = "gpio-leds";
 
@@ -90,7 +87,6 @@
 	};
 };
 
-/* 4. Base NAND Config */
 &nand {
 	status = "okay";
 
@@ -111,7 +107,6 @@
 			read-only;
 		};
 
-		/* --- FIX APPLIED HERE: Added "factory:" label --- */
 		factory: partition@100000 {
 			label = "factory";
 			reg = <0x100000 0x40000>;
@@ -126,16 +121,16 @@
 					reg = <0x0 0x4da8>;
 				};
 
-				macaddr_factory_4: macaddr@4 {
-					reg = <0x4 0x6>;
-				};
-
 				macaddr_factory_e000: macaddr@e000 {
 					reg = <0xe000 0x6>;
 				};
 
 				macaddr_factory_e006: macaddr@e006 {
 					reg = <0xe006 0x6>;
+				};
+
+				macaddr_factory_e00c: macaddr@e00c {
+					reg = <0xe00c 0x6>;
 				};
 			};
 		};
@@ -146,7 +141,6 @@
 			read-only;
 		};
 
-		/* 40MB Firmware Partition */
 		partition@180000 {
 			label = "firmware";
 			compatible = "openwrt,uimage", "denx,uimage";
@@ -179,7 +173,6 @@
 	};
 };
 
-/* 5. Fixed PCIe / WiFi Config */
 &pcie {
 	status = "okay";
 
@@ -188,25 +181,19 @@
 		wifi@0,0 {
 			compatible = "mediatek,mt7615";
 			reg = <0x0000 0 0 0 0>;
-			
-			nvmem-cells = <&macaddr_factory_4>;
-			nvmem-cells = <&macaddr_factory_e000>;
-
-			/* Fixed Calibration Paths */
+			nvmem-cells = <&macaddr_factory_e00c>;
+			nvmem-cell-names = "mac-address";
+			mac-address-increment = <1>;
 			mediatek,mtd-eeprom = <&factory 0x0000>;
-			mediatek,2g-eeprom = <&factory 0x0000>;
-			mediatek,5g-eeprom = <&factory 0x8000>;
 		};
 	};
 };
 
-/* 6. Specific LAN MAC Config */
 &gmac0 {
 	nvmem-cells = <&macaddr_factory_e000>;
 	nvmem-cell-names = "mac-address";
 };
 
-/* 7. Base WAN Config */
 &gmac1 {
 	status = "okay";
 	label = "wan";
