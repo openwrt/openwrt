@@ -1,0 +1,99 @@
+From 60d5de358f5d5745623f3293f7888a1ea47d6d9d Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Linus=20L=C3=BCssing?= <linus.luessing@c0d3.blue>
+Date: Tue, 13 May 2025 10:29:51 +0200
+Subject: [PATCH] net: dsa: forward bridge/switchdev mcast router notification
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Add a new "port_mdb_set_mrouter()" handler to the DSA API. This allows DSA
+drivers to receive the multicast router notification from the
+bridge. So that switch drivers can act on it accordingly, especially
+as forwarding to multicast router ports is necessary due to RFC4541, to
+avoid packet loss.
+
+Based on a patch from Jan Hoffmann.
+
+Signed-off-by: Linus Lüssing <linus.luessing@c0d3.blue>
+---
+ Documentation/networking/dsa/dsa.rst |  4 ++++
+ include/net/dsa.h                    |  3 +++
+ net/dsa/port.c                       | 11 +++++++++++
+ net/dsa/port.h                       |  2 ++
+ net/dsa/user.c                      |  9 +++++++++
+ 5 files changed, 29 insertions(+)
+
+--- a/Documentation/networking/dsa/dsa.rst
++++ b/Documentation/networking/dsa/dsa.rst
+@@ -1034,6 +1034,10 @@ Bridge VLAN filtering
+   depends on multicast for NDP) packet loss. And should (by default) avoid
+   forwarding to an active port if there is no listener or multicast router on it.
+ 
++- ``port_mdb_set_mrouter``: bridge layer function invoked when the bridge wants
++  to (un)install a multicast router on a specific port. The switch hardware should
++  be programmed to forward all multicast packets to this port.
++
+ Link aggregation
+ ----------------
+ 
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
+@@ -1101,6 +1101,9 @@ struct dsa_switch_ops {
+ 				   const struct switchdev_mc_active mc_active,
+ 				   struct netlink_ext_ack *extack,
+ 				   bool handled);
++	int	(*port_mdb_set_mrouter)(struct dsa_switch *ds, int port,
++					bool mrouter,
++					struct netlink_ext_ack *extack);
+ 
+ 	/*
+ 	 * RXNFC
+--- a/net/dsa/port.c
++++ b/net/dsa/port.c
+@@ -1309,6 +1309,17 @@ int dsa_port_bridge_mdb_active(const str
+ 	return dsa_port_notify(dp, DSA_NOTIFIER_MDB_ACTIVE, &info);
+ }
+ 
++int dsa_port_mrouter(struct dsa_port *dp, bool mrouter,
++		     struct netlink_ext_ack *extack)
++{
++	struct dsa_switch *ds = dp->ds;
++
++	if (!ds->ops->port_mdb_set_mrouter)
++		return -EOPNOTSUPP;
++
++	return ds->ops->port_mdb_set_mrouter(ds, dp->index, mrouter, extack);
++}
++
+ int dsa_port_vlan_add(struct dsa_port *dp,
+ 		      const struct switchdev_obj_port_vlan *vlan,
+ 		      struct netlink_ext_ack *extack)
+--- a/net/dsa/port.h
++++ b/net/dsa/port.h
+@@ -78,6 +78,8 @@ int dsa_port_bridge_host_mdb_del(const s
+ int dsa_port_bridge_mdb_active(const struct dsa_port *dp,
+ 			       const struct switchdev_mc_active mc_active,
+ 			       struct netlink_ext_ack *extack, bool handled);
++int dsa_port_mrouter(struct dsa_port *dp, bool mrouter,
++		     struct netlink_ext_ack *extack);
+ int dsa_port_pre_bridge_flags(const struct dsa_port *dp,
+ 			      struct switchdev_brport_flags flags,
+ 			      struct netlink_ext_ack *extack);
+--- a/net/dsa/user.c
++++ b/net/dsa/user.c
+@@ -665,6 +665,15 @@ static int dsa_user_port_attr_set(struct
+ 		ret = dsa_port_bridge_mdb_active(dp, attr->u.mc_active, extack,
+ 						 *handled);
+ 		break;
++	case SWITCHDEV_ATTR_ID_BRIDGE_MROUTER:
++		ret = dsa_port_mrouter(dp->cpu_dp, attr->u.mrouter, extack);
++		break;
++	case SWITCHDEV_ATTR_ID_PORT_MROUTER:
++		if (!dsa_port_offloads_bridge_port(dp, attr->orig_dev))
++			return -EOPNOTSUPP;
++
++		ret = dsa_port_mrouter(dp, attr->u.mrouter, extack);
++		break;
+ 	default:
+ 		ret = -EOPNOTSUPP;
+ 		break;

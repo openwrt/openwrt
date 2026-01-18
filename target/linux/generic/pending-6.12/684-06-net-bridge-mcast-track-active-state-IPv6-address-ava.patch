@@ -1,0 +1,51 @@
+From bc97ce4eb0ad150bb9747834aa05da02eab451cf Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Linus=20L=C3=BCssing?= <linus.luessing@c0d3.blue>
+Date: Sat, 9 Aug 2025 07:28:36 +0200
+Subject: [PATCH 06/16] net: bridge: mcast: track active state, IPv6 address
+ availability
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+If we are the only potential MLD querier but don't have an IPv6
+link-local address configured on our bridge interface then we can't
+create a valid MLD query and in turn can't reliably receive MLD reports
+and can't build a complete MDB. Hence disable the new multicast active
+state variable then. Or reenable it if an IPv6 link-local address
+became available.
+
+No functional change for the fast/data path yet.
+
+Signed-off-by: Linus Lüssing <linus.luessing@c0d3.blue>
+---
+ net/bridge/br_multicast.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/net/bridge/br_multicast.c b/net/bridge/br_multicast.c
+index a7db3cd198c2..31dee8f5d0e2 100644
+--- a/net/bridge/br_multicast.c
++++ b/net/bridge/br_multicast.c
+@@ -1125,6 +1125,7 @@ static void br_multicast_notify_active(struct net_bridge_mcast *brmctx,
+  * The multicast active state is set, per protocol family, if:
+  *
+  * - an IGMP/MLD querier is present
++ * - for own IPv6 MLD querier: an IPv6 address is configured on the bridge
+  *
+  * And is unset otherwise.
+  *
+@@ -1222,10 +1223,12 @@ static struct sk_buff *br_ip6_multicast_alloc_query(struct net_bridge_mcast *brm
+ 			       &ip6h->daddr, 0, &ip6h->saddr)) {
+ 		kfree_skb(skb);
+ 		br_opt_toggle(brmctx->br, BROPT_HAS_IPV6_ADDR, false);
++		br_multicast_update_active(brmctx);
+ 		return NULL;
+ 	}
+ 
+ 	br_opt_toggle(brmctx->br, BROPT_HAS_IPV6_ADDR, true);
++	br_multicast_update_active(brmctx);
+ 	ipv6_eth_mc_map(&ip6h->daddr, eth->h_dest);
+ 
+ 	hopopt = (u8 *)(ip6h + 1);
+-- 
+2.51.0
+
