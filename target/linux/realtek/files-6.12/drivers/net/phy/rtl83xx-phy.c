@@ -57,6 +57,8 @@ extern struct rtl83xx_soc_info soc_info;
 #define RTL821X_JOIN_LAST		1
 #define RTL821X_JOIN_OTHER		2
 
+#define RTL8214FC_MEDIA_COPPER		BIT(11)
+
 static const struct firmware rtl838x_8380_fw;
 static const struct firmware rtl838x_8218b_fw;
 
@@ -447,7 +449,7 @@ static bool __rtl8214fc_media_is_fibre(struct phy_device *phydev)
 	__phy_write(basephy, RTL821XEXT_MEDIA_PAGE_SELECT, oldxpage);
 	__phy_write(basephy, RTL8XXX_PAGE_SELECT, oldpage);
 
-	return !(val & BMCR_PDOWN);
+	return !(val & RTL8214FC_MEDIA_COPPER);
 }
 
 static bool rtl8214fc_media_is_fibre(struct phy_device *phydev)
@@ -495,13 +497,13 @@ static int rtl8214fc_resume(struct phy_device *phydev)
 static void rtl8214fc_media_set(struct phy_device *phydev, bool set_fibre)
 {
 	struct phy_device *basephy = get_base_phy(phydev);
-	int pdown = set_fibre ? 0 : BMCR_PDOWN;
+	int copper = set_fibre ? 0 : RTL8214FC_MEDIA_COPPER;
 	static int regs[] = {16, 19, 20, 21};
 	int reg = regs[phydev->mdio.addr & 3];
 
 	phydev_info(phydev, "switch to %s\n", set_fibre ? "fibre" : "copper");
 	phy_write_paged(basephy, RTL838X_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
-	phy_modify_paged(basephy, RTL821X_PAGE_PORT, reg, BMCR_PDOWN, pdown);
+	phy_modify_paged(basephy, RTL821X_PAGE_PORT, reg, RTL8214FC_MEDIA_COPPER, copper);
 	phy_write_paged(basephy, RTL838X_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 
 	if (!phydev->suspended) {
@@ -806,15 +808,6 @@ static int rtl8214fc_config_init(struct phy_device *phydev)
 	ret = rtl8218b_config_init(phydev);
 	if (ret)
 		return ret;
-
-	if (phydev->mdio.addr % 8 == 0) {
-		for (int port = 0; port < 4; port++) {
-			phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, 0x8);
-			/* setup basic fiber control in base phy and default to copper */
-			phy_write_paged(phydev, 0x266, regs[port], 0x0f95);
-			phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, 0x0);
-		}
-	}
 
 	/* Step 2 - port setup */
 	phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, 0x3);
