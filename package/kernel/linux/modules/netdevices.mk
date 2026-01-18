@@ -525,6 +525,23 @@ endef
 
 $(eval $(call KernelPackage,phy-aquantia))
 
+
+define KernelPackage/phy-motorcomm
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Motorcomm Ethernet PHYs
+  DEPENDS:=+kmod-libphy
+  KCONFIG:=CONFIG_MOTORCOMM_PHY
+  FILES:=$(LINUX_DIR)/drivers/net/phy/motorcomm.ko
+  AUTOLOAD:=$(call AutoLoad,18,motorcomm,1)
+endef
+
+define KernelPackage/phy-motorcomm/description
+  Supports the Motorcomm 8511/8521/8531/8531S/8821 Ethernet PHYs
+endef
+
+$(eval $(call KernelPackage,phy-motorcomm))
+
+
 define KernelPackage/dsa
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Distributed Switch Architecture support
