@@ -136,7 +136,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
  #include <net/dst.h>
  #include <net/sock.h>
  #include <net/checksum.h>
-@@ -4827,6 +4831,9 @@ static const u8 skb_ext_type_len[] = {
+@@ -4829,6 +4833,9 @@ static const u8 skb_ext_type_len[] = {
  #if IS_ENABLED(CONFIG_MCTP_FLOWS)
  	[SKB_EXT_MCTP] = SKB_EXT_CHUNKSIZEOF(struct mctp_flow),
  #endif
