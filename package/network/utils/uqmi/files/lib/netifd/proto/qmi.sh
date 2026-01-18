@@ -430,10 +430,8 @@ proto_qmi_setup() {
 			proto_add_ipv6_prefix "${ip_6}/${ip_prefix_length}"
 			proto_add_ipv6_route "$gateway_6" "128"
 			[ "$defaultroute" = 0 ] || proto_add_ipv6_route "::0" 0 "$gateway_6" "" "" "${ip_6}/${ip_prefix_length}"
-			[ "$peerdns" = 0 ] || {
-				proto_add_dns_server "$dns1_6"
-				proto_add_dns_server "$dns2_6"
-			}
+			proto_add_dns_server "$dns1_6"
+			proto_add_dns_server "$dns2_6"
 			[ -n "$zone" ] && {
 				proto_add_data
 				json_add_string zone "$zone"
@@ -473,10 +471,8 @@ proto_qmi_setup() {
 			proto_add_ipv4_address "$ip_4" "$subnet_4"
 			proto_add_ipv4_route "$gateway_4" "128"
 			[ "$defaultroute" = 0 ] || proto_add_ipv4_route "0.0.0.0" 0 "$gateway_4"
-			[ "$peerdns" = 0 ] || {
-				proto_add_dns_server "$dns1_4"
-				proto_add_dns_server "$dns2_4"
-			}
+			proto_add_dns_server "$dns1_4"
+			proto_add_dns_server "$dns2_4"
 			[ -n "$zone" ] && {
 				proto_add_data
 				json_add_string zone "$zone"
