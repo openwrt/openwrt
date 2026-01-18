@@ -153,9 +153,17 @@ enum rtpcs_sds_pll_type {
 };
 
 struct rtpcs_ctrl;
+struct rtpcs_serdes;
+
+struct rtpcs_serdes_ops {
+	int (*read)(struct rtpcs_serdes *sds, int page, int regnum, int bithigh, int bitlow);
+	int (*write)(struct rtpcs_serdes *sds, int page, int regnum, int bithigh, int bitlow,
+		     u16 value);
+};
 
 struct rtpcs_serdes {
 	struct rtpcs_ctrl *ctrl;
+	const struct rtpcs_serdes_ops *ops;
 	enum rtpcs_sds_mode hw_mode;
 	u8 id;
 	u8 num_of_links;
@@ -192,6 +200,7 @@ struct rtpcs_config {
 	u8 serdes_count;
 
 	const struct phylink_pcs_ops *pcs_ops;
+	const struct rtpcs_serdes_ops *sds_ops;
 	int (*init_serdes_common)(struct rtpcs_ctrl *ctrl);
 	int (*set_autoneg)(struct rtpcs_serdes *sds, unsigned int neg_mode);
 	int (*setup_serdes)(struct rtpcs_serdes *sds, phy_interface_t mode);
@@ -208,54 +217,87 @@ static int rtpcs_sds_to_mmd(int sds_page, int sds_regnum)
 	return (sds_page << 8) + sds_regnum;
 }
 
-static int rtpcs_sds_read(struct rtpcs_serdes *sds, int page, int regnum)
+/*
+ * Basic helpers
+ *
+ * These work on the plain SerDes ID. They shouldn't be used except for
+ * implementing the SerDes read/write ops.
+ */
+
+static int __rtpcs_sds_read_raw(struct rtpcs_ctrl *ctrl, int sds_id, int page, int regnum,
+				int bithigh, int bitlow)
 {
 	int mmd_regnum = rtpcs_sds_to_mmd(page, regnum);
+	u16 mask;
+	int val;
 
-	return mdiobus_c45_read(sds->ctrl->bus, sds->id, MDIO_MMD_VEND1,
-				mmd_regnum);
-}
-
-static int rtpcs_sds_read_bits(struct rtpcs_serdes *sds, int page,
-			       int regnum, int bithigh, int bitlow)
-{
-	int mask, val;
-
-	WARN_ON(bithigh < bitlow);
+	if (WARN_ON(bithigh < bitlow))
+		return -EINVAL;
 
 	mask = GENMASK(bithigh, bitlow);
-	val = rtpcs_sds_read(sds, page, regnum);
+	val = mdiobus_c45_read(ctrl->bus, sds_id, MDIO_MMD_VEND1, mmd_regnum);
 	if (val < 0)
 		return val;
 
 	return (val & mask) >> bitlow;
 }
 
-static int rtpcs_sds_write(struct rtpcs_serdes *sds, int page, int regnum, u16 value)
+static int __rtpcs_sds_write_raw(struct rtpcs_ctrl *ctrl, int sds_id, int page, int regnum,
+				 int bithigh, int bitlow, u16 value)
 {
 	int mmd_regnum = rtpcs_sds_to_mmd(page, regnum);
+	u16 mask, set;
 
-	return mdiobus_c45_write(sds->ctrl->bus, sds->id, MDIO_MMD_VEND1,
-				 mmd_regnum, value);
-}
+	if (WARN_ON(bithigh < bitlow))
+		return -EINVAL;
 
-static int rtpcs_sds_write_bits(struct rtpcs_serdes *sds, int page,
-				int regnum, int bithigh, int bitlow, u16 value)
-{
-	int mask, reg;
-
-	WARN_ON(bithigh < bitlow);
+	if (bithigh == 15 && bitlow == 0)
+		return mdiobus_c45_write(ctrl->bus, sds_id, MDIO_MMD_VEND1, mmd_regnum, value);
 
 	mask = GENMASK(bithigh, bitlow);
-	reg = rtpcs_sds_read(sds, page, regnum);
-	if (reg < 0)
-		return reg;
-
-	reg = (reg & ~mask);
-	reg |= (value << bitlow) & mask;
-
-	return rtpcs_sds_write(sds, page, regnum, reg);
+	set = (value << bitlow) & mask;
+	return mdiobus_c45_modify(ctrl->bus, sds_id, MDIO_MMD_VEND1, mmd_regnum, mask, set);
 }
+
+/* Generic implementations, if no special behavior is needed */
+
+static int rtpcs_generic_sds_op_read(struct rtpcs_serdes *sds, int page, int regnum, int bithigh,
+				     int bitlow)
+{
+	return __rtpcs_sds_read_raw(sds->ctrl, sds->id, page, regnum, bithigh, bitlow);
+}
+
+static int rtpcs_generic_sds_op_write(struct rtpcs_serdes *sds, int page, int regnum, int bithigh,
+				      int bitlow, u16 value)
+{
+	return __rtpcs_sds_write_raw(sds->ctrl, sds->id, page, regnum, bithigh, bitlow, value);
+}
+
+/* Convenience helpers */
+
+static int rtpcs_sds_read_bits(struct rtpcs_serdes *sds, int page, int regnum, int bithigh,
+			       int bitlow)
+{
+	return sds->ops->read(sds, page, regnum, bithigh, bitlow);
+}
+
+static int rtpcs_sds_write_bits(struct rtpcs_serdes *sds, int page, int regnum, int bithigh,
+				int bitlow, u16 value)
+{
+	return sds->ops->write(sds, page, regnum, bithigh, bitlow, value);
+}
+
+static int rtpcs_sds_read(struct rtpcs_serdes *sds, int page, int regnum)
+{
+	return sds->ops->read(sds, page, regnum, 15, 0);
+}
+
+static int rtpcs_sds_write(struct rtpcs_serdes *sds, int page, int regnum, u16 value)
+{
+	return sds->ops->write(sds, page, regnum, 15, 0, value);
+}
+
+/* Other helpers */
 
 static int rtpcs_sds_modify(struct rtpcs_serdes *sds, int page, int regnum,
 			    u16 mask, u16 set)
@@ -3716,6 +3758,8 @@ static int rtpcs_probe(struct platform_device *pdev)
 		sds = &ctrl->serdes[i];
 		sds->ctrl = ctrl;
 		sds->id = i;
+
+		sds->ops = ctrl->cfg->sds_ops;
 	}
 
 	for_each_child_of_node(dev->of_node, child) {
@@ -3760,6 +3804,11 @@ static const struct phylink_pcs_ops rtpcs_838x_pcs_ops = {
 	.pcs_get_state		= rtpcs_pcs_get_state,
 };
 
+static const struct rtpcs_serdes_ops rtpcs_838x_sds_ops = {
+	.read			= rtpcs_generic_sds_op_read,
+	.write			= rtpcs_generic_sds_op_write,
+};
+
 static const struct rtpcs_config rtpcs_838x_cfg = {
 	.cpu_port		= RTPCS_838X_CPU_PORT,
 	.mac_link_dup_sts	= RTPCS_838X_MAC_LINK_DUP_STS,
@@ -3770,6 +3819,7 @@ static const struct rtpcs_config rtpcs_838x_cfg = {
 	.mac_tx_pause_sts	= RTPCS_838X_MAC_TX_PAUSE_STS,
 	.serdes_count		= RTPCS_838X_SERDES_CNT,
 	.pcs_ops		= &rtpcs_838x_pcs_ops,
+	.sds_ops		= &rtpcs_838x_sds_ops,
 	.init_serdes_common	= rtpcs_838x_init_serdes_common,
 	.setup_serdes		= rtpcs_838x_setup_serdes,
 };
@@ -3778,6 +3828,11 @@ static const struct phylink_pcs_ops rtpcs_839x_pcs_ops = {
 	.pcs_an_restart		= rtpcs_pcs_an_restart,
 	.pcs_config		= rtpcs_pcs_config,
 	.pcs_get_state		= rtpcs_pcs_get_state,
+};
+
+static const struct rtpcs_serdes_ops rtpcs_839x_sds_ops = {
+	.read			= rtpcs_generic_sds_op_read,
+	.write			= rtpcs_generic_sds_op_write,
 };
 
 static const struct rtpcs_config rtpcs_839x_cfg = {
@@ -3790,6 +3845,7 @@ static const struct rtpcs_config rtpcs_839x_cfg = {
 	.mac_tx_pause_sts	= RTPCS_839X_MAC_TX_PAUSE_STS,
 	.serdes_count		= RTPCS_839X_SERDES_CNT,
 	.pcs_ops		= &rtpcs_839x_pcs_ops,
+	.sds_ops		= &rtpcs_839x_sds_ops,
 	.init_serdes_common	= rtpcs_839x_init_serdes_common,
 	.setup_serdes		= rtpcs_839x_setup_serdes,
 };
@@ -3798,6 +3854,11 @@ static const struct phylink_pcs_ops rtpcs_930x_pcs_ops = {
 	.pcs_an_restart		= rtpcs_pcs_an_restart,
 	.pcs_config		= rtpcs_pcs_config,
 	.pcs_get_state		= rtpcs_pcs_get_state,
+};
+
+static const struct rtpcs_serdes_ops rtpcs_930x_sds_ops = {
+	.read			= rtpcs_generic_sds_op_read,
+	.write			= rtpcs_generic_sds_op_write,
 };
 
 static const struct rtpcs_config rtpcs_930x_cfg = {
@@ -3810,6 +3871,7 @@ static const struct rtpcs_config rtpcs_930x_cfg = {
 	.mac_tx_pause_sts	= RTPCS_930X_MAC_TX_PAUSE_STS,
 	.serdes_count		= RTPCS_930X_SERDES_CNT,
 	.pcs_ops		= &rtpcs_930x_pcs_ops,
+	.sds_ops		= &rtpcs_930x_sds_ops,
 	.set_autoneg		= rtpcs_93xx_set_autoneg,
 	.setup_serdes		= rtpcs_930x_setup_serdes,
 };
@@ -3818,6 +3880,11 @@ static const struct phylink_pcs_ops rtpcs_931x_pcs_ops = {
 	.pcs_an_restart		= rtpcs_pcs_an_restart,
 	.pcs_config		= rtpcs_pcs_config,
 	.pcs_get_state		= rtpcs_pcs_get_state,
+};
+
+static const struct rtpcs_serdes_ops rtpcs_931x_sds_ops = {
+	.read			= rtpcs_generic_sds_op_read,
+	.write			= rtpcs_generic_sds_op_write,
 };
 
 static const struct rtpcs_config rtpcs_931x_cfg = {
@@ -3830,6 +3897,7 @@ static const struct rtpcs_config rtpcs_931x_cfg = {
 	.mac_tx_pause_sts	= RTPCS_931X_MAC_TX_PAUSE_STS,
 	.serdes_count		= RTPCS_931X_SERDES_CNT,
 	.pcs_ops		= &rtpcs_931x_pcs_ops,
+	.sds_ops		= &rtpcs_931x_sds_ops,
 	.set_autoneg		= rtpcs_93xx_set_autoneg,
 	.setup_serdes		= rtpcs_931x_setup_serdes,
 };
