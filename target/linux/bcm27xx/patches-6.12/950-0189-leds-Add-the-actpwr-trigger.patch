@@ -17,7 +17,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 
 --- a/drivers/leds/trigger/Kconfig
 +++ b/drivers/leds/trigger/Kconfig
-@@ -168,4 +168,15 @@ config LEDS_TRIGGER_INPUT_EVENTS
+@@ -177,4 +177,15 @@ config LEDS_TRIGGER_INPUT_EVENTS
  
  	  When build as a module this driver will be called ledtrig-input-events.
  
@@ -35,10 +35,10 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  endif # LEDS_TRIGGERS
 --- a/drivers/leds/trigger/Makefile
 +++ b/drivers/leds/trigger/Makefile
-@@ -17,3 +17,4 @@ obj-$(CONFIG_LEDS_TRIGGER_NETDEV)	+= led
- obj-$(CONFIG_LEDS_TRIGGER_PATTERN)	+= ledtrig-pattern.o
+@@ -18,3 +18,4 @@ obj-$(CONFIG_LEDS_TRIGGER_PATTERN)	+= le
  obj-$(CONFIG_LEDS_TRIGGER_TTY)		+= ledtrig-tty.o
  obj-$(CONFIG_LEDS_TRIGGER_INPUT_EVENTS)	+= ledtrig-input-events.o
+ obj-$(CONFIG_LEDS_TRIGGER_NETWORK)	+= ledtrig-network.o
 +obj-$(CONFIG_LEDS_TRIGGER_ACTPWR)	+= ledtrig-actpwr.o
 --- /dev/null
 +++ b/drivers/leds/trigger/ledtrig-actpwr.c
