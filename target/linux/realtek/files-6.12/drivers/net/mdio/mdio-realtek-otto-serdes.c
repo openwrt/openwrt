@@ -326,9 +326,6 @@ static int rtsds_rt93xx_io(struct rtsds_ctrl *ctrl, int sds, int page, int regnu
  */
 static int rtsds_930x_get_backing_sds(int sds, int page)
 {
-	if (sds == 3 && page < 4)
-		return 10;
-
 	return sds;
 }
 
