@@ -22,6 +22,8 @@
 #define RTPCS_SPEED_2500			5
 #define RTPCS_SPEED_5000			6
 
+#define RTPCS_SDS_RAW_ACCESS			BIT(31)
+
 #define RTPCS_838X_CPU_PORT			28
 #define RTPCS_838X_SERDES_CNT			6
 #define RTPCS_838X_MAC_LINK_DUP_STS		0xa19c
@@ -202,53 +204,91 @@ static int rtpcs_sds_to_mmd(int sds_page, int sds_regnum)
 	return (sds_page << 8) + sds_regnum;
 }
 
-static int rtpcs_sds_read(struct rtpcs_serdes *sds, int page, int regnum)
+/* NOTE: The read/write helpers with '__rtpcs' prefix work with the plain
+ * SerDes id while the normal helpers work on a reference to 'struct
+ * rtpcs_serdes'. Thus, the former are unsafer versions of the latter.
+ *
+ * If possible, always use the latter/safer versions. They exist for a reason.
+ * The unsafe helpers are provided just for some corner cases where this is
+ * needed, usually to work around some quirks.
+ */
+
+/* Read helpers */
+
+static int __rtpcs_sds_read(struct rtpcs_ctrl *ctrl, int sds_id, int page, int regnum)
 {
 	int mmd_regnum = rtpcs_sds_to_mmd(page, regnum);
 
-	return mdiobus_c45_read(sds->ctrl->bus, sds->id, MDIO_MMD_VEND1,
-				mmd_regnum);
+	return mdiobus_c45_read(ctrl->bus, sds_id, MDIO_MMD_VEND1, mmd_regnum);
 }
 
-static int rtpcs_sds_read_bits(struct rtpcs_serdes *sds, int page,
-			       int regnum, int bithigh, int bitlow)
+static int __rtpcs_sds_read_bits(struct rtpcs_ctrl *ctrl, int sds_id, int page,
+				 int regnum, int bithigh, int bitlow)
 {
 	int mask, val;
 
 	WARN_ON(bithigh < bitlow);
 
 	mask = GENMASK(bithigh, bitlow);
-	val = rtpcs_sds_read(sds, page, regnum);
+	val = __rtpcs_sds_read(ctrl, sds_id, page, regnum);
 	if (val < 0)
 		return val;
 
 	return (val & mask) >> bitlow;
 }
 
-static int rtpcs_sds_write(struct rtpcs_serdes *sds, int page, int regnum, u16 value)
+static int rtpcs_sds_read(struct rtpcs_serdes *sds, int page, int regnum)
+{
+	return __rtpcs_sds_read(sds->ctrl, sds->id, page, regnum);
+}
+
+static int rtpcs_sds_read_bits(struct rtpcs_serdes *sds, int page, int regnum,
+			       int bithigh, int bitlow)
+{
+	return __rtpcs_sds_read_bits(sds->ctrl, sds->id, page, regnum, bithigh, bitlow);
+}
+
+/* Write helpers */
+
+static int __rtpcs_sds_write(struct rtpcs_ctrl *ctrl, int sds_id, int page, int regnum,
+			     u16 value)
 {
 	int mmd_regnum = rtpcs_sds_to_mmd(page, regnum);
 
-	return mdiobus_c45_write(sds->ctrl->bus, sds->id, MDIO_MMD_VEND1,
+	return mdiobus_c45_write(ctrl->bus, sds_id, MDIO_MMD_VEND1,
 				 mmd_regnum, value);
 }
 
-static int rtpcs_sds_write_bits(struct rtpcs_serdes *sds, int page,
-				int regnum, int bithigh, int bitlow, u16 value)
+static int __rtpcs_sds_write_bits(struct rtpcs_ctrl *ctrl, int sds_id, int page,
+				  int regnum, int bithigh, int bitlow, u16 value)
 {
 	int mask, reg;
 
 	WARN_ON(bithigh < bitlow);
 
+	if (bithigh == 15 && bitlow == 0)
+		return __rtpcs_sds_write(ctrl, sds_id, page, regnum, value);
+
 	mask = GENMASK(bithigh, bitlow);
-	reg = rtpcs_sds_read(sds, page, regnum);
+	reg = __rtpcs_sds_read(ctrl, sds_id, page, regnum);
 	if (reg < 0)
 		return reg;
 
 	reg = (reg & ~mask);
 	reg |= (value << bitlow) & mask;
 
-	return rtpcs_sds_write(sds, page, regnum, reg);
+	return __rtpcs_sds_write(ctrl, sds_id, page, regnum, reg);
+}
+
+static int rtpcs_sds_write(struct rtpcs_serdes *sds, int page, int regnum, u16 value)
+{
+	return __rtpcs_sds_write(sds->ctrl, sds->id, page, regnum, value);
+}
+
+static int rtpcs_sds_write_bits(struct rtpcs_serdes *sds, int page, int regnum,
+				int bithigh, int bitlow, u16 value)
+{
+	return __rtpcs_sds_write_bits(sds->ctrl, sds->id, page, regnum, bithigh, bitlow, value);
 }
 
 static int rtpcs_sds_modify(struct rtpcs_serdes *sds, int page, int regnum,
@@ -897,6 +937,49 @@ static const u16 rtpcs_930x_sds_submode_regs[] = {
 	0x2d8, 0x2d8, 0x2d8, 0x2d8,0x2d8, 0x2d8 /* SDS_SUBMODE_CTRL1 */
 };
 static const u8 rtpcs_930x_sds_submode_lsb[] = { 0, 5, 0, 5, 10, 15, 20, 25 };
+
+/*
+ * Realtek uses some nasty logic for digital parts of SerDes 2 and 3.
+ *
+ * a) If a page is digital (aka < 4), SerDes 3 is mapped to SerDes 10.
+ *    This is already handled in the SerDes MDIO driver.
+ * b) Some operations need explicit digital writes which implicate dual-write, i.e.:
+ *      - SDS 2: write to SDS 2 + SDS 3
+ *      - SDS 3: write to SDS 10 + SDS 11
+ *
+ * There's no way elegant way to pass that to the SerDes MDIO driver so raw access
+ * is used. In this case, MDIO driver won't do any front-to-back SerDes mapping.
+ *
+ * This implements 'dal_longan_sds_xsg_field_write' and a combination of
+ * '_rtl9300_serdes_index_to_physical' and '_rtl9300_serdes_reg_write' from the SDK.
+ */
+
+static int rtpcs_930x_sds_xsg_write_bits(struct rtpcs_serdes *sds, int page, int regnum,
+					 int bithigh, int bitlow, u16 value)
+{
+	int ret, sds_id;
+
+	if (sds->id != 2 && sds->id != 3)
+		return -ENOTSUPP;
+
+	if (page >= 4)
+		return rtpcs_sds_write_bits(sds, page, regnum, bithigh, bitlow, value);
+
+	sds_id = (sds->id == 3) ? 10 : 2;
+	sds_id |= RTPCS_SDS_RAW_ACCESS;
+
+	ret = __rtpcs_sds_write_bits(sds->ctrl, sds_id, page, regnum, bithigh, bitlow, value);
+	if (ret)
+		return ret;
+
+	return __rtpcs_sds_write_bits(sds->ctrl, sds_id + 1, page, regnum, bithigh, bitlow, value);
+}
+
+__maybe_unused
+static int rtpcs_930x_sds_xsg_write(struct rtpcs_serdes *sds, int page, int regnum, u16 value)
+{
+	return rtpcs_930x_sds_xsg_write_bits(sds, page, regnum, 15, 0, value);
+}
 
 __always_unused
 static int __rtpcs_930x_sds_get_mac_mode(struct rtpcs_serdes *sds)
