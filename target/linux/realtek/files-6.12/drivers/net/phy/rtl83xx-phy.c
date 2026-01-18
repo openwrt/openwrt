@@ -498,14 +498,15 @@ static int rtl8214fc_resume(struct phy_device *phydev)
 static void rtl8214fc_media_set(struct phy_device *phydev, bool set_fibre)
 {
 	struct phy_device *basephy = get_base_phy(phydev);
+	int oldxpage = phy_read(basephy, RTL821XEXT_MEDIA_PAGE_SELECT);
 	int copper = set_fibre ? 0 : RTL8214FC_MEDIA_COPPER;
 	static int regs[] = {16, 19, 20, 21};
 	int reg = regs[phydev->mdio.addr & 3];
 
 	phydev_info(phydev, "switch to %s\n", set_fibre ? "fibre" : "copper");
-	phy_write_paged(basephy, RTL838X_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
+	phy_write(basephy, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
 	phy_modify_paged(basephy, RTL821X_PAGE_PORT, reg, RTL8214FC_MEDIA_COPPER, copper);
-	phy_write_paged(basephy, RTL838X_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
+	phy_write(basephy, RTL821XEXT_MEDIA_PAGE_SELECT, oldxpage);
 
 	if (!phydev->suspended) {
 		rtl8214fc_power_set(phydev, PORT_MII, !set_fibre);
