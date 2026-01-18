@@ -50,7 +50,7 @@ Signed-off-by: minda.chen <minda.chen@starfivetech.com>
  
  #include "xhci.h"
  #include "xhci-trace.h"
-@@ -1884,6 +1885,7 @@ EXPORT_SYMBOL_GPL(xhci_remove_secondary_
+@@ -1878,6 +1879,7 @@ EXPORT_SYMBOL_GPL(xhci_remove_secondary_
  void xhci_mem_cleanup(struct xhci_hcd *xhci)
  {
  	struct device	*dev = xhci_to_hcd(xhci)->self.sysdev;
@@ -58,7 +58,7 @@ Signed-off-by: minda.chen <minda.chen@starfivetech.com>
  	int i, j, num_ports;
  
  	cancel_delayed_work_sync(&xhci->cmd_timer);
-@@ -1934,6 +1936,13 @@ void xhci_mem_cleanup(struct xhci_hcd *x
+@@ -1928,6 +1930,13 @@ void xhci_mem_cleanup(struct xhci_hcd *x
  	xhci_dbg_trace(xhci, trace_xhci_dbg_init,
  			"Freed medium stream array pool");
  
@@ -72,7 +72,7 @@ Signed-off-by: minda.chen <minda.chen@starfivetech.com>
  	if (xhci->dcbaa)
  		dma_free_coherent(dev, sizeof(*xhci->dcbaa),
  				xhci->dcbaa, xhci->dcbaa->dma);
-@@ -2405,6 +2414,55 @@ xhci_create_secondary_interrupter(struct
+@@ -2399,6 +2408,55 @@ xhci_create_secondary_interrupter(struct
  }
  EXPORT_SYMBOL_GPL(xhci_create_secondary_interrupter);
  
@@ -128,7 +128,7 @@ Signed-off-by: minda.chen <minda.chen@starfivetech.com>
  int xhci_mem_init(struct xhci_hcd *xhci, gfp_t flags)
  {
  	struct xhci_interrupter *ir;
-@@ -2546,6 +2604,12 @@ int xhci_mem_init(struct xhci_hcd *xhci,
+@@ -2540,6 +2598,12 @@ int xhci_mem_init(struct xhci_hcd *xhci,
  
  	xhci->isoc_bei_interval = AVOID_BEI_INTERVAL_MAX;
  
@@ -160,7 +160,7 @@ Signed-off-by: minda.chen <minda.chen@starfivetech.com>
  	}
 --- a/drivers/usb/host/xhci-ring.c
 +++ b/drivers/usb/host/xhci-ring.c
-@@ -3726,7 +3726,8 @@ int xhci_queue_bulk_tx(struct xhci_hcd *
+@@ -3722,7 +3722,8 @@ int xhci_queue_bulk_tx(struct xhci_hcd *
  
  	full_len = urb->transfer_buffer_length;
  	/* If we have scatter/gather list, we use it. */

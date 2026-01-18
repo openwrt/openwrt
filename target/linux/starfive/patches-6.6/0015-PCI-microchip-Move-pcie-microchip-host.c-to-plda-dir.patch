@@ -37,7 +37,7 @@ Reviewed-by: Conor Dooley <conor.dooley@microchip.com>
  config PCI_HYPERV_INTERFACE
  	tristate "Microsoft Hyper-V PCI Interface"
  	depends on ((X86 && X86_64) || ARM64) && HYPERV && PCI_MSI
-@@ -345,4 +337,5 @@ config PCIE_XILINX_CPM
+@@ -344,4 +336,5 @@ config PCIE_XILINX_CPM
  source "drivers/pci/controller/cadence/Kconfig"
  source "drivers/pci/controller/dwc/Kconfig"
  source "drivers/pci/controller/mobiveil/Kconfig"
