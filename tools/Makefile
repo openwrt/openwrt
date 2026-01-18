@@ -109,8 +109,13 @@ $(curdir)/flex/compile := $(curdir)/libtool/compile
 $(curdir)/genext2fs/compile := $(curdir)/libtool/compile
 $(curdir)/gengetopt/compile := $(curdir)/libtool/compile
 $(curdir)/gmp/compile := $(curdir)/libtool/compile
+$(curdir)/gpgv2/compile := $(curdir)/libgpg-error/compile $(curdir)/npth/compile $(curdir)/libgcrypt/compile $(curdir)/libassuan/compile $(curdir)/libksba/compile
 $(curdir)/isl/compile := $(curdir)/gmp/compile
+$(curdir)/libassuan/compile := $(curdir)/libgpg-error/compile
 $(curdir)/liblzo/compile := $(curdir)/cmake/compile
+$(curdir)/libgcrypt/compile := $(curdir)/libgpg-error/compile
+$(curdir)/libgpg-error/compile := $(curdir)/flock/compile
+$(curdir)/libksba/compile := $(curdir)/libgpg-error/compile
 $(curdir)/libressl/compile := $(curdir)/pkgconf/compile
 $(curdir)/libtool/compile := $(curdir)/automake/compile $(curdir)/gnulib/compile $(curdir)/missing-macros/compile
 $(curdir)/lz4/compile := $(curdir)/meson/compile
@@ -126,6 +131,7 @@ $(curdir)/mold/compile := $(curdir)/cmake/compile $(curdir)/zlib/compile $(curdi
 $(curdir)/mpc/compile := $(curdir)/mpfr/compile $(curdir)/gmp/compile
 $(curdir)/mpfr/compile := $(curdir)/gmp/compile
 $(curdir)/mtd-utils/compile := $(curdir)/libtool/compile $(curdir)/zlib/compile $(curdir)/util-linux/compile
+$(curdir)/npth/compile := $(curdir)/flock/compile
 $(curdir)/padjffs2/compile := $(curdir)/findutils/compile
 $(curdir)/patchelf/compile := $(curdir)/libtool/compile
 $(curdir)/pkgconf/compile := $(curdir)/meson/compile
@@ -166,21 +172,27 @@ endif
 # dependency for tools which have patches directory
 $(foreach tool, $(tools-y), $(if $(wildcard $(curdir)/$(tool)/patches),$(eval $(curdir)/$(tool)/compile += $(curdir)/patch/compile)))
 
-$(foreach tool, $(filter-out zstd,$(tools-y)), $(eval $(curdir)/$(tool)/compile += $(curdir)/zstd/compile))
+$(foreach tool, $(filter-out zstd libgpg-error npth libgcrypt libassuan libksba gpgv2,$(tools-y)), $(eval $(curdir)/$(tool)/compile += $(curdir)/zstd/compile))
 
 # make any tool depend on the following to ensure that archives can be unpacked and patched properly
 tools-core += libdeflate
+tools-core += libgpg-error
+tools-core += npth
+tools-core += libgcrypt
+tools-core += libassuan
+tools-core += libksba
+tools-core += gpgv2
 tools-core += patch
 tools-core += tar
 tools-core += zstd
 
-$(foreach tool, $(tools-y), $(eval $(curdir)/$(tool)/compile += $(patsubst %,$(curdir)/%/compile,$(tools-core))))
+$(foreach tool, $(filter-out $(tools-core),$(tools-y)), $(eval $(curdir)/$(tool)/compile += $(patsubst %,$(curdir)/%/compile,$(tools-core))))
 tools-y += $(tools-core)
 
 # make some core tools depend on sed and flock
 $(curdir)/patch/compile += $(curdir)/sed/compile
 $(curdir)/tar/compile += $(curdir)/sed/compile
-$(curdir)/zstd/compile += $(curdir)/libdeflate/compile
+$(curdir)/zstd/compile += $(curdir)/libdeflate/compile $(curdir)/gpgv2/compile
 
 $(curdir)/sed/compile := $(curdir)/flock/compile $(curdir)/zstd/compile
 tools-y += flock sed
