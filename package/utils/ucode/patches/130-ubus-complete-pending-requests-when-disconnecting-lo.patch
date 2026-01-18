@@ -23,7 +23,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
      add_definitions(-DHAVE_NEW_UBUS_STATUS_CODES)
    endif()
 +  if(HAVE_UBUS_FLUSH_REQUESTS)
-+    add_definitions(-DHAVE_UBUS_FLUSH_REQUESTS)
++    target_compile_definitions(ubus_lib PRIVATE HAVE_UBUS_FLUSH_REQUESTS)
 +  endif()
    if (HAVE_UBUS_NEW_OBJ_CB)
      target_compile_definitions(ubus_lib PUBLIC HAVE_UBUS_NEW_OBJ_CB)
