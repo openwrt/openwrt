@@ -91,10 +91,12 @@ found:
 	val = ioread32(reg + 4);
 	chip_id = val & 0xffff;
 
-	if (model_id < 0x9300)
-		chip_version = val >> 16 & 0x1f;
+	if (model_id < 0x8390)
+		chip_version = (val >> 16) & 0x1f;
+	else if (model_id < 0x9300)
+		chip_version = ((val >> 16) & 0x1f) + 1;
 	else
-		chip_version = val >> 28 & 0x0f;
+		chip_version = ((val >> 28) & 0x0f) + 1;
 
 	snprintf(buffer, len, "RTL%04X%c (chip id %04x%c)",
 		 model_id, model_version ? model_version + 64 : 0,

@@ -27,8 +27,8 @@
 
 	rtl8366rb {
 		compatible = "realtek,rtl8366rb";
-		gpio-sda = <&gpio 35 GPIO_ACTIVE_HIGH>;
-		gpio-sck = <&gpio 37 GPIO_ACTIVE_HIGH>;
+		sda-gpios = <&gpio 35 GPIO_ACTIVE_HIGH>;
+		sck-gpios = <&gpio 37 GPIO_ACTIVE_HIGH>;
 
 		realtek,initvals = <
 			0x0000 0x0830

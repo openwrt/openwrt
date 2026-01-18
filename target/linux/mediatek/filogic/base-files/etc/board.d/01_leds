@@ -6,6 +6,10 @@ board=$(board_name)
 board_config_update
 
 case $board in
+airpi,ap3000m)
+	ucidef_set_led_netdev "wlan2g" "WLAN2G" "orange:wlan-2ghz" "phy0-ap0" "link tx rx"
+	ucidef_set_led_netdev "wlan5g" "WLAN5G" "white:wlan-5ghz" "phy1-ap0" "link tx rx"
+	;;
 abt,asr3000)
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1"
 	ucidef_set_led_netdev "wlan2g" "WLAN2G" "green:wlan-2ghz" "phy0-ap0"
@@ -21,6 +25,7 @@ acer,predator-w6x-ubootmod)
 	ucidef_set_led_netdev "wan" "wan" "rgb:status" "eth1"
 	;;
 asus,rt-ax52|\
+asus,rt-ax57m|\
 snr,snr-cpe-ax2)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan" "link tx rx"
 	;;
@@ -58,6 +63,7 @@ bananapi,bpi-r4-lite)
 	ucidef_set_led_netdev "sfp0" "sfp0" "green:sfp" "sfp0" "link tx rx"
 	;;
 cudy,re3000-v1|\
+kebidumei,ax3000-u22|\
 wavlink,wl-wn573hx3)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0" "link tx rx"
 	;;
@@ -73,6 +79,14 @@ cudy,wr3000p-v1)
 	ucidef_set_led_netdev "lan4" "lan4" "white:lan-4" "lan4" "link tx rx"
 	ucidef_set_led_netdev "wan" "wan" "white:wan" "wan" "link tx rx"
 	ucidef_set_led_netdev "internet" "internet" "white:wan-online" "wan" "link"
+	;;
+cudy,wbr3000uax-v1|\
+cudy,wbr3000uax-v1-ubootmod)
+	ucidef_set_led_default "internet_off" "internet_off" "red:fault" "1"
+	ucidef_set_led_netdev "internet" "internet" "blue:wan-online" "wan" "link"
+	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan" "tx rx"
+	ucidef_set_led_default "lan_off" "lan_off" "red:wps" "1"
+	ucidef_set_led_netdev "lan" "lan" "blue:lan" "br-lan" "link tx rx"
 	;;
 elecom,wrc-x3000gs3)
 	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan"
@@ -102,6 +116,12 @@ iptime,ax3000sm)
 	;;
 iptime,ax7800m-6e)
 	ucidef_set_led_netdev "wan" "wan" "mdio-bus:06:blue:wan" "eth1" "link tx rx"
+	;;
+keenetic,kn-1812|\
+netcraze,nc-1812)
+	ucidef_set_led_netdev "wlan2g" "WLAN2G" "green:indicator-1" "phy0.0-ap0"
+	ucidef_set_led_netdev "wlan5g" "WLAN5G" "green:wlan" "phy0.1-ap0"
+	ucidef_set_led_netdev "internet" "internet" "green:wan-online" "wan" "link"
 	;;
 mercusys,mr80x-v3)
 	ucidef_set_led_netdev "lan1" "lan-1" "green:lan-1" "lan1" "link tx rx"
@@ -144,6 +164,10 @@ netgear,eax17)
 netgear,wax220)
 	ucidef_set_led_netdev "eth0" "LAN" "green:lan" "eth0"
 	;;
+netis,nx30v2)
+	ucidef_set_led_netdev "wanlink" "WANLINK" "blue:wan" "eth1" "link"
+	ucidef_set_led_netdev "wanact" "WANACT" "blue:wan-online" "eth1" "tx rx"
+	;;
 netis,nx31)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "eth1" "link tx rx"
 	;;
@@ -184,6 +208,14 @@ routerich,ax3000-v1)
 	ucidef_set_led_netdev "lan-3" "lan-3" "blue:lan-3" "lan3" "link tx rx"
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "eth1" "link tx rx"
 	ucidef_set_led_netdev "wan-off" "wan-off" "red:wan" "eth1" "link"
+	;;
+routerich,be7200)
+	ucidef_set_led_netdev "lan-1" "lan-1" "blue:lan-1" "lan1" "link tx rx"
+	ucidef_set_led_netdev "lan-2" "lan-2" "blue:lan-2" "lan2" "link tx rx"
+	ucidef_set_led_netdev "lan-3" "lan-3" "blue:lan-3" "lan3" "link tx rx"
+	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan" "link tx rx"
+	ucidef_set_led_netdev "wan-off" "wan-off" "red:wan" "wan" "link"
+	ucidef_set_led_netdev "wlan5g" "wlan-5ghz" "blue:wlan-5ghz" "phy0.1-ap0" "link tx rx"
 	;;
 smartrg,sdg-8612)
 	ucidef_set_led_netdev "lan4" "LAN4" "mdio-bus:05:amber:lan" "lan4" "link_10 link_100"
@@ -237,6 +269,9 @@ teltonika,rutc50)
 totolink,x6000r)
 	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan" "link tx rx"
 	;;
+tplink,archer-ax80-v1-eu)
+	ucidef_set_led_netdev "lan" "LAN" "white:lan" "br-lan" "link tx rx"
+	;;
 tplink,be450)
 	ucidef_set_led_netdev "br-lan" "lan" "blue:lan" "br-lan" "link tx rx"
 	ucidef_set_led_netdev "wlan2g" "WLAN2G" "blue:wlan-2ghz" "phy0.0-ap0"
@@ -275,7 +310,8 @@ xiaomi,redmi-router-ax6000-stock|\
 xiaomi,redmi-router-ax6000-ubootmod)
 	ucidef_set_led_netdev "wan" "wan" "rgb:network" "wan"
 	;;
-zbtlink,zbt-z8103ax)
+zbtlink,zbt-z8103ax|\
+zbtlink,zbt-z8103ax-c)
 	ucidef_set_led_netdev "wan" "wan" "green:wan" "eth1" "link tx rx"
 	;;
 zyxel,ex5601-t0-stock|\

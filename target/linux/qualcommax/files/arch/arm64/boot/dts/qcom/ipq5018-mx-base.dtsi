@@ -15,11 +15,6 @@
 		serial0 = &blsp1_uart1;
 	};
 
-	chosen {
-		bootargs-append = " root=/dev/ubiblock0_0 coherent_pool=2M";
-		stdout-path = "serial0:115200n8";
-	};
-
 	keys {
 		compatible = "gpio-keys";
 		pinctrl-0 = <&button_pins>;
@@ -113,10 +108,6 @@
 	pinctrl-names = "default";
 	status = "okay";
 
-	partitions {
-		status = "disabled";
-	};
-
 	nand@0 {
 		compatible = "spi-nand";
 		reg = <0>;
@@ -124,76 +115,10 @@
 		nand-bus-width = <8>;
 
 		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
+			compatible = "qcom,smem-part";
 
-			partition@0 {
-				label = "0:SBL1";
-				reg = <0x00000000 0x80000>;
-				read-only;
-			};
-
-			partition@80000 {
-				label = "0:MIBIB";
-				reg = <0x00080000 0x80000>;
-				read-only;
-			};
-
-			partition@100000 {
-				label = "0:QSEE";
-				reg = <0x00100000 0x100000>;
-				read-only;
-			};
-
-			partition@200000 {
-				label = "0:DEVCFG";
-				reg = <0x00200000 0x40000>;
-				read-only;
-			};
-
-			partition@240000 {
-				label = "0:CDT";
-				reg = <0x00240000 0x40000>;
-				read-only;
-			};
-
-			partition@280000 {
-				label = "0:APPSBLENV";
-				reg = <0x00280000 0x80000>;
-			};
-
-			partition@300000 {
-				label = "0:APPSBL";
-				reg = <0x00300000 0x140000>;
-				read-only;
-			};
-
-			partition@440000 {
-				label = "0:ART";
-				reg = <0x00440000 0x100000>;
-				read-only;
-			};
-
-			partition@540000 {
-				label = "0:TRAINING";
-				reg = <0x00540000 0x80000>;
-				read-only;
-			};
-
-			partition@5c0000 {
-				label = "u_env";
-				reg = <0x005c0000 0x80000>;
-			};
-
-			partition@640000 {
-				label = "s_env";
-				reg = <0x00640000 0x40000>;
-			};
-
-			partition@680000 {
+			partition-devinfo {
 				label = "devinfo";
-				reg = <0x00680000 0x40000>;
 				read-only;
 
 				nvmem-layout {
@@ -203,42 +128,9 @@
 
 					hw_mac_addr: hw_mac_addr {
 						compatible = "mac-base";
-
 						#nvmem-cell-cells = <1>;
 					};
 				};
-			};
-
-			partition@6c0000 {
-				label = "kernel";
-				reg = <0x006c0000 0x5200000>;
-			};
-
-			partition@ec0000 {
-				label = "rootfs";
-				reg = <0x0ec0000 0x4a00000>;
-			};
-
-			partition@58c0000 {
-				label = "alt_kernel";
-				reg = <0x058c0000 0x5200000>;
-			};
-
-			partition@60c0000 {
-				label = "alt_rootfs";
-				reg = <0x060c0000 0x4a00000>;
-			};
-
-			partition@aac0000 {
-				label = "sysdiag";
-				reg = <0x0aac0000 0x200000>;
-				read-only;
-			};
-
-			partition@acc0000 {
-				label = "syscfg";
-				reg = <0x0acc0000 0x4400000>;
-				read-only;
 			};
 		};
 	};

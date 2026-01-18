@@ -82,14 +82,14 @@
 
 	qcom,port_phyinfo {
 		// MAC0 -> GE Phy
-		port@0 {
+		port@1 {
 			port_id = <1>;
 			mdiobus = <&mdio0>;
 			phy_address = <7>;
 		};
 
 		// MAC1 -> Uniphy --- SGMII --- QCA8081
-		port@1 {
+		port@2 {
 			port_id = <2>;
 			mdiobus = <&mdio1>;
 			phy_address = <28>;
@@ -286,10 +286,6 @@
 	pinctrl-0 = <&qpic_pins>;
 	pinctrl-names = "default";
 	status = "okay";
-
-	partitions {
-		status = "disabled";
-	};
 
 	nand@0 {
 		compatible = "spi-nand";

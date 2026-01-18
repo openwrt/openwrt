@@ -9,7 +9,8 @@ ipq50xx_setup_interfaces()
 	case $board in
 	elecom,wrc-x3000gs2|\
 	iodata,wn-dax3000gr|\
-	linksys,mr5500)
+	linksys,mr5500|\
+	zyxel,scr50axe)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
 	glinet,gl-b3000)
@@ -22,6 +23,7 @@ ipq50xx_setup_interfaces()
 	xiaomi,ax6000)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
+	linksys,mx6200|\
 	yuncore,ax830|\
 	yuncore,ax850)
 		ucidef_set_interfaces_lan_wan "lan" "wan"

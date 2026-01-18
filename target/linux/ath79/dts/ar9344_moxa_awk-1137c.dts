@@ -49,25 +49,17 @@
 
 		led-2 {
 			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_WLAN;
-			function-enumerator = <0>;
-			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
-		};
-
-		led-3 {
-			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_WAN;
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		};
 
-		led-4 {
+		led-3 {
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_LAN;
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 
-		led-5 {
+		led-4 {
 			color = <LED_COLOR_ID_YELLOW>;
 			function = LED_FUNCTION_WLAN;
 			function-enumerator = <1>;
@@ -157,6 +149,16 @@
 				label = "art";
 				reg = <0xfe0000 0x010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+				};
 			};
 
 			partition@ff0000 {
@@ -174,5 +176,12 @@
 
 &wmac {
 	status = "okay";
-	qca,no-eeprom;
+
+	nvmem-cells = <&cal_art_1000>;
+	nvmem-cell-names = "calibration";
+
+	led {
+		led-sources = <12>;
+		led-active-low;
+	};
 };

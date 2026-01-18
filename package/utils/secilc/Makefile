@@ -31,7 +31,7 @@ define Package/secilc
 	SECTION:=utils
 	CATEGORY:=Utilities
 	TITLE:=SELinux Common Intermediate Language (CIL) Compiler
-	URL:=http://selinuxproject.org/page/Main_Page
+	URL:=https://github.com/selinuxproject
 	DEPENDS:=+libsepol
 endef
 

@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libunwind
 PKG_VERSION:=1.8.3
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/libunwind/libunwind/releases/download/v$(PKG_VERSION)/
@@ -31,7 +31,7 @@ define Package/libunwind
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=The libunwind project
-  URL:=http://www.nongnu.org/libunwind/
+  URL:=https://www.nongnu.org/libunwind/
   DEPENDS:=@!(USE_MUSL&&(powerpc)) +zlib
   ABI_VERSION:=8
 endef

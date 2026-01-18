@@ -255,7 +255,7 @@ static int rtldsa_bus_c45_write(struct mii_bus *bus, int addr, int devad, int re
 	return mdiobus_c45_write_nested(priv->parent_bus, addr, devad, regnum, val);
 }
 
-static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
+static int rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 {
 	struct device_node *dn, *phy_node, *pcs_node, *led_node, *np, *mii_np;
 	struct device *dev = priv->dev;
@@ -331,12 +331,14 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 			continue;
 		}
 
-		priv->pcs[pn] = rtpcs_create(priv->dev, pcs_node, pn);
-		if (IS_ERR(priv->pcs[pn])) {
-			dev_err(priv->dev, "port %u failed to create PCS instance: %ld\n",
-				pn, PTR_ERR(priv->pcs[pn]));
-			priv->pcs[pn] = NULL;
-			continue;
+		if (pcs_node) {
+			priv->pcs[pn] = rtpcs_create(priv->dev, pcs_node, pn);
+			if (IS_ERR(priv->pcs[pn])) {
+				dev_err(priv->dev, "port %u failed to create PCS instance: %ld\n",
+					pn, PTR_ERR(priv->pcs[pn]));
+				priv->pcs[pn] = NULL;
+				continue;
+			}
 		}
 
 		if (of_get_phy_mode(dn, &interface))
@@ -356,6 +358,7 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 			sprintf(led_set_str, "led_set%d", led_set);
 			priv->ports[pn].leds_on_this_port = of_property_count_u32_elems(led_node, led_set_str);
 			if (priv->ports[pn].leds_on_this_port > 4) {
+				of_node_put(dn);
 				dev_err(priv->dev, "led_set %d for port %d configuration is invalid\n", led_set, pn);
 				return -ENODEV;
 			}
@@ -365,14 +368,6 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 			if (priv->pcs[pn])
 				priv->ports[pn].phy_is_integrated = true;
 
-			continue;
-		}
-
-		/* Check for the integrated SerDes of the RTL8380M first */
-		if (of_property_read_bool(phy_node, "phy-is-integrated")
-		    && priv->id == 0x8380 && pn >= 24) {
-			pr_debug("----> FOUND A SERDES\n");
-			priv->ports[pn].phy = PHY_RTL838X_SDS;
 			continue;
 		}
 
@@ -407,17 +402,10 @@ static int __init rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 		sw_w32_mask(BIT(7), 0, RTL839X_SMI_GLB_CTRL);
 	}
 
-	/* Power on fibre ports and reset them if necessary */
-	if (priv->ports[24].phy == PHY_RTL838X_SDS) {
-		pr_debug("Powering on fibre ports & reset\n");
-		rtl8380_sds_power(24, 1);
-		rtl8380_sds_power(26, 1);
-	}
-
 	return 0;
 }
 
-static int __init rtl83xx_get_l2aging(struct rtl838x_switch_priv *priv)
+static int rtl83xx_get_l2aging(struct rtl838x_switch_priv *priv)
 {
 	int t = sw_r32(priv->r->l2_ctrl_1);
 
@@ -1403,7 +1391,7 @@ static int rtldsa_ethernet_loaded(struct platform_device *pdev)
 	return ret;
 }
 
-static int __init rtl83xx_sw_probe(struct platform_device *pdev)
+static int rtl83xx_sw_probe(struct platform_device *pdev)
 {
 	struct rtl838x_switch_priv *priv;
 	struct device *dev = &pdev->dev;
@@ -1695,8 +1683,8 @@ static const struct of_device_id rtl83xx_switch_of_ids[] = {
 MODULE_DEVICE_TABLE(of, rtl83xx_switch_of_ids);
 
 static struct platform_driver rtl83xx_switch_driver = {
-	.probe = rtl83xx_sw_probe,
-	.remove_new = rtl83xx_sw_remove,
+	.probe  = rtl83xx_sw_probe,
+	.remove = rtl83xx_sw_remove,
 	.driver = {
 		.name = "rtl83xx-switch",
 		.pm = NULL,

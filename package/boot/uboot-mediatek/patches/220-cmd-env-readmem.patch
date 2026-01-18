@@ -104,7 +104,7 @@
 +U_BOOT_CMD_COMPLETE(
 +	readmem,	CONFIG_SYS_MAXARGS,	3,	do_env_readmem,
 +	"get environment variable from memory address",
-+	"name [-b] address size\n"
++	"[-b] name address size\n"
 +	"    - store memory address to env variable\n"
 +	"      \"-b\": read binary ethaddr",
 +	var_complete

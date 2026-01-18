@@ -31,7 +31,7 @@ define Package/libsemanage
   DEPENDS:=+libaudit +libselinux +libbz2
   CATEGORY:=Libraries
   TITLE:=SELinux policy management library
-  URL:=http://selinuxproject.org/page/Main_Page
+  URL:=https://github.com/selinuxproject
 endef
 
 define Package/libsemanage/description

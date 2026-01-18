@@ -74,22 +74,20 @@
 &pcie0 {
 	status = "okay";
 
-	ath9k0: wifi@11,0 { /* 2.4 GHz */
+	wifi@11,0 { /* 2.4 GHz */
 		compatible = "pci168c,0029";
 		reg = <0x8800 0 0 0 0>;
-		qca,no-eeprom;
-		nvmem-cells = <&macaddr_config_66 1>;
-		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&macaddr_config_66 1>, <&cal_art_11000>;
+		nvmem-cell-names = "mac-address", "calibration";
 		#gpio-cells = <2>;
 		gpio-controller;
 	};
 
-	ath9k1: wifi@12,0 { /* 5 GHz */
+	wifi@12,0 { /* 5 GHz */
 		compatible = "pci168c,0029";
 		reg = <0x9000 0 0 0 0>;
-		qca,no-eeprom;
-		nvmem-cells = <&macaddr_config_66 2>;
-		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&macaddr_config_66 2>, <&cal_art_15000>;
+		nvmem-cell-names = "mac-address", "calibration";
 		#gpio-cells = <2>;
 		gpio-controller;
 	};
@@ -139,7 +137,7 @@
 				read-only;
 			};
 
-			config: partition@80000 {
+			partition@80000 {
 				label = "config";
 				reg = <0x80000 0x20000>;
 				read-only;
@@ -167,6 +165,20 @@
 				label = "art";
 				reg = <0xfe0000 0x20000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_art_11000: calibration@11000 {
+						reg = <0x11000 0xeb8>;
+					};
+
+					cal_art_15000: calibration@15000 {
+						reg = <0x15000 0xeb8>;
+					};
+				};
 			};
 		};
 	};

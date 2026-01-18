@@ -49,12 +49,7 @@ case "$board" in
 		;;
 	engenius,ecb1200|\
 	engenius,ecb1750)
-		[ "$PHYNBR" -eq 0 ] && \
-			mtd_get_mac_ascii u-boot-env athaddr > /sys${DEVPATH}/macaddress
-		;;
-	engenius,ews511ap)
-		[ "$PHYNBR" -eq 0 ] && \
-		macaddr_add $(cat /sys/class/net/eth0/address) 1 > /sys${DEVPATH}/macaddress
+		macaddr_add "$(mtd_get_mac_ascii u-boot-env athaddr)" ${PHYNBR} > /sys${DEVPATH}/macaddress
 		;;
 	enterasys,ws-ap3705i)
 		[ "$PHYNBR" -eq 0 ] && \
@@ -65,7 +60,6 @@ case "$board" in
 	extreme-networks,ws-ap3805i)
 		[ "$PHYNBR" -eq 0 ] && \
 			mtd_get_mac_ascii cfg1 RADIOADDR0 > /sys${DEVPATH}/macaddress
-		;;
 		[ "$PHYNBR" -eq 1 ] && \
 			mtd_get_mac_ascii cfg1 RADIOADDR1 > /sys${DEVPATH}/macaddress
 		;;
@@ -76,7 +70,6 @@ case "$board" in
 		# which would allow to patch the macaddress
 		[ "$PHYNBR" -eq 0 ] && \
 			macaddr_add "$(mtd_get_mac_ascii u-boot-env ethaddr)" 1 > /sys${DEVPATH}/macaddress
-		;;
 		[ "$PHYNBR" -eq 1 ] && \
 			macaddr_add "$(mtd_get_mac_ascii u-boot-env ethaddr)" 0 > /sys${DEVPATH}/macaddress
 		;;
@@ -85,10 +78,9 @@ case "$board" in
 		# which would allow to patch the macaddress
 		macaddr_add "$(mtd_get_mac_ascii u-boot-env ethaddr)" $PHYNBR > /sys${DEVPATH}/macaddress
 		;;
-	sitecom,wlr-7100|\
-	sitecom,wlr-8100)
+	moxa,awk-1137c)
 		[ "$PHYNBR" -eq 0 ] && \
-			macaddr_add "$(mtd_get_mac_ascii u-boot-env ethaddr)" 1 > /sys${DEVPATH}/macaddress
+			mtd_get_mac_ascii u-boot-env mac_addr > /sys${DEVPATH}/macaddress
 		;;
 	dlink,dir-842-c1|\
 	dlink,dir-842-c2|\

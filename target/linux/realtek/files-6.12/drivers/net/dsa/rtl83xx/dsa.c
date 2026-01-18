@@ -614,6 +614,10 @@ static int rtl93xx_setup(struct dsa_switch *ds)
 	}
 	priv->r->traffic_set(priv->cpu_port, BIT_ULL(priv->cpu_port));
 
+	/* Configure how MAC gets PHY ability for each port */
+	if (priv->family_id == RTL9310_FAMILY_ID)
+		rtldsa_931x_config_phy_ability_source(priv);
+
 	if (priv->family_id == RTL9300_FAMILY_ID)
 		rtl930x_print_matrix();
 	else if (priv->family_id == RTL9310_FAMILY_ID)
@@ -650,43 +654,6 @@ static struct phylink_pcs *rtldsa_phylink_mac_select_pcs(struct dsa_switch *ds,
 	struct rtl838x_switch_priv *priv = ds->priv;
 
 	return priv->pcs[port];
-}
-
-static void rtl83xx_config_interface(int port, phy_interface_t interface)
-{
-	u32 old, int_shift, sds_shift;
-
-	switch (port) {
-	case 24:
-		int_shift = 0;
-		sds_shift = 5;
-		break;
-	case 26:
-		int_shift = 3;
-		sds_shift = 0;
-		break;
-	default:
-		return;
-	}
-
-	old = sw_r32(RTL838X_SDS_MODE_SEL);
-	switch (interface) {
-	case PHY_INTERFACE_MODE_1000BASEX:
-		if ((old >> sds_shift & 0x1f) == 4)
-			return;
-		sw_w32_mask(0x7 << int_shift, 1 << int_shift, RTL838X_INT_MODE_CTRL);
-		sw_w32_mask(0x1f << sds_shift, 4 << sds_shift, RTL838X_SDS_MODE_SEL);
-		break;
-	case PHY_INTERFACE_MODE_SGMII:
-		if ((old >> sds_shift & 0x1f) == 2)
-			return;
-		sw_w32_mask(0x7 << int_shift, 2 << int_shift, RTL838X_INT_MODE_CTRL);
-		sw_w32_mask(0x1f << sds_shift, 2 << sds_shift, RTL838X_SDS_MODE_SEL);
-		break;
-	default:
-		return;
-	}
-	pr_debug("configured port %d for interface %s\n", port, phy_modes(interface));
 }
 
 static void rtldsa_83xx_phylink_get_caps(struct dsa_switch *ds, int port,
@@ -754,7 +721,7 @@ static void rtl83xx_phylink_mac_config(struct dsa_switch *ds, int port,
 	mcr = sw_r32(priv->r->mac_force_mode_ctrl(port));
 	if (mode == MLO_AN_PHY || phylink_autoneg_inband(mode)) {
 		pr_debug("port %d PHY autonegotiates\n", port);
-		rtl83xx_config_interface(port, state->interface);
+
 		mcr |= RTL838X_NWAY_EN;
 	} else {
 		mcr &= ~RTL838X_NWAY_EN;

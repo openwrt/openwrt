@@ -32,7 +32,7 @@ define Package/libreadline
   CATEGORY:=Libraries
   TITLE:=Command lines edition library
   DEPENDS:=+libncursesw
-  URL:=http://cnswww.cns.cwru.edu/php/chet/readline/rltop.html
+  URL:=https://tiswww.case.edu/php/chet/readline/rltop.html
   ABI_VERSION:=8
 endef
 
@@ -57,7 +57,10 @@ CONFIGURE_VARS += \
 	bash_cv_termcap_lib=libncursesw
 
 TARGET_CFLAGS += $(FPIC)
-HOST_CFLAGS += $(FPIC)
+TARGET_LDFLAGS += $(FPIC)
+
+HOST_CFLAGS += $(HOST_FPIC)
+HOST_LDFLAGS += $(HOST_FPIC)
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include

@@ -44,8 +44,8 @@ struct rtl8366_mib_counter {
 
 struct rtl8366_smi {
 	struct device		*parent;
-	unsigned int		gpio_sda;
-	unsigned int		gpio_sck;
+	struct gpio_desc	*gpio_sda;
+	struct gpio_desc	*gpio_sck;
 	void			(*hw_reset)(struct rtl8366_smi *smi, bool active);
 	unsigned int		clk_delay;	/* ns */
 	u8			cmd_read;

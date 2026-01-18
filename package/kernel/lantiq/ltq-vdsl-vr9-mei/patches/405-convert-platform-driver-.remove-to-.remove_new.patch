@@ -30,12 +30,3 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  }
  
  static const struct of_device_id ltq_dsl_cpe_mei_match[] = {
-@@ -2070,7 +2069,7 @@ static struct platform_driver ltq_dsl_cp
-       .owner          = THIS_MODULE,
-       .of_match_table = ltq_dsl_cpe_mei_match,
-    },
--   .remove = __exit_p(ltq_dsl_cpe_mei_remove),
-+   .remove_new = __exit_p(ltq_dsl_cpe_mei_remove),
- };
- 
- static int __init ltq_dsl_cpe_mei_probe(struct platform_device *pdev)

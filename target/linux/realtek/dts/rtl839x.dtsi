@@ -213,6 +213,19 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		ethernet0: ethernet {
+			compatible = "realtek,rtl8392-eth";
+			interrupt-parent = <&intc>;
+			interrupts = <24 3>;
+			#interrupt-cells = <1>;
+			phy-mode = "internal";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+
 		mdio_ctrl: mdio-controller {
 			compatible = "realtek,rtl8392-mdio", "realtek,otto-mdio";
 			#address-cells = <1>;
@@ -331,21 +344,6 @@
 		/* enable AUX MDC/MDIO */
 		mdio_aux_mdx: aux-mdx-pins {
 			pinctrl-single,bits = <0x0 0x100000 0x1c0000>;
-		};
-	};
-
-	ethernet0: ethernet@1b00a300 {
-		compatible = "realtek,rtl838x-eth";
-		reg = <0x1b00a300 0x100>;
-
-		interrupt-parent = <&intc>;
-		interrupts = <24 3>;
-
-		phy-mode = "internal";
-
-		fixed-link {
-			speed = <1000>;
-			full-duplex;
 		};
 	};
 

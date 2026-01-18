@@ -41,10 +41,19 @@ typedef void (*entry_func_t)(unsigned long reg_a0, unsigned long reg_a1,
 			     unsigned long reg_a2, unsigned long reg_a3);
 
 
-static bool is_uimage(void *m)
+static bool is_uimage(unsigned char *m)
 {
 	unsigned int data[UIMAGE_HDR_SIZE / sizeof(int)];
 	unsigned int image_crc;
+
+	/*
+	 * The most basic way to find a uImage is to lookup the operating system
+	 * opcode (for Linux it is 5). Then verify the header checksum. This is
+	 * reasonably fast and all other magic value or constants can be avoided.
+	 */
+
+	if (m[28] != UIMAGE_OS_LINUX)
+		return false;
 
 	memcpy(data, m, UIMAGE_HDR_SIZE);
 	image_crc = data[1];
@@ -119,24 +128,15 @@ void *decompress(void *out, void *in, int len)
 	return out;
 }
 
-void search_image(void **flash_addr, int *flash_size, void **load_addr)
+void search_image(void **image_addr, int *image_size, void **load_addr)
 {
-	unsigned char *addr = *flash_addr;
-	unsigned int image_size = 0;
-	unsigned int *maxaddr;
+	unsigned char *addr = *image_addr;
 
-	printf("Searching for uImage starting at 0x%08x ...\n", addr);
-
-	/*
-	 * The most basic way to find a uImage is to lookup the operating system
-	 * opcode (for Linux it is 5). Then verify the header checksum. This is
-	 * reasonably fast and all other magic value or constants can be avoided.
-	 */
-	*flash_addr = NULL;
-	for (int i = 0; i < 256 * 1024; i += 4, addr += 4) {
-		if ((addr[28] == UIMAGE_OS_LINUX) && is_uimage(addr)) {
-			*flash_addr = addr;
-			*flash_size = *(int *)(addr + 12);
+	*image_addr = NULL;
+	for (int i = 0; i < 256 * 1024; i += 1, addr += 1) {
+		if (is_uimage(addr)) {
+			*image_addr = addr;
+			*image_size = *(int *)(addr + 12);
 			*load_addr = *(void **)(addr + 16);
 			_kernel_comp_type = addr[31];
 			break;
@@ -144,9 +144,15 @@ void search_image(void **flash_addr, int *flash_size, void **load_addr)
 	}
 }
 
-void load_kernel(void *flash_start)
+void load_uimage_from_flash(void *flash_start)
 {
 	void *flash_addr = flash_start;
+
+	/*
+	 * Loader has been started standalone. So no piggy backed kernel. Search
+	 * flash for kernel uImage and copy it to memory before the loader.
+	 */
+	printf("Searching for uImage starting at 0x%08x ...\n", flash_addr);
 
 	search_image(&flash_addr, &_kernel_data_size, &_kernel_load_addr);
 	_kernel_data_addr = _my_load_addr - _kernel_data_size - 1024;
@@ -164,10 +170,32 @@ void load_kernel(void *flash_start)
 	memcpy(_kernel_data_addr, flash_addr + UIMAGE_HDR_SIZE, _kernel_data_size);
 }
 
+bool search_piggy_backed_uimage(void)
+{
+	void *addr = _kernel_data_addr;
+
+	/*
+	 * Piggy-backed data might be an uImage or not. Run a lazy uImage check.
+	 * In case it fails it should be safe to assume an lzma data stream.
+	 */
+	search_image(&addr, &_kernel_data_size, &_kernel_load_addr);
+
+	if (!addr)
+		return false;
+
+	printf("piggy-backed uImage '%s' found at 0x%08x with load address 0x%08x\n",
+	       (char *)(addr + 32), addr, _kernel_load_addr);
+
+	_kernel_data_addr = addr + UIMAGE_HDR_SIZE;
+
+	return true;
+}
+
 void main(unsigned long reg_a0, unsigned long reg_a1,
 	  unsigned long reg_a2, unsigned long reg_a3)
 {
 	void *flash_start = (void *)FLASH_ADDR; /* from makefile */
+	void *kernel_addr = (void *)KERNEL_ADDR; /* from makefile */
 	entry_func_t fn;
 
 	/*
@@ -183,11 +211,13 @@ void main(unsigned long reg_a0, unsigned long reg_a1,
 	}
 
 	/*
-	 * Check if we have been started standalone. So no piggy backed kernel.
-	 * Search flash for kernel uImage and copy it to memory before the loader.
+	 * Usually the loader expects a piggy-backed lzma compressed kernel stream.
+	 * Evaluate alternative configurations for kernel loading and decompression.
 	 */
 	if (flash_start)
-		load_kernel(flash_start);
+		load_uimage_from_flash(flash_start);
+	else if (!search_piggy_backed_uimage() && kernel_addr)
+		_kernel_load_addr = kernel_addr;
 
 	/*
 	 * Finally extract the attached kernel image to the load address. This is

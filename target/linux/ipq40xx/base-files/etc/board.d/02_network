@@ -57,6 +57,7 @@ ipq40xx_setup_interfaces()
 	dlink,dap-2610|\
 	engenius,eap1300|\
 	extreme-networks,ws-ap3915i|\
+	meraki,mr20|\
 	meraki,mr33|\
 	meraki,mr74|\
 	mikrotik,lhgg-60ad|\
@@ -70,14 +71,14 @@ ipq40xx_setup_interfaces()
 	buffalo,wtr-m2133hp|\
 	ezviz,cs-w3-wd1200g-eup|\
 	netgear,rbr40|\
-	netgear,rbs40|\
 	netgear,rbr50|\
-	netgear,rbs50|\
-	netgear,srr60|\
-	netgear,srs60)
+	netgear,srr60)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
-	avm,fritzbox-7530)
+	avm,fritzbox-7530|\
+	netgear,rbs40|\
+	netgear,rbs50|\
+	netgear,srs60)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		;;
 	avm,fritzrepeater-3000|\
@@ -244,10 +245,9 @@ ipq40xx_setup_macs()
 		lan_mac=$(cat /sys/firmware/mikrotik/hard_config/mac_base)
 		label_mac="$lan_mac"
 		;;
+	netgear,rbr40|\
 	netgear,rbr50|\
-	netgear,rbs50|\
 	netgear,srr60|\
-	netgear,srs60|\
 	pakedge,wr-1)
 		wan_mac=$(macaddr_add $(get_mac_label) 1)
 		;;

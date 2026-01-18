@@ -22,7 +22,7 @@ define Package/libxml2
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Gnome XML library
-  URL:=http://xmlsoft.org/
+  URL:=https://gitlab.gnome.org/GNOME/libxml2
   DEPENDS:=+libpthread +zlib $(ICONV_DEPENDS)
   ABI_VERSION:=16
 endef
@@ -36,7 +36,7 @@ define Package/libxml2-dev
   CATEGORY:=Development
   SUBMENU:=Libraries
   TITLE:=Development files for libxml2
-  URL:=http://xmlsoft.org/
+  URL:=https://gitlab.gnome.org/GNOME/libxml2
   DEPENDS:=+libxml2
 endef
 
@@ -50,7 +50,7 @@ define Package/libxml2-utils
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=XML command line utilities (xmllint...)
-  URL:=http://xmlsoft.org/
+  URL:=https://gitlab.gnome.org/GNOME/libxml2
   DEPENDS:=+libxml2
 endef
 

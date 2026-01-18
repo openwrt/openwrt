@@ -298,7 +298,7 @@
 
 	qcom,port_phyinfo {
 		// MAC0 -> GE Phy --- MDI --- QCA8337 Switch
-		port@0 {
+		port@1 {
 			port_id = <1>;
 			mdiobus = <&mdio0>;
 			phy_address = <7>;
@@ -306,7 +306,7 @@
 		};
 
 		// MAC1 -> Uniphy --- SGMII --- QCA8081
-		port@1 {
+		port@2 {
 			port_id = <2>;
 			mdiobus = <&mdio1>;
 			phy_address = <8>;
@@ -393,6 +393,9 @@
 		reg = <17>;
 
 		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
 			port@1 {
 				reg = <1>;
 				label = "lan1";

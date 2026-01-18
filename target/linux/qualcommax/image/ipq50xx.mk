@@ -136,6 +136,24 @@ define Device/linksys_mx5500
 endef
 TARGET_DEVICES += linksys_mx5500
 
+define Device/linksys_mx6200
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Linksys
+	DEVICE_MODEL := MX6200
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_DTS_CONFIG := config@mp03.5-c1
+	KERNEL_SIZE := 8192k
+	IMAGE_SIZE := 51200k
+	NAND_SIZE := 256m
+	SOC := ipq5018
+	IMAGE/factory.ubi := append-ubi | linksys-image type=$$$$(DEVICE_MODEL)
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
+		ipq-wifi-linksys_mx6200
+endef
+TARGET_DEVICES += linksys_mx6200
+
 define Device/linksys_spnmx56
 	$(call Device/linksys_ipq50xx_mx_base)
 	DEVICE_MODEL := SPNMX56
@@ -200,3 +218,18 @@ define Device/yuncore_ax850
 		ipq-wifi-yuncore_ax850
 endef
 TARGET_DEVICES += yuncore_ax850
+
+define Device/zyxel_scr50axe
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := Zyxel
+	DEVICE_MODEL := SCR50AXE
+	SOC := ipq5018
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	NAND_SIZE := 256m
+	DEVICE_DTS_CONFIG := config@mp03.5-c1
+	DEVICE_PACKAGES := ath11k-firmware-ipq5018-qcn6122 \
+		ipq-wifi-zyxel_scr50axe
+endef
+TARGET_DEVICES += zyxel_scr50axe

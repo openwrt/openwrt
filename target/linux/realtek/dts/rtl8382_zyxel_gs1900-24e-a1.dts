@@ -30,14 +30,14 @@
 
 &switch0 {
 	ports {
-		SWITCH_PORT(1, 1, qsgmii)
-		SWITCH_PORT(0, 2, qsgmii)
-		SWITCH_PORT(3, 3, qsgmii)
-		SWITCH_PORT(2, 4, qsgmii)
-		SWITCH_PORT(5, 5, qsgmii)
-		SWITCH_PORT(4, 6, qsgmii)
-		SWITCH_PORT(7, 7, qsgmii)
-		SWITCH_PORT(6, 8, qsgmii)
+		SWITCH_PORT_SDS(1, 1, 0, qsgmii)
+		SWITCH_PORT_SDS(0, 2, 0, qsgmii)
+		SWITCH_PORT_SDS(3, 3, 0, qsgmii)
+		SWITCH_PORT_SDS(2, 4, 0, qsgmii)
+		SWITCH_PORT_SDS(5, 5, 1, qsgmii)
+		SWITCH_PORT_SDS(4, 6, 1, qsgmii)
+		SWITCH_PORT_SDS(7, 7, 1, qsgmii)
+		SWITCH_PORT_SDS(6, 8, 1, qsgmii)
 
 		SWITCH_PORT(9, 9, internal)
 		SWITCH_PORT(8, 10, internal)
@@ -48,14 +48,14 @@
 		SWITCH_PORT(15, 15, internal)
 		SWITCH_PORT(14, 16, internal)
 
-		SWITCH_PORT(17, 17, qsgmii)
-		SWITCH_PORT(16, 18, qsgmii)
-		SWITCH_PORT(19, 19, qsgmii)
-		SWITCH_PORT(18, 20, qsgmii)
-		SWITCH_PORT(21, 21, qsgmii)
-		SWITCH_PORT(20, 22, qsgmii)
-		SWITCH_PORT(23, 23, qsgmii)
-		SWITCH_PORT(22, 24, qsgmii)
+		SWITCH_PORT_SDS(17, 17, 2, qsgmii)
+		SWITCH_PORT_SDS(16, 18, 2, qsgmii)
+		SWITCH_PORT_SDS(19, 19, 2, qsgmii)
+		SWITCH_PORT_SDS(18, 20, 2, qsgmii)
+		SWITCH_PORT_SDS(21, 21, 3, qsgmii)
+		SWITCH_PORT_SDS(20, 22, 3, qsgmii)
+		SWITCH_PORT_SDS(23, 23, 3, qsgmii)
+		SWITCH_PORT_SDS(22, 24, 3, qsgmii)
 	};
 };
 

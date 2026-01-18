@@ -5,6 +5,18 @@
 
 /* Register definition */
 
+/*
+ * Reset
+ */
+#define RTL838X_RST_GLB_CTRL_0			(0x003c)
+#define RTL839X_RST_GLB_CTRL			(0x0014)
+#define RTL930X_RST_GLB_CTRL_0			(0x000c)
+#define RTL931X_RST_GLB_CTRL			(0x0400)
+
+/* Switch interrupts */
+#define RTL839X_IMR_PORT_LINK_STS_CHG		(0x0068)
+#define RTL839X_ISR_PORT_LINK_STS_CHG		(0x00a0)
+
 /* Per port MAC control */
 #define RTL838X_MAC_PORT_CTRL			(0xd560)
 #define RTL839X_MAC_PORT_CTRL			(0x8004)
@@ -90,14 +102,6 @@
 
 #define RTL838X_DMA_IF_TX_CUR_DESC_ADDR_CTRL	(0x9F48)
 #define RTL930X_DMA_IF_TX_CUR_DESC_ADDR_CTRL	(0xE008)
-
-#define RTL838X_DMY_REG31			(0x3b28)
-#define RTL838X_SDS_MODE_SEL			(0x0028)
-#define RTL838X_SDS_CFG_REG			(0x0034)
-#define RTL838X_INT_MODE_CTRL			(0x005c)
-#define RTL838X_SDS4_REG28			(0xef80)
-#define RTL838X_SDS4_DUMMY0			(0xef8c)
-#define RTL838X_SDS5_EXT_REG6			(0xf18c)
 
 /* L2 features */
 #define RTL839X_TBL_ACCESS_L2_CTRL		(0x1180)
@@ -192,20 +196,6 @@
 #define RTL931X_RMA_CTRL_1			(0x8804)
 #define RTL931X_RMA_CTRL_2			(0x8808)
 
-/* Advanced SMI control for clause 45 PHYs */
-#define RTL930X_SMI_MAC_TYPE_CTRL		(0xCA04)
-#define RTL930X_SMI_PORT24_27_ADDR_CTRL		(0xCB90)
-#define RTL930X_SMI_PORT0_15_POLLING_SEL	(0xCA08)
-#define RTL930X_SMI_PORT16_27_POLLING_SEL	(0xCA0C)
-
-#define RTL930X_SMI_10GPHY_POLLING_REG0_CFG	(0xCBB4)
-#define RTL930X_SMI_10GPHY_POLLING_REG9_CFG	(0xCBB8)
-#define RTL930X_SMI_10GPHY_POLLING_REG10_CFG	(0xCBBC)
-#define RTL930X_SMI_PRVTE_POLLING_CTRL		(0xCA10)
-
-/* Registers of the internal Serdes of the 8390 */
-#define RTL839X_SDS12_13_XSG0			(0xB800)
-
 /* Chip configuration registers of the RTL9310 */
 #define RTL931X_MEM_ENCAP_INIT			(0x4854)
 #define RTL931X_MEM_MIB_INIT			(0x7E18)
@@ -215,12 +205,6 @@
 #define RTL931X_MEM_ALE_INIT_2			(0x82E4)
 #define RTL931X_MDX_CTRL_RSVD			(0x0fcc)
 #define RTL931X_PS_SOC_CTRL			(0x13f8)
-#define RTL931X_SMI_10GPHY_POLLING_SEL2		(0xCF8)
-#define RTL931X_SMI_10GPHY_POLLING_SEL3		(0xCFC)
-#define RTL931X_SMI_10GPHY_POLLING_SEL4		(0xD00)
-
-/* Registers of the internal Serdes of the 8380 */
-#define RTL838X_SDS4_FIB_REG0			(0xF800)
 
 /* shared CPU tag definitions for RTL930X/RTL931X */
 #define RTL93XX_CPU_TAG1_FWD_MASK		GENMASK(11, 8)
@@ -434,8 +418,11 @@ inline u32 rtl931x_get_mac_tx_pause_sts(int p)
 
 struct p_hdr;
 struct dsa_tag;
+struct rteth_ctrl;
 
-struct rtl838x_eth_reg {
+struct rteth_config {
+	int family_id;
+	int cpu_port;
 	irqreturn_t (*net_irq)(int irq, void *dev_id);
 	int (*mac_port_ctrl)(int port);
 	int dma_if_intr_sts;
@@ -463,12 +450,12 @@ struct rtl838x_eth_reg {
 	u32 (*get_mac_tx_pause_sts)(int port);
 	int mac;
 	int l2_tbl_flush_ctrl;
-	void (*update_cntr)(int r, int work_done);
 	void (*create_tx_header)(struct p_hdr *h, unsigned int dest_port, int prio);
 	bool (*decode_tag)(struct p_hdr *h, struct dsa_tag *tag);
+	void (*hw_reset)(struct rteth_ctrl *ctrl);
+	int (*init_mac)(struct rteth_ctrl *ctrl);
+	void (*update_counter)(int r, int work_done);
+	const struct net_device_ops *netdev_ops;
 };
-
-/* TODO actually from arch/mips/rtl838x/prom.c */
-extern struct rtl83xx_soc_info soc_info;
 
 #endif /* _RTL838X_ETH_H */

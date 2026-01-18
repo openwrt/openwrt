@@ -30,6 +30,19 @@ define Build/rt-loader
 	mv "$@.new" "$@"
 endef
 
+define Build/rt-loader-no-uimage
+        $(MAKE) all clean -C rt-loader CROSS_COMPILE="$(TARGET_CROSS)" \
+                KERNEL_ADDR="$(KERNEL_LOADADDR)" KERNEL_IMG_IN="$@" \
+                KERNEL_IMG_OUT="$@.new" BUILD_DIR="$@.build"
+        mv "$@.new" "$@"
+endef
+
+define Build/rt-loader-standalone
+	$(MAKE) all clean -C rt-loader CROSS_COMPILE="$(TARGET_CROSS)" \
+		FLASH_ADDR=$(FLASH_ADDR) KERNEL_IMG_OUT="$@.new" BUILD_DIR="$@.build"
+	mv "$@.new" "$@"
+endef
+
 define Build/zyxel-vers
        ( echo VERS;\
        for hw in $(ZYXEL_VERS); do\
@@ -92,6 +105,12 @@ endef
 
 define Build/linksys-image
 	$(SCRIPT_DIR)/linksys-image.sh $(@) $(@).new $(LINKSYS_MODEL)
+	mv $@.new $@
+endef
+
+define Build/zynsig
+	$(STAGING_DIR_HOST)/bin/zynsig -i $@ \
+		-o $@.new
 	mv $@.new $@
 endef
 

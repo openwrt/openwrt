@@ -30,6 +30,10 @@ case "$FIRMWARE" in
 		ath11k_patch_mac $(macaddr_add $label_mac 2) 1
 		ath11k_set_macflag
 		;;
+	jdcloud,re-cs-02|\
+	jdcloud,re-ss-01)
+		caldata_extract_mmc "0:ART" 0x1000 0x10000
+		;;
 	linksys,mr7350|\
 	linksys,mr7500)
 		caldata_extract "0:art" 0x1000 0x10000
@@ -75,6 +79,9 @@ case "$FIRMWARE" in
 	case "$board" in
 	cambiumnetworks,xe3-4)
 		caldata_extract "0:ART" 0x26800 0x20000
+		;;
+	jdcloud,re-cs-02)
+		caldata_extract_mmc "0:ART" 0x26800 0x20000
 		;;
 	linksys,mr7500)
 		caldata_extract "0:art" 0x26800 0x20000

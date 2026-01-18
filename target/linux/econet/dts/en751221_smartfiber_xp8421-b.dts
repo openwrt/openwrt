@@ -31,27 +31,35 @@
 			label = "bootloader";
 			reg = <0x0 0x40000>;
 			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_bootloader_ff48: macaddr@ff48 {
+					compatible = "mac-base";
+					reg = <0xff48 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+			};
 		};
 
 		partition@40000 {
 			label = "romfile";
 			reg = <0x40000 0x40000>;
-			read-only;
 		};
 
 		partition@80000 {
 			label = "tclinux";
 			reg = <0x80000 0x1400000>;
-			read-only;
 			econet,enable-remap;
 		};
 
-		/* Nested inside of tclinux */
 		partition@480000 {
 			label = "rootfs";
 			reg = <0x480000 0xf80000>;
 			linux,rootfs;
-			read-only;
 		};
 
 		partition@1480000 {
@@ -77,6 +85,28 @@
 		partition@de40000 {
 			label = "reservearea";
 			reg = <0xde40000 0x1c0000>;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom_reserve_140000: eeprom@140000 {
+					/* MT7592 */
+					reg = <0x140000 0x200>;
+				};
+
+				eeprom_reserve_180040: eeprom@180040 {
+					/* MT7612E */
+					reg = <0x180040 0x600>;
+				};
+			};
 		};
 	};
+};
+
+&gmac0 {
+	status = "okay";
+	nvmem-cells = <&macaddr_bootloader_ff48 0>;
+	nvmem-cell-names = "mac-address";
 };

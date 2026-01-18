@@ -44,7 +44,12 @@ function iface_start(wdev)
 				push(cmd, key, wdev[key]);
 		system(cmd);
 	} else if (wdev.mode == "mesh") {
-		let cmd = [ "iw", "dev", ifname, "mesh", "join", wdev.ssid, "freq", wdev.freq, htmode ];
+		let cmd = [ "iw", "dev", ifname, "mesh", "join", wdev.ssid ];
+		if (wdev.freq) {
+			push(cmd, "freq", wdev.freq);
+			if (htmode && htmode != "NOHT")
+				push(cmd, htmode);
+		}
 		for (let key in [ "basic-rates", "mcast-rate", "beacon-interval" ])
 			if (wdev[key])
 				push(cmd, key, wdev[key]);

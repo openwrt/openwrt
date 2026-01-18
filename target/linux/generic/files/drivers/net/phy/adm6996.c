@@ -1208,8 +1208,8 @@ static void adm6996_gpio_remove(struct platform_device *pdev)
 }
 
 static struct platform_driver adm6996_gpio_driver = {
-	.probe = adm6996_gpio_probe,
-	.remove_new = adm6996_gpio_remove,
+	.probe  = adm6996_gpio_probe,
+	.remove = adm6996_gpio_remove,
 	.driver = {
 		.name = "adm6996_gpio",
 	},

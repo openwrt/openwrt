@@ -169,6 +169,10 @@ function format_rate(rate) {
 	return rate ? sprintf('%.01f', rate / 10.0) : 'unknown';
 }
 
+function format_expected_throughput(rate) {
+	return rate ? sprintf('%.01f', rate / 1000.0) : 'unknown';
+}
+
 function format_mgmt_key(key) {
 	switch(+key) {
 	case 1:
@@ -312,7 +316,7 @@ function dbm2quality(dbm) {
 }
 
 function hwmodelist(name) {
-	const mode = { 'HT*': 'n', 'VHT*': 'ac', 'HE*': 'ax' };
+	const mode = { 'HT*': 'n', 'VHT*': 'ac', 'HE*': 'ax', 'EHT*': 'be' };
 	let iface = ifaces[name];
 	let phy = board_data.wlan?.['phy' + iface.wiphy];
 	if (!phy || !iface.radio?.band)
@@ -352,7 +356,7 @@ export function assoclist(dev) {
 				packets: station.sta_info.tx_packets ?? 0,
 				flags: assoc_flags(station.sta_info.tx_bitrate ?? {}),
 			},
-			expected_throughput: station.sta_info.expected_throughput ?? 'unknown',
+			expected_throughput: format_expected_throughput(station.sta_info.expected_throughput ?? 0),
 		};
 		ret[sta.mac] = sta;
 	}

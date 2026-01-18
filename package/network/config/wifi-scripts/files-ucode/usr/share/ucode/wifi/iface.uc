@@ -4,6 +4,9 @@ import { append_value, log } from 'wifi.common';
 import * as fs from 'fs';
 
 export function parse_encryption(config, dev_config) {
+	if (!config.encryption)
+		return;
+
 	let encryption = split(config.encryption, '+', 2);
 
 	config.wpa = 0;
@@ -13,10 +16,11 @@ export function parse_encryption(config, dev_config) {
 			config.wpa = v;
 			break;
 		}
-	if (!config.wpa)
-		config.wpa_pairwise = null;
 
-	config.wpa_pairwise = (config.hw_mode == 'ad') ? 'GCMP' : 'CCMP';
+	config.wpa_pairwise = null;
+	if (config.wpa)
+		config.wpa_pairwise = (config.hw_mode == 'ad') ? 'GCMP' : 'CCMP';
+
 	config.auth_type = encryption[0] ?? 'none';
 
 	let wpa3_pairwise = config.wpa_pairwise;

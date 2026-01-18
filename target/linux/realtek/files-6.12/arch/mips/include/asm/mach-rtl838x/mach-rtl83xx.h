@@ -26,78 +26,8 @@
 #define RTL93XX_MODEL_NAME_INFO		(0x0004)
 #define RTL93XX_CHIP_INFO		(0x0008)
 
-#define RTL838X_LED_GLB_CTRL		(0xA000)
-#define RTL839X_LED_GLB_CTRL		(0x00E4)
-#define RTL930X_LED_GLB_CTRL		(0xCC00)
-#define RTL931X_LED_GLB_CTRL		(0x0600)
-
 #define RTL838X_INT_RW_CTRL		(0x0058)
 #define RTL838X_EXT_VERSION		(0x00D0)
-#define RTL838X_PLL_CML_CTRL		(0x0FF8)
-
-/*
- * Reset
- */
-#define RTL838X_RST_GLB_CTRL_0		(0x003c)
-#define RTL838X_RST_GLB_CTRL_1		(0x0040)
-#define RTL839X_RST_GLB_CTRL		(0x0014)
-#define RTL930X_RST_GLB_CTRL_0		(0x000c)
-#define RTL931X_RST_GLB_CTRL		(0x0400)
-
-/* LED control by switch */
-#define RTL838X_LED_MODE_SEL		(0x1004)
-#define RTL838X_LED_MODE_CTRL		(0xA004)
-#define RTL838X_LED_P_EN_CTRL		(0xA008)
-
-/* LED control by software */
-#define RTL838X_LED_SW_CTRL		(0xA00C)
-#define RTL839X_LED_SW_CTRL		(0xA00C)
-#define RTL838X_LED_SW_P_EN_CTRL	(0xA010)
-#define RTL839X_LED_SW_P_EN_CTRL	(0x012C)
-#define RTL838X_LED0_SW_P_EN_CTRL	(0xA010)
-#define RTL839X_LED0_SW_P_EN_CTRL	(0x012C)
-#define RTL838X_LED1_SW_P_EN_CTRL	(0xA014)
-#define RTL839X_LED1_SW_P_EN_CTRL	(0x0130)
-#define RTL838X_LED2_SW_P_EN_CTRL	(0xA018)
-#define RTL839X_LED2_SW_P_EN_CTRL	(0x0134)
-#define RTL838X_LED_SW_P_CTRL		(0xA01C)
-#define RTL838X_LED_SW_P_CTRL_PORT(p)	(RTL838X_LED_SW_P_CTRL + (((p) << 2)))
-#define RTL839X_LED_SW_P_CTRL		(0x0144)
-
-#define RTL839X_MAC_EFUSE_CTRL		(0x02ac)
-
-/*
- * MDIO via Realtek's SMI interface
- */
-#define RTL838X_SMI_GLB_CTRL		(0xa100)
-#define RTL838X_SMI_POLL_CTRL		(0xa17c)
-
-#define RTL839X_SMI_GLB_CTRL		(0x03f8)
-#define RTL839X_SMI_PORT_POLLING_CTRL	(0x03fc)
-
-#define RTL930X_SMI_POLL_CTRL		(0xca90)
-#define RTL931X_SMI_PORT_POLLING_CTRL	(0x0CCC)
-
-/* Switch interrupts */
-#define RTL838X_IMR_GLB			(0x1100)
-#define RTL838X_IMR_PORT_LINK_STS_CHG	(0x1104)
-#define RTL838X_ISR_GLB_SRC		(0x1148)
-#define RTL838X_ISR_PORT_LINK_STS_CHG	(0x114C)
-
-#define RTL839X_IMR_GLB			(0x0064)
-#define RTL839X_IMR_PORT_LINK_STS_CHG	(0x0068)
-#define RTL839X_ISR_GLB_SRC		(0x009c)
-#define RTL839X_ISR_PORT_LINK_STS_CHG	(0x00a0)
-
-#define RTL930X_IMR_GLB			(0xC628)
-#define RTL930X_IMR_PORT_LINK_STS_CHG	(0xC62C)
-#define RTL930X_ISR_GLB			(0xC658)
-#define RTL930X_ISR_PORT_LINK_STS_CHG	(0xC660)
-
-/* IMR_GLB does not exit on RTL931X */
-#define RTL931X_IMR_PORT_LINK_STS_CHG	(0x126C)
-#define RTL931X_ISR_GLB_SRC		(0x12B4)
-#define RTL931X_ISR_PORT_LINK_STS_CHG	(0x12B8)
 
 /* Definition of family IDs */
 #define RTL8380_FAMILY_ID		(0x8380)
@@ -118,8 +48,8 @@ struct rtl83xx_soc_info {
 	unsigned int revision;
 	unsigned int cpu;
 	bool testchip;
-	unsigned char *compatible;
 	int cpu_port;
+	int memory_size;
 };
 
 #endif /* _MACH_RTL838X_H_ */

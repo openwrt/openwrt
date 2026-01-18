@@ -26,7 +26,7 @@ endif
 define Package/gcc/Default
   SECTION:=libs
   CATEGORY:=Base system
-  URL:=http://gcc.gnu.org/
+  URL:=https://gcc.gnu.org/
   VERSION:=$(LIBGCC_VERSION)-r$(PKG_RELEASE)
 endef
 
@@ -781,8 +781,9 @@ else
 
 endif
 
-$(eval $(call BuildPackage,libc))
 $(eval $(call BuildPackage,libgcc))
+# libc depends on knowing libgcc's ABI, so it needs to be evaluated first
+$(eval $(call BuildPackage,libc))
 $(eval $(call BuildPackage,libatomic))
 $(eval $(call BuildPackage,libquadmath))
 $(eval $(call BuildPackage,libstdcpp))

@@ -742,6 +742,16 @@ define Device/cudy_ap1300-outdoor-v1
 endef
 TARGET_DEVICES += cudy_ap1300-outdoor-v1
 
+define Device/cudy_c200p
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := C200P
+  IMAGE_SIZE := 15872k
+  UIMAGE_NAME := R74
+  DEVICE_PACKAGES := -uboot-envtools -wpad-basic-mbedtls kmod-usb3
+endef
+TARGET_DEVICES += cudy_c200p
+
 define Device/cudy_m1300-v2
   $(Device/dsa-migration)
   IMAGE_SIZE := 15872k
@@ -764,6 +774,16 @@ define Device/cudy_m1800
   DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
 endef
 TARGET_DEVICES += cudy_m1800
+
+define Device/cudy_r700
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := R700
+  IMAGE_SIZE := 15872k
+  UIMAGE_NAME := R29
+  DEVICE_PACKAGES := -uboot-envtools -wpad-basic-mbedtls
+endef
+TARGET_DEVICES += cudy_r700
 
 define Device/cudy_wr1300-v1
   $(Device/dsa-migration)
@@ -810,26 +830,6 @@ define Device/cudy_wr2100
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware -uboot-envtools
 endef
 TARGET_DEVICES += cudy_wr2100
-
-define Device/cudy_r700
-  $(Device/dsa-migration)
-  DEVICE_VENDOR := Cudy
-  DEVICE_MODEL := R700
-  IMAGE_SIZE := 15872k
-  UIMAGE_NAME := R29
-  DEVICE_PACKAGES := -uboot-envtools -wpad-basic-mbedtls
-endef
-TARGET_DEVICES += cudy_r700
-
-define Device/cudy_c200p
-  $(Device/dsa-migration)
-  DEVICE_VENDOR := Cudy
-  DEVICE_MODEL := C200P
-  IMAGE_SIZE := 15872k
-  UIMAGE_NAME := R74
-  DEVICE_PACKAGES := -uboot-envtools -wpad-basic-mbedtls kmod-usb3
-endef
-TARGET_DEVICES += cudy_c200p
 
 define Device/cudy_x6-v1
   $(Device/dsa-migration)

@@ -16,15 +16,15 @@
 #include <linux/init.h>
 #include <linux/device.h>
 #include <linux/of.h>
-#include <linux/of_platform.h>
+#include <linux/platform_device.h>
 #include <linux/delay.h>
 #include <linux/skbuff.h>
-#include <linux/rtl8366.h>
 
 #include "rtl8366_smi.h"
 
 #define RTL8366RB_DRIVER_DESC	"Realtek RTL8366RB ethernet switch driver"
 #define RTL8366RB_DRIVER_VER	"0.2.4"
+#define RTL8366RB_DRIVER_NAME	"rtl8366rb"
 
 #define RTL8366RB_PHY_NO_MAX	4
 #define RTL8366RB_PHY_PAGE_MAX	7
@@ -285,13 +285,10 @@ static int rtl8366rb_reset_chip(struct rtl8366_smi *smi)
 static int rtl8366rb_setup(struct rtl8366_smi *smi)
 {
 	int err;
-#ifdef CONFIG_OF
 	unsigned i;
-	struct device_node *np;
 	unsigned num_initvals;
 	const __be32 *paddr;
-
-	np = smi->parent->of_node;
+	struct device_node *np = smi->parent->of_node;
 
 	paddr = of_get_property(np, "realtek,initvals", &num_initvals);
 	if (paddr) {
@@ -309,7 +306,6 @@ static int rtl8366rb_setup(struct rtl8366_smi *smi)
 			REG_WR(smi, reg, val);
 		}
 	}
-#endif
 
 	/* set maximum packet length to 1536 bytes */
 	REG_RMW(smi, RTL8366RB_SGCR, RTL8366RB_SGCR_MAX_LENGTH_MASK,
@@ -1490,21 +1486,19 @@ static void rtl8366rb_remove(struct platform_device *pdev)
 	}
 }
 
-#ifdef CONFIG_OF
 static const struct of_device_id rtl8366rb_match[] = {
 	{ .compatible = "realtek,rtl8366rb" },
 	{},
 };
 MODULE_DEVICE_TABLE(of, rtl8366rb_match);
-#endif
 
 static struct platform_driver rtl8366rb_driver = {
 	.driver = {
 		.name		= RTL8366RB_DRIVER_NAME,
-		.of_match_table = of_match_ptr(rtl8366rb_match),
+		.of_match_table = rtl8366rb_match,
 	},
 	.probe		= rtl8366rb_probe,
-	.remove_new		= rtl8366rb_remove,
+	.remove		= rtl8366rb_remove,
 };
 
 static int __init rtl8366rb_module_init(void)

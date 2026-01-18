@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iproute2
-PKG_VERSION:=6.17.0
+PKG_VERSION:=6.18.0
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/utils/net/iproute2
-PKG_HASH:=9781e59410ab7dea8e9f79bb10ff1488e63d10fcbb70503b94426ba27a8e2dec
+PKG_HASH:=6ba520e1975e4c50dc931eeae91ea37c198b8a173744885f8895b84325f9d456
 PKG_BUILD_PARALLEL:=1
 PKG_BUILD_DEPENDS:=iptables
 PKG_LICENSE:=GPL-2.0
@@ -28,7 +28,7 @@ include $(INCLUDE_DIR)/nls.mk
 define Package/iproute2/Default
   SECTION:=net
   CATEGORY:=Network
-  URL:=http://www.linuxfoundation.org/collaborate/workgroups/networking/iproute2
+  URL:=https://wiki.linuxfoundation.org/networking/iproute2
   SUBMENU:=Routing and Redirection
   MAINTAINER:=Russell Senior <russell@personaltelco.net>
 endef

@@ -499,7 +499,7 @@ static int ptm_ioctl(struct net_device *dev, struct ifreq *ifr, void __user *dat
     case IFX_PTM_MIB_FRAME_GET:
         {
             PTM_FRAME_MIB_T tmp = {0};
-    
+
             tmp.RxCorrect   = WAN_MIB_TABLE[ndev].wrx_correct_pdu;
             tmp.TC_CrcError = WAN_MIB_TABLE[ndev].wrx_tccrc_err_pdu;
             tmp.RxDropped   = WAN_MIB_TABLE[ndev].wrx_nodesc_drop_pdu + WAN_MIB_TABLE[ndev].wrx_len_violation_drop_pdu;
@@ -1360,14 +1360,9 @@ static INLINE void clear_priv_data(void)
         }
     }
 
-    if ( g_ptm_priv_data.rx_desc_base != NULL )
-        kfree(g_ptm_priv_data.rx_desc_base);
-
-    if ( g_ptm_priv_data.tx_desc_base != NULL )
-        kfree(g_ptm_priv_data.tx_desc_base);
-
-    if ( g_ptm_priv_data.tx_skb_base != NULL )
-        kfree(g_ptm_priv_data.tx_skb_base);
+    kfree(g_ptm_priv_data.rx_desc_base);
+    kfree(g_ptm_priv_data.tx_desc_base);
+    kfree(g_ptm_priv_data.tx_skb_base);
 }
 
 static INLINE void init_tables(void)
@@ -1637,8 +1632,8 @@ static void ltq_ptm_remove(struct platform_device *pdev)
 }
 
 static struct platform_driver ltq_ptm_driver = {
-       .probe = ltq_ptm_probe,
-       .remove_new = ltq_ptm_remove,
+       .probe  = ltq_ptm_probe,
+       .remove = ltq_ptm_remove,
        .driver = {
                .name = "ptm",
                .of_match_table = ltq_ptm_match,

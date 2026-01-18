@@ -424,8 +424,7 @@
 		},
 		"ieee80211k": {
 			"description": "Enables Radio Resource Measurement (802.11k) support",
-			"type": "boolean",
-			"default": true
+			"type": "boolean"
 		},
 		"ieee80211r": {
 			"description": "Enables fast BSS transition (802.11r) support.",
@@ -605,11 +604,8 @@
 			"type": "boolean"
 		},
 		"mcast_rate": {
-			"description": "Allowed multicast rates",
-			"type": "array",
-			"items": {
-				"type": "number"
-			}
+			"description": "Allowed multicast rate",
+			"type": "number"
 		},
 		"mesh_auto_open_plinks": {
 			"type": "boolean"
@@ -764,6 +760,10 @@
 		"network_auth_type": {
 			"description": "Network Authentication Type",
 			"type": "string"
+		},
+		"no_probe_resp_if_max_sta": {
+			"description": "Do not answer probe requests if iface_max_num_sta was reached",
+			"type": "boolean"
 		},
 		"ocv": {
 			"description": "Operating Channel Validation",
@@ -932,18 +932,15 @@
 		},
 		"rrm_beacon_report": {
 			"description": "Enable beacon report via radio measurements",
-			"type": "boolean",
-			"default": true
+			"type": "boolean"
 		},
 		"rrm_neighbor_report": {
 			"description": "Enable neighbor report via radio measurements",
-			"type": "boolean",
-			"default": true
+			"type": "boolean"
 		},
 		"rnr": {
 			"description": "Enable reduced neighbor reporting",
-			"type": "boolean",
-			"default": true
+			"type": "boolean"
 		},
 		"roaming_consortium": {
 			"description": "Roaming Consortium List",

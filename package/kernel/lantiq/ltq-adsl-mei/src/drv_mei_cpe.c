@@ -1286,8 +1286,7 @@ IFX_MEI_RunAdslModem (DSL_DEV_Device_t *pDev)
 //	DSL_DEV_WinHost_Message_t m;
 
 	if (mei_arc_swap_buff == NULL) {
-		mei_arc_swap_buff =
-			(u32 *) kmalloc (MAXSWAPSIZE * 4, GFP_KERNEL);
+		mei_arc_swap_buff = kmalloc (MAXSWAPSIZE * 4, GFP_KERNEL);
 		if (mei_arc_swap_buff == NULL) {
 			IFX_MEI_EMSG (">>> malloc fail for codeswap buff!!! <<<\n");
 			return DSL_DEV_MEI_ERR_FAILURE;
@@ -2809,8 +2808,8 @@ static const struct of_device_id ltq_mei_match[] = {
 };
 
 static struct platform_driver ltq_mei_driver = {
-	.probe = ltq_mei_probe,
-	.remove_new = ltq_mei_remove,
+	.probe  = ltq_mei_probe,
+	.remove = ltq_mei_remove,
 	.driver = {
 		.name = "lantiq,mei-xway",
 		.of_match_table = ltq_mei_match,

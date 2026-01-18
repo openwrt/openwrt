@@ -1,0 +1,101 @@
+From db156d900072423be739b1aaaa68a712d3fcb8e4 Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Mon, 9 Sep 2024 17:14:47 +0200
+Subject: [PATCH 14/25] phy: sparx5-serdes: add support for branching on chip
+ type
+
+In preparation for lan969x, add a way to branch out on code that is to
+be executed on either Sparx5 or lan969x.  Initially, this is required to
+branch out when checking the SERDES types and SERDES speeds, since the
+handling of these differ on the two platforms. This will also be used by
+the lan969x driver introduced in a subsequent patch.
+
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Reviewed-by: Steen Hegelund <Steen.Hegelund@microchip.com>
+Link: https://lore.kernel.org/r/20240909-sparx5-lan969x-serdes-driver-v2-7-d695bcb57b84@microchip.com
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
+---
+ drivers/phy/microchip/sparx5_serdes.c | 29 +++++++++++++++++----------
+ drivers/phy/microchip/sparx5_serdes.h |  5 +++++
+ 2 files changed, 23 insertions(+), 11 deletions(-)
+
+--- a/drivers/phy/microchip/sparx5_serdes.c
++++ b/drivers/phy/microchip/sparx5_serdes.c
+@@ -2298,10 +2298,12 @@ static int sparx5_serdes_set_speed(struc
+ {
+ 	struct sparx5_serdes_macro *macro = phy_get_drvdata(phy);
+ 
+-	if (macro->sidx < SPX5_SERDES_10G_START && speed > SPEED_5000)
+-		return -EINVAL;
+-	if (macro->sidx < SPX5_SERDES_25G_START && speed > SPEED_10000)
+-		return -EINVAL;
++	if (macro->priv->data->type == SPX5_TARGET_SPARX5) {
++		if (macro->sidx < SPX5_SERDES_10G_START && speed > SPEED_5000)
++			return -EINVAL;
++		if (macro->sidx < SPX5_SERDES_25G_START && speed > SPEED_10000)
++			return -EINVAL;
++	}
+ 	if (speed != macro->speed) {
+ 		macro->speed = speed;
+ 		if (macro->serdesmode != SPX5_SD_MODE_NONE)
+@@ -2338,11 +2340,14 @@ static int sparx5_serdes_validate(struct
+ 	if (macro->speed == 0)
+ 		return -EINVAL;
+ 
+-	if (macro->sidx < SPX5_SERDES_10G_START && macro->speed > SPEED_5000)
+-		return -EINVAL;
+-	if (macro->sidx < SPX5_SERDES_25G_START && macro->speed > SPEED_10000)
+-		return -EINVAL;
+-
++	if (macro->priv->data->type == SPX5_TARGET_SPARX5) {
++		if (macro->sidx < SPX5_SERDES_10G_START &&
++		    macro->speed > SPEED_5000)
++			return -EINVAL;
++		if (macro->sidx < SPX5_SERDES_25G_START &&
++		    macro->speed > SPEED_10000)
++			return -EINVAL;
++	}
+ 	switch (submode) {
+ 	case PHY_INTERFACE_MODE_1000BASEX:
+ 		if (macro->speed != SPEED_100 && /* This is for 100BASE-FX */
+@@ -2515,6 +2520,7 @@ static struct sparx5_serdes_io_resource
+ };
+ 
+ static const struct sparx5_serdes_match_data sparx5_desc = {
++	.type = SPX5_TARGET_SPARX5,
+ 	.iomap = sparx5_serdes_iomap,
+ 	.iomap_size = ARRAY_SIZE(sparx5_serdes_iomap),
+ 	.tsize = sparx5_serdes_tsize,
+@@ -2618,8 +2624,9 @@ static int sparx5_serdes_probe(struct pl
+ 			return err;
+ 	}
+ 
+-	/* Power down all CMUs by default */
+-	sparx5_serdes_cmu_power_off(priv);
++	/* Power down all CMU's by default */
++	if (priv->data->type == SPX5_TARGET_SPARX5)
++		sparx5_serdes_cmu_power_off(priv);
+ 
+ 	provider = devm_of_phy_provider_register(priv->dev, sparx5_serdes_xlate);
+ 
+--- a/drivers/phy/microchip/sparx5_serdes.h
++++ b/drivers/phy/microchip/sparx5_serdes.h
+@@ -34,6 +34,10 @@ enum sparx5_10g28cmu_mode {
+ 	SPX5_SD10G28_CMU_MAX,
+ };
+ 
++enum sparx5_target {
++	SPX5_TARGET_SPARX5,
++};
++
+ struct sparx5_serdes_macro {
+ 	struct sparx5_serdes_private *priv;
+ 	u32 sidx;
+@@ -56,6 +60,7 @@ struct sparx5_serdes_ops {
+ };
+ 
+ struct sparx5_serdes_match_data {
++	enum sparx5_target type;
+ 	const struct sparx5_serdes_consts consts;
+ 	const struct sparx5_serdes_ops ops;
+ 	const struct sparx5_serdes_io_resource *iomap;

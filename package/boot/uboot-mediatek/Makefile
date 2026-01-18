@@ -251,8 +251,8 @@ define U-Boot/mt7981_cmcc_rax3000m-emmc-ddr3
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=emmc
   BL2_SOC:=mt7981
-  BL2_DDRTYPE:=ddr3-1866mhz
-  DEPENDS:=+trusted-firmware-a-mt7981-emmc-ddr3-1866mhz
+  BL2_DDRTYPE:=ddr3-1866
+  DEPENDS:=+trusted-firmware-a-mt7981-emmc-ddr3-1866
 endef
 
 define U-Boot/mt7981_cmcc_rax3000m-emmc-ddr4
@@ -275,8 +275,8 @@ define U-Boot/mt7981_cmcc_rax3000m-nand-ddr3
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=spim-nand
   BL2_SOC:=mt7981
-  BL2_DDRTYPE:=ddr3-1866mhz
-  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3-1866mhz
+  BL2_DDRTYPE:=ddr3-1866
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3-1866
 endef
 
 define U-Boot/mt7981_cmcc_rax3000m-nand-ddr4
@@ -309,9 +309,20 @@ define U-Boot/mt7981_cudy_tr3000-v1
   BUILD_DEVICES:=cudy_tr3000-v1-ubootmod
   UBOOT_CONFIG:=mt7981_cudy_tr3000-v1
   UBOOT_IMAGE:=u-boot.fip
-  BL2_BOOTDEV:=cudy-tr3000-v1
+  BL2_BOOTDEV:=cudy-ddr3
   BL2_SOC:=mt7981
-  DEPENDS:=+trusted-firmware-a-mt7981-cudy-tr3000-v1
+  DEPENDS:=+trusted-firmware-a-mt7981-cudy-ddr3
+endef
+
+define U-Boot/mt7981_cudy_wbr3000uax-v1
+  NAME:=Cudy WBR3000UAX v1
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=cudy_wbr3000uax-v1-ubootmod
+  UBOOT_CONFIG:=mt7981_cudy_wbr3000uax-v1
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=cudy-ddr3
+  BL2_SOC:=mt7981
+  DEPENDS:=+trusted-firmware-a-mt7981-cudy-ddr3
 endef
 
 define U-Boot/mt7981_glinet_gl-mt2500
@@ -391,6 +402,18 @@ define U-Boot/mt7981_konka_komi-a31
   BUILD_SUBTARGET:=filogic
   BUILD_DEVICES:=konka_komi-a31
   UBOOT_CONFIG:=mt7981_konka_komi-a31
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
+endef
+
+define U-Boot/mt7981_netis_nx30v2
+  NAME:=Netis NX30V2
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=netis_nx30v2
+  UBOOT_CONFIG:=mt7981_netis_nx30v2
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=spim-nand
   BL2_SOC:=mt7981
@@ -858,6 +881,17 @@ define U-Boot/mt7987_bananapi_bpi-r4-lite-nor
   FIP_COMPRESS:=1
 endef
 
+define U-Boot/mt7987_routerich_be7200
+  NAME:=Routerich BE7200
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=routerich_be7200
+  UBOOT_CONFIG:=mt7987a_routerich_be7200
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand0
+  BL2_SOC:=mt7987
+  DEPENDS:=+trusted-firmware-a-mt7987-spim-nand0
+endef
+
 define U-Boot/mt7988_arcadyan_mozart
   NAME:=Arcadyan Mozart
   BUILD_SUBTARGET:=filogic
@@ -1079,6 +1113,7 @@ UBOOT_TARGETS := \
 	mt7981_cmcc_rax3000m-nand-ddr4 \
 	mt7981_comfast_cf-wr632ax \
 	mt7981_cudy_tr3000-v1 \
+	mt7981_cudy_wbr3000uax-v1 \
 	mt7981_gatonetworks_gdsp \
 	mt7981_glinet_gl-mt2500 \
 	mt7981_glinet_gl-x3000 \
@@ -1087,6 +1122,7 @@ UBOOT_TARGETS := \
 	mt7981_imou_hx21 \
 	mt7981_jcg_q30-pro \
 	mt7981_konka_komi-a31 \
+	mt7981_netis_nx30v2 \
 	mt7981_netis_nx31 \
 	mt7981_nokia_ea0326gmp \
 	mt7981_openwrt_one-snand \
@@ -1127,6 +1163,7 @@ UBOOT_TARGETS := \
 	mt7987_rfb-emmc \
 	mt7987_rfb-sd \
 	mt7987_rfb-spim-nand \
+	mt7987_routerich_be7200 \
 	mt7988_arcadyan_mozart \
 	mt7988_asus_zenwifi-bt8 \
 	mt7988_bananapi_bpi-r4-emmc \
