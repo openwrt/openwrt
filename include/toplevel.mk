@@ -12,7 +12,7 @@ ifeq ($(SDK),1)
   include $(TOPDIR)/include/version.mk
 else
   REVISION:=$(shell $(TOPDIR)/scripts/getver.sh)
-  SOURCE_DATE_EPOCH:=$(shell $(TOPDIR)/scripts/get_source_date_epoch.sh)
+  SOURCE_DATE_EPOCH:=0
 endif
 
 export REVISION
