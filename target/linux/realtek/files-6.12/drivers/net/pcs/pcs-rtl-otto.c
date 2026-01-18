@@ -932,6 +932,34 @@ static int rtpcs_839x_setup_serdes(struct rtpcs_serdes *sds,
 
 /* RTL930X */
 
+/* 
+ * RTL930X needs a special mapping from logic SerDes ID to physical SerDes ID,
+ * which takes the page into account. This applies to most of read/write calls.
+ */
+static int rtpcs_930x_sds_get_phys_sds_id(int sds_id, int page)
+{
+        if (sds_id == 3 && page < 4)
+                return 10;
+
+        return sds_id;
+}
+
+static int rtpcs_930x_sds_op_read(struct rtpcs_serdes *sds, int page, int regnum, int bithigh,
+				  int bitlow)
+{
+	int sds_id = rtpcs_930x_sds_get_phys_sds_id(sds->id, page);
+
+	return __rtpcs_sds_read_raw(sds->ctrl, sds_id, page, regnum, bithigh, bitlow);
+}
+
+static int rtpcs_930x_sds_op_write(struct rtpcs_serdes *sds, int page, int regnum, int bithigh,
+				   int bitlow, u16 value)
+{
+	int sds_id = rtpcs_930x_sds_get_phys_sds_id(sds->id, page);
+
+	return __rtpcs_sds_write_raw(sds->ctrl, sds_id, page, regnum, bithigh, bitlow, value);
+}
+
 static const u16 rtpcs_930x_sds_regs[] = {
 	0x0194, 0x0194, 0x0194, 0x0194,		/* SDS_MODE_SEL_0 */
 	0x02a0, 0x02a0, 0x02a0, 0x02a0,		/* SDS_MODE_SEL_1 */
@@ -3857,8 +3885,8 @@ static const struct phylink_pcs_ops rtpcs_930x_pcs_ops = {
 };
 
 static const struct rtpcs_serdes_ops rtpcs_930x_sds_ops = {
-	.read			= rtpcs_generic_sds_op_read,
-	.write			= rtpcs_generic_sds_op_write,
+	.read			= rtpcs_930x_sds_op_read,
+	.write			= rtpcs_930x_sds_op_write,
 };
 
 static const struct rtpcs_config rtpcs_930x_cfg = {
