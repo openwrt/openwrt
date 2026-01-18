@@ -52,7 +52,7 @@ $(eval $(call KernelPackage,f71808e-wdt))
 
 define KernelPackage/sound-cs5535audio
   TITLE:=CS5535/CS5536 Audio Controller
-  DEPENDS:=@TARGET_x86_geode +kmod-ac97
+  DEPENDS:=@(TARGET_x86_geode||TARGET_x86_legacy) +kmod-ac97
   KCONFIG:=CONFIG_SND_CS5535AUDIO
   FILES:=$(LINUX_DIR)/sound/pci/cs5535audio/snd-cs5535audio.ko
   AUTOLOAD:=$(call AutoLoad,36,snd-cs5535audio)
