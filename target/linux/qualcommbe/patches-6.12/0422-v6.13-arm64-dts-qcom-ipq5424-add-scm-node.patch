@@ -1,0 +1,35 @@
+From 2561c1377d4153ad1e31878eaa9b6a8d2975a71a Mon Sep 17 00:00:00 2001
+From: Manikanta Mylavarapu <quic_mmanikan@quicinc.com>
+Date: Wed, 4 Dec 2024 19:06:27 +0530
+Subject: [PATCH] arm64: dts: qcom: ipq5424: add scm node
+
+Add an scm node to interact with the secure world.
+
+Signed-off-by: Manikanta Mylavarapu <quic_mmanikan@quicinc.com>
+Reviewed-by: Dmitry Baryshkov <dmitry.baryshkov@linaro.org>
+Link: https://lore.kernel.org/r/20241204133627.1341760-3-quic_mmanikan@quicinc.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+---
+ arch/arm64/boot/dts/qcom/ipq5424.dtsi | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/ipq5424.dtsi b/arch/arm64/boot/dts/qcom/ipq5424.dtsi
+index 3ab2ffa10f63..19bf77143728 100644
+--- a/arch/arm64/boot/dts/qcom/ipq5424.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5424.dtsi
+@@ -98,6 +98,12 @@ l2_300: l2-cache {
+ 		};
+ 	};
+ 
++	firmware {
++		scm {
++			compatible = "qcom,scm-ipq5424", "qcom,scm";
++		};
++	};
++
+ 	memory@80000000 {
+ 		device_type = "memory";
+ 		/* We expect the bootloader to fill in the size */
+-- 
+2.34.1
+

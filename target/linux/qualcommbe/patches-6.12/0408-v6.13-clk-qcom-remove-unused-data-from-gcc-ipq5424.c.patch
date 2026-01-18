@@ -1,0 +1,76 @@
+From f1f49cc505bc998d7c13e5a518d027419a21fbae Mon Sep 17 00:00:00 2001
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Mon, 11 Nov 2024 11:32:51 +0100
+Subject: [PATCH] clk: qcom: remove unused data from gcc-ipq5424.c
+
+The newly added driver causes a warnings when enabling -Wunused-const-variables:
+
+drivers/clk/qcom/gcc-ipq5424.c:1064:30: error: 'ftbl_gcc_q6_axi_clk_src' defined but not used [-Werror=unused-const-variable=]
+ 1064 | static const struct freq_tbl ftbl_gcc_q6_axi_clk_src[] = {
+      |                              ^~~~~~~~~~~~~~~~~~~~~~~
+drivers/clk/qcom/gcc-ipq5424.c:957:30: error: 'ftbl_gcc_qpic_clk_src' defined but not used [-Werror=unused-const-variable=]
+  957 | static const struct freq_tbl ftbl_gcc_qpic_clk_src[] = {
+      |                              ^~~~~~~~~~~~~~~~~~~~~
+drivers/clk/qcom/gcc-ipq5424.c:497:30: error: 'ftbl_gcc_qupv3_2x_core_clk_src' defined but not used [-Werror=unused-const-variable=]
+  497 | static const struct freq_tbl ftbl_gcc_qupv3_2x_core_clk_src[] = {
+      |                              ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In order to hopefully enable this warning by default in the future,
+remove the data for now. If it gets used in the future, it can
+trivially get added back.
+
+Fixes: 21b5d5a4a311 ("clk: qcom: add Global Clock controller (GCC) driver for IPQ5424 SoC")
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Reviewed-by: Dmitry Baryshkov <dmitry.baryshkov@linaro.org>
+Link: https://lore.kernel.org/r/20241111103258.3336183-1-arnd@kernel.org
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+---
+ drivers/clk/qcom/gcc-ipq5424.c | 18 ------------------
+ 1 file changed, 18 deletions(-)
+
+diff --git a/drivers/clk/qcom/gcc-ipq5424.c b/drivers/clk/qcom/gcc-ipq5424.c
+index 3458c1c98bb7..88a7d5b2e751 100644
+--- a/drivers/clk/qcom/gcc-ipq5424.c
++++ b/drivers/clk/qcom/gcc-ipq5424.c
+@@ -494,11 +494,6 @@ static struct clk_rcg2 gcc_pcie_aux_clk_src = {
+ 	},
+ };
+ 
+-static const struct freq_tbl ftbl_gcc_qupv3_2x_core_clk_src[] = {
+-	F(200000000, P_GPLL0_OUT_MAIN, 4, 0, 0),
+-	{ }
+-};
+-
+ static const struct freq_tbl ftbl_gcc_qupv3_i2c0_clk_src[] = {
+ 	F(4800000, P_XO, 5, 0, 0),
+ 	F(9600000, P_XO, 2.5, 0, 0),
+@@ -954,13 +949,6 @@ static struct clk_rcg2 gcc_qpic_io_macro_clk_src = {
+ 	},
+ };
+ 
+-static const struct freq_tbl ftbl_gcc_qpic_clk_src[] = {
+-	F(24000000, P_XO, 1, 0, 0),
+-	F(100000000, P_GPLL0_OUT_MAIN, 8, 0, 0),
+-	F(200000000, P_GPLL0_OUT_MAIN, 4, 0, 0),
+-	{ }
+-};
+-
+ static struct clk_rcg2 gcc_qpic_clk_src = {
+ 	.cmd_rcgr = 0x32020,
+ 	.mnd_width = 0,
+@@ -1061,12 +1049,6 @@ static struct clk_regmap_div gcc_qupv3_i2c1_div_clk_src = {
+ 	},
+ };
+ 
+-static const struct freq_tbl ftbl_gcc_q6_axi_clk_src[] = {
+-	F(480000000, P_GPLL4_OUT_AUX, 2.5, 0, 0),
+-	F(533333333, P_GPLL0_OUT_MAIN, 1.5, 0, 0),
+-	{ }
+-};
+-
+ static struct clk_regmap_div gcc_usb0_mock_utmi_div_clk_src = {
+ 	.reg = 0x2c040,
+ 	.shift = 0,
+-- 
+2.34.1
+

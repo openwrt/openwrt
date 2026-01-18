@@ -1,0 +1,25 @@
+From f626d9cccdd513f794d19405a16395387679f951 Mon Sep 17 00:00:00 2001
+From: Luo Jie <quic_luoj@quicinc.com>
+Date: Wed, 5 Mar 2025 18:19:42 +0800
+Subject: [PATCH 635/636] arm64: dts: qcom: Update edma reset name
+
+Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
+---
+ arch/arm64/boot/dts/qcom/ipq9574.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/ipq9574.dtsi b/arch/arm64/boot/dts/qcom/ipq9574.dtsi
+index b3dfc6b839cc..e63e16a4795c 100644
+--- a/arch/arm64/boot/dts/qcom/ipq9574.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq9574.dtsi
+@@ -1312,6 +1312,7 @@
+ 				clock-names = "sys",
+ 					      "apb";
+ 				resets = <&nsscc EDMA_HW_RESET>;
++				reset-names = "edma";
+ 				interrupts = <GIC_SPI 363 IRQ_TYPE_LEVEL_HIGH>,
+ 					     <GIC_SPI 364 IRQ_TYPE_LEVEL_HIGH>,
+ 					     <GIC_SPI 365 IRQ_TYPE_LEVEL_HIGH>,
+-- 
+2.34.1
+

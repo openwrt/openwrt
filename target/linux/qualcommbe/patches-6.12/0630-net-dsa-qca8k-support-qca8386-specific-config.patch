@@ -1,0 +1,221 @@
+From f827023578bc19e3f74720e558a54b2577558fd9 Mon Sep 17 00:00:00 2001
+From: Luo Jie <quic_luoj@quicinc.com>
+Date: Fri, 8 Mar 2024 16:26:26 +0800
+Subject: [PATCH 630/636] net: dsa: qca8k: support qca8386 specific config
+
+QCA8386 increase the buffer number to 2040 from the legacy
+chip qca8337 with 504, the HoL of QCA8386 has the different
+configurations.
+
+In this patch, the ingress VLAN mode is configured as disabled,
+and the egress VLAN mode is configured as untouched to make
+the packet is forwared based on the port VLAN member correctly,
+which is appliable to both QCA8386 and the legacy QCA8K chips.
+
+Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
+---
+ drivers/net/dsa/qca/qca8k-8xxx.c | 98 +++++++++++++++++++++++++++++---
+ drivers/net/dsa/qca/qca8k.h      | 36 ++++++++++++
+ 2 files changed, 126 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/net/dsa/qca/qca8k-8xxx.c b/drivers/net/dsa/qca/qca8k-8xxx.c
+index faed95dada76..99b4fa10d216 100644
+--- a/drivers/net/dsa/qca/qca8k-8xxx.c
++++ b/drivers/net/dsa/qca/qca8k-8xxx.c
+@@ -1997,6 +1997,48 @@ static void qca8k_setup_hol_fixup(struct qca8k_priv *priv, int port)
+ 			   mask);
+ }
+ 
++static void qca8386_setup_hol_fixup(struct qca8k_priv *priv, int port)
++{
++	u32 mask, hol1_mask = 0;
++
++	switch (port) {
++	/* The CPU port 0, 5 require some different priority than
++	 * any other ports.
++	 */
++	case 0:
++	case 5:
++		mask = QCA8386_PORT_HOL_CTRL0_EG_PRI0(0x3) |
++		       QCA8386_PORT_HOL_CTRL0_EG_PRI1(0x4) |
++		       QCA8386_PORT_HOL_CTRL0_EG_PRI2(0x4) |
++		       QCA8386_PORT_HOL_CTRL0_EG_PRI3(0x4) |
++		       QCA8386_PORT_HOL_CTRL0_EG_PORT(0x4b);
++		hol1_mask = QCA8386_PORT_HOL_CTRL1_EG_PRI4(0x6) |
++			    QCA8386_PORT_HOL_CTRL1_EG_PRI5(0x8);
++		break;
++	default:
++		mask = QCA8386_PORT_HOL_CTRL0_EG_PRI0(0x3) |
++		       QCA8386_PORT_HOL_CTRL0_EG_PRI1(0x4) |
++		       QCA8386_PORT_HOL_CTRL0_EG_PRI2(0x6) |
++		       QCA8386_PORT_HOL_CTRL0_EG_PRI3(0x8) |
++		       QCA8386_PORT_HOL_CTRL0_EG_PORT(0x3e);
++	}
++	regmap_write(priv->regmap, QCA8K_REG_PORT_HOL_CTRL0(port), mask);
++
++	hol1_mask |= QCA8386_PORT_HOL_CTRL1_ING(0x6) |
++		     QCA8K_PORT_HOL_CTRL1_EG_PRI_BUF_EN |
++		     QCA8K_PORT_HOL_CTRL1_EG_PORT_BUF_EN |
++		     QCA8K_PORT_HOL_CTRL1_WRED_EN;
++
++	regmap_update_bits(priv->regmap, QCA8K_REG_PORT_HOL_CTRL1(port),
++			   QCA8386_PORT_HOL_CTRL1_EG_PRI4_BUF_MASK |
++			   QCA8386_PORT_HOL_CTRL1_EG_PRI5_BUF_MASK |
++			   QCA8386_PORT_HOL_CTRL1_ING_BUF_MASK |
++			   QCA8K_PORT_HOL_CTRL1_EG_PRI_BUF_EN |
++			   QCA8K_PORT_HOL_CTRL1_EG_PORT_BUF_EN |
++			   QCA8K_PORT_HOL_CTRL1_WRED_EN,
++			   mask);
++}
++
+ static int
+ qca8k_setup(struct dsa_switch *ds)
+ {
+@@ -2069,6 +2111,19 @@ qca8k_setup(struct dsa_switch *ds)
+ 	dsa_switch_for_each_user_port(dp, ds)
+ 		qca8k_port_set_status(priv, dp->index, 0);
+ 
++	/* Enable 2 byte QCA header */
++	if (priv->switch_id == QCA8K_ID_QCA8386) {
++		ret = qca8k_rmw(priv, QCA8386_REG_SWITCH_HDR_CTRL,
++				QCA8386_REG_SWITCH_HDR_CTRL_TYPE_MASK |
++				QCA8386_REG_SWITCH_HDR_CTRL_LENGTH_SEL_MASK,
++				FIELD_PREP(QCA8386_REG_SWITCH_HDR_CTRL_TYPE_MASK,
++					   QCA8386_REG_SWITCH_HDR_CTRL_TYPE_VAL) |
++				FIELD_PREP(QCA8386_REG_SWITCH_HDR_CTRL_LENGTH_SEL_MASK,
++					   QCA8386_HEADER_LENGTH_SEL_BYTE_2));
++		if (ret)
++			return ret;
++	}
++
+ 	/* Enable QCA header mode on all cpu ports */
+ 	dsa_switch_for_each_cpu_port(dp, ds) {
+ 		ret = qca8k_write(priv, QCA8K_REG_PORT_HDR_CTRL(dp->index),
+@@ -2129,15 +2184,42 @@ qca8k_setup(struct dsa_switch *ds)
+ 			return ret;
+ 	}
+ 
+-	/* The port 5 of the qca8337 have some problem in flood condition. The
+-	 * original legacy driver had some specific buffer and priority settings
+-	 * for the different port suggested by the QCA switch team. Add this
+-	 * missing settings to improve switch stability under load condition.
+-	 * This problem is limited to qca8337 and other qca8k switch are not affected.
+-	 */
+-	if (priv->switch_id == QCA8K_ID_QCA8337)
+-		dsa_switch_for_each_available_port(dp, ds)
++	dsa_switch_for_each_available_port(dp, ds) {
++
++		/* Configure ingress vlan mode of port as disabled to use the
++		 * port based member to forward packet.
++		 */
++		qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(dp->index),
++			  QCA8K_PORT_LOOKUP_VLAN_MODE_MASK,
++			  QCA8K_PORT_LOOKUP_VLAN_MODE_NONE);
++		/* Configure the egress mode of port as untouched to make the
++		 * packet egressed from the port without any changed.
++		 */
++		qca8k_rmw(priv, QCA8K_REG_PORT_VLAN_CTRL1(dp->index),
++			  QCA8K_PORT_VLAN_EGMODE_MASK,
++			  QCA8K_PORT_VLAN_EGMODE(0x3));
++
++		qca8k_rmw(priv, QCA8K_ROUTE_EGRESS_VLAN,
++			  QCA8K_ROUTE_EGRESS_VLAN_MODE_MASK(dp->index),
++			  QCA8K_ROUTE_EGRESS_VLAN_MODE(dp->index, 0x3));
++
++		switch (priv->switch_id) {
++		case QCA8K_ID_QCA8337:
++			/* The port 5 of the qca8337 have some problem in flood condition. The
++			 * original legacy driver had some specific buffer and priority settings
++			 * for the different port suggested by the QCA switch team. Add this
++			 * missing settings to improve switch stability under load condition.
++			 * This problem is limited to qca8337 and other qca8k switch are not affected.
++			 */
+ 			qca8k_setup_hol_fixup(priv, dp->index);
++			break;
++		case QCA8K_ID_QCA8386:
++			qca8386_setup_hol_fixup(priv, dp->index);
++			break;
++		default:
++			break;
++		}
++	}
+ 
+ 	/* Special GLOBAL_FC_THRESH value are needed for ar8327 switch */
+ 	if (priv->switch_id == QCA8K_ID_QCA8327) {
+diff --git a/drivers/net/dsa/qca/qca8k.h b/drivers/net/dsa/qca/qca8k.h
+index 8ca8dcf2047c..ec7dedac338c 100644
+--- a/drivers/net/dsa/qca/qca8k.h
++++ b/drivers/net/dsa/qca/qca8k.h
+@@ -149,6 +149,12 @@
+ #define   QCA8K_PORT_STATUS_LINK_AUTO			BIT(9)
+ #define   QCA8K_PORT_STATUS_LINK_PAUSE			BIT(10)
+ #define   QCA8K_PORT_STATUS_FLOW_AUTO			BIT(12)
++#define QCA8386_REG_SWITCH_HDR_CTRL			0x98
++#define QCA8386_REG_SWITCH_HDR_CTRL_TYPE_MASK		GENMASK(15, 0)
++#define QCA8386_REG_SWITCH_HDR_CTRL_TYPE_VAL		0xaaaa
++#define QCA8386_REG_SWITCH_HDR_CTRL_LENGTH_SEL_MASK	BIT(16)
++#define QCA8386_HEADER_LENGTH_SEL_BYTE_2		0
++#define QCA8386_HEADER_LENGTH_SEL_BTYE_4		1
+ #define QCA8K_REG_PORT_HDR_CTRL(_i)			(0x9c + (_i * 4))
+ #define   QCA8K_PORT_HDR_CTRL_RX_MASK			GENMASK(3, 2)
+ #define   QCA8K_PORT_HDR_CTRL_TX_MASK			GENMASK(1, 0)
+@@ -191,6 +197,8 @@
+ #define   QCA8K_PORT_VLAN_SVID_MASK			GENMASK(11, 0)
+ #define   QCA8K_PORT_VLAN_SVID(x)			FIELD_PREP(QCA8K_PORT_VLAN_SVID_MASK, x)
+ #define QCA8K_REG_PORT_VLAN_CTRL1(_i)			(0x424 + (_i * 8))
++#define   QCA8K_PORT_VLAN_EGMODE(x)			((x & 0x3) << 12)
++#define   QCA8K_PORT_VLAN_EGMODE_MASK			GENMASK(13, 12)
+ #define QCA8K_REG_IPV4_PRI_BASE_ADDR			0x470
+ #define QCA8K_REG_IPV4_PRI_ADDR_MASK			0x474
+ 
+@@ -312,6 +320,20 @@
+ #define   QCA8K_PORT_HOL_CTRL0_EG_PORT_BUF_MASK		GENMASK(29, 24)
+ #define   QCA8K_PORT_HOL_CTRL0_EG_PORT(x)		FIELD_PREP(QCA8K_PORT_HOL_CTRL0_EG_PORT_BUF_MASK, x)
+ 
++/* QCA8386 expands the buffer number from the QCA8337, the bits of buffer for
++ * the queue is also increased.
++ */
++#define   QCA8386_PORT_HOL_CTRL0_EG_PRI0_BUF_MASK	GENMASK(5, 0)
++#define   QCA8386_PORT_HOL_CTRL0_EG_PRI0(x)		FIELD_PREP(QCA8386_PORT_HOL_CTRL0_EG_PRI0_BUF_MASK, x)
++#define   QCA8386_PORT_HOL_CTRL0_EG_PRI1_BUF_MASK	GENMASK(11, 6)
++#define   QCA8386_PORT_HOL_CTRL0_EG_PRI1(x)		FIELD_PREP(QCA8386_PORT_HOL_CTRL0_EG_PRI1_BUF_MASK, x)
++#define   QCA8386_PORT_HOL_CTRL0_EG_PRI2_BUF_MASK	GENMASK(17, 12)
++#define   QCA8386_PORT_HOL_CTRL0_EG_PRI2(x)		FIELD_PREP(QCA8386_PORT_HOL_CTRL0_EG_PRI2_BUF_MASK, x)
++#define   QCA8386_PORT_HOL_CTRL0_EG_PRI3_BUF_MASK	GENMASK(23, 18)
++#define   QCA8386_PORT_HOL_CTRL0_EG_PRI3(x)		FIELD_PREP(QCA8386_PORT_HOL_CTRL0_EG_PRI3_BUF_MASK, x)
++#define   QCA8386_PORT_HOL_CTRL0_EG_PORT_BUF_MASK	GENMASK(31, 24)
++#define   QCA8386_PORT_HOL_CTRL0_EG_PORT(x)		FIELD_PREP(QCA8386_PORT_HOL_CTRL0_EG_PORT_BUF_MASK, x)
++
+ #define QCA8K_REG_PORT_HOL_CTRL1(_i)			(0x974 + (_i) * 0x8)
+ #define   QCA8K_PORT_HOL_CTRL1_ING_BUF_MASK		GENMASK(3, 0)
+ #define   QCA8K_PORT_HOL_CTRL1_ING(x)			FIELD_PREP(QCA8K_PORT_HOL_CTRL1_ING_BUF_MASK, x)
+@@ -320,12 +342,26 @@
+ #define   QCA8K_PORT_HOL_CTRL1_WRED_EN			BIT(8)
+ #define   QCA8K_PORT_HOL_CTRL1_EG_MIRROR_EN		BIT(16)
+ 
++/* QCA8386 expands the buffer number from the QCA8337, the bits of buffer for
++ * the ingress is also increased.
++ */
++#define   QCA8386_PORT_HOL_CTRL1_ING_BUF_MASK		GENMASK(5, 0)
++#define   QCA8386_PORT_HOL_CTRL1_ING(x)			FIELD_PREP(QCA8386_PORT_HOL_CTRL1_ING_BUF_MASK, x)
++#define   QCA8386_PORT_HOL_CTRL1_EG_PRI4_BUF_MASK	GENMASK(25, 20)
++#define   QCA8386_PORT_HOL_CTRL1_EG_PRI4(x)		FIELD_PREP(QCA8386_PORT_HOL_CTRL1_EG_PRI4_BUF_MASK, x)
++#define   QCA8386_PORT_HOL_CTRL1_EG_PRI5_BUF_MASK	GENMASK(31, 26)
++#define   QCA8386_PORT_HOL_CTRL1_EG_PRI5(x)		FIELD_PREP(QCA8386_PORT_HOL_CTRL1_EG_PRI5_BUF_MASK, x)
++
+ /* Pkt edit registers */
+ #define QCA8K_EGREES_VLAN_PORT_SHIFT(_i)		(16 * ((_i) % 2))
+ #define QCA8K_EGREES_VLAN_PORT_MASK(_i)			(GENMASK(11, 0) << QCA8K_EGREES_VLAN_PORT_SHIFT(_i))
+ #define QCA8K_EGREES_VLAN_PORT(_i, x)			((x) << QCA8K_EGREES_VLAN_PORT_SHIFT(_i))
+ #define QCA8K_EGRESS_VLAN(x)				(0x0c70 + (4 * (x / 2)))
+ 
++#define QCA8K_ROUTE_EGRESS_VLAN				0xc80
++#define QCA8K_ROUTE_EGRESS_VLAN_MODE_MASK(x)		(GENMASK(1, 0) << (4 * x))
++#define QCA8K_ROUTE_EGRESS_VLAN_MODE(x, val)		(val << (4 * x))
++
+ /* L3 registers */
+ #define QCA8K_HROUTER_CONTROL				0xe00
+ #define   QCA8K_HROUTER_CONTROL_GLB_LOCKTIME_M		GENMASK(17, 16)
+-- 
+2.34.1
+

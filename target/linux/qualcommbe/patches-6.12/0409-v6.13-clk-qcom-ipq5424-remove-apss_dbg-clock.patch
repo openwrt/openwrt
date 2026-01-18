@@ -1,0 +1,56 @@
+From 5051b61d769ecc02b218499c35bee4cc1c38b7dc Mon Sep 17 00:00:00 2001
+From: Manikanta Mylavarapu <quic_mmanikan@quicinc.com>
+Date: Tue, 17 Dec 2024 17:09:08 +0530
+Subject: [PATCH] clk: qcom: ipq5424: remove apss_dbg clock
+
+The gcc_apss_dbg clk is access protected by trust zone, and accessing
+it results in a kernel crash. Therefore remove the gcc_apss_dbg_clk
+from the gcc driver.
+
+Signed-off-by: Manikanta Mylavarapu <quic_mmanikan@quicinc.com>
+Link: https://lore.kernel.org/r/20241217113909.3522305-2-quic_mmanikan@quicinc.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+---
+ drivers/clk/qcom/gcc-ipq5424.c | 19 -------------------
+ 1 file changed, 19 deletions(-)
+
+diff --git a/drivers/clk/qcom/gcc-ipq5424.c b/drivers/clk/qcom/gcc-ipq5424.c
+index 88a7d5b2e751..5f42ac6c8cdc 100644
+--- a/drivers/clk/qcom/gcc-ipq5424.c
++++ b/drivers/clk/qcom/gcc-ipq5424.c
+@@ -1097,24 +1097,6 @@ static struct clk_branch gcc_adss_pwm_clk = {
+ 	},
+ };
+ 
+-static struct clk_branch gcc_apss_dbg_clk = {
+-	.halt_reg = 0x2402c,
+-	.halt_check = BRANCH_HALT_VOTED,
+-	.clkr = {
+-		.enable_reg = 0x2402c,
+-		.enable_mask = BIT(0),
+-		.hw.init = &(const struct clk_init_data) {
+-			.name = "gcc_apss_dbg_clk",
+-			.parent_hws = (const struct clk_hw*[]) {
+-				&gcc_qdss_dap_sync_clk_src.hw
+-			},
+-			.num_parents = 1,
+-			.flags = CLK_SET_RATE_PARENT,
+-			.ops = &clk_branch2_ops,
+-		},
+-	},
+-};
+-
+ static struct clk_branch gcc_cnoc_pcie0_1lane_s_clk = {
+ 	.halt_reg = 0x31088,
+ 	.halt_check = BRANCH_HALT,
+@@ -2785,7 +2767,6 @@ static struct clk_branch gcc_pcie3_rchng_clk = {
+ static struct clk_regmap *gcc_ipq5424_clocks[] = {
+ 	[GCC_ADSS_PWM_CLK] = &gcc_adss_pwm_clk.clkr,
+ 	[GCC_ADSS_PWM_CLK_SRC] = &gcc_adss_pwm_clk_src.clkr,
+-	[GCC_APSS_DBG_CLK] = &gcc_apss_dbg_clk.clkr,
+ 	[GCC_CNOC_PCIE0_1LANE_S_CLK] = &gcc_cnoc_pcie0_1lane_s_clk.clkr,
+ 	[GCC_CNOC_PCIE1_1LANE_S_CLK] = &gcc_cnoc_pcie1_1lane_s_clk.clkr,
+ 	[GCC_CNOC_PCIE2_2LANE_S_CLK] = &gcc_cnoc_pcie2_2lane_s_clk.clkr,
+-- 
+2.34.1
+
