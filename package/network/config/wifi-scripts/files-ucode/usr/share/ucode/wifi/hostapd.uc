@@ -283,6 +283,17 @@ function device_htmode_append(config) {
 				}
 			config.op_class = 137;
 			config.eht_oper_chwidth = 7;
+
+			/*
+			 * Set HE operation values for 160MHz backward compatibility
+			 * with WiFi 6E clients. Pick the 160MHz half that contains
+			 * the primary channel.
+			 */
+			config.he_oper_chwidth = 3;
+			if (config.channel < config.eht_oper_centr_freq_seg0_idx)
+				config.he_oper_centr_freq_seg0_idx = config.eht_oper_centr_freq_seg0_idx - 16;
+			else
+				config.he_oper_centr_freq_seg0_idx = config.eht_oper_centr_freq_seg0_idx + 16;
 			break;
 
 		case 'HE40':
@@ -383,8 +394,15 @@ function device_htmode_append(config) {
 		config.ieee80211ax = true;
 
 		if (config.hw_mode == 'a') {
-			config.he_oper_chwidth = config.vht_oper_chwidth;
-			config.he_oper_centr_freq_seg0_idx = config.vht_oper_centr_freq_seg0_idx;
+			/*
+			 * Only set HE values from VHT if not already set.
+			 * For 6GHz 320MHz, these are pre-set for 160MHz backward
+			 * compatibility with WiFi 6E clients.
+			 */
+			if (!config.he_oper_chwidth)
+				config.he_oper_chwidth = config.vht_oper_chwidth;
+			if (!config.he_oper_centr_freq_seg0_idx)
+				config.he_oper_centr_freq_seg0_idx = config.vht_oper_centr_freq_seg0_idx;
 		}
 
 		if (config.band == "6g") {
