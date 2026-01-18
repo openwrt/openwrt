@@ -1053,6 +1053,22 @@ define Device/tplink_tl-mr6400-v5
 endef
 TARGET_DEVICES += tplink_tl-mr6400-v5
 
+define Device/tplink_tl-mr6400-v7
+  $(Device/tplink-v2)
+  IMAGE_SIZE := 15872k
+  DEVICE_MODEL := TL-MR6400
+  DEVICE_VARIANT := v7
+  TPLINK_FLASHLAYOUT := 16Mmtk
+  TPLINK_HWID := 0x64000007
+  TPLINK_HWREV := 0x7
+  TPLINK_HWREVADD := 0x7
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-ledtrig-usbport \
+	kmod-usb-serial-option kmod-usb-net-qmi-wwan uqmi
+  IMAGES := sysupgrade.bin tftp-recovery.bin
+  IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
+endef
+TARGET_DEVICES += tplink_tl-mr6400-v7
+
 define Device/tplink_tl-wa801nd-v5
   $(Device/tplink-v2)
   IMAGE_SIZE := 7808k
