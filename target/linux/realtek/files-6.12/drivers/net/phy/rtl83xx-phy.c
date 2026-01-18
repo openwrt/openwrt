@@ -738,6 +738,68 @@ static int rtl821x_config_init(struct phy_device *phydev)
 	return 0;
 }
 
+static int rtl8218d_config_init(struct phy_device *phydev)
+{
+	int oldpage, oldxpage;
+	bool is_qsgmii;
+	int chip_info;
+
+	rtl821x_config_init(phydev);
+
+	if (phydev->mdio.addr % 8)
+		return 0;
+	/*
+	 * The RTl8218D has two MAC (aka SoC side) operation modes. Either dual QSGMII
+	 * or single XSGMII (Realtek proprietary) link. The mode is usually configured via
+	 * strapping pins CHIP_MODE1/2. For the moment offer a configuration that at least
+	 * works for RTL93xx devices. This sequence even "revives" a PHY that has been hard
+	 * reset with
+	 *
+	 *	phy_write(phydev, 0x1e, 0x8);
+	 *	phy_write_paged(phydev, 0x262, 0x10, 0x1);
+	 */
+	oldpage = phy_read(phydev, RTL8XXX_PAGE_SELECT);
+	oldxpage = phy_read(phydev, RTL821XEXT_MEDIA_PAGE_SELECT);
+
+	phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, 0x8);
+	chip_info = phy_read_paged(phydev, 0x327, 0x15);
+	is_qsgmii = (phy_read_paged(phydev, 0x260, 0x12) & 0xf0) == 0xd0;
+
+	pr_info("RTL8218D (chip_id=%d, rev_id=%d) on port %d running in %s mode\n",
+		(chip_info >> 7) & 0x7, chip_info & 0x7f, phydev->mdio.addr,
+		is_qsgmii ? "QSGMII" : "XSGMII");
+
+	if (is_qsgmii) {
+		for (int sds = 0; sds < 2; sds++) {
+			/* unknown amplification value */
+			phy_modify_paged(phydev, 0x4a8 + sds * 0x100, 0x12, BIT(3), 0);
+			/* main aplification */
+			phy_modify_paged(phydev, 0x4ab + sds * 0x100, 0x16, 0x3e0, 0x1e0);
+			/* unknown LCCMU value */
+			phy_write_paged(phydev, 0x4ac + sds * 0x100, 0x15, 0x4380);
+		}
+	} else {
+		/* serdes 0/1 disable auto negotiation */
+		phy_modify_paged(phydev, 0x400, 0x12, 0, BIT(8));
+		phy_modify_paged(phydev, 0x500, 0x12, 0, BIT(8));
+		/* unknown eye configuration */
+		phy_modify_paged(phydev, 0x4b8, 0x12, BIT(3), 0);
+	}
+
+	/* reset serdes 0 */
+	phy_write_paged(phydev, 0x400, 0x10, 0x1700);
+	phy_write_paged(phydev, 0x400, 0x10, 0x1703);
+
+	/* reset serdes 1 */
+	phy_write_paged(phydev, 0x500, 0x10, 0x1400);
+	phy_write_paged(phydev, 0x500, 0x10, 0x1403);
+
+	phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, oldxpage);
+	phy_write(phydev, RTL8XXX_PAGE_SELECT, oldpage);
+
+	return 0;
+}
+
 static void rtl8218b_cmu_reset(struct phy_device *phydev, int reset_id)
 {
 	int bitpos = reset_id * 2;
@@ -896,7 +958,7 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 	{
 		PHY_ID_MATCH_EXACT(PHY_ID_RTL8218D),
 		.name		= "REALTEK RTL8218D",
-		.config_init	= rtl821x_config_init,
+		.config_init	= rtl8218d_config_init,
 		.features	= PHY_GBIT_FEATURES,
 		.probe		= rtl8218x_phy_probe,
 		.read_mmd	= rtl821x_read_mmd,
