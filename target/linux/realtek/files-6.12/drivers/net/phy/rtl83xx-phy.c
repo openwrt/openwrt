@@ -466,14 +466,15 @@ static bool rtl8214fc_media_is_fibre(struct phy_device *phydev)
 static void rtl8214fc_power_set(struct phy_device *phydev, int port, bool on)
 {
 	int page = port == PORT_FIBRE ? RTL821X_MEDIA_PAGE_FIBRE : RTL821X_MEDIA_PAGE_COPPER;
+	int oldxpage = __phy_read(phydev, RTL821XEXT_MEDIA_PAGE_SELECT);
 	int pdown = on ? 0 : BMCR_PDOWN;
 
 	phydev_info(phydev, "power %s %s\n", on ? "on" : "off",
 		    port == PORT_FIBRE ? "fibre" : "copper");
 
-	phy_write(phydev, RTL821XINT_MEDIA_PAGE_SELECT, page);
+	phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, page);
 	phy_modify_paged(phydev, RTL821X_PAGE_POWER, 0x10, BMCR_PDOWN, pdown);
-	phy_write(phydev, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
+	phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, oldxpage);
 }
 
 static int rtl8214fc_suspend(struct phy_device *phydev)
