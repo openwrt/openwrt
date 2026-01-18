@@ -1,0 +1,19 @@
+/dts-v1/;
+
+#include "ipq9574-be800v1-common.dtsi"
+
+/ {
+};
+
+&xgmac6 {
+	phy-mode = "10gbase-r";
+	sfp = <&sfp0>;
+};
+
+&sfp_medium {
+	default-state = "on";
+};
+
+&sfp0 {
+	status = "okay";
+};
