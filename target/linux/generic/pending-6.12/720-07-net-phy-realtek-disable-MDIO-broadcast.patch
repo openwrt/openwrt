@@ -21,7 +21,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  #define RTL8366RB_POWER_SAVE			0x15
  #define RTL8366RB_POWER_SAVE_ON			BIT(12)
-@@ -1350,7 +1351,8 @@ static int rtl822x_init_phycr1(struct ph
+@@ -1358,7 +1359,8 @@ static int rtl822x_init_phycr1(struct ph
  
  	return phy_modify_mmd_changed(phydev, MDIO_MMD_VEND2, RTL8221B_PHYCR1,
  				      RTL8221B_PHYCR1_ALDPS_EN |
