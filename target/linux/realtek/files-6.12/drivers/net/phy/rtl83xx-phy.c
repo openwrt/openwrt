@@ -863,10 +863,19 @@ static int rtl8218b_config_init(struct phy_device *phydev)
 	return 0;
 }
 
-static int rtl8214fc_config_init(struct phy_device *phydev)
+static int rtl8214fc_phy_probe(struct phy_device *phydev)
 {
 	static int regs[] = {16, 19, 20, 21};
 	int ret;
+
+	rtl821x_package_join(phydev, 4);
+
+	/*
+	 * Normally phy_probe() only initializes PHY structures and setup is run in
+	 * config_init(). The RTL8214FC needs configuration before SFP probing while
+	 * the preferred media is still copper. This way all SFP events (even before
+	 * the first config_init()) will find a consistent port state.
+	 */
 
 	/* Step 1 - package setup: Due to similar design reuse RTL8218B coding */
 	ret = rtl8218b_config_init(phydev);
@@ -874,33 +883,24 @@ static int rtl8214fc_config_init(struct phy_device *phydev)
 		return ret;
 
 	if (phydev->mdio.addr % 8 == 0) {
-		for (int port = 0; port < 4; port++) {
-			phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, 0x8);
-			/* setup basic fiber control in base phy and default to copper */
-			phy_write_paged(phydev, 0x266, regs[port], 0x0f95);
-			phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, 0x0);
-		}
+		/* Force all ports to copper */
+		phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
+		for (int port = 0; port < 4; port++)
+			phy_modify_paged(phydev, 0x266, regs[port], 0, GENMASK(11, 10));
 	}
 
 	/* Step 2 - port setup */
-	phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, 0x3);
+	phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_FIBRE);
 	/* set fiber SerDes RX to negative edge */
 	phy_modify_paged(phydev, 0x8, 0x17, 0, BIT(14));
 	/* auto negotiation disable link on */
 	phy_modify_paged(phydev, 0x8, 0x14, 0, BIT(2));
 	/* disable fiber 100MBit */
 	phy_modify_paged(phydev, 0x8, 0x11, BIT(5), 0);
-	phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, 0x0);
+	phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 
 	/* Disable EEE. 0xa5d/0x10 is the same as MDIO_MMD_AN / MDIO_AN_EEE_ADV */
 	phy_write_paged(phydev, 0xa5d, 0x10, 0x0000);
-
-	return 0;
-}
-
-static int rtl8214fc_phy_probe(struct phy_device *phydev)
-{
-	rtl821x_package_join(phydev, 4);
 
 	return phy_sfp_probe(phydev, &rtl8214fc_sfp_ops);
 }
@@ -920,7 +920,6 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.match_phy_device = rtl8214fc_match_phy_device,
 		.name		= "Realtek RTL8214FC",
 		.config_aneg	= rtl8214fc_config_aneg,
-		.config_init	= rtl8214fc_config_init,
 		.get_features	= rtl8214fc_get_features,
 		.get_tunable    = rtl8214fc_get_tunable,
 		.probe		= rtl8214fc_phy_probe,
