@@ -156,16 +156,20 @@ static void rtl931x_vlan_profile_dump(int index)
 		 index, (u32)(profile[0] & (3 << 14)), profile[1], profile[2], profile[3]);
 }
 
-static void rtl931x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
+static int rtldsa_931x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, int port, u32 port_state[])
 {
+	int idx = 3 - ((port + 8) / 16);
+	int bit = 2 * ((port + 8) % 16);
 	u32 cmd = 1 << 20 | /* Execute cmd */
 		  0 << 19 | /* Read */
 		  5 << 15 | /* Table type 0b101 */
 		  (msti & 0x3fff);
-	priv->r->exec_tbl0_cmd(cmd);
 
+	priv->r->exec_tbl0_cmd(cmd);
 	for (int i = 0; i < 4; i++)
 		port_state[i] = sw_r32(priv->r->tbl_access_data_0(i));
+
+	return (port_state[idx] >> bit) & 3;
 }
 
 static void rtl931x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
@@ -1829,7 +1833,7 @@ const struct rtl838x_reg rtl931x_reg = {
 	.vlan_profile_dump = rtl931x_vlan_profile_dump,
 	.vlan_profile_setup = rtl931x_vlan_profile_setup,
 	.vlan_fwd_on_inner = rtl931x_vlan_fwd_on_inner,
-	.stp_get = rtl931x_stp_get,
+	.stp_get = rtldsa_931x_stp_get,
 	.stp_set = rtl931x_stp_set,
 	.mac_force_mode_ctrl = rtl931x_mac_force_mode_ctrl,
 	.mac_port_ctrl = rtl931x_mac_port_ctrl,

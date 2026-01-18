@@ -653,16 +653,20 @@ void rtl839x_vlan_profile_dump(int profile)
 	pr_debug("VLAN profile %d: raw %08x, %08x\n", profile, p[0], p[1]);
 }
 
-static void rtl839x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
+static int rtldsa_839x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, int port, u32 port_state[])
 {
+	int idx = 3 - ((port + 12) / 16);
+	int bit = 2 * ((port + 12) % 16);
 	u32 cmd = 1 << 16 | /* Execute cmd */
 		  0 << 15 | /* Read */
 		  5 << 12 | /* Table type 0b101 */
 		  (msti & 0xfff);
-	priv->r->exec_tbl0_cmd(cmd);
 
+	priv->r->exec_tbl0_cmd(cmd);
 	for (int i = 0; i < 4; i++)
 		port_state[i] = sw_r32(priv->r->tbl_access_data_0(i));
+
+	return (port_state[idx] >> bit) & 3;
 }
 
 static void rtl839x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
@@ -1661,7 +1665,7 @@ const struct rtl838x_reg rtl839x_reg = {
 	.enable_mcast_flood = rtl839x_enable_mcast_flood,
 	.enable_bcast_flood = rtl839x_enable_bcast_flood,
 	.set_static_move_action = rtl839x_set_static_move_action,
-	.stp_get = rtl839x_stp_get,
+	.stp_get = rtldsa_839x_stp_get,
 	.stp_set = rtl839x_stp_set,
 	.mac_force_mode_ctrl = rtl839x_mac_force_mode_ctrl,
 	.mac_port_ctrl = rtl839x_mac_port_ctrl,

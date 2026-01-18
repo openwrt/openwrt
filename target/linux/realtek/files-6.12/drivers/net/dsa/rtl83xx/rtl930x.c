@@ -402,17 +402,20 @@ static void rtldsa_930x_enable_flood(int port, bool enable)
 		    RTL930X_L2_LRN_PORT_CONSTRT_CTRL + port * 4);
 }
 
-static void rtl930x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
+static int rtldsa_930x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, int port, u32 port_state[])
 {
+	int idx = 1 - ((port + 3) / 16);
+	int bit = 2 * ((port + 3) % 16);
 	u32 cmd = 1 << 17 | /* Execute cmd */
 		  0 << 16 | /* Read */
 		  4 << 12 | /* Table type 0b10 */
 		  (msti & 0xfff);
-	priv->r->exec_tbl0_cmd(cmd);
 
+	priv->r->exec_tbl0_cmd(cmd);
 	for (int i = 0; i < 2; i++)
-		port_state[i] = sw_r32(RTL930X_TBL_ACCESS_DATA_0(i));
-	pr_debug("MSTI: %d STATE: %08x, %08x\n", msti, port_state[0], port_state[1]);
+		port_state[i] = sw_r32(priv->r->tbl_access_data_0(i));
+
+	return (port_state[idx] >> bit) & 3;
 }
 
 static void rtl930x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
@@ -2646,7 +2649,7 @@ const struct rtl838x_reg rtl930x_reg = {
 	.vlan_fwd_on_inner = rtl930x_vlan_fwd_on_inner,
 	.set_vlan_igr_filter = rtl930x_set_igr_filter,
 	.set_vlan_egr_filter = rtl930x_set_egr_filter,
-	.stp_get = rtl930x_stp_get,
+	.stp_get = rtldsa_930x_stp_get,
 	.stp_set = rtl930x_stp_set,
 	.mac_force_mode_ctrl = rtl930x_mac_force_mode_ctrl,
 	.mac_port_ctrl = rtl930x_mac_port_ctrl,
