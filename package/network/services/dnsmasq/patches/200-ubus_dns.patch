@@ -1,6 +1,6 @@
 --- a/src/dnsmasq.c
 +++ b/src/dnsmasq.c
-@@ -2097,6 +2097,10 @@ static void do_tcp_connection(struct lis
+@@ -2123,6 +2123,10 @@ static void do_tcp_connection(struct lis
        daemon->pipe_to_parent = pipefd[1];
      }
  
@@ -13,7 +13,7 @@
       Reset that here. */
 --- a/src/dnsmasq.h
 +++ b/src/dnsmasq.h
-@@ -1690,14 +1690,26 @@ void emit_dbus_signal(int action, struct
+@@ -1722,14 +1722,26 @@ void emit_dbus_signal(int action, struct
  
  /* ubus.c */
  #ifdef HAVE_UBUS
@@ -42,7 +42,7 @@
  /* ipset.c */
 --- a/src/forward.c
 +++ b/src/forward.c
-@@ -801,7 +801,7 @@ static size_t process_reply(struct dns_h
+@@ -803,7 +803,7 @@ static size_t process_reply(struct dns_h
  	  cache_secure = 0;
  	}
        
@@ -50,7 +50,7 @@
 +      if ((daemon->doctors || ubus_dns_notify_has_subscribers()) && do_doctor(header, n, daemon->namebuff))
  	cache_secure = 0;
        
-       /* check_for_bogus_wildcard() does it's own caching, so
+       /* check_for_bogus_wildcard() does its own caching, so
 --- a/src/rfc1035.c
 +++ b/src/rfc1035.c
 @@ -13,8 +13,10 @@
@@ -65,7 +65,7 @@
  
  /* EXTR_NAME_EXTRACT -> extract name
     EXTR_NAME_COMPARE -> compare name, case insensitive
-@@ -437,10 +439,65 @@ static int private_net6(struct in6_addr
+@@ -444,10 +446,65 @@ int private_net6(struct in6_addr *a, int
      ((u32 *)a)[0] == htonl(0x20010db8); /* RFC 6303 4.6 */
  }
  
@@ -132,7 +132,7 @@
    int done = 0;
    
    if (!(p = skip_questions(header, qlen)))
-@@ -457,7 +514,7 @@ int do_doctor(struct dns_header *header,
+@@ -464,7 +521,7 @@ int do_doctor(struct dns_header *header,
        
        GETSHORT(qtype, p); 
        GETSHORT(qclass, p);
@@ -141,7 +141,7 @@
        GETSHORT(rdlen, p);
        
        if (qclass == C_IN && qtype == T_A)
-@@ -468,6 +525,9 @@ int do_doctor(struct dns_header *header,
+@@ -475,6 +532,9 @@ int do_doctor(struct dns_header *header,
  	  if (!CHECK_LEN(header, p, qlen, INADDRSZ))
  	    return done;
  	  
@@ -151,7 +151,7 @@
  	  /* alignment */
  	  memcpy(&addr.addr4, p, INADDRSZ);
  	  
-@@ -497,6 +557,14 @@ int do_doctor(struct dns_header *header,
+@@ -504,6 +564,14 @@ int do_doctor(struct dns_header *header,
  	      break;
  	    }
  	}
@@ -222,7 +222,7 @@
  static int ubus_handle_metrics(struct ubus_context *ctx, struct ubus_object *obj,
  			       struct ubus_request_data *req, const char *method,
  			       struct blob_attr *msg)
-@@ -328,6 +354,53 @@ fail:
+@@ -333,6 +359,53 @@ fail:
        } \
    } while (0)
  
