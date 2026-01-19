@@ -1302,7 +1302,6 @@ static void rteth_set_mac_hw(struct net_device *dev, u8 *mac)
 
 static int rteth_set_mac_address(struct net_device *dev, void *p)
 {
-	struct rteth_ctrl *ctrl = netdev_priv(dev);
 	const struct sockaddr *addr = p;
 	u8 *mac = (u8 *)(addr->sa_data);
 
@@ -1312,7 +1311,7 @@ static int rteth_set_mac_address(struct net_device *dev, void *p)
 	dev_addr_set(dev, addr->sa_data);
 	rteth_set_mac_hw(dev, mac);
 
-	pr_info("Using MAC %08x%08x\n", sw_r32(ctrl->r->mac), sw_r32(ctrl->r->mac + 4));
+	pr_info("Using MAC %pM\n", dev->dev_addr);
 
 	return 0;
 }
@@ -1747,8 +1746,7 @@ static int rtl838x_eth_probe(struct platform_device *pdev)
 		if (rteth_set_mac_address(dev, &sa))
 			netdev_warn(dev, "Failed to set MAC address.\n");
 	}
-	pr_info("Using MAC %08x%08x\n", sw_r32(ctrl->r->mac),
-		sw_r32(ctrl->r->mac + 4));
+	pr_info("Using MAC %pM\n", dev->dev_addr);
 	strscpy(dev->name, "eth%d", sizeof(dev->name));
 
 	ctrl->pdev = pdev;
