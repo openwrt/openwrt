@@ -17,6 +17,10 @@ PKG_SOURCE_URL:= \
 	https://dropbear.nl/mirror/releases/
 PKG_HASH:=defa924475abf6bc1e74abc00173e46bfdc804bd47caafa14f5a4ef0cc76da34
 
+PKG_GPG_KEYS_DIR:=$(CURDIR)/keys
+PKG_SOURCE_SIG:=$(PKG_SOURCE).asc
+PKG_VALIDPGPKEYS:=F7347EF2EE2E07A267628CA944931494F29C6773
+
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=LICENSE libtomcrypt/LICENSE libtommath/LICENSE
 PKG_CPE_ID:=cpe:/a:dropbear_ssh_project:dropbear_ssh
