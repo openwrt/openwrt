@@ -8,7 +8,7 @@
 +SUBDIRS=lib ip tc bridge misc genl
  ifeq ($(HAVE_MNL),y)
 -SUBDIRS += tipc devlink rdma dcb vdpa netshaper
-+SUBDIRS += devlink rdma
++SUBDIRS += devlink rdma dcb
  endif
  
  LIBNETLINK=../lib/libutil.a ../lib/libnetlink.a
