@@ -101,13 +101,17 @@
 };
 
 &mdio_bus {
+	/* We need to have the reset GPIO on the MDIO bus node,
+	 * otherwise the PHY would be held in reset during PHY detection */
+	reset-gpios = <&pio 3 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <100000>;
+	reset-post-delay-us = <100000>;
 
 	phy6: ethernet-phy@6 {
+		/* Either Realtek RTL8221B-VB-CG or Motorcomm YT8821,
+		 * depending on HW revision */
 		compatible = "ethernet-phy-ieee802.3-c45";
 		reg = <6>;
-		reset-assert-us = <100000>;
-		reset-deassert-us = <100000>;
-		reset-gpios = <&pio 3 GPIO_ACTIVE_LOW>;
 	};
 };
 
