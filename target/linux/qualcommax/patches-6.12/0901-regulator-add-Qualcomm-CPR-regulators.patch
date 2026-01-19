@@ -77,7 +77,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  obj-$(CONFIG_REGULATOR_PF8X00) += pf8x00-regulator.o
 --- /dev/null
 +++ b/drivers/regulator/cpr3-npu-regulator.c
-@@ -0,0 +1,694 @@
+@@ -0,0 +1,689 @@
 +/*
 + * Copyright (c) 2017, The Linux Foundation. All rights reserved.
 + *
@@ -652,8 +652,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	struct device *dev = &pdev->dev;
 +	struct cpr3_controller *ctrl;
 +	int i, rc;
-+	const struct of_device_id *match;
-+	struct cpr3_reg_data *cpr_data;
++	const struct cpr3_reg_data *cpr_data;
 +
 +	if (!dev->of_node) {
 +		dev_err(dev, "Device tree node is missing\n");
@@ -665,11 +664,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +		return -ENOMEM;
 +	g_ctrl = ctrl;
 +
-+	match = of_match_device(cpr3_regulator_match_table, &pdev->dev);
-+	if (!match)
-+		return -ENODEV;
-+
-+	cpr_data = (struct cpr3_reg_data *)match->data;
++	cpr_data = of_device_get_match_data(&pdev->dev);
 +	g_valid_npu_fuse_count = cpr_data->cpr_valid_fuse_count;
 +	dev_info(dev, "NPU CPR valid fuse count: %d\n", g_valid_npu_fuse_count);
 +	ctrl->cpr_clock_rate = cpr_data->cpr_clk_rate;
@@ -9863,7 +9858,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +}
 --- /dev/null
 +++ b/drivers/regulator/cpr4-apss-regulator.c
-@@ -0,0 +1,1818 @@
+@@ -0,0 +1,1813 @@
 +/*
 + * Copyright (c) 2015-2016, The Linux Foundation. All rights reserved.
 + *
@@ -11560,8 +11555,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +{
 +	struct device *dev = &pdev->dev;
 +	struct cpr3_controller *ctrl;
-+	const struct of_device_id *match;
-+	struct cpr4_reg_data *cpr_data;
++	const struct cpr4_reg_data *cpr_data;
 +	int i, rc;
 +
 +	if (!dev->of_node) {
@@ -11573,11 +11567,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	if (!ctrl)
 +		return -ENOMEM;
 +
-+	match = of_match_device(cpr4_regulator_match_table, &pdev->dev);
-+	if (!match)
-+		return -ENODEV;
-+
-+	cpr_data = (struct cpr4_reg_data *)match->data;
++	cpr_data = of_device_get_match_data(&pdev->dev);
 +	g_valid_fuse_count = cpr_data->cpr_valid_fuse_count;
 +	dev_info(dev, "CPR valid fuse count: %d\n", g_valid_fuse_count);
 +	ctrl->cpr_clock_rate = cpr_data->cpr_clk_rate;

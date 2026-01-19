@@ -49,7 +49,7 @@ Signed-off-by: William Qiu <william.qiu@starfivetech.com>
  obj-$(CONFIG_PWM_PXA)		+= pwm-pxa.o
 --- /dev/null
 +++ b/drivers/pwm/pwm-ocores.c
-@@ -0,0 +1,230 @@
+@@ -0,0 +1,225 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * OpenCores PWM Driver
@@ -213,15 +213,10 @@ Signed-off-by: William Qiu <william.qiu@starfivetech.com>
 +
 +static int ocores_pwm_probe(struct platform_device *pdev)
 +{
-+	const struct of_device_id *id;
 +	struct device *dev = &pdev->dev;
 +	struct ocores_pwm_device *ddata;
 +	struct pwm_chip *chip;
 +	int ret;
-+
-+	id = of_match_device(ocores_pwm_of_match, dev);
-+	if (!id)
-+		return -EINVAL;
 +
 +	chip = devm_pwmchip_alloc(dev, 8, sizeof(*ddata));
 +	if (IS_ERR(chip))
@@ -230,7 +225,7 @@ Signed-off-by: William Qiu <william.qiu@starfivetech.com>
 +	chip->ops = &ocores_pwm_ops;
 +
 +	ddata = chip_to_ocores(chip);
-+	ddata->data = id->data;
++	ddata->data = of_device_get_match_data(dev);
 +
 +	ddata->regs = devm_platform_ioremap_resource(pdev, 0);
 +	if (IS_ERR(ddata->regs))

@@ -311,9 +311,9 @@ Signed-off-by: George Moussalem <george.moussalem@outlook.com>
  	return 0;
  
  free_rproc:
-@@ -720,7 +707,6 @@ static int q6_wcss_probe(struct platform
+@@ -715,7 +702,6 @@ static int q6_wcss_probe(struct platform
  	wcss->dev = &pdev->dev;
- 	wcss->desc = desc;
+ 	wcss->desc = of_device_get_match_data(&pdev->dev);;
  	wcss->firmware = firmware;
 -	wcss->version = Q6_IPQ;
  
