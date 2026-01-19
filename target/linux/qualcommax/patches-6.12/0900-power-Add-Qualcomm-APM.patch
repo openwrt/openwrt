@@ -49,7 +49,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +obj-$(CONFIG_QCOM_APM)		+= apm.o
 --- /dev/null
 +++ b/drivers/power/qcom/apm.c
-@@ -0,0 +1,941 @@
+@@ -0,0 +1,936 @@
 +/*
 + * Copyright (c) 2015-2016, The Linux Foundation. All rights reserved.
 + *
@@ -893,7 +893,6 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +{
 +	struct device *dev = &pdev->dev;
 +	struct msm_apm_ctrl_dev *ctrl;
-+	const struct of_device_id *match;
 +	int ret = 0;
 +
 +	dev_dbg(dev, "probing MSM Array Power Mux driver\n");
@@ -902,10 +901,6 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +		dev_err(dev, "Device tree node is missing\n");
 +		return -ENODEV;
 +	}
-+
-+	match = of_match_device(msm_apm_match_table, dev);
-+	if (!match)
-+		return -ENODEV;
 +
 +	ctrl = devm_kzalloc(dev, sizeof(*ctrl), GFP_KERNEL);
 +	if (!ctrl) {
@@ -916,7 +911,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
 +	INIT_LIST_HEAD(&ctrl->list);
 +	spin_lock_init(&ctrl->lock);
 +	ctrl->dev = dev;
-+	ctrl->msm_id = (uintptr_t)match->data;
++	ctrl->msm_id = (uintptr_t)of_device_get_match_data(dev);
 +	platform_set_drvdata(pdev, ctrl);
 +
 +	switch (ctrl->msm_id) {

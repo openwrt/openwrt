@@ -373,7 +373,7 @@ Signed-off-by: shanlong.li <shanlong.li@starfivetech.com>
 +#endif
 --- /dev/null
 +++ b/drivers/e24/starfive_e24.c
-@@ -0,0 +1,1524 @@
+@@ -0,0 +1,1522 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * e24 driver for StarFive JH7110 SoC
@@ -1863,11 +1863,9 @@ Signed-off-by: shanlong.li <shanlong.li@starfivetech.com>
 +static int e24_probe(struct platform_device *pdev)
 +{
 +	long ret = -EINVAL;
-+	const struct of_device_id *match;
-+	e24_init_function *init;
++	const e24_init_function *init;
 +
-+	match = of_match_device(e24_of_match, &pdev->dev);
-+	init = match->data;
++	init = of_device_get_match_data(&pdev->dev);
 +	ret = init(pdev);
 +
 +	return IS_ERR_VALUE(ret) ? ret : 0;
