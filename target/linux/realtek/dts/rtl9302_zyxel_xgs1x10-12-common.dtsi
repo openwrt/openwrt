@@ -221,16 +221,18 @@
 			label = "lan9";
 			pcs-handle = <&serdes6>;
 			phy-handle = <&phy24>;
-			phy-mode = "2500base-x";
+			phy-mode = "sgmii";
 			led-set = <1>;
+			managed = "in-band-status";
 		};
 		port@25 {
 			reg = <25>;
 			label = "lan10";
 			pcs-handle = <&serdes7>;
 			phy-handle = <&phy25>;
-			phy-mode = "2500base-x";
+			phy-mode = "sgmii";
 			led-set = <1>;
+			managed = "in-band-status";
 		};
 
 		port@26 {
