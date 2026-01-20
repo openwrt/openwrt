@@ -563,6 +563,27 @@ define Device/asus_zenwifi-bt8-ubootmod
 endef
 TARGET_DEVICES += asus_zenwifi-bt8-ubootmod
 
+define Device/asus_rt-be59
+  DEVICE_VENDOR := ASUS
+  DEVICE_MODEL := RT-BE59
+  DEVICE_DTS := mt7987a-asus-rt-be59
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7996e kmod-mt7992-23-firmware kmod-phy-airoha-en8811h mt7987-2p5g-phy-firmware
+  KERNEL := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  KERNEL_LOADADDR := 0x48080000
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+ifeq ($(IB),)
+  ARTIFACTS := initramfs.trx
+  ARTIFACT/initramfs.trx := append-image-stage initramfs-kernel.bin | \
+	uImage none | asus-trx -v 3 -n $$(DEVICE_MODEL)
+endif
+endef
+TARGET_DEVICES += asus_rt-be59
+
 
 define Device/bananapi_bpi-r3
   DEVICE_VENDOR := Bananapi
