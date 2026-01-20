@@ -2,6 +2,7 @@
 
 #include <dt-bindings/interrupt-controller/mips-gic.h>
 #include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/clock/rtl83xx-clk.h>
 
 / {
 	#address-cells = <1>;
@@ -9,20 +10,34 @@
 
 	compatible = "realtek,rtl960x-soc";
 
+	osc: oscillator {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <25000000>;
+	};
+
+	ccu: clock-controller {
+		compatible = "realtek,rtl9607-clock";
+		#clock-cells = <1>;
+		clocks = <&osc>;
+		clock-names = "ref_clk";
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
-		frequency = <1150000000>;
 
 		cpu@0 {
 			compatible = "mti,interaptiv";
 			device_type = "cpu";
 			reg = <0>;
+			clocks = <&ccu CLK_CPU>;
 		};
 		cpu@1 {
 			compatible = "mti,interaptiv";
 			device_type = "cpu";
 			reg = <1>;
+			clocks = <&ccu CLK_CPU>;
 		};
 	};
 
@@ -41,23 +56,9 @@
 		stdout-path = "serial0:115200n8";
 	};
 
-	lx_clk: lx_clk {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-frequency = <200000000>;
-	};
-
 	cpc: cpc@1bde0000 {
 		compatible = "mti,mips-cpc";
 		reg = <0x1bde0000 0x8000>;
-	};
-
-	cpuclock: cpuclock@0 {
-		#clock-cells = <0>;
-		compatible = "fixed-clock";
-
-		/* FIXME: there should be way to detect this */
-		clock-frequency = <1150000000>;
 	};
 
 	cpuintc: cpuintc {
@@ -79,7 +80,7 @@
 		timer {
 			compatible = "mti,gic-timer";
 			interrupts = <GIC_LOCAL 1 IRQ_TYPE_NONE>;
-			clocks = <&cpuclock>;
+			clocks = <&ccu CLK_CPU>;
 		};
 	};
 
@@ -111,7 +112,8 @@
 			reg = <0x1a400 0x44>;
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SHARED 35 IRQ_TYPE_LEVEL_HIGH>;
-			clocks = <&lx_clk>;
+			clocks = <&ccu CLK_LXB>;
+
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
@@ -122,7 +124,7 @@
 
 			realtek,reset-mode = "soc";
 
-			clocks = <&lx_clk>;
+			clocks = <&ccu CLK_LXB>;
 			timeout-sec = <30>;
 
 			interrupt-parent = <&gic>;
@@ -153,14 +155,14 @@
 			interrupts = <GIC_SHARED 0 IRQ_TYPE_LEVEL_HIGH>, <GIC_SHARED 1 IRQ_TYPE_LEVEL_HIGH>,
 				     <GIC_SHARED 2 IRQ_TYPE_LEVEL_HIGH>, <GIC_SHARED 3 IRQ_TYPE_LEVEL_HIGH>,
 				     <GIC_SHARED 4 IRQ_TYPE_LEVEL_HIGH>, <GIC_SHARED 5 IRQ_TYPE_LEVEL_HIGH>;
-			clocks = <&lx_clk>;
+			clocks = <&ccu CLK_LXB>;
 		};
 
 		uart0: uart@2000 {
 			compatible = "ns16550a";
 			reg = <0x2000 0x100>;
 
-			clock-frequency = <200000000>;
+			clocks = <&ccu CLK_LXB>;
 
 			interrupt-parent = <&gic>;
 			#interrupt-cells = <3>;
@@ -176,7 +178,7 @@
 			compatible = "ns16550a";
 			reg = <0x2100 0x100>;
 
-			clock-frequency = <200000000>;
+			clocks = <&ccu CLK_LXB>;
 
 			interrupt-parent = <&gic>;
 			#interrupt-cells = <3>;
