@@ -15,7 +15,7 @@ Signed-off-by: Antoine Tenart <antoine.tenart@bootlin.com>
 
 --- a/drivers/net/mdio/Kconfig
 +++ b/drivers/net/mdio/Kconfig
-@@ -54,6 +54,17 @@ config MDIO_SUN4I
+@@ -37,6 +37,17 @@ config MDIO_SUN4I
  	  interface units of the Allwinner SoC that have an EMAC (A10,
  	  A12, A10s, etc.)
  
@@ -35,9 +35,9 @@ Signed-off-by: Antoine Tenart <antoine.tenart@bootlin.com>
  	depends on ARCH_XGENE || COMPILE_TEST
 --- a/drivers/net/mdio/Makefile
 +++ b/drivers/net/mdio/Makefile
-@@ -20,6 +20,7 @@ obj-$(CONFIG_MDIO_MSCC_MIIM)		+= mdio-ms
- obj-$(CONFIG_MDIO_MVUSB)		+= mdio-mvusb.o
+@@ -22,6 +22,7 @@ obj-$(CONFIG_MDIO_MVUSB)		+= mdio-mvusb.
  obj-$(CONFIG_MDIO_OCTEON)		+= mdio-octeon.o
+ obj-$(CONFIG_MDIO_REALTEK_RTL9300)	+= mdio-realtek-rtl9300.o
  obj-$(CONFIG_MDIO_REGMAP)		+= mdio-regmap.o
 +obj-$(CONFIG_MDIO_SMBUS)		+= mdio-smbus.o
  obj-$(CONFIG_MDIO_SUN4I)		+= mdio-sun4i.o
@@ -389,7 +389,7 @@ Signed-off-by: Antoine Tenart <antoine.tenart@bootlin.com>
 +MODULE_LICENSE("GPL");
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -76,6 +76,7 @@ config SFP
+@@ -81,6 +81,7 @@ config SFP
  	depends on I2C && PHYLINK
  	depends on HWMON || HWMON=n
  	select MDIO_I2C
