@@ -46,6 +46,8 @@ do_mount_root() {
 		missing_lines /tmp/group /etc/group >> /etc/group
 		missing_lines /tmp/shadow /etc/shadow >> /etc/shadow
 		rm /tmp/passwd /tmp/group /tmp/shadow
+
+		cp /rom/etc/uci-defaults/* /etc/uci-defaults/
 		# Prevent configuration corruption on a power loss
 		sync
 	}
