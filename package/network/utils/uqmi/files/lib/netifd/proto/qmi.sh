@@ -306,12 +306,12 @@ proto_qmi_setup() {
 
 	[ "$pdptype" = "ip" -o "$pdptype" = "ipv6" -o "$pdptype" = "ipv4v6" ] || pdptype="ip"
 
-	# Configure PDP type and APN for profile 1.
+	# Configure PDP type and APN for the selected profile.
 	# In case GGSN rejects IPv4v6 PDP, modem might not be able to
 	# establish a non-LTE data session.
 	profile_pdptype="$pdptype"
 	[ "$profile_pdptype" = "ip" ] && profile_pdptype="ipv4"
-	uqmi -s -d "$device" -t 1000 --modify-profile "3gpp,1" --apn "$apn" --pdp-type "$profile_pdptype" > /dev/null 2>&1
+	uqmi -s -d "$device" -t 1000 --modify-profile "3gpp,${profile:-1}" --apn "$apn" --pdp-type "$profile_pdptype" > /dev/null 2>&1
 
 	if [ "$pdptype" = "ip" ]; then
 		[ -z "$autoconnect" ] && autoconnect=1
