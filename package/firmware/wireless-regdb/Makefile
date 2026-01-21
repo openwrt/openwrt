@@ -10,6 +10,10 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/software/network/wireless-regdb/
 PKG_HASH:=8a27bfc081bafed8c24dd70fab0d96f098e5a0bfcd08d3da672595f225ab8993
 
+PKG_GPG_KEYS_DIR:=$(CURDIR)/keys
+PKG_SOURCE_SIG:=$(basename $(PKG_SOURCE)).sign
+PKG_VALIDPGPKEYS:=DA73759BF8619E484E5A3B47389A54219C0F2430
+
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 
 include $(INCLUDE_DIR)/package.mk
