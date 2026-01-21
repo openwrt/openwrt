@@ -10,7 +10,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
 
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
-@@ -164,6 +164,11 @@ cflags-$(CONFIG_CPU_R4X00)	+= $(call cc-
+@@ -160,6 +160,11 @@ cflags-$(CONFIG_CPU_R4X00)	+= $(call cc-
  cflags-$(CONFIG_CPU_TX49XX)	+= $(call cc-option,-march=r4600,-march=mips3) -Wa,--trap
  cflags-$(CONFIG_CPU_MIPS32_R1)	+= -march=mips32 -Wa,--trap
  cflags-$(CONFIG_CPU_MIPS32_R2)	+= -march=mips32r2 -mtune=34kc -Wa,--trap

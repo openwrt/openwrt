@@ -129,7 +129,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
  
  	raw_spin_unlock_irqrestore(&irq_lock, flags);
  }
-@@ -65,110 +118,259 @@ static void realtek_ictl_unmask_irq(stru
+@@ -65,110 +118,261 @@ static void realtek_ictl_unmask_irq(stru
  static void realtek_ictl_mask_irq(struct irq_data *i)
  {
  	unsigned long flags;
@@ -148,7 +148,8 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
  }
  
 +static int __maybe_unused realtek_ictl_irq_affinity(struct irq_data *i,
-+	const struct cpumask *dest, bool force)
++						    const struct cpumask *dest,
++						    bool force)
 +{
 +	struct realtek_ictl_output *output = i->domain->host_data;
 +	cpumask_t cpu_configure;
@@ -212,7 +213,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
  }
  
 +static int intc_select(struct irq_domain *d, struct irq_fwspec *fwspec,
-+	enum irq_domain_bus_token bus_token)
++		       enum irq_domain_bus_token bus_token)
 +{
 +	struct realtek_ictl_output *output = d->host_data;
 +	bool routed_elsewhere;
@@ -266,7 +267,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
  	chained_irq_enter(chip, desc);
 -	pending = readl(REG(RTL_ICTL_GIMR)) & readl(REG(RTL_ICTL_GISR));
 +	pending = readl(REG(RTL_ICTL_GIMR, cpu)) & readl(REG(RTL_ICTL_GISR, cpu))
-+		& output->child_mask;
++		  & output->child_mask;
  
  	if (unlikely(!pending)) {
  		spurious_interrupt();
@@ -291,7 +292,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
 + * disconnected. Routing values {1..15} connect to output lines {0..14}.
 + */
 +static int __init setup_parent_interrupts(struct device_node *node, int *parents,
-+	unsigned int num_parents)
++					  unsigned int num_parents)
 +{
 +	struct realtek_ictl_output *outputs;
 +	struct realtek_ictl_output *output;
@@ -339,11 +340,11 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
 -	int parent_irq;
 +	unsigned int p;
 +	int cpu;
-+
-+	cpumask_clear(&realtek_ictl_cpu_configurable);
  
 -	realtek_ictl_base = of_iomap(node, 0);
 -	if (!realtek_ictl_base)
++	cpumask_clear(&realtek_ictl_cpu_configurable);
++
 +	for (cpu = 0; cpu < NR_CPUS; cpu++) {
 +		realtek_ictl_base[cpu] = of_iomap(node, cpu);
 +		if (realtek_ictl_base[cpu]) {
@@ -370,11 +371,11 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
 +		pr_err("too many parent interrupts\n");
 +		return -EINVAL;
 +	}
- 
--	if (WARN_ON(!of_irq_count(node))) {
++
 +	for (p = 0; p < num_parents; p++)
 +		parent_irqs[p] = of_irq_get(node, p);
-+
+ 
+-	if (WARN_ON(!of_irq_count(node))) {
 +	if (WARN_ON(!num_parents)) {
  		/*
  		 * If DT contains no parent interrupts, assume MIPS CPU IRQ 2
@@ -387,7 +388,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
  		oirq.np = of_find_compatible_node(NULL, NULL, "mti,cpu-interrupt-controller");
 -		oirq.args_count = 1;
 -		oirq.args[0] = 2;
--
+ 
 -		parent_irq = irq_create_of_mapping(&oirq);
 +		if (oirq.np) {
 +			oirq.args_count = 1;
@@ -407,7 +408,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
 -	else if (!parent_irq)
 -		return -ENODEV;
 -
--	domain = irq_domain_add_linear(node, RTL_ICTL_NUM_INPUTS, &irq_domain_ops, NULL);
+-	domain = irq_domain_create_linear(of_fwnode_handle(node), RTL_ICTL_NUM_INPUTS, &irq_domain_ops, NULL);
 -	if (!domain)
 -		return -ENOMEM;
 -

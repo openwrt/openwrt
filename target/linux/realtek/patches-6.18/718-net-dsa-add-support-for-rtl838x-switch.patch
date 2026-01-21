@@ -22,7 +22,7 @@ Submitted-by: John Crispin <john@phrozen.org>
 
 --- a/drivers/net/dsa/Kconfig
 +++ b/drivers/net/dsa/Kconfig
-@@ -89,6 +89,8 @@ source "drivers/net/dsa/xrs700x/Kconfig"
+@@ -84,6 +84,8 @@ source "drivers/net/dsa/xrs700x/Kconfig"
  
  source "drivers/net/dsa/realtek/Kconfig"
  
@@ -30,10 +30,10 @@ Submitted-by: John Crispin <john@phrozen.org>
 +
  config NET_DSA_RZN1_A5PSW
  	tristate "Renesas RZ/N1 A5PSW Ethernet switch support"
- 	depends on OF && ARCH_RZN1
+ 	depends on OF && (ARCH_RZN1 || COMPILE_TEST)
 --- a/drivers/net/dsa/Makefile
 +++ b/drivers/net/dsa/Makefile
-@@ -25,5 +25,6 @@ obj-y				+= mv88e6xxx/
+@@ -22,5 +22,6 @@ obj-y				+= mv88e6xxx/
  obj-y				+= ocelot/
  obj-y				+= qca/
  obj-y				+= realtek/
