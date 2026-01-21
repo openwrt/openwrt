@@ -24,6 +24,7 @@
 #include "taxonomy.h"
 #include "airtime_policy.h"
 #include "hw_features.h"
+#include "radius/radius.h"
 
 static struct ubus_context *ctx;
 static struct blob_buf b;
@@ -320,6 +321,36 @@ hostapd_bss_get_clients(struct ubus_context *ctx, struct ubus_object *obj,
 			blobmsg_add_u32(&b, "tx", sta_driver_data.current_tx_rate * 100);
 			blobmsg_close_table(&b, r);
 			blobmsg_add_u32(&b, "signal", sta_driver_data.signal);
+		}
+
+		/* RADIUS Attributes */
+		if (sta->radius_accept) {
+			struct radius_hdr *hdr = radius_msg_get_hdr(sta->radius_accept);
+			char hex_buf[1024] = "";
+			unsigned max_bytes = (sizeof(hex_buf) - 1) / 2;
+			size_t attr_used = radius_msg_get_attr_used(sta->radius_accept);
+			r = blobmsg_open_array(&b, "radius_attrs");
+			for (size_t i = 0; i < attr_used; i++) {
+				struct radius_attr_hdr *attr_hdr = radius_msg_get_attr_hdr(
+					sta->radius_accept, i
+				);
+				if (attr_hdr == NULL) { continue; }
+
+				uint8_t *pos = (uint8_t *)(attr_hdr + 1);
+				size_t value_length = attr_hdr->length - sizeof(*attr_hdr);
+				if (value_length > max_bytes) { continue; }
+
+				void *r2 = blobmsg_open_table(&b, "radius_attrs_items");
+				blobmsg_add_u8(&b, "type", attr_hdr->type);
+				blobmsg_add_u8(&b, "length", attr_hdr->length);
+
+				for (size_t j = 0; j < value_length; j++) {
+					snprintf(&hex_buf[j * 2], 3, "%02x", pos[j]);
+				}
+				blobmsg_add_string(&b, "value_hex", hex_buf);
+				blobmsg_close_table(&b, r2);
+			}
+			blobmsg_close_table(&b, r);
 		}
 
 		hostapd_parse_capab_blobmsg(sta);
