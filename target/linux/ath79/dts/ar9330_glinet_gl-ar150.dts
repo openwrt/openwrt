@@ -21,13 +21,6 @@
 	leds {
 		compatible = "gpio-leds";
 
-		wlan {
-			function = LED_FUNCTION_WLAN;
-			color = <LED_COLOR_ID_ORANGE>;
-			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "phy0tpt";
-		};
-
 		configurable {
 			label = "green:configurable";
 			gpios = <&gpio 13 GPIO_ACTIVE_HIGH>;
@@ -163,4 +156,8 @@
 
 	nvmem-cells = <&macaddr_art_0>, <&cal_art_1000>;
 	nvmem-cell-names = "mac-address", "calibration";
+
+	led {
+		led-sources = <0>;
+	};
 };
