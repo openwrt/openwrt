@@ -5,10 +5,10 @@
  
  #define DSL_INTERN
 +#include <linux/kthread.h>
- #include <linux/of_platform.h>
+ #include <linux/mod_devicetable.h>
+ #include <linux/platform_device.h>
  
- #include "drv_dsl_cpe_api.h"
-@@ -39,7 +40,7 @@ static DSL_ssize_t DSL_DRV_Write(DSL_DRV
+@@ -40,7 +41,7 @@ static DSL_ssize_t DSL_DRV_Write(DSL_DRV
  static DSL_int_t DSL_DRV_Ioctls(DSL_DRV_inode_t * pINode, DSL_DRV_file_t * pFile,
                           DSL_uint_t nCommand, unsigned long nArg);
  #else
@@ -17,7 +17,7 @@
                           DSL_uint_t nCommand, unsigned long nArg);
  #endif
  static int DSL_DRV_Open(DSL_DRV_inode_t * ino, DSL_DRV_file_t * fil);
-@@ -183,7 +184,7 @@ static DSL_int_t DSL_DRV_Ioctls(DSL_DRV_
+@@ -184,7 +185,7 @@ static DSL_int_t DSL_DRV_Ioctls(DSL_DRV_
     DSL_uint_t nCommand,
     unsigned long nArg)
  #else
@@ -26,7 +26,7 @@
     DSL_DRV_file_t * pFile,
     DSL_uint_t nCommand,
     unsigned long nArg)
-@@ -520,9 +521,9 @@ DSL_void_t* DSL_IoctlMemCpyTo(
+@@ -521,9 +522,9 @@ DSL_void_t* DSL_IoctlMemCpyTo(
     - IFX_SUCCESS on success
     - IFX_ERROR on error
  */
@@ -38,7 +38,7 @@
     DSL_int32_t retVal          = -1;
  #ifndef _lint
  
-@@ -545,30 +546,6 @@ DSL_DRV_STATIC DSL_int32_t DSL_DRV_Kerne
+@@ -546,30 +547,6 @@ DSL_DRV_STATIC DSL_int32_t DSL_DRV_Kerne
        (DSL_NULL, "ENTER - Kernel Thread Startup <%s>" DSL_DRV_CRLF,
          pThrCntrl->thrParams.pName));
  
@@ -69,7 +69,7 @@
     /*DSL_DRV_ThreadPriorityModify(pThrCntrl->nPriority);*/
  
     pThrCntrl->thrParams.bRunning = 1;
-@@ -638,9 +615,7 @@ DSL_int32_t DSL_DRV_ThreadInit(
+@@ -639,9 +616,7 @@ DSL_int32_t DSL_DRV_ThreadInit(
           init_completion(&pThrCntrl->thrCompletion);
  
           /* start kernel thread via the wrapper function */
@@ -80,7 +80,7 @@
  
           pThrCntrl->bValid = DSL_TRUE;
  
-@@ -1075,7 +1050,7 @@ static int ltq_adsl_probe(struct platfor
+@@ -1076,7 +1051,7 @@ static int ltq_adsl_probe(struct platfor
     struct class *dsl_class;
     DSL_int_t i;
  
