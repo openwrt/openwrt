@@ -30,11 +30,11 @@ wifi_isup() {
 	for device in $devices; do
 		json_select "$device"
 			json_get_var up up
-			[ $up -eq 0 ] && return 1
+			[ $up -eq 1 ] && return 0
 		json_select ..
 	done
 
-	return 0
+	return 1
 }
 
 wifi_updown() {
