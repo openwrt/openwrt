@@ -133,22 +133,29 @@ env_ask_sync() {
 }
 
 env_clear() {
-	env_init
-	[ -L "$BASEDIR/.config" ] && rm -f "$BASEDIR/.config"
-	[ -L "$BASEDIR/files" ] && rm -f "$BASEDIR/files"
-	[ -f "$ENVDIR/.config" ] || ( cd "$ENVDIR/files" && find . | grep -vE '^\.$' > /dev/null )
-	env_sync_data
-	if ask_bool 1 "Do you want to keep your current config and files"; then
-		mkdir -p "$BASEDIR/files"
-		shopt -s dotglob
-		cp -a "$ENVDIR/files/"* "$BASEDIR/files" 2>/dev/null >/dev/null
-		shopt -u dotglob
-		cp "$ENVDIR/.config" "$BASEDIR/"
+	if ask_bool 0 "
+Are you sure you want to completely erase the history of your configuration changes?
+
+You will have the option to save your last status in the next step.  All other configurations will be lost."; then
+		env_init
+		[ -L "$BASEDIR/.config" ] && rm -f "$BASEDIR/.config"
+		[ -L "$BASEDIR/files" ] && rm -f "$BASEDIR/files"
+		[ -f "$ENVDIR/.config" ] || ( cd "$ENVDIR/files" && find . | grep -vE '^\.$' > /dev/null )
+		env_sync_data
+		if ask_bool 1 "Do you want to keep your current config and files"; then
+			mkdir -p "$BASEDIR/files"
+			shopt -s dotglob
+			cp -a "$ENVDIR/files/"* "$BASEDIR/files" 2>/dev/null >/dev/null
+			shopt -u dotglob
+			cp "$ENVDIR/.config" "$BASEDIR/"
+		else
+			rm -rf "$BASEDIR/files" "$BASEDIR/.config"
+		fi
+		cd "$BASEDIR" || exit 1
+		rm -rf "$ENVDIR"
 	else
-		rm -rf "$BASEDIR/files" "$BASEDIR/.config"
+		echo ; echo "OK, exiting without any further changes."
 	fi
-	cd "$BASEDIR" || exit 1
-	rm -rf "$ENVDIR"
 }
 
 env_delete() {
