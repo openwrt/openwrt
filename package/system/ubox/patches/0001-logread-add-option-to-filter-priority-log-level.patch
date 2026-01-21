@@ -1,0 +1,90 @@
+From 071cfc2853dd7a4f9fb59a1650de8d5c874ce4f2 Mon Sep 17 00:00:00 2001
+From: Isaev Ruslan <legale.legale@gmail.com>
+Date: Sat, 22 Jul 2023 01:28:05 +0300
+Subject: [PATCH] logread: add option to filter priority (log level)
+
+This adds an ability to filter log messages priority:
+	-v	<log level>	handle only messages with given log level (0-7), repeatable
+	-V	<log level>	ignore messages with given log level (0-7), repeatable
+
+Signed-off-by: Isaev Ruslan <legale.legale@gmail.com>
+---
+ log/logread.c | 27 ++++++++++++++++++++++++++-
+ 1 file changed, 26 insertions(+), 1 deletion(-)
+
+diff --git a/log/logread.c b/log/logread.c
+index f48dd4b..91aae00 100644
+--- a/log/logread.c
++++ b/log/logread.c
+@@ -66,6 +66,8 @@ static int log_type = LOG_STDOUT;
+ static int log_size, log_udp, log_follow, log_trailer_null = 0;
+ static int log_timestamp;
+ static int logd_conn_tries = LOGD_CONNECT_RETRY;
++static int loglevel_include;
++static int loglevel_exclude;
+ static int facility_include;
+ static int facility_exclude;
+ 
+@@ -79,6 +81,16 @@ static int check_facility_filter(int f)
+ 	return 1;
+ }
+ 
++/* check for loglevel filter; return 0 if message shall be dropped */
++static int check_loglevel_filter(int f)
++{
++	if (loglevel_include)
++		return !!(loglevel_include & (1 << f));
++	if (loglevel_exclude)
++		return !(loglevel_exclude & (1 << f));
++	return 1;
++}
++
+ static const char* getcodetext(int value, CODE *codetable) {
+ 	CODE *i;
+ 
+@@ -155,6 +167,9 @@ static int log_notify(struct blob_attr *msg)
+ 
+ 	if (!check_facility_filter(LOG_FAC(p)))
+ 			return 0;
++  
++  if (!check_loglevel_filter(LOG_PRI(p)))
++    return 0;
+ 
+ 	m = blobmsg_get_string(tb[LOG_MSG]);
+ 	if (regexp_pattern &&
+@@ -233,6 +248,8 @@ static int usage(const char *prog)
+ 		"    -p	<file>		PID file\n"
+ 		"    -h	<hostname>	Add hostname to the message\n"
+ 		"    -P	<prefix>	Prefix custom text to streamed messages\n"
++		"    -v	<log level>	handle only messages with given log level (0-7), repeatable\n"
++		"    -V	<log level>	ignore messages with given log level (0-7), repeatable\n"
+ 		"    -z	<facility>	handle only messages with given facility (0-23), repeatable\n"
+ 		"    -Z	<facility>	ignore messages with given facility (0-23), repeatable\n"
+ 		"    -f			Follow log messages\n"
+@@ -313,7 +330,7 @@ int main(int argc, char **argv)
+ 
+ 	signal(SIGPIPE, SIG_IGN);
+ 
+-	while ((ch = getopt(argc, argv, "u0fcs:l:z:Z:r:F:p:S:P:h:e:t")) != -1) {
++	while ((ch = getopt(argc, argv, "u0fcs:l:v:V:z:Z:r:F:p:S:P:h:e:t")) != -1) {
+ 		switch (ch) {
+ 		case 'u':
+ 			log_udp = 1;
+@@ -343,6 +360,14 @@ int main(int argc, char **argv)
+ 		case 'l':
+ 			lines = atoi(optarg);
+ 			break;
++		case 'v':
++			id = strtoul(optarg, NULL, 0) & 0x1f;
++			loglevel_include |= (1 << id);
++			break;
++		case 'V':
++			id = strtoul(optarg, NULL, 0) & 0x1f;
++			loglevel_exclude |= (1 << id);
++			break;
+ 		case 'z':
+ 			id = strtoul(optarg, NULL, 0) & 0x1f;
+ 			facility_include |= (1 << id);
+-- 
+2.30.2
+
