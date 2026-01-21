@@ -47,7 +47,7 @@ define Package/kexec
   $(call Package/kexec-tools/Default)
   TITLE:=Kernel boots kernel
   DEPENDS:=\
-	@(armeb||arm||i386||x86_64||powerpc64||mipsel||mips) \
+	@(armeb||arm||aarch64||i386||x86_64||powerpc64||mipsel||mips) \
 	+KEXEC_ZLIB:zlib +KEXEC_LZMA:liblzma @KERNEL_KEXEC
 endef
 
@@ -58,7 +58,7 @@ endef
 define Package/kdump
   $(call Package/kexec-tools/Default)
   TITLE:=Kernel crash analysis
-  DEPENDS:=+kexec @(i386||x86_64||arm) @KERNEL_CRASH_DUMP
+  DEPENDS:=+kexec @(i386||x86_64||arm||aarch64) @KERNEL_CRASH_DUMP
 endef
 
 define Package/kdump/description
