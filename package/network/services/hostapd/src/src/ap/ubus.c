@@ -1164,12 +1164,12 @@ enum {
 
 static const struct blobmsg_policy beacon_req_policy[__BEACON_REQ_MAX] = {
 	[BEACON_REQ_ADDR] = { "addr", BLOBMSG_TYPE_STRING },
-	[BEACON_REQ_OP_CLASS] { "op_class", BLOBMSG_TYPE_INT32 },
-	[BEACON_REQ_CHANNEL] { "channel", BLOBMSG_TYPE_INT32 },
-	[BEACON_REQ_DURATION] { "duration", BLOBMSG_TYPE_INT32 },
-	[BEACON_REQ_MODE] { "mode", BLOBMSG_TYPE_INT32 },
-	[BEACON_REQ_BSSID] { "bssid", BLOBMSG_TYPE_STRING },
-	[BEACON_REQ_SSID] { "ssid", BLOBMSG_TYPE_STRING },
+	[BEACON_REQ_OP_CLASS] = { "op_class", BLOBMSG_TYPE_INT32 },
+	[BEACON_REQ_CHANNEL] = { "channel", BLOBMSG_TYPE_INT32 },
+	[BEACON_REQ_DURATION] = { "duration", BLOBMSG_TYPE_INT32 },
+	[BEACON_REQ_MODE] = { "mode", BLOBMSG_TYPE_INT32 },
+	[BEACON_REQ_BSSID] = { "bssid", BLOBMSG_TYPE_STRING },
+	[BEACON_REQ_SSID] = { "ssid", BLOBMSG_TYPE_STRING },
 };
 
 static int
