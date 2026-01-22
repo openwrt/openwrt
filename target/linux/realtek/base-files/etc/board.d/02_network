@@ -101,7 +101,54 @@ realtek_setup_macs()
 		label_mac="$lan_mac"
 		lan_mac_start=$lan_mac
 		;;
-	*)
+	allnet,all-sg8208m|\
+	apresia,aplgs120gtss|\
+	d-link,dgs-1210-10mp-f|\
+	d-link,dgs-1210-10p|\
+	d-link,dgs-1210-16|\
+	d-link,dgs-1210-20|\
+	d-link,dgs-1210-26|\
+	d-link,dgs-1210-28|\
+	d-link,dgs-1210-28mp-f|\
+	d-link,dgs-1210-28p-f|\
+	d-link,dgs-1210-52|\
+	engenius,ews2910p-v1|\
+	engenius,ews2910p-v3|\
+	hasivo,s1100w-8xgt-se|\
+	inaba,aml2-17gp|\
+	iodata,bsh-g24mb|\
+	linksys,lgs310c|\
+	linksys,lgs328c|\
+	linksys,lgs352c|\
+	netgear,gs108t-v3|\
+	netgear,gs110tpp-v1|\
+	netgear,gs110tup-v1|\
+	netgear,gs308t-v1|\
+	netgear,gs310tp-v1|\
+	netgear,gs750e|\
+	panasonic,m16eg-pn28160k|\
+	panasonic,m24eg-pn28240k|\
+	panasonic,m48eg-pn28480k|\
+	panasonic,m8eg-pn28080k|\
+	vimin,vm-s100-0800ms|\
+	zyxel,gs1900-10hp-a1|\
+	zyxel,gs1900-16-a1|\
+	zyxel,gs1900-24-a1|\
+	zyxel,gs1900-24-b1|\
+	zyxel,gs1900-24e-a1|\
+	zyxel,gs1900-24ep-a1|\
+	zyxel,gs1900-24hp-a1|\
+	zyxel,gs1900-24hp-b1|\
+	zyxel,gs1900-48-a1|\
+	zyxel,gs1900-8-a1|\
+	zyxel,gs1900-8-b1|\
+	zyxel,gs1900-8hp-a1|\
+	zyxel,gs1900-8hp-b1|\
+	zyxel,gs1920-24hp-v1|\
+	zyxel,xgs1210-12-a1|\
+	zyxel,xgs1210-12-b1|\
+	zyxel,xgs1250-12-a1|\
+	zyxel,xgs1250-12-b1)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env2 mac_start)
 		lan_mac_end=$(mtd_get_mac_ascii u-boot-env2 mac_end)
 		label_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
