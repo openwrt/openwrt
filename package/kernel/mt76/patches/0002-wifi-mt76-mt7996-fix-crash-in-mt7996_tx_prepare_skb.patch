@@ -1,0 +1,25 @@
+From f473d66ab595d5f37aedc868bfe407da0a1245c8 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 12 Nov 2025 16:32:44 +0000
+Subject: wifi: mt76: mt7996: fix crash in mt7996_tx_prepare_skb
+
+Add missing NULL pointer check. In mesh mode, sta can be NULL even for
+qosdata frames.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+Upstream: https://github.com/openwrt/mt76/commit/f473d66ab595d5f37aedc868bfe407da0a1245c8
+---
+ mt7996/mac.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/mt7996/mac.c
++++ b/mt7996/mac.c
+@@ -1061,7 +1061,7 @@ int mt7996_tx_prepare_skb(struct mt76_de
+ 	if (!wcid)
+ 		wcid = &dev->mt76.global_wcid;
+ 
+-	if ((is_8023 || ieee80211_is_data_qos(hdr->frame_control)) && sta->mlo &&
++	if ((is_8023 || ieee80211_is_data_qos(hdr->frame_control)) && sta && sta->mlo &&
+ 	    likely(tx_info->skb->protocol != cpu_to_be16(ETH_P_PAE))) {
+ 		u8 tid = tx_info->skb->priority & IEEE80211_QOS_CTL_TID_MASK;
+ 
