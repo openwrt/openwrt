@@ -83,7 +83,7 @@ realtek_setup_macs()
 	plasmacloud,psx28)
 		lan_mac_start=skip
 		lan_mac="$(get_mac_label)"
-	;;
+		;;
 	tplink,tl-st1008f-v2|\
 	zyxel,xgs1010-12-a1)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
