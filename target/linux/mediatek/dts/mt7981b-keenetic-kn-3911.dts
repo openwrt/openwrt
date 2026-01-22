@@ -9,7 +9,7 @@
 	compatible = "keenetic,kn-3911", "mediatek,mt7981";
 
 	aliases {
-		label-mac-device = &gmac0;
+		label-mac-device = &gmac1;
 		led-boot = &status_led;
 		led-failsafe = &status_led;
 		led-running = &status_led;
@@ -94,7 +94,7 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&mdio_pins>;
 
-	gmac0: mac@0 {
+	mac@0 {
 		compatible = "mediatek,eth-mac";
 		reg = <0>;
 		phy-mode = "2500base-x";
