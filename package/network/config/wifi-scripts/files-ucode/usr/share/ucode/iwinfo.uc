@@ -21,15 +21,16 @@ function find_phy(wiphy) {
 	return null;
 }
 
-function get_noise(iface) {
-	for (let phy in phys) {
-		let channels = nl80211.request(nl80211.const.NL80211_CMD_GET_SURVEY, nl80211.const.NLM_F_DUMP, { dev: iface.ifname });
-		for (let k, channel in channels)
-			if (channel.survey_info.frequency == iface.wiphy_freq)
-				return channel.survey_info.noise;
-	}
+function get_survey(iface) {
+	let channels = nl80211.request(nl80211.const.NL80211_CMD_GET_SURVEY, nl80211.const.NLM_F_DUMP, { dev: iface.ifname });
+	for (let channel in channels)
+		if (channel.survey_info?.frequency == iface.wiphy_freq)
+			return channel.survey_info;
+	return null;
+}
 
-	return -100;
+function get_noise(iface) {
+	return iface.survey?.noise ?? -100;
 }
 
 function get_country(iface) {
@@ -104,6 +105,7 @@ export function update() {
 		let iface = ifaces[v.ifname] = v;
 
 		iface.mode = iftypes[iface.iftype] ?? 'unknown',
+		iface.survey = get_survey(iface);
 		iface.noise = get_noise(iface);
 		iface.country = get_country(iface);
 		iface.max_power = get_max_power(iface);
