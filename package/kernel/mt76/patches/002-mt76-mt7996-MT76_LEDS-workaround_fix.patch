@@ -1,0 +1,45 @@
+--- a/mt7996/init.c	2025-11-06 19:34:56.000000000 +0800
++++ b/mt7996/init.c	2026-01-22 19:31:55.404514250 +0800
+@@ -286,14 +286,20 @@ static void mt7996_led_set_config(struct
+ 
+ 	/* select TX blink mode, 2: only data frames */
+ 	mt76_rmw_field(dev, MT_TMAC_TCR0(mphy->band_idx), MT_TMAC_TCR0_TX_BLINK, 2);
++	if (mphy->band_idx == 0 && mphy->hw->wiphy->n_radio == 2)
++		mt76_rmw_field(dev, MT_TMAC_TCR0(mphy->band_idx + 1), MT_TMAC_TCR0_TX_BLINK, 2);
+ 
+ 	/* enable LED */
+ 	mt76_wr(dev, MT_LED_EN(mphy->band_idx), 1);
++	if (mphy->band_idx == 0 && mphy->hw->wiphy->n_radio == 2)
++		mt76_wr(dev, MT_LED_EN(mphy->band_idx + 1), 1);
+ 
+ 	/* set LED Tx blink on/off time */
+ 	val = FIELD_PREP(MT_LED_TX_BLINK_ON_MASK, delay_on) |
+ 	      FIELD_PREP(MT_LED_TX_BLINK_OFF_MASK, delay_off);
+ 	mt76_wr(dev, MT_LED_TX_BLINK(mphy->band_idx), val);
++	if (mphy->band_idx == 0 && mphy->hw->wiphy->n_radio == 2)
++		mt76_wr(dev, MT_LED_TX_BLINK(mphy->band_idx + 1), val);
+ 
+ 	/* turn LED off */
+ 	if (delay_off == 0xff && delay_on == 0x0) {
+@@ -310,6 +316,12 @@ static void mt7996_led_set_config(struct
+ 
+ 	mt76_wr(dev, MT_LED_CTRL(mphy->band_idx), val);
+ 	mt76_clear(dev, MT_LED_CTRL(mphy->band_idx), MT_LED_CTRL_KICK);
++	if (mphy->band_idx == 0 && mphy->hw->wiphy->n_radio == 2) {
++		if (!(delay_off == 0xff && delay_on == 0x0))
++			val |= MT_LED_CTRL_BLINK_BAND_SEL;
++		mt76_wr(dev, MT_LED_CTRL(mphy->band_idx + 1), val);
++		mt76_clear(dev, MT_LED_CTRL(mphy->band_idx + 1), MT_LED_CTRL_KICK);
++	}
+ }
+ 
+ static int mt7996_led_set_blink(struct led_classdev *led_cdev,
+--- a/mt7996/Makefile	2026-01-22 19:30:39.847147080 +0800
++++ b/mt7996/Makefile	2026-01-22 19:29:15.680624117 +0800
+@@ -1,5 +1,6 @@
+ # SPDX-License-Identifier: BSD-3-Clause-Clear
+ 
++EXTRA_CFLAGS += -DCONFIG_MT76_LEDS
+ obj-$(CONFIG_MT7996E) += mt7996e.o
+ 
+ mt7996e-y := pci.o init.o dma.o eeprom.o main.o mcu.o mac.o \

@@ -1,0 +1,18 @@
+#!/bin/sh
+
+RED_LED="/sys/class/leds/red:wan/brightness"
+case $(board_name) in
+	asus,rt-be59)
+	
+	[ "$INTERFACE" != "wan" ] && exit 0
+	[ ! -e "$RED_LED" ] && exit 0
+
+	case "$ACTION" in
+	    ifup)
+		echo 0 > "$RED_LED"
+		;;
+	    ifdown)
+		echo 1 > "$RED_LED"
+		;;
+	esac
+esac
