@@ -841,14 +841,21 @@ static void rtmdio_get_phy_info(struct mii_bus *bus, int addr, struct rtmdio_phy
 
 static int rtmdio_838x_reset(struct mii_bus *bus)
 {
-	pr_debug("%s called\n", __func__);
-	/* Disable MAC polling the PHY so that we can start configuration */
-	sw_w32(0x00000000, RTMDIO_838X_SMI_POLL_CTRL);
+	struct rtmdio_bus_priv *priv = bus->priv;
+	int combo_phy;
 
-	/* Enable PHY control via SoC */
-	sw_w32_mask(0, 1 << 15, RTMDIO_838X_SMI_GLB_CTRL);
+	/* Disable MAC polling for PHY config. It will be activated later in the DSA driver */
+	sw_w32(0, RTMDIO_838X_SMI_POLL_CTRL);
 
-	/* Probably should reset all PHYs here... */
+	/*
+	 * Control bits EX_PHY_MAN_xxx have an important effect on the detection of the media
+	 * status (fibre/copper) of a PHY. Once activated, register MAC_LINK_MEDIA_STS can
+	 * give the real media status (0=copper, 1=fibre). For now assume that if port 24 is
+	 * PHY driven, it must be a combo PHY and media detection is needed.
+	 */
+	combo_phy = priv->smi_bus[24] < 0 ? 0 : BIT(7);
+	sw_w32_mask(BIT(7), combo_phy, RTMDIO_838X_SMI_GLB_CTRL);
+
 	return 0;
 }
 

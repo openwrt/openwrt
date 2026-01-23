@@ -368,8 +368,8 @@ static int rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 
 	/* Enable PHY control via SoC */
 	if (priv->family_id == RTL8380_FAMILY_ID) {
-		/* Enable SerDes NWAY and PHY control via SoC */
-		sw_w32_mask(BIT(7), BIT(15), RTL838X_SMI_GLB_CTRL);
+		/* Enable PHY control by telling SoC that "PHY patching is done" */
+		sw_w32_mask(0, BIT(15), RTL838X_SMI_GLB_CTRL);
 	} else if (priv->family_id == RTL8390_FAMILY_ID) {
 		/* Disable PHY polling via SoC */
 		sw_w32_mask(BIT(7), 0, RTL839X_SMI_GLB_CTRL);
