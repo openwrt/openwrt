@@ -18,8 +18,6 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  drivers/clk/clk-en7523.c | 14 ++++++++------
  1 file changed, 8 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/clk/clk-en7523.c b/drivers/clk/clk-en7523.c
-index 495c0d607c7d..3a4b7ed40af4 100644
 --- a/drivers/clk/clk-en7523.c
 +++ b/drivers/clk/clk-en7523.c
 @@ -75,6 +75,7 @@ struct en_rst_data {
@@ -30,7 +28,7 @@ index 495c0d607c7d..3a4b7ed40af4 100644
  	const struct clk_ops pcie_ops;
  	int (*hw_init)(struct platform_device *pdev,
  		       struct clk_hw_onecell_data *clk_data);
-@@ -504,8 +505,6 @@ static void en7523_register_clocks(struct device *dev, struct clk_hw_onecell_dat
+@@ -503,8 +504,6 @@ static void en7523_register_clocks(struc
  	u32 rate;
  	int i;
  
@@ -39,7 +37,7 @@ index 495c0d607c7d..3a4b7ed40af4 100644
  	for (i = 0; i < ARRAY_SIZE(en7523_base_clks); i++) {
  		const struct en_clk_desc *desc = &en7523_base_clks[i];
  		u32 reg = desc->div_reg ? desc->div_reg : desc->base_reg;
-@@ -587,8 +586,6 @@ static void en7581_register_clocks(struct device *dev, struct clk_hw_onecell_dat
+@@ -586,8 +585,6 @@ static void en7581_register_clocks(struc
  
  	hw = en7523_register_pcie_clk(dev, base);
  	clk_data->hws[EN7523_CLK_PCIE] = hw;
@@ -48,7 +46,7 @@ index 495c0d607c7d..3a4b7ed40af4 100644
  }
  
  static int en7523_reset_update(struct reset_controller_dev *rcdev,
-@@ -702,13 +699,15 @@ static int en7523_clk_probe(struct platform_device *pdev)
+@@ -701,13 +698,15 @@ static int en7523_clk_probe(struct platf
  	struct clk_hw_onecell_data *clk_data;
  	int r;
  
@@ -66,7 +64,7 @@ index 495c0d607c7d..3a4b7ed40af4 100644
  	r = soc_data->hw_init(pdev, clk_data);
  	if (r)
  		return r;
-@@ -717,6 +716,7 @@ static int en7523_clk_probe(struct platform_device *pdev)
+@@ -716,6 +715,7 @@ static int en7523_clk_probe(struct platf
  }
  
  static const struct en_clk_soc_data en7523_data = {
@@ -74,7 +72,7 @@ index 495c0d607c7d..3a4b7ed40af4 100644
  	.pcie_ops = {
  		.is_enabled = en7523_pci_is_enabled,
  		.prepare = en7523_pci_prepare,
-@@ -726,6 +726,8 @@ static const struct en_clk_soc_data en7523_data = {
+@@ -725,6 +725,8 @@ static const struct en_clk_soc_data en75
  };
  
  static const struct en_clk_soc_data en7581_data = {
@@ -83,6 +81,3 @@ index 495c0d607c7d..3a4b7ed40af4 100644
  	.pcie_ops = {
  		.is_enabled = en7581_pci_is_enabled,
  		.enable = en7581_pci_enable,
--- 
-2.39.5
-

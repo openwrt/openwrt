@@ -18,8 +18,6 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  .../bindings/clock/airoha,en7523-scu.yaml     | 23 +++++++------------
  1 file changed, 8 insertions(+), 15 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml b/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
-index 84353fd09428..fe2c5c1baf43 100644
 --- a/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
 +++ b/Documentation/devicetree/bindings/clock/airoha,en7523-scu.yaml
 @@ -34,8 +34,10 @@ properties:
@@ -44,9 +42,9 @@ index 84353fd09428..fe2c5c1baf43 100644
 -            - description: misc scu base address
 +          minItems: 2
  
-         '#reset-cells': false
- 
-@@ -73,11 +73,7 @@ allOf:
+   - if:
+       properties:
+@@ -71,11 +71,7 @@ allOf:
      then:
        properties:
          reg:
@@ -59,7 +57,7 @@ index 84353fd09428..fe2c5c1baf43 100644
  
  additionalProperties: false
  
-@@ -96,12 +92,9 @@ examples:
+@@ -95,12 +91,9 @@ examples:
        #address-cells = <2>;
        #size-cells = <2>;
  
@@ -74,6 +72,3 @@ index 84353fd09428..fe2c5c1baf43 100644
                #clock-cells = <1>;
                #reset-cells = <1>;
        };
--- 
-2.39.5
-
