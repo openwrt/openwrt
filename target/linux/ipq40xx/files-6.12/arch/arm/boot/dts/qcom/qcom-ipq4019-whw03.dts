@@ -1,0 +1,74 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qcom-ipq4019-whw03.dtsi"
+
+/ {
+	model = "Linksys WHW03 (Velop)";
+	compatible = "linksys,whw03", "qcom,ipq4019";
+
+	// Default bootargs include rootfstype=ext4 and need to be overriden.
+	chosen {
+		bootargs-append = " rootfstype=squashfs";
+	};
+};
+
+&tlmm {
+	sd_pins: sd-pinmux {
+		pins = "gpio23", "gpio24", "gpio25", "gpio26",
+			"gpio27", "gpio28", "gpio29", "gpio30",
+			"gpio31", "gpio32";
+		function = "sdio";
+	};
+
+	i2c_0_pins: i2c-0-pinmux {
+		pins = "gpio58", "gpio59";
+		function = "blsp_i2c0";
+		bias-disable;
+	};
+
+	spi_0_pins: spi-0-pinmux {
+		pins = "gpio12", "gpio13", "gpio14", "gpio15";
+		function = "blsp_spi0";
+		bias-disable;
+	};
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+
+	reset-gpios = <&tlmm 41 GPIO_ACTIVE_LOW>;
+};
+
+&vqmmc {
+	status = "okay";
+};
+
+&sdhci {
+	status = "okay";
+	pinctrl-0 = <&sd_pins>;
+	pinctrl-names = "default";
+
+	cd-gpios = <&tlmm 22 GPIO_ACTIVE_LOW>;
+	sd-ldo-gpios = <&tlmm 33 GPIO_ACTIVE_LOW>;
+
+	vqmmc-supply = <&vqmmc>;
+};
+
+&wifi0 {
+	qcom,ath10k-calibration-variant = "linksys-whw03";
+};
+
+&wifi1 {
+	qcom,ath10k-calibration-variant = "linksys-whw03";
+};
+
+&pcie_bridge0 {
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x00010000 0 0 0 0>;
+		ieee80211-freq-limit = <5490000 5835000>;
+		qcom,ath10k-calibration-variant = "linksys-whw03";
+	};
+};
