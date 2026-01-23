@@ -18,7 +18,8 @@ ipq60xx_setup_interfaces()
 	alfa-network,ap120c-ax)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
-	cambiumnetworks,xe3-4)
+	cambiumnetworks,xe3-4|\
+	netgear,rbs350)
 		ucidef_set_interface_lan "lan1 lan2" "dhcp"
 		;;
 	glinet,gl-ax1800|\
@@ -30,6 +31,7 @@ ipq60xx_setup_interfaces()
 		;;
 	jdcloud,re-cs-07|\
 	jdcloud,re-ss-01|\
+	netgear,rbr350|\
 	qihoo,360v6)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
