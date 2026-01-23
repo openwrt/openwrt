@@ -157,7 +157,7 @@ endif
 #
 # 1: package name
 define GetABISuffix
-$(shell $(APK) query --fields tags --match provides $(1) | grep openwrt:abiversion | awk -F= '{print $$2; exit}')
+$(shell $(APK) query --fields tags --match provides $(1) | tr ' ' '\n' | grep '^openwrt:abiversion=' | cut -d= -f2)
 endef
 
 # Format packages by adding an ABI version suffix if found
