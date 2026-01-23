@@ -15,8 +15,6 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  drivers/clk/clk-en7523.c | 93 ++++++++++++++--------------------------
  1 file changed, 33 insertions(+), 60 deletions(-)
 
-diff --git a/drivers/clk/clk-en7523.c b/drivers/clk/clk-en7523.c
-index fdd8ea989ed2..60dc938144d7 100644
 --- a/drivers/clk/clk-en7523.c
 +++ b/drivers/clk/clk-en7523.c
 @@ -76,11 +76,6 @@ struct en_rst_data {
@@ -31,7 +29,7 @@ index fdd8ea989ed2..60dc938144d7 100644
  	int (*hw_init)(struct platform_device *pdev,
  		       struct clk_hw_onecell_data *clk_data);
  };
-@@ -595,32 +590,6 @@ static void en7581_register_clocks(struct device *dev, struct clk_hw_onecell_dat
+@@ -596,32 +591,6 @@ static void en7581_register_clocks(struc
  	clk_data->num = EN7523_NUM_CLOCKS;
  }
  
@@ -64,7 +62,7 @@ index fdd8ea989ed2..60dc938144d7 100644
  static int en7523_reset_update(struct reset_controller_dev *rcdev,
  			       unsigned long id, bool assert)
  {
-@@ -670,23 +639,18 @@ static int en7523_reset_xlate(struct reset_controller_dev *rcdev,
+@@ -671,23 +640,18 @@ static int en7523_reset_xlate(struct res
  	return rst_data->idx_map[reset_spec->args[0]];
  }
  
@@ -90,7 +88,7 @@ index fdd8ea989ed2..60dc938144d7 100644
  	base = devm_platform_ioremap_resource(pdev, 1);
  	if (IS_ERR(base))
  		return PTR_ERR(base);
-@@ -695,13 +659,13 @@ static int en7523_reset_register(struct platform_device *pdev,
+@@ -696,13 +660,13 @@ static int en7523_reset_register(struct
  	if (!rst_data)
  		return -ENOMEM;
  
@@ -108,7 +106,7 @@ index fdd8ea989ed2..60dc938144d7 100644
  	rst_data->rcdev.of_node = dev->of_node;
  	rst_data->rcdev.of_reset_n_cells = 1;
  	rst_data->rcdev.owner = THIS_MODULE;
-@@ -710,6 +674,32 @@ static int en7523_reset_register(struct platform_device *pdev,
+@@ -711,6 +675,32 @@ static int en7523_reset_register(struct
  	return devm_reset_controller_register(dev, &rst_data->rcdev);
  }
  
@@ -141,7 +139,7 @@ index fdd8ea989ed2..60dc938144d7 100644
  static int en7523_clk_probe(struct platform_device *pdev)
  {
  	struct device_node *node = pdev->dev.of_node;
-@@ -728,19 +718,7 @@ static int en7523_clk_probe(struct platform_device *pdev)
+@@ -729,19 +719,7 @@ static int en7523_clk_probe(struct platf
  	if (r)
  		return r;
  
@@ -162,7 +160,7 @@ index fdd8ea989ed2..60dc938144d7 100644
  }
  
  static const struct en_clk_soc_data en7523_data = {
-@@ -758,11 +736,6 @@ static const struct en_clk_soc_data en7581_data = {
+@@ -759,11 +737,6 @@ static const struct en_clk_soc_data en75
  		.enable = en7581_pci_enable,
  		.disable = en7581_pci_disable,
  	},
@@ -174,6 +172,3 @@ index fdd8ea989ed2..60dc938144d7 100644
  	.hw_init = en7581_clk_hw_init,
  };
  
--- 
-2.39.5
-

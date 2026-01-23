@@ -14,8 +14,6 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  drivers/clk/clk-en7523.c | 64 ++++++++++++++++++++++++++++++++++++----
  1 file changed, 59 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/clk/clk-en7523.c b/drivers/clk/clk-en7523.c
-index 15bbdeb60b8e..08cc8e5acf43 100644
 --- a/drivers/clk/clk-en7523.c
 +++ b/drivers/clk/clk-en7523.c
 @@ -9,6 +9,7 @@
@@ -90,7 +88,7 @@ index 15bbdeb60b8e..08cc8e5acf43 100644
  static u32 en7523_get_base_rate(const struct en_clk_desc *desc, u32 val)
  {
  	if (!desc->base_bits)
-@@ -552,7 +603,8 @@ static int en7523_clk_hw_init(struct platform_device *pdev,
+@@ -552,7 +603,8 @@ static int en7523_clk_hw_init(struct pla
  
  	en7523_register_clocks(&pdev->dev, clk_data, base, np_base);
  
@@ -100,7 +98,7 @@ index 15bbdeb60b8e..08cc8e5acf43 100644
  }
  
  static void en7581_register_clocks(struct device *dev, struct clk_hw_onecell_data *clk_data,
-@@ -652,7 +704,8 @@ static const struct reset_control_ops en7581_reset_ops = {
+@@ -652,7 +704,8 @@ static const struct reset_control_ops en
  	.status = en7523_reset_status,
  };
  
@@ -110,7 +108,7 @@ index 15bbdeb60b8e..08cc8e5acf43 100644
  {
  	struct en_rst_data *rst_data;
  
-@@ -661,10 +714,10 @@ static int en7581_reset_register(struct device *dev, void __iomem *base)
+@@ -661,10 +714,10 @@ static int en7581_reset_register(struct
  		return -ENOMEM;
  
  	rst_data->bank_ofs = en7581_rst_ofs;
@@ -123,7 +121,7 @@ index 15bbdeb60b8e..08cc8e5acf43 100644
  	rst_data->rcdev.of_xlate = en7523_reset_xlate;
  	rst_data->rcdev.ops = &en7581_reset_ops;
  	rst_data->rcdev.of_node = dev->of_node;
-@@ -698,7 +751,8 @@ static int en7581_clk_hw_init(struct platform_device *pdev,
+@@ -698,7 +751,8 @@ static int en7581_clk_hw_init(struct pla
  	val = readl(base + REG_NP_SCU_PCIC);
  	writel(val | 3, base + REG_NP_SCU_PCIC);
  
@@ -133,6 +131,3 @@ index 15bbdeb60b8e..08cc8e5acf43 100644
  }
  
  static int en7523_clk_probe(struct platform_device *pdev)
--- 
-2.39.5
-

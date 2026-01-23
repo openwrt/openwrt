@@ -14,8 +14,6 @@ Signed-off-by: Stephen Boyd <sboyd@kernel.org>
  drivers/clk/clk-en7523.c | 32 +++++++++++++-------------------
  1 file changed, 13 insertions(+), 19 deletions(-)
 
-diff --git a/drivers/clk/clk-en7523.c b/drivers/clk/clk-en7523.c
-index 60dc938144d7..e52c5460e927 100644
 --- a/drivers/clk/clk-en7523.c
 +++ b/drivers/clk/clk-en7523.c
 @@ -39,8 +39,8 @@
@@ -29,7 +27,7 @@ index 60dc938144d7..e52c5460e927 100644
  
  struct en_clk_desc {
  	int id;
-@@ -645,15 +645,9 @@ static const struct reset_control_ops en7581_reset_ops = {
+@@ -646,15 +646,9 @@ static const struct reset_control_ops en
  	.status = en7523_reset_status,
  };
  
@@ -46,7 +44,7 @@ index 60dc938144d7..e52c5460e927 100644
  
  	rst_data = devm_kzalloc(dev, sizeof(*rst_data), GFP_KERNEL);
  	if (!rst_data)
-@@ -677,27 +671,27 @@ static int en7581_reset_register(struct platform_device *pdev)
+@@ -678,27 +672,27 @@ static int en7581_reset_register(struct
  static int en7581_clk_hw_init(struct platform_device *pdev,
  			      struct clk_hw_onecell_data *clk_data)
  {
@@ -84,6 +82,3 @@ index 60dc938144d7..e52c5460e927 100644
  }
  
  static int en7523_clk_probe(struct platform_device *pdev)
--- 
-2.39.5
-
