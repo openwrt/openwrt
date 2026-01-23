@@ -68,6 +68,7 @@ ALLWIFIBOARDS:= \
 	netgear_rax120v2 \
 	netgear_rbk20 \
 	netgear_rbk40 \
+	netgear_rbk350 \
 	netgear_rbk750 \
 	netgear_sxk80 \
 	netgear_wax214 \
@@ -257,7 +258,11 @@ $(eval $(call generate-ipq-wifi-package,netgear_lbr20,Netgear LBR20))
 $(eval $(call generate-ipq-wifi-package,netgear_rax120v2,Netgear RAX120v2))
 $(eval $(call generate-ipq-wifi-package,netgear_rbk20,Netgear RBK20))
 $(eval $(call generate-ipq-wifi-package,netgear_rbk40,Netgear RBK40))
+<<<<<<< HEAD
 $(eval $(call generate-ipq-wifi-package,netgear_rbk750,Netgear RBK750))
+=======
+$(eval $(call generate-ipq-wifi-package,netgear_rbk350,Netgear RBK350))
+>>>>>>> fb4c0dd54e (qualcommax: ipq60xx: add Netgear RBx350 support)
 $(eval $(call generate-ipq-wifi-package,netgear_sxk80,Netgear SXK80))
 $(eval $(call generate-ipq-wifi-package,netgear_wax214,Netgear WAX214))
 $(eval $(call generate-ipq-wifi-package,netgear_wax218,Netgear WAX218))

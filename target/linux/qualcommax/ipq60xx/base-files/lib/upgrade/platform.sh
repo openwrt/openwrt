@@ -156,6 +156,8 @@ platform_do_upgrade() {
 		;;
 	glinet,gl-ax1800|\
 	glinet,gl-axt1800|\
+	netgear,rbr350|\
+	netgear,rbs350|\
 	netgear,wax214)
 		nand_do_upgrade "$1"
 		;;
