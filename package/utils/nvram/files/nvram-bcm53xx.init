@@ -71,11 +71,27 @@ set_bcm43602_variables() {
 	esac
 }
 
+drop_vendor_wl_runtime_state() {
+	# Drop vendor-generated wl*_ runtime state that can confuse brcmfmac
+	# during early attach. Keep only minimal wl*_ identity keys.
+
+	case $(board_name) in
+		asus,rt-ac3200|\
+		asus,rt-ac5300)
+			for k in $(nvram show 2>/dev/null | cut -d= -f1 | grep -E '^(wl0_|wl1_|wl2_)'); do
+				echo "$k" | grep -Eq '^(wl0_(fabid|state|state_idx)|wl1_(fabid|state|state_idx)|wl2_(fabid|state|state_idx))$' && continue
+				nvram unset "$k" && COMMIT=1
+			done
+			;;
+	esac
+}
+
 boot() {
 	. /lib/functions.sh
 
 	clear_partialboots
 	set_wireless_led_behaviour
+	drop_vendor_wl_runtime_state
 	set_bcm43602_variables
 
 	[ "$COMMIT" = "1" ] && nvram commit
