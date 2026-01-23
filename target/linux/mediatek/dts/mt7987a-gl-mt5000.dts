@@ -164,7 +164,7 @@
 &mdio {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	reset-gpios = <&pio 0 1>;
+	reset-gpios = <&pio 0 GPIO_ACTIVE_LOW>;
 	reset-delay-us = <10000>;
 
 	phy15: phy@15 {
