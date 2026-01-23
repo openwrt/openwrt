@@ -86,7 +86,7 @@ Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
  }
  
  static unsigned long
-@@ -577,7 +567,6 @@ static int rockchip_usb2phy_power_on(str
+@@ -574,7 +564,6 @@ static int rockchip_usb2phy_power_on(str
  {
  	struct rockchip_usb2phy_port *rport = phy_get_drvdata(phy);
  	struct rockchip_usb2phy *rphy = dev_get_drvdata(phy->dev.parent);
@@ -94,7 +94,7 @@ Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
  	int ret;
  
  	dev_dbg(&rport->phy->dev, "port power on\n");
-@@ -589,7 +578,7 @@ static int rockchip_usb2phy_power_on(str
+@@ -586,7 +575,7 @@ static int rockchip_usb2phy_power_on(str
  	if (ret)
  		return ret;
  
@@ -103,7 +103,7 @@ Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
  	if (ret) {
  		clk_disable_unprepare(rphy->clk480m);
  		return ret;
-@@ -618,7 +607,6 @@ static int rockchip_usb2phy_power_off(st
+@@ -615,7 +604,6 @@ static int rockchip_usb2phy_power_off(st
  {
  	struct rockchip_usb2phy_port *rport = phy_get_drvdata(phy);
  	struct rockchip_usb2phy *rphy = dev_get_drvdata(phy->dev.parent);
@@ -111,7 +111,7 @@ Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
  	int ret;
  
  	dev_dbg(&rport->phy->dev, "port power off\n");
-@@ -626,7 +614,7 @@ static int rockchip_usb2phy_power_off(st
+@@ -623,7 +611,7 @@ static int rockchip_usb2phy_power_off(st
  	if (rport->suspended)
  		return 0;
  
@@ -120,7 +120,7 @@ Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
  	if (ret)
  		return ret;
  
-@@ -790,28 +778,22 @@ static const char *chg_to_string(enum po
+@@ -787,28 +775,22 @@ static const char *chg_to_string(enum po
  static void rockchip_chg_enable_dcd(struct rockchip_usb2phy *rphy,
  				    bool en)
  {
@@ -155,33 +155,33 @@ Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
  }
  
  #define CHG_DCD_POLL_TIME	(100 * HZ / 1000)
-@@ -823,7 +805,6 @@ static void rockchip_chg_detect_work(str
+@@ -820,7 +802,6 @@ static void rockchip_chg_detect_work(str
  	struct rockchip_usb2phy_port *rport =
  		container_of(work, struct rockchip_usb2phy_port, chg_work.work);
  	struct rockchip_usb2phy *rphy = dev_get_drvdata(rport->phy->dev.parent);
 -	struct regmap *base = get_reg_base(rphy);
- 	bool is_dcd, tmout, vout;
+ 	bool is_dcd, tmout, vout, vbus_attach;
  	unsigned long delay;
  
 @@ -834,7 +815,7 @@ static void rockchip_chg_detect_work(str
- 		if (!rport->suspended)
  			rockchip_usb2phy_power_off(rport->phy);
  		/* put the controller in non-driving mode */
--		property_enable(base, &rphy->phy_cfg->chg_det.opmode, false);
-+		property_enable(rphy->grf, &rphy->phy_cfg->chg_det.opmode, false);
+ 		if (!vbus_attach)
+-			property_enable(base, &rphy->phy_cfg->chg_det.opmode, false);
++			property_enable(rphy->grf, &rphy->phy_cfg->chg_det.opmode, false);
  		/* Start DCD processing stage 1 */
  		rockchip_chg_enable_dcd(rphy, true);
  		rphy->chg_state = USB_CHG_STATE_WAIT_FOR_DCD;
-@@ -897,7 +878,7 @@ static void rockchip_chg_detect_work(str
- 		fallthrough;
+@@ -898,7 +879,7 @@ static void rockchip_chg_detect_work(str
  	case USB_CHG_STATE_DETECTED:
  		/* put the controller in normal mode */
--		property_enable(base, &rphy->phy_cfg->chg_det.opmode, true);
-+		property_enable(rphy->grf, &rphy->phy_cfg->chg_det.opmode, true);
+ 		if (!vbus_attach)
+-			property_enable(base, &rphy->phy_cfg->chg_det.opmode, true);
++			property_enable(rphy->grf, &rphy->phy_cfg->chg_det.opmode, true);
  		rockchip_usb2phy_otg_sm_work(&rport->otg_sm_work.work);
  		dev_dbg(&rport->phy->dev, "charger = %s\n",
  			 chg_to_string(rphy->chg_type));
-@@ -1352,29 +1333,14 @@ static int rockchip_usb2phy_probe(struct
+@@ -1353,29 +1334,14 @@ static int rockchip_usb2phy_probe(struct
  	if (!rphy)
  		return -ENOMEM;
  
