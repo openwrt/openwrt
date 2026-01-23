@@ -207,32 +207,30 @@
 		function = "fc";
 	};
 
+	mdio_irq_pins: mdio-irq-pins {
+		pins = "GPIO_11";
+		function = "miim_irq";
+	};
+
 	mdio_pins: mdio-pins {
 		pins = "GPIO_9", "GPIO_10";
 		function = "miim";
 	};
 
-	mdio_irq_pins: mdio-irq-pins {
-		pins = "GPIO_11";
-		function = "miim_irq";
+	ptp_ext_pins: ptp-ext-pins {
+		pins = "GPIO_59";
+		function = "ptpsync_5";
+	};
+
+	ptp_out_pins: ptp-out-pins {
+		pins = "GPIO_58";
+		function = "ptpsync_4";
 	};
 
 	sgpio_pins: sgpio-pins {
 		/* SCK, D0, D1, LD */
 		pins = "GPIO_5", "GPIO_6", "GPIO_7", "GPIO_8";
 		function = "sgpio_a";
-	};
-
-	usb_ulpi_pins: usb-ulpi-pins {
-		pins = "GPIO_30", "GPIO_31", "GPIO_32", "GPIO_33",
-		       "GPIO_34", "GPIO_35", "GPIO_36", "GPIO_37",
-		       "GPIO_38", "GPIO_39", "GPIO_40", "GPIO_41";
-		function = "usb_ulpi";
-	};
-
-	usb_rst_pins: usb-rst-pins {
-		pins = "GPIO_12";
-		function = "usb2phy_rst";
 	};
 
 	usb_over_pins: usb-over-pins {
@@ -245,14 +243,16 @@
 		function = "usb_power";
 	};
 
-	ptp_out_pins: ptp-out-pins {
-		pins = "GPIO_58";
-		function = "ptpsync_4";
+	usb_rst_pins: usb-rst-pins {
+		pins = "GPIO_12";
+		function = "usb2phy_rst";
 	};
 
-	ptp_ext_pins: ptp-ext-pins {
-		pins = "GPIO_59";
-		function = "ptpsync_5";
+	usb_ulpi_pins: usb-ulpi-pins {
+		pins = "GPIO_30", "GPIO_31", "GPIO_32", "GPIO_33",
+		       "GPIO_34", "GPIO_35", "GPIO_36", "GPIO_37",
+		       "GPIO_38", "GPIO_39", "GPIO_40", "GPIO_41";
+		function = "usb_ulpi";
 	};
 };
 
@@ -770,7 +770,6 @@
 
 		port29: port@29 {
 			reg = <29>;
-			phys = <&serdes 11>;
 			phy-handle = <&phy3>;
 			phy-mode = "rgmii-id";
 			microchip,bandwidth = <1000>;
