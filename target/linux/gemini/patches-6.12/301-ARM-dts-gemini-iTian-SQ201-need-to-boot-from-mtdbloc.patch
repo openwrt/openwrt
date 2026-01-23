@@ -1,0 +1,24 @@
+From e2bb2bcf9ea335b0a874683a5a56940c39901fcd Mon Sep 17 00:00:00 2001
+From: Linus Walleij <linusw@kernel.org>
+Date: Fri, 23 Jan 2026 21:04:10 +0100
+Subject: [PATCH] ARM: dts: gemini: iTian SQ201 need to boot from mtdblock3
+
+Alter the rootfs partition to the one actually used for the
+rootfs.
+
+Signed-off-by: Linus Walleij <linusw@kernel.org>
+---
+ arch/arm/boot/dts/gemini/gemini-sq201.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm/boot/dts/gemini/gemini-sq201.dts
++++ b/arch/arm/boot/dts/gemini/gemini-sq201.dts
+@@ -20,7 +20,7 @@
+ 	};
+ 
+ 	chosen {
+-		bootargs = "console=ttyS0,115200n8 root=/dev/mtdblock2 rw rootfstype=squashfs,jffs2 rootwait";
++		bootargs = "console=ttyS0,115200n8 root=/dev/mtdblock3 rw rootfstype=squashfs,jffs2 rootwait";
+ 		stdout-path = &uart0;
+ 	};
+ 
