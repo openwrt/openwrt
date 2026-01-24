@@ -32,8 +32,8 @@ failsafe_dropbear () {
 
 		case "${ktype}" in
 		ed25519) _ensurekey "${tkey}" -t ed25519 ;;
-		ecdsa)   _ensurekey "${tkey}" -t ecdsa -s 256 ;;
-		rsa)     _ensurekey "${tkey}" -t rsa   -s 1024 ;;
+		ecdsa)   _ensurekey "${tkey}" -t ecdsa ;;
+		rsa)     _ensurekey "${tkey}" -t rsa ;;
 		*)
 			echo "unknown key type: ${ktype}" >&2
 			continue
