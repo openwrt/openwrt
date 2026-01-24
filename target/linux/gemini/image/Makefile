@@ -94,14 +94,13 @@ define CreateStorlinkTarfile
 
 	# "Application" partition is the rootfs
 	mv $@ $@.tmp/hddapp.tgz
-	# 256 bytes copy routine
-	# TODO fix for IB-4220-B
-	dd if=$(KDIR)/copy-kernel.bin of=$@.tmp/zImage
+	# 512 bytes copy routine
+	dd if=$(KDIR)/copy-kernel-$(2).bin of=$@.tmp/zImage
 	$(call Image/pad-to,$@.tmp/zImage,512)
 	# Copy first part of the kernel into zImage
-	dd if=$(IMAGE_KERNEL) of=$@.tmp/zImage bs=1 seek=512 count=$(2)
+	dd if=$(IMAGE_KERNEL) of=$@.tmp/zImage bs=1 seek=512 count=$(3)
 	# Put the rest of the kernel into the "ramdisk"
-	dd if=$(IMAGE_KERNEL) of=$@.tmp/rd.gz bs=1 skip=$(2) count=6144k conv=sync
+	dd if=$(IMAGE_KERNEL) of=$@.tmp/rd.gz bs=1 skip=$(3) count=6144k conv=sync
 	cp ./ImageInfo-$(1) $@.tmp/ImageInfo
 
 	sed -i -e "s/DATESTR/`date +%Y%m%d $(if $(SOURCE_DATE_EPOCH),--date "@$(SOURCE_DATE_EPOCH)")`/g" $@.tmp/ImageInfo
@@ -115,12 +114,12 @@ endef
 
 # 2048k "Kern" partition
 define Build/storlink-default-image
-	$(call CreateStorlinkTarfile,$(1),2096640)
+	$(call CreateStorlinkTarfile,$(1),2048k,2096640)
 endef
 
-# 3032k "Kern" partition
+# 3072k "Kern" partition
 define Build/raidsonic-ib-4220-b-image
-	$(call CreateStorlinkTarfile,$(1),3145216)
+	$(call CreateStorlinkTarfile,$(1),3072k,3145216)
 endef
 
 # WBD-111 and WBD-222:
@@ -228,7 +227,7 @@ define Device/raidsonic_ib-4220-b
 	# Application  6144k       | = 15360k
 	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to 6144k | \
 		raidsonic-ib-4220-b-image $(1)
-	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to 6144k | \
+	IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | pad-to 6144k | \
 		raidsonic-ib-4220-b-image $(1) | append-metadata
 endef
 TARGET_DEVICES += raidsonic_ib-4220-b
