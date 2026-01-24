@@ -683,7 +683,7 @@ static void rtl839x_setup_notify_ring_buffer(struct rteth_ctrl *ctrl)
 	ctrl->lastEvent = 0;
 }
 
-static int rtl838x_eth_open(struct net_device *ndev)
+static int rteth_open(struct net_device *ndev)
 {
 	unsigned long flags;
 	struct rteth_ctrl *ctrl = netdev_priv(ndev);
@@ -816,7 +816,7 @@ static void rtl838x_hw_stop(struct rteth_ctrl *ctrl)
 	mdelay(200);
 }
 
-static int rtl838x_eth_stop(struct net_device *ndev)
+static int rteth_stop(struct net_device *ndev)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(ndev);
 
@@ -1450,8 +1450,8 @@ static struct phylink_pcs *rteth_mac_select_pcs(struct phylink_config *config,
 }
 
 static const struct net_device_ops rteth_838x_netdev_ops = {
-	.ndo_open = rtl838x_eth_open,
-	.ndo_stop = rtl838x_eth_stop,
+	.ndo_open = rteth_open,
+	.ndo_stop = rteth_stop,
 	.ndo_start_xmit = rteth_start_xmit,
 	.ndo_select_queue = rteth_83xx_pick_tx_queue,
 	.ndo_set_mac_address = rteth_set_mac_address,
@@ -1494,8 +1494,8 @@ static const struct rteth_config rteth_838x_cfg = {
 };
 
 static const struct net_device_ops rteth_839x_netdev_ops = {
-	.ndo_open = rtl838x_eth_open,
-	.ndo_stop = rtl838x_eth_stop,
+	.ndo_open = rteth_open,
+	.ndo_stop = rteth_stop,
 	.ndo_start_xmit = rteth_start_xmit,
 	.ndo_select_queue = rteth_83xx_pick_tx_queue,
 	.ndo_set_mac_address = rteth_set_mac_address,
@@ -1538,8 +1538,8 @@ static const struct rteth_config rteth_839x_cfg = {
 };
 
 static const struct net_device_ops rteth_930x_netdev_ops = {
-	.ndo_open = rtl838x_eth_open,
-	.ndo_stop = rtl838x_eth_stop,
+	.ndo_open = rteth_open,
+	.ndo_stop = rteth_stop,
 	.ndo_start_xmit = rteth_start_xmit,
 	.ndo_select_queue = rteth_93xx_pick_tx_queue,
 	.ndo_set_mac_address = rteth_set_mac_address,
@@ -1588,8 +1588,8 @@ static const struct rteth_config rteth_930x_cfg = {
 };
 
 static const struct net_device_ops rteth_931x_netdev_ops = {
-	.ndo_open = rtl838x_eth_open,
-	.ndo_stop = rtl838x_eth_stop,
+	.ndo_open = rteth_open,
+	.ndo_stop = rteth_stop,
 	.ndo_start_xmit = rteth_start_xmit,
 	.ndo_select_queue = rteth_93xx_pick_tx_queue,
 	.ndo_set_mac_address = rteth_set_mac_address,
