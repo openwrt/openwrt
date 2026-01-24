@@ -1775,33 +1775,6 @@ irqreturn_t rtl838x_switch_irq(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-void rtl8380_get_version(struct rtl838x_switch_priv *priv)
-{
-	u32 rw_save, info_save;
-	u32 info;
-
-	rw_save = sw_r32(RTL838X_INT_RW_CTRL);
-	sw_w32(rw_save | 0x3, RTL838X_INT_RW_CTRL);
-
-	info_save = sw_r32(RTL838X_CHIP_INFO);
-	sw_w32(info_save | 0xA0000000, RTL838X_CHIP_INFO);
-
-	info = sw_r32(RTL838X_CHIP_INFO);
-	sw_w32(info_save, RTL838X_CHIP_INFO);
-	sw_w32(rw_save, RTL838X_INT_RW_CTRL);
-
-	if ((info & 0xFFFF) == 0x6275) {
-		if (((info >> 16) & 0x1F) == 0x1)
-			priv->version = RTL8380_VERSION_A;
-		else if (((info >> 16) & 0x1F) == 0x2)
-			priv->version = RTL8380_VERSION_B;
-		else
-			priv->version = RTL8380_VERSION_B;
-	} else {
-		priv->version = '-';
-	}
-}
-
 void rtl838x_vlan_profile_dump(int profile)
 {
 	u32 p;
