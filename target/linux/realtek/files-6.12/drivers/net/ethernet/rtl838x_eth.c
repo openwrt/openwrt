@@ -523,7 +523,7 @@ static void rteth_93xx_hw_reset(struct rteth_ctrl *ctrl)
 	}
 }
 
-static void rtl838x_hw_ring_setup(struct rteth_ctrl *ctrl)
+static void rteth_hw_ring_setup(struct rteth_ctrl *ctrl)
 {
 	struct ring_b *ring = ctrl->membase;
 
@@ -624,7 +624,7 @@ static void rtl93xx_hw_en_rxtx(struct rteth_ctrl *ctrl)
 		sw_w32(0x2a1d, ctrl->r->mac_force_mode_ctrl + ctrl->r->cpu_port * 4);
 }
 
-static void rtl838x_setup_ring_buffer(struct rteth_ctrl *ctrl, struct ring_b *ring)
+static void rteth_setup_ring_buffer(struct rteth_ctrl *ctrl, struct ring_b *ring)
 {
 	for (int i = 0; i < ctrl->rxrings; i++) {
 		struct p_hdr *h;
@@ -694,7 +694,7 @@ static int rteth_open(struct net_device *ndev)
 
 	spin_lock_irqsave(&ctrl->lock, flags);
 	ctrl->r->hw_reset(ctrl);
-	rtl838x_setup_ring_buffer(ctrl, ring);
+	rteth_setup_ring_buffer(ctrl, ring);
 	if (ctrl->r->family_id == RTL8390_FAMILY_ID) {
 		rtl839x_setup_notify_ring_buffer(ctrl);
 		/* Make sure the ring structure is visible to the ASIC */
@@ -702,7 +702,7 @@ static int rteth_open(struct net_device *ndev)
 		flush_cache_all();
 	}
 
-	rtl838x_hw_ring_setup(ctrl);
+	rteth_hw_ring_setup(ctrl);
 	phylink_start(ctrl->phylink);
 
 	for (int i = 0; i < ctrl->rxrings; i++)
@@ -920,7 +920,7 @@ static void rteth_tx_timeout(struct net_device *ndev, unsigned int txqueue)
 	pr_warn("%s\n", __func__);
 	spin_lock_irqsave(&ctrl->lock, flags);
 	rtl838x_hw_stop(ctrl);
-	rtl838x_hw_ring_setup(ctrl);
+	rteth_hw_ring_setup(ctrl);
 	rtl838x_hw_en_rxtx(ctrl);
 	netif_trans_update(ndev);
 	netif_start_queue(ndev);
