@@ -1,0 +1,90 @@
+From e8d6592f711d5015d910f40e7cffc9c72f157adb Mon Sep 17 00:00:00 2001
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Sat, 24 Jan 2026 11:58:10 +0800
+Subject: [PATCH] mtd: spi-nor: add support for BoyaMicro BY25Q128AS
+
+Add MTD support for the BoyaMicro BY25Q128AS SPI NOR flash chip.
+The chip has 16MB of total capacity, divided into a total of 256
+sectors, each 64KB sized. The chip also supports 4KB sectors.
+Additionally, it supports dual and quad read modes.
+
+Co-authored-by: David Bauer <mail@david-bauer.net>
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ drivers/mtd/spi-nor/Makefile    |  1 +
+ drivers/mtd/spi-nor/boyamicro.c | 37 +++++++++++++++++++++++++++++++++
+ drivers/mtd/spi-nor/core.c      |  1 +
+ drivers/mtd/spi-nor/core.h      |  1 +
+ 4 files changed, 40 insertions(+)
+ create mode 100644 drivers/mtd/spi-nor/boyamicro.c
+
+--- a/drivers/mtd/spi-nor/Makefile
++++ b/drivers/mtd/spi-nor/Makefile
+@@ -2,6 +2,7 @@
+ 
+ spi-nor-objs			:= core.o sfdp.o swp.o otp.o sysfs.o
+ spi-nor-objs			+= atmel.o
++spi-nor-objs			+= boyamicro.o
+ spi-nor-objs			+= eon.o
+ spi-nor-objs			+= esmt.o
+ spi-nor-objs			+= everspin.o
+--- /dev/null
++++ b/drivers/mtd/spi-nor/boyamicro.c
+@@ -0,0 +1,37 @@
++// SPDX-License-Identifier: GPL-2.0
++
++#include <linux/mtd/spi-nor.h>
++
++#include "core.h"
++
++static int
++by25q128_post_bfpt(struct spi_nor *nor,
++		   const struct sfdp_parameter_header *bfpt_header,
++		   const struct sfdp_bfpt *bfpt)
++{
++	/**
++	 * BY25Q128xS series SFDP table does not define the Quad
++	 * Enable methods. Set the default Quad Enable method.
++	 */
++	nor->params->quad_enable = spi_nor_sr2_bit1_quad_enable;
++
++	return 0;
++}
++
++static const struct spi_nor_fixups by25q128_fixups = {
++	.post_bfpt = by25q128_post_bfpt,
++};
++
++static const struct flash_info boyamicro_parts[] = {
++	{
++		/* BY25Q128AS, BY25Q128ES */
++		.id = SNOR_ID(0x68, 0x40, 0x18),
++		.fixups = &by25q128_fixups,
++	},
++};
++
++const struct spi_nor_manufacturer spi_nor_boyamicro = {
++	.name = "boyamicro",
++	.parts = boyamicro_parts,
++	.nparts = ARRAY_SIZE(boyamicro_parts),
++};
+--- a/drivers/mtd/spi-nor/core.c
++++ b/drivers/mtd/spi-nor/core.c
+@@ -1966,6 +1966,7 @@ int spi_nor_sr2_bit7_quad_enable(struct
+ 
+ static const struct spi_nor_manufacturer *manufacturers[] = {
+ 	&spi_nor_atmel,
++	&spi_nor_boyamicro,
+ 	&spi_nor_eon,
+ 	&spi_nor_esmt,
+ 	&spi_nor_everspin,
+--- a/drivers/mtd/spi-nor/core.h
++++ b/drivers/mtd/spi-nor/core.h
+@@ -580,6 +580,7 @@ struct sfdp {
+ 
+ /* Manufacturer drivers. */
+ extern const struct spi_nor_manufacturer spi_nor_atmel;
++extern const struct spi_nor_manufacturer spi_nor_boyamicro;
+ extern const struct spi_nor_manufacturer spi_nor_eon;
+ extern const struct spi_nor_manufacturer spi_nor_esmt;
+ extern const struct spi_nor_manufacturer spi_nor_everspin;
