@@ -1,5 +1,6 @@
 #!/bin/sh /etc/rc.common
 # Copyright (C) 2006-2011 OpenWrt.org
+# BusyBox crond init script (procd managed)
 
 START=50
 
@@ -12,6 +13,9 @@ validate_cron_section() {
 }
 
 start_service() {
+        # crond is only started when at least one crontab exists.
+        # BusyBox expects crontabs in /etc/crontabs/<user> and will ignore
+        # entries whose <user> does not exist.
 	[ -z "$(ls /etc/crontabs/)" ] && return 1
 
 	loglevel="$(uci_get "system.@system[0].cronloglevel")"
@@ -29,6 +33,8 @@ start_service() {
 
 	procd_open_instance
 	procd_set_param command "$PROG" -f -c /etc/crontabs -l "${loglevel:-7}"
+        # Track crontab files so procd can restart/recreate the instance when
+        # watched files or instance parameters (e.g. cronloglevel) change.
 	for crontab in /etc/crontabs/*; do
 		 procd_set_param file "$crontab"
 	done
