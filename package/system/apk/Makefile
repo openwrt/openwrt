@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=apk
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE_URL=https://gitlab.alpinelinux.org/alpine/apk-tools.git
 PKG_SOURCE_PROTO:=git
@@ -13,7 +13,7 @@ PKG_VERSION=3.0.2
 PKG_MAINTAINER:=Paul Spooren <mail@aparcar.org>
 PKG_LICENSE:=GPL-2.0-only
 PKG_LICENSE_FILES:=LICENSE
-PKG_INSTALL:=2
+PKG_INSTALL:=1
 
 HOST_BUILD_PREFIX:=$(STAGING_DIR_HOST)
 HOST_BUILD_DEPENDS:=lua/host
@@ -57,6 +57,7 @@ MESON_COMMON_ARGS = \
 	-Dhelp=enabled \
 	-Dlua_version=5.1 \
 	-Ddefault_library=static \
+	-Dprefer_static=true \
 	-Durl_backend=wget \
 	-Dzstd=disabled \
 	-Dpython=disabled \
