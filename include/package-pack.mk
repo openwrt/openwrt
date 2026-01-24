@@ -435,7 +435,7 @@ Installed-Size: 0
 $(_endef)
 
     $$(PACK_$(1)) : export CONTROL=$$(Package/$(1)/CONTROL)
-    $$(PACK_$(1)) : export DESCRIPTION=$$(Package/$(1)/description)
+    $$(PACK_$(1)) : $(call shexport,Package/$(1)/description)
     $$(PACK_$(1)) : export PATH=$$(TARGET_PATH_PKG)
     $$(PACK_$(1)) : export PKG_SOURCE_DATE_EPOCH:=$(PKG_SOURCE_DATE_EPOCH)
     $$(PACK_$(1)) : export SOURCE_DATE_EPOCH:=$(PKG_SOURCE_DATE_EPOCH)
@@ -493,7 +493,7 @@ ifeq ($(CONFIG_USE_APK),)
 	(cd $$(IDIR_$(1))/CONTROL; \
 		( \
 			echo "$$$$CONTROL"; \
-			printf "Description: "; echo "$$$$DESCRIPTION" | sed -e 's,^[[:space:]]*, ,g'; \
+			printf "Description: "; echo "$$$$$(call shvar,Package/$(1)/description)" | sed -e 's,^[[:space:]]*, ,g'; \
 		) > control; \
 		chmod 644 control; \
 		( \
