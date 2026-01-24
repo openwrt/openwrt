@@ -1419,7 +1419,6 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->r = &rtl838x_reg;
 		priv->ds->num_ports = 29;
 		priv->fib_entries = 8192;
-		rtl8380_get_version(priv);
 		priv->ds->num_lag_ids = 8;
 		priv->l2_bucket_size = 4;
 		priv->n_mst = 64;
@@ -1436,7 +1435,6 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->r = &rtl839x_reg;
 		priv->ds->num_ports = 53;
 		priv->fib_entries = 16384;
-		rtl8390_get_version(priv);
 		priv->ds->num_lag_ids = 16;
 		priv->l2_bucket_size = 4;
 		priv->n_mst = 256;
@@ -1453,10 +1451,6 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->r = &rtl930x_reg;
 		priv->ds->num_ports = 29;
 		priv->fib_entries = 16384;
-		/* TODO A version based on CHIP_INFO and MODEL_NAME_INFO should
-		 * be constructed. For now, just set it to a static 'A'
-		 */
-		priv->version = RTL8390_VERSION_A;
 		priv->ds->num_lag_ids = 16;
 		sw_w32(0, RTL930X_ST_CTRL);
 		priv->l2_bucket_size = 8;
@@ -1474,10 +1468,6 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->r = &rtl931x_reg;
 		priv->ds->num_ports = 57;
 		priv->fib_entries = 16384;
-		/* TODO A version based on CHIP_INFO and MODEL_NAME_INFO should
-		 * be constructed. For now, just set it to a static 'A'
-		 */
-		priv->version = RTL8390_VERSION_A;
 		priv->ds->num_lag_ids = 16;
 		sw_w32(0, RTL931x_ST_CTRL);
 		priv->l2_bucket_size = 8;
@@ -1487,7 +1477,6 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->n_counters = 2048;
 		break;
 	}
-	pr_debug("Chip version %c\n", priv->version);
 
 	err = rtl83xx_mdio_probe(priv);
 	if (err) {
