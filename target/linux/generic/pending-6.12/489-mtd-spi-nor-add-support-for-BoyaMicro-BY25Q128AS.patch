@@ -12,10 +12,10 @@ Co-authored-by: David Bauer <mail@david-bauer.net>
 Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
 ---
  drivers/mtd/spi-nor/Makefile    |  1 +
- drivers/mtd/spi-nor/boyamicro.c | 37 +++++++++++++++++++++++++++++++++
+ drivers/mtd/spi-nor/boyamicro.c | 40 +++++++++++++++++++++++++++++++++
  drivers/mtd/spi-nor/core.c      |  1 +
  drivers/mtd/spi-nor/core.h      |  1 +
- 4 files changed, 40 insertions(+)
+ 4 files changed, 43 insertions(+)
  create mode 100644 drivers/mtd/spi-nor/boyamicro.c
 
 --- a/drivers/mtd/spi-nor/Makefile
@@ -30,7 +30,7 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  spi-nor-objs			+= everspin.o
 --- /dev/null
 +++ b/drivers/mtd/spi-nor/boyamicro.c
-@@ -0,0 +1,37 @@
+@@ -0,0 +1,40 @@
 +// SPDX-License-Identifier: GPL-2.0
 +
 +#include <linux/mtd/spi-nor.h>
@@ -47,6 +47,9 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
 +	 * Enable methods. Set the default Quad Enable method.
 +	 */
 +	nor->params->quad_enable = spi_nor_sr2_bit1_quad_enable;
++
++	/* The 01H command can only be used to write SR1 */
++	nor->flags &= ~SNOR_F_HAS_16BIT_SR;
 +
 +	return 0;
 +}
