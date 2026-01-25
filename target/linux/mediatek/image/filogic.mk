@@ -1349,6 +1349,13 @@ endif
 endef
 TARGET_DEVICES += dlink_aquila-pro-ai-m30-a1
 
+define Device/dlink_aquila-pro-ai-m30-a1-ubootmod
+  $(Device/dlink_aquila-pro-ai-m30-a1)
+  DEVICE_MODEL := AQUILA PRO AI M30 (OpenWrt partition layout)
+  DEVICE_DTS := mt7981b-dlink-aquila-pro-ai-m30-a1-ubootmod
+endef
+TARGET_DEVICES += dlink_aquila-pro-ai-m30-a1-ubootmod
+
 define Device/dlink_aquila-pro-ai-m60-a1
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := AQUILA PRO AI M60
