@@ -3701,15 +3701,18 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 		return -ENOTSUPP;
 	}
 
-	dev_info(ctrl->dev, "configure SerDes %u for mode %s\n", sds->id,
-		 phy_modes(interface));
-
 	mutex_lock(&ctrl->lock);
 
-	if (ctrl->cfg->setup_serdes) {
+	if (sds->hw_mode != hw_mode) {
+		dev_info(ctrl->dev, "configure SerDes %u for mode %s\n", sds->id,
+			 phy_modes(interface));
+
 		ret = ctrl->cfg->setup_serdes(sds, hw_mode);
 		if (ret < 0)
 			goto out;
+	} else {
+		dev_dbg(ctrl->dev, "SerDes %u already in mode %s, no change\n",
+			 sds->id, phy_modes(interface));
 	}
 
 	if (ctrl->cfg->set_autoneg) {
@@ -3721,7 +3724,6 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 	ret = 0;
 out:
 	mutex_unlock(&ctrl->lock);
-
 	return ret;
 }
 
