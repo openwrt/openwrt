@@ -2351,7 +2351,8 @@ define KernelPackage/sparx5-switch
   DEPENDS:=@TARGET_microchipsw +kmod-phylink +kmod-ptp
   KCONFIG:= \
   CONFIG_SPARX5_SWITCH \
-  CONFIG_LAN969X_SWITCH=y
+  CONFIG_LAN969X_SWITCH=y \
+  CONFIG_SPARX5_DCB=y
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/microchip/sparx5/sparx5-switch.ko
   AUTOLOAD:=$(call AutoProbe,sparx5-switch,1)
 endef
