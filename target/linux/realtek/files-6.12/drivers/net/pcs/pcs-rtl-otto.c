@@ -2894,23 +2894,22 @@ static void rtpcs_931x_sds_rx_reset(struct rtpcs_serdes *sds)
 	mdelay(50);
 }
 
-static int rtpcs_931x_sds_cmu_page_get(phy_interface_t mode)
+static int rtpcs_931x_sds_cmu_page_get(enum rtpcs_sds_mode hw_mode)
 {
-	switch (mode) {
-	case PHY_INTERFACE_MODE_SGMII:
-	case PHY_INTERFACE_MODE_1000BASEX:	/* MII_1000BX_FIBER / 100BX_FIBER / 1000BX100BX_AUTO */
+	switch (hw_mode) {
+	case RTPCS_SDS_MODE_SGMII:
+	case RTPCS_SDS_MODE_1000BASEX:		/* MII_1000BX_FIBER / 100BX_FIBER / 1000BX100BX_AUTO */
 		return 0x24;
-	case PHY_INTERFACE_MODE_2500BASEX:	/* MII_2500Base_X: */
+	case RTPCS_SDS_MODE_2500BASEX:		/* MII_2500Base_X: */
 		return 0x28;
 /*	case MII_HISGMII_5G: */
 /*		return 0x2a; */
-	case PHY_INTERFACE_MODE_QSGMII:
+	case RTPCS_SDS_MODE_QSGMII:
 		return 0x2a;			/* Code also has 0x34 */
-	case PHY_INTERFACE_MODE_XAUI:		/* MII_RXAUI_LITE: */
-		return 0x2c;
-	case PHY_INTERFACE_MODE_XGMII:		/* MII_XSGMII */
-	case PHY_INTERFACE_MODE_10GKR:
-	case PHY_INTERFACE_MODE_10GBASER:	/* MII_10GR */
+/*	case MII_RXAUI_LITE: */
+/*		return 0x2c; */
+	case RTPCS_SDS_MODE_XSGMII:		/* MII_XSGMII */
+	case RTPCS_SDS_MODE_10GBASER:		/* MII_10GR */
 		return 0x2e;
 	default:
 		return -1;
@@ -2920,7 +2919,7 @@ static int rtpcs_931x_sds_cmu_page_get(phy_interface_t mode)
 }
 
 static void rtpcs_931x_sds_cmu_type_set(struct rtpcs_serdes *sds,
-					phy_interface_t mode, int chiptype)
+					enum rtpcs_sds_mode hw_mode, int chiptype)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
 	int cmu_type = 0; /* Clock Management Unit */
@@ -2928,12 +2927,16 @@ static void rtpcs_931x_sds_cmu_type_set(struct rtpcs_serdes *sds,
 	u32 frc_cmu_spd;
 	u32 frc_lc_mode_bitnum, frc_lc_mode_val_bitnum;
 
-	switch (mode) {
-	case PHY_INTERFACE_MODE_NA:
-	case PHY_INTERFACE_MODE_10GKR:
-	case PHY_INTERFACE_MODE_XGMII:
-	case PHY_INTERFACE_MODE_10GBASER:
-	case PHY_INTERFACE_MODE_USXGMII:
+	switch (hw_mode) {
+	case RTPCS_SDS_MODE_OFF:
+	case RTPCS_SDS_MODE_XSGMII:
+	case RTPCS_SDS_MODE_10GBASER:
+	case RTPCS_SDS_MODE_USXGMII_10GSXGMII:
+	case RTPCS_SDS_MODE_USXGMII_10GDXGMII:
+	case RTPCS_SDS_MODE_USXGMII_10GQXGMII:
+	case RTPCS_SDS_MODE_USXGMII_5GSXGMII:
+	case RTPCS_SDS_MODE_USXGMII_5GDXGMII:
+	case RTPCS_SDS_MODE_USXGMII_2_5GSXGMII:
 		return;
 
 /*	case MII_10GR1000BX_AUTO:
@@ -2941,12 +2944,12 @@ static void rtpcs_931x_sds_cmu_type_set(struct rtpcs_serdes *sds,
 			rtpcs_sds_write_bits(ctrl, sds, 0x24, 0xd, 14, 14, 0);
 		return; */
 
-	case PHY_INTERFACE_MODE_QSGMII:
+	case RTPCS_SDS_MODE_QSGMII:
 		cmu_type = 1;
 		frc_cmu_spd = 0;
 		break;
 
-	case PHY_INTERFACE_MODE_1000BASEX:
+	case RTPCS_SDS_MODE_1000BASEX:
 		cmu_type = 1;
 		frc_cmu_spd = 0;
 		break;
@@ -2956,12 +2959,12 @@ static void rtpcs_931x_sds_cmu_type_set(struct rtpcs_serdes *sds,
 		frc_cmu_spd = 0;
 		break; */
 
-	case PHY_INTERFACE_MODE_SGMII:
+	case RTPCS_SDS_MODE_SGMII:
 		cmu_type = 1;
 		frc_cmu_spd = 0;
 		break;
 
-	case PHY_INTERFACE_MODE_2500BASEX:
+	case RTPCS_SDS_MODE_2500BASEX:
 		cmu_type = 1;
 		frc_cmu_spd = 1;
 		break;
@@ -2972,7 +2975,7 @@ static void rtpcs_931x_sds_cmu_type_set(struct rtpcs_serdes *sds,
 	}
 
 	if (cmu_type == 1)
-		cmu_page = rtpcs_931x_sds_cmu_page_get(mode);
+		cmu_page = rtpcs_931x_sds_cmu_page_get(hw_mode);
 
 	if (sds == even_sds) { 
 		frc_lc_mode_bitnum = 4;
@@ -3005,10 +3008,10 @@ static void rtpcs_931x_sds_cmu_type_set(struct rtpcs_serdes *sds,
 
 static int rtpcs_931x_sds_cmu_band_set(struct rtpcs_serdes *sds,
 				       bool enable, u32 band,
-				       phy_interface_t mode)
+				       enum rtpcs_sds_mode hw_mode)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
-	int page = rtpcs_931x_sds_cmu_page_get(mode);
+	int page = rtpcs_931x_sds_cmu_page_get(hw_mode);
 
 	page += 1;
 
@@ -3028,10 +3031,10 @@ static int rtpcs_931x_sds_cmu_band_set(struct rtpcs_serdes *sds,
 }
 
 static int rtpcs_931x_sds_cmu_band_get(struct rtpcs_serdes *sds,
-				       phy_interface_t mode)
+				       enum rtpcs_sds_mode hw_mode)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
-	int page = rtpcs_931x_sds_cmu_page_get(mode);
+	int page = rtpcs_931x_sds_cmu_page_get(hw_mode);
 	u32 band;
 
 	page += 1;
@@ -3260,7 +3263,7 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 		rtpcs_sds_write_bits(sds, 0x24, 0x9, 15, 15, 0);
 
 		/* this was in rtl931x_phylink_mac_config in dsa/rtl83xx/dsa.c before */
-		rtpcs_931x_sds_cmu_band_set(sds, true, 62, PHY_INTERFACE_MODE_SGMII);
+		rtpcs_931x_sds_cmu_band_set(sds, true, 62, RTPCS_SDS_MODE_SGMII);
 		break;
 
 	case RTPCS_SDS_MODE_XSGMII:
@@ -3405,7 +3408,7 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 	rtpcs_931x_sds_power(sds, false);
 
 	/* this was in rtl931x_phylink_mac_config in dsa/rtl83xx/dsa.c before */
-	band = rtpcs_931x_sds_cmu_band_get(sds, mode);
+	band = rtpcs_931x_sds_cmu_band_get(sds, hw_mode);
 
 	ret = rtpcs_931x_sds_config_hw_mode(sds, hw_mode, chiptype);
 	if (ret < 0)
@@ -3429,7 +3432,7 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 		break;
 	}
 
-	rtpcs_931x_sds_cmu_type_set(sds, mode, chiptype);
+	rtpcs_931x_sds_cmu_type_set(sds, hw_mode, chiptype);
 
 	if (sds_id >= 2) {
 		if (chiptype)
