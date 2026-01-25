@@ -547,24 +547,14 @@ static void rtl839x_config_qos(void)
 	}
 }
 
-void __init rtl83xx_setup_qos(struct rtl838x_switch_priv *priv)
+void rtldsa_838x_qos_init(struct rtl838x_switch_priv *priv)
 {
-	switch_priv = priv;
+	rtl838x_config_qos();
+	rtl838x_rate_control_init(priv);
+}
 
-	pr_info("In %s\n", __func__);
-
-	switch (priv->family_id) {
-	case RTL8380_FAMILY_ID:
-		rtl838x_config_qos();
-		rtl838x_rate_control_init(priv);
-		break;
-	case RTL8390_FAMILY_ID:
-		rtl839x_config_qos();
-		rtl839x_rate_control_init(priv);
-		break;
-	default:
-		if (priv->r->qos_init)
-			priv->r->qos_init(priv);
-		break;
-	}
+void rtldsa_839x_qos_init(struct rtl838x_switch_priv *priv)
+{
+	rtl839x_config_qos();
+	rtl839x_rate_control_init(priv);
 }

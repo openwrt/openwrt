@@ -1559,7 +1559,8 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 
 	rtl83xx_get_l2aging(priv);
 
-	rtl83xx_setup_qos(priv);
+	if (priv->r->qos_init)
+		priv->r->qos_init(priv);
 
 	if (priv->r->l3_setup)
 		priv->r->l3_setup(priv);
