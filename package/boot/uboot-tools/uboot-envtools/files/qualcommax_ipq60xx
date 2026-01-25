@@ -10,6 +10,7 @@ board=$(board_name)
 case "$board" in
 8devices,mango-dvk|\
 8devices,mango-dvk-sfp|\
+datto,ap440|\
 cambiumnetworks,xe3-4)
 	ubootenv_add_mtd "0:APPSBLENV" "0x0" "0x10000" "0x10000"
 	;;

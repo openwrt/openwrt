@@ -1,0 +1,20 @@
+#!/bin/sh
+
+[ -e /lib/firmware/$FIRMWARE ] && exit 0
+
+. /lib/functions/caldata.sh
+
+board=$(board_name)
+
+case "$FIRMWARE" in
+"ath10k/cal-pci-0000:01:00.0.bin")
+	case "$board" in
+	datto,ap440)
+		caldata_extract "0:ART" 0x33000 0x2f20
+		;;
+	esac
+	;;
+*)
+	exit 1
+	;;
+esac

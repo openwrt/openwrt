@@ -285,3 +285,12 @@ define Device/yuncore_fap650
 	IMAGE/factory.ubin := append-ubi | qsdk-ipq-factory-nand
 endef
 TARGET_DEVICES += yuncore_fap650
+
+define Device/datto_ap440
+	$(call Device/FitImage)
+	DEVICE_VENDOR := Datto
+	DEVICE_MODEL := AP440
+	SOC := ipq6010
+	DEVICE_PACKAGES := ipq-wifi-datto_ap440
+endef
+TARGET_DEVICES += datto_ap440

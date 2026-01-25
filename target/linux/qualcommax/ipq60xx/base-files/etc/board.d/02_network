@@ -15,7 +15,8 @@ ipq60xx_setup_interfaces()
 	glinet,gl-axt1800)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
 		;;
-	alfa-network,ap120c-ax)
+	alfa-network,ap120c-ax|\
+	datto,ap440)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
 		;;
 	cambiumnetworks,xe3-4)

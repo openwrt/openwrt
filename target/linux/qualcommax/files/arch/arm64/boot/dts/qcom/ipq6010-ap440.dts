@@ -1,0 +1,380 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "ipq6018.dtsi"
+#include "ipq6018-cp-cpu.dtsi"
+#include "ipq6018-ess.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/net/qcom-ipq-ess.h>
+
+/ {
+	model = "Datto AP440";
+	compatible = "datto,ap440", "qcom,ipq6018";
+
+	aliases {
+		serial0 = &blsp1_uart3;
+		ethernet0 = &dp3;
+		ethernet1 = &dp4;
+		led-boot = &led_status;
+		led-failsafe = &led_status;
+		led-running = &led_status;
+		led-upgrade = &led_status;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs-append = " root=/dev/ubiblock0_1";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
+
+		led_status: status {
+			label = "status";
+			gpios = <&tlmm 37 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	gpio-watchdog {
+		compatible = "linux,wdt-gpio";
+		gpios = <&tlmm 68 GPIO_ACTIVE_LOW>;
+		hw_algo = "toggle";
+		/* hw_margin_ms is actually 300s but driver limits it to 60s */
+		hw_margin_ms = <60000>;
+		always-running;
+	};
+
+	usb_vbus: regulator-usb-vbus {
+		compatible = "regulator-fixed";
+		regulator-name = "usb_vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpio = <&tlmm 30 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-always-on;
+		pinctrl-0 = <&usb_pins>;
+		pinctrl-names = "default";
+	};
+};
+
+&soc {
+	watchdog@b017000 {
+		status = "okay";
+	};
+};
+
+&tlmm {
+	mdio_pins: mdio-pins {
+		mdc {
+			pins = "gpio64";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio {
+			pins = "gpio65";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+
+	led_pins: led-pins {
+		pins = "gpio37";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-down;
+	};
+
+	spi_0_pins: spi-0-pins {
+		pins = "gpio38", "gpio39", "gpio40", "gpio41";
+		function = "blsp0_spi";
+		drive-strength = <8>;
+		bias-pull-down;
+	};
+
+	usb_pins: usb-pins {
+		pins = "gpio30";
+		function = "gpio";
+		drive-strength = <8>;
+		bias-pull-down;
+		output-high;
+	};
+};
+
+&blsp1_uart3 {
+	pinctrl-0 = <&serial_3_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&blsp1_spi1 {
+	pinctrl-0 = <&spi_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	flash@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0>;
+		compatible = "jedec,spi-nor";
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "0:SBL1";
+				reg = <0x0 0xc0000>;
+				read-only;
+			};
+
+			partition@c0000 {
+				label = "0:MIBIB";
+				reg = <0xc0000 0x10000>;
+				read-only;
+			};
+
+			partition@d0000 {
+				label = "0:QSEE";
+				reg = <0xd0000 0x1a0000>;
+				read-only;
+			};
+
+			partition@270000 {
+				label = "0:DEVCFG";
+				reg = <0x270000 0x10000>;
+				read-only;
+			};
+
+			partition@280000 {
+				label = "0:RPM";
+				reg = <0x280000 0x20000>;
+				read-only;
+			};
+
+			partition@2a0000 {
+				label = "0:CDT";
+				reg = <0x2a0000 0x10000>;
+				read-only;
+			};
+
+			partition@2b0000 {
+				label = "0:APPSBLENV";
+				reg = <0x2b0000 0x10000>;
+			};
+
+			partition@2c0000 {
+				label = "0:APPSBL";
+				reg = <0x2c0000 0xa0000>;
+				read-only;
+			};
+
+			partition@360000 {
+				label = "0:ART";
+				reg = <0x360000 0x40000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					mac_base: mac@0 {
+						reg = <0x0 0x6>;
+					};
+				};
+			};
+
+			partition@3a0000 {
+				label = "datto";
+				reg = <0x3a0000 0x30000>;
+				read-only;
+			};
+
+			partition@3d0000 {
+				label = "serial";
+				reg = <0x3d0000 0x30000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	status = "okay";
+
+	nand@0 {
+		reg = <0>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			kernel@0 {
+				label = "kernel";
+				reg = <0x00000000 0x01000000>; /* 16 MiB */
+			};
+
+			ubi@1000000 {
+				label = "ubi";
+				reg = <0x01000000 0x1f000000>; /* 496 MiB */
+			};
+		};
+	};
+};
+
+&mdio {
+    status = "okay";
+
+    pinctrl-0 = <&mdio_pins>;
+    pinctrl-names = "default";
+    reset-gpios = <&tlmm 75 GPIO_ACTIVE_LOW>;
+    reset-delay-us = <10000>;
+    reset-post-delay-us = <50000>;
+
+    ethernet-phy-package@0 {
+        #address-cells = <1>;
+        #size-cells = <0>;
+        compatible = "qcom,qca8075-package";
+        reg = <0>;
+
+        qcom,package-mode = "psgmii";
+
+        phy0: ethernet-phy@3 {
+            reg = <3>;
+            qca,disable-smarteee;
+            qca,disable-hibernation;
+        };
+
+        phy1: ethernet-phy@4 {
+            reg = <4>;
+            qca,disable-smarteee;
+            qca,disable-hibernation;
+        };
+    };
+};
+
+&switch {
+	status = "okay";
+
+	switch_cpu_bmp = <ESS_PORT0>;
+	switch_lan_bmp = <ESS_PORT3>;
+	switch_wan_bmp = <ESS_PORT4>;
+	switch_mac_mode = <MAC_MODE_PSGMII>;
+	switch_mac_mode1 = <MAC_MODE_DISABLED>;
+	switch_mac_mode2 = <MAC_MODE_DISABLED>;
+	bm_tick_mode = <0>;
+	tm_tick_mode = <0>;
+	port3_pcs_channel = <4>;
+	port4_pcs_channel = <3>;
+
+	qcom,port_phyinfo {
+		port@3 {
+			port_id = <3>;
+			phy_address = <4>;
+		};
+		port@4 {
+			port_id = <4>;
+			phy_address = <3>;
+		};
+	};
+};
+
+&edma {
+	status = "okay";
+};
+
+&dp3 {
+    status = "okay";
+	phy-handle = <&phy1>;
+	label = "wan";
+	nvmem-cells = <&mac_base>;
+	nvmem-cell-names = "mac-address";
+	mac-address-increment = <1>;
+};
+
+&dp4 {
+    status = "okay";
+	phy-handle = <&phy0>;
+	label = "lan";
+	nvmem-cells = <&mac_base>;
+	nvmem-cell-names = "mac-address";
+};
+
+&wifi {
+	status = "okay";
+
+	qcom,ath11k-calibration-variant = "Datto-AP440";
+};
+
+&pcie_phy {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+
+	perst-gpio = <&tlmm 60 GPIO_ACTIVE_LOW>;
+
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi2: wifi@1,0 {
+			status = "okay";
+			compatible = "qcom,ath10k";
+			reg = <0x00010000 0 0 0 0>;
+
+			qcom,ath10k-calibration-variant = "Datto-AP440-FCC-indoor";
+		};
+	};
+};
+
+&qusb_phy_0 {
+	status = "okay";
+};
+
+&qusb_phy_1 {
+	status = "okay";
+};
+
+&ssphy_0 {
+	status = "okay";
+};
+
+&usb3 {
+	status = "okay";
+};
+
+&usb2 {
+	status = "okay";
+	vbus-supply = <&usb_vbus>;
+
+	dwc_1: usb@7000000 {
+		snps,nominal-elastic-buffer;
+		snps,quirk-ref-clock-adjustment = <0xa87f0>;
+		snps,quirk-ref-clock-period = <0x29>;
+	};
+};

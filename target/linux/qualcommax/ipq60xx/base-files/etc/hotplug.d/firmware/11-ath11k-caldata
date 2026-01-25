@@ -19,6 +19,9 @@ case "$FIRMWARE" in
 		ath11k_patch_mac $(macaddr_add $label_mac 1) 0
 		ath11k_set_macflag
 		;;
+	datto,ap440)
+		caldata_extract "0:ART" 0x1000 0x20000
+		;;
 	cambiumnetworks,xe3-4)
 		caldata_extract "0:ART" 0x1000 0x10000
 		;;
