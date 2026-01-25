@@ -5,6 +5,11 @@
 
 /* Register definition */
 
+#define RTETH_838X_CPU_PORT			28
+#define RTETH_839X_CPU_PORT			52
+#define RTETH_930X_CPU_PORT			28
+#define RTETH_931X_CPU_PORT			56
+
 /*
  * Reset
  */
@@ -17,13 +22,17 @@
 #define RTL839X_IMR_PORT_LINK_STS_CHG		(0x0068)
 #define RTL839X_ISR_PORT_LINK_STS_CHG		(0x00a0)
 
-/* Per port MAC control */
-#define RTL838X_MAC_PORT_CTRL			(0xd560)
-#define RTL839X_MAC_PORT_CTRL			(0x8004)
-#define RTL930X_MAC_L2_PORT_CTRL		(0x3268)
-#define RTL930X_MAC_PORT_CTRL			(0x3260)
-#define RTL931X_MAC_L2_PORT_CTRL		(0x6000)
-#define RTL931X_MAC_PORT_CTRL			(0x6004)
+/*
+ * CPU port MAC control. On RTL93XX the functionality of the MAC port control register is
+ * split into MAC_L2_PORT_CTRL and MAC_PORT_CTRL and the L2 register holds the important
+ * bits for the driver. To avoid confusion on splitted models use the L2 naming convention
+ * for all targets.
+ */
+
+#define RTETH_838X_MAC_L2_PORT_CTRL		(0xd560 + (RTETH_838X_CPU_PORT << 7))
+#define RTETH_839X_MAC_L2_PORT_CTRL		(0x8004 + (RTETH_839X_CPU_PORT << 7))
+#define RTETH_930X_MAC_L2_PORT_CTRL		(0x3268 + (RTETH_930X_CPU_PORT << 6))
+#define RTETH_931X_MAC_L2_PORT_CTRL		(0x6000 + (RTETH_931X_CPU_PORT << 7))
 
 /* DMA interrupt control and status registers */
 #define RTL838X_DMA_IF_CTRL			(0x9f58)
@@ -224,31 +233,6 @@
 /* Default MTU with jumbo frames support */
 #define DEFAULT_MTU 9000
 
-inline int rtl838x_mac_port_ctrl(int p)
-{
-	return RTL838X_MAC_PORT_CTRL + (p << 7);
-}
-
-inline int rtl839x_mac_port_ctrl(int p)
-{
-	return RTL839X_MAC_PORT_CTRL + (p << 7);
-}
-
-/* On the RTL931XX, the functionality of the MAC port control register is split up
- * into RTL931X_MAC_L2_PORT_CTRL and RTL931X_MAC_PORT_CTRL the functionality used
- * by the Ethernet driver is in the same bits now in RTL931X_MAC_L2_PORT_CTRL
- */
-
-inline int rtl930x_mac_port_ctrl(int p)
-{
-	return RTL930X_MAC_L2_PORT_CTRL + (p << 6);
-}
-
-inline int rtl931x_mac_port_ctrl(int p)
-{
-	return RTL931X_MAC_L2_PORT_CTRL + (p << 7);
-}
-
 inline int rtl838x_dma_if_rx_ring_size(int i)
 {
 	return RTL838X_DMA_IF_RX_RING_SIZE + ((i >> 3) << 2);
@@ -424,7 +408,7 @@ struct rteth_config {
 	int family_id;
 	int cpu_port;
 	irqreturn_t (*net_irq)(int irq, void *dev_id);
-	int (*mac_port_ctrl)(int port);
+	int mac_l2_port_ctrl;
 	int dma_if_intr_sts;
 	int dma_if_intr_msk;
 	int dma_if_intr_rx_runout_sts;
