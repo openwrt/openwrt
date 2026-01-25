@@ -19,6 +19,9 @@ KERNEL_PATH=$3
 ROOTFS_PATH=$4
 
 case $CE_TYPE in
+AP440)
+	EXTRA_SETENV="setenv qsdk 0"
+	;;
 PAX1800-Lite)
 	EXTRA_SETENV=""
 	;;

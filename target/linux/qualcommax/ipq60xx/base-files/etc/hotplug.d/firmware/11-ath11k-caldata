@@ -22,6 +22,9 @@ case "$FIRMWARE" in
 	cambiumnetworks,xe3-4)
 		caldata_extract "0:ART" 0x1000 0x10000
 		;;
+	datto,ap440)
+		caldata_extract "0:ART" 0x1000 0x20000
+		;;
 	glinet,gl-ax1800|\
 	glinet,gl-axt1800)
 		caldata_extract "0:art" 0x1000 0x10000
