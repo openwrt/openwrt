@@ -99,8 +99,10 @@ define CreateStorlinkTarfile
 	$(call Image/pad-to,$@.tmp/zImage,512)
 	# Copy first part of the kernel into zImage
 	dd if=$(IMAGE_KERNEL) of=$@.tmp/zImage bs=1 seek=512 count=$(3)
+	$(call Image/pad-to,$@.tmp/zImage,128k)
 	# Put the rest of the kernel into the "ramdisk"
 	dd if=$(IMAGE_KERNEL) of=$@.tmp/rd.gz bs=1 skip=$(3) count=6144k conv=sync
+	$(call Image/pad-to,$@.tmp/rd.gz,128k)
 	cp ./ImageInfo-$(1) $@.tmp/ImageInfo
 
 	sed -i -e "s/DATESTR/`date +%Y%m%d $(if $(SOURCE_DATE_EPOCH),--date "@$(SOURCE_DATE_EPOCH)")`/g" $@.tmp/ImageInfo
@@ -200,9 +202,9 @@ define Device/storlink-reference
         #              2096640 bytes zImage
 	# Ramdisk      6144k remaining zImage
 	# Application  6144k
-	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to 6144k | \
+	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to 128k | \
 		storlink-default-image $(1)
-	IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | pad-to 6144k | \
+	IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | pad-to 128k | \
 		storlink-default-image $(1) | append-metadata
 	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES)
 endef
@@ -225,9 +227,9 @@ define Device/raidsonic_ib-4220-b
 	# Kern         3072k - 512 | = 3145216
 	# Ramdisk      6144k       | = 9216k
 	# Application  6144k       | = 15360k
-	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to 6144k | \
+	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to 128k | \
 		raidsonic-ib-4220-b-image $(1)
-	IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | pad-to 6144k | \
+	IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | pad-to 128k | \
 		raidsonic-ib-4220-b-image $(1) | append-metadata
 endef
 TARGET_DEVICES += raidsonic_ib-4220-b
