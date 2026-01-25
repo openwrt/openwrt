@@ -3701,6 +3701,12 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 		return -ENOTSUPP;
 	}
 
+	if (sds->hw_mode == hw_mode) {
+		dev_info(ctrl->dev, "SerDes %u already in mode %s, skipping config\n",
+			 sds->id, phy_modes(interface));
+		return 0;
+	}
+
 	dev_info(ctrl->dev, "configure SerDes %u for mode %s\n", sds->id,
 		 phy_modes(interface));
 
