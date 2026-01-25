@@ -64,6 +64,12 @@ buffalo,wbmr-300hpd)
 	ucidef_set_led_switch "lan3" "LAN3" "green:lan3" "switch0" "0x20"
 	ucidef_set_led_default "router" "router" "green:router" "1"
 	;;
+dlink,dwr-966)
+	ucidef_set_led_netdev "lan1" "LAN1" "1e108000.switch-mii:02:green:lan" "lan1" "link rx tx"
+	ucidef_set_led_netdev "lan2" "LAN2" "1e108000.switch-mii:04:green:lan" "lan2" "link rx tx"
+	ucidef_set_led_netdev "lan3" "LAN3" "1e108000.switch-mii:01:green:lan" "lan3" "link rx tx"
+	ucidef_set_led_netdev "lan4" "LAN4" "1e108000.switch-mii:03:green:lan" "lan4" "link rx tx"
+	;;
 esac
 
 board_config_flush
