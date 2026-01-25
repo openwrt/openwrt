@@ -101,8 +101,8 @@
 #define RTSDS_930X_PLL_1000		0x1
 #define RTSDS_930X_PLL_10000		0x5
 #define RTSDS_930X_PLL_2500		0x3
-#define RTSDS_930X_PLL_LC		0x3
-#define RTSDS_930X_PLL_RING		0x1
+#define RTPCS_930X_PLL_LC		0x3
+#define RTPCS_930X_PLL_RING		0x1
 
 /* Registers of the internal SerDes of the 9310 */
 #define RTL931X_SERDES_MODE_CTRL		(0x13cc)
@@ -144,6 +144,12 @@ enum rtpcs_port_media {
 	RTPCS_PORT_MEDIA_DAC_100CM,
 	RTPCS_PORT_MEDIA_DAC_300CM,
 	RTPCS_PORT_MEDIA_DAC_500CM,
+};
+
+enum rtpcs_sds_pll_type {
+	RTPCS_SDS_PLL_RING,
+	RTPCS_SDS_PLL_LC,
+	RTPCS_SDS_PLL_END,
 };
 
 struct rtpcs_ctrl;
@@ -977,38 +983,42 @@ static void rtpcs_930x_sds_rx_reset(struct rtpcs_serdes *sds,
 	rtpcs_sds_write_bits(sds, page, 0x15, 4, 4, 0x0);
 }
 
-static void rtpcs_930x_sds_get_pll_data(struct rtpcs_serdes *sds,
-					int *pll, int *speed)
+static void rtpcs_930x_sds_get_pll_data(struct rtpcs_serdes *sds, enum rtpcs_sds_pll_type *pll,
+					int *speed)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
 	int sbit, pbit = (sds == even_sds) ? 4 : 6;
+	int pll_val;
 
 	/*
 	 * PLL data is shared between adjacent SerDes in the even lane. Each SerDes defines
 	 * what PLL it needs (ring or LC) while the PLL itself stores the current speed.
 	 */
 
-	*pll = rtpcs_sds_read_bits(even_sds, 0x20, 0x12, pbit + 1, pbit);
-	sbit = *pll == RTSDS_930X_PLL_LC ? 8 : 12;
+	pll_val = rtpcs_sds_read_bits(even_sds, 0x20, 0x12, pbit + 1, pbit);
+	*pll = pll_val == RTPCS_930X_PLL_LC ? RTPCS_SDS_PLL_LC : RTPCS_SDS_PLL_RING;
+
+	sbit = *pll == RTPCS_SDS_PLL_LC ? 8 : 12;
 	*speed = rtpcs_sds_read_bits(even_sds, 0x20, 0x12, sbit + 3, sbit);
 }
 
-static int rtpcs_930x_sds_set_pll_data(struct rtpcs_serdes *sds,
-				       int pll, int speed)
+static int rtpcs_930x_sds_set_pll_data(struct rtpcs_serdes *sds, enum rtpcs_sds_pll_type pll,
+				       int speed)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
-	int sbit = pll == RTSDS_930X_PLL_LC ? 8 : 12;
+	int sbit = pll == RTPCS_SDS_PLL_LC ? 8 : 12;
 	int pbit = (sds == even_sds) ? 4 : 6;
+	int pll_val;
 
 	if ((speed != RTSDS_930X_PLL_1000) &&
 	    (speed != RTSDS_930X_PLL_2500) &&
 	    (speed != RTSDS_930X_PLL_10000))
 		return -EINVAL;
 
-	if ((pll != RTSDS_930X_PLL_RING) && (pll != RTSDS_930X_PLL_LC))
+	if (pll >= RTPCS_SDS_PLL_END)
 		return -EINVAL;
 
-	if ((pll == RTSDS_930X_PLL_RING) && (speed == RTSDS_930X_PLL_10000))
+	if ((pll == RTPCS_SDS_PLL_RING) && (speed == RTSDS_930X_PLL_10000))
 		return -EINVAL;
 
 	/*
@@ -1017,8 +1027,9 @@ static int rtpcs_930x_sds_set_pll_data(struct rtpcs_serdes *sds,
 	 * always activate both.
 	 */
 
+	pll_val = pll == RTPCS_SDS_PLL_LC ? RTPCS_930X_PLL_LC : RTPCS_930X_PLL_RING;
 	rtpcs_sds_write_bits(even_sds, 0x20, 0x12, 3, 0, 0xf);
-	rtpcs_sds_write_bits(even_sds, 0x20, 0x12, pbit + 1, pbit, pll);
+	rtpcs_sds_write_bits(even_sds, 0x20, 0x12, pbit + 1, pbit, pll_val);
 	rtpcs_sds_write_bits(even_sds, 0x20, 0x12, sbit + 3, sbit, speed);
 
 	return 0;
@@ -1028,7 +1039,8 @@ static void rtpcs_930x_sds_reset_cmu(struct rtpcs_serdes *sds)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
 	int reset_sequence[4] = { 3, 2, 3, 1 };
-	int pll, speed, i, bit;
+	enum rtpcs_sds_pll_type pll;
+	int speed, i, bit;
 
 	/*
 	 * After the PLL speed has changed, the CMU must take over the new values. The models
@@ -1037,7 +1049,7 @@ static void rtpcs_930x_sds_reset_cmu(struct rtpcs_serdes *sds)
 	 */
 
 	rtpcs_930x_sds_get_pll_data(sds, &pll, &speed);
-	bit = pll == RTSDS_930X_PLL_LC ? 2 : 0;
+	bit = pll == RTPCS_SDS_PLL_LC ? 2 : 0;
 
 	for (i = 0; i < ARRAY_SIZE(reset_sequence); i++)
 		rtpcs_sds_write_bits(even_sds, 0x21, 0x0b, bit + 1, bit,
@@ -1089,9 +1101,10 @@ static void rtpcs_930x_sds_set_power(struct rtpcs_serdes *sds, bool on)
 	rtpcs_sds_write_bits(sds, 0x20, 0x00, 5, 4, rx_enable);
 }
 
-static void rtpcs_930x_sds_reconfigure_pll(struct rtpcs_serdes *sds, int pll)
+static void rtpcs_930x_sds_reconfigure_pll(struct rtpcs_serdes *sds, enum rtpcs_sds_pll_type pll)
 {
-	int mode, tmp, speed;
+	enum rtpcs_sds_pll_type tmp;
+	int mode, speed;
 
 	mode = __rtpcs_930x_sds_get_ip_mode(sds);
 	rtpcs_930x_sds_get_pll_data(sds, &tmp, &speed);
@@ -1113,9 +1126,9 @@ static int rtpcs_930x_sds_config_pll(struct rtpcs_serdes *sds,
 				     enum rtpcs_sds_mode hw_mode)
 {
 	struct rtpcs_serdes *nb_sds = rtpcs_sds_get_neighbor(sds);
-	int neighbor_speed, neighbor_mode, neighbor_pll;
+	enum rtpcs_sds_pll_type pll, neighbor_pll;
+	int speed, neighbor_speed, neighbor_mode;
 	bool speed_changed = true;
-	int pll, speed;
 
 	/*
 	 * A SerDes pair on the RTL930x is driven by two PLLs. A low speed ring PLL can generate
@@ -1150,19 +1163,19 @@ static int rtpcs_930x_sds_config_pll(struct rtpcs_serdes *sds,
 		return -ENOTSUPP;
 
 	if (!neighbor_mode)
-		pll = speed == RTSDS_930X_PLL_10000 ? RTSDS_930X_PLL_LC : RTSDS_930X_PLL_RING;
+		pll = speed == RTSDS_930X_PLL_10000 ? RTPCS_SDS_PLL_LC : RTPCS_SDS_PLL_RING;
 	else if (speed == neighbor_speed) {
 		speed_changed = false;
 		pll = neighbor_pll;
-	} else if (neighbor_pll == RTSDS_930X_PLL_RING)
-		pll = RTSDS_930X_PLL_LC;
+	} else if (neighbor_pll == RTPCS_SDS_PLL_RING)
+		pll = RTPCS_SDS_PLL_LC;
 	else if (speed == RTSDS_930X_PLL_10000) {
 		pr_info("%s: SDS %d needs LC PLL, reconfigure SDS %d to use ring PLL\n",
 			__func__, sds->id, nb_sds->id);
-		rtpcs_930x_sds_reconfigure_pll(nb_sds, RTSDS_930X_PLL_RING);
-		pll = RTSDS_930X_PLL_LC;
+		rtpcs_930x_sds_reconfigure_pll(nb_sds, RTPCS_SDS_PLL_RING);
+		pll = RTPCS_SDS_PLL_LC;
 	} else
-		pll = RTSDS_930X_PLL_RING;
+		pll = RTPCS_SDS_PLL_RING;
 
 	rtpcs_930x_sds_set_pll_data(sds, pll, speed);
 
@@ -1170,7 +1183,7 @@ static int rtpcs_930x_sds_config_pll(struct rtpcs_serdes *sds,
 		rtpcs_930x_sds_reset_cmu(sds);
 
 	pr_info("%s: SDS %d using %s PLL for mode %d\n", __func__, sds->id,
-		pll == RTSDS_930X_PLL_LC ? "LC" : "ring", hw_mode);
+		pll == RTPCS_SDS_PLL_LC ? "LC" : "ring", hw_mode);
 
 	return 0;
 }
@@ -2916,14 +2929,14 @@ static int rtpcs_931x_sds_cmu_page_get(enum rtpcs_sds_mode hw_mode)
 	}
 }
 
-static int rtpcs_931x_sds_cmu_type_set(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode,
-				       int chiptype)
+static int rtpcs_931x_sds_config_cmu(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode,
+				     int chiptype)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
-	u32 frc_lc_mode_bitnum, frc_lc_mode_val_bitnum;
-	int cmu_type = 0; /* Clock Management Unit */
+	u32 force_lc_mode_bit, force_lc_mode_val_bit;
+	enum rtpcs_sds_pll_type pll_type; /* SDK calls this cmu_type */
+	bool force_pll_spd;
 	int cmu_page = 0;
-	u32 frc_cmu_spd;
 
 	switch (hw_mode) {
 	case RTPCS_SDS_MODE_OFF:
@@ -2943,28 +2956,28 @@ static int rtpcs_931x_sds_cmu_type_set(struct rtpcs_serdes *sds, enum rtpcs_sds_
 		return; */
 
 	case RTPCS_SDS_MODE_QSGMII:
-		cmu_type = 1;
-		frc_cmu_spd = 0;
+		pll_type = RTPCS_SDS_PLL_RING;
+		force_pll_spd = false;
 		break;
 
 	case RTPCS_SDS_MODE_1000BASEX:
-		cmu_type = 1;
-		frc_cmu_spd = 0;
+		pll_type = RTPCS_SDS_PLL_RING;
+		force_pll_spd = false;
 		break;
 
 /*	case MII_1000BX100BX_AUTO:
-		cmu_type = 1;
-		frc_cmu_spd = 0;
+		pll_type = RTPCS_SDS_PLL_RING;
+		force_pll_spd = false;
 		break; */
 
 	case RTPCS_SDS_MODE_SGMII:
-		cmu_type = 1;
-		frc_cmu_spd = 0;
+		pll_type = RTPCS_SDS_PLL_RING;
+		force_pll_spd = false;
 		break;
 
 	case RTPCS_SDS_MODE_2500BASEX:
-		cmu_type = 1;
-		frc_cmu_spd = 1;
+		pll_type = RTPCS_SDS_PLL_RING;
+		force_pll_spd = true;
 		break;
 
 	default:
@@ -2972,36 +2985,36 @@ static int rtpcs_931x_sds_cmu_type_set(struct rtpcs_serdes *sds, enum rtpcs_sds_
 		return -EINVAL;
 	}
 
-	if (cmu_type == 1) {
+	if (pll_type == RTPCS_SDS_PLL_RING) {
 		cmu_page = rtpcs_931x_sds_cmu_page_get(hw_mode);
 		if (cmu_page < 0)
 			return -EINVAL;
 	}
 
 	if (sds == even_sds) { 
-		frc_lc_mode_bitnum = 4;
-		frc_lc_mode_val_bitnum = 5;
+		force_lc_mode_bit = 4;
+		force_lc_mode_val_bit = 5;
 	} else {
-		frc_lc_mode_bitnum = 6;
-		frc_lc_mode_val_bitnum = 7;
+		force_lc_mode_bit = 6;
+		force_lc_mode_val_bit = 7;
 	}
 
-	pr_info("%s: cmu_type %0d cmu_page %x frc_cmu_spd %d even_sds %d sds %d\n",
-		__func__, cmu_type, cmu_page, frc_cmu_spd, even_sds->id,
-		sds->id);
+	pr_info("%s: pll_type %s cmu_page %x force_pll_spd %d even_sds %d sds %d\n",
+		__func__, pll_type == RTPCS_SDS_PLL_LC ? "LC" : "ring", cmu_page, force_pll_spd,
+		even_sds->id, sds->id);
 
-	if (cmu_type == 1) {
+	if (pll_type == RTPCS_SDS_PLL_RING) {
 		rtpcs_sds_write_bits(sds, cmu_page, 0x7, 15, 15, 0x0);
 		if (chiptype)
 			rtpcs_sds_write_bits(sds, cmu_page, 0xd, 14, 14, 0x0);
 
 		rtpcs_sds_write_bits(even_sds, 0x20, 0x12, 3, 2, 0x3);
-		rtpcs_sds_write_bits(even_sds, 0x20, 0x12, frc_lc_mode_bitnum,
-				     frc_lc_mode_bitnum, 0x1);
-		rtpcs_sds_write_bits(even_sds, 0x20, 0x12, frc_lc_mode_val_bitnum,
-				     frc_lc_mode_val_bitnum, 0x0);
+		rtpcs_sds_write_bits(even_sds, 0x20, 0x12, force_lc_mode_bit,
+				     force_lc_mode_bit, 0x1);
+		rtpcs_sds_write_bits(even_sds, 0x20, 0x12, force_lc_mode_val_bit,
+				     force_lc_mode_val_bit, 0x0);
 		rtpcs_sds_write_bits(even_sds, 0x20, 0x12, 12, 12, 0x1);
-		rtpcs_sds_write_bits(even_sds, 0x20, 0x12, 15, 13, frc_cmu_spd);
+		rtpcs_sds_write_bits(even_sds, 0x20, 0x12, 15, 13, force_pll_spd ? 0x1 : 0x0);
 	}
 
 	return 0;
@@ -3431,7 +3444,7 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 		break;
 	}
 
-	rtpcs_931x_sds_cmu_type_set(sds, hw_mode, chiptype);
+	rtpcs_931x_sds_config_cmu(sds, hw_mode, chiptype);
 
 	if (sds_id >= 2) {
 		if (chiptype)
