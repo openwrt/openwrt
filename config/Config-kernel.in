@@ -1277,6 +1277,7 @@ config KERNEL_NET_L3_MASTER_DEV
 config KERNEL_DCB
 	bool "Data Center Bridging support"
 	default y if TARGET_armsr_armv8
+	default y if TARGET_microchipsw
 	default y if TARGET_x86_64
 	help
 	  This enables support for configuring Data Center Bridging (DCB)
