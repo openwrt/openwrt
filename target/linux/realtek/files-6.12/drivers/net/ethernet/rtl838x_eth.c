@@ -1453,6 +1453,7 @@ static const struct net_device_ops rteth_838x_netdev_ops = {
 static const struct rteth_config rteth_838x_cfg = {
 	.family_id = RTL8380_FAMILY_ID,
 	.cpu_port = RTETH_838X_CPU_PORT,
+	.rx_rings = 8,
 	.net_irq = rteth_83xx_net_irq,
 	.mac_l2_port_ctrl = RTETH_838X_MAC_L2_PORT_CTRL,
 	.dma_if_intr_sts = RTL838X_DMA_IF_INTR_STS,
@@ -1496,6 +1497,7 @@ static const struct net_device_ops rteth_839x_netdev_ops = {
 static const struct rteth_config rteth_839x_cfg = {
 	.family_id = RTL8390_FAMILY_ID,
 	.cpu_port = RTETH_839X_CPU_PORT,
+	.rx_rings = 8,
 	.net_irq = rteth_83xx_net_irq,
 	.mac_l2_port_ctrl = RTETH_839X_MAC_L2_PORT_CTRL,
 	.dma_if_intr_sts = RTL839X_DMA_IF_INTR_STS,
@@ -1539,6 +1541,7 @@ static const struct net_device_ops rteth_930x_netdev_ops = {
 static const struct rteth_config rteth_930x_cfg = {
 	.family_id = RTL9300_FAMILY_ID,
 	.cpu_port = RTETH_930X_CPU_PORT,
+	.rx_rings = 32,
 	.net_irq = rteth_93xx_net_irq,
 	.mac_l2_port_ctrl = RTETH_930X_MAC_L2_PORT_CTRL,
 	.dma_if_intr_rx_runout_sts = RTL930X_DMA_IF_INTR_RX_RUNOUT_STS,
@@ -1587,6 +1590,7 @@ static const struct net_device_ops rteth_931x_netdev_ops = {
 static const struct rteth_config rteth_931x_cfg = {
 	.family_id = RTL9310_FAMILY_ID,
 	.cpu_port = RTETH_931X_CPU_PORT,
+	.rx_rings = 32,
 	.net_irq = rteth_93xx_net_irq,
 	.mac_l2_port_ctrl = RTETH_931X_MAC_L2_PORT_CTRL,
 	.dma_if_intr_rx_runout_sts = RTL931X_DMA_IF_INTR_RX_RUNOUT_STS,
@@ -1643,7 +1647,7 @@ static int rtl838x_eth_probe(struct platform_device *pdev)
 	struct net_device *dev;
 	struct device_node *dn = pdev->dev.of_node;
 	struct rteth_ctrl *ctrl;
-	const struct rteth_config *matchdata;
+	const struct rteth_config *cfg;
 	phy_interface_t phy_mode;
 	struct phylink *phylink;
 	u8 mac_addr[ETH_ALEN] = {0};
@@ -1658,11 +1662,9 @@ static int rtl838x_eth_probe(struct platform_device *pdev)
 		return -EINVAL;
 	}
 
-	matchdata = (const struct rteth_config *)device_get_match_data(&pdev->dev);
+	cfg = device_get_match_data(&pdev->dev);
 
-	rxrings = (matchdata->family_id == RTL8380_FAMILY_ID ||
-		   matchdata->family_id == RTL8390_FAMILY_ID) ? 8 : 32;
-	rxrings = rxrings > MAX_RXRINGS ? MAX_RXRINGS : rxrings;
+	rxrings = cfg->rx_rings > MAX_RXRINGS ? MAX_RXRINGS : cfg->rx_rings;
 	rxringlen = MAX_ENTRIES / rxrings;
 	rxringlen = rxringlen > MAX_RXLEN ? MAX_RXLEN : rxringlen;
 
@@ -1671,7 +1673,7 @@ static int rtl838x_eth_probe(struct platform_device *pdev)
 		return -ENOMEM;
 	SET_NETDEV_DEV(dev, &pdev->dev);
 	ctrl = netdev_priv(dev);
-	ctrl->r = matchdata;
+	ctrl->r = cfg;
 
 	/* Allocate buffer memory */
 	ctrl->membase = dmam_alloc_coherent(&pdev->dev, rxrings * rxringlen * RING_BUFFER +
