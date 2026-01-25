@@ -229,6 +229,25 @@ define U-Boot/easy50712_norspl
   DEPENDS+=@BROKEN
 endef
 
+define U-Boot/arv7519rw22_brn
+  NAME:=Arcadyan ARV7519RW22 (BRN)
+  BUILD_SUBTARGET:=xrx200
+  BUILD_DEVICES:=arcadyan_arv7519rw22
+endef
+
+define U-Boot/arv7519rw22_nor
+  NAME:=Arcadyan ARV7519RW22 (NOR)
+  BUILD_SUBTARGET:=xrx200
+  BUILD_DEVICES:=arcadyan_arv7519rw22
+endef
+
+define U-Boot/arv7519rw22_ram
+  NAME:=Arcadyan ARV7519RW22 (RAM)
+  BUILD_SUBTARGET:=xrx200
+  BUILD_DEVICES:=arcadyan_arv7519rw22
+  DDR_SETTINGS:=board/arcadyan/arv7519rw22/ddr_settings.h
+endef
+
 define U-Boot/easy80920_ram
   NAME:=Lantiq EASY80920 (RAM)
   BUILD_SUBTARGET:=xrx200
@@ -338,6 +357,7 @@ UBOOT_TARGETS:= \
 	arv7510pw_ram arv7510pw_nor arv7510pw_brn \
 	arv7510pw22_ram arv7510pw22_nor arv7510pw22_brn \
 	arv7518pw_ram arv7518pw_nor arv7518pw_brn \
+	arv7519rw22_brn arv7519rw22_nor arv7519rw22_ram \
 	arv752dpw_ram arv752dpw_nor arv752dpw_brn \
 	arv752dpw22_ram arv752dpw22_nor arv752dpw22_brn \
 	arv8539pw22_brn arv8539pw22_nor arv8539pw22_ram \
