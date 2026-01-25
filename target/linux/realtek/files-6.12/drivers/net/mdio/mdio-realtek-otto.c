@@ -960,7 +960,7 @@ static int rtmdio_probe(struct platform_device *pdev)
 	bus->write_c45 = rtmdio_write_c45;
 	bus->parent = dev;
 	bus->phy_mask = ~0;
-	snprintf(bus->id, MII_BUS_ID_SIZE, "%s-mii", dev_name(dev));
+	snprintf(bus->id, MII_BUS_ID_SIZE, "realtek-mdio");
 
 	device_set_node(&bus->dev, of_fwnode_handle(dev->of_node));
 	ret = devm_mdiobus_register(dev, bus);
