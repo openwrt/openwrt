@@ -2985,11 +2985,9 @@ static int rtpcs_931x_sds_config_cmu(struct rtpcs_serdes *sds, enum rtpcs_sds_mo
 		return -EINVAL;
 	}
 
-	if (pll_type == RTPCS_SDS_PLL_RING) {
-		cmu_page = rtpcs_931x_sds_cmu_page_get(hw_mode);
-		if (cmu_page < 0)
-			return -EINVAL;
-	}
+	cmu_page = rtpcs_931x_sds_cmu_page_get(hw_mode);
+	if (cmu_page < 0)
+		return -EINVAL;
 
 	if (sds == even_sds) { 
 		force_lc_mode_bit = 4;
@@ -3015,6 +3013,18 @@ static int rtpcs_931x_sds_config_cmu(struct rtpcs_serdes *sds, enum rtpcs_sds_mo
 				     force_lc_mode_val_bit, 0x0);
 		rtpcs_sds_write_bits(even_sds, 0x20, 0x12, 12, 12, 0x1);
 		rtpcs_sds_write_bits(even_sds, 0x20, 0x12, 15, 13, force_pll_spd ? 0x1 : 0x0);
+	} else if (pll_type == RTPCS_SDS_PLL_LC) {
+		rtpcs_sds_write_bits(sds, cmu_page, 0x7, 15, 15, 0x1);
+		if (chiptype)
+			rtpcs_sds_write_bits(sds, cmu_page, 0xd, 14, 14, 1);
+
+		rtpcs_sds_write_bits(even_sds, 0x20, 0x12, 1, 0, 0x3);
+		rtpcs_sds_write_bits(even_sds, 0x20, 0x12, force_lc_mode_bit,
+				     force_lc_mode_bit, 0x1);
+		rtpcs_sds_write_bits(even_sds, 0x20, 0x12, force_lc_mode_val_bit,
+				     force_lc_mode_val_bit, 0x1);
+		rtpcs_sds_write_bits(even_sds, 0x20, 0x12, 8, 8, 0x1);
+		rtpcs_sds_write_bits(even_sds, 0x20, 0x12, 11, 9, force_pll_spd ? 0x1 : 0x0);
 	}
 
 	return 0;
