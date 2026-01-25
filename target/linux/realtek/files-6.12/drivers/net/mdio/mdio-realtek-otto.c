@@ -174,7 +174,7 @@
  */
 
 
-struct rtmdio_bus_priv {
+struct rtmdio_ctrl {
 	const struct rtmdio_config *cfg;
 	int page[RTMDIO_MAX_PORT];
 	bool raw[RTMDIO_MAX_PORT];
@@ -469,13 +469,13 @@ static int rtmdio_931x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
 
 static int rtmdio_read_c45(struct mii_bus *bus, int addr, int devnum, int regnum)
 {
-	struct rtmdio_bus_priv *priv = bus->priv;
+	struct rtmdio_ctrl *ctrl = bus->priv;
 	int err, val;
 
-	if (addr >= priv->cfg->cpu_port)
+	if (addr >= ctrl->cfg->cpu_port)
 		return -ENODEV;
 
-	err = (*priv->cfg->read_mmd_phy)(addr, devnum, regnum, &val);
+	err = (*ctrl->cfg->read_mmd_phy)(addr, devnum, regnum, &val);
 	pr_debug("rd_MMD(adr=%d, dev=%d, reg=%d) = %d, err = %d\n",
 		 addr, devnum, regnum, val, err);
 	return err ? err : val;
@@ -483,32 +483,32 @@ static int rtmdio_read_c45(struct mii_bus *bus, int addr, int devnum, int regnum
 
 static int rtmdio_read(struct mii_bus *bus, int addr, int regnum)
 {
-	struct rtmdio_bus_priv *priv = bus->priv;
+	struct rtmdio_ctrl *ctrl = bus->priv;
 	int err, val;
 
-	if (addr >= priv->cfg->cpu_port)
+	if (addr >= ctrl->cfg->cpu_port)
 		return -ENODEV;
 
-	if (regnum == RTMDIO_PAGE_SELECT && priv->page[addr] != priv->cfg->raw_page)
-		return priv->page[addr];
+	if (regnum == RTMDIO_PAGE_SELECT && ctrl->page[addr] != ctrl->cfg->raw_page)
+		return ctrl->page[addr];
 
-	priv->raw[addr] = (priv->page[addr] == priv->cfg->raw_page);
+	ctrl->raw[addr] = (ctrl->page[addr] == ctrl->cfg->raw_page);
 
-	err = (*priv->cfg->read_phy)(addr, priv->page[addr], regnum, &val);
+	err = (*ctrl->cfg->read_phy)(addr, ctrl->page[addr], regnum, &val);
 	pr_debug("rd_PHY(adr=%d, pag=%d, reg=%d) = %d, err = %d\n",
-		 addr, priv->page[addr], regnum, val, err);
+		 addr, ctrl->page[addr], regnum, val, err);
 	return err ? err : val;
 }
 
 static int rtmdio_write_c45(struct mii_bus *bus, int addr, int devnum, int regnum, u16 val)
 {
-	struct rtmdio_bus_priv *priv = bus->priv;
+	struct rtmdio_ctrl *ctrl = bus->priv;
 	int err;
 
-	if (addr >= priv->cfg->cpu_port)
+	if (addr >= ctrl->cfg->cpu_port)
 		return -ENODEV;
 
-	err = (*priv->cfg->write_mmd_phy)(addr, devnum, regnum, val);
+	err = (*ctrl->cfg->write_mmd_phy)(addr, devnum, regnum, val);
 	pr_debug("wr_MMD(adr=%d, dev=%d, reg=%d, val=%d) err = %d\n",
 		 addr, devnum, regnum, val, err);
 	return err;
@@ -516,27 +516,27 @@ static int rtmdio_write_c45(struct mii_bus *bus, int addr, int devnum, int regnu
 
 static int rtmdio_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 {
-	struct rtmdio_bus_priv *priv = bus->priv;
+	struct rtmdio_ctrl *ctrl = bus->priv;
 	int err, page;
 
-	if (addr >= priv->cfg->cpu_port)
+	if (addr >= ctrl->cfg->cpu_port)
 		return -ENODEV;
 
-	page = priv->page[addr];
+	page = ctrl->page[addr];
 
 	if (regnum == RTMDIO_PAGE_SELECT)
-		priv->page[addr] = val;
+		ctrl->page[addr] = val;
 
-	if (!priv->raw[addr] && (regnum != RTMDIO_PAGE_SELECT || page == priv->cfg->raw_page)) {
-		priv->raw[addr] = (page == priv->cfg->raw_page);
+	if (!ctrl->raw[addr] && (regnum != RTMDIO_PAGE_SELECT || page == ctrl->cfg->raw_page)) {
+		ctrl->raw[addr] = (page == ctrl->cfg->raw_page);
 
-		err = (*priv->cfg->write_phy)(addr, page, regnum, val);
+		err = (*ctrl->cfg->write_phy)(addr, page, regnum, val);
 		pr_debug("wr_PHY(adr=%d, pag=%d, reg=%d, val=%d) err = %d\n",
 			 addr, page, regnum, val, err);
 		return err;
 	}
 
-	priv->raw[addr] = false;
+	ctrl->raw[addr] = false;
 	return 0;
 }
 
@@ -546,12 +546,12 @@ static int rtmdio_read_phy_id(struct mii_bus *bus, u8 addr, unsigned int *phy_id
 		MDIO_MMD_PMAPMD, MDIO_MMD_PCS, MDIO_MMD_AN,
 		MDIO_MMD_VEND1, MDIO_MMD_VEND2
 	};
-	struct rtmdio_bus_priv *priv = bus->priv;
+	struct rtmdio_ctrl *ctrl = bus->priv;
 	int devid1 = 0, devid2 = 0;
 	unsigned int id = 0;
 
 	/* Clause 22 */
-	if (!priv->smi_bus_isc45[priv->smi_bus[addr]]) {
+	if (!ctrl->smi_bus_isc45[ctrl->smi_bus[addr]]) {
 		devid1 = rtmdio_read(bus, addr, MDIO_DEVID1);
 		devid2 = rtmdio_read(bus, addr, MDIO_DEVID2);
 		if (devid1 < 0 || devid2 < 0)
@@ -588,7 +588,7 @@ static int rtmdio_read_phy_id(struct mii_bus *bus, u8 addr, unsigned int *phy_id
 
 static void rtmdio_get_phy_info(struct mii_bus *bus, int addr, struct rtmdio_phy_info *phyinfo)
 {
-	struct rtmdio_bus_priv *priv = bus->priv;
+	struct rtmdio_ctrl *ctrl = bus->priv;
 
 	/*
 	 * Depending on the attached PHY the polling mechanism must be fine tuned. Basically
@@ -596,7 +596,7 @@ static void rtmdio_get_phy_info(struct mii_bus *bus, int addr, struct rtmdio_phy
 	 * features.
 	 */
 	memset(phyinfo, 0, sizeof(*phyinfo));
-	if (priv->smi_bus[addr] < 0) {
+	if (ctrl->smi_bus[addr] < 0) {
 		phyinfo->phy_unknown = true;
 		return;
 	}
@@ -638,7 +638,7 @@ static void rtmdio_get_phy_info(struct mii_bus *bus, int addr, struct rtmdio_phy
 
 static int rtmdio_838x_reset(struct mii_bus *bus)
 {
-	struct rtmdio_bus_priv *priv = bus->priv;
+	struct rtmdio_ctrl *ctrl = bus->priv;
 	int combo_phy;
 
 	/* Disable MAC polling for PHY config. It will be activated later in the DSA driver */
@@ -650,7 +650,7 @@ static int rtmdio_838x_reset(struct mii_bus *bus)
 	 * give the real media status (0=copper, 1=fibre). For now assume that if port 24 is
 	 * PHY driven, it must be a combo PHY and media detection is needed.
 	 */
-	combo_phy = priv->smi_bus[24] < 0 ? 0 : BIT(7);
+	combo_phy = ctrl->smi_bus[24] < 0 ? 0 : BIT(7);
 	sw_w32_mask(BIT(7), combo_phy, RTMDIO_838X_SMI_GLB_CTRL);
 
 	return 0;
@@ -674,36 +674,36 @@ static int rtmdio_839x_reset(struct mii_bus *bus)
 
 static int rtmdio_930x_reset(struct mii_bus *bus)
 {
-	struct rtmdio_bus_priv *priv = bus->priv;
+	struct rtmdio_ctrl *ctrl = bus->priv;
 	struct rtmdio_phy_info phyinfo;
 	unsigned int reg, mask, val;
 
 	/* Define bus topology */
-	for (int addr = 0; addr < priv->cfg->cpu_port; addr++) {
-		if (priv->smi_bus[addr] < 0)
+	for (int addr = 0; addr < ctrl->cfg->cpu_port; addr++) {
+		if (ctrl->smi_bus[addr] < 0)
 			continue;
 
 		reg = (addr / 6) * 4;
 		mask = 0x1f << ((addr % 6) * 5);
-		val = priv->smi_addr[addr] << (ffs(mask) - 1);
+		val = ctrl->smi_addr[addr] << (ffs(mask) - 1);
 		sw_w32_mask(mask, val, RTMDIO_930X_SMI_PORT0_5_ADDR + reg);
 
 		reg = (addr / 16) * 4;
 		mask = 0x3 << ((addr % 16) * 2);
-		val = priv->smi_bus[addr] << (ffs(mask) - 1);
+		val = ctrl->smi_bus[addr] << (ffs(mask) - 1);
 		sw_w32_mask(mask, val, RTMDIO_930X_SMI_PORT0_15_POLLING_SEL + reg);
 	}
 
 	/* Define c22/c45 bus polling */
 	for (int addr = 0; addr < RTMDIO_MAX_SMI_BUS; addr++) {
 		mask = BIT(16 + addr);
-		val = priv->smi_bus_isc45[addr] ? mask : 0;
+		val = ctrl->smi_bus_isc45[addr] ? mask : 0;
 		sw_w32_mask(mask, val, RTMDIO_930X_SMI_GLB_CTRL);
 	}
 
 	/* Define PHY specific polling parameters */
-	for (int addr = 0; addr < priv->cfg->cpu_port; addr++) {
-		if (priv->smi_bus[addr] < 0)
+	for (int addr = 0; addr < ctrl->cfg->cpu_port; addr++) {
+		if (ctrl->smi_bus[addr] < 0)
 			continue;
 
 		rtmdio_get_phy_info(bus, addr, &phyinfo);
@@ -719,7 +719,7 @@ static int rtmdio_930x_reset(struct mii_bus *bus)
 		sw_w32_mask(mask, val, RTMDIO_930X_SMI_MAC_TYPE_CTRL);
 
 		/* polling via standard or resolution register */
-		mask = BIT(20 + priv->smi_bus[addr]);
+		mask = BIT(20 + ctrl->smi_bus[addr]);
 		val = phyinfo.has_res_reg ? mask : 0;
 		sw_w32_mask(mask, val, RTMDIO_930X_SMI_GLB_CTRL);
 
@@ -758,7 +758,7 @@ static int rtmdio_930x_reset(struct mii_bus *bus)
 
 static int rtmdio_931x_reset(struct mii_bus *bus)
 {
-	struct rtmdio_bus_priv *priv = bus->priv;
+	struct rtmdio_ctrl *ctrl = bus->priv;
 	struct rtmdio_phy_info phyinfo;
 	u32 poll_sel[4] = { 0 };
 	u32 poll_ctrl = 0;
@@ -771,17 +771,17 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 	msleep(100);
 
 	/* Mapping of port to phy-addresses on an SMI bus */
-	for (int addr = 0; addr < priv->cfg->cpu_port; addr++) {
+	for (int addr = 0; addr < ctrl->cfg->cpu_port; addr++) {
 		u32 pos;
 
-		if (priv->smi_bus[addr] < 0)
+		if (ctrl->smi_bus[addr] < 0)
 			continue;
 
 		pos = (addr % 6) * 5;
-		sw_w32_mask(0x1f << pos, priv->smi_addr[addr] << pos, RTMDIO_931X_SMI_PORT_ADDR + (addr / 6) * 4);
+		sw_w32_mask(0x1f << pos, ctrl->smi_addr[addr] << pos, RTMDIO_931X_SMI_PORT_ADDR + (addr / 6) * 4);
 		pos = (addr * 2) % 32;
-		poll_sel[addr / 16] |= priv->smi_bus[addr] << pos;
-		poll_ctrl |= BIT(20 + priv->smi_bus[addr]);
+		poll_sel[addr / 16] |= ctrl->smi_bus[addr] << pos;
+		poll_ctrl |= BIT(20 + ctrl->smi_bus[addr]);
 	}
 
 	/* Configure which SMI bus is behind which port number */
@@ -798,7 +798,7 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 	 */
 	for (int i = 0; i < RTMDIO_MAX_SMI_BUS; i++) {
 		/* bus is polled in c45 */
-		if (priv->smi_bus_isc45[i])
+		if (ctrl->smi_bus_isc45[i])
 			c45_mask |= 0x2 << (i * 2);  /* Std. C45, non-standard is 0x3 */
 	}
 	pr_info("%s: c45_mask: %08x", __func__, c45_mask);
@@ -811,9 +811,9 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 	 * the existing hardware designs (i.e. only equally polled PHYs on
 	 * the same SMI bus or kind of PHYs).
 	 */
-	for (int addr = 0; addr < priv->cfg->cpu_port; addr++) {
+	for (int addr = 0; addr < ctrl->cfg->cpu_port; addr++) {
 		unsigned int mask, val;
-		int smi = priv->smi_bus[addr];
+		int smi = ctrl->smi_bus[addr];
 		
 		if (smi < 0)
 			continue;
@@ -880,50 +880,50 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 
 static int rtmdio_reset(struct mii_bus *bus)
 {
-	struct rtmdio_bus_priv *priv = bus->priv;
+	struct rtmdio_ctrl *ctrl = bus->priv;
 
-	return priv->cfg->reset(bus);
+	return ctrl->cfg->reset(bus);
 }
 
 static int rtmdio_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
-	struct rtmdio_bus_priv *priv;
+	struct rtmdio_ctrl *ctrl;
 	struct device_node *dn;
 	struct mii_bus *bus;
 	int ret, addr;
 
-	bus = devm_mdiobus_alloc_size(dev, sizeof(*priv));
+	bus = devm_mdiobus_alloc_size(dev, sizeof(*ctrl));
 	if (!bus)
 		return -ENOMEM;
 
-	priv = bus->priv;
-	priv->cfg = (const struct rtmdio_config *)device_get_match_data(dev);
+	ctrl = bus->priv;
+	ctrl->cfg = (const struct rtmdio_config *)device_get_match_data(dev);
 	for (addr = 0; addr < RTMDIO_MAX_PORT; addr++)
-		priv->smi_bus[addr] = -1;
+		ctrl->smi_bus[addr] = -1;
 
 	for_each_node_by_name(dn, "ethernet-phy") {
 		if (of_property_read_u32(dn, "reg", &addr))
 			continue;
 
-		if (addr >= priv->cfg->cpu_port) {
+		if (addr >= ctrl->cfg->cpu_port) {
 			pr_err("%s: illegal port number %d\n", __func__, addr);
 			return -ENODEV;
 		}
 
-		of_property_read_u32(dn->parent, "reg", &priv->smi_bus[addr]);
-		if (of_property_read_u32(dn, "realtek,smi-address", &priv->smi_addr[addr]))
-			priv->smi_addr[addr] = addr;
+		of_property_read_u32(dn->parent, "reg", &ctrl->smi_bus[addr]);
+		if (of_property_read_u32(dn, "realtek,smi-address", &ctrl->smi_addr[addr]))
+			ctrl->smi_addr[addr] = addr;
 		
-		if (priv->smi_bus[addr] >= RTMDIO_MAX_SMI_BUS) {
-			pr_err("%s: illegal SMI bus number %d\n", __func__, priv->smi_bus[addr]);
+		if (ctrl->smi_bus[addr] >= RTMDIO_MAX_SMI_BUS) {
+			pr_err("%s: illegal SMI bus number %d\n", __func__, ctrl->smi_bus[addr]);
 			return -ENODEV;
 		}
 
 		if (of_device_is_compatible(dn, "ethernet-phy-ieee802.3-c45"))
-			priv->smi_bus_isc45[priv->smi_bus[addr]] = true;
+			ctrl->smi_bus_isc45[ctrl->smi_bus[addr]] = true;
 
-		priv->dn[addr] = dn;
+		ctrl->dn[addr] = dn;
 	}
 
 	bus->name = "Realtek MDIO bus";
@@ -941,9 +941,9 @@ static int rtmdio_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
-	for (addr = 0; addr < priv->cfg->cpu_port; addr++) {
-		if (priv->dn[addr]) {
-			ret = fwnode_mdiobus_register_phy(bus, of_fwnode_handle(priv->dn[addr]), addr);
+	for (addr = 0; addr < ctrl->cfg->cpu_port; addr++) {
+		if (ctrl->dn[addr]) {
+			ret = fwnode_mdiobus_register_phy(bus, of_fwnode_handle(ctrl->dn[addr]), addr);
 			if (ret)
 				return ret;
 		}
