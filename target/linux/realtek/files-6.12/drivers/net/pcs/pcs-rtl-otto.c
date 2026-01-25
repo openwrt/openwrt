@@ -2912,20 +2912,18 @@ static int rtpcs_931x_sds_cmu_page_get(enum rtpcs_sds_mode hw_mode)
 	case RTPCS_SDS_MODE_10GBASER:		/* MII_10GR */
 		return 0x2e;
 	default:
-		return -1;
+		return -EINVAL;
 	}
-
-	return -1;
 }
 
-static void rtpcs_931x_sds_cmu_type_set(struct rtpcs_serdes *sds,
-					enum rtpcs_sds_mode hw_mode, int chiptype)
+static int rtpcs_931x_sds_cmu_type_set(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode,
+				       int chiptype)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
-	int cmu_type = 0; /* Clock Management Unit */
-	u32 cmu_page = 0;
-	u32 frc_cmu_spd;
 	u32 frc_lc_mode_bitnum, frc_lc_mode_val_bitnum;
+	int cmu_type = 0; /* Clock Management Unit */
+	int cmu_page = 0;
+	u32 frc_cmu_spd;
 
 	switch (hw_mode) {
 	case RTPCS_SDS_MODE_OFF:
@@ -2937,7 +2935,7 @@ static void rtpcs_931x_sds_cmu_type_set(struct rtpcs_serdes *sds,
 	case RTPCS_SDS_MODE_USXGMII_5GSXGMII:
 	case RTPCS_SDS_MODE_USXGMII_5GDXGMII:
 	case RTPCS_SDS_MODE_USXGMII_2_5GSXGMII:
-		return;
+		return 0;
 
 /*	case MII_10GR1000BX_AUTO:
 		if (chiptype)
@@ -2971,11 +2969,14 @@ static void rtpcs_931x_sds_cmu_type_set(struct rtpcs_serdes *sds,
 
 	default:
 		pr_info("SerDes %d mode is invalid\n", sds->id);
-		return;
+		return -EINVAL;
 	}
 
-	if (cmu_type == 1)
+	if (cmu_type == 1) {
 		cmu_page = rtpcs_931x_sds_cmu_page_get(hw_mode);
+		if (cmu_page < 0)
+			return -EINVAL;
+	}
 
 	if (sds == even_sds) { 
 		frc_lc_mode_bitnum = 4;
@@ -2990,20 +2991,20 @@ static void rtpcs_931x_sds_cmu_type_set(struct rtpcs_serdes *sds,
 		sds->id);
 
 	if (cmu_type == 1) {
-		pr_info("%s A CMU page 0x28 0x7 %08x\n", __func__, rtpcs_sds_read(sds, 0x28, 0x7));
-		rtpcs_sds_write_bits(sds, cmu_page, 0x7, 15, 15, 0);
-		pr_info("%s B CMU page 0x28 0x7 %08x\n", __func__, rtpcs_sds_read(sds, 0x28, 0x7));
+		rtpcs_sds_write_bits(sds, cmu_page, 0x7, 15, 15, 0x0);
 		if (chiptype)
-			rtpcs_sds_write_bits(sds, cmu_page, 0xd, 14, 14, 0);
+			rtpcs_sds_write_bits(sds, cmu_page, 0xd, 14, 14, 0x0);
 
 		rtpcs_sds_write_bits(even_sds, 0x20, 0x12, 3, 2, 0x3);
-		rtpcs_sds_write_bits(even_sds, 0x20, 0x12, frc_lc_mode_bitnum, frc_lc_mode_bitnum, 1);
-		rtpcs_sds_write_bits(even_sds, 0x20, 0x12, frc_lc_mode_val_bitnum, frc_lc_mode_val_bitnum, 0);
-		rtpcs_sds_write_bits(even_sds, 0x20, 0x12, 12, 12, 1);
+		rtpcs_sds_write_bits(even_sds, 0x20, 0x12, frc_lc_mode_bitnum,
+				     frc_lc_mode_bitnum, 0x1);
+		rtpcs_sds_write_bits(even_sds, 0x20, 0x12, frc_lc_mode_val_bitnum,
+				     frc_lc_mode_val_bitnum, 0x0);
+		rtpcs_sds_write_bits(even_sds, 0x20, 0x12, 12, 12, 0x1);
 		rtpcs_sds_write_bits(even_sds, 0x20, 0x12, 15, 13, frc_cmu_spd);
 	}
 
-	pr_info("%s CMU page 0x28 0x7 %08x\n", __func__, rtpcs_sds_read(sds, 0x28, 0x7));
+	return 0;
 }
 
 static int rtpcs_931x_sds_cmu_band_set(struct rtpcs_serdes *sds,
@@ -3012,17 +3013,16 @@ static int rtpcs_931x_sds_cmu_band_set(struct rtpcs_serdes *sds,
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
 	int page = rtpcs_931x_sds_cmu_page_get(hw_mode);
+	int en_val;
+
+	if (page < 0)
+		return -EINVAL;
 
 	page += 1;
+	en_val = enable ? 0 : 1;
 
-	if (enable) {
-		rtpcs_sds_write_bits(even_sds, page, 0x7, 13, 13, 0);
-		rtpcs_sds_write_bits(even_sds, page, 0x7, 11, 11, 0);
-	} else {
-		rtpcs_sds_write_bits(even_sds, page, 0x7, 13, 13, 0);
-		rtpcs_sds_write_bits(even_sds, page, 0x7, 11, 11, 0);
-	}
-
+	rtpcs_sds_write_bits(even_sds, page, 0x7, 13, 13, en_val);
+	rtpcs_sds_write_bits(even_sds, page, 0x7, 11, 11, en_val);
 	rtpcs_sds_write_bits(even_sds, page, 0x7, 4, 0, band);
 
 	rtpcs_931x_sds_reset(even_sds);
@@ -3035,16 +3035,15 @@ static int rtpcs_931x_sds_cmu_band_get(struct rtpcs_serdes *sds,
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
 	int page = rtpcs_931x_sds_cmu_page_get(hw_mode);
-	u32 band;
+
+	if (page < 0)
+		return -EINVAL;
 
 	page += 1;
 	rtpcs_sds_write(even_sds, 0x1f, 0x02, 73);
+	rtpcs_sds_write_bits(even_sds, page, 0x5, 15, 15, 0x1);
 
-	rtpcs_sds_write_bits(even_sds, page, 0x5, 15, 15, 1);
-	band = rtpcs_sds_read_bits(even_sds, 0x1f, 0x15, 8, 3);
-	pr_info("%s band is: %d\n", __func__, band);
-
-	return band;
+	return rtpcs_sds_read_bits(even_sds, 0x1f, 0x15, 8, 3);
 }
 
 __always_unused
@@ -3262,7 +3261,7 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 	case RTPCS_SDS_MODE_SGMII:
 		rtpcs_sds_write_bits(sds, 0x24, 0x9, 15, 15, 0);
 
-		/* this was in rtl931x_phylink_mac_config in dsa/rtl83xx/dsa.c before */
+		/* TODO: where does this come from? SDK doesn't have this. */
 		rtpcs_931x_sds_cmu_band_set(sds, true, 62, RTPCS_SDS_MODE_SGMII);
 		break;
 
@@ -3407,7 +3406,7 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 
 	rtpcs_931x_sds_power(sds, false);
 
-	/* this was in rtl931x_phylink_mac_config in dsa/rtl83xx/dsa.c before */
+	/* TODO: is this needed? */
 	band = rtpcs_931x_sds_cmu_band_get(sds, hw_mode);
 
 	ret = rtpcs_931x_sds_config_hw_mode(sds, hw_mode, chiptype);
