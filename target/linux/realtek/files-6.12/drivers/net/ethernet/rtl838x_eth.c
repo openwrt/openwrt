@@ -447,7 +447,7 @@ static irqreturn_t rteth_93xx_net_irq(int irq, void *dev_id)
 static void rteth_nic_reset(struct rteth_ctrl *ctrl, int reset_mask)
 {
 	pr_info("RESETTING CPU_PORT %d\n", ctrl->r->cpu_port);
-	sw_w32_mask(0x3, 0, ctrl->r->mac_port_ctrl(ctrl->r->cpu_port));
+	sw_w32_mask(0x3, 0, ctrl->r->mac_l2_port_ctrl);
 	mdelay(100);
 
 	/* Reset NIC (SW_NIC_RST) and queues (SW_Q_RST) */
@@ -549,7 +549,7 @@ static void rtl838x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 	sw_w32_mask(0, RX_EN | TX_EN, ctrl->r->dma_if_ctrl);
 
 	/* Restart TX/RX to CPU port */
-	sw_w32_mask(0x0, 0x3, ctrl->r->mac_port_ctrl(ctrl->r->cpu_port));
+	sw_w32_mask(0x0, 0x3, ctrl->r->mac_l2_port_ctrl);
 	/* Set Speed, duplex, flow control
 	 * FORCE_EN | LINK_EN | NWAY_EN | DUP_SEL
 	 * | SPD_SEL = 0b10 | FORCE_FC_EN | PHY_MASTER_SLV_MANUAL_EN
@@ -558,7 +558,7 @@ static void rtl838x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 	sw_w32(0x6192F, ctrl->r->mac_force_mode_ctrl + ctrl->r->cpu_port * 4);
 
 	/* Enable CRC checks on CPU-port */
-	sw_w32_mask(0, BIT(3), ctrl->r->mac_port_ctrl(ctrl->r->cpu_port));
+	sw_w32_mask(0, BIT(3), ctrl->r->mac_l2_port_ctrl);
 }
 
 static void rtl839x_hw_en_rxtx(struct rteth_ctrl *ctrl)
@@ -573,7 +573,7 @@ static void rtl839x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 	sw_w32_mask(0, RX_EN | TX_EN, ctrl->r->dma_if_ctrl);
 
 	/* Restart TX/RX to CPU port, enable CRC checking */
-	sw_w32_mask(0x0, 0x3 | BIT(3), ctrl->r->mac_port_ctrl(ctrl->r->cpu_port));
+	sw_w32_mask(0x0, 0x3 | BIT(3), ctrl->r->mac_l2_port_ctrl);
 
 	/* CPU port joins Lookup Miss Flooding Portmask */
 	/* TODO: The code below should also work for the RTL838x */
@@ -611,7 +611,7 @@ static void rtl93xx_hw_en_rxtx(struct rteth_ctrl *ctrl)
 	sw_w32_mask(0, RX_EN_93XX | TX_EN_93XX, ctrl->r->dma_if_ctrl);
 
 	/* Restart TX/RX to CPU port, enable CRC checking */
-	sw_w32_mask(0x0, 0x3 | BIT(4), ctrl->r->mac_port_ctrl(ctrl->r->cpu_port));
+	sw_w32_mask(0x0, 0x3 | BIT(4), ctrl->r->mac_l2_port_ctrl);
 
 	if (ctrl->r->family_id == RTL9300_FAMILY_ID)
 		sw_w32_mask(0, BIT(ctrl->r->cpu_port), RTL930X_L2_UNKN_UC_FLD_PMSK);
@@ -757,7 +757,7 @@ static void rtl838x_hw_stop(struct rteth_ctrl *ctrl)
 	u32 clear_irq = ctrl->r->family_id == RTL8380_FAMILY_ID ? 0x000fffff : 0x007fffff;
 
 	/* Disable RX/TX from/to CPU-port */
-	sw_w32_mask(0x3, 0, ctrl->r->mac_port_ctrl(ctrl->r->cpu_port));
+	sw_w32_mask(0x3, 0, ctrl->r->mac_l2_port_ctrl);
 
 	/* Disable traffic */
 	if (ctrl->r->family_id == RTL9300_FAMILY_ID || ctrl->r->family_id == RTL9310_FAMILY_ID)
@@ -1272,7 +1272,7 @@ static void rteth_mac_link_down(struct phylink_config *config,
 
 	pr_debug("In %s\n", __func__);
 	/* Stop TX/RX to port */
-	sw_w32_mask(0x03, 0, ctrl->r->mac_port_ctrl(ctrl->r->cpu_port));
+	sw_w32_mask(0x03, 0, ctrl->r->mac_l2_port_ctrl);
 }
 
 static void rteth_mac_link_up(struct phylink_config *config,
@@ -1285,7 +1285,7 @@ static void rteth_mac_link_up(struct phylink_config *config,
 
 	pr_debug("In %s\n", __func__);
 	/* Restart TX/RX to port */
-	sw_w32_mask(0, 0x03, ctrl->r->mac_port_ctrl(ctrl->r->cpu_port));
+	sw_w32_mask(0, 0x03, ctrl->r->mac_l2_port_ctrl);
 }
 
 static void rteth_set_mac_hw(struct net_device *dev, u8 *mac)
@@ -1418,9 +1418,9 @@ static int rteth_83xx_set_features(struct net_device *dev, netdev_features_t fea
 
 	if ((features ^ dev->features) & NETIF_F_RXCSUM) {
 		if (!(features & NETIF_F_RXCSUM))
-			sw_w32_mask(BIT(3), 0, ctrl->r->mac_port_ctrl(ctrl->r->cpu_port));
+			sw_w32_mask(BIT(3), 0, ctrl->r->mac_l2_port_ctrl);
 		else
-			sw_w32_mask(0, BIT(3), ctrl->r->mac_port_ctrl(ctrl->r->cpu_port));
+			sw_w32_mask(0, BIT(3), ctrl->r->mac_l2_port_ctrl);
 	}
 
 	return 0;
@@ -1432,9 +1432,9 @@ static int rteth_93xx_set_features(struct net_device *dev, netdev_features_t fea
 
 	if ((features ^ dev->features) & NETIF_F_RXCSUM) {
 		if (!(features & NETIF_F_RXCSUM))
-			sw_w32_mask(BIT(4), 0, ctrl->r->mac_port_ctrl(ctrl->r->cpu_port));
+			sw_w32_mask(BIT(4), 0, ctrl->r->mac_l2_port_ctrl);
 		else
-			sw_w32_mask(0, BIT(4), ctrl->r->mac_port_ctrl(ctrl->r->cpu_port));
+			sw_w32_mask(0, BIT(4), ctrl->r->mac_l2_port_ctrl);
 	}
 
 	return 0;
@@ -1465,9 +1465,9 @@ static const struct net_device_ops rteth_838x_netdev_ops = {
 
 static const struct rteth_config rteth_838x_cfg = {
 	.family_id = RTL8380_FAMILY_ID,
-	.cpu_port = 28,
+	.cpu_port = RTETH_838X_CPU_PORT,
 	.net_irq = rteth_83xx_net_irq,
-	.mac_port_ctrl = rtl838x_mac_port_ctrl,
+	.mac_l2_port_ctrl = RTETH_838X_MAC_L2_PORT_CTRL,
 	.dma_if_intr_sts = RTL838X_DMA_IF_INTR_STS,
 	.dma_if_intr_msk = RTL838X_DMA_IF_INTR_MSK,
 	.dma_if_ctrl = RTL838X_DMA_IF_CTRL,
@@ -1509,9 +1509,9 @@ static const struct net_device_ops rteth_839x_netdev_ops = {
 
 static const struct rteth_config rteth_839x_cfg = {
 	.family_id = RTL8390_FAMILY_ID,
-	.cpu_port = 52,
+	.cpu_port = RTETH_839X_CPU_PORT,
 	.net_irq = rteth_83xx_net_irq,
-	.mac_port_ctrl = rtl839x_mac_port_ctrl,
+	.mac_l2_port_ctrl = RTETH_839X_MAC_L2_PORT_CTRL,
 	.dma_if_intr_sts = RTL839X_DMA_IF_INTR_STS,
 	.dma_if_intr_msk = RTL839X_DMA_IF_INTR_MSK,
 	.dma_if_ctrl = RTL839X_DMA_IF_CTRL,
@@ -1553,9 +1553,9 @@ static const struct net_device_ops rteth_930x_netdev_ops = {
 
 static const struct rteth_config rteth_930x_cfg = {
 	.family_id = RTL9300_FAMILY_ID,
-	.cpu_port = 28,
+	.cpu_port = RTETH_930X_CPU_PORT,
 	.net_irq = rteth_93xx_net_irq,
-	.mac_port_ctrl = rtl930x_mac_port_ctrl,
+	.mac_l2_port_ctrl = RTETH_930X_MAC_L2_PORT_CTRL,
 	.dma_if_intr_rx_runout_sts = RTL930X_DMA_IF_INTR_RX_RUNOUT_STS,
 	.dma_if_intr_rx_done_sts = RTL930X_DMA_IF_INTR_RX_DONE_STS,
 	.dma_if_intr_tx_done_sts = RTL930X_DMA_IF_INTR_TX_DONE_STS,
@@ -1602,9 +1602,9 @@ static const struct net_device_ops rteth_931x_netdev_ops = {
 
 static const struct rteth_config rteth_931x_cfg = {
 	.family_id = RTL9310_FAMILY_ID,
-	.cpu_port = 56,
+	.cpu_port = RTETH_931X_CPU_PORT,
 	.net_irq = rteth_93xx_net_irq,
-	.mac_port_ctrl = rtl931x_mac_port_ctrl,
+	.mac_l2_port_ctrl = RTETH_931X_MAC_L2_PORT_CTRL,
 	.dma_if_intr_rx_runout_sts = RTL931X_DMA_IF_INTR_RX_RUNOUT_STS,
 	.dma_if_intr_rx_done_sts = RTL931X_DMA_IF_INTR_RX_DONE_STS,
 	.dma_if_intr_tx_done_sts = RTL931X_DMA_IF_INTR_TX_DONE_STS,
