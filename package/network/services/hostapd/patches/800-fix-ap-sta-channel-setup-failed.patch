@@ -1,0 +1,29 @@
+diff --git a/src/common/hw_features_common.c b/src/common/hw_features_common.c
+index ad2aebf..355b4a8 100644
+--- a/src/common/hw_features_common.c
++++ b/src/common/hw_features_common.c
+@@ -615,9 +615,21 @@ int hostapd_set_freq_params(struct hostapd_freq_params *data,
+ 			    center_segment0 == channel - 6)
+ 				data->center_freq1 = 5000 + center_segment0 * 5;
+ 			else {
+-				wpa_printf(MSG_ERROR,
+-					   "Wrong coupling between HT and VHT/HE channel setting");
+-				return -1;
++				if (channel <= 48)
++					center_segment0 = 42;
++				else if (channel <= 64)
++					center_segment0 = 58;
++				else if (channel <= 112)
++					center_segment0 = 106;
++				else if (channel <= 128)
++					center_segment0 = 122;
++				else if (channel <= 144)
++					center_segment0 = 138;
++				else if (channel <= 161)
++					center_segment0 = 155;
++				else if (channel <= 177)
++					center_segment0 = 171;
++				data->center_freq1 = 5000 + center_segment0 * 5;
+ 			}
+ 		}
+ 		break;
