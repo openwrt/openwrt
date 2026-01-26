@@ -127,18 +127,18 @@ static int rtl821x_match_phy_device(struct phy_device *phydev)
 	 * during detection.
 	 */
 
-	oldpage = mdiobus_read(bus, addr, 0x1f);
-	oldxpage = mdiobus_read(bus, addr, 0x1e);
+	oldpage = mdiobus_read(bus, addr, RTL821x_PAGE_SELECT);
+	oldxpage = mdiobus_read(bus, addr, RTL821x_EXT_PAGE_SELECT);
 
-	mdiobus_write(bus, addr, 0x1e, 0x8);
-	mdiobus_write(bus, addr, 0x1f, 0x278);
+	mdiobus_write(bus, addr, RTL821x_EXT_PAGE_SELECT, 0x8);
+	mdiobus_write(bus, addr, RTL821x_PAGE_SELECT, 0x278);
 	mdiobus_write(bus, addr, 0x12, 0x455);
-	mdiobus_write(bus, addr, 0x1f, 0x260);
+	mdiobus_write(bus, addr, RTL821x_PAGE_SELECT, 0x260);
 	chip_mode = mdiobus_read(bus, addr, 0x12);
 	dev_dbg(&phydev->mdio.dev, "got RTL8218B/RTL8214Fx chip mode %04x\n", chip_mode);
 
-	mdiobus_write(bus, addr, 0x1e, oldxpage);
-	mdiobus_write(bus, addr, 0x1f, oldpage);
+	mdiobus_write(bus, addr, RTL821x_EXT_PAGE_SELECT, oldxpage);
+	mdiobus_write(bus, addr, RTL821x_PAGE_SELECT, oldpage);
 
 	/* no values while reading the 5th port during 5-8th port detection of RTL8218B */
 	if (!chip_mode)
