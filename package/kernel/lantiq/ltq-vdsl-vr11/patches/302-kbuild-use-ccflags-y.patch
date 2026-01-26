@@ -1,0 +1,13 @@
+Index: dsl_cpe_api-ugw_8.5.2.10/src/Makefile.am
+===================================================================
+--- dsl_cpe_api-ugw_8.5.2.10.orig/src/Makefile.am
++++ dsl_cpe_api-ugw_8.5.2.10/src/Makefile.am
+@@ -348,7 +348,7 @@ drv_dsl_cpe_api.ko: $(drv_dsl_cpe_api_SO
+ 	@echo -e "# drv_dsl_cpe_api: Generated to build Linux 2.6.x kernel object" > $(PWD)/Kbuild
+ 	@echo -e "obj-m := $(subst .ko,.o,$@)"			>> $(PWD)/Kbuild
+ 	@echo -e "$(subst .ko,,$@)-y := $(drv_dsl_cpe_api_OBJS)"	>> $(PWD)/Kbuild
+-	@echo -e "EXTRA_CFLAGS := -DHAVE_CONFIG_H $(drv_dsl_cpe_api_CFLAGS) $(DSL_DRIVER_INCL_PATH) $(IFXOS_INCLUDE_PATH) -I@abs_srcdir@/$(VRX_HEADER_DIR) -I@abs_srcdir@/include -I$(PWD)/include"	>> $(PWD)/Kbuild
++	@echo -e "ccflags-y := -DHAVE_CONFIG_H $(drv_dsl_cpe_api_CFLAGS) $(DSL_DRIVER_INCL_PATH) $(IFXOS_INCLUDE_PATH) -I@abs_srcdir@/$(VRX_HEADER_DIR) -I@abs_srcdir@/include -I$(PWD)/include"	>> $(PWD)/Kbuild
+ 	$(MAKE) ARCH=@KERNEL_ARCH@ -C @KERNEL_BUILD_PATH@ O=@KERNEL_BUILD_PATH@ M=$(PWD) modules
+ 
+ clean-generic:
