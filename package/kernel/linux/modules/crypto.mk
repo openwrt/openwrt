@@ -583,10 +583,12 @@ endif
 
 # Note that a non-neon fallback implementation is available on arm32 when
 # NEON is not supported, hence all arm targets can utilize lib-chacha20/arm
+ifndef CONFIG_LINUX_6_18
 define KernelPackage/crypto-lib-chacha20/arm
   KCONFIG+=CONFIG_CRYPTO_CHACHA20_NEON
   FILES:=$(LINUX_DIR)/arch/arm/crypto/chacha-neon.ko
 endef
+endif
 
 KernelPackage/crypto-lib-chacha20/armeb=$(KernelPackage/crypto-lib-chacha20/arm)
 
@@ -643,10 +645,12 @@ define KernelPackage/crypto-lib-curve25519/x86_64
 endef
 endif
 
+ifndef CONFIG_LINUX_6_18
 define KernelPackage/crypto-lib-curve25519/arm-neon
   KCONFIG+=CONFIG_CRYPTO_CURVE25519_NEON
   FILES+=$(LINUX_DIR)/arch/arm/crypto/curve25519-neon.ko
 endef
+endif
 
 ifeq ($(ARCH)-$(CONFIG_KERNEL_MODE_NEON),arm-y)
   KernelPackage/crypto-lib-curve25519/$(CRYPTO_TARGET)=\
@@ -676,10 +680,12 @@ define KernelPackage/crypto-lib-poly1305/x86_64
 endef
 endif
 
+ifndef CONFIG_LINUX_6_18
 define KernelPackage/crypto-lib-poly1305/arm
   KCONFIG+=CONFIG_CRYPTO_POLY1305_ARM
   FILES:=$(LINUX_DIR)/arch/arm/crypto/poly1305-arm.ko
 endef
+endif
 
 KernelPackage/crypto-lib-poly1305/armeb=$(KernelPackage/crypto-lib-poly1305/arm)
 
@@ -985,6 +991,7 @@ define KernelPackage/crypto-sha1
   $(call AddDepends/crypto)
 endef
 
+ifndef CONFIG_LINUX_6_18
 define KernelPackage/crypto-sha1/arm
   FILES+=$(LINUX_DIR)/arch/arm/crypto/sha1-arm.ko
   AUTOLOAD+=$(call AutoLoad,09,sha1-arm)
@@ -995,6 +1002,7 @@ define KernelPackage/crypto-sha1/arm-neon
   FILES+=$(LINUX_DIR)/arch/arm/crypto/sha1-arm-neon.ko
   AUTOLOAD+=$(call AutoLoad,09,sha1-arm-neon)
 endef
+endif
 
 define KernelPackage/crypto-sha1/aarch64-ce
   FILES+=$(LINUX_DIR)/arch/arm64/crypto/sha1-ce.ko
@@ -1128,10 +1136,12 @@ define KernelPackage/crypto-sha512
   $(call AddDepends/crypto)
 endef
 
+ifndef CONFIG_LINUX_6_18
 define KernelPackage/crypto-sha512/arm
   FILES+=$(LINUX_DIR)/arch/arm/crypto/sha512-arm.ko
   AUTOLOAD+=$(call AutoLoad,09,sha512-arm)
 endef
+endif
 
 define KernelPackage/crypto-sha512/aarch64
   FILES+=$(LINUX_DIR)/arch/arm64/crypto/sha512-arm64.ko
