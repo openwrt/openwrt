@@ -948,9 +948,18 @@ static int rtpcs_839x_setup_serdes(struct rtpcs_serdes *sds,
 
 static int rtpcs_93xx_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int neg_mode)
 {
-	u16 bmcr = neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED ? BMCR_ANENABLE : 0;
+	u16 bmcr, en_val;
 
-	return rtpcs_sds_modify(sds, 2, MII_BMCR, BMCR_ANENABLE, bmcr);
+	switch (sds->hw_mode) {
+	case RTPCS_SDS_MODE_XSGMII: /* XSG N-way state */
+		en_val = neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED ? 0x0 : 0x1;
+
+		return rtpcs_sds_xsg_write_bits(sds, 0x0, 0x2, 9, 8, en_val);
+	default:
+		bmcr = neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED ? BMCR_ANENABLE : 0;
+
+		return rtpcs_sds_modify(sds, 0x2, MII_BMCR, BMCR_ANENABLE, bmcr);
+	}
 }
 
 /* RTL930X */
