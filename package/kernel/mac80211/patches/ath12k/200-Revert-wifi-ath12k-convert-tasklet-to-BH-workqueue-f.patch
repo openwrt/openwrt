@@ -23,7 +23,7 @@ This reverts commit cdad737160571a98cc4933a62c9f2728e965ab27.
  	struct ath12k_ce_ring *status_ring;
 --- a/drivers/net/wireless/ath/ath12k/pci.c
 +++ b/drivers/net/wireless/ath/ath12k/pci.c
-@@ -430,9 +430,9 @@ static void ath12k_pci_sync_ce_irqs(stru
+@@ -448,9 +448,9 @@ static void ath12k_pci_sync_ce_irqs(stru
  	}
  }
  
@@ -35,7 +35,7 @@ This reverts commit cdad737160571a98cc4933a62c9f2728e965ab27.
  	int irq_idx = ATH12K_PCI_IRQ_CE0_OFFSET + ce_pipe->pipe_num;
  
  	ath12k_ce_per_engine_service(ce_pipe->ab, ce_pipe->pipe_num);
-@@ -454,7 +454,7 @@ static irqreturn_t ath12k_pci_ce_interru
+@@ -472,7 +472,7 @@ static irqreturn_t ath12k_pci_ce_interru
  
  	disable_irq_nosync(ab->irq_num[irq_idx]);
  
@@ -44,7 +44,7 @@ This reverts commit cdad737160571a98cc4933a62c9f2728e965ab27.
  
  	return IRQ_HANDLED;
  }
-@@ -684,7 +684,7 @@ static int ath12k_pci_config_irq(struct
+@@ -702,7 +702,7 @@ static int ath12k_pci_config_irq(struct
  
  		irq_idx = ATH12K_PCI_IRQ_CE0_OFFSET + i;
  
@@ -53,7 +53,7 @@ This reverts commit cdad737160571a98cc4933a62c9f2728e965ab27.
  
  		ret = request_irq(irq, ath12k_pci_ce_interrupt_handler,
  				  ab_pci->irq_flags, irq_name[irq_idx],
-@@ -967,7 +967,7 @@ static void ath12k_pci_aspm_restore(stru
+@@ -985,7 +985,7 @@ static void ath12k_pci_aspm_restore(stru
  						   PCI_EXP_LNKCTL_ASPMC);
  }
  
@@ -62,7 +62,7 @@ This reverts commit cdad737160571a98cc4933a62c9f2728e965ab27.
  {
  	int i;
  
-@@ -977,7 +977,7 @@ static void ath12k_pci_cancel_workqueue(
+@@ -995,7 +995,7 @@ static void ath12k_pci_cancel_workqueue(
  		if (ath12k_ce_get_attr_flags(ab, i) & CE_ATTR_DIS_INTR)
  			continue;
  
@@ -71,7 +71,7 @@ This reverts commit cdad737160571a98cc4933a62c9f2728e965ab27.
  	}
  }
  
-@@ -985,7 +985,7 @@ static void ath12k_pci_ce_irq_disable_sy
+@@ -1003,7 +1003,7 @@ static void ath12k_pci_ce_irq_disable_sy
  {
  	ath12k_pci_ce_irqs_disable(ab);
  	ath12k_pci_sync_ce_irqs(ab);
