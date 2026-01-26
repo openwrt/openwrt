@@ -38,9 +38,6 @@ extern struct rtl83xx_soc_info soc_info;
  */
 #define RTL838X_PAGE_RAW		0x0fff
 
-/* internal RTL821X PHY uses register 0x1d to select media page */
-#define RTL821XINT_MEDIA_PAGE_SELECT	0x1d
-/* external RTL821X PHY uses register 0x1e to select media page */
 #define RTL821XEXT_MEDIA_PAGE_SELECT	0x1e
 #define RTL821X_PHYCR2			0x19
 #define RTL821X_PHYCR2_PHY_EEE_ENABLE	BIT(5)
@@ -536,25 +533,6 @@ static int rtl8214fc_write_mmd(struct phy_device *phydev, int devnum, u16 regnum
 	return rtl821x_write_mmd(phydev, devnum, regnum, val);
 }
 
-static int rtl8380_configure_rtl8214c(struct phy_device *phydev)
-{
-	u32 phy_id, val;
-	int mac = phydev->mdio.addr;
-
-	val = phy_read(phydev, 2);
-	phy_id = val << 16;
-	val = phy_read(phydev, 3);
-	phy_id |= val;
-	pr_debug("Phy on MAC %d: %x\n", mac, phy_id);
-
-	phydev_info(phydev, "Detected external RTL8214C\n");
-
-	/* GPHY auto conf */
-	phy_write_paged(phydev, RTL821X_PAGE_GPHY, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
-
-	return 0;
-}
-
 static int rtl8214fc_sfp_insert(void *upstream, const struct sfp_eeprom_id *id)
 {
 	__ETHTOOL_DECLARE_LINK_MODE_MASK(support) = { 0, };
@@ -588,8 +566,7 @@ static const struct sfp_upstream_ops rtl8214fc_sfp_ops = {
 
 static int rtl8214c_phy_probe(struct phy_device *phydev)
 {
-	if (rtl821x_package_join(phydev, 4) == RTL821X_JOIN_LAST)
-		return rtl8380_configure_rtl8214c(get_base_phy(phydev));
+	rtl821x_package_join(phydev, 4);
 
 	return 0;
 }
