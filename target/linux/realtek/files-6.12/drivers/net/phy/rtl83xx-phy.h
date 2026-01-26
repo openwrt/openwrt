@@ -22,7 +22,6 @@ struct __packed fw_header {
  * this has been changed, this firmware file can be dropped completely.
  */
 #define FIRMWARE_838X_8380_1			"rtl838x_phy/rtl838x_8380.fw"
-#define FIRMWARE_838X_8218b_1			"rtl838x_phy/rtl838x_8218b.fw"
 
 #define PHY_ID_RTL8214C				0x001cc942
 #define PHY_ID_RTL8218B_E			0x001cc980

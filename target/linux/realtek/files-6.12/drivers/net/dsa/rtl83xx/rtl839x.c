@@ -624,19 +624,6 @@ irqreturn_t rtl839x_switch_irq(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-void rtl8390_get_version(struct rtl838x_switch_priv *priv)
-{
-	u32 info, model;
-
-	sw_w32_mask(0xf << 28, 0xa << 28, RTL839X_CHIP_INFO);
-	info = sw_r32(RTL839X_CHIP_INFO);
-
-	model = sw_r32(RTL839X_MODEL_NAME_INFO);
-	priv->version = RTL8390_VERSION_A + ((model & 0x3f) >> 1);
-
-	pr_debug("RTL839X Chip-Info: %x, version %c\n", info, priv->version);
-}
-
 void rtl839x_vlan_profile_dump(int profile)
 {
 	u32 p[2];
@@ -1698,4 +1685,5 @@ const struct rtl838x_reg rtl839x_reg = {
 	.l3_setup = rtl839x_l3_setup,
 	.set_distribution_algorithm = rtl839x_set_distribution_algorithm,
 	.set_receive_management_action = rtl839x_set_receive_management_action,
+	.qos_init = rtldsa_839x_qos_init,
 };

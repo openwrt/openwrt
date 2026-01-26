@@ -123,6 +123,10 @@ netcraze,nc-1812)
 	ucidef_set_led_netdev "wlan5g" "WLAN5G" "green:wlan" "phy0.1-ap0"
 	ucidef_set_led_netdev "internet" "internet" "green:wan-online" "wan" "link"
 	;;
+keenetic,kn-3711|\
+keenetic,kn-3811)
+	ucidef_set_led_netdev "internet" "internet" "green:wan" "wan" "link"
+	;;
 mercusys,mr80x-v3)
 	ucidef_set_led_netdev "lan1" "lan-1" "green:lan-1" "lan1" "link tx rx"
 	ucidef_set_led_netdev "lan2" "lan-2" "green:lan-2" "lan2" "link tx rx"

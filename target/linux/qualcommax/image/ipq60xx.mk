@@ -251,6 +251,26 @@ define Device/tplink_eap625-outdoor-hd-v1
 endef
 TARGET_DEVICES += tplink_eap625-outdoor-hd-v1
 
+define Device/tplink_eap620-hd-v3
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := TP-Link
+	DEVICE_MODEL := EAP620 HD v3
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	SOC := ipq6018
+	DEVICE_PACKAGES := ipq-wifi-tplink_eap620-hd-v3
+	IMAGES += web-ui-factory.bin
+	IMAGE/web-ui-factory.bin := append-ubi | tplink-image-2022
+	TPLINK_SUPPORT_STRING := SupportList:\r\n \
+		EAP620 HD(TP-Link|UN|AX1800-D):3.0\r\n \
+		EAP620 HD(TP-Link|CA|AX1800-D):3.0\r\n \
+		EAP620 HD(TP-Link|JP|AX1800-D):3.0\r\n \
+		EAP620 HD(TP-Link|EG|AX1800-D):3.0\r\n
+
+endef
+TARGET_DEVICES += tplink_eap620-hd-v3
+
 define Device/yuncore_fap650
 	$(call Device/FitImage)
 	$(call Device/UbiFit)

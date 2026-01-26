@@ -523,7 +523,7 @@ static void rteth_93xx_hw_reset(struct rteth_ctrl *ctrl)
 	}
 }
 
-static void rtl838x_hw_ring_setup(struct rteth_ctrl *ctrl)
+static void rteth_hw_ring_setup(struct rteth_ctrl *ctrl)
 {
 	struct ring_b *ring = ctrl->membase;
 
@@ -624,7 +624,7 @@ static void rtl93xx_hw_en_rxtx(struct rteth_ctrl *ctrl)
 		sw_w32(0x2a1d, ctrl->r->mac_force_mode_ctrl + ctrl->r->cpu_port * 4);
 }
 
-static void rtl838x_setup_ring_buffer(struct rteth_ctrl *ctrl, struct ring_b *ring)
+static void rteth_setup_ring_buffer(struct rteth_ctrl *ctrl, struct ring_b *ring)
 {
 	for (int i = 0; i < ctrl->rxrings; i++) {
 		struct p_hdr *h;
@@ -683,7 +683,7 @@ static void rtl839x_setup_notify_ring_buffer(struct rteth_ctrl *ctrl)
 	ctrl->lastEvent = 0;
 }
 
-static int rtl838x_eth_open(struct net_device *ndev)
+static int rteth_open(struct net_device *ndev)
 {
 	unsigned long flags;
 	struct rteth_ctrl *ctrl = netdev_priv(ndev);
@@ -694,7 +694,7 @@ static int rtl838x_eth_open(struct net_device *ndev)
 
 	spin_lock_irqsave(&ctrl->lock, flags);
 	ctrl->r->hw_reset(ctrl);
-	rtl838x_setup_ring_buffer(ctrl, ring);
+	rteth_setup_ring_buffer(ctrl, ring);
 	if (ctrl->r->family_id == RTL8390_FAMILY_ID) {
 		rtl839x_setup_notify_ring_buffer(ctrl);
 		/* Make sure the ring structure is visible to the ASIC */
@@ -702,7 +702,7 @@ static int rtl838x_eth_open(struct net_device *ndev)
 		flush_cache_all();
 	}
 
-	rtl838x_hw_ring_setup(ctrl);
+	rteth_hw_ring_setup(ctrl);
 	phylink_start(ctrl->phylink);
 
 	for (int i = 0; i < ctrl->rxrings; i++)
@@ -816,7 +816,7 @@ static void rtl838x_hw_stop(struct rteth_ctrl *ctrl)
 	mdelay(200);
 }
 
-static int rtl838x_eth_stop(struct net_device *ndev)
+static int rteth_stop(struct net_device *ndev)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(ndev);
 
@@ -920,7 +920,7 @@ static void rteth_tx_timeout(struct net_device *ndev, unsigned int txqueue)
 	pr_warn("%s\n", __func__);
 	spin_lock_irqsave(&ctrl->lock, flags);
 	rtl838x_hw_stop(ctrl);
-	rtl838x_hw_ring_setup(ctrl);
+	rteth_hw_ring_setup(ctrl);
 	rtl838x_hw_en_rxtx(ctrl);
 	netif_trans_update(ndev);
 	netif_start_queue(ndev);
@@ -1450,8 +1450,8 @@ static struct phylink_pcs *rteth_mac_select_pcs(struct phylink_config *config,
 }
 
 static const struct net_device_ops rteth_838x_netdev_ops = {
-	.ndo_open = rtl838x_eth_open,
-	.ndo_stop = rtl838x_eth_stop,
+	.ndo_open = rteth_open,
+	.ndo_stop = rteth_stop,
 	.ndo_start_xmit = rteth_start_xmit,
 	.ndo_select_queue = rteth_83xx_pick_tx_queue,
 	.ndo_set_mac_address = rteth_set_mac_address,
@@ -1494,8 +1494,8 @@ static const struct rteth_config rteth_838x_cfg = {
 };
 
 static const struct net_device_ops rteth_839x_netdev_ops = {
-	.ndo_open = rtl838x_eth_open,
-	.ndo_stop = rtl838x_eth_stop,
+	.ndo_open = rteth_open,
+	.ndo_stop = rteth_stop,
 	.ndo_start_xmit = rteth_start_xmit,
 	.ndo_select_queue = rteth_83xx_pick_tx_queue,
 	.ndo_set_mac_address = rteth_set_mac_address,
@@ -1538,8 +1538,8 @@ static const struct rteth_config rteth_839x_cfg = {
 };
 
 static const struct net_device_ops rteth_930x_netdev_ops = {
-	.ndo_open = rtl838x_eth_open,
-	.ndo_stop = rtl838x_eth_stop,
+	.ndo_open = rteth_open,
+	.ndo_stop = rteth_stop,
 	.ndo_start_xmit = rteth_start_xmit,
 	.ndo_select_queue = rteth_93xx_pick_tx_queue,
 	.ndo_set_mac_address = rteth_set_mac_address,
@@ -1588,8 +1588,8 @@ static const struct rteth_config rteth_930x_cfg = {
 };
 
 static const struct net_device_ops rteth_931x_netdev_ops = {
-	.ndo_open = rtl838x_eth_open,
-	.ndo_stop = rtl838x_eth_stop,
+	.ndo_open = rteth_open,
+	.ndo_stop = rteth_stop,
 	.ndo_start_xmit = rteth_start_xmit,
 	.ndo_select_queue = rteth_93xx_pick_tx_queue,
 	.ndo_set_mac_address = rteth_set_mac_address,

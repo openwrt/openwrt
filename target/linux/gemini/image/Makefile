@@ -89,18 +89,18 @@ endef
 # 0x000000320000-0x000000920000 : "Ramdisk" - second part of the kernel and
 #                                 some padding goes here
 # 0x000000920000-0x000000f20000 : "Application" - rootfs goes here
-define Build/storlink-default-images
+define CreateStorlinkTarfile
 	mkdir -p $@.tmp
 
-	# "App" partition is the rootfs
+	# "Application" partition is the rootfs
 	mv $@ $@.tmp/hddapp.tgz
-	# 256 bytes copy routine
-	dd if=$(KDIR)/copy-kernel.bin of=$@.tmp/zImage
+	# 512 bytes copy routine
+	dd if=$(KDIR)/copy-kernel-$(2).bin of=$@.tmp/zImage
 	$(call Image/pad-to,$@.tmp/zImage,512)
 	# Copy first part of the kernel into zImage
-	dd if=$(IMAGE_KERNEL) of=$@.tmp/zImage bs=1 seek=512 count=2096640
+	dd if=$(IMAGE_KERNEL) of=$@.tmp/zImage bs=1 seek=512 count=$(3)
 	# Put the rest of the kernel into the "ramdisk"
-	dd if=$(IMAGE_KERNEL) of=$@.tmp/rd.gz bs=1 skip=2096640 count=6144k conv=sync
+	dd if=$(IMAGE_KERNEL) of=$@.tmp/rd.gz bs=1 skip=$(3) count=6144k conv=sync
 	cp ./ImageInfo-$(1) $@.tmp/ImageInfo
 
 	sed -i -e "s/DATESTR/`date +%Y%m%d $(if $(SOURCE_DATE_EPOCH),--date "@$(SOURCE_DATE_EPOCH)")`/g" $@.tmp/ImageInfo
@@ -109,6 +109,17 @@ define Build/storlink-default-images
 		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)"))
 
 	rm -rf $@.tmp
+	exit 0
+endef
+
+# 2048k "Kern" partition
+define Build/storlink-default-image
+	$(call CreateStorlinkTarfile,$(1),2048k,2096640)
+endef
+
+# 3072k "Kern" partition
+define Build/raidsonic-ib-4220-b-image
+	$(call CreateStorlinkTarfile,$(1),3072k,3145216)
 endef
 
 # WBD-111 and WBD-222:
@@ -182,10 +193,17 @@ TARGET_DEVICES += dlink_dns-313
 define Device/storlink-reference
 	COMPILE := copy-kernel-$(1).bin
 	COMPILE/copy-kernel-$(1).bin := copy-kernel.bin
-	IMAGES := factory.bin
+	IMAGES := factory.bin sysupgrade.bin
 	FILESYSTEMS := squashfs
+	# Flash layout:
+	# Kern         512 bytes copy-kernel
+        #              2096640 bytes zImage
+	# Ramdisk      6144k remaining zImage
+	# Application  6144k
 	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to 6144k | \
-		storlink-default-images $(1)
+		storlink-default-image $(1)
+	IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | pad-to 6144k | \
+		storlink-default-image $(1) | append-metadata
 	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES)
 endef
 
@@ -203,6 +221,14 @@ define Device/raidsonic_ib-4220-b
 	DEVICE_VENDOR := Raidsonic
 	DEVICE_MODEL := NAS IB-4220-B
 	DEVICE_DTS := gemini-nas4220b
+	# The IB-4220-B has a deviating flash layout
+	# Kern         3072k - 512 | = 3145216
+	# Ramdisk      6144k       | = 9216k
+	# Application  6144k       | = 15360k
+	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to 6144k | \
+		raidsonic-ib-4220-b-image $(1)
+	IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | pad-to 6144k | \
+		raidsonic-ib-4220-b-image $(1) | append-metadata
 endef
 TARGET_DEVICES += raidsonic_ib-4220-b
 

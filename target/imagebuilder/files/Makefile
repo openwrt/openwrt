@@ -98,7 +98,7 @@ OPKG:=$(call opkg,$(TARGET_DIR)) \
 
 export APK_KEYS:=$(TOPDIR)/keys
 APK:=$(call apk,$(TARGET_DIR)) \
-	--repositories-file $(TOPDIR)/repositories \
+	$(if $(CONFIG_IB_STANDALONE),,--repositories-file $(TOPDIR)/repositories) \
 	--repository $(PACKAGE_DIR)/packages.adb \
 	$(if $(CONFIG_SIGNATURE_CHECK),,--allow-untrusted) \
 	--cache-dir $(DL_DIR)
@@ -157,7 +157,7 @@ endif
 #
 # 1: package name
 define GetABISuffix
-$(shell $(APK) query --fields tags --match provides $(1) | grep openwrt:abiversion | awk -F= '{print $$2; exit}')
+$(shell $(APK) query --fields tags --match provides $(1) | tr ' ' '\n' | grep '^openwrt:abiversion=' | cut -d= -f2)
 endef
 
 # Format packages by adding an ABI version suffix if found

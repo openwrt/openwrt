@@ -9,7 +9,7 @@
 	compatible = "keenetic,kn-3711", "mediatek,mt7981";
 
 	aliases {
-		label-mac-device = &gmac0;
+		label-mac-device = &gmac1;
 		led-boot = &power_led;
 		led-failsafe = &power_led;
 		led-running = &power_led;
@@ -117,7 +117,7 @@
 		};
 	};
 
-	mac@1 {
+	gmac1: mac@1 {
 		compatible = "mediatek,eth-mac";
 		reg = <1>;
 		phy-mode = "gmii";
@@ -208,13 +208,6 @@
 		spi-max-frequency = <52000000>;
 		spi-tx-buswidth = <4>;
 		spi-rx-buswidth = <4>;
-
-		spi-cal-enable;
-		spi-cal-mode = "read-data";
-		spi-cal-datalen = <7>;
-		spi-cal-data = /bits/ 8 <0x53 0x50 0x49 0x4e 0x41 0x4e 0x44>;
-		spi-cal-addrlen = <5>;
-		spi-cal-addr = /bits/ 32 <0x0 0x0 0x0 0x0 0x0>;
 
 		mediatek,nmbm;
 		mediatek,bmt-max-ratio = <1>;

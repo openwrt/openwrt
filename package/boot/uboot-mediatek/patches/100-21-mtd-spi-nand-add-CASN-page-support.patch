@@ -51,9 +51,9 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +#include <linux/mtd/casn.h>
  #include <linux/mtd/spinand.h>
  #include <linux/printk.h>
- #endif
-@@ -496,6 +500,62 @@ static int spinand_lock_block(struct spi
- 	return spinand_write_reg_op(spinand, REG_BLOCK_LOCK, lock);
+ #include <linux/delay.h>
+@@ -229,6 +233,62 @@ static int spinand_cont_read_enable(stru
+ 	return spinand->set_cont_read(spinand, enable);
  }
  
 +static size_t eccsr_none_op(size_t val, size_t mask) { return val; }
@@ -115,8 +115,8 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  static int spinand_check_ecc_status(struct spinand_device *spinand, u8 status)
  {
  	struct nand_device *nand = spinand_to_nand(spinand);
-@@ -865,6 +925,300 @@ static int spinand_manufacturer_match(st
- 	return -ENOTSUPP;
+@@ -1267,6 +1327,301 @@ static int spinand_manufacturer_match(st
+ 	return -EOPNOTSUPP;
  }
  
 +static u16 nanddev_crc16(u16 crc, u8 const *p, size_t len)
@@ -381,12 +381,13 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +		if (ret)
 +			goto finish;
 +
-+		ret = spinand_wait(spinand, &status);
++		ret = spinand_wait(spinand, SPINAND_READ_INITIAL_DELAY_US,
++				   SPINAND_READ_POLL_DELAY_US, &status);
 +		if (ret < 0)
 +			goto finish;
 +
-+		op = (struct spi_mem_op) SPINAND_PAGE_READ_FROM_CACHE_OP(
-+			false, 768, 1, (u8 *)casn, 256 * CASN_PAGE_V1_COPIES);
++		op = (struct spi_mem_op) SPINAND_PAGE_READ_FROM_CACHE_1S_1S_1S_OP(
++			768, 1, (u8 *)casn, 256 * CASN_PAGE_V1_COPIES, 0);
 +		ret = spi_mem_exec_op(spinand->slave, &op);
 +		if (ret < 0)
 +			goto finish;
@@ -416,16 +417,16 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  static int spinand_id_detect(struct spinand_device *spinand)
  {
  	u8 *id = spinand->id.data;
-@@ -896,7 +1250,7 @@ static int spinand_id_detect(struct spin
- 
- static int spinand_manufacturer_init(struct spinand_device *spinand)
+@@ -1300,7 +1655,7 @@ static int spinand_manufacturer_init(str
  {
--	if (spinand->manufacturer->ops->init)
-+	if (!spinand->use_casn && spinand->manufacturer->ops->init)
- 		return spinand->manufacturer->ops->init(spinand);
+ 	int ret;
  
- 	return 0;
-@@ -905,7 +1259,7 @@ static int spinand_manufacturer_init(str
+-	if (spinand->manufacturer->ops->init) {
++	if (!spinand->use_casn && spinand->manufacturer->ops->init) {
+ 		ret = spinand->manufacturer->ops->init(spinand);
+ 		if (ret)
+ 			return ret;
+@@ -1318,7 +1673,7 @@ static int spinand_manufacturer_init(str
  static void spinand_manufacturer_cleanup(struct spinand_device *spinand)
  {
  	/* Release manufacturer private data */
@@ -434,7 +435,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  		return spinand->manufacturer->ops->cleanup(spinand);
  }
  
-@@ -1026,37 +1380,455 @@ int spinand_match_and_init(struct spinan
+@@ -1452,37 +1807,455 @@ int spinand_match_and_init(struct spinan
  	return -ENOTSUPP;
  }
  
@@ -901,7 +902,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +	return ret;
  }
  
- static int spinand_noecc_ooblayout_ecc(struct mtd_info *mtd, int section,
+ static int spinand_init_flash(struct spinand_device *spinand)
 --- /dev/null
 +++ b/include/linux/mtd/casn.h
 @@ -0,0 +1,191 @@
@@ -1155,23 +1156,23 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +		   SPI_MEM_OP_DATA_IN(casn_adv_ecc_status.status_nbytes, buf, 1))
 +/* Macros for CASN end */
 +
- #define SPINAND_PAGE_READ_FROM_CACHE_OP(fast, addr, ndummy, buf, len)	\
- 	SPI_MEM_OP(SPI_MEM_OP_CMD(fast ? 0x0b : 0x03, 1),		\
+ #define SPINAND_PAGE_READ_FROM_CACHE_1S_1S_1S_OP(addr, ndummy, buf, len, freq) \
+ 	SPI_MEM_OP(SPI_MEM_OP_CMD(0x03, 1),				\
  		   SPI_MEM_OP_ADDR(2, addr, 1),				\
-@@ -295,6 +348,11 @@ struct spinand_ecc_info {
- 
- #define SPINAND_HAS_QE_BIT		BIT(0)
- #define SPINAND_HAS_CR_FEAT_BIT		BIT(1)
-+#define SPINAND_SUP_CR			BIT(2)
-+#define SPINAND_SUP_ON_DIE_ECC		BIT(3)
-+#define SPINAND_SUP_LEGACY_ECC_STATUS	BIT(4)
-+#define SPINAND_SUP_ADV_ECC_STATUS	BIT(5)
-+#define SPINAND_ECC_PARITY_READABLE	BIT(6)
+@@ -416,6 +469,11 @@ struct spinand_ecc_info {
+ #define SPINAND_HAS_PROG_PLANE_SELECT_BIT	BIT(2)
+ #define SPINAND_HAS_READ_PLANE_SELECT_BIT	BIT(3)
+ #define SPINAND_NO_RAW_ACCESS			BIT(4)
++#define SPINAND_SUP_CR			BIT(5)
++#define SPINAND_SUP_ON_DIE_ECC		BIT(6)
++#define SPINAND_SUP_LEGACY_ECC_STATUS	BIT(7)
++#define SPINAND_SUP_ADV_ECC_STATUS	BIT(8)
++#define SPINAND_ECC_PARITY_READABLE	BIT(9)
  
  /**
-  * struct spinand_info - Structure used to describe SPI NAND chips
-@@ -366,6 +424,28 @@ struct spinand_info {
- 	}
+  * struct spinand_otp_layout - structure to describe the SPI NAND OTP area
+@@ -598,6 +656,28 @@ struct spinand_dirmap {
+ };
  
  /**
 + * struct CASN_ADVECC - CASN's advanced ECC description
@@ -1199,7 +1200,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
   * struct spinand_device - SPI NAND device instance
   * @base: NAND device instance
   * @slave: pointer to the SPI slave object
-@@ -419,6 +499,23 @@ struct spinand_device {
+@@ -666,6 +746,23 @@ struct spinand_device {
  	u8 *oobbuf;
  	u8 *scratchbuf;
  	const struct spinand_manufacturer *manufacturer;
@@ -1221,5 +1222,5 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 +	size_t (*eccsr_math_op[4])(size_t, size_t);
 +
  	void *priv;
- };
  
+ 	u8 last_wait_status;

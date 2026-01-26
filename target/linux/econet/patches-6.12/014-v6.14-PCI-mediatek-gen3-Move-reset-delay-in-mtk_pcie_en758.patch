@@ -30,11 +30,9 @@ Acked-by: Stephen Boyd <sboyd@kernel.org>
  drivers/clk/clk-en7523.c | 1 -
  1 file changed, 1 deletion(-)
 
-diff --git a/drivers/clk/clk-en7523.c b/drivers/clk/clk-en7523.c
-index e52c5460e927..513730e5b953 100644
 --- a/drivers/clk/clk-en7523.c
 +++ b/drivers/clk/clk-en7523.c
-@@ -477,7 +477,6 @@ static int en7581_pci_enable(struct clk_hw *hw)
+@@ -478,7 +478,6 @@ static int en7581_pci_enable(struct clk_
  	       REG_PCI_CONTROL_PERSTOUT;
  	val = readl(np_base + REG_PCI_CONTROL);
  	writel(val | mask, np_base + REG_PCI_CONTROL);
@@ -42,6 +40,3 @@ index e52c5460e927..513730e5b953 100644
  
  	return 0;
  }
--- 
-2.39.5
-

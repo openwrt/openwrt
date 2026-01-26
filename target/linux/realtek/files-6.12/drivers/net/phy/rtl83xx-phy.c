@@ -37,7 +37,6 @@ extern struct rtl83xx_soc_info soc_info;
  * the cache and paging engine of the MDIO controller.
  */
 #define RTL838X_PAGE_RAW		0x0fff
-#define RTL839X_PAGE_RAW		0x1fff
 
 /* internal RTL821X PHY uses register 0x1d to select media page */
 #define RTL821XINT_MEDIA_PAGE_SELECT	0x1d
@@ -57,8 +56,9 @@ extern struct rtl83xx_soc_info soc_info;
 #define RTL821X_JOIN_LAST		1
 #define RTL821X_JOIN_OTHER		2
 
+#define RTL8214FC_MEDIA_COPPER		BIT(11)
+
 static const struct firmware rtl838x_8380_fw;
-static const struct firmware rtl838x_8218b_fw;
 
 struct rtl821x_shared_priv {
 	int base_addr;
@@ -233,25 +233,6 @@ out:
 	return NULL;
 }
 
-static void rtl821x_phy_setup_package_broadcast(struct phy_device *phydev, bool enable)
-{
-	int mac = phydev->mdio.addr;
-
-	/* select main page 0 */
-	phy_write_paged(phydev, RTL838X_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL8XXX_PAGE_MAIN);
-	/* write to 0x8 to register 0x1d on main page 0 */
-	phy_write_paged(phydev, RTL838X_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
-	/* select page 0x266 */
-	phy_write_paged(phydev, RTL838X_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL821X_PAGE_PORT);
-	/* set phy id and target broadcast bitmap in register 0x16 on page 0x266 */
-	phy_write_paged(phydev, RTL838X_PAGE_RAW, 0x16, (enable ? 0xff00 : 0x00) | mac);
-	/* return to main page 0 */
-	phy_write_paged(phydev, RTL838X_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL8XXX_PAGE_MAIN);
-	/* write to 0x0 to register 0x1d on main page 0 */
-	phy_write_paged(phydev, RTL838X_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
-	mdelay(1);
-}
-
 static int rtl821x_prepare_patch(struct phy_device *phydev, int ports)
 {
 	struct phy_device *patchphy;
@@ -342,94 +323,6 @@ static int rtl8380_configure_int_rtl8218b(struct phy_device *phydev)
 	return 0;
 }
 
-static int rtl8380_configure_ext_rtl8218b(struct phy_device *phydev)
-{
-	u32 *rtl8218B_6276B_rtl8380_perport;
-	u32 *rtl8380_rtl8218b_perchip;
-	u32 *rtl8380_rtl8218b_perport;
-	struct phy_device *patchphy;
-	struct fw_header *h;
-	u32 val, ipd;
-	int ret;
-
-	/* Read internal PHY ID */
-	phy_write_paged(phydev, 31, 27, 0x0002);
-	val = phy_read_paged(phydev, 31, 28);
-	if (val != RTL821X_CHIP_ID) {
-		phydev_err(phydev, "Expected external RTL8218B, found PHY-ID %x\n", val);
-		return -1;
-	}
-
-	h = rtl838x_request_fw(phydev, &rtl838x_8218b_fw, FIRMWARE_838X_8218b_1);
-	if (!h)
-		return -1;
-
-	if (h->phy != 0x8218b000) {
-		phydev_err(phydev, "Wrong firmware file: PHY mismatch.\n");
-		return -1;
-	}
-
-	rtl8380_rtl8218b_perchip = (void *)h + sizeof(struct fw_header) + h->parts[0].start;
-	rtl8218B_6276B_rtl8380_perport = (void *)h + sizeof(struct fw_header) + h->parts[1].start;
-	rtl8380_rtl8218b_perport = (void *)h + sizeof(struct fw_header) + h->parts[2].start;
-
-	val = phy_read(phydev, MII_BMCR);
-	if (val & BMCR_PDOWN)
-		rtl8380_int_phy_on_off(phydev, true);
-	else
-		rtl8380_phy_reset(phydev);
-
-	msleep(100);
-
-	/* Get Chip revision */
-	phy_write_paged(phydev, RTL838X_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL8XXX_PAGE_MAIN);
-	phy_write_paged(phydev, RTL838X_PAGE_RAW, 0x1b, 0x4);
-	val = phy_read_paged(phydev, RTL838X_PAGE_RAW, 0x1c);
-
-	phydev_info(phydev, "patch chip revision %d\n", val);
-
-	for (int i = 0; rtl8380_rtl8218b_perchip[i * 3] &&
-			rtl8380_rtl8218b_perchip[i * 3 + 1]; i++) {
-		patchphy = get_package_phy(phydev, rtl8380_rtl8218b_perchip[i * 3]);
-		phy_write_paged(patchphy, RTL838X_PAGE_RAW,
-				rtl8380_rtl8218b_perchip[i * 3 + 1],
-				rtl8380_rtl8218b_perchip[i * 3 + 2]);
-	}
-
-	/* Enable PHY */
-	for (int port = 0; port < 8; port++) {
-		patchphy = get_package_phy(phydev, port);
-		phy_write_paged(patchphy, RTL838X_PAGE_RAW, RTL8XXX_PAGE_SELECT, RTL8XXX_PAGE_MAIN);
-		phy_write_paged(patchphy, RTL838X_PAGE_RAW, 0x00, 0x1140);
-	}
-	mdelay(100);
-
-	ret = rtl821x_prepare_patch(phydev, 8);
-	if (ret)
-		return ret;
-
-	/* Use Broadcast ID method for patching */
-	rtl821x_phy_setup_package_broadcast(phydev, true);
-
-	phy_write_paged(phydev, RTL838X_PAGE_RAW, 30, 8);
-	phy_write_paged(phydev, 0x26e, 17, 0xb);
-	phy_write_paged(phydev, 0x26e, 16, 0x2);
-	mdelay(1);
-	ipd = phy_read_paged(phydev, 0x26e, 19);
-	phy_write_paged(phydev, 0, 30, 0);
-	ipd = (ipd >> 4) & 0xf; /* unused ? */
-
-	for (int i = 0; rtl8218B_6276B_rtl8380_perport[i * 2]; i++) {
-		phy_write_paged(phydev, RTL838X_PAGE_RAW, rtl8218B_6276B_rtl8380_perport[i * 2],
-				rtl8218B_6276B_rtl8380_perport[i * 2 + 1]);
-	}
-
-	/* Disable broadcast ID */
-	rtl821x_phy_setup_package_broadcast(phydev, false);
-
-	return 0;
-}
-
 static bool __rtl8214fc_media_is_fibre(struct phy_device *phydev)
 {
 	struct phy_device *basephy = get_base_phy(phydev);
@@ -447,7 +340,7 @@ static bool __rtl8214fc_media_is_fibre(struct phy_device *phydev)
 	__phy_write(basephy, RTL821XEXT_MEDIA_PAGE_SELECT, oldxpage);
 	__phy_write(basephy, RTL8XXX_PAGE_SELECT, oldpage);
 
-	return !(val & BMCR_PDOWN);
+	return !(val & RTL8214FC_MEDIA_COPPER);
 }
 
 static bool rtl8214fc_media_is_fibre(struct phy_device *phydev)
@@ -464,14 +357,15 @@ static bool rtl8214fc_media_is_fibre(struct phy_device *phydev)
 static void rtl8214fc_power_set(struct phy_device *phydev, int port, bool on)
 {
 	int page = port == PORT_FIBRE ? RTL821X_MEDIA_PAGE_FIBRE : RTL821X_MEDIA_PAGE_COPPER;
+	int oldxpage = __phy_read(phydev, RTL821XEXT_MEDIA_PAGE_SELECT);
 	int pdown = on ? 0 : BMCR_PDOWN;
 
 	phydev_info(phydev, "power %s %s\n", on ? "on" : "off",
 		    port == PORT_FIBRE ? "fibre" : "copper");
 
-	phy_write(phydev, RTL821XINT_MEDIA_PAGE_SELECT, page);
+	phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, page);
 	phy_modify_paged(phydev, RTL821X_PAGE_POWER, 0x10, BMCR_PDOWN, pdown);
-	phy_write(phydev, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
+	phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, oldxpage);
 }
 
 static int rtl8214fc_suspend(struct phy_device *phydev)
@@ -495,14 +389,15 @@ static int rtl8214fc_resume(struct phy_device *phydev)
 static void rtl8214fc_media_set(struct phy_device *phydev, bool set_fibre)
 {
 	struct phy_device *basephy = get_base_phy(phydev);
-	int pdown = set_fibre ? 0 : BMCR_PDOWN;
+	int oldxpage = phy_read(basephy, RTL821XEXT_MEDIA_PAGE_SELECT);
+	int copper = set_fibre ? 0 : RTL8214FC_MEDIA_COPPER;
 	static int regs[] = {16, 19, 20, 21};
 	int reg = regs[phydev->mdio.addr & 3];
 
 	phydev_info(phydev, "switch to %s\n", set_fibre ? "fibre" : "copper");
-	phy_write_paged(basephy, RTL838X_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
-	phy_modify_paged(basephy, RTL821X_PAGE_PORT, reg, BMCR_PDOWN, pdown);
-	phy_write_paged(basephy, RTL838X_PAGE_RAW, RTL821XINT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
+	phy_write(basephy, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
+	phy_modify_paged(basephy, RTL821X_PAGE_PORT, reg, RTL8214FC_MEDIA_COPPER, copper);
+	phy_write(basephy, RTL821XEXT_MEDIA_PAGE_SELECT, oldxpage);
 
 	if (!phydev->suspended) {
 		rtl8214fc_power_set(phydev, PORT_MII, !set_fibre);
@@ -701,10 +596,7 @@ static int rtl8214c_phy_probe(struct phy_device *phydev)
 
 static int rtl8218b_ext_phy_probe(struct phy_device *phydev)
 {
-	if (rtl821x_package_join(phydev, 8) == RTL821X_JOIN_LAST) {
-		if (soc_info.family == RTL8380_FAMILY_ID)
-			return rtl8380_configure_ext_rtl8218b(get_base_phy(phydev));
-	}
+	rtl821x_package_join(phydev, 8);
 
 	return 0;
 }
@@ -734,6 +626,68 @@ static int rtl821x_config_init(struct phy_device *phydev)
 	/* Disable PHY-mode EEE so LPI is passed to the MAC */
 	phy_modify_paged(phydev, RTL821X_PAGE_MAC, RTL821X_PHYCR2,
 			 RTL821X_PHYCR2_PHY_EEE_ENABLE, 0);
+
+	return 0;
+}
+
+static int rtl8218d_config_init(struct phy_device *phydev)
+{
+	int oldpage, oldxpage;
+	bool is_qsgmii;
+	int chip_info;
+
+	rtl821x_config_init(phydev);
+
+	if (phydev->mdio.addr % 8)
+		return 0;
+	/*
+	 * The RTl8218D has two MAC (aka SoC side) operation modes. Either dual QSGMII
+	 * or single XSGMII (Realtek proprietary) link. The mode is usually configured via
+	 * strapping pins CHIP_MODE1/2. For the moment offer a configuration that at least
+	 * works for RTL93xx devices. This sequence even "revives" a PHY that has been hard
+	 * reset with
+	 *
+	 *	phy_write(phydev, 0x1e, 0x8);
+	 *	phy_write_paged(phydev, 0x262, 0x10, 0x1);
+	 */
+	oldpage = phy_read(phydev, RTL8XXX_PAGE_SELECT);
+	oldxpage = phy_read(phydev, RTL821XEXT_MEDIA_PAGE_SELECT);
+
+	phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, 0x8);
+	chip_info = phy_read_paged(phydev, 0x327, 0x15);
+	is_qsgmii = (phy_read_paged(phydev, 0x260, 0x12) & 0xf0) == 0xd0;
+
+	pr_info("RTL8218D (chip_id=%d, rev_id=%d) on port %d running in %s mode\n",
+		(chip_info >> 7) & 0x7, chip_info & 0x7f, phydev->mdio.addr,
+		is_qsgmii ? "QSGMII" : "XSGMII");
+
+	if (is_qsgmii) {
+		for (int sds = 0; sds < 2; sds++) {
+			/* unknown amplification value */
+			phy_modify_paged(phydev, 0x4a8 + sds * 0x100, 0x12, BIT(3), 0);
+			/* main aplification */
+			phy_modify_paged(phydev, 0x4ab + sds * 0x100, 0x16, 0x3e0, 0x1e0);
+			/* unknown LCCMU value */
+			phy_write_paged(phydev, 0x4ac + sds * 0x100, 0x15, 0x4380);
+		}
+	} else {
+		/* serdes 0/1 disable auto negotiation */
+		phy_modify_paged(phydev, 0x400, 0x12, 0, BIT(8));
+		phy_modify_paged(phydev, 0x500, 0x12, 0, BIT(8));
+		/* unknown eye configuration */
+		phy_modify_paged(phydev, 0x4b8, 0x12, BIT(3), 0);
+	}
+
+	/* reset serdes 0 */
+	phy_write_paged(phydev, 0x400, 0x10, 0x1700);
+	phy_write_paged(phydev, 0x400, 0x10, 0x1703);
+
+	/* reset serdes 1 */
+	phy_write_paged(phydev, 0x500, 0x10, 0x1400);
+	phy_write_paged(phydev, 0x500, 0x10, 0x1403);
+
+	phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, oldxpage);
+	phy_write(phydev, RTL8XXX_PAGE_SELECT, oldpage);
 
 	return 0;
 }
@@ -797,10 +751,19 @@ static int rtl8218b_config_init(struct phy_device *phydev)
 	return 0;
 }
 
-static int rtl8214fc_config_init(struct phy_device *phydev)
+static int rtl8214fc_phy_probe(struct phy_device *phydev)
 {
 	static int regs[] = {16, 19, 20, 21};
 	int ret;
+
+	rtl821x_package_join(phydev, 4);
+
+	/*
+	 * Normally phy_probe() only initializes PHY structures and setup is run in
+	 * config_init(). The RTL8214FC needs configuration before SFP probing while
+	 * the preferred media is still copper. This way all SFP events (even before
+	 * the first config_init()) will find a consistent port state.
+	 */
 
 	/* Step 1 - package setup: Due to similar design reuse RTL8218B coding */
 	ret = rtl8218b_config_init(phydev);
@@ -808,33 +771,24 @@ static int rtl8214fc_config_init(struct phy_device *phydev)
 		return ret;
 
 	if (phydev->mdio.addr % 8 == 0) {
-		for (int port = 0; port < 4; port++) {
-			phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, 0x8);
-			/* setup basic fiber control in base phy and default to copper */
-			phy_write_paged(phydev, 0x266, regs[port], 0x0f95);
-			phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, 0x0);
-		}
+		/* Force all ports to copper */
+		phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_INTERNAL);
+		for (int port = 0; port < 4; port++)
+			phy_modify_paged(phydev, 0x266, regs[port], 0, GENMASK(11, 10));
 	}
 
 	/* Step 2 - port setup */
-	phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, 0x3);
+	phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_FIBRE);
 	/* set fiber SerDes RX to negative edge */
 	phy_modify_paged(phydev, 0x8, 0x17, 0, BIT(14));
 	/* auto negotiation disable link on */
 	phy_modify_paged(phydev, 0x8, 0x14, 0, BIT(2));
 	/* disable fiber 100MBit */
 	phy_modify_paged(phydev, 0x8, 0x11, BIT(5), 0);
-	phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, 0x0);
+	phy_write(phydev, RTL821XEXT_MEDIA_PAGE_SELECT, RTL821X_MEDIA_PAGE_AUTO);
 
 	/* Disable EEE. 0xa5d/0x10 is the same as MDIO_MMD_AN / MDIO_AN_EEE_ADV */
 	phy_write_paged(phydev, 0xa5d, 0x10, 0x0000);
-
-	return 0;
-}
-
-static int rtl8214fc_phy_probe(struct phy_device *phydev)
-{
-	rtl821x_package_join(phydev, 4);
 
 	return phy_sfp_probe(phydev, &rtl8214fc_sfp_ops);
 }
@@ -854,7 +808,6 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.match_phy_device = rtl8214fc_match_phy_device,
 		.name		= "Realtek RTL8214FC",
 		.config_aneg	= rtl8214fc_config_aneg,
-		.config_init	= rtl8214fc_config_init,
 		.get_features	= rtl8214fc_get_features,
 		.get_tunable    = rtl8214fc_get_tunable,
 		.probe		= rtl8214fc_phy_probe,
@@ -896,7 +849,7 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 	{
 		PHY_ID_MATCH_EXACT(PHY_ID_RTL8218D),
 		.name		= "REALTEK RTL8218D",
-		.config_init	= rtl821x_config_init,
+		.config_init	= rtl8218d_config_init,
 		.features	= PHY_GBIT_FEATURES,
 		.probe		= rtl8218x_phy_probe,
 		.read_mmd	= rtl821x_read_mmd,
