@@ -56,8 +56,8 @@ gemini_check_redboot_parts() {
 	fi
 }
 
-gemini_do_platform_upgrade() {
-	echo "Extract the three firmware parts"
+gemini_do_redboot_upgrade() {
+	echo "Extract the three firmware parts from tarfile"
 	echo 3 > /proc/sys/vm/drop_caches
 	echo "COMMENCING UPGRADE. BE PATIENT, THIS IS NOT FAST!"
 	KFSZ=$(tar xfz "$1" zImage -O | wc -c)
@@ -74,16 +74,45 @@ gemini_do_platform_upgrade() {
 	[ $? -ne 0 ] && exit 1
 }
 
+# This converts the old RedBoot partitioning to the new shared
+# "firmware" partition.
+gemini_do_flat_redboot_upgrade() {
+	ESZ=131072
+	KSZ=$(($ESZ * $2))
+	RSZ=$(($ESZ * $3))
+	KRSZ=$(($KSZ + $RSZ))
+	ASZ=$(($ESZ * $4))
+	echo "Partition sizes: Kern ${KSZ}, Ramdisk ${RSZ}, Application ${ASZ}"
+	echo "Extract Kern from flat image ${1}"
+	echo "Write Kern from flat image ${1}"
+	dd if="$1" bs=1 count=${KSZ} | mtd write - Kern
+	echo "Write rd.gz from flat image ${1}"
+	dd if="$1" bs=1 skip=${KSZ} count=${RSZ} | mtd write - Ramdisk
+	echo "Write hddapp.tgz from flat image ${1}"
+	dd if="$1" bs=1 skip=${KRSZ} count=${ASZ} | mtd write - Application
+}
+
+# Check if we have the new partition scheme, else do it the old
+# way.
+gemini_do_combined_upgrade() {
+	NAME=`cat ${MTDSYSFS}/mtd1/name`
+	if test "x${NAME}" == "xfirmware" ; then
+		PART_NAME=firmware
+		default_do_upgrade "$1"
+	else
+		gemini_check_redboot_parts "$1" $2 $3 $4
+		gemini_do_flat_redboot_upgrade "$1" $2 $3 $4
+	fi
+}
+
 platform_check_image() {
 	local board=$(board_name)
 
 	case "$board" in
-	dlink,dir-685)
-		return 0
-		;;
-	raidsonic,ib-4220-b|\
+	dlink,dir-685|\
 	itian,sq201|\
-	storlink,gemini324)
+	storlink,gemini324|\
+	raidsonic,ib-4220-b)
 		return 0
 		;;
 	esac
@@ -100,14 +129,13 @@ platform_do_upgrade() {
 		PART_NAME=firmware
 		default_do_upgrade "$1"
 		;;
+	raidsonic,ib-4220-b)
+		gemini_do_combined_upgrade "$1" 24 48 48
+		;;
 	itian,sq201|\
 	storlink,gemini324)
 		gemini_check_redboot_parts "$1" 16 48 48
-		gemini_do_platform_upgrade "$1"
-		;;
-	raidsonic,ib-4220-b)
-		gemini_check_redboot_parts "$1" 24 48 48
-		gemini_do_platform_upgrade "$1"
+		gemini_do_redboot_upgrade "$1"
 		;;
 	esac
 }

@@ -89,14 +89,23 @@ endef
 # 0x000000320000-0x000000920000 : "Ramdisk" - second part of the kernel and
 #                                 some padding goes here
 # 0x000000920000-0x000000f20000 : "Application" - rootfs goes here
+
+define CreateStorlinkProlog
+	# 512 bytes copy routine
+	dd if=$(KDIR)/copy-kernel-$(2).bin of=$(1)
+	# Add OpenWrt prolog header (used by partition splitter)
+	echo "OPENWRT-PROLOG-512" >> $(1)
+	stat -c %s ${IMAGE_KERNEL} >> $(1)
+	$(call Image/pad-to,$(1),512)
+endef
+
 define CreateStorlinkTarfile
 	mkdir -p $@.tmp
 
 	# "Application" partition is the rootfs
 	mv $@ $@.tmp/hddapp.tgz
-	# 512 bytes copy routine
-	dd if=$(KDIR)/copy-kernel-$(2).bin of=$@.tmp/zImage
-	$(call Image/pad-to,$@.tmp/zImage,512)
+	$(STAGING_DIR_HOST)/bin/padjffs2 $(IMAGE_ROOTFS) -c 128 >>$@.tmp/hddapp.tgz
+	$(call CreateStorlinkProlog,$@.tmp/zImage,$(2))
 	# Copy first part of the kernel into zImage
 	dd if=$(IMAGE_KERNEL) of=$@.tmp/zImage bs=1 seek=512 count=$(3)
 	$(call Image/pad-to,$@.tmp/zImage,128k)
@@ -114,14 +123,60 @@ define CreateStorlinkTarfile
 	exit 0
 endef
 
+define CreateStorlinkFactoryfile
+	mkdir -p $@.tmp
+	$(call CreateStorlinkProlog,$@.tmp/zImage,$(2))
+	# Copy first part of the kernel into zImage
+	dd if=$(IMAGE_KERNEL) of=$@.tmp/zImage bs=1 seek=512 count=$(3)
+	$(call Image/pad-to,$@.tmp/zImage,128k)
+	# Put the rest of the kernel into the "ramdisk"
+	dd if=$(IMAGE_KERNEL) of=$@-ramdisk bs=1 skip=$(3) conv=sync
+	$(call Image/pad-to,$@-ramdisk,128k)
+	# Append the root filesystem right after this
+	dd if=$(IMAGE_ROOTFS) >> $@-ramdisk
+	$(STAGING_DIR_HOST)/bin/padjffs2 $(IMAGE_ROOTFS) -c 128 >> $@-ramdisk
+	# Now rd.gz is too big so split off rd.gz and the tail into "hddapp.gz"
+	dd if=$@-ramdisk of=$@.tmp/rd.gz bs=1 count=6144k conv=sync
+	dd if=$@-ramdisk of=$@.tmp/hddapp.tgz bs=1 skip=6144k count=6144k conv=sync
+	rm -f $@-ramdisk
+	# Taglabel
+	cp ./ImageInfo-$(1) $@.tmp/ImageInfo
+
+	sed -i -e "s/DATESTR/`date +%Y%m%d $(if $(SOURCE_DATE_EPOCH),--date "@$(SOURCE_DATE_EPOCH)")`/g" $@.tmp/ImageInfo
+
+	(cd $@.tmp; tar --sort=name --owner=0 --group=0 --numeric-owner -czf $@ * \
+		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)"))
+
+	rm -rf $@.tmp
+	exit 0
+endef
+
+define CreateStorlinkSysupgradefile
+	$(call CreateStorlinkProlog,$@,$(2))
+	# Catenate the kernel
+	dd if=$(IMAGE_KERNEL) >> $@
+	$(call Image/pad-to,$@,128k)
+	# Append the root filesystem right after this
+	dd if=$(IMAGE_ROOTFS) >> $@
+	$(STAGING_DIR_HOST)/bin/padjffs2 $(IMAGE_ROOTFS) -c 128 >> $@
+endef
+
 # 2048k "Kern" partition
-define Build/storlink-default-image
+define Build/storlink-2048k-default-image
 	$(call CreateStorlinkTarfile,$(1),2048k,2096640)
 endef
 
+define Build/storlink-2048k-sysupgrade-image
+	$(call CreateStorlinkSysupgradefile,$(1),2048k)
+endef
+
 # 3072k "Kern" partition
-define Build/raidsonic-ib-4220-b-image
-	$(call CreateStorlinkTarfile,$(1),3072k,3145216)
+define Build/storlink-3072k-factory-image
+	$(call CreateStorlinkFactoryfile,$(1),3072k,3145216)
+endef
+
+define Build/storlink-3072k-sysupgrade-image
+	$(call CreateStorlinkSysupgradefile,$(1),3072k)
 endef
 
 # WBD-111 and WBD-222:
@@ -203,9 +258,9 @@ define Device/storlink-reference
 	# Ramdisk      6144k remaining zImage
 	# Application  6144k
 	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to 128k | \
-		storlink-default-image $(1)
+		storlink-2048k-default-image $(1)
 	IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | pad-to 128k | \
-		storlink-default-image $(1) | append-metadata
+		storlink-2048k-default-image $(1) | append-metadata
 	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES)
 endef
 
@@ -227,10 +282,9 @@ define Device/raidsonic_ib-4220-b
 	# Kern         3072k - 512 | = 3145216
 	# Ramdisk      6144k       | = 9216k
 	# Application  6144k       | = 15360k
-	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to 128k | \
-		raidsonic-ib-4220-b-image $(1)
-	IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | pad-to 128k | \
-		raidsonic-ib-4220-b-image $(1) | append-metadata
+	IMAGE/factory.bin := storlink-3072k-factory-image $(1)
+	IMAGE/sysupgrade.bin := storlink-3072k-sysupgrade-image $(1) |\
+			append-metadata
 endef
 TARGET_DEVICES += raidsonic_ib-4220-b
 
