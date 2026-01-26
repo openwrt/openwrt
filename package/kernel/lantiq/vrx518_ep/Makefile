@@ -47,7 +47,7 @@ EXTRA_CFLAGS:= \
 define Build/Compile
 	$(KERNEL_MAKE) \
 		M="$(PKG_BUILD_DIR)" \
-		EXTRA_CFLAGS="$(EXTRA_CFLAGS)" \
+		ccflags-y="$(EXTRA_CFLAGS)" \
 		$(EXTRA_KCONFIG) \
 		modules
 endef
