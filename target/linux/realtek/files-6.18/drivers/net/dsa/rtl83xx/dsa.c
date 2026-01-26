@@ -2497,9 +2497,6 @@ static int rtl83xx_port_mdb_add(struct dsa_switch *ds, int port,
 	u64 seed = priv->r->l2_hash_seed(mac, vid);
 	int mc_group;
 
-	if (priv->id >= 0x9300)
-		return -EOPNOTSUPP;
-
 	pr_debug("In %s port %d, mac %llx, vid: %d\n", __func__, port, mac, vid);
 
 	if (priv->lag_non_primary & BIT_ULL(port)) {
@@ -3130,8 +3127,10 @@ const struct dsa_switch_ops rtl93xx_switch_ops = {
 	.port_fdb_del		= rtl83xx_port_fdb_del,
 	.port_fdb_dump		= rtl83xx_port_fdb_dump,
 
+	/* ToDo: test on rtl93xx
 	.port_mdb_add		= rtl83xx_port_mdb_add,
 	.port_mdb_del		= rtl83xx_port_mdb_del,
+	*/
 
 	.port_mirror_add	= rtldsa_port_mirror_add,
 	.port_mirror_del	= rtldsa_port_mirror_del,
