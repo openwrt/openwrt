@@ -2186,27 +2186,40 @@ static void rtpcs_930x_sds_do_rx_calibration(struct rtpcs_serdes *sds,
 static int rtpcs_930x_sds_sym_err_reset(struct rtpcs_serdes *sds,
 					enum rtpcs_sds_mode hw_mode)
 {
-	switch (hw_mode) {
-	case RTPCS_SDS_MODE_XSGMII:
-		break;
+	int channel, channels;
 
+	switch (hw_mode) {
 	case RTPCS_SDS_MODE_10GBASER:
+	case RTPCS_SDS_MODE_USXGMII_10GSXGMII:
 		/* Read twice to clear */
 		rtpcs_sds_read(sds, 5, 1);
 		rtpcs_sds_read(sds, 5, 1);
-		break;
+		return 0;
 
-	case RTPCS_SDS_MODE_1000BASEX:
-	case RTPCS_SDS_MODE_SGMII:
-	case RTPCS_SDS_MODE_USXGMII_10GQXGMII:
-		rtpcs_sds_write_bits(sds, 0x1, 24, 2, 0, 0);
-		rtpcs_sds_write_bits(sds, 0x1, 3, 15, 8, 0);
-		rtpcs_sds_write_bits(sds, 0x1, 2, 15, 0, 0);
+	case RTPCS_SDS_MODE_XSGMII:
+	case RTPCS_SDS_MODE_QSGMII:
+		channels = 4;
 		break;
 
 	default:
-		pr_info("%s unsupported phy mode\n", __func__);
+		channels = 1;
+	}
+
+	/* TODO: Below reset sequence must run with new xsg_write() function */
+	if (hw_mode == RTPCS_SDS_MODE_XSGMII) {
+		pr_info("%s unsupported PHY-mode\n", __func__);
 		return -1;
+	}
+
+	for (channel = 0; channel < channels; channel++) {
+		rtpcs_sds_write_bits(sds, 0x1, 24, 2, 0, channel);
+		rtpcs_sds_write_bits(sds, 0x1, 3, 15, 8, 0);
+		rtpcs_sds_write_bits(sds, 0x1, 2, 15, 0, 0);
+	}
+
+	if (channels > 1) {
+		rtpcs_sds_write_bits(sds, 0x1, 0, 15, 0, 0);
+		rtpcs_sds_write_bits(sds, 0x1, 1, 15, 8, 0);
 	}
 
 	return 0;
