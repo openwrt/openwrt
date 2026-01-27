@@ -543,6 +543,148 @@ int rtldsa_83xx_lag_setup_algomask(struct rtl838x_switch_priv *priv, int group,
 	return priv->r->lag_set_distribution_algorithm(priv, group, algoidx, algomsk);
 }
 
+static int rtldsa_93xx_lag_set_group2ports(struct rtl838x_switch_priv *priv, int group,
+					   struct netdev_lag_upper_info *info)
+{
+	DECLARE_BITMAP(ports, ARRAY_SIZE(priv->ports));
+	struct rtldsa_93xx_lag_entry e;
+	unsigned int table_pos = 0;
+	u8 num_of_lag_ports = 0;
+	u8 group_ports[8];
+	u32 data[3];
+	int i;
+	/* Read lag table using Table control register 2 */
+	struct table_reg *r = priv->r->lag_table();
+
+	rtl_table_read(r, group);
+
+	bitmap_clear(ports, 0, ARRAY_SIZE(priv->ports));
+	bitmap_from_arr64(ports, &priv->lags_port_members[group],
+			  ARRAY_SIZE(priv->ports));
+
+	for (i = 0; i < 3; i++)
+		data[i] = sw_r32(rtl_table_data(r, i));
+
+	priv->r->lag_fill_data(data, &e);
+
+	num_of_lag_ports = bitmap_weight(ports, ARRAY_SIZE(priv->ports));
+	if (num_of_lag_ports > ARRAY_SIZE(group_ports)) {
+		pr_err("%s: Number of LAG ports too high: %u", __func__,
+		       num_of_lag_ports);
+
+		return -ENOSPC;
+	}
+
+	memset(group_ports, 0x3f, sizeof(group_ports));
+
+	table_pos = 0;
+	for_each_set_bit(i, ports, ARRAY_SIZE(priv->ports)) {
+		group_ports[table_pos] = i;
+		table_pos++;
+	}
+
+	// Remove tx disabled ports
+	num_of_lag_ports = table_pos;
+
+	e.trk_dev0 = 0;
+	e.trk_port0 = group_ports[0];
+	e.trk_dev1 = 0;
+	e.trk_port1 = group_ports[1];
+	e.trk_dev2 = 0;
+	e.trk_port2 = group_ports[2];
+	e.trk_dev3 = 0;
+	e.trk_port3 = group_ports[3];
+	e.trk_dev4 = 0;
+	e.trk_port4 = group_ports[4];
+	e.trk_dev5 = 0;
+	e.trk_port5 = group_ports[5];
+	e.trk_dev6 = 0;
+	e.trk_port6 = group_ports[6];
+	e.trk_dev7 = 0;
+	e.trk_port7 = group_ports[7];
+
+	e.num_tx_candi = num_of_lag_ports;
+	// set hash_mask_idx to 0 if we are deleting lag group
+	if (info) {
+		if (info->hash_type == NETDEV_LAG_HASH_L2) {
+			e.l2_hash_mask_idx = RTL93XX_HASH_MASK_INDEX_L2;
+			e.ip4_hash_mask_idx = RTL93XX_HASH_MASK_INDEX_L2;
+			e.ip6_hash_mask_idx = RTL93XX_HASH_MASK_INDEX_L2;
+		} else if (info->hash_type == NETDEV_LAG_HASH_L23) {
+			e.l2_hash_mask_idx = RTL93XX_HASH_MASK_INDEX_L23;
+			e.ip4_hash_mask_idx = RTL93XX_HASH_MASK_INDEX_L23;
+			e.ip6_hash_mask_idx = RTL93XX_HASH_MASK_INDEX_L23;
+		} else {
+			return -EOPNOTSUPP;
+		}
+	}
+
+	priv->r->lag_write_data(data, &e);
+
+	for (i = 0; i < 3; i++)
+		sw_w32(data[i], rtl_table_data(r, i));
+	rtl_table_write(r, group);
+	rtl_table_release(r);
+
+	return 0;
+}
+
+static void rtldsa_93xx_lag_set_local_group2ports(struct rtl838x_switch_priv *priv, int group,
+						  u64 ports, u64 clear)
+{
+	priv->r->mask_port_reg_be(clear, ports, priv->r->trk_mbr_ctr(group));
+}
+
+int rtldsa_93xx_lag_set_port_members(struct rtl838x_switch_priv *priv, int group,
+				     u64 members, struct netdev_lag_upper_info *info)
+{
+	DECLARE_BITMAP(affected_members, ARRAY_SIZE(priv->ports));
+	bool valid_group;
+	u64 old_members;
+	u64 affected;
+	size_t port;
+	u64 clear;
+	int ret;
+
+	/* calculate modifications of the LAG group */
+	old_members = priv->lags_port_members[group];
+	priv->lags_port_members[group] = members;
+
+	clear = old_members & ~priv->lags_port_members[group];
+	affected = old_members | priv->lags_port_members[group];
+
+	bitmap_clear(affected_members, 0, ARRAY_SIZE(priv->ports));
+	bitmap_from_arr64(affected_members, &affected, BITS_PER_TYPE(affected));
+
+	valid_group = __sw_hweight64(priv->lags_port_members[group]);
+
+	/* apply global group and port settings */
+	ret = rtldsa_93xx_lag_set_group2ports(priv, group, info);
+	if (ret)
+		return ret;
+
+	for_each_set_bit(port, affected_members, ARRAY_SIZE(priv->ports)) {
+		bool valid = priv->lags_port_members[group] & BIT_ULL(port);
+
+		priv->r->lag_set_port2group(group, port, valid);
+	}
+
+	/* apply local group and port settings */
+	priv->r->lag_set_local_group_id(group, group, valid_group);
+	rtldsa_93xx_lag_set_local_group2ports(priv, group, priv->lags_port_members[group], clear);
+
+	for_each_set_bit(port, affected_members, ARRAY_SIZE(priv->ports)) {
+		bool valid = priv->lags_port_members[group] & BIT_ULL(port);
+
+		priv->r->lag_set_local_port2group(group, port, valid);
+	}
+
+	/* write lag table (and maybe additional information) to SRAM */
+	priv->r->lag_sync_tables();
+
+	return 0;
+}
+
 // Currently Unused
 // /* Allocate a 64 bit octet counter located in the LOG HW table */
 // static int rtl83xx_octet_cntr_alloc(struct rtl838x_switch_priv *priv)

@@ -357,13 +357,98 @@
 #define RTL839X_TRK_HASH_IDX_CTRL		(0x2280)
 #define RTL839X_TRK_HASH_CTRL			(0x2284)
 
+#define RTL930X_LOCAL_PORT_TRK_MAP		(0xD0C8)
+#define RTL930X_TRK_ID_CTRL			(0xA3A8)
 #define RTL930X_TRK_MBR_CTRL			(0xA41C)
 #define RTL930X_TRK_HASH_CTRL			(0x9F80)
 #define RTL930X_TRK_CTRL			(0x9F88)
+#define RTL930X_TRK_SHIFT_CTRL			(0x9F8C)
+#define RTL930X_TRK_LOCAL_TBL_REFRESH		(0x9F90)
+#define RTL930X_TRK_LOCAL_TBL			(0x9F94)
+#define RTL930X_TRK_STK_CTRL			(0xA07C)
 
+#define RTL930X_TRK_ID_CTRL_TRK_VALID		BIT(6)
+#define RTL930X_TRK_ID_CTRL_TRK_ID		GENMASK(5, 0)
+
+#define RTL930X_LOCAL_PORT_TRK_MAP_IS_TRK_MBR	BIT(6)
+#define RTL930X_LOCAL_PORT_TRK_MAP_TRK_ID	GENMASK(5, 0)
+
+#define RTL930X_SRC_TRK_MAP_TRK_VALID		BIT(31)
+#define RTL930X_SRC_TRK_MAP_TRK_ID		GENMASK(30, 25)
+
+#define RTL931X_LOCAL_PORT_TRK_MAP		(0x4CAC)
+#define RTL931X_TRK_ID_CTRL			(0xB800)
 #define RTL931X_TRK_MBR_CTRL			(0xB8D0)
 #define RTL931X_TRK_HASH_CTRL			(0xBA70)
 #define RTL931X_TRK_CTRL			(0xBA78)
+#define RTL931X_TRK_SHIFT_CTRL			(0xBA7C)
+#define RTL931X_TRK_LOCAL_TBL_REFRESH		(0xBA80)
+#define RTL931X_TRK_LOCAL_TBL			(0xBA84)
+#define RTL931X_TRK_STK_CTRL			(0xBE94)
+
+#define RLT931X_TRK_ID_CTRL_TRK_ID		GENMASK(6, 0)
+#define RTL931X_TRK_ID_CTRL_TRK_VALID		BIT(7)
+
+#define RTL931X_LOCAL_PORT_TRK_MAP_IS_TRK_MBR	BIT(7)
+#define RTL931X_LOCAL_PORT_TRK_MAP_TRK_ID	GENMASK(6, 0)
+
+#define RTL931X_SRC_TRK_MAP_TRK_ID		GENMASK(30, 24)
+#define RTL931X_SRC_TRK_MAP_TRK_ID_VALID	BIT(31)
+
+#define GENMASK_MOD(high, low)			GENMASK((high) % 32, (low) % 32)
+#define BIT_MOD(bit)				BIT((bit) % 32)
+
+/* RTL930X LAG Table offsets */
+#define RTL930X_LAG_NUM_TX_CANDI		GENMASK_MOD(92, 89)
+#define RTL930X_LAG_L2_HASH_MSK_IDX		BIT_MOD(88)
+#define RTL930X_LAG_IP4_HASH_MSK_IDX		BIT_MOD(87)
+#define RTL930X_LAG_IP6_HASH_MSK_IDX		BIT_MOD(86)
+#define RTL930X_LAG_SEP_DLF_BCAST_EN		BIT_MOD(85)
+#define RTL930X_LAG_SEP_KWN_MC_EN		BIT_MOD(84)
+#define RTL930X_LAG_TRK_DEV7			GENMASK_MOD(83, 80)
+#define RTL930X_LAG_TRK_PORT7			GENMASK_MOD(79, 74)
+#define RTL930X_LAG_TRK_DEV6			GENMASK_MOD(73, 70)
+#define RTL930X_LAG_TRK_PORT6			GENMASK_MOD(69, 64)
+
+#define RTL930X_LAG_TRK_DEV5			GENMASK_MOD(61, 58)
+#define RTL930X_LAG_TRK_PORT5			GENMASK_MOD(57, 52)
+#define RTL930X_LAG_TRK_DEV4			GENMASK_MOD(51, 48)
+#define RTL930X_LAG_TRK_PORT4			GENMASK_MOD(47, 42)
+#define RTL930X_LAG_TRK_DEV3			GENMASK_MOD(41, 38)
+#define RTL930X_LAG_TRK_PORT3			GENMASK_MOD(37, 32)
+
+#define RTL930X_LAG_TRK_DEV2			GENMASK_MOD(29, 26)
+#define RTL930X_LAG_TRK_PORT2			GENMASK_MOD(25, 20)
+#define RTL930X_LAG_TRK_DEV1			GENMASK_MOD(19, 16)
+#define RTL930X_LAG_TRK_PORT1			GENMASK_MOD(15, 10)
+#define RTL930X_LAG_TRK_DEV0			GENMASK_MOD(9, 6)
+#define RTL930X_LAG_TRK_PORT0			GENMASK_MOD(5, 0)
+
+/* RTL931X LAG Table offsets */
+#define RTL931X_LAG_NUM_TX_CANDI		GENMASK_MOD(92, 89)
+#define RTL931X_LAG_L2_HASH_MSK_IDX		BIT_MOD(88)
+#define RTL931X_LAG_IP4_HASH_MSK_IDX		BIT_MOD(87)
+#define RTL931X_LAG_IP6_HASH_MSK_IDX		BIT_MOD(86)
+#define RTL931X_LAG_SEP_FLOOD_EN		BIT_MOD(85)
+#define RTL931X_LAG_SEP_KWN_MC_EN		BIT_MOD(84)
+#define RTL931X_LAG_TRK_DEV7			GENMASK_MOD(83, 80)
+#define RTL931X_LAG_TRK_PORT7			GENMASK_MOD(79, 74)
+#define RTL931X_LAG_TRK_DEV6			GENMASK_MOD(73, 70)
+#define RTL931X_LAG_TRK_PORT6			GENMASK_MOD(69, 64)
+
+#define RTL931X_LAG_TRK_DEV5			GENMASK_MOD(61, 58)
+#define RTL931X_LAG_TRK_PORT5			GENMASK_MOD(57, 52)
+#define RTL931X_LAG_TRK_DEV4			GENMASK_MOD(51, 48)
+#define RTL931X_LAG_TRK_PORT4			GENMASK_MOD(47, 42)
+#define RTL931X_LAG_TRK_DEV3			GENMASK_MOD(41, 38)
+#define RTL931X_LAG_TRK_PORT3			GENMASK_MOD(37, 32)
+
+#define RTL931X_LAG_TRK_DEV2			GENMASK_MOD(29, 26)
+#define RTL931X_LAG_TRK_PORT2			GENMASK_MOD(25, 20)
+#define RTL931X_LAG_TRK_DEV1			GENMASK_MOD(19, 16)
+#define RTL931X_LAG_TRK_PORT1			GENMASK_MOD(15, 10)
+#define RTL931X_LAG_TRK_DEV0			GENMASK_MOD(9, 6)
+#define RTL931X_LAG_TRK_PORT0			GENMASK_MOD(5, 0)
 
 /* Attack prevention */
 #define RTL838X_ATK_PRVNT_PORT_EN		(0x5B00)
@@ -823,6 +908,36 @@ struct rtldsa_counter_state {
 
 	/** @link_stat: Prepared return data for .get_stats64 which can be accessed without mutex */
 	struct rtnl_link_stats64 link_stat;
+};
+
+struct rtldsa_93xx_lag_entry {
+	u32 trk_port0:6;
+	u32 trk_dev0:4;
+	u32 trk_port1:6;
+	u32 trk_dev1:4;
+	u32 trk_port2:6;
+	u32 trk_dev2:4;
+	u32 trk_port3:6;
+	u32 trk_dev3:4;
+	u32 trk_port4:6;
+	u32 trk_dev4:4;
+	u32 trk_port5:6;
+	u32 trk_dev5:4;
+	u32 trk_port6:6;
+	u32 trk_dev6:4;
+	u32 trk_port7:6;
+	u32 trk_dev7:4;
+	u32 sep_kwn_mc_en:1;
+	union {
+		// for rtl930x
+		u32 sep_dlf_bcast_en:1;
+		// for rtl931x
+		u32 sep_flood_en:1;
+	} flood_dlf_bcast;
+	u32 ip6_hash_mask_idx:1;
+	u32 ip4_hash_mask_idx:1;
+	u32 l2_hash_mask_idx:1;
+	u32 num_tx_candi:4;
 };
 
 struct rtl838x_port {
@@ -1300,6 +1415,13 @@ struct rtl838x_reg {
 	int (*lag_set_distribution_algorithm)(struct rtl838x_switch_priv *priv,
 					      int group, int algoidx,
 					      u32 algomask);
+	void (*lag_set_local_group_id)(int local_group, int global_group, bool valid);
+	void (*lag_write_data)(u32 data[], struct rtldsa_93xx_lag_entry *e);
+	void (*lag_fill_data)(u32 data[], struct rtldsa_93xx_lag_entry *e);
+	void (*lag_set_local_port2group)(int group, int port, bool valid);
+	void (*lag_set_port2group)(int group, int port, bool valid);
+	struct table_reg* (*lag_table)(void);
+	void (*lag_sync_tables)(void);
 };
 
 struct rtl838x_switch_priv {
@@ -1380,6 +1502,8 @@ void rtl930x_dbgfs_init(struct rtl838x_switch_priv *priv);
 void rtldsa_93xx_lag_switch_init(struct rtl838x_switch_priv *priv);
 int rtldsa_93xx_lag_set_distribution_algorithm(struct rtl838x_switch_priv *priv,
 					       int group, int algoidx, u32 algomsk);
+int rtldsa_93xx_lag_set_port_members(struct rtl838x_switch_priv *priv, int group,
+				     u64 members, struct netdev_lag_upper_info *info);
 
 void rtldsa_counters_lock_register(struct rtl838x_switch_priv *priv, int port)
 	__acquires(&priv->ports[port].counters.lock);
