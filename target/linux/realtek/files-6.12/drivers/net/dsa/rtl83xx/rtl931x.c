@@ -1924,6 +1924,7 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.enable_flood = rtldsa_931x_enable_flood,
 	.set_receive_management_action = rtldsa_931x_set_receive_management_action,
 	.qos_init = rtldsa_931x_qos_init,
+	.trk_ctrl = RTL931X_TRK_CTRL,
 	.trk_hash_ctrl = RTL931X_TRK_HASH_CTRL,
 	.prepare_lag_fdb = rtldsa_93xx_prepare_lag_fdb,
 	.lag_switch_init = rtldsa_93xx_lag_switch_init,
