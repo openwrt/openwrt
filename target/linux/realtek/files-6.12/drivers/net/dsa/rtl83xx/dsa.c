@@ -2849,8 +2849,36 @@ static bool rtl83xx_lag_can_offload(struct dsa_switch *ds,
 
 static int rtl83xx_port_lag_change(struct dsa_switch *ds, int port)
 {
-	pr_debug("%s: %d\n", __func__, port);
-	/* Nothing to be done... */
+	struct dsa_port *dp = dsa_to_port(ds, port);
+	struct rtl838x_switch_priv *priv = ds->priv;
+	int lag_group;
+	int ret;
+
+	if (priv->family_id != RTL9300_FAMILY_ID && priv->family_id != RTL9310_FAMILY_ID)
+		return 0;
+
+	if (!dp)
+		return -ENOMEM;
+
+	lag_group = rtl93xx_find_lag_group_from_port(priv, port);
+	if (lag_group < 0)
+		return lag_group;
+
+	if (dp->lag_tx_enabled)
+		priv->lag_enabled_ports |= BIT_ULL(port);
+	else
+		priv->lag_enabled_ports &= ~BIT_ULL(port);
+
+	if (priv->r->lag_set_port_members) {
+		/* Set same port members again, the function should check against
+		 * lag_tx_enabled and set egress ports accordingly.
+		 */
+		ret = priv->r->lag_set_port_members(priv, lag_group,
+						    priv->lags_port_members[lag_group],
+						    NULL);
+		if (ret)
+			return ret;
+	}
 
 	return 0;
 }
@@ -2885,6 +2913,7 @@ static int rtl83xx_port_lag_join(struct dsa_switch *ds,
 		priv->lag_non_primary |= BIT_ULL(port);
 
 	priv->lagmembers |= BIT_ULL(port);
+	priv->lag_enabled_ports |= BIT_ULL(port);
 
 	pr_debug("lag_members = %llX\n", priv->lagmembers);
 	err = rtl83xx_lag_add(priv->ds, group, port, info);
@@ -2921,6 +2950,8 @@ static int rtl83xx_port_lag_leave(struct dsa_switch *ds, int port,
 	pr_info("port_lag_del: group %d, port %d\n", group, port);
 	priv->lagmembers &= ~BIT_ULL(port);
 	priv->lag_non_primary &= ~BIT_ULL(port);
+	priv->lag_enabled_ports &= ~BIT_ULL(port);
+
 	pr_debug("lag_members = %llX\n", priv->lagmembers);
 	err = rtl83xx_lag_del(priv->ds, group, port);
 	if (err) {

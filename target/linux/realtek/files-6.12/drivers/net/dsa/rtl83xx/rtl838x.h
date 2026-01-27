@@ -1456,6 +1456,9 @@ struct rtl838x_switch_priv {
 	 */
 	u32 lag_primary[MAX_LAGS];
 
+	/** @lag_enabled_ports: Port (bit) will be used for egress when part of LAG */
+	u64 lag_enabled_ports;
+
 	/**
 	 * @lag_non_primary: Port (bit) is part of any LAG but not the
 	 * first/primary port which needs to be added in the port matrix

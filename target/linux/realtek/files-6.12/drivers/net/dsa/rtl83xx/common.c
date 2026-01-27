@@ -579,6 +579,9 @@ static int rtldsa_93xx_lag_set_group2ports(struct rtl838x_switch_priv *priv, int
 
 	table_pos = 0;
 	for_each_set_bit(i, ports, ARRAY_SIZE(priv->ports)) {
+		if (!(BIT_ULL(i) & priv->lag_enabled_ports))
+			continue;
+
 		group_ports[table_pos] = i;
 		table_pos++;
 	}
