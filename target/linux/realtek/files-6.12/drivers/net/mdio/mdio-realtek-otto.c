@@ -6,6 +6,7 @@
 #include <linux/of.h>
 #include <linux/phy.h>
 #include <linux/platform_device.h>
+#include <linux/regmap.h>
 #include <linux/types.h>
 
 #define RTMDIO_MAX_PORT				57
@@ -31,12 +32,14 @@
 #define RTMDIO_SW_BASE				((volatile void *) 0xBB000000)
 
 /* MDIO bus registers */
+#define RTMDIO_RUN				BIT(0)
+
 #define RTMDIO_838X_CMD_FAIL			0
 #define RTMDIO_838X_CMD_READ_C22		0
 #define RTMDIO_838X_CMD_READ_C45		BIT(1)
 #define RTMDIO_838X_CMD_WRITE_C22		BIT(2)
 #define RTMDIO_838X_CMD_WRITE_C45		BIT(1) | BIT(2)
-#define RTMDIO_838X_CMD_MASK			BIT(1) | BIT(2)
+#define RTMDIO_838X_CMD_MASK			GENMASK(2, 0)
 #define RTMDIO_838X_SMI_GLB_CTRL		(0xa100)
 #define RTMDIO_838X_SMI_ACCESS_PHY_CTRL_0	(0xa1b8)
 #define RTMDIO_838X_SMI_ACCESS_PHY_CTRL_1	(0xa1bc)
@@ -49,7 +52,7 @@
 #define RTMDIO_839X_CMD_READ_C45		BIT(2)
 #define RTMDIO_839X_CMD_WRITE_C22		BIT(3)
 #define RTMDIO_839X_CMD_WRITE_C45		BIT(2) | BIT(3)
-#define RTMDIO_839X_CMD_MASK			BIT(1) | BIT(2) | BIT(3)
+#define RTMDIO_839X_CMD_MASK			GENMASK(3, 0)
 #define RTMDIO_839X_PHYREG_CTRL			(0x03E0)
 #define RTMDIO_839X_PHYREG_PORT_CTRL		(0x03E4)
 #define RTMDIO_839X_PHYREG_ACCESS_CTRL		(0x03DC)
@@ -63,7 +66,7 @@
 #define RTMDIO_930X_CMD_READ_C45		BIT(1)
 #define RTMDIO_930X_CMD_WRITE_C22		BIT(2)
 #define RTMDIO_930X_CMD_WRITE_C45		BIT(1) | BIT(2)
-#define RTMDIO_930X_CMD_MASK			BIT(1) | BIT(2) | BIT(25)
+#define RTMDIO_930X_CMD_MASK			GENMASK(2, 0) | BIT(25)
 #define RTMDIO_930X_SMI_GLB_CTRL		(0xCA00)
 #define RTMDIO_930X_SMI_ACCESS_PHY_CTRL_0	(0xCB70)
 #define RTMDIO_930X_SMI_ACCESS_PHY_CTRL_1	(0xCB74)
@@ -83,7 +86,7 @@
 #define RTMDIO_931X_CMD_READ_C45		BIT(3)
 #define RTMDIO_931X_CMD_WRITE_C22		BIT(4)
 #define RTMDIO_931X_CMD_WRITE_C45		BIT(3) | BIT(4)
-#define RTMDIO_931X_CMD_MASK			BIT(1) | BIT(2) | BIT(3) | BIT(4)
+#define RTMDIO_931X_CMD_MASK			GENMASK(4, 0)
 #define RTMDIO_931X_SMI_PORT_POLLING_CTRL	(0x0CCC)
 #define RTMDIO_931X_SMI_INDRT_ACCESS_BC_CTRL	(0x0C14)
 #define RTMDIO_931X_SMI_GLB_CTRL0		(0x0CC0)
@@ -208,10 +211,11 @@ struct rtmdio_phy_info {
 
 static int rtmdio_run_cmd(struct mii_bus *bus, int cmd, int mask, int regnum, int fail)
 {
+	struct rtmdio_ctrl *ctrl = bus->priv;
 	int ret, val;
 
-	sw_w32_mask(mask, cmd | 1, regnum);
-	ret = readx_poll_timeout(sw_r32, regnum, val, !(val & 1), 20, 500000);
+	ret = regmap_update_bits(ctrl->map, regnum, mask, cmd | RTMDIO_RUN);
+	ret = regmap_read_poll_timeout(ctrl->map, regnum, val, !(val & RTMDIO_RUN), 20, 500000);
 	if (ret)
 		WARN_ONCE(1, "mdio bus access timed out\n");
 	else if (val & fail) {
