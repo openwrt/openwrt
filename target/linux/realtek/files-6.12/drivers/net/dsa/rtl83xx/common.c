@@ -399,9 +399,8 @@ static int rtl83xx_get_l2aging(struct rtl838x_switch_priv *priv)
 int rtl83xx_lag_add(struct dsa_switch *ds, int group, int port, struct netdev_lag_upper_info *info)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
+	int ret;
 	int i;
-	u32 algomsk = 0;
-	u32 algoidx = 0;
 
 	for (i = 0; i < priv->ds->num_lag_ids; i++) {
 		if (priv->lags_port_members[i] & BIT_ULL(port))
@@ -412,31 +411,16 @@ int rtl83xx_lag_add(struct dsa_switch *ds, int group, int port, struct netdev_la
 		return -ENOSPC;
 	}
 
-	switch (info->hash_type) {
-	case NETDEV_LAG_HASH_L2:
-		algomsk |= TRUNK_DISTRIBUTION_ALGO_DMAC_BIT;
-		algomsk |= TRUNK_DISTRIBUTION_ALGO_SMAC_BIT;
-	break;
-	case NETDEV_LAG_HASH_L23:
-		algomsk |= TRUNK_DISTRIBUTION_ALGO_DMAC_BIT;
-		algomsk |= TRUNK_DISTRIBUTION_ALGO_SMAC_BIT;
-		algomsk |= TRUNK_DISTRIBUTION_ALGO_SIP_BIT; /* source ip */
-		algomsk |= TRUNK_DISTRIBUTION_ALGO_DIP_BIT; /* dest ip */
-		algoidx = 1;
-	break;
-	case NETDEV_LAG_HASH_L34:
-		algomsk |= TRUNK_DISTRIBUTION_ALGO_SRC_L4PORT_BIT; /* sport */
-		algomsk |= TRUNK_DISTRIBUTION_ALGO_DST_L4PORT_BIT; /* dport */
-		algomsk |= TRUNK_DISTRIBUTION_ALGO_SIP_BIT; /* source ip */
-		algomsk |= TRUNK_DISTRIBUTION_ALGO_DIP_BIT; /* dest ip */
-		algoidx = 2;
-	break;
-	default:
-		algomsk |= 0x7f;
+	if (priv->r->lag_setup_algomask) {
+		ret = priv->r->lag_setup_algomask(priv, group, info);
+		if (ret != 0)
+			return ret;
 	}
-	priv->r->set_distribution_algorithm(group, algoidx, algomsk);
-	priv->r->mask_port_reg_be(0, BIT_ULL(port), priv->r->trk_mbr_ctr(group));
-	priv->lags_port_members[group] |= BIT_ULL(port);
+
+	ret = priv->r->lag_set_port_members(priv, group,
+					    priv->lags_port_members[group] | BIT_ULL(port), info);
+	if (ret)
+		return ret;
 
 	pr_info("%s: Added port %d to LAG %d. Members now %016llx.\n",
 		__func__, port, group, priv->lags_port_members[group]);
@@ -448,6 +432,7 @@ int rtl83xx_lag_add(struct dsa_switch *ds, int group, int port, struct netdev_la
 int rtl83xx_lag_del(struct dsa_switch *ds, int group, int port)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
+	int ret;
 
 	if (group >= priv->ds->num_lag_ids) {
 		pr_err("%s: LAG %d invalid.\n", __func__, group);
@@ -459,14 +444,54 @@ int rtl83xx_lag_del(struct dsa_switch *ds, int group, int port)
 		return -ENOSPC;
 	}
 
-	/* 0x7f algo mask all */
-	priv->r->mask_port_reg_be(BIT_ULL(port), 0, priv->r->trk_mbr_ctr(group));
-	priv->lags_port_members[group] &= ~BIT_ULL(port);
+	/* Don't touch hash mask bits, as only the port might be removed from
+	 * the LAG group. This means the lag group stays valid with existing
+	 * mask algo bits. If there are no lag members left, then
+	 * rtl83xx_lag_add will reconfigure hash mask when new LAG group is
+	 * created.
+	 */
+	ret = priv->r->lag_set_port_members(priv, group,
+					    priv->lags_port_members[group] & ~BIT_ULL(port),
+					    NULL);
+	if (ret)
+		return ret;
 
 	pr_info("%s: Removed port %d from LAG %d. Members now %016llx.\n",
 		__func__, port, group, priv->lags_port_members[group]);
 
 	return 0;
+}
+
+int rtldsa_83xx_lag_setup_algomask(struct rtl838x_switch_priv *priv, int group,
+				   struct netdev_lag_upper_info *info)
+{
+	u32 algomsk = 0;
+	u32 algoidx = 0;
+
+	switch (info->hash_type) {
+	case NETDEV_LAG_HASH_L2:
+		algomsk |= TRUNK_DISTRIBUTION_ALGO_DMAC_BIT;
+		algomsk |= TRUNK_DISTRIBUTION_ALGO_SMAC_BIT;
+		break;
+	case NETDEV_LAG_HASH_L23:
+		algomsk |= TRUNK_DISTRIBUTION_ALGO_DMAC_BIT;
+		algomsk |= TRUNK_DISTRIBUTION_ALGO_SMAC_BIT;
+		algomsk |= TRUNK_DISTRIBUTION_ALGO_SIP_BIT; /* source ip */
+		algomsk |= TRUNK_DISTRIBUTION_ALGO_DIP_BIT; /* dest ip */
+		algoidx = 1;
+		break;
+	case NETDEV_LAG_HASH_L34:
+		algomsk |= TRUNK_DISTRIBUTION_ALGO_SRC_L4PORT_BIT; /* sport */
+		algomsk |= TRUNK_DISTRIBUTION_ALGO_DST_L4PORT_BIT; /* dport */
+		algomsk |= TRUNK_DISTRIBUTION_ALGO_SIP_BIT; /* source ip */
+		algomsk |= TRUNK_DISTRIBUTION_ALGO_DIP_BIT; /* dest ip */
+		algoidx = 2;
+		break;
+	default:
+		algomsk |= 0x7f;
+	}
+
+	return priv->r->lag_set_distribution_algorithm(priv, group, algoidx, algomsk);
 }
 
 // Currently Unused

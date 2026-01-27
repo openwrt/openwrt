@@ -320,14 +320,16 @@
 #define RTL839X_IGR_BWCTRL_CTRL_LB_THR		(0x1614)
 
 /* Link aggregation (Trunking) */
-#define TRUNK_DISTRIBUTION_ALGO_SPA_BIT		0x01
-#define TRUNK_DISTRIBUTION_ALGO_SMAC_BIT	0x02
-#define TRUNK_DISTRIBUTION_ALGO_DMAC_BIT	0x04
-#define TRUNK_DISTRIBUTION_ALGO_SIP_BIT		0x08
-#define TRUNK_DISTRIBUTION_ALGO_DIP_BIT		0x10
-#define TRUNK_DISTRIBUTION_ALGO_SRC_L4PORT_BIT	0x20
-#define TRUNK_DISTRIBUTION_ALGO_DST_L4PORT_BIT	0x40
-#define TRUNK_DISTRIBUTION_ALGO_MASKALL		0x7F
+#define TRUNK_DISTRIBUTION_ALGO_SPA_BIT         BIT(0)
+#define TRUNK_DISTRIBUTION_ALGO_SMAC_BIT        BIT(1)
+#define TRUNK_DISTRIBUTION_ALGO_DMAC_BIT        BIT(2)
+
+#define TRUNK_DISTRIBUTION_ALGO_SIP_BIT         BIT(3)
+#define TRUNK_DISTRIBUTION_ALGO_DIP_BIT         BIT(4)
+#define TRUNK_DISTRIBUTION_ALGO_SRC_L4PORT_BIT  BIT(5)
+#define TRUNK_DISTRIBUTION_ALGO_DST_L4PORT_BIT  BIT(6)
+#define TRUNK_DISTRIBUTION_ALGO_VLAN_BIT        BIT(7)
+#define TRUNK_DISTRIBUTION_ALGO_MASKALL         0x7F
 
 #define TRUNK_DISTRIBUTION_ALGO_L2_SPA_BIT	0x01
 #define TRUNK_DISTRIBUTION_ALGO_L2_SMAC_BIT	0x02
@@ -1210,6 +1212,8 @@ struct rtl838x_reg {
 	int isr_port_link_sts_chg;
 	int imr_port_link_sts_chg;
 	int imr_glb;
+	int trk_ctrl;
+	int trk_hash_ctrl;
 	void (*vlan_tables_read)(u32 vlan, struct rtl838x_vlan_info *info);
 	void (*vlan_set_tagged)(u32 vlan, struct rtl838x_vlan_info *info);
 	void (*vlan_set_untagged)(u32 vlan, u64 portmask);
@@ -1242,7 +1246,6 @@ struct rtl838x_reg {
 	void (*write_l2_entry_using_hash)(u32 hash, u32 pos, struct rtl838x_l2_entry *e);
 	u64 (*read_cam)(int idx, struct rtl838x_l2_entry *e);
 	void (*write_cam)(int idx, struct rtl838x_l2_entry *e);
-	int (*trk_mbr_ctr)(int group);
 	int rma_bpdu_fld_pmask;
 	int spcl_trap_eapol_ctrl;
 	void (*init_eee)(struct rtl838x_switch_priv *priv, bool enable);
@@ -1273,10 +1276,17 @@ struct rtl838x_reg {
 	void (*get_l3_router_mac)(u32 idx, struct rtl93xx_rt_mac *m);
 	void (*set_l3_router_mac)(u32 idx, struct rtl93xx_rt_mac *m);
 	void (*set_l3_egress_intf)(int idx, struct rtl838x_l3_intf *intf);
-	void (*set_distribution_algorithm)(int group, int algoidx, u32 algomask);
 	void (*set_receive_management_action)(int port, rma_ctrl_t type, action_type_t action);
 	void (*led_init)(struct rtl838x_switch_priv *priv);
 	void (*qos_init)(struct rtl838x_switch_priv *priv);
+	int (*trk_mbr_ctr)(int group);
+	int (*lag_set_port_members)(struct rtl838x_switch_priv *priv, int group, u64 members,
+				    struct netdev_lag_upper_info *info);
+	int (*lag_setup_algomask)(struct rtl838x_switch_priv *priv, int group,
+				  struct netdev_lag_upper_info *info);
+	int (*lag_set_distribution_algorithm)(struct rtl838x_switch_priv *priv,
+					      int group, int algoidx,
+					      u32 algomask);
 };
 
 struct rtl838x_switch_priv {

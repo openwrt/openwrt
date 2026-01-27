@@ -2380,7 +2380,8 @@ static void rtl930x_set_egr_filter(int port,  enum egr_filter state)
 		    RTL930X_VLAN_PORT_EGR_FLTR + (((port / 29) << 2)));
 }
 
-static void rtl930x_set_distribution_algorithm(int group, int algoidx, u32 algomsk)
+static int rtl930x_set_distribution_algorithm(struct rtl838x_switch_priv *priv, int group,
+					      int algoidx, u32 algomsk)
 {
 	u32 l3shift = 0;
 	u32 newmask = 0;
@@ -2418,6 +2419,7 @@ static void rtl930x_set_distribution_algorithm(int group, int algoidx, u32 algom
 	}
 
 	sw_w32(newmask << l3shift, RTL930X_TRK_HASH_CTRL + (algoidx << 2));
+	return 0;
 }
 
 static void rtldsa_930x_led_get_forced(const struct device_node *node,
@@ -2696,10 +2698,10 @@ const struct rtl838x_reg rtl930x_reg = {
 	.set_l3_router_mac = rtl930x_set_l3_router_mac,
 	.set_l3_egress_intf = rtl930x_set_l3_egress_intf,
 #endif
-	.set_distribution_algorithm = rtl930x_set_distribution_algorithm,
 	.led_init = rtl930x_led_init,
 	.enable_learning = rtldsa_930x_enable_learning,
 	.enable_flood = rtldsa_930x_enable_flood,
 	.set_receive_management_action = rtldsa_930x_set_receive_management_action,
 	.qos_init = rtldsa_930x_qos_init,
+	.lag_set_distribution_algorithm = rtl930x_set_distribution_algorithm,
 };
