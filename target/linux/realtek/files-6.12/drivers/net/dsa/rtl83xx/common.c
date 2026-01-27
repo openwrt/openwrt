@@ -462,6 +462,55 @@ int rtl83xx_lag_del(struct dsa_switch *ds, int group, int port)
 	return 0;
 }
 
+int rtldsa_93xx_lag_set_distribution_algorithm(struct rtl838x_switch_priv *priv,
+					       int group, int algoidx, u32 algomsk)
+{
+	u32 newmask = 0;
+	bool is_l3 = 0;
+
+	if (algomsk & TRUNK_DISTRIBUTION_ALGO_SIP_BIT) {
+		is_l3 = true;
+		newmask |= TRUNK_DISTRIBUTION_ALGO_L3_SIP_BIT;
+	}
+	if (algomsk & TRUNK_DISTRIBUTION_ALGO_DIP_BIT) {
+		is_l3 = true;
+		newmask |= TRUNK_DISTRIBUTION_ALGO_L3_DIP_BIT;
+	}
+	if (algomsk & TRUNK_DISTRIBUTION_ALGO_SRC_L4PORT_BIT) {
+		is_l3 = true;
+		newmask |= TRUNK_DISTRIBUTION_ALGO_L3_SRC_L4PORT_BIT;
+	}
+
+	if (algomsk & TRUNK_DISTRIBUTION_ALGO_DST_L4PORT_BIT) {
+		is_l3 = true;
+		newmask |= TRUNK_DISTRIBUTION_ALGO_L3_DST_L4PORT_BIT;
+	}
+
+	if (is_l3) {
+		if (algomsk & TRUNK_DISTRIBUTION_ALGO_SPA_BIT)
+			newmask |= TRUNK_DISTRIBUTION_ALGO_L3_SPA_BIT;
+		if (algomsk & TRUNK_DISTRIBUTION_ALGO_SMAC_BIT)
+			newmask |= TRUNK_DISTRIBUTION_ALGO_L3_SMAC_BIT;
+		if (algomsk & TRUNK_DISTRIBUTION_ALGO_DMAC_BIT)
+			newmask |= TRUNK_DISTRIBUTION_ALGO_L3_DMAC_BIT;
+		if (algomsk & TRUNK_DISTRIBUTION_ALGO_VLAN_BIT)
+			newmask |= TRUNK_DISTRIBUTION_ALGO_L3_VLAN_BIT;
+	} else {
+		if (algomsk & TRUNK_DISTRIBUTION_ALGO_SPA_BIT)
+			newmask |= TRUNK_DISTRIBUTION_ALGO_L2_SPA_BIT;
+		if (algomsk & TRUNK_DISTRIBUTION_ALGO_SMAC_BIT)
+			newmask |= TRUNK_DISTRIBUTION_ALGO_L2_SMAC_BIT;
+		if (algomsk & TRUNK_DISTRIBUTION_ALGO_DMAC_BIT)
+			newmask |= TRUNK_DISTRIBUTION_ALGO_L2_DMAC_BIT;
+		if (algomsk & TRUNK_DISTRIBUTION_ALGO_VLAN_BIT)
+			newmask |= TRUNK_DISTRIBUTION_ALGO_L2_VLAN_BIT;
+	}
+
+	sw_w32(newmask, priv->r->trk_hash_ctrl + (algoidx << 2));
+
+	return 0;
+}
+
 int rtldsa_83xx_lag_setup_algomask(struct rtl838x_switch_priv *priv, int group,
 				   struct netdev_lag_upper_info *info)
 {
