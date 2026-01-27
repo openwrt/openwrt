@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
+#include <linux/fwnode.h>
 #include <linux/fwnode_mdio.h>
-#include <linux/mutex.h>
-#include <linux/of_mdio.h>
-#include <linux/of_net.h>
-#include <linux/of_platform.h>
+#include <linux/mfd/syscon.h>
+#include <linux/of.h>
 #include <linux/phy.h>
 #include <linux/platform_device.h>
 #include <linux/types.h>
@@ -175,6 +174,7 @@
 
 
 struct rtmdio_ctrl {
+	struct regmap *map;
 	const struct rtmdio_config *cfg;
 	int page[RTMDIO_MAX_PORT];
 	bool raw[RTMDIO_MAX_PORT];
@@ -899,6 +899,10 @@ static int rtmdio_probe(struct platform_device *pdev)
 
 	ctrl = bus->priv;
 	ctrl->cfg = (const struct rtmdio_config *)device_get_match_data(dev);
+	ctrl->map = syscon_node_to_regmap(pdev->dev.of_node->parent);
+	if (IS_ERR(ctrl->map))
+		return PTR_ERR(ctrl->map);
+
 	for (addr = 0; addr < RTMDIO_MAX_PORT; addr++)
 		ctrl->smi_bus[addr] = -1;
 
