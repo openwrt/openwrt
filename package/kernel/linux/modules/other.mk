@@ -990,7 +990,7 @@ $(eval $(call KernelPackage,tpm))
 define KernelPackage/tpm-tis
   SUBMENU:=$(OTHER_MENU)
   TITLE:=TPM TIS 1.2 Interface / TPM 2.0 FIFO Interface
-	DEPENDS:= @(TARGET_x86||TARGET_armsr) +kmod-tpm
+	DEPENDS:= @(TARGET_x86||TARGET_armsr||TARGET_imx) +kmod-tpm
   KCONFIG:= CONFIG_TCG_TIS
   FILES:= \
 	$(LINUX_DIR)/drivers/char/tpm/tpm_tis.ko \
@@ -1006,6 +1006,27 @@ define KernelPackage/tpm-tis/description
 endef
 
 $(eval $(call KernelPackage,tpm-tis))
+
+define KernelPackage/tpm-tis-spi
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=TPM TIS 1.3 Interface SPI Interface
+	DEPENDS:= +kmod-tpm-tis +kmod-spi-dev
+  KCONFIG:= CONFIG_TCG_TIS_SPI \
+	CONFIG_TCG_TIS_SPI_CR50=n
+  FILES:= \
+	$(LINUX_DIR)/drivers/char/tpm/tpm_tis_spi.ko
+  AUTOLOAD:=$(call AutoLoad,20,tpm_tis_spi,1)
+endef
+
+define KernelPackage/tpm-tis-spi/description
+	If you have a TPM security chip which is connected to a regular,
+	non-tcg SPI master that is compliant with the
+	TCG TIS 1.3 TPM specification (TPM1.2) or the TCG PTP FIFO
+	specification (TPM2.0) say Yes and it will be accessible from
+	within Linux.
+endef
+
+$(eval $(call KernelPackage,tpm-tis-spi))
 
 define KernelPackage/tpm-i2c-atmel
   SUBMENU:=$(OTHER_MENU)
