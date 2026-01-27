@@ -2377,8 +2377,28 @@ static bool rtldsa_83xx_lag_can_offload(struct dsa_switch *ds,
 
 static int rtldsa_port_lag_change(struct dsa_switch *ds, int port)
 {
-	pr_debug("%s: %d\n", __func__, port);
-	/* Nothing to be done... */
+	struct dsa_port *dp = dsa_to_port(ds, port);
+	struct rtl838x_switch_priv *priv = ds->priv;
+	int lag_group;
+	int ret;
+
+	if (!dp)
+		return -EINVAL;
+
+	lag_group = rtldsa_find_lag_group_from_port(priv, port);
+	if (lag_group < 0)
+		return lag_group;
+
+	if (priv->r->lag_set_port_members) {
+		/* Set same port members again, the function should check against
+		 * lag_tx_enabled and set egress ports accordingly.
+		 */
+		ret = priv->r->lag_set_port_members(priv, lag_group,
+						    priv->lags_port_members[lag_group],
+						    NULL);
+		if (ret)
+			return ret;
+	}
 
 	return 0;
 }
