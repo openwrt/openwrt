@@ -1,0 +1,16 @@
+--- a/src/forward.c
++++ b/src/forward.c
+@@ -782,13 +782,6 @@
+ 	server->flags |= SERV_WARNED_RECURSIVE;
+     }  
+ 
+-  if (header->hb3 & HB3_TC)
+-    {
+-      log_query(F_UPSTREAM, NULL, NULL, "truncated", 0);
+-      header->ancount = htons(0);
+-      header->nscount = htons(0);
+-      header->arcount = htons(0);
+-    }
+ 
+   if  (!(header->hb3 & HB3_TC) && (!bogusanswer || (header->hb4 & HB4_CD)))
+     {
