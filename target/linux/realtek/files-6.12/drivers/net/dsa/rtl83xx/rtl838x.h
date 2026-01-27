@@ -359,9 +359,11 @@
 
 #define RTL930X_TRK_MBR_CTRL			(0xA41C)
 #define RTL930X_TRK_HASH_CTRL			(0x9F80)
+#define RTL930X_TRK_CTRL			(0x9F88)
 
 #define RTL931X_TRK_MBR_CTRL			(0xB8D0)
 #define RTL931X_TRK_HASH_CTRL			(0xBA70)
+#define RTL931X_TRK_CTRL			(0xBA78)
 
 /* Attack prevention */
 #define RTL838X_ATK_PRVNT_PORT_EN		(0x5B00)
@@ -462,6 +464,16 @@
 #define RTL838X_LED_SW_P_CTRL			(0xA01C)
 #define RTL838X_LED_SW_P_CTRL_PORT(p)		(RTL838X_LED_SW_P_CTRL + (((p) << 2)))
 
+#define RTL93XX_HASH_MASK_INDEX_L2	(0)
+#define RTL93XX_HASH_MASK_INDEX_L23	(1)
+
+#define RTL93XX_TRK_CTRL_NON_TMN_TUNNEL_HASH_SEL	BIT(0)
+#define RTL93XX_TRK_CTRL_SEP_PORT_SEL			BIT(1)
+#define RTL93XX_TRK_CTRL_TRK_STAND_ALONE_MODE		BIT(2)
+#define RTL93XX_TRK_CTRL_STK_HASH_CAL			BIT(3)
+#define RTL93XX_TRK_CTRL_LOCAL_FIRST			BIT(4)
+#define RTL93XX_TRK_CTRL_CONGST_AVOID			BIT(5)
+#define RTL93XX_TRK_CTRL_LINK_DOWN_AVOID		BIT(6)
 
 /* special port action controls */
 /* values:
@@ -1280,6 +1292,7 @@ struct rtl838x_reg {
 	void (*led_init)(struct rtl838x_switch_priv *priv);
 	void (*qos_init)(struct rtl838x_switch_priv *priv);
 	int (*trk_mbr_ctr)(int group);
+	void (*lag_switch_init)(struct rtl838x_switch_priv *priv);
 	int (*lag_set_port_members)(struct rtl838x_switch_priv *priv, int group, u64 members,
 				    struct netdev_lag_upper_info *info);
 	int (*lag_setup_algomask)(struct rtl838x_switch_priv *priv, int group,
@@ -1364,6 +1377,7 @@ struct rtl838x_switch_priv {
 
 void rtl838x_dbgfs_init(struct rtl838x_switch_priv *priv);
 void rtl930x_dbgfs_init(struct rtl838x_switch_priv *priv);
+void rtldsa_93xx_lag_switch_init(struct rtl838x_switch_priv *priv);
 int rtldsa_93xx_lag_set_distribution_algorithm(struct rtl838x_switch_priv *priv,
 					       int group, int algoidx, u32 algomsk);
 

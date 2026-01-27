@@ -1674,6 +1674,9 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		break;
 	}
 
+	if (priv->r->lag_switch_init)
+		priv->r->lag_switch_init(priv);
+
 	return 0;
 
 err_register_fib_nb:
@@ -1684,6 +1687,35 @@ err_register_switch:
 	destroy_workqueue(priv->wq);
 
 	return err;
+}
+
+void rtldsa_93xx_lag_switch_init(struct rtl838x_switch_priv *priv)
+{
+	u32 trk_ctrlmask = 0;
+	u32 algomask;
+
+	trk_ctrlmask |= RTL93XX_TRK_CTRL_NON_TMN_TUNNEL_HASH_SEL;
+	trk_ctrlmask |= RTL93XX_TRK_CTRL_TRK_STAND_ALONE_MODE;
+	trk_ctrlmask |= RTL93XX_TRK_CTRL_LOCAL_FIRST;
+	trk_ctrlmask |= RTL93XX_TRK_CTRL_LINK_DOWN_AVOID;
+
+	sw_w32(trk_ctrlmask, priv->r->trk_ctrl);
+
+	/* Setup NETDEV_LAG_HASH_L2 on slot 0 */
+	algomask = TRUNK_DISTRIBUTION_ALGO_SPA_BIT |
+		   TRUNK_DISTRIBUTION_ALGO_SMAC_BIT |
+		   TRUNK_DISTRIBUTION_ALGO_DMAC_BIT |
+		   TRUNK_DISTRIBUTION_ALGO_VLAN_BIT;
+	priv->r->lag_set_distribution_algorithm(priv, 0, RTL93XX_HASH_MASK_INDEX_L2, algomask);
+
+	/* Setup NETDEV_LAG_HASH_L23 on slot 1 */
+	algomask = TRUNK_DISTRIBUTION_ALGO_SPA_BIT |
+		   TRUNK_DISTRIBUTION_ALGO_SMAC_BIT |
+		   TRUNK_DISTRIBUTION_ALGO_DMAC_BIT |
+		   TRUNK_DISTRIBUTION_ALGO_VLAN_BIT |
+		   TRUNK_DISTRIBUTION_ALGO_SIP_BIT |
+		   TRUNK_DISTRIBUTION_ALGO_DIP_BIT;
+	priv->r->lag_set_distribution_algorithm(priv, 0, RTL93XX_HASH_MASK_INDEX_L23, algomask);
 }
 
 static void rtl83xx_sw_remove(struct platform_device *pdev)
