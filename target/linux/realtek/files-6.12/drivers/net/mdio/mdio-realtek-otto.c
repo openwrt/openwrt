@@ -187,11 +187,11 @@ struct rtmdio_ctrl {
 struct rtmdio_config {
 	int cpu_port;
 	int raw_page;
-	int (*read_mmd_phy)(u32 port, u32 addr, u32 reg, u32 *val);
-	int (*read_phy)(u32 port, u32 page, u32 reg, u32 *val);
+	int (*read_mmd_phy)(struct mii_bus *bus, u32 port, u32 addr, u32 reg, u32 *val);
+	int (*read_phy)(struct mii_bus *bus, u32 port, u32 page, u32 reg, u32 *val);
 	int (*reset)(struct mii_bus *bus);
-	int (*write_mmd_phy)(u32 port, u32 addr, u32 reg, u32 val);
-	int (*write_phy)(u32 port, u32 page, u32 reg, u32 val);
+	int (*write_mmd_phy)(struct mii_bus *bus, u32 port, u32 addr, u32 reg, u32 val);
+	int (*write_phy)(struct mii_bus *bus, u32 port, u32 page, u32 reg, u32 val);
 };
 
 struct rtmdio_phy_info {
@@ -231,7 +231,7 @@ static int rtmdio_838x_run_cmd(int cmd)
 }
 
 /* Reads a register in a page from the PHY */
-static int rtmdio_838x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
+static int rtmdio_838x_read_phy(struct mii_bus *bus, u32 port, u32 page, u32 reg, u32 *val)
 {
 	u32 park_page = 0x1f;
 	int err;
@@ -246,7 +246,7 @@ static int rtmdio_838x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 }
 
 /* Write to a register in a page of the PHY */
-static int rtmdio_838x_write_phy(u32 port, u32 page, u32 reg, u32 val)
+static int rtmdio_838x_write_phy(struct mii_bus *bus, u32 port, u32 page, u32 reg, u32 val)
 {
 	u32 park_page = 0x1f;
 
@@ -258,7 +258,7 @@ static int rtmdio_838x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 }
 
 /* Read an mmd register of a PHY */
-static int rtmdio_838x_read_mmd_phy(u32 port, u32 addr, u32 reg, u32 *val)
+static int rtmdio_838x_read_mmd_phy(struct mii_bus *bus, u32 port, u32 addr, u32 reg, u32 *val)
 {
 	int err;
 
@@ -273,7 +273,7 @@ static int rtmdio_838x_read_mmd_phy(u32 port, u32 addr, u32 reg, u32 *val)
 }
 
 /* Write to an mmd register of a PHY */
-static int rtmdio_838x_write_mmd_phy(u32 port, u32 addr, u32 reg, u32 val)
+static int rtmdio_838x_write_mmd_phy(struct mii_bus *bus, u32 port, u32 addr, u32 reg, u32 val)
 {
 	sw_w32(1 << port, RTMDIO_838X_SMI_ACCESS_PHY_CTRL_0);
 	sw_w32_mask(0xffff0000, val << 16, RTMDIO_838X_SMI_ACCESS_PHY_CTRL_2);
@@ -291,7 +291,7 @@ static int rtmdio_839x_run_cmd(int cmd)
 			      RTMDIO_839X_PHYREG_ACCESS_CTRL, RTMDIO_839X_CMD_FAIL);
 }
 
-static int rtmdio_839x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
+static int rtmdio_839x_read_phy(struct mii_bus *bus, u32 port, u32 page, u32 reg, u32 *val)
 {
 	int err;
 	u32 v;
@@ -307,7 +307,7 @@ static int rtmdio_839x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 	return err;
 }
 
-static int rtmdio_839x_write_phy(u32 port, u32 page, u32 reg, u32 val)
+static int rtmdio_839x_write_phy(struct mii_bus *bus, u32 port, u32 page, u32 reg, u32 val)
 {
 	u32 v;
 
@@ -322,7 +322,7 @@ static int rtmdio_839x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 }
 
 /* Read an mmd register of the PHY */
-static int rtmdio_839x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
+static int rtmdio_839x_read_mmd_phy(struct mii_bus *bus, u32 port, u32 devnum, u32 regnum, u32 *val)
 {
 	int err;
 
@@ -336,7 +336,7 @@ static int rtmdio_839x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
 }
 
 /* Write to an mmd register of the PHY */
-static int rtmdio_839x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
+static int rtmdio_839x_write_mmd_phy(struct mii_bus *bus, u32 port, u32 devnum, u32 regnum, u32 val)
 {
 	sw_w32(BIT_ULL(port), RTMDIO_839X_PHYREG_PORT_CTRL);
 	sw_w32(BIT_ULL(port) >> 32, RTMDIO_839X_PHYREG_PORT_CTRL + 4);
@@ -354,7 +354,7 @@ static int rtmdio_930x_run_cmd(int cmd)
 			      RTMDIO_930X_SMI_ACCESS_PHY_CTRL_1, RTMDIO_930X_CMD_FAIL);
 }
 
-static int rtmdio_930x_write_phy(u32 port, u32 page, u32 reg, u32 val)
+static int rtmdio_930x_write_phy(struct mii_bus *bus, u32 port, u32 page, u32 reg, u32 val)
 {
 	u32 v;
 
@@ -366,7 +366,7 @@ static int rtmdio_930x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 	return rtmdio_930x_run_cmd(RTMDIO_930X_CMD_WRITE_C22);
 }
 
-static int rtmdio_930x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
+static int rtmdio_930x_read_phy(struct mii_bus *bus, u32 port, u32 page, u32 reg, u32 *val)
 {
 	int err;
 	u32 v;
@@ -382,7 +382,7 @@ static int rtmdio_930x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 }
 
 /* Write to an mmd register of the PHY */
-static int rtmdio_930x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
+static int rtmdio_930x_write_mmd_phy(struct mii_bus *bus, u32 port, u32 devnum, u32 regnum, u32 val)
 {
 	sw_w32(BIT(port), RTMDIO_930X_SMI_ACCESS_PHY_CTRL_0);
 	sw_w32_mask(0xffff << 16, val << 16, RTMDIO_930X_SMI_ACCESS_PHY_CTRL_2);
@@ -392,7 +392,7 @@ static int rtmdio_930x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
 }
 
 /* Read an mmd register of the PHY */
-static int rtmdio_930x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
+static int rtmdio_930x_read_mmd_phy(struct mii_bus *bus, u32 port, u32 devnum, u32 regnum, u32 *val)
 {
 	int err ;
 
@@ -413,7 +413,7 @@ static int rtmdio_931x_run_cmd(int cmd)
 			      RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_0, RTMDIO_931X_CMD_FAIL);
 }
 
-static int rtmdio_931x_write_phy(u32 port, u32 page, u32 reg, u32 val)
+static int rtmdio_931x_write_phy(struct mii_bus *bus, u32 port, u32 page, u32 reg, u32 val)
 {
 	sw_w32(0, RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_2);
 	sw_w32(0, RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_2 + 4);
@@ -425,7 +425,7 @@ static int rtmdio_931x_write_phy(u32 port, u32 page, u32 reg, u32 val)
 	return rtmdio_931x_run_cmd(RTMDIO_931X_CMD_WRITE_C22);
 }
 
-static int rtmdio_931x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
+static int rtmdio_931x_read_phy(struct mii_bus *bus, u32 port, u32 page, u32 reg, u32 *val)
 {
 	int err;
 
@@ -439,7 +439,7 @@ static int rtmdio_931x_read_phy(u32 port, u32 page, u32 reg, u32 *val)
 }
 
 /* Read an mmd register of the PHY */
-static int rtmdio_931x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
+static int rtmdio_931x_read_mmd_phy(struct mii_bus *bus, u32 port, u32 devnum, u32 regnum, u32 *val)
 {
 	int err;
 
@@ -453,7 +453,7 @@ static int rtmdio_931x_read_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 *val)
 }
 
 /* Write to an mmd register of the PHY */
-static int rtmdio_931x_write_mmd_phy(u32 port, u32 devnum, u32 regnum, u32 val)
+static int rtmdio_931x_write_mmd_phy(struct mii_bus *bus, u32 port, u32 devnum, u32 regnum, u32 val)
 {
 	u64 mask = BIT_ULL(port);
 
@@ -475,7 +475,7 @@ static int rtmdio_read_c45(struct mii_bus *bus, int addr, int devnum, int regnum
 	if (addr >= ctrl->cfg->cpu_port)
 		return -ENODEV;
 
-	err = (*ctrl->cfg->read_mmd_phy)(addr, devnum, regnum, &val);
+	err = (*ctrl->cfg->read_mmd_phy)(bus, addr, devnum, regnum, &val);
 	pr_debug("rd_MMD(adr=%d, dev=%d, reg=%d) = %d, err = %d\n",
 		 addr, devnum, regnum, val, err);
 	return err ? err : val;
@@ -494,7 +494,7 @@ static int rtmdio_read(struct mii_bus *bus, int addr, int regnum)
 
 	ctrl->raw[addr] = (ctrl->page[addr] == ctrl->cfg->raw_page);
 
-	err = (*ctrl->cfg->read_phy)(addr, ctrl->page[addr], regnum, &val);
+	err = (*ctrl->cfg->read_phy)(bus, addr, ctrl->page[addr], regnum, &val);
 	pr_debug("rd_PHY(adr=%d, pag=%d, reg=%d) = %d, err = %d\n",
 		 addr, ctrl->page[addr], regnum, val, err);
 	return err ? err : val;
@@ -508,7 +508,7 @@ static int rtmdio_write_c45(struct mii_bus *bus, int addr, int devnum, int regnu
 	if (addr >= ctrl->cfg->cpu_port)
 		return -ENODEV;
 
-	err = (*ctrl->cfg->write_mmd_phy)(addr, devnum, regnum, val);
+	err = (*ctrl->cfg->write_mmd_phy)(bus, addr, devnum, regnum, val);
 	pr_debug("wr_MMD(adr=%d, dev=%d, reg=%d, val=%d) err = %d\n",
 		 addr, devnum, regnum, val, err);
 	return err;
@@ -530,7 +530,7 @@ static int rtmdio_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 	if (!ctrl->raw[addr] && (regnum != RTMDIO_PAGE_SELECT || page == ctrl->cfg->raw_page)) {
 		ctrl->raw[addr] = (page == ctrl->cfg->raw_page);
 
-		err = (*ctrl->cfg->write_phy)(addr, page, regnum, val);
+		err = (*ctrl->cfg->write_phy)(bus, addr, page, regnum, val);
 		pr_debug("wr_PHY(adr=%d, pag=%d, reg=%d, val=%d) err = %d\n",
 			 addr, page, regnum, val, err);
 		return err;
