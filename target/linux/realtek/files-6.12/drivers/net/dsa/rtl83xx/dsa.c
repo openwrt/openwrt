@@ -2345,6 +2345,26 @@ static int rtl83xx_find_l2_cam_entry(struct rtl838x_switch_priv *priv, u64 seed,
 	return idx;
 }
 
+/**
+ * rtl93xx_find_lag_group_from_port() - Find lag group of current port
+ * @priv: private data of rtldsa switch
+ * @port: port id of potential LAG member
+ * Return: -ENOENT when port does not belong to any lag group, lag id otherwise
+ */
+static int rtl93xx_find_lag_group_from_port(struct rtl838x_switch_priv *priv, int port)
+{
+	if (!(priv->lagmembers & BIT_ULL(port)))
+		return -ENOENT;
+
+	/* port is a lag member */
+	for (int lag_group = 0; lag_group < MAX_LAGS; lag_group++) {
+		if (priv->lags_port_members[lag_group] & BIT_ULL(port))
+			return lag_group;
+	}
+
+	return -ENOENT;
+}
+
 static int rtl83xx_port_fdb_add(struct dsa_switch *ds, int port,
 				const unsigned char *addr, u16 vid,
 				const struct dsa_db db)
@@ -2355,9 +2375,18 @@ static int rtl83xx_port_fdb_add(struct dsa_switch *ds, int port,
 	int err = 0, idx;
 	u64 seed = priv->r->l2_hash_seed(mac, vid);
 
-	if (priv->lag_non_primary & BIT_ULL(port)) {
-		pr_debug("%s: %d is lag slave. ignore\n", __func__, port);
-		return 0;
+	if (priv->family_id == RTL9300_FAMILY_ID || priv->family_id == RTL9310_FAMILY_ID) {
+		int lag_group = rtl93xx_find_lag_group_from_port(priv, port);
+
+		if (lag_group >= 0) {
+			e.is_trunk = true;
+			e.trunk = lag_group;
+		}
+	} else if (priv->family_id == RTL8380_FAMILY_ID || priv->family_id == RTL8380_FAMILY_ID) {
+		if (priv->lag_non_primary & BIT_ULL(port)) {
+			pr_debug("%s: %d is lag slave. ignore\n", __func__, port);
+			return 0;
+		}
 	}
 
 	mutex_lock(&priv->reg_mutex);
@@ -2399,6 +2428,16 @@ static int rtl83xx_port_fdb_del(struct dsa_switch *ds, int port,
 	u64 seed = priv->r->l2_hash_seed(mac, vid);
 
 	pr_debug("In %s, mac %llx, vid: %d\n", __func__, mac, vid);
+
+	if (priv->family_id == RTL9300_FAMILY_ID || priv->family_id == RTL9310_FAMILY_ID) {
+		int lag_group = rtl93xx_find_lag_group_from_port(priv, port);
+
+		if (lag_group >= 0) {
+			e.is_trunk = true;
+			e.trunk = lag_group;
+		}
+	}
+
 	mutex_lock(&priv->reg_mutex);
 
 	idx = rtl83xx_find_l2_hash_entry(priv, seed, true, &e);
@@ -2440,6 +2479,10 @@ static int rtl83xx_port_fdb_dump(struct dsa_switch *ds, int port,
 		if (!e.valid)
 			continue;
 
+		// Map trunk fdb entries to it's primary ports
+		if (e.is_trunk)
+			e.port = priv->lag_primary[e.trunk];
+
 		if (e.port == port || e.port == RTL930X_PORT_IGNORE)
 			cb(e.mac, e.vid, e.is_static, data);
 
@@ -2452,6 +2495,9 @@ static int rtl83xx_port_fdb_dump(struct dsa_switch *ds, int port,
 
 		if (!e.valid)
 			continue;
+
+		if (e.is_trunk)
+			e.port = priv->lag_primary[e.trunk];
 
 		if (e.port == port)
 			cb(e.mac, e.vid, e.is_static, data);
@@ -2874,7 +2920,6 @@ static int rtl83xx_port_lag_leave(struct dsa_switch *ds, int port,
 	}
 	pr_info("port_lag_del: group %d, port %d\n", group, port);
 	priv->lagmembers &= ~BIT_ULL(port);
-	priv->lag_primary[group] = -1;
 	priv->lag_non_primary &= ~BIT_ULL(port);
 	pr_debug("lag_members = %llX\n", priv->lagmembers);
 	err = rtl83xx_lag_del(priv->ds, group, port);
@@ -2882,6 +2927,19 @@ static int rtl83xx_port_lag_leave(struct dsa_switch *ds, int port,
 		err = -EINVAL;
 		goto out;
 	}
+
+	/* To re-elect primary interface, just remove the first interface in
+	 * this-group's interfaces from non-primary
+	 */
+	if (priv->lags_port_members[group]) {
+		priv->lag_primary[group] = fls64(priv->lags_port_members[group]);
+		priv->lag_non_primary &= ~BIT_ULL(priv->lag_primary[group]);
+	}
+
+	/* No need to update fdb entries since they make use of trunk_id for entry.
+	 * The primary interface is only calculated at time of
+	 * port_fdb_dump
+	 */
 
 out:
 	mutex_unlock(&priv->reg_mutex);
