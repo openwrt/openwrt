@@ -15,19 +15,7 @@ Signed-off-by: Stefan Kalscheuer <stefan@stklcode.de>
 
 --- a/arch/arm64/boot/dts/marvell/armada-3720-uDPU.dts
 +++ b/arch/arm64/boot/dts/marvell/armada-3720-uDPU.dts
-@@ -8,6 +8,11 @@
- 	model = "Methode uDPU Board";
- 	compatible = "methode,udpu", "marvell,armada3720", "marvell,armada3710";
- 
-+	aliases {
-+		ethernet0 = &eth0;
-+		ethernet1 = &eth1;
-+	};
-+
- 	sfp_eth0: sfp-eth0 {
- 		compatible = "sff,sfp";
- 		i2c-bus = <&i2c0>;
-@@ -37,6 +42,10 @@
+@@ -37,6 +37,10 @@
  };
  
  &eth0 {
