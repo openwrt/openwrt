@@ -102,6 +102,14 @@ switch() {
 
 main() {
     case "$(board_name)" in
+    genexis,platinum-4410)
+        part=$(part_named '"reservearea"')
+        offset_blocks=12
+        block_size=$((1024 * 128))
+        code_offset=0
+        code_openwrt=30
+        code_factory=31
+        ;;
     tplink,archer-vr1200v-v2)
         # 03fe0000
         part=$(part_named '"reserve"')
