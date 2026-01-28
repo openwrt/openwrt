@@ -403,6 +403,7 @@ inline u32 rtl931x_get_mac_tx_pause_sts(int p)
 struct p_hdr;
 struct dsa_tag;
 struct rteth_ctrl;
+struct rteth_packet;
 
 struct rteth_config {
 	int family_id;
