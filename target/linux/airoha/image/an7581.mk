@@ -42,3 +42,14 @@ define Device/airoha_an7581-evb-emmc
   ARTIFACTS := preloader.bin bl31-uboot.fip
 endef
 TARGET_DEVICES += airoha_an7581-evb-emmc
+
+define Device/nokia_valyrian
+  DEVICE_VENDOR := Nokia
+  DEVICE_MODEL := Valyrian
+  DEVICE_DTS := nokia-valyrian
+  DEVICE_PACKAGES := kmod-mt7996-firmware kmod-i2c-an7581 kmod-sfp kmod-phy-aeonsemi-as21xxx
+  ARTIFACT/preloader.bin := an7581-preloader nokia_valyrian
+  ARTIFACT/bl31-uboot.fip := an7581-bl31-uboot nokia_valyrian
+  ARTIFACTS := preloader.bin bl31-uboot.fip
+endef
+TARGET_DEVICES += nokia_valyrian
