@@ -2620,6 +2620,26 @@ define Device/tenbay_wr3000k
 endef
 TARGET_DEVICES += tenbay_wr3000k
 
+define Device/tenda_ax12l-pro
+  DEVICE_VENDOR := Tenda
+  DEVICE_MODEL := AX12L Pro
+  DEVICE_ALT0_VENDOR := Tenda
+  DEVICE_ALT0_MODEL := JD12L Pro
+  DEVICE_ALT1_VENDOR := Tenda
+  DEVICE_ALT1_MODEL := RX12L Pro
+  DEVICE_ALT2_VENDOR := Tenda
+  DEVICE_ALT2_MODEL := TX12L Pro
+  DEVICE_DTS := mt7981b-tenda-ax12l-pro
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware uboot-envtools
+  KERNEL_LOADADDR := 0x40000000
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+        fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE_SIZE := 14528k
+  IMAGE/sysupgrade.bin := append-kernel | pad-to 128k | append-rootfs | pad-rootfs | check-size | append-metadata
+endef
+TARGET_DEVICES += tenda_ax12l-pro
+
 define Device/tenda_be12-pro
   DEVICE_VENDOR := Tenda
   DEVICE_MODEL := BE12 Pro
