@@ -445,7 +445,7 @@ export function info(name) {
 		};
 
 		let phy = find_phy(data.wiphy);
-		for (let limit in phy.interface_combinations[0]?.limits)
+		for (let limit in phy.interface_combinations?.[0]?.limits)
 			if (limit.types?.ap && limit.max > 1)
 				dev.vaps = 'yes';
 
