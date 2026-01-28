@@ -140,7 +140,57 @@ static int rtsds_dbg_registers_show(struct seq_file *seqf, void *unused)
 
 	return 0;
 }
-DEFINE_SHOW_ATTRIBUTE(rtsds_dbg_registers);
+
+static ssize_t rtsds_dbg_registers_write(struct file *file, const char __user *user_buf,
+					 size_t count, loff_t *ppos)
+{
+	char *page_str, *reg_str, *val_str;
+	struct rtsds_debug_info *dbg_info;
+	struct rtsds_ctrl *ctrl;
+	struct mii_bus *bus;
+	char buf[32], *pos;
+	size_t len = count;
+	u8 page, reg;
+	u16 val;
+	int ret;
+
+	if (len >= sizeof(buf))
+		return -EOVERFLOW;
+	if (copy_from_user(buf, user_buf, len))
+		return -EFAULT;
+
+	if (len > 0 && buf[len - 1] == '\n')
+		len--;
+
+	buf[len] = 0;
+	if (!len)
+		return count;
+
+	pos = buf;
+	page_str = strsep(&pos, ",");
+	reg_str = strsep(&pos, ",");
+	val_str = pos;
+
+	if (!page_str || !reg_str || !val_str)
+		return -EINVAL;
+
+	if (kstrtou8(page_str, 16, &page) || kstrtou8(reg_str, 16, &reg) ||
+	    kstrtou16(val_str, 16, &val))
+		return -EINVAL;
+
+	dbg_info = file_inode(file)->i_private;
+	ctrl = dbg_info->ctrl;
+	bus = ctrl->bus;
+
+	if (page >= ctrl->cfg->page_cnt || reg >= RTSDS_REG_CNT)
+		return -ERANGE;
+
+	ret = mdiobus_c45_write(bus, dbg_info->sds, MDIO_MMD_VEND1,
+				rtsds_sds_to_mmd(page, reg), val);
+	return ret ? ret : count;
+}
+
+DEFINE_SHOW_STORE_ATTRIBUTE(rtsds_dbg_registers);
 
 static int rtsds_debug_init(struct rtsds_ctrl *ctrl)
 {
