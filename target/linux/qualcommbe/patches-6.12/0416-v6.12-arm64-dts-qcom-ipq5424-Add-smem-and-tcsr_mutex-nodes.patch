@@ -1,0 +1,50 @@
+From 35e0a4f0a39651a6a6009f516847721cfdc633b7 Mon Sep 17 00:00:00 2001
+From: Manikanta Mylavarapu <quic_mmanikan@quicinc.com>
+Date: Wed, 16 Oct 2024 20:45:28 +0530
+Subject: [PATCH] arm64: dts: qcom: ipq5424: Add smem and tcsr_mutex nodes
+
+The smem is necessary for the socinfo driver. Additionally
+smem requires the tcsr_mutex node. Therefore add both the nodes.
+
+Signed-off-by: Manikanta Mylavarapu <quic_mmanikan@quicinc.com>
+Link: https://lore.kernel.org/r/20241016151528.2893599-4-quic_mmanikan@quicinc.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+---
+ arch/arm64/boot/dts/qcom/ipq5424.dtsi | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/ipq5424.dtsi b/arch/arm64/boot/dts/qcom/ipq5424.dtsi
+index 76af0d87e9a8..5e219f900412 100644
+--- a/arch/arm64/boot/dts/qcom/ipq5424.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5424.dtsi
+@@ -129,6 +129,14 @@ tz@8a600000 {
+ 			reg = <0x0 0x8a600000 0x0 0x200000>;
+ 			no-map;
+ 		};
++
++		smem@8a800000 {
++			compatible = "qcom,smem";
++			reg = <0x0 0x8a800000 0x0 0x32000>;
++			no-map;
++
++			hwlocks = <&tcsr_mutex 3>;
++		};
+ 	};
+ 
+ 	soc@0 {
+@@ -170,6 +178,12 @@ gcc: clock-controller@1800000 {
+ 			#interconnect-cells = <1>;
+ 		};
+ 
++		tcsr_mutex: hwlock@1905000 {
++			compatible = "qcom,tcsr-mutex";
++			reg = <0 0x01905000 0 0x20000>;
++			#hwlock-cells = <1>;
++		};
++
+ 		qupv3: geniqup@1ac0000 {
+ 			compatible = "qcom,geni-se-qup";
+ 			reg = <0 0x01ac0000 0 0x2000>;
+-- 
+2.34.1
+
