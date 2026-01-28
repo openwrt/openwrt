@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
 #include <dt-bindings/leds/common.h>
+#include <dt-bindings/interrupt-controller/irq.h>
 
 #include "mt7620a_tplink_8m.dtsi"
 
@@ -79,20 +80,11 @@
 			linux,code = <KEY_RFKILL>;
 		};
 	};
-
-	rtl8367s {
-		compatible = "realtek,rtl8367b";
-		realtek,extif = <7 1 0 1 1 1 1 1 1 2>;
-		mii-bus = <&mdio0>;
-		phy-id = <29>;
-	};
 };
 
-&spi0 {
-	flash@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
-	};
+&gpio0 {
+	interrupt-controller;
+	#interrupt-cells = <2>;
 };
 
 &state_default {
@@ -106,6 +98,13 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&rgmii1_pins &mdio_pins>;
 
+	/* Internal switch is used as transparent switch connecting
+	   its port6 (CPU) to external switch through port5 */
+	/delete-property/ mediatek,portmap;
+
+	/* Currrent realtek DSA driver forces forwarding on CPU */
+	mediatek,mac-learn-disable;
+
 	port@5 {
 		status = "okay";
 		mediatek,fixed-link = <1000 1 1 1>;
@@ -114,8 +113,98 @@
 
 	mdio0: mdio-bus {
 		status = "okay";
+	};
+};
+
+&mdio0 {
+	switch1@29 {
+
+		compatible = "realtek,rtl8365mb";
+		reg = <29>;
+
 		reset-gpios = <&gpio2 20 GPIO_ACTIVE_LOW>;
-		reset-delay-us = <10000>;
+
+		switch_intc: interrupt-controller {
+			interrupt-parent = <&gpio0>;
+			interrupts = <11 IRQ_TYPE_EDGE_FALLING>;
+			interrupt-controller;
+			#address-cells = <0>;
+			#interrupt-cells = <1>;
+		};
+
+		mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			phy0: ethernet-phy@0 {
+				reg = <0>;
+				interrupt-parent = <&switch_intc>;
+				interrupts = <0>;
+			};
+			phy1: ethernet-phy@1 {
+				reg = <1>;
+				interrupt-parent = <&switch_intc>;
+				interrupts = <1>;
+			};
+			phy2: ethernet-phy@2 {
+				reg = <2>;
+				interrupt-parent = <&switch_intc>;
+				interrupts = <2>;
+			};
+			phy3: ethernet-phy@3 {
+				reg = <3>;
+				interrupt-parent = <&switch_intc>;
+				interrupts = <3>;
+			};
+		};
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "lan3";
+				phy-handle = <&phy0>;
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan2";
+				phy-handle = <&phy1>;
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan1";
+				phy-handle = <&phy2>;
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "wan";
+				phy-handle = <&phy3>;
+
+				nvmem-cells = <&macaddr_rom_f100 1>;
+				nvmem-cell-names = "mac-address";
+			};
+
+			port@7 {
+				reg = <7>;
+				ethernet = <&ethernet>;
+				phy-mode = "rgmii";
+				tx-internal-delay-ps = <2000>;
+				rx-internal-delay-ps = <0>;
+
+				dsa-tag-protocol = "rtl8_4";
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
 	};
 };
 
