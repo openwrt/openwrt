@@ -465,7 +465,6 @@ static void rtldsa_vlan_setup(struct rtl838x_switch_priv *priv)
 	pr_info("In %s\n", __func__);
 
 	priv->r->vlan_profile_setup(0);
-	priv->r->vlan_profile_setup(1);
 	priv->r->vlan_profile_dump(priv, 0);
 
 	info.fid = 0;			/* Default Forwarding ID / MSTI */
