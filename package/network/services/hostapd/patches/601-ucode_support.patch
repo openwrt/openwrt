@@ -106,7 +106,7 @@ as adding/removing interfaces.
  
 --- a/hostapd/Makefile
 +++ b/hostapd/Makefile
-@@ -169,9 +169,21 @@ OBJS += ../src/eapol_auth/eapol_auth_sm.
+@@ -169,9 +169,22 @@ OBJS += ../src/eapol_auth/eapol_auth_sm.
  
  ifdef CONFIG_UBUS
  CFLAGS += -DUBUS_SUPPORT
@@ -115,6 +115,7 @@ as adding/removing interfaces.
 -LIBS += -lubox -lubus
 +LIBS += -lubus
 +NEED_ULOOP:=y
++NEED_BASE64=y
 +endif
 +
 +ifdef CONFIG_UCODE
