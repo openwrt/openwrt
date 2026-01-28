@@ -1,0 +1,444 @@
+From b436896feb781bee5de8c9c3b2576daf0781a9fc Mon Sep 17 00:00:00 2001
+From: Elwin Huang <s09289728096@gmail.com>
+Date: Wed, 10 Sep 2025 17:06:07 +0800
+Subject: [PATCH] mt76: mt7996: Add external eeprom support
+
+Add external eeprom support for upstream mt76 by the patch on mediatek feed.
+Without this commit, mt7990 and mt7992 cannot read eeprom on chip.
+Note that this commit doesn't implement related debugfs, which is applied in the orginal patch.
+Pass the test with: AsiaRF AW7990-AED (mt7990) and AW7991-AE2 (mt7992)
+
+As the original patch described:
+Add external eeprom support
+For mt7992 and mt7990, efuse mode is not supported due to the lack of
+space in efuse.
+So, an additional external eeprom is added for user to store their
+golden eeprom.
+
+Note that the FW currently has some issues with writing to the ext
+eeprom, so the write back function of ext eeprom is not yet linked
+to any command.
+A write back command will be added once the FW fixes the issue.
+
+Add ext eeprom write callback
+
+Link: https://git01.mediatek.com/plugins/gitiles/openwrt/feeds/mtk-openwrt-feeds/+/refs/heads/master/autobuild/unified/filogic/mac80211/24.10/files/package/kernel/mt76/patches/0033-mtk-mt76-mt7996-add-external-eeprom-support.patch
+Signed-off-by: Elwin Huang <s09289728096@gmail.com>
+---
+ mt76_connac_mcu.h |   1 +
+ mt7996/eeprom.c   |  34 +++++++-----
+ mt7996/init.c     |   3 +-
+ mt7996/mcu.c      | 132 +++++++++++++++++++++++++++++++++++-----------
+ mt7996/mcu.h      |  43 ++++++++++++++-
+ mt7996/mt7996.h   |  30 ++++++++++-
+ 6 files changed, 196 insertions(+), 47 deletions(-)
+
+diff --git a/mt76_connac_mcu.h b/mt76_connac_mcu.h
+index 27daf419..8a0b8771 100644
+--- a/mt76_connac_mcu.h
++++ b/mt76_connac_mcu.h
+@@ -1306,6 +1306,7 @@ enum {
+ 	MCU_UNI_CMD_PER_STA_INFO = 0x6d,
+ 	MCU_UNI_CMD_ALL_STA_INFO = 0x6e,
+ 	MCU_UNI_CMD_ASSERT_DUMP = 0x6f,
++	MCU_UNI_CMD_EXT_EEPROM_CTRL  = 0x74,
+ 	MCU_UNI_CMD_RADIO_STATUS = 0x80,
+ 	MCU_UNI_CMD_SDO = 0x88,
+ };
+diff --git a/mt7996/eeprom.c b/mt7996/eeprom.c
+index 87c6192b..8c42dbea 100644
+--- a/mt7996/eeprom.c
++++ b/mt7996/eeprom.c
+@@ -176,37 +176,47 @@ static int mt7996_eeprom_load(struct mt7996_dev *dev)
+ 	}
+ 
+ 	if (!dev->flash_mode) {
+-		u32 eeprom_blk_size = MT7996_EEPROM_BLOCK_SIZE;
+-		u32 block_num = DIV_ROUND_UP(MT7996_EEPROM_SIZE, eeprom_blk_size);
++		u32 eeprom_blk_size, block_num;
+ 		u8 free_block_num;
+ 		int i;
+ 
+ 		memset(dev->mt76.eeprom.data, 0, MT7996_EEPROM_SIZE);
+-		ret = mt7996_mcu_get_eeprom_free_block(dev, &free_block_num);
+-		if (ret < 0)
+-			return ret;
+-
+-		/* efuse info isn't enough */
+-		if (free_block_num >= 59) {
+-			use_default = true;
+-			goto out;
++		if (!mt7996_has_ext_eeprom(dev)) {
++			/* efuse mode */
++			dev->eeprom_mode = EFUSE_MODE;
++			eeprom_blk_size = MT7996_EEPROM_BLOCK_SIZE;
++			ret = mt7996_mcu_get_efuse_free_block(dev, &free_block_num);
++			if (ret < 0)
++				return ret;
++
++			/* efuse info isn't enough */
++			if (free_block_num >= 59) {
++				use_default = true;
++				goto out;
++			}
++		} else {
++			/* external eeprom mode */
++			dev->eeprom_mode = EXT_EEPROM_MODE;
++			eeprom_blk_size = MT7996_EXT_EEPROM_BLOCK_SIZE;
+ 		}
+ 
+ 		/* check if eeprom data from fw is valid */
+-		if (mt7996_mcu_get_eeprom(dev, 0, NULL, 0) ||
++			if (mt7996_mcu_get_eeprom(dev, 0, NULL, eeprom_blk_size,
++					dev->eeprom_mode) ||
+ 		    mt7996_check_eeprom(dev)) {
+ 			use_default = true;
+ 			goto out;
+ 		}
+ 
+ 		/* read eeprom data from fw */
++		block_num = DIV_ROUND_UP(MT7996_EEPROM_SIZE, eeprom_blk_size);
+ 		for (i = 1; i < block_num; i++) {
+ 			u32 len = eeprom_blk_size;
+ 
+ 			if (i == block_num - 1)
+ 				len = MT7996_EEPROM_SIZE % eeprom_blk_size;
+ 			ret = mt7996_mcu_get_eeprom(dev, i * eeprom_blk_size,
+-						    NULL, len);
++						    NULL, len, dev->eeprom_mode);
+ 			if (ret && ret != -EINVAL) {
+ 				use_default = true;
+ 				goto out;
+diff --git a/mt7996/init.c b/mt7996/init.c
+index 007f16ad..1e8bb069 100644
+--- a/mt7996/init.c
++++ b/mt7996/init.c
+@@ -1143,7 +1143,8 @@ static int mt7996_variant_fem_init(struct mt7996_dev *dev)
+ 	if (ret)
+ 		return ret;
+ 
+-	ret = mt7996_mcu_get_eeprom(dev, MT7976C_EFUSE_OFFSET, buf, sizeof(buf));
++	ret = mt7996_mcu_get_eeprom(dev, MT7976C_EFUSE_OFFSET, buf, sizeof(buf),
++		EFUSE_MODE);
+ 	if (ret && ret != -EINVAL)
+ 		return ret;
+ 
+diff --git a/mt7996/mcu.c b/mt7996/mcu.c
+index 183c559c..45e159f6 100644
+--- a/mt7996/mcu.c
++++ b/mt7996/mcu.c
+@@ -3833,7 +3833,7 @@ static int mt7996_mcu_set_eeprom_flash(struct mt7996_dev *dev)
+ #define MAX_PAGE_IDX_MASK	GENMASK(7, 5)
+ #define PAGE_IDX_MASK		GENMASK(4, 2)
+ #define PER_PAGE_SIZE		0x400
+-	struct mt7996_mcu_eeprom req = {
++	struct mt7996_mcu_eeprom_update req = {
+ 		.tag = cpu_to_le16(UNI_EFUSE_BUFFER_MODE),
+ 		.buffer_mode = EE_MODE_BUFFER
+ 	};
+@@ -3875,57 +3875,77 @@ static int mt7996_mcu_set_eeprom_flash(struct mt7996_dev *dev)
+ 
+ int mt7996_mcu_set_eeprom(struct mt7996_dev *dev)
+ {
+-	struct mt7996_mcu_eeprom req = {
++	struct mt7996_mcu_eeprom_update req = {
+ 		.tag = cpu_to_le16(UNI_EFUSE_BUFFER_MODE),
+ 		.len = cpu_to_le16(sizeof(req) - 4),
+ 		.buffer_mode = EE_MODE_EFUSE,
+ 		.format = EE_FORMAT_WHOLE
+ 	};
+ 
+-	if (dev->flash_mode)
++	if (dev->flash_mode || mt7996_has_ext_eeprom(dev))
+ 		return mt7996_mcu_set_eeprom_flash(dev);
+ 
+ 	return mt76_mcu_send_msg(&dev->mt76, MCU_WM_UNI_CMD(EFUSE_CTRL),
+ 				 &req, sizeof(req), true);
+ }
+ 
+-int mt7996_mcu_get_eeprom(struct mt7996_dev *dev, u32 offset, u8 *buf, u32 buf_len)
++int mt7996_mcu_get_eeprom(struct mt7996_dev *dev, u32 offset, u8 *buf, u32 buf_len,
++					enum mt7996_eeprom_mode mode)
+ {
+-	struct {
+-		u8 _rsv[4];
+-
+-		__le16 tag;
+-		__le16 len;
+-		__le32 addr;
+-		__le32 valid;
+-		u8 data[16];
+-	} __packed req = {
+-		.tag = cpu_to_le16(UNI_EFUSE_ACCESS),
+-		.len = cpu_to_le16(sizeof(req) - 4),
+-		.addr = cpu_to_le32(round_down(offset,
+-				    MT7996_EEPROM_BLOCK_SIZE)),
+-	};
++	struct mt7996_mcu_eeprom_access req;
++	struct mt7996_mcu_eeprom_access_event *event;
+ 	struct sk_buff *skb;
+-	bool valid;
+-	int ret;
++	int ret, cmd;
++
++	switch (mode) {
++	case EFUSE_MODE:
++		req.info.tag = cpu_to_le16(UNI_EFUSE_ACCESS);
++		req.info.len = cpu_to_le16(sizeof(req) - 4);
++		req.info.addr = cpu_to_le32(round_down(offset, MT7996_EEPROM_BLOCK_SIZE));
++		cmd = MCU_WM_UNI_CMD_QUERY(EFUSE_CTRL);
++		break;
++	case EXT_EEPROM_MODE:
++		req.info.tag = cpu_to_le16(UNI_EXT_EEPROM_ACCESS);
++		req.info.len = cpu_to_le16(sizeof(req) - 4);
++		req.info.addr = cpu_to_le32(round_down(offset, MT7996_EXT_EEPROM_BLOCK_SIZE));
++		req.eeprom.ext_eeprom.data_len = cpu_to_le32(buf_len);
++		cmd = MCU_WM_UNI_CMD_QUERY(EXT_EEPROM_CTRL);
++		break;
++	default:
++		return -EINVAL;
++	}
+ 
+-	ret = mt76_mcu_send_and_get_msg(&dev->mt76,
+-					MCU_WM_UNI_CMD_QUERY(EFUSE_CTRL),
+-					&req, sizeof(req), true, &skb);
++	ret = mt76_mcu_send_and_get_msg(&dev->mt76, cmd, &req,
++					sizeof(req), true, &skb);
+ 	if (ret)
+ 		return ret;
+ 
+-	valid = le32_to_cpu(*(__le32 *)(skb->data + 16));
+-	if (valid) {
+-		u32 addr = le32_to_cpu(*(__le32 *)(skb->data + 12));
++	event = (struct mt7996_mcu_eeprom_access_event *)skb->data;
++	if (event->valid) {
++		u32 addr = le32_to_cpu(event->addr);
++		u32 ret_len = le32_to_cpu(event->eeprom.ext_eeprom.data_len);
+ 
+ 		if (!buf)
+ 			buf = (u8 *)dev->mt76.eeprom.data + addr;
+-		if (!buf_len || buf_len > MT7996_EEPROM_BLOCK_SIZE)
+-			buf_len = MT7996_EEPROM_BLOCK_SIZE;
+ 
+-		skb_pull(skb, 48);
+-		memcpy(buf, skb->data, buf_len);
++		switch (mode) {
++		case EFUSE_MODE:
++			if (!buf_len || buf_len > MT7996_EEPROM_BLOCK_SIZE)
++				buf_len = MT7996_EEPROM_BLOCK_SIZE;
++
++			memcpy(buf, event->eeprom.efuse, buf_len);
++			break;
++		case EXT_EEPROM_MODE:
++			if (!buf_len || buf_len > MT7996_EXT_EEPROM_BLOCK_SIZE)
++				buf_len = MT7996_EXT_EEPROM_BLOCK_SIZE;
++
++			memcpy(buf, event->eeprom.ext_eeprom.data,
++			       ret_len < buf_len ? ret_len : buf_len);
++			break;
++		default:
++			ret = -EINVAL;
++			break;
++		}
+ 	} else {
+ 		ret = -EINVAL;
+ 	}
+@@ -3935,7 +3955,57 @@ int mt7996_mcu_get_eeprom(struct mt7996_dev *dev, u32 offset, u8 *buf, u32 buf_l
+ 	return ret;
+ }
+ 
+-int mt7996_mcu_get_eeprom_free_block(struct mt7996_dev *dev, u8 *block_num)
++int
++mt7996_mcu_write_ext_eeprom(struct mt7996_dev *dev, u32 offset,
++			    u32 data_len, u8 *write_buf)
++{
++	struct mt7996_mcu_eeprom_access req = {
++		.info.tag = cpu_to_le16(UNI_EXT_EEPROM_ACCESS),
++		.info.len = cpu_to_le16(sizeof(req) - 4 +
++					MT7996_EXT_EEPROM_BLOCK_SIZE),
++	};
++	u32 block_num, block_size = MT7996_EXT_EEPROM_BLOCK_SIZE;
++	u8 *buf = write_buf;
++	int i, ret = -EINVAL;
++	int msg_len = sizeof(req) + block_size;
++
++	if (!mt7996_has_ext_eeprom(dev))
++		return ret;
++
++	if (!buf)
++		buf = (u8 *)dev->mt76.eeprom.data + offset;
++
++	block_num = DIV_ROUND_UP(data_len, block_size);
++	for (i = 0; i < block_num; i++) {
++		struct sk_buff *skb;
++		u32 buf_len = block_size;
++		u32 block_offs = i * block_size;
++
++		if (block_offs + block_size > data_len)
++			buf_len = data_len % block_size;
++
++		req.info.addr = cpu_to_le32(offset + block_offs);
++		req.eeprom.ext_eeprom.data_len = cpu_to_le32(buf_len);
++
++		skb = mt76_mcu_msg_alloc(&dev->mt76, NULL, msg_len);
++		if (!skb)
++			return -ENOMEM;
++
++		skb_put_data(skb, &req, sizeof(req));
++		skb_put_data(skb, buf, buf_len);
++
++		ret = mt76_mcu_skb_send_msg(&dev->mt76, skb,
++					    MCU_WM_UNI_CMD(EXT_EEPROM_CTRL), false);
++		if (ret)
++			return ret;
++
++		buf += buf_len;
++	}
++
++	return 0;
++}
++
++int mt7996_mcu_get_efuse_free_block(struct mt7996_dev *dev, u8 *block_num)
+ {
+ 	struct {
+ 		u8 _rsv[4];
+diff --git a/mt7996/mcu.h b/mt7996/mcu.h
+index 7b21d6ae..43df54fc 100644
+--- a/mt7996/mcu.h
++++ b/mt7996/mcu.h
+@@ -147,7 +147,7 @@ struct mt7996_mcu_background_chain_ctrl {
+ 	u8 rsv[2];
+ } __packed;
+ 
+-struct mt7996_mcu_eeprom {
++struct mt7996_mcu_eeprom_update {
+ 	u8 _rsv[4];
+ 
+ 	__le16 tag;
+@@ -157,6 +157,43 @@ struct mt7996_mcu_eeprom {
+ 	__le16 buf_len;
+ } __packed;
+ 
++union eeprom_data {
++	struct {
++		__le32 data_len;
++		DECLARE_FLEX_ARRAY(u8, data);
++	} ext_eeprom;
++	DECLARE_FLEX_ARRAY(u8, efuse);
++} __packed;
++
++struct mt7996_mcu_eeprom_info {
++	u8 _rsv[4];
++
++	__le16 tag;
++	__le16 len;
++	__le32 addr;
++	__le32 valid;
++} __packed;
++
++struct mt7996_mcu_eeprom_access {
++	struct mt7996_mcu_eeprom_info info;
++	union eeprom_data eeprom;
++} __packed;
++
++struct mt7996_mcu_eeprom_access_event {
++	u8 _rsv[4];
++
++	__le16 tag;
++	__le16 len;
++	__le32 version;
++	__le32 addr;
++	__le32 valid;
++	__le32 size;
++	__le32 magic_no;
++	__le32 type;
++	__le32 rsv[4];
++	union eeprom_data eeprom;
++} __packed;
++
+ struct mt7996_mcu_phy_rx_info {
+ 	u8 category;
+ 	u8 rate;
+@@ -864,6 +901,10 @@ enum {
+ 	UNI_EFUSE_BUFFER_RD,
+ };
+ 
++enum {
++	UNI_EXT_EEPROM_ACCESS = 1,
++};
++
+ enum {
+ 	UNI_VOW_DRR_CTRL,
+ 	UNI_VOW_RX_AT_AIRTIME_EN = 0x0b,
+diff --git a/mt7996/mt7996.h b/mt7996/mt7996.h
+index be26e04b..2e93d006 100644
+--- a/mt7996/mt7996.h
++++ b/mt7996/mt7996.h
+@@ -81,6 +81,7 @@
+ 
+ #define MT7996_EEPROM_SIZE		7680
+ #define MT7996_EEPROM_BLOCK_SIZE	16
++#define MT7996_EXT_EEPROM_BLOCK_SIZE	1024
+ #define MT7996_TOKEN_SIZE		16384
+ #define MT7996_HW_TOKEN_SIZE		8192
+ 
+@@ -165,6 +166,14 @@ enum mt7996_fem_type {
+ 	MT7996_FEM_MIX,
+ };
+ 
++enum mt7996_eeprom_mode {
++	DEFAULT_BIN_MODE,
++	EFUSE_MODE,
++	FLASH_MODE,
++	BIN_FILE_MODE,
++	EXT_EEPROM_MODE,
++};
++
+ enum mt7996_txq_id {
+ 	MT7996_TXQ_FWDL = 16,
+ 	MT7996_TXQ_MCU_WM,
+@@ -467,6 +476,8 @@ struct mt7996_dev {
+ 		struct list_head page_map[MT7996_RRO_MSDU_PG_HASH_SIZE];
+ 	} wed_rro;
+ 
++	u8 eeprom_mode;
++
+ 	bool ibf;
+ 	u8 fw_debug_wm;
+ 	u8 fw_debug_wa;
+@@ -574,6 +585,18 @@ mt7996_band_valid(struct mt7996_dev *dev, u8 band)
+ 	return band <= MT_BAND2;
+ }
+ 
++static inline bool
++mt7996_has_ext_eeprom(struct mt7996_dev *dev)
++{
++	switch (mt76_chip(&dev->mt76)) {
++	case MT7996_DEVICE_ID:
++		return false;
++	case MT7992_DEVICE_ID:
++	default:
++		return true;
++	}
++}
++
+ static inline struct mt7996_phy *
+ mt7996_band_phy(struct mt7996_dev *dev, enum nl80211_band band)
+ {
+@@ -701,8 +724,11 @@ int mt7996_mcu_set_fixed_rate_ctrl(struct mt7996_dev *dev,
+ int mt7996_mcu_set_fixed_field(struct mt7996_dev *dev, struct mt7996_sta *msta,
+ 			       void *data, u8 link_id, u32 field);
+ int mt7996_mcu_set_eeprom(struct mt7996_dev *dev);
+-int mt7996_mcu_get_eeprom(struct mt7996_dev *dev, u32 offset, u8 *buf, u32 buf_len);
+-int mt7996_mcu_get_eeprom_free_block(struct mt7996_dev *dev, u8 *block_num);
++int mt7996_mcu_get_eeprom(struct mt7996_dev *dev, u32 offset, u8 *buf, u32 buf_len,
++			  enum mt7996_eeprom_mode mode);
++int mt7996_mcu_get_efuse_free_block(struct mt7996_dev *dev, u8 *block_num);
++int mt7996_mcu_write_ext_eeprom(struct mt7996_dev *dev, u32 offset,
++				u32 data_len, u8 *write_buf);
+ int mt7996_mcu_get_chip_config(struct mt7996_dev *dev, u32 *cap);
+ int mt7996_mcu_set_ser(struct mt7996_dev *dev, u8 action, u8 set, u8 band);
+ int mt7996_mcu_set_txbf(struct mt7996_dev *dev, u8 action);
+-- 
+2.43.0
+
