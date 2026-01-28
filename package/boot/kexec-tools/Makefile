@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=kexec-tools
 PKG_VERSION:=2.0.32
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/utils/kernel/kexec
@@ -19,7 +19,7 @@ PKG_LICENSE:=GPL-2.0-only
 PKG_LICENSE_FILES:=COPYING
 PKG_CPE_ID:=cpe:/a:kernel:kexec-tools
 
-PKG_CONFIG_DEPENDS := CONFIG_KEXEC_ZLIB CONFIG_KEXEC_LZMA
+PKG_CONFIG_DEPENDS := CONFIG_KEXEC_ZLIB CONFIG_KEXEC_LZMA CONFIG_KEXEC_ZSTD
 
 PKG_BUILD_FLAGS:=gc-sections
 
@@ -48,7 +48,7 @@ define Package/kexec
   TITLE:=Kernel boots kernel
   DEPENDS:=\
 	@(armeb||arm||aarch64||i386||x86_64||powerpc64||mipsel||mips) \
-	+KEXEC_ZLIB:zlib +KEXEC_LZMA:liblzma @KERNEL_KEXEC
+	+KEXEC_ZLIB:zlib +KEXEC_LZMA:liblzma +KEXEC_ZSTD:libzstd @KERNEL_KEXEC
 endef
 
 define Package/kexec/description
@@ -86,6 +86,7 @@ CONFIGURE_ARGS = \
 		--sysconfdir=/etc \
 		$(if $(CONFIG_KEXEC_ZLIB),--with,--without)-zlib \
 		$(if $(CONFIG_KEXEC_LZMA),--with,--without)-lzma \
+		$(if $(CONFIG_KEXEC_ZSTD),--with,--without)-zstd \
 		TARGET_LD="$(TARGET_CROSS)ld"
 
 CONFIGURE_VARS += \
