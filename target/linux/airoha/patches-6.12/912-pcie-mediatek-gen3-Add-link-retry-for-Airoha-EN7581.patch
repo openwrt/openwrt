@@ -1,0 +1,125 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ryan Chen <rchen14b@gmail.com>
+Date: Tue, 23 Dec 2025 12:00:00 +0000
+Subject: [PATCH] PCI: mediatek-gen3: Add PCIe link retry for Airoha EN7581
+
+The MT7996 WiFi chip on Airoha EN7581 SoC may occasionally fail to
+establish PCIe link during boot due to timing issues. This is similar
+to the issue seen on MT7988 platforms.
+
+The root cause is intermittent link training failures that occur
+randomly during boot. Without retry logic, the WiFi card fails to
+be detected and the system boots without WiFi functionality.
+
+Add link training retry mechanism for EN7581 SoC:
+- Introduce PCIE_LINK_RETRY flag in mtk_gen3_pcie_flags enum
+- Add mtk_pcie_phy_reset_retry() to reset PHY between retries
+- Retry link training up to 5 times on failure
+- Enable retry for EN7581 SoC by default
+
+This mirrors the relink logic found in OEM firmware and has been
+tested to successfully recover from intermittent link training
+failures on W1700K router hardware.
+
+Signed-off-by: Ryan Chen <rchen14b@gmail.com>
+---
+ drivers/pci/controller/pcie-mediatek-gen3.c | 50 ++++++++++++++++++++-
+ 1 file changed, 49 insertions(+), 1 deletion(-)
+
+--- a/drivers/pci/controller/pcie-mediatek-gen3.c
++++ b/drivers/pci/controller/pcie-mediatek-gen3.c
+@@ -63,6 +63,7 @@
+
+ #define PCIE_LINK_STATUS_REG		0x154
+ #define PCIE_PORT_LINKUP		BIT(8)
++#define PCIE_LINK_RETRY_COUNT		5
+
+ #define PCIE_MSI_SET_NUM		8
+ #define PCIE_MSI_IRQS_PER_SET		32
+@@ -134,6 +135,9 @@ enum mtk_gen3_pcie_flags {
+ 				   * probing or suspend/resume phase to
+ 				   * avoid hw bugs/issues.
+ 				   */
++	PCIE_LINK_RETRY	= BIT(1), /* Enable PCIe link retry for devices
++				   * with intermittent link training issues.
++				   */
+ };
+
+ /**
+@@ -386,6 +390,38 @@ static void mtk_pcie_enable_msi(struct m
+ 	writel_relaxed(val, pcie->base + PCIE_INT_ENABLE_REG);
+ }
+
++static int mtk_pcie_phy_reset_retry(struct mtk_gen3_pcie *pcie)
++{
++	int num_resets = pcie->soc->phy_resets.num_resets;
++	int err;
++
++	/* Assert PHY reset */
++	err = reset_control_bulk_assert(num_resets, pcie->phy_resets);
++	if (err) {
++		dev_err(pcie->dev, "failed to assert PHY reset for retry\n");
++		return err;
++	}
++
++	usleep_range(1000, 2000);
++
++	/* Deassert PHY reset */
++	err = reset_control_bulk_deassert(num_resets, pcie->phy_resets);
++	if (err) {
++		dev_err(pcie->dev, "failed to deassert PHY reset for retry\n");
++		return err;
++	}
++
++	/* Wait for PHY to stabilize */
++	usleep_range(5000, 10000);
++
++	/* Re-initialize PHY */
++	err = phy_init(pcie->phy);
++	if (err)
++		dev_warn(pcie->dev, "PHY reinit failed: %d, continuing anyway\n", err);
++
++	return 0;
++}
++
+ static int mtk_pcie_startup_port(struct mtk_gen3_pcie *pcie)
+ {
+ 	struct resource_entry *entry;
+@@ -393,6 +429,7 @@ static int mtk_pcie_startup_port(struct
+ 	unsigned int table_index = 0;
+ 	int err;
+ 	u32 val;
++	int retry_count = 0;
+
+ 	/* Set as RC mode */
+ 	val = readl_relaxed(pcie->base + PCIE_SETTING_REG);
+@@ -443,11 +480,19 @@ static int mtk_pcie_startup_port(struct
+ 		writel_relaxed(val, pcie->base + PCIE_RST_CTRL_REG);
+ 	}
+
++retry_link:
+ 	/* Check if the link is up or not */
+ 	err = readl_poll_timeout(pcie->base + PCIE_LINK_STATUS_REG, val,
+ 				 !!(val & PCIE_PORT_LINKUP), 20,
+ 				 PCI_PM_D3COLD_WAIT * USEC_PER_MSEC);
+-	if (err) {
++	if (err && (pcie->soc->flags & PCIE_LINK_RETRY) &&
++	    retry_count < PCIE_LINK_RETRY_COUNT) {
++		retry_count++;
++		dev_info(pcie->dev, "PCIe link training failed, retry %d/%d\n",
++			 retry_count, PCIE_LINK_RETRY_COUNT);
++		mtk_pcie_phy_reset_retry(pcie);
++		goto retry_link;
++	} else if (err) {
+ 		const char *ltssm_state;
+ 		int ltssm_index;
+
+@@ -1278,7 +1323,7 @@ static const struct mtk_gen3_pcie_pdata
+ 		.id[2] = "phy-lane2",
+ 		.num_resets = 3,
+ 	},
+-	.flags = SKIP_PCIE_RSTB,
++	.flags = SKIP_PCIE_RSTB | PCIE_LINK_RETRY,
+ };
+
+ static const struct of_device_id mtk_pcie_of_match[] = {
