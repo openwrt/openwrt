@@ -542,8 +542,8 @@ static void rtl838x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 	/* Truncate RX buffer to DEFAULT_MTU bytes, pad TX */
 	sw_w32((DEFAULT_MTU << 16) | RX_TRUNCATE_EN_83XX | TX_PAD_EN_838X, ctrl->r->dma_if_ctrl);
 
-	/* Enable RX done, RX overflow and TX done interrupts */
-	sw_w32(0xfffff, ctrl->r->dma_if_intr_msk);
+	/* Enable RX done and RX overflow, TX done interrupts not needed */
+	sw_w32(0xffff, ctrl->r->dma_if_intr_msk);
 
 	/* Enable DMA, engine expects empty FCS field */
 	sw_w32_mask(0, RX_EN | TX_EN, ctrl->r->dma_if_ctrl);
@@ -566,8 +566,8 @@ static void rtl839x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 	/* Setup CPU-Port: RX Buffer */
 	sw_w32((DEFAULT_MTU << 5) | RX_TRUNCATE_EN_83XX, ctrl->r->dma_if_ctrl);
 
-	/* Enable Notify, RX done, RX overflow and TX done interrupts */
-	sw_w32(0x007fffff, ctrl->r->dma_if_intr_msk); /* Notify IRQ! */
+	/* Enable Notify, RX done and RX overflow, TX done interrupts not needed */
+	sw_w32(0x0070ffff, ctrl->r->dma_if_intr_msk); /* Notify IRQ! */
 
 	/* Enable DMA */
 	sw_w32_mask(0, RX_EN | TX_EN, ctrl->r->dma_if_ctrl);
@@ -602,10 +602,10 @@ static void rtl93xx_hw_en_rxtx(struct rteth_ctrl *ctrl)
 		sw_w32_mask(0x3ff << pos, v, ctrl->r->dma_if_rx_ring_cntr(i));
 	}
 
-	/* Enable Notify, RX done, RX overflow and TX done interrupts */
+	/* Enable Notify, RX done and RX overflow, TX done interrupts not needed */
 	sw_w32(0xffffffff, ctrl->r->dma_if_intr_rx_runout_msk);
 	sw_w32(0xffffffff, ctrl->r->dma_if_intr_rx_done_msk);
-	sw_w32(0x0000000f, ctrl->r->dma_if_intr_tx_done_msk);
+	sw_w32(0x00000000, ctrl->r->dma_if_intr_tx_done_msk);
 
 	/* Enable DMA */
 	sw_w32_mask(0, RX_EN_93XX | TX_EN_93XX, ctrl->r->dma_if_ctrl);
