@@ -25,6 +25,6 @@ DEFAULT_PACKAGES += \
 	kmod-usb-fotg210 \
 	kmod-usb-ledtrig-usbport \
 	kmod-leds-gpio \
-	kmod-gpio-button-hotplug
+	kmod-input-gpio-keys
 
 $(eval $(call BuildTarget))
