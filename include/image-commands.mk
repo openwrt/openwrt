@@ -753,6 +753,14 @@ define Build/tplink-image-2022
 	@mv $@.new $@
 endef
 
+define Build/tplink-image-2023
+	$(TOPDIR)/scripts/tplink-mkimage-2023.py  \
+		--create $@.new \
+		--rootfs $@ \
+		--support "$(TPLINK_SUPPORT_STRING)"
+	@mv $@.new $@
+endef
+
 define Build/tplink-safeloader
 	-$(STAGING_DIR_HOST)/bin/tplink-safeloader \
 		-B $(TPLINK_BOARD_ID) \
