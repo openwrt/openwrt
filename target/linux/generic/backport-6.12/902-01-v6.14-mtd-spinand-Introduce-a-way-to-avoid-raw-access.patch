@@ -22,11 +22,9 @@ Signed-off-by: Miquel Raynal <miquel.raynal@bootlin.com>
  include/linux/mtd/spinand.h |  1 +
  2 files changed, 21 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/mtd/nand/spi/core.c b/drivers/mtd/nand/spi/core.c
-index 00e1bfa416ce..f46769eda388 100644
 --- a/drivers/mtd/nand/spi/core.c
 +++ b/drivers/mtd/nand/spi/core.c
-@@ -294,6 +294,9 @@ static int spinand_ondie_ecc_prepare_io_req(struct nand_device *nand,
+@@ -294,6 +294,9 @@ static int spinand_ondie_ecc_prepare_io_
  	struct spinand_device *spinand = nand_to_spinand(nand);
  	bool enable = (req->mode != MTD_OPS_RAW);
  
@@ -36,7 +34,7 @@ index 00e1bfa416ce..f46769eda388 100644
  	memset(spinand->oobbuf, 0xff, nanddev_per_page_oobsize(nand));
  
  	/* Only enable or disable the engine */
-@@ -901,9 +904,17 @@ static bool spinand_isbad(struct nand_device *nand, const struct nand_pos *pos)
+@@ -921,9 +924,17 @@ static bool spinand_isbad(struct nand_de
  		.oobbuf.in = marker,
  		.mode = MTD_OPS_RAW,
  	};
@@ -55,7 +53,7 @@ index 00e1bfa416ce..f46769eda388 100644
  	if (marker[0] != 0xff || marker[1] != 0xff)
  		return true;
  
-@@ -942,7 +953,14 @@ static int spinand_markbad(struct nand_device *nand, const struct nand_pos *pos)
+@@ -966,7 +977,14 @@ static int spinand_markbad(struct nand_d
  	if (ret)
  		return ret;
  
@@ -71,11 +69,9 @@ index 00e1bfa416ce..f46769eda388 100644
  }
  
  static int spinand_mtd_block_markbad(struct mtd_info *mtd, loff_t offs)
-diff --git a/include/linux/mtd/spinand.h b/include/linux/mtd/spinand.h
-index 702e5fb13dae..5cf11005b41a 100644
 --- a/include/linux/mtd/spinand.h
 +++ b/include/linux/mtd/spinand.h
-@@ -314,6 +314,7 @@ struct spinand_ecc_info {
+@@ -316,6 +316,7 @@ struct spinand_ecc_info {
  #define SPINAND_HAS_CR_FEAT_BIT		BIT(1)
  #define SPINAND_HAS_PROG_PLANE_SELECT_BIT		BIT(2)
  #define SPINAND_HAS_READ_PLANE_SELECT_BIT		BIT(3)
@@ -83,6 +79,3 @@ index 702e5fb13dae..5cf11005b41a 100644
  
  /**
   * struct spinand_ondie_ecc_conf - private SPI-NAND on-die ECC engine structure
--- 
-2.40.1
-

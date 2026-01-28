@@ -21,21 +21,17 @@ Signed-off-by: Miquel Raynal <miquel.raynal@bootlin.com>
  4 files changed, 150 insertions(+), 1 deletion(-)
  create mode 100644 drivers/mtd/nand/spi/skyhigh.c
 
-diff --git a/drivers/mtd/nand/spi/Makefile b/drivers/mtd/nand/spi/Makefile
-index f725f0c..7fb8e21 100644
 --- a/drivers/mtd/nand/spi/Makefile
 +++ b/drivers/mtd/nand/spi/Makefile
 @@ -1,4 +1,4 @@
  # SPDX-License-Identifier: GPL-2.0
- spinand-objs := core.o alliancememory.o ato.o esmt.o etron.o fmsh.o foresee.o gigadevice.o
--spinand-objs += macronix.o micron.o paragon.o toshiba.o winbond.o xtx.o
-+spinand-objs += macronix.o micron.o paragon.o skyhigh.o toshiba.o winbond.o xtx.o
+ spinand-objs := core.o alliancememory.o ato.o esmt.o fmsh.o foresee.o gigadevice.o macronix.o
+-spinand-objs += micron.o paragon.o toshiba.o winbond.o xtx.o
++spinand-objs += micron.o paragon.o skyhigh.o toshiba.o winbond.o xtx.o
  obj-$(CONFIG_MTD_SPI_NAND) += spinand.o
-diff --git a/drivers/mtd/nand/spi/core.c b/drivers/mtd/nand/spi/core.c
-index 8e56ca6..61158d9 100644
 --- a/drivers/mtd/nand/spi/core.c
 +++ b/drivers/mtd/nand/spi/core.c
-@@ -1166,6 +1166,7 @@ static const struct spinand_manufacturer *spinand_manufacturers[] = {
+@@ -1184,6 +1184,7 @@ static const struct spinand_manufacturer
  	&macronix_spinand_manufacturer,
  	&micron_spinand_manufacturer,
  	&paragon_spinand_manufacturer,
@@ -43,9 +39,6 @@ index 8e56ca6..61158d9 100644
  	&toshiba_spinand_manufacturer,
  	&winbond_spinand_manufacturer,
  	&xtx_spinand_manufacturer,
-diff --git a/drivers/mtd/nand/spi/skyhigh.c b/drivers/mtd/nand/spi/skyhigh.c
-new file mode 100644
-index 0000000..8b32b74
 --- /dev/null
 +++ b/drivers/mtd/nand/spi/skyhigh.c
 @@ -0,0 +1,147 @@
@@ -196,11 +189,9 @@ index 0000000..8b32b74
 +	.nchips = ARRAY_SIZE(skyhigh_spinand_table),
 +	.ops = &skyhigh_spinand_manuf_ops,
 +};
-diff --git a/include/linux/mtd/spinand.h b/include/linux/mtd/spinand.h
-index 5cf11005b41ae2..cbbcd44ac22565 100644
 --- a/include/linux/mtd/spinand.h
 +++ b/include/linux/mtd/spinand.h
-@@ -268,6 +268,7 @@ extern const struct spinand_manufacturer gigadevice_spinand_manufacturer;
+@@ -270,6 +270,7 @@ extern const struct spinand_manufacturer
  extern const struct spinand_manufacturer macronix_spinand_manufacturer;
  extern const struct spinand_manufacturer micron_spinand_manufacturer;
  extern const struct spinand_manufacturer paragon_spinand_manufacturer;
@@ -208,6 +199,3 @@ index 5cf11005b41ae2..cbbcd44ac22565 100644
  extern const struct spinand_manufacturer toshiba_spinand_manufacturer;
  extern const struct spinand_manufacturer winbond_spinand_manufacturer;
  extern const struct spinand_manufacturer xtx_spinand_manufacturer;
--- 
-2.40.1
-
