@@ -32,6 +32,11 @@ int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type
  * for an RX ring, MAX_ENTRIES the maximum number of entries
  * available in total for all queues.
  */
+
+#define RTETH_OWN_CPU		1
+#define RTETH_TX_RING_SIZE	16
+#define RTETH_TX_RINGS		2
+
 #define MAX_RXRINGS	32
 #define MAX_RXLEN	300
 #define MAX_ENTRIES	(300 * 8)
@@ -49,6 +54,24 @@ int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type
 #define TX_DO		0x2
 #define WRAP		0x2
 #define RING_BUFFER	1600
+
+struct rteth_packet {
+	/* hardware header part as required by SoC */
+	dma_addr_t		dma;
+	u16			reserved;
+	u16			size;
+	u16			offset;
+	u16			len;
+	u16			cpu_tag[10];
+	/* software mangement and data part */
+	struct sk_buff		*skb;
+} __packed __aligned(1);
+
+struct rteth_tx {
+	int			slot;
+	dma_addr_t		ring[RTETH_TX_RING_SIZE];
+	struct rteth_packet	packet[RTETH_TX_RING_SIZE];
+};
 
 struct p_hdr {
 	u8	*buf;
@@ -197,6 +220,10 @@ struct rteth_ctrl {
 	u32 lastEvent;
 	u16 rxrings;
 	u16 rxringlen;
+	/* transmit handling */
+	dma_addr_t		tx_dma;
+	spinlock_t		tx_lock;
+	struct rteth_tx		*tx_data;
 };
 
 /* On the RTL93XX, the RTL93XX_DMA_IF_RX_RING_CNTR track the fill level of
@@ -661,6 +688,19 @@ static void rteth_setup_ring_buffer(struct rteth_ctrl *ctrl, struct ring_b *ring
 		/* Last header is wrapping around */
 		ring->tx_r[i][j - 1] |= WRAP;
 		ring->c_tx[i] = 0;
+	}
+
+	for (int r = 0; r < RTETH_TX_RINGS; r++) {
+		for (int i = 0; i < RTETH_TX_RING_SIZE; i++) {
+			ctrl->tx_data[r].packet[i].skb = NULL;
+			ctrl->tx_data[r].ring[i] = ctrl->tx_dma +
+						   sizeof(struct rteth_tx) * r +
+						   offsetof(struct rteth_tx, packet) +
+						   sizeof(struct rteth_packet) * i;
+		}
+
+		ctrl->tx_data[r].ring[RTETH_TX_RING_SIZE - 1] |= WRAP;
+		ctrl->tx_data[r].slot = 0;
 	}
 }
 
@@ -1702,7 +1742,11 @@ static int rtl838x_eth_probe(struct platform_device *pdev)
 	ring = ctrl->membase;
 	ring->rx_space = ctrl->membase + sizeof(struct ring_b) + sizeof(struct notify_b);
 
+	ctrl->tx_data = dmam_alloc_coherent(&pdev->dev, sizeof(struct rteth_tx) * RTETH_TX_RINGS,
+					    &ctrl->tx_dma, GFP_KERNEL);
+
 	spin_lock_init(&ctrl->lock);
+	spin_lock_init(&ctrl->tx_lock);
 
 	dev->ethtool_ops = &rteth_ethtool_ops;
 	dev->min_mtu = ETH_ZLEN;
