@@ -2,18 +2,26 @@ REQUIRE_IMAGE_METADATA=1
 MTDSYSFS=/sys/class/mtd
 
 gemini_do_platform_upgrade() {
+	MTD1OF=`cat ${MTDSYSFS}/mtd1/offset`
+	MTD2OF=`cat ${MTDSYSFS}/mtd2/offset`
+	MTD3OF=`cat ${MTDSYSFS}/mtd3/offset`
+	MTD4OF=`cat ${MTDSYSFS}/mtd4/offset`
+	MTD1SZ=$((${MTD2OF} - ${MTD1OF}))
+	MTD2SZ=$((${MTD3OF} - ${MTD2OF}))
+	MTD3SZ=$((${MTD4OF} - ${MTD3OF}))
 	ESZ=`cat ${MTDSYSFS}/mtd1/erasesize`
 	if test ${ESZ} == 131072 ; then
-		echo "MTD1 has 128kb EB size..."
+		echo "MTD has 128kb EB size"
 	else
-		echo "MTD1 has wrong EB size!"
+		echo "MTD has wrong EB size!"
 	fi
-	NAME=`cat ${MTDSYSFS}/mtd1/name`
-	SZ=`cat ${MTDSYSFS}/mtd1/size`
 	KSZ=$(($ESZ * $2))
+	RSZ=$(($ESZ * $3))
+	ASZ=$(($ESZ * $4))
+	NAME=`cat ${MTDSYSFS}/mtd1/name`
 	if test "x${NAME}" == "xKern" ; then
-		if test ${SZ} == ${KSZ} ; then
-			echo "MTD1 OK..."
+		if test ${MTD1SZ} == ${KSZ} ; then
+			echo "MTD1 Kern ${MTD1SZ} OK..."
 		else
 			echo "MTD1 is wrong size, aborting" >&2
 			exit 1
@@ -23,13 +31,11 @@ gemini_do_platform_upgrade() {
 		exit 1
 	fi
 	NAME=`cat ${MTDSYSFS}/mtd2/name`
-	SZ=`cat ${MTDSYSFS}/mtd2/size`
-	RSZ=$(($ESZ * $3))
 	if test "x${NAME}" == "xRamdisk" ; then
-		if test ${SZ} == ${RSZ} ; then
-			echo "MTD2 OK..."
+		if test ${MTD2SZ} == ${RSZ} ; then
+			echo "MTD2 Ramdisk ${MTD2SZ} OK..."
 		else
-			echo "MTD2 is wrong size, aborting" >&2
+			echo "MTD2 is at wrong offset, aborting" >&2
 			exit 1
 		fi
 	else
@@ -37,13 +43,11 @@ gemini_do_platform_upgrade() {
 		exit 1
 	fi
 	NAME=`cat ${MTDSYSFS}/mtd3/name`
-	SZ=`cat ${MTDSYSFS}/mtd3/size`
-	ASZ=$(($ESZ * $4))
 	if test "x${NAME}" == "xApplication" ; then
-		if test ${SZ} == ${ASZ} ; then
-			echo "MTD3 OK..."
+		if test ${MTD3SZ} == ${ASZ} ; then
+			echo "MTD3 Application ${MTD3SZ} OK..."
 		else
-			echo "MTD3 is wrong size, aborting" >&2
+			echo "MTD3 is at wrong offset, aborting" >&2
 			exit 1
 		fi
 	else
