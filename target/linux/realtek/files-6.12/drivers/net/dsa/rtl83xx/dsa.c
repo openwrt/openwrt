@@ -2739,8 +2739,13 @@ static int rtldsa_port_pre_bridge_flags(struct dsa_switch *ds, int port,
 	pr_debug("%s: %d %lX\n", __func__, port, flags.val);
 	if (priv->r->enable_learning)
 		features |= BR_LEARNING;
-	if (priv->r->enable_flood)
+
+	if (priv->r->enable_flood) {
 		features |= BR_FLOOD;
+		if (priv->r->l2_port_new_salrn)
+			features |= BR_PORT_LOCKED;
+	}
+
 	if (priv->r->enable_mcast_flood)
 		features |= BR_MCAST_FLOOD;
 	if (priv->r->enable_bcast_flood)
@@ -2756,11 +2761,35 @@ static int rtl83xx_port_bridge_flags(struct dsa_switch *ds, int port, struct swi
 	struct rtl838x_switch_priv *priv = ds->priv;
 
 	pr_debug("%s: %d %lX\n", __func__, port, flags.val);
+
+	if (flags.mask & BR_PORT_LOCKED) {
+		if (flags.val & BR_PORT_LOCKED) {
+			/* Locked Mode:
+			 * Disable automatic SA learning
+			 * Flush FDB
+			 * Do not forward broadcast/unicast/multicast for unknown SA
+			 */
+			priv->ports[port].flood_type = RTLDSA_FLOOD_TYPE_TRAP2CPU;
+			rtl83xx_port_set_salrn(priv, port, false);
+			ds->ops->port_fast_age(ds, port);
+		} else {
+			priv->ports[port].flood_type = RTLDSA_FLOOD_TYPE_FORWARD;
+			// priv->ports[port].flood_type should be decided by BR_FLOOD
+			rtl83xx_port_set_salrn(priv, port, true);
+		}
+	}
+
+	if (flags.mask & BR_FLOOD) {
+		priv->ports[port].flood_type = (flags.val & BR_FLOOD) ?
+						RTLDSA_FLOOD_TYPE_FORWARD :
+						RTLDSA_FLOOD_TYPE_DROP;
+	}
+
+	if (priv->r->enable_flood)
+		priv->r->enable_flood(port, priv->ports[port].flood_type);
+
 	if (priv->r->enable_learning && (flags.mask & BR_LEARNING))
 		priv->r->enable_learning(port, !!(flags.val & BR_LEARNING));
-
-	if (priv->r->enable_flood && (flags.mask & BR_FLOOD))
-		priv->r->enable_flood(port, !!(flags.val & BR_FLOOD));
 
 	if (priv->r->enable_mcast_flood && (flags.mask & BR_MCAST_FLOOD))
 		priv->r->enable_mcast_flood(port, !!(flags.val & BR_MCAST_FLOOD));

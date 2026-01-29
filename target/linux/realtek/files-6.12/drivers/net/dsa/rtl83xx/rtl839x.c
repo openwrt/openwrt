@@ -572,14 +572,14 @@ static void rtl839x_enable_learning(int port, bool enable)
 		    RTL839X_L2_PORT_LRN_CONSTRT + (port << 2));
 }
 
-static void rtl839x_enable_flood(int port, bool enable)
+static void rtl839x_enable_flood(int port, enum rtldsa_flood_type mode)
 {
 	/* 0: Forward
 	 * 1: Disable
 	 * 2: to CPU
 	 * 3: Copy to CPU
 	 */
-	sw_w32_mask(0x3, enable ? 0 : 1,
+	sw_w32_mask(0x3, mode,
 		    RTL839X_L2_PORT_LRN_CONSTRT + (port << 2));
 }
 
