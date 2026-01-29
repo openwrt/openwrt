@@ -83,7 +83,7 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
  		init.parent_names = &clk_name;
  		init.num_parents = 1;
  	} else {
-@@ -1408,16 +1426,26 @@ static int rockchip_usb2phy_probe(struct
+@@ -1407,11 +1425,13 @@ static int rockchip_usb2phy_probe(struct
  	if (IS_ERR(rphy->phy_reset))
  		return PTR_ERR(rphy->phy_reset);
  
@@ -101,8 +101,10 @@ Signed-off-by: Vinod Koul <vkoul@kernel.org>
 +	rphy->num_clks = ret < 0 ? 0 : ret;
  
  	ret = rockchip_usb2phy_clk480m_register(rphy);
- 	if (ret)
- 		return dev_err_probe(dev, ret, "failed to register 480m output clock\n");
+ 	if (ret) {
+@@ -1419,6 +1439,14 @@ static int rockchip_usb2phy_probe(struct
+ 		return ret;
+ 	}
  
 +	ret = clk_bulk_prepare_enable(rphy->num_clks, rphy->clks);
 +	if (ret)
