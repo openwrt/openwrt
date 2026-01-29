@@ -153,21 +153,62 @@ BUILD_PACKAGES+= \
   "kernel=$(KERNEL_VERSION)"
 endif
 
-# Get ABI version suffix for a package from an apk index
+# Get ABI version suffix for a package
+# Input example: 
+# $(1)=libustream-mbedtls
+# $(2)=... libustream-mbedtls20201210:20201210 ...
 #
 # 1: package name
+# 2: list of packages names with ABI suffixes 
 define GetABISuffix
-$(shell $(APK) query --fields tags --match provides $(1) | tr ' ' '\n' | grep '^openwrt:abiversion=' | cut -d= -f2)
+$(strip
+  $(foreach name_abi_abi,$(2),
+    $(eval abi:=$(lastword $(subst :, ,$(name_abi_abi))))
+    $(eval name_abi:=$(firstword $(subst :, ,$(name_abi_abi))))
+    $(if $(filter $(1)$(abi),$(name_abi)),
+      $(abi)
+    )
+  )
+)
+endef
+
+# Get list of packages matching the "Tags:" field in APK metadata
+# with the parameter $(1) and print them in the format:
+# "package_name<abi_version>:tag_value"
+# 
+# apk query --fields name,tags --match tags 'openwrt:abi*'
+# Name: libustream-mbedtls20201210
+# Tags: openwrt:abiversion=20201210
+# ...
+# Output: ... libustream-mbedtls20201210:20201210 ...
+#
+# 1: tag to match
+define GetPackagesByTags
+$(strip $(shell $(APK) query --fields name,tags --match tags '$(1)' | awk ' \
+  /^Name:/ { \
+    name = $$2 \
+  } \
+  /^Tags:/ { \
+    for (i=2; i<=NF; i++) { \
+      if ($$i ~ /^$(1)/) { \
+        split($$i, tag, "="); \
+        printf "%s:%s ", name, tag[2]; \
+      } \
+    } \
+  }' \
+))
 endef
 
 # Format packages by adding an ABI version suffix if found
 #
 # 1: list of packages
 define FormatPackages
+$(eval pkg_names_abi:=$(call GetPackagesByTags,openwrt:abi*)) \
 $(strip $(foreach pkg,$(strip $(subst ",,$(1))),
   $(eval pkg_name:=$(firstword $(subst =, ,$(pkg))))
+  $(eval pkg_ver:=)
   $(if $(findstring =,$(pkg)),$(eval pkg_ver:==$(lastword $(subst =, ,$(pkg)))))
-  $(pkg_name)$(call GetABISuffix,$(pkg_name))$(pkg_ver)
+  $(pkg_name)$(call GetABISuffix,$(pkg_name),$(pkg_names_abi))$(pkg_ver)
 ))
 endef
 
