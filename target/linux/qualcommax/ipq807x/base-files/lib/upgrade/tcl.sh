@@ -1,6 +1,7 @@
 # based on target/linux/qualcommax/ipq50xx/base-files/lib/upgrade/elecom.sh
 
 . /lib/functions.sh
+. /lib/functions/bootconfig.sh
 
 # Read or update an entry in Qualcomm bootconfig partition
 #

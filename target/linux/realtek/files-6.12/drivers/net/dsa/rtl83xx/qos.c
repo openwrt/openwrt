@@ -6,8 +6,6 @@
 
 #include "rtl83xx.h"
 
-static struct rtl838x_switch_priv *switch_priv;
-
 enum scheduler_type {
 	WEIGHTED_FAIR_QUEUE = 0,
 	WEIGHTED_ROUND_ROBIN,
@@ -445,7 +443,7 @@ static void rtl839x_set_scheduling_queue_weights(struct rtl838x_switch_priv *pri
 	mutex_unlock(&priv->reg_mutex);
 }
 
-static void rtl838x_config_qos(void)
+static void rtl838x_config_qos(struct rtl838x_switch_priv *priv)
 {
 	u32 v;
 
@@ -490,10 +488,9 @@ static void rtl838x_config_qos(void)
 	sw_w32_mask(0, 7, RTL838X_QM_PKT2CPU_INTPRI_1);
 }
 
-static void rtl839x_config_qos(void)
+static void rtl839x_config_qos(struct rtl838x_switch_priv *priv)
 {
 	u32 v;
-	struct rtl838x_switch_priv *priv = switch_priv;
 
 	pr_info("Setting up RTL839X QoS\n");
 	pr_info("RTL839X_PRI_SEL_TBL_CTRL(i): %08x\n", sw_r32(RTL839X_PRI_SEL_TBL_CTRL(0)));
@@ -549,12 +546,12 @@ static void rtl839x_config_qos(void)
 
 void rtldsa_838x_qos_init(struct rtl838x_switch_priv *priv)
 {
-	rtl838x_config_qos();
+	rtl838x_config_qos(priv);
 	rtl838x_rate_control_init(priv);
 }
 
 void rtldsa_839x_qos_init(struct rtl838x_switch_priv *priv)
 {
-	rtl839x_config_qos();
+	rtl839x_config_qos(priv);
 	rtl839x_rate_control_init(priv);
 }

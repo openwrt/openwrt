@@ -1,0 +1,225 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "rtl930x.dtsi"
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	compatible = "xikestor,sks8300-8t", "realtek,rtl9303-soc";
+	model = "XikeStor SKS8300-8T";
+
+	aliases {
+		label-mac-device = &ethernet0;
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x10000000>, /* first 256 MiB */
+		      <0x20000000 0x10000000>; /* remaining 256 MiB */
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		button-reset {
+			label = "reset";
+			gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	led_set {
+		compatible = "realtek,rtl9300-leds";
+		active-low;
+
+		led_set0 = <(RTL93XX_LED_SET_10M | RTL93XX_LED_SET_100M |
+			     RTL93XX_LED_SET_1G | RTL93XX_LED_SET_2P5G |
+			     RTL93XX_LED_SET_5G | RTL93XX_LED_SET_LINK |
+			     RTL93XX_LED_SET_ACT)
+			    (RTL93XX_LED_SET_10G | RTL93XX_LED_SET_LINK |
+			     RTL93XX_LED_SET_ACT)>;
+	};
+};
+
+&i2c_mst1 {
+	status = "okay";
+
+	i2c@0 {
+		reg = <0>;
+
+		temperature_sensor: temperature-sensor@48 {
+			compatible = "national,lm75";
+			reg = <0x48>;
+			#thermal-sensor-cells = <0>;
+		};
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x1c0000>;
+				read-only;
+			};
+
+			partition@1c0000 {
+				label = "u-boot-env";
+				reg = <0x1c0000 0x10000>;
+			};
+
+			partition@1d0000 {
+				label = "sysinfo";
+				reg = <0x1d0000 0x10000>;
+				read-only;
+			};
+
+			partition@1e0000 {
+				label = "factory";
+				reg = <0x1e0000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					factory_macaddr: macaddr@80 {
+						reg = <0x80 0x6>;
+					};
+				};
+			};
+
+			partition@1f0000 {
+				label = "sysdata";
+				reg = <0x1f0000 0x10000>;
+			};
+
+			partition@200000 {
+				label = "jffs2_filesystem";
+				reg = <0x200000 0xa00000>;
+			};
+
+			partition@c00000 {
+				compatible = "openwrt,uimage", "denx,uimage";
+				label = "firmware";
+				reg = <0xc00000 0x1400000>;
+				openwrt,ih-magic = <0x93000000>;
+				openwrt,offset = <0x10>;
+			};
+		};
+	};
+};
+
+&mdio_bus0 {
+	phy0: ethernet-phy@0 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <0>;
+	};
+
+	phy8: ethernet-phy@8 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <8>;
+		realtek,smi-address = <1>;
+	};
+
+	phy16: ethernet-phy@16 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <16>;
+		realtek,smi-address = <2>;
+	};
+
+	phy20: ethernet-phy@20 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <20>;
+		realtek,smi-address = <3>;
+	};
+};
+
+&mdio_bus1 {
+	phy24: ethernet-phy@24 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <24>;
+		realtek,smi-address = <0>;
+	};
+
+	phy25: ethernet-phy@25 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <25>;
+		realtek,smi-address = <1>;
+	};
+
+	phy26: ethernet-phy@26 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <26>;
+		realtek,smi-address = <2>;
+	};
+
+	phy27: ethernet-phy@27 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <27>;
+		realtek,smi-address = <3>;
+	};
+};
+
+&ethernet0 {
+	nvmem-cells = <&factory_macaddr>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch0 {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		SWITCH_PORT_SDS(0, 1, 2, usxgmii)
+		SWITCH_PORT_SDS(8, 2, 3, usxgmii)
+		SWITCH_PORT_SDS(16, 3, 4, usxgmii)
+		SWITCH_PORT_SDS(20, 4, 5, usxgmii)
+		SWITCH_PORT_SDS(24, 5, 6, usxgmii)
+		SWITCH_PORT_SDS(25, 6, 7, usxgmii)
+		SWITCH_PORT_SDS(26, 7, 8, usxgmii)
+		SWITCH_PORT_SDS(27, 8, 9, usxgmii)
+
+		port@28 {
+			ethernet = <&ethernet0>;
+			reg = <28>;
+			phy-mode = "internal";
+			fixed-link {
+				speed = <10000>;
+				full-duplex;
+			};
+		};
+	};
+};
+
+&thermal_zones {
+	sys-thermal {
+		polling-delay-passive = <1000>;
+		polling-delay = <1000>;
+		thermal-sensors = <&temperature_sensor>;
+		trips {
+			sys-crit {
+				temperature = <70000>;
+				hysteresis = <2000>;
+				type = "critical";
+			};
+		};
+	};
+};

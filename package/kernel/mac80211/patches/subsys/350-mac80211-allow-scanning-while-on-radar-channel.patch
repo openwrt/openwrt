@@ -1,6 +1,6 @@
 --- a/net/mac80211/cfg.c
 +++ b/net/mac80211/cfg.c
-@@ -3825,6 +3825,27 @@ static bool ieee80211_is_scan_ongoing(st
+@@ -3815,6 +3815,27 @@ static bool ieee80211_is_scan_ongoing(st
  	return false;
  }
  
@@ -28,7 +28,7 @@
  static int ieee80211_start_radar_detection(struct wiphy *wiphy,
  					   struct net_device *dev,
  					   struct cfg80211_chan_def *chandef,
-@@ -3838,7 +3859,7 @@ static int ieee80211_start_radar_detecti
+@@ -3828,7 +3849,7 @@ static int ieee80211_start_radar_detecti
  
  	lockdep_assert_wiphy(local->hw.wiphy);
  
@@ -37,7 +37,7 @@
  		return -EBUSY;
  
  	link_data = sdata_dereference(sdata->link[link_id], sdata);
-@@ -4330,7 +4351,7 @@ __ieee80211_channel_switch(struct wiphy
+@@ -4320,7 +4341,7 @@ __ieee80211_channel_switch(struct wiphy
  
  	lockdep_assert_wiphy(local->hw.wiphy);
  
@@ -387,7 +387,7 @@
   * the suspend->resume cycle. Since we can't check each caller
 --- a/net/wireless/util.c
 +++ b/net/wireless/util.c
-@@ -2964,6 +2964,9 @@ bool cfg80211_radio_chandef_valid(const
+@@ -2943,6 +2943,9 @@ bool cfg80211_radio_chandef_valid(const
  {
  	u32 freq, width;
  

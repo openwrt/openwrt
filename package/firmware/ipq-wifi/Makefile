@@ -6,9 +6,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/firmware/qca-wireless.git
-PKG_SOURCE_DATE:=2026-01-24
-PKG_SOURCE_VERSION:=8e1fb2f59893dc4ce3203b7649e61b30fde2d5a8
-PKG_MIRROR_HASH:=df8b18d380fc7df5a0848d6868b10e91d010959415fa2972b69636de77868134
+PKG_SOURCE_DATE:=2026-01-28
+PKG_SOURCE_VERSION:=88514e5aab3e1c0dabad81c7ace815c2fa45565a
+PKG_MIRROR_HASH:=d51f25001a8cf166bc6d42372861b4290c69dae1f8aaeb9b1e5d85f4b06f8545
 PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
@@ -94,6 +94,7 @@ ALLWIFIBOARDS:= \
 	tplink_archer-c60-v1 \
 	tplink_archer-c60-v2 \
 	ubiquiti_afi-aln-r \
+	tplink_tl-wa1201-v2 \
 	wallys_dr40x9 \
 	xiaomi_aiot-ac2350 \
 	xiaomi_ax3600 \
@@ -282,6 +283,7 @@ $(eval $(call generate-ipq-wifi-package,tplink_archer-c6-v2,TP-Link Archer C6 V2
 $(eval $(call generate-ipq-wifi-package,tplink_archer-c60-v1,TP-Link Archer C60 V1))
 $(eval $(call generate-ipq-wifi-package,tplink_archer-c60-v2,TP-Link Archer C60 V2))
 $(eval $(call generate-ipq-wifi-package,ubiquiti_afi-aln-r,Ubiquiti Amplifi Alien Router))
+$(eval $(call generate-ipq-wifi-package,tplink_tl-wa1201-v2,TP-Link TL-WA1201 V2))
 $(eval $(call generate-ipq-wifi-package,wallys_dr40x9,Wallys DR40X9))
 $(eval $(call generate-ipq-wifi-package,xiaomi_aiot-ac2350,Xiaomi AIoT AC2350))
 $(eval $(call generate-ipq-wifi-package,xiaomi_ax3600,Xiaomi AX3600))

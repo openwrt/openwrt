@@ -75,6 +75,7 @@ realtek_setup_macs()
 		lan_mac_start=$(macaddr_add $lan_mac 2)
 		lan_mac_end=$(macaddr_add $lan_mac $((mac_count2-mac_count1)))
 		;;
+	hasivo,s1100wp-8gt-se|\
 	plasmacloud,esx28|\
 	plasmacloud,mcx3|\
 	plasmacloud,psx8|\
@@ -87,6 +88,10 @@ realtek_setup_macs()
 	zyxel,xgs1010-12-a1)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		[ -z "$lan_mac" ] || [ "$lan_mac" = "00:e0:4c:00:00:00" ] && lan_mac=$(macaddr_random)
+		;;
+	xikestor,sks8300-8t)
+		lan_mac="$(get_mac_label)"
+		label_mac="$lan_mac"
 		;;
 	xikestor,sks8300-8x)
 		lan_mac=$(mtd_get_mac_binary board-info 0x1f1)
