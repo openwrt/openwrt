@@ -5,12 +5,18 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+ifeq ($(CONFIG_TARGET_IMAGES_PIGZ),y)
+  GZIPCMD:=pigz
+else
+  GZIPCMD:=gzip
+endif
+
 define CompressLzma
   $(STAGING_DIR_HOST)/bin/lzma e $(1) -lc1 -lp2 -pb2 $(2)
 endef
 
 define CompressGzip
-	gzip -9n -c $(1) > $(2)
+	$(GZIPCMD) -9n -c $(1) > $(2)
 endef
 
 define MkuImage
@@ -38,7 +44,7 @@ define Image/Build/Initramfs
 endef
 
 define Image/Build/gzip
-	gzip -f9n $(BIN_DIR)/$(IMG_ROOTFS)-$(1).img
+	$(GZIPCMD) -f9n $(BIN_DIR)/$(IMG_ROOTFS)-$(1).img
 endef
 
 $(eval $(call Image/gzip-ext4-padded-squashfs))
