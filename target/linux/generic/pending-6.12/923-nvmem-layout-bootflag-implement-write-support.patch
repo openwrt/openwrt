@@ -1,0 +1,92 @@
+From: Michael Lotz <mmlr@mlotz.ch>
+Subject: nvmem-layout bootflag: implement write support
+
+This adds write support to the bootflag nvmem-layout by providing a
+write_pre_process hook. The hook inverts the operations done by the
+read hook.
+
+Signed-off-by: Michael Lotz <mmlr@mlotz.ch>
+--- a/drivers/nvmem/layouts/bootflag.c
++++ b/drivers/nvmem/layouts/bootflag.c
+@@ -4,11 +4,13 @@
+  */
+ 
+ #include <linux/module.h>
++#include <linux/nvmem-consumer.h>
+ #include <linux/nvmem-provider.h>
+ #include <linux/of.h>
+ #include <linux/platform_device.h>
+ 
+ struct bootflag_cell {
++	struct nvmem_layout *layout;
+ 	size_t length;
+ 	int shift;
+ 	const u8 *mask;
+@@ -47,6 +51,55 @@ static int bootflag_read_post_process(vo
+ 	return 0;
+ }
+ 
++static int bootflag_write_pre_process(void *context, unsigned int offset,
++	void **buf, size_t *bytes)
++{
++	struct bootflag_cell *cell = context;
++	const u8 *source = NULL;
++	u8 *buffer = *buf;
++	u8 value = buffer[0];
++	u8 mask;
++	int read, i;
++
++	if (cell->length != *bytes) {
++		*buf = buffer = kzalloc(cell->length, GFP_KERNEL);
++		if (!buf)
++			return -ENOMEM;
++
++		*bytes = cell->length;
++	}
++
++	read = nvmem_device_read(cell->layout->nvmem, offset, *bytes, *buf);
++	if (read < 0)
++		return read;
++	if (read != *bytes)
++		return -EIO;
++
++	if (cell->map_count > 0) {
++		if (value >= cell->map_count)
++			return -EINVAL;
++
++		source = &cell->map[value * *bytes];
++	}
++
++	for (i = 0; i < *bytes; i++) {
++		mask = ~0;
++		if (cell->mask)
++			mask = cell->mask[i];
++
++		buffer[i] &= ~(mask << cell->shift);
++		if (source)
++			value = source[i];
++
++		if (value & ~mask)
++			return -EINVAL;
++
++		buffer[i] |= value << cell->shift;
++	}
++
++	return 0;
++}
++
+ static int bootflag_add_cells(struct nvmem_layout *layout)
+ {
+ 	struct device *dev = &layout->dev;
+@@ -87,8 +140,11 @@ static int bootflag_add_cells(struct nvm
+ 		info.name = name;
+ 		info.np = of_node_get(child);
+ 		info.read_post_process = bootflag_read_post_process;
++		info.write_pre_process = bootflag_write_pre_process;
+ 		info.priv = priv;
+ 
++		priv->layout = layout;
++
+ 		addr = of_get_property(child, "shift", &len);
+ 		if (addr) {
+ 			if (priv->length != 1) {
