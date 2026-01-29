@@ -1,0 +1,103 @@
+// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+/dts-v1/;
+
+#include <dt-bindings/interrupt-controller/mips-gic.h>
+
+/ {
+	compatible = "econet,en7528";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	hpt_clock: clock {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <200000000>;  /* 200 MHz */
+	};
+
+	spi_clock: spi-clock {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <40000000>;  /* 40 MHz */
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "mips,mips1004Kc";
+			reg = <0>;
+		};
+
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "mips,mips1004Kc";
+			reg = <1>;
+		};
+	};
+
+	cpuintc: interrupt-controller {
+		compatible = "mti,cpu-interrupt-controller";
+		interrupt-controller;
+		#address-cells = <0>;
+		#interrupt-cells = <1>;
+	};
+
+	gic: interrupt-controller@1f8c0000 {
+		compatible = "mti,gic";
+		reg = <0x1f8c0000 0x20000>;
+
+		interrupt-controller;
+		#interrupt-cells = <3>;
+
+		interrupt-parent = <&cpuintc>;
+		interrupts = <2>;
+	};
+
+	timer_hpt: timer@1fbf0400 {
+		compatible = "econet,en7528-timer";
+		reg = <0x1fbf0400 0x14>,
+		      <0x1fbe0000 0x14>;
+
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SHARED 30 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SHARED 29 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SHARED 37 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SHARED 36 IRQ_TYPE_LEVEL_HIGH>;
+
+		clocks = <&hpt_clock>;
+	};
+
+	spi_ctrl: spi@1fa10000 {
+		compatible = "airoha,en7581-snand";
+		reg = <0x1fa10000 0x140>,
+		      <0x1fa11000 0x160>;
+
+		clocks = <&spi_clock>;
+		clock-names = "spi";
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		nand: nand@0 {
+			compatible = "spi-nand";
+			reg = <0>;
+			spi-max-frequency = <40000000>;
+			spi-tx-bus-width = <1>;
+			spi-rx-bus-width = <2>;
+		};
+	};
+
+	uart: serial@1fbf0000 {
+		compatible = "airoha,en7523-uart";
+		reg = <0x1fbf0000 0x30>;
+		reg-io-width = <4>;
+		reg-shift = <2>;
+
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SHARED 2 IRQ_TYPE_LEVEL_HIGH>;
+
+		clock-frequency = <7372800>;
+	};
+};
