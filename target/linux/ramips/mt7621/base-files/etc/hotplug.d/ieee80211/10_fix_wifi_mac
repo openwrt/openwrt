@@ -78,7 +78,7 @@ case "$board" in
 	sim,simax1800u)
 		[ "$PHYNBR" = "1" ] && \
 			macaddr_setbit_la "$(mtd_get_mac_binary factory 0x4)" > /sys${DEVPATH}/macaddress
-		;;
+		;;	
 	h3c,tx1800-plus|\
 	h3c,tx1801-plus|\
 	h3c,tx1806)
@@ -194,5 +194,9 @@ case "$board" in
 		hw_mac_addr="$(mtd_get_mac_binary Factory 0x4)"
 		[ "$PHYNBR" = "0" ] && macaddr_setbit_la "$hw_mac_addr" > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && echo -n "$hw_mac_addr" > /sys${DEVPATH}/macaddress
+		;;
+	z-router,zr-2662)
+		[ "$PHYNBR" = "1" ] && \
+			macaddr_add "$(mtd_get_mac_binary factory 0x4)" 1 > /sys${DEVPATH}/macaddress
 		;;
 esac
