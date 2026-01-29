@@ -1,7 +1,7 @@
 REQUIRE_IMAGE_METADATA=1
 MTDSYSFS=/sys/class/mtd
 
-gemini_do_platform_upgrade() {
+gemini_check_redboot_parts() {
 	MTD1OF=`cat ${MTDSYSFS}/mtd1/offset`
 	MTD2OF=`cat ${MTDSYSFS}/mtd2/offset`
 	MTD3OF=`cat ${MTDSYSFS}/mtd3/offset`
@@ -54,19 +54,23 @@ gemini_do_platform_upgrade() {
 		echo "MTD3 has wrong name, aborting" >&2
 		exit 1
 	fi
+}
+
+gemini_do_platform_upgrade() {
 	echo "Extract the three firmware parts"
-	tar xvfz "$1"; rm "$1"
-	sync
 	echo 3 > /proc/sys/vm/drop_caches
 	echo "COMMENCING UPGRADE. BE PATIENT, THIS IS NOT FAST!"
-	echo "Upgrade Kern partition (kernel part 1, $2 erase blocks)"
-	mtd write zImage Kern
+	KFSZ=$(tar xfz "$1" zImage -O | wc -c)
+	echo "Upgrade Kern partition (kernel part 1, size ${KFSZ})"
+	tar xfz "$1" zImage -O | mtd write - Kern
 	[ $? -ne 0 ] && exit 1
-	echo "Upgrade Ramdisk partition (kernel part 2, $3 erase blocks)"
-	mtd write rd.gz Ramdisk
+	RFSZ=$(tar xfz "$1" rd.gz -O | wc -c)
+	echo "Upgrade Ramdisk partition (kernel part 2, size ${RFSZ})"
+	tar xfz "$1" rd.gz -O | mtd write - Ramdisk
 	[ $? -ne 0 ] && exit 1
-	echo "Upgrade Application partition (rootfs, $4 erase blocks)"
-	mtd write hddapp.tgz Application
+	AFSZ=$(tar xfz "$1" hddapp.tgz -O | wc -c)
+	echo "Upgrade Application partition (rootfs, size ${AFSZ})"
+	tar xfz "$1" hddapp.tgz -O | mtd write - Application
 	[ $? -ne 0 ] && exit 1
 }
 
@@ -98,10 +102,12 @@ platform_do_upgrade() {
 		;;
 	itian,sq201|\
 	storlink,gemini324)
-		gemini_do_platform_upgrade "$1" 16 48 48
+		gemini_check_redboot_parts "$1" 16 48 48
+		gemini_do_platform_upgrade "$1"
 		;;
 	raidsonic,ib-4220-b)
-		gemini_do_platform_upgrade "$1" 24 48 48
+		gemini_check_redboot_parts "$1" 24 48 48
+		gemini_do_platform_upgrade "$1"
 		;;
 	esac
 }
