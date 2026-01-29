@@ -1640,12 +1640,14 @@ static void rtl838x_set_egr_filter(int port, enum egr_filter state)
 		    RTL838X_VLAN_PORT_EGR_FLTR + (((port / 29) << 2)));
 }
 
-static void rtl838x_set_distribution_algorithm(int group, int algoidx, u32 algomsk)
+static int rtl838x_set_distribution_algorithm(struct rtl838x_switch_priv *priv,
+					      int group, int algoidx, u32 algomsk)
 {
 	algoidx &= 1; /* RTL838X only supports 2 concurrent algorithms */
 	sw_w32_mask(1 << (group % 8), algoidx << (group % 8),
 		    RTL838X_TRK_HASH_IDX_CTRL + ((group >> 3) << 2));
 	sw_w32(algomsk, RTL838X_TRK_HASH_CTRL + (algoidx << 2));
+	return 0;
 }
 
 static void rtl838x_set_receive_management_action(int port, rma_ctrl_t type, action_type_t action)
@@ -1667,6 +1669,26 @@ static void rtl838x_set_receive_management_action(int port, rma_ctrl_t type, act
 		break;
 	}
 }
+
+static int rtldsa_838x_lag_set_port_members(struct rtl838x_switch_priv *priv, int group,
+					    u64 members, struct netdev_lag_upper_info *info)
+{
+	u64 old_members;
+	u64 clear;
+
+	old_members = priv->lags_port_members[group];
+	priv->lags_port_members[group] = members;
+
+	clear = old_members & ~priv->lags_port_members[group];
+
+	priv->r->mask_port_reg_be(clear, priv->lags_port_members[group],
+				  priv->r->trk_mbr_ctr(group));
+
+	return 0;
+}
+
+int rtldsa_83xx_lag_setup_algomask(struct rtl838x_switch_priv *priv, int group,
+				   struct netdev_lag_upper_info *info);
 
 const struct rtl838x_reg rtl838x_reg = {
 	.mask_port_reg_be = rtl838x_mask_port_reg,
@@ -1746,9 +1768,11 @@ const struct rtl838x_reg rtl838x_reg = {
 	.route_read = rtl838x_route_read,
 	.route_write = rtl838x_route_write,
 	.l3_setup = rtl838x_l3_setup,
-	.set_distribution_algorithm = rtl838x_set_distribution_algorithm,
+	.lag_set_distribution_algorithm = rtl838x_set_distribution_algorithm,
 	.set_receive_management_action = rtl838x_set_receive_management_action,
 	.qos_init = rtldsa_838x_qos_init,
+	.lag_set_port_members = rtldsa_838x_lag_set_port_members,
+	.lag_setup_algomask = rtldsa_83xx_lag_setup_algomask,
 };
 
 irqreturn_t rtl838x_switch_irq(int irq, void *dev_id)
