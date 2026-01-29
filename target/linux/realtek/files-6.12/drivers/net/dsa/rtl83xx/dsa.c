@@ -504,6 +504,12 @@ static void rtldsa_setup_lldp_traps(struct rtl838x_switch_priv *priv)
 		priv->r->set_receive_management_action(i, LLDP, TRAP2CPU);
 }
 
+static void rtldsa_setup_eapol_traps(struct rtl838x_switch_priv *priv)
+{
+	for (int i = 0; i < priv->cpu_port; i++)
+		priv->r->set_receive_management_action(i, EAPOL, TRAP2CPU);
+}
+
 static void rtl83xx_port_set_salrn(struct rtl838x_switch_priv *priv,
 				   int port, bool enable)
 {
@@ -630,6 +636,7 @@ static int rtl93xx_setup(struct dsa_switch *ds)
 
 	rtldsa_setup_bpdu_traps(priv);
 	rtldsa_setup_lldp_traps(priv);
+	rtldsa_setup_eapol_traps(priv);
 
 	ds->configure_vlan_while_not_filtering = true;
 
