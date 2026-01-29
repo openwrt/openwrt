@@ -46,6 +46,9 @@ ramips_setup_interfaces()
 	cudy,ap1300-outdoor-v1|\
 	dlink,dap-1620-b1|\
 	dlink,dap-x1860-a1|\
+	dlink,dir-1360-a1)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+		;;
 	dlink,dra-1360-a1|\
 	edimax,re23s|\
 	linksys,re7000|\
