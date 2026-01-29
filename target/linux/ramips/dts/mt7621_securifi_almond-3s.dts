@@ -1,0 +1,216 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/*
+ * Copyright (c) 2026
+ * Author: Fil Dunsky <filipp.dunsky@gmail.com>
+ */
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	model = "Securifi Almond 3S";
+	compatible = "securifi,almond-3s", "mediatek,mt7621-soc";
+
+	chosen {
+		bootargs = "console=ttyS0,57600n8";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 32 GPIO_ACTIVE_LOW>;
+			debounce-interval = <20>;
+		};
+		
+		tamper {
+			label = "tamper";
+			linux,code = <BTN_0>;
+			gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
+			debounce-interval = <20>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		display_power {
+			label = "display:power";
+			gpios = <&gpio 31 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		modem-reset {
+			gpio-export,name = "modem_reset";
+			gpio-export,output = <1>;
+			gpios = <&gpio 33 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&i2c {
+	status = "okay";
+};
+
+&gdma {
+	status = "okay";
+};
+
+&i2s {
+	status = "okay";
+	#sound-dai-cells = <0>;
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 { /* MT25QL512AB */
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <52000000>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partitions: partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "u-boot-env";
+				reg = <0x30000 0x10000>;
+			};
+
+			partition@40000 {
+				label = "factory";
+				reg = <0x40000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x1000>;
+					};
+
+					eeprom_factory_8000: eeprom@8000 {
+						reg = <0x8000 0x1000>;
+					};
+					
+					mac_wifi2g: macaddr@4 {
+						reg = <0x4 0x6>;
+					};
+					
+					mac_lan: macaddr@28 {
+						reg = <0x28 0x6>;
+					};
+
+					mac_wan: macaddr@2e {
+						reg = <0x2e 0x6>;
+					};
+
+					mac_wifi5g: macaddr@8004 {
+						reg = <0x8004 0x6>;
+					};					
+				};
+			};
+			
+			partition@50000 {
+					compatible = "openwrt,uimage", "denx,uimage";
+					label = "firmware";
+					reg = <0x0050000 0x3fb0000>;
+			};
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		ieee80211-freq-limit = <5000000 6000000>;
+
+		nvmem-cells = <&eeprom_factory_8000>, <&mac_wifi5g>;
+		nvmem-cell-names = "eeprom", "mac-address";
+	};
+};
+
+&pcie1 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		ieee80211-freq-limit = <2400000 2500000>;
+
+		nvmem-cells = <&eeprom_factory_0>, <&mac_wifi2g>;
+		nvmem-cell-names = "eeprom", "mac-address";
+	};
+};
+
+&gmac0 {
+	nvmem-cells = <&mac_lan>;
+	nvmem-cell-names = "mac-address";
+};
+
+&ethphy0 {
+	/delete-property/ interrupts;
+};
+
+&ethernet {
+	pinctrl-0 = <&mdio_pins>;
+};
+
+&switch0 {
+	ports {
+		port@0 {
+			status = "okay";
+			label = "wan";
+			nvmem-cells = <&mac_wan>;
+			nvmem-cell-names = "mac-address";
+		};
+        
+		port@1 {
+			status = "okay";
+			label = "lan2";
+		};
+
+		port@2 {
+			status = "okay";
+			label = "lan1";
+		};
+	};
+};
+
+&uartlite2 {
+	status = "okay";
+	current-speed = <57600>;
+};
+
+&uartlite3 {
+	status = "okay";
+	current-speed = <57600>;
+};
+
+&xhci {
+	status = "okay";
+};
