@@ -175,6 +175,7 @@ int32 phy_patch(uint32 unit, rtk_port_t port, uint8 portOffset, uint8 patch_mode
             break;
         }
     }
+#ifdef CONFIG_MACH_REALTEK_RTL
     ret = _phy_patch_process(unit, port, portOffset, rtl826XB_patch_rtk_conf, sizeof(rtl826XB_patch_rtk_conf), patch_mode);
     if (ret == RT_ERR_CHECK_FAILED)
         chk_ret = ret;
@@ -183,6 +184,7 @@ int32 phy_patch(uint32 unit, rtk_port_t port, uint8 portOffset, uint8 patch_mode
         RT_LOG(LOG_MAJOR_ERR, (MOD_HAL | MOD_PHY), "U%u P%u patch_mode:%u id:%u patch-%u failed. ret:0x%X\n", unit, port, patch_mode, i, patch_type, ret);
         return ret;
     }
+#endif
 
     return (chk_ret == RT_ERR_CHECK_FAILED) ? chk_ret : RT_ERR_OK;
 }
