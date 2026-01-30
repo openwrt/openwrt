@@ -36,7 +36,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  static unsigned int dwcmshc_get_max_clock(struct sdhci_host *host)
  {
  	struct sdhci_pltfm_host *pltfm_host = sdhci_priv(host);
-@@ -339,7 +351,7 @@ static void rk35xx_sdhci_reset(struct sd
+@@ -346,7 +358,7 @@ static void rk35xx_sdhci_reset(struct sd
  }
  
  static const struct sdhci_ops sdhci_dwcmshc_ops = {
@@ -45,7 +45,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	.set_bus_width		= sdhci_set_bus_width,
  	.set_uhs_signaling	= dwcmshc_set_uhs_signaling,
  	.get_max_clock		= dwcmshc_get_max_clock,
-@@ -359,8 +371,10 @@ static const struct sdhci_ops sdhci_dwcm
+@@ -366,8 +378,10 @@ static const struct sdhci_ops sdhci_dwcm
  
  static const struct sdhci_pltfm_data sdhci_dwcmshc_pdata = {
  	.ops = &sdhci_dwcmshc_ops,
@@ -58,7 +58,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  };
  
  #ifdef CONFIG_ACPI
-@@ -513,6 +527,14 @@ static int dwcmshc_probe(struct platform
+@@ -520,6 +534,14 @@ static int dwcmshc_probe(struct platform
  		priv->bus_clk = devm_clk_get(dev, "bus");
  		if (!IS_ERR(priv->bus_clk))
  			clk_prepare_enable(priv->bus_clk);
@@ -73,7 +73,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	}
  
  	pltfm_host->timeout_clk = devm_clk_get(&pdev->dev, "timeout");
-@@ -530,6 +552,7 @@ static int dwcmshc_probe(struct platform
+@@ -537,6 +559,7 @@ static int dwcmshc_probe(struct platform
  		goto err_clk;
  
  	sdhci_get_of_property(pdev);

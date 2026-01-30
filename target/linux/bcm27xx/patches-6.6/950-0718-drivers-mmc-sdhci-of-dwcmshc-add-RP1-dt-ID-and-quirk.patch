@@ -13,7 +13,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
 
 --- a/drivers/mmc/host/sdhci-of-dwcmshc.c
 +++ b/drivers/mmc/host/sdhci-of-dwcmshc.c
-@@ -386,6 +386,15 @@ static const struct sdhci_pltfm_data sdh
+@@ -393,6 +393,15 @@ static const struct sdhci_pltfm_data sdh
  };
  #endif
  
@@ -29,7 +29,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  static const struct sdhci_pltfm_data sdhci_dwcmshc_rk35xx_pdata = {
  	.ops = &sdhci_dwcmshc_rk35xx_ops,
  	.quirks = SDHCI_QUIRK_CAP_CLOCK_BASE_BROKEN |
-@@ -454,6 +463,10 @@ static void dwcmshc_rk35xx_postinit(stru
+@@ -461,6 +470,10 @@ static void dwcmshc_rk35xx_postinit(stru
  
  static const struct of_device_id sdhci_dwcmshc_dt_ids[] = {
  	{

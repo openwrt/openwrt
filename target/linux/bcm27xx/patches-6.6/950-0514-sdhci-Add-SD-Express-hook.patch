@@ -12,7 +12,7 @@ sdhci: remove PYA0_INTR_BUG quirk. Add quirks to disable some of the higher SDR 
 
 --- a/drivers/mmc/host/sdhci-of-dwcmshc.c
 +++ b/drivers/mmc/host/sdhci-of-dwcmshc.c
-@@ -376,7 +376,10 @@ static const struct sdhci_pltfm_data sdh
+@@ -383,7 +383,10 @@ static const struct sdhci_pltfm_data sdh
  	.quirks = SDHCI_QUIRK_CAP_CLOCK_BASE_BROKEN |
  		  SDHCI_QUIRK_BROKEN_TIMEOUT_VAL,
  	.quirks2 = SDHCI_QUIRK2_PRESET_VALUE_BROKEN |
