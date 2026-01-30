@@ -147,8 +147,8 @@ static void rtl931x_vlan_profile_dump(int index)
 	profile[0] = sw_r32(RTL931X_VLAN_PROFILE_SET(index));
 	profile[1] = (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 4) & 0x1FFFFFFFULL) << 32 |
 		     (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 8) & 0xFFFFFFFF);
-	profile[2] = (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 16) & 0x1FFFFFFFULL) << 32 |
-		     (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 12) & 0xFFFFFFFF);
+	profile[2] = (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 12) & 0x1FFFFFFFULL) << 32 |
+		     (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 16) & 0xFFFFFFFF);
 	profile[3] = (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 20) & 0x1FFFFFFFULL) << 32 |
 		     (sw_r32(RTL931X_VLAN_PROFILE_SET(index) + 24) & 0xFFFFFFFF);
 
