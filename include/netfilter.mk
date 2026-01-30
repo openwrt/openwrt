@@ -286,6 +286,7 @@ $(eval $(if $(NF_KMOD),$(call nf_add,NF_CONNCOUNT,CONFIG_NETFILTER_CONNCOUNT, $(
 #
 
 $(eval $(if $(NF_KMOD),$(call nf_add,EBTABLES,CONFIG_BRIDGE_NF_EBTABLES, $(P_EBT)ebtables),))
+$(eval $(if $(NF_KMOD),$(call nf_add,EBTABLES,CONFIG_BRIDGE_NF_EBTABLES_LEGACY, $(P_EBT)ebtables),))
 
 # ebtables: tables
 $(eval $(call nf_add,EBTABLES,CONFIG_BRIDGE_EBT_BROUTE, $(P_EBT)ebtable_broute))
