@@ -54,6 +54,7 @@ $(eval $(call KernelPackage,nf-conncount))
 define KernelPackage/nf-ipt
   SUBMENU:=$(NF_MENU)
   TITLE:=Iptables core
+  DEPENDS:=+kmod-nf-xtables
   KCONFIG:=$(KCONFIG_NF_IPT)
   FILES:=$(foreach mod,$(NF_IPT-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoProbe,$(notdir $(NF_IPT-m)))
@@ -81,7 +82,7 @@ define KernelPackage/ipt-core
   KCONFIG:=$(KCONFIG_IPT_CORE)
   FILES:=$(foreach mod,$(IPT_CORE-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoProbe,$(notdir $(IPT_CORE-m)))
-  DEPENDS:=+kmod-nf-reject +kmod-nf-ipt +kmod-nf-log
+  DEPENDS:=+kmod-nf-reject +kmod-nf-ipt +kmod-nf-log +kmod-nf-xtables
 endef
 
 define KernelPackage/ipt-core/description
@@ -225,6 +226,15 @@ define AddDepends/ipt
   DEPENDS+= +kmod-ipt-core $(1)
 endef
 
+define KernelPackage/nf-xtables
+  SUBMENU:=$(NF_MENU)
+  TITLE:=Netfilter Xtables support
+  KCONFIG:=$(KCONFIG_NF_XTABLES)
+  FILES:=$(foreach mod,$(NF_XTABLES-m),$(LINUX_DIR)/net/$(mod).ko)
+  AUTOLOAD:=$(call AutoProbe,$(notdir $(NF_XTABLES-m)))
+endef
+
+$(eval $(call KernelPackage,nf-xtables))
 
 define KernelPackage/ipt-conntrack
   TITLE:=Basic connection tracking modules
@@ -1277,7 +1287,7 @@ $(eval $(call KernelPackage,nft-tproxy))
 define KernelPackage/nft-compat
   SUBMENU:=$(NF_MENU)
   TITLE:=Netfilter nf_tables compat support
-  DEPENDS:=+kmod-nft-core +kmod-nf-ipt
+  DEPENDS:=+kmod-nf-xtables +kmod-nft-core +kmod-nf-ipt
   FILES:=$(foreach mod,$(NFT_COMPAT-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoProbe,$(notdir $(NFT_COMPAT-m)))
   KCONFIG:=$(KCONFIG_NFT_COMPAT)
