@@ -12,7 +12,7 @@ Signed-off-by: Liam Fraser <liam@raspberrypi.com>
 
 --- a/drivers/mmc/host/sdhci-of-dwcmshc.c
 +++ b/drivers/mmc/host/sdhci-of-dwcmshc.c
-@@ -343,6 +343,7 @@ static const struct sdhci_ops sdhci_dwcm
+@@ -350,6 +350,7 @@ static const struct sdhci_ops sdhci_dwcm
  	.set_bus_width		= sdhci_set_bus_width,
  	.set_uhs_signaling	= dwcmshc_set_uhs_signaling,
  	.get_max_clock		= dwcmshc_get_max_clock,
@@ -20,7 +20,7 @@ Signed-off-by: Liam Fraser <liam@raspberrypi.com>
  	.reset			= sdhci_reset,
  	.adma_write_desc	= dwcmshc_adma_write_desc,
  };
-@@ -514,6 +515,16 @@ static int dwcmshc_probe(struct platform
+@@ -521,6 +522,16 @@ static int dwcmshc_probe(struct platform
  			clk_prepare_enable(priv->bus_clk);
  	}
  
@@ -37,7 +37,7 @@ Signed-off-by: Liam Fraser <liam@raspberrypi.com>
  	err = mmc_of_parse(host->mmc);
  	if (err)
  		goto err_clk;
-@@ -578,6 +589,7 @@ err_rpm:
+@@ -585,6 +596,7 @@ err_rpm:
  	pm_runtime_put_noidle(dev);
  err_clk:
  	clk_disable_unprepare(pltfm_host->clk);
