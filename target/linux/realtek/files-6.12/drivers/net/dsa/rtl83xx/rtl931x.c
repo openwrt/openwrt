@@ -840,17 +840,31 @@ static void rtldsa_931x_enable_learning(int port, bool enable)
 		    RTL931X_L2_LRN_PORT_CONSTRT_CTRL + port * 4);
 }
 
-static void rtldsa_931x_enable_flood(int port, bool enable)
+static void rtldsa_931x_enable_flood(int port, enum rtldsa_flood_type mode)
 {
-	/* 0: forward
-	 * 1: drop
-	 * 2: trap to local CPU
-	 * 3: copy to local CPU
-	 * 4: trap to master CPU
-	 * 5: copy to master CPU
-	 */
-	sw_w32_mask(GENMASK(2, 0), enable ? 0 : 1,
+	/* RTL931X_L2_{UNKN_UC,BC}_FLD_PMSK is big-endian */
+	u32 port_offset = ((63 - port) / 32) * 4;
+	u32 new_sa_fwd_shift = (port % 10) * 3;
+	u32 port_mask = BIT(port % 32);
+	u32 val;
+
+	val = (mode == RTLDSA_FLOOD_TYPE_FORWARD || mode == RTLDSA_FLOOD_TYPE_TRAP2CPU) ?
+	       BIT(port % 32) : 0;
+
+	sw_w32_mask(GENMASK(2, 0), mode,
 		    RTL931X_L2_LRN_PORT_CONSTRT_CTRL + port * 4);
+
+	sw_w32_mask(GENMASK(new_sa_fwd_shift + 2, new_sa_fwd_shift),
+		    mode << new_sa_fwd_shift,
+		    rtl931x_l2_port_new_sa_fwd(port));
+
+	sw_w32_mask(port_mask,
+		    val,
+		    RTL931X_L2_BC_FLD_PMSK + port_offset);
+
+	sw_w32_mask(port_mask,
+		    val,
+		    RTL931X_L2_UNKN_UC_FLD_PMSK + port_offset);
 }
 
 static u64 rtl931x_read_mcast_pmask(int idx)

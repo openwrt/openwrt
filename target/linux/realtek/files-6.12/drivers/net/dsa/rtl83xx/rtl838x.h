@@ -492,6 +492,15 @@ typedef enum {
 	COPY2CPU,
 } action_type_t;
 
+enum rtldsa_flood_type {
+	RTLDSA_FLOOD_TYPE_FORWARD = 0,
+	RTLDSA_FLOOD_TYPE_DROP,
+	RTLDSA_FLOOD_TYPE_TRAP2CPU,
+	RTLDSA_FLOOD_TYPE_COPY2CPU,
+	RTLDSA_FLOOD_TYPE_TRAP2MASTER,
+	RTLDSA_FLOOD_TYPE_COPY2MASTER,
+};
+
 #define RTL838X_RMA_BPDU_CTRL			(0x4330)
 #define RTL839X_RMA_BPDU_CTRL			(0x122C)
 #define RTL930X_RMA_BPDU_CTRL			(0x9E7C)
@@ -824,6 +833,7 @@ struct rtl838x_port {
 	bool eee_enabled;
 	enum phy_type phy;
 	int led_set;
+	enum rtldsa_flood_type flood_type;
 	int leds_on_this_port;
 	struct rtldsa_counter_state counters;
 	const struct dsa_port *dp;
@@ -1222,7 +1232,7 @@ struct rtl838x_reg {
 	void (*set_vlan_igr_filter)(int port, enum igr_filter state);
 	void (*set_vlan_egr_filter)(int port, enum egr_filter state);
 	void (*enable_learning)(int port, bool enable);
-	void (*enable_flood)(int port, bool enable);
+	void (*enable_flood)(int port, enum rtldsa_flood_type flood_type);
 	void (*enable_mcast_flood)(int port, bool enable);
 	void (*enable_bcast_flood)(int port, bool enable);
 	void (*set_static_move_action)(int port, bool forward);

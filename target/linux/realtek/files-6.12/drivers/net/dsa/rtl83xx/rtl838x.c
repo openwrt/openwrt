@@ -534,14 +534,14 @@ static void rtl838x_enable_learning(int port, bool enable)
 		    RTL838X_L2_PORT_LRN_CONSTRT + (port << 2));
 }
 
-static void rtl838x_enable_flood(int port, bool enable)
+static void rtl838x_enable_flood(int port, enum rtldsa_flood_type mode)
 {
 	/* 0: Forward
 	 * 1: Disable
 	 * 2: to CPU
 	 * 3: Copy to CPU
 	 */
-	sw_w32_mask(0x3, enable ? 0 : 1,
+	sw_w32_mask(0x3, mode,
 		    RTL838X_L2_PORT_LRN_CONSTRT + (port << 2));
 }
 
