@@ -114,7 +114,7 @@ struct notify_b {
 	u32			reserved2[8];
 };
 
-static void rteth_838x_create_tx_header(struct p_hdr *h, unsigned int dest_port, int prio)
+static void rteth_838x_create_tx_header(struct rteth_packet *h, unsigned int dest_port, int prio)
 {
 	/* cpu_tag[0] is reserved on the RTL83XX SoCs */
 	h->cpu_tag[1] = 0x0400;  /* BIT 10: RTL8380_CPU_TAG */
@@ -128,7 +128,7 @@ static void rteth_838x_create_tx_header(struct p_hdr *h, unsigned int dest_port,
 		h->cpu_tag[2] |= ((prio & 0x7) | BIT(3)) << 12;
 }
 
-static void rteth_839x_create_tx_header(struct p_hdr *h, unsigned int dest_port, int prio)
+static void rteth_839x_create_tx_header(struct rteth_packet *h, unsigned int dest_port, int prio)
 {
 	/* cpu_tag[0] is reserved on the RTL83XX SoCs */
 	h->cpu_tag[1] = 0x0100; /* RTL8390_CPU_TAG marker */
@@ -149,7 +149,7 @@ static void rteth_839x_create_tx_header(struct p_hdr *h, unsigned int dest_port,
 		h->cpu_tag[2] |= ((prio & 0x7) | BIT(3)) << 8;
 }
 
-static void rteth_930x_create_tx_header(struct p_hdr *h, unsigned int dest_port, int prio)
+static void rteth_930x_create_tx_header(struct rteth_packet *h, unsigned int dest_port, int prio)
 {
 	h->cpu_tag[0] = 0x8000;  /* CPU tag marker */
 
@@ -168,7 +168,7 @@ static void rteth_930x_create_tx_header(struct p_hdr *h, unsigned int dest_port,
 		h->cpu_tag[2] = (BIT(5) | (prio & 0x1f)) << 8;
 }
 
-static void rteth_931x_create_tx_header(struct p_hdr *h, unsigned int dest_port, int prio)
+static void rteth_931x_create_tx_header(struct rteth_packet *h, unsigned int dest_port, int prio)
 {
 	h->cpu_tag[0] = 0x8000;  /* CPU tag marker */
 
@@ -557,8 +557,10 @@ static void rteth_hw_ring_setup(struct rteth_ctrl *ctrl)
 	for (int i = 0; i < ctrl->rxrings; i++)
 		sw_w32(KSEG1ADDR(&ring->rx_r[i]), ctrl->r->dma_rx_base + i * 4);
 
-	for (int i = 0; i < TXRINGS; i++)
-		sw_w32(KSEG1ADDR(&ring->tx_r[i]), ctrl->r->dma_tx_base + i * 4);
+	for (int r = 0; r < RTETH_TX_RINGS; r++)
+		sw_w32(ctrl->tx_dma +
+		       r * sizeof(struct rteth_tx) + offsetof(struct rteth_tx, ring),
+		       ctrl->r->dma_tx_base + r * 4);
 }
 
 static void rtl838x_hw_en_rxtx(struct rteth_ctrl *ctrl)
@@ -967,100 +969,102 @@ static void rteth_tx_timeout(struct net_device *ndev, unsigned int txqueue)
 	spin_unlock_irqrestore(&ctrl->lock, flags);
 }
 
-static int rteth_start_xmit(struct sk_buff *skb, struct net_device *dev)
+static int rteth_start_xmit(struct sk_buff *skb, struct net_device *netdev)
 {
-	int len;
-	struct rteth_ctrl *ctrl = netdev_priv(dev);
-	struct ring_b *ring = ctrl->membase;
-	int ret;
-	unsigned long flags;
-	struct p_hdr *h;
-	int dest_port = -1;
-	int q = skb_get_queue_mapping(skb) % TXRINGS;
+	struct rteth_ctrl *ctrl = netdev_priv(netdev);
+	int slot, len = skb->len, dest_port = -1;
+	int ring = skb_get_queue_mapping(skb);
+	struct device *dev = &ctrl->pdev->dev;
+	struct rteth_packet *packet;
+	dma_addr_t packet_dma;
 
-	if (q) /* Check for high prio queue */
-		pr_debug("SKB priority: %d\n", skb->priority);
-
-	spin_lock_irqsave(&ctrl->lock, flags);
-	len = skb->len;
-
-	/* Check for DSA tagging at the end of the buffer */
-	if (netdev_uses_dsa(dev) &&
+	if (netdev_uses_dsa(netdev) &&
 	    skb->data[len - 4] == 0x80 &&
 	    skb->data[len - 3] < ctrl->r->cpu_port &&
 	    skb->data[len - 2] == 0x10 &&
 	    skb->data[len - 1] == 0x00) {
-		/* Reuse tag space for CRC if possible */
+		/* DSA tag, reuse space for CRC */
 		dest_port = skb->data[len - 3];
-		skb->data[len - 4] = skb->data[len - 3] = skb->data[len - 2] = skb->data[len - 1] = 0x00;
-		len -= 4;
-	}
-
-	len += 4; /* Add space for CRC */
-
-	if (skb_padto(skb, len)) {
-		ret = NETDEV_TX_OK;
-		goto txdone;
-	}
-
-	/* We can send this packet if CPU owns the descriptor */
-	if (!(ring->tx_r[q][ring->c_tx[q]] & 0x1)) {
-		/* Set descriptor for tx */
-		h = &ring->tx_header[q][ring->c_tx[q]];
-		h->size = len;
-		h->len = len;
-		/* On RTL8380 SoCs, small packet lengths being sent need adjustments */
-		if (ctrl->r->family_id == RTL8380_FAMILY_ID) {
-			if (len < ETH_ZLEN - 4)
-				h->len -= 4;
-		}
-
-		if (dest_port >= 0)
-			ctrl->r->create_tx_header(h, dest_port, skb->priority >> 1);
-
-		/* Copy packet data to tx buffer */
-		memcpy((void *)KSEG1ADDR(h->buf), skb->data, len);
-		/* Make sure packet data is visible to ASIC */
-		wmb();
-
-		/* Hand over to switch */
-		ring->tx_r[q][ring->c_tx[q]] |= 1;
-
-		/* Before starting TX, prevent a Lextra bus bug on RTL8380 SoCs */
-		if (ctrl->r->family_id == RTL8380_FAMILY_ID) {
-			for (int i = 0; i < 10; i++) {
-				u32 val = sw_r32(ctrl->r->dma_if_ctrl);
-
-				if ((val & 0xc) == 0xc)
-					break;
-			}
-		}
-
-		/* Tell switch to send data */
-		if (ctrl->r->family_id == RTL9310_FAMILY_ID || ctrl->r->family_id == RTL9300_FAMILY_ID) {
-			/* Ring ID q == 0: Low priority, Ring ID = 1: High prio queue */
-			if (!q)
-				sw_w32_mask(0, BIT(2), ctrl->r->dma_if_ctrl);
-			else
-				sw_w32_mask(0, BIT(3), ctrl->r->dma_if_ctrl);
-		} else {
-			sw_w32_mask(0, TX_DO, ctrl->r->dma_if_ctrl);
-		}
-
-		dev->stats.tx_packets++;
-		dev->stats.tx_bytes += len;
-		dev_kfree_skb(skb);
-		ring->c_tx[q] = (ring->c_tx[q] + 1) % TXRINGLEN;
-		ret = NETDEV_TX_OK;
+		skb->data[len - 4] = skb->data[len - 3] = 0;
+		skb->data[len - 2] = skb->data[len - 1] = 0;
 	} else {
-		dev_warn(&ctrl->pdev->dev, "Data is owned by switch\n");
-		ret = NETDEV_TX_BUSY;
+		/* No DSA tag, add space for CRC */
+		len += 4;
 	}
 
-txdone:
-	spin_unlock_irqrestore(&ctrl->lock, flags);
+	if (unlikely(skb_padto(skb, len))) {
+		netdev->stats.tx_errors++;
+		dev_warn(dev, "skb pad failed\n");
 
-	return ret;
+		return NETDEV_TX_OK;
+	}
+
+	slot = ctrl->tx_data[ring].slot;
+	packet = &ctrl->tx_data[ring].packet[slot];
+	packet_dma = ctrl->tx_data[ring].ring[slot];
+
+	if (unlikely(packet_dma & RTETH_OWN_CPU)) {
+		netif_stop_subqueue(netdev, ring);
+		if (net_ratelimit())
+			dev_warn(dev, "tx ring %d busy, waiting for slot %d\n", ring, slot);
+
+		return NETDEV_TX_BUSY;
+	}
+
+	packet->dma = dma_map_single(dev, skb->data, skb->len, DMA_TO_DEVICE);
+	if (unlikely(dma_mapping_error(dev, packet->dma))) {
+		dev_kfree_skb_any(skb);
+		netdev->stats.tx_errors++;
+
+		return NETDEV_TX_OK;
+	}
+
+	if (likely(packet->skb)) {
+		/* cleanup old data of this slot */
+		dma_unmap_single(dev, packet->dma, packet->skb->len, DMA_TO_DEVICE);
+		dev_kfree_skb_any(packet->skb);
+	}
+
+	if (ctrl->r->family_id == RTL8380_FAMILY_ID) {
+		/* On RTL8380 SoCs, small packet lengths being sent need adjustments */
+		if (len < ETH_ZLEN - 4)
+			len -= 4;
+	}
+
+	if (dest_port >= 0)
+		ctrl->r->create_tx_header(packet, dest_port, 0); // TODO ok to set prio to 0?
+
+	/* Transfer data and hand packet over to switch */
+	packet->len = len;
+	packet->skb = skb;
+	dma_wmb();
+	ctrl->tx_data[ring].ring[slot] = packet_dma | RTETH_OWN_CPU;
+	ctrl->tx_data[ring].slot = (slot + 1) % RTETH_TX_RING_SIZE;
+	wmb();
+
+	spin_lock(&ctrl->tx_lock);
+
+	/* Before starting TX, prevent a Lexra bus bug on RTL8380 SoCs */
+	if (ctrl->r->family_id == RTL8380_FAMILY_ID) {
+		for (int i = 0; i < 10; i++) {
+			u32 val = sw_r32(ctrl->r->dma_if_ctrl);
+			if ((val & 0xc) == 0xc)
+				break;
+		}
+	}
+
+	/* Tell switch to send data */
+	if (ctrl->r->family_id == RTL9310_FAMILY_ID || ctrl->r->family_id == RTL9300_FAMILY_ID)
+		sw_w32_mask(0, BIT(2 + ring), ctrl->r->dma_if_ctrl);
+	else
+		sw_w32_mask(0, TX_DO, ctrl->r->dma_if_ctrl);
+
+	netdev->stats.tx_packets++;
+	netdev->stats.tx_bytes += len;
+
+	spin_unlock(&ctrl->tx_lock);
+
+	return NETDEV_TX_OK;
 }
 
 static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
