@@ -1,0 +1,323 @@
+#!/bin/sh
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# shellcheck disable=SC2039
+#
+# Grow partition 2 (rootfs_data) until the end of the disk
+#
+
+readbin2hex() {
+	local input=$1
+	local seek=$2
+	local length=$3
+	hexdump -ve '1/1 "%.2x"' -s "$seek" -n "$length" "$input"
+}
+
+hex2bin() {
+	printf "%s\n" "$1" | sed -r 's/(.{2})/\\\\x\1 /g' | xargs printf '%b'
+}
+
+writehex2bin() {
+	local output=$1
+	local seek=$2
+	local hexbuf=$3
+	local length=$((${#hexbuf}/2))
+	hex2bin "$hexbuf" | dd bs=1 seek="$seek" count="$length" of="$output" conv=notrunc 2>/dev/null
+}
+
+writehex2buf() {
+	local buf=$1
+	local seek=$2
+	local modified=$3
+	printf "%s" "${buf:0:seek*2}"
+	printf "%s" "$modified"
+	printf "%s\n" "${buf:seek*2+${#modified}}"
+}
+
+crc32_hex() {
+	gzip -c | tail -c8 | hexdump -n4 -e '"%.8x" "\n"'
+}
+
+msg() {
+	printf "grow_rootfspart: %s\n" "$*" >&2
+
+}
+
+die() {
+	local err=$1; shift
+	msg "$@"
+	exit "$err"
+}
+
+# swap endianness
+bswap() {
+	local hexle=$1
+	while [ "$hexle" ]; do
+		local last=$((${#hexle}-2))
+		echo -n "${hexle:$last:2}"
+		hexle=${hexle:0:$last}
+	done
+	echo
+}
+
+dec2hex() { printf "%.$(($2*2))x\n" "$1"; }
+
+sector2chs() {
+	local sector=$1
+	if [ "$sector" -ge 16514064 ]; then
+		echo "ffffff"
+		return
+	fi
+	local c=$((sector / (HPC*SPT)))
+	local h=$(((sector / SPT) % HPC))
+	local s=$(((sector % SPT)))
+	b1=$(dec2hex "$h" 1)
+	b2=$(dec2hex "$(((c & 0x300 >> 2) | (s & 0x3f) ))" 1)
+	b3=$(dec2hex "$((c & 0xff))" 1)
+	printf "%s\n" "$b1$b2$b3"
+}
+
+mbr_parse_part() {
+	local partentry_hex=$1
+
+	[ "$partentry_hex" = "00000000000000000000000000000000" ] && return 1
+
+	mbr_partition_first_sector_hex_le=${partentry_hex:MBR_PARTFIRST_SECTOR*2:MBR_PARTSECTOR_SIZE*2}
+	mbr_partition_first_sector_hex=$(bswap "$mbr_partition_first_sector_hex_le")
+	mbr_partition_number_of_sectors_hex_le=${partentry_hex:MBR_PARTNUMBER_OF_SECTOR*2:MBR_PARTSECTOR_SIZE*2}
+	mbr_partition_number_of_sectors_hex=$(bswap "$mbr_partition_number_of_sectors_hex_le")
+}
+
+gpt_parse_part() {
+	local partentry_hex=$1
+
+	gpt_partition_type=${partentry_hex:GPT_PARTITION_TYPE*2:GPT_PARTITION_TYPE_SIZE*2}
+	[ "$gpt_partition_type" = "00000000000000000000000000000000" ] && return 1
+
+	gpt_partition_first_lba_hex_le=${partentry_hex:GPT_PARTITION_FIRST_LBA*2:GPT_LBA_SIZE*2}
+	gpt_partition_first_lba_hex=$(bswap "$gpt_partition_first_lba_hex_le")
+	gpt_partition_last_lba_hex_le=${partentry_hex:GPT_PARTITION_LAST_LBA*2:GPT_LBA_SIZE*2}
+	gpt_partition_last_lba_hex=$(bswap "$gpt_partition_last_lba_hex_le")
+}
+
+DISK_SECTOR=$((0x0200))
+
+#CHS conversion
+HPC=16
+SPT=63
+
+MBR_PART1_ENTRY=$((0x01BE))
+MBR_PART2_ENTRY=$((0x01CE))
+MBR_PART3_ENTRY=$((0x01DE))
+MBR_PART4_ENTRY=$((0x01EE))
+MBR_PARTENTRY_SIZE=16
+
+MBR_PARTLAST_CHS=$((0x05))
+MBR_PARTFIRST_SECTOR=$((0x08)) MBR_PARTNUMBER_OF_SECTOR=$((0x0C)) MBR_PARTSECTOR_SIZE=4
+MBR_BOOT_SIGNATURE=$((0x1FE)) MBR_BOOT_SIGNATURE_SIZE=2
+MBR_MAGIC="55aa"
+
+MBR_MAX_SECTORS=$((2**32-1))
+
+#GPT
+GPT_HEADER_LBA=1
+GPT_HEADER=$((GPT_HEADER_LBA*DISK_SECTOR))
+
+GPT_SIG=$((0x00)) GPT_SIG_SIZE=8
+GPT_HEADER_SIZE=$((0x0C)) GPT_HEADER_SIZE_SIZE=4
+GPT_HEADER_CRC32=$((0x10)) GPT_PARTITIONS_CRC32=$((0x58)) GPT_CRC32_SIZE=4
+GPT_CURRENT_LBA=$((0x18)) GPT_BACKUP_LBA=$((0x20)) GPT_LBA_SIZE=8
+GPT_LAST_LBA=$((0x30))
+GPT_PARTITIONS_LBA=$((0x48))
+GPT_NUMBER_OF_PARTITIONS=$((0x50)) GPT_NUMBER_OF_PARTITIONS_SIZE=4
+GPT_PARTITION_ENTRY_SIZE=$((0x54)) GPT_PARTITION_ENTRY_SIZE_SIZE=4
+
+GPT_PARTITION_TYPE=$((0x0)) GPT_PARTITION_TYPE_SIZE=16
+GPT_PARTITION_FIRST_LBA=$((0x20)) GPT_PARTITION_LAST_LBA=$((0x28))
+
+GPT_MAGIC="4546492050415254"
+
+disk=$1
+disk=$(readlink -f "$1")
+
+[ -r "$1" ] ||
+	die 1 "Failed to read '$1'"
+
+if [ -b "$disk" ]; then
+	disk_major_minor=$(ls -l "$disk" | awk '{ print substr($5,1,length($5)-1) ":" $6 }')
+	disk_size_sectors=$(($(cat "/sys/dev/block/$disk_major_minor/size")))
+else
+	disk_size_sectors=$(wc -c "$disk" | awk -vDISK_SECTOR="$DISK_SECTOR" '{ print $1/DISK_SECTOR }')
+fi
+
+gpt_sig=$(readbin2hex "$disk" $((GPT_HEADER+GPT_SIG)) $GPT_SIG_SIZE)
+if [ "$gpt_sig" = "$GPT_MAGIC" ]; then
+	gpt_touched=false
+
+	gpt_header_size_hex_le=$(readbin2hex "$disk" $((GPT_HEADER+GPT_HEADER_SIZE)) $GPT_HEADER_SIZE_SIZE)
+	gpt_header_size_hex=$(bswap "$gpt_header_size_hex_le")
+	gpt_header_hex=$(readbin2hex "$disk" $((GPT_HEADER)) $((0x$gpt_header_size_hex)))
+
+	gpt_header_crc32_hex_le=${gpt_header_hex:GPT_HEADER_CRC32*2:GPT_CRC32_SIZE*2}
+	gpt_header_hex=$(writehex2buf "$gpt_header_hex" $GPT_HEADER_CRC32 "00000000")
+
+	gpt_current_lba_hex_le=${gpt_header_hex:GPT_CURRENT_LBA*2:GPT_LBA_SIZE*2}
+	gpt_backup_lba_hex_le=${gpt_header_hex:GPT_BACKUP_LBA*2:GPT_LBA_SIZE*2}
+	gpt_backup_lba_hex=$(bswap "$gpt_backup_lba_hex_le")
+	new_gpt_backup_lba=$((disk_size_sectors-1))
+	if [ "$((0x$gpt_backup_lba_hex))" -lt "$new_gpt_backup_lba" ]; then
+		new_gpt_backup_lba_hex=$(dec2hex "$new_gpt_backup_lba" "$GPT_LBA_SIZE")
+		new_gpt_backup_lba_hex_le=$(bswap "$new_gpt_backup_lba_hex")
+		msg "Expanding disk $disk from $((0x$gpt_backup_lba_hex+1)) sectors to $disk_size_sectors" >&2
+		gpt_backup_lba_hex_le=$new_gpt_backup_lba_hex_le
+		gpt_backup_lba_hex=$new_gpt_backup_lba_hex
+		gpt_backup_lba=$new_gpt_backup_lba
+		gpt_header_hex=$(writehex2buf "$gpt_header_hex" "$GPT_BACKUP_LBA" "$gpt_backup_lba_hex_le")
+		gpt_touched=true
+	fi
+
+	gpt_number_of_partitions_hex_le=${gpt_header_hex:GPT_NUMBER_OF_PARTITIONS*2:GPT_NUMBER_OF_PARTITIONS_SIZE*2}
+	gpt_number_of_partitions_hex=$(bswap "$gpt_number_of_partitions_hex_le")
+	gpt_partition_entry_size_hex_le=${gpt_header_hex:GPT_PARTITION_ENTRY_SIZE*2:GPT_PARTITION_ENTRY_SIZE_SIZE*2}
+	gpt_partition_entry_size_hex=$(bswap "$gpt_partition_entry_size_hex_le")
+
+	gpt_last_lba_hex_le=${gpt_header_hex:GPT_LAST_LBA*2:GPT_LBA_SIZE*2}
+	gpt_last_lba_hex=$(bswap "$gpt_last_lba_hex_le")
+	new_gpt_last_lba=$((gpt_backup_lba-0x$gpt_partition_entry_size_hex*0x$gpt_number_of_partitions_hex/DISK_SECTOR-1))
+	if [ "$((0x$gpt_last_lba_hex))" -lt "$new_gpt_last_lba" ]; then
+		new_gpt_last_lba_hex=$(dec2hex "$new_gpt_last_lba" "$GPT_LBA_SIZE")
+		new_gpt_last_lba_hex_le=$(bswap "$new_gpt_last_lba_hex")
+		gpt_last_lba_hex=$new_gpt_last_lba_hex
+		gpt_header_hex=$(writehex2buf "$gpt_header_hex" "$GPT_LAST_LBA" "$new_gpt_last_lba_hex_le")
+		gpt_touched=true
+	fi
+
+	gpt_partitions_lba_hex_le=${gpt_header_hex:GPT_PARTITIONS_LBA*2:GPT_LBA_SIZE*2}
+	gpt_partitions_lba_hex=$(bswap "$gpt_partitions_lba_hex_le")
+	gpt_partition_entries=$(readbin2hex "$disk" "$((0x$gpt_partitions_lba_hex*DISK_SECTOR))" "$((0x$gpt_partition_entry_size_hex*0x$gpt_number_of_partitions_hex))")
+
+	gpt_partitions_bondaries=""
+	for i in $(seq $((0x$gpt_number_of_partitions_hex))); do
+		gpt_partition_entry=${gpt_partition_entries:0x$gpt_partition_entry_size_hex*(i-1)*2:0x$gpt_partition_entry_size_hex*2}
+		gpt_parse_part "$gpt_partition_entry" || continue
+
+		if [ "$i" -eq  2 ]; then
+			new_gpt_partition_last_lba_hex=$gpt_last_lba_hex
+			new_gpt_partition_last_lba_hex_le=$(bswap "$new_gpt_partition_last_lba_hex")
+			if [ "$new_gpt_partition_last_lba_hex_le" = "$gpt_partition_last_lba_hex_le" ]; then
+				break
+			fi
+			msg "Growing $disk partition 2 from $((0x$gpt_partition_last_lba_hex-0x$gpt_partition_first_lba_hex+1)) to $((0x$new_gpt_partition_last_lba_hex-0x$gpt_partition_first_lba_hex+1)) sectors" >&2
+			gpt_partition_entries="$(writehex2buf "$gpt_partition_entries" "$((0x$gpt_partition_entry_size_hex*(i-1)+GPT_PARTITION_LAST_LBA))" "$new_gpt_partition_last_lba_hex_le")"
+			gpt_partition2_last_lba=$((0x$gpt_last_lba_hex))
+			gpt_touched=true
+		else
+			gpt_partitions_bondaries="$gpt_partitions_bondaries $((0x$gpt_partition_first_lba_hex)) $((0x$gpt_partition_last_lba_hex))"
+		fi
+
+		if [ "$gpt_partition2_last_lba" ]; then
+			for boundary in $gpt_partitions_bondaries; do
+				if [ "$boundary" -gt "$gpt_partition2_last_lba" ]; then
+					die 1 "A partition is starting or ending between partition 2 and the end of the disk. $disk partition 2 cannot be expanded."
+				fi
+			done
+			gpt_partitions_bondaries=
+		fi
+	done
+
+	gpt_partitions_crc32_hex_le=${gpt_header_hex:GPT_PARTITIONS_CRC32*2:GPT_CRC32_SIZE*2}
+	new_gpt_partitions_crc32_hex=$(hex2bin "$gpt_partition_entries" | crc32_hex)
+	new_gpt_partitions_crc32_hex_le=$(bswap "$new_gpt_partitions_crc32_hex")
+	if [ "$new_gpt_partitions_crc32_hex_le" != "$gpt_partitions_crc32_hex_le" ]; then
+		gpt_header_hex=$(writehex2buf "$gpt_header_hex" "$GPT_PARTITIONS_CRC32" "$new_gpt_partitions_crc32_hex_le")
+		gpt_touched=true
+	fi
+
+	new_gpt_header_crc32_hex=$(hex2bin "$gpt_header_hex" | crc32_hex)
+	new_gpt_header_crc32_hex_le=$(bswap "$new_gpt_header_crc32_hex")
+	if [ "$new_gpt_header_crc32_hex_le" != "$gpt_header_crc32_hex_le" ]; then
+		gpt_header_hex=$(writehex2buf "$gpt_header_hex" "$GPT_HEADER_CRC32" "$new_gpt_header_crc32_hex_le")
+		gpt_touched=true
+	fi
+
+	$gpt_touched || exit
+
+	# Primary Header
+	msg "Saving $disk new primary partition table..." >&2
+	writehex2bin "$disk" "$((gpt_partitions_lba_hex*DISK_SECTOR))" "$gpt_partition_entries"
+	writehex2bin "$disk" "$GPT_HEADER" "$gpt_header_hex"
+
+	# Backup header
+	gpt_sig=$(readbin2hex "$disk" "$(((0x$gpt_backup_lba_hex)*DISK_SECTOR))" "$GPT_SIG_SIZE")
+	if [ "$gpt_sig" != "$GPT_MAGIC" ]; then
+		msg "Creating missing GPT backup header" >&2
+	fi
+
+	gpt_header_hex=$(writehex2buf "$gpt_header_hex" "$GPT_BACKUP_LBA" "$gpt_current_lba_hex_le")
+	gpt_header_hex=$(writehex2buf "$gpt_header_hex" "$GPT_CURRENT_LBA" "$gpt_backup_lba_hex_le")
+	gpt_header_hex=$(writehex2buf "$gpt_header_hex" "$GPT_PARTITIONS_LBA" "$(bswap "$(dec2hex $((0x$gpt_last_lba_hex+1)) 8)")")
+	gpt_header_hex=$(writehex2buf "$gpt_header_hex" "$GPT_HEADER_CRC32" "00000000")
+	gpt_header_hex=$(writehex2buf "$gpt_header_hex" "$GPT_HEADER_CRC32" "$(bswap "$(hex2bin "$gpt_header_hex" | crc32_hex)")")
+
+	msg "Saving $disk new backup partition table..." >&2
+	writehex2bin "$disk" "$(((0x$gpt_last_lba_hex+1)*DISK_SECTOR))" "$gpt_partition_entries"
+	writehex2bin "$disk" "$(((0x$gpt_backup_lba_hex)*DISK_SECTOR))" "$gpt_header_hex"
+
+	# Update protective MBR
+	part1=$(readbin2hex "$disk" "$MBR_PART1_ENTRY" "$MBR_PARTENTRY_SIZE")
+	mbr_parse_part "$part1"
+	new_number_of_sectors=$(( disk_size_sectors - 0x$mbr_partition_first_sector_hex ))
+	if [ "$new_number_of_sectors" -gt "$MBR_MAX_SECTORS" ]; then
+		new_number_of_sectors=$MBR_MAX_SECTORS
+	fi
+	if [ "$new_number_of_sectors" -le "$((0x$mbr_partition_number_of_sectors_hex))" ]; then
+		exit
+	fi
+
+	msg "Saving $disk new protective MBR partition table..." >&2
+	writehex2bin "$disk" "$((MBR_PART1_ENTRY+MBR_PARTLAST_CHS))" "ffffff" ||
+		die 1 "Failed to update CHS field"
+	writehex2bin "$disk" "$((MBR_PART1_ENTRY+MBR_PARTNUMBER_OF_SECTOR))" "$(bswap "$(dec2hex "$new_number_of_sectors" "$MBR_PARTSECTOR_SIZE")")" ||
+		die 1 "Failed to update sector count field"
+else
+	#MBR
+	part1=$(readbin2hex "$disk" "$MBR_PART1_ENTRY" "$MBR_PARTENTRY_SIZE")
+	part2=$(readbin2hex "$disk" "$MBR_PART2_ENTRY" "$MBR_PARTENTRY_SIZE")
+	part3=$(readbin2hex "$disk" "$MBR_PART3_ENTRY" "$MBR_PARTENTRY_SIZE")
+	part4=$(readbin2hex "$disk" "$MBR_PART4_ENTRY" "$MBR_PARTENTRY_SIZE")
+	mbr_sig=$(readbin2hex "$disk" "$MBR_BOOT_SIGNATURE" "$MBR_BOOT_SIGNATURE_SIZE")
+
+	[ "$MBR_MAGIC" = "$mbr_sig" ] ||
+		die 1 "Could not detect either MBR or GPT signatures"
+
+	mbr_parse_part "$part1" ||
+		die 1 "MBR Part 1 should not be empty"
+	mbr_parse_part "$part2" ||
+		die 1 "MBR Part 2 should not be empty"
+	mbr_parse_part "$part3" &&
+		die 1 "MBR Part 3 is not empty"
+	mbr_parse_part "$part4" &&
+		die 1 "MBR Part 4 is not empty"
+
+	mbr_parse_part "$part2"
+	new_number_of_sectors=$(( disk_size_sectors - 0x$mbr_partition_first_sector_hex ))
+	if [ "$new_number_of_sectors" -gt "$MBR_MAX_SECTORS" ]; then
+		new_number_of_sectors=$MBR_MAX_SECTORS
+	fi
+	if [ "$new_number_of_sectors" -le "$((0x$mbr_partition_number_of_sectors_hex))" ]; then
+		exit
+	fi
+
+	msg "Growing $disk partition 2 from $((0x$mbr_partition_number_of_sectors_hex)) to $new_number_of_sectors sectors"
+	new_mbr_last_chs=$(sector2chs "$((0x$mbr_partition_first_sector_hex + new_number_of_sectors))")
+
+	msg "Saving $disk new MBR partition table..." >&2
+	writehex2bin "$disk" "$((MBR_PART2_ENTRY+MBR_PARTLAST_CHS))" "$new_mbr_last_chs" ||
+		die 1 "Failed to update CHS field"
+	writehex2bin "$disk" "$((MBR_PART2_ENTRY+MBR_PARTNUMBER_OF_SECTOR))" "$(bswap "$(dec2hex "$new_number_of_sectors" "$MBR_PARTSECTOR_SIZE")")" ||
+		die 1 "Failed to update sector count field"
+fi
+
+fsync "$disk"
+! [ -b "$disk" ] || partx -u "$disk"
