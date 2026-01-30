@@ -1063,29 +1063,6 @@ txdone:
 	return ret;
 }
 
-/* Return queue number for TX. On the RTL83XX, these queues have equal priority
- * so we do round-robin
- */
-static u16 rteth_83xx_pick_tx_queue(struct net_device *dev, struct sk_buff *skb,
-				 struct net_device *sb_dev)
-{
-	static u8 last;
-
-	last++;
-	return last % TXRINGS;
-}
-
-/* Return queue number for TX. On the RTL93XX, queue 1 is the high priority queue
- */
-static u16 rteth_93xx_pick_tx_queue(struct net_device *dev, struct sk_buff *skb,
-				 struct net_device *sb_dev)
-{
-	if (skb->priority >= TC_PRIO_CONTROL)
-		return 1;
-
-	return 0;
-}
-
 static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
@@ -1493,7 +1470,6 @@ static const struct net_device_ops rteth_838x_netdev_ops = {
 	.ndo_open = rteth_open,
 	.ndo_stop = rteth_stop,
 	.ndo_start_xmit = rteth_start_xmit,
-	.ndo_select_queue = rteth_83xx_pick_tx_queue,
 	.ndo_set_mac_address = rteth_set_mac_address,
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_set_rx_mode = rteth_838x_set_rx_mode,
@@ -1537,7 +1513,6 @@ static const struct net_device_ops rteth_839x_netdev_ops = {
 	.ndo_open = rteth_open,
 	.ndo_stop = rteth_stop,
 	.ndo_start_xmit = rteth_start_xmit,
-	.ndo_select_queue = rteth_83xx_pick_tx_queue,
 	.ndo_set_mac_address = rteth_set_mac_address,
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_set_rx_mode = rteth_839x_set_rx_mode,
@@ -1581,7 +1556,6 @@ static const struct net_device_ops rteth_930x_netdev_ops = {
 	.ndo_open = rteth_open,
 	.ndo_stop = rteth_stop,
 	.ndo_start_xmit = rteth_start_xmit,
-	.ndo_select_queue = rteth_93xx_pick_tx_queue,
 	.ndo_set_mac_address = rteth_set_mac_address,
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_set_rx_mode = rteth_930x_set_rx_mode,
@@ -1631,7 +1605,6 @@ static const struct net_device_ops rteth_931x_netdev_ops = {
 	.ndo_open = rteth_open,
 	.ndo_stop = rteth_stop,
 	.ndo_start_xmit = rteth_start_xmit,
-	.ndo_select_queue = rteth_93xx_pick_tx_queue,
 	.ndo_set_mac_address = rteth_set_mac_address,
 	.ndo_validate_addr = eth_validate_addr,
 	.ndo_set_rx_mode = rtl931x_eth_set_multicast_list,
