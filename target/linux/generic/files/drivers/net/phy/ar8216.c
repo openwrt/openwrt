@@ -23,7 +23,7 @@
 #include <linux/skbuff.h>
 #include <linux/netdevice.h>
 #include <linux/netlink.h>
-#include <linux/of_device.h>
+#include <linux/of.h>
 #include <linux/of_mdio.h>
 #include <linux/of_net.h>
 #include <linux/bitops.h>
@@ -2758,15 +2758,10 @@ static const struct of_device_id ar8xxx_mdiodev_of_match[] = {
 static int
 ar8xxx_mdiodev_probe(struct mdio_device *mdiodev)
 {
-	const struct of_device_id *match;
 	struct ar8xxx_priv *priv;
 	struct switch_dev *swdev;
 	struct device_node *mdio_node;
 	int ret;
-
-	match = of_match_device(ar8xxx_mdiodev_of_match, &mdiodev->dev);
-	if (!match)
-		return -EINVAL;
 
 	priv = ar8xxx_create();
 	if (priv == NULL)
@@ -2774,7 +2769,7 @@ ar8xxx_mdiodev_probe(struct mdio_device *mdiodev)
 
 	priv->mii_bus = mdiodev->bus;
 	priv->pdev = &mdiodev->dev;
-	priv->chip = (const struct ar8xxx_chip *) match->data;
+	priv->chip = of_device_get_match_data(&mdiodev->dev);
 
 	ret = of_property_read_u32(priv->pdev->of_node, "qca,mib-poll-interval",
 				   &priv->mib_poll_interval);
