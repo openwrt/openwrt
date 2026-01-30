@@ -40,8 +40,6 @@ int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type
 #define MAX_RXRINGS	32
 #define MAX_RXLEN	300
 #define MAX_ENTRIES	(300 * 8)
-#define TXRINGS		2
-#define TXRINGLEN	160
 #define NOTIFY_EVENTS	10
 #define NOTIFY_BLOCKS	10
 #define TX_EN		0x8
@@ -94,12 +92,8 @@ struct n_event {
 
 struct ring_b {
 	u32	rx_r[MAX_RXRINGS][MAX_RXLEN];
-	u32	tx_r[TXRINGS][TXRINGLEN];
 	struct	p_hdr	rx_header[MAX_RXRINGS][MAX_RXLEN];
-	struct	p_hdr	tx_header[TXRINGS][TXRINGLEN];
 	u32	c_rx[MAX_RXRINGS];
-	u32	c_tx[TXRINGS];
-	u8		tx_space[TXRINGS * TXRINGLEN * RING_BUFFER];
 	u8		*rx_space;
 };
 
@@ -191,14 +185,6 @@ static void rteth_931x_create_tx_header(struct rteth_packet *h, unsigned int des
 	if (prio >= 0)
 		h->cpu_tag[2] = (BIT(5) | (prio & 0x1f)) << 8;
 }
-
-// Currently unused
-// static void rtl93xx_header_vlan_set(struct p_hdr *h, int vlan)
-// {
-// 	h->cpu_tag[2] |= BIT(4); /* Enable VLAN forwarding offload */
-// 	h->cpu_tag[2] |= (vlan >> 8) & 0xf;
-// 	h->cpu_tag[3] |= (vlan & 0xff) << 8;
-// }
 
 struct rtl838x_rx_q {
 	int id;
@@ -674,24 +660,6 @@ static void rteth_setup_ring_buffer(struct rteth_ctrl *ctrl, struct ring_b *ring
 		ring->c_rx[i] = 0;
 	}
 
-	for (int i = 0; i < TXRINGS; i++) {
-		struct p_hdr *h;
-		int j;
-
-		for (j = 0; j < TXRINGLEN; j++) {
-			h = &ring->tx_header[i][j];
-			memset(h, 0, sizeof(struct p_hdr));
-			h->buf = (u8 *)KSEG1ADDR(ring->tx_space +
-						 i * TXRINGLEN * RING_BUFFER +
-						 j * RING_BUFFER);
-			h->size = RING_BUFFER;
-			ring->tx_r[i][j] = KSEG1ADDR(&ring->tx_header[i][j]);
-		}
-		/* Last header is wrapping around */
-		ring->tx_r[i][j - 1] |= WRAP;
-		ring->c_tx[i] = 0;
-	}
-
 	for (int r = 0; r < RTETH_TX_RINGS; r++) {
 		for (int i = 0; i < RTETH_TX_RING_SIZE; i++) {
 			ctrl->tx_data[r].packet[i].skb = NULL;
@@ -732,7 +700,7 @@ static int rteth_open(struct net_device *ndev)
 	struct ring_b *ring = ctrl->membase;
 
 	pr_debug("%s called: RX rings %d(length %d), TX rings %d(length %d)\n",
-		 __func__, ctrl->rxrings, ctrl->rxringlen, TXRINGS, TXRINGLEN);
+		 __func__, ctrl->rxrings, ctrl->rxringlen, RTETH_TX_RINGS, RTETH_TX_RING_SIZE);
 
 	spin_lock_irqsave(&ctrl->lock, flags);
 	ctrl->r->hw_reset(ctrl);
@@ -1699,7 +1667,7 @@ static int rtl838x_eth_probe(struct platform_device *pdev)
 	rxringlen = MAX_ENTRIES / rxrings;
 	rxringlen = rxringlen > MAX_RXLEN ? MAX_RXLEN : rxringlen;
 
-	dev = devm_alloc_etherdev_mqs(&pdev->dev, sizeof(struct rteth_ctrl), TXRINGS, rxrings);
+	dev = devm_alloc_etherdev_mqs(&pdev->dev, sizeof(struct rteth_ctrl), RTETH_TX_RINGS, rxrings);
 	if (!dev)
 		return -ENOMEM;
 	SET_NETDEV_DEV(dev, &pdev->dev);
