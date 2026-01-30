@@ -1696,7 +1696,7 @@ static int rtl838x_eth_probe(struct platform_device *pdev)
 	dev->ethtool_ops = &rteth_ethtool_ops;
 	dev->min_mtu = ETH_ZLEN;
 	dev->max_mtu = DEFAULT_MTU;
-	dev->features = NETIF_F_RXCSUM | NETIF_F_HW_CSUM;
+	dev->features = NETIF_F_RXCSUM;
 	dev->hw_features = NETIF_F_RXCSUM;
 	dev->netdev_ops = ctrl->r->netdev_ops;
 
