@@ -242,11 +242,9 @@ v2: Make #pwm-cells const (Rob Herring)
  drivers/pwm/pwm-ipq.c | 239 ++++++++++++++++++++++++++++++++++++++++++++++++++
  3 files changed, 252 insertions(+)
 
-diff --git a/drivers/pwm/Kconfig b/drivers/pwm/Kconfig
-index bf2d101f67a1e0ae12a58b5630abd5cfd77ccc99..6393f4e91697ae471b1aba72e7ef3f94c5e18383 100644
 --- a/drivers/pwm/Kconfig
 +++ b/drivers/pwm/Kconfig
-@@ -347,6 +347,18 @@ config PWM_INTEL_LGM
+@@ -319,6 +319,18 @@ config PWM_INTEL_LGM
  	  To compile this driver as a module, choose M here: the module
  	  will be called pwm-intel-lgm.
  
@@ -265,11 +263,9 @@ index bf2d101f67a1e0ae12a58b5630abd5cfd77ccc99..6393f4e91697ae471b1aba72e7ef3f94
  config PWM_IQS620A
  	tristate "Azoteq IQS620A PWM support"
  	depends on MFD_IQS62X || COMPILE_TEST
-diff --git a/drivers/pwm/Makefile b/drivers/pwm/Makefile
-index 0dc0d2b69025dbd27013285cd335d3cb1ca2ab3f..5630a521a7cffeb83ff8c8960e15eb23ddb1c9f8 100644
 --- a/drivers/pwm/Makefile
 +++ b/drivers/pwm/Makefile
-@@ -29,6 +29,7 @@ obj-$(CONFIG_PWM_IMX1)		+= pwm-imx1.o
+@@ -27,6 +27,7 @@ obj-$(CONFIG_PWM_IMX1)		+= pwm-imx1.o
  obj-$(CONFIG_PWM_IMX27)		+= pwm-imx27.o
  obj-$(CONFIG_PWM_IMX_TPM)	+= pwm-imx-tpm.o
  obj-$(CONFIG_PWM_INTEL_LGM)	+= pwm-intel-lgm.o
@@ -277,9 +273,6 @@ index 0dc0d2b69025dbd27013285cd335d3cb1ca2ab3f..5630a521a7cffeb83ff8c8960e15eb23
  obj-$(CONFIG_PWM_IQS620A)	+= pwm-iqs620a.o
  obj-$(CONFIG_PWM_JZ4740)	+= pwm-jz4740.o
  obj-$(CONFIG_PWM_KEEMBAY)	+= pwm-keembay.o
-diff --git a/drivers/pwm/pwm-ipq.c b/drivers/pwm/pwm-ipq.c
-new file mode 100644
-index 0000000000000000000000000000000000000000..9955b185bc60f27d770f3833d5acd7f587595324
 --- /dev/null
 +++ b/drivers/pwm/pwm-ipq.c
 @@ -0,0 +1,239 @@
