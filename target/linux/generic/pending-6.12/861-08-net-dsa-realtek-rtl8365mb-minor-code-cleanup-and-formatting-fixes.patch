@@ -1,0 +1,178 @@
+From: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+Date: Tue, 18 Nov 2025 22:04:23 +0100
+Subject: [PATCH] net: dsa: realtek: rtl8365mb: minor code cleanup and formatting fixes
+
+ - Fix indentation in debug message for VLAN MC creation
+ - Remove trailing backslash in error message for VLAN MC entries
+ - Consolidate variable declarations in multiple functions for cleaner code
+ - Use proper UL suffix for timeout constant in regmap_read_poll_timeout
+
+These changes improve code readability and consistency without changing functionality
+
+Signed-off-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+---
+ drivers/net/dsa/realtek/rtl8365mb.c | 50 +++++++++--------------------
+ 1 file changed, 16 insertions(+), 34 deletions(-)
+
+--- a/drivers/net/dsa/realtek/rtl8365mb.c
++++ b/drivers/net/dsa/realtek/rtl8365mb.c
+@@ -1230,14 +1230,14 @@ static int rtl8365mb_vlanmc_set(struct d
+ 		/* for now, vlan_mc is only required for PVID */
+ 		if (!(vlan->flags & BRIDGE_VLAN_INFO_PVID)) {
+ 			dev_dbg(priv->dev, "Not creating VlanMC for vlan %d until a port uses PVID (%d does not)\n",
+-			vlan->vid, port);
++				vlan->vid, port);
+ 			return 0;
+ 		}
+ 
+ 		if (first_unused < 0) {
+ 			if (extack)
+ 				NL_SET_ERR_MSG_FMT_MOD(extack,
+-					   "All VLAN MC entries (%d) are in use.", \
++					   "All VLAN MC entries (%d) are in use.",
+ 					   RTL8365MB_VLAN_MC_CONF_SIZE);
+ 			return -EINVAL;
+ 		}
+@@ -1459,11 +1459,8 @@ rtl8365mb_get_tag_protocol(struct dsa_sw
+ 			   enum dsa_tag_protocol mp)
+ {
+ 	struct realtek_priv *priv = ds->priv;
+-	struct rtl8365mb_cpu *cpu;
+-	struct rtl8365mb *mb;
+-
+-	mb = priv->chip_data;
+-	cpu = &mb->cpu;
++	struct rtl8365mb *mb = priv->chip_data;
++	struct rtl8365mb_cpu *cpu = &mb->cpu;
+ 
+ 	if (cpu->position == RTL8365MB_CPU_POS_BEFORE_CRC)
+ 		return DSA_TAG_PROTO_RTL8_4T;
+@@ -1691,11 +1688,10 @@ static void rtl8365mb_phylink_mac_link_d
+ 	struct dsa_port *dp = dsa_phylink_to_port(config);
+ 	struct realtek_priv *priv = dp->ds->priv;
+ 	struct rtl8365mb_port *p;
+-	struct rtl8365mb *mb;
++	struct rtl8365mb *mb = priv->chip_data;
+ 	u8 port = dp->index;
+ 	int ret;
+ 
+-	mb = priv->chip_data;
+ 	p = &mb->ports[port];
+ 	cancel_delayed_work_sync(&p->mib_work);
+ 
+@@ -1721,11 +1717,10 @@ static void rtl8365mb_phylink_mac_link_u
+ 	struct dsa_port *dp = dsa_phylink_to_port(config);
+ 	struct realtek_priv *priv = dp->ds->priv;
+ 	struct rtl8365mb_port *p;
+-	struct rtl8365mb *mb;
++	struct rtl8365mb *mb = priv->chip_data;
+ 	u8 port = dp->index;
+ 	int ret;
+ 
+-	mb = priv->chip_data;
+ 	p = &mb->ports[port];
+ 	schedule_delayed_work(&p->mib_work, 0);
+ 
+@@ -1971,12 +1966,10 @@ static int rtl8365mb_mib_counter_read(st
+ static void rtl8365mb_get_ethtool_stats(struct dsa_switch *ds, int port, u64 *data)
+ {
+ 	struct realtek_priv *priv = ds->priv;
+-	struct rtl8365mb *mb;
++	struct rtl8365mb *mb = priv->chip_data;
+ 	int ret;
+ 	int i;
+ 
+-	mb = priv->chip_data;
+-
+ 	mutex_lock(&mb->mib_lock);
+ 	for (i = 0; i < RTL8365MB_MIB_END; i++) {
+ 		struct rtl8365mb_mib_counter *mib = &rtl8365mb_mib_counters[i];
+@@ -2019,9 +2012,8 @@ static void rtl8365mb_get_phy_stats(stru
+ {
+ 	struct realtek_priv *priv = ds->priv;
+ 	struct rtl8365mb_mib_counter *mib;
+-	struct rtl8365mb *mb;
++	struct rtl8365mb *mb = priv->chip_data;
+ 
+-	mb = priv->chip_data;
+ 	mib = &rtl8365mb_mib_counters[RTL8365MB_MIB_dot3StatsSymbolErrors];
+ 
+ 	mutex_lock(&mb->mib_lock);
+@@ -2054,12 +2046,10 @@ static void rtl8365mb_get_mac_stats(stru
+ 
+ 	};
+ 	struct realtek_priv *priv = ds->priv;
+-	struct rtl8365mb *mb;
++	struct rtl8365mb *mb = priv->chip_data;
+ 	int ret;
+ 	int i;
+ 
+-	mb = priv->chip_data;
+-
+ 	mutex_lock(&mb->mib_lock);
+ 	for (i = 0; i < RTL8365MB_MIB_END; i++) {
+ 		struct rtl8365mb_mib_counter *mib = &rtl8365mb_mib_counters[i];
+@@ -2120,9 +2110,8 @@ static void rtl8365mb_get_ctrl_stats(str
+ {
+ 	struct realtek_priv *priv = ds->priv;
+ 	struct rtl8365mb_mib_counter *mib;
+-	struct rtl8365mb *mb;
++	struct rtl8365mb *mb = priv->chip_data;
+ 
+-	mb = priv->chip_data;
+ 	mib = &rtl8365mb_mib_counters[RTL8365MB_MIB_dot3ControlInUnknownOpcodes];
+ 
+ 	mutex_lock(&mb->mib_lock);
+@@ -2226,9 +2215,8 @@ static void rtl8365mb_get_stats64(struct
+ {
+ 	struct realtek_priv *priv = ds->priv;
+ 	struct rtl8365mb_port *p;
+-	struct rtl8365mb *mb;
++	struct rtl8365mb *mb = priv->chip_data;
+ 
+-	mb = priv->chip_data;
+ 	p = &mb->ports[port];
+ 
+ 	spin_lock(&p->stats_lock);
+@@ -2565,11 +2553,8 @@ static int rtl8365mb_change_tag_protocol
+ 					 enum dsa_tag_protocol proto)
+ {
+ 	struct realtek_priv *priv = ds->priv;
+-	struct rtl8365mb_cpu *cpu;
+-	struct rtl8365mb *mb;
+-
+-	mb = priv->chip_data;
+-	cpu = &mb->cpu;
++	struct rtl8365mb *mb = priv->chip_data;
++	struct rtl8365mb_cpu *cpu = &mb->cpu;
+ 
+ 	switch (proto) {
+ 	case DSA_TAG_PROTO_RTL8_4:
+@@ -2635,7 +2620,7 @@ static int rtl8365mb_reset_chip(struct r
+ 	msleep(100);
+ 	return regmap_read_poll_timeout(priv->map, RTL8365MB_CHIP_RESET_REG, val,
+ 					!(val & RTL8365MB_CHIP_RESET_HW_MASK),
+-					20000, 1e6);
++					20000, 1000000UL);
+ }
+ 
+ /* VLAN support is always enabled in the switch.
+@@ -2703,16 +2688,13 @@ static int rtl8365mb_vlan_init(struct ds
+ static int rtl8365mb_setup(struct dsa_switch *ds)
+ {
+ 	struct realtek_priv *priv = ds->priv;
+-	struct rtl8365mb_cpu *cpu;
+ 	struct dsa_port *cpu_dp;
+-	struct rtl8365mb *mb;
++	struct rtl8365mb *mb = priv->chip_data;
++	struct rtl8365mb_cpu *cpu = &mb->cpu;
+ 	u32 user_ports;
+ 	int ret;
+ 	int i;
+ 
+-	mb = priv->chip_data;
+-	cpu = &mb->cpu;
+-
+ 	/* Table access mutex */
+ 	mutex_init(&mb->table_lock);
+ 
