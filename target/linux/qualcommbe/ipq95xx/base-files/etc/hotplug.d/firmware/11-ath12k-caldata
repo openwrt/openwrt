@@ -1,0 +1,39 @@
+#!/bin/sh
+
+[ -e /lib/firmware/$FIRMWARE ] && exit 0
+
+. /lib/functions/caldata.sh
+
+board=$(board_name)
+
+case "$FIRMWARE" in
+"ath12k/QCN9274/hw2.0/cal-pci-0001:01:00.0.bin")
+	case "$board" in
+	askey,sbe1v1k)
+		caldata_extract_mmc "0:ART" 0x58800 0x2d000
+		label_mac=$(mmc_get_mac_ascii 0:APPSBLENV ethaddr)
+		ath11k_patch_mac $(macaddr_add $label_mac -3) 1
+		ath11k_patch_mac $(macaddr_add $label_mac -1) 0
+		ath11k_patch_mac $(macaddr_add $label_mac -2) 2
+		ath11k_set_macflag
+		;;
+	esac
+	;;
+"ath12k/QCN9274/hw2.0/cal-pci-0002:01:00.0.bin")
+	case "$board" in
+	askey,sbe1v1k)
+		caldata_extract_mmc "0:ART" 0x8a800 0x2d000
+		;;
+	esac
+	;;
+"ath12k/QCN9274/hw2.0/cal-pci-0003:01:00.0.bin")
+	case "$board" in
+	askey,sbe1v1k)
+		caldata_extract_mmc "0:ART" 0xbc800 0x2d000
+		;;
+	esac
+	;;
+*)
+	exit 1
+	;;
+esac
