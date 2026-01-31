@@ -56,12 +56,10 @@ proto_wireguard_setup() {
 	config_get nohostroute "${config}" "nohostroute"
 	config_get tunlink "${config}" "tunlink"
 
-	ip link del dev "${config}" 2>/dev/null
-	ip link add dev "${config}" type wireguard
+	# Add the link only if it didn't already exist
+	ip -br link show "${config}" >/dev/null 2>&1 || ip link add dev "${config}" type wireguard
 
-	if [ "${mtu}" ]; then
-		ip link set mtu "${mtu}" dev "${config}"
-	fi
+	[ -n "${mtu}" ] && ip link set mtu "${mtu}" dev "${config}"
 
 	proto_init_update "${config}" 1
 
