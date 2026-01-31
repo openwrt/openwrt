@@ -90,7 +90,8 @@ function iface_auth_type(config) {
 	}
 
 	if (config.auth_type in [ 'psk-sae', 'eap-eap2' ]) {
-		config.ieee80211w = 1;
+		if (!config.ieee80211w)
+			config.ieee80211w = 1;
 		if (config.rsn_override)
 			config.rsn_override_mfp = 2;
 		config.sae_require_mfp = 1;
