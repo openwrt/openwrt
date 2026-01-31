@@ -16,6 +16,9 @@ fi
 }
 
 proto_wireguard_init_config() {
+	renew_handler=1
+	peer_detect=1
+
 	proto_config_add_string "private_key"
 	proto_config_add_int "listen_port"
 	proto_config_add_int "mtu"
@@ -201,6 +204,11 @@ proto_wireguard_setup() {
 	fi
 
 	proto_send_update "${config}"
+}
+
+proto_wireguard_renew() {
+	local interface="$1"
+	proto_wireguard_setup "$interface"
 }
 
 proto_wireguard_teardown() {
