@@ -1,0 +1,10 @@
+--- a/drivers/net/phy/mxl-gpy.c
++++ b/drivers/net/phy/mxl-gpy.c
+@@ -233,6 +233,7 @@ static umode_t gpy_hwmon_is_visible(cons
+ }
+ 
+ static const struct hwmon_channel_info * const gpy_hwmon_info[] = {
++	HWMON_CHANNEL_INFO(chip, HWMON_C_REGISTER_TZ),
+ 	HWMON_CHANNEL_INFO(temp, HWMON_T_INPUT),
+ 	NULL
+ };
