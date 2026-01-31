@@ -3580,18 +3580,7 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 
 			rtpcs_sds_write_bits(sds, 0x6, 0x2, 12, 12, 0);
 		} else {
-			rtpcs_sds_write_bits(sds, 0x2e, 0xd, 6, 0, 0x0);
-			rtpcs_sds_write_bits(sds, 0x2e, 0xd, 7, 7, 0x1);
-
-			rtpcs_sds_write_bits(sds, 0x2e, 0x1c, 5, 0, 0x1E);
-			rtpcs_sds_write_bits(sds, 0x2e, 0x1d, 11, 0, 0x00);
-			rtpcs_sds_write_bits(sds, 0x2e, 0x1f, 11, 0, 0x00);
-			rtpcs_sds_write_bits(sds, 0x2f, 0x0, 11, 0, 0x00);
-			rtpcs_sds_write_bits(sds, 0x2f, 0x1, 11, 0, 0x00);
-
-			rtpcs_sds_write_bits(sds, 0x2e, 0xf, 12, 6, 0x7F);
-			rtpcs_sds_write(sds, 0x2f, 0x12, 0xaaa);
-
+			rtpcs_931x_sds_init_leq_dfe(sds);
 			rtpcs_931x_sds_rx_reset(sds);
 
 			rtpcs_sds_write(sds, 0x7, 0x10, op_code);
