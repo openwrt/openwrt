@@ -1,0 +1,101 @@
+From 198675bbc03d437fb80a35d781ad13d622d0ff68 Mon Sep 17 00:00:00 2001
+From: Sergio Paracuellos <sergio.paracuellos@gmail.com>
+Date: Tue, 10 Sep 2024 06:40:24 +0200
+Subject: [PATCH 3/3] clk: ralink: mtmips: add mmc related clocks for SoCs
+ MT7620, MT7628 and MT7688
+
+Original architecture clock code from where this driver was derived did not
+include nothing related to mmc clocks. OpenWRT people started to use mtk-sd
+upstream driver recently and they were forced to use a dts 'fixed-clock'
+node with 48 MHz clock:
+- https://github.com/openwrt/openwrt/pull/15896
+The proper thing to do to avoid that is to add the mmc related clocks to the
+driver to avoid a dts with fixed clocks nodes. The minimal documentation in
+the mt7620 programming guide says that there is a BBP_PLL clock of 480 MHz
+derived from the 40 MHz XTAL and from there a clock divider by ten produces
+the desired SDHC clock of 48 MHz for the mmc. Hence add a fixed clock 'bbppll'
+and factor clock 'sdhc' ten divider child to properly set the 'mmc' peripheral
+clock with the desired 48 Mhz rate.
+
+Signed-off-by: Sergio Paracuellos <sergio.paracuellos@gmail.com>
+Link: https://lore.kernel.org/r/20240910044024.120009-4-sergio.paracuellos@gmail.com
+Signed-off-by: Stephen Boyd <sboyd@kernel.org>
+---
+ drivers/clk/ralink/clk-mtmips.c | 30 +++++++++++++++++++++++-------
+ 1 file changed, 23 insertions(+), 7 deletions(-)
+
+--- a/drivers/clk/ralink/clk-mtmips.c
++++ b/drivers/clk/ralink/clk-mtmips.c
+@@ -207,6 +207,7 @@ static struct mtmips_clk mt7620_pherip_c
+ 	{ CLK_PERIPH("10000b00.spi", "bus") },
+ 	{ CLK_PERIPH("10000b40.spi", "bus") },
+ 	{ CLK_PERIPH("10000c00.uartlite", "periph") },
++	{ CLK_PERIPH("10130000.mmc", "sdhc") },
+ 	{ CLK_PERIPH("10180000.wmac", "xtal") }
+ };
+ 
+@@ -220,6 +221,7 @@ static struct mtmips_clk mt76x8_pherip_c
+ 	{ CLK_PERIPH("10000c00.uart0", "periph") },
+ 	{ CLK_PERIPH("10000d00.uart1", "periph") },
+ 	{ CLK_PERIPH("10000e00.uart2", "periph") },
++	{ CLK_PERIPH("10130000.mmc", "sdhc") },
+ 	{ CLK_PERIPH("10300000.wmac", "xtal") }
+ };
+ 
+@@ -271,8 +273,13 @@ static struct mtmips_clk_fixed rt3352_fi
+ 	CLK_FIXED("periph", "xtal", 40000000)
+ };
+ 
++static struct mtmips_clk_fixed mt7620_fixed_clocks[] = {
++	CLK_FIXED("bbppll", "xtal", 480000000)
++};
++
+ static struct mtmips_clk_fixed mt76x8_fixed_clocks[] = {
+-	CLK_FIXED("pcmi2s", "xtal", 480000000),
++	CLK_FIXED("bbppll", "xtal", 480000000),
++	CLK_FIXED("pcmi2s", "bbppll", 480000000),
+ 	CLK_FIXED("periph", "xtal", 40000000)
+ };
+ 
+@@ -327,6 +334,15 @@ static struct mtmips_clk_factor rt305x_f
+ 	CLK_FACTOR("bus", "cpu", 1, 3)
+ };
+ 
++static struct mtmips_clk_factor mt7620_factor_clocks[] = {
++	CLK_FACTOR("sdhc", "bbppll", 1, 10)
++};
++
++static struct mtmips_clk_factor mt76x8_factor_clocks[] = {
++	CLK_FACTOR("bus", "cpu", 1, 3),
++	CLK_FACTOR("sdhc", "bbppll", 1, 10)
++};
++
+ static int mtmips_register_factor_clocks(struct clk_hw_onecell_data *clk_data,
+ 					 struct mtmips_clk_priv *priv)
+ {
+@@ -810,10 +826,10 @@ static const struct mtmips_clk_data rt53
+ static const struct mtmips_clk_data mt7620_clk_data = {
+ 	.clk_base = mt7620_clks_base,
+ 	.num_clk_base = ARRAY_SIZE(mt7620_clks_base),
+-	.clk_fixed = NULL,
+-	.num_clk_fixed = 0,
+-	.clk_factor = NULL,
+-	.num_clk_factor = 0,
++	.clk_fixed = mt7620_fixed_clocks,
++	.num_clk_fixed = ARRAY_SIZE(mt7620_fixed_clocks),
++	.clk_factor = mt7620_factor_clocks,
++	.num_clk_factor = ARRAY_SIZE(mt7620_factor_clocks),
+ 	.clk_periph = mt7620_pherip_clks,
+ 	.num_clk_periph = ARRAY_SIZE(mt7620_pherip_clks),
+ };
+@@ -823,8 +839,8 @@ static const struct mtmips_clk_data mt76
+ 	.num_clk_base = ARRAY_SIZE(mt76x8_clks_base),
+ 	.clk_fixed = mt76x8_fixed_clocks,
+ 	.num_clk_fixed = ARRAY_SIZE(mt76x8_fixed_clocks),
+-	.clk_factor = rt305x_factor_clocks,
+-	.num_clk_factor = ARRAY_SIZE(rt305x_factor_clocks),
++	.clk_factor = mt76x8_factor_clocks,
++	.num_clk_factor = ARRAY_SIZE(mt76x8_factor_clocks),
+ 	.clk_periph = mt76x8_pherip_clks,
+ 	.num_clk_periph = ARRAY_SIZE(mt76x8_pherip_clks),
+ };
