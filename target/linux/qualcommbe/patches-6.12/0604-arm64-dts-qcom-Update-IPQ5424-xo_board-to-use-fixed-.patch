@@ -1,0 +1,55 @@
+From 1e2feaca39efb84c0874829e214d370683880593 Mon Sep 17 00:00:00 2001
+From: Luo Jie <quic_luoj@quicinc.com>
+Date: Tue, 10 Jun 2025 18:35:21 +0800
+Subject: [PATCH 604/636] arm64: dts: qcom: Update IPQ5424 xo_board to use
+ fixed factor clock
+
+xo_board is fixed to 24 MHZ, which is routed from WiFi output clock
+48 MHZ (also being the reference clock of CMN PLL) divided 2 by
+analog block routing channel.
+
+Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
+Link: https://lore.kernel.org/r/20250610-qcom_ipq5424_cmnpll-v3-4-ceada8165645@quicinc.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+---
+ arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts | 7 ++++++-
+ arch/arm64/boot/dts/qcom/ipq5424.dtsi       | 3 ++-
+ 2 files changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts b/arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts
+index be01c21b5919..0705cbe33f25 100644
+--- a/arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts
++++ b/arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts
+@@ -170,8 +170,13 @@
+ 	clock-mult = <1>;
+ };
+ 
++/*
++ * The frequency of xo_board is fixed to 24 MHZ, which is routed
++ * from WiFi output clock 48 MHZ divided by 2.
++ */
+ &xo_board {
+-	clock-frequency = <24000000>;
++	clock-div = <2>;
++	clock-mult = <1>;
+ };
+ 
+ &xo_clk {
+diff --git a/arch/arm64/boot/dts/qcom/ipq5424.dtsi b/arch/arm64/boot/dts/qcom/ipq5424.dtsi
+index a6cd72632817..9e5120933b7e 100644
+--- a/arch/arm64/boot/dts/qcom/ipq5424.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5424.dtsi
+@@ -31,7 +31,8 @@
+ 		};
+ 
+ 		xo_board: xo-board-clk {
+-			compatible = "fixed-clock";
++			compatible = "fixed-factor-clock";
++			clocks = <&ref_48mhz_clk>;
+ 			#clock-cells = <0>;
+ 		};
+ 
+-- 
+2.34.1
+
