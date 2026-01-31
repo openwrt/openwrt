@@ -1,0 +1,136 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later
+#
+# Copyright (C) 2026 Michael Lotz <mmlr@mlotz.ch>
+
+print_usage_and_exit() {
+	echo "usage: $0 [<options>] <command> <bootflag> [<arguments>]
+
+Commands:
+	list
+		List all available bootflags.
+
+	values <bootflag>
+		Prints the available named values of the flag, if present.
+
+	show <bootflag>
+		Prints the current value of the flag in human readable format.
+
+	get <bootflag>
+		Prints the raw value of the flag.
+
+	set <bootflag> <value>
+		Sets the value of the flag either by numeric value or label."
+
+	exit 1
+}
+
+find_bootflag() {
+	BOOTFLAG=$(find /sys/devices/platform | grep "/cells/$1@" | head -n1)
+
+	if [ -z "$BOOTFLAG" ]
+	then
+		echo "nvmem-cell \"$NAME\" not found"
+		exit 2
+	fi
+
+	echo "$BOOTFLAG"
+}
+
+get_flag_labels() {
+	FLAG=$(find /sys/firmware/devicetree -type d \
+		| grep "/nvmem-layout/$1@" | head -n1)
+	[ -r "$FLAG/value-labels" ] || return
+
+	I=0
+	for LABEL in $(cat "$FLAG/value-labels" | tr '\0' ' ')
+	do
+		echo "$I=$LABEL"
+		I=$(($I + 1))
+	done
+}
+
+get_flag_label_for_value() {
+	get_flag_labels "$1" | grep "^$2=" | cut -d'=' -f2
+}
+
+get_flag_value_for_label() {
+	get_flag_labels "$1" | grep "^.*=$2$" | cut -d'=' -f1
+}
+
+[ -z "$1" ] && print_usage_and_exit
+
+NAME="$2"
+
+case "$1" in
+	list)
+		[ $# -eq 1 ] || print_usage_and_exit
+
+		LAYOUTS=$(find /sys/firmware/devicetree \
+			| grep "/nvmem-layout/compatible")
+		for LAYOUT in $LAYOUTS
+		do
+			COMPATIBLE=$(cat "$LAYOUT")
+			[ $(cat "$LAYOUT") == "bootflag" ] || continue
+
+			FLAGS=$(find $(dirname "$LAYOUT") -type d -mindepth 1 -maxdepth 1)
+			for FLAG in $FLAGS
+			do
+				echo -n $(basename ${FLAG%@*})
+				if [ ! -r "$FLAG/label" ]
+				then
+					echo
+					continue
+				fi
+
+				echo " - $(cat "$FLAG/label")"
+			done
+		done
+	;;
+
+	values)
+		[ $# -eq 2 ] || print_usage_and_exit
+
+		LABELS=$(get_flag_labels "$NAME")
+		if [ -z "$LABELS" ]
+		then
+			echo "no value labels, use numeric values"
+		else
+			echo "$LABELS"
+		fi
+	;;
+
+	show|get)
+		[ $# -eq 2 ] || print_usage_and_exit
+
+		BOOTFLAG=$(find_bootflag "$NAME")
+		VALUE=$(hexdump -n1 -e '1/1 "%d\n"' "$BOOTFLAG")
+		if [ "$1" == "get" ]
+		then
+			echo "$VALUE"
+		else
+			LABEL=$(get_flag_label_for_value "$NAME" "$VALUE")
+			[ -z "$LABEL" ] || LABEL="=$LABEL"
+			echo "current \"$NAME\" value: $VALUE$LABEL"
+		fi
+	;;
+
+	set)
+		[ $# -eq 3 ] || print_usage_and_exit
+
+		BOOTFLAG=$(find_bootflag "$NAME")
+
+		VALUE=$(get_flag_value_for_label "$NAME" "$3")
+		[ -z "$VALUE" ] && VALUE="$3"
+
+		LABEL=$(get_flag_label_for_value "$NAME" "$VALUE")
+		[ -z "$LABEL" ] || LABEL="=$LABEL"
+
+		echo "setting \"$NAME\" value to $VALUE$LABEL"
+		echo -ne $(printf "\x%02x" "$VALUE") > "$BOOTFLAG"
+	;;
+
+	*)
+		print_usage_and_exit
+	;;
+esac

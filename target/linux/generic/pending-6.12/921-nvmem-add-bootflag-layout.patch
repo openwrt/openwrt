@@ -1,0 +1,287 @@
+From: Michael Lotz <mmlr@mlotz.ch>
+Subject: nvmem: add bootflag nvmem-layout
+
+The concept of bootflags is common in embedded systems using dual-image
+setups for A/B updates. There often is a bit, byte sequence, ASCII
+character or similar stored in a specific flash location to indicate to
+the bootloader/OS what image or set of partitions to use. So far there
+was no way to describe these sequences in a generic way in the device
+tree and vendor/model specific tools were used.
+
+The bootflag driver adds a nvmem layout to declare bootflags in the DT.
+It further allows to shift, mask and map raw values so that the nvmem
+cell reads as a single byte index. This allows for more generic tools to
+be built, as the DT can specify the mapping of vendor specific formats
+to image indices.
+
+An example might look like this:
+
+    &flash {
+        partitions {
+            compatible = "fixed-partitions";
+            #address-cells = <1>;
+            #size-cells = <1>;
+
+            partition@0 {
+                label = "boot";
+                reg = <0x0 0x100000>;
+
+                nvmem-layout {
+                    compatible = "bootflag";
+                    #address-cells = <1>;
+                    #size-cells = <1>;
+
+                    bootflag: bootflag@ff000 {
+                        label = "image-index";
+                        value-labels = "main", "backup";
+                        reg = <0xff000 0x1>;
+                        shift = <4>;
+                        mask = [03];
+                        map = [01], [02];
+                    };
+                };
+            };
+
+	    ...
+        };
+    };
+
+This example declares a single byte bootflag within the "boot" partition
+at offset 0xff000. When the cell is read, the declared 4 bit shift, 2
+bit mask and mapping are applied. The resulting operation would look
+like this:
+
+value at 0xff000 = 0x93, shift 4 = 0x09, mask 0x03 = 0x01, map 0x01 = 0
+value at 0xff000 = 0xa3, shift 4 = 0x0a, mask 0x03 = 0x02, map 0x02 = 1
+
+All operation properties are optional. Missing properties result in
+their operation being skipped. In the simplest case, where a flag byte
+already contains the desired index, none of the properties need to be
+provided.
+
+The provided mask and each entry in the map array need to match the
+length of the cell as defined by the reg property. The shift can only be
+applied to single byte flags.
+
+As the mapping is generic, it can be applied to other flag bits, like
+image state, validity and similar.
+
+There currently is no write support, as there is no correpsonding
+preprocess to the postprocess hook in the underlying nvmem layout
+system.
+
+Signed-off-by: Michael Lotz <mmlr@mlotz.ch>
+--- a/drivers/nvmem/layouts/Kconfig
++++ b/drivers/nvmem/layouts/Kconfig
+@@ -50,6 +50,16 @@ config NVMEM_LAYOUT_ASCII_ENV
+ 
+ 	  If unsure, say N.
+ 
++config NVMEM_LAYOUT_BOOTFLAG
++	tristate "Generic bootflag support"
++	help
++	  This driver exposes bootflags in a generic way. A configurable shift,
++	  mask and map step are applied to the data on read to map raw values to
++	  an index. Typically it would be used to return the currently used image
++	  index on a dual-image setup in a platform agnostic way.
++
++	  If unsure, say N.
++
+ endmenu
+ 
+ endif
+--- a/drivers/nvmem/layouts/Makefile
++++ b/drivers/nvmem/layouts/Makefile
+@@ -7,3 +7,4 @@ obj-$(CONFIG_NVMEM_LAYOUT_SL28_VPD) += s
+ obj-$(CONFIG_NVMEM_LAYOUT_ONIE_TLV) += onie-tlv.o
+ obj-$(CONFIG_NVMEM_LAYOUT_U_BOOT_ENV) += u-boot-env.o
+ obj-$(CONFIG_NVMEM_LAYOUT_ASCII_ENV) += ascii-env.o
++obj-$(CONFIG_NVMEM_LAYOUT_BOOTFLAG) += bootflag.o
+--- /dev/null
++++ b/drivers/nvmem/layouts/bootflag.c
+@@ -0,0 +1,185 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Copyright (C) 2026 Michael Lotz <mmlr@mlotz.ch>
++ */
++
++#include <linux/module.h>
++#include <linux/nvmem-provider.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
++
++struct bootflag_cell {
++	size_t length;
++	int shift;
++	const u8 *mask;
++	int map_count;
++	const u8 *map;
++};
++
++static int bootflag_read_post_process(void *context, const char *id,
++	int index, unsigned int offset, void *buf, size_t bytes)
++{
++	struct bootflag_cell *cell = context;
++	u8 *buffer = buf;
++	int i;
++
++	if (bytes != cell->length) {
++		pr_err("length mismatch in bootflag post processing\n");
++		return -EINVAL;
++	}
++
++	if (cell->shift)
++		buffer[0] >>= cell->shift;
++
++	if (cell->mask) {
++		for (i = 0; i < bytes; i++)
++			buffer[i] &= cell->mask[i];
++	}
++
++	for (i = 0; i < cell->map_count; i++) {
++		if (memcmp(&cell->map[i * bytes], buffer, bytes))
++			continue;
++
++		buffer[0] = i;
++		break;
++	}
++
++	return 0;
++}
++
++static int bootflag_add_cells(struct nvmem_layout *layout)
++{
++	struct device *dev = &layout->dev;
++	struct bootflag_cell *priv = NULL;
++	struct device_node *child;
++	char *name = NULL;
++	const __be32 *addr;
++	int len, ret;
++
++	for_each_child_of_node(dev->of_node, child) {
++		struct nvmem_cell_info info = {0};
++
++		addr = of_get_property(child, "reg", &len);
++		if (!addr)
++			continue;
++
++		if (len < 2 * sizeof(u32)) {
++			dev_err(dev, "invalid reg on %pOF\n", child);
++			ret = -EINVAL;
++			goto err_put_node;
++		}
++
++		priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
++		if (!priv) {
++			ret = -ENOMEM;
++			goto err_put_node;
++		}
++
++		name = kasprintf(GFP_KERNEL, "%pOFn", child);
++		if (!name) {
++			ret = -ENOMEM;
++			goto err_free_priv;
++		}
++
++		info.offset = be32_to_cpup(addr++);
++		info.raw_len = priv->length = be32_to_cpup(addr);
++		info.bytes = 1;
++		info.name = name;
++		info.np = of_node_get(child);
++		info.read_post_process = bootflag_read_post_process;
++		info.priv = priv;
++
++		addr = of_get_property(child, "shift", &len);
++		if (addr) {
++			if (priv->length != 1) {
++				dev_err(dev, "shift for multibyte cells unsupported\n");
++				ret = -EINVAL;
++				goto err_free_priv;
++			}
++
++			priv->shift = be32_to_cpup(addr);
++		}
++
++		addr = of_get_property(child, "mask", &len);
++		if (addr) {
++			if (len != priv->length) {
++				dev_err(dev, "mask length does not match cell size\n");
++				ret = -EINVAL;
++				goto err_free_priv;
++			}
++
++			priv->mask = devm_kmemdup(dev, addr, len, GFP_KERNEL);
++			if (!priv->mask) {
++				ret = -ENOMEM;
++				goto err_free_priv;
++			}
++		}
++
++		addr = of_get_property(child, "map", &len);
++		if (addr) {
++			if (len % priv->length != 0) {
++				dev_err(dev, "map length is not a multiple of cell size\n");
++				ret = -EINVAL;
++				goto err_free_priv;
++			}
++
++			priv->map = devm_kmemdup(dev, addr, len, GFP_KERNEL);
++			if (!priv->map) {
++				ret = -ENOMEM;
++				goto err_free_priv;
++			}
++
++			priv->map_count = len / priv->length;
++		}
++
++		ret = nvmem_add_one_cell(layout->nvmem, &info);
++		if (ret)
++			goto err_free_priv;
++
++		kfree(name);
++		name = NULL;
++	}
++
++	return 0;
++
++err_free_priv:
++	kfree(priv->mask);
++	kfree(priv->map);
++	kfree(priv);
++
++err_put_node:
++	of_node_put(child);
++	kfree(name);
++	return ret;
++}
++
++static int bootflag_probe(struct nvmem_layout *layout)
++{
++	layout->add_cells = bootflag_add_cells;
++	return nvmem_layout_register(layout);
++}
++
++static void bootflag_remove(struct nvmem_layout *layout)
++{
++	nvmem_layout_unregister(layout);
++}
++
++static const struct of_device_id bootflag_of_match_table[] = {
++	{ .compatible = "bootflag" },
++	{},
++};
++
++static struct nvmem_layout_driver bootflag_layout = {
++	.driver = {
++		.name = "bootflag-layout",
++		.of_match_table = bootflag_of_match_table,
++	},
++	.probe = bootflag_probe,
++	.remove = bootflag_remove,
++};
++module_nvmem_layout_driver(bootflag_layout);
++
++MODULE_AUTHOR("Michael Lotz");
++MODULE_LICENSE("GPL");
++MODULE_DEVICE_TABLE(of, bootflag_of_match_table);
++MODULE_DESCRIPTION("Generic bootflag support");

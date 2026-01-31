@@ -1,0 +1,166 @@
+From: Michael Lotz <mmlr@mlotz.ch>
+Subject: nvmem: implement writes on nvmem-layout cells
+
+This introduces a write_pre_process hook that corresponds to the
+read_post_process hook and is supposed to provide the inverse operation
+of that. As the raw buffer size may be larger than the processed one,
+the hook may change the buffer and length.
+
+Cells that have no read_post_process or provide both a read_post_process
+and write_pre_process hook are considered read-write. They are now also
+exposed in the sysfs as that. Glue for sysfs writes to nvmem_cell_write
+enables actual writes to take place.
+
+Note that no bit shift or bit offset support is provided by the nvmem
+core for cell writes that use a write_pre_process hook. The hook is
+responsible to fill in any partial bits.
+
+Signed-off-by: Michael Lotz <mmlr@mlotz.ch>
+--- a/drivers/nvmem/core.c
++++ b/drivers/nvmem/core.c
+@@ -32,6 +32,8 @@ struct nvmem_cell_entry {
+ 	int			bit_offset;
+ 	int			nbits;
+ 	nvmem_cell_post_process_t read_post_process;
++	nvmem_cell_pre_process_t write_pre_process;
++	bool			read_only;
+ 	void			*priv;
+ 	struct device_node	*np;
+ 	struct nvmem_device	*nvmem;
+@@ -364,6 +366,29 @@ destroy_cell:
+ 	return read_len;
+ }
+ 
++static ssize_t nvmem_cell_attr_write(struct file *filp, struct kobject *kobj,
++				    struct bin_attribute *attr, char *buf,
++				    loff_t pos, size_t count)
++{
++	struct nvmem_cell_entry *entry;
++	struct nvmem_cell *cell = NULL;
++	int ret;
++
++	entry = attr->private;
++	cell = nvmem_create_cell(entry, entry->name, 0);
++	if (IS_ERR(cell))
++		return PTR_ERR(cell);
++
++	if (!cell)
++		return -EINVAL;
++
++	ret = nvmem_cell_write(cell, buf, count);
++
++	kfree_const(cell->id);
++	kfree(cell);
++	return ret;
++}
++
+ /* default read/write permissions */
+ static struct bin_attribute bin_attr_rw_nvmem = {
+ 	.attr	= {
+@@ -482,9 +507,11 @@ static int nvmem_populate_sysfs_cells(st
+ 						    "%s@%x,%x", entry->name,
+ 						    entry->offset,
+ 						    entry->bit_offset);
+-		attrs[i].attr.mode = 0444 & nvmem_bin_attr_get_umode(nvmem);
++		attrs[i].attr.mode = (0444 | (entry->read_only ? 0 : 0200))
++			& nvmem_bin_attr_get_umode(nvmem);
+ 		attrs[i].size = entry->bytes;
+ 		attrs[i].read = &nvmem_cell_attr_read;
++		attrs[i].write = &nvmem_cell_attr_write;
+ 		attrs[i].private = entry;
+ 		if (!attrs[i].attr.name) {
+ 			ret = -ENOMEM;
+@@ -575,8 +602,16 @@ static int nvmem_cell_info_to_nvmem_cell
+ 	cell->bytes = info->bytes;
+ 	cell->name = info->name;
+ 	cell->read_post_process = info->read_post_process;
++	cell->write_pre_process = info->write_pre_process;
+ 	cell->priv = info->priv;
+ 
++	/*
++	 * Any cells which only have a read_post_process hook are read-only
++	 * because we cannot reverse the operation and it might affect other
++	 * cells, too.
++	 */
++	cell->read_only = cell->read_post_process && !cell->write_pre_process;
++
+ 	cell->bit_offset = info->bit_offset;
+ 	cell->nbits = info->nbits;
+ 	cell->np = info->np;
+@@ -1792,29 +1827,38 @@ err:
+ static int __nvmem_cell_entry_write(struct nvmem_cell_entry *cell, void *buf, size_t len)
+ {
+ 	struct nvmem_device *nvmem = cell->nvmem;
++	void *preprocessed_buf;
++	size_t preprocessed_len;
+ 	int rc;
+ 
+-	if (!nvmem || nvmem->read_only ||
++	if (!nvmem || nvmem->read_only || cell->read_only ||
+ 	    (cell->bit_offset == 0 && len != cell->bytes))
+ 		return -EINVAL;
+ 
+-	/*
+-	 * Any cells which have a read_post_process hook are read-only because
+-	 * we cannot reverse the operation and it might affect other cells,
+-	 * too.
+-	 */
+-	if (cell->read_post_process)
+-		return -EINVAL;
++	if (cell->write_pre_process) {
++		preprocessed_buf = buf;
++		preprocessed_len = cell->bytes;
++		rc = cell->write_pre_process(cell->priv, cell->offset,
++			&preprocessed_buf, &preprocessed_len);
++		if (rc)
++			return rc;
+ 
+-	if (cell->bit_offset || cell->nbits) {
+-		if (len != BITS_TO_BYTES(cell->nbits) && len != cell->bytes)
+-			return -EINVAL;
+-		buf = nvmem_cell_prepare_write_buffer(cell, buf, len);
+-		if (IS_ERR(buf))
+-			return PTR_ERR(buf);
+-	}
++		rc = nvmem_reg_write(nvmem, cell->offset, preprocessed_buf,
++			preprocessed_len);
+ 
+-	rc = nvmem_reg_write(nvmem, cell->offset, buf, cell->bytes);
++		if (preprocessed_buf != buf)
++			kfree(preprocessed_buf);
++	} else {
++		if (cell->bit_offset || cell->nbits) {
++			if (len != BITS_TO_BYTES(cell->nbits) && len != cell->bytes)
++				return -EINVAL;
++			buf = nvmem_cell_prepare_write_buffer(cell, buf, len);
++			if (IS_ERR(buf))
++				return PTR_ERR(buf);
++		}
++
++		rc = nvmem_reg_write(nvmem, cell->offset, buf, cell->bytes);
++	}
+ 
+ 	/* free the tmp buffer */
+ 	if (cell->bit_offset || cell->nbits)
+--- a/include/linux/nvmem-provider.h
++++ b/include/linux/nvmem-provider.h
+@@ -20,7 +20,10 @@ typedef int (*nvmem_reg_read_t)(void *pr
+ 				void *val, size_t bytes);
+ typedef int (*nvmem_reg_write_t)(void *priv, unsigned int offset,
+ 				 void *val, size_t bytes);
+-/* used for vendor specific post processing of cell data */
++/* used for vendor specific pre/post processing of cell data */
++typedef int (*nvmem_cell_pre_process_t)(void *priv, unsigned int offset,
++					 void **buf,
++					 size_t *bytes);
+ typedef int (*nvmem_cell_post_process_t)(void *priv, const char *id, int index,
+ 					 unsigned int offset, void *buf,
+ 					 size_t bytes);
+@@ -71,6 +74,7 @@ struct nvmem_cell_info {
+ 	unsigned int		nbits;
+ 	struct device_node	*np;
+ 	nvmem_cell_post_process_t read_post_process;
++	nvmem_cell_pre_process_t write_pre_process;
+ 	void			*priv;
+ };
+ 
