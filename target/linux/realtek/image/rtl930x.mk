@@ -114,6 +114,24 @@ define Device/xikestor_sks8300-8x
 endef
 TARGET_DEVICES += xikestor_sks8300-8x
 
+define Device/xikestor_sks8300-12e2t2x
+  SOC := rtl9302
+  UIMAGE_MAGIC := 0x93000000
+  DEVICE_VENDOR := XikeStor
+  DEVICE_MODEL := SKS8300-12E2T2X
+  IMAGE_SIZE := 20480k
+  $(Device/kernel-lzma)
+  IMAGE/sysupgrade.bin := \
+    pad-extra 16 | \
+    append-kernel | \
+    pad-to 64k | \
+    append-rootfs | \
+    pad-rootfs | \
+    check-size | \
+    append-metadata
+endef
+TARGET_DEVICES += xikestor_sks8300-12e2t2x
+
 define Device/xikestor_sks8310-8x
   SOC := rtl9303
   UIMAGE_MAGIC := 0x93000000
