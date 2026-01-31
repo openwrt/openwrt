@@ -11,6 +11,12 @@ set_preinit_iface() {
 		ip link set eth1 up
 		ifname=eth1
 		;;
+	cudy,m3000-v1-yt8821)
+		# It is necessary to let the WAN (eth0) PHY warm up
+		ip link set eth0 up
+		ip link set eth1 up
+		ifname=eth1
+		;;
 	cudy,ap3000-v1|\
 	cudy,ap3000outdoor-v1|\
 	cudy,re3000-v1|\
