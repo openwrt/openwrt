@@ -299,7 +299,10 @@ start_service() {
 	}
 
 	[ -z "${snr}" ] && snr=0
-	[ -z "${macaddr}" ] && macaddr="00:00:00:00:00:00"
+	[ -z "${macaddr}" ] && {
+		hw=$(cat /sys/class/net/dsl0/address)
+		macaddr="${hw:-00:00:00:00:00:00}"
+	}
 	autoboot_script "$snr" "$macaddr"
 	autoboot="-a /tmp/dsl.scr -A /tmp/dsl.scr"
 
