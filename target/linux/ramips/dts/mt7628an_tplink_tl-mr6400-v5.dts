@@ -1,0 +1,115 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include <dt-bindings/leds/common.h>
+
+#include "mt7628an_tplink_8m.dtsi"
+
+/ {
+	compatible = "tplink,tl-mr6400-v5", "mediatek,mt7628an-soc";
+	model = "TP-Link TL-MR6400 v5";
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 38 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		rfkill {
+			label = "rfkill";
+			gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RFKILL>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		wlan {
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		lan {
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power: power {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&gpio 39 GPIO_ACTIVE_LOW>;
+		};
+
+		wan {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&gpio 40 GPIO_ACTIVE_LOW>;
+		};
+
+		signal1 {
+			label = "white:signal1";
+			gpios = <&gpio 41 GPIO_ACTIVE_LOW>;
+		};
+
+		signal2 {
+			label = "white:signal2";
+			gpios = <&gpio 42 GPIO_ACTIVE_LOW>;
+		};
+
+		signal3 {
+			label = "white:signal3";
+			gpios = <&gpio 43 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "i2c", "p0led_an", "p1led_an", "p2led_an", "p3led_an", "p4led_an", "uart1", "wdt";
+		function = "gpio";
+	};
+};
+
+&esw {
+	mediatek,portmap = <0x37>;
+	mediatek,portdisable = <0x30>;
+};
+
+&wmac {
+	status = "okay";
+
+	nvmem-cells = <&eeprom_factory_20000>, <&macaddr_factory_1f100 0>;
+	nvmem-cell-names = "eeprom", "mac-address";
+};
+
+&ethernet {
+	nvmem-cells = <&macaddr_factory_1f100 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&factory {
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		macaddr_factory_1f100: macaddr@1f100 {
+			compatible = "mac-base";
+			reg = <0x1f100 0x6>;
+			#nvmem-cell-cells = <1>;
+		};
+	};
+};

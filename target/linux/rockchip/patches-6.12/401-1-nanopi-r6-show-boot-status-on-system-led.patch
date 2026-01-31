@@ -1,0 +1,33 @@
+Nanopi R6: show boot progress on the system LED
+
+Set up openwrt to show boot progress on the nanopi R6S or R6C system LED.
+
+The LED blinking states indicate the boot stage. The led is defined as
+a power LED, but can still be set to heartbeat in /etc/config/system
+after the system is done booting.
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588s-nanopi-r6.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588s-nanopi-r6.dtsi
+@@ -16,6 +16,10 @@
+ 		ethernet0 = &gmac1;
+ 		mmc0 = &sdmmc;
+ 		mmc1 = &sdhci;
++		led-boot = &sys_led;
++		led-failsafe = &sys_led;
++		led-running = &sys_led;
++		led-upgrade = &sys_led;
+ 	};
+ 
+ 	chosen {
+@@ -54,9 +58,9 @@
+ 
+ 		sys_led: led-0 {
+ 			color = <LED_COLOR_ID_RED>;
+-			function = LED_FUNCTION_HEARTBEAT;
++			function = LED_FUNCTION_POWER;
+ 			gpios = <&gpio1 RK_PC1 GPIO_ACTIVE_HIGH>;
+-			linux,default-trigger = "heartbeat";
++			default-state = "on";
+ 			pinctrl-names = "default";
+ 			pinctrl-0 = <&sys_led_pin>;
+ 		};

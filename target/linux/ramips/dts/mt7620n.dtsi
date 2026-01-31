@@ -1,0 +1,382 @@
+/dts-v1/;
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	compatible = "ralink,mt7620n-soc";
+
+	aliases {
+		spi0 = &spi0;
+		spi1 = &spi1;
+		serial0 = &uartlite;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			compatible = "mips,mips24KEc";
+			reg = <0>;
+		};
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,57600";
+	};
+
+	cpuintc: cpuintc {
+		#address-cells = <0>;
+		#interrupt-cells = <1>;
+		interrupt-controller;
+		compatible = "mti,cpu-interrupt-controller";
+	};
+
+	palmbus: palmbus@10000000 {
+		compatible = "palmbus";
+		reg = <0x10000000 0x200000>;
+		ranges = <0x0 0x10000000 0x1FFFFF>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		sysc: syscon@0 {
+			compatible = "ralink,mt7620-sysc", "syscon";
+			reg = <0x0 0x100>;
+			#clock-cells = <1>;
+			#reset-cells = <1>;
+		};
+
+		timer: timer@100 {
+			compatible = "ralink,rt2880-timer";
+			reg = <0x100 0x20>;
+
+			clocks = <&sysc 7>;
+
+			interrupt-parent = <&intc>;
+			interrupts = <1>;
+		};
+
+		watchdog: watchdog@120 {
+			compatible = "ralink,rt2880-wdt";
+			reg = <0x120 0x10>;
+
+			clocks = <&sysc 8>;
+
+			resets = <&sysc 8>;
+			reset-names = "wdt";
+
+			interrupt-parent = <&intc>;
+			interrupts = <1>;
+		};
+
+		intc: intc@200 {
+			compatible = "ralink,rt2880-intc";
+			reg = <0x200 0x100>;
+
+			interrupt-controller;
+			#interrupt-cells = <1>;
+
+			interrupt-parent = <&cpuintc>;
+			interrupts = <2>;
+		};
+
+		memc: memc@300 {
+			compatible = "ralink,mt7620a-memc", "ralink,rt3050-memc";
+			reg = <0x300 0x100>;
+
+			interrupt-parent = <&intc>;
+			interrupts = <3>;
+		};
+
+		gpio0: gpio@600 {
+			compatible = "ralink,rt2880-gpio";
+			reg = <0x600 0x34>;
+
+			interrupt-parent = <&intc>;
+			interrupts = <6>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <24>;
+			ralink,register-map = [ 00 04 08 0c
+						20 24 28 2c
+						30 34 ];
+		};
+
+		gpio1: gpio@638 {
+			compatible = "ralink,rt2880-gpio";
+			reg = <0x638 0x24>;
+
+			interrupt-parent = <&intc>;
+			interrupts = <6>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <16>;
+			ralink,register-map = [ 00 04 08 0c
+						10 14 18 1c
+						20 24 ];
+
+			status = "disabled";
+		};
+
+		gpio2: gpio@660 {
+			compatible = "ralink,rt2880-gpio";
+			reg = <0x660 0x24>;
+
+			interrupt-parent = <&intc>;
+			interrupts = <6>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <32>;
+			ralink,register-map = [ 00 04 08 0c
+						10 14 18 1c
+						20 24 ];
+
+			status = "disabled";
+		};
+
+		gpio3: gpio@688 {
+			compatible = "ralink,rt2880-gpio";
+			reg = <0x688 0x24>;
+
+			interrupt-parent = <&intc>;
+			interrupts = <6>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <1>;
+			ralink,register-map = [ 00 04 08 0c
+						10 14 18 1c
+						20 24 ];
+
+			status = "disabled";
+		};
+
+		i2c: i2c@900 {
+			compatible = "ralink,rt2880-i2c";
+			reg = <0x900 0x100>;
+
+			clocks = <&sysc 10>;
+
+			resets = <&sysc 16>;
+			reset-names = "i2c";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&i2c_pins>;
+		};
+
+		spi0: spi@b00 {
+			compatible = "ralink,rt2880-spi";
+			reg = <0xb00 0x40>;
+
+			clocks = <&sysc 12>;
+
+			resets = <&sysc 18>;
+			reset-names = "spi";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&spi_pins>;
+		};
+
+		spi1: spi@b40 {
+			compatible = "ralink,rt2880-spi";
+			reg = <0xb40 0x60>;
+
+			clocks = <&sysc 13>;
+
+			resets = <&sysc 18>;
+			reset-names = "spi";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&spi_cs1>;
+		};
+
+		uartlite: uartlite@c00 {
+			compatible = "ralink,mt7620a-uart", "ralink,rt2880-uart", "ns16550a";
+			reg = <0xc00 0x100>;
+
+			clocks = <&sysc 14>;
+
+			resets = <&sysc 19>;
+
+			interrupt-parent = <&intc>;
+			interrupts = <12>;
+
+			reg-shift = <2>;
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&uartlite_pins>;
+		};
+
+		systick: systick@d00 {
+			compatible = "ralink,mt7620a-systick", "ralink,cevt-systick";
+			reg = <0xd00 0x10>;
+
+			interrupt-parent = <&cpuintc>;
+			interrupts = <7>;
+		};
+	};
+
+	pinctrl: pinctrl {
+		compatible = "ralink,rt2880-pinmux";
+		pinctrl-names = "default";
+		pinctrl-0 = <&state_default>;
+
+		state_default: pinctrl0 {
+		};
+
+		ephy_pins: ephy {
+			ephy {
+				groups = "ephy";
+				function = "ephy";
+			};
+		};
+
+		spi_pins: spi_pins {
+			spi_pins {
+				groups = "spi";
+				function = "spi";
+			};
+		};
+
+		spi_cs1: spi1 {
+			spi1 {
+				groups = "spi refclk";
+				function = "spi refclk";
+			};
+		};
+
+		i2c_pins: i2c_pins {
+			i2c_pins {
+				groups = "i2c";
+				function = "i2c";
+			};
+		};
+
+		uartlite_pins: uartlite {
+			uart {
+				groups = "uartlite";
+				function = "uartlite";
+			};
+		};
+	};
+
+	usbphy: usbphy {
+		compatible = "mediatek,mt7620-usbphy";
+		#phy-cells = <0>;
+
+		ralink,sysctl = <&sysc>;
+		/* usb phy reset is only controled by RSTCTRL bit 25 */
+		resets = <&sysc 25>, <&sysc 22>;
+		reset-names = "host", "device";
+	};
+
+	ethernet: ethernet@10100000 {
+		compatible = "mediatek,mt7620-eth";
+		reg = <0x10100000 0x10000>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		interrupt-parent = <&cpuintc>;
+		interrupts = <5>;
+
+		resets = <&sysc 21>, <&sysc 23>;
+		reset-names = "fe", "esw";
+
+		mediatek,switch = <&gsw>;
+	};
+
+	gsw: gsw@10110000 {
+		compatible = "mediatek,mt7620-gsw";
+		reg = <0x10110000 0x8000>;
+
+		resets = <&sysc 24>;
+		reset-names = "ephy";
+
+		interrupt-parent = <&intc>;
+		interrupts = <17>;
+	};
+
+	ehci: ehci@101c0000 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "generic-ehci";
+		reg = <0x101c0000 0x1000>;
+
+		interrupt-parent = <&intc>;
+		interrupts = <18>;
+
+		phys = <&usbphy>;
+		phy-names = "usb";
+
+		status = "disabled";
+
+		ehci_port1: port@1 {
+			reg = <1>;
+			#trigger-source-cells = <0>;
+		};
+	};
+
+	ohci: ohci@101c1000 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "generic-ohci";
+		reg = <0x101c1000 0x1000>;
+
+		phys = <&usbphy>;
+		phy-names = "usb";
+
+		interrupt-parent = <&intc>;
+		interrupts = <18>;
+
+		status = "disabled";
+
+		ohci_port1: port@1 {
+			reg = <1>;
+			#trigger-source-cells = <0>;
+		};
+	};
+
+	wmac: wmac@10180000 {
+		compatible = "ralink,rt7620-wifi", "ralink,rt2880-wifi";
+		reg = <0x10180000 0x40000>;
+
+		clocks = <&sysc 16>;
+
+		interrupt-parent = <&cpuintc>;
+		interrupts = <6>;
+
+		ralink,eeprom = "soc_wmac.eeprom";
+	};
+};

@@ -1,0 +1,123 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include <dt-bindings/leds/common.h>
+
+#include "qca9533_mikrotik_routerboard-16m.dtsi"
+
+/ {
+	compatible = "mikrotik,routerboard-map-2nd", "qca,qca9533";
+	model = "MikroTik RouterBOARD mAP-2nD (mAP)";
+
+	aliases {
+		led-boot = &led_user;
+		led-failsafe = &led_user;
+		led-running = &led_user;
+		led-upgrade = &led_user;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		power {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		eth_1 {
+			label = "green:eth_1";
+			gpios = <&gpio_ext 0 GPIO_ACTIVE_LOW>;
+		};
+
+		eth_2 {
+			label = "green:eth_2";
+			gpios = <&gpio_ext 1 GPIO_ACTIVE_LOW>;
+		};
+
+		poe_out {
+			label = "red:poe_out";
+			gpios = <&gpio_ext 2 GPIO_ACTIVE_LOW>;
+		};
+
+		led_user: user {
+			label = "green:user";
+			gpios = <&gpio_ext 3 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan {
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio_ext 4 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		ap_cap {
+			label = "green:ap_cap";
+			gpios = <&gpio_ext 6 GPIO_ACTIVE_LOW>;
+		};
+
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		usb_power {
+			gpio-export,name = "usb-power";
+			gpio-export,output = <1>;
+			gpios = <&gpio_ext 5 GPIO_ACTIVE_LOW>;
+		};
+
+		enable_poe_port5 {
+			gpio-export,name = "enable-poe";
+			gpio-export,output = <0>;
+			gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&spi {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pin_spi_cs1>;
+
+	gpio_ext: gpio_ext@1 {
+		compatible = "fairchild,74hc595";
+		reg = <1>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		registers-number = <1>;
+		spi-max-frequency = <25000000>;
+	};
+};
+
+
+&pinmux {
+	pin_spi_cs1: pinmux_spi_cs1 {
+		pinctrl-single,bits = <0x8 0x0a000000 0xff000000>;
+	};
+};
+
+&wmac {
+	status = "okay";
+
+	qca,no-eeprom;
+};
+
+&eth0 {
+	status = "okay";
+
+	phy-handle = <&swphy0>;
+
+	gmac-config {
+		device = <&gmac>;
+		switch-phy-swap = <1>;
+	};
+};
+
+&usb0 {
+	status = "okay";
+};
+
+&usb_phy {
+	status = "okay";
+};

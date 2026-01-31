@@ -1,0 +1,179 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca955x.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "buffalo,wzr-450hp2", "qca,qca9558";
+	model = "Buffalo WZR-450HP2/WZR-450HP2D";
+
+	aliases {
+		led-boot = &led_status_green;
+		led-failsafe = &led_status_green;
+		led-running = &led_status_green;
+		led-upgrade = &led_status_green;
+		label-mac-device = &eth0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_status_green: status_green {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		led_wlan_green: wlan_green {
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		led_wps_green: wps_green {
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "Reset button";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		rfkill {
+		       label = "RFKILL button";
+		       linux,code = <KEY_RFKILL>;
+		       gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
+		       debounce-interval = <60>;
+		};
+	};
+};
+
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x40000>;
+				read-only;
+			};
+
+			partition@40000 {
+				reg = <0x40000 0x10000>;
+				label = "u-boot-env";
+			};
+
+			partition@50000 {
+				compatible = "denx,uimage";
+				reg = <0x50000 0xf90000>;
+				label = "firmware";
+			};
+
+			partition@fe0000 {
+				reg = <0xfe0000 0x10000>;
+				label = "user_property";
+				read-only;
+			};
+
+			art: partition@ff0000 {
+				label = "art";
+				reg = <0xff0000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_wan: macaddr@0 {
+						reg = <0x0 0x6>;
+					};
+
+					macaddr_lan: macaddr@6 {
+						reg = <0x6 0x6>;
+					};
+
+					cal_ath9k: cal_ath9k@1000 {
+						reg = <0x1000 0x440>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy0: ethernet-phy@0 {
+		reg = <0>;
+
+		qca,ar8327-initvals = <
+			0x04 0x07600000 /* PORT0 PAD MODE CTRL: RGMII, to eth0 */
+			0x0c 0x00080080 /* PORT6 PAD MODE CTRL: SGMII, to eth1 */
+			0x10 0x81000080 /* POWER ON STRAP */
+			0x50 0xcc35cc35 /* LED_CTRL0 */
+			0x54 0xca35ca35 /* LED_CTRL1 */
+			0x58 0xc935c935 /* LED_CTRL2 */
+			0x5c 0x03ffff00 /* LED_CTRL3 */
+			0x7c 0x0000007e /* PORT0_STATUS */
+			0x94 0x0000007e /* PORT6_STATUS */
+		>;
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_wan>;
+	nvmem-cell-names = "mac-address";
+	phy-handle = <&phy0>;
+	pll-data = <0x56000000 0x00000101 0x00001616>;
+
+	gmac-config {
+		device = <&gmac>;
+		rgmii-enabled = <1>;
+	};
+};
+
+&eth1 {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_lan>;
+	nvmem-cell-names = "mac-address";
+	pll-data = <0x03000101 0x00000101 0x00001616>;
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&wmac {
+	status = "okay";
+
+	nvmem-cells = <&cal_ath9k>;
+	nvmem-cell-names = "calibration";
+};

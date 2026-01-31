@@ -1,0 +1,171 @@
+From 7d086f78fe09fb94eb3b2e12436f2feed21d9c1e Mon Sep 17 00:00:00 2001
+From: Heiko Stuebner <heiko@sntech.de>
+Date: Mon, 19 May 2025 00:04:46 +0200
+Subject: [PATCH] arm64: dts: rockchip: move rk3528 pinctrl node outside the
+ soc node
+
+The non-mmio pinctrl node is not supposed to be inside the soc simple-bus
+as dtc points out:
+
+../arch/arm64/boot/dts/rockchip/rk3528.dtsi:870.20-936.5: Warning (simple_bus_reg): /soc/pinctrl: missing or empty reg/ranges property
+
+Move the pinctrl node outside and adapt the indentation.
+
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+Link: https://lore.kernel.org/r/20250518220449.2722673-5-heiko@sntech.de
+---
+ arch/arm64/boot/dts/rockchip/rk3528.dtsi | 136 +++++++++++------------
+ 1 file changed, 68 insertions(+), 68 deletions(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3528.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3528.dtsi
+@@ -111,6 +111,74 @@
+ 		};
+ 	};
+ 
++	pinctrl: pinctrl {
++		compatible = "rockchip,rk3528-pinctrl";
++		rockchip,grf = <&ioc_grf>;
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++
++		gpio0: gpio@ff610000 {
++			compatible = "rockchip,gpio-bank";
++			reg = <0x0 0xff610000 0x0 0x200>;
++			clocks = <&cru PCLK_GPIO0>, <&cru DBCLK_GPIO0>;
++			interrupts = <GIC_SPI 71 IRQ_TYPE_LEVEL_HIGH>;
++			gpio-controller;
++			#gpio-cells = <2>;
++			gpio-ranges = <&pinctrl 0 0 32>;
++			interrupt-controller;
++			#interrupt-cells = <2>;
++		};
++
++		gpio1: gpio@ffaf0000 {
++			compatible = "rockchip,gpio-bank";
++			reg = <0x0 0xffaf0000 0x0 0x200>;
++			clocks = <&cru PCLK_GPIO1>, <&cru DBCLK_GPIO1>;
++			interrupts = <GIC_SPI 73 IRQ_TYPE_LEVEL_HIGH>;
++			gpio-controller;
++			#gpio-cells = <2>;
++			gpio-ranges = <&pinctrl 0 32 32>;
++			interrupt-controller;
++			#interrupt-cells = <2>;
++		};
++
++		gpio2: gpio@ffb00000 {
++			compatible = "rockchip,gpio-bank";
++			reg = <0x0 0xffb00000 0x0 0x200>;
++			clocks = <&cru PCLK_GPIO2>, <&cru DBCLK_GPIO2>;
++			interrupts = <GIC_SPI 75 IRQ_TYPE_LEVEL_HIGH>;
++			gpio-controller;
++			#gpio-cells = <2>;
++			gpio-ranges = <&pinctrl 0 64 32>;
++			interrupt-controller;
++			#interrupt-cells = <2>;
++		};
++
++		gpio3: gpio@ffb10000 {
++			compatible = "rockchip,gpio-bank";
++			reg = <0x0 0xffb10000 0x0 0x200>;
++			clocks = <&cru PCLK_GPIO3>, <&cru DBCLK_GPIO3>;
++			interrupts = <GIC_SPI 76 IRQ_TYPE_LEVEL_HIGH>;
++			gpio-controller;
++			#gpio-cells = <2>;
++			gpio-ranges = <&pinctrl 0 96 32>;
++			interrupt-controller;
++			#interrupt-cells = <2>;
++		};
++
++		gpio4: gpio@ffb20000 {
++			compatible = "rockchip,gpio-bank";
++			reg = <0x0 0xffb20000 0x0 0x200>;
++			clocks = <&cru PCLK_GPIO4>, <&cru DBCLK_GPIO4>;
++			interrupts = <GIC_SPI 78 IRQ_TYPE_LEVEL_HIGH>;
++			gpio-controller;
++			#gpio-cells = <2>;
++			gpio-ranges = <&pinctrl 0 128 32>;
++			interrupt-controller;
++			#interrupt-cells = <2>;
++		};
++	};
++
+ 	psci {
+ 		compatible = "arm,psci-1.0", "arm,psci-0.2";
+ 		method = "smc";
+@@ -882,74 +950,6 @@
+ 			#dma-cells = <1>;
+ 			arm,pl330-periph-burst;
+ 		};
+-
+-		pinctrl: pinctrl {
+-			compatible = "rockchip,rk3528-pinctrl";
+-			rockchip,grf = <&ioc_grf>;
+-			#address-cells = <2>;
+-			#size-cells = <2>;
+-			ranges;
+-
+-			gpio0: gpio@ff610000 {
+-				compatible = "rockchip,gpio-bank";
+-				reg = <0x0 0xff610000 0x0 0x200>;
+-				clocks = <&cru PCLK_GPIO0>, <&cru DBCLK_GPIO0>;
+-				interrupts = <GIC_SPI 71 IRQ_TYPE_LEVEL_HIGH>;
+-				gpio-controller;
+-				#gpio-cells = <2>;
+-				gpio-ranges = <&pinctrl 0 0 32>;
+-				interrupt-controller;
+-				#interrupt-cells = <2>;
+-			};
+-
+-			gpio1: gpio@ffaf0000 {
+-				compatible = "rockchip,gpio-bank";
+-				reg = <0x0 0xffaf0000 0x0 0x200>;
+-				clocks = <&cru PCLK_GPIO1>, <&cru DBCLK_GPIO1>;
+-				interrupts = <GIC_SPI 73 IRQ_TYPE_LEVEL_HIGH>;
+-				gpio-controller;
+-				#gpio-cells = <2>;
+-				gpio-ranges = <&pinctrl 0 32 32>;
+-				interrupt-controller;
+-				#interrupt-cells = <2>;
+-			};
+-
+-			gpio2: gpio@ffb00000 {
+-				compatible = "rockchip,gpio-bank";
+-				reg = <0x0 0xffb00000 0x0 0x200>;
+-				clocks = <&cru PCLK_GPIO2>, <&cru DBCLK_GPIO2>;
+-				interrupts = <GIC_SPI 75 IRQ_TYPE_LEVEL_HIGH>;
+-				gpio-controller;
+-				#gpio-cells = <2>;
+-				gpio-ranges = <&pinctrl 0 64 32>;
+-				interrupt-controller;
+-				#interrupt-cells = <2>;
+-			};
+-
+-			gpio3: gpio@ffb10000 {
+-				compatible = "rockchip,gpio-bank";
+-				reg = <0x0 0xffb10000 0x0 0x200>;
+-				clocks = <&cru PCLK_GPIO3>, <&cru DBCLK_GPIO3>;
+-				interrupts = <GIC_SPI 76 IRQ_TYPE_LEVEL_HIGH>;
+-				gpio-controller;
+-				#gpio-cells = <2>;
+-				gpio-ranges = <&pinctrl 0 96 32>;
+-				interrupt-controller;
+-				#interrupt-cells = <2>;
+-			};
+-
+-			gpio4: gpio@ffb20000 {
+-				compatible = "rockchip,gpio-bank";
+-				reg = <0x0 0xffb20000 0x0 0x200>;
+-				clocks = <&cru PCLK_GPIO4>, <&cru DBCLK_GPIO4>;
+-				interrupts = <GIC_SPI 78 IRQ_TYPE_LEVEL_HIGH>;
+-				gpio-controller;
+-				#gpio-cells = <2>;
+-				gpio-ranges = <&pinctrl 0 128 32>;
+-				interrupt-controller;
+-				#interrupt-cells = <2>;
+-			};
+-		};
+ 	};
+ };
+ 

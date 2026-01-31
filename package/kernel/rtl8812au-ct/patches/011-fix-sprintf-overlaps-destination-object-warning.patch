@@ -1,0 +1,28 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Tue, 29 Apr 2025 00:21:50 +0800
+Subject: [PATCH] fix sprintf() overlaps destination object warning
+
+/workspaces/openwrt/build_dir/target-x86_64_musl/linux-x86_64/rtl8812au-ct-2022.10.26~9b2b203a/core/rtw_mp.c: In function 'mp_query_psd':
+/workspaces/openwrt/build_dir/target-x86_64_musl/linux-x86_64/rtl8812au-ct-2022.10.26~9b2b203a/core/rtw_mp.c:1874:17: error: 'sprintf' argument 3 overlaps destination object 'data' [-Werror=restrict]
+ 1874 |                 sprintf(data, "%s%x ", data, psd_data);
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspaces/openwrt/build_dir/target-x86_64_musl/linux-x86_64/rtl8812au-ct-2022.10.26~9b2b203a/core/rtw_mp.c:1839:41: note: destination object referenced by 'restrict'-qualified argument 1 was declared here
+ 1839 | u32 mp_query_psd(PADAPTER pAdapter, u8 *data)
+      |                                     ~~~~^~~~
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ core/rtw_mp.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/core/rtw_mp.c
++++ b/core/rtw_mp.c
+@@ -1871,7 +1871,7 @@ u32 mp_query_psd(PADAPTER pAdapter, u8 *
+ 		} else {
+ 			psd_data = rtw_GetPSDData(pAdapter, i);
+ 		}
+-		sprintf(data, "%s%x ", data, psd_data);
++		sprintf(data + strlen(data), "%x ", psd_data);
+ 		i++;
+ 	}
+ 

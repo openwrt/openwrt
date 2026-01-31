@@ -1,0 +1,610 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+/dts-v1/;
+#include "mt7988a.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/pinctrl/mt65xx.h>
+#include <dt-bindings/regulator/richtek,rt5190a-regulator.h>
+
+/ {
+	aliases {
+		serial0 = &serial0;
+		label-mac-device = &gmac1;
+		led-boot = &power_led;
+		led-failsafe = &power_led;
+		led-running = &power_led;
+		led-upgrade = &power_led;
+	};
+
+	chosen {
+		stdout-path = &serial0;
+		bootargs = "console=ttyS0,115200n1 pci=pcie_bus_perf";
+	};
+
+	memory@40000000 {
+		reg = <0x0 0x40000000 0x0 0x40000000>;
+		device_type = "memory";
+	};
+
+	cpus {
+		/delete-node/ cpu@3;
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		button-fn1 {
+			label = "fn1";
+			linux,code = <BTN_0>;
+			gpios = <&pio 29 GPIO_ACTIVE_LOW>;
+		};
+
+		button-fn2 {
+			label = "fn2";
+			linux,code = <BTN_1>;
+			gpios = <&pio 37 GPIO_ACTIVE_LOW>;
+		};
+
+		button-reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pio 60 GPIO_ACTIVE_LOW>;
+		};
+
+		button-wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pio 61 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		/* fn1 */
+		led-0 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_INDICATOR;
+			function-enumerator = <0>;
+			gpios = <&pio 42 GPIO_ACTIVE_LOW>;
+		};
+
+		/* fn2 */
+		led-1 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_INDICATOR;
+			function-enumerator = <1>;
+			gpios = <&pio 43 GPIO_ACTIVE_LOW>;
+		};
+
+		/* wifi */
+		led-2 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			gpios = <&pio 47 GPIO_ACTIVE_LOW>;
+		};
+
+		/* internet */
+		led-3 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN_ONLINE;
+			gpios = <&pio 48 GPIO_ACTIVE_LOW>;
+		};
+
+		/* power */
+		power_led: led-4 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&pio 50 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		/* usb2.0 hub GL850G */
+		usbhub {
+			gpio-export,name = "usbhub";
+			gpio-export,output = <1>;
+			gpios = <&pio 34 GPIO_ACTIVE_HIGH>;
+		};
+
+		/* USB2.0 */
+		usb1power {
+			gpio-export,name = "usb1power";
+			gpio-export,output = <1>;
+			gpios = <&pio 44 GPIO_ACTIVE_HIGH>;
+		};
+
+		/* USB3.2 Gen1 */
+		usb2power {
+			gpio-export,name = "usb2power";
+			gpio-export,output = <1>;
+			gpios = <&pio 45 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	virtual_flash {
+		compatible = "mtd-concat";
+		devices = <&firmware1 &storage1 &firmware2 &storage2>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "kernel";
+				reg = <0x0 0x600000>;
+			};
+
+			partition@400000 {
+				label = "ubi";
+				reg = <0x600000 0x0>;
+			};
+		};
+	};
+};
+
+/* configure uart */
+&serial0 {
+	status = "okay";
+};
+
+/* configure spi-nand */
+&spi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi0_flash_pins>;
+	status = "okay";
+
+	/* Winbond W25N02KV (256M) */
+	spi_nand@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+
+		spi-max-frequency = <52000000>;
+		spi-rx-bus-width = <4>;
+		spi-tx-bus-width = <4>;
+
+		mediatek,nmbm;
+		mediatek,bmt-max-ratio = <1>;
+		mediatek,bmt-max-reserved-blocks = <64>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* bl2 */
+			partition@0 {
+				label = "preloader";
+				reg = <0x0 0x80000>;
+				read-only;
+			};
+
+			/* fip */
+			partition@80000 {
+				label = "u-boot";
+				reg = <0x80000 0x200000>;
+				read-only;
+			};
+
+			partition@280000 {
+				label = "u-config";
+				reg = <0x280000 0x80000>;
+				read-only;
+			};
+
+			partition@300000 {
+				label = "rf-eeprom";
+				reg = <0x300000 0x400000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x1e00>;
+					};
+
+					/* lan mac */
+					macaddr_factory_4: macaddr@4 {
+						reg = <0x4 0x6>;
+					};
+
+					/* 5Ghz mac */
+					macaddr_factory_a: macaddr@a {
+						reg = <0xa 0x6>;
+					};
+
+					/* lan5 mac */
+					macaddr_factory_fffee: macaddr@fffee {
+						reg = <0xfffee 0x6>;
+					};
+
+					/* wan mac */
+					macaddr_factory_ffffa: macaddr@ffffa {
+						reg = <0xffffa 0x6>;
+					};
+				};
+			};
+
+			firmware1: partition@700000 {
+				label = "firmware_1";
+				reg = <0x700000 0x3800000>;
+			};
+
+			partition@3f00000 {
+				label = "config_1";
+				reg = <0x3f00000 0x80000>;
+				read-only;
+			};
+
+			partition@3f80000 {
+				label = "dump";
+				reg = <0x3f80000 0x80000>;
+				read-only;
+			};
+
+			storage1: partition@4000000 {
+				label = "storage_a";
+				reg = <0x4000000 0x3800000>;
+			};
+
+			partition@7800000 {
+				label = "u-state";
+				reg = <0x7800000 0x80000>;
+				read-only;
+			};
+
+			partition@7a80000 {
+				label = "u-config_res";
+				reg = <0x7a80000 0x80000>;
+				read-only;
+			};
+
+			partition@7b00000 {
+				label = "rf-eeprom_res";
+				reg = <0x7b00000 0x400000>;
+				read-only;
+			};
+
+			firmware2: partition@7f00000 {
+				label = "firmware_2";
+				reg = <0x7f00000 0x3800000>;
+			};
+
+			partition@b700000 {
+				label = "config_2";
+				reg = <0xb700000 0x80000>;
+				read-only;
+			};
+
+			storage2: partition@b780000 {
+				label = "storage_b";
+				reg = <0xb780000 0x3880000>;
+			};
+		};
+	};
+};
+
+/* configure switch */
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_4>;
+	nvmem-cell-names = "mac-address";
+	status = "okay";
+};
+
+/* lan1 */
+&gsw_port0 {
+	label = "lan1";
+};
+
+&gsw_phy0 {
+	pinctrl-names = "gbe-led";
+	pinctrl-0 = <&gbe0_led0_pins>;
+};
+
+&gsw_phy0_led0 {
+	status = "okay";
+	function = LED_FUNCTION_LAN;
+	color = <LED_COLOR_ID_GREEN>;
+};
+
+/* lan2 */
+&gsw_port1 {
+	label = "lan2";
+};
+
+&gsw_phy1 {
+	pinctrl-names = "gbe-led";
+	pinctrl-0 = <&gbe1_led0_pins>;
+};
+
+&gsw_phy1_led0 {
+	status = "okay";
+	function = LED_FUNCTION_LAN;
+	color = <LED_COLOR_ID_GREEN>;
+};
+
+/* lan3 */
+&gsw_port2 {
+	label = "lan3";
+};
+
+&gsw_phy2 {
+	pinctrl-names = "gbe-led";
+	pinctrl-0 = <&gbe2_led0_pins>;
+};
+
+&gsw_phy2_led0 {
+	status = "okay";
+	function = LED_FUNCTION_LAN;
+	color = <LED_COLOR_ID_GREEN>;
+};
+
+/* lan4 */
+&gsw_port3 {
+	label = "lan4";
+};
+
+&gsw_phy3 {
+	pinctrl-names = "gbe-led";
+	pinctrl-0 = <&gbe3_led0_pins>;
+};
+
+&gsw_phy3_led0 {
+	status = "okay";
+	function = LED_FUNCTION_LAN;
+	color = <LED_COLOR_ID_GREEN>;
+};
+
+/* configure wan */
+&gmac1 {
+	nvmem-cells = <&macaddr_factory_ffffa>;
+	nvmem-cell-names = "mac-address";
+	label = "wan";
+	phy-mode = "internal";
+	phy-connection-type = "internal";
+	phy = <&int_2p5g_phy>;
+	status = "okay";
+};
+
+&int_2p5g_phy {
+	pinctrl-names = "i2p5gbe-led";
+	pinctrl-0 = <&i2p5gbe_led0_pins>;
+};
+
+&i2p5gbe_led0 {
+	color = <LED_COLOR_ID_GREEN>;
+	function = LED_FUNCTION_WAN;
+	status = "okay";
+};
+
+/* configure lan5 */
+&eth {
+	pinctrl-names = "default";
+	pinctrl-0 = <&mdio0_pins>;
+	status = "okay";
+};
+
+&mdio_bus {
+	phy27: ethernet-phy@1b {
+		/* RTL8261BE */
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <0x1b>;
+
+		reset-gpios = <&pio 4 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <100000>;
+		reset-deassert-us = <100000>;
+	};
+};
+
+&gmac2 {
+	nvmem-cells = <&macaddr_factory_fffee>;
+	nvmem-cell-names = "mac-address";
+	label = "lan5";
+	phy-mode = "usxgmii";
+	phy-connection-type = "usxgmii";
+	phy = <&phy27>;
+	status = "okay";
+};
+
+/* configure power supply */
+&i2c0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c0_pins>;
+	status = "okay";
+
+	rt5190a_64: rt5190a@64 {
+		compatible = "richtek,rt5190a";
+		reg = <0x64>;
+
+		vin2-supply = <&rt5190_buck1>;
+		vin3-supply = <&rt5190_buck1>;
+		vin4-supply = <&rt5190_buck1>;
+
+		regulators {
+			rt5190_buck1: buck1 {
+				regulator-name = "rt5190a-buck1";
+				regulator-min-microvolt = <5090000>;
+				regulator-max-microvolt = <5090000>;
+				regulator-allowed-modes =
+				<RT5190A_OPMODE_AUTO RT5190A_OPMODE_FPWM>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			buck2 {
+				regulator-name = "vcore";
+				regulator-min-microvolt = <600000>;
+				regulator-max-microvolt = <1400000>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			rt5190_buck3: buck3 {
+				regulator-name = "vproc";
+				regulator-min-microvolt = <600000>;
+				regulator-max-microvolt = <1400000>;
+				regulator-boot-on;
+			};
+
+			buck4 {
+				regulator-name = "rt5190a-buck4";
+				regulator-min-microvolt = <850000>;
+				regulator-max-microvolt = <850000>;
+				regulator-allowed-modes =
+				<RT5190A_OPMODE_AUTO RT5190A_OPMODE_FPWM>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			ldo {
+				regulator-name = "rt5190a-ldo";
+				regulator-min-microvolt = <1200000>;
+				regulator-max-microvolt = <1200000>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+		};
+	};
+};
+
+&cpu0 {
+	proc-supply = <&rt5190_buck3>;
+};
+
+&cpu1 {
+	proc-supply = <&rt5190_buck3>;
+};
+
+&cpu2 {
+	proc-supply = <&rt5190_buck3>;
+};
+
+&cci {
+	proc-supply = <&rt5190_buck3>;
+};
+
+/* configure wifi chip */
+&pcie0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie0_1_pins>;
+	wifi-reset-gpios = <&pio 7 GPIO_ACTIVE_LOW>;
+	wifi-reset-msleep = <100>;
+	status = "okay";
+
+	pcie@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+
+		mt7996@0,0 {
+			reg = <0x0000 0 0 0 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			nvmem-cells = <&eeprom_factory_0>;
+			nvmem-cell-names = "eeprom";
+			ieee80211-freq-limit = <2400000 2500000>, <5170000 5835000>;
+
+			band@0 {
+				/* 2.4 GHz */
+				reg = <0>;
+				nvmem-cells = <&macaddr_factory_4>;
+				nvmem-cell-names = "mac-address";
+			};
+
+			band@1 {
+				/* 5 GHz */
+				reg = <1>;
+				nvmem-cells = <&macaddr_factory_a>;
+				nvmem-cell-names = "mac-address";
+			};
+		};
+	};
+};
+
+/* configure pinmux settings */
+&pio {
+	mdio0_pins: mdio0-pins {
+		mux {
+			function = "eth";
+			groups = "mdc_mdio0";
+		};
+
+		conf {
+			groups = "mdc_mdio0";
+			drive-strength = <MTK_DRIVE_4mA>;
+		};
+	};
+
+	gbe0_led0_pins: gbe0-led0-pins {
+		mux {
+			function = "led";
+			groups = "gbe0_led0";
+		};
+	};
+
+	gbe1_led0_pins: gbe1-led0-pins {
+		mux {
+			function = "led";
+			groups = "gbe1_led0";
+		};
+	};
+
+	gbe2_led0_pins: gbe2-led0-pins {
+		mux {
+			function = "led";
+			groups = "gbe2_led0";
+		};
+	};
+
+	gbe3_led0_pins: gbe3-led0-pins {
+		mux {
+			function = "led";
+			groups = "gbe3_led0";
+		};
+	};
+
+	i2p5gbe_led0_pins: 2p5gbe-led0-pins {
+		mux {
+			function = "led";
+			groups = "2p5gbe_led0";
+		};
+	};
+
+	i2c0_pins: i2c0-pins-g0 {
+		mux {
+			function = "i2c";
+			groups = "i2c0_1";
+		};
+	};
+
+	pcie0_1_pins: pcie0-pins-g1 {
+		mux {
+			function = "pcie";
+			groups = "pcie_2l_0_pereset", "pcie_clk_req_n0_0";
+		};
+	};
+
+	spi0_flash_pins: spi0-flash-pins {
+		mux {
+			function = "spi";
+			groups = "spi0", "spi0_wp_hold";
+		};
+	};
+};
+
+/* configure usb */
+&ssusb1 {
+	status = "okay";
+};
+
+&tphy {
+	status = "okay";
+};

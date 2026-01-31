@@ -1,0 +1,20 @@
+{
+	"user": "network",
+	"access": {
+		"service": {
+			"methods": [ "event" ]
+		},
+		"wpa_supplicant": {
+			"methods": [ "phy_set_state", "phy_set_macaddr_list", "phy_status" ]
+		},
+		"hostapd": {
+			"methods": [ "apsta_state" ]
+		},
+		"udebug": {
+			"methods": [ "get_config" ]
+		}
+	},
+	"subscribe": [ "udebug" ],
+	"publish": [ "hostapd", "hostapd.*", "wpa_supplicant", "wpa_supplicant.*", "hostapd-auth" ],
+	"send": [ "bss.*", "wps_credentials" ]
+}

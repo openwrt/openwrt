@@ -1,0 +1,79 @@
+From ede044113c0418f11dbee09069ff1dd68f284dfa Mon Sep 17 00:00:00 2001
+From: Tim Harvey <tharvey@gateworks.com>
+Date: Fri, 18 Oct 2024 10:36:08 -0700
+Subject: [PATCH] arm64: dts: imx8m*-venice-gw75xx: add Accelerometer device
+
+The GW75xx has a LIS2DE12TR 3-axis accelerometer on the I2C bus with an
+interrupt pin. Add it to the device-tree.
+
+Signed-off-by: Tim Harvey <tharvey@gateworks.com>
+Signed-off-by: Shawn Guo <shawnguo@kernel.org>
+---
+ .../boot/dts/freescale/imx8mm-venice-gw75xx.dtsi | 16 ++++++++++++++++
+ .../boot/dts/freescale/imx8mp-venice-gw75xx.dtsi | 16 ++++++++++++++++
+ 2 files changed, 32 insertions(+)
+
+--- a/arch/arm64/boot/dts/freescale/imx8mm-venice-gw75xx.dtsi
++++ b/arch/arm64/boot/dts/freescale/imx8mm-venice-gw75xx.dtsi
+@@ -116,6 +116,16 @@
+ 	pinctrl-0 = <&pinctrl_i2c2>;
+ 	status = "okay";
+ 
++	accelerometer@19 {
++		compatible = "st,lis2de12";
++		reg = <0x19>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_accel>;
++		interrupt-parent = <&gpio5>;
++		interrupts = <8 IRQ_TYPE_LEVEL_LOW>;
++		st,drdy-int-pin = <1>;
++	};
++
+ 	eeprom@52 {
+ 		compatible = "atmel,24c32";
+ 		reg = <0x52>;
+@@ -198,6 +208,12 @@
+ 		>;
+ 	};
+ 
++	pinctrl_accel: accelgrp {
++		fsl,pins = <
++			MX8MM_IOMUXC_ECSPI1_MISO_GPIO5_IO8	0x159
++		>;
++	};
++
+ 	pinctrl_gpio_leds: gpioledgrp {
+ 		fsl,pins = <
+ 			MX8MM_IOMUXC_SAI1_RXFS_GPIO4_IO0	0x6	/* LEDG */
+--- a/arch/arm64/boot/dts/freescale/imx8mp-venice-gw75xx.dtsi
++++ b/arch/arm64/boot/dts/freescale/imx8mp-venice-gw75xx.dtsi
+@@ -104,6 +104,16 @@
+ 	pinctrl-0 = <&pinctrl_i2c2>;
+ 	status = "okay";
+ 
++	accelerometer@19 {
++		compatible = "st,lis2de12";
++		reg = <0x19>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_accel>;
++		interrupt-parent = <&gpio5>;
++		interrupts = <8 IRQ_TYPE_LEVEL_LOW>;
++		st,drdy-int-pin = <1>;
++	};
++
+ 	eeprom@52 {
+ 		compatible = "atmel,24c32";
+ 		reg = <0x52>;
+@@ -204,6 +214,12 @@
+ 		>;
+ 	};
+ 
++	pinctrl_accel: accelgrp {
++		fsl,pins = <
++			MX8MP_IOMUXC_ECSPI1_MISO__GPIO5_IO08	0x159
++		>;
++	};
++
+ 	pinctrl_gpio_leds: gpioledgrp {
+ 		fsl,pins = <
+ 			MX8MP_IOMUXC_SAI2_RXC__GPIO4_IO22	0x6	/* LEDG */

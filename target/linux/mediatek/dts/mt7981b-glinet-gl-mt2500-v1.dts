@@ -1,0 +1,15 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+/dts-v1/;
+#include "mt7981b-glinet-gl-mt2500.dtsi"
+
+&gmac0 {
+	phy-handle = <&phy5>;
+};
+
+&mdio_bus {
+	phy5: ethernet-phy@5 {
+		reg = <5>;
+		compatible = "ethernet-phy-ieee802.3-c45";
+	};
+};

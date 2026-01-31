@@ -1,0 +1,144 @@
+Extra ATM traffic classes requires atm_qos struct extension and a set of
+new defines. What itself requires atm.h updates both in the kernel and
+in the toolchain. On another hand we do not have any real users of these
+traffic classes.
+
+In absence of real user there are no benefits to support this
+functionality. There is only the burden of maintenance of extra patches
+all around the building framework. So just drop these extra QoS traffic
+classes in order to facilitate maintenance and avoid side effects like
+breaking compatibility with existing userspace tools like linux-atm.
+
+Signed-off-by: Sergey Ryazanov <ryazanov.s.a@gmail.com>
+--
+--- a/dcdp/atm_tc.c
++++ b/dcdp/atm_tc.c
+@@ -463,34 +463,9 @@ static void set_qsb(struct atm_priv *pri
+ 	/* Weighted Fair Queueing Factor (WFQF) */
+ 	switch (qos->txtp.traffic_class) {
+ 	case ATM_CBR:
+-	case ATM_VBR_RT:
+ 		/*  real time queue gets weighted fair queueing bypass  */
+ 		q_parm_tbl.bit.wfqf = 0;
+ 		break;
+-	case ATM_VBR_NRT:
+-	case ATM_UBR_PLUS:
+-		/*  WFQF calculation here is based on virtual cell rates,
+-		      to reduce granularity for high rates
+-		*/
+-		/*  WFQF is maximum cell rate / garenteed cell rate */
+-		/*  wfqf = qsb_minimum_cell_rate * QSB_WFQ_NONUBR_MAX /
+-			requested_minimum_peak_cell_rate
+-		*/
+-		if (qos->txtp.min_pcr == 0)
+-			q_parm_tbl.bit.wfqf = QSB_WFQ_NONUBR_MAX;
+-		else {
+-			tmp = QSB_GCR_MIN * QSB_WFQ_NONUBR_MAX /
+-				qos->txtp.min_pcr;
+-			if (tmp == 0)
+-				q_parm_tbl.bit.wfqf = 1;
+-			else if (tmp > QSB_WFQ_NONUBR_MAX)
+-				q_parm_tbl.bit.wfqf
+-					= QSB_WFQ_NONUBR_MAX;
+-			else
+-				q_parm_tbl.bit.wfqf = tmp;
+-		}
+-		break;
+-
+ 	case ATM_UBR:
+ 	default:
+ 		q_parm_tbl.bit.wfqf = QSB_WFQ_UBR_BYPASS;
+@@ -498,42 +473,9 @@ static void set_qsb(struct atm_priv *pri
+ 	}
+ 
+ 	/* Sustained Cell Rate (SCR) Leaky Bucket Shaper VBR.0/VBR.1 */
+-	if (qos->txtp.traffic_class == ATM_VBR_RT ||
+-		qos->txtp.traffic_class == ATM_VBR_NRT) {
+-		if (qos->txtp.scr == 0) {
+-			/* disable shaper */
+-			q_vbr_parm_tbl.bit.taus = 0;
+-			q_vbr_parm_tbl.bit.ts = 0;
+-		} else {
+-			/* Cell Loss Priority  (CLP) */
+-			if ((vcc->atm_options & ATM_ATMOPT_CLP))
+-				/* CLP1 */
+-				q_parm_tbl.bit.vbr = 1;
+-			else
+-				/* CLP0 */
+-				q_parm_tbl.bit.vbr = 0;
+-			/* Rate Shaper Parameter (TS) and
+-			    Burst Tolerance Parameter for SCR (tauS)
+-			*/
+-			tmp = ((qsb_clk * param->qsb_tstep) >> 5) /
+-					qos->txtp.scr + 1;
+-			q_vbr_parm_tbl.bit.ts
+-				= tmp > QSB_TP_TS_MAX ? QSB_TP_TS_MAX : tmp;
+-			tmp = (qos->txtp.mbs - 1) *
+-				(q_vbr_parm_tbl.bit.ts -
+-					q_parm_tbl.bit.tp) / 64;
+-			if (tmp == 0)
+-				q_vbr_parm_tbl.bit.taus = 1;
+-			else if (tmp > QSB_TAUS_MAX)
+-				q_vbr_parm_tbl.bit.taus
+-					= QSB_TAUS_MAX;
+-			else
+-				q_vbr_parm_tbl.bit.taus = tmp;
+-		}
+-	} else {
+-		q_vbr_parm_tbl.bit.taus = 0;
+-		q_vbr_parm_tbl.bit.ts = 0;
+-	}
++	/* NB: shaper disabled since there no user interface to activate it */
++	q_vbr_parm_tbl.bit.taus = 0;
++	q_vbr_parm_tbl.bit.ts = 0;
+ 
+ 	/* Queue Parameter Table (QPT) */
+ 	tc_w32(QSB_QPT_SET_MASK, QSB_RTM);
+@@ -1064,15 +1006,6 @@ static int ppe_open(struct atm_vcc *vcc)
+ 	/* check bandwidth */
+ 	if ((vcc->qos.txtp.traffic_class == ATM_CBR &&
+ 		vcc->qos.txtp.max_pcr >
+-			(port->tx_max_cell_rate - port->tx_used_cell_rate))
+-		|| (vcc->qos.txtp.traffic_class == ATM_VBR_RT &&
+-		vcc->qos.txtp.max_pcr >
+-			(port->tx_max_cell_rate - port->tx_used_cell_rate))
+-		|| (vcc->qos.txtp.traffic_class == ATM_VBR_NRT &&
+-		vcc->qos.txtp.scr >
+-			(port->tx_max_cell_rate - port->tx_used_cell_rate))
+-		|| (vcc->qos.txtp.traffic_class == ATM_UBR_PLUS &&
+-		vcc->qos.txtp.min_pcr >
+ 			(port->tx_max_cell_rate - port->tx_used_cell_rate))) {
+ 		tc_dbg(priv->tc_priv, MSG_INIT, "exceed TX line rate\n");
+ 		return -EINVAL;
+@@ -1128,15 +1061,8 @@ static int ppe_open(struct atm_vcc *vcc)
+ 	/*  reserve bandwidth */
+ 	switch (vcc->qos.txtp.traffic_class) {
+ 	case ATM_CBR:
+-	case ATM_VBR_RT:
+ 		port->tx_used_cell_rate += vcc->qos.txtp.max_pcr;
+ 		break;
+-	case ATM_VBR_NRT:
+-		port->tx_used_cell_rate += vcc->qos.txtp.scr;
+-		break;
+-	case ATM_UBR_PLUS:
+-		port->tx_used_cell_rate += vcc->qos.txtp.min_pcr;
+-		break;
+ 	}
+ 
+ 	/* update atm_vcc structure */
+@@ -1222,15 +1148,8 @@ static void ppe_close(struct atm_vcc *vc
+ 	/* release bandwidth */
+ 	switch (vcc->qos.txtp.traffic_class) {
+ 	case ATM_CBR:
+-	case ATM_VBR_RT:
+ 		port->tx_used_cell_rate -= vcc->qos.txtp.max_pcr;
+ 		break;
+-	case ATM_VBR_NRT:
+-		port->tx_used_cell_rate -= vcc->qos.txtp.scr;
+-		break;
+-	case ATM_UBR_PLUS:
+-		port->tx_used_cell_rate -= vcc->qos.txtp.min_pcr;
+-		break;
+ 	}
+ 
+ 	/* idle for a while to let parallel operation finish */

@@ -1,0 +1,143 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Thu, 8 May 2025 23:53:01 +0800
+Subject: [PATCH] fix version macro definition conflicts on 6.12 kernel
+
+Add LANTIQ prefix before MIN/MAX to fix:
+
+/home/db/owrt/build_dir/target-mips_24kc_musl/linux-lantiq_xrx200/drv_vmmc-1.9.0/src/drv_vmmc_init.c:91:9: error: "MAX" redefined [-Werror]
+   91 | #define MAX(x,y) ((x) > (y) ? (x) : (y))
+      |         ^~~
+./include/linux/minmax.h:330:9: note: this is the location of the previous definition
+  330 | #define MAX(a,b) __cmp(max,a,b)
+      |         ^~~
+/home/db/owrt/build_dir/target-mips_24kc_musl/linux-lantiq_xrx200/drv_vmmc-1.9.0/src/drv_vmmc_init_cap.c:42:9: error: "MIN" redefined [-Werror]
+   42 | #define MIN(x,y) ({ (x) < (y) ? (x) : (y); })
+      |         ^~~
+./include/linux/minmax.h:329:9: note: this is the location of the previous definition
+  329 | #define MIN(a,b) __cmp(min,a,b)
+      |         ^~~
+/home/db/owrt/build_dir/target-mips_24kc_musl/linux-lantiq_xrx200/drv_vmmc-1.9.0/src/drv_vmmc_sig_cptd.c:41:9: error: "MAX" redefined [-Werror]
+   41 | #define MAX(x,y) ((x) > (y) ? (x) : (y))
+      |         ^~~
+./include/linux/minmax.h:330:9: note: this is the location of the previous definition
+  330 | #define MAX(a,b) __cmp(max,a,b)
+      |         ^~~
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ src/drv_vmmc_init.c     | 12 ++++++------
+ src/drv_vmmc_init_cap.c |  4 ++--
+ src/drv_vmmc_sig_cptd.c |  4 ++--
+ 3 files changed, 10 insertions(+), 10 deletions(-)
+
+--- a/src/drv_vmmc_init.c
++++ b/src/drv_vmmc_init.c
+@@ -88,7 +88,7 @@ CREATE_TRACE_GROUP(VMMC);
+ /** what compatible driver version */
+ #define DRV_VMMC_WHAT_STR "@(#)Lantiq VMMC device driver, version " DRV_VMMC_VER_STR
+ 
+-#define MAX(x,y) ((x) > (y) ? (x) : (y))
++#define LANTIQ_MAX(x,y) ((x) > (y) ? (x) : (y))
+ 
+ #define MPS_CH_VALID(mpsCh)      ((mpsCh >= 1 && mpsCh <= 7) ? 1 : 0)
+ 
+@@ -927,17 +927,17 @@ static IFX_int32_t VMMC_TAPI_LL_FW_Init(
+ 
+       /* Maximum number of resources, is the maximum of:
+          nALI, nPCM, nCOD, nSIG, nDECT, nLIN and nAudioCnt. */
+-      tmp1 = MAX (pDev->caps.nALI, pDev->caps.nPCM);
+-      tmp2 = MAX (pDev->caps.nCOD, pDev->caps.nSIG);
+-      pDev->caps.nMaxRes = MAX(tmp1, tmp2);
++      tmp1 = LANTIQ_MAX(pDev->caps.nALI, pDev->caps.nPCM);
++      tmp2 = LANTIQ_MAX(pDev->caps.nCOD, pDev->caps.nSIG);
++      pDev->caps.nMaxRes = LANTIQ_MAX(tmp1, tmp2);
+ #ifdef DECT_SUPPORT
+-      pDev->caps.nMaxRes = MAX(pDev->caps.nMaxRes, pDev->caps.nDECT);
++      pDev->caps.nMaxRes = LANTIQ_MAX(pDev->caps.nMaxRes, pDev->caps.nDECT);
+ #endif /* LIN_SUPPORT */
+ #ifdef LIN_SUPPORT
+-      pDev->caps.nMaxRes = MAX(pDev->caps.nMaxRes, pDev->caps.nLIN);
++      pDev->caps.nMaxRes = LANTIQ_MAX(pDev->caps.nMaxRes, pDev->caps.nLIN);
+ #endif /* LIN_SUPPORT */
+ #if (VMMC_CFG_FEATURES & VMMC_FEAT_AUDIO)
+-      pDev->caps.nMaxRes = MAX(pDev->caps.nMaxRes, pDev->caps.nAudioCnt);
++      pDev->caps.nMaxRes = LANTIQ_MAX(pDev->caps.nMaxRes, pDev->caps.nAudioCnt);
+ #endif /* (VMMC_CFG_FEATURES & VMMC_FEAT_AUDIO) */
+ 
+       if (pDev->caps.nMaxRes > VMMC_MAX_CH_NR)
+@@ -977,7 +977,7 @@ static IFX_int32_t VMMC_TAPI_LL_FW_Init(
+       nResource.DTMFRCount = pDev->caps.nDTMFD;
+       nResource.FSKGCount  = pDev->caps.nCIDS;
+       nResource.FSKRCount  = pDev->caps.nCIDR;
+-      nResource.ToneCount  = MAX(pDev->caps.nSIG, pDev->caps.nDECT);
++      nResource.ToneCount  = LANTIQ_MAX(pDev->caps.nSIG, pDev->caps.nDECT);
+       nResource.HdlcCount  = pDev->caps.nHDLC;
+       IFX_TAPI_ReportResources (pDev->pTapiDev,&nResource);
+ 
+--- a/src/drv_vmmc_init_cap.c
++++ b/src/drv_vmmc_init_cap.c
+@@ -39,7 +39,7 @@
+ /* ============================= */
+ /* Local Macros & Definitions    */
+ /* ============================= */
+-#define MIN(x,y) ({ (x) < (y) ? (x) : (y); })
++#define LANTIQ_MIN(x,y) ({ (x) < (y) ? (x) : (y); })
+ 
+ /* ============================= */
+ /* Local function declaration    */
+@@ -392,7 +392,7 @@ IFX_return_t VMMC_Get_FwCap(VMMC_DEVICE
+       /* Read the maximum length of the message that we can interpret but
+          not more than the firmware can provide. */
+       /* BLEN is the length including the header that the fw reports. */
+-      capCmd.LENGTH = MIN (capCmd.BLEN, sizeof(SYS_CAP_t));
++      capCmd.LENGTH = LANTIQ_MIN(capCmd.BLEN, sizeof(SYS_CAP_t));
+       /* Subtract the length of the header. */
+       capCmd.LENGTH -= CMD_HDR_CNT;
+       /* Read capability once more - this time with maximum length. */
+@@ -479,7 +479,7 @@ IFX_return_t VMMC_Get_FwCap(VMMC_DEVICE
+       pDev->caps.FEAT = capCmd.FEAT;
+       /* Number of UTG resources per channel (== SIG module), either 1 or 2 */
+       pDev->caps.nUtgPerCh = (capCmd.FEAT & EDSP_CAP_FEAT_UTGUD) ? 2 : 1;
+-      pDev->caps.nUtgPerCh = MIN(pDev->caps.nUtgPerCh, LL_TAPI_TONE_MAXRES);
++      pDev->caps.nUtgPerCh = LANTIQ_MIN(pDev->caps.nUtgPerCh, LL_TAPI_TONE_MAXRES);
+       /* Number of AudioChannels */
+       pDev->caps.nAudioCnt = (pDev->caps.FEAT & EDSP_CAP_FEAT_CHAUD) ? 1 : 0;
+       /* Overlays */
+--- a/src/drv_vmmc_sig_cptd.c
++++ b/src/drv_vmmc_sig_cptd.c
+@@ -38,7 +38,7 @@
+ /** define which constant is taken for cpt level calculation */
+ #define CONST_CPT                CONST_CPT_BLACKMAN
+ /* return the maximum of two scalar values */
+-#define MAX(x,y) ((x) > (y) ? (x) : (y))
++#define LANTIQ_MAX(x,y) ((x) > (y) ? (x) : (y))
+ 
+ /* ============================= */
+ /* Local function declaration    */
+@@ -511,7 +511,7 @@ static IFX_int32_t vmmc_sig_CPTD_SetCoef
+       if (nTenPercentTimeTolerance > nMaxTenPercentTimeTolerance)
+          nMaxTenPercentTimeTolerance = nTenPercentTimeTolerance;
+ 
+-      val = (IFX_uint16_t) (pTone->cadence[i] - MAX(nAbsoluteTimeTolerance,
++      val = (IFX_uint16_t) (pTone->cadence[i] - LANTIQ_MAX(nAbsoluteTimeTolerance,
+                                                     nTenPercentTimeTolerance));
+       switch (i)
+       {
+@@ -578,7 +578,7 @@ static IFX_int32_t vmmc_sig_CPTD_SetCoef
+    {
+       /* set tolerance +TIM_TOL */
+       pCmd->TIM_TOL =
+-                (2 * MAX (nAbsoluteTimeTolerance, nMaxTenPercentTimeTolerance));
++                (2 * LANTIQ_MAX(nAbsoluteTimeTolerance, nMaxTenPercentTimeTolerance));
+       /* return because nothing more to do */
+       return IFX_SUCCESS;
+    }
+@@ -605,7 +605,7 @@ static IFX_int32_t vmmc_sig_CPTD_SetCoef
+    /* set tolerance +TIM_TOL and NR of successfully fulfilled timing
+       requirement steps required to pass */
+    pCmd->TIM_TOL =
+-                (2 * MAX (nAbsoluteTimeTolerance, nMaxTenPercentTimeTolerance));
++                (2 * LANTIQ_MAX(nAbsoluteTimeTolerance, nMaxTenPercentTimeTolerance));
+    pCmd->NR = nr;
+ 
+    return IFX_SUCCESS;

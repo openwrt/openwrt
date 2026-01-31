@@ -1,0 +1,14 @@
+// SPDX-License-Identifier: (GPL-2.0+)
+
+/dts-v1/;
+
+#include "ipq6010-wax610-base.dtsi"
+
+/ {
+	model = "Netgear WAX610Y";
+	compatible = "netgear,wax610y", "qcom,ipq6018";
+};
+
+&wifi {
+	qcom,ath11k-calibration-variant = "Netgear-WAX610Y";
+};

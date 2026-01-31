@@ -1,0 +1,110 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include <dt-bindings/leds/common.h>
+
+#include "qca955x_dlink_dap-2xxx.dtsi"
+
+/ {
+	compatible = "dlink,dap-2660-a1", "qca,qca9557";
+	model = "D-Link DAP-2660 A1";
+
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_red;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power_red: power_red {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_green: power_green {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+	};
+};
+
+&partitions {
+	partition@70000 {
+		label = "firmware";
+		reg = <0x70000 0xee0000>;
+		compatible = "wrg";
+	};
+
+	partition@f50000 {
+		label = "dlink";
+		reg = <0xf50000 0xa0000>;
+		read-only;
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy4: ethernet-phy@4 {
+		reg = <4>;
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	pll-data = <0x82000000 0x80000101 0x80001313>;
+
+	phy-handle = <&phy4>;
+	phy-mode = "rgmii-id";
+
+	gmac-config {
+		device = <&gmac>;
+		rgmii-enabled = <1>;
+		rxd-delay = <3>;
+		rxdv-delay = <3>;
+	};
+};
+
+&pcie0 {
+	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0 0 0 0 0>;
+
+		nvmem-cells = <&cal_ath10k>;
+		nvmem-cell-names = "calibration";
+	};
+};
+
+&art {
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		cal_ath9k: calibration@1000 {
+			reg = <0x1000 0x440>;
+		};
+
+		cal_ath10k: calibration@5000 {
+			reg = <0x5000 0x844>;
+		};
+	};
+};

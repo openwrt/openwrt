@@ -1,0 +1,77 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621_elecom_wrc-gs-1pci.dtsi"
+
+/ {
+	compatible = "elecom,wmc-m1267gst2", "mediatek,mt7621-soc";
+	model = "ELECOM WMC-M1267GST2";
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_fff4>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gmac1 {
+	nvmem-cells = <&macaddr_factory_fffa>;
+	nvmem-cell-names = "mac-address";
+};
+
+&partitions {
+	partition@50000 {
+		compatible = "denx,uimage";
+		label = "firmware";
+		reg = <0x50000 0x1800000>;
+	};
+
+	partition@1850000 {
+		label = "tm_pattern";
+		reg = <0x1850000 0x400000>;
+		read-only;
+	};
+
+	partition@1c50000 {
+		label = "tm_key";
+		reg = <0x1c50000 0x100000>;
+		read-only;
+	};
+
+	partition@1d50000 {
+		label = "nvram";
+		reg = <0x1d50000 0xb0000>;
+		read-only;
+	};
+
+	partition@1e00000 {
+		label = "user_data";
+		reg = <0x1e00000 0x200000>;
+		read-only;
+	};
+};
+
+&wifi {
+	nvmem-cells = <&eeprom_factory_0>, <&macaddr_factory_4 (-1)>;
+	nvmem-cell-names = "eeprom", "mac-address";
+};
+
+&factory {
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		macaddr_factory_4: macaddr@4 {
+			compatible = "mac-base";
+			reg = <0x4 0x6>;
+			#nvmem-cell-cells = <1>;
+		};
+
+		macaddr_factory_fff4: macaddr@fff4 {
+			reg = <0xfff4 0x6>;
+		};
+
+		macaddr_factory_fffa: macaddr@fffa {
+			reg = <0xfffa 0x6>;
+		};
+	};
+};

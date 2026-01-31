@@ -1,0 +1,23 @@
+--- a/src/ap/acs.h
++++ b/src/ap/acs.h
+@@ -15,7 +15,7 @@
+ enum hostapd_chan_status acs_init(struct hostapd_iface *iface);
+ void acs_cleanup(struct hostapd_iface *iface);
+ 
+-#define ACS_SCAN_RETRY_MAX_COUNT	15
++#define ACS_SCAN_RETRY_MAX_COUNT	50
+ #define ACS_SCAN_RETRY_INTERVAL		5
+ 
+ #else /* CONFIG_ACS */
+--- a/src/drivers/driver_nl80211_scan.c
++++ b/src/drivers/driver_nl80211_scan.c
+@@ -455,6 +455,9 @@ int wpa_driver_nl80211_scan(struct i802_
+ 			}
+ #endif /* CONFIG_IEEE80211BE */
+ 
++			if (ret == -EBUSY)
++				goto fail;
++
+ 			/*
+ 			 * mac80211 does not allow scan requests in AP mode, so
+ 			 * try to do this in station mode.

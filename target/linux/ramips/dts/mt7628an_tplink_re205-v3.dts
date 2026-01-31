@@ -1,0 +1,44 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7628an_tplink_re200.dtsi"
+
+/ {
+	compatible = "tplink,re205-v3", "mediatek,mt7628an-soc";
+	model = "TP-Link RE205 v3";
+
+	/delete-node/ leds;
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: power {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 39 GPIO_ACTIVE_LOW>;
+		};
+
+		wifi5g {
+			function = LED_FUNCTION_WLAN_5GHZ;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 40 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		wifi2g {
+			function = LED_FUNCTION_WLAN_2GHZ;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 41 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		signal_blue {
+			label = "blue:signal";
+			gpios = <&gpio 42 GPIO_ACTIVE_LOW>;
+		};
+
+		signal_red {
+			label = "red:signal";
+			gpios = <&gpio 43 GPIO_ACTIVE_LOW>;
+		};
+	};
+};

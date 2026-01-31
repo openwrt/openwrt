@@ -1,0 +1,82 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621_buffalo_wsr-2533dhplx.dtsi"
+
+/ {
+	compatible = "buffalo,wsr-2533dhpls", "mediatek,mt7621-soc";
+	model = "Buffalo WSR-2533DHPLS";
+
+	chosen {
+		bootargs = "console=ttyS0,115200n8 ubi.block=0,rootfs root=/dev/ubiblock0_0";
+	};
+};
+
+&nand {
+	status = "okay";
+
+	mediatek,nmbm;
+	/*
+	 * -  u-boot - (kernel (6MiB, in "firmware"))
+	 * - Kernel2 - WTB
+	 */
+	mediatek,bmt-remap-range = <0x0 0x780000>,
+				   <0x1980000 0x5b00000>;
+};
+
+&partitions {
+	partition@100000 {
+		label = "factory";
+		reg = <0x100000 0x80000>;
+		read-only;
+
+		nvmem-layout {
+			compatible = "fixed-layout";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			eeprom_factory_0: eeprom@0 {
+				reg = <0x0 0x4da8>;
+			};
+
+			eeprom_factory_8000: eeprom@8000 {
+				reg = <0x8000 0x4da8>;
+			};
+		};
+	};
+
+	partition@180000 {
+		compatible = "brcm,trx";
+		brcm,trx-magic = <0x534c4844>;
+		label = "firmware";
+		reg = <0x180000 0x1800000>;
+	};
+
+	partition@1980000 {
+		label = "Kernel2";
+		reg = <0x1980000 0x1800000>;
+	};
+
+	partition@3180000 {
+		label = "glbcfg";
+		reg = <0x3180000 0x200000>;
+		read-only;
+	};
+
+	partition@3380000 {
+		label = "board_data";
+		reg = <0x3380000 0x200000>;
+		read-only;
+	};
+
+	partition@3580000 {
+		label = "debug_log";
+		reg = <0x3580000 0x900000>;
+		read-only;
+	};
+
+	partition@3e80000 {
+		label = "WTB";
+		reg = <0x3e80000 0x3600000>;
+		read-only;
+	};
+};

@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+. /lib/functions/leds.sh
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+case "$(board_name)" in
+comtrend,ar-5315u |\
+tp-link,td-w8968-v3)
+	ucidef_set_led_usbport "usb" "USB" "green:usb" "usb1-port1" "usb2-port1"
+	;;
+esac
+
+board_config_flush
+
+exit 0

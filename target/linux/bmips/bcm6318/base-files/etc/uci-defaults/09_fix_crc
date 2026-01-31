@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+. /lib/functions.sh
+
+case "$(board_name)" in
+comtrend,ar-5315u) |\
+tp-link,td-w8968-v3)
+	mtd fixtrx firmware
+	;;
+esac
+
+exit 0

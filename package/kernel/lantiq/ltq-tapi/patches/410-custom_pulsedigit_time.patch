@@ -1,0 +1,52 @@
+--- a/src/drv_tapi.h
++++ b/src/drv_tapi.h
+@@ -25,6 +25,7 @@
+ #include <lib_bufferpool.h>
+ #include "drv_tapi_io.h"
+ #include "drv_tapi_event.h"
++#include <linux/module.h>
+ 
+ 
+ /* ============================= */
+--- a/src/drv_tapi_dial.c
++++ b/src/drv_tapi_dial.c
+@@ -20,6 +20,19 @@
+ #include "drv_tapi.h"
+ #include "drv_tapi_errno.h"
+ 
++
++
++static unsigned int min_digit_low = TAPI_MIN_DIGIT_LOW;
++static unsigned int max_digit_low = TAPI_MAX_DIGIT_LOW;
++static unsigned int min_digit_high = TAPI_MIN_DIGIT_HIGH;
++static unsigned int max_digit_high = TAPI_MAX_DIGIT_HIGH;
++static unsigned int min_interdigit = TAPI_MIN_INTERDIGIT;
++module_param(min_digit_low, uint, 0);
++module_param(max_digit_low, uint, 0);
++module_param(min_digit_high, uint, 0);
++module_param(max_digit_high, uint, 0);
++module_param(min_interdigit, uint, 0);
++
+ /*lint -save -esym(749, TAPI_HOOK_STATE_PULSE_H_FLASH_VAL) */
+ /* ============================= */
+ /* Local macros and definitions  */
+@@ -408,14 +421,14 @@ IFX_int32_t IFX_TAPI_Dial_Initialise(TAP
+       }
+    }
+    /* set default values for the validation timers */
+-   pTapiDialData->TapiDigitLowTime.nMinTime      = TAPI_MIN_DIGIT_LOW;
+-   pTapiDialData->TapiDigitLowTime.nMaxTime      = TAPI_MAX_DIGIT_LOW;
+-   pTapiDialData->TapiDigitHighTime.nMinTime     = TAPI_MIN_DIGIT_HIGH;
+-   pTapiDialData->TapiDigitHighTime.nMaxTime     = TAPI_MAX_DIGIT_HIGH;
++   pTapiDialData->TapiDigitLowTime.nMinTime      = min_digit_low;
++   pTapiDialData->TapiDigitLowTime.nMaxTime      = max_digit_low;
++   pTapiDialData->TapiDigitHighTime.nMinTime     = min_digit_high;
++   pTapiDialData->TapiDigitHighTime.nMaxTime     = max_digit_high;
+    pTapiDialData->TapiHookFlashTime.nMinTime     = TAPI_MIN_FLASH;
+    pTapiDialData->TapiHookFlashTime.nMaxTime     = TAPI_MAX_FLASH;
+    pTapiDialData->TapiHookFlashMakeTime.nMinTime = TAPI_MIN_FLASH_MAKE;
+-   pTapiDialData->TapiInterDigitTime.nMinTime    = TAPI_MIN_INTERDIGIT;
++   pTapiDialData->TapiInterDigitTime.nMinTime    = min_interdigit;
+    pTapiDialData->TapiHookOffTime.nMinTime       = TAPI_MIN_OFF_HOOK;
+    pTapiDialData->TapiHookOnTime.nMinTime        = TAPI_MIN_ON_HOOK;
+    /* start hook state FSM in onhook state */

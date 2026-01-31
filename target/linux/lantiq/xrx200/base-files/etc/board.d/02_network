@@ -1,0 +1,153 @@
+#
+# Copyright (C) 2011-2015 OpenWrt.org
+#
+
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+. /lib/functions/lantiq.sh
+
+lantiq_setup_interfaces()
+{
+	local board="$1"
+
+	case "$board" in
+	arcadyan,arv7519rw22)
+		ucidef_set_interface_lan "lan1 lan2 lan3 lan4 lan5"
+		;;
+	arcadyan,vgv7510kw22-brn|\
+	arcadyan,vgv7510kw22-nor|\
+	arcadyan,vgv7519-brn|\
+	arcadyan,vgv7519-nor|\
+	arcadyan,vrv9510kwac23|\
+	avm,fritz5490|\
+	avm,fritz5490-micron|\
+	bt,homehub-v5a|\
+	lantiq,easy80920-nand|\
+	lantiq,easy80920-nor|\
+	zyxel,p-2812hnu-f1|\
+	zyxel,p-2812hnu-f3)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+		;;
+	avm,fritz3370-rev2-hynix|\
+	avm,fritz3370-rev2-micron|\
+	avm,fritz3390|\
+	avm,fritz3490|\
+	avm,fritz3490-micron|\
+	avm,fritz7360sl|\
+	avm,fritz7360-v2|\
+	avm,fritz7362sl|\
+	avm,fritz7430|\
+	avm,fritz7490|\
+	avm,fritz7490-micron|\
+	buffalo,wbmr-300hpd|\
+	tplink,vr200|\
+	tplink,vr200v)
+		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
+		;;
+	avm,fritz7412)
+		ucidef_set_interface_lan "lan"
+		;;
+	*)
+		ucidef_set_interface_lan 'eth0'
+		;;
+	esac
+}
+
+lantiq_setup_dsl()
+{
+	local board="$1"
+	local annex="a"
+
+	case "$board" in
+	arcadyan,vgv7510kw22-brn|\
+	arcadyan,vgv7510kw22-nor|\
+	avm,fritz3370-rev2-hynix|\
+	avm,fritz3370-rev2-micron|\
+	avm,fritz3390|\
+	avm,fritz3490|\
+	avm,fritz3490-micron|\
+	avm,fritz7360sl|\
+	avm,fritz7362sl|\
+	avm,fritz7412|\
+	avm,fritz7430|\
+	avm,fritz7490|\
+	avm,fritz7490-micron)
+		annex="b"
+		;;
+	esac
+
+	lantiq_setup_dsl_helper "$annex"
+}
+
+lantiq_setup_macs()
+{
+	local board="$1"
+	local lan_mac=""
+	local wan_mac=""
+
+	case "$board" in
+	arcadyan,arv7519rw22)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary boardconfig 0x16)" 1)
+		;;
+	lantiq,easy80920-nand|\
+	lantiq,easy80920-nor|\
+	zyxel,p-2812hnu-f1|\
+	zyxel,p-2812hnu-f3)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_ascii u-boot-env ethaddr)" 1)
+		;;
+	arcadyan,vgv7519-brn|\
+	arcadyan,vgv7519-nor|\
+	arcadyan,vrv9510kwac23)
+		wan_mac=$(mtd_get_mac_binary board_config 0x16)
+		;;
+	avm,fritz3370-rev2-hynix|\
+	avm,fritz3370-rev2-micron)
+		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
+		wan_mac=$(macaddr_add "$lan_mac" 3)
+		;;
+	avm,fritz7360sl)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary urlader 0xa91)" 1)
+		;;
+	avm,fritz3390|\
+	avm,fritz3490|\
+	avm,fritz3490-micron|\
+	avm,fritz5490|\
+	avm,fritz5490-micron|\
+	avm,fritz7362sl|\
+	avm,fritz7490|\
+	avm,fritz7490-micron)
+		lan_mac=$(fritz_tffs -n maca -i $(find_mtd_part "tffs (1)"))
+		wan_mac=$(fritz_tffs -n macdsl -i $(find_mtd_part "tffs (1)"))
+		;;
+	avm,fritz7412|\
+	avm,fritz7430)
+		tffsdev=$(find_mtd_chardev "nand-tffs")
+		lan_mac=$(/usr/bin/fritz_tffs_nand -d $tffsdev -n maca -o)
+		wan_mac=$(/usr/bin/fritz_tffs_nand -d $tffsdev -n macdsl -o)
+		label_mac=$lan_mac
+		;;
+	bt,homehub-v5a)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary_ubi caldata 0x110c)" 5)
+		;;
+	buffalo,wbmr-300hpd)
+		wan_mac="$(mtd_get_mac_ascii u-boot-env ethaddr)"
+		;;
+	tplink,vr200|\
+	tplink,vr200v)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary romfile 0xf100)" 1)
+		;;
+	esac
+
+	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" "$lan_mac"
+	[ -n "$wan_mac" ] && ucidef_set_interface_macaddr "wan" "$wan_mac"
+	[ -n "$label_mac" ] && ucidef_set_label_macaddr "$label_mac"
+}
+
+board_config_update
+board=$(board_name)
+lantiq_setup_interfaces $board
+lantiq_setup_dsl $board
+lantiq_setup_macs $board
+board_config_flush
+
+exit 0

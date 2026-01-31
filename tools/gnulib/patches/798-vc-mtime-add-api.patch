@@ -1,0 +1,91 @@
+From f4c40c2d6aabef8e587176bbf5226c8bc6649574 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 2 May 2025 02:43:23 +0200
+Subject: [PATCH] vc-mtime: Add API for more efficient use of git, part 2.
+
+* lib/vc-mtime.c (max_vc_mtime): Don't skip the odd-numbered arguments.
+---
+ ChangeLog      |  5 +++++
+ lib/vc-mtime.c | 57 +++++++++++++++++++++-----------------------------
+ 2 files changed, 29 insertions(+), 33 deletions(-)
+
+--- a/lib/vc-mtime.c
++++ b/lib/vc-mtime.c
+@@ -558,17 +558,14 @@ max_vc_mtime (struct timespec *max_of_mt
+                     size_t n = n0;
+                     size_t cmd_len = 25;
+                     for (; n < nfiles; n++)
+-                      {
+-                        if (vc_controlled[n] == 1)
+-                          {
+-                            if (cmd_len + strlen (currdir_relative_filenames[n]) >= MAX_CMD_LEN
+-                                && i > i0)
+-                              break;
+-                            argv[i++] = currdir_relative_filenames[n];
+-                            cmd_len += 1 + strlen (currdir_relative_filenames[n]);
+-                          }
+-                        n++;
+-                      }
++                      if (vc_controlled[n] == 1)
++                        {
++                          if (cmd_len + strlen (currdir_relative_filenames[n]) >= MAX_CMD_LEN
++                              && i > i0)
++                            break;
++                          argv[i++] = currdir_relative_filenames[n];
++                          cmd_len += 1 + strlen (currdir_relative_filenames[n]);
++                        }
+                     if (i > i0)
+                       {
+                         pid_t child;
+@@ -672,17 +669,14 @@ max_vc_mtime (struct timespec *max_of_mt
+                     size_t n = n0;
+                     size_t cmd_len = 46;
+                     for (; n < nfiles; n++)
+-                      {
+-                        if (vc_controlled[n] == 1)
+-                          {
+-                            if (cmd_len + strlen (currdir_relative_filenames[n]) >= MAX_CMD_LEN
+-                                && i > i0)
+-                              break;
+-                            argv[i++] = currdir_relative_filenames[n];
+-                            cmd_len += 1 + strlen (currdir_relative_filenames[n]);
+-                          }
+-                        n++;
+-                      }
++                      if (vc_controlled[n] == 1)
++                        {
++                          if (cmd_len + strlen (currdir_relative_filenames[n]) >= MAX_CMD_LEN
++                              && i > i0)
++                            break;
++                          argv[i++] = currdir_relative_filenames[n];
++                          cmd_len += 1 + strlen (currdir_relative_filenames[n]);
++                        }
+                     if (i > i0)
+                       {
+                         pid_t child;
+@@ -768,17 +762,14 @@ max_vc_mtime (struct timespec *max_of_mt
+                     size_t n = n0;
+                     size_t cmd_len = 27;
+                     for (; n < nfiles; n++)
+-                      {
+-                        if (vc_controlled[n] == 1)
+-                          {
+-                            if (cmd_len + strlen (currdir_relative_filenames[n]) >= MAX_CMD_LEN
+-                                && i > i0)
+-                              break;
+-                            argv[i++] = currdir_relative_filenames[n];
+-                            cmd_len += 1 + strlen (currdir_relative_filenames[n]);
+-                          }
+-                        n++;
+-                      }
++                      if (vc_controlled[n] == 1)
++                        {
++                          if (cmd_len + strlen (currdir_relative_filenames[n]) >= MAX_CMD_LEN
++                              && i > i0)
++                            break;
++                          argv[i++] = currdir_relative_filenames[n];
++                          cmd_len += 1 + strlen (currdir_relative_filenames[n]);
++                        }
+                     if (i > i0)
+                       {
+                         pid_t child;

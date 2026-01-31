@@ -1,0 +1,63 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+#include "mt7622-dlink-eagle-pro-ai-ax3200-a1.dtsi"
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "D-Link EAGLE PRO AI M32 A1";
+	compatible = "dlink,eagle-pro-ai-m32-a1", "mediatek,mt7622";
+
+	aliases {
+		led-boot = &led_status_orange;
+		led-failsafe = &led_status_red;
+		led-running = &led_status_white;
+		led-upgrade = &led_status_red;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_status_white: led-status-white {
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&pio 85 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_orange: led-status-orange {
+			color = <LED_COLOR_ID_ORANGE>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&pio 20 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		led_status_red: led-status-red {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&pio 17 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&switch {
+	ports {
+		port@2 {
+			reg = <2>;
+			label = "lan2";
+		};
+
+		port@3 {
+			reg = <3>;
+			label = "lan1";
+		};
+	};
+};
+
+&odm_partition {
+	macaddr_odm: macaddr@83 {
+		compatible = "mac-base";
+		reg = <0x83 0x6>;
+		#nvmem-cell-cells = <1>;
+	};
+};
+

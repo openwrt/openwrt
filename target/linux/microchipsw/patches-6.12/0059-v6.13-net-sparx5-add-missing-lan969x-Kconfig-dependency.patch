@@ -1,0 +1,45 @@
+From e63e43479af9d5817eecd34e26af67a5064937b4 Mon Sep 17 00:00:00 2001
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Wed, 13 Nov 2024 12:55:08 +0100
+Subject: [PATCH 64/82] net: sparx5: add missing lan969x Kconfig dependency
+
+The sparx5 switchdev driver can be built either with or without support
+for the Lan969x switch. However, it cannot be built-in when the lan969x
+driver is a loadable module because of a link-time dependency:
+
+arm-linux-gnueabi-ld: drivers/net/ethernet/microchip/sparx5/sparx5_main.o:(.rodata+0xd44): undefined reference to `lan969x_desc'
+
+Add a Kconfig dependency to reflect this in Kconfig, allowing all
+the valid configurations but forcing sparx5 to be a loadable module
+as well if lan969x is.
+
+Fixes: 98a01119608d ("net: sparx5: add compatible string for lan969x")
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Reviewed-by: Daniel Machon <daniel.machon@microchip.com>
+Link: https://patch.msgid.link/20241113115513.4132548-1-arnd@kernel.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/ethernet/microchip/lan969x/Kconfig  | 2 +-
+ drivers/net/ethernet/microchip/lan969x/Makefile | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/ethernet/microchip/lan969x/Kconfig
++++ b/drivers/net/ethernet/microchip/lan969x/Kconfig
+@@ -1,5 +1,5 @@
+ config LAN969X_SWITCH
+-	tristate "Lan969x switch driver"
++	bool "Lan969x switch driver"
+ 	depends on SPARX5_SWITCH
+ 	help
+ 	  This driver supports the lan969x family of network switch devices.
+--- a/drivers/net/ethernet/microchip/lan969x/Makefile
++++ b/drivers/net/ethernet/microchip/lan969x/Makefile
+@@ -3,7 +3,7 @@
+ # Makefile for the Microchip lan969x network device drivers.
+ #
+ 
+-obj-$(CONFIG_LAN969X_SWITCH) += lan969x-switch.o
++obj-$(CONFIG_SPARX5_SWITCH) += lan969x-switch.o
+ 
+ lan969x-switch-y := lan969x_regs.o lan969x.o lan969x_calendar.o \
+  lan969x_vcap_ag_api.o lan969x_vcap_impl.o

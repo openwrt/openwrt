@@ -1,0 +1,37 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7986a-acer-predator-w6x.dtsi"
+
+/ {
+	model = "Acer Predator Connect W6x (Stock Layout)";
+	compatible = "acer,predator-w6x-stock", "mediatek,mt7986a";
+};
+
+&partitions {
+	partition@600000 {
+		label = "dual";
+		reg = <0x600000 0x100000>;
+		read-only;
+	};
+
+	partition@700000 {
+		label = "pot";
+		reg = <0x700000 0x100000>;
+		read-only;
+	};
+
+	partition@800000 {
+		label = "ubi";
+		reg = <0x800000 0x6400000>;
+	};
+
+	partition@6C00000 {
+		label = "ubi1";
+		reg = <0x6C00000 0x6400000>;
+	};
+
+	partition@D000000 {
+		label = "storage";
+		reg = <0xD000000 0x800000>;
+	};
+};

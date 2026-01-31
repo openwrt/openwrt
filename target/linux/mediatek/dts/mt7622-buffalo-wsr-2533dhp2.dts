@@ -1,0 +1,135 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include <dt-bindings/pinctrl/mt65xx.h>
+
+#include "mt7622-buffalo-wsr.dtsi"
+
+/ {
+	model = "Buffalo WSR-2533DHP2";
+	compatible = "buffalo,wsr-2533dhp2", "mediatek,mt7622";
+
+	aliases {
+		label-mac-device = &gmac0;
+	};
+
+	memory@40000000 {
+		reg = <0 0x40000000 0 0x0f000000>;
+		device_type = "memory";
+	};
+
+	rtkgsw: rtkgsw@0 {
+		compatible = "mediatek,rtk-gsw";
+		mediatek,ethsys = <&ethsys>;
+		mediatek,mdio = <&mdio>;
+		reset-gpios = <&pio 54 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&pio {
+	/* Parallel nand is shared pin with eMMC */
+	parallel_nand_pins: parallel-nand-pins {
+		mux {
+			function = "flash";
+			groups = "par_nand";
+		};
+
+		conf-cmd-dat {
+			pins = "NCEB", "NWEB", "NREB",
+				  "NDL4", "NDL5", "NDL6",
+				  "NDL7", "NRB", "NCLE",
+				  "NALE", "NDL0", "NDL1",
+				  "NDL2", "NDL3";
+			input-enable;
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-pull-up;
+		};
+	};
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_4 (-1)>;
+	nvmem-cell-names = "mac-address";
+};
+
+&nandc {
+	pinctrl-names = "default";
+	pinctrl-0 = <&parallel_nand_pins>;
+	status = "okay";
+
+	nand@0 {
+		reg = <0>;
+		nand-ecc-mode = "hw";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "Preloader";
+				reg = <0x0 0x80000>;
+				read-only;
+			};
+
+			partition@80000 {
+				label = "ATF";
+				reg = <0x80000 0x40000>;
+				read-only;
+			};
+
+			partition@c0000 {
+				label = "Bootloader";
+				reg = <0xc0000 0x80000>;
+				read-only;
+			};
+
+			partition@140000 {
+				label = "Config";
+				reg = <0x140000 0x80000>;
+			};
+
+			factory: partition@1c0000 {
+				label = "factory";
+				reg = <0x1c0000 0x40000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_factory_4: macaddr@4 {
+						compatible = "mac-base";
+						reg = <0x4 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition@200000 {
+				compatible = "brcm,trx";
+				brcm,trx-magic = <0x32504844>;
+				label = "firmware";
+				reg = <0x200000 0x3a00000>;
+			};
+
+			partition@3C00000 {
+				label = "Kernel2";
+				reg = <0x3c00000 0x3a00000>;
+			};
+
+			partition@7600000 {
+				label = "glbcfg";
+				reg = <0x7600000 0x200000>;
+				read-only;
+			};
+
+			partition@7800000 {
+				label = "board_data";
+				reg = <0x7800000 0x200000>;
+				read-only;
+			};
+		};
+	};
+};

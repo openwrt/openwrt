@@ -1,0 +1,21 @@
+#!/bin/sh
+
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+ipq50xx_set_oem_name()
+{
+	local board="$1"
+	case $board in
+	glinet,gl-b3000)
+		oem_name=${board#*-}
+		echo "$oem_name"  > "$oem_file"
+		;;
+	esac
+}
+
+oem_file=/tmp/sysinfo/oem_name
+board=$(board_name)
+ipq50xx_set_oem_name $board
+
+exit 0

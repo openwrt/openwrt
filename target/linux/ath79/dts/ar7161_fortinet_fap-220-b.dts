@@ -1,0 +1,168 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "ar7100.dtsi"
+#include "arxxxx_fortinet_loader.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "fortinet,fap-220-b", "qca,ar7161";
+	model = "Fortinet FAP-220-B";
+
+	chosen {
+		bootargs = "console=ttyS0,9600";
+	};
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+		label-mac-device = &eth1;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: power-green {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+
+		status-green {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
+		};
+
+		status-yellow {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_YELLOW>;
+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
+			panic-indicator;
+		};
+
+		mode-green {
+			label = "green:mode";
+			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
+		};
+
+		mode-yellow {
+			label = "yellow:mode";
+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan2g-green {
+			label = "green:wlan2g";
+			gpios = <&ath9k0 5 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		wlan2g-yellow {
+			label = "yellow:wlan2g";
+			gpios = <&ath9k0 3 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0assoc";
+		};
+
+		wlan5g-green {
+			label = "green:wlan5g";
+			gpios = <&ath9k1 5 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		wlan5g-yellow {
+			label = "yellow:wlan5g";
+			gpios = <&ath9k1 3 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1assoc";
+		};
+	};
+
+	virtual_flash {
+		devices = <&fwconcat0 &fwconcat1 &fwconcat2>;
+	};
+};
+
+&pcie0 {
+	status = "okay";
+
+	ath9k0: wifi@11,0 { /* 2.4 GHz */
+		compatible = "pci168c,0029";
+		reg = <0x8800 0 0 0 0>;
+		ieee80211-freq-limit = <2402000 2482000>;
+		nvmem-cells = <&macaddr_uboot_3ff80 9>, <&cal_art_1000>;
+		nvmem-cell-names = "mac-address", "calibration";
+		#gpio-cells = <2>;
+		gpio-controller;
+	};
+
+	ath9k1: wifi@12,0 { /* 5 GHz */
+		compatible = "pci168c,0029";
+		reg = <0x9000 0 0 0 0>;
+		ieee80211-freq-limit = <2402000 2482000 4900000 5990000>;
+		nvmem-cells = <&macaddr_uboot_3ff80 2>, <&cal_art_5000>;
+		nvmem-cell-names = "mac-address", "calibration";
+		#gpio-cells = <2>;
+		gpio-controller;
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy0: ethernet-phy@0 {
+		reg = <0x0>;
+	};
+};
+
+&eth0 {
+	status = "okay";
+	compatible = "syscon", "simple-mfd";
+};
+
+&eth1 {
+	status = "okay";
+	nvmem-cells = <&macaddr_uboot_3ff80 0>;
+	nvmem-cell-names = "mac-address";
+
+	pll-data = <0x00110000 0x00001099 0x00991099>;
+	phy-handle = <&phy0>;
+	phy-mode = "rgmii";
+};
+
+&usb1 {
+	status = "okay";
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&art {
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		cal_art_1000: calibration@1000 {
+			reg = <0x1000 0xeb8>;
+		};
+
+		cal_art_5000: calibration@5000 {
+			reg = <0x5000 0xeb8>;
+		};
+	};
+};

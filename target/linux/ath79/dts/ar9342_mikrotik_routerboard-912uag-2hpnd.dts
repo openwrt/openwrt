@@ -1,0 +1,27 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "ar9342_mikrotik_routerboard-911g.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "mikrotik,routerboard-912uag-2hpnd", "qca,ar9342";
+	model = "MikroTik RouterBOARD 912UAG-(2,5)HPnD";
+};
+
+&ref {
+	clock-frequency = <40000000>;
+};
+
+&pcie {
+	status = "okay";
+};
+
+&usb {
+	status = "okay";
+};
+
+&usb_phy {
+	status = "okay";
+};

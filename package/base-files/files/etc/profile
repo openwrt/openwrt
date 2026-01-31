@@ -1,0 +1,39 @@
+unset FAILSAFE
+[ -e /tmp/.failsafe ] && export FAILSAFE=1
+
+[ -f /etc/banner ] && cat /etc/banner
+[ -n "$FAILSAFE" ] && [ -f /etc/banner.failsafe ] && cat /etc/banner.failsafe
+
+if grep -Fsq '/ overlay ro,' /proc/mounts ; then
+cat << EOF
+
+ === WARNING! ======================================
+ Your JFFS2-partition seems full and overlayfs is
+ mounted as READ-ONLY!
+ Please try to remove files from /overlay/upper/...
+ and reboot!
+ ---------------------------------------------------
+
+EOF
+fi
+
+export PATH="%PATH%"
+HOME=$(grep -E "^${USER:-root}:" /etc/passwd | cut -d ":" -f 6)
+HOME=${HOME:-/root}
+export HOME
+export PS1='\u@\h:\w\$ '
+export ENV=/etc/shinit
+
+case "$TERM" in
+	xterm*|rxvt*)
+		export PS1='\[\e]0;\u@\h: \w\a\]'"$PS1"
+	;;
+esac
+
+if [ -z "$FAILSAFE" ] ; then
+	for FILE in /etc/profile.d/*.sh ; do
+		[ -f "${FILE%.sh}.hush" ] && continue
+		[ -f "$FILE" ] && . "$FILE"
+	done
+	unset FILE
+fi

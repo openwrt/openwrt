@@ -1,0 +1,128 @@
+
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+rockchip_setup_interfaces()
+{
+	local board="$1"
+
+	case "$board" in
+	armsom,sige7|\
+	friendlyarm,nanopi-r2c|\
+	friendlyarm,nanopi-r2c-plus|\
+	friendlyarm,nanopi-r2s|\
+	friendlyarm,nanopi-r3s|\
+	friendlyarm,nanopi-r4s|\
+	friendlyarm,nanopi-r4s-enterprise|\
+	friendlyarm,nanopi-r6c|\
+	hinlink,h66k|\
+	radxa,rockpi-e|\
+	xunlong,orangepi-r1-plus|\
+	xunlong,orangepi-r1-plus-lts)
+		ucidef_set_interfaces_lan_wan 'eth1' 'eth0'
+		;;
+	friendlyarm,nanopc-t6|\
+	friendlyarm,nanopi-r5c|\
+	friendlyarm,nanopi-r76s|\
+	hinlink,h28k|\
+	lunzn,fastrhino-r66s|\
+	radxa,e20c|\
+	radxa,e25|\
+	radxa,rock-3b)
+		ucidef_set_interfaces_lan_wan 'eth0' 'eth1'
+		;;
+	friendlyarm,nanopi-r5s)
+		ucidef_set_interfaces_lan_wan 'eth1 eth2' 'eth0'
+		;;
+	friendlyarm,nanopi-r6s)
+		ucidef_set_interfaces_lan_wan 'eth0 eth2' 'eth1'
+		;;
+	hinlink,h68k)
+		ucidef_set_interfaces_lan_wan 'eth0 eth2 eth3' 'eth1'
+		;;
+	linkease,easepi-r1)
+		ucidef_set_network_device_path eth2 'platform/3c0400000.pcie/pci0001:10/0001:10:00.0/0001:11:00.0'
+		ucidef_set_network_device_path eth3 'platform/3c0000000.pcie/pci0000:00/0000:00:00.0/0000:01:00.0'
+		ucidef_set_interfaces_lan_wan 'eth1 eth2 eth3' 'eth0'
+		;;
+	radxa,e52c)
+		ucidef_set_network_device_path 'wan' 'platform/a40c00000.pcie/pci0003:30/0003:30:00.0/0003:31:00.0'
+		ucidef_set_network_device_path 'lan' 'platform/a41000000.pcie/pci0004:40/0004:40:00.0/0004:41:00.0'
+		ucidef_set_interfaces_lan_wan 'lan' 'wan'
+		;;
+	radxa,rock-5-itx)
+		ucidef_set_network_device_path 'eth0' 'platform/a40c00000.pcie/pci0003:30/0003:30:00.0/0003:31:00.0'
+		ucidef_set_network_device_path 'eth1' 'platform/a41000000.pcie/pci0004:40/0004:40:00.0/0004:41:00.0'
+		ucidef_set_interfaces_lan_wan 'eth0' 'eth1'
+		;;
+	radxa,rock-5t)
+		ucidef_set_network_device_path 'eth1' 'platform/a40c00000.pcie/pci0003:30/0003:30:00.0/0003:31:00.0'
+		ucidef_set_network_device_path 'eth0' 'platform/a41000000.pcie/pci0004:40/0004:40:00.0/0004:41:00.0'
+		ucidef_set_interfaces_lan_wan 'eth0' 'eth1'
+		;;
+	sinovoip,rk3568-bpi-r2pro)
+		ucidef_set_interfaces_lan_wan 'lan0 lan1 lan2 lan3' 'eth0'
+		;;
+	*)
+		ucidef_set_interface_lan 'eth0'
+		;;
+	esac
+}
+
+rockchip_setup_macs()
+{
+	local board="$1"
+	local lan_mac=""
+	local wan_mac=""
+	local label_mac=""
+
+	case "$board" in
+	armsom,sige7|\
+	friendlyarm,nanopc-t6|\
+	friendlyarm,nanopi-r2c|\
+	friendlyarm,nanopi-r2s|\
+	friendlyarm,nanopi-r76s|\
+	hinlink,h28k|\
+	hinlink,h66k|\
+	hinlink,h68k|\
+	linkease,easepi-r1|\
+	lunzn,fastrhino-r66s)
+		wan_mac=$(macaddr_generate_from_mmc_cid mmcblk0)
+		lan_mac=$(macaddr_add "$wan_mac" 1)
+		;;
+	friendlyarm,nanopi-r2c-plus|\
+	friendlyarm,nanopi-r4s|\
+	friendlyarm,nanopi-r5s|\
+	sinovoip,rk3568-bpi-r2pro)
+		wan_mac=$(macaddr_generate_from_mmc_cid mmcblk1)
+		lan_mac=$(macaddr_add "$wan_mac" 1)
+		;;
+	friendlyarm,nanopi-r3s|\
+	friendlyarm,nanopi-r5c|\
+	friendlyarm,nanopi-r6c|\
+	friendlyarm,nanopi-r6s)
+		wan_mac=$(macaddr_generate_from_mmc_cid mmcblk*)
+		lan_mac=$(macaddr_add "$wan_mac" 1)
+		;;
+	friendlyarm,nanopi-r4s-enterprise)
+		wan_mac=$(get_mac_binary "/sys/bus/i2c/devices/2-0051/eeprom" 0xfa)
+		lan_mac=$(macaddr_setbit_la "$wan_mac")
+		;;
+	xunlong,orangepi-r1-plus|\
+	xunlong,orangepi-r1-plus-lts)
+		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth1/address)" -1)
+		;;
+	esac
+
+	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" $lan_mac
+	[ -n "$wan_mac" ] && ucidef_set_interface_macaddr "wan" $wan_mac
+	[ -n "$label_mac" ] && ucidef_set_label_macaddr $label_mac
+}
+
+board_config_update
+board=$(board_name)
+rockchip_setup_interfaces $board
+rockchip_setup_macs $board
+board_config_flush
+
+exit 0

@@ -1,0 +1,33 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include <dt-bindings/leds/common.h>
+
+#include "qca9563_dlink_dir-8x9-a1.dtsi"
+
+/ {
+	model = "D-Link DIR-869 A1";
+	compatible = "dlink,dir-869-a1", "qca,qca9563";
+
+	aliases {
+		led-boot = &led_power_orange;
+		led-failsafe = &led_power_orange;
+		led-running = &led_power_white;
+		led-upgrade = &led_power_orange;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power_orange: power_orange {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_ORANGE>;
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_white: power_white {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+		};
+	};
+};

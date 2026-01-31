@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: GPL-2.0-or-later OR BSD-2-Clause
+
+rootfs_create() {
+	local blocks
+
+	blocks=$(cat /sys/class/ubi/ubi0/avail_eraseblocks)
+	[ -z "$blocks" ] && {
+		echo "Failed to read amount of available erase blocks" >&2
+		return
+	}
+
+	# Delete after getting available blocks: Make sure enough space is
+	# left to recreate these volumes.
+	ubirmvol /dev/ubi0 -N kernel_backup
+	ubirmvol /dev/ubi0 -N rootfs_backup
+
+	# Use 90% of remaining flash size for "rootfs_data"
+	ubimkvol /dev/ubi0 -n 20 -N rootfs_data --lebs $((blocks / 100 * 90))
+	mknod -m 0600 /dev/ubi0_20 c 250 21
+}
+
+rootfs_prepare() {
+	case $(board_name) in
+	netgear,wax220)
+		if ! ubinfo /dev/ubi0 -N rootfs_data &>/dev/null; then
+			echo "Creating \"rootfs_data\" UBI volume"
+			rootfs_create
+		fi
+		;;
+	*)
+		;;
+	esac
+}
+
+boot_hook_add preinit_main rootfs_prepare

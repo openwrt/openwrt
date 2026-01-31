@@ -1,0 +1,49 @@
+From 1f160c287c14b4300c4248752e20da5981c9763e Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Wed, 18 Jan 2023 19:00:54 +0100
+Subject: [PATCH] libxdp: Use __noinline__ reserved attribute for XDP
+ dispatcher
+
+The use of noinline is wrong as noline is not a reserved attribute and
+with gcc12 this became an error. Use the reserved __noinline__ attribute
+to fix compilation error.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+[a.heider: adapt lib/libxdp/protocol.org too]
+Signed-off-by: Andre Heider <a.heider@gmail.com>
+---
+ lib/libxdp/protocol.org        | 2 +-
+ lib/libxdp/xdp-dispatcher.c.in | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+--- a/lib/libxdp/protocol.org
++++ b/lib/libxdp/protocol.org
+@@ -59,7 +59,7 @@ static volatile const struct xdp_dispatc
+ /* The volatile return value prevents the compiler from assuming it knows the
+  * return value and optimising based on that.
+  */
+-__attribute__ ((noinline))
++__attribute__ ((__noinline__))
+ int prog0(struct xdp_md *ctx) {
+         volatile int ret = XDP_DISPATCHER_RETVAL;
+ 
+--- a/lib/libxdp/xdp-dispatcher.c.in
++++ b/lib/libxdp/xdp-dispatcher.c.in
+@@ -29,7 +29,7 @@ static volatile const struct xdp_dispatc
+  * return value and optimising based on that.
+  */
+ forloop(`i', `0', NUM_PROGS,
+-`__attribute__ ((noinline))
++`__attribute__ ((__noinline__))
+ int format(`prog%d', i)(struct xdp_md *ctx) {
+         volatile int ret = XDP_DISPATCHER_RETVAL;
+ 
+@@ -39,7 +39,7 @@ int format(`prog%d', i)(struct xdp_md *c
+ }
+ ')
+ 
+-__attribute__ ((noinline))
++__attribute__ ((__noinline__))
+ int compat_test(struct xdp_md *ctx) {
+         volatile int ret = XDP_DISPATCHER_RETVAL;
+ 

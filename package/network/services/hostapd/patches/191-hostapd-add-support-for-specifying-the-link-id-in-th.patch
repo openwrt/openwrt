@@ -1,0 +1,58 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 3 Jul 2025 11:22:26 +0200
+Subject: [PATCH] hostapd: add support for specifying the link id in the config
+
+Makes it easier to dynamically manage links for a MLD at run time.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/hostapd/config_file.c
++++ b/hostapd/config_file.c
+@@ -4934,6 +4934,8 @@ static int hostapd_config_fill(struct ho
+ 		conf->punct_acs_threshold = val;
+ 	} else if (os_strcmp(buf, "mld_ap") == 0) {
+ 		bss->mld_ap = !!atoi(pos);
++	} else if (os_strcmp(buf, "mld_link_id") == 0) {
++		bss->mld_link_id = atoi(pos);
+ 	} else if (os_strcmp(buf, "mld_addr") == 0) {
+ 		if (hwaddr_aton(pos, bss->mld_addr)) {
+ 			wpa_printf(MSG_ERROR, "Line %d: Invalid mld_addr",
+--- a/src/ap/ap_config.c
++++ b/src/ap/ap_config.c
+@@ -177,6 +177,10 @@ void hostapd_config_defaults_bss(struct
+ 	bss->pasn_comeback_after = 10;
+ 	bss->pasn_noauth = 1;
+ #endif /* CONFIG_PASN */
++
++#ifdef CONFIG_IEEE80211BE
++	bss->mld_link_id = -1;
++#endif
+ }
+ 
+ 
+--- a/src/ap/ap_config.h
++++ b/src/ap/ap_config.h
+@@ -967,6 +967,8 @@ struct hostapd_bss_config {
+ 	/* The AP's MLD MAC address within the AP MLD */
+ 	u8 mld_addr[ETH_ALEN];
+ 
++	s8 mld_link_id;
++
+ #ifdef CONFIG_TESTING_OPTIONS
+ 	/*
+ 	 * If set indicate the AP as disabled in the RNR element included in the
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -3105,7 +3105,10 @@ struct hostapd_iface * hostapd_alloc_ifa
+ #ifdef CONFIG_IEEE80211BE
+ static void hostapd_bss_alloc_link_id(struct hostapd_data *hapd)
+ {
+-	hapd->mld_link_id = hapd->mld->next_link_id++;
++	if (hapd->conf->mld_link_id >= 0)
++		hapd->mld_link_id = hapd->conf->mld_link_id;
++	else
++		hapd->mld_link_id = hapd->mld->next_link_id++;
+ 	wpa_printf(MSG_DEBUG, "AP MLD: %s: Link ID %d assigned.",
+ 		   hapd->mld->name, hapd->mld_link_id);
+ }

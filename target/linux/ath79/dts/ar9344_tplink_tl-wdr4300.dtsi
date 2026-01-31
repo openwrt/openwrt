@@ -1,0 +1,176 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "ar9344_tplink_tl-wdrxxxx.dtsi"
+#include <dt-bindings/leds/common.h>
+
+/ {
+	aliases {
+		label-mac-device = &ath9k;
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		gpio_usb1_power {
+			gpio-export,name = "tp-link:power:usb1";
+			gpio-export,output = <1>;
+			gpios = <&gpio 22 GPIO_ACTIVE_HIGH>;
+		};
+
+		gpio_usb2_power {
+			gpio-export,name = "tp-link:power:usb2";
+			gpio-export,output = <1>;
+			gpios = <&gpio 21 GPIO_ACTIVE_HIGH>;
+		};
+
+		gpio_ext_lna0 {
+			gpio-export,name = "tp-link:ext:lna0";
+			gpio-export,output = <1>;
+			gpios = <&gpio 18 GPIO_ACTIVE_HIGH>;
+		};
+
+		gpio_ext_lna1 {
+			gpio-export,name = "tp-link:ext:lna1";
+			gpio-export,output = <1>;
+			gpios = <&gpio 19 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&leds {
+	usb1 {
+		label = "green:usb1";
+		gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+		trigger-sources = <&hub_port1>;
+		linux,default-trigger = "usbport";
+	};
+
+	usb2 {
+		label = "green:usb2";
+		gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+		trigger-sources = <&hub_port2>;
+		linux,default-trigger = "usbport";
+	};
+};
+
+&usb {
+	status = "okay";
+};
+
+&hub_port {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	hub_port1: port@1 {
+		reg = <1>;
+		#trigger-source-cells = <0>;
+	};
+
+	hub_port2: port@2 {
+		reg = <2>;
+		#trigger-source-cells = <0>;
+	};
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&wmac {
+	status = "okay";
+	nvmem-cells = <&macaddr_uboot_1fc00 (-1)>, <&cal_art_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
+};
+
+&pcie {
+	status = "okay";
+
+	ath9k: wifi@0,0 {
+		compatible = "pci168c,0033";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&macaddr_uboot_1fc00 0>, <&cal_art_5000>;
+		nvmem-cell-names = "mac-address", "calibration";
+
+		led {
+			led-sources = <0>;
+			led-active-low;
+		};
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	switch@1f {
+		compatible = "qca,ar8327";
+		reg = <0x1f>;
+
+		qca,ar8327-initvals = <
+			0x04 0x07600000 /* PORT0 PAD MODE CTRL */
+			0x10 0x80000080 /* POWER_ON_STRAP */
+			0x50 0xc737c737 /* LED_CTRL0 */
+			0x54 0x00000000 /* LED_CTRL1 */
+			0x58 0x00000000 /* LED_CTRL2 */
+			0x5c 0x0030c300 /* LED_CTRL3 */
+			0x7c 0x0000007e /* PORT0_STATUS */
+			>;
+
+		leds {
+			led@0 {
+				reg = <0>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_WAN;
+				qca,led-mode = <0>;
+			};
+
+			led@3 {
+				reg = <3>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_LAN;
+				function-enumerator = <1>;
+				qca,led-mode = <0>;
+			};
+
+			led@6 {
+				reg = <6>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_LAN;
+				function-enumerator = <2>;
+				qca,led-mode = <0>;
+			};
+
+			led@9 {
+				reg = <9>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_LAN;
+				function-enumerator = <3>;
+				qca,led-mode = <0>;
+			};
+
+			led@12 {
+				reg = <12>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_LAN;
+				function-enumerator = <4>;
+				qca,led-mode = <0>;
+			};
+		};
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	/* default for ar934x, except for 1000M */
+	pll-data = <0x06000000 0x00000101 0x00001616>;
+
+	nvmem-cells = <&macaddr_uboot_1fc00 0>;
+	nvmem-cell-names = "mac-address";
+
+	phy-mode = "rgmii";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};

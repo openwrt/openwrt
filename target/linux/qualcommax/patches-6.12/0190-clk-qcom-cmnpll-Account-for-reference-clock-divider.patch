@@ -1,0 +1,47 @@
+From: Luo Jie <jie.luo@oss.qualcomm.com>
+Date: Tue, 06 Jan 2026 21:35:10 -0800
+Subject: [PATCH v2 1/5] clk: qcom: cmnpll: Account for reference clock divider
+
+The clk_cmn_pll_recalc_rate() function must account for the reference clock
+divider programmed in CMN_PLL_REFCLK_CONFIG. Without this fix, platforms
+with a reference divider other than 1 calculate incorrect CMN PLL rates.
+For example, on IPQ5332 where the reference divider is 2, the computed rate
+becomes twice the actual output.
+
+Read CMN_PLL_REFCLK_DIV and divide the parent rate by this value before
+applying the 2 * FACTOR scaling. This yields the correct rate calculation:
+rate = (parent_rate / ref_div) * 2 * factor.
+
+Maintain backward compatibility with earlier platforms (e.g. IPQ9574,
+IPQ5424, IPQ5018) that use ref_div = 1.
+
+Fixes: f81715a4c87c ("clk: qcom: Add CMN PLL clock controller driver for IPQ SoC")
+Signed-off-by: Luo Jie <jie.luo@oss.qualcomm.com>
+--- a/drivers/clk/qcom/ipq-cmn-pll.c
++++ b/drivers/clk/qcom/ipq-cmn-pll.c
+@@ -186,7 +186,7 @@ static unsigned long clk_cmn_pll_recalc_
+ 					     unsigned long parent_rate)
+ {
+ 	struct clk_cmn_pll *cmn_pll = to_clk_cmn_pll(hw);
+-	u32 val, factor;
++	u32 val, factor, ref_div;
+ 
+ 	/*
+ 	 * The value of CMN_PLL_DIVIDER_CTRL_FACTOR is automatically adjusted
+@@ -194,8 +194,15 @@ static unsigned long clk_cmn_pll_recalc_
+ 	 */
+ 	regmap_read(cmn_pll->regmap, CMN_PLL_DIVIDER_CTRL, &val);
+ 	factor = FIELD_GET(CMN_PLL_DIVIDER_CTRL_FACTOR, val);
++	if (WARN_ON(factor == 0))
++		factor = 1;
+ 
+-	return parent_rate * 2 * factor;
++	regmap_read(cmn_pll->regmap, CMN_PLL_REFCLK_CONFIG, &val);
++	ref_div = FIELD_GET(CMN_PLL_REFCLK_DIV, val);
++	if (WARN_ON(ref_div == 0))
++		ref_div = 1;
++
++	return div_u64((u64)parent_rate * 2 * factor, ref_div);
+ }
+ 
+ static int clk_cmn_pll_determine_rate(struct clk_hw *hw,

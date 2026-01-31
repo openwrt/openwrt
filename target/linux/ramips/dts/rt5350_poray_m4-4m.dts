@@ -1,0 +1,10 @@
+#include "rt5350_poray_m4.dtsi"
+
+/ {
+	compatible = "poray,m4-4m", "poray,m4", "ralink,rt5350-soc";
+	model = "Poray M4 (4M)";
+};
+
+&firmware {
+	reg = <0x50000 0x3b0000>;
+};

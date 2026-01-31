@@ -1,0 +1,25 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Fri, 9 May 2025 21:16:08 +0800
+Subject: [PATCH] add missing header "mod_devicetable.h"
+
+Fix compilation error:
+
+/home/db/owrt/build_dir/target-mips_24kc_musl/linux-lantiq_xway/ltq-ptm-danube/ltq-ptm/ifxmips_ptm_adsl.c:1433:34: error: array type has incomplete element type 'struct of_device_id'
+ 1433 | static const struct of_device_id ltq_ptm_match[] = {
+      |                                  ^~~~~~~~~~~~~
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ ifxmips_ptm_adsl.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/ifxmips_ptm_adsl.c
++++ b/ifxmips_ptm_adsl.c
+@@ -43,6 +43,7 @@
+ #include <linux/ioctl.h>
+ #include <linux/etherdevice.h>
+ #include <linux/interrupt.h>
++#include <linux/mod_devicetable.h>
+ #include <linux/netdevice.h>
+ #include <linux/platform_device.h>
+ #include <linux/of_device.h>

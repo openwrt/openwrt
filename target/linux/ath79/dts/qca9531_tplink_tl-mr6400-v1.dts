@@ -1,0 +1,181 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "qca953x.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "tplink,tl-mr6400-v1", "qca,qca9531";
+	model = "TP-Link TL-MR6400 v1";
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+		label-mac-device = &wmac;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		/* D12 */
+		wan {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
+		};
+
+		/* D11 */
+		4g {
+			label = "white:4g";
+			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
+		};
+
+		/* D5 */
+		wps {
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
+		};
+
+		/* D3 */
+		wlan {
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		/* D2 */
+		led_power: power {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&gpio 13 GPIO_ACTIVE_HIGH>;
+		};
+
+		/* D4 */
+		lan {
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		/* SW2 */
+		reset {
+			label = "Reset button";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		/* SW3 */
+		rfkill {
+			label = "RF kill button";
+			linux,code = <KEY_RFKILL>;
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		gpio_usb_power {
+			gpio-export,name = "tp-link:power:lte";
+			gpio-export,output = <0>;
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			uboot: partition@0 {
+				label = "u-boot";
+				reg = <0x000000 0x020000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_uboot_1fc00: macaddr@1fc00 {
+						compatible = "mac-base";
+						reg = <0x1fc00 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition@20000 {
+				compatible = "tplink,firmware";
+				label = "firmware";
+				reg = <0x020000 0x7d0000>;
+			};
+
+			partition@7f0000 {
+				label = "art";
+				reg = <0x7f0000 0x010000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	phy-handle = <&swphy0>;
+
+	nvmem-cells = <&macaddr_uboot_1fc00 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&eth1 {
+	nvmem-cells = <&macaddr_uboot_1fc00 (-1)>;
+	nvmem-cell-names = "mac-address";
+};
+
+&wmac {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_uboot_1fc00 0>, <&cal_art_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
+};
+
+&usb0 {
+	status = "okay";
+};
+
+&usb_phy {
+	status = "okay";
+};

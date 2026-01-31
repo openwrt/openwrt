@@ -1,0 +1,186 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca953x.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "tplink,tl-wr842n-v3", "qca,qca9533";
+	model = "TP-Link TL-WR842N v3";
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+		label-mac-device = &eth1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: power {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		wifi {
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		qss {
+			label = "green:qss";
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+		};
+
+		wan_green {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+		};
+
+		wan_red {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+		};
+
+		lan1 {
+			label = "green:lan1";
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+		};
+
+		lan2 {
+			label = "green:lan2";
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		lan3 {
+			label = "green:lan3";
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+		};
+
+		lan4 {
+			label = "green:lan4";
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+		};
+
+		usb {
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "usbport";
+			trigger-sources = <&hub_port0>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "Reset button";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		rfkill {
+			label = "RFKILL button";
+			linux,code = <KEY_RFKILL>;
+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+};
+
+&usb0 {
+	status = "okay";
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			uboot: partition@0 {
+				label = "u-boot";
+				reg = <0x000000 0x020000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_uboot_1fc00: macaddr@1fc00 {
+						compatible = "mac-base";
+						reg = <0x1fc00 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition@20000 {
+				compatible = "tplink,firmware";
+				label = "firmware";
+				reg = <0x020000 0xfd0000>;
+			};
+
+			partition@ff0000 {
+				label = "art";
+				reg = <0xff0000 0x010000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	phy-handle = <&swphy4>;
+
+	nvmem-cells = <&macaddr_uboot_1fc00 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&eth1 {
+	nvmem-cells = <&macaddr_uboot_1fc00 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&wmac {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_uboot_1fc00 0>, <&cal_art_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
+};

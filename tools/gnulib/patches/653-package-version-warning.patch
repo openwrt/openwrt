@@ -1,0 +1,32 @@
+From 2e46209809f751087ca27523283bd5c3e9071d31 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Sun, 26 Jan 2025 13:26:35 +0100
+Subject: package-version: Avoid compiler warnings in config.log.
+
+* m4/init-package-version.m4 (gl_INIT_PACKAGE_VERSION): Undefine
+PACKAGE_VERSION and PACKAGE_STRING before redefining them.
+---
+ ChangeLog                  | 6 ++++++
+ m4/init-package-version.m4 | 4 +++-
+ 2 files changed, 9 insertions(+), 1 deletion(-)
+
+--- a/m4/init-package-version.m4
++++ b/m4/init-package-version.m4
+@@ -1,5 +1,5 @@
+ # init-package-version.m4
+-# serial 5
++# serial 6
+ dnl Copyright (C) 1992-2025 Free Software Foundation, Inc.
+ dnl This file is free software, distributed under the terms of the GNU
+ dnl General Public License.  As a special exception to the GNU General
+@@ -102,8 +102,10 @@ AC_DEFUN([gl_INIT_PACKAGE_VERSION],
+      dnl Set variables documented in Autoconf.
+      AC_SUBST([PACKAGE_VERSION], ["$1"])
+      AC_SUBST([PACKAGE_STRING], ["AC_PACKAGE_NAME $1"])
++     _AC_DEFINE([#undef PACKAGE_VERSION])
+      AC_DEFINE_UNQUOTED([PACKAGE_VERSION], ["$1"],
+        [Define to the version of this package.])
++     _AC_DEFINE([#undef PACKAGE_STRING])
+      AC_DEFINE_UNQUOTED([PACKAGE_STRING], ["AC_PACKAGE_NAME $1"],
+        [Define to the full name and version of this package.])
+     ])

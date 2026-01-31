@@ -1,0 +1,146 @@
+#include "rt3352.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "dlink,dir-615-h1", "ralink,rt3352-soc";
+	model = "D-Link DIR-615 H1";
+
+	aliases {
+		led-boot = &led_status_green;
+		led-failsafe = &led_status_green;
+		led-running = &led_status_green;
+		led-upgrade = &led_status_green;
+		label-mac-device = &wmac;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		status {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_AMBER>;
+			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_status_green: status2 {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+
+		wan {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_AMBER>;
+			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+		};
+
+		wan2 {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+		};
+
+		wps {
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "u-boot-env";
+				reg = <0x30000 0x10000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "factory";
+				reg = <0x40000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x200>;
+					};
+
+					macaddr_factory_28: macaddr@28 {
+						reg = <0x28 0x6>;
+					};
+				};
+			};
+
+			partition@50000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x50000 0x3b0000>;
+			};
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "i2c", "jtag", "uartf";
+		function = "gpio";
+	};
+};
+
+&ethernet {
+	nvmem-cells = <&macaddr_factory_28>;
+	nvmem-cell-names = "mac-address";
+	pinctrl-names = "default";
+	pinctrl-0 = <&rgmii_pins &mdio_pins>;
+};
+
+&esw {
+	mediatek,portmap = <0x2f>;
+};
+
+&wmac {
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
+};

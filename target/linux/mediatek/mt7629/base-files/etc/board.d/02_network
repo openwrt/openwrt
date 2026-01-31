@@ -1,0 +1,54 @@
+
+. /lib/functions.sh
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+mediatek_setup_interfaces()
+{
+	local board="$1"
+
+	case $board in
+	iptime,a6004mx|\
+	linksys,ea7500-v3)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "eth1"
+		;;
+	mediatek,mt7629-rfb)
+		ucidef_set_interface_wan "eth1"
+		ucidef_add_switch "switch0" \
+			"0:lan" "1:lan" "2:lan" "3:lan" "6@eth0"
+		;;
+	netgear,ex6250-v2|\
+	tplink,eap225-v5)
+		ucidef_set_interface_lan "eth0"
+		;;
+	esac
+}
+
+mediatek_setup_macs()
+{
+	local board="$1"
+
+	case $board in
+	linksys,ea7500-v3)
+		lan_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
+		wan_mac=$lan_mac
+		label_mac=$lan_mac
+		;;
+	netgear,ex6250-v2)
+		lan_mac=$(mtd_get_mac_ascii Config mac)
+		label_mac=$lan_mac
+		;;
+	esac
+
+	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" $lan_mac
+	[ -n "$wan_mac" ] && ucidef_set_interface_macaddr "wan" $wan_mac
+	[ -n "$label_mac" ] && ucidef_set_label_macaddr $label_mac
+}
+
+board_config_update
+board=$(board_name)
+mediatek_setup_interfaces $board
+mediatek_setup_macs $board
+board_config_flush
+
+exit 0

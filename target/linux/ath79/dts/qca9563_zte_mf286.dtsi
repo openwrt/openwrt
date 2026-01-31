@@ -1,0 +1,33 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+// Copyright (c) 2021 Cezary Jackiewicz
+// Copyright (c) 2021, 2022 Lech Perczak
+#include "qca9563_zte_mf28x.dtsi"
+
+/ {
+	leds {
+		pinctrl-names = "default";
+		pinctrl-0 = <&enable_wlan_led_gpio>;
+
+		led-1 {
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+	};
+
+	keys {
+		wifi {
+			label = "wifi";
+			linux,code = <KEY_RFKILL>;
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+};
+
+&pinmux {
+	enable_wlan_led_gpio: pinmux_wlan_led_gpio {
+		pinctrl-single,bits = <0x10 0x0 0xff000000>;
+	};
+};

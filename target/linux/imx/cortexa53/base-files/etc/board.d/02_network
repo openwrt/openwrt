@@ -1,0 +1,36 @@
+. /lib/functions/uci-defaults.sh
+
+board=$(board_name)
+
+board_config_update
+
+case "$board" in
+gw,imx8mm-gw71xx-0x|\
+gateworks,imx8mp-gw71xx-2x|\
+gateworks,imx8mm-gw75xx-0x|\
+gateworks,imx8mp-gw75xx-2x|\
+gw,imx8mm-gw7903|\
+gateworks,imx8mm-gw7904)
+	ucidef_set_interface_wan 'eth0'
+	;;
+gw,imx8mm-gw72xx-0x|\
+gw,imx8mp-gw72xx-2x|\
+gw,imx8mm-gw73xx-0x|\
+gw,imx8mp-gw73xx-2x|\
+gw,imx8mm-gw7902-0x|\
+gateworks,imx8mp-gw82xx-2x)
+	ucidef_set_interfaces_lan_wan 'eth1' 'eth0'
+	;;
+gw,imx8mm-gw7901)
+	ucidef_set_interfaces_lan_wan 'lan2 lan3 lan4' 'lan1'
+	;;
+gateworks,imx8mp-gw74xx)
+	ucidef_set_network_device_path "eth0" "platform/soc@0/30800000.bus/30bf0000.ethernet"
+	ucidef_set_network_device_path "eth1" "platform/soc@0/30800000.bus/30be0000.ethernet"
+	ucidef_set_interfaces_lan_wan 'lan1 lan2 lan3 lan4' 'eth0'
+	;;
+esac
+
+board_config_flush
+
+exit 0

@@ -1,0 +1,40 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca9563_dlink_covr.dtsi"
+
+/ {
+	compatible = "dlink,covr-c1200-a1", "qca,qca9563";
+	model = "D-Link COVR-C1200 A1";
+
+	aliases {
+		led-boot = &led_power_orange;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_white;
+		led-upgrade = &led_power_red;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&jtag_disable_pins>;
+
+		led_power_red: power_red {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio 6 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_power_white: power_white {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_power_orange: power_orange {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_ORANGE>;
+			gpios = <&gpio 8 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+	};
+};

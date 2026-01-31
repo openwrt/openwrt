@@ -1,0 +1,236 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca955x.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "openmesh,om5p-ac-v1", "qca,qca9558";
+	model = "OpenMesh OM5P-AC v1";
+
+	chosen {
+		/delete-property/ bootargs;
+	};
+
+	aliases {
+		led-boot = &led_power_blue;
+		led-failsafe = &led_power_blue;
+		led-running = &led_power_blue;
+		led-upgrade = &led_power_blue;
+		label-mac-device = &eth0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power_blue: power_blue {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		wan_blue {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
+		};
+
+		lan_blue {
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
+		};
+
+		wifi_green {
+			label = "green:wifi";
+			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		wifi_yellow {
+			label = "yellow:wifi";
+			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
+		};
+
+		wifi_red {
+			label = "red:wifi";
+			gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	i2c {
+		compatible = "i2c-gpio";
+		gpios = <&gpio 11 GPIO_ACTIVE_HIGH /* sda */
+			 &gpio 12 GPIO_ACTIVE_HIGH /* scl */
+			>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		i2c-gpio,scl-open-drain;
+		i2c-gpio,sda-open-drain;
+
+		tmp423a@4c {
+			compatible = "ti,tmp423";
+			reg = <0x4c>;
+		};
+	};
+
+	watchdog {
+		compatible = "linux,wdt-gpio";
+		gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+		hw_algo = "toggle";
+		/* hw_margin_ms is actually 300s but driver limits it to 60s */
+		hw_margin_ms = <60000>;
+		always-running;
+	};
+};
+
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <40000000>;
+
+		/* partitions are passed via bootloader */
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x000000 0x040000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "u-boot-env";
+				reg = <0x040000 0x010000>;
+			};
+
+			partition@50000 {
+				label = "custom";
+				reg = <0x050000 0x060000>;
+				read-only;
+			};
+
+			partition@b0000 {
+				label = "inactive";
+				reg = <0x0b0000 0x7a0000>;
+			};
+
+			partition@850000 {
+				label = "inactive2";
+				reg = <0x850000 0x7a0000>;
+			};
+
+			partition@ff0000 {
+				label = "ART";
+				reg = <0xff0000 0x010000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_art_0: macaddr@0 {
+						compatible = "mac-base";
+						reg = <0x0 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					macaddr_art_6: macaddr@6 {
+						reg = <0x6 0x6>;
+					};
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+
+					cal_art_5000: calibration@5000 {
+						reg = <0x5000 0x844>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy1: ethernet-phy@1 {
+		reg = <1>;
+		eee-broken-100tx;
+		eee-broken-1000t;
+	};
+
+	phy2: ethernet-phy@2 {
+		reg = <2>;
+		eee-broken-100tx;
+		eee-broken-1000t;
+		at803x-override-sgmii-link-check;
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	pll-data = <0x82000101 0x80000101 0x80001313>;
+
+	nvmem-cells = <&macaddr_art_0 0>;
+	nvmem-cell-names = "mac-address";
+
+	phy-mode = "rgmii-id";
+	phy-handle = <&phy1>;
+
+	gmac-config {
+		device = <&gmac>;
+		rgmii-enabled = <1>;
+		rxd-delay = <3>;
+		rxdv-delay = <3>;
+		txd-delay = <0>;
+		txen-delay = <0>;
+	};
+};
+
+&eth1 {
+	status = "okay";
+
+	pll-data = <0x03000101 0x80000101 0x80001313>;
+
+	nvmem-cells = <&macaddr_art_6>;
+	nvmem-cell-names = "mac-address";
+
+	qca955x-sgmii-fixup;
+
+	phy-handle = <&phy2>;
+};
+
+&wdt {
+	status = "disabled";
+};
+
+&wmac {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_art_0 2>, <&cal_art_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
+};
+
+&pcie1 {
+	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&cal_art_5000>, <&macaddr_art_0 16>;
+		nvmem-cell-names = "calibration", "mac-address";
+	};
+};

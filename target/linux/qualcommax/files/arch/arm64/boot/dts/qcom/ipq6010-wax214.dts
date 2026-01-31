@@ -1,0 +1,172 @@
+// SPDX-License-Identifier: (GPL-2.0+)
+
+/dts-v1/;
+
+#include "ipq6018.dtsi"
+#include "ipq6018-cp-cpu.dtsi"
+#include "ipq6018-ess.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "Netgear WAX214";
+	compatible = "netgear,wax214", "qcom,ipq6018";
+
+	aliases {
+		serial0 = &blsp1_uart3;
+		ethernet0 = &dp3;
+		label-mac-device = &dp3;
+		led-boot = &pwr;
+		led-failsafe = &pwr;
+		led-running = &pwr;
+		led-upgrade = &pwr;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs-append = " root=/dev/ubiblock0_1";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&tlmm 9 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		pwr: pwr {
+			color = <LED_COLOR_ID_ORANGE>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&tlmm 28 GPIO_ACTIVE_HIGH>;
+		};
+
+		lan  {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_LAN;
+			gpios = <&tlmm 29 GPIO_ACTIVE_HIGH>;
+		};
+
+		wlan2g  {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <0>;
+			gpios = <&tlmm 30 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0radio";
+		};
+
+		wlan5g  {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <1>;
+			gpios = <&tlmm 31 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy1radio";
+		};
+	};
+};
+
+&blsp1_uart3 {
+	pinctrl-0 = <&serial_3_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&tlmm {
+	mdio_pins: mdio-pins {
+		mdc {
+			pins = "gpio64";
+			function = "mdc";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+
+		mdio {
+			pins = "gpio65";
+			function = "mdio";
+			drive-strength = <8>;
+			bias-pull-up;
+		};
+	};
+};
+
+&dp3 {
+	status = "okay";
+
+	phy-handle = <&qca8072_4>;
+	label = "lan";
+};
+
+&edma {
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 75 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <10000>;
+	reset-post-delay-us = <50000>;
+
+	ethernet-phy-package@0 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "qcom,qca8075-package";
+		reg = <0>;
+
+		qcom,package-mode = "psgmii";
+
+		qca8072_4: ethernet-phy@4 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <4>;
+		};
+	};
+};
+
+&switch {
+	status = "okay";
+
+	switch_lan_bmp = <ESS_PORT3>;
+	switch_mac_mode = <MAC_MODE_PSGMII>;
+	port3_pcs_channel = <4>;
+
+	qcom,port_phyinfo {
+		port@3 {
+			port_id = <3>;
+			phy_address = <4>;
+		};
+	};
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&qpic_nand {
+	status = "okay";
+
+	nand@0 {
+		reg = <0>;
+
+		nand-ecc-strength = <4>;
+		nand-ecc-step-size = <512>;
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "qcom,smem-part";
+		};
+	};
+};
+
+
+&wifi {
+	status = "okay";
+	qcom,ath11k-fw-memory-mode = <1>;
+	qcom,ath11k-calibration-variant = "Netgear-WAX214";
+};

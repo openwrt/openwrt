@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+include $(TOPDIR)/rules.mk
+
+PKG_NAME:=xxHash
+PKG_VERSION:=0.8.3
+
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_URL=https://github.com/Cyan4973/xxHash
+PKG_MIRROR_HASH:=69f3e49799db17894a5e4c5e10d3de59f12a8c454e7b6a1ba9d0cf16d9a34515
+PKG_SOURCE_VERSION:=e626a72bc2321cd320e953a0ccf1584cad60f363
+
+PKG_LICENSE:=BSD-2-Clause
+PKG_LICENSE_FILES:=LICENSE
+
+include $(INCLUDE_DIR)/host-build.mk
+include $(INCLUDE_DIR)/cmake.mk
+
+CMAKE_C_COMPILER_LAUNCHER :=
+CMAKE_CXX_COMPILER_LAUNCHER :=
+
+CMAKE_BINARY_SUBDIR := build
+CMAKE_SOURCE_SUBDIR := cmake_unofficial
+
+$(eval $(call HostBuild))

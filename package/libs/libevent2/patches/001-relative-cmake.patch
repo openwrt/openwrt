@@ -1,0 +1,58 @@
+From 81c6b8823c1b58d7837e827bb1098aa5f9e5956b Mon Sep 17 00:00:00 2001
+From: "Jeremy W. Murphy" <jeremy.william.murphy@gmail.com>
+Date: Tue, 16 May 2023 05:07:36 +1000
+Subject: [PATCH] cmake: Only use relative paths for install DESTINATION option
+ (#1405)
+
+As described in #1404, the explicit use of CMAKE_INSTALL_PREFIX conflicts with using command-line --prefix.
+
+This simply removes all explicit use of CMAKE_INSTALL_PREFIX.
+
+Otherwise this path will be duplicated:
+
+    $ cmake -DCMAKE_BUILD_TYPE=debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_INSTALL_PREFIX=inst ..
+    $ DESTDIR=inst ninja install
+    ...
+    -- Installing: inst/src/le/libevent/.cmake-debug/inst/include/event2/util.h
+    -- Installing: inst/src/le/libevent/.cmake-debug/inst/include/event2/ws.h
+    ...
+
+Fixes: #1404
+Co-authored-by: Jeremy Murphy <jeremymu@blackmagicdesign.com>
+---
+ CMakeLists.txt              | 3 +--
+ cmake/AddEventLibrary.cmake | 4 ++--
+ 2 files changed, 3 insertions(+), 4 deletions(-)
+
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1452,8 +1452,7 @@ endif()
+ # Installation preparation.
+ #
+ 
+-set(EVENT_INSTALL_CMAKE_DIR
+-    "${CMAKE_INSTALL_PREFIX}/lib/cmake/libevent")
++set(EVENT_INSTALL_CMAKE_DIR "lib/cmake/libevent")
+ 
+ export(PACKAGE libevent)
+ 
+--- a/cmake/AddEventLibrary.cmake
++++ b/cmake/AddEventLibrary.cmake
+@@ -31,7 +31,7 @@ macro(generate_pkgconfig LIB_NAME)
+     configure_file("lib${LIB_NAME}.pc.in" "lib${LIB_NAME}.pc" @ONLY)
+     install(
+         FILES "${CMAKE_CURRENT_BINARY_DIR}/lib${LIB_NAME}.pc"
+-        DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig"
++        DESTINATION "lib/pkgconfig"
+     )
+ endmacro()
+ 
+@@ -150,7 +150,7 @@ macro(add_event_library LIB_NAME)
+             set_target_properties(
+                 "${LIB_NAME}_shared" PROPERTIES
+                 OUTPUT_NAME "${LIB_NAME}-${EVENT_PACKAGE_RELEASE}.${CURRENT_MINUS_AGE}"
+-                INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib"
++                INSTALL_NAME_DIR "lib"
+                 LINK_FLAGS "-compatibility_version ${COMPATIBILITY_VERSION} -current_version ${COMPATIBILITY_VERSION}.${EVENT_ABI_LIBVERSION_REVISION}")
+         else()
+             math(EXPR CURRENT_MINUS_AGE "${EVENT_ABI_LIBVERSION_CURRENT}-${EVENT_ABI_LIBVERSION_AGE}")

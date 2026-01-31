@@ -1,0 +1,88 @@
+From e263a2c741eef417e769075e11d32318b8b2b8ab Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Fri, 4 Oct 2024 15:19:31 +0200
+Subject: [PATCH 33/82] net: sparx5: add constants to match data
+
+Add new struct sparx5_consts, containing all the chip constants that are
+known to be different for Sparx5 and lan969x.
+
+Reviewed-by: Steen Hegelund <Steen.Hegelund@microchip.com>
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ .../ethernet/microchip/sparx5/sparx5_main.c   | 21 +++++++++++++++++++
+ .../ethernet/microchip/sparx5/sparx5_main.h   | 21 +++++++++++++++++++
+ 2 files changed, 42 insertions(+)
+
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
+@@ -952,11 +952,32 @@ static const struct sparx5_regs sparx5_r
+ 	.fsize = sparx5_fsize,
+ };
+ 
++static const struct sparx5_consts sparx5_consts = {
++	.n_ports             = 65,
++	.n_ports_all         = 70,
++	.n_hsch_l1_elems     = 64,
++	.n_hsch_queues       = 8,
++	.n_lb_groups         = 10,
++	.n_pgids             = 2113, /* (2048 + n_ports) */
++	.n_sio_clks          = 3,
++	.n_own_upsids        = 3,
++	.n_auto_cals         = 7,
++	.n_filters           = 1024,
++	.n_gates             = 1024,
++	.n_sdlbs             = 4096,
++	.n_dsm_cal_taxis     = 8,
++	.buf_size            = 4194280,
++	.qres_max_prio_idx   = 630,
++	.qres_max_colour_idx = 638,
++	.tod_pin             = 4,
++};
++
+ static const struct sparx5_match_data sparx5_desc = {
+ 	.iomap = sparx5_main_iomap,
+ 	.iomap_size = ARRAY_SIZE(sparx5_main_iomap),
+ 	.ioranges = 3,
+ 	.regs = &sparx5_regs,
++	.consts = &sparx5_consts,
+ };
+ 
+ static const struct of_device_id mchp_sparx5_match[] = {
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
+@@ -238,6 +238,26 @@ struct sparx5_regs {
+ 	const unsigned int *fsize;
+ };
+ 
++struct sparx5_consts {
++	u32 n_ports;             /* Number of front ports */
++	u32 n_ports_all;         /* Number of front ports + internal ports */
++	u32 n_hsch_l1_elems;     /* Number of HSCH layer 1 elements */
++	u32 n_hsch_queues;       /* Number of HSCH queues */
++	u32 n_lb_groups;         /* Number of leacky bucket groupd */
++	u32 n_pgids;             /* Number of PGID's */
++	u32 n_sio_clks;          /* Number of serial IO clocks */
++	u32 n_own_upsids;        /* Number of own UPSID's */
++	u32 n_auto_cals;         /* Number of auto calendars */
++	u32 n_filters;           /* Number of PSFP filters */
++	u32 n_gates;             /* Number of PSFP gates */
++	u32 n_sdlbs;             /* Number of service dual leaky buckets */
++	u32 n_dsm_cal_taxis;     /* Number of DSM calendar taxis */
++	u32 buf_size;            /* Amount of QLIM watermark memory */
++	u32 qres_max_prio_idx;   /* Maximum QRES prio index */
++	u32 qres_max_colour_idx; /* Maximum QRES colour index */
++	u32 tod_pin;             /* PTP TOD pin */
++};
++
+ struct sparx5_main_io_resource {
+ 	enum sparx5_target id;
+ 	phys_addr_t offset;
+@@ -246,6 +266,7 @@ struct sparx5_main_io_resource {
+ 
+ struct sparx5_match_data {
+ 	const struct sparx5_regs *regs;
++	const struct sparx5_consts *consts;
+ 	const struct sparx5_main_io_resource *iomap;
+ 	int ioranges;
+ 	int iomap_size;

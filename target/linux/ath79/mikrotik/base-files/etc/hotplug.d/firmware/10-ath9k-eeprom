@@ -1,0 +1,62 @@
+#!/bin/sh
+
+[ -e /lib/firmware/$FIRMWARE ] && exit 0
+
+. /lib/functions/caldata.sh
+
+caldata_mikrotik_ath9k() {
+	local offset=$(($1))
+	local count=$(($2))
+	local macaddr=$3
+
+	caldata_from_file $wlan_data $offset $count /tmp/$FIRMWARE
+	ath9k_patch_mac "$macaddr" /tmp/$FIRMWARE
+	caldata_sysfsload_from_file /tmp/$FIRMWARE 0x0 $count
+	rm -f /tmp/$FIRMWARE
+}
+
+wlan_data="/sys/firmware/mikrotik/hard_config/wlan_data"
+mac_base="$(cat /sys/firmware/mikrotik/hard_config/mac_base)"
+
+board=$(board_name)
+
+case "$FIRMWARE" in
+"ath9k-eeprom-ahb-18100000.wmac.bin")
+	case $board in
+	mikrotik,routerboard-2011uias-2hnd)
+		caldata_mikrotik_ath9k 0x1000 0x440 $(macaddr_add "$mac_base" 11)
+		;;
+	mikrotik,routerboard-911-lite|\
+	mikrotik,routerboard-911g-xhpnd|\
+	mikrotik,routerboard-912uag-2hpnd|\
+	mikrotik,routerboard-lhg-2nd|\
+	mikrotik,routerboard-lhg-5nd|\
+	mikrotik,routerboard-sxt-5nd-r2|\
+	mikrotik,routerboard-wap-2nd|\
+	mikrotik,routerboard-wapr-2nd)
+		caldata_mikrotik_ath9k 0x1000 0x440 $(macaddr_add "$mac_base" 1)
+		;;
+	mikrotik,routerboard-map-2nd)
+		caldata_mikrotik_ath9k 0x1000 0x440 $(macaddr_add "$mac_base" 3)
+		;;
+	mikrotik,routerboard-mapl-2nd|\
+	mikrotik,routerboard-wap-g-5hact2hnd)
+		caldata_mikrotik_ath9k 0x1000 0x440 $(macaddr_add "$mac_base" 2)
+		;;
+	mikrotik,routerboard-951ui-2nd|\
+	mikrotik,routerboard-952ui-5ac2nd)
+		caldata_mikrotik_ath9k 0x1000 0x440 $(macaddr_add "$mac_base" 6)
+		;;
+	mikrotik,routerboard-962uigs-5hact2hnt)
+		caldata_mikrotik_ath9k 0x1000 0x440 $(macaddr_add "$mac_base" 7)
+		;;
+	mikrotik,routerboard-951g-2hnd|\
+	mikrotik,routerboard-951ui-2hnd)
+		caldata_mikrotik_ath9k 0x1000 0x440 $(macaddr_add "$mac_base" +11)
+		;;
+	*)
+		caldata_die "board $board is not supported yet"
+		;;
+	esac
+	;;
+esac

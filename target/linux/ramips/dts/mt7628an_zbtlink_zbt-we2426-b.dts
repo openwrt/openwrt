@@ -1,0 +1,183 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7628an.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "zbtlink,zbt-we2426-b", "mediatek,mt7628an-soc";
+	model = "Zbtlink ZBT-WE2426-B";
+
+	aliases {
+		led-boot = &led_wlan;
+		led-failsafe = &led_wlan;
+		led-upgrade = &led_wlan;
+		label-mac-device = &wmac;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 38 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		lan1 {
+			gpios = <&gpio 43 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+		};
+
+		lan2 {
+			gpios = <&gpio 42 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
+		};
+
+		lan3 {
+			gpios = <&gpio 41 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <3>;
+		};
+
+		lan4 {
+			gpios = <&gpio 40 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <4>;
+		};
+
+		wan {
+			gpios = <&gpio 39 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN;
+		};
+
+		led_wlan: wlan2g {
+			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			linux,default-trigger = "phy0tpt";
+		};
+
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "u-boot-env";
+				reg = <0x30000 0x10000>;
+				read-only;
+			};
+
+			factory: partition@40000 {
+				label = "factory";
+				reg = <0x40000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x400>;
+					};
+
+					eeprom_factory_8000: eeprom@8000 {
+						reg = <0x8000 0x200>;
+					};
+
+					macaddr_factory_28: macaddr@28 {
+						reg = <0x28 0x6>;
+					};
+				};
+			};
+
+			partition@50000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x50000 0x7b0000>;
+			};
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "i2s", "refclk", "wdt", "p4led_an",
+				"p3led_an", "p2led_an",
+				"p1led_an", "p0led_an",
+				"wled_an";
+		function = "gpio";
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_8000>;
+		nvmem-cell-names = "eeprom";
+		ieee80211-freq-limit = <5000000 6000000>;
+
+		led {
+			led-sources = <2>;
+			led-active-low;
+		};
+	};
+};
+
+&wmac {
+	status = "okay";
+
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
+};
+
+&ethernet {
+	nvmem-cells = <&macaddr_factory_28>;
+	nvmem-cell-names = "mac-address";
+};
+
+&esw {
+	mediatek,portmap = <0x2f>;
+};
+
+&sdhci {
+	status = "okay";
+};

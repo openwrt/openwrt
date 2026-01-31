@@ -1,0 +1,34 @@
+#!/bin/sh /etc/rc.common
+
+START=15
+STOP=10
+
+boot() {
+	case $(board_name) in
+		netgear,lbr20)
+			echo "0" > /sys/class/gpio/lte_rst/value
+			echo "0" > /sys/class/gpio/lte_pwrkey/value
+			echo "0" > /sys/class/gpio/lte_usb_boot/value
+			echo "0" > /sys/class/gpio/lte_pwm/value
+			sleep 1
+			echo "1" > /sys/class/gpio/lte_pwm/value
+			echo "1" > /sys/class/gpio/lte_pwrkey/value
+			echo "1" > /sys/class/gpio/lte_rst/value
+			sleep 1
+			echo "0" > /sys/class/gpio/lte_pwrkey/value
+			sleep 1
+			echo "1" > /sys/class/gpio/lte_pwrkey/value
+		;;
+	esac
+}
+
+shutdown() {
+	case $(board_name) in
+		netgear,lbr20)
+			echo "0" > /sys/class/gpio/lte_pwrkey/value
+			sleep 1
+			echo "1" > /sys/class/gpio/lte_pwrkey/value
+			sleep 10
+		;;
+	esac
+}
