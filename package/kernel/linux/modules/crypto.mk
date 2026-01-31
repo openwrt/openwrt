@@ -116,7 +116,7 @@ $(eval $(call KernelPackage,crypto-ccm))
 
 define KernelPackage/crypto-chacha20poly1305
   TITLE:=ChaCha20-Poly1305 AEAD support, RFC7539 (used by strongSwan IPsec VPN)
-  DEPENDS:=+kmod-crypto-aead +kmod-crypto-manager
+  DEPENDS:=+kmod-crypto-aead +kmod-crypto-manager +!LINUX_6_12:kmod-crypto-lib-poly1305
   KCONFIG:=CONFIG_CRYPTO_CHACHA20POLY1305
   FILES:=$(LINUX_DIR)/crypto/chacha20poly1305.ko
   AUTOLOAD:=$(call AutoLoad,09,chacha20poly1305)
@@ -143,8 +143,9 @@ define KernelPackage/crypto-crc32
   DEPENDS:=+kmod-crypto-hash
   KCONFIG:=CONFIG_CRYPTO_CRC32
   HIDDEN:=1
-  FILES:=$(LINUX_DIR)/crypto/crc32_generic.ko
-  AUTOLOAD:=$(call AutoLoad,04,crc32_generic,1)
+  FILES:=$(LINUX_DIR)/crypto/crc32_generic.ko@lt6.18 \
+	$(LINUX_DIR)/crypto/crc32-cryptoapi.ko@ge6.18
+  AUTOLOAD:=$(call AutoLoad,04,LINUX_6_12:crc32_generic !LINUX_6_12:crc32-cryptoapi,1)
   $(call AddDepends/crypto)
 endef
 
@@ -155,8 +156,9 @@ define KernelPackage/crypto-crc32c
   TITLE:=CRC32c CRC module
   DEPENDS:=+kmod-crypto-hash
   KCONFIG:=CONFIG_CRYPTO_CRC32C
-  FILES:=$(LINUX_DIR)/crypto/crc32c_generic.ko
-  AUTOLOAD:=$(call AutoLoad,04,crc32c_generic,1)
+  FILES:=$(LINUX_DIR)/crypto/crc32c_generic.ko@lt6.18 \
+	$(LINUX_DIR)/crypto/crc32c-cryptoapi.ko@ge6.18
+  AUTOLOAD:=$(call AutoLoad,04,LINUX_6_12:crc32c_generic !LINUX_6_12:crc32c-cryptoapi,1)
   $(call AddDepends/crypto)
 endef
 
@@ -521,7 +523,7 @@ $(eval $(call KernelPackage,crypto-hw-talitos))
 
 define KernelPackage/crypto-hw-eip93
   TITLE:=MTK EIP93 crypto module
-  DEPENDS:=@TARGET_ramips_mt7621 \
+  DEPENDS:=@(TARGET_ramips_mt7621||TARGET_airoha) \
 	+kmod-crypto-authenc \
 	+kmod-crypto-des \
 	+kmod-crypto-md5 \
@@ -530,21 +532,26 @@ define KernelPackage/crypto-hw-eip93
   KCONFIG:= \
 	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_EIP93 \
-	CONFIG_CRYPTO_DEV_EIP93_AES=y \
-	CONFIG_CRYPTO_DEV_EIP93_DES=y \
-	CONFIG_CRYPTO_DEV_EIP93_AEAD=y \
+	CONFIG_CRYPTO_DEV_EIP93_AES=y@lt6.18 \
+	CONFIG_CRYPTO_DEV_EIP93_DES=y@lt6.18 \
+	CONFIG_CRYPTO_DEV_EIP93_AEAD=y@lt6.18 \
 	CONFIG_CRYPTO_DEV_EIP93_GENERIC_SW_MAX_LEN=256 \
 	CONFIG_CRYPTO_DEV_EIP93_AES_128_SW_MAX_LEN=512
-  FILES:=$(LINUX_DIR)/drivers/crypto/mtk-eip93/crypto-hw-eip93.ko
+  FILES:=$(LINUX_DIR)/drivers/crypto/mtk-eip93/crypto-hw-eip93.ko@lt6.18 \
+    $(LINUX_DIR)/drivers/crypto/inside-secure/eip93/crypto-hw-eip93.ko@ge6.18
   AUTOLOAD:=$(call AutoLoad,09,crypto-hw-eip93)
   $(call AddDepends/crypto)
 endef
 
 define KernelPackage/crypto-hw-eip93/description
 Kernel module to enable EIP-93 Crypto engine as found
-in the Mediatek MT7621 SoC.
+in Mediatek MT7621 and Airoha SoCs.
 It enables DES/3DES/AES ECB/CBC/CTR and
 IPSEC offload with authenc(hmac(sha1/sha256), aes/cbc/rfc3686)
+endef
+
+define KernelPackage/crypto-hw-eip93/airoha
+  FILES:=$(LINUX_DIR)/drivers/crypto/inside-secure/eip93/crypto-hw-eip93.ko
 endef
 
 $(eval $(call KernelPackage,crypto-hw-eip93))
@@ -574,6 +581,7 @@ define KernelPackage/crypto-lib-chacha20/x86_64
 endef
 endif
 
+ifeq ($(KERNEL_PATCHVER),6.12)
 # Note that a non-neon fallback implementation is available on arm32 when
 # NEON is not supported, hence all arm targets can utilize lib-chacha20/arm
 define KernelPackage/crypto-lib-chacha20/arm
@@ -596,6 +604,7 @@ endef
 ifeq ($(CONFIG_CPU_MIPS32_R2),y)
   KernelPackage/crypto-lib-chacha20/$(ARCH)=\
 	  $(KernelPackage/crypto-lib-chacha20/mips32r2)
+endif
 endif
 
 ifdef KernelPackage/crypto-lib-chacha20/$(ARCH)
@@ -623,7 +632,7 @@ define KernelPackage/crypto-lib-curve25519
   HIDDEN:=1
   FILES:= \
 	$(LINUX_DIR)/lib/crypto/libcurve25519.ko \
-	$(LINUX_DIR)/lib/crypto/libcurve25519-generic.ko
+	$(LINUX_DIR)/lib/crypto/libcurve25519-generic.ko@lt6.18
   $(call AddDepends/crypto,+kmod-crypto-kpp)
 endef
 
@@ -667,6 +676,7 @@ define KernelPackage/crypto-lib-poly1305/x86_64
 endef
 endif
 
+ifeq ($(KERNEL_PATCHVER),6.12)
 define KernelPackage/crypto-lib-poly1305/arm
   KCONFIG+=CONFIG_CRYPTO_POLY1305_ARM
   FILES:=$(LINUX_DIR)/arch/arm/crypto/poly1305-arm.ko
@@ -687,6 +697,7 @@ endef
 KernelPackage/crypto-lib-poly1305/mipsel=$(KernelPackage/crypto-lib-poly1305/mips)
 KernelPackage/crypto-lib-poly1305/mips64=$(KernelPackage/crypto-lib-poly1305/mips)
 KernelPackage/crypto-lib-poly1305/mips64el=$(KernelPackage/crypto-lib-poly1305/mips)
+endif
 
 ifdef KernelPackage/crypto-lib-poly1305/$(ARCH)
   KernelPackage/crypto-lib-poly1305/$(CRYPTO_TARGET)=\
@@ -729,8 +740,9 @@ define KernelPackage/crypto-md5
 	CONFIG_CRYPTO_MD5 \
 	CONFIG_CRYPTO_MD5_OCTEON \
 	CONFIG_CRYPTO_MD5_PPC
-  FILES:=$(LINUX_DIR)/crypto/md5.ko
-  AUTOLOAD:=$(call AutoLoad,09,md5)
+  FILES:=$(LINUX_DIR)/crypto/md5.ko \
+	$(LINUX_DIR)/lib/crypto/libmd5.ko@ge6.18
+  AUTOLOAD:=$(call AutoLoad,09,md5 !LINUX_6_12:libmd5)
   $(call AddDepends/crypto)
 endef
 
@@ -967,11 +979,13 @@ define KernelPackage/crypto-sha1
 	CONFIG_CRYPTO_SHA1_OCTEON \
 	CONFIG_CRYPTO_SHA1_PPC_SPE \
 	CONFIG_CRYPTO_SHA1_SSSE3
-  FILES:=$(LINUX_DIR)/crypto/sha1_generic.ko
-  AUTOLOAD:=$(call AutoLoad,09,sha1_generic)
+  FILES:=$(LINUX_DIR)/crypto/sha1_generic.ko@lt6.18 \
+	$(LINUX_DIR)/crypto/sha1.ko@ge6.18
+  AUTOLOAD:=$(call AutoLoad,09,LINUX_6_12:sha1_generic !LINUX_6_12:sha1)
   $(call AddDepends/crypto)
 endef
 
+ifeq ($(KERNEL_PATCHVER),6.12)
 define KernelPackage/crypto-sha1/arm
   FILES+=$(LINUX_DIR)/arch/arm/crypto/sha1-arm.ko
   AUTOLOAD+=$(call AutoLoad,09,sha1-arm)
@@ -998,6 +1012,7 @@ KernelPackage/crypto-sha1/mvebu/cortexa53=$(KernelPackage/crypto-sha1/aarch64-ce
 KernelPackage/crypto-sha1/mvebu/cortexa72=$(KernelPackage/crypto-sha1/aarch64-ce)
 KernelPackage/crypto-sha1/qualcommax=$(KernelPackage/crypto-sha1/aarch64-ce)
 KernelPackage/crypto-sha1/rockchip/armv8=$(KernelPackage/crypto-sha1/aarch64-ce)
+endif
 
 define KernelPackage/crypto-sha1/octeon
   FILES+=$(LINUX_DIR)/arch/mips/cavium-octeon/crypto/octeon-sha1.ko
@@ -1049,12 +1064,14 @@ define KernelPackage/crypto-sha256
 	CONFIG_CRYPTO_SHA2_ARM64_CE \
 	CONFIG_CRYPTO_SHA256_SSSE3
   FILES:= \
-	$(LINUX_DIR)/crypto/sha256_generic.ko \
+	$(LINUX_DIR)/crypto/sha256_generic.ko@lt6.18 \
+	$(LINUX_DIR)/crypto/sha256.ko@ge6.18 \
 	$(LINUX_DIR)/lib/crypto/libsha256.ko
-  AUTOLOAD:=$(call AutoLoad,09,sha256_generic)
+  AUTOLOAD:=$(call AutoLoad,09,LINUX_6_12:sha256_generic !LINUX_6_12:sha256)
   $(call AddDepends/crypto)
 endef
 
+ifeq ($(filter 6.18,$(KERNEL_PATCHVER)),)
 define KernelPackage/crypto-sha256/aarch64
   FILES+=$(LINUX_DIR)/arch/arm64/crypto/sha256-arm64.ko
   AUTOLOAD+=$(call AutoLoad,09,sha256-arm64)
@@ -1094,6 +1111,7 @@ ifdef KernelPackage/crypto-sha256/$(ARCH)
   KernelPackage/crypto-sha256/$(CRYPTO_TARGET)=\
 	  $(KernelPackage/crypto-sha256/$(ARCH))
 endif
+endif # 6.18
 
 $(eval $(call KernelPackage,crypto-sha256))
 
@@ -1107,11 +1125,14 @@ define KernelPackage/crypto-sha512
 	CONFIG_CRYPTO_SHA512_ARM64 \
 	CONFIG_CRYPTO_SHA512_OCTEON \
 	CONFIG_CRYPTO_SHA512_SSSE3
-  FILES:=$(LINUX_DIR)/crypto/sha512_generic.ko
-  AUTOLOAD:=$(call AutoLoad,09,sha512_generic)
+  FILES:=$(LINUX_DIR)/crypto/sha512_generic.ko@lt6.18 \
+	$(LINUX_DIR)/crypto/sha512.ko@ge6.18 \
+	$(LINUX_DIR)/lib/crypto/libsha512.ko@ge6.18
+  AUTOLOAD:=$(call AutoLoad,09,LINUX_6_12:sha512_generic !LINUX_6_12:sha512)
   $(call AddDepends/crypto)
 endef
 
+ifeq ($(filter 6.18,$(KERNEL_PATCHVER)),)
 define KernelPackage/crypto-sha512/arm
   FILES+=$(LINUX_DIR)/arch/arm/crypto/sha512-arm.ko
   AUTOLOAD+=$(call AutoLoad,09,sha512-arm)
@@ -1133,6 +1154,7 @@ define KernelPackage/crypto-sha512/octeon
 endef
 
 KernelPackage/crypto-sha512/tegra=$(KernelPackage/crypto-sha512/arm)
+endif # 6.18
 
 ifndef CONFIG_TARGET_uml
 define KernelPackage/crypto-sha512/x86_64
