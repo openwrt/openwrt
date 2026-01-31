@@ -166,6 +166,10 @@ define Build/storlink-2048k-default-image
 	$(call CreateStorlinkTarfile,$(1),2048k,2096640)
 endef
 
+define Build/storlink-2048k-factory-image
+	$(call CreateStorlinkFactoryfile,$(1),2048k,2096640)
+endef
+
 define Build/storlink-2048k-sysupgrade-image
 	$(call CreateStorlinkSysupgradefile,$(1),2048k)
 endef
@@ -269,6 +273,9 @@ define Device/itian_sq201
 	DEVICE_VENDOR := ITian
 	DEVICE_MODEL := Square One SQ201
 	DEVICE_DTS := gemini-sq201
+	IMAGE/factory.bin := storlink-2048k-factory-image $(1)
+	IMAGE/sysupgrade.bin := storlink-2048k-sysupgrade-image $(1) |\
+				append-metadata
 	DEVICE_PACKAGES += kmod-rt61-pci kmod-usb2-pci kmod-dsa-vsc73xx-spi
 endef
 TARGET_DEVICES += itian_sq201
