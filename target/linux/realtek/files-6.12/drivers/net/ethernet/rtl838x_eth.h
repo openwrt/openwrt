@@ -407,6 +407,7 @@ struct rteth_ctrl;
 struct rteth_config {
 	int family_id;
 	int cpu_port;
+	int rx_rings;
 	irqreturn_t (*net_irq)(int irq, void *dev_id);
 	int mac_l2_port_ctrl;
 	int dma_if_intr_sts;
