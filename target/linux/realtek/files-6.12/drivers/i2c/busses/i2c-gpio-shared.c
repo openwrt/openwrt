@@ -82,7 +82,6 @@ static void gpio_shared_post_xfer(struct i2c_adapter *adap)
 static int gpio_shared_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
-	struct fwnode_handle *child;
 	struct gpio_shared_ctx *ctx;
 	int msecs, ret, bus_num = -1;
 
@@ -100,7 +99,7 @@ static int gpio_shared_probe(struct platform_device *pdev)
 	if (device_get_child_node_count(dev) >= GPIO_SHARED_MAX_BUS)
 		return dev_err_probe(dev, -EINVAL, "Too many channels\n");
 
-	device_for_each_child_node(dev, child) {
+	device_for_each_child_node_scoped(dev, child) {
 		struct gpio_shared_bus *bus = &ctx->bus[++bus_num];
 		struct i2c_adapter *adap = &bus->adap;
 		struct i2c_algo_bit_data *bit_data = &bus->bit_data;

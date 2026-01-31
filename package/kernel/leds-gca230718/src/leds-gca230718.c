@@ -122,8 +122,7 @@ static int gca230718_probe(struct i2c_client *client)
 
 	i2c_set_clientdata(client, priv);
 
-	struct device_node *ledNode;
-	for_each_child_of_node(client->dev.of_node, ledNode) {
+	for_each_child_of_node_scoped(client->dev.of_node, ledNode) {
 		u32 regValue = 0;
 		if (of_property_read_u32(ledNode, "reg", &regValue))
 			pr_info("Missing entry \"reg\" in node %s\n",
