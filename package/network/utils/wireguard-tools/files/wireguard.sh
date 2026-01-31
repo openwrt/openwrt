@@ -112,16 +112,10 @@ ensure_key_is_generated() {
 	local private_key
 	private_key="$(uci get network."$1".private_key)"
 
-	if [ "$private_key" == "generate" ]; then
-		local ucitmp
-		oldmask="$(umask)"
-		umask 077
-		ucitmp="$(mktemp -d)"
+	if [ "$private_key" = "generate" ] || [ -z "$private_key" ]; then
 		private_key="$("${WG}" genkey)"
-		uci -q -t "$ucitmp" set network."$1".private_key="$private_key" && \
-			uci -q -t "$ucitmp" commit network
-		rm -rf "$ucitmp"
-		umask "$oldmask"
+		uci -q set network."$1".private_key="$private_key" && \
+			uci -q commit network
 	fi
 }
 
