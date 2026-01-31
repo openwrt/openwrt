@@ -1,0 +1,392 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+/dts-v1/;
+
+#include "rtl930x.dtsi"
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	compatible = "xikestor,sks8300-12e2t2x", "realtek,rtl9302-soc";
+	model = "XikeStor SKS8300-12E2T2X";
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x10000000>, /* first 256 MiB */
+		      <0x20000000 0x10000000>; /* remaining 256 MiB */
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		button-reset {
+			label = "reset";
+			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	led_set {
+		compatible = "realtek,rtl9300-leds";
+		active-low;
+
+		/*
+		 * 2,5G Ports LED0 (orange): 10M/100M/1G/LINK/ACT
+		 * 2,5G Ports LED1 (green): 2.5G/LINK/ACT
+		 */
+		led_set0 = <(RTL93XX_LED_SET_10M | RTL93XX_LED_SET_100M | RTL93XX_LED_SET_1G |
+			     RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)
+			    (RTL93XX_LED_SET_2P5G | RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)>;
+
+		/*
+		 * 10G Ports LED0 (orange): 10M/100M/1G/2.5G/5G/LINK/ACT
+		 * 10G Ports LED1 (green): 10G/LINK/ACT
+		 */
+		led_set1 = <(RTL93XX_LED_SET_10M | RTL93XX_LED_SET_100M | RTL93XX_LED_SET_1G |
+			     RTL93XX_LED_SET_2P5G | RTL93XX_LED_SET_5G |
+			     RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)
+			    (RTL93XX_LED_SET_10G | RTL93XX_LED_SET_LINK | RTL93XX_LED_SET_ACT)>;
+	};
+
+	sfp0: sfp-p15 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp0>;
+		maximum-power-milliwatt = <1500>;
+		mod-def0-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+		los-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+		#thermal-sensor-cells = <0>;
+	};
+
+	sfp1: sfp-p16 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp1>;
+		maximum-power-milliwatt = <1500>;
+		mod-def0-gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+		los-gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
+		#thermal-sensor-cells = <0>;
+
+	};
+	aliases {
+		label-mac-device = &ethernet0;
+	};
+};
+
+&i2c_mst1 {
+	status = "okay";
+	i2c_sfp0: i2c@0 {
+		reg = <0>;
+	};
+	i2c_sfp1: i2c@1 {
+		reg = <1>;
+	};
+};
+
+&spi0 {
+	status = "okay";
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x1c0000>;
+				read-only;
+			};
+			partition@1c0000 {
+				label = "u-boot-env";
+				reg = <0x1c0000 0x10000>;
+			};
+			partition@1d0000 {
+				label = "sysinfo";
+				reg = <0x1d0000 0x10000>;
+				read-only;
+			};
+			partition@1e0000 {
+				label = "factory";
+				reg = <0x1e0000 0x10000>;
+				read-only;
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+					factory_macaddr: macaddr@80 {
+						reg = <0x80 0x6>;
+					};
+				};
+			};
+			partition@1f0000 {
+				label = "sysdata";
+				reg = <0x1f0000 0x10000>;
+			};
+			partition@200000 {
+				label = "jffs2_filesystem";
+				reg = <0x200000 0xa00000>;
+			};
+			partition@c00000 {
+				compatible = "openwrt,uimage", "denx,uimage";
+				label = "firmware";
+				reg = <0xc00000 0x1400000>;
+				openwrt,ih-magic = <0x93000000>;
+				openwrt,offset = <0x10>;
+			};
+		};
+	};
+};
+
+&ethernet0 {
+	nvmem-cells = <&factory_macaddr>;
+	nvmem-cell-names = "mac-address";
+};
+
+&mdio_bus0 {
+	phy0: ethernet-phy@0 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <0>;
+	};
+	phy1: ethernet-phy@1 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <1>;
+	};
+	phy2: ethernet-phy@2 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <2>;
+	};
+	phy3: ethernet-phy@3 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <3>;
+	};
+};
+
+&mdio_bus1 {
+	phy8: ethernet-phy@8 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <8>;
+		realtek,smi-address = <0>;
+	};
+	phy9: ethernet-phy@9 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <9>;
+		realtek,smi-address = <1>;
+	};
+	phy10: ethernet-phy@10 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <10>;
+		realtek,smi-address = <2>;
+	};
+	phy11: ethernet-phy@11 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <11>;
+		realtek,smi-address = <3>;
+	};
+};
+
+&mdio_bus2 {
+	phy16: ethernet-phy@16 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <16>;
+		realtek,smi-address = <0>;
+	};
+	phy17: ethernet-phy@17 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <17>;
+		realtek,smi-address = <1>;
+	};
+	phy18: ethernet-phy@18 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <18>;
+		realtek,smi-address = <2>;
+	};
+	phy19: ethernet-phy@19 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <19>;
+		realtek,smi-address = <3>;
+	};
+};
+
+&mdio_bus3 {
+	phy24: ethernet-phy@24 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <24>;
+		realtek,smi-address = <0>;
+	};
+	phy25: ethernet-phy@25 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <25>;
+		realtek,smi-address = <1>;
+	};
+};
+
+&switch0 {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+			label = "lan2";
+			led-set = <0>;
+			pcs-handle = <&serdes2>;
+			phy-handle = <&phy0>;
+			phy-mode = "10g-qxgmii";
+		};
+		port@1 {
+			reg = <1>;
+			label = "lan1";
+			led-set = <0>;
+			pcs-handle = <&serdes2>;
+			phy-handle = <&phy1>;
+			phy-mode = "10g-qxgmii";
+		};
+		port@2 {
+			reg = <2>;
+			label = "lan4";
+			led-set = <0>;
+			pcs-handle = <&serdes2>;
+			phy-handle = <&phy2>;
+			phy-mode = "10g-qxgmii";
+		};
+		port@3 {
+			reg = <3>;
+			label = "lan3";
+			led-set = <0>;
+			pcs-handle = <&serdes2>;
+			phy-handle = <&phy3>;
+			phy-mode = "10g-qxgmii";
+		};
+
+		port@8 {
+			reg = <8>;
+			label = "lan6";
+			led-set = <0>;
+			pcs-handle = <&serdes3>;
+			phy-handle = <&phy8>;
+			phy-mode = "10g-qxgmii";
+		};
+		port@9 {
+			reg = <9>;
+			label = "lan5";
+			led-set = <0>;
+			pcs-handle = <&serdes3>;
+			phy-handle = <&phy9>;
+			phy-mode = "10g-qxgmii";
+		};
+		port@10 {
+			reg = <10>;
+			label = "lan8";
+			led-set = <0>;
+			pcs-handle = <&serdes3>;
+			phy-handle = <&phy10>;
+			phy-mode = "10g-qxgmii";
+		};
+		port@11 {
+			reg = <11>;
+			label = "lan7";
+			led-set = <0>;
+			pcs-handle = <&serdes3>;
+			phy-handle = <&phy11>;
+			phy-mode = "10g-qxgmii";
+		};
+
+		port@16 {
+			reg = <16>;
+			label = "lan10";
+			led-set = <0>;
+			pcs-handle = <&serdes4>;
+			phy-handle = <&phy16>;
+			phy-mode = "10g-qxgmii";
+		};
+		port@17 {
+			reg = <17>;
+			label = "lan9";
+			led-set = <0>;
+			pcs-handle = <&serdes4>;
+			phy-handle = <&phy17>;
+			phy-mode = "10g-qxgmii";
+		};
+		port@18 {
+			reg = <18>;
+			label = "lan12";
+			led-set = <0>;
+			pcs-handle = <&serdes4>;
+			phy-handle = <&phy18>;
+			phy-mode = "10g-qxgmii";
+		};
+		port@19 {
+			reg = <19>;
+			label = "lan11";
+			led-set = <0>;
+			pcs-handle = <&serdes4>;
+			phy-handle = <&phy19>;
+			phy-mode = "10g-qxgmii";
+		};
+
+		port@24 {
+			reg = <24>;
+			label = "lan13";
+			led-set = <1>;
+			pcs-handle = <&serdes6>;
+			phy-handle = <&phy24>;
+			phy-mode = "usxgmii";
+		};
+		port@25 {
+			reg = <25>;
+			label = "lan14";
+			led-set = <1>;
+			pcs-handle = <&serdes7>;
+			phy-handle = <&phy25>;
+			phy-mode = "usxgmii";
+		};
+
+		port@26 {
+			reg = <26>;
+			label = "lan15";
+			led-set = <1>;
+			pcs-handle = <&serdes8>;
+			phy-mode = "1000base-x";
+			sfp = <&sfp0>;
+			managed = "in-band-status";
+		};
+		port@27 {
+			reg = <27>;
+			label = "lan16";
+			led-set = <1>;
+			pcs-handle = <&serdes9>;
+			phy-mode = "1000base-x";
+			sfp = <&sfp1>;
+			managed = "in-band-status";
+		};
+
+		port@28 {
+			reg = <28>;
+			ethernet = <&ethernet0>;
+			phy-mode = "internal";
+			fixed-link {
+				speed = <10000>;
+				full-duplex;
+			};
+		};
+	};
+};
+
+&thermal_zones {
+	sfp-thermal {
+		polling-delay-passive = <10000>;
+		polling-delay = <10000>;
+		thermal-sensors = <&sfp0>, <&sfp1>;
+		trips {
+			sfp-crit {
+				temperature = <110000>;
+				hysteresis = <1000>;
+				type = "critical";
+			};
+		};
+	};
+};
