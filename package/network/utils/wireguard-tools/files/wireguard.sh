@@ -29,85 +29,6 @@ proto_wireguard_init_config() {
 	no_proto_task=1
 }
 
-proto_wireguard_setup_peer() {
-	local peer_config="$1"
-
-	local disabled
-	local public_key
-	local preshared_key
-	local allowed_ips
-	local route_allowed_ips
-	local endpoint_host
-	local endpoint_port
-	local persistent_keepalive
-
-	config_get_bool disabled "${peer_config}" "disabled" 0
-	config_get public_key "${peer_config}" "public_key"
-	config_get preshared_key "${peer_config}" "preshared_key"
-	config_get allowed_ips "${peer_config}" "allowed_ips"
-	config_get_bool route_allowed_ips "${peer_config}" "route_allowed_ips" 0
-	config_get endpoint_host "${peer_config}" "endpoint_host"
-	config_get endpoint_port "${peer_config}" "endpoint_port"
-	config_get persistent_keepalive "${peer_config}" "persistent_keepalive"
-
-	if [ "${disabled}" -eq 1 ]; then
-		# skip disabled peers
-		return 0
-	fi
-
-	if [ -z "$public_key" ]; then
-		echo "Skipping peer config $peer_config because public key is not defined."
-		return 0
-	fi
-
-	echo "[Peer]" >> "${wg_cfg}"
-	echo "PublicKey=${public_key}" >> "${wg_cfg}"
-	if [ "${preshared_key}" ]; then
-		echo "PresharedKey=${preshared_key}" >> "${wg_cfg}"
-	fi
-	for allowed_ip in $allowed_ips; do
-		echo "AllowedIPs=${allowed_ip}" >> "${wg_cfg}"
-	done
-	if [ "${endpoint_host}" ]; then
-		case "${endpoint_host}" in
-			*:*)
-				endpoint="[${endpoint_host}]"
-				;;
-			*)
-				endpoint="${endpoint_host}"
-				;;
-		esac
-		if [ "${endpoint_port}" ]; then
-			endpoint="${endpoint}:${endpoint_port}"
-		else
-			endpoint="${endpoint}:51820"
-		fi
-		echo "Endpoint=${endpoint}" >> "${wg_cfg}"
-	fi
-	if [ "${persistent_keepalive}" ]; then
-		echo "PersistentKeepalive=${persistent_keepalive}" >> "${wg_cfg}"
-	fi
-
-	if [ ${route_allowed_ips} -ne 0 ]; then
-		for allowed_ip in ${allowed_ips}; do
-			case "${allowed_ip}" in
-				*:*/*)
-					proto_add_ipv6_route "${allowed_ip%%/*}" "${allowed_ip##*/}"
-					;;
-				*.*/*)
-					proto_add_ipv4_route "${allowed_ip%%/*}" "${allowed_ip##*/}"
-					;;
-				*:*)
-					proto_add_ipv6_route "${allowed_ip%%/*}" "128"
-					;;
-				*.*)
-					proto_add_ipv4_route "${allowed_ip%%/*}" "32"
-					;;
-			esac
-		done
-	fi
-}
-
 ensure_key_is_generated() {
 	local private_key
 	private_key="$(uci get network."$1".private_key)"
@@ -121,13 +42,8 @@ ensure_key_is_generated() {
 
 proto_wireguard_setup() {
 	local config="$1"
-	local wg_dir="/tmp/wireguard"
-	local wg_cfg="${wg_dir}/${config}"
 
-	local private_key
-	local listen_port
-	local mtu
-
+	local private_key listen_port mtu fwmark addresses ip6prefix nohostroute tunlink
 	ensure_key_is_generated "${config}"
 
 	config_load network
@@ -149,25 +65,65 @@ proto_wireguard_setup() {
 
 	proto_init_update "${config}" 1
 
-	umask 077
-	mkdir -p "${wg_dir}"
-	echo "[Interface]" > "${wg_cfg}"
-	echo "PrivateKey=${private_key}" >> "${wg_cfg}"
-	if [ "${listen_port}" ]; then
-		echo "ListenPort=${listen_port}" >> "${wg_cfg}"
-	fi
-	if [ "${fwmark}" ]; then
-		echo "FwMark=${fwmark}" >> "${wg_cfg}"
-	fi
-	config_foreach proto_wireguard_setup_peer "wireguard_${config}"
+	# Build WireGuard configuration entirely in memory
+	local wg_config="[Interface]\n"
+	wg_config="${wg_config}PrivateKey=${private_key}\n"
+	[ -n "${listen_port}" ]	&& wg_config="${wg_config}ListenPort=${listen_port}\n"
+	[ -n "${fwmark}" ]		&& wg_config="${wg_config}FwMark=${fwmark}\n"
 
-	# apply configuration file
-	${WG} setconf ${config} "${wg_cfg}"
-	WG_RETURN=$?
+	# Collect peer configs into wg_config as well
+	local peer_config
+	peer_config=""
+	proto_wireguard_setup_peer_collect() {
+		local section="$1"
+		local peer_block
 
-	rm -f "${wg_cfg}"
+		config_get_bool route_allowed_ips "$section" "route_allowed_ips" 0
+		config_get_bool disabled "$section" "disabled" 0
+		[ "$disabled" = 1 ] && return;
+		config_get peer_key "$section" "public_key"
+		config_get peer_eph "$section" "endpoint_host"
+		config_get peer_port "$section" "endpoint_port" "51820"
+		config_get peer_a_ips "$section" "allowed_ips"
+		config_get peer_p_ka "$section" "persistent_keepalive"
+		config_get peer_psk "$section" "peer_psk"
+
+
+		[ "${peer_eph##*:}" != "$peer_eph" ] && peer_eph="[$peer_eph]"
+		peer_port=${peer_port:-51820}
+
+		peer_block="\n[Peer]\n"
+		[ -n "${peer_key}" ]	&& peer_block="${peer_block}PublicKey=${peer_key}\n"
+		[ -n "${peer_psk}" ]	&& peer_block="${peer_block}PresharedKey=${peer_psk}\n"
+		[ -n "${peer_eph}" ]	&& peer_block="${peer_block}Endpoint=${peer_eph}${peer_port:+:$peer_port}\n"
+		[ -n "${peer_a_ips}" ]	&& peer_block="${peer_block}AllowedIPs=${peer_a_ips/ /, }\n"
+		[ -n "${peer_p_ka}" ]	&& peer_block="${peer_block}PersistentKeepalive=${peer_p_ka}\n"
+
+		[ -n "$peer_key" ] && peer_config="$peer_config$peer_block\n"
+		if [ $route_allowed_ips -ne 0 ]; then
+			for allowed_ip in $peer_a_ips; do
+				case "${allowed_ip}" in
+					*:*/*) proto_add_ipv6_route "${allowed_ip%%/*}" "${allowed_ip##*/}" ;;
+					*.*/*) proto_add_ipv4_route "${allowed_ip%%/*}" "${allowed_ip##*/}" ;;
+					*:*) proto_add_ipv6_route "${allowed_ip%%/*}" "128" ;;
+					*.*) proto_add_ipv4_route "${allowed_ip%%/*}" "32" ;;
+				esac
+			done
+		fi
+
+	}
+
+	config_foreach proto_wireguard_setup_peer_collect "wireguard_${config}"
+
+	# Combine interface + peer config into one variable
+	wg_config="${wg_config}${peer_config}"
+
+	# Apply configuration directly using wg syncconf via stdin
+	printf "%b" "$wg_config" | ${WG} syncconf "${config}" /dev/stdin
+	local WG_RETURN=$?
 
 	if [ ${WG_RETURN} -ne 0 ]; then
+		echo "Could not sync WireGuard configuration"
 		sleep 5
 		proto_setup_failed "${config}"
 		exit 1
