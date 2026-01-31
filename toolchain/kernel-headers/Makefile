@@ -14,6 +14,21 @@ override HOST_QUILT:=
 
 include $(INCLUDE_DIR)/kernel.mk
 
+# GPG signature verification for kernel source (tarball case)
+# Upstream signs the uncompressed tarball, hence basename().
+ifneq ($(call qstrip,$(CONFIG_KERNEL_GIT_CLONE_URI)),)
+  # git clone case: no upstream .sign tarball, skip GPG sig wiring here
+else
+  LINUX_GPG_KEYS_DIR := $(TOPDIR)/target/linux/generic/keys
+  LINUX_SOURCE_SIG   := $(basename $(LINUX_SOURCE)).sign
+  LINUX_VALIDPGPKEYS := 647F28654894E3BD457199BE38DBBDC86092693E
+
+  # Map kernel GPG variables to package GPG variables for download.mk
+  PKG_SOURCE_SIG     := $(LINUX_SOURCE_SIG)
+  PKG_GPG_KEYS_DIR   := $(LINUX_GPG_KEYS_DIR)
+  PKG_VALIDPGPKEYS   := $(LINUX_VALIDPGPKEYS)
+endif
+
 PKG_NAME:=linux
 PKG_VERSION:=$(LINUX_VERSION)
 PKG_SOURCE:=$(LINUX_SOURCE)
