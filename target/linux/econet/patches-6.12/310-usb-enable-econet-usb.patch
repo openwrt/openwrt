@@ -1,13 +1,13 @@
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -392,6 +392,7 @@ config ECONET
+@@ -391,6 +391,7 @@ config MACH_DECSTATION
+ config ECONET
  	bool "EcoNet MIPS family"
  	select BOOT_RAW
- 	select CPU_BIG_ENDIAN
 +	select DMA_NONCOHERENT
  	select DEBUG_ZBOOT if DEBUG_KERNEL
  	select EARLY_PRINTK_8250
- 	select ECONET_EN751221_TIMER
+ 	select SERIAL_8250
 --- a/drivers/usb/host/Kconfig
 +++ b/drivers/usb/host/Kconfig
 @@ -71,7 +71,7 @@ config USB_XHCI_HISTB

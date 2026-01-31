@@ -138,6 +138,15 @@ main() {
         code_openwrt=30
         code_factory=31
         ;;
+    dasan,h660gm-a)
+        # bootflag stored in dzs partition at offset 0x49
+        part=$(part_named '"dzs"')
+        offset_blocks=0
+        block_size=$((1024 * 128))
+        code_offset=73
+        code_openwrt=0000
+        code_factory=0101
+        ;;
     *)
         echo "Unsupported machine: $machine"
         exit 1
