@@ -1,6 +1,7 @@
 #!/bin/sh
 # Copyright 2016-2017 Dan Luedtke <mail@danrl.com>
 # Licensed to the public under the Apache License 2.0.
+# shellcheck disable=SC2317
 
 WG=/usr/bin/wg
 if [ ! -x $WG ]; then
@@ -19,6 +20,8 @@ proto_wireguard_init_config() {
 	proto_config_add_int "listen_port"
 	proto_config_add_int "mtu"
 	proto_config_add_string "fwmark"
+	proto_config_add_string "addresses"
+
 	available=1
 	no_proto_task=1
 }
@@ -173,20 +176,13 @@ proto_wireguard_setup() {
 		exit 1
 	fi
 
+	# Assign addresses
 	for address in ${addresses}; do
 		case "${address}" in
-			*:*/*)
-				proto_add_ipv6_address "${address%%/*}" "${address##*/}"
-				;;
-			*.*/*)
-				proto_add_ipv4_address "${address%%/*}" "${address##*/}"
-				;;
-			*:*)
-				proto_add_ipv6_address "${address%%/*}" "128"
-				;;
-			*.*)
-				proto_add_ipv4_address "${address%%/*}" "32"
-				;;
+			*:*/*) proto_add_ipv6_address "${address%%/*}" "${address##*/}" ;;
+			*.*/*) proto_add_ipv4_address "${address%%/*}" "${address##*/}" ;;
+			*:*)   proto_add_ipv6_address "${address%%/*}" "128" ;;
+			*.*)   proto_add_ipv4_address "${address%%/*}" "32" ;;
 		esac
 	done
 
@@ -194,7 +190,7 @@ proto_wireguard_setup() {
 		proto_add_ipv6_prefix "$prefix"
 	done
 
-	# endpoint dependency
+	# Endpoint dependency tracking
 	if [ "${nohostroute}" != "1" ]; then
 		wg show "${config}" endpoints | \
 		sed -E 's/\[?([0-9.:a-f]+)\]?:([0-9]+)/\1 \2/' | \
