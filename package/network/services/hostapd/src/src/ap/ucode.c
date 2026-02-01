@@ -671,6 +671,9 @@ out:
 	if (conf->channel && !iface->freq)
 		iface->freq = hostapd_hw_get_freq(iface->bss[0], conf->channel);
 
+	for (i = 0; i < iface->num_bss; i++)
+		iface->bss[i]->conf->start_disabled = 0;
+
 	if (iface->state != HAPD_IFACE_ENABLED) {
 		hostapd_enable_iface(iface);
 		return ucv_boolean_new(true);
@@ -680,7 +683,6 @@ out:
 		struct hostapd_data *hapd = iface->bss[i];
 		int ret;
 
-		hapd->conf->start_disabled = 0;
 		hostapd_set_freq(hapd, conf->hw_mode, iface->freq,
 				 conf->channel,
 				 conf->enable_edmg,
