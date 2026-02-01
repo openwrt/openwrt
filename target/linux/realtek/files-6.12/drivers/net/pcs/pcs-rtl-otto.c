@@ -3020,17 +3020,17 @@ static void rtpcs_931x_sds_clear_symerr(struct rtpcs_serdes *sds,
 
 static int rtpcs_931x_sds_init_leq_dfe(struct rtpcs_serdes *sds)
 {
-	rtpcs_sds_write_bits(sds, 0x2e, 0xd, 6, 0, 0x0);
-	rtpcs_sds_write_bits(sds, 0x2e, 0xd, 7, 7, 0x1);
+	rtpcs_sds_write_bits(sds, 0x2e, 0xd, 6, 0, 0x0);	/* [6:2] LEQ gain */
+	rtpcs_sds_write_bits(sds, 0x2e, 0xd, 7, 7, 0x1);	/* LEQ manual 1=true,0=false */
 
-	rtpcs_sds_write_bits(sds, 0x2e, 0x1c, 5, 0, 0x1e);
-	rtpcs_sds_write_bits(sds, 0x2e, 0x1d, 11, 0, 0x0);
-	rtpcs_sds_write_bits(sds, 0x2e, 0x1f, 11, 0, 0x0);
-	rtpcs_sds_write_bits(sds, 0x2f, 0x0, 11, 0, 0x0);
-	rtpcs_sds_write_bits(sds, 0x2f, 0x1, 11, 0, 0x0);
+	rtpcs_sds_write_bits(sds, 0x2e, 0x1c, 5, 0, 0x1e);	/* TAP0 */
+	rtpcs_sds_write_bits(sds, 0x2e, 0x1d, 11, 0, 0x0);	/* TAP1 [11:6] ODD | [5:0] EVEN */
+	rtpcs_sds_write_bits(sds, 0x2e, 0x1f, 11, 0, 0x0);	/* TAP2 [11:6] ODD | [5:0] EVEN */
+	rtpcs_sds_write_bits(sds, 0x2f, 0x0, 11, 0, 0x0);	/* TAP3 [11:6] ODD | [5:0] EVEN */
+	rtpcs_sds_write_bits(sds, 0x2f, 0x1, 11, 0, 0x0);	/* TAP4 [11:6] ODD | [5:0] EVEN */
 
-	rtpcs_sds_write_bits(sds, 0x2e, 0xf, 12, 6, 0x7f);
-	rtpcs_sds_write(sds, 0x2f, 0x12, 0xaaa);
+	rtpcs_sds_write_bits(sds, 0x2e, 0xf, 12, 6, 0x7f);	/* set manual mode */
+	rtpcs_sds_write(sds, 0x2f, 0x12, 0xaaa);		/* [11:8] VTHN | [7:4] VTHP */
 
 	return 0;
 }
@@ -3178,12 +3178,12 @@ static void rtpcs_931x_sds_rx_reset(struct rtpcs_serdes *sds)
 		return;
 
 	rtpcs_sds_write(sds, 0x2e, 0x12, 0x2740);
-	rtpcs_sds_write(sds, 0x2f, 0x0, 0x0);
+	rtpcs_sds_write(sds, 0x2f, 0x0, 0x0);		/* [11:6] DFE_TAP3_ODD | [5:0] DFE_TAP3_EVEN */
 	rtpcs_sds_write(sds, 0x2f, 0x2, 0x2010);
 	rtpcs_sds_write(sds, 0x20, 0x0, 0xc10);
 
 	rtpcs_sds_write(sds, 0x2e, 0x12, 0x27c0);
-	rtpcs_sds_write(sds, 0x2f, 0x0, 0xc000);
+	rtpcs_sds_write(sds, 0x2f, 0x0, 0xc000);	/* [11:6] DFE_TAP3_ODD | [5:0] DFE_TAP3_EVEN */
 	rtpcs_sds_write(sds, 0x2f, 0x2, 0x6010);
 	rtpcs_sds_write(sds, 0x20, 0x0, 0xc30);
 
@@ -3403,9 +3403,9 @@ static int rtpcs_931x_sds_set_port_media(struct rtpcs_serdes *sds,
 
 	/* media none behavior */
 	rtpcs_sds_write(sds, 0x2e, 0x12, 0x2740);
-	rtpcs_sds_write(sds, 0x2f, 0x0, 0x0);
+	rtpcs_sds_write(sds, 0x2f, 0x0, 0x0);		/* [11:6] DFE_TAP3_ODD | [5:0] DFE_TAP3_EVEN */
 	rtpcs_sds_write(sds, 0x2f, 0x2, 0x2010);
-	rtpcs_sds_write(sds, 0x20, 0x0, 0xcd1);
+	rtpcs_sds_write(sds, 0x20, 0x0, 0xcd1);		/* from 930x: [7:6] POWER_DOWN OF ?? */
 	rtpcs_sds_write_bits(sds, 0x2e, 0xf, 5, 0, 0x4);
 
 	rtpcs_sds_write_bits(sds, 0x2a, 0x12, 7, 6, 0x1);
@@ -3416,7 +3416,7 @@ static int rtpcs_931x_sds_set_port_media(struct rtpcs_serdes *sds,
 		return 0;
 
 	rtpcs_sds_write(sds, 0x21, 0x19, 0xf0f0); /* from XS1930-10 SDK */
-	rtpcs_sds_write(even_sds, 0x2e, 0x8, 0x0294);
+	rtpcs_sds_write(even_sds, 0x2e, 0x8, 0x0294);	/* [10:7] impedance */
 
 	/* from _phy_rtl9310_sds_init, DMS1250 SDK */
 	rtpcs_sds_write_bits(sds, 0x2e, 0xe, 13, 11, 0x0);
@@ -3440,14 +3440,14 @@ static int rtpcs_931x_sds_set_port_media(struct rtpcs_serdes *sds,
 	case RTPCS_PORT_MEDIA_DAC_100CM:
 		rtpcs_sds_write_bits(sds, 0x2e, 0x1, 15, 0, 0x1340);
 		rtpcs_sds_write(sds, 0x21, 0x19, 0xf0a5); /* from XS1930-10 SDK */
-		rtpcs_sds_write(even_sds, 0x2e, 0x8, 0x02a0);
+		rtpcs_sds_write(even_sds, 0x2e, 0x8, 0x02a0); /* [10:7] impedance */
 		break;
 
 	case RTPCS_PORT_MEDIA_DAC_300CM:
 	case RTPCS_PORT_MEDIA_DAC_500CM:
 		rtpcs_sds_write_bits(sds, 0x2e, 0x1, 15, 0, 0x5200);
 		rtpcs_sds_write(sds, 0x21, 0x19, 0xf0a5); /* from XS1930-10 SDK */
-		rtpcs_sds_write(even_sds, 0x2e, 0x8, 0x02a0);
+		rtpcs_sds_write(even_sds, 0x2e, 0x8, 0x02a0); /* [10:7] impedance */
 		break;
 
 	case RTPCS_PORT_MEDIA_FIBER_10G:
@@ -3463,22 +3463,24 @@ static int rtpcs_931x_sds_set_port_media(struct rtpcs_serdes *sds,
 		break;
 	}
 
+	/* CFG_LINKDW_SEL? (same semantics as 930x) */
 	rtpcs_sds_write_bits(sds, 0x6, 0xd, 6, 6, is_dac ? 0x0 : 0x1);
 
 	if (is_10g) {
 		rtpcs_sds_write(sds, 0x2e, 0x12, 0x27c0);
-		rtpcs_sds_write(sds, 0x2f, 0x0, 0xc000);
+		rtpcs_sds_write(sds, 0x2f, 0x0, 0xc000);	/* [11:6] DFE_TAP3_ODD | [5:0] DFE_TAP3_EVEN */
 		rtpcs_sds_write(sds, 0x2f, 0x2, 0x6010);
 	}
 
 	/* FIXME: is this redundant with the writes below? */
-	rtpcs_sds_write(sds, 0x20, 0x0, 0xc30);
+	rtpcs_sds_write(sds, 0x20, 0x0, 0xc30);			/* from 930x: [7:6] POWER_DOWN OF ?? */
 	rtpcs_sds_write_bits(sds, 0x20, 0x0, 9, 0, 0x30);
 	rtpcs_sds_write_bits(sds, 0x2a, 0x12, 7, 6, 0x3);
 
 	rtpcs_sds_write_bits(sds, 0x20, 0x0, 11, 10, 0x1);
 	rtpcs_sds_write_bits(sds, 0x20, 0x0, 11, 10, 0x3);
 
+	/* clear pending SerDes RX idle interrupt flag */
 	regmap_write_bits(sds->ctrl->map, RTPCS_931X_ISR_SERDES_RXIDLE,
 			  BIT(sds->id - 2), BIT(sds->id - 2));
 
