@@ -56,24 +56,6 @@ gemini_check_redboot_parts() {
 	fi
 }
 
-gemini_do_redboot_upgrade() {
-	echo "Extract the three firmware parts from tarfile"
-	echo 3 > /proc/sys/vm/drop_caches
-	echo "COMMENCING UPGRADE. BE PATIENT, THIS IS NOT FAST!"
-	KFSZ=$(tar xfz "$1" zImage -O | wc -c)
-	echo "Upgrade Kern partition (kernel part 1, size ${KFSZ})"
-	tar xfz "$1" zImage -O | mtd write - Kern
-	[ $? -ne 0 ] && exit 1
-	RFSZ=$(tar xfz "$1" rd.gz -O | wc -c)
-	echo "Upgrade Ramdisk partition (kernel part 2, size ${RFSZ})"
-	tar xfz "$1" rd.gz -O | mtd write - Ramdisk
-	[ $? -ne 0 ] && exit 1
-	AFSZ=$(tar xfz "$1" hddapp.tgz -O | wc -c)
-	echo "Upgrade Application partition (rootfs, size ${AFSZ})"
-	tar xfz "$1" hddapp.tgz -O | mtd write - Application
-	[ $? -ne 0 ] && exit 1
-}
-
 # This converts the old RedBoot partitioning to the new shared
 # "firmware" partition.
 gemini_do_flat_redboot_upgrade() {
@@ -129,13 +111,12 @@ platform_do_upgrade() {
 		PART_NAME=firmware
 		default_do_upgrade "$1"
 		;;
-	raidsonic,ib-4220-b)
+	raidsonic,ib-4220-b|\
+	storlink,gemini324)
 		gemini_do_combined_upgrade "$1" 24 48 48
 		;;
-	itian,sq201|\
-	storlink,gemini324)
-		gemini_check_redboot_parts "$1" 16 48 48
-		gemini_do_redboot_upgrade "$1"
+	itian,sq201)
+		gemini_do_combined_upgrade "$1" 16 48 48
 		;;
 	esac
 }

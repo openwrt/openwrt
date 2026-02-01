@@ -99,30 +99,6 @@ define CreateStorlinkProlog
 	$(call Image/pad-to,$(1),512)
 endef
 
-define CreateStorlinkTarfile
-	mkdir -p $@.tmp
-
-	# "Application" partition is the rootfs
-	mv $@ $@.tmp/hddapp.tgz
-	$(STAGING_DIR_HOST)/bin/padjffs2 $(IMAGE_ROOTFS) -c 128 >>$@.tmp/hddapp.tgz
-	$(call CreateStorlinkProlog,$@.tmp/zImage,$(2))
-	# Copy first part of the kernel into zImage
-	dd if=$(IMAGE_KERNEL) of=$@.tmp/zImage bs=1 seek=512 count=$(3)
-	$(call Image/pad-to,$@.tmp/zImage,128k)
-	# Put the rest of the kernel into the "ramdisk"
-	dd if=$(IMAGE_KERNEL) of=$@.tmp/rd.gz bs=1 skip=$(3) count=6144k conv=sync
-	$(call Image/pad-to,$@.tmp/rd.gz,128k)
-	cp ./ImageInfo-$(1) $@.tmp/ImageInfo
-
-	sed -i -e "s/DATESTR/`date +%Y%m%d $(if $(SOURCE_DATE_EPOCH),--date "@$(SOURCE_DATE_EPOCH)")`/g" $@.tmp/ImageInfo
-
-	(cd $@.tmp; tar --sort=name --owner=0 --group=0 --numeric-owner -czf $@ * \
-		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)"))
-
-	rm -rf $@.tmp
-	exit 0
-endef
-
 define CreateStorlinkFactoryfile
 	mkdir -p $@.tmp
 	$(call CreateStorlinkProlog,$@.tmp/zImage,$(2))
@@ -162,10 +138,6 @@ define CreateStorlinkSysupgradefile
 endef
 
 # 2048k "Kern" partition
-define Build/storlink-2048k-default-image
-	$(call CreateStorlinkTarfile,$(1),2048k,2096640)
-endef
-
 define Build/storlink-2048k-factory-image
 	$(call CreateStorlinkFactoryfile,$(1),2048k,2096640)
 endef
@@ -256,15 +228,6 @@ define Device/storlink-reference
 	COMPILE/copy-kernel-$(1).bin := copy-kernel.bin
 	IMAGES := factory.bin sysupgrade.bin
 	FILESYSTEMS := squashfs
-	# Flash layout:
-	# Kern         512 bytes copy-kernel
-        #              2096640 bytes zImage
-	# Ramdisk      6144k remaining zImage
-	# Application  6144k
-	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to 128k | \
-		storlink-2048k-default-image $(1)
-	IMAGE/sysupgrade.bin := append-rootfs | pad-rootfs | pad-to 128k | \
-		storlink-2048k-default-image $(1) | append-metadata
 	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES)
 endef
 
@@ -300,6 +263,9 @@ define Device/storlink_sl93512r
 	DEVICE_VENDOR := StorLink
 	DEVICE_MODEL := SL93512r
 	DEVICE_DTS := gemini-sl93512r
+	IMAGE/factory.bin := storlink-3072k-factory-image $(1)
+	IMAGE/sysupgrade.bin := storlink-3072k-sysupgrade-image $(1) |\
+			append-metadata
 	DEVICE_PACKAGES += kmod-dsa-vsc73xx-spi
 endef
 TARGET_DEVICES += storlink_sl93512r
