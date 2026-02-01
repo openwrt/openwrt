@@ -26,6 +26,20 @@ platform_do_upgrade() {
 	qcom,ipq8064-ap161)
 		nand_do_upgrade "$1"
 		;;
+	aruba,ap-325)
+		# The bootloader on this device unfortunately enforces a particular set of UBI volumes,
+		# and will mess with the partitioning if it doesn't find it.
+		# Therefore, we have to make do with the stock layout, which is a set of three
+		# MTD partitions, each containing a single UBI volume with the same name.
+		CI_KERNPART="aos0"
+		CI_ROOTPART="aos1"
+		CI_DATAPART="ubifs"
+		CI_KERN_UBIPART="aos0"
+		CI_ROOT_UBIPART="aos1"
+		CI_DATA_UBIPART="ubifs"
+		CI_SKIP_KERNEL_MTD=1
+		nand_do_upgrade "$1"
+		;;
 	asrock,g10)
 		asrock_upgrade_prepare
 		nand_do_upgrade "$1"
