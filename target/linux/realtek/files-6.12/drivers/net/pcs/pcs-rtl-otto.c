@@ -207,7 +207,7 @@ struct rtpcs_config {
 	const struct rtpcs_serdes_ops *sds_ops;
 	int (*init_serdes_common)(struct rtpcs_ctrl *ctrl);
 	int (*set_autoneg)(struct rtpcs_serdes *sds, unsigned int neg_mode);
-	int (*setup_serdes)(struct rtpcs_serdes *sds, phy_interface_t mode);
+	int (*setup_serdes)(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode);
 };
 
 struct rtpcs_sds_config {
@@ -688,14 +688,9 @@ static int rtpcs_838x_init_serdes_common(struct rtpcs_ctrl *ctrl)
 }
 
 static int rtpcs_838x_setup_serdes(struct rtpcs_serdes *sds,
-				   phy_interface_t mode)
+				   enum rtpcs_sds_mode hw_mode)
 {
-	enum rtpcs_sds_mode hw_mode;
 	int ret;
-
-	ret = rtpcs_sds_determine_hw_mode(sds, mode, &hw_mode);
-	if (ret < 0)
-		return -ENOTSUPP;
 
 	if (!rtpcs_838x_sds_is_hw_mode_supported(sds, hw_mode))
 		return -ENOTSUPP;
@@ -927,9 +922,8 @@ static int rtpcs_839x_init_serdes_common(struct rtpcs_ctrl *ctrl)
 }
 
 static int rtpcs_839x_setup_serdes(struct rtpcs_serdes *sds,
-				   phy_interface_t if_mode)
+				   enum rtpcs_sds_mode hw_mode)
 {
-	enum rtpcs_sds_mode hw_mode;
 	int ret;
 
 	/* Don't touch 5G SerDes, they are already properly configured
@@ -938,10 +932,6 @@ static int rtpcs_839x_setup_serdes(struct rtpcs_serdes *sds,
 	 */
 	if (sds->id != 8 && sds->id != 9 && sds->id != 12 && sds->id != 13)
 		return 0;
-
-	ret = rtpcs_sds_determine_hw_mode(sds, if_mode, &hw_mode);
-	if (ret < 0)
-		return ret;
 
 	ret = rtpcs_839x_sds_set_mode(sds, hw_mode);
 	if (ret < 0)
@@ -2730,14 +2720,9 @@ static int rtpcs_930x_sds_cmu_band_get(struct rtpcs_serdes *sds)
 }
 
 static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
-				   phy_interface_t if_mode)
+				   enum rtpcs_sds_mode hw_mode)
 {
-	enum rtpcs_sds_mode hw_mode;
 	int calib_tries = 0, ret;
-
-	ret = rtpcs_sds_determine_hw_mode(sds, if_mode, &hw_mode);
-	if (ret < 0)
-		return -ENOTSUPP;
 
 	/* Rely on setup from U-boot for some modes, e.g. USXGMII */
 	switch (hw_mode) {
@@ -3507,7 +3492,7 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 }
 
 static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
-				   phy_interface_t mode)
+				   enum rtpcs_sds_mode hw_mode)
 {
 	u32 board_sds_tx_type1[] = {
 		0x01c3, 0x01c3, 0x01c3, 0x01a3, 0x01a3, 0x01a3,
@@ -3523,17 +3508,9 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 	};
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
 	struct rtpcs_ctrl *ctrl = sds->ctrl;
-	enum rtpcs_sds_mode hw_mode;
 	u32 band, model_info, val;
 	u32 sds_id = sds->id;
 	int ret, chiptype = 0;
-
-	ret = rtpcs_sds_determine_hw_mode(sds, mode, &hw_mode);
-	if (ret < 0) {
-		dev_err(ctrl->dev, "SerDes %u doesn't support %s mode\n", sds_id,
-			phy_modes(mode));
-		return -ENOTSUPP;
-	}
 
 	/*
 	 * TODO: USXGMII is currently the swiss army knife to declare 10G
@@ -3550,7 +3527,6 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 	    hw_mode == RTPCS_SDS_MODE_XSGMII)
 		return 0;
 
-	pr_info("%s: set sds %d to mode %d\n", __func__, sds_id, mode);
 	val = rtpcs_sds_read_bits(sds, 0x1F, 0x9, 11, 6);
 
 	pr_info("%s: fibermode %08X stored mode 0x%x", __func__,
@@ -3714,28 +3690,40 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 {
 	struct rtpcs_link *link = rtpcs_phylink_pcs_to_link(pcs);
 	struct rtpcs_ctrl *ctrl = link->ctrl;
-	int ret = 0;
+	struct rtpcs_serdes *sds = link->sds;
+	enum rtpcs_sds_mode hw_mode;
+	int ret;
 
-	dev_info(ctrl->dev, "configure SerDes %u for mode %s\n", link->sds->id,
-		 phy_modes(interface));
+	ret = rtpcs_sds_determine_hw_mode(sds, interface, &hw_mode);
+	if (ret < 0) {
+		dev_err(ctrl->dev, "SerDes %u doesn't support %s mode\n", sds->id,
+			phy_modes(interface));
+		return -ENOTSUPP;
+	}
 
 	mutex_lock(&ctrl->lock);
 
-	if (ctrl->cfg->setup_serdes) {
-		ret = ctrl->cfg->setup_serdes(link->sds, interface);
+	if (sds->hw_mode != hw_mode) {
+		dev_info(ctrl->dev, "configure SerDes %u for mode %s\n", sds->id,
+			 phy_modes(interface));
+
+		ret = ctrl->cfg->setup_serdes(sds, hw_mode);
 		if (ret < 0)
 			goto out;
+	} else {
+		dev_dbg(ctrl->dev, "SerDes %u already in mode %s, no change\n",
+			 sds->id, phy_modes(interface));
 	}
 
 	if (ctrl->cfg->set_autoneg) {
-		ret = ctrl->cfg->set_autoneg(link->sds, neg_mode);
+		ret = ctrl->cfg->set_autoneg(sds, neg_mode);
 		if (ret < 0)
 			goto out;
 	}
 
+	ret = 0;
 out:
 	mutex_unlock(&ctrl->lock);
-
 	return ret;
 }
 
