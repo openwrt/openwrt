@@ -94,7 +94,8 @@ platform_check_image() {
 	dlink,dir-685|\
 	itian,sq201|\
 	storlink,gemini324|\
-	raidsonic,ib-4220-b)
+	raidsonic,ib-4220-b|\
+	verbatim,s08v1901-d1)
 		return 0
 		;;
 	esac
@@ -112,7 +113,8 @@ platform_do_upgrade() {
 		default_do_upgrade "$1"
 		;;
 	raidsonic,ib-4220-b|\
-	storlink,gemini324)
+	storlink,gemini324|\
+	verbatim,s08v1901-d1)
 		gemini_do_combined_upgrade "$1" 24 48 48
 		;;
 	itian,sq201)
