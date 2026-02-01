@@ -2,7 +2,7 @@ From: Christian Lamparter <chunkeey@googlemail.com>
 Subject: SoC: add qualcomm syscon
 --- a/drivers/soc/qcom/Kconfig
 +++ b/drivers/soc/qcom/Kconfig
-@@ -295,4 +295,11 @@ config QCOM_PBS
+@@ -295,6 +295,13 @@ config QCOM_PBS
  	  This module provides the APIs to the client drivers that wants to send the
  	  PBS trigger event to the PBS RAM.
  
@@ -14,13 +14,16 @@ Subject: SoC: add qualcomm syscon
 +	  functions for various peripherals.
 +
  endmenu
+ 
+ config QCOM_UBWC_CONFIG
 --- a/drivers/soc/qcom/Makefile
 +++ b/drivers/soc/qcom/Makefile
-@@ -39,3 +39,4 @@ obj-$(CONFIG_QCOM_ICC_BWMON)	+= icc-bwmo
+@@ -39,4 +39,5 @@ obj-$(CONFIG_QCOM_ICC_BWMON)	+= icc-bwmo
  qcom_ice-objs			+= ice.o
  obj-$(CONFIG_QCOM_INLINE_CRYPTO_ENGINE)	+= qcom_ice.o
  obj-$(CONFIG_QCOM_PBS) +=	qcom-pbs.o
 +obj-$(CONFIG_QCOM_TCSR)		+= qcom_tcsr.o
+ obj-$(CONFIG_QCOM_UBWC_CONFIG) += ubwc_config.o
 --- /dev/null
 +++ b/drivers/soc/qcom/qcom_tcsr.c
 @@ -0,0 +1,94 @@
