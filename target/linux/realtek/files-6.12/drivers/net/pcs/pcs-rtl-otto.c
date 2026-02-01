@@ -67,8 +67,8 @@
 
 #define RTPCS_93XX_MAC_LINK_SPD_BITS		4
 
-#define RTL93XX_MODEL_NAME_INFO			(0x0004)
-#define RTL93XX_CHIP_INFO			(0x0008)
+#define RTPCS_93XX_MODEL_NAME_INFO		(0x0004)
+#define RTPCS_93XX_CHIP_INFO			(0x0008)
 
 #define PHY_PAGE_2	2
 #define PHY_PAGE_4	4
@@ -152,6 +152,11 @@ enum rtpcs_sds_pll_type {
 	RTPCS_SDS_PLL_END,
 };
 
+enum rtpcs_chip_version {
+	RTPCS_CHIP_V1 = 0,
+	RTPCS_CHIP_V2,
+};
+
 struct rtpcs_ctrl;
 struct rtpcs_serdes;
 
@@ -188,6 +193,9 @@ struct rtpcs_ctrl {
 	struct rtpcs_serdes serdes[RTPCS_SDS_CNT];
 	struct rtpcs_link *link[RTPCS_PORT_CNT];
 	struct mutex lock;
+
+	/* meaning and source may be family-specific */
+	enum rtpcs_chip_version chip_version;
 };
 
 struct rtpcs_link {
@@ -1000,6 +1008,30 @@ static int rtpcs_93xx_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int neg
 static void rtpcs_93xx_sds_restart_autoneg(struct rtpcs_serdes *sds)
 {
 	rtpcs_sds_modify(sds, 0x2, MII_BMCR, BMCR_ANRESTART, BMCR_ANRESTART);
+}
+
+static int rtpcs_93xx_init_serdes_common(struct rtpcs_ctrl *ctrl)
+{
+	u32 model_info = 0;
+	int rl_vid, val;
+
+	regmap_read(ctrl->map, RTPCS_93XX_MODEL_NAME_INFO, &model_info);
+	if (model_info & BIT(4))
+		dev_warn(ctrl->dev, "ES chip variants may not work properly!\n");
+
+	val = 0xa0000; /* CHIP_INFO_EN */
+	regmap_write(ctrl->map, RTPCS_93XX_CHIP_INFO, val);
+	regmap_read(ctrl->map, RTPCS_93XX_CHIP_INFO, &val);
+	rl_vid = FIELD_GET(GENMASK(31, 28), val);
+
+	if (rl_vid & BIT(0))
+		ctrl->chip_version = RTPCS_CHIP_V2;
+
+	val = 0;
+	regmap_write(ctrl->map, RTPCS_93XX_CHIP_INFO, val);
+
+	dev_dbg(ctrl->dev, "chip_version %u\n", ctrl->chip_version + 1);
+	return 0;
 }
 
 /* RTL930X */
@@ -3544,8 +3576,8 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 	};
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
 	struct rtpcs_ctrl *ctrl = sds->ctrl;
-	u32 band, model_info, val;
 	u32 sds_id = sds->id;
+	u32 band, val;
 	int ret;
 
 	/*
@@ -3577,11 +3609,6 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 	pr_info("%s CMU page 0x28 0x7 %08x\n", __func__, rtpcs_sds_read(sds, 0x28, 0x7));
 	pr_info("%s XSG page 0x0 0xe %08x\n", __func__, rtpcs_sds_read(sds, 0x40, 0xe));
 	pr_info("%s XSG2 page 0x0 0xe %08x\n", __func__, rtpcs_sds_read(sds, 0x80, 0xe));
-
-	regmap_read(ctrl->map, RTL93XX_MODEL_NAME_INFO, &model_info);
-	if ((model_info >> 4) & 0x1)
-		dev_warn(ctrl->dev, "ES chip variants may not work properly!\n");
-
 	pr_info("%s: 2.5gbit %08X", __func__, rtpcs_sds_read(sds, 0x41, 0x14));
 
 	rtpcs_931x_sds_power(sds, false);
@@ -3614,17 +3641,11 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 	rtpcs_931x_sds_config_cmu(sds, hw_mode);
 
 	if (sds_id >= 2) {
-		val = 0xa0000;
-		regmap_write(ctrl->map, RTL93XX_CHIP_INFO, val);
-		regmap_read(ctrl->map, RTL93XX_CHIP_INFO, &val);
-
-		if (val & BIT(28)) /* consider 9311 etc. RTL9313_CHIP_ID == HWP_CHIP_ID(unit)) */
+		if (ctrl->chip_version == RTPCS_CHIP_V2)
+			/* consider 9311 etc. RTL9313_CHIP_ID == HWP_CHIP_ID(unit)) */
 			rtpcs_sds_write(sds, 0x2E, 0x1, board_sds_tx2[sds_id - 2]);
 		else
 			rtpcs_sds_write(sds, 0x2E, 0x1, board_sds_tx[sds_id - 2]);
-
-		val = 0;
-		regmap_write(ctrl->map, RTL93XX_CHIP_INFO, val);
 	}
 
 	rtpcs_931x_sds_set_polarity(sds, sds->tx_pol_inv, sds->rx_pol_inv);
@@ -4011,6 +4032,7 @@ static const struct rtpcs_config rtpcs_930x_cfg = {
 	.serdes_count		= RTPCS_930X_SERDES_CNT,
 	.pcs_ops		= &rtpcs_930x_pcs_ops,
 	.sds_ops		= &rtpcs_930x_sds_ops,
+	.init_serdes_common	= rtpcs_93xx_init_serdes_common,
 	.setup_serdes		= rtpcs_930x_setup_serdes,
 };
 
@@ -4039,6 +4061,7 @@ static const struct rtpcs_config rtpcs_931x_cfg = {
 	.serdes_count		= RTPCS_931X_SERDES_CNT,
 	.pcs_ops		= &rtpcs_931x_pcs_ops,
 	.sds_ops		= &rtpcs_931x_sds_ops,
+	.init_serdes_common	= rtpcs_93xx_init_serdes_common,
 	.setup_serdes		= rtpcs_931x_setup_serdes,
 };
 
