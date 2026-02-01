@@ -1,15 +1,18 @@
 #!/bin/sh
-rm -rf /var/run/config.check
-mkdir -p /var/run/config.check
-for config in /etc/config/*; do
-	file=${config##*/}
-	uci show "${file##*/}" > /var/run/config.check/$file
+EXE=/usr/bin/md5sum
+FILE=/var/run/config.md5
+
+cd /etc/config && DIR=$(mktemp -d) && [ -d "$DIR" ] || return 1
+for conf in *; do
+	uci show "$conf" > "$DIR/$conf"
 done
-MD5FILE=/var/run/config.md5
-[ -f $MD5FILE ] && {
-	for c in $(md5sum -c $MD5FILE 2>/dev/null| grep FAILED | cut -d: -f1); do
-		ubus call service event "{ \"type\": \"config.change\", \"data\": { \"package\": \"$(basename $c)\" }}"
+cd "$DIR"
+[ -f $FILE ] && {
+	$EXE -c $FILE | awk -F: '/FAILED$/{print $1}' | while read conf; do
+		ubus call service event \
+			"{'type':'config.change','data':{'package':'$conf'}}"
 	done
 }
-md5sum /var/run/config.check/* > $MD5FILE
-rm -rf /var/run/config.check
+$EXE * > $FILE
+cd "$OLDPWD"
+rm -rf "$DIR"
