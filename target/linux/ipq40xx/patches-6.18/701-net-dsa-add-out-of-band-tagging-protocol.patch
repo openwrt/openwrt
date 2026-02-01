@@ -64,7 +64,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
  
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -19038,6 +19038,7 @@ L:	netdev@vger.kernel.org
+@@ -21140,6 +21140,7 @@ L:	netdev@vger.kernel.org
  S:	Maintained
  F:	Documentation/devicetree/bindings/net/qcom,ipq4019-ess-edma.yaml
  F:	drivers/net/ethernet/qualcomm/ipqess/
@@ -93,9 +93,9 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
 +#endif
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
-@@ -4806,6 +4806,9 @@ enum skb_ext_id {
- #if IS_ENABLED(CONFIG_MCTP_FLOWS)
- 	SKB_EXT_MCTP,
+@@ -4908,6 +4908,9 @@ enum skb_ext_id {
+ #if IS_ENABLED(CONFIG_INET_PSP)
+ 	SKB_EXT_PSP,
  #endif
 +#if IS_ENABLED(CONFIG_NET_DSA_TAG_OOB)
 +	SKB_EXT_DSA_OOB,
@@ -123,9 +123,9 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
  struct dsa_switch;
 --- a/net/core/skbuff.c
 +++ b/net/core/skbuff.c
-@@ -65,8 +65,12 @@
- #include <linux/kcov.h>
+@@ -66,8 +66,12 @@
  #include <linux/iov_iter.h>
+ #include <linux/crc32.h>
  #include <linux/if.h>
 +#ifdef CONFIG_NET_DSA_TAG_OOB
 +#include <linux/dsa/oob.h>
@@ -136,9 +136,9 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
  #include <net/dst.h>
  #include <net/sock.h>
  #include <net/checksum.h>
-@@ -5070,6 +5074,9 @@ static const u8 skb_ext_type_len[] = {
- #if IS_ENABLED(CONFIG_MCTP_FLOWS)
- 	[SKB_EXT_MCTP] = SKB_EXT_CHUNKSIZEOF(struct mctp_flow),
+@@ -5085,6 +5089,9 @@ static const u8 skb_ext_type_len[] = {
+ #if IS_ENABLED(CONFIG_INET_PSP)
+ 	[SKB_EXT_PSP] = SKB_EXT_CHUNKSIZEOF(struct psp_skb_ext),
  #endif
 +#if IS_ENABLED(CONFIG_NET_DSA_TAG_OOB)
 +	[SKB_EXT_DSA_OOB] = SKB_EXT_CHUNKSIZEOF(struct dsa_oob_tag_info),

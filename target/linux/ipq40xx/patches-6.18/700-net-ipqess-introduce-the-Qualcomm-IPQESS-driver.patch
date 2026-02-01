@@ -32,7 +32,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
 
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -19032,6 +19032,13 @@ L:	netdev@vger.kernel.org
+@@ -21134,6 +21134,13 @@ L:	netdev@vger.kernel.org
  S:	Maintained
  F:	drivers/net/ethernet/qualcomm/emac/
  
@@ -48,9 +48,9 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
  L:	netdev@vger.kernel.org
 --- a/drivers/net/ethernet/qualcomm/Kconfig
 +++ b/drivers/net/ethernet/qualcomm/Kconfig
-@@ -61,6 +61,17 @@ config QCOM_EMAC
- 	  low power, Receive-Side Scaling (RSS), and IEEE 1588-2008
- 	  Precision Clock Synchronization Protocol.
+@@ -75,6 +75,17 @@ config QCOM_PPE
+ 	  To compile this driver as a module, choose M here. The module
+ 	  will be called qcom-ppe.
  
 +config QCOM_IPQ4019_ESS_EDMA
 +	tristate "Qualcomm Atheros IPQ4019 ESS EDMA support"
@@ -68,12 +68,13 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
  endif # NET_VENDOR_QUALCOMM
 --- a/drivers/net/ethernet/qualcomm/Makefile
 +++ b/drivers/net/ethernet/qualcomm/Makefile
-@@ -11,4 +11,6 @@ qcauart-objs := qca_uart.o
+@@ -11,5 +11,7 @@ qcauart-objs := qca_uart.o
  
  obj-y += emac/
  
 +obj-$(CONFIG_QCOM_IPQ4019_ESS_EDMA) += ipqess/
 +
+ obj-$(CONFIG_QCOM_PPE) += ppe/
  obj-$(CONFIG_RMNET) += rmnet/
 --- /dev/null
 +++ b/drivers/net/ethernet/qualcomm/ipqess/Makefile
@@ -1326,7 +1327,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
 +		.of_match_table = ipqess_of_mtable,
 +	},
 +	.probe    = ipqess_axi_probe,
-+	.remove_new   = ipqess_axi_remove,
++	.remove   = ipqess_axi_remove,
 +};
 +
 +module_platform_driver(ipqess_axi_driver);
