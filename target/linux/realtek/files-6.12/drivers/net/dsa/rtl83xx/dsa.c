@@ -428,7 +428,7 @@ static enum dsa_tag_protocol rtldsa_get_tag_protocol(struct dsa_switch *ds,
 	/* The switch does not tag the frames, instead internally the header
 	 * structure for each packet is tagged accordingly.
 	 */
-	return DSA_TAG_PROTO_TRAILER;
+	return DSA_TAG_PROTO_RTL_OTTO;
 }
 
 static void rtldsa_vlan_set_pvid(struct rtl838x_switch_priv *priv,
