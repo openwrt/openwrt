@@ -662,7 +662,7 @@ static int rtmdio_838x_reset(struct mii_bus *bus)
 	int combo_phy;
 
 	/* Disable MAC polling for PHY config. It will be activated later in the DSA driver */
-	sw_w32(0, RTMDIO_838X_SMI_POLL_CTRL);
+	regmap_write(ctrl->map, RTMDIO_838X_SMI_POLL_CTRL, 0);
 
 	/*
 	 * Control bits EX_PHY_MAN_xxx have an important effect on the detection of the media
@@ -671,22 +671,24 @@ static int rtmdio_838x_reset(struct mii_bus *bus)
 	 * PHY driven, it must be a combo PHY and media detection is needed.
 	 */
 	combo_phy = ctrl->smi_bus[24] < 0 ? 0 : BIT(7);
-	sw_w32_mask(BIT(7), combo_phy, RTMDIO_838X_SMI_GLB_CTRL);
+	regmap_update_bits(ctrl->map, RTMDIO_838X_SMI_GLB_CTRL, BIT(7), combo_phy);
 
 	return 0;
 }
 
 static int rtmdio_839x_reset(struct mii_bus *bus)
 {
+	struct rtmdio_ctrl *ctrl = bus->priv;
+
 	return 0;
 
 	pr_debug("%s called\n", __func__);
 	/* BUG: The following does not work, but should! */
 	/* Disable MAC polling the PHY so that we can start configuration */
-	sw_w32(0x00000000, RTMDIO_839X_SMI_PORT_POLLING_CTRL);
-	sw_w32(0x00000000, RTMDIO_839X_SMI_PORT_POLLING_CTRL + 4);
+	regmap_write(ctrl->map, RTMDIO_839X_SMI_PORT_POLLING_CTRL, 0);
+	regmap_write(ctrl->map, RTMDIO_839X_SMI_PORT_POLLING_CTRL + 4, 0);
 	/* Disable PHY polling via SoC */
-	sw_w32_mask(1 << 7, 0, RTMDIO_839X_SMI_GLB_CTRL);
+	regmap_update_bits(ctrl->map, RTMDIO_839X_SMI_GLB_CTRL, BIT(7), 0);
 
 	/* Probably should reset all PHYs here... */
 	return 0;
