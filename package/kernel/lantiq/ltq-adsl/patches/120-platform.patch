@@ -1,15 +1,16 @@
 --- a/src/common/drv_dsl_cpe_os_linux.c
 +++ b/src/common/drv_dsl_cpe_os_linux.c
-@@ -11,7 +11,7 @@
+@@ -11,7 +11,8 @@
  #ifdef __LINUX__
  
  #define DSL_INTERN
 -#include <linux/device.h>
-+#include <linux/of_platform.h>
++#include <linux/mod_devicetable.h>
++#include <linux/platform_device.h>
  
  #include "drv_dsl_cpe_api.h"
  #include "drv_dsl_cpe_api_ioctl.h"
-@@ -1070,7 +1070,7 @@ static void DSL_DRV_DebugInit(void)
+@@ -1070,7 +1071,7 @@ static void DSL_DRV_DebugInit(void)
  #endif
  
  /* Entry point of driver */
@@ -18,7 +19,7 @@
  {
     struct class *dsl_class;
     DSL_int_t i;
-@@ -1128,7 +1128,7 @@ int __init DSL_ModuleInit(void)
+@@ -1128,7 +1129,7 @@ int __init DSL_ModuleInit(void)
     return 0;
  }
  
@@ -27,7 +28,7 @@
  {
     printk("Module will be unloaded"DSL_DRV_CRLF);
  
-@@ -1142,8 +1142,6 @@ void __exit DSL_ModuleCleanup(void)
+@@ -1142,8 +1143,6 @@ void __exit DSL_ModuleCleanup(void)
                 DSL_FPGA_BND_REGS_SZ_BYTE,
                 (DSL_uint8_t**)&g_BndFpgaBase);
  #endif /* defined(INCLUDE_DSL_CPE_API_VINAX) && defined(INCLUDE_DSL_BONDING)*/
@@ -36,7 +37,7 @@
  }
  
  #ifndef _lint
-@@ -1159,8 +1157,29 @@ module_param(debug_level, byte, 0);
+@@ -1159,8 +1158,29 @@ module_param(debug_level, byte, 0);
  MODULE_PARM_DESC(debug_level, "set to get more (1) or fewer (4) debug outputs");
  #endif /* #ifndef DSL_DEBUG_DISABLE*/
  

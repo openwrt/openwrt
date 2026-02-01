@@ -3,7 +3,7 @@
 #include <linux/fwnode.h>
 #include <linux/fwnode_mdio.h>
 #include <linux/mfd/syscon.h>
-#include <linux/of.h>
+#include <linux/mod_devicetable.h>
 #include <linux/phy.h>
 #include <linux/platform_device.h>
 #include <linux/regmap.h>
@@ -823,7 +823,7 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 	for (int addr = 0; addr < ctrl->cfg->cpu_port; addr++) {
 		unsigned int mask, val;
 		int smi = ctrl->smi_bus[addr];
-		
+
 		if (smi < 0)
 			continue;
 
@@ -927,7 +927,7 @@ static int rtmdio_probe(struct platform_device *pdev)
 		of_property_read_u32(dn->parent, "reg", &ctrl->smi_bus[addr]);
 		if (of_property_read_u32(dn, "realtek,smi-address", &ctrl->smi_addr[addr]))
 			ctrl->smi_addr[addr] = addr;
-		
+
 		if (ctrl->smi_bus[addr] >= RTMDIO_MAX_SMI_BUS) {
 			pr_err("%s: illegal SMI bus number %d\n", __func__, ctrl->smi_bus[addr]);
 			return -ENODEV;
