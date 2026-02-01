@@ -708,19 +708,19 @@ static int rtmdio_930x_reset(struct mii_bus *bus)
 		reg = (addr / 6) * 4;
 		mask = 0x1f << ((addr % 6) * 5);
 		val = ctrl->smi_addr[addr] << (ffs(mask) - 1);
-		sw_w32_mask(mask, val, RTMDIO_930X_SMI_PORT0_5_ADDR + reg);
+		regmap_update_bits(ctrl->map, RTMDIO_930X_SMI_PORT0_5_ADDR + reg, mask, val);
 
 		reg = (addr / 16) * 4;
 		mask = 0x3 << ((addr % 16) * 2);
 		val = ctrl->smi_bus[addr] << (ffs(mask) - 1);
-		sw_w32_mask(mask, val, RTMDIO_930X_SMI_PORT0_15_POLLING_SEL + reg);
+		regmap_update_bits(ctrl->map, RTMDIO_930X_SMI_PORT0_15_POLLING_SEL + reg, mask, val);
 	}
 
 	/* Define c22/c45 bus polling */
 	for (int addr = 0; addr < RTMDIO_MAX_SMI_BUS; addr++) {
 		mask = BIT(16 + addr);
 		val = ctrl->smi_bus_isc45[addr] ? mask : 0;
-		sw_w32_mask(mask, val, RTMDIO_930X_SMI_GLB_CTRL);
+		regmap_update_bits(ctrl->map, RTMDIO_930X_SMI_GLB_CTRL, mask, val);
 	}
 
 	/* Define PHY specific polling parameters */
@@ -738,23 +738,23 @@ static int rtmdio_930x_reset(struct mii_bus *bus)
 		/* port MAC type */
 		mask = addr > 23 ? 0x7 << ((addr - 24) * 3 + 12): 0x3 << ((addr / 4) * 2);
 		val = phyinfo.mac_type << (ffs(mask) - 1);
-		sw_w32_mask(mask, val, RTMDIO_930X_SMI_MAC_TYPE_CTRL);
+		regmap_update_bits(ctrl->map, RTMDIO_930X_SMI_MAC_TYPE_CTRL, mask, val);
 
 		/* polling via standard or resolution register */
 		mask = BIT(20 + ctrl->smi_bus[addr]);
 		val = phyinfo.has_res_reg ? mask : 0;
-		sw_w32_mask(mask, val, RTMDIO_930X_SMI_GLB_CTRL);
+		regmap_update_bits(ctrl->map, RTMDIO_930X_SMI_GLB_CTRL, mask, val);
 
 		/* proprietary Realtek 1G/2.5 lite polling */
 		mask = BIT(addr);
 		val = phyinfo.has_giga_lite ? mask : 0;
-		sw_w32_mask(mask, val, RTMDIO_930X_SMI_PRVTE_POLLING_CTRL);
+		regmap_update_bits(ctrl->map, RTMDIO_930X_SMI_PRVTE_POLLING_CTRL, mask, val);
 
 		/* special duplex/advertisement polling registers */
 		if (phyinfo.poll_duplex || phyinfo.poll_adv_1000 || phyinfo.poll_lpa_1000) {
-			sw_w32(phyinfo.poll_duplex, RTMDIO_930X_SMI_10G_POLLING_REG0_CFG);
-			sw_w32(phyinfo.poll_adv_1000, RTMDIO_930X_SMI_10G_POLLING_REG9_CFG);
-			sw_w32(phyinfo.poll_lpa_1000, RTMDIO_930X_SMI_10G_POLLING_REG10_CFG);
+			regmap_write(ctrl->map, RTMDIO_930X_SMI_10G_POLLING_REG0_CFG, phyinfo.poll_duplex);
+			regmap_write(ctrl->map, RTMDIO_930X_SMI_10G_POLLING_REG9_CFG, phyinfo.poll_adv_1000);
+			regmap_write(ctrl->map, RTMDIO_930X_SMI_10G_POLLING_REG10_CFG, phyinfo.poll_lpa_1000);
 		}
 	}
 
@@ -789,8 +789,8 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 
 	pr_info("%s called\n", __func__);
 	/* Disable port polling for configuration purposes */
-	sw_w32(0, RTMDIO_931X_SMI_PORT_POLLING_CTRL);
-	sw_w32(0, RTMDIO_931X_SMI_PORT_POLLING_CTRL + 4);
+	regmap_write(ctrl->map, RTMDIO_931X_SMI_PORT_POLLING_CTRL, 0);
+	regmap_write(ctrl->map, RTMDIO_931X_SMI_PORT_POLLING_CTRL + 4, 0);
 	msleep(100);
 
 	/* Mapping of port to phy-addresses on an SMI bus */
@@ -801,7 +801,8 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 			continue;
 
 		pos = (addr % 6) * 5;
-		sw_w32_mask(0x1f << pos, ctrl->smi_addr[addr] << pos, RTMDIO_931X_SMI_PORT_ADDR + (addr / 6) * 4);
+		regmap_update_bits(ctrl->map, RTMDIO_931X_SMI_PORT_ADDR + (addr / 6) * 4,
+				   0x1f << pos, ctrl->smi_addr[addr] << pos);
 		pos = (addr * 2) % 32;
 		poll_sel[addr / 16] |= ctrl->smi_bus[addr] << pos;
 		poll_ctrl |= BIT(20 + ctrl->smi_bus[addr]);
@@ -810,7 +811,7 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 	/* Configure which SMI bus is behind which port number */
 	for (int i = 0; i < RTMDIO_MAX_SMI_BUS; i++) {
 		pr_info("poll sel %d, %08x\n", i, poll_sel[i]);
-		sw_w32(poll_sel[i], RTMDIO_931X_SMI_PORT_POLLING_SEL + (i * 4));
+		regmap_write(ctrl->map, RTMDIO_931X_SMI_PORT_POLLING_SEL + (i * 4), poll_sel[i]);
 	}
 
 	/* Configure c22/c45 polling (bit 1 of SMI_SETX_FMT_SEL)
@@ -825,7 +826,7 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 			c45_mask |= 0x2 << (i * 2);  /* Std. C45, non-standard is 0x3 */
 	}
 	pr_info("%s: c45_mask: %08x", __func__, c45_mask);
-	sw_w32_mask(GENMASK(7, 0), c45_mask, RTMDIO_931X_SMI_GLB_CTRL1);
+	regmap_update_bits(ctrl->map, RTMDIO_931X_SMI_GLB_CTRL1, GENMASK(7, 0), c45_mask);
 
 	/* Define PHY specific polling parameters
 	 *
@@ -860,18 +861,18 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 		if (phyinfo.force_res)
 			val |= BIT(24 + smi);
 
-		sw_w32_mask(mask, val, RTMDIO_931X_SMI_GLB_CTRL0);
+		regmap_update_bits(ctrl->map, RTMDIO_931X_SMI_GLB_CTRL0, mask, val);
 
 		/* polling std. or proprietary format (bit 0 of SMI_SETX_FMT_SEL) */
 		mask = BIT(smi * 2);
 		val = phyinfo.force_res ? mask : 0;
-		sw_w32_mask(mask, val, RTMDIO_931X_SMI_GLB_CTRL1);
+		regmap_update_bits(ctrl->map, RTMDIO_931X_SMI_GLB_CTRL1, mask, val);
 
 		/* special polling registers */
 		if (phyinfo.poll_duplex || phyinfo.poll_adv_1000 || phyinfo.poll_lpa_1000) {
-			sw_w32(phyinfo.poll_duplex, RTMDIO_931X_SMI_10GPHY_POLLING_SEL2);
-			sw_w32(phyinfo.poll_adv_1000, RTMDIO_931X_SMI_10GPHY_POLLING_SEL3);
-			sw_w32(phyinfo.poll_lpa_1000, RTMDIO_931X_SMI_10GPHY_POLLING_SEL4);
+			regmap_write(ctrl->map, RTMDIO_931X_SMI_10GPHY_POLLING_SEL2, phyinfo.poll_duplex);
+			regmap_write(ctrl->map, RTMDIO_931X_SMI_10GPHY_POLLING_SEL3, phyinfo.poll_adv_1000);
+			regmap_write(ctrl->map, RTMDIO_931X_SMI_10GPHY_POLLING_SEL4, phyinfo.poll_lpa_1000);
 		}
 	}
 
