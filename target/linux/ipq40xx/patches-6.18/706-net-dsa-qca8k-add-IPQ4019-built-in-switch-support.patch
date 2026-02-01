@@ -67,7 +67,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  		mask = QCA8K_VTU_FUNC0_EG_MODE_PORT_NOT(i);
  
  		if ((reg & mask) != mask) {
-@@ -623,7 +623,7 @@ static int qca8k_update_port_member(stru
+@@ -616,7 +616,7 @@ static int qca8k_update_port_member(stru
  	u32 port_mask = BIT(dp->cpu_dp->index);
  	int i, ret;
  
@@ -78,7 +78,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
  		if (dsa_is_cpu_port(priv->ds, i))
 --- /dev/null
 +++ b/drivers/net/dsa/qca/qca8k-ipq4019.c
-@@ -0,0 +1,948 @@
+@@ -0,0 +1,961 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (C) 2009 Felix Fietkau <nbd@nbd.name>
@@ -126,11 +126,13 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 +}
 +
 +static struct phylink_pcs *
-+qca8k_ipq4019_phylink_mac_select_pcs(struct dsa_switch *ds, int port,
++qca8k_ipq4019_phylink_mac_select_pcs(struct phylink_config *config,
 +				     phy_interface_t interface)
 +{
-+	struct qca8k_priv *priv = ds->priv;
++	struct dsa_port *dp = dsa_phylink_to_port(config);
++	struct qca8k_priv *priv = dp->ds->priv;
 +	struct phylink_pcs *pcs = NULL;
++	int port = dp->index;
 +
 +	switch (interface) {
 +	case PHY_INTERFACE_MODE_PSGMII:
@@ -164,7 +166,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 +	return container_of(pcs, struct qca8k_pcs, pcs);
 +}
 +
-+static void qca8k_ipq4019_pcs_get_state(struct phylink_pcs *pcs,
++static void qca8k_ipq4019_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mode,
 +					struct phylink_link_state *state)
 +{
 +	struct qca8k_priv *priv = pcs_to_qca8k_pcs(pcs)->priv;
@@ -250,22 +252,25 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 +}
 +
 +static void
-+qca8k_phylink_ipq4019_mac_link_down(struct dsa_switch *ds, int port,
++qca8k_phylink_ipq4019_mac_link_down(struct phylink_config *config,
 +				    unsigned int mode,
 +				    phy_interface_t interface)
 +{
-+	struct qca8k_priv *priv = ds->priv;
++	struct dsa_port *dp = dsa_phylink_to_port(config);
++	struct qca8k_priv *priv = dp->ds->priv;
 +
-+	qca8k_port_set_status(priv, port, 0);
++	qca8k_port_set_status(priv, dp->index, 0);
 +}
 +
 +static void
-+qca8k_phylink_ipq4019_mac_link_up(struct dsa_switch *ds, int port,
-+				  unsigned int mode, phy_interface_t interface,
-+				  struct phy_device *phydev, int speed,
-+				  int duplex, bool tx_pause, bool rx_pause)
++qca8k_phylink_ipq4019_mac_link_up(struct phylink_config *config,
++			  	  struct phy_device *phydev, unsigned int mode,
++			  	  phy_interface_t interface, int speed, int duplex,
++			  	  bool tx_pause, bool rx_pause)
 +{
-+	struct qca8k_priv *priv = ds->priv;
++	struct dsa_port *dp = dsa_phylink_to_port(config);
++	struct qca8k_priv *priv = dp->ds->priv;
++	int port = dp->index;
 +	u32 reg;
 +
 +	if (phylink_autoneg_inband(mode)) {
@@ -289,10 +294,10 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 +		if (duplex == DUPLEX_FULL)
 +			reg |= QCA8K_PORT_STATUS_DUPLEX;
 +
-+		if (rx_pause || dsa_is_cpu_port(ds, port))
++		if (rx_pause || dsa_port_is_cpu(dp))
 +			reg |= QCA8K_PORT_STATUS_RXFLOW;
 +
-+		if (tx_pause || dsa_is_cpu_port(ds, port))
++		if (tx_pause || dsa_port_is_cpu(dp))
 +			reg |= QCA8K_PORT_STATUS_TXFLOW;
 +	}
 +
@@ -676,11 +681,16 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 +}
 +
 +static void
-+qca8k_phylink_ipq4019_mac_config(struct dsa_switch *ds, int port,
++qca8k_phylink_ipq4019_mac_config(struct phylink_config *config,
 +				 unsigned int mode,
 +				 const struct phylink_link_state *state)
 +{
-+	struct qca8k_priv *priv = ds->priv;
++	struct dsa_port *dp = dsa_phylink_to_port(config);
++	struct dsa_switch *ds = dp->ds;
++	struct qca8k_priv *priv;
++	int port = dp->index;
++
++	priv = ds->priv;
 +
 +	switch (port) {
 +	case 0:
@@ -856,6 +866,13 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 +	return 0;
 +}
 +
++static const struct phylink_mac_ops qca8k_ipq4019_phylink_mac_ops = {
++	.mac_select_pcs	= qca8k_ipq4019_phylink_mac_select_pcs,
++	.mac_config	= qca8k_phylink_ipq4019_mac_config,
++	.mac_link_down	= qca8k_phylink_ipq4019_mac_link_down,
++	.mac_link_up	= qca8k_phylink_ipq4019_mac_link_up,
++};
++
 +static const struct dsa_switch_ops qca8k_ipq4019_switch_ops = {
 +	.get_tag_protocol	= qca8k_ipq4019_get_tag_protocol,
 +	.setup			= qca8k_ipq4019_setup,
@@ -863,7 +880,6 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 +	.get_ethtool_stats	= qca8k_get_ethtool_stats,
 +	.get_sset_count		= qca8k_get_sset_count,
 +	.set_ageing_time	= qca8k_set_ageing_time,
-+	.get_mac_eee		= qca8k_get_mac_eee,
 +	.set_mac_eee		= qca8k_set_mac_eee,
 +	.port_enable		= qca8k_port_enable,
 +	.port_disable		= qca8k_port_disable,
@@ -885,11 +901,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 +	.port_vlan_filtering	= qca8k_port_vlan_filtering,
 +	.port_vlan_add		= qca8k_port_vlan_add,
 +	.port_vlan_del		= qca8k_port_vlan_del,
-+	.phylink_mac_select_pcs	= qca8k_ipq4019_phylink_mac_select_pcs,
 +	.phylink_get_caps	= qca8k_ipq4019_phylink_get_caps,
-+	.phylink_mac_config	= qca8k_phylink_ipq4019_mac_config,
-+	.phylink_mac_link_down	= qca8k_phylink_ipq4019_mac_link_down,
-+	.phylink_mac_link_up	= qca8k_phylink_ipq4019_mac_link_up,
 +	.port_lag_join		= qca8k_port_lag_join,
 +	.port_lag_leave		= qca8k_port_lag_leave,
 +};
@@ -982,6 +994,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 +	priv->ds->num_ports = QCA8K_IPQ4019_NUM_PORTS;
 +	priv->ds->priv = priv;
 +	priv->ds->ops = &qca8k_ipq4019_switch_ops;
++	priv->ds->phylink_mac_ops = &qca8k_ipq4019_phylink_mac_ops;
 +	ret = devm_mutex_init(dev, &priv->reg_mutex);
 +	if (ret)
 +		return ret;
@@ -1014,7 +1027,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 +
 +static struct platform_driver qca8k_ipq4019_driver = {
 +	.probe = qca8k_ipq4019_probe,
-+	.remove_new = qca8k_ipq4019_remove,
++	.remove = qca8k_ipq4019_remove,
 +	.driver = {
 +		.name = "qca8k-ipq4019",
 +		.of_match_table = qca8k_ipq4019_of_match,
@@ -1030,7 +1043,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 --- a/drivers/net/dsa/qca/qca8k.h
 +++ b/drivers/net/dsa/qca/qca8k.h
 @@ -19,7 +19,10 @@
- #define QCA8K_ETHERNET_TIMEOUT				5
+ #define QCA8K_ETHERNET_TIMEOUT				msecs_to_jiffies(5)
  
  #define QCA8K_NUM_PORTS					7
 +#define QCA8K_IPQ4019_NUM_PORTS				6
