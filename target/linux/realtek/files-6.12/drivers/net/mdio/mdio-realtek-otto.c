@@ -358,8 +358,6 @@ static int rtmdio_839x_write_mmd_phy(struct mii_bus *bus, u32 port, u32 devnum, 
 	return rtmdio_839x_run_cmd(bus, RTMDIO_839X_CMD_WRITE_C45);
 }
 
-/* RTL930x specific MDIO functions */
-
 static int rtmdio_930x_run_cmd(struct mii_bus *bus, int cmd)
 {
 	return rtmdio_run_cmd(bus, cmd, RTMDIO_930X_CMD_MASK,
@@ -368,51 +366,58 @@ static int rtmdio_930x_run_cmd(struct mii_bus *bus, int cmd)
 
 static int rtmdio_930x_write_phy(struct mii_bus *bus, u32 port, u32 page, u32 reg, u32 val)
 {
-	u32 v;
+	struct rtmdio_ctrl *ctrl = bus->priv;
+	u32 park_page = 31;
 
-	sw_w32(BIT(port), RTMDIO_930X_SMI_ACCESS_PHY_CTRL_0);
-	sw_w32_mask(0xffff << 16, val << 16, RTMDIO_930X_SMI_ACCESS_PHY_CTRL_2);
-	v = reg << 20 | page << 3 | 0x1f << 15 | BIT(2);
-	sw_w32(v, RTMDIO_930X_SMI_ACCESS_PHY_CTRL_1);
+	regmap_write(ctrl->map, RTMDIO_930X_SMI_ACCESS_PHY_CTRL_0, BIT(port));
+	regmap_write(ctrl->map, RTMDIO_930X_SMI_ACCESS_PHY_CTRL_2, val << 16);
+	regmap_write(ctrl->map, RTMDIO_930X_SMI_ACCESS_PHY_CTRL_1,
+		     reg << 20 | page << 3 | park_page << 15);
 
 	return rtmdio_930x_run_cmd(bus, RTMDIO_930X_CMD_WRITE_C22);
 }
 
 static int rtmdio_930x_read_phy(struct mii_bus *bus, u32 port, u32 page, u32 reg, u32 *val)
 {
+	struct rtmdio_ctrl *ctrl = bus->priv;
+	u32 park_page = 31;
 	int err;
-	u32 v;
 
-	sw_w32_mask(0xffff << 16, port << 16, RTMDIO_930X_SMI_ACCESS_PHY_CTRL_2);
-	v = reg << 20 | page << 3 | 0x1f << 15;
-	sw_w32(v, RTMDIO_930X_SMI_ACCESS_PHY_CTRL_1);
+	regmap_write(ctrl->map, RTMDIO_930X_SMI_ACCESS_PHY_CTRL_2, port << 16);
+	regmap_write(ctrl->map, RTMDIO_930X_SMI_ACCESS_PHY_CTRL_1,
+		     reg << 20 | page << 3 | park_page << 15);
 	err = rtmdio_930x_run_cmd(bus, RTMDIO_930X_CMD_READ_C22);
 	if (!err)
-		*val = (sw_r32(RTMDIO_930X_SMI_ACCESS_PHY_CTRL_2) & 0xffff);
+		err = regmap_read(ctrl->map, RTMDIO_930X_SMI_ACCESS_PHY_CTRL_2, val);
+	if (!err)
+		*val &= GENMASK(15, 0);
 
 	return err;
 }
 
-/* Write to an mmd register of the PHY */
 static int rtmdio_930x_write_mmd_phy(struct mii_bus *bus, u32 port, u32 devnum, u32 regnum, u32 val)
 {
-	sw_w32(BIT(port), RTMDIO_930X_SMI_ACCESS_PHY_CTRL_0);
-	sw_w32_mask(0xffff << 16, val << 16, RTMDIO_930X_SMI_ACCESS_PHY_CTRL_2);
-	sw_w32(devnum << 16 | (regnum & 0xffff), RTMDIO_930X_SMI_ACCESS_PHY_CTRL_3);
+	struct rtmdio_ctrl *ctrl = bus->priv;
+
+	regmap_write(ctrl->map, RTMDIO_930X_SMI_ACCESS_PHY_CTRL_0, BIT(port));
+	regmap_write(ctrl->map, RTMDIO_930X_SMI_ACCESS_PHY_CTRL_2, val << 16);
+	regmap_write(ctrl->map, RTMDIO_930X_SMI_ACCESS_PHY_CTRL_3, (devnum << 16) | (regnum & 0xffff));
 
 	return rtmdio_930x_run_cmd(bus, RTMDIO_930X_CMD_WRITE_C45);
 }
 
-/* Read an mmd register of the PHY */
 static int rtmdio_930x_read_mmd_phy(struct mii_bus *bus, u32 port, u32 devnum, u32 regnum, u32 *val)
 {
+	struct rtmdio_ctrl *ctrl = bus->priv;
 	int err ;
 
-	sw_w32_mask(0xffff << 16, port << 16, RTMDIO_930X_SMI_ACCESS_PHY_CTRL_2);
-	sw_w32(devnum << 16 | (regnum & 0xffff), RTMDIO_930X_SMI_ACCESS_PHY_CTRL_3);
+	regmap_write(ctrl->map, RTMDIO_930X_SMI_ACCESS_PHY_CTRL_2, port << 16);
+	regmap_write(ctrl->map, RTMDIO_930X_SMI_ACCESS_PHY_CTRL_3, (devnum << 16) | (regnum & 0xffff));
 	err = rtmdio_930x_run_cmd(bus, RTMDIO_930X_CMD_READ_C45);
 	if (!err)
-		*val = (sw_r32(RTMDIO_930X_SMI_ACCESS_PHY_CTRL_2) & 0xffff);
+		err = regmap_read(ctrl->map, RTMDIO_930X_SMI_ACCESS_PHY_CTRL_2, val);
+	if (!err)
+		*val &= GENMASK(15, 0);
 
 	return err;
 }
