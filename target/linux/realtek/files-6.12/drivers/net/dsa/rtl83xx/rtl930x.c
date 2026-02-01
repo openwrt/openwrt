@@ -402,6 +402,118 @@ static void rtldsa_930x_enable_flood(int port, bool enable)
 		    RTL930X_L2_LRN_PORT_CONSTRT_CTRL + port * 4);
 }
 
+static void rtldsa_930x_lag_set_port2group(int group, int port, bool valid)
+{
+	struct table_reg *r = rtl_table_get(RTL9300_TBL_L2, 8);
+	u32 mask = valid ? RTL930X_SRC_TRK_MAP_TRK_VALID : 0;
+
+	rtl_table_read(r, port);
+	mask |= FIELD_PREP(RTL930X_SRC_TRK_MAP_TRK_ID, group); // Update TRK Field.
+	sw_w32(mask, rtl_table_data(r, 0));
+	rtl_table_write(r, port);
+	rtl_table_release(r);
+}
+
+/* Write data from the data buffer into the lag-entry strucure */
+static void rtldsa_930x_lag_fill_data(u32 data[], struct rtldsa_93xx_lag_entry *e)
+{
+	/* 95-64 */
+	e->num_tx_candi = FIELD_GET(RTL930X_LAG_NUM_TX_CANDI, data[0]);
+	e->l2_hash_mask_idx = FIELD_GET(RTL930X_LAG_L2_HASH_MSK_IDX, data[0]);
+	e->ip4_hash_mask_idx = FIELD_GET(RTL930X_LAG_IP4_HASH_MSK_IDX, data[0]);
+	e->ip6_hash_mask_idx = FIELD_GET(RTL930X_LAG_IP6_HASH_MSK_IDX, data[0]);
+	e->flood_dlf_bcast.sep_dlf_bcast_en = FIELD_GET(RTL930X_LAG_SEP_DLF_BCAST_EN, data[0]);
+	e->sep_kwn_mc_en = FIELD_GET(RTL930X_LAG_SEP_KWN_MC_EN, data[0]);
+	e->trk_dev7 = FIELD_GET(RTL930X_LAG_TRK_DEV7, data[0]);
+	e->trk_port7 = FIELD_GET(RTL930X_LAG_TRK_PORT7, data[0]);
+	e->trk_dev6 = FIELD_GET(RTL930X_LAG_TRK_DEV6, data[0]);
+	e->trk_port6 = FIELD_GET(RTL930X_LAG_TRK_PORT6, data[0]);
+
+	/* 63-32 */
+	e->trk_dev5 = FIELD_GET(RTL930X_LAG_TRK_DEV5, data[1]);
+	e->trk_port5 = FIELD_GET(RTL930X_LAG_TRK_PORT5, data[1]);
+	e->trk_dev4 = FIELD_GET(RTL930X_LAG_TRK_DEV4, data[1]);
+	e->trk_port4 = FIELD_GET(RTL930X_LAG_TRK_PORT4, data[1]);
+	e->trk_dev3 = FIELD_GET(RTL930X_LAG_TRK_DEV3, data[1]);
+	e->trk_port3 = FIELD_GET(RTL930X_LAG_TRK_PORT3, data[1]);
+
+	/* 31-0 */
+	e->trk_dev2 = FIELD_GET(RTL930X_LAG_TRK_DEV2, data[2]);
+	e->trk_port2 = FIELD_GET(RTL930X_LAG_TRK_PORT2, data[2]);
+	e->trk_dev1 = FIELD_GET(RTL930X_LAG_TRK_DEV1, data[2]);
+	e->trk_port1 = FIELD_GET(RTL930X_LAG_TRK_PORT1, data[2]);
+	e->trk_dev0 = FIELD_GET(RTL930X_LAG_TRK_DEV0, data[2]);
+	e->trk_port0 = FIELD_GET(RTL930X_LAG_TRK_PORT0, data[2]);
+}
+
+/* Write lag-entry data into buffer */
+static void rtldsa_930x_lag_write_data(u32 data[], struct rtldsa_93xx_lag_entry *e)
+{
+	/* 95-64 */
+	data[0] = FIELD_PREP(RTL930X_LAG_NUM_TX_CANDI, e->num_tx_candi);
+	data[0] |= FIELD_PREP(RTL930X_LAG_L2_HASH_MSK_IDX, e->l2_hash_mask_idx);
+	data[0] |= FIELD_PREP(RTL930X_LAG_IP4_HASH_MSK_IDX, e->ip4_hash_mask_idx);
+	data[0] |= FIELD_PREP(RTL930X_LAG_IP6_HASH_MSK_IDX, e->ip6_hash_mask_idx);
+	data[0] |= FIELD_PREP(RTL930X_LAG_SEP_DLF_BCAST_EN, e->flood_dlf_bcast.sep_dlf_bcast_en);
+	data[0] |= FIELD_PREP(RTL930X_LAG_SEP_KWN_MC_EN, e->sep_kwn_mc_en);
+	data[0] |= FIELD_PREP(RTL930X_LAG_TRK_DEV7, e->trk_dev7);
+	data[0] |= FIELD_PREP(RTL930X_LAG_TRK_PORT7, e->trk_port7);
+	data[0] |= FIELD_PREP(RTL930X_LAG_TRK_DEV6, e->trk_dev6);
+	data[0] |= FIELD_PREP(RTL930X_LAG_TRK_PORT6, e->trk_port6);
+
+	/* 63-32 */
+	data[1] = FIELD_PREP(RTL930X_LAG_TRK_DEV5, e->trk_dev5);
+	data[1] |= FIELD_PREP(RTL930X_LAG_TRK_PORT5, e->trk_port5);
+	data[1] |= FIELD_PREP(RTL930X_LAG_TRK_DEV4, e->trk_dev4);
+	data[1] |= FIELD_PREP(RTL930X_LAG_TRK_PORT4, e->trk_port4);
+	data[1] |= FIELD_PREP(RTL930X_LAG_TRK_DEV3, e->trk_dev3);
+	data[1] |= FIELD_PREP(RTL930X_LAG_TRK_PORT3, e->trk_port3);
+
+	/* 31-0 */
+	data[2] = FIELD_PREP(RTL930X_LAG_TRK_DEV2, e->trk_dev2);
+	data[2] |= FIELD_PREP(RTL930X_LAG_TRK_PORT2, e->trk_port2);
+	data[2] |= FIELD_PREP(RTL930X_LAG_TRK_DEV1, e->trk_dev1);
+	data[2] |= FIELD_PREP(RTL930X_LAG_TRK_PORT1, e->trk_port1);
+	data[2] |= FIELD_PREP(RTL930X_LAG_TRK_DEV0, e->trk_dev0);
+	data[2] |= FIELD_PREP(RTL930X_LAG_TRK_PORT0, e->trk_port0);
+}
+
+static void rtldsa_930x_lag_set_local_group_id(int local_group, int global_group, bool valid)
+{
+	u32 mask = 0;
+
+	mask |= valid ? RTL930X_TRK_ID_CTRL_TRK_VALID : 0;
+	mask |= FIELD_PREP(RTL930X_TRK_ID_CTRL_TRK_ID, global_group);
+	sw_w32(mask, RTL930X_TRK_ID_CTRL + (4 * local_group));
+}
+
+static void rtldsa_930x_lag_set_local_port2group(int group, int port, bool valid)
+{
+	u32 mask = 0;
+
+	mask |= valid ? RTL930X_LOCAL_PORT_TRK_MAP_IS_TRK_MBR : 0;
+	mask |= FIELD_PREP(RTL930X_LOCAL_PORT_TRK_MAP_TRK_ID, group);
+	sw_w32(mask, RTL930X_LOCAL_PORT_TRK_MAP + (4 * port));
+}
+
+static void rtldsa_930x_lag_sync_tables(void)
+{
+	u32 val;
+	int ret;
+
+	sw_w32(BIT(0), RTL930X_TRK_LOCAL_TBL_REFRESH);
+
+	ret = readx_poll_timeout(sw_r32, RTL930X_TRK_LOCAL_TBL_REFRESH, val,
+				 !(val & BIT(0)), 20, 10000);
+	if (ret)
+		pr_err("%s: timeout\n", __func__);
+}
+
+static struct table_reg *rtldsa_930x_lag_table(void)
+{
+	return rtl_table_get(RTL9300_TBL_0, 7);
+}
+
 static int rtldsa_930x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, int port, u32 port_state[])
 {
 	int idx = 1 - ((port + 3) / 16);
@@ -2380,46 +2492,6 @@ static void rtl930x_set_egr_filter(int port,  enum egr_filter state)
 		    RTL930X_VLAN_PORT_EGR_FLTR + (((port / 29) << 2)));
 }
 
-static void rtl930x_set_distribution_algorithm(int group, int algoidx, u32 algomsk)
-{
-	u32 l3shift = 0;
-	u32 newmask = 0;
-
-	/* TODO: for now we set algoidx to 0 */
-	algoidx = 0;
-	if (algomsk & TRUNK_DISTRIBUTION_ALGO_SIP_BIT) {
-		l3shift = 4;
-		newmask |= TRUNK_DISTRIBUTION_ALGO_L3_SIP_BIT;
-	}
-	if (algomsk & TRUNK_DISTRIBUTION_ALGO_DIP_BIT) {
-		l3shift = 4;
-		newmask |= TRUNK_DISTRIBUTION_ALGO_L3_DIP_BIT;
-	}
-	if (algomsk & TRUNK_DISTRIBUTION_ALGO_SRC_L4PORT_BIT) {
-		l3shift = 4;
-		newmask |= TRUNK_DISTRIBUTION_ALGO_L3_SRC_L4PORT_BIT;
-	}
-	if (algomsk & TRUNK_DISTRIBUTION_ALGO_SRC_L4PORT_BIT) {
-		l3shift = 4;
-		newmask |= TRUNK_DISTRIBUTION_ALGO_L3_SRC_L4PORT_BIT;
-	}
-
-	if (l3shift == 4) {
-		if (algomsk & TRUNK_DISTRIBUTION_ALGO_SMAC_BIT)
-			newmask |= TRUNK_DISTRIBUTION_ALGO_L3_SMAC_BIT;
-
-		if (algomsk & TRUNK_DISTRIBUTION_ALGO_DMAC_BIT)
-			newmask |= TRUNK_DISTRIBUTION_ALGO_L3_DMAC_BIT;
-	} else  {
-		if (algomsk & TRUNK_DISTRIBUTION_ALGO_SMAC_BIT)
-			newmask |= TRUNK_DISTRIBUTION_ALGO_L2_SMAC_BIT;
-		if (algomsk & TRUNK_DISTRIBUTION_ALGO_DMAC_BIT)
-			newmask |= TRUNK_DISTRIBUTION_ALGO_L2_DMAC_BIT;
-	}
-
-	sw_w32(newmask << l3shift, RTL930X_TRK_HASH_CTRL + (algoidx << 2));
-}
-
 static void rtldsa_930x_led_get_forced(const struct device_node *node,
 				       const u8 leds_in_set[4],
 				       u8 forced_leds_per_port[RTL930X_CPU_PORT])
@@ -2696,10 +2768,21 @@ const struct rtl838x_reg rtl930x_reg = {
 	.set_l3_router_mac = rtl930x_set_l3_router_mac,
 	.set_l3_egress_intf = rtl930x_set_l3_egress_intf,
 #endif
-	.set_distribution_algorithm = rtl930x_set_distribution_algorithm,
 	.led_init = rtl930x_led_init,
 	.enable_learning = rtldsa_930x_enable_learning,
 	.enable_flood = rtldsa_930x_enable_flood,
 	.set_receive_management_action = rtldsa_930x_set_receive_management_action,
 	.qos_init = rtldsa_930x_qos_init,
+	.trk_ctrl = RTL930X_TRK_CTRL,
+	.trk_hash_ctrl = RTL930X_TRK_HASH_CTRL,
+	.lag_switch_init = rtldsa_93xx_lag_switch_init,
+	.lag_set_port_members = rtldsa_93xx_lag_set_port_members,
+	.lag_set_distribution_algorithm = rtldsa_93xx_lag_set_distribution_algorithm,
+	.lag_set_local_group_id = rtldsa_930x_lag_set_local_group_id,
+	.lag_write_data = rtldsa_930x_lag_write_data,
+	.lag_fill_data = rtldsa_930x_lag_fill_data,
+	.lag_set_local_port2group = rtldsa_930x_lag_set_local_port2group,
+	.lag_set_port2group = rtldsa_930x_lag_set_port2group,
+	.lag_sync_tables = rtldsa_930x_lag_sync_tables,
+	.lag_table = rtldsa_930x_lag_table,
 };
