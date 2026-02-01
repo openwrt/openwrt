@@ -19,7 +19,7 @@ start_service() {
 
 	procd_open_instance
 	procd_set_param command /sbin/netifd
-	procd_append_param command -l ${netifd_loglevel}
+	procd_append_param command -l ${netifd_loglevel:-2}
 	procd_set_param respawn
 	procd_set_param watch network.interface
 	[ -e /proc/sys/kernel/core_pattern ] && {
