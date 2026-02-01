@@ -42,7 +42,7 @@ Signed-off-by: Robert Marko <robimarko@gmail.com>
  	if (err)
  		goto err_notifier_unregister;
  
-+	dev_set_threaded(netdev, true);
++	dev_set_threaded(netdev, NETDEV_NAPI_THREADED_ENABLED);
 +
  	return 0;
  

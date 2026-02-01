@@ -18,7 +18,7 @@ Signed-off-by: Florian Maurer <f.maurer@outlook.com>
 
 --- a/drivers/pci/controller/dwc/pcie-qcom.c
 +++ b/drivers/pci/controller/dwc/pcie-qcom.c
-@@ -207,11 +207,24 @@ struct qcom_pcie_resources_2_3_3 {
+@@ -210,11 +210,24 @@ struct qcom_pcie_resources_2_3_3 {
  };
  
  #define QCOM_PCIE_2_4_0_MAX_RESETS		12
@@ -43,7 +43,7 @@ Signed-off-by: Florian Maurer <f.maurer@outlook.com>
  };
  
  #define QCOM_PCIE_2_7_0_MAX_SUPPLIES		2
-@@ -711,12 +724,65 @@ static int qcom_pcie_post_init_2_3_2(str
+@@ -734,12 +747,65 @@ static int qcom_pcie_post_init_2_3_2(str
  	return 0;
  }
  
@@ -110,7 +110,7 @@ Signed-off-by: Florian Maurer <f.maurer@outlook.com>
  	int ret;
  
  	res->num_clks = devm_clk_bulk_get_all(dev, &res->clks);
-@@ -755,6 +821,17 @@ static void qcom_pcie_deinit_2_4_0(struc
+@@ -778,6 +844,17 @@ static void qcom_pcie_deinit_2_4_0(struc
  	clk_bulk_disable_unprepare(res->num_clks, res->clks);
  }
  
@@ -128,7 +128,7 @@ Signed-off-by: Florian Maurer <f.maurer@outlook.com>
  static int qcom_pcie_init_2_4_0(struct qcom_pcie *pcie)
  {
  	struct qcom_pcie_resources_2_4_0 *res = &pcie->res.v2_4_0;
-@@ -1336,6 +1413,16 @@ static const struct qcom_pcie_ops ops_2_
+@@ -1383,6 +1460,16 @@ static const struct qcom_pcie_ops ops_2_
  	.ltssm_enable = qcom_pcie_2_3_2_ltssm_enable,
  };
  
@@ -145,7 +145,7 @@ Signed-off-by: Florian Maurer <f.maurer@outlook.com>
  /* Qcom IP rev.: 2.3.3	Synopsys IP rev.: 4.30a */
  static const struct qcom_pcie_ops ops_2_3_3 = {
  	.get_resources = qcom_pcie_get_resources_2_3_3,
-@@ -1403,6 +1490,10 @@ static const struct qcom_pcie_cfg cfg_2_
+@@ -1460,6 +1547,10 @@ static const struct qcom_pcie_cfg cfg_2_
  	.ops = &ops_2_4_0,
  };
  
@@ -156,11 +156,11 @@ Signed-off-by: Florian Maurer <f.maurer@outlook.com>
  static const struct qcom_pcie_cfg cfg_2_7_0 = {
  	.ops = &ops_2_7_0,
  };
-@@ -1827,6 +1918,7 @@ static const struct of_device_id qcom_pc
+@@ -2073,6 +2164,7 @@ static const struct of_device_id qcom_pc
  	{ .compatible = "qcom,pcie-apq8064", .data = &cfg_2_1_0 },
  	{ .compatible = "qcom,pcie-apq8084", .data = &cfg_1_0_0 },
  	{ .compatible = "qcom,pcie-ipq4019", .data = &cfg_2_4_0 },
 +	{ .compatible = "qcom,pcie-ipq4019-lantiq-hack", .data = &cfg_2_4_0_lantiq_hack },
+ 	{ .compatible = "qcom,pcie-ipq5018", .data = &cfg_2_9_0 },
  	{ .compatible = "qcom,pcie-ipq6018", .data = &cfg_2_9_0 },
  	{ .compatible = "qcom,pcie-ipq8064", .data = &cfg_2_1_0 },
- 	{ .compatible = "qcom,pcie-ipq8064-v2", .data = &cfg_2_1_0 },

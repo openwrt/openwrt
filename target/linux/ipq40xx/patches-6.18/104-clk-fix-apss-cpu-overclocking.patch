@@ -74,16 +74,16 @@ Signed-off-by: John Crispin <john@phrozen.org>
  /*
   * Round rate function for APSS CPU PLL Clock divider.
   * It looks up the frequency table and returns the next higher frequency
-@@ -132,7 +155,7 @@ static long clk_cpu_div_round_rate(struc
+@@ -132,7 +155,7 @@ static int clk_cpu_div_determine_rate(st
  	struct clk_hw *p_hw;
  	const struct freq_tbl *f;
  
--	f = qcom_find_freq(pll->freq_tbl, rate);
-+	f = qcom_find_freq_close(pll->freq_tbl, rate);
+-	f = qcom_find_freq(pll->freq_tbl, req->rate);
++	f = qcom_find_freq_close(pll->freq_tbl, req->rate);
  	if (!f)
  		return -EINVAL;
  
-@@ -154,7 +177,7 @@ static int clk_cpu_div_set_rate(struct c
+@@ -156,7 +179,7 @@ static int clk_cpu_div_set_rate(struct c
  	const struct freq_tbl *f;
  	u32 mask;
  
@@ -92,7 +92,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	if (!f)
  		return -EINVAL;
  
-@@ -181,6 +204,7 @@ static unsigned long
+@@ -183,6 +206,7 @@ static unsigned long
  clk_cpu_div_recalc_rate(struct clk_hw *hw,
  			unsigned long parent_rate)
  {
@@ -100,7 +100,7 @@ Signed-off-by: John Crispin <john@phrozen.org>
  	struct clk_fepll *pll = to_clk_fepll(hw);
  	u32 cdiv, pre_div;
  	u64 rate;
-@@ -201,7 +225,11 @@ clk_cpu_div_recalc_rate(struct clk_hw *h
+@@ -203,7 +227,11 @@ clk_cpu_div_recalc_rate(struct clk_hw *h
  	rate = clk_fepll_vco_calc_rate(pll, parent_rate) * 2;
  	do_div(rate, pre_div);
  
