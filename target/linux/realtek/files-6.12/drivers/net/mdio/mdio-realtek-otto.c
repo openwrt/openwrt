@@ -28,9 +28,6 @@
 
 #define RTMDIO_PHY_POLL_MMD(dev, reg, bit)	((bit << 21) | (dev << 16) | reg)
 
-/* Register base */
-#define RTMDIO_SW_BASE				((volatile void *) 0xBB000000)
-
 /* MDIO bus registers */
 #define RTMDIO_RUN				BIT(0)
 
@@ -104,10 +101,6 @@
 #define RTMDIO_931X_SMI_10GPHY_POLLING_SEL2	(0x0CF8)
 #define RTMDIO_931X_SMI_10GPHY_POLLING_SEL3	(0x0CFC)
 #define RTMDIO_931X_SMI_10GPHY_POLLING_SEL4	(0x0D00)
-
-#define sw_r32(reg)				readl(RTMDIO_SW_BASE + reg)
-#define sw_w32(val, reg)			writel(val, RTMDIO_SW_BASE + reg)
-#define sw_w32_mask(clear, set, reg)		sw_w32((sw_r32(reg) & ~(clear)) | (set), reg)
 
 /*
  * On all Realtek switch platforms the hardware periodically reads the link status of all
