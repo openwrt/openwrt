@@ -34,8 +34,7 @@ define Package/uclient-fetch
   CATEGORY:=Network
   TITLE:=Tiny wget replacement using libuclient
   ALTERNATIVES:=200:/usr/bin/wget:/bin/uclient-fetch
-  DEFAULT_VARIANT:=1
-  PROVIDES:=@wget-any
+  PROVIDES:=wget
   DEPENDS:=+libuclient
 endef
 
