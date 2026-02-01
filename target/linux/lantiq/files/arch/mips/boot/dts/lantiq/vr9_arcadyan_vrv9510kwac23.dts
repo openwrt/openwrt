@@ -314,6 +314,8 @@
 		label = "wan";
 		phy-mode = "internal";
 		phy-handle = <&phy13>;
+		nvmem-cells = <&macaddr_boardconfig_16 0>;
+		nvmem-cell-names = "mac-address";
 	};
 	port@5 {
 		reg = <5>;

@@ -1,0 +1,27 @@
+From f4d02a22079cc198b26edd0efee5f50e5f3cf0e3 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Fri, 30 Jan 2026 13:34:20 +0100
+Subject: Revert "ip6_tunnel: use skb_vlan_inet_prepare() in __ip6_tnl_rcv()"
+
+This reverts commit df5ffde9669314500809bc498ae73d6d3d9519ac.
+
+This change broke the IPv6 tunneling stack (MAP-E and DS-Lite)
+
+Link: https://lists.openwall.net/netdev/2026/01/30/70
+Link: https://github.com/openwrt/openwrt/issues/21737
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ net/ipv6/ip6_tunnel.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/net/ipv6/ip6_tunnel.c
++++ b/net/ipv6/ip6_tunnel.c
+@@ -970,7 +970,7 @@ static int __ip6_tnl_rcv(struct ip6_tnl
+ 
+ 	skb_reset_network_header(skb);
+ 
+-	if (skb_vlan_inet_prepare(skb, true)) {
++	if (!pskb_inet_may_pull(skb)) {
+ 		DEV_STATS_INC(tunnel->dev, rx_length_errors);
+ 		DEV_STATS_INC(tunnel->dev, rx_errors);
+ 		goto drop;

@@ -60,7 +60,7 @@ function setup_sta(data, config) {
 
 	if (config.auth_type in [ 'sae', 'owe', 'eap2', 'eap192' ])
 		config.ieee80211w = 2;
-	else if (config.auth_type in [ 'psk-sae' ])
+	else if (config.auth_type in [ 'psk-sae' ] && !config.ieee80211w)
 		config.ieee80211w = 1;
 	if ((wildcard(data.htmode, 'EHT*') || wildcard(data.htmode, 'HE*')) &&
 		config.rsn_override)
