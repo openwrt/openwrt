@@ -805,6 +805,31 @@ endif
 endef
 TARGET_DEVICES += bananapi_bpi-r4-lite
 
+define Device/bazis_ax3000wm
+  DEVICE_VENDOR := Bazis
+  DEVICE_MODEL := AX3000WM
+  DEVICE_DTS := mt7981b-bazis-ax3000wm
+  DEVICE_DTS_DIR := ../dts
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_IN_UBI := 1
+  UBOOTENV_IN_UBI := 1
+  IMAGES := sysupgrade.itb
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  KERNEL := kernel-bin | gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.itb := append-kernel | \
+	fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | \
+	append-metadata
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
+  ARTIFACTS := preloader.bin bl31-uboot.fip
+  ARTIFACT/preloader.bin := mt7981-bl2 spim-nand-ddr3
+  ARTIFACT/bl31-uboot.fip := mt7981-bl31-uboot bazis-ax3000wm
+endef
+TARGET_DEVICES += bazis_ax3000wm
+
 define Device/buffalo_wsr-6000ax8
   DEVICE_MODEL := WSR-6000AX8
   DEVICE_VENDOR := Buffalo
