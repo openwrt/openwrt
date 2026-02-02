@@ -3018,7 +3018,21 @@ static void rtpcs_931x_sds_clear_symerr(struct rtpcs_serdes *sds,
 	}
 }
 
-static int rtpcs_931x_sds_init_leq_dfe(struct rtpcs_serdes *sds)
+/**
+ * rtpcs_931x_sds_reset_leq_dfe() - Reset LEQ + DFE to a baseline.
+ *
+ * @sds: Reference to SerDes instance
+ *
+ * Reset both LEQ and DFE in the RX path to baseline configuration. I.e.
+ * sets LEQ and DFE to manual mode and sets certain values (mostly 0) for
+ * LEQ and DFE coefficients/parameters.
+ *
+ * LEQ and DFE can run in two modes:
+ * * manual: specific values are set and used
+ * * auto: both adapt their parameters automatically
+ *
+ */
+static int rtpcs_931x_sds_reset_leq_dfe(struct rtpcs_serdes *sds)
 {
 	rtpcs_sds_write_bits(sds, 0x2e, 0xd, 6, 0, 0x0);	/* [6:2] LEQ gain */
 	rtpcs_sds_write_bits(sds, 0x2e, 0xd, 7, 7, 0x1);	/* LEQ manual 1=true,0=false */
@@ -3421,7 +3435,7 @@ static int rtpcs_931x_sds_set_port_media(struct rtpcs_serdes *sds,
 	/* from _phy_rtl9310_sds_init, DMS1250 SDK */
 	rtpcs_sds_write_bits(sds, 0x2e, 0xe, 13, 11, 0x0);
 	rtpcs_931x_sds_rx_reset(sds);
-	rtpcs_931x_sds_init_leq_dfe(sds);
+	rtpcs_931x_sds_reset_leq_dfe(sds);
 
 	is_dac = (port_media == RTPCS_PORT_MEDIA_DAC_50CM ||
 		  port_media == RTPCS_PORT_MEDIA_DAC_100CM ||
@@ -3549,7 +3563,7 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 	case RTPCS_SDS_MODE_USXGMII_2_5GSXGMII:
 		u32 op_code = 0x6003;
 
-		rtpcs_931x_sds_init_leq_dfe(sds);
+		rtpcs_931x_sds_reset_leq_dfe(sds);
 		rtpcs_931x_sds_rx_reset(sds);
 
 		rtpcs_sds_write(sds, 0x7, 0x10, op_code);
