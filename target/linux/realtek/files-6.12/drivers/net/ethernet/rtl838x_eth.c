@@ -34,6 +34,7 @@ int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type
  */
 
 #define RTETH_OWN_CPU		1
+#define RTETH_RX_RING_SIZE	128
 #define RTETH_RX_RINGS		2
 #define RTETH_TX_RING_SIZE	16
 #define RTETH_TX_RINGS		2
@@ -63,8 +64,17 @@ struct rteth_packet {
 	u16			len;
 	u16			cpu_tag[10];
 	/* software mangement and data part */
-	struct sk_buff		*skb;
+	union {
+		struct sk_buff	*skb;
+		char		*buf;
+	};
 } __packed __aligned(1);
+
+struct rteth_rx {
+	int			slot;
+	dma_addr_t		ring[RTETH_RX_RING_SIZE];
+	struct rteth_packet	packet[RTETH_RX_RING_SIZE];
+};
 
 struct rteth_tx {
 	int			slot;
@@ -207,6 +217,12 @@ struct rteth_ctrl {
 	u32 lastEvent;
 	u16 rxrings;
 	u16 rxringlen;
+	/* receive handling */
+	dma_addr_t		rx_buf_dma;
+	char			*rx_buf;
+	dma_addr_t		rx_data_dma;
+	spinlock_t		rx_lock;
+	struct rteth_rx		*rx_data;
 	/* transmit handling */
 	dma_addr_t		tx_dma;
 	spinlock_t		tx_lock;
@@ -550,7 +566,7 @@ static void rteth_setup_cpu_rx_rings(struct rteth_ctrl *ctrl)
 
 	if (ctrl->r->qm_pkt2cpu_intpri_map) {
 		for (int priority = 0; priority < 8; priority++) {
-			int ring = (priority % RTETH_RX_RINGS) + 5;
+			int ring = priority % RTETH_RX_RINGS;
 			int shift = priority * 3;
 
 			sw_w32_mask(0x7 << shift, ring << shift, ctrl->r->qm_pkt2cpu_intpri_map);
@@ -569,7 +585,7 @@ static void rteth_setup_cpu_rx_rings(struct rteth_ctrl *ctrl)
 		for (int reason = 0; reason < reason_cnt; reason++) {
 			int reg = ctrl->r->qm_rsn2cpuqid_ctrl + 4 * (reason / fields_per_reg);
 			int shift = (reason % fields_per_reg) * bits_per_field;
-			int ring = (reason % RTETH_RX_RINGS) + 5;
+			int ring = reason % RTETH_RX_RINGS;
 
 			sw_w32_mask(mask << shift, ring << shift, reg);
 		}
@@ -678,6 +694,9 @@ static void rtl93xx_hw_en_rxtx(struct rteth_ctrl *ctrl)
 
 static void rteth_setup_ring_buffer(struct rteth_ctrl *ctrl, struct ring_b *ring)
 {
+	dma_addr_t rx_buf_dma = ctrl->rx_buf_dma;
+	char *rx_buf = ctrl->rx_buf;
+
 	for (int i = 0; i < ctrl->rxrings; i++) {
 		struct p_hdr *h;
 		int j;
@@ -695,6 +714,24 @@ static void rteth_setup_ring_buffer(struct rteth_ctrl *ctrl, struct ring_b *ring
 					   0);
 		}
 		ring->c_rx[i] = 0;
+	}
+
+	for (int r = 0; r < RTETH_RX_RINGS; r++) {
+		for (int i = 0; i < RTETH_RX_RING_SIZE; i++) {
+			ctrl->rx_data[r].packet[i].size = RING_BUFFER;
+			ctrl->rx_data[r].packet[i].dma = rx_buf_dma;
+			ctrl->rx_data[r].packet[i].buf = rx_buf;
+			ctrl->rx_data[r].ring[i] = ctrl->rx_data_dma +
+						   sizeof(struct rteth_rx) * r +
+						   offsetof(struct rteth_rx, packet) +
+						   sizeof(struct rteth_packet) * i +
+						   RTETH_OWN_CPU;
+			rx_buf += RING_BUFFER;
+			rx_buf_dma += RING_BUFFER;
+		}
+
+		ctrl->rx_data[r].ring[RTETH_RX_RING_SIZE - 1] |= WRAP;
+		ctrl->rx_data[r].slot = 0;
 	}
 
 	for (int r = 0; r < RTETH_TX_RINGS; r++) {
@@ -1724,10 +1761,16 @@ static int rtl838x_eth_probe(struct platform_device *pdev)
 	ring = ctrl->membase;
 	ring->rx_space = ctrl->membase + sizeof(struct ring_b) + sizeof(struct notify_b);
 
+	ctrl->rx_buf = dma_alloc_noncoherent(&pdev->dev,
+					     RTETH_RX_RINGS * RTETH_RX_RING_SIZE * RING_BUFFER,
+					     &ctrl->rx_buf_dma, DMA_FROM_DEVICE, GFP_KERNEL);
+	ctrl->rx_data = dmam_alloc_coherent(&pdev->dev, sizeof(struct rteth_rx) * RTETH_RX_RINGS,
+					    &ctrl->rx_data_dma, GFP_KERNEL);
 	ctrl->tx_data = dmam_alloc_coherent(&pdev->dev, sizeof(struct rteth_tx) * RTETH_TX_RINGS,
 					    &ctrl->tx_dma, GFP_KERNEL);
 
 	spin_lock_init(&ctrl->lock);
+	spin_lock_init(&ctrl->rx_lock);
 	spin_lock_init(&ctrl->tx_lock);
 
 	dev->ethtool_ops = &rteth_ethtool_ops;
