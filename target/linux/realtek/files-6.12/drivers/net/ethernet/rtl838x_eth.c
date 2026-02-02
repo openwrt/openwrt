@@ -311,7 +311,7 @@ static bool rteth_931x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 	t->crc_error = h->cpu_tag[1] & BIT(6);
 
 	if (t->reason != 63)
-		pr_info("%s: Reason %d, port %d, queue %d\n", __func__, t->reason, t->port, t->queue);
+		pr_debug("%s: Reason %d, port %d, queue %d\n", __func__, t->reason, t->port, t->queue);
 	if (t->reason >= 19 && t->reason <= 27)	/* NIC_RX_REASON_RMA */
 		t->l2_offloaded = 0;
 	else
