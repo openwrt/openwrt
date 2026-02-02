@@ -25,23 +25,12 @@
 
 int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type_data);
 
-/* Maximum number of RX rings is 8 on RTL83XX and 32 on the 93XX
- * The ring is assigned by switch based on packet/port priortity
- * Maximum number of TX rings is 2, Ring 2 being the high priority
- * ring on the RTL93xx SoCs. MAX_RXLEN gives the maximum length
- * for an RX ring, MAX_ENTRIES the maximum number of entries
- * available in total for all queues.
- */
-
 #define RTETH_OWN_CPU		1
 #define RTETH_RX_RING_SIZE	128
 #define RTETH_RX_RINGS		2
 #define RTETH_TX_RING_SIZE	16
 #define RTETH_TX_RINGS		2
 
-#define MAX_RXRINGS	32
-#define MAX_RXLEN	300
-#define MAX_ENTRIES	(300 * 8)
 #define NOTIFY_EVENTS	10
 #define NOTIFY_BLOCKS	10
 #define TX_EN		0x8
@@ -82,16 +71,6 @@ struct rteth_tx {
 	struct rteth_packet	packet[RTETH_TX_RING_SIZE];
 };
 
-struct p_hdr {
-	u8	*buf;
-	u16	reserved;
-	u16	size;		/* buffer size */
-	u16	offset;
-	u16	len;		/* pkt len */
-	/* cpu_tag[0] is a reserved u16 on RTL83xx */
-	u16	cpu_tag[10];
-} __packed __aligned(1);
-
 struct n_event {
 	u32	type:2;
 	u32	fidVid:12;
@@ -100,13 +79,6 @@ struct n_event {
 	u32	valid:1;
 	u32	reserved:27;
 } __packed __aligned(1);
-
-struct ring_b {
-	u32	rx_r[MAX_RXRINGS][MAX_RXLEN];
-	struct	p_hdr	rx_header[MAX_RXRINGS][MAX_RXLEN];
-	u32	c_rx[MAX_RXRINGS];
-	u8		*rx_space;
-};
 
 struct notify_block {
 	struct n_event	events[NOTIFY_EVENTS];
@@ -209,14 +181,12 @@ struct rteth_ctrl {
 	void *membase;
 	spinlock_t lock;
 	struct mii_bus *mii_bus;
-	struct rtl838x_rx_q rx_qs[MAX_RXRINGS];
+	struct rtl838x_rx_q rx_qs[RTETH_RX_RINGS];
 	struct phylink *phylink;
 	struct phylink_config phylink_config;
 	struct phylink_pcs pcs;
 	const struct rteth_config *r;
 	u32 lastEvent;
-	u16 rxrings;
-	u16 rxringlen;
 	/* receive handling */
 	dma_addr_t		rx_buf_dma;
 	char			*rx_buf;
@@ -362,7 +332,7 @@ static void rtl838x_fdb_sync(struct work_struct *work)
 
 static void rtl839x_l2_notification_handler(struct rteth_ctrl *ctrl)
 {
-	struct notify_b *nb = ctrl->membase + sizeof(struct ring_b);
+	struct notify_b *nb = ctrl->membase;
 	u32 e = ctrl->lastEvent;
 
 	while (!(nb->ring[e] & 1)) {
@@ -413,7 +383,7 @@ static irqreturn_t rteth_83xx_net_irq(int irq, void *dev_id)
 				    status, sw_r32(ctrl->r->dma_if_intr_msk));
 
 	rings = FIELD_GET(RTL83XX_DMA_IF_INTR_RX_DONE_MASK, status);
-	for_each_set_bit(ring, &rings, ctrl->rxrings) {
+	for_each_set_bit(ring, &rings, RTETH_RX_RINGS) {
 		netdev_dbg(ndev, "schedule rx ring %lu\n", ring);
 		sw_w32_mask(RTL83XX_DMA_IF_INTR_RX_MASK(ring), 0, ctrl->r->dma_if_intr_msk);
 		napi_schedule(&ctrl->rx_qs[ring].napi);
@@ -451,7 +421,7 @@ static irqreturn_t rteth_93xx_net_irq(int irq, void *dev_id)
 		/* ACK and disable RX interrupt for given rings */
 		sw_w32(status_rx, ctrl->r->dma_if_intr_rx_done_sts);
 		sw_w32_mask(status_rx, 0, ctrl->r->dma_if_intr_rx_done_msk);
-		for (int i = 0; i < ctrl->rxrings; i++) {
+		for (int i = 0; i < RTETH_RX_RINGS; i++) {
 			if (status_rx & BIT(i)) {
 				pr_debug("Scheduling queue: %d\n", i);
 				napi_schedule(&ctrl->rx_qs[i].napi);
@@ -540,7 +510,7 @@ static void rteth_93xx_hw_reset(struct rteth_ctrl *ctrl)
 	rteth_nic_reset(ctrl, 0x6);
 
 	/* Setup Head of Line */
-	for (int i = 0; i < ctrl->rxrings; i++) {
+	for (int i = 0; i < RTETH_RX_RINGS; i++) {
 		int pos = (i % 3) * 10;
 
 		sw_w32_mask(0x3ff << pos, 0, ctrl->r->dma_if_rx_ring_size(i));
@@ -658,7 +628,7 @@ static void rtl93xx_hw_en_rxtx(struct rteth_ctrl *ctrl)
 	/* Setup CPU-Port: RX Buffer truncated at DEFAULT_MTU Bytes */
 	sw_w32((DEFAULT_MTU << 16) | RX_TRUNCATE_EN_93XX, ctrl->r->dma_if_ctrl);
 
-	for (int i = 0; i < ctrl->rxrings; i++) {
+	for (int i = 0; i < RTETH_RX_RINGS; i++) {
 		int cnt = min(RTETH_RX_RING_SIZE - 2, 0x3ff);
 		int pos = (i % 3) * 10;
 		u32 v;
@@ -692,29 +662,10 @@ static void rtl93xx_hw_en_rxtx(struct rteth_ctrl *ctrl)
 		sw_w32(0x2a1d, ctrl->r->mac_force_mode_ctrl + ctrl->r->cpu_port * 4);
 }
 
-static void rteth_setup_ring_buffer(struct rteth_ctrl *ctrl, struct ring_b *ring)
+static void rteth_setup_ring_buffer(struct rteth_ctrl *ctrl)
 {
 	dma_addr_t rx_buf_dma = ctrl->rx_buf_dma;
 	char *rx_buf = ctrl->rx_buf;
-
-	for (int i = 0; i < ctrl->rxrings; i++) {
-		struct p_hdr *h;
-		int j;
-
-		for (j = 0; j < ctrl->rxringlen; j++) {
-			h = &ring->rx_header[i][j];
-			memset(h, 0, sizeof(struct p_hdr));
-			h->buf = (u8 *)KSEG1ADDR(ring->rx_space +
-						 i * ctrl->rxringlen * RING_BUFFER +
-						 j * RING_BUFFER);
-			h->size = RING_BUFFER;
-			/* All rings owned by switch, last one wraps */
-			ring->rx_r[i][j] = KSEG1ADDR(h) | 1 | (j == (ctrl->rxringlen - 1) ?
-					   WRAP :
-					   0);
-		}
-		ring->c_rx[i] = 0;
-	}
 
 	for (int r = 0; r < RTETH_RX_RINGS; r++) {
 		for (int i = 0; i < RTETH_RX_RING_SIZE; i++) {
@@ -750,7 +701,7 @@ static void rteth_setup_ring_buffer(struct rteth_ctrl *ctrl, struct ring_b *ring
 
 static void rtl839x_setup_notify_ring_buffer(struct rteth_ctrl *ctrl)
 {
-	struct notify_b *b = ctrl->membase + sizeof(struct ring_b);
+	struct notify_b *b = ctrl->membase;
 
 	for (int i = 0; i < NOTIFY_BLOCKS; i++)
 		b->ring[i] = KSEG1ADDR(&b->blocks[i]) | 1 | (i == (NOTIFY_BLOCKS - 1) ? WRAP : 0);
@@ -771,7 +722,6 @@ static int rteth_open(struct net_device *ndev)
 {
 	unsigned long flags;
 	struct rteth_ctrl *ctrl = netdev_priv(ndev);
-	struct ring_b *ring = ctrl->membase;
 
 	pr_debug("%s called: RX rings %d(length %d), TX rings %d(length %d)\n",
 		 __func__, RTETH_RX_RINGS, RTETH_RX_RING_SIZE, RTETH_TX_RINGS, RTETH_TX_RING_SIZE);
@@ -779,7 +729,7 @@ static int rteth_open(struct net_device *ndev)
 	spin_lock_irqsave(&ctrl->lock, flags);
 	ctrl->r->hw_reset(ctrl);
 	rteth_setup_cpu_rx_rings(ctrl);
-	rteth_setup_ring_buffer(ctrl, ring);
+	rteth_setup_ring_buffer(ctrl);
 	if (ctrl->r->family_id == RTL8390_FAMILY_ID) {
 		rtl839x_setup_notify_ring_buffer(ctrl);
 		/* Make sure the ring structure is visible to the ASIC */
@@ -790,7 +740,7 @@ static int rteth_open(struct net_device *ndev)
 	rteth_hw_ring_setup(ctrl);
 	phylink_start(ctrl->phylink);
 
-	for (int i = 0; i < ctrl->rxrings; i++)
+	for (int i = 0; i < RTETH_RX_RINGS; i++)
 		napi_enable(&ctrl->rx_qs[i].napi);
 
 	switch (ctrl->r->family_id) {
@@ -910,7 +860,7 @@ static int rteth_stop(struct net_device *ndev)
 	phylink_stop(ctrl->phylink);
 	rtl838x_hw_stop(ctrl);
 
-	for (int i = 0; i < ctrl->rxrings; i++)
+	for (int i = 0; i < RTETH_RX_RINGS; i++)
 		napi_disable(&ctrl->rx_qs[i].napi);
 
 	netif_tx_stop_all_queues(ndev);
@@ -1701,8 +1651,7 @@ static int rtl838x_eth_probe(struct platform_device *pdev)
 	phy_interface_t phy_mode;
 	struct phylink *phylink;
 	u8 mac_addr[ETH_ALEN] = {0};
-	int err = 0, rxrings, rxringlen;
-	struct ring_b *ring;
+	int err = 0;
 
 	pr_info("Probing RTL838X eth device pdev: %x, dev: %x\n",
 		(u32)pdev, (u32)(&pdev->dev));
@@ -1714,11 +1663,7 @@ static int rtl838x_eth_probe(struct platform_device *pdev)
 
 	cfg = device_get_match_data(&pdev->dev);
 
-	rxrings = cfg->rx_rings > MAX_RXRINGS ? MAX_RXRINGS : cfg->rx_rings;
-	rxringlen = MAX_ENTRIES / rxrings;
-	rxringlen = rxringlen > MAX_RXLEN ? MAX_RXLEN : rxringlen;
-
-	dev = devm_alloc_etherdev_mqs(&pdev->dev, sizeof(struct rteth_ctrl), RTETH_TX_RINGS, rxrings);
+	dev = devm_alloc_etherdev_mqs(&pdev->dev, sizeof(struct rteth_ctrl), RTETH_TX_RINGS, RTETH_RX_RINGS);
 	if (!dev)
 		return -ENOMEM;
 	SET_NETDEV_DEV(dev, &pdev->dev);
@@ -1726,17 +1671,12 @@ static int rtl838x_eth_probe(struct platform_device *pdev)
 	ctrl->r = cfg;
 
 	/* Allocate buffer memory */
-	ctrl->membase = dmam_alloc_coherent(&pdev->dev, rxrings * rxringlen * RING_BUFFER +
-					    sizeof(struct ring_b) + sizeof(struct notify_b),
+	ctrl->membase = dmam_alloc_coherent(&pdev->dev, sizeof(struct notify_b),
 					    (void *)&dev->mem_start, GFP_KERNEL);
 	if (!ctrl->membase) {
 		dev_err(&pdev->dev, "cannot allocate DMA buffer\n");
 		return -ENOMEM;
 	}
-
-	/* Allocate ring-buffer space at the end of the allocated memory */
-	ring = ctrl->membase;
-	ring->rx_space = ctrl->membase + sizeof(struct ring_b) + sizeof(struct notify_b);
 
 	ctrl->rx_buf = dma_alloc_noncoherent(&pdev->dev,
 					     RTETH_RX_RINGS * RTETH_RX_RING_SIZE * RING_BUFFER,
@@ -1756,9 +1696,6 @@ static int rtl838x_eth_probe(struct platform_device *pdev)
 	dev->features = NETIF_F_RXCSUM;
 	dev->hw_features = NETIF_F_RXCSUM;
 	dev->netdev_ops = ctrl->r->netdev_ops;
-
-	ctrl->rxringlen = rxringlen;
-	ctrl->rxrings = rxrings;
 
 	/* Obtain device IRQ number */
 	dev->irq = platform_get_irq(pdev, 0);
@@ -1810,7 +1747,7 @@ static int rtl838x_eth_probe(struct platform_device *pdev)
 	ctrl->pdev = pdev;
 	ctrl->netdev = dev;
 
-	for (int i = 0; i < ctrl->rxrings; i++) {
+	for (int i = 0; i < RTETH_RX_RINGS; i++) {
 		ctrl->rx_qs[i].id = i;
 		ctrl->rx_qs[i].ctrl = ctrl;
 		netif_napi_add(dev, &ctrl->rx_qs[i].napi, rtl838x_poll_rx);
@@ -1858,7 +1795,7 @@ static void rtl838x_eth_remove(struct platform_device *pdev)
 
 		netif_tx_stop_all_queues(dev);
 
-		for (int i = 0; i < ctrl->rxrings; i++)
+		for (int i = 0; i < RTETH_RX_RINGS; i++)
 			netif_napi_del(&ctrl->rx_qs[i].napi);
 	}
 }
