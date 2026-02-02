@@ -619,6 +619,60 @@ let main_obj = {
 			return ret;
 		}
 	},
+	status: {
+		args: {},
+		call: function(req) {
+			let interfaces = {};
+
+			for (let phy_name, phy in wpas.data.config) {
+				if (!phy || !phy.data)
+					continue;
+
+				for (let ifname, iface_data in phy.data) {
+					let config = iface_data.config;
+
+					let entry = {
+						wiphy: phy.name,
+						macaddr: config.macaddr,
+						running: !!iface_data.running,
+						pending: !iface_data.running,
+					};
+
+					if (phy.radio != null && phy.radio >= 0)
+						entry.radio = phy.radio;
+
+					interfaces[config.iface] = entry;
+				}
+			}
+
+			for (let name, mld in wpas.data.mld) {
+				let entry = {
+					wiphy: mld.phy,
+					links: {},
+				};
+
+				if (mld.config && mld.config.macaddr)
+					entry.macaddr = mld.config.macaddr;
+
+				let mask = mld.radio_mask;
+				for (let radio = 0; mask; radio++, mask >>= 1) {
+					if (!(mask & 1))
+						continue;
+
+					entry.links[radio] = {
+						radio,
+						running: !!(mld.radio_mask_up & (1 << radio)),
+						pending: !!(mld.radio_mask_present & (1 << radio)) &&
+						         !(mld.radio_mask_up & (1 << radio)),
+					};
+				}
+
+				interfaces[mld.name] = entry;
+			}
+
+			return { interfaces };
+		}
+	},
 };
 
 wpas.data.ubus = ubus;
