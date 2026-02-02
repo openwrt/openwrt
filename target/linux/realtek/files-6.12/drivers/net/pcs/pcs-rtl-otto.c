@@ -3620,6 +3620,10 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 	if (ret < 0)
 		return ret;
 
+	ret = rtpcs_931x_sds_config_cmu(sds, hw_mode);
+	if (ret < 0)
+		return ret;
+
 	switch (hw_mode) {
 	case RTPCS_SDS_MODE_OFF:
 		ret = rtpcs_931x_sds_set_port_media(sds, RTPCS_PORT_MEDIA_NONE);
@@ -3637,8 +3641,6 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 	default:
 		break;
 	}
-
-	rtpcs_931x_sds_config_cmu(sds, hw_mode);
 
 	if (sds_id >= 2) {
 		if (ctrl->chip_version == RTPCS_CHIP_V2)
