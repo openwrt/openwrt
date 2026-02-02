@@ -34,6 +34,7 @@ int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type
  */
 
 #define RTETH_OWN_CPU		1
+#define RTETH_RX_RINGS		2
 #define RTETH_TX_RING_SIZE	16
 #define RTETH_TX_RINGS		2
 
@@ -531,6 +532,50 @@ static void rteth_93xx_hw_reset(struct rteth_ctrl *ctrl)
 	}
 }
 
+static void rteth_setup_cpu_rx_rings(struct rteth_ctrl *ctrl)
+{
+	/*
+	 * Realtek switches either have 8 (RTL83xx) or 32 (RTL93xx) receive queues. Whenever
+	 * a packet is trapped/received for the CPU it is put into one of these queues. This
+	 * is configured via mapping registers in two ways:
+	 *
+	 * - Switching queue/priority to CPU queue mapping (RTL83xx)
+	 * - Reason (why it is sent to CPU) to CPU queue mapping (all devices)
+	 *
+	 * With only low performance CPUs there is not much benefit of using all of these
+	 * queues in parallel. Especially because each queue needs buffer space. To keep
+	 * the queue limit simple, just write the desired CPU queue in a round robin style
+	 * to the registers.
+	 */
+
+	if (ctrl->r->qm_pkt2cpu_intpri_map) {
+		for (int priority = 0; priority < 8; priority++) {
+			int ring = (priority % RTETH_RX_RINGS) + 5;
+			int shift = priority * 3;
+
+			sw_w32_mask(0x7 << shift, ring << shift, ctrl->r->qm_pkt2cpu_intpri_map);
+		}
+	}
+
+	if (ctrl->r->qm_rsn2cpuqid_ctrl) {
+		int mask, bits_per_field, fields_per_reg, reason_cnt;
+
+		mask = ctrl->r->rx_rings - 1;
+		bits_per_field = fls(mask);
+		fields_per_reg = 32 / bits_per_field;
+		reason_cnt = ctrl->r->qm_rsn2cpuqid_cnt * fields_per_reg;
+
+		/* Reason registers have gaps. Do not care for now. */
+		for (int reason = 0; reason < reason_cnt; reason++) {
+			int reg = ctrl->r->qm_rsn2cpuqid_ctrl + 4 * (reason / fields_per_reg);
+			int shift = (reason % fields_per_reg) * bits_per_field;
+			int ring = (reason % RTETH_RX_RINGS) + 5;
+
+			sw_w32_mask(mask << shift, ring << shift, reg);
+		}
+	}
+}
+
 static void rteth_hw_ring_setup(struct rteth_ctrl *ctrl)
 {
 	struct ring_b *ring = ctrl->membase;
@@ -696,6 +741,7 @@ static int rteth_open(struct net_device *ndev)
 
 	spin_lock_irqsave(&ctrl->lock, flags);
 	ctrl->r->hw_reset(ctrl);
+	rteth_setup_cpu_rx_rings(ctrl);
 	rteth_setup_ring_buffer(ctrl, ring);
 	if (ctrl->r->family_id == RTL8390_FAMILY_ID) {
 		rtl839x_setup_notify_ring_buffer(ctrl);
@@ -1436,6 +1482,9 @@ static const struct rteth_config rteth_838x_cfg = {
 	.rx_rings = 8,
 	.net_irq = rteth_83xx_net_irq,
 	.mac_l2_port_ctrl = RTETH_838X_MAC_L2_PORT_CTRL,
+	.qm_pkt2cpu_intpri_map = RTETH_838X_QM_PKT2CPU_INTPRI_MAP,
+	.qm_rsn2cpuqid_ctrl = RTETH_838X_QM_PKT2CPU_INTPRI_0,
+	.qm_rsn2cpuqid_cnt = RTETH_838X_QM_PKT2CPU_INTPRI_CNT,
 	.dma_if_intr_sts = RTL838X_DMA_IF_INTR_STS,
 	.dma_if_intr_msk = RTL838X_DMA_IF_INTR_MSK,
 	.dma_if_ctrl = RTL838X_DMA_IF_CTRL,
@@ -1480,6 +1529,9 @@ static const struct rteth_config rteth_839x_cfg = {
 	.rx_rings = 8,
 	.net_irq = rteth_83xx_net_irq,
 	.mac_l2_port_ctrl = RTETH_839X_MAC_L2_PORT_CTRL,
+	.qm_pkt2cpu_intpri_map = RTETH_839X_QM_PKT2CPU_INTPRI_MAP,
+	.qm_rsn2cpuqid_ctrl = RTETH_839X_QM_PKT2CPU_INTPRI_0,
+	.qm_rsn2cpuqid_cnt = RTETH_839X_QM_PKT2CPU_INTPRI_CNT,
 	.dma_if_intr_sts = RTL839X_DMA_IF_INTR_STS,
 	.dma_if_intr_msk = RTL839X_DMA_IF_INTR_MSK,
 	.dma_if_ctrl = RTL839X_DMA_IF_CTRL,
@@ -1524,6 +1576,8 @@ static const struct rteth_config rteth_930x_cfg = {
 	.rx_rings = 32,
 	.net_irq = rteth_93xx_net_irq,
 	.mac_l2_port_ctrl = RTETH_930X_MAC_L2_PORT_CTRL,
+	.qm_rsn2cpuqid_ctrl = RTETH_930X_QM_RSN2CPUQID_CTRL_0,
+	.qm_rsn2cpuqid_cnt = RTETH_930X_QM_RSN2CPUQID_CTRL_CNT,
 	.dma_if_intr_rx_runout_sts = RTL930X_DMA_IF_INTR_RX_RUNOUT_STS,
 	.dma_if_intr_rx_done_sts = RTL930X_DMA_IF_INTR_RX_DONE_STS,
 	.dma_if_intr_tx_done_sts = RTL930X_DMA_IF_INTR_TX_DONE_STS,
@@ -1573,6 +1627,8 @@ static const struct rteth_config rteth_931x_cfg = {
 	.rx_rings = 32,
 	.net_irq = rteth_93xx_net_irq,
 	.mac_l2_port_ctrl = RTETH_931X_MAC_L2_PORT_CTRL,
+	.qm_rsn2cpuqid_ctrl = RTETH_931X_QM_RSN2CPUQID_CTRL_0,
+	.qm_rsn2cpuqid_cnt = RTETH_931X_QM_RSN2CPUQID_CTRL_CNT,
 	.dma_if_intr_rx_runout_sts = RTL931X_DMA_IF_INTR_RX_RUNOUT_STS,
 	.dma_if_intr_rx_done_sts = RTL931X_DMA_IF_INTR_RX_DONE_STS,
 	.dma_if_intr_tx_done_sts = RTL931X_DMA_IF_INTR_TX_DONE_STS,
