@@ -264,7 +264,7 @@ struct dsa_tag {
 	bool	crc_error;
 };
 
-static bool rteth_838x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
+static bool rteth_838x_decode_tag(struct rteth_packet *h, struct dsa_tag *t)
 {
 	/* cpu_tag[0] is reserved. Fields are off-by-one */
 	t->reason = h->cpu_tag[4] & 0xf;
@@ -281,7 +281,7 @@ static bool rteth_838x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 	return t->l2_offloaded;
 }
 
-static bool rteth_839x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
+static bool rteth_839x_decode_tag(struct rteth_packet *h, struct dsa_tag *t)
 {
 	/* cpu_tag[0] is reserved. Fields are off-by-one */
 	t->reason = h->cpu_tag[5] & 0x1f;
@@ -299,7 +299,7 @@ static bool rteth_839x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 	return t->l2_offloaded;
 }
 
-static bool rteth_930x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
+static bool rteth_930x_decode_tag(struct rteth_packet *h, struct dsa_tag *t)
 {
 	t->reason = h->cpu_tag[7] & 0x3f;
 	t->queue =  (h->cpu_tag[2] >> 11) & 0x1f;
@@ -315,7 +315,7 @@ static bool rteth_930x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
 	return t->l2_offloaded;
 }
 
-static bool rteth_931x_decode_tag(struct p_hdr *h, struct dsa_tag *t)
+static bool rteth_931x_decode_tag(struct rteth_packet *h, struct dsa_tag *t)
 {
 	t->reason = h->cpu_tag[7] & 0x3f;
 	t->queue =  (h->cpu_tag[2] >> 11) & 0x1f;
@@ -544,7 +544,7 @@ static void rteth_93xx_hw_reset(struct rteth_ctrl *ctrl)
 		int pos = (i % 3) * 10;
 
 		sw_w32_mask(0x3ff << pos, 0, ctrl->r->dma_if_rx_ring_size(i));
-		sw_w32_mask(0x3ff << pos, ctrl->rxringlen, ctrl->r->dma_if_rx_ring_cntr(i));
+		sw_w32_mask(0x3ff << pos, RTETH_RX_RING_SIZE, ctrl->r->dma_if_rx_ring_cntr(i));
 	}
 }
 
@@ -594,10 +594,10 @@ static void rteth_setup_cpu_rx_rings(struct rteth_ctrl *ctrl)
 
 static void rteth_hw_ring_setup(struct rteth_ctrl *ctrl)
 {
-	struct ring_b *ring = ctrl->membase;
-
-	for (int i = 0; i < ctrl->rxrings; i++)
-		sw_w32(KSEG1ADDR(&ring->rx_r[i]), ctrl->r->dma_rx_base + i * 4);
+	for (int r = 0; r < RTETH_RX_RINGS; r++)
+		sw_w32(ctrl->rx_data_dma +
+		       r * sizeof(struct rteth_rx) + offsetof(struct rteth_rx, ring),
+		       ctrl->r->dma_rx_base + r * 4);
 
 	for (int r = 0; r < RTETH_TX_RINGS; r++)
 		sw_w32(ctrl->tx_dma +
@@ -659,7 +659,7 @@ static void rtl93xx_hw_en_rxtx(struct rteth_ctrl *ctrl)
 	sw_w32((DEFAULT_MTU << 16) | RX_TRUNCATE_EN_93XX, ctrl->r->dma_if_ctrl);
 
 	for (int i = 0; i < ctrl->rxrings; i++) {
-		int cnt = min(ctrl->rxringlen - 2, 0x3ff);
+		int cnt = min(RTETH_RX_RING_SIZE - 2, 0x3ff);
 		int pos = (i % 3) * 10;
 		u32 v;
 
@@ -774,7 +774,7 @@ static int rteth_open(struct net_device *ndev)
 	struct ring_b *ring = ctrl->membase;
 
 	pr_debug("%s called: RX rings %d(length %d), TX rings %d(length %d)\n",
-		 __func__, ctrl->rxrings, ctrl->rxringlen, RTETH_TX_RINGS, RTETH_TX_RING_SIZE);
+		 __func__, RTETH_RX_RINGS, RTETH_RX_RING_SIZE, RTETH_TX_RINGS, RTETH_TX_RING_SIZE);
 
 	spin_lock_irqsave(&ctrl->lock, flags);
 	ctrl->r->hw_reset(ctrl);
@@ -1110,54 +1110,45 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *netdev)
 	return NETDEV_TX_OK;
 }
 
-static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
+static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 {
+	int slot, len, work_done = 0, rx_packets = 0, rx_bytes = 0;
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
-	struct ring_b *ring = ctrl->membase;
-	unsigned long flags;
-	int work_done = 0;
-	u32	*last;
 	bool dsa = netdev_uses_dsa(dev);
+	struct rteth_packet *packet;
+	dma_addr_t packet_dma;
+	struct sk_buff *skb;
+	struct dsa_tag tag;
 
-	pr_debug("---------------------------------------------------------- RX - %d\n", r);
-	spin_lock_irqsave(&ctrl->lock, flags);
-	last = (u32 *)KSEG1ADDR(sw_r32(ctrl->r->dma_if_rx_cur + r * 4));
+	while (work_done < budget) {
+		slot = ctrl->rx_data[ring].slot;
+		packet_dma = ctrl->rx_data[ring].ring[slot];
+		rmb();
 
-	do {
-		struct sk_buff *skb;
-		struct dsa_tag tag;
-		struct p_hdr *h;
-		u8 *data;
-		int len;
-
-		if ((ring->rx_r[r][ring->c_rx[r]] & 0x1)) {
-			if (&ring->rx_r[r][ring->c_rx[r]] != last) {
-				netdev_warn(dev, "Ring contention: r: %x, last %x, cur %x\n",
-					    r, (u32)last, (u32)&ring->rx_r[r][ring->c_rx[r]]);
-			}
+		if (packet_dma & RTETH_OWN_CPU)
 			break;
+
+		packet = &ctrl->rx_data[ring].packet[slot];
+		len = packet->len;
+
+		if (!len) {
+			netdev_err(dev, "empty packet received\n");
+			break;
+		} else if (!dsa) {
+			len -= 4;
 		}
 
-		h = &ring->rx_header[r][ring->c_rx[r]];
-		data = (u8 *)KSEG1ADDR(h->buf);
-		len = h->len;
-		if (!len)
-			break;
-		work_done++;
-
-		len -= 4; /* strip the CRC */
-		/* Add 4 bytes for cpu_tag */
-		if (dsa)
-			len += 4;
-
 		skb = netdev_alloc_skb_ip_align(dev, len);
-		if (likely(skb)) {
-			/* Make sure data is visible */
-			mb();
-			skb_put_data(skb, (u8 *)KSEG1ADDR(data), len);
-			/* Overwrite CRC with cpu_tag */
+		if (unlikely(!skb)) {
+			netdev_warn(dev, "low memory, packet dropped\n");
+			dev->stats.rx_dropped++;
+		} else {
+			dma_sync_single_for_cpu(&ctrl->pdev->dev, packet->dma, len, DMA_FROM_DEVICE);
+			dma_rmb();
+			skb_put_data(skb, packet->buf, len);
+
 			if (dsa) {
-				ctrl->r->decode_tag(h, &tag);
+				ctrl->r->decode_tag(packet, &tag);
 				skb->data[len - 4] = 0x80;
 				skb->data[len - 3] = tag.port;
 				skb->data[len - 2] = 0x10;
@@ -1166,10 +1157,6 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 					skb->data[len - 3] |= 0x40;
 			}
 
-			if (tag.queue >= 0)
-				pr_debug("Queue: %d, len: %d, reason %d port %d\n",
-					 tag.queue, len, tag.reason, tag.port);
-
 			skb->protocol = eth_type_trans(skb, dev);
 			if (dev->features & NETIF_F_RXCSUM) {
 				if (tag.crc_error)
@@ -1177,32 +1164,22 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 				else
 					skb->ip_summed = CHECKSUM_UNNECESSARY;
 			}
-			dev->stats.rx_packets++;
-			dev->stats.rx_bytes += len;
 
-			napi_gro_receive(&ctrl->rx_qs[r].napi, skb);
-		} else {
-			if (net_ratelimit())
-				dev_warn(&dev->dev, "low on memory - packet dropped\n");
-			dev->stats.rx_dropped++;
+			rx_packets++;
+			rx_bytes += len;
+			napi_gro_receive(&ctrl->rx_qs[ring].napi, skb);
 		}
 
-		/* Reset header structure */
-		memset(h, 0, sizeof(struct p_hdr));
-		h->buf = data;
-		h->size = RING_BUFFER;
+		ctrl->rx_data[ring].ring[slot] = packet_dma | RTETH_OWN_CPU;
+		ctrl->rx_data[ring].slot = (slot + 1) % RTETH_RX_RING_SIZE;
+		work_done++;
+	}
 
-		ring->rx_r[r][ring->c_rx[r]] = KSEG1ADDR(h) | 0x1 | (ring->c_rx[r] == (ctrl->rxringlen - 1) ?
-					       WRAP :
-					       0x1);
-		ring->c_rx[r] = (ring->c_rx[r] + 1) % ctrl->rxringlen;
-		last = (u32 *)KSEG1ADDR(sw_r32(ctrl->r->dma_if_rx_cur + r * 4));
-	} while (&ring->rx_r[r][ring->c_rx[r]] != last && work_done < budget);
-
-	/* Update counters */
-	ctrl->r->update_counter(r, work_done);
-
-	spin_unlock_irqrestore(&ctrl->lock, flags);
+	spin_lock(&ctrl->rx_lock);
+	ctrl->r->update_counter(ring, work_done);
+	dev->stats.rx_packets += rx_packets;
+	dev->stats.rx_bytes += rx_bytes;
+	spin_unlock(&ctrl->rx_lock);
 
 	return work_done;
 }
@@ -1216,7 +1193,7 @@ static int rtl838x_poll_rx(struct napi_struct *napi, int budget)
 	int work_done = 0;
 
 	while (work_done < budget) {
-		int work = rtl838x_hw_receive(ctrl->netdev, ring, budget - work_done);
+		int work = rteth_hw_receive(ctrl->netdev, ring, budget - work_done);
 
 		if (!work)
 			break;
