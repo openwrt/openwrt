@@ -22,21 +22,25 @@ ipq60xx_setup_interfaces()
 		ucidef_set_interface_lan "lan1 lan2" "dhcp"
 		;;
 	glinet,gl-ax1800|\
+	jdcloud,re-cs-02|\
 	linksys,mr7350|\
 	linksys,mr7500|\
 	yuncore,fap650)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
-	netgear,wax214)
-		ucidef_set_interfaces_lan_wan "lan"
-		;;
+	jdcloud,re-cs-07|\
+	jdcloud,re-ss-01|\
 	qihoo,360v6)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+		;;
+	netgear,wax214)
+		ucidef_set_interfaces_lan_wan "lan"
 		;;
 	netgear,wax610|\
 	netgear,wax610y|\
 	tplink,eap610-outdoor|\
 	tplink,eap623od-hd-v1|\
+	tplink,eap620-hd-v3|\
 	tplink,eap625-outdoor-hd-v1)
 		ucidef_set_interface_lan "lan" "dhcp"
 		;;
@@ -63,6 +67,7 @@ ipq60xx_setup_macs()
 		label_mac=$lan_mac
 		;;
 	tplink,eap610-outdoor|\
+	tplink,eap620-hd-v3|\
 	tplink,eap623od-hd-v1|\
 	tplink,eap625-outdoor-hd-v1)
 		label_mac=$(get_mac_binary /tmp/factory_data/default-mac 0)

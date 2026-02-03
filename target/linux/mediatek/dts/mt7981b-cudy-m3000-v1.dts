@@ -86,7 +86,7 @@
 		phy-handle = <&rtl8221b_phy>;
 
 		nvmem-cell-names = "mac-address";
-		nvmem-cells = <&macaddr_bdinfo_de00 1>;
+		nvmem-cells = <&macaddr_bdinfo_de00 0>;
 	};
 
 	gmac1: mac@1 {
@@ -96,7 +96,7 @@
 		phy-handle = <&int_gbe_phy>;
 
 		nvmem-cell-names = "mac-address";
-		nvmem-cells = <&macaddr_bdinfo_de00 0>;
+		nvmem-cells = <&macaddr_bdinfo_de00 1>;
 	};
 };
 

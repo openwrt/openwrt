@@ -3,7 +3,7 @@
 PART_NAME=firmware
 REQUIRE_IMAGE_METADATA=1
 
-RAMFS_COPY_BIN='fw_printenv fw_setenv head'
+RAMFS_COPY_BIN='fw_printenv fw_setenv head seq'
 RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
 
 remove_oem_ubi_volume() {
@@ -166,6 +166,20 @@ platform_do_upgrade() {
 		remove_oem_ubi_volume ubi_rootfs
 		nand_do_upgrade "$1"
 		;;
+	jdcloud,re-cs-02|\
+	jdcloud,re-cs-07|\
+	jdcloud,re-ss-01)
+		local cfgpart=$(find_mmc_part "0:BOOTCONFIG")
+		part_num="$(hexdump -e '1/1 "%01x|"' -n 1 -s 148 -C $cfgpart | cut -f 1 -d "|" | head -n1)"
+		if [ "$part_num" -eq "1" ]; then
+			CI_KERNPART="0:HLOS_1"
+			CI_ROOTPART="rootfs_1"
+		else
+			CI_KERNPART="0:HLOS"
+			CI_ROOTPART="rootfs"
+		fi
+		emmc_do_upgrade "$1"
+		;;
 	netgear,wax610|\
 	netgear,wax610y)
 		remove_oem_ubi_volume wifi_fw
@@ -188,6 +202,7 @@ platform_do_upgrade() {
 		nand_do_upgrade "$1"
 		;;
 	tplink,eap610-outdoor|\
+	tplink,eap620-hd-v3|\
 	tplink,eap623od-hd-v1|\
 	tplink,eap625-outdoor-hd-v1)
 		tplink_do_upgrade "$1"

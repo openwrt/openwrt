@@ -20,7 +20,7 @@ PKG_SOURCE_VERSION:=9f612dc02c34509f062ed63b60bcc7e937e25178
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=BSD-4-Clause
-PKG_CPE_ID:=cpe:/a:samba:ppp
+PKG_CPE_ID:=cpe:/a:point-to-point_protocol_project:point-to-point_protocol
 
 PKG_ASLR_PIE_REGULAR:=1
 PKG_BUILD_DEPENDS:=libpcap

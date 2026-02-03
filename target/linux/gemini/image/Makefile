@@ -89,18 +89,33 @@ endef
 # 0x000000320000-0x000000920000 : "Ramdisk" - second part of the kernel and
 #                                 some padding goes here
 # 0x000000920000-0x000000f20000 : "Application" - rootfs goes here
-define Build/storlink-default-images
-	mkdir -p $@.tmp
 
-	# "App" partition is the rootfs
-	mv $@ $@.tmp/hddapp.tgz
-	# 256 bytes copy routine
-	dd if=$(KDIR)/copy-kernel.bin of=$@.tmp/zImage
-	$(call Image/pad-to,$@.tmp/zImage,512)
+define CreateStorlinkProlog
+	# 512 bytes copy routine
+	dd if=$(KDIR)/copy-kernel-$(2).bin of=$(1)
+	# Add OpenWrt prolog header (used by partition splitter)
+	echo "OPENWRT-PROLOG-512" >> $(1)
+	stat -c %s ${IMAGE_KERNEL} >> $(1)
+	$(call Image/pad-to,$(1),512)
+endef
+
+define CreateStorlinkFactoryfile
+	mkdir -p $@.tmp
+	$(call CreateStorlinkProlog,$@.tmp/zImage,$(2))
 	# Copy first part of the kernel into zImage
-	dd if=$(IMAGE_KERNEL) of=$@.tmp/zImage bs=1 seek=512 count=2096640
+	dd if=$(IMAGE_KERNEL) of=$@.tmp/zImage bs=1 seek=512 count=$(3)
+	$(call Image/pad-to,$@.tmp/zImage,128k)
 	# Put the rest of the kernel into the "ramdisk"
-	dd if=$(IMAGE_KERNEL) of=$@.tmp/rd.gz bs=1 skip=2096640 count=6144k conv=sync
+	dd if=$(IMAGE_KERNEL) of=$@-ramdisk bs=1 skip=$(3) conv=sync
+	$(call Image/pad-to,$@-ramdisk,128k)
+	# Append the root filesystem right after this
+	dd if=$(IMAGE_ROOTFS) >> $@-ramdisk
+	$(STAGING_DIR_HOST)/bin/padjffs2 $(IMAGE_ROOTFS) -c 128 >> $@-ramdisk
+	# Now rd.gz is too big so split off rd.gz and the tail into "hddapp.gz"
+	dd if=$@-ramdisk of=$@.tmp/rd.gz bs=1 count=6144k conv=sync
+	dd if=$@-ramdisk of=$@.tmp/hddapp.tgz bs=1 skip=6144k count=6144k conv=sync
+	rm -f $@-ramdisk
+	# Taglabel
 	cp ./ImageInfo-$(1) $@.tmp/ImageInfo
 
 	sed -i -e "s/DATESTR/`date +%Y%m%d $(if $(SOURCE_DATE_EPOCH),--date "@$(SOURCE_DATE_EPOCH)")`/g" $@.tmp/ImageInfo
@@ -109,6 +124,35 @@ define Build/storlink-default-images
 		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)"))
 
 	rm -rf $@.tmp
+	exit 0
+endef
+
+define CreateStorlinkSysupgradefile
+	$(call CreateStorlinkProlog,$@,$(2))
+	# Catenate the kernel
+	dd if=$(IMAGE_KERNEL) >> $@
+	$(call Image/pad-to,$@,128k)
+	# Append the root filesystem right after this
+	dd if=$(IMAGE_ROOTFS) >> $@
+	$(STAGING_DIR_HOST)/bin/padjffs2 $(IMAGE_ROOTFS) -c 128 >> $@
+endef
+
+# 2048k "Kern" partition
+define Build/storlink-2048k-factory-image
+	$(call CreateStorlinkFactoryfile,$(1),2048k,2096640)
+endef
+
+define Build/storlink-2048k-sysupgrade-image
+	$(call CreateStorlinkSysupgradefile,$(1),2048k)
+endef
+
+# 3072k "Kern" partition
+define Build/storlink-3072k-factory-image
+	$(call CreateStorlinkFactoryfile,$(1),3072k,3145216)
+endef
+
+define Build/storlink-3072k-sysupgrade-image
+	$(call CreateStorlinkSysupgradefile,$(1),3072k)
 endef
 
 # WBD-111 and WBD-222:
@@ -182,10 +226,8 @@ TARGET_DEVICES += dlink_dns-313
 define Device/storlink-reference
 	COMPILE := copy-kernel-$(1).bin
 	COMPILE/copy-kernel-$(1).bin := copy-kernel.bin
-	IMAGES := factory.bin
+	IMAGES := factory.bin sysupgrade.bin
 	FILESYSTEMS := squashfs
-	IMAGE/factory.bin := append-rootfs | pad-rootfs | pad-to 6144k | \
-		storlink-default-images $(1)
 	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES)
 endef
 
@@ -194,6 +236,9 @@ define Device/itian_sq201
 	DEVICE_VENDOR := ITian
 	DEVICE_MODEL := Square One SQ201
 	DEVICE_DTS := gemini-sq201
+	IMAGE/factory.bin := storlink-2048k-factory-image $(1)
+	IMAGE/sysupgrade.bin := storlink-2048k-sysupgrade-image $(1) |\
+				append-metadata
 	DEVICE_PACKAGES += kmod-rt61-pci kmod-usb2-pci kmod-dsa-vsc73xx-spi
 endef
 TARGET_DEVICES += itian_sq201
@@ -203,6 +248,13 @@ define Device/raidsonic_ib-4220-b
 	DEVICE_VENDOR := Raidsonic
 	DEVICE_MODEL := NAS IB-4220-B
 	DEVICE_DTS := gemini-nas4220b
+	# The IB-4220-B has a deviating flash layout
+	# Kern         3072k - 512 | = 3145216
+	# Ramdisk      6144k       | = 9216k
+	# Application  6144k       | = 15360k
+	IMAGE/factory.bin := storlink-3072k-factory-image $(1)
+	IMAGE/sysupgrade.bin := storlink-3072k-sysupgrade-image $(1) |\
+			append-metadata
 endef
 TARGET_DEVICES += raidsonic_ib-4220-b
 
@@ -211,6 +263,9 @@ define Device/storlink_sl93512r
 	DEVICE_VENDOR := StorLink
 	DEVICE_MODEL := SL93512r
 	DEVICE_DTS := gemini-sl93512r
+	IMAGE/factory.bin := storlink-3072k-factory-image $(1)
+	IMAGE/sysupgrade.bin := storlink-3072k-sysupgrade-image $(1) |\
+			append-metadata
 	DEVICE_PACKAGES += kmod-dsa-vsc73xx-spi
 endef
 TARGET_DEVICES += storlink_sl93512r

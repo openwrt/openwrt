@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+
+#include <dt-bindings/reset/econet,en751221-scu.h>
+
 /dts-v1/;
 
 / {
@@ -45,6 +48,11 @@
 		};
 	};
 
+	chip_scu: syscon@1fa20000 {
+		compatible = "econet,en751221-chip-scu", "syscon";
+		reg = <0x1fa20000 0x388>;
+	};
+
 	intc: interrupt-controller@1fb40000 {
 		compatible = "econet,en751221-intc";
 		reg = <0x1fb40000 0x100>;
@@ -56,9 +64,25 @@
 		econet,shadow-interrupts = <7 2>, <8 3>, <13 12>, <30 29>;
 	};
 
+	scuclk: clock-controller@1fb00000 {
+		compatible = "econet,en751221-scu", "syscon";
+		reg = <0x1fb00000 0x970>;
+		#clock-cells = <1>;
+		#reset-cells = <1>;
+	};
+
 	ethernet: ethernet@1fb50000 {
 		compatible = "econet,en751221-eth";
 		reg = <0x1fb50000 0x10000>;
+
+		resets = <&scuclk EN751221_FE_RST>,
+			 <&scuclk EN751221_FE_QDMA1_RST>,
+			 <&scuclk EN751221_FE_QDMA2_RST>,
+			 <&scuclk EN751221_GSW_RST>,
+			 <&scuclk EN751221_XPON_MAC_RST>,
+			 <&scuclk EN751221_XPON_PHY_RST>;
+		reset-names = "fe", "qdma0", "qdma1", "gsw",
+			      "xpon-mac", "xpon-phy";
 
 		#address-cells = <1>;
 		#size-cells = <0>;

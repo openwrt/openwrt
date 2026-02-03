@@ -157,7 +157,7 @@
 				     <GIC_SHARED 2 IRQ_TYPE_LEVEL_HIGH>, <GIC_SHARED 3 IRQ_TYPE_LEVEL_HIGH>,
 				     <GIC_SHARED 4 IRQ_TYPE_LEVEL_HIGH>, <GIC_SHARED 5 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&lx_clk>;
-                };
+		};
 
 		uart0: uart@2000 {
 			compatible = "ns16550a";
@@ -243,6 +243,21 @@
 
 			mdio_bus0: mdio-bus@0 {
 				reg = <0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+			mdio_bus1: mdio-bus@1 {
+				reg = <1>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+			mdio_bus2: mdio-bus@2 {
+				reg = <2>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+			mdio_bus3: mdio-bus@3 {
+				reg = <3>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 			};

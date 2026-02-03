@@ -5,10 +5,11 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=https://github.com/microchip-ung/arm-trusted-firmware.git
-PKG_SOURCE_DATE:=2024-08-13
-PKG_SOURCE_VERSION:=67fcfcab71f78ac7d4af834c37b29f8c98dd5ff1
-PKG_MIRROR_HASH:=777c68273e84028de77750f3fe8a1219b02f01d43ce35948893ac642d8eb10d7
+PKG_SOURCE_DATE:=2026-01-07
+PKG_SOURCE_VERSION:=7696c9aaaae7c677f4c373a61a1289cba7f824aa
+PKG_MIRROR_HASH:=331548d7c73896bd5e4438c0ec9c71bbe58d3bf9a29350496ad94c382e922b9c
 
+PKG_BUILD_DEPENDS:=ruby/host
 PKG_MAINTAINER:=Robert Marko <robert.marko@sartura.hr>
 
 include $(INCLUDE_DIR)/kernel.mk
@@ -28,7 +29,17 @@ define Trusted-Firmware-A/ev23x71a
   DEPENDS:=+u-boot-ev23x71a
 endef
 
-TFA_TARGETS:= ev23x71a
+define Trusted-Firmware-A/tactical-1000
+  NAME:=Novarq Tactical 1000
+  BUILD_SUBTARGET:=lan969x
+  BUILD_DEVICES:=novarq_tactical-1000
+  PLAT:=novarq_tactical_1000_v3
+  DEPENDS:=+u-boot-tactical-1000
+endef
+
+TFA_TARGETS:= \
+	ev23x71a \
+	tactical-1000
 
 MBEDTLS_NAME:=mbedtls
 MBEDTLS_RELEASE:=2.28.10
@@ -50,17 +61,6 @@ define Build/Prepare
 	$(call Build/Prepare/Default,)
 
 	$(TAR) -C $(PKG_BUILD_DIR) -xf $(DL_DIR)/$(MBEDTLS_SOURCE)
-endef
-
-# We must not pass OPENSSL_DIR as locally built mbedtls is used
-define Build/Compile
-	+unset CC; \
-	$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
-		CROSS_COMPILE=$(TARGET_CROSS) \
-		$(if $(DTC),DTC="$(DTC)") \
-		PLAT=$(PLAT) \
-		BUILD_STRING="OpenWrt $(PKG_VERSION_PREFIX)$(PKG_VERSION)-$(PKG_RELEASE) ($(VARIANT))" \
-		$(TFA_MAKE_FLAGS)
 endef
 
 TFA_MAKE_FLAGS += \

@@ -521,17 +521,17 @@ static void rtl839x_write_mcast_pmask(int idx, u64 portmask)
 
 static void rtl839x_vlan_profile_setup(int profile)
 {
-	u32 p[2];
-	u32 pmask_id = UNKNOWN_MC_PMASK;
+	u32 p[2] = { 0, 0 };
 
-	p[0] = pmask_id; /* Use portmaks 0xfff for unknown IPv6 MC flooding */
-	/* Enable L2 Learning BIT 0, portmask UNKNOWN_MC_PMASK for IP/L2-MC traffic flooding */
-	p[1] = 1 | pmask_id << 1 | pmask_id << 13;
+	p[1] = RTL839X_VLAN_L2_LEARN_EN(1);
+	p[1] |= RTL839X_VLAN_L2_UNKN_MC_FLD(MC_PMASK_ALL_PORTS_IDX) |
+		RTL839X_VLAN_IP4_UNKN_MC_FLD(MC_PMASK_ALL_PORTS_IDX);
+	p[0] |= RTL839X_VLAN_IP6_UNKN_MC_FLD(MC_PMASK_ALL_PORTS_IDX);
 
 	sw_w32(p[0], RTL839X_VLAN_PROFILE(profile));
 	sw_w32(p[1], RTL839X_VLAN_PROFILE(profile) + 4);
 
-	rtl839x_write_mcast_pmask(UNKNOWN_MC_PMASK, 0x001fffffffffffff);
+	rtl839x_write_mcast_pmask(MC_PMASK_ALL_PORTS_IDX, RTL839X_MC_PMASK_ALL_PORTS);
 }
 
 static void rtl839x_traffic_set(int source, u64 dest_matrix)
@@ -555,7 +555,9 @@ static void rtl839x_l2_learning_setup(void)
 	 * address flooding to the reserved entry in the portmask table used
 	 * also for multicast flooding
 	 */
-	sw_w32(UNKNOWN_MC_PMASK << 12 | UNKNOWN_MC_PMASK, RTL839X_L2_FLD_PMSK);
+	sw_w32(RTL839X_L2_BC_FLD(MC_PMASK_ALL_PORTS_IDX) |
+	       RTL839X_L2_UNKN_UC_FLD(MC_PMASK_ALL_PORTS_IDX),
+	       RTL839X_L2_FLD_PMSK);
 
 	/* Limit learning to maximum: 32k entries, after that just flood (bits 0-1) */
 	sw_w32((0x7fff << 2) | 0, RTL839X_L2_LRN_CONSTRT);
@@ -624,64 +626,38 @@ irqreturn_t rtl839x_switch_irq(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-/* TODO: unused */
-int rtl8390_sds_power(int mac, int val)
-{
-	u32 offset = (mac == 48) ? 0x0 : 0x100;
-	u32 mode = val ? 0 : 1;
-
-	pr_debug("In %s: mac %d, set %d\n", __func__, mac, val);
-
-	if ((mac != 48) && (mac != 49)) {
-		pr_err("%s: not an SFP port: %d\n", __func__, mac);
-		return -1;
-	}
-
-	/* Set bit 1003. 1000 starts at 7c */
-	sw_w32_mask(BIT(11), mode << 11, RTL839X_SDS12_13_PWR0 + offset);
-
-	return 0;
-}
-
-void rtl8390_get_version(struct rtl838x_switch_priv *priv)
-{
-	u32 info, model;
-
-	sw_w32_mask(0xf << 28, 0xa << 28, RTL839X_CHIP_INFO);
-	info = sw_r32(RTL839X_CHIP_INFO);
-
-	model = sw_r32(RTL839X_MODEL_NAME_INFO);
-	priv->version = RTL8390_VERSION_A + ((model & 0x3f) >> 1);
-
-	pr_debug("RTL839X Chip-Info: %x, version %c\n", info, priv->version);
-}
-
 void rtl839x_vlan_profile_dump(int profile)
 {
 	u32 p[2];
 
-	if (profile < 0 || profile > 7)
+	if (profile < 0 || profile > RTL839X_VLAN_PROFILE_MAX)
 		return;
 
 	p[0] = sw_r32(RTL839X_VLAN_PROFILE(profile));
 	p[1] = sw_r32(RTL839X_VLAN_PROFILE(profile) + 4);
 
 	pr_debug("VLAN profile %d: L2 learning: %d, UNKN L2MC FLD PMSK %d, UNKN IPMC FLD PMSK %d, UNKN IPv6MC FLD PMSK: %d\n",
-		 profile, p[1] & 1, (p[1] >> 1) & 0xfff, (p[1] >> 13) & 0xfff,
-		 (p[0]) & 0xfff);
+		 profile, RTL839X_VLAN_L2_LEARN_EN_R(p),
+		 RTL839X_VLAN_L2_UNKN_MC_FLD_PMSK(p),
+		 RTL839X_VLAN_IP4_UNKN_MC_FLD_PMSK(p),
+		 RTL839X_VLAN_IP6_UNKN_MC_FLD_PMSK(p));
 	pr_debug("VLAN profile %d: raw %08x, %08x\n", profile, p[0], p[1]);
 }
 
-static void rtl839x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
+static int rtldsa_839x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, int port, u32 port_state[])
 {
+	int idx = 3 - ((port + 12) / 16);
+	int bit = 2 * ((port + 12) % 16);
 	u32 cmd = 1 << 16 | /* Execute cmd */
 		  0 << 15 | /* Read */
 		  5 << 12 | /* Table type 0b101 */
 		  (msti & 0xfff);
-	priv->r->exec_tbl0_cmd(cmd);
 
+	priv->r->exec_tbl0_cmd(cmd);
 	for (int i = 0; i < 4; i++)
 		port_state[i] = sw_r32(priv->r->tbl_access_data_0(i));
+
+	return (port_state[idx] >> bit) & 3;
 }
 
 static void rtl839x_stp_set(struct rtl838x_switch_priv *priv, u16 msti, u32 port_state[])
@@ -1680,7 +1656,7 @@ const struct rtl838x_reg rtl839x_reg = {
 	.enable_mcast_flood = rtl839x_enable_mcast_flood,
 	.enable_bcast_flood = rtl839x_enable_bcast_flood,
 	.set_static_move_action = rtl839x_set_static_move_action,
-	.stp_get = rtl839x_stp_get,
+	.stp_get = rtldsa_839x_stp_get,
 	.stp_set = rtl839x_stp_set,
 	.mac_force_mode_ctrl = rtl839x_mac_force_mode_ctrl,
 	.mac_port_ctrl = rtl839x_mac_port_ctrl,
@@ -1713,4 +1689,5 @@ const struct rtl838x_reg rtl839x_reg = {
 	.l3_setup = rtl839x_l3_setup,
 	.set_distribution_algorithm = rtl839x_set_distribution_algorithm,
 	.set_receive_management_action = rtl839x_set_receive_management_action,
+	.qos_init = rtldsa_839x_qos_init,
 };

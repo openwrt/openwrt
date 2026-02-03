@@ -24,6 +24,7 @@
 #include "taxonomy.h"
 #include "airtime_policy.h"
 #include "hw_features.h"
+#include "base64.h"
 
 static struct ubus_context *ctx;
 static struct blob_buf b;
@@ -1159,17 +1160,21 @@ enum {
 	BEACON_REQ_DURATION,
 	BEACON_REQ_BSSID,
 	BEACON_REQ_SSID,
+	BEACON_REQ_REPORTING_DETAIL,
+	BEACON_REQ_CHANNEL_REPORTS,
 	__BEACON_REQ_MAX,
 };
 
 static const struct blobmsg_policy beacon_req_policy[__BEACON_REQ_MAX] = {
 	[BEACON_REQ_ADDR] = { "addr", BLOBMSG_TYPE_STRING },
-	[BEACON_REQ_OP_CLASS] { "op_class", BLOBMSG_TYPE_INT32 },
-	[BEACON_REQ_CHANNEL] { "channel", BLOBMSG_TYPE_INT32 },
-	[BEACON_REQ_DURATION] { "duration", BLOBMSG_TYPE_INT32 },
-	[BEACON_REQ_MODE] { "mode", BLOBMSG_TYPE_INT32 },
-	[BEACON_REQ_BSSID] { "bssid", BLOBMSG_TYPE_STRING },
-	[BEACON_REQ_SSID] { "ssid", BLOBMSG_TYPE_STRING },
+	[BEACON_REQ_OP_CLASS] = { "op_class", BLOBMSG_TYPE_INT32 },
+	[BEACON_REQ_CHANNEL] = { "channel", BLOBMSG_TYPE_INT32 },
+	[BEACON_REQ_DURATION] = { "duration", BLOBMSG_TYPE_INT32 },
+	[BEACON_REQ_MODE] = { "mode", BLOBMSG_TYPE_INT32 },
+	[BEACON_REQ_BSSID] = { "bssid", BLOBMSG_TYPE_STRING },
+	[BEACON_REQ_SSID] = { "ssid", BLOBMSG_TYPE_STRING },
+	[BEACON_REQ_REPORTING_DETAIL] = { "reporting_detail", BLOBMSG_TYPE_INT32 },
+	[BEACON_REQ_CHANNEL_REPORTS] = { "channel_reports", BLOBMSG_TYPE_ARRAY },
 };
 
 static int
@@ -1185,6 +1190,7 @@ hostapd_rrm_beacon_req(struct ubus_context *ctx, struct ubus_object *obj,
 	u8 addr[ETH_ALEN];
 	int mode, rem, ret;
 	int buf_len = 13;
+	int reporting_detail = 255;
 
 	blobmsg_parse(beacon_req_policy, __BEACON_REQ_MAX, tb, blob_data(msg), blob_len(msg));
 
@@ -1202,6 +1208,9 @@ hostapd_rrm_beacon_req(struct ubus_context *ctx, struct ubus_object *obj,
 	if (tb[BEACON_REQ_BSSID] &&
 	    hwaddr_aton(blobmsg_data(tb[BEACON_REQ_BSSID]), bssid))
 		return UBUS_STATUS_INVALID_ARGUMENT;
+
+	if (tb[BEACON_REQ_REPORTING_DETAIL])
+		reporting_detail = blobmsg_get_u32(tb[BEACON_REQ_REPORTING_DETAIL]);
 
 	req = wpabuf_alloc(buf_len);
 	if (!req)
@@ -1229,6 +1238,14 @@ hostapd_rrm_beacon_req(struct ubus_context *ctx, struct ubus_object *obj,
 		wpabuf_put_u8(req, WLAN_EID_SSID);
 		wpabuf_put_u8(req, blobmsg_data_len(cur) - 1);
 		wpabuf_put_data(req, blobmsg_data(cur), blobmsg_data_len(cur) - 1);
+	}
+
+	/* as per 9-106 */
+	if (reporting_detail >= 0 && reporting_detail < 3) {
+		/* as per 9-104 */
+		wpabuf_put_u8(req, 2);
+		wpabuf_put_u8(req, 1);
+		wpabuf_put_le16(req, reporting_detail);
 	}
 
 	ret = hostapd_send_beacon_req(hapd, addr, 0, req);
@@ -1607,12 +1624,13 @@ hostapd_bss_get_sta_ies(struct ubus_context *ctx, struct ubus_object *obj,
 		return UBUS_STATUS_INVALID_ARGUMENT;
 
 	sta = ap_get_sta(hapd, addr);
-	if (!sta || (!sta->probe_ie_taxonomy && !sta->assoc_ie_taxonomy))
+	if (!sta || (!sta->probe_ie_taxonomy && !sta->assoc_ie_taxonomy && !sta->assoc_frame_taxonomy))
 		return UBUS_STATUS_NOT_FOUND;
 
 	blob_buf_init(&b, 0);
 	hostapd_add_b64_data("probe_ie", sta->probe_ie_taxonomy);
 	hostapd_add_b64_data("assoc_ie", sta->assoc_ie_taxonomy);
+	hostapd_add_b64_data("assoc_frame", sta->assoc_frame_taxonomy);
 	ubus_send_reply(ctx, req, b.head);
 
 	return 0;
@@ -1988,6 +2006,8 @@ void hostapd_ubus_notify_beacon_report(
 	struct hostapd_data *hapd, const u8 *addr, u8 token, u8 rep_mode,
 	struct rrm_measurement_beacon_report *rep, size_t len)
 {
+	char *encoded;
+
 	if (!hapd->ubus.obj.has_subscribers)
 		return;
 
@@ -2007,7 +2027,11 @@ void hostapd_ubus_notify_beacon_report(
 	blobmsg_add_u16(&b, "antenna-id", rep->antenna_id);
 	blobmsg_add_u16(&b, "parent-tsf", rep->parent_tsf);
 	blobmsg_add_u16(&b, "rep-mode", rep_mode);
-
+	encoded = base64_encode(rep, len, NULL);
+	if (encoded) {
+		blobmsg_add_string(&b, "report", encoded);
+		os_free(encoded);
+	}
 	ubus_notify(ctx, &hapd->ubus.obj, "beacon-report", b.head, -1);
 }
 

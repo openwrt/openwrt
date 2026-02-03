@@ -413,6 +413,102 @@ config KERNEL_PREEMPT_TRACER
 	  enabled. This option and the irqs-off timing option can be
 	  used together or separately.)
 
+config KERNEL_HWLAT_TRACER
+	bool "Tracer to detect hardware latencies (like SMIs)"
+	depends on KERNEL_FTRACE
+	help
+	  This tracer, when enabled will create one or more kernel threads,
+	  depending on what the cpumask file is set to, which each thread
+	  spinning in a loop looking for interruptions caused by
+	  something other than the kernel. For example, if a
+	  System Management Interrupt (SMI) takes a noticeable amount of
+	  time, this tracer will detect it. This is useful for testing
+	  if a system is reliable for Real Time tasks.
+
+	  Some files are created in the tracing directory when this
+	  is enabled:
+
+	    hwlat_detector/width   - time in usecs for how long to spin for
+	    hwlat_detector/window  - time in usecs between the start of each
+				     iteration
+
+	  A kernel thread is created that will spin with interrupts disabled
+	  for "width" microseconds in every "window" cycle. It will not spin
+	  for "window - width" microseconds, where the system can
+	  continue to operate.
+
+	  The output will appear in the trace and trace_pipe files.
+
+	  When the tracer is not running, it has no affect on the system,
+	  but when it is running, it can cause the system to be
+	  periodically non responsive. Do not run this tracer on a
+	  production system.
+
+	  To enable this tracer, echo in "hwlat" into the current_tracer
+	  file. Every time a latency is greater than tracing_thresh, it will
+	  be recorded into the ring buffer.
+
+config KERNEL_OSNOISE_TRACER
+	bool "OS Noise tracer"
+	depends on KERNEL_FTRACE
+	help
+	  In the context of high-performance computing (HPC), the Operating
+	  System Noise (osnoise) refers to the interference experienced by an
+	  application due to activities inside the operating system. In the
+	  context of Linux, NMIs, IRQs, SoftIRQs, and any other system thread
+	  can cause noise to the system. Moreover, hardware-related jobs can
+	  also cause noise, for example, via SMIs.
+
+	  The osnoise tracer leverages the hwlat_detector by running a similar
+	  loop with preemption, SoftIRQs and IRQs enabled, thus allowing all
+	  the sources of osnoise during its execution. The osnoise tracer takes
+	  note of the entry and exit point of any source of interferences,
+	  increasing a per-cpu interference counter. It saves an interference
+	  counter for each source of interference. The interference counter for
+	  NMI, IRQs, SoftIRQs, and threads is increased anytime the tool
+	  observes these interferences' entry events. When a noise happens
+	  without any interference from the operating system level, the
+	  hardware noise counter increases, pointing to a hardware-related
+	  noise. In this way, osnoise can account for any source of
+	  interference. At the end of the period, the osnoise tracer prints
+	  the sum of all noise, the max single noise, the percentage of CPU
+	  available for the thread, and the counters for the noise sources.
+
+	  In addition to the tracer, a set of tracepoints were added to
+	  facilitate the identification of the osnoise source.
+
+	  The output will appear in the trace and trace_pipe files.
+
+	  To enable this tracer, echo in "osnoise" into the current_tracer
+	  file.
+
+config KERNEL_TIMERLAT_TRACER
+	bool "Timerlat tracer"
+	depends on KERNEL_FTRACE
+	help
+	  The timerlat tracer aims to help the preemptive kernel developers
+	  to find sources of wakeup latencies of real-time threads.
+
+	  The tracer creates a per-cpu kernel thread with real-time priority.
+	  The tracer thread sets a periodic timer to wakeup itself, and goes
+	  to sleep waiting for the timer to fire. At the wakeup, the thread
+	  then computes a wakeup latency value as the difference between
+	  the current time and the absolute time that the timer was set
+	  to expire.
+
+	  The tracer prints two lines at every activation. The first is the
+	  timer latency observed at the hardirq context before the
+	  activation of the thread. The second is the timer latency observed
+	  by the thread, which is the same level that cyclictest reports. The
+	  ACTIVATION ID field serves to relate the irq execution to its
+	  respective thread execution.
+
+	  The tracer is build on top of osnoise tracer, and the osnoise:
+	  events can be used to trace the source of interference from NMI,
+	  IRQs and other threads. It also enables the capture of the
+	  stacktrace at the IRQ context, which helps to identify the code
+	  path that can cause thread delay.
+
 config KERNEL_HIST_TRIGGERS
 	bool "Histogram triggers"
 	depends on KERNEL_FTRACE
@@ -1181,6 +1277,7 @@ config KERNEL_NET_L3_MASTER_DEV
 config KERNEL_DCB
 	bool "Data Center Bridging support"
 	default y if TARGET_armsr_armv8
+	default y if TARGET_microchipsw
 	default y if TARGET_x86_64
 	help
 	  This enables support for configuring Data Center Bridging (DCB)
@@ -1492,3 +1589,72 @@ config KERNEL_WERROR
 	  and unusual warnings, or you have some architecture with problems,
 	  you may need to disable this config option in order to
 	  successfully build the kernel.
+
+choice
+	prompt "Preemption Model"
+	default KERNEL_PREEMPT_NONE
+
+config KERNEL_PREEMPT_NONE
+	bool "No Forced Preemption (Server)"
+	help
+	  This is the traditional Linux preemption model, geared towards
+	  throughput. It will still provide good latencies most of the
+	  time, but there are no guarantees and occasional longer delays
+	  are possible.
+
+	  Select this option if you are building a kernel for a server or
+	  scientific/computation system, or if you want to maximize the
+	  raw processing power of the kernel, irrespective of scheduling
+	  latencies.
+
+config KERNEL_PREEMPT_VOLUNTARY
+	bool "Voluntary Kernel Preemption (Desktop)"
+	help
+	  This option reduces the latency of the kernel by adding more
+	  "explicit preemption points" to the kernel code. These new
+	  preemption points have been selected to reduce the maximum
+	  latency of rescheduling, providing faster application reactions,
+	  at the cost of slightly lower throughput.
+
+	  This allows reaction to interactive events by allowing a
+	  low priority process to voluntarily preempt itself even if it
+	  is in kernel mode executing a system call. This allows
+	  applications to run more 'smoothly' even when the system is
+	  under load.
+
+	  Select this if you are building a kernel for a desktop system.
+
+config KERNEL_PREEMPT
+	bool "Preemptible Kernel (Low-Latency Desktop)"
+	help
+	  This option reduces the latency of the kernel by making
+	  all kernel code (that is not executing in a critical section)
+	  preemptible.  This allows reaction to interactive events by
+	  permitting a low priority process to be preempted involuntarily
+	  even if it is in kernel mode executing a system call and would
+	  otherwise not be about to reach a natural preemption point.
+	  This allows applications to run more 'smoothly' even when the
+	  system is under load, at the cost of slightly lower throughput
+	  and a slight runtime overhead to kernel code.
+
+	  Select this if you are building a kernel for a desktop or
+	  embedded system with latency requirements in the milliseconds
+	  range.
+
+config KERNEL_PREEMPT_RT
+	bool "Fully Preemptible Kernel (Real-Time)"
+	depends on (x86_64 || aarch64 || riscv64)
+	help
+	  This option turns the kernel into a real-time kernel by replacing
+	  various locking primitives (spinlocks, rwlocks, etc.) with
+	  preemptible priority-inheritance aware variants, enforcing
+	  interrupt threading and introducing mechanisms to break up long
+	  non-preemptible sections. This makes the kernel, except for very
+	  low level and critical code paths (entry code, scheduler, low
+	  level interrupt handling) fully preemptible and brings most
+	  execution contexts under scheduler control.
+
+	  Select this if you are building a kernel for systems which
+	  require real-time guarantees.
+
+endchoice

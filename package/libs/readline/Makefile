@@ -57,7 +57,10 @@ CONFIGURE_VARS += \
 	bash_cv_termcap_lib=libncursesw
 
 TARGET_CFLAGS += $(FPIC)
-HOST_CFLAGS += $(FPIC)
+TARGET_LDFLAGS += $(FPIC)
+
+HOST_CFLAGS += $(HOST_FPIC)
+HOST_LDFLAGS += $(HOST_FPIC)
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include

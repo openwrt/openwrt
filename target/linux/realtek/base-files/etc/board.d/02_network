@@ -51,6 +51,14 @@ realtek_setup_macs()
 	local label_mac=""
 
 	case $board in
+	edgecore,ecs4100-12ph|\
+	tplink,sg2008p-v1|\
+	tplink,sg2210p-v3|\
+	tplink,sg2452p-v4|\
+	tplink,t1600g-28ts-v3)
+		label_mac=$(get_mac_label)
+		lan_mac="$label_mac"
+		;;
 	hpe,1920-8g|\
 	hpe,1920-8g-poe-65w|\
 	hpe,1920-8g-poe-180w|\
@@ -67,6 +75,7 @@ realtek_setup_macs()
 		lan_mac_start=$(macaddr_add $lan_mac 2)
 		lan_mac_end=$(macaddr_add $lan_mac $((mac_count2-mac_count1)))
 		;;
+	hasivo,s1100wp-8gt-se|\
 	plasmacloud,esx28|\
 	plasmacloud,mcx3|\
 	plasmacloud,psx8|\
@@ -75,17 +84,14 @@ realtek_setup_macs()
 		lan_mac_start=skip
 		lan_mac="$(get_mac_label)"
 	;;
-	tplink,sg2008p-v1|\
-	tplink,sg2210p-v3|\
-	tplink,sg2452p-v4|\
-	tplink,t1600g-28ts-v3)
-		label_mac=$(get_mac_label)
-		lan_mac="$label_mac"
-		;;
 	tplink,tl-st1008f-v2|\
 	zyxel,xgs1010-12-a1)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		[ -z "$lan_mac" ] || [ "$lan_mac" = "00:e0:4c:00:00:00" ] && lan_mac=$(macaddr_random)
+		;;
+	xikestor,sks8300-8t)
+		lan_mac="$(get_mac_label)"
+		label_mac="$lan_mac"
 		;;
 	xikestor,sks8300-8x)
 		lan_mac=$(mtd_get_mac_binary board-info 0x1f1)
@@ -132,6 +138,10 @@ realtek_setup_poe()
 		ucidef_set_poe 193 "lan8 lan7 lan6 lan5 lan4 lan3 lan2 lan1 lan16 lan15 lan14 lan13 lan12 lan11 lan10 lan9 lan24 lan23
 				lan22 lan21 lan20 lan19 lan18 lan17"
 		;;
+	edgecore,ecs4100-12ph|\
+	netgear,gs110tpp-v1)
+		ucidef_set_poe 130 "$(filter_port_list "$lan_list" "lan9 lan10")"
+		;;
 	engenius,ews2910p-v1|\
 	engenius,ews2910p-v3)
 		ucidef_set_poe 60 "$(filter_port_list "$lan_list" "lan9 lan10")"
@@ -152,9 +162,6 @@ realtek_setup_poe()
 		ucidef_set_poe 370 "lan8 lan7 lan6 lan5 lan4 lan3 lan2 lan1 lan16 lan15 lan14 lan13 lan12 lan11 lan10 lan9 lan24 lan23
 				lan22 lan21 lan20 lan19 lan18 lan17 lan32 lan31 lan30 lan29 lan28 lan27 lan26 lan25 lan40 lan39 lan38 lan37
 				lan36 lan35 lan34 lan33 lan48 lan47 lan46 lan45 lan44 lan43 lan42 lan41"
-		;;
-	netgear,gs110tpp-v1)
-		ucidef_set_poe 130 "$(filter_port_list "$lan_list" "lan9 lan10")"
 		;;
 	netgear,gs110tup-v1)
 		ucidef_set_poe 240 "$(filter_port_list "$lan_list" "lan9 lan10")"

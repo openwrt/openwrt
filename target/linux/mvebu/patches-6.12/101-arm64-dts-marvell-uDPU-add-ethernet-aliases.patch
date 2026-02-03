@@ -1,0 +1,33 @@
+From 4b23f8aecf46484cefb5563b0c255ac4e0cd52f9 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Tue, 27 Jan 2026 13:24:59 +0100
+Subject: [PATCH] arm64: dts: marvell: uDPU: add ethernet aliases
+
+On eDPU plus, which is an updated revision of eDPU which uses an external
+MV88E6361 switch we are relying on U-Boot to detect the board, and then
+enable and disable the required nodes for that revision.
+
+However, it seems that I missed adding the required aliases for ethernet
+controllers, and this worked as in OpenWrt we had added those locally.
+
+Cc: stable@vger.kernel.org
+Fixes: 660b8b2f3944 ("arm64: dts: marvell: eDPU: add support for version with external switch")
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+---
+ arch/arm64/boot/dts/marvell/armada-3720-uDPU.dtsi | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/arch/arm64/boot/dts/marvell/armada-3720-uDPU.dtsi
++++ b/arch/arm64/boot/dts/marvell/armada-3720-uDPU.dtsi
+@@ -15,6 +15,11 @@
+ #include "armada-372x.dtsi"
+ 
+ / {
++	aliases {
++		ethernet0 = &eth0;
++		ethernet1 = &eth1;
++	};
++
+ 	chosen {
+ 		stdout-path = "serial0:115200n8";
+ 	};

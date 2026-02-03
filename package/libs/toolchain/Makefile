@@ -578,7 +578,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   endef
 
   define Package/libc/install
-    echo $(LIBC_VERSION)-r$(PKG_RELEASE) > $(TMP_DIR)/libc.version; \
+    echo $(LIBC_VERSION)-r$(PKG_RELEASE) > $(STAGING_DIR)/libc.version; \
     $(call Package/$(LIBC)/install,$1)
   endef
 
@@ -698,7 +698,7 @@ else
   endef
 
   define Package/libc/install
-	echo $(LIBC_VERSION)-r$(PKG_RELEASE) > $(TMP_DIR)/libc.version; \
+	echo $(LIBC_VERSION)-r$(PKG_RELEASE) > $(STAGING_DIR)/libc.version; \
 	for file in $(call qstrip,$(CONFIG_LIBC_FILE_SPEC)); do \
 		if [ '$(CONFIG_USE_GLIBC)' != '' ] ; then \
 			case "$${file}" in \

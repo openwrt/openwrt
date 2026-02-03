@@ -165,7 +165,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  }
  
  static int b53_fdb_copy(int port, const struct b53_arl_entry *ent,
-@@ -1983,14 +2040,20 @@ int b53_fdb_dump(struct dsa_switch *ds,
+@@ -1986,14 +2043,20 @@ int b53_fdb_dump(struct dsa_switch *ds,
  	struct b53_device *priv = ds->priv;
  	struct b53_arl_entry results[2];
  	unsigned int count = 0;

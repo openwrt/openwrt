@@ -76,6 +76,42 @@ define Device/glinet_gl-axt1800
 endef
 TARGET_DEVICES += glinet_gl-axt1800
 
+define Device/jdcloud_re-cs-02
+	$(call Device/FitImage)
+	DEVICE_VENDOR := JDCloud
+	DEVICE_MODEL := RE-CS-02
+	SOC := ipq6010
+	BLOCKSIZE := 64k
+	KERNEL_SIZE := 6144k
+	DEVICE_DTS_CONFIG := config@cp03-c3
+	DEVICE_PACKAGES := ath11k-firmware-qcn9074 ipq-wifi-jdcloud_re-cs-02 kmod-ath11k-pci
+endef
+TARGET_DEVICES += jdcloud_re-cs-02
+
+define Device/jdcloud_re-cs-07
+	$(call Device/FitImage)
+	DEVICE_VENDOR := JDCloud
+	DEVICE_MODEL := RE-CS-07
+	SOC := ipq6010
+	BLOCKSIZE := 64k
+	KERNEL_SIZE := 6144k
+	DEVICE_DTS_CONFIG := config@cp03-c4
+	DEVICE_PACKAGES := -ath11k-firmware-ipq6018 -kmod-ath11k-ahb -wpad-basic-mbedtls
+endef
+TARGET_DEVICES += jdcloud_re-cs-07
+
+define Device/jdcloud_re-ss-01
+	$(call Device/FitImage)
+	DEVICE_VENDOR := JDCloud
+	DEVICE_MODEL := RE-SS-01
+	SOC := ipq6000
+	BLOCKSIZE := 64k
+	KERNEL_SIZE := 6144k
+	DEVICE_DTS_CONFIG := config@cp03-c2
+	DEVICE_PACKAGES := ipq-wifi-jdcloud_re-ss-01
+endef
+TARGET_DEVICES += jdcloud_re-ss-01
+
 define Device/linksys_mr
 	$(call Device/FitImage)
 	DEVICE_VENDOR := Linksys
@@ -188,7 +224,7 @@ define Device/tplink_eap623od-hd-v1
 	BLOCKSIZE := 128k
 	PAGESIZE := 2048
 	SOC := ipq6018
-	DEVICE_PACKAGES := ipq-wifi-tplink_eap623od-hd-v1 kmod-phy-realtek
+	DEVICE_PACKAGES := ipq-wifi-tplink_eap623-outdoor-hd-v1 kmod-phy-realtek
 	IMAGES += web-ui-factory.bin
 	IMAGE/web-ui-factory.bin := append-ubi | tplink-image-2022
 	TPLINK_SUPPORT_STRING := SupportList:\r\nEAP623-Outdoor HD(TP-Link|UN|AX1800-D):1.0\r\n
@@ -214,6 +250,26 @@ define Device/tplink_eap625-outdoor-hd-v1
 
 endef
 TARGET_DEVICES += tplink_eap625-outdoor-hd-v1
+
+define Device/tplink_eap620-hd-v3
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := TP-Link
+	DEVICE_MODEL := EAP620 HD v3
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	SOC := ipq6018
+	DEVICE_PACKAGES := ipq-wifi-tplink_eap620-hd-v3
+	IMAGES += web-ui-factory.bin
+	IMAGE/web-ui-factory.bin := append-ubi | tplink-image-2022
+	TPLINK_SUPPORT_STRING := SupportList:\r\n \
+		EAP620 HD(TP-Link|UN|AX1800-D):3.0\r\n \
+		EAP620 HD(TP-Link|CA|AX1800-D):3.0\r\n \
+		EAP620 HD(TP-Link|JP|AX1800-D):3.0\r\n \
+		EAP620 HD(TP-Link|EG|AX1800-D):3.0\r\n
+
+endef
+TARGET_DEVICES += tplink_eap620-hd-v3
 
 define Device/yuncore_fap650
 	$(call Device/FitImage)

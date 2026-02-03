@@ -24,6 +24,17 @@ __network_ifstatus() {
 	eval "$__tmp"
 }
 
+# determine the IAID of the given logical interface
+# 1: destination variable
+# 2: interface
+network_generate_iface_iaid() {
+	local __iaid
+
+	__iaid=$(printf '%s' "$2" | md5sum | cut -c 1-8)
+
+	export "$1=$__iaid"
+}
+
 # determine first IPv4 address of given logical interface
 # 1: destination variable
 # 2: interface

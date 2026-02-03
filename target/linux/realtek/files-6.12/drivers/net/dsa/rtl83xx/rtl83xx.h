@@ -6,10 +6,6 @@
 #include <net/dsa.h>
 #include "rtl838x.h"
 
-#define RTL8380_VERSION_A 'A'
-#define RTL8390_VERSION_A 'A'
-#define RTL8380_VERSION_B 'B'
-
 struct fdb_update_work {
 	struct work_struct work;
 	struct net_device *ndev;
@@ -131,13 +127,14 @@ inline u16 rtl_table_data(struct table_reg *r, int i);
 inline u32 rtl_table_data_r(struct table_reg *r, int i);
 inline void rtl_table_data_w(struct table_reg *r, u32 v, int i);
 
-void __init rtl83xx_setup_qos(struct rtl838x_switch_priv *priv);
+void rtldsa_838x_qos_init(struct rtl838x_switch_priv *priv);
+void rtldsa_839x_qos_init(struct rtl838x_switch_priv *priv);
 
-void rtl83xx_fast_age(struct dsa_switch *ds, int port);
+void rtldsa_83xx_fast_age(struct dsa_switch *ds, int port);
 int rtl83xx_packet_cntr_alloc(struct rtl838x_switch_priv *priv);
-int rtl83xx_port_get_stp_state(struct rtl838x_switch_priv *priv, int port);
+int rtldsa_port_get_stp_state(struct rtl838x_switch_priv *priv, int port);
 int rtl83xx_port_is_under(const struct net_device *dev, struct rtl838x_switch_priv *priv);
-void rtl83xx_port_stp_state_set(struct dsa_switch *ds, int port, u8 state);
+void rtldsa_port_stp_state_set(struct dsa_switch *ds, int port, u8 state);
 int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type_data);
 
 /* Port register accessor functions for the RTL839x and RTL931X SoCs */
@@ -160,14 +157,12 @@ int rtl838x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate
 /* RTL838x-specific */
 u32 rtl838x_hash(struct rtl838x_switch_priv *priv, u64 seed);
 irqreturn_t rtl838x_switch_irq(int irq, void *dev_id);
-void rtl8380_get_version(struct rtl838x_switch_priv *priv);
 void rtl838x_vlan_profile_dump(int index);
 void rtl838x_print_matrix(void);
 
 /* RTL839x-specific */
 u32 rtl839x_hash(struct rtl838x_switch_priv *priv, u64 seed);
 irqreturn_t rtl839x_switch_irq(int irq, void *dev_id);
-void rtl8390_get_version(struct rtl838x_switch_priv *priv);
 void rtl839x_vlan_profile_dump(int index);
 void rtl839x_exec_tbl2_cmd(u32 cmd);
 void rtl839x_print_matrix(void);
@@ -196,7 +191,6 @@ int rtl83xx_lag_del(struct dsa_switch *ds, int group, int port);
 void rtl838x_egress_rate_queue_limit(struct rtl838x_switch_priv *priv, int port,
 				     int queue, u32 rate);
 
-int rtl8390_sds_power(int mac, int val);
 void rtl839x_pie_rule_dump(struct  pie_rule *pr);
 void rtl839x_set_egress_queue(int port, int queue);
 
@@ -205,8 +199,8 @@ void rtl930x_pie_rule_dump_raw(u32 r[]);
 
 void rtl931x_print_matrix(void);
 
-extern const struct dsa_switch_ops rtl83xx_switch_ops;
-extern const struct dsa_switch_ops rtl93xx_switch_ops;
+extern const struct dsa_switch_ops rtldsa_83xx_switch_ops;
+extern const struct dsa_switch_ops rtldsa_93xx_switch_ops;
 
 extern const struct rtl838x_reg rtl838x_reg;
 extern const struct rtl838x_reg rtl839x_reg;

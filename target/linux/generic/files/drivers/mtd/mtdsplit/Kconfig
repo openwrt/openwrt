@@ -115,3 +115,8 @@ config MTD_SPLIT_MSTC_BOOT
 	bool "MSTC bootnum-based parser"
 	depends on MTD_SPLIT_SUPPORT
 	select MTD_SPLIT
+
+config MTD_SPLIT_OPENWRT_PROLOG
+	bool "OpenWrt executable prolog-based parser"
+	depends on MTD_SPLIT_SUPPORT
+	select MTD_SPLIT

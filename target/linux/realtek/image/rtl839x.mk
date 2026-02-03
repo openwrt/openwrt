@@ -9,6 +9,21 @@ define Device/d-link_dgs-1210-52
 endef
 TARGET_DEVICES += d-link_dgs-1210-52
 
+define Device/edgecore_ecs4100-12ph
+  $(Device/uimage-rt-loader)
+  SOC := rtl8393
+  DEVICE_VENDOR := Edgecore
+  DEVICE_MODEL := ECS4100-12PH
+  IMAGE_SIZE := 14336k
+  DEVICE_PACKAGES := \
+	kmod-eeprom-at24 \
+	kmod-hwmon-adt7470 \
+	kmod-hwmon-lm75 \
+	kmod-thermal \
+	realtek-poe
+endef
+TARGET_DEVICES += edgecore_ecs4100-12ph
+
 define Device/hpe_1920-48g
   $(Device/hpe_1920)
   SOC := rtl8393
@@ -82,3 +97,31 @@ define Device/zyxel_gs1900-48-a1
   SUPPORTED_DEVICES += zyxel,gs1900-48
 endef
 TARGET_DEVICES += zyxel_gs1900-48-a1
+
+define Device/zyxel_gs1920-24hp-v1
+  FLASH_ADDR := 0xb40c0000
+ifeq ($(IB),)
+  ARTIFACTS := loader.bin
+  ARTIFACT/loader.bin := \
+    rt-loader-standalone | \
+    zynsig
+endif
+  SOC := rtl8392
+  IMAGE_SIZE := 12144k
+  DEVICE_VENDOR := Zyxel
+  DEVICE_MODEL := GS1920-24HP
+  DEVICE_VARIANT := v1
+  DEVICE_PACKAGES := \
+	  kmod-hwmon-lm85
+  KERNEL := \
+    kernel-bin | \
+    append-dtb | \
+    rt-compress | \
+    uImage lzma
+  KERNEL_INITRAMFS := \
+    kernel-bin | \
+    append-dtb | \
+    rt-compress | \
+    rt-loader
+endef
+TARGET_DEVICES += zyxel_gs1920-24hp-v1

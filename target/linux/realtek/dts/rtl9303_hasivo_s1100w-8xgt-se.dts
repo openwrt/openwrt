@@ -129,49 +129,50 @@
 &mdio_bus0 {
 	phy0: ethernet-phy@0 {
 		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <0 0>;
 		reg = <0>;
 	};
 
 	phy8: ethernet-phy@8 {
 		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <0 1>;
+		realtek,smi-address = <1>;
 		reg = <8>;
 	};
 
 	phy16: ethernet-phy@16 {
 		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <0 2>;
+		realtek,smi-address = <2>;
 		reg = <16>;
 	};
 
 	phy20: ethernet-phy@20 {
 		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <0 3>;
+		realtek,smi-address = <3>;
 		reg = <20>;
 	};
+};
 
+&mdio_bus3 {
 	phy24: ethernet-phy@24 {
 		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <3 16>;
+		realtek,smi-address = <16>;
 		reg = <24>;
 	};
 
 	phy25: ethernet-phy@25 {
 		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <3 17>;
+		realtek,smi-address = <17>;
 		reg = <25>;
 	};
 
 	phy26: ethernet-phy@26 {
 		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <3 18>;
+		realtek,smi-address = <18>;
 		reg = <26>;
 	};
 
 	phy27: ethernet-phy@27 {
 		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <3 19>;
+		realtek,smi-address = <19>;
 		reg = <27>;
 	};
 };

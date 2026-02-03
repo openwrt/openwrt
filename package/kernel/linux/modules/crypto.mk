@@ -624,11 +624,7 @@ define KernelPackage/crypto-lib-curve25519
   FILES:= \
 	$(LINUX_DIR)/lib/crypto/libcurve25519.ko \
 	$(LINUX_DIR)/lib/crypto/libcurve25519-generic.ko
-  $(call AddDepends/crypto,+PACKAGE_kmod-crypto-kpp:kmod-crypto-kpp)
-endef
-
-define KernelPackage/crypto-lib-curve25519/config
-  imply PACKAGE_kmod-crypto-kpp
+  $(call AddDepends/crypto,+kmod-crypto-kpp)
 endef
 
 ifndef CONFIG_TARGET_uml
@@ -661,11 +657,7 @@ define KernelPackage/crypto-lib-poly1305
   KCONFIG:=CONFIG_CRYPTO_LIB_POLY1305
   HIDDEN:=1
   FILES:=$(LINUX_DIR)/lib/crypto/libpoly1305.ko
-  $(call AddDepends/crypto,+PACKAGE_kmod-crypto-hash:kmod-crypto-hash)
-endef
-
-define KernelPackage/crypto-lib-poly1305/config
-  imply PACKAGE_kmod-crypto-hash
+  $(call AddDepends/crypto,+kmod-crypto-hash)
 endef
 
 ifndef CONFIG_TARGET_uml

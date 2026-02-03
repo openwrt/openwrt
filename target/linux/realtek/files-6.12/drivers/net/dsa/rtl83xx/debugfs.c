@@ -162,12 +162,12 @@ static ssize_t stp_state_read(struct file *filp, char __user *buffer, size_t cou
 {
 	struct rtl838x_port *p = filp->private_data;
 	struct dsa_switch *ds = p->dp->ds;
-	int value = rtl83xx_port_get_stp_state(ds->priv, p->dp->index);
+	int state = rtldsa_port_get_stp_state(ds->priv, p->dp->index);
 
-	if (value < 0)
-		return -EINVAL;
+	if (state < 0)
+		return state;
 
-	return rtl838x_common_read(buffer, count, ppos, (u32)value);
+	return rtl838x_common_read(buffer, count, ppos, (u32)state);
 }
 
 static ssize_t stp_state_write(struct file *filp, const char __user *buffer,
@@ -180,7 +180,7 @@ static ssize_t stp_state_write(struct file *filp, const char __user *buffer,
 	if (res < 0)
 		return res;
 
-	rtl83xx_port_stp_state_set(p->dp->ds, p->dp->index, (u8)value);
+	rtldsa_port_stp_state_set(p->dp->ds, p->dp->index, (u8)value);
 
 	return res;
 }
@@ -384,7 +384,7 @@ static ssize_t age_out_write(struct file *filp, const char __user *buffer,
 	if (res < 0)
 		return res;
 
-	rtl83xx_fast_age(p->dp->ds, p->dp->index);
+	rtldsa_83xx_fast_age(p->dp->ds, p->dp->index);
 
 	return res;
 }

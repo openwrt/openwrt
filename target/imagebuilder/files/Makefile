@@ -98,7 +98,7 @@ OPKG:=$(call opkg,$(TARGET_DIR)) \
 
 export APK_KEYS:=$(TOPDIR)/keys
 APK:=$(call apk,$(TARGET_DIR)) \
-	--repositories-file $(TOPDIR)/repositories \
+	$(if $(CONFIG_IB_STANDALONE),,--repositories-file $(TOPDIR)/repositories) \
 	--repository $(PACKAGE_DIR)/packages.adb \
 	$(if $(CONFIG_SIGNATURE_CHECK),,--allow-untrusted) \
 	--cache-dir $(DL_DIR)
@@ -145,6 +145,32 @@ BUILD_PACKAGES:=$(sort $(DEFAULT_PACKAGES) $($(USER_PROFILE)_PACKAGES) kernel)
 BUILD_PACKAGES:=$(filter-out $(filter -%,$(BUILD_PACKAGES)) $(patsubst -%,%,$(filter -%,$(BUILD_PACKAGES))),$(BUILD_PACKAGES))
 BUILD_PACKAGES:=$(USER_PACKAGES) $(BUILD_PACKAGES)
 BUILD_PACKAGES:=$(filter-out $(filter -%,$(BUILD_PACKAGES)) $(patsubst -%,%,$(filter -%,$(BUILD_PACKAGES))),$(BUILD_PACKAGES))
+
+ifneq ($(CONFIG_USE_APK),)
+BUILD_PACKAGES+= \
+  "base-files=$(BASE_FILES_VERSION)" \
+  "libc=$(LIBC_VERSION)" \
+  "kernel=$(KERNEL_VERSION)"
+endif
+
+# Get ABI version suffix for a package from an apk index
+#
+# 1: package name
+define GetABISuffix
+$(shell $(APK) query --fields tags --match provides $(1) | tr ' ' '\n' | grep '^openwrt:abiversion=' | cut -d= -f2)
+endef
+
+# Format packages by adding an ABI version suffix if found
+#
+# 1: list of packages
+define FormatPackages
+$(strip $(foreach pkg,$(strip $(subst ",,$(1))),
+  $(eval pkg_name:=$(firstword $(subst =, ,$(pkg))))
+  $(if $(findstring =,$(pkg)),$(eval pkg_ver:==$(lastword $(subst =, ,$(pkg)))))
+  $(pkg_name)$(call GetABISuffix,$(pkg_name))$(pkg_ver)
+))
+endef
+
 PACKAGES:=
 
 _call_image: staging_dir/host/.prereq-build
@@ -229,10 +255,8 @@ ifeq ($(CONFIG_USE_APK),)
 	$(OPKG) install $(wildcard $(PACKAGE_DIR)/kernel_*.ipk)
 	$(OPKG) install $(BUILD_PACKAGES)
 else
-	$(APK) add --arch $(ARCH_PACKAGES) --no-scripts $(BUILD_PACKAGES) \
-        "base-files=$(BASE_FILES_VERSION)" \
-        "libc=$(LIBC_VERSION)" \
-        "kernel=$(KERNEL_VERSION)"
+	$(eval BUILD_PACKAGES:=$(call FormatPackages,$(BUILD_PACKAGES)))
+	$(APK) add --arch $(ARCH_PACKAGES) --no-scripts $(BUILD_PACKAGES)
 endif
 
 prepare_rootfs: FORCE

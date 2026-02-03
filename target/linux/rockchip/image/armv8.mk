@@ -180,6 +180,42 @@ define Device/friendlyarm_nanopi-r76s
 endef
 TARGET_DEVICES += friendlyarm_nanopi-r76s
 
+define Device/hinlink_h28k
+  $(Device/rk3528)
+  DEVICE_VENDOR := HINLINK
+  DEVICE_MODEL := H28K
+  DEVICE_ALT0_VENDOR := LinkStar
+  DEVICE_ALT0_MODEL := H28K
+  DEVICE_DTS := rk3528-hinlink-h28k
+  UBOOT_DEVICE_NAME := hinlink-h28k-rk3528
+  DEVICE_PACKAGES := kmod-r8169
+endef
+TARGET_DEVICES += hinlink_h28k
+
+define Device/hinlink_h6xk
+  $(Device/rk3568)
+  DEVICE_VENDOR := HINLINK
+  DEVICE_PACKAGES := kmod-ata-ahci-dwc kmod-mt7921e kmod-r8169 wpad-basic-mbedtls
+endef
+
+define Device/hinlink_h66k
+  $(Device/hinlink_h6xk)
+  DEVICE_MODEL := H66K
+  DEVICE_DTS := rk3568-hinlink-h66k
+  UBOOT_DEVICE_NAME := hinlink-h66k-rk3568
+endef
+TARGET_DEVICES += hinlink_h66k
+
+define Device/hinlink_h68k
+  $(Device/hinlink_h6xk)
+  DEVICE_MODEL := H68K
+  DEVICE_ALT0_VENDOR := LinkStar
+  DEVICE_ALT0_MODEL := H68K
+  DEVICE_DTS := rk3568-hinlink-h68k
+  UBOOT_DEVICE_NAME := hinlink-h68k-rk3568
+endef
+TARGET_DEVICES += hinlink_h68k
+
 define Device/linkease_easepi-r1
   $(Device/rk3568)
   DEVICE_VENDOR := LinkEase

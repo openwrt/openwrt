@@ -9,7 +9,7 @@
 	compatible = "keenetic,kn-3811", "mediatek,mt7981";
 
 	aliases {
-		label-mac-device = &gmac0;
+		label-mac-device = &gmac1;
 		led-boot = &power_led;
 		led-failsafe = &power_led;
 		led-running = &power_led;
@@ -123,7 +123,7 @@
 		phy-mode = "2500base-x";
 
 		nvmem-cell-names = "mac-address";
-		nvmem-cells = <&macaddr_factory_4 0>;
+		nvmem-cells = <&macaddr_factory_4>;
 
 		fixed-link {
 			speed = <2500>;
@@ -140,7 +140,7 @@
 		label = "wan";
 
 		nvmem-cell-names = "mac-address";
-		nvmem-cells = <&macaddr_factory_a 0>;
+		nvmem-cells = <&macaddr_factory_a>;
 	};
 };
 
@@ -225,13 +225,6 @@
 		spi-tx-buswidth = <4>;
 		spi-rx-buswidth = <4>;
 
-		spi-cal-enable;
-		spi-cal-mode = "read-data";
-		spi-cal-datalen = <7>;
-		spi-cal-data = /bits/ 8 <0x53 0x50 0x49 0x4e 0x41 0x4e 0x44>;
-		spi-cal-addrlen = <5>;
-		spi-cal-addr = /bits/ 32 <0x0 0x0 0x0 0x0 0x0>;
-
 		mediatek,nmbm;
 		mediatek,bmt-max-ratio = <1>;
 		mediatek,bmt-max-reserved-blocks = <64>;
@@ -277,16 +270,12 @@
 
 					/* lan mac */
 					macaddr_factory_4: macaddr@4 {
-						compatible = "mac-base";
 						reg = <0x4 0x6>;
-						#nvmem-cell-cells = <1>;
 					};
 
 					/* wan mac */
 					macaddr_factory_a: macaddr@a {
-						compatible = "mac-base";
 						reg = <0xa 0x6>;
-						#nvmem-cell-cells = <1>;
 					};
 				};
 			};

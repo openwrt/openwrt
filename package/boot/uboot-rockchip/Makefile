@@ -5,9 +5,9 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_VERSION:=2025.10
+PKG_VERSION:=2026.01
 PKG_RELEASE:=1
-PKG_HASH:=b4f032848e56cc8f213ad59f9132c084dbbb632bc29176d024e58220e0efdf4a
+PKG_HASH:=b60d5865cefdbc75da8da4156c56c458e00de75a49b80c1a2e58a96e30ad0d54
 
 PKG_MAINTAINER:=Sarah Maedel <openwrt@tbspace.de>
 
@@ -174,6 +174,13 @@ define U-Boot/rk3528/Default
   TPL:=rk3528_ddr_1056MHz_v1.11.bin
 endef
 
+define U-Boot/hinlink-h28k-rk3528
+  $(U-Boot/rk3528/Default)
+  NAME:=HINLINK H28K
+  BUILD_DEVICES:= \
+    hinlink_h28k
+endef
+
 define U-Boot/radxa-e20c-rk3528
   $(U-Boot/rk3528/Default)
   NAME:=E20C
@@ -256,6 +263,20 @@ define U-Boot/fastrhino-r66s-rk3568
   NAME:=FastRhino R66S
   BUILD_DEVICES:= \
     lunzn_fastrhino-r66s
+endef
+
+define U-Boot/hinlink-h66k-rk3568
+  $(U-Boot/rk3568/Default)
+  NAME:=HINLINK H66K
+  BUILD_DEVICES:= \
+    hinlink_h66k
+endef
+
+define U-Boot/hinlink-h68k-rk3568
+  $(U-Boot/rk3568/Default)
+  NAME:=HINLINK H68K
+  BUILD_DEVICES:= \
+    hinlink_h68k
 endef
 
 define U-Boot/nanopi-r5c-rk3568
@@ -420,6 +441,7 @@ UBOOT_TARGETS := \
   rock64-rk3328 \
   rock-pi-e-rk3328 \
   rock-pi-e-v3-rk3328 \
+  hinlink-h28k-rk3528 \
   radxa-e20c-rk3528 \
   rock-2-rk3528 \
   nanopi-r3s-rk3566 \
@@ -429,6 +451,8 @@ UBOOT_TARGETS := \
   bpi-r2-pro-rk3568 \
   easepi-r1-rk3568 \
   fastrhino-r66s-rk3568 \
+  hinlink-h66k-rk3568 \
+  hinlink-h68k-rk3568 \
   nanopi-r5c-rk3568 \
   nanopi-r5s-rk3568 \
   radxa-e25-rk3568 \

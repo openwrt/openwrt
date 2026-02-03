@@ -621,6 +621,23 @@ endef
 
 $(eval $(call KernelPackage,phy-aquantia))
 
+
+define KernelPackage/phy-motorcomm
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Motorcomm Ethernet PHYs
+  DEPENDS:=+kmod-libphy
+  KCONFIG:=CONFIG_MOTORCOMM_PHY
+  FILES:=$(LINUX_DIR)/drivers/net/phy/motorcomm.ko
+  AUTOLOAD:=$(call AutoLoad,18,motorcomm,1)
+endef
+
+define KernelPackage/phy-motorcomm/description
+  Supports the Motorcomm 8511/8521/8531/8531S/8821 Ethernet PHYs
+endef
+
+$(eval $(call KernelPackage,phy-motorcomm))
+
+
 define KernelPackage/dsa
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Distributed Switch Architecture support
@@ -2327,3 +2344,21 @@ define KernelPackage/enc28j60/description
 endef
 
 $(eval $(call KernelPackage,enc28j60))
+
+define KernelPackage/sparx5-switch
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Sparx5 switch driver
+  DEPENDS:=@TARGET_microchipsw +kmod-phylink +kmod-ptp
+  KCONFIG:= \
+  CONFIG_SPARX5_SWITCH \
+  CONFIG_LAN969X_SWITCH=y \
+  CONFIG_SPARX5_DCB=y
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/microchip/sparx5/sparx5-switch.ko
+  AUTOLOAD:=$(call AutoProbe,sparx5-switch,1)
+endef
+
+define KernelPackage/sparx5-switch/description
+  This driver supports the Sparx5 network switch device.
+endef
+
+$(eval $(call KernelPackage,sparx5-switch))
