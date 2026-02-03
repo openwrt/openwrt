@@ -84,7 +84,7 @@ proto_wireguard_setup() {
 		config_get peer_port "$section" "endpoint_port" "51820"
 		config_get peer_a_ips "$section" "allowed_ips"
 		config_get peer_p_ka "$section" "persistent_keepalive"
-		config_get peer_psk "$section" "peer_psk"
+		config_get peer_psk "$section" "preshared_key"
 
 
 		[ "${peer_eph##*:}" != "$peer_eph" ] && peer_eph="[$peer_eph]"
@@ -94,7 +94,7 @@ proto_wireguard_setup() {
 		[ -n "${peer_key}" ]	&& peer_block="${peer_block}PublicKey=${peer_key}\n"
 		[ -n "${peer_psk}" ]	&& peer_block="${peer_block}PresharedKey=${peer_psk}\n"
 		[ -n "${peer_eph}" ]	&& peer_block="${peer_block}Endpoint=${peer_eph}${peer_port:+:$peer_port}\n"
-		[ -n "${peer_a_ips}" ]	&& peer_block="${peer_block}AllowedIPs=${peer_a_ips/ /, }\n"
+		[ -n "${peer_a_ips}" ]	&& peer_block="${peer_block}AllowedIPs=${peer_a_ips// /, }\n"
 		[ -n "${peer_p_ka}" ]	&& peer_block="${peer_block}PersistentKeepalive=${peer_p_ka}\n"
 
 		[ -n "$peer_key" ] && peer_config="$peer_config$peer_block\n"
