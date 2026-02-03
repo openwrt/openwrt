@@ -988,7 +988,21 @@ as adding/removing interfaces.
  				       MULTI_AP_FRONTHAUL_BSS);
  	wpa_s->multi_ap_ie = 1;
  }
-@@ -6293,6 +6300,7 @@ void supplicant_event(void *ctx, enum wp
+@@ -5500,6 +5507,13 @@ static void wpas_event_rx_mgmt_action(st
+ 	}
+ #endif /* CONFIG_WNM */
+ 
++#if defined(CONFIG_GAS) && defined(CONFIG_DPP)
++	if ((mgmt->u.action.category == WLAN_ACTION_PUBLIC ||
++	     mgmt->u.action.category == WLAN_ACTION_PROTECTED_DUAL) &&
++	    wpas_ucode_dpp_gas_rx(wpa_s, mgmt->sa, payload, plen, freq))
++		return;
++#endif /* CONFIG_GAS && CONFIG_DPP */
++
+ #ifdef CONFIG_GAS
+ 	if ((mgmt->u.action.category == WLAN_ACTION_PUBLIC ||
+ 	     mgmt->u.action.category == WLAN_ACTION_PROTECTED_DUAL) &&
+@@ -6293,6 +6307,7 @@ void supplicant_event(void *ctx, enum wp
  		event_to_string(event), event);
  #endif /* CONFIG_NO_STDOUT_DEBUG */
  
@@ -1014,3 +1028,88 @@ as adding/removing interfaces.
  	gpriv = wpa_s->global->ctrl_iface;
  
  	if (type != WPA_MSG_NO_GLOBAL && gpriv &&
+--- a/src/ap/dpp_hostapd.c
++++ b/src/ap/dpp_hostapd.c
+@@ -23,6 +23,7 @@
+ #include "wpa_auth.h"
+ #include "beacon.h"
+ #include "dpp_hostapd.h"
++#include "ucode.h"
+ 
+ 
+ static void hostapd_dpp_reply_wait_timeout(void *eloop_ctx, void *timeout_ctx);
+@@ -3017,6 +3018,9 @@ void hostapd_dpp_rx_action(struct hostap
+ 	wpa_msg(hapd->msg_ctx, MSG_INFO, DPP_EVENT_RX "src=" MACSTR
+ 		" freq=%u type=%d", MAC2STR(src), freq, type);
+ 
++	if (hostapd_ucode_dpp_rx_action(hapd, src, type, freq, hdr, len + 6))
++		return;
++
+ #ifdef CONFIG_DPP2
+ 	if (dpp_relay_rx_action(hapd->iface->interfaces->dpp,
+ 				src, hdr, buf, len, freq, NULL, NULL,
+@@ -3116,13 +3120,19 @@ void hostapd_dpp_rx_action(struct hostap
+ 
+ struct wpabuf *
+ hostapd_dpp_gas_req_handler(struct hostapd_data *hapd, const u8 *sa,
+-			    const u8 *query, size_t query_len,
++			    u8 dialog_token, const u8 *query, size_t query_len,
+ 			    const u8 *data, size_t data_len)
+ {
+ 	struct dpp_authentication *auth = hapd->dpp_auth;
+ 	struct wpabuf *resp;
+ 
+ 	wpa_printf(MSG_DEBUG, "DPP: GAS request from " MACSTR, MAC2STR(sa));
++
++	resp = hostapd_ucode_dpp_gas_req(hapd, sa, dialog_token,
++					 query, query_len);
++	if (resp)
++		return resp;
++
+ 	eloop_cancel_timeout(hostapd_gas_req_wait, hapd, NULL);
+ 	if (!auth || (!auth->auth_success && !auth->reconfig_success) ||
+ 	    !ether_addr_equal(sa, auth->peer_mac_addr)) {
+--- a/src/ap/dpp_hostapd.h
++++ b/src/ap/dpp_hostapd.h
+@@ -25,7 +25,7 @@ void hostapd_dpp_tx_status(struct hostap
+ 			   const u8 *data, size_t data_len, int ok);
+ struct wpabuf *
+ hostapd_dpp_gas_req_handler(struct hostapd_data *hapd, const u8 *sa,
+-			    const u8 *query, size_t query_len,
++			    u8 dialog_token, const u8 *query, size_t query_len,
+ 			    const u8 *data, size_t data_len);
+ void hostapd_dpp_gas_status_handler(struct hostapd_data *hapd, int ok);
+ int hostapd_dpp_configurator_add(struct hostapd_data *hapd, const char *cmd);
+--- a/src/ap/gas_serv.c
++++ b/src/ap/gas_serv.c
+@@ -1402,8 +1402,8 @@ static void gas_serv_rx_gas_initial_req(
+ 	if (dpp) {
+ 		struct wpabuf *msg;
+ 
+-		msg = hostapd_dpp_gas_req_handler(hapd, sa, pos, slen,
+-						  data, len);
++		msg = hostapd_dpp_gas_req_handler(hapd, sa, dialog_token,
++						  pos, slen, data, len);
+ 		if (!msg)
+ 			return;
+ 		gas_serv_req_dpp_processing(hapd, sa, dialog_token, prot, msg,
+--- a/wpa_supplicant/dpp_supplicant.c
++++ b/wpa_supplicant/dpp_supplicant.c
+@@ -29,6 +29,7 @@
+ #include "scan.h"
+ #include "notify.h"
+ #include "dpp_supplicant.h"
++#include "ucode.h"
+ 
+ 
+ static int wpas_dpp_listen_start(struct wpa_supplicant *wpa_s,
+@@ -4118,6 +4119,9 @@ void wpas_dpp_rx_action(struct wpa_suppl
+ 		return;
+ 	}
+ 	wpa_hexdump(MSG_MSGDUMP, "DPP: Received message attributes", buf, len);
++	if (wpas_ucode_dpp_rx_action(wpa_s, src, type, freq, hdr, len + DPP_HDR_LEN))
++		return;
++
+ 	if (dpp_check_attrs(buf, len) < 0) {
+ 		wpa_msg(wpa_s, MSG_INFO, DPP_EVENT_RX "src=" MACSTR
+ 			" freq=%u type=%d ignore=invalid-attributes",

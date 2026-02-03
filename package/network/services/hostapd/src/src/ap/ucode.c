@@ -3,6 +3,7 @@
 #include "utils/includes.h"
 #include "utils/common.h"
 #include "utils/ucode.h"
+#include "utils/base64.h"
 #include "sta_info.h"
 #include "beacon.h"
 #include "hw_features.h"
@@ -11,6 +12,11 @@
 #include "acs.h"
 #include "ieee802_11_auth.h"
 #include "neighbor_db.h"
+#include "gas_serv.h"
+#ifdef CONFIG_DPP
+#include "common/dpp.h"
+#include "common/wpa_ctrl.h"
+#endif /* CONFIG_DPP */
 #include <libubox/uloop.h>
 
 static uc_resource_type_t *global_type, *bss_type, *iface_type;
@@ -942,6 +948,190 @@ uc_wpa_rkh_derive_key(uc_vm_t *vm, size_t nargs)
 #endif
 }
 
+#ifdef CONFIG_DPP
+static uc_value_t *
+uc_hostapd_bss_dpp_send_action(uc_vm_t *vm, size_t nargs)
+{
+	struct hostapd_data *hapd = uc_fn_thisval("hostapd.bss");
+	uc_value_t *dst_arg = uc_fn_arg(0);
+	uc_value_t *freq_arg = uc_fn_arg(1);
+	uc_value_t *frame_arg = uc_fn_arg(2);
+	struct wpabuf *msg;
+	const char *dst_str, *frame_b64;
+	unsigned char *frame_data;
+	size_t frame_len;
+	u8 dst[ETH_ALEN];
+	unsigned int freq;
+	u8 frame_type;
+	int ret;
+
+	if (!hapd || ucv_type(dst_arg) != UC_STRING ||
+	    ucv_type(frame_arg) != UC_STRING)
+		return NULL;
+
+	dst_str = ucv_string_get(dst_arg);
+	if (hwaddr_aton(dst_str, dst))
+		return NULL;
+
+	freq = ucv_int64_get(freq_arg);
+	if (!freq)
+		freq = hapd->iface->freq;
+
+	frame_b64 = ucv_string_get(frame_arg);
+	frame_data = base64_decode(frame_b64, os_strlen(frame_b64), &frame_len);
+	if (!frame_data)
+		return NULL;
+
+	if (frame_len < 6) {
+		os_free(frame_data);
+		return NULL;
+	}
+
+	frame_type = frame_data[5];
+	msg = dpp_alloc_msg(frame_type, frame_len - 6);
+	if (!msg) {
+		os_free(frame_data);
+		return NULL;
+	}
+	wpabuf_put_data(msg, frame_data + 6, frame_len - 6);
+	os_free(frame_data);
+
+	wpa_msg(hapd->msg_ctx, MSG_INFO, DPP_EVENT_TX "dst=" MACSTR
+		" freq=%u type=%d", MAC2STR(dst), freq, frame_type);
+	ret = hostapd_drv_send_action(hapd, freq, 0, dst,
+				      wpabuf_head(msg), wpabuf_len(msg));
+	wpabuf_free(msg);
+
+	return ucv_boolean_new(ret == 0);
+}
+
+static uc_value_t *
+uc_hostapd_bss_dpp_send_gas_resp(uc_vm_t *vm, size_t nargs)
+{
+	struct hostapd_data *hapd = uc_fn_thisval("hostapd.bss");
+	uc_value_t *dst_arg = uc_fn_arg(0);
+	uc_value_t *token_arg = uc_fn_arg(1);
+	uc_value_t *data_arg = uc_fn_arg(2);
+	uc_value_t *freq_arg = uc_fn_arg(3);
+	const char *dst_str, *data_b64;
+	unsigned char *data;
+	size_t data_len;
+	struct wpabuf *buf;
+	u8 dst[ETH_ALEN];
+	u8 dialog_token;
+	int freq;
+
+	if (!hapd || ucv_type(dst_arg) != UC_STRING ||
+	    ucv_type(token_arg) != UC_INTEGER ||
+	    ucv_type(data_arg) != UC_STRING)
+		return NULL;
+
+	dst_str = ucv_string_get(dst_arg);
+	if (hwaddr_aton(dst_str, dst))
+		return NULL;
+
+	dialog_token = ucv_int64_get(token_arg);
+	if (dialog_token == 0)
+		return NULL;
+
+	freq = ucv_int64_get(freq_arg);
+	if (!freq)
+		freq = hapd->iface->freq;
+
+	data_b64 = ucv_string_get(data_arg);
+	data = base64_decode(data_b64, os_strlen(data_b64), &data_len);
+	if (!data)
+		return NULL;
+
+	buf = wpabuf_alloc_copy(data, data_len);
+	os_free(data);
+	if (!buf)
+		return NULL;
+
+	gas_serv_req_dpp_processing(hapd, dst, dialog_token, 0, buf, freq);
+
+	return ucv_boolean_new(true);
+}
+
+int hostapd_ucode_dpp_rx_action(struct hostapd_data *hapd, const u8 *src,
+				u8 frame_type, unsigned int freq,
+				const u8 *data, size_t data_len)
+{
+	uc_value_t *val;
+	char addr[18];
+	char *frame_b64;
+	size_t frame_b64_len;
+	int ret = 0;
+
+	if (wpa_ucode_call_prepare("dpp_rx_action"))
+		return 0;
+
+	os_snprintf(addr, sizeof(addr), MACSTR, MAC2STR(src));
+	frame_b64 = base64_encode_no_lf(data, data_len, &frame_b64_len);
+	if (!frame_b64) {
+		ucv_put(wpa_ucode_call(0));
+		return 0;
+	}
+
+	uc_value_push(ucv_string_new(hapd->conf->iface));
+	uc_value_push(ucv_string_new(addr));
+	uc_value_push(ucv_int64_new(frame_type));
+	uc_value_push(ucv_int64_new(freq));
+	uc_value_push(ucv_string_new(frame_b64));
+	os_free(frame_b64);
+
+	val = wpa_ucode_call(5);
+	ret = ucv_is_truish(val);
+	ucv_put(val);
+
+	return ret;
+}
+
+struct wpabuf *hostapd_ucode_dpp_gas_req(struct hostapd_data *hapd,
+					 const u8 *sa, u8 dialog_token,
+					 const u8 *query, size_t query_len)
+{
+	uc_value_t *val;
+	char addr[18];
+	char *query_b64;
+	size_t query_b64_len;
+	struct wpabuf *ret = NULL;
+
+	if (wpa_ucode_call_prepare("dpp_rx_gas"))
+		return NULL;
+
+	os_snprintf(addr, sizeof(addr), MACSTR, MAC2STR(sa));
+	query_b64 = base64_encode_no_lf(query, query_len, &query_b64_len);
+	if (!query_b64) {
+		ucv_put(wpa_ucode_call(0));
+		return NULL;
+	}
+
+	uc_value_push(ucv_string_new(hapd->conf->iface));
+	uc_value_push(ucv_string_new(addr));
+	uc_value_push(ucv_int64_new(dialog_token));
+	uc_value_push(ucv_string_new(query_b64));
+	os_free(query_b64);
+
+	val = wpa_ucode_call(4);
+	if (ucv_type(val) == UC_STRING) {
+		const char *resp_b64 = ucv_string_get(val);
+		size_t resp_len;
+		unsigned char *resp_data;
+
+		resp_data = base64_decode(resp_b64, os_strlen(resp_b64),
+					  &resp_len);
+		if (resp_data) {
+			ret = wpabuf_alloc_copy(resp_data, resp_len);
+			os_free(resp_data);
+		}
+	}
+	ucv_put(val);
+
+	return ret;
+}
+#endif /* CONFIG_DPP */
+
 int hostapd_ucode_init(struct hapd_interfaces *ifaces)
 {
 	static const uc_function_list_t global_fns[] = {
@@ -959,6 +1149,10 @@ int hostapd_ucode_init(struct hapd_interfaces *ifaces)
 		{ "set_config", uc_hostapd_bss_set_config },
 		{ "rename", uc_hostapd_bss_rename },
 		{ "delete", uc_hostapd_bss_delete },
+#ifdef CONFIG_DPP
+		{ "dpp_send_action", uc_hostapd_bss_dpp_send_action },
+		{ "dpp_send_gas_resp", uc_hostapd_bss_dpp_send_gas_resp },
+#endif /* CONFIG_DPP */
 	};
 	static const uc_function_list_t iface_fns[] = {
 		{ "state", uc_hostapd_iface_state },

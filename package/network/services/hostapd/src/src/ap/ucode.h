@@ -32,6 +32,15 @@ void hostapd_ucode_sta_connected(struct hostapd_data *hapd, struct sta_info *sta
 void hostapd_ucode_apup_newpeer(struct hostapd_data *hapd, const char *ifname);
 #endif // def CONFIG_APUP
 
+#ifdef CONFIG_DPP
+int hostapd_ucode_dpp_rx_action(struct hostapd_data *hapd, const u8 *src,
+				u8 frame_type, unsigned int freq,
+				const u8 *data, size_t data_len);
+struct wpabuf *hostapd_ucode_dpp_gas_req(struct hostapd_data *hapd,
+					 const u8 *sa, u8 dialog_token,
+					 const u8 *query, size_t query_len);
+#endif /* CONFIG_DPP */
+
 #else
 
 static inline int hostapd_ucode_init(struct hapd_interfaces *ifaces)
@@ -57,6 +66,24 @@ static inline void hostapd_ucode_sta_connected(struct hostapd_data *hapd, struct
 static inline void hostapd_ucode_free_bss(struct hostapd_data *hapd)
 {
 }
+
+#ifdef CONFIG_DPP
+static inline int hostapd_ucode_dpp_rx_action(struct hostapd_data *hapd,
+					      const u8 *src, u8 frame_type,
+					      unsigned int freq,
+					      const u8 *data, size_t data_len)
+{
+	return 0;
+}
+static inline struct wpabuf *hostapd_ucode_dpp_gas_req(struct hostapd_data *hapd,
+						       const u8 *sa,
+						       u8 dialog_token,
+						       const u8 *query,
+						       size_t query_len)
+{
+	return NULL;
+}
+#endif /* CONFIG_DPP */
 
 #endif
 

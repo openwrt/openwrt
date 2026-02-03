@@ -60,6 +60,7 @@ hostapd.data.bss_info_fields = {
 };
 
 hostapd.data.mld = {};
+hostapd.data.dpp_hooks = {};
 
 function iface_remove(cfg)
 {
@@ -1128,6 +1129,103 @@ function mld_set_config(config)
 		mld_reload_interface(name);
 }
 
+function dpp_find_bss(ifname)
+{
+	for (let phy, bss_list in hostapd.bss) {
+		if (bss_list[ifname])
+			return bss_list[ifname];
+	}
+	return null;
+}
+
+function dpp_channel_handle_request(channel, req)
+{
+	let data = req.args ?? {};
+	let bss;
+
+	switch (req.type) {
+	case "start":
+		if (!data.ifname)
+			return libubus.STATUS_INVALID_ARGUMENT;
+		let old_hook = hostapd.data.dpp_hooks[data.ifname];
+		if (old_hook && old_hook.channel != channel)
+			old_hook.channel.disconnect();
+		hostapd.data.dpp_hooks[data.ifname] = {
+			channel: channel,
+			timeout_count: 0,
+		};
+		return 0;
+
+	case "stop":
+		if (!data.ifname)
+			return libubus.STATUS_INVALID_ARGUMENT;
+		let hook = hostapd.data.dpp_hooks[data.ifname];
+		if (hook && hook.channel == channel)
+			delete hostapd.data.dpp_hooks[data.ifname];
+		return 0;
+
+	case "tx_action":
+		bss = dpp_find_bss(data.ifname);
+		if (!bss)
+			return libubus.STATUS_NOT_FOUND;
+		if (!bss.dpp_send_action(data.dst, data.freq ?? 0, data.frame))
+			return libubus.STATUS_UNKNOWN_ERROR;
+		return 0;
+
+	case "tx_gas_resp":
+		bss = dpp_find_bss(data.ifname);
+		if (!bss)
+			return libubus.STATUS_NOT_FOUND;
+		if (!bss.dpp_send_gas_resp(data.dst, data.dialog_token, data.data, data.freq ?? 0))
+			return libubus.STATUS_UNKNOWN_ERROR;
+		return 0;
+
+	case "set_cce":
+		bss = dpp_find_bss(data.ifname);
+		if (!bss)
+			return libubus.STATUS_NOT_FOUND;
+		let val = data.enable ? "dd04506f9a1e" : "";
+		bss.ctrl("SET vendor_elements " + val);
+		bss.ctrl("UPDATE_BEACON");
+		return 0;
+
+	default:
+		return libubus.STATUS_METHOD_NOT_FOUND;
+	}
+}
+
+function dpp_channel_handle_disconnect(channel)
+{
+	for (let ifname, hook in hostapd.data.dpp_hooks) {
+		if (hook.channel == channel)
+			delete hostapd.data.dpp_hooks[ifname];
+	}
+}
+
+function dpp_rx_via_channel(ifname, method, data)
+{
+	let hook = hostapd.data.dpp_hooks[ifname];
+	if (!hook)
+		return null;
+
+	let response = hook.channel.request({
+		method: method,
+		data: data,
+	});
+	if (hook.channel.error(true) == libubus.STATUS_TIMEOUT) {
+		hook.timeout_count++;
+		if (hook.timeout_count >= 3) {
+			hostapd.printf(`DPP channel timeout for ${ifname}, disconnecting`);
+			hook.channel.disconnect();
+			delete hostapd.data.dpp_hooks[ifname];
+		}
+		return null;
+	}
+
+	hook.timeout_count = 0;
+	return response;
+}
+
 let main_obj = {
 	reload: {
 		args: {
@@ -1411,6 +1509,20 @@ let main_obj = {
 			return { interfaces };
 		}
 	},
+	dpp_channel: {
+		args: {},
+		call: function(req) {
+			let channel;
+			let on_request = (chan_req) => dpp_channel_handle_request(channel, chan_req);
+			let on_disconnect = () => dpp_channel_handle_disconnect(channel);
+
+			channel = req.new_channel(on_request, on_disconnect, 1);
+			if (!channel)
+				return libubus.STATUS_UNKNOWN_ERROR;
+
+			return 0;
+		}
+	},
 };
 
 hostapd.data.ubus = ubus;
@@ -1452,6 +1564,7 @@ return {
 		bss_event("reload", name, { reconf: reconf != 0 });
 	},
 	bss_remove: function(phy, name, obj) {
+		delete hostapd.data.dpp_hooks[name];
 		bss_event("remove", name);
 	},
 	sta_auth: function(iface, sta) {
@@ -1473,5 +1586,21 @@ return {
 		if (hostapd.data.auth_obj)
 			hostapd.data.auth_obj.notify("sta_connected", msg, data_cb, null, null, 1000);
 		return ret;
+	},
+	dpp_rx_action: function(iface, src, frame_type, freq, frame) {
+		let response = dpp_rx_via_channel(iface, "rx_action", {
+			ifname: iface, src, frame_type, freq, frame,
+		});
+		if (response && response.handled)
+			return true;
+		return false;
+	},
+	dpp_rx_gas: function(iface, src, dialog_token, query, freq) {
+		let response = dpp_rx_via_channel(iface, "rx_gas", {
+			ifname: iface, src, dialog_token, query, freq,
+		});
+		if (response && response.response)
+			return response.response;
+		return null;
 	},
 };
