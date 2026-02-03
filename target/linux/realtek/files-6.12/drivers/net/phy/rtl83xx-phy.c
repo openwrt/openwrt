@@ -15,10 +15,7 @@
 #include <linux/mii.h>
 #include <linux/mdio.h>
 
-#include <asm/mach-rtl838x/mach-rtl83xx.h>
 #include "rtl83xx-phy.h"
-
-extern struct rtl83xx_soc_info soc_info;
 
 /*
  * Realtek PHYs have three special page registers. Register 31 (page select) switches the
@@ -587,11 +584,6 @@ static int rtl8218b_ext_phy_probe(struct phy_device *phydev)
 
 static int rtl8218b_int_phy_probe(struct phy_device *phydev)
 {
-	if (soc_info.family != RTL8380_FAMILY_ID)
-		return -ENODEV;
-	if (phydev->mdio.addr >= 24)
-		return -ENODEV;
-
 	if (rtl821x_package_join(phydev, 8) == RTL821X_JOIN_LAST)
 		return rtl8380_configure_int_rtl8218b(get_base_phy(phydev));
 
