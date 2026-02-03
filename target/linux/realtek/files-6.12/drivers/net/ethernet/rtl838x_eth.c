@@ -217,14 +217,9 @@ struct rteth_ctrl {
  * When the content reaches the ring size, the ASIC no longer adds
  * packets to this receive queue.
  */
-static void rteth_838x_update_counter(int r, int released)
+static void rteth_83xx_update_counter(int r, int released)
 {
-	/* This feature is not available on RTL838x SoCs */
-}
-
-static void rteth_839x_update_counter(int r, int released)
-{
-	/* This feature is not available on RTL839x SoCs */
+	/* Free floating rings without space tracking */
 }
 
 static void rteth_930x_update_counter(int r, int released)
@@ -479,8 +474,8 @@ static void rteth_838x_hw_reset(struct rteth_ctrl *ctrl)
 
 	rteth_nic_reset(ctrl, 0xc);
 
-	/* Setup Head of Line */
-	sw_w32(0, RTL838X_DMA_IF_RX_RING_SIZE);  /* Disabled on RTL8380 */
+	/* Free floating rings without space tracking */
+	sw_w32(0, RTL838X_DMA_IF_RX_RING_SIZE);
 }
 
 static void rteth_839x_hw_reset(struct rteth_ctrl *ctrl)
@@ -501,9 +496,6 @@ static void rteth_839x_hw_reset(struct rteth_ctrl *ctrl)
 
 	rteth_nic_reset(ctrl, 0xc);
 
-	/* Setup Head of Line */
-	sw_w32(0xffffffff, RTL839X_DMA_IF_RX_RING_CNTR);
-
 	/* Re-enable link change interrupt */
 	sw_w32(0xffffffff, RTL839X_ISR_PORT_LINK_STS_CHG);
 	sw_w32(0xffffffff, RTL839X_ISR_PORT_LINK_STS_CHG + 4);
@@ -513,6 +505,9 @@ static void rteth_839x_hw_reset(struct rteth_ctrl *ctrl)
 	/* Restore notification settings: on RTL838x these bits are null */
 	sw_w32_mask(7 << 20, int_saved & (7 << 20), ctrl->r->dma_if_intr_msk);
 	sw_w32(nbuf, RTL839X_DMA_IF_NBUF_BASE_DESC_ADDR_CTRL);
+
+	/* Free floating rings without space tracking */
+	sw_w32(0, RTL839X_DMA_IF_RX_RING_SIZE);
 }
 
 static void rteth_93xx_hw_reset(struct rteth_ctrl *ctrl)
@@ -551,9 +546,6 @@ static void rteth_hw_ring_setup(struct rteth_ctrl *ctrl)
 
 static void rtl838x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 {
-	/* Disable Head of Line features for all RX rings */
-	sw_w32(0xffffffff, ctrl->r->dma_if_rx_ring_size(0));
-
 	/* Truncate RX buffer to DEFAULT_MTU bytes, pad TX */
 	sw_w32((DEFAULT_MTU << 16) | RX_TRUNCATE_EN_83XX | TX_PAD_EN_838X, ctrl->r->dma_if_ctrl);
 
@@ -1077,18 +1069,6 @@ static int rtl838x_hw_receive(struct net_device *dev, int r, int budget)
 
 		skb = netdev_alloc_skb_ip_align(dev, len);
 		if (likely(skb)) {
-			/* BUG: Prevent bug on RTL838x SoCs */
-			if (ctrl->r->family_id == RTL8380_FAMILY_ID) {
-				sw_w32(0xffffffff, ctrl->r->dma_if_rx_ring_size(0));
-				for (int i = 0; i < ctrl->rxrings; i++) {
-					unsigned int val;
-
-					/* Update each ring cnt */
-					val = sw_r32(ctrl->r->dma_if_rx_ring_cntr(i));
-					sw_w32(val, ctrl->r->dma_if_rx_ring_cntr(i));
-				}
-			}
-
 			/* Make sure data is visible */
 			mb();
 			skb_put_data(skb, (u8 *)KSEG1ADDR(data), len);
@@ -1473,7 +1453,7 @@ static const struct rteth_config rteth_838x_cfg = {
 	.get_mac_tx_pause_sts = rtl838x_get_mac_tx_pause_sts,
 	.mac = RTL838X_MAC,
 	.l2_tbl_flush_ctrl = RTL838X_L2_TBL_FLUSH_CTRL,
-	.update_counter = rteth_838x_update_counter,
+	.update_counter = rteth_83xx_update_counter,
 	.create_tx_header = rteth_838x_create_tx_header,
 	.decode_tag = rteth_838x_decode_tag,
 	.hw_reset = &rteth_838x_hw_reset,
@@ -1517,7 +1497,7 @@ static const struct rteth_config rteth_839x_cfg = {
 	.get_mac_tx_pause_sts = rtl839x_get_mac_tx_pause_sts,
 	.mac = RTL839X_MAC,
 	.l2_tbl_flush_ctrl = RTL839X_L2_TBL_FLUSH_CTRL,
-	.update_counter = rteth_839x_update_counter,
+	.update_counter = rteth_83xx_update_counter,
 	.create_tx_header = rteth_839x_create_tx_header,
 	.decode_tag = rteth_839x_decode_tag,
 	.hw_reset = &rteth_839x_hw_reset,
