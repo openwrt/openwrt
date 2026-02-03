@@ -1,0 +1,26 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Sat, 7 Feb 2026 09:20:30 +0000
+Subject: [PATCH] wpa_supplicant: avoid stopping DPP chirp when offchannel tx
+ fails
+
+Offchannel tx failure can happen when the scan finds an AP on a DFS channel.
+Make chirping more reliable by immediately switching to the next channel
+when that happens.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/wpa_supplicant/dpp_supplicant.c
++++ b/wpa_supplicant/dpp_supplicant.c
+@@ -5131,7 +5131,10 @@ static void wpas_dpp_chirp_start(struct
+ 		    wpa_s->own_addr, broadcast,
+ 		    wpabuf_head(msg), wpabuf_len(msg),
+ 		    2000, wpas_dpp_chirp_tx_status, 0) < 0)
+-		wpas_dpp_chirp_stop(wpa_s);
++		wpas_dpp_chirp_tx_status(wpa_s, wpa_s->dpp_chirp_freq,
++					 broadcast, wpa_s->own_addr, broadcast,
++					 wpabuf_head(msg), wpabuf_len(msg),
++					 OFFCHANNEL_SEND_ACTION_FAILED);
+ 
+ 	wpabuf_free(announce);
+ }
