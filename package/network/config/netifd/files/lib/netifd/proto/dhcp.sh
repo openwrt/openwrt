@@ -27,6 +27,8 @@ proto_dhcp_init_config() {
 	proto_config_add_string mtu6rd
 	proto_config_add_string customroutes
 	proto_config_add_boolean classlessroute
+	proto_config_add_int 'retryinterval:uinteger'
+	proto_config_add_int 'numdiscoverpackets:uinteger'
 }
 
 proto_dhcp_add_sendopts() {
@@ -49,8 +51,8 @@ proto_dhcp_setup() {
 	local config="$1"
 	local iface="$2"
 
-	local ipaddr hostname clientid vendorid broadcast norelease reqopts defaultreqopts iface6rd sendopts delegate zone6rd zone mtu6rd customroutes classlessroute
-	json_get_vars ipaddr hostname clientid vendorid broadcast norelease reqopts defaultreqopts iface6rd delegate zone6rd zone mtu6rd customroutes classlessroute
+	local ipaddr hostname clientid vendorid broadcast norelease reqopts defaultreqopts iface6rd sendopts delegate zone6rd zone mtu6rd customroutes classlessroute retryinterval numdiscoverpackets
+	json_get_vars ipaddr hostname clientid vendorid broadcast norelease reqopts defaultreqopts iface6rd delegate zone6rd zone mtu6rd customroutes classlessroute retryinterval numdiscoverpackets
 
 	local opt dhcpopts
 	for opt in $reqopts; do
@@ -92,7 +94,7 @@ proto_dhcp_setup() {
 	proto_run_command "$config" udhcpc \
 		-p /var/run/udhcpc-$iface.pid \
 		-s /lib/netifd/dhcp.script \
-		-f -t 0 -i "$iface" \
+		-f -t "${numdiscoverpackets:-0}" -T "${retryinterval:-3}" -i "$iface" \
 		${ipaddr:+-r ${ipaddr/\/*/}} \
 		${hostname:+-x "hostname:$hostname"} \
 		${emptyvendorid:+-V ""} \
