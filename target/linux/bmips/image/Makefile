@@ -85,10 +85,17 @@ define Image/FileSystemStrip
 $(firstword $(subst +,$(space),$(subst root.,,$(notdir $(1)))))
 endef
 
+# CFE_LOADADDR: the memory address where CFE unzips the compressed firmware to
+# CFE_ENTRY: the memory address to jump to, after CFE loads the firmware into the memory
+# By default, the tag version will be set to 6, and `imagetag` only supports version 6.
+# There are many tag versions, each has its own format.
+# But in almost all cases, only the first 138 bytes matter (e.g. addresses, signatures).
+# To specify a tag version, use `CFE_EXTRAS += --tag-version=7`.
 define Build/cfe-bin
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(IMAGE_KERNEL) -f $(IMAGE_ROOTFS) \
 		--output $@ --boardid $(CFE_BOARD_ID) --chipid $(CHIP_ID) \
-		--entry $(LOADER_ENTRY) --load-addr $(LOADER_ENTRY) \
+		--load-addr $(if $(CFE_LOADADDR),$(CFE_LOADADDR),$(LOADER_ENTRY)) \
+		--entry $(if $(CFE_ENTRY),$(CFE_ENTRY),$(LOADER_ENTRY)) \
 		--info1 "$(call ModelNameLimit16,$(DEVICE_NAME))" \
 		--info2 "$(call Image/FileSystemStrip,$(IMAGE_ROOTFS))" \
 		$(call rootfspad/$(call Image/FileSystemStrip,$(IMAGE_ROOTFS))) \
