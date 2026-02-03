@@ -3340,6 +3340,7 @@ static int rtpcs_931x_sds_cmu_band_set(struct rtpcs_serdes *sds,
 	return 0;
 }
 
+__maybe_unused
 static int rtpcs_931x_sds_cmu_band_get(struct rtpcs_serdes *sds,
 				       enum rtpcs_sds_mode hw_mode)
 {
@@ -3593,7 +3594,7 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
 	struct rtpcs_ctrl *ctrl = sds->ctrl;
 	u32 sds_id = sds->id;
-	u32 band, val;
+	u32 val;
 	int ret;
 
 	/*
@@ -3628,9 +3629,6 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 	pr_info("%s: 2.5gbit %08X", __func__, rtpcs_sds_read(sds, 0x41, 0x14));
 
 	rtpcs_931x_sds_power(sds, false);
-
-	/* TODO: is this needed? */
-	band = rtpcs_931x_sds_cmu_band_get(sds, hw_mode);
 
 	ret = rtpcs_931x_sds_config_hw_mode(sds, hw_mode);
 	if (ret < 0)
