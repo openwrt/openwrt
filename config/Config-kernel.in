@@ -889,6 +889,11 @@ config KERNEL_BIG_KEYS
 	bool "Enable large payload keys on kernel keyrings"
 	depends on KERNEL_KEYS
 
+config KERNEL_FS_ENCRYPTION
+	bool "Enable encryption of files and directories"
+	select KERNEL_KEYS
+	default y if !SMALL_FLASH
+
 #
 # CGROUP support symbols
 #
