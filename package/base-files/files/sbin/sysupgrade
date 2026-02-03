@@ -403,6 +403,27 @@ json_get_var forceable "forceable"
 	fi
 }
 
+# Notify user about provisioning scripts extracted from firmware metadata
+if [ -d /tmp/sysupgrade.d ] && [ -n "$(ls /tmp/sysupgrade.d 2>/dev/null)" ]; then
+	echo "Provisioning scripts found in firmware image:"
+	for script in /tmp/sysupgrade.d/*; do
+		[ -f "$script" ] && echo "  - ${script##*/}"
+	done
+	echo "These scripts will run on first boot after upgrade."
+	ask_bool 0 "View provisioning scripts" && {
+		for script in /tmp/sysupgrade.d/*; do
+			[ -f "$script" ] || continue
+			echo "=== ${script##*/} ==="
+			cat "$script"
+			echo ""
+		done
+	}
+	ask_bool 1 "Continue with upgrade" || {
+		rm -rf /tmp/sysupgrade.d
+		exit 0
+	}
+fi
+
 if [ -n "$CONF_IMAGE" ]; then
 	case "$(get_magic_word $CONF_IMAGE cat)" in
 		# .gz files
