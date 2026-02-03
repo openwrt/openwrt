@@ -13,10 +13,11 @@ P_EBT:=bridge/netfilter/
 endif
 
 # 1: variable
-# 2: kconfig symbols
+# 2: kconfig symbol - multiple symbols are not supported
 # 3: file list
 # 4: version dependency
 define nf_add
+ $(if $(word 2,$(2)),$(warning ### FAIL: nf_add called with multiple symbols for $(1): $(2)))
  $(if $(4),ifeq ($$(strip $$(call CompareKernelPatchVer,$$(KERNEL_PATCHVER),$(firstword $(4)),$(lastword $(4)))),1))
   $(1)-$$($(2)) += $(3)
  $(if $(4),endif)
