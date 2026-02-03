@@ -10,6 +10,16 @@ define Build/netgear-fit-padding
 	mv $@.new $@
 endef
 
+define Build/copy-vmlinux
+	cp $(KDIR)/vmlinux $@
+endef
+
+define Build/cradlepoint-kernel-packing
+	./cradlepoint-kernel-packing.py $@ $@.new $(IMAGE_ROOTFS)
+	rm $@
+	mv $@.new $@
+endef
+
 define Device/FitImage
 	KERNEL_SUFFIX := -uImage.itb
 	KERNEL = kernel-bin | gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
@@ -377,6 +387,33 @@ define Device/compex_wpj428
 	DEFAULT := n
 endef
 TARGET_DEVICES += compex_wpj428
+
+define Cradlepoint/base_pkgs
+	DEVICE_PACKAGES += kmod-gpio-pca953x \
+	kmod-usb-acm kmod-usb-net kmod-usb-net-cdc-qmi kmod-usb-serial kmod-usb-serial-option
+endef
+
+# Base defs for IBR1700 and AER2200
+define Device/cradlepoint_brulk
+	$(call Device/FitImage)
+	$(call Cradlepoint/base_pkgs)
+	DEVICE_VENDOR := Cradlepoint
+	SOC := qcom-ipq4029
+	DEVICE_DTS_CONFIG := config@ap.dk04.1-c3
+	FILESYSTEMS := squashfs
+	BLOCKSIZE := 32k
+	IMAGE_SIZE := 65536k
+	KERNEL_SIZE := 8192k
+	IMAGES += sysupgrade.bin
+	IMAGE/sysupgrade.bin = copy-vmlinux | gzip | cradlepoint-kernel-packing | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb | sysupgrade-tar kernel=$$$$@ | append-metadata
+	DEVICE_PACKAGES += kmod-mmc ath10k-firmware-qca9984 kmod-spi-dev kmod-hwmon-lm90 parted mkf2fs e2fsprogs kmod-fs-f2fs
+endef
+
+define Device/cradlepoint_ibr1700
+	$(call Device/cradlepoint_brulk)
+	DEVICE_MODEL := IBR1700
+endef
+TARGET_DEVICES += cradlepoint_ibr1700
 
 define Device/devolo_magic-2-wifi-next
 	$(call Device/FitzImage)
