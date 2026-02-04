@@ -465,7 +465,7 @@ function wdev_mark_up(wdev)
 function wdev_set_data(wdev, vif, vlan, data)
 {
 	let config = wdev.handler_config;
-	let cur = wdev;
+	let cur = { name: wdev.name };
 	let cur_type = "device";
 	if (!config)
 		return ubus.STATUS_INVALID_ARGUMENT;
