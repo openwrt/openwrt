@@ -1,0 +1,84 @@
+From 2ad41a12a0c2639fa50f41232fb646174d59bbca Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Wed, 28 May 2025 03:18:32 +0200
+Subject: [PATCH 33/36] airoha: add default configuration
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ configs/an7581_evb_defconfig | 2 ++
+ configs/an7583_evb_defconfig | 2 ++
+ configs/en7523_evb_defconfig | 2 ++
+ defenvs/an7581_rfb_env       | 4 ++++
+ defenvs/an7583_rfb_env       | 4 ++++
+ defenvs/en7523_rfb_env       | 4 ++++
+ 6 files changed, 18 insertions(+)
+ create mode 100644 defenvs/an7581_rfb_env
+ create mode 100644 defenvs/an7583_rfb_env
+ create mode 100644 defenvs/en7523_rfb_env
+
+diff --git a/configs/an7581_evb_defconfig b/configs/an7581_evb_defconfig
+index 7fe511d1b78..2c4f632a459 100644
+--- a/configs/an7581_evb_defconfig
++++ b/configs/an7581_evb_defconfig
+@@ -100,4 +100,6 @@ CONFIG_MTD_UBI_BEB_LIMIT=20
+ CONFIG_UBI_BLOCK=y
+ # CONFIG_UBIFS_SILENCE_MSG is not set
+ # CONFIG_UBIFS_SILENCE_DEBUG_DUMP is not set
++CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/an7581_rfb_env"
+ CONFIG_SHA512=y
+diff --git a/configs/an7583_evb_defconfig b/configs/an7583_evb_defconfig
+index c2863b187f7..2f77fb9d422 100644
+--- a/configs/an7583_evb_defconfig
++++ b/configs/an7583_evb_defconfig
+@@ -100,4 +100,6 @@ CONFIG_MTD_UBI_BEB_LIMIT=20
+ CONFIG_UBI_BLOCK=y
+ # CONFIG_UBIFS_SILENCE_MSG is not set
+ # CONFIG_UBIFS_SILENCE_DEBUG_DUMP is not set
++CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/an7583_rfb_env"
+ CONFIG_SHA512=y
+diff --git a/configs/en7523_evb_defconfig b/configs/en7523_evb_defconfig
+index 4d01e3f54fe..8febb6cabdd 100644
+--- a/configs/en7523_evb_defconfig
++++ b/configs/en7523_evb_defconfig
+@@ -79,4 +79,6 @@ CONFIG_MTD_UBI_BEB_LIMIT=20
+ CONFIG_UBI_BLOCK=y
+ # CONFIG_UBIFS_SILENCE_MSG is not set
+ # CONFIG_UBIFS_SILENCE_DEBUG_DUMP is not set
++CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/en7523_rfb_env"
+ CONFIG_SHA512=y
+diff --git a/defenvs/an7581_rfb_env b/defenvs/an7581_rfb_env
+new file mode 100644
+index 00000000000..716ddc321e2
+--- /dev/null
++++ b/defenvs/an7581_rfb_env
+@@ -0,0 +1,4 @@
++loadaddr=0x81800000
++ipaddr=192.168.1.1
++serverip=192.168.1.10
++bootargs=ubi.mtd=ubi root=/dev/ubiblock0_5 rootwait
+diff --git a/defenvs/an7583_rfb_env b/defenvs/an7583_rfb_env
+new file mode 100644
+index 00000000000..716ddc321e2
+--- /dev/null
++++ b/defenvs/an7583_rfb_env
+@@ -0,0 +1,4 @@
++loadaddr=0x81800000
++ipaddr=192.168.1.1
++serverip=192.168.1.10
++bootargs=ubi.mtd=ubi root=/dev/ubiblock0_5 rootwait
+diff --git a/defenvs/en7523_rfb_env b/defenvs/en7523_rfb_env
+new file mode 100644
+index 00000000000..716ddc321e2
+--- /dev/null
++++ b/defenvs/en7523_rfb_env
+@@ -0,0 +1,4 @@
++loadaddr=0x81800000
++ipaddr=192.168.1.1
++serverip=192.168.1.10
++bootargs=ubi.mtd=ubi root=/dev/ubiblock0_5 rootwait
+-- 
+2.51.0
+

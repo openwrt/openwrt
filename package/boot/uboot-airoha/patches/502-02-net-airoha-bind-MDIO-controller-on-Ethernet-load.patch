@@ -1,0 +1,83 @@
+From 95fffc893d4e744b35c98e04841e210878660505 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Fri, 22 Aug 2025 15:26:20 +0200
+Subject: [PATCH] net: airoha: bind MDIO controller on Ethernet load
+
+Bind MDIO controller on Ethernet Controller load. The Airoha AN7581 SoC
+have an integrated Switch based on MT7531 (or more saying MT7988).
+
+Attach it to the switch node to support scanning for MDIO devices on the
+BUS.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/net/Kconfig      |  1 +
+ drivers/net/airoha_eth.c | 27 +++++++++++++++++++++++++++
+ 2 files changed, 28 insertions(+)
+
+diff --git a/drivers/net/Kconfig b/drivers/net/Kconfig
+index 1356ca36722..943305155c4 100644
+--- a/drivers/net/Kconfig
++++ b/drivers/net/Kconfig
+@@ -130,6 +130,7 @@ config AIROHA_ETH
+ 	select PHYLIB
+ 	select DM_ETH_PHY
+ 	select DM_RESET
++	select MDIO_MT7531_MMIO
+ 	help
+ 	  This Driver support Airoha Ethernet QDMA Driver
+ 	  Say Y to enable support for the Airoha Ethernet QDMA.
+diff --git a/drivers/net/airoha_eth.c b/drivers/net/airoha_eth.c
+index 1283abe8b2e..15c95aec24b 100644
+--- a/drivers/net/airoha_eth.c
++++ b/drivers/net/airoha_eth.c
+@@ -11,6 +11,7 @@
+ #include <dm.h>
+ #include <dm/device-internal.h>
+ #include <dm/devres.h>
++#include <dm/lists.h>
+ #include <mapmem.h>
+ #include <miiphy.h>
+ #include <net.h>
+@@ -1284,12 +1285,38 @@ static int arht_eth_write_hwaddr(struct udevice *dev)
+ 
+ static int airoha_eth_bind(struct udevice *dev)
+ {
++	struct airoha_eth_soc_data *data = (void *)dev_get_driver_data(dev);
++	ofnode switch_node, mdio_node;
++	struct udevice *mdio_dev;
++	int ret;
++
+ 	/*
+ 	 * Force Probe as we set the Main ETH driver as misc
+ 	 * to register multiple eth port for each GDM
+ 	 */
+ 	dev_or_flags(dev, DM_FLAG_PROBE_AFTER_BIND);
+ 
++	if (!CONFIG_IS_ENABLED(MDIO_MT7531_MMIO))
++		return 0;
++
++	switch_node = ofnode_by_compatible(ofnode_null(),
++					   data->switch_compatible);
++	if (!ofnode_valid(switch_node)) {
++		debug("Warning: missing switch node\n");
++		return 0;
++	}
++
++	mdio_node = ofnode_find_subnode(switch_node, "mdio");
++	if (!ofnode_valid(mdio_node)) {
++		debug("Warning: missing mdio node\n");
++		return 0;
++	}
++
++	ret = device_bind_driver_to_node(dev, "mt7531-mdio-mmio", "mdio",
++					 mdio_node, &mdio_dev);
++	if (ret)
++		debug("Warning: failed to bind mdio controller\n");
++
+ 	return 0;
+ }
+ 
+-- 
+2.51.0
+

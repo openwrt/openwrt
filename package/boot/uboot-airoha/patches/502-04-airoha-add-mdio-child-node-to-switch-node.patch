@@ -1,0 +1,65 @@
+From 7e9e85688e119b353df12620395d57b7b2030ffb Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Wed, 15 Oct 2025 02:35:13 +0200
+Subject: [PATCH] airoha: add mdio child node to switch node
+
+Add mdio child node to switch node to reflect upstream DTS.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ arch/arm/dts/an7581-u-boot.dtsi | 5 +++++
+ arch/arm/dts/an7583.dtsi        | 5 +++++
+ arch/arm/dts/en7523-u-boot.dtsi | 5 +++++
+ 3 files changed, 15 insertions(+)
+
+diff --git a/arch/arm/dts/an7581-u-boot.dtsi b/arch/arm/dts/an7581-u-boot.dtsi
+index 9ee0f808660..4548076b96a 100644
+--- a/arch/arm/dts/an7581-u-boot.dtsi
++++ b/arch/arm/dts/an7581-u-boot.dtsi
+@@ -128,6 +128,11 @@
+ 		switch: switch@1fb58000 {
+ 			compatible = "airoha,en7581-switch";
+ 			reg = <0 0x1fb58000 0 0x8000>;
++
++			mdio: mdio {
++				#address-cells = <1>;
++				#size-cells = <0>;
++			};
+ 		};
+ 
+ 		snfi: spi@1fa10000 {
+diff --git a/arch/arm/dts/an7583.dtsi b/arch/arm/dts/an7583.dtsi
+index 11d48d20376..2229d48ef9c 100644
+--- a/arch/arm/dts/an7583.dtsi
++++ b/arch/arm/dts/an7583.dtsi
+@@ -238,6 +238,11 @@
+ 		switch: switch@1fb58000 {
+ 			compatible = "airoha,an7583-switch";
+ 			reg = <0 0x1fb58000 0 0x8000>;
++
++			mdio: mdio {
++				#address-cells = <1>;
++				#size-cells = <0>;
++			};
+ 		};
+ 
+ 		syscon@1fbe3400 {
+diff --git a/arch/arm/dts/en7523-u-boot.dtsi b/arch/arm/dts/en7523-u-boot.dtsi
+index a403e684adc..62d1a724678 100644
+--- a/arch/arm/dts/en7523-u-boot.dtsi
++++ b/arch/arm/dts/en7523-u-boot.dtsi
+@@ -55,6 +55,11 @@
+ 	switch: switch@1fb58000 {
+ 		compatible = "airoha,en7523-switch";
+ 		reg = <0x1fb58000 0x8000>;
++
++		mdio: mdio {
++			#address-cells = <1>;
++			#size-cells = <0>;
++		};
+ 	};
+ 
+ 	snfi: spi@1fa10000 {
+-- 
+2.51.0
+
