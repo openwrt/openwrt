@@ -3180,8 +3180,7 @@ static int rtpcs_931x_sds_cmu_page_get(enum rtpcs_sds_mode hw_mode)
 	}
 }
 
-static int rtpcs_931x_sds_config_cmu(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode,
-				     int chiptype)
+static int rtpcs_931x_sds_config_cmu(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
 	u32 force_lc_mode_bit, force_lc_mode_val_bit;
@@ -3200,11 +3199,6 @@ static int rtpcs_931x_sds_config_cmu(struct rtpcs_serdes *sds, enum rtpcs_sds_mo
 	case RTPCS_SDS_MODE_USXGMII_5GDXGMII:
 	case RTPCS_SDS_MODE_USXGMII_2_5GSXGMII:
 		return 0;
-
-/*	case MII_10GR1000BX_AUTO:
-		if (chiptype)
-			rtpcs_sds_write_bits(ctrl, sds, 0x24, 0xd, 14, 14, 0);
-		return; */
 
 	case RTPCS_SDS_MODE_QSGMII:
 		pll_type = RTPCS_SDS_PLL_RING;
@@ -3254,8 +3248,6 @@ static int rtpcs_931x_sds_config_cmu(struct rtpcs_serdes *sds, enum rtpcs_sds_mo
 
 	if (pll_type == RTPCS_SDS_PLL_RING) {
 		rtpcs_sds_write_bits(sds, cmu_page, 0x7, 15, 15, 0x0);
-		if (chiptype)
-			rtpcs_sds_write_bits(sds, cmu_page, 0xd, 14, 14, 0x0);
 
 		rtpcs_sds_write_bits(even_sds, 0x20, 0x12, 3, 2, 0x3);
 		rtpcs_sds_write_bits(even_sds, 0x20, 0x12, force_lc_mode_bit,
@@ -3266,8 +3258,6 @@ static int rtpcs_931x_sds_config_cmu(struct rtpcs_serdes *sds, enum rtpcs_sds_mo
 		rtpcs_sds_write_bits(even_sds, 0x20, 0x12, 15, 13, force_pll_spd ? 0x1 : 0x0);
 	} else if (pll_type == RTPCS_SDS_PLL_LC) {
 		rtpcs_sds_write_bits(sds, cmu_page, 0x7, 15, 15, 0x1);
-		if (chiptype)
-			rtpcs_sds_write_bits(sds, cmu_page, 0xd, 14, 14, 1);
 
 		rtpcs_sds_write_bits(even_sds, 0x20, 0x12, 1, 0, 0x3);
 		rtpcs_sds_write_bits(even_sds, 0x20, 0x12, force_lc_mode_bit,
@@ -3467,30 +3457,6 @@ static int rtpcs_931x_sds_set_port_media(struct rtpcs_serdes *sds,
 	return 0;
 }
 
-static const struct rtpcs_sds_config rtpcs_931x_sds_cfg_10p3125g_type1[] = {
-	{ 0x2E, 0x00, 0x0107 }, { 0x2E, 0x01, 0x01A3 }, { 0x2E, 0x02, 0x6A24 },
-	{ 0x2E, 0x03, 0xD10D }, { 0x2E, 0x04, 0x8000 }, { 0x2E, 0x05, 0xA17E },
-	{ 0x2E, 0x06, 0xE31D }, { 0x2E, 0x07, 0x800E }, { 0x2E, 0x08, 0x0294 },
-	{ 0x2E, 0x09, 0x0CE4 }, { 0x2E, 0x0A, 0x7FC8 }, { 0x2E, 0x0B, 0xE0E7 },
-	{ 0x2E, 0x0C, 0x0200 }, { 0x2E, 0x0D, 0xDF80 }, { 0x2E, 0x0E, 0x0000 },
-	{ 0x2E, 0x0F, 0x1FC2 }, { 0x2E, 0x10, 0x0C3F }, { 0x2E, 0x11, 0x0000 },
-	{ 0x2E, 0x12, 0x27C0 }, { 0x2E, 0x13, 0x7E1D }, { 0x2E, 0x14, 0x1300 },
-	{ 0x2E, 0x15, 0x003F }, { 0x2E, 0x16, 0xBE7F }, { 0x2E, 0x17, 0x0090 },
-	{ 0x2E, 0x18, 0x0000 }, { 0x2E, 0x19, 0x4000 }, { 0x2E, 0x1A, 0x0000 },
-	{ 0x2E, 0x1B, 0x8000 }, { 0x2E, 0x1C, 0x011F }, { 0x2E, 0x1D, 0x0000 },
-	{ 0x2E, 0x1E, 0xC8FF }, { 0x2E, 0x1F, 0x0000 }, { 0x2F, 0x00, 0xC000 },
-	{ 0x2F, 0x01, 0xF000 }, { 0x2F, 0x02, 0x6010 }, { 0x2F, 0x12, 0x0EE7 },
-	{ 0x2F, 0x13, 0x0000 }
-};
-
-static const struct rtpcs_sds_config rtpcs_931x_sds_cfg_10p3125g_cmu_type1[] = {
-	{ 0x2F, 0x03, 0x4210 }, { 0x2F, 0x04, 0x0000 }, { 0x2F, 0x05, 0x0019 },
-	{ 0x2F, 0x06, 0x18A6 }, { 0x2F, 0x07, 0x2990 }, { 0x2F, 0x08, 0xFFF4 },
-	{ 0x2F, 0x09, 0x1F08 }, { 0x2F, 0x0A, 0x0000 }, { 0x2F, 0x0B, 0x8000 },
-	{ 0x2F, 0x0C, 0x4224 }, { 0x2F, 0x0D, 0x0000 }, { 0x2F, 0x0E, 0x0000 },
-	{ 0x2F, 0x0F, 0xA470 }, { 0x2F, 0x10, 0x8000 }, { 0x2F, 0x11, 0x037B }
-};
-
 static int rtpcs_931x_sds_config_fiber_1g(struct rtpcs_serdes *sds)
 {
 	rtpcs_sds_write_bits(sds, 0x43, 0x12, 15, 14, 0x0);
@@ -3503,11 +3469,8 @@ static int rtpcs_931x_sds_config_fiber_1g(struct rtpcs_serdes *sds)
 }
 
 static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
-					 enum rtpcs_sds_mode hw_mode,
-					 int chiptype)
+					 enum rtpcs_sds_mode hw_mode)
 {
-	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
-
 	switch (hw_mode) {
 	case RTPCS_SDS_MODE_OFF:
 		break;
@@ -3540,15 +3503,6 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 		break;
 
 	case RTPCS_SDS_MODE_XSGMII:
-		if (chiptype) {
-			/* fifo inv clk */
-			rtpcs_sds_write_bits(sds, 0x41, 0x1, 7, 4, 0xf);
-			rtpcs_sds_write_bits(sds, 0x41, 0x1, 3, 0, 0xf);
-
-			rtpcs_sds_write_bits(sds, 0x81, 0x1, 7, 4, 0xf);
-			rtpcs_sds_write_bits(sds, 0x81, 0x1, 3, 0, 0xf);
-		}
-
 		rtpcs_sds_write_bits(sds, 0x40, 0xE, 12, 12, 1);
 		rtpcs_sds_write_bits(sds, 0x80, 0xE, 12, 12, 1);
 		break;
@@ -3561,32 +3515,12 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 	case RTPCS_SDS_MODE_USXGMII_2_5GSXGMII:
 		u32 op_code = 0x6003;
 
-		if (chiptype) {
-			rtpcs_sds_write_bits(sds, 0x6, 0x2, 12, 12, 1);
+		rtpcs_931x_sds_init_leq_dfe(sds);
+		rtpcs_931x_sds_rx_reset(sds);
 
-			for (int i = 0; i < ARRAY_SIZE(rtpcs_931x_sds_cfg_10p3125g_type1); ++i) {
-				rtpcs_sds_write(sds,
-						rtpcs_931x_sds_cfg_10p3125g_type1[i].page - 0x4,
-						rtpcs_931x_sds_cfg_10p3125g_type1[i].reg,
-						rtpcs_931x_sds_cfg_10p3125g_type1[i].data);
-			}
-
-			for (int i = 0; i < ARRAY_SIZE(rtpcs_931x_sds_cfg_10p3125g_cmu_type1); ++i) {
-				rtpcs_sds_write(even_sds,
-						rtpcs_931x_sds_cfg_10p3125g_cmu_type1[i].page - 0x4,
-						rtpcs_931x_sds_cfg_10p3125g_cmu_type1[i].reg,
-						rtpcs_931x_sds_cfg_10p3125g_cmu_type1[i].data);
-			}
-
-			rtpcs_sds_write_bits(sds, 0x6, 0x2, 12, 12, 0);
-		} else {
-			rtpcs_931x_sds_init_leq_dfe(sds);
-			rtpcs_931x_sds_rx_reset(sds);
-
-			rtpcs_sds_write(sds, 0x7, 0x10, op_code);
-			rtpcs_sds_write(sds, 0x6, 0x1d, 0x0480);
-			rtpcs_sds_write(sds, 0x6, 0xe, 0x0400);
-		}
+		rtpcs_sds_write(sds, 0x7, 0x10, op_code);
+		rtpcs_sds_write(sds, 0x6, 0x1d, 0x0480);
+		rtpcs_sds_write(sds, 0x6, 0xe, 0x0400);
 		break;
 
 	case RTPCS_SDS_MODE_QSGMII:
@@ -3600,10 +3534,6 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 				   enum rtpcs_sds_mode hw_mode)
 {
-	u32 board_sds_tx_type1[] = {
-		0x01c3, 0x01c3, 0x01c3, 0x01a3, 0x01a3, 0x01a3,
-		0x0143, 0x0143, 0x0143, 0x0143, 0x0163, 0x0163,
-	};
 	u32 board_sds_tx[] = {
 		0x1a00, 0x1a00, 0x0200, 0x0200, 0x0200, 0x0200,
 		0x01a3, 0x01a3, 0x01a3, 0x01a3, 0x01e3, 0x01e3
@@ -3616,7 +3546,7 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 	struct rtpcs_ctrl *ctrl = sds->ctrl;
 	u32 band, model_info, val;
 	u32 sds_id = sds->id;
-	int ret, chiptype = 0;
+	int ret;
 
 	/*
 	 * TODO: USXGMII is currently the swiss army knife to declare 10G
@@ -3649,12 +3579,8 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 	pr_info("%s XSG2 page 0x0 0xe %08x\n", __func__, rtpcs_sds_read(sds, 0x80, 0xe));
 
 	regmap_read(ctrl->map, RTL93XX_MODEL_NAME_INFO, &model_info);
-	if ((model_info >> 4) & 0x1) {
-		pr_info("detected chiptype 1\n");
-		chiptype = 1;
-	} else {
-		pr_info("detected chiptype 0\n");
-	}
+	if ((model_info >> 4) & 0x1)
+		dev_warn(ctrl->dev, "ES chip variants may not work properly!\n");
 
 	pr_info("%s: 2.5gbit %08X", __func__, rtpcs_sds_read(sds, 0x41, 0x14));
 
@@ -3663,7 +3589,7 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 	/* TODO: is this needed? */
 	band = rtpcs_931x_sds_cmu_band_get(sds, hw_mode);
 
-	ret = rtpcs_931x_sds_config_hw_mode(sds, hw_mode, chiptype);
+	ret = rtpcs_931x_sds_config_hw_mode(sds, hw_mode);
 	if (ret < 0)
 		return ret;
 
@@ -3685,24 +3611,20 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 		break;
 	}
 
-	rtpcs_931x_sds_config_cmu(sds, hw_mode, chiptype);
+	rtpcs_931x_sds_config_cmu(sds, hw_mode);
 
 	if (sds_id >= 2) {
-		if (chiptype)
-			rtpcs_sds_write(sds, 0x2E, 0x1, board_sds_tx_type1[sds_id - 2]);
-		else {
-			val = 0xa0000;
-			regmap_write(ctrl->map, RTL93XX_CHIP_INFO, val);
-			regmap_read(ctrl->map, RTL93XX_CHIP_INFO, &val);
+		val = 0xa0000;
+		regmap_write(ctrl->map, RTL93XX_CHIP_INFO, val);
+		regmap_read(ctrl->map, RTL93XX_CHIP_INFO, &val);
 
-			if (val & BIT(28)) /* consider 9311 etc. RTL9313_CHIP_ID == HWP_CHIP_ID(unit)) */
-				rtpcs_sds_write(sds, 0x2E, 0x1, board_sds_tx2[sds_id - 2]);
-			else
-				rtpcs_sds_write(sds, 0x2E, 0x1, board_sds_tx[sds_id - 2]);
+		if (val & BIT(28)) /* consider 9311 etc. RTL9313_CHIP_ID == HWP_CHIP_ID(unit)) */
+			rtpcs_sds_write(sds, 0x2E, 0x1, board_sds_tx2[sds_id - 2]);
+		else
+			rtpcs_sds_write(sds, 0x2E, 0x1, board_sds_tx[sds_id - 2]);
 
-			val = 0;
-			regmap_write(ctrl->map, RTL93XX_CHIP_INFO, val);
-		}
+		val = 0;
+		regmap_write(ctrl->map, RTL93XX_CHIP_INFO, val);
 	}
 
 	rtpcs_931x_sds_set_polarity(sds, sds->tx_pol_inv, sds->rx_pol_inv);
