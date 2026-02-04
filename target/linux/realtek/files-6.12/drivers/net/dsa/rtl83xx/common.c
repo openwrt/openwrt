@@ -366,14 +366,9 @@ static int rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 	/* Disable MAC polling the PHY so that we can start configuration */
 	priv->r->set_port_reg_le(0ULL, priv->r->smi_poll_ctrl);
 
-	/* Enable PHY control via SoC */
-	if (priv->family_id == RTL8380_FAMILY_ID) {
-		/* Enable PHY control by telling SoC that "PHY patching is done" */
-		sw_w32_mask(0, BIT(15), RTL838X_SMI_GLB_CTRL);
-	} else if (priv->family_id == RTL8390_FAMILY_ID) {
-		/* Disable PHY polling via SoC */
+	/* Disable PHY polling via SoC */
+	if (priv->family_id == RTL8390_FAMILY_ID)
 		sw_w32_mask(BIT(7), 0, RTL839X_SMI_GLB_CTRL);
-	}
 
 	return 0;
 }
