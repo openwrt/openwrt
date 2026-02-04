@@ -1,0 +1,257 @@
+--- a/include/libunwind-ppc32.h
++++ b/include/libunwind-ppc32.h
+@@ -40,6 +40,10 @@ extern "C" {
+ #include <stdint.h>
+ #include <ucontext.h>
+ 
++#ifndef __GLIBC__
++#include <bits/reg.h>
++#endif
++
+ #ifndef UNW_EMPTY_STRUCT
+ #  define UNW_EMPTY_STRUCT uint8_t unused;
+ #endif
+@@ -81,6 +85,88 @@ typedef int64_t unw_sword_t;
+ 
+ typedef long double unw_tdep_fpreg_t;
+ 
++#ifndef __GLIBC__
++
++/* We can't include asm/ptrace.h here, as it conflicts with musl's definitions */
++
++#define PT_R0	0
++#define PT_R1	1
++#define PT_R2	2
++#define PT_R3	3
++#define PT_R4	4
++#define PT_R5	5
++#define PT_R6	6
++#define PT_R7	7
++#define PT_R8	8
++#define PT_R9	9
++#define PT_R10	10
++#define PT_R11	11
++#define PT_R12	12
++#define PT_R13	13
++#define PT_R14	14
++#define PT_R15	15
++#define PT_R16	16
++#define PT_R17	17
++#define PT_R18	18
++#define PT_R19	19
++#define PT_R20	20
++#define PT_R21	21
++#define PT_R22	22
++#define PT_R23	23
++#define PT_R24	24
++#define PT_R25	25
++#define PT_R26	26
++#define PT_R27	27
++#define PT_R28	28
++#define PT_R29	29
++#define PT_R30	30
++#define PT_R31	31
++
++#define PT_NIP	32
++#define PT_MSR	33
++#define PT_ORIG_R3 34
++#define PT_CTR	35
++#define PT_LNK	36
++#define PT_XER	37
++#define PT_CCR	38
++#ifndef __powerpc64__
++#define PT_MQ	39
++#else
++#define PT_SOFTE 39
++#endif
++#define PT_TRAP	40
++#define PT_DAR	41
++#define PT_DSISR 42
++#define PT_RESULT 43
++#define PT_DSCR 44
++#define PT_REGS_COUNT 44
++
++#define PT_FPR0	48	/* each FP reg occupies 2 slots in this space */
++
++#ifndef __powerpc64__
++
++#define PT_FPR31 (PT_FPR0 + 2*31)
++#define PT_FPSCR (PT_FPR0 + 2*32 + 1)
++
++#else /* __powerpc64__ */
++
++#define PT_FPSCR (PT_FPR0 + 32)	/* each FP reg occupies 1 slot in 64-bit space */
++
++
++#define PT_VR0 82	/* each Vector reg occupies 2 slots in 64-bit */
++#define PT_VSCR (PT_VR0 + 32*2 + 1)
++#define PT_VRSAVE (PT_VR0 + 33*2)
++
++
++/*
++ * Only store first 32 VSRs here. The second 32 VSRs in VR0-31
++ */
++#define PT_VSR0 150	/* each VSR reg occupies 2 slots in 64-bit */
++#define PT_VSR31 (PT_VSR0 + 2*31)
++#endif /* __powerpc64__ */
++
++#endif /* !__GLIBC__ */
++
+ typedef enum
+   {
+     UNW_PPC32_R0,
+--- a/include/libunwind-ppc64.h
++++ b/include/libunwind-ppc64.h
+@@ -40,6 +40,10 @@ extern "C" {
+ #include <stdint.h>
+ #include <ucontext.h>
+ 
++#ifndef __GLIBC__
++#include <bits/reg.h>
++#endif
++
+ #ifndef UNW_EMPTY_STRUCT
+ #  define UNW_EMPTY_STRUCT uint8_t unused;
+ #endif
+@@ -88,6 +92,88 @@ typedef struct {
+     uint64_t halves[2];
+ } unw_tdep_vreg_t;
+ 
++#ifndef __GLIBC__
++
++/* We can't include asm/ptrace.h here, as it conflicts with musl's definitions */
++
++#define PT_R0	0
++#define PT_R1	1
++#define PT_R2	2
++#define PT_R3	3
++#define PT_R4	4
++#define PT_R5	5
++#define PT_R6	6
++#define PT_R7	7
++#define PT_R8	8
++#define PT_R9	9
++#define PT_R10	10
++#define PT_R11	11
++#define PT_R12	12
++#define PT_R13	13
++#define PT_R14	14
++#define PT_R15	15
++#define PT_R16	16
++#define PT_R17	17
++#define PT_R18	18
++#define PT_R19	19
++#define PT_R20	20
++#define PT_R21	21
++#define PT_R22	22
++#define PT_R23	23
++#define PT_R24	24
++#define PT_R25	25
++#define PT_R26	26
++#define PT_R27	27
++#define PT_R28	28
++#define PT_R29	29
++#define PT_R30	30
++#define PT_R31	31
++
++#define PT_NIP	32
++#define PT_MSR	33
++#define PT_ORIG_R3 34
++#define PT_CTR	35
++#define PT_LNK	36
++#define PT_XER	37
++#define PT_CCR	38
++#ifndef __powerpc64__
++#define PT_MQ	39
++#else
++#define PT_SOFTE 39
++#endif
++#define PT_TRAP	40
++#define PT_DAR	41
++#define PT_DSISR 42
++#define PT_RESULT 43
++#define PT_DSCR 44
++#define PT_REGS_COUNT 44
++
++#define PT_FPR0	48	/* each FP reg occupies 2 slots in this space */
++
++#ifndef __powerpc64__
++
++#define PT_FPR31 (PT_FPR0 + 2*31)
++#define PT_FPSCR (PT_FPR0 + 2*32 + 1)
++
++#else /* __powerpc64__ */
++
++#define PT_FPSCR (PT_FPR0 + 32)	/* each FP reg occupies 1 slot in 64-bit space */
++
++
++#define PT_VR0 82	/* each Vector reg occupies 2 slots in 64-bit */
++#define PT_VSCR (PT_VR0 + 32*2 + 1)
++#define PT_VRSAVE (PT_VR0 + 33*2)
++
++
++/*
++ * Only store first 32 VSRs here. The second 32 VSRs in VR0-31
++ */
++#define PT_VSR0 150	/* each VSR reg occupies 2 slots in 64-bit */
++#define PT_VSR31 (PT_VSR0 + 2*31)
++#endif /* __powerpc64__ */
++
++#endif /* !__GLIBC__ */
++
+ typedef enum
+   {
+     UNW_PPC64_R0,
+--- a/src/ppc32/Ginit.c
++++ b/src/ppc32/Ginit.c
+@@ -46,10 +46,15 @@ static void *
+ uc_addr (ucontext_t *uc, int reg)
+ {
+   void *addr;
++#ifdef __GLIBC__
++  mcontext_t *mc = uc->uc_mcontext.uc_regs;
++#else
++  mcontext_t *mc = &uc->uc_mcontext;
++#endif
+ 
+   if ((unsigned) (reg - UNW_PPC32_R0) < 32)
+ #if defined(__linux__)
+-    addr = &uc->uc_mcontext.uc_regs->gregs[reg - UNW_PPC32_R0];
++    addr = &mc->gregs[reg - UNW_PPC32_R0];
+ #elif defined(__FreeBSD__)
+     addr = &uc->uc_mcontext.mc_gpr[reg - UNW_PPC32_R0];
+ #endif
+@@ -58,7 +63,7 @@ uc_addr (ucontext_t *uc, int reg)
+   if ( ((unsigned) (reg - UNW_PPC32_F0) < 32) &&
+        ((unsigned) (reg - UNW_PPC32_F0) >= 0) )
+ #if defined(__linux__)
+-    addr = &uc->uc_mcontext.uc_regs->fpregs.fpregs[reg - UNW_PPC32_F0];
++    addr = &mc->fpregs.fpregs[reg - UNW_PPC32_F0];
+  #elif defined(__FreeBSD__)
+     addr = &uc->uc_mcontext.mc_fpreg[reg - UNW_PPC32_F0];
+ #endif
+@@ -85,7 +90,7 @@ uc_addr (ucontext_t *uc, int reg)
+           return NULL;
+         }
+ #if defined(__linux__)
+-      addr = &uc->uc_mcontext.uc_regs->gregs[gregs_idx];
++      addr = &mc->gregs[gregs_idx];
+ #elif defined(__FreeBSD__)
+       addr = &uc->uc_mcontext.mc_gpr[gregs_idx];
+ #endif
+--- a/src/ppc32/ucontext_i.h
++++ b/src/ppc32/ucontext_i.h
+@@ -44,8 +44,13 @@ WITH THE SOFTWARE OR THE USE OR OTHER DE
+ //#define MQ_IDX                36
+ #define LINK_IDX        36
+ 
++#ifdef __GLIBC__
+ #define _UC_MCONTEXT_GPR(x) ( ((void *)&dmy_ctxt.uc_mcontext.uc_regs->gregs[x] - (void *)&dmy_ctxt) )
+ #define _UC_MCONTEXT_FPR(x) ( ((void *)&dmy_ctxt.uc_mcontext.uc_regs->fpregs.fpregs[x] - (void *)&dmy_ctxt) )
++#else
++#define _UC_MCONTEXT_GPR(x) ( ((void *)&dmy_ctxt.uc_mcontext.gregs[x] - (void *)&dmy_ctxt) )
++#define _UC_MCONTEXT_FPR(x) ( ((void *)&dmy_ctxt.uc_mcontext.fpregs.fpregs[x] - (void *)&dmy_ctxt) )
++#endif
+ 
+ /* These are dummy structures used only for obtaining the offsets of the
+    various structure members. */

@@ -1,0 +1,78 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca9533_mikrotik_routerboard-16m.dtsi"
+
+/ {
+	compatible = "mikrotik,routerboard-750-r2", "qca,qca9533";
+	model = "MikroTik RouterBOARD 750 r2 (hEX lite)";
+
+	aliases {
+		led-boot = &led_usr;
+		led-failsafe = &led_usr;
+		led-upgrade = &led_usr;
+		led-running = &led_usr;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-names = "default";
+
+		led_usr: usr {
+			label = "green:usr";
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+		};
+
+		led1 {
+			label = "green:port1";
+			gpios = <&ssr 0 GPIO_ACTIVE_LOW>;
+		};
+
+		led2 {
+			label = "green:port2";
+			gpios = <&ssr 1 GPIO_ACTIVE_LOW>;
+		};
+
+		led3 {
+			label = "green:port3";
+			gpios = <&ssr 2 GPIO_ACTIVE_LOW>;
+		};
+
+		led4 {
+			label = "green:port4";
+			gpios = <&ssr 3 GPIO_ACTIVE_LOW>;
+		};
+
+		led5 {
+			label = "green:port5";
+			gpios = <&ssr 4 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&pinmux {
+	pmx_spi_cs1: pinmux_spi_cs1 {
+		pinctrl-single,bits = <0x8 0x0a000000 0xff000000>;
+	};
+};
+
+&spi {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pmx_spi_cs1>;
+
+	cs-gpios = <0>, <&gpio 11 GPIO_ACTIVE_LOW>;
+
+	ssr: ssr@1 {
+		compatible = "fairchild,74hc595";
+		gpio-controller;
+		#gpio-cells = <2>;
+		registers-number = <1>;
+		reg = <1>;
+		spi-max-frequency = <10000000>;
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	phy-handle = <&swphy4>;
+};

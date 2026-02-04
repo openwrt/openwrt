@@ -1,0 +1,43 @@
+From 6e58302c84ce90aadbecd41efe1f69098a6f91e5 Mon Sep 17 00:00:00 2001
+From: Jonas Karlman <jonas@kwiboo.se>
+Date: Tue, 4 Mar 2025 20:16:36 +0000
+Subject: [PATCH] arm64: dts: rockchip: Add SARADC node for RK3528
+
+Add a device tree node for the SARADC controller used by RK3528.
+
+Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Link: https://lore.kernel.org/r/20250304201642.831218-4-jonas@kwiboo.se
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3528.dtsi | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3528.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3528.dtsi
+@@ -9,6 +9,7 @@
+ #include <dt-bindings/interrupt-controller/irq.h>
+ #include <dt-bindings/pinctrl/rockchip.h>
+ #include <dt-bindings/clock/rockchip,rk3528-cru.h>
++#include <dt-bindings/reset/rockchip,rk3528-cru.h>
+ 
+ / {
+ 	compatible = "rockchip,rk3528";
+@@ -455,6 +456,18 @@
+ 			status = "disabled";
+ 		};
+ 
++		saradc: adc@ffae0000 {
++			compatible = "rockchip,rk3528-saradc";
++			reg = <0x0 0xffae0000 0x0 0x10000>;
++			clocks = <&cru CLK_SARADC>, <&cru PCLK_SARADC>;
++			clock-names = "saradc", "apb_pclk";
++			interrupts = <GIC_SPI 140 IRQ_TYPE_LEVEL_HIGH>;
++			resets = <&cru SRST_P_SARADC>;
++			reset-names = "saradc-apb";
++			#io-channel-cells = <1>;
++			status = "disabled";
++		};
++
+ 		pinctrl: pinctrl {
+ 			compatible = "rockchip,rk3528-pinctrl";
+ 			rockchip,grf = <&ioc_grf>;

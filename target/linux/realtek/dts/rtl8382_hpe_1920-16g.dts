@@ -1,0 +1,48 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "rtl8382_hpe_1920.dtsi"
+
+/ {
+	compatible = "hpe,1920-16g", "realtek,rtl838x-soc";
+	model = "HPE 1920-16G (JG923A)";
+};
+
+&switch0 {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		SWITCH_PORT(8, 1, internal)
+		SWITCH_PORT(9, 2, internal)
+		SWITCH_PORT(10, 3, internal)
+		SWITCH_PORT(11, 4, internal)
+		SWITCH_PORT(12, 5, internal)
+		SWITCH_PORT(13, 6, internal)
+		SWITCH_PORT(14, 7, internal)
+		SWITCH_PORT(15, 8, internal)
+
+		SWITCH_PORT_SDS(16, 9, 2, qsgmii)
+		SWITCH_PORT_SDS(17, 10, 2, qsgmii)
+		SWITCH_PORT_SDS(18, 11, 2, qsgmii)
+		SWITCH_PORT_SDS(19, 12, 2, qsgmii)
+		SWITCH_PORT_SDS(20, 13, 3, qsgmii)
+		SWITCH_PORT_SDS(21, 14, 3, qsgmii)
+		SWITCH_PORT_SDS(22, 15, 3, qsgmii)
+		SWITCH_PORT_SDS(23, 16, 3, qsgmii)
+
+		SWITCH_PORT_SDS(24, 17, 4, qsgmii)
+		SWITCH_PORT_SDS(25, 18, 4, qsgmii)
+		SWITCH_PORT_SDS(26, 19, 4, qsgmii)
+		SWITCH_PORT_SDS(27, 20, 4, qsgmii)
+
+		port@28 {
+			ethernet = <&ethernet0>;
+			reg = <28>;
+			phy-mode = "internal";
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+	};
+};

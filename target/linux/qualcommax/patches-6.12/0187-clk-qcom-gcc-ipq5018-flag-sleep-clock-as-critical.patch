@@ -1,0 +1,19 @@
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Tue, 21 Oct 2025 15:15:23 +0400
+Subject: [PATCH] clk: qcom: gcc-ipq5018: flag sleep clock as critical
+
+The sleep clock never be disabled. To avoid the kernel trying to disable
+it and keep it always on, flag it as critical.
+
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+---
+--- a/drivers/clk/qcom/gcc-ipq5018.c
++++ b/drivers/clk/qcom/gcc-ipq5018.c
+@@ -1340,6 +1340,7 @@ static struct clk_branch gcc_sleep_clk_s
+ 			.name = "gcc_sleep_clk_src",
+ 			.parent_data = gcc_sleep_clk_data,
+ 			.num_parents = ARRAY_SIZE(gcc_sleep_clk_data),
++			.flags = CLK_IS_CRITICAL,
+ 			.ops = &clk_branch2_ops,
+ 		},
+ 	},

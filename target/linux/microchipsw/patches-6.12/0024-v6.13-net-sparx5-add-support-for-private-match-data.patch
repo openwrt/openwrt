@@ -1,0 +1,135 @@
+From 7b27e8e600e75b493c97a3fd5b764064fa61dd91 Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Fri, 4 Oct 2024 15:19:27 +0200
+Subject: [PATCH 29/82] net: sparx5: add support for private match data
+
+In preparation for lan969x, add support for private match data. This
+will be needed for abstracting away differences between the Sparx5 and
+lan969x platforms. We initially add values for: iomap, iomap size and
+ioranges. Update the use of these throughout.
+
+Reviewed-by: Steen Hegelund <Steen.Hegelund@microchip.com>
+Reviewed-by: Jacob Keller <jacob.e.keller@intel.com>
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ .../ethernet/microchip/sparx5/sparx5_main.c   | 36 +++++++++++--------
+ .../ethernet/microchip/sparx5/sparx5_main.h   | 13 +++++++
+ 2 files changed, 34 insertions(+), 15 deletions(-)
+
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
+@@ -45,12 +45,6 @@ struct sparx5_ram_config {
+ 	u32 init_val;
+ };
+ 
+-struct sparx5_main_io_resource {
+-	enum sparx5_target id;
+-	phys_addr_t offset;
+-	int range;
+-};
+-
+ static const struct sparx5_main_io_resource sparx5_main_iomap[] =  {
+ 	{ TARGET_CPU,                         0, 0 }, /* 0x600000000 */
+ 	{ TARGET_FDMA,                  0x80000, 0 }, /* 0x600080000 */
+@@ -216,21 +210,24 @@ static const struct sparx5_main_io_resou
+ 
+ static int sparx5_create_targets(struct sparx5 *sparx5)
+ {
++	const struct sparx5_main_io_resource *iomap = sparx5->data->iomap;
++	int iomap_size = sparx5->data->iomap_size;
++	int ioranges = sparx5->data->ioranges;
+ 	struct resource *iores[IO_RANGES];
+ 	void __iomem *iomem[IO_RANGES];
+ 	void __iomem *begin[IO_RANGES];
+ 	int range_id[IO_RANGES];
+ 	int idx, jdx;
+ 
+-	for (idx = 0, jdx = 0; jdx < ARRAY_SIZE(sparx5_main_iomap); jdx++) {
+-		const struct sparx5_main_io_resource *iomap = &sparx5_main_iomap[jdx];
++	for (idx = 0, jdx = 0; jdx < iomap_size; jdx++) {
++		const struct sparx5_main_io_resource *io = &iomap[jdx];
+ 
+-		if (idx == iomap->range) {
++		if (idx == io->range) {
+ 			range_id[idx] = jdx;
+ 			idx++;
+ 		}
+ 	}
+-	for (idx = 0; idx < IO_RANGES; idx++) {
++	for (idx = 0; idx < ioranges; idx++) {
+ 		iores[idx] = platform_get_resource(sparx5->pdev, IORESOURCE_MEM,
+ 						   idx);
+ 		if (!iores[idx]) {
+@@ -245,12 +242,12 @@ static int sparx5_create_targets(struct
+ 				iores[idx]->name);
+ 			return -ENOMEM;
+ 		}
+-		begin[idx] = iomem[idx] - sparx5_main_iomap[range_id[idx]].offset;
++		begin[idx] = iomem[idx] - iomap[range_id[idx]].offset;
+ 	}
+-	for (jdx = 0; jdx < ARRAY_SIZE(sparx5_main_iomap); jdx++) {
+-		const struct sparx5_main_io_resource *iomap = &sparx5_main_iomap[jdx];
++	for (jdx = 0; jdx < iomap_size; jdx++) {
++		const struct sparx5_main_io_resource *io = &iomap[jdx];
+ 
+-		sparx5->regs[iomap->id] = begin[iomap->range] + iomap->offset;
++		sparx5->regs[io->id] = begin[io->range] + io->offset;
+ 	}
+ 	return 0;
+ }
+@@ -758,6 +755,9 @@ static int mchp_sparx5_probe(struct plat
+ 	sparx5->dev = &pdev->dev;
+ 	spin_lock_init(&sparx5->tx_lock);
+ 
++	sparx5->data = device_get_match_data(sparx5->dev);
++	if (!sparx5->data)
++		return -EINVAL;
+ 	/* Do switch core reset if available */
+ 	reset = devm_reset_control_get_optional_shared(&pdev->dev, "switch");
+ 	if (IS_ERR(reset))
+@@ -936,8 +936,14 @@ static void mchp_sparx5_remove(struct pl
+ 	destroy_workqueue(sparx5->mact_queue);
+ }
+ 
++static const struct sparx5_match_data sparx5_desc = {
++	.iomap = sparx5_main_iomap,
++	.iomap_size = ARRAY_SIZE(sparx5_main_iomap),
++	.ioranges = 3,
++};
++
+ static const struct of_device_id mchp_sparx5_match[] = {
+-	{ .compatible = "microchip,sparx5-switch" },
++	{ .compatible = "microchip,sparx5-switch", .data = &sparx5_desc },
+ 	{ }
+ };
+ MODULE_DEVICE_TABLE(of, mchp_sparx5_match);
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
+@@ -226,6 +226,18 @@ struct sparx5_mall_entry {
+ #define SPARX5_SKB_CB(skb) \
+ 	((struct sparx5_skb_cb *)((skb)->cb))
+ 
++struct sparx5_main_io_resource {
++	enum sparx5_target id;
++	phys_addr_t offset;
++	int range;
++};
++
++struct sparx5_match_data {
++	const struct sparx5_main_io_resource *iomap;
++	int ioranges;
++	int iomap_size;
++};
++
+ struct sparx5 {
+ 	struct platform_device *pdev;
+ 	struct device *dev;
+@@ -293,6 +305,7 @@ struct sparx5 {
+ 	struct list_head mall_entries;
+ 	/* Common root for debugfs */
+ 	struct dentry *debugfs_root;
++	const struct sparx5_match_data *data;
+ };
+ 
+ /* sparx5_switchdev.c */

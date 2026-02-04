@@ -1,0 +1,294 @@
+From 64042bb91aea5f854ca8a8938e2b3f7d1935e4f1 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Wed, 30 Apr 2025 12:47:37 +0200
+Subject: [PATCH] New module hashcode-string1.
+
+* lib/hashcode-string1.h: New file.
+* lib/hashcode-string1.c: New file, based on lib/hash.c.
+* modules/hashcode-string1: New file.
+* lib/hash.h: Include hashcode-string1.h.
+(hash_string): Remove declaration.
+* lib/hash.c (hash_string): Remove function.
+* modules/hash (Depends-on): Add hashcode-string1.
+* lib/exclude.c: Include hashcode-string1.h.
+* modules/exclude (Depends-on): Add hashcode-string1.
+---
+ ChangeLog                | 13 +++++++++
+ lib/exclude.c            |  1 +
+ lib/hash.c               | 59 ++++++--------------------------------
+ lib/hash.h               | 11 +++----
+ lib/hashcode-string1.c   | 62 ++++++++++++++++++++++++++++++++++++++++
+ lib/hashcode-string1.h   | 38 ++++++++++++++++++++++++
+ modules/exclude          |  1 +
+ modules/hash             |  1 +
+ modules/hashcode-string1 | 24 ++++++++++++++++
+ 9 files changed, 154 insertions(+), 56 deletions(-)
+ create mode 100644 lib/hashcode-string1.c
+ create mode 100644 lib/hashcode-string1.h
+ create mode 100644 modules/hashcode-string1
+
+--- a/lib/exclude.c
++++ b/lib/exclude.c
+@@ -36,6 +36,7 @@
+ #include "filename.h"
+ #include <fnmatch.h>
+ #include "hash.h"
++#include "hashcode-string1.h"
+ #if GNULIB_MCEL_PREFER
+ # include "mcel.h"
+ #else
+--- a/lib/hash.c
++++ b/lib/hash.c
+@@ -345,57 +345,6 @@ hash_do_for_each (const Hash_table *tabl
+   return counter;
+ }
+ 
+-/* Allocation and clean-up.  */
+-
+-#if USE_DIFF_HASH
+-
+-/* About hashings, Paul Eggert writes to me (FP), on 1994-01-01: "Please see
+-   B. J. McKenzie, R. Harries & T. Bell, Selecting a hashing algorithm,
+-   Software--practice & experience 20, 2 (Feb 1990), 209-224.  Good hash
+-   algorithms tend to be domain-specific, so what's good for [diffutils'] io.c
+-   may not be good for your application."  */
+-
+-size_t
+-hash_string (const char *string, size_t n_buckets)
+-{
+-# define HASH_ONE_CHAR(Value, Byte) \
+-  ((Byte) + rotl_sz (Value, 7))
+-
+-  size_t value = 0;
+-  unsigned char ch;
+-
+-  for (; (ch = *string); string++)
+-    value = HASH_ONE_CHAR (value, ch);
+-  return value % n_buckets;
+-
+-# undef HASH_ONE_CHAR
+-}
+-
+-#else /* not USE_DIFF_HASH */
+-
+-/* This one comes from 'recode', and performs a bit better than the above as
+-   per a few experiments.  It is inspired from a hashing routine found in the
+-   very old Cyber 'snoop', itself written in typical Greg Mansfield style.
+-   (By the way, what happened to this excellent man?  Is he still alive?)  */
+-
+-size_t
+-hash_string (const char *string, size_t n_buckets)
+-{
+-  size_t value = 0;
+-  unsigned char ch;
+-
+-  for (; (ch = *string); string++)
+-    value = (value * 31 + ch) % n_buckets;
+-  return value;
+-}
+-
+-#endif /* not USE_DIFF_HASH */
+-
+-void
+-hash_reset_tuning (Hash_tuning *tuning)
+-{
+-  *tuning = default_tuning;
+-}
+ 
+ /* If the user passes a NULL hasher, we hash the raw pointer.  */
+ static size_t
+@@ -418,6 +367,14 @@ raw_comparator (const void *a, const voi
+ }
+ 
+ 
++/* Allocation and clean-up.  */
++
++void
++hash_reset_tuning (Hash_tuning *tuning)
++{
++  *tuning = default_tuning;
++}
++
+ /* For the given hash TABLE, check the user supplied tuning structure for
+    reasonable values, and return true if there is no gross error with it.
+    Otherwise, definitively reset the TUNING field to some acceptable default
+--- a/lib/hash.h
++++ b/lib/hash.h
+@@ -134,11 +134,6 @@ extern size_t hash_do_for_each (const Ha
+  * Allocation and clean-up.
+  */
+ 
+-/* Return a hash index for a NUL-terminated STRING between 0 and N_BUCKETS-1.
+-   This is a convenience routine for constructing other hashing functions.  */
+-extern size_t hash_string (const char *string, size_t n_buckets)
+-       _GL_ATTRIBUTE_PURE;
+-
+ extern void hash_reset_tuning (Hash_tuning *tuning);
+ 
+ typedef size_t (*Hash_hasher) (const void *entry, size_t table_size);
+@@ -266,6 +261,12 @@ extern void *hash_remove (Hash_table *ta
+ _GL_ATTRIBUTE_DEPRECATED
+ extern void *hash_delete (Hash_table *table, const void *entry);
+ 
++
++# if GNULIB_HASHCODE_STRING1
++/* Include declarations of module 'hashcode-string1'.  */
++#  include "hashcode-string1.h"
++# endif
++
+ # ifdef __cplusplus
+ }
+ # endif
+--- /dev/null
++++ b/lib/hashcode-string1.c
+@@ -0,0 +1,62 @@
++/* hashcode-string1.c -- compute a hash value from a NUL-terminated string.
++
++   Copyright (C) 1998-2004, 2006-2007, 2009-2025 Free Software Foundation, Inc.
++
++   This file is free software: you can redistribute it and/or modify
++   it under the terms of the GNU Lesser General Public License as
++   published by the Free Software Foundation; either version 2.1 of the
++   License, or (at your option) any later version.
++
++   This file is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++#include <config.h>
++
++/* Specification.  */
++#include "hashcode-string1.h"
++
++#if USE_DIFF_HASH
++
++# include "bitrotate.h"
++
++/* About hashings, Paul Eggert writes to me (FP), on 1994-01-01: "Please see
++   B. J. McKenzie, R. Harries & T. Bell, Selecting a hashing algorithm,
++   Software--practice & experience 20, 2 (Feb 1990), 209-224.  Good hash
++   algorithms tend to be domain-specific, so what's good for [diffutils'] io.c
++   may not be good for your application."  */
++
++size_t
++hash_string (const char *string, size_t tablesize)
++{
++  size_t value = 0;
++  unsigned char ch;
++
++  for (; (ch = *string); string++)
++    value = ch + rotl_sz (value, 7);
++  return value % tablesize;
++}
++
++#else /* not USE_DIFF_HASH */
++
++/* This one comes from 'recode', and performs a bit better than the above as
++   per a few experiments.  It is inspired from a hashing routine found in the
++   very old Cyber 'snoop', itself written in typical Greg Mansfield style.
++   (By the way, what happened to this excellent man?  Is he still alive?)  */
++
++size_t
++hash_string (const char *string, size_t tablesize)
++{
++  size_t value = 0;
++  unsigned char ch;
++
++  for (; (ch = *string); string++)
++    value = (value * 31 + ch) % tablesize;
++  return value;
++}
++
++#endif /* not USE_DIFF_HASH */
+--- /dev/null
++++ b/lib/hashcode-string1.h
+@@ -0,0 +1,38 @@
++/* hashcode-string1.h -- declaration for a simple hash function
++   Copyright (C) 1998-2004, 2006-2007, 2009-2025 Free Software Foundation, Inc.
++
++   This file is free software: you can redistribute it and/or modify
++   it under the terms of the GNU Lesser General Public License as
++   published by the Free Software Foundation; either version 2.1 of the
++   License, or (at your option) any later version.
++
++   This file is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++/* This file uses _GL_ATTRIBUTE_PURE.  */
++#if !_GL_CONFIG_H_INCLUDED
++ #error "Please include config.h first."
++#endif
++
++#include <stddef.h>
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++
++/* Compute a hash code for a NUL-terminated string S,
++   and return the hash code modulo TABLESIZE.
++   The result is platform dependent: it depends on the size of the 'size_t'
++   type.  */
++extern size_t hash_string (char const *s, size_t tablesize) _GL_ATTRIBUTE_PURE;
++
++
++#ifdef __cplusplus
++}
++#endif
+--- a/modules/exclude
++++ b/modules/exclude
+@@ -12,6 +12,7 @@ filename
+ fnmatch
+ fopen-gnu
+ hash
++hashcode-string1
+ mbscasecmp
+ mbuiter               [test "$GNULIB_MCEL_PREFER" != yes]
+ nullptr
+--- a/modules/hash
++++ b/modules/hash
+@@ -14,6 +14,7 @@ next-prime
+ bool
+ stdint-h
+ xalloc-oversized
++hashcode-string1
+ 
+ configure.ac:
+ 
+--- /dev/null
++++ b/modules/hashcode-string1
+@@ -0,0 +1,24 @@
++Description:
++Compute a hash value for a NUL-terminated string.
++
++Files:
++lib/hashcode-string1.h
++lib/hashcode-string1.c
++
++Depends-on:
++bitrotate
++
++configure.ac:
++gl_MODULE_INDICATOR([hashcode-string1])
++
++Makefile.am:
++lib_SOURCES += hashcode-string1.h hashcode-string1.c
++
++Include:
++"hashcode-string1.h"
++
++License:
++LGPLv2+
++
++Maintainer:
++Jim Meyering

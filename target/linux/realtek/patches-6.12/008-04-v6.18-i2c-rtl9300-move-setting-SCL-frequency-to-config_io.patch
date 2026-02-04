@@ -1,0 +1,67 @@
+From 6b0549abc8582a81425f89a436def8e28d8d7dce Mon Sep 17 00:00:00 2001
+From: Jonas Jelonek <jelonek.jonas@gmail.com>
+Date: Sat, 27 Sep 2025 10:19:26 +0000
+Subject: [PATCH] i2c: rtl9300: move setting SCL frequency to config_io
+
+Move the register operation to set the SCL frequency to the
+rtl9300_i2c_config_io function instead of the rtl9300_i2c_config_xfer
+function. This rather belongs there next to selecting the current SDA
+output line.
+
+Signed-off-by: Jonas Jelonek <jelonek.jonas@gmail.com>
+Tested-by: Sven Eckelmann <sven@narfation.org>
+Reviewed-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
+Tested-by: Chris Packham <chris.packham@alliedtelesis.co.nz> # On RTL9302C based board
+Tested-by: Markus Stockhausen <markus.stockhausen@gmx.de>
+Signed-off-by: Andi Shyti <andi.shyti@kernel.org>
+Link: https://lore.kernel.org/r/20250927101931.71575-5-jelonek.jonas@gmail.com
+
+--- a/drivers/i2c/busses/i2c-rtl9300.c
++++ b/drivers/i2c/busses/i2c-rtl9300.c
+@@ -95,18 +95,23 @@ static int rtl9300_i2c_select_scl(struct
+ 	return regmap_field_write(i2c->fields[F_SCL_SEL], 1);
+ }
+ 
+-static int rtl9300_i2c_config_io(struct rtl9300_i2c *i2c, u8 sda_pin)
++static int rtl9300_i2c_config_io(struct rtl9300_i2c *i2c, struct rtl9300_i2c_chan *chan)
+ {
+ 	struct rtl9300_i2c_drv_data *drv_data;
+ 	int ret;
+ 
+ 	drv_data = (struct rtl9300_i2c_drv_data *)device_get_match_data(i2c->dev);
+ 
+-	ret = regmap_field_update_bits(i2c->fields[F_SDA_SEL], BIT(sda_num), BIT(sda_num));
++	ret = regmap_field_update_bits(i2c->fields[F_SDA_SEL], BIT(chan->sda_num),
++				       BIT(chan->sda_num));
+ 	if (ret)
+ 		return ret;
+ 
+-	ret = regmap_field_write(i2c->fields[F_SDA_OUT_SEL], sda_num);
++	ret = regmap_field_write(i2c->fields[F_SDA_OUT_SEL], chan->sda_num);
++	if (ret)
++		return ret;
++
++	ret = regmap_field_write(i2c->fields[F_SCL_FREQ], chan->bus_freq);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -121,10 +126,6 @@ static int rtl9300_i2c_config_xfer(struc
+ 	if (len < 1 || len > 16)
+ 		return -EINVAL;
+ 
+-	ret = regmap_field_write(i2c->fields[F_SCL_FREQ], chan->bus_freq);
+-	if (ret)
+-		return ret;
+-
+ 	ret = regmap_field_write(i2c->fields[F_DEV_ADDR], addr);
+ 	if (ret)
+ 		return ret;
+@@ -244,7 +245,7 @@ static int rtl9300_i2c_smbus_xfer(struct
+ 
+ 	mutex_lock(&i2c->lock);
+ 	if (chan->sda_num != i2c->sda_num) {
+-		ret = rtl9300_i2c_config_io(i2c, chan->sda_pin);
++		ret = rtl9300_i2c_config_io(i2c, chan);
+ 		if (ret)
+ 			goto out_unlock;
+ 		i2c->sda_num = chan->sda_num;

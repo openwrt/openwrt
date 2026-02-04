@@ -1,0 +1,355 @@
+From fc875dc858249c8c2c2eac758c3f89b3a7719f74 Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Fri, 4 Oct 2024 15:19:30 +0200
+Subject: [PATCH 32/82] net: sparx5: add *sparx5 argument to a few functions
+
+The *sparx5 context pointer is required in functions that need to access
+platform constants (which will be added in a subsequent patch).  Prepare
+for this by updating the prototype and use of such functions.
+
+Reviewed-by: Steen Hegelund <Steen.Hegelund@microchip.com>
+Reviewed-by: Jacob Keller <jacob.e.keller@intel.com>
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ .../microchip/sparx5/sparx5_ethtool.c         | 24 ++++++++--------
+ .../ethernet/microchip/sparx5/sparx5_main.h   |  2 +-
+ .../ethernet/microchip/sparx5/sparx5_netdev.c |  2 +-
+ .../ethernet/microchip/sparx5/sparx5_packet.c |  2 +-
+ .../ethernet/microchip/sparx5/sparx5_port.c   | 28 +++++++++----------
+ .../ethernet/microchip/sparx5/sparx5_port.h   |  6 ++--
+ .../ethernet/microchip/sparx5/sparx5_psfp.c   | 24 ++++++++--------
+ .../net/ethernet/microchip/sparx5/sparx5_tc.c |  8 +++---
+ 8 files changed, 48 insertions(+), 48 deletions(-)
+
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_ethtool.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_ethtool.c
+@@ -505,8 +505,8 @@ static void sparx5_get_dev_misc_stats(u6
+ static void sparx5_get_device_stats(struct sparx5 *sparx5, int portno)
+ {
+ 	u64 *portstats = &sparx5->stats[portno * sparx5->num_stats];
+-	u32 tinst = sparx5_port_dev_index(portno);
+-	u32 dev = sparx5_to_high_dev(portno);
++	u32 tinst = sparx5_port_dev_index(sparx5, portno);
++	u32 dev = sparx5_to_high_dev(sparx5, portno);
+ 	void __iomem *inst;
+ 
+ 	inst = spx5_inst_get(sparx5, dev, tinst);
+@@ -819,8 +819,8 @@ static void sparx5_get_eth_phy_stats(str
+ 
+ 	portstats = &sparx5->stats[portno * sparx5->num_stats];
+ 	if (sparx5_is_baser(port->conf.portmode)) {
+-		u32 tinst = sparx5_port_dev_index(portno);
+-		u32 dev = sparx5_to_high_dev(portno);
++		u32 tinst = sparx5_port_dev_index(sparx5, portno);
++		u32 dev = sparx5_to_high_dev(sparx5, portno);
+ 
+ 		inst = spx5_inst_get(sparx5, dev, tinst);
+ 		sparx5_get_dev_phy_stats(portstats, inst, tinst);
+@@ -844,8 +844,8 @@ static void sparx5_get_eth_mac_stats(str
+ 
+ 	portstats = &sparx5->stats[portno * sparx5->num_stats];
+ 	if (sparx5_is_baser(port->conf.portmode)) {
+-		u32 tinst = sparx5_port_dev_index(portno);
+-		u32 dev = sparx5_to_high_dev(portno);
++		u32 tinst = sparx5_port_dev_index(sparx5, portno);
++		u32 dev = sparx5_to_high_dev(sparx5, portno);
+ 
+ 		inst = spx5_inst_get(sparx5, dev, tinst);
+ 		sparx5_get_dev_mac_stats(portstats, inst, tinst);
+@@ -912,8 +912,8 @@ static void sparx5_get_eth_mac_ctrl_stat
+ 
+ 	portstats = &sparx5->stats[portno * sparx5->num_stats];
+ 	if (sparx5_is_baser(port->conf.portmode)) {
+-		u32 tinst = sparx5_port_dev_index(portno);
+-		u32 dev = sparx5_to_high_dev(portno);
++		u32 tinst = sparx5_port_dev_index(sparx5, portno);
++		u32 dev = sparx5_to_high_dev(sparx5, portno);
+ 
+ 		inst = spx5_inst_get(sparx5, dev, tinst);
+ 		sparx5_get_dev_mac_ctrl_stats(portstats, inst, tinst);
+@@ -944,8 +944,8 @@ static void sparx5_get_eth_rmon_stats(st
+ 
+ 	portstats = &sparx5->stats[portno * sparx5->num_stats];
+ 	if (sparx5_is_baser(port->conf.portmode)) {
+-		u32 tinst = sparx5_port_dev_index(portno);
+-		u32 dev = sparx5_to_high_dev(portno);
++		u32 tinst = sparx5_port_dev_index(sparx5, portno);
++		u32 dev = sparx5_to_high_dev(sparx5, portno);
+ 
+ 		inst = spx5_inst_get(sparx5, dev, tinst);
+ 		sparx5_get_dev_rmon_stats(portstats, inst, tinst);
+@@ -1027,8 +1027,8 @@ static void sparx5_get_sset_data(struct
+ 
+ 	portstats = &sparx5->stats[portno * sparx5->num_stats];
+ 	if (sparx5_is_baser(port->conf.portmode)) {
+-		u32 tinst = sparx5_port_dev_index(portno);
+-		u32 dev = sparx5_to_high_dev(portno);
++		u32 tinst = sparx5_port_dev_index(sparx5, portno);
++		u32 dev = sparx5_to_high_dev(sparx5, portno);
+ 
+ 		inst = spx5_inst_get(sparx5, dev, tinst);
+ 		sparx5_get_dev_misc_stats(portstats, inst, tinst);
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
+@@ -401,7 +401,7 @@ void sparx5_set_port_ifh_timestamp(void
+ void sparx5_set_port_ifh_rew_op(void *ifh_hdr, u32 rew_op);
+ void sparx5_set_port_ifh_pdu_type(void *ifh_hdr, u32 pdu_type);
+ void sparx5_set_port_ifh_pdu_w16_offset(void *ifh_hdr, u32 pdu_w16_offset);
+-void sparx5_set_port_ifh(void *ifh_hdr, u16 portno);
++void sparx5_set_port_ifh(struct sparx5 *sparx5, void *ifh_hdr, u16 portno);
+ bool sparx5_netdevice_check(const struct net_device *dev);
+ struct net_device *sparx5_create_netdev(struct sparx5 *sparx5, u32 portno);
+ int sparx5_register_netdevs(struct sparx5 *sparx5);
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_netdev.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_netdev.c
+@@ -55,7 +55,7 @@ static void __ifh_encode_bitfield(void *
+ 		ifh_hdr[byte - 5] |= (u8)((encode & 0xFF0000000000) >> 40);
+ }
+ 
+-void sparx5_set_port_ifh(void *ifh_hdr, u16 portno)
++void sparx5_set_port_ifh(struct sparx5 *sparx5, void *ifh_hdr, u16 portno)
+ {
+ 	/* VSTAX.RSV = 1. MSBit must be 1 */
+ 	ifh_encode_bitfield(ifh_hdr, 1, VSTAX + 79,  1);
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_packet.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_packet.c
+@@ -235,7 +235,7 @@ netdev_tx_t sparx5_port_xmit_impl(struct
+ 	netdev_tx_t ret;
+ 
+ 	memset(ifh, 0, IFH_LEN * 4);
+-	sparx5_set_port_ifh(ifh, port->portno);
++	sparx5_set_port_ifh(sparx5, ifh, port->portno);
+ 
+ 	if (sparx5->ptp && skb_shinfo(skb)->tx_flags & SKBTX_HW_TSTAMP) {
+ 		if (sparx5_ptp_txtstamp_request(port, skb) < 0)
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_port.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_port.c
+@@ -132,8 +132,8 @@ static int sparx5_get_sfi_status(struct
+ 		return -EINVAL;
+ 	}
+ 
+-	dev = sparx5_to_high_dev(portno);
+-	tinst = sparx5_port_dev_index(portno);
++	dev = sparx5_to_high_dev(sparx5, portno);
++	tinst = sparx5_port_dev_index(sparx5, portno);
+ 	inst = spx5_inst_get(sparx5, dev, tinst);
+ 
+ 	value = spx5_inst_rd(inst, DEV10G_MAC_TX_MONITOR_STICKY(0));
+@@ -316,9 +316,9 @@ static int sparx5_port_flush_poll(struct
+ static int sparx5_port_disable(struct sparx5 *sparx5, struct sparx5_port *port, bool high_spd_dev)
+ {
+ 	u32 tinst = high_spd_dev ?
+-		    sparx5_port_dev_index(port->portno) : port->portno;
++		    sparx5_port_dev_index(sparx5, port->portno) : port->portno;
+ 	u32 dev = high_spd_dev ?
+-		  sparx5_to_high_dev(port->portno) : TARGET_DEV2G5;
++		  sparx5_to_high_dev(sparx5, port->portno) : TARGET_DEV2G5;
+ 	void __iomem *devinst = spx5_inst_get(sparx5, dev, tinst);
+ 	u32 spd = port->conf.speed;
+ 	u32 spd_prm;
+@@ -427,7 +427,7 @@ static int sparx5_port_disable(struct sp
+ 		 HSCH_FLUSH_CTRL);
+ 
+ 	if (high_spd_dev) {
+-		u32 pcs = sparx5_to_pcs_dev(port->portno);
++		u32 pcs = sparx5_to_pcs_dev(sparx5, port->portno);
+ 		void __iomem *pcsinst = spx5_inst_get(sparx5, pcs, tinst);
+ 
+ 		/* 12: Disable 5G/10G/25 BaseR PCS */
+@@ -558,8 +558,8 @@ static int sparx5_port_max_tags_set(stru
+ 	bool dtag           = max_tags == SPX5_PORT_MAX_TAGS_TWO;
+ 	enum sparx5_vlan_port_type vlan_type  = port->vlan_type;
+ 	bool dotag          = max_tags != SPX5_PORT_MAX_TAGS_NONE;
+-	u32 dev             = sparx5_to_high_dev(port->portno);
+-	u32 tinst           = sparx5_port_dev_index(port->portno);
++	u32 dev             = sparx5_to_high_dev(sparx5, port->portno);
++	u32 tinst           = sparx5_port_dev_index(sparx5, port->portno);
+ 	void __iomem *inst  = spx5_inst_get(sparx5, dev, tinst);
+ 	u32 etype;
+ 
+@@ -789,9 +789,9 @@ static int sparx5_port_pcs_high_set(stru
+ 				    struct sparx5_port_config *conf)
+ {
+ 	u32 clk_spd = conf->portmode == PHY_INTERFACE_MODE_5GBASER ? 1 : 0;
+-	u32 pix = sparx5_port_dev_index(port->portno);
+-	u32 dev = sparx5_to_high_dev(port->portno);
+-	u32 pcs = sparx5_to_pcs_dev(port->portno);
++	u32 pix = sparx5_port_dev_index(sparx5, port->portno);
++	u32 dev = sparx5_to_high_dev(sparx5, port->portno);
++	u32 pcs = sparx5_to_pcs_dev(sparx5, port->portno);
+ 	void __iomem *devinst;
+ 	void __iomem *pcsinst;
+ 	int err;
+@@ -843,7 +843,7 @@ static int sparx5_port_pcs_high_set(stru
+ /* Switch between 1G/2500 and 5G/10G/25G devices */
+ static void sparx5_dev_switch(struct sparx5 *sparx5, int port, bool hsd)
+ {
+-	int bt_indx = BIT(sparx5_port_dev_index(port));
++	int bt_indx = BIT(sparx5_port_dev_index(sparx5, port));
+ 
+ 	if (sparx5_port_is_5g(port)) {
+ 		spx5_rmw(hsd ? 0 : bt_indx,
+@@ -1016,9 +1016,9 @@ int sparx5_port_init(struct sparx5 *spar
+ {
+ 	u32 pause_start = sparx5_wm_enc(6  * (ETH_MAXLEN / SPX5_BUFFER_CELL_SZ));
+ 	u32 atop = sparx5_wm_enc(20 * (ETH_MAXLEN / SPX5_BUFFER_CELL_SZ));
+-	u32 devhigh = sparx5_to_high_dev(port->portno);
+-	u32 pix = sparx5_port_dev_index(port->portno);
+-	u32 pcs = sparx5_to_pcs_dev(port->portno);
++	u32 devhigh = sparx5_to_high_dev(sparx5, port->portno);
++	u32 pix = sparx5_port_dev_index(sparx5, port->portno);
++	u32 pcs = sparx5_to_pcs_dev(sparx5, port->portno);
+ 	bool sd_pol = port->signd_active_high;
+ 	bool sd_sel = !port->signd_internal;
+ 	bool sd_ena = port->signd_enable;
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_port.h
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_port.h
+@@ -40,7 +40,7 @@ static inline bool sparx5_port_is_25g(in
+ 	return portno >= 56 && portno <= 63;
+ }
+ 
+-static inline u32 sparx5_to_high_dev(int port)
++static inline u32 sparx5_to_high_dev(struct sparx5 *sparx5, int port)
+ {
+ 	if (sparx5_port_is_5g(port))
+ 		return TARGET_DEV5G;
+@@ -49,7 +49,7 @@ static inline u32 sparx5_to_high_dev(int
+ 	return TARGET_DEV25G;
+ }
+ 
+-static inline u32 sparx5_to_pcs_dev(int port)
++static inline u32 sparx5_to_pcs_dev(struct sparx5 *sparx5, int port)
+ {
+ 	if (sparx5_port_is_5g(port))
+ 		return TARGET_PCS5G_BR;
+@@ -58,7 +58,7 @@ static inline u32 sparx5_to_pcs_dev(int
+ 	return TARGET_PCS25G_BR;
+ }
+ 
+-static inline int sparx5_port_dev_index(int port)
++static inline int sparx5_port_dev_index(struct sparx5 *sparx5, int port)
+ {
+ 	if (sparx5_port_is_2g5(port))
+ 		return port;
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_psfp.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_psfp.c
+@@ -20,34 +20,34 @@ static struct sparx5_pool_entry sparx5_p
+ /* Pool of available stream filters */
+ static struct sparx5_pool_entry sparx5_psfp_sf_pool[SPX5_PSFP_SF_CNT];
+ 
+-static int sparx5_psfp_sf_get(u32 *id)
++static int sparx5_psfp_sf_get(struct sparx5 *sparx5, u32 *id)
+ {
+ 	return sparx5_pool_get(sparx5_psfp_sf_pool, SPX5_PSFP_SF_CNT, id);
+ }
+ 
+-static int sparx5_psfp_sf_put(u32 id)
++static int sparx5_psfp_sf_put(struct sparx5 *sparx5, u32 id)
+ {
+ 	return sparx5_pool_put(sparx5_psfp_sf_pool, SPX5_PSFP_SF_CNT, id);
+ }
+ 
+-static int sparx5_psfp_sg_get(u32 idx, u32 *id)
++static int sparx5_psfp_sg_get(struct sparx5 *sparx5, u32 idx, u32 *id)
+ {
+ 	return sparx5_pool_get_with_idx(sparx5_psfp_sg_pool, SPX5_PSFP_SG_CNT,
+ 					idx, id);
+ }
+ 
+-static int sparx5_psfp_sg_put(u32 id)
++static int sparx5_psfp_sg_put(struct sparx5 *sparx5, u32 id)
+ {
+ 	return sparx5_pool_put(sparx5_psfp_sg_pool, SPX5_PSFP_SG_CNT, id);
+ }
+ 
+-static int sparx5_psfp_fm_get(u32 idx, u32 *id)
++static int sparx5_psfp_fm_get(struct sparx5 *sparx5, u32 idx, u32 *id)
+ {
+ 	return sparx5_pool_get_with_idx(sparx5_psfp_fm_pool, SPX5_SDLB_CNT, idx,
+ 					id);
+ }
+ 
+-static int sparx5_psfp_fm_put(u32 id)
++static int sparx5_psfp_fm_put(struct sparx5 *sparx5, u32 id)
+ {
+ 	return sparx5_pool_put(sparx5_psfp_fm_pool, SPX5_SDLB_CNT, id);
+ }
+@@ -205,7 +205,7 @@ int sparx5_psfp_sf_add(struct sparx5 *sp
+ {
+ 	int ret;
+ 
+-	ret = sparx5_psfp_sf_get(id);
++	ret = sparx5_psfp_sf_get(sparx5, id);
+ 	if (ret < 0)
+ 		return ret;
+ 
+@@ -220,7 +220,7 @@ int sparx5_psfp_sf_del(struct sparx5 *sp
+ 
+ 	sparx5_psfp_sf_set(sparx5, id, &sf);
+ 
+-	return sparx5_psfp_sf_put(id);
++	return sparx5_psfp_sf_put(sparx5, id);
+ }
+ 
+ int sparx5_psfp_sg_add(struct sparx5 *sparx5, u32 uidx,
+@@ -229,7 +229,7 @@ int sparx5_psfp_sg_add(struct sparx5 *sp
+ 	ktime_t basetime;
+ 	int ret;
+ 
+-	ret = sparx5_psfp_sg_get(uidx, id);
++	ret = sparx5_psfp_sg_get(sparx5, uidx, id);
+ 	if (ret < 0)
+ 		return ret;
+ 	/* Was already in use, no need to reconfigure */
+@@ -253,7 +253,7 @@ int sparx5_psfp_sg_del(struct sparx5 *sp
+ 	const struct sparx5_psfp_sg sg = { 0 };
+ 	int ret;
+ 
+-	ret = sparx5_psfp_sg_put(id);
++	ret = sparx5_psfp_sg_put(sparx5, id);
+ 	if (ret < 0)
+ 		return ret;
+ 	/* Stream gate still in use ? */
+@@ -270,7 +270,7 @@ int sparx5_psfp_fm_add(struct sparx5 *sp
+ 	int ret;
+ 
+ 	/* Get flow meter */
+-	ret = sparx5_psfp_fm_get(uidx, &fm->pol.idx);
++	ret = sparx5_psfp_fm_get(sparx5, uidx, &fm->pol.idx);
+ 	if (ret < 0)
+ 		return ret;
+ 	/* Was already in use, no need to reconfigure */
+@@ -303,7 +303,7 @@ int sparx5_psfp_fm_del(struct sparx5 *sp
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	ret = sparx5_psfp_fm_put(id);
++	ret = sparx5_psfp_fm_put(sparx5, id);
+ 	if (ret < 0)
+ 		return ret;
+ 	/* Do not reset flow-meter if still in use. */
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_tc.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_tc.c
+@@ -60,8 +60,8 @@ static int sparx5_tc_setup_block(struct
+ 					  cb, ndev, ndev, false);
+ }
+ 
+-static void sparx5_tc_get_layer_and_idx(u32 parent, u32 portno, u32 *layer,
+-					u32 *idx)
++static void sparx5_tc_get_layer_and_idx(struct sparx5 *sparx5, u32 parent,
++					u32 portno, u32 *layer, u32 *idx)
+ {
+ 	if (parent == TC_H_ROOT) {
+ 		*layer = 2;
+@@ -90,8 +90,8 @@ static int sparx5_tc_setup_qdisc_tbf(str
+ 	struct sparx5_port *port = netdev_priv(ndev);
+ 	u32 layer, se_idx;
+ 
+-	sparx5_tc_get_layer_and_idx(qopt->parent, port->portno, &layer,
+-				    &se_idx);
++	sparx5_tc_get_layer_and_idx(port->sparx5, qopt->parent, port->portno,
++				    &layer, &se_idx);
+ 
+ 	switch (qopt->command) {
+ 	case TC_TBF_REPLACE:

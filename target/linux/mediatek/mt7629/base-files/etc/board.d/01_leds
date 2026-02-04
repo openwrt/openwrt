@@ -1,0 +1,20 @@
+. /lib/functions/leds.sh
+. /lib/functions/uci-defaults.sh
+
+board=$(board_name)
+
+board_config_update
+
+case $board in
+iptime,a6004mx)
+	ucidef_set_led_netdev "wan" "WAN" "orange:wan" "eth1"
+	;;
+netgear,ex6250-v2)
+	ucidef_set_led_netdev "eth_act" "LAN act" "yellow:eth" "eth0" "tx rx"
+	ucidef_set_led_netdev "eth_link" "LAN link" "green:eth" "eth0" "link"
+	;;
+esac
+
+board_config_flush
+
+exit 0

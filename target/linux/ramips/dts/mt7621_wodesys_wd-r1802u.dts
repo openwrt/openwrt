@@ -1,0 +1,153 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "wodesys,wd-r1802u", "mediatek,mt7621-soc";
+	model = "Wodesys WD-R1802U";
+
+	aliases {
+		label-mac-device = &gmac0;
+		led-boot = &led_blue;
+		led-failsafe = &led_red;
+		led-running = &led_green;
+		led-upgrade = &led_blue;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		key-0 {
+			label = "reset";
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		led_green: led-0 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		led_blue: led-1 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+		};
+
+		led_red: led-2 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+			panic-indicator;
+		};
+	};
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_4 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie1 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_0>, <&precal_factory_e10>;
+		nvmem-cell-names = "eeprom", "precal";
+		mediatek,disable-radar-background;
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x00000 0x30000>;
+				read-only;
+			};
+
+			/* 0x30000-0x4ffff are unused
+                           (flash contents is 0xff) */
+
+			partition@50000 {
+				label = "factory";
+				reg = <0x50000 0x40000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0xe00>;
+					};
+
+					macaddr_factory_4: macaddr@4 { // wifi 2.4
+						compatible = "mac-base";
+						reg = <0x4 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					precal_factory_e10: precal@e10 {
+						reg = <0xe10 0x19c10>;
+					};
+				};
+			};
+
+			partition@90000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x90000 0xf70000>;
+			};
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "jtag", "wdt";
+		function = "gpio";
+	};
+};
+
+&switch0 {
+	ports {
+		port@4 {
+			status = "okay";
+			label = "lan";
+		};
+	};
+};
+
+&xhci {
+	status = "disabled";
+};

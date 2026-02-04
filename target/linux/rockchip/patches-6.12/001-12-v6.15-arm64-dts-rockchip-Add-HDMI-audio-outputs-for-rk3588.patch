@@ -1,0 +1,91 @@
+From b8c6c136971c0e9750eec89f367529b2854d3a3c Mon Sep 17 00:00:00 2001
+From: Detlev Casanova <detlev.casanova@collabora.com>
+Date: Mon, 17 Feb 2025 16:47:41 -0500
+Subject: arm64: dts: rockchip: Add HDMI audio outputs for rk3588
+
+For hdmi0_sound, use the simple-audio-card driver with the hdmi0 QP node
+as CODEC and the i2s5 device as CPU.
+
+Similarly for hdmi1_sound, the CODEC is the hdmi1 node and the CPU is
+i2s6, but only added in the rk3588-extra.dtsi device tree as the second
+TX HDMI port is not available on base versions of the SoC.
+
+The simple-audio-card,mclk-fs value is set to 128 as it is done in
+the downstream driver.
+
+The #sound-dai-cells value is set to 0 in the hdmi0 and hdmi1 nodes so
+that they can be used as audio codec nodes.
+
+Tested-by: Quentin Schulz <quentin.schulz@cherry.de> # RK3588 Tiger Haikou
+Signed-off-by: Detlev Casanova <detlev.casanova@collabora.com>
+Fixes: 419d1918105e ("ASoC: simple-card-utils: use __free(device_node) for device node")
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Link: https://lore.kernel.org/r/20250217215641.372723-3-detlev.casanova@collabora.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi
+@@ -382,6 +382,22 @@
+ 		};
+ 	};
+ 
++	hdmi0_sound: hdmi0-sound {
++		compatible = "simple-audio-card";
++		simple-audio-card,format = "i2s";
++		simple-audio-card,mclk-fs = <128>;
++		simple-audio-card,name = "hdmi0";
++		status = "disabled";
++
++		simple-audio-card,codec {
++			sound-dai = <&hdmi0>;
++		};
++
++		simple-audio-card,cpu {
++			sound-dai = <&i2s5_8ch>;
++		};
++	};
++
+ 	pmu-a55 {
+ 		compatible = "arm,cortex-a55-pmu";
+ 		interrupts = <GIC_PPI 7 IRQ_TYPE_LEVEL_HIGH &ppi_partition0>;
+@@ -1396,6 +1412,7 @@
+ 		reset-names = "ref", "hdp";
+ 		rockchip,grf = <&sys_grf>;
+ 		rockchip,vo-grf = <&vo1_grf>;
++		#sound-dai-cells = <0>;
+ 		status = "disabled";
+ 
+ 		ports {
+--- a/arch/arm64/boot/dts/rockchip/rk3588-extra.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588-extra.dtsi
+@@ -7,6 +7,22 @@
+ #include "rk3588-extra-pinctrl.dtsi"
+ 
+ / {
++	hdmi1_sound: hdmi1-sound {
++		compatible = "simple-audio-card";
++		simple-audio-card,format = "i2s";
++		simple-audio-card,mclk-fs = <128>;
++		simple-audio-card,name = "hdmi1";
++		status = "disabled";
++
++		simple-audio-card,codec {
++			sound-dai = <&hdmi1>;
++		};
++
++		simple-audio-card,cpu {
++			sound-dai = <&i2s6_8ch>;
++		};
++	};
++
+ 	usb_host1_xhci: usb@fc400000 {
+ 		compatible = "rockchip,rk3588-dwc3", "snps,dwc3";
+ 		reg = <0x0 0xfc400000 0x0 0x400000>;
+@@ -165,6 +181,7 @@
+ 		reset-names = "ref", "hdp";
+ 		rockchip,grf = <&sys_grf>;
+ 		rockchip,vo-grf = <&vo1_grf>;
++		#sound-dai-cells = <0>;
+ 		status = "disabled";
+ 
+ 		ports {

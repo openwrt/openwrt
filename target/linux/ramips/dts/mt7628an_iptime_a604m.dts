@@ -1,0 +1,46 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include <dt-bindings/leds/common.h>
+
+#include "mt7628an_iptime.dtsi"
+
+/ {
+	compatible = "iptime,a604m", "mediatek,mt7628an-soc";
+	model = "ipTIME A604M";
+
+	aliases {
+		led-boot = &led_cpu;
+		led-failsafe = &led_cpu;
+		led-running = &led_cpu;
+		led-upgrade = &led_cpu;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		wlan5g {
+			label = "blue:wlan5g";
+			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		led_cpu: cpu {
+			function = LED_FUNCTION_CPU;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan2g {
+			label = "blue:wlan2g";
+			gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "i2c", "uart1", "wdt";
+		function = "gpio";
+	};
+};

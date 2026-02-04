@@ -1,0 +1,24 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+/dts-v1/;
+#include "mt7981b-cudy-tr3000-v1.dtsi"
+
+/ {
+	model = "Cudy TR3000 v1 (OpenWrt U-Boot layout)";
+	compatible = "cudy,tr3000-v1-ubootmod", "mediatek,mt7981";
+};
+
+&chosen {
+	bootargs = "root=/dev/fit0 rootwait";
+	rootdisk = <&ubi_rootdisk>;
+};
+
+&ubi {
+	reg = <0x5c0000 0x7a40000>;
+
+	volumes {
+		ubi_rootdisk: ubi-volume-fit {
+			volname = "fit";
+		};
+	};
+};

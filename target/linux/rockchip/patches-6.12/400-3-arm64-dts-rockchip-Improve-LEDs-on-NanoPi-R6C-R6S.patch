@@ -1,0 +1,184 @@
+From dfa0e0a42f3e256189849a45203aac98a0b4d1aa Mon Sep 17 00:00:00 2001
+From: Sebastian Kropatsch <seb-dev@mail.de>
+Date: Wed, 12 Jun 2024 22:48:12 +0200
+Subject: [PATCH 3/5] arm64: dts: rockchip: Improve LEDs on NanoPi R6C/R6S
+
+Move led-3 node into NanoPi R6C/R6S's source files since they have
+different functionalities on each board: On the R6S this LED is used
+to signal LAN2 link up, while on the R6C this LED does not have a
+pre-defined purpose.
+
+In addition to that:
+    - Remove deprecated label property
+    - Add color and function properties
+    - Add linux,default-trigger to trigger on Ethernet link
+
+Signed-off-by: Sebastian Kropatsch <seb-dev@mail.de>
+---
+ .../boot/dts/rockchip/rk3588s-nanopi-r6.dtsi  | 32 +++++++------------
+ .../boot/dts/rockchip/rk3588s-nanopi-r6c.dts  | 22 ++++++++++---
+ .../boot/dts/rockchip/rk3588s-nanopi-r6s.dts  | 26 +++++++++++++--
+ 3 files changed, 54 insertions(+), 26 deletions(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588s-nanopi-r6.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588s-nanopi-r6.dtsi
+@@ -8,6 +8,7 @@
+ #include <dt-bindings/pinctrl/rockchip.h>
+ #include <dt-bindings/gpio/gpio.h>
+ #include <dt-bindings/input/input.h>
++#include <dt-bindings/leds/common.h>
+ #include "rk3588s.dtsi"
+ 
+ / {
+@@ -52,7 +53,8 @@
+ 		compatible = "gpio-leds";
+ 
+ 		sys_led: led-0 {
+-			label = "sys_led";
++			color = <LED_COLOR_ID_RED>;
++			function = LED_FUNCTION_HEARTBEAT;
+ 			gpios = <&gpio1 RK_PC1 GPIO_ACTIVE_HIGH>;
+ 			linux,default-trigger = "heartbeat";
+ 			pinctrl-names = "default";
+@@ -60,24 +62,22 @@
+ 		};
+ 
+ 		wan_led: led-1 {
+-			label = "wan_led";
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_WAN;
+ 			gpios = <&gpio1 RK_PC2 GPIO_ACTIVE_HIGH>;
++			linux,default-trigger = "stmmac-0:01:link";
+ 			pinctrl-names = "default";
+ 			pinctrl-0 = <&wan_led_pin>;
+ 		};
+ 
+ 		lan1_led: led-2 {
+-			label = "lan1_led";
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_LAN;
+ 			gpios = <&gpio1 RK_PC3 GPIO_ACTIVE_HIGH>;
++			linux,default-trigger = "r8169-3-3100:00:link";
+ 			pinctrl-names = "default";
+ 			pinctrl-0 = <&lan1_led_pin>;
+ 		};
+-
+-		lan2_led: led-3 {
+-			gpios = <&gpio1 RK_PC4 GPIO_ACTIVE_HIGH>;
+-			pinctrl-names = "default";
+-			pinctrl-0 = <&lan2_led_pin>;
+-		};
+ 	};
+ 
+ 	vcc_5v0: regulator-vcc-5v0 {
+@@ -328,23 +328,15 @@
+ 
+ 	gpio-leds {
+ 		sys_led_pin: sys-led-pin {
+-			rockchip,pins =
+-				<1 RK_PC1 RK_FUNC_GPIO &pcfg_pull_none>;
++			rockchip,pins = <1 RK_PC1 RK_FUNC_GPIO &pcfg_pull_none>;
+ 		};
+ 
+ 		wan_led_pin: wan-led-pin {
+-			rockchip,pins =
+-				<1 RK_PC2 RK_FUNC_GPIO &pcfg_pull_none>;
++			rockchip,pins = <1 RK_PC2 RK_FUNC_GPIO &pcfg_pull_none>;
+ 		};
+ 
+ 		lan1_led_pin: lan1-led-pin {
+-			rockchip,pins =
+-				<1 RK_PC3 RK_FUNC_GPIO &pcfg_pull_none>;
+-		};
+-
+-		lan2_led_pin: lan2-led-pin {
+-			rockchip,pins =
+-				<1 RK_PC4 RK_FUNC_GPIO &pcfg_pull_none>;
++			rockchip,pins = <1 RK_PC3 RK_FUNC_GPIO &pcfg_pull_none>;
+ 		};
+ 	};
+ 
+--- a/arch/arm64/boot/dts/rockchip/rk3588s-nanopi-r6c.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3588s-nanopi-r6c.dts
+@@ -8,6 +8,18 @@
+ 	model = "FriendlyElec NanoPi R6C";
+ 	compatible = "friendlyarm,nanopi-r6c", "rockchip,rk3588s";
+ 
++	leds {
++		compatible = "gpio-leds";
++
++		led1_led: led-3 {
++			color = <LED_COLOR_ID_GREEN>;
++			function = "led1";
++			gpios = <&gpio1 RK_PC4 GPIO_ACTIVE_HIGH>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&led1_led_pin>;
++		};
++	};
++
+ 	/* MP2143DJ power switch (U9536 in schematics) */
+ 	vcc3v3_pcie: regulator-vcc3v3-pcie {
+ 		compatible = "regulator-fixed";
+@@ -24,16 +36,18 @@
+ 	};
+ };
+ 
+-&lan2_led {
+-	label = "user_led";
+-};
+-
+ /* M.2 M-Key socket */
+ &pcie2x1l2 {
+ 	vpcie3v3-supply = <&vcc3v3_pcie>;
+ };
+ 
+ &pinctrl {
++	gpio-leds {
++		led1_led_pin: led1-led-pin {
++			rockchip,pins = <1 RK_PC4 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
++
+ 	pcie {
+ 		pcie20x1_2_con_pwren: pcie20x1-2-con-pwren {
+ 			rockchip,pins = <3 RK_PC6 RK_FUNC_GPIO &pcfg_pull_none>;
+--- a/arch/arm64/boot/dts/rockchip/rk3588s-nanopi-r6s.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3588s-nanopi-r6s.dts
+@@ -7,13 +7,35 @@
+ / {
+ 	model = "FriendlyElec NanoPi R6S";
+ 	compatible = "friendlyarm,nanopi-r6s", "rockchip,rk3588s";
++
++	leds {
++		compatible = "gpio-leds";
++
++		lan2_led: led-3 {
++			color = <LED_COLOR_ID_GREEN>;
++			function = LED_FUNCTION_LAN;
++			function-enumerator = <2>;
++			gpios = <&gpio1 RK_PC4 GPIO_ACTIVE_HIGH>;
++			linux,default-trigger = "r8169-4-4100:00:link";
++			pinctrl-names = "default";
++			pinctrl-0 = <&lan2_led_pin>;
++		};
++	};
+ };
+ 
+-&lan2_led {
+-	label = "lan2_led";
++&lan1_led {
++	function-enumerator = <1>;
+ };
+ 
+ /* RTL8125BG Ethernet */
+ &pcie2x1l2 {
+ 	vpcie3v3-supply = <&vcc_3v3_s3>;
+ };
++
++&pinctrl {
++	gpio-leds {
++		lan2_led_pin: lan2-led-pin {
++			rockchip,pins = <1 RK_PC4 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
++};

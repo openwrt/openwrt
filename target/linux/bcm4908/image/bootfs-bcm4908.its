@@ -1,0 +1,48 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/include/ "bootfs.itsi"
+
+/ {
+	images {
+		uboot {
+			data = /incbin/("${images_dir}/u-boot/u-boot-bcm4908.bin");
+		};
+
+		fdt_uboot {
+			data = /incbin/("${images_dir}/u-boot/u-boot-bcm4908.dtb");
+		};
+
+		fdt_uboot_RAX220 {
+			description = "dtb";
+			data = /incbin/("${images_dir}/u-boot/RAX220.dtb");
+			type = "flat_dt";
+			compression = "none";
+
+			hash-1 {
+				algo = "sha256";
+			};
+		};
+
+		fdt_linux_RAX220 {
+			description = "dtb";
+			data = /incbin/("${dts_dir}/broadcom/bcmbca/bcm4908-netgear-raxe500.dtb");
+			arch = "arm64";
+			type = "flat_dt";
+			compression = "none";
+		};
+	};
+
+	configurations {
+		conf_ub_RAX220 {
+			description = "RAX220";
+			fdt = "fdt_uboot_RAX220";
+			loadables = "atf", "uboot";
+		};
+
+		conf_lx_RAX220 {
+			description = "BRCM 63xxx linux";
+			kernel = "kernel";
+			fdt = "fdt_linux_RAX220";
+		};
+	};
+};

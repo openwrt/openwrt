@@ -1,0 +1,27 @@
+From 0d2312f0d3e4ce74af0977c1519a07dfc71a82ac Mon Sep 17 00:00:00 2001
+From: Jonas Karlman <jonas@kwiboo.se>
+Date: Fri, 28 Feb 2025 06:40:11 +0000
+Subject: [PATCH] arm64: dts: rockchip: Add uart0 pinctrl to Radxa E20C
+
+Radxa E20C route UART0 M0 pins (GPIO4_C7 and GPIO4_D0) to the onboard
+CH340B for debug console use.
+
+Add pinctrl for UART0 M0 pins used for serial console.
+
+Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Link: https://lore.kernel.org/r/20250228064024.3200000-6-jonas@kwiboo.se
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3528-radxa-e20c.dts | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3528-radxa-e20c.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3528-radxa-e20c.dts
+@@ -18,5 +18,7 @@
+ };
+ 
+ &uart0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart0m0_xfer>;
+ 	status = "okay";
+ };

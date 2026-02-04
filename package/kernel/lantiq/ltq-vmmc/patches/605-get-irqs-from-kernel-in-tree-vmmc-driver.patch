@@ -1,0 +1,89 @@
+--- a/src/mps/drv_mps_vmmc_linux.c
++++ b/src/mps/drv_mps_vmmc_linux.c
+@@ -104,6 +104,10 @@ extern irqreturn_t ifx_mps_vc_irq (IFX_i
+ extern IFX_void_t ifx_mps_shutdown (IFX_void_t);
+ extern IFX_int32_t ifx_mps_event_activation_poll (mps_devices type,
+                                                   MbxEventRegs_s * act);
++extern unsigned int ltq_get_mps_ad0_irq(void);
++extern unsigned int ltq_get_mps_ad1_irq(void);
++extern unsigned int ltq_get_mps_vc_irq(int idx);
++
+ mps_mbx_dev *ifx_mps_get_device (mps_devices type);
+ 
+ #ifdef CONFIG_PROC_FS
+@@ -2260,7 +2264,7 @@ IFX_int32_t __init ifx_mps_init_module (
+    /* reset the device before initializing the device driver */
+    ifx_mps_reset ();
+ 
+-  result = request_irq (INT_NUM_IM4_IRL18,
++  result = request_irq (ltq_get_mps_ad0_irq(),
+ #ifdef LINUX_2_6
+                          ifx_mps_ad0_irq, 0x0
+ #else /* */
+@@ -2270,7 +2274,7 @@ IFX_int32_t __init ifx_mps_init_module (
+                          , "mps_mbx ad0", &ifx_mps_dev);
+    if (result)
+       return result;
+-   result = request_irq (INT_NUM_IM4_IRL19,
++   result = request_irq (ltq_get_mps_ad1_irq(),
+ #ifdef LINUX_2_6
+                          ifx_mps_ad1_irq, 0x0
+ #else /* */
+@@ -2285,7 +2289,7 @@ IFX_int32_t __init ifx_mps_init_module (
+    for (i = 0; i < 4; ++i)
+    {
+       sprintf (&voice_channel_int_name[i][0], "mps_mbx vc%d", i);
+-      result = request_irq (INT_NUM_IM4_IRL14 + i,
++      result = request_irq (ltq_get_mps_vc_irq(i),
+ #ifdef LINUX_2_6
+                             ifx_mps_vc_irq, 0x0
+ #else /* */
+@@ -2446,13 +2450,13 @@ ifx_mps_cleanup_module (IFX_void_t)
+    ifx_mps_release_structures (&ifx_mps_dev);
+ 
+    /* release all interrupts at the system */
+-   free_irq (INT_NUM_IM4_IRL18, &ifx_mps_dev);
+-   free_irq (INT_NUM_IM4_IRL19, &ifx_mps_dev);
++   free_irq (ltq_get_mps_ad0_irq(), &ifx_mps_dev);
++   free_irq (ltq_get_mps_ad1_irq(), &ifx_mps_dev);
+ 
+    /* register status interrupts for voice channels */
+    for (i = 0; i < 4; ++i)
+    {
+-      free_irq (INT_NUM_IM4_IRL14 + i, &ifx_mps_dev);
++      free_irq (ltq_get_mps_vc_irq(i), &ifx_mps_dev);
+    }
+ #ifdef CONFIG_PROC_FS
+ #if CONFIG_MPS_HISTORY_SIZE > 0
+--- a/src/mps/drv_mps_vmmc_common.c
++++ b/src/mps/drv_mps_vmmc_common.c
+@@ -134,6 +134,8 @@ extern IFX_void_t mask_and_ack_danube_ir
+ 
+ #endif /* */
+ 
++extern unsigned int ltq_get_mps_vc_irq(int idx);
++
+ extern void sys_hw_setup (void);
+ 
+ extern IFXOS_event_t fw_ready_evt;
+@@ -2979,7 +2981,7 @@ irqreturn_t ifx_mps_ad1_irq (IFX_int32_t
+  */
+ irqreturn_t ifx_mps_vc_irq (IFX_int32_t irq, mps_comm_dev * pDev)
+ {
+-   IFX_uint32_t chan = irq - INT_NUM_IM4_IRL14;
++   IFX_uint32_t chan = irq - ltq_get_mps_vc_irq(0);
+    mps_mbx_dev *mbx_dev = (mps_mbx_dev *) & (pMPSDev->voice_mb[chan]);
+    MPS_VCStatReg_u MPS_VCStatusReg;
+    MbxEventRegs_s events;
+--- a/src/mps/drv_mps_vmmc_device.h
++++ b/src/mps/drv_mps_vmmc_device.h
+@@ -69,9 +69,6 @@
+ #  define IFX_MPS_CVC3SR      IFXMIPS_MPS_CVC3SR
+ #  define IFX_MPS_SAD0SR      IFXMIPS_MPS_SAD0SR
+ /* interrupt vectors */
+-#  define INT_NUM_IM4_IRL14   (INT_NUM_IM4_IRL0 + 14)
+-#  define INT_NUM_IM4_IRL18   (INT_NUM_IM4_IRL0 + 18)
+-#  define INT_NUM_IM4_IRL19   (INT_NUM_IM4_IRL0 + 19)
+ #  define IFX_ICU_IM4_IER     IFXMIPS_ICU_IM4_IER
+ 
+ /* ============================= */

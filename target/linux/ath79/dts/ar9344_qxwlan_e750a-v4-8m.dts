@@ -1,0 +1,54 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include <dt-bindings/leds/common.h>
+
+#include "ar9344_qxwlan_e750x.dtsi"
+
+/ {
+	model = "Qxwlan E750A v4 8M";
+	compatible = "qxwlan,e750a-v4-8m", "qca,ar9344";
+};
+
+&leds {
+	lan {
+		function = LED_FUNCTION_LAN;
+		color = <LED_COLOR_ID_GREEN>;
+		gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
+	};
+
+	wan {
+		function = LED_FUNCTION_WAN;
+		color = <LED_COLOR_ID_GREEN>;
+		gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	phy-handle = <&swphy4>;
+
+	nvmem-cells = <&macaddr_pridata_400 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&eth1 {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_pridata_400 0>;
+	nvmem-cell-names = "mac-address";
+
+	gmac-config {
+		device = <&gmac>;
+		switch-phy-swap = <0>;
+		switch-only-mode = <1>;
+	};
+};
+
+&partitions {
+	partition@70000 {
+		compatible = "denx,uimage";
+		label = "firmware";
+		reg = <0x070000 0x790000>;
+	};
+};

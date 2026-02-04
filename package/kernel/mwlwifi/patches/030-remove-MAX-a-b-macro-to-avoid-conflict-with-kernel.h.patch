@@ -1,0 +1,51 @@
+From 8c19700558b154b4898e49014b9a9725dabadddb Mon Sep 17 00:00:00 2001
+From: Stefan Kalscheuer <stefan@stklcode.de>
+Date: Sat, 31 May 2025 16:52:23 +0200
+Subject: [PATCH] remove MAX(a,b) macro to avoid conflict with
+ kernel.h/minmax.h
+
+Building against recent kernel versions (noticed with 6.12) and -Werror
+can fail because a macro MAX(a,b) is already defined in minmax.h or
+kernel.h before 5.10.
+
+In file included from ../mwlwifi-2025.02.06~db97edf2/hif/fwcmd.h:23,
+                 from ../mwlwifi-2025.02.06~db97edf2/core.c:25:
+../mwlwifi-2025.02.06~db97edf2/hif/hostcmd.h:1124:9: error: "MAX" redefined [-Werror]
+ 1124 | #define MAX(a, b) (((a) > (b)) ? (a) : (b))
+      |         ^~~
+In file included from usr/include/mac80211-backport/linux/minmax.h:4,
+                 from ./include/linux/kernel.h:28,
+                 from usr/include/mac80211-backport/linux/kernel.h:3,
+                 from ./include/linux/skbuff.h:13,
+                 from usr/include/mac80211-backport/linux/skbuff.h:3,
+                 from ./include/linux/if_ether.h:19,
+                 from usr/include/mac80211-backport/linux/if_ether.h:3,
+                 from ./include/linux/etherdevice.h:20,
+                 from usr/include/mac80211-backport/linux/etherdevice.h:3,
+                 from ../mwlwifi-2025.02.06~db97edf2/core.c:18:
+./include/linux/minmax.h:330:9: note: this is the location of the previous definition
+  330 | #define MAX(a,b) __cmp(max,a,b)
+      |         ^~~
+
+This macro is not used anywhere else but in the very next line, so
+instead of adding conditionals, let's expand MAX_GROUP_PER_CHANNEL_RATE
+and drop the definition of MAX.
+
+Signed-off-by: Stefan Kalscheuer <stefan@stklcode.de>
+---
+ hif/hostcmd.h | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/hif/hostcmd.h
++++ b/hif/hostcmd.h
+@@ -1121,9 +1121,8 @@ struct hostcmd_cmd_get_fw_region_code_sc
+ #define HAL_TRPC_ID_MAX_SC4        32
+ #define MAX_GROUP_PER_CHANNEL_5G   39
+ #define MAX_GROUP_PER_CHANNEL_2G   21
+-#define	MAX(a, b) (((a) > (b)) ? (a) : (b))
+ #define MAX_GROUP_PER_CHANNEL_RATE \
+-	MAX(MAX_GROUP_PER_CHANNEL_5G, MAX_GROUP_PER_CHANNEL_2G)
++	((MAX_GROUP_PER_CHANNEL_5G > MAX_GROUP_PER_CHANNEL_2G) ? MAX_GROUP_PER_CHANNEL_5G : MAX_GROUP_PER_CHANNEL_2G)
+ 
+ struct channel_power_tbl_sc4 {
+ 	u8 channel;

@@ -1,0 +1,37 @@
+From 87ec8e4cb7d7e13d51c351c7e2fcb069081d54c4 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Mon, 3 Aug 2020 15:30:49 +0300
+Subject: [PATCH 096/110] mmc: introduce SDHCI_QUIRK2_AT91_HS400_PRESET
+
+AT91 architecture uses a different HS400 preset register offset.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+(cherry picked from linux-6.1-trunk/mmc)
+[andrei.simion: increment the value for left shift for
+		AT91 specific HS400 preset register]
+Signed-off-by: Andrei Simion <andrei.simion@microchip.com>
+---
+ drivers/mmc/host/sdhci.h | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/drivers/mmc/host/sdhci.h
++++ b/drivers/mmc/host/sdhci.h
+@@ -270,6 +270,7 @@
+ #define SDHCI_PRESET_FOR_SDR104        0x6C
+ #define SDHCI_PRESET_FOR_DDR50 0x6E
+ #define SDHCI_PRESET_FOR_HS400 0x74 /* Non-standard */
++#define SDHCI_PRESET_FOR_HS400_AT91	0x244 /* AT91 specific */
+ #define SDHCI_PRESET_DRV_MASK		GENMASK(15, 14)
+ #define SDHCI_PRESET_CLKGEN_SEL		BIT(10)
+ #define SDHCI_PRESET_SDCLK_FREQ_MASK	GENMASK(9, 0)
+@@ -484,6 +485,10 @@ struct sdhci_host {
+ #define SDHCI_QUIRK2_USE_32BIT_BLK_CNT			(1<<18)
+ /* Issue CMD and DATA reset together */
+ #define SDHCI_QUIRK2_ISSUE_CMD_DAT_RESET_TOGETHER	(1<<19)
++/*
++ * AT91 specific HS400 preset register
++ */
++#define SDHCI_QUIRK2_AT91_HS400_PRESET			(1<<20)
+ 
+ 	int irq;		/* Device IRQ */
+ 	void __iomem *ioaddr;	/* Mapped address */

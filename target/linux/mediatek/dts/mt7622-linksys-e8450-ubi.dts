@@ -1,0 +1,107 @@
+// SPDX-License-Identifier: (GPL-2.0-only OR MIT)
+
+/dts-v1/;
+#include "mt7622-linksys-e8450.dtsi"
+
+/ {
+	model = "Linksys E8450 (UBI)";
+	compatible = "linksys,e8450-ubi", "mediatek,mt7622";
+
+	aliases {
+		label-mac-device = &wan;
+	};
+
+	chosen {
+		rootdisk = <&ubi_rootfs>;
+		bootargs = "earlycon=uart8250,mmio32,0x11002000 console=ttyS0,115200n1 swiotlb=512 ubi.block=0,fit root=/dev/fit0 rootwait";
+	};
+};
+
+&snand {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "bl2";
+			reg = <0x0 0x80000>;
+			read-only;
+		};
+
+		partition@80000 {
+			label = "ubi";
+			reg = <0x80000 0x7f80000>;
+			compatible = "linux,ubi";
+
+			volumes {
+				ubi-volume-ubootenv {
+					volname = "ubootenv";
+					nvmem-layout {
+						compatible = "u-boot,env-redundant-bool";
+					};
+				};
+
+				ubi-volume-ubootenv2 {
+					volname = "ubootenv2";
+					nvmem-layout {
+						compatible = "u-boot,env-redundant-bool";
+					};
+				};
+
+				ubi_rootfs: ubi-volume-fit {
+					volname = "fit";
+				};
+
+				ubi_factory: ubi-volume-factory {
+					volname = "factory";
+				};
+			};
+		};
+	};
+};
+
+&ubi_factory {
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		eeprom_factory_0: eeprom@0 {
+			reg = <0x0 0x4da8>; /* actual length 0x400 */
+		};
+
+		eeprom_factory_5000: eeprom@5000 {
+			reg = <0x5000 0xe00>;
+		};
+
+		macaddr_factory_7fff4: macaddr@7fff4 {
+			reg = <0x7fff4 0x6>;
+		};
+
+		macaddr_factory_7fffa: macaddr@7fffa {
+			reg = <0x7fffa 0x6>;
+		};
+	};
+};
+
+&wmac {
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
+	status = "okay";
+};
+
+&wmac1 {
+	nvmem-cells = <&eeprom_factory_5000>;
+	nvmem-cell-names = "eeprom";
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_7fff4>;
+	nvmem-cell-names = "mac-address";
+};
+
+&wan {
+	nvmem-cells = <&macaddr_factory_7fffa>;
+	nvmem-cell-names = "mac-address";
+};

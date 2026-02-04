@@ -1,0 +1,48 @@
+From fa79ded408b14cbf687c7139eadce368c0f7003b Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Thu, 13 Jan 2022 13:18:24 +0200
+Subject: [PATCH 093/110] mmc: sdhci-of-at91: avoid division by zero
+
+Avoid division by zero and setting invalid values to address pointed
+by SDHCI_PRESET_FOR_SDR104.
+
+Fixes: bac9f2f1caa5 ("mmc: sdhci-of-at91: add preset for HS400 mode")
+Fixes: d85a06913358 ("mmc: sdhci-of-at91: add compatible to sama7g5 SoC")
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+Reviewed-by: Eugen Hristev <eugen.hristev@microchip.com>
+(cherry picked from linux-6.1-trunk/at91/mmc)
+Signed-off-by: Andrei Simion <andrei.simion@microchip.com>
+---
+ drivers/mmc/host/sdhci-of-at91.c | 18 ++++++++++++------
+ 1 file changed, 12 insertions(+), 6 deletions(-)
+
+--- a/drivers/mmc/host/sdhci-of-at91.c
++++ b/drivers/mmc/host/sdhci-of-at91.c
+@@ -306,15 +306,21 @@ static int sdhci_at91_set_clks_presets(s
+ 	preset_div = DIV_ROUND_UP(gck_rate, 100000000) - 1;
+ 	writew(SDHCI_AT91_PRESET_COMMON_CONF | preset_div,
+ 	       host->ioaddr + SDHCI_PRESET_FOR_SDR50);
+-	preset_div = DIV_ROUND_UP(gck_rate, priv->soc_data->max_sdr104_clk) - 1;
+-	writew(SDHCI_AT91_PRESET_COMMON_CONF | preset_div,
+-	       host->ioaddr + SDHCI_PRESET_FOR_SDR104);
++	if (priv->soc_data->max_sdr104_clk) {
++		preset_div = DIV_ROUND_UP(gck_rate,
++					  priv->soc_data->max_sdr104_clk) - 1;
++		writew(SDHCI_AT91_PRESET_COMMON_CONF | preset_div,
++		       host->ioaddr + SDHCI_PRESET_FOR_SDR104);
++	}
+ 	preset_div = DIV_ROUND_UP(gck_rate, 50000000) - 1;
+ 	writew(SDHCI_AT91_PRESET_COMMON_CONF | preset_div,
+ 	       host->ioaddr + SDHCI_PRESET_FOR_DDR50);
+-	preset_div = DIV_ROUND_UP(gck_rate, priv->soc_data->max_sdr104_clk) - 1;
+-	writew(SDHCI_AT91_PRESET_DRVA_CONF | preset_div,
+-	       host->ioaddr + SDHCI_PRESET_FOR_HS400);
++	if (priv->soc_data->max_sdr104_clk) {
++		preset_div = DIV_ROUND_UP(gck_rate,
++					  priv->soc_data->max_sdr104_clk) - 1;
++		writew(SDHCI_AT91_PRESET_DRVA_CONF | preset_div,
++		       host->ioaddr + SDHCI_PRESET_FOR_HS400);
++	}
+ 
+ 	clk_prepare_enable(priv->mainck);
+ 	clk_prepare_enable(priv->gck);

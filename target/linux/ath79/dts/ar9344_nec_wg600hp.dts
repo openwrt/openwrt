@@ -1,0 +1,16 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "ar9344_nec_aterm.dtsi"
+
+/ {
+	compatible = "nec,wg600hp", "qca,ar9344";
+	model = "NEC Aterm WG600HP";
+};
+
+&partitions {
+	partition@40000 {
+		compatible = "denx,uimage";
+		label = "firmware";
+		reg = <0x040000 0x7c0000>;
+	};
+};

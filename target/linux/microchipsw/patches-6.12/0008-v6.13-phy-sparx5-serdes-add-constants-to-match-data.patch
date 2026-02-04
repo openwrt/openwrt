@@ -1,0 +1,63 @@
+From 484f940614857bfb2766c6a0dadd6f77485ba992 Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Mon, 9 Sep 2024 17:14:42 +0200
+Subject: [PATCH 09/25] phy: sparx5-serdes: add constants to match data
+
+We need to handle a few different constants that differ for Sparx5 and
+lan969x. Add a new struct: sparx5_serdes_consts for this purpose. We
+populate it with an initial field for the number of SERDES'es: sd_max.
+
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Reviewed-by: Steen Hegelund <Steen.Hegelund@microchip.com>
+Link: https://lore.kernel.org/r/20240909-sparx5-lan969x-serdes-driver-v2-2-d695bcb57b84@microchip.com
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
+---
+ drivers/phy/microchip/sparx5_serdes.c | 7 +++++--
+ drivers/phy/microchip/sparx5_serdes.h | 5 +++++
+ 2 files changed, 10 insertions(+), 2 deletions(-)
+
+--- a/drivers/phy/microchip/sparx5_serdes.c
++++ b/drivers/phy/microchip/sparx5_serdes.c
+@@ -2510,6 +2510,9 @@ static struct sparx5_serdes_io_resource
+ static const struct sparx5_serdes_match_data sparx5_desc = {
+ 	.iomap = sparx5_serdes_iomap,
+ 	.iomap_size = ARRAY_SIZE(sparx5_serdes_iomap),
++	.consts = {
++		.sd_max       = 33,
++	},
+ };
+ 
+ /* Client lookup function, uses serdes index */
+@@ -2526,7 +2529,7 @@ static struct phy *sparx5_serdes_xlate(s
+ 	sidx = args->args[0];
+ 
+ 	/* Check validity: ERR_PTR(-ENODEV) if not valid */
+-	for (idx = 0; idx < SPX5_SERDES_MAX; idx++) {
++	for (idx = 0; idx < priv->data->consts.sd_max; idx++) {
+ 		struct sparx5_serdes_macro *macro =
+ 			phy_get_drvdata(priv->phys[idx]);
+ 
+@@ -2594,7 +2597,7 @@ static int sparx5_serdes_probe(struct pl
+ 
+ 		priv->regs[iomap->id] = iomem + iomap->offset;
+ 	}
+-	for (idx = 0; idx < SPX5_SERDES_MAX; idx++) {
++	for (idx = 0; idx < priv->data->consts.sd_max; idx++) {
+ 		err = sparx5_phy_create(priv, idx, &priv->phys[idx]);
+ 		if (err)
+ 			return err;
+--- a/drivers/phy/microchip/sparx5_serdes.h
++++ b/drivers/phy/microchip/sparx5_serdes.h
+@@ -26,7 +26,12 @@ enum sparx5_serdes_mode {
+ 	SPX5_SD_MODE_SFI,
+ };
+ 
++struct sparx5_serdes_consts {
++	int sd_max;
++};
++
+ struct sparx5_serdes_match_data {
++	const struct sparx5_serdes_consts consts;
+ 	const struct sparx5_serdes_io_resource *iomap;
+ 	int iomap_size;
+ };

@@ -1,0 +1,26 @@
+From 630b39c46b29de1874149c6b2c18c64966a0fabf Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Petr=20=C5=A0tetiar?= <ynezz@true.cz>
+Date: Sun, 1 Mar 2020 22:47:31 +0100
+Subject: [PATCH] apalis_imx6_defconfig: enable some useful commands
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+partition table info, EXT4 write support, support for FAT and generic FS
+commands like load/ls that work for multiple FS types.
+
+Signed-off-by: Petr Štetiar <ynezz@true.cz>
+---
+ configs/apalis_imx6_defconfig | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/configs/apalis_imx6_defconfig
++++ b/configs/apalis_imx6_defconfig
+@@ -60,6 +60,7 @@ CONFIG_CMD_CACHE=y
+ CONFIG_CMD_TIME=y
+ CONFIG_CMD_PMIC=y
+ CONFIG_CMD_REGULATOR=y
++CONFIG_CMD_EXT4_WRITE=y
+ CONFIG_OF_CONTROL=y
+ CONFIG_ENV_OVERWRITE=y
+ CONFIG_ENV_IS_IN_MMC=y

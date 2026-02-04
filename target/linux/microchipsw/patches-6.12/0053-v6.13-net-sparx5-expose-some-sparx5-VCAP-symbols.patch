@@ -1,0 +1,116 @@
+From c7a8ba9eec856c3a1d134a09387df04a13efb163 Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Fri, 1 Nov 2024 08:09:07 +0100
+Subject: [PATCH 58/82] net: sparx5: expose some sparx5 VCAP symbols
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+In preparation for lan969x VCAP support, expose the following symbols for
+use by the lan969x VCAP implementation:
+
+- The symbols SPARX5_*_LOOKUPS defines the number of lookups in each
+  VCAP instance.  These are the same for lan969x. Move them to the
+  header file.
+
+- The struct sparx5_vcap_inst encapsulates information about a single
+  VCAP instance. Move this struct to the header file and declare the
+  sparx5_vcap_inst_cfg as extern.
+
+Reviewed-by: Steen Hegelund <Steen.Hegelund@microchip.com>
+Reviewed-by: Jens Emil Schulz Østergaard <jensemil.schulzostergaard@microchip.com>
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ .../microchip/sparx5/sparx5_vcap_impl.c       | 18 +---------------
+ .../microchip/sparx5/sparx5_vcap_impl.h       | 21 +++++++++++++++++++
+ 2 files changed, 22 insertions(+), 17 deletions(-)
+
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_vcap_impl.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_vcap_impl.c
+@@ -17,7 +17,6 @@
+ #define SUPER_VCAP_BLK_SIZE 3072 /* addresses per Super VCAP block */
+ #define STREAMSIZE (64 * 4)  /* bytes in the VCAP cache area */
+ 
+-#define SPARX5_IS2_LOOKUPS 4
+ #define VCAP_IS2_KEYSEL(_ena, _noneth, _v4_mc, _v4_uc, _v6_mc, _v6_uc, _arp) \
+ 	(ANA_ACL_VCAP_S2_KEY_SEL_KEY_SEL_ENA_SET(_ena) | \
+ 	 ANA_ACL_VCAP_S2_KEY_SEL_NON_ETH_KEY_SEL_SET(_noneth) | \
+@@ -27,7 +26,6 @@
+ 	 ANA_ACL_VCAP_S2_KEY_SEL_IP6_UC_KEY_SEL_SET(_v6_uc) | \
+ 	 ANA_ACL_VCAP_S2_KEY_SEL_ARP_KEY_SEL_SET(_arp))
+ 
+-#define SPARX5_IS0_LOOKUPS 6
+ #define VCAP_IS0_KEYSEL(_ena, _etype, _ipv4, _ipv6, _mpls_uc, _mpls_mc, _mlbs) \
+ 	(ANA_CL_ADV_CL_CFG_LOOKUP_ENA_SET(_ena) | \
+ 	ANA_CL_ADV_CL_CFG_ETYPE_CLM_KEY_SEL_SET(_etype) | \
+@@ -37,31 +35,17 @@
+ 	ANA_CL_ADV_CL_CFG_MPLS_MC_CLM_KEY_SEL_SET(_mpls_mc) | \
+ 	ANA_CL_ADV_CL_CFG_MLBS_CLM_KEY_SEL_SET(_mlbs))
+ 
+-#define SPARX5_ES0_LOOKUPS 1
+ #define VCAP_ES0_KEYSEL(_key) (REW_RTAG_ETAG_CTRL_ES0_ISDX_KEY_ENA_SET(_key))
+ #define SPARX5_STAT_ESDX_GRN_PKTS  0x300
+ #define SPARX5_STAT_ESDX_YEL_PKTS  0x301
+ 
+-#define SPARX5_ES2_LOOKUPS 2
+ #define VCAP_ES2_KEYSEL(_ena, _arp, _ipv4, _ipv6) \
+ 	(EACL_VCAP_ES2_KEY_SEL_KEY_ENA_SET(_ena) | \
+ 	EACL_VCAP_ES2_KEY_SEL_ARP_KEY_SEL_SET(_arp) | \
+ 	EACL_VCAP_ES2_KEY_SEL_IP4_KEY_SEL_SET(_ipv4) | \
+ 	EACL_VCAP_ES2_KEY_SEL_IP6_KEY_SEL_SET(_ipv6))
+ 
+-static struct sparx5_vcap_inst {
+-	enum vcap_type vtype; /* type of vcap */
+-	int vinst; /* instance number within the same type */
+-	int lookups; /* number of lookups in this vcap type */
+-	int lookups_per_instance; /* number of lookups in this instance */
+-	int first_cid; /* first chain id in this vcap */
+-	int last_cid; /* last chain id in this vcap */
+-	int count; /* number of available addresses, not in super vcap */
+-	int map_id; /* id in the super vcap block mapping (if applicable) */
+-	int blockno; /* starting block in super vcap (if applicable) */
+-	int blocks; /* number of blocks in super vcap (if applicable) */
+-	bool ingress; /* is vcap in the ingress path */
+-} sparx5_vcap_inst_cfg[] = {
++const struct sparx5_vcap_inst sparx5_vcap_inst_cfg[] = {
+ 	{
+ 		.vtype = VCAP_TYPE_IS0, /* CLM-0 */
+ 		.vinst = 0,
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_vcap_impl.h
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_vcap_impl.h
+@@ -16,6 +16,11 @@
+ #include "vcap_api.h"
+ #include "vcap_api_client.h"
+ 
++#define SPARX5_IS2_LOOKUPS 4
++#define SPARX5_IS0_LOOKUPS 6
++#define SPARX5_ES0_LOOKUPS 1
++#define SPARX5_ES2_LOOKUPS 2
++
+ #define SPARX5_VCAP_CID_IS0_L0 VCAP_CID_INGRESS_L0 /* IS0/CLM lookup 0 */
+ #define SPARX5_VCAP_CID_IS0_L1 VCAP_CID_INGRESS_L1 /* IS0/CLM lookup 1 */
+ #define SPARX5_VCAP_CID_IS0_L2 VCAP_CID_INGRESS_L2 /* IS0/CLM lookup 2 */
+@@ -40,6 +45,22 @@
+ #define SPARX5_VCAP_CID_ES2_MAX \
+ 	(VCAP_CID_EGRESS_STAGE2_L1 + VCAP_CID_LOOKUP_SIZE - 1) /* ES2 Max */
+ 
++struct sparx5_vcap_inst {
++	enum vcap_type vtype; /* type of vcap */
++	int vinst; /* instance number within the same type */
++	int lookups; /* number of lookups in this vcap type */
++	int lookups_per_instance; /* number of lookups in this instance */
++	int first_cid; /* first chain id in this vcap */
++	int last_cid; /* last chain id in this vcap */
++	int count; /* number of available addresses, not in super vcap */
++	int map_id; /* id in the super vcap block mapping (if applicable) */
++	int blockno; /* starting block in super vcap (if applicable) */
++	int blocks; /* number of blocks in super vcap (if applicable) */
++	bool ingress; /* is vcap in the ingress path */
++};
++
++extern const struct sparx5_vcap_inst sparx5_vcap_inst_cfg[];
++
+ /* IS0 port keyset selection control */
+ 
+ /* IS0 ethernet, IPv4, IPv6 traffic type keyset generation */

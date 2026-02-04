@@ -1,0 +1,21 @@
+From 9f3360b42bb5b0c99073827a3dd81d2568b2a4ed Mon Sep 17 00:00:00 2001
+From: FUKAUMI Naoki <naoki@radxa.com>
+Date: Mon, 28 Oct 2024 07:23:44 +0000
+Subject: arm64: dts: rockchip: sort rk3588s-rock5a properly in Makefile
+
+sort target dtb files properly in Makefile for rockchip.
+
+Signed-off-by: FUKAUMI Naoki <naoki@radxa.com>
+Link: https://lore.kernel.org/r/20241028072344.1514-1-naoki@radxa.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+
+--- a/arch/arm64/boot/dts/rockchip/Makefile
++++ b/arch/arm64/boot/dts/rockchip/Makefile
+@@ -151,6 +151,6 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588s-i
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588s-khadas-edge2.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588s-nanopi-r6s.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588s-nanopi-r6c.dtb
+-dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588s-rock-5a.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588s-odroid-m2.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588s-orangepi-5.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3588s-rock-5a.dtb

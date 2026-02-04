@@ -1,0 +1,25 @@
+From a98053d098c4ad91a45a3a55604d9574dfc6ffdb Mon Sep 17 00:00:00 2001
+From: FUKAUMI Naoki <naoki@radxa.com>
+Date: Sat, 19 Oct 2024 02:50:08 +0000
+Subject: arm64: dts: rockchip: add and enable gpu node for Radxa ROCK 5A
+
+add gpu node to make it usable on Radxa ROCK 5A.
+
+Signed-off-by: FUKAUMI Naoki <naoki@radxa.com>
+Link: https://lore.kernel.org/r/20241019025008.852-1-naoki@radxa.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588s-rock-5a.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3588s-rock-5a.dts
+@@ -166,6 +166,11 @@
+ 	cpu-supply = <&vdd_cpu_lit_s0>;
+ };
+ 
++&gpu {
++	mali-supply = <&vdd_gpu_s0>;
++	status = "okay";
++};
++
+ &i2c0 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&i2c0m2_xfer>;

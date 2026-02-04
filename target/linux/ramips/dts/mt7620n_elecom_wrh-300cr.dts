@@ -1,0 +1,148 @@
+#include "mt7620n.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "elecom,wrh-300cr", "ralink,mt7620n-soc";
+	model = "ELECOM WRH-300CR";
+
+	aliases {
+		led-boot = &led_wps;
+		led-failsafe = &led_wps;
+		led-running = &led_wps;
+		led-upgrade = &led_wps;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_wps: wps {
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
+		};
+
+		ethernet {
+			label = "green:ethernet";
+			gpios = <&gpio2 3 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan {
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+	};
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "u-boot-env";
+				reg = <0x30000 0x10000>;
+			};
+
+			partition@40000 {
+				label = "factory";
+				reg = <0x40000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x200>;
+					};
+
+					macaddr_factory_2e: macaddr@2e {
+						reg = <0x2e 0x6>;
+					};
+				};
+			};
+
+			partition@50000 {
+				label = "recover";
+				reg = <0x50000 0x1c0000>;
+				read-only;
+			};
+
+			partition@210000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x210000 0xdf0000>;
+			};
+		};
+	};
+};
+
+&ehci {
+	status = "okay";
+};
+
+&ohci {
+	status = "okay";
+};
+
+&ethernet {
+	nvmem-cells = <&macaddr_factory_2e>;
+	nvmem-cell-names = "mac-address";
+
+	mediatek,portmap = "llllw";
+};
+
+&wmac {
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
+};
+
+&state_default {
+	default {
+		groups = "i2c", "ephy", "wled";
+		function = "gpio";
+	};
+};

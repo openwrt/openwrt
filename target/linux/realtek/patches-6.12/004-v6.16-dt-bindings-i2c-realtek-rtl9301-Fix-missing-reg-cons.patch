@@ -1,0 +1,27 @@
+From 5f05fc6e2218db7ecc52c60eb34b707fe69262c2 Mon Sep 17 00:00:00 2001
+From: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Date: Wed, 2 Jul 2025 08:15:31 +0200
+Subject: [PATCH] dt-bindings: i2c: realtek,rtl9301: Fix missing 'reg'
+ constraint
+
+Lists should have fixed amount if items, so add missing constraint to
+the 'reg' property (only one address space entry).
+
+Fixes: c5eda0333076 ("dt-bindings: i2c: Add Realtek RTL I2C Controller")
+Cc: <stable@vger.kernel.org> # v6.13+
+Signed-off-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Signed-off-by: Andi Shyti <andi.shyti@kernel.org>
+Link: https://lore.kernel.org/r/20250702061530.6940-2-krzysztof.kozlowski@linaro.org
+
+--- a/Documentation/devicetree/bindings/i2c/realtek,rtl9301-i2c.yaml
++++ b/Documentation/devicetree/bindings/i2c/realtek,rtl9301-i2c.yaml
+@@ -26,7 +26,8 @@ properties:
+       - const: realtek,rtl9301-i2c
+ 
+   reg:
+-    description: Register offset and size this I2C controller.
++    items:
++      - description: Register offset and size this I2C controller.
+ 
+   "#address-cells":
+     const: 1

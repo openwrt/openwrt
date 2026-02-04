@@ -1,0 +1,236 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "ar9344.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "Netgear R6100";
+	compatible = "netgear,r6100", "qca,ar9344";
+
+	aliases {
+		label-mac-device = &eth0;
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_amber;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		usb-power {
+			gpio-export,name = "usb-power";
+			gpio-export,output = <1>;
+			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		rfkill {
+			label = "rfkill";
+			linux,code = <KEY_RFKILL>;
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power_amber: power_amber {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_AMBER>;
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_green: power_green {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+		};
+
+		usb {
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+			trigger-sources = <&hub_port>;
+			linux,default-trigger = "usbport";
+		};
+
+		wan_amber {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_AMBER>;
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+		};
+
+		wan_green {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	phy-handle = <&swphy0>;
+
+	nvmem-cells = <&macaddr_caldata_6>;
+	nvmem-cell-names = "mac-address";
+
+	gmac-config {
+		device = <&gmac>;
+		switch-phy-swap = <1>;
+	};
+};
+
+&eth1 {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_caldata_0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&nand {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "u-boot";
+			reg = <0x0000000 0x0020000>;
+			read-only;
+		};
+
+		caldata: partition@20000 {
+			label = "caldata";
+			reg = <0x0020000 0x0040000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				cal_ath9k: calibration@1000 {
+					reg = <0x1000 0x440>;
+				};
+
+				cal_ath10k: calibration@5000 {
+					reg = <0x5000 0x844>;
+				};
+
+				macaddr_caldata_0: macaddr@0 {
+					reg = <0x0 0x6>;
+				};
+
+				macaddr_caldata_6: macaddr@6 {
+					reg = <0x6 0x6>;
+				};
+
+				macaddr_caldata_c: macaddr@c {
+					reg = <0xc 0x6>;
+				};
+			};
+		};
+
+		partition@60000 {
+			label = "caldata-backup";
+			reg = <0x0060000 0x0040000>;
+			read-only;
+		};
+
+		partition@a0000 {
+			label = "config";
+			reg = <0x00a0000 0x0080000>;
+			read-only;
+		};
+
+		partition@120000 {
+			label = "pot";
+			reg = <0x0120000 0x0080000>;
+			read-only;
+		};
+
+		partition@1a0000 {
+			label = "kernel";
+			reg = <0x01a0000 0x0400000>;
+		};
+
+		partition@5a0000 {
+			label = "ubi";
+			reg = <0x05a0000 0x7560000>;
+		};
+
+		partition@7b00000 {
+			label = "language";
+			reg = <0x7b00000 0x0200000>;
+			read-only;
+		};
+
+		partition@7d00000 {
+			label = "traffic_meter";
+			reg = <0x7d00000 0x0300000>;
+			read-only;
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x0000 0 0 0 0>;
+
+		nvmem-cells = <&cal_ath10k>, <&macaddr_caldata_c>;
+		nvmem-cell-names = "calibration", "mac-address";
+	};
+};
+
+&ref {
+	clock-frequency = <40000000>;
+};
+
+&usb {
+	status = "okay";
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&wmac {
+	status = "okay";
+
+	nvmem-cells = <&cal_ath9k>;
+	nvmem-cell-names = "calibration";
+
+	led {
+		led-sources = <0>;
+		led-active-low;
+	};
+};

@@ -1,0 +1,16 @@
+. /lib/functions.sh
+. /lib/functions/migrations.sh
+
+board=$(board_name)
+
+case "$board" in
+keenetic,kn-1613)
+	migrate_leds 'green:internet=green:wan'
+	;;
+esac
+
+remove_devicename_leds
+
+migrations_apply system
+
+exit 0

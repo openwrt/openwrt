@@ -1,0 +1,32 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621_wavlink_wl-wn53xax.dtsi"
+
+/ {
+	compatible = "wavlink,wl-wn531a6", "mediatek,mt7621-soc";
+	model = "Wavlink WL-WN531A6";
+};
+
+&wifi0{
+	ieee80211-freq-limit = <2400000 2500000>;
+};
+
+&wifi1{
+	ieee80211-freq-limit = <5000000 6000000>;
+};
+
+&port0{
+	label = "lan1";
+};
+
+&port1{
+	label = "lan2";
+};
+
+&port2{
+	label = "lan3";
+};
+
+&port3{
+	label = "lan4";
+};

@@ -1,0 +1,37 @@
+From ceee7776c010c5f09d30985c9e5223b363a6172a Mon Sep 17 00:00:00 2001
+From: Sven Eckelmann <sven@narfation.org>
+Date: Sun, 10 Aug 2025 20:05:15 +0200
+Subject: [PATCH] i2c: rtl9300: Increase timeout for transfer polling
+
+The timeout for transfers was only set to 2ms. Because of this relatively
+low limit, 12-byte read operations to the frontend MCU of a RTL8239 POE PSE
+chip cluster was consistently resulting in a timeout.
+
+The original OpenWrt downstream driver [1] was not using any timeout limit
+at all. This is also possible by setting the timeout_us parameter of
+regmap_read_poll_timeout() to 0. But since the driver currently implements
+the ETIMEDOUT error, it is more sensible to increase the timeout in such a
+way that communication with the (quite common) Realtek I2C-connected POE
+management solution is possible.
+
+[1] https://git.openwrt.org/?p=openwrt/openwrt.git;a=blob;f=target/linux/realtek/files-6.12/drivers/i2c/busses/i2c-rtl9300.c;h=c4d973195ef39dc56d6207e665d279745525fcac#l202
+
+Fixes: c366be720235 ("i2c: Add driver for the RTL9300 I2C controller")
+Signed-off-by: Sven Eckelmann <sven@narfation.org>
+Cc: <stable@vger.kernel.org> # v6.13+
+Reviewed-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
+Tested-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
+Signed-off-by: Andi Shyti <andi.shyti@kernel.org>
+Link: https://lore.kernel.org/r/20250810-i2c-rtl9300-multi-byte-v5-3-cd9dca0db722@narfation.org
+
+--- a/drivers/i2c/busses/i2c-rtl9300.c
++++ b/drivers/i2c/busses/i2c-rtl9300.c
+@@ -175,7 +175,7 @@ static int rtl9300_i2c_execute_xfer(stru
+ 		return ret;
+ 
+ 	ret = regmap_read_poll_timeout(i2c->regmap, i2c->reg_base + RTL9300_I2C_MST_CTRL1,
+-				       val, !(val & RTL9300_I2C_MST_CTRL1_I2C_TRIG), 100, 2000);
++				       val, !(val & RTL9300_I2C_MST_CTRL1_I2C_TRIG), 100, 100000);
+ 	if (ret)
+ 		return ret;
+ 

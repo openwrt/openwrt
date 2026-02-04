@@ -1,0 +1,75 @@
+From eebf59470a76a38d0c43005a34483e1a52a33de0 Mon Sep 17 00:00:00 2001
+From: Nicolas Frattaroli <nicolas.frattaroli@collabora.com>
+Date: Mon, 30 Jun 2025 17:36:35 +0200
+Subject: [PATCH] arm64: dts: rockchip: theoretically enable Wi-Fi on ROCK 4D
+
+The production version of the ROCK 4D appears to sport a AICSEMI
+AIC8800D80 USB Wi-Fi + BT chipset. This chip does not yet have a
+mainline driver.
+
+Add the necessary rfkill node and wifi regulator node to at least make
+it show up in lsusb output. The regulator is set as always-on, as like 2
+hours deep into debugging why onboard_usb_dev.c wouldn't try enabling
+the regulator the device needs to actually show up and thus bind to
+onboard_usb_dev.c, I decided that it's not worth the effort.
+
+Signed-off-by: Nicolas Frattaroli <nicolas.frattaroli@collabora.com>
+Link: https://lore.kernel.org/r/20250630-rock4d-reg-usb-wifi-v1-3-1057f412d98c@collabora.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ .../boot/dts/rockchip/rk3576-rock-4d.dts      | 30 +++++++++++++++++++
+ 1 file changed, 30 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3576-rock-4d.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3576-rock-4d.dts
+@@ -37,6 +37,14 @@
+ 		};
+ 	};
+ 
++	rfkill {
++		compatible = "rfkill-gpio";
++		pinctrl-names = "default";
++		pinctrl-0 = <&wifi_en_h>;
++		radio-type = "wlan";
++		shutdown-gpios = <&gpio2 RK_PD1 GPIO_ACTIVE_HIGH>;
++	};
++
+ 	leds: leds {
+ 		compatible = "gpio-leds";
+ 		pinctrl-names = "default";
+@@ -159,6 +167,19 @@
+ 		vin-supply = <&vcc_5v0_sys>;
+ 	};
+ 
++	vcc_3v3_wifi: regulator-vcc-3v3-wifi {
++		compatible = "regulator-fixed";
++		enable-active-high;
++		gpios = <&gpio2 RK_PC7 GPIO_ACTIVE_HIGH>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&usb_wifi_pwr>;
++		regulator-always-on;
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-name = "vcc_3v3_wifi";
++		vin-supply = <&vcc_3v3_s3>;
++	};
++
+ 	vcc_5v0_device: regulator-vcc-5v0-device {
+ 		compatible = "regulator-fixed";
+ 		regulator-always-on;
+@@ -720,6 +741,15 @@
+ 
+ 		};
+ 	};
++
++	wifi {
++		usb_wifi_pwr: usb-wifi-pwr {
++			rockchip,pins = <2 RK_PC7 RK_FUNC_GPIO &pcfg_pull_down>;
++		};
++		wifi_en_h: wifi-en-h {
++			rockchip,pins = <2 RK_PD1 RK_FUNC_GPIO &pcfg_pull_down>;
++		};
++	};
+ };
+ 
+ &sdmmc {

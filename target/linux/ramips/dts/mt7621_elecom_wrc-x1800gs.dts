@@ -1,0 +1,279 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "elecom,wrc-x1800gs", "mediatek,mt7621-soc";
+	model = "ELECOM WRC-X1800GS";
+
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+		label-mac-device = &gmac0;
+	};
+
+	chosen {
+		bootargs-override = "console=ttyS0,115200n8";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		/* available on 1st HW rev. */
+		led-0 {
+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_2GHZ;
+			function-enumerator = <1>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		led_power_green: led-1 {
+			gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+		};
+
+		led_power_red: led-2 {
+			gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_POWER;
+		};
+
+		led-3 {
+			gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_WLAN_2GHZ;
+		};
+
+		led-4 {
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_WPS;
+		};
+
+		led-5 {
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_5GHZ;
+			linux,default-trigger = "phy1tpt";
+		};
+
+		/* available on 2nd HW rev. */
+		led-6 {
+			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_2GHZ;
+			function-enumerator = <2>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		led-7 {
+			gpios = <&gpio 17 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_WLAN_5GHZ;
+		};
+
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		button-reset {
+			label = "reset";
+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		switch-ap {
+			label = "ap";
+			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_0>;
+		};
+
+		switch-router {
+			label = "router";
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_1>;
+		};
+
+		button-wps {
+			label = "wps";
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+	};
+};
+
+&nand {
+	status = "okay";
+	pinctrl-0 = <&nand_pins>;
+	pinctrl-names = "default";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			reg = <0x0 0x100000>;
+			label = "u-boot";
+			read-only;
+		};
+
+		partition@100000 {
+			reg = <0x100000 0x100000>;
+			label = "u-boot-env";
+		};
+
+		partition@200000 {
+			reg = <0x200000 0x1c0000>;
+			label = "factory";
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0xe00>;
+				};
+
+				precal_factory_e10: precal@e10 {
+					reg = <0xe10 0x19c10>;
+				};
+
+				macaddr_factory_1fdf4: macaddr@1fdf4 {
+					reg = <0x1fdf4 0x6>;
+				};
+
+				macaddr_factory_1fdfa: macaddr@1fdfa {
+					reg = <0x1fdfa 0x6>;
+				};
+			};
+		};
+
+		/* "RAS1" on stock fw */
+		partition@3c0000 {
+			compatible = "fixed-partitions";
+			reg = <0x3c0000 0x3240000>;
+			label = "firmware";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				reg = <0x0 0x800000>;
+				label = "kernel";
+			};
+
+			partition@800000 {
+				reg = <0x800000 0x2a40000>;
+				label = "ubi";
+			};
+		};
+
+		partition@3600000 {
+			reg = <0x3600000 0x100000>;
+			label = "Config";
+			read-only;
+		};
+
+		/* "RAS2" on stock fw */
+		partition@3700000 {
+			reg = <0x3700000 0x3240000>;
+			label = "firmware2";
+		};
+
+		partition@6940000 {
+			reg = <0x6940000 0x100000>;
+			label = "Config_2";
+			read-only;
+		};
+
+		partition@6a40000 {
+			reg = <0x6a40000 0x100000>;
+			label = "persist";
+		};
+
+		partition@6b40000 {
+			reg = <0x6b40000 0x100000>;
+			label = "mesh";
+			read-only;
+		};
+
+		partition@6c40000 {
+			reg = <0x6c40000 0x1340000>;
+			label = "backup";
+			read-only;
+		};
+	};
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_1fdfa>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gmac1 {
+	status = "okay";
+	label = "wan";
+	phy-handle = <&ethphy0>;
+
+	nvmem-cells = <&macaddr_factory_1fdf4>;
+	nvmem-cell-names = "mac-address";
+};
+
+&ethphy0 {
+	/delete-property/ interrupts;
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie1 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_0>, <&precal_factory_e10>;
+		nvmem-cell-names = "eeprom", "precal";
+		mediatek,disable-radar-background;
+	};
+};
+
+&pcie2 {
+	status = "disabled";
+};
+
+&switch0 {
+	ports {
+		port@1 {
+			status = "okay";
+			label = "lan2";
+		};
+
+		port@2 {
+			status = "okay";
+			label = "lan1";
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "i2c", "uart3", "jtag", "wdt";
+		function = "gpio";
+	};
+};
+
+&uartlite {
+	pinctrl-0 = <&uart1_pins>;
+	pinctrl-names = "default";
+};

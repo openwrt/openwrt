@@ -1,0 +1,218 @@
+From 0b953ba82830f51ce9b939700705d238f9b0c0ba Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Wed, 30 Apr 2025 01:52:17 +0200
+Subject: [PATCH] New module next-prime.
+
+* lib/next-prime.h: New file, based on lib/hash.c.
+* lib/next-prime.c: New file, based on lib/hash.c.
+* modules/next-prime: New file.
+* lib/hash.c: Include next-prime.h.
+(is_prime, next_prime): Remove functions.
+* modules/hash (Depends-on): Add next-prime.
+---
+ ChangeLog          | 10 +++++++++
+ lib/hash.c         | 39 +-------------------------------
+ lib/next-prime.c   | 56 ++++++++++++++++++++++++++++++++++++++++++++++
+ lib/next-prime.h   | 41 +++++++++++++++++++++++++++++++++
+ modules/hash       |  1 +
+ modules/next-prime | 24 ++++++++++++++++++++
+ 6 files changed, 133 insertions(+), 38 deletions(-)
+ create mode 100644 lib/next-prime.c
+ create mode 100644 lib/next-prime.h
+ create mode 100644 modules/next-prime
+
+--- a/lib/hash.c
++++ b/lib/hash.c
+@@ -27,6 +27,7 @@
+ #include "hash.h"
+ 
+ #include "bitrotate.h"
++#include "next-prime.h"
+ #include "xalloc-oversized.h"
+ 
+ #include <errno.h>
+@@ -390,44 +391,6 @@ hash_string (const char *string, size_t
+ 
+ #endif /* not USE_DIFF_HASH */
+ 
+-/* Return true if CANDIDATE is a prime number.  CANDIDATE should be an odd
+-   number at least equal to 11.  */
+-
+-static bool _GL_ATTRIBUTE_CONST
+-is_prime (size_t candidate)
+-{
+-  size_t divisor = 3;
+-  size_t square = divisor * divisor;
+-
+-  while (square < candidate && (candidate % divisor))
+-    {
+-      divisor++;
+-      square += 4 * divisor;
+-      divisor++;
+-    }
+-
+-  return (candidate % divisor ? true : false);
+-}
+-
+-/* Round a given CANDIDATE number up to the nearest prime, and return that
+-   prime.  Primes lower than 10 are merely skipped.  */
+-
+-static size_t _GL_ATTRIBUTE_CONST
+-next_prime (size_t candidate)
+-{
+-  /* Skip small primes.  */
+-  if (candidate < 10)
+-    candidate = 10;
+-
+-  /* Make it definitely odd.  */
+-  candidate |= 1;
+-
+-  while (SIZE_MAX != candidate && !is_prime (candidate))
+-    candidate += 2;
+-
+-  return candidate;
+-}
+-
+ void
+ hash_reset_tuning (Hash_tuning *tuning)
+ {
+--- /dev/null
++++ b/lib/next-prime.c
+@@ -0,0 +1,56 @@
++/* Finding the next prime >= a given small integer.
++   Copyright (C) 1995-2025 Free Software Foundation, Inc.
++
++   This file is free software: you can redistribute it and/or modify
++   it under the terms of the GNU Lesser General Public License as
++   published by the Free Software Foundation; either version 2.1 of the
++   License, or (at your option) any later version.
++
++   This file is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++#include <config.h>
++
++/* Specification.  */
++#include "next-prime.h"
++
++#include <stdint.h> /* for SIZE_MAX */
++
++/* Return true if CANDIDATE is a prime number.  CANDIDATE should be an odd
++   number at least equal to 11.  */
++static bool _GL_ATTRIBUTE_CONST
++is_prime (size_t candidate)
++{
++  size_t divisor = 3;
++  size_t square = divisor * divisor;
++
++  while (square < candidate && (candidate % divisor))
++    {
++      divisor++;
++      square += 4 * divisor;
++      divisor++;
++    }
++
++  return (candidate % divisor ? true : false);
++}
++
++size_t _GL_ATTRIBUTE_CONST
++next_prime (size_t candidate)
++{
++  /* Skip small primes.  */
++  if (candidate < 10)
++    candidate = 10;
++
++  /* Make it definitely odd.  */
++  candidate |= 1;
++
++  while (SIZE_MAX != candidate && !is_prime (candidate))
++    candidate += 2;
++
++  return candidate;
++}
+--- /dev/null
++++ b/lib/next-prime.h
+@@ -0,0 +1,41 @@
++/* Finding the next prime >= a given small integer.
++   Copyright (C) 1995-2025 Free Software Foundation, Inc.
++
++   This file is free software: you can redistribute it and/or modify
++   it under the terms of the GNU Lesser General Public License as
++   published by the Free Software Foundation; either version 2.1 of the
++   License, or (at your option) any later version.
++
++   This file is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++#ifndef _GL_NEXT_PRIME_H
++#define _GL_NEXT_PRIME_H
++
++/* This file uses _GL_ATTRIBUTE_CONST.  */
++#if !_GL_CONFIG_H_INCLUDED
++ #error "Please include config.h first."
++#endif
++
++#include <stddef.h>
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++
++/* Round a given CANDIDATE number up to the nearest prime, and return that
++   prime.  Primes lower than 10 are merely skipped.  */
++extern size_t _GL_ATTRIBUTE_CONST next_prime (size_t candidate);
++
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* _GL_NEXT_PRIME_H */
+--- a/modules/hash
++++ b/modules/hash
+@@ -10,6 +10,7 @@ bitrotate
+ calloc-posix
+ free-posix
+ malloc-posix
++next-prime
+ bool
+ stdint-h
+ xalloc-oversized
+--- /dev/null
++++ b/modules/next-prime
+@@ -0,0 +1,24 @@
++Description:
++Finding the next prime >= a given small integer.
++
++Files:
++lib/next-prime.h
++lib/next-prime.c
++
++Depends-on:
++bool
++stdint-h
++
++configure.ac:
++
++Makefile.am:
++lib_SOURCES += next-prime.h next-prime.c
++
++Include:
++"next-prime.h"
++
++License:
++LGPLv2+
++
++Maintainer:
++all

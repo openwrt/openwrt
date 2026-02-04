@@ -1,0 +1,55 @@
+From 05910d497f903ea44d794de7155d0a3eeceb60e9 Mon Sep 17 00:00:00 2001
+From: Yao Zi <ziyao@disroot.org>
+Date: Thu, 29 Aug 2024 09:27:05 +0000
+Subject: [PATCH] arm64: dts: rockchip: Add Radxa e20c board
+
+Add board-level device tree for Radxa e20c board[1]. This basic
+implementation supports boot into a kernel with only UART console.
+Other features will be added later.
+
+[1]: https://docs.radxa.com/en/e/e20c
+
+Signed-off-by: Yao Zi <ziyao@disroot.org>
+Link: https://lore.kernel.org/r/20240829092705.6241-5-ziyao@disroot.org
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/Makefile         |  1 +
+ .../boot/dts/rockchip/rk3528-radxa-e20c.dts   | 22 +++++++++++++++++++
+ 2 files changed, 23 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/rockchip/rk3528-radxa-e20c.dts
+
+--- a/arch/arm64/boot/dts/rockchip/Makefile
++++ b/arch/arm64/boot/dts/rockchip/Makefile
+@@ -76,6 +76,7 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-ro
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-sapphire.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-sapphire-excavator.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399pro-rock-pi-n10.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3528-radxa-e20c.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-anbernic-rg-arc-d.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-anbernic-rg-arc-s.dtb
+ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-anbernic-rg353p.dtb
+--- /dev/null
++++ b/arch/arm64/boot/dts/rockchip/rk3528-radxa-e20c.dts
+@@ -0,0 +1,22 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Copyright (c) 2020 Rockchip Electronics Co., Ltd
++ * Copyright (c) 2024 Radxa Limited
++ * Copyright (c) 2024 Yao Zi <ziyao@disroot.org>
++ */
++
++/dts-v1/;
++#include "rk3528.dtsi"
++
++/ {
++	model = "Radxa E20C";
++	compatible = "radxa,e20c", "rockchip,rk3528";
++
++	chosen {
++		stdout-path = "serial0:1500000n8";
++	};
++};
++
++&uart0 {
++	status = "okay";
++};

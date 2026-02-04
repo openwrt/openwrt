@@ -1,0 +1,196 @@
+#include "mt7620a.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "xiaomi,miwifi-mini", "ralink,mt7620a-soc";
+	model = "Xiaomi MiWiFi Mini";
+
+	aliases {
+		led-boot = &led_yellow;
+		led-failsafe = &led_red;
+		led-running = &led_blue;
+		led-upgrade = &led_blue;
+		label-mac-device = &ethernet;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_blue: blue {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio1 0 GPIO_ACTIVE_LOW>;
+		};
+
+		led_yellow: yellow {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_YELLOW>;
+			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
+		};
+
+		led_red: red {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
+		};
+
+		wan {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio2 4 GPIO_ACTIVE_LOW>;
+		};
+
+		lan1 {
+			label = "green:lan1";
+			gpios = <&gpio2 1 GPIO_ACTIVE_LOW>;
+		};
+
+		lan2 {
+			label = "green:lan2";
+			gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+		m25p,fast-read;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "u-boot-env";
+				reg = <0x30000 0x10000>;
+			};
+
+			partition@40000 {
+				label = "factory";
+				reg = <0x40000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x200>;
+					};
+
+					eeprom_factory_8000: eeprom@8000 {
+						reg = <0x8000 0x200>;
+					};
+
+					macaddr_factory_28: macaddr@28 {
+						reg = <0x28 0x6>;
+					};
+				};
+			};
+
+			partition@50000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x50000 0xf80000>;
+			};
+
+			partition@fd0000 {
+				label = "crash";
+				reg = <0xfd0000 0x10000>;
+			};
+
+			partition@fe0000 {
+				label = "reserved";
+				reg = <0xfe0000 0x10000>;
+				read-only;
+			};
+
+			partition@ff0000 {
+				label = "Bdata";
+				reg = <0xff0000 0x10000>;
+			};
+		};
+	};
+};
+
+&ehci {
+	status = "okay";
+};
+
+&ohci {
+	status = "okay";
+};
+
+&ethernet {
+	nvmem-cells = <&macaddr_factory_28>;
+	nvmem-cell-names = "mac-address";
+
+	mediatek,portmap = "llllw";
+};
+
+&wmac {
+	pinctrl-names = "default", "pa_gpio";
+	pinctrl-0 = <&pa_pins>;
+	pinctrl-1 = <&pa_gpio_pins>;
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_8000>;
+		nvmem-cell-names = "eeprom";
+		ieee80211-freq-limit = <5000000 6000000>;
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "ephy", "i2c", "rgmii1";
+		function = "gpio";
+	};
+};

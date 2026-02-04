@@ -1,0 +1,55 @@
+From 7b00d4a90af1d7bff50833ffe1216cf59592353a Mon Sep 17 00:00:00 2001
+From: Andre Heider <a.heider@gmail.com>
+Date: Wed, 18 Jan 2023 22:42:28 +0100
+Subject: [PATCH] Add BPF_LDFLAGS to allow overwriting llc's -march argument
+
+The argument to clang's -target isn't necessarily the same as to
+llc's -march.
+
+Analogue to BPF_CFLAGS, introduce BPF_LDFLAGS to allow e.g.:
+BPF_TARGET="mipsel-linux-gnu" BPF_LDFLAGS="-march=bpfel -mcpu=v3"
+
+Signed-off-by: Andre Heider <a.heider@gmail.com>
+---
+ configure           | 2 ++
+ lib/common.mk       | 2 +-
+ lib/libxdp/Makefile | 2 +-
+ 3 files changed, 4 insertions(+), 2 deletions(-)
+
+--- a/configure
++++ b/configure
+@@ -17,10 +17,12 @@ check_opts()
+     : ${DYNAMIC_LIBXDP:=0}
+     : ${MAX_DISPATCHER_ACTIONS:=10}
+     : ${BPF_TARGET:=bpf}
++    : ${BPF_LDFLAGS:=-march=$(BPF_TARGET)}
+     echo "PRODUCTION:=${PRODUCTION}" >>$CONFIG
+     echo "DYNAMIC_LIBXDP:=${DYNAMIC_LIBXDP}" >>$CONFIG
+     echo "MAX_DISPATCHER_ACTIONS:=${MAX_DISPATCHER_ACTIONS}" >>$CONFIG
+     echo "BPF_TARGET:=${BPF_TARGET}" >>$CONFIG
++    echo "BPF_LDFLAGS:=${BPF_LDFLAGS}" >>$CONFIG
+ }
+ 
+ find_tool()
+--- a/lib/common.mk
++++ b/lib/common.mk
+@@ -118,7 +118,7 @@ $(XDP_OBJ): %.o: %.c $(KERN_USER_H) $(EX
+ 	    -Werror \
+ 	    $(BPF_CFLAGS) \
+ 	    -O2 -emit-llvm -c -g -o ${@:.o=.ll} $<
+-	$(QUIET_LLC)$(LLC) -march=$(BPF_TARGET) -filetype=obj -o $@ ${@:.o=.ll}
++	$(QUIET_LLC)$(LLC) $(BPF_LDFLAGS) -filetype=obj -o $@ ${@:.o=.ll}
+ 
+ $(BPF_SKEL_H): %.skel.h: %.bpf.o
+ 	$(QUIET_GEN)$(BPFTOOL) gen skeleton $< name ${@:.skel.h=} > $@
+--- a/lib/libxdp/Makefile
++++ b/lib/libxdp/Makefile
+@@ -145,7 +145,7 @@ $(XDP_OBJS): %.o: %.c $(BPF_HEADERS) $(L
+ 	    -Werror \
+ 	    $(BPF_CFLAGS) \
+ 	    -O2 -emit-llvm -c -g -o ${@:.o=.ll} $<
+-	$(QUIET_LLC)$(LLC) -march=$(BPF_TARGET) -filetype=obj -o $@ ${@:.o=.ll}
++	$(QUIET_LLC)$(LLC) $(BPF_LDFLAGS) -filetype=obj -o $@ ${@:.o=.ll}
+ 
+ .PHONY: man
+ ifeq ($(EMACS),)

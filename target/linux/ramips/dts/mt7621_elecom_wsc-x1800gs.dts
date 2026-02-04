@@ -1,0 +1,33 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621_elecom_wxc-x1800gsx.dtsi"
+
+/ {
+	compatible = "elecom,wsc-x1800gs", "mediatek,mt7621-soc";
+	model = "ELECOM WSC-X1800GS";
+
+	aliases {
+		label-mac-device = &wifi_band1;
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "uart3", "uart2", "jtag", "wdt";
+		function = "gpio";
+	};
+};
+
+&wifi {
+	band@0 {
+		reg = <0>;
+		nvmem-cells = <&macaddr_factory_4 (-1)>;
+		nvmem-cell-names = "mac-address";
+	};
+
+	wifi_band1: band@1 {
+		reg = <1>;
+		nvmem-cells = <&macaddr_factory_4 0>;
+		nvmem-cell-names = "mac-address";
+	};
+};

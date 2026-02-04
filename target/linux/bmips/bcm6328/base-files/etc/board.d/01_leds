@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+. /lib/functions/leds.sh
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+case "$(board_name)" in
+arcadyan,ar7516)
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
+	ucidef_set_led_netdev "wlan0" "WiFi" "green:wifi" "phy0-ap0"
+	;;
+inteno,xg6846 |\
+nucom,r5010unv2 |\
+sercomm,ad1018)
+	ucidef_set_led_usbport "usb" "USB" "green:usb" "usb1-port1" "usb2-port1"
+	;;
+esac
+
+board_config_flush
+
+exit 0

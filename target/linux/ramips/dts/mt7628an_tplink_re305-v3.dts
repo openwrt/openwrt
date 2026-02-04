@@ -1,0 +1,89 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7628an_tplink_re305.dtsi"
+
+/ {
+	compatible = "tplink,re305-v3", "mediatek,mt7628an-soc";
+	model = "TP-Link RE305 v3";
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x20000>;
+				read-only;
+			};
+
+			partition@20000 {
+				compatible = "tplink,firmware";
+				label = "firmware";
+				reg = <0x20000 0x7a0000>;
+			};
+
+			partition@7c0000 {
+				label = "config";
+				reg = <0x7c0000 0x30000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_config_2008: macaddr@2008 {
+						compatible = "mac-base";
+						reg = <0x2008 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition@7f0000 {
+				label = "radio";
+				reg = <0x7f0000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_radio_0: eeprom@0 {
+						reg = <0x0 0x400>;
+					};
+
+					eeprom_radio_8000: eeprom@8000 {
+						reg = <0x8000 0x200>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&wlan5g {
+	nvmem-cells = <&eeprom_radio_8000>, <&macaddr_config_2008 (-2)>;
+	nvmem-cell-names = "eeprom", "mac-address";
+};
+
+&wmac {
+	nvmem-cells = <&eeprom_radio_0>, <&macaddr_config_2008 (-1)>;
+	nvmem-cell-names = "eeprom", "mac-address";
+};
+
+&ethernet {
+	nvmem-cells = <&macaddr_config_2008 0>;
+	nvmem-cell-names = "mac-address";
+};

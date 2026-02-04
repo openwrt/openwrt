@@ -1,0 +1,27 @@
+From 823122980e18bf20eac1689ebccad488e828b33b Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Wed, 2 Jul 2025 20:36:06 +0200
+Subject: [PATCH 19/25] dmaengine: xdmac: make it selectable for ARCH_MICROCHIP
+
+LAN969x uses the Atmel XDMAC, so make it selectable for ARCH_MICROCHIP to
+avoid needing to update depends in future if other Microchip SoC-s use it
+as well.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+Link: https://lore.kernel.org/r/20250702183856.1727275-9-robert.marko@sartura.hr
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
+---
+ drivers/dma/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/dma/Kconfig
++++ b/drivers/dma/Kconfig
+@@ -103,7 +103,7 @@ config AT_HDMAC
+ 
+ config AT_XDMAC
+ 	tristate "Atmel XDMA support"
+-	depends on ARCH_AT91
++	depends on ARCH_MICROCHIP
+ 	select DMA_ENGINE
+ 	help
+ 	  Support the Atmel XDMA controller.

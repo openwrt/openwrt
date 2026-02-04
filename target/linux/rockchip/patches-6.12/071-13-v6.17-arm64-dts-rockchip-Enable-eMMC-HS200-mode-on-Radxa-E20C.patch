@@ -1,0 +1,28 @@
+From 6e3071f4e03997ca0e4388ca61aa06df2802dcd1 Mon Sep 17 00:00:00 2001
+From: Jonas Karlman <jonas@kwiboo.se>
+Date: Sat, 21 Jun 2025 16:58:30 +0000
+Subject: [PATCH] arm64: dts: rockchip: Enable eMMC HS200 mode on Radxa E20C
+
+eMMC HS200 mode (1.8V I/O) is supported by the MMC host controller on
+RK3528 and works with the optional on-board eMMC module on Radxa E20C.
+
+Be explicit about HS200 support in the device tree for Radxa E20C.
+
+Fixes: 3a01b5f14a8a ("arm64: dts: rockchip: Enable onboard eMMC on Radxa E20C")
+Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Link: https://lore.kernel.org/r/20250621165832.2226160-1-jonas@kwiboo.se
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3528-radxa-e20c.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3528-radxa-e20c.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3528-radxa-e20c.dts
+@@ -283,6 +283,7 @@
+ &sdhci {
+ 	bus-width = <8>;
+ 	cap-mmc-highspeed;
++	mmc-hs200-1_8v;
+ 	no-sd;
+ 	no-sdio;
+ 	non-removable;

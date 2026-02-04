@@ -1,0 +1,42 @@
+From a2a18e5da64f8da306fa97c397b4c739ea776f37 Mon Sep 17 00:00:00 2001
+From: Shawn Lin <shawn.lin@rock-chips.com>
+Date: Tue, 18 Nov 2025 17:52:05 +0800
+Subject: [PATCH] phy: rockchip: naneng-combphy: Fix PCIe L1ss support RK3528
+
+When PCIe link enters L1 PM substates, the PHY will turn off its
+PLL for power-saving. However, it turns off the PLL too fast which
+leads the PHY to be broken. According to the PHY document, we need
+to delay PLL turnoff time.
+
+Fixes: bbcca4fac873 ("phy: rockchip: naneng-combphy: Add RK3528 support")
+Signed-off-by: Shawn Lin <shawn.lin@rock-chips.com>
+Reviewed-by: Neil Armstrong <neil.armstrong@linaro.org>
+Link: https://patch.msgid.link/1763459526-35004-1-git-send-email-shawn.lin@rock-chips.com
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
+---
+ drivers/phy/rockchip/phy-rockchip-naneng-combphy.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/drivers/phy/rockchip/phy-rockchip-naneng-combphy.c
++++ b/drivers/phy/rockchip/phy-rockchip-naneng-combphy.c
+@@ -21,6 +21,9 @@
+ #define REF_CLOCK_100MHz		(100 * HZ_PER_MHZ)
+ 
+ /* RK3528 COMBO PHY REG */
++#define RK3528_PHYREG5				0x14
++#define RK3528_PHYREG5_GATE_TX_PCK_SEL		BIT(3)
++#define RK3528_PHYREG5_GATE_TX_PCK_DLY_PLL_OFF	BIT(3)
+ #define RK3528_PHYREG6				0x18
+ #define RK3528_PHYREG6_PLL_KVCO			GENMASK(12, 10)
+ #define RK3528_PHYREG6_PLL_KVCO_VALUE		0x2
+@@ -504,6 +507,10 @@ static int rk3528_combphy_cfg(struct roc
+ 	case REF_CLOCK_100MHz:
+ 		rockchip_combphy_param_write(priv->phy_grf, &cfg->pipe_clk_100m, true);
+ 		if (priv->type == PHY_TYPE_PCIE) {
++			/* Gate_tx_pck_sel length select for L1ss support */
++			rockchip_combphy_updatel(priv, RK3528_PHYREG5_GATE_TX_PCK_SEL,
++						 RK3528_PHYREG5_GATE_TX_PCK_DLY_PLL_OFF, RK3528_PHYREG5);
++
+ 			/* PLL KVCO tuning fine */
+ 			val = FIELD_PREP(RK3528_PHYREG6_PLL_KVCO, RK3528_PHYREG6_PLL_KVCO_VALUE);
+ 			rockchip_combphy_updatel(priv, RK3528_PHYREG6_PLL_KVCO, val,

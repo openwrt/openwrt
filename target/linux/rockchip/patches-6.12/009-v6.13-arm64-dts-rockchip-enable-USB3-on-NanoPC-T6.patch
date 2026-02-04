@@ -1,0 +1,87 @@
+From a6ae420439dc47a58550a6e61e596e9dd1562caf Mon Sep 17 00:00:00 2001
+From: Rick Wertenbroek <rick.wertenbroek@gmail.com>
+Date: Wed, 6 Nov 2024 14:03:13 +0100
+Subject: [PATCH] arm64: dts: rockchip: enable USB3 on NanoPC-T6
+
+Enable the USB3 port on FriendlyELEC NanoPC-T6.
+
+Signed-off-by: Rick Wertenbroek <rick.wertenbroek@gmail.com>
+Link: https://lore.kernel.org/r/20241106130314.1289055-1-rick.wertenbroek@gmail.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ .../boot/dts/rockchip/rk3588-nanopc-t6.dtsi   | 36 +++++++++++++++++++
+ 1 file changed, 36 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588-nanopc-t6.dtsi
+@@ -159,6 +159,20 @@
+ 		vin-supply = <&vcc5v0_sys>;
+ 	};
+ 
++	vbus5v0_usb: vbus5v0-usb-regulator {
++		compatible = "regulator-fixed";
++		enable-active-high;
++		gpio = <&gpio4 RK_PB0 GPIO_ACTIVE_HIGH>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&usb5v_pwren>;
++		regulator-always-on;
++		regulator-boot-on;
++		regulator-name = "vbus5v0_usb";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		vin-supply = <&vcc5v0_sys>;
++	};
++
+ 	vcc3v3_pcie2x1l0: vcc3v3-pcie2x1l0-regulator {
+ 		compatible = "regulator-fixed";
+ 		enable-active-high;
+@@ -575,6 +589,10 @@
+ 			rockchip,pins = <1 RK_PD2 RK_FUNC_GPIO &pcfg_pull_none>;
+ 		};
+ 
++		usb5v_pwren: usb5v_pwren {
++			rockchip,pins = <4 RK_PB0 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++
+ 		usbc0_int: usbc0-int {
+ 			rockchip,pins = <0 RK_PD3 RK_FUNC_GPIO &pcfg_pull_up>;
+ 		};
+@@ -973,6 +991,14 @@
+ 	status = "okay";
+ };
+ 
++&u2phy1 {
++	status = "okay";
++};
++
++&u2phy1_otg {
++	status = "okay";
++};
++
+ &u2phy2_host {
+ 	status = "okay";
+ };
+@@ -1012,6 +1038,11 @@
+ 	};
+ };
+ 
++&usbdp_phy1 {
++	phy-supply = <&vbus5v0_usb>;
++	status = "okay";
++};
++
+ &usb_host0_ehci {
+ 	status = "okay";
+ };
+@@ -1032,6 +1063,11 @@
+ 	};
+ };
+ 
++&usb_host1_xhci {
++	dr_mode = "host";
++	status = "okay";
++};
++
+ &usb_host1_ehci {
+ 	status = "okay";
+ };

@@ -1,0 +1,139 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621_ubnt_unifi.dtsi"
+
+/ {
+	compatible = "ubnt,unifi-6-lite", "mediatek,mt7621-soc";
+	model = "Ubiquiti UniFi 6 Lite";
+
+	chosen {
+		bootargs-override = "console=ttyS0,115200";
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x60000>;
+				read-only;
+			};
+
+			partition@60000 {
+				label = "u-boot-env";
+				reg = <0x60000 0x10000>;
+				read-only;
+			};
+
+			partition@70000 {
+				label = "factory";
+				reg = <0x70000 0x40000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x400>;
+					};
+
+					eeprom_factory_20000: eeprom@20000 {
+						reg = <0x20000 0xe00>;
+					};
+
+					precal_factory_20e10: precal@20e10 {
+						reg = <0x20e10 0x19c10>;
+					};
+				};
+			};
+
+			partition@b0000 {
+				label = "eeprom";
+				reg = <0xb0000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_eeprom_0: macaddr@0 {
+						reg = <0x0 0x6>;
+					};
+
+					macaddr_eeprom_6: macaddr@6 {
+						compatible = "mac-base";
+						reg = <0x6 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition@c0000 {
+				label = "bs";
+				reg = <0xc0000 0x10000>;
+			};
+
+			partition@d0000 {
+				label = "cfg";
+				reg = <0xd0000 0x100000>;
+				read-only;
+			};
+
+			partition@1d0000 {
+				compatible = "denx,fit";
+				label = "firmware";
+				reg = <0x1d0000 0xf10000>;
+			};
+
+			partition@10e0000 {
+				label = "kernel1";
+				reg = <0x10e0000 0xf10000>;
+			};
+		};
+	};
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_eeprom_0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&wlan_2g {
+	nvmem-cells = <&eeprom_factory_0>, <&macaddr_eeprom_0>;
+	nvmem-cell-names = "eeprom", "mac-address";
+};
+
+&wlan_5g {
+	/* This is a workaround.
+	 *
+	 * Ubiquiti uses a +2 offset in the first octet relative
+	 * to the 2.4 GHz WMAC. Other octets are identical.
+	 *
+	 * The vendor firmware increases the last octet by 2 for each
+	 * VAP.
+	 *
+	 * This is in conflict on how mac80211 addresses subsequent VAPs.
+	 * mac80211 increases the first octet by two for each VAP, leading
+	 * to conflicting MAC addresses for subsequent interfaces.
+	 */
+	nvmem-cells = <&macaddr_eeprom_6 1>, <&eeprom_factory_20000>, <&precal_factory_20e10>;
+	nvmem-cell-names = "mac-address", "eeprom", "precal";
+
+	ieee80211-freq-limit = <5000000 6000000>;
+
+	mediatek,disable-radar-background;
+};

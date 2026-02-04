@@ -1,0 +1,29 @@
+--- a/configure.ac
++++ b/configure.ac
+@@ -38,11 +38,8 @@ fi
+ # LTM_CFLAGS is given to ./configure by the user, 
+ # DROPBEAR_LTM_CFLAGS is substituted in the LTM Makefile.in
+ DROPBEAR_LTM_CFLAGS="$LTM_CFLAGS"
+-if test -z "$DROPBEAR_LTM_CFLAGS"; then
+-	DROPBEAR_LTM_CFLAGS="-O3 -funroll-loops -fomit-frame-pointer"
+-fi
+-AC_MSG_NOTICE(Setting LTM_CFLAGS to $DROPBEAR_LTM_CFLAGS)
+-AC_ARG_VAR(LTM_CFLAGS, CFLAGS for bundled libtommath. Default -O3 -funroll-loops -fomit-frame-pointer)
++AC_MSG_NOTICE(Setting LTM_CFLAGS to '$DROPBEAR_LTM_CFLAGS')
++AC_ARG_VAR(LTM_CFLAGS, CFLAGS for bundled libtommath. Defaults to empty string)
+ AC_SUBST(DROPBEAR_LTM_CFLAGS)
+ 
+ AC_MSG_NOTICE([Checking if compiler '$CC' supports -Wno-pointer-sign])
+--- a/libtomcrypt/src/headers/tomcrypt_dropbear.h
++++ b/libtomcrypt/src/headers/tomcrypt_dropbear.h
+@@ -7,8 +7,10 @@
+ 
+ /* Use small code where possible */
+ #if DROPBEAR_SMALL_CODE
++#ifndef LTC_SMALL_CODE
+ #define LTC_SMALL_CODE
+ #endif
++#endif
+ 
+ /* Fewer entries needed */
+ #define TAB_SIZE      5

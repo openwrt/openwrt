@@ -1,0 +1,58 @@
+From ea6e579557cf85f3b0ed3c94c3e4d69afbcba46c Mon Sep 17 00:00:00 2001
+From: Varshini Rajendran <varshini.rajendran@microchip.com>
+Date: Mon, 8 Sep 2025 09:44:19 +0530
+Subject: [PATCH 110/112] spi: atmel-quadspi: add support for SAM9X7 QSPI
+ controller
+
+Add support for the QuadSPI controller found on the SAM9X7 SoC.
+
+This controller does not implement pad calibration. It supports
+operation up to 100 MHz, and requires the GCK to run at twice
+the data rate.
+
+Signed-off-by: Varshini Rajendran <varshini.rajendran@microchip.com>
+Signed-off-by: Dharma Balasubiramani <dharma.b@microchip.com>
+Link: https://patch.msgid.link/20250908-microchip-qspi-v2-4-8f3d69fdd5c9@microchip.com
+Signed-off-by: Mark Brown <broonie@kernel.org>
+---
+ drivers/spi/atmel-quadspi.c | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+--- a/drivers/spi/atmel-quadspi.c
++++ b/drivers/spi/atmel-quadspi.c
+@@ -63,6 +63,7 @@
+ 
+ #define SAMA7G5_QSPI0_MAX_SPEED_HZ	200000000
+ #define SAMA7G5_QSPI1_SDR_MAX_SPEED_HZ	133000000
++#define SAM9X7_QSPI_MAX_SPEED_HZ	100000000
+ 
+ /* Bitfields in QSPI_CR (Control Register) */
+ #define QSPI_CR_QSPIEN                  BIT(0)
+@@ -1604,6 +1605,16 @@ static const struct atmel_qspi_caps atme
+ 	.has_ricr = true,
+ };
+ 
++static const struct atmel_qspi_caps atmel_sam9x7_ospi_caps = {
++	.max_speed_hz = SAM9X7_QSPI_MAX_SPEED_HZ,
++	.has_gclk = true,
++	.octal = true,
++	.has_dma = true,
++	.has_2xgclk = true,
++	.has_padcalib = false,
++	.has_dllon = false,
++};
++
+ static const struct atmel_qspi_caps atmel_sama7g5_ospi_caps = {
+ 	.max_speed_hz = SAMA7G5_QSPI0_MAX_SPEED_HZ,
+ 	.has_gclk = true,
+@@ -1637,6 +1648,10 @@ static const struct of_device_id atmel_q
+ 		.compatible = "microchip,sama7g5-qspi",
+ 		.data = &atmel_sama7g5_qspi_caps,
+ 	},
++	{
++		.compatible = "microchip,sam9x7-ospi",
++		.data = &atmel_sam9x7_ospi_caps,
++	},
+ 
+ 	{ /* sentinel */ }
+ };

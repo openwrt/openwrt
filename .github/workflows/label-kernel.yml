@@ -1,0 +1,16 @@
+# ci:kernel:x86:64 is going to trigger CI kernel check jobs for x86/64 target
+
+name: Build kernel and check patches for target specified in labels
+on:
+  pull_request:
+    types:
+      - labeled
+
+jobs:
+  build-kernels-label:
+    name: Build all affected Kernels from defined label
+    permissions:
+      contents: read
+      packages: read
+      actions: write
+    uses: openwrt/actions-shared-workflows/.github/workflows/label-kernel.yml@main

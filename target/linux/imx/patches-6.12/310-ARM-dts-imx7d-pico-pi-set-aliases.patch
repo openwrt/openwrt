@@ -1,0 +1,24 @@
+--- a/arch/arm/boot/dts/nxp/imx/imx7d-pico-pi.dts
++++ b/arch/arm/boot/dts/nxp/imx/imx7d-pico-pi.dts
+@@ -8,12 +8,20 @@
+ 	model = "TechNexion PICO-IMX7D Board and PI baseboard";
+ 	compatible = "technexion,imx7d-pico-pi", "fsl,imx7d";
+ 
++	aliases {
++		led-boot = &led_system;
++		led-failsafe = &led_system;
++		led-running = &led_system;
++		led-upgrade = &led_system;
++		label-mac-device = &fec1;
++	};
++
+ 	leds {
+ 		compatible = "gpio-leds";
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&pinctrl_gpio_leds>;
+ 
+-		led {
++		led_system: led {
+ 			label = "gpio-led";
+ 			gpios = <&gpio2 6 GPIO_ACTIVE_HIGH>;
+ 		};

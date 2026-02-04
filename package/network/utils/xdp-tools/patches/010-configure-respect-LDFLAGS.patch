@@ -1,0 +1,29 @@
+--- a/configure
++++ b/configure
+@@ -191,7 +191,7 @@ int main(int argc, char **argv) {
+     return 0;
+ }
+ EOF
+-    libpcap_err=$($CC -o $TMPDIR/libpcaptest $TMPDIR/libpcaptest.c  $LIBPCAP_CFLAGS $LIBPCAP_LDLIBS 2>&1)
++    libpcap_err=$($CC -o $TMPDIR/libpcaptest $TMPDIR/libpcaptest.c  $LIBPCAP_CFLAGS $LIBPCAP_LDLIBS $LDFLAGS 2>&1)
+     if [ "$?" -eq "0" ]; then
+         echo "HAVE_PCAP:=y" >>$CONFIG
+         [ -n "$LIBPCAP_CFLAGS" ] && echo 'CFLAGS += ' $LIBPCAP_CFLAGS >> $CONFIG
+@@ -267,7 +267,7 @@ int main(int argc, char **argv) {
+     return 0;
+ }
+ EOF
+-    compile_cmd="$CC -o $TMPDIR/libbpftest $TMPDIR/libbpftest.c -Werror $LIBBPF_CFLAGS $LIBBPF_LDLIBS"
++    compile_cmd="$CC -o $TMPDIR/libbpftest $TMPDIR/libbpftest.c -Werror $LIBBPF_CFLAGS $LIBBPF_LDLIBS $LDFLAGS"
+     libbpf_err=$($compile_cmd 2>&1)
+     if [ "$?" -eq "0" ]; then
+         echo "HAVE_FEATURES+=${config_var}" >>"$CONFIG"
+@@ -345,7 +345,7 @@ int main(int argc, char **argv) {
+ }
+ EOF
+ 
+-        libbpf_err=$($CC -o $TMPDIR/libbpftest $TMPDIR/libbpftest.c -Werror $LIBBPF_CFLAGS $LIBBPF_LDLIBS 2>&1)
++        libbpf_err=$($CC -o $TMPDIR/libbpftest $TMPDIR/libbpftest.c -Werror $LIBBPF_CFLAGS $LIBBPF_LDLIBS $LDFLAGS 2>&1)
+         if [ "$?" -eq "0" ]; then
+             echo "SYSTEM_LIBBPF:=y" >>$CONFIG
+             echo "LIBBPF_VERSION=$LIBBPF_VERSION" >>$CONFIG

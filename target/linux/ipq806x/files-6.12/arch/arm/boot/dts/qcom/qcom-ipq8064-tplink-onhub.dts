@@ -1,0 +1,230 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Copyright 2014 The ChromiumOS Authors
+ */
+
+#include "qcom-ipq8064-onhub.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/soc/qcom,gsbi.h>
+
+/ {
+	model = "TP-Link OnHub";
+	compatible = "tplink,onhub", "google,whirlwind-sp5", "qcom,ipq8064";
+};
+
+&qcom_pinmux {
+	gpio-line-names = "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  "",
+			  /* RECOVERY_SW_L is crossystem ABI. */
+			  "RECOVERY_SW_L", /* 16 */
+			  /* AP_FLASH_WP_L is crossystem ABI. */
+			  "AP_FLASH_WP_L" /* 17 */;
+
+	i2c7_pins: i2c7_pinmux {
+		mux {
+			pins = "gpio8", "gpio9";
+			function = "gsbi7";
+		};
+		data {
+			pins = "gpio8";
+			bias-disable;
+		};
+		clk {
+			pins = "gpio9";
+			bias-disable;
+		};
+	};
+};
+
+&gsbi7 {
+	status = "okay";
+	qcom,mode = <GSBI_PROT_I2C_UART>;
+};
+
+&gsbi7_i2c {
+	status = "okay";
+	clock-frequency = <100000>;
+	pinctrl-0 = <&i2c7_pins>;
+	pinctrl-names = "default";
+
+	led-controller@32 {
+		compatible = "national,lp5523";
+		reg = <0x32>;
+		clock-mode = /bits/ 8 <1>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		led@0 {
+			reg = <0>;
+			color = <LED_COLOR_ID_RED>;
+			chan-name = "red:status-0";
+			linux,default-trigger = "default-on";
+			led-cur = /bits/ 8 <0x64>;
+			max-cur = /bits/ 8 <0x78>;
+		};
+
+		led@1 {
+			reg = <1>;
+			color = <LED_COLOR_ID_GREEN>;
+			chan-name = "green:status-0";
+			led-cur = /bits/ 8 <0x64>;
+			max-cur = /bits/ 8 <0x78>;
+		};
+
+		led@2 {
+			reg = <2>;
+			color = <LED_COLOR_ID_BLUE>;
+			chan-name = "blue:status-0";
+			led-cur = /bits/ 8 <0x64>;
+			max-cur = /bits/ 8 <0x78>;
+		};
+
+		led@3 {
+			reg = <3>;
+			color = <LED_COLOR_ID_RED>;
+			chan-name = "red:status-1";
+			led-cur = /bits/ 8 <0x64>;
+			max-cur = /bits/ 8 <0x78>;
+		};
+
+		led@4 {
+			reg = <4>;
+			color = <LED_COLOR_ID_GREEN>;
+			chan-name = "green:status-1";
+			linux,default-trigger = "default-on";
+			led-cur = /bits/ 8 <0x64>;
+			max-cur = /bits/ 8 <0x78>;
+		};
+
+		led@5 {
+			reg = <5>;
+			color = <LED_COLOR_ID_BLUE>;
+			chan-name = "blue:status-1";
+			led-cur = /bits/ 8 <0x64>;
+			max-cur = /bits/ 8 <0x78>;
+		};
+
+		led@6 {
+			reg = <6>;
+			color = <LED_COLOR_ID_RED>;
+			chan-name = "red:status-2";
+			led-cur = /bits/ 8 <0x64>;
+			max-cur = /bits/ 8 <0x78>;
+		};
+
+		led@7 {
+			reg = <7>;
+			color = <LED_COLOR_ID_GREEN>;
+			chan-name = "green:status-2";
+			led-cur = /bits/ 8 <0x64>;
+			max-cur = /bits/ 8 <0x78>;
+		};
+
+		led@8 {
+			reg = <8>;
+			color = <LED_COLOR_ID_BLUE>;
+			chan-name = "blue:status-2";
+			linux,default-trigger = "default-on";
+			led-cur = /bits/ 8 <0x64>;
+			max-cur = /bits/ 8 <0x78>;
+		};
+	};
+
+	led-controller@33 {
+		compatible = "national,lp5523";
+		reg = <0x33>;
+		clock-mode = /bits/ 8 <1>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		led@0 {
+			reg = <0>;
+			color = <LED_COLOR_ID_RED>;
+			chan-name = "red:status-3";
+			linux,default-trigger = "default-on";
+			led-cur = /bits/ 8 <0x64>;
+			max-cur = /bits/ 8 <0x78>;
+		};
+
+		led@1 {
+			reg = <1>;
+			color = <LED_COLOR_ID_GREEN>;
+			chan-name = "green:status-3";
+			led-cur = /bits/ 8 <0x64>;
+			max-cur = /bits/ 8 <0x78>;
+		};
+
+		led@2 {
+			reg = <2>;
+			color = <LED_COLOR_ID_BLUE>;
+			chan-name = "blue:status-3";
+			led-cur = /bits/ 8 <0x64>;
+			max-cur = /bits/ 8 <0x78>;
+		};
+
+		led@3 {
+			reg = <3>;
+			color = <LED_COLOR_ID_RED>;
+			chan-name = "red:status-4";
+			led-cur = /bits/ 8 <0x64>;
+			max-cur = /bits/ 8 <0x78>;
+		};
+
+		led@4 {
+			reg = <4>;
+			color = <LED_COLOR_ID_GREEN>;
+			chan-name = "green:status-4";
+			linux,default-trigger = "default-on";
+			led-cur = /bits/ 8 <0x64>;
+			max-cur = /bits/ 8 <0x78>;
+		};
+
+		led@5 {
+			reg = <5>;
+			color = <LED_COLOR_ID_BLUE>;
+			chan-name = "blue:status-4";
+			led-cur = /bits/ 8 <0x64>;
+			max-cur = /bits/ 8 <0x78>;
+		};
+
+		led@6 {
+			reg = <6>;
+			color = <LED_COLOR_ID_RED>;
+			chan-name = "red:status-5";
+			led-cur = /bits/ 8 <0x64>;
+			max-cur = /bits/ 8 <0x78>;
+		};
+
+		led@7 {
+			reg = <7>;
+			color = <LED_COLOR_ID_GREEN>;
+			chan-name = "green:status-5";
+			led-cur = /bits/ 8 <0x64>;
+			max-cur = /bits/ 8 <0x78>;
+		};
+
+		led@8 {
+			reg = <8>;
+			color = <LED_COLOR_ID_BLUE>;
+			chan-name = "blue:status-5";
+			linux,default-trigger = "default-on";
+			led-cur = /bits/ 8 <0x64>;
+			max-cur = /bits/ 8 <0x78>;
+		};
+	};
+};

@@ -1,0 +1,56 @@
+From 25fec35ac0e5bf3f9da0920055c278bb170983d2 Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Mon, 9 Sep 2024 17:14:43 +0200
+Subject: [PATCH 10/25] phy: sparx5-serdes: add constant for the number of
+ CMU's
+
+The number of CMU's differ for Sparx5 and lan969x, so add a new field:
+cmu_max and use it throughout.
+
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Reviewed-by: Steen Hegelund <Steen.Hegelund@microchip.com>
+Link: https://lore.kernel.org/r/20240909-sparx5-lan969x-serdes-driver-v2-3-d695bcb57b84@microchip.com
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
+---
+ drivers/phy/microchip/sparx5_serdes.c | 5 ++---
+ drivers/phy/microchip/sparx5_serdes.h | 1 +
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+--- a/drivers/phy/microchip/sparx5_serdes.c
++++ b/drivers/phy/microchip/sparx5_serdes.c
+@@ -21,8 +21,6 @@
+ 
+ #include "sparx5_serdes.h"
+ 
+-#define SPX5_CMU_MAX          14
+-
+ #define SPX5_SERDES_10G_START 13
+ #define SPX5_SERDES_25G_START 25
+ #define SPX5_SERDES_6G10G_CNT SPX5_SERDES_25G_START
+@@ -1101,7 +1099,7 @@ static void sparx5_serdes_cmu_power_off(
+ 	int i;
+ 
+ 	/* Power down each CMU */
+-	for (i = 0; i < SPX5_CMU_MAX; i++) {
++	for (i = 0; i < priv->data->consts.cmu_max; i++) {
+ 		cmu_inst = sdx5_inst_get(priv, TARGET_SD_CMU, i);
+ 		cmu_cfg_inst = sdx5_inst_get(priv, TARGET_SD_CMU_CFG, i);
+ 
+@@ -2512,6 +2510,7 @@ static const struct sparx5_serdes_match_
+ 	.iomap_size = ARRAY_SIZE(sparx5_serdes_iomap),
+ 	.consts = {
+ 		.sd_max       = 33,
++		.cmu_max      = 14,
+ 	},
+ };
+ 
+--- a/drivers/phy/microchip/sparx5_serdes.h
++++ b/drivers/phy/microchip/sparx5_serdes.h
+@@ -28,6 +28,7 @@ enum sparx5_serdes_mode {
+ 
+ struct sparx5_serdes_consts {
+ 	int sd_max;
++	int cmu_max;
+ };
+ 
+ struct sparx5_serdes_match_data {

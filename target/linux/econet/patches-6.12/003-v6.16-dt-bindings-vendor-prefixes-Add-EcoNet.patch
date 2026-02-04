@@ -1,0 +1,26 @@
+From 9e0dd98654a528735d2b363d0dc73f7904108652 Mon Sep 17 00:00:00 2001
+From: Caleb James DeLisle <cjd@cjdns.fr>
+Date: Sun, 30 Mar 2025 17:02:57 +0000
+Subject: [PATCH] dt-bindings: vendor-prefixes: Add EcoNet
+
+Add the "econet" vendor prefix for SoC maker
+
+Signed-off-by: Caleb James DeLisle <cjd@cjdns.fr>
+Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Link: https://lore.kernel.org/r/20250330170306.2584136-2-cjd@cjdns.fr
+Signed-off-by: Rob Herring (Arm) <robh@kernel.org>
+---
+ Documentation/devicetree/bindings/vendor-prefixes.yaml | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/Documentation/devicetree/bindings/vendor-prefixes.yaml
++++ b/Documentation/devicetree/bindings/vendor-prefixes.yaml
+@@ -420,6 +420,8 @@ patternProperties:
+     description: EBV Elektronik
+   "^eckelmann,.*":
+     description: Eckelmann AG
++  "^econet,.*":
++    description: EcoNet (HK) Limited
+   "^edgeble,.*":
+     description: Edgeble AI Technologies Pvt. Ltd.
+   "^edimax,.*":

@@ -1,0 +1,38 @@
+From 64016a564b81491c092ef03c7e11305650d8641a Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Wed, 13 Aug 2025 19:44:39 +0200
+Subject: [PATCH 02/25] arm64: lan969x: Add support for Microchip LAN969x SoC
+
+This adds support for the Microchip LAN969x ARMv8-based SoC switch family.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+Acked-by: Daniel Machon <daniel.machon@microchip.com>
+Signed-off-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+---
+ arch/arm64/Kconfig.platforms | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+--- a/arch/arm64/Kconfig.platforms
++++ b/arch/arm64/Kconfig.platforms
+@@ -166,6 +166,21 @@ menu "Microchip SoC support"
+ config ARCH_MICROCHIP
+ 	bool
+ 
++config ARCH_LAN969X
++	bool "Microchip LAN969X SoC family"
++	select PINCTRL
++	select DW_APB_TIMER_OF
++	select ARCH_MICROCHIP
++	help
++	  This enables support for the Microchip LAN969X ARMv8-based
++	  SoC family of TSN-capable gigabit switches.
++
++	  The LAN969X Ethernet switch family provides a rich set of
++	  switching features such as advanced TCAM-based VLAN and QoS
++	  processing enabling delivery of differentiated services, and
++	  security through TCAM-based frame processing using versatile
++	  content aware processor (VCAP).
++
+ config ARCH_SPARX5
+ 	bool "Microchip Sparx5 SoC family"
+ 	select PINCTRL

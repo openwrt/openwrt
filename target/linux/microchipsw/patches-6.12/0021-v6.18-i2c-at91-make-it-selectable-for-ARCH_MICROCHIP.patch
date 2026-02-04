@@ -1,0 +1,28 @@
+From 0ee61e26871b1c039b905569cf74382c800c1e8b Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Wed, 13 Aug 2025 19:44:43 +0200
+Subject: [PATCH 23/25] i2c: at91: make it selectable for ARCH_MICROCHIP
+
+LAN969x uses the Atmel TWI I2C, so make it selectable for ARCH_MICROCHIP to
+avoid needing to update depends in future if other Microchip SoC-s use it
+as well.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+Acked-by: Wolfram Sang <wsa+renesas@sang-engineering.com>
+Acked-by: Daniel Machon <daniel.machon@microchip.com>
+Signed-off-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+---
+ drivers/i2c/busses/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/i2c/busses/Kconfig
++++ b/drivers/i2c/busses/Kconfig
+@@ -423,7 +423,7 @@ config I2C_ASPEED
+ 
+ config I2C_AT91
+ 	tristate "Atmel AT91 I2C Two-Wire interface (TWI)"
+-	depends on ARCH_AT91 || COMPILE_TEST
++	depends on ARCH_MICROCHIP || COMPILE_TEST
+ 	help
+ 	  This supports the use of the I2C interface on Atmel AT91
+ 	  processors.

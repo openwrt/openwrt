@@ -1,0 +1,34 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "ar7241.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	aliases {
+		label-mac-device = &eth0;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+
+	wifi: wifi@0,0 {
+		reg = <0x0000 0 0 0 0>;
+	};
+};
+
+&eth0 {
+	status = "okay";
+};

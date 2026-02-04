@@ -1,0 +1,88 @@
+From 0327238991ba2d1de25e1116b1c064f433e45b8d Mon Sep 17 00:00:00 2001
+From: Shreeya Patel <shreeya.patel@collabora.com>
+Date: Fri, 7 Mar 2025 12:18:56 +0300
+Subject: arm64: dts: rockchip: Add device tree support for HDMI RX Controller
+
+Add device tree support for Synopsys DesignWare HDMI RX
+Controller.
+
+Reviewed-by: Dmitry Osipenko <dmitry.osipenko@collabora.com>
+Tested-by: Dmitry Osipenko <dmitry.osipenko@collabora.com>
+Co-developed-by: Dingxian Wen <shawn.wen@rock-chips.com>
+Signed-off-by: Dingxian Wen <shawn.wen@rock-chips.com>
+Signed-off-by: Shreeya Patel <shreeya.patel@collabora.com>
+Signed-off-by: Dmitry Osipenko <dmitry.osipenko@collabora.com>
+Link: https://lore.kernel.org/r/20250307091857.646581-2-dmitry.osipenko@collabora.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588-extra.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588-extra.dtsi
+@@ -23,6 +23,30 @@
+ 		};
+ 	};
+ 
++	reserved-memory {
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++
++		/*
++		 * The 4k HDMI capture controller works only with 32bit
++		 * phys addresses and doesn't support IOMMU. HDMI RX CMA
++		 * must be reserved below 4GB.
++		 * The size of 160MB was determined as follows:
++		 * (3840 * 2160 pixels) * (4 bytes/pixel) * (2 frames/buffer) / 10^6 = 66MB
++		 * To ensure sufficient support for practical use-cases,
++		 * we doubled the 66MB value.
++		 */
++		hdmi_receiver_cma: hdmi-receiver-cma {
++			compatible = "shared-dma-pool";
++			alloc-ranges = <0x0 0x0 0x0 0xffffffff>;
++			size = <0x0 (160 * 0x100000)>; /* 160MiB */
++			alignment = <0x0 0x40000>; /* 64K */
++			no-map;
++			status = "disabled";
++		};
++	};
++
+ 	usb_host1_xhci: usb@fc400000 {
+ 		compatible = "rockchip,rk3588-dwc3", "snps,dwc3";
+ 		reg = <0x0 0xfc400000 0x0 0x400000>;
+@@ -198,6 +222,37 @@
+ 		};
+ 	};
+ 
++	hdmi_receiver: hdmi_receiver@fdee0000 {
++		compatible = "rockchip,rk3588-hdmirx-ctrler", "snps,dw-hdmi-rx";
++		reg = <0x0 0xfdee0000 0x0 0x6000>;
++		interrupts = <GIC_SPI 177 IRQ_TYPE_LEVEL_HIGH 0>,
++			     <GIC_SPI 178 IRQ_TYPE_LEVEL_HIGH 0>,
++			     <GIC_SPI 179 IRQ_TYPE_LEVEL_HIGH 0>;
++		interrupt-names = "cec", "hdmi", "dma";
++		clocks = <&cru ACLK_HDMIRX>,
++			 <&cru CLK_HDMIRX_AUD>,
++			 <&cru CLK_CR_PARA>,
++			 <&cru PCLK_HDMIRX>,
++			 <&cru CLK_HDMIRX_REF>,
++			 <&cru PCLK_S_HDMIRX>,
++			 <&cru HCLK_VO1>;
++		clock-names = "aclk",
++			      "audio",
++			      "cr_para",
++			      "pclk",
++			      "ref",
++			      "hclk_s_hdmirx",
++			      "hclk_vo1";
++		memory-region = <&hdmi_receiver_cma>;
++		power-domains = <&power RK3588_PD_VO1>;
++		resets = <&cru SRST_A_HDMIRX>, <&cru SRST_P_HDMIRX>,
++			 <&cru SRST_HDMIRX_REF>, <&cru SRST_A_HDMIRX_BIU>;
++		reset-names = "axi", "apb", "ref", "biu";
++		rockchip,grf = <&sys_grf>;
++		rockchip,vo1-grf = <&vo1_grf>;
++		status = "disabled";
++	};
++
+ 	pcie3x4: pcie@fe150000 {
+ 		compatible = "rockchip,rk3588-pcie", "rockchip,rk3568-pcie";
+ 		#address-cells = <3>;

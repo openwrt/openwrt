@@ -1,0 +1,91 @@
+#!/bin/sh
+
+[ "$ACTION" = add ] || exit
+
+get_device_irq() {
+	local device="$1"
+	local line
+	local seconds="0"
+
+	# wait up to 10 seconds for the irq/device to appear
+	while [ "${seconds}" -le 10 ]; do
+		line=$(grep -E -m 1 "${device}\$" /proc/interrupts) && break
+		seconds="$(( seconds + 2 ))"
+		sleep 2
+	done
+	echo ${line} | sed 's/:.*//'
+}
+
+set_interface_core() {
+	local core_mask="$1"
+	local interface="$2"
+	local device="$3"
+
+	[ -z "${device}" ] && device="$interface"
+
+	local irq=$(get_device_irq "$device")
+
+	echo "${core_mask}" > /proc/irq/${irq}/smp_affinity
+}
+
+case "$(board_name)" in
+armsom,sige7|\
+friendlyarm,nanopi-r3s|\
+friendlyarm,nanopi-r5c|\
+hinlink,h66k|\
+linkease,easepi-r1|\
+lunzn,fastrhino-r66s|\
+radxa,e25|\
+sinovoip,rk3568-bpi-r2pro)
+	set_interface_core 2 "eth0"
+	set_interface_core 4 "eth1"
+	;;
+friendlyarm,nanopi-r2c|\
+friendlyarm,nanopi-r2c-plus|\
+friendlyarm,nanopi-r2s|\
+radxa,cm3-io|\
+xunlong,orangepi-r1-plus|\
+xunlong,orangepi-r1-plus-lts)
+	set_interface_core 2 "eth0"
+	set_interface_core 4 "eth1" "xhci-hcd:usb[0-9]+"
+	;;
+friendlyarm,nanopi-r4s|\
+friendlyarm,nanopi-r4s-enterprise|\
+friendlyarm,nanopi-r6c|\
+friendlyarm,nanopi-r76s|\
+friendlyarm,nanopc-t6|\
+radxa,rock-5-itx|\
+radxa,rock-5t)
+	set_interface_core 10 "eth0"
+	set_interface_core 20 "eth1"
+	;;
+friendlyarm,nanopi-r5s)
+	set_interface_core 2 "eth0"
+	set_interface_core 4 "eth1"
+	set_interface_core 8 "eth2"
+	;;
+friendlyarm,nanopi-r6s)
+	set_interface_core 10 "eth0"
+	set_interface_core 20 "eth1"
+	set_interface_core 40 "eth2"
+	;;
+hinlink,h28k|\
+radxa,e20c)
+	set_interface_core 2 "eth0"
+	;;
+hinlink,h68k)
+	set_interface_core 2 "eth1"
+	set_interface_core 4 "eth2"
+	set_interface_core 8 "eth3"
+	;;
+radxa,rock-5a|\
+radxa,rock-5c)
+	set_interface_core 10 "eth1"
+	set_interface_core 20 "eth2"
+	;;
+radxa,e52c)
+	set_interface_core 10 "lan"
+	set_interface_core 20 "wan"
+	;;
+esac
+

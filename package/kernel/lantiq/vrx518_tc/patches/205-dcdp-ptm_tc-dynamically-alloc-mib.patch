@@ -1,0 +1,206 @@
+--- a/dcdp/ptm_tc.c
++++ b/dcdp/ptm_tc.c
+@@ -307,15 +307,19 @@ static int ptm_tc_get_stats(struct ptm_e
+ )
+ {
+ 	struct rtnl_link_stats64 *stat;
+-	struct wan_rx_mib_table rx_mib;
++	struct wan_rx_mib_table *rx_mib;
+ 	unsigned int cur_cnt, last_cnt;
+ 	struct intel_tc_ptm_sl_stats *ptm_sl_stats;
+ 	struct ptm_priv *ptm_tc;
++	int ret = 0;
+ 	if (!priv || !stats)
+ 		return -EFAULT;
+ 	ptm_tc = priv->ptm_tc;
+ 	if (!ptm_tc)
+ 		return -EFAULT;
++	rx_mib = kzalloc(sizeof(*rx_mib), GFP_KERNEL);
++	if (!rx_mib)
++		return -ENOMEM;
+ 	if (bonding)
+ 		stats->tc_info = TC_PTM_BND_MODE;
+ 	else
+@@ -349,11 +353,11 @@ static int ptm_tc_get_stats(struct ptm_e
+ 		? cur_cnt - last_cnt
+ 		: cur_cnt + ((unsigned int)(-1) - last_cnt);
+ 
+-	tc_mem_read(priv, &rx_mib,
++	tc_mem_read(priv, rx_mib,
+ 		fpi_addr(__RX_GIF_MIB_BASE),
+-		sizeof(rx_mib)
++		sizeof(*rx_mib)
+ 	);
+-	ptm_sl_stats->wrx_gif_drop_pdu = rx_mib.wrx_dropdes_pdu;
++	ptm_sl_stats->wrx_gif_drop_pdu = rx_mib->wrx_dropdes_pdu;
+ 
+ 	cur_cnt = tc_r32(GIF0_RX_CRC_ERR_CNT);
+ 	last_cnt = priv->ptm_mib.rx_crc_err_pdu[0];
+@@ -367,7 +371,7 @@ static int ptm_tc_get_stats(struct ptm_e
+ 		? cur_cnt - last_cnt
+ 		: cur_cnt + ((unsigned int)(-1) - last_cnt);
+ 
+-	ptm_sl_stats->wrx_gif_total_bytes = rx_mib.wrx_total_bytes;
++	ptm_sl_stats->wrx_gif_total_bytes = rx_mib->wrx_total_bytes;
+ 	cur_cnt = sb_r32(__US_TC_LOCAL_Q_CFG_CTXT_BASE +
+ 		offsetof(desq_cfg_ctxt_t, deq_pkt_cnt) / 4);
+ 	last_cnt = priv->ptm_mib.tx_total_pdu[0];
+@@ -385,90 +389,108 @@ static int ptm_tc_get_stats(struct ptm_e
+ 	/* For bonding information */
+ 	if (bonding) {
+ 		int i;
+-		struct intel_tc_ptm_bonding_stats ptm_ds;
+-		struct intel_tc_ptm_bonding_stats ptm_us;
++		struct intel_tc_ptm_bonding_stats *ptm_ds;
++		struct intel_tc_ptm_bonding_stats *ptm_us;
+ 		struct intel_tc_ptm_bonding_stats *ptm_bonding_stats;
++
++		ptm_ds = kzalloc(sizeof(*ptm_ds), GFP_KERNEL);
++		if (!ptm_ds) {
++			ret = -ENOMEM;
++			goto free_rx_mib;
++		}
++		
++		ptm_us = kzalloc(sizeof(*ptm_us), GFP_KERNEL);
++		if (!ptm_us) {
++			ret = -ENOMEM;
++			goto free_ptm_ds;
++		}
++
+ 		priv = tc_ep_priv(0);
+-		ptm_tc_bond_get_stats(priv, &ptm_ds);
++		ptm_tc_bond_get_stats(priv, ptm_ds);
+ 		priv = tc_ep_priv(1);
+-		ptm_tc_bond_get_stats(priv, &ptm_us);
++		ptm_tc_bond_get_stats(priv, ptm_us);
+ 		ptm_bonding_stats =
+ 			&(stats->stats.ptm_tc_stats.pmt_bonding_stats);
+ 		for (i = 0; i < 8; i++)
+ 			ptm_bonding_stats->us_gif_mib[i] =
+-				ptm_ds.us_gif_mib[i] + ptm_us.us_gif_mib[i];
++				ptm_ds->us_gif_mib[i] + ptm_us->us_gif_mib[i];
+ 		for (i = 0; i < 8; i++) {
+ 			ptm_bonding_stats->ds_gif_mib[i].rx_frag_byte_cnt =
+-				ptm_ds.ds_gif_mib[i].rx_frag_byte_cnt
+-				+ ptm_us.ds_gif_mib[i].rx_frag_byte_cnt;
++				ptm_ds->ds_gif_mib[i].rx_frag_byte_cnt
++				+ ptm_us->ds_gif_mib[i].rx_frag_byte_cnt;
+ 			ptm_bonding_stats->ds_gif_mib[i].rx_byte_cnt =
+-				ptm_ds.ds_gif_mib[i].rx_byte_cnt
+-				+ ptm_us.ds_gif_mib[i].rx_byte_cnt;
++				ptm_ds->ds_gif_mib[i].rx_byte_cnt
++				+ ptm_us->ds_gif_mib[i].rx_byte_cnt;
+ 			ptm_bonding_stats->ds_gif_mib[i].rx_of_frag_byte_cnt =
+-				ptm_ds.ds_gif_mib[i].rx_of_frag_byte_cnt
+-				+ ptm_us.ds_gif_mib[i].rx_of_frag_byte_cnt;
++				ptm_ds->ds_gif_mib[i].rx_of_frag_byte_cnt
++				+ ptm_us->ds_gif_mib[i].rx_of_frag_byte_cnt;
+ 			ptm_bonding_stats->ds_gif_mib[i].rx_of_byte_cnt =
+-				ptm_ds.ds_gif_mib[i].rx_of_byte_cnt
+-				+ ptm_us.ds_gif_mib[i].rx_of_byte_cnt;
++				ptm_ds->ds_gif_mib[i].rx_of_byte_cnt
++				+ ptm_us->ds_gif_mib[i].rx_of_byte_cnt;
+ 			ptm_bonding_stats->ds_gif_mib[i].rx_oor_frag_byte_cnt =
+-				ptm_ds.ds_gif_mib[i].rx_oor_frag_byte_cnt
+-				+ ptm_us.ds_gif_mib[i].rx_oor_frag_byte_cnt;
++				ptm_ds->ds_gif_mib[i].rx_oor_frag_byte_cnt
++				+ ptm_us->ds_gif_mib[i].rx_oor_frag_byte_cnt;
+ 			ptm_bonding_stats->ds_gif_mib[i].rx_miss_frag_byte_cnt =
+-				ptm_ds.ds_gif_mib[i].rx_miss_frag_byte_cnt
+-				+ ptm_us.ds_gif_mib[i].rx_miss_frag_byte_cnt;
++				ptm_ds->ds_gif_mib[i].rx_miss_frag_byte_cnt
++				+ ptm_us->ds_gif_mib[i].rx_miss_frag_byte_cnt;
+ 			ptm_bonding_stats->ds_gif_mib[i].rx_to_frag_byte_cnt =
+-				ptm_ds.ds_gif_mib[i].rx_to_frag_byte_cnt
+-				+ ptm_us.ds_gif_mib[i].rx_to_frag_byte_cnt;
++				ptm_ds->ds_gif_mib[i].rx_to_frag_byte_cnt
++				+ ptm_us->ds_gif_mib[i].rx_to_frag_byte_cnt;
+ 		}
+ 		for (i = 0; i < 4; i++) {
+ 			ptm_bonding_stats->ds_bg_mib[i].conform_pkt_cnt =
+-				ptm_ds.ds_bg_mib[i].conform_pkt_cnt
+-				+ ptm_us.ds_bg_mib[i].conform_pkt_cnt;
++				ptm_ds->ds_bg_mib[i].conform_pkt_cnt
++				+ ptm_us->ds_bg_mib[i].conform_pkt_cnt;
+ 			ptm_bonding_stats->ds_bg_mib[i].conform_frag_cnt =
+-				ptm_ds.ds_bg_mib[i].conform_frag_cnt
+-				+ ptm_us.ds_bg_mib[i].conform_frag_cnt;
++				ptm_ds->ds_bg_mib[i].conform_frag_cnt
++				+ ptm_us->ds_bg_mib[i].conform_frag_cnt;
+ 			ptm_bonding_stats->ds_bg_mib[i].conform_byte_cnt =
+-				ptm_ds.ds_bg_mib[i].conform_byte_cnt
+-				+ ptm_us.ds_bg_mib[i].conform_byte_cnt;
++				ptm_ds->ds_bg_mib[i].conform_byte_cnt
++				+ ptm_us->ds_bg_mib[i].conform_byte_cnt;
+ 			ptm_bonding_stats->ds_bg_mib[i].no_sop_pkt_cnt =
+-				ptm_ds.ds_bg_mib[i].no_sop_pkt_cnt
+-				+ ptm_us.ds_bg_mib[i].no_sop_pkt_cnt;
++				ptm_ds->ds_bg_mib[i].no_sop_pkt_cnt
++				+ ptm_us->ds_bg_mib[i].no_sop_pkt_cnt;
+ 			ptm_bonding_stats->ds_bg_mib[i].no_sop_frag_cnt =
+-				ptm_ds.ds_bg_mib[i].no_sop_frag_cnt
+-				+ ptm_us.ds_bg_mib[i].no_sop_frag_cnt;
++				ptm_ds->ds_bg_mib[i].no_sop_frag_cnt
++				+ ptm_us->ds_bg_mib[i].no_sop_frag_cnt;
+ 			ptm_bonding_stats->ds_bg_mib[i].no_sop_byte_cnt =
+-				ptm_ds.ds_bg_mib[i].no_sop_byte_cnt
+-				+ ptm_us.ds_bg_mib[i].no_sop_byte_cnt;
++				ptm_ds->ds_bg_mib[i].no_sop_byte_cnt
++				+ ptm_us->ds_bg_mib[i].no_sop_byte_cnt;
+ 			ptm_bonding_stats->ds_bg_mib[i].no_eop_pkt_cnt =
+-				ptm_ds.ds_bg_mib[i].no_eop_pkt_cnt
+-				+ ptm_us.ds_bg_mib[i].no_eop_pkt_cnt;
++				ptm_ds->ds_bg_mib[i].no_eop_pkt_cnt
++				+ ptm_us->ds_bg_mib[i].no_eop_pkt_cnt;
+ 			ptm_bonding_stats->ds_bg_mib[i].no_eop_frag_cnt =
+-				ptm_ds.ds_bg_mib[i].no_eop_frag_cnt
+-				+ ptm_us.ds_bg_mib[i].no_eop_frag_cnt;
++				ptm_ds->ds_bg_mib[i].no_eop_frag_cnt
++				+ ptm_us->ds_bg_mib[i].no_eop_frag_cnt;
+ 			ptm_bonding_stats->ds_bg_mib[i].no_eop_byte_cnt =
+-				ptm_ds.ds_bg_mib[i].no_eop_byte_cnt
+-				+ ptm_us.ds_bg_mib[i].no_eop_byte_cnt;
++				ptm_ds->ds_bg_mib[i].no_eop_byte_cnt
++				+ ptm_us->ds_bg_mib[i].no_eop_byte_cnt;
+ 			ptm_bonding_stats->ds_bg_mib[i].oversize_pkt_cnt =
+-				ptm_ds.ds_bg_mib[i].oversize_pkt_cnt
+-				+ ptm_us.ds_bg_mib[i].oversize_pkt_cnt;
++				ptm_ds->ds_bg_mib[i].oversize_pkt_cnt
++				+ ptm_us->ds_bg_mib[i].oversize_pkt_cnt;
+ 			ptm_bonding_stats->ds_bg_mib[i].oversize_frag_cnt =
+-				ptm_ds.ds_bg_mib[i].oversize_frag_cnt
+-				+ ptm_us.ds_bg_mib[i].oversize_frag_cnt;
++				ptm_ds->ds_bg_mib[i].oversize_frag_cnt
++				+ ptm_us->ds_bg_mib[i].oversize_frag_cnt;
+ 			ptm_bonding_stats->ds_bg_mib[i].oversize_byte_cnt =
+-				ptm_ds.ds_bg_mib[i].oversize_byte_cnt
+-				+ ptm_us.ds_bg_mib[i].oversize_byte_cnt;
++				ptm_ds->ds_bg_mib[i].oversize_byte_cnt
++				+ ptm_us->ds_bg_mib[i].oversize_byte_cnt;
+ 			ptm_bonding_stats->ds_bg_mib[i].noncosec_pkt_cnt =
+-				ptm_ds.ds_bg_mib[i].noncosec_pkt_cnt
+-				+ ptm_us.ds_bg_mib[i].noncosec_pkt_cnt;
++				ptm_ds->ds_bg_mib[i].noncosec_pkt_cnt
++				+ ptm_us->ds_bg_mib[i].noncosec_pkt_cnt;
+ 			ptm_bonding_stats->ds_bg_mib[i].noncosec_frag_cnt =
+-				ptm_ds.ds_bg_mib[i].noncosec_frag_cnt
+-				+ ptm_us.ds_bg_mib[i].noncosec_frag_cnt;
++				ptm_ds->ds_bg_mib[i].noncosec_frag_cnt
++				+ ptm_us->ds_bg_mib[i].noncosec_frag_cnt;
+ 			ptm_bonding_stats->ds_bg_mib[i].noncosec_byte_cnt =
+-				ptm_ds.ds_bg_mib[i].noncosec_byte_cnt
+-				+ ptm_us.ds_bg_mib[i].noncosec_byte_cnt;
++				ptm_ds->ds_bg_mib[i].noncosec_byte_cnt
++				+ ptm_us->ds_bg_mib[i].noncosec_byte_cnt;
+ 		}
++		kfree(ptm_us);
++free_ptm_ds:
++		kfree(ptm_ds);
+ 	}
+-	return 0;
++free_rx_mib:
++	kfree(rx_mib);
++	return ret;
+ }
+ static int ptm_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
+ {

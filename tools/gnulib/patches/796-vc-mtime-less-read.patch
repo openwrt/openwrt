@@ -1,0 +1,44 @@
+From 60cd34886c2c9f509974239fcf64a61f9a507d14 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Tue, 25 Feb 2025 09:04:28 +0100
+Subject: [PATCH] vc-mtime: Reduce number of read() system calls.
+
+* lib/vc-mtime.c: Include <stddef.h>.
+(git_vc_controlled): Read bytes into a buffer, not one-by-one.
+---
+ ChangeLog      |  6 ++++++
+ lib/vc-mtime.c | 15 +++++++++++----
+ 2 files changed, 17 insertions(+), 4 deletions(-)
+
+--- a/lib/vc-mtime.c
++++ b/lib/vc-mtime.c
+@@ -21,6 +21,7 @@
+ /* Specification.  */
+ #include "vc-mtime.h"
+ 
++#include <stddef.h>
+ #include <stdlib.h>
+ #include <unistd.h>
+ 
+@@ -56,11 +57,17 @@ git_vc_controlled (const char *filename)
+     return false;
+ 
+   /* Read the subprocess output, and test whether it is non-empty.  */
+-  size_t count = 0;
+-  char c;
++  ptrdiff_t count = 0;
+ 
+-  while (safe_read (fd[0], &c, 1) > 0)
+-    count++;
++  for (;;)
++    {
++      char buf[1024];
++      ptrdiff_t n = safe_read (fd[0], buf, sizeof (buf));
++      if (n > 0)
++        count += n;
++      else
++        break;
++    }
+ 
+   close (fd[0]);
+ 

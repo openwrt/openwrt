@@ -1,0 +1,66 @@
+
+. /lib/functions/leds.sh
+. /lib/functions/uci-defaults.sh
+
+board=$(board_name)
+boardname="${board##*,}"
+
+board_config_update
+
+case $board in
+friendlyarm,nanopi-r2c|\
+friendlyarm,nanopi-r2c-plus|\
+friendlyarm,nanopi-r2s|\
+friendlyarm,nanopi-r3s|\
+friendlyarm,nanopi-r4s|\
+friendlyarm,nanopi-r4s-enterprise|\
+friendlyarm,nanopi-r6c|\
+xunlong,orangepi-r1-plus|\
+xunlong,orangepi-r1-plus-lts)
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth0"
+	ucidef_set_led_netdev "lan" "LAN" "green:lan" "eth1"
+	;;
+friendlyarm,nanopi-r5c)
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1"
+	ucidef_set_led_netdev "lan" "LAN" "green:lan" "eth0"
+	ucidef_set_led_netdev "wlan" "WLAN" "green:wlan" "phy0-ap0"
+	;;
+friendlyarm,nanopi-r5s)
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth0"
+	ucidef_set_led_netdev "lan1" "LAN1" "green:lan-1" "eth1"
+	ucidef_set_led_netdev "lan2" "LAN2" "green:lan-2" "eth2"
+	;;
+friendlyarm,nanopi-r6s)
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1"
+	ucidef_set_led_netdev "lan1" "LAN1" "green:lan-1" "eth2"
+	ucidef_set_led_netdev "lan2" "LAN2" "green:lan-2" "eth0"
+	;;
+friendlyarm,nanopi-r76s)
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1"
+	ucidef_set_led_netdev "lan" "LAN" "green:lan" "eth0"
+	;;
+hinlink,h28k)
+	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "eth1"
+	ucidef_set_led_netdev "lan" "LAN" "amber:lan" "eth0"
+	;;
+hinlink,h66k)
+	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "eth0"
+	;;
+hinlink,h68k)
+	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "eth1"
+	;;
+radxa,e20c)
+	ucidef_set_led_netdev "lan" "LAN" "green:lan" "eth0"
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth1"
+	ucidef_set_led_netdev "wan-0" "WAN-0" "eth1-0::lan" "eth1" "link_100"
+	ucidef_set_led_netdev "wan-1" "WAN-1" "eth1-1::lan" "eth1" "link_1000"
+	;;
+radxa,e52c)
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
+	ucidef_set_led_netdev "lan" "LAN" "green:lan" "lan"
+	;;
+esac
+
+board_config_flush
+
+exit 0

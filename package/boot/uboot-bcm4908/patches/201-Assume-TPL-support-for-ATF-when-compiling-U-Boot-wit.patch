@@ -1,0 +1,67 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <rafal@milecki.pl>
+Date: Fri, 4 Mar 2022 09:23:34 +0100
+Subject: [PATCH] Assume TPL support for ATF when compiling U-Boot without TPL
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Broadcom's U-Boot behaviour depends on compilation time check whether
+TPL was compiled with or without ATF support. There is no proper runtime
+check.
+
+When compiling just U-Boot (without SPL & TPL) there is no way to tell
+if it's going to work with TPL with or without ATF support.
+
+Modify code to blindly assume ATF support in TPL in such cases. It seems
+to be always true for Broadcom and we need some assumption as we don't
+deal with compiling SPL or TPL.
+
+Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
+---
+ arch/arm/mach-bcmbca/bcm4908/cpu.c | 2 +-
+ arch/arm/mach-bcmbca/bcm4912/cpu.c | 2 +-
+ board/broadcom/bcmbca/board.c      | 4 ++--
+ 3 files changed, 4 insertions(+), 4 deletions(-)
+
+--- a/arch/arm/mach-bcmbca/bcm4908/cpu.c
++++ b/arch/arm/mach-bcmbca/bcm4908/cpu.c
+@@ -138,7 +138,7 @@ int get_nr_cpus()
+ 	return nr_cpus;
+ }
+ 
+-#if !defined(CONFIG_TPL_ATF)
++#if defined(CONFIG_TPL) && !defined(CONFIG_TPL_ATF)
+ void boot_secondary_cpu(unsigned long vector)
+ {
+ 	uint32_t cpu, nr_cpus = QUAD_CPUS;
+--- a/arch/arm/mach-bcmbca/bcm4912/cpu.c
++++ b/arch/arm/mach-bcmbca/bcm4912/cpu.c
+@@ -174,7 +174,7 @@ int bcmbca_get_boot_device(void)
+ 	return BOOT_DEVICE_NONE;
+ }
+ 
+-#if !defined(CONFIG_TPL_ATF)
++#if defined(CONFIG_TPL) && !defined(CONFIG_TPL_ATF)
+ void boot_secondary_cpu(unsigned long vector)
+ {
+ 	uint32_t cpu, nr_cpus = 4;
+--- a/board/broadcom/bcmbca/board.c
++++ b/board/broadcom/bcmbca/board.c
+@@ -103,7 +103,7 @@ void board_spinor_init(void)
+ 
+ int board_init(void)
+ {
+-#if !defined(CONFIG_TPL_ATF)
++#if defined(CONFIG_TPL) && !defined(CONFIG_TPL_ATF)
+ 	unsigned long vector;
+ #endif
+ 	board_sdk_init_e();
+@@ -121,7 +121,7 @@ int board_init(void)
+ 	printf("$Uboot: "BUILD_TAG" $\n");
+ #endif
+ 
+-#if !defined(CONFIG_TPL_ATF)
++#if defined(CONFIG_TPL) && !defined(CONFIG_TPL_ATF)
+ #if defined(CONFIG_ARM64)
+ 	vector  = (unsigned long)&_start;
+ #else

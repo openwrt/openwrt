@@ -1,0 +1,49 @@
+From e2d8eae9477f6ba41ab75ad77202f235e34c04f7 Mon Sep 17 00:00:00 2001
+From: Andre Heider <a.heider@gmail.com>
+Date: Wed, 18 Jan 2023 22:30:23 +0100
+Subject: [PATCH] lib: allow overwriting -W* flags via BPF_CFLAGS
+
+The bpf header file situation is a mess, and the default warning
+compiler flags may not be suitable everywhere, especially with -Werror
+in the mix.
+
+Move BPF_CFLAGS further down, so these can be overwritten by builders.
+
+Signed-off-by: Andre Heider <a.heider@gmail.com>
+---
+ lib/common.mk       | 2 +-
+ lib/libxdp/Makefile | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/lib/common.mk
++++ b/lib/common.mk
+@@ -111,12 +111,12 @@ $(XDP_OBJ): %.o: %.c $(KERN_USER_H) $(EX
+ 	$(QUIET_CLANG)$(CLANG) -S \
+ 	    -target $(BPF_TARGET) \
+ 	    -D __BPF_TRACING__ \
+-	    $(BPF_CFLAGS) \
+ 	    -Wall \
+ 	    -Wno-unused-value \
+ 	    -Wno-pointer-sign \
+ 	    -Wno-compare-distinct-pointer-types \
+ 	    -Werror \
++	    $(BPF_CFLAGS) \
+ 	    -O2 -emit-llvm -c -g -o ${@:.o=.ll} $<
+ 	$(QUIET_LLC)$(LLC) -march=$(BPF_TARGET) -filetype=obj -o $@ ${@:.o=.ll}
+ 
+--- a/lib/libxdp/Makefile
++++ b/lib/libxdp/Makefile
+@@ -138,12 +138,12 @@ $(XDP_OBJS): %.o: %.c $(BPF_HEADERS) $(L
+ 	$(QUIET_CLANG)$(CLANG) -S \
+ 	    -target $(BPF_TARGET) \
+ 	    -D __BPF_TRACING__ \
+-	    $(BPF_CFLAGS) \
+ 	    -Wall \
+ 	    -Wno-unused-value \
+ 	    -Wno-pointer-sign \
+ 	    -Wno-compare-distinct-pointer-types \
+ 	    -Werror \
++	    $(BPF_CFLAGS) \
+ 	    -O2 -emit-llvm -c -g -o ${@:.o=.ll} $<
+ 	$(QUIET_LLC)$(LLC) -march=$(BPF_TARGET) -filetype=obj -o $@ ${@:.o=.ll}
+ 

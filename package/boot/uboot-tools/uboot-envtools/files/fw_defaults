@@ -1,0 +1,17 @@
+. /lib/functions/uci-defaults.sh
+
+fw_loadenv
+
+board_config_update
+
+[ -f /var/run/uboot-env/owrt_ssid -a -f /var/run/uboot-env/owrt_wifi_key ] &&
+	ucidef_set_wireless all "$(cat /var/run/uboot-env/owrt_ssid)" sae-mixed "$(cat /var/run/uboot-env/owrt_wifi_key)"
+[ -f /var/run/uboot-env/owrt_country ] && ucidef_set_country "$(cat /var/run/uboot-env/owrt_country)"
+[ -f /var/run/uboot-env/owrt_ssh_auth_key ] && ucidef_set_ssh_authorized_key "$(cat /var/run/uboot-env/owrt_ssh_auth_key)"
+[ -f /var/run/uboot-env/owrt_root_password_plain ] && ucidef_set_root_password_plain "$(cat /var/run/uboot-env/owrt_root_password_plain)"
+[ -f /var/run/uboot-env/owrt_root_password_hash ] && ucidef_set_root_password_hash "$(cat /var/run/uboot-env/owrt_root_password_hash)"
+[ -f /var/run/uboot-env/owrt_timezone ] && ucidef_set_timezone "$(cat /var/run/uboot-env/owrt_timezone)"
+
+board_config_flush
+
+exit 0

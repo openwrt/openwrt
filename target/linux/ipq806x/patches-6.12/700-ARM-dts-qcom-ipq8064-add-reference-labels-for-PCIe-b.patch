@@ -1,0 +1,41 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Sun, 1 Jun 2025 11:56:05 +0800
+Subject: [PATCH] ARM: dts: qcom: ipq8064: add reference labels for PCIe bridge
+
+Some devices have ath10k PCIe peripherals. Add node labels so that
+the bridge node can be referenced.
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ arch/arm/boot/dts/qcom/qcom-ipq8064.dtsi | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/arch/arm/boot/dts/qcom/qcom-ipq8064.dtsi
++++ b/arch/arm/boot/dts/qcom/qcom-ipq8064.dtsi
+@@ -1257,7 +1257,7 @@
+ 			status = "disabled";
+ 			perst-gpios = <&qcom_pinmux 3 GPIO_ACTIVE_LOW>;
+ 
+-			pcie@0 {
++			pcie_bridge0: pcie@0 {
+ 				device_type = "pci";
+ 				reg = <0x0 0x0 0x0 0x0 0x0>;
+ 				bus-range = <0x01 0xff>;
+@@ -1318,7 +1318,7 @@
+ 			status = "disabled";
+ 			perst-gpios = <&qcom_pinmux 48 GPIO_ACTIVE_LOW>;
+ 
+-			pcie@0 {
++			pcie_bridge1: pcie@0 {
+ 				device_type = "pci";
+ 				reg = <0x0 0x0 0x0 0x0 0x0>;
+ 				bus-range = <0x01 0xff>;
+@@ -1379,7 +1379,7 @@
+ 			status = "disabled";
+ 			perst-gpios = <&qcom_pinmux 63 GPIO_ACTIVE_LOW>;
+ 
+-			pcie@0 {
++			pcie_bridge2: pcie@0 {
+ 				device_type = "pci";
+ 				reg = <0x0 0x0 0x0 0x0 0x0>;
+ 				bus-range = <0x01 0xff>;

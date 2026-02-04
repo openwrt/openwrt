@@ -1,0 +1,20 @@
+From 165d395ffa2a22e293160b24d4791302a156eab8 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Mon, 8 Dec 2025 12:48:01 -0800
+Subject: add include for older kernels
+
+in6.h is needed for some macros. Seems newer kernels include this implicitly.
+---
+ lib/socket.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/lib/socket.c
++++ b/lib/socket.c
+@@ -77,6 +77,7 @@
+ #include "ucode/platform.h"
+ 
+ #if defined(__linux__)
++# include <linux/in6.h>
+ # include <linux/if_packet.h>
+ # include <linux/filter.h>
+ 

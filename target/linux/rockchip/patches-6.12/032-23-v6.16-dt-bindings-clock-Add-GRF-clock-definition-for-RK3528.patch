@@ -1,0 +1,31 @@
+From 8a023e86f3d999007f2687952afe78ef34a6aa91 Mon Sep 17 00:00:00 2001
+From: Yao Zi <ziyao@disroot.org>
+Date: Tue, 6 May 2025 09:22:02 +0000
+Subject: [PATCH] dt-bindings: clock: Add GRF clock definition for RK3528
+
+These clocks are for SD/SDIO tuning purpose and come with registers
+in GRF syscon.
+
+Signed-off-by: Yao Zi <ziyao@disroot.org>
+Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Link: https://lore.kernel.org/r/20250506092206.46143-2-ziyao@disroot.org
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ include/dt-bindings/clock/rockchip,rk3528-cru.h | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/include/dt-bindings/clock/rockchip,rk3528-cru.h
++++ b/include/dt-bindings/clock/rockchip,rk3528-cru.h
+@@ -414,6 +414,12 @@
+ #define MCLK_I2S2_2CH_SAI_SRC_PRE	402
+ #define MCLK_I2S3_8CH_SAI_SRC_PRE	403
+ #define MCLK_SDPDIF_SRC_PRE		404
++#define SCLK_SDMMC_DRV			405
++#define SCLK_SDMMC_SAMPLE		406
++#define SCLK_SDIO0_DRV			407
++#define SCLK_SDIO0_SAMPLE		408
++#define SCLK_SDIO1_DRV			409
++#define SCLK_SDIO1_SAMPLE		410
+ 
+ /* scmi-clocks indices */
+ #define SCMI_PCLK_KEYREADER		0

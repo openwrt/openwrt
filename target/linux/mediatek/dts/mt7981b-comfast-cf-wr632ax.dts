@@ -1,0 +1,18 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7981b-comfast-cf-wr632ax-common.dtsi"
+
+/ {
+	model = "COMFAST CF-WR632AX";
+	compatible = "comfast,cf-wr632ax", "mediatek,mt7981";
+};
+
+&spi_nand {
+	mediatek,nmbm;
+	mediatek,bmt-max-ratio = <1>;
+	mediatek,bmt-max-reserved-blocks = <64>;
+};
+
+&ubi {
+	reg = <0x580000 0x4000000>;
+};

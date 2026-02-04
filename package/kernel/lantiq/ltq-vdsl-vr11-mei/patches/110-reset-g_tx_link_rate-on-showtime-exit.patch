@@ -1,0 +1,12 @@
+--- a/src/drv_mei_cpe_api_atm_ptm_intern.c
++++ b/src/drv_mei_cpe_api_atm_ptm_intern.c
+@@ -152,6 +152,9 @@ IFX_int32_t MEI_InternalXtmSwhowtimeExit
+    /* Get line number*/
+    dslLineNum = pMeiDynCntrl->pMeiDev->meiDrvCntrl.dslLineNum;
+ 
++   g_tx_link_rate[dslLineNum][0] = 0;
++   g_tx_link_rate[dslLineNum][1] = 0;
++
+ #ifdef PPA_SUPPORTS_CALLBACKS
+    /* get NULL or function pointer */
+    mei_showtime_exit =

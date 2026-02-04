@@ -1,0 +1,215 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "bcm6358.dtsi"
+
+/ {
+	aliases {
+		led-boot = &led_power_red;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_red;
+		led-upgrade = &led_power_red;
+	};
+
+	gpio_keys: keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		wlan {
+			label = "wlan";
+			gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WLAN>;
+			debounce-interval = <60>;
+		};
+
+		restart {
+			label = "restart";
+			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+		};
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_CONFIG>;
+			debounce-interval = <60>;
+		};
+	};
+
+	gpio_leds: leds {
+		compatible = "gpio-leds";
+
+		led-2 {
+			label = "red:dsl";
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_red: led-3 {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+		};
+
+		led-13 {
+			label = "red:lan1";
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		led-22 {
+			label = "red:lan2";
+			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
+		};
+
+		led-23 {
+			label = "green:lan3";
+			gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
+		};
+
+		led-26 {
+			label = "red:lan3";
+			gpios = <&gpio 26 GPIO_ACTIVE_LOW>;
+		};
+
+		led-27 {
+			label = "green:lan4";
+			gpios = <&gpio 27 GPIO_ACTIVE_LOW>;
+		};
+
+		led-28 {
+			label = "red:lan4";
+			gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&ehci {
+	status = "okay";
+};
+
+&ethernet1 {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_cfe_6a0 0>;
+	nvmem-cell-names = "mac-address";
+
+	phy-mode = "mii";
+
+	fixed-link {
+		speed = <100>;
+		full-duplex;
+	};
+};
+
+&iudma {
+	status = "okay";
+};
+
+&mdio1 {
+	switch@1e {
+		compatible = "brcm,bcm5325";
+		reg = <30>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				label = "lan1";
+
+				phy-mode = "mii";
+			};
+
+			port@1 {
+				reg = <1>;
+				label = "lan2";
+
+				phy-mode = "mii";
+			};
+
+			port@2 {
+				reg = <2>;
+				label = "lan3";
+
+				phy-mode = "mii";
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan4";
+
+				phy-mode = "mii";
+			};
+
+			port@5 {
+				reg = <5>;
+				label = "cpu";
+
+				phy-mode = "internal";
+				ethernet = <&ethernet1>;
+
+				fixed-link {
+					speed = <100>;
+					full-duplex;
+				};
+			};
+		};
+	};
+};
+
+&ohci {
+	status = "okay";
+};
+
+&pflash {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "cfe";
+			reg = <0x000000 0x020000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_cfe_6a0: macaddr@6a0 {
+					compatible = "mac-base";
+					reg = <0x6a0 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+			};
+		};
+
+		partition@20000 {
+			label = "firmware";
+			reg = <0x020000 0xec0000>;
+			compatible = "brcm,bcm963xx-imagetag";
+		};
+
+		cal_data: partition@ee0000 {
+			label = "cal_data";
+			reg = <0xee0000 0x100000>;
+			read-only;
+		};
+
+		partition@fe0000 {
+			label = "nvram";
+			reg = <0xfe0000 0x020000>;
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&usbh {
+	status = "okay";
+};

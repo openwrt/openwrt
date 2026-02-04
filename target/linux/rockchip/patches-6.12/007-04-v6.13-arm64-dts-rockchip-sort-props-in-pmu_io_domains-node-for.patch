@@ -1,0 +1,35 @@
+From 17e150fdd983c7e59b9240e34a166285f3c3fb39 Mon Sep 17 00:00:00 2001
+From: Tianling Shen <cnsztl@gmail.com>
+Date: Wed, 23 Oct 2024 03:35:28 +0800
+Subject: [PATCH] arm64: dts: rockchip: sort props in pmu_io_domains node for
+ NanoPi R3S
+
+The status prop is typically the last prop.
+
+Fixes: 50decd493c83 ("arm64: dts: rockchip: Add FriendlyARM NanoPi R3S board")
+Suggested-by: Jonas Karlman <jonas@kwiboo.se>
+Signed-off-by: Tianling Shen <cnsztl@gmail.com>
+Link: https://lore.kernel.org/r/20241022193537.1117919-4-cnsztl@gmail.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3566-nanopi-r3s.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3566-nanopi-r3s.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3566-nanopi-r3s.dts
+@@ -476,7 +476,6 @@
+ };
+ 
+ &pmu_io_domains {
+-	status = "okay";
+ 	pmuio1-supply = <&vcc3v3_pmu>;
+ 	pmuio2-supply = <&vcc3v3_pmu>;
+ 	vccio1-supply = <&vccio_acodec>;
+@@ -486,6 +485,7 @@
+ 	vccio5-supply = <&vcc_1v8>;
+ 	vccio6-supply = <&vcc_3v3>;
+ 	vccio7-supply = <&vcc_3v3>;
++	status = "okay";
+ };
+ 
+ &sdhci {

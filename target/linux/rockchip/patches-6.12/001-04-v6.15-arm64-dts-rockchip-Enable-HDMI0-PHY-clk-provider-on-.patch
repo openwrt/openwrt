@@ -1,0 +1,28 @@
+From d0f17738778c12be629ba77ff00c43c3e9eb8428 Mon Sep 17 00:00:00 2001
+From: Cristian Ciocaltea <cristian.ciocaltea@collabora.com>
+Date: Tue, 4 Feb 2025 14:40:07 +0200
+Subject: arm64: dts: rockchip: Enable HDMI0 PHY clk provider on RK3588
+
+Since commit c4b09c562086 ("phy: phy-rockchip-samsung-hdptx: Add clock
+provider support"), the HDMI PHY PLL can be used as an alternative and
+more accurate pixel clock source for VOP2 to improve display modes
+handling on RK3588 SoC.
+
+Add the missing #clock-cells property to allow using the clock provider
+functionality of HDMI0 PHY.
+
+Signed-off-by: Cristian Ciocaltea <cristian.ciocaltea@collabora.com>
+Tested-by: FUKAUMI Naoki <naoki@radxa.com>
+Link: https://lore.kernel.org/r/20250204-vop2-hdmi0-disp-modes-v3-4-d71c6a196e58@collabora.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi
+@@ -2813,6 +2813,7 @@
+ 		reg = <0x0 0xfed60000 0x0 0x2000>;
+ 		clocks = <&cru CLK_USB2PHY_HDPTXRXPHY_REF>, <&cru PCLK_HDPTX0>;
+ 		clock-names = "ref", "apb";
++		#clock-cells = <0>;
+ 		#phy-cells = <0>;
+ 		resets = <&cru SRST_HDPTX0>, <&cru SRST_P_HDPTX0>,
+ 			 <&cru SRST_HDPTX0_INIT>, <&cru SRST_HDPTX0_CMN>,

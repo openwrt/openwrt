@@ -1,0 +1,42 @@
+From ba82f56bbf20e4166c988621cd0507509872848e Mon Sep 17 00:00:00 2001
+From: Detlev Casanova <detlev.casanova@collabora.com>
+Date: Fri, 28 Feb 2025 09:50:48 -0500
+Subject: [PATCH] arm64: dts: rockchip: Add SPI NOR device on the ROCK 4D
+
+The SPI NOR chip is connected on the FSPI0 core, so enable the sfc0 node
+and add the flash device to it.
+
+The SPI NOR won't work at higher speed than 50 MHz, specify the limit.
+
+Signed-off-by: Detlev Casanova <detlev.casanova@collabora.com>
+Link: https://lore.kernel.org/r/20250228145304.581349-3-detlev.casanova@collabora.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3576-rock-4d.dts | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3576-rock-4d.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3576-rock-4d.dts
+@@ -701,6 +701,22 @@
+ 	status = "okay";
+ };
+ 
++
++&sfc0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&fspi0_pins &fspi0_csn0>;
++	status = "okay";
++
++	flash@0 {
++		compatible = "jedec,spi-nor";
++		reg = <0>;
++		spi-max-frequency = <50000000>;
++		spi-rx-bus-width = <4>;
++		spi-tx-bus-width = <1>;
++		vcc-supply = <&vcc_1v8_s3>;
++	};
++};
++
+ &u2phy0 {
+ 	status = "okay";
+ };

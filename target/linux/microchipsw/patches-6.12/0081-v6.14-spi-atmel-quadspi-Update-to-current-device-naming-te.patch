@@ -1,0 +1,66 @@
+From 2eaa23a57b91442f98ae2c77ab1258a2bf0065b9 Mon Sep 17 00:00:00 2001
+From: Alexander Dahl <ada@thorsis.com>
+Date: Thu, 9 Jan 2025 10:48:43 +0100
+Subject: [PATCH 101/112] spi: atmel-quadspi: Update to current device naming
+ terminology
+
+For v6.9 the spi subsystem changed the terminology to host and target
+devices, see commit 99769a52464d ("spi: Update the "master/slave"
+terminology in documentation") for reference.  Support for SAMA7G5 was
+forward ported recently from an old vendor branch before that
+terminology change, so naming for the new struct member is adapted to
+follow the current scheme.
+
+Signed-off-by: Alexander Dahl <ada@thorsis.com>
+Link: https://patch.msgid.link/20250109094843.36014-1-ada@thorsis.com
+Signed-off-by: Mark Brown <broonie@kernel.org>
+---
+ drivers/spi/atmel-quadspi.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+--- a/drivers/spi/atmel-quadspi.c
++++ b/drivers/spi/atmel-quadspi.c
+@@ -280,7 +280,7 @@ struct atmel_qspi {
+ 	u32			irq_mask;
+ 	u32			mr;
+ 	u32			scr;
+-	u32			slave_max_speed_hz;
++	u32			target_max_speed_hz;
+ 	struct completion	cmd_completion;
+ 	struct completion	dma_completion;
+ 	dma_addr_t		mmap_phys_base;
+@@ -1041,7 +1041,7 @@ static int atmel_qspi_set_pad_calibratio
+ 
+ 	/* Refresh analogic blocks every 1 ms.*/
+ 	atmel_qspi_write(FIELD_PREP(QSPI_REFRESH_DELAY_COUNTER,
+-				    aq->slave_max_speed_hz / 1000),
++				    aq->target_max_speed_hz / 1000),
+ 			 aq, QSPI_REFRESH);
+ 
+ 	return ret;
+@@ -1064,12 +1064,12 @@ static int atmel_qspi_set_gclk(struct at
+ 			return ret;
+ 	}
+ 
+-	if (aq->slave_max_speed_hz > QSPI_DLLCFG_THRESHOLD_FREQ)
++	if (aq->target_max_speed_hz > QSPI_DLLCFG_THRESHOLD_FREQ)
+ 		atmel_qspi_write(QSPI_DLLCFG_RANGE, aq, QSPI_DLLCFG);
+ 	else
+ 		atmel_qspi_write(0, aq, QSPI_DLLCFG);
+ 
+-	ret = clk_set_rate(aq->gclk, aq->slave_max_speed_hz);
++	ret = clk_set_rate(aq->gclk, aq->target_max_speed_hz);
+ 	if (ret) {
+ 		dev_err(&aq->pdev->dev, "Failed to set generic clock rate.\n");
+ 		return ret;
+@@ -1131,8 +1131,8 @@ static int atmel_qspi_sama7g5_setup(stru
+ {
+ 	struct atmel_qspi *aq = spi_controller_get_devdata(spi->controller);
+ 
+-	/* The controller can communicate with a single slave. */
+-	aq->slave_max_speed_hz = spi->max_speed_hz;
++	/* The controller can communicate with a single peripheral device (target). */
++	aq->target_max_speed_hz = spi->max_speed_hz;
+ 
+ 	return atmel_qspi_sama7g5_init(aq);
+ }

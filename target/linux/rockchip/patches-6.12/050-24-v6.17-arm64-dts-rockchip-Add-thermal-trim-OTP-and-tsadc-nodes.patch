@@ -1,0 +1,91 @@
+From a4053badacf3699023527392c947314b074f5e0e Mon Sep 17 00:00:00 2001
+From: Nicolas Frattaroli <nicolas.frattaroli@collabora.com>
+Date: Tue, 10 Jun 2025 14:32:43 +0200
+Subject: [PATCH] arm64: dts: rockchip: Add thermal trim OTP and tsadc nodes
+
+Thanks to Heiko's work getting OTP working on the RK3576, we can specify
+the thermal sensor trim values which are stored there now, and with my
+driver addition to rockchip_thermal, we can make use of these.
+
+Add them to the devicetree for the SoC.
+
+Signed-off-by: Nicolas Frattaroli <nicolas.frattaroli@collabora.com>
+Link: https://lore.kernel.org/r/20250610-rk3576-tsadc-upstream-v6-7-b6e9efbf1015@collabora.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3576.dtsi | 57 ++++++++++++++++++++++++
+ 1 file changed, 57 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3576.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3576.dtsi
+@@ -1937,6 +1937,30 @@
+ 			log_leakage: log-leakage@22 {
+ 				reg = <0x22 0x1>;
+ 			};
++			bigcore_tsadc_trim: bigcore-tsadc-trim@24 {
++				reg = <0x24 0x2>;
++				bits = <0 10>;
++			};
++			litcore_tsadc_trim: litcore-tsadc-trim@26 {
++				reg = <0x26 0x2>;
++				bits = <0 10>;
++			};
++			ddr_tsadc_trim: ddr-tsadc-trim@28 {
++				reg = <0x28 0x2>;
++				bits = <0 10>;
++			};
++			npu_tsadc_trim: npu-tsadc-trim@2a {
++				reg = <0x2a 0x2>;
++				bits = <0 10>;
++			};
++			gpu_tsadc_trim: gpu-tsadc-trim@2c {
++				reg = <0x2c 0x2>;
++				bits = <0 10>;
++			};
++			soc_tsadc_trim: soc-tsadc-trim@64 {
++				reg = <0x64 0x2>;
++				bits = <0 10>;
++			};
+ 		};
+ 
+ 		sai0: sai@2a600000 {
+@@ -2461,6 +2485,39 @@
+ 			rockchip,hw-tshut-temp = <120000>;
+ 			rockchip,hw-tshut-mode = <0>; /* tshut mode 0:CRU 1:GPIO */
+ 			rockchip,hw-tshut-polarity = <0>; /* tshut polarity 0:LOW 1:HIGH */
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			sensor@0 {
++				reg = <0>;
++				nvmem-cells = <&soc_tsadc_trim>;
++				nvmem-cell-names = "trim";
++			};
++			sensor@1 {
++				reg = <1>;
++				nvmem-cells = <&bigcore_tsadc_trim>;
++				nvmem-cell-names = "trim";
++			};
++			sensor@2 {
++				reg = <2>;
++				nvmem-cells = <&litcore_tsadc_trim>;
++				nvmem-cell-names = "trim";
++			};
++			sensor@3 {
++				reg = <3>;
++				nvmem-cells = <&ddr_tsadc_trim>;
++				nvmem-cell-names = "trim";
++			};
++			sensor@4 {
++				reg = <4>;
++				nvmem-cells = <&npu_tsadc_trim>;
++				nvmem-cell-names = "trim";
++			};
++			sensor@5 {
++				reg = <5>;
++				nvmem-cells = <&gpu_tsadc_trim>;
++				nvmem-cell-names = "trim";
++			};
+ 		};
+ 
+ 		i2c9: i2c@2ae80000 {

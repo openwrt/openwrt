@@ -1,0 +1,104 @@
+ltq-adsl-app: Fix compilation with GCC 14
+
+This fixes the following compile problem:
+```
+checking for asm/types.h... dsl_cpe_linux.c: In function 'DSL_CPE_ThreadInit':
+dsl_cpe_linux.c:779:25: error: assignment to 'DSL_CPE_Thread_t' {aka 'int'} from 'pthread_t' {aka 'struct __pthread *'} makes integer from pointer without a cast [-Wint-conversion]
+  779 |          pThrCntrl->tid = tid;
+      |                         ^
+dsl_cpe_linux.c: In function 'DSL_CPE_ThreadDelete':
+dsl_cpe_linux.c:862:44: error: passing argument 1 of 'pthread_cancel' makes pointer from integer without a cast [-Wint-conversion]
+  862 |             switch(pthread_cancel(pThrCntrl->tid))
+      |                                   ~~~~~~~~~^~~~~
+      |                                            |
+      |                                            DSL_CPE_Thread_t {aka int}
+In file included from dsl_cpe_linux.h:35:
+/builder/shared-workdir/build/staging_dir/toolchain-mips_mips32_gcc-14.2.0_musl/include/pthread.h:98:20: note: expected 'pthread_t' {aka 'struct __pthread *'} but argument is of type 'DSL_CPE_Thread_t' {aka 'int'}
+   98 | int pthread_cancel(pthread_t);
+      |                    ^~~~~~~~~
+dsl_cpe_linux.c: In function 'DSL_CPE_ThreadIdGet':
+dsl_cpe_linux.c:1123:11: error: returning 'pthread_t' {aka 'struct __pthread *'} from a function with return type 'DSL_CPE_Thread_t' {aka 'int'} makes integer from pointer without a cast [-Wint-conversion]
+ 1123 |    return pthread_self();
+      |           ^~~~~~~~~~~~~~
+```
+
+While at it, fix also some additional build warnings.
+
+--- a/src/dsl_cpe_linux.h
++++ b/src/dsl_cpe_linux.h
+@@ -21,7 +21,7 @@
+ #include <stdlib.h>
+ #include <getopt.h>
+ #include <stdio.h>               /* fdopen */
+-#include <sys/fcntl.h>           /* open */
++#include <fcntl.h>               /* open */
+ #include <sys/ioctl.h>           /* ioctl */
+ #include <string.h>              /* memset, strstr, strlen */
+ #include <stdlib.h>              /* strtoul */
+@@ -233,7 +233,7 @@ typedef struct stat              DSL_CPE
+ /**
+    LINUX User Thread - map the Thread ID.
+ */
+-typedef int    DSL_CPE_Thread_t;
++typedef pthread_t    DSL_CPE_Thread_t;
+ 
+ /**
+    LINUX User Thread - function type LINUX User Thread Start Routine.
+--- a/src/dsl_cpe_os_lint_map.h
++++ b/src/dsl_cpe_os_lint_map.h
+@@ -168,7 +168,7 @@ typedef struct timeval           DSL_Tim
+ /**
+    LINUX User Thread - map the Thread ID.
+ */
+-typedef int    DSL_CPE_Thread_t;
++typedef pthread_t    DSL_CPE_Thread_t;
+ 
+ /**
+    LINUX User Thread - function type LINUX User Thread Start Routine.
+--- a/src/dsl_cpe_control.c
++++ b/src/dsl_cpe_control.c
+@@ -2062,7 +2062,7 @@ DSL_Error_t DSL_CPE_ScriptExecute (
+ 
+       /* if the line is empty or a special "#" symbol detected,
+          then go on to the next */
+-      if ((sscanf (buf, "%s", &str_command) == 0) || (buf[0] == '#'))
++      if ((sscanf (buf, "%s", str_command) == 0) || (buf[0] == '#'))
+       {
+          continue;
+       }
+@@ -2075,7 +2075,7 @@ DSL_Error_t DSL_CPE_ScriptExecute (
+ 
+       while(*pFile__++ != '\n');
+ 
+-      if ((sscanf (buf, "%s", &str_command) == 0) || (buf[0] == '#'))
++      if ((sscanf (buf, "%s", str_command) == 0) || (buf[0] == '#'))
+       {
+          continue;
+       }
+@@ -2269,7 +2269,7 @@ DSL_Error_t DSL_CPE_ScriptExecute (
+       {
+          meireg regrdwr;
+ 
+-         sscanf (buf, "%s %s %s", &str_command, &op1, &op2);
++         sscanf (buf, "%s %s %s", str_command, &op1, &op2);
+          regrdwr.iAddress = strtoul (op1, DSL_NULL, 0) + MEI_SPACE_ACCESS;
+ 
+ 
+@@ -2302,7 +2302,7 @@ DSL_Error_t DSL_CPE_ScriptExecute (
+       {
+          meireg regrdwr;
+ 
+-         sscanf (buf, "%s %s %s", &str_command, &op1, &op2);
++         sscanf (buf, "%s %s %s", str_command, &op1, &op2);
+          regrdwr.iAddress = strtoul (op1, DSL_NULL, 0) + MEI_SPACE_ACCESS;
+          if (ioctl (pContext->fd, DANUBE_MEI_CMV_READ, &regrdwr) < 0)
+          {
+@@ -3522,7 +3522,7 @@ DSL_CPE_STATIC  DSL_int_t DSL_CPE_Event_
+          sprintf(sVarName, "DSL_DATARATE_%s_BC%d",
+             pEvent->data.nAccessDir == DSL_DOWNSTREAM ? "DS" : "US",
+             pEvent->data.nChannel == 0 ? 0 : pEvent->data.nChannel == 1 ? 1 : 0);
+-         sprintf(sVarVal, "%lu", pEvent->data.pData->channelStatusData.ActualDataRate);
++         sprintf(sVarVal, "%u", pEvent->data.pData->channelStatusData.ActualDataRate);
+ 
+          if (DSL_CPE_SetEnv(sVarName, sVarVal) == DSL_SUCCESS)
+          {

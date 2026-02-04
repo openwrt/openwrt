@@ -1,0 +1,267 @@
+#!/bin/sh
+
+[ -e /lib/firmware/$FIRMWARE ] && exit 0
+
+. /lib/functions/caldata.sh
+
+board=$(board_name)
+
+case "$FIRMWARE" in
+"ath10k/pre-cal-pci-0000:01:00.0.bin")
+	case "$board" in
+	asus,rt-ac42u)
+		caldata_extract_ubi "Factory" 0x9000 0x2f20
+		;;
+	avm,fritzrepeater-3000)
+		/usr/bin/fritz_cal_extract -i 1 -s 0x3D000 -e 0x212 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader0") || \
+		/usr/bin/fritz_cal_extract -i 1 -s 0x3C800 -e 0x212 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader0") || \
+		/usr/bin/fritz_cal_extract -i 1 -s 0x3C000 -e 0x212 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader0") || \
+		/usr/bin/fritz_cal_extract -i 1 -s 0x3D000 -e 0x212 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader1") || \
+		/usr/bin/fritz_cal_extract -i 1 -s 0x3C800 -e 0x212 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader1") || \
+		/usr/bin/fritz_cal_extract -i 1 -s 0x3C000 -e 0x212 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader1")
+		;;
+	linksys,ea8300|\
+	linksys,mr6350|\
+	linksys,mr8300)
+		caldata_extract "ART" 0x9000 0x2f20
+		# OEM assigns 4 sequential MACs
+		ath10k_patch_mac $(macaddr_setbit_la $(macaddr_add "$(cat /sys/class/net/eth0/address)" 4))
+		;;
+	linksys,whw03)
+		caldata_extract_mmc "0:ART" 0x9000 0x2f20
+		ath10k_patch_mac $(macaddr_add "$(cat /sys/class/net/eth0/address)" 3)
+		;;
+	netgear,rbr40|\
+	netgear,rbs40|\
+	netgear,rbr50|\
+	netgear,rbs50|\
+	netgear,srr60|\
+	netgear,srs60)
+		caldata_extract_mmc "0:ART" 0x9000 0x2f20
+		ath10k_patch_mac $(mmc_get_mac_binary ARTMTD 0x12)
+		;;
+	esac
+	;;
+"ath10k/pre-cal-ahb-a000000.wifi.bin")
+	case "$board" in
+	asus,rt-ac42u)
+		caldata_extract_ubi "Factory" 0x1000 0x2f20
+		;;
+	avm,fritzbox-4040)
+		/usr/bin/fritz_cal_extract -i 1 -s 0x400 -e 0x207 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader_config")
+		;;
+	avm,fritzbox-7530|\
+	avm,fritzrepeater-1200|\
+	avm,fritzrepeater-3000)
+		/usr/bin/fritz_cal_extract -i 1 -s 0x3C000 -e 0x207 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader0") || \
+		/usr/bin/fritz_cal_extract -i 1 -s 0x3C800 -e 0x207 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader0") || \
+		/usr/bin/fritz_cal_extract -i 1 -s 0x3D000 -e 0x207 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader0") || \
+		/usr/bin/fritz_cal_extract -i 1 -s 0x3C000 -e 0x207 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader1") || \
+		/usr/bin/fritz_cal_extract -i 1 -s 0x3C800 -e 0x207 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader1") || \
+		/usr/bin/fritz_cal_extract -i 1 -s 0x3D000 -e 0x207 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader1")
+		;;
+	cellc,rtl30vw)
+		caldata_extract "0:ART" 0x1000 0x2f20
+		;;
+	devolo,magic-2-wifi-next)
+		caldata_extract "ART" 0x1000 0x2f20
+		ath10k_patch_mac $(mtd_get_mac_ascii APPSBLENV WiFiMacAddress0)
+		;;
+	dlink,dap-2610)
+		caldata_extract "ART" 0x1000 0x2f20
+		ath10k_patch_mac $(mtd_get_mac_ascii bdcfg wlanmac)
+		;;
+	engenius,emd1)
+		caldata_extract "0:ART" 0x1000 0x2f20
+		ath10k_patch_mac $(mtd_get_mac_ascii 0:APPSBLENV wlanaddr)
+		;;
+	engenius,emr3500)
+		caldata_extract "0:ART" 0x1000 0x2f20
+		ath10k_patch_mac $(mtd_get_mac_ascii 0:APPSBLENV ethaddr)
+		;;
+	engenius,ens620ext)
+		caldata_extract "ART" 0x1000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) 2)
+		;;
+	extreme-networks,ws-ap3915i|\
+	extreme-networks,ws-ap391x)
+		caldata_extract "ART" 0x1000 0x2f20
+		ath10k_patch_mac $(mtd_get_mac_ascii CFG1 RADIOADDR0)
+		;;
+	linksys,ea8300|\
+	linksys,mr6350|\
+	linksys,mr8300)
+		caldata_extract "ART" 0x1000 0x2f20
+		ath10k_patch_mac $(macaddr_add "$(cat /sys/class/net/eth0/address)" 2)
+		;;
+	linksys,whw03)
+		caldata_extract_mmc "0:ART" 0x1000 0x2f20
+		ath10k_patch_mac $(macaddr_add "$(cat /sys/class/net/eth0/address)" 1)
+		;;
+	mikrotik,cap-ac|\
+	mikrotik,hap-ac2|\
+	mikrotik,hap-ac3|\
+	mikrotik,hap-ac3-lte6-kit|\
+	mikrotik,wap-ac|\
+	mikrotik,wap-ac-lte|\
+	mikrotik,wap-r-ac)
+		wlan_data="/sys/firmware/mikrotik/hard_config/wlan_data"
+		( [ -f "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data" 0x0 0x2f20 ) || \
+		( [ -d "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data/data_0" 0x0 0x2f20 )
+		;;
+	netgear,rbr40|\
+	netgear,rbs40|\
+	netgear,rbr50|\
+	netgear,rbs50|\
+	netgear,srr60|\
+	netgear,srs60)
+		caldata_extract_mmc "0:ART" 0x1000 0x2f20
+		ath10k_patch_mac $(mmc_get_mac_binary ARTMTD 0x0)
+		;;
+	pakedge,wr-1)
+		caldata_extract "0:ART" 0x1000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(get_mac_label) 2)
+		;;
+	teltonika,rutx10|\
+	teltonika,rutx50)
+		caldata_extract "0:ART" 0x1000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary "0:CONFIG" 0x0) 2)
+		;;
+	sony,ncp-hg100-cellular)
+		caldata_extract_mmc "0:ART" 0x1000 0x2f20
+		;;
+	zyxel,nbg6617|\
+	zyxel,wre6606)
+		caldata_extract "ART" 0x1000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) -2)
+		;;
+	esac
+	;;
+"ath10k/pre-cal-ahb-a800000.wifi.bin")
+	case "$board" in
+	avm,fritzbox-4040)
+		/usr/bin/fritz_cal_extract -i 1 -s 0x400 -e 0x208 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader_config")
+		;;
+	avm,fritzbox-7530|\
+	avm,fritzrepeater-1200|\
+	avm,fritzrepeater-3000)
+		/usr/bin/fritz_cal_extract -i 1 -s 0x3C800 -e 0x208 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader0") || \
+		/usr/bin/fritz_cal_extract -i 1 -s 0x3D000 -e 0x208 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader0") || \
+		/usr/bin/fritz_cal_extract -i 1 -s 0x3C000 -e 0x208 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader0") || \
+		/usr/bin/fritz_cal_extract -i 1 -s 0x3C800 -e 0x208 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader1") || \
+		/usr/bin/fritz_cal_extract -i 1 -s 0x3D000 -e 0x208 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader1") || \
+		/usr/bin/fritz_cal_extract -i 1 -s 0x3C000 -e 0x208 -l 12064 -o /lib/firmware/$FIRMWARE $(find_mtd_chardev "urlader1")
+		;;
+	cellc,rtl30vw)
+		caldata_extract "0:ART" 0x5000 0x2f20
+		;;
+	devolo,magic-2-wifi-next)
+		caldata_extract "ART" 0x5000 0x2f20
+		ath10k_patch_mac $(mtd_get_mac_ascii APPSBLENV WiFiMacAddress1)
+		;;
+	dlink,dap-2610)
+		caldata_extract "ART" 0x5000 0x2f20
+		ath10k_patch_mac $(mtd_get_mac_ascii bdcfg wlanmac_a)
+		;;
+	engenius,emd1)
+		caldata_extract "0:ART" 0x5000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii 0:APPSBLENV wlanaddr) 1)
+		;;
+	engenius,emr3500)
+		caldata_extract "0:ART" 0x5000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii 0:APPSBLENV ethaddr) 1)
+		;;
+	engenius,ens620ext)
+		caldata_extract "ART" 0x5000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii u-boot-env ethaddr) 3)
+		;;
+	extreme-networks,ws-ap3915i|\
+	extreme-networks,ws-ap391x)
+		caldata_extract "ART" 0x5000 0x2f20
+		ath10k_patch_mac $(mtd_get_mac_ascii CFG1 RADIOADDR1)
+		;;
+	linksys,ea8300|\
+	linksys,mr6350|\
+	linksys,mr8300)
+		caldata_extract "ART" 0x5000 0x2f20
+		ath10k_patch_mac $(macaddr_add "$(cat /sys/class/net/eth0/address)" 3)
+		;;
+	linksys,whw03)
+		caldata_extract_mmc "0:ART" 0x5000 0x2f20
+		ath10k_patch_mac $(macaddr_add "$(cat /sys/class/net/eth0/address)" 2)
+		;;
+	mikrotik,cap-ac|\
+	mikrotik,hap-ac2|\
+	mikrotik,hap-ac3|\
+	mikrotik,hap-ac3-lte6-kit|\
+	mikrotik,sxtsq-5-ac|\
+	mikrotik,wap-ac|\
+	mikrotik,wap-ac-lte|\
+	mikrotik,wap-r-ac)
+		wlan_data="/sys/firmware/mikrotik/hard_config/wlan_data"
+		( [ -f "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data" 0x8000 0x2f20 ) || \
+		( [ -d "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data/data_2" 0x0 0x2f20 )
+		;;
+	netgear,rbr40|\
+	netgear,rbs40|\
+	netgear,rbr50|\
+	netgear,rbs50|\
+	netgear,srr60|\
+	netgear,srs60)
+		caldata_extract_mmc "0:ART" 0x5000 0x2f20
+		ath10k_patch_mac $(mmc_get_mac_binary ARTMTD 0xc)
+		;;
+	pakedge,wr-1)
+		caldata_extract "0:ART" 0x5000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(get_mac_label) 4)
+		;;
+	teltonika,rutx10|\
+	teltonika,rutx50)
+		caldata_extract "0:ART" 0x5000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_binary "0:CONFIG" 0x0) 3)
+		;;
+	sony,ncp-hg100-cellular)
+		caldata_extract_mmc "0:ART" 0x5000 0x2f20
+		;;
+	zyxel,nbg6617|\
+	zyxel,wre6606)
+		caldata_extract "ART" 0x5000 0x2f20
+		ath10k_patch_mac $(macaddr_add $(cat /sys/class/net/eth0/address) -1)
+		;;
+	esac
+	;;
+"ath10k/QCA4019/hw1.0/board-ahb-a000000.wifi.bin")
+	case "$board" in
+	mikrotik,cap-ac|\
+	mikrotik,hap-ac2|\
+	mikrotik,hap-ac3|\
+	mikrotik,hap-ac3-lte6-kit|\
+	mikrotik,wap-ac|\
+	mikrotik,wap-ac-lte|\
+	mikrotik,wap-r-ac)
+		wlan_data="/sys/firmware/mikrotik/hard_config/wlan_data"
+		( [ -f "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data" 0x2f20 0x2f20 ) || \
+		( [ -d "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data/data_0" 0x2f20 0x2f20 )
+		;;
+	esac
+	;;
+"ath10k/QCA4019/hw1.0/board-ahb-a800000.wifi.bin")
+	case "$board" in
+	mikrotik,cap-ac|\
+	mikrotik,hap-ac2|\
+	mikrotik,hap-ac3|\
+	mikrotik,hap-ac3-lte6-kit|\
+	mikrotik,sxtsq-5-ac|\
+	mikrotik,wap-ac|\
+	mikrotik,wap-ac-lte|\
+	mikrotik,wap-r-ac)
+		wlan_data="/sys/firmware/mikrotik/hard_config/wlan_data"
+		( [ -f "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data" 0xaf20 0x2f20 ) || \
+		( [ -d "$wlan_data" ] && caldata_sysfsload_from_file "$wlan_data/data_2" 0x2f20 0x2f20 )
+		;;
+	esac
+	;;
+*)
+	exit 1
+	;;
+esac

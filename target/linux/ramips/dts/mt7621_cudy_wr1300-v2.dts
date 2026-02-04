@@ -1,0 +1,28 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621_cudy_wr1300-v2v3.dtsi"
+
+/ {
+	compatible = "cudy,wr1300-v2", "mediatek,mt7621-soc";
+	model = "Cudy WR1300 v2";
+};
+
+&pcie1 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_0>, <&macaddr_bdinfo_de00 0>;
+		nvmem-cell-names = "eeprom", "mac-address";
+		ieee80211-freq-limit = <2400000 2500000>;
+	};
+};
+
+&pcie0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_8000>, <&macaddr_bdinfo_de00 2>;
+		nvmem-cell-names = "eeprom", "mac-address";
+		ieee80211-freq-limit = <5000000 6000000>;
+	};
+};

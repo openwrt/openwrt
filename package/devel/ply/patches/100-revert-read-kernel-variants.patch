@@ -1,0 +1,94 @@
+From 755220eb974708615b14bcdc6412319698e0485d Mon Sep 17 00:00:00 2001
+From: Tony Ambardar <Tony.Ambardar@gmail.com>
+Date: Thu, 22 Dec 2022 22:53:10 -0800
+Subject: [PATCH] Revert "ply: Use new read_kernel variants"
+
+This reverts commit 17864b9818cceca09f31a346908afe1c718c10c5.
+
+Fixes: 17864b98 ("ply: Use new read_kernel variants")
+Signed-off-by: Tony Ambardar <Tony.Ambardar@gmail.com>
+---
+ src/libply/built-in/memory.c     | 10 +++++-----
+ src/libply/ir.c                  | 10 +++++-----
+ src/libply/provider/tracepoint.c |  2 +-
+ 3 files changed, 11 insertions(+), 11 deletions(-)
+
+--- a/src/libply/built-in/memory.c
++++ b/src/libply/built-in/memory.c
+@@ -140,7 +140,7 @@ static int str_ir_post(const struct func
+ 	ir_emit_ldbp(pb->ir, BPF_REG_1, n->sym->irs.stack);
+ 	ir_emit_insn(ir, MOV_IMM((int32_t)type_sizeof(n->sym->type)), BPF_REG_2, 0);
+ 	ir_emit_sym_to_reg(ir, BPF_REG_3, ptr->sym);
+-	ir_emit_insn(ir, CALL(BPF_FUNC_probe_read_kernel_str), 0, 0);
++	ir_emit_insn(ir, CALL(BPF_FUNC_probe_read_str), 0, 0);
+ 	return 0;
+ }
+ 
+@@ -305,7 +305,7 @@ static int struct_dot_ir_pre(const struc
+ 		sou->sym->irs.hint.dot = 1;
+ 
+ 		/* this also means we need to put ourselves on the
+-		 * stack since data will be loaded via probe_read_kernel */
++		 * stack since data will be loaded via probe_read */
+ 		n->sym->irs.hint.stack = 1;
+ 	}
+ 	return 0;
+@@ -334,7 +334,7 @@ static int struct_dot_ir_post(const stru
+ 
+ 		ir_emit_sym_to_reg(pb->ir, BPF_REG_3, ptr->sym);
+ 		ir_emit_insn(pb->ir, ALU64_IMM(BPF_ADD, offset), BPF_REG_3, 0);
+-		goto probe_read_kernel;
++		goto probe_read;
+ 	}
+ 
+ 	offset += sou->sym->irs.stack;
+@@ -346,10 +346,10 @@ static int struct_dot_ir_post(const stru
+ 	}
+ 
+ 	ir_emit_insn(pb->ir, ALU_IMM(BPF_ADD, offset), BPF_REG_3, 0);
+-probe_read_kernel:
++probe_read:
+ 	ir_emit_insn(pb->ir, MOV_IMM((int32_t)dst->size), BPF_REG_2, 0);
+ 	ir_emit_ldbp(pb->ir, BPF_REG_1, dst->stack);
+-	ir_emit_insn(pb->ir, CALL(BPF_FUNC_probe_read_kernel), 0, 0);
++	ir_emit_insn(pb->ir, CALL(BPF_FUNC_probe_read), 0, 0);
+ 	/* TODO if (r0) exit(r0); */
+ 	return 0;
+ }
+--- a/src/libply/ir.c
++++ b/src/libply/ir.c
+@@ -38,10 +38,10 @@ static const char *bpf_func_name(enum bp
+ 		return "map_update_elem";
+ 	case BPF_FUNC_perf_event_output:
+ 		return "perf_event_output";
+-	case BPF_FUNC_probe_read_kernel:
+-		return "probe_read_kernel";
+-	case BPF_FUNC_probe_read_kernel_str:
+-		return "probe_read_kernel_str";
++	case BPF_FUNC_probe_read:
++		return "probe_read";
++	case BPF_FUNC_probe_read_str:
++		return "probe_read_str";
+ 	case BPF_FUNC_trace_printk:
+ 		return "trace_printk";
+ 	default:
+@@ -416,7 +416,7 @@ void ir_emit_read_to_sym(struct ir *ir,
+ 	if (src != BPF_REG_3)
+ 		ir_emit_insn(ir, MOV, BPF_REG_3, src);
+ 
+-	ir_emit_insn(ir, CALL(BPF_FUNC_probe_read_kernel), 0, 0);
++	ir_emit_insn(ir, CALL(BPF_FUNC_probe_read), 0, 0);
+ 	/* TODO if (r0) exit(r0); */
+ }
+ 
+--- a/src/libply/provider/tracepoint.c
++++ b/src/libply/provider/tracepoint.c
+@@ -68,7 +68,7 @@ static int tracepoint_dyn_ir_post(const
+ 	ir_emit_insn(ir, ALU_IMM(BPF_AND, 0xffff), BPF_REG_4, 0);
+ 	ir_emit_insn(ir, ALU64(BPF_ADD), BPF_REG_3, BPF_REG_4);
+ 
+-	ir_emit_insn(ir, CALL(BPF_FUNC_probe_read_kernel), 0, 0);
++	ir_emit_insn(ir, CALL(BPF_FUNC_probe_read), 0, 0);
+ 	return 0;
+ }
+ 

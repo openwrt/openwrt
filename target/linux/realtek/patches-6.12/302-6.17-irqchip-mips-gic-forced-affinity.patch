@@ -1,0 +1,47 @@
+From 2250db8628a0d8293ad2e0671138b848a185fba1 Mon Sep 17 00:00:00 2001
+From: Markus Stockhausen <markus.stockhausen@gmx.de>
+Date: Sat, 21 Jun 2025 01:49:51 -0400
+Subject: irqchip/mips-gic: Allow forced affinity
+
+Devices of the Realtek MIPS Otto platform use the official rtl-otto-timer
+as clock event generator and CPU clocksource. It is registered for each CPU
+startup via cpuhp_setup_state() and forces the affinity of the clockevent
+interrupts to the appropriate CPU via irq_force_affinity().
+
+On the "smaller" devices with a vendor specific interrupt controller
+(supported by irq-realtek-rtl) the registration works fine. The "larger"
+RTL931x series is based on a MIPS interAptiv dual core with a MIPS GIC
+controller. Interrupt routing setup is cancelled because gic_set_affinity()
+does not accept the current (not yet online) CPU as a target.
+
+Relax the checks by evaluating the force parameter that is provided for
+exactly this purpose like in other drivers. With this the affinity can be
+set as follows:
+
+ - force = false: allow to set affinity to any online cpu
+ - force = true:  allow to set affinity to any cpu
+
+Co-developed-by: Sebastian Gottschall <s.gottschall@dd-wrt.com>
+Signed-off-by: Sebastian Gottschall <s.gottschall@dd-wrt.com>
+Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Link: https://lore.kernel.org/all/20250621054952.380374-1-markus.stockhausen@gmx.de
+---
+ drivers/irqchip/irq-mips-gic.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+--- a/drivers/irqchip/irq-mips-gic.c
++++ b/drivers/irqchip/irq-mips-gic.c
+@@ -263,7 +263,11 @@ static int gic_set_affinity(struct irq_d
+ 	unsigned long flags;
+ 	unsigned int cpu;
+ 
+-	cpu = cpumask_first_and(cpumask, cpu_online_mask);
++	if (force)
++		cpu = cpumask_first(cpumask);
++	else
++		cpu = cpumask_first_and(cpumask, cpu_online_mask);
++
+ 	if (cpu >= NR_CPUS)
+ 		return -EINVAL;
+ 

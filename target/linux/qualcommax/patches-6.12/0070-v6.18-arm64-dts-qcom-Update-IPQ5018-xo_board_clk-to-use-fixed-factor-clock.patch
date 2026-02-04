@@ -1,0 +1,33 @@
+From 5ca3d42384a66bcb66f91d75da16ec9e9f053aab Mon Sep 17 00:00:00 2001
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Mon, 21 Jul 2025 10:04:36 +0400
+Subject: arm64: dts: qcom: Update IPQ5018 xo_board_clk to use fixed factor
+ clock
+
+The xo_board_clk is fixed to 24 MHZ, which is routed from WiFi output
+clock 96 MHZ (also being the reference clock of CMN PLL) divided by 4
+to the analog block routing channel. Update the xo_board_clk nodes in
+the board DTS files to use clock-div/clock-mult accordingly.
+
+Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+Link: https://lore.kernel.org/r/20250721-ipq5018-cmn-pll-v5-2-4cbf3479af65@outlook.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+---
+ arch/arm64/boot/dts/qcom/ipq5018.dtsi | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+(limited to 'arch/arm64/boot/dts/qcom/ipq5018.dtsi')
+
+--- a/arch/arm64/boot/dts/qcom/ipq5018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
+@@ -44,7 +44,8 @@
+ 		};
+ 
+ 		xo_board_clk: xo-board-clk {
+-			compatible = "fixed-clock";
++			compatible = "fixed-factor-clock";
++			clocks = <&ref_96mhz_clk>;
+ 			#clock-cells = <0>;
+ 		};
+ 

@@ -1,0 +1,37 @@
+From 010badc96adbafed214d9cba0236a8a832dbfc77 Mon Sep 17 00:00:00 2001
+From: Liangbin Lian <jjm2473@gmail.com>
+Date: Mon, 21 Aug 2023 10:26:28 +0800
+Subject: [PATCH] fix netdevice notifier
+
+rtw_ndev_notifier_call should ignore network devices created by other drivers,
+and it does so, but when CONFIG_WIRELESS_EXT=n, it does not behave as expected.
+
+---
+ os_dep/linux/os_intfs.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/os_dep/linux/os_intfs.c
++++ b/os_dep/linux/os_intfs.c
+@@ -746,6 +746,8 @@ u16 rtw_recv_select_queue(struct sk_buff
+ }
+ 
+ #endif
++int rtw_ndev_init(struct net_device *dev);
++
+ static int rtw_ndev_notifier_call(struct notifier_block * nb, unsigned long state, void *ptr)
+ {
+ #if (LINUX_VERSION_CODE>=KERNEL_VERSION(3,11,0))
+@@ -761,6 +763,13 @@ static int rtw_ndev_notifier_call(struct
+ 	if (dev->do_ioctl != rtw_ioctl)
+ #endif
+ 		return NOTIFY_DONE;
++#else
++#if (LINUX_VERSION_CODE>=KERNEL_VERSION(2,6,29))
++	if (dev->netdev_ops->ndo_init != rtw_ndev_init)
++#else
++	if (dev->init != rtw_ndev_init)
++#endif
++		return NOTIFY_DONE;
+ #endif
+ 
+ 	DBG_871X_LEVEL(_drv_info_, FUNC_NDEV_FMT" state:%lu\n", FUNC_NDEV_ARG(dev), state);

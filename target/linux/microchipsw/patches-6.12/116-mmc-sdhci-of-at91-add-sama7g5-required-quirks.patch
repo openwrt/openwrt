@@ -1,0 +1,24 @@
+From f1f3703830bfc8d35e1535f78f38a4b5799f0e99 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Mon, 19 Dec 2022 12:52:00 +0200
+Subject: [PATCH 095/110] mmc: sdhci-of-at91: add sama7g5 required quirks
+
+Add quirks for sama7g5 product
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+(cherry picked from linux-6.1-trunk/at91/mmc)
+Signed-off-by: Andrei Simion <andrei.simion@microchip.com>
+---
+ drivers/mmc/host/sdhci-of-at91.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/mmc/host/sdhci-of-at91.c
++++ b/drivers/mmc/host/sdhci-of-at91.c
+@@ -232,6 +232,7 @@ static const struct sdhci_at91_soc_data
+ 	.baseclk_is_generated_internally = true,
+ 	.divider_for_baseclk = 2,
+ 	.max_sdr104_clk = 200000000,
++	.quirks2 = SDHCI_QUIRK2_AT91_HS400_PRESET,
+ };
+ 
+ static const struct of_device_id sdhci_at91_dt_match[] = {

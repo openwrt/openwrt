@@ -1,0 +1,122 @@
+From 6e84c752630600be74db11feae869d333c55fe1c Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Thu, 24 Oct 2024 00:01:23 +0200
+Subject: [PATCH 47/82] net: sparx5: add sparx5 context pointer to a few
+ functions
+
+In preparation for lan969x, add the sparx5 context pointer to certain
+IFH (Internal Frame Header) functions. This is required, as the
+is_sparx5() function will be used here in a subsequent patch.
+
+Reviewed-by: Steen Hegelund <Steen.Hegelund@microchip.com>
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Link: https://patch.msgid.link/20241024-sparx5-lan969x-switch-driver-2-v2-4-a0b5fae88a0f@microchip.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/ethernet/microchip/sparx5/sparx5_fdma.c |  2 +-
+ drivers/net/ethernet/microchip/sparx5/sparx5_main.h | 11 +++++++----
+ .../net/ethernet/microchip/sparx5/sparx5_netdev.c   |  9 ++++++---
+ .../net/ethernet/microchip/sparx5/sparx5_packet.c   | 13 ++++++++-----
+ 4 files changed, 22 insertions(+), 13 deletions(-)
+
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_fdma.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_fdma.c
+@@ -154,7 +154,7 @@ static bool sparx5_fdma_rx_get_frame(str
+ 	skb = rx->skb[fdma->dcb_index][fdma->db_index];
+ 	skb_put(skb, fdma_db_len_get(db_hw));
+ 	/* Now do the normal processing of the skb */
+-	sparx5_ifh_parse((u32 *)skb->data, &fi);
++	sparx5_ifh_parse(sparx5, (u32 *)skb->data, &fi);
+ 	/* Map to port netdev */
+ 	port = fi.src_port < sparx5->data->consts->n_ports ?
+ 		       sparx5->ports[fi.src_port] :
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
+@@ -401,7 +401,7 @@ struct frame_info {
+ };
+ 
+ void sparx5_xtr_flush(struct sparx5 *sparx5, u8 grp);
+-void sparx5_ifh_parse(u32 *ifh, struct frame_info *info);
++void sparx5_ifh_parse(struct sparx5 *sparx5, u32 *ifh, struct frame_info *info);
+ irqreturn_t sparx5_xtr_handler(int irq, void *_priv);
+ netdev_tx_t sparx5_port_xmit_impl(struct sk_buff *skb, struct net_device *dev);
+ int sparx5_manual_injection_mode(struct sparx5 *sparx5);
+@@ -469,10 +469,13 @@ static inline int sparx5_dcb_init(struct
+ #endif
+ 
+ /* sparx5_netdev.c */
+-void sparx5_set_port_ifh_timestamp(void *ifh_hdr, u64 timestamp);
++void sparx5_set_port_ifh_timestamp(struct sparx5 *sparx5, void *ifh_hdr,
++				   u64 timestamp);
+ void sparx5_set_port_ifh_rew_op(void *ifh_hdr, u32 rew_op);
+-void sparx5_set_port_ifh_pdu_type(void *ifh_hdr, u32 pdu_type);
+-void sparx5_set_port_ifh_pdu_w16_offset(void *ifh_hdr, u32 pdu_w16_offset);
++void sparx5_set_port_ifh_pdu_type(struct sparx5 *sparx5, void *ifh_hdr,
++				  u32 pdu_type);
++void sparx5_set_port_ifh_pdu_w16_offset(struct sparx5 *sparx5, void *ifh_hdr,
++					u32 pdu_w16_offset);
+ void sparx5_set_port_ifh(struct sparx5 *sparx5, void *ifh_hdr, u16 portno);
+ bool sparx5_netdevice_check(const struct net_device *dev);
+ struct net_device *sparx5_create_netdev(struct sparx5 *sparx5, u32 portno);
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_netdev.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_netdev.c
+@@ -81,17 +81,20 @@ void sparx5_set_port_ifh_rew_op(void *if
+ 	ifh_encode_bitfield(ifh_hdr, rew_op, VSTAX + 32,  10);
+ }
+ 
+-void sparx5_set_port_ifh_pdu_type(void *ifh_hdr, u32 pdu_type)
++void sparx5_set_port_ifh_pdu_type(struct sparx5 *sparx5, void *ifh_hdr,
++				  u32 pdu_type)
+ {
+ 	ifh_encode_bitfield(ifh_hdr, pdu_type, 191, 4);
+ }
+ 
+-void sparx5_set_port_ifh_pdu_w16_offset(void *ifh_hdr, u32 pdu_w16_offset)
++void sparx5_set_port_ifh_pdu_w16_offset(struct sparx5 *sparx5, void *ifh_hdr,
++					u32 pdu_w16_offset)
+ {
+ 	ifh_encode_bitfield(ifh_hdr, pdu_w16_offset, 195, 6);
+ }
+ 
+-void sparx5_set_port_ifh_timestamp(void *ifh_hdr, u64 timestamp)
++void sparx5_set_port_ifh_timestamp(struct sparx5 *sparx5, void *ifh_hdr,
++				   u64 timestamp)
+ {
+ 	ifh_encode_bitfield(ifh_hdr, timestamp, 232,  40);
+ }
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_packet.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_packet.c
+@@ -32,7 +32,7 @@ void sparx5_xtr_flush(struct sparx5 *spa
+ 	spx5_wr(0, sparx5, QS_XTR_FLUSH);
+ }
+ 
+-void sparx5_ifh_parse(u32 *ifh, struct frame_info *info)
++void sparx5_ifh_parse(struct sparx5 *sparx5, u32 *ifh, struct frame_info *info)
+ {
+ 	u8 *xtr_hdr = (u8 *)ifh;
+ 
+@@ -72,7 +72,7 @@ static void sparx5_xtr_grp(struct sparx5
+ 		ifh[i] = spx5_rd(sparx5, QS_XTR_RD(grp));
+ 
+ 	/* Decode IFH (what's needed) */
+-	sparx5_ifh_parse(ifh, &fi);
++	sparx5_ifh_parse(sparx5, ifh, &fi);
+ 
+ 	/* Map to port netdev */
+ 	port = fi.src_port < sparx5->data->consts->n_ports ?
+@@ -242,9 +242,12 @@ netdev_tx_t sparx5_port_xmit_impl(struct
+ 			return NETDEV_TX_BUSY;
+ 
+ 		sparx5_set_port_ifh_rew_op(ifh, SPARX5_SKB_CB(skb)->rew_op);
+-		sparx5_set_port_ifh_pdu_type(ifh, SPARX5_SKB_CB(skb)->pdu_type);
+-		sparx5_set_port_ifh_pdu_w16_offset(ifh, SPARX5_SKB_CB(skb)->pdu_w16_offset);
+-		sparx5_set_port_ifh_timestamp(ifh, SPARX5_SKB_CB(skb)->ts_id);
++		sparx5_set_port_ifh_pdu_type(sparx5, ifh,
++					     SPARX5_SKB_CB(skb)->pdu_type);
++		sparx5_set_port_ifh_pdu_w16_offset(sparx5, ifh,
++						   SPARX5_SKB_CB(skb)->pdu_w16_offset);
++		sparx5_set_port_ifh_timestamp(sparx5, ifh,
++					      SPARX5_SKB_CB(skb)->ts_id);
+ 	}
+ 
+ 	skb_tx_timestamp(skb);

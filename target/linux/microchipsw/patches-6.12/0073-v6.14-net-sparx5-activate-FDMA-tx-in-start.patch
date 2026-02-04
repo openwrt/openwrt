@@ -1,0 +1,61 @@
+From 9415d95bb109ed59b4487ff2a90ef8309a8e7e06 Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Mon, 13 Jan 2025 20:36:07 +0100
+Subject: [PATCH 78/82] net: sparx5: activate FDMA tx in start()
+
+The function sparx5_fdma_tx_activate() is responsible for configuring
+the TX FDMA instance and activating the channel. TX activation has
+previously been done in the xmit() function, when the first frame is
+transmitted. Now that we have separate functions for starting and
+stopping the FDMA, it seems reasonable to move the TX activation to the
+start function. This change has no implications on the functionality.
+
+Reviewed-by: Steen Hegelund <Steen.Hegelund@microchip.com>
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Link: https://patch.msgid.link/20250113-sparx5-lan969x-switch-driver-5-v2-3-c468f02fd623@microchip.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/ethernet/microchip/sparx5/sparx5_fdma.c | 11 ++++-------
+ 1 file changed, 4 insertions(+), 7 deletions(-)
+
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_fdma.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_fdma.c
+@@ -217,7 +217,6 @@ int sparx5_fdma_xmit(struct sparx5 *spar
+ {
+ 	struct sparx5_tx *tx = &sparx5->tx;
+ 	struct fdma *fdma = &tx->fdma;
+-	static bool first_time = true;
+ 	void *virt_addr;
+ 
+ 	fdma_dcb_advance(fdma);
+@@ -238,12 +237,8 @@ int sparx5_fdma_xmit(struct sparx5 *spar
+ 		     FDMA_DCB_STATUS_BLOCKO(0) |
+ 		     FDMA_DCB_STATUS_BLOCKL(skb->len + IFH_LEN * 4 + 4));
+ 
+-	if (first_time) {
+-		sparx5_fdma_tx_activate(sparx5, tx);
+-		first_time = false;
+-	} else {
+-		sparx5_fdma_reload(sparx5, fdma);
+-	}
++	sparx5_fdma_reload(sparx5, fdma);
++
+ 	return NETDEV_TX_OK;
+ }
+ 
+@@ -456,6 +451,7 @@ static u32 sparx5_fdma_port_ctrl(struct
+ int sparx5_fdma_start(struct sparx5 *sparx5)
+ {
+ 	struct sparx5_rx *rx = &sparx5->rx;
++	struct sparx5_tx *tx = &sparx5->tx;
+ 
+ 	netif_napi_add_weight(rx->ndev,
+ 			      &rx->napi,
+@@ -465,6 +461,7 @@ int sparx5_fdma_start(struct sparx5 *spa
+ 	napi_enable(&rx->napi);
+ 
+ 	sparx5_fdma_rx_activate(sparx5, rx);
++	sparx5_fdma_tx_activate(sparx5, tx);
+ 
+ 	return 0;
+ }

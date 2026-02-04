@@ -1,0 +1,17 @@
+. /lib/functions.sh
+. /lib/upgrade/common.sh
+
+move_config() {
+	local board=$(board_name)
+	local partdev
+
+	export_bootdevice && export_partdevice partdev 1 && {
+		mount -o rw,noatime "/dev/$partdev" /mnt
+		[ -f "/mnt/$BACKUP_FILE" ] && {
+			mv -f "/mnt/$BACKUP_FILE" /
+		}
+		umount /mnt
+	}
+}
+
+boot_hook_add preinit_mount_root move_config

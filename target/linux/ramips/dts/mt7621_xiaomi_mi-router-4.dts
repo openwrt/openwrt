@@ -1,0 +1,111 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include <dt-bindings/leds/common.h>
+
+#include "mt7621_xiaomi_nand_128m.dtsi"
+
+/ {
+	compatible = "xiaomi,mi-router-4", "mediatek,mt7621-soc";
+	model = "Xiaomi Mi Router 4";
+
+	aliases {
+		led-boot = &led_status_yellow;
+		led-failsafe = &led_status_red;
+		led-running = &led_status_blue;
+		led-upgrade = &led_status_yellow;
+		label-mac-device = &gmac0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_status_red: status_red {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_blue: status_blue {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_yellow: status_yellow {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_YELLOW>;
+			gpios = <&gpio 10 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&keys {
+	minet {
+		label = "minet";
+		gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+		linux,code = <KEY_WPS_BUTTON>;
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_0>;
+		nvmem-cell-names = "eeprom";
+		ieee80211-freq-limit = <2400000 2500000>;
+	};
+};
+
+&pcie1 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_8000>;
+		nvmem-cell-names = "eeprom";
+		ieee80211-freq-limit = <5000000 6000000>;
+	};
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_e000>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gmac1 {
+	status = "okay";
+	label = "wan";
+	phy-handle = <&ethphy4>;
+
+	nvmem-cells = <&macaddr_factory_e006>;
+	nvmem-cell-names = "mac-address";
+};
+
+&ethphy4 {
+	/delete-property/ interrupts;
+};
+
+&switch0 {
+	ports {
+		port@1 {
+			status = "okay";
+			label = "lan2";
+		};
+
+		port@2 {
+			status = "okay";
+			label = "lan1";
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "jtag", "uart2", "uart3", "wdt";
+		function = "gpio";
+	};
+};

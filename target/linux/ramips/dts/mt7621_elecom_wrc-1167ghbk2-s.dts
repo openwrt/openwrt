@@ -1,0 +1,210 @@
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "elecom,wrc-1167ghbk2-s", "mediatek,mt7621-soc";
+	model = "ELECOM WRC-1167GHBK2-S";
+
+	aliases {
+		led-boot = &led_power_green;
+		led-failsafe = &led_power_green;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_green;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		wlan2g {
+			label = "white:wlan2g";
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0radio";
+		};
+
+		wlan5g {
+			label = "white:wlan5g";
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_green: power_green {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
+		};
+
+		power_blue {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 8 GPIO_ACTIVE_HIGH>;
+		};
+
+		wps {
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
+		};
+
+		power_red {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+	};
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_e000 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gmac1 {
+	status = "okay";
+	label = "wan";
+	phy-handle = <&ethphy0>;
+
+	nvmem-cells = <&macaddr_factory_e006>;
+	nvmem-cell-names = "mac-address";
+};
+
+&ethphy0 {
+	/delete-property/ interrupts;
+};
+
+&switch0 {
+	ports {
+		port@1 {
+			status = "okay";
+			label = "lan4";
+		};
+
+		port@2 {
+			status = "okay";
+			label = "lan3";
+		};
+
+		port@3 {
+			status = "okay";
+			label = "lan2";
+		};
+
+		port@4 {
+			status = "okay";
+			label = "lan1";
+		};
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "u-boot-env";
+				reg = <0x30000 0x10000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "factory";
+				reg = <0x40000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x4da8>;
+					};
+
+					macaddr_factory_e000: macaddr@e000 {
+						compatible = "mac-base";
+						reg = <0xe000 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					macaddr_factory_e006: macaddr@e006 {
+						reg = <0xe006 0x6>;
+					};
+				};
+			};
+
+			partition@50000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x50000 0xf20000>;
+			};
+
+			partition@f70000 {
+				label = "user_data";
+				reg = <0xf70000 0x80000>;
+				read-only;
+			};
+
+			partition@ff0000 {
+				label = "NVRAM";
+				reg = <0xff0000 0x10000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "i2c", "uart3", "jtag", "wdt";
+		function = "gpio";
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_0>, <&macaddr_factory_e000 1>;
+		nvmem-cell-names = "eeprom", "mac-address";
+	};
+};
+
+&xhci {
+	status = "disabled";
+};

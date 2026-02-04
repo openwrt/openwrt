@@ -1,0 +1,31 @@
+From e62acaef5d3b67648a7161b329ae8a5afce8c682 Mon Sep 17 00:00:00 2001
+From: Bartosz Golaszewski <bartosz.golaszewski@linaro.org>
+Date: Thu, 12 Jun 2025 15:15:16 +0200
+Subject: [PATCH] pinctrl: xway: statify xway_pinconf_group_set()
+
+This function is not exported and is only used locally. Make it static.
+
+Signed-off-by: Bartosz Golaszewski <bartosz.golaszewski@linaro.org>
+Link: https://lore.kernel.org/20250612-gpiochip-set-rv-pinctrl-remaining-v1-7-556b0a530cd4@linaro.org
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ drivers/pinctrl/pinctrl-xway.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/drivers/pinctrl/pinctrl-xway.c
++++ b/drivers/pinctrl/pinctrl-xway.c
+@@ -1228,10 +1228,10 @@ static int xway_pinconf_set(struct pinct
+ 	return 0;
+ }
+ 
+-int xway_pinconf_group_set(struct pinctrl_dev *pctldev,
+-			unsigned selector,
+-			unsigned long *configs,
+-			unsigned num_configs)
++static int xway_pinconf_group_set(struct pinctrl_dev *pctldev,
++				  unsigned int selector,
++				  unsigned long *configs,
++				  unsigned int num_configs)
+ {
+ 	struct ltq_pinmux_info *info = pinctrl_dev_get_drvdata(pctldev);
+ 	int i, ret = 0;

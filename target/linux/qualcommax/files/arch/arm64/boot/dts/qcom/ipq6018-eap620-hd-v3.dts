@@ -1,0 +1,50 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "ipq6018-tplink-eap6xx-outdoor.dtsi"
+
+/ {
+	model = "TP-Link EAP620HD v3";
+	compatible = "tplink,eap620-hd-v3", "qcom,ipq6018";
+
+	/* Delete EAP6xx outdoor leds node to redefine it. */
+	/delete-node/ leds;
+
+	aliases {
+		led-boot = &led_status_blue;
+		led-failsafe = &led_status_blue;
+		led-running = &led_status_blue;
+		led-upgrade = &led_status_blue;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_status_blue: status-blue {
+			function = LED_FUNCTION_STATUS;
+			gpios = <&tlmm 35 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_BLUE>;
+		};
+	};
+};
+
+&mdio {
+	rtl8211f_4: ethernet-phy@4 {
+		reg = <4>;
+		compatible = "ethernet-phy-ieee802.3-c22";
+	};
+};
+
+&tlmm {
+	gpio-reserved-ranges = <20 1>;
+};
+
+&switch {
+	switch_mac_mode1 = <MAC_MODE_SGMII_PLUS>;
+};
+
+&wifi {
+	qcom,ath11k-calibration-variant = "TP-Link-EAP620-HD-v3";
+	status = "okay";
+};
