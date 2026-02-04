@@ -78,7 +78,12 @@ hostapd_append_wpa_key_mgmt() {
 		owe)
 			append wpa_key_mgmt "OWE"
 		;;
+		dpp)
+			append wpa_key_mgmt "DPP"
+		;;
 	esac
+
+	[ "$dpp" -gt 0 ] && [ "$auth_type" != "dpp" ] && append wpa_key_mgmt "DPP"
 
 	[ "$fils" -gt 0 ] && {
 		case "$auth_type" in
@@ -97,6 +102,7 @@ hostapd_append_wpa_key_mgmt() {
 			;;
 		esac
 	}
+
 }
 
 hostapd_add_log_config() {
@@ -400,6 +406,9 @@ hostapd_common_add_bss_config() {
 	config_add_boolean fils
 	config_add_string fils_dhcp
 
+	config_add_boolean dpp
+	config_add_string dpp_connector dpp_csign dpp_netaccesskey
+
 	config_add_int ocv
 	config_add_boolean beacon_prot spp_amsdu
 
@@ -563,9 +572,10 @@ hostapd_set_bss_options() {
 		ppsk airtime_bss_weight airtime_bss_limit airtime_sta_weight \
 		multicast_to_unicast_all proxy_arp per_sta_vif na_mcast_to_ucast \
 		eap_server eap_user_file ca_cert server_cert private_key private_key_passwd server_id radius_server_clients radius_server_auth_port \
-		vendor_elements fils ocv beacon_prot spp_amsdu apup rsn_override
+		vendor_elements fils ocv beacon_prot spp_amsdu apup rsn_override dpp
 
 	set_default rsn_override 1
+	set_default dpp 0
 	set_default fils 0
 	set_default isolate 0
 	set_default maxassoc 0
@@ -639,7 +649,7 @@ hostapd_set_bss_options() {
 	[ -n "$spp_amsdu" ] && append bss_conf "spp_amsdu=$spp_amsdu" "$N"
 
 	case "$auth_type" in
-		sae|owe|eap2|eap192)
+		sae|owe|eap2|eap192|dpp)
 			set_default ieee80211w 2
 			set_default sae_require_mfp 1
 			[ "$ppsk" -eq 0 ] && set_default sae_pwe 2
@@ -672,6 +682,13 @@ hostapd_set_bss_options() {
 			# Here we make the assumption that if we're in open mode
 			# with WPS enabled, we got to be in unconfigured state.
 			wps_not_configured=1
+		;;
+		dpp)
+			json_get_vars dpp_connector dpp_csign dpp_netaccesskey
+
+			[ -n "$dpp_connector" ] && append bss_conf "dpp_connector=$dpp_connector" "$N"
+			[ -n "$dpp_csign" ] && append bss_conf "dpp_csign=$dpp_csign" "$N"
+			[ -n "$dpp_netaccesskey" ] && append bss_conf "dpp_netaccesskey=$dpp_netaccesskey" "$N"
 		;;
 		psk|sae|psk-sae)
 			json_get_vars key wpa_psk_file sae_password_file
@@ -1193,6 +1210,14 @@ hostapd_set_bss_options() {
 		fi
 	fi
 
+	[ "$dpp" -gt 0 ] && [ "$auth_type" != "dpp" ] && {
+		json_get_vars dpp_connector dpp_csign dpp_netaccesskey
+
+		[ -n "$dpp_connector" ] && append bss_conf "dpp_connector=$dpp_connector" "$N"
+		[ -n "$dpp_csign" ] && append bss_conf "dpp_csign=$dpp_csign" "$N"
+		[ -n "$dpp_netaccesskey" ] && append bss_conf "dpp_netaccesskey=$dpp_netaccesskey" "$N"
+	}
+
 	json_get_values opts hostapd_bss_options
 	for val in $opts; do
 		append bss_conf "$val" "$N"
@@ -1343,7 +1368,7 @@ wpa_supplicant_add_network() {
 	set_default rsn_override 1
 
 	case "$auth_type" in
-		sae|owe|eap2|eap192)
+		sae|owe|eap2|eap192|dpp)
 			set_default ieee80211w 2
 		;;
 		psk-sae)
@@ -1403,6 +1428,10 @@ wpa_supplicant_add_network() {
 	case "$auth_type" in
 		none) ;;
 		owe)
+			hostapd_append_wpa_key_mgmt
+			key_mgmt="$wpa_key_mgmt"
+		;;
+		dpp)
 			hostapd_append_wpa_key_mgmt
 			key_mgmt="$wpa_key_mgmt"
 		;;
@@ -1631,6 +1660,14 @@ wpa_supplicant_add_network() {
 		local mc_rate=
 		wpa_supplicant_add_rate mc_rate "$mcast_rate"
 		append network_data "mcast_rate=$mc_rate" "$N$T"
+	}
+
+	[ "$auth_type" = "dpp" ] && {
+		json_get_vars dpp_connector dpp_csign dpp_netaccesskey
+
+		[ -n "$dpp_connector" ] && append network_data "dpp_connector=$dpp_connector" "$N$T"
+		[ -n "$dpp_csign" ] && append network_data "dpp_csign=$dpp_csign" "$N$T"
+		[ -n "$dpp_netaccesskey" ] && append network_data "dpp_netaccesskey=$dpp_netaccesskey" "$N$T"
 	}
 
 	if [ "$key_mgmt" = "WPS" ]; then
