@@ -165,6 +165,7 @@ struct rtpcs_serdes_ops {
 			 u16 value);
 
 	int (*set_autoneg)(struct rtpcs_serdes *sds, unsigned int neg_mode);
+	void (*restart_autoneg)(struct rtpcs_serdes *sds);
 };
 
 struct rtpcs_serdes {
@@ -960,6 +961,11 @@ static int rtpcs_93xx_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int neg
 
 		return rtpcs_sds_modify(sds, 0x2, MII_BMCR, BMCR_ANENABLE, bmcr);
 	}
+}
+
+static void rtpcs_93xx_sds_restart_autoneg(struct rtpcs_serdes *sds)
+{
+	rtpcs_sds_modify(sds, 0x2, MII_BMCR, BMCR_ANRESTART, BMCR_ANRESTART);
 }
 
 /* RTL930X */
@@ -3702,6 +3708,17 @@ static int rtpcs_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int neg_mode
 	return sds->ops->set_autoneg(sds, neg_mode);
 }
 
+static void rtpcs_sds_restart_autoneg(struct rtpcs_serdes *sds)
+{
+	if (!sds->ops->restart_autoneg) {
+		dev_warn(sds->ctrl->dev, "restart_autoneg not implemented for SDS %u, skipping\n",
+		         sds->id);
+		return;
+	}
+
+	sds->ops->restart_autoneg(sds);
+}
+
 static void rtpcs_pcs_get_state(struct phylink_pcs *pcs, struct phylink_link_state *state)
 {
 	struct rtpcs_link *link = rtpcs_phylink_pcs_to_link(pcs);
@@ -3767,9 +3784,11 @@ static void rtpcs_pcs_an_restart(struct phylink_pcs *pcs)
 {
 	struct rtpcs_link *link = rtpcs_phylink_pcs_to_link(pcs);
 	struct rtpcs_ctrl *ctrl = link->ctrl;
+	struct rtpcs_serdes *sds = link->sds;
 
-	dev_warn(ctrl->dev, "an_restart() for port %d and sds %d not yet implemented\n",
-		 link->port, link->sds->id);
+	mutex_lock(&ctrl->lock);
+	rtpcs_sds_restart_autoneg(sds);
+	mutex_unlock(&ctrl->lock);
 }
 
 static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
@@ -4032,6 +4051,7 @@ static const struct rtpcs_serdes_ops rtpcs_930x_sds_ops = {
 	.write			= rtpcs_930x_sds_op_write,
 	.xsg_write		= rtpcs_930x_sds_op_xsg_write,
 	.set_autoneg		= rtpcs_93xx_sds_set_autoneg,
+	.restart_autoneg	= rtpcs_93xx_sds_restart_autoneg,
 };
 
 static const struct rtpcs_config rtpcs_930x_cfg = {
@@ -4059,6 +4079,7 @@ static const struct rtpcs_serdes_ops rtpcs_931x_sds_ops = {
 	.write			= rtpcs_generic_sds_op_write,
 	.xsg_write		= rtpcs_931x_sds_op_xsg_write,
 	.set_autoneg		= rtpcs_93xx_sds_set_autoneg,
+	.restart_autoneg	= rtpcs_93xx_sds_restart_autoneg,
 };
 
 static const struct rtpcs_config rtpcs_931x_cfg = {
