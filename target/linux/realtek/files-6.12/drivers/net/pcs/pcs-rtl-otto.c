@@ -164,7 +164,8 @@ struct rtpcs_serdes_ops {
 	int (*xsg_write)(struct rtpcs_serdes *sds, int page, int regnum, int bithigh, int bitlow,
 			 u16 value);
 
-	int (*set_autoneg)(struct rtpcs_serdes *sds, unsigned int neg_mode);
+	int (*set_autoneg)(struct rtpcs_serdes *sds, unsigned int neg_mode,
+			   const unsigned long *advertising);
 	void (*restart_autoneg)(struct rtpcs_serdes *sds);
 };
 
@@ -331,6 +332,15 @@ static int rtpcs_sds_modify(struct rtpcs_serdes *sds, int page, int regnum,
 
 	return mdiobus_c45_modify(sds->ctrl->bus, sds->id, MDIO_MMD_VEND1,
 				  mmd_regnum, mask, set);
+}
+
+static int rtpcs_sds_modify_changed(struct rtpcs_serdes *sds, int page, int regnum,
+				    u16 mask, u16 set)
+{
+	int mmd_regnum = rtpcs_sds_to_mmd(page, regnum);
+
+	return mdiobus_c45_modify_changed(sds->ctrl->bus, sds->id, MDIO_MMD_VEND1,
+					  mmd_regnum, mask, set);
 }
 
 static struct rtpcs_serdes *rtpcs_sds_get_even(struct rtpcs_serdes *sds)
@@ -947,9 +957,12 @@ static int rtpcs_839x_setup_serdes(struct rtpcs_serdes *sds,
 
 /* RTL93XX */
 
-static int rtpcs_93xx_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int neg_mode)
+static int rtpcs_93xx_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int neg_mode,
+				      const unsigned long *advertising)
 {
-	u16 bmcr, en_val;
+	u16 bmcr, adv, en_val;
+	bool changed = 0;
+	int ret;
 
 	switch (sds->hw_mode) {
 	case RTPCS_SDS_MODE_XSGMII: /* XSG N-way state */
@@ -957,9 +970,30 @@ static int rtpcs_93xx_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int neg
 
 		return rtpcs_sds_xsg_write_bits(sds, 0x0, 0x2, 9, 8, en_val);
 	default:
+		if ((sds->hw_mode == RTPCS_SDS_MODE_1000BASEX) ||
+		    (sds->hw_mode == RTPCS_SDS_MODE_2500BASEX)) {
+			adv = ADVERTISE_1000XFULL;
+			if (linkmode_test_bit(ETHTOOL_LINK_MODE_Pause_BIT,
+					      advertising))
+				adv |= ADVERTISE_1000XPAUSE;
+			if (linkmode_test_bit(ETHTOOL_LINK_MODE_Asym_Pause_BIT,
+					      advertising))
+				adv |= ADVERTISE_1000XPSE_ASYM;
+
+			ret = rtpcs_sds_modify_changed(sds, 0x2, MII_ADVERTISE,
+						       0xffff, adv);
+			if (ret < 0)
+				return ret;
+			changed = ret;
+		}
+
 		bmcr = neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED ? BMCR_ANENABLE : 0;
 
-		return rtpcs_sds_modify(sds, 0x2, MII_BMCR, BMCR_ANENABLE, bmcr);
+		ret = rtpcs_sds_modify(sds, 0x2, MII_BMCR, BMCR_ANENABLE, bmcr);
+		if (ret < 0)
+			return ret;
+
+		return changed;
 	}
 }
 
@@ -3697,7 +3731,8 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 
 /* Common functions */
 
-static int rtpcs_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int neg_mode)
+static int rtpcs_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int neg_mode,
+				 const unsigned long *advertising)
 {
 	if (!sds->ops->set_autoneg) {
 		dev_warn(sds->ctrl->dev, "set_autoneg not implemented for SDS %u, skipping\n",
@@ -3705,7 +3740,7 @@ static int rtpcs_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int neg_mode
 		return 0;
 	}
 
-	return sds->ops->set_autoneg(sds, neg_mode);
+	return sds->ops->set_autoneg(sds, neg_mode, advertising);
 }
 
 static void rtpcs_sds_restart_autoneg(struct rtpcs_serdes *sds)
@@ -3822,7 +3857,7 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 			 sds->id, phy_modes(interface));
 	}
 
-	ret = rtpcs_sds_set_autoneg(sds, neg_mode);
+	ret = rtpcs_sds_set_autoneg(sds, neg_mode, advertising);
 
 out:
 	mutex_unlock(&ctrl->lock);
