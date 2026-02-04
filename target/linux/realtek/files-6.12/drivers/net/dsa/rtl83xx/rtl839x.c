@@ -1609,7 +1609,7 @@ static void rtl839x_set_receive_management_action(int port, rma_ctrl_t type, act
 	}
 }
 
-const struct rtl838x_reg rtl839x_reg = {
+const struct rtldsa_config rtldsa_839x_cfg = {
 	.mask_port_reg_be = rtl839x_mask_port_reg_be,
 	.set_port_reg_be = rtl839x_set_port_reg_be,
 	.get_port_reg_be = rtl839x_get_port_reg_be,

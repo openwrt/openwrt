@@ -1231,7 +1231,7 @@ struct rtldsa_mirror_config {
 	u32 val;
 };
 
-struct rtl838x_reg {
+struct rtldsa_config {
 	void (*mask_port_reg_be)(u64 clear, u64 set, int reg);
 	void (*set_port_reg_be)(u64 set, int reg);
 	u64 (*get_port_reg_be)(int reg);
@@ -1355,7 +1355,7 @@ struct rtl838x_switch_priv {
 	int link_state_irq;
 	int mirror_group_ports[4];
 	struct mii_bus *parent_bus;
-	const struct rtl838x_reg *r;
+	const struct rtldsa_config *r;
 	u8 cpu_port;
 	u8 port_mask;
 	u8 port_width;

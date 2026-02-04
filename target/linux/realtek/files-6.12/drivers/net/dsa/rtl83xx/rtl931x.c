@@ -1800,7 +1800,7 @@ void rtldsa_931x_config_phy_ability_source(struct rtl838x_switch_priv *priv)
 	sw_w32(phy_ablty_sel[3], RTLDSA_931X_SMI_PHY_ABLTY_GET_SEL + 0xc);
 }
 
-const struct rtl838x_reg rtl931x_reg = {
+const struct rtldsa_config rtldsa_931x_cfg = {
 	.mask_port_reg_be = rtl839x_mask_port_reg_be,
 	.set_port_reg_be = rtl839x_set_port_reg_be,
 	.get_port_reg_be = rtl839x_get_port_reg_be,

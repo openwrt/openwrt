@@ -2614,7 +2614,7 @@ static void rtldsa_930x_qos_init(struct rtl838x_switch_priv *priv)
 	rtldsa_930x_qos_set_scheduling_queue_weights(priv);
 }
 
-const struct rtl838x_reg rtl930x_reg = {
+const struct rtldsa_config rtldsa_930x_cfg = {
 	.mask_port_reg_be = rtl838x_mask_port_reg,
 	.set_port_reg_be = rtl838x_set_port_reg,
 	.get_port_reg_be = rtl838x_get_port_reg,

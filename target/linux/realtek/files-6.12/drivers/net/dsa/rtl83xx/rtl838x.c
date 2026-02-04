@@ -1671,7 +1671,7 @@ static void rtl838x_set_receive_management_action(int port, rma_ctrl_t type, act
 	}
 }
 
-const struct rtl838x_reg rtl838x_reg = {
+const struct rtldsa_config rtldsa_838x_cfg = {
 	.mask_port_reg_be = rtl838x_mask_port_reg,
 	.set_port_reg_be = rtl838x_set_port_reg,
 	.get_port_reg_be = rtl838x_get_port_reg,
