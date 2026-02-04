@@ -357,7 +357,7 @@
 
 	switch0: switch@1b000000 {
 		status = "okay";
-		compatible = "realtek,rtl83xx-switch";
+		compatible = "realtek,rtl8392-switch", "realtek,otto-switch";
 
 		interrupt-parent = <&intc>;
 		interrupts = <20 2>;

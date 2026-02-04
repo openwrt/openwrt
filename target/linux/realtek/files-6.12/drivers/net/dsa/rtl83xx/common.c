@@ -278,7 +278,7 @@ static int rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 	if (ret)
 		return ret;
 
-	dn = of_find_compatible_node(NULL, NULL, "realtek,rtl83xx-switch");
+	dn = of_find_compatible_node(NULL, NULL, "realtek,otto-switch");
 	if (!dn) {
 		dev_err(priv->dev, "No RTL switch node in DTS\n");
 		return -ENODEV;
@@ -1402,6 +1402,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 	if (err)
 		return err;
 
+	priv->r = device_get_match_data(&pdev->dev);
 	priv->family_id = soc_info.family;
 	priv->id = soc_info.id;
 	switch (soc_info.family) {
@@ -1411,7 +1412,6 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->port_mask = 0x1f;
 		priv->port_width = 1;
 		priv->irq_mask = 0x0FFFFFFF;
-		priv->r = &rtl838x_reg;
 		priv->ds->num_ports = RTL838X_CPU_PORT + 1;
 		priv->fib_entries = 8192;
 		priv->ds->num_lag_ids = 8;
@@ -1427,7 +1427,6 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->port_mask = 0x3f;
 		priv->port_width = 2;
 		priv->irq_mask = 0xFFFFFFFFFFFFFULL;
-		priv->r = &rtl839x_reg;
 		priv->ds->num_ports = RTL839X_CPU_PORT + 1;
 		priv->fib_entries = 16384;
 		priv->ds->num_lag_ids = 16;
@@ -1443,7 +1442,6 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->port_mask = 0x1f;
 		priv->port_width = 1;
 		priv->irq_mask = 0x0FFFFFFF;
-		priv->r = &rtl930x_reg;
 		priv->ds->num_ports = RTL930X_CPU_PORT + 1;
 		priv->fib_entries = 16384;
 		priv->ds->num_lag_ids = 16;
@@ -1460,7 +1458,6 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->port_mask = 0x3f;
 		priv->port_width = 2;
 		priv->irq_mask = GENMASK_ULL(priv->cpu_port - 1, 0);
-		priv->r = &rtl931x_reg;
 		priv->ds->num_ports = RTL931X_CPU_PORT + 1;
 		priv->fib_entries = 16384;
 		priv->ds->num_lag_ids = 16;
@@ -1634,7 +1631,22 @@ static void rtl83xx_sw_remove(struct platform_device *pdev)
 }
 
 static const struct of_device_id rtl83xx_switch_of_ids[] = {
-	{ .compatible = "realtek,rtl83xx-switch"},
+	{
+		.compatible = "realtek,rtl8380-switch",
+		.data = &rtldsa_838x_cfg,
+	},
+	{
+		.compatible = "realtek,rtl8392-switch",
+		.data = &rtldsa_839x_cfg,
+	},
+	{
+		.compatible = "realtek,rtl9301-switch",
+		.data = &rtldsa_930x_cfg,
+	},
+	{
+		.compatible = "realtek,rtl9311-switch",
+		.data = &rtldsa_931x_cfg,
+	},
 	{ /* sentinel */ }
 };
 
