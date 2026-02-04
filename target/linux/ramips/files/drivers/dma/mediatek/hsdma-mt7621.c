@@ -544,7 +544,7 @@ static int mtk_hsdam_alloc_desc(struct mtk_hsdam_engine *hsdma,
 {
 	int i;
 
-	chan->tx_ring = dma_alloc_coherent(hsdma->ddev.dev,
+	chan->tx_ring = dmam_alloc_coherent(hsdma->ddev.dev,
 					   2 * HSDMA_DESCS_NUM *
 					   sizeof(*chan->tx_ring),
 			&chan->desc_addr, GFP_ATOMIC | __GFP_ZERO);
@@ -560,18 +560,6 @@ static int mtk_hsdam_alloc_desc(struct mtk_hsdam_engine *hsdma,
 	return 0;
 no_mem:
 	return -ENOMEM;
-}
-
-static void mtk_hsdam_free_desc(struct mtk_hsdam_engine *hsdma,
-				struct mtk_hsdma_chan *chan)
-{
-	if (chan->tx_ring) {
-		dma_free_coherent(hsdma->ddev.dev,
-				  2 * HSDMA_DESCS_NUM * sizeof(*chan->tx_ring),
-				  chan->tx_ring, chan->desc_addr);
-		chan->tx_ring = NULL;
-		chan->rx_ring = NULL;
-	}
 }
 
 static int mtk_hsdma_init(struct mtk_hsdam_engine *hsdma)
@@ -623,10 +611,6 @@ static void mtk_hsdma_uninit(struct mtk_hsdam_engine *hsdma)
 	/* disable intr */
 	mtk_hsdma_write(hsdma, HSDMA_REG_INT_MASK, 0);
 
-	/* free desc */
-	chan = &hsdma->chan[0];
-	mtk_hsdam_free_desc(hsdma, chan);
-
 	/* tx */
 	mtk_hsdma_write(hsdma, HSDMA_REG_TX_BASE, 0);
 	mtk_hsdma_write(hsdma, HSDMA_REG_TX_CNT, 0);
@@ -634,6 +618,7 @@ static void mtk_hsdma_uninit(struct mtk_hsdam_engine *hsdma)
 	mtk_hsdma_write(hsdma, HSDMA_REG_RX_BASE, 0);
 	mtk_hsdma_write(hsdma, HSDMA_REG_RX_CNT, 0);
 	/* reset */
+	chan = &hsdma->chan[0];
 	mtk_hsdma_reset_chan(hsdma, chan);
 }
 
