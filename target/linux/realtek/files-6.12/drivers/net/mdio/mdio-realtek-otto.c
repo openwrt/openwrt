@@ -666,6 +666,11 @@ static int rtmdio_838x_reset(struct mii_bus *bus)
 	combo_phy = ctrl->smi_bus[24] < 0 ? 0 : BIT(7);
 	regmap_update_bits(ctrl->map, RTMDIO_838X_SMI_GLB_CTRL, BIT(7), combo_phy);
 
+	/*
+	 * Bit 15, PHY_PATCH_DONE, enables phy control via SoC. This is required for phy
+	 * access, including patching. Must always be set before the phys are probed.
+	 */
+	regmap_update_bits(ctrl->map, RTMDIO_838X_SMI_GLB_CTRL, BIT(15), BIT(15));
 	return 0;
 }
 
