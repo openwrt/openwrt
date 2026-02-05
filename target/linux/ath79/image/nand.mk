@@ -103,7 +103,7 @@ define Device/dongwon_dw02-412h
   DEVICE_MODEL := DW02-412H
   DEVICE_ALT0_VENDOR := KT
   DEVICE_ALT0_MODEL := GiGA WiFi home
-  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct ath10k-firmware-qca988x-ct \
+  DEVICE_PACKAGES := kmod-usb2 kmod-ath10k ath10k-firmware-qca988x \
 	kmod-ag71xx-legacy   kmod-dsa-qca8k kmod-phy-qca83xx kmod-libphy kmod-mii kmod-fixed-phy kmod-phylink kmod-phy-at803x \
 	-kmod-ag71xx -kmod-switch-ip17xx -kmod-switch-ar8xxx -kmod-swconfig -swconfig
   KERNEL_SIZE := 8192k
@@ -122,7 +122,6 @@ define Device/dongwon_dw02-412h-64m
   $(Device/dongwon_dw02-412h)
   DEVICE_VARIANT := (64M)
   DEVICE_ALT0_VARIANT := (64M)
-  DEVICE_DTS := qca9557_dongwon_dw02-412h-64m
   IMAGE_SIZE := 49152k
 endef
 TARGET_DEVICES += dongwon_dw02-412h-64m
@@ -131,7 +130,6 @@ define Device/dongwon_dw02-412h-128m
   $(Device/dongwon_dw02-412h)
   DEVICE_VARIANT := (128M)
   DEVICE_ALT0_VARIANT := (128M)
-  DEVICE_DTS := qca9557_dongwon_dw02-412h-128m
   IMAGE_SIZE := 114688k
 endef
 TARGET_DEVICES += dongwon_dw02-412h-128m

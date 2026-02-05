@@ -186,18 +186,18 @@
 &mdio0 {
 	status = "okay";
 
-	switch0@0 {
+	ethernet-switch@0 {
 		compatible = "qca,qca8337";
 		#address-cells = <1>;
 		#size-cells = <0>;
 
 		reg = <0>;
 
-		ports {
+		ethernet-ports {
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			port@0 {
+			ethernet-port@0 {
 				reg = <0>;
 				label = "cpu0";
 				ethernet = <&eth0>;
@@ -208,35 +208,35 @@
 				};
 			};
 
-			port@1 {
+			ethernet-port@1 {
 				reg = <1>;
 				label = "wan";
 				phy-mode = "internal";
 				phy-handle = <&phy_port1>;
 			};
 
-			port@2 {
+			ethernet-port@2 {
 				reg = <2>;
 				label = "lan4";
 				phy-mode = "internal";
 				phy-handle = <&phy_port2>;
 			};
 
-			port@3 {
+			ethernet-port@3 {
 				reg = <3>;
 				label = "lan3";
 				phy-mode = "internal";
 				phy-handle = <&phy_port3>;
 			};
 
-			port@4 {
+			ethernet-port@4 {
 				reg = <4>;
 				label = "lan2";
 				phy-mode = "internal";
 				phy-handle = <&phy_port4>;
 			};
 
-			port@5 {
+			ethernet-port@5 {
 				reg = <5>;
 				label = "lan1";
 				phy-mode = "internal";
@@ -277,8 +277,6 @@
 	status = "okay";
 	
 	pll-data = <0xa6000000 0x00000101 0x00001616>;
-	
-	phy-mode = "rgmii-id";
 	
 	nvmem-cells = <&macaddr_art_0 0>;
 	nvmem-cell-names = "mac-address";
