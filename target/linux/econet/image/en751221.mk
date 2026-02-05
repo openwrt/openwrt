@@ -7,6 +7,16 @@ define Device/en751221_generic
 endef
 TARGET_DEVICES += en751221_generic
 
+define Device/genexis_platinum-4410
+  $(Device/tclinux-lzma-loader)
+  DEVICE_VENDOR := Genexis
+  DEVICE_MODEL := Platinum 4410
+  DEVICE_DTS := en751221_genexis_platinum-4410
+  TCLINUX_MODEL := P4410\n
+  NAND_BBT_SIZE := 250
+endef
+TARGET_DEVICES += genexis_platinum-4410
+
 define Device/nokia_g240g-e
   DEVICE_VENDOR := Nokia
   DEVICE_MODEL := G-240G-E

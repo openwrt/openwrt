@@ -1,0 +1,30 @@
+From: Ahmed Naseef <naseefkm@gmail.com>
+Subject: mips: econet: add fw_init_cmdline() support
+
+Add support for reading kernel command line from bootloader arguments.
+This enables the bootloader to pass arguments via fw_arg0 (argc) and
+fw_arg1 (argv), which are then parsed by fw_init_cmdline().
+
+This is needed for dual-image NAND boot support where the LZMA loader
+needs to pass the correct root device (root=/dev/mtdblockN) dynamically
+based on which partition (MAIN or SLAVE) is being booted.
+
+Signed-off-by: Ahmed Naseef <naseefkm@gmail.com>
+--- a/arch/mips/econet/init.c
++++ b/arch/mips/econet/init.c
+@@ -16,6 +16,7 @@
+ #include <asm/prom.h>
+ #include <asm/smp-ops.h>
+ #include <asm/reboot.h>
++#include <asm/fw/fw.h>
+
+ #define CR_AHB_RSTCR		((void __iomem *)CKSEG1ADDR(0x1fb00040))
+ #define RESET			BIT(31)
+@@ -31,6 +32,7 @@ static void hw_reset(char *command)
+ /* 1. Bring up early printk. */
+ void __init prom_init(void)
+ {
++	fw_init_cmdline();
+ 	setup_8250_early_printk_port(UART_BASE, UART_REG_SHIFT, 0);
+ 	_machine_restart = hw_reset;
+ }
