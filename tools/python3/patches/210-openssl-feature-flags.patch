@@ -1,0 +1,47 @@
+--- a/Modules/_hashopenssl.c
++++ b/Modules/_hashopenssl.c
+@@ -45,10 +45,12 @@
+ 
+ #define MUNCH_SIZE INT_MAX
+ 
++#if !defined(LIBRESSL_VERSION_NUMBER)
+ #define PY_OPENSSL_HAS_SCRYPT 1
+ #define PY_OPENSSL_HAS_SHA3 1
+ #define PY_OPENSSL_HAS_SHAKE 1
+ #define PY_OPENSSL_HAS_BLAKE2 1
++#endif
+ 
+ #if OPENSSL_VERSION_NUMBER >= 0x30000000L
+ #define PY_EVP_MD EVP_MD
+@@ -119,6 +121,7 @@ static const py_hashentry_t py_hashes[]
+     PY_HASH_ENTRY(Py_hash_sha256, "SHA256", SN_sha256, NID_sha256),
+     PY_HASH_ENTRY(Py_hash_sha384, "SHA384", SN_sha384, NID_sha384),
+     PY_HASH_ENTRY(Py_hash_sha512, "SHA512", SN_sha512, NID_sha512),
++#if !defined(LIBRESSL_VERSION_NUMBER)
+     /* truncated sha2 */
+     PY_HASH_ENTRY(Py_hash_sha512_224, "SHA512_224", SN_sha512_224, NID_sha512_224),
+     PY_HASH_ENTRY(Py_hash_sha512_256, "SHA512_256", SN_sha512_256, NID_sha512_256),
+@@ -133,6 +136,7 @@ static const py_hashentry_t py_hashes[]
+     /* blake2 digest */
+     PY_HASH_ENTRY(Py_hash_blake2s, "blake2s256", SN_blake2s256, NID_blake2s256),
+     PY_HASH_ENTRY(Py_hash_blake2b, "blake2b512", SN_blake2b512, NID_blake2b512),
++#endif
+     PY_HASH_ENTRY(NULL, NULL, NULL, 0),
+ };
+ 
+@@ -873,11 +877,15 @@ py_evp_fromname(PyObject *module, const
+         goto exit;
+     }
+ 
++#if defined(LIBRESSL_VERSION_NUMBER)
++    type = get_hashlib_state(module)->EVPtype;
++#else
+     if ((EVP_MD_flags(digest) & EVP_MD_FLAG_XOF) == EVP_MD_FLAG_XOF) {
+         type = get_hashlib_state(module)->EVPXOFtype;
+     } else {
+         type = get_hashlib_state(module)->EVPtype;
+     }
++#endif
+ 
+     self = newEVPobject(type);
+     if (self == NULL) {
