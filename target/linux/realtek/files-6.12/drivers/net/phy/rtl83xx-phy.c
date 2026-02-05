@@ -15,8 +15,6 @@
 #include <linux/mii.h>
 #include <linux/mdio.h>
 
-#include "rtl83xx-phy.h"
-
 /*
  * Realtek PHYs have three special page registers. Register 31 (page select) switches the
  * register pages and gives access to special registers that are mapped into register
@@ -59,7 +57,18 @@
 
 #define RTL8214FC_MEDIA_COPPER		BIT(11)
 
-static const struct firmware rtl838x_8380_fw;
+#define PHY_ID_RTL8214C			0x001cc942
+#define PHY_ID_RTL8218B_E		0x001cc980
+#define PHY_ID_RTL8214_OR_8218		0x001cc981
+#define PHY_ID_RTL8218D			0x001cc983
+#define PHY_ID_RTL8218E			0x001cc984
+#define PHY_ID_RTL8218B_I		0x001cca40
+
+/* These PHYs share the same id (0x001cc981) */
+#define PHY_IS_NOT_RTL821X		0
+#define PHY_IS_RTL8214FC		1
+#define PHY_IS_RTL8214FB		2
+#define PHY_IS_RTL8218B_E		3
 
 struct rtl821x_shared_priv {
 	int base_addr;
@@ -171,16 +180,6 @@ static int rtl8214fc_match_phy_device(struct phy_device *phydev,
 	return rtl821x_match_phy_device(phydev) == PHY_IS_RTL8214FC;
 }
 
-static void rtl8380_int_phy_on_off(struct phy_device *phydev, bool on)
-{
-	phy_modify(phydev, 0, BMCR_PDOWN, on ? 0 : BMCR_PDOWN);
-}
-
-static void rtl8380_phy_reset(struct phy_device *phydev)
-{
-	phy_modify(phydev, 0, BMCR_RESET, BMCR_RESET);
-}
-
 static int rtl821x_read_page(struct phy_device *phydev)
 {
 	return __phy_read(phydev, RTL821x_PAGE_SELECT);
@@ -189,139 +188,6 @@ static int rtl821x_read_page(struct phy_device *phydev)
 static int rtl821x_write_page(struct phy_device *phydev, int page)
 {
 	return __phy_write(phydev, RTL821x_PAGE_SELECT, page);
-}
-
-static struct fw_header *rtl838x_request_fw(struct phy_device *phydev,
-					    const struct firmware *fw,
-					    const char *name)
-{
-	struct device *dev = &phydev->mdio.dev;
-	int err;
-	struct fw_header *h;
-	u32 checksum, my_checksum;
-
-	err = request_firmware(&fw, name, dev);
-	if (err < 0)
-		goto out;
-
-	if (fw->size < sizeof(struct fw_header)) {
-		pr_err("Firmware size too small.\n");
-		err = -EINVAL;
-		goto out;
-	}
-
-	h = (struct fw_header *)fw->data;
-	pr_info("Firmware loaded. Size %d, magic: %08x\n", fw->size, h->magic);
-
-	if (h->magic != 0x83808380) {
-		pr_err("Wrong firmware file: MAGIC mismatch.\n");
-		goto out;
-	}
-
-	checksum = h->checksum;
-	h->checksum = 0;
-	my_checksum = ~crc32(0xFFFFFFFFU, fw->data, fw->size);
-	if (checksum != my_checksum) {
-		pr_err("Firmware checksum mismatch.\n");
-		err = -EINVAL;
-		goto out;
-	}
-	h->checksum = checksum;
-
-	return h;
-out:
-	dev_err(dev, "Unable to load firmware %s (%d)\n", name, err);
-	return NULL;
-}
-
-static int rtl821x_prepare_patch(struct phy_device *phydev, int ports)
-{
-	struct phy_device *patchphy;
-	int tries = 50;
-
-	for (int port = 0; port < ports; port++) {
-		patchphy = get_package_phy(phydev, port);
-		phy_write_paged(patchphy, RTL821X_PAGE_PATCH, 0x10, 0x10);
-	}
-
-	for (int port = 0; port < ports; port++) {
-		patchphy = get_package_phy(phydev, port);
-		while (tries && !(phy_read_paged(patchphy, RTL821X_PAGE_STATE, 0x10) & 0x40)) {
-			tries--;
-			usleep_range(10000, 25000);
-		};
-	}
-
-	if (!tries)
-		phydev_err(get_package_phy(phydev, 0), "package not ready for patch.\n");
-
-	return tries ? 0 : -EIO;
-}
-
-static int rtl8380_configure_int_rtl8218b(struct phy_device *phydev)
-{
-	u32 *rtl838x_6275B_intPhy_perport;
-	u32 *rtl8218b_6276B_hwEsd_perport;
-	struct phy_device *patchphy;
-	struct fw_header *h;
-	int ret;
-	u32 val;
-
-	/* Read internal PHY ID */
-	phy_write_paged(phydev, 31, 27, 0x0002);
-	val = phy_read_paged(phydev, 31, 28);
-	if (val != 0x6275) {
-		phydev_err(phydev, "Expected internal RTL8218B, found PHY-ID %x\n", val);
-		return -1;
-	}
-
-	h = rtl838x_request_fw(phydev, &rtl838x_8380_fw, FIRMWARE_838X_8380_1);
-	if (!h)
-		return -1;
-
-	if (h->phy != 0x83800000) {
-		phydev_err(phydev, "Wrong firmware file: PHY mismatch.\n");
-		return -1;
-	}
-
-	rtl838x_6275B_intPhy_perport = (void *)h + sizeof(struct fw_header) + h->parts[8].start;
-	rtl8218b_6276B_hwEsd_perport = (void *)h + sizeof(struct fw_header) + h->parts[9].start;
-
-	phydev_info(phydev, "patch\n");
-
-	val = phy_read(phydev, MII_BMCR);
-	if (val & BMCR_PDOWN)
-		rtl8380_int_phy_on_off(phydev, true);
-	else
-		rtl8380_phy_reset(phydev);
-	msleep(100);
-
-	ret = rtl821x_prepare_patch(phydev, 8);
-	if (ret)
-		return ret;
-
-	for (int port = 0; port < 8; port++) {
-		int i;
-
-		patchphy = get_package_phy(phydev, port);
-
-		i = 0;
-		while (rtl838x_6275B_intPhy_perport[i * 2]) {
-			phy_write_paged(patchphy, RTL838X_PAGE_RAW,
-					rtl838x_6275B_intPhy_perport[i * 2],
-					rtl838x_6275B_intPhy_perport[i * 2 + 1]);
-			i++;
-		}
-		i = 0;
-		while (rtl8218b_6276B_hwEsd_perport[i * 2]) {
-			phy_write_paged(patchphy, RTL838X_PAGE_RAW,
-					rtl8218b_6276B_hwEsd_perport[i * 2],
-					rtl8218b_6276B_hwEsd_perport[i * 2 + 1]);
-			i++;
-		}
-	}
-
-	return 0;
 }
 
 static bool __rtl8214fc_media_is_fibre(struct phy_device *phydev)
@@ -575,21 +441,6 @@ static int rtl8214c_phy_probe(struct phy_device *phydev)
 	return 0;
 }
 
-static int rtl8218b_ext_phy_probe(struct phy_device *phydev)
-{
-	rtl821x_package_join(phydev, 8);
-
-	return 0;
-}
-
-static int rtl8218b_int_phy_probe(struct phy_device *phydev)
-{
-	if (rtl821x_package_join(phydev, 8) == RTL821X_JOIN_LAST)
-		return rtl8380_configure_int_rtl8218b(get_base_phy(phydev));
-
-	return 0;
-}
-
 static int rtl8218x_phy_probe(struct phy_device *phydev)
 {
 	rtl821x_package_join(phydev, 8);
@@ -801,7 +652,7 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.name		= "Realtek RTL8218B (external)",
 		.config_init	= rtl8218b_config_init,
 		.features	= PHY_GBIT_FEATURES,
-		.probe		= rtl8218b_ext_phy_probe,
+		.probe		= rtl8218x_phy_probe,
 		.read_mmd	= rtl821x_read_mmd,
 		.read_page	= rtl821x_read_page,
 		.resume		= genphy_resume,
@@ -814,7 +665,7 @@ static struct phy_driver rtl83xx_phy_driver[] = {
 		.name		= "Realtek RTL8218B (internal)",
 		.config_init	= rtl821x_config_init,
 		.features	= PHY_GBIT_FEATURES,
-		.probe		= rtl8218b_int_phy_probe,
+		.probe		= rtl8218x_phy_probe,
 		.read_mmd	= rtl821x_read_mmd,
 		.read_page	= rtl821x_read_page,
 		.resume		= genphy_resume,
