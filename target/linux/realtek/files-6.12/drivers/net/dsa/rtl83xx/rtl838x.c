@@ -490,6 +490,29 @@ static void rtl838x_write_mcast_pmask(int idx, u64 portmask)
 	rtl_table_release(q);
 }
 
+static int
+rtl838x_vlan_profile_get(int idx, struct rtl83xx_vlan_profile *profile)
+{
+	u32 p;
+
+	if (idx < 0 || idx > RTL838X_VLAN_PROFILE_MAX)
+		return -EINVAL;
+
+	p = sw_r32(RTL838X_VLAN_PROFILE(idx));
+
+	*profile = (struct rtl83xx_vlan_profile) {
+		.l2_learn = RTL838X_VLAN_L2_LEARN_EN_R(p),
+		.unkn_mc_fld.pmsks_idx = {
+			.l2 = RTL838X_VLAN_L2_UNKN_MC_FLD_PMSK(p),
+			.ip = RTL838X_VLAN_IP4_UNKN_MC_FLD_PMSK(p),
+			.ip6 = RTL838X_VLAN_IP6_UNKN_MC_FLD_PMSK(p),
+		},
+		.pmsk_is_idx = 1,
+	};
+
+	return 0;
+}
+
 static void rtl838x_vlan_profile_setup(int profile)
 {
 	u32 p = RTL838X_VLAN_L2_LEARN_EN(1) |
@@ -498,13 +521,6 @@ static void rtl838x_vlan_profile_setup(int profile)
 		RTL838X_VLAN_IP6_UNKN_MC_FLD(MC_PMASK_ALL_PORTS_IDX);
 
 	sw_w32(p, RTL838X_VLAN_PROFILE(profile));
-
-	/* RTL8380 and RTL8390 use an index into the portmask table to set the
-	 * unknown multicast portmask, setup a default at a safe location
-	 * On RTL93XX, the portmask is directly set in the profile,
-	 * see e.g. rtl9300_vlan_profile_setup
-	 */
-	rtl838x_write_mcast_pmask(MC_PMASK_ALL_PORTS_IDX, RTL838X_MC_PMASK_ALL_PORTS);
 }
 
 static void rtl838x_l2_learning_setup(void)
@@ -1671,6 +1687,19 @@ static void rtl838x_set_receive_management_action(int port, rma_ctrl_t type, act
 	}
 }
 
+static void rtl838x_vlan_profile_dump(struct rtl838x_switch_priv *priv, int idx)
+{
+	struct rtl83xx_vlan_profile p;
+
+	if (rtl838x_vlan_profile_get(idx, &p) < 0)
+		return;
+
+	dev_dbg(priv->dev,
+		"VLAN profile %d: L2 learning: %d, UNKN L2MC FLD PMSK %d, UNKN IPMC FLD PMSK %d, UNKN IPv6MC FLD PMSK: %d\n", idx,
+		p.l2_learn, p.unkn_mc_fld.pmsks_idx.l2,
+		p.unkn_mc_fld.pmsks_idx.ip, p.unkn_mc_fld.pmsks_idx.ip6);
+}
+
 const struct rtl838x_reg rtl838x_reg = {
 	.mask_port_reg_be = rtl838x_mask_port_reg,
 	.set_port_reg_be = rtl838x_set_port_reg,
@@ -1706,6 +1735,7 @@ const struct rtl838x_reg rtl838x_reg = {
 	.vlan_set_tagged = rtl838x_vlan_set_tagged,
 	.vlan_set_untagged = rtl838x_vlan_set_untagged,
 	.mac_force_mode_ctrl = rtl838x_mac_force_mode_ctrl,
+	.vlan_profile_get = rtl838x_vlan_profile_get,
 	.vlan_profile_dump = rtl838x_vlan_profile_dump,
 	.vlan_profile_setup = rtl838x_vlan_profile_setup,
 	.vlan_fwd_on_inner = rtl838x_vlan_fwd_on_inner,
@@ -1777,20 +1807,3 @@ irqreturn_t rtl838x_switch_irq(int irq, void *dev_id)
 
 	return IRQ_HANDLED;
 }
-
-void rtl838x_vlan_profile_dump(int profile)
-{
-	u32 p;
-
-	if (profile < 0 || profile > RTL838X_VLAN_PROFILE_MAX)
-		return;
-
-	p = sw_r32(RTL838X_VLAN_PROFILE(profile));
-
-	pr_debug("VLAN profile %d: L2 learning: %d, UNKN L2MC FLD PMSK %d, UNKN IPMC FLD PMSK %d, UNKN IPv6MC FLD PMSK: %d\n",
-		 profile, RTL838X_VLAN_L2_LEARN_EN_R(p),
-		 RTL838X_VLAN_L2_UNKN_MC_FLD_PMSK(p),
-		 RTL838X_VLAN_IP4_UNKN_MC_FLD_PMSK(p),
-		 RTL838X_VLAN_IP6_UNKN_MC_FLD_PMSK(p));
-}
-

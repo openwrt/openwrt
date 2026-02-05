@@ -447,6 +447,16 @@ static void rtldsa_vlan_set_pvid(struct rtl838x_switch_priv *priv,
 	priv->ports[port].pvid = pvid;
 }
 
+static void rtldsa_83xx_mc_pmasks_setup(struct rtl838x_switch_priv *priv)
+{
+	/* RTL8380 and RTL8390 use an index into the portmask table to set the
+	 * unknown multicast portmask, setup a default at a safe location
+	 * On RTL93XX, the portmask is directly set in the profile,
+	 * see e.g. rtl9300_vlan_profile_setup
+	 */
+	priv->r->write_mcast_pmask(MC_PMASK_ALL_PORTS_IDX, ~0);
+}
+
 /* Initialize all VLANS */
 static void rtldsa_vlan_setup(struct rtl838x_switch_priv *priv)
 {
@@ -455,9 +465,7 @@ static void rtldsa_vlan_setup(struct rtl838x_switch_priv *priv)
 	pr_info("In %s\n", __func__);
 
 	priv->r->vlan_profile_setup(0);
-	priv->r->vlan_profile_setup(1);
-	dev_info(priv->dev, "MC_PMASK_ALL_PORTS: %016llx\n", priv->r->read_mcast_pmask(MC_PMASK_ALL_PORTS_IDX));
-	priv->r->vlan_profile_dump(0);
+	priv->r->vlan_profile_dump(priv, 0);
 
 	info.fid = 0;			/* Default Forwarding ID / MSTI */
 	info.hash_uc_fid = false;	/* Do not build the L2 lookup hash with FID, but VID */
@@ -554,6 +562,7 @@ static int rtldsa_83xx_setup(struct dsa_switch *ds)
 	rtldsa_83xx_init_stats(priv);
 	rtldsa_init_counters(priv);
 
+	rtldsa_83xx_mc_pmasks_setup(priv);
 	rtldsa_vlan_setup(priv);
 
 	rtldsa_setup_bpdu_traps(priv);
