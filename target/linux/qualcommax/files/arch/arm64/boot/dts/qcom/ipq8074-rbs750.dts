@@ -1,0 +1,21 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/*
+ * Copyright (c) 2026 Michael Lotz <mmlr@mlotz.ch>
+ */
+
+/dts-v1/;
+
+#include "ipq8074-rbx750.dtsi"
+
+/ {
+	model = "Netgear RBS750";
+	compatible = "netgear,rbs750", "qcom,ipq8074";
+};
+
+&dp1 {
+	status = "disabled";
+};
+
+&dp2 {
+	status = "disabled";
+};

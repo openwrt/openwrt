@@ -39,6 +39,7 @@ ipq807x_setup_interfaces()
 	linksys,mx4200v1|\
 	linksys,mx4200v2|\
 	linksys,mx4300|\
+	netgear,rbr750|\
 	prpl,haze|\
 	redmi,ax6|\
 	spectrum,sax1v1k|\
@@ -59,6 +60,7 @@ ipq807x_setup_interfaces()
 	netgear,wax620)
 		ucidef_set_interface_lan "lan" "dhcp"
 		;;
+	netgear,rbs750|\
 	netgear,wax630)
 		ucidef_set_interface_lan "lan1 lan2" "dhcp"
 		;;

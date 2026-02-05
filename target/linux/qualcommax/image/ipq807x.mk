@@ -23,6 +23,17 @@ define Build/asus-trx
 	mv $@.new $@
 endef
 
+define Build/netgear-rbx750-qsdk-ipq-factory
+	$(CP) $(FLASH_SCRIPT) $(KDIR_TMP)/
+
+	echo "VERSION : V8.0.0.0_$(LINUX_VERSION)" > $@.metadata
+	echo "MODEL_ID : $(DEVICE_MODEL)" >> $@.metadata
+
+	$(TOPDIR)/scripts/mkits-qsdk-ipq-image.sh $@.its $(FLASH_SCRIPT) txt $@.metadata ubi $@
+	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $@.its $@.new
+	@mv $@.new $@
+endef
+
 define Build/wax6xx-netgear-tar
 	mkdir $@.tmp
 	mv $@ $@.tmp/nand-ipq807x-apps.img
@@ -281,6 +292,35 @@ endif
 		append-metadata
 endef
 TARGET_DEVICES += netgear_rax120v2
+
+define Device/netgear_rbx750
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	SOC := ipq8074
+	DEVICE_VENDOR := Netgear
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_PACKAGES := ipq-wifi-netgear_rbk750 kmod-leds-lp5562
+	DEVICE_DTS_CONFIG := config@oak03
+	FLASH_SCRIPT := netgear_rbx750.bootscript
+	IMAGES += factory.chk
+	IMAGE/factory.chk := append-ubi | netgear-rbx750-qsdk-ipq-factory | \
+		netgear-chk
+endef
+
+define Device/netgear_rbr750
+	$(call Device/netgear_rbx750)
+	DEVICE_MODEL := RBR750
+	NETGEAR_BOARD_ID := U12H415T00_NETGEAR
+endef
+TARGET_DEVICES += netgear_rbr750
+
+define Device/netgear_rbs750
+	$(call Device/netgear_rbx750)
+	DEVICE_MODEL := RBS750
+	NETGEAR_BOARD_ID := U12H416T00_NETGEAR
+endef
+TARGET_DEVICES += netgear_rbs750
 
 define Device/netgear_sxk80
 	$(call Device/FitImage)
