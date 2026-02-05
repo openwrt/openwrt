@@ -1,92 +1,90 @@
-From patchwork Fri Nov 28 10:29:14 2025
+From patchwork Wed Feb  4 11:25:08 2026
 Content-Type: text/plain; charset="utf-8"
 MIME-Version: 1.0
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: 7bit
 X-Patchwork-Submitter: George Moussalem via B4 Relay
  <devnull+george.moussalem.outlook.com@kernel.org>
-X-Patchwork-Id: 2169933
+X-Patchwork-Id: 2192910
 Return-Path: 
- <linux-pwm+bounces-7723-incoming=patchwork.ozlabs.org@vger.kernel.org>
+ <linux-pwm+bounces-8087-incoming=patchwork.ozlabs.org@vger.kernel.org>
 X-Original-To: incoming@patchwork.ozlabs.org
 Delivered-To: patchwork-incoming@legolas.ozlabs.org
 Authentication-Results: legolas.ozlabs.org;
 	dkim=pass (2048-bit key;
  unprotected) header.d=kernel.org header.i=@kernel.org header.a=rsa-sha256
- header.s=k20201202 header.b=fs4uwdpy;
+ header.s=k20201202 header.b=WGUCMoYx;
 	dkim-atps=neutral
 Authentication-Results: legolas.ozlabs.org;
  spf=pass (sender SPF authorized) smtp.mailfrom=vger.kernel.org
- (client-ip=2a01:60a::1994:3:14; helo=ams.mirrors.kernel.org;
- envelope-from=linux-pwm+bounces-7723-incoming=patchwork.ozlabs.org@vger.kernel.org;
+ (client-ip=172.105.105.114; helo=tor.lore.kernel.org;
+ envelope-from=linux-pwm+bounces-8087-incoming=patchwork.ozlabs.org@vger.kernel.org;
  receiver=patchwork.ozlabs.org)
-Received: from ams.mirrors.kernel.org (ams.mirrors.kernel.org
- [IPv6:2a01:60a::1994:3:14])
+Received: from tor.lore.kernel.org (tor.lore.kernel.org [172.105.105.114])
 	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature ECDSA (secp384r1))
+	 key-exchange x25519)
 	(No client certificate requested)
-	by legolas.ozlabs.org (Postfix) with ESMTPS id 4dHqMT6PPHz1yDj
-	for <incoming@patchwork.ozlabs.org>; Fri, 28 Nov 2025 21:31:01 +1100 (AEDT)
-Received: from smtp.subspace.kernel.org (relay.kernel.org [52.25.139.140])
-	(using TLSv1.2 with cipher ECDHE-ECDSA-AES256-GCM-SHA384 (256/256 bits))
-	(No client certificate requested)
-	by ams.mirrors.kernel.org (Postfix) with ESMTPS id 396E43530DC
-	for <incoming@patchwork.ozlabs.org>; Fri, 28 Nov 2025 10:29:43 +0000 (UTC)
+	by legolas.ozlabs.org (Postfix) with ESMTPS id 4f5dMp0fDDz1xqf
+	for <incoming@patchwork.ozlabs.org>; Wed, 04 Feb 2026 22:26:14 +1100 (AEDT)
+Received: from smtp.subspace.kernel.org (conduit.subspace.kernel.org
+ [100.90.174.1])
+	by tor.lore.kernel.org (Postfix) with ESMTP id EBABA301D322
+	for <incoming@patchwork.ozlabs.org>; Wed,  4 Feb 2026 11:25:18 +0000 (UTC)
 Received: from localhost.localdomain (localhost.localdomain [127.0.0.1])
-	by smtp.subspace.kernel.org (Postfix) with ESMTP id 6D89430C62B;
-	Fri, 28 Nov 2025 10:29:23 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTP id 498E93ECBC6;
+	Wed,  4 Feb 2026 11:25:14 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
 	dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org
- header.b="fs4uwdpy"
+ header.b="WGUCMoYx"
 X-Original-To: linux-pwm@vger.kernel.org
 Received: from smtp.kernel.org (aws-us-west-2-korg-mail-1.web.codeaurora.org
  [10.30.226.201])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
 	(No client certificate requested)
-	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 32A6330BBB6;
-	Fri, 28 Nov 2025 10:29:23 +0000 (UTC)
+	by smtp.subspace.kernel.org (Postfix) with ESMTPS id 1653D3E9F8E;
+	Wed,  4 Feb 2026 11:25:14 +0000 (UTC)
 Authentication-Results: smtp.subspace.kernel.org;
  arc=none smtp.client-ip=10.30.226.201
 ARC-Seal: i=1; a=rsa-sha256; d=subspace.kernel.org; s=arc-20240116;
-	t=1764325763; cv=none;
- b=Tzl3GCZjE2m+aCNqXwS9YlwXBMRVfjpboNdMxhrMXPeoUopSQ3Ry4MRINf+lE8xzVojk5g0TORcLLp9hItA5+h0mJllDCBqApTVtREAgNflz7+IVWcDqoMyZ5AeAKzFZJZeHWfz77C9LrGkjapS93WkVz2tntemVjd160qx/TIA=
+	t=1770204314; cv=none;
+ b=G3d0Ri0xw7F/u2rUoaF2eprL1ihrTvDSfCszkp2ciK2Y+UB3YSBt1K9D5nrbQw3bG1mHFZSO34nH/NZUQUoP97w8cJNILcVALgdGNfpM1vdDsKcRjomVZOvJi5sTvm2qnS4gIzL5DhybGv6UMOPcMrPM4TyZjpnvnJyWo9twGXE=
 ARC-Message-Signature: i=1; a=rsa-sha256; d=subspace.kernel.org;
-	s=arc-20240116; t=1764325763; c=relaxed/simple;
-	bh=TEhxXz9OWicY34HonQSghsWxCeso6WSrZUXJqwSHrSc=;
+	s=arc-20240116; t=1770204314; c=relaxed/simple;
+	bh=DlyTmDysGY1XB33v65FxlGZh2bVxvGJcWBwNBttMHy4=;
 	h=From:Date:Subject:MIME-Version:Content-Type:Message-Id:References:
 	 In-Reply-To:To:Cc;
- b=J7MAU+n66IIa8QWlX6JkEChT11SFUd9zqIBvi1/v7U3o4lffoH8MEZAHNRpPkZidhwQHMcBOhNiKIHGUZ3Rl0a4e/ORBFIoxSCKWz2MDANrr7C8Cz0hNUtFTaTwb1OwxNC9wwqGH41Qy7YKnIs3oFqgbGasxKGdRZJkDPIl5r7U=
+ b=oscy1mdUqAhot2KYVVHi6uWkqWGm1fzDdZJUn82fx79nITsOMMaDBwep6Ra0KSpsxVMrI0KvqGJf5Aa68+YmcJpXOGKERtXl98pFEsTsnHR8ofyWZ5r2lR8Xiojdk3aCWuj3pkgi61p9TwpvAsXI4eZU0JoqNv2Ty8HO6hF2+cI=
 ARC-Authentication-Results: i=1; smtp.subspace.kernel.org;
  dkim=pass (2048-bit key) header.d=kernel.org header.i=@kernel.org
- header.b=fs4uwdpy; arc=none smtp.client-ip=10.30.226.201
-Received: by smtp.kernel.org (Postfix) with ESMTPS id C8D21C19422;
-	Fri, 28 Nov 2025 10:29:22 +0000 (UTC)
+ header.b=WGUCMoYx; arc=none smtp.client-ip=10.30.226.201
+Received: by smtp.kernel.org (Postfix) with ESMTPS id C1097C2BCAF;
+	Wed,  4 Feb 2026 11:25:13 +0000 (UTC)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
-	s=k20201202; t=1764325762;
-	bh=TEhxXz9OWicY34HonQSghsWxCeso6WSrZUXJqwSHrSc=;
+	s=k20201202; t=1770204313;
+	bh=DlyTmDysGY1XB33v65FxlGZh2bVxvGJcWBwNBttMHy4=;
 	h=From:Date:Subject:References:In-Reply-To:To:Cc:Reply-To:From;
-	b=fs4uwdpymjOqhRRSh3P1dK74FIUx0YAoDbdG3Clrlk4P27M+zBCSQ+JrYGWSEmUIR
-	 V27QCvuYcZZSHD/StRwPctBV8BizjQw54jGepHmpQaEh3whreKqGAMkFUuz38Ym7fa
-	 ktEEJyj4Ef46bDg1gfMTCJ6ko5jGZsWNPfj6Df6s7mAcpuSQIb8mWllHTmBpXVb42a
-	 SgQSylAC1bn8zf8Gq8YN1S57UnHHFXIF0Xj+ydzUavU3yLW/DTwZdTeQ/Pei8Nlghu
-	 ZxS9WLkEAHuPL/Rx7yD+zko2dfmeJMvYfXgZWRkAFYe/W4ZQ77CZdVUTZiIPh6dbTK
-	 XKQvl3wJ0Zwvw==
+	b=WGUCMoYxqwybcHrn+vGBd5QHaN5JxKMe0VHNxaeZmtbFd0vYZ3BwJ8m5hAjyRZ0eD
+	 2JIVvL9CxJeb48YIWZL8Hp49Ofp7FboBk7Q31N1+sBMQOC74MJNfvnFS9aMDNmTwJc
+	 /vWoridD8Vn4Nj7bwQyhMAkreL54siL8bGUwW32yihFKR1AztlfhSE8roX72luaGMc
+	 ALHuZzPPpCZFC4ZQ55PvaDHDAdBAplA3bVN0hcawiL/9jlpNiFoFsNHNOSmYgbkxIH
+	 KW9GymmfG5d9cinrJZ2EThR1WDiIs41hnH1ijcK7vMMG3L6LoXzyIrjZo973bSp+oB
+	 H5T79DAQ5KXZA==
 Received: from aws-us-west-2-korg-lkml-1.web.codeaurora.org
  (localhost.localdomain [127.0.0.1])
-	by smtp.lore.kernel.org (Postfix) with ESMTP id B1571CFD376;
-	Fri, 28 Nov 2025 10:29:22 +0000 (UTC)
+	by smtp.lore.kernel.org (Postfix) with ESMTP id AABE3E95389;
+	Wed,  4 Feb 2026 11:25:13 +0000 (UTC)
 From: George Moussalem via B4 Relay
  <devnull+george.moussalem.outlook.com@kernel.org>
-Date: Fri, 28 Nov 2025 14:29:14 +0400
-Subject: [PATCH v19 2/6] pwm: driver for qualcomm ipq6018 pwm block
+Date: Wed, 04 Feb 2026 15:25:08 +0400
+Subject: [PATCH v20 2/6] pwm: driver for qualcomm ipq6018 pwm block
 Precedence: bulk
 X-Mailing-List: linux-pwm@vger.kernel.org
 List-Id: <linux-pwm.vger.kernel.org>
 List-Subscribe: <mailto:linux-pwm+subscribe@vger.kernel.org>
 List-Unsubscribe: <mailto:linux-pwm+unsubscribe@vger.kernel.org>
 MIME-Version: 1.0
-Message-Id: <20251128-ipq-pwm-v19-2-13bc704cc6a5@outlook.com>
-References: <20251128-ipq-pwm-v19-0-13bc704cc6a5@outlook.com>
-In-Reply-To: <20251128-ipq-pwm-v19-0-13bc704cc6a5@outlook.com>
+Message-Id: <20260204-ipq-pwm-v20-2-91733011a3d1@outlook.com>
+References: <20260204-ipq-pwm-v20-0-91733011a3d1@outlook.com>
+In-Reply-To: <20260204-ipq-pwm-v20-0-91733011a3d1@outlook.com>
 To: =?utf-8?q?Uwe_Kleine-K=C3=B6nig?= <ukleinek@kernel.org>,
   Rob Herring <robh@kernel.org>, Krzysztof Kozlowski <krzk+dt@kernel.org>,
   Conor Dooley <conor+dt@kernel.org>, Baruch Siach <baruch@tkos.co.il>,
@@ -98,11 +96,11 @@ Cc: linux-arm-msm@vger.kernel.org, linux-pwm@vger.kernel.org,
  Devi Priya <quic_devipriy@quicinc.com>,
  Baruch Siach <baruch.siach@siklu.com>
 X-Mailer: b4 0.14.2
-X-Developer-Signature: v=1; a=ed25519-sha256; t=1764325760; l=12302;
+X-Developer-Signature: v=1; a=ed25519-sha256; t=1770204310; l=9677;
  i=george.moussalem@outlook.com; s=20250321; h=from:subject:message-id;
- bh=ECLgbGQXvQqaCHleNN2KaOI3IfiJYGfU1o7zDHbZOZo=;
- b=vPkUe390XfPgnR9A+4cm/jNIETdu3JSzsxMjDjX/DTB7RqMnFGjoy8Nh/xGoBmr00hGJQY3dW
- bPY4a3duJVOAtYeG1EbsRAywjXTrIxNLun6ElJfCqutCXvpOyMkvWn0
+ bh=lqVC0W9FHdaTi1eT81frsdr/MvrSo0xMFV72k7YrO7I=;
+ b=mcjrEkuzodOMpsOdLZkQ609EXbJZFxJ8sU8yRwppwYWMDGETj4y5NtRIMVLi7GxOiU0zqcWls
+ CZHLZJaNDRaCaTzN1DMBfmpBhwkY/Hu+GKk+Nh9uBfpU2UxvCU4SSmG
 X-Developer-Key: i=george.moussalem@outlook.com; a=ed25519;
  pk=/PuRTSI9iYiHwcc6Nrde8qF4ZDhJBlUgpHdhsIjnqIk=
 X-Endpoint-Received: by B4 Relay for george.moussalem@outlook.com/20250321
@@ -124,118 +122,6 @@ Signed-off-by: Devi Priya <quic_devipriy@quicinc.com>
 Reviewed-by: Bjorn Andersson <andersson@kernel.org>
 Signed-off-by: George Moussalem <george.moussalem@outlook.com>
 ---
-v18:
-
-  Added hardware notes and limitations based on own findings as
-  requested. NOTE: there's no publically available datasheet though.
-
-  Expanded comment on REG1_UPDATE to indicate that when this bit is set,
-  values for div and pre-div take effect. The hardware automatically
-  unsets it when the change is completed.
-
-  Added newline between MACRO definition and next comment
-
-  In config_div_and_duty, used mul_u64_u64_div_u64 to avoid overflow
-
-  Removed unncessary restriction of pwm_div to MAX_DIV - 1 after testing
-
-  Constrain pre_div to MAX_DIV is pre_div calculated is > MAX_DIV
-
-  Use of mul_u64_u64_div_u64 in .apply
-
-  Skip calculation of period and duty cycle when PWM_ENABLE REG is unset
-
-  Set duty cycle to period value when calculated duty cycle > period to
-  return a valid config
-
-  Removed .npwm as it's taken care of in devm_pwmchip_alloc
-
-  Added call to devm_clk_rate_exclusive_get to lock the clock rate
-
-  Start all kernel messages with a capital letter and end with \n.
-
-v17:
-
-  Removed unnecessary code comments
-
-v16:
-
-  Simplified code to calculate divs and duty cycle as per Uwe's comments
-
-  Removed unused pwm_chip struct from ipq_pwm_chip struct
-
-  Removed unnecessary cast as per Uwe's comment
-
-  Replaced devm_clk_get & clk_prepare_enable by devm_clk_get_enabled
-
-  Replaced pwmchip_add by devm_pwmchip_add and removed .remove function
-
-  Removed .owner from driver struct
-
-v15:
-
-  No change
-
-v14:
-
-  Picked up the R-b tag
-
-v13:
-
-  Updated the file name to match the compatible
-
-  Sorted the properties and updated the order in the required field
-
-  Dropped the syscon node from examples
-
-v12:
-
-  Picked up the R-b tag
-
-v11:
-
-  No change
-
-v10:
-
-  No change
-
-v9:
-
-  Add 'ranges' property to example (Rob)
-
-  Drop label in example (Rob)
-
-v8:
-
-  Add size cell to 'reg' (Rob)
-
-v7:
-
-  Use 'reg' instead of 'offset' (Rob)
-
-  Drop 'clock-names' and 'assigned-clock*' (Bjorn)
-
-  Use single cell address/size in example node (Bjorn)
-
-  Move '#pwm-cells' lower in example node (Bjorn)
-
-  List 'reg' as required
-
-v6:
-
-  Device node is child of TCSR; remove phandle (Rob Herring)
-
-  Add assigned-clocks/assigned-clock-rates (Uwe Kleine-König)
-
-v5: Use qcom,pwm-regs for phandle instead of direct regs (Bjorn
-    Andersson, Kathiravan T)
-
-v4: Update the binding example node as well (Rob Herring's bot)
-
-v3: s/qcom,pwm-ipq6018/qcom,ipq6018-pwm/ (Rob Herring)
-
-v2: Make #pwm-cells const (Rob Herring)
 ---
  drivers/pwm/Kconfig   |  12 +++
  drivers/pwm/Makefile  |   1 +
@@ -312,12 +198,6 @@ v2: Make #pwm-cells const (Rob Herring)
 +#define IPQ_PWM_MAX_PERIOD_NS	((u64)NSEC_PER_SEC)
 +
 +/*
-+ * The max value specified for each field is based on the number of bits
-+ * in the pwm control register for that field
-+ */
-+#define IPQ_PWM_MAX_DIV		0xFFFF
-+
-+/*
 + * Two 32-bit registers for each PWM: REG0, and REG1.
 + * Base offset for PWM #i is at 8 * #i.
 + */
@@ -329,6 +209,12 @@ v2: Make #pwm-cells const (Rob Herring)
 +#define IPQ_PWM_REG1_PRE_DIV		GENMASK(15, 0)
 +
 +/*
++ * The max value specified for each field is based on the number of bits
++ * in the pwm control register for that field (16-bit)
++ */
++#define IPQ_PWM_MAX_DIV			FIELD_MAX(IPQ_PWM_REG0_PWM_DIV)
++
++/*
 + * Enable bit is set to enable output toggling in pwm device.
 + * Update bit is set to trigger the change and is unset automatically
 + * to reflect the changed divider and high duration values in register.
@@ -337,8 +223,8 @@ v2: Make #pwm-cells const (Rob Herring)
 +#define IPQ_PWM_REG1_ENABLE		BIT(31)
 +
 +struct ipq_pwm_chip {
-+	struct clk *clk;
 +	void __iomem *mem;
++	unsigned long clk_rate;
 +};
 +
 +static struct ipq_pwm_chip *ipq_pwm_from_chip(struct pwm_chip *chip)
@@ -363,18 +249,42 @@ v2: Make #pwm-cells const (Rob Herring)
 +	writel(val, ipq_chip->mem + off);
 +}
 +
-+static void config_div_and_duty(struct pwm_device *pwm, unsigned int pre_div,
-+				unsigned int pwm_div, unsigned long rate, u64 duty_ns,
-+				bool enable)
++static int ipq_pwm_apply(struct pwm_chip *chip, struct pwm_device *pwm,
++			 const struct pwm_state *state)
 +{
-+	unsigned long hi_dur;
++	struct ipq_pwm_chip *ipq_chip = ipq_pwm_from_chip(chip);
++	unsigned int pre_div, pwm_div;
++	u64 period_ns, duty_ns;
 +	unsigned long val = 0;
++	unsigned long hi_dur;
++
++	if (state->polarity != PWM_POLARITY_NORMAL)
++		return -EINVAL;
++
++	if (!ipq_chip->clk_rate)
++		return -EINVAL;
++
++	if (state->period < DIV64_U64_ROUND_UP(NSEC_PER_SEC,
++					       ipq_chip->clk_rate))
++		return -ERANGE;
++
++	period_ns = min(state->period, IPQ_PWM_MAX_PERIOD_NS);
++	duty_ns = min(state->duty_cycle, period_ns);
++
++	pwm_div = IPQ_PWM_MAX_DIV - 1;
++	pre_div = mul_u64_u64_div_u64(period_ns, ipq_chip->clk_rate,
++				      (u64)NSEC_PER_SEC * (pwm_div + 1));
++	pre_div = (pre_div > 0) ? pre_div - 1 : 0;
++
++	if (pre_div > IPQ_PWM_MAX_DIV)
++		pre_div = IPQ_PWM_MAX_DIV;
 +
 +	/*
 +	 * high duration = pwm duty * (pwm div + 1)
 +	 * pwm duty = duty_ns / period_ns
 +	 */
-+	hi_dur = mul_u64_u64_div_u64(duty_ns, rate, (pre_div + 1) * NSEC_PER_SEC);
++	hi_dur = mul_u64_u64_div_u64(duty_ns, ipq_chip->clk_rate,
++				     (u64)(pre_div + 1) * NSEC_PER_SEC);
 +
 +	val = FIELD_PREP(IPQ_PWM_REG0_HI_DURATION, hi_dur) |
 +		FIELD_PREP(IPQ_PWM_REG0_PWM_DIV, pwm_div);
@@ -385,35 +295,9 @@ v2: Make #pwm-cells const (Rob Herring)
 +
 +	/* PWM enable toggle needs a separate write to REG1 */
 +	val |= IPQ_PWM_REG1_UPDATE;
-+	if (enable)
++	if (state->enabled)
 +		val |= IPQ_PWM_REG1_ENABLE;
 +	ipq_pwm_reg_write(pwm, IPQ_PWM_REG1, val);
-+}
-+
-+static int ipq_pwm_apply(struct pwm_chip *chip, struct pwm_device *pwm,
-+			 const struct pwm_state *state)
-+{
-+	struct ipq_pwm_chip *ipq_chip = ipq_pwm_from_chip(chip);
-+	unsigned long rate = clk_get_rate(ipq_chip->clk);
-+	unsigned int pre_div, pwm_div;
-+	u64 period_ns, duty_ns;
-+
-+	if (state->polarity != PWM_POLARITY_NORMAL)
-+		return -EINVAL;
-+
-+	if (state->period < DIV64_U64_ROUND_UP(NSEC_PER_SEC, rate))
-+		return -ERANGE;
-+
-+	period_ns = min(state->period, IPQ_PWM_MAX_PERIOD_NS);
-+	duty_ns = min(state->duty_cycle, period_ns);
-+
-+	pwm_div = IPQ_PWM_MAX_DIV;
-+	pre_div = mul_u64_u64_div_u64(period_ns, rate, (u64)NSEC_PER_SEC * (pwm_div + 1));
-+
-+	if (pre_div > IPQ_PWM_MAX_DIV)
-+		pre_div = IPQ_PWM_MAX_DIV;
-+
-+	config_div_and_duty(pwm, pre_div, pwm_div, rate, duty_ns, state->enabled);
 +
 +	return 0;
 +}
@@ -422,7 +306,6 @@ v2: Make #pwm-cells const (Rob Herring)
 +			     struct pwm_state *state)
 +{
 +	struct ipq_pwm_chip *ipq_chip = ipq_pwm_from_chip(chip);
-+	unsigned long rate = clk_get_rate(ipq_chip->clk);
 +	unsigned int pre_div, pwm_div, hi_dur;
 +	u64 effective_div, hi_div;
 +	u32 reg0, reg1;
@@ -441,12 +324,13 @@ v2: Make #pwm-cells const (Rob Herring)
 +	hi_dur = FIELD_GET(IPQ_PWM_REG0_HI_DURATION, reg0);
 +	pre_div = FIELD_GET(IPQ_PWM_REG1_PRE_DIV, reg1);
 +
-+	/* No overflow here, both pre_div and pwm_div <= 0xffff */
-+	effective_div = (pre_div + 1) * (pwm_div + 1);
-+	state->period = DIV64_U64_ROUND_UP(effective_div * NSEC_PER_SEC, rate);
++	effective_div = (u64)(pre_div + 1) * (pwm_div + 1);
++	state->period = DIV64_U64_ROUND_UP(effective_div * NSEC_PER_SEC,
++					   ipq_chip->clk_rate);
 +
 +	hi_div = hi_dur * (pre_div + 1);
-+	state->duty_cycle = DIV64_U64_ROUND_UP(hi_div * NSEC_PER_SEC, rate);
++	state->duty_cycle = DIV64_U64_ROUND_UP(hi_div * NSEC_PER_SEC,
++					       ipq_chip->clk_rate);
 +
 +	/*
 +	 * ensure a valid config is passed back to PWM core in case duty_cycle
@@ -467,6 +351,7 @@ v2: Make #pwm-cells const (Rob Herring)
 +	struct device *dev = &pdev->dev;
 +	struct ipq_pwm_chip *pwm;
 +	struct pwm_chip *chip;
++	struct clk *clk;
 +	int ret;
 +
 +	chip = devm_pwmchip_alloc(dev, 4, sizeof(*pwm));
@@ -477,17 +362,18 @@ v2: Make #pwm-cells const (Rob Herring)
 +	pwm->mem = devm_platform_ioremap_resource(pdev, 0);
 +	if (IS_ERR(pwm->mem))
 +		return dev_err_probe(dev, PTR_ERR(pwm->mem),
-+				"Failed to acquire resource\n");
++				     "Failed to acquire resource\n");
 +
-+	pwm->clk = devm_clk_get_enabled(dev, NULL);
-+	if (IS_ERR(pwm->clk))
-+		return dev_err_probe(dev, PTR_ERR(pwm->clk),
-+				"Failed to get clock\n");
++	clk = devm_clk_get_enabled(dev, NULL);
++	if (IS_ERR(clk))
++		return dev_err_probe(dev, PTR_ERR(clk),
++				     "Failed to get clock\n");
 +
-+	ret = devm_clk_rate_exclusive_get(dev, pwm->clk);
++	ret = devm_clk_rate_exclusive_get(dev, clk);
 +	if (ret)
-+		return dev_err_probe(dev, ret,
-+				"Failed to lock clock rate\n");
++		return dev_err_probe(dev, ret, "Failed to lock clock rate\n");
++
++	pwm->clk_rate = clk_get_rate(clk);
 +
 +	chip->ops = &ipq_pwm_ops;
 +
@@ -495,7 +381,7 @@ v2: Make #pwm-cells const (Rob Herring)
 +	if (ret < 0)
 +		return dev_err_probe(dev, ret, "Failed to add pwm chip\n");
 +
-+	return ret;
++	return 0;
 +}
 +
 +static const struct of_device_id pwm_ipq_dt_match[] = {
