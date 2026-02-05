@@ -1,0 +1,197 @@
+From 49e93b9f13ecb267744adb75b0aad93ca5584820 Mon Sep 17 00:00:00 2001
+From: Md Sadre Alam <mdalam@qti.qualcomm.com>
+Date: Thu, 4 Sep 2025 17:44:50 +0530
+Subject: arm64: ipq5424: enable spi nand for ipq5424 target
+
+Signed-off-by: Md Sadre Alam <mdalam@qti.qualcomm.com>
+---
+ arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts | 72 ++++++++++++---------
+ arch/arm64/boot/dts/qcom/ipq5424.dtsi       | 27 ++++++++
+ 2 files changed, 70 insertions(+), 29 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts b/arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts
+index 738618551203..398638c52066 100644
+--- a/arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts
++++ b/arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts
+@@ -457,26 +457,26 @@
+ };
+ 
+ &tlmm {
+-	sdc_default_state: sdc-default-state {
+-		clk-pins {
++	qpic_snand_default_state: qpic-snand-default-state {
++		qspi_clock {
+ 			pins = "gpio5";
+-			function = "sdc_clk";
++			function = "qspi_clk";
+ 			drive-strength = <8>;
+-			bias-disable;
++			bias-pull-down;
+ 		};
+ 
+-		cmd-pins {
++		qspi_cs {
+ 			pins = "gpio4";
+-			function = "sdc_cmd";
++			function = "qspi_cs";
+ 			drive-strength = <8>;
+ 			bias-pull-up;
+ 		};
+ 
+-		data-pins {
++		qspi_data {
+ 			pins = "gpio0", "gpio1", "gpio2", "gpio3";
+-			function = "sdc_data";
++			function = "qspi_data";
+ 			drive-strength = <8>;
+-			bias-pull-up;
++			bias-pull-down;
+ 		};
+ 	};
+ 
+@@ -271,6 +264,27 @@ &usb3 {
+ 	status = "okay";
+ };
+ 
++&qpic_bam {
++	status = "okay";
++};
++
++&qpic_nand {
++	pinctrl-0 = <&qpic_snand_default_state>;
++	pinctrl-names = "default";
++
++	status = "okay";
++
++	flash@0 {
++		compatible = "spi-nand";
++		reg = <0>;
++		#address-cells = <1>;
++		#size-cells = <1>;
++		nand-ecc-engine = <&qpic_nand>;
++		nand-ecc-strength = <8>;
++		nand-ecc-step-size = <512>;
++	};
++};
++
+ /*
+  * The bootstrap pins for the board select the XO clock frequency that
+  * supports 48 MHZ, 96 MHZ or 192 MHZ. This setting automatically
+diff --git a/include/linux/dma/qcom_bam_dma.h b/include/linux/dma/qcom_bam_dma.h
+--- a/include/linux/dma/qcom_bam_dma.h
++++ b/include/linux/dma/qcom_bam_dma.h
+@@ -67,5 +67,6 @@ bam_prep_ce(struct bam_cmd_element *bam_
+ 	    enum bam_command_type cmd, u32 data)
+ {
+ 	bam_prep_ce_le32(bam_ce, addr, cmd, cpu_to_le32(data));
++	bam_ce->mask = 0x0;
+ }
+ #endif
+diff --git a/arch/arm64/boot/dts/qcom/ipq5424-rdp487.dts b/arch/arm64/boot/dts/qcom/ipq5424-rdp487.dts
+--- a/arch/arm64/boot/dts/qcom/ipq5424-rdp487.dts
++++ b/arch/arm64/boot/dts/qcom/ipq5424-rdp487.dts
+@@ -403,26 +403,26 @@
+ };
+ 
+ &tlmm {
+-	sdc_default_state: sdc-default-state {
+-		clk-pins {
++	qpic_snand_default_state: qpic-snand-default-state {
++		qspi_clock {
+ 			pins = "gpio5";
+-			function = "sdc_clk";
++			function = "qspi_clk";
+ 			drive-strength = <8>;
+-			bias-disable;
++			bias-pull-down;
+ 		};
+ 
+-		cmd-pins {
++		qspi_cs {
+ 			pins = "gpio4";
+-			function = "sdc_cmd";
++			function = "qspi_cs";
+ 			drive-strength = <8>;
+ 			bias-pull-up;
+ 		};
+ 
+-		data-pins {
++		qspi_data {
+ 			pins = "gpio0", "gpio1", "gpio2", "gpio3";
+-			function = "sdc_data";
++			function = "qspi_data";
+ 			drive-strength = <8>;
+-			bias-pull-up;
++			bias-pull-down;
+ 		};
+ 	};
+ 
+@@ -449,6 +449,27 @@
+ 	status = "okay";
+ };
+ 
++&qpic_bam {
++	status = "okay";
++};
++
++&qpic_nand {
++	pinctrl-0 = <&qpic_snand_default_state>;
++	pinctrl-names = "default";
++
++	status = "okay";
++
++	flash@0 {
++		compatible = "spi-nand";
++		reg = <0>;
++		#address-cells = <1>;
++		#size-cells = <1>;
++		nand-ecc-engine = <&qpic_nand>;
++		nand-ecc-strength = <8>;
++		nand-ecc-step-size = <512>;
++	};
++};
++
+ /*
+  * The bootstrap pins for the board select the XO clock frequency that
+  * supports 48 MHZ, 96 MHZ or 192 MHZ. This setting automatically
+diff --git a/arch/arm64/boot/dts/qcom/ipq5424.dtsi b/arch/arm64/boot/dts/qcom/ipq5424.dtsi
+index bbb539dbdf5c..4b9f1d53fc0f 100644
+--- a/arch/arm64/boot/dts/qcom/ipq5424.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5424.dtsi
+@@ -492,6 +492,33 @@ tcsr: syscon@1937000 {
+ 			reg = <0 0x01937000 0 0x2a000>;
+ 		};
+ 
++		qpic_bam: dma-controller@7984000 {
++			compatible = "qcom,bam-v1.7.4", "qcom,bam-v1.7.0";
++			reg = <0x0 0x07984000 0x0 0x1c000>;
++			interrupts = <GIC_SPI 109 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&gcc GCC_QPIC_AHB_CLK>;
++			clock-names = "bam_clk";
++			#dma-cells = <1>;
++			qcom,ee = <0>;
++			status = "disabled";
++		};
++
++		qpic_nand: spi@79b0000 {
++			compatible = "qcom,ipq5424-snand", "qcom,ipq5424-nand";
++			reg = <0x0 0x079b0000 0x0 0x10000>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			clocks = <&gcc GCC_QPIC_CLK>,
++				 <&gcc GCC_QPIC_AHB_CLK>,
++				 <&gcc GCC_QPIC_IO_MACRO_CLK>;
++			clock-names = "core", "aon", "iom";
++			dmas = <&qpic_bam 0>,
++			       <&qpic_bam 1>,
++			       <&qpic_bam 2>;
++			dma-names = "tx", "rx", "cmd";
++			status = "disabled";
++		};
++
+ 		qupv3: geniqup@1ac0000 {
+ 			compatible = "qcom,geni-se-qup";
+ 			reg = <0 0x01ac0000 0 0x2000>;
+-- 
+2.34.1
+

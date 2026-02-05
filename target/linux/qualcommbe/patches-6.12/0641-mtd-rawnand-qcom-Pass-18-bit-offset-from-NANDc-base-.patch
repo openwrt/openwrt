@@ -1,0 +1,124 @@
+From ee000969f28bf579d3772bf7c0ae8aff86586e20 Mon Sep 17 00:00:00 2001
+From: Md Sadre Alam <quic_mdalam@quicinc.com>
+Date: Thu, 10 Apr 2025 15:30:17 +0530
+Subject: mtd: rawnand: qcom: Pass 18 bit offset from NANDc base to BAM
+ base
+
+The BAM command descriptor provides only 18 bits to specify the BAM
+register offset. Additionally, in the BAM command descriptor, the BAM
+register offset is supposed to be specified as "(NANDc base - BAM base)
++ reg_off". Since, the BAM controller expecting the value in the form of
+"NANDc base - BAM base", so that added a new field 'bam_offset' in the NAND
+properties structure and use it while preparing the command descriptor.
+
+Previously, the driver was specifying the NANDc base address in the BAM
+command descriptor.
+
+Cc: stable@vger.kernel.org
+Fixes: 8d6b6d7e135e ("mtd: nand: qcom: support for command descriptor formation")
+Tested-by: Lakshmi Sowjanya D <quic_laksd@quicinc.com>
+Signed-off-by: Md Sadre Alam <quic_mdalam@quicinc.com>
+Acked-by: Mark Brown <broonie@kernel.org>
+Tested-by: Gabor Juhos <j4g8y7@gmail.com> # on IPQ9574
+Reviewed-by: Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>
+Signed-off-by: Miquel Raynal <miquel.raynal@bootlin.com>
+---
+ drivers/mtd/nand/qpic_common.c       | 8 ++++----
+ drivers/mtd/nand/raw/qcom_nandc.c    | 4 ++++
+ drivers/spi/spi-qpic-snand.c         | 1 +
+ include/linux/mtd/nand-qpic-common.h | 4 +---
+ 4 files changed, 10 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/mtd/nand/qpic_common.c b/drivers/mtd/nand/qpic_common.c
+index e0ed25b5afea..4dc4d65e7d32 100644
+--- a/drivers/mtd/nand/qpic_common.c
++++ b/drivers/mtd/nand/qpic_common.c
+@@ -236,21 +236,21 @@ int qcom_prep_bam_dma_desc_cmd(struct qc
+ 	int i, ret;
+ 	struct bam_cmd_element *bam_ce_buffer;
+ 	struct bam_transaction *bam_txn = nandc->bam_txn;
++	u32 offset;
+ 
+ 	bam_ce_buffer = &bam_txn->bam_ce[bam_txn->bam_ce_pos];
+ 
+ 	/* fill the command desc */
+ 	for (i = 0; i < size; i++) {
++		offset = nandc->props->bam_offset + reg_off + 4 * i;
+ 		if (read)
+ 			bam_prep_ce(&bam_ce_buffer[i],
+-				    nandc_reg_phys(nandc, reg_off + 4 * i),
+-				    BAM_READ_COMMAND,
++				    offset, BAM_READ_COMMAND,
+ 				    reg_buf_dma_addr(nandc,
+ 						     (__le32 *)vaddr + i));
+ 		else
+ 			bam_prep_ce_le32(&bam_ce_buffer[i],
+-					 nandc_reg_phys(nandc, reg_off + 4 * i),
+-					 BAM_WRITE_COMMAND,
++				         offset, BAM_WRITE_COMMAND,
+ 					 *((__le32 *)vaddr + i));
+ 	}
+ 
+diff --git a/drivers/mtd/nand/raw/qcom_nandc.c b/drivers/mtd/nand/raw/qcom_nandc.c
+index 5eaa0be367cd..ef2dd158ca34 100644
+--- a/drivers/mtd/nand/raw/qcom_nandc.c
++++ b/drivers/mtd/nand/raw/qcom_nandc.c
+@@ -2368,6 +2368,7 @@ static const struct qcom_nandc_props ipq
+ 	.supports_bam = false,
+ 	.use_codeword_fixup = true,
+ 	.dev_cmd_reg_start = 0x0,
++	.bam_offset = 0x30000,
+ };
+ 
+ static const struct qcom_nandc_props ipq4019_nandc_props = {
+@@ -2375,6 +2376,7 @@ static const struct qcom_nandc_props ipq
+ 	.supports_bam = true,
+ 	.nandc_part_of_qpic = true,
+ 	.dev_cmd_reg_start = 0x0,
++	.bam_offset = 0x30000,
+ };
+ 
+ static const struct qcom_nandc_props ipq8074_nandc_props = {
+@@ -2382,6 +2384,7 @@ static const struct qcom_nandc_props ipq
+ 	.supports_bam = true,
+ 	.nandc_part_of_qpic = true,
+ 	.dev_cmd_reg_start = 0x7000,
++	.bam_offset = 0x30000,
+ };
+ 
+ static const struct qcom_nandc_props sdx55_nandc_props = {
+@@ -2390,6 +2393,7 @@ static const struct qcom_nandc_props sdx
+ 	.nandc_part_of_qpic = true,
+ 	.qpic_version2 = true,
+ 	.dev_cmd_reg_start = 0x7000,
++	.bam_offset = 0x30000,
+ };
+ 
+ /*
+diff --git a/drivers/spi/spi-qpic-snand.c b/drivers/spi/spi-qpic-snand.c
+index 17eb67e19132..d9fb602160c7 100644
+--- a/drivers/spi/spi-qpic-snand.c
++++ b/drivers/spi/spi-qpic-snand.c
+@@ -1646,6 +1646,7 @@ static void qcom_spi_remove(struct platf
+ 
+ static const struct qcom_nandc_props ipq9574_snandc_props = {
+ 	.dev_cmd_reg_start = 0x7000,
++	.bam_offset = 0x30000,
+ 	.supports_bam = true,
+ };
+ 
+diff --git a/include/linux/mtd/nand-qpic-common.h b/include/linux/mtd/nand-qpic-common.h
+index cd7172e6c1bb..e8462deda6db 100644
+--- a/include/linux/mtd/nand-qpic-common.h
++++ b/include/linux/mtd/nand-qpic-common.h
+@@ -452,6 +452,7 @@ struct qcom_nand_controller {
+ struct qcom_nandc_props {
+ 	u32 ecc_modes;
+ 	u32 dev_cmd_reg_start;
++	u32 bam_offset;
+ 	bool supports_bam;
+ 	bool nandc_part_of_qpic;
+ 	bool qpic_version2;
+-- 
+2.34.1
+

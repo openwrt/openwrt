@@ -1,0 +1,182 @@
+From 7a837fb45c7fccec1d47f3352c929efd882eed27 Mon Sep 17 00:00:00 2001
+From: Luo Jie <quic_luoj@quicinc.com>
+Date: Fri, 8 Mar 2024 17:02:35 +0800
+Subject: [PATCH 631/636] net: dsa: qca8k: Parse qca8386 clock and reset
+
+QCA8386 integrates a clock controller that provides the clocks
+and resets to the switch core and port.
+
+The QCA8386 integrated clock controller is driven as the clock
+provider, The clock and reset are defined in the device tree
+node of switch port.
+
+Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
+---
+ drivers/net/dsa/qca/qca8k-8xxx.c | 65 ++++++++++++++++++++++++++++++++
+ drivers/net/dsa/qca/qca8k.h      | 25 ++++++++++++
+ 2 files changed, 90 insertions(+)
+
+diff --git a/drivers/net/dsa/qca/qca8k-8xxx.c b/drivers/net/dsa/qca/qca8k-8xxx.c
+index 99b4fa10d216..c9d3196ee576 100644
+--- a/drivers/net/dsa/qca/qca8k-8xxx.c
++++ b/drivers/net/dsa/qca/qca8k-8xxx.c
+@@ -20,10 +20,22 @@
+ #include <linux/gpio/consumer.h>
+ #include <linux/etherdevice.h>
+ #include <linux/dsa/tag_qca.h>
++#include <linux/clk.h>
++#include <linux/reset.h>
+ 
+ #include "qca8k.h"
+ #include "qca8k_leds.h"
+ 
++static const char *const qca8386_port_clock_name[PORT_CLK_CNT] = {
++	"port_rx_clk", "port_tx_clk",
++	"port_rx_src_clk", "port_tx_src_clk",
++	"ephy_rx_clk", "ephy_tx_clk",
++};
++
++static const char *const qca8386_port_reset_name[PORT_RESET_CNT] = {
++	"ephy_rx_reset", "ephy_tx_reset",
++};
++
+ static void
+ qca8k_split_addr(u32 regaddr, u16 *r1, u16 *r2, u16 *page)
+ {
+@@ -1199,6 +1211,37 @@ qca8k_setup_of_pws_reg(struct qca8k_priv *priv)
+ 			val);
+ }
+ 
++static void qca8386_port_reset_release(struct qca8k_priv *priv)
++{
++	struct dsa_port *dp;
++	int ret;
++
++	dsa_switch_for_each_available_port(dp, priv->ds)
++		for (ret = 0; ret < PORT_RESET_CNT; ret++)
++			reset_control_put(priv->port[dp->index].reset[ret]);
++}
++
++static int qca8386_parse_port_config(struct qca8k_priv *priv)
++{
++	struct dsa_port *dp;
++	int ret;
++
++	dsa_switch_for_each_available_port(dp, priv->ds) {
++		for (ret = 0; ret < PORT_CLK_CNT; ret++)
++			priv->port[dp->index].clk[ret] = of_clk_get_by_name(dp->dn,
++					qca8386_port_clock_name[ret]);
++
++
++		for (ret = 0; ret < PORT_RESET_CNT; ret++)
++			priv->port[dp->index].reset[ret] =
++				of_reset_control_get_optional_exclusive(dp->dn,
++						qca8386_port_reset_name[ret]);
++	}
++
++	return 0;
++}
++
++
+ static int
+ qca8k_parse_port_config(struct qca8k_priv *priv)
+ {
+@@ -1208,6 +1251,17 @@ qca8k_parse_port_config(struct qca8k_priv *priv)
+ 	struct dsa_port *dp;
+ 	u32 delay;
+ 
++	/* QCA8386 does not support RGMII and the SGMII PLL configs are
++	 * not needed, however, there is a clock controller integrated
++	 * in the QCA8386, this inner clock controller is driven by the
++	 * clock provider, the clocks and resets from this inner clock
++	 * provider need to be configured as the correct value for the
++	 * current port link speed, these clocks and resets are defined
++	 * the port device tree node.
++	 */
++	if (priv->switch_id == QCA8K_ID_QCA8386)
++		return qca8386_parse_port_config(priv);
++
+ 	/* We have 2 CPU port. Check them */
+ 	for (port = 0; port < QCA8K_NUM_PORTS; port++) {
+ 		/* Skip every other port */
+@@ -2259,9 +2313,16 @@ static const struct phylink_mac_ops qca8k_phylink_mac_ops = {
+ 	.mac_link_up	= qca8k_phylink_mac_link_up,
+ };
+ 
++static void qca8k_teardown(struct dsa_switch *ds)
++{
++	struct qca8k_priv *priv = ds->priv;
++	qca8386_port_reset_release(priv);
++}
++
+ static const struct dsa_switch_ops qca8k_switch_ops = {
+ 	.get_tag_protocol	= qca8k_get_tag_protocol,
+ 	.setup			= qca8k_setup,
++	.teardown		= qca8k_teardown,
+ 	.get_strings		= qca8k_get_strings,
+ 	.get_ethtool_stats	= qca8k_get_ethtool_stats,
+ 	.get_sset_count		= qca8k_get_sset_count,
+@@ -2317,6 +2378,10 @@ qca8k_sw_probe(struct mdio_device *mdiodev)
+ 	priv->dev = &mdiodev->dev;
+ 	priv->info = of_device_get_match_data(priv->dev);
+ 
++	priv->root_clk = devm_clk_get_optional(priv->dev, "uniphy1_tx_312p5m_clk");
++	if (IS_ERR(priv->root_clk))
++		return PTR_ERR(priv->root_clk);
++
+ 	priv->reset_gpio = devm_gpiod_get_optional(priv->dev, "reset",
+ 						   GPIOD_OUT_HIGH);
+ 	if (IS_ERR(priv->reset_gpio))
+diff --git a/drivers/net/dsa/qca/qca8k.h b/drivers/net/dsa/qca/qca8k.h
+index ec7dedac338c..2af23a1b6163 100644
+--- a/drivers/net/dsa/qca/qca8k.h
++++ b/drivers/net/dsa/qca/qca8k.h
+@@ -18,6 +18,8 @@
+ #define QCA8K_ETHERNET_PHY_PRIORITY			6
+ #define QCA8K_ETHERNET_TIMEOUT				5
+ 
++/* Ther are 4 front panel ports and two CPU ports on QCA8386. */
++#define QCA8386_NUM_PORTS				6
+ #define QCA8K_NUM_PORTS					7
+ #define QCA8K_NUM_CPU_PORTS				2
+ #define QCA8K_MAX_MTU					9000
+@@ -495,6 +497,27 @@ struct qca8k_led {
+ 	struct led_classdev cdev;
+ };
+ 
++enum {
++	PORT_RX_CLK,
++	PORT_TX_CLK,
++	PORT_RX_SRC_CLK,
++	PORT_TX_SRC_CLK,
++	EPHY_RX_CLK,
++	EPHY_TX_CLK,
++	PORT_CLK_CNT,
++};
++
++enum {
++	EPHY_RX_RESET,
++	EPHY_TX_RESET,
++	PORT_RESET_CNT,
++};
++
++struct qca8386_port {
++	struct clk *clk[PORT_CLK_CNT];
++	struct reset_control *reset[PORT_RESET_CNT];
++};
++
+ struct qca8k_priv {
+ 	u8 switch_id;
+ 	u8 switch_revision;
+@@ -522,6 +545,8 @@ struct qca8k_priv {
+ 	struct qca8k_pcs pcs_port_6;
+ 	const struct qca8k_match_data *info;
+ 	struct qca8k_led ports_led[QCA8K_LED_COUNT];
++	struct qca8386_port port[QCA8386_NUM_PORTS];
++	struct clk *root_clk;   /* The root clock of qca8386 port */
+ };
+ 
+ struct qca8k_mib_desc {
+-- 
+2.34.1
+
