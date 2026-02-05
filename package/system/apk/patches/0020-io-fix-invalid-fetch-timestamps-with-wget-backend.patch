@@ -1,0 +1,33 @@
+From 42f159e67bafe1dad16839c0c0a005b5e89487ba Mon Sep 17 00:00:00 2001
+From: Matt Merhar <mattmerhar@protonmail.com>
+Date: Sun, 1 Feb 2026 21:16:01 -0500
+Subject: [PATCH] io: fix invalid fetch timestamps with wget backend
+
+In OpenWrt it was noticed that files downloaded via 'apk fetch' had
+huge, invalid timestamps.
+
+An strace showed utimensat_time64() being called with tv_sec values like
+-5268223168728060756 and 1167423650789556, causing even an 'ls -l' of
+the file afterwards to crash busybox.
+
+The explanation here is that the process_get_meta() stub in process.c
+doesn't set anything, so the struct is filled with garbage.
+
+To address this, zero init the struct in apk_ostream_copy_meta(). This
+leads to the timestamp of the downloaded file being set to the current
+time.
+---
+ src/io.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/src/io.c
++++ b/src/io.c
+@@ -1258,7 +1258,7 @@ int apk_ostream_fmt(struct apk_ostream *
+ 
+ void apk_ostream_copy_meta(struct apk_ostream *os, struct apk_istream *is)
+ {
+-	struct apk_file_meta meta;
++	struct apk_file_meta meta = { 0 };
+ 	apk_istream_get_meta(is, &meta);
+ 	os->ops->set_meta(os, &meta);
+ }
