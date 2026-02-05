@@ -9,7 +9,7 @@ Acked-by: Maxime Ripard <maxime.ripard@bootlin.com>
 
 --- a/drivers/soc/sunxi/sunxi_sram.c
 +++ b/drivers/soc/sunxi/sunxi_sram.c
-@@ -98,6 +98,10 @@ static const struct of_device_id sunxi_s
+@@ -99,6 +99,10 @@ static const struct of_device_id sunxi_s
  		.compatible	= "allwinner,sun50i-a64-sram-c",
  		.data		= &sun50i_a64_sram_c.data,
  	},
@@ -20,9 +20,9 @@ Acked-by: Maxime Ripard <maxime.ripard@bootlin.com>
  	{}
  };
  
-@@ -430,6 +434,10 @@ static const struct of_device_id sunxi_s
- 		.compatible = "allwinner,sun50i-h616-system-control",
- 		.data = &sun50i_h616_sramc_variant,
+@@ -444,6 +448,10 @@ static const struct of_device_id sunxi_s
+ 		.compatible = "allwinner,sun55i-a523-system-control",
+ 		.data = &sun55i_a523_sramc_variant,
  	},
 +	{
 +		.compatible = "allwinner,suniv-f1c100s-system-control",
