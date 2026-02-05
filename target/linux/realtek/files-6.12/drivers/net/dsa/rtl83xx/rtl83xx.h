@@ -188,9 +188,6 @@ int rtl83xx_lag_del(struct dsa_switch *ds, int group, int port);
  * collect them in this section.
  */
 
-void rtl838x_egress_rate_queue_limit(struct rtl838x_switch_priv *priv, int port,
-				     int queue, u32 rate);
-
 void rtl839x_pie_rule_dump(struct  pie_rule *pr);
 void rtl839x_set_egress_queue(int port, int queue);
 
