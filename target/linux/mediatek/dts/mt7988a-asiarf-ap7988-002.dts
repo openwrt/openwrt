@@ -1,0 +1,76 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * Copyright (C) 2025 AsiaRF Co., Ltd.
+ * Author: Elwin Huang <elwin@asiarf.com>
+ */
+
+/dts-v1/;
+#include "mt7988a-asiarf-ap7988.dtsi"
+
+/ {
+	compatible = "asiarf,ap7988-002", "mediatek,mt7988a";
+	model = "AsaiRF AP7988-002";
+};
+
+&i2c1 {
+	iio@77 {
+		compatible = "infineon,dps310";
+		reg = <0x77>;
+	};
+};
+
+&mmc0 {
+	pinctrl-names = "default", "state_uhs";
+	pinctrl-0 = <&mmc0_pins_sdcard>;
+	pinctrl-1 = <&mmc0_pins_sdcard>;
+	cd-gpios = <&pio 1 GPIO_ACTIVE_LOW>;
+	bus-width = <4>;
+	max-frequency = <50000000>;
+	cap-sd-highspeed;
+	vmmc-supply = <&reg_3p3v>;
+	vqmmc-supply = <&reg_3p3v>;
+	status = "okay";
+};
+
+&serial1 {
+	status = "okay";
+};
+
+&pcie0 {
+	pcie@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+
+		/* BE19000 */
+		mt7996@0,0 {
+			reg = <0x0000 0 0 0 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			nvmem-cells = <&eeprom_factory_0>;
+			nvmem-cell-names = "eeprom";
+			ieee80211-freq-limit = <2400000 2500000>, <5170000 5835000>, <5945000 7125000>;
+
+			band@0 {
+				/* 2.4 GHz */
+				reg = <0>;
+				nvmem-cells = <&macaddr_factory_4>;
+				nvmem-cell-names = "mac-address";
+			};
+
+			band@1 {
+				/* 5 GHz */
+				reg = <1>;
+				nvmem-cells = <&macaddr_factory_a>;
+				nvmem-cell-names = "mac-address";
+			};
+
+			band@2 {
+				/* 6 GHz */
+				reg = <2>;
+				nvmem-cells = <&macaddr_factory_2c0>;
+				nvmem-cell-names = "mac-address";
+			};
+		};
+	};
+};
