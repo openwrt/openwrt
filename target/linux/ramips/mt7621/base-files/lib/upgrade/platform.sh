@@ -193,6 +193,10 @@ platform_do_upgrade() {
 	plasmacloud,pax1800-lite)
 		platform_do_upgrade_dualboot_datachk "$1"
 		;;
+	tplink,deco-x20-v3)
+		fw_setenv tp_boot_idx 0
+		nand_do_upgrade "$1"
+		;;
 	tplink,er605-v2)
 		echo "Upgrading tplink,er605-v2"
 		CI_UBIPART="firmware"
