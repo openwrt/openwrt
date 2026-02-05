@@ -40,6 +40,9 @@ mediatek_setup_interfaces()
 	arcadyan,mozart)
 		ucidef_set_interfaces_lan_wan "lan0 eth1" eth2
 		;;
+	asiarf,ap7988-002)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 eth2" eth1
+		;;
 	asus,rt-ax52|\
 	asus,rt-ax59u|\
 	asus,zenwifi-bt8|\
