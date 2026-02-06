@@ -18,7 +18,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
 
 --- a/drivers/pci/controller/pcie-brcmstb.c
 +++ b/drivers/pci/controller/pcie-brcmstb.c
-@@ -116,8 +116,9 @@
+@@ -115,8 +115,9 @@
  		PCIE_MISC_CPU_2_PCIE_MEM_WIN0_LIMIT_HI + ((win) * 8)
  
  #define PCIE_MISC_HARD_PCIE_HARD_DEBUG					0x4204
@@ -30,7 +30,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  
  
  #define PCIE_INTR2_CPU_BASE		0x4300
-@@ -283,6 +284,7 @@ struct brcm_pcie {
+@@ -282,6 +283,7 @@ struct brcm_pcie {
  	struct clk		*clk;
  	struct device_node	*np;
  	bool			ssc;
@@ -38,7 +38,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	int			gen;
  	u64			msi_target_addr;
  	struct brcm_msi		*msi;
-@@ -1033,12 +1035,25 @@ static int brcm_pcie_setup(struct brcm_p
+@@ -1029,12 +1031,25 @@ static int brcm_pcie_setup(struct brcm_p
  		PCIE_RC_CFG_VENDOR_VENDOR_SPECIFIC_REG1_ENDIAN_MODE_BAR2_MASK);
  	writel(tmp, base + PCIE_RC_CFG_VENDOR_VENDOR_SPECIFIC_REG1);
  
@@ -69,7 +69,7 @@ Signed-off-by: Phil Elwell <phil@raspberrypi.com>
  	writel(tmp, base + PCIE_MISC_HARD_PCIE_HARD_DEBUG);
  
  	return 0;
-@@ -1267,6 +1282,7 @@ static int brcm_pcie_probe(struct platfo
+@@ -1263,6 +1278,7 @@ static int brcm_pcie_probe(struct platfo
  	pcie->gen = (ret < 0) ? 0 : ret;
  
  	pcie->ssc = of_property_read_bool(np, "brcm,enable-ssc");

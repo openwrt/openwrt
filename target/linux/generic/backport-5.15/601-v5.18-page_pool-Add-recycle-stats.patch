@@ -82,21 +82,16 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	if (ptr_ring_init(&pool->ring, ring_qsize, GFP_KERNEL) < 0)
  		return -ENOMEM;
  
-@@ -437,7 +450,12 @@ static bool page_pool_recycle_in_ring(st
- 	else
- 		ret = ptr_ring_produce_bh(&pool->ring, page);
- 
--	return (ret == 0) ? true : false;
-+	if (!ret) {
+@@ -435,6 +448,8 @@ static bool page_pool_recycle_in_ring(st
+ 	/* BH protection not needed if current is softirq */
+ 	in_softirq = page_pool_producer_lock(pool);
+ 	ret = !__ptr_ring_produce(&pool->ring, page);
++	if (ret)
 +		recycle_stat_inc(pool, ring);
-+		return true;
-+	}
-+
-+	return false;
- }
+ 	page_pool_producer_unlock(pool, in_softirq);
  
- /* Only allow direct recycling in special circumstances, into the
-@@ -448,11 +466,14 @@ static bool page_pool_recycle_in_ring(st
+ 	return ret;
+@@ -448,11 +463,14 @@ static bool page_pool_recycle_in_ring(st
  static bool page_pool_recycle_in_cache(struct page *page,
  				       struct page_pool *pool)
  {
@@ -112,7 +107,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	return true;
  }
  
-@@ -507,6 +528,7 @@ __page_pool_put_page(struct page_pool *p
+@@ -507,6 +525,7 @@ __page_pool_put_page(struct page_pool *p
  	 * doing refcnt based recycle tricks, meaning another process
  	 * will be invoking put_page.
  	 */
@@ -120,7 +115,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	/* Do not replace this with page_pool_return_page() */
  	page_pool_release_page(pool, page);
  	put_page(page);
-@@ -520,6 +542,7 @@ void page_pool_put_page(struct page_pool
+@@ -520,6 +539,7 @@ void page_pool_put_page(struct page_pool
  	page = __page_pool_put_page(pool, page, dma_sync_size, allow_direct);
  	if (page && !page_pool_recycle_in_ring(pool, page)) {
  		/* Cache full, fallback to free pages */
@@ -128,7 +123,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		page_pool_return_page(pool, page);
  	}
  }
-@@ -667,6 +690,9 @@ static void page_pool_free(struct page_p
+@@ -667,6 +687,9 @@ static void page_pool_free(struct page_p
  	if (pool->p.flags & PP_FLAG_DMA_MAP)
  		put_device(pool->p.dev);
  
