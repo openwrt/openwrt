@@ -6,20 +6,28 @@
 /* Register definition */
 
 #define RTETH_838X_CPU_PORT			28
+#define RTETH_838X_DMA_IF_INTR_MSK		(0x9f50)
+#define RTETH_838X_DMA_IF_INTR_STS		(0x9f54)
 #define RTETH_838X_QM_PKT2CPU_INTPRI_MAP	(0x5f10)
 #define RTETH_838X_QM_PKT2CPU_INTPRI_0		(0x5f04)
 #define RTETH_838X_QM_PKT2CPU_INTPRI_CNT	3
 
 #define RTETH_839X_CPU_PORT			52
+#define RTETH_839X_DMA_IF_INTR_MSK		(0x7864)
+#define RTETH_839X_DMA_IF_INTR_STS		(0x7868)
 #define RTETH_839X_QM_PKT2CPU_INTPRI_MAP	(0x1154)
 #define RTETH_839X_QM_PKT2CPU_INTPRI_0		(0x1148)
 #define RTETH_839X_QM_PKT2CPU_INTPRI_CNT	3
 
 #define RTETH_930X_CPU_PORT			28
+#define RTETH_930X_DMA_IF_INTR_MSK		(0xe010)
+#define RTETH_930X_DMA_IF_INTR_STS		(0xe01c)
 #define RTETH_930X_QM_RSN2CPUQID_CTRL_0		(0xa344)
 #define RTETH_930X_QM_RSN2CPUQID_CTRL_CNT	11
 
 #define RTETH_931X_CPU_PORT			56
+#define RTETH_931X_DMA_IF_INTR_MSK		(0x0910)
+#define RTETH_931X_DMA_IF_INTR_STS		(0x091c)
 #define RTETH_931X_QM_RSN2CPUQID_CTRL_0		(0xa9f4)
 #define RTETH_931X_QM_RSN2CPUQID_CTRL_CNT	14
 
@@ -49,18 +57,12 @@
 
 /* DMA interrupt control and status registers */
 #define RTL838X_DMA_IF_CTRL			(0x9f58)
-#define RTL838X_DMA_IF_INTR_STS			(0x9f54)
-#define RTL838X_DMA_IF_INTR_MSK			(0x9f50)
 
 #define RTL839X_DMA_IF_CTRL			(0x786c)
-#define RTL839X_DMA_IF_INTR_STS			(0x7868)
-#define RTL839X_DMA_IF_INTR_MSK			(0x7864)
 
 #define RTL930X_DMA_IF_CTRL			(0xe028)
-#define RTL930X_DMA_IF_INTR_RX_RUNOUT_STS	(0xe01C)
 #define RTL930X_DMA_IF_INTR_RX_DONE_STS		(0xe020)
 #define RTL930X_DMA_IF_INTR_TX_DONE_STS		(0xe024)
-#define RTL930X_DMA_IF_INTR_RX_RUNOUT_MSK	(0xe010)
 #define RTL930X_DMA_IF_INTR_RX_DONE_MSK		(0xe014)
 #define RTL930X_DMA_IF_INTR_TX_DONE_MSK		(0xe018)
 #define RTL930X_L2_NTFY_IF_INTR_MSK		(0xe04C)
@@ -68,10 +70,8 @@
 
 /* TODO: RTL931X_DMA_IF_CTRL has different bits meanings */
 #define RTL931X_DMA_IF_CTRL			(0x0928)
-#define RTL931X_DMA_IF_INTR_RX_RUNOUT_STS	(0x091c)
 #define RTL931X_DMA_IF_INTR_RX_DONE_STS		(0x0920)
 #define RTL931X_DMA_IF_INTR_TX_DONE_STS		(0x0924)
-#define RTL931X_DMA_IF_INTR_RX_RUNOUT_MSK	(0x0910)
 #define RTL931X_DMA_IF_INTR_RX_DONE_MSK		(0x0914)
 #define RTL931X_DMA_IF_INTR_TX_DONE_MSK		(0x0918)
 #define RTL931X_L2_NTFY_IF_INTR_MSK		(0x09E4)
@@ -429,10 +429,8 @@ struct rteth_config {
 	int qm_rsn2cpuqid_cnt;
 	int dma_if_intr_sts;
 	int dma_if_intr_msk;
-	int dma_if_intr_rx_runout_sts;
 	int dma_if_intr_rx_done_sts;
 	int dma_if_intr_tx_done_sts;
-	int dma_if_intr_rx_runout_msk;
 	int dma_if_intr_rx_done_msk;
 	int dma_if_intr_tx_done_msk;
 	int l2_ntfy_if_intr_sts;

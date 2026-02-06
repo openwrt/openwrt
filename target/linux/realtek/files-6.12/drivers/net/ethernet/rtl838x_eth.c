@@ -401,7 +401,7 @@ static irqreturn_t rteth_93xx_net_irq(int irq, void *dev_id)
 {
 	struct net_device *dev = dev_id;
 	struct rteth_ctrl *ctrl = netdev_priv(dev);
-	u32 status_rx_r = sw_r32(ctrl->r->dma_if_intr_rx_runout_sts);
+	u32 status_rx_r = sw_r32(ctrl->r->dma_if_intr_sts);
 	u32 status_rx = sw_r32(ctrl->r->dma_if_intr_rx_done_sts);
 	u32 status_tx = sw_r32(ctrl->r->dma_if_intr_tx_done_sts);
 
@@ -432,8 +432,8 @@ static irqreturn_t rteth_93xx_net_irq(int irq, void *dev_id)
 	/* RX buffer overrun */
 	if (status_rx_r) {
 		pr_debug("RX buffer overrun: status %x, mask: %x\n",
-			 status_rx_r, sw_r32(ctrl->r->dma_if_intr_rx_runout_msk));
-		sw_w32(status_rx_r, ctrl->r->dma_if_intr_rx_runout_sts);
+			 status_rx_r, sw_r32(ctrl->r->dma_if_intr_msk));
+		sw_w32(status_rx_r, ctrl->r->dma_if_intr_sts);
 	}
 
 	return IRQ_HANDLED;
@@ -500,8 +500,8 @@ static void rteth_839x_hw_reset(struct rteth_ctrl *ctrl)
 static void rteth_93xx_hw_reset(struct rteth_ctrl *ctrl)
 {
 	/* Disable and clear interrupts */
-	sw_w32(0x00000000, ctrl->r->dma_if_intr_rx_runout_msk);
-	sw_w32(0xffffffff, ctrl->r->dma_if_intr_rx_runout_sts);
+	sw_w32(0x00000000, ctrl->r->dma_if_intr_msk);
+	sw_w32(0xffffffff, ctrl->r->dma_if_intr_sts);
 	sw_w32(0x00000000, ctrl->r->dma_if_intr_rx_done_msk);
 	sw_w32(0xffffffff, ctrl->r->dma_if_intr_rx_done_sts);
 	sw_w32(0x00000000, ctrl->r->dma_if_intr_tx_done_msk);
@@ -641,7 +641,7 @@ static void rtl93xx_hw_en_rxtx(struct rteth_ctrl *ctrl)
 	}
 
 	/* Enable Notify, RX done and RX overflow, TX done interrupts not needed */
-	sw_w32(0xffffffff, ctrl->r->dma_if_intr_rx_runout_msk);
+	sw_w32(0xffffffff, ctrl->r->dma_if_intr_msk);
 	sw_w32(0xffffffff, ctrl->r->dma_if_intr_rx_done_msk);
 	sw_w32(0x00000000, ctrl->r->dma_if_intr_tx_done_msk);
 
@@ -835,8 +835,8 @@ static void rtl838x_hw_stop(struct rteth_ctrl *ctrl)
 
 	/* Disable all TX/RX interrupts */
 	if (ctrl->r->family_id == RTL9300_FAMILY_ID || ctrl->r->family_id == RTL9310_FAMILY_ID) {
-		sw_w32(0x00000000, ctrl->r->dma_if_intr_rx_runout_msk);
-		sw_w32(0xffffffff, ctrl->r->dma_if_intr_rx_runout_sts);
+		sw_w32(0x00000000, ctrl->r->dma_if_intr_msk);
+		sw_w32(0xffffffff, ctrl->r->dma_if_intr_sts);
 		sw_w32(0x00000000, ctrl->r->dma_if_intr_rx_done_msk);
 		sw_w32(0xffffffff, ctrl->r->dma_if_intr_rx_done_sts);
 		sw_w32(0x00000000, ctrl->r->dma_if_intr_tx_done_msk);
@@ -1449,8 +1449,8 @@ static const struct rteth_config rteth_838x_cfg = {
 	.qm_pkt2cpu_intpri_map = RTETH_838X_QM_PKT2CPU_INTPRI_MAP,
 	.qm_rsn2cpuqid_ctrl = RTETH_838X_QM_PKT2CPU_INTPRI_0,
 	.qm_rsn2cpuqid_cnt = RTETH_838X_QM_PKT2CPU_INTPRI_CNT,
-	.dma_if_intr_sts = RTL838X_DMA_IF_INTR_STS,
-	.dma_if_intr_msk = RTL838X_DMA_IF_INTR_MSK,
+	.dma_if_intr_sts = RTETH_838X_DMA_IF_INTR_STS,
+	.dma_if_intr_msk = RTETH_838X_DMA_IF_INTR_MSK,
 	.dma_if_ctrl = RTL838X_DMA_IF_CTRL,
 	.mac_force_mode_ctrl = RTL838X_MAC_FORCE_MODE_CTRL,
 	.dma_rx_base = RTL838X_DMA_RX_BASE,
@@ -1496,8 +1496,8 @@ static const struct rteth_config rteth_839x_cfg = {
 	.qm_pkt2cpu_intpri_map = RTETH_839X_QM_PKT2CPU_INTPRI_MAP,
 	.qm_rsn2cpuqid_ctrl = RTETH_839X_QM_PKT2CPU_INTPRI_0,
 	.qm_rsn2cpuqid_cnt = RTETH_839X_QM_PKT2CPU_INTPRI_CNT,
-	.dma_if_intr_sts = RTL839X_DMA_IF_INTR_STS,
-	.dma_if_intr_msk = RTL839X_DMA_IF_INTR_MSK,
+	.dma_if_intr_sts = RTETH_839X_DMA_IF_INTR_STS,
+	.dma_if_intr_msk = RTETH_839X_DMA_IF_INTR_MSK,
 	.dma_if_ctrl = RTL839X_DMA_IF_CTRL,
 	.mac_force_mode_ctrl = RTL839X_MAC_FORCE_MODE_CTRL,
 	.dma_rx_base = RTL839X_DMA_RX_BASE,
@@ -1542,10 +1542,10 @@ static const struct rteth_config rteth_930x_cfg = {
 	.mac_l2_port_ctrl = RTETH_930X_MAC_L2_PORT_CTRL,
 	.qm_rsn2cpuqid_ctrl = RTETH_930X_QM_RSN2CPUQID_CTRL_0,
 	.qm_rsn2cpuqid_cnt = RTETH_930X_QM_RSN2CPUQID_CTRL_CNT,
-	.dma_if_intr_rx_runout_sts = RTL930X_DMA_IF_INTR_RX_RUNOUT_STS,
+	.dma_if_intr_sts = RTETH_930X_DMA_IF_INTR_STS,
 	.dma_if_intr_rx_done_sts = RTL930X_DMA_IF_INTR_RX_DONE_STS,
 	.dma_if_intr_tx_done_sts = RTL930X_DMA_IF_INTR_TX_DONE_STS,
-	.dma_if_intr_rx_runout_msk = RTL930X_DMA_IF_INTR_RX_RUNOUT_MSK,
+	.dma_if_intr_msk = RTETH_930X_DMA_IF_INTR_MSK,
 	.dma_if_intr_rx_done_msk = RTL930X_DMA_IF_INTR_RX_DONE_MSK,
 	.dma_if_intr_tx_done_msk = RTL930X_DMA_IF_INTR_TX_DONE_MSK,
 	.l2_ntfy_if_intr_sts = RTL930X_L2_NTFY_IF_INTR_STS,
@@ -1593,10 +1593,10 @@ static const struct rteth_config rteth_931x_cfg = {
 	.mac_l2_port_ctrl = RTETH_931X_MAC_L2_PORT_CTRL,
 	.qm_rsn2cpuqid_ctrl = RTETH_931X_QM_RSN2CPUQID_CTRL_0,
 	.qm_rsn2cpuqid_cnt = RTETH_931X_QM_RSN2CPUQID_CTRL_CNT,
-	.dma_if_intr_rx_runout_sts = RTL931X_DMA_IF_INTR_RX_RUNOUT_STS,
+	.dma_if_intr_sts = RTETH_931X_DMA_IF_INTR_STS,
 	.dma_if_intr_rx_done_sts = RTL931X_DMA_IF_INTR_RX_DONE_STS,
 	.dma_if_intr_tx_done_sts = RTL931X_DMA_IF_INTR_TX_DONE_STS,
-	.dma_if_intr_rx_runout_msk = RTL931X_DMA_IF_INTR_RX_RUNOUT_MSK,
+	.dma_if_intr_msk = RTETH_931X_DMA_IF_INTR_MSK,
 	.dma_if_intr_rx_done_msk = RTL931X_DMA_IF_INTR_RX_DONE_MSK,
 	.dma_if_intr_tx_done_msk = RTL931X_DMA_IF_INTR_TX_DONE_MSK,
 	.l2_ntfy_if_intr_sts = RTL931X_L2_NTFY_IF_INTR_STS,
