@@ -127,6 +127,7 @@ platform_do_upgrade() {
 	airpi,ap3000m|\
 	arcadyan,mozart|\
 	glinet,gl-mt2500|\
+	glinet,gl-mt2500-airoha|\
 	glinet,gl-mt6000|\
 	glinet,gl-x3000|\
 	glinet,gl-xe3000|\
@@ -350,6 +351,7 @@ platform_copy_config() {
 	airpi,ap3000m|\
 	arcadyan,mozart|\
 	glinet,gl-mt2500|\
+	glinet,gl-mt2500-airoha|\
 	glinet,gl-mt6000|\
 	glinet,gl-x3000|\
 	glinet,gl-xe3000|\
