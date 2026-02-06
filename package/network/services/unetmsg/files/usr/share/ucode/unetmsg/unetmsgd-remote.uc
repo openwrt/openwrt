@@ -203,16 +203,8 @@ function network_check_auth(sock_data, info)
 	core.dbg(`Incoming connection from ${sock_data.name} established\n`);
 
 	let chan = net.tx_channels[sock_data.name];
-	if (!chan) {
+	if (!chan || !chan.auth)
 		net.timer.set(100);
-		return;
-	}
-
-	chan.channel.request({
-		method: "ping",
-		data: {},
-		return: "ignore",
-	});
 }
 
 function network_accept(net, sock, addr)
