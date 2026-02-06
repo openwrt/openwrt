@@ -62,7 +62,7 @@ function network_rx_socket_close(data)
 
 	core.dbg(`Incoming connection from ${data.name} closed\n`);
 	let net = networks[data.network];
-	if (net && net.rx_channels[data.name] != data) {
+	if (net && net.rx_channels[data.name] == data) {
 		delete net.rx_channels[data.name];
 		network_rx_cleanup_state(data.name);
 	}
