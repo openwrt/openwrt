@@ -156,13 +156,17 @@
 	eeprom_factory_a0000: eeprom@a0000 {
 		reg = <0xa0000 0x1000>;
 	};
+
+	precal_factory_a1010: precal@a1010 {
+		reg = <0xa1010 0x62810>;
+	};
 };
 
 &slot0 {
 	radio0: mt7915@0,0 {
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&eeprom_factory_a0000>;
-		nvmem-cell-names = "eeprom";
+		nvmem-cells = <&eeprom_factory_a0000>, <&precal_factory_a1010>;
+		nvmem-cell-names = "eeprom", "precal";
 	};
 };
 
