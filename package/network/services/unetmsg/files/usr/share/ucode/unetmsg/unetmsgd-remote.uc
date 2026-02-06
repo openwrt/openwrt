@@ -93,6 +93,8 @@ function network_socket_handle_request(sock_data, req)
 	let host = sock_data.name;
 	let network = sock_data.network;
 	let args = { ...req.args, host, network };
+	let tx_chan = net.tx_channels[host];
+	let tx_auth = tx_chan && tx_chan.auth;
 	switch (msgtype) {
 	case "publish":
 	case "subscribe":
@@ -102,7 +104,8 @@ function network_socket_handle_request(sock_data, req)
 			return;
 		if (args.enabled) {
 			if (list[name]) {
-				core.handle_publish(null, name);
+				if (tx_auth)
+					core.handle_publish(null, name);
 				return 0;
 			}
 
@@ -121,7 +124,8 @@ function network_socket_handle_request(sock_data, req)
 				network: sock_data.network,
 				name: host,
 			}, pubsub_proto);
-			core.handle_publish(null, name);
+			if (tx_auth)
+				core.handle_publish(null, name);
 			list[name] = true;
 		} else {
 			if (!list[name])
@@ -318,6 +322,11 @@ function network_open_channel(net, name, peer)
 					data: { name, enabled: true },
 					return: "ignore",
 				});
+
+		let rx_chan = net.rx_channels[name];
+		if (rx_chan)
+			for (let sub_name in rx_chan.publish)
+				core.handle_publish(null, sub_name);
 	};
 	let auth_cb = () => {
 		if (!sock_data.auth)
