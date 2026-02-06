@@ -524,7 +524,7 @@ function unetd_network_update()
 	}
 
 	for (let name in networks)
-		if (!data.networks)
+		if (!data.networks[name])
 			network_close(name);
 }
 
