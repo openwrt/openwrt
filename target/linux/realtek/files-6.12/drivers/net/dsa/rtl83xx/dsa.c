@@ -727,22 +727,6 @@ static void rtldsa_83xx_phylink_mac_config(struct dsa_switch *ds, int port,
 	sw_w32(mcr, priv->r->mac_force_mode_ctrl(port));
 }
 
-static void rtldsa_931x_phylink_mac_config(struct dsa_switch *ds, int port,
-					   unsigned int mode,
-					   const struct phylink_link_state *state)
-{
-	struct rtl838x_switch_priv *priv = ds->priv;
-	u32 reg;
-
-	reg = sw_r32(priv->r->mac_force_mode_ctrl(port));
-	pr_info("%s reading FORCE_MODE_CTRL: %08x\n", __func__, reg);
-
-	/* Disable MAC completely so PCS can setup the SerDes */
-	reg = 0;
-
-	sw_w32(reg, priv->r->mac_force_mode_ctrl(port));
-}
-
 static void rtldsa_93xx_phylink_mac_config(struct dsa_switch *ds, int port,
 					   unsigned int mode,
 					   const struct phylink_link_state *state)
@@ -753,11 +737,8 @@ static void rtldsa_93xx_phylink_mac_config(struct dsa_switch *ds, int port,
 	if (port == priv->cpu_port)
 		return;
 
-	if (priv->family_id == RTL9310_FAMILY_ID)
-		return rtldsa_931x_phylink_mac_config(ds, port, mode, state);
-
 	/* Disable MAC completely */
-	sw_w32(0, RTL930X_MAC_FORCE_MODE_CTRL + 4 * port);
+	sw_w32(0, priv->r->mac_force_mode_ctrl(port));
 }
 
 static void rtldsa_83xx_phylink_mac_link_down(struct dsa_switch *ds, int port,
