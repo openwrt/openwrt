@@ -449,6 +449,13 @@ function network_close(name)
 	net.timer.cancel();
 	net.handle.delete();
 	net.socket.close();
+
+	for (let peer, sock_data in net.rx_channels)
+		network_rx_socket_close(sock_data);
+
+	for (let peer, sock_data in net.tx_channels)
+		network_tx_socket_close(sock_data);
+
 	delete networks[name];
 }
 
