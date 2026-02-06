@@ -92,38 +92,38 @@ endef
 # 1: list of dependencies
 # 2: list of extra dependencies
 define FormatDepends
-$(strip
-  $(eval _COMMA_SEP := __COMMA_SEP__)
-  $(eval _SPACE_SEP := __SPACE_SEP__)
-  $(eval _DEPENDS := $(1))
-  $(eval _EXTRA_DEPENDS_ABI := )
-  $(eval _DEP_ITEMS := $(subst $(_COMMA_SEP),$(space),$(subst $(space),$(_SPACE_SEP),$(subst $(comma),$(_COMMA_SEP),$(2)))))
-
-  $(foreach dep,$(_DEP_ITEMS),
-    $(eval _EXTRA_DEP := )
-    $(eval _CUR_DEP := $(subst $(_SPACE_SEP),$(space),$(strip $(dep))))
-    $(eval _PKG_NAME := $(word 1,$(_CUR_DEP)))
-    $(if $(findstring $(paren_left), $(_PKG_NAME)),
-      $(error "Unsupported extra dependency format: no space before '(': $(_CUR_DEP)"))
-    )
-    $(eval _ABI_SUFFIX := $(call GetABISuffix,$(_PKG_NAME)))
-    $(eval _PKG_NAME_ABI := $(_PKG_NAME)$(_ABI_SUFFIX))
-    $(eval _VERSION_CONSTRAINT := $(word 2,$(_CUR_DEP)))
-    $(if $(_VERSION_CONSTRAINT),
-      $(eval _EXTRA_DEP := $(_PKG_NAME_ABI) $(_VERSION_CONSTRAINT)),
-      $(error "Extra dependencies must have version constraints. $(_PKG_NAME) seems to be unversioned.")
-    )
-    $(if $(and $(_EXTRA_DEPENDS_ABI),$(_EXTRA_DEP)),
-      $(eval _EXTRA_DEPENDS_ABI := $(_EXTRA_DEPENDS_ABI)$(comma)$(_EXTRA_DEP)),
-      $(eval _EXTRA_DEPENDS_ABI := $(_EXTRA_DEP))
-    )
-    $(if $(_DEPENDS),
-      $(eval _DEPENDS := $(filter-out $(_PKG_NAME_ABI),$(_DEPENDS)))
-    )
-  )
-
-  $(eval _DEPENDS := $(call mergelist,$(_DEPENDS)))
-  $(_EXTRA_DEPENDS_ABI)$(if $(_DEPENDS),$(comma) $(_DEPENDS))
+$(strip \
+  $(eval _COMMA_SEP := __COMMA_SEP__) \
+  $(eval _SPACE_SEP := __SPACE_SEP__) \
+  $(eval _DEPENDS := $(1)) \
+  $(eval _EXTRA_DEPENDS_ABI := ) \
+  $(eval _DEP_ITEMS := $(subst $(_COMMA_SEP),$(space),$(subst $(space),$(_SPACE_SEP),$(subst $(comma),$(_COMMA_SEP),$(2))))) \
+ \
+  $(foreach dep,$(_DEP_ITEMS), \
+    $(eval _EXTRA_DEP := ) \
+    $(eval _CUR_DEP := $(subst $(_SPACE_SEP),$(space),$(strip $(dep)))) \
+    $(eval _PKG_NAME := $(word 1,$(_CUR_DEP))) \
+    $(if $(findstring $(paren_left), $(_PKG_NAME)), \
+      $(error "Unsupported extra dependency format: no space before '(': $(_CUR_DEP)")) \
+    ) \
+    $(eval _ABI_SUFFIX := $(call GetABISuffix,$(_PKG_NAME))) \
+    $(eval _PKG_NAME_ABI := $(_PKG_NAME)$(_ABI_SUFFIX)) \
+    $(eval _VERSION_CONSTRAINT := $(word 2,$(_CUR_DEP))) \
+    $(if $(_VERSION_CONSTRAINT), \
+      $(eval _EXTRA_DEP := $(_PKG_NAME_ABI) $(_VERSION_CONSTRAINT)), \
+      $(error "Extra dependencies must have version constraints. $(_PKG_NAME) seems to be unversioned.") \
+    ) \
+    $(if $(and $(_EXTRA_DEPENDS_ABI),$(_EXTRA_DEP)), \
+      $(eval _EXTRA_DEPENDS_ABI := $(_EXTRA_DEPENDS_ABI)$(comma)$(_EXTRA_DEP)), \
+      $(eval _EXTRA_DEPENDS_ABI := $(_EXTRA_DEP)) \
+    ) \
+    $(if $(_DEPENDS), \
+      $(eval _DEPENDS := $(filter-out $(_PKG_NAME_ABI),$(_DEPENDS))) \
+    ) \
+  ) \
+ \
+  $(eval _DEPENDS := $(call mergelist,$(_DEPENDS))) \
+  $(_EXTRA_DEPENDS_ABI)$(if $(_DEPENDS),$(comma) $(_DEPENDS)) \
 )
 endef
 
