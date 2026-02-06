@@ -92,179 +92,38 @@ endef
 # 1: list of dependencies
 # 2: list of extra dependencies
 define FormatDepends
-$(strip
-  $(eval _COMMA_SEP := __COMMA_SEP__)
-  $(eval _SPACE_SEP := __SPACE_SEP__)
-  $(eval _DEPENDS := $(1))
-  $(eval _EXTRA_DEPENDS_ABI := )
-  $(eval _DEP_ITEMS := $(subst $(_COMMA_SEP),$(space),$(subst $(space),$(_SPACE_SEP),$(subst $(comma),$(_COMMA_SEP),$(2)))))
-
-  $(foreach dep,$(_DEP_ITEMS),
-    $(eval _EXTRA_DEP := )
-    $(eval _CUR_DEP := $(subst $(_SPACE_SEP),$(space),$(strip $(dep))))
-    $(eval _PKG_NAME := $(word 1,$(_CUR_DEP)))
-    $(if $(findstring $(paren_left), $(_PKG_NAME)),
-      $(error "Unsupported extra dependency format: no space before '(': $(_CUR_DEP)"))
-    )
-    $(eval _ABI_SUFFIX := $(call GetABISuffix,$(_PKG_NAME)))
-    $(eval _PKG_NAME_ABI := $(_PKG_NAME)$(_ABI_SUFFIX))
-    $(eval _VERSION_CONSTRAINT := $(word 2,$(_CUR_DEP)))
-    $(if $(_VERSION_CONSTRAINT),
-      $(eval _EXTRA_DEP := $(_PKG_NAME_ABI) $(_VERSION_CONSTRAINT)),
-      $(error "Extra dependencies must have version constraints. $(_PKG_NAME) seems to be unversioned.")
-    )
-    $(if $(and $(_EXTRA_DEPENDS_ABI),$(_EXTRA_DEP)),
-      $(eval _EXTRA_DEPENDS_ABI := $(_EXTRA_DEPENDS_ABI)$(comma)$(_EXTRA_DEP)),
-      $(eval _EXTRA_DEPENDS_ABI := $(_EXTRA_DEP))
-    )
-    $(if $(_DEPENDS),
-      $(eval _DEPENDS := $(filter-out $(_PKG_NAME_ABI),$(_DEPENDS)))
-    )
-  )
-
-  $(eval _DEPENDS := $(call mergelist,$(_DEPENDS)))
-  $(_EXTRA_DEPENDS_ABI)$(if $(_DEPENDS),$(comma) $(_DEPENDS))
-)
-endef
-
-# Format provide and add ABI and version if it's not a virtual provide marked
-# with an @.
-#
-# Same as for the base package name, if ABI version is set, provide both
-# unversioned provide and one with ABI version and version.
-#
-# 1: provide name
-# 2: provide version
-# 3: (optional) ABI version
-define AddProvide
-$(strip
-  $(if $(filter @%,$(1)),
-    $(patsubst @%,%,$(1)),
-    $(if $(3),
-      $(1) $(1)$(call FormatABISuffix,$(1),$(3))=$(2),
-      $(1)=$(2)
-    )
-  )
-)
-endef
-
-# Remove virtual provides prefix and self. apk doesn't like it when packages
-# specify a redundant provide pointing to self.
-#
-# 1: package name
-# 2: list of provides
-define SanitizeProvides
-$(filter-out $(1),$(patsubst @%,%,$(2)))
-endef
-
-# Format provides both for apk and control
-#
-# - If ABI version is defined:
-#   - package is named `${package_name}${ABI_version}`
-#     if a `package_name` ends in a number, the `ABI_version` will be prefixed
-#     with a - sign, e.g.: libsqlite3-0
-#   - package implicitly provides
-#     `${package_name}${ABI_version}=${package_version}`
-#     this implies that only one version of a package per ABI can be installed
-#     at the same time
-#   - additionally provide `${package_name}` so multiple packages can be looked
-#     up by its base name
-#   - for each `provides`:
-#     - provide `${provide}${ABI_version}=${package_version}`
-#       this implies that only one version of a provide can be installed at the
-#       same time
-#     - if a `provide` ends in a number, the `ABI_version` will be prefixed with
-#       a - sign, e.g.: provide1-0
-#     - additionally provide `${provide}` so multiple packages can be looked up
-#       by its base name
-#
-# - else if ABI version is _not_ defined
-#   - package is named `${package_name}`
-#   - package implicitly provides `${package_name}=${package_version}`
-#     this implies that only one version of a package can be installed at the
-#     same time
-#   - for each `provides`, provide `${provide}=${package_version}` this implies
-#     that only one version of a provide can be installed at the same time
-#
-# - Both with and without an ABI, if a provide starts with an @, treat it as a
-#   virtual provide, that doesn't own the name by not appending version.
-#   Multiple packages with the same virtual provides can be installed
-#   side-by-side.
-#
-# - apk doesn't like it when packages specify a redundant provide pointing to
-#   self. Filter it out, but keep virtual self provides, in the form of
-#   @(kmod-)?${package_name}-any.
-#
-# - Packages implicitly add a virtual @${package_name}-any provide in Package,
-#   which implies that kmods, which are also packages, will have a virtual
-#   @kmod-${package_name}-any provide.
-#
-# - Aside from the two aforementioned implicit provides, packages are expected
-#   to manage their provides themselves.
-#
-# - When multiple variants inside the same package have the same provide, a
-#   default variant must be set using DEFAULT_VARIANT:=1.
-#
-# - Cross-package provides must be virtual and a default variant must be set. If
-#   different packages provide the same versioned (i.e. non-virtual) provide the
-#   package with a higher version will be preferred, which results in unintended
-#   behavior, because the order might change with package updates.
-#
-#   Example:
-#   - both uclient-fetch and wget provide wget
-#   - wget doesn't have a default variant called wget that would provide an
-#     implicit @wget-any
-#     - add wget to PROVIDES for both wget-ssl and wget-nossl variants so they
-#       can't be installed at the same time
-#     - add @wget-any to both packages so packages outside of wget can provide
-#       it
-#   - uclient-fetch has only one variant
-#     - add @wget-any to PROVIDES
-#     - mark uclient-fetch as the default variant using DEFAULT_VARIANT:=1
-#   - switch wget consumer that don't depend on a specific version like apk to
-#     depend on @wget-any
-#
-# - Alternatives don't affect the packaging.
-#
-# 1: package name
-# 2: package version
-# 3: ABI version
-# 4: list of provides
-define FormatProvides
-$(strip
-  $(if $(call FormatABISuffix,$(1),$(3)),
-    $(1) $(foreach provide,
-      $(filter-out $(1),$(4)),
-      $(call AddProvide,$(provide),$(2),$(3))
-    ),
-    $(foreach provide,
-      $(filter-out $(1),$(4)),
-      $(call AddProvide,$(provide),$(2))
-    )
-  )
-)
-endef
-
-# Get apk provider priority
-#
-# - if a package is marked as a default variant, set it to 100.
-#
-# - if a package has an ABI version defined, set it to 10.
-#   The enables packages with an ABI version to be installed by their base name
-#   instead of a name and an ABI version, e.g.:
-#   libfoo3, where 3 is the ABI version can be installed by just libfoo.
-#   This affects manual installation only, as the dependency resolution takes
-#   care of ABI versions.
-#
-# - otherwise return nothing, i.e. package will have the default priority 0.
-#
-# 1: Default variant
-# 2: ABI version
-define GetProviderPriority
-$(strip
-  $(if $(1),100,
-    $(if $(2),10)
-  )
+$(strip \
+  $(eval _COMMA_SEP := __COMMA_SEP__) \
+  $(eval _SPACE_SEP := __SPACE_SEP__) \
+  $(eval _DEPENDS := $(1)) \
+  $(eval _EXTRA_DEPENDS_ABI := ) \
+  $(eval _DEP_ITEMS := $(subst $(_COMMA_SEP),$(space),$(subst $(space),$(_SPACE_SEP),$(subst $(comma),$(_COMMA_SEP),$(2))))) \
+ \
+  $(foreach dep,$(_DEP_ITEMS), \
+    $(eval _EXTRA_DEP := ) \
+    $(eval _CUR_DEP := $(subst $(_SPACE_SEP),$(space),$(strip $(dep)))) \
+    $(eval _PKG_NAME := $(word 1,$(_CUR_DEP))) \
+    $(if $(findstring $(paren_left), $(_PKG_NAME)), \
+      $(error "Unsupported extra dependency format: no space before '(': $(_CUR_DEP)")) \
+    ) \
+    $(eval _ABI_SUFFIX := $(call GetABISuffix,$(_PKG_NAME))) \
+    $(eval _PKG_NAME_ABI := $(_PKG_NAME)$(_ABI_SUFFIX)) \
+    $(eval _VERSION_CONSTRAINT := $(word 2,$(_CUR_DEP))) \
+    $(if $(_VERSION_CONSTRAINT), \
+      $(eval _EXTRA_DEP := $(_PKG_NAME_ABI) $(_VERSION_CONSTRAINT)), \
+      $(error "Extra dependencies must have version constraints. $(_PKG_NAME) seems to be unversioned.") \
+    ) \
+    $(if $(and $(_EXTRA_DEPENDS_ABI),$(_EXTRA_DEP)), \
+      $(eval _EXTRA_DEPENDS_ABI := $(_EXTRA_DEPENDS_ABI)$(comma)$(_EXTRA_DEP)), \
+      $(eval _EXTRA_DEPENDS_ABI := $(_EXTRA_DEP)) \
+    ) \
+    $(if $(_DEPENDS), \
+      $(eval _DEPENDS := $(filter-out $(_PKG_NAME_ABI),$(_DEPENDS))) \
+    ) \
+  ) \
+ \
+  $(eval _DEPENDS := $(call mergelist,$(_DEPENDS))) \
+  $(_EXTRA_DEPENDS_ABI)$(if $(_DEPENDS),$(comma) $(_DEPENDS)) \
 )
 endef
 
@@ -383,7 +242,7 @@ endif
 	$(if $(ABI_VERSION),echo '$(ABI_VERSION)' | cmp -s - $(PKG_INFO_DIR)/$(1).version || { \
 		mkdir -p $(PKG_INFO_DIR); \
 		echo '$(ABI_VERSION)' > $(PKG_INFO_DIR)/$(1).version; \
-		$(foreach pkg,$(call SanitizeProvides,$(1),$(PROVIDES)), \
+		$(foreach pkg,$(filter-out $(1),$(PROVIDES)), \
 			cp $(PKG_INFO_DIR)/$(1).version $(PKG_INFO_DIR)/$(pkg).version; \
 		) \
 	} )
@@ -402,20 +261,14 @@ endif
       Package/$(1)/DEPENDS := $$(call mergelist,$$(Package/$(1)/DEPENDS))
     endif
 
-    ifeq ($(CONFIG_USE_APK),)
-      Package/$(1)/PROVIDES := $$(patsubst @%,%,$(PROVIDES))
-      Package/$(1)/PROVIDES := $$(filter-out $(1)$$(ABIV_$(1)),$$(Package/$(1)/PROVIDES)$$(if $$(ABIV_$(1)), $(1) $$(foreach provide,$$(Package/$(1)/PROVIDES),$$(provide)$$(ABIV_$(1)))))
-    else
-      Package/$(1)/PROVIDES := $$(call FormatProvides,$(1),$(VERSION),$(ABI_VERSION),$(PROVIDES))
-      Package/$(1)/PRIORITY := $$(call GetProviderPriority,$(DEFAULT_VARIANT),$(ABI_VERSION))
-    endif
+    $$(info $(1) fused dependencies: $$(Package/$(1)/DEPENDS))
 
 $(_define) Package/$(1)/CONTROL
 Package: $(1)$$(ABIV_$(1))
 Version: $(VERSION)
 $$(call addfield,Depends,$$(Package/$(1)/DEPENDS)
 )$$(call addfield,Conflicts,$$(call mergelist,$(CONFLICTS))
-)$$(call addfield,Provides,$$(call mergelist,$$(Package/$(1)/PROVIDES))
+)$$(call addfield,Provides,$$(call mergelist,$$(filter-out $(1)$$(ABIV_$(1)),$(PROVIDES)$$(if $$(ABIV_$(1)), $(1) $(foreach provide,$(PROVIDES),$(provide)$$(ABIV_$(1))))))
 )$$(call addfield,Alternatives,$$(call mergelist,$(ALTERNATIVES))
 )$$(call addfield,Source,$(SOURCE)
 )$$(call addfield,SourceName,$(PKG_NAME)
@@ -459,7 +312,7 @@ endif
 			fi; \
 		done; $(Package/$(1)/extra_provides) \
 	) | sort -u > $(PKG_INFO_DIR)/$(1).provides
-	$(if $(PROVIDES),@for pkg in $(call SanitizeProvides,$(1),$(PROVIDES)); do cp $(PKG_INFO_DIR)/$(1).provides $(PKG_INFO_DIR)/$$$$pkg.provides; done)
+	$(if $(PROVIDES),@for pkg in $(filter-out $(1),$(PROVIDES)); do cp $(PKG_INFO_DIR)/$(1).provides $(PKG_INFO_DIR)/$$$$pkg.provides; done)
 	$(CheckDependencies)
 
 	$(RSTRIP) $$(IDIR_$(1))
@@ -600,8 +453,15 @@ else
 	  --info "origin:$(SOURCE)" \
 	  --info "url:$(URL)" \
 	  --info "maintainer:$(MAINTAINER)" \
-	  $$(if $$(Package/$(1)/PROVIDES),--info "provides:$$(Package/$(1)/PROVIDES)") \
-	  $$(if $$(Package/$(1)/PRIORITY),--info "provider-priority:$$(Package/$(1)/PRIORITY)") \
+	  --info "provides:$(strip \
+	    $$(if $$(ABIV_$(1)), \
+	      $(1)$(foreach provide,$(PROVIDES), $(provide) $(provide)$(call FormatABISuffix,$(provide),$(ABI_VERSION))=$(VERSION)), \
+	      $(foreach provide,$(filter-out $(1),$(PROVIDES)), $(provide)) \
+	    ) \
+	    $(1)$$(ABIV_$(1))[conflict]=$(VERSION) \
+	    $(if $(CONFLICTS),$(foreach conflict,$(CONFLICTS), $(conflict)$$(ABIV_$(1))[conflict]=0.0.0)) \
+	    )" \
+	  $(if $(DEFAULT_VARIANT),--info "provider-priority:100",$(if $(findstring kernel/linux,$(SOURCE)),--info "provider-priority:50",--info "provider-priority:1")) \
 	  $$(APK_SCRIPTS_$(1)) \
 	  --info "depends:$$(foreach depends,$$(subst $$(comma),$$(space),$$(subst $$(space),,$$(subst $$(paren_right),,$$(subst $$(paren_left),,$$(Package/$(1)/DEPENDS))))),$$(depends))" \
 	  --files "$$(IDIR_$(1))" \
