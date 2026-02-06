@@ -51,8 +51,12 @@ function network_rx_cleanup_state(name)
 	for (let cur, sub in core.remote_subscribe)
 		delete sub[name];
 
-	for (let cur, sub in core.remote_publish)
+	for (let cur, sub in core.remote_publish) {
+		if (!sub[name])
+			continue;
 		delete sub[name];
+		core.handle_publish(null, cur);
+	}
 }
 
 function network_rx_socket_close(data)
