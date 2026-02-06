@@ -33,7 +33,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
 
 --- a/drivers/usb/host/xhci-mem.c
 +++ b/drivers/usb/host/xhci-mem.c
-@@ -392,6 +392,17 @@ struct xhci_ring *xhci_ring_alloc(struct
+@@ -386,6 +386,17 @@ struct xhci_ring *xhci_ring_alloc(struct
  		return ring;
  
  	ring->trbs_per_seg = TRBS_PER_SEGMENT;

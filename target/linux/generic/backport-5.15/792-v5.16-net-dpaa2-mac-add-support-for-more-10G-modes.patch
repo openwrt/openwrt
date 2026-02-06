@@ -19,7 +19,7 @@ Signed-off-by: Russell King <rmk+kernel@armlinux.org.uk>
 
 --- a/drivers/net/ethernet/freescale/dpaa2/dpaa2-mac.c
 +++ b/drivers/net/ethernet/freescale/dpaa2/dpaa2-mac.c
-@@ -140,6 +140,12 @@ static void dpaa2_mac_validate(struct ph
+@@ -143,6 +143,12 @@ static void dpaa2_mac_validate(struct ph
  	case PHY_INTERFACE_MODE_10GBASER:
  	case PHY_INTERFACE_MODE_USXGMII:
  		phylink_set(mask, 10000baseT_Full);

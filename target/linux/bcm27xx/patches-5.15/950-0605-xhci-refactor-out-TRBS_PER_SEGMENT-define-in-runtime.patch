@@ -46,8 +46,8 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	}
  }
  
-@@ -139,15 +140,17 @@ static void xhci_link_rings(struct xhci_
- 			  (xhci->quirks & XHCI_AMD_0x96_HOST)));
+@@ -136,15 +137,17 @@ static void xhci_link_rings(struct xhci_
+ 	chain_links = xhci_link_chain_quirk(xhci, ring->type);
  
  	next = ring->enq_seg->next;
 -	xhci_link_segments(ring->enq_seg, first, ring->type, chain_links);
@@ -69,7 +69,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  			|= cpu_to_le32(LINK_TOGGLE);
  		ring->last_seg = last;
  	}
-@@ -314,14 +317,15 @@ void xhci_initialize_ring_info(struct xh
+@@ -311,14 +314,15 @@ void xhci_initialize_ring_info(struct xh
  	 * Each segment has a link TRB, and leave an extra TRB for SW
  	 * accounting purpose
  	 */
@@ -88,7 +88,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  {
  	struct xhci_segment *prev;
  	bool chain_links;
-@@ -350,12 +354,12 @@ static int xhci_alloc_segments_for_ring(
+@@ -344,12 +348,12 @@ static int xhci_alloc_segments_for_ring(
  			}
  			return -ENOMEM;
  		}
@@ -103,7 +103,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	*last = prev;
  
  	return 0;
-@@ -387,16 +391,17 @@ struct xhci_ring *xhci_ring_alloc(struct
+@@ -381,16 +385,17 @@ struct xhci_ring *xhci_ring_alloc(struct
  	if (num_segs == 0)
  		return ring;
  
@@ -124,7 +124,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  			cpu_to_le32(LINK_TOGGLE);
  	}
  	xhci_initialize_ring_info(ring, cycle_state);
-@@ -429,16 +434,15 @@ int xhci_ring_expansion(struct xhci_hcd
+@@ -423,16 +428,15 @@ int xhci_ring_expansion(struct xhci_hcd
  	unsigned int		num_segs_needed;
  	int			ret;
  
@@ -145,7 +145,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	if (ret)
  		return -ENOMEM;
  
-@@ -1828,7 +1832,7 @@ int xhci_alloc_erst(struct xhci_hcd *xhc
+@@ -1822,7 +1826,7 @@ int xhci_alloc_erst(struct xhci_hcd *xhc
  	for (val = 0; val < evt_ring->num_segs; val++) {
  		entry = &erst->entries[val];
  		entry->seg_addr = cpu_to_le64(seg->dma);
@@ -205,7 +205,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  		xhci_err(xhci, "Tried to move enqueue past ring segment\n");
  		return;
  	}
-@@ -3324,7 +3327,7 @@ irqreturn_t xhci_irq(struct usb_hcd *hcd
+@@ -3322,7 +3325,7 @@ irqreturn_t xhci_irq(struct usb_hcd *hcd
  	 * that clears the EHB.
  	 */
  	while (xhci_handle_event(xhci, ir) > 0) {
@@ -214,7 +214,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  			continue;
  		xhci_update_erst_dequeue(xhci, ir, event_ring_deq);
  		event_ring_deq = ir->event_ring->dequeue;
-@@ -3466,7 +3469,8 @@ static int prepare_ring(struct xhci_hcd
+@@ -3462,7 +3465,8 @@ static int prepare_ring(struct xhci_hcd
  		}
  	}
  
