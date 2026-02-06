@@ -1,0 +1,22 @@
+From 6198529cbe50383dc3aec944079d73811d436788 Mon Sep 17 00:00:00 2001
+From: Nick Hainke <vincent@systemli.org>
+Date: Sun, 8 Feb 2026 11:03:17 +0100
+Subject: [PATCH] param.h: fix build with musl
+
+Replace linux/if_ether.h from param.h with net/ethernet.h.
+This avoids duplicate struct ethhdr definitions.
+---
+ lib/util/params.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/lib/util/params.h
++++ b/lib/util/params.h
+@@ -8,7 +8,7 @@
+ #include <stdlib.h>
+ #include <linux/in.h>
+ #include <linux/in6.h>
+-#include <linux/if_ether.h>
++#include <net/ethernet.h>
+ #include <bpf/libbpf.h>
+ 
+ enum option_type {
