@@ -4,7 +4,7 @@ Subject: [PATCH] UGW_SW-29163: ATM oam support
 
 --- a/drivers/net/ppp/ppp_generic.c
 +++ b/drivers/net/ppp/ppp_generic.c
-@@ -2982,6 +2982,22 @@ char *ppp_dev_name(struct ppp_channel *c
+@@ -2985,6 +2985,24 @@ char *ppp_dev_name(struct ppp_channel *c
  	return name;
  }
  
@@ -17,17 +17,19 @@ Subject: [PATCH] UGW_SW-29163: ATM oam support
 +	struct net_device *dev = NULL;
 +
 +	if (pch) {
-+		read_lock_bh(&pch->upl);
-+		if (pch->ppp && pch->ppp->dev)
-+			dev = pch->ppp->dev;
-+		read_unlock_bh(&pch->upl);
++		struct ppp *ppp;
++		rcu_read_lock();
++		ppp = rcu_dereference(pch->ppp);
++		if (ppp)
++			dev = ppp->dev;
++		rcu_read_unlock();
 +	}
 +	return dev;
 +}
  
  /*
   * Disconnect a channel from the generic layer.
-@@ -3633,6 +3649,7 @@ EXPORT_SYMBOL(ppp_unregister_channel);
+@@ -3646,6 +3664,7 @@ EXPORT_SYMBOL(ppp_unregister_channel);
  EXPORT_SYMBOL(ppp_channel_index);
  EXPORT_SYMBOL(ppp_unit_number);
  EXPORT_SYMBOL(ppp_dev_name);
