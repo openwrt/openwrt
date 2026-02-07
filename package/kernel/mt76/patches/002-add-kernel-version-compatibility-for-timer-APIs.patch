@@ -1,0 +1,244 @@
+From 890069c5dbe4aa6d1b70ac74093947a387979c0b Mon Sep 17 00:00:00 2001
+From: John Audia <therealgraysky@proton.me>
+Date: Sat, 27 Dec 2025 16:48:40 -0500
+Subject: [PATCH] wifi: mt76: add kernel version compatibility for timer APIs
+
+Add version checks to support both old and new timer APIs across
+different kernel versions:
+
+- Use timer_delete_sync() on kernels >= 6.1, fall back to
+  del_timer_sync() on older kernels. The timer_delete_sync() function
+  was introduced in kernel 6.1 as a replacement for del_timer_sync().
+
+- Use from_timer() for timer callbacks on kernels >= 4.15, fall back
+  to container_of() on older kernels. The from_timer() macro was
+  introduced in kernel 4.15 as part of the timer API modernization.
+
+- Use hrtimer_setup() on kernels >= 4.15, fall back to manual
+  hrtimer_init() and function assignment on older kernels. The
+  hrtimer_setup() helper was introduced alongside the timer callback
+  changes in kernel 4.15.
+
+- Use timer_container_of() on kernels >= 6.16 and container_of() for
+  older kernels. Since the minimum supported kernel is currently 6.12,
+  there is no need to add container_of() for older kernels.
+
+Signed-off-by: John Audia <therealgraysky@proton.me>
+---
+ mt7615/main.c      | 12 ++++++++++++
+ mt7615/pci_mac.c   |  8 ++++++++
+ mt7615/usb.c       |  4 ++++
+ mt76x02_usb_core.c |  5 +++++
+ mt7921/main.c      | 12 ++++++++++++
+ mt7925/main.c      |  8 ++++++++
+ mt792x_core.c      | 13 ++++++++++++-
+ 7 files changed, 61 insertions(+), 1 deletion(-)
+
+diff --git a/mt7615/main.c b/mt7615/main.c
+index a18aa0d84..ade84c9ee 100644
+--- a/mt7615/main.c
++++ b/mt7615/main.c
+@@ -97,7 +97,11 @@ static void mt7615_stop(struct ieee80211_hw *hw, bool suspend)
+ 	struct mt7615_phy *phy = mt7615_hw_phy(hw);
+ 
+ 	cancel_delayed_work_sync(&phy->mt76->mac_work);
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
++	timer_delete_sync(&phy->roc_timer);
++#else
+ 	del_timer_sync(&phy->roc_timer);
++#endif
+ 	cancel_work_sync(&phy->roc_work);
+ 
+ 	cancel_delayed_work_sync(&dev->pm.ps_work);
+@@ -1046,7 +1050,11 @@ void mt7615_roc_work(struct work_struct *work)
+ 
+ void mt7615_roc_timer(struct timer_list *timer)
+ {
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 16, 0)
++	struct mt7615_phy *phy = timer_container_of(phy, timer, roc_timer);
++#else
+ 	struct mt7615_phy *phy = from_timer(phy, timer, roc_timer);
++#endif
+ 
+ 	ieee80211_queue_work(phy->mt76->hw, &phy->roc_work);
+ }
+@@ -1197,7 +1205,11 @@ static int mt7615_cancel_remain_on_channel(struct ieee80211_hw *hw,
+ 	if (!test_and_clear_bit(MT76_STATE_ROC, &phy->mt76->state))
+ 		return 0;
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
++	timer_delete_sync(&phy->roc_timer);
++#else
+ 	del_timer_sync(&phy->roc_timer);
++#endif
+ 	cancel_work_sync(&phy->roc_work);
+ 
+ 	mt7615_mutex_acquire(phy->dev);
+diff --git a/mt7615/pci_mac.c b/mt7615/pci_mac.c
+index d83d8ec46..5938e7f07 100644
+--- a/mt7615/pci_mac.c
++++ b/mt7615/pci_mac.c
+@@ -220,12 +220,20 @@ void mt7615_mac_reset_work(struct work_struct *work)
+ 	set_bit(MT76_MCU_RESET, &dev->mphy.state);
+ 	wake_up(&dev->mt76.mcu.wait);
+ 	cancel_delayed_work_sync(&dev->mphy.mac_work);
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
++	timer_delete_sync(&dev->phy.roc_timer);
++#else
+ 	del_timer_sync(&dev->phy.roc_timer);
++#endif
+ 	cancel_work_sync(&dev->phy.roc_work);
+ 	if (phy2) {
+ 		set_bit(MT76_RESET, &phy2->mt76->state);
+ 		cancel_delayed_work_sync(&phy2->mt76->mac_work);
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
++		timer_delete_sync(&phy2->roc_timer);
++#else
+ 		del_timer_sync(&phy2->roc_timer);
++#endif
+ 		cancel_work_sync(&phy2->roc_work);
+ 	}
+ 
+diff --git a/mt7615/usb.c b/mt7615/usb.c
+index 7736ae3f3..1c22bf992 100644
+--- a/mt7615/usb.c
++++ b/mt7615/usb.c
+@@ -85,7 +85,11 @@ static void mt7663u_stop(struct ieee80211_hw *hw, bool suspend)
+ 	struct mt7615_dev *dev = hw->priv;
+ 
+ 	clear_bit(MT76_STATE_RUNNING, &dev->mphy.state);
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
++	timer_delete_sync(&phy->roc_timer);
++#else
+ 	del_timer_sync(&phy->roc_timer);
++#endif
+ 	cancel_work_sync(&phy->roc_work);
+ 	cancel_delayed_work_sync(&phy->scan_work);
+ 	cancel_delayed_work_sync(&phy->mt76->mac_work);
+diff --git a/mt76x02_usb_core.c b/mt76x02_usb_core.c
+index c94c2f661..f5226f064 100644
+--- a/mt76x02_usb_core.c
++++ b/mt76x02_usb_core.c
+@@ -264,8 +264,13 @@ void mt76x02u_init_beacon_config(struct mt76x02_dev *dev)
+ 	};
+ 	dev->beacon_ops = &beacon_ops;
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
++	hrtimer_setup(&dev->pre_tbtt_timer, mt76x02u_pre_tbtt_interrupt,
++		      CLOCK_MONOTONIC, HRTIMER_MODE_REL);
++#else
+ 	hrtimer_init(&dev->pre_tbtt_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+ 	dev->pre_tbtt_timer.function = mt76x02u_pre_tbtt_interrupt;
++#endif
+ 	INIT_WORK(&dev->pre_tbtt_work, mt76x02u_pre_tbtt_work);
+ 
+ 	mt76x02_init_beacon_config(dev);
+diff --git a/mt7921/main.c b/mt7921/main.c
+index 66051b056..023c9dcc2 100644
+--- a/mt7921/main.c
++++ b/mt7921/main.c
+@@ -371,7 +371,11 @@ void mt7921_roc_abort_sync(struct mt792x_dev *dev)
+ {
+ 	struct mt792x_phy *phy = &dev->phy;
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
++	timer_delete_sync(&phy->roc_timer);
++#else
+ 	del_timer_sync(&phy->roc_timer);
++#endif
+ 	cancel_work_sync(&phy->roc_work);
+ 	if (test_and_clear_bit(MT76_STATE_ROC, &phy->mt76->state))
+ 		ieee80211_iterate_interfaces(mt76_hw(dev),
+@@ -402,7 +406,11 @@ static int mt7921_abort_roc(struct mt792x_phy *phy, struct mt792x_vif *vif)
+ {
+ 	int err = 0;
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
++	timer_delete_sync(&phy->roc_timer);
++#else
+ 	del_timer_sync(&phy->roc_timer);
++#endif
+ 	cancel_work_sync(&phy->roc_work);
+ 
+ 	mt792x_mutex_acquire(phy->dev);
+@@ -1494,7 +1502,11 @@ static void mt7921_abort_channel_switch(struct ieee80211_hw *hw,
+ {
+ 	struct mt792x_vif *mvif = (struct mt792x_vif *)vif->drv_priv;
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
++	timer_delete_sync(&mvif->csa_timer);
++#else
+ 	del_timer_sync(&mvif->csa_timer);
++#endif
+ 	cancel_work_sync(&mvif->csa_work);
+ }
+ 
+diff --git a/mt7925/main.c b/mt7925/main.c
+index 307850a58..52178df83 100644
+--- a/mt7925/main.c
++++ b/mt7925/main.c
+@@ -457,7 +457,11 @@ void mt7925_roc_abort_sync(struct mt792x_dev *dev)
+ {
+ 	struct mt792x_phy *phy = &dev->phy;
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
++	timer_delete_sync(&phy->roc_timer);
++#else
+ 	del_timer_sync(&phy->roc_timer);
++#endif
+ 	cancel_work_sync(&phy->roc_work);
+ 	if (test_and_clear_bit(MT76_STATE_ROC, &phy->mt76->state))
+ 		ieee80211_iterate_interfaces(mt76_hw(dev),
+@@ -489,7 +493,11 @@ static int mt7925_abort_roc(struct mt792x_phy *phy,
+ {
+ 	int err = 0;
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
++	timer_delete_sync(&phy->roc_timer);
++#else
+ 	del_timer_sync(&phy->roc_timer);
++#endif
+ 	cancel_work_sync(&phy->roc_work);
+ 
+ 	mt792x_mutex_acquire(phy->dev);
+diff --git a/mt792x_core.c b/mt792x_core.c
+index cc488ee94..3c490e530 100644
+--- a/mt792x_core.c
++++ b/mt792x_core.c
+@@ -305,7 +305,11 @@ EXPORT_SYMBOL_GPL(mt792x_tx_worker);
+ 
+ void mt792x_roc_timer(struct timer_list *timer)
+ {
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 16, 0)
++	struct mt792x_phy *phy = timer_container_of(phy, timer, roc_timer);
++#else
+ 	struct mt792x_phy *phy = from_timer(phy, timer, roc_timer);
++#endif
+ 
+ 	ieee80211_queue_work(phy->mt76->hw, &phy->roc_work);
+ }
+@@ -313,8 +317,11 @@ EXPORT_SYMBOL_GPL(mt792x_roc_timer);
+ 
+ void mt792x_csa_timer(struct timer_list *timer)
+ {
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 16, 0)
++	struct mt792x_vif *mvif = timer_container_of(mvif, timer, csa_timer);
++#else
+ 	struct mt792x_vif *mvif = from_timer(mvif, timer, csa_timer);
+-
++#endif
+ 	ieee80211_queue_work(mvif->phy->mt76->hw, &mvif->csa_work);
+ }
+ EXPORT_SYMBOL_GPL(mt792x_csa_timer);
+@@ -362,7 +369,11 @@ void mt792x_unassign_vif_chanctx(struct ieee80211_hw *hw,
+ 	mutex_unlock(&dev->mt76.mutex);
+ 
+ 	if (vif->bss_conf.csa_active) {
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
++		timer_delete_sync(&mvif->csa_timer);
++#else
+ 		del_timer_sync(&mvif->csa_timer);
++#endif
+ 		cancel_work_sync(&mvif->csa_work);
+ 	}
+ }
