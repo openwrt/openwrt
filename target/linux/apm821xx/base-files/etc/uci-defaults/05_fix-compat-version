@@ -1,7 +1,10 @@
 . /lib/functions.sh
 
 case "$(board_name)" in
-meraki,mx60|\
+meraki,mx60)
+	uci set system.@system[0].compat_version="3.1"
+	uci commit system
+	;;
 netgear,wndr4700)
 	uci set system.@system[0].compat_version="3.0"
 	uci commit system
