@@ -19,6 +19,10 @@ linksys,mr7350|\
 linksys,mr7500)
 	ubootenv_add_mtd "u_env" "0x0" "0x40000" "0x20000"
 	;;
+link,nn6000-v1|\
+link,nn6000-v2)
+	ubootenv_add_mmc "0:APPSBLENV" "" "0x0" "0x40000" "0x20000"
+	;;
 netgear,rbr350|\
 netgear,rbs350|\
 netgear,wax214|\
