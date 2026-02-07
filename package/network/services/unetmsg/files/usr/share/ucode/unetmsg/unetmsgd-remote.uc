@@ -104,7 +104,7 @@ function network_socket_handle_request(sock_data, req)
 			return;
 		if (args.enabled) {
 			if (list[name]) {
-				if (tx_auth)
+				if (tx_auth && msgtype == "publish")
 					core.handle_publish(null, name);
 				return 0;
 			}
@@ -124,13 +124,14 @@ function network_socket_handle_request(sock_data, req)
 				network: sock_data.network,
 				name: host,
 			}, pubsub_proto);
-			if (tx_auth)
+			if (tx_auth && msgtype == "publish")
 				core.handle_publish(null, name);
 			list[name] = true;
 		} else {
 			if (!list[name])
 				return 0;
-			core.handle_publish(null, name);
+			if (msgtype == "publish")
+				core.handle_publish(null, name);
 			delete core["remote_" + msgtype][name][host];
 			delete list[name];
 		}
