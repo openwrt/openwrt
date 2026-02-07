@@ -185,6 +185,7 @@ platform_do_upgrade() {
 	netgear,wax218|\
 	netgear,wax620|\
 	netgear,wax630|\
+	zyxel,nwa110ax|\
 	zyxel,nwa210ax)
 		nand_do_upgrade "$1"
 		;;
