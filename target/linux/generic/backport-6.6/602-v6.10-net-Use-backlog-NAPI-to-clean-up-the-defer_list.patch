@@ -46,7 +46,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -246,7 +246,7 @@ static bool use_backlog_threads(void)
+@@ -220,7 +220,7 @@ static inline struct hlist_head *dev_ind
  static inline void rps_lock_irqsave(struct softnet_data *sd,
  				    unsigned long *flags)
  {
@@ -55,7 +55,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		spin_lock_irqsave(&sd->input_pkt_queue.lock, *flags);
  	else if (!IS_ENABLED(CONFIG_PREEMPT_RT))
  		local_irq_save(*flags);
-@@ -254,7 +254,7 @@ static inline void rps_lock_irqsave(stru
+@@ -228,7 +228,7 @@ static inline void rps_lock_irqsave(stru
  
  static inline void rps_lock_irq_disable(struct softnet_data *sd)
  {
@@ -64,7 +64,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		spin_lock_irq(&sd->input_pkt_queue.lock);
  	else if (!IS_ENABLED(CONFIG_PREEMPT_RT))
  		local_irq_disable();
-@@ -263,7 +263,7 @@ static inline void rps_lock_irq_disable(
+@@ -237,7 +237,7 @@ static inline void rps_lock_irq_disable(
  static inline void rps_unlock_irq_restore(struct softnet_data *sd,
  					  unsigned long *flags)
  {
@@ -73,7 +73,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		spin_unlock_irqrestore(&sd->input_pkt_queue.lock, *flags);
  	else if (!IS_ENABLED(CONFIG_PREEMPT_RT))
  		local_irq_restore(*flags);
-@@ -271,7 +271,7 @@ static inline void rps_unlock_irq_restor
+@@ -245,7 +245,7 @@ static inline void rps_unlock_irq_restor
  
  static inline void rps_unlock_irq_enable(struct softnet_data *sd)
  {
@@ -82,7 +82,7 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  		spin_unlock_irq(&sd->input_pkt_queue.lock);
  	else if (!IS_ENABLED(CONFIG_PREEMPT_RT))
  		local_irq_enable();
-@@ -4840,6 +4840,23 @@ static void napi_schedule_rps(struct sof
+@@ -4810,6 +4810,23 @@ static void napi_schedule_rps(struct sof
  	__napi_schedule_irqoff(&mysd->backlog);
  }
  
