@@ -1,0 +1,378 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qcom-ipq4019.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/soc/qcom,tcsr.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	chosen {
+		bootargs-append = " root=/dev/mtdblock16";
+	};
+
+	aliases {
+		label-mac-device = &swport4;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&tlmm 18 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	soc {
+		tcsr@194b000 {
+			compatible = "qcom,tcsr";
+			reg = <0x194b000 0x100>;
+			qcom,usb-hsphy-mode-select = <TCSR_USB_HSPHY_HOST_MODE>;
+			status = "okay";
+		};
+
+		tcsr@1949000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1949000 0x100>;
+			qcom,wifi_glb_cfg = <TCSR_WIFI_GLB_CFG>;
+		};
+
+		tcsr@1957000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1957000 0x100>;
+			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
+		};
+
+		ess_tcsr@1953000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1953000 0x1000>;
+			qcom,ess-interface-select = <TCSR_ESS_PSGMII>;
+		};
+	};
+};
+
+&tlmm {
+	serial_0_pins: serial_0_pinmux {
+		pinmux {
+			pins = "gpio16", "gpio17";
+			function = "blsp_uart0";
+			bias-disable;
+		};
+	};
+
+	serial_1_pins: serial_1_pinmux {
+		pinmux {
+			pins = "gpio8", "gpio9", "gpio10", "gpio11";
+			function = "blsp_uart1";
+			bias-disable;
+		};
+	};
+
+	spi_0_pins: spi_0_pinmux {
+		pinmux {
+			pins = "gpio13", "gpio14", "gpio15";
+			function = "blsp_spi0";
+			drive-strength = <12>;
+			bias-disable;
+		};
+		pinmux_cs {
+			pins = "gpio12";
+			function = "gpio";
+			drive-strength = <2>;
+			bias-disable;
+			output-high;
+		};
+	};
+
+	i2c_0_pins: i2c_0_pinmux {
+		pinmux {
+			pins = "gpio20", "gpio21";
+			function = "blsp_i2c0";
+			drive-strength = <16>;
+			bias-disable;
+		};
+	};
+
+	wifi_pins: wifi_pinmux {
+		pinmux_1 {
+			pins = "gpio37";
+			function = "gpio";
+			drive-strength = <6>;
+			bias-pull-up;
+			output-high;
+		};
+
+		pinmux_2 {
+			pins = "gpio42";
+			function = "gpio";
+			drive-strength = <6>;
+			bias-pull-up;
+			output-high;
+		};
+
+		pinmux_3 {
+			pins = "gpio43";
+			function = "gpio";
+			drive-strength = <6>;
+			bias-pull-up;
+		};
+	};
+};
+
+&blsp_dma {
+	status = "okay";
+};
+
+&blsp1_i2c3 {
+	pinctrl-0 = <&i2c_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	led_driver: lp5521@32 {
+		compatible = "national,lp5521";
+		reg = <0x32>;
+		clock-mode = /bits/ 8 <2>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+
+		led_driver_red: led@0 {
+			reg = <0>;
+			chan-name = "fault:red";
+			led-cur = /bits/ 8 <0x2f>;
+			max-cur = /bits/ 8 <0x5f>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_FAULT;
+		};
+		led_driver_green: led@1 {
+			reg = <1>;
+			chan-name = "power:green";
+			led-cur = /bits/ 8 <0x2f>;
+			max-cur = /bits/ 8 <0x5f>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+		};
+		led_driver_blue: led@2 {
+			reg = <2>;
+			chan-name = "boot:blue";
+			led-cur = /bits/ 8 <0x2f>;
+			max-cur = /bits/ 8 <0x5f>;
+			color = <LED_COLOR_ID_BLUE>;
+		};
+	};
+};
+
+&blsp1_uart1 {
+	pinctrl-0 = <&serial_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&blsp1_uart2 {
+	pinctrl-0 = <&serial_1_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&blsp1_spi1 {
+	pinctrl-0 = <&spi_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+	cs-gpios = <&tlmm 12 GPIO_ACTIVE_HIGH>;
+
+	flash@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0>;
+		compatible = "jedec,spi-nor";
+		spi-max-frequency = <24000000>;
+
+		partitions {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "fixed-partitions";
+
+			partition@0 {
+				label = "0:SBL1";
+				reg = <0x00000000 0x00030000>;
+				read-only;
+			};
+			partition@30000 {
+				label = "0:BOOTCONFIG";
+				reg = <0x00030000 0x00010000>;
+				read-only;
+			};
+			partition@40000 {
+				label = "0:MIBIB";
+				reg = <0x00040000 0x00010000>;
+				read-only;
+			};
+			partition@50000 {
+				label = "0:BOOTCONFIG1";
+				reg = <0x00050000 0x00010000>;
+				read-only;
+			};
+			partition@60000 {
+				label = "0:QSEE";
+				reg = <0x00060000 0x00060000>;
+				read-only;
+			};
+			partition@c0000 {
+				label = "0:CDT";
+				reg = <0x000c0000 0x00010000>;
+				read-only;
+			};
+			partition@d0000 {
+				label = "0:DDRPARAMS";
+				reg = <0x000d0000 0x00010000>;
+				read-only;
+			};
+			partition@e0000 {
+				label = "0:APPSBLENV";
+				reg = <0x000e0000 0x00010000>;
+				read-only;
+			};
+			partition@f0000 {
+				label = "0:APPSBL";
+				reg = <0x000f0000 0x00080000>;
+				read-only;
+			};
+			partition@170000 {
+				label = "0:ART";
+				reg = <0x00170000 0x00010000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					precal_art_1000: precal@1000 {
+						reg = <0x1000 0x2f20>;
+					};
+
+					precal_art_5000: precal@5000 {
+						reg = <0x5000 0x2f20>;
+					};
+				};
+			};
+			partition@180000 {
+				label = "OPAQUE";
+				reg = <0x00180000 0x000c0000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_gmac0: macaddr@0 {
+						compatible = "mac-base";
+						reg = <0x8 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+			partition@240000 {
+				label = "0:HLOS";
+				reg = <0x00240000 0x00300000>;
+				read-only;
+			};
+			partition@540000 {
+				label = "0:rootfs";
+				reg = <0x00540000 0x007d0000>;
+				read-only;
+			};
+			partition@d10000 {
+				label = "0:APPSBL_1";
+				reg = <0x00d10000 0x00080000>;
+				read-only;
+			};
+			partition@d90000 {
+				label = "firmware";
+				compatible = "denx,fit";
+				reg = <0x00d90000 0x01040000>;
+			};
+		};
+	};
+};
+
+&crypto {
+	status = "okay";
+};
+
+&cryptobam {
+	status = "okay";
+};
+
+&prng {
+	status = "okay";
+};
+
+&usb2 {
+	status = "disabled";
+};
+
+&usb2_hs_phy {
+	status = "disabled";
+};
+
+&usb3 {
+	status = "disabled";
+};
+
+&usb3_hs_phy {
+	status = "disabled";
+};
+
+&usb3_ss_phy {
+	status = "disabled";
+};
+
+&mdio {
+	status = "okay";
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&gmac {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport4 {
+	status = "okay";
+	label = "lan";
+
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_gmac0 0>;
+};
+
+&swport5 {
+	status = "okay";
+	label = "wan";
+
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_gmac0 1>;
+};
+
+&wifi0 {
+	pinctrl-0 = <&wifi_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+	nvmem-cell-names = "pre-calibration", "mac-address";
+	nvmem-cells = <&precal_art_1000>, <&macaddr_gmac0 2>;
+};
+
+&wifi1 {
+	status = "okay";
+	nvmem-cell-names = "pre-calibration", "mac-address";
+	nvmem-cells = <&precal_art_5000>, <&macaddr_gmac0 3>;
+};
