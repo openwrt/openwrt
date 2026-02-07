@@ -231,17 +231,17 @@ endef
 # 3: ABI version
 # 4: list of provides
 define FormatProvides
-$(strip
-  $(if $(call FormatABISuffix,$(1),$(3)),
-    $(1) $(foreach provide,
-      $(filter-out $(1),$(4)),
-      $(call AddProvide,$(provide),$(2),$(3))
-    ),
-    $(foreach provide,
-      $(filter-out $(1),$(4)),
-      $(call AddProvide,$(provide),$(2))
-    )
-  )
+$(strip \
+  $(if $(call FormatABISuffix,$(1),$(3)), \
+    $(1) $(foreach provide, \
+      $(filter-out $(1),$(4)), \
+      $(call AddProvide,$(provide),$(2),$(3)) \
+    ), \
+    $(foreach provide, \
+      $(filter-out $(1),$(4)), \
+      $(call AddProvide,$(provide),$(2)) \
+    ) \
+  ) \
 )
 endef
 
