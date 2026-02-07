@@ -131,7 +131,8 @@ inline u16 rtl_table_data(struct table_reg *r, int i);
 inline u32 rtl_table_data_r(struct table_reg *r, int i);
 inline void rtl_table_data_w(struct table_reg *r, u32 v, int i);
 
-void __init rtl83xx_setup_qos(struct rtl838x_switch_priv *priv);
+void rtldsa_838x_qos_init(struct rtl838x_switch_priv *priv);
+void rtldsa_839x_qos_init(struct rtl838x_switch_priv *priv);
 
 void rtl83xx_fast_age(struct dsa_switch *ds, int port);
 int rtl83xx_packet_cntr_alloc(struct rtl838x_switch_priv *priv);
@@ -191,9 +192,6 @@ int rtl83xx_lag_del(struct dsa_switch *ds, int group, int port);
  * they are static and not made available externally. To preserve them for future use
  * collect them in this section.
  */
-
-void rtl838x_egress_rate_queue_limit(struct rtl838x_switch_priv *priv, int port,
-				     int queue, u32 rate);
 
 int rtl8390_sds_power(int mac, int val);
 void rtl839x_pie_rule_dump(struct  pie_rule *pr);
