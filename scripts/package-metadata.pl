@@ -57,11 +57,12 @@ sub gen_kconfig_overrides() {
 	my $pkginfo = shift @ARGV;
 	my $cfgfile = shift @ARGV;
 	my $patchver = shift @ARGV;
+	my $builtin = shift(@ARGV) eq 'y';
 
 	# parameter 2: build system config
 	open FILE, "<$cfgfile" or return;
 	while (<FILE>) {
-		/^(CONFIG_.+?)=(.+)$/ and $config{$1} = 1;
+		/^(CONFIG_.+?)=(.+)$/ and $config{$1} = $2;
 	}
 	close FILE;
 
@@ -78,6 +79,8 @@ sub gen_kconfig_overrides() {
 					$config = $1;
 					$override = 1;
 					$val = $2;
+				} elsif ($builtin and $config{"CONFIG_PACKAGE_$package"} eq 'y') {
+					$val = 'y';
 				}
 				if ($config{"CONFIG_PACKAGE_$package"} and ($config ne 'n')) {
 					next if $kconfig{$config} eq 'y';
@@ -859,18 +862,18 @@ sub parse_command() {
 	}
 	die <<EOF
 Available Commands:
-	$0 mk [file]					Package metadata in makefile format
-	$0 config [file] 				Package metadata in Kconfig format
-	$0 kconfig [file] [config] [patchver]	Kernel config overrides
-	$0 source [file] 				Package source file information
-	$0 pkgaux [file]				Package auxiliary variables in makefile format
-	$0 pkgmanifestjson [file]			Package manifests in JSON format
-	$0 imgcyclonedxsbom <file> [manifest]	Image package manifest in CycloneDX SBOM JSON format
-	$0 pkgcyclonedxsbom <file>			Package manifest in CycloneDX SBOM JSON format
-	$0 license [file] 				Package license information
-	$0 licensefull [file] 			Package license information (full list)
-	$0 usergroup [file]				Package usergroup allocation list
-	$0 version_filter [patchver] [list...]	Filter list of version tagged strings
+	$0 mk [file]						Package metadata in makefile format
+	$0 config [file] 					Package metadata in Kconfig format
+	$0 kconfig [file] [config] [patchver] [builtin]	Kernel config overrides
+	$0 source [file] 					Package source file information
+	$0 pkgaux [file]					Package auxiliary variables in makefile format
+	$0 pkgmanifestjson [file]				Package manifests in JSON format
+	$0 imgcyclonedxsbom <file> [manifest]		Image package manifest in CycloneDX SBOM JSON format
+	$0 pkgcyclonedxsbom <file>				Package manifest in CycloneDX SBOM JSON format
+	$0 license [file] 					Package license information
+	$0 licensefull [file] 				Package license information (full list)
+	$0 usergroup [file]					Package usergroup allocation list
+	$0 version_filter [patchver] [list...]		Filter list of version tagged strings
 
 Options:
 	--ignore <name>				Ignore the source package <name>
