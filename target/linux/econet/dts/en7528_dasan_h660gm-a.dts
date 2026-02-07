@@ -3,9 +3,20 @@
 
 #include "en7528.dtsi"
 
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
 / {
 	model = "DASAN H660GM-A";
 	compatible = "dasan,h660gm-a", "econet,en7528";
+
+	aliases {
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-running = &led_power;
+		led-upgrade = &led_power;
+	};
 
 	memory@0 {
 		device_type = "memory";
@@ -15,6 +26,120 @@
 	chosen {
 		stdout-path = "/serial@1fbf0000:115200";
 		linux,usable-memory-range = <0x00020000 0x0ffe0000>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: pwr {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&gpio0 29 GPIO_ACTIVE_LOW>;
+		};
+
+		led_pon_green: pon-green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+		};
+
+		led_pon_red: pon-red {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&gpio1 0 GPIO_ACTIVE_LOW>;
+		};
+
+		led_auth: auth {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_INDICATOR;
+			gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+		};
+
+		led_internet: internet {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+		};
+
+		led_tel: tel {
+			label = "green:tel";
+			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+		};
+
+		led_wps: wps {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WPS;
+			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
+		};
+
+		led_lan1: lan1 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
+		};
+
+		led_lan2: lan2 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
+			gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
+		};
+
+		led_lan3: lan3 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <3>;
+			gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
+		};
+
+		led_lan4: lan4 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <4>;
+			gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
+		};
+
+		led_wlan24: wlan2g {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_2GHZ;
+			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		led_wlan5: wlan5g {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN_5GHZ;
+			gpios = <&gpio1 4 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+	};
+
+	gpio_export {
+		compatible = "gpio-export";
+
+		usb-power {
+			gpio-export,name = "usb-power";
+			gpio-export,output = <1>;
+			gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		key-reset {
+			label = "reset";
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		key-wps {
+			label = "wps";
+			gpios = <&gpio0 30 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
 	};
 };
 
