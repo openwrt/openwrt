@@ -50,10 +50,10 @@ define Device/meraki_mx60
   KERNEL := kernel-bin | libdeflate-gzip | MuImage-initramfs gzip
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   UBINIZE_OPTS := -E 5
-  DEVICE_COMPAT_VERSION := 3.0
-  DEVICE_COMPAT_MESSAGE := uboot's bootcmd has to be updated to support standard multi-image uImages. \
-       Network swconfig configuration cannot be upgraded to DSA. \
-       Upgrade via sysupgrade mechanism is not possible.
+  DEVICE_COMPAT_VERSION := 3.1
+  DEVICE_COMPAT_MESSAGE := meraki_loadaddr of u-boot has to be adjusted before upgrade \
+       to boot properly. Query https://openwrt.org/toh/meraki/mx60#upgrading_to_v2512 \
+       for detail.
 endef
 TARGET_DEVICES += meraki_mx60
 
