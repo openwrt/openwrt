@@ -1,0 +1,25 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 6 Feb 2026 19:04:54 +0000
+Subject: [PATCH] ubus: fix refcounting bug
+
+In uc_ubus_channel_req_cb an extra ref is taken for args and method,
+which are not used elsewhere.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/lib/ubus.c
++++ b/lib/ubus.c
+@@ -2395,10 +2395,10 @@ uc_ubus_channel_req_cb(struct ubus_conte
+ 
+ 	args = blob_array_to_ucv(c->vm, blob_data(msg), blob_len(msg), true);
+ 	reqproto = ucv_object_new(c->vm);
+-	ucv_object_add(reqproto, "args", ucv_get(args));
++	ucv_object_add(reqproto, "args", args);
+ 
+ 	if (method)
+-		ucv_object_add(reqproto, "type", ucv_get(ucv_string_new(method)));
++		ucv_object_add(reqproto, "type", ucv_string_new(method));
+ 
+ 	return uc_ubus_handle_reply_common(ctx, req, c->vm, c->res, func, reqproto);
+ }
