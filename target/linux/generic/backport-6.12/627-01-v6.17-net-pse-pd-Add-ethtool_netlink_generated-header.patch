@@ -2,22 +2,25 @@ From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: OpenWrt PSE-PD Backport <openwrt@openwrt.org>
 Date: Fri, 31 Jan 2025 00:00:00 +0000
 Subject: [PATCH] net: pse-pd: Add ethtool netlink definitions for PSE events
+ and priority
 
 GENERATED PATCH - OpenWrt PSE-PD Backport
 
 This patch:
-1. Creates include/uapi/linux/ethtool_netlink_generated.h with PSE event
+1. Adds ETHTOOL_A_PSE_PW_D_ID, ETHTOOL_A_PSE_PRIO_MAX, ETHTOOL_A_PSE_PRIO to
+   the ETHTOOL_A_PSE_* enum in ethtool_netlink.h (backported from kernel 6.17+)
+2. Creates include/uapi/linux/ethtool_netlink_generated.h with PSE event
    definitions (in mainline 6.17+, this file is auto-generated)
-2. Adds ETHTOOL_MSG_PSE_NTF to the kernel message types enum
+3. Adds ETHTOOL_MSG_PSE_NTF to the kernel message types enum
 
-These definitions are required by PSE event reporting patches.
+These definitions are required by PSE event reporting and priority patches.
 
 Signed-off-by: OpenWrt PSE-PD Backport <openwrt@openwrt.org>
 Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
 ---
- include/uapi/linux/ethtool_netlink.h           |  1 +
- include/uapi/linux/ethtool_netlink_generated.h | 45 ++++++++++++++++++
- 2 files changed, 46 insertions(+)
+ include/uapi/linux/ethtool_netlink.h           |  4 ++
+ include/uapi/linux/ethtool_netlink_generated.h | 31 ++++++++++++++++++++++++++
+ 2 files changed, 35 insertions(+)
  create mode 100644 include/uapi/linux/ethtool_netlink_generated.h
 
 --- a/include/uapi/linux/ethtool_netlink.h
@@ -30,31 +33,25 @@ Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
  	/* add new constants above here */
  	__ETHTOOL_MSG_KERNEL_CNT,
  	ETHTOOL_MSG_KERNEL_MAX = __ETHTOOL_MSG_KERNEL_CNT - 1
+@@ -970,6 +971,9 @@ enum {
+ 	ETHTOOL_A_C33_PSE_EXT_SUBSTATE,		/* u32 */
+ 	ETHTOOL_A_C33_PSE_AVAIL_PW_LIMIT,	/* u32 */
+ 	ETHTOOL_A_C33_PSE_PW_LIMIT_RANGES,	/* nest - _C33_PSE_PW_LIMIT_* */
++	ETHTOOL_A_PSE_PW_D_ID,			/* u32 */
++	ETHTOOL_A_PSE_PRIO_MAX,			/* u32 */
++	ETHTOOL_A_PSE_PRIO,			/* u32 */
+ 
+ 	/* add new constants above here */
+ 	__ETHTOOL_A_PSE_CNT,
 --- /dev/null
 +++ b/include/uapi/linux/ethtool_netlink_generated.h
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,31 @@
 +/* SPDX-License-Identifier: ((GPL-2.0 WITH Linux-syscall-note) OR BSD-3-Clause) */
-+/*
-+ * Minimal PSE ethtool netlink definitions - OpenWrt backport for 6.12.67
-+ * In mainline 6.17+, this file is auto-generated from:
-+ *   Documentation/netlink/specs/ethtool.yaml
-+ *
-+ * GENERATED PATCH - OpenWrt PSE-PD Backport
-+ */
++/* PSE ethtool netlink definitions - OpenWrt backport for 6.12 */
 +
 +#ifndef _UAPI_LINUX_ETHTOOL_NETLINK_GENERATED_H
 +#define _UAPI_LINUX_ETHTOOL_NETLINK_GENERATED_H
 +
-+/**
-+ * enum ethtool_pse_event - PSE event list for the PSE controller
-+ * @ETHTOOL_PSE_EVENT_OVER_CURRENT: PSE output current is too high
-+ * @ETHTOOL_PSE_EVENT_OVER_TEMP: PSE in over temperature state
-+ * @ETHTOOL_C33_PSE_EVENT_DETECTION: detection process occur on the PSE
-+ * @ETHTOOL_C33_PSE_EVENT_CLASSIFICATION: classification process occur
-+ * @ETHTOOL_C33_PSE_EVENT_DISCONNECTION: PD has been disconnected
-+ * @ETHTOOL_PSE_EVENT_OVER_BUDGET: PSE turned off due to over budget
-+ * @ETHTOOL_PSE_EVENT_SW_PW_CONTROL_ERROR: PSE power control error
-+ */
 +enum ethtool_pse_event {
 +	ETHTOOL_PSE_EVENT_OVER_CURRENT = 1,
 +	ETHTOOL_PSE_EVENT_OVER_TEMP = 2,
@@ -65,16 +62,18 @@ Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
 +	ETHTOOL_PSE_EVENT_SW_PW_CONTROL_ERROR = 64,
 +};
 +
-+/* PSE notification attributes */
 +enum {
 +	ETHTOOL_A_PSE_NTF_HEADER = 1,
 +	ETHTOOL_A_PSE_NTF_EVENTS,
-+
 +	__ETHTOOL_A_PSE_NTF_CNT,
 +	ETHTOOL_A_PSE_NTF_MAX = (__ETHTOOL_A_PSE_NTF_CNT - 1)
 +};
 +
-+/* PSE power domain ID attribute - value 14 in the ETHTOOL_A_PSE_* enum */
-+#define ETHTOOL_A_PSE_PW_D_ID 14
++enum {
++	ETHTOOL_A_PSE_NTF_EVT_UNSPEC,
++	ETHTOOL_A_PSE_NTF_EVT_INDEX,
++	__ETHTOOL_A_PSE_NTF_EVT_CNT,
++	ETHTOOL_A_PSE_NTF_EVT_MAX = (__ETHTOOL_A_PSE_NTF_EVT_CNT - 1)
++};
 +
 +#endif /* _UAPI_LINUX_ETHTOOL_NETLINK_GENERATED_H */
