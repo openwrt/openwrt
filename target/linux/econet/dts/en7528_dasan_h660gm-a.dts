@@ -18,6 +18,12 @@
 	};
 };
 
+&gmac0 {
+	status = "okay";
+	nvmem-cells = <&macaddr_dzs 7>;
+	nvmem-cell-names = "mac-address";
+};
+
 &nand {
 	status = "okay";
 	econet,bmt;
@@ -37,6 +43,17 @@
 		partition@40000 {
 			label = "dzs";
 			reg = <0x40000 0x40000>;
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr_dzs: macaddr@a {
+					compatible = "mac-base";
+					reg = <0xa 0x6>;
+					#nvmem-cell-cells = <1>;
+				};
+			};
 		};
 
 		partition@80000 {

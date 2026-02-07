@@ -2,6 +2,8 @@
 /dts-v1/;
 
 #include <dt-bindings/interrupt-controller/mips-gic.h>
+#include <dt-bindings/clock/en7523-clk.h>
+#include <dt-bindings/reset/airoha,en7523-reset.h>
 
 / {
 	compatible = "econet,en7528";
@@ -55,6 +57,14 @@
 		interrupts = <2>;
 	};
 
+	scu: system-controller@1fb00000 {
+		compatible = "airoha,en7523-scu";
+		reg = <0x1fa20000 0x400>,
+		      <0x1fb00000 0x1000>;
+		#clock-cells = <1>;
+		#reset-cells = <1>;
+	};
+
 	timer_hpt: timer@1fbf0400 {
 		compatible = "econet,en7528-timer";
 		reg = <0x1fbf0400 0x14>,
@@ -99,5 +109,46 @@
 		interrupts = <GIC_SHARED 2 IRQ_TYPE_LEVEL_HIGH>;
 
 		clock-frequency = <7372800>;
+	};
+
+	ethernet: ethernet@1fb50000 {
+		compatible = "econet,en7528-eth";
+		reg = <0x1fb50000 0x10000>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SHARED 21 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SHARED 22 IRQ_TYPE_LEVEL_HIGH>;
+
+		resets = <&scu EN7523_FE_RST>,
+			 <&scu EN7523_FE_PDMA_RST>,
+			 <&scu EN7523_FE_QDMA_RST>,
+			 <&scu EN7523_GSW_RST>,
+			 <&scu EN7523_XPON_MAC_RST>,
+			 <&scu EN7523_XPON_PHY_RST>;
+		reset-names = "fe", "qdma0", "qdma1", "gsw",
+			      "xpon-mac", "xpon-phy";
+
+		gmac0: mac@0 {
+			compatible = "econet,eth-mac";
+			reg = <0>;
+			phy-mode = "trgmii";
+			status = "disabled";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+				pause;
+			};
+		};
+
+		gmac1: mac@1 {
+			compatible = "econet,eth-mac";
+			reg = <1>;
+			phy-mode = "rgmii-rxid";
+			status = "disabled";
+		};
 	};
 };
