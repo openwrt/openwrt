@@ -1,0 +1,24 @@
+From bc88053f617f597527e5a7d165ee67bbf84c89ab Mon Sep 17 00:00:00 2001
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Sat, 20 Dec 2025 11:47:59 +0800
+Subject: [PATCH] CMake: update package version
+
+This version string seems to have been accidentally changed in commit:
+8b8a124eb42b ("CMake: Add cmake-format.yaml and reformat the cmake files.")
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.12...3.
+ project(
+     zlib
+     LANGUAGES C
+-    VERSION 1.4.1.1
++    VERSION 1.3.1.2
+     HOMEPAGE_URL "https://zlib.net/"
+     DESCRIPTION "a general-purpose lossless data-compression library")
+ 
