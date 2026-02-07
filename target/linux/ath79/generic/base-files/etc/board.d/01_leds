@@ -523,6 +523,9 @@ ubnt,uk-ultra)
 	ucidef_set_led_rssi "rssimediumhigh" "RSSIMEDIUMHIGH" "white:rssi2" "wlan0" "51" "100"
 	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "white:rssi3" "wlan0" "76" "100"
 	;;
+ubnt,unifiac-pro)
+	ucidef_set_led_netdev "eth0" "ETH0" "blue:dome" "eth0"
+	;;
 wallys,dr531)
 	ucidef_set_led_netdev "lan" "LAN" "green:lan" "eth0"
 	ucidef_set_led_switch "wan" "WAN" "green:wan" "switch0" "0x2"
