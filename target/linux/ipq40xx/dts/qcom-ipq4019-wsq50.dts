@@ -297,19 +297,17 @@
 	qcom,ath10k-calibration-variant = "Zyxel-WSQ50";
 };
 
-&pcie0 { /* QCA9984 */
+&pcie0 { 
+	/* QCA9984 */
 	status = "okay";
 	perst-gpio = <&tlmm 38 GPIO_ACTIVE_LOW>;
 	wake-gpio = <&tlmm 40 GPIO_ACTIVE_LOW>;
 	clkreq-gpio = <&tlmm 39 GPIO_ACTIVE_LOW>;
+};
 
-	bridge@0,0 {
-		#address-cells = <3>;
-		#size-cells = <2>;
-		reg = <0x00000000 0 0 0 0>;
-		ranges;
+&pcie_bridge0 {
 
-		wifi2: wifi@1,0 {
+		wifi@0,0 {
 			reg = <0x00010000 0 0 0 0>;
 			ieee80211-freq-limit = <5170000 5875000>;
 			compatible = "qcom,ath10k";
@@ -317,7 +315,6 @@
 			nvmem-cells = <&precal_wifi2>, <&macaddr_wifi2>;
 			qcom,ath10k-calibration-variant = "Zyxel-WSQ50";
 		};
-	};
 };
 
 &usb2 {
