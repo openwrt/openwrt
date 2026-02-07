@@ -29,6 +29,9 @@
 #define RTL838X_INT_RW_CTRL		(0x0058)
 #define RTL838X_EXT_VERSION		(0x00D0)
 
+#define RTL931X_LED_GLB_CTRL		(0x0600)
+#define RTL931X_MAC_L2_GLOBAL_CTRL2	(0x1358)
+
 /* Definition of family IDs */
 #define RTL8380_FAMILY_ID		(0x8380)
 #define RTL8390_FAMILY_ID		(0x8390)
