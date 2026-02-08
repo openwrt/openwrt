@@ -33,100 +33,6 @@
 extern const struct ar8xxx_mib_desc ar8236_mibs[39];
 extern const struct switch_attr ar8xxx_sw_attr_vlan[1];
 
-static u32
-ar8327_get_pad_cfg(struct ar8327_pad_cfg *cfg)
-{
-	u32 t;
-
-	if (!cfg)
-		return 0;
-
-	t = 0;
-	switch (cfg->mode) {
-	case AR8327_PAD_NC:
-		break;
-
-	case AR8327_PAD_MAC2MAC_MII:
-		t = AR8327_PAD_MAC_MII_EN;
-		if (cfg->rxclk_sel)
-			t |= AR8327_PAD_MAC_MII_RXCLK_SEL;
-		if (cfg->txclk_sel)
-			t |= AR8327_PAD_MAC_MII_TXCLK_SEL;
-		break;
-
-	case AR8327_PAD_MAC2MAC_GMII:
-		t = AR8327_PAD_MAC_GMII_EN;
-		if (cfg->rxclk_sel)
-			t |= AR8327_PAD_MAC_GMII_RXCLK_SEL;
-		if (cfg->txclk_sel)
-			t |= AR8327_PAD_MAC_GMII_TXCLK_SEL;
-		break;
-
-	case AR8327_PAD_MAC_SGMII:
-		t = AR8327_PAD_SGMII_EN;
-
-		/*
-		 * WAR for the QUalcomm Atheros AP136 board.
-		 * It seems that RGMII TX/RX delay settings needs to be
-		 * applied for SGMII mode as well, The ethernet is not
-		 * reliable without this.
-		 */
-		t |= cfg->txclk_delay_sel << AR8327_PAD_RGMII_TXCLK_DELAY_SEL_S;
-		t |= cfg->rxclk_delay_sel << AR8327_PAD_RGMII_RXCLK_DELAY_SEL_S;
-		if (cfg->rxclk_delay_en)
-			t |= AR8327_PAD_RGMII_RXCLK_DELAY_EN;
-		if (cfg->txclk_delay_en)
-			t |= AR8327_PAD_RGMII_TXCLK_DELAY_EN;
-
-		if (cfg->sgmii_delay_en)
-			t |= AR8327_PAD_SGMII_DELAY_EN;
-
-		break;
-
-	case AR8327_PAD_MAC2PHY_MII:
-		t = AR8327_PAD_PHY_MII_EN;
-		if (cfg->rxclk_sel)
-			t |= AR8327_PAD_PHY_MII_RXCLK_SEL;
-		if (cfg->txclk_sel)
-			t |= AR8327_PAD_PHY_MII_TXCLK_SEL;
-		break;
-
-	case AR8327_PAD_MAC2PHY_GMII:
-		t = AR8327_PAD_PHY_GMII_EN;
-		if (cfg->pipe_rxclk_sel)
-			t |= AR8327_PAD_PHY_GMII_PIPE_RXCLK_SEL;
-		if (cfg->rxclk_sel)
-			t |= AR8327_PAD_PHY_GMII_RXCLK_SEL;
-		if (cfg->txclk_sel)
-			t |= AR8327_PAD_PHY_GMII_TXCLK_SEL;
-		break;
-
-	case AR8327_PAD_MAC_RGMII:
-		t = AR8327_PAD_RGMII_EN;
-		t |= cfg->txclk_delay_sel << AR8327_PAD_RGMII_TXCLK_DELAY_SEL_S;
-		t |= cfg->rxclk_delay_sel << AR8327_PAD_RGMII_RXCLK_DELAY_SEL_S;
-		if (cfg->rxclk_delay_en)
-			t |= AR8327_PAD_RGMII_RXCLK_DELAY_EN;
-		if (cfg->txclk_delay_en)
-			t |= AR8327_PAD_RGMII_TXCLK_DELAY_EN;
-		break;
-
-	case AR8327_PAD_PHY_GMII:
-		t = AR8327_PAD_PHYX_GMII_EN;
-		break;
-
-	case AR8327_PAD_PHY_RGMII:
-		t = AR8327_PAD_PHYX_RGMII_EN;
-		break;
-
-	case AR8327_PAD_PHY_MII:
-		t = AR8327_PAD_PHYX_MII_EN;
-		break;
-	}
-
-	return t;
-}
-
 static void
 ar8327_phy_rgmii_set(struct ar8xxx_priv *priv, struct phy_device *phydev)
 {
@@ -191,34 +97,6 @@ ar8327_phy_fixup(struct ar8xxx_priv *priv, int phy)
 		ar8xxx_phy_dbg_write(priv, phy, 0x3c, 0x6000);
 		break;
 	}
-}
-
-static u32
-ar8327_get_port_init_status(struct ar8327_port_cfg *cfg)
-{
-	u32 t;
-
-	if (!cfg->force_link)
-		return AR8216_PORT_STATUS_LINK_AUTO;
-
-	t = AR8216_PORT_STATUS_TXMAC | AR8216_PORT_STATUS_RXMAC;
-	t |= cfg->duplex ? AR8216_PORT_STATUS_DUPLEX : 0;
-	t |= cfg->rxpause ? AR8216_PORT_STATUS_RXFLOW : 0;
-	t |= cfg->txpause ? AR8216_PORT_STATUS_TXFLOW : 0;
-
-	switch (cfg->speed) {
-	case AR8327_PORT_SPEED_10:
-		t |= AR8216_PORT_SPEED_10M;
-		break;
-	case AR8327_PORT_SPEED_100:
-		t |= AR8216_PORT_SPEED_100M;
-		break;
-	case AR8327_PORT_SPEED_1000:
-		t |= AR8216_PORT_SPEED_1000M;
-		break;
-	}
-
-	return t;
 }
 
 #define AR8327_LED_ENTRY(_num, _reg, _shift) \
