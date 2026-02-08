@@ -1,0 +1,29 @@
+From 165cac17c03dc288acdf21abefd3326699e15db4 Mon Sep 17 00:00:00 2001
+From: Nick Hainke <vincent@systemli.org>
+Date: Sat, 7 Feb 2026 10:32:32 +0100
+Subject: [PATCH] xdpsock: fix build with musl
+
+Remove linux/if_ether.h from xdpsock.c.
+This avoids duplicate struct ethhdr definitions when
+including net/ethernet.h.
+---
+ lib/util/xdpsock.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/lib/util/xdpsock.c
++++ b/lib/util/xdpsock.c
+@@ -9,13 +9,12 @@
+ #include <linux/err.h>
+ #include <linux/if_link.h>
+ #include <linux/if_xdp.h>
+-#include <linux/if_ether.h>
+ #include <linux/ip.h>
+ #include <linux/limits.h>
+ #include <linux/udp.h>
+ #include <locale.h>
+ #include <arpa/inet.h>
+-#include <net/ethernet.h>
++#include <netinet/if_ether.h>
+ #include <netinet/ether.h>
+ #include <net/if.h>
+ #include <poll.h>

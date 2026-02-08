@@ -1,0 +1,22 @@
+From a7830bfd654bf708b03343ffc3d9c85801417c52 Mon Sep 17 00:00:00 2001
+From: Nick Hainke <vincent@systemli.org>
+Date: Sat, 7 Feb 2026 12:18:37 +0100
+Subject: [PATCH] xdp-tools: fix build with GCC maybe-uninitialized warning
+
+Initialize tv_sec/tv_usec in tx_only() to avoid -Werror build failure.
+---
+ lib/util/xdpsock.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/lib/util/xdpsock.c
++++ b/lib/util/xdpsock.c
+@@ -1259,8 +1259,8 @@ static void *xsk_rx_drop_all(void *arg)
+ static int tx_only(struct xsk_ctx *ctx, struct xsk_socket_info *xsk, __u32 *frame_nb,
+ 		   int batch_size, unsigned long tx_ns)
+ {
+-	__u32 idx, tv_sec, tv_usec;
+ 	int i;
++	__u32 idx, tv_sec = 0, tv_usec = 0;
+ 
+ 	while (xsk_ring_prod__reserve(&xsk->tx, batch_size, &idx) <
+ 	       (unsigned int)batch_size) {
