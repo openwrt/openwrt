@@ -186,6 +186,7 @@ struct rtmdio_config {
 	int (*read_mmd_phy)(struct mii_bus *bus, u32 port, u32 addr, u32 reg, u32 *val);
 	int (*read_phy)(struct mii_bus *bus, u32 port, u32 page, u32 reg, u32 *val);
 	int (*reset)(struct mii_bus *bus);
+	void (*setup_polling)(struct mii_bus *bus);
 	int (*write_mmd_phy)(struct mii_bus *bus, u32 port, u32 addr, u32 reg, u32 val);
 	int (*write_phy)(struct mii_bus *bus, u32 port, u32 page, u32 reg, u32 val);
 };
@@ -695,7 +696,6 @@ static int rtmdio_839x_reset(struct mii_bus *bus)
 static int rtmdio_930x_reset(struct mii_bus *bus)
 {
 	struct rtmdio_ctrl *ctrl = bus->priv;
-	struct rtmdio_phy_info phyinfo;
 	unsigned int reg, mask, val;
 
 	/* Define bus topology */
@@ -720,6 +720,15 @@ static int rtmdio_930x_reset(struct mii_bus *bus)
 		val = ctrl->smi_bus_isc45[addr] ? mask : 0;
 		regmap_update_bits(ctrl->map, RTMDIO_930X_SMI_GLB_CTRL, mask, val);
 	}
+
+	return 0;
+}
+
+static void rtmdio_930x_setup_polling(struct mii_bus *bus)
+{
+	struct rtmdio_ctrl *ctrl = bus->priv;
+	struct rtmdio_phy_info phyinfo;
+	unsigned int mask, val;
 
 	/* Define PHY specific polling parameters */
 	for (int addr = 0; addr < ctrl->cfg->cpu_port; addr++) {
@@ -772,18 +781,14 @@ static int rtmdio_930x_reset(struct mii_bus *bus)
 	pr_debug("%s: RTMDIO_930X_SMI_10G_POLLING_REG10_CFG %08x\n", __func__, val);
 	regmap_read(ctrl->map, RTMDIO_930X_SMI_PRVTE_POLLING_CTRL, &val);
 	pr_debug("%s: RTMDIO_930X_SMI_PRVTE_POLLING_CTRL %08x\n", __func__, val);
-
-	return 0;
 }
 
 static int rtmdio_931x_reset(struct mii_bus *bus)
 {
 	struct rtmdio_ctrl *ctrl = bus->priv;
-	struct rtmdio_phy_info phyinfo;
 	u32 poll_sel[4] = { 0 };
 	u32 poll_ctrl = 0;
 	u32 c45_mask = 0;
-	u32 val;
 
 	pr_info("%s called\n", __func__);
 	/* Disable port polling for configuration purposes */
@@ -825,6 +830,15 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 	}
 	pr_info("%s: c45_mask: %08x", __func__, c45_mask);
 	regmap_update_bits(ctrl->map, RTMDIO_931X_SMI_GLB_CTRL1, GENMASK(7, 0), c45_mask);
+
+	return 0;
+}
+
+static void rtmdio_931x_setup_polling(struct mii_bus *bus)
+{
+	struct rtmdio_ctrl *ctrl = bus->priv;
+	struct rtmdio_phy_info phyinfo;
+	u32 val;
 
 	/* Define PHY specific polling parameters
 	 *
@@ -896,8 +910,6 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 	pr_debug("%s: RTMDIO_931X_SMI_10GPHY_POLLING_SEL3 %08x\n", __func__, val);
 	regmap_read(ctrl->map, RTMDIO_931X_SMI_10GPHY_POLLING_SEL4, &val);
 	pr_debug("%s: RTMDIO_931X_SMI_10GPHY_POLLING_SEL4 %08x\n", __func__, val);
-
-	return 0;
 }
 
 static int rtmdio_reset(struct mii_bus *bus)
@@ -967,6 +979,9 @@ static int rtmdio_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
+	if (ctrl->cfg->setup_polling)
+		ctrl->cfg->setup_polling(bus);
+
 	for (addr = 0; addr < ctrl->cfg->cpu_port; addr++) {
 		if (ctrl->dn[addr]) {
 			ret = fwnode_mdiobus_register_phy(bus, of_fwnode_handle(ctrl->dn[addr]), addr);
@@ -1004,6 +1019,7 @@ static const struct rtmdio_config rtmdio_930x_cfg = {
 	.read_mmd_phy	= rtmdio_930x_read_mmd_phy,
 	.read_phy	= rtmdio_930x_read_phy,
 	.reset		= rtmdio_930x_reset,
+	.setup_polling	= rtmdio_930x_setup_polling,
 	.write_mmd_phy	= rtmdio_930x_write_mmd_phy,
 	.write_phy	= rtmdio_930x_write_phy,
 };
@@ -1014,6 +1030,7 @@ static const struct rtmdio_config rtmdio_931x_cfg = {
 	.read_mmd_phy	= rtmdio_931x_read_mmd_phy,
 	.read_phy	= rtmdio_931x_read_phy,
 	.reset		= rtmdio_931x_reset,
+	.setup_polling	= rtmdio_931x_setup_polling,
 	.write_mmd_phy	= rtmdio_931x_write_mmd_phy,
 	.write_phy	= rtmdio_931x_write_phy,
 };
