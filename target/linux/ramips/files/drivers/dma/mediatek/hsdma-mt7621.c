@@ -137,7 +137,7 @@ struct mtk_hsdma_sg {
 struct mtk_hsdma_desc {
 	struct virt_dma_desc vdesc;
 	unsigned int num_sgs;
-	struct mtk_hsdma_sg sg[1];
+	struct mtk_hsdma_sg sg;
 };
 
 struct mtk_hsdma_chan {
@@ -159,7 +159,7 @@ struct mtk_hsdam_engine {
 	struct tasklet_struct task;
 	volatile unsigned long chan_issued;
 
-	struct mtk_hsdma_chan chan[1];
+	struct mtk_hsdma_chan chan;
 };
 
 static inline struct mtk_hsdam_engine *mtk_hsdma_chan_get_dev(struct mtk_hsdma_chan *chan)
@@ -319,7 +319,7 @@ static int mtk_hsdma_start_transfer(struct mtk_hsdam_engine *hsdma,
 	unsigned int i;
 	int rx_idx;
 
-	sg = &chan->desc->sg[0];
+	sg = &chan->desc->sg;
 	len = sg->len;
 	chan->desc->num_sgs = DIV_ROUND_UP(len, HSDMA_MAX_PLEN);
 
@@ -471,9 +471,9 @@ static struct dma_async_tx_descriptor *mtk_hsdma_prep_dma_memcpy(
 		return NULL;
 	}
 
-	desc->sg[0].src_addr = src;
-	desc->sg[0].dst_addr = dest;
-	desc->sg[0].len = len;
+	desc->sg.src_addr = src;
+	desc->sg.dst_addr = dest;
+	desc->sg.len = len;
 
 	return vchan_tx_prep(&chan->vchan, &desc->vdesc, flags);
 }
@@ -500,7 +500,7 @@ static void mtk_hsdma_tx(struct mtk_hsdam_engine *hsdma)
 	struct mtk_hsdma_chan *chan;
 
 	if (test_and_clear_bit(0, &hsdma->chan_issued)) {
-		chan = &hsdma->chan[0];
+		chan = &hsdma->chan;
 		if (chan->desc)
 			mtk_hsdma_start_transfer(hsdma, chan);
 		else
@@ -513,7 +513,7 @@ static void mtk_hsdma_rx(struct mtk_hsdam_engine *hsdma)
 	struct mtk_hsdma_chan *chan;
 	int next_idx, drx_idx, cnt;
 
-	chan = &hsdma->chan[0];
+	chan = &hsdma->chan;
 	next_idx = HSDMA_NEXT_DESC(chan->rx_idx);
 	drx_idx = mtk_hsdma_read(hsdma, HSDMA_REG_RX_DRX);
 
@@ -544,7 +544,7 @@ static int mtk_hsdam_alloc_desc(struct mtk_hsdam_engine *hsdma,
 {
 	int i;
 
-	chan->tx_ring = dma_alloc_coherent(hsdma->ddev.dev,
+	chan->tx_ring = dmam_alloc_coherent(hsdma->ddev.dev,
 					   2 * HSDMA_DESCS_NUM *
 					   sizeof(*chan->tx_ring),
 			&chan->desc_addr, GFP_ATOMIC | __GFP_ZERO);
@@ -562,18 +562,6 @@ no_mem:
 	return -ENOMEM;
 }
 
-static void mtk_hsdam_free_desc(struct mtk_hsdam_engine *hsdma,
-				struct mtk_hsdma_chan *chan)
-{
-	if (chan->tx_ring) {
-		dma_free_coherent(hsdma->ddev.dev,
-				  2 * HSDMA_DESCS_NUM * sizeof(*chan->tx_ring),
-				  chan->tx_ring, chan->desc_addr);
-		chan->tx_ring = NULL;
-		chan->rx_ring = NULL;
-	}
-}
-
 static int mtk_hsdma_init(struct mtk_hsdam_engine *hsdma)
 {
 	struct mtk_hsdma_chan *chan;
@@ -581,7 +569,7 @@ static int mtk_hsdma_init(struct mtk_hsdam_engine *hsdma)
 	u32 reg;
 
 	/* init desc */
-	chan = &hsdma->chan[0];
+	chan = &hsdma->chan;
 	ret = mtk_hsdam_alloc_desc(hsdma, chan);
 	if (ret)
 		return ret;
@@ -623,10 +611,6 @@ static void mtk_hsdma_uninit(struct mtk_hsdam_engine *hsdma)
 	/* disable intr */
 	mtk_hsdma_write(hsdma, HSDMA_REG_INT_MASK, 0);
 
-	/* free desc */
-	chan = &hsdma->chan[0];
-	mtk_hsdam_free_desc(hsdma, chan);
-
 	/* tx */
 	mtk_hsdma_write(hsdma, HSDMA_REG_TX_BASE, 0);
 	mtk_hsdma_write(hsdma, HSDMA_REG_TX_CNT, 0);
@@ -634,6 +618,7 @@ static void mtk_hsdma_uninit(struct mtk_hsdam_engine *hsdma)
 	mtk_hsdma_write(hsdma, HSDMA_REG_RX_BASE, 0);
 	mtk_hsdma_write(hsdma, HSDMA_REG_RX_CNT, 0);
 	/* reset */
+	chan = &hsdma->chan;
 	mtk_hsdma_reset_chan(hsdma, chan);
 }
 
@@ -697,7 +682,7 @@ static int mtk_hsdma_probe(struct platform_device *pdev)
 	dma_set_max_seg_size(dd->dev, HSDMA_MAX_PLEN);
 	INIT_LIST_HEAD(&dd->channels);
 
-	chan = &hsdma->chan[0];
+	chan = &hsdma->chan;
 	chan->id = 0;
 	chan->vchan.desc_free = mtk_hsdma_desc_free;
 	vchan_init(&chan->vchan, dd);
