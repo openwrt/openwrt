@@ -243,6 +243,65 @@ void wpas_ucode_wps_complete(struct wpa_supplicant *wpa_s,
 #endif /* CONFIG_WPS */
 }
 
+static uc_value_t *
+uc_wpas_iface_wps_set_m7(uc_vm_t *vm, size_t nargs)
+{
+	struct wpa_supplicant *wpa_s = uc_fn_thisval("wpas.iface");
+	uc_value_t *data_arg = uc_fn_arg(0);
+	const char *data_b64;
+	unsigned char *data;
+	size_t data_len;
+
+	if (!wpa_s || !wpa_s->wps)
+		return NULL;
+
+	wpabuf_free(wpa_s->wps->m7_encr_extra);
+	wpa_s->wps->m7_encr_extra = NULL;
+
+	if (ucv_type(data_arg) != UC_STRING)
+		return ucv_boolean_new(true);
+
+	data_b64 = ucv_string_get(data_arg);
+	data = base64_decode(data_b64, os_strlen(data_b64), &data_len);
+	if (!data)
+		return NULL;
+
+	wpa_s->wps->m7_encr_extra = wpabuf_alloc_copy(data, data_len);
+	os_free(data);
+
+	return ucv_boolean_new(wpa_s->wps->m7_encr_extra != NULL);
+}
+
+int wpas_ucode_wps_m8_rx(struct wpa_supplicant *wpa_s,
+			  const u8 *data, size_t data_len)
+{
+	uc_value_t *val;
+	char *data_b64;
+	size_t data_b64_len;
+	int ret = 0;
+
+	if (wpa_ucode_call_prepare("wps_m8_rx"))
+		return 0;
+
+	data_b64 = base64_encode_no_lf(data, data_len, &data_b64_len);
+	if (!data_b64) {
+		ucv_put(wpa_ucode_call(0));
+		return 0;
+	}
+
+	uc_value_push(ucv_string_new(wpa_s->ifname));
+	val = wpa_ucode_registry_get(iface_registry, wpa_s->ucode.idx);
+	uc_value_push(ucv_get(val));
+	uc_value_push(ucv_string_new(data_b64));
+	os_free(data_b64);
+
+	val = wpa_ucode_call(3);
+	ret = ucv_is_truish(val);
+	ucv_put(val);
+
+	return ret;
+}
+
 #ifdef CONFIG_DPP
 int wpas_ucode_dpp_rx_action(struct wpa_supplicant *wpa_s, const u8 *src,
 			     u8 frame_type, unsigned int freq,
@@ -692,6 +751,7 @@ int wpas_ucode_init(struct wpa_global *gl)
 		{ "status", uc_wpas_iface_status },
 		{ "ctrl", uc_wpas_iface_ctrl },
 		{ "config", uc_wpas_iface_config },
+		{ "wps_set_m7", uc_wpas_iface_wps_set_m7 },
 #ifdef CONFIG_DPP
 		{ "dpp_send_action", uc_wpas_iface_dpp_send_action },
 		{ "dpp_send_gas_req", uc_wpas_iface_dpp_send_gas_req },

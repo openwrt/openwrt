@@ -1132,6 +1132,56 @@ struct wpabuf *hostapd_ucode_dpp_gas_req(struct hostapd_data *hapd,
 }
 #endif /* CONFIG_DPP */
 
+void hostapd_ucode_wps_m7_rx(struct hostapd_data *hapd, const u8 *addr,
+			      const u8 *data, size_t data_len,
+			      struct wpabuf **m8_encr_extra, int *skip_cred)
+{
+	uc_value_t *val, *obj;
+	char addr_str[18];
+	char *data_b64;
+	size_t data_b64_len;
+
+	if (wpa_ucode_call_prepare("wps_m7_rx"))
+		return;
+
+	os_snprintf(addr_str, sizeof(addr_str), MACSTR, MAC2STR(addr));
+	data_b64 = base64_encode_no_lf(data, data_len, &data_b64_len);
+	if (!data_b64) {
+		ucv_put(wpa_ucode_call(0));
+		return;
+	}
+
+	uc_value_push(ucv_string_new(hapd->conf->iface));
+	uc_value_push(ucv_string_new(addr_str));
+	uc_value_push(ucv_string_new(data_b64));
+	os_free(data_b64);
+
+	val = wpa_ucode_call(3);
+	if (ucv_type(val) != UC_OBJECT)
+		goto out;
+
+	obj = ucv_object_get(val, "skip_cred", NULL);
+	if (ucv_is_truish(obj))
+		*skip_cred = 1;
+
+	obj = ucv_object_get(val, "data", NULL);
+	if (ucv_type(obj) == UC_STRING) {
+		const char *extra_b64 = ucv_string_get(obj);
+		unsigned char *extra;
+		size_t extra_len;
+
+		extra = base64_decode(extra_b64, os_strlen(extra_b64),
+				      &extra_len);
+		if (extra) {
+			*m8_encr_extra = wpabuf_alloc_copy(extra, extra_len);
+			os_free(extra);
+		}
+	}
+
+out:
+	ucv_put(val);
+}
+
 int hostapd_ucode_init(struct hapd_interfaces *ifaces)
 {
 	static const uc_function_list_t global_fns[] = {

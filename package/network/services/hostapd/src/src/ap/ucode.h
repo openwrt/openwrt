@@ -32,6 +32,10 @@ void hostapd_ucode_sta_connected(struct hostapd_data *hapd, struct sta_info *sta
 void hostapd_ucode_apup_newpeer(struct hostapd_data *hapd, const char *ifname);
 #endif // def CONFIG_APUP
 
+void hostapd_ucode_wps_m7_rx(struct hostapd_data *hapd, const u8 *addr,
+			      const u8 *data, size_t data_len,
+			      struct wpabuf **m8_encr_extra, int *skip_cred);
+
 #ifdef CONFIG_DPP
 int hostapd_ucode_dpp_rx_action(struct hostapd_data *hapd, const u8 *src,
 				u8 frame_type, unsigned int freq,
@@ -64,6 +68,13 @@ static inline void hostapd_ucode_sta_connected(struct hostapd_data *hapd, struct
 {
 }
 static inline void hostapd_ucode_free_bss(struct hostapd_data *hapd)
+{
+}
+static inline void hostapd_ucode_wps_m7_rx(struct hostapd_data *hapd,
+					    const u8 *addr,
+					    const u8 *data, size_t data_len,
+					    struct wpabuf **m8_encr_extra,
+					    int *skip_cred)
 {
 }
 
