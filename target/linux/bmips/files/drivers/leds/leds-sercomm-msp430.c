@@ -327,14 +327,13 @@ static int msp430_leds_probe(struct spi_device *spi)
 {
 	struct device *dev = &spi->dev;
 	struct device_node *np = dev_of_node(dev);
-	struct device_node *child;
 	int rc;
 
 	rc = msp430_check_workmode(spi);
 	if (rc)
 		return rc;
 
-	for_each_available_child_of_node(np, child) {
+	for_each_available_child_of_node_scoped(np, child) {
 		u32 reg;
 
 		if (of_property_read_u32(child, "reg", &reg))
@@ -347,10 +346,8 @@ static int msp430_leds_probe(struct spi_device *spi)
 		}
 
 		rc = msp430_led_probe(spi, child, reg);
-		if (rc < 0) {
-			of_node_put(child);
+		if (rc < 0)
 			return rc;
-		}
 	}
 
 	return 0;
