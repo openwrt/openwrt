@@ -1603,4 +1603,12 @@ return {
 			return response.response;
 		return null;
 	},
+	wps_m7_rx: function(ifname, addr, data) {
+		let response = dpp_rx_via_channel(ifname, "wps_m7_rx", {
+			ifname, addr, data,
+		});
+		if (!response)
+			return null;
+		return response;
+	},
 };

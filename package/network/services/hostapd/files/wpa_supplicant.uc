@@ -478,6 +478,14 @@ function dpp_channel_handle_request(channel, req)
 		iface.ctrl("DPP_STOP_CHIRP");
 		return 0;
 
+	case "wps_set_m7":
+		iface = dpp_find_iface(data.ifname);
+		if (!iface)
+			return libubus.STATUS_NOT_FOUND;
+		if (!iface.wps_set_m7(data.data))
+			return libubus.STATUS_UNKNOWN_ERROR;
+		return 0;
+
 	default:
 		return libubus.STATUS_METHOD_NOT_FOUND;
 	}
@@ -1073,6 +1081,14 @@ return {
 	dpp_rx_gas: function(iface, src, freq, gas_frame) {
 		let response = dpp_rx_via_channel(iface, "rx_gas", {
 			ifname: iface, src, freq, gas_frame,
+		});
+		if (response && response.handled)
+			return true;
+		return false;
+	},
+	wps_m8_rx: function(ifname, iface, data) {
+		let response = dpp_rx_via_channel(ifname, "wps_m8_rx", {
+			ifname, data,
 		});
 		if (response && response.handled)
 			return true;
