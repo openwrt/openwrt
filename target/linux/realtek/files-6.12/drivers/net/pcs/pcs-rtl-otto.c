@@ -3689,29 +3689,6 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 
 /* Common functions */
 
-static int rtpcs_sds_set_autoneg(struct rtpcs_serdes *sds, unsigned int neg_mode,
-				 const unsigned long *advertising)
-{
-	if (!sds->ops->set_autoneg) {
-		dev_warn(sds->ctrl->dev, "set_autoneg not implemented for SDS %u, skipping\n",
-			 sds->id);
-		return 0;
-	}
-
-	return sds->ops->set_autoneg(sds, neg_mode, advertising);
-}
-
-static void rtpcs_sds_restart_autoneg(struct rtpcs_serdes *sds)
-{
-	if (!sds->ops->restart_autoneg) {
-		dev_warn(sds->ctrl->dev, "restart_autoneg not implemented for SDS %u, skipping\n",
-		         sds->id);
-		return;
-	}
-
-	sds->ops->restart_autoneg(sds);
-}
-
 static void rtpcs_pcs_get_state(struct phylink_pcs *pcs, struct phylink_link_state *state)
 {
 	struct rtpcs_link *link = rtpcs_phylink_pcs_to_link(pcs);
@@ -3780,7 +3757,7 @@ static void rtpcs_pcs_an_restart(struct phylink_pcs *pcs)
 	struct rtpcs_serdes *sds = link->sds;
 
 	mutex_lock(&ctrl->lock);
-	rtpcs_sds_restart_autoneg(sds);
+	sds->ops->restart_autoneg(sds);
 	mutex_unlock(&ctrl->lock);
 }
 
@@ -3815,7 +3792,7 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 			 sds->id, phy_modes(interface));
 	}
 
-	ret = rtpcs_sds_set_autoneg(sds, neg_mode, advertising);
+	ret = sds->ops->set_autoneg(sds, neg_mode, advertising);
 
 out:
 	mutex_unlock(&ctrl->lock);
