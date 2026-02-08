@@ -1,0 +1,63 @@
+From 854c833a925d6ca6be6a66b443296e48bc3c4b52 Mon Sep 17 00:00:00 2001
+From: Wenli Looi <wlooi@ucalgary.ca>
+Date: Tue, 11 Apr 2023 18:42:13 +0000
+Subject: [PATCH v3 02/11] wifi: ath9k: delete some unused/duplicate macros
+
+The rate macros are for AR9002 and not correct for AR9003.
+
+The AGC 3 macros are unused and have incorrect values, at least for
+QCN5502, where AR_AGC3_BASE should be 0x2de00.
+
+This change does not appear to affect the final binary.
+
+Signed-off-by: Wenli Looi <wlooi@ucalgary.ca>
+---
+ drivers/net/wireless/ath/ath9k/ar9003_phy.h | 9 ---------
+ drivers/net/wireless/ath/ath9k/reg_aic.h    | 4 ----
+ 2 files changed, 13 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/ath9k/ar9003_phy.h b/drivers/net/wireless/ath/ath9k/ar9003_phy.h
+index 57e2b4c891..ad72a30b67 100644
+--- a/drivers/net/wireless/ath/ath9k/ar9003_phy.h
++++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.h
+@@ -851,8 +851,6 @@
+ #define AR_PHY_TXGAIN_FORCED_TXBB1DBGAIN  0x0000000e
+ #define AR_PHY_TXGAIN_FORCED_TXBB1DBGAIN_S 1
+ 
+-#define AR_PHY_POWER_TX_RATE1   0x9934
+-#define AR_PHY_POWER_TX_RATE2   0x9938
+ #define AR_PHY_POWER_TX_RATE_MAX    0x993c
+ #define AR_PHY_POWER_TX_RATE_MAX_TPC_ENABLE 0x00000040
+ #define PHY_AGC_CLR             0x10000000
+@@ -1041,13 +1039,6 @@
+ 
+ #define AR_PHY_TX_IQCAL_STATUS_B2_FAILED    0x00000001
+ 
+-/*
+- * AGC 3 Register Map
+- */
+-#define AR_AGC3_BASE	0xce00
+-
+-#define AR_PHY_RSSI_3            (AR_AGC3_BASE + 0x180)
+-
+ /* GLB Registers */
+ #define AR_GLB_BASE	0x20000
+ #define AR_GLB_GPIO_CONTROL	(AR_GLB_BASE)
+diff --git a/drivers/net/wireless/ath/ath9k/reg_aic.h b/drivers/net/wireless/ath/ath9k/reg_aic.h
+index 955147ab48..f50994910e 100644
+--- a/drivers/net/wireless/ath/ath9k/reg_aic.h
++++ b/drivers/net/wireless/ath/ath9k/reg_aic.h
+@@ -17,10 +17,6 @@
+ #ifndef REG_AIC_H
+ #define REG_AIC_H
+ 
+-#define AR_SM_BASE                              0xa200
+-#define AR_SM1_BASE                             0xb200
+-#define AR_AGC_BASE                             0x9e00
+-
+ #define AR_PHY_AIC_CTRL_0_B0                    (AR_SM_BASE + 0x4b0)
+ #define AR_PHY_AIC_CTRL_1_B0                    (AR_SM_BASE + 0x4b4)
+ #define AR_PHY_AIC_CTRL_2_B0                    (AR_SM_BASE + 0x4b8)
+-- 
+2.34.1
+
