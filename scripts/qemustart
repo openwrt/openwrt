@@ -224,7 +224,7 @@ start_qemu_malta() {
 	qemu_exe="qemu-system-mips$is64$isel"
 	[ -n "$is64" ] && cpu="MIPS64R2-generic" || cpu="24Kc"
 
-	[ -n "$kernel" ] || kernel="$o_bindir/openwrt-malta-${o_subtarget%-*}-vmlinux-initramfs.elf"
+	[ -n "$kernel" ] || kernel="$o_bindir/openwrt-malta-${o_subtarget%-*}-generic-initramfs-kernel.bin"
 
 	[ -z "$rootfs" ] || {
 		if [ ! -f "$rootfs" -a -s "$rootfs.gz" ]; then
