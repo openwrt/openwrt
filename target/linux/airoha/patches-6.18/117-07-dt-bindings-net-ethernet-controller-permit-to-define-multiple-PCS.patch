@@ -1,0 +1,163 @@
+From patchwork Sun May 11 20:12:33 2025
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+X-Patchwork-Submitter: Christian Marangi <ansuelsmth@gmail.com>
+X-Patchwork-Id: 14084285
+Return-Path: 
+ <linux-mediatek-bounces+linux-mediatek=archiver.kernel.org@lists.infradead.org>
+X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
+	aws-us-west-2-korg-lkml-1.web.codeaurora.org
+Received: from bombadil.infradead.org (bombadil.infradead.org
+ [198.137.202.133])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by smtp.lore.kernel.org (Postfix) with ESMTPS id 9078AC3ABCC
+	for <linux-mediatek@archiver.kernel.org>;
+ Sun, 11 May 2025 20:29:53 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=lists.infradead.org; s=bombadil.20210309; h=Sender:List-Subscribe:List-Help
+	:List-Post:List-Archive:List-Unsubscribe:List-Id:Content-Transfer-Encoding:
+	MIME-Version:References:In-Reply-To:Message-ID:Date:Subject:To:From:Reply-To:
+	Cc:Content-Type:Content-ID:Content-Description:Resent-Date:Resent-From:
+	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Owner;
+	bh=kkLGswoAoqo/118QvnKQBtIy92ngW50tFunPEBOrZ/k=; b=X/q8tFSRN54Zlyq4h7KQNNIQFe
+	Zugr2owdyIx1rfsdqgzXpj4QFoCwQ3+tMRZIGAZrzmhc+H+k0Q3EMNZvDZEkDei6IM+O40uzNjOZh
+	aEk72U9mdCB4alrNKo3YZNIDkl/ZlZJ4uITavHADAnGOSCdxR74LpkepmCog0+Yu4sh+IfkRujW+n
+	mPk9jrZNDk85E8Bsn3DqBkz4b0luCs4UE0pStQZDsQWbSaoKOIDsZ3bzxG3KzHMqfR60jArZKDHJb
+	ohtRyuyFLG7iGtJ5Vfh9QHBvaYftHYmV10GJdsu7gnknqMbEwhfTuO1p6amFf0gkHuavuLUB0rK6w
+	dDoxHCAg==;
+Received: from localhost ([::1] helo=bombadil.infradead.org)
+	by bombadil.infradead.org with esmtp (Exim 4.98.2 #2 (Red Hat Linux))
+	id 1uEDJ2-00000007oZM-2mJS;
+	Sun, 11 May 2025 20:29:52 +0000
+Received: from mail-wm1-x32e.google.com ([2a00:1450:4864:20::32e])
+	by bombadil.infradead.org with esmtps (Exim 4.98.2 #2 (Red Hat Linux))
+	id 1uED3F-00000007mpk-1ubN;
+	Sun, 11 May 2025 20:13:34 +0000
+Received: by mail-wm1-x32e.google.com with SMTP id
+ 5b1f17b1804b1-442ccf0e1b3so44349425e9.3;
+        Sun, 11 May 2025 13:13:33 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1746994412; x=1747599212;
+ darn=lists.infradead.org;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:to:from:from:to:cc:subject:date:message-id
+         :reply-to;
+        bh=kkLGswoAoqo/118QvnKQBtIy92ngW50tFunPEBOrZ/k=;
+        b=WgSBzoVqNxlI0BBm9HgsnxcQrXyyEc0a7JRFDVTIP8RqP+YGGsbDf4oZ2MsKGHtOHH
+         /IK7ddHvqdGyCinp76HmKHlnWGStQc/37CgYbZcHqYxmuwmqbaPeOEof59r9aKAK2aN3
+         LDCF4v2Qi/RuZz9VGgGP3FnjJuP2vTW5dSsrmukhKXMj1biBYblW9HJ3Tcqq2PU7k7S6
+         tC8X/3szveXOjPfUhegpz1U+/gfsy5aG92JCvD84xABeNnW6K9IaDXbuKVBJ1F63sPdH
+         N+ELQt1w2y7BDIhSbgK3PFMlJrMOaNTJ4hThBMQ4r9PTWhf+CYoQRtgeGENcCXhWq+hM
+         249A==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1746994412; x=1747599212;
+        h=content-transfer-encoding:mime-version:references:in-reply-to
+         :message-id:date:subject:to:from:x-gm-message-state:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=kkLGswoAoqo/118QvnKQBtIy92ngW50tFunPEBOrZ/k=;
+        b=qmZaFZQesoyOr5g3l70pM0IT3ZYH6w58dhneLMlJEz7uSl6ICUMEGtAKOrveL5Kjt5
+         fmaq1hSOBaCLHFEYgUpTodSdHtBKvR+t6kJLebAdeAtHlC6jlzNEeDs5phcbQSYGo4oP
+         YVwQcywf+vHnc/3n8FstTXPRX1ZK2r22/PrbbS8/59bsEt+CzGZ9xWnq9+3kqhzb+f5G
+         92qMPzzHvXryyCXVa8uKowjSGFYfT2+izUuKKmYsGRXdxu1IpAuDh/8nJdV2Y4kkB6+z
+         d8lT3GSZZE8n9iTbzQo3nKNfvuGPbd0NiwS1PIwIbwZUcTuBUgFLvaJDQTVZUuB52eKW
+         UJRQ==
+X-Forwarded-Encrypted: i=1;
+ AJvYcCVBiMOpUAj67SXb7sRDSXI3aDGqaUxHkQgkqDcQv8FfbcnZsF3q9Mh85gxHJn9pa9dU5utI3uzaL6wCoNwGe+yH@lists.infradead.org,
+ AJvYcCVb/RyybNCjgfcSuvTzkOvq7IyvYojHFQpqm2X5RN97RsBKQQ02xU4PXd/IJZSy5O0w/1w21zqMAz+2jvjVo48=@lists.infradead.org
+X-Gm-Message-State: AOJu0YwB1JJ3BoJDwaOd8z2M2WvTgSNr9e3YIqbKBszh0sOYiVftu66s
+	rbD2Z06JZgE8hiOiFoDh403DDvy8ELKYwUt4NM5SFhPQyMWaX8CW
+X-Gm-Gg: ASbGnctKGaNHpZGDlQgS727UORUlL4nCqVjuogHV3WIhltYORouWzOgTKqJFPwlzV5o
+	7iJJv5UFwI6nWKBjlrZ/SQHmtJaDEKb2PJUwf96qbLknJSsQC+gtD/MJ7gJGDZvDwJQ76Gk1rD7
+	9IlIajIIN9hf42TiPg9Ru4cRL0WclPlWRKjKajzV4URAroj8wJFD8a6frFPZXcRJH3FGU3nHNkK
+	3qsy8476w5wiJYiHOyLBk8L2hV+eZdiuxPDAW4pAArSX1kNNBO7p9X544HnNVVBIwU9vYQHJyWf
+	yAbRj90V62v9mB7tEsuMDs7IFkTchbAOc560aBkFM0o3wp7Fd4s3WdXeSz68l0gbhMV0mtM7CgK
+	mLtQFQho+NLB99ZHoBbLl
+X-Google-Smtp-Source: 
+ AGHT+IFbxNC67QrJzS8ubdHLUfywR0W99gAi0Zl9vw1n/B+YFWZSNpU2mxOgGnTWER5WWOFxR4TBWA==
+X-Received: by 2002:a05:600c:3e0f:b0:442:e109:3027 with SMTP id
+ 5b1f17b1804b1-442e1093222mr47155515e9.24.1746994411685;
+        Sun, 11 May 2025 13:13:31 -0700 (PDT)
+Received: from localhost.localdomain (93-34-88-225.ip49.fastwebnet.it.
+ [93.34.88.225])
+        by smtp.googlemail.com with ESMTPSA id
+ 5b1f17b1804b1-442d67ee275sm100615165e9.19.2025.05.11.13.13.30
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sun, 11 May 2025 13:13:31 -0700 (PDT)
+From: Christian Marangi <ansuelsmth@gmail.com>
+To: Andrew Lunn <andrew+netdev@lunn.ch>,
+	"David S. Miller" <davem@davemloft.net>,
+	Eric Dumazet <edumazet@google.com>,
+	Jakub Kicinski <kuba@kernel.org>,
+	Paolo Abeni <pabeni@redhat.com>,
+	Rob Herring <robh@kernel.org>,
+	Krzysztof Kozlowski <krzk+dt@kernel.org>,
+	Conor Dooley <conor+dt@kernel.org>,
+	Lorenzo Bianconi <lorenzo@kernel.org>,
+	Heiner Kallweit <hkallweit1@gmail.com>,
+	Russell King <linux@armlinux.org.uk>,
+	Philipp Zabel <p.zabel@pengutronix.de>,
+	Nathan Chancellor <nathan@kernel.org>,
+	Nick Desaulniers <nick.desaulniers+lkml@gmail.com>,
+	Bill Wendling <morbo@google.com>,
+	Justin Stitt <justinstitt@google.com>,
+	Christian Marangi <ansuelsmth@gmail.com>,
+	Daniel Golle <daniel@makrotopia.org>,
+	netdev@vger.kernel.org,
+	devicetree@vger.kernel.org,
+	linux-kernel@vger.kernel.org,
+	linux-arm-kernel@lists.infradead.org,
+	linux-mediatek@lists.infradead.org,
+	llvm@lists.linux.dev
+Subject: [net-next PATCH v4 07/11] dt-bindings: net: ethernet-controller:
+ permit to define multiple PCS
+Date: Sun, 11 May 2025 22:12:33 +0200
+Message-ID: <20250511201250.3789083-8-ansuelsmth@gmail.com>
+X-Mailer: git-send-email 2.48.1
+In-Reply-To: <20250511201250.3789083-1-ansuelsmth@gmail.com>
+References: <20250511201250.3789083-1-ansuelsmth@gmail.com>
+MIME-Version: 1.0
+X-CRM114-Version: 20100106-BlameMichelson ( TRE 0.8.0 (BSD) ) MR-646709E3 
+X-CRM114-CacheID: sfid-20250511_131333_486693_F2587462 
+X-CRM114-Status: GOOD (  10.40  )
+X-BeenThere: linux-mediatek@lists.infradead.org
+X-Mailman-Version: 2.1.34
+Precedence: list
+List-Id: <linux-mediatek.lists.infradead.org>
+List-Unsubscribe: <http://lists.infradead.org/mailman/options/linux-mediatek>,
+ <mailto:linux-mediatek-request@lists.infradead.org?subject=unsubscribe>
+List-Archive: <http://lists.infradead.org/pipermail/linux-mediatek/>
+List-Post: <mailto:linux-mediatek@lists.infradead.org>
+List-Help: <mailto:linux-mediatek-request@lists.infradead.org?subject=help>
+List-Subscribe: <http://lists.infradead.org/mailman/listinfo/linux-mediatek>,
+ <mailto:linux-mediatek-request@lists.infradead.org?subject=subscribe>
+Sender: "Linux-mediatek" <linux-mediatek-bounces@lists.infradead.org>
+Errors-To: 
+ linux-mediatek-bounces+linux-mediatek=archiver.kernel.org@lists.infradead.org
+
+Drop the limitation of a single PCS in pcs-handle property. Multiple PCS
+can be defined for an ethrnet-controller node to support various PHY
+interface mode type.
+
+It's very common for SoCs to have a 2 or more dedicated PCS for Base-X
+(for example SGMII, 1000base-x, 2500base-x, ...) and Base-R (for example
+USXGMII,10base-r, ...) with the MAC selecting one of the other based on
+the attached PHY.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ Documentation/devicetree/bindings/net/ethernet-controller.yaml | 2 --
+ 1 file changed, 2 deletions(-)
+
+--- a/Documentation/devicetree/bindings/net/ethernet-controller.yaml
++++ b/Documentation/devicetree/bindings/net/ethernet-controller.yaml
+@@ -85,8 +85,6 @@ properties:
+ 
+   pcs-handle:
+     $ref: /schemas/types.yaml#/definitions/phandle-array
+-    items:
+-      maxItems: 1
+     description:
+       Specifies a reference to a node representing a PCS PHY device on a MDIO
+       bus to link with an external PHY (phy-handle) if exists.
