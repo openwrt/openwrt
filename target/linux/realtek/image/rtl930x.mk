@@ -2,11 +2,6 @@
 
 include ./common.mk
 
-define Build/xikestor-nosimg
-  $(STAGING_DIR_HOST)/bin/nosimg-enc -i $@ -o $@.new
-  mv $@.new $@
-endef
-
 define Device/hasivo_s1100w-8xgt-se
   SOC := rtl9303
   DEVICE_VENDOR := Hasivo

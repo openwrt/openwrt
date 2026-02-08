@@ -90,7 +90,8 @@ realtek_setup_macs()
 		[ -z "$lan_mac" ] || [ "$lan_mac" = "00:e0:4c:00:00:00" ] && lan_mac=$(macaddr_random)
 		;;
 	xikestor,sks8300-8t|\
-	xikestor,sks8300-12e2t2x)
+	xikestor,sks8300-12e2t2x|\
+	xikestor,sks8300-12x)
 		lan_mac="$(get_mac_label)"
 		label_mac="$lan_mac"
 		;;

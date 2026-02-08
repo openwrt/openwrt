@@ -301,6 +301,27 @@ static void prepare_highmem(void)
 	__sync();
 }
 
+static void apply_early_quirks(void)
+{
+	/*
+	 * fw_arg2 should be the pointer to the environment. Some devices (e.g. HP JG924A)
+	 * hand over other than expected kernel boot arguments. Something like 0xfffdffff
+	 * looks suspicious. Do extra cleanup for fw_init_cmdline() to avoid a hang during boot.
+	 */
+	if (fw_arg2 >= CKSEG2)
+		fw_arg2 = 0;
+
+	if (soc_info.family == RTL9300_FAMILY_ID || soc_info.family == RTL9310_FAMILY_ID) {
+		/* some devices (in particular XikeStor switches) use the SYS_LED/GPIO0
+		 * to feed an external watchdog. While usually this should be setup
+		 * correctly by the bootloader, on some models it seems to be deactivated
+		 * on purpose. Set this to a safe state to avoid a reset during early boot.
+		 */
+		sw_w32_mask(GENMASK(13, 12), BIT(12), 0x600);	/* LED_GLB_CTRL */
+		sw_w32_mask(0x0, BIT(8), 0x1358);		/* MAC_L2_GLOBAL_CTRL */
+	}
+}
+
 void __init prom_init(void)
 {
 	u32 model = read_model();
@@ -312,14 +333,7 @@ void __init prom_init(void)
 	pr_info("%s SoC with %d MB\n", get_system_type(), soc_info.memory_size >> 20);
 
 	prepare_highmem();
-
-	/*
-	 * fw_arg2 is be the pointer to the environment. Some devices (e.g. HP JG924A) hand
-	 * over other than expected kernel boot arguments. Something like 0xfffdffff looks
-	 * suspicous. Do extra cleanup for fw_init_cmdline() to avoid a hang during boot.
-	 */
-	if (fw_arg2 >= CKSEG2)
-		fw_arg2 = 0;
+	apply_early_quirks();
 
 	fw_init_cmdline();
 }
