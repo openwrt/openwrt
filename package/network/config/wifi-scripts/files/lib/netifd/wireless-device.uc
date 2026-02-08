@@ -142,8 +142,13 @@ function wdev_config_init(wdev)
 
 function wdev_setup_cb(wdev)
 {
-	if (wdev.state != "setup")
+	if (wdev.state != "setup") {
+		if (wdev.state == "up" && wdev.config_change) {
+			wdev_config_init(wdev);
+			wdev.setup();
+		}
 		return;
+	}
 
 	if (wdev.retry > 0)
 		wdev.retry--;
@@ -447,11 +452,6 @@ function wdev_mark_up(wdev)
 	wdev.dbg("mark up, state=" + wdev.state);
 	if (wdev.state != "setup")
 		return;
-
-	if (wdev.config_change) {
-		wdev.setup();
-		return;
-	}
 
 	for (let section, data in wdev.handler_data) {
 		if (data.ifname)
