@@ -2960,21 +2960,6 @@ static int rtpcs_930x_setup_serdes(struct rtpcs_serdes *sds,
 {
 	int calib_tries = 0, ret;
 
-	/* Rely on setup from U-boot for some modes, e.g. USXGMII */
-	switch (hw_mode) {
-	case RTPCS_SDS_MODE_1000BASEX:
-	case RTPCS_SDS_MODE_SGMII:
-	case RTPCS_SDS_MODE_2500BASEX:
-	case RTPCS_SDS_MODE_10GBASER:
-	case RTPCS_SDS_MODE_USXGMII_10GSXGMII:
-	case RTPCS_SDS_MODE_USXGMII_10GQXGMII:
-	case RTPCS_SDS_MODE_QSGMII:
-	case RTPCS_SDS_MODE_XSGMII:
-		break;
-	default:
-		return 0;
-	}
-
 	/* Turn Off Serdes */
 	ret = rtpcs_930x_sds_set_mode(sds, RTPCS_SDS_MODE_OFF);
 	if (ret < 0)
