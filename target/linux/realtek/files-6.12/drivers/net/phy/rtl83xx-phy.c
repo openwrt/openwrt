@@ -35,16 +35,8 @@
 #define RTL821X_PAGE_PATCH		0x0b82
 #define RTL821X_MAC_SDS_PAGE(sds, page)	(0x404 + (sds) * 0x20 + (page))
 
-/* Using the special page 0xfff with the MDIO controller found in
- * RealTek SoCs allows to access the PHY in RAW mode, ie. bypassing
- * the cache and paging engine of the MDIO controller.
- */
-#define RTL838X_PAGE_RAW		0x0fff
-
 #define RTL821X_PHYCR2			0x19
 #define RTL821X_PHYCR2_PHY_EEE_ENABLE	BIT(5)
-
-#define RTL821X_CHIP_ID			0x6276
 
 #define RTL821X_MEDIA_PAGE_AUTO		0
 #define RTL821X_MEDIA_PAGE_COPPER	1
