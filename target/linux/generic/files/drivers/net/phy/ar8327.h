@@ -303,6 +303,90 @@ struct ar8327_led_entry {
 	unsigned shift;
 };
 
+enum ar8327_pad_mode {
+	AR8327_PAD_NC = 0,
+	AR8327_PAD_MAC2MAC_MII,
+	AR8327_PAD_MAC2MAC_GMII,
+	AR8327_PAD_MAC_SGMII,
+	AR8327_PAD_MAC2PHY_MII,
+	AR8327_PAD_MAC2PHY_GMII,
+	AR8327_PAD_MAC_RGMII,
+	AR8327_PAD_PHY_GMII,
+	AR8327_PAD_PHY_RGMII,
+	AR8327_PAD_PHY_MII,
+};
+
+enum ar8327_clk_delay_sel {
+	AR8327_CLK_DELAY_SEL0 = 0,
+	AR8327_CLK_DELAY_SEL1,
+	AR8327_CLK_DELAY_SEL2,
+	AR8327_CLK_DELAY_SEL3,
+};
+
+struct ar8327_pad_cfg {
+	enum ar8327_pad_mode mode;
+	bool rxclk_sel;
+	bool txclk_sel;
+	bool pipe_rxclk_sel;
+	bool txclk_delay_en;
+	bool rxclk_delay_en;
+	bool sgmii_delay_en;
+	enum ar8327_clk_delay_sel txclk_delay_sel;
+	enum ar8327_clk_delay_sel rxclk_delay_sel;
+	bool mac06_exchange_dis;
+};
+
+enum ar8327_port_speed {
+	AR8327_PORT_SPEED_10 = 0,
+	AR8327_PORT_SPEED_100,
+	AR8327_PORT_SPEED_1000,
+};
+
+struct ar8327_port_cfg {
+	int force_link:1;
+	enum ar8327_port_speed speed;
+	int txpause:1;
+	int rxpause:1;
+	int duplex:1;
+};
+
+struct ar8327_sgmii_cfg {
+	u32 sgmii_ctrl;
+	bool serdes_aen;
+};
+
+enum ar8327_led_num {
+	AR8327_LED_PHY0_0 = 0,
+	AR8327_LED_PHY0_1,
+	AR8327_LED_PHY0_2,
+	AR8327_LED_PHY1_0,
+	AR8327_LED_PHY1_1,
+	AR8327_LED_PHY1_2,
+	AR8327_LED_PHY2_0,
+	AR8327_LED_PHY2_1,
+	AR8327_LED_PHY2_2,
+	AR8327_LED_PHY3_0,
+	AR8327_LED_PHY3_1,
+	AR8327_LED_PHY3_2,
+	AR8327_LED_PHY4_0,
+	AR8327_LED_PHY4_1,
+	AR8327_LED_PHY4_2,
+};
+
+enum ar8327_led_mode {
+       AR8327_LED_MODE_HW = 0,
+       AR8327_LED_MODE_SW,
+};
+
+struct ar8327_led_info {
+	const char *name;
+	const char *default_trigger;
+	bool active_low;
+	enum ar8327_led_num led_num;
+	enum ar8327_led_mode mode;
+	struct fwnode_handle *fwnode;
+};
+
 struct ar8327_led {
 	struct led_classdev cdev;
 	struct ar8xxx_priv *sw_priv;

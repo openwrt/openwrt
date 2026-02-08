@@ -21,7 +21,6 @@
 #include <linux/delay.h>
 #include <linux/phy.h>
 #include <linux/lockdep.h>
-#include <linux/ar8216_platform.h>
 #include <linux/workqueue.h>
 #include <linux/of.h>
 #include <linux/of_device.h>
@@ -532,89 +531,6 @@ ar8327_leds_cleanup(struct ar8xxx_priv *priv)
 }
 
 static int
-ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
-		       struct ar8327_platform_data *pdata)
-{
-	struct ar8327_led_cfg *led_cfg;
-	struct ar8327_data *data = priv->chip_data;
-	u32 pos, new_pos;
-	u32 t;
-
-	if (!pdata)
-		return -EINVAL;
-
-	priv->get_port_link = pdata->get_port_link;
-
-	data->port0_status = ar8327_get_port_init_status(&pdata->port0_cfg);
-	data->port6_status = ar8327_get_port_init_status(&pdata->port6_cfg);
-
-	t = ar8327_get_pad_cfg(pdata->pad0_cfg);
-	if (chip_is_ar8337(priv) && !pdata->pad0_cfg->mac06_exchange_dis)
-	    t |= AR8337_PAD_MAC06_EXCHANGE_EN;
-	ar8xxx_write(priv, AR8327_REG_PAD0_MODE, t);
-
-	t = ar8327_get_pad_cfg(pdata->pad5_cfg);
-	ar8xxx_write(priv, AR8327_REG_PAD5_MODE, t);
-	t = ar8327_get_pad_cfg(pdata->pad6_cfg);
-	ar8xxx_write(priv, AR8327_REG_PAD6_MODE, t);
-
-	pos = ar8xxx_read(priv, AR8327_REG_POWER_ON_STRAP);
-	new_pos = pos;
-
-	led_cfg = pdata->led_cfg;
-	if (led_cfg) {
-		if (led_cfg->open_drain)
-			new_pos |= AR8327_POWER_ON_STRAP_LED_OPEN_EN;
-		else
-			new_pos &= ~AR8327_POWER_ON_STRAP_LED_OPEN_EN;
-
-		ar8xxx_write(priv, AR8327_REG_LED_CTRL0, led_cfg->led_ctrl0);
-		ar8xxx_write(priv, AR8327_REG_LED_CTRL1, led_cfg->led_ctrl1);
-		ar8xxx_write(priv, AR8327_REG_LED_CTRL2, led_cfg->led_ctrl2);
-		ar8xxx_write(priv, AR8327_REG_LED_CTRL3, led_cfg->led_ctrl3);
-
-		if (new_pos != pos)
-			new_pos |= AR8327_POWER_ON_STRAP_POWER_ON_SEL;
-	}
-
-	if (pdata->sgmii_cfg) {
-		t = pdata->sgmii_cfg->sgmii_ctrl;
-		if (priv->chip_rev == 1)
-			t |= AR8327_SGMII_CTRL_EN_PLL |
-			     AR8327_SGMII_CTRL_EN_RX |
-			     AR8327_SGMII_CTRL_EN_TX;
-		else
-			t &= ~(AR8327_SGMII_CTRL_EN_PLL |
-			       AR8327_SGMII_CTRL_EN_RX |
-			       AR8327_SGMII_CTRL_EN_TX);
-
-		ar8xxx_write(priv, AR8327_REG_SGMII_CTRL, t);
-
-		if (pdata->sgmii_cfg->serdes_aen)
-			new_pos &= ~AR8327_POWER_ON_STRAP_SERDES_AEN;
-		else
-			new_pos |= AR8327_POWER_ON_STRAP_SERDES_AEN;
-	}
-
-	ar8xxx_write(priv, AR8327_REG_POWER_ON_STRAP, new_pos);
-
-	if (pdata->leds && pdata->num_leds) {
-		int i;
-
-		data->leds = kzalloc(pdata->num_leds * sizeof(void *),
-				     GFP_KERNEL);
-		if (!data->leds)
-			return -ENOMEM;
-
-		for (i = 0; i < pdata->num_leds; i++)
-			ar8327_led_create(priv, &pdata->leds[i]);
-	}
-
-	return 0;
-}
-
-#ifdef CONFIG_OF
-static int
 ar8327_hw_config_of(struct ar8xxx_priv *priv, struct device_node *np)
 {
 	struct ar8327_data *data = priv->chip_data;
@@ -684,13 +600,6 @@ ar8327_hw_config_of(struct ar8xxx_priv *priv, struct device_node *np)
 	of_node_put(leds);
 	return 0;
 }
-#else
-static inline int
-ar8327_hw_config_of(struct ar8xxx_priv *priv, struct device_node *np)
-{
-	return -EINVAL;
-}
-#endif
 
 static int
 ar8327_hw_init(struct ar8xxx_priv *priv)
@@ -701,12 +610,7 @@ ar8327_hw_init(struct ar8xxx_priv *priv)
 	if (!priv->chip_data)
 		return -ENOMEM;
 
-	if (priv->pdev->of_node)
-		ret = ar8327_hw_config_of(priv, priv->pdev->of_node);
-	else
-		ret = ar8327_hw_config_pdata(priv,
-					     priv->phy->mdio.dev.platform_data);
-
+	ret = ar8327_hw_config_of(priv, priv->pdev->of_node);
 	if (ret)
 		return ret;
 
