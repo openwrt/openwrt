@@ -152,7 +152,7 @@ static int trelay_do_add(char *name, char *devn1, char *devn2)
 	struct trelay *tr, *tr1;
 	int ret;
 
-	tr = kzalloc(sizeof(*tr) + strlen(name) + 1, GFP_KERNEL);
+	tr = kzalloc(struct_size(tr, name, strlen(name) + 1), GFP_KERNEL);
 	if (!tr)
 		return -ENOMEM;
 
