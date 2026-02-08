@@ -1,0 +1,79 @@
+// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+/dts-v1/;
+
+#include "en7528.dtsi"
+
+/ {
+	model = "DASAN H660GM-A";
+	compatible = "dasan,h660gm-a", "econet,en7528";
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x10000000>;
+	};
+
+	chosen {
+		stdout-path = "/serial@1fbf0000:115200";
+		linux,usable-memory-range = <0x00020000 0x0ffe0000>;
+	};
+};
+
+&nand {
+	status = "okay";
+	econet,bmt;
+	econet,bbt-table-size = <250>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "bootloader";
+			reg = <0x0 0x40000>;
+			read-only;
+		};
+
+		partition@40000 {
+			label = "dzs";
+			reg = <0x40000 0x40000>;
+		};
+
+		partition@80000 {
+			label = "tclinux";
+			reg = <0x80000 0x2000000>;
+			econet,enable-remap;
+		};
+
+		partition@480000 {
+			label = "rootfs";
+			reg = <0x480000 0x1c00000>;
+			linux,rootfs;
+		};
+
+		partition@2080000 {
+			label = "tclinux_slave";
+			reg = <0x2080000 0x2000000>;
+		};
+
+		partition@4080000 {
+			label = "romfile";
+			reg = <0x4080000 0x40000>;
+		};
+
+		partition@40c0000 {
+			label = "rwfs";
+			reg = <0x40c0000 0x2000000>;
+		};
+
+		partition@60c0000 {
+			label = "unknown";
+			reg = <0x60c0000 0x7d00000>;
+		};
+
+		partition@ddc0000 {
+			label = "reservearea";
+			reg = <0xddc0000 0x240000>;
+		};
+	};
+};
