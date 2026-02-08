@@ -339,7 +339,6 @@ struct ar8327_led {
 	struct led_classdev cdev;
 	struct ar8xxx_priv *sw_priv;
 
-	char *name;
 	bool active_low;
 	u8 led_num;
 	enum ar8327_led_mode mode;
@@ -350,6 +349,7 @@ struct ar8327_led {
 	bool enable_hw_mode;
 	enum ar8327_led_pattern pattern;
 	struct fwnode_handle *fwnode;
+	char name[];
 };
 
 struct ar8327_data {

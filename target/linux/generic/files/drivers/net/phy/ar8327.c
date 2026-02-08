@@ -319,7 +319,7 @@ ar8327_led_create(struct ar8xxx_priv *priv,
 	if (led_info->led_num >= AR8327_NUM_LEDS)
 		return -EINVAL;
 
-	aled = kzalloc(sizeof(*aled) + strlen(led_info->name) + 1,
+	aled = kzalloc(struct_size(aled, name, strlen(led_info->name) + 1),
 		       GFP_KERNEL);
 	if (!aled)
 		return -ENOMEM;
@@ -333,7 +333,6 @@ ar8327_led_create(struct ar8xxx_priv *priv,
 	if (aled->mode == AR8327_LED_MODE_HW)
 		aled->enable_hw_mode = true;
 
-	aled->name = (char *)(aled + 1);
 	strcpy(aled->name, led_info->name);
 
 	aled->cdev.name = aled->name;
