@@ -2720,6 +2720,25 @@ define Device/tplink_be450
 endef
 TARGET_DEVICES += tplink_be450
 
+define Device/tplink_eap683-lr
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := EAP683-LR
+  DEVICE_ALT0_VENDOR := TP-Link
+  DEVICE_ALT0_MODEL := EAP683-UR
+  DEVICE_DTS := mt7986a-tplink-eap683-lr
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 39424k
+  KERNEL_IN_UBI := 1
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += tplink_eap683-lr
+
 define Device/tplink_re6000xd
   DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := RE6000XD
