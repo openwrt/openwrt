@@ -1,0 +1,25 @@
+From fb856c4233202c489be5c6a2335da75bafab0a56 Mon Sep 17 00:00:00 2001
+From: Matt Merhar <mattmerhar@protonmail.com>
+Date: Tue, 3 Feb 2026 23:01:41 -0500
+Subject: [PATCH 1/4] defines: align apk_array
+
+-fsanitize=alignment complained about this one, though no issues were
+otherwise encountered during runtime.
+
+While x86-64 wants 8 byte alignment, 32-bit ARM hits SIGILL; so, use
+sizeof(void *) to tune it per target.
+---
+ src/apk_defines.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/src/apk_defines.h
++++ b/src/apk_defines.h
+@@ -178,7 +178,7 @@ struct apk_array {
+ 	uint32_t num;
+ 	uint32_t capacity : 31;
+ 	uint32_t allocated : 1;
+-};
++} __attribute__((aligned(sizeof(void *))));
+ 
+ extern const struct apk_array _apk_array_empty;
+ 
