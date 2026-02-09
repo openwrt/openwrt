@@ -767,7 +767,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
  	if (!res) {
-@@ -671,18 +873,54 @@ ltq_etop_probe(struct platform_device *p
+@@ -671,18 +873,60 @@ ltq_etop_probe(struct platform_device *p
  		goto err_out;
  	}
  
@@ -806,7 +806,13 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	if (err)
 +		pr_err("Can't find phy-mode for port\n");
 +
-+	of_get_mac_address(pdev->dev.of_node, priv->mac);
++	err = of_get_mac_address(pdev->dev.of_node, priv->mac);
++	if (err == -EPROBE_DEFER)
++		goto err_out;
++	if (err) {
++		eth_hw_addr_random(dev);
++		dev_err(&pdev->dev, "generated random MAC address %pM\n", priv->mac);
++	}
 +
 +	priv->clk_ppe = clk_get(&pdev->dev, NULL);
 +	if (IS_ERR(priv->clk_ppe))
@@ -828,7 +834,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	spin_lock_init(&priv->lock);
  	SET_NETDEV_DEV(dev, &pdev->dev);
  
-@@ -698,15 +936,10 @@ ltq_etop_probe(struct platform_device *p
+@@ -698,15 +942,10 @@ ltq_etop_probe(struct platform_device *p
  		goto err_free;
  	}
  
@@ -848,7 +854,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	err = register_netdev(dev);
  	if (err)
-@@ -733,31 +966,22 @@ static void ltq_etop_remove(struct platf
+@@ -733,31 +972,22 @@ static void ltq_etop_remove(struct platf
  	}
  }
  
