@@ -143,6 +143,38 @@
 	};
 };
 
+&pcie0 {
+	status = "okay";
+};
+
+&pcie1 {
+	status = "okay";
+};
+
+&slot0 {
+	status = "okay";
+
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&macaddr_dzs 8>, <&eeprom_reservearea_40000>;
+		nvmem-cell-names = "mac-address", "eeprom";
+		ieee80211-freq-limit = <2400000 2500000>;
+	};
+};
+
+&slot1 {
+	status = "okay";
+
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&macaddr_dzs 9>, <&eeprom_reservearea_1c0000>;
+		nvmem-cell-names = "mac-address", "eeprom";
+		ieee80211-freq-limit = <5000000 6000000>;
+	};
+};
+
 &gmac0 {
 	status = "okay";
 	nvmem-cells = <&macaddr_dzs 7>;
@@ -216,6 +248,19 @@
 		partition@ddc0000 {
 			label = "reservearea";
 			reg = <0xddc0000 0x240000>;
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom_reservearea_40000: eeprom@40000 {
+					reg = <0x40000 0x400>;
+				};
+
+				eeprom_reservearea_1c0000: eeprom@1c0000 {
+					reg = <0x1c0000 0x1000>;
+				};
+			};
 		};
 	};
 };

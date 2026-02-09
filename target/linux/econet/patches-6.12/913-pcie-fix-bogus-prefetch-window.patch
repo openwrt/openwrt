@@ -1,0 +1,38 @@
+Subject: [PATCH] PCI: Skip bridge window reads when window is not supported
+
+pci_read_bridge_io() and pci_read_bridge_mmio_pref() read bridge window
+registers unconditionally. If the registers are hardwired to zero
+(not implemented), both base and limit will be 0. Since (0 <= 0) is
+true, a bogus window [mem 0x00000000-0x000fffff] or [io 0x0000-0x0fff]
+gets created.
+
+pci_read_bridge_windows() already detects unsupported windows by
+testing register writability and sets io_window/pref_window flags
+accordingly. Check these flags at the start of pci_read_bridge_io()
+and pci_read_bridge_mmio_pref() to skip reading registers when the
+window is not supported.
+
+Suggested-by: Bjorn Helgaas <helgaas@kernel.org>
+Signed-off-by: Ahmed Naseef <naseefkm@gmail.com>
+--- a/drivers/pci/probe.c
++++ b/drivers/pci/probe.c
+@@ -351,6 +351,9 @@ static void pci_read_bridge_io(struct pc
+ 	unsigned long io_mask, io_granularity, base, limit;
+ 	struct pci_bus_region region;
+ 
++	if (!dev->io_window)
++		return;
++
+ 	io_mask = PCI_IO_RANGE_MASK;
+ 	io_granularity = 0x1000;
+ 	if (dev->io_window_1k) {
+@@ -412,6 +415,9 @@ static void pci_read_bridge_mmio_pref(st
+ 	pci_bus_addr_t base, limit;
+ 	struct pci_bus_region region;
+ 
++	if (!dev->pref_window)
++		return;
++
+ 	pci_read_config_word(dev, PCI_PREF_MEMORY_BASE, &mem_base_lo);
+ 	pci_read_config_word(dev, PCI_PREF_MEMORY_LIMIT, &mem_limit_lo);
+ 	base64 = (mem_base_lo & PCI_PREF_RANGE_MASK) << 16;
