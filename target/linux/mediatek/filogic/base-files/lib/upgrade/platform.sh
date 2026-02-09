@@ -95,6 +95,7 @@ platform_do_upgrade() {
 	cudy,wbr3000uax-v1-ubootmod|\
 	cudy,wr3000e-v1-ubootmod|\
 	cudy,wr3000s-v1-ubootmod|\
+	cudy,wr3000h-v1-ubootmod|\
 	cudy,wr3000p-v1-ubootmod|\
 	gatonetworks,gdsp|\
 	h3c,magic-nx30-pro|\
@@ -290,6 +291,7 @@ platform_check_image() {
 	cudy,wbr3000uax-v1-ubootmod|\
 	cudy,wr3000e-v1-ubootmod|\
 	cudy,wr3000s-v1-ubootmod|\
+	cudy,wr3000h-v1-ubootmod|\
 	cudy,wr3000p-v1-ubootmod|\
 	gatonetworks,gdsp|\
 	h3c,magic-nx30-pro|\
