@@ -117,6 +117,7 @@ fs-types-$(CONFIG_TARGET_ROOTFS_JFFS2_NAND) += $(addprefix jffs2-nand-,$(NAND_BL
 fs-types-$(CONFIG_TARGET_ROOTFS_EXT4FS) += ext4
 fs-types-$(CONFIG_TARGET_ROOTFS_UBIFS) += ubifs
 fs-types-$(CONFIG_TARGET_ROOTFS_EROFS) += erofs
+fs-types-$(CONFIG_TARGET_ROOTFS_TARGZ) += targz
 fs-subtypes-$(CONFIG_TARGET_ROOTFS_JFFS2) += $(addsuffix -raw,$(addprefix jffs2-,$(JFFS2_BLOCKSIZE)))
 
 TARGET_FILESYSTEMS := $(fs-types-y)
@@ -327,6 +328,12 @@ define Image/mkfs/erofs
 	env -u SOURCE_DATE_EPOCH $(STAGING_DIR_HOST)/bin/mkfs.erofs -z$(EROFSCOMP) \
 		-C$(EROFS_PCLUSTERSIZE) $(EROFSOPT) \
 		$@ $(call mkfs_target_dir,$(1))
+endef
+
+define Image/mkfs/targz
+	$(TAR) -cp --numeric-owner --owner=0 --group=0 --mode=a-s --sort=name \
+		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
+		-C $(call mkfs_target_dir,$(1)) . | gzip -9n > $@
 endef
 
 define Image/Manifest
