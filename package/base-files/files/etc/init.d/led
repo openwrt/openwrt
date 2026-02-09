@@ -59,7 +59,7 @@ load_led() {
 	config_get dev $1 dev
 	config_get ports $1 port
 	config_get mode $1 mode
-	config_get_bool default $1 default "0"
+	config_get_bool default $1 default "nil"
 	config_get delayon $1 delayon
 	config_get delayoff $1 delayoff
 	config_get interval $1 interval "50"
@@ -103,13 +103,24 @@ load_led() {
 		}
 		printf "\n" >> /var/run/led.state
 
-		[ "$default" = 0 ] &&
+		case $default in
+		"0")
 			echo 0 >/sys/class/leds/${sysfs}/brightness
+		;;
 
-		[ "$default" = 1 ] && {
-			[ -z "$brightness" ] && brightness="$(cat /sys/class/leds/${sysfs}/max_brightness)"
+		"1")
+			[ -z "$brightness" ] && \
+				brightness="$(cat /sys/class/leds/${sysfs}/max_brightness)"
 			echo "$brightness" > /sys/class/leds/${sysfs}/brightness
-		}
+		;;
+
+		*)
+			if [ -n "$brightness" ]; then
+				brightness="$(cat /sys/class/leds/${sysfs}/max_brightness)"
+				echo $(brightness) >/sys/class/leds/${sysfs}/brightness
+			fi
+		;;
+		esac
 
 		led_color_set "$1" "$sysfs"
 
