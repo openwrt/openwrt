@@ -199,6 +199,17 @@ define Device/creality_wb-01
 endef
 TARGET_DEVICES += creality_wb-01
 
+define Device/cudy_lt300-v3
+  IMAGE_SIZE := 15872k
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := LT300
+  DEVICE_VARIANT := v3
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-net-rndis \
+	kmod-usb-serial-option kmod-mt7603
+  SUPPORTED_DEVICES += R100
+endef
+TARGET_DEVICES += cudy_lt300-v3
+
 define Device/cudy_lt400e-v1
   IMAGE_SIZE := 7808k
   DEVICE_VENDOR := Cudy
