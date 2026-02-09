@@ -78,6 +78,9 @@ methode,edpu)
 synology,ds213j)
 	ubootenv_add_mtd "u-boot-env" "0x0" "0x10000" "0x10000"
 	;;
+zyxel,nas326)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x80000" "0x80000"
+	;;
 esac
 
 config_load ubootenv
