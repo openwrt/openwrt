@@ -286,6 +286,9 @@ static struct rtpcs_link *rtpcs_phylink_pcs_to_link(struct phylink_pcs *pcs)
 
 static void rtpcs_838x_sds_patch_01_qsgmii_6275b(struct rtpcs_ctrl *ctrl)
 {
+	/* CKREFBUF_S0S1 for QSGMII */
+	regmap_write_bits(ctrl->map, RTPCS_838X_PLL_CML_CTRL, 0xf, 0xf);
+
 	rtpcs_sds_write(SDS(ctrl, 0), 1, 3, 0xf46f);
 	rtpcs_sds_write(SDS(ctrl, 0), 1, 2, 0x85fa);
 	rtpcs_sds_write(SDS(ctrl, 1), 1, 2, 0x85fa);
@@ -522,17 +525,10 @@ static int rtpcs_838x_sds_patch(struct rtpcs_serdes *sds,
 
 static int rtpcs_838x_init_serdes_common(struct rtpcs_ctrl *ctrl)
 {
-	u32 val;
-
 	dev_dbg(ctrl->dev, "Init RTL838X SerDes common\n");
 
 	/* enable R/W of some protected registers */
 	regmap_write(ctrl->map, RTPCS_838X_INT_RW_CTRL, 0x3);
-
-	regmap_read(ctrl->map, RTPCS_838X_PLL_CML_CTRL, &val);
-	dev_dbg(ctrl->dev, "PLL control register: %x\n", val);
-	regmap_write_bits(ctrl->map, RTPCS_838X_PLL_CML_CTRL, 0xfffffff0,
-			  0xaaaaaaaf & 0xf);
 
 	/* power off and reset all SerDes */
 	regmap_write(ctrl->map, RTPCS_838X_SDS_CFG_REG, 0x3f);
