@@ -28,7 +28,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
 
 --- a/drivers/base/regmap/regmap.c
 +++ b/drivers/base/regmap/regmap.c
-@@ -1957,6 +1957,8 @@ static int _regmap_bus_reg_write(void *c
+@@ -1959,6 +1959,8 @@ static int _regmap_bus_reg_write(void *c
  {
  	struct regmap *map = context;
  
@@ -37,7 +37,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  	return map->bus->reg_write(map->bus_context, reg, val);
  }
  
-@@ -2729,6 +2731,8 @@ static int _regmap_bus_reg_read(void *co
+@@ -2731,6 +2733,8 @@ static int _regmap_bus_reg_read(void *co
  {
  	struct regmap *map = context;
  
@@ -46,7 +46,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  	return map->bus->reg_read(map->bus_context, reg, val);
  }
  
-@@ -3098,6 +3102,8 @@ static int _regmap_update_bits(struct re
+@@ -3100,6 +3104,8 @@ static int _regmap_update_bits(struct re
  		*change = false;
  
  	if (regmap_volatile(map, reg) && map->reg_update_bits) {
