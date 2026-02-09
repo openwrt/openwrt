@@ -1,0 +1,250 @@
+--- a/arch/arm/dts/Makefile
++++ b/arch/arm/dts/Makefile
+@@ -655,6 +655,7 @@ dtb-$(CONFIG_MACH_SUN8I_R528) += \
+ 	sun8i-t113s-mangopi-mqdual-t113.dtb \
+ 	sun8i-t113s-myir-myd-yt113x-emmc.dtb \
+ 	sun8i-t113s-myir-myd-yt113x-spi.dtb \
++	sun8i-t113s-olinuxino.dtb \
+ 	sun8i-t113s-rongpin-rp-t113.dtb
+ dtb-$(CONFIG_MACH_SUN50I_H5) += \
+ 	sun50i-h5-bananapi-m2-plus.dtb \
+--- /dev/null
++++ b/arch/arm/dts/sun8i-t113s-olinuxino.dts
+@@ -0,0 +1,193 @@
++// SPDX-License-Identifier: (GPL-2.0+ or MIT)
++// Copyright (C) 2022 Arm Ltd.
++
++#include <dt-bindings/interrupt-controller/irq.h>
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/leds/common.h>
++
++/dts-v1/;
++
++#include "sun8i-t113s.dtsi"
++
++/ {
++	model = "Olimex Olinuxino T113";
++	compatible = "olimex,olinuxino-t113", "allwinner,sun8i-t113s";
++
++	aliases {
++		serial0 = &uart4;
++		ethernet0 = &rtl8723bs;
++	};
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++
++	/* board wide 5V supply directly from the USB-C socket */
++	reg_vcc5v: regulator-5v {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc-5v";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-always-on;
++	};
++
++	/* SY8008 DC/DC regulator on the board */
++	reg_3v3: regulator-3v3 {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc-3v3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		vin-supply = <&reg_vcc5v>;
++	};
++
++	/* SY8008 DC/DC regulator on the board, also supplying VDD-SYS */
++	reg_vcc_core: regulator-core {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc-core";
++		regulator-min-microvolt = <880000>;
++		regulator-max-microvolt = <880000>;
++		vin-supply = <&reg_vcc5v>;
++	};
++
++	/* XC6206 LDO on the board */
++	reg_avdd2v8: regulator-avdd {
++		compatible = "regulator-fixed";
++		regulator-name = "avdd2v8";
++		regulator-min-microvolt = <2800000>;
++		regulator-max-microvolt = <2800000>;
++		vin-supply = <&reg_3v3>;
++	};
++
++	reg_gmac_3v3: gmac-3v3 {
++		compatible = "regulator-fixed";
++		regulator-name = "gmac-3v3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		gpio = <&pio 4 16 GPIO_ACTIVE_HIGH>; /* PE16 */
++	};
++
++	wifi_pwrseq: wifi-pwrseq {
++		compatible = "mmc-pwrseq-simple";
++		reset-gpios = <&pio 3 12 GPIO_ACTIVE_LOW>; /* PD12 - WIFI_PMU_EN */
++	};
++
++	leds { // TBD
++		compatible = "gpio-leds";
++
++		led-0 {
++			color = <LED_COLOR_ID_BLUE>;
++			function = LED_FUNCTION_STATUS;
++			gpios = <&pio 4 12 GPIO_ACTIVE_LOW>; /* PE12 */
++		};
++	};
++};
++
++&cpu0 {
++	cpu-supply = <&reg_vcc_core>;
++};
++
++&cpu1 {
++	cpu-supply = <&reg_vcc_core>;
++};
++
++&dcxo {
++	clock-frequency = <24000000>;
++};
++
++&ehci1 {
++	status = "okay";
++};
++
++&mmc0 {
++	pinctrl-0 = <&mmc0_pins>;
++	pinctrl-names = "default";
++	vmmc-supply = <&reg_3v3>;
++	cd-gpios = <&pio 5 6 GPIO_ACTIVE_LOW>;
++	disable-wp;
++	bus-width = <4>;
++	status = "okay";
++};
++
++&mmc1 {
++	pinctrl-0 = <&mmc1_pins>;
++	pinctrl-names = "default";
++	vmmc-supply = <&reg_3v3>;
++	non-removable;
++	bus-width = <4>;
++	mmc-pwrseq = <&wifi_pwrseq>;
++	status = "okay";
++
++	rtl8723bs: wifi@1 {
++		reg = <1>;
++	};
++};
++
++&ohci1 {
++	status = "okay";
++};
++
++&pio {
++	vcc-pb-supply = <&reg_3v3>;
++	vcc-pd-supply = <&reg_3v3>;
++	vcc-pe-supply = <&reg_avdd2v8>;
++	vcc-pf-supply = <&reg_3v3>;
++	vcc-pg-supply = <&reg_3v3>;
++};
++
++&usbphy {
++	usb1_vbus-supply = <&reg_vcc5v>;
++	status = "okay";
++};
++
++&uart0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart0_pins>;
++	status = "okay";
++};
++
++&uart3 {
++	status = "disabled";
++};
++
++&uart4 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&uart4_pd_pins>;
++	status = "okay";
++};
++
++&wdt {
++	status = "okay";
++};
++
++&emac {
++	pinctrl-0 = <&rmii_pe_pins>;
++	pinctrl-names = "default";
++	phy-handle = <&ext_rmii_phy>;
++	phy-mode = "rmii";
++	phy-supply = <&reg_gmac_3v3>;
++	status = "okay";
++};
++
++&mdio {
++	ext_rmii_phy: ethernet-phy@1 {
++		compatible = "ethernet-phy-ieee802.3-c22";
++		reg = <1>;
++//		reset-gpios = <&pio 4 13 GPIO_ACTIVE_LOW>; /* PE13 */
++	};
++};
++
++&spi0 {
++      status = "okay";
++
++      pinctrl-names = "default";
++      pinctrl-0 = <&spi0_pins>;
++
++      flash@0 {
++              #address-cells = <1>;
++              #size-cells = <1>;
++
++              compatible = "spi-nand";
++              reg = <0>;
++                spi-max-frequency = <52000000>;
++      };
++};
+--- /dev/null
++++ b/configs/olimex_olinuxino_defconfig
+@@ -0,0 +1,41 @@
++CONFIG_ARM=y
++CONFIG_ARCH_SUNXI=y
++CONFIG_DEFAULT_DEVICE_TREE="sun8i-t113s-olinuxino"
++CONFIG_SUNXI_MINIMUM_DRAM_MB=128
++CONFIG_SPL=y
++CONFIG_MACH_SUN8I_R528=y
++CONFIG_CONS_INDEX=5
++CONFIG_MMC0_CD_PIN="PF6"
++CONFIG_MMC_SUNXI_SLOT_EXTRA=-1
++# CONFIG_SYS_MALLOC_CLEAR_ON_INIT is not set
++CONFIG_SYS_MONITOR_LEN=786432
++CONFIG_DRAM_CLK=792
++CONFIG_DRAM_ZQ=8092667
++CONFIG_DRAM_SUNXI_ODT_EN=0
++CONFIG_DRAM_SUNXI_TPR0=0x004a2195
++CONFIG_DRAM_SUNXI_TPR11=0x340000
++CONFIG_DRAM_SUNXI_TPR12=0x46
++CONFIG_DRAM_SUNXI_TPR13=0x34000100
++CONFIG_USB_EHCI_HCD=y
++CONFIG_USB_OHCI_HCD=y
++CONFIG_SUN8I_EMAC=y
++CONFIG_RMII=y
++CONFIG_SUPPORT_EMMC_BOOT=y
++CONFIG_MMC_IO_VOLTAGE=y
++CONFIG_SPL_MMC_IO_VOLTAGE=y
++CONFIG_MMC_HS200_SUPPORT=y
++CONFIG_SPL_MMC_HS200_SUPPORT=y
++CONFIG_REALTEK_PHY=y
++CONFIG_NET_RANDOM_ETHADDR=y
++CONFIG_MTD=y
++CONFIG_DM_MTD=y
++CONFIG_DM_SPI_FLASH=y
++CONFIG_SYS_MTDPARTS_RUNTIME=y
++CONFIG_MTD_SPI_NAND=y
++CONFIG_MTD_UBI_FASTMAP=y
++CONFIG_SPI_FLASH_WINBOND=y
++# CONFIG_SPI_FLASH_USE_4K_SECTORS is not set
++CONFIG_SPI_FLASH_MTD=y
++CONFIG_SPL_SPI_FLASH_MTD=y
++CONFIG_SPL_SPI_SUNXI=y
++CONFIG_SPI=y
