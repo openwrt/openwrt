@@ -62,6 +62,7 @@ realtek_setup_macs()
 		lan_mac=$(get_mac_label)
 		lan_mac_start=$lan_mac
 		;;
+	hasivo,s1100wp-8gt-se|\
 	hpe,1920-8g|\
 	hpe,1920-8g-poe-65w|\
 	hpe,1920-8g-poe-180w|\
@@ -70,16 +71,7 @@ realtek_setup_macs()
 	hpe,1920-24g-poe-180w|\
 	hpe,1920-24g-poe-370w|\
 	hpe,1920-48g|\
-	hpe,1920-48g-poe)
-		label_mac=$(mtd_get_mac_binary factory 0x68)
-		lan_mac=$label_mac
-		eth0_mac=$lan_mac
-		mac_count1=$(hexdump -v -n 4 -s 0x110 -e '4 "%d"' $(find_mtd_part factory) 2>/dev/null)
-		mac_count2=$(hexdump -v -n 4 -s 0x114 -e '4 "%d"' $(find_mtd_part factory) 2>/dev/null)
-		lan_mac_start=$(macaddr_add $lan_mac 2)
-		lan_mac_end=$(macaddr_add $lan_mac $((mac_count2-mac_count1)))
-		;;
-	hasivo,s1100wp-8gt-se|\
+	hpe,1920-48g-poe|\
 	plasmacloud,esx28|\
 	plasmacloud,mcx3|\
 	plasmacloud,psx8|\

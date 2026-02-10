@@ -96,3 +96,23 @@
 		SWITCH_PORT_SDS(51, 51, 12, qsgmii)
 	};
 };
+
+&port48 {
+	nvmem-cells = <&macaddr_factory 51>;
+	nvmem-cell-names = "mac-address";
+};
+
+&port49 {
+	nvmem-cells = <&macaddr_factory 53>;
+	nvmem-cell-names = "mac-address";
+};
+
+&port50 {
+	nvmem-cells = <&macaddr_factory 50>;
+	nvmem-cell-names = "mac-address";
+};
+
+&port51 {
+	nvmem-cells = <&macaddr_factory 52>;
+	nvmem-cell-names = "mac-address";
+};

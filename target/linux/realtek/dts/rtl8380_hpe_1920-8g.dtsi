@@ -89,6 +89,9 @@
 			phy-mode = "1000base-x";
 			managed = "in-band-status";
 			sfp = <&sfp0>;
+
+			nvmem-cells = <&macaddr_factory 10>;
+			nvmem-cell-names = "mac-address";
 		};
 
 		port@26 {
@@ -98,6 +101,9 @@
 			phy-mode = "1000base-x";
 			managed = "in-band-status";
 			sfp = <&sfp1>;
+
+			nvmem-cells = <&macaddr_factory 11>;
+			nvmem-cell-names = "mac-address";
 		};
 
 		port@28 {
@@ -110,4 +116,44 @@
 			};
 		};
 	};
+};
+
+&port8 {
+	nvmem-cells = <&macaddr_factory 2>;
+	nvmem-cell-names = "mac-address";
+};
+
+&port9 {
+	nvmem-cells = <&macaddr_factory 3>;
+	nvmem-cell-names = "mac-address";
+};
+
+&port10 {
+	nvmem-cells = <&macaddr_factory 4>;
+	nvmem-cell-names = "mac-address";
+};
+
+&port11 {
+	nvmem-cells = <&macaddr_factory 5>;
+	nvmem-cell-names = "mac-address";
+};
+
+&port12 {
+	nvmem-cells = <&macaddr_factory 6>;
+	nvmem-cell-names = "mac-address";
+};
+
+&port13 {
+	nvmem-cells = <&macaddr_factory 7>;
+	nvmem-cell-names = "mac-address";
+};
+
+&port14 {
+	nvmem-cells = <&macaddr_factory 8>;
+	nvmem-cell-names = "mac-address";
+};
+
+&port15 {
+	nvmem-cells = <&macaddr_factory 9>;
+	nvmem-cell-names = "mac-address";
 };
