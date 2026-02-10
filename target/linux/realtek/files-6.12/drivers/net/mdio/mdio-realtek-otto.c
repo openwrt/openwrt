@@ -558,55 +558,27 @@ static int rtmdio_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 	return 0;
 }
 
-static int rtmdio_read_phy_id(struct mii_bus *bus, u8 addr, unsigned int *phy_id)
+static u32 rtmdio_get_phy_id(struct phy_device *phydev)
 {
-	static const int common_mmds[] = {
-		MDIO_MMD_PMAPMD, MDIO_MMD_PCS, MDIO_MMD_AN,
-		MDIO_MMD_VEND1, MDIO_MMD_VEND2
-	};
-	struct rtmdio_ctrl *ctrl = bus->priv;
-	int devid1 = 0, devid2 = 0;
-	unsigned int id = 0;
-
-	/* Clause 22 */
-	if (!ctrl->smi_bus_isc45[ctrl->smi_bus[addr]]) {
-		devid1 = rtmdio_read(bus, addr, MDIO_DEVID1);
-		devid2 = rtmdio_read(bus, addr, MDIO_DEVID2);
-		if (devid1 < 0 || devid2 < 0)
-			return -EIO;
-
-		id = (devid1 << 16) | devid2;
-		if (!id || (id & 0x1fffffff) == 0x1fffffff)
-			return -ENODEV;
-
-		*phy_id = id;
+	if (!phydev)
 		return 0;
-	}
 
+	if (phydev->is_c45) {
+		for (int devad = 0; devad < MDIO_MMD_NUM; devad++) {
+			u32 phyid = phydev->c45_ids.device_ids[devad];
 
-	/* Clause 45
-	 * only scan some MMDs which can be considered as common i.e.
-	 * implemented by most PHYs.
-	 */
-	for (int i = 0; i < ARRAY_SIZE(common_mmds); i++) {
-		devid1 = rtmdio_read_c45(bus, addr, common_mmds[i], MDIO_DEVID1);
-		devid2 = rtmdio_read_c45(bus, addr, common_mmds[i], MDIO_DEVID2);
-		if (devid1 < 0 || devid2 < 0)
-			continue;
-
-		id = (devid1 << 16) | devid2;
-		if (id && id != 0xffffffff) {
-			*phy_id = id;
-			return 0;
+			if (phyid && phyid != 0xffffffff)
+				return phyid;
 		}
 	}
 
-	return -ENODEV;
+	return phydev->phy_id;
 }
 
 static void rtmdio_get_phy_info(struct mii_bus *bus, int addr, struct rtmdio_phy_info *phyinfo)
 {
-	struct rtmdio_ctrl *ctrl = bus->priv;
+	struct phy_device *phydev = mdiobus_get_phy(bus, addr);
+	u32 phyid = rtmdio_get_phy_id(phydev);
 
 	/*
 	 * Depending on the attached PHY the polling mechanism must be fine tuned. Basically
@@ -614,17 +586,8 @@ static void rtmdio_get_phy_info(struct mii_bus *bus, int addr, struct rtmdio_phy
 	 * features.
 	 */
 	memset(phyinfo, 0, sizeof(*phyinfo));
-	if (ctrl->smi_bus[addr] < 0) {
-		phyinfo->phy_unknown = true;
-		return;
-	}
 
-	if (rtmdio_read_phy_id(bus, addr, &phyinfo->phy_id) < 0) {
-		phyinfo->phy_unknown = true;
-		return;
-	}
-
-	switch(phyinfo->phy_id) {
+	switch(phyid) {
 	case RTMDIO_PHY_AQR113C_A:
 	case RTMDIO_PHY_AQR113C_B:
 	case RTMDIO_PHY_AQR813:
