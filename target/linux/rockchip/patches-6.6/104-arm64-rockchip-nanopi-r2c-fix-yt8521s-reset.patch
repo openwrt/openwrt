@@ -1,0 +1,42 @@
+From 9530ce001cd6c886c91f2fab392223a80c36fb3f Mon Sep 17 00:00:00 2001
+From: jjm2473 <jjm2473@gmail.com>
+Date: Tue, 15 Jul 2025 13:38:26 +0800
+Subject: [PATCH] arm64: rockchip: Fix yt8521s reset on NanoPi R2C
+
+`ip link set dev eth0 down; sleep 1; ip link set dev eth0 up` will trigger a hard reset, but `motorcomm,clk-out-frequency-hz` is not applied after reset,
+then stmmac die:
+```
+[   46.656359] rk_gmac-dwmac ff540000.ethernet eth0: Register MEM_TYPE_PAGE_POOL RxQ-0
+[   46.730371] rk_gmac-dwmac ff540000.ethernet eth0: PHY [stmmac-0:03] driver [YT8521 Gigabit Ethernet] (irq=POLL)
+[   46.934670] rk_gmac-dwmac ff540000.ethernet: Failed to reset the dma
+[   46.935284] rk_gmac-dwmac ff540000.ethernet eth0: stmmac_hw_setup: DMA engine initialization failed
+[   46.936092] rk_gmac-dwmac ff540000.ethernet eth0: __stmmac_open: Hw setup failed
+```
+
+Signed-off-by: jjm2473 <jjm2473@gmail.com>
+---
+ arch/arm64/boot/dts/rockchip/rk3328-nanopi-r2c.dts | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3328-nanopi-r2c.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3328-nanopi-r2c.dts
+@@ -18,6 +18,9 @@
+ 	phy-handle = <&yt8521s>;
+ 	tx_delay = <0x22>;
+ 	rx_delay = <0x12>;
++	snps,reset-gpio = <&gpio1 RK_PC2 GPIO_ACTIVE_LOW>;
++	snps,reset-active-low;
++	snps,reset-delays-us = <0 15000 50000>;
+ 
+ 	mdio {
+ 		/delete-node/ ethernet-phy@1;
+@@ -32,9 +35,6 @@
+ 
+ 			pinctrl-0 = <&eth_phy_reset_pin>;
+ 			pinctrl-names = "default";
+-			reset-assert-us = <10000>;
+-			reset-deassert-us = <50000>;
+-			reset-gpios = <&gpio1 RK_PC2 GPIO_ACTIVE_LOW>;
+ 		};
+ 	};
+ };
