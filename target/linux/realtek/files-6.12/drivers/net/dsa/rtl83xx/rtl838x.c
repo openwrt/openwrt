@@ -1496,10 +1496,8 @@ static void rtl838x_pie_init(struct rtl838x_switch_priv *priv)
 	/* Delete all present rules */
 	rtl838x_pie_rule_del(priv, 0, priv->n_pie_blocks * PIE_BLOCK_SIZE - 1);
 
-	/* Routing bypasses source port filter: disable write-protection, first */
-	sw_w32_mask(0, 3, RTL838X_INT_RW_CTRL);
+	/* Routing bypasses source port filter */
 	sw_w32_mask(0, 1, RTL838X_DMY_REG27);
-	sw_w32_mask(3, 0, RTL838X_INT_RW_CTRL);
 
 	/* Enable predefined templates 0, 1 and 2 for even blocks */
 	template_selectors = 0 | (1 << 3) | (2 << 6);
