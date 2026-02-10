@@ -58,7 +58,6 @@
 #define RTPCS_838X_SDS_CFG_REG			0x34
 #define RTPCS_838X_RST_GLB_CTRL_0		0x3c
 #define RTPCS_838X_SDS_MODE_SEL			0x0028
-#define RTPCS_838X_INT_RW_CTRL			0x0058
 #define RTPCS_838X_INT_MODE_CTRL		0x005c
 #define RTPCS_838X_PLL_CML_CTRL			0x0ff8
 
@@ -526,9 +525,6 @@ static int rtpcs_838x_sds_patch(struct rtpcs_serdes *sds,
 static int rtpcs_838x_init_serdes_common(struct rtpcs_ctrl *ctrl)
 {
 	dev_dbg(ctrl->dev, "Init RTL838X SerDes common\n");
-
-	/* enable R/W of some protected registers */
-	regmap_write(ctrl->map, RTPCS_838X_INT_RW_CTRL, 0x3);
 
 	/* power off and reset all SerDes */
 	regmap_write(ctrl->map, RTPCS_838X_SDS_CFG_REG, 0x3f);

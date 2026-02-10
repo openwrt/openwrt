@@ -76,6 +76,13 @@ static int rtlsmp_register(void)
 
 #endif
 
+static void __init apply_early_quirks(void)
+{
+	/* Open up write protected registers. Never mess with this elsewhere */
+	if (soc_info.family == RTL8380_FAMILY_ID)
+		sw_w32(0x3, RTL838X_INT_RW_CTRL);
+}
+
 void __init device_tree_init(void)
 {
 	if (!fdt_check_header(&__appended_dtb)) {
@@ -106,7 +113,6 @@ static void __init rtl838x_read_details(u32 model)
 {
 	u32 chip_info, ext_version, tmp;
 
-	sw_w32(0x3, RTL838X_INT_RW_CTRL);
 	sw_w32(0xa << 28, RTL838X_CHIP_INFO);
 
 	chip_info = sw_r32(RTL838X_CHIP_INFO);
@@ -167,6 +173,8 @@ static u32 __init read_model(void)
 	if ((id >= 0x8380 && id <= 0x8382) || id == 0x8330 || id == 0x8332) {
 		soc_info.id = id;
 		soc_info.family = RTL8380_FAMILY_ID;
+		soc_info.cpu_port = RTL838X_CPU_PORT;
+		apply_early_quirks();
 		rtl838x_read_details(model);
 		return model;
 	}
@@ -176,6 +184,8 @@ static u32 __init read_model(void)
 	if ((id >= 0x8391 && id <= 0x8396) || (id >= 0x8351 && id <= 0x8353)) {
 		soc_info.id = id;
 		soc_info.family = RTL8390_FAMILY_ID;
+		soc_info.cpu_port = RTL839X_CPU_PORT;
+		apply_early_quirks();
 		rtl839x_read_details(model);
 		return model;
 	}
@@ -185,11 +195,15 @@ static u32 __init read_model(void)
 	if (id >= 0x9301 && id <= 0x9303) {
 		soc_info.id = id;
 		soc_info.family = RTL9300_FAMILY_ID;
+		soc_info.cpu_port = RTL930X_CPU_PORT;
+		apply_early_quirks();
 		rtl93xx_read_details(model);
 		return model;
 	} else if (id >= 0x9311 && id <= 0x9313) {
 		soc_info.id = id;
 		soc_info.family = RTL9310_FAMILY_ID;
+		soc_info.cpu_port = RTL931X_CPU_PORT;
+		apply_early_quirks();
 		rtl93xx_read_details(model);
 		return model;
 	}
