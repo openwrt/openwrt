@@ -158,27 +158,12 @@
 			reg = <0x00080000 0x00040000>;
 		};
 
-		partition@c0000 {
+		mtd_nsb_master: partition@c0000 {
 			label = "nsb_master";
 			reg = <0x000c0000 0x02880000>;
-
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			partition@0 {
-				label = "kernel";
-				reg = <0x0 0x880000>;
-			};
-
-			partition@880000 {
-				compatible = "linux,ubi";
-				label = "ubi";
-				reg = <0x880000 0x2000000>;
-			};
 		};
 
-		partition@2940000 {
+		mtd_nsb_slave: partition@2940000 {
 			label = "nsb_slave";
 			reg = <0x02940000 0x02880000>;
 		};
@@ -208,17 +193,17 @@
 			reg = <0x052c0000 0x00a00000>;
 		};
 
-		partition@5cc0000 {
+		mtd_framwork1: partition@5cc0000 {
 			label = "framwork1";
 			reg = <0x05cc0000 0x01000000>;
 		};
 
-		partition@6cc0000 {
+		mtd_framwork2: partition@6cc0000 {
 			label = "framwork2";
 			reg = <0x06cc0000 0x01000000>;
 		};
 
-		partition@7cc0000 {
+		mtd_apps: partition@7cc0000 {
 			label = "apps";
 			reg = <0x07cc0000 0x060e0000>;
 		};
@@ -231,6 +216,32 @@
 		partition@e1a0000 {
 			label = "log";
 			reg = <0x0e1a0000 0x00a00000>;
+		};
+	};
+};
+
+/ {
+	virtual_flash {
+		compatible = "mtd-concat";
+		devices = <&mtd_nsb_master &mtd_nsb_slave
+			   /* &mtd_framwork1 &mtd_framwork2 */
+			   /* &mtd_apps */>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "kernel";
+				reg = <0x0 0x880000>;
+			};
+
+			partition@880000 {
+				compatible = "linux,ubi";
+				label = "ubi";
+				reg = <0x880000 0x04880000>;
+			};
 		};
 	};
 };
