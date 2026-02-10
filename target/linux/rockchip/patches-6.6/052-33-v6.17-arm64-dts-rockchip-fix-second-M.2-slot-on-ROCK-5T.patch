@@ -1,0 +1,56 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nicolas Frattaroli <nicolas.frattaroli@collabora.com>
+Date: Tue, 26 Aug 2025 10:08:36 +0200
+Subject: arm64: dts: rockchip: fix second M.2 slot on ROCK 5T
+
+The Radxa ROCK 5T has two M.2 slots, much like the Radxa Rock 5B+. As it
+stands, the board won't be able to use PCIe3 if the second M.2 slot is
+in use.
+
+Fix this by adding the necessary node enablement and data-lanes property
+to the ROCK 5T device tree, mirroring what's in the ROCK 5B+ device
+tree.
+
+Reported-by: FUKAUMI Naoki <naoki@radxa.com>
+Closes: https://libera.catirclogs.org/linux-rockchip/2025-08-25#38610630;
+Fixes: 0ea651de9b79 ("arm64: dts: rockchip: add ROCK 5T device tree")
+Signed-off-by: Nicolas Frattaroli <nicolas.frattaroli@collabora.com>
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588-rock-5t.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3588-rock-5t.dts
+@@ -68,6 +68,22 @@
+ 	status = "okay";
+ };
+ 
++&pcie30phy {
++	data-lanes = <1 1 2 2>;
++};
++
++&pcie3x2 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pcie3x2_rst>;
++	reset-gpios = <&gpio4 RK_PB0 GPIO_ACTIVE_HIGH>;
++	vpcie3v3-supply = <&vcc3v3_pcie30>;
++	status = "okay";
++};
++
++&pcie3x4 {
++	num-lanes = <2>;
++};
++
+ &pinctrl {
+ 	hdmirx {
+ 		hdmirx_hpd: hdmirx-5v-detection {
+@@ -90,6 +106,12 @@
+ 		};
+ 	};
+ 
++	pcie3 {
++		pcie3x2_rst: pcie3x2-rst {
++			rockchip,pins = <4 RK_PB0 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
++
+ 	sound {
+ 		hp_detect: hp-detect {
+ 			rockchip,pins = <4 RK_PC3 RK_FUNC_GPIO &pcfg_pull_none>;
