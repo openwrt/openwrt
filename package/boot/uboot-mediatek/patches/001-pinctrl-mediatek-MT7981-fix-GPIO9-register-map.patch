@@ -1,0 +1,75 @@
+From a1d1fc8d8c8699d80e1b9ab3214752e5882d3740 Mon Sep 17 00:00:00 2001
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Sat, 3 Jan 2026 16:42:39 +0800
+Subject: [PATCH] pinctrl: mediatek: MT7981: fix GPIO9 register map
+
+Ported from the Mediatek SDK. The upstream Linux kernel also has the
+same register map as the SDK.
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ drivers/pinctrl/mediatek/pinctrl-mt7981.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+--- a/drivers/pinctrl/mediatek/pinctrl-mt7981.c
++++ b/drivers/pinctrl/mediatek/pinctrl-mt7981.c
+@@ -103,8 +103,8 @@ static const struct mtk_pin_field_calc m
+ 	PIN_FIELD_BASE(6, 6, 4, 0x20, 0x10, 3, 1),
+ 	PIN_FIELD_BASE(7, 7, 4, 0x20, 0x10, 0, 1),
+ 	PIN_FIELD_BASE(8, 8, 4, 0x20, 0x10, 4, 1),
+-	PIN_FIELD_BASE(9, 9, 4, 0x20, 0x10, 9, 1),
+ 
++	PIN_FIELD_BASE(9, 9, 5, 0x20, 0x10, 9, 1),
+ 	PIN_FIELD_BASE(10, 10, 5, 0x20, 0x10, 8, 1),
+ 	PIN_FIELD_BASE(11, 11, 5, 0x40, 0x10, 10, 1),
+ 	PIN_FIELD_BASE(12, 12, 5, 0x20, 0x10, 7, 1),
+@@ -172,8 +172,8 @@ static const struct mtk_pin_field_calc m
+ 	PIN_FIELD_BASE(6, 6, 4, 0x80, 0x10, 3, 1),
+ 	PIN_FIELD_BASE(7, 7, 4, 0x80, 0x10, 0, 1),
+ 	PIN_FIELD_BASE(8, 8, 4, 0x80, 0x10, 4, 1),
+-	PIN_FIELD_BASE(9, 9, 4, 0x80, 0x10, 9, 1),
+ 
++	PIN_FIELD_BASE(9, 9, 5, 0x90, 0x10, 9, 1),
+ 	PIN_FIELD_BASE(10, 10, 5, 0x90, 0x10, 8, 1),
+ 	PIN_FIELD_BASE(11, 11, 5, 0x90, 0x10, 10, 1),
+ 	PIN_FIELD_BASE(12, 12, 5, 0x90, 0x10, 7, 1),
+@@ -285,8 +285,8 @@ static const struct mtk_pin_field_calc m
+ 	PIN_FIELD_BASE(6, 6, 4, 0x00, 0x10, 9, 3),
+ 	PIN_FIELD_BASE(7, 7, 4, 0x00, 0x10, 0, 3),
+ 	PIN_FIELD_BASE(8, 8, 4, 0x00, 0x10, 12, 3),
+-	PIN_FIELD_BASE(9, 9, 4, 0x00, 0x10, 27, 3),
+ 
++	PIN_FIELD_BASE(9, 9, 5, 0x00, 0x10, 27, 3),
+ 	PIN_FIELD_BASE(10, 10, 5, 0x00, 0x10, 24, 3),
+ 	PIN_FIELD_BASE(11, 11, 5, 0x00, 0x10, 0, 3),
+ 	PIN_FIELD_BASE(12, 12, 5, 0x00, 0x10, 21, 3),
+@@ -354,8 +354,8 @@ static const struct mtk_pin_field_calc m
+ 	PIN_FIELD_BASE(6, 6, 4, 0x30, 0x10, 3, 1),
+ 	PIN_FIELD_BASE(7, 7, 4, 0x30, 0x10, 0, 1),
+ 	PIN_FIELD_BASE(8, 8, 4, 0x30, 0x10, 4, 1),
+-	PIN_FIELD_BASE(9, 9, 4, 0x30, 0x10, 9, 1),
+ 
++	PIN_FIELD_BASE(9, 9, 5, 0x30, 0x10, 9, 1),
+ 	PIN_FIELD_BASE(10, 10, 5, 0x30, 0x10, 8, 1),
+ 	PIN_FIELD_BASE(11, 11, 5, 0x30, 0x10, 10, 1),
+ 	PIN_FIELD_BASE(12, 12, 5, 0x30, 0x10, 7, 1),
+@@ -404,8 +404,8 @@ static const struct mtk_pin_field_calc m
+ 	PIN_FIELD_BASE(6, 6, 4, 0x40, 0x10, 3, 1),
+ 	PIN_FIELD_BASE(7, 7, 4, 0x40, 0x10, 0, 1),
+ 	PIN_FIELD_BASE(8, 8, 4, 0x40, 0x10, 4, 1),
+-	PIN_FIELD_BASE(9, 9, 4, 0x40, 0x10, 9, 1),
+ 
++	PIN_FIELD_BASE(9, 9, 5, 0x40, 0x10, 9, 1),
+ 	PIN_FIELD_BASE(10, 10, 5, 0x40, 0x10, 8, 1),
+ 	PIN_FIELD_BASE(11, 11, 5, 0x40, 0x10, 10, 1),
+ 	PIN_FIELD_BASE(12, 12, 5, 0x40, 0x10, 7, 1),
+@@ -454,8 +454,8 @@ static const struct mtk_pin_field_calc m
+ 	PIN_FIELD_BASE(6, 6, 4, 0x50, 0x10, 3, 1),
+ 	PIN_FIELD_BASE(7, 7, 4, 0x50, 0x10, 0, 1),
+ 	PIN_FIELD_BASE(8, 8, 4, 0x50, 0x10, 4, 1),
+-	PIN_FIELD_BASE(9, 9, 4, 0x50, 0x10, 9, 1),
+ 
++	PIN_FIELD_BASE(9, 9, 5, 0x50, 0x10, 9, 1),
+ 	PIN_FIELD_BASE(10, 10, 5, 0x50, 0x10, 8, 1),
+ 	PIN_FIELD_BASE(11, 11, 5, 0x50, 0x10, 10, 1),
+ 	PIN_FIELD_BASE(12, 12, 5, 0x50, 0x10, 7, 1),
