@@ -1,0 +1,96 @@
+From 783fbbd591982749714fba784318bf0fac3c9d41 Mon Sep 17 00:00:00 2001
+From: Matt Merhar <mattmerhar@protonmail.com>
+Date: Tue, 3 Feb 2026 23:01:41 -0500
+Subject: [PATCH 2/4] defines: rework apk_unaligned_* helpers
+
+These only work properly on little endian input words, and
+apk_unaligned_u64a32 won't work correctly as-is on big endian systems.
+
+Change the suffixes to explicitly call out this "limitation" and switch
+the uint64_t variant to operate on single bytes as the others already do
+so it works as expected on big endian hosts.
+
+And, add a uint16_t variant.
+---
+ src/adb.c         |  2 +-
+ src/apk_defines.h | 22 ++++++++++++++++------
+ src/blob.c        |  2 +-
+ src/database.c    |  2 +-
+ 4 files changed, 19 insertions(+), 9 deletions(-)
+
+--- a/src/adb.c
++++ b/src/adb.c
+@@ -434,7 +434,7 @@ uint64_t adb_r_int(const struct adb *db,
+ 	case ADB_TYPE_INT_64:
+ 		ptr = adb_r_deref(db, v, 0, sizeof(uint64_t));
+ 		if (!ptr) return 0;
+-		return le64toh(apk_unaligned_u64a32(ptr));
++		return apk_unaligned_le64(ptr);
+ 	default:
+ 		return 0;
+ 	}
+--- a/src/apk_defines.h
++++ b/src/apk_defines.h
+@@ -151,24 +151,34 @@ static inline uint64_t apk_calc_installe
+ }
+ 
+ #if defined(__x86_64__) || defined(__i386__)
+-static inline uint32_t apk_unaligned_u32(const void *ptr)
++static inline uint16_t apk_unaligned_le16(const void *ptr)
++{
++	return *(const uint16_t *)ptr;
++}
++static inline uint32_t apk_unaligned_le32(const void *ptr)
+ {
+ 	return *(const uint32_t *)ptr;
+ }
+-static inline uint64_t apk_unaligned_u64a32(const void *ptr)
++static inline uint64_t apk_unaligned_le64(const void *ptr)
+ {
+ 	return *(const uint64_t *)ptr;
+ }
+ #else
+-static inline uint32_t apk_unaligned_u32(const void *ptr)
++static inline uint16_t apk_unaligned_le16(const void *ptr)
++{
++	const uint8_t *p = ptr;
++	return p[0] | (uint16_t)p[1] << 8;
++}
++static inline uint32_t apk_unaligned_le32(const void *ptr)
+ {
+ 	const uint8_t *p = ptr;
+ 	return p[0] | (uint32_t)p[1] << 8 | (uint32_t)p[2] << 16 | (uint32_t)p[3] << 24;
+ }
+-static inline uint64_t apk_unaligned_u64a32(const void *ptr)
++static inline uint64_t apk_unaligned_le64(const void *ptr)
+ {
+-	const uint32_t *p = ptr;
+-	return p[0] | (uint64_t)p[1] << 32;
++	const uint8_t *p = ptr;
++	return p[0] | (uint64_t)p[1] << 8 | (uint64_t)p[2] << 16 | (uint64_t)p[3] << 24 |
++		(uint64_t)p[4] << 32 | (uint64_t)p[5] << 40 | (uint64_t)p[6] << 48 | (uint64_t)p[7] << 56;
+ }
+ #endif
+ 
+--- a/src/blob.c
++++ b/src/blob.c
+@@ -98,7 +98,7 @@ static uint32_t murmur3_32(const void *p
+ 	int i;
+ 
+ 	for (i = 0; i < nblocks; i++, key += 4) {
+-		k  = apk_unaligned_u32(key);
++		k  = apk_unaligned_le32(key);
+ 		k *= c1;
+ 		k  = rotl32(k, 15);
+ 		k *= c2;
+--- a/src/database.c
++++ b/src/database.c
+@@ -90,7 +90,7 @@ static unsigned long csum_hash(apk_blob_
+ 	/* Checksum's highest bits have the most "randomness", use that
+ 	 * directly as hash */
+ 	if (csum.len >= sizeof(uint32_t))
+-		return apk_unaligned_u32(csum.ptr);
++		return apk_unaligned_le32(csum.ptr);
+ 	return 0;
+ }
+ 

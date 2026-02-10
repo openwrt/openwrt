@@ -1,0 +1,240 @@
+From 2cb386c75518ca4df5348d1f29c75ac923fc847c Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Timo=20Ter=C3=A4s?= <timo.teras@iki.fi>
+Date: Thu, 5 Feb 2026 13:07:04 +0200
+Subject: [PATCH 4/4] io: synchronize istream buffer alignment with file
+ offset
+
+To correctly guarantee buffer alignment for apk_istream_get() reads
+the buffer needs to be aligned with the file offset. Fixup the
+io code to properly synchronize the alignment.
+
+This removes unaligned memory reads in various places. In practice
+this speeds up things and fixes the faults/read errors on platforms
+where unaligned access is an error.
+---
+ src/apk_io.h          |  3 ++-
+ src/io.c              | 37 +++++++++++++++++---------
+ src/io_gunzip.c       |  2 ++
+ src/io_url_libfetch.c |  2 ++
+ src/process.c         |  2 ++
+ test/unit/io_test.c   | 62 +++++++++++++++++++++++++++++++++++++++++++
+ 6 files changed, 94 insertions(+), 14 deletions(-)
+
+--- a/src/apk_io.h
++++ b/src/apk_io.h
+@@ -82,7 +82,7 @@ struct apk_istream {
+ 	unsigned int flags;
+ 	struct apk_progress *prog;
+ 	const struct apk_istream_ops *ops;
+-};
++} __attribute__((aligned(8)));
+ 
+ typedef int (*apk_archive_entry_parser)(void *ctx,
+ 					const struct apk_file_info *ae,
+@@ -144,6 +144,7 @@ struct apk_segment_istream {
+ 	struct apk_istream *pis;
+ 	uint64_t bytes_left;
+ 	time_t mtime;
++	uint8_t align;
+ };
+ struct apk_istream *apk_istream_segment(struct apk_segment_istream *sis, struct apk_istream *is, uint64_t len, time_t mtime);
+ 
+--- a/src/io.c
++++ b/src/io.c
+@@ -33,6 +33,9 @@
+ #define HAVE_O_TMPFILE
+ #endif
+ 
++// The granularity for the file offset and istream buffer alignment synchronization.
++#define APK_ISTREAM_ALIGN_SYNC 8
++
+ size_t apk_io_bufsize = 128*1024;
+ 
+ 
+@@ -111,16 +114,16 @@ ssize_t apk_istream_read_max(struct apk_
+ 		if (left > is->buf_size/4) {
+ 			r = is->ops->read(is, ptr, left);
+ 			if (r <= 0) break;
++			is->ptr = is->end = &is->buf[(is->ptr - is->buf + r) % APK_ISTREAM_ALIGN_SYNC];
+ 			left -= r;
+ 			ptr += r;
+ 			continue;
+ 		}
+ 
+-		r = is->ops->read(is, is->buf, is->buf_size);
++		r = is->ops->read(is, is->ptr, is->buf + is->buf_size - is->ptr);
+ 		if (r <= 0) break;
+ 
+-		is->ptr = is->buf;
+-		is->end = is->buf + r;
++		is->end = is->ptr + r;
+ 	}
+ 
+ 	if (r < 0) return apk_istream_error(is, r);
+@@ -136,19 +139,20 @@ int apk_istream_read(struct apk_istream
+ 
+ static int __apk_istream_fill(struct apk_istream *is)
+ {
+-	ssize_t sz;
+-
+ 	if (is->err) return is->err;
+ 
+-	if (is->ptr != is->buf) {
+-		sz = is->end - is->ptr;
+-		memmove(is->buf, is->ptr, sz);
+-		is->ptr = is->buf;
+-		is->end = is->buf + sz;
+-	} else if (is->end-is->ptr == is->buf_size)
+-		return -ENOBUFS;
++	size_t offs = is->ptr - is->buf;
++	if (offs >= APK_ISTREAM_ALIGN_SYNC) {
++		size_t buf_used = is->end - is->ptr;
++		uint8_t *ptr = &is->buf[offs % APK_ISTREAM_ALIGN_SYNC];
++		memmove(ptr, is->ptr, buf_used);
++		is->ptr = ptr;
++		is->end = ptr + buf_used;
++	} else {
++		if (is->end == is->buf+is->buf_size) return -ENOBUFS;
++	}
+ 
+-	sz = is->ops->read(is, is->end, is->buf + is->buf_size - is->end);
++	ssize_t sz = is->ops->read(is, is->end, is->buf + is->buf_size - is->end);
+ 	if (sz <= 0) return apk_istream_error(is, sz ?: 1);
+ 	is->end += sz;
+ 	return 0;
+@@ -282,6 +286,7 @@ static ssize_t segment_read(struct apk_i
+ 		if (r == 0) r = -ECONNABORTED;
+ 	} else {
+ 		sis->bytes_left -= r;
++		sis->align += r;
+ 	}
+ 	return r;
+ }
+@@ -290,6 +295,7 @@ static int segment_close(struct apk_istr
+ {
+ 	struct apk_segment_istream *sis = container_of(is, struct apk_segment_istream, is);
+ 
++	if (!sis->pis->ptr) sis->pis->ptr = sis->pis->end = &is->buf[sis->align % APK_ISTREAM_ALIGN_SYNC];
+ 	if (sis->bytes_left) apk_istream_skip(sis->pis, sis->bytes_left);
+ 	return is->err < 0 ? is->err : 0;
+ }
+@@ -316,6 +322,9 @@ struct apk_istream *apk_istream_segment(
+ 		sis->is.end = sis->is.ptr + len;
+ 		is->ptr += len;
+ 	} else {
++		// Calculated at segment_closet again, set to null to catch if
++		// the inner istream is used before segment close.
++		sis->align = is->end - is->buf;
+ 		is->ptr = is->end = 0;
+ 	}
+ 	sis->bytes_left -= sis->is.end - sis->is.ptr;
+@@ -600,6 +609,8 @@ struct apk_istream *apk_istream_from_fd(
+ 		.is.ops = &fd_istream_ops,
+ 		.is.buf = (uint8_t *)(fis + 1),
+ 		.is.buf_size = apk_io_bufsize,
++		.is.ptr = (uint8_t *)(fis + 1),
++		.is.end = (uint8_t *)(fis + 1),
+ 		.fd = fd,
+ 	};
+ 
+--- a/src/io_gunzip.c
++++ b/src/io_gunzip.c
+@@ -165,6 +165,8 @@ struct apk_istream *apk_istream_zlib(str
+ 		.is.ops = &gunzip_istream_ops,
+ 		.is.buf = (uint8_t*)(gis + 1),
+ 		.is.buf_size = apk_io_bufsize,
++		.is.ptr = (uint8_t*)(gis + 1),
++		.is.end = (uint8_t*)(gis + 1),
+ 		.zis = is,
+ 		.cb = cb,
+ 		.cbctx = ctx,
+--- a/src/io_url_libfetch.c
++++ b/src/io_url_libfetch.c
+@@ -161,6 +161,8 @@ struct apk_istream *apk_io_url_istream(c
+ 		.is.ops = &fetch_istream_ops,
+ 		.is.buf = (uint8_t*)(fis+1),
+ 		.is.buf_size = apk_io_bufsize,
++		.is.ptr = (uint8_t*)(fis+1),
++		.is.end = (uint8_t*)(fis+1),
+ 		.fetchIO = io,
+ 		.urlstat = fis->urlstat,
+ 	};
+--- a/src/process.c
++++ b/src/process.c
+@@ -317,6 +317,8 @@ struct apk_istream *apk_process_istream(
+ 		.is.ops = &process_istream_ops,
+ 		.is.buf = (uint8_t *)(pis + 1),
+ 		.is.buf_size = apk_io_bufsize,
++		.is.ptr = (uint8_t *)(pis + 1),
++		.is.end = (uint8_t *)(pis + 1),
+ 	};
+ 	r = apk_process_init(&pis->proc, apk_last_path_segment(argv[0]), logpfx, out, NULL);
+ 	if (r != 0) goto err;
+--- a/test/unit/io_test.c
++++ b/test/unit/io_test.c
+@@ -119,3 +119,65 @@ APK_TEST(io_foreach_config_file) {
+ 
+ 	assert_int_equal(0, apk_dir_foreach_config_file(MOCKFD, assert_path_entry, NULL, apk_filename_is_hidden, "a", "b", NULL));
+ }
++
++APK_TEST(io_istream_align) {
++	struct apk_istream *is = apk_istream_from_file(AT_FDCWD, "/dev/zero");
++	struct apk_segment_istream seg;
++	size_t bufsz = 1024*1024;
++	uint8_t *buf = malloc(bufsz), *ptr;
++
++	assert_int_equal(0, apk_istream_read(is, buf, 1024));
++
++	ptr = apk_istream_get(is, 1024);
++	assert_ptr_ok(ptr);
++	assert_int_equal(0, (uintptr_t)ptr & 7);
++
++	assert_ptr_ok(apk_istream_get(is, 7));
++	assert_ptr_ok(apk_istream_get(is, apk_io_bufsize - 1024));
++	assert_ptr_ok(apk_istream_get(is, 1));
++
++	ptr = apk_istream_get(is, 64);
++	assert_ptr_ok(ptr);
++	assert_int_equal(0, (uintptr_t)ptr & 7);
++
++	assert_int_equal(0, apk_istream_read(is, buf, bufsz - 1));
++	assert_int_equal(0, apk_istream_read(is, buf, 1));
++	ptr = apk_istream_get(is, 64);
++	assert_ptr_ok(ptr);
++	assert_int_equal(0, (uintptr_t)ptr & 7);
++
++	apk_istream_segment(&seg, is, 1024-1, 0);
++	apk_istream_close(&seg.is);
++	assert_ptr_ok(apk_istream_get(is, 1));
++	ptr = apk_istream_get(is, 64);
++	assert_ptr_ok(ptr);
++	assert_int_equal(0, (uintptr_t)ptr & 7);
++
++	apk_istream_segment(&seg, is, bufsz-1, 0);
++	apk_istream_close(&seg.is);
++	assert_ptr_ok(apk_istream_get(is, 1));
++	ptr = apk_istream_get(is, 64);
++	assert_ptr_ok(ptr);
++	assert_int_equal(0, (uintptr_t)ptr & 7);
++
++	assert_ptr_ok(apk_istream_get(is, 7));
++	apk_istream_segment(&seg, is, bufsz-7, 0);
++	assert_int_equal(0, apk_istream_read(&seg.is, buf, bufsz-10));
++	assert_int_equal(0, apk_istream_read(&seg.is, buf, 1));
++	apk_istream_close(&seg.is);
++	ptr = apk_istream_get(is, 64);
++	assert_ptr_ok(ptr);
++	assert_int_equal(0, (uintptr_t)ptr & 7);
++
++	apk_istream_segment(&seg, is, bufsz*2+1, 0);
++	assert_int_equal(0, apk_istream_read(&seg.is, buf, bufsz));
++	assert_int_equal(0, apk_istream_read(&seg.is, buf, bufsz));
++	apk_istream_close(&seg.is);
++	assert_int_equal(0, apk_istream_read(is, buf, 7));
++	ptr = apk_istream_get(is, 64);
++	assert_ptr_ok(ptr);
++	assert_int_equal(0, (uintptr_t)ptr & 7);
++
++	apk_istream_close(is);
++	free(buf);
++}

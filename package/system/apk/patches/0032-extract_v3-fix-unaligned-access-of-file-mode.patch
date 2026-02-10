@@ -1,0 +1,33 @@
+From 98da5aa6b2539c28459f303fb06891df86a5b4c7 Mon Sep 17 00:00:00 2001
+From: Matt Merhar <mattmerhar@protonmail.com>
+Date: Tue, 3 Feb 2026 23:01:41 -0500
+Subject: [PATCH 3/4] extract_v3: fix unaligned access of file mode
+
+This is one of a couple places that frequently caused apk operations
+to mysteriously fail on the OpenWrt kirkwood target (ARMv5TE); in this
+particular case, APKE_ADB_SCHEMA would be returned.
+
+GDB showed the octal mode value being a nonsensical '022' whereas
+referencing the original memory showed the expected 0120000 (S_IFLNK):
+
+	(gdb) p/o *(uint16_t*)(target.ptr - 2)
+	$67 = 0120000
+	(gdb) p/o mode
+	$68 = 022
+
+So, utilize the newly added apk_unaligned_le16() to access it.
+---
+ src/extract_v3.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/src/extract_v3.c
++++ b/src/extract_v3.c
+@@ -73,7 +73,7 @@ static int apk_extract_v3_file(struct ap
+ 		uint16_t mode;
+ 
+ 		if (target.len < 2) goto err_schema;
+-		mode = le16toh(*(uint16_t*)target.ptr);
++		mode = apk_unaligned_le16(target.ptr);
+ 		target.ptr += 2;
+ 		target.len -= 2;
+ 		switch (mode) {

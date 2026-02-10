@@ -139,14 +139,12 @@ endef
 define Build/uDPU-firmware
 	(rm -fR $@-fw; mkdir -p $@-fw)
 	$(CP) $(BIN_DIR)/$(DEVICE_IMG_PREFIX)-initramfs.itb $@-fw/recovery.itb
+	$(CP) $(IMAGE_ROOTFS) $@-fw/rootfs.tgz
 	$(CP) $@-boot.scr $@-fw/boot.scr
-	$(TAR) -cvzp --numeric-owner --owner=0 --group=0 --sort=name \
-		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
-		-f $@-fw/rootfs.tgz -C $(TARGET_DIR) .
-	$(TAR) -cvzp --numeric-owner --owner=0 --group=0 --sort=name \
+	$(TAR) -czp --numeric-owner --owner=0 --group=0 --sort=name \
 		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
 		-f $@-fw/boot.tgz -C $@.boot .
-	$(TAR) -cvzp --numeric-owner --owner=0 --group=0 --sort=name \
+	$(TAR) -czp --numeric-owner --owner=0 --group=0 --sort=name \
 		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
 		-f $(KDIR_TMP)/$(DEVICE_IMG_PREFIX)-firmware.tgz -C $@-fw .
 endef
