@@ -167,6 +167,7 @@ ramips_setup_interfaces()
 	tplink,eap615-wall-v1)
 		ucidef_set_interface_lan "lan0 lan1 lan2 lan3"
 		;;
+	tplink,er605-v1|\
 	tplink,er605-v2)
 		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan1"
 		;;
@@ -309,6 +310,11 @@ ramips_setup_macs()
 		lan_mac=$(mtd_get_mac_ascii Config lan_hwaddr)
 		wan_mac=$(mtd_get_mac_ascii Config wan_hwaddr)
 		label_mac=$lan_mac
+		;;
+	tplink,er605-v1)
+		label_mac=$(mtd_get_mac_uci_config "tddp")
+		lan_mac=$label_mac
+		wan_mac=$(macaddr_add "$label_mac" 1)
 		;;
 	tplink,er605-v2)
 		CI_UBIPART="firmware"
