@@ -120,18 +120,50 @@ define Build/ctera-firmware
 	rm -rf $@.tmp
 endef
 
+define Build/emmc-img
+	SIGNATURE="$(IMG_PART_SIGNATURE)" \
+	./gen_mvebu_img.sh $@ \
+		$(if $(UBOOT_EMMC),$(STAGING_DIR_IMAGE)/$(UBOOT_EMMC) 4096) \
+		c $(CONFIG_TARGET_KERNEL_PARTSIZE) $@.boot \
+		83 $(CONFIG_TARGET_ROOTFS_PARTSIZE) $(IMAGE_ROOTFS)
+endef
+
+define Build/emmc-img-ext4
+	SIGNATURE="$(IMG_PART_SIGNATURE)" \
+	./gen_mvebu_img.sh $@ \
+		$(if $(UBOOT_EMMC),$(STAGING_DIR_IMAGE)/$(UBOOT_EMMC) 4096) \
+		83 $(CONFIG_TARGET_KERNEL_PARTSIZE) $@.bootimg \
+		83 $(CONFIG_TARGET_ROOTFS_PARTSIZE) $(IMAGE_ROOTFS)
+endef
+
+define Build/sata-img
+	SIGNATURE="$(IMG_PART_SIGNATURE)" \
+	./gen_mvebu_img.sh $@ \
+		$(if $(UBOOT_SATA),$(STAGING_DIR_IMAGE)/$(UBOOT_SATA) 1) \
+		c $(CONFIG_TARGET_KERNEL_PARTSIZE) $@.boot \
+		83 $(CONFIG_TARGET_ROOTFS_PARTSIZE) $(IMAGE_ROOTFS)
+endef
+
+define Build/sata-img-ext4
+	SIGNATURE="$(IMG_PART_SIGNATURE)" \
+	./gen_mvebu_img.sh $@ \
+		$(if $(UBOOT_SATA),$(STAGING_DIR_IMAGE)/$(UBOOT_SATA) 1) \
+		83 $(CONFIG_TARGET_KERNEL_PARTSIZE) $@.bootimg \
+		83 $(CONFIG_TARGET_ROOTFS_PARTSIZE) $(IMAGE_ROOTFS)
+endef
+
 define Build/sdcard-img
 	SIGNATURE="$(IMG_PART_SIGNATURE)" \
-	./gen_mvebu_sdcard_img.sh $@ \
-		$(if $(UBOOT),$(STAGING_DIR_IMAGE)/$(UBOOT)) \
+	./gen_mvebu_img.sh $@ \
+		$(if $(UBOOT),$(STAGING_DIR_IMAGE)/$(UBOOT) 1) \
 		c $(CONFIG_TARGET_KERNEL_PARTSIZE) $@.boot \
 		83 $(CONFIG_TARGET_ROOTFS_PARTSIZE) $(IMAGE_ROOTFS)
 endef
 
 define Build/sdcard-img-ext4
 	SIGNATURE="$(IMG_PART_SIGNATURE)" \
-	./gen_mvebu_sdcard_img.sh $@ \
-		$(if $(UBOOT),$(STAGING_DIR_IMAGE)/$(UBOOT)) \
+	./gen_mvebu_img.sh $@ \
+		$(if $(UBOOT),$(STAGING_DIR_IMAGE)/$(UBOOT) 1) \
 		83 $(CONFIG_TARGET_KERNEL_PARTSIZE) $@.bootimg \
 		83 $(CONFIG_TARGET_ROOTFS_PARTSIZE) $(IMAGE_ROOTFS)
 endef
