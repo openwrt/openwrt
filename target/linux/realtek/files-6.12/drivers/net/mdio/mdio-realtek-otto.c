@@ -177,7 +177,6 @@ struct rtmdio_ctrl {
 	bool raw[RTMDIO_MAX_PORT];
 	int smi_bus[RTMDIO_MAX_PORT];
 	int smi_addr[RTMDIO_MAX_PORT];
-	struct device_node *dn[RTMDIO_MAX_PORT];
 	bool smi_bus_isc45[RTMDIO_MAX_SMI_BUS];
 };
 
@@ -931,6 +930,7 @@ static int rtmdio_probe(struct platform_device *pdev)
 	struct rtmdio_ctrl *ctrl;
 	struct device_node *dn;
 	struct mii_bus *bus;
+	u64 mask = 0ULL;
 	int ret, addr;
 
 	bus = devm_mdiobus_alloc_size(dev, sizeof(*ctrl));
@@ -967,7 +967,7 @@ static int rtmdio_probe(struct platform_device *pdev)
 		if (of_device_is_compatible(dn, "ethernet-phy-ieee802.3-c45"))
 			ctrl->smi_bus_isc45[ctrl->smi_bus[addr]] = true;
 
-		ctrl->dn[addr] = dn;
+		mask |= BIT_ULL(addr);
 	}
 
 	bus->name = "Realtek MDIO bus";
@@ -977,7 +977,7 @@ static int rtmdio_probe(struct platform_device *pdev)
 	bus->read_c45 = rtmdio_read_c45;
 	bus->write_c45 = rtmdio_write_c45;
 	bus->parent = dev;
-	bus->phy_mask = ~0;
+	bus->phy_mask = ~mask;
 	snprintf(bus->id, MII_BUS_ID_SIZE, "realtek-mdio");
 
 	device_set_node(&bus->dev, of_fwnode_handle(dev->of_node));
@@ -987,14 +987,6 @@ static int rtmdio_probe(struct platform_device *pdev)
 
 	if (ctrl->cfg->setup_polling)
 		ctrl->cfg->setup_polling(bus);
-
-	for (addr = 0; addr < ctrl->cfg->cpu_port; addr++) {
-		if (ctrl->dn[addr]) {
-			ret = fwnode_mdiobus_register_phy(bus, of_fwnode_handle(ctrl->dn[addr]), addr);
-			if (ret)
-				return ret;
-		}
-	}
 
 	return 0;
 }
