@@ -913,18 +913,20 @@ static int rtmdio_probe(struct platform_device *pdev)
 		if (of_property_read_u32(dn, "reg", &addr))
 			continue;
 
-		if (addr >= ctrl->cfg->cpu_port) {
-			pr_err("%s: illegal port number %d\n", __func__, addr);
-			return -ENODEV;
+		if (addr < 0 || addr >= ctrl->cfg->cpu_port) {
+			dev_err(dev, "illegal port number %d\n", addr);
+			of_node_put(dn);
+			return -EINVAL;
 		}
 
 		of_property_read_u32(dn->parent, "reg", &ctrl->smi_bus[addr]);
 		if (of_property_read_u32(dn, "realtek,smi-address", &ctrl->smi_addr[addr]))
 			ctrl->smi_addr[addr] = addr;
 		
-		if (ctrl->smi_bus[addr] >= RTMDIO_MAX_SMI_BUS) {
-			pr_err("%s: illegal SMI bus number %d\n", __func__, ctrl->smi_bus[addr]);
-			return -ENODEV;
+		if (ctrl->smi_bus[addr] < 0 || ctrl->smi_bus[addr] >= RTMDIO_MAX_SMI_BUS) {
+			dev_err(dev, "illegal SMI bus number %d\n", ctrl->smi_bus[addr]);
+			of_node_put(dn);
+			return -EINVAL;
 		}
 
 		if (of_device_is_compatible(dn, "ethernet-phy-ieee802.3-c45"))
