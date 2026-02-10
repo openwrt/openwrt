@@ -1,0 +1,34 @@
+From 3983dc1674fec43beb8ce9d9bfdd6302fef86eae Mon Sep 17 00:00:00 2001
+From: Andrew MacIntyre <andymac@pcug.org.au>
+Date: Mon, 4 Nov 2024 22:41:25 +1100
+Subject: [PATCH] vrx518_tc: allow larger MTU to support RFC4638
+
+vrx518_tc currently sets the interface maximum MTU to the ethernet default
+of 1500 bytes by default via ether_setup() called from ptm_setup().
+
+To support 1508 byte baby jumbo frames (RFC4638) for PPPoE connections
+over VDSL links as already supported by the VR9 ltq_ptm driver ([1], [2])
+set the interface maximum MTU to MAX_MTU.
+
+MAX_MTU is defined in dcdp/inc/tc_common.h to 2002 bytes and this value is
+used in ptm_change_mtu() and elsewhere as the maximum MTU, however this is
+short circuited by checks against the interface maximum MTU.
+
+[1]: https://forum.openwrt.org/t/fritzbox-7530-and-rfc4638-baby-jumbo-frames/181327
+[2]: https://git.openwrt.org/?p=openwrt/openwrt.git;a=commit;h=8a2a20e71e2909f84dab47e51dfda9e292a6c1ae
+
+Signed-off-by: Andrew MacIntyre <andymac@pcug.org.au>
+---
+ dcdp/ptm_tc.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/dcdp/ptm_tc.c
++++ b/dcdp/ptm_tc.c
+@@ -666,6 +666,7 @@ static void ptm_setup(struct net_device
+ 	ether_setup(dev);
+ 	dev->watchdog_timeo = 10 * HZ;
+ 	dev->netdev_ops = &g_ptm_netdev_ops;
++	dev->max_mtu = MAX_MTU;
+ }
+ 
+ static int ptm_dev_init(struct tc_priv *tc_priv, u32 id,

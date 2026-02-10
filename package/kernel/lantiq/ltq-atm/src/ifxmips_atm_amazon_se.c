@@ -254,7 +254,7 @@ static inline int pp32_download_code(u32 *code_src, unsigned int code_dword_len,
  * ####################################
  */
 
-extern void ase_fw_ver(unsigned int *major, unsigned int *minor)
+static void ase_fw_ver(unsigned int *major, unsigned int *minor)
 {
     ASSERT(major != NULL, "pointer is NULL");
     ASSERT(minor != NULL, "pointer is NULL");
@@ -263,7 +263,7 @@ extern void ase_fw_ver(unsigned int *major, unsigned int *minor)
     *minor = FW_VER_ID->minor;
 }
 
-void ase_init(struct platform_device *pdev)
+static int ase_init(struct platform_device *pdev)
 {
     init_pmu();
 
@@ -276,9 +276,11 @@ void ase_init(struct platform_device *pdev)
     init_atm_tc();
 
     clear_share_buffer();
+
+    return 0;
 }
 
-void ase_shutdown(void)
+static void ase_shutdown(void)
 {
     uninit_pmu();
 }
@@ -292,7 +294,7 @@ void ase_shutdown(void)
  *    int  --- 0: Success
  *             else:        Error Code
  */
-int ase_start(int pp32)
+static int ase_start(int pp32)
 {
     int ret;
 
@@ -318,7 +320,7 @@ int ase_start(int pp32)
  *  Output:
  *    none
  */
-void ase_stop(int pp32)
+static void ase_stop(int pp32)
 {
     /*  halt PP32   */
     IFX_REG_W32(DBG_CTRL_STOP, PP32_DBG_CTRL);

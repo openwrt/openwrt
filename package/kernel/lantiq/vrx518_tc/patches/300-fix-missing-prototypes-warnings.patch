@@ -1,0 +1,66 @@
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Thu, 8 May 2025 7:43:51 +0800
+Subject: [PATCH] fix missing prototypes warnings
+
+This patch fixes various missing-prototypes build warnings on
+6.12 kernel.
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ dcdp/atm_tc.c           | 2 +-
+ dcdp/inc/platform.h     | 1 +
+ dcdp/platform/sw_plat.c | 1 +
+ dcdp/tc_proc.c          | 4 ++--
+ 4 files changed, 5 insertions(+), 3 deletions(-)
+
+--- a/dcdp/atm_tc.c
++++ b/dcdp/atm_tc.c
+@@ -279,7 +279,7 @@ unsigned int find_vpi(unsigned int vpi)
+  *    success: 0
+  *    failed: -1
+  */
+-unsigned int find_vpivci_from_queue_id(
++static unsigned int find_vpivci_from_queue_id(
+ 	unsigned int queue_id,
+ 	unsigned int *vpi,
+ 	unsigned int *vci)
+--- a/dcdp/inc/platform.h
++++ b/dcdp/inc/platform.h
+@@ -20,6 +20,7 @@
+   the file called "COPYING".
+ 
+ *******************************************************************************/
++struct tc_priv;
+ extern size_t plat_priv_sz(void);
+ extern int platform_init(struct tc_priv *, const char *);
+ extern void platform_exit(void);
+--- a/dcdp/platform/sw_plat.c
++++ b/dcdp/platform/sw_plat.c
+@@ -38,6 +38,7 @@
+ #include <linux/workqueue.h>
+ #include "../inc/dsl_tc.h"
+ 
++#include "../inc/platform.h"
+ #include "../inc/tc_main.h"
+ #include "../inc/reg_addr.h"
+ #include "../inc/tc_common.h"
+--- a/dcdp/tc_proc.c
++++ b/dcdp/tc_proc.c
+@@ -1945,7 +1945,7 @@ static void fwdbg_help(struct tc_comm *p
+ 	if (!cmds[i].cmd)
+ 		fwdbg_help(priv, NULL, 0, result);
+ }
+-int fw_dbg_start(struct tc_comm *priv,
++static int fw_dbg_start(struct tc_comm *priv,
+ 	char *commands[], int num, char *result)
+ {
+ 	int i;
+@@ -1964,7 +1964,7 @@ int fw_dbg_start(struct tc_comm *priv,
+ 	return 0;
+ }
+ 
+-ssize_t proc_write_fwdbg_seq(
++static ssize_t proc_write_fwdbg_seq(
+ 	struct file *file,
+ 	const char __user *buf,
+ 	size_t count,
