@@ -37,6 +37,7 @@
 #define RTMDIO_838X_CMD_WRITE_C22		BIT(2)
 #define RTMDIO_838X_CMD_WRITE_C45		BIT(1) | BIT(2)
 #define RTMDIO_838X_CMD_MASK			GENMASK(2, 0)
+#define RTMDIO_838X_PHY_PATCH_DONE		BIT(15)
 #define RTMDIO_838X_SMI_GLB_CTRL		(0xa100)
 #define RTMDIO_838X_SMI_ACCESS_PHY_CTRL_0	(0xa1b8)
 #define RTMDIO_838X_SMI_ACCESS_PHY_CTRL_1	(0xa1bc)
@@ -653,6 +654,20 @@ static void rtmdio_get_phy_info(struct mii_bus *bus, int addr, struct rtmdio_phy
 static int rtmdio_838x_reset(struct mii_bus *bus)
 {
 	struct rtmdio_ctrl *ctrl = bus->priv;
+
+	/*
+	 * PHY_PATCH_DONE enables phy control via SoC. This is required for phy access,
+	 * including patching. Must always be set before the phys are probed.
+	 */
+	regmap_update_bits(ctrl->map, RTMDIO_838X_SMI_GLB_CTRL,
+			   RTMDIO_838X_PHY_PATCH_DONE, RTMDIO_838X_PHY_PATCH_DONE);
+
+	return 0;
+}
+
+static void rtmdio_838x_setup_polling(struct mii_bus *bus)
+{
+	struct rtmdio_ctrl *ctrl = bus->priv;
 	int combo_phy;
 
 	/* Disable MAC polling for PHY config. It will be activated later in the DSA driver */
@@ -666,13 +681,6 @@ static int rtmdio_838x_reset(struct mii_bus *bus)
 	 */
 	combo_phy = ctrl->smi_bus[24] < 0 ? 0 : BIT(7);
 	regmap_update_bits(ctrl->map, RTMDIO_838X_SMI_GLB_CTRL, BIT(7), combo_phy);
-
-	/*
-	 * Bit 15, PHY_PATCH_DONE, enables phy control via SoC. This is required for phy
-	 * access, including patching. Must always be set before the phys are probed.
-	 */
-	regmap_update_bits(ctrl->map, RTMDIO_838X_SMI_GLB_CTRL, BIT(15), BIT(15));
-	return 0;
 }
 
 static int rtmdio_839x_reset(struct mii_bus *bus)
@@ -999,6 +1007,7 @@ static const struct rtmdio_config rtmdio_838x_cfg = {
 	.read_mmd_phy	= rtmdio_838x_read_mmd_phy,
 	.read_phy	= rtmdio_838x_read_phy,
 	.reset		= rtmdio_838x_reset,
+	.setup_polling	= rtmdio_838x_setup_polling,
 	.write_mmd_phy	= rtmdio_838x_write_mmd_phy,
 	.write_phy	= rtmdio_838x_write_phy,
 };
