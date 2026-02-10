@@ -3148,6 +3148,13 @@ static int rtpcs_931x_sds_set_ip_mode(struct rtpcs_serdes *sds,
 		mode_val = 0x9;
 		break;
 
+	case RTPCS_SDS_MODE_2500BASEX:
+		/* available SDK code doesn't have this value. based on brute-forcing
+		 * the SerDes mode register field until the link is working
+		 */
+		mode_val = 0x2d;
+		break;
+
 	case RTPCS_SDS_MODE_10GBASER:
 		mode_val = 0x35;
 		break;
