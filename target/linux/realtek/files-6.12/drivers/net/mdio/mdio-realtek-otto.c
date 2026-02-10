@@ -722,7 +722,7 @@ static int rtmdio_930x_reset(struct mii_bus *bus)
 		regmap_update_bits(ctrl->map, RTMDIO_930X_SMI_PORT0_15_POLLING_SEL + reg, mask, val);
 	}
 
-	/* Define c22/c45 bus polling */
+	/* Define C22/C45 bus feature set */
 	for (int addr = 0; addr < RTMDIO_MAX_SMI_BUS; addr++) {
 		mask = BIT(16 + addr);
 		val = ctrl->smi_bus_isc45[addr] ? mask : 0;
@@ -825,14 +825,8 @@ static int rtmdio_931x_reset(struct mii_bus *bus)
 		regmap_write(ctrl->map, RTMDIO_931X_SMI_PORT_POLLING_SEL + (i * 4), poll_sel[i]);
 	}
 
-	/* Configure c22/c45 polling (bit 1 of SMI_SETX_FMT_SEL)
-	 *
-	 * NOTE: this seems to be needed before accessing the bus though
-	 * it should only apply to the SMI polling. Not setting c22/c45 here
-	 * apparently causes garbage being read below.
-	 */
+	/* Define C22/C45 bus feature set */
 	for (int i = 0; i < RTMDIO_MAX_SMI_BUS; i++) {
-		/* bus is polled in c45 */
 		if (ctrl->smi_bus_isc45[i])
 			c45_mask |= 0x2 << (i * 2);  /* Std. C45, non-standard is 0x3 */
 	}
