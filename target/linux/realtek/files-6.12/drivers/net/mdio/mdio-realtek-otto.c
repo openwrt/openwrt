@@ -504,6 +504,10 @@ static int rtmdio_read(struct mii_bus *bus, int addr, int regnum)
 	if (addr >= ctrl->cfg->cpu_port)
 		return -ENODEV;
 
+	/* prevent WARN_ONCE() during scan */
+	if (ctrl->smi_bus[addr] >=0 && ctrl->smi_bus_isc45[ctrl->smi_bus[addr]] && regnum == 2)
+		return -EIO;
+
 	if (regnum == RTMDIO_PAGE_SELECT && ctrl->page[addr] != ctrl->cfg->raw_page)
 		return ctrl->page[addr];
 
