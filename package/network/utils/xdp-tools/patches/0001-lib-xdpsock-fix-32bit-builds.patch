@@ -1,0 +1,43 @@
+From 741155b26c7b0b5797bd8af758cc3060e578a774 Mon Sep 17 00:00:00 2001
+From: Luca Boccassi <luca.boccassi@gmail.com>
+Date: Sat, 10 Jan 2026 12:08:47 +0100
+Subject: [PATCH] lib/xdpsock: fix 32bit builds
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+xdpsock.c: In function ‘xsk_validate_opts’:
+xdpsock.c:1887:25: error: format ‘%lu’ expects argument of type ‘long unsigned int’, but argument 4 has type ‘unsigned int’ [-Werror=format=]
+ 1887 |                 pr_warn("TX packet size %d less than minimum %lu bytes when timestamps are enabled\n",
+      |                         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+logging.h:22:38: note: in definition of macro ‘__pr’
+   22 |                 logging_print(level, fmt, ##__VA_ARGS__); \
+      |                                      ^~~
+xdpsock.c:1887:17: note: in expansion of macro ‘pr_warn’
+ 1887 |                 pr_warn("TX packet size %d less than minimum %lu bytes when timestamps are enabled\n",
+      |                 ^~~~~~~
+xdpsock.c:1887:64: note: format string is defined here
+ 1887 |                 pr_warn("TX packet size %d less than minimum %lu bytes when timestamps are enabled\n",
+      |                                                              ~~^
+      |                                                                |
+      |                                                                long unsigned int
+      |                                                              %u
+
+Follow-up for eff891c0bb54a8c3f4a93164d5cdf5c94b25b282
+
+Signed-off-by: Luca Boccassi <luca.boccassi@gmail.com>
+---
+ lib/util/xdpsock.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/lib/util/xdpsock.c
++++ b/lib/util/xdpsock.c
+@@ -1884,7 +1884,7 @@ int xsk_validate_opts(const struct xsk_o
+ 		return -EINVAL;
+ 	}
+ 	if (opt->timestamp && opt->tx_pkt_size < PKTGEN_SIZE_MIN(opt)) {
+-		pr_warn("TX packet size %d less than minimum %lu bytes when timestamps are enabled\n",
++		pr_warn("TX packet size %d less than minimum %zu bytes when timestamps are enabled\n",
+ 			opt->tx_pkt_size, PKTGEN_SIZE_MIN(opt));
+ 		return -EINVAL;
+ 	}
