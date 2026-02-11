@@ -3630,7 +3630,6 @@ static int rtpcs_931x_sds_config_fiber_1g(struct rtpcs_serdes *sds)
 {
 	rtpcs_sds_write_bits(sds, 0x43, 0x12, 15, 14, 0x0);
 
-	rtpcs_sds_write_bits(sds, 0x42, 0x0, 12, 12, 0x1);
 	rtpcs_sds_write_bits(sds, 0x42, 0x0, 6, 6, 0x1);
 	rtpcs_sds_write_bits(sds, 0x42, 0x0, 13, 13, 0x0);
 
