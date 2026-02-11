@@ -138,8 +138,9 @@ huasifei,ws1208v2)
 	ucidef_set_led_netdev "wwan0" "wwan0" "green:cellular" "wwan0" "link tx rx"
 	;;
 keenetic,kn-1910|\
-keenetic,kn-3010)
-	ucidef_set_led_netdev "internet" "internet" "green:internet" "wan"
+keenetic,kn-3010|\
+keenetic,kn-3013)
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
 	;;
 linksys,e5600)
 	ucidef_set_led_netdev "wan" "wan link" "blue:wan" "wan" "link"
