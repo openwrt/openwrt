@@ -129,6 +129,7 @@ $(curdir)/index: FORCE
 	@echo Generating package index...
 ifneq ($(CONFIG_USE_APK),)
 	@for d in $(PACKAGE_SUBDIRS); do \
+		set -e; \
 		mkdir -p $$d; \
 		cd $$d || continue; \
 		ls *.apk >/dev/null 2>&1 || continue; \
