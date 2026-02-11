@@ -77,7 +77,6 @@ static nvram_tuple_t * _nvram_realloc( nvram_handle_t *h, nvram_tuple_t *t,
 			return NULL;
 
 		/* Copy name */
-		t->name = (char *) &t[1];
 		strcpy(t->name, name);
 
 		t->value = NULL;
@@ -242,9 +241,9 @@ nvram_tuple_t * nvram_getall(nvram_handle_t *h)
 
 	for (i = 0; i < NVRAM_ARRAYSIZE(h->nvram_hash); i++) {
 		for (t = h->nvram_hash[i]; t; t = t->next) {
-			if( (x = (nvram_tuple_t *) malloc(sizeof(nvram_tuple_t))) != NULL )
+			if( (x = malloc(sizeof(*x) + strlen(t->name) + 1)) != NULL )
 			{
-				x->name  = t->name;
+				strcpy(x->name, t->name);
 				x->value = t->value;
 				x->next  = l;
 				l = x;
