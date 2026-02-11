@@ -10,6 +10,12 @@ curdir:=package
 include $(INCLUDE_DIR)/feeds.mk
 include $(INCLUDE_DIR)/rootfs.mk
 
+ifeq ($(CONFIG_TARGET_IMAGES_PIGZ),y)
+  GZIPCMD:=pigz
+else
+  GZIPCMD:=gzip
+endif
+
 -include $(TMP_DIR)/.packagedeps
 package-y += kernel/linux
 $(curdir)/autoremove:=1
@@ -153,7 +159,7 @@ else
 			{ echo ""; echo ""; } >> Packages;; \
 		esac; \
 		$(SCRIPT_DIR)/make-index-json.py -f opkg -a "$(ARCH_PACKAGES)" Packages > index.json; \
-		gzip -9nc Packages > Packages.gz; \
+		$(GZIPCMD) -9nc Packages > Packages.gz; \
 	); done
 ifdef CONFIG_SIGNED_PACKAGES
 	@echo Signing package index...
