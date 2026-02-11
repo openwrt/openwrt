@@ -1,0 +1,229 @@
+From e51b27438a10391fdc94dd2046d9ffa9c2679c74 Mon Sep 17 00:00:00 2001
+From: Marc Zyngier <maz@kernel.org>
+Date: Tue, 13 May 2025 18:28:11 +0100
+Subject: [PATCH] irqchip: Make irq-msi-lib.h globally available
+
+Move irq-msi-lib.h into include/linux/irqchip, making it available
+to compilation units outside of drivers/irqchip.
+
+This requires some churn in drivers to fetch it from the new location,
+generated using this script:
+
+	git grep -l -w \"irq-msi-lib.h\" | \
+	xargs sed -i -e 's:"irq-msi-lib.h":\<linux/irqchip/irq-msi-lib.h\>:'
+
+Signed-off-by: Marc Zyngier <maz@kernel.org>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Link: https://lore.kernel.org/all/20250513172819.2216709-2-maz@kernel.org
+---
+ drivers/irqchip/irq-bcm2712-mip.c                | 2 +-
+ drivers/irqchip/irq-gic-v2m.c                    | 2 +-
+ drivers/irqchip/irq-gic-v3-its-msi-parent.c      | 2 +-
+ drivers/irqchip/irq-gic-v3-its.c                 | 2 +-
+ drivers/irqchip/irq-gic-v3-mbi.c                 | 2 +-
+ drivers/irqchip/irq-imx-mu-msi.c                 | 2 +-
+ drivers/irqchip/irq-loongarch-avec.c             | 2 +-
+ drivers/irqchip/irq-loongson-pch-msi.c           | 2 +-
+ drivers/irqchip/irq-msi-lib.c                    | 2 +-
+ drivers/irqchip/irq-mvebu-gicp.c                 | 2 +-
+ drivers/irqchip/irq-mvebu-icu.c                  | 2 +-
+ drivers/irqchip/irq-mvebu-odmi.c                 | 2 +-
+ drivers/irqchip/irq-mvebu-sei.c                  | 2 +-
+ drivers/irqchip/irq-riscv-imsic-platform.c       | 2 +-
+ drivers/irqchip/irq-sg2042-msi.c                 | 2 +-
+ {drivers => include/linux}/irqchip/irq-msi-lib.h | 6 +++---
+ 16 files changed, 18 insertions(+), 18 deletions(-)
+ rename {drivers => include/linux}/irqchip/irq-msi-lib.h (84%)
+
+--- a/drivers/irqchip/irq-gic-v2m.c
++++ b/drivers/irqchip/irq-gic-v2m.c
+@@ -26,7 +26,7 @@
+ #include <linux/irqchip/arm-gic.h>
+ #include <linux/irqchip/arm-gic-common.h>
+ 
+-#include "irq-msi-lib.h"
++#include <linux/irqchip/irq-msi-lib.h>
+ 
+ /*
+ * MSI_TYPER:
+--- a/drivers/irqchip/irq-gic-v3-its-msi-parent.c
++++ b/drivers/irqchip/irq-gic-v3-its-msi-parent.c
+@@ -8,7 +8,7 @@
+ #include <linux/pci.h>
+ 
+ #include "irq-gic-common.h"
+-#include "irq-msi-lib.h"
++#include <linux/irqchip/irq-msi-lib.h>
+ 
+ #define ITS_MSI_FLAGS_REQUIRED  (MSI_FLAG_USE_DEF_DOM_OPS |	\
+ 				 MSI_FLAG_USE_DEF_CHIP_OPS |	\
+--- a/drivers/irqchip/irq-gic-v3-its.c
++++ b/drivers/irqchip/irq-gic-v3-its.c
+@@ -38,7 +38,7 @@
+ #include <asm/exception.h>
+ 
+ #include "irq-gic-common.h"
+-#include "irq-msi-lib.h"
++#include <linux/irqchip/irq-msi-lib.h>
+ 
+ #define ITS_FLAGS_CMDQ_NEEDS_FLUSHING		(1ULL << 0)
+ #define ITS_FLAGS_WORKAROUND_CAVIUM_22375	(1ULL << 1)
+--- a/drivers/irqchip/irq-gic-v3-mbi.c
++++ b/drivers/irqchip/irq-gic-v3-mbi.c
+@@ -18,7 +18,7 @@
+ 
+ #include <linux/irqchip/arm-gic-v3.h>
+ 
+-#include "irq-msi-lib.h"
++#include <linux/irqchip/irq-msi-lib.h>
+ 
+ struct mbi_range {
+ 	u32			spi_start;
+--- a/drivers/irqchip/irq-imx-mu-msi.c
++++ b/drivers/irqchip/irq-imx-mu-msi.c
+@@ -24,7 +24,7 @@
+ #include <linux/pm_domain.h>
+ #include <linux/spinlock.h>
+ 
+-#include "irq-msi-lib.h"
++#include <linux/irqchip/irq-msi-lib.h>
+ 
+ #define IMX_MU_CHANS            4
+ 
+--- a/drivers/irqchip/irq-loongarch-avec.c
++++ b/drivers/irqchip/irq-loongarch-avec.c
+@@ -18,7 +18,7 @@
+ #include <asm/loongarch.h>
+ #include <asm/setup.h>
+ 
+-#include "irq-msi-lib.h"
++#include <linux/irqchip/irq-msi-lib.h>
+ #include "irq-loongson.h"
+ 
+ #define VECTORS_PER_REG		64
+--- a/drivers/irqchip/irq-loongson-pch-msi.c
++++ b/drivers/irqchip/irq-loongson-pch-msi.c
+@@ -15,7 +15,7 @@
+ #include <linux/pci.h>
+ #include <linux/slab.h>
+ 
+-#include "irq-msi-lib.h"
++#include <linux/irqchip/irq-msi-lib.h>
+ #include "irq-loongson.h"
+ 
+ static int nr_pics;
+--- a/drivers/irqchip/irq-msi-lib.c
++++ b/drivers/irqchip/irq-msi-lib.c
+@@ -4,7 +4,7 @@
+ 
+ #include <linux/export.h>
+ 
+-#include "irq-msi-lib.h"
++#include <linux/irqchip/irq-msi-lib.h>
+ 
+ /**
+  * msi_lib_init_dev_msi_info - Domain info setup for MSI domains
+--- a/drivers/irqchip/irq-mvebu-gicp.c
++++ b/drivers/irqchip/irq-mvebu-gicp.c
+@@ -17,7 +17,7 @@
+ #include <linux/of_platform.h>
+ #include <linux/platform_device.h>
+ 
+-#include "irq-msi-lib.h"
++#include <linux/irqchip/irq-msi-lib.h>
+ 
+ #include <dt-bindings/interrupt-controller/arm-gic.h>
+ 
+--- a/drivers/irqchip/irq-mvebu-icu.c
++++ b/drivers/irqchip/irq-mvebu-icu.c
+@@ -20,7 +20,7 @@
+ #include <linux/of_platform.h>
+ #include <linux/platform_device.h>
+ 
+-#include "irq-msi-lib.h"
++#include <linux/irqchip/irq-msi-lib.h>
+ 
+ #include <dt-bindings/interrupt-controller/mvebu-icu.h>
+ 
+--- a/drivers/irqchip/irq-mvebu-odmi.c
++++ b/drivers/irqchip/irq-mvebu-odmi.c
+@@ -18,7 +18,7 @@
+ #include <linux/of_address.h>
+ #include <linux/slab.h>
+ 
+-#include "irq-msi-lib.h"
++#include <linux/irqchip/irq-msi-lib.h>
+ 
+ #include <dt-bindings/interrupt-controller/arm-gic.h>
+ 
+--- a/drivers/irqchip/irq-mvebu-sei.c
++++ b/drivers/irqchip/irq-mvebu-sei.c
+@@ -14,7 +14,7 @@
+ #include <linux/of_irq.h>
+ #include <linux/of_platform.h>
+ 
+-#include "irq-msi-lib.h"
++#include <linux/irqchip/irq-msi-lib.h>
+ 
+ /* Cause register */
+ #define GICP_SECR(idx)		(0x0  + ((idx) * 0x4))
+--- a/drivers/irqchip/irq-msi-lib.h
++++ /dev/null
+@@ -1,27 +0,0 @@
+-// SPDX-License-Identifier: GPL-2.0-only
+-// Copyright (C) 2022 Linutronix GmbH
+-// Copyright (C) 2022 Intel
+-
+-#ifndef _DRIVERS_IRQCHIP_IRQ_MSI_LIB_H
+-#define _DRIVERS_IRQCHIP_IRQ_MSI_LIB_H
+-
+-#include <linux/bits.h>
+-#include <linux/irqdomain.h>
+-#include <linux/msi.h>
+-
+-#ifdef CONFIG_PCI_MSI
+-#define MATCH_PCI_MSI		BIT(DOMAIN_BUS_PCI_MSI)
+-#else
+-#define MATCH_PCI_MSI		(0)
+-#endif
+-
+-#define MATCH_PLATFORM_MSI	BIT(DOMAIN_BUS_PLATFORM_MSI)
+-
+-int msi_lib_irq_domain_select(struct irq_domain *d, struct irq_fwspec *fwspec,
+-			      enum irq_domain_bus_token bus_token);
+-
+-bool msi_lib_init_dev_msi_info(struct device *dev, struct irq_domain *domain,
+-			       struct irq_domain *real_parent,
+-			       struct msi_domain_info *info);
+-
+-#endif /* _DRIVERS_IRQCHIP_IRQ_MSI_LIB_H */
+--- /dev/null
++++ b/include/linux/irqchip/irq-msi-lib.h
+@@ -0,0 +1,27 @@
++// SPDX-License-Identifier: GPL-2.0-only
++// Copyright (C) 2022 Linutronix GmbH
++// Copyright (C) 2022 Intel
++
++#ifndef _IRQCHIP_IRQ_MSI_LIB_H
++#define _IRQCHIP_IRQ_MSI_LIB_H
++
++#include <linux/bits.h>
++#include <linux/irqdomain.h>
++#include <linux/msi.h>
++
++#ifdef CONFIG_PCI_MSI
++#define MATCH_PCI_MSI		BIT(DOMAIN_BUS_PCI_MSI)
++#else
++#define MATCH_PCI_MSI		(0)
++#endif
++
++#define MATCH_PLATFORM_MSI	BIT(DOMAIN_BUS_PLATFORM_MSI)
++
++int msi_lib_irq_domain_select(struct irq_domain *d, struct irq_fwspec *fwspec,
++			      enum irq_domain_bus_token bus_token);
++
++bool msi_lib_init_dev_msi_info(struct device *dev, struct irq_domain *domain,
++			       struct irq_domain *real_parent,
++			       struct msi_domain_info *info);
++
++#endif /* _IRQCHIP_IRQ_MSI_LIB_H */
