@@ -1,34 +1,57 @@
-From f85e675d7be222d88246bfdb42a1faac92f1eb63 Mon Sep 17 00:00:00 2001
+From 2bd435e8b2da2047ea0c5bb9b9af96bc6af2f8cd Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
 Date: Wed, 28 May 2025 03:18:32 +0200
-Subject: [PATCH 2/2] airoha: add default configuration
+Subject: [PATCH 22/24] airoha: add default configuration
 
 Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 ---
  configs/an7581_evb_defconfig | 2 ++
  configs/an7583_evb_defconfig | 2 ++
+ configs/en7523_evb_defconfig | 2 ++
  defenvs/an7581_rfb_env       | 4 ++++
  defenvs/an7583_rfb_env       | 4 ++++
- 4 files changed, 12 insertions(+)
+ defenvs/en7523_rfb_env       | 4 ++++
+ 6 files changed, 18 insertions(+)
  create mode 100644 defenvs/an7581_rfb_env
  create mode 100644 defenvs/an7583_rfb_env
+ create mode 100644 defenvs/en7523_rfb_env
 
+diff --git a/configs/an7581_evb_defconfig b/configs/an7581_evb_defconfig
+index 05e37d04681..7633cb7ac96 100644
 --- a/configs/an7581_evb_defconfig
 +++ b/configs/an7581_evb_defconfig
-@@ -94,3 +94,5 @@ CONFIG_MTD_UBI_BEB_LIMIT=20
+@@ -98,4 +98,6 @@ CONFIG_MTD_UBI_BEB_LIMIT=20
  CONFIG_UBI_BLOCK=y
  # CONFIG_UBIFS_SILENCE_MSG is not set
  # CONFIG_UBIFS_SILENCE_DEBUG_DUMP is not set
 +CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
 +CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/an7581_rfb_env"
+ CONFIG_SHA512=y
+diff --git a/configs/an7583_evb_defconfig b/configs/an7583_evb_defconfig
+index 663d1ec52ae..c69cf353ffa 100644
 --- a/configs/an7583_evb_defconfig
 +++ b/configs/an7583_evb_defconfig
-@@ -96,3 +96,5 @@ CONFIG_MTD_UBI_BEB_LIMIT=20
+@@ -97,4 +97,6 @@ CONFIG_MTD_UBI_BEB_LIMIT=20
  CONFIG_UBI_BLOCK=y
  # CONFIG_UBIFS_SILENCE_MSG is not set
  # CONFIG_UBIFS_SILENCE_DEBUG_DUMP is not set
 +CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
 +CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/an7583_rfb_env"
+ CONFIG_SHA512=y
+diff --git a/configs/en7523_evb_defconfig b/configs/en7523_evb_defconfig
+index 4d01e3f54fe..8febb6cabdd 100644
+--- a/configs/en7523_evb_defconfig
++++ b/configs/en7523_evb_defconfig
+@@ -79,4 +79,6 @@ CONFIG_MTD_UBI_BEB_LIMIT=20
+ CONFIG_UBI_BLOCK=y
+ # CONFIG_UBIFS_SILENCE_MSG is not set
+ # CONFIG_UBIFS_SILENCE_DEBUG_DUMP is not set
++CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/en7523_rfb_env"
+ CONFIG_SHA512=y
+diff --git a/defenvs/an7581_rfb_env b/defenvs/an7581_rfb_env
+new file mode 100644
+index 00000000000..716ddc321e2
 --- /dev/null
 +++ b/defenvs/an7581_rfb_env
 @@ -0,0 +1,4 @@
@@ -36,6 +59,9 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +ipaddr=192.168.1.1
 +serverip=192.168.1.10
 +bootargs=ubi.mtd=ubi root=/dev/ubiblock0_5 rootwait
+diff --git a/defenvs/an7583_rfb_env b/defenvs/an7583_rfb_env
+new file mode 100644
+index 00000000000..716ddc321e2
 --- /dev/null
 +++ b/defenvs/an7583_rfb_env
 @@ -0,0 +1,4 @@
@@ -43,3 +69,16 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +ipaddr=192.168.1.1
 +serverip=192.168.1.10
 +bootargs=ubi.mtd=ubi root=/dev/ubiblock0_5 rootwait
+diff --git a/defenvs/en7523_rfb_env b/defenvs/en7523_rfb_env
+new file mode 100644
+index 00000000000..716ddc321e2
+--- /dev/null
++++ b/defenvs/en7523_rfb_env
+@@ -0,0 +1,4 @@
++loadaddr=0x81800000
++ipaddr=192.168.1.1
++serverip=192.168.1.10
++bootargs=ubi.mtd=ubi root=/dev/ubiblock0_5 rootwait
+-- 
+2.51.0
+

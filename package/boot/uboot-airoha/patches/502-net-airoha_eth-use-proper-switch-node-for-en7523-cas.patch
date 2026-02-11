@@ -1,0 +1,39 @@
+From 54e56dd99f1c00eae7be5ca8c37149b8671f25d8 Mon Sep 17 00:00:00 2001
+From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Date: Sat, 31 Jan 2026 01:06:24 +0300
+Subject: [PATCH 12/24] net: airoha_eth: use proper switch node for en7523 case
+
+Commit d2145a89bcf6 ("net: airoha: bind MDIO controller on Ethernet load")
+uses "airoha,en7581-switch" dts node for finding MDIO childs. This is wrong
+for EN7523 SoC. The correct node name should be used instead.
+
+Fixes: d2145a89bcf6 ("net: airoha: bind MDIO controller on Ethernet load")
+Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+---
+ drivers/net/airoha_eth.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/airoha_eth.c b/drivers/net/airoha_eth.c
+index 7be4f3c074f..f8d7235146d 100644
+--- a/drivers/net/airoha_eth.c
++++ b/drivers/net/airoha_eth.c
+@@ -1067,6 +1067,7 @@ static int arht_eth_write_hwaddr(struct udevice *dev)
+ 
+ static int airoha_eth_bind(struct udevice *dev)
+ {
++	struct airoha_eth_soc_data *data = (void *)dev_get_driver_data(dev);
+ 	ofnode switch_node, mdio_node;
+ 	struct udevice *mdio_dev;
+ 	int ret = 0;
+@@ -1075,7 +1076,7 @@ static int airoha_eth_bind(struct udevice *dev)
+ 		return 0;
+ 
+ 	switch_node = ofnode_by_compatible(ofnode_null(),
+-					   "airoha,en7581-switch");
++					   data->switch_compatible);
+ 	if (!ofnode_valid(switch_node)) {
+ 		debug("Warning: missing switch node\n");
+ 		return 0;
+-- 
+2.51.0
+
