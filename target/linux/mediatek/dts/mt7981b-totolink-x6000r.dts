@@ -72,6 +72,10 @@
 	status = "okay";
 };
 
+&watchdog {
+	status = "okay";
+};
+
 &eth {
 	pinctrl-names = "default";
 	pinctrl-0 = <&mdio_pins &gbe_led0_pins &gbe_led1_pins>;
@@ -92,7 +96,7 @@
 		};
 	};
 
-	mac@1 {
+	gmac1: mac@1 {
 		compatible = "mediatek,eth-mac";
 		reg = <1>;
 		phy-mode = "gmii";
