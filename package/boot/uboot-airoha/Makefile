@@ -1,8 +1,8 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_VERSION:=2025.10
-PKG_HASH:=b4f032848e56cc8f213ad59f9132c084dbbb632bc29176d024e58220e0efdf4a
+PKG_VERSION:=2026.01
+PKG_HASH:=b60d5865cefdbc75da8da4156c56c458e00de75a49b80c1a2e58a96e30ad0d54
 PKG_BUILD_DEPENDS:=arm-trusted-firmware-tools/host
 
 UBOOT_USE_INTREE_DTC:=1
@@ -14,6 +14,16 @@ include $(INCLUDE_DIR)/host-build.mk
 define U-Boot/Default
   BUILD_TARGET:=airoha
   FIP_COMPRESS:=1
+endef
+
+define U-Boot/en7523_rfb
+  NAME:=EN7523 Reference Board
+  UBOOT_CONFIG:=en7523_evb
+  BUILD_DEVICES:=airoha_en7523-evb
+  BUILD_SUBTARGET:=en7523
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_IMAGE:=en7523-bl2.bin
+  BL31_IMAGE:=en7523-bl31.bin
 endef
 
 define U-Boot/an7581_rfb
@@ -37,6 +47,7 @@ define U-Boot/an7583_rfb
 endef
 
 UBOOT_TARGETS := \
+	en7523_rfb \
 	an7581_rfb \
 	an7583_rfb
 

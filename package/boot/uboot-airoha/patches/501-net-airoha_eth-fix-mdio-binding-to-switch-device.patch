@@ -1,0 +1,55 @@
+From 967084a19cf6aef3a5f2a43d758e93ae1fadebbf Mon Sep 17 00:00:00 2001
+From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Date: Sat, 31 Jan 2026 01:06:23 +0300
+Subject: [PATCH 11/24] net: airoha_eth: fix mdio binding to switch device
+
+Commit d2145a89bcf6 ("net: airoha: bind MDIO controller on Ethernet load")
+refers to non-present CONFIG_MDIO_MT7531 and non-present "mt7531-mdio"
+driver. It should use CONFIG_MDIO_MT7531_MMIO and "mt7531-mdio-mmio"
+instead.
+
+Fixes: d2145a89bcf6 ("net: airoha: bind MDIO controller on Ethernet load")
+Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+---
+ drivers/net/Kconfig      | 2 +-
+ drivers/net/airoha_eth.c | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/net/Kconfig b/drivers/net/Kconfig
+index f382a7752d5..51663580bdc 100644
+--- a/drivers/net/Kconfig
++++ b/drivers/net/Kconfig
+@@ -126,7 +126,7 @@ config AIROHA_ETH
+ 	depends on ARCH_AIROHA
+ 	select PHYLIB
+ 	select DM_RESET
+-	select MDIO_MT7531
++	select MDIO_MT7531_MMIO
+ 	help
+ 	  This Driver support Airoha Ethernet QDMA Driver
+ 	  Say Y to enable support for the Airoha Ethernet QDMA.
+diff --git a/drivers/net/airoha_eth.c b/drivers/net/airoha_eth.c
+index 661b6ac19f0..7be4f3c074f 100644
+--- a/drivers/net/airoha_eth.c
++++ b/drivers/net/airoha_eth.c
+@@ -1071,7 +1071,7 @@ static int airoha_eth_bind(struct udevice *dev)
+ 	struct udevice *mdio_dev;
+ 	int ret = 0;
+ 
+-	if (!CONFIG_IS_ENABLED(MDIO_MT7531))
++	if (!CONFIG_IS_ENABLED(MDIO_MT7531_MMIO))
+ 		return 0;
+ 
+ 	switch_node = ofnode_by_compatible(ofnode_null(),
+@@ -1087,7 +1087,7 @@ static int airoha_eth_bind(struct udevice *dev)
+ 		return 0;
+ 	}
+ 
+-	ret = device_bind_driver_to_node(dev, "mt7531-mdio", "mdio",
++	ret = device_bind_driver_to_node(dev, "mt7531-mdio-mmio", "mdio",
+ 					 mdio_node, &mdio_dev);
+ 	if (ret)
+ 		debug("Warning: failed to bind mdio controller\n");
+-- 
+2.51.0
+
