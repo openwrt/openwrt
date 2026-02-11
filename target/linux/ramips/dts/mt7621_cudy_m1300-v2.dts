@@ -63,7 +63,9 @@
 	flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <10000000>;
+		spi-max-frequency = <50000000>;
+		m25p,fast-read;
+		broken-flash-reset;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -167,28 +169,29 @@
 
 
 &gmac0 {
+	status = "okay";
 	nvmem-cells = <&macaddr_bdinfo_de00 0>;
 	nvmem-cell-names = "mac-address";
 };
 
 &gmac1 {
-	status = "okay";
-	label = "wan";
-	phy-handle = <&ethphy4>;
-
-	nvmem-cells = <&macaddr_bdinfo_de00 2>;
-	nvmem-cell-names = "mac-address";
-};
-
-&ethphy4 {
-	/delete-property/ interrupts;
+	status = "disabled";
 };
 
 &switch0 {
 	ports {
 		port@3 {
 			status = "okay";
+			label = "wan";
+			nvmem-cells = <&macaddr_bdinfo_de00 2>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		port@4 {
+			status = "okay";
 			label = "lan";
+			nvmem-cells = <&macaddr_bdinfo_de00 0>;
+			nvmem-cell-names = "mac-address";
 		};
 	};
 };
