@@ -90,7 +90,7 @@ void welcome(void)
 	board_get_system(system, sizeof(system));
 
 	printf("\nrt-loader\n");
-	printf("Running on %s with %dMB\n", system, board_get_memory() >> 20);
+	printf("Running on %s SoC with %d MB\n", system, board_get_memory() >> 20);
 }
 
 void decompress_error(char *x)
