@@ -1,0 +1,29 @@
+From c8d2c4c3beb5fd27a041744f0f9a6b6d5c4e1ebe Mon Sep 17 00:00:00 2001
+From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Date: Wed, 11 Feb 2026 03:26:13 +0300
+Subject: [PATCH 19/24] configs: an7583: add mii/mdio support
+
+This enables mdio/mii command support.
+
+Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu
+---
+ configs/an7583_evb_defconfig | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/configs/an7583_evb_defconfig b/configs/an7583_evb_defconfig
+index d1893fff398..41d98bab5de 100644
+--- a/configs/an7583_evb_defconfig
++++ b/configs/an7583_evb_defconfig
+@@ -65,6 +65,9 @@ CONFIG_SPI_FLASH_STMICRO=y
+ CONFIG_SPI_FLASH_WINBOND=y
+ CONFIG_SPI_FLASH_MTD=y
+ CONFIG_AIROHA_ETH=y
++CONFIG_DM_MDIO=y
++CONFIG_CMD_MII=y
++CONFIG_CMD_MDIO=y
+ CONFIG_PHY=y
+ CONFIG_PINCTRL=y
+ CONFIG_PINCONF=y
+-- 
+2.51.0
+
