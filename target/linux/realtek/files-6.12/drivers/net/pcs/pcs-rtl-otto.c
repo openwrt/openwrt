@@ -179,6 +179,7 @@ struct rtpcs_serdes {
 	enum rtpcs_sds_mode hw_mode;
 	u8 id;
 	u8 num_of_links;
+	bool first_start;
 
 	bool rx_pol_inv;
 	bool tx_pol_inv;
@@ -766,6 +767,20 @@ static int rtpcs_838x_setup_serdes(struct rtpcs_serdes *sds,
 	rtpcs_sds_write(sds, 0, 3, 0x7106);
 
 	rtpcs_838x_sds_power(sds, true);
+
+	/*
+	 * Run a switch queue reset after the first start of a SerDes. This recovers ports that
+	 * were already connected during boot and will not pass traffic. Sometimes the bug can
+	 * be seen in registers INGR_DBG_REG0-INGR_DBG_REG2 but this is quite erratic. The SDK
+	 * seems to have no issues because it starts all SerDes then PHYs and runs a queue reset
+	 * finally during NIC start.
+	 *
+	 * Of course this is totally wrong here and should be part of the DSA driver. But
+	 * implementing it over there requires more tricks than this (e.g. delayed work).
+	 */
+	if (sds->first_start)
+		regmap_write(sds->ctrl->map, RTPCS_838X_RST_GLB_CTRL_0, 0x4);
+
 	return 0;
 }
 
@@ -3779,6 +3794,8 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 		ret = ctrl->cfg->setup_serdes(sds, hw_mode);
 		if (ret < 0)
 			goto out;
+
+		sds->first_start = false;
 	} else {
 		dev_dbg(ctrl->dev, "SerDes %u already in mode %s, no change\n",
 			 sds->id, phy_modes(interface));
@@ -3915,9 +3932,10 @@ static int rtpcs_probe(struct platform_device *pdev)
 
 	for (i = 0; i < ctrl->cfg->serdes_count; i++) {
 		sds = &ctrl->serdes[i];
-		sds->ctrl = ctrl;
-		sds->id = i;
 
+		sds->ctrl = ctrl;
+		sds->first_start = true;
+		sds->id = i;
 		sds->ops = ctrl->cfg->sds_ops;
 	}
 
