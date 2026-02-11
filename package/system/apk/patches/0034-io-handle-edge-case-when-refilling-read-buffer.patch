@@ -1,0 +1,29 @@
+From 1e985a4444d8c9ab5a0804b555858dcf518b243a Mon Sep 17 00:00:00 2001
+From: Matt Merhar <mattmerhar@protonmail.com>
+Date: Wed, 11 Feb 2026 16:04:52 -0500
+Subject: [PATCH] io: handle edge case when refilling read buffer
+
+This caused failures when processing specific (< 0.1%) .apk files in
+the packages feed.
+
+It affected packages with a header size greater than the read buffer
+size of 128KB but less than 160KB (128KB + (128KB / 4)).
+
+In those cases, we'd attempt a 0 byte read, leading to APKE_EOF.
+---
+ src/io.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/src/io.c
++++ b/src/io.c
+@@ -120,6 +120,10 @@ ssize_t apk_istream_read_max(struct apk_
+ 			continue;
+ 		}
+ 
++		if (is->ptr - is->buf >= APK_ISTREAM_ALIGN_SYNC) {
++			is->ptr = is->end = is->buf + ((is->ptr - is->buf) % APK_ISTREAM_ALIGN_SYNC);
++		}
++
+ 		r = is->ops->read(is, is->ptr, is->buf + is->buf_size - is->ptr);
+ 		if (r <= 0) break;
+ 
