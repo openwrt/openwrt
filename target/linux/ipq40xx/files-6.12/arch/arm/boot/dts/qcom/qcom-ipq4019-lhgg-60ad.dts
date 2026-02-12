@@ -151,7 +151,7 @@
 		};
 
 		pinmux_cs {
-			function = "gpio";
+			function = "blsp_spi0";
 			pins = "gpio12";
 			bias-disable;
 			output-high;
@@ -166,7 +166,6 @@
 &blsp1_spi1 {
 	pinctrl-0 = <&spi_0_pins>;
 	pinctrl-names = "default";
-	cs-gpios = <&tlmm 12 GPIO_ACTIVE_LOW>;
 	status = "okay";
 
 	m25p80@0 {
