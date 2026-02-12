@@ -35,14 +35,9 @@ int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type
 
 #define NOTIFY_EVENTS	10
 #define NOTIFY_BLOCKS	10
-#define TX_EN		0x8
-#define RX_EN		0x4
-#define TX_EN_93XX	0x20
-#define RX_EN_93XX	0x10
 #define RX_TRUNCATE_EN_93XX BIT(6)
 #define RX_TRUNCATE_EN_83XX BIT(4)
 #define TX_PAD_EN_838X BIT(5)
-#define TX_DO		0x2
 #define WRAP		0x2
 #define RING_BUFFER	1600
 
@@ -590,7 +585,7 @@ static void rtl838x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 	rteth_enable_all_rx_irqs(ctrl);
 
 	/* Enable DMA, engine expects empty FCS field */
-	sw_w32_mask(0, RX_EN | TX_EN, ctrl->r->dma_if_ctrl);
+	sw_w32_mask(0, ctrl->r->tx_rx_enable, ctrl->r->dma_if_ctrl);
 
 	/* Restart TX/RX to CPU port */
 	sw_w32_mask(0x0, 0x3, ctrl->r->mac_l2_port_ctrl);
@@ -613,7 +608,7 @@ static void rtl839x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 	rteth_enable_all_rx_irqs(ctrl);
 
 	/* Enable DMA */
-	sw_w32_mask(0, RX_EN | TX_EN, ctrl->r->dma_if_ctrl);
+	sw_w32_mask(0, ctrl->r->tx_rx_enable, ctrl->r->dma_if_ctrl);
 
 	/* Restart TX/RX to CPU port, enable CRC checking */
 	sw_w32_mask(0x0, 0x3 | BIT(3), ctrl->r->mac_l2_port_ctrl);
@@ -648,7 +643,7 @@ static void rtl93xx_hw_en_rxtx(struct rteth_ctrl *ctrl)
 	rteth_enable_all_rx_irqs(ctrl);
 
 	/* Enable DMA */
-	sw_w32_mask(0, RX_EN_93XX | TX_EN_93XX, ctrl->r->dma_if_ctrl);
+	sw_w32_mask(0, ctrl->r->tx_rx_enable, ctrl->r->dma_if_ctrl);
 
 	/* Restart TX/RX to CPU port, enable CRC checking */
 	sw_w32_mask(0x0, 0x3 | BIT(4), ctrl->r->mac_l2_port_ctrl);
@@ -796,10 +791,7 @@ static void rtl838x_hw_stop(struct rteth_ctrl *ctrl)
 	sw_w32_mask(0x3, 0, ctrl->r->mac_l2_port_ctrl);
 
 	/* Disable traffic */
-	if (ctrl->r->family_id == RTL9300_FAMILY_ID || ctrl->r->family_id == RTL9310_FAMILY_ID)
-		sw_w32_mask(RX_EN_93XX | TX_EN_93XX, 0, ctrl->r->dma_if_ctrl);
-	else
-		sw_w32_mask(RX_EN | TX_EN, 0, ctrl->r->dma_if_ctrl);
+	sw_w32_mask(ctrl->r->tx_rx_enable, 0, ctrl->r->dma_if_ctrl);
 	mdelay(200); /* Test, whether this is needed */
 
 	/* Block all ports */
@@ -1024,7 +1016,7 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *netdev)
 	if (ctrl->r->family_id == RTL8380_FAMILY_ID) {
 		for (int i = 0; i < 10; i++) {
 			u32 val = sw_r32(ctrl->r->dma_if_ctrl);
-			if ((val & 0xc) == 0xc)
+			if ((val & ctrl->r->tx_rx_enable) == ctrl->r->tx_rx_enable)
 				break;
 		}
 	}
@@ -1425,6 +1417,7 @@ static const struct rteth_config rteth_838x_cfg = {
 	.family_id = RTL8380_FAMILY_ID,
 	.cpu_port = RTETH_838X_CPU_PORT,
 	.rx_rings = 8,
+	.tx_rx_enable = 0xc,
 	.tx_trigger_mask = BIT(1),
 	.net_irq = rteth_83xx_net_irq,
 	.mac_l2_port_ctrl = RTETH_838X_MAC_L2_PORT_CTRL,
@@ -1473,6 +1466,7 @@ static const struct rteth_config rteth_839x_cfg = {
 	.family_id = RTL8390_FAMILY_ID,
 	.cpu_port = RTETH_839X_CPU_PORT,
 	.rx_rings = 8,
+	.tx_rx_enable = 0xc,
 	.tx_trigger_mask = BIT(1),
 	.net_irq = rteth_83xx_net_irq,
 	.mac_l2_port_ctrl = RTETH_839X_MAC_L2_PORT_CTRL,
@@ -1521,6 +1515,7 @@ static const struct rteth_config rteth_930x_cfg = {
 	.family_id = RTL9300_FAMILY_ID,
 	.cpu_port = RTETH_930X_CPU_PORT,
 	.rx_rings = 32,
+	.tx_rx_enable = 0x30,
 	.tx_trigger_mask = GENMASK(3, 2),
 	.net_irq = rteth_93xx_net_irq,
 	.mac_l2_port_ctrl = RTETH_930X_MAC_L2_PORT_CTRL,
@@ -1573,6 +1568,7 @@ static const struct rteth_config rteth_931x_cfg = {
 	.family_id = RTL9310_FAMILY_ID,
 	.cpu_port = RTETH_931X_CPU_PORT,
 	.rx_rings = 32,
+	.tx_rx_enable = 0x30,
 	.tx_trigger_mask = GENMASK(3, 2),
 	.net_irq = rteth_93xx_net_irq,
 	.mac_l2_port_ctrl = RTETH_931X_MAC_L2_PORT_CTRL,
