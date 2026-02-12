@@ -8,6 +8,7 @@
 #include <linux/etherdevice.h>
 #include <linux/interrupt.h>
 #include <linux/io.h>
+#include <linux/minmax.h>
 #include <linux/platform_device.h>
 #include <linux/sched.h>
 #include <linux/slab.h>
@@ -977,16 +978,15 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *netdev)
 	    skb->data[len - 3] < ctrl->r->cpu_port &&
 	    skb->data[len - 2] == 0x10 &&
 	    skb->data[len - 1] == 0x00) {
-		/* DSA tag, reuse space for CRC */
 		dest_port = skb->data[len - 3];
-		skb->data[len - 4] = skb->data[len - 3] = 0;
-		skb->data[len - 2] = skb->data[len - 1] = 0;
+		/* space will be reused for 4 byte layer 2 FCS */
 	} else {
-		/* No DSA tag, add space for CRC */
-		len += 4;
+		/* No DSA tag, add space for 4 byte layer 2 FCS */
+		len += ETH_FCS_LEN;
 	}
 
-	if (unlikely(skb_padto(skb, len))) {
+	len = max(ETH_ZLEN + ETH_FCS_LEN, len);
+	if (unlikely(skb_put_padto(skb, len))) {
 		netdev->stats.tx_errors++;
 		dev_warn(dev, "skb pad failed\n");
 
@@ -1005,7 +1005,7 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *netdev)
 		return NETDEV_TX_BUSY;
 	}
 
-	packet->dma = dma_map_single(dev, skb->data, skb->len, DMA_TO_DEVICE);
+	packet->dma = dma_map_single(dev, skb->data, len, DMA_TO_DEVICE);
 	if (unlikely(dma_mapping_error(dev, packet->dma))) {
 		dev_kfree_skb_any(skb);
 		netdev->stats.tx_errors++;
@@ -1017,12 +1017,6 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *netdev)
 		/* cleanup old data of this slot */
 		dma_unmap_single(dev, packet->dma, packet->skb->len, DMA_TO_DEVICE);
 		dev_kfree_skb_any(packet->skb);
-	}
-
-	if (ctrl->r->family_id == RTL8380_FAMILY_ID) {
-		/* On RTL8380 SoCs, small packet lengths being sent need adjustments */
-		if (len < ETH_ZLEN - 4)
-			len -= 4;
 	}
 
 	if (dest_port >= 0)
