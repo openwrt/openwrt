@@ -235,30 +235,17 @@ static void rteth_enable_all_rx_irqs(struct rteth_ctrl *ctrl)
 	sw_w32_mask(0, mask << shift, ctrl->r->dma_if_intr_msk + reg * 4);
 }
 
-/* On the RTL93XX, the RTL93XX_DMA_IF_RX_RING_CNTR track the fill level of
- * the rings. Writing x into these registers substracts x from its content.
- * When the content reaches the ring size, the ASIC no longer adds
- * packets to this receive queue.
- */
-static void rteth_83xx_update_counter(int r, int released)
+static void rteth_83xx_update_counter(struct rteth_ctrl *ctrl, int ring, int released)
 {
 	/* Free floating rings without space tracking */
 }
 
-static void rteth_930x_update_counter(int r, int released)
+static void rteth_93xx_update_counter(struct rteth_ctrl *ctrl, int ring, int released)
 {
-	u32 reg = rtl930x_dma_if_rx_ring_cntr(r);
-	int pos = (r % 3) * 10;
+	int pos = (ring % 3) * 10;
 
-	sw_w32(released << pos, reg);
-}
-
-static void rteth_931x_update_counter(int r, int released)
-{
-	u32 reg = rtl931x_dma_if_rx_ring_cntr(r);
-	int pos = (r % 3) * 10;
-
-	sw_w32(released << pos, reg);
+	/* writing x to the ring counter increases ring free space by x */
+	sw_w32(released << pos, ctrl->r->dma_if_rx_ring_cntr(ring));
 }
 
 struct dsa_tag {
@@ -1120,7 +1107,7 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 	}
 
 	spin_lock(&ctrl->rx_lock);
-	ctrl->r->update_counter(ring, work_done);
+	ctrl->r->update_counter(ctrl, ring, work_done);
 	dev->stats.rx_packets += rx_packets;
 	dev->stats.rx_bytes += rx_bytes;
 	spin_unlock(&ctrl->rx_lock);
@@ -1562,7 +1549,7 @@ static const struct rteth_config rteth_930x_cfg = {
 	.get_mac_tx_pause_sts = rtl930x_get_mac_tx_pause_sts,
 	.mac = RTL930X_MAC_L2_ADDR_CTRL,
 	.l2_tbl_flush_ctrl = RTL930X_L2_TBL_FLUSH_CTRL,
-	.update_counter = rteth_930x_update_counter,
+	.update_counter = rteth_93xx_update_counter,
 	.create_tx_header = rteth_930x_create_tx_header,
 	.decode_tag = rteth_930x_decode_tag,
 	.hw_reset = &rteth_93xx_hw_reset,
@@ -1614,7 +1601,7 @@ static const struct rteth_config rteth_931x_cfg = {
 	.get_mac_tx_pause_sts = rtl931x_get_mac_tx_pause_sts,
 	.mac = RTL931X_MAC_L2_ADDR_CTRL,
 	.l2_tbl_flush_ctrl = RTL931X_L2_TBL_FLUSH_CTRL,
-	.update_counter = rteth_931x_update_counter,
+	.update_counter = rteth_93xx_update_counter,
 	.create_tx_header = rteth_931x_create_tx_header,
 	.decode_tag = rteth_931x_decode_tag,
 	.hw_reset = &rteth_93xx_hw_reset,
