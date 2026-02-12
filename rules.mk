@@ -253,6 +253,11 @@ endif
 TARGET_LINKER?=bfd
 TARGET_LDFLAGS+= -fuse-ld=$(TARGET_LINKER)
 
+ifneq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
+TARGET_CFLAGS+= -idirafter $(STAGING_DIR)/usr/include
+TARGET_LDFLAGS+=-L$(STAGING_DIR)/usr/lib -Wl,-rpath-link,$(STAGING_DIR)/usr/lib
+endif
+
 TARGET_PATH_PKG:=$(STAGING_DIR)/host/bin:$(STAGING_DIR_HOSTPKG)/bin:$(TARGET_PATH)
 
 ifeq ($(CONFIG_SOFT_FLOAT),y)
