@@ -1,0 +1,43 @@
+From 77e187e7bae1269cb1623dc1fc064f8c88b83a03 Mon Sep 17 00:00:00 2001
+From: Pugemon <islavaivanov76@gmail.com>
+Date: Tue, 30 Jul 2024 14:27:45 +0300
+Subject: [PATCH] uboot-rockchip: Fix Orange Pi R1 Plus LTS Boot and Sysupgrade
+
+Orange Pi R1 Plus LTS don't have emmc (default mmc0 in rk3328-u-boot.dtsi)
+
+Because of this, during sysupgrade, the board cannot start up because the script that changes the boot_device to an available one does not trigger.
+
+In this patch, I am changing the alias of mmc0 from &emmc to &sdmmc. Thanks to this, the board starts correctly and sysupgrade is successfully performed.
+
+Also, thanks to this, it has become possible to save the u-boot environment using saveenv
+
+Signed-off-by: Pugemon <islavaivanov76@gmail.com>
+---
+ arch/arm/dts/rk3328-orangepi-r1-plus-lts-u-boot.dtsi | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/arch/arm/dts/rk3328-orangepi-r1-plus-lts-u-boot.dtsi b/arch/arm/dts/rk3328-orangepi-r1-plus-lts-u-boot.dtsi
+index b50c1332b8..eee55cbb3b 100644
+--- a/arch/arm/dts/rk3328-orangepi-r1-plus-lts-u-boot.dtsi
++++ b/arch/arm/dts/rk3328-orangepi-r1-plus-lts-u-boot.dtsi
+@@ -7,6 +7,17 @@
+ #include "rk3328-u-boot.dtsi"
+ #include "rk3328-sdram-lpddr3-666.dtsi"
+ 
++/ {
++	aliases {
++		mmc0 = &sdmmc;
++		spi0 = &spi0;
++	};
++
++	chosen {
++		u-boot,spl-boot-order = "same-as-spl", &sdmmc;
++	};
++};
++
+ &spi0 {
+ 	flash@0 {
+ 		bootph-pre-ram;
+-- 
+2.39.1.windows.1
+
