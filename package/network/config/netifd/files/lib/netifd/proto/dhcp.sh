@@ -67,7 +67,16 @@ proto_dhcp_setup() {
 	[ "$norelease" = 1 ] && norelease="" || norelease="-R"
 	[ -z "$clientid" ] && clientid="$(proto_dhcp_get_default_clientid "$iface")"
 	[ -n "$clientid" ] && clientid="-x 0x3d:${clientid//:/}"
-	[ -n "$vendorid" ] && append dhcpopts "-x 0x3c:$(echo -n "$vendorid" | hexdump -ve '1/1 "%02x"')"
+	if [ -n "$vendorid" ]; then
+	    if [ "" = "${vendorid//[0-9a-fA-F]/}" ] && \
+	       [ $(( ${#vendorid} % 2 )) -eq 0 ]; then
+	        # vendorid is ASCII-HEX payload, use directly
+	        append dhcpopts "-x 0x3c:$vendorid"
+	    else
+	        # vendorid is plain string, convert to ASCII-HEX
+	        append dhcpopts "-x 0x3c:$(printf '%s' "$vendorid" | hexdump -ve '1/1 "%02x"')"
+	    fi
+	fi
 	[ -n "$iface6rd" ] && proto_export "IFACE6RD=$iface6rd"
 	[ "$iface6rd" != 0 -a -f /lib/netifd/proto/6rd.sh ] && append dhcpopts "-O 212"
 	[ -n "$zone6rd" ] && proto_export "ZONE6RD=$zone6rd"
