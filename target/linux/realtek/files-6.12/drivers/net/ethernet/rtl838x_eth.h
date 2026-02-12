@@ -422,6 +422,7 @@ struct rteth_config {
 	int family_id;
 	int cpu_port;
 	int rx_rings;
+	int tx_trigger_mask;
 	irqreturn_t (*net_irq)(int irq, void *dev_id);
 	int mac_l2_port_ctrl;
 	int qm_pkt2cpu_intpri_map;
