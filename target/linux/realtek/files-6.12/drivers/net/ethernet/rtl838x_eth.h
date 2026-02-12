@@ -455,7 +455,7 @@ struct rteth_config {
 	bool (*decode_tag)(struct rteth_packet *h, struct dsa_tag *tag);
 	void (*hw_reset)(struct rteth_ctrl *ctrl);
 	int (*init_mac)(struct rteth_ctrl *ctrl);
-	void (*update_counter)(int r, int work_done);
+	void (*update_counter)(struct rteth_ctrl *ctrl, int ring, int released);
 	const struct net_device_ops *netdev_ops;
 };
 
