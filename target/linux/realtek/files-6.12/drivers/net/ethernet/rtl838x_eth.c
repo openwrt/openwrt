@@ -31,6 +31,7 @@ int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type
 #define RTETH_RX_RINGS		2
 #define RTETH_TX_RING_SIZE	16
 #define RTETH_TX_RINGS		2
+#define RTETH_TX_TRIGGER	0x16
 
 #define NOTIFY_EVENTS	10
 #define NOTIFY_BLOCKS	10
@@ -1041,11 +1042,9 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *netdev)
 		}
 	}
 
-	/* Tell switch to send data */
-	if (ctrl->r->family_id == RTL9310_FAMILY_ID || ctrl->r->family_id == RTL9300_FAMILY_ID)
-		sw_w32_mask(0, BIT(2 + ring), ctrl->r->dma_if_ctrl);
-	else
-		sw_w32_mask(0, TX_DO, ctrl->r->dma_if_ctrl);
+	/* issue SoC independent send for 1 or 2 triggers with some bit vodoo */
+	sw_w32_mask(0, (RTETH_TX_TRIGGER >> ring) & ctrl->r->tx_trigger_mask,
+		    ctrl->r->dma_if_ctrl);
 
 	netdev->stats.tx_packets++;
 	netdev->stats.tx_bytes += len;
@@ -1439,6 +1438,7 @@ static const struct rteth_config rteth_838x_cfg = {
 	.family_id = RTL8380_FAMILY_ID,
 	.cpu_port = RTETH_838X_CPU_PORT,
 	.rx_rings = 8,
+	.tx_trigger_mask = BIT(1),
 	.net_irq = rteth_83xx_net_irq,
 	.mac_l2_port_ctrl = RTETH_838X_MAC_L2_PORT_CTRL,
 	.qm_pkt2cpu_intpri_map = RTETH_838X_QM_PKT2CPU_INTPRI_MAP,
@@ -1486,6 +1486,7 @@ static const struct rteth_config rteth_839x_cfg = {
 	.family_id = RTL8390_FAMILY_ID,
 	.cpu_port = RTETH_839X_CPU_PORT,
 	.rx_rings = 8,
+	.tx_trigger_mask = BIT(1),
 	.net_irq = rteth_83xx_net_irq,
 	.mac_l2_port_ctrl = RTETH_839X_MAC_L2_PORT_CTRL,
 	.qm_pkt2cpu_intpri_map = RTETH_839X_QM_PKT2CPU_INTPRI_MAP,
@@ -1533,6 +1534,7 @@ static const struct rteth_config rteth_930x_cfg = {
 	.family_id = RTL9300_FAMILY_ID,
 	.cpu_port = RTETH_930X_CPU_PORT,
 	.rx_rings = 32,
+	.tx_trigger_mask = GENMASK(3, 2),
 	.net_irq = rteth_93xx_net_irq,
 	.mac_l2_port_ctrl = RTETH_930X_MAC_L2_PORT_CTRL,
 	.qm_rsn2cpuqid_ctrl = RTETH_930X_QM_RSN2CPUQID_CTRL_0,
@@ -1584,6 +1586,7 @@ static const struct rteth_config rteth_931x_cfg = {
 	.family_id = RTL9310_FAMILY_ID,
 	.cpu_port = RTETH_931X_CPU_PORT,
 	.rx_rings = 32,
+	.tx_trigger_mask = GENMASK(3, 2),
 	.net_irq = rteth_93xx_net_irq,
 	.mac_l2_port_ctrl = RTETH_931X_MAC_L2_PORT_CTRL,
 	.qm_rsn2cpuqid_ctrl = RTETH_931X_QM_RSN2CPUQID_CTRL_0,
