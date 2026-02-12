@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=binutils
 PKG_VERSION:=$(call qstrip,$(CONFIG_BINUTILS_VERSION))
-BIN_VERSION:=$(PKG_VERSION)
+BASE_VERSION:=$(subst $(space),.,$(wordlist 1,2,$(subst .,$(space),$(PKG_VERSION))))
 
 PKG_SOURCE_URL:=@GNU/binutils/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
@@ -34,7 +34,7 @@ endif
 
 HOST_BUILD_PARALLEL:=1
 
-PATCH_DIR:=./patches/$(PKG_VERSION)
+PATCH_DIR:=./patches/$(BASE_VERSION)
 
 include $(INCLUDE_DIR)/toolchain-build.mk
 
