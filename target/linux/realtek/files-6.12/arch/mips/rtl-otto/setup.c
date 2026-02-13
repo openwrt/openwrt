@@ -25,7 +25,7 @@
 #include <asm/prom.h>
 #include <asm/smp-ops.h>
 
-#include "mach-rtl83xx.h"
+#include "mach-rtl-otto.h"
 
 extern struct rtl83xx_soc_info soc_info;
 

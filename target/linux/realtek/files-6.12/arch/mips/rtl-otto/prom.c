@@ -15,7 +15,7 @@
 #include <asm/smp-ops.h>
 #include <linux/smp.h>
 
-#include <mach-rtl83xx.h>
+#include <mach-rtl-otto.h>
 
 #define RTL_SOC_BASE			((volatile void *) 0xB8000000)
 

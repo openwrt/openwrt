@@ -3,7 +3,7 @@
 #ifndef _RTL838X_H
 #define _RTL838X_H
 
-#include <asm/mach-rtl838x/mach-rtl83xx.h>
+#include <asm/mach-rtl-otto/mach-rtl-otto.h>
 #include <net/dsa.h>
 
 /* Register definition */

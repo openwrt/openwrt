@@ -2,7 +2,7 @@
 
 #include <net/dsa.h>
 #include <linux/delay.h>
-#include <asm/mach-rtl838x/mach-rtl83xx.h>
+#include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
 #include "rtl83xx.h"
 

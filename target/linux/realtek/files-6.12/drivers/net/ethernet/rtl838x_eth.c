@@ -20,7 +20,7 @@
 #include <net/dsa.h>
 #include <net/switchdev.h>
 
-#include <asm/mach-rtl838x/mach-rtl83xx.h>
+#include <asm/mach-rtl-otto/mach-rtl-otto.h>
 #include "rtl838x_eth.h"
 
 int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type_data);

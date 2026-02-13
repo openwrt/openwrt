@@ -6,7 +6,7 @@
 #include <linux/netdevice.h>
 #include <net/flow_offload.h>
 #include <linux/rhashtable.h>
-#include <asm/mach-rtl838x/mach-rtl83xx.h>
+#include <asm/mach-rtl-otto/mach-rtl-otto.h>
 
 #include "rtl83xx.h"
 #include "rtl838x.h"
