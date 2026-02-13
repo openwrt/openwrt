@@ -111,7 +111,7 @@ static enum template_field_id fixed_templates[N_FIXED_TEMPLATES][N_FIXED_FIELDS]
 	},
 };
 
-void rtl838x_print_matrix(void)
+void rtldsa_838x_print_matrix(void)
 {
 	unsigned volatile int *ptr8;
 
@@ -1720,6 +1720,7 @@ const struct rtldsa_config rtldsa_838x_cfg = {
 	.l2_port_new_salrn = rtl838x_l2_port_new_salrn,
 	.l2_port_new_sa_fwd = rtl838x_l2_port_new_sa_fwd,
 	.get_mirror_config = rtldsa_838x_get_mirror_config,
+	.print_matrix = rtldsa_838x_print_matrix,
 	.read_l2_entry_using_hash = rtl838x_read_l2_entry_using_hash,
 	.write_l2_entry_using_hash = rtl838x_write_l2_entry_using_hash,
 	.read_cam = rtl838x_read_cam,

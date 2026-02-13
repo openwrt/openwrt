@@ -544,11 +544,7 @@ static int rtldsa_83xx_setup(struct dsa_switch *ds)
 			priv->r->set_static_move_action(i, true);
 	}
 
-	if (priv->family_id == RTL8380_FAMILY_ID)
-		rtl838x_print_matrix();
-	else
-		rtl839x_print_matrix();
-
+	priv->r->print_matrix();
 	rtldsa_83xx_init_stats(priv);
 	rtldsa_init_counters(priv);
 
@@ -616,10 +612,7 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 	if (priv->family_id == RTL9310_FAMILY_ID)
 		rtldsa_931x_config_phy_ability_source(priv);
 
-	if (priv->family_id == RTL9300_FAMILY_ID)
-		rtl930x_print_matrix();
-	else if (priv->family_id == RTL9310_FAMILY_ID)
-		rtl931x_print_matrix();
+	priv->r->print_matrix();
 
 	/* TODO: Initialize statistics */
 	rtldsa_init_counters(priv);

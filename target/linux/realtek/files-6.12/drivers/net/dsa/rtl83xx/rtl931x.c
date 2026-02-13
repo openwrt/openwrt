@@ -385,7 +385,7 @@ irqreturn_t rtl931x_switch_irq(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-void rtl931x_print_matrix(void)
+void rtldsa_931x_print_matrix(void)
 {
 	struct table_reg *r = rtl_table_get(RTL9310_TBL_2, 1);
 
@@ -1845,6 +1845,7 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.get_mirror_config = rtldsa_931x_get_mirror_config,
 	.port_rate_police_add = rtldsa_931x_port_rate_police_add,
 	.port_rate_police_del = rtldsa_931x_port_rate_police_del,
+	.print_matrix = rtldsa_931x_print_matrix,
 	.read_l2_entry_using_hash = rtl931x_read_l2_entry_using_hash,
 	.write_l2_entry_using_hash = rtl931x_write_l2_entry_using_hash,
 	.read_cam = rtl931x_read_cam,
