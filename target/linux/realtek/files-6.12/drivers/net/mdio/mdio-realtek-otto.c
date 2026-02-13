@@ -199,8 +199,6 @@ struct rtmdio_config {
 };
 
 struct rtmdio_phy_info {
-	unsigned int phy_id;
-	bool phy_unknown;
 	int mac_type;
 	bool has_giga_lite;
 	bool has_res_reg;
@@ -604,10 +602,11 @@ static u32 rtmdio_get_phy_id(struct phy_device *phydev)
 	return phydev->phy_id;
 }
 
-static void rtmdio_get_phy_info(struct mii_bus *bus, int addr, struct rtmdio_phy_info *phyinfo)
+static int rtmdio_get_phy_info(struct mii_bus *bus, int addr, struct rtmdio_phy_info *phyinfo)
 {
 	struct phy_device *phydev = mdiobus_get_phy(bus, addr);
 	u32 phyid = rtmdio_get_phy_id(phydev);
+	int ret = 0;
 
 	/*
 	 * Depending on the attached PHY the polling mechanism must be fine tuned. Basically
@@ -641,9 +640,12 @@ static void rtmdio_get_phy_info(struct mii_bus *bus, int addr, struct rtmdio_phy
 		phyinfo->poll_lpa_1000 = RTMDIO_PHY_POLL_MMD(31, 0xa414, 11);
 		break;
 	default:
-		phyinfo->phy_unknown = true;
+		pr_warn("skip polling setup for unknown PHY %08x on port %d\n", phyid, addr);
+		ret = -EINVAL;
 		break;
 	}
+
+	return ret;
 }
 
 static int rtmdio_838x_reset(struct mii_bus *bus)
@@ -721,12 +723,8 @@ static void rtmdio_930x_setup_polling(struct mii_bus *bus)
 
 	/* Define PHY specific polling parameters */
 	for_each_port(ctrl, addr) {
-		rtmdio_get_phy_info(bus, addr, &phyinfo);
-		if (phyinfo.phy_unknown) {
-			pr_warn("skip polling setup for unknown PHY %08x on port %d\n",
-				phyinfo.phy_id, addr);
+		if (rtmdio_get_phy_info(bus, addr, &phyinfo))
 			continue;
-		}
 
 		/* port MAC type */
 		mask = addr > 23 ? 0x7 << ((addr - 24) * 3 + 12): 0x3 << ((addr / 4) * 2);
@@ -806,12 +804,8 @@ static void rtmdio_931x_setup_polling(struct mii_bus *bus)
 		int smi = ctrl->smi_bus[addr];
 		unsigned int mask, val;
 		
-		rtmdio_get_phy_info(bus, addr, &phyinfo);
-		if (phyinfo.phy_unknown) {
-			pr_warn("skip polling setup for unknown PHY %08x on port %d\n",
-				phyinfo.phy_id, addr);
+		if (rtmdio_get_phy_info(bus, addr, &phyinfo))
 			continue;
-		}
 
 		mask = val = 0;
 
