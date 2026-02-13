@@ -1,0 +1,82 @@
+From: Michael Lotz <mmlr@mlotz.ch>
+Subject: mtd: implement nvmem write support
+
+This adds mtd_nvmem_reg_write to handle nvmem writes to MTD devices.
+It is implemented as read-modify-write as needed for flash based
+storage. An erase cycle is performed on the erase blocks affected by the
+write. This is the same mechanism as used by mtdblock, but without any
+caching, as nvmem writes are not expected to be frequent or consist of
+multiple writes.
+
+Signed-off-by: Michael Lotz <mmlr@mlotz.ch>
+--- a/drivers/mtd/mtdcore.c
++++ b/drivers/mtd/mtdcore.c
+@@ -555,6 +555,55 @@ static int mtd_nvmem_reg_read(void *priv
+ 	return retlen == bytes ? 0 : -EIO;
+ }
+ 
++static int mtd_nvmem_reg_write(void *priv, unsigned int offset,
++			      void *val, size_t bytes)
++{
++	struct mtd_info *mtd = priv;
++	struct erase_info erase;
++	u8 *buffer;
++	size_t retlen;
++	int err;
++
++	erase.addr = offset;
++	erase.len = bytes;
++	mtd_align_erase_req(mtd, &erase);
++
++	buffer = kmalloc(erase.len, GFP_KERNEL);
++	if (!buffer)
++		return -ENOMEM;
++
++	err = mtd_read(mtd, erase.addr, erase.len, &retlen, buffer);
++	if (err && err != -EUCLEAN)
++		goto err_free_buffer;
++
++	if (retlen != erase.len) {
++		err = -EIO;
++		goto err_free_buffer;
++	}
++
++	err = mtd_erase(mtd, &erase);
++	if (err) {
++		pr_warn("%s: erase of region [0x%lx, 0x%x] on \"%s\" failed\n",
++			__func__, (unsigned long)erase.addr,
++			(unsigned int)erase.len, mtd->name);
++		goto err_free_buffer;
++	}
++
++	memcpy(buffer + (offset - erase.addr), val, bytes);
++
++	err = mtd_write(mtd, erase.addr, erase.len, &retlen, buffer);
++	kfree(buffer);
++
++	if (err)
++		return err;
++
++	return retlen == erase.len ? 0 : -EIO;
++
++err_free_buffer:
++	kfree(buffer);
++	return err;
++}
++
+ static int mtd_nvmem_add(struct mtd_info *mtd)
+ {
+ 	struct device_node *node = mtd_get_of_node(mtd);
+@@ -566,10 +615,11 @@ static int mtd_nvmem_add(struct mtd_info
+ 	config.owner = THIS_MODULE;
+ 	config.add_legacy_fixed_of_cells = of_device_is_compatible(node, "nvmem-cells");
+ 	config.reg_read = mtd_nvmem_reg_read;
++	config.reg_write = mtd_nvmem_reg_write;
+ 	config.size = mtd->size;
+ 	config.word_size = 1;
+ 	config.stride = 1;
+-	config.read_only = true;
++	config.read_only = !(mtd->flags & MTD_WRITEABLE);
+ 	config.root_only = true;
+ 	config.ignore_wp = true;
+ 	config.priv = mtd;
