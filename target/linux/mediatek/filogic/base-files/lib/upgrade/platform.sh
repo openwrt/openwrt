@@ -80,6 +80,7 @@ platform_do_upgrade() {
 	case "$board" in
 	abt,asr3000|\
 	acer,predator-w6x-ubootmod|\
+	asiarf,ap7988-002|\
 	asus,zenwifi-bt8-ubootmod|\
 	bananapi,bpi-r3|\
 	bananapi,bpi-r3-mini|\
