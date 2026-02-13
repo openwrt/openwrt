@@ -174,9 +174,23 @@ struct rtpcs_serdes_ops {
 	void (*restart_autoneg)(struct rtpcs_serdes *sds);
 };
 
+struct rtpcs_sds_reg_field {
+	u8 page;
+	u8 reg;
+	u8 msb;
+	u8 lsb;
+};
+
+struct rtpcs_sds_regs {
+	struct rtpcs_sds_reg_field an_enable;
+	struct rtpcs_sds_reg_field an_restart;
+	struct rtpcs_sds_reg_field an_advertise;
+};
+
 struct rtpcs_serdes {
 	struct rtpcs_ctrl *ctrl;
 	const struct rtpcs_serdes_ops *ops;
+	const struct rtpcs_sds_regs *regs;
 	enum rtpcs_sds_mode hw_mode;
 	u8 id;
 	u8 num_of_links;
@@ -218,6 +232,7 @@ struct rtpcs_config {
 
 	const struct phylink_pcs_ops *pcs_ops;
 	const struct rtpcs_serdes_ops *sds_ops;
+	const struct rtpcs_sds_regs *sds_regs;
 	int (*init_serdes_common)(struct rtpcs_ctrl *ctrl);
 	int (*setup_serdes)(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode);
 };
@@ -311,6 +326,19 @@ static int rtpcs_sds_read(struct rtpcs_serdes *sds, int page, int regnum)
 static int rtpcs_sds_write(struct rtpcs_serdes *sds, int page, int regnum, u16 value)
 {
 	return sds->ops->write(sds, page, regnum, 15, 0, value);
+}
+
+__maybe_unused
+static int rtpcs_sds_read_field(struct rtpcs_serdes *sds, const struct rtpcs_sds_reg_field *field)
+{
+	return sds->ops->read(sds, field->page, field->reg, field->msb, field->lsb);
+}
+
+__maybe_unused
+static int rtpcs_sds_write_field(struct rtpcs_serdes *sds, const struct rtpcs_sds_reg_field *field,
+				 u16 value)
+{
+	return sds->ops->write(sds, field->page, field->reg, field->msb, field->lsb, value);
 }
 
 __maybe_unused
@@ -4016,6 +4044,7 @@ static int rtpcs_probe(struct platform_device *pdev)
 		sds->first_start = true;
 		sds->id = i;
 		sds->ops = ctrl->cfg->sds_ops;
+		sds->regs = ctrl->cfg->sds_regs;
 	}
 
 	for_each_child_of_node(dev->of_node, child) {
