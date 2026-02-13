@@ -112,8 +112,8 @@ define CreateStorlinkFactoryfile
 	dd if=$(IMAGE_ROOTFS) >> $@-ramdisk
 	$(STAGING_DIR_HOST)/bin/padjffs2 $(IMAGE_ROOTFS) -c 128 >> $@-ramdisk
 	# Now rd.gz is too big so split off rd.gz and the tail into "hddapp.gz"
-	dd if=$@-ramdisk of=$@.tmp/rd.gz bs=1 count=6144k conv=sync
-	dd if=$@-ramdisk of=$@.tmp/hddapp.tgz bs=1 skip=6144k count=6144k conv=sync
+	dd if=$@-ramdisk of=$@.tmp/rd.gz bs=1 count=$(4) conv=sync
+	dd if=$@-ramdisk of=$@.tmp/hddapp.tgz bs=1 skip=$(4) count=$(5) conv=sync
 	rm -f $@-ramdisk
 	# Taglabel
 	cp ./ImageInfo-$(1) $@.tmp/ImageInfo
@@ -137,18 +137,27 @@ define CreateStorlinkSysupgradefile
 	$(STAGING_DIR_HOST)/bin/padjffs2 $(IMAGE_ROOTFS) -c 128 >> $@
 endef
 
-# 2048k "Kern" partition
+# 1024k "Kern" partition, 5120k "Ramdisk" partition
+define Build/storlink-1024k-factory-image
+	$(call CreateStorlinkFactoryfile,$(1),1024k,1048064,5120k,1664k)
+endef
+
+define Build/storlink-1024k-sysupgrade-image
+	$(call CreateStorlinkSysupgradefile,$(1),1024k)
+endef
+
+# 2048k "Kern" partition, 6144k "Ramdisk" partition
 define Build/storlink-2048k-factory-image
-	$(call CreateStorlinkFactoryfile,$(1),2048k,2096640)
+	$(call CreateStorlinkFactoryfile,$(1),2048k,2096640,6144k,6144k)
 endef
 
 define Build/storlink-2048k-sysupgrade-image
 	$(call CreateStorlinkSysupgradefile,$(1),2048k)
 endef
 
-# 3072k "Kern" partition
+# 3072k "Kern" partition, 6144k "Ramdisk" partition
 define Build/storlink-3072k-factory-image
-	$(call CreateStorlinkFactoryfile,$(1),3072k,3145216)
+	$(call CreateStorlinkFactoryfile,$(1),3072k,3145216,6144k,6144k)
 endef
 
 define Build/storlink-3072k-sysupgrade-image
@@ -228,7 +237,6 @@ define Device/storlink-reference
 	COMPILE/copy-kernel-$(1).bin := copy-kernel.bin
 	IMAGES := factory.bin sysupgrade.bin
 	FILESYSTEMS := squashfs
-	DEVICE_PACKAGES := $(GEMINI_NAS_PACKAGES)
 endef
 
 define Device/itian_sq201
@@ -239,7 +247,8 @@ define Device/itian_sq201
 	IMAGE/factory.bin := storlink-2048k-factory-image $(1)
 	IMAGE/sysupgrade.bin := storlink-2048k-sysupgrade-image $(1) |\
 				append-metadata
-	DEVICE_PACKAGES += kmod-rt61-pci kmod-usb2-pci kmod-dsa-vsc73xx-spi
+	DEVICE_PACKAGES += $(GEMINI_NAS_PACKAGES) kmod-rt61-pci \
+		kmod-usb2-pci kmod-dsa-vsc73xx-spi
 endef
 TARGET_DEVICES += itian_sq201
 
@@ -251,6 +260,7 @@ define Device/raidsonic_ib-4210-b
 	IMAGE/factory.bin := storlink-3072k-factory-image $(1)
 	IMAGE/sysupgrade.bin := storlink-3072k-sysupgrade-image $(1) |\
 			append-metadata
+	DEVICE_PACKAGES += $(GEMINI_NAS_PACKAGES)
 endef
 TARGET_DEVICES += raidsonic_ib-4210-b
 
@@ -262,6 +272,7 @@ define Device/raidsonic_ib-4220-b
 	IMAGE/factory.bin := storlink-3072k-factory-image $(1)
 	IMAGE/sysupgrade.bin := storlink-3072k-sysupgrade-image $(1) |\
 			append-metadata
+	DEVICE_PACKAGES += $(GEMINI_NAS_PACKAGES)
 endef
 TARGET_DEVICES += raidsonic_ib-4220-b
 
@@ -273,9 +284,23 @@ define Device/storlink_sl93512r
 	IMAGE/factory.bin := storlink-3072k-factory-image $(1)
 	IMAGE/sysupgrade.bin := storlink-3072k-sysupgrade-image $(1) |\
 			append-metadata
-	DEVICE_PACKAGES += kmod-dsa-vsc73xx-spi
+	DEVICE_PACKAGES += $(GEMINI_NAS_PACKAGES) kmod-dsa-vsc73xx-spi
 endef
 TARGET_DEVICES += storlink_sl93512r
+
+define Device/teltonika_rut104
+	$(Device/storlink-reference)
+	# Only 32 MB of RAM and 8MB flash so not building by default
+        DEFAULT := n
+	DEVICE_VENDOR := Teltonika
+	DEVICE_MODEL := RUT104
+	DEVICE_DTS := gemini-rut1xx
+	IMAGE/factory.bin := storlink-1024k-factory-image $(1)
+	IMAGE/sysupgrade.bin := storlink-1024k-sysupgrade-image $(1) |\
+			append-metadata
+	DEVICE_PACKAGES += kmod-phy-micrel kmod-ath5k
+endef
+TARGET_DEVICES += teltonika_rut104
 
 define Device/verbatim_s08v1901_d1
 	$(Device/storlink-reference)
@@ -285,6 +310,7 @@ define Device/verbatim_s08v1901_d1
 	IMAGE/factory.bin := storlink-3072k-factory-image $(1)
 	IMAGE/sysupgrade.bin := storlink-3072k-sysupgrade-image $(1) |\
 			append-metadata
+	DEVICE_PACKAGES += $(GEMINI_NAS_PACKAGES)
 endef
 TARGET_DEVICES += verbatim_s08v1901_d1
 
