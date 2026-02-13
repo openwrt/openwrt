@@ -344,6 +344,9 @@ function hwmodelist(name) {
 }
 
 export function assoclist(dev) {
+	if (!ifaces[dev])
+		return {};
+
 	let stations = ifaces[dev].assoclist;
 	let ret = {};
 	
