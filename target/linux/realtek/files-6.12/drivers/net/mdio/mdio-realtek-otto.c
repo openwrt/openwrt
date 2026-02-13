@@ -104,6 +104,10 @@
 #define RTMDIO_931X_SMI_10GPHY_POLLING_SEL3	(0x0CFC)
 #define RTMDIO_931X_SMI_10GPHY_POLLING_SEL4	(0x0D00)
 
+#define for_each_port(ctrl, addr) \
+	for (int addr = 0; addr < (ctrl)->cfg->cpu_port; addr++) \
+		if ((ctrl)->smi_bus[addr] >= 0)
+
 /*
  * On all Realtek switch platforms the hardware periodically reads the link status of all
  * PHYs. This is to some degree programmable, so that one can tell the hardware to read
@@ -566,10 +570,7 @@ static void rtmdio_setup_smi_topology(struct mii_bus *bus)
 	struct rtmdio_ctrl *ctrl = bus->priv;
 	u32 reg, mask, val;
 
-	for (int addr = 0; addr < ctrl->cfg->cpu_port; addr++) {
-		if (ctrl->smi_bus[addr] < 0)
-			continue;
-
+	for_each_port(ctrl, addr) {
 		if (ctrl->cfg->bus_map_base) {
 			reg = (addr / 16) * 4;
 			mask = 0x3 << ((addr % 16) * 2);
@@ -719,10 +720,7 @@ static void rtmdio_930x_setup_polling(struct mii_bus *bus)
 	regmap_write(ctrl->map, RTMDIO_930X_SMI_MAC_TYPE_CTRL, 0);
 
 	/* Define PHY specific polling parameters */
-	for (int addr = 0; addr < ctrl->cfg->cpu_port; addr++) {
-		if (ctrl->smi_bus[addr] < 0)
-			continue;
-
+	for_each_port(ctrl, addr) {
 		rtmdio_get_phy_info(bus, addr, &phyinfo);
 		if (phyinfo.phy_unknown) {
 			pr_warn("skip polling setup for unknown PHY %08x on port %d\n",
@@ -804,13 +802,10 @@ static void rtmdio_931x_setup_polling(struct mii_bus *bus)
 	 * the existing hardware designs (i.e. only equally polled PHYs on
 	 * the same SMI bus or kind of PHYs).
 	 */
-	for (int addr = 0; addr < ctrl->cfg->cpu_port; addr++) {
-		unsigned int mask, val;
+	for_each_port(ctrl, addr) {
 		int smi = ctrl->smi_bus[addr];
+		unsigned int mask, val;
 		
-		if (smi < 0)
-			continue;
-
 		rtmdio_get_phy_info(bus, addr, &phyinfo);
 		if (phyinfo.phy_unknown) {
 			pr_warn("skip polling setup for unknown PHY %08x on port %d\n",
