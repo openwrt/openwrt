@@ -13,7 +13,7 @@ to the PCIe controller driver to manage directly via the NP_SCU regmap.
 Signed-off-by: Ryan Chen <rchen14b@gmail.com>
 --- a/drivers/clk/clk-en7523.c
 +++ b/drivers/clk/clk-en7523.c
-@@ -961,9 +961,11 @@ static int en7581_pci_enable(struct clk_
+@@ -960,9 +960,11 @@ static int en7581_pci_enable(struct clk_
  	struct regmap *map = cg->map;
  	u32 mask;
  
@@ -28,7 +28,7 @@ Signed-off-by: Ryan Chen <rchen14b@gmail.com>
  	regmap_set_bits(map, REG_PCI_CONTROL, mask);
  
  	return 0;
-@@ -975,9 +977,8 @@ static void en7581_pci_disable(struct cl
+@@ -974,9 +976,8 @@ static void en7581_pci_disable(struct cl
  	struct regmap *map = cg->map;
  	u32 mask;
  

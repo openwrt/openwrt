@@ -14,7 +14,7 @@ Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
 
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -381,6 +381,7 @@ struct phy_package_shared {
+@@ -376,6 +376,7 @@ struct phy_package_shared {
  /* used as bit number in atomic bitops */
  #define PHY_SHARED_F_INIT_DONE  0
  #define PHY_SHARED_F_PROBE_DONE 1
@@ -22,7 +22,7 @@ Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
  
  /**
   * struct mii_bus - Represents an MDIO bus
-@@ -2282,6 +2283,11 @@ static inline bool phy_package_probe_onc
+@@ -2277,6 +2278,11 @@ static inline bool phy_package_probe_onc
  	return __phy_package_set_once(phydev, PHY_SHARED_F_PROBE_DONE);
  }
  
