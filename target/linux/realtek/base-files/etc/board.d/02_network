@@ -58,7 +58,9 @@ realtek_setup_macs()
 	tplink,sg2452p-v4|\
 	tplink,t1600g-28ts-v3|\
 	xikestor,sks8300-8t|\
-	xikestor,sks8300-12e2t2x)
+	xikestor,sks8300-12e2t2x|\
+	zyxel,xgs1210-12-a1|\
+	zyxel,xgs1210-12-b1)
 		lan_mac=$(get_mac_label)
 		lan_mac_start=$lan_mac
 		;;
@@ -142,8 +144,6 @@ realtek_setup_macs()
 	zyxel,gs1900-8hp-a1|\
 	zyxel,gs1900-8hp-b1|\
 	zyxel,gs1920-24hp-v1|\
-	zyxel,xgs1210-12-a1|\
-	zyxel,xgs1210-12-b1|\
 	zyxel,xgs1250-12-a1|\
 	zyxel,xgs1250-12-b1)
 		lan_mac=$(mtd_get_mac_ascii u-boot-env2 mac_start)
