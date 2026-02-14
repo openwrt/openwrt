@@ -508,10 +508,6 @@ static int rtmdio_read(struct mii_bus *bus, int addr, int regnum)
 	if (addr >= ctrl->cfg->cpu_port)
 		return -ENODEV;
 
-	/* prevent WARN_ONCE() during scan */
-	if (ctrl->smi_bus[addr] >=0 && ctrl->smi_bus_isc45[ctrl->smi_bus[addr]] && regnum == 2)
-		return -EIO;
-
 	if (regnum == RTMDIO_PAGE_SELECT && ctrl->page[addr] != ctrl->cfg->raw_page)
 		return ctrl->page[addr];
 
@@ -868,10 +864,9 @@ static int rtmdio_reset(struct mii_bus *bus)
 static int rtmdio_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
+	struct device_node *dn[RTMDIO_MAX_PORT] = {}, *np;
 	struct rtmdio_ctrl *ctrl;
-	struct device_node *dn;
 	struct mii_bus *bus;
-	u64 mask = 0ULL;
 	int ret, addr;
 
 	bus = devm_mdiobus_alloc_size(dev, sizeof(*ctrl));
@@ -887,30 +882,30 @@ static int rtmdio_probe(struct platform_device *pdev)
 	for (addr = 0; addr < RTMDIO_MAX_PORT; addr++)
 		ctrl->smi_bus[addr] = -1;
 
-	for_each_node_by_name(dn, "ethernet-phy") {
-		if (of_property_read_u32(dn, "reg", &addr))
+	for_each_node_by_name(np, "ethernet-phy") {
+		if (of_property_read_u32(np, "reg", &addr))
 			continue;
 
 		if (addr < 0 || addr >= ctrl->cfg->cpu_port) {
 			dev_err(dev, "illegal port number %d\n", addr);
-			of_node_put(dn);
+			of_node_put(np);
 			return -EINVAL;
 		}
 
-		of_property_read_u32(dn->parent, "reg", &ctrl->smi_bus[addr]);
-		if (of_property_read_u32(dn, "realtek,smi-address", &ctrl->smi_addr[addr]))
+		of_property_read_u32(np->parent, "reg", &ctrl->smi_bus[addr]);
+		if (of_property_read_u32(np, "realtek,smi-address", &ctrl->smi_addr[addr]))
 			ctrl->smi_addr[addr] = addr;
-		
+
 		if (ctrl->smi_bus[addr] < 0 || ctrl->smi_bus[addr] >= RTMDIO_MAX_SMI_BUS) {
 			dev_err(dev, "illegal SMI bus number %d\n", ctrl->smi_bus[addr]);
-			of_node_put(dn);
+			of_node_put(np);
 			return -EINVAL;
 		}
 
-		if (of_device_is_compatible(dn, "ethernet-phy-ieee802.3-c45"))
+		if (of_device_is_compatible(np, "ethernet-phy-ieee802.3-c45"))
 			ctrl->smi_bus_isc45[ctrl->smi_bus[addr]] = true;
 
-		mask |= BIT_ULL(addr);
+		dn[addr] = of_node_get(np);
 	}
 
 	bus->name = "Realtek MDIO bus";
@@ -920,7 +915,7 @@ static int rtmdio_probe(struct platform_device *pdev)
 	bus->read_c45 = rtmdio_read_c45;
 	bus->write_c45 = rtmdio_write_c45;
 	bus->parent = dev;
-	bus->phy_mask = ~mask;
+	bus->phy_mask = ~0;
 	snprintf(bus->id, MII_BUS_ID_SIZE, "realtek-mdio");
 
 	device_set_node(&bus->dev, of_fwnode_handle(dev->of_node));
@@ -929,6 +924,16 @@ static int rtmdio_probe(struct platform_device *pdev)
 	ret = devm_mdiobus_register(dev, bus);
 	if (ret)
 		return ret;
+
+	for (addr = 0; addr < ctrl->cfg->cpu_port; addr++) {
+		if (ctrl->smi_bus[addr] < 0)
+			continue;
+
+		ret = fwnode_mdiobus_register_phy(bus, of_fwnode_handle(dn[addr]), addr);
+		of_node_put(dn[addr]);
+		if (ret)
+			return ret;
+	}
 
 	if (ctrl->cfg->setup_polling)
 		ctrl->cfg->setup_polling(bus);
