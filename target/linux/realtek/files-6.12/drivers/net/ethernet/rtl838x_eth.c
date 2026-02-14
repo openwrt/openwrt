@@ -196,6 +196,24 @@ struct rteth_ctrl {
 	struct rteth_tx		*tx_data;
 };
 
+static inline void rteth_confirm_and_disable_irqs(struct rteth_ctrl *ctrl,
+						  unsigned long *rings, bool *l2)
+{
+	u32 mask = GENMASK(ctrl->r->rx_rings - 1, 0);
+	u32 shift = ctrl->r->rx_rings % 32;
+	u32 reg = ctrl->r->rx_rings / 32;
+	u32 active;
+
+	/* get all irqs, disable only rx (on RTL839x this keeps L2), confirm all */
+	active = sw_r32(ctrl->r->dma_if_intr_sts + reg * 4);
+	sw_w32_mask(active & (mask << shift), 0, ctrl->r->dma_if_intr_msk + reg * 4);
+	sw_w32(active, ctrl->r->dma_if_intr_sts + reg * 4);
+
+	/* ~mask filters out RTL93xx devices */
+	*l2 = !!(active & ~mask & RTL839X_DMA_IF_INTR_NOTIFY_MASK);
+	*rings = (active >> shift) & mask;
+}
+
 static void rteth_disable_all_irqs(struct rteth_ctrl *ctrl)
 {
 	int registers = ((ctrl->r->rx_rings * 2 + 7) / 32) + 1;
@@ -386,73 +404,21 @@ static void rtl839x_l2_notification_handler(struct rteth_ctrl *ctrl)
 	ctrl->lastEvent = e;
 }
 
-static irqreturn_t rteth_83xx_net_irq(int irq, void *dev_id)
+static irqreturn_t rteth_net_irq(int irq, void *dev_id)
 {
 	struct net_device *ndev = dev_id;
 	struct rteth_ctrl *ctrl = netdev_priv(ndev);
-	u32 status = sw_r32(ctrl->r->dma_if_intr_sts);
 	unsigned long ring, rings;
+	bool l2;
 
-	netdev_dbg(ndev, "rx interrupt received, status %08x\n", status);
-
-	if (status & RTL83XX_DMA_IF_INTR_RX_RUN_OUT_MASK)
-		if (net_ratelimit())
-			netdev_warn(ndev, "rx ring overrun, status 0x%08x, mask 0x%08x\n",
-				    status, sw_r32(ctrl->r->dma_if_intr_msk));
-
-	rings = FIELD_GET(RTL83XX_DMA_IF_INTR_RX_DONE_MASK, status);
+	rteth_confirm_and_disable_irqs(ctrl, &rings, &l2);
 	for_each_set_bit(ring, &rings, RTETH_RX_RINGS) {
 		netdev_dbg(ndev, "schedule rx ring %lu\n", ring);
-		sw_w32_mask(RTL83XX_DMA_IF_INTR_RX_MASK(ring), 0, ctrl->r->dma_if_intr_msk);
 		napi_schedule(&ctrl->rx_qs[ring].napi);
 	}
 
-	if (status & RTL839X_DMA_IF_INTR_NOTIFY_MASK)
+	if (unlikely(l2))
 		rtl839x_l2_notification_handler(ctrl);
-
-	sw_w32(status, ctrl->r->dma_if_intr_sts);
-
-	return IRQ_HANDLED;
-}
-
-static irqreturn_t rteth_93xx_net_irq(int irq, void *dev_id)
-{
-	struct net_device *dev = dev_id;
-	struct rteth_ctrl *ctrl = netdev_priv(dev);
-	u32 status_rx_r = sw_r32(ctrl->r->dma_if_intr_sts);
-	u32 status_rx = sw_r32(ctrl->r->dma_if_intr_rx_done_sts);
-	u32 status_tx = sw_r32(ctrl->r->dma_if_intr_tx_done_sts);
-
-	pr_debug("In %s, status_tx: %08x, status_rx: %08x, status_rx_r: %08x\n",
-		 __func__, status_tx, status_rx, status_rx_r);
-
-	/*  Ignore TX interrupt */
-	if (status_tx) {
-		/* Clear ISR */
-		pr_debug("TX done\n");
-		sw_w32(status_tx, ctrl->r->dma_if_intr_tx_done_sts);
-	}
-
-	/* RX interrupt */
-	if (status_rx) {
-		pr_debug("RX IRQ\n");
-		/* ACK and disable RX interrupt for given rings */
-		sw_w32(status_rx, ctrl->r->dma_if_intr_rx_done_sts);
-		sw_w32_mask(status_rx, 0, ctrl->r->dma_if_intr_rx_done_msk);
-		for (int i = 0; i < RTETH_RX_RINGS; i++) {
-			if (status_rx & BIT(i)) {
-				pr_debug("Scheduling queue: %d\n", i);
-				napi_schedule(&ctrl->rx_qs[i].napi);
-			}
-		}
-	}
-
-	/* RX buffer overrun */
-	if (status_rx_r) {
-		pr_debug("RX buffer overrun: status %x, mask: %x\n",
-			 status_rx_r, sw_r32(ctrl->r->dma_if_intr_msk));
-		sw_w32(status_rx_r, ctrl->r->dma_if_intr_sts);
-	}
 
 	return IRQ_HANDLED;
 }
@@ -1419,7 +1385,6 @@ static const struct rteth_config rteth_838x_cfg = {
 	.rx_rings = 8,
 	.tx_rx_enable = 0xc,
 	.tx_trigger_mask = BIT(1),
-	.net_irq = rteth_83xx_net_irq,
 	.mac_l2_port_ctrl = RTETH_838X_MAC_L2_PORT_CTRL,
 	.qm_pkt2cpu_intpri_map = RTETH_838X_QM_PKT2CPU_INTPRI_MAP,
 	.qm_rsn2cpuqid_ctrl = RTETH_838X_QM_PKT2CPU_INTPRI_0,
@@ -1467,7 +1432,6 @@ static const struct rteth_config rteth_839x_cfg = {
 	.rx_rings = 8,
 	.tx_rx_enable = 0xc,
 	.tx_trigger_mask = BIT(1),
-	.net_irq = rteth_83xx_net_irq,
 	.mac_l2_port_ctrl = RTETH_839X_MAC_L2_PORT_CTRL,
 	.qm_pkt2cpu_intpri_map = RTETH_839X_QM_PKT2CPU_INTPRI_MAP,
 	.qm_rsn2cpuqid_ctrl = RTETH_839X_QM_PKT2CPU_INTPRI_0,
@@ -1515,16 +1479,13 @@ static const struct rteth_config rteth_930x_cfg = {
 	.rx_rings = 32,
 	.tx_rx_enable = 0x30,
 	.tx_trigger_mask = GENMASK(3, 2),
-	.net_irq = rteth_93xx_net_irq,
 	.mac_l2_port_ctrl = RTETH_930X_MAC_L2_PORT_CTRL,
 	.qm_rsn2cpuqid_ctrl = RTETH_930X_QM_RSN2CPUQID_CTRL_0,
 	.qm_rsn2cpuqid_cnt = RTETH_930X_QM_RSN2CPUQID_CTRL_CNT,
 	.dma_if_intr_sts = RTETH_930X_DMA_IF_INTR_STS,
-	.dma_if_intr_rx_done_sts = RTL930X_DMA_IF_INTR_RX_DONE_STS,
 	.dma_if_intr_tx_done_sts = RTL930X_DMA_IF_INTR_TX_DONE_STS,
 	.dma_if_intr_msk = RTETH_930X_DMA_IF_INTR_MSK,
 	.dma_if_intr_rx_done_msk = RTL930X_DMA_IF_INTR_RX_DONE_MSK,
-	.dma_if_intr_tx_done_msk = RTL930X_DMA_IF_INTR_TX_DONE_MSK,
 	.l2_ntfy_if_intr_sts = RTL930X_L2_NTFY_IF_INTR_STS,
 	.l2_ntfy_if_intr_msk = RTL930X_L2_NTFY_IF_INTR_MSK,
 	.dma_if_ctrl = RTL930X_DMA_IF_CTRL,
@@ -1567,16 +1528,13 @@ static const struct rteth_config rteth_931x_cfg = {
 	.rx_rings = 32,
 	.tx_rx_enable = 0x30,
 	.tx_trigger_mask = GENMASK(3, 2),
-	.net_irq = rteth_93xx_net_irq,
 	.mac_l2_port_ctrl = RTETH_931X_MAC_L2_PORT_CTRL,
 	.qm_rsn2cpuqid_ctrl = RTETH_931X_QM_RSN2CPUQID_CTRL_0,
 	.qm_rsn2cpuqid_cnt = RTETH_931X_QM_RSN2CPUQID_CTRL_CNT,
 	.dma_if_intr_sts = RTETH_931X_DMA_IF_INTR_STS,
-	.dma_if_intr_rx_done_sts = RTL931X_DMA_IF_INTR_RX_DONE_STS,
 	.dma_if_intr_tx_done_sts = RTL931X_DMA_IF_INTR_TX_DONE_STS,
 	.dma_if_intr_msk = RTETH_931X_DMA_IF_INTR_MSK,
 	.dma_if_intr_rx_done_msk = RTL931X_DMA_IF_INTR_RX_DONE_MSK,
-	.dma_if_intr_tx_done_msk = RTL931X_DMA_IF_INTR_TX_DONE_MSK,
 	.l2_ntfy_if_intr_sts = RTL931X_L2_NTFY_IF_INTR_STS,
 	.l2_ntfy_if_intr_msk = RTL931X_L2_NTFY_IF_INTR_MSK,
 	.dma_if_ctrl = RTL931X_DMA_IF_CTRL,
@@ -1680,8 +1638,7 @@ static int rtl838x_eth_probe(struct platform_device *pdev)
 		return -ENODEV;
 
 	rteth_disable_all_irqs(ctrl);
-	err = devm_request_irq(&pdev->dev, dev->irq, ctrl->r->net_irq,
-			       IRQF_SHARED, dev->name, dev);
+	err = devm_request_irq(&pdev->dev, dev->irq, rteth_net_irq, IRQF_SHARED, dev->name, dev);
 	if (err) {
 		dev_err(&pdev->dev, "%s: could not acquire interrupt: %d\n",
 			__func__, err);
