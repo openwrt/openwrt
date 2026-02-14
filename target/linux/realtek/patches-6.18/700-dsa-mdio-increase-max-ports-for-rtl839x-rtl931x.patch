@@ -35,16 +35,16 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
  				 &phy->mdio.reset_assert_delay);
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -311,7 +311,7 @@ static inline const char *phy_modes(phy_
- #define PHY_INIT_TIMEOUT	100000
- #define PHY_FORCE_TIMEOUT	10
+@@ -316,7 +316,7 @@ static inline long rgmii_clock(int speed
+ 	}
+ }
  
 -#define PHY_MAX_ADDR	32
 +#define PHY_MAX_ADDR	64
  
  /* Used when trying to connect to a specific phy (mii bus id:phy device id) */
  #define PHY_ID_FMT "%s:%02x"
-@@ -431,10 +431,10 @@ struct mii_bus {
+@@ -402,10 +402,10 @@ struct mii_bus {
  	struct mdio_device *mdio_map[PHY_MAX_ADDR];
  
  	/** @phy_mask: PHY addresses to be ignored when probing */
@@ -70,7 +70,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
  struct dsa_chip_data {
 --- a/include/net/dsa.h
 +++ b/include/net/dsa.h
-@@ -475,7 +475,7 @@ struct dsa_switch {
+@@ -476,7 +476,7 @@ struct dsa_switch {
  	/*
  	 * User mii_bus and devices for the individual ports.
  	 */
@@ -79,7 +79,7 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
  	struct mii_bus		*user_mii_bus;
  
  	/* Ageing Time limits in msecs */
-@@ -611,24 +611,24 @@ static inline bool dsa_is_user_port(stru
+@@ -612,24 +612,24 @@ static inline bool dsa_is_user_port(stru
  	dsa_switch_for_each_port_continue_reverse((_dp), (_ds)) \
  		if (dsa_port_is_cpu((_dp)))
  
@@ -130,23 +130,23 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
  		return ds->ops->phy_write(ds, addr, reg, val);
  
  	return 0;
---- a/drivers/net/phy/mdio_bus.c
-+++ b/drivers/net/phy/mdio_bus.c
-@@ -615,7 +615,7 @@ static int mdiobus_scan_bus_c22(struct m
+--- a/drivers/net/phy/mdio_bus_provider.c
++++ b/drivers/net/phy/mdio_bus_provider.c
+@@ -209,7 +209,7 @@ static int mdiobus_scan_bus_c22(struct m
  	int i;
  
  	for (i = 0; i < PHY_MAX_ADDR; i++) {
 -		if ((bus->phy_mask & BIT(i)) == 0) {
-+		if ((bus->phy_mask & BIT_ULL(i)) == 0ULL) {
++		if ((bus->phy_mask & BIT_ULL(i)) == 0) {
  			struct phy_device *phydev;
  
  			phydev = mdiobus_scan_c22(bus, i);
-@@ -631,7 +631,7 @@ static int mdiobus_scan_bus_c45(struct m
+@@ -225,7 +225,7 @@ static int mdiobus_scan_bus_c45(struct m
  	int i;
  
  	for (i = 0; i < PHY_MAX_ADDR; i++) {
 -		if ((bus->phy_mask & BIT(i)) == 0) {
-+		if ((bus->phy_mask & BIT_ULL(i)) == 0ULL) {
++		if ((bus->phy_mask & BIT_ULL(i)) == 0) {
  			struct phy_device *phydev;
  
  			/* Don't scan C45 if we already have a C22 device */

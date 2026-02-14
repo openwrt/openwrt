@@ -24,8 +24,8 @@ Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
 +	  This module provides a driver for the Realtek SerDes PCS
 +
  config PCS_RZN1_MIIC
- 	tristate "Renesas RZ/N1 MII converter"
- 	depends on OF && (ARCH_RZN1 || COMPILE_TEST)
+ 	tristate "Renesas RZ/N1, RZ/N2H, RZ/T2H MII converter"
+ 	depends on OF
 --- a/drivers/net/pcs/Makefile
 +++ b/drivers/net/pcs/Makefile
 @@ -7,5 +7,6 @@ pcs_xpcs-$(CONFIG_PCS_XPCS)	:= pcs-xpcs.

@@ -11,7 +11,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
 ---
 --- a/arch/mips/Kbuild.platforms
 +++ b/arch/mips/Kbuild.platforms
-@@ -22,6 +22,7 @@ platform-$(CONFIG_MACH_NINTENDO64)	+= n6
+@@ -23,6 +23,7 @@ platform-$(CONFIG_MACH_NINTENDO64)	+= n6
  platform-$(CONFIG_PIC32MZDA)		+= pic32/
  platform-$(CONFIG_RALINK)		+= ralink/
  platform-$(CONFIG_MIKROTIK_RB532)	+= rb532/
@@ -21,7 +21,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
  platform-$(CONFIG_SGI_IP28)		+= sgi-ip22/
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -651,23 +651,24 @@ config RALINK
+@@ -696,23 +696,24 @@ config RALINK
  
  config MACH_REALTEK_RTL
  	bool "Realtek RTL838x/RTL839x based machines"
@@ -52,7 +52,7 @@ Submitted-by: Birger Koblitz <git@birger-koblitz.de>
  
  config SGI_IP22
  	bool "SGI IP22 (Indy/Indigo2)"
-@@ -1011,6 +1012,36 @@ config FIT_IMAGE_FDT_EPM5
+@@ -1056,6 +1057,36 @@ config FIT_IMAGE_FDT_EPM5
  	  from Mobileye in the FIT kernel image.
  	  This requires u-boot on the platform.
  
