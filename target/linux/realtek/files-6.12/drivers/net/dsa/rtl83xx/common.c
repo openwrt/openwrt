@@ -575,7 +575,7 @@ static int rtl83xx_l2_nexthop_add(struct rtl838x_switch_priv *priv, struct rtl83
 		e.block_sa = false;
 		e.suspended = false;
 		e.age = 0;			/* With port-ignore */
-		e.port = priv->port_ignore;
+		e.port = priv->r->port_ignore;
 		u64_to_ether_addr(nh->mac, &e.mac[0]);
 	}
 	e.next_hop = true;
@@ -665,7 +665,7 @@ static int rtl83xx_l3_nexthop_update(struct rtl838x_switch_priv *priv,  __be32 i
 		pr_debug("Route with id %d to %pI4 / %d\n", r->id, &r->dst_ip, r->prefix_len);
 
 		r->nh.mac = r->nh.gw = mac;
-		r->nh.port = priv->port_ignore;
+		r->nh.port = priv->r->port_ignore;
 		r->nh.id = r->id;
 
 		/* Do we need to explicitly add a DMAC entry with the route's nh index? */
@@ -1097,7 +1097,7 @@ static int rtldsa_fib4_add(struct rtl838x_switch_priv *priv,
 			int slot;
 
 			route->nh.mac = mac;
-			route->nh.port = priv->port_ignore;
+			route->nh.port = priv->r->port_ignore;
 			route->attr.valid = true;
 			route->attr.action = ROUTE_ACT_TRAP2CPU;
 			route->attr.type = 0;
@@ -1418,7 +1418,6 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->l2_bucket_size = 4;
 		priv->n_mst = 64;
 		priv->n_pie_blocks = 12;
-		priv->port_ignore = 0x1f;
 		priv->n_counters = 128;
 		break;
 	case RTL8390_FAMILY_ID:
@@ -1433,7 +1432,6 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->l2_bucket_size = 4;
 		priv->n_mst = 256;
 		priv->n_pie_blocks = 18;
-		priv->port_ignore = 0x3f;
 		priv->n_counters = 1024;
 		break;
 	case RTL9300_FAMILY_ID:
@@ -1449,7 +1447,6 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->l2_bucket_size = 8;
 		priv->n_mst = 64;
 		priv->n_pie_blocks = 16;
-		priv->port_ignore = 0x3f;
 		priv->n_counters = 2048;
 		break;
 	case RTL9310_FAMILY_ID:
@@ -1465,7 +1462,6 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->l2_bucket_size = 8;
 		priv->n_mst = 128;
 		priv->n_pie_blocks = 16;
-		priv->port_ignore = 0x3f;
 		priv->n_counters = 2048;
 		break;
 	}
