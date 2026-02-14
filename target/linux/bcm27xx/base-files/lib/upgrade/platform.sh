@@ -128,3 +128,10 @@ platform_restore_backup() {
 	tar -C / -x${TAR_V}zf "$CONF_RESTORE"
 	bcm27xx_set_root_part
 }
+
+platform_selectively_restore_backup() {
+	local TAR_V=$1
+
+	tar -C / -x${TAR_V}zf "$CONF_RESTORE" -T "$CONF_SELECTIVE_RESTORE_FILELIST"
+	bcm27xx_set_root_part
+}
