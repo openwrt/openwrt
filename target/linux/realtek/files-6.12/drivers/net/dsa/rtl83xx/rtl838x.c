@@ -1700,6 +1700,7 @@ const struct rtldsa_config rtldsa_838x_cfg = {
 	.isr_port_link_sts_chg = RTL838X_ISR_PORT_LINK_STS_CHG,
 	.imr_port_link_sts_chg = RTL838X_IMR_PORT_LINK_STS_CHG,
 	.imr_glb = RTL838X_IMR_GLB,
+	.port_ignore = 0x1f,
 	.vlan_tables_read = rtl838x_vlan_tables_read,
 	.vlan_set_tagged = rtl838x_vlan_set_tagged,
 	.vlan_set_untagged = rtl838x_vlan_set_untagged,
