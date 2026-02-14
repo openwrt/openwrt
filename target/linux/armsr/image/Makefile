@@ -46,7 +46,7 @@ define Build/combined
 		$@ \
 		$(CONFIG_TARGET_KERNEL_PARTSIZE) $@.boot \
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE) $(IMAGE_ROOTFS) \
-		256
+		$(CONFIG_ALIGN_SIZE)
 endef
 
 define Build/grub-config
