@@ -143,6 +143,16 @@ ifneq ($(CONFIG_USE_APK),)
 		$(STAGING_DIR_HOST)/bin/apk adbdump --format json packages.adb | \
 			$(SCRIPT_DIR)/make-index-json.py -f apk -a "$(ARCH_PACKAGES)" - > index.json; \
 	done
+ifdef CONFIG_JSON_CYCLONEDX_SBOM
+	@echo Creating CycloneDX package SBOMs...
+	@for d in $(PACKAGE_SUBDIRS); do \
+		[ -d $$d ] && \
+			cd $$d || continue; \
+		[ -f packages.adb ] || continue; \
+		$(STAGING_DIR_HOST)/bin/apk adbdump --format json packages.adb | \
+			$(SCRIPT_DIR)/make-sbom.py - -f apk > Packages.bom.cdx.json || true; \
+	done
+endif
 else
 	@for d in $(PACKAGE_SUBDIRS); do ( \
 		mkdir -p $$d; \
