@@ -1273,6 +1273,7 @@ struct rtldsa_config {
 	int isr_port_link_sts_chg;
 	int imr_port_link_sts_chg;
 	int imr_glb;
+	u8 port_ignore;
 	void (*vlan_tables_read)(u32 vlan, struct rtl838x_vlan_info *info);
 	void (*vlan_set_tagged)(u32 vlan, struct rtl838x_vlan_info *info);
 	void (*vlan_set_untagged)(u32 vlan, u64 portmask);
@@ -1360,7 +1361,6 @@ struct rtl838x_switch_priv {
 	u8 cpu_port;
 	u8 port_mask;
 	u8 port_width;
-	u8 port_ignore;
 	u64 irq_mask;
 	u32 fib_entries;
 	int l2_bucket_size;
