@@ -1,3 +1,5 @@
+DTS_DIR := $(DTS_DIR)/qcom
+
 define Device/mikrotik_nor
 	DEVICE_VENDOR := MikroTik
 	BLOCKSIZE := 64k
