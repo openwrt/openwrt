@@ -1,3 +1,4 @@
+DTS_DIR := $(DTS_DIR)/qcom
 DEVICE_VARS += TPLINK_SUPPORT_STRING
 
 define Build/wax610-netgear-tar
