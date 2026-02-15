@@ -10,7 +10,8 @@ platform_check_image() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
-	8devices,kiwi-dvk)
+	8devices,kiwi-dvk|\
+	alta,route10)
 		CI_KERNPART="0:HLOS"
 		CI_ROOTPART="rootfs"
 		emmc_do_upgrade "$1"
