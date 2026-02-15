@@ -1,0 +1,21 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+/dts-v1/;
+
+#include "mt7981b-cudy-m3000-v1.dtsi"
+
+/ {
+	model = "Cudy M3000 v1 with YT8821 PHY";
+	compatible = "cudy,m3000-v1-yt8821", "mediatek,mt7981";
+};
+
+&mdio_bus {
+	wan_phy: ethernet-phy@1 {
+		/* Motorcomm YT8821. The PHY only works fully when its ID is directly specified. */
+		compatible = "ethernet-phy-id4f51.ea19";
+		reg = <1>;
+		reset-assert-us = <100000>;
+		reset-deassert-us = <100000>;
+		reset-gpios = <&pio 39 GPIO_ACTIVE_LOW>;
+	};
+};
