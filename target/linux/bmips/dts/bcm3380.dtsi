@@ -1,0 +1,288 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+/dts-v1/;
+
+#include <dt-bindings/clock/bcm3380-clock.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/interrupt-controller/bcm3380-interrupt-controller.h>
+#include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/reset/bcm3380-reset.h>
+
+// We may not need this for bcm3380
+// #include <dt-bindings/soc/bcm6362-pm.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	compatible = "brcm,bcm3380";
+
+	aliases {
+		serial0 = &uart0;
+		serial1 = &uart1;
+		spi0 = &lsspi;
+	};
+
+	chosen {
+		bootargs = "earlycon";
+		stdout-path = "serial0:115200n8";
+	};
+
+	clocks {
+		periph_osc: periph-osc {
+			compatible = "fixed-clock";
+
+			#clock-cells = <0>;
+
+			// Was 50000000 in eCos source code
+			clock-frequency = <48000000>;
+			clock-output-names = "periph";
+		};
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/* 1/2 of the CPU core clock (standard MIPS behavior) */
+		mips-hpt-frequency = <166500000>;
+
+		cpu@0 {
+			compatible = "brcm,bmips4350", "mips,mips4Kc";
+			device_type = "cpu";
+			reg = <0>;
+		};
+
+		cpu@1 {
+			compatible = "brcm,bmips4350", "mips,mips4Kc";
+			device_type = "cpu";
+			reg = <1>;
+		};
+	};
+
+	cpu_intc: interrupt-controller {
+		#address-cells = <0>;
+		compatible = "mti,cpu-interrupt-controller";
+
+		interrupt-controller;
+		#interrupt-cells = <1>;
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0 0>;
+	};
+
+	ubus {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		compatible = "simple-bus";
+		ranges;
+
+		periph_clk0: clock-controller@14e00004 {
+			compatible = "brcm,bcm3380-clocks-low";
+			reg = <0x14e00004 0x4>;
+			#clock-cells = <1>;
+		};
+
+		periph_clk1: clock-controller@14e00008 {
+			compatible = "brcm,bcm3380-clocks-high";
+			reg = <0x14e00008 0x4>;
+			#clock-cells = <1>;
+		};
+
+		pll_cntl: syscon@14e00010 {
+			compatible = "syscon", "simple-mfd";
+			reg = <0x14e00010 0x4>;
+			native-endian;
+
+			syscon-reboot {
+				compatible = "syscon-reboot";
+				offset = <0x0>;
+				mask = <0x1>;
+			};
+		};
+
+		periph_rst0: reset-controller@14e0008c {
+			compatible = "brcm,bcm6345-reset";
+			reg = <0x14e0008c 0x4>;
+			#reset-cells = <1>;
+		};
+
+		periph_rst1: reset-controller@14e00090 {
+			compatible = "brcm,bcm6345-reset";
+			reg = <0x14e00090 0x4>;
+			#reset-cells = <1>;
+		};
+
+		// Peripheral interrupts
+		periph_intc: interrupt-controller@14e00048 {
+			#address-cells = <1>;
+			compatible = "brcm,bcm6345-l1-intc";
+			reg = <0x14e00040 0x08>,
+				  <0x14e00048 0x08>;
+
+			interrupt-controller;
+			#interrupt-cells = <1>;
+
+			interrupt-parent = <&cpu_intc>;
+			interrupts = <3>, <4>;
+		};
+
+		// IO processor (IOP) interrupts
+		iop_intc: interrupt-controller@14e00058 {
+			#address-cells = <1>;
+			compatible = "brcm,bcm6345-l1-intc";
+			reg = <0x14e00050 0x08>,
+				  <0x14e00058 0x08>;
+
+			interrupt-controller;
+			#interrupt-cells = <1>;
+
+			interrupt-parent = <&cpu_intc>;
+			interrupts = <5>, <6>;
+		};
+
+		// Not in U-Boot DTS
+		/*
+		ext_intc: interrupt-controller@10000018 {
+			#address-cells = <1>;
+			compatible = "brcm,bcm6345-ext-intc";
+			reg = <0x10000018 0x4>;
+
+			interrupt-controller;
+			#interrupt-cells = <2>;
+
+			interrupt-parent = <&periph_intc>;
+			interrupts = <BCM6362_IRQ_EXT0>,
+				     <BCM6362_IRQ_EXT1>,
+				     <BCM6362_IRQ_EXT2>,
+				     <BCM6362_IRQ_EXT3>;
+		};
+		*/
+
+		wdt: watchdog@14e000dc {
+			// Same as brcm,bcm7038-wdt
+			compatible = "brcm,bcm6345-wdt";
+			reg = <0x14e000dc 0xc>;
+
+			clocks = <&periph_osc>;
+			clock-names = "periph";
+
+			timeout-sec = <30>;
+		};
+
+		gpio_cntl: syscon@14e00100 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			// TODO: add documentation like this:
+			// https://github.com/torvalds/linux/blob/master/Documentation/devicetree/bindings/mfd/brcm%2Cbcm63268-gpio-sysctl.yaml
+			compatible = "brcm,bcm3380-gpio-sysctl",
+				     "syscon", "simple-mfd";
+			reg = <0x14e00100 0x88>;
+			ranges = <0 0x14e00100 0x88>;
+			native-endian;
+
+			gpio: gpio@0 {
+				compatible = "brcm,bcm3380-gpio";
+				reg-names = "dirout", "dat";
+				reg = <0x0 0x8>, <0x8 0x8>;
+
+				gpio-controller;
+				gpio-ranges = <&pinctrl 0 0 52>;
+				#gpio-cells = <2>;
+			};
+
+			pinctrl: pinctrl@80 {
+				compatible = "brcm,bcm3380-pinctrl";
+				reg = <0x80 0x8>;
+
+				pinctrl_lsspi_cs3: lsspi_cs3-pins {
+					function = "lsspi_cs3";
+					pins = "gpio15";
+				};
+			};
+		};
+
+		uart0: serial@14e00200 {
+			compatible = "brcm,bcm6345-uart";
+			reg = <0x14e00200 0x18>;
+
+			// This was not in U-boot DTS, but OpenWrt DTS has them
+			interrupt-parent = <&periph_intc>;
+			interrupts = <BCM3380_IRQ_UART>;
+
+			clocks = <&periph_osc>;
+			clock-names = "periph";
+
+			status = "disabled";
+		};
+
+		uart1: serial@14e00220 {
+			compatible = "brcm,bcm6345-uart";
+			reg = <0x14e00220 0x18>;
+
+			// This was not in U-boot DTS, but OpenWrt DTS has them
+			interrupt-parent = <&periph_intc>;
+			interrupts = <BCM3380_IRQ_UART1>;
+
+			clocks = <&periph_osc>;
+			clock-names = "periph";
+
+			status = "disabled";
+		};
+
+		lsspi: spi@14e02000 {
+			compatible = "brcm,bcm6358-spi";
+			reg = <0x14e02000 0x70c>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			// This was not in U-boot DTS, but OpenWrt DTS has them
+			interrupt-parent = <&periph_intc>;
+			interrupts = <BCM3380_IRQ_SPI>;
+
+			clocks = <&periph_clk0 BCM3380_CLK0_SPI>;
+			clock-names = "spi";
+
+			resets = <&periph_rst0 BCM3380_RST0_SPI>;
+
+			// These were in U-boot DTS, but not sure if they are necessary
+			spi-max-frequency = <25000000>;
+			num-cs = <6>;
+
+			status = "disabled";
+		};
+
+		ethernet_gmii: ethernet@12110000 {
+			compatible = "brcm,bcm3380-unimac";
+			reg = <0x12110000 0x80000>;
+
+			interrupt-parent = <&iop_intc>;
+			interrupts = <BCM3380_IRQ_IOP_MSP>;
+
+			clocks = <&periph_clk0 BCM3380_CLK0_UNIMAC1>,
+				 <&periph_clk0 BCM3380_CLK0_FPM>,
+				 <&periph_clk0 BCM3380_CLK0_MSP>,
+				 <&periph_clk0 BCM3380_CLK0_UNIMAC0>,
+				 <&periph_clk1 BCM3380_CLK1_GPHYPLL>,
+				 <&periph_clk1 BCM3380_CLK1_GPHY>;
+			clock-names = "unimac1", "fpm", "msp", "unimac0", "gphypll", "gphy";
+
+			resets = <&periph_rst0 BCM3380_RST0_UNIMAC1>,
+				 <&periph_rst0 BCM3380_RST0_FPM>,
+				 <&periph_rst0 BCM3380_RST0_MSP>,
+				 <&periph_rst0 BCM3380_RST0_UNIMAC0>,
+				 <&periph_rst0 BCM3380_RST0_GPHY>;
+
+			local-mac-address = [00 10 18 FF FF FF];
+
+			fixed-link {
+				speed = <1000>;
+				duplex-full;
+			};
+		};
+	};
+};
