@@ -21,7 +21,6 @@
 #include <linux/etherdevice.h>
 #include <linux/ethtool.h>
 #include <linux/platform_device.h>
-#include <linux/of_device.h>
 #include <linux/clk.h>
 #include <linux/of_net.h>
 #include <linux/of_mdio.h>
@@ -1514,7 +1513,6 @@ static void fe_pending_work(struct work_struct *work)
 
 static int fe_probe(struct platform_device *pdev)
 {
-	const struct of_device_id *match;
 	struct fe_soc_data *soc;
 	struct net_device *netdev;
 	struct fe_priv *priv;
@@ -1525,9 +1523,7 @@ static int fe_probe(struct platform_device *pdev)
 	if (err)
 		dev_err(&pdev->dev, "failed to reset device\n");
 
-	match = of_match_device(of_fe_match, &pdev->dev);
-	soc = (struct fe_soc_data *)match->data;
-
+	soc = (struct fe_soc_data *)of_device_get_match_data(&pdev->dev);
 	if (soc->reg_table)
 		fe_reg_table = soc->reg_table;
 	else
