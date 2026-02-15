@@ -2751,6 +2751,29 @@ define Device/tplink_archer-ax80-v1
 endef
 TARGET_DEVICES += tplink_archer-ax80-v1
 
+define Device/tplink_archer-ax80-v1-ubi
+$(call Device/tplink_archer-ax80-v1)
+  DEVICE_VARIANT := v1 (UBI)
+  DEVICE_DTS := mt7986a-tplink-archer-ax80-v1-ubi
+  DEVICE_DTC_FLAGS := --pad 4096
+  DEVICE_DTS_LOADADDR := 0x43f00000
+  KERNEL_IN_UBI := 1
+  UBOOTENV_IN_UBI := 1
+  IMAGES := sysupgrade.itb
+  KERNEL_INITRAMFS_SUFFIX := -recovery.itb
+  KERNEL := kernel-bin | gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | \
+  fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | \
+  pad-to 64k
+  IMAGE/sysupgrade.itb := append-kernel | \
+  fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-with-rootfs | \
+  append-metadata
+  ARTIFACTS := bl31-uboot.fip preloader.bin
+  ARTIFACT/preloader.bin := mt7986-bl2 spim-nand-ubi-ddr3
+  ARTIFACT/bl31-uboot.fip := mt7986-bl31-uboot tplink_archer-ax80-v1-ubi
+endef
+TARGET_DEVICES += tplink_archer-ax80-v1-ubi
+
 define Device/tplink_archer-ax80-v1-eu
   DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := Archer AX80
