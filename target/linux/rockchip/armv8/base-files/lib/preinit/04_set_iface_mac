@@ -1,0 +1,47 @@
+. /lib/functions.sh
+
+preinit_set_mac_address() {
+	case "$board" in
+	friendlyarm,nanopi-r2c|\
+	friendlyarm,nanopi-r2s)
+		wan_mac=$(macaddr_generate_from_mmc_cid mmcblk0)
+		ip link set dev eth0 address $wan_mac
+		ip link set dev eth1 address $(macaddr_add "$wan_mac" 1)
+		;;
+	friendlyarm,nanopi-r2c-plus|\
+	friendlyarm,nanopi-r4s|\
+	friendlyarm,nanopi-r5s|\
+	sinovoip,rk3568-bpi-r2pro)
+		wan_mac=$(macaddr_generate_from_mmc_cid mmcblk1)
+		ip link set dev eth0 address $wan_mac
+		ip link set dev eth1 address $(macaddr_add "$wan_mac" 1)
+		;;
+	sinovoip,rk3568-bpi-r2pro)
+		wan_mac=$(macaddr_generate_from_mmc_cid mmcblk1)
+		lan_mac=$(macaddr_add "$wan_mac" 1)
+		ip link set dev eth0 address $wan_mac
+		ip link set dev eth1 address $lan_mac
+		ip link set dev lan0 address $lan_mac
+		ip link set dev lan1 address $lan_mac
+		ip link set dev lan2 address $lan_mac
+		ip link set dev lan3 address $lan_mac
+		;;
+	friendlyarm,nanopi-r4s-enterprise)
+		wan_mac=$(get_mac_binary "/sys/bus/i2c/devices/2-0051/eeprom" 0xfa)
+		ip link set dev eth0 address $wan_mac
+		ip link set dev eth1 address $(macaddr_setbit_la "$wan_mac")
+		;;
+	friendlyarm,nanopi-r5c)
+		wan_mac=$(macaddr_generate_from_mmc_cid mmcblk*)
+		ip link set dev eth1 address $wan_mac
+		ip link set dev eth0 address $(macaddr_add "$wan_mac" 1)
+		;;
+	xunlong,orangepi-r1-plus|\
+	xunlong,orangepi-r1-plus-lts)
+		wan_mac=$(macaddr_add "$(cat /sys/class/net/eth1/address)" -1)
+		ip link set dev eth0 address $wan_mac
+		;;
+	esac
+}
+
+boot_hook_add preinit_main preinit_set_mac_address
