@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: GPL-2.0-only
+config NET_DSA_MXL862
+	tristate "MaxLinear MxL862xx"
+	depends on NET_DSA
+	select NET_DSA_TAG_MXL862
+	select FW_LOADER
+	help
+	  This enables support for the MaxLinear MxL862xx switch family.
