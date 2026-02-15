@@ -20,6 +20,7 @@ proto_mbim_init_config() {
 	proto_config_add_string username
 	proto_config_add_string password
 	[ -e /proc/sys/net/ipv6 ] && proto_config_add_string ipv6
+	proto_config_add_string devpath
 	proto_config_add_string dhcp
 	proto_config_add_string dhcpv6
 	proto_config_add_boolean sourcefilter
@@ -46,8 +47,8 @@ _proto_mbim_setup() {
 	local tid=2
 	local ret
 
-	local allow_partner allow_roaming apn auth delay device password pincode username
-	json_get_vars allow_partner allow_roaming apn auth delay device password pincode username
+	local allow_partner allow_roaming apn auth delay device devpath password pincode username
+	json_get_vars allow_partner allow_roaming apn auth delay device devpath password pincode username
 
 	local dhcp dhcpv6 pdptype
 	json_get_vars dhcp dhcpv6 pdptype
@@ -58,6 +59,32 @@ _proto_mbim_setup() {
 	[ ! -e /proc/sys/net/ipv6 ] && ipv6=0 || json_get_var ipv6 ipv6
 
 	[ -n "$ctl_device" ] && device=$ctl_device
+
+	if [ -n "$devpath" ]; then
+		local usbmisc_path wwan_path
+		# /sys/devices/platform/1e1c0000.xhci/usb1/1-2/1-2:1.4/usbmisc/cdc-wdm0
+		# Numbers after ":" are the configuration and interface number
+		# of the connected modem. There can be multiple interfaces but
+		# there will only be a single interface that provides the
+		# control channel device. Therefore, use -maxdepth 2 to allow
+		# specifying the USB port number the modem is directly connected
+		# to.
+		usbmisc_path=$(find "$devpath" -maxdepth 2 -type d -name "usbmisc")
+		# /sys/devices/platform/soc/11280000.pcie/pci0003:00/0003:00:00.0/0003:01:00.0/wwan/wwan0/wwan0mbim0
+		# Use -maxdepth 2 to allow specifying the PCI address of the
+		# modem.
+		wwan_path=$(find "$devpath" -maxdepth 2 -type d -regex '.*/wwan[0-9][0-9]*$')
+		if [ -n "$usbmisc_path" ]; then
+			device="/dev/$(ls "$usbmisc_path")"
+		elif [ -n "$wwan_path" ]; then
+			device="/dev/$(ls "$wwan_path")"
+		else
+			echo "mbim[$$]" "The specified control device does not exist"
+			proto_notify_error "$interface" NO_DEVICE
+			proto_set_available "$interface" 0
+			return 1
+		fi
+	fi
 
 	[ -n "$device" ] || {
 		echo "mbim[$$]" "No control device specified"
@@ -321,11 +348,21 @@ proto_mbim_setup() {
 proto_mbim_teardown() {
 	local interface="$1"
 
-	local device
-	json_get_vars device
+	local device devpath
+	json_get_vars device devpath
 	local tid=$(uci_get_state network $interface tid)
 
 	[ -n "$ctl_device" ] && device=$ctl_device
+
+	if [ -n "$devpath" ]; then
+		local usbmisc_path wwan_path
+		usbmisc_path=$(find "$devpath" -maxdepth 2 -type d -name "usbmisc")
+		wwan_path=$(find "$devpath" -maxdepth 2 -type d -regex '.*/wwan[0-9][0-9]*$')
+		if [ -n "$usbmisc_path" ]; then
+			device="/dev/$(ls "$usbmisc_path")"
+		else
+			device="/dev/$(ls "$wwan_path")"
+	fi
 
 	echo "mbim[$$]" "Stopping network"
 	[ -n "$tid" ] && {
