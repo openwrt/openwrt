@@ -52,7 +52,7 @@ Signed-off-by: Viresh Kumar <viresh.kumar@linaro.org>
  obj-$(CONFIG_ARM_ARMADA_8K_CPUFREQ)	+= armada-8k-cpufreq.o
 --- /dev/null
 +++ b/drivers/cpufreq/airoha-cpufreq.c
-@@ -0,0 +1,166 @@
+@@ -0,0 +1,171 @@
 +// SPDX-License-Identifier: GPL-2.0
 +
 +#include <linux/bitfield.h>
@@ -87,16 +87,17 @@ Signed-off-by: Viresh Kumar <viresh.kumar@linaro.org>
 +
 +static int airoha_cpufreq_probe(struct platform_device *pdev)
 +{
-+	struct dev_pm_opp_config config = {
-+		.clk_names = airoha_cpufreq_clk_names,
-+		.config_clks = airoha_cpufreq_config_clks_nop,
-+		.genpd_names = airoha_cpufreq_pd_names,
-+	};
 +	struct platform_device *cpufreq_dt;
 +	struct airoha_cpufreq_priv *priv;
 +	struct device *dev = &pdev->dev;
 +	struct device **virt_devs = NULL;
 +	struct device *cpu_dev;
++	struct dev_pm_opp_config config = {
++		.clk_names = airoha_cpufreq_clk_names,
++		.config_clks = airoha_cpufreq_config_clks_nop,
++		.genpd_names = airoha_cpufreq_pd_names,
++		.virt_devs = &virt_devs,
++	};
 +	int ret;
 +
 +	/* CPUs refer to the same OPP table */
@@ -156,15 +157,18 @@ Signed-off-by: Viresh Kumar <viresh.kumar@linaro.org>
 +static void airoha_cpufreq_remove(struct platform_device *pdev)
 +{
 +	struct airoha_cpufreq_priv *priv = platform_get_drvdata(pdev);
-+	const char * const *name = airoha_cpufreq_pd_names;
-+	int i;
 +
 +	platform_device_unregister(priv->cpufreq_dt);
 +
 +	dev_pm_opp_clear_config(priv->opp_token);
 +
-+	for (i = 0; *name; i++, name++)
-+		pm_runtime_put(priv->virt_devs[i]);
++	if (priv->virt_devs) {
++		const char * const *name = airoha_cpufreq_pd_names;
++		int i;
++
++		for (i = 0; *name; i++, name++)
++			pm_runtime_put(priv->virt_devs[i]);
++	}
 +}
 +
 +static struct platform_driver airoha_cpufreq_driver = {
@@ -177,6 +181,7 @@ Signed-off-by: Viresh Kumar <viresh.kumar@linaro.org>
 +
 +static const struct of_device_id airoha_cpufreq_match_list[] __initconst = {
 +	{ .compatible = "airoha,en7581" },
++	{ .compatible = "airoha,an7581" },
 +	{},
 +};
 +MODULE_DEVICE_TABLE(of, airoha_cpufreq_match_list);
@@ -221,11 +226,12 @@ Signed-off-by: Viresh Kumar <viresh.kumar@linaro.org>
 +MODULE_LICENSE("GPL");
 --- a/drivers/cpufreq/cpufreq-dt-platdev.c
 +++ b/drivers/cpufreq/cpufreq-dt-platdev.c
-@@ -104,6 +104,8 @@ static const struct of_device_id allowli
+@@ -104,6 +104,9 @@ static const struct of_device_id allowli
   * platforms using "operating-points-v2" property.
   */
  static const struct of_device_id blocklist[] __initconst = {
 +	{ .compatible = "airoha,en7581", },
++	{ .compatible = "airoha,an7581", },
 +
  	{ .compatible = "allwinner,sun50i-h6", },
  	{ .compatible = "allwinner,sun50i-h616", },
