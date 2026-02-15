@@ -1,3 +1,5 @@
+DTS_DIR := $(DTS_DIR)/qcom
+
 define Device/8devices_kiwi-dvk
 	$(call Device/FitImage)
 	$(call Device/EmmcImage)
