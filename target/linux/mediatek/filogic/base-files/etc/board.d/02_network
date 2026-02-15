@@ -138,6 +138,7 @@ mediatek_setup_interfaces()
 	glinet,gl-mt3000|\
 	glinet,gl-x3000|\
 	glinet,gl-xe3000|\
+	hiveton,h5000m|\
 	openembed,som7981|\
 	openwrt,one)
 		ucidef_set_interfaces_lan_wan eth1 eth0
@@ -247,6 +248,10 @@ mediatek_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii pdt_data_1 ethaddr)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		label_mac=$wan_mac
+		;;
+	hiveton,h5000m)
+		lan_mac=$(macaddr_generate_from_mmc_cid mmcblk0)
+		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
 	mercusys,mr80x-v3|\
 	mercusys,mr85x)
