@@ -1114,7 +1114,7 @@ define U-Boot/mt7987_rfb-emmc
   BUILD_DEVICES:=mediatek_mt7987a-rfb
   UBOOT_CONFIG:=mt7987_emmc_rfb
   UBOOT_IMAGE:=u-boot.fip
-  BL2_BOOTDEV:=sdmmc
+  BL2_BOOTDEV:=emmc
   BL2_SOC:=mt7987
   BL2_DDRTYPE:=comb
   DEPENDS:=+trusted-firmware-a-mt7987-emmc-comb
