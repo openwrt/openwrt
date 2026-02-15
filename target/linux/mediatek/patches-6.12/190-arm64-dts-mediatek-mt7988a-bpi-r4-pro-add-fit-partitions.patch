@@ -1,0 +1,100 @@
+--- a/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-emmc.dtso
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-emmc.dtso
+@@ -29,5 +29,28 @@
+ 	#address-cells = <1>;
+ 	#size-cells = <0>;
+ 	status = "okay";
++
++	card@0 {
++		compatible = "mmc-card";
++		reg = <0>;
++
++		partitions {
++			compatible = "gpt-partitions";
++
++			block-partition-env {
++				partname = "ubootenv";
++				nvmem-layout {
++					compatible = "u-boot,env-layout";
++				};
++			};
++
++			emmc_rootfs: block-partition-production {
++				partname = "production";
++			};
++		};
++	};
+ };
+ 
++&{/chosen} {
++	rootdisk-emmc = <&emmc_rootfs>;
++};
+--- a/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-sd.dtso
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro-sd.dtso
+@@ -27,5 +27,28 @@
+ 	#address-cells = <1>;
+ 	#size-cells = <0>;
+ 	status = "okay";
++
++	card@0 {
++		compatible = "mmc-card";
++		reg = <0>;
++
++		partitions {
++			compatible = "gpt-partitions";
++
++			block-partition-env {
++				partname = "ubootenv";
++				nvmem-layout {
++					compatible = "u-boot,env-layout";
++				};
++			};
++
++			sd_rootfs: block-partition-production {
++				partname = "production";
++			};
++		};
++	};
+ };
+ 
++&{/chosen} {
++	rootdisk-sd = <&sd_rootfs>;
++};
+--- a/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro.dtsi
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro.dtsi
+@@ -28,6 +28,8 @@
+ 
+ 	chosen {
+ 		stdout-path = &serial0;
++		bootargs = "console=ttyS0,115200n1 pci=pcie_bus_perf ubi.block=0,fit root=/dev/fit0";
++		rootdisk-spim-nand = <&ubi_rootfs>;
+ 	};
+ 
+ 	fan: pwm-fan {
+@@ -499,6 +501,26 @@
+ 			compatible = "linux,ubi";
+ 			reg = <0x200000 0xfe00000>;
+ 			label = "ubi";
++
++			volumes {
++				ubi-volume-ubootenv {
++					volname = "ubootenv";
++					nvmem-layout {
++						compatible = "u-boot,env-redundant-bool-layout";
++					};
++				};
++
++				ubi-volume-ubootenv2 {
++					volname = "ubootenv2";
++					nvmem-layout {
++						compatible = "u-boot,env-redundant-bool-layout";
++					};
++				};
++
++				ubi_rootfs: ubi-volume-fit {
++					volname = "fit";
++				};
++			};
+ 		};
+ 	};
+ };
