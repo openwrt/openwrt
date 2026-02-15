@@ -41,6 +41,52 @@ config KERNEL_DEBUG_FS
 	  write to these files. Many common debugging facilities, such as
 	  ftrace, require the existence of debugfs.
 
+config KERNEL_CONFIGFS_FS
+	bool "Compile the kernel with configuration filesystem support"
+	default n
+	help
+	  configfs is a RAM-based filesystem that provides the converse
+	  of sysfs's functionality. Where sysfs is a filesystem-based
+	  view of kernel objects, configfs is a filesystem-based manager
+	  of kernel objects, or config_items.
+
+	  Both sysfs and configfs can and should exist together on the
+	  same system. One is not a replacement for the other.
+
+config KERNEL_ACPI_TABLE_UPGRADE
+	bool "Compile the kernel with ACPI tables upgrading via initrd"
+	depends on HAS_ACPI
+	default y
+	help
+	  This option provides functionality to upgrade arbitrary ACPI tables
+	  via initrd. No functional change if no ACPI tables are passed via
+	  initrd, therefore it's safe to say Y.
+	  See Documentation/admin-guide/acpi/initrd_table_override.rst for details
+
+config KERNEL_ACPI_CONFIGFS
+	bool "Compile the kernel with ACPI enabled configfs support"
+	default n
+	depends on HAS_ACPI
+	select KERNEL_CONFIGFS_FS
+	help
+	  Select this option to enable support for ACPI configuration from
+	  userspace. The configurable ACPI groups will be visible under
+	  /config/acpi, assuming configfs is mounted under /config.
+
+config KERNEL_ACPI_DEBUG
+	bool "Compile the kernel with ACPI debugging support"
+	default n
+	depends on HAS_ACPI
+	select KERNEL_ACPI_CONFIGFS
+	help
+	  The ACPI subsystem can produce debug output.  Saying Y enables this
+	  output and increases the kernel size by around 50K.
+
+	  Use the acpi.debug_layer and acpi.debug_level kernel command-line
+	  parameters documented in Documentation/firmware-guide/acpi/debug.rst and
+	  Documentation/admin-guide/kernel-parameters.rst to control the type and
+	  amount of debug output.
+
 config KERNEL_MIPS_FP_SUPPORT
 	bool
 	default y if TARGET_pistachio
