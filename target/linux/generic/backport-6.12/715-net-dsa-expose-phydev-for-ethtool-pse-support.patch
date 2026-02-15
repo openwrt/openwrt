@@ -1,0 +1,66 @@
+net: dsa: expose phydev on net_device for ethtool PSE support
+
+DSA with phylink doesn't expose the PHY device on the net_device,
+which prevents ethtool PSE commands from working. The ethtool PSE
+code path requires net_device->phydev->psec to access the PSE
+controller.
+
+Add phylink_get_phydev() helper to retrieve the PHY device from
+a phylink instance, and set user_dev->phydev after successful PHY
+connection in DSA. This enables ethtool --show-pse and --set-pse
+commands to work on DSA switch ports with PSE controllers attached.
+
+Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
+---
+ drivers/net/phy/phylink.c | 14 ++++++++++++++
+ include/linux/phylink.h   |  1 +
+ net/dsa/user.c            |  6 ++++++
+ 3 files changed, 21 insertions(+)
+
+--- a/drivers/net/phy/phylink.c
++++ b/drivers/net/phy/phylink.c
+@@ -3040,6 +3040,19 @@ int phylink_get_eee_err(struct phylink *
+ EXPORT_SYMBOL_GPL(phylink_get_eee_err);
+ 
+ /**
++ * phylink_get_phydev() - get the PHY device
++ * @pl: a pointer to a &struct phylink returned from phylink_create()
++ *
++ * Returns the phy_device associated with the phylink instance, or NULL
++ * if no PHY is attached. Used by DSA to expose phydev for ethtool PSE.
++ */
++struct phy_device *phylink_get_phydev(struct phylink *pl)
++{
++	return pl->phydev;
++}
++EXPORT_SYMBOL_GPL(phylink_get_phydev);
++
++/**
+  * phylink_init_eee() - init and check the EEE features
+  * @pl: a pointer to a &struct phylink returned from phylink_create()
+  * @clk_stop_enable: allow PHY to stop receive clock
+--- a/include/linux/phylink.h
++++ b/include/linux/phylink.h
+@@ -642,6 +642,7 @@ void phylink_ethtool_get_pauseparam(stru
+ int phylink_ethtool_set_pauseparam(struct phylink *,
+ 				   struct ethtool_pauseparam *);
+ int phylink_get_eee_err(struct phylink *);
++struct phy_device *phylink_get_phydev(struct phylink *);
+ int phylink_init_eee(struct phylink *, bool);
+ int phylink_ethtool_get_eee(struct phylink *link, struct ethtool_keee *eee);
+ int phylink_ethtool_set_eee(struct phylink *link, struct ethtool_keee *eee);
+--- a/net/dsa/user.c
++++ b/net/dsa/user.c
+@@ -2629,6 +2629,12 @@ static int dsa_user_phy_setup(struct net
+ 		netdev_err(user_dev, "failed to connect to PHY: %pe\n",
+ 			   ERR_PTR(ret));
+ 		dsa_port_phylink_destroy(dp);
++	} else {
++		/* Expose phydev on net_device for ethtool PSE support.
++		 * phylink manages the PHY but doesn't set netdev->phydev,
++		 * which is required for ethtool PSE commands to work.
++		 */
++		user_dev->phydev = phylink_get_phydev(dp->pl);
+ 	}
+ 
+ 	return ret;
