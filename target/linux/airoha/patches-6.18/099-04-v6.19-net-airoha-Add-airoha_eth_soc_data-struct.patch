@@ -1,0 +1,238 @@
+From patchwork Fri Oct 17 09:06:13 2025
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+X-Patchwork-Submitter: Lorenzo Bianconi <lorenzo@kernel.org>
+X-Patchwork-Id: 14271896
+Return-Path: 
+ <linux-mediatek-bounces+linux-mediatek=archiver.kernel.org@lists.infradead.org>
+X-Spam-Checker-Version: SpamAssassin 3.4.0 (2014-02-07) on
+	aws-us-west-2-korg-lkml-1.web.codeaurora.org
+Received: from bombadil.infradead.org (bombadil.infradead.org
+ [198.137.202.133])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
+	(No client certificate requested)
+	by smtp.lore.kernel.org (Postfix) with ESMTPS id 5E296CCD19A
+	for <linux-mediatek@archiver.kernel.org>;
+ Fri, 17 Oct 2025 09:06:47 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=lists.infradead.org; s=bombadil.20210309; h=Sender:List-Subscribe:List-Help
+	:List-Post:List-Archive:List-Unsubscribe:List-Id:Cc:To:In-Reply-To:References
+	:Message-Id:Content-Transfer-Encoding:Content-Type:MIME-Version:Subject:Date:
+	From:Reply-To:Content-ID:Content-Description:Resent-Date:Resent-From:
+	Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Owner;
+	bh=wkwlASsYkhvjM8U46EGMA8RVHAmJNSn6nDbcBIOmXzc=; b=alNX1VP7YU5DZx7HzeRSJ5nBse
+	DgwR+w89rUa2HubXYOoalBM3rAs9TWVY4L+j+o/b9Y3XgaUOjIr4CSB+u6MbpcnQlTAVfMJsBH+Ih
+	5DQjihDar1M1TaTK6aCqaElo6zF0zVUzKLkJUE3ZdJVqXv2EXJL0I0QAkyoU/q4aBAdFjrFoBe9si
+	DFFsRLBFIbRw//wbcAKT7479x2ifQGd0bULABSeMQ6nh1mPIcH+YSfgkpUIF0DaAO2MEfw9zwL4nD
+	ubUDEP1+8TnWjn9A7y4YjpbmmMsuxvRgmT73ZJ1BI7F93YZKGvufuFeRTftSC7DWjUQVZ6xeS04zt
+	kpPa7o0A==;
+Received: from localhost ([::1] helo=bombadil.infradead.org)
+	by bombadil.infradead.org with esmtp (Exim 4.98.2 #2 (Red Hat Linux))
+	id 1v9gQA-00000007BtM-21tU;
+	Fri, 17 Oct 2025 09:06:46 +0000
+Received: from sea.source.kernel.org ([2600:3c0a:e001:78e:0:1991:8:25])
+	by bombadil.infradead.org with esmtps (Exim 4.98.2 #2 (Red Hat Linux))
+	id 1v9gQ5-00000007Bok-42VY;
+	Fri, 17 Oct 2025 09:06:43 +0000
+Received: from smtp.kernel.org (transwarp.subspace.kernel.org [100.75.92.58])
+	by sea.source.kernel.org (Postfix) with ESMTP id A2CE3453C1;
+	Fri, 17 Oct 2025 09:06:41 +0000 (UTC)
+Received: by smtp.kernel.org (Postfix) with ESMTPSA id 2E225C4CEE7;
+	Fri, 17 Oct 2025 09:06:41 +0000 (UTC)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=kernel.org;
+	s=k20201202; t=1760692001;
+	bh=3mSU+FX9dbIsh1PJOErN1WzsRYXyPLXOJt1QhSHoWGk=;
+	h=From:Date:Subject:References:In-Reply-To:To:Cc:From;
+	b=GI0h9/PMIzRN/Va/X8T0iAQNSwnaVer99pOwVwggwC2Fi4geBqdSnTiDSqgFUkYTD
+	 4+4FR8y/CqJ7x64+cSYSb5lTtxFjLYoOFRbxx6yGihsx1B8OldBS+6eQhjaC2ByK6j
+	 kUdYgMKgyVHxjSwCtUaqq6oudNQjTvpfQ9kMW0e1eVQb4S9iRlenE0ZyBqtNZqjbCL
+	 v1C37Sk0nhbAmx40ObcJmbQKcMXRCofyFK50GyAoG8beIIevW7TJ0z/TnlmvIiCjjC
+	 TZ9SErjGXxEVDNDWsCV/gWSKfxL8TsEIU/kqS8es29RcdUXwlwE0VU7t4xuJCEVGYG
+	 AwMAEVl+apMBA==
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Fri, 17 Oct 2025 11:06:13 +0200
+Subject: [PATCH net-next v3 04/13] net: airoha: Add airoha_eth_soc_data
+ struct
+MIME-Version: 1.0
+Message-Id: <20251017-an7583-eth-support-v3-4-f28319666667@kernel.org>
+References: <20251017-an7583-eth-support-v3-0-f28319666667@kernel.org>
+In-Reply-To: <20251017-an7583-eth-support-v3-0-f28319666667@kernel.org>
+To: Andrew Lunn <andrew+netdev@lunn.ch>,
+ "David S. Miller" <davem@davemloft.net>, Eric Dumazet <edumazet@google.com>,
+ Jakub Kicinski <kuba@kernel.org>, Paolo Abeni <pabeni@redhat.com>,
+ Rob Herring <robh@kernel.org>, Krzysztof Kozlowski <krzk+dt@kernel.org>,
+ Conor Dooley <conor+dt@kernel.org>, Philipp Zabel <p.zabel@pengutronix.de>,
+ Lorenzo Bianconi <lorenzo@kernel.org>
+Cc: linux-arm-kernel@lists.infradead.org,
+ linux-mediatek@lists.infradead.org, netdev@vger.kernel.org,
+ devicetree@vger.kernel.org, Christian Marangi <ansuelsmth@gmail.com>,
+ Simon Horman <horms@kernel.org>
+X-Mailer: b4 0.14.2
+X-CRM114-Version: 20100106-BlameMichelson ( TRE 0.8.0 (BSD) ) MR-646709E3 
+X-CRM114-CacheID: sfid-20251017_020642_051538_068D2EF8 
+X-CRM114-Status: GOOD (  17.46  )
+X-BeenThere: linux-mediatek@lists.infradead.org
+X-Mailman-Version: 2.1.34
+Precedence: list
+List-Id: <linux-mediatek.lists.infradead.org>
+List-Unsubscribe: <http://lists.infradead.org/mailman/options/linux-mediatek>,
+ <mailto:linux-mediatek-request@lists.infradead.org?subject=unsubscribe>
+List-Archive: <http://lists.infradead.org/pipermail/linux-mediatek/>
+List-Post: <mailto:linux-mediatek@lists.infradead.org>
+List-Help: <mailto:linux-mediatek-request@lists.infradead.org?subject=help>
+List-Subscribe: <http://lists.infradead.org/mailman/listinfo/linux-mediatek>,
+ <mailto:linux-mediatek-request@lists.infradead.org?subject=subscribe>
+Sender: "Linux-mediatek" <linux-mediatek-bounces@lists.infradead.org>
+Errors-To: 
+ linux-mediatek-bounces+linux-mediatek=archiver.kernel.org@lists.infradead.org
+
+Introduce airoha_eth_soc_data struct to contain differences between
+various SoC. Move XSI reset names in airoha_eth_soc_data. This is a
+preliminary patch to enable AN7583 ethernet controller support in
+airoha-eth driver.
+
+Co-developed-by: Christian Marangi <ansuelsmth@gmail.com>
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+Reviewed-by: Simon Horman <horms@kernel.org>
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 42 +++++++++++++++++++++++++-------
+ drivers/net/ethernet/airoha/airoha_eth.h | 17 +++++++++++--
+ 2 files changed, 48 insertions(+), 11 deletions(-)
+
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.c b/drivers/net/ethernet/airoha/airoha_eth.c
+index 5825f6f29a92e8fff0596d7883a4c2648432a6ef..c9cebe6752eb524e58cfa30f937372d6d3baea1c 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -1387,8 +1387,7 @@ static int airoha_hw_init(struct platform_device *pdev,
+ 	int err, i;
+ 
+ 	/* disable xsi */
+-	err = reset_control_bulk_assert(ARRAY_SIZE(eth->xsi_rsts),
+-					eth->xsi_rsts);
++	err = reset_control_bulk_assert(eth->soc->num_xsi_rsts, eth->xsi_rsts);
+ 	if (err)
+ 		return err;
+ 
+@@ -2922,6 +2921,7 @@ static int airoha_alloc_gdm_port(struct airoha_eth *eth,
+ 
+ static int airoha_probe(struct platform_device *pdev)
+ {
++	struct reset_control_bulk_data *xsi_rsts;
+ 	struct device_node *np;
+ 	struct airoha_eth *eth;
+ 	int i, err;
+@@ -2930,6 +2930,10 @@ static int airoha_probe(struct platform_device *pdev)
+ 	if (!eth)
+ 		return -ENOMEM;
+ 
++	eth->soc = of_device_get_match_data(&pdev->dev);
++	if (!eth->soc)
++		return -EINVAL;
++
+ 	eth->dev = &pdev->dev;
+ 
+ 	err = dma_set_mask_and_coherent(eth->dev, DMA_BIT_MASK(32));
+@@ -2954,13 +2958,18 @@ static int airoha_probe(struct platform_device *pdev)
+ 		return err;
+ 	}
+ 
+-	eth->xsi_rsts[0].id = "xsi-mac";
+-	eth->xsi_rsts[1].id = "hsi0-mac";
+-	eth->xsi_rsts[2].id = "hsi1-mac";
+-	eth->xsi_rsts[3].id = "hsi-mac";
+-	eth->xsi_rsts[4].id = "xfp-mac";
++	xsi_rsts = devm_kzalloc(eth->dev,
++				eth->soc->num_xsi_rsts * sizeof(*xsi_rsts),
++				GFP_KERNEL);
++	if (err)
++		return err;
++
++	eth->xsi_rsts = xsi_rsts;
++	for (i = 0; i < eth->soc->num_xsi_rsts; i++)
++		eth->xsi_rsts[i].id = eth->soc->xsi_rsts_names[i];
++
+ 	err = devm_reset_control_bulk_get_exclusive(eth->dev,
+-						    ARRAY_SIZE(eth->xsi_rsts),
++						    eth->soc->num_xsi_rsts,
+ 						    eth->xsi_rsts);
+ 	if (err) {
+ 		dev_err(eth->dev, "failed to get bulk xsi reset lines\n");
+@@ -3048,8 +3057,23 @@ static void airoha_remove(struct platform_device *pdev)
+ 	platform_set_drvdata(pdev, NULL);
+ }
+ 
++static const char * const en7581_xsi_rsts_names[] = {
++	"xsi-mac",
++	"hsi0-mac",
++	"hsi1-mac",
++	"hsi-mac",
++	"xfp-mac",
++};
++
++static const struct airoha_eth_soc_data en7581_soc_data = {
++	.version = 0x7581,
++	.xsi_rsts_names = en7581_xsi_rsts_names,
++	.num_xsi_rsts = ARRAY_SIZE(en7581_xsi_rsts_names),
++	.num_ppe = 2,
++};
++
+ static const struct of_device_id of_airoha_match[] = {
+-	{ .compatible = "airoha,en7581-eth" },
++	{ .compatible = "airoha,en7581-eth", .data = &en7581_soc_data },
+ 	{ /* sentinel */ }
+ };
+ MODULE_DEVICE_TABLE(of, of_airoha_match);
+diff --git a/drivers/net/ethernet/airoha/airoha_eth.h b/drivers/net/ethernet/airoha/airoha_eth.h
+index 1f7e34a5f457ca2200e9c81dd05dc03cd7c5eb77..cb7e198e40eeb2f44bd6e035cc7b583f47441d59 100644
+--- a/drivers/net/ethernet/airoha/airoha_eth.h
++++ b/drivers/net/ethernet/airoha/airoha_eth.h
+@@ -21,7 +21,6 @@
+ #define AIROHA_MAX_NUM_IRQ_BANKS	4
+ #define AIROHA_MAX_DSA_PORTS		7
+ #define AIROHA_MAX_NUM_RSTS		3
+-#define AIROHA_MAX_NUM_XSI_RSTS		5
+ #define AIROHA_MAX_MTU			9216
+ #define AIROHA_MAX_PACKET_SIZE		2048
+ #define AIROHA_NUM_QOS_CHANNELS		4
+@@ -556,9 +555,18 @@ struct airoha_ppe {
+ 	struct dentry *debugfs_dir;
+ };
+ 
++struct airoha_eth_soc_data {
++	u16 version;
++	const char * const *xsi_rsts_names;
++	int num_xsi_rsts;
++	int num_ppe;
++};
++
+ struct airoha_eth {
+ 	struct device *dev;
+ 
++	const struct airoha_eth_soc_data *soc;
++
+ 	unsigned long state;
+ 	void __iomem *fe_regs;
+ 
+@@ -568,7 +576,7 @@ struct airoha_eth {
+ 	struct rhashtable flow_table;
+ 
+ 	struct reset_control_bulk_data rsts[AIROHA_MAX_NUM_RSTS];
+-	struct reset_control_bulk_data xsi_rsts[AIROHA_MAX_NUM_XSI_RSTS];
++	struct reset_control_bulk_data *xsi_rsts;
+ 
+ 	struct net_device *napi_dev;
+ 
+@@ -611,6 +619,11 @@ static inline bool airhoa_is_lan_gdm_port(struct airoha_gdm_port *port)
+ 	return port->id == 1;
+ }
+ 
++static inline bool airoha_is_7581(struct airoha_eth *eth)
++{
++	return eth->soc->version == 0x7581;
++}
++
+ bool airoha_is_valid_gdm_port(struct airoha_eth *eth,
+ 			      struct airoha_gdm_port *port);
+ 
