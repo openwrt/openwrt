@@ -1,7 +1,7 @@
-From 10bd131a6a365965ce868419933fd7936e91c635 Mon Sep 17 00:00:00 2001
+From c89b8f1baa9bf4e32b9f146f5fece6f2151e2dd0 Mon Sep 17 00:00:00 2001
 From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
 Date: Mon, 13 Oct 2025 20:48:00 +0300
-Subject: [PATCH 2/3] arm: airoha: disable environment inside mtd partition
+Subject: [PATCH 23/24] arm: airoha: disable environment inside mtd partition
 
 When booting on en7581_evb board equipped with spinand flash, a u-boot
 panic occurs. The panic is caused by the absence any available mtd
@@ -17,9 +17,11 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  configs/an7583_evb_defconfig | 1 +
  2 files changed, 2 insertions(+)
 
+diff --git a/configs/an7581_evb_defconfig b/configs/an7581_evb_defconfig
+index 7633cb7ac96..afdb0cd8586 100644
 --- a/configs/an7581_evb_defconfig
 +++ b/configs/an7581_evb_defconfig
-@@ -40,6 +40,7 @@ CONFIG_CMD_LOG=y
+@@ -41,6 +41,7 @@ CONFIG_CMD_LOG=y
  CONFIG_OF_UPSTREAM=y
  CONFIG_ENV_OVERWRITE=y
  CONFIG_ENV_IS_IN_MMC=y
@@ -27,9 +29,11 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  CONFIG_ENV_RELOC_GD_ENV_ADDR=y
  CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
  CONFIG_NET_RANDOM_ETHADDR=y
+diff --git a/configs/an7583_evb_defconfig b/configs/an7583_evb_defconfig
+index c69cf353ffa..c3d47c411ba 100644
 --- a/configs/an7583_evb_defconfig
 +++ b/configs/an7583_evb_defconfig
-@@ -41,6 +41,7 @@ CONFIG_CMD_MTDPARTS=y
+@@ -40,6 +40,7 @@ CONFIG_CMD_MTDPARTS=y
  CONFIG_CMD_LOG=y
  CONFIG_ENV_OVERWRITE=y
  CONFIG_ENV_IS_IN_MMC=y
@@ -37,4 +41,6 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  CONFIG_ENV_RELOC_GD_ENV_ADDR=y
  CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
  CONFIG_NET_RANDOM_ETHADDR=y
+-- 
+2.51.0
 

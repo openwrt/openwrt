@@ -1,7 +1,7 @@
-From 1a3039c1e3a194b3f1e72b4506f8bdcd5b10fbbf Mon Sep 17 00:00:00 2001
+From a982b2b81c8c73213915ff7ff655461fe2fe0cef Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
 Date: Mon, 19 May 2025 14:52:26 +0200
-Subject: [PATCH] airoha: add MMC node for Airoha AN7583
+Subject: [PATCH 09/24] airoha: add MMC node for Airoha AN7583
 
 Add MMC node for Airoha AN7583. These follow the same node of Airoha
 AN7581.
@@ -14,6 +14,8 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  arch/arm/dts/an7583.dtsi | 33 +++++++++++++++++++++++++++++++++
  1 file changed, 33 insertions(+)
 
+diff --git a/arch/arm/dts/an7583.dtsi b/arch/arm/dts/an7583.dtsi
+index daf9886af64..95c9d9a9507 100644
 --- a/arch/arm/dts/an7583.dtsi
 +++ b/arch/arm/dts/an7583.dtsi
 @@ -105,6 +105,21 @@
@@ -63,3 +65,6 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  		uart1: serial@1fbf0000 {
  			compatible = "ns16550";
  			reg = <0x0 0x1fbf0000 0x0 0x30>;
+-- 
+2.51.0
+
