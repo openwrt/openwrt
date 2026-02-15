@@ -8,6 +8,7 @@
 #include <linux/etherdevice.h>
 #include <linux/interrupt.h>
 #include <linux/io.h>
+#include <linux/minmax.h>
 #include <linux/platform_device.h>
 #include <linux/sched.h>
 #include <linux/slab.h>
@@ -30,17 +31,13 @@ int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type
 #define RTETH_RX_RINGS		2
 #define RTETH_TX_RING_SIZE	16
 #define RTETH_TX_RINGS		2
+#define RTETH_TX_TRIGGER	0x16
 
 #define NOTIFY_EVENTS	10
 #define NOTIFY_BLOCKS	10
-#define TX_EN		0x8
-#define RX_EN		0x4
-#define TX_EN_93XX	0x20
-#define RX_EN_93XX	0x10
 #define RX_TRUNCATE_EN_93XX BIT(6)
 #define RX_TRUNCATE_EN_83XX BIT(4)
 #define TX_PAD_EN_838X BIT(5)
-#define TX_DO		0x2
 #define WRAP		0x2
 #define RING_BUFFER	1600
 
@@ -233,30 +230,17 @@ static void rteth_enable_all_rx_irqs(struct rteth_ctrl *ctrl)
 	sw_w32_mask(0, mask << shift, ctrl->r->dma_if_intr_msk + reg * 4);
 }
 
-/* On the RTL93XX, the RTL93XX_DMA_IF_RX_RING_CNTR track the fill level of
- * the rings. Writing x into these registers substracts x from its content.
- * When the content reaches the ring size, the ASIC no longer adds
- * packets to this receive queue.
- */
-static void rteth_83xx_update_counter(int r, int released)
+static void rteth_83xx_update_counter(struct rteth_ctrl *ctrl, int ring, int released)
 {
 	/* Free floating rings without space tracking */
 }
 
-static void rteth_930x_update_counter(int r, int released)
+static void rteth_93xx_update_counter(struct rteth_ctrl *ctrl, int ring, int released)
 {
-	u32 reg = rtl930x_dma_if_rx_ring_cntr(r);
-	int pos = (r % 3) * 10;
+	int pos = (ring % 3) * 10;
 
-	sw_w32(released << pos, reg);
-}
-
-static void rteth_931x_update_counter(int r, int released)
-{
-	u32 reg = rtl931x_dma_if_rx_ring_cntr(r);
-	int pos = (r % 3) * 10;
-
-	sw_w32(released << pos, reg);
+	/* writing x to the ring counter increases ring free space by x */
+	sw_w32(released << pos, ctrl->r->dma_if_rx_ring_cntr(ring));
 }
 
 struct dsa_tag {
@@ -601,7 +585,7 @@ static void rtl838x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 	rteth_enable_all_rx_irqs(ctrl);
 
 	/* Enable DMA, engine expects empty FCS field */
-	sw_w32_mask(0, RX_EN | TX_EN, ctrl->r->dma_if_ctrl);
+	sw_w32_mask(0, ctrl->r->tx_rx_enable, ctrl->r->dma_if_ctrl);
 
 	/* Restart TX/RX to CPU port */
 	sw_w32_mask(0x0, 0x3, ctrl->r->mac_l2_port_ctrl);
@@ -624,7 +608,7 @@ static void rtl839x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 	rteth_enable_all_rx_irqs(ctrl);
 
 	/* Enable DMA */
-	sw_w32_mask(0, RX_EN | TX_EN, ctrl->r->dma_if_ctrl);
+	sw_w32_mask(0, ctrl->r->tx_rx_enable, ctrl->r->dma_if_ctrl);
 
 	/* Restart TX/RX to CPU port, enable CRC checking */
 	sw_w32_mask(0x0, 0x3 | BIT(3), ctrl->r->mac_l2_port_ctrl);
@@ -659,7 +643,7 @@ static void rtl93xx_hw_en_rxtx(struct rteth_ctrl *ctrl)
 	rteth_enable_all_rx_irqs(ctrl);
 
 	/* Enable DMA */
-	sw_w32_mask(0, RX_EN_93XX | TX_EN_93XX, ctrl->r->dma_if_ctrl);
+	sw_w32_mask(0, ctrl->r->tx_rx_enable, ctrl->r->dma_if_ctrl);
 
 	/* Restart TX/RX to CPU port, enable CRC checking */
 	sw_w32_mask(0x0, 0x3 | BIT(4), ctrl->r->mac_l2_port_ctrl);
@@ -807,10 +791,7 @@ static void rtl838x_hw_stop(struct rteth_ctrl *ctrl)
 	sw_w32_mask(0x3, 0, ctrl->r->mac_l2_port_ctrl);
 
 	/* Disable traffic */
-	if (ctrl->r->family_id == RTL9300_FAMILY_ID || ctrl->r->family_id == RTL9310_FAMILY_ID)
-		sw_w32_mask(RX_EN_93XX | TX_EN_93XX, 0, ctrl->r->dma_if_ctrl);
-	else
-		sw_w32_mask(RX_EN | TX_EN, 0, ctrl->r->dma_if_ctrl);
+	sw_w32_mask(ctrl->r->tx_rx_enable, 0, ctrl->r->dma_if_ctrl);
 	mdelay(200); /* Test, whether this is needed */
 
 	/* Block all ports */
@@ -977,16 +958,15 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *netdev)
 	    skb->data[len - 3] < ctrl->r->cpu_port &&
 	    skb->data[len - 2] == 0x10 &&
 	    skb->data[len - 1] == 0x00) {
-		/* DSA tag, reuse space for CRC */
 		dest_port = skb->data[len - 3];
-		skb->data[len - 4] = skb->data[len - 3] = 0;
-		skb->data[len - 2] = skb->data[len - 1] = 0;
+		/* space will be reused for 4 byte layer 2 FCS */
 	} else {
-		/* No DSA tag, add space for CRC */
-		len += 4;
+		/* No DSA tag, add space for 4 byte layer 2 FCS */
+		len += ETH_FCS_LEN;
 	}
 
-	if (unlikely(skb_padto(skb, len))) {
+	len = max(ETH_ZLEN + ETH_FCS_LEN, len);
+	if (unlikely(skb_put_padto(skb, len))) {
 		netdev->stats.tx_errors++;
 		dev_warn(dev, "skb pad failed\n");
 
@@ -1005,7 +985,7 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *netdev)
 		return NETDEV_TX_BUSY;
 	}
 
-	packet->dma = dma_map_single(dev, skb->data, skb->len, DMA_TO_DEVICE);
+	packet->dma = dma_map_single(dev, skb->data, len, DMA_TO_DEVICE);
 	if (unlikely(dma_mapping_error(dev, packet->dma))) {
 		dev_kfree_skb_any(skb);
 		netdev->stats.tx_errors++;
@@ -1017,12 +997,6 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *netdev)
 		/* cleanup old data of this slot */
 		dma_unmap_single(dev, packet->dma, packet->skb->len, DMA_TO_DEVICE);
 		dev_kfree_skb_any(packet->skb);
-	}
-
-	if (ctrl->r->family_id == RTL8380_FAMILY_ID) {
-		/* On RTL8380 SoCs, small packet lengths being sent need adjustments */
-		if (len < ETH_ZLEN - 4)
-			len -= 4;
 	}
 
 	if (dest_port >= 0)
@@ -1042,16 +1016,14 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *netdev)
 	if (ctrl->r->family_id == RTL8380_FAMILY_ID) {
 		for (int i = 0; i < 10; i++) {
 			u32 val = sw_r32(ctrl->r->dma_if_ctrl);
-			if ((val & 0xc) == 0xc)
+			if ((val & ctrl->r->tx_rx_enable) == ctrl->r->tx_rx_enable)
 				break;
 		}
 	}
 
-	/* Tell switch to send data */
-	if (ctrl->r->family_id == RTL9310_FAMILY_ID || ctrl->r->family_id == RTL9300_FAMILY_ID)
-		sw_w32_mask(0, BIT(2 + ring), ctrl->r->dma_if_ctrl);
-	else
-		sw_w32_mask(0, TX_DO, ctrl->r->dma_if_ctrl);
+	/* issue SoC independent send for 1 or 2 triggers with some bit vodoo */
+	sw_w32_mask(0, (RTETH_TX_TRIGGER >> ring) & ctrl->r->tx_trigger_mask,
+		    ctrl->r->dma_if_ctrl);
 
 	netdev->stats.tx_packets++;
 	netdev->stats.tx_bytes += len;
@@ -1127,7 +1099,7 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 	}
 
 	spin_lock(&ctrl->rx_lock);
-	ctrl->r->update_counter(ring, work_done);
+	ctrl->r->update_counter(ctrl, ring, work_done);
 	dev->stats.rx_packets += rx_packets;
 	dev->stats.rx_bytes += rx_bytes;
 	spin_unlock(&ctrl->rx_lock);
@@ -1445,6 +1417,8 @@ static const struct rteth_config rteth_838x_cfg = {
 	.family_id = RTL8380_FAMILY_ID,
 	.cpu_port = RTETH_838X_CPU_PORT,
 	.rx_rings = 8,
+	.tx_rx_enable = 0xc,
+	.tx_trigger_mask = BIT(1),
 	.net_irq = rteth_83xx_net_irq,
 	.mac_l2_port_ctrl = RTETH_838X_MAC_L2_PORT_CTRL,
 	.qm_pkt2cpu_intpri_map = RTETH_838X_QM_PKT2CPU_INTPRI_MAP,
@@ -1492,6 +1466,8 @@ static const struct rteth_config rteth_839x_cfg = {
 	.family_id = RTL8390_FAMILY_ID,
 	.cpu_port = RTETH_839X_CPU_PORT,
 	.rx_rings = 8,
+	.tx_rx_enable = 0xc,
+	.tx_trigger_mask = BIT(1),
 	.net_irq = rteth_83xx_net_irq,
 	.mac_l2_port_ctrl = RTETH_839X_MAC_L2_PORT_CTRL,
 	.qm_pkt2cpu_intpri_map = RTETH_839X_QM_PKT2CPU_INTPRI_MAP,
@@ -1539,6 +1515,8 @@ static const struct rteth_config rteth_930x_cfg = {
 	.family_id = RTL9300_FAMILY_ID,
 	.cpu_port = RTETH_930X_CPU_PORT,
 	.rx_rings = 32,
+	.tx_rx_enable = 0x30,
+	.tx_trigger_mask = GENMASK(3, 2),
 	.net_irq = rteth_93xx_net_irq,
 	.mac_l2_port_ctrl = RTETH_930X_MAC_L2_PORT_CTRL,
 	.qm_rsn2cpuqid_ctrl = RTETH_930X_QM_RSN2CPUQID_CTRL_0,
@@ -1566,7 +1544,7 @@ static const struct rteth_config rteth_930x_cfg = {
 	.get_mac_tx_pause_sts = rtl930x_get_mac_tx_pause_sts,
 	.mac = RTL930X_MAC_L2_ADDR_CTRL,
 	.l2_tbl_flush_ctrl = RTL930X_L2_TBL_FLUSH_CTRL,
-	.update_counter = rteth_930x_update_counter,
+	.update_counter = rteth_93xx_update_counter,
 	.create_tx_header = rteth_930x_create_tx_header,
 	.decode_tag = rteth_930x_decode_tag,
 	.hw_reset = &rteth_93xx_hw_reset,
@@ -1590,6 +1568,8 @@ static const struct rteth_config rteth_931x_cfg = {
 	.family_id = RTL9310_FAMILY_ID,
 	.cpu_port = RTETH_931X_CPU_PORT,
 	.rx_rings = 32,
+	.tx_rx_enable = 0x30,
+	.tx_trigger_mask = GENMASK(3, 2),
 	.net_irq = rteth_93xx_net_irq,
 	.mac_l2_port_ctrl = RTETH_931X_MAC_L2_PORT_CTRL,
 	.qm_rsn2cpuqid_ctrl = RTETH_931X_QM_RSN2CPUQID_CTRL_0,
@@ -1617,7 +1597,7 @@ static const struct rteth_config rteth_931x_cfg = {
 	.get_mac_tx_pause_sts = rtl931x_get_mac_tx_pause_sts,
 	.mac = RTL931X_MAC_L2_ADDR_CTRL,
 	.l2_tbl_flush_ctrl = RTL931X_L2_TBL_FLUSH_CTRL,
-	.update_counter = rteth_931x_update_counter,
+	.update_counter = rteth_93xx_update_counter,
 	.create_tx_header = rteth_931x_create_tx_header,
 	.decode_tag = rteth_931x_decode_tag,
 	.hw_reset = &rteth_93xx_hw_reset,

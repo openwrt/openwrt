@@ -422,6 +422,8 @@ struct rteth_config {
 	int family_id;
 	int cpu_port;
 	int rx_rings;
+	int tx_rx_enable;
+	int tx_trigger_mask;
 	irqreturn_t (*net_irq)(int irq, void *dev_id);
 	int mac_l2_port_ctrl;
 	int qm_pkt2cpu_intpri_map;
@@ -454,7 +456,7 @@ struct rteth_config {
 	bool (*decode_tag)(struct rteth_packet *h, struct dsa_tag *tag);
 	void (*hw_reset)(struct rteth_ctrl *ctrl);
 	int (*init_mac)(struct rteth_ctrl *ctrl);
-	void (*update_counter)(int r, int work_done);
+	void (*update_counter)(struct rteth_ctrl *ctrl, int ring, int released);
 	const struct net_device_ops *netdev_ops;
 };
 
