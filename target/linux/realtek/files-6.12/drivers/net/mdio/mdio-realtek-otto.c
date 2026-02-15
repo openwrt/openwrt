@@ -704,6 +704,8 @@ static void rtmdio_930x_setup_polling(struct mii_bus *bus)
 	struct rtmdio_phy_info phyinfo;
 	unsigned int mask, val;
 
+	regmap_write(ctrl->map, RTMDIO_930X_SMI_MAC_TYPE_CTRL, 0);
+
 	/* Define PHY specific polling parameters */
 	for (int addr = 0; addr < ctrl->cfg->cpu_port; addr++) {
 		if (ctrl->smi_bus[addr] < 0)
