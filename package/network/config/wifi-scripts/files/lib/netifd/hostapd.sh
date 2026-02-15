@@ -1347,6 +1347,25 @@ wpa_supplicant_set_fixed_freq() {
 	esac
 }
 
+append_cert_key_config() {
+    local cert="$1"        # client_cert or client_cert2
+    local priv_key="$2"    # private_key or private_key2
+    local priv_pwd="$3"    # private_key_passwd or private_key2_passwd
+
+    if [ -n "$priv_key" ]; then
+        case "$priv_key" in
+            *".p12"|*".pfx")
+                # PKCS#12/PFX contains both cert+key, so skip client_cert
+                ;;
+            *)
+                append network_data "client_cert=\"$cert\"" "$N$T"
+                ;;
+        esac
+        append network_data "private_key=\"$priv_key\"" "$N$T"
+        append network_data "private_key_passwd=\"$priv_pwd\"" "$N$T"
+    fi
+}
+
 wpa_supplicant_add_network() {
 	local ifname="$1"
 	local freq="$2"
@@ -1480,9 +1499,7 @@ wpa_supplicant_add_network() {
 			case "$eap_type" in
 				tls)
 					json_get_vars client_cert priv_key priv_key_pwd
-					append network_data "client_cert=\"$client_cert\"" "$N$T"
-					append network_data "private_key=\"$priv_key\"" "$N$T"
-					append network_data "private_key_passwd=\"$priv_key_pwd\"" "$N$T"
+					append_cert_key_config "$client_cert" "$priv_key" "$priv_key_pwd"
 
 					json_get_vars subject_match
 					[ -n "$subject_match" ] && append network_data "subject_match=\"$subject_match\"" "$N$T"
@@ -1524,9 +1541,7 @@ wpa_supplicant_add_network() {
 						else
 							[ -n "$ca_cert2" ] && append network_data "ca_cert2=\"$ca_cert2\"" "$N$T"
 						fi
-						append network_data "client_cert2=\"$client_cert2\"" "$N$T"
-						append network_data "private_key2=\"$priv_key2\"" "$N$T"
-						append network_data "private_key2_passwd=\"$priv_key2_pwd\"" "$N$T"
+						append_cert_key_config "$client_cert" "$priv_key" "$priv_key_pwd"
 					else
 						append network_data "password=\"$password\"" "$N$T"
 					fi
