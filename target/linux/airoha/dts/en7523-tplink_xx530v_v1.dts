@@ -1,0 +1,13 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include "en7523-tplink_xxx30v.dtsi"
+
+/ {
+	model = "TP-Link xx530v";
+	compatible = "tplink,xx530v", "airoha,en7523";
+};
+
+&eeprom0 {
+	reg = <0x80000 0x1000>;
+};
