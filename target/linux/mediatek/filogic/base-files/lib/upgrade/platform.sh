@@ -256,6 +256,7 @@ platform_do_upgrade() {
 	xiaomi,redmi-router-ax6000-stock)
 		CI_KERN_UBIPART=ubi_kernel
 		CI_ROOT_UBIPART=ubi
+		CI_DATA_UBIPART=ubi
 		nand_do_upgrade "$1"
 		;;
 	*)
