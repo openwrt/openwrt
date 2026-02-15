@@ -88,13 +88,6 @@
 	};
 };
 
-&spi0 {
-	flash@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
-	};
-};
-
 &state_default {
 	gpio {
 		groups = "i2c", "uartf", "ephy", "rgmii2";
