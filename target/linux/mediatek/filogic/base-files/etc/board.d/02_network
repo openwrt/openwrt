@@ -41,6 +41,9 @@ mediatek_setup_interfaces()
 	arcadyan,mozart)
 		ucidef_set_interfaces_lan_wan "lan0 eth1" eth2
 		;;
+	asus,rt-be59)
+		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 eth2" eth1
+		;;
 	asus,rt-ax52|\
 	asus,rt-ax59u|\
 	asus,zenwifi-bt8|\
@@ -242,6 +245,11 @@ mediatek_setup_macs()
 	bananapi,bpi-r4|\
 	bananapi,bpi-r4-lite)
 		wan_mac=$(macaddr_add $(cat /sys/class/net/eth0/address) 1)
+		;;
+	asus,rt-be59)
+		lan_mac=$(cat /sys/class/net/eth0/address)
+		wan_mac=$(macaddr_add $(cat /sys/class/net/eth0/address) 1)
+		label_mac=$lan_mac
 		;;
 	h3c,magic-nx30-pro)
 		wan_mac=$(mtd_get_mac_ascii pdt_data_1 ethaddr)
