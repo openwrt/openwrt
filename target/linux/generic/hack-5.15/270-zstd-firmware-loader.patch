@@ -1,0 +1,441 @@
+From:   Takashi Iwai <tiwai@suse.de>
+Subject: [PATCH RFC 1/4] firmware: Add the support for ZSTD-compressed firmware files
+Date:   Wed, 27 Jan 2021 16:49:36 +0100
+Message-Id: <20210127154939.13288-2-tiwai@suse.de>
+In-Reply-To: <20210127154939.13288-1-tiwai@suse.de>
+References: <20210127154939.13288-1-tiwai@suse.de>
+List-ID: <linux-kernel.vger.kernel.org>
+X-Mailing-List: linux-kernel@vger.kernel.org
+
+Due to the popular demands on ZSTD, here is a patch to add a support
+of ZSTD-compressed firmware files via the direct firmware loader.
+It's just like XZ-compressed file support, providing a decompressor
+with ZSTD.  Since ZSTD API can give the decompression size beforehand,
+the code is even simpler than XZ.
+---
+Subject: [PATCH RFC 2/4] selftests: firmware: Simplify test patterns
+Date:   Wed, 27 Jan 2021 16:49:37 +0100
+Message-Id: <20210127154939.13288-3-tiwai@suse.de>
+
+The test patterns are almost same in three sequential tests.
+Make the unified helper function for improving the readability.
+---
+Subject: [PATCH RFC 3/4] selftest: firmware: Fix the request_firmware_into_buf() test for XZ format
+Date:   Wed, 27 Jan 2021 16:49:38 +0100
+Message-Id: <20210127154939.13288-4-tiwai@suse.de>
+
+The test uses a different firmware name, and we forgot to adapt for
+the XZ compressed file tests.
+---
+Subject: [PATCH RFC 4/4] selftest: firmware: Add ZSTD compressed file tests
+Date:   Wed, 27 Jan 2021 16:49:39 +0100
+Message-Id: <20210127154939.13288-5-tiwai@suse.de>
+
+It's similar like XZ compressed files.  For the simplicity, both XZ
+and ZSTD tests are done in a single function.  The format is specified
+via $COMPRESS_FORMAT and the compression function is pre-defined.
+
+Signed-off-by: Takashi Iwai <tiwai@suse.de>
+---
+ drivers/base/firmware_loader/Kconfig | 21 ++++++--
+ drivers/base/firmware_loader/main.c  | 74 ++++++++++++++++++++++++++--
+ 2 files changed, 87 insertions(+), 8 deletions(-)
+
+--- a/drivers/base/firmware_loader/Kconfig
++++ b/drivers/base/firmware_loader/Kconfig
+@@ -157,17 +157,28 @@ config FW_LOADER_USER_HELPER_FALLBACK
+ 
+ config FW_LOADER_COMPRESS
+ 	bool "Enable compressed firmware support"
+-	select FW_LOADER_PAGED_BUF
+-	select XZ_DEC
+ 	help
+ 	  This option enables the support for loading compressed firmware
+ 	  files. The caller of firmware API receives the decompressed file
+ 	  content. The compressed file is loaded as a fallback, only after
+ 	  loading the raw file failed at first.
+ 
+-	  Currently only XZ-compressed files are supported, and they have to
+-	  be compressed with either none or crc32 integrity check type (pass
+-	  "-C crc32" option to xz command).
++if FW_LOADER_COMPRESS
++config FW_LOADER_COMPRESS_XZ
++	bool "Enable XZ-compressed firmware support"
++	select FW_LOADER_PAGED_BUF
++	select XZ_DEC
++	help
++	  This option adds the support for XZ-compressed files.
++	  The files have to be compressed with either none or crc32
++	  integrity check type (pass "-C crc32" option to xz command).
++
++config FW_LOADER_COMPRESS_ZSTD
++	bool "Enable ZSTD-compressed firmware support"
++	select ZSTD_DECOMPRESS
++	help
++	  This option adds the support for ZSTD-compressed files.
++endif # FW_LOADER_COMPRESS
+ 
+ config FW_CACHE
+ 	bool "Enable firmware caching during suspend"
+--- a/drivers/base/firmware_loader/main.c
++++ b/drivers/base/firmware_loader/main.c
+@@ -35,6 +35,7 @@
+ #include <linux/syscore_ops.h>
+ #include <linux/reboot.h>
+ #include <linux/security.h>
++#include <linux/zstd.h>
+ #include <linux/xz.h>
+ 
+ #include <generated/utsrelease.h>
+@@ -365,9 +366,71 @@ int fw_map_paged_buf(struct fw_priv *fw_
+ #endif
+ 
+ /*
++ * ZSTD-compressed firmware support
++ */
++#ifdef CONFIG_FW_LOADER_COMPRESS_ZSTD
++static int fw_decompress_zstd(struct device *dev, struct fw_priv *fw_priv,
++			      size_t in_size, const void *in_buffer)
++{
++	size_t len, out_size, workspace_size;
++	void *workspace, *out_buf;
++	ZSTD_DCtx *ctx;
++	int err;
++
++	if (fw_priv->data) {
++		out_size = fw_priv->allocated_size;
++		out_buf = fw_priv->data;
++	} else {
++		out_size = ZSTD_findDecompressedSize(in_buffer, in_size);
++		if (out_size == ZSTD_CONTENTSIZE_UNKNOWN ||
++		    out_size == ZSTD_CONTENTSIZE_ERROR) {
++			dev_dbg(dev, "%s: invalid decompression size\n", __func__);
++			return -EINVAL;
++		}
++		out_buf = vzalloc(out_size);
++		if (!out_buf)
++			return -ENOMEM;
++	}
++
++	workspace_size = ZSTD_DCtxWorkspaceBound();
++	workspace = kvzalloc(workspace_size, GFP_KERNEL);
++	if (!workspace) {
++		err = -ENOMEM;
++		goto error;
++	}
++
++	ctx = ZSTD_initDCtx(workspace, workspace_size);
++	if (!ctx) {
++		dev_dbg(dev, "%s: failed to initialize context\n", __func__);
++		err = -EINVAL;
++		goto error;
++	}
++
++	len = ZSTD_decompressDCtx(ctx, out_buf, out_size, in_buffer, in_size);
++	if (ZSTD_isError(len)) {
++		dev_dbg(dev, "%s: failed to decompress: %d\n", __func__,
++			ZSTD_getErrorCode(len));
++		err = -EINVAL;
++		goto error;
++	}
++
++	fw_priv->size = len;
++	if (!fw_priv->data)
++		fw_priv->data = out_buf;
++	err = 0;
++
++ error:
++	kvfree(workspace);
++	if (!fw_priv->data)
++		vfree(out_buf);
++	return err;
++}
++#endif /* CONFIG_FW_LOADER_COMPRESS_ZSTD */
++
++/*
+  * XZ-compressed firmware support
+  */
+-#ifdef CONFIG_FW_LOADER_COMPRESS
++#ifdef CONFIG_FW_LOADER_COMPRESS_XZ
+ /* show an error and return the standard error code */
+ static int fw_decompress_xz_error(struct device *dev, enum xz_ret xz_ret)
+ {
+@@ -461,7 +524,7 @@ static int fw_decompress_xz(struct devic
+ 	else
+ 		return fw_decompress_xz_pages(dev, fw_priv, in_size, in_buffer);
+ }
+-#endif /* CONFIG_FW_LOADER_COMPRESS */
++#endif /* CONFIG_FW_LOADER_COMPRESS_XZ */
+ 
+ /* direct firmware loading support */
+ static char fw_path_para[256];
+@@ -831,7 +894,12 @@ _request_firmware(const struct firmware
+ 	if (!(opt_flags & FW_OPT_PARTIAL))
+ 		nondirect = true;
+ 
+-#ifdef CONFIG_FW_LOADER_COMPRESS
++#ifdef CONFIG_FW_LOADER_COMPRESS_ZSTD
++	if (ret == -ENOENT && nondirect)
++		ret = fw_get_filesystem_firmware(device, fw->priv, ".zst",
++						 fw_decompress_zstd);
++#endif
++#ifdef CONFIG_FW_LOADER_COMPRESS_XZ
+ 	if (ret == -ENOENT && nondirect)
+ 		ret = fw_get_filesystem_firmware(device, fw->priv, ".xz",
+ 						 fw_decompress_xz);
+--- a/tools/testing/selftests/firmware/fw_filesystem.sh
++++ b/tools/testing/selftests/firmware/fw_filesystem.sh
+@@ -211,7 +211,7 @@ read_firmwares()
+ 	else
+ 		fwfile="$FW"
+ 	fi
+-	if [ "$1" = "xzonly" ]; then
++	if [ "$1" = "componly" ]; then
+ 		fwfile="${fwfile}-orig"
+ 	fi
+ 	for i in $(seq 0 3); do
+@@ -235,7 +235,7 @@ read_partial_firmwares()
+ 		fwfile="${FW}"
+ 	fi
+ 
+-	if [ "$1" = "xzonly" ]; then
++	if [ "$1" = "componly" ]; then
+ 		fwfile="${fwfile}-orig"
+ 	fi
+ 
+@@ -409,10 +409,8 @@ test_request_firmware_nowait_custom()
+ 	config_unset_uevent
+ 	RANDOM_FILE_PATH=$(setup_random_file)
+ 	RANDOM_FILE="$(basename $RANDOM_FILE_PATH)"
+-	if [ "$2" = "both" ]; then
+-		xz -9 -C crc32 -k $RANDOM_FILE_PATH
+-	elif [ "$2" = "xzonly" ]; then
+-		xz -9 -C crc32 $RANDOM_FILE_PATH
++	if [ -n "$2" -a "$2" != "normal" ]; then
++		compress-"$2"-$COMPRESS_FORMAT $RANDOM_FILE_PATH
+ 	fi
+ 	config_set_name $RANDOM_FILE
+ 	config_trigger_async
+@@ -435,6 +433,32 @@ test_request_partial_firmware_into_buf()
+ 	echo "OK"
+ }
+ 
++do_tests ()
++{
++	mode="$1"
++	suffix="$2"
++
++	for i in $(seq 1 5); do
++		test_batched_request_firmware$suffix $i $mode
++	done
++
++	for i in $(seq 1 5); do
++		test_batched_request_firmware_into_buf$suffix $i $mode
++	done
++
++	for i in $(seq 1 5); do
++		test_batched_request_firmware_direct$suffix $i $mode
++	done
++
++	for i in $(seq 1 5); do
++		test_request_firmware_nowait_uevent$suffix $i $mode
++	done
++
++	for i in $(seq 1 5); do
++		test_request_firmware_nowait_custom$suffix $i $mode
++	done
++}
++
+ # Only continue if batched request triggers are present on the
+ # test-firmware driver
+ test_config_present
+@@ -442,25 +466,7 @@ test_config_present
+ # test with the file present
+ echo
+ echo "Testing with the file present..."
+-for i in $(seq 1 5); do
+-	test_batched_request_firmware $i normal
+-done
+-
+-for i in $(seq 1 5); do
+-	test_batched_request_firmware_into_buf $i normal
+-done
+-
+-for i in $(seq 1 5); do
+-	test_batched_request_firmware_direct $i normal
+-done
+-
+-for i in $(seq 1 5); do
+-	test_request_firmware_nowait_uevent $i normal
+-done
+-
+-for i in $(seq 1 5); do
+-	test_request_firmware_nowait_custom $i normal
+-done
++do_tests normal
+ 
+ # Partial loads cannot use fallback, so do not repeat tests.
+ test_request_partial_firmware_into_buf 0 10
+@@ -472,25 +478,7 @@ test_request_partial_firmware_into_buf 2
+ # a hung task, which would require a hard reset.
+ echo
+ echo "Testing with the file missing..."
+-for i in $(seq 1 5); do
+-	test_batched_request_firmware_nofile $i
+-done
+-
+-for i in $(seq 1 5); do
+-	test_batched_request_firmware_into_buf_nofile $i
+-done
+-
+-for i in $(seq 1 5); do
+-	test_batched_request_firmware_direct_nofile $i
+-done
+-
+-for i in $(seq 1 5); do
+-	test_request_firmware_nowait_uevent_nofile $i
+-done
+-
+-for i in $(seq 1 5); do
+-	test_request_firmware_nowait_custom_nofile $i
+-done
++do_tests nofile _nofile
+ 
+ # Partial loads cannot use fallback, so do not repeat tests.
+ test_request_partial_firmware_into_buf_nofile 0 10
+@@ -498,55 +486,58 @@ test_request_partial_firmware_into_buf_n
+ test_request_partial_firmware_into_buf_nofile 1 6
+ test_request_partial_firmware_into_buf_nofile 2 10
+ 
+-test "$HAS_FW_LOADER_COMPRESS" != "yes" && exit 0
++test_request_firmware_compressed ()
++{
++	export COMPRESS_FORMAT="$1"
+ 
+-# test with both files present
+-xz -9 -C crc32 -k $FW
+-config_set_name $NAME
+-echo
+-echo "Testing with both plain and xz files present..."
+-for i in $(seq 1 5); do
+-	test_batched_request_firmware $i both
+-done
+-
+-for i in $(seq 1 5); do
+-	test_batched_request_firmware_into_buf $i both
+-done
+-
+-for i in $(seq 1 5); do
+-	test_batched_request_firmware_direct $i both
+-done
+-
+-for i in $(seq 1 5); do
+-	test_request_firmware_nowait_uevent $i both
+-done
+-
+-for i in $(seq 1 5); do
+-	test_request_firmware_nowait_custom $i both
+-done
++	# test with both files present
++	compress-both-$COMPRESS_FORMAT $FW
++	compress-both-$COMPRESS_FORMAT $FW_INTO_BUF
+ 
+-# test with only xz file present
+-mv "$FW" "${FW}-orig"
+-echo
+-echo "Testing with only xz file present..."
+-for i in $(seq 1 5); do
+-	test_batched_request_firmware $i xzonly
+-done
+-
+-for i in $(seq 1 5); do
+-	test_batched_request_firmware_into_buf $i xzonly
+-done
+-
+-for i in $(seq 1 5); do
+-	test_batched_request_firmware_direct $i xzonly
+-done
+-
+-for i in $(seq 1 5); do
+-	test_request_firmware_nowait_uevent $i xzonly
+-done
+-
+-for i in $(seq 1 5); do
+-	test_request_firmware_nowait_custom $i xzonly
+-done
++	config_set_name $NAME
++	echo
++	echo "Testing with both plain and $COMPRESS_FORMAT files present..."
++	do_tests both
++
++	# test with only compressed file present
++	mv "$FW" "${FW}-orig"
++	mv "$FW_INTO_BUF" "${FW_INTO_BUF}-orig"
++
++	config_set_name $NAME
++	echo
++	echo "Testing with only $COMPRESS_FORMAT file present..."
++	do_tests componly
++
++	mv "${FW}-orig" "$FW"
++	mv "${FW_INTO_BUF}-orig" "$FW_INTO_BUF"
++}
++
++compress-both-XZ ()
++{
++	xz -k -9 -C crc32 "$@"
++}
++
++compress-componly-XZ ()
++{
++	xz -9 -C crc32 "$@"
++}
++
++compress-both-ZSTD ()
++{
++	zstd -q -k "$@"
++}
++
++compress-componly-ZSTD ()
++{
++	zstd -q --rm "$@"
++}
++
++if test "$HAS_FW_LOADER_COMPRESS_XZ" = "yes"; then
++	test_request_firmware_compressed XZ
++fi
++
++if test "$HAS_FW_LOADER_COMPRESS_ZSTD" = "yes"; then
++	test_request_firmware_compressed ZSTD
++fi
+ 
+ exit 0
+--- a/tools/testing/selftests/firmware/fw_lib.sh
++++ b/tools/testing/selftests/firmware/fw_lib.sh
+@@ -62,7 +62,8 @@ check_setup()
+ {
+ 	HAS_FW_LOADER_USER_HELPER="$(kconfig_has CONFIG_FW_LOADER_USER_HELPER=y)"
+ 	HAS_FW_LOADER_USER_HELPER_FALLBACK="$(kconfig_has CONFIG_FW_LOADER_USER_HELPER_FALLBACK=y)"
+-	HAS_FW_LOADER_COMPRESS="$(kconfig_has CONFIG_FW_LOADER_COMPRESS=y)"
++	HAS_FW_LOADER_COMPRESS_XZ="$(kconfig_has CONFIG_FW_LOADER_COMPRESS_XZ=y)"
++	HAS_FW_LOADER_COMPRESS_ZSTD="$(kconfig_has CONFIG_FW_LOADER_COMPRESS_ZSTD=y)"
+ 	PROC_FW_IGNORE_SYSFS_FALLBACK="0"
+ 	PROC_FW_FORCE_SYSFS_FALLBACK="0"
+ 
+@@ -98,9 +99,14 @@ check_setup()
+ 
+ 	OLD_FWPATH="$(cat /sys/module/firmware_class/parameters/path)"
+ 
+-	if [ "$HAS_FW_LOADER_COMPRESS" = "yes" ]; then
++	if [ "$HAS_FW_LOADER_COMPRESS_XZ" = "yes" ]; then
+ 		if ! which xz 2> /dev/null > /dev/null; then
+-			HAS_FW_LOADER_COMPRESS=""
++			HAS_FW_LOADER_COMPRESS_XZ=""
++		fi
++	fi
++	if [ "$HAS_FW_LOADER_COMPRESS_ZSTD" = "yes" ]; then
++		if ! which zstd 2> /dev/null > /dev/null; then
++			HAS_FW_LOADER_COMPRESS_ZSTD=""
+ 		fi
+ 	fi
+ }
