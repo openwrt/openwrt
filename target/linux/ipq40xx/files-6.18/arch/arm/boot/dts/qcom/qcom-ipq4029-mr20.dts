@@ -1,0 +1,59 @@
+// SPDX-License-Identifier: GPL-2.0-only
+// Device Tree Source for Meraki MR20 (Grub) / Go GR10 (Maggot)
+
+#include "qcom-ipq4029-meraki-underdog.dtsi"
+
+/ {
+	model = "Meraki MR20";
+	compatible = "meraki,mr20";
+
+	leds {
+		compatible = "gpio-leds";
+
+		status_green: led_green {
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&tlmm 34 GPIO_ACTIVE_HIGH>;
+		};
+
+		status_blue: led_blue {
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&tlmm 35 GPIO_ACTIVE_HIGH>;
+		};
+
+		status_red: led_red {
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&tlmm 8 GPIO_ACTIVE_HIGH>;
+		};
+
+	};
+
+	soc {
+		ess_tcsr@1953000 {
+			qcom,ess-interface-select = <TCSR_ESS_PSGMII_RGMII5>;
+		};
+	};
+};
+
+&mdio {
+	ar8035: ethernet-phy@0 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <0>;
+	};
+};
+
+&swport5 {
+	status = "okay";
+	label = "lan";
+	phy-handle = <&ar8035>;
+	phy-mode = "rgmii-id";
+};
+
+&wifi0 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "Meraki-underdog";
+};
+
+&wifi1 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "Meraki-underdog";
+};
