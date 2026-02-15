@@ -13,6 +13,7 @@
 #include <asm/mips-cps.h>
 #include <asm/prom.h>
 #include <asm/smp-ops.h>
+#include <linux/of.h>
 #include <linux/smp.h>
 
 #include <mach-rtl-otto.h>
@@ -103,6 +104,21 @@ static void __init apply_early_quirks(void)
 		sw_w32(0x3, RTL838X_INT_RW_CTRL);
 }
 
+static void __init apply_dts_quirks(void)
+{
+	struct device_node *node;
+
+	node = of_find_compatible_node(NULL, NULL, "diodes,pt7a75xx-wdt");
+	if (node) {
+		if (soc_info.family == RTL9310_FAMILY_ID) {
+			pr_info("apply quirk for diodes pt7a75xx watchdog\n");
+			sw_w32_mask(GENMASK(13, 12), BIT(12), RTL931X_LED_GLB_CTRL);
+			sw_w32_mask(0x0, BIT(8), RTL931X_MAC_L2_GLOBAL_CTRL2);
+		};
+		of_node_put(node);
+	}
+}
+
 void __init device_tree_init(void)
 {
 	if (!fdt_check_header(&__appended_dtb)) {
@@ -111,6 +127,7 @@ void __init device_tree_init(void)
 	}
 	initial_boot_params = (void *)fdt;
 	unflatten_and_copy_device_tree();
+	apply_dts_quirks();
 
 	/* delay cpc & smp probing to allow devicetree access */
 	mips_cpc_probe();
