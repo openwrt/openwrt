@@ -286,12 +286,32 @@ static void prepare_highmem(void)
 		return;
 
 	/*
-	 * To use highmem on RTL930x, SRAM must be deactivated and the highmem mapping
-	 * registers must be setup properly. The hardcoded 0x70000000 might be strange
-	 * but at least it conforms somehow to the RTL931x devices.
+	 * The RTL930x provides 3 logical adressing zones that can be configured individually
+	 * and offer an additional memory access indirection. Memory is accessed via the OCP
+	 * bus that checks these regions and maps logical addresses to physical ones. They are
 	 *
-	 * - RTL930x: highmem start 0x20000000 + offset 0x70000000 = 0x90000000
-	 * - RTL931x: highmem start 0x90000000 + no offset at all  = 0x90000000
+	 * zone 1: logical address 0x00000000-0x0fffffff (256 MB) - map register 0xb8004200
+	 * zone 2: logical address 0x10000000-0x13ffffff (64 MB)  - map register 0xb8004210
+	 * zone 3: logical address 0x20000000-0x9fffffff (2 GB)   - map register 0xb8004220
+	 *
+	 * Whenever CPU accesses memory the normal MIPS translation is applied and afterwards
+	 * the bus adds the zone mapping. E.g. a read to 0x81230000 is converted to an cached
+	 * memory access to logical address 0x01230000. It is issued to the OCP bus and the 
+	 * mapping from zone 1 register is added. That allows for two memory topologies:
+	 *
+	 * Linear memory with a maximum of 320 MB:
+	 *
+	 * Zone | map content | logical               | physical
+	 * -------------------+-----------------------+-----------------------
+	 *    1 | 0x00000000  | 0x00000000-0x0fffffff | 0x00000000-0x0fffffff
+	 *    2 | 0x00000000  | 0x10000000-0x13ffffff | 0x10000000-0x13ffffff
+	 *
+	 * 256MB low memory plus up to 2GB high memory:
+	 *
+	 * Zone | map content | logical               | physical
+	 * -------------------+-----------------------+-----------------------
+	 *    1 | 0x00000000  | 0x00000000-0x0fffffff | 0x00000000-0x0fffffff
+	 *    3 | 0x70000000  | 0x20000000-0x9fffffff | 0x10000000-0x7fffffff
 	 */
 
 	pr_info("highmem kernel on RTL930x with > 256 MB RAM, adapt SoC memory mapping\n");
