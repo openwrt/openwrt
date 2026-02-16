@@ -1,0 +1,1266 @@
+From b0ca9ec7eb09cc939141438840d97a09dfb45007 Mon Sep 17 00:00:00 2001
+From: Alexey Sadkov <alx.v.sadkov@gmail.com>
+Date: Thu, 15 Apr 2021 21:55:52 +0300
+Subject: [PATCH] Add-xiaomi-dgnwg05lm-device
+
+---
+Add xiaomi dgnwg05lm device
+
+Boot from nand, squashfs or ubifs (set env bootargs=${bootargs_ubi} or set env bootargs=${bootargs_squash})
+Added button (state available on env)
+Added pwm leds with control from env. color_uboot - hex value set rgb color when uboot start and process, can be dynamically ajust on set env. envset color_after_uboot set color before start kernel.
+
+Contain driver update from NXP: MLK-11719-4: mtd: gpmi: change the BCH layout setting for large oob NAND
+
+Signed-off-by: Alexey Sadkov <alx.v.sadkov@gmail.com>
+
+ arch/arm/dts/Makefile                    |   3 +-
+ arch/arm/dts/imx6ull-xiaomi-lumi.dts     | 330 +++++++++++++++++++++++
+ arch/arm/include/asm/arch-mx6/imx-regs.h |  21 ++
+ arch/arm/mach-imx/mx6/Kconfig            |  11 +
+ board/xiaomi/dgnwg05lm/Kconfig           |  18 ++
+ board/xiaomi/dgnwg05lm/Makefile          |   4 +
+ board/xiaomi/dgnwg05lm/imximage.cfg      | 120 +++++++++
+ board/xiaomi/dgnwg05lm/lumi.c            | 224 +++++++++++++++
+ board/xiaomi/dgnwg05lm/plugin.S          | 138 ++++++++++
+ configs/xiaomi_dgnwg05lm_defconfig       |  69 +++++
+ drivers/mtd/nand/raw/mxs_nand.c          | 205 +++++++++-----
+ include/configs/xiaomi_dgnwg05lm.h       | 163 +++++++++++
+ include/mxs_nand.h                       |  12 +-
+ 13 files changed, 1244 insertions(+), 74 deletions(-)
+ create mode 100644 arch/arm/dts/imx6ull-xiaomi-lumi.dts
+ create mode 100644 board/xiaomi/dgnwg05lm/Kconfig
+ create mode 100644 board/xiaomi/dgnwg05lm/Makefile
+ create mode 100644 board/xiaomi/dgnwg05lm/imximage.cfg
+ create mode 100644 board/xiaomi/dgnwg05lm/lumi.c
+ create mode 100644 board/xiaomi/dgnwg05lm/plugin.S
+ create mode 100644 configs/xiaomi_dgnwg05lm_defconfig
+ create mode 100644 include/configs/xiaomi_dgnwg05lm.h
+
+--- a/arch/arm/dts/Makefile
++++ b/arch/arm/dts/Makefile
+@@ -689,7 +689,8 @@ dtb-$(CONFIG_MX6ULL) += \
+ 	imx6ull-phytec-segin-ff-rdk-emmc.dtb \
+ 	imx6ull-dart-6ul.dtb \
+ 	imx6ull-somlabs-visionsom.dtb \
+-	imx6ulz-14x14-evk.dtb
++	imx6ulz-14x14-evk.dtb \
++	imx6ull-xiaomi-lumi.dtb
+
+ dtb-$(CONFIG_ARCH_MX6) += \
+ 	imx6-apalis.dtb \
+--- /dev/null
++++ b/arch/arm/dts/imx6ull-xiaomi-lumi.dts
+@@ -0,0 +1,330 @@
++// SPDX-License-Identifier: GPL-2.0
++//
++// Copyright (C) 2016 Freescale Semiconductor, Inc.
++
++/dts-v1/;
++
++#include "imx6ull.dtsi"
++#include "imx6ul-14x14-evk.dtsi"
++#include "imx6ul-14x14-evk-u-boot.dtsi"
++
++/ {
++	model = "Xiaomi Lumi Gateway";
++	compatible = "xiaomi,gateway-lumi", "xiaomi,dgnwg05lm", "aqara,zhwg11lm",
++               "fsl,imx6ull-14x14-evk", "fsl,imx6ull";
++
++	backlight_display: backlight-display {
++		status = "disabled";
++	};
++
++	gpio-keys {
++		compatible = "gpio-keys";
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_bnt0_key>;
++
++		btn0 {
++			label = "btn0";
++			gpios = <&gpio2 15 GPIO_ACTIVE_LOW>;
++			linux,code = <BTN_0>;
++			debounce-interval = <10>;
++		};
++	};
++
++	pwmleds {
++		compatible = "pwm-leds";
++		green {
++			label = "green";
++			pwms = <&pwm1 0 1000000>;
++			max-brightness = <255>;
++			brightness = <0>;
++			default-state = <0>;
++			status = "okay";
++			linux,default-trigger = "backlight";
++		};
++		red {
++			label = "red";
++			pwms = <&pwm2 0 1000000>;
++			max-brightness = <255>;
++			brightness = <0>;
++			default-state = <0>;
++			status = "okay";
++			linux,default-trigger = "backlight";
++		};
++		blue {
++			label = "blue";
++			pwms = <&pwm3 0 1000000>;
++			max-brightness = <255>;
++			brightness = <0>;
++			default-state = <0>;
++			status = "okay";
++			linux,default-trigger = "backlight";
++		};
++	 };
++
++	tfa9882: tfa9882 {
++		#sound-dai-cells = <0>;
++		compatible = "fsl,tfa9882";
++		clocks = <&clks IMX6UL_CLK_SAI1>;
++		clock-names = "mclk";
++	};
++
++	sound-tfa9882 {
++		compatible = "simple-audio-card";
++		simple-audio-card,name = "tfa9882-audio";
++		simple-audio-card,format = "i2s";
++		simple-audio-card,frame-master = <&cpudai>;
++		simple-audio-card,bitclock-master = <&cpudai>;
++		simple-audio-card,widgets =
++			"Line", "Left Line Out Jack",
++			"Line", "Right Line Out Jack";
++		simple-audio-card,routing =
++			"Left Line Out Jack", "LINEVOUTL",
++			"Right Line Out Jack", "LINEVOUTR";
++
++		cpudai: simple-audio-card,cpu {
++			sound-dai = <&sai1>;
++			dai-tdm-slot-num = <2>;
++			dai-tdm-slot-width = <32>;
++		};
++
++		simple-audio-card,codec {
++			sound-dai = <&tfa9882>;
++			clocks = <&clks IMX6UL_CLK_SAI1>;
++			clock-names = "mclk";
++		};
++	};
++};
++
++&sai1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_sai1>;
++	assigned-clocks = <&clks IMX6UL_CLK_SAI1_SEL>,
++			<&clks IMX6UL_CLK_SAI1>;
++	assigned-clock-parents = <&clks IMX6UL_CLK_PLL4_AUDIO_DIV>;
++	assigned-clock-rates = <0>, <12288000>;
++	fsl,sai-mclk-direction-output;
++	status = "okay";
++};
++
++&sai2 {
++	status = "disabled";
++};
++
++&clks {
++	assigned-clocks = <&clks IMX6UL_CLK_PLL3_PFD2>,<&clks IMX6UL_CLK_PLL4_AUDIO_DIV>;
++	assigned-clock-rates = <320000000>,<786432000>;
++};
++
++&gpmi {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_gpmi_nand_1>;
++	status = "okay";
++	nand-on-flash-bbt;
++};
++
++&uart3 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_uart3>;
++	uart-has-rtscts;
++	status = "okay";
++};
++
++&iomuxc {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_jnflash>;
++
++	pinctrl_gpmi_nand_1: gpmi-nand-1 {
++		fsl,pins = <
++			MX6UL_PAD_NAND_CLE__RAWNAND_CLE		0xb0b1
++			MX6UL_PAD_NAND_ALE__RAWNAND_ALE		0xb0b1
++			MX6UL_PAD_NAND_WP_B__RAWNAND_WP_B	0xb0b1
++			MX6UL_PAD_NAND_READY_B__RAWNAND_READY_B 0xb000
++			MX6UL_PAD_NAND_CE0_B__RAWNAND_CE0_B	0xb0b1
++			MX6UL_PAD_NAND_CE1_B__RAWNAND_CE1_B	0xb0b1
++			MX6UL_PAD_NAND_RE_B__RAWNAND_RE_B	0xb0b1
++			MX6UL_PAD_NAND_WE_B__RAWNAND_WE_B	0xb0b1
++			MX6UL_PAD_NAND_DATA00__RAWNAND_DATA00   0xb0b1
++			MX6UL_PAD_NAND_DATA01__RAWNAND_DATA01   0xb0b1
++			MX6UL_PAD_NAND_DATA02__RAWNAND_DATA02   0xb0b1
++			MX6UL_PAD_NAND_DATA03__RAWNAND_DATA03   0xb0b1
++			MX6UL_PAD_NAND_DATA04__RAWNAND_DATA04   0xb0b1
++			MX6UL_PAD_NAND_DATA05__RAWNAND_DATA05   0xb0b1
++			MX6UL_PAD_NAND_DATA06__RAWNAND_DATA06   0xb0b1
++			MX6UL_PAD_NAND_DATA07__RAWNAND_DATA07   0xb0b1
++		>;
++ 	};
++
++
++	pinctrl_uart2: uart2grp {
++		fsl,pins = <
++			MX6UL_PAD_UART2_TX_DATA__UART2_DCE_TX	0x1b0b1
++			MX6UL_PAD_UART2_RX_DATA__UART2_DCE_RX	0x1b0b1
++		>;
++	};
++
++	pinctrl_uart3: uart3grp {
++		fsl,pins = <
++			MX6UL_PAD_UART3_TX_DATA__UART3_DCE_TX 0x1b0b1
++			MX6UL_PAD_UART3_RX_DATA__UART3_DCE_RX 0x1b0b1
++			MX6UL_PAD_UART3_RTS_B__UART3_DCE_RTS  0x1b0b1
++			MX6UL_PAD_UART3_CTS_B__UART3_DCE_CTS  0x1b0b1
++		>;
++	};
++
++	pinctrl_pwm2: pwm2grp {
++		fsl,pins = <
++			MX6UL_PAD_GPIO1_IO09__PWM2_OUT   0x110b0
++		>;
++	};
++
++	pinctrl_pwm3: pwm3grp {
++		fsl,pins = <
++			MX6UL_PAD_GPIO1_IO04__PWM3_OUT   0x110b0
++		>;
++	};
++
++	pinctrl_usdhc1: usdhc1grp {
++		fsl,pins = <
++			MX6UL_PAD_SD1_CMD__USDHC1_CMD	 	0x17059
++			MX6UL_PAD_SD1_CLK__USDHC1_CLK	 	0x10059
++			MX6UL_PAD_SD1_DATA0__USDHC1_DATA0 	0x17059
++			MX6UL_PAD_SD1_DATA1__USDHC1_DATA1 	0x17059
++			MX6UL_PAD_SD1_DATA2__USDHC1_DATA2 	0x17059
++			MX6UL_PAD_SD1_DATA3__USDHC1_DATA3 	0x17059
++		>;
++	};
++
++	pinctrl_jnflash: jnflashgrp {
++		fsl,pins = <
++			MX6UL_PAD_ENET2_RX_DATA0__GPIO2_IO08	   0x000010B0
++			MX6UL_PAD_ENET2_RX_DATA1__GPIO2_IO09	   0x000010B0
++		>;
++	};
++
++	pinctrl_sai1: sai1grp {
++		fsl,pins = <
++			MX6UL_PAD_CSI_DATA04__SAI1_TX_SYNC 0x17088
++			MX6UL_PAD_CSI_DATA05__SAI1_TX_BCLK 0x17088
++			MX6UL_PAD_CSI_DATA07__SAI1_TX_DATA 0x11088
++		>;
++	};
++
++	pinctrl_adc1: adc1grp {
++	  	fsl,pins = <
++			MX6UL_PAD_GPIO1_IO05__GPIO1_IO05           0x000000B0
++		>;
++	};
++
++	pinctrl_bnt0_key: btn0grp {
++		fsl,pins = <
++			MX6UL_PAD_ENET2_RX_ER__GPIO2_IO15          0x000010B0
++		>;
++	};
++	pinctrl_gpio: gpio {
++		fsl,pins = <
++                MX6UL_PAD_LCD_DATA00__GPIO3_IO05           0x000010B0
++                MX6UL_PAD_LCD_DATA01__GPIO3_IO06           0x000010B0
++                MX6UL_PAD_LCD_DATA05__GPIO3_IO10           0x000010B0
++                MX6UL_PAD_LCD_DATA06__GPIO3_IO11           0x000010B0
++                MX6UL_PAD_LCD_DATA08__GPIO3_IO13           0x000010B0
++                MX6UL_PAD_LCD_DATA09__GPIO3_IO14           0x000010B0
++                MX6UL_PAD_LCD_DATA13__GPIO3_IO18           0x000010B0
++                MX6UL_PAD_LCD_DATA14__GPIO3_IO19           0x000010B0
++                MX6UL_PAD_LCD_DATA17__GPIO3_IO22           0x000010B0
++                MX6UL_PAD_LCD_DATA18__GPIO3_IO23           0x000010B0
++                MX6UL_PAD_LCD_DATA21__GPIO3_IO26           0x000010B0
++                MX6UL_PAD_LCD_DATA22__GPIO3_IO27           0x000010B0
++		>;
++ 	};
++
++};
++
++&i2c1 {
++	clock-frequency = <100000>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_i2c1>;
++	status = "okay";
++};
++
++&reg_sd1_vmmc {
++	regulator-always-on;
++};
++
++&usdhc1 {
++	#address-cells = <1>;
++	#size-cells = <0>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_usdhc1>;
++	no-1-8-v;
++	non-removable;
++	pm-ignore-notify;
++	cap-power-off-card;
++	/delete-property/ wakeup-source;
++	/delete-property/ enable-sdio-wakeup;
++	status = "okay";
++};
++&pwm1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_pwm1>;
++	status = "okay";
++};
++
++&pwm2 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_pwm2>;
++	status = "okay";
++};
++
++&pwm3 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_pwm3>;
++	status = "okay";
++};
++
++&adc1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_adc1>;
++	num-channels = <2>;
++	status = "okay";
++};
++
++&usdhc2 {
++	status = "disabled";
++};
++
++&fec1 {
++	status = "disabled";
++};
++
++&fec2 {
++	status = "disabled";
++};
++
++&usbotg1 {
++	dr_mode = "otg";
++	status = "okay";
++};
++
++&usbotg2 {
++	dr_mode = "host";
++	disable-over-current;
++	status = "okay";
++};
++
++&usbphy1 {
++	fsl,tx-d-cal = <106>;
++};
++
++&usbphy2 {
++	fsl,tx-d-cal = <106>;
++};
++
++
++
++
++
++&wdog1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_wdog>;
++	fsl,ext-reset-output;
++};
+--- a/arch/arm/include/asm/arch-mx6/imx-regs.h
++++ b/arch/arm/include/asm/arch-mx6/imx-regs.h
+@@ -158,9 +158,15 @@
+ #define UART1_BASE                  (ATZ1_BASE_ADDR + 0x20000)
+ #define ESAI1_BASE_ADDR             (ATZ1_BASE_ADDR + 0x24000)
+ #define UART8_BASE                  (ATZ1_BASE_ADDR + 0x24000)
++#if (defined(CONFIG_MX6UL) || defined(CONFIG_MX6ULL))
++#define SAI1_BASE_ADDR              (ATZ1_BASE_ADDR + 0x28000)
++#define SAI2_BASE_ADDR              (ATZ1_BASE_ADDR + 0x2C000)
++#define SAI3_BASE_ADDR              (ATZ1_BASE_ADDR + 0x30000)
++#else
+ #define SSI1_BASE_ADDR              (ATZ1_BASE_ADDR + 0x28000)
+ #define SSI2_BASE_ADDR              (ATZ1_BASE_ADDR + 0x2C000)
+ #define SSI3_BASE_ADDR              (ATZ1_BASE_ADDR + 0x30000)
++#endif
+ #define ASRC_BASE_ADDR              (ATZ1_BASE_ADDR + 0x34000)
+
+ #ifndef CONFIG_MX6SX
+@@ -218,10 +224,19 @@
+ #define SEMAPHORE1_BASE_ADDR        (AIPS1_OFF_BASE_ADDR + 0x74000)
+ #define SEMAPHORE2_BASE_ADDR        (AIPS1_OFF_BASE_ADDR + 0x78000)
+ #define RDC_BASE_ADDR               (AIPS1_OFF_BASE_ADDR + 0x7C000)
++
++#elif (defined(CONFIG_MX6UL) || defined(CONFIG_MX6ULL))
++#define GPT2_BASE_ADDR              (AIPS1_OFF_BASE_ADDR + 0x68000)
++#define SDMA_BASE_ADDR              (AIPS1_OFF_BASE_ADDR + 0x6C000)
++#define PWM5_BASE_ADDR              (AIPS1_OFF_BASE_ADDR + 0x70000)
++#define PWM6_BASE_ADDR              (AIPS1_OFF_BASE_ADDR + 0x74000)
++#define PWM7_BASE_ADDR              (AIPS1_OFF_BASE_ADDR + 0x78000)
++#define PWM8_BASE_ADDR              (AIPS1_OFF_BASE_ADDR + 0x7C000)
+ #else
+ #define DCIC1_BASE_ADDR             (AIPS1_OFF_BASE_ADDR + 0x64000)
+ #define DCIC2_BASE_ADDR             (AIPS1_OFF_BASE_ADDR + 0x68000)
+ #define DMA_REQ_PORT_HOST_BASE_ADDR (AIPS1_OFF_BASE_ADDR + 0x6C000)
++#define EPDC_BASE_ADDR              (AIPS1_OFF_BASE_ADDR + 0x74000)
+ #endif
+
+ #define MX6SL_LCDIF_BASE_ADDR      (AIPS1_OFF_BASE_ADDR + 0x78000)
+@@ -368,6 +383,7 @@
+ #define IRAM_SIZE                    0x00020000
+ #endif
+ #define FEC_QUIRK_ENET_MAC
++#define SNVS_LPGPR                   0x68
+
+ #include <asm/mach-imx/regs-lcdif.h>
+ #if !(defined(__KERNEL_STRICT_NAMES) || defined(__ASSEMBLY__))
+@@ -584,7 +600,12 @@ struct iomuxc {
+ #if (defined(CONFIG_MX6SX) || defined(CONFIG_MX6UL) || defined(CONFIG_MX6ULL))
+ 	u8 reserved[0x4000];
+ #endif
++
++#if (defined(CONFIG_MX6UL) || defined(CONFIG_MX6ULL))
++	u32 gpr[15];
++#else
+ 	u32 gpr[14];
++#endif
+ };
+
+ struct gpc {
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -2200,6 +2200,7 @@
+ source "board/phytium/durian/Kconfig"
+ source "board/xen/xenguest_arm64/Kconfig"
+ source "board/keymile/Kconfig"
++source "board/xiaomi/dgnwg05lm/Kconfig"
+ 
+ source "arch/arm/Kconfig.debug"
+ 
+--- a/arch/arm/mach-imx/mx6/Kconfig
++++ b/arch/arm/mach-imx/mx6/Kconfig
+@@ -649,6 +649,14 @@
+ 	  Support for www.out4.ru O4-iMX6UL-NANO platform
+ 	  based on Freescale's i.MX6UL/i.MX6ULL SoC.
+ 
++config TARGET_XIAOMI_DGNWG05LM
++	bool "Support Xiaomi Lumi Gateway"
++	depends on MX6ULL
++	select BOARD_LATE_INIT
++	select DM
++	select DM_THERMAL
++	imply CMD_DM
++
+ endchoice
+ 
+ config SYS_SOC
+@@ -700,5 +708,6 @@
+ source "board/warp/Kconfig"
+ source "board/BuR/brppt2/Kconfig"
+ source "board/out4/o4-imx6ull-nano/Kconfig"
++source "board/xiaomi/dgnwg05lm/Kconfig"
+ 
+ endif
+--- /dev/null
++++ b/board/xiaomi/dgnwg05lm/Kconfig
+@@ -0,0 +1,18 @@
++if TARGET_XIAOMI_DGNWG05LM
++
++config SYS_BOARD
++	default "dgnwg05lm"
++
++config SYS_VENDOR
++	default "xiaomi"
++
++config SYS_CONFIG_NAME
++	default "xiaomi_dgnwg05lm"
++
++config SYS_TEXT_BASE
++	default 0x87800000
++
++config IMX_CONFIG
++	default "board/xiaomi/dgnwg05lm/imximage.cfg"
++
++endif
+--- /dev/null
++++ b/board/xiaomi/dgnwg05lm/Makefile
+@@ -0,0 +1,4 @@
++# SPDX-License-Identifier: GPL-2.0+
++# (C) Copyright 2016 Freescale Semiconductor, Inc.
++
++obj-y  := lumi.o
+--- /dev/null
++++ b/board/xiaomi/dgnwg05lm/imximage.cfg
+@@ -0,0 +1,120 @@
++/* SPDX-License-Identifier: GPL-2.0+ */
++/*
++ * Copyright (C) 2016 Freescale Semiconductor, Inc.
++ *
++ * Refer doc/README.imximage for more details about how-to configure
++ * and create imximage boot image
++ *
++ * The syntax is taken as close as possible with the kwbimage
++ */
++
++#define __ASSEMBLY__
++#include <config.h>
++
++/* image version */
++
++IMAGE_VERSION 2
++
++/*
++ * Boot Device : one of
++ * spi/sd/nand/onenand, qspi/nor
++ */
++
++#ifdef CONFIG_QSPI_BOOT
++BOOT_FROM	qspi
++#elif defined(CONFIG_NOR_BOOT)
++BOOT_FROM	nor
++#else
++BOOT_FROM	sd
++#endif
++
++#ifdef CONFIG_USE_IMXIMG_PLUGIN
++/*PLUGIN    plugin-binary-file    IRAM_FREE_START_ADDR*/
++PLUGIN	board/xiaomi/dgnwg05lm/plugin.bin 0x00907000
++#else
++
++#ifdef CONFIG_IMX_HAB
++CSF CONFIG_CSF_SIZE
++#endif
++
++/*
++ * Device Configuration Data (DCD)
++ *
++ * Each entry must have the format:
++ * Addr-type           Address        Value
++ *
++ * where:
++ *	Addr-type register length (1,2 or 4 bytes)
++ *	Address	  absolute address of the register
++ *	value	  value to be stored in the register
++ */
++
++/* Enable all clocks */
++DATA 4 0x020c4068 0xffffffff
++DATA 4 0x020c406c 0xffffffff
++DATA 4 0x020c4070 0xffffffff
++DATA 4 0x020c4074 0xffffffff
++DATA 4 0x020c4078 0xffffffff
++DATA 4 0x020c407c 0xffffffff
++DATA 4 0x020c4080 0xffffffff
++
++#ifdef CONFIG_IMX_OPTEE
++DATA 4 0x20e4024 0x00000001
++CHECK_BITS_SET 4 0x20e4024 0x1
++#endif
++
++DATA 4 0x020e04b4 0x000c0000
++DATA 4 0x020e04ac 0x00000000
++DATA 4 0x020e027c 0x00000030
++DATA 4 0x020e0250 0x00000030
++DATA 4 0x020e024c 0x00000030
++DATA 4 0x020e0490 0x00000030
++DATA 4 0x020e0288 0x000c0030
++DATA 4 0x020e0270 0x00000000
++DATA 4 0x020e0260 0x00000030
++DATA 4 0x020e0264 0x00000030
++DATA 4 0x020e04a0 0x00000030
++DATA 4 0x020e0494 0x00020000
++DATA 4 0x020e0280 0x00000030
++DATA 4 0x020e0284 0x00000030
++DATA 4 0x020e04b0 0x00020000
++DATA 4 0x020e0498 0x00000030
++DATA 4 0x020e04a4 0x00000030
++DATA 4 0x020e0244 0x00000030
++DATA 4 0x020e0248 0x00000030
++DATA 4 0x021b001c 0x00008000
++DATA 4 0x021b0800 0xa1390003
++DATA 4 0x021b080c 0x00000004
++DATA 4 0x021b083c 0x41640158
++DATA 4 0x021b0848 0x40403237
++DATA 4 0x021b0850 0x40403c33
++DATA 4 0x021b081c 0x33333333
++DATA 4 0x021b0820 0x33333333
++DATA 4 0x021b082c 0xf3333333
++DATA 4 0x021b0830 0xf3333333
++DATA 4 0x021b08c0 0x00944009
++DATA 4 0x021b08b8 0x00000800
++DATA 4 0x021b0004 0x0002002d
++DATA 4 0x021b0008 0x1b333030
++DATA 4 0x021b000c 0x676b52f3
++DATA 4 0x021b0010 0xb66d0b63
++DATA 4 0x021b0014 0x01ff00db
++DATA 4 0x021b0018 0x00201740
++DATA 4 0x021b001c 0x00008000
++DATA 4 0x021b002c 0x000026d2
++DATA 4 0x021b0030 0x006b1023
++DATA 4 0x021b0040 0x00000047 //MMDC Memory 256Mb.
++DATA 4 0x021b0000 0x83180000 //MMDC Memory 14 bits/row.
++DATA 4 0x021b0890 0x00400000
++DATA 4 0x021b001c 0x02008032
++DATA 4 0x021b001c 0x00008033
++DATA 4 0x021b001c 0x00048031
++DATA 4 0x021b001c 0x15208030
++DATA 4 0x021b001c 0x04008040
++DATA 4 0x021b0020 0x00000800
++DATA 4 0x021b0818 0x00000227
++DATA 4 0x021b0004 0x0002552d
++DATA 4 0x021b0404 0x00011006
++DATA 4 0x021b001c 0x00000000
++
++#endif
+--- /dev/null
++++ b/board/xiaomi/dgnwg05lm/lumi.c
+@@ -0,0 +1,254 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Copyright (C) 2016 Freescale Semiconductor, Inc.
++ */
++
++#include <init.h>
++#include <asm/arch/clock.h>
++#include <asm/arch/iomux.h>
++#include <asm/arch/imx-regs.h>
++#include <asm/arch/crm_regs.h>
++#include <asm/arch/mx6-pins.h>
++#include <asm/arch/sys_proto.h>
++#include <asm/gpio.h>
++#include <asm/mach-imx/iomux-v3.h>
++#include <asm/mach-imx/boot_mode.h>
++#include <asm/io.h>
++#include <common.h>
++#include <env.h>
++#include <fsl_esdhc_imx.h>
++#include <linux/sizes.h>
++#include <mmc.h>
++#include <asm/setup.h>
++#include <usb.h>
++#include <usb/ehci-ci.h>
++#include <pwm.h>
++#include <wait_bit.h>
++
++DECLARE_GLOBAL_DATA_PTR;
++
++#define UART_PAD_CTRL  (PAD_CTL_PKE | PAD_CTL_PUE |		\
++	PAD_CTL_PUS_100K_UP | PAD_CTL_SPEED_MED |		\
++	PAD_CTL_DSE_40ohm   | PAD_CTL_SRE_FAST  | PAD_CTL_HYS)
++
++#define GPMI_PAD_CTRL0 (PAD_CTL_PKE | PAD_CTL_PUE | PAD_CTL_PUS_100K_UP)
++#define GPMI_PAD_CTRL1 (PAD_CTL_DSE_40ohm | PAD_CTL_SPEED_MED | \
++			PAD_CTL_SRE_FAST)
++#define GPMI_PAD_CTRL2 (GPMI_PAD_CTRL0 | GPMI_PAD_CTRL1)
++
++#define USDHC_PAD_CTRL (PAD_CTL_PUS_47K_UP |			\
++	PAD_CTL_SPEED_LOW | PAD_CTL_DSE_80ohm |			\
++	PAD_CTL_SRE_FAST  | PAD_CTL_HYS)
++
++#define BTN0 IMX_GPIO_NR(2, 15)
++
++int dram_init(void)
++{
++	gd->ram_size = imx_ddr_size();
++
++	return 0;
++}
++static iomux_v3_cfg_t const button_pads[] = {
++	/* Menu */
++	MX6_PAD_ENET2_RX_ER__GPIO2_IO15 | MUX_PAD_CTRL(PAD_CTL_PUS_100K_UP | PAD_CTL_SPEED_MED | PAD_CTL_DSE_40ohm | PAD_CTL_HYS),
++};
++static void setup_buttons(void)
++{
++	SETUP_IOMUX_PADS(button_pads);
++}
++#ifdef CONFIG_PWM_IMX
++static iomux_v3_cfg_t const rgb_pads[] = {
++	MX6_PAD_GPIO1_IO08__PWM1_OUT | MUX_PAD_CTRL(NO_PAD_CTRL), /* red */
++	MX6_PAD_GPIO1_IO09__PWM2_OUT | MUX_PAD_CTRL(NO_PAD_CTRL), /* green */
++	MX6_PAD_GPIO1_IO04__PWM3_OUT | MUX_PAD_CTRL(NO_PAD_CTRL), /* blue */
++};
++void set_rgb_color(uint rgb){
++	int ret, i, c, pad;
++	c = rgb & 0xff;
++
++	for(i=0;i<3;i++) {
++		pad=(i+2)%3;
++		c = rgb & 0xff;
++		if (c == 0) {
++			pwm_disable(pad);
++		} else {
++			ret = pwm_config(pad, c*20, 5120);
++			ret = pwm_enable(pad);
++		}
++		rgb = rgb>>8;
++	}
++}
++static int setup_rgb(void)
++{
++	int ret, i;
++	ulong rgb;
++	SETUP_IOMUX_PADS(rgb_pads);
++	for(i=0; i<3; i++) {
++		ret = pwm_init(i, 0, 0);
++		if (ret) goto error;
++	}
++	rgb = env_get_hex("color_after_uboot", 0x1000001);
++	if(rgb > 0x1000000) {
++		env_set_hex("color_after_uboot",0);
++       }
++
++	rgb = env_get_hex("color_uboot", 0x1000001);
++	if(rgb > 0x1000000) {
++		rgb = 0x111111;
++		env_set("color_uboot", "0x111111");
++       }
++	set_rgb_color(rgb);
++error:
++	return ret;
++}
++#else
++static int setup_rgb(void)
++{
++	return 0;
++}
++#endif
++
++static iomux_v3_cfg_t const uart1_pads[] = {
++	MX6_PAD_UART1_TX_DATA__UART1_DCE_TX | MUX_PAD_CTRL(UART_PAD_CTRL),
++	MX6_PAD_UART1_RX_DATA__UART1_DCE_RX | MUX_PAD_CTRL(UART_PAD_CTRL),
++};
++
++static void setup_iomux_uart(void)
++{
++	SETUP_IOMUX_PADS(uart1_pads);
++}
++
++#ifdef CONFIG_NAND_MXS
++static iomux_v3_cfg_t const nand_pads[] = {
++	MX6_PAD_NAND_DATA00__RAWNAND_DATA00 | MUX_PAD_CTRL(GPMI_PAD_CTRL2),
++	MX6_PAD_NAND_DATA01__RAWNAND_DATA01 | MUX_PAD_CTRL(GPMI_PAD_CTRL2),
++	MX6_PAD_NAND_DATA02__RAWNAND_DATA02 | MUX_PAD_CTRL(GPMI_PAD_CTRL2),
++	MX6_PAD_NAND_DATA03__RAWNAND_DATA03 | MUX_PAD_CTRL(GPMI_PAD_CTRL2),
++	MX6_PAD_NAND_DATA04__RAWNAND_DATA04 | MUX_PAD_CTRL(GPMI_PAD_CTRL2),
++	MX6_PAD_NAND_DATA05__RAWNAND_DATA05 | MUX_PAD_CTRL(GPMI_PAD_CTRL2),
++	MX6_PAD_NAND_DATA06__RAWNAND_DATA06 | MUX_PAD_CTRL(GPMI_PAD_CTRL2),
++	MX6_PAD_NAND_DATA07__RAWNAND_DATA07 | MUX_PAD_CTRL(GPMI_PAD_CTRL2),
++	MX6_PAD_NAND_CLE__RAWNAND_CLE | MUX_PAD_CTRL(GPMI_PAD_CTRL2),
++	MX6_PAD_NAND_ALE__RAWNAND_ALE | MUX_PAD_CTRL(GPMI_PAD_CTRL2),
++	MX6_PAD_NAND_CE0_B__RAWNAND_CE0_B | MUX_PAD_CTRL(GPMI_PAD_CTRL2),
++	MX6_PAD_NAND_CE1_B__RAWNAND_CE1_B | MUX_PAD_CTRL(GPMI_PAD_CTRL2),
++	MX6_PAD_NAND_RE_B__RAWNAND_RE_B | MUX_PAD_CTRL(GPMI_PAD_CTRL2),
++	MX6_PAD_NAND_WE_B__RAWNAND_WE_B | MUX_PAD_CTRL(GPMI_PAD_CTRL2),
++	MX6_PAD_NAND_WP_B__RAWNAND_WP_B | MUX_PAD_CTRL(GPMI_PAD_CTRL2),
++	MX6_PAD_NAND_READY_B__RAWNAND_READY_B | MUX_PAD_CTRL(GPMI_PAD_CTRL2),
++	MX6_PAD_NAND_DQS__RAWNAND_DQS | MUX_PAD_CTRL(GPMI_PAD_CTRL2),
++};
++
++static void setup_gpmi_nand(void)
++{
++	struct mxc_ccm_reg *mxc_ccm = (struct mxc_ccm_reg *)CCM_BASE_ADDR;
++
++	/* config gpmi nand iomux */
++	SETUP_IOMUX_PADS(nand_pads);
++
++	setup_gpmi_io_clk((MXC_CCM_CS2CDR_ENFC_CLK_PODF(0) |
++			MXC_CCM_CS2CDR_ENFC_CLK_PRED(3) |
++			MXC_CCM_CS2CDR_ENFC_CLK_SEL(3)));
++
++	/* enable apbh clock gating */
++	setbits_le32(&mxc_ccm->CCGR0, MXC_CCM_CCGR0_APBHDMA_MASK);
++}
++#endif
++#ifdef CONFIG_SERIAL_TAG
++void get_board_serial(struct tag_serialnr *serialnr)
++{
++	struct ocotp_regs *ocotp = (struct ocotp_regs *)OCOTP_BASE_ADDR;
++	struct fuse_bank *bank = &ocotp->bank[0];
++	struct fuse_bank0_regs *fuse =
++		(struct fuse_bank0_regs *)bank->fuse_regs;
++
++	serialnr->low = fuse->uid_low;
++	serialnr->high = fuse->uid_high;
++}
++#endif
++
++int misc_init_r(void)
++{
++	env_set_hex("reset_cause", get_imx_reset_cause());
++	return 0;
++}
++
++int board_early_init_f(void)
++{
++	setup_iomux_uart();
++	setup_buttons();
++	return 0;
++}
++
++int board_init(void)
++{
++	/* Address of boot parameters */
++	gd->bd->bi_boot_params = PHYS_SDRAM + 0x100;
++
++#ifdef CONFIG_NAND_MXS
++	setup_gpmi_nand();
++#endif
++	return 0;
++}
++#ifdef CONFIG_CMD_BMODE
++/* TODO */
++static const struct boot_mode board_boot_modes[] = {
++	/* 4 bit bus width */
++	{"nand", MAKE_CFGVAL(0x40, 0x34, 0x00, 0x00)},
++	{"sd1", MAKE_CFGVAL(0x10, 0x10, 0x00, 0x00)},
++	{NULL, 0},
++};
++#endif
++
++int board_late_init(void)
++{
++	int ret;
++#ifdef CONFIG_CMD_BMODE
++	add_board_boot_modes(board_boot_modes);
++#endif
++
++#ifdef CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG
++	env_set("board_name", "Xiaomi Lumi Gateway");
++	env_set("board_rev", "DGNWG05LM");
++#endif
++
++	gpio_request(BTN0, "btn0");
++	gpio_direction_input(BTN0);
++
++	env_set("button", "pressed");
++	if(gpio_get_value(BTN0)) {
++		env_set("button", "released");
++	}
++	gpio_free(BTN0);
++
++	ret = setup_rgb();
++	if (ret)
++		return ret;
++
++
++	return 0;
++}
++/**
++ * Update color when the "ubootcolor" env var changes.
++ */
++static int on_coloruboot(const char *name, const char *value, enum env_op op,
++		int flags)
++{
++	ulong rgb=simple_strtoul(value, NULL, 16);
++	set_rgb_color(rgb);
++	return 0;
++}
++U_BOOT_ENV_CALLBACK(coloruboot, on_coloruboot);
++
++void board_preboot_os(void)
++{
++	ulong rgb=env_get_hex("color_after_uboot", 0x1000001);
++	set_rgb_color(rgb);
++}
++
++int checkboard(void)
++{
++	puts("Board: DGNWG05LM\n");
++
++	return 0;
++}
+--- /dev/null
++++ b/board/xiaomi/dgnwg05lm/plugin.S
+@@ -0,0 +1,138 @@
++/* SPDX-License-Identifier: GPL-2.0+ */
++/*
++ * Copyright (C) 2016 Freescale Semiconductor, Inc.
++ */
++
++#include <config.h>
++
++/* DDR script */
++.macro imx6ull_ddr3_evk_setting
++	ldr r0, =IOMUXC_BASE_ADDR
++	ldr r1, =0x000C0000
++	str r1, [r0, #0x4B4]
++	ldr r1, =0x00000000
++	str r1, [r0, #0x4AC]
++	ldr r1, =0x00000030
++	str r1, [r0, #0x27C]
++	ldr r1, =0x00000030
++	str r1, [r0, #0x250]
++	str r1, [r0, #0x24C]
++	str r1, [r0, #0x490]
++	ldr r1, =0x000C0030
++	str r1, [r0, #0x288]
++
++	ldr r1, =0x00000000
++	str r1, [r0, #0x270]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x260]
++	str r1, [r0, #0x264]
++	str r1, [r0, #0x4A0]
++
++	ldr r1, =0x00020000
++	str r1, [r0, #0x494]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x280]
++	ldr r1, =0x00000030
++	str r1, [r0, #0x284]
++
++	ldr r1, =0x00020000
++	str r1, [r0, #0x4B0]
++
++	ldr r1, =0x00000030
++	str r1, [r0, #0x498]
++	str r1, [r0, #0x4A4]
++	str r1, [r0, #0x244]
++	str r1, [r0, #0x248]
++
++	ldr r0, =MMDC_P0_BASE_ADDR
++	ldr r1, =0x00008000
++	str r1, [r0, #0x1C]
++	ldr r1, =0xA1390003
++	str r1, [r0, #0x800]
++	ldr r1, =0x00000004
++	str r1, [r0, #0x80C]
++	ldr r1, =0x41640158
++	str r1, [r0, #0x83C]
++	ldr r1, =0x40403237
++	str r1, [r0, #0x848]
++	ldr r1, =0x40403C33
++	str r1, [r0, #0x850]
++	ldr r1, =0x33333333
++	str r1, [r0, #0x81C]
++	str r1, [r0, #0x820]
++	ldr r1, =0xF3333333
++	str r1, [r0, #0x82C]
++	str r1, [r0, #0x830]
++	ldr r1, =0x00944009
++	str r1, [r0, #0x8C0]
++	ldr r1, =0x00000800
++	str r1, [r0, #0x8B8]
++	ldr r1, =0x0002002D
++	str r1, [r0, #0x004]
++	ldr r1, =0x1B333030
++	str r1, [r0, #0x008]
++	ldr r1, =0x676B52F3
++	str r1, [r0, #0x00C]
++	ldr r1, =0xB66D0B63
++	str r1, [r0, #0x010]
++	ldr r1, =0x01FF00DB
++	str r1, [r0, #0x014]
++	ldr r1, =0x00201740
++	str r1, [r0, #0x018]
++	ldr r1, =0x00008000
++	str r1, [r0, #0x01C]
++	ldr r1, =0x000026D2
++	str r1, [r0, #0x02C]
++	ldr r1, =0x006B1023
++	str r1, [r0, #0x030]
++	ldr r1, =0x0000004F
++	str r1, [r0, #0x040]
++	ldr r1, =0x84180000
++	str r1, [r0, #0x000]
++	ldr r1, =0x00400000
++	str r1, [r0, #0x890]
++	ldr r1, =0x02008032
++	str r1, [r0, #0x01C]
++	ldr r1, =0x00008033
++	str r1, [r0, #0x01C]
++	ldr r1, =0x00048031
++	str r1, [r0, #0x01C]
++	ldr r1, =0x15208030
++	str r1, [r0, #0x01C]
++	ldr r1, =0x04008040
++	str r1, [r0, #0x01C]
++	ldr r1, =0x00000800
++	str r1, [r0, #0x020]
++	ldr r1, =0x00000227
++	str r1, [r0, #0x818]
++	ldr r1, =0x0002552D
++	str r1, [r0, #0x004]
++	ldr r1, =0x00011006
++	str r1, [r0, #0x404]
++	ldr r1, =0x00000000
++	str r1, [r0, #0x01C]
++.endm
++
++.macro imx6_clock_gating
++	ldr r0, =CCM_BASE_ADDR
++	ldr r1, =0xFFFFFFFF
++	str r1, [r0, #0x68]
++	str r1, [r0, #0x6C]
++	str r1, [r0, #0x70]
++	str r1, [r0, #0x74]
++	str r1, [r0, #0x78]
++	str r1, [r0, #0x7C]
++	str r1, [r0, #0x80]
++.endm
++
++.macro imx6_qos_setting
++.endm
++
++.macro imx6_ddr_setting
++	imx6ull_ddr3_evk_setting
++.endm
++
++/* include the common plugin code here */
++#include <asm/arch/mx6_plugin.S>
+--- /dev/null
++++ b/configs/xiaomi_dgnwg05lm_defconfig
+@@ -0,0 +1,75 @@
++CONFIG_ARCH_MX6=y
++CONFIG_ARM=y
++CONFIG_MX6ULL=y
++CONFIG_BOARD_EARLY_INIT_F=y
++CONFIG_BOOTDELAY=1
++CONFIG_BOUNCE_BUFFER=y
++CONFIG_CMD_BOOTZ=y
++CONFIG_CMD_CACHE=y
++CONFIG_CMD_EXT2=y
++CONFIG_CMD_EXT4=y
++CONFIG_CMD_EXT4_WRITE=y
++CONFIG_CMD_FAT=y
++CONFIG_CMD_FS_GENERIC=y
++CONFIG_CMD_GPIO=y
++CONFIG_CMD_I2C=y
++CONFIG_CMD_MEMTEST=y
++CONFIG_CMD_MMC=y
++CONFIG_CMD_MTD=y
++CONFIG_CMD_MTDPARTS=y
++CONFIG_CMD_NAND=y
++CONFIG_CMD_NAND_TRIMFFS=y
++CONFIG_CMD_REGULATOR=y
++CONFIG_CMD_UBI=y
++CONFIG_CMD_USB=y
++CONFIG_CMD_ENV_CALLBACK=y
++CONFIG_DEFAULT_DEVICE_TREE="imx6ull-xiaomi-lumi"
++CONFIG_DM_GPIO=y
++CONFIG_DM_I2C=y
++CONFIG_DM_MMC=y
++CONFIG_DM_MTD=y
++CONFIG_DM_REGULATOR=y
++CONFIG_DM_REGULATOR_FIXED=y
++CONFIG_DM_REGULATOR_GPIO=y
++CONFIG_DM_SERIAL=y
++CONFIG_DM_SPI=y
++CONFIG_DM_USB=y
++CONFIG_ENV_IS_IN_NAND=y
++CONFIG_ENV_OFFSET=0x2e0000
++CONFIG_ENV_SIZE=0x20000
++CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
++CONFIG_FSL_USDHC=y
++CONFIG_HUSH_PARSER=y
++CONFIG_IMX_THERMAL=y
++CONFIG_MTD=y
++CONFIG_MTD_RAW_NAND=y
++CONFIG_MTD_UBI_FASTMAP=y
++CONFIG_MTDIDS_DEFAULT="nand0=gpmi-nand"
++CONFIG_MTDPARTS_DEFAULT="mtdparts=gpmi-nand:3m(boot),7m(kernel),1m(dtb),-(ubi)"
++CONFIG_NAND=y
++CONFIG_NAND_BOOT=y
++CONFIG_NAND_MXS=y
++CONFIG_NAND_MXS_DT=y
++CONFIG_NR_DRAM_BANKS=1
++CONFIG_OF_CONTROL=y
++CONFIG_PINCTRL=y
++CONFIG_PINCTRL_IMX6=y
++CONFIG_SOFT_SPI=y
++CONFIG_SPI=y
++CONFIG_SUPPORT_RAW_INITRD=y
++CONFIG_SYS_PROMPT="Lumi iMX6ULL # "
++CONFIG_SYS_RELOC_GD_ENV_ADDR=y
++CONFIG_SYS_TEXT_BASE=0x87800000
++CONFIG_SYS_MALLOC_LEN=0x4000000
++CONFIG_SYS_MEMTEST_START=0x80000000
++CONFIG_SYS_MEMTEST_END=0x88000000
++CONFIG_TARGET_XIAOMI_DGNWG05LM=y
++CONFIG_USB=y
++CONFIG_USB_GADGET=y
++CONFIG_USB_GADGET_MANUFACTURER="FSL"
++CONFIG_USB_GADGET_PRODUCT_NUM=0x4ee0
++CONFIG_USB_GADGET_VBUS_DRAW=500
++CONFIG_USB_GADGET_VENDOR_NUM=0x18d1
++CONFIG_USB_STORAGE=y
++CONFIG_CRC32_VERIFY=y
++CONFIG_PWM_IMX=y
++CONFIG_SYS_TEXT_BASE=0x87800000
+--- /dev/null
++++ b/include/configs/xiaomi_dgnwg05lm.h
+@@ -0,0 +1,158 @@
++/* SPDX-License-Identifier: GPL-2.0+ */
++/*
++ * Copyright (C) 2016 Freescale Semiconductor, Inc.
++ *
++ * Configuration settings for the Freescale i.MX6UL 14x14 EVK board.
++ */
++#ifndef __XIAOMI_DGNWG05LM_CONFIG_H
++#define __XIAOMI_DGNWG05LM_CONFIG_H
++
++
++#include <asm/arch/imx-regs.h>
++#include <linux/sizes.h>
++#include "mx6_common.h"
++#include <asm/mach-imx/gpio.h>
++
++#define PHYS_SDRAM_SIZE	SZ_256M
++
++#define BOOTARGS_CMA_SIZE	"cma=32M "
++#define CONFIG_ENV_CALLBACK_LIST_STATIC "color_uboot:coloruboot"
++
++/* Size of malloc() pool */
++//#define CONFIG_SYS_MALLOC_LEN		(16 * SZ_1M)
++
++#define CONFIG_MXC_UART
++#define CONFIG_MXC_UART_BASE		UART1_BASE
++
++/* MMC Configs */
++#ifdef CONFIG_FSL_USDHC
++#define CONFIG_SYS_FSL_ESDHC_ADDR	USDHC2_BASE_ADDR
++
++/* NAND pin conflicts with usdhc2 */
++#ifdef CONFIG_NAND_MXS
++#define CONFIG_SYS_FSL_USDHC_NUM	1
++#else
++#define CONFIG_SYS_FSL_USDHC_NUM	2
++#endif
++#endif
++
++/* I2C configs */
++#ifdef CONFIG_CMD_I2C
++#define CONFIG_SYS_I2C_MXC
++#define CONFIG_SYS_I2C_MXC_I2C1		/* enable I2C bus 1 */
++#define CONFIG_SYS_I2C_MXC_I2C2		/* enable I2C bus 2 */
++#define CONFIG_SYS_I2C_SPEED		100000
++#endif
++
++#define CONFIG_SYS_MMC_IMG_LOAD_PART	1
++
++#define CONFIG_CMD_READ
++#define CONFIG_SERIAL_TAG
++#define CONFIG_FASTBOOT_USB_DEV 0
++
++#define MEM_LAYOUT_ENV_SETTINGS \
++	"fdt_addr=0x83000000\0" \
++	"loadaddr=0x80800000\0" \
++	"initrd_addr=0x83800000\0" \
++	"initrd_high=0xffffffff\0"
++
++#ifndef CONFIG_MTDPARTS_DEFAULT
++#define CONFIG_MTDPARTS_DEFAULT "mtdparts=gpmi-nand:3m(boot),7m(kernel),1m(dtb),-(ubi)"
++#endif
++
++#define CONFIG_BOOTARGS_SQUASH "console=ttymxc0,115200 ubi.mtd=3 ubi.block=0,rootfs root=/dev/ubiblock0_0 rootfstype=squashfs " \
++	BOOTARGS_CMA_SIZE \
++	CONFIG_MTDPARTS_DEFAULT
++
++#define CONFIG_BOOTARGS_UBI "console=ttymxc0,115200 ubi.mtd=3 root=ubi0:ubi rootfstype=ubifs " \
++	BOOTARGS_CMA_SIZE \
++	CONFIG_MTDPARTS_DEFAULT
++
++#define CONFIG_EXTRA_ENV_SETTINGS \
++    "mfgtool_args=setenv bootargs console=ttymxc0,115200 " \
++        BOOTARGS_CMA_SIZE \
++        "rdinit=/linuxrc " \
++        "g_mass_storage.stall=0 g_mass_storage.removable=1 " \
++        "g_mass_storage.idVendor=0x066F g_mass_storage.idProduct=0x37FF "\
++        "g_mass_storage.iSerialNumber=\"\" "\
++        CONFIG_MTDPARTS_DEFAULT \
++        "\0" \
++    "bootargs_ubi="  \
++        CONFIG_BOOTARGS_UBI \
++        "\0" \
++    "bootargs_squashfs="  \
++        CONFIG_BOOTARGS_SQUASH \
++        "\0" \
++    "bootcmd_mfg=run mfgtool_args;bootz ${loadaddr} ${initrd_addr} ${fdt_addr};\0" \
++    MEM_LAYOUT_ENV_SETTINGS \
++    "bootargs=" \
++        CONFIG_BOOTARGS_SQUASH \
++        "\0" \
++    "bootcmd=nand read ${loadaddr} 0x300000 0x700000;" \
++        "nand read ${fdt_addr} 0xA00000 0x100000;" \
++        "bootz ${loadaddr} - ${fdt_addr};\0" \
++    "mtdids=nand0=gpmi-nand\0" \
++    "mtdparts=" \
++        CONFIG_MTDPARTS_DEFAULT \
++        "\0"
++/* Miscellaneous configurable options */
++//#define CONFIG_SYS_MEMTEST_START	0x80000000
++//#define CONFIG_SYS_MEMTEST_END		(CONFIG_SYS_MEMTEST_START + 0x8000000)
++#undef CONFIG_SYS_LOAD_ADDR
++#define CONFIG_SYS_LOAD_ADDR		0x80800000
++#define CONFIG_SYS_HZ			1000
++
++/* Physical Memory Map */
++#define PHYS_SDRAM			MMDC0_ARB_BASE_ADDR
++
++#define CONFIG_SYS_SDRAM_BASE		PHYS_SDRAM
++#define CONFIG_SYS_INIT_RAM_ADDR	IRAM_BASE_ADDR
++#define CONFIG_SYS_INIT_RAM_SIZE	IRAM_SIZE
++
++#define CONFIG_SYS_INIT_SP_OFFSET \
++	(CONFIG_SYS_INIT_RAM_SIZE - GENERATED_GBL_DATA_SIZE)
++#define CONFIG_SYS_INIT_SP_ADDR \
++	(CONFIG_SYS_INIT_RAM_ADDR + CONFIG_SYS_INIT_SP_OFFSET)
++
++/* environment organization */
++#define CONFIG_SYS_MMC_ENV_DEV		1	/* USDHC2 */
++#define CONFIG_SYS_MMC_ENV_PART		0	/* user area */
++#define CONFIG_MMCROOT			"/dev/mmcblk1p2"  /* USDHC2 */
++
++#define CONFIG_IOMUX_LPSR
++
++#ifndef CONFIG_IMX_THERMAL
++#define CONFIG_IMX_THERMAL
++#endif
++
++#ifndef CONFIG_PWM_IMX
++#define CONFIG_PWM_IMX
++#endif
++
++#define CONFIG_IMX6_PWM_PER_CLK 66000000
++
++#ifdef CONFIG_FSL_QSPI
++#define CONFIG_SYS_FSL_QSPI_AHB
++#define FSL_QSPI_FLASH_NUM		1
++#define FSL_QSPI_FLASH_SIZE		SZ_32M
++#endif
++
++/* NAND stuff */
++#ifdef CONFIG_NAND_MXS
++#define CONFIG_SYS_MAX_NAND_DEVICE	1
++#define CONFIG_SYS_NAND_BASE		0x40000000
++#define CONFIG_SYS_NAND_5_ADDR_CYCLE
++#define CONFIG_SYS_NAND_ONFI_DETECTION
++#define CONFIG_SYS_NAND_USE_FLASH_BBT
++
++/* DMA stuff, needed for GPMI/MXS NAND support */
++#endif
++/* USB Configs */
++#ifdef CONFIG_CMD_USB
++#define CONFIG_EHCI_HCD_INIT_AFTER_RESET
++#define CONFIG_MXC_USB_PORTSC  (PORT_PTS_UTMI | PORT_PTS_PTW)
++#define CONFIG_MXC_USB_FLAGS   0
++#define CONFIG_USB_MAX_CONTROLLER_COUNT 2
++#endif
++
++#endif

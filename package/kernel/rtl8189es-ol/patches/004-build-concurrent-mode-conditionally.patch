@@ -1,0 +1,10 @@
+--- a/Makefile
++++ b/Makefile
+@@ -20,7 +20,6 @@ ccflags-y += -Wno-date-time	# Fix compil
+ endif
+ 
+ ccflags-y += -I$(src)/include
+-ccflags-y += -DCONFIG_CONCURRENT_MODE
+ ldflags-y += --strip-debug
+ 
+ CONFIG_AUTOCFG_CP = n

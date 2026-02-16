@@ -1,0 +1,385 @@
+Xiaomi DGNWG05LM is a is a wall-mounted zigbee-to-internet gateway.
+Device specifications:
+* SoC: Freescale iMX6ULL
+* RAM: 256MiB
+* Flash: 256MiB NAND flash
+* Wireless 2.4GHz (RTL8723BS): b/g/n
+* Bluetooth 4.2 integrated in RTL8723BS
+* Zigbee Chip: NXP jn5169
+* Ring of RGB leds
+* BTN0 button
+* Sound chip TFA9882 + speaker
+
+Tested on: Xiaomi Gateway DGNWG05LM
+
+Signed-off-by: Ivan Belokobylskiy <belokobylskij@gmail.com>
+
+--- a/arch/arm/boot/dts/nxp/imx/Makefile
++++ b/arch/arm/boot/dts/nxp/imx/Makefile
+@@ -315,6 +315,7 @@ dtb-$(CONFIG_SOC_IMX6UL) += \
+ 	imx6ul-tx6ul-0011.dtb \
+ 	imx6ul-tx6ul-mainboard.dtb \
+ 	imx6ull-14x14-evk.dtb \
++	imx6ull-xiaomi-dgnwg05lm.dtb \
+ 	imx6ull-colibri-aster.dtb \
+ 	imx6ull-colibri-emmc-aster.dtb \
+ 	imx6ull-colibri-emmc-eval-v3.dtb \
+--- /dev/null
++++ b/arch/arm/boot/dts/nxp/imx/imx6ull-xiaomi-lumi.dtsi
+@@ -0,0 +1,343 @@
++// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
++
++/dts-v1/;
++
++#include "imx6ull.dtsi"
++
++/ {
++	model = "Xiaomi Gateway Lumi";
++	compatible = "xiaomi,gateway-lumi", "fsl,imx6ull";
++
++	chosen {
++		stdout-path = &uart1;
++	};
++
++	memory@80000000 {
++		device_type = "memory";
++		reg = <0x80000000 0x10000000>;
++	};
++
++	wifi_pwrseq: wifi_pwrseq {
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_wifi>;
++		compatible = "mmc-pwrseq-simple";
++		reset-gpios = <&gpio5 1 GPIO_ACTIVE_LOW>;
++	};
++
++	reg_wifi_3v3: regulator_wifi_3v3 {
++		compatible = "regulator-fixed";
++		regulator-name = "VSD_3V3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-always-on;
++	};
++
++	gpio-keys {
++		compatible = "gpio-keys";
++		pinctrl-names = "default";
++		pinctrl-0 = <&pinctrl_bnt0_key>;
++
++		btn0 {
++			label = "btn0";
++			gpios = <&gpio2 15 GPIO_ACTIVE_LOW>;
++			linux,code = <BTN_0>;
++			debounce-interval = <10>;
++		};
++	};
++
++	pwmleds {
++		compatible = "pwm-leds";
++		green {
++			label = "green";
++			pwms = <&pwm1 0 1000000>;
++			max-brightness = <255>;
++			brightness = <0>;
++			default-state = <0>;
++			status = "okay";
++			linux,default-trigger = "backlight";
++		};
++		red {
++			label = "red";
++			pwms = <&pwm2 0 1000000>;
++			max-brightness = <255>;
++			brightness = <0>;
++			default-state = <0>;
++			status = "okay";
++			linux,default-trigger = "backlight";
++		};
++		blue {
++			label = "blue";
++			pwms = <&pwm3 0 1000000>;
++			max-brightness = <255>;
++			brightness = <0>;
++			default-state = <0>;
++			status = "okay";
++			linux,default-trigger = "backlight";
++		};
++	 };
++
++	tfa9882: tfa9882 {
++		#sound-dai-cells = <0>;
++		compatible = "fsl,tfa9882";
++		clocks = <&clks IMX6UL_CLK_SAI1>;
++		clock-names = "mclk";
++	};
++
++	sound-tfa9882 {
++		compatible = "simple-audio-card";
++		simple-audio-card,name = "tfa9882-audio";
++		simple-audio-card,format = "i2s";
++		simple-audio-card,frame-master = <&cpudai>;
++		simple-audio-card,bitclock-master = <&cpudai>;
++		simple-audio-card,widgets =
++			"Line", "Left Line Out Jack",
++			"Line", "Right Line Out Jack";
++		simple-audio-card,routing =
++			"Left Line Out Jack", "LINEVOUTL",
++			"Right Line Out Jack", "LINEVOUTR";
++
++		cpudai: simple-audio-card,cpu {
++			sound-dai = <&sai1>;
++			dai-tdm-slot-num = <2>;
++			dai-tdm-slot-width = <32>;
++		};
++
++		simple-audio-card,codec {
++			sound-dai = <&tfa9882>;
++			clocks = <&clks IMX6UL_CLK_SAI1>;
++			clock-names = "mclk";
++		};
++	};
++};
++
++&sai1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_sai1>;
++	assigned-clocks = <&clks IMX6UL_CLK_SAI1_SEL>,
++			<&clks IMX6UL_CLK_SAI1>;
++	assigned-clock-parents = <&clks IMX6UL_CLK_PLL4_AUDIO_DIV>;
++	assigned-clock-rates = <0>, <12288000>;
++	fsl,sai-mclk-direction-output;
++	status = "okay";
++};
++
++&clks {
++	assigned-clocks = <&clks IMX6UL_CLK_PLL3_PFD2>,<&clks IMX6UL_CLK_PLL4_AUDIO_DIV>;
++	assigned-clock-rates = <320000000>,<786432000>;
++};
++
++&gpmi {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_gpmi_nand_1>;
++	fsl,use-minimum-ecc;
++	nand-on-flash-bbt;
++	status = "okay";
++};
++
++&uart1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_uart1>;
++	status = "okay";
++};
++
++&uart2 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_uart2>;
++	status = "okay";
++};
++
++&uart3 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_uart3>;
++	uart-has-rtscts;
++	status = "okay";
++};
++
++&usbotg1 {
++	dr_mode = "host";
++	status = "okay";
++};
++
++&usbphy1 {
++	fsl,tx-d-cal = <106>;
++};
++
++&usbphy2 {
++	fsl,tx-d-cal = <106>;
++};
++
++
++&iomuxc {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_jnflash>;
++
++	pinctrl_gpmi_nand_1: gpmi-nand-1 {
++		fsl,pins = <
++			MX6UL_PAD_NAND_CLE__RAWNAND_CLE		0xb0b1
++			MX6UL_PAD_NAND_ALE__RAWNAND_ALE		0xb0b1
++			MX6UL_PAD_NAND_WP_B__RAWNAND_WP_B	0xb0b1
++			MX6UL_PAD_NAND_READY_B__RAWNAND_READY_B 0xb000
++			MX6UL_PAD_NAND_CE0_B__RAWNAND_CE0_B	0xb0b1
++			MX6UL_PAD_NAND_CE1_B__RAWNAND_CE1_B	0xb0b1
++			MX6UL_PAD_NAND_RE_B__RAWNAND_RE_B	0xb0b1
++			MX6UL_PAD_NAND_WE_B__RAWNAND_WE_B	0xb0b1
++			MX6UL_PAD_NAND_DATA00__RAWNAND_DATA00   0xb0b1
++			MX6UL_PAD_NAND_DATA01__RAWNAND_DATA01   0xb0b1
++			MX6UL_PAD_NAND_DATA02__RAWNAND_DATA02   0xb0b1
++			MX6UL_PAD_NAND_DATA03__RAWNAND_DATA03   0xb0b1
++			MX6UL_PAD_NAND_DATA04__RAWNAND_DATA04   0xb0b1
++			MX6UL_PAD_NAND_DATA05__RAWNAND_DATA05   0xb0b1
++			MX6UL_PAD_NAND_DATA06__RAWNAND_DATA06   0xb0b1
++			MX6UL_PAD_NAND_DATA07__RAWNAND_DATA07   0xb0b1
++		>;
++ 	};
++
++	pinctrl_wifi: wifigrp {
++		fsl,pins = <
++			MX6UL_PAD_SNVS_TAMPER1__GPIO5_IO01 0x03029
++		>;
++	};
++
++	pinctrl_i2c1: i2c1grp {
++		fsl,pins = <
++			MX6UL_PAD_UART4_TX_DATA__I2C1_SCL 0x4001b8b0
++			MX6UL_PAD_UART4_RX_DATA__I2C1_SDA 0x4001b8b0
++		>;
++	};
++
++	pinctrl_i2c2: i2c2grp {
++		fsl,pins = <
++			MX6UL_PAD_UART5_TX_DATA__I2C2_SCL 0x4001b8b0
++			MX6UL_PAD_UART5_RX_DATA__I2C2_SDA 0x4001b8b0
++		>;
++	};
++
++	pinctrl_uart1: uart1grp {
++		fsl,pins = <
++			MX6UL_PAD_UART1_TX_DATA__UART1_DCE_TX 0x1b0b1
++			MX6UL_PAD_UART1_RX_DATA__UART1_DCE_RX 0x1b0b1
++		>;
++	};
++
++	pinctrl_uart2: uart2grp {
++		fsl,pins = <
++			MX6UL_PAD_UART2_TX_DATA__UART2_DCE_TX	0x1b0b1
++			MX6UL_PAD_UART2_RX_DATA__UART2_DCE_RX	0x1b0b1
++		>;
++	};
++
++	pinctrl_uart3: uart3grp {
++		fsl,pins = <
++			MX6UL_PAD_UART3_TX_DATA__UART3_DCE_TX 0x1b0b1
++			MX6UL_PAD_UART3_RX_DATA__UART3_DCE_RX 0x1b0b1
++			MX6UL_PAD_UART3_RTS_B__UART3_DCE_RTS  0x1b0b1
++			MX6UL_PAD_UART3_CTS_B__UART3_DCE_CTS  0x1b0b1
++		>;
++	};
++
++	pinctrl_pwm1: pwm1grp {
++		fsl,pins = <
++			MX6UL_PAD_GPIO1_IO08__PWM1_OUT   0x110b0
++		>;
++	};
++
++	pinctrl_pwm2: pwm2grp {
++		fsl,pins = <
++			MX6UL_PAD_GPIO1_IO09__PWM2_OUT   0x110b0
++		>;
++	};
++
++	pinctrl_pwm3: pwm3grp {
++		fsl,pins = <
++			MX6UL_PAD_GPIO1_IO04__PWM3_OUT   0x110b0
++		>;
++	};
++
++	pinctrl_usdhc1: usdhc1grp {
++		fsl,pins = <
++			MX6UL_PAD_SD1_CMD__USDHC1_CMD	 	0x17059
++			MX6UL_PAD_SD1_CLK__USDHC1_CLK	 	0x10059
++			MX6UL_PAD_SD1_DATA0__USDHC1_DATA0 	0x17059
++			MX6UL_PAD_SD1_DATA1__USDHC1_DATA1 	0x17059
++			MX6UL_PAD_SD1_DATA2__USDHC1_DATA2 	0x17059
++			MX6UL_PAD_SD1_DATA3__USDHC1_DATA3 	0x17059
++		>;
++	};
++
++	pinctrl_jnflash: jnflashgrp {
++		fsl,pins = <
++			MX6UL_PAD_ENET2_RX_DATA0__GPIO2_IO08	   0x000010B0
++			MX6UL_PAD_ENET2_RX_DATA1__GPIO2_IO09	   0x000010B0
++		>;
++	};
++
++	pinctrl_sai1: sai1grp {
++		fsl,pins = <
++			MX6UL_PAD_CSI_DATA04__SAI1_TX_SYNC 0x17088
++			MX6UL_PAD_CSI_DATA05__SAI1_TX_BCLK 0x17088
++			MX6UL_PAD_CSI_DATA07__SAI1_TX_DATA 0x11088
++		>;
++	};
++
++	pinctrl_adc1: adc1grp {
++	  	fsl,pins = <
++			MX6UL_PAD_GPIO1_IO05__GPIO1_IO05           0x000000B0
++		>;
++	};
++
++	pinctrl_bnt0_key: btn0grp {
++		fsl,pins = <
++			MX6UL_PAD_ENET2_RX_ER__GPIO2_IO15          0x000010B0
++		>;
++	};
++};
++
++&i2c1 {
++	clock-frequency = <100000>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_i2c1>;
++	status = "okay";
++};
++
++&usdhc1 {
++	#address-cells = <1>;
++	#size-cells = <0>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_usdhc1>;
++	no-1-8-v;
++	vmmc-supply = <&reg_wifi_3v3>;
++	non-removable;
++	pm-ignore-notify;
++	mmc-pwrseq = <&wifi_pwrseq>;
++	cap-power-off-card;
++	status = "okay";
++
++	rtlwifi_sdio: rtlwifi_sdio@1 {
++		reg = <1>;
++	};
++};
++
++&pwm1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_pwm1>;
++	status = "okay";
++};
++
++&pwm2 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_pwm2>;
++	status = "okay";
++};
++
++&pwm3 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_pwm3>;
++	status = "okay";
++};
++
++&adc1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_adc1>;
++	num-channels = <2>;
++	status = "okay";
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/nxp/imx/imx6ull-xiaomi-dgnwg05lm.dts
+@@ -0,0 +1,10 @@
++// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
++
++/dts-v1/;
++
++#include "imx6ull-xiaomi-lumi.dtsi"
++
++/ {
++	model = "Xiaomi Gateway DGNWG05LM";
++	compatible = "xiaomi,dgnwg05lm", "xiaomi,gateway-lumi", "fsl,imx6ull";
++};
