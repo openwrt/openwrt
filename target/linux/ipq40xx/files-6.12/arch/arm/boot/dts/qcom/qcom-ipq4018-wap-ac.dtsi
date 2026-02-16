@@ -24,6 +24,7 @@
 		led-failsafe = &led_user;
 		led-running = &led_user;
 		led-upgrade = &led_user;
+		label-mac-device = &swport5;
 	};
 
 	soc {
@@ -146,6 +147,14 @@
 				hard_config {
 					read-only;
 					size = <0x2000>;
+
+					nvmem-layout {
+						compatible = "mikrotik,routerboot-nvmem";
+
+						macaddr_hard: base-mac-address {
+							#nvmem-cell-cells = <1>;
+						};
+					};
 				};
 
 				dtb_config {
@@ -199,11 +208,17 @@
 &swport4 {
 	status = "okay";
 	label = "sw-eth2";
+
+	nvmem-cells = <&macaddr_hard 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &swport5 {
 	status = "okay";
 	label = "sw-eth1";
+
+	nvmem-cells = <&macaddr_hard 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &wifi0 {
