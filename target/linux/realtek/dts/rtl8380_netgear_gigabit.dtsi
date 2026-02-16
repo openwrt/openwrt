@@ -8,6 +8,10 @@
 / {
 	compatible = "realtek,rtl838x-soc";
 
+	aliases {
+		label-mac-device = &ethernet0;
+	};
+
 	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x8000000>;
@@ -84,6 +88,14 @@
 			partition@e0000 {
 				label = "u-boot-env";
 				reg = <0x00e0000 0x0010000>;
+
+				nvmem-layout {
+					compatible = "u-boot,env";
+
+					macaddr_ubootenv_ethaddr: ethaddr {
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@f0000 {
@@ -116,6 +128,11 @@
 			};
 		};
 	};
+};
+
+&ethernet0 {
+	nvmem-cells = <&macaddr_ubootenv_ethaddr 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &switch0 {
