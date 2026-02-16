@@ -396,6 +396,8 @@ TARGET_DEVICES += arcadyan_mozart
 define Device/asus_rt-ax52
   DEVICE_VENDOR := ASUS
   DEVICE_MODEL := RT-AX52
+  DEVICE_ALT0_VENDOR := ASUS
+  DEVICE_ALT0_MODEL := RT-AX52 PRO
   DEVICE_DTS := mt7981b-asus-rt-ax52
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware
