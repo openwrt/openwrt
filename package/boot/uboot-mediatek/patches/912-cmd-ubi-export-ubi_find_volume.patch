@@ -1,0 +1,43 @@
+From 7cd40d1669c60fc67854c5631abfaa37a2d5d22b Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Sun, 15 Feb 2026 23:34:59 +0000
+Subject: [PATCH 07/17] cmd: ubi: export ubi_find_volume()
+
+Remove the static qualifier from ubi_find_volume() and add a
+declaration to include/ubi_uboot.h so that other translation units
+can look up a UBI volume by name.
+
+The function now refers to ubi_devices[0] directly instead of the
+file-local 'ubi' pointer, and takes a const char * for the volume
+name.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+
+---
+Changes since RFCv1:
+  - Added full function documentation comment (Simon)
+---
+ cmd/ubi.c           | 10 +++++++---
+ include/ubi_uboot.h | 11 +++++++++++
+ 2 files changed, 18 insertions(+), 3 deletions(-)
+
+--- a/cmd/ubi.c
++++ b/cmd/ubi.c
+@@ -253,11 +253,15 @@ int ubi_create_vol(char *volume, int64_t
+ 
+ struct ubi_volume *ubi_find_volume(char *volume)
+ {
++	struct ubi_device *dev = ubi_devices[0];
+ 	struct ubi_volume *vol;
+ 	int i;
+ 
+-	for (i = 0; i < ubi->vtbl_slots; i++) {
+-		vol = ubi->volumes[i];
++	if (!dev)
++		return NULL;
++
++	for (i = 0; i < dev->vtbl_slots; i++) {
++		vol = dev->volumes[i];
+ 		if (vol && !strcmp(vol->name, volume))
+ 			return vol;
+ 	}

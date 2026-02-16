@@ -1,0 +1,208 @@
+From 6dd34fa3764af60d9351764439cbd3227cff2a83 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 20 Feb 2026 17:36:28 +0000
+Subject: [PATCH 21/26] boot: bootmeth: openwrt: implement boot via imagemap
+
+Implement the boot() callback for the OpenWrt boot method. Builds
+an imagemap for the boot device, loads the FIT header to detect
+the image format, then invokes bootm with the imagemap device
+so that sub-images are read on demand.
+
+Block, MTD, and UBI backends are selected at runtime based on the
+bootflow's device type.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+Changes since RFC:
+  - Reworked for imagemap driver model (Simon)
+  - Boot via imagemap device instead of bootm cmdline extensions
+  - Supports block, MTD, and UBI backends (absorbed 18/20)
+  - use bootm_run_states()
+  - make use of updated dm-verity bootargs generation
+---
+ boot/bootmeth_openwrt.c | 155 +++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 154 insertions(+), 1 deletion(-)
+
+--- a/boot/bootmeth_openwrt.c
++++ b/boot/bootmeth_openwrt.c
+@@ -13,6 +13,8 @@
+ #include <bootm.h>
+ #include <bootmeth.h>
+ #include <dm.h>
++#include <env.h>
++#include <image.h>
+ #include <imagemap.h>
+ #include <malloc.h>
+ #include <part.h>
+@@ -75,12 +77,160 @@ static int openwrt_read_bootflow(struct
+ 	if (fdt_check_header(hdr))
+ 		return -ENOENT;
+ 
++	bflow->state = BOOTFLOWST_READY;
++
+ 	return 0;
+ }
+ 
++/*
++ * Phase 1 states: parse the FIT, find OS/FDT/loadables, load images.
++ * fit_verity_build_cmdline() runs automatically during FINDOTHER.
++ */
++#define OPENWRT_PHASE1_STATES \
++	(BOOTM_STATE_START | BOOTM_STATE_PRE_LOAD | BOOTM_STATE_FINDOS | \
++	 BOOTM_STATE_FINDOTHER | BOOTM_STATE_LOADOS)
++
++/*
++ * Phase 2 states: prepare cmdline and hand off to the OS.
++ * fit_verity_apply_bootargs() runs automatically during OS_PREP.
++ *
++ * BOOTM_STATE_RAMDISK and BOOTM_STATE_MEASURE are added conditionally
++ * at runtime to match bootm_run() behaviour.
++ */
++#define OPENWRT_PHASE2_STATES \
++	(BOOTM_STATE_OS_PREP | BOOTM_STATE_OS_FAKE_GO | BOOTM_STATE_OS_GO)
++
++/**
++ * openwrt_prepare_boot() - set up bootm_info and run phase 1 of bootm
++ * @bflow: bootflow to update
++ *
++ * Creates an imagemap for the boot device, initialises a heap-allocated
++ * struct bootm_info, reads ``bootconf``, and runs phase 1 of the bootm
++ * state machine (parse FIT, load images).  dm-verity cmdline fragments
++ * are built automatically during boot_get_loadable().
++ *
++ * The resulting ``struct bootm_info`` is stored in bflow->bootmeth_priv
++ * and must be freed by the caller after bootm_run_states() returns.
++ *
++ * Return: 0 on success, negative errno on error
++ */
++static int openwrt_prepare_boot(struct bootflow *bflow)
++{
++	struct udevice *imdev = NULL;
++	struct bootm_info *bmi;
++	char *addr_img = NULL;
++	const char *conf;
++	int ret;
++
++	ret = imagemap_create(bflow->blk ? bflow->blk :
++			      dev_get_parent(bflow->dev),
++			      bflow->fname, bflow->part, &imdev);
++	if (ret)
++		return log_msg_ret("im", ret);
++
++	bmi = calloc(1, sizeof(*bmi));
++	if (!bmi) {
++		ret = -ENOMEM;
++		goto err_imagemap;
++	}
++	bootm_init(bmi);
++	bmi->imagemap = imdev;
++
++	/* FIT config selection via #conf suffix */
++	conf = env_get("bootconf");
++	if (conf) {
++		addr_img = malloc(strlen(conf) + 2);
++		if (!addr_img) {
++			ret = -ENOMEM;
++			goto err_bmi;
++		}
++		sprintf(addr_img, "#%s", conf);
++		bmi->addr_img = addr_img;
++	}
++
++	bmi->cmd_name = "bootm";
++	bflow->bootmeth_priv = bmi;
++
++	/*
++	 * Phase 1: parse FIT and load images.
++	 */
++	ret = bootm_run_states(bmi, OPENWRT_PHASE1_STATES);
++	if (ret)
++		goto err_priv;
++
++	return 0;
++
++err_priv:
++	bflow->bootmeth_priv = NULL;
++err_bmi:
++	free(addr_img);
++	free(bmi);
++err_imagemap:
++	imagemap_cleanup(imdev);
++	return log_msg_ret("prep", ret);
++}
++
++#if CONFIG_IS_ENABLED(BOOTSTD_FULL)
++static int openwrt_read_all(struct udevice *dev, struct bootflow *bflow)
++{
++	return openwrt_prepare_boot(bflow);
++}
++#endif /* BOOTSTD_FULL */
++
+ static int openwrt_boot(struct udevice *dev, struct bootflow *bflow)
+ {
+-	return log_msg_ret("nyi", -ENOSYS);
++	struct bootm_info *bmi;
++	const char *root;
++	int states;
++	int ret;
++
++	/* Run phase 1 if not done yet */
++	if (!bflow->bootmeth_priv) {
++		ret = openwrt_prepare_boot(bflow);
++		if (ret)
++			return log_msg_ret("prep", ret);
++	}
++
++	bmi = bflow->bootmeth_priv;
++
++	/*
++	 * Decide root= based on whether verity targets were found
++	 * during phase 1.  With verity the root filesystem is /dev/dm-0;
++	 * without it, it is the first FIT block device.
++	 */
++	root = fit_verity_active(bmi->images) ? "/dev/dm-0" : "/dev/fit0";
++	ret = bootflow_cmdline_set_arg(bflow, "root", root, false);
++	if (ret)
++		goto out;
++
++	ret = bootflow_cmdline_set_arg(bflow, "rootwait",
++				       BOOTFLOWCL_EMPTY, false);
++	if (ret)
++		goto out;
++
++	/* Propagate assembled cmdline to bootargs environment */
++	if (bflow->cmdline)
++		env_set("bootargs", bflow->cmdline);
++
++	/*
++	 * Phase 2: measure, prep bootargs (verity params appended
++	 * automatically), and boot the OS.
++	 */
++	states = OPENWRT_PHASE2_STATES;
++	if (IS_ENABLED(CONFIG_SYS_BOOT_RAMDISK_HIGH))
++		states |= BOOTM_STATE_RAMDISK;
++	if (IS_ENABLED(CONFIG_MEASURED_BOOT))
++	        states |= BOOTM_STATE_MEASURE;
++	ret = bootm_run_states(bmi, states);
++
++out:
++	/* bootm consumed the imagemap — only free our own allocations */
++	fit_verity_free(bmi->images);
++	free((void *)bmi->addr_img);
++	free(bmi);
++	bflow->bootmeth_priv = NULL;
++
++	return log_msg_ret("run", ret);
+ }
+ 
+ static int openwrt_bootmeth_bind(struct udevice *dev)
+@@ -97,6 +247,9 @@ static struct bootmeth_ops openwrt_bootm
+ 	.check		= openwrt_check,
+ 	.read_bootflow	= openwrt_read_bootflow,
+ 	.boot		= openwrt_boot,
++#if CONFIG_IS_ENABLED(BOOTSTD_FULL)
++	.read_all	= openwrt_read_all,
++#endif /* BOOTSTD_FULL */
+ };
+ 
+ static const struct udevice_id openwrt_bootmeth_ids[] = {

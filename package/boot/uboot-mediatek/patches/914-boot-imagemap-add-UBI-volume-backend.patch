@@ -1,0 +1,244 @@
+From 6530105e31c5df82f40e7a6b5ad237337903f6e4 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 20 Feb 2026 17:22:27 +0000
+Subject: [PATCH 14/26] boot: imagemap: add UBI volume backend
+
+Add a UBI volume storage backend for the imagemap framework.
+
+imagemap_init_ubi() takes a volume name, ensures the UBI device is
+attached (auto-attaching from the device tree if needed), and
+installs a read callback wrapping ubi_volume_read().
+
+Auto-attach scans the device tree for the first MTD partition with
+compatible = "linux,ubi", finds the corresponding MTD device by
+matching flash_node, and calls ubi_part_from_mtd(). Since U-Boot
+only supports a single attached UBI device at a time, only the
+first matching partition is used.
+
+UBI handles bad-block management and wear levelling internally, so
+the read callback is a straightforward passthrough.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+Changes since RFC:
+  - Converted to a proper DM driver, child of the MTD device
+  - Replaced global ofnode_for_each_compatible_node DT walk with direct
+    MTD partition list traversal via dev_get_uclass_priv() (Simon)
+  - Blank line before final return (Simon)
+---
+ boot/Kconfig        |   8 ++
+ boot/Makefile       |   1 +
+ boot/imagemap-ubi.c | 180 ++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 189 insertions(+)
+ create mode 100644 boot/imagemap-ubi.c
+
+--- a/boot/Kconfig
++++ b/boot/Kconfig
+@@ -1225,6 +1225,14 @@ config IMAGEMAP_MTD
+ 	  parallel NAND, etc.) using the imagemap framework.
+ 	  NAND bad blocks are skipped transparently.
+ 
++config IMAGEMAP_UBI
++	bool "UBI volume backend for imagemap"
++	depends on IMAGEMAP && CMD_UBI
++	help
++	  Allows loading images from UBI volumes using the imagemap
++	  framework. Auto-attaches the UBI device from the device tree
++	  if not already attached.
++
+ config DISTRO_DEFAULTS
+ 	bool "(deprecated) Script-based booting of Linux distributions"
+ 	select CMDLINE
+--- a/boot/Makefile
++++ b/boot/Makefile
+@@ -76,6 +76,7 @@ obj-$(CONFIG_$(PHASE_)BOOTMETH_ANDROID)
+ obj-$(CONFIG_IMAGEMAP) += imagemap.o
+ obj-$(CONFIG_IMAGEMAP_BLK) += imagemap-blk.o
+ obj-$(CONFIG_IMAGEMAP_MTD) += imagemap-mtd.o
++obj-$(CONFIG_IMAGEMAP_UBI) += imagemap-ubi.o
+ 
+ obj-$(CONFIG_$(PHASE_)BOOTMETH_VBE_ABREC) += vbe_abrec.o vbe_common.o
+ obj-$(CONFIG_$(PHASE_)BOOTMETH_VBE_ABREC_FW) += vbe_abrec_fw.o
+--- /dev/null
++++ b/boot/imagemap-ubi.c
+@@ -0,0 +1,180 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * UBI volume backend for imagemap (UCLASS_IMAGEMAP driver)
++ *
++ * Copyright (C) 2026 Daniel Golle <daniel@makrotopia.org>
++ */
++
++#include <dm.h>
++#include <imagemap.h>
++#include <dm/device-internal.h>
++#include <dm/lists.h>
++#include <dm/ofnode.h>
++#include <log.h>
++#include <mtd.h>
++#include <ubi_uboot.h>
++
++/**
++ * struct imagemap_ubi_plat - Platform data set before probe
++ *
++ * @vol_name:	UBI volume name (strdup'd, owned by this struct)
++ * @ubi_mtd:	MTD partition hosting the UBI device
++ */
++struct imagemap_ubi_plat {
++	char *vol_name;
++	struct mtd_info *ubi_mtd;
++};
++
++/**
++ * struct imagemap_ubi_priv - Runtime private data
++ *
++ * @vol_name:	UBI volume name
++ * @ubi_mtd:	MTD partition hosting the UBI device
++ */
++struct imagemap_ubi_priv {
++	char *vol_name;
++	struct mtd_info *ubi_mtd;
++};
++
++static int imagemap_ubi_read(struct udevice *dev, loff_t src,
++			     ulong size, void *dst)
++{
++	struct imagemap_ubi_priv *priv = dev_get_priv(dev);
++	int ret;
++
++	/* Ensure UBI is attached on the correct partition (no-op if same) */
++	ret = ubi_part_from_mtd(priv->ubi_mtd);
++	if (ret)
++		return ret;
++
++	ret = ubi_volume_read(priv->vol_name, dst, src, size);
++	/* ubi_volume_read() returns positive errno values on error */
++
++	return ret ? -ret : 0;
++}
++
++static int imagemap_ubi_probe(struct udevice *dev)
++{
++	struct imagemap_ubi_plat *plat = dev_get_plat(dev);
++	struct imagemap_ubi_priv *priv = dev_get_priv(dev);
++
++	priv->vol_name = plat->vol_name;
++	priv->ubi_mtd = plat->ubi_mtd;
++
++	return 0;
++}
++
++static int imagemap_ubi_remove(struct udevice *dev)
++{
++	struct imagemap_ubi_plat *plat = dev_get_plat(dev);
++
++	free(plat->vol_name);
++	plat->vol_name = NULL;
++
++	return 0;
++}
++
++/**
++ * imagemap_create_ubi() - bind and probe an imagemap for a UBI volume
++ *
++ * The caller must ensure a UBI device is already attached and the
++ * named volume is accessible (e.g. via ubi_part_from_mtd()).
++ *
++ * @parent:	DM parent device for the new imagemap
++ * @ubi_mtd:	MTD partition hosting the UBI device
++ * @vol_name:	UBI volume name
++ * @devp:	On success, the new imagemap device
++ * Return: 0 on success, negative errno on failure
++ */
++static int imagemap_create_ubi(struct udevice *parent,
++			       struct mtd_info *ubi_mtd,
++			       const char *vol_name,
++			       struct udevice **devp)
++{
++	struct imagemap_ubi_plat *plat;
++	struct udevice *dev;
++	int ret;
++
++	ret = device_bind_driver(parent, "imagemap_ubi",
++				 vol_name, &dev);
++	if (ret)
++		return ret;
++
++	plat = dev_get_plat(dev);
++	plat->vol_name = strdup(vol_name);
++	if (!plat->vol_name) {
++		device_unbind(dev);
++		return -ENOMEM;
++	}
++	plat->ubi_mtd = ubi_mtd;
++
++	ret = device_probe(dev);
++	if (ret) {
++		free(plat->vol_name);
++		plat->vol_name = NULL;
++		device_unbind(dev);
++		return ret;
++	}
++
++	*devp = dev;
++
++	return 0;
++}
++
++static const struct imagemap_ops imagemap_ubi_ops = {
++	.read	= imagemap_ubi_read,
++};
++
++U_BOOT_DRIVER(imagemap_ubi) = {
++	.name		= "imagemap_ubi",
++	.id		= UCLASS_IMAGEMAP,
++	.ops		= &imagemap_ubi_ops,
++	.probe		= imagemap_ubi_probe,
++	.remove		= imagemap_ubi_remove,
++	.plat_auto	= sizeof(struct imagemap_ubi_plat),
++	.priv_auto	= sizeof(struct imagemap_ubi_priv),
++};
++
++static int imagemap_ubi_dev_create(struct udevice *dev, const char *name,
++				   int part, struct udevice **devp)
++{
++	struct mtd_info *mtd;
++
++	mtd_probe_devices();
++
++	/*
++	 * Walk all MTD partitions whose top-level flash device matches
++	 * our DM parent to find the UBI partition hosting a volume with
++	 * the requested name.  @part carries the UBI volume ID but is
++	 * not used here — the volume name already uniquely identifies
++	 * the target within a single flash device.
++	 */
++	mtd_for_each_device(mtd) {
++		struct mtd_info *top = mtd;
++
++		while (top->parent)
++			top = top->parent;
++
++		if (top->dev != dev)
++			continue;
++
++		if (!ofnode_device_is_compatible(mtd->flash_node,
++						"linux,ubi"))
++			continue;
++
++		if (ubi_part_from_mtd(mtd))
++			continue;
++
++		if (!ubi_find_volume(name))
++			continue;
++
++		return imagemap_create_ubi(dev, mtd, name, devp);
++	}
++
++	return -ENODEV;
++}
++
++IMAGEMAP_BACKEND(imagemap_ubi) = {
++	.uclass	= UCLASS_MTD,
++	.create	= imagemap_ubi_dev_create,
++};

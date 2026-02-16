@@ -1,0 +1,292 @@
+From 61d17f6a58a8ace4a202360d490dd42e1a54d3b8 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 24 Feb 2026 01:54:31 +0000
+Subject: [PATCH 04/26] doc: fit: add dm-verity boot parameter documentation
+
+Add documentation for CONFIG_FIT_VERITY which allows U-Boot to
+construct dm-mod.create= and dm-mod.waitfor= kernel command-line
+parameters from dm-verity metadata embedded in FIT filesystem
+sub-images.
+
+The new document covers the relationship between FIT
+loadable indices and the /dev/fitN block devices that the Linux
+uImage.FIT block driver creates, provides a complete .its example
+with a dm-verity-protected SquashFS root filesystem, describes all
+required dm-verity subnode properties and explains how to generate
+the verity metadata using veritysetup format.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+New patch in v2.
+---
+ doc/usage/fit/dm-verity.rst | 253 ++++++++++++++++++++++++++++++++++++
+ doc/usage/fit/index.rst     |   1 +
+ 2 files changed, 254 insertions(+)
+ create mode 100644 doc/usage/fit/dm-verity.rst
+
+--- /dev/null
++++ b/doc/usage/fit/dm-verity.rst
+@@ -0,0 +1,253 @@
++.. SPDX-License-Identifier: GPL-2.0+
++
++FIT dm-verity Boot Parameters
++=============================
++
++Introduction
++------------
++
++Linux's dm-verity device-mapper target provides transparent integrity
++checking of block devices using a Merkle tree.  It is commonly used to
++protect read-only root filesystems such as SquashFS images.
++
++When a FIT image packages the root filesystem as a loadable sub-image of
++type ``filesystem`` (``IH_TYPE_FILESYSTEM``), the verity metadata can be
++stored alongside the image data in a ``dm-verity`` subnode.  U-Boot reads
++this metadata at boot time and generates the kernel command-line parameters
++that Linux needs to activate the verity target, eliminating the need for
++an initramfs or userspace helper to set up dm-verity.
++
++This feature is enabled by ``CONFIG_FIT_VERITY`` (see ``boot/Kconfig``).
++
++Prerequisites
++-------------
++
++* **Linux uImage.FIT block driver** – the kernel must include the FIT block
++  driver that exposes loadable sub-images as ``/dev/fit0``, ``/dev/fit1``,
++  etc.  The driver assigns device numbers in the order loadables appear in
++  the FIT configuration.
++
++* **dm-verity support in the kernel** – ``CONFIG_DM_VERITY`` must be
++  enabled so the kernel can process the ``dm-mod.create=`` parameter.
++
++* **CONFIG_FIT_VERITY** enabled in U-Boot.
++
++How it works
++------------
++
++The implementation is split into a **build** phase and an **apply** phase,
++both of which run automatically within the ``bootm`` state machine.  No
++boot method needs to call verity functions explicitly.
++
++**Build phase** (``BOOTM_STATE_FINDOTHER`` → ``boot_get_loadable()``)
++
++1. After all loadable sub-images have been loaded,
++   ``fit_verity_build_cmdline()`` iterates the configuration's
++   ``loadables`` list.
++
++2. For each loadable that is an ``IH_TYPE_FILESYSTEM`` image **and**
++   contains a ``dm-verity`` child node, a dm-verity target specification is
++   built by the helper ``fit_verity_build_target()``.
++
++3. The dm-verity target references ``/dev/fitN``, where *N* is the
++   zero-based index of the loadable in the configuration.  This matches the
++   numbering used by the Linux FIT block driver.
++
++4. The resulting fragments are stored in ``struct bootm_headers``:
++
++   ``images->dm_mod_create``
++     The full dm-verity target table.  Multiple targets are separated by
++     ``;``.
++
++   ``images->dm_mod_waitfor``
++     Comma-separated list of ``/dev/fitN`` devices so the kernel waits for
++     the underlying FIT block devices to appear before activating
++     device-mapper.
++
++**Apply phase** (``BOOTM_STATE_OS_PREP``)
++
++5. Just before ``bootm_process_cmdline_env()`` processes the ``bootargs``
++   environment variable, ``fit_verity_apply_bootargs()`` appends the
++   ``dm-mod.create=`` and ``dm-mod.waitfor=`` parameters.
++
++**Bootmeth integration**
++
++  Because the fragments are stored in ``struct bootm_headers``, a boot
++  method can check ``fit_verity_active(images)`` between bootm state
++  invocations.  A typical pattern splits ``bootm_run_states()`` into two
++  calls — one for ``START|FINDOS|FINDOTHER|LOADOS`` and one for
++  ``OS_PREP|OS_GO`` — and inspects ``fit_verity_active()`` in
++  between to decide whether to add a ``root=`` parameter pointing at the
++  dm-verity device.
++
++FIT image source (.its) example
++-------------------------------
++
++Below is a minimal ``.its`` file showing a kernel and a dm-verity-protected
++root filesystem packaged as a FIT::
++
++    /dts-v1/;
++
++    / {
++        description = "Kernel + dm-verity rootfs";
++        #address-cells = <1>;
++
++        images {
++            kernel {
++                description = "Linux kernel";
++                data = /incbin/("./Image.gz");
++                type = "kernel";
++                arch = "arm64";
++                os = "linux";
++                compression = "gzip";
++                load = <0x44000000>;
++                entry = <0x44000000>;
++            };
++
++            fdt {
++                description = "Device tree blob";
++                data = /incbin/("./board.dtb");
++                type = "flat_dt";
++                arch = "arm64";
++                compression = "none";
++            };
++
++            rootfs {
++                description = "SquashFS root filesystem";
++                data = /incbin/("./rootfs.squashfs");
++                type = "filesystem";
++                arch = "arm64";
++                compression = "none";
++
++                dm-verity {
++                    data-block-size = <4096>;
++                    hash-block-size = <4096>;
++                    num-data-blocks = <3762>;
++                    hash-start-block = <3763>;
++                    algo = "sha256";
++                    digest = [8e 67 91 63 7f 93 cb b8 1f c4 52 99 e2 03 cb e8
++                              5c a2 e4 7a 38 f5 05 1b dd ee ce 92 d7 b1 c9 f9];
++                    salt = [aa 7b 11 f8 db 8f e2 e5 bf d4 ec a1 d1 8a 22 b5
++                            de 7e a3 9d 2e 1b 93 bb 72 72 ce 0c 6c a3 cc 8e];
++                };
++            };
++        };
++
++        configurations {
++            default = "config-1";
++            config-1 {
++                description = "Boot with dm-verity rootfs";
++                kernel = "kernel";
++                fdt = "fdt";
++                loadables = "rootfs";
++            };
++        };
++    };
++
++With this configuration U-Boot produces a kernel command line similar to::
++
++    dm-mod.create="rootfs,,, ro,0 <data_sectors> verity 1 \
++        /dev/fit0 /dev/fit0 4096 4096 3762 3763 sha256 \
++        8e6791637f93cbb81fc45299e203cbe85ca2e47a38f5051bddeece92d7b1c9f9 \
++        aa7b11f8db8fe2e5bfd4eca1d18a22b5de7ea39d2e1b93bb7272ce0c6ca3cc8e" \
++    dm-mod.waitfor=/dev/fit0
++
++dm-verity subnode properties
++----------------------------
++
++Mandatory properties:
++
++.. list-table::
++   :header-rows: 1
++   :widths: 20 15 65
++
++   * - Property
++     - Type
++     - Description
++   * - ``data-block-size``
++     - u32
++     - Data block size in bytes (>= 512, typically 4096).
++   * - ``hash-block-size``
++     - u32
++     - Hash block size in bytes (>= 512, typically 4096).
++   * - ``num-data-blocks``
++     - u32
++     - Number of data blocks in the filesystem image.
++   * - ``hash-start-block``
++     - u32
++     - Offset in ``hash-block-size``-sized blocks from the start of the
++       sub-image to the root block of the hash tree.
++   * - ``algo``
++     - string
++     - Hash algorithm name, e.g. ``"sha256"``.
++   * - ``digest``
++     - byte array
++     - Root hash of the Merkle tree, stored as raw bytes. Length must match
++       the output size of ``algorithm``.
++   * - ``salt``
++     - byte array
++     - Salt used when computing the Merkle tree, stored as raw bytes.
++
++Optional boolean properties (when present, they are collected and appended
++as dm-verity optional parameters with hyphens converted to underscores):
++
++.. list-table::
++   :header-rows: 1
++   :widths: 30 70
++
++   * - Property
++     - Description
++   * - ``ignore-corruption``
++     - Log corrupted blocks but proceed normally.
++   * - ``restart-on-corruption``
++     - Restart the system on data corruption.
++   * - ``panic-on-corruption``
++     - Panic the system on data corruption.
++   * - ``restart-on-error``
++     - Restart the system on I/O error.
++   * - ``panic-on-error``
++     - Panic the system on I/O error.
++   * - ``check-at-most-once``
++     - Verify data blocks only on first read.
++
++These values are the same ones produced by ``veritysetup format`` and can
++typically be obtained from its output or from the verity superblock.
++The ``digest`` and ``salt`` byte arrays correspond to the hex-encoded
++``Root hash`` and ``Salt`` printed by ``veritysetup format``.
++
++Generating verity metadata
++--------------------------
++
++To prepare a filesystem image with dm-verity metadata::
++
++    # Create the filesystem image
++    mksquashfs rootfs/ rootfs.squashfs -comp xz
++
++    # Generate the Merkle tree and append it to the image
++    veritysetup format rootfs.squashfs rootfs.squashfs \
++        --hash=sha256 --data-block-size=4096 --hash-block-size=4096
++
++The ``veritysetup format`` command prints ``Root hash``, ``Salt``,
++``Data blocks``, ``Data block size``, ``Hash block size`` and other values —
++use these to populate the ``dm-verity`` subnode in the ``.its`` file.
++The ``Root hash`` and ``Salt`` hex strings must be converted to raw byte
++arrays (``[xx xx ...]`` syntax in DTS).  ``hash-start-block`` is typically
++``num-data-blocks + 1`` to skip the 512-byte verity superblock padded to
++one hash block.
++
++.. note::
++
++   The example above appends the hash tree to the same file as the data.
++   This is the expected layout: data blocks followed by a 512-byte verity
++   superblock (padded to one hash block), followed by the hash-tree blocks.
++
++Kconfig
++-------
++
++``CONFIG_FIT_VERITY``
++  Depends on ``CONFIG_FIT`` and ``CONFIG_OF_LIBFDT``.
++  When enabled, ``fit_verity_build_cmdline()`` and
++  ``fit_verity_apply_bootargs()`` are compiled into the boot path.
++  When disabled, the functions are static inlines returning 0, so there
++  is no code-size impact.  Works with both the ``bootm`` command and
++  BOOTSTD boot methods.
+--- a/doc/usage/fit/index.rst
++++ b/doc/usage/fit/index.rst
+@@ -11,6 +11,7 @@ images that it reads and boots. Document
+     :maxdepth: 1
+ 
+     beaglebone_vboot
++    dm-verity
+     howto
+     kernel_fdt
+     kernel_fdts_compressed

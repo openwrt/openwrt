@@ -1,0 +1,124 @@
+From 44ed3eee15269517e018da8e90cd2eb38e830118 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Mon, 16 Feb 2026 15:22:19 +0000
+Subject: [PATCH 19/26] boot: bootmeth: add OpenWrt boot method skeleton
+
+Add the initial bootmeth_openwrt driver.
+
+This is the foundation for booting OpenWrt-style uImage.FIT firmware
+images stored directly on raw storage partitions. The bootmeth will
+delegate actual image loading to the existing bootm storage path via
+imagemap.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Reviewed-by: Simon Glass <simon.glass@canonical.com>
+---
+Changes since RFC:
+  - Rewrote commit message in prose (Simon, Tom)
+---
+ boot/Kconfig            | 13 +++++++++
+ boot/Makefile           |  1 +
+ boot/bootmeth_openwrt.c | 65 +++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 79 insertions(+)
+ create mode 100644 boot/bootmeth_openwrt.c
+
+--- a/boot/Kconfig
++++ b/boot/Kconfig
+@@ -614,6 +614,19 @@ config BOOTMETH_CROS
+ 
+ 	  Note that only x86 devices are supported at present.
+ 
++config BOOTMETH_OPENWRT
++	bool "Bootdev support for OpenWrt"
++	depends on FIT
++	depends on BOOTSTD
++	depends on IMAGEMAP
++	help
++	  Enables support for booting OpenWrt-style uImage.FIT firmware
++	  images stored directly on raw storage (block device partitions,
++	  MTD partitions, or UBI volumes). The boot method loads the FIT
++	  metadata, selectively reads only the kernel and FDT sub-images
++	  from storage, and skips filesystem sub-images that Linux maps
++	  directly from flash.
++
+ config BOOTMETH_EXTLINUX
+ 	bool "Bootdev support for extlinux boot"
+ 	select PXE_UTILS
+--- a/boot/Makefile
++++ b/boot/Makefile
+@@ -72,6 +72,7 @@ obj-$(CONFIG_$(PHASE_)BOOTMETH_VBE_SIMPL
+ obj-$(CONFIG_$(PHASE_)BOOTMETH_VBE_SIMPLE_OS) += vbe_simple_os.o
+ 
+ obj-$(CONFIG_$(PHASE_)BOOTMETH_ANDROID) += bootmeth_android.o
++obj-$(CONFIG_$(PHASE_)BOOTMETH_OPENWRT) += bootmeth_openwrt.o
+ 
+ obj-$(CONFIG_IMAGEMAP) += imagemap.o
+ obj-$(CONFIG_IMAGEMAP_BLK) += imagemap-blk.o
+--- /dev/null
++++ b/boot/bootmeth_openwrt.c
+@@ -0,0 +1,65 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Bootmethod for OpenWrt
++ *
++ * Copyright (C) 2026 Daniel Golle <daniel@makrotopia.org>
++ */
++
++#define LOG_CATEGORY UCLASS_BOOTSTD
++
++#include <blk.h>
++#include <bootdev.h>
++#include <bootflow.h>
++#include <bootm.h>
++#include <bootmeth.h>
++#include <dm.h>
++#include <imagemap.h>
++#include <malloc.h>
++#include <mapmem.h>
++
++static int openwrt_check(struct udevice *dev, struct bootflow_iter *iter)
++{
++	if (bootflow_iter_check_blk(iter))
++		return log_msg_ret("blk", -EOPNOTSUPP);
++
++	return 0;
++}
++
++static int openwrt_read_bootflow(struct udevice *dev, struct bootflow *bflow)
++{
++	return log_msg_ret("nyi", -ENOENT);
++}
++
++static int openwrt_boot(struct udevice *dev, struct bootflow *bflow)
++{
++	return log_msg_ret("nyi", -ENOSYS);
++}
++
++static int openwrt_bootmeth_bind(struct udevice *dev)
++{
++	struct bootmeth_uc_plat *plat = dev_get_uclass_plat(dev);
++
++	plat->desc = "OpenWrt";
++	plat->flags = BOOTMETHF_ANY_PART;
++
++	return 0;
++}
++
++static struct bootmeth_ops openwrt_bootmeth_ops = {
++	.check		= openwrt_check,
++	.read_bootflow	= openwrt_read_bootflow,
++	.boot		= openwrt_boot,
++};
++
++static const struct udevice_id openwrt_bootmeth_ids[] = {
++	{ .compatible = "u-boot,openwrt" },
++	{ }
++};
++
++U_BOOT_DRIVER(bootmeth_openwrt) = {
++	.name		= "bootmeth_openwrt",
++	.id		= UCLASS_BOOTMETH,
++	.of_match	= openwrt_bootmeth_ids,
++	.ops		= &openwrt_bootmeth_ops,
++	.bind		= openwrt_bootmeth_bind,
++};

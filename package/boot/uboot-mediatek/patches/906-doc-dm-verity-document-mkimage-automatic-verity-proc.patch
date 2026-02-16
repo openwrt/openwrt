@@ -1,0 +1,139 @@
+From 595e2135edd13d798d09dbfda3a85700b038a001 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Thu, 26 Feb 2026 19:05:34 +0000
+Subject: [PATCH 06/26] doc: dm-verity: document mkimage automatic verity
+ processing
+
+Update the dm-verity documentation to reflect that mkimage now runs
+veritysetup automatically:
+
+- The ITS example only shows the three user-provided properties
+  (algorithm, data-block-size, hash-block-size).
+- The property table is split into user-provided and computed sections.
+- The 'Generating verity metadata' section explains the automated
+  pipeline and the -E requirement.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ doc/usage/fit/dm-verity.rst | 68 ++++++++++++++++++++++++++-----------
+ 1 file changed, 48 insertions(+), 20 deletions(-)
+
+--- a/doc/usage/fit/dm-verity.rst
++++ b/doc/usage/fit/dm-verity.rst
+@@ -84,7 +84,10 @@ FIT image source (.its) example
+ -------------------------------
+ 
+ Below is a minimal ``.its`` file showing a kernel and a dm-verity-protected
+-root filesystem packaged as a FIT::
++root filesystem packaged as a FIT. Only the three user-provided properties
++(``algo``, ``data-block-size``, ``hash-block-size``) are included; ``mkimage``
++computes and fills in ``digest``, ``salt``, ``num-data-blocks``, and
++``hash-start-block`` automatically (see `Generating verity metadata`_ below)::
+ 
+     /dts-v1/;
+ 
+@@ -155,7 +158,7 @@ With this configuration U-Boot produces
+ dm-verity subnode properties
+ ----------------------------
+ 
+-Mandatory properties:
++User-provided properties (required in the ``.its``):
+ 
+ .. list-table::
+    :header-rows: 1
+@@ -164,22 +167,33 @@ Mandatory properties:
+    * - Property
+      - Type
+      - Description
++   * - ``algo``
++     - string
++     - Hash algorithm name, e.g. ``"sha256"``.
+    * - ``data-block-size``
+      - u32
+      - Data block size in bytes (>= 512, typically 4096).
+    * - ``hash-block-size``
+      - u32
+      - Hash block size in bytes (>= 512, typically 4096).
++
++Computed properties (filled in by ``mkimage``):
++
++.. list-table::
++   :header-rows: 1
++   :widths: 20 15 65
++
++   * - Property
++     - Type
++     - Description
+    * - ``num-data-blocks``
+      - u32
+-     - Number of data blocks in the filesystem image.
++     - Number of data blocks in the filesystem image (computed from the
++       image size and ``data-block-size``).
+    * - ``hash-start-block``
+      - u32
+      - Offset in ``hash-block-size``-sized blocks from the start of the
+        sub-image to the root block of the hash tree.
+-   * - ``algo``
+-     - string
+-     - Hash algorithm name, e.g. ``"sha256"``.
+    * - ``digest``
+      - byte array
+      - Root hash of the Merkle tree, stored as raw bytes. Length must match
+@@ -218,28 +232,42 @@ The ``digest`` and ``salt`` byte arrays
+ Generating verity metadata
+ --------------------------
+ 
+-To prepare a filesystem image with dm-verity metadata::
++``mkimage`` automates the entire process.  When it encounters a
++``dm-verity`` subnode, it:
++
++1. Writes the embedded image data to a temporary file.
++2. Runs ``veritysetup format`` with the user-supplied algorithm and
++   block sizes.
++3. Parses ``Root hash`` and ``Salt`` from ``veritysetup`` stdout.
++4. Reads back the expanded file (original data + verity superblock +
++   Merkle hash tree) and replaces the image's ``data`` property.
++5. Writes the computed ``digest``, ``salt``, ``num-data-blocks``, and
++   ``hash-start-block`` properties into the ``dm-verity`` subnode.
++
++Images with ``dm-verity`` subnodes **must** use external data layout
++(``mkimage -E``).  ``mkimage`` will abort with an error if ``-E`` is
++not specified.
++
++Usage::
+ 
+     # Create the filesystem image
+     mksquashfs rootfs/ rootfs.squashfs -comp xz
+ 
+-    # Generate the Merkle tree and append it to the image
+-    veritysetup format rootfs.squashfs rootfs.squashfs \
+-        --hash=sha256 --data-block-size=4096 --hash-block-size=4096
+-
+-The ``veritysetup format`` command prints ``Root hash``, ``Salt``,
+-``Data blocks``, ``Data block size``, ``Hash block size`` and other values —
+-use these to populate the ``dm-verity`` subnode in the ``.its`` file.
+-The ``Root hash`` and ``Salt`` hex strings must be converted to raw byte
+-arrays (``[xx xx ...]`` syntax in DTS).  ``hash-start-block`` is typically
+-``num-data-blocks + 1`` to skip the 512-byte verity superblock padded to
+-one hash block.
++    # Build the FIT (dm-verity is computed automatically)
++    mkimage -E -f image.its image.itb
++
++``veritysetup`` (from the cryptsetup_ package) must be installed on
++the build host.
++
++.. _cryptsetup: https://gitlab.com/cryptsetup/cryptsetup
+ 
+ .. note::
+ 
+-   The example above appends the hash tree to the same file as the data.
+-   This is the expected layout: data blocks followed by a 512-byte verity
+-   superblock (padded to one hash block), followed by the hash-tree blocks.
++   The Merkle hash tree is appended to the image data within the FIT
++   external data section.  The layout is: data blocks, followed by a
++   512-byte verity superblock (padded to one ``hash-block-size`` block),
++   followed by the hash-tree blocks.  ``hash-start-block`` is set to
++   ``num-data-blocks + 1`` (skipping the superblock).
+ 
+ Kconfig
+ -------
