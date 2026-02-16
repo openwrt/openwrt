@@ -29,7 +29,7 @@ define Package/resolveip/description
 endef
 
 define Build/Compile
-	$(TARGET_CC) $(TARGET_CFLAGS) $(TARGET_LDFLAGS) -Wall \
+	$(TARGET_CC) $(TARGET_CPPFLAGS) $(TARGET_CFLAGS) $(TARGET_LDFLAGS) -Wall \
 		-o $(PKG_BUILD_DIR)/resolveip $(PKG_BUILD_DIR)/resolveip.c
 endef
 
