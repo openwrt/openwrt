@@ -18,9 +18,9 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
 
 --- a/drivers/mailbox/Kconfig
 +++ b/drivers/mailbox/Kconfig
-@@ -295,4 +295,17 @@ config QCOM_IPCC
- 	  acts as an interrupt controller for receiving interrupts from clients.
- 	  Say Y here if you want to build this driver.
+@@ -390,4 +390,17 @@ config RISCV_SBI_MPXY_MBOX
+ 	  or HS-mode hypervisor). Say Y here if you want to have this support.
+ 	  If unsure say N.
  
 +config STARFIVE_MBOX
 +	tristate "Platform Starfive Mailbox"
@@ -38,10 +38,10 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
  endif
 --- a/drivers/mailbox/Makefile
 +++ b/drivers/mailbox/Makefile
-@@ -64,3 +64,7 @@ obj-$(CONFIG_SPRD_MBOX)		+= sprd-mailbox
- obj-$(CONFIG_QCOM_CPUCP_MBOX)	+= qcom-cpucp-mbox.o
+@@ -82,3 +82,7 @@ obj-$(CONFIG_CIX_MBOX)	+= cix-mailbox.o
+ obj-$(CONFIG_BCM74110_MAILBOX)	+= bcm74110-mailbox.o
  
- obj-$(CONFIG_QCOM_IPCC)		+= qcom-ipcc.o
+ obj-$(CONFIG_RISCV_SBI_MPXY_MBOX)	+= riscv-sbi-mpxy-mbox.o
 +
 +obj-$(CONFIG_STARFIVE_MBOX)    += starfive_mailbox.o
 +ccflags-$(CONFIG_STARFIVE_MBOX) := -Wno-error=missing-prototypes
