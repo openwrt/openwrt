@@ -318,7 +318,7 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +};
 --- a/arch/arm/boot/dts/broadcom/bcm4709-asus-rt-ac87u.dts
 +++ b/arch/arm/boot/dts/broadcom/bcm4709-asus-rt-ac87u.dts
-@@ -77,6 +77,40 @@
+@@ -77,6 +77,43 @@
  	status = "okay";
  };
  
@@ -328,6 +328,9 @@ Signed-off-by: Rafał Miłecki <rafal@milecki.pl>
 +	ports {
 +		port@0 {
 +			label = "wan";
++
++			nvmem-cells = <&et1macaddr 1>;
++			nvmem-cell-names = "mac-address";
 +		};
 +
 +		port@1 {
