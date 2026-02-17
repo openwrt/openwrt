@@ -13,15 +13,15 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
 
 --- a/drivers/spi/spi-pl022.c
 +++ b/drivers/spi/spi-pl022.c
-@@ -33,6 +33,7 @@
- #include <linux/pm_runtime.h>
+@@ -34,6 +34,7 @@
  #include <linux/of.h>
  #include <linux/pinctrl/consumer.h>
+ #include <linux/minmax.h>
 +#include <linux/reset.h>
  
  /*
   * This macro is used to define some register default values.
-@@ -363,6 +364,7 @@ struct pl022 {
+@@ -364,6 +365,7 @@ struct pl022 {
  	resource_size_t			phybase;
  	void __iomem			*virtbase;
  	struct clk			*clk;
@@ -29,7 +29,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
  	struct spi_controller		*host;
  	struct pl022_ssp_controller	*host_info;
  	struct spi_transfer		*cur_transfer;
-@@ -1930,6 +1932,19 @@ static int pl022_probe(struct amba_devic
+@@ -1927,6 +1929,19 @@ static int pl022_probe(struct amba_devic
  		goto err_no_clk;
  	}
  
@@ -49,7 +49,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
  	/* Disable SSP */
  	writew((readw(SSP_CR1(pl022->virtbase)) & (~SSP_CR1_MASK_SSE)),
  	       SSP_CR1(pl022->virtbase));
-@@ -1985,6 +2000,8 @@ static int pl022_probe(struct amba_devic
+@@ -1982,6 +1997,8 @@ static int pl022_probe(struct amba_devic
  	if (platform_info->enable_dma)
  		pl022_dma_remove(pl022);
   err_no_irq:
