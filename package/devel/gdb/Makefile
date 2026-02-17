@@ -76,10 +76,12 @@ TARGET_LDFLAGS+= \
 	-static-libstdc++ \
 	-Wl,--gc-sections
 
+MAKE_VARS+= \
+	CPPFLAGS="$(TARGET_CPPFLAGS)"
+
 define Build/Install
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
-		CPPFLAGS="$(TARGET_CPPFLAGS)" \
 		install-gdb install-gdbserver
 endef
 
