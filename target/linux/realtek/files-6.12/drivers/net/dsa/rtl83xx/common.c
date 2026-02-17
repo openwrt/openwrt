@@ -473,7 +473,7 @@ int rtl83xx_lag_del(struct dsa_switch *ds, int group, int port)
 // 	mutex_lock(&priv->reg_mutex);
 
 // 	idx = find_first_zero_bit(priv->octet_cntr_use_bm, MAX_COUNTERS);
-// 	if (idx >= priv->n_counters) {
+// 	if (idx >= priv->r->n_counters) {
 // 		mutex_unlock(&priv->reg_mutex);
 // 		return -1;
 // 	}
@@ -499,9 +499,9 @@ int rtl83xx_packet_cntr_alloc(struct rtl838x_switch_priv *priv)
 	 * a 0-bit means the counter is already allocated (for octets)
 	 */
 	idx = find_first_bit(priv->packet_cntr_use_bm, MAX_COUNTERS * 2);
-	if (idx >= priv->n_counters * 2) {
+	if (idx >= priv->r->n_counters * 2) {
 		j = find_first_zero_bit(priv->octet_cntr_use_bm, MAX_COUNTERS);
-		if (j >= priv->n_counters) {
+		if (j >= priv->r->n_counters) {
 			mutex_unlock(&priv->reg_mutex);
 			return -1;
 		}
@@ -1418,7 +1418,6 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->l2_bucket_size = 4;
 		priv->n_mst = 64;
 		priv->n_pie_blocks = 12;
-		priv->n_counters = 128;
 		break;
 	case RTL8390_FAMILY_ID:
 		priv->ds->ops = &rtldsa_83xx_switch_ops;
@@ -1432,7 +1431,6 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->l2_bucket_size = 4;
 		priv->n_mst = 256;
 		priv->n_pie_blocks = 18;
-		priv->n_counters = 1024;
 		break;
 	case RTL9300_FAMILY_ID:
 		priv->ds->ops = &rtldsa_93xx_switch_ops;
@@ -1447,7 +1445,6 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->l2_bucket_size = 8;
 		priv->n_mst = 64;
 		priv->n_pie_blocks = 16;
-		priv->n_counters = 2048;
 		break;
 	case RTL9310_FAMILY_ID:
 		priv->ds->ops = &rtldsa_93xx_switch_ops;
@@ -1462,7 +1459,6 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		priv->l2_bucket_size = 8;
 		priv->n_mst = 128;
 		priv->n_pie_blocks = 16;
-		priv->n_counters = 2048;
 		break;
 	}
 
