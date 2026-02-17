@@ -49,7 +49,7 @@ Signed-off-by: Emil Renner Berthing <kernel@esmil.dk>
  struct starfive_pinctrl {
  	struct gpio_chip gc;
  	struct pinctrl_gpio_range gpios;
-@@ -1210,6 +1214,65 @@ static void starfive_disable_clock(void
+@@ -1212,6 +1216,65 @@ static void starfive_disable_clock(void
  	clk_disable_unprepare(data);
  }
  
@@ -115,7 +115,7 @@ Signed-off-by: Emil Renner Berthing <kernel@esmil.dk>
  static int starfive_probe(struct platform_device *pdev)
  {
  	struct device *dev = &pdev->dev;
-@@ -1271,6 +1334,9 @@ static int starfive_probe(struct platfor
+@@ -1273,6 +1336,9 @@ static int starfive_probe(struct platfor
  		writel(value, sfp->padctl + IO_PADSHARE_SEL);
  	}
  

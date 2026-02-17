@@ -15,7 +15,7 @@ Signed-off-by: Xingyu Wu <xingyu.wu@starfivetech.com>
 
 --- a/drivers/clocksource/Kconfig
 +++ b/drivers/clocksource/Kconfig
-@@ -652,6 +652,17 @@ config RISCV_TIMER
+@@ -663,6 +663,17 @@ config RISCV_TIMER
  	  is accessed via both the SBI and the rdcycle instruction.  This is
  	  required for all RISC-V systems.
  
@@ -35,7 +35,7 @@ Signed-off-by: Xingyu Wu <xingyu.wu@starfivetech.com>
  	depends on GENERIC_SCHED_CLOCK && RISCV
 --- a/drivers/clocksource/Makefile
 +++ b/drivers/clocksource/Makefile
-@@ -81,6 +81,7 @@ obj-$(CONFIG_INGENIC_TIMER)		+= ingenic-
+@@ -83,6 +83,7 @@ obj-$(CONFIG_INGENIC_TIMER)		+= ingenic-
  obj-$(CONFIG_CLKSRC_ST_LPC)		+= clksrc_st_lpc.o
  obj-$(CONFIG_X86_NUMACHIP)		+= numachip.o
  obj-$(CONFIG_RISCV_TIMER)		+= timer-riscv.o

@@ -14,15 +14,15 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
 
 --- a/drivers/spi/spi-pl022.c
 +++ b/drivers/spi/spi-pl022.c
-@@ -34,6 +34,7 @@
- #include <linux/of.h>
+@@ -35,6 +35,7 @@
  #include <linux/pinctrl/consumer.h>
+ #include <linux/minmax.h>
  #include <linux/reset.h>
 +#include <linux/platform_device.h>
  
  /*
   * This macro is used to define some register default values.
-@@ -1841,7 +1842,10 @@ pl022_platform_data_dt_get(struct device
+@@ -1838,7 +1839,10 @@ pl022_platform_data_dt_get(struct device
  		return NULL;
  	}
  
@@ -34,7 +34,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
  	if (!pd)
  		return NULL;
  
-@@ -1861,6 +1865,14 @@ static int pl022_probe(struct amba_devic
+@@ -1858,6 +1862,14 @@ static int pl022_probe(struct amba_devic
  	struct spi_controller *host;
  	struct pl022 *pl022 = NULL;	/*Data for this driver */
  	int status = 0;
@@ -49,7 +49,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
  
  	dev_info(&adev->dev,
  		 "ARM PL022 driver, device ID: 0x%08x\n", adev->periphid);
-@@ -1916,7 +1928,11 @@ static int pl022_probe(struct amba_devic
+@@ -1913,7 +1925,11 @@ static int pl022_probe(struct amba_devic
  		goto err_no_ioregion;
  
  	pl022->phybase = adev->res.start;
@@ -62,7 +62,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
  				       resource_size(&adev->res));
  	if (pl022->virtbase == NULL) {
  		status = -ENOMEM;
-@@ -1925,14 +1941,28 @@ static int pl022_probe(struct amba_devic
+@@ -1922,14 +1938,28 @@ static int pl022_probe(struct amba_devic
  	dev_info(&adev->dev, "mapped registers from %pa to %p\n",
  		&adev->res.start, pl022->virtbase);
  
@@ -93,7 +93,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
  	if (IS_ERR(pl022->rst)) {
  		status = PTR_ERR(pl022->rst);
  		dev_err(&adev->dev, "could not retrieve SSP/SPI bus reset\n");
-@@ -1950,7 +1980,11 @@ static int pl022_probe(struct amba_devic
+@@ -1947,7 +1977,11 @@ static int pl022_probe(struct amba_devic
  	       SSP_CR1(pl022->virtbase));
  	load_ssp_default_config(pl022);
  
@@ -106,7 +106,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
  				  0, "pl022", pl022);
  	if (status < 0) {
  		dev_err(&adev->dev, "probe - cannot get IRQ (%d)\n", status);
-@@ -1975,7 +2009,10 @@ static int pl022_probe(struct amba_devic
+@@ -1972,7 +2006,10 @@ static int pl022_probe(struct amba_devic
  
  	/* Register with the SPI framework */
  	amba_set_drvdata(adev, pl022);
@@ -118,7 +118,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
  	if (status != 0) {
  		dev_err_probe(&adev->dev, status,
  			      "problem registering spi host\n");
-@@ -2000,13 +2037,24 @@ static int pl022_probe(struct amba_devic
+@@ -1997,13 +2034,24 @@ static int pl022_probe(struct amba_devic
  	if (platform_info->enable_dma)
  		pl022_dma_remove(pl022);
   err_no_irq:
@@ -143,7 +143,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
  	return status;
  }
  
-@@ -2205,6 +2253,89 @@ static void __exit pl022_exit(void)
+@@ -2202,6 +2250,89 @@ static void __exit pl022_exit(void)
  }
  module_exit(pl022_exit);
  
