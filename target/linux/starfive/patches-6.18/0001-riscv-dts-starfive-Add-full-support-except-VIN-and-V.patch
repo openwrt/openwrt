@@ -15,7 +15,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
 
 --- a/arch/riscv/boot/dts/starfive/jh7110-common.dtsi
 +++ b/arch/riscv/boot/dts/starfive/jh7110-common.dtsi
-@@ -18,6 +18,8 @@
+@@ -20,6 +20,8 @@
  		i2c6 = &i2c6;
  		mmc0 = &mmc0;
  		mmc1 = &mmc1;
@@ -26,8 +26,8 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
  
 --- a/arch/riscv/boot/dts/starfive/jh7110-starfive-visionfive-2.dtsi
 +++ b/arch/riscv/boot/dts/starfive/jh7110-starfive-visionfive-2.dtsi
-@@ -29,6 +29,24 @@
- 	};
+@@ -37,6 +37,24 @@
+ 	status = "okay";
  };
  
 +&i2srx {
@@ -51,8 +51,8 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
  &mmc0 {
  	non-removable;
  };
-@@ -40,3 +58,85 @@
- &pcie1 {
+@@ -65,3 +83,85 @@
+ 	dr_mode = "peripheral";
  	status = "okay";
  };
 +
@@ -139,7 +139,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
 +};
 --- a/arch/riscv/boot/dts/starfive/jh7110.dtsi
 +++ b/arch/riscv/boot/dts/starfive/jh7110.dtsi
-@@ -259,6 +259,7 @@
+@@ -264,6 +264,7 @@
  		clock-output-names = "dvp_clk";
  		#clock-cells = <0>;
  	};
@@ -147,7 +147,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
  	gmac0_rgmii_rxin: gmac0-rgmii-rxin-clock {
  		compatible = "fixed-clock";
  		clock-output-names = "gmac0_rgmii_rxin";
-@@ -919,6 +920,26 @@
+@@ -932,6 +933,26 @@
  			#gpio-cells = <2>;
  		};
  

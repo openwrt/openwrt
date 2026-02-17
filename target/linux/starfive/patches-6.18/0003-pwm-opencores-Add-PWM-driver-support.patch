@@ -18,7 +18,7 @@ Signed-off-by: William Qiu <william.qiu@starfivetech.com>
 
 --- a/drivers/pwm/Kconfig
 +++ b/drivers/pwm/Kconfig
-@@ -471,6 +471,18 @@ config PWM_NTXEC
+@@ -524,6 +524,18 @@ config PWM_NTXEC
  	  controller found in certain e-book readers designed by the original
  	  design manufacturer Netronix.
  
@@ -39,7 +39,7 @@ Signed-off-by: William Qiu <william.qiu@starfivetech.com>
  	depends on OF
 --- a/drivers/pwm/Makefile
 +++ b/drivers/pwm/Makefile
-@@ -42,6 +42,7 @@ obj-$(CONFIG_PWM_MICROCHIP_CORE)	+= pwm-
+@@ -46,6 +46,7 @@ obj-$(CONFIG_PWM_MICROCHIP_CORE)	+= pwm-
  obj-$(CONFIG_PWM_MTK_DISP)	+= pwm-mtk-disp.o
  obj-$(CONFIG_PWM_MXS)		+= pwm-mxs.o
  obj-$(CONFIG_PWM_NTXEC)		+= pwm-ntxec.o

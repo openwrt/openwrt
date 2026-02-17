@@ -24,9 +24,9 @@ Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
 -    maximum: 8
 +    maximum: 16
  
-   resets:
-     minItems: 1
-@@ -81,14 +81,14 @@ properties:
+   dma-noncoherent: true
+ 
+@@ -83,14 +83,14 @@ properties:
        Channel priority specifier associated with the DMA channels.
      $ref: /schemas/types.yaml#/definitions/uint32-array
      minItems: 1

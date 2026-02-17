@@ -14,7 +14,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
 
 --- a/drivers/spi/spi-pl022.c
 +++ b/drivers/spi/spi-pl022.c
-@@ -1859,6 +1859,163 @@ pl022_platform_data_dt_get(struct device
+@@ -1856,6 +1856,163 @@ pl022_platform_data_dt_get(struct device
  	return pd;
  }
  
@@ -178,7 +178,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
  static int pl022_probe(struct amba_device *adev, const struct amba_id *id)
  {
  	struct device *dev = &adev->dev;
-@@ -1867,14 +2024,6 @@ static int pl022_probe(struct amba_devic
+@@ -1864,14 +2021,6 @@ static int pl022_probe(struct amba_devic
  	struct spi_controller *host;
  	struct pl022 *pl022 = NULL;	/*Data for this driver */
  	int status = 0;
@@ -193,7 +193,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
  
  	dev_info(&adev->dev,
  		 "ARM PL022 driver, device ID: 0x%08x\n", adev->periphid);
-@@ -1930,11 +2079,7 @@ static int pl022_probe(struct amba_devic
+@@ -1927,11 +2076,7 @@ static int pl022_probe(struct amba_devic
  		goto err_no_ioregion;
  
  	pl022->phybase = adev->res.start;
@@ -206,7 +206,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
  				       resource_size(&adev->res));
  	if (pl022->virtbase == NULL) {
  		status = -ENOMEM;
-@@ -1943,28 +2088,14 @@ static int pl022_probe(struct amba_devic
+@@ -1940,28 +2085,14 @@ static int pl022_probe(struct amba_devic
  	dev_info(&adev->dev, "mapped registers from %pa to %p\n",
  		&adev->res.start, pl022->virtbase);
  
@@ -237,7 +237,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
  	if (IS_ERR(pl022->rst)) {
  		status = PTR_ERR(pl022->rst);
  		dev_err(&adev->dev, "could not retrieve SSP/SPI bus reset\n");
-@@ -1982,11 +2113,7 @@ static int pl022_probe(struct amba_devic
+@@ -1979,11 +2110,7 @@ static int pl022_probe(struct amba_devic
  	       SSP_CR1(pl022->virtbase));
  	load_ssp_default_config(pl022);
  
@@ -250,7 +250,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
  				  0, "pl022", pl022);
  	if (status < 0) {
  		dev_err(&adev->dev, "probe - cannot get IRQ (%d)\n", status);
-@@ -2011,18 +2138,16 @@ static int pl022_probe(struct amba_devic
+@@ -2008,18 +2135,16 @@ static int pl022_probe(struct amba_devic
  
  	/* Register with the SPI framework */
  	amba_set_drvdata(adev, pl022);
@@ -273,7 +273,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
  	/* let runtime pm put suspend */
  	if (platform_info->autosuspend_delay > 0) {
  		dev_info(&adev->dev,
-@@ -2032,10 +2157,8 @@ static int pl022_probe(struct amba_devic
+@@ -2029,10 +2154,8 @@ static int pl022_probe(struct amba_devic
  			platform_info->autosuspend_delay);
  		pm_runtime_use_autosuspend(dev);
  	}
@@ -286,7 +286,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
  
  	return 0;
  
-@@ -2043,24 +2166,15 @@ static int pl022_probe(struct amba_devic
+@@ -2040,24 +2163,15 @@ static int pl022_probe(struct amba_devic
  	if (platform_info->enable_dma)
  		pl022_dma_remove(pl022);
   err_no_irq:
@@ -312,7 +312,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
  	return status;
  }
  
-@@ -2272,23 +2386,8 @@ static int starfive_of_pl022_probe(struc
+@@ -2269,23 +2383,8 @@ static int starfive_of_pl022_probe(struc
  		.mask = 0x000fffff,
  		.data = &vendor_arm
  	};
@@ -336,7 +336,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
  	ret = of_clk_set_defaults(dev->of_node, false);
  	if (ret < 0)
  		goto err_probe;
-@@ -2297,16 +2396,11 @@ static int starfive_of_pl022_probe(struc
+@@ -2294,16 +2393,11 @@ static int starfive_of_pl022_probe(struc
  	if (ret)
  		goto err_probe;
  
@@ -357,7 +357,7 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
  
  	if (ret) {
  		pm_runtime_disable(dev);
-@@ -2321,31 +2415,25 @@ err_probe:
+@@ -2318,31 +2412,25 @@ err_probe:
  
  static void starfive_of_pl022_remove(struct platform_device *pdev)
  {
