@@ -27,15 +27,15 @@ Signed-off-by: Hal Feng <hal.feng@starfivetech.com>
  lib-y			+= memset.o
  lib-y			+= memmove.o
  ifeq ($(CONFIG_KASAN_GENERIC)$(CONFIG_KASAN_SW_TAGS),)
-@@ -16,6 +15,8 @@ lib-$(CONFIG_MMU)	+= uaccess.o
+@@ -15,6 +14,8 @@ endif
+ lib-$(CONFIG_MMU)	+= uaccess.o
  lib-$(CONFIG_64BIT)	+= tishift.o
  lib-$(CONFIG_RISCV_ISA_ZICBOZ)	+= clear_page.o
- lib-$(CONFIG_RISCV_ISA_ZBC)	+= crc32.o
 +lib-y			+= string.o
 +lib-y			+= memcpy_aligned.o
- 
  obj-$(CONFIG_FUNCTION_ERROR_INJECTION) += error-inject.o
  lib-$(CONFIG_RISCV_ISA_V)	+= xor.o
+ lib-$(CONFIG_RISCV_ISA_V)	+= riscv_v_helpers.o
 --- a/arch/riscv/lib/memcpy.S
 +++ /dev/null
 @@ -1,110 +0,0 @@

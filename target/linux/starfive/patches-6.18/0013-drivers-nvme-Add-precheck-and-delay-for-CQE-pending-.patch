@@ -14,17 +14,17 @@ Signed-off-by: Kevin.xie <kevin.xie@starfivetech.com>
 
 --- a/drivers/nvme/host/pci.c
 +++ b/drivers/nvme/host/pci.c
-@@ -28,6 +28,7 @@
+@@ -27,6 +27,7 @@
+ #include <linux/io-64-nonatomic-lo-hi.h>
  #include <linux/io-64-nonatomic-hi-lo.h>
  #include <linux/sed-opal.h>
- #include <linux/pci-p2pdma.h>
 +#include <linux/delay.h>
  
  #include "trace.h"
  #include "nvme.h"
-@@ -1156,6 +1157,15 @@ static inline int nvme_poll_cq(struct nv
+@@ -1368,6 +1369,15 @@ static inline bool nvme_poll_cq(struct n
  {
- 	int found = 0;
+ 	bool found = false;
  
 +	/*
 +	 * In some cases, such as udev trigger, cqe status may update
@@ -36,5 +36,5 @@ Signed-off-by: Kevin.xie <kevin.xie@starfivetech.com>
 +		udelay(1);
 +
  	while (nvme_cqe_pending(nvmeq)) {
- 		found++;
+ 		found = true;
  		/*
