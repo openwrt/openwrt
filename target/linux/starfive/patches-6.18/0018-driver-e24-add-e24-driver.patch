@@ -1795,7 +1795,7 @@ Signed-off-by: shanlong.li <shanlong.li@starfivetech.com>
 +		if (ret)
 +			goto err_pm_disable;
 +	}
-+	nodeid = ida_simple_get(&e24_nodeid, 0, 0, GFP_KERNEL);
++	nodeid = ida_alloc(&e24_nodeid, GFP_KERNEL);
 +	if (nodeid < 0) {
 +		ret = nodeid;
 +		goto err_pm_disable;
@@ -1817,7 +1817,7 @@ Signed-off-by: shanlong.li <shanlong.li@starfivetech.com>
 +
 +	return PTR_ERR(e24_dev);
 +err_free_id:
-+	ida_simple_remove(&e24_nodeid, nodeid);
++	ida_free(&e24_nodeid, nodeid);
 +
 +err_pm_disable:
 +	pm_runtime_disable(e24_dev->dev);
@@ -1851,7 +1851,7 @@ Signed-off-by: shanlong.li <shanlong.li@starfivetech.com>
 +	misc_deregister(&e24_dev->miscdev);
 +	e24_free_pool(e24_dev->pool);
 +	kfree(e24_dev->address_map.entry);
-+	ida_simple_remove(&e24_nodeid, e24_dev->nodeid);
++	ida_free(&e24_nodeid, e24_dev->nodeid);
 +
 +	if (e24_dev->rx_channel)
 +		mbox_free_channel(e24_dev->rx_channel);
