@@ -56,7 +56,7 @@ endef
 MAKE_VARS += EXT_LIBSI="$(LIBGCC_S)"
 
 MAKE_FLAGS += \
-	CFLAGS="$(TARGET_CFLAGS)" \
+	CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS)" \
 	LIBDIR="/usr/lib/ebtables"
 
 define Package/ebtables-legacy/install
