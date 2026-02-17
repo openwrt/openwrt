@@ -12,7 +12,7 @@ FEATURES+=cpiogz ext4 ramdisk squashfs targz vmdk
 KERNEL_PATCHVER:=6.12
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += mkf2fs e2fsprogs
+DEFAULT_PACKAGES += mkf2fs e2fsprogs kmod-button-hotplug
 # blkid used for resolving PARTUUID
 # in sysupgrade. vfat required for
 # mounting ESP partition
