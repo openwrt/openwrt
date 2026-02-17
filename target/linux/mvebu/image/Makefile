@@ -149,6 +149,12 @@ define Build/uDPU-firmware
 		-f $(KDIR_TMP)/$(DEVICE_IMG_PREFIX)-firmware.tgz -C $@-fw .
 endef
 
+define Device/FitImage
+  KERNEL_SUFFIX := -uImage.itb
+  KERNEL = kernel-bin | gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
+  KERNEL_NAME := Image
+endef
+
 define Device/Default
   PROFILES := Default
   DEVICE_DTS = $$(SOC)-$(lastword $(subst _, ,$(1)))
