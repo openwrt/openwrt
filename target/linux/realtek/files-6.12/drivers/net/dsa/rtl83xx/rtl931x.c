@@ -1326,11 +1326,11 @@ static int rtl931x_pie_rule_add(struct rtl838x_switch_priv *priv, struct pie_rul
 {
 	int idx, block, j;
 	int min_block = 0;
-	int max_block = priv->n_pie_blocks / 2;
+	int max_block = priv->r->n_pie_blocks / 2;
 
 	if (pr->is_egress) {
 		min_block = max_block;
-		max_block = priv->n_pie_blocks;
+		max_block = priv->r->n_pie_blocks;
 	}
 	pr_debug("In %s\n", __func__);
 
@@ -1351,7 +1351,7 @@ static int rtl931x_pie_rule_add(struct rtl838x_switch_priv *priv, struct pie_rul
 			break;
 	}
 
-	if (block >= priv->n_pie_blocks) {
+	if (block >= priv->r->n_pie_blocks) {
 		mutex_unlock(&priv->pie_mutex);
 		return -EOPNOTSUPP;
 	}
@@ -1415,18 +1415,18 @@ static void rtl931x_pie_init(struct rtl838x_switch_priv *priv)
 	sw_w32_mask(0, 1, RTL931X_METER_GLB_CTRL);
 
 	/* Delete all present rules, block size is 128 on all SoC families */
-	rtl931x_pie_rule_del(priv, 0, priv->n_pie_blocks * 128 - 1);
+	rtl931x_pie_rule_del(priv, 0, priv->r->n_pie_blocks * 128 - 1);
 
 	/* Assign first half blocks 0-7 to VACL phase, second half to IACL */
 	/* 3 bits are used for each block, values for PIE blocks are */
 	/* 6: Disabled, 0: VACL, 1: IACL, 2: EACL */
 	/* And for OpenFlow Flow blocks: 3: Ingress Flow table 0, */
 	/* 4: Ingress Flow Table 3, 5: Egress flow table 0 */
-	for (int i = 0; i < priv->n_pie_blocks; i++) {
+	for (int i = 0; i < priv->r->n_pie_blocks; i++) {
 		int pos = (i % 10) * 3;
 		u32 r = RTL931X_PIE_BLK_PHASE_CTRL + 4 * (i / 10);
 
-		if (i < priv->n_pie_blocks / 2)
+		if (i < priv->r->n_pie_blocks / 2)
 			sw_w32_mask(0x7 << pos, 0, r);
 		else
 			sw_w32_mask(0x7 << pos, 1 << pos, r);
@@ -1434,22 +1434,22 @@ static void rtl931x_pie_init(struct rtl838x_switch_priv *priv)
 
 	/* Enable predefined templates 0, 1 for first quarter of all blocks */
 	template_selectors = 0 | (1 << 4);
-	for (int i = 0; i < priv->n_pie_blocks / 4; i++)
+	for (int i = 0; i < priv->r->n_pie_blocks / 4; i++)
 		sw_w32(template_selectors, RTL931X_PIE_BLK_TMPLTE_CTRL(i));
 
 	/* Enable predefined templates 2, 3 for second quarter of all blocks */
 	template_selectors = 2 | (3 << 4);
-	for (int i = priv->n_pie_blocks / 4; i < priv->n_pie_blocks / 2; i++)
+	for (int i = priv->r->n_pie_blocks / 4; i < priv->r->n_pie_blocks / 2; i++)
 		sw_w32(template_selectors, RTL931X_PIE_BLK_TMPLTE_CTRL(i));
 
 	/* Enable predefined templates 0, 1 for third quater of all blocks */
 	template_selectors = 0 | (1 << 4);
-	for (int i = priv->n_pie_blocks / 2; i < priv->n_pie_blocks * 3 / 4; i++)
+	for (int i = priv->r->n_pie_blocks / 2; i < priv->r->n_pie_blocks * 3 / 4; i++)
 		sw_w32(template_selectors, RTL931X_PIE_BLK_TMPLTE_CTRL(i));
 
 	/* Enable predefined templates 2, 3 for fourth quater of all blocks */
 	template_selectors = 2 | (3 << 4);
-	for (int i = priv->n_pie_blocks * 3 / 4; i < priv->n_pie_blocks; i++)
+	for (int i = priv->r->n_pie_blocks * 3 / 4; i < priv->r->n_pie_blocks; i++)
 		sw_w32(template_selectors, RTL931X_PIE_BLK_TMPLTE_CTRL(i));
 }
 
@@ -1802,6 +1802,7 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.imr_port_link_sts_chg = RTL931X_IMR_PORT_LINK_STS_CHG,
 	/* imr_glb does not exist on RTL931X */
 	.n_counters = 2048,
+	.n_pie_blocks = 16,
 	.port_ignore = 0x3f,
 	.vlan_tables_read = rtl931x_vlan_tables_read,
 	.vlan_set_tagged = rtl931x_vlan_set_tagged,

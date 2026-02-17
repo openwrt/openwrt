@@ -1951,11 +1951,11 @@ static int rtl930x_pie_rule_add(struct rtl838x_switch_priv *priv, struct pie_rul
 {
 	int idx, block, j, t;
 	int min_block = 0;
-	int max_block = priv->n_pie_blocks / 2;
+	int max_block = priv->r->n_pie_blocks / 2;
 
 	if (pr->is_egress) {
 		min_block = max_block;
-		max_block = priv->n_pie_blocks;
+		max_block = priv->r->n_pie_blocks;
 	}
 	pr_debug("In %s\n", __func__);
 
@@ -1975,7 +1975,7 @@ static int rtl930x_pie_rule_add(struct rtl838x_switch_priv *priv, struct pie_rul
 			break;
 	}
 
-	if (block >= priv->n_pie_blocks) {
+	if (block >= priv->r->n_pie_blocks) {
 		mutex_unlock(&priv->pie_mutex);
 		return -EOPNOTSUPP;
 	}
@@ -2037,29 +2037,29 @@ static void rtl930x_pie_init(struct rtl838x_switch_priv *priv)
 	sw_w32_mask(0, 1, RTL930X_METER_GLB_CTRL);
 
 	/* Delete all present rules, block size is 128 on all SoC families */
-	rtl930x_pie_rule_del(priv, 0, priv->n_pie_blocks * 128 - 1);
+	rtl930x_pie_rule_del(priv, 0, priv->r->n_pie_blocks * 128 - 1);
 
 	/* Assign blocks 0-7 to VACL phase (bit = 0), blocks 8-15 to IACL (bit = 1) */
 	sw_w32(0xff00, RTL930X_PIE_BLK_PHASE_CTRL);
 
 	/* Enable predefined templates 0, 1 for first quarter of all blocks */
 	template_selectors = 0 | (1 << 4);
-	for (int i = 0; i < priv->n_pie_blocks / 4; i++)
+	for (int i = 0; i < priv->r->n_pie_blocks / 4; i++)
 		sw_w32(template_selectors, RTL930X_PIE_BLK_TMPLTE_CTRL(i));
 
 	/* Enable predefined templates 2, 3 for second quarter of all blocks */
 	template_selectors = 2 | (3 << 4);
-	for (int i = priv->n_pie_blocks / 4; i < priv->n_pie_blocks / 2; i++)
+	for (int i = priv->r->n_pie_blocks / 4; i < priv->r->n_pie_blocks / 2; i++)
 		sw_w32(template_selectors, RTL930X_PIE_BLK_TMPLTE_CTRL(i));
 
 	/* Enable predefined templates 0, 1 for third half of all blocks */
 	template_selectors = 0 | (1 << 4);
-	for (int i = priv->n_pie_blocks / 2; i < priv->n_pie_blocks * 3 / 4; i++)
+	for (int i = priv->r->n_pie_blocks / 2; i < priv->r->n_pie_blocks * 3 / 4; i++)
 		sw_w32(template_selectors, RTL930X_PIE_BLK_TMPLTE_CTRL(i));
 
 	/* Enable predefined templates 2, 3 for fourth quater of all blocks */
 	template_selectors = 2 | (3 << 4);
-	for (int i = priv->n_pie_blocks * 3 / 4; i < priv->n_pie_blocks; i++)
+	for (int i = priv->r->n_pie_blocks * 3 / 4; i < priv->r->n_pie_blocks; i++)
 		sw_w32(template_selectors, RTL930X_PIE_BLK_TMPLTE_CTRL(i));
 }
 
@@ -2646,6 +2646,7 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.imr_port_link_sts_chg = RTL930X_IMR_PORT_LINK_STS_CHG,
 	.imr_glb = RTL930X_IMR_GLB,
 	.n_counters = 2048,
+	.n_pie_blocks = 16,
 	.port_ignore = 0x3f,
 	.vlan_tables_read = rtl930x_vlan_tables_read,
 	.vlan_set_tagged = rtl930x_vlan_set_tagged,

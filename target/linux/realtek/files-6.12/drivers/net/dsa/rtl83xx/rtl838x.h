@@ -1274,6 +1274,7 @@ struct rtldsa_config {
 	int imr_port_link_sts_chg;
 	int imr_glb;
 	int n_counters;
+	int n_pie_blocks;
 	u8 port_ignore;
 	void (*vlan_tables_read)(u32 vlan, struct rtl838x_vlan_info *info);
 	void (*vlan_set_tagged)(u32 vlan, struct rtl838x_vlan_info *info);
@@ -1389,7 +1390,6 @@ struct rtl838x_switch_priv {
 	struct notifier_block fib_nb;
 	bool eee_enabled;
 	unsigned long mc_group_bm[MAX_MC_GROUPS >> 5];
-	int n_pie_blocks;
 	struct rhashtable tc_ht;
 	unsigned long pie_use_bm[MAX_PIE_ENTRIES >> 5];
 	unsigned long octet_cntr_use_bm[MAX_COUNTERS >> 5];
