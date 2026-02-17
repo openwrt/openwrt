@@ -29,17 +29,17 @@ Signed-off-by: shanlong.li <shanlong.li@starfivetech.com>
 
 --- a/drivers/Kconfig
 +++ b/drivers/Kconfig
-@@ -245,4 +245,5 @@ source "drivers/cdx/Kconfig"
+@@ -251,4 +251,5 @@ source "drivers/hte/Kconfig"
  
- source "drivers/dpll/Kconfig"
+ source "drivers/cdx/Kconfig"
  
 +source "drivers/e24/Kconfig"
  endmenu
 --- a/drivers/Makefile
 +++ b/drivers/Makefile
-@@ -195,3 +195,4 @@ obj-$(CONFIG_CDX_BUS)		+= cdx/
- obj-$(CONFIG_DPLL)		+= dpll/
+@@ -197,3 +197,4 @@ obj-$(CONFIG_DPLL)		+= dpll/
  
+ obj-$(CONFIG_DIBS)		+= dibs/
  obj-$(CONFIG_S390)		+= s390/
 +obj-$(CONFIG_E24)		+= e24/
 --- /dev/null
