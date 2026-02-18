@@ -23,7 +23,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
  #
  # SunOS provides a version of libpcap that would work, but SunOS has no support for activity filter
  AM_CONDITIONAL([PPP_WITH_FILTER], [ test "x${with_pcap}" = "xyes" && test "x${build_sunos}" != "xyes" ])
-@@ -359,6 +362,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
+@@ -348,6 +351,7 @@ $PACKAGE_NAME version $PACKAGE_VERSION
      With libatm..........: ${with_atm:-no}
      With libpam..........: ${with_pam:-no}
      With libpcap.........: ${with_pcap:-no}
@@ -33,7 +33,7 @@ Signed-off-by: Jo-Philipp Wich <jo@mein.io>
      Linker...............: $LD $LDFLAGS $LIBS
 --- a/pppd/Makefile.am
 +++ b/pppd/Makefile.am
-@@ -138,6 +138,12 @@ pppd_LDFLAGS += $(PCAP_LDFLAGS)
+@@ -137,6 +137,12 @@ pppd_LDFLAGS += $(PCAP_LDFLAGS)
  pppd_LIBS += $(PCAP_LIBS)
  endif
  
