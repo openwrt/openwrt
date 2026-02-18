@@ -26,6 +26,8 @@
 #define RTL839X_PLL_MEM_CTRL0			(0x0048)
 #define RTL839X_PLL_MEM_CTRL1			(0x004c)
 
+#define RTL960X_PHY_RG5X_PLL			(0x1f054)
+
 #define RTL_PLL_CTRL0_CMU_SEL_PREDIV(v)		(((v) >> 0) & 0x3)
 #define RTL_PLL_CTRL0_CMU_SEL_DIV4(v)		(((v) >> 2) & 0x1)
 #define RTL_PLL_CTRL0_CMU_NCODE_IN(v)		(((v) >> 4) & 0xff)
@@ -49,6 +51,8 @@
 #define RTL839X_PLL_CTRL1_CMU_DIVN2_SELB(v)	(((v) >> 2) & 0x1)
 #define RTL839X_PLL_CTRL1_CMU_DIVN3_SEL(v)	(((v) >> 0) & 0x3)
 
+#define RTL960X_LX_FREQ_SEL(v)			((v) & 0xf)
+
 /*
  * Core registers (e.g. memory controller)
  */
@@ -66,6 +70,24 @@
 
 #define RTL_MC_MCR_DRAMTYPE(v)			((((v) >> 28) & 0xf) + 1)
 #define RTL_MC_DCR_BUSWIDTH(v)			(8 << (((v) >> 24) & 0xf))
+
+#define RTL960X_OCP_PLL_CTRL0		(0x0200)
+#define RTL960X_OCP_PLL_CTRL3		(0x020c)
+#define RTL960X_CMU_GCR			(0x0380)
+#define RTL960X_MEM_PLL_CTRL2		(0x023c)
+#define RTL960X_MEM_PLL_CTRL3		(0x0240)
+#define RTL960X_MEM_PLL_CTRL5		(0x0248)
+
+#define RTL960X_OCP_CTRL0_CPU_FREQ_SEL0(v)		(((v) >> 16) & 0x3f)
+
+#define RTL960X_OCP_CTRL3_EN_DIV2_CPU0(v)		(((v) >> 18) & 0x1)
+
+#define RTL960X_CMU_GCR_CMU_MODE(v)		((v) & 0x3)
+#define RTL960X_CMU_GCR_FREQ_DIV(v)		(((v) >> 4) & 0x7)
+
+#define RTL960X_MEM_CTRL2_PDIV(v)		(((v) >> 14) & 0x3)
+#define RTL960X_MEM_CTRL3_N_CODE(v)		(((v) >> 24) & 0xff)
+#define RTL960X_MEM_CTRL5_F_CODE(v)		((v) & 0x1fff)
 
 /*
  * Other stuff

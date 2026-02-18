@@ -92,7 +92,8 @@
 
 #define SOC_RTL838X		0
 #define SOC_RTL839X		1
-#define SOC_COUNT		2
+#define SOC_RTL960X		2
+#define SOC_COUNT		3
 
 #define MEM_DDR1		1
 #define MEM_DDR2		2
@@ -264,6 +265,8 @@ static const struct rtcl_round_set rtcl_round_set[SOC_COUNT][CLK_COUNT] = {
 		RTCL_ROUND_SET(400000000, 850000000, 25000000),
 		RTCL_ROUND_SET(100000000, 400000000, 25000000),
 		RTCL_ROUND_SET(50000000, 200000000, 50000000)
+	}, {
+		RTCL_ROUND_SET(500000000, 1200000000, 25000000)
 	}
 };
 
@@ -465,6 +468,87 @@ static long rtcl_round_rate(struct clk_hw *hw, unsigned long rate, unsigned long
 	return rrate;
 }
 
+static unsigned long rtcl_960x_cpu_recalc_rate(struct clk_hw *hw,
+					     unsigned long parent_rate)
+{
+	u32 ocp_pll_ctrl0, ocp_pll_ctrl3, cmu_gcr;
+	u32 cpu_freq_sel0, en_div2_cpu0, cmu_mode, freq_div;
+	unsigned long rate;
+
+	ocp_pll_ctrl0 = read_soc(RTL960X_OCP_PLL_CTRL0);
+	ocp_pll_ctrl3 = read_soc(RTL960X_OCP_PLL_CTRL3);
+	cmu_gcr = read_soc(RTL960X_CMU_GCR);
+
+	cpu_freq_sel0 = RTL960X_OCP_CTRL0_CPU_FREQ_SEL0(ocp_pll_ctrl0);
+	en_div2_cpu0 = RTL960X_OCP_CTRL3_EN_DIV2_CPU0(ocp_pll_ctrl3);
+	cmu_mode = RTL960X_CMU_GCR_CMU_MODE(cmu_gcr);
+	freq_div = RTL960X_CMU_GCR_FREQ_DIV(cmu_gcr);
+
+	rate = ((cpu_freq_sel0 + 2) * 2 * parent_rate) >> en_div2_cpu0;
+	if (cmu_mode != 0)
+		rate >>= freq_div;
+
+	return rate;
+}
+
+static unsigned long rtcl_960x_lxb_recalc_rate(struct clk_hw *hw,
+					     unsigned long parent_rate)
+{
+	u32 phy_rg5x_pll, lx_freq_sel;
+	unsigned long rate;
+
+	phy_rg5x_pll = read_sw(RTL960X_PHY_RG5X_PLL);
+	lx_freq_sel = RTL960X_LX_FREQ_SEL(phy_rg5x_pll);
+
+	rate = (40 * parent_rate) / (lx_freq_sel + 5);
+
+	return rate;
+}
+
+static unsigned long rtcl_960x_mem_recalc_rate(struct clk_hw *hw,
+					     unsigned long parent_rate)
+{
+	u32 mem_pll_ctrl2, mem_pll_ctrl3, mem_pll_ctrl5;
+	u32 n_code, pdiv, f_code;
+	unsigned long rate;
+
+	mem_pll_ctrl2 = read_soc(RTL960X_MEM_PLL_CTRL2);
+	mem_pll_ctrl3 = read_soc(RTL960X_MEM_PLL_CTRL3);
+	mem_pll_ctrl5 = read_soc(RTL960X_MEM_PLL_CTRL5);
+
+	pdiv = RTL960X_MEM_CTRL2_PDIV(mem_pll_ctrl2);
+	n_code = RTL960X_MEM_CTRL3_N_CODE(mem_pll_ctrl3);
+	f_code = RTL960X_MEM_CTRL5_F_CODE(mem_pll_ctrl5);
+
+	rate = (parent_rate * (n_code + 3)) / (2 * (1 << pdiv));
+	rate += ((parent_rate * f_code) / 2) / 8192;
+
+	return rate;
+}
+
+static unsigned long rtcl_960x_recalc_rate(struct clk_hw *hw, unsigned long parent_rate)
+{
+	struct rtcl_clk *clk = rtcl_hw_to_clk(hw);
+	unsigned long rate;
+
+	if ((clk->idx >= CLK_COUNT) || (!rtcl_ccu) || (rtcl_ccu->soc >= SOC_COUNT))
+		return 0;
+
+	switch (clk->idx) {
+	case CLK_CPU:
+		rate = rtcl_960x_cpu_recalc_rate(hw, parent_rate);
+		break;
+	case CLK_MEM:
+		rate = rtcl_960x_mem_recalc_rate(hw, parent_rate);
+		break;
+	case CLK_LXB:
+		rate = rtcl_960x_lxb_recalc_rate(hw, parent_rate);
+		break;
+	}
+
+	return rate;
+}
+
 /*
  * Initialization functions to register the CCU and its clocks
  */
@@ -473,6 +557,10 @@ static long rtcl_round_rate(struct clk_hw *hw, unsigned long rate, unsigned long
 	rtcl_##SOC##_sram_##FN = ((void *)&rtcl_##SOC##_dram_##FN -	\
 				  (void *)&rtcl_##SOC##_dram_start) +	\
 				  (void *)PBASE; })
+
+static const struct clk_ops rtcl_960x_clk_ops = {
+	.recalc_rate = rtcl_960x_recalc_rate,
+};
 
 static const struct clk_ops rtcl_clk_ops = {
 	.set_rate = rtcl_set_rate,
@@ -488,6 +576,8 @@ static int rtcl_ccu_create(struct device_node *np)
 		soc = SOC_RTL838X;
 	else if (of_device_is_compatible(np, "realtek,rtl8390-clock"))
 		soc = SOC_RTL839X;
+	else if (of_device_is_compatible(np, "realtek,rtl9607-clock"))
+		soc = SOC_RTL960X;
 	else
 		return -ENXIO;
 
@@ -516,9 +606,13 @@ static int rtcl_register_clkhw(int clk_idx)
 	rclk->hw.init = &hw_init;
 
 	hw_init.num_parents = 1;
-	hw_init.ops = &rtcl_clk_ops;
 	hw_init.parent_data = &parent_data;
 	hw_init.name = rtcl_clk_info[clk_idx].name;
+
+	if (rtcl_ccu->soc == SOC_RTL960X)
+		hw_init.ops = &rtcl_960x_clk_ops;
+	else
+		hw_init.ops = &rtcl_clk_ops;
 
 	ret = of_clk_hw_register(rtcl_ccu->np, &rclk->hw);
 	if (ret)
@@ -719,6 +813,7 @@ static void __init rtcl_probe_early(struct device_node *np)
 
 CLK_OF_DECLARE_DRIVER(rtl838x_clk, "realtek,rtl8380-clock", rtcl_probe_early);
 CLK_OF_DECLARE_DRIVER(rtl839x_clk, "realtek,rtl8390-clock", rtcl_probe_early);
+CLK_OF_DECLARE_DRIVER(rtl960x_clk, "realtek,rtl9607-clock", rtcl_probe_early);
 
 /*
  * Late registration: Finally register as normal platform driver. At this point
