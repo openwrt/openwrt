@@ -179,6 +179,7 @@ platform_do_upgrade() {
 		platform_do_upgrade_linksys_emmc "$1"
 		;;
 	meraki,mr20|\
+	meraki,mr70|\
 	meraki,gx20|\
 	meraki,z3)
 		# DO NOT set CI_KERNPART to part.safe,

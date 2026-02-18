@@ -844,6 +844,14 @@ define Device/meraki_mr33
 endef
 TARGET_DEVICES += meraki_mr33
 
+define Device/meraki_mr70
+	$(call Device/meraki_common)
+	DEVICE_MODEL := MR70
+	DEVICE_DTS_CONFIG := config@5
+	DEVICE_PACKAGES := ipq-wifi-meraki_underdog
+endef
+TARGET_DEVICES += meraki_mr70
+
 define Device/meraki_mr74
 	$(call Device/meraki_common)
 	DEVICE_MODEL := MR74
