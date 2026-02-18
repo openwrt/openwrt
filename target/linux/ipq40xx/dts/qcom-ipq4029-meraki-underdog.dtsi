@@ -18,7 +18,7 @@
 / {
 	aliases {
 		led-boot = &status_green;
-		led-failsafe = &status_red;
+		led-failsafe = &status_blue;
 		led-running = &status_green;
 		led-upgrade = &power_orange;
 	};
@@ -31,6 +31,24 @@
 			color = <LED_COLOR_ID_ORANGE>;
 			gpios = <&tlmm 49 GPIO_ACTIVE_HIGH>;
 			panic-indicator;
+		};
+
+		status_green: led_green {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&tlmm 34 GPIO_ACTIVE_HIGH>;
+		};
+
+		status_blue: led_blue {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&tlmm 35 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	soc {
+		ess_tcsr@1953000 {
+			qcom,ess-interface-select = <TCSR_ESS_PSGMII_RGMII5>;
 		};
 	};
 };
@@ -69,6 +87,11 @@
 	ethernet-phy-package@0 {
 		status = "disabled";
 	};
+
+	ar8035: ethernet-phy@0 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <0>;
+	};
 };
 
 &switch {
@@ -99,3 +122,19 @@
 	status = "disabled";
 };
 
+&swport5 {
+	status = "okay";
+	label = "lan";
+	phy-handle = <&ar8035>;
+	phy-mode = "rgmii-id";
+};
+
+&wifi0 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "Meraki-underdog";
+};
+
+&wifi1 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "Meraki-underdog";
+};
