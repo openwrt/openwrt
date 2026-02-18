@@ -1,0 +1,184 @@
+From 4640a1f0d8f2246f34d6e74330d7e7d2cf75605b Mon Sep 17 00:00:00 2001
+From: Kory Maincent <kory.maincent@bootlin.com>
+Date: Fri, 10 Jan 2025 10:40:28 +0100
+Subject: [PATCH] net: pse-pd: Remove is_enabled callback from drivers
+
+The is_enabled callback is now redundant as the admin_state can be obtained
+directly from the driver and provides the same information.
+
+To simplify functionality, the core will handle this internally, making
+the is_enabled callback unnecessary at the driver level. Remove the
+callback from all drivers.
+
+Acked-by: Oleksij Rempel <o.rempel@pengutronix.de>
+Signed-off-by: Kory Maincent <kory.maincent@bootlin.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
+---
+ drivers/net/pse-pd/pd692x0.c       | 26 --------------------------
+ drivers/net/pse-pd/pse_core.c      | 13 +++++++++++--
+ drivers/net/pse-pd/pse_regulator.c |  9 ---------
+ drivers/net/pse-pd/tps23881.c      | 28 ----------------------------
+ include/linux/pse-pd/pse.h         |  3 ---
+ 5 files changed, 11 insertions(+), 68 deletions(-)
+
+--- a/drivers/net/pse-pd/pd692x0.c
++++ b/drivers/net/pse-pd/pd692x0.c
+@@ -431,31 +431,6 @@ static int pd692x0_pi_disable(struct pse
+ 	return 0;
+ }
+ 
+-static int pd692x0_pi_is_enabled(struct pse_controller_dev *pcdev, int id)
+-{
+-	struct pd692x0_priv *priv = to_pd692x0_priv(pcdev);
+-	struct pd692x0_msg msg, buf = {0};
+-	int ret;
+-
+-	ret = pd692x0_fw_unavailable(priv);
+-	if (ret)
+-		return ret;
+-
+-	msg = pd692x0_msg_template_list[PD692X0_MSG_GET_PORT_STATUS];
+-	msg.sub[2] = id;
+-	ret = pd692x0_sendrecv_msg(priv, &msg, &buf);
+-	if (ret < 0)
+-		return ret;
+-
+-	if (buf.sub[1]) {
+-		priv->admin_state[id] = ETHTOOL_C33_PSE_ADMIN_STATE_ENABLED;
+-		return 1;
+-	} else {
+-		priv->admin_state[id] = ETHTOOL_C33_PSE_ADMIN_STATE_DISABLED;
+-		return 0;
+-	}
+-}
+-
+ struct pd692x0_pse_ext_state_mapping {
+ 	u32 status_code;
+ 	enum ethtool_c33_pse_ext_state pse_ext_state;
+@@ -1105,7 +1080,6 @@ static const struct pse_controller_ops p
+ 	.pi_get_actual_pw = pd692x0_pi_get_actual_pw,
+ 	.pi_enable = pd692x0_pi_enable,
+ 	.pi_disable = pd692x0_pi_disable,
+-	.pi_is_enabled = pd692x0_pi_is_enabled,
+ 	.pi_get_voltage = pd692x0_pi_get_voltage,
+ 	.pi_get_pw_limit = pd692x0_pi_get_pw_limit,
+ 	.pi_set_pw_limit = pd692x0_pi_set_pw_limit,
+--- a/drivers/net/pse-pd/pse_core.c
++++ b/drivers/net/pse-pd/pse_core.c
+@@ -210,16 +210,25 @@ out:
+ static int pse_pi_is_enabled(struct regulator_dev *rdev)
+ {
+ 	struct pse_controller_dev *pcdev = rdev_get_drvdata(rdev);
++	struct pse_admin_state admin_state = {0};
+ 	const struct pse_controller_ops *ops;
+ 	int id, ret;
+ 
+ 	ops = pcdev->ops;
+-	if (!ops->pi_is_enabled)
++	if (!ops->pi_get_admin_state)
+ 		return -EOPNOTSUPP;
+ 
+ 	id = rdev_get_id(rdev);
+ 	mutex_lock(&pcdev->lock);
+-	ret = ops->pi_is_enabled(pcdev, id);
++	ret = ops->pi_get_admin_state(pcdev, id, &admin_state);
++	if (ret)
++		goto out;
++
++	if (admin_state.podl_admin_state == ETHTOOL_PODL_PSE_ADMIN_STATE_ENABLED ||
++	    admin_state.c33_admin_state == ETHTOOL_C33_PSE_ADMIN_STATE_ENABLED)
++		ret = 1;
++
++out:
+ 	mutex_unlock(&pcdev->lock);
+ 
+ 	return ret;
+--- a/drivers/net/pse-pd/pse_regulator.c
++++ b/drivers/net/pse-pd/pse_regulator.c
+@@ -52,14 +52,6 @@ pse_reg_pi_disable(struct pse_controller
+ }
+ 
+ static int
+-pse_reg_pi_is_enabled(struct pse_controller_dev *pcdev, int id)
+-{
+-	struct pse_reg_priv *priv = to_pse_reg(pcdev);
+-
+-	return regulator_is_enabled(priv->ps);
+-}
+-
+-static int
+ pse_reg_pi_get_admin_state(struct pse_controller_dev *pcdev, int id,
+ 			   struct pse_admin_state *admin_state)
+ {
+@@ -95,7 +87,6 @@ static const struct pse_controller_ops p
+ 	.pi_get_admin_state = pse_reg_pi_get_admin_state,
+ 	.pi_get_pw_status = pse_reg_pi_get_pw_status,
+ 	.pi_enable = pse_reg_pi_enable,
+-	.pi_is_enabled = pse_reg_pi_is_enabled,
+ 	.pi_disable = pse_reg_pi_disable,
+ };
+ 
+--- a/drivers/net/pse-pd/tps23881.c
++++ b/drivers/net/pse-pd/tps23881.c
+@@ -174,33 +174,6 @@ static int tps23881_pi_disable(struct ps
+ 	return i2c_smbus_write_word_data(client, TPS23881_REG_DET_CLA_EN, val);
+ }
+ 
+-static int tps23881_pi_is_enabled(struct pse_controller_dev *pcdev, int id)
+-{
+-	struct tps23881_priv *priv = to_tps23881_priv(pcdev);
+-	struct i2c_client *client = priv->client;
+-	bool enabled;
+-	u8 chan;
+-	u16 val;
+-	int ret;
+-
+-	ret = i2c_smbus_read_word_data(client, TPS23881_REG_PW_STATUS);
+-	if (ret < 0)
+-		return ret;
+-
+-	chan = priv->port[id].chan[0];
+-	val = tps23881_calc_val(ret, chan, 0, BIT(chan % 4));
+-	enabled = !!(val);
+-
+-	if (priv->port[id].is_4p) {
+-		chan = priv->port[id].chan[1];
+-		val = tps23881_calc_val(ret, chan, 0, BIT(chan % 4));
+-		enabled &= !!(val);
+-	}
+-
+-	/* Return enabled status only if both channel are on this state */
+-	return enabled;
+-}
+-
+ static int
+ tps23881_pi_get_admin_state(struct pse_controller_dev *pcdev, int id,
+ 			    struct pse_admin_state *admin_state)
+@@ -690,7 +663,6 @@ static const struct pse_controller_ops t
+ 	.setup_pi_matrix = tps23881_setup_pi_matrix,
+ 	.pi_enable = tps23881_pi_enable,
+ 	.pi_disable = tps23881_pi_disable,
+-	.pi_is_enabled = tps23881_pi_is_enabled,
+ 	.pi_get_admin_state = tps23881_pi_get_admin_state,
+ 	.pi_get_pw_status = tps23881_pi_get_pw_status,
+ };
+--- a/include/linux/pse-pd/pse.h
++++ b/include/linux/pse-pd/pse.h
+@@ -122,8 +122,6 @@ struct ethtool_pse_control_status {
+  * @pi_get_ext_state: Get the extended state of the PSE PI.
+  * @pi_get_pw_class: Get the power class of the PSE PI.
+  * @pi_get_actual_pw: Get actual power of the PSE PI in mW.
+- * @pi_is_enabled: Return 1 if the PSE PI is enabled, 0 if not.
+- *		   May also return negative errno.
+  * @pi_enable: Configure the PSE PI as enabled.
+  * @pi_disable: Configure the PSE PI as disabled.
+  * @pi_get_voltage: Return voltage similarly to get_voltage regulator
+@@ -145,7 +143,6 @@ struct pse_controller_ops {
+ 				struct pse_ext_state_info *ext_state_info);
+ 	int (*pi_get_pw_class)(struct pse_controller_dev *pcdev, int id);
+ 	int (*pi_get_actual_pw)(struct pse_controller_dev *pcdev, int id);
+-	int (*pi_is_enabled)(struct pse_controller_dev *pcdev, int id);
+ 	int (*pi_enable)(struct pse_controller_dev *pcdev, int id);
+ 	int (*pi_disable)(struct pse_controller_dev *pcdev, int id);
+ 	int (*pi_get_voltage)(struct pse_controller_dev *pcdev, int id);
