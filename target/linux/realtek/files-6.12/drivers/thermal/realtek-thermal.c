@@ -45,6 +45,16 @@
 #define RTL9300_COMPARE_DLY_SHIFT	(0)
 #define RTL9300_COMPARE_DLY_MASK	GENMASK(RTL9300_COMPARE_DLY_SHIFT + 15, RTL9300_COMPARE_DLY_SHIFT)
 
+#define RTL9607_THERMAL_CTRL_0		0x150
+#define RTL9607_REG_PPOW		BIT(29)
+#define RTL9607_THERMAL_CTRL_2		0x158
+#define RTL9607_THERMAL_CTRL_5		0x164
+#define RTL9607_THERMAL_STS_0		0x178
+#define RTL9607_TEMP_OUT_MASK		GENMASK(18, 0)
+#define RTL9607_TEMP_OUT_SIGN		BIT(18)
+#define RTL9607_TEMP_OUT_INT		GENMASK(17, 10)
+#define RTL9607_TEMP_OUT_FLOAT		GENMASK(9, 0)
+
 struct realtek_thermal_priv {
 	struct regmap *regmap;
 	bool enabled;
@@ -144,6 +154,40 @@ static const struct thermal_zone_device_ops rtl9300_ops = {
 	.get_temp = rtl9300_get_temp,
 };
 
+static void rtl9607_thermal_init(struct realtek_thermal_priv *priv)
+{
+	priv->enabled = !regmap_update_bits(priv->regmap, RTL9607_THERMAL_CTRL_0, RTL9607_REG_PPOW, RTL9607_REG_PPOW);
+}
+
+static int rtl9607_get_temp(struct thermal_zone_device *tz, int *res)
+{
+	struct realtek_thermal_priv *priv = thermal_zone_device_priv(tz);
+	int offset = thermal_zone_get_offset(tz);
+	int slope = thermal_zone_get_slope(tz);
+	u32 val;
+	int ret;
+
+	if (!priv->enabled)
+		rtl9607_thermal_init(priv);
+
+	ret = regmap_read(priv->regmap, RTL9607_THERMAL_STS_0, &val);
+	if (ret)
+		return ret;
+
+	/*
+	 * The temperature sensor output consist of sign at bit 18, integer part at bits 17~10
+	 * and fractional point with 0.5 scaling at bits 9~0.
+	 * For simplicity, we only care about the integer part.
+	 */
+	*res = FIELD_GET(RTL9607_TEMP_OUT_INT, val) * slope + offset;
+
+	return 0;
+}
+
+static const struct thermal_zone_device_ops rtl9607_ops = {
+	.get_temp = rtl9607_get_temp,
+};
+
 static int realtek_thermal_probe(struct platform_device *pdev)
 {
 	struct realtek_thermal_priv *priv;
@@ -171,6 +215,7 @@ static const struct of_device_id realtek_sensor_ids[] = {
 	{ .compatible = "realtek,rtl8380-thermal", .data = &rtl8380_ops, },
 	{ .compatible = "realtek,rtl8390-thermal", .data = &rtl8390_ops, },
 	{ .compatible = "realtek,rtl9300-thermal", .data = &rtl9300_ops, },
+	{ .compatible = "realtek,rtl9607-thermal", .data = &rtl9607_ops, },
 	{ /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, realtek_sensor_ids);
