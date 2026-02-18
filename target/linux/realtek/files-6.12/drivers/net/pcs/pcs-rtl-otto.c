@@ -105,6 +105,12 @@
 #define RTPCS_930X_PLL_RING		0x1
 
 /* Registers of the internal SerDes of the 9310 */
+#define RTPCS_931X_MAC_GROUP0_1_CTRL		(0x13a4)
+#define RTPCS_931X_MAC_GROUP2_3_CTRL		(0x13a8)
+#define RTPCS_931X_MAC_GROUP4_CTRL		(0x13ac)
+#define RTPCS_931X_MAC_GROUP5_CTRL		(0x13b0)
+#define RTPCS_931X_MAC_GROUP6_7_CTRL		(0x13b4)
+#define RTPCS_931X_MAC_GROUP8_11_CTRL		(0x13b8)
 #define RTL931X_SERDES_MODE_CTRL		(0x13cc)
 #define RTL931X_PS_SERDES_OFF_MODE_CTRL_ADDR	(0x13F4)
 #define RTL931X_MAC_SERDES_MODE_CTRL(sds)	(0x136C + (((sds) << 2)))
@@ -3796,6 +3802,51 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 	return 0;
 }
 
+/**
+ * rtpcs_931x_init_mac_groups - Initialize MAC groups
+ *
+ * RTL931x organizes MACs into 12 groups (one per SerDes) that must be explicitly
+ * enabled before link establishment. Without initialization, link may fail or
+ * packets may be corrupted, especially in USXGMII/XSGMII modes.
+ *
+ * Simply enable all MACs by writing 0xffffffff to all group registers. Unused
+ * MACs and reserved bits are harmless, avoiding complex per-SerDes logic.
+ *
+ * This lives in the PCS driver since groups are tied to SerDes, and the DSA
+ * driver has no SerDes awareness.
+ */
+static int rtpcs_931x_init_mac_groups(struct rtpcs_ctrl *ctrl)
+{
+	static const u32 mac_group_regs[] = {
+		RTPCS_931X_MAC_GROUP0_1_CTRL,
+		RTPCS_931X_MAC_GROUP2_3_CTRL,
+		RTPCS_931X_MAC_GROUP4_CTRL,
+		RTPCS_931X_MAC_GROUP5_CTRL,
+		RTPCS_931X_MAC_GROUP6_7_CTRL,
+		RTPCS_931X_MAC_GROUP8_11_CTRL,
+	};
+	int ret;
+
+	for (int i = 0; i < ARRAY_SIZE(mac_group_regs); i++) {
+		ret = regmap_write(ctrl->map, mac_group_regs[i], 0xffffffff);
+		if (ret)
+			return ret;
+	}
+
+	return 0;
+}
+
+static int rtpcs_931x_init(struct rtpcs_ctrl *ctrl)
+{
+	int ret;
+
+	ret = rtpcs_931x_init_mac_groups(ctrl);
+	if (ret < 0)
+		return ret;
+
+	return rtpcs_93xx_init_serdes_common(ctrl);
+}
+
 /* Common functions */
 
 static void rtpcs_pcs_get_state(struct phylink_pcs *pcs, struct phylink_link_state *state)
@@ -4209,7 +4260,7 @@ static const struct rtpcs_config rtpcs_931x_cfg = {
 	.pcs_ops		= &rtpcs_931x_pcs_ops,
 	.sds_ops		= &rtpcs_931x_sds_ops,
 	.sds_regs		= &rtpcs_931x_sds_regs,
-	.init_serdes_common	= rtpcs_93xx_init_serdes_common,
+	.init_serdes_common	= rtpcs_931x_init,
 	.setup_serdes		= rtpcs_931x_setup_serdes,
 };
 
