@@ -26,8 +26,6 @@ GRUB_TERMINAL_CONFIG := terminal_input $(GRUB_TERMINALS); terminal_output $(GRUB
 
 ROOTPART:=$(call qstrip,$(CONFIG_TARGET_ROOTFS_PARTNAME))
 ROOTPART:=$(if $(ROOTPART),$(ROOTPART),PARTUUID=$(IMG_PART_SIGNATURE)-02)
-GPT_ROOTPART:=$(call qstrip,$(CONFIG_TARGET_ROOTFS_PARTNAME))
-GPT_ROOTPART:=$(if $(GPT_ROOTPART),$(GPT_ROOTPART),PARTUUID=$(shell echo $(IMG_PART_DISKGUID) | sed 's/00$$/02/'))
 
 GRUB_TIMEOUT:=$(call qstrip,$(CONFIG_GRUB_TIMEOUT))
 GRUB_TITLE:=$(call qstrip,$(CONFIG_GRUB_TITLE))
@@ -36,15 +34,18 @@ BOOTOPTS:=$(call qstrip,$(CONFIG_GRUB_BOOTOPTS))
 
 define Build/combined
 	$(CP) $(KDIR)/$(KERNEL_NAME) $@.boot/boot/vmlinuz
-	-$(CP) $(STAGING_DIR_ROOT)/boot/. $@.boot/boot/
-	$(CP) $(STAGING_DIR_IMAGE)/grub2/boot.img $@.boot/boot/grub/
-	$(CP) $(STAGING_DIR_IMAGE)/grub2/$(if $(filter $(1),efi),gpt,$(GRUB2_VARIANT))-core.img \
-		$@.boot/boot/grub/core.img
 	$(if $(filter $(1),efi),
-		$(INSTALL_DIR) $@.boot/efi/boot
-		$(CP) $(STAGING_DIR_IMAGE)/grub2/boot$(if $(CONFIG_x86_64),x64,ia32).efi $@.boot/efi/boot/
+		rm -f $@.grub.img
+		mkfs.fat -n ESP -C $@.grub.img -S 512 1024
+		mmd -i $@.grub.img ::/efi ::/efi/boot
+		mcopy -i $@.grub.img \
+			$(STAGING_DIR_IMAGE)/grub2/boot$(if $(CONFIG_x86_64),x64,ia32).efi \
+			::/efi/boot/boot$(if $(CONFIG_x86_64),x64,ia32).efi,
+		$(CP) $(STAGING_DIR_IMAGE)/grub2/boot.img $@.boot/boot/grub/
+		$(CP) $(STAGING_DIR_IMAGE)/grub2/$(GRUB2_VARIANT)-core.img \
+			$@.boot/boot/grub/core.img
 	)
-	PADDING="1" SIGNATURE="$(IMG_PART_SIGNATURE)" \
+	KERNELPARTTYPE="ea" PADDING="1" SIGNATURE="$(IMG_PART_SIGNATURE)" \
 		$(if $(filter $(1),efi),GUID="$(IMG_PART_DISKGUID)") $(SCRIPT_DIR)/gen_image_generic.sh \
 		$@ \
 		$(CONFIG_TARGET_KERNEL_PARTSIZE) $@.boot \
@@ -59,43 +60,42 @@ define Build/grub-config
 		-e 's#@SERIAL_CONFIG@#$(strip $(GRUB_SERIAL_CONFIG))#g' \
 		-e 's#@TERMINAL_CONFIG@#$(strip $(GRUB_TERMINAL_CONFIG))#g' \
 		-e 's#@ROOTPART@#root=$(ROOTPART) rootwait#g' \
-		-e 's#@GPT_ROOTPART@#root=$(GPT_ROOTPART) rootwait#g' \
 		-e 's#@CMDLINE@#$(BOOTOPTS) $(GRUB_CONSOLE_CMDLINE)#g' \
 		-e 's#@TIMEOUT@#$(GRUB_TIMEOUT)#g' \
 		-e 's#@TITLE@#$(GRUB_TITLE)#g' \
 		./grub-$(1).cfg > $@.boot/boot/grub/grub.cfg
+	$(if $(filter $(1),efi),
+		$(STAGING_DIR_HOST)/bin/grub-editenv $@.boot/boot/grub/grubenv create
+		$(STAGING_DIR_HOST)/bin/grub-editenv $@.boot/boot/grub/grubenv set attempt=0)
 endef
 
 define Build/grub-install
 	rm -fR $@.grub2
 	$(INSTALL_DIR) $@.grub2
 	$(CP) $(STAGING_DIR_IMAGE)/grub2/boot.img $@.grub2/
-	$(CP) $(STAGING_DIR_IMAGE)/grub2/$(if $(filter $(1),efi),gpt,$(GRUB2_VARIANT))-core.img $@.grub2/core.img
+	$(CP) $(STAGING_DIR_IMAGE)/grub2/$(GRUB2_VARIANT)-core.img $@.grub2/core.img
 	echo '(hd0) $@' > $@.grub2/device.map
 	$(STAGING_DIR_HOST)/bin/grub-bios-setup \
 		-m "$@.grub2/device.map" \
 		-d "$@.grub2" \
-		-r "hd0,$(if $(filter $(1),efi),gpt1,msdos1)" \
+		-r "hd0,msdos1" \
 		$@
 endef
 
 define Build/iso
 	$(CP) $(KDIR)/$(KERNEL_NAME) $@.boot/boot/vmlinuz
-	cat \
-		$(STAGING_DIR_IMAGE)/grub2/cdboot.img \
-		$(STAGING_DIR_IMAGE)/grub2/eltorito.img \
-		> $@.boot/boot/grub/eltorito.img
-	-$(CP) $(STAGING_DIR_ROOT)/boot/. $@.boot/boot/
 	$(if $(filter $(1),efi),
-		mkfs.fat -C $@.boot/boot/grub/isoboot.img -S 512 1440
+		mkfs.fat -n ESP -C $@.boot/boot/grub/isoboot.img -S 512 1440
 		mmd -i $@.boot/boot/grub/isoboot.img ::/efi ::/efi/boot
 		mcopy -i $@.boot/boot/grub/isoboot.img \
 			$(STAGING_DIR_IMAGE)/grub2/iso-boot$(if $(CONFIG_x86_64),x64,ia32).efi \
-			::/efi/boot/boot$(if $(CONFIG_x86_64),x64,ia32).efi
-	)
-	mkisofs -R -b boot/grub/eltorito.img -no-emul-boot -boot-info-table \
-		$(if $(filter $(1),efi),-boot-load-size 4 -c boot.cat -eltorito-alt-boot -b boot/grub/isoboot.img -no-emul-boot) \
-		-o $@ $@.boot $(TARGET_DIR)
+			::/efi/boot/boot$(if $(CONFIG_x86_64),x64,ia32).efi,
+		cat \
+			$(STAGING_DIR_IMAGE)/grub2/cdboot.img \
+			$(STAGING_DIR_IMAGE)/grub2/eltorito.img \
+			> $@.boot/boot/grub/eltorito.img)
+	mkisofs -R -b boot/grub/$(if $(filter $1,efi),isoboot.img -boot-load-size 4 -c boot.cat,eltorito.img) \
+		-no-emul-boot -boot-info-table -o $@ $@.boot $(TARGET_DIR)
 endef
 
 DEVICE_VARS += GRUB2_VARIANT
@@ -109,11 +109,11 @@ define Device/Default
   IMAGE/rootfs.img := append-rootfs | pad-to $(ROOTFS_PARTSIZE)
   IMAGE/rootfs.img.gz := append-rootfs | pad-to $(ROOTFS_PARTSIZE) | gzip
   ARTIFACT/image-efi.iso := grub-config iso | iso efi
-  IMAGE/combined-efi.img := grub-config efi | combined efi | grub-install efi | append-metadata
-  IMAGE/combined-efi.img.gz := grub-config efi | combined efi | grub-install efi | gzip | append-metadata
-  IMAGE/combined-efi.vdi := grub-config efi | combined efi | grub-install efi | qemu-image vdi
-  IMAGE/combined-efi.vmdk := grub-config efi | combined efi | grub-install efi | qemu-image vmdk
-  IMAGE/combined-efi.vhdx := grub-config efi | combined efi | grub-install efi | qemu-image vhdx -o subformat=dynamic
+  IMAGE/combined-efi.img := grub-config efi | combined efi | append-metadata
+  IMAGE/combined-efi.img.gz := grub-config efi | combined efi | gzip | append-metadata
+  IMAGE/combined-efi.vdi := grub-config efi | combined efi | qemu-image vdi
+  IMAGE/combined-efi.vmdk := grub-config efi | combined efi | qemu-image vmdk
+  IMAGE/combined-efi.vhdx := grub-config efi | combined efi | qemu-image vhdx -o subformat=dynamic
   ifeq ($(CONFIG_TARGET_IMAGES_GZIP),y)
     IMAGES-y := rootfs.img.gz
     IMAGES-$$(CONFIG_GRUB_IMAGES) += combined.img.gz
