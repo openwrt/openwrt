@@ -12,7 +12,7 @@
   */
  static int ath_set_channel(struct ath_softc *sc)
  {
-+	struct device_node *np = sc->dev->of_node;
++	struct device *dev = sc->dev;
  	struct ath_hw *ah = sc->sc_ah;
  	struct ath_common *common = ath9k_hw_common(ah);
  	struct ieee80211_hw *hw = sc->hw;
@@ -20,7 +20,7 @@
  	ath_dbg(common, CONFIG, "Set channel: %d MHz width: %d\n",
  		chan->center_freq, chandef->width);
  
-+	if (of_property_read_bool(np, "ubnt,hsr")) {
++	if (device_property_present(dev, "ubnt,hsr")) {
 +		ath9k_hsr_enable(ah, chandef->width, chan->center_freq);
 +		ath9k_hsr_status(ah);
 +	}
@@ -346,7 +346,7 @@
  static int ath9k_start(struct ieee80211_hw *hw)
  {
  	struct ath_softc *sc = hw->priv;
-+	struct device_node *np = sc->dev->of_node;
++	struct device_node *dev = sc->dev;
  	struct ath_hw *ah = sc->sc_ah;
  	struct ath_common *common = ath9k_hw_common(ah);
  	struct ieee80211_channel *curchan = sc->cur_chan->chandef.chan;
@@ -354,7 +354,7 @@
  					  AR_GPIO_OUTPUT_MUX_AS_OUTPUT);
  	}
  
-+	if (of_property_read_bool(np, "ubnt,hsr")) {
++	if (device_property_present(dev, "ubnt,hsr")) {
 +		ath9k_hsr_init(ah);
 +		ath9k_hsr_disable(ah);
 +	}

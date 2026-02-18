@@ -1,0 +1,30 @@
+From ebbc52d0bebb92063ca4386c9ac31e297bc121ed Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Wed, 18 Feb 2026 16:23:03 -0800
+Subject: [PATCH 1/3] wifi: rt2x00: use non of nvmem_cell_get
+
+The library doesn't necessarily depend on OF.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+@@ -10965,13 +10965,13 @@ EXPORT_SYMBOL_GPL(rt2800_read_eeprom_efu
+ 
+ int rt2800_read_eeprom_nvmem(struct rt2x00_dev *rt2x00dev)
+ {
+-	struct device_node *np = rt2x00dev->dev->of_node;
++	struct device *dev = rt2x00dev->dev;
+ 	unsigned int len = rt2x00dev->ops->eeprom_size;
+ 	struct nvmem_cell *cell;
+ 	const void *data;
+ 	size_t retlen;
+ 
+-	cell = of_nvmem_cell_get(np, "eeprom");
++	cell = nvmem_cell_get(dev, "eeprom");
+ 	if (IS_ERR(cell))
+ 		return PTR_ERR(cell);
+ 
