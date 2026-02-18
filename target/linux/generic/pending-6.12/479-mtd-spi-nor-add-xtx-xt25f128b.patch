@@ -29,18 +29,22 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  drivers/mtd/spi-nor/spi-nor.c | 4 ++++
  1 file changed, 4 insertions(+)
 
---- a/drivers/mtd/spi-nor/Makefile
-+++ b/drivers/mtd/spi-nor/Makefile
-@@ -14,6 +14,7 @@ spi-nor-objs			+= spansion.o
+Index: linux-6.12.71/drivers/mtd/spi-nor/Makefile
+===================================================================
+--- linux-6.12.71.orig/drivers/mtd/spi-nor/Makefile	2026-02-18 03:02:13.358417107 +0400
++++ linux-6.12.71/drivers/mtd/spi-nor/Makefile	2026-02-18 11:16:50.929253141 +0400
+@@ -14,6 +14,7 @@
  spi-nor-objs			+= sst.o
  spi-nor-objs			+= winbond.o
  spi-nor-objs			+= xmc.o
 +spi-nor-objs			+= xtx.o
  spi-nor-$(CONFIG_DEBUG_FS)	+= debugfs.o
+ spi-nor-$(CONFIG_MTD_SPI_NOR_OF_ERASE_REGIONS) += of_regions.o
  obj-$(CONFIG_MTD_SPI_NOR)	+= spi-nor.o
- 
---- /dev/null
-+++ b/drivers/mtd/spi-nor/xtx.c
+Index: linux-6.12.71/drivers/mtd/spi-nor/xtx.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-6.12.71/drivers/mtd/spi-nor/xtx.c	2026-02-18 11:16:50.929253141 +0400
 @@ -0,0 +1,20 @@
 +// SPDX-License-Identifier: GPL-2.0
 +#include <linux/mtd/spi-nor.h>
@@ -62,9 +66,11 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 +	.parts = xtx_parts,
 +	.nparts = ARRAY_SIZE(xtx_parts),
 +};
---- a/drivers/mtd/spi-nor/core.c
-+++ b/drivers/mtd/spi-nor/core.c
-@@ -1979,6 +1979,7 @@ static const struct spi_nor_manufacturer
+Index: linux-6.12.71/drivers/mtd/spi-nor/core.c
+===================================================================
+--- linux-6.12.71.orig/drivers/mtd/spi-nor/core.c	2026-02-18 11:07:50.270008702 +0400
++++ linux-6.12.71/drivers/mtd/spi-nor/core.c	2026-02-18 11:19:34.000000000 +0400
+@@ -1979,6 +1979,7 @@
  	&spi_nor_sst,
  	&spi_nor_winbond,
  	&spi_nor_xmc,
@@ -72,9 +78,11 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  };
  
  static const struct flash_info spi_nor_generic_flash = {
---- a/drivers/mtd/spi-nor/core.h
-+++ b/drivers/mtd/spi-nor/core.h
-@@ -593,6 +593,7 @@ extern const struct spi_nor_manufacturer
+Index: linux-6.12.71/drivers/mtd/spi-nor/core.h
+===================================================================
+--- linux-6.12.71.orig/drivers/mtd/spi-nor/core.h	2026-02-18 11:14:18.538459067 +0400
++++ linux-6.12.71/drivers/mtd/spi-nor/core.h	2026-02-18 11:16:50.929253141 +0400
+@@ -593,6 +593,7 @@
  extern const struct spi_nor_manufacturer spi_nor_sst;
  extern const struct spi_nor_manufacturer spi_nor_winbond;
  extern const struct spi_nor_manufacturer spi_nor_xmc;
