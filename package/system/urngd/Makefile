@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=urngd
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/urngd.git
@@ -19,6 +19,7 @@ define Package/urngd
   SECTION:=utils
   CATEGORY:=Base system
   TITLE:=OpenWrt non-physical true random number generator based on timing jitter
+  USERID:=urngd=210:urngd=210
   DEPENDS:=+libubox
 endef
 
@@ -41,6 +42,8 @@ define Package/urngd/install
 	$(INSTALL_BIN) ./files/$(PKG_NAME).init $(1)/etc/init.d/$(PKG_NAME)
 	$(INSTALL_DIR) $(1)/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/$(PKG_NAME) $(1)/sbin/$(PKG_NAME)
+	$(INSTALL_DIR) $(1)/etc/capabilities
+	$(INSTALL_DATA) ./files/urngd.json $(1)/etc/capabilities
 endef
 
 $(eval $(call BuildPackage,urngd))
