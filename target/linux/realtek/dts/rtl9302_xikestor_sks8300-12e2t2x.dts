@@ -13,8 +13,8 @@
 
 	memory@0 {
 		device_type = "memory";
-		reg = <0x00000000 0x10000000>, /* first 256 MiB */
-		      <0x20000000 0x10000000>; /* remaining 256 MiB */
+		reg = <0x00000000 0x14000000>, /* 320 MiB lowmem */
+		      <0x20000000 0x0c000000>; /* 192 MiB highmem */
 	};
 
 	chosen {

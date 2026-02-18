@@ -281,7 +281,7 @@ static void get_system_memory(void)
 static void prepare_highmem(void)
 {
 	if ((soc_info.family != RTL9300_FAMILY_ID) ||
-	    (soc_info.memory_size <= 256 * 1024 * 1024) ||
+	    (soc_info.memory_size <= 320 * 1024 * 1024) ||
 	    !IS_ENABLED(CONFIG_HIGHMEM))
 		return;
 
@@ -297,24 +297,18 @@ static void prepare_highmem(void)
 	 * Whenever CPU accesses memory the normal MIPS translation is applied and afterwards
 	 * the bus adds the zone mapping. E.g. a read to 0x81230000 is converted to an cached
 	 * memory access to logical address 0x01230000. It is issued to the OCP bus and the 
-	 * mapping from zone 1 register is added. That allows for two memory topologies:
+	 * mapping from zone 1 register is added. That allows for this memory topologies:
 	 *
-	 * Linear memory with a maximum of 320 MB:
-	 *
-	 * Zone | map content | logical               | physical
-	 * -------------------+-----------------------+-----------------------
-	 *    1 | 0x00000000  | 0x00000000-0x0fffffff | 0x00000000-0x0fffffff
-	 *    2 | 0x00000000  | 0x10000000-0x13ffffff | 0x10000000-0x13ffffff
-	 *
-	 * 256MB low memory plus up to 2GB high memory:
+	 * 320 MB low memory plus up to 2GB high memory:
 	 *
 	 * Zone | map content | logical               | physical
 	 * -------------------+-----------------------+-----------------------
 	 *    1 | 0x00000000  | 0x00000000-0x0fffffff | 0x00000000-0x0fffffff
-	 *    3 | 0x70000000  | 0x20000000-0x9fffffff | 0x10000000-0x7fffffff
+	 *    1 | 0x00000000  | 0x10000000-0x13ffffff | 0x10000000-0x13ffffff
+	 *    3 | 0x74000000  | 0x20000000-0x9fffffff | 0x14000000-0x7fffffff
 	 */
 
-	pr_info("highmem kernel on RTL930x with > 256 MB RAM, adapt SoC memory mapping\n");
+	pr_info("highmem kernel on RTL930x with > 320 MB RAM, adapt SoC memory mapping\n");
 
 	soc_w32(0, RTL9300_UMSAR0);
 	soc_w32(0, RTL9300_UMSAR1);
@@ -326,7 +320,7 @@ static void prepare_highmem(void)
 	soc_w32(0, RTL9300_SRAMSAR3);
 	__sync();
 
-	soc_w32(0x70000000, RTL9300_O0DOR2);
+	soc_w32(0x74000000, RTL9300_O0DOR2);
 	soc_w32(0x7fffffff, RTL9300_O0DMAR2);
 	__sync();
 }
