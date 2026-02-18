@@ -1,33 +1,16 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Setup for the Realtek RTL838X SoC:
- *	Memory, Timer and Serial
- *
  * Copyright (C) 2020 B. Koblitz
  * based on the original BSP by
  * Copyright (C) 2006-2012 Tony Wu (tonywu@realtek.com)
- *
  */
 
-#include <linux/console.h>
-#include <linux/init.h>
-#include <linux/clkdev.h>
-#include <linux/clk-provider.h>
-#include <linux/clk.h>
-#include <linux/delay.h>
-#include <linux/of_fdt.h>
-#include <linux/irqchip.h>
-
-#include <asm/addrspace.h>
-#include <asm/io.h>
 #include <asm/bootinfo.h>
-#include <asm/time.h>
 #include <asm/prom.h>
-#include <asm/smp-ops.h>
-
-#include "mach-rtl-otto.h"
-
-extern struct rtl83xx_soc_info soc_info;
+#include <asm/time.h>
+#include <linux/clk.h>
+#include <linux/irqchip.h>
+#include <linux/of_clk.h>
 
 void __init plat_mem_setup(void)
 {
@@ -39,10 +22,7 @@ void __init plat_mem_setup(void)
 	if (!dtb)
 		panic("no dtb found");
 
-	/*
-	 * Load the devicetree. This causes the chosen node to be
-	 * parsed resulting in our memory appearing
-	 */
+	/* Load the devicetree to let the memory appear. */
 	__dt_setup_arch(dtb);
 }
 
@@ -66,11 +46,10 @@ static void plat_time_init_fallback(void)
 
 void __init plat_time_init(void)
 {
-/*
- * Initialization routine resembles generic MIPS plat_time_init() with
- * lazy error handling. The final fallback is only needed until we have
- * converted all device trees to new clock syntax.
- */
+	/*
+	 * Initialization routine resembles generic MIPS plat_time_init() with lazy error
+	 * handling. The final fallback is needed until all device trees use new clock syntax.
+	 */
 	struct device_node *np;
 	struct clk *clk;
 
