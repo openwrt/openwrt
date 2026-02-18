@@ -95,7 +95,9 @@
 #define RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_2	(0x0C08)
 #define RTMDIO_931X_SMI_INDRT_ACCESS_CTRL_3	(0x0C10)
 #define RTMDIO_931X_SMI_INDRT_ACCESS_MMD_CTRL	(0x0C18)
-#define RTMDIO_931X_MAC_L2_GLOBAL_CTRL2		(0x1358)
+#define RTMDIO_931X_SMI_PHY_ABLTY_GET_SEL	(0x0CAC)
+#define   RTMDIO_931X_SMY_PHY_ABLTY_MDIO	0x0
+#define   RTMDIO_931X_SMI_PHY_ABLTY_SDS		0x2
 #define RTMDIO_931X_SMI_PORT_POLLING_SEL	(0x0C9C)
 #define RTMDIO_931X_SMI_PORT_ADDR_CTRL		(0x0C74)
 #define RTMDIO_931X_SMI_10GPHY_POLLING_SEL0	(0x0CF0)
@@ -715,6 +717,7 @@ static void rtmdio_930x_setup_polling(struct mii_bus *bus)
 	struct rtmdio_phy_info phyinfo;
 	unsigned int mask, val;
 
+	/* reset all ports to "SerDes driven" */
 	regmap_write(ctrl->map, RTMDIO_930X_SMI_MAC_TYPE_CTRL, 0);
 
 	/* Define PHY specific polling parameters */
@@ -722,7 +725,7 @@ static void rtmdio_930x_setup_polling(struct mii_bus *bus)
 		if (rtmdio_get_phy_info(bus, addr, &phyinfo))
 			continue;
 
-		/* port MAC type */
+		/* set port to "PHY driven" */
 		mask = addr > 23 ? 0x7 << ((addr - 24) * 3 + 12): 0x3 << ((addr / 4) * 2);
 		val = phyinfo.mac_type << (ffs(mask) - 1);
 		regmap_update_bits(ctrl->map, RTMDIO_930X_SMI_MAC_TYPE_CTRL, mask, val);
@@ -789,13 +792,12 @@ static void rtmdio_931x_setup_polling(struct mii_bus *bus)
 	struct rtmdio_phy_info phyinfo;
 	u32 val;
 
-	/* Define PHY specific polling parameters
-	 *
-	 * Those are applied per port here but the SoC only supports them
-	 * per SMI bus or for all GPHY/10GPHY. This should be guarded by
-	 * the existing hardware designs (i.e. only equally polled PHYs on
-	 * the same SMI bus or kind of PHYs).
-	 */
+	/* reset all ports to "SerDes driven" */
+	for (int reg = 0; reg < 4; reg++)
+		regmap_write(ctrl->map, RTMDIO_931X_SMI_PHY_ABLTY_GET_SEL + reg * 4,
+			     RTMDIO_931X_SMI_PHY_ABLTY_SDS * 0x55555555U);
+
+	/* Define PHY specific polling parameters */
 	for_each_port(ctrl, addr) {
 		int smi = ctrl->smi_bus[addr];
 		unsigned int mask, val;
@@ -803,6 +805,11 @@ static void rtmdio_931x_setup_polling(struct mii_bus *bus)
 		if (rtmdio_get_phy_info(bus, addr, &phyinfo))
 			continue;
 
+		/* set port to "PHY driven" */
+		mask = GENMASK(1, 0) << ((addr % 16) * 2);
+		val = RTMDIO_931X_SMY_PHY_ABLTY_MDIO << (ffs(mask) - 1);
+		regmap_update_bits(ctrl->map, RTMDIO_931X_SMI_PHY_ABLTY_GET_SEL + (addr / 16) * 4,
+				   mask, val);
 		mask = val = 0;
 
 		/* PRVTE0 polling */
