@@ -15,6 +15,7 @@ mvebu_setup_interfaces()
 	ctera,c200-v2|\
 	synology,ds213j|\
 	wd,cloud-ex2-ultra|\
+	wd,cloud-gen2|\
 	wd,cloud-mirror-gen2)
 		ucidef_set_interface_lan "eth0" "dhcp"
 		;;
@@ -96,6 +97,10 @@ mvebu_setup_macs()
 		label_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 		lan_mac=$label_mac
 		wan_mac=$label_mac
+		;;
+	wd,cloud-gen2)
+		label_mac=$(mtd_get_mac_text u-boot 0xff800)
+		lan_mac=$label_mac
 		;;
 	wd,cloud-ex2-ultra|\
 	wd,cloud-mirror-gen2)
