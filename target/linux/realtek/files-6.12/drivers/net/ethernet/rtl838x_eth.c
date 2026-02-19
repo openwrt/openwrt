@@ -594,7 +594,7 @@ static void rtl838x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 	 * | SPD_SEL = 0b10 | FORCE_FC_EN | PHY_MASTER_SLV_MANUAL_EN
 	 * | MEDIA_SEL
 	 */
-	sw_w32(0x6192F, ctrl->r->mac_force_mode_ctrl + ctrl->r->cpu_port * 4);
+	sw_w32(0x6192F, ctrl->r->mac_force_mode_ctrl);
 
 	/* Enable CRC checks on CPU-port */
 	sw_w32_mask(0, BIT(3), ctrl->r->mac_l2_port_ctrl);
@@ -620,7 +620,7 @@ static void rtl839x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 	sw_w32(0x38000, RTL839X_TBL_ACCESS_L2_CTRL);
 
 	/* Force CPU port link up */
-	sw_w32_mask(0, 3, ctrl->r->mac_force_mode_ctrl + ctrl->r->cpu_port * 4);
+	sw_w32_mask(0, 3, ctrl->r->mac_force_mode_ctrl);
 }
 
 static void rtl93xx_hw_en_rxtx(struct rteth_ctrl *ctrl)
@@ -654,9 +654,9 @@ static void rtl93xx_hw_en_rxtx(struct rteth_ctrl *ctrl)
 		sw_w32_mask(0, BIT(ctrl->r->cpu_port), RTL931X_L2_UNKN_UC_FLD_PMSK);
 
 	if (ctrl->r->family_id == RTL9300_FAMILY_ID)
-		sw_w32(0x217, ctrl->r->mac_force_mode_ctrl + ctrl->r->cpu_port * 4);
+		sw_w32(0x217, ctrl->r->mac_force_mode_ctrl);
 	else
-		sw_w32(0x2a1d, ctrl->r->mac_force_mode_ctrl + ctrl->r->cpu_port * 4);
+		sw_w32(0x2a1d, ctrl->r->mac_force_mode_ctrl);
 }
 
 static void rteth_setup_ring_buffer(struct rteth_ctrl *ctrl)
@@ -819,11 +819,11 @@ static void rtl838x_hw_stop(struct rteth_ctrl *ctrl)
 
 	/* CPU-Port: Link down */
 	if (ctrl->r->family_id == RTL8380_FAMILY_ID || ctrl->r->family_id == RTL8390_FAMILY_ID)
-		sw_w32(force_mac, ctrl->r->mac_force_mode_ctrl + ctrl->r->cpu_port * 4);
+		sw_w32(force_mac, ctrl->r->mac_force_mode_ctrl);
 	else if (ctrl->r->family_id == RTL9300_FAMILY_ID)
-		sw_w32_mask(0x3, 0, ctrl->r->mac_force_mode_ctrl + ctrl->r->cpu_port * 4);
+		sw_w32_mask(0x3, 0, ctrl->r->mac_force_mode_ctrl);
 	else if (ctrl->r->family_id == RTL9310_FAMILY_ID)
-		sw_w32_mask(BIT(0) | BIT(9), 0, ctrl->r->mac_force_mode_ctrl + ctrl->r->cpu_port * 4);
+		sw_w32_mask(BIT(0) | BIT(9), 0, ctrl->r->mac_force_mode_ctrl);
 	mdelay(100);
 
 	rteth_disable_all_irqs(ctrl);
@@ -1157,9 +1157,9 @@ static void rteth_pcs_an_restart(struct phylink_pcs *pcs)
 
 	pr_debug("In %s\n", __func__);
 	/* Restart by disabling and re-enabling link */
-	sw_w32(0x6192D, ctrl->r->mac_force_mode_ctrl + ctrl->r->cpu_port * 4);
+	sw_w32(0x6192D, ctrl->r->mac_force_mode_ctrl);
 	mdelay(20);
-	sw_w32(0x6192F, ctrl->r->mac_force_mode_ctrl + ctrl->r->cpu_port * 4);
+	sw_w32(0x6192F, ctrl->r->mac_force_mode_ctrl);
 }
 
 static void rteth_pcs_get_state(struct phylink_pcs *pcs,
@@ -1427,7 +1427,7 @@ static const struct rteth_config rteth_838x_cfg = {
 	.dma_if_intr_sts = RTETH_838X_DMA_IF_INTR_STS,
 	.dma_if_intr_msk = RTETH_838X_DMA_IF_INTR_MSK,
 	.dma_if_ctrl = RTL838X_DMA_IF_CTRL,
-	.mac_force_mode_ctrl = RTL838X_MAC_FORCE_MODE_CTRL,
+	.mac_force_mode_ctrl = RTETH_838X_MAC_FORCE_MODE_CTRL,
 	.dma_rx_base = RTL838X_DMA_RX_BASE,
 	.dma_tx_base = RTL838X_DMA_TX_BASE,
 	.dma_if_rx_ring_size = rtl838x_dma_if_rx_ring_size,
@@ -1476,7 +1476,7 @@ static const struct rteth_config rteth_839x_cfg = {
 	.dma_if_intr_sts = RTETH_839X_DMA_IF_INTR_STS,
 	.dma_if_intr_msk = RTETH_839X_DMA_IF_INTR_MSK,
 	.dma_if_ctrl = RTL839X_DMA_IF_CTRL,
-	.mac_force_mode_ctrl = RTL839X_MAC_FORCE_MODE_CTRL,
+	.mac_force_mode_ctrl = RTETH_839X_MAC_FORCE_MODE_CTRL,
 	.dma_rx_base = RTL839X_DMA_RX_BASE,
 	.dma_tx_base = RTL839X_DMA_TX_BASE,
 	.dma_if_rx_ring_size = rtl839x_dma_if_rx_ring_size,
@@ -1530,7 +1530,7 @@ static const struct rteth_config rteth_930x_cfg = {
 	.l2_ntfy_if_intr_sts = RTL930X_L2_NTFY_IF_INTR_STS,
 	.l2_ntfy_if_intr_msk = RTL930X_L2_NTFY_IF_INTR_MSK,
 	.dma_if_ctrl = RTL930X_DMA_IF_CTRL,
-	.mac_force_mode_ctrl = RTL930X_MAC_FORCE_MODE_CTRL,
+	.mac_force_mode_ctrl = RTETH_930X_MAC_FORCE_MODE_CTRL,
 	.dma_rx_base = RTL930X_DMA_RX_BASE,
 	.dma_tx_base = RTL930X_DMA_TX_BASE,
 	.dma_if_rx_ring_size = rtl930x_dma_if_rx_ring_size,
@@ -1583,7 +1583,7 @@ static const struct rteth_config rteth_931x_cfg = {
 	.l2_ntfy_if_intr_sts = RTL931X_L2_NTFY_IF_INTR_STS,
 	.l2_ntfy_if_intr_msk = RTL931X_L2_NTFY_IF_INTR_MSK,
 	.dma_if_ctrl = RTL931X_DMA_IF_CTRL,
-	.mac_force_mode_ctrl = RTL931X_MAC_FORCE_MODE_CTRL,
+	.mac_force_mode_ctrl = RTETH_931X_MAC_FORCE_MODE_CTRL,
 	.dma_rx_base = RTL931X_DMA_RX_BASE,
 	.dma_tx_base = RTL931X_DMA_TX_BASE,
 	.dma_if_rx_ring_size = rtl931x_dma_if_rx_ring_size,
