@@ -115,6 +115,7 @@ mediatek_setup_interfaces()
 	netgear,eax17|\
 	netgear,wax220|\
 	openfi,6c|\
+	tplink,f65-v1|\
 	ubnt,unifi-6-plus|\
 	wavlink,wl-wn573hx3|\
 	widelantech,wap430x|\
@@ -285,7 +286,8 @@ mediatek_setup_macs()
 		wan_mac=$label_mac
 		lan_mac=$(macaddr_add "$label_mac" 1)
 		;;
-	tplink,eap683-lr)
+	tplink,eap683-lr|\
+	tplink,f65-v1)
 		label_mac=$(get_mac_binary "/tmp/factory/default-mac" 0)
 		lan_mac=$label_mac
 		;;

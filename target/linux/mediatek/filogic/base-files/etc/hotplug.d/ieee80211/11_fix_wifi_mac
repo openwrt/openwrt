@@ -212,7 +212,8 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && macaddr_add $addr 2 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr 3 > /sys${DEVPATH}/macaddress
 		;;
-	tplink,eap683-lr)
+	tplink,eap683-lr|\
+	tplink,f65-v1)
 		addr=$(get_mac_label)
 		[ "$PHYNBR" = "0" ] && echo $addr > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr 1 > /sys${DEVPATH}/macaddress

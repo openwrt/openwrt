@@ -1,0 +1,206 @@
+// SPDX-License-Identifier: GPL-2.0-only OR MIT
+
+/dts-v1/;
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/pinctrl/mt65xx.h>
+
+#include "mt7981b.dtsi"
+
+/ {
+	compatible = "tplink,f65-v1", "mediatek,mt7981";
+	model = "TP-Link F65 v1";
+
+	aliases {
+		serial0 = &uart0;
+		led-boot = &led_status;
+		led-failsafe = &led_status;
+		led-running = &led_status;
+		led-upgrade = &led_status;
+	};
+
+	chosen {
+		bootargs-append = " ubi.mtd=ubi root=/dev/ubiblock0_1";
+		stdout-path = "serial0:115200n8";
+	};
+
+	memory@40000000 {
+		reg = <0 0x40000000 0 0x10000000>;
+		device_type = "memory";
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_status: led_status {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&pio 35 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&spi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi0_flash_pins>;
+	status = "okay";
+
+	spi_nand@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "spi-nand";
+		reg = <0>;
+		spi-max-frequency = <52000000>;
+		spi-tx-buswidth = <4>;
+		spi-rx-buswidth = <4>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "bl2";
+				reg = <0x00000 0x100000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "boot-config";
+				reg = <0x100000 0x100000>;
+				read-only;
+			};
+
+			partition@200000 {
+				label = "boot-config1";
+				reg = <0x200000 0x100000>;
+				read-only;
+			};
+
+			partition@300000 {
+				label = "u-boot-env";
+				reg = <0x300000 0x100000>;
+			};
+
+			partition@400000 {
+				label = "fip0";
+				reg = <0x400000 0x200000>;
+				read-only;
+			};
+
+			partition@600000 {
+				label = "fip1";
+				reg = <0x600000 0x200000>;
+				read-only;
+			};
+
+			partition@800000 {
+				label = "oops";
+				reg = <0x800000 0x100000>;
+				read-only;
+			};
+
+			partition@900000 {
+				label = "ubi";
+				reg = <0x900000 0x2680000>;
+			};
+
+			partition@2F80000 {
+				label = "ubi_1";
+				reg = <0x2F80000 0x2680000>;
+				read-only;
+			};
+
+			partition@5600000 {
+				label = "factory";
+				reg = <0x5600000 0x800000>;
+				read-only;
+			};
+
+			partition@5E00000 {
+				label = "runtime_data";
+				reg = <0x5E00000 0xC00000>;
+				read-only;
+			};
+
+			partition@6A00000 {
+				label = "backup_data";
+				reg = <0x6A00000 0x800000>;
+				read-only;
+			};
+
+			partition@7200000 {
+				label = "runtime_backup";
+				reg = <0x7200000 0x800000>;
+				read-only;
+			};
+
+		};
+	};
+};
+
+&pio {
+	spi0_flash_pins: spi0-pins {
+		mux {
+			function = "spi";
+			groups = "spi0", "spi0_wp_hold";
+		};
+
+		conf-pu {
+			pins = "SPI0_CS", "SPI0_HOLD", "SPI0_WP";
+			drive-strength = <MTK_DRIVE_8mA>;
+		};
+
+		conf-pd {
+			pins = "SPI0_CLK", "SPI0_MOSI", "SPI0_MISO";
+			drive-strength = <MTK_DRIVE_8mA>;
+		};
+	};
+};
+
+&eth {
+	status = "okay";
+
+	gmac1: mac@1 {
+		compatible = "mediatek,eth-mac";
+		reg = <1>;
+		phy-mode = "gmii";
+		phy-handle = <&phy0>;
+	};
+
+	mdio: mdio-bus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		phy0: ethernet-phy@0 {
+			compatible = "ethernet-phy-id03a2.9461";
+			reg = <0>;
+			phy-mode = "gmii";
+			nvmem-cells = <&phy_calibration>;
+			nvmem-cell-names = "phy-cal-data";
+		};
+	};
+};
+
+&wifi {
+	status = "okay";
+};
