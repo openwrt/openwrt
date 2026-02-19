@@ -44,12 +44,6 @@
 			trigger-sources = <&hub_port0>;
 		};
 
-		wifi2g {
-			label = "white:wifi2g";
-			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
-		};
-
 		wifi5g {
 			label = "white:wifi5g";
 			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
@@ -198,4 +192,9 @@
 		nvmem-cell-names = "calibration", "mac-address";
 		qcom,ath10k-calibration-variant = "ZyXEL-NBG6716";
 	};
+};
+
+&wmac {
+	led-sources = <19>;
+	led-active-low;
 };

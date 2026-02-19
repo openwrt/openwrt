@@ -635,18 +635,6 @@ ath79_setup_macs()
 		lan_mac=$(mtd_get_mac_binary "Board data" 2)
 		label_mac=$lan_mac
 		;;
-	alfa-network,ap121f|\
-	alfa-network,ap121fe|\
-	alfa-network,n2q|\
-	alfa-network,n5q|\
-	alfa-network,pi-wifi4|\
-	alfa-network,r36a|\
-	alfa-network,tube-2hq|\
-	alfa-network,wifi-camppro-nano-duo|\
-	engenius,eap300-v2|\
-	engenius,ens202ext-v1)
-		label_mac=$(mtd_get_mac_binary art 0x1002)
-		;;
 	arduino,yun)
 		base_mac=$(mtd_get_mac_binary art 0x1002)
 		lan_mac=$(macaddr_setbit $base_mac 29)
@@ -672,10 +660,6 @@ ath79_setup_macs()
 	compex,wpj558-16m|\
 	compex,wpj563)
 		wan_mac=$(mtd_get_mac_binary u-boot 0x2e018)
-		;;
-	devolo,dlan-pro-1200plus-ac|\
-	devolo,magic-2-wifi)
-		label_mac=$(macaddr_add "$(mtd_get_mac_binary art 0x1002)" 3)
 		;;
 	dlink,covr-c1200-a1)
 		lan_mac=$(mtd_get_mac_ascii art "protest_lan_mac")
@@ -742,8 +726,7 @@ ath79_setup_macs()
 		label_mac=$(mtd_get_mac_binary u-boot 0x1fc00)
 		;;
 	iodata,etg3-r)
-		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
-		wan_mac=$(macaddr_add "$lan_mac" -1)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_ascii u-boot-env ethaddr)" -1)
 		label_mac=$wan_mac
 		;;
 	iodata,wn-ac1167dgr|\
@@ -806,6 +789,10 @@ ath79_setup_macs()
 		lan_mac=$(mtd_get_mac_binary board-data 0x807E)
 		label_mac=$lan_mac
 		;;
+	siemens,ws-ap3610)
+		lan_mac=$(mtd_get_mac_ascii cfg1 ethaddr)
+		label_mac=$lan_mac
+		;;
 	sitecom,wlr-7100|\
 	sitecom,wlr-8100)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
@@ -833,9 +820,6 @@ ath79_setup_macs()
 	ubnt,routerstation-pro)
 		wan_mac=$(fconfig -s -r -d $(find_mtd_part "RedBoot config") -n ar7100_esa)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
-		;;
-	wd,mynet-wifi-rangeextender)
-		lan_mac=$(nvram get et0macaddr)
 		;;
 	xiaomi,aiot-ac2350)
 		lan_mac=$(mtd_get_mac_binary art 0x1002)
