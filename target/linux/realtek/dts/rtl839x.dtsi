@@ -345,6 +345,11 @@
 		mdio_aux_mdx: aux-mdx-pins {
 			pinctrl-single,bits = <0x0 0x100000 0x1c0000>;
 		};
+
+		/* disable port LED offloading */
+		port_led_offload: port-led-offload {
+			pinctrl-single,bits = <0x0 0x0 0x20>;
+		};
 	};
 
 	sram0: sram@9f000000 {
