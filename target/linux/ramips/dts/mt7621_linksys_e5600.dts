@@ -15,6 +15,7 @@
 		led-failsafe = &led_power;
 		led-running = &led_power;
 		led-upgrade = &led_power;
+		label-mac-device = &gmac0;
 	};
 
 	chosen {
@@ -116,6 +117,18 @@
 			label = "devinfo";
 			reg = <0x140000 0x40000>;
 			read-only;
+
+			nvmem-layout {
+				compatible = "ascii-eq-delim-env";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				hw_mac_addr: hw_mac_addr {
+					compatible = "mac-base";
+
+					#nvmem-cell-cells = <1>;
+				};
+			};
 		};
 
 		partition@180000 {
@@ -155,8 +168,8 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&eeprom_factory_0>;
-		nvmem-cell-names = "eeprom";
+		nvmem-cells = <&eeprom_factory_0>, <&hw_mac_addr 1>;
+		nvmem-cell-names = "eeprom", "mac-address";
 	};
 };
 
@@ -164,15 +177,23 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&eeprom_factory_8000>;
-		nvmem-cell-names = "eeprom";
+		nvmem-cells = <&eeprom_factory_8000>, <&hw_mac_addr 2>;
+		nvmem-cell-names = "eeprom", "mac-address";
 	};
+};
+
+&gmac0 {
+	nvmem-cells = <&hw_mac_addr 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &gmac1 {
 	status = "okay";
 	label = "wan";
 	phy-handle = <&ethphy4>;
+
+	nvmem-cells = <&hw_mac_addr 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &ethphy4 {
