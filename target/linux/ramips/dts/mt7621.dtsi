@@ -3,6 +3,7 @@
 #include <dt-bindings/clock/mt7621-clk.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/interrupt-controller/mips-gic.h>
+#include <dt-bindings/phy/phy.h>
 #include <dt-bindings/reset/mt7621-reset.h>
 
 / {
@@ -403,6 +404,10 @@
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SHARED 22 IRQ_TYPE_LEVEL_HIGH>;
 
+		phys = <&u2port0 PHY_TYPE_USB2>,
+		       <&u3port0 PHY_TYPE_USB3>,
+		       <&u2port1 PHY_TYPE_USB2>;
+
 		vbus-supply = <&reg_vbus>;
 		vusb33-supply = <&reg_vusb33>;
 
@@ -423,6 +428,29 @@
 		ehci_port2: port@2 {
 			reg = <2>;
 			#trigger-source-cells = <0>;
+		};
+	};
+
+	usb_phy: t-phy@1e1d0000 {
+		compatible = "mediatek,generic-tphy-v1";
+		reg = <0x1e1d0000 0x0700>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		u2port0: usb-phy@1e1d0800 {
+			reg = <0x1e1d0800 0x0100>;
+			#phy-cells = <1>;
+		};
+
+		u3port0: usb-phy@1e1d0900 {
+			reg = <0x1e1d0900 0x0700>;
+			#phy-cells = <1>;
+		};
+
+		u2port1: usb-phy@1e1d1000 {
+			reg = <0x1e1d1000 0x0100>;
+			#phy-cells = <1>;
 		};
 	};
 
