@@ -29,6 +29,7 @@ proto_qmi_init_config() {
 	proto_config_add_int plmn
 	proto_config_add_int timeout
 	proto_config_add_int mtu
+	proto_config_add_string llp
 	proto_config_add_defaults
 }
 
@@ -46,8 +47,8 @@ proto_qmi_setup() {
 	local apn auth delay device modes password pdptype pincode username v6apn
 	json_get_vars apn auth delay device modes password pdptype pincode username v6apn
 
-	local profile v6profile dhcp dhcpv6 autoconnect plmn timeout
-	json_get_vars profile v6profile dhcp dhcpv6 autoconnect plmn timeout
+	local profile v6profile dhcp dhcpv6 autoconnect plmn timeout llp
+	json_get_vars profile v6profile dhcp dhcpv6 autoconnect plmn timeout llp
 
 	[ "$timeout" = "" ] && timeout="10"
 
@@ -229,21 +230,33 @@ proto_qmi_setup() {
 	# Go online
 	uqmi -s -d "$device" -t 1000 --set-device-operating-mode online > /dev/null 2>&1
 
-	# Set IP format
-	uqmi -s -d "$device" -t 1000 --set-data-format 802.3 > /dev/null 2>&1
-	uqmi -s -d "$device" -t 1000 --wda-set-data-format 802.3 > /dev/null 2>&1
+	# Set the link layer protocol (llp)
+	[ -z "$llp" ] && llp="802.3"
+	uqmi -s -d "$device" -t 1000 --set-data-format "$llp" > /dev/null 2>&1
+	uqmi -s -d "$device" -t 1000 --wda-set-data-format "$llp" > /dev/null 2>&1
 	json_load "$(uqmi -s -d "$device" -t 1000 --wda-get-data-format)"
 	json_get_var dataformat link-layer-protocol
+
+	if [ "$dataformat" != "\"$llp\"" ]; then
+		echo "Selected link layer protocol \"$llp\" is not supported by the Device, use $dataformat instead"
+	fi
 
 	if [ "$dataformat" = "raw-ip" ]; then
 
 		[ -f /sys/class/net/$ifname/qmi/raw_ip ] || {
-			echo "Device only supports raw-ip mode but is missing this required driver attribute: /sys/class/net/$ifname/qmi/raw_ip"
+			echo "Device is missing this required driver attribute: /sys/class/net/$ifname/qmi/raw_ip"
 			return 1
 		}
 
-		echo "Device does not support 802.3 mode. Informing driver of raw-ip only for $ifname .."
-		echo "Y" > /sys/class/net/$ifname/qmi/raw_ip
+		[ "$(cat /sys/class/net/$ifname/qmi/raw_ip)" = "Y" ] || {
+			echo "Informing driver to use raw-ip for $ifname .."
+			echo "Y" > /sys/class/net/$ifname/qmi/raw_ip
+		}
+	else
+		[ -f /sys/class/net/$ifname/qmi/raw_ip -a "$(cat /sys/class/net/$ifname/qmi/raw_ip)" = "Y" ] && {
+			echo "Informing driver to NOT use raw-ip for $ifname .."
+			echo "N" > /sys/class/net/$ifname/qmi/raw_ip
+		}
 	fi
 
 	uqmi -s -d "$device" -t 1000 --sync > /dev/null 2>&1
