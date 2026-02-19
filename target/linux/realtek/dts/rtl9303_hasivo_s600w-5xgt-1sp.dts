@@ -1,0 +1,233 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+/dts-v1/;
+
+#include "rtl930x.dtsi"
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "hasivo,s600w-5xgt-1s+", "realtek,rtl930x-soc";
+	model = "Hasivo S600W-5XGT-1S+";
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x00000000 0x10000000>; /* 256 MiB */
+	};
+
+	aliases {
+		led-boot = &led_sys;
+		led-failsafe = &led_sys;
+		led-running = &led_sys;
+		led-upgrade = &led_sys;
+		label-mac-device = &ethernet0;
+	};
+
+	chosen {
+		stdout-path = "serial0:38400n8";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		button-reset {
+			label = "reset";
+			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinmux_disable_sys_led>,<&pinmux_enable_led_sync>;
+		led_sys: led-0 {
+			label = "green:system";
+                        color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "heartbeat";
+		};
+	};
+
+	led_set: led_set {
+		compatible = "realtek,rtl9300-leds";
+		// Device has unwired ports, skip their LEDs
+		realtek,led-set0-force-port-mask = <0x0a000000>;
+		led_set0 = <
+		(	// ORANGE LEFT RJ45 - 10G link, blink on activity
+			RTL93XX_LED_SET_LINK |
+			RTL93XX_LED_SET_10G
+		)
+		(	// GREEN RIGHT RJ45 - 10M/100M/1G link, blink on activity
+			RTL93XX_LED_SET_ACT |
+			RTL93XX_LED_SET_LINK |
+			RTL93XX_LED_SET_10M |
+			RTL93XX_LED_SET_100M |
+			RTL93XX_LED_SET_1G |
+			RTL93XX_LED_SET_2P5G |
+			RTL93XX_LED_SET_5G |
+			RTL93XX_LED_SET_10G
+		)
+		(	// GREEN LEFT RJ45 - 2.5/5G link
+			RTL93XX_LED_SET_LINK |
+			RTL93XX_LED_SET_5G |
+			RTL93XX_LED_SET_2P5G
+		)
+		>;
+	};
+
+	i2c_scl7_sda6: i2c-gpio-sfp {
+		compatible = "i2c-gpio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		scl-gpios = <&gpio0 7 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		sda-gpios = <&gpio0 6 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		status = "okay";
+
+		clock-frequency = <100000>;
+	};
+
+	sfp0: sfp-p26 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_scl7_sda6>;
+		mod-def0-gpio = <&gpio0 9 GPIO_ACTIVE_LOW>;
+		// TODO: should exist...
+		//los-gpio = <&gpio0 23 GPIO_ACTIVE_HIGH>;
+		// TODO: unknown if we have one of these
+                //tx-disable-gpio = <&gpio0 21 GPIO_ACTIVE_HIGH>;
+		// TODO: This value is not informed by anything yet... 
+		maximum-power-milliwatt = <2900>;
+		#thermal-sensor-cells = <0>;
+	};
+
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* stock is LOADER */
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0000000 0x00e0000>;
+				read-only;
+			};
+
+			/* stock is BDINFO */
+			partition@e0000 {
+				label = "u-boot-env";
+				reg = <0x00e0000 0x0010000>;
+
+				nvmem-layout {
+					compatible = "u-boot,env";
+
+					macaddr_ubootenv_ethaddr: ethaddr {
+						#nvmem-cell-cells = <1>;
+					};
+					serialnumber_ubootenv: serialnumber {
+						#nvmem-cell-cells = <1>;
+					};
+					pse_bt_port_no_ubootenv: pse_bt_port_no {
+						#nvmem-cell-cells = <1>;
+					};
+					pse_existed_flag_ubootenv: pse_existed_flag {
+						#nvmem-cell-cells = <1>;
+					};
+					pse_power_bank_ubootenv: pse_power_bank {
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			/* stock is SYSINFO */
+			partition@f0000 {
+				label = "u-boot-env2";
+				reg = <0x00f0000 0x0010000>;
+				read-only;
+			};
+
+			/* stock is JFFS2 CFG */
+			partition@100000 {
+				label = "jffs";
+				reg = <0x0100000 0x0100000>;
+			};
+
+			/* stock is JFFS2 LOG */
+			partition@200000 {
+				label = "jffs2";
+				reg = <0x0200000 0x0100000>;
+			};
+
+			/* stock is RUNTIME */
+			partition@300000 {
+				compatible = "openwrt,uimage", "denx,uimage";
+				label = "firmware";
+				reg = <0x0300000 0x0700000>;
+			};
+
+			/* stock is RUNTIME2 */
+			partition@a00000 {
+				label = "runtime2";
+				reg = <0x0a00000 0x1600000>;
+				read-only;
+			};
+		};
+	};
+};
+
+
+&ethernet0 {
+	nvmem-cells = <&macaddr_ubootenv_ethaddr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&mdio_bus0 {
+	PHY_C45(0, 0)
+	PHY_C45(8, 16)
+};
+
+&mdio_bus1 {
+	PHY_C45(16, 0)
+	PHY_C45(20, 16)
+};
+
+&mdio_bus2 {
+	PHY_C45(24, 0)
+};
+
+&switch0 {
+	ethernet-ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		SWITCH_PORT_LED(0, 1, 2, 0, usxgmii)
+		SWITCH_PORT_LED(8, 2, 3, 0, usxgmii)
+		SWITCH_PORT_LED(16, 3, 4, 0, usxgmii)
+		SWITCH_PORT_LED(20, 4, 5, 0, usxgmii)
+		SWITCH_PORT_LED(24, 5, 6, 0, usxgmii)
+
+		SWITCH_PORT_SFP(26, 6, 8, 0, 0)
+
+		/* Internal SoC */
+		port@28 {
+			ethernet = <&ethernet0>;
+			reg = <28>;
+			phy-mode = "internal";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+	};
+};
