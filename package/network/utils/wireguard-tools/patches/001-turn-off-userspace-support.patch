@@ -1,0 +1,67 @@
+Disable userspace daemon support to save a serveral Kb of footprint as
+we don't use userspace mode in OpenWRT
+
+Signed-off-by: Maksim Dmitrichneko <dmitrmax@gmail.com>
+--- a/src/ipc.c
++++ b/src/ipc.c
+@@ -40,7 +40,9 @@ static int string_list_add(struct string
+ 	return 0;
+ }
+ 
++#if defined(IPC_SUPPORTS_USERSPACE_INTERFACE)
+ #include "ipc-uapi.h"
++#endif
+ #if defined(__linux__)
+ #include "ipc-linux.h"
+ #elif defined(__OpenBSD__)
+@@ -55,16 +57,18 @@ static int string_list_add(struct string
+ char *ipc_list_devices(void)
+ {
+ 	struct string_list list = { 0 };
+-	int ret;
++	int ret = 0;
+ 
+ #ifdef IPC_SUPPORTS_KERNEL_INTERFACE
+ 	ret = kernel_get_wireguard_interfaces(&list);
+ 	if (ret < 0)
+ 		goto cleanup;
+ #endif
++#ifdef IPC_SUPPORTS_USERSPACE_INTERFACE
+ 	ret = userspace_get_wireguard_interfaces(&list);
+ 	if (ret < 0)
+ 		goto cleanup;
++#endif
+ 
+ cleanup:
+ 	errno = -ret;
+@@ -77,22 +81,24 @@ cleanup:
+ 
+ int ipc_get_device(struct wgdevice **dev, const char *iface)
+ {
+-#ifdef IPC_SUPPORTS_KERNEL_INTERFACE
++#ifdef IPC_SUPPORTS_USERSPACE_INTERFACE
+ 	if (userspace_has_wireguard_interface(iface))
+ 		return userspace_get_device(dev, iface);
++#endif
++#ifdef IPC_SUPPORTS_KERNEL_INTERFACE
+ 	return kernel_get_device(dev, iface);
+-#else
+-	return userspace_get_device(dev, iface);
+ #endif
++    return 0;
+ }
+ 
+ int ipc_set_device(struct wgdevice *dev)
+ {
+-#ifdef IPC_SUPPORTS_KERNEL_INTERFACE
++#ifdef IPC_SUPPORTS_USERSPACE_INTERFACE
+ 	if (userspace_has_wireguard_interface(dev->name))
+ 		return userspace_set_device(dev);
++#endif
++#ifdef IPC_SUPPORTS_KERNEL_INTERFACE
+ 	return kernel_set_device(dev);
+-#else
+-	return userspace_set_device(dev);
+ #endif
++	return 0;
+ }
