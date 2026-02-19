@@ -145,6 +145,18 @@ menu "Global build settings"
 		  Useful for release builds, so that kernel issues can be debugged offline
 		  later.
 
+	config BUILTIN_KMODS
+		bool
+		prompt "Make kernel module packages built-in to the kernel"
+		help
+		  All kernel module packages that are selected for inclusion in the base
+		  image will be compiled directly into the kernel binary. This allows kmods
+		  to be loaded before pre-init so they can be used to mount the root fs.
+		  This increases the size of the kernel image, but decreases the size of the
+		  filesystem. It tends to offer a small net-benefit. Caution: Some (rare)
+		  devices are known to be impossible to reset except by unloading the module
+		  or rebooting. If the module is builtin then it cannot be unloaded.
+
 	menu "Kernel build options"
 
 	source "config/Config-kernel.in"
