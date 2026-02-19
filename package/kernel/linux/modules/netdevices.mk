@@ -1468,7 +1468,7 @@ $(eval $(call KernelPackage,ice))
 define KernelPackage/iavf
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel(R) Ethernet Adaptive Virtual Function support
-  DEPENDS:=@PCI_SUPPORT +kmod-libie +!LINUX_6_12:kmod-libie-adminq
+  DEPENDS:=@PCI_SUPPORT +kmod-libie +!LINUX_6_12:kmod-libie-adminq +kmod-ptp
   KCONFIG:= \
        CONFIG_I40EVF \
        CONFIG_IAVF
