@@ -115,11 +115,6 @@
 #define RTL930X_DMA_IF_RX_RING_CNTR		(0x7C8C)
 #define RTL931X_DMA_IF_RX_RING_CNTR		(0x20AC)
 
-#define RTL838X_DMA_IF_RX_CUR			(0x9F20)
-#define RTL839X_DMA_IF_RX_CUR			(0x782c)
-#define RTL930X_DMA_IF_RX_CUR			(0xdf80)
-#define RTL931X_DMA_IF_RX_CUR			(0x0880)
-
 #define RTL838X_DMA_IF_TX_CUR_DESC_ADDR_CTRL	(0x9F48)
 #define RTL930X_DMA_IF_TX_CUR_DESC_ADDR_CTRL	(0xE008)
 
@@ -441,7 +436,6 @@ struct rteth_config {
 	int dma_tx_base;
 	int (*dma_if_rx_ring_size)(int ring);
 	int (*dma_if_rx_ring_cntr)(int ring);
-	int dma_if_rx_cur;
 	int rst_glb_ctrl;
 	u32 (*get_mac_link_sts)(int port);
 	u32 (*get_mac_link_dup_sts)(int port);
