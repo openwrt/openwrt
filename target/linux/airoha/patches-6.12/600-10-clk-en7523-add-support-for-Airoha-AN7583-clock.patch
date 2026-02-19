@@ -32,7 +32,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +static const u32 gsw7583_base[] = { 540672000, 270336000, 400000000, 200000000 };
 +static const u32 emi7583_base[] = { 540672000, 480000000, 400000000, 300000000 };
 +static const u32 bus7583_base[] = { 600000000, 540672000, 480000000, 400000000 };
-+static const u32 spi7583_base[] = { 100000000, 12500000 };
++static const u32 spi7583_base[] = { 400000000, 12500000 };
 +static const u32 npu7583_base[] = { 666000000, 800000000, 720000000, 600000000 };
 +static const u32 crypto7583_base[] = { 540672000, 400000000 };
 +static const u32 emmc7583_base[] = { 150000000, 200000000 };
@@ -92,7 +92,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +
 +		.base_reg = REG_SPI_CLK_FREQ_SEL,
 +		.base_bits = 1,
-+		.base_shift = 0,
++		.base_shift = 1,
 +		.base_values = slic_base,
 +		.n_base_values = ARRAY_SIZE(slic_base),
 +
@@ -107,7 +107,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +
 +		.base_reg = REG_SPI_CLK_FREQ_SEL,
 +		.base_bits = 1,
-+		.base_shift = 1,
++		.base_shift = 0,
 +		.base_values = spi7583_base,
 +		.n_base_values = ARRAY_SIZE(spi7583_base),
 +
