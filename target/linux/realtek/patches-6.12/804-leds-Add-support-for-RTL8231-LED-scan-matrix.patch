@@ -50,7 +50,7 @@ Signed-off-by: Sander Vanheule <sander@svanheule.net>
  obj-$(CONFIG_LEDS_SUN50I_A100)		+= leds-sun50i-a100.o
 --- /dev/null
 +++ b/drivers/leds/leds-rtl8231.c
-@@ -0,0 +1,285 @@
+@@ -0,0 +1,290 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +
 +#include <linux/device.h>
@@ -308,6 +308,11 @@ Signed-off-by: Sander Vanheule <sander@svanheule.net>
 +		dev_err(dev, "scan mode missing or invalid");
 +		return -EINVAL;
 +	}
++
++	/* Enable immediate LED changes, otherwise we need to latch updates */
++	err = regmap_update_bits(map, RTL8231_REG_FUNC0, RTL8231_ENABLE_SYNC_LED, 0);
++	if (err)
++		return err;
 +
 +	fwnode_for_each_available_child_node(dev->fwnode, child) {
 +		err = rtl8231_led_probe_single(dev, map, port_counts, child);
