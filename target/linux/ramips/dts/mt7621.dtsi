@@ -390,10 +390,9 @@
 	};
 
 	xhci: xhci@1e1c0000 {
+		compatible = "mediatek,mtk-xhci";
 		#address-cells = <1>;
 		#size-cells = <0>;
-
-		compatible = "mediatek,mt8173-xhci";
 		reg = <0x1e1c0000 0x1000
 		       0x1e1d0700 0x0100>;
 		reg-names = "mac", "ippc";
