@@ -194,10 +194,10 @@ Signed-off-by: Sander Vanheule <sander@svanheule.net>
 +			interval_ms = (*delay_on + *delay_off) / 2;
 +	}
 +
-+	/* Find clamped toggle interval */
-+	for (i = 0; i < (num_rates - 1); i++)
-+		if (interval_ms > rates[i].interval_ms)
-+			break;
++	/* Find ceiled (or maximum) toggle interval */
++	i = 0;
++	while (i < (num_rates - 1) && interval_ms > rates[i].interval_ms)
++		i++;
 +
 +	interval_ms = rates[i].interval_ms;
 +
