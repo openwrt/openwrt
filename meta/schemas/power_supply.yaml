@@ -1,0 +1,37 @@
+$id: https://openwrt.org/schema/power_supply.yaml
+title: Power Supply
+type: object
+
+required:
+  - type
+  - volt
+  - ampere
+
+examples:
+  - type: DC
+    volt: 5
+    ampere: 2
+
+items:
+  anyOf:
+  - $id: '#/properties/ethernet/items/anyOf/0'
+    properties:
+      type:
+        $id: '#/properties/ethernet/items/anyOf/0/properties/type'
+        title: Type
+        type: string
+        enum:
+          - AC
+          - DC
+
+      volt:
+        $id: '#/properties/ethernet/items/anyOf/0/properties/volt'
+        title: volt
+        type: number
+        minimum: 0
+
+      ampere:
+        $id: '#/properties/ethernet/items/anyOf/0/properties/ampere'
+        title: Ampere
+        type: number
+        minimum: 0
