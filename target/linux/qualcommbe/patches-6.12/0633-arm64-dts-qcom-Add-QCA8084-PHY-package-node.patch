@@ -1,0 +1,132 @@
+From 67b3e5dd3495b4efb312deb1bf218907c3eea888 Mon Sep 17 00:00:00 2001
+From: Luo Jie <quic_luoj@quicinc.com>
+Date: Wed, 5 Mar 2025 16:40:21 +0800
+Subject: [PATCH 633/636] arm64: dts: qcom: Add QCA8084 PHY package node
+
+Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
+---
+ arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts | 87 ++++++++++++++++++++-
+ 1 file changed, 86 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts b/arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts
+index dcd64760bd1d..1ec36acb9e25 100644
+--- a/arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts
++++ b/arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts
+@@ -8,6 +8,9 @@
+ /dts-v1/;
+ 
+ #include "ipq5424.dtsi"
++#include <dt-bindings/clock/qcom,qca8k-nsscc.h>
++#include <dt-bindings/net/qcom,qca808x.h>
++#include <dt-bindings/reset/qcom,qca8k-nsscc.h>
+ 
+ / {
+ 	model = "Qualcomm Technologies, Inc. IPQ5424 RDP466";
+@@ -17,6 +20,18 @@
+ 		serial0 = &uart1;
+ 	};
+ 
++	qca8k_uniphy1_rx312p5m: qca8k-uniphy1-rx312p5m {
++		compatible = "fixed-clock";
++		clock-frequency = <312500000>;
++		#clock-cells = <0>;
++	};
++
++	qca8k_uniphy1_tx312p5m: qca8k-uniphy1-tx312p5m {
++		compatible = "fixed-clock";
++		clock-frequency = <312500000>;
++		#clock-cells = <0>;
++	};
++
+ 	vreg_misc_3p3: regulator-usb-3p3 {
+ 		compatible = "regulator-fixed";
+ 		regulator-min-microvolt = <3300000>;
+@@ -49,6 +64,77 @@
+ 	clock-frequency = <6250000>;
+ 	status = "okay";
+ 
++	ethernet-phy-package@1 {
++		compatible = "qcom,qca8084-package";
++		reg = <1>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++		clocks = <&qca8k_nsscc NSS_CC_APB_BRIDGE_CLK>,
++			 <&qca8k_nsscc NSS_CC_AHB_CLK>,
++			 <&qca8k_nsscc NSS_CC_SEC_CTRL_AHB_CLK>,
++			 <&qca8k_nsscc NSS_CC_TLMM_CLK>,
++			 <&qca8k_nsscc NSS_CC_TLMM_AHB_CLK>,
++			 <&qca8k_nsscc NSS_CC_CNOC_AHB_CLK>,
++			 <&qca8k_nsscc NSS_CC_MDIO_AHB_CLK>,
++			 <&qca8k_nsscc NSS_CC_MDIO_MASTER_AHB_CLK>,
++			 <&qca8k_nsscc NSS_CC_SWITCH_CORE_CLK>;
++		clock-names = "apb_bridge",
++			      "ahb",
++			      "sec_ctrl_ahb",
++			      "tlmm",
++			      "tlmm_ahb",
++			      "cnoc_ahb",
++			      "mdio_ahb",
++			      "mdio_master_ahb",
++			      "switch_core";
++		resets = <&qca8k_nsscc NSS_CC_GEPHY_FULL_ARES>;
++		qcom,package-mode = <QCA808X_PCS1_SGMII_MAC_PCS0_SGMII_MAC>;
++		qcom,phy-addr-fixup = <1 2 3 4 5 6 7>;
++
++		dsa_phy0: ethernet-phy@1 {
++			compatible = "ethernet-phy-id004d.d180";
++			reg = <1>;
++			clocks = <&qca8k_nsscc NSS_CC_GEPHY0_SYS_CLK>;
++			resets = <&qca8k_nsscc NSS_CC_GEPHY0_SYS_ARES>;
++		};
++
++		dsa_phy1: ethernet-phy@2 {
++			compatible = "ethernet-phy-id004d.d180";
++			reg = <2>;
++			clocks = <&qca8k_nsscc NSS_CC_GEPHY1_SYS_CLK>;
++			resets = <&qca8k_nsscc NSS_CC_GEPHY1_SYS_ARES>;
++		};
++
++		dsa_phy2: ethernet-phy@3 {
++			compatible = "ethernet-phy-id004d.d180";
++			reg = <3>;
++			clocks = <&qca8k_nsscc NSS_CC_GEPHY2_SYS_CLK>;
++			resets = <&qca8k_nsscc NSS_CC_GEPHY2_SYS_ARES>;
++		};
++
++		dsa_phy3: ethernet-phy@4 {
++			compatible = "ethernet-phy-id004d.d180";
++			reg = <4>;
++			clocks = <&qca8k_nsscc NSS_CC_GEPHY3_SYS_CLK>;
++			resets = <&qca8k_nsscc NSS_CC_GEPHY3_SYS_ARES>;
++		};
++	};
++
++	qca8k_nsscc: qca8k-nsscc@18 {
++		compatible = "qcom,qca8084-nsscc";
++		reg = <0x18>;
++		#clock-cells = <1>;
++		#reset-cells = <1>;
++		reset-gpios = <&tlmm 18 GPIO_ACTIVE_LOW>;
++		clocks = <&cmn_pll IPQ5424_ETH2_50MHZ_CLK>,
++			 <0>,
++			 <0>,
++			 <0>,
++			 <0>,
++			 <&qca8k_uniphy1_rx312p5m>,
++			 <&qca8k_uniphy1_tx312p5m>;
++	};
++
+ 	phy0: ethernet-phy@8 {
+ 		compatible ="ethernet-phy-ieee802.3-c45";
+ 		reg = <8>;
+@@ -64,7 +150,6 @@
+ 		reset-assert-us = <100000>;
+ 		reset-deassert-us = <100000>;
+ 	};
+-
+ };
+ 
+ &dwc_0 {
+-- 
+2.34.1
+

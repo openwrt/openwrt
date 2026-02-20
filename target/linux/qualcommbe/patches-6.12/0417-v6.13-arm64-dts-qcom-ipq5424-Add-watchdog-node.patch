@@ -1,0 +1,35 @@
+From 825b203296a845a1093722062ac6e5b655825704 Mon Sep 17 00:00:00 2001
+From: Manikanta Mylavarapu <quic_mmanikan@quicinc.com>
+Date: Thu, 21 Nov 2024 10:49:51 +0530
+Subject: [PATCH] arm64: dts: qcom: ipq5424: Add watchdog node
+
+Add the watchdog node for IPQ5424 SoC.
+
+Signed-off-by: Manikanta Mylavarapu <quic_mmanikan@quicinc.com>
+Link: https://lore.kernel.org/r/20241121051951.1776250-3-quic_mmanikan@quicinc.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+---
+ arch/arm64/boot/dts/qcom/ipq5424.dtsi | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/ipq5424.dtsi b/arch/arm64/boot/dts/qcom/ipq5424.dtsi
+index 5e219f900412..269cbee1bc54 100644
+--- a/arch/arm64/boot/dts/qcom/ipq5424.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5424.dtsi
+@@ -233,6 +233,13 @@ intc: interrupt-controller@f200000 {
+ 			msi-controller;
+ 		};
+ 
++		watchdog@f410000 {
++			compatible = "qcom,apss-wdt-ipq5424", "qcom,kpss-wdt";
++			reg = <0 0x0f410000 0 0x1000>;
++			interrupts = <GIC_SPI 0 IRQ_TYPE_EDGE_RISING>;
++			clocks = <&sleep_clk>;
++		};
++
+ 		timer@f420000 {
+ 			compatible = "arm,armv7-timer-mem";
+ 			reg = <0 0xf420000 0 0x1000>;
+-- 
+2.34.1
+

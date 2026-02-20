@@ -1,0 +1,83 @@
+From 3997368b384244bc5ac3c6625c102ce0df64eae5 Mon Sep 17 00:00:00 2001
+From: Luo Jie <quic_luoj@quicinc.com>
+Date: Tue, 4 Mar 2025 20:05:39 +0800
+Subject: [PATCH 616/636] dt-bindings: net: Add IPQ5424 PPE support
+
+The IPQ5424 PPE needs to enable the different interconnect clocks
+compared with IPQ9574 PPE.
+
+Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
+---
+ .../bindings/net/qcom,ipq9574-ppe.yaml        | 47 ++++++++++++-------
+ 1 file changed, 31 insertions(+), 16 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/net/qcom,ipq9574-ppe.yaml b/Documentation/devicetree/bindings/net/qcom,ipq9574-ppe.yaml
+index be6f9311eebb..93492ed90526 100644
+--- a/Documentation/devicetree/bindings/net/qcom,ipq9574-ppe.yaml
++++ b/Documentation/devicetree/bindings/net/qcom,ipq9574-ppe.yaml
+@@ -77,6 +77,7 @@ description:
+ properties:
+   compatible:
+     enum:
++      - qcom,ipq5424-ppe
+       - qcom,ipq9574-ppe
+ 
+   reg:
+@@ -101,24 +102,38 @@ properties:
+     description: PPE reset, which is necessary before configuring PPE hardware
+ 
+   interconnects:
+-    items:
+-      - description: Clock path leading to PPE switch core function
+-      - description: Clock path leading to PPE register access
+-      - description: Clock path leading to QoS generation
+-      - description: Clock path leading to timeout reference
+-      - description: Clock path leading to NSS NOC from memory NOC
+-      - description: Clock path leading to memory NOC from NSS NOC
+-      - description: Clock path leading to enhanced memory NOC from NSS NOC
++    oneOf:
++      - items:
++          - description: Bus interconnect path leading to PPE switch core function
++          - description: Bus interconnect path leading to PPE register access
++          - description: Bus interconnect path leading to QoS generation
++          - description: Bus interconnect path leading to timeout reference
++          - description: Bus interconnect path leading to NSS NOC from memory NOC
++          - description: Bus interconnect path leading to memory NOC from NSS NOC
++          - description: Bus interconnect path leading to enhanced memory NOC from NSS NOC
++      - items:
++          - description: Bus interconnect path leading to PPE switch core function
++          - description: Bus interconnect path leading to PPE register access
++          - description: Bus interconnect path leading to CE AXI
++          - description: Bus interconnect path leading to CE APB
++          - description: Bus interconnect path leading to NSS CSR access
+ 
+   interconnect-names:
+-    items:
+-      - const: ppe
+-      - const: ppe_cfg
+-      - const: qos_gen
+-      - const: timeout_ref
+-      - const: nssnoc_memnoc
+-      - const: memnoc_nssnoc
+-      - const: memnoc_nssnoc_1
++    oneOf:
++      - items:
++          - const: ppe
++          - const: ppe_cfg
++          - const: qos_gen
++          - const: timeout_ref
++          - const: nssnoc_memnoc
++          - const: memnoc_nssnoc
++          - const: memnoc_nssnoc_1
++      - items:
++          - const: ppe
++          - const: ppe_cfg
++          - const: nssnoc_ce_axi
++          - const: nssnoc_ce_apb
++          - const: nssnoc_nss_csr
+ 
+   ethernet-dma:
+     type: object
+-- 
+2.34.1
+

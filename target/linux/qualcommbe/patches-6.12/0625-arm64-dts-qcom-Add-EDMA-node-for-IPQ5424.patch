@@ -1,0 +1,70 @@
+From b435280c74c0463a9d1ce83e01a56346d2531569 Mon Sep 17 00:00:00 2001
+From: Pavithra R <quic_pavir@quicinc.com>
+Date: Thu, 13 Mar 2025 09:25:31 +0530
+Subject: [PATCH 625/636] arm64: dts: qcom: Add EDMA node for IPQ5424.
+
+Change-Id: I850f5469db58af010a9cba980a543989c901c24c
+Signed-off-by: Pavithra R <quic_pavir@quicinc.com>
+---
+ arch/arm64/boot/dts/qcom/ipq5424.dtsi | 45 +++++++++++++++++++++++++++
+ 1 file changed, 45 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/ipq5424.dtsi b/arch/arm64/boot/dts/qcom/ipq5424.dtsi
+index aff0a4b7664f..4db91dcf75cb 100644
+--- a/arch/arm64/boot/dts/qcom/ipq5424.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5424.dtsi
+@@ -783,6 +783,51 @@
+ 					     "nssnoc_ce_axi",
+ 					     "nssnoc_ce_apb",
+ 					     "nssnoc_nss_csr";
++
++			ethernet-dma {
++				clocks = <&nsscc NSS_CC_PPE_EDMA_CLK>,
++					 <&nsscc NSS_CC_PPE_EDMA_CFG_CLK>;
++				clock-names = "sys",
++					      "apb";
++				resets = <&nsscc NSS_CC_PPE_EDMA_CLK_ARES>,
++					 <&nsscc NSS_CC_PPE_EDMA_CFG_CLK_ARES>;
++				reset-names = "edma_rst",
++					      "edma_cfg_rst";
++				interrupts = <0 286 4>,			/* Tx complete ring id #4 IRQ info */
++						<0 287 4>,		/* Tx complete ring id #5 IRQ info */
++						<0 288 4>,		/* Tx complete ring id #6 IRQ info */
++						<0 289 4>,		/* Tx complete ring id #7 IRQ info */
++						<0 290 4>,		/* Tx complete ring id #8 IRQ info */
++						<0 291 4>,		/* Tx complete ring id #9 IRQ info */
++						<0 292 4>,		/* Tx complete ring id #10 IRQ info */
++						<0 293 4>,		/* Tx complete ring id #11 IRQ info */
++						<0 294 4>,		/* Tx complete ring id #12 IRQ info */
++						<0 295 4>,		/* Tx complete ring id #13 IRQ info */
++						<0 296 4>,		/* Tx complete ring id #14 IRQ info */
++						<0 297 4>,		/* Tx complete ring id #15 IRQ info */
++						<0 270 4>,		/* Rx desc ring id #20 IRQ info */
++						<0 271 4>,		/* Rx desc ring id #21 IRQ info */
++						<0 272 4>,		/* Rx desc ring id #22 IRQ info */
++						<0 273 4>,		/* Rx desc ring id #23 IRQ info */
++						<0 314 4>;		/* Misc error IRQ info */
++				interrupt-names = "txcmpl_4",
++						  "txcmpl_5",
++						  "txcmpl_6",
++						  "txcmpl_7",
++						  "txcmpl_8",
++						  "txcmpl_9",
++						  "txcmpl_10",
++						  "txcmpl_11",
++						  "txcmpl_12",
++						  "txcmpl_13",
++						  "txcmpl_14",
++						  "txcmpl_15",
++						  "rxdesc_20",
++						  "rxdesc_21",
++						  "rxdesc_22",
++						  "rxdesc_23",
++						  "misc";
++			};
+ 		};
+ 
+ 		pcie3: pcie@40000000 {
+-- 
+2.34.1
+

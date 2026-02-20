@@ -1,0 +1,580 @@
+From 2f8b853a278a451c0e4ca6d80bd945a896834d88 Mon Sep 17 00:00:00 2001
+From: Luo Jie <quic_luoj@quicinc.com>
+Date: Sat, 21 Oct 2023 21:49:12 +0800
+Subject: [PATCH 627/636] net: pcs: Add QCA8386 PCS module
+
+Add QCA8386 PCS module which exposes the necessary operations
+to drive the PCS using phylink.
+
+The interface mode SGMII and 2500BASE-X are supported by the QCA8K
+PCS module, this module is enabled by the driver(such as DSA QCA8K)
+in need and not selectable.
+
+Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
+---
+ drivers/net/pcs/Kconfig       |   6 +
+ drivers/net/pcs/Makefile      |   1 +
+ drivers/net/pcs/pcs-qca8k.c   | 490 ++++++++++++++++++++++++++++++++++
+ include/linux/pcs/pcs-qca8k.h |  24 ++
+ 4 files changed, 521 insertions(+)
+ create mode 100644 drivers/net/pcs/pcs-qca8k.c
+ create mode 100644 include/linux/pcs/pcs-qca8k.h
+
+diff --git a/drivers/net/pcs/Kconfig b/drivers/net/pcs/Kconfig
+index 5a72c4deae34..8ba1c691b844 100644
+--- a/drivers/net/pcs/Kconfig
++++ b/drivers/net/pcs/Kconfig
+@@ -46,6 +46,12 @@ config PCS_QCOM_IPQ9574
+ 	  XPCS functions to support different interface modes for MAC to PHY
+ 	  connections.
+ 
++config PCS_QCA8K
++	tristate
++	help
++	  This module provides helpers to phylink for managing the qca8k PCS
++	  which is part of the qca8386 and qca8084 Ethernet SERDES.
++
+ config PCS_RZN1_MIIC
+ 	tristate "Renesas RZ/N1 MII converter"
+ 	depends on OF && (ARCH_RZN1 || COMPILE_TEST)
+diff --git a/drivers/net/pcs/Makefile b/drivers/net/pcs/Makefile
+index 084026896cf1..2a8d0b9c53e7 100644
+--- a/drivers/net/pcs/Makefile
++++ b/drivers/net/pcs/Makefile
+@@ -7,6 +7,7 @@ pcs_xpcs-$(CONFIG_PCS_XPCS)	:= pcs-xpcs.o pcs-xpcs-plat.o \
+ obj-$(CONFIG_PCS_XPCS)		+= pcs_xpcs.o
+ obj-$(CONFIG_PCS_LYNX)		+= pcs-lynx.o
+ obj-$(CONFIG_PCS_MTK_LYNXI)	+= pcs-mtk-lynxi.o
++obj-$(CONFIG_PCS_QCA8K)		+= pcs-qca8k.o
+ obj-$(CONFIG_PCS_QCOM_IPQ9574)	+= pcs-qcom-ipq9574.o
+ obj-$(CONFIG_PCS_RZN1_MIIC)	+= pcs-rzn1-miic.o
+ obj-$(CONFIG_PCS_MTK_USXGMII)	+= pcs-mtk-usxgmii.o
+diff --git a/drivers/net/pcs/pcs-qca8k.c b/drivers/net/pcs/pcs-qca8k.c
+new file mode 100644
+index 000000000000..cfe2d236c416
+--- /dev/null
++++ b/drivers/net/pcs/pcs-qca8k.c
+@@ -0,0 +1,490 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
++ */
++
++#include <linux/clk.h>
++#include <linux/clk-provider.h>
++#include <linux/mdio.h>
++#include <linux/pcs/pcs-qca8k.h>
++#include <linux/phylink.h>
++#include <linux/property.h>
++#include <linux/reset.h>
++
++/* MII registers */
++#define PLL_POWER_ON_AND_RESET			0x0
++#define PCS_ANA_SW_RESET			BIT(6)
++
++#define PLL_CONTROL				6
++#define PLL_CONTROL_CMLDIV2_IBSEL_MASK		GENMASK(5, 4)
++
++/* MMD_PMAPMD registers */
++#define CALIBRATION4				0x78
++#define CALIBRATION_DONE			BIT(7)
++
++#define MODE_CONTROL				0x11b
++#define MODE_CONTROL_SEL_MASK			GENMASK(12, 8)
++#define MODE_CONTROL_XPCS			0x10
++#define MODE_CONTROL_SGMII_PLUS			0x8
++#define MODE_CONTROL_SGMII			0x4
++#define MODE_CONTROL_SGMII_SEL_MASK		GENMASK(6, 4)
++#define MODE_CONTROL_SGMII_PHY			1
++#define MODE_CONTROL_SGMII_MAC			2
++
++#define QP_USXG_OPTION1				0x180
++#define QP_USXG_OPTION1_DATAPASS		BIT(0)
++#define QP_USXG_OPTION1_DATAPASS_SGMII		0
++#define QP_USXG_OPTION1_DATAPASS_USXGMII	1
++
++#define PCS_CH0_CONFIG				0x120
++#define PCS_CH0_ADPT_RESET			BIT(11)
++#define PCS_CH0_AUTONEG_DIS			BIT(3)
++#define PCS_CH0_SPEED_MASK			GENMASK(2, 1)
++#define PCS_CH0_SPEED_1000			2
++#define PCS_CH0_SPEED_100			1
++#define PCS_CH0_SPEED_10			0
++
++#define QP_USXG_RESET				0x18c
++#define QP_USXG_SGMII_FUNC_RESET		BIT(4)
++#define QP_USXG_P3_FUNC_RESET			BIT(3)
++#define QP_USXG_P2_FUNC_RESET			BIT(2)
++#define QP_USXG_P1_FUNC_RESET			BIT(1)
++#define QP_USXG_P0_FUNC_RESET			BIT(0)
++
++/* There are dedicated clock and reset for each PCS function
++ * such as system, RX and TX.
++ */
++enum pcs_func_id {
++	PCS_FUNC_RX,
++	PCS_FUNC_TX,
++	PCS_FUNC_SYS,
++	PCS_FUNC_MAX
++};
++
++enum {
++	RAW_CLK_RX = 0,
++	RAW_CLK_TX,
++	RAW_CLK_MAX
++};
++
++struct qca8k_raw_clk {
++	struct clk_hw hw_clk;
++	phy_interface_t cur_interface;
++};
++
++
++struct qca8k_pcs {
++	struct phylink_pcs pcs;
++	struct mdio_device *mdiodev;
++	struct clk *clk[PCS_FUNC_MAX];
++	struct reset_control *rstc[PCS_FUNC_MAX];
++	struct qca8k_raw_clk raw_clk[RAW_CLK_MAX];
++	struct clk_hw_onecell_data *data;
++};
++
++#define phylink_pcs_to_qca8k(pl_pcs) \
++	container_of((pl_pcs), struct qca8k_pcs, pcs)
++#define qca8k_to_phylink_pcs(qca8k) (&(qca8k)->pcs)
++
++const char *const pcs_func_name[PCS_FUNC_MAX] = {
++	"rx", "tx", "sys"
++};
++
++static unsigned long qca8k_pcs_clk_recalc_rate(struct clk_hw *hw,
++					       unsigned long parent_rate)
++{
++	struct qca8k_raw_clk *raw_clk = container_of(hw, struct qca8k_raw_clk,
++						     hw_clk);
++
++	switch (raw_clk->cur_interface) {
++	case PHY_INTERFACE_MODE_2500BASEX:
++		return 312500000;
++	default:
++		return 125000000;
++	}
++}
++
++static int qca8k_pcs_clk_determine_rate(struct clk_hw *hw,
++					struct clk_rate_request *req)
++{
++	switch (req->rate) {
++	case 125000000:
++	case 312500000:
++		return 0;
++	default:
++		return -EINVAL;
++	}
++}
++
++static const struct clk_ops qca8k_pcs_clk_ops = {
++	.recalc_rate = qca8k_pcs_clk_recalc_rate,
++	.determine_rate = qca8k_pcs_clk_determine_rate,
++};
++
++static int qca8k_raw_clk_register(struct qca8k_pcs *qca8k)
++{
++	struct device *dev = &qca8k->mdiodev->dev;
++	struct clk_hw_onecell_data *data;
++	struct clk_init_data init = {};
++	int ret, i;
++
++	data = kzalloc(struct_size(data, hws, RAW_CLK_MAX), GFP_KERNEL);
++	if (!data)
++		return -ENOMEM;
++
++	data->num = RAW_CLK_MAX;
++	for (i = 0; i < RAW_CLK_MAX; i++) {
++		ret = of_property_read_string_index(dev_of_node(dev),
++						    "clock-output-names",
++						    i, &init.name);
++		if (ret)
++			goto err_raw_clk_register;
++
++		init.ops = &qca8k_pcs_clk_ops;
++		qca8k->raw_clk[i].hw_clk.init = &init;
++
++		ret = clk_hw_register(dev, &qca8k->raw_clk[i].hw_clk);
++		if (ret)
++			goto err_raw_clk_register;
++
++		data->hws[i] = &qca8k->raw_clk[i].hw_clk;
++	}
++
++	ret = of_clk_add_hw_provider(dev_of_node(dev),
++				     of_clk_hw_onecell_get,
++				     data);
++	if (ret)
++		goto err_raw_clk_register;
++
++	qca8k->data = data;
++	return 0;
++
++err_raw_clk_register:
++	for (i = 0; i < RAW_CLK_MAX; i++)
++		clk_hw_unregister(data->hws[i]);
++
++	kfree(data);
++	return ret;
++}
++
++static void qca8k_raw_clk_unregister(struct qca8k_pcs *qca8k)
++{
++	int i;
++
++	of_clk_del_provider(dev_of_node(&qca8k->mdiodev->dev));
++	for (i = 0; i < RAW_CLK_MAX; i++)
++		clk_hw_unregister(qca8k->data->hws[i]);
++
++	kfree(qca8k->data);
++}
++
++static int qca8k_pcs_set_mode(struct mdio_device *mdio_dev, int ifmode)
++{
++	int ret, hw_ifmode, data;
++
++	switch (ifmode) {
++	case PHY_INTERFACE_MODE_SGMII:
++		hw_ifmode = MODE_CONTROL_SGMII;
++		data = QP_USXG_OPTION1_DATAPASS_SGMII;
++		break;
++	case PHY_INTERFACE_MODE_2500BASEX:
++		hw_ifmode = MODE_CONTROL_SGMII_PLUS;
++		data = QP_USXG_OPTION1_DATAPASS_SGMII;
++		break;
++	default:
++		return -EOPNOTSUPP;
++	}
++
++	/* For PLL stable under high temperature */
++	ret = mdiodev_modify(mdio_dev, PLL_CONTROL,
++			     PLL_CONTROL_CMLDIV2_IBSEL_MASK,
++			     FIELD_PREP(PLL_CONTROL_CMLDIV2_IBSEL_MASK, 3));
++	if (ret)
++		return ret;
++
++	/* Configure the interface mode of PCS */
++	ret = mdiodev_c45_modify(mdio_dev, MDIO_MMD_PMAPMD, MODE_CONTROL,
++				 MODE_CONTROL_SEL_MASK,
++				 FIELD_PREP(MODE_CONTROL_SEL_MASK, hw_ifmode));
++	if (ret)
++		return ret;
++
++	/* Data pass selects sgmii or usgmii */
++	ret = mdiodev_c45_modify(mdio_dev, MDIO_MMD_PMAPMD, QP_USXG_OPTION1,
++				 QP_USXG_OPTION1_DATAPASS,
++				 FIELD_PREP(QP_USXG_OPTION1_DATAPASS, data));
++	if (ret)
++		return ret;
++
++	/* Configure SGMII with MAC connected. */
++	return mdiodev_c45_modify(mdio_dev, MDIO_MMD_PMAPMD, MODE_CONTROL,
++				  MODE_CONTROL_SGMII_SEL_MASK,
++				  FIELD_PREP(MODE_CONTROL_SGMII_SEL_MASK,
++					     MODE_CONTROL_SGMII_MAC));
++}
++
++static int qca8k_pcs_config(struct phylink_pcs *pcs,
++			    unsigned int neg_mode,
++			    phy_interface_t ifmode,
++			    const unsigned long *advertising,
++			    bool permit)
++{
++	struct qca8k_pcs *qca8k = phylink_pcs_to_qca8k(pcs);
++	int ret;
++
++	ret = qca8k_pcs_set_mode(qca8k->mdiodev, ifmode);
++	if (ret)
++		return ret;
++
++	qca8k->raw_clk[RAW_CLK_RX].cur_interface = ifmode;
++	qca8k->raw_clk[RAW_CLK_TX].cur_interface = ifmode;
++
++	return 0;
++}
++
++static int qca8k_do_calibration(struct mdio_device *mdio_dev)
++{
++	int ret;
++
++	ret = mdiodev_modify(mdio_dev, PLL_POWER_ON_AND_RESET,
++			     PCS_ANA_SW_RESET, 0);
++	if (ret)
++		return ret;
++
++	msleep(10);
++	ret = mdiodev_modify(mdio_dev, PLL_POWER_ON_AND_RESET,
++			     PCS_ANA_SW_RESET, PCS_ANA_SW_RESET);
++	if (ret)
++		return ret;
++
++	/* Wait calibration done */
++	return read_poll_timeout(mdiodev_c45_read, ret,
++				 (ret & CALIBRATION_DONE),
++				 1000, 100000, true, mdio_dev,
++				 MDIO_MMD_PMAPMD, CALIBRATION4);
++}
++
++static int qca8k_pcs_adpt_reset(struct mdio_device *mdio_dev)
++{
++	int ret;
++
++	ret = mdiodev_c45_modify(mdio_dev, MDIO_MMD_PMAPMD,
++				 PCS_CH0_CONFIG, PCS_CH0_ADPT_RESET, 0);
++	if (ret)
++		return ret;
++
++	msleep(1);
++	return mdiodev_c45_modify(mdio_dev, MDIO_MMD_PMAPMD, PCS_CH0_CONFIG,
++				  PCS_CH0_ADPT_RESET, PCS_CH0_ADPT_RESET);
++}
++
++static int qca8k_pcs_ipg_tune_reset(struct mdio_device *mdio_dev)
++{
++	int ret;
++
++	ret = mdiodev_c45_modify(mdio_dev, MDIO_MMD_PMAPMD, QP_USXG_RESET,
++				 QP_USXG_SGMII_FUNC_RESET, 0);
++	if (ret)
++		return ret;
++
++	msleep(1);
++	return mdiodev_c45_modify(mdio_dev, MDIO_MMD_PMAPMD, QP_USXG_RESET,
++				  QP_USXG_SGMII_FUNC_RESET,
++				  QP_USXG_SGMII_FUNC_RESET);
++}
++
++static void qca8k_pcs_link_up_sgmii(struct phylink_pcs *pcs,
++				    unsigned int neg_mode,
++				    int speed, int duplex)
++{
++	struct qca8k_pcs *qca8k = phylink_pcs_to_qca8k(pcs);
++	u16 sgmii_config = 0;
++	unsigned long rate;
++	int ret;
++
++	if (neg_mode != PHYLINK_PCS_NEG_INBAND_ENABLED) {
++		switch (speed) {
++		case SPEED_2500:
++			rate = 312500000;
++			sgmii_config = PCS_CH0_SPEED_1000;
++			break;
++		case SPEED_1000:
++			rate = 125000000;
++			sgmii_config = PCS_CH0_SPEED_1000;
++			break;
++		case SPEED_100:
++			rate = 25000000;
++			sgmii_config = PCS_CH0_SPEED_100;
++			break;
++		case SPEED_10:
++			rate = 2500000;
++			sgmii_config = PCS_CH0_SPEED_10;
++			break;
++		case SPEED_UNKNOWN:
++		default:
++			dev_err(&qca8k->mdiodev->dev,
++				"Invalid PCS speed %d\n", speed);
++			return;
++		}
++		sgmii_config |= PCS_CH0_AUTONEG_DIS;
++	}
++
++	/* Configure auto-negotiation parameters */
++	ret = mdiodev_c45_modify(qca8k->mdiodev, MDIO_MMD_PMAPMD,
++				 PCS_CH0_CONFIG,
++				 PCS_CH0_SPEED_MASK | PCS_CH0_AUTONEG_DIS,
++				 sgmii_config);
++	if (ret)
++		return;
++
++	reset_control_reset(qca8k->rstc[PCS_FUNC_RX]);
++	reset_control_reset(qca8k->rstc[PCS_FUNC_TX]);
++
++	ret = qca8k_do_calibration(qca8k->mdiodev);
++	if (ret) {
++		dev_err(&qca8k->mdiodev->dev, "Calibration timeout!\n");
++		return;
++	}
++
++	clk_set_rate(qca8k->clk[PCS_FUNC_RX], rate);
++	clk_set_rate(qca8k->clk[PCS_FUNC_TX], rate);
++
++	clk_prepare_enable(qca8k->clk[PCS_FUNC_RX]);
++	clk_prepare_enable(qca8k->clk[PCS_FUNC_TX]);
++
++	qca8k_pcs_adpt_reset(qca8k->mdiodev);
++	qca8k_pcs_ipg_tune_reset(qca8k->mdiodev);
++}
++
++static void qca8k_pcs_link_up(struct phylink_pcs *pcs, unsigned int neg_mode,
++			      phy_interface_t interface, int speed, int duplex)
++{
++	switch (interface) {
++	case PHY_INTERFACE_MODE_SGMII:
++	case PHY_INTERFACE_MODE_2500BASEX:
++		qca8k_pcs_link_up_sgmii(pcs, neg_mode, speed, duplex);
++		break;
++	default:
++		break;
++	}
++}
++
++static const struct phylink_pcs_ops qca8k_pcs_phylink_ops = {
++	.pcs_config = qca8k_pcs_config,
++	.pcs_link_up = qca8k_pcs_link_up,
++};
++
++static struct phylink_pcs *qca8k_pcs_create(struct mdio_device *mdio_dev)
++{
++	struct device *dev = &mdio_dev->dev;
++	struct reset_control *rstc;
++	struct qca8k_pcs *qca8k;
++	struct clk *clk;
++	int i, ret;
++
++	qca8k = kzalloc(sizeof(*qca8k), GFP_KERNEL);
++	if (!qca8k)
++		return ERR_PTR(-ENOMEM);
++
++	for (i = 0; i < PCS_FUNC_MAX; i++) {
++		clk = clk_get_optional(dev, pcs_func_name[i]);
++		if (IS_ERR(clk)) {
++			ret = PTR_ERR(clk);
++			goto err_pcs_create;
++		}
++		qca8k->clk[i] = clk;
++
++		rstc = reset_control_get_optional_exclusive(dev,
++							    pcs_func_name[i]);
++		if (IS_ERR(rstc)) {
++			ret = PTR_ERR(rstc);
++			goto err_pcs_create;
++		}
++		qca8k->rstc[i] = rstc;
++	}
++
++	/* PCS system clock is always kept as enabled, then do reset
++	 * on the PCS system.
++	 */
++	clk_prepare_enable(qca8k->clk[PCS_FUNC_SYS]);
++
++	reset_control_assert(qca8k->rstc[PCS_FUNC_SYS]);
++	usleep_range(10000, 11000);
++	reset_control_deassert(qca8k->rstc[PCS_FUNC_SYS]);
++
++	qca8k->mdiodev = mdio_dev;
++	qca8k->pcs.ops = &qca8k_pcs_phylink_ops;
++	qca8k->pcs.poll = true;
++
++	ret = qca8k_raw_clk_register(qca8k);
++	if (ret)
++		goto err_pcs_create;
++
++	return qca8k_to_phylink_pcs(qca8k);
++
++err_pcs_create:
++	for (i = 0; i< PCS_FUNC_MAX; i++) {
++		clk_put(qca8k->clk[i]);
++		reset_control_put(qca8k->rstc[i]);
++	}
++
++	kfree(qca8k);
++	return ERR_PTR(ret);
++}
++
++/**
++ * qca8k_pcs_create_fwnode - Create PCS instance based on MDIO fwnode
++ * @node: The fwnode of MDIO device
++ *
++ * The PCS device is registered as MDIO device, this function registers
++ * the raw clock provider that supplies clocks to the PCS TX and RX
++ * functions. The system clock of PCS is always configured as enabled.
++ */
++struct phylink_pcs *qca8k_pcs_create_fwnode(struct fwnode_handle *node)
++{
++	struct mdio_device *mdio_dev;
++	struct phylink_pcs *pcs;
++
++	if (!fwnode_device_is_available(node))
++		return ERR_PTR(-ENODEV);
++
++	mdio_dev = fwnode_mdio_find_device(node);
++	if (!mdio_dev)
++		return ERR_PTR(-EPROBE_DEFER);
++
++	pcs = qca8k_pcs_create(mdio_dev);
++	if (IS_ERR(pcs))
++		mdio_device_put(mdio_dev);
++
++	return pcs;
++}
++EXPORT_SYMBOL_GPL(qca8k_pcs_create_fwnode);
++
++/**
++ * qca8k_pcs_destroy - Destroy PCS instance
++ * @pcs: The PCS instance to be destroyed
++ *
++ * The clock rate of PCS RX and TX clocks are restored to the crystal
++ * clock rate so that the raw clock provider can be unregistered.
++ */
++void qca8k_pcs_destroy(struct phylink_pcs *pcs)
++{
++	struct qca8k_pcs *qca8k = phylink_pcs_to_qca8k(pcs);
++	int i;
++
++	for (i = 0; i< PCS_FUNC_MAX; i++) {
++		if (i != PCS_FUNC_SYS)
++			clk_set_rate(qca8k->clk[i], P_XO_CLOCK_RATE);
++
++		clk_put(qca8k->clk[i]);
++		reset_control_put(qca8k->rstc[i]);
++	}
++
++	qca8k_raw_clk_unregister(qca8k);
++	mdio_device_put(qca8k->mdiodev);
++	kfree(qca8k);
++}
++EXPORT_SYMBOL_GPL(qca8k_pcs_destroy);
++
++MODULE_DESCRIPTION("Qualcomm QCA8386 PCS phylink library");
++MODULE_LICENSE("GPL");
+diff --git a/include/linux/pcs/pcs-qca8k.h b/include/linux/pcs/pcs-qca8k.h
+new file mode 100644
+index 000000000000..b7cc4abf8c14
+--- /dev/null
++++ b/include/linux/pcs/pcs-qca8k.h
+@@ -0,0 +1,24 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Copyright (c) 2024, Qualcomm Innovation Center, Inc. All rights reserved.
++ */
++
++#ifndef __LINUX_PCS_QCA8K_H
++#define __LINUX_PCS_QCA8K_H
++
++#include <linux/phylink.h>
++
++/**
++ * define P_XO_CLOCK_RATE - Clock frequency of crystal(External clock)
++ *
++ * The reference clock frequency of QCAK is fixed to 50000000 HZ,
++ * which is used to restore the parent of PCS clocks to crystal clock
++ * (External clock connected to QCA8K) by configuring the clock rate of
++ * PCS to 50000000 HZ.
++ */
++#define P_XO_CLOCK_RATE		50000000
++
++struct phylink_pcs *qca8k_pcs_create_fwnode(struct fwnode_handle *node);
++void qca8k_pcs_destroy(struct phylink_pcs *pcs);
++
++#endif /* __LINUX_PCS_QCA8K_H */
+-- 
+2.34.1
+

@@ -1,0 +1,5212 @@
+From 9ba21bc960226c61da3fb895e4eb61ba298dbab7 Mon Sep 17 00:00:00 2001
+From: Luo Jie <quic_luoj@quicinc.com>
+Date: Thu, 22 May 2025 11:16:12 +0800
+Subject: [PATCH 503/512] driver: net: qualcomm: Update IPQ9574 PPE driver
+
+Update PPE driver to keep aligned with the upstream patches. The
+updated PPE driver also fix some known issues such as GRO/GSO/TSO
+issue for the performance improvement.
+
+Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
+---
+ drivers/net/ethernet/qualcomm/Kconfig         |   3 +-
+ drivers/net/ethernet/qualcomm/ppe/Makefile    |   2 +-
+ drivers/net/ethernet/qualcomm/ppe/edma.c      | 189 ++---
+ drivers/net/ethernet/qualcomm/ppe/edma.h      |  27 +-
+ .../net/ethernet/qualcomm/ppe/edma_cfg_rx.c   | 138 ++--
+ .../net/ethernet/qualcomm/ppe/edma_cfg_rx.h   |   5 +-
+ .../net/ethernet/qualcomm/ppe/edma_cfg_tx.c   |  22 +-
+ .../net/ethernet/qualcomm/ppe/edma_cfg_tx.h   |   2 +-
+ .../net/ethernet/qualcomm/ppe/edma_debugfs.c  |   2 +-
+ .../net/ethernet/qualcomm/ppe/edma_ethtool.c  |  31 +-
+ drivers/net/ethernet/qualcomm/ppe/edma_port.c |  20 +-
+ drivers/net/ethernet/qualcomm/ppe/edma_port.h |   4 +-
+ drivers/net/ethernet/qualcomm/ppe/edma_rx.c   |  65 +-
+ drivers/net/ethernet/qualcomm/ppe/edma_rx.h   |   2 +-
+ drivers/net/ethernet/qualcomm/ppe/edma_tx.c   |  98 ++-
+ drivers/net/ethernet/qualcomm/ppe/edma_tx.h   |  16 +-
+ drivers/net/ethernet/qualcomm/ppe/ppe.c       |  11 +-
+ drivers/net/ethernet/qualcomm/ppe/ppe.h       |   4 +-
+ drivers/net/ethernet/qualcomm/ppe/ppe_api.c   | 113 +++
+ drivers/net/ethernet/qualcomm/ppe/ppe_api.h   |  43 ++
+ .../net/ethernet/qualcomm/ppe/ppe_config.c    | 505 ++++++------
+ .../net/ethernet/qualcomm/ppe/ppe_config.h    |   4 +-
+ .../net/ethernet/qualcomm/ppe/ppe_debugfs.c   | 687 ++++++++++-------
+ .../net/ethernet/qualcomm/ppe/ppe_debugfs.h   |   2 +-
+ drivers/net/ethernet/qualcomm/ppe/ppe_port.c  | 721 ++++++++++--------
+ drivers/net/ethernet/qualcomm/ppe/ppe_port.h  |  24 +-
+ drivers/net/ethernet/qualcomm/ppe/ppe_regs.h  | 168 ++--
+ 27 files changed, 1616 insertions(+), 1292 deletions(-)
+ create mode 100644 drivers/net/ethernet/qualcomm/ppe/ppe_api.c
+ create mode 100644 drivers/net/ethernet/qualcomm/ppe/ppe_api.h
+
+diff --git a/drivers/net/ethernet/qualcomm/Kconfig b/drivers/net/ethernet/qualcomm/Kconfig
+index b636ffa25f3a..c2099c038f65 100644
+--- a/drivers/net/ethernet/qualcomm/Kconfig
++++ b/drivers/net/ethernet/qualcomm/Kconfig
+@@ -64,7 +64,8 @@ config QCOM_EMAC
+ config QCOM_PPE
+ 	tristate "Qualcomm Technologies, Inc. PPE Ethernet support"
+ 	depends on HAS_IOMEM && OF
+-	depends on COMMON_CLK
++	depends on COMMON_CLK && HAS_IOMEM && OF
++	depends on ARCH_QCOM || COMPILE_TEST
+ 	select REGMAP_MMIO
+ 	select PHYLINK
+ 	select PCS_QCOM_IPQ9574
+diff --git a/drivers/net/ethernet/qualcomm/ppe/Makefile b/drivers/net/ethernet/qualcomm/ppe/Makefile
+index 0ada3973debe..03a9f17b1619 100644
+--- a/drivers/net/ethernet/qualcomm/ppe/Makefile
++++ b/drivers/net/ethernet/qualcomm/ppe/Makefile
+@@ -4,7 +4,7 @@
+ #
+ 
+ obj-$(CONFIG_QCOM_PPE) += qcom-ppe.o
+-qcom-ppe-objs := ppe.o ppe_config.o ppe_debugfs.o ppe_port.o
++qcom-ppe-objs := ppe.o ppe_config.o ppe_debugfs.o ppe_port.o ppe_api.o
+ 
+ #EDMA
+ qcom-ppe-objs += edma.o edma_cfg_rx.o edma_cfg_tx.o edma_debugfs.o edma_port.o edma_rx.o edma_tx.o edma_ethtool.o
+diff --git a/drivers/net/ethernet/qualcomm/ppe/edma.c b/drivers/net/ethernet/qualcomm/ppe/edma.c
+index d63546d3fb2b..2e136692205f 100644
+--- a/drivers/net/ethernet/qualcomm/ppe/edma.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma.c
+@@ -1,5 +1,5 @@
+ // SPDX-License-Identifier: GPL-2.0-only
+- /* Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
++ /* Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
+   */
+ 
+  /* Qualcomm Ethernet DMA driver setup, HW configuration, clocks and
+@@ -23,6 +23,7 @@
+ #include "ppe_regs.h"
+ 
+ #define EDMA_IRQ_NAME_SIZE		32
++#define EDMA_NODE_NAME			"ethernet-dma"
+ 
+ /* Global EDMA context. */
+ struct edma_context *edma_ctx;
+@@ -75,14 +76,14 @@ static u8 edma_pri_map[PPE_QUEUE_INTER_PRI_NUM] = {
+ 	0, 1, 2, 3, 4, 5, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7};
+ 
+ enum edma_clk_id {
+-	EDMA_CLK,
+-	EDMA_CFG_CLK,
++	EDMA_SYS_CLK,
++	EDMA_APB_CLK,
+ 	EDMA_CLK_MAX
+ };
+ 
+ static const char * const clock_name[EDMA_CLK_MAX] = {
+-	[EDMA_CLK] = "edma",
+-	[EDMA_CFG_CLK] = "edma-cfg",
++	[EDMA_SYS_CLK] = "sys",
++	[EDMA_APB_CLK] = "apb",
+ };
+ 
+ /* Rx Fill ring info for IPQ9574. */
+@@ -120,7 +121,7 @@ static struct edma_hw_info ipq9574_hw_info = {
+ 	.tx = &ipq9574_tx_ring_info,
+ 	.txcmpl = &ipq9574_txcmpl_ring_info,
+ 	.max_ports = 6,
+-	.napi_budget_rx = 128,
++	.napi_budget_rx = 32,
+ 	.napi_budget_tx = 512,
+ };
+ 
+@@ -131,7 +132,7 @@ static int edma_clock_set_and_enable(struct device *dev,
+ 	struct clk *clk = NULL;
+ 	int ret;
+ 
+-	edma_np = of_get_child_by_name(dev->of_node, "edma");
++	edma_np = of_get_child_by_name(dev->of_node, EDMA_NODE_NAME);
+ 
+ 	clk = devm_get_clk_from_child(dev, edma_np, id);
+ 	if (IS_ERR(clk)) {
+@@ -155,13 +156,12 @@ static int edma_clock_set_and_enable(struct device *dev,
+ 	}
+ 
+ 	of_node_put(edma_np);
+-
+ 	dev_dbg(dev, "set %lu rate for %s\n", rate, id);
+ 
+ 	return 0;
+ }
+ 
+-static int edma_clock_init(void)
++static int edma_clock_configure(void)
+ {
+ 	struct ppe_device *ppe_dev = edma_ctx->ppe_dev;
+ 	struct device *dev = ppe_dev->dev;
+@@ -170,16 +170,18 @@ static int edma_clock_init(void)
+ 
+ 	ppe_rate = ppe_dev->clk_rate;
+ 
+-	ret = edma_clock_set_and_enable(dev, clock_name[EDMA_CLK],
++	ret = edma_clock_set_and_enable(dev, clock_name[EDMA_SYS_CLK],
+ 					ppe_rate);
+ 	if (ret)
+ 		return ret;
+ 
+-	ret = edma_clock_set_and_enable(dev, clock_name[EDMA_CFG_CLK],
++	ret = edma_clock_set_and_enable(dev, clock_name[EDMA_APB_CLK],
+ 					ppe_rate);
+ 	if (ret)
+ 		return ret;
+ 
++	dev_dbg(dev, "EDMA clocks are configured\n");
++
+ 	return 0;
+ }
+ 
+@@ -244,7 +246,7 @@ static int edma_configure_ucast_prio_map_tbl(void)
+ 		}
+ 
+ 		ret = ppe_edma_queue_offset_config(edma_ctx->ppe_dev,
+-						   PPE_QUEUE_CLASS_PRIORITY, int_pri, pri_class);
++						   PPE_QUEUE_OFFSET_BY_PRIORITY, int_pri, pri_class);
+ 
+ 		if (ret) {
+ 			pr_err("Failed with error: %d to set queue priority class for int_pri: %d for profile_id: %d\n",
+@@ -382,7 +384,7 @@ static int edma_irq_register(void)
+ 			goto txcmpl_ring_irq_name_alloc_fail;
+ 		}
+ 
+-		snprintf(edma_txcmpl_irq_name[i], EDMA_IRQ_NAME_SIZE, "edma_txcmpl_%d",
++		snprintf(edma_txcmpl_irq_name[i], EDMA_IRQ_NAME_SIZE, "txcmpl_%d",
+ 			 txcmpl->ring_start + i);
+ 
+ 		irq_set_status_flags(edma_ctx->intr_info.intr_txcmpl[i], IRQ_DISABLE_UNLAZY);
+@@ -419,7 +421,7 @@ static int edma_irq_register(void)
+ 			goto rxdesc_ring_irq_name_alloc_fail;
+ 		}
+ 
+-		snprintf(edma_rxdesc_irq_name[i], 20, "edma_rxdesc_%d",
++		snprintf(edma_rxdesc_irq_name[i], 20, "rxdesc_%d",
+ 			 rx->ring_start + i);
+ 
+ 		irq_set_status_flags(edma_ctx->intr_info.intr_rx[i], IRQ_DISABLE_UNLAZY);
+@@ -442,7 +444,7 @@ static int edma_irq_register(void)
+ 
+ 	/* Request Misc IRQ */
+ 	ret = request_irq(edma_ctx->intr_info.intr_misc, edma_misc_handle_irq,
+-			  IRQF_SHARED, "edma_misc",
++			  IRQF_SHARED, "misc",
+ 			  (void *)dev);
+ 	if (ret) {
+ 		pr_err("MISC IRQ:%d request failed\n",
+@@ -479,7 +481,7 @@ txcmpl_ring_irq_name_alloc_fail:
+ 	return ret;
+ }
+ 
+-static int edma_irq_init(void)
++static int edma_irq_configure(void)
+ {
+ 	struct edma_hw_info *hw_info = edma_ctx->hw_info;
+ 	struct edma_ring_info *txcmpl = hw_info->txcmpl;
+@@ -492,7 +494,7 @@ static int edma_irq_init(void)
+ 	u32 i;
+ 
+ 	pdev = to_platform_device(dev);
+-	edma_np = of_get_child_by_name(dev->of_node, "edma");
++	edma_np = of_get_child_by_name(dev->of_node, EDMA_NODE_NAME);
+ 	edma_ctx->intr_info.intr_txcmpl = kzalloc((sizeof(*edma_ctx->intr_info.intr_txcmpl) *
+ 						  txcmpl->num_rings), GFP_KERNEL);
+ 	if (!edma_ctx->intr_info.intr_txcmpl) {
+@@ -502,7 +504,7 @@ static int edma_irq_init(void)
+ 
+ 	/* Get TXCMPL rings IRQ numbers. */
+ 	for (i = 0; i < txcmpl->num_rings; i++) {
+-		snprintf(edma_irq_name, sizeof(edma_irq_name), "edma_txcmpl_%d",
++		snprintf(edma_irq_name, sizeof(edma_irq_name), "txcmpl_%d",
+ 			 txcmpl->ring_start + i);
+ 		edma_ctx->intr_info.intr_txcmpl[i] = of_irq_get_byname(edma_np, edma_irq_name);
+ 		if (edma_ctx->intr_info.intr_txcmpl[i] < 0) {
+@@ -527,7 +529,7 @@ static int edma_irq_init(void)
+ 
+ 	/* Get RXDESC rings IRQ numbers. */
+ 	for (i = 0; i < rx->num_rings; i++) {
+-		snprintf(edma_irq_name, sizeof(edma_irq_name), "edma_rxdesc_%d",
++		snprintf(edma_irq_name, sizeof(edma_irq_name), "rxdesc_%d",
+ 			 rx->ring_start + i);
+ 		edma_ctx->intr_info.intr_rx[i] = of_irq_get_byname(edma_np, edma_irq_name);
+ 		if (edma_ctx->intr_info.intr_rx[i] < 0) {
+@@ -544,7 +546,7 @@ static int edma_irq_init(void)
+ 	}
+ 
+ 	/* Get misc IRQ number. */
+-	edma_ctx->intr_info.intr_misc = of_irq_get_byname(edma_np, "edma_misc");
++	edma_ctx->intr_info.intr_misc = of_irq_get_byname(edma_np, "misc");
+ 	if (edma_ctx->intr_info.intr_misc < 0) {
+ 		dev_err(dev, "%s: misc_intr irq get failed\n", edma_np->name);
+ 		of_node_put(edma_np);
+@@ -587,44 +589,23 @@ static int edma_hw_reset(void)
+ 	struct device *dev = ppe_dev->dev;
+ 	struct reset_control *edma_hw_rst;
+ 	struct device_node *edma_np;
+-	const char *reset_string;
+-	u32 count, i;
+-	int ret;
+ 
+-	/* Count and parse reset names from DTSI. */
+-	edma_np = of_get_child_by_name(dev->of_node, "edma");
+-	count = of_property_count_strings(edma_np, "reset-names");
+-	if (count < 0) {
+-		dev_err(dev, "EDMA reset entry not found\n");
++	edma_np = of_get_child_by_name(dev->of_node, EDMA_NODE_NAME);
++	edma_hw_rst = of_reset_control_get_exclusive(edma_np, NULL);
++	if (IS_ERR(edma_hw_rst)) {
+ 		of_node_put(edma_np);
+-		return -EINVAL;
++		return PTR_ERR(edma_hw_rst);
+ 	}
+ 
+-	for (i = 0; i < count; i++) {
+-		ret = of_property_read_string_index(edma_np, "reset-names",
+-						    i, &reset_string);
+-		if (ret) {
+-			dev_err(dev, "Error reading reset-names");
+-			of_node_put(edma_np);
+-			return -EINVAL;
+-		}
+-
+-		edma_hw_rst = of_reset_control_get_exclusive(edma_np, reset_string);
+-		if (IS_ERR(edma_hw_rst)) {
+-			of_node_put(edma_np);
+-			return PTR_ERR(edma_hw_rst);
+-		}
+-
+-		/* 100ms delay is required by hardware to reset EDMA. */
+-		reset_control_assert(edma_hw_rst);
+-		fsleep(100);
++	/* 100ms delay is required by hardware to reset EDMA. */
++	reset_control_assert(edma_hw_rst);
++	fsleep(100);
+ 
+-		reset_control_deassert(edma_hw_rst);
+-		fsleep(100);
++	reset_control_deassert(edma_hw_rst);
++	fsleep(100);
+ 
+-		reset_control_put(edma_hw_rst);
+-		dev_dbg(dev, "EDMA HW reset, i:%d reset_string:%s\n", i, reset_string);
+-	}
++	reset_control_put(edma_hw_rst);
++	dev_dbg(dev, "EDMA HW reset\n");
+ 
+ 	of_node_put(edma_np);
+ 
+@@ -646,14 +627,12 @@ static int edma_hw_configure(void)
+ 
+ 	pr_debug("EDMA ver %d hw init\n", data);
+ 
+-	/* Setup private data structure. */
+ 	edma_ctx->intr_info.intr_mask_rx = EDMA_RXDESC_INT_MASK_PKT_INT;
+ 	edma_ctx->intr_info.intr_mask_txcmpl = EDMA_TX_INT_MASK_PKT_INT;
+ 
+-	/* Reset EDMA. */
+ 	ret = edma_hw_reset();
+ 	if (ret) {
+-		pr_err("Error in resetting the hardware. ret: %d\n", ret);
++		pr_err("Error in resetting the hardware, ret: %d\n", ret);
+ 		return ret;
+ 	}
+ 
+@@ -667,7 +646,7 @@ static int edma_hw_configure(void)
+ 	edma_ctx->dummy_dev = alloc_netdev_dummy(0);
+ 	if (!edma_ctx->dummy_dev) {
+ 		ret = -ENOMEM;
+-		pr_err("Failed to allocate dummy device. ret: %d\n", ret);
++		pr_err("Failed to allocate dummy device, ret: %d\n", ret);
+ 		goto dummy_dev_alloc_failed;
+ 	}
+ 
+@@ -681,7 +660,7 @@ static int edma_hw_configure(void)
+ 
+ 	ret = edma_alloc_rings();
+ 	if (ret) {
+-		pr_err("Error in initializaing the rings. ret: %d\n", ret);
++		pr_err("Error in initializing the rings, ret: %d\n", ret);
+ 		goto edma_alloc_rings_failed;
+ 	}
+ 
+@@ -701,7 +680,7 @@ static int edma_hw_configure(void)
+ 
+ 	ret = edma_cfg_rx_rings();
+ 	if (ret) {
+-		pr_err("Error in configuring Rx rings. ret: %d\n", ret);
++		pr_err("Error in configuring Rx rings, ret: %d\n", ret);
+ 		goto edma_cfg_rx_rings_failed;
+ 	}
+ 
+@@ -719,15 +698,13 @@ static int edma_hw_configure(void)
+ 	if (ret)
+ 		return ret;
+ 
+-	/* Configure Tx Timeout Threshold. */
+ 	data = EDMA_TX_TIMEOUT_THRESH_VAL;
+-
+ 	reg = EDMA_BASE_OFFSET + EDMA_REG_TX_TIMEOUT_THRESH_ADDR;
+ 	ret = regmap_write(regmap, reg, data);
+ 	if (ret)
+ 		return ret;
+ 
+-	/* Set Miscellaneous error mask. */
++	/* Set Miscellaneous error interrupt mask. */
+ 	data = EDMA_MISC_AXI_RD_ERR_MASK |
+ 		EDMA_MISC_AXI_WR_ERR_MASK |
+ 		EDMA_MISC_RX_DESC_FIFO_FULL_MASK |
+@@ -742,15 +719,15 @@ static int edma_hw_configure(void)
+ 	edma_cfg_rx_napi_add();
+ 	edma_cfg_rx_napi_enable();
+ 
+-	/* Global EDMA enable and padding enable. */
++	/* Enable whole edma to work and padding if packet length less than 60
++	 * byte in EDMA port interface control register.
++	 */
+ 	data = EDMA_PORT_PAD_EN | EDMA_PORT_EDMA_EN;
+-
+ 	reg = EDMA_BASE_OFFSET + EDMA_REG_PORT_CTRL_ADDR;
+ 	ret = regmap_write(regmap, reg, data);
+ 	if (ret)
+ 		return ret;
+ 
+-	/* Initialize unicast priority map table. */
+ 	ret = (int)edma_configure_ucast_prio_map_tbl();
+ 	if (ret) {
+ 		pr_err("Failed to initialize unicast priority map table: %d\n",
+@@ -758,7 +735,6 @@ static int edma_hw_configure(void)
+ 		goto configure_ucast_prio_map_tbl_failed;
+ 	}
+ 
+-	/* Initialize RPS hash map table. */
+ 	ret = edma_cfg_rx_rps_hash_map();
+ 	if (ret) {
+ 		pr_err("Failed to configure rps hash table: %d\n",
+@@ -766,6 +742,8 @@ static int edma_hw_configure(void)
+ 		goto edma_cfg_rx_rps_hash_map_failed;
+ 	}
+ 
++	pr_info("EDMA Hardware Configured\n");
++
+ 	return 0;
+ 
+ edma_cfg_rx_rps_hash_map_failed:
+@@ -802,14 +780,13 @@ void edma_destroy(struct ppe_device *ppe_dev)
+ 		edma_ctx->rx_rps_ctl_table_hdr = NULL;
+ 	}
+ 
+-	/* Disable interrupts. */
+ 	for (i = 1; i <= hw_info->max_ports; i++)
+ 		edma_cfg_tx_disable_interrupts(i);
+ 
+ 	edma_cfg_rx_disable_interrupts();
+ 	edma_disable_misc_interrupt();
+ 
+-	/* Free IRQ for TXCMPL rings. */
++	/* Free IRQ for Tx cmpl rings. */
+ 	for (i = 0; i < txcmpl->num_rings; i++) {
+ 		synchronize_irq(edma_ctx->intr_info.intr_txcmpl[i]);
+ 
+@@ -819,7 +796,7 @@ void edma_destroy(struct ppe_device *ppe_dev)
+ 	}
+ 	kfree(edma_txcmpl_irq_name);
+ 
+-	/* Free IRQ for RXDESC rings */
++	/* Free IRQ for Rx DESC rings */
+ 	for (i = 0; i < rx->num_rings; i++) {
+ 		synchronize_irq(edma_ctx->intr_info.intr_rx[i]);
+ 		free_irq(edma_ctx->intr_info.intr_rx[i],
+@@ -860,7 +837,7 @@ static struct ctl_table edma_rx_rps_core_table[] = {
+  * edma_setup - EDMA Setup.
+  * @ppe_dev: PPE device
+  *
+- * Configure Ethernet global ctx, clocks, hardware and interrupts.
++ * Configure EDMA global context, clocks, hardware and interrupts.
+  *
+  * Return 0 on success, negative error code on failure.
+  */
+@@ -888,22 +865,19 @@ int edma_setup(struct ppe_device *ppe_dev)
+ 		return -EINVAL;
+ 	}
+ 
+-	/* Configure the EDMA common clocks. */
+-	ret = edma_clock_init();
++	ret = edma_clock_configure();
+ 	if (ret) {
+ 		dev_err(dev, "Error in configuring the EDMA clocks\n");
+ 		return ret;
+ 	}
+ 
+-	dev_dbg(dev, "QCOM EDMA common clocks are configured\n");
+-
+ 	ret = edma_hw_configure();
+ 	if (ret) {
+ 		dev_err(dev, "Error in edma configuration\n");
+ 		return ret;
+ 	}
+ 
+-	ret = edma_irq_init();
++	ret = edma_irq_configure();
+ 	if (ret) {
+ 		dev_err(dev, "Error in irq initialization\n");
+ 		return ret;
+@@ -924,70 +898,3 @@ int edma_setup(struct ppe_device *ppe_dev)
+ 
+ 	return 0;
+ }
+-
+-/**
+- * ppe_edma_queue_offset_config - Configure queue offset for EDMA interface
+- * @ppe_dev: PPE device
+- * @class: The class to configure queue offset
+- * @index: Class index, internal priority or hash value
+- * @queue_offset: Queue offset value
+- *
+- * PPE EDMA queue offset is configured based on the PPE internal priority or
+- * RSS hash value, the profile ID is fixed to 0 for EDMA interface.
+- *
+- * Return 0 on success, negative error code on failure.
+- */
+-int ppe_edma_queue_offset_config(struct ppe_device *ppe_dev,
+-				 enum ppe_queue_class_type class,
+-				 int index, int queue_offset)
+-{
+-	if (class == PPE_QUEUE_CLASS_PRIORITY)
+-		return ppe_queue_ucast_offset_pri_set(ppe_dev, 0,
+-						      index, queue_offset);
+-
+-	return ppe_queue_ucast_offset_hash_set(ppe_dev, 0,
+-					       index, queue_offset);
+-}
+-
+-/**
+- * ppe_edma_queue_resource_get - Get EDMA queue resource
+- * @ppe_dev: PPE device
+- * @type: Resource type
+- * @res_start: Resource start ID returned
+- * @res_end: Resource end ID returned
+- *
+- * PPE EDMA queue resource includes unicast queue and multicast queue.
+- *
+- * Return 0 on success, negative error code on failure.
+- */
+-int ppe_edma_queue_resource_get(struct ppe_device *ppe_dev, int type,
+-				int *res_start, int *res_end)
+-{
+-	if (type != PPE_RES_UCAST && type != PPE_RES_MCAST)
+-		return -EINVAL;
+-
+-	return ppe_port_resource_get(ppe_dev, 0, type, res_start, res_end);
+-};
+-
+-/**
+- * ppe_edma_ring_to_queues_config - Map EDMA ring to PPE queues
+- * @ppe_dev: PPE device
+- * @ring_id: EDMA ring ID
+- * @num: Number of queues mapped to EDMA ring
+- * @queues: PPE queue IDs
+- *
+- * PPE queues are configured to map with the special EDMA ring ID.
+- *
+- * Return 0 on success, negative error code on failure.
+- */
+-int ppe_edma_ring_to_queues_config(struct ppe_device *ppe_dev, int ring_id,
+-				   int num, int queues[] __counted_by(num))
+-{
+-	u32 queue_bmap[PPE_RING_TO_QUEUE_BITMAP_WORD_CNT] = {};
+-	int index;
+-
+-	for (index = 0; index < num; index++)
+-		queue_bmap[queues[index] / 32] |= BIT_MASK(queues[index] % 32);
+-
+-	return ppe_ring_queue_map_set(ppe_dev, ring_id, queue_bmap);
+-}
+diff --git a/drivers/net/ethernet/qualcomm/ppe/edma.h b/drivers/net/ethernet/qualcomm/ppe/edma.h
+index b40f33c07b1b..9bb0bb1b219f 100644
+--- a/drivers/net/ethernet/qualcomm/ppe/edma.h
++++ b/drivers/net/ethernet/qualcomm/ppe/edma.h
+@@ -1,13 +1,13 @@
+ /* SPDX-License-Identifier: GPL-2.0-only
+- * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
++ * Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
+  */
+ 
+ #ifndef __EDMA_MAIN__
+ #define __EDMA_MAIN__
+ 
+-#include "ppe_config.h"
+ #include "edma_rx.h"
+ #include "edma_tx.h"
++#include "ppe_api.h"
+ 
+ /* One clock cycle = 1/(EDMA clock frequency in Mhz) micro seconds.
+  *
+@@ -36,16 +36,6 @@
+ 			((((head) - (tail)) + \
+ 			(max)) & ((max) - 1)); })
+ 
+-/**
+- * enum ppe_queue_class_type - PPE queue class type
+- * @PPE_QUEUE_CLASS_PRIORITY: Queue offset configured from internal priority
+- * @PPE_QUEUE_CLASS_HASH: Queue offset configured from RSS hash.
+- */
+-enum ppe_queue_class_type {
+-	PPE_QUEUE_CLASS_PRIORITY,
+-	PPE_QUEUE_CLASS_HASH,
+-};
+-
+ /**
+  * struct edma_err_stats - EDMA error stats
+  * @edma_axi_read_err: AXI read error
+@@ -123,7 +113,7 @@ struct edma_intr_info {
+ /**
+  * struct edma_context - EDMA context.
+  * @netdev_arr: Net device for each EDMA port
+- * @dummy_dev: Dummy netdevice for RX DMA
++ * @dummy_dev: Dummy netdevice for Rx DMA
+  * @ppe_dev: PPE device
+  * @hw_info: EDMA Hardware info
+  * @intr_info: EDMA Interrupt info
+@@ -154,7 +144,7 @@ struct edma_context {
+ 	bool tx_requeue_stop;
+ };
+ 
+-/* Global EDMA context */
++/* Global EDMA context. */
+ extern struct edma_context *edma_ctx;
+ 
+ int edma_err_stats_alloc(void);
+@@ -164,13 +154,4 @@ int edma_setup(struct ppe_device *ppe_dev);
+ void edma_debugfs_teardown(void);
+ int edma_debugfs_setup(struct ppe_device *ppe_dev);
+ void edma_set_ethtool_ops(struct net_device *netdev);
+-int ppe_edma_queue_offset_config(struct ppe_device *ppe_dev,
+-				 enum ppe_queue_class_type class,
+-				 int index, int queue_offset);
+-int ppe_edma_queue_resource_get(struct ppe_device *ppe_dev, int type,
+-				int *res_start, int *res_end);
+-int ppe_edma_ring_to_queues_config(struct ppe_device *ppe_dev, int ring_id,
+-				   int num, int queues[] __counted_by(num));
+-
+-
+ #endif
+diff --git a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c
+index 58021df6c950..5186849f551e 100644
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c
+@@ -1,5 +1,5 @@
+ // SPDX-License-Identifier: GPL-2.0-only
+-/* Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
++/* Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
+  */
+ 
+ /* Configure rings, Buffers and NAPI for receive path along with
+@@ -19,9 +19,6 @@
+ #include "ppe.h"
+ #include "ppe_regs.h"
+ 
+-/* EDMA Queue ID to Ring ID Table. */
+-#define EDMA_QID2RID_TABLE_MEM(q)	(0xb9000 + (0x4 * (q)))
+-
+ /* Rx ring queue offset. */
+ #define EDMA_QUEUE_OFFSET(q_id)	((q_id) / EDMA_MAX_PRI_PER_CORE)
+ 
+@@ -32,6 +29,9 @@
+ /* EDMA Queue ID to Ring ID configuration. */
+ #define EDMA_QID2RID_NUM_PER_REG	4
+ 
++/* EDMA Queue ID to Ring ID Table. */
++#define EDMA_QID2RID_TABLE_MEM(q)	(0xb9000 + (0x4 * (q)))
++
+ int rx_queues[] = {0, 8, 16, 24};
+ 
+ static u32 edma_rx_ring_queue_map[][EDMA_MAX_CORE] = {{ 0, 8, 16, 24 },
+@@ -75,7 +75,7 @@ static int edma_cfg_rx_desc_ring_reset_queue_priority(u32 rxdesc_ring_idx)
+ 	for (i = 0; i < EDMA_MAX_PRI_PER_CORE; i++) {
+ 		queue_id = edma_rx_ring_queue_map[i][rxdesc_ring_idx];
+ 
+-		ret = ppe_queue_priority_set(edma_ctx->ppe_dev, queue_id, i);
++		ret = ppe_queue_node_priority_set(edma_ctx->ppe_dev, queue_id, i);
+ 		if (ret) {
+ 			pr_err("Error in resetting %u queue's priority\n",
+ 			       queue_id);
+@@ -138,7 +138,7 @@ static int edma_cfg_rx_desc_ring_to_queue_mapping(void)
+ 			pr_err("Error in configuring Rx ring to PPE queue mapping, ret: %d, id: %d\n",
+ 			       ret, rxdesc_ring->ring_id);
+ 			if (!edma_cfg_rx_desc_rings_reset_queue_mapping())
+-				pr_err("Error in resetting Rx desc ringbackpressure configurations\n");
++				pr_err("Error in resetting Rx desc ring configurations\n");
+ 
+ 			return ret;
+ 		}
+@@ -219,7 +219,9 @@ static void edma_cfg_rx_qid_to_rx_desc_ring_mapping(void)
+ 
+ 	desc_index = (rx->ring_start & EDMA_RX_RING_ID_MASK);
+ 
+-	/* Here map all the queues to ring. */
++	/* There are 4 Rx desc rings, one for each core.
++	 * Map the unicast queues to Rx desc rings.
++	 */
+ 	for (q_id = EDMA_RX_QUEUE_START;
+ 		q_id <= EDMA_CPU_PORT_QUEUE_MAX(EDMA_RX_QUEUE_START);
+ 			q_id += EDMA_QID2RID_NUM_PER_REG) {
+@@ -271,6 +273,11 @@ static void edma_cfg_rx_rings_to_rx_fill_mapping(void)
+ 	struct edma_ring_info *rx = hw_info->rx;
+ 	u32 i, data, reg;
+ 
++        /* Set RXDESC2FILL_MAP_xx reg.
++         * 3 registers hold the Rxfill mapping for all Rx desc rings.
++         * 3 bits holds the Rx fill ring mapping for each of the
++         * Rx descriptor ring.
++         */
+ 	regmap_write(regmap, EDMA_BASE_OFFSET + EDMA_REG_RXDESC2FILL_MAP_0_ADDR, 0);
+ 	regmap_write(regmap, EDMA_BASE_OFFSET + EDMA_REG_RXDESC2FILL_MAP_1_ADDR, 0);
+ 	regmap_write(regmap, EDMA_BASE_OFFSET + EDMA_REG_RXDESC2FILL_MAP_2_ADDR, 0);
+@@ -326,7 +333,6 @@ void edma_cfg_rx_rings_enable(void)
+ 	struct edma_ring_info *rx = hw_info->rx;
+ 	u32 i, reg;
+ 
+-	/* Enable Rx rings */
+ 	for (i = rx->ring_start; i < rx->ring_start + rx->num_rings; i++) {
+ 		u32 data;
+ 
+@@ -445,7 +451,6 @@ static int edma_cfg_rx_fill_ring_dma_alloc(struct edma_rxfill_ring *rxfill_ring)
+ 	struct ppe_device *ppe_dev = edma_ctx->ppe_dev;
+ 	struct device *dev = ppe_dev->dev;
+ 
+-	/* Allocate RxFill ring descriptors */
+ 	rxfill_ring->desc = dma_alloc_coherent(dev, (sizeof(struct edma_rxfill_desc)
+ 					       * rxfill_ring->count),
+ 					       &rxfill_ring->dma,
+@@ -633,6 +638,62 @@ rxdesc_mem_alloc_fail:
+ 	return -ENOMEM;
+ }
+ 
++static void edma_cfg_rx_fill_ring_configure(struct edma_rxfill_ring *rxfill_ring)
++{
++	struct ppe_device *ppe_dev = edma_ctx->ppe_dev;
++	struct regmap *regmap = ppe_dev->regmap;
++	u32 ring_sz, reg;
++
++	reg = EDMA_BASE_OFFSET + EDMA_REG_RXFILL_BA(rxfill_ring->ring_id);
++	regmap_write(regmap, reg, (u32)(rxfill_ring->dma & EDMA_RING_DMA_MASK));
++
++	ring_sz = rxfill_ring->count & EDMA_RXFILL_RING_SIZE_MASK;
++	reg = EDMA_BASE_OFFSET + EDMA_REG_RXFILL_RING_SIZE(rxfill_ring->ring_id);
++	regmap_write(regmap, reg, ring_sz);
++
++	edma_rx_alloc_buffer(rxfill_ring, rxfill_ring->count - 1);
++}
++
++static void edma_cfg_rx_desc_ring_flow_control(u32 threshold_xoff, u32 threshold_xon)
++{
++	struct edma_hw_info *hw_info = edma_ctx->hw_info;
++	struct ppe_device *ppe_dev = edma_ctx->ppe_dev;
++	struct regmap *regmap = ppe_dev->regmap;
++	struct edma_ring_info *rx = hw_info->rx;
++	u32 data, i, reg;
++
++	data = (threshold_xoff & EDMA_RXDESC_FC_XOFF_THRE_MASK) << EDMA_RXDESC_FC_XOFF_THRE_SHIFT;
++	data |= ((threshold_xon & EDMA_RXDESC_FC_XON_THRE_MASK) << EDMA_RXDESC_FC_XON_THRE_SHIFT);
++
++	for (i = 0; i < rx->num_rings; i++) {
++		struct edma_rxdesc_ring *rxdesc_ring;
++
++		rxdesc_ring = &edma_ctx->rx_rings[i];
++		reg = EDMA_BASE_OFFSET + EDMA_REG_RXDESC_FC_THRE(rxdesc_ring->ring_id);
++		regmap_write(regmap, reg, data);
++	}
++}
++
++static void edma_cfg_rx_fill_ring_flow_control(int threshold_xoff, int threshold_xon)
++{
++	struct edma_hw_info *hw_info = edma_ctx->hw_info;
++	struct edma_ring_info *rxfill = hw_info->rxfill;
++	struct ppe_device *ppe_dev = edma_ctx->ppe_dev;
++	struct regmap *regmap = ppe_dev->regmap;
++	u32 data, i, reg;
++
++	data = (threshold_xoff & EDMA_RXFILL_FC_XOFF_THRE_MASK) << EDMA_RXFILL_FC_XOFF_THRE_SHIFT;
++	data |= ((threshold_xon & EDMA_RXFILL_FC_XON_THRE_MASK) << EDMA_RXFILL_FC_XON_THRE_SHIFT);
++
++	for (i = 0; i < rxfill->num_rings; i++) {
++		struct edma_rxfill_ring *rxfill_ring;
++
++		rxfill_ring = &edma_ctx->rxfill_rings[i];
++		reg = EDMA_BASE_OFFSET + EDMA_REG_RXFILL_FC_THRE(rxfill_ring->ring_id);
++		regmap_write(regmap, reg, data);
++	}
++}
++
+ /**
+  * edma_cfg_rx_buff_size_setup - Configure EDMA Rx jumbo buffer
+  *
+@@ -729,62 +790,6 @@ void edma_cfg_rx_rings_cleanup(void)
+ 	edma_ctx->rx_rings = NULL;
+ }
+ 
+-static void edma_cfg_rx_fill_ring_configure(struct edma_rxfill_ring *rxfill_ring)
+-{
+-	struct ppe_device *ppe_dev = edma_ctx->ppe_dev;
+-	struct regmap *regmap = ppe_dev->regmap;
+-	u32 ring_sz, reg;
+-
+-	reg = EDMA_BASE_OFFSET + EDMA_REG_RXFILL_BA(rxfill_ring->ring_id);
+-	regmap_write(regmap, reg, (u32)(rxfill_ring->dma & EDMA_RING_DMA_MASK));
+-
+-	ring_sz = rxfill_ring->count & EDMA_RXFILL_RING_SIZE_MASK;
+-	reg = EDMA_BASE_OFFSET + EDMA_REG_RXFILL_RING_SIZE(rxfill_ring->ring_id);
+-	regmap_write(regmap, reg, ring_sz);
+-
+-	edma_rx_alloc_buffer(rxfill_ring, rxfill_ring->count - 1);
+-}
+-
+-static void edma_cfg_rx_desc_ring_flow_control(u32 threshold_xoff, u32 threshold_xon)
+-{
+-	struct edma_hw_info *hw_info = edma_ctx->hw_info;
+-	struct ppe_device *ppe_dev = edma_ctx->ppe_dev;
+-	struct regmap *regmap = ppe_dev->regmap;
+-	struct edma_ring_info *rx = hw_info->rx;
+-	u32 data, i, reg;
+-
+-	data = (threshold_xoff & EDMA_RXDESC_FC_XOFF_THRE_MASK) << EDMA_RXDESC_FC_XOFF_THRE_SHIFT;
+-	data |= ((threshold_xon & EDMA_RXDESC_FC_XON_THRE_MASK) << EDMA_RXDESC_FC_XON_THRE_SHIFT);
+-
+-	for (i = 0; i < rx->num_rings; i++) {
+-		struct edma_rxdesc_ring *rxdesc_ring;
+-
+-		rxdesc_ring = &edma_ctx->rx_rings[i];
+-		reg = EDMA_BASE_OFFSET + EDMA_REG_RXDESC_FC_THRE(rxdesc_ring->ring_id);
+-		regmap_write(regmap, reg, data);
+-	}
+-}
+-
+-static void edma_cfg_rx_fill_ring_flow_control(int threshold_xoff, int threshold_xon)
+-{
+-	struct edma_hw_info *hw_info = edma_ctx->hw_info;
+-	struct edma_ring_info *rxfill = hw_info->rxfill;
+-	struct ppe_device *ppe_dev = edma_ctx->ppe_dev;
+-	struct regmap *regmap = ppe_dev->regmap;
+-	u32 data, i, reg;
+-
+-	data = (threshold_xoff & EDMA_RXFILL_FC_XOFF_THRE_MASK) << EDMA_RXFILL_FC_XOFF_THRE_SHIFT;
+-	data |= ((threshold_xon & EDMA_RXFILL_FC_XON_THRE_MASK) << EDMA_RXFILL_FC_XON_THRE_SHIFT);
+-
+-	for (i = 0; i < rxfill->num_rings; i++) {
+-		struct edma_rxfill_ring *rxfill_ring;
+-
+-		rxfill_ring = &edma_ctx->rxfill_rings[i];
+-		reg = EDMA_BASE_OFFSET + EDMA_REG_RXFILL_FC_THRE(rxfill_ring->ring_id);
+-		regmap_write(regmap, reg, data);
+-	}
+-}
+-
+ /**
+  * edma_cfg_rx_rings - Configure EDMA Rx rings.
+  *
+@@ -917,6 +922,7 @@ void edma_cfg_rx_napi_delete(void)
+ 		if (!rxdesc_ring->napi_added)
+ 			continue;
+ 
++		napi_disable(&rxdesc_ring->napi);
+ 		netif_napi_del(&rxdesc_ring->napi);
+ 		rxdesc_ring->napi_added = false;
+ 	}
+@@ -978,7 +984,7 @@ int edma_cfg_rx_rps_hash_map(void)
+ 
+ 	for (hash = 0; hash < PPE_QUEUE_HASH_NUM; hash++) {
+ 		ret = ppe_edma_queue_offset_config(edma_ctx->ppe_dev,
+-						   PPE_QUEUE_CLASS_HASH, hash, q_map[idx]);
++						   PPE_QUEUE_OFFSET_BY_HASH, hash, q_map[idx]);
+ 		if (ret)
+ 			return ret;
+ 
+diff --git a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.h b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.h
+index 4e3ec010e5d6..1b35f46e98fb 100644
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.h
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.h
+@@ -1,5 +1,5 @@
+ /* SPDX-License-Identifier: GPL-2.0-only
+- * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
++ * Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
+  */
+ 
+ #ifndef __EDMA_CFG_RX__
+@@ -28,6 +28,7 @@
+ 
+ /* Rx AC flow control default threshold */
+ #define EDMA_RX_AC_FC_THRES_DEF		0x104
++
+ /* Rx mitigation timer's default value in microseconds */
+ #define EDMA_RX_MITIGATION_TIMER_DEF	25
+ 
+@@ -66,7 +67,7 @@ void edma_cfg_rx_rings_enable(void);
+ void edma_cfg_rx_rings_disable(void);
+ void edma_cfg_rx_buff_size_setup(void);
+ int edma_cfg_rx_rps_hash_map(void);
+-int edma_cfg_rx_rps(const struct ctl_table *table, int write,
++int edma_cfg_rx_rps(struct ctl_table *table, int write,
+ 		    void *buffer, size_t *lenp, loff_t *ppos);
+ int edma_cfg_rx_rps_bitmap(const struct ctl_table *table, int write,
+ 			   void *buffer, size_t *lenp, loff_t *ppos);
+diff --git a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_tx.c b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_tx.c
+index 771acebdaf75..0001a45691dd 100644
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_tx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_tx.c
+@@ -1,5 +1,5 @@
+ // SPDX-License-Identifier: GPL-2.0-only
+-/* Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
++/* Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
+  */
+ 
+ /* Configure rings, Buffers and NAPI for transmit path along with
+@@ -27,7 +27,7 @@ static void edma_cfg_txcmpl_ring_cleanup(struct edma_txcmpl_ring *txcmpl_ring)
+ 	/* Free any buffers assigned to any descriptors. */
+ 	edma_tx_complete(EDMA_TX_RING_SIZE - 1, txcmpl_ring);
+ 
+-	/* Free TxCmpl ring descriptors. */
++	/* Free Tx cmpl ring descriptors. */
+ 	dma_free_coherent(dev, sizeof(struct edma_txcmpl_desc)
+ 			  * txcmpl_ring->count, txcmpl_ring->desc,
+ 			  txcmpl_ring->dma);
+@@ -101,7 +101,6 @@ static int edma_cfg_tx_desc_ring_setup(struct edma_txdesc_ring *txdesc_ring)
+ 	struct ppe_device *ppe_dev = edma_ctx->ppe_dev;
+ 	struct device *dev = ppe_dev->dev;
+ 
+-	/* Allocate RxFill ring descriptors. */
+ 	txdesc_ring->pdesc = dma_alloc_coherent(dev, sizeof(struct edma_txdesc_pri)
+ 						* txdesc_ring->count,
+ 						&txdesc_ring->pdma,
+@@ -159,14 +158,14 @@ static void edma_cfg_txcmpl_ring_configure(struct edma_txcmpl_ring *txcmpl_ring)
+ 	struct regmap *regmap = ppe_dev->regmap;
+ 	u32 data, reg;
+ 
+-	/* Configure TxCmpl ring base address. */
++	/* Configure Tx cmpl ring base address. */
+ 	reg = EDMA_BASE_OFFSET + EDMA_REG_TXCMPL_BA(txcmpl_ring->id);
+ 	regmap_write(regmap, reg, (u32)(txcmpl_ring->dma & EDMA_RING_DMA_MASK));
+ 
+ 	reg = EDMA_BASE_OFFSET + EDMA_REG_TXCMPL_RING_SIZE(txcmpl_ring->id);
+ 	regmap_write(regmap, reg, (u32)(txcmpl_ring->count & EDMA_TXDESC_RING_SIZE_MASK));
+ 
+-	/* Set TxCmpl ret mode to opaque. */
++	/* Set Tx cmpl ret mode to opaque. */
+ 	reg = EDMA_BASE_OFFSET + EDMA_REG_TXCMPL_CTRL(txcmpl_ring->id);
+ 	regmap_write(regmap, reg, EDMA_TXCMPL_RETMODE_OPAQUE);
+ 
+@@ -327,10 +326,10 @@ void edma_cfg_tx_ring_mappings(void)
+ 		else
+ 			reg = EDMA_BASE_OFFSET + EDMA_REG_TXDESC2CMPL_MAP_5_ADDR;
+ 
+-		pr_debug("Configure Tx desc:%u to use TxCmpl:%u\n", i, desc_index);
++		pr_debug("Configure Tx desc:%u to use Tx cmpl:%u\n", i, desc_index);
+ 
+ 		/* Set the Tx complete descriptor ring number in the mapping register.
+-		 * E.g. If (txcmpl ring)desc_index = 31, (txdesc ring)i = 28.
++		 * E.g. If (Tx cmpl ring)desc_index = 31, (txdesc ring)i = 28.
+ 		 *	reg = EDMA_REG_TXDESC2CMPL_MAP_4_ADDR
+ 		 *	data |= (desc_index & 0x1F) << ((i % 6) * 5);
+ 		 *	data |= (0x1F << 20); -
+@@ -408,7 +407,7 @@ static int edma_cfg_tx_rings_setup(void)
+ 		}
+ 	}
+ 
+-	/* Allocate TxCmpl ring descriptors. */
++	/* Allocate Tx cmpl ring descriptors. */
+ 	for (i = 0; i < txcmpl->num_rings; i++) {
+ 		struct edma_txcmpl_ring *txcmpl_ring = NULL;
+ 		int ret;
+@@ -419,7 +418,7 @@ static int edma_cfg_tx_rings_setup(void)
+ 
+ 		ret = edma_cfg_txcmpl_ring_setup(txcmpl_ring);
+ 		if (ret != 0) {
+-			pr_err("Error in setting up %d TxCmpl ring. ret: %d",
++			pr_err("Error in setting up %d Tx cmpl ring. ret: %d",
+ 			       txcmpl_ring->id, ret);
+ 			while (i-- >= 0)
+ 				edma_cfg_txcmpl_ring_cleanup(&edma_ctx->txcmpl_rings[i]);
+@@ -527,7 +526,7 @@ void edma_cfg_tx_rings(void)
+ 	for (i = 0; i < tx->num_rings; i++)
+ 		edma_cfg_tx_desc_ring_configure(&edma_ctx->tx_rings[i]);
+ 
+-	/* Configure TxCmpl ring. */
++	/* Configure Tx cmpl ring. */
+ 	for (i = 0; i < txcmpl->num_rings; i++)
+ 		edma_cfg_txcmpl_ring_configure(&edma_ctx->txcmpl_rings[i]);
+ }
+@@ -634,6 +633,7 @@ void edma_cfg_tx_napi_delete(u32 port_id)
+ 		if (!txcmpl_ring->napi_added)
+ 			continue;
+ 
++		napi_disable(&txcmpl_ring->napi);
+ 		netif_napi_del(&txcmpl_ring->napi);
+ 		txcmpl_ring->napi_added = false;
+ 	}
+@@ -666,7 +666,7 @@ void edma_cfg_tx_napi_add(struct net_device *netdev, u32 port_id)
+ 		netif_napi_add_weight(netdev, &txcmpl_ring->napi,
+ 				      edma_tx_napi_poll, hw_info->napi_budget_tx);
+ 		txcmpl_ring->napi_added = true;
+-		netdev_dbg(netdev, "Napi added for txcmpl ring: %u\n", txcmpl_ring->id);
++		netdev_dbg(netdev, "Napi added for Tx cmpl ring: %u\n", txcmpl_ring->id);
+ 	}
+ 
+ 	netdev_dbg(netdev, "Tx NAPI budget: %d\n", edma_tx_napi_budget);
+diff --git a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_tx.h b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_tx.h
+index 608bbc5f93e8..5702518a166d 100644
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_tx.h
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_tx.h
+@@ -1,5 +1,5 @@
+ /* SPDX-License-Identifier: GPL-2.0-only
+- * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
++ * Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
+  */
+ 
+ #ifndef __EDMA_CFG_TX__
+diff --git a/drivers/net/ethernet/qualcomm/ppe/edma_debugfs.c b/drivers/net/ethernet/qualcomm/ppe/edma_debugfs.c
+index 671062d4ee72..baaa32816579 100644
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_debugfs.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_debugfs.c
+@@ -1,5 +1,5 @@
+ // SPDX-License-Identifier: GPL-2.0-only
+-/* Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
++/* Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
+  */
+ 
+ /* EDMA debugfs routines for display of Tx/Rx counters. */
+diff --git a/drivers/net/ethernet/qualcomm/ppe/edma_ethtool.c b/drivers/net/ethernet/qualcomm/ppe/edma_ethtool.c
+index eabc1e11b16f..96438da029e9 100644
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_ethtool.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_ethtool.c
+@@ -1,5 +1,5 @@
+ // SPDX-License-Identifier: GPL-2.0-only
+-/* Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
++/* Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
+  */
+ 
+ /* ethtool support for EDMA */
+@@ -242,33 +242,6 @@ static int edma_set_pauseparam(struct net_device *netdev,
+ 	return phylink_ethtool_set_pauseparam(port->phylink, pause);
+ }
+ 
+-static int edma_get_eee(struct net_device *netdev, struct ethtool_keee *eee)
+-{
+-	struct edma_port_priv *port_priv = (struct edma_port_priv *)netdev_priv(netdev);
+-	struct ppe_port *port =  port_priv->ppe_port;
+-
+-	if (!port_priv)
+-		return -EINVAL;
+-
+-	return phylink_ethtool_get_eee(port->phylink, eee);
+-}
+-
+-static int edma_set_eee(struct net_device *netdev, struct ethtool_keee *eee)
+-{
+-	struct edma_port_priv *port_priv = (struct edma_port_priv *)netdev_priv(netdev);
+-	struct ppe_port *port =  port_priv->ppe_port;
+-	int ret;
+-
+-	if (!port_priv)
+-		return -EINVAL;
+-
+-	ret = ppe_port_set_mac_eee(port_priv->ppe_port, eee);
+-	if (ret)
+-		return ret;
+-
+-	return phylink_ethtool_set_eee(port->phylink, eee);
+-}
+-
+ static const struct ethtool_ops edma_ethtool_ops = {
+ 	.get_strings = &edma_get_strings,
+ 	.get_sset_count = &edma_get_strset_count,
+@@ -278,8 +251,6 @@ static const struct ethtool_ops edma_ethtool_ops = {
+ 	.set_link_ksettings = edma_set_link_ksettings,
+ 	.get_pauseparam = &edma_get_pauseparam,
+ 	.set_pauseparam = &edma_set_pauseparam,
+-	.get_eee = &edma_get_eee,
+-	.set_eee = &edma_set_eee,
+ };
+ 
+ /**
+diff --git a/drivers/net/ethernet/qualcomm/ppe/edma_port.c b/drivers/net/ethernet/qualcomm/ppe/edma_port.c
+index 6730cee5d6c9..0de540aa2d2f 100644
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_port.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_port.c
+@@ -1,5 +1,5 @@
+ // SPDX-License-Identifier: GPL-2.0-only
+- /* Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
++ /* Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
+   */
+ 
+ /* EDMA port initialization, configuration and netdevice ops handling */
+@@ -59,9 +59,12 @@ static void edma_port_stats_free(struct net_device *netdev)
+ static void edma_port_configure(struct net_device *netdev)
+ {
+ 	struct edma_port_priv *port_priv = (struct edma_port_priv *)netdev_priv(netdev);
+-	struct ppe_port *port =  port_priv->ppe_port;
++	struct ppe_port *port = port_priv->ppe_port;
+ 	int port_id = port->port_id;
+ 
++	netdev_dbg(netdev, "Configuring the port %s(qcom-id:%d)\n",
++		   netdev->name, port_id);
++
+ 	edma_cfg_tx_fill_per_port_tx_map(netdev, port_id);
+ 	edma_cfg_tx_rings_enable(port_id);
+ 	edma_cfg_tx_napi_add(netdev, port_id);
+@@ -70,7 +73,7 @@ static void edma_port_configure(struct net_device *netdev)
+ static void edma_port_deconfigure(struct net_device *netdev)
+ {
+ 	struct edma_port_priv *port_priv = (struct edma_port_priv *)netdev_priv(netdev);
+-	struct ppe_port *port =  port_priv->ppe_port;
++	struct ppe_port *port = port_priv->ppe_port;
+ 	int port_id = port->port_id;
+ 
+ 	edma_cfg_tx_napi_delete(port_id);
+@@ -140,7 +143,6 @@ static int edma_port_close(struct net_device *netdev)
+ 	edma_cfg_tx_disable_interrupts(port_id);
+ 	edma_cfg_tx_napi_disable(port_id);
+ 
+-	/* Phylink close. */
+ 	if (ppe_port->phylink)
+ 		phylink_stop(ppe_port->phylink);
+ 
+@@ -219,7 +221,7 @@ static netdev_tx_t edma_port_xmit(struct sk_buff *skb,
+ 		if (unlikely(ret == EDMA_TX_FAIL_NO_DESC)) {
+ 			if (likely(!edma_ctx->tx_requeue_stop)) {
+ 				cpu_id = smp_processor_id();
+-				netdev_dbg(dev, "Stopping tx queue due to lack oftx descriptors\n");
++				netdev_dbg(dev, "Stopping tx queue due to lack of tx descriptors\n");
+ 				u64_stats_update_begin(&stats->syncp);
+ 				++stats->tx_queue_stopped[cpu_id];
+ 				u64_stats_update_end(&stats->syncp);
+@@ -406,16 +408,12 @@ int edma_port_setup(struct ppe_port *port)
+ 			    port_id, netdev->dev_addr);
+ 	}
+ 
+-	/* Allocate memory for EDMA port statistics. */
+ 	ret = edma_port_stats_alloc(netdev);
+ 	if (ret) {
+ 		netdev_dbg(netdev, "EDMA port stats alloc failed\n");
+ 		goto stats_alloc_fail;
+ 	}
+ 
+-	netdev_dbg(netdev, "Configuring the port %s(qcom-id:%d)\n",
+-		   netdev->name, port_id);
+-
+ 	/* We expect 'port_id' to correspond to ports numbers on SoC.
+ 	 * These begin from '1' and hence we subtract
+ 	 * one when using it as an array index.
+@@ -424,7 +422,6 @@ int edma_port_setup(struct ppe_port *port)
+ 
+ 	edma_port_configure(netdev);
+ 
+-	/* Setup phylink. */
+ 	ret = ppe_port_phylink_setup(port, netdev);
+ 	if (ret) {
+ 		netdev_dbg(netdev, "EDMA port phylink setup for netdevice %s\n",
+@@ -432,7 +429,6 @@ int edma_port_setup(struct ppe_port *port)
+ 		goto port_phylink_setup_fail;
+ 	}
+ 
+-	/* Register the network interface. */
+ 	ret = register_netdev(netdev);
+ 	if (ret) {
+ 		netdev_dbg(netdev, "Error registering netdevice %s\n",
+@@ -440,7 +436,7 @@ int edma_port_setup(struct ppe_port *port)
+ 		goto register_netdev_fail;
+ 	}
+ 
+-	netdev_dbg(netdev, "Setup EDMA port GMAC%d done\n", port_id);
++	netdev_dbg(netdev, "Setup EDMA port%d done\n", port_id);
+ 	return ret;
+ 
+ register_netdev_fail:
+diff --git a/drivers/net/ethernet/qualcomm/ppe/edma_port.h b/drivers/net/ethernet/qualcomm/ppe/edma_port.h
+index b67eddabd41c..911d2d1380a4 100644
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_port.h
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_port.h
+@@ -1,5 +1,5 @@
+ /* SPDX-License-Identifier: GPL-2.0-only
+- * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
++ * Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
+  */
+ 
+ #ifndef __EDMA_PORTS__
+@@ -17,7 +17,7 @@
+ 					| NETIF_F_TSO6)
+ 
+ /**
+- * struct edma_port_rx_stats - EDMA RX per CPU stats for the port.
++ * struct edma_port_rx_stats - EDMA Rx per CPU stats for the port.
+  * @rx_pkts: Number of Rx packets
+  * @rx_bytes: Number of Rx bytes
+  * @rx_drops: Number of Rx drops
+diff --git a/drivers/net/ethernet/qualcomm/ppe/edma_rx.c b/drivers/net/ethernet/qualcomm/ppe/edma_rx.c
+index a1eb533410ce..df5a5497d0b6 100644
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_rx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_rx.c
+@@ -1,5 +1,5 @@
+ // SPDX-License-Identifier: GPL-2.0-only
+-/* Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
++/* Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
+  */
+ 
+ /* Provides APIs to alloc Rx Buffers, reap the buffers, receive and
+@@ -33,10 +33,12 @@ static int edma_rx_alloc_buffer_list(struct edma_rxfill_ring *rxfill_ring, int a
+ 	struct device *dev = ppe_dev->dev;
+ 	u16 prod_idx, start_idx;
+ 	u16 num_alloc = 0;
++	u32 dma_map_size;
+ 	u32 reg;
+ 
+ 	prod_idx = rxfill_ring->prod_idx;
+ 	start_idx = prod_idx;
++	dma_map_size = rx_alloc_size - EDMA_RX_SKB_HEADROOM - NET_IP_ALIGN;
+ 
+ 	while (likely(alloc_count--)) {
+ 		dma_addr_t buff_addr;
+@@ -56,9 +58,9 @@ static int edma_rx_alloc_buffer_list(struct edma_rxfill_ring *rxfill_ring, int a
+ 		skb_reserve(skb, EDMA_RX_SKB_HEADROOM + NET_IP_ALIGN);
+ 
+ 		if (likely(!page_mode)) {
+-			buff_addr = dma_map_single(dev, skb->data, rx_alloc_size, DMA_FROM_DEVICE);
++			buff_addr = dma_map_single(dev, skb->data, dma_map_size, DMA_TO_DEVICE);
+ 			if (dma_mapping_error(dev, buff_addr)) {
+-				dev_dbg(dev, "edma_context:%p Unable to dma for non page mode",
++				dev_dbg(dev, "edma_context:%pK Unable to dma for non page mode",
+ 					edma_ctx);
+ 				dev_kfree_skb_any(skb);
+ 				break;
+@@ -70,14 +72,14 @@ static int edma_rx_alloc_buffer_list(struct edma_rxfill_ring *rxfill_ring, int a
+ 				++rxfill_stats->page_alloc_failed;
+ 				u64_stats_update_end(&rxfill_stats->syncp);
+ 				dev_kfree_skb_any(skb);
+-				dev_dbg(dev, "edma_context:%p Unable to allocate page",
++				dev_dbg(dev, "edma_context:%pK Unable to allocate page",
+ 					edma_ctx);
+ 				break;
+ 			}
+ 
+-			buff_addr = dma_map_page(dev, pg, 0, PAGE_SIZE, DMA_FROM_DEVICE);
++			buff_addr = dma_map_page(dev, pg, 0, PAGE_SIZE, DMA_TO_DEVICE);
+ 			if (dma_mapping_error(dev, buff_addr)) {
+-				dev_dbg(dev, "edma_context:%p Mapping error for page mode",
++				dev_dbg(dev, "edma_context:%pK Mapping error for page mode",
+ 					edma_ctx);
+ 				__free_page(pg);
+ 				dev_kfree_skb_any(skb);
+@@ -97,9 +99,12 @@ static int edma_rx_alloc_buffer_list(struct edma_rxfill_ring *rxfill_ring, int a
+ 					   (u32)(buf_len) & EDMA_RXFILL_BUF_SIZE_MASK);
+ 		prod_idx = (prod_idx + 1) & EDMA_RX_RING_SIZE_MASK;
+ 		num_alloc++;
++
++		EDMA_RXFILL_ENDIAN_SET(rxfill_desc);
+ 	}
+ 
+ 	if (likely(num_alloc)) {
++		dsb(st);
+ 		reg = EDMA_BASE_OFFSET + EDMA_REG_RXFILL_PROD_IDX(rxfill_ring->ring_id);
+ 		regmap_write(regmap, reg, prod_idx);
+ 		rxfill_ring->prod_idx = prod_idx;
+@@ -122,24 +127,26 @@ int edma_rx_alloc_buffer(struct edma_rxfill_ring *rxfill_ring, int alloc_count)
+ 	return edma_rx_alloc_buffer_list(rxfill_ring, alloc_count);
+ }
+ 
+-/* Mark ip_summed appropriately in the skb as per the L3/L4 checksum
+- * status in descriptor.
+- */
+-static void edma_rx_checksum_verify(struct edma_rxdesc_pri *rxdesc_pri,
++static inline uint8_t edma_rx_checksum_verify(struct edma_rxdesc_pri *rxdesc_pri,
+ 				    struct sk_buff *skb)
+ {
+ 	u8 pid = EDMA_RXDESC_PID_GET(rxdesc_pri);
+ 
+ 	skb_checksum_none_assert(skb);
+ 
++	/* Mark ip_summed appropriately in the skb as per the L3/L4 checksum
++	 * status in descriptor.
++	 */
+ 	if (likely(EDMA_RX_PID_IS_IPV4(pid))) {
+ 		if (likely(EDMA_RXDESC_L3CSUM_STATUS_GET(rxdesc_pri)) &&
+ 		    likely(EDMA_RXDESC_L4CSUM_STATUS_GET(rxdesc_pri)))
+-			skb->ip_summed = CHECKSUM_UNNECESSARY;
++			return CHECKSUM_UNNECESSARY;
+ 	} else if (likely(EDMA_RX_PID_IS_IPV6(pid))) {
+ 		if (likely(EDMA_RXDESC_L4CSUM_STATUS_GET(rxdesc_pri)))
+-			skb->ip_summed = CHECKSUM_UNNECESSARY;
++			return CHECKSUM_UNNECESSARY;
+ 	}
++
++	return skb->ip_summed;
+ }
+ 
+ static void edma_rx_process_last_segment(struct edma_rxdesc_ring *rxdesc_ring,
+@@ -154,7 +161,6 @@ static void edma_rx_process_last_segment(struct edma_rxdesc_ring *rxdesc_ring,
+ 	struct net_device *dev;
+ 	u32 pkt_length;
+ 
+-	/* Get packet length. */
+ 	pkt_length = EDMA_RXDESC_PACKET_LEN_GET(rxdesc_pri);
+ 
+ 	skb_head = rxdesc_ring->head;
+@@ -162,7 +168,7 @@ static void edma_rx_process_last_segment(struct edma_rxdesc_ring *rxdesc_ring,
+ 
+ 	/* Check Rx checksum offload status. */
+ 	if (likely(dev->features & NETIF_F_RXCSUM))
+-		edma_rx_checksum_verify(rxdesc_pri, skb_head);
++		skb->ip_summed = edma_rx_checksum_verify(rxdesc_pri, skb_head);
+ 
+ 	/* Get stats for the netdevice. */
+ 	port_dev = netdev_priv(dev);
+@@ -207,7 +213,7 @@ static void edma_rx_process_last_segment(struct edma_rxdesc_ring *rxdesc_ring,
+ 	rx_stats->rx_fraglist_pkts += (u64)(!page_mode);
+ 	u64_stats_update_end(&rx_stats->syncp);
+ 
+-	pr_debug("edma_context:%p skb:%p Jumbo pkt_length:%u\n",
++	pr_debug("edma_context:%pK skb:%pK Jumbo pkt_length:%u\n",
+ 		 edma_ctx, skb_head, skb_head->len);
+ 
+ 	skb_head->protocol = eth_type_trans(skb_head, dev);
+@@ -229,9 +235,8 @@ static void edma_rx_handle_frag_list(struct edma_rxdesc_ring *rxdesc_ring,
+ {
+ 	u32 pkt_length;
+ 
+-	/* Get packet length. */
+ 	pkt_length = EDMA_RXDESC_PACKET_LEN_GET(rxdesc_pri);
+-	pr_debug("edma_context:%p skb:%p fragment pkt_length:%u\n",
++	pr_debug("edma_context:%pK skb:%pK fragment pkt_length:%u\n",
+ 		 edma_ctx, skb, pkt_length);
+ 
+ 	if (!(rxdesc_ring->head)) {
+@@ -275,9 +280,8 @@ static void edma_rx_handle_nr_frags(struct edma_rxdesc_ring *rxdesc_ring,
+ 	skb_frag_t *frag = NULL;
+ 	u32 pkt_length;
+ 
+-	/* Get packet length. */
+ 	pkt_length = EDMA_RXDESC_PACKET_LEN_GET(rxdesc_pri);
+-	pr_debug("edma_context:%p skb:%p fragment pkt_length:%u\n",
++	pr_debug("edma_context:%pK skb:%pK fragment pkt_length:%u\n",
+ 		 edma_ctx, skb, pkt_length);
+ 
+ 	if (!(rxdesc_ring->head)) {
+@@ -327,7 +331,6 @@ static bool edma_rx_handle_linear_packets(struct edma_rxdesc_ring *rxdesc_ring,
+ 	pcpu_stats = &port_dev->pcpu_stats;
+ 	rx_stats = this_cpu_ptr(pcpu_stats->rx_stats);
+ 
+-	/* Get packet length. */
+ 	pkt_length = EDMA_RXDESC_PACKET_LEN_GET(rxdesc_pri);
+ 
+ 	if (likely(!page_mode)) {
+@@ -355,7 +358,7 @@ send_to_stack:
+ 
+ 	/* Check Rx checksum offload status. */
+ 	if (likely(skb->dev->features & NETIF_F_RXCSUM))
+-		edma_rx_checksum_verify(rxdesc_pri, skb);
++		skb->ip_summed = edma_rx_checksum_verify(rxdesc_pri, skb);
+ 
+ 	u64_stats_update_begin(&rx_stats->syncp);
+ 	rx_stats->rx_pkts++;
+@@ -363,15 +366,15 @@ send_to_stack:
+ 	rx_stats->rx_nr_frag_pkts += (u64)page_mode;
+ 	u64_stats_update_end(&rx_stats->syncp);
+ 
++	netdev_dbg(skb->dev, "edma_context:%pK, skb:%pK pkt_length:%u\n",
++		   edma_ctx, skb, skb->len);
++
+ 	skb->protocol = eth_type_trans(skb, skb->dev);
+ 	if (skb->dev->features & NETIF_F_GRO)
+ 		napi_gro_receive(&rxdesc_ring->napi, skb);
+ 	else
+ 		netif_receive_skb(skb);
+ 
+-	netdev_dbg(skb->dev, "edma_context:%p, skb:%p pkt_length:%u\n",
+-		   edma_ctx, skb, skb->len);
+-
+ 	return true;
+ }
+ 
+@@ -390,7 +393,7 @@ static struct net_device *edma_rx_get_src_dev(struct edma_rxdesc_stats *rxdesc_s
+ 		src_port_num = src_info & EDMA_RXDESC_PORTNUM_BITS;
+ 	} else {
+ 		if (net_ratelimit()) {
+-			pr_warn("Invalid src info_type:0x%x. Drop skb:%p\n",
++			pr_warn("Invalid src info_type:0x%x. Drop skb:%pK\n",
+ 				(src_info & EDMA_RXDESC_SRCINFO_TYPE_MASK), skb);
+ 		}
+ 
+@@ -401,11 +404,10 @@ static struct net_device *edma_rx_get_src_dev(struct edma_rxdesc_stats *rxdesc_s
+ 		return NULL;
+ 	}
+ 
+-	/* Packet with PP source. */
+ 	if (likely(src_port_num <= hw_info->max_ports)) {
+ 		if (unlikely(src_port_num < EDMA_START_IFNUM)) {
+ 			if (net_ratelimit())
+-				pr_warn("Port number error :%d. Drop skb:%p\n",
++				pr_warn("Port number error :%d. Drop skb:%pK\n",
+ 					src_port_num, skb);
+ 
+ 			u64_stats_update_begin(&rxdesc_stats->syncp);
+@@ -427,7 +429,7 @@ static struct net_device *edma_rx_get_src_dev(struct edma_rxdesc_stats *rxdesc_s
+ 		return ndev;
+ 
+ 	if (net_ratelimit())
+-		pr_warn("Netdev Null src_info_type:0x%x src port num:%d Drop skb:%p\n",
++		pr_warn("Netdev Null src_info_type:0x%x src port num:%d Drop skb:%pK\n",
+ 			(src_info & EDMA_RXDESC_SRCINFO_TYPE_MASK),
+ 			src_port_num, skb);
+ 
+@@ -482,16 +484,17 @@ static int edma_rx_reap(struct edma_rxdesc_ring *rxdesc_ring, int budget)
+ 		struct net_device *ndev;
+ 		struct sk_buff *skb;
+ 		dma_addr_t dma_addr;
++		u32 dma_map_size;
+ 
+ 		skb = next_skb;
+ 		rxdesc_pri = next_rxdesc_pri;
+ 		dma_addr = EDMA_RXDESC_BUFFER_ADDR_GET(rxdesc_pri);
++		dma_map_size = alloc_size - EDMA_RX_SKB_HEADROOM - NET_IP_ALIGN;
+ 
+ 		if (!page_mode)
+-			dma_unmap_single(dev, dma_addr, alloc_size,
+-					 DMA_TO_DEVICE);
++			dma_unmap_single(dev, dma_addr, dma_map_size, DMA_FROM_DEVICE);
+ 		else
+-			dma_unmap_page(dev, dma_addr, PAGE_SIZE, DMA_TO_DEVICE);
++			dma_unmap_page(dev, dma_addr, PAGE_SIZE, DMA_FROM_DEVICE);
+ 
+ 		/* Update consumer index. */
+ 		cons_idx = (cons_idx + 1) & EDMA_RX_RING_SIZE_MASK;
+diff --git a/drivers/net/ethernet/qualcomm/ppe/edma_rx.h b/drivers/net/ethernet/qualcomm/ppe/edma_rx.h
+index 0ef8138b4530..edead80859e0 100644
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_rx.h
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_rx.h
+@@ -1,5 +1,5 @@
+ /* SPDX-License-Identifier: GPL-2.0-only
+- * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
++ * Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
+  */
+ 
+ #ifndef __EDMA_RX__
+diff --git a/drivers/net/ethernet/qualcomm/ppe/edma_tx.c b/drivers/net/ethernet/qualcomm/ppe/edma_tx.c
+index 47876c142df5..f98bcbba76a1 100644
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_tx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_tx.c
+@@ -1,5 +1,5 @@
+ // SPDX-License-Identifier: GPL-2.0-only
+-/* Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
++/* Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
+  */
+ 
+ /* Provide APIs to alloc Tx Buffers, fill the Tx descriptors and transmit
+@@ -68,14 +68,9 @@ enum edma_tx_gso_status edma_tx_gso_segment(struct sk_buff *skb,
+ 	if (likely(!skb_is_nonlinear(skb)))
+ 		return EDMA_TX_GSO_NOT_NEEDED;
+ 
+-	/* Check if TSO is enabled. If so, return as skb doesn't
+-	 * need to be segmented by linux.
+-	 */
+-	if (netdev->features & (NETIF_F_TSO | NETIF_F_TSO6)) {
+-		num_tx_desc_needed = edma_tx_num_descs_for_sg(skb);
+-		if (likely(num_tx_desc_needed <= EDMA_TX_TSO_SEG_MAX))
+-			return EDMA_TX_GSO_NOT_NEEDED;
+-	}
++	num_tx_desc_needed = edma_tx_num_descs_for_sg(skb);
++	if (likely(num_tx_desc_needed <= EDMA_TX_TSO_SEG_MAX))
++		return EDMA_TX_GSO_NOT_NEEDED;
+ 
+ 	/* GSO segmentation of the skb into multiple segments. */
+ 	*segs = skb_gso_segment(skb, netdev->features
+@@ -119,7 +114,7 @@ u32 edma_tx_complete(u32 work_to_do, struct edma_txcmpl_ring *txcmpl_ring)
+ 	if (likely(txcmpl_ring->avail_pkt >= work_to_do)) {
+ 		avail = work_to_do;
+ 	} else {
+-		/* Get TXCMPL ring producer index. */
++		/* Get Tx cmpl ring producer index. */
+ 		reg = EDMA_BASE_OFFSET + EDMA_REG_TXCMPL_PROD_IDX(txcmpl_ring->id);
+ 		regmap_read(regmap, reg, &data);
+ 		prod_idx = data & EDMA_TXCMPL_PROD_IDX_MASK;
+@@ -128,7 +123,7 @@ u32 edma_tx_complete(u32 work_to_do, struct edma_txcmpl_ring *txcmpl_ring)
+ 		txcmpl_ring->avail_pkt = avail;
+ 
+ 		if (unlikely(!avail)) {
+-			dev_dbg(dev, "No available descriptors are pending for %d txcmpl ring\n",
++			dev_dbg(dev, "No available descriptors are pending for %d Tx cmpl ring\n",
+ 				txcmpl_ring->id);
+ 			u64_stats_update_begin(&txcmpl_stats->syncp);
+ 			++txcmpl_stats->no_pending_desc;
+@@ -144,9 +139,6 @@ u32 edma_tx_complete(u32 work_to_do, struct edma_txcmpl_ring *txcmpl_ring)
+ 	end_idx = (cons_idx + avail) & EDMA_TX_RING_SIZE_MASK;
+ 	txcmpl = EDMA_TXCMPL_DESC(txcmpl_ring, cons_idx);
+ 
+-	/* Instead of freeing the skb, it might be better to save and use
+-	 * for Rxfill.
+-	 */
+ 	while (likely(avail--)) {
+ 		/* The last descriptor holds the SKB pointer for scattered frames.
+ 		 * So skip the descriptors with more bit set.
+@@ -172,27 +164,13 @@ u32 edma_tx_complete(u32 work_to_do, struct edma_txcmpl_ring *txcmpl_ring)
+ 			++txcmpl_stats->invalid_buffer;
+ 			u64_stats_update_end(&txcmpl_stats->syncp);
+ 		} else {
+-			dev_dbg(dev, "TXCMPL: skb:%p, skb->len %d, skb->data_len %d, cons_idx:%d prod_idx:%d word2:0x%x word3:0x%x\n",
+-				skb, skb->len, skb->data_len, cons_idx, prod_idx,
+-				txcmpl->word2, txcmpl->word3);
+-
+-			txcmpl_errors = EDMA_TXCOMP_RING_ERROR_GET(txcmpl->word3);
+-			if (unlikely(txcmpl_errors)) {
+-				if (net_ratelimit())
+-					dev_err(dev, "Error 0x%0x observed in tx complete %d ring\n",
+-						txcmpl_errors, txcmpl_ring->id);
+-
+-				u64_stats_update_begin(&txcmpl_stats->syncp);
+-				++txcmpl_stats->errors;
+-				u64_stats_update_end(&txcmpl_stats->syncp);
+-			}
+ 
+ 			/* Retrieve pool id for unmapping.
+ 			 * 0 for linear skb and (pool id - 1) represents nr_frag index.
+ 			 */
+ 			if (!EDMA_TXCOMP_POOL_ID_GET(txcmpl)) {
+ 				dma_unmap_single(dev, virt_to_phys(skb->data),
+-						 skb->len, DMA_TO_DEVICE);
++						 skb_headlen(skb), DMA_TO_DEVICE);
+ 			} else {
+ 				u8 frag_index = (EDMA_TXCOMP_POOL_ID_GET(txcmpl) - 1);
+ 				skb_frag_t *frag = &skb_shinfo(skb)->frags[frag_index];
+@@ -201,6 +179,21 @@ u32 edma_tx_complete(u32 work_to_do, struct edma_txcmpl_ring *txcmpl_ring)
+ 					       PAGE_SIZE, DMA_TO_DEVICE);
+ 			}
+ 
++			dev_dbg(dev, "TXCMPL: skb:%pK, skb->len %d, skb->data_len %d, cons_idx:%d prod_idx:%d word2:0x%x word3:0x%x\n",
++				skb, skb->len, skb->data_len, cons_idx, prod_idx,
++				txcmpl->word2, txcmpl->word3);
++
++			txcmpl_errors = EDMA_TXCOMP_RING_ERROR_GET(txcmpl->word3);
++			if (unlikely(txcmpl_errors)) {
++				if (net_ratelimit())
++					dev_err(dev, "Error 0x%0x observed in tx complete %d ring\n",
++						txcmpl_errors, txcmpl_ring->id);
++
++				u64_stats_update_begin(&txcmpl_stats->syncp);
++				++txcmpl_stats->errors;
++				u64_stats_update_end(&txcmpl_stats->syncp);
++			}
++
+ 			dev_kfree_skb(skb);
+ 		}
+ 
+@@ -211,7 +204,7 @@ u32 edma_tx_complete(u32 work_to_do, struct edma_txcmpl_ring *txcmpl_ring)
+ 	txcmpl_ring->cons_idx = cons_idx;
+ 	txcmpl_ring->avail_pkt -= count;
+ 
+-	dev_dbg(dev, "TXCMPL:%u count:%u prod_idx:%u cons_idx:%u\n",
++	dev_dbg(dev, "Tx cmpl:%u count:%u prod_idx:%u cons_idx:%u\n",
+ 		txcmpl_ring->id, count, prod_idx, cons_idx);
+ 	reg = EDMA_BASE_OFFSET + EDMA_REG_TXCMPL_CONS_IDX(txcmpl_ring->id);
+ 	regmap_write(regmap, reg, cons_idx);
+@@ -265,7 +258,7 @@ int edma_tx_napi_poll(struct napi_struct *napi, int budget)
+ 	/* No more packets to process. Finish NAPI processing. */
+ 	napi_complete(napi);
+ 
+-	/* Set TXCMPL ring interrupt mask. */
++	/* Set Tx cmpl ring interrupt mask. */
+ 	reg = EDMA_BASE_OFFSET + EDMA_REG_TX_INT_MASK(txcmpl_ring->id);
+ 	regmap_write(regmap, reg, edma_ctx->intr_info.intr_mask_txcmpl);
+ 
+@@ -392,7 +385,7 @@ static u32 edma_tx_skb_nr_frags(struct edma_txdesc_ring *txdesc_ring,
+ 	return num_descs;
+ }
+ 
+-static void edma_tx_fill_pp_desc(struct edma_port_priv *port_priv,
++static void edma_tx_fill_desc(struct edma_port_priv *port_priv,
+ 				 struct edma_txdesc_pri *txd, struct sk_buff *skb,
+ 	struct edma_port_tx_stats *stats)
+ {
+@@ -463,7 +456,7 @@ static struct edma_txdesc_pri *edma_tx_skb_first_desc(struct edma_port_priv *por
+ 
+ 	EDMA_TXDESC_BUFFER_ADDR_SET(txd, buff_addr);
+ 	EDMA_TXDESC_POOL_ID_SET(txd, 0);
+-	edma_tx_fill_pp_desc(port_priv, txd, skb, stats);
++	edma_tx_fill_desc(port_priv, txd, skb, stats);
+ 
+ 	/* Set packet length in the descriptor. */
+ 	EDMA_TXDESC_DATA_LEN_SET(txd, buf_len);
+@@ -528,6 +521,23 @@ static u32 edma_tx_skb_sg_fill_desc(struct edma_txdesc_ring *txdesc_ring,
+ 	/* Head skb processed already. */
+ 	num_descs++;
+ 
++	/* Process skb with nr_frags. */
++	if (unlikely(skb_shinfo(skb)->nr_frags)) {
++		num_descs += edma_tx_skb_nr_frags(txdesc_ring, &txd, skb,
++						  hw_next_to_use, &invalid_frag);
++		if (unlikely(!num_descs)) {
++			dev_dbg(dev, "No descriptor available for ring %d\n", txdesc_ring->id);
++			edma_tx_dma_unmap_frags(skb, invalid_frag);
++			*txdesc = NULL;
++			return num_descs;
++		}
++
++		u64_stats_update_begin(&stats->syncp);
++		stats->tx_nr_frag_pkts++;
++		u64_stats_update_end(&stats->syncp);
++	}
++
++	/* Process skb if it has frag_list */
+ 	if (unlikely(skb_has_frag_list(skb))) {
+ 		struct edma_txdesc_pri *start_desc = NULL;
+ 		u32 start_idx = 0, end_idx = 0;
+@@ -608,23 +618,9 @@ skip_primary:
+ 		u64_stats_update_begin(&stats->syncp);
+ 		stats->tx_fraglist_pkts++;
+ 		u64_stats_update_end(&stats->syncp);
+-	} else {
+-		/* Process skb with nr_frags. */
+-		num_descs += edma_tx_skb_nr_frags(txdesc_ring, &txd, skb,
+-						  hw_next_to_use, &invalid_frag);
+-		if (unlikely(!num_descs)) {
+-			dev_dbg(dev, "No descriptor available for ring %d\n", txdesc_ring->id);
+-			edma_tx_dma_unmap_frags(skb, invalid_frag);
+-			*txdesc = NULL;
+-			return num_descs;
+-		}
+-
+-		u64_stats_update_begin(&stats->syncp);
+-		stats->tx_nr_frag_pkts++;
+-		u64_stats_update_end(&stats->syncp);
+ 	}
+ 
+-	dev_dbg(dev, "skb:%p num_descs_filled: %u, nr_frags %u, frag_list fragments %u\n",
++	dev_dbg(dev, "skb:%pK num_descs_filled: %u, nr_frags %u, frag_list fragments %u\n",
+ 		skb, num_descs, skb_shinfo(skb)->nr_frags, num_sg_frag_list);
+ 
+ 	*txdesc = txd;
+@@ -775,7 +771,7 @@ enum edma_tx_status edma_tx_ring_xmit(struct net_device *netdev,
+ 			netdev_dbg(netdev, "No descriptor available for ring %d\n",
+ 				   txdesc_ring->id);
+ 			dma_unmap_single(dev, virt_to_phys(skb->data),
+-					 skb->len, DMA_TO_DEVICE);
++					 skb_headlen(skb), DMA_TO_DEVICE);
+ 			u64_stats_update_begin(&txdesc_stats->syncp);
+ 			++txdesc_stats->no_desc_avail;
+ 			u64_stats_update_end(&txdesc_stats->syncp);
+@@ -792,10 +788,12 @@ enum edma_tx_status edma_tx_ring_xmit(struct net_device *netdev,
+ 	txdesc_ring->prod_idx = hw_next_to_use & EDMA_TXDESC_PROD_IDX_MASK;
+ 	txdesc_ring->avail_desc -= num_desc_filled;
+ 
+-	netdev_dbg(netdev, "%s: skb:%p tx_ring:%u proto:0x%x skb->len:%d\n port:%u prod_idx:%u ip_summed:0x%x\n",
++	netdev_dbg(netdev, "%s: skb:%pK tx_ring:%u proto:0x%x skb->len:%d\n port:%u prod_idx:%u ip_summed:0x%x\n",
+ 		   netdev->name, skb, txdesc_ring->id, ntohs(skb->protocol),
+ 		 skb->len, port_id, hw_next_to_use, skb->ip_summed);
+ 
++	dsb(st);
++
+ 	reg = EDMA_BASE_OFFSET + EDMA_REG_TXDESC_PROD_IDX(txdesc_ring->id);
+ 	regmap_write(regmap, reg, txdesc_ring->prod_idx);
+ 
+diff --git a/drivers/net/ethernet/qualcomm/ppe/edma_tx.h b/drivers/net/ethernet/qualcomm/ppe/edma_tx.h
+index c4fa63321d1f..a71c641bca51 100644
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_tx.h
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_tx.h
+@@ -1,5 +1,5 @@
+ /* SPDX-License-Identifier: GPL-2.0-only
+- * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
++ * Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
+  */
+ 
+ #ifndef __EDMA_TX__
+@@ -66,7 +66,7 @@
+ #define EDMA_TXDESC_L4_CSUM_SET(desc)  ((desc)->word5 |= \
+ 			       (FIELD_PREP(EDMA_TXDESC_L4_CSUM_SET_MASK, 1)))
+ 
+-#define EDMA_TXDESC_POOL_ID_SET_MASK	GENMASK(24, 18)
++#define EDMA_TXDESC_POOL_ID_SET_MASK	GENMASK(23, 18)
+ #define EDMA_TXDESC_POOL_ID_SET(desc, x)	((desc)->word5 |= \
+ 				(FIELD_PREP(EDMA_TXDESC_POOL_ID_SET_MASK, x)))
+ 
+@@ -153,7 +153,7 @@ enum edma_tx_gso_status {
+ };
+ 
+ /**
+- * struct edma_txcmpl_stats - EDMA TX complete ring statistics.
++ * struct edma_txcmpl_stats - EDMA Tx complete ring statistics.
+  * @invalid_buffer: Invalid buffer address received.
+  * @errors: Other Tx complete descriptor errors indicated by the hardware.
+  * @desc_with_more_bit: Packet's segment transmit count.
+@@ -181,7 +181,7 @@ struct edma_txdesc_stats {
+ };
+ 
+ /**
+- * struct edma_txdesc_pri - EDMA primary TX descriptor.
++ * struct edma_txdesc_pri - EDMA primary Tx descriptor.
+  * @word0: Low 32-bit of buffer address.
+  * @word1: Buffer recycling, PTP tag flag, PRI valid flag.
+  * @word2: Low 32-bit of opaque value.
+@@ -203,7 +203,7 @@ struct edma_txdesc_pri {
+ };
+ 
+ /**
+- * struct edma_txdesc_sec - EDMA secondary TX descriptor.
++ * struct edma_txdesc_sec - EDMA secondary Tx descriptor.
+  * @word0: Reserved.
+  * @word1: Custom csum offset, payload offset, TTL/NAT action.
+  * @word2: NAPT translated port, DSCP value, TTL value.
+@@ -225,7 +225,7 @@ struct edma_txdesc_sec {
+ };
+ 
+ /**
+- * struct edma_txcmpl_desc - EDMA TX complete descriptor.
++ * struct edma_txcmpl_desc - EDMA Tx complete descriptor.
+  * @word0: Low 32-bit opaque value.
+  * @word1: High 32-bit opaque value.
+  * @word2: More fragment, transmit ring id, pool id.
+@@ -239,7 +239,7 @@ struct edma_txcmpl_desc {
+ };
+ 
+ /**
+- * struct edma_txdesc_ring - EDMA TX descriptor ring
++ * struct edma_txdesc_ring - EDMA Tx descriptor ring
+  * @prod_idx: Producer index
+  * @id: Tx ring number
+  * @avail_desc: Number of available descriptor to process
+@@ -265,7 +265,7 @@ struct edma_txdesc_ring {
+ };
+ 
+ /**
+- * struct edma_txcmpl_ring - EDMA TX complete ring
++ * struct edma_txcmpl_ring - EDMA Tx complete ring
+  * @napi: NAPI
+  * @cons_idx: Consumer index
+  * @avail_pkt: Number of available packets to process
+diff --git a/drivers/net/ethernet/qualcomm/ppe/ppe.c b/drivers/net/ethernet/qualcomm/ppe/ppe.c
+index 04c8a7476115..bc68caf250ae 100644
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe.c
+@@ -1,6 +1,6 @@
+ // SPDX-License-Identifier: GPL-2.0-only
+ /*
+- * Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
++ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+  */
+ 
+ /* PPE platform device probe, DTSI parser and PPE clock initializations. */
+@@ -124,6 +124,11 @@ static int ppe_clock_init_and_reset(struct ppe_device *ppe_dev)
+ 		ppe_dev->icc_paths[i].name = ppe_icc_data[i].name;
+ 		ppe_dev->icc_paths[i].avg_bw = ppe_icc_data[i].avg_bw ? :
+ 					       Bps_to_icc(ppe_rate);
++
++		/* PPE does not have an explicit peak bandwidth requirement,
++		 * so set the peak bandwidth to be equal to the average
++		 * bandwidth.
++		 */
+ 		ppe_dev->icc_paths[i].peak_bw = ppe_icc_data[i].peak_bw ? :
+ 						Bps_to_icc(ppe_rate);
+ 	}
+@@ -224,11 +229,9 @@ static void qcom_ppe_remove(struct platform_device *pdev)
+ 	struct ppe_device *ppe_dev;
+ 
+ 	ppe_dev = platform_get_drvdata(pdev);
+-	ppe_debugfs_teardown(ppe_dev);
+ 	ppe_port_mac_deinit(ppe_dev);
++	ppe_debugfs_teardown(ppe_dev);
+ 	edma_destroy(ppe_dev);
+-
+-	platform_set_drvdata(pdev, NULL);
+ }
+ 
+ static const struct of_device_id qcom_ppe_of_match[] = {
+diff --git a/drivers/net/ethernet/qualcomm/ppe/ppe.h b/drivers/net/ethernet/qualcomm/ppe/ppe.h
+index 86713f79b3d7..9e8b28a76938 100644
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe.h
+@@ -1,6 +1,6 @@
+ /* SPDX-License-Identifier: GPL-2.0-only
+  *
+- * Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
++ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+  */
+ 
+ #ifndef __PPE_H__
+@@ -13,6 +13,8 @@ struct device;
+ struct regmap;
+ struct dentry;
+ 
++struct ppe_ports;
++
+ /**
+  * struct ppe_device - PPE device private data.
+  * @dev: PPE device structure.
+diff --git a/drivers/net/ethernet/qualcomm/ppe/ppe_api.c b/drivers/net/ethernet/qualcomm/ppe/ppe_api.c
+new file mode 100644
+index 000000000000..4a26c278a975
+--- /dev/null
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_api.c
+@@ -0,0 +1,113 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
++ */
++
++#include "ppe.h"
++#include "ppe_api.h"
++#include "ppe_config.h"
++
++/**
++ * ppe_queue_node_priority_set - set scheduler priority of PPE queue or flow
++ * @ppe_dev: PPE device
++ * @node_id: PPE hardware node ID, which can be queue ID or flow ID.
++ * @priority: PPE discipline scheduler priority
++ *
++ * Configure scheduler priority for a given PPE node. Node may be of type
++ * PPE queue or flow. The packet is dispatched first by queue scheduler
++ * (level 0), then dispatched by flow scheduler (level 1).
++ *
++ * Return 0 on success, negative error code on failure.
++ */
++int ppe_queue_node_priority_set(struct ppe_device *ppe_dev,
++				int node_id, int priority)
++{
++	struct ppe_scheduler_cfg sch_cfg;
++	int ret, port, level = 0;
++
++	if (node_id >= PPE_QUEUE_ID_MAX + PPE_FLOW_ID_MAX)
++		return -EINVAL;
++
++	if (node_id >= PPE_QUEUE_ID_MAX) {
++		level = 1;
++		node_id -= PPE_QUEUE_ID_MAX;
++	}
++
++	ret = ppe_queue_scheduler_get(ppe_dev, node_id, level, &port, &sch_cfg);
++	if (ret)
++		return ret;
++
++	sch_cfg.pri = priority;
++
++	return ppe_queue_scheduler_set(ppe_dev, node_id, level, port, sch_cfg);
++}
++
++/**
++ * ppe_edma_queue_offset_config - Configure queue offset for EDMA interface
++ * @ppe_dev: PPE device
++ * @type: The type can be internal priority or PPE hash
++ * @index: Class index, which can be internal priority or hash value
++ * @queue_offset: Queue offset value which is added by the queue base to get
++ * 		  the egress queue ID.
++ *
++ * PPE EDMA queue offset is configured based on the PPE internal priority or
++ * RSS hash value, the profile ID is fixed to 0 for the EDMA interface.
++ *
++ * Return 0 on success, negative error code on failure.
++ */
++int ppe_edma_queue_offset_config(struct ppe_device *ppe_dev,
++				 enum ppe_queue_offset_type type,
++				 int index, int queue_offset)
++{
++	if (type == PPE_QUEUE_OFFSET_BY_PRIORITY)
++		return ppe_queue_ucast_offset_pri_set(ppe_dev, 0,
++						      index, queue_offset);
++
++	return ppe_queue_ucast_offset_hash_set(ppe_dev, 0,
++					       index, queue_offset);
++}
++
++/**
++ * ppe_edma_queue_resource_get - Get EDMA queue resource
++ * @ppe_dev: PPE device
++ * @type: Resource type
++ * @res_start: Resource start ID returned
++ * @res_end: Resource end ID returned
++ *
++ * PPE EDMA queue resource includes unicast queue and multicast queue.
++ *
++ * Return 0 on success, negative error code on failure.
++ */
++int ppe_edma_queue_resource_get(struct ppe_device *ppe_dev,
++				enum ppe_resource_type type,
++				int *res_start, int *res_end)
++{
++	if (type != PPE_RES_UCAST && type != PPE_RES_MCAST)
++		return -EINVAL;
++
++	return ppe_port_resource_get(ppe_dev, 0, type, res_start, res_end);
++};
++
++/**
++ * ppe_edma_ring_to_queues_config - Configure EDMA ring to queue mapping in PPE
++ * @ppe_dev: PPE device
++ * @ring_id: EDMA ring ID
++ * @num: Number of queues mapped to EDMA ring
++ * @queues: PPE queue IDs
++ *
++ * Enable EDMA ring to PPE queue mapping configuration for packet
++ * receive to an EDMA ring.
++ *
++ * Return 0 on success, negative error code on failure.
++ */
++int ppe_edma_ring_to_queues_config(struct ppe_device *ppe_dev, int ring_id,
++				   int num, int queues[])
++{
++	u32 queue_bmap[PPE_RING_TO_QUEUE_BITMAP_WORD_CNT] = {};
++	int index;
++
++	for (index = 0; index < num; index++)
++		queue_bmap[queues[index] / 32] |= BIT_MASK(queues[index] % 32);
++
++	return ppe_ring_queue_map_set(ppe_dev, ring_id, queue_bmap);
++}
+diff --git a/drivers/net/ethernet/qualcomm/ppe/ppe_api.h b/drivers/net/ethernet/qualcomm/ppe/ppe_api.h
+new file mode 100644
+index 000000000000..9361bf1973e1
+--- /dev/null
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_api.h
+@@ -0,0 +1,43 @@
++/* SPDX-License-Identifier: GPL-2.0-only
++ *
++ * Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
++ */
++
++/* Functions for low level PPE configurations which are needed during ethernet
++ * driver initialization.
++ */
++
++#ifndef __PPE_API_H__
++#define __PPE_API_H__
++
++#include "ppe.h"
++#include "ppe_config.h"
++
++#define PPE_QUEUE_ID_MAX			300
++#define PPE_FLOW_ID_MAX				64
++#define PPE_QUEUE_INTERNAL_PRI_NUM		16
++#define PPE_QUEUE_HASH_NUM			256
++
++/**
++ * enum ppe_queue_offset_type - PPE queue offset type
++ * @PPE_QUEUE_CLASS_PRIORITY: Queue offset decided by PPE internal priority
++ * @PPE_QUEUE_CLASS_HASH: Queue offset decided by PPE RSS hash value.
++ */
++enum ppe_queue_offset_type {
++	PPE_QUEUE_OFFSET_BY_PRIORITY,
++	PPE_QUEUE_OFFSET_BY_HASH,
++};
++
++int ppe_queue_node_priority_set(struct ppe_device *ppe_dev,
++				int node_id, int priority);
++
++int ppe_edma_queue_offset_config(struct ppe_device *ppe_dev,
++				 enum ppe_queue_offset_type type,
++				 int index, int queue_offset);
++
++int ppe_edma_queue_resource_get(struct ppe_device *ppe_dev,
++				enum ppe_resource_type type,
++				int *res_start, int *res_end);
++int ppe_edma_ring_to_queues_config(struct ppe_device *ppe_dev, int ring_id,
++				   int num, int queues[]);
++#endif
+diff --git a/drivers/net/ethernet/qualcomm/ppe/ppe_config.c b/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
+index 146040710d9c..a23e7f45d6dc 100644
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_config.c
+@@ -1,6 +1,6 @@
+ // SPDX-License-Identifier: GPL-2.0-only
+ /*
+- * Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
++ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+  */
+ 
+ /* PPE HW initialization configs such as BM(buffer management),
+@@ -69,22 +69,32 @@ struct ppe_qm_queue_config {
+ 	bool dynamic;
+ };
+ 
++/**
++ * enum ppe_scheduler_direction - PPE scheduler direction for packet.
++ * @PPE_SCH_INGRESS: Scheduler for the packet on ingress,
++ * @PPE_SCH_EGRESS: Scheduler for the packet on egress,
++ */
++enum ppe_scheduler_direction {
++	PPE_SCH_INGRESS = 0,
++	PPE_SCH_EGRESS = 1,
++};
++
+ /**
+  * struct ppe_scheduler_bm_config - PPE arbitration for buffer config.
+  * @valid: Arbitration entry valid or not.
+- * @is_egress: Arbitration entry for egress or not.
++ * @dir: Arbitration entry for egress or ingress.
+  * @port: Port ID to use arbitration entry.
+- * @second_valid: Second port valid or not.
+- * @second_port: Second port to use.
++ * @backup_port_valid: Backup port valid or not.
++ * @backup_port: Backup port ID to use.
+  *
+  * Configure the scheduler settings for accessing and releasing the PPE buffers.
+  */
+ struct ppe_scheduler_bm_config {
+ 	bool valid;
+-	bool is_egress;
++	enum ppe_scheduler_direction dir;
+ 	unsigned int port;
+-	bool second_valid;
+-	unsigned int second_port;
++	bool backup_port_valid;
++	unsigned int backup_port;
+ };
+ 
+ /**
+@@ -92,8 +102,8 @@ struct ppe_scheduler_bm_config {
+  * @ensch_port_bmp: Port bit map for enqueue scheduler.
+  * @ensch_port: Port ID to enqueue scheduler.
+  * @desch_port: Port ID to dequeue scheduler.
+- * @desch_second_valid: Dequeue for the second port valid or not.
+- * @desch_second_port: Second port ID to dequeue scheduler.
++ * @desch_backup_port_valid: Dequeue for the backup port valid or not.
++ * @desch_backup_port: Backup port ID to dequeue scheduler.
+  *
+  * Configure the scheduler settings for enqueuing and dequeuing packets on
+  * the PPE port.
+@@ -102,8 +112,8 @@ struct ppe_scheduler_qm_config {
+ 	unsigned int ensch_port_bmp;
+ 	unsigned int ensch_port;
+ 	unsigned int desch_port;
+-	bool desch_second_valid;
+-	unsigned int desch_second_port;
++	bool desch_backup_port_valid;
++	unsigned int desch_backup_port;
+ };
+ 
+ /**
+@@ -157,7 +167,11 @@ struct ppe_port_schedule_resource {
+ 	unsigned int l1node_end;
+ };
+ 
+-/* Assign the share buffer number 1550 to group 0 by default. */
++/* There are total 2048 buffers available in PPE, out of which some
++ * buffers are reserved for some specific purposes per PPE port. The
++ * rest of the pool of 1550 buffers are assigned to the general 'group0'
++ * which is shared among all ports of the PPE.
++ */
+ static const int ipq9574_ppe_bm_group_config = 1550;
+ 
+ /* The buffer configurations per PPE port. There are 15 BM ports and
+@@ -216,7 +230,14 @@ static const struct ppe_bm_port_config ipq9574_ppe_bm_port_config[] = {
+ 	},
+ };
+ 
+-/* Default QM group settings for IPQ9754. */
++/* QM fetches the packet from PPE buffer management for transmitting the
++ * packet out. The QM group configuration limits the total number of buffers
++ * enqueued by all PPE hardware queues.
++ * There are total 2048 buffers available, out of which some buffers are
++ * dedicated to hardware exception handlers. The remaining buffers are
++ * assigned to the general 'group0', which is the group assigned to all
++ * queues by default.
++ */
+ static const int ipq9574_ppe_qm_group_config = 2000;
+ 
+ /* Default QM settings for unicast and multicast queues for IPQ9754. */
+@@ -243,175 +264,179 @@ static const struct ppe_qm_queue_config ipq9574_ppe_qm_queue_config[] = {
+ 	},
+ };
+ 
+-/* Scheduler configuration for the assigning and releasing buffers for the
+- * packet passing through PPE, which is different per SoC.
++/* PPE scheduler configuration for BM includes multiple entries. Each entry
++ * indicates the primary port to be assigned the buffers for the ingress or
++ * to release the buffers for the egress. Backup port ID will be used when
++ * the primary port ID is down.
+  */
+ static const struct ppe_scheduler_bm_config ipq9574_ppe_sch_bm_config[] = {
+-	{1, 0, 0, 0, 0},
+-	{1, 1, 0, 0, 0},
+-	{1, 0, 5, 0, 0},
+-	{1, 1, 5, 0, 0},
+-	{1, 0, 6, 0, 0},
+-	{1, 1, 6, 0, 0},
+-	{1, 0, 1, 0, 0},
+-	{1, 1, 1, 0, 0},
+-	{1, 0, 0, 0, 0},
+-	{1, 1, 0, 0, 0},
+-	{1, 0, 5, 0, 0},
+-	{1, 1, 5, 0, 0},
+-	{1, 0, 6, 0, 0},
+-	{1, 1, 6, 0, 0},
+-	{1, 0, 7, 0, 0},
+-	{1, 1, 7, 0, 0},
+-	{1, 0, 0, 0, 0},
+-	{1, 1, 0, 0, 0},
+-	{1, 0, 1, 0, 0},
+-	{1, 1, 1, 0, 0},
+-	{1, 0, 5, 0, 0},
+-	{1, 1, 5, 0, 0},
+-	{1, 0, 6, 0, 0},
+-	{1, 1, 6, 0, 0},
+-	{1, 0, 2, 0, 0},
+-	{1, 1, 2, 0, 0},
+-	{1, 0, 0, 0, 0},
+-	{1, 1, 0, 0, 0},
+-	{1, 0, 5, 0, 0},
+-	{1, 1, 5, 0, 0},
+-	{1, 0, 6, 0, 0},
+-	{1, 1, 6, 0, 0},
+-	{1, 0, 1, 0, 0},
+-	{1, 1, 1, 0, 0},
+-	{1, 0, 3, 0, 0},
+-	{1, 1, 3, 0, 0},
+-	{1, 0, 0, 0, 0},
+-	{1, 1, 0, 0, 0},
+-	{1, 0, 5, 0, 0},
+-	{1, 1, 5, 0, 0},
+-	{1, 0, 6, 0, 0},
+-	{1, 1, 6, 0, 0},
+-	{1, 0, 7, 0, 0},
+-	{1, 1, 7, 0, 0},
+-	{1, 0, 0, 0, 0},
+-	{1, 1, 0, 0, 0},
+-	{1, 0, 1, 0, 0},
+-	{1, 1, 1, 0, 0},
+-	{1, 0, 5, 0, 0},
+-	{1, 1, 5, 0, 0},
+-	{1, 0, 6, 0, 0},
+-	{1, 1, 6, 0, 0},
+-	{1, 0, 4, 0, 0},
+-	{1, 1, 4, 0, 0},
+-	{1, 0, 0, 0, 0},
+-	{1, 1, 0, 0, 0},
+-	{1, 0, 5, 0, 0},
+-	{1, 1, 5, 0, 0},
+-	{1, 0, 6, 0, 0},
+-	{1, 1, 6, 0, 0},
+-	{1, 0, 1, 0, 0},
+-	{1, 1, 1, 0, 0},
+-	{1, 0, 0, 0, 0},
+-	{1, 1, 0, 0, 0},
+-	{1, 0, 5, 0, 0},
+-	{1, 1, 5, 0, 0},
+-	{1, 0, 6, 0, 0},
+-	{1, 1, 6, 0, 0},
+-	{1, 0, 2, 0, 0},
+-	{1, 1, 2, 0, 0},
+-	{1, 0, 0, 0, 0},
+-	{1, 1, 0, 0, 0},
+-	{1, 0, 7, 0, 0},
+-	{1, 1, 7, 0, 0},
+-	{1, 0, 5, 0, 0},
+-	{1, 1, 5, 0, 0},
+-	{1, 0, 6, 0, 0},
+-	{1, 1, 6, 0, 0},
+-	{1, 0, 1, 0, 0},
+-	{1, 1, 1, 0, 0},
+-	{1, 0, 0, 0, 0},
+-	{1, 1, 0, 0, 0},
+-	{1, 0, 5, 0, 0},
+-	{1, 1, 5, 0, 0},
+-	{1, 0, 6, 0, 0},
+-	{1, 1, 6, 0, 0},
+-	{1, 0, 3, 0, 0},
+-	{1, 1, 3, 0, 0},
+-	{1, 0, 1, 0, 0},
+-	{1, 1, 1, 0, 0},
+-	{1, 0, 0, 0, 0},
+-	{1, 1, 0, 0, 0},
+-	{1, 0, 5, 0, 0},
+-	{1, 1, 5, 0, 0},
+-	{1, 0, 6, 0, 0},
+-	{1, 1, 6, 0, 0},
+-	{1, 0, 4, 0, 0},
+-	{1, 1, 4, 0, 0},
+-	{1, 0, 7, 0, 0},
+-	{1, 1, 7, 0, 0},
++	{true, PPE_SCH_INGRESS, 0, false, 0},
++	{true, PPE_SCH_EGRESS,  0, false, 0},
++	{true, PPE_SCH_INGRESS, 5, false, 0},
++	{true, PPE_SCH_EGRESS,  5, false, 0},
++	{true, PPE_SCH_INGRESS, 6, false, 0},
++	{true, PPE_SCH_EGRESS,  6, false, 0},
++	{true, PPE_SCH_INGRESS, 1, false, 0},
++	{true, PPE_SCH_EGRESS,  1, false, 0},
++	{true, PPE_SCH_INGRESS, 0, false, 0},
++	{true, PPE_SCH_EGRESS,  0, false, 0},
++	{true, PPE_SCH_INGRESS, 5, false, 0},
++	{true, PPE_SCH_EGRESS,  5, false, 0},
++	{true, PPE_SCH_INGRESS, 6, false, 0},
++	{true, PPE_SCH_EGRESS,  6, false, 0},
++	{true, PPE_SCH_INGRESS, 7, false, 0},
++	{true, PPE_SCH_EGRESS,  7, false, 0},
++	{true, PPE_SCH_INGRESS, 0, false, 0},
++	{true, PPE_SCH_EGRESS,  0, false, 0},
++	{true, PPE_SCH_INGRESS, 1, false, 0},
++	{true, PPE_SCH_EGRESS,  1, false, 0},
++	{true, PPE_SCH_INGRESS, 5, false, 0},
++	{true, PPE_SCH_EGRESS,  5, false, 0},
++	{true, PPE_SCH_INGRESS, 6, false, 0},
++	{true, PPE_SCH_EGRESS,  6, false, 0},
++	{true, PPE_SCH_INGRESS, 2, false, 0},
++	{true, PPE_SCH_EGRESS,  2, false, 0},
++	{true, PPE_SCH_INGRESS, 0, false, 0},
++	{true, PPE_SCH_EGRESS,  0, false, 0},
++	{true, PPE_SCH_INGRESS, 5, false, 0},
++	{true, PPE_SCH_EGRESS,  5, false, 0},
++	{true, PPE_SCH_INGRESS, 6, false, 0},
++	{true, PPE_SCH_EGRESS,  6, false, 0},
++	{true, PPE_SCH_INGRESS, 1, false, 0},
++	{true, PPE_SCH_EGRESS,  1, false, 0},
++	{true, PPE_SCH_INGRESS, 3, false, 0},
++	{true, PPE_SCH_EGRESS,  3, false, 0},
++	{true, PPE_SCH_INGRESS, 0, false, 0},
++	{true, PPE_SCH_EGRESS,  0, false, 0},
++	{true, PPE_SCH_INGRESS, 5, false, 0},
++	{true, PPE_SCH_EGRESS,  5, false, 0},
++	{true, PPE_SCH_INGRESS, 6, false, 0},
++	{true, PPE_SCH_EGRESS,  6, false, 0},
++	{true, PPE_SCH_INGRESS, 7, false, 0},
++	{true, PPE_SCH_EGRESS,  7, false, 0},
++	{true, PPE_SCH_INGRESS, 0, false, 0},
++	{true, PPE_SCH_EGRESS,  0, false, 0},
++	{true, PPE_SCH_INGRESS, 1, false, 0},
++	{true, PPE_SCH_EGRESS,  1, false, 0},
++	{true, PPE_SCH_INGRESS, 5, false, 0},
++	{true, PPE_SCH_EGRESS,  5, false, 0},
++	{true, PPE_SCH_INGRESS, 6, false, 0},
++	{true, PPE_SCH_EGRESS,  6, false, 0},
++	{true, PPE_SCH_INGRESS, 4, false, 0},
++	{true, PPE_SCH_EGRESS,  4, false, 0},
++	{true, PPE_SCH_INGRESS, 0, false, 0},
++	{true, PPE_SCH_EGRESS,  0, false, 0},
++	{true, PPE_SCH_INGRESS, 5, false, 0},
++	{true, PPE_SCH_EGRESS,  5, false, 0},
++	{true, PPE_SCH_INGRESS, 6, false, 0},
++	{true, PPE_SCH_EGRESS,  6, false, 0},
++	{true, PPE_SCH_INGRESS, 1, false, 0},
++	{true, PPE_SCH_EGRESS,  1, false, 0},
++	{true, PPE_SCH_INGRESS, 0, false, 0},
++	{true, PPE_SCH_EGRESS,  0, false, 0},
++	{true, PPE_SCH_INGRESS, 5, false, 0},
++	{true, PPE_SCH_EGRESS,  5, false, 0},
++	{true, PPE_SCH_INGRESS, 6, false, 0},
++	{true, PPE_SCH_EGRESS,  6, false, 0},
++	{true, PPE_SCH_INGRESS, 2, false, 0},
++	{true, PPE_SCH_EGRESS,  2, false, 0},
++	{true, PPE_SCH_INGRESS, 0, false, 0},
++	{true, PPE_SCH_EGRESS,  0, false, 0},
++	{true, PPE_SCH_INGRESS, 7, false, 0},
++	{true, PPE_SCH_EGRESS,  7, false, 0},
++	{true, PPE_SCH_INGRESS, 5, false, 0},
++	{true, PPE_SCH_EGRESS,  5, false, 0},
++	{true, PPE_SCH_INGRESS, 6, false, 0},
++	{true, PPE_SCH_EGRESS,  6, false, 0},
++	{true, PPE_SCH_INGRESS, 1, false, 0},
++	{true, PPE_SCH_EGRESS,  1, false, 0},
++	{true, PPE_SCH_INGRESS, 0, false, 0},
++	{true, PPE_SCH_EGRESS,  0, false, 0},
++	{true, PPE_SCH_INGRESS, 5, false, 0},
++	{true, PPE_SCH_EGRESS,  5, false, 0},
++	{true, PPE_SCH_INGRESS, 6, false, 0},
++	{true, PPE_SCH_EGRESS,  6, false, 0},
++	{true, PPE_SCH_INGRESS, 3, false, 0},
++	{true, PPE_SCH_EGRESS,  3, false, 0},
++	{true, PPE_SCH_INGRESS, 1, false, 0},
++	{true, PPE_SCH_EGRESS,  1, false, 0},
++	{true, PPE_SCH_INGRESS, 0, false, 0},
++	{true, PPE_SCH_EGRESS,  0, false, 0},
++	{true, PPE_SCH_INGRESS, 5, false, 0},
++	{true, PPE_SCH_EGRESS,  5, false, 0},
++	{true, PPE_SCH_INGRESS, 6, false, 0},
++	{true, PPE_SCH_EGRESS,  6, false, 0},
++	{true, PPE_SCH_INGRESS, 4, false, 0},
++	{true, PPE_SCH_EGRESS,  4, false, 0},
++	{true, PPE_SCH_INGRESS, 7, false, 0},
++	{true, PPE_SCH_EGRESS,  7, false, 0},
+ };
+ 
+-/* Scheduler configuration for dispatching packet on PPE queues, which
+- * is different per SoC.
++/* PPE scheduler configuration for QM includes multiple entries. Each entry
++ * contains ports to be dispatched for enqueueing and dequeueing. The backup
++ * port for dequeueing is supported to be used when the primary port for
++ * dequeueing is down.
+  */
+ static const struct ppe_scheduler_qm_config ipq9574_ppe_sch_qm_config[] = {
+-	{0x98, 6, 0, 1, 1},
+-	{0x94, 5, 6, 1, 3},
+-	{0x86, 0, 5, 1, 4},
+-	{0x8C, 1, 6, 1, 0},
+-	{0x1C, 7, 5, 1, 1},
+-	{0x98, 2, 6, 1, 0},
+-	{0x1C, 5, 7, 1, 1},
+-	{0x34, 3, 6, 1, 0},
+-	{0x8C, 4, 5, 1, 1},
+-	{0x98, 2, 6, 1, 0},
+-	{0x8C, 5, 4, 1, 1},
+-	{0xA8, 0, 6, 1, 2},
+-	{0x98, 5, 1, 1, 0},
+-	{0x98, 6, 5, 1, 2},
+-	{0x89, 1, 6, 1, 4},
+-	{0xA4, 3, 0, 1, 1},
+-	{0x8C, 5, 6, 1, 4},
+-	{0xA8, 0, 2, 1, 1},
+-	{0x98, 6, 5, 1, 0},
+-	{0xC4, 4, 3, 1, 1},
+-	{0x94, 6, 5, 1, 0},
+-	{0x1C, 7, 6, 1, 1},
+-	{0x98, 2, 5, 1, 0},
+-	{0x1C, 6, 7, 1, 1},
+-	{0x1C, 5, 6, 1, 0},
+-	{0x94, 3, 5, 1, 1},
+-	{0x8C, 4, 6, 1, 0},
+-	{0x94, 1, 5, 1, 3},
+-	{0x94, 6, 1, 1, 0},
+-	{0xD0, 3, 5, 1, 2},
+-	{0x98, 6, 0, 1, 1},
+-	{0x94, 5, 6, 1, 3},
+-	{0x94, 1, 5, 1, 0},
+-	{0x98, 2, 6, 1, 1},
+-	{0x8C, 4, 5, 1, 0},
+-	{0x1C, 7, 6, 1, 1},
+-	{0x8C, 0, 5, 1, 4},
+-	{0x89, 1, 6, 1, 2},
+-	{0x98, 5, 0, 1, 1},
+-	{0x94, 6, 5, 1, 3},
+-	{0x92, 0, 6, 1, 2},
+-	{0x98, 1, 5, 1, 0},
+-	{0x98, 6, 2, 1, 1},
+-	{0xD0, 0, 5, 1, 3},
+-	{0x94, 6, 0, 1, 1},
+-	{0x8C, 5, 6, 1, 4},
+-	{0x8C, 1, 5, 1, 0},
+-	{0x1C, 6, 7, 1, 1},
+-	{0x1C, 5, 6, 1, 0},
+-	{0xB0, 2, 3, 1, 1},
+-	{0xC4, 4, 5, 1, 0},
+-	{0x8C, 6, 4, 1, 1},
+-	{0xA4, 3, 6, 1, 0},
+-	{0x1C, 5, 7, 1, 1},
+-	{0x4C, 0, 5, 1, 4},
+-	{0x8C, 6, 0, 1, 1},
+-	{0x34, 7, 6, 1, 3},
+-	{0x94, 5, 0, 1, 1},
+-	{0x98, 6, 5, 1, 2},
++	{0x98, 6, 0, true, 1},
++	{0x94, 5, 6, true, 3},
++	{0x86, 0, 5, true, 4},
++	{0x8C, 1, 6, true, 0},
++	{0x1C, 7, 5, true, 1},
++	{0x98, 2, 6, true, 0},
++	{0x1C, 5, 7, true, 1},
++	{0x34, 3, 6, true, 0},
++	{0x8C, 4, 5, true, 1},
++	{0x98, 2, 6, true, 0},
++	{0x8C, 5, 4, true, 1},
++	{0xA8, 0, 6, true, 2},
++	{0x98, 5, 1, true, 0},
++	{0x98, 6, 5, true, 2},
++	{0x89, 1, 6, true, 4},
++	{0xA4, 3, 0, true, 1},
++	{0x8C, 5, 6, true, 4},
++	{0xA8, 0, 2, true, 1},
++	{0x98, 6, 5, true, 0},
++	{0xC4, 4, 3, true, 1},
++	{0x94, 6, 5, true, 0},
++	{0x1C, 7, 6, true, 1},
++	{0x98, 2, 5, true, 0},
++	{0x1C, 6, 7, true, 1},
++	{0x1C, 5, 6, true, 0},
++	{0x94, 3, 5, true, 1},
++	{0x8C, 4, 6, true, 0},
++	{0x94, 1, 5, true, 3},
++	{0x94, 6, 1, true, 0},
++	{0xD0, 3, 5, true, 2},
++	{0x98, 6, 0, true, 1},
++	{0x94, 5, 6, true, 3},
++	{0x94, 1, 5, true, 0},
++	{0x98, 2, 6, true, 1},
++	{0x8C, 4, 5, true, 0},
++	{0x1C, 7, 6, true, 1},
++	{0x8C, 0, 5, true, 4},
++	{0x89, 1, 6, true, 2},
++	{0x98, 5, 0, true, 1},
++	{0x94, 6, 5, true, 3},
++	{0x92, 0, 6, true, 2},
++	{0x98, 1, 5, true, 0},
++	{0x98, 6, 2, true, 1},
++	{0xD0, 0, 5, true, 3},
++	{0x94, 6, 0, true, 1},
++	{0x8C, 5, 6, true, 4},
++	{0x8C, 1, 5, true, 0},
++	{0x1C, 6, 7, true, 1},
++	{0x1C, 5, 6, true, 0},
++	{0xB0, 2, 3, true, 1},
++	{0xC4, 4, 5, true, 0},
++	{0x8C, 6, 4, true, 1},
++	{0xA4, 3, 6, true, 0},
++	{0x1C, 5, 7, true, 1},
++	{0x4C, 0, 5, true, 4},
++	{0x8C, 6, 0, true, 1},
++	{0x34, 7, 6, true, 3},
++	{0x94, 5, 0, true, 1},
++	{0x98, 6, 5, true, 2},
+ };
+ 
+ static const struct ppe_scheduler_port_config ppe_port_sch_config[] = {
+@@ -864,7 +889,7 @@ static int ppe_scheduler_l0_queue_map_set(struct ppe_device *ppe_dev,
+ 				  val);
+ }
+ 
+-/* Get the first level scheduler configuration. */
++/* Get the PPE queue level scheduler configuration. */
+ static int ppe_scheduler_l0_queue_map_get(struct ppe_device *ppe_dev,
+ 					  int node_id, int *port,
+ 					  struct ppe_scheduler_cfg *scheduler_cfg)
+@@ -961,7 +986,7 @@ static int ppe_scheduler_l1_queue_map_set(struct ppe_device *ppe_dev,
+ 	return regmap_update_bits(ppe_dev->regmap, reg, PPE_L1_COMP_CFG_TBL_NODE_METER_LEN, val);
+ }
+ 
+-/* Get the second level scheduler configuration. */
++/* Get the PPE flow level scheduler configuration. */
+ static int ppe_scheduler_l1_queue_map_get(struct ppe_device *ppe_dev,
+ 					  int node_id, int *port,
+ 					  struct ppe_scheduler_cfg *scheduler_cfg)
+@@ -1030,58 +1055,6 @@ int ppe_queue_scheduler_set(struct ppe_device *ppe_dev,
+ 					      port, scheduler_cfg);
+ }
+ 
+-/**
+- * ppe_queue_scheduler_get - get QoS scheduler of PPE hardware queue
+- * @ppe_dev: PPE device
+- * @node_id: PPE node ID
+- * @flow_level: Flow level scheduler or queue level scheduler
+- * @port: PPE port ID to get scheduler config
+- * @scheduler_cfg: QoS scheduler configuration
+- *
+- * The hardware QoS function is supported by PPE, the current scheduler
+- * configuration can be acquired based on the queue ID of PPE port.
+- *
+- * Return 0 on success, negative error code on failure.
+- */
+-int ppe_queue_scheduler_get(struct ppe_device *ppe_dev,
+-			    int node_id, bool flow_level, int *port,
+-			    struct ppe_scheduler_cfg *scheduler_cfg)
+-{
+-	if (flow_level)
+-		return ppe_scheduler_l1_queue_map_get(ppe_dev, node_id,
+-						      port, scheduler_cfg);
+-
+-	return ppe_scheduler_l0_queue_map_get(ppe_dev, node_id,
+-					      port, scheduler_cfg);
+-}
+-
+-
+-/**
+- * ppe_queue_priority_set - set scheduler priority of PPE hardware queue
+- * @ppe_dev: PPE device
+- * @node_id: PPE hardware node ID, which is either queue ID or flow ID
+- * @priority: Qos scheduler priority
+- *
+- * Configure scheduler priority of PPE hardware queque, the maximum node
+- * ID supported is PPE_QUEUE_ID_NUM added by PPE_FLOW_ID_NUM, queue ID
+- * belongs to level 0, flow ID belongs to level 1 in the packet pipeline.
+- *
+- * Return 0 on success, negative error code on failure.
+- */
+-int ppe_queue_priority_set(struct ppe_device *ppe_dev,
+-			   int node_id, int priority)
+-{
+-	struct ppe_scheduler_cfg sch_cfg;
+-	int ret, port, level = 0;
+-
+-	ret = ppe_queue_scheduler_get(ppe_dev, node_id, level, &port, &sch_cfg);
+-	if (ret)
+-		return ret;
+-
+-	sch_cfg.pri = priority;
+-	return ppe_queue_scheduler_set(ppe_dev, node_id, level, port, sch_cfg);
+-}
+-
+ /**
+  * ppe_queue_ucast_base_set - Set PPE unicast queue base ID and profile ID
+  * @ppe_dev: PPE device
+@@ -1339,19 +1312,19 @@ static int ppe_rss_hash_ipv4_config(struct ppe_device *ppe_dev, int index,
+ 
+ 	switch (index) {
+ 	case 0:
+-		val = FIELD_PREP(PPE_RSS_HASH_MIX_IPV4_VAL, cfg.hash_sip_mix[0]);
++		val = cfg.hash_sip_mix[0];
+ 		break;
+ 	case 1:
+-		val = FIELD_PREP(PPE_RSS_HASH_MIX_IPV4_VAL, cfg.hash_dip_mix[0]);
++		val = cfg.hash_dip_mix[0];
+ 		break;
+ 	case 2:
+-		val = FIELD_PREP(PPE_RSS_HASH_MIX_IPV4_VAL, cfg.hash_protocol_mix);
++		val = cfg.hash_protocol_mix;
+ 		break;
+ 	case 3:
+-		val = FIELD_PREP(PPE_RSS_HASH_MIX_IPV4_VAL, cfg.hash_dport_mix);
++		val = cfg.hash_dport_mix;
+ 		break;
+ 	case 4:
+-		val = FIELD_PREP(PPE_RSS_HASH_MIX_IPV4_VAL, cfg.hash_sport_mix);
++		val = cfg.hash_sport_mix;
+ 		break;
+ 	default:
+ 		return -EINVAL;
+@@ -1359,7 +1332,9 @@ static int ppe_rss_hash_ipv4_config(struct ppe_device *ppe_dev, int index,
+ 
+ 	reg = PPE_RSS_HASH_MIX_IPV4_ADDR + index * PPE_RSS_HASH_MIX_IPV4_INC;
+ 
+-	return regmap_write(ppe_dev->regmap, reg, val);
++	return regmap_update_bits(ppe_dev->regmap, reg,
++				  PPE_RSS_HASH_MIX_IPV4_VAL,
++				  FIELD_PREP(PPE_RSS_HASH_MIX_IPV4_VAL, val));
+ }
+ 
+ static int ppe_rss_hash_ipv6_config(struct ppe_device *ppe_dev, int index,
+@@ -1369,19 +1344,19 @@ static int ppe_rss_hash_ipv6_config(struct ppe_device *ppe_dev, int index,
+ 
+ 	switch (index) {
+ 	case 0 ... 3:
+-		val = FIELD_PREP(PPE_RSS_HASH_MIX_VAL, cfg.hash_sip_mix[index]);
++		val = cfg.hash_sip_mix[index];
+ 		break;
+ 	case 4 ... 7:
+-		val = FIELD_PREP(PPE_RSS_HASH_MIX_VAL, cfg.hash_dip_mix[index - 4]);
++		val = cfg.hash_dip_mix[index - 4];
+ 		break;
+ 	case 8:
+-		val = FIELD_PREP(PPE_RSS_HASH_MIX_VAL, cfg.hash_protocol_mix);
++		val = cfg.hash_protocol_mix;
+ 		break;
+ 	case 9:
+-		val = FIELD_PREP(PPE_RSS_HASH_MIX_VAL, cfg.hash_dport_mix);
++		val = cfg.hash_dport_mix;
+ 		break;
+ 	case 10:
+-		val = FIELD_PREP(PPE_RSS_HASH_MIX_VAL, cfg.hash_sport_mix);
++		val = cfg.hash_sport_mix;
+ 		break;
+ 	default:
+ 		return -EINVAL;
+@@ -1389,7 +1364,9 @@ static int ppe_rss_hash_ipv6_config(struct ppe_device *ppe_dev, int index,
+ 
+ 	reg = PPE_RSS_HASH_MIX_ADDR + index * PPE_RSS_HASH_MIX_INC;
+ 
+-	return regmap_write(ppe_dev->regmap, reg, val);
++	return regmap_update_bits(ppe_dev->regmap, reg,
++				  PPE_RSS_HASH_MIX_VAL,
++				  FIELD_PREP(PPE_RSS_HASH_MIX_VAL, val));
+ }
+ 
+ /**
+@@ -1491,6 +1468,31 @@ int ppe_ring_queue_map_set(struct ppe_device *ppe_dev, int ring_id, u32 *queue_m
+ 				 ARRAY_SIZE(queue_bitmap_val));
+ }
+ 
++/**
++ * ppe_queue_scheduler_get - get scheduler of PPE hardware queue
++ * @ppe_dev: PPE device
++ * @node_id: PPE queue ID or flow ID
++ * @flow_level: Flow level scheduler or queue level scheduler
++ * @port: PPE port ID to get scheduler config
++ * @scheduler_cfg: PPE scheduler configuration
++ *
++ * The current scheduler configuration can be acquired based on the
++ * queue ID of PPE port.
++ *
++ * Return 0 on success, negative error code on failure.
++ */
++int ppe_queue_scheduler_get(struct ppe_device *ppe_dev,
++			    int node_id, bool flow_level, int *port,
++			    struct ppe_scheduler_cfg *scheduler_cfg)
++{
++	if (flow_level)
++		return ppe_scheduler_l1_queue_map_get(ppe_dev, node_id,
++						      port, scheduler_cfg);
++
++	return ppe_scheduler_l0_queue_map_get(ppe_dev, node_id,
++					      port, scheduler_cfg);
++}
++
+ static int ppe_config_bm_threshold(struct ppe_device *ppe_dev, int bm_port_id,
+ 				   const struct ppe_bm_port_config port_cfg)
+ {
+@@ -1762,10 +1764,12 @@ static int ppe_config_scheduler(struct ppe_device *ppe_dev)
+ 	 */
+ 	for (i = 0; i < count; i++) {
+ 		val = FIELD_PREP(PPE_BM_SCH_CFG_TBL_VALID, bm_cfg[i].valid);
+-		val |= FIELD_PREP(PPE_BM_SCH_CFG_TBL_DIR, bm_cfg[i].is_egress);
++		val |= FIELD_PREP(PPE_BM_SCH_CFG_TBL_DIR, bm_cfg[i].dir);
+ 		val |= FIELD_PREP(PPE_BM_SCH_CFG_TBL_PORT_NUM, bm_cfg[i].port);
+-		val |= FIELD_PREP(PPE_BM_SCH_CFG_TBL_SECOND_PORT_VALID, bm_cfg[i].second_valid);
+-		val |= FIELD_PREP(PPE_BM_SCH_CFG_TBL_SECOND_PORT, bm_cfg[i].second_port);
++		val |= FIELD_PREP(PPE_BM_SCH_CFG_TBL_SECOND_PORT_VALID,
++				  bm_cfg[i].backup_port_valid);
++		val |= FIELD_PREP(PPE_BM_SCH_CFG_TBL_SECOND_PORT,
++				  bm_cfg[i].backup_port);
+ 
+ 		reg = PPE_BM_SCH_CFG_TBL_ADDR + i * PPE_BM_SCH_CFG_TBL_INC;
+ 		ret = regmap_write(ppe_dev->regmap, reg, val);
+@@ -1794,9 +1798,9 @@ static int ppe_config_scheduler(struct ppe_device *ppe_dev)
+ 		val |= FIELD_PREP(PPE_PSCH_SCH_CFG_TBL_DES_PORT,
+ 				  qm_cfg[i].desch_port);
+ 		val |= FIELD_PREP(PPE_PSCH_SCH_CFG_TBL_DES_SECOND_PORT_EN,
+-				  qm_cfg[i].desch_second_valid);
++				  qm_cfg[i].desch_backup_port_valid);
+ 		val |= FIELD_PREP(PPE_PSCH_SCH_CFG_TBL_DES_SECOND_PORT,
+-				  qm_cfg[i].desch_second_port);
++				  qm_cfg[i].desch_backup_port);
+ 
+ 		reg = PPE_PSCH_SCH_CFG_TBL_ADDR + i * PPE_PSCH_SCH_CFG_TBL_INC;
+ 		ret = regmap_write(ppe_dev->regmap, reg, val);
+@@ -1936,10 +1940,11 @@ static int ppe_port_config_init(struct ppe_device *ppe_dev)
+ 		if (ret)
+ 			return ret;
+ 
+-		/* Drop the packet when the packet size is more than
+-		 * the MTU or MRU of the physical interface.
++		/* Drop the packet when the packet size is more than the MTU
++		 * and redirect the packet to the CPU port when the received
++		 * packet size is more than the MRU of the physical interface.
+ 		 */
+-		PPE_MRU_MTU_CTRL_SET_MRU_CMD(mru_mtu_val, PPE_ACTION_DROP);
++		PPE_MRU_MTU_CTRL_SET_MRU_CMD(mru_mtu_val, PPE_ACTION_REDIRECT_TO_CPU);
+ 		PPE_MRU_MTU_CTRL_SET_MTU_CMD(mru_mtu_val, PPE_ACTION_DROP);
+ 		ret = regmap_bulk_write(ppe_dev->regmap, reg,
+ 					mru_mtu_val, ARRAY_SIZE(mru_mtu_val));
+diff --git a/drivers/net/ethernet/qualcomm/ppe/ppe_config.h b/drivers/net/ethernet/qualcomm/ppe/ppe_config.h
+index 2f17796f08a0..f9f23b24ea3a 100644
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_config.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_config.h
+@@ -1,6 +1,6 @@
+ /* SPDX-License-Identifier: GPL-2.0-only
+  *
+- * Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
++ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+  */
+ 
+ #ifndef __PPE_CONFIG_H__
+@@ -294,8 +294,6 @@ int ppe_queue_scheduler_set(struct ppe_device *ppe_dev,
+ int ppe_queue_scheduler_get(struct ppe_device *ppe_dev,
+ 			    int node_id, bool flow_level, int *port,
+ 			    struct ppe_scheduler_cfg *scheduler_cfg);
+-int ppe_queue_priority_set(struct ppe_device *ppe_dev,
+-			   int queue_id, int priority);
+ int ppe_queue_ucast_base_set(struct ppe_device *ppe_dev,
+ 			     struct ppe_queue_ucast_dest queue_dst,
+ 			     int queue_base,
+diff --git a/drivers/net/ethernet/qualcomm/ppe/ppe_debugfs.c b/drivers/net/ethernet/qualcomm/ppe/ppe_debugfs.c
+index 2b9598ff95b5..1bbbdf862797 100644
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_debugfs.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_debugfs.c
+@@ -1,12 +1,14 @@
+ // SPDX-License-Identifier: GPL-2.0-only
+ /*
+- * Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
++ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+  */
+ 
+ /* PPE debugfs routines for display of PPE counters useful for debug. */
+ 
+ #include <linux/bitfield.h>
+ #include <linux/debugfs.h>
++#include <linux/dev_printk.h>
++#include <linux/device.h>
+ #include <linux/netdevice.h>
+ #include <linux/regmap.h>
+ #include <linux/seq_file.h>
+@@ -25,34 +27,11 @@
+ #define PPE_W3_DROP_PKT_CNT_HIGH			GENMASK(7, 0)
+ 
+ #define PPE_GET_PKT_CNT(tbl_cnt)			\
+-	u32_get_bits(*((u32 *)(tbl_cnt)), PPE_W0_PKT_CNT)
++	FIELD_GET(PPE_W0_PKT_CNT, *(tbl_cnt))
+ #define PPE_GET_DROP_PKT_CNT_LOW(tbl_cnt)		\
+-	u32_get_bits(*((u32 *)(tbl_cnt) + 0x2), PPE_W2_DROP_PKT_CNT_LOW)
++	FIELD_GET(PPE_W2_DROP_PKT_CNT_LOW, *((tbl_cnt) + 0x2))
+ #define PPE_GET_DROP_PKT_CNT_HIGH(tbl_cnt)		\
+-	u32_get_bits(*((u32 *)(tbl_cnt) + 0x3), PPE_W3_DROP_PKT_CNT_HIGH)
+-
+-#define PRINT_COUNTER_PREFIX(desc, cnt_type)		\
+-	seq_printf(seq, "%-16s %16s", desc, cnt_type)
+-
+-#define PRINT_CPU_CODE_COUNTER(cnt, code)		\
+-	seq_printf(seq, "%10u(cpucode:%d)", cnt, code)
+-
+-#define PRINT_DROP_CODE_COUNTER(cnt, port, code)	\
+-	seq_printf(seq, "%10u(port=%d),dropcode:%d", cnt, port, code)
+-
+-#define PRINT_SINGLE_COUNTER(tag, cnt, str, index)			\
+-do {									\
+-	if (!((tag) % 4))							\
+-		seq_printf(seq, "\n%-16s %16s", "", "");		\
+-	seq_printf(seq, "%10u(%s=%04d)", cnt, str, index);		\
+-} while (0)
+-
+-#define PRINT_TWO_COUNTERS(tag, cnt0, cnt1, str, index)			\
+-do {									\
+-	if (!((tag) % 4))							\
+-		seq_printf(seq, "\n%-16s %16s", "", "");		\
+-	seq_printf(seq, "%10u/%u(%s=%04d)", cnt0, cnt1, str, index);	\
+-} while (0)
++	FIELD_GET(PPE_W3_DROP_PKT_CNT_HIGH, *((tbl_cnt) + 0x3))
+ 
+ /**
+  * enum ppe_cnt_size_type - PPE counter size type
+@@ -72,6 +51,84 @@ enum ppe_cnt_size_type {
+ 	PPE_PKT_CNT_SIZE_5WORD,
+ };
+ 
++/**
++ * enum ppe_cnt_type - PPE counter type.
++ * @PPE_CNT_BM: Packet counter processed by BM.
++ * @PPE_CNT_PARSE: Packet counter parsed on ingress.
++ * @PPE_CNT_PORT_RX: Packet counter on the ingress port.
++ * @PPE_CNT_VLAN_RX: VLAN packet counter received.
++ * @PPE_CNT_L2_FWD: Packet counter processed by L2 forwarding.
++ * @PPE_CNT_CPU_CODE: Packet counter marked with various CPU codes.
++ * @PPE_CNT_VLAN_TX: VLAN packet counter transmitted.
++ * @PPE_CNT_PORT_TX: Packet counter on the egress port.
++ * @PPE_CNT_QM: Packet counter processed by QM.
++ */
++enum ppe_cnt_type {
++	PPE_CNT_BM,
++	PPE_CNT_PARSE,
++	PPE_CNT_PORT_RX,
++	PPE_CNT_VLAN_RX,
++	PPE_CNT_L2_FWD,
++	PPE_CNT_CPU_CODE,
++	PPE_CNT_VLAN_TX,
++	PPE_CNT_PORT_TX,
++	PPE_CNT_QM,
++};
++
++/**
++ * struct ppe_debugfs_entry - PPE debugfs entry.
++ * @name: Debugfs file name.
++ * @counter_type: PPE packet counter type.
++ * @ppe: PPE device.
++ *
++ * The PPE debugfs entry is used to create the debugfs file and passed
++ * to debugfs_create_file() as private data.
++ */
++struct ppe_debugfs_entry {
++	const char *name;
++	enum ppe_cnt_type counter_type;
++	struct ppe_device *ppe;
++};
++
++static const struct ppe_debugfs_entry debugfs_files[] = {
++	{
++		.name			= "bm",
++		.counter_type		= PPE_CNT_BM,
++	},
++	{
++		.name			= "parse",
++		.counter_type		= PPE_CNT_PARSE,
++	},
++	{
++		.name			= "port_rx",
++		.counter_type		= PPE_CNT_PORT_RX,
++	},
++	{
++		.name			= "vlan_rx",
++		.counter_type		= PPE_CNT_VLAN_RX,
++	},
++	{
++		.name			= "l2_forward",
++		.counter_type		= PPE_CNT_L2_FWD,
++	},
++	{
++		.name			= "cpu_code",
++		.counter_type		= PPE_CNT_CPU_CODE,
++	},
++	{
++		.name			= "vlan_tx",
++		.counter_type		= PPE_CNT_VLAN_TX,
++	},
++	{
++		.name			= "port_tx",
++		.counter_type		= PPE_CNT_PORT_TX,
++	},
++	{
++		.name			= "qm",
++		.counter_type		= PPE_CNT_QM,
++	},
++};
++
+ static int ppe_pkt_cnt_get(struct ppe_device *ppe_dev, u32 reg,
+ 			   enum ppe_cnt_size_type cnt_type,
+ 			   u32 *cnt, u32 *drop_cnt)
+@@ -139,261 +196,270 @@ static void ppe_tbl_pkt_cnt_clear(struct ppe_device *ppe_dev, u32 reg,
+ 	}
+ }
+ 
+-/* The number of packets dropped because of no buffer available, no PPE
+- * buffer assigned to these packets.
+- */
+-static void ppe_port_rx_drop_counter_get(struct ppe_device *ppe_dev,
+-					 struct seq_file *seq)
++static int ppe_bm_counter_get(struct ppe_device *ppe_dev, struct seq_file *seq)
+ {
+-	u32 reg, drop_cnt = 0;
+-	int ret, i, tag = 0;
++	u32 reg, val, pkt_cnt, pkt_cnt1;
++	int ret, i, tag;
+ 
+-	PRINT_COUNTER_PREFIX("PRX_DROP_CNT", "SILENT_DROP:");
++	seq_printf(seq, "%-24s", "BM SILENT_DROP:");
++	tag = 0;
+ 	for (i = 0; i < PPE_DROP_CNT_TBL_ENTRIES; i++) {
+ 		reg = PPE_DROP_CNT_TBL_ADDR + i * PPE_DROP_CNT_TBL_INC;
+ 		ret = ppe_pkt_cnt_get(ppe_dev, reg, PPE_PKT_CNT_SIZE_1WORD,
+-				      &drop_cnt, NULL);
++				      &pkt_cnt, NULL);
+ 		if (ret) {
+-			seq_printf(seq, "ERROR %d\n", ret);
+-			return;
++			dev_err(ppe_dev->dev, "CNT ERROR %d\n", ret);
++			return ret;
+ 		}
+ 
+-		if (drop_cnt > 0) {
+-			tag++;
+-			PRINT_SINGLE_COUNTER(tag, drop_cnt, "port", i);
++		if (pkt_cnt > 0) {
++			if (!((++tag) % 4))
++				seq_printf(seq, "\n%-24s", "");
++
++			seq_printf(seq, "%10u(%s=%04d)", pkt_cnt, "port", i);
+ 		}
+ 	}
+ 
+ 	seq_putc(seq, '\n');
+-}
+-
+-/* The number of packets dropped because hardware buffers were available
+- * only partially for the packet.
+- */
+-static void ppe_port_rx_bm_drop_counter_get(struct ppe_device *ppe_dev,
+-					    struct seq_file *seq)
+-{
+-	u32 reg, pkt_cnt = 0;
+-	int ret, i, tag = 0;
+ 
+-	PRINT_COUNTER_PREFIX("PRX_BM_DROP_CNT", "OVERFLOW_DROP:");
++	/* The number of packets dropped because hardware buffers were
++	 * available only partially for the packet.
++	 */
++	seq_printf(seq, "%-24s", "BM OVERFLOW_DROP:");
++	tag = 0;
+ 	for (i = 0; i < PPE_DROP_STAT_TBL_ENTRIES; i++) {
+ 		reg = PPE_DROP_STAT_TBL_ADDR + PPE_DROP_STAT_TBL_INC * i;
+ 
+ 		ret = ppe_pkt_cnt_get(ppe_dev, reg, PPE_PKT_CNT_SIZE_3WORD,
+ 				      &pkt_cnt, NULL);
+ 		if (ret) {
+-			seq_printf(seq, "ERROR %d\n", ret);
+-			return;
++			dev_err(ppe_dev->dev, "CNT ERROR %d\n", ret);
++			return ret;
+ 		}
+ 
+ 		if (pkt_cnt > 0) {
+-			tag++;
+-			PRINT_SINGLE_COUNTER(tag, pkt_cnt, "port", i);
++			if (!((++tag) % 4))
++				seq_printf(seq, "\n%-24s", "");
++
++			seq_printf(seq, "%10u(%s=%04d)", pkt_cnt, "port", i);
+ 		}
+ 	}
+ 
+ 	seq_putc(seq, '\n');
+-}
+ 
+-/* The number of currently occupied buffers, that can't be flushed. */
+-static void ppe_port_rx_bm_port_counter_get(struct ppe_device *ppe_dev,
+-					    struct seq_file *seq)
+-{
+-	int used_cnt, react_cnt;
+-	int ret, i, tag = 0;
+-	u32 reg, val;
+-
+-	PRINT_COUNTER_PREFIX("PRX_BM_PORT_CNT", "USED/REACT:");
++	/* The number of currently occupied buffers, that can't be flushed. */
++	seq_printf(seq, "%-24s", "BM USED/REACT:");
++	tag = 0;
+ 	for (i = 0; i < PPE_BM_USED_CNT_TBL_ENTRIES; i++) {
+ 		reg = PPE_BM_USED_CNT_TBL_ADDR + i * PPE_BM_USED_CNT_TBL_INC;
+ 		ret = regmap_read(ppe_dev->regmap, reg, &val);
+ 		if (ret) {
+-			seq_printf(seq, "ERROR %d\n", ret);
+-			return;
++			dev_err(ppe_dev->dev, "CNT ERROR %d\n", ret);
++			return ret;
+ 		}
+ 
+ 		/* The number of PPE buffers used for caching the received
+ 		 * packets before the pause frame sent.
+ 		 */
+-		used_cnt = FIELD_GET(PPE_BM_USED_CNT_VAL, val);
++		pkt_cnt = FIELD_GET(PPE_BM_USED_CNT_VAL, val);
+ 
+ 		reg = PPE_BM_REACT_CNT_TBL_ADDR + i * PPE_BM_REACT_CNT_TBL_INC;
+ 		ret = regmap_read(ppe_dev->regmap, reg, &val);
+ 		if (ret) {
+-			seq_printf(seq, "ERROR %d\n", ret);
+-			return;
++			dev_err(ppe_dev->dev, "CNT ERROR %d\n", ret);
++			return ret;
+ 		}
+ 
+ 		/* The number of PPE buffers used for caching the received
+ 		 * packets after pause frame sent out.
+ 		 */
+-		react_cnt = FIELD_GET(PPE_BM_REACT_CNT_VAL, val);
++		pkt_cnt1 = FIELD_GET(PPE_BM_REACT_CNT_VAL, val);
+ 
+-		if (used_cnt > 0 || react_cnt > 0) {
+-			tag++;
+-			PRINT_TWO_COUNTERS(tag, used_cnt, react_cnt, "port", i);
++		if (pkt_cnt > 0 || pkt_cnt1 > 0) {
++			if (!((++tag) % 4))
++				seq_printf(seq, "\n%-24s", "");
++
++			seq_printf(seq, "%10u/%u(%s=%04d)", pkt_cnt, pkt_cnt1,
++				   "port", i);
+ 		}
+ 	}
+ 
+ 	seq_putc(seq, '\n');
++
++	return 0;
+ }
+ 
+ /* The number of packets processed by the ingress parser module of PPE. */
+-static void ppe_parse_pkt_counter_get(struct ppe_device *ppe_dev,
+-				      struct seq_file *seq)
++static int ppe_parse_pkt_counter_get(struct ppe_device *ppe_dev,
++				     struct seq_file *seq)
+ {
+ 	u32 reg, cnt = 0, tunnel_cnt = 0;
+ 	int i, ret, tag = 0;
+ 
+-	PRINT_COUNTER_PREFIX("IPR_PKT_CNT", "TPRX/IPRX:");
++	seq_printf(seq, "%-24s", "PARSE TPRX/IPRX:");
+ 	for (i = 0; i < PPE_IPR_PKT_CNT_TBL_ENTRIES; i++) {
+ 		reg = PPE_TPR_PKT_CNT_TBL_ADDR + i * PPE_TPR_PKT_CNT_TBL_INC;
+ 		ret = ppe_pkt_cnt_get(ppe_dev, reg, PPE_PKT_CNT_SIZE_1WORD,
+ 				      &tunnel_cnt, NULL);
+ 		if (ret) {
+-			seq_printf(seq, "ERROR %d\n", ret);
+-			return;
++			dev_err(ppe_dev->dev, "CNT ERROR %d\n", ret);
++			return ret;
+ 		}
+ 
+ 		reg = PPE_IPR_PKT_CNT_TBL_ADDR + i * PPE_IPR_PKT_CNT_TBL_INC;
+ 		ret = ppe_pkt_cnt_get(ppe_dev, reg, PPE_PKT_CNT_SIZE_1WORD,
+ 				      &cnt, NULL);
+ 		if (ret) {
+-			seq_printf(seq, "ERROR %d\n", ret);
+-			return;
++			dev_err(ppe_dev->dev, "CNT ERROR %d\n", ret);
++			return ret;
+ 		}
+ 
+ 		if (tunnel_cnt > 0 || cnt > 0) {
+-			tag++;
+-			PRINT_TWO_COUNTERS(tag, tunnel_cnt, cnt, "port", i);
++			if (!((++tag) % 4))
++				seq_printf(seq, "\n%-24s", "");
++
++			seq_printf(seq, "%10u/%u(%s=%04d)", tunnel_cnt, cnt,
++				   "port", i);
+ 		}
+ 	}
+ 
+ 	seq_putc(seq, '\n');
++
++	return 0;
+ }
+ 
+-/* The number of packets received or dropped on the ingress direction. */
+-static void ppe_port_rx_counter_get(struct ppe_device *ppe_dev,
+-				    struct seq_file *seq)
++/* The number of packets received or dropped on the ingress port. */
++static int ppe_port_rx_counter_get(struct ppe_device *ppe_dev,
++				   struct seq_file *seq)
+ {
+ 	u32 reg, pkt_cnt = 0, drop_cnt = 0;
+-	int ret, i, tag = 0;
++	int ret, i, tag;
+ 
+-	PRINT_COUNTER_PREFIX("PORT_RX_CNT", "RX/RX_DROP:");
++	seq_printf(seq, "%-24s", "PORT RX/RX_DROP:");
++	tag = 0;
+ 	for (i = 0; i < PPE_PHY_PORT_RX_CNT_TBL_ENTRIES; i++) {
+ 		reg = PPE_PHY_PORT_RX_CNT_TBL_ADDR + PPE_PHY_PORT_RX_CNT_TBL_INC * i;
+ 		ret = ppe_pkt_cnt_get(ppe_dev, reg, PPE_PKT_CNT_SIZE_5WORD,
+ 				      &pkt_cnt, &drop_cnt);
+ 		if (ret) {
+-			seq_printf(seq, "ERROR %d\n", ret);
+-			return;
++			dev_err(ppe_dev->dev, "CNT ERROR %d\n", ret);
++			return ret;
+ 		}
+ 
+ 		if (pkt_cnt > 0) {
+-			tag++;
+-			PRINT_TWO_COUNTERS(tag, pkt_cnt, drop_cnt, "port", i);
++			if (!((++tag) % 4))
++				seq_printf(seq, "\n%-24s", "");
++
++			seq_printf(seq, "%10u/%u(%s=%04d)", pkt_cnt, drop_cnt,
++				   "port", i);
+ 		}
+ 	}
+ 
+ 	seq_putc(seq, '\n');
+-}
+-
+-/* The number of packets received or dropped by the port. */
+-static void ppe_vp_rx_counter_get(struct ppe_device *ppe_dev,
+-				  struct seq_file *seq)
+-{
+-	u32 reg, pkt_cnt = 0, drop_cnt = 0;
+-	int ret, i, tag = 0;
+ 
+-	PRINT_COUNTER_PREFIX("VPORT_RX_CNT", "RX/RX_DROP:");
++	seq_printf(seq, "%-24s", "VPORT RX/RX_DROP:");
++	tag = 0;
+ 	for (i = 0; i < PPE_PORT_RX_CNT_TBL_ENTRIES; i++) {
+ 		reg = PPE_PORT_RX_CNT_TBL_ADDR + PPE_PORT_RX_CNT_TBL_INC * i;
+ 		ret = ppe_pkt_cnt_get(ppe_dev, reg, PPE_PKT_CNT_SIZE_5WORD,
+ 				      &pkt_cnt, &drop_cnt);
+ 		if (ret) {
+-			seq_printf(seq, "ERROR %d\n", ret);
+-			return;
++			dev_err(ppe_dev->dev, "CNT ERROR %d\n", ret);
++			return ret;
+ 		}
+ 
+ 		if (pkt_cnt > 0) {
+-			tag++;
+-			PRINT_TWO_COUNTERS(tag, pkt_cnt, drop_cnt, "port", i);
++			if (!((++tag) % 4))
++				seq_printf(seq, "\n%-24s", "");
++
++			seq_printf(seq, "%10u/%u(%s=%04d)", pkt_cnt, drop_cnt,
++				   "port", i);
+ 		}
+ 	}
+ 
+ 	seq_putc(seq, '\n');
++
++	return 0;
+ }
+ 
+ /* The number of packets received or dropped by layer 2 processing. */
+-static void ppe_pre_l2_counter_get(struct ppe_device *ppe_dev,
+-				   struct seq_file *seq)
++static int ppe_l2_counter_get(struct ppe_device *ppe_dev,
++			      struct seq_file *seq)
+ {
+ 	u32 reg, pkt_cnt = 0, drop_cnt = 0;
+ 	int ret, i, tag = 0;
+ 
+-	PRINT_COUNTER_PREFIX("PRE_L2_CNT", "RX/RX_DROP:");
++	seq_printf(seq, "%-24s", "L2 RX/RX_DROP:");
+ 	for (i = 0; i < PPE_PRE_L2_CNT_TBL_ENTRIES; i++) {
+ 		reg = PPE_PRE_L2_CNT_TBL_ADDR + PPE_PRE_L2_CNT_TBL_INC * i;
+ 		ret = ppe_pkt_cnt_get(ppe_dev, reg, PPE_PKT_CNT_SIZE_5WORD,
+ 				      &pkt_cnt, &drop_cnt);
+ 		if (ret) {
+-			seq_printf(seq, "ERROR %d\n", ret);
+-			return;
++			dev_err(ppe_dev->dev, "CNT ERROR %d\n", ret);
++			return ret;
+ 		}
+ 
+ 		if (pkt_cnt > 0) {
+-			tag++;
+-			PRINT_TWO_COUNTERS(tag, pkt_cnt, drop_cnt, "vsi", i);
++			if (!((++tag) % 4))
++				seq_printf(seq, "\n%-24s", "");
++
++			seq_printf(seq, "%10u/%u(%s=%04d)", pkt_cnt, drop_cnt,
++				   "vsi", i);
+ 		}
+ 	}
+ 
+ 	seq_putc(seq, '\n');
++
++	return 0;
+ }
+ 
+ /* The number of VLAN packets received by PPE. */
+-static void ppe_vlan_counter_get(struct ppe_device *ppe_dev,
+-				 struct seq_file *seq)
++static int ppe_vlan_rx_counter_get(struct ppe_device *ppe_dev,
++				   struct seq_file *seq)
+ {
+ 	u32 reg, pkt_cnt = 0;
+ 	int ret, i, tag = 0;
+ 
+-	PRINT_COUNTER_PREFIX("VLAN_CNT", "RX:");
++	seq_printf(seq, "%-24s", "VLAN RX:");
+ 	for (i = 0; i < PPE_VLAN_CNT_TBL_ENTRIES; i++) {
+ 		reg = PPE_VLAN_CNT_TBL_ADDR + PPE_VLAN_CNT_TBL_INC * i;
+ 
+ 		ret = ppe_pkt_cnt_get(ppe_dev, reg, PPE_PKT_CNT_SIZE_3WORD,
+ 				      &pkt_cnt, NULL);
+ 		if (ret) {
+-			seq_printf(seq, "ERROR %d\n", ret);
+-			return;
++			dev_err(ppe_dev->dev, "CNT ERROR %d\n", ret);
++			return ret;
+ 		}
+ 
+ 		if (pkt_cnt > 0) {
+-			tag++;
+-			PRINT_SINGLE_COUNTER(tag, pkt_cnt, "vsi", i);
++			if (!((++tag) % 4))
++				seq_printf(seq, "\n%-24s", "");
++
++			seq_printf(seq, "%10u(%s=%04d)", pkt_cnt, "vsi", i);
+ 		}
+ 	}
+ 
+ 	seq_putc(seq, '\n');
++
++	return 0;
+ }
+ 
+ /* The number of packets handed to CPU by PPE. */
+-static void ppe_cpu_code_counter_get(struct ppe_device *ppe_dev,
+-				     struct seq_file *seq)
++static int ppe_cpu_code_counter_get(struct ppe_device *ppe_dev,
++				    struct seq_file *seq)
+ {
+ 	u32 reg, pkt_cnt = 0;
+ 	int ret, i;
+ 
+-	PRINT_COUNTER_PREFIX("CPU_CODE_CNT", "CODE:");
++	seq_printf(seq, "%-24s", "CPU CODE:");
+ 	for (i = 0; i < PPE_DROP_CPU_CNT_TBL_ENTRIES; i++) {
+ 		reg = PPE_DROP_CPU_CNT_TBL_ADDR + PPE_DROP_CPU_CNT_TBL_INC * i;
+ 
+ 		ret = ppe_pkt_cnt_get(ppe_dev, reg, PPE_PKT_CNT_SIZE_3WORD,
+ 				      &pkt_cnt, NULL);
+ 		if (ret) {
+-			seq_printf(seq, "ERROR %d\n", ret);
+-			return;
++			dev_err(ppe_dev->dev, "CNT ERROR %d\n", ret);
++			return ret;
+ 		}
+ 
+ 		if (!pkt_cnt)
+@@ -404,127 +470,135 @@ static void ppe_cpu_code_counter_get(struct ppe_device *ppe_dev,
+ 		 * (0-7), the total entries is 256 + 8 * 128.
+ 		 */
+ 		if (i < 256)
+-			PRINT_CPU_CODE_COUNTER(pkt_cnt, i);
++			seq_printf(seq, "%10u(cpucode:%d)", pkt_cnt, i);
+ 		else
+-			PRINT_DROP_CODE_COUNTER(pkt_cnt, (i - 256) % 8,
+-						(i - 256) / 8);
++			seq_printf(seq, "%10u(port=%04d),dropcode:%d", pkt_cnt,
++				   (i - 256) % 8, (i - 256) / 8);
+ 		seq_putc(seq, '\n');
+-		PRINT_COUNTER_PREFIX("", "");
++		seq_printf(seq, "%-24s", "");
+ 	}
+ 
+ 	seq_putc(seq, '\n');
++
++	return 0;
+ }
+ 
+ /* The number of packets forwarded by VLAN on the egress direction. */
+-static void ppe_eg_vsi_counter_get(struct ppe_device *ppe_dev,
++static int ppe_vlan_tx_counter_get(struct ppe_device *ppe_dev,
+ 				   struct seq_file *seq)
+ {
+ 	u32 reg, pkt_cnt = 0;
+ 	int ret, i, tag = 0;
+ 
+-	PRINT_COUNTER_PREFIX("EG_VSI_CNT", "TX:");
++	seq_printf(seq, "%-24s", "VLAN TX:");
+ 	for (i = 0; i < PPE_EG_VSI_COUNTER_TBL_ENTRIES; i++) {
+ 		reg = PPE_EG_VSI_COUNTER_TBL_ADDR + PPE_EG_VSI_COUNTER_TBL_INC * i;
+ 
+ 		ret = ppe_pkt_cnt_get(ppe_dev, reg, PPE_PKT_CNT_SIZE_3WORD,
+ 				      &pkt_cnt, NULL);
+ 		if (ret) {
+-			seq_printf(seq, "ERROR %d\n", ret);
+-			return;
++			dev_err(ppe_dev->dev, "CNT ERROR %d\n", ret);
++			return ret;
+ 		}
+ 
+ 		if (pkt_cnt > 0) {
+-			tag++;
+-			PRINT_SINGLE_COUNTER(tag, pkt_cnt, "vsi", i);
++			if (!((++tag) % 4))
++				seq_printf(seq, "\n%-24s", "");
++
++			seq_printf(seq, "%10u(%s=%04d)", pkt_cnt, "vsi", i);
+ 		}
+ 	}
+ 
+ 	seq_putc(seq, '\n');
++
++	return 0;
+ }
+ 
+-/* The number of packets trasmitted or dropped by port. */
+-static void ppe_vp_tx_counter_get(struct ppe_device *ppe_dev,
+-				  struct seq_file *seq)
++/* The number of packets transmitted or dropped on the egress port. */
++static int ppe_port_tx_counter_get(struct ppe_device *ppe_dev,
++				   struct seq_file *seq)
+ {
+ 	u32 reg, pkt_cnt = 0, drop_cnt = 0;
+-	int ret, i, tag = 0;
++	int ret, i, tag;
+ 
+-	PRINT_COUNTER_PREFIX("VPORT_TX_CNT", "TX/TX_DROP:");
++	seq_printf(seq, "%-24s", "VPORT TX/TX_DROP:");
++	tag = 0;
+ 	for (i = 0; i < PPE_VPORT_TX_COUNTER_TBL_ENTRIES; i++) {
+ 		reg = PPE_VPORT_TX_COUNTER_TBL_ADDR + PPE_VPORT_TX_COUNTER_TBL_INC * i;
+ 		ret = ppe_pkt_cnt_get(ppe_dev, reg, PPE_PKT_CNT_SIZE_3WORD,
+ 				      &pkt_cnt, NULL);
+ 		if (ret) {
+-			seq_printf(seq, "ERROR %d\n", ret);
+-			return;
++			dev_err(ppe_dev->dev, "CNT ERROR %d\n", ret);
++			return ret;
+ 		}
+ 
+ 		reg = PPE_VPORT_TX_DROP_CNT_TBL_ADDR + PPE_VPORT_TX_DROP_CNT_TBL_INC * i;
+ 		ret = ppe_pkt_cnt_get(ppe_dev, reg, PPE_PKT_CNT_SIZE_3WORD,
+ 				      &drop_cnt, NULL);
+ 		if (ret) {
+-			seq_printf(seq, "ERROR %d\n", ret);
+-			return;
++			dev_err(ppe_dev->dev, "CNT ERROR %d\n", ret);
++			return ret;
+ 		}
+ 
+ 		if (pkt_cnt > 0 || drop_cnt > 0) {
+-			tag++;
+-			PRINT_TWO_COUNTERS(tag, pkt_cnt, drop_cnt, "port", i);
++			if (!((++tag) % 4))
++				seq_printf(seq, "\n%-24s", "");
++
++			seq_printf(seq, "%10u/%u(%s=%04d)", pkt_cnt, drop_cnt,
++				   "port", i);
+ 		}
+ 	}
+ 
+ 	seq_putc(seq, '\n');
+-}
+ 
+-/* The number of packets trasmitted or dropped on the egress direction. */
+-static void ppe_port_tx_counter_get(struct ppe_device *ppe_dev,
+-				    struct seq_file *seq)
+-{
+-	u32 reg, pkt_cnt = 0, drop_cnt = 0;
+-	int ret, i, tag = 0;
+-
+-	PRINT_COUNTER_PREFIX("PORT_TX_CNT", "TX/TX_DROP:");
++	seq_printf(seq, "%-24s", "PORT TX/TX_DROP:");
++	tag = 0;
+ 	for (i = 0; i < PPE_PORT_TX_COUNTER_TBL_ENTRIES; i++) {
+ 		reg = PPE_PORT_TX_COUNTER_TBL_ADDR + PPE_PORT_TX_COUNTER_TBL_INC * i;
+ 		ret = ppe_pkt_cnt_get(ppe_dev, reg, PPE_PKT_CNT_SIZE_3WORD,
+ 				      &pkt_cnt, NULL);
+ 		if (ret) {
+-			seq_printf(seq, "ERROR %d\n", ret);
+-			return;
++			dev_err(ppe_dev->dev, "CNT ERROR %d\n", ret);
++			return ret;
+ 		}
+ 
+ 		reg = PPE_PORT_TX_DROP_CNT_TBL_ADDR + PPE_PORT_TX_DROP_CNT_TBL_INC * i;
+ 		ret = ppe_pkt_cnt_get(ppe_dev, reg, PPE_PKT_CNT_SIZE_3WORD,
+ 				      &drop_cnt, NULL);
+ 		if (ret) {
+-			seq_printf(seq, "ERROR %d\n", ret);
+-			return;
++			dev_err(ppe_dev->dev, "CNT ERROR %d\n", ret);
++			return ret;
+ 		}
+ 
+ 		if (pkt_cnt > 0 || drop_cnt > 0) {
+-			tag++;
+-			PRINT_TWO_COUNTERS(tag, pkt_cnt, drop_cnt, "port", i);
++			if (!((++tag) % 4))
++				seq_printf(seq, "\n%-24s", "");
++
++			seq_printf(seq, "%10u/%u(%s=%04d)", pkt_cnt, drop_cnt,
++				   "port", i);
+ 		}
+ 	}
+ 
+ 	seq_putc(seq, '\n');
++
++	return 0;
+ }
+ 
+ /* The number of packets transmitted or pending by the PPE queue. */
+-static void ppe_queue_tx_counter_get(struct ppe_device *ppe_dev,
+-				     struct seq_file *seq)
++static int ppe_queue_counter_get(struct ppe_device *ppe_dev,
++				 struct seq_file *seq)
+ {
+-	u32 reg, val, pkt_cnt = 0, pend_cnt = 0;
++	u32 reg, val, pkt_cnt = 0, pend_cnt = 0, drop_cnt = 0;
+ 	int ret, i, tag = 0;
+ 
+-	PRINT_COUNTER_PREFIX("QUEUE_TX_CNT", "TX/PEND:");
++	seq_printf(seq, "%-24s", "QUEUE TX/PEND/DROP:");
+ 	for (i = 0; i < PPE_QUEUE_TX_COUNTER_TBL_ENTRIES; i++) {
+ 		reg = PPE_QUEUE_TX_COUNTER_TBL_ADDR + PPE_QUEUE_TX_COUNTER_TBL_INC * i;
+ 		ret = ppe_pkt_cnt_get(ppe_dev, reg, PPE_PKT_CNT_SIZE_3WORD,
+ 				      &pkt_cnt, NULL);
+ 		if (ret) {
+-			seq_printf(seq, "ERROR %d\n", ret);
+-			return;
++			dev_err(ppe_dev->dev, "CNT ERROR %d\n", ret);
++			return ret;
+ 		}
+ 
+ 		if (i < PPE_AC_UNICAST_QUEUE_CFG_TBL_ENTRIES) {
+@@ -532,161 +606,240 @@ static void ppe_queue_tx_counter_get(struct ppe_device *ppe_dev,
+ 			      PPE_AC_UNICAST_QUEUE_CNT_TBL_INC * i;
+ 			ret = regmap_read(ppe_dev->regmap, reg, &val);
+ 			if (ret) {
+-				seq_printf(seq, "ERROR %d\n", ret);
+-				return;
++				dev_err(ppe_dev->dev, "CNT ERROR %d\n", ret);
++				return ret;
+ 			}
+ 
+ 			pend_cnt = FIELD_GET(PPE_AC_UNICAST_QUEUE_CNT_TBL_PEND_CNT, val);
++
++			reg = PPE_UNICAST_DROP_CNT_TBL_ADDR +
++			      PPE_AC_UNICAST_QUEUE_CNT_TBL_INC *
++			      (i * PPE_UNICAST_DROP_TYPES + PPE_UNICAST_DROP_FORCE_OFFSET);
++
++			ret = ppe_pkt_cnt_get(ppe_dev, reg, PPE_PKT_CNT_SIZE_3WORD,
++					      &drop_cnt, NULL);
++			if (ret) {
++				dev_err(ppe_dev->dev, "CNT ERROR %d\n", ret);
++				return ret;
++			}
+ 		} else {
++			int mq_offset = i - PPE_AC_UNICAST_QUEUE_CFG_TBL_ENTRIES;
++
+ 			reg = PPE_AC_MULTICAST_QUEUE_CNT_TBL_ADDR +
+-			      PPE_AC_MULTICAST_QUEUE_CNT_TBL_INC *
+-			      (i - PPE_AC_UNICAST_QUEUE_CFG_TBL_ENTRIES);
++			      PPE_AC_MULTICAST_QUEUE_CNT_TBL_INC * mq_offset;
+ 			ret = regmap_read(ppe_dev->regmap, reg, &val);
+ 			if (ret) {
+-				seq_printf(seq, "ERROR %d\n", ret);
+-				return;
++				dev_err(ppe_dev->dev, "CNT ERROR %d\n", ret);
++				return ret;
+ 			}
+ 
+ 			pend_cnt = FIELD_GET(PPE_AC_MULTICAST_QUEUE_CNT_TBL_PEND_CNT, val);
++
++			if (mq_offset < PPE_P0_MULTICAST_QUEUE_NUM) {
++				reg = PPE_CPU_PORT_MULTICAST_FORCE_DROP_CNT_TBL_ADDR(mq_offset);
++			} else {
++				mq_offset -= PPE_P0_MULTICAST_QUEUE_NUM;
++
++				reg = PPE_P1_MULTICAST_DROP_CNT_TBL_ADDR;
++				reg += (mq_offset / PPE_MULTICAST_QUEUE_NUM) *
++					PPE_MULTICAST_QUEUE_PORT_ADDR_INC;
++				reg += (mq_offset % PPE_MULTICAST_QUEUE_NUM) *
++					PPE_MULTICAST_DROP_CNT_TBL_INC *
++					PPE_MULTICAST_DROP_TYPES;
++			}
++
++			ret = ppe_pkt_cnt_get(ppe_dev, reg, PPE_PKT_CNT_SIZE_3WORD,
++					      &drop_cnt, NULL);
++			if (ret) {
++				dev_err(ppe_dev->dev, "CNT ERROR %d\n", ret);
++				return ret;
++			}
+ 		}
+ 
+-		if (pkt_cnt > 0 || pend_cnt > 0) {
+-			tag++;
+-			PRINT_TWO_COUNTERS(tag, pkt_cnt, pend_cnt, "queue", i);
++		if (pkt_cnt > 0 || pend_cnt > 0 || drop_cnt > 0) {
++			if (!((++tag) % 4))
++				seq_printf(seq, "\n%-24s", "");
++
++			seq_printf(seq, "%10u/%u/%u(%s=%04d)",
++				   pkt_cnt, pend_cnt, drop_cnt, "queue", i);
+ 		}
+ 	}
+ 
+ 	seq_putc(seq, '\n');
++
++	return 0;
+ }
+ 
+ /* Display the various packet counters of PPE. */
+ static int ppe_packet_counter_show(struct seq_file *seq, void *v)
+ {
+-	struct ppe_device *ppe_dev = seq->private;
+-
+-	ppe_port_rx_drop_counter_get(ppe_dev, seq);
+-	ppe_port_rx_bm_drop_counter_get(ppe_dev, seq);
+-	ppe_port_rx_bm_port_counter_get(ppe_dev, seq);
+-	ppe_parse_pkt_counter_get(ppe_dev, seq);
+-	ppe_port_rx_counter_get(ppe_dev, seq);
+-	ppe_vp_rx_counter_get(ppe_dev, seq);
+-	ppe_pre_l2_counter_get(ppe_dev, seq);
+-	ppe_vlan_counter_get(ppe_dev, seq);
+-	ppe_cpu_code_counter_get(ppe_dev, seq);
+-	ppe_eg_vsi_counter_get(ppe_dev, seq);
+-	ppe_vp_tx_counter_get(ppe_dev, seq);
+-	ppe_port_tx_counter_get(ppe_dev, seq);
+-	ppe_queue_tx_counter_get(ppe_dev, seq);
++	struct ppe_debugfs_entry *entry = seq->private;
++	struct ppe_device *ppe_dev = entry->ppe;
++	int ret;
+ 
+-	return 0;
+-}
++	switch (entry->counter_type) {
++	case PPE_CNT_BM:
++		ret = ppe_bm_counter_get(ppe_dev, seq);
++		break;
++	case PPE_CNT_PARSE:
++		ret = ppe_parse_pkt_counter_get(ppe_dev, seq);
++		break;
++	case PPE_CNT_PORT_RX:
++		ret = ppe_port_rx_counter_get(ppe_dev, seq);
++		break;
++	case PPE_CNT_VLAN_RX:
++		ret = ppe_vlan_rx_counter_get(ppe_dev, seq);
++		break;
++	case PPE_CNT_L2_FWD:
++		ret = ppe_l2_counter_get(ppe_dev, seq);
++		break;
++	case PPE_CNT_CPU_CODE:
++		ret = ppe_cpu_code_counter_get(ppe_dev, seq);
++		break;
++	case PPE_CNT_VLAN_TX:
++		ret = ppe_vlan_tx_counter_get(ppe_dev, seq);
++		break;
++	case PPE_CNT_PORT_TX:
++		ret = ppe_port_tx_counter_get(ppe_dev, seq);
++		break;
++	case PPE_CNT_QM:
++		ret = ppe_queue_counter_get(ppe_dev, seq);
++		break;
++	default:
++		ret = -EINVAL;
++		break;
++	}
+ 
+-static int ppe_packet_counter_open(struct inode *inode, struct file *file)
+-{
+-	return single_open(file, ppe_packet_counter_show, inode->i_private);
++	return ret;
+ }
+ 
+-static ssize_t ppe_packet_counter_clear(struct file *file,
++/* Flush the various packet counters of PPE. */
++static ssize_t ppe_packet_counter_write(struct file *file,
+ 					const char __user *buf,
+ 					size_t count, loff_t *pos)
+ {
+-	struct ppe_device *ppe_dev = file_inode(file)->i_private;
++	struct ppe_debugfs_entry *entry = file_inode(file)->i_private;
++	struct ppe_device *ppe_dev = entry->ppe;
+ 	u32 reg;
+ 	int i;
+ 
+-	for (i = 0; i < PPE_DROP_CNT_TBL_ENTRIES; i++) {
+-		reg = PPE_DROP_CNT_TBL_ADDR + i * PPE_DROP_CNT_TBL_INC;
+-		ppe_tbl_pkt_cnt_clear(ppe_dev, reg, PPE_PKT_CNT_SIZE_1WORD);
+-	}
++	switch (entry->counter_type) {
++	case PPE_CNT_BM:
++		for (i = 0; i < PPE_DROP_CNT_TBL_ENTRIES; i++) {
++			reg = PPE_DROP_CNT_TBL_ADDR + i * PPE_DROP_CNT_TBL_INC;
++			ppe_tbl_pkt_cnt_clear(ppe_dev, reg, PPE_PKT_CNT_SIZE_1WORD);
++		}
+ 
+-	for (i = 0; i < PPE_DROP_STAT_TBL_ENTRIES; i++) {
+-		reg = PPE_DROP_STAT_TBL_ADDR + PPE_DROP_STAT_TBL_INC * i;
+-		ppe_tbl_pkt_cnt_clear(ppe_dev, reg, PPE_PKT_CNT_SIZE_3WORD);
+-	}
++		for (i = 0; i < PPE_DROP_STAT_TBL_ENTRIES; i++) {
++			reg = PPE_DROP_STAT_TBL_ADDR + PPE_DROP_STAT_TBL_INC * i;
++			ppe_tbl_pkt_cnt_clear(ppe_dev, reg, PPE_PKT_CNT_SIZE_3WORD);
++		}
+ 
+-	for (i = 0; i < PPE_IPR_PKT_CNT_TBL_ENTRIES; i++) {
+-		reg = PPE_IPR_PKT_CNT_TBL_ADDR + i * PPE_IPR_PKT_CNT_TBL_INC;
+-		ppe_tbl_pkt_cnt_clear(ppe_dev, reg, PPE_PKT_CNT_SIZE_1WORD);
++		break;
++	case PPE_CNT_PARSE:
++		for (i = 0; i < PPE_IPR_PKT_CNT_TBL_ENTRIES; i++) {
++			reg = PPE_IPR_PKT_CNT_TBL_ADDR + i * PPE_IPR_PKT_CNT_TBL_INC;
++			ppe_tbl_pkt_cnt_clear(ppe_dev, reg, PPE_PKT_CNT_SIZE_1WORD);
+ 
+-		reg = PPE_TPR_PKT_CNT_TBL_ADDR + i * PPE_TPR_PKT_CNT_TBL_INC;
+-		ppe_tbl_pkt_cnt_clear(ppe_dev, reg, PPE_PKT_CNT_SIZE_1WORD);
+-	}
++			reg = PPE_TPR_PKT_CNT_TBL_ADDR + i * PPE_TPR_PKT_CNT_TBL_INC;
++			ppe_tbl_pkt_cnt_clear(ppe_dev, reg, PPE_PKT_CNT_SIZE_1WORD);
++		}
+ 
+-	for (i = 0; i < PPE_VLAN_CNT_TBL_ENTRIES; i++) {
+-		reg = PPE_VLAN_CNT_TBL_ADDR + PPE_VLAN_CNT_TBL_INC * i;
+-		ppe_tbl_pkt_cnt_clear(ppe_dev, reg, PPE_PKT_CNT_SIZE_3WORD);
+-	}
++		break;
++	case PPE_CNT_PORT_RX:
++		for (i = 0; i < PPE_PORT_RX_CNT_TBL_ENTRIES; i++) {
++			reg = PPE_PORT_RX_CNT_TBL_ADDR + PPE_PORT_RX_CNT_TBL_INC * i;
++			ppe_tbl_pkt_cnt_clear(ppe_dev, reg, PPE_PKT_CNT_SIZE_5WORD);
++		}
+ 
+-	for (i = 0; i < PPE_PRE_L2_CNT_TBL_ENTRIES; i++) {
+-		reg = PPE_PRE_L2_CNT_TBL_ADDR + PPE_PRE_L2_CNT_TBL_INC * i;
+-		ppe_tbl_pkt_cnt_clear(ppe_dev, reg, PPE_PKT_CNT_SIZE_5WORD);
+-	}
++		for (i = 0; i < PPE_PHY_PORT_RX_CNT_TBL_ENTRIES; i++) {
++			reg = PPE_PHY_PORT_RX_CNT_TBL_ADDR + PPE_PHY_PORT_RX_CNT_TBL_INC * i;
++			ppe_tbl_pkt_cnt_clear(ppe_dev, reg, PPE_PKT_CNT_SIZE_5WORD);
++		}
+ 
+-	for (i = 0; i < PPE_PORT_TX_COUNTER_TBL_ENTRIES; i++) {
+-		reg = PPE_PORT_TX_DROP_CNT_TBL_ADDR + PPE_PORT_TX_DROP_CNT_TBL_INC * i;
+-		ppe_tbl_pkt_cnt_clear(ppe_dev, reg, PPE_PKT_CNT_SIZE_3WORD);
++		break;
++	case PPE_CNT_VLAN_RX:
++		for (i = 0; i < PPE_VLAN_CNT_TBL_ENTRIES; i++) {
++			reg = PPE_VLAN_CNT_TBL_ADDR + PPE_VLAN_CNT_TBL_INC * i;
++			ppe_tbl_pkt_cnt_clear(ppe_dev, reg, PPE_PKT_CNT_SIZE_3WORD);
++		}
+ 
+-		reg = PPE_PORT_TX_COUNTER_TBL_ADDR + PPE_PORT_TX_COUNTER_TBL_INC * i;
+-		ppe_tbl_pkt_cnt_clear(ppe_dev, reg, PPE_PKT_CNT_SIZE_3WORD);
+-	}
++		break;
++	case PPE_CNT_L2_FWD:
++		for (i = 0; i < PPE_PRE_L2_CNT_TBL_ENTRIES; i++) {
++			reg = PPE_PRE_L2_CNT_TBL_ADDR + PPE_PRE_L2_CNT_TBL_INC * i;
++			ppe_tbl_pkt_cnt_clear(ppe_dev, reg, PPE_PKT_CNT_SIZE_5WORD);
++		}
+ 
+-	for (i = 0; i < PPE_EG_VSI_COUNTER_TBL_ENTRIES; i++) {
+-		reg = PPE_EG_VSI_COUNTER_TBL_ADDR + PPE_EG_VSI_COUNTER_TBL_INC * i;
+-		ppe_tbl_pkt_cnt_clear(ppe_dev, reg, PPE_PKT_CNT_SIZE_3WORD);
+-	}
++		break;
++	case PPE_CNT_CPU_CODE:
++		for (i = 0; i < PPE_DROP_CPU_CNT_TBL_ENTRIES; i++) {
++			reg = PPE_DROP_CPU_CNT_TBL_ADDR + PPE_DROP_CPU_CNT_TBL_INC * i;
++			ppe_tbl_pkt_cnt_clear(ppe_dev, reg, PPE_PKT_CNT_SIZE_3WORD);
++		}
+ 
+-	for (i = 0; i < PPE_VPORT_TX_COUNTER_TBL_ENTRIES; i++) {
+-		reg = PPE_VPORT_TX_COUNTER_TBL_ADDR + PPE_VPORT_TX_COUNTER_TBL_INC * i;
+-		ppe_tbl_pkt_cnt_clear(ppe_dev, reg, PPE_PKT_CNT_SIZE_3WORD);
++		break;
++	case PPE_CNT_VLAN_TX:
++		for (i = 0; i < PPE_EG_VSI_COUNTER_TBL_ENTRIES; i++) {
++			reg = PPE_EG_VSI_COUNTER_TBL_ADDR + PPE_EG_VSI_COUNTER_TBL_INC * i;
++			ppe_tbl_pkt_cnt_clear(ppe_dev, reg, PPE_PKT_CNT_SIZE_3WORD);
++		}
+ 
+-		reg = PPE_VPORT_TX_DROP_CNT_TBL_ADDR + PPE_VPORT_TX_DROP_CNT_TBL_INC * i;
+-		ppe_tbl_pkt_cnt_clear(ppe_dev, reg, PPE_PKT_CNT_SIZE_3WORD);
+-	}
++		break;
++	case PPE_CNT_PORT_TX:
++		for (i = 0; i < PPE_PORT_TX_COUNTER_TBL_ENTRIES; i++) {
++			reg = PPE_PORT_TX_DROP_CNT_TBL_ADDR + PPE_PORT_TX_DROP_CNT_TBL_INC * i;
++			ppe_tbl_pkt_cnt_clear(ppe_dev, reg, PPE_PKT_CNT_SIZE_3WORD);
+ 
+-	for (i = 0; i < PPE_QUEUE_TX_COUNTER_TBL_ENTRIES; i++) {
+-		reg = PPE_QUEUE_TX_COUNTER_TBL_ADDR + PPE_QUEUE_TX_COUNTER_TBL_INC * i;
+-		ppe_tbl_pkt_cnt_clear(ppe_dev, reg, PPE_PKT_CNT_SIZE_3WORD);
+-	}
++			reg = PPE_PORT_TX_COUNTER_TBL_ADDR + PPE_PORT_TX_COUNTER_TBL_INC * i;
++			ppe_tbl_pkt_cnt_clear(ppe_dev, reg, PPE_PKT_CNT_SIZE_3WORD);
++		}
+ 
+-	ppe_tbl_pkt_cnt_clear(ppe_dev, PPE_EPE_DBG_IN_CNT_ADDR, PPE_PKT_CNT_SIZE_1WORD);
+-	ppe_tbl_pkt_cnt_clear(ppe_dev, PPE_EPE_DBG_OUT_CNT_ADDR, PPE_PKT_CNT_SIZE_1WORD);
++		for (i = 0; i < PPE_VPORT_TX_COUNTER_TBL_ENTRIES; i++) {
++			reg = PPE_VPORT_TX_COUNTER_TBL_ADDR + PPE_VPORT_TX_COUNTER_TBL_INC * i;
++			ppe_tbl_pkt_cnt_clear(ppe_dev, reg, PPE_PKT_CNT_SIZE_3WORD);
+ 
+-	for (i = 0; i < PPE_DROP_CPU_CNT_TBL_ENTRIES; i++) {
+-		reg = PPE_DROP_CPU_CNT_TBL_ADDR + PPE_DROP_CPU_CNT_TBL_INC * i;
+-		ppe_tbl_pkt_cnt_clear(ppe_dev, reg, PPE_PKT_CNT_SIZE_3WORD);
+-	}
++			reg = PPE_VPORT_TX_DROP_CNT_TBL_ADDR + PPE_VPORT_TX_DROP_CNT_TBL_INC * i;
++			ppe_tbl_pkt_cnt_clear(ppe_dev, reg, PPE_PKT_CNT_SIZE_3WORD);
++		}
+ 
+-	for (i = 0; i < PPE_PORT_RX_CNT_TBL_ENTRIES; i++) {
+-		reg = PPE_PORT_RX_CNT_TBL_ADDR + PPE_PORT_RX_CNT_TBL_INC * i;
+-		ppe_tbl_pkt_cnt_clear(ppe_dev, reg, PPE_PKT_CNT_SIZE_5WORD);
+-	}
++		break;
++	case PPE_CNT_QM:
++		for (i = 0; i < PPE_QUEUE_TX_COUNTER_TBL_ENTRIES; i++) {
++			reg = PPE_QUEUE_TX_COUNTER_TBL_ADDR + PPE_QUEUE_TX_COUNTER_TBL_INC * i;
++			ppe_tbl_pkt_cnt_clear(ppe_dev, reg, PPE_PKT_CNT_SIZE_3WORD);
++		}
+ 
+-	for (i = 0; i < PPE_PHY_PORT_RX_CNT_TBL_ENTRIES; i++) {
+-		reg = PPE_PHY_PORT_RX_CNT_TBL_ADDR + PPE_PHY_PORT_RX_CNT_TBL_INC * i;
+-		ppe_tbl_pkt_cnt_clear(ppe_dev, reg, PPE_PKT_CNT_SIZE_5WORD);
++		break;
++	default:
++		break;
+ 	}
+ 
+ 	return count;
+ }
+-
+-static const struct file_operations ppe_debugfs_packet_counter_fops = {
+-	.owner   = THIS_MODULE,
+-	.open    = ppe_packet_counter_open,
+-	.read    = seq_read,
+-	.llseek  = seq_lseek,
+-	.release = single_release,
+-	.write   = ppe_packet_counter_clear,
+-};
++DEFINE_SHOW_STORE_ATTRIBUTE(ppe_packet_counter);
+ 
+ void ppe_debugfs_setup(struct ppe_device *ppe_dev)
+ {
+-	int ret;
++	struct ppe_debugfs_entry *entry;
++	int i, ret;
+ 
+ 	ppe_dev->debugfs_root = debugfs_create_dir("ppe", NULL);
+-	debugfs_create_file("packet_counters", 0444,
+-			    ppe_dev->debugfs_root,
+-			    ppe_dev,
+-			    &ppe_debugfs_packet_counter_fops);
++	if (IS_ERR(ppe_dev->debugfs_root))
++		return;
++
++	for (i = 0; i < ARRAY_SIZE(debugfs_files); i++) {
++		entry = devm_kzalloc(ppe_dev->dev, sizeof(*entry), GFP_KERNEL);
++		if (!entry)
++			return;
++
++		entry->ppe = ppe_dev;
++		entry->counter_type = debugfs_files[i].counter_type;
++
++		debugfs_create_file(debugfs_files[i].name, 0444,
++				    ppe_dev->debugfs_root, entry,
++				    &ppe_packet_counter_fops);
++	}
+ 
+ 	if (!ppe_dev->debugfs_root) {
+ 		dev_err(ppe_dev->dev, "Error in PPE debugfs setup\n");
+diff --git a/drivers/net/ethernet/qualcomm/ppe/ppe_debugfs.h b/drivers/net/ethernet/qualcomm/ppe/ppe_debugfs.h
+index ba0a5b3af583..81f49a709123 100644
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_debugfs.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_debugfs.h
+@@ -1,6 +1,6 @@
+ /* SPDX-License-Identifier: GPL-2.0-only
+  *
+- * Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
++ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+  */
+ 
+ /* PPE debugfs counters setup. */
+diff --git a/drivers/net/ethernet/qualcomm/ppe/ppe_port.c b/drivers/net/ethernet/qualcomm/ppe/ppe_port.c
+index 05c52ba07aef..0df0baae9974 100644
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_port.c
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_port.c
+@@ -1,16 +1,17 @@
+ // SPDX-License-Identifier: GPL-2.0-only
+ /*
+- * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
++ * Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
+  */
+ 
+ /* PPE Port MAC initialization and PPE port MAC functions. */
+ 
+ #include <linux/clk.h>
++#include <linux/of.h>
+ #include <linux/of_net.h>
+-#include <linux/pcs/pcs-qcom-ipq-uniphy.h>
++#include <linux/pcs/pcs-qcom-ipq9574.h>
+ #include <linux/phylink.h>
+-#include <linux/reset.h>
+ #include <linux/regmap.h>
++#include <linux/reset.h>
+ #include <linux/rtnetlink.h>
+ 
+ #include "edma_port.h"
+@@ -117,7 +118,7 @@ enum ppe_xgmib_stats_type {
+ 	xgmib_rx_broadcast_g,
+ 	xgmib_rx_multicast_g,
+ 	xgmib_rx_crc_err,
+-	xgmib_rx_runt_err,
++	xgmib_rx_frag_err,
+ 	xgmib_rx_jabber_err,
+ 	xgmib_rx_undersize_g,
+ 	xgmib_rx_oversize_g,
+@@ -142,9 +143,9 @@ enum ppe_xgmib_stats_type {
+ 
+ /* PPE port clock and reset name */
+ static const char * const ppe_port_clk_rst_name[] = {
+-	[PPE_PORT_CLK_RST_MAC] = "port_mac",
+-	[PPE_PORT_CLK_RST_RX] = "port_rx",
+-	[PPE_PORT_CLK_RST_TX] = "port_tx",
++	[PPE_PORT_CLK_RST_MAC] = "mac",
++	[PPE_PORT_CLK_RST_RX] = "rx",
++	[PPE_PORT_CLK_RST_TX] = "tx",
+ };
+ 
+ /* PPE GMAC MIB statistics description information */
+@@ -219,7 +220,7 @@ static const struct ppe_mac_mib_info xgmib_info[] = {
+ 	PPE_MAC_MIB_DESC(8, XGMAC_RXBROAD_G_ADDR, "rx_broadcast_g"),
+ 	PPE_MAC_MIB_DESC(8, XGMAC_RXMULTI_G_ADDR, "rx_multicast_g"),
+ 	PPE_MAC_MIB_DESC(8, XGMAC_RXCRC_ERR_ADDR, "rx_crc_err"),
+-	PPE_MAC_MIB_DESC(4, XGMAC_RXRUNT_ERR_ADDR, "rx_runt_err"),
++	PPE_MAC_MIB_DESC(4, XGMAC_RXFRAG_ERR_ADDR, "rx_frag_err"),
+ 	PPE_MAC_MIB_DESC(4, XGMAC_RXJABBER_ERR_ADDR, "rx_jabber_err"),
+ 	PPE_MAC_MIB_DESC(4, XGMAC_RXUNDERSIZE_G_ADDR, "rx_undersize_g"),
+ 	PPE_MAC_MIB_DESC(4, XGMAC_RXOVERSIZE_G_ADDR, "rx_oversize_g"),
+@@ -257,7 +258,8 @@ static void ppe_port_gmib_update(struct ppe_port *ppe_port)
+ 
+ 		ret = regmap_read(ppe_dev->regmap, reg, &val);
+ 		if (ret) {
+-			dev_warn(ppe_dev->dev, "%s: %d\n", __func__, ret);
++			dev_warn(ppe_dev->dev, "PPE port GMIB read fail %d\n",
++				 ret);
+ 			continue;
+ 		}
+ 
+@@ -265,8 +267,8 @@ static void ppe_port_gmib_update(struct ppe_port *ppe_port)
+ 		if (mib->size == 8) {
+ 			ret = regmap_read(ppe_dev->regmap, reg + 4, &val);
+ 			if (ret) {
+-				dev_warn(ppe_dev->dev, "%s: %d\n",
+-					 __func__, ret);
++				dev_warn(ppe_dev->dev,
++					 "PPE port GMIB read fail %d\n", ret);
+ 				continue;
+ 			}
+ 
+@@ -288,6 +290,43 @@ static void ppe_port_gmib_stats_poll(struct work_struct *work)
+ 			      msecs_to_jiffies(PPE_GMIB_POLL_INTERVAL_MS));
+ }
+ 
++/* Start PPE port GMAC MIB statistics polling work */
++static int ppe_port_gmib_work_start(struct ppe_port *ppe_port)
++{
++	struct ppe_device *ppe_dev = ppe_port->ppe_dev;
++
++	if (!ppe_port->gmib_stats) {
++		u64 *gstats;
++		/* Allocate array memory to store GMIB statistics */
++		gstats = devm_kzalloc(ppe_dev->dev,
++				      sizeof(*gstats) * ARRAY_SIZE(gmib_info),
++				      GFP_KERNEL);
++		if (!gstats)
++			return -ENOMEM;
++
++		ppe_port->gmib_stats = gstats;
++
++		/* Init GMIB statistics polling work */
++		spin_lock_init(&ppe_port->gmib_stats_lock);
++		INIT_DELAYED_WORK(&ppe_port->gmib_read,
++				  ppe_port_gmib_stats_poll);
++	}
++
++	/* Start GMIB statistics polling work */
++	schedule_delayed_work(&ppe_port->gmib_read, 0);
++
++	return 0;
++}
++
++/* Stop PPE port GMAC MIB statistics polling work */
++static void ppe_port_gmib_work_stop(struct ppe_port *ppe_port)
++{
++	if (ppe_port->gmib_stats) {
++		/* Stop GMIB statistics polling work */
++		cancel_delayed_work_sync(&ppe_port->gmib_read);
++	}
++}
++
+ /* Get the XGMAC MIB counter based on the specific MIB stats type */
+ static u64 ppe_port_xgmib_get(struct ppe_port *ppe_port,
+ 			      enum ppe_xgmib_stats_type xgmib_type)
+@@ -304,7 +343,7 @@ static u64 ppe_port_xgmib_get(struct ppe_port *ppe_port,
+ 
+ 	ret = regmap_read(ppe_dev->regmap, reg, &val);
+ 	if (ret) {
+-		dev_warn(ppe_dev->dev, "%s: %d\n", __func__, ret);
++		dev_warn(ppe_dev->dev, "PPE port XGMIB read fail %d\n", ret);
+ 		goto data_return;
+ 	}
+ 
+@@ -312,7 +351,8 @@ static u64 ppe_port_xgmib_get(struct ppe_port *ppe_port,
+ 	if (mib->size == 8) {
+ 		ret = regmap_read(ppe_dev->regmap, reg + 4, &val);
+ 		if (ret) {
+-			dev_warn(ppe_dev->dev, "%s: %d\n", __func__, ret);
++			dev_warn(ppe_dev->dev, "PPE port XGMIB read fail %d\n",
++				 ret);
+ 			goto data_return;
+ 		}
+ 
+@@ -338,10 +378,12 @@ int ppe_port_get_sset_count(struct ppe_port *ppe_port, int sset)
+ 	if (sset != ETH_SS_STATS)
+ 		return 0;
+ 
+-	if (ppe_port->mac_type == PPE_MAC_TYPE_GMAC)
+-		return ARRAY_SIZE(gmib_info);
+-	else
+-		return ARRAY_SIZE(xgmib_info);
++	/* The MAC type is invisible to the upper interface. The interface
++	 * can switch between GMAC and XGMAC in different interface modes.
++	 * Therefore, the unified XGMIB statistics format is used, and GMIB
++	 * statistics will be merged into the XGMIB statistics.
++	 */
++	return ARRAY_SIZE(xgmib_info);
+ }
+ 
+ /**
+@@ -361,15 +403,9 @@ void ppe_port_get_strings(struct ppe_port *ppe_port, u32 stringset, u8 *data)
+ 	if (stringset != ETH_SS_STATS)
+ 		return;
+ 
+-	if (ppe_port->mac_type == PPE_MAC_TYPE_GMAC) {
+-		for (i = 0; i < ARRAY_SIZE(gmib_info); i++)
+-			strscpy(data + i * ETH_GSTRING_LEN, gmib_info[i].name,
+-				ETH_GSTRING_LEN);
+-	} else {
+-		for (i = 0; i < ARRAY_SIZE(xgmib_info); i++)
+-			strscpy(data + i * ETH_GSTRING_LEN, xgmib_info[i].name,
+-				ETH_GSTRING_LEN);
+-	}
++	for (i = 0; i < ARRAY_SIZE(xgmib_info); i++)
++		strscpy(data + i * ETH_GSTRING_LEN, xgmib_info[i].name,
++			ETH_GSTRING_LEN);
+ }
+ 
+ /**
+@@ -385,17 +421,64 @@ void ppe_port_get_ethtool_stats(struct ppe_port *ppe_port, u64 *data)
+ {
+ 	int i;
+ 
+-	if (ppe_port->mac_type == PPE_MAC_TYPE_GMAC) {
++	for (i = 0; i < ARRAY_SIZE(xgmib_info); i++)
++		data[i] = ppe_port_xgmib_get(ppe_port, i);
++
++	/* Merge the GMIB statistics into the XGMIB statistics to show
++	 * the total counters for this interface.
++	 */
++	if (ppe_port->gmib_stats) {
++		u64 *gsrc = ppe_port->gmib_stats;
++
+ 		spin_lock(&ppe_port->gmib_stats_lock);
+ 
+ 		ppe_port_gmib_update(ppe_port);
+-		for (i = 0; i < ARRAY_SIZE(gmib_info); i++)
+-			data[i] = ppe_port->gmib_stats[i];
++
++		data[xgmib_tx_bytes] += gsrc[gmib_tx_bytes];
++		data[xgmib_tx_frames] += gsrc[gmib_tx_broadcast];
++		data[xgmib_tx_frames] += gsrc[gmib_tx_multicast];
++		data[xgmib_tx_frames] += gsrc[gmib_tx_unicast];
++		data[xgmib_tx_broadcast_g] += gsrc[gmib_tx_broadcast];
++		data[xgmib_tx_multicast_g] += gsrc[gmib_tx_multicast];
++		data[xgmib_tx_pkt64] += gsrc[gmib_tx_pkt64];
++		data[xgmib_tx_pkt65to127] += gsrc[gmib_tx_pkt65to127];
++		data[xgmib_tx_pkt128to255] += gsrc[gmib_tx_pkt128to255];
++		data[xgmib_tx_pkt256to511] += gsrc[gmib_tx_pkt256to511];
++		data[xgmib_tx_pkt512to1023] += gsrc[gmib_tx_pkt512to1023];
++		data[xgmib_tx_pkt1024tomax] += gsrc[gmib_tx_pkt1024to1518];
++		data[xgmib_tx_pkt1024tomax] += gsrc[gmib_tx_pkt1519tomax];
++		data[xgmib_tx_unicast] += gsrc[gmib_tx_unicast];
++		data[xgmib_tx_multicast] += gsrc[gmib_tx_multicast];
++		data[xgmib_tx_broadcast] += gsrc[gmib_tx_broadcast];
++		data[xgmib_tx_underflow_err] += gsrc[gmib_tx_underrun];
++		data[xgmib_tx_bytes_g] += gsrc[gmib_tx_bytes];
++		data[xgmib_tx_frames_g] += gsrc[gmib_tx_broadcast];
++		data[xgmib_tx_frames_g] += gsrc[gmib_tx_multicast];
++		data[xgmib_tx_frames_g] += gsrc[gmib_tx_unicast];
++		data[xgmib_tx_pause] += gsrc[gmib_tx_pause];
++
++		data[xgmib_rx_frames] += gsrc[gmib_rx_broadcast];
++		data[xgmib_rx_frames] += gsrc[gmib_rx_multicast];
++		data[xgmib_rx_frames] += gsrc[gmib_rx_unicast];
++		data[xgmib_rx_bytes] += gsrc[gmib_rx_bytes_g];
++		data[xgmib_rx_bytes] += gsrc[gmib_rx_bytes_b];
++		data[xgmib_rx_bytes_g] += gsrc[gmib_rx_bytes_g];
++		data[xgmib_rx_broadcast_g] += gsrc[gmib_rx_broadcast];
++		data[xgmib_rx_multicast_g] += gsrc[gmib_rx_multicast];
++		data[xgmib_rx_crc_err] += gsrc[gmib_rx_fcserr];
++		data[xgmib_rx_crc_err] += gsrc[gmib_rx_frag];
++		data[xgmib_rx_frag_err] += gsrc[gmib_rx_frag];
++		data[xgmib_rx_pkt64] += gsrc[gmib_rx_pkt64];
++		data[xgmib_rx_pkt65to127] += gsrc[gmib_rx_pkt65to127];
++		data[xgmib_rx_pkt128to255] += gsrc[gmib_rx_pkt128to255];
++		data[xgmib_rx_pkt256to511] += gsrc[gmib_rx_pkt256to511];
++		data[xgmib_rx_pkt512to1023] += gsrc[gmib_rx_pkt512to1023];
++		data[xgmib_rx_pkt1024tomax] += gsrc[gmib_rx_pkt1024to1518];
++		data[xgmib_rx_pkt1024tomax] += gsrc[gmib_rx_pkt1519tomax];
++		data[xgmib_rx_unicast_g] += gsrc[gmib_rx_unicast];
++		data[xgmib_rx_pause] += gsrc[gmib_rx_pause];
+ 
+ 		spin_unlock(&ppe_port->gmib_stats_lock);
+-	} else {
+-		for (i = 0; i < ARRAY_SIZE(xgmib_info); i++)
+-			data[i] = ppe_port_xgmib_get(ppe_port, i);
+ 	}
+ }
+ 
+@@ -410,56 +493,57 @@ void ppe_port_get_ethtool_stats(struct ppe_port *ppe_port, u64 *data)
+ void ppe_port_get_stats64(struct ppe_port *ppe_port,
+ 			  struct rtnl_link_stats64 *s)
+ {
+-	if (ppe_port->mac_type == PPE_MAC_TYPE_GMAC) {
+-		u64 *src = ppe_port->gmib_stats;
++	s->multicast = ppe_port_xgmib_get(ppe_port, xgmib_rx_multicast_g);
+ 
+-		spin_lock(&ppe_port->gmib_stats_lock);
+-
+-		ppe_port_gmib_update(ppe_port);
++	s->rx_packets = s->multicast;
++	s->rx_packets += ppe_port_xgmib_get(ppe_port, xgmib_rx_unicast_g);
++	s->rx_packets += ppe_port_xgmib_get(ppe_port, xgmib_rx_broadcast_g);
+ 
+-		s->rx_packets = src[gmib_rx_unicast] +
+-			src[gmib_rx_broadcast] + src[gmib_rx_multicast];
++	s->tx_packets = ppe_port_xgmib_get(ppe_port, xgmib_tx_frames);
++	s->rx_bytes = ppe_port_xgmib_get(ppe_port, xgmib_rx_bytes);
++	s->tx_bytes = ppe_port_xgmib_get(ppe_port, xgmib_tx_bytes);
+ 
+-		s->tx_packets = src[gmib_tx_unicast] +
+-			src[gmib_tx_broadcast] + src[gmib_tx_multicast];
++	s->rx_crc_errors = ppe_port_xgmib_get(ppe_port, xgmib_rx_crc_err);
++	s->rx_fifo_errors = ppe_port_xgmib_get(ppe_port,
++					       xgmib_rx_fifo_overflow);
+ 
+-		s->rx_bytes = src[gmib_rx_bytes_g];
+-		s->tx_bytes = src[gmib_tx_bytes];
+-		s->multicast = src[gmib_rx_multicast];
++	s->rx_length_errors = ppe_port_xgmib_get(ppe_port, xgmib_rx_len_err);
++	s->rx_errors = s->rx_crc_errors +
++		s->rx_fifo_errors + s->rx_length_errors;
++	s->rx_dropped = s->rx_errors;
+ 
+-		s->rx_crc_errors = src[gmib_rx_fcserr] + src[gmib_rx_frag];
+-		s->rx_frame_errors = src[gmib_rx_alignerr];
+-		s->rx_errors = s->rx_crc_errors + s->rx_frame_errors;
+-		s->rx_dropped = src[gmib_rx_toolong] + s->rx_errors;
++	s->tx_fifo_errors = ppe_port_xgmib_get(ppe_port,
++					       xgmib_tx_underflow_err);
++	s->tx_errors = s->tx_packets -
++		ppe_port_xgmib_get(ppe_port, xgmib_tx_frames_g);
+ 
+-		s->tx_fifo_errors = src[gmib_tx_underrun];
+-		s->tx_aborted_errors = src[gmib_tx_abortcol];
+-		s->tx_errors = s->tx_fifo_errors + s->tx_aborted_errors;
+-		s->collisions = src[gmib_tx_collisions];
++	if (ppe_port->gmib_stats) {
++		u64 *gsrc = ppe_port->gmib_stats;
++		u64 temp;
+ 
+-		spin_unlock(&ppe_port->gmib_stats_lock);
+-	} else {
+-		s->multicast = ppe_port_xgmib_get(ppe_port, xgmib_rx_multicast_g);
+-
+-		s->rx_packets = s->multicast;
+-		s->rx_packets += ppe_port_xgmib_get(ppe_port, xgmib_rx_unicast_g);
+-		s->rx_packets += ppe_port_xgmib_get(ppe_port, xgmib_rx_broadcast_g);
+-
+-		s->tx_packets = ppe_port_xgmib_get(ppe_port, xgmib_tx_frames);
+-		s->rx_bytes = ppe_port_xgmib_get(ppe_port, xgmib_rx_bytes);
+-		s->tx_bytes = ppe_port_xgmib_get(ppe_port, xgmib_tx_bytes);
++		spin_lock(&ppe_port->gmib_stats_lock);
+ 
+-		s->rx_crc_errors = ppe_port_xgmib_get(ppe_port, xgmib_rx_crc_err);
+-		s->rx_fifo_errors = ppe_port_xgmib_get(ppe_port, xgmib_rx_fifo_overflow);
++		ppe_port_gmib_update(ppe_port);
+ 
+-		s->rx_length_errors = ppe_port_xgmib_get(ppe_port, xgmib_rx_len_err);
+-		s->rx_errors = s->rx_crc_errors +
+-			s->rx_fifo_errors + s->rx_length_errors;
+-		s->rx_dropped = s->rx_errors;
++		s->multicast += gsrc[gmib_rx_multicast];
++		s->rx_packets += gsrc[gmib_rx_unicast];
++		s->rx_packets += gsrc[gmib_rx_broadcast];
++		s->rx_packets += gsrc[gmib_rx_multicast];
++		s->tx_packets += gsrc[gmib_tx_unicast];
++		s->tx_packets += gsrc[gmib_tx_broadcast];
++		s->tx_packets += gsrc[gmib_tx_multicast];
++		s->rx_bytes += gsrc[gmib_rx_bytes_g];
++		s->tx_bytes += gsrc[gmib_tx_bytes];
++		temp = gsrc[gmib_rx_fcserr] + gsrc[gmib_rx_frag];
++		s->rx_crc_errors += temp;
++		temp += gsrc[gmib_rx_alignerr];
++		s->rx_errors += temp;
++		s->rx_dropped += temp;
++		s->tx_fifo_errors += gsrc[gmib_tx_underrun];
++		s->tx_errors += gsrc[gmib_tx_underrun];
++		s->tx_errors += gsrc[gmib_tx_abortcol];
+ 
+-		s->tx_fifo_errors = ppe_port_xgmib_get(ppe_port, xgmib_tx_underflow_err);
+-		s->tx_errors = s->tx_packets -
+-			ppe_port_xgmib_get(ppe_port, xgmib_tx_frames_g);
++		spin_unlock(&ppe_port->gmib_stats_lock);
+ 	}
+ }
+ 
+@@ -479,73 +563,37 @@ int ppe_port_set_mac_address(struct ppe_port *ppe_port, const u8 *addr)
+ 	u32 reg, val;
+ 	int ret;
+ 
+-	if (ppe_port->mac_type == PPE_MAC_TYPE_GMAC) {
+-		reg = PPE_PORT_GMAC_ADDR(port);
+-		val = (addr[5] << 8) | addr[4];
+-		ret = regmap_write(ppe_dev->regmap, reg + GMAC_GOL_ADDR0_ADDR, val);
+-		if (ret)
+-			return ret;
+-
+-		val = (addr[0] << 24) | (addr[1] << 16) |
+-		      (addr[2] << 8) | addr[3];
+-		ret = regmap_write(ppe_dev->regmap, reg + GMAC_GOL_ADDR1_ADDR, val);
+-		if (ret)
+-			return ret;
+-	} else {
+-		reg = PPE_PORT_XGMAC_ADDR(port);
+-		val = (addr[5] << 8) | addr[4] | XGMAC_ADDR_EN;
+-		ret = regmap_write(ppe_dev->regmap, reg + XGMAC_ADDR0_H_ADDR, val);
+-		if (ret)
+-			return ret;
+-
+-		val = (addr[3] << 24) | (addr[2] << 16) |
+-		      (addr[1] << 8) | addr[0];
+-		ret = regmap_write(ppe_dev->regmap, reg + XGMAC_ADDR0_L_ADDR, val);
+-		if (ret)
+-			return ret;
+-	}
+-
+-	return 0;
+-}
+-
+-/**
+- * ppe_port_set_mac_eee() - Set EEE configuration for PPE port MAC
+- * @ppe_port: PPE port
+- * @eee: EEE settings
+- *
+- * Description: Set port MAC EEE settings for the given PPE port.
+- *
+- * Return: 0 upon success or a negative error upon failure.
+- */
+-int ppe_port_set_mac_eee(struct ppe_port *ppe_port, struct ethtool_keee *eee)
+-{
+-	struct ppe_device *ppe_dev = ppe_port->ppe_dev;
+-	int port = ppe_port->port_id;
+-	u32 val;
+-	int ret;
+-
+-	ret = regmap_read(ppe_dev->regmap, PPE_LPI_EN_ADDR, &val);
++	/* Set address to GMAC */
++	reg = PPE_PORT_GMAC_ADDR(port);
++	val = (addr[5] << 8) | addr[4];
++	ret = regmap_write(ppe_dev->regmap, reg + GMAC_GOL_ADDR0_ADDR, val);
+ 	if (ret)
+ 		return ret;
+ 
+-	if (eee->tx_lpi_enabled)
+-		val |= PPE_LPI_PORT_EN(port);
+-	else
+-		val &= ~PPE_LPI_PORT_EN(port);
++	val = (addr[0] << 24) | (addr[1] << 16) | (addr[2] << 8) | addr[3];
++	ret = regmap_write(ppe_dev->regmap, reg + GMAC_GOL_ADDR1_ADDR, val);
++	if (ret)
++		return ret;
+ 
+-	ret = regmap_write(ppe_dev->regmap, PPE_LPI_EN_ADDR, val);
++	/* Set address to XGMAC */
++	reg = PPE_PORT_XGMAC_ADDR(port);
++	val = (addr[5] << 8) | addr[4] | XGMAC_ADDR_EN;
++	ret = regmap_write(ppe_dev->regmap, reg + XGMAC_ADDR0_H_ADDR, val);
++	if (ret)
++		return ret;
+ 
+-	return ret;
++	val = (addr[3] << 24) | (addr[2] << 16) | (addr[1] << 8) | addr[0];
++	return regmap_write(ppe_dev->regmap, reg + XGMAC_ADDR0_L_ADDR, val);
+ }
+ 
+ /**
+- * ppe_port_set_maxframe() - Set port maximum frame size
++ * ppe_port_set_maxframe() - Set maximum frame size including MTU and MRU of port
+  * @ppe_port: PPE port structure
+- * @maxframe_size: Maximum frame size supported by PPE port
++ * @maxframe_size: Maximum frame size configured to the PPE port
+  *
+- * Description: Set MTU of network interface specified by @ppe_port.
++ * Set maximum frame size of network interface specified by @ppe_port.
+  *
+- * Return: 0 upon success or a negative error upon failure.
++ * Return: 0 on success, negative error code on failure.
+  */
+ int ppe_port_set_maxframe(struct ppe_port *ppe_port, int maxframe_size)
+ {
+@@ -585,42 +633,23 @@ int ppe_port_set_maxframe(struct ppe_port *ppe_port, int maxframe_size)
+ /* PPE port and MAC reset */
+ static int ppe_port_mac_reset(struct ppe_port *ppe_port)
+ {
+-	struct ppe_device *ppe_dev = ppe_port->ppe_dev;
+-	int ret;
+-
+-	ret = reset_control_assert(ppe_port->rstcs[PPE_PORT_CLK_RST_MAC]);
+-	if (ret)
+-		goto error;
+-
+-	ret = reset_control_assert(ppe_port->rstcs[PPE_PORT_CLK_RST_RX]);
+-	if (ret)
+-		goto error;
+-
+-	ret = reset_control_assert(ppe_port->rstcs[PPE_PORT_CLK_RST_TX]);
+-	if (ret)
+-		goto error;
+-
+-	/* 150ms delay is required by hardware to reset PPE port and MAC */
+-	msleep(150);
++	int ret, i;
+ 
+-	ret = reset_control_deassert(ppe_port->rstcs[PPE_PORT_CLK_RST_MAC]);
+-	if (ret)
+-		goto error;
++	for (i = PPE_PORT_CLK_RST_MAC; i < PPE_PORT_CLK_RST_MAX; i++) {
++		ret = reset_control_assert(ppe_port->rstcs[PPE_PORT_CLK_RST_MAC]);
++		if (ret)
++			return ret;
++	}
+ 
+-	ret = reset_control_deassert(ppe_port->rstcs[PPE_PORT_CLK_RST_RX]);
+-	if (ret)
+-		goto error;
++	fsleep(10000);
+ 
+-	ret = reset_control_deassert(ppe_port->rstcs[PPE_PORT_CLK_RST_TX]);
+-	if (ret)
+-		goto error;
+-
+-	return ret;
++	for (i = PPE_PORT_CLK_RST_MAC; i < PPE_PORT_CLK_RST_MAX; i++) {
++		ret = reset_control_deassert(ppe_port->rstcs[PPE_PORT_CLK_RST_MAC]);
++		if (ret)
++			return ret;
++	}
+ 
+-error:
+-	dev_err(ppe_dev->dev, "%s: port %d reset fail %d\n",
+-		__func__, ppe_port->port_id, ret);
+-	return ret;
++	return 0;
+ }
+ 
+ /* PPE port MAC configuration for phylink */
+@@ -643,31 +672,28 @@ static void ppe_port_mac_config(struct phylink_config *config,
+ 	case PHY_INTERFACE_MODE_10G_QXGMII:
+ 		mac_type = PPE_MAC_TYPE_XGMAC;
+ 		break;
++	case PHY_INTERFACE_MODE_SGMII:
+ 	case PHY_INTERFACE_MODE_QSGMII:
+ 	case PHY_INTERFACE_MODE_PSGMII:
+-	case PHY_INTERFACE_MODE_SGMII:
+ 	case PHY_INTERFACE_MODE_1000BASEX:
+ 		mac_type = PPE_MAC_TYPE_GMAC;
+ 		break;
+ 	default:
+-		dev_err(ppe_dev->dev, "%s: Unsupport interface %s\n",
+-			__func__, phy_modes(state->interface));
++		dev_err(ppe_dev->dev, "Unsupported interface %s\n",
++			phy_modes(state->interface));
+ 		return;
+ 	}
+ 
+-	/* Reset Port MAC for GMAC */
+-	if (mac_type == PPE_MAC_TYPE_GMAC) {
+-		ret = ppe_port_mac_reset(ppe_port);
+-		if (ret)
+-			goto err_mac_config;
+-	}
++	/* Reset Port MAC */
++	ret = ppe_port_mac_reset(ppe_port);
++	if (ret)
++		goto err_mac_config;
+ 
+ 	/* Port mux to select GMAC or XGMAC */
+ 	mask = PPE_PORT_SEL_XGMAC(port);
+ 	val = mac_type == PPE_MAC_TYPE_GMAC ? 0 : mask;
+ 	ret = regmap_update_bits(ppe_dev->regmap,
+-				 PPE_PORT_MUX_CTRL_ADDR,
+-				 mask, val);
++				 PPE_PORT_MUX_CTRL_ADDR, mask, val);
+ 	if (ret)
+ 		goto err_mac_config;
+ 
+@@ -676,8 +702,111 @@ static void ppe_port_mac_config(struct phylink_config *config,
+ 	return;
+ 
+ err_mac_config:
+-	dev_err(ppe_dev->dev, "%s: port %d MAC config fail %d\n",
+-		__func__, port, ret);
++	dev_err(ppe_dev->dev, "PPE port %d MAC config fail %d\n", port, ret);
++}
++
++/* Get port MAC speed clock rate for GMII/GMII+ interface */
++static unsigned long ppe_port_mac_clock_rate_get_gmii(int speed)
++{
++	unsigned long rate = 0;
++
++	switch (speed) {
++	case SPEED_2500:
++		rate = 312500000;
++		break;
++	case SPEED_1000:
++		rate = 125000000;
++		break;
++	case SPEED_100:
++		rate = 25000000;
++		break;
++	case SPEED_10:
++		rate = 2500000;
++		break;
++	default:
++		break;
++	}
++
++	return rate;
++}
++
++/* Get port MAC speed clock rate for XGMII interface */
++static unsigned long ppe_port_mac_clock_rate_get_xgmii(int speed)
++{
++	unsigned long rate = 0;
++
++	switch (speed) {
++	case SPEED_10000:
++		rate = 312500000;
++		break;
++	case SPEED_5000:
++		rate = 156250000;
++		break;
++	case SPEED_2500:
++		rate = 78125000;
++		break;
++	case SPEED_1000:
++		rate = 125000000;
++		break;
++	case SPEED_100:
++		rate = 12500000;
++		break;
++	case SPEED_10:
++		rate = 1250000;
++		break;
++	default:
++		break;
++	}
++
++	return rate;
++}
++
++/* Set PPE port MAC speed clock to appropriate rate */
++static int ppe_port_mac_speed_clock_rate_set(struct ppe_port *ppe_port,
++					     phy_interface_t interface,
++					     int speed)
++{
++	struct ppe_device *ppe_dev = ppe_port->ppe_dev;
++	struct device *device = ppe_dev->dev;
++	unsigned long rate;
++	int ret;
++
++	switch (interface) {
++	case PHY_INTERFACE_MODE_SGMII:
++	case PHY_INTERFACE_MODE_QSGMII:
++	case PHY_INTERFACE_MODE_PSGMII:
++	case PHY_INTERFACE_MODE_2500BASEX:
++		rate = ppe_port_mac_clock_rate_get_gmii(speed);
++		break;
++	case PHY_INTERFACE_MODE_USXGMII:
++	case PHY_INTERFACE_MODE_10GBASER:
++	case PHY_INTERFACE_MODE_10G_QXGMII:
++		rate = ppe_port_mac_clock_rate_get_xgmii(speed);
++		break;
++	default:
++		dev_err(device,
++			"Unsupported interface %s\n", phy_modes(interface));
++		return -EOPNOTSUPP;
++	}
++
++	if (rate == 0) {
++		dev_err(device, "Invalid port speed clock rate\n");
++		return -EINVAL;
++	}
++
++	ret = clk_set_rate(ppe_port->clks[PPE_PORT_CLK_RST_RX], rate);
++	if (ret) {
++		dev_err(device, "Failed to set PPE port RX clock rate\n");
++		return ret;
++	}
++
++	ret = clk_set_rate(ppe_port->clks[PPE_PORT_CLK_RST_TX], rate);
++	if (ret) {
++		dev_err(device, "Failed to set PPE port TX clock rate\n");
++		return ret;
++	}
++
++	return 0;
+ }
+ 
+ /* PPE port GMAC link up configuration */
+@@ -688,6 +817,11 @@ static int ppe_port_gmac_link_up(struct ppe_port *ppe_port, int speed,
+ 	int ret, port = ppe_port->port_id;
+ 	u32 reg, val;
+ 
++	/* Start GMAC MIB statistics polling work task */
++	ret = ppe_port_gmib_work_start(ppe_port);
++	if (ret)
++		return ret;
++
+ 	/* Set GMAC speed */
+ 	switch (speed) {
+ 	case SPEED_1000:
+@@ -700,8 +834,8 @@ static int ppe_port_gmac_link_up(struct ppe_port *ppe_port, int speed,
+ 		val = GMAC_SPEED_10;
+ 		break;
+ 	default:
+-		dev_err(ppe_dev->dev, "%s: Invalid GMAC speed %s\n",
+-			__func__, phy_speed_to_str(speed));
++		dev_err(ppe_dev->dev, "Invalid GMAC speed %s\n",
++			phy_speed_to_str(speed));
+ 		return -EINVAL;
+ 	}
+ 
+@@ -720,10 +854,8 @@ static int ppe_port_gmac_link_up(struct ppe_port *ppe_port, int speed,
+ 	if (rx_pause)
+ 		val |= GMAC_RXFCEN;
+ 
+-	ret = regmap_update_bits(ppe_dev->regmap, reg + GMAC_ENABLE_ADDR,
+-				 GMAC_ENABLE_ALL, val);
+-
+-	return ret;
++	return regmap_update_bits(ppe_dev->regmap, reg + GMAC_ENABLE_ADDR,
++				  GMAC_ENABLE_ALL, val);
+ }
+ 
+ /* PPE port XGMAC link up configuration */
+@@ -764,8 +896,8 @@ static int ppe_port_xgmac_link_up(struct ppe_port *ppe_port,
+ 		val = XGMAC_SPEED_10;
+ 		break;
+ 	default:
+-		dev_err(ppe_dev->dev, "%s: Invalid XGMAC speed %s\n",
+-			__func__, phy_speed_to_str(speed));
++		dev_err(ppe_dev->dev, "Invalid XGMAC speed %s\n",
++			phy_speed_to_str(speed));
+ 		return -EINVAL;
+ 	}
+ 
+@@ -792,10 +924,8 @@ static int ppe_port_xgmac_link_up(struct ppe_port *ppe_port,
+ 		return ret;
+ 
+ 	/* Enable XGMAC RX*/
+-	ret = regmap_update_bits(ppe_dev->regmap, reg + XGMAC_RX_CONFIG_ADDR,
+-				 XGMAC_RXEN, XGMAC_RXEN);
+-
+-	return ret;
++	return regmap_set_bits(ppe_dev->regmap, reg + XGMAC_RX_CONFIG_ADDR,
++			       XGMAC_RXEN);
+ }
+ 
+ /* PPE port MAC link up configuration for phylink */
+@@ -813,9 +943,12 @@ static void ppe_port_mac_link_up(struct phylink_config *config,
+ 	int ret, port = ppe_port->port_id;
+ 	u32 reg, val;
+ 
+-	/* Start GMIB statistics polling */
+-	schedule_delayed_work(&ppe_port->gmib_read, 0);
++	/* Set PPE port MAC speed clock */
++	ret = ppe_port_mac_speed_clock_rate_set(ppe_port, interface, speed);
++	if (ret)
++		goto err_port_mac_link_up;
+ 
++	/* Configure PPE MAC according current speed */
+ 	if (mac_type == PPE_MAC_TYPE_GMAC)
+ 		ret = ppe_port_gmac_link_up(ppe_port,
+ 					    speed, duplex, tx_pause, rx_pause);
+@@ -836,17 +969,47 @@ static void ppe_port_mac_link_up(struct phylink_config *config,
+ 
+ 	/* Enable PPE port TX */
+ 	reg = PPE_PORT_BRIDGE_CTRL_ADDR + PPE_PORT_BRIDGE_CTRL_INC * port;
+-	ret = regmap_update_bits(ppe_dev->regmap, reg,
+-				 PPE_PORT_BRIDGE_TXMAC_EN,
+-				 PPE_PORT_BRIDGE_TXMAC_EN);
++	ret = regmap_set_bits(ppe_dev->regmap, reg, PPE_PORT_BRIDGE_TXMAC_EN);
+ 	if (ret)
+ 		goto err_port_mac_link_up;
+ 
+ 	return;
+ 
+ err_port_mac_link_up:
+-	dev_err(ppe_dev->dev, "%s: port %d link up fail %d\n",
+-		__func__, port, ret);
++	dev_err(ppe_dev->dev, "PPE port %d link up fail %d\n", port, ret);
++}
++
++/* PPE port GMAC link down configuration */
++static int ppe_port_gmac_link_down(struct ppe_port *ppe_port)
++{
++	struct ppe_device *ppe_dev = ppe_port->ppe_dev;
++	int port = ppe_port->port_id;
++	u32 reg;
++
++	/* Stop GMAC MIB statistics polling work task */
++	ppe_port_gmib_work_stop(ppe_port);
++
++	/* Disable GMAC RX and TX */
++	reg = PPE_PORT_GMAC_ADDR(port) + GMAC_ENABLE_ADDR;
++	return regmap_clear_bits(ppe_dev->regmap, reg, GMAC_TRXEN);
++}
++
++/* PPE port XGMAC link down configuration */
++static int ppe_port_xgmac_link_down(struct ppe_port *ppe_port)
++{
++	struct ppe_device *ppe_dev = ppe_port->ppe_dev;
++	int ret, port = ppe_port->port_id;
++	u32 reg;
++
++	/* Disable XGMAC RX and TX */
++	reg = PPE_PORT_XGMAC_ADDR(port);
++	ret = regmap_clear_bits(ppe_dev->regmap,
++				reg + XGMAC_RX_CONFIG_ADDR, XGMAC_RXEN);
++	if (ret)
++		return ret;
++
++	return regmap_clear_bits(ppe_dev->regmap,
++				 reg + XGMAC_TX_CONFIG_ADDR, XGMAC_TXEN);
+ }
+ 
+ /* PPE port MAC link down configuration for phylink */
+@@ -861,48 +1024,28 @@ static void ppe_port_mac_link_down(struct phylink_config *config,
+ 	int ret, port = ppe_port->port_id;
+ 	u32 reg;
+ 
+-	/* Stop GMIB statistics polling */
+-	cancel_delayed_work_sync(&ppe_port->gmib_read);
+-
+ 	/* Disable PPE port TX */
+ 	reg = PPE_PORT_BRIDGE_CTRL_ADDR + PPE_PORT_BRIDGE_CTRL_INC * port;
+-	ret = regmap_update_bits(ppe_dev->regmap, reg,
+-				 PPE_PORT_BRIDGE_TXMAC_EN, 0);
++	ret = regmap_clear_bits(ppe_dev->regmap, reg, PPE_PORT_BRIDGE_TXMAC_EN);
+ 	if (ret)
+ 		goto err_port_mac_link_down;
+ 
+-	/* Disable PPE MAC */
+-	if (mac_type == PPE_MAC_TYPE_GMAC) {
+-		reg = PPE_PORT_GMAC_ADDR(port) + GMAC_ENABLE_ADDR;
+-		ret = regmap_update_bits(ppe_dev->regmap, reg, GMAC_TRXEN, 0);
+-		if (ret)
+-			goto err_port_mac_link_down;
+-	} else {
+-		reg = PPE_PORT_XGMAC_ADDR(port);
+-		ret = regmap_update_bits(ppe_dev->regmap,
+-					 reg + XGMAC_RX_CONFIG_ADDR,
+-					 XGMAC_RXEN, 0);
+-		if (ret)
+-			goto err_port_mac_link_down;
+-
+-		ret = regmap_update_bits(ppe_dev->regmap,
+-					 reg + XGMAC_TX_CONFIG_ADDR,
+-					 XGMAC_TXEN, 0);
+-		if (ret)
+-			goto err_port_mac_link_down;
+-	}
++	if (mac_type == PPE_MAC_TYPE_GMAC)
++		ret = ppe_port_gmac_link_down(ppe_port);
++	else
++		ret = ppe_port_xgmac_link_down(ppe_port);
++	if (ret)
++		goto err_port_mac_link_down;
+ 
+ 	return;
+ 
+ err_port_mac_link_down:
+-	dev_err(ppe_dev->dev, "%s: port %d link down fail %d\n",
+-		__func__, port, ret);
++	dev_err(ppe_dev->dev, "PPE port %d link down fail %d\n", port, ret);
+ }
+ 
+ /* PPE port MAC PCS selection for phylink */
+-static
+-struct phylink_pcs *ppe_port_mac_select_pcs(struct phylink_config *config,
+-					    phy_interface_t interface)
++static struct phylink_pcs *ppe_port_mac_select_pcs(struct phylink_config *config,
++						   phy_interface_t interface)
+ {
+ 	struct ppe_port *ppe_port = container_of(config, struct ppe_port,
+ 						 phylink_config);
+@@ -920,8 +1063,8 @@ struct phylink_pcs *ppe_port_mac_select_pcs(struct phylink_config *config,
+ 					 PPE_PORT_MUX_CTRL_ADDR,
+ 					 PPE_PORT5_SEL_PCS1, val);
+ 		if (ret) {
+-			dev_err(ppe_dev->dev, "%s: port5 select PCS fail %d\n",
+-				__func__, ret);
++			dev_err(ppe_dev->dev, "PPE port5 select PCS fail %d\n",
++				ret);
+ 			return NULL;
+ 		}
+ 	}
+@@ -936,6 +1079,17 @@ static const struct phylink_mac_ops ppe_phylink_ops = {
+ 	.mac_select_pcs = ppe_port_mac_select_pcs,
+ };
+ 
++static const phy_interface_t mac_interfaces[] = {
++	PHY_INTERFACE_MODE_SGMII,
++	PHY_INTERFACE_MODE_QSGMII,
++	PHY_INTERFACE_MODE_PSGMII,
++	PHY_INTERFACE_MODE_1000BASEX,
++	PHY_INTERFACE_MODE_2500BASEX,
++	PHY_INTERFACE_MODE_USXGMII,
++	PHY_INTERFACE_MODE_10GBASER,
++	PHY_INTERFACE_MODE_10G_QXGMII,
++};
++
+ /**
+  * ppe_port_phylink_setup() - Set phylink instance for the given PPE port
+  * @ppe_port: PPE port
+@@ -950,18 +1104,18 @@ int ppe_port_phylink_setup(struct ppe_port *ppe_port, struct net_device *netdev)
+ {
+ 	struct ppe_device *ppe_dev = ppe_port->ppe_dev;
+ 	struct device_node *pcs_node;
+-	int ret;
++	int i, ret;
+ 
+-	/* Create PCS */
++	/* Get PCS instance */
+ 	pcs_node = of_parse_phandle(ppe_port->np, "pcs-handle", 0);
+ 	if (!pcs_node)
+ 		return -ENODEV;
+ 
+-	ppe_port->pcs = ipq_unipcs_create(pcs_node);
++	ppe_port->pcs = ipq_pcs_get(pcs_node);
+ 	of_node_put(pcs_node);
+ 	if (IS_ERR(ppe_port->pcs)) {
+-		dev_err(ppe_dev->dev, "%s: port %d failed to create PCS\n",
+-			__func__, ppe_port->port_id);
++		dev_err(ppe_dev->dev, "PPE port %d failed to create PCS\n",
++			ppe_port->port_id);
+ 		return PTR_ERR(ppe_port->pcs);
+ 	}
+ 
+@@ -971,22 +1125,10 @@ int ppe_port_phylink_setup(struct ppe_port *ppe_port, struct net_device *netdev)
+ 	ppe_port->phylink_config.mac_capabilities = MAC_ASYM_PAUSE |
+ 		MAC_SYM_PAUSE | MAC_10 | MAC_100 | MAC_1000 |
+ 		MAC_2500FD | MAC_5000FD | MAC_10000FD;
+-	__set_bit(PHY_INTERFACE_MODE_QSGMII,
+-		  ppe_port->phylink_config.supported_interfaces);
+-	__set_bit(PHY_INTERFACE_MODE_PSGMII,
+-		  ppe_port->phylink_config.supported_interfaces);
+-	__set_bit(PHY_INTERFACE_MODE_SGMII,
+-		  ppe_port->phylink_config.supported_interfaces);
+-	__set_bit(PHY_INTERFACE_MODE_1000BASEX,
+-		  ppe_port->phylink_config.supported_interfaces);
+-	__set_bit(PHY_INTERFACE_MODE_2500BASEX,
+-		  ppe_port->phylink_config.supported_interfaces);
+-	__set_bit(PHY_INTERFACE_MODE_USXGMII,
+-		  ppe_port->phylink_config.supported_interfaces);
+-	__set_bit(PHY_INTERFACE_MODE_10GBASER,
+-		  ppe_port->phylink_config.supported_interfaces);
+-	__set_bit(PHY_INTERFACE_MODE_10G_QXGMII,
+-		  ppe_port->phylink_config.supported_interfaces);
++
++	for (i = 0; i < ARRAY_SIZE(mac_interfaces); i++)
++		__set_bit(mac_interfaces[i],
++			  ppe_port->phylink_config.supported_interfaces);
+ 
+ 	/* Create phylink */
+ 	ppe_port->phylink = phylink_create(&ppe_port->phylink_config,
+@@ -994,8 +1136,8 @@ int ppe_port_phylink_setup(struct ppe_port *ppe_port, struct net_device *netdev)
+ 					   ppe_port->interface,
+ 					   &ppe_phylink_ops);
+ 	if (IS_ERR(ppe_port->phylink)) {
+-		dev_err(ppe_dev->dev, "%s: port %d failed to create phylink\n",
+-			__func__, ppe_port->port_id);
++		dev_err(ppe_dev->dev, "PPE port %d failed to create phylink\n",
++			ppe_port->port_id);
+ 		ret = PTR_ERR(ppe_port->phylink);
+ 		goto err_free_pcs;
+ 	}
+@@ -1003,8 +1145,8 @@ int ppe_port_phylink_setup(struct ppe_port *ppe_port, struct net_device *netdev)
+ 	/* Connect phylink */
+ 	ret = phylink_of_phy_connect(ppe_port->phylink, ppe_port->np, 0);
+ 	if (ret) {
+-		dev_err(ppe_dev->dev, "%s: port %d failed to connect phylink\n",
+-			__func__, ppe_port->port_id);
++		dev_err(ppe_dev->dev, "PPE port %d failed to connect phylink\n",
++			ppe_port->port_id);
+ 		goto err_free_phylink;
+ 	}
+ 
+@@ -1014,7 +1156,7 @@ err_free_phylink:
+ 	phylink_destroy(ppe_port->phylink);
+ 	ppe_port->phylink = NULL;
+ err_free_pcs:
+-	ipq_unipcs_destroy(ppe_port->pcs);
++	ipq_pcs_put(ppe_port->pcs);
+ 	ppe_port->pcs = NULL;
+ 	return ret;
+ }
+@@ -1037,9 +1179,9 @@ void ppe_port_phylink_destroy(struct ppe_port *ppe_port)
+ 		ppe_port->phylink = NULL;
+ 	}
+ 
+-	/* Destroy PCS */
++	/* Release PCS instance */
+ 	if (ppe_port->pcs) {
+-		ipq_unipcs_destroy(ppe_port->pcs);
++		ipq_pcs_put(ppe_port->pcs);
+ 		ppe_port->pcs = NULL;
+ 	}
+ }
+@@ -1050,7 +1192,7 @@ static int ppe_port_clock_init(struct ppe_port *ppe_port)
+ 	struct device_node *port_node = ppe_port->np;
+ 	struct reset_control *rstc;
+ 	struct clk *clk;
+-	int i, j, ret;
++	int i, ret;
+ 
+ 	for (i = 0; i < PPE_PORT_CLK_RST_MAX; i++) {
+ 		/* Get PPE port resets which will be used to reset PPE
+@@ -1084,10 +1226,11 @@ err_clk_en:
+ err_clk_get:
+ 	reset_control_put(rstc);
+ err_rst:
+-	for (j = 0; j < i; j++) {
+-		clk_disable_unprepare(ppe_port->clks[j]);
+-		clk_put(ppe_port->clks[j]);
+-		reset_control_put(ppe_port->rstcs[j]);
++	while (i) {
++		i--;
++		clk_disable_unprepare(ppe_port->clks[i]);
++		clk_put(ppe_port->clks[i]);
++		reset_control_put(ppe_port->rstcs[i]);
+ 	}
+ 
+ 	return ret;
+@@ -1114,12 +1257,12 @@ static int ppe_port_mac_hw_init(struct ppe_port *ppe_port)
+ 
+ 	/* GMAC RX and TX are initialized as disabled */
+ 	reg = PPE_PORT_GMAC_ADDR(port);
+-	ret = regmap_update_bits(ppe_dev->regmap,
+-				 reg + GMAC_ENABLE_ADDR, GMAC_TRXEN, 0);
++	ret = regmap_clear_bits(ppe_dev->regmap,
++				reg + GMAC_ENABLE_ADDR, GMAC_TRXEN);
+ 	if (ret)
+ 		return ret;
+ 
+-	/* GMAC max frame size configuration */
++	/* GMAC jumbo frame size and max frame size configuration */
+ 	val = FIELD_PREP(GMAC_JUMBO_SIZE_M, PPE_PORT_MAC_MAX_FRAME_SIZE);
+ 	ret = regmap_update_bits(ppe_dev->regmap, reg + GMAC_JUMBO_SIZE_ADDR,
+ 				 GMAC_JUMBO_SIZE_M, val);
+@@ -1128,13 +1271,13 @@ static int ppe_port_mac_hw_init(struct ppe_port *ppe_port)
+ 
+ 	val = FIELD_PREP(GMAC_MAXFRAME_SIZE_M, PPE_PORT_MAC_MAX_FRAME_SIZE);
+ 	val |= FIELD_PREP(GMAC_TX_THD_M, 0x1);
+-	ret = regmap_update_bits(ppe_dev->regmap, reg + GMAC_CTRL_ADDR,
++	ret = regmap_update_bits(ppe_dev->regmap, reg + GMAC_CTRL0_ADDR,
+ 				 GMAC_CTRL_MASK, val);
+ 	if (ret)
+ 		return ret;
+ 
+ 	val = FIELD_PREP(GMAC_HIGH_IPG_M, 0xc);
+-	ret = regmap_update_bits(ppe_dev->regmap, reg + GMAC_DBG_CTRL_ADDR,
++	ret = regmap_update_bits(ppe_dev->regmap, reg + GMAC_CTRL1_ADDR,
+ 				 GMAC_HIGH_IPG_M, val);
+ 	if (ret)
+ 		return ret;
+@@ -1142,13 +1285,13 @@ static int ppe_port_mac_hw_init(struct ppe_port *ppe_port)
+ 	/* Enable and reset GMAC MIB counters and set as read clear
+ 	 * mode, the GMAC MIB counters will be cleared after reading.
+ 	 */
+-	ret = regmap_update_bits(ppe_dev->regmap, reg + GMAC_MIB_CTRL_ADDR,
+-				 GMAC_MIB_CTRL_MASK, GMAC_MIB_CTRL_MASK);
++	ret = regmap_set_bits(ppe_dev->regmap, reg + GMAC_MIB_CTRL_ADDR,
++			      GMAC_MIB_CTRL_MASK);
+ 	if (ret)
+ 		return ret;
+ 
+-	ret = regmap_update_bits(ppe_dev->regmap, reg + GMAC_MIB_CTRL_ADDR,
+-				 GMAC_MIB_RST, 0);
++	ret = regmap_clear_bits(ppe_dev->regmap, reg + GMAC_MIB_CTRL_ADDR,
++				GMAC_MIB_RST);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -1179,31 +1322,8 @@ static int ppe_port_mac_hw_init(struct ppe_port *ppe_port)
+ 		return ret;
+ 
+ 	/* Enable and reset XGMAC MIB counters */
+-	ret = regmap_update_bits(ppe_dev->regmap, reg + XGMAC_MMC_CTRL_ADDR,
+-				 XGMAC_MCF | XGMAC_CNTRST, XGMAC_CNTRST);
+-
+-	return ret;
+-}
+-
+-/* PPE port MAC MIB work task initialization */
+-static int ppe_port_mac_mib_work_init(struct ppe_port *ppe_port)
+-{
+-	struct ppe_device *ppe_dev = ppe_port->ppe_dev;
+-	u64 *gstats;
+-
+-	gstats = devm_kzalloc(ppe_dev->dev,
+-			      sizeof(*gstats) * ARRAY_SIZE(gmib_info),
+-			      GFP_KERNEL);
+-	if (!gstats)
+-		return -ENOMEM;
+-
+-	ppe_port->gmib_stats = gstats;
+-
+-	spin_lock_init(&ppe_port->gmib_stats_lock);
+-	INIT_DELAYED_WORK(&ppe_port->gmib_read,
+-			  ppe_port_gmib_stats_poll);
+-
+-	return 0;
++	return regmap_update_bits(ppe_dev->regmap, reg + XGMAC_MMC_CTRL_ADDR,
++				  XGMAC_MCF | XGMAC_CNTRST, XGMAC_CNTRST);
+ }
+ 
+ /**
+@@ -1218,8 +1338,8 @@ static int ppe_port_mac_mib_work_init(struct ppe_port *ppe_port)
+ int ppe_port_mac_init(struct ppe_device *ppe_dev)
+ {
+ 	struct device_node *ports_node, *port_node;
+-	int port, num, ret, j, i = 0;
+ 	struct ppe_ports *ppe_ports;
++	int port, num, ret, i = 0;
+ 	phy_interface_t phy_mode;
+ 
+ 	ports_node = of_get_child_by_name(ppe_dev->dev->of_node,
+@@ -1259,6 +1379,7 @@ int ppe_port_mac_init(struct ppe_device *ppe_dev)
+ 		ppe_ports->port[i].port_id = port;
+ 		ppe_ports->port[i].np = port_node;
+ 		ppe_ports->port[i].interface = phy_mode;
++		ppe_ports->port[i].mac_type = PPE_MAC_TYPE_GMAC;
+ 
+ 		ret = ppe_port_clock_init(&ppe_ports->port[i]);
+ 		if (ret) {
+@@ -1272,12 +1393,6 @@ int ppe_port_mac_init(struct ppe_device *ppe_dev)
+ 			goto err_port_node;
+ 		}
+ 
+-		ret = ppe_port_mac_mib_work_init(&ppe_ports->port[i]);
+-		if (ret) {
+-			dev_err(ppe_dev->dev, "Failed to initialize MAC MIB work\n");
+-			goto err_port_node;
+-		}
+-
+ 		ret = edma_port_setup(&ppe_ports->port[i]);
+ 		if (ret) {
+ 			dev_err(ppe_dev->dev, "QCOM EDMA port setup failed\n");
+@@ -1299,8 +1414,11 @@ err_port_setup:
+ 	}
+ 
+ err_port_clk:
+-	for (j = 0; j < i; j++)
+-		ppe_port_clock_deinit(&ppe_ports->port[j]);
++	while (i) {
++		i--;
++		ppe_port_clock_deinit(&ppe_ports->port[i]);
++	}
++
+ err_port_node:
+ 	of_node_put(port_node);
+ err_ports_node:
+@@ -1322,10 +1440,7 @@ void ppe_port_mac_deinit(struct ppe_device *ppe_dev)
+ 
+ 	for (i = 0; i < ppe_dev->ports->num; i++) {
+ 		ppe_port = &ppe_dev->ports->port[i];
+-
+-		/* Destroy all phylinks and edma ports */
+ 		edma_port_destroy(ppe_port);
+-
+ 		ppe_port_clock_deinit(ppe_port);
+ 	}
+ }
+diff --git a/drivers/net/ethernet/qualcomm/ppe/ppe_port.h b/drivers/net/ethernet/qualcomm/ppe/ppe_port.h
+index 8234e86fb401..bd3e88cf1f21 100644
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_port.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_port.h
+@@ -1,16 +1,23 @@
+ /* SPDX-License-Identifier: GPL-2.0-only
+  *
+- * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
++ * Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
+  */
+ 
+ #ifndef __PPE_PORT_H__
+ #define __PPE_PORT_H__
+ 
++#include <linux/compiler.h>
++#include <linux/phy.h>
+ #include <linux/phylink.h>
+ 
+-struct ethtool_keee;
++struct clk;
++struct device_node;
++struct net_device;
++struct reset_control;
+ struct rtnl_link_stats64;
+ 
++struct ppe_device;
++
+ /**
+  * enum ppe_port_clk_rst_type - PPE port clock and reset ID type
+  * @PPE_PORT_CLK_RST_MAC: The clock and reset ID for port MAC
+@@ -37,14 +44,14 @@ enum ppe_mac_type {
+ 
+ /**
+  * struct ppe_port - Private data for each PPE port
+- * @phylink: Linux phylink instance
+- * @phylink_config: Linux phylink configurations
+- * @pcs: Linux phylink PCS instance
+  * @np: Port device tree node
+  * @ppe_dev: Back pointer to PPE device private data
+  * @interface: Port interface mode
+  * @mac_type: Port MAC type, GMAC or XGMAC
+  * @port_id: Port ID
++ * @phylink: Linux phylink instance
++ * @phylink_config: Linux phylink configurations
++ * @pcs: Linux phylink PCS instance
+  * @clks: Port clocks
+  * @rstcs: Port resets
+  * @gmib_read: Delay work task for GMAC MIB statistics polling function
+@@ -52,14 +59,14 @@ enum ppe_mac_type {
+  * @gmib_stats_lock: Lock to protect GMAC MIB statistics
+  */
+ struct ppe_port {
+-	struct phylink *phylink;
+-	struct phylink_config phylink_config;
+-	struct phylink_pcs *pcs;
+ 	struct device_node *np;
+ 	struct ppe_device *ppe_dev;
+ 	phy_interface_t interface;
+ 	enum ppe_mac_type mac_type;
+ 	int port_id;
++	struct phylink *phylink;
++	struct phylink_config phylink_config;
++	struct phylink_pcs *pcs;
+ 	struct clk *clks[PPE_PORT_CLK_RST_MAX];
+ 	struct reset_control *rstcs[PPE_PORT_CLK_RST_MAX];
+ 	struct delayed_work gmib_read;
+@@ -88,6 +95,5 @@ void ppe_port_get_ethtool_stats(struct ppe_port *ppe_port, u64 *data);
+ void ppe_port_get_stats64(struct ppe_port *ppe_port,
+ 			  struct rtnl_link_stats64 *s);
+ int ppe_port_set_mac_address(struct ppe_port *ppe_port, const u8 *addr);
+-int ppe_port_set_mac_eee(struct ppe_port *ppe_port, struct ethtool_keee *eee);
+ int ppe_port_set_maxframe(struct ppe_port *ppe_port, int maxframe_size);
+ #endif
+diff --git a/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h b/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
+index 5aba637c7970..533d1e25d53e 100644
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
+@@ -1,6 +1,6 @@
+ /* SPDX-License-Identifier: GPL-2.0-only
+  *
+- * Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
++ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+  */
+ 
+ /* PPE hardware register and table declarations. */
+@@ -20,16 +20,6 @@
+ #define PPE_PORT5_SEL_PCS1			BIT(4)
+ #define PPE_PORT_SEL_XGMAC(x)			(BIT(8) << ((x) - 1))
+ 
+-/* PPE port LPI enable register */
+-#define PPE_LPI_EN_ADDR				0x400
+-#define PPE_LPI_PORT1_EN			BIT(0)
+-#define PPE_LPI_PORT2_EN			BIT(1)
+-#define PPE_LPI_PORT3_EN			BIT(2)
+-#define PPE_LPI_PORT4_EN			BIT(3)
+-#define PPE_LPI_PORT5_EN			BIT(4)
+-#define PPE_LPI_PORT6_EN			BIT(5)
+-#define PPE_LPI_PORT_EN(x)			(BIT(0) << ((x) - 1))
+-
+ /* PPE scheduler configurations for buffer manager block. */
+ #define PPE_BM_SCH_CTRL_ADDR			0xb000
+ #define PPE_BM_SCH_CTRL_INC			4
+@@ -47,9 +37,6 @@
+ #define PPE_DROP_STAT_TBL_ENTRIES		30
+ #define PPE_DROP_STAT_TBL_INC			0x10
+ 
+-#define PPE_EPE_DBG_IN_CNT_ADDR			0x26054
+-#define PPE_EPE_DBG_OUT_CNT_ADDR		0x26070
+-
+ /* Egress VLAN counters. */
+ #define PPE_EG_VSI_COUNTER_TBL_ADDR		0x41000
+ #define PPE_EG_VSI_COUNTER_TBL_ENTRIES		64
+@@ -130,9 +117,9 @@
+ #define PPE_SERVICE_W1_RX_CNT_EN		BIT(0)
+ 
+ #define PPE_SERVICE_SET_BYPASS_BITMAP(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)tbl_cfg, value, PPE_SERVICE_W0_BYPASS_BITMAP)
++	FIELD_MODIFY(PPE_SERVICE_W0_BYPASS_BITMAP, tbl_cfg, value)
+ #define PPE_SERVICE_SET_RX_CNT_EN(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)(tbl_cfg) + 0x1, value, PPE_SERVICE_W1_RX_CNT_EN)
++	FIELD_MODIFY(PPE_SERVICE_W1_RX_CNT_EN, (tbl_cfg) + 0x1, value)
+ 
+ /* PPE port egress VLAN configurations. */
+ #define PPE_PORT_EG_VLAN_TBL_ADDR		0x20020
+@@ -161,15 +148,15 @@
+ #define PPE_EG_SERVICE_W1_TX_CNT_EN		BIT(15)
+ 
+ #define PPE_EG_SERVICE_SET_UPDATE_ACTION(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)tbl_cfg, value, PPE_EG_SERVICE_W0_UPDATE_ACTION)
++	FIELD_MODIFY(PPE_EG_SERVICE_W0_UPDATE_ACTION, tbl_cfg, value)
+ #define PPE_EG_SERVICE_SET_NEXT_SERVCODE(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)(tbl_cfg) + 0x1, value, PPE_EG_SERVICE_W1_NEXT_SERVCODE)
++	FIELD_MODIFY(PPE_EG_SERVICE_W1_NEXT_SERVCODE, (tbl_cfg) + 0x1, value)
+ #define PPE_EG_SERVICE_SET_HW_SERVICE(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)(tbl_cfg) + 0x1, value, PPE_EG_SERVICE_W1_HW_SERVICE)
++	FIELD_MODIFY(PPE_EG_SERVICE_W1_HW_SERVICE, (tbl_cfg) + 0x1, value)
+ #define PPE_EG_SERVICE_SET_OFFSET_SEL(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)(tbl_cfg) + 0x1, value, PPE_EG_SERVICE_W1_OFFSET_SEL)
++	FIELD_MODIFY(PPE_EG_SERVICE_W1_OFFSET_SEL, (tbl_cfg) + 0x1, value)
+ #define PPE_EG_SERVICE_SET_TX_CNT_EN(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)(tbl_cfg) + 0x1, value, PPE_EG_SERVICE_W1_TX_CNT_EN)
++	FIELD_MODIFY(PPE_EG_SERVICE_W1_TX_CNT_EN, (tbl_cfg) + 0x1, value)
+ 
+ /* PPE port bridge configuration */
+ #define PPE_PORT_BRIDGE_CTRL_ADDR		0x60300
+@@ -201,21 +188,21 @@
+ #define PPE_VSI_W1_STATION_MOVE_FWD_CMD		GENMASK(5, 4)
+ 
+ #define PPE_VSI_SET_MEMBER_PORT_BITMAP(tbl_cfg, value)		\
+-	u32p_replace_bits((u32 *)tbl_cfg, value, PPE_VSI_W0_MEMBER_PORT_BITMAP)
++	FIELD_MODIFY(PPE_VSI_W0_MEMBER_PORT_BITMAP, tbl_cfg, value)
+ #define PPE_VSI_SET_UUC_BITMAP(tbl_cfg, value)			\
+-	u32p_replace_bits((u32 *)tbl_cfg, value, PPE_VSI_W0_UUC_BITMAP)
++	FIELD_MODIFY(PPE_VSI_W0_UUC_BITMAP, tbl_cfg, value)
+ #define PPE_VSI_SET_UMC_BITMAP(tbl_cfg, value)			\
+-	u32p_replace_bits((u32 *)tbl_cfg, value, PPE_VSI_W0_UMC_BITMAP)
++	FIELD_MODIFY(PPE_VSI_W0_UMC_BITMAP, tbl_cfg, value)
+ #define PPE_VSI_SET_BC_BITMAP(tbl_cfg, value)			\
+-	u32p_replace_bits((u32 *)tbl_cfg, value, PPE_VSI_W0_BC_BITMAP)
++	FIELD_MODIFY(PPE_VSI_W0_BC_BITMAP, tbl_cfg, value)
+ #define PPE_VSI_SET_NEW_ADDR_LRN_EN(tbl_cfg, value)		\
+-	u32p_replace_bits((u32 *)(tbl_cfg) + 0x1, value, PPE_VSI_W1_NEW_ADDR_LRN_EN)
++	FIELD_MODIFY(PPE_VSI_W1_NEW_ADDR_LRN_EN, (tbl_cfg) + 0x1, value)
+ #define PPE_VSI_SET_NEW_ADDR_FWD_CMD(tbl_cfg, value)		\
+-	u32p_replace_bits((u32 *)(tbl_cfg) + 0x1, value, PPE_VSI_W1_NEW_ADDR_FWD_CMD)
++	FIELD_MODIFY(PPE_VSI_W1_NEW_ADDR_FWD_CMD, (tbl_cfg) + 0x1, value)
+ #define PPE_VSI_SET_STATION_MOVE_LRN_EN(tbl_cfg, value)		\
+-	u32p_replace_bits((u32 *)(tbl_cfg) + 0x1, value, PPE_VSI_W1_STATION_MOVE_LRN_EN)
++	FIELD_MODIFY(PPE_VSI_W1_STATION_MOVE_LRN_EN, (tbl_cfg) + 0x1, value)
+ #define PPE_VSI_SET_STATION_MOVE_FWD_CMD(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)(tbl_cfg) + 0x1, value, PPE_VSI_W1_STATION_MOVE_FWD_CMD)
++	FIELD_MODIFY(PPE_VSI_W1_STATION_MOVE_FWD_CMD, (tbl_cfg) + 0x1, value)
+ 
+ /* PPE port control configurations for the traffic to the unicast queues. */
+ #define PPE_MRU_MTU_CTRL_TBL_ADDR		0x65000
+@@ -232,17 +219,17 @@
+ #define PPE_MRU_MTU_CTRL_W2_INNER_PREC_HIGH	GENMASK(1, 0)
+ 
+ #define PPE_MRU_MTU_CTRL_SET_MRU(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)tbl_cfg, value, PPE_MRU_MTU_CTRL_W0_MRU)
++	FIELD_MODIFY(PPE_MRU_MTU_CTRL_W0_MRU, tbl_cfg, value)
+ #define PPE_MRU_MTU_CTRL_SET_MRU_CMD(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)tbl_cfg, value, PPE_MRU_MTU_CTRL_W0_MRU_CMD)
++	FIELD_MODIFY(PPE_MRU_MTU_CTRL_W0_MRU_CMD, tbl_cfg, value)
+ #define PPE_MRU_MTU_CTRL_SET_MTU(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)tbl_cfg, value, PPE_MRU_MTU_CTRL_W0_MTU)
++	FIELD_MODIFY(PPE_MRU_MTU_CTRL_W0_MTU, tbl_cfg, value)
+ #define PPE_MRU_MTU_CTRL_SET_MTU_CMD(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)tbl_cfg, value, PPE_MRU_MTU_CTRL_W0_MTU_CMD)
++	FIELD_MODIFY(PPE_MRU_MTU_CTRL_W0_MTU_CMD, tbl_cfg, value)
+ #define PPE_MRU_MTU_CTRL_SET_RX_CNT_EN(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)(tbl_cfg) + 0x1, value, PPE_MRU_MTU_CTRL_W1_RX_CNT_EN)
++	FIELD_MODIFY(PPE_MRU_MTU_CTRL_W1_RX_CNT_EN, (tbl_cfg) + 0x1, value)
+ #define PPE_MRU_MTU_CTRL_SET_TX_CNT_EN(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)(tbl_cfg) + 0x1, value, PPE_MRU_MTU_CTRL_W1_TX_CNT_EN)
++	FIELD_MODIFY(PPE_MRU_MTU_CTRL_W1_TX_CNT_EN, (tbl_cfg) + 0x1, value)
+ 
+ /* PPE service code configuration for destination port and counter. */
+ #define PPE_IN_L2_SERVICE_TBL_ADDR		0x66000
+@@ -263,9 +250,9 @@
+ #define PPE_L2_VP_PORT_W0_DST_INFO		GENMASK(9, 2)
+ 
+ #define PPE_L2_PORT_SET_INVALID_VSI_FWD_EN(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)tbl_cfg, value, PPE_L2_VP_PORT_W0_INVALID_VSI_FWD_EN)
++	FIELD_MODIFY(PPE_L2_VP_PORT_W0_INVALID_VSI_FWD_EN, tbl_cfg, value)
+ #define PPE_L2_PORT_SET_DST_INFO(tbl_cfg, value)		\
+-	u32p_replace_bits((u32 *)tbl_cfg, value, PPE_L2_VP_PORT_W0_DST_INFO)
++	FIELD_MODIFY(PPE_L2_VP_PORT_W0_DST_INFO, tbl_cfg, value)
+ 
+ /* Port RX and RX drop counters. */
+ #define PPE_PORT_RX_CNT_TBL_ADDR		0x150000
+@@ -454,21 +441,21 @@
+ #define PPE_BM_PORT_FC_W1_PRE_ALLOC		GENMASK(22, 12)
+ 
+ #define PPE_BM_PORT_FC_SET_REACT_LIMIT(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)tbl_cfg, value, PPE_BM_PORT_FC_W0_REACT_LIMIT)
++	FIELD_MODIFY(PPE_BM_PORT_FC_W0_REACT_LIMIT, tbl_cfg, value)
+ #define PPE_BM_PORT_FC_SET_RESUME_THRESHOLD(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)tbl_cfg, value, PPE_BM_PORT_FC_W0_RESUME_THRESHOLD)
++	FIELD_MODIFY(PPE_BM_PORT_FC_W0_RESUME_THRESHOLD, tbl_cfg, value)
+ #define PPE_BM_PORT_FC_SET_RESUME_OFFSET(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)tbl_cfg, value, PPE_BM_PORT_FC_W0_RESUME_OFFSET)
++	FIELD_MODIFY(PPE_BM_PORT_FC_W0_RESUME_OFFSET, tbl_cfg, value)
+ #define PPE_BM_PORT_FC_SET_CEILING_LOW(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)tbl_cfg, value, PPE_BM_PORT_FC_W0_CEILING_LOW)
++	FIELD_MODIFY(PPE_BM_PORT_FC_W0_CEILING_LOW, tbl_cfg, value)
+ #define PPE_BM_PORT_FC_SET_CEILING_HIGH(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)(tbl_cfg) + 0x1, value, PPE_BM_PORT_FC_W1_CEILING_HIGH)
++	FIELD_MODIFY(PPE_BM_PORT_FC_W1_CEILING_HIGH, (tbl_cfg) + 0x1, value)
+ #define PPE_BM_PORT_FC_SET_WEIGHT(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)(tbl_cfg) + 0x1, value, PPE_BM_PORT_FC_W1_WEIGHT)
++	FIELD_MODIFY(PPE_BM_PORT_FC_W1_WEIGHT, (tbl_cfg) + 0x1, value)
+ #define PPE_BM_PORT_FC_SET_DYNAMIC(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)(tbl_cfg) + 0x1, value, PPE_BM_PORT_FC_W1_DYNAMIC)
++	FIELD_MODIFY(PPE_BM_PORT_FC_W1_DYNAMIC, (tbl_cfg) + 0x1, value)
+ #define PPE_BM_PORT_FC_SET_PRE_ALLOC(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)(tbl_cfg) + 0x1, value, PPE_BM_PORT_FC_W1_PRE_ALLOC)
++	FIELD_MODIFY(PPE_BM_PORT_FC_W1_PRE_ALLOC, (tbl_cfg) + 0x1, value)
+ 
+ /* The queue base configurations based on destination port,
+  * service code or CPU code.
+@@ -507,19 +494,19 @@
+ #define PPE_AC_UNICAST_QUEUE_CFG_W3_GRN_RESUME	GENMASK(23, 13)
+ 
+ #define PPE_AC_UNICAST_QUEUE_SET_EN(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)tbl_cfg, value, PPE_AC_UNICAST_QUEUE_CFG_W0_EN)
++	FIELD_MODIFY(PPE_AC_UNICAST_QUEUE_CFG_W0_EN, tbl_cfg, value)
+ #define PPE_AC_UNICAST_QUEUE_SET_GRP_ID(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)tbl_cfg, value, PPE_AC_UNICAST_QUEUE_CFG_W0_GRP_ID)
++	FIELD_MODIFY(PPE_AC_UNICAST_QUEUE_CFG_W0_GRP_ID, tbl_cfg, value)
+ #define PPE_AC_UNICAST_QUEUE_SET_PRE_LIMIT(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)tbl_cfg, value, PPE_AC_UNICAST_QUEUE_CFG_W0_PRE_LIMIT)
++	FIELD_MODIFY(PPE_AC_UNICAST_QUEUE_CFG_W0_PRE_LIMIT, tbl_cfg, value)
+ #define PPE_AC_UNICAST_QUEUE_SET_DYNAMIC(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)tbl_cfg, value, PPE_AC_UNICAST_QUEUE_CFG_W0_DYNAMIC)
++	FIELD_MODIFY(PPE_AC_UNICAST_QUEUE_CFG_W0_DYNAMIC, tbl_cfg, value)
+ #define PPE_AC_UNICAST_QUEUE_SET_WEIGHT(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)tbl_cfg, value, PPE_AC_UNICAST_QUEUE_CFG_W0_WEIGHT)
++	FIELD_MODIFY(PPE_AC_UNICAST_QUEUE_CFG_W0_WEIGHT, tbl_cfg, value)
+ #define PPE_AC_UNICAST_QUEUE_SET_THRESHOLD(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)tbl_cfg, value, PPE_AC_UNICAST_QUEUE_CFG_W0_THRESHOLD)
++	FIELD_MODIFY(PPE_AC_UNICAST_QUEUE_CFG_W0_THRESHOLD, tbl_cfg, value)
+ #define PPE_AC_UNICAST_QUEUE_SET_GRN_RESUME(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)(tbl_cfg) + 0x3, value, PPE_AC_UNICAST_QUEUE_CFG_W3_GRN_RESUME)
++	FIELD_MODIFY(PPE_AC_UNICAST_QUEUE_CFG_W3_GRN_RESUME, (tbl_cfg) + 0x3, value)
+ 
+ /* PPE multicast queue (256-299) configurations. */
+ #define PPE_AC_MULTICAST_QUEUE_CFG_TBL_ADDR	0x84a000
+@@ -534,15 +521,15 @@
+ #define PPE_AC_MULTICAST_QUEUE_CFG_W2_RESUME	GENMASK(17, 7)
+ 
+ #define PPE_AC_MULTICAST_QUEUE_SET_EN(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)tbl_cfg, value, PPE_AC_MULTICAST_QUEUE_CFG_W0_EN)
++	FIELD_MODIFY(PPE_AC_MULTICAST_QUEUE_CFG_W0_EN, tbl_cfg, value)
+ #define PPE_AC_MULTICAST_QUEUE_SET_GRN_GRP_ID(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)tbl_cfg, value, PPE_AC_MULTICAST_QUEUE_CFG_W0_GRP_ID)
++	FIELD_MODIFY(PPE_AC_MULTICAST_QUEUE_CFG_W0_GRP_ID, tbl_cfg, value)
+ #define PPE_AC_MULTICAST_QUEUE_SET_GRN_PRE_LIMIT(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)tbl_cfg, value, PPE_AC_MULTICAST_QUEUE_CFG_W0_PRE_LIMIT)
++	FIELD_MODIFY(PPE_AC_MULTICAST_QUEUE_CFG_W0_PRE_LIMIT, tbl_cfg, value)
+ #define PPE_AC_MULTICAST_QUEUE_SET_GRN_THRESHOLD(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)tbl_cfg, value, PPE_AC_MULTICAST_QUEUE_CFG_W0_THRESHOLD)
++	FIELD_MODIFY(PPE_AC_MULTICAST_QUEUE_CFG_W0_THRESHOLD, tbl_cfg, value)
+ #define PPE_AC_MULTICAST_QUEUE_SET_GRN_RESUME(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)(tbl_cfg) + 0x2, value, PPE_AC_MULTICAST_QUEUE_CFG_W2_RESUME)
++	FIELD_MODIFY(PPE_AC_MULTICAST_QUEUE_CFG_W2_RESUME, (tbl_cfg) + 0x2, value)
+ 
+ /* PPE admission control group (0-3) configurations */
+ #define PPE_AC_GRP_CFG_TBL_ADDR			0x84c000
+@@ -558,7 +545,7 @@
+ #define PPE_AC_GRP_W2_PRE_ALLOC			GENMASK(26, 16)
+ 
+ #define PPE_AC_GRP_SET_BUF_LIMIT(tbl_cfg, value)	\
+-	u32p_replace_bits((u32 *)(tbl_cfg) + 0x1, value, PPE_AC_GRP_W1_BUF_LIMIT)
++	FIELD_MODIFY(PPE_AC_GRP_W1_BUF_LIMIT, (tbl_cfg) + 0x1, value)
+ 
+ /* Counters for packets handled by unicast queues (0-255). */
+ #define PPE_AC_UNICAST_QUEUE_CNT_TBL_ADDR	0x84e000
+@@ -578,6 +565,41 @@
+ #define PPE_ENQ_OPR_TBL_INC			0x10
+ #define PPE_ENQ_OPR_TBL_ENQ_DISABLE		BIT(0)
+ 
++/* Unicast drop count includes the possible drops with WRED for the green,
++ * yellow and red categories.
++ */
++#define PPE_UNICAST_DROP_CNT_TBL_ADDR		0x9e0000
++#define PPE_UNICAST_DROP_CNT_TBL_ENTRIES	1536
++#define PPE_UNICAST_DROP_CNT_TBL_INC		0x10
++#define PPE_UNICAST_DROP_TYPES			6
++#define PPE_UNICAST_DROP_FORCE_OFFSET		3
++
++/* There are 16 multicast queues dedicated to CPU port 0. Multicast drop
++ * count includes the force drop for green, yellow and red category packets.
++ */
++#define PPE_P0_MULTICAST_DROP_CNT_TBL_ADDR	0x9f0000
++#define PPE_P0_MULTICAST_DROP_CNT_TBL_ENTRIES	48
++#define PPE_P0_MULTICAST_DROP_CNT_TBL_INC	0x10
++#define PPE_P0_MULTICAST_QUEUE_NUM		16
++
++/* Each PPE physical port has four dedicated multicast queues, providing
++ * a total of 12 entries per port. The multicast drop count includes forced
++ * drops for green, yellow, and red category packets.
++ */
++#define PPE_MULTICAST_QUEUE_PORT_ADDR_INC	0x1000
++#define PPE_MULTICAST_DROP_CNT_TBL_INC		0x10
++#define PPE_MULTICAST_DROP_TYPES		3
++#define PPE_MULTICAST_QUEUE_NUM			4
++#define PPE_MULTICAST_DROP_CNT_TBL_ENTRIES	12
++
++#define PPE_CPU_PORT_MULTICAST_FORCE_DROP_CNT_TBL_ADDR(mq_offset)	\
++	(PPE_P0_MULTICAST_DROP_CNT_TBL_ADDR +				\
++	 (mq_offset) * PPE_P0_MULTICAST_DROP_CNT_TBL_INC *		\
++	 PPE_MULTICAST_DROP_TYPES)
++
++#define PPE_P1_MULTICAST_DROP_CNT_TBL_ADDR	\
++	(PPE_P0_MULTICAST_DROP_CNT_TBL_ADDR + PPE_MULTICAST_QUEUE_PORT_ADDR_INC)
++
+ /* PPE GMAC and XGMAC register base address */
+ #define PPE_PORT_GMAC_ADDR(x)			(0x001000 + ((x) - 1) * 0x200)
+ #define PPE_PORT_XGMAC_ADDR(x)			(0x500000 + ((x) - 1) * 0x4000)
+@@ -614,7 +636,7 @@
+ #define GMAC_ADDR_BYTE3				GENMASK(7, 0)
+ 
+ /* GMAC control register */
+-#define GMAC_CTRL_ADDR				0x18
++#define GMAC_CTRL0_ADDR				0x18
+ #define GMAC_TX_THD_M				GENMASK(27, 24)
+ #define GMAC_MAXFRAME_SIZE_M			GENMASK(21, 8)
+ #define GMAC_CRS_SEL				BIT(6)
+@@ -623,7 +645,7 @@
+ 	(GMAC_TX_THD_M | GMAC_MAXFRAME_SIZE_M | GMAC_CRS_SEL)
+ 
+ /* GMAC debug control register */
+-#define GMAC_DBG_CTRL_ADDR			0x1c
++#define GMAC_CTRL1_ADDR				0x1c
+ #define GMAC_HIGH_IPG_M				GENMASK(15, 8)
+ 
+ /* GMAC jumbo size register */
+@@ -778,7 +800,7 @@
+ #define XGMAC_RXBROAD_G_ADDR			0x918
+ #define XGMAC_RXMULTI_G_ADDR			0x920
+ #define XGMAC_RXCRC_ERR_ADDR			0x928
+-#define XGMAC_RXRUNT_ERR_ADDR			0x930
++#define XGMAC_RXFRAG_ERR_ADDR			0x930
+ #define XGMAC_RXJABBER_ERR_ADDR			0x934
+ #define XGMAC_RXUNDERSIZE_G_ADDR		0x938
+ #define XGMAC_RXOVERSIZE_G_ADDR			0x93C
+@@ -892,7 +914,7 @@
+ #define EDMA_REG_TX_MOD_TIMER(n)	(0x99008 + (0x1000 * (n)))
+ #define EDMA_REG_TX_INT_CTRL(n)		(0x9900c + (0x1000 * (n)))
+ 
+-/* EDMA_QID2RID_TABLE_MEM register field masks */
++/* EDMA_QID2RID_TABLE_MEM register (Rx queue to ring ID mapping) field masks */
+ #define EDMA_RX_RING_ID_QUEUE0_MASK	GENMASK(7, 0)
+ #define EDMA_RX_RING_ID_QUEUE1_MASK	GENMASK(15, 8)
+ #define EDMA_RX_RING_ID_QUEUE2_MASK	GENMASK(23, 16)
+@@ -920,7 +942,7 @@
+ /* Rx Descriptor ring pre-header base address mask */
+ #define EDMA_RXDESC_PREHEADER_BA_MASK		0xffffffff
+ 
+-/* Tx descriptor prod ring index mask */
++/* Tx descriptor producer ring index mask */
+ #define EDMA_TXDESC_PROD_IDX_MASK		0xffff
+ 
+ /* Tx descriptor consumer ring index mask */
+@@ -935,7 +957,7 @@
+ #define EDMA_TXDESC_CTRL_TXEN_MASK		BIT(0)
+ #define EDMA_TXDESC_CTRL_FC_GRP_ID_MASK		GENMASK(3, 1)
+ 
+-/* Tx completion ring prod index mask */
++/* Tx completion ring producer index mask */
+ #define EDMA_TXCMPL_PROD_IDX_MASK		0xffff
+ 
+ /* Tx completion ring urgent threshold mask */
+@@ -946,7 +968,7 @@
+ #define EDMA_TX_MOD_TIMER_INIT_MASK		0xffff
+ #define EDMA_TX_MOD_TIMER_INIT_SHIFT		0
+ 
+-/* Rx fill ring prod index mask */
++/* Rx fill ring producer index mask */
+ #define EDMA_RXFILL_PROD_IDX_MASK		0xffff
+ 
+ /* Rx fill ring consumer index mask */
+@@ -964,10 +986,10 @@
+ /* Rx fill ring enable bit */
+ #define EDMA_RXFILL_RING_EN			0x1
+ 
+-/* Rx desc ring prod index mask */
++/* Rx desc ring producer index mask */
+ #define EDMA_RXDESC_PROD_IDX_MASK		0xffff
+ 
+-/* Rx descriptor ring cons index mask */
++/* Rx descriptor ring consumer index mask */
+ #define EDMA_RXDESC_CONS_IDX_MASK		0xffff
+ 
+ /* Rx descriptor ring size masks */
+@@ -1005,23 +1027,23 @@
+ /* EDMA Ring mask */
+ #define EDMA_RING_DMA_MASK			0xffffffff
+ 
+-/* RXDESC threshold interrupt. */
++/* Rx desc threshold interrupt. */
+ #define EDMA_RXDESC_UGT_INT_STAT		0x2
+ 
+-/* RXDESC timer interrupt */
++/* Rx desc timer interrupt */
+ #define EDMA_RXDESC_PKT_INT_STAT		0x1
+ 
+-/* RXDESC Interrupt status mask */
++/* Rx desc interrupt status mask */
+ #define EDMA_RXDESC_RING_INT_STATUS_MASK \
+ 	(EDMA_RXDESC_UGT_INT_STAT | EDMA_RXDESC_PKT_INT_STAT)
+ 
+-/* TXCMPL threshold interrupt. */
++/* Tx cmpl threshold interrupt. */
+ #define EDMA_TXCMPL_UGT_INT_STAT		0x2
+ 
+-/* TXCMPL timer interrupt */
++/* Tx cmpl timer interrupt */
+ #define EDMA_TXCMPL_PKT_INT_STAT		0x1
+ 
+-/* TXCMPL Interrupt status mask */
++/* Tx cmpl interrupt status mask */
+ #define EDMA_TXCMPL_RING_INT_STATUS_MASK \
+ 	(EDMA_TXCMPL_UGT_INT_STAT | EDMA_TXCMPL_PKT_INT_STAT)
+ 
+-- 
+2.34.1
+

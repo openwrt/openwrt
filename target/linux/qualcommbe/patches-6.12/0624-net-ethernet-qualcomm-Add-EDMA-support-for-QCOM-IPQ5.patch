@@ -1,0 +1,529 @@
+From 399095bb5870276faa1ab4c8e738a7f4c9c8a295 Mon Sep 17 00:00:00 2001
+From: Pavithra R <quic_pavir@quicinc.com>
+Date: Wed, 5 Mar 2025 12:07:01 +0530
+Subject: [PATCH 624/636] net: ethernet: qualcomm: Add EDMA support for QCOM
+ IPQ5424 chipset.
+
+Change-Id: Ifac9fcccc388ecc68afef9f818a3fa3629bbd04e
+Signed-off-by: Pavithra R <quic_pavir@quicinc.com>
+---
+ drivers/net/ethernet/qualcomm/ppe/edma.c      | 90 ++++++++++++++++---
+ drivers/net/ethernet/qualcomm/ppe/edma.h      |  4 +
+ .../net/ethernet/qualcomm/ppe/edma_cfg_rx.c   | 39 +++++---
+ .../net/ethernet/qualcomm/ppe/edma_cfg_tx.c   | 19 ++--
+ drivers/net/ethernet/qualcomm/ppe/edma_rx.c   |  5 +-
+ drivers/net/ethernet/qualcomm/ppe/edma_tx.c   | 20 +++--
+ drivers/net/ethernet/qualcomm/ppe/edma_tx.h   |  3 -
+ drivers/net/ethernet/qualcomm/ppe/ppe_regs.h  | 32 +------
+ 8 files changed, 146 insertions(+), 66 deletions(-)
+
+diff --git a/drivers/net/ethernet/qualcomm/ppe/edma.c b/drivers/net/ethernet/qualcomm/ppe/edma.c
+index 2e136692205f..d78e9c17e3bc 100644
+--- a/drivers/net/ethernet/qualcomm/ppe/edma.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma.c
+@@ -123,6 +123,49 @@ static struct edma_hw_info ipq9574_hw_info = {
+ 	.max_ports = 6,
+ 	.napi_budget_rx = 32,
+ 	.napi_budget_tx = 512,
++	.tso_max = 32,
++	.idx_mask = 0xffff,
++};
++
++/* Rx Fill ring info for IPQ5424 */
++static struct edma_ring_info ipq5424_rxfill_ring_info = {
++	.max_rings = 8,
++	.ring_start = 4,
++	.num_rings = 4,
++};
++
++/* Rx ring info for IPQ5424 */
++static struct edma_ring_info ipq5424_rx_ring_info = {
++	.max_rings = 24,
++	.ring_start = 20,
++	.num_rings = 4,
++};
++
++/* Tx ring info for IPQ5424 */
++static struct edma_ring_info ipq5424_tx_ring_info = {
++	.max_rings = 32,
++	.ring_start = 4,
++	.num_rings = 12,
++};
++
++/* Tx complete ring info for IPQ5424 */
++static struct edma_ring_info ipq5424_txcmpl_ring_info = {
++	.max_rings = 32,
++	.ring_start = 4,
++	.num_rings = 12,
++};
++
++/* HW info for IPQ5424 */
++static struct edma_hw_info ipq5424_hw_info = {
++	.rxfill = &ipq5424_rxfill_ring_info,
++	.rx = &ipq5424_rx_ring_info,
++	.tx = &ipq5424_tx_ring_info,
++	.txcmpl = &ipq5424_txcmpl_ring_info,
++	.max_ports = 3,
++	.napi_budget_rx = 128,
++	.napi_budget_tx = 256,
++	.tso_max = 48,
++	.idx_mask = 0xffffffff,
+ };
+ 
+ static int edma_clock_set_and_enable(struct device *dev,
+@@ -589,23 +632,44 @@ static int edma_hw_reset(void)
+ 	struct device *dev = ppe_dev->dev;
+ 	struct reset_control *edma_hw_rst;
+ 	struct device_node *edma_np;
++	const char *reset_string;
++	u32 count, i;
++	int ret;
+ 
++	/* Count and parse reset names from DTSI. */
+ 	edma_np = of_get_child_by_name(dev->of_node, EDMA_NODE_NAME);
+-	edma_hw_rst = of_reset_control_get_exclusive(edma_np, NULL);
+-	if (IS_ERR(edma_hw_rst)) {
++	count = of_property_count_strings(edma_np, "reset-names");
++	if (count < 0) {
++		dev_err(dev, "EDMA reset entry not found\n");
+ 		of_node_put(edma_np);
+-		return PTR_ERR(edma_hw_rst);
++		return -EINVAL;
+ 	}
+ 
+-	/* 100ms delay is required by hardware to reset EDMA. */
+-	reset_control_assert(edma_hw_rst);
+-	fsleep(100);
++	for (i = 0; i < count; i++) {
++		ret = of_property_read_string_index(edma_np, "reset-names",
++						    i, &reset_string);
++		if (ret) {
++			dev_err(dev, "Error reading reset-names");
++			of_node_put(edma_np);
++			return -EINVAL;
++		}
++
++		edma_hw_rst = of_reset_control_get_exclusive(edma_np, reset_string);
++		if (IS_ERR(edma_hw_rst)) {
++			of_node_put(edma_np);
++			return PTR_ERR(edma_hw_rst);
++		}
++
++		/* 100ms delay is required by hardware to reset EDMA. */
++		reset_control_assert(edma_hw_rst);
++		fsleep(100);
+ 
+-	reset_control_deassert(edma_hw_rst);
+-	fsleep(100);
++		reset_control_deassert(edma_hw_rst);
++		fsleep(100);
+ 
+-	reset_control_put(edma_hw_rst);
+-	dev_dbg(dev, "EDMA HW reset\n");
++		reset_control_put(edma_hw_rst);
++		dev_dbg(dev, "EDMA HW reset, i:%d reset_string:%s\n", i, reset_string);
++	}
+ 
+ 	of_node_put(edma_np);
+ 
+@@ -850,7 +914,11 @@ int edma_setup(struct ppe_device *ppe_dev)
+ 	if (!edma_ctx)
+ 		return -ENOMEM;
+ 
+-	edma_ctx->hw_info = &ipq9574_hw_info;
++	if (ppe_dev->type == IPQ9574_PPE)
++		edma_ctx->hw_info = &ipq9574_hw_info;
++	else
++		edma_ctx->hw_info = &ipq5424_hw_info;
++
+ 	edma_ctx->ppe_dev = ppe_dev;
+ 	edma_ctx->rx_buf_size = rx_buff_size;
+ 
+diff --git a/drivers/net/ethernet/qualcomm/ppe/edma.h b/drivers/net/ethernet/qualcomm/ppe/edma.h
+index 9bb0bb1b219f..7413cb017a5a 100644
+--- a/drivers/net/ethernet/qualcomm/ppe/edma.h
++++ b/drivers/net/ethernet/qualcomm/ppe/edma.h
+@@ -81,6 +81,8 @@ struct edma_ring_info {
+  * @max_ports: Maximum number of ports
+  * @napi_budget_rx: Rx NAPI budget
+  * @napi_budget_tx: Tx NAPI budget
++ * @tso_max: Max segment processing capacity of HW for TSO
++ * @idx_mask: Mask for producer, consumer index and ring size
+  */
+ struct edma_hw_info {
+ 	struct edma_ring_info *rxfill;
+@@ -90,6 +92,8 @@ struct edma_hw_info {
+ 	u32 max_ports;
+ 	u32 napi_budget_rx;
+ 	u32 napi_budget_tx;
++	u32 tso_max;
++	u32 idx_mask;
+ };
+ 
+ /**
+diff --git a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c
+index 5186849f551e..8739581cebd9 100644
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_rx.c
+@@ -153,6 +153,7 @@ static int edma_cfg_rx_desc_ring_to_queue_mapping(void)
+ static void edma_cfg_rx_desc_ring_configure(struct edma_rxdesc_ring *rxdesc_ring)
+ {
+ 	struct ppe_device *ppe_dev = edma_ctx->ppe_dev;
++	u32 idx_mask = edma_ctx->hw_info->idx_mask;
+ 	struct regmap *regmap = ppe_dev->regmap;
+ 	u32 data, reg;
+ 
+@@ -162,9 +163,16 @@ static void edma_cfg_rx_desc_ring_configure(struct edma_rxdesc_ring *rxdesc_ring
+ 	reg = EDMA_BASE_OFFSET + EDMA_REG_RXDESC_PREHEADER_BA(rxdesc_ring->ring_id);
+ 	regmap_write(regmap, reg, (u32)(rxdesc_ring->sdma & EDMA_RXDESC_PREHEADER_BA_MASK));
+ 
+-	data = rxdesc_ring->count & EDMA_RXDESC_RING_SIZE_MASK;
+-	data |= (EDMA_RXDESC_PL_DEFAULT_VALUE & EDMA_RXDESC_PL_OFFSET_MASK)
+-		 << EDMA_RXDESC_PL_OFFSET_SHIFT;
++	data = rxdesc_ring->count & idx_mask;
++
++	/* For SOC's where Rxdesc ring register do not contain PL offset
++	 * fields, skip writing that data into the Register.
++	 */
++	if (ppe_dev->type != IPQ5424_PPE) {
++		data |= (EDMA_RXDESC_PL_DEFAULT_VALUE & EDMA_RXDESC_PL_OFFSET_MASK)
++			 << EDMA_RXDESC_PL_OFFSET_SHIFT;
++	}
++
+ 	reg = EDMA_BASE_OFFSET + EDMA_REG_RXDESC_RING_SIZE(rxdesc_ring->ring_id);
+ 	regmap_write(regmap, reg, data);
+ 
+@@ -405,18 +413,21 @@ void edma_cfg_rx_ring_mappings(void)
+ static void edma_cfg_rx_fill_ring_cleanup(struct edma_rxfill_ring *rxfill_ring)
+ {
+ 	struct ppe_device *ppe_dev = edma_ctx->ppe_dev;
++	u32 idx_mask = edma_ctx->hw_info->idx_mask;
+ 	struct regmap *regmap = ppe_dev->regmap;
+ 	struct device *dev = ppe_dev->dev;
+-	u16 cons_idx, curr_idx;
++	u32 cons_idx, curr_idx;
+ 	u32 data, reg;
+ 
+ 	/* Get RxFill ring producer index */
+-	curr_idx = rxfill_ring->prod_idx & EDMA_RXFILL_PROD_IDX_MASK;
++
++	curr_idx = rxfill_ring->prod_idx & idx_mask;
+ 
+ 	/* Get RxFill ring consumer index */
+ 	reg = EDMA_BASE_OFFSET + EDMA_REG_RXFILL_CONS_IDX(rxfill_ring->ring_id);
+ 	regmap_read(regmap, reg, &data);
+-	cons_idx = data & EDMA_RXFILL_CONS_IDX_MASK;
++
++	cons_idx = data & idx_mask;
+ 
+ 	while (curr_idx != cons_idx) {
+ 		struct edma_rxfill_desc *rxfill_desc;
+@@ -491,16 +502,18 @@ static int edma_cfg_rx_desc_ring_dma_alloc(struct edma_rxdesc_ring *rxdesc_ring)
+ static void edma_cfg_rx_desc_ring_cleanup(struct edma_rxdesc_ring *rxdesc_ring)
+ {
+ 	struct ppe_device *ppe_dev = edma_ctx->ppe_dev;
++	u32 idx_mask = edma_ctx->hw_info->idx_mask;
+ 	struct regmap *regmap = ppe_dev->regmap;
+ 	struct device *dev = ppe_dev->dev;
+ 	u32 prod_idx, cons_idx, reg;
+ 
+ 	/* Get Rxdesc consumer & producer indices */
+-	cons_idx = rxdesc_ring->cons_idx & EDMA_RXDESC_CONS_IDX_MASK;
++	cons_idx = rxdesc_ring->cons_idx & idx_mask;
+ 
+ 	reg = EDMA_BASE_OFFSET + EDMA_REG_RXDESC_PROD_IDX(rxdesc_ring->ring_id);
+ 	regmap_read(regmap, reg, &prod_idx);
+-	prod_idx = prod_idx & EDMA_RXDESC_PROD_IDX_MASK;
++
++	prod_idx = prod_idx & idx_mask;
+ 
+ 	/* Free any buffers assigned to any descriptors */
+ 	while (cons_idx != prod_idx) {
+@@ -641,14 +654,20 @@ rxdesc_mem_alloc_fail:
+ static void edma_cfg_rx_fill_ring_configure(struct edma_rxfill_ring *rxfill_ring)
+ {
+ 	struct ppe_device *ppe_dev = edma_ctx->ppe_dev;
++	u32 idx_mask = edma_ctx->hw_info->idx_mask;
+ 	struct regmap *regmap = ppe_dev->regmap;
+ 	u32 ring_sz, reg;
+ 
+ 	reg = EDMA_BASE_OFFSET + EDMA_REG_RXFILL_BA(rxfill_ring->ring_id);
+ 	regmap_write(regmap, reg, (u32)(rxfill_ring->dma & EDMA_RING_DMA_MASK));
+ 
+-	ring_sz = rxfill_ring->count & EDMA_RXFILL_RING_SIZE_MASK;
+-	reg = EDMA_BASE_OFFSET + EDMA_REG_RXFILL_RING_SIZE(rxfill_ring->ring_id);
++	ring_sz = rxfill_ring->count & idx_mask;
++
++	if (ppe_dev->type == IPQ5424_PPE)
++		reg = EDMA_BASE_OFFSET + EDMA_REG_RXFILL_BUFFER1_SIZE(rxfill_ring->ring_id);
++	else
++		reg = EDMA_BASE_OFFSET + EDMA_REG_RXFILL_RING_SIZE(rxfill_ring->ring_id);
++
+ 	regmap_write(regmap, reg, ring_sz);
+ 
+ 	edma_rx_alloc_buffer(rxfill_ring, rxfill_ring->count - 1);
+diff --git a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_tx.c b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_tx.c
+index 0001a45691dd..0901c574f745 100644
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_cfg_tx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_cfg_tx.c
+@@ -55,6 +55,7 @@ static int edma_cfg_txcmpl_ring_setup(struct edma_txcmpl_ring *txcmpl_ring)
+ static void edma_cfg_tx_desc_ring_cleanup(struct edma_txdesc_ring *txdesc_ring)
+ {
+ 	struct ppe_device *ppe_dev = edma_ctx->ppe_dev;
++	u32 idx_mask = edma_ctx->hw_info->idx_mask;
+ 	struct regmap *regmap = ppe_dev->regmap;
+ 	struct edma_txdesc_pri *txdesc = NULL;
+ 	struct device *dev =  ppe_dev->dev;
+@@ -64,11 +65,13 @@ static void edma_cfg_tx_desc_ring_cleanup(struct edma_txdesc_ring *txdesc_ring)
+ 	/* Free any buffers assigned to any descriptors. */
+ 	reg = EDMA_BASE_OFFSET + EDMA_REG_TXDESC_PROD_IDX(txdesc_ring->id);
+ 	regmap_read(regmap, reg, &data);
+-	prod_idx = data & EDMA_TXDESC_PROD_IDX_MASK;
++
++	prod_idx = data & idx_mask;
+ 
+ 	reg = EDMA_BASE_OFFSET + EDMA_REG_TXDESC_CONS_IDX(txdesc_ring->id);
+ 	regmap_read(regmap, reg, &data);
+-	cons_idx = data & EDMA_TXDESC_CONS_IDX_MASK;
++
++	cons_idx = data & idx_mask;
+ 
+ 	/* Walk active list, obtain skb from descriptor and free it. */
+ 	while (cons_idx != prod_idx) {
+@@ -130,6 +133,7 @@ static int edma_cfg_tx_desc_ring_setup(struct edma_txdesc_ring *txdesc_ring)
+ static void edma_cfg_tx_desc_ring_configure(struct edma_txdesc_ring *txdesc_ring)
+ {
+ 	struct ppe_device *ppe_dev = edma_ctx->ppe_dev;
++	u32 idx_mask = edma_ctx->hw_info->idx_mask;
+ 	struct regmap *regmap = ppe_dev->regmap;
+ 	u32 data, reg;
+ 
+@@ -140,12 +144,16 @@ static void edma_cfg_tx_desc_ring_configure(struct edma_txdesc_ring *txdesc_ring
+ 	regmap_write(regmap, reg, (u32)(txdesc_ring->sdma & EDMA_RING_DMA_MASK));
+ 
+ 	reg = EDMA_BASE_OFFSET + EDMA_REG_TXDESC_RING_SIZE(txdesc_ring->id);
+-	regmap_write(regmap, reg, (u32)(txdesc_ring->count & EDMA_TXDESC_RING_SIZE_MASK));
++
++	regmap_write(regmap, reg, (u32)(txdesc_ring->count & idx_mask));
+ 
+ 	reg = EDMA_BASE_OFFSET + EDMA_REG_TXDESC_PROD_IDX(txdesc_ring->id);
+ 	regmap_write(regmap, reg, (u32)EDMA_TX_INITIAL_PROD_IDX);
+ 
+-	data = FIELD_PREP(EDMA_TXDESC_CTRL_FC_GRP_ID_MASK, txdesc_ring->fc_grp_id);
++	if (ppe_dev->type == IPQ5424_PPE)
++		data = FIELD_PREP(EDMA_TXDESC_CTRL_FC_GRP_ID_MASK_IPQ54XX, txdesc_ring->fc_grp_id);
++	else
++		data = FIELD_PREP(EDMA_TXDESC_CTRL_FC_GRP_ID_MASK, txdesc_ring->fc_grp_id);
+ 
+ 	/* Configure group ID for flow control for this Tx ring. */
+ 	reg = EDMA_BASE_OFFSET + EDMA_REG_TXDESC_CTRL(txdesc_ring->id);
+@@ -155,6 +163,7 @@ static void edma_cfg_tx_desc_ring_configure(struct edma_txdesc_ring *txdesc_ring
+ static void edma_cfg_txcmpl_ring_configure(struct edma_txcmpl_ring *txcmpl_ring)
+ {
+ 	struct ppe_device *ppe_dev = edma_ctx->ppe_dev;
++	u32 idx_mask = edma_ctx->hw_info->idx_mask;
+ 	struct regmap *regmap = ppe_dev->regmap;
+ 	u32 data, reg;
+ 
+@@ -163,7 +172,7 @@ static void edma_cfg_txcmpl_ring_configure(struct edma_txcmpl_ring *txcmpl_ring)
+ 	regmap_write(regmap, reg, (u32)(txcmpl_ring->dma & EDMA_RING_DMA_MASK));
+ 
+ 	reg = EDMA_BASE_OFFSET + EDMA_REG_TXCMPL_RING_SIZE(txcmpl_ring->id);
+-	regmap_write(regmap, reg, (u32)(txcmpl_ring->count & EDMA_TXDESC_RING_SIZE_MASK));
++	regmap_write(regmap, reg, (u32)(txcmpl_ring->count & idx_mask));
+ 
+ 	/* Set Tx cmpl ret mode to opaque. */
+ 	reg = EDMA_BASE_OFFSET + EDMA_REG_TXCMPL_CTRL(txcmpl_ring->id);
+diff --git a/drivers/net/ethernet/qualcomm/ppe/edma_rx.c b/drivers/net/ethernet/qualcomm/ppe/edma_rx.c
+index df5a5497d0b6..254fb9d5fb31 100644
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_rx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_rx.c
+@@ -446,6 +446,7 @@ static int edma_rx_reap(struct edma_rxdesc_ring *rxdesc_ring, int budget)
+ 	u32 alloc_size = rxdesc_ring->rxfill->alloc_size;
+ 	bool page_mode = rxdesc_ring->rxfill->page_mode;
+ 	struct ppe_device *ppe_dev = edma_ctx->ppe_dev;
++	u32 idx_mask = edma_ctx->hw_info->idx_mask;
+ 	struct edma_rxdesc_pri *next_rxdesc_pri;
+ 	struct regmap *regmap = ppe_dev->regmap;
+ 	struct device *dev = ppe_dev->dev;
+@@ -462,7 +463,9 @@ static int edma_rx_reap(struct edma_rxdesc_ring *rxdesc_ring, int budget)
+ 	} else {
+ 		reg = EDMA_BASE_OFFSET + EDMA_REG_RXDESC_PROD_IDX(rxdesc_ring->ring_id);
+ 		regmap_read(regmap, reg, &prod_idx);
+-		prod_idx = prod_idx & EDMA_RXDESC_PROD_IDX_MASK;
++
++		prod_idx = prod_idx & idx_mask;
++
+ 		work_to_do = EDMA_DESC_AVAIL_COUNT(prod_idx,
+ 						   cons_idx, EDMA_RX_RING_SIZE);
+ 		rxdesc_ring->work_leftover = work_to_do;
+diff --git a/drivers/net/ethernet/qualcomm/ppe/edma_tx.c b/drivers/net/ethernet/qualcomm/ppe/edma_tx.c
+index f98bcbba76a1..a0fb3f0b0414 100644
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_tx.c
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_tx.c
+@@ -62,6 +62,7 @@ static u32 edma_tx_num_descs_for_sg(struct sk_buff *skb)
+ enum edma_tx_gso_status edma_tx_gso_segment(struct sk_buff *skb,
+ 					    struct net_device *netdev, struct sk_buff **segs)
+ {
++	struct edma_hw_info *hw_info = edma_ctx->hw_info;
+ 	u32 num_tx_desc_needed;
+ 
+ 	/* Check is skb is non-linear to proceed. */
+@@ -69,7 +70,7 @@ enum edma_tx_gso_status edma_tx_gso_segment(struct sk_buff *skb,
+ 		return EDMA_TX_GSO_NOT_NEEDED;
+ 
+ 	num_tx_desc_needed = edma_tx_num_descs_for_sg(skb);
+-	if (likely(num_tx_desc_needed <= EDMA_TX_TSO_SEG_MAX))
++	if (likely(num_tx_desc_needed <= hw_info->tso_max))
+ 		return EDMA_TX_GSO_NOT_NEEDED;
+ 
+ 	/* GSO segmentation of the skb into multiple segments. */
+@@ -99,6 +100,7 @@ u32 edma_tx_complete(u32 work_to_do, struct edma_txcmpl_ring *txcmpl_ring)
+ {
+ 	struct edma_txcmpl_stats *txcmpl_stats = &txcmpl_ring->txcmpl_stats;
+ 	struct ppe_device *ppe_dev = edma_ctx->ppe_dev;
++	u32 idx_mask = edma_ctx->hw_info->idx_mask;
+ 	struct regmap *regmap = ppe_dev->regmap;
+ 	u32 cons_idx, end_idx, data, cpu_id;
+ 	struct device *dev = ppe_dev->dev;
+@@ -117,7 +119,8 @@ u32 edma_tx_complete(u32 work_to_do, struct edma_txcmpl_ring *txcmpl_ring)
+ 		/* Get Tx cmpl ring producer index. */
+ 		reg = EDMA_BASE_OFFSET + EDMA_REG_TXCMPL_PROD_IDX(txcmpl_ring->id);
+ 		regmap_read(regmap, reg, &data);
+-		prod_idx = data & EDMA_TXCMPL_PROD_IDX_MASK;
++
++		prod_idx = data & idx_mask;
+ 
+ 		avail = EDMA_DESC_AVAIL_COUNT(prod_idx, cons_idx, EDMA_TX_RING_SIZE);
+ 		txcmpl_ring->avail_pkt = avail;
+@@ -645,12 +648,14 @@ static u32 edma_tx_avail_desc(struct edma_txdesc_ring *txdesc_ring,
+ {
+ 	struct ppe_device *ppe_dev = edma_ctx->ppe_dev;
+ 	u32 data = 0, avail = 0, hw_next_to_clean = 0;
++	u32 idx_mask = edma_ctx->hw_info->idx_mask;
+ 	struct regmap *regmap = ppe_dev->regmap;
+ 	u32 reg;
+ 
+ 	reg = EDMA_BASE_OFFSET + EDMA_REG_TXDESC_CONS_IDX(txdesc_ring->id);
+ 	regmap_read(regmap, reg, &data);
+-	hw_next_to_clean = data & EDMA_TXDESC_CONS_IDX_MASK;
++
++	hw_next_to_clean = data & idx_mask;
+ 
+ 	avail = EDMA_DESC_AVAIL_COUNT(hw_next_to_clean - 1,
+ 				      hw_next_to_use, EDMA_TX_RING_SIZE);
+@@ -676,12 +681,14 @@ enum edma_tx_status edma_tx_ring_xmit(struct net_device *netdev,
+ {
+ 	struct edma_txdesc_stats *txdesc_stats = &txdesc_ring->txdesc_stats;
+ 	struct edma_port_priv *port_priv = netdev_priv(netdev);
++	struct edma_hw_info *hw_info = edma_ctx->hw_info;
+ 	u32 num_tx_desc_needed = 0, num_desc_filled = 0;
+ 	struct ppe_device *ppe_dev = edma_ctx->ppe_dev;
+ 	struct ppe_port *port = port_priv->ppe_port;
+ 	struct regmap *regmap = ppe_dev->regmap;
+ 	struct edma_txdesc_pri *txdesc = NULL;
+ 	struct device *dev = ppe_dev->dev;
++	u32 idx_mask = hw_info->idx_mask;
+ 	int port_id = port->port_id;
+ 	u32 hw_next_to_use = 0;
+ 	u32 reg;
+@@ -726,9 +733,9 @@ enum edma_tx_status edma_tx_ring_xmit(struct net_device *netdev,
+ 		 * HW hangs up if it sees more than 32 segments. Kernel Perform GSO
+ 		 * for such packets with netdev gso_max_segs set to 32.
+ 		 */
+-		if (unlikely(num_tx_desc_needed > EDMA_TX_TSO_SEG_MAX)) {
++		if (unlikely(num_tx_desc_needed > hw_info->tso_max)) {
+ 			netdev_dbg(netdev, "Number of segments %u more than %u for %d ring\n",
+-				   num_tx_desc_needed, EDMA_TX_TSO_SEG_MAX, txdesc_ring->id);
++				   num_tx_desc_needed, hw_info->tso_max, txdesc_ring->id);
+ 			u64_stats_update_begin(&txdesc_stats->syncp);
+ 			++txdesc_stats->tso_max_seg_exceed;
+ 			u64_stats_update_end(&txdesc_stats->syncp);
+@@ -785,7 +792,8 @@ enum edma_tx_status edma_tx_ring_xmit(struct net_device *netdev,
+ 	EDMA_TXDESC_OPAQUE_SET(txdesc, skb);
+ 
+ 	/* Update producer index. */
+-	txdesc_ring->prod_idx = hw_next_to_use & EDMA_TXDESC_PROD_IDX_MASK;
++	txdesc_ring->prod_idx = hw_next_to_use & idx_mask;
++
+ 	txdesc_ring->avail_desc -= num_desc_filled;
+ 
+ 	netdev_dbg(netdev, "%s: skb:%pK tx_ring:%u proto:0x%x skb->len:%d\n port:%u prod_idx:%u ip_summed:0x%x\n",
+diff --git a/drivers/net/ethernet/qualcomm/ppe/edma_tx.h b/drivers/net/ethernet/qualcomm/ppe/edma_tx.h
+index a71c641bca51..d68a3c6ec2d1 100644
+--- a/drivers/net/ethernet/qualcomm/ppe/edma_tx.h
++++ b/drivers/net/ethernet/qualcomm/ppe/edma_tx.h
+@@ -25,9 +25,6 @@
+ #define EDMA_TX_RING_SIZE               2048
+ #define EDMA_TX_RING_SIZE_MASK		(EDMA_TX_RING_SIZE - 1)
+ 
+-/* Max segment processing capacity of HW for TSO. */
+-#define EDMA_TX_TSO_SEG_MAX		32
+-
+ /* HW defined low and high MSS size. */
+ #define EDMA_TX_TSO_MSS_MIN		256
+ #define EDMA_TX_TSO_MSS_MAX		10240
+diff --git a/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h b/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
+index 533d1e25d53e..5a3c283cd230 100644
+--- a/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
++++ b/drivers/net/ethernet/qualcomm/ppe/ppe_regs.h
+@@ -942,23 +942,12 @@
+ /* Rx Descriptor ring pre-header base address mask */
+ #define EDMA_RXDESC_PREHEADER_BA_MASK		0xffffffff
+ 
+-/* Tx descriptor producer ring index mask */
+-#define EDMA_TXDESC_PROD_IDX_MASK		0xffff
+-
+-/* Tx descriptor consumer ring index mask */
+-#define EDMA_TXDESC_CONS_IDX_MASK		0xffff
+-
+-/* Tx descriptor ring size mask */
+-#define EDMA_TXDESC_RING_SIZE_MASK		0xffff
+-
+ /* Tx descriptor ring enable */
+ #define EDMA_TXDESC_TX_ENABLE			0x1
+ 
+ #define EDMA_TXDESC_CTRL_TXEN_MASK		BIT(0)
+-#define EDMA_TXDESC_CTRL_FC_GRP_ID_MASK		GENMASK(3, 1)
+-
+-/* Tx completion ring producer index mask */
+-#define EDMA_TXCMPL_PROD_IDX_MASK		0xffff
++#define EDMA_TXDESC_CTRL_FC_GRP_ID_MASK         GENMASK(3, 1)
++#define EDMA_TXDESC_CTRL_FC_GRP_ID_MASK_IPQ54XX GENMASK(4, 1)
+ 
+ /* Tx completion ring urgent threshold mask */
+ #define EDMA_TXCMPL_LOW_THRE_MASK		0xffff
+@@ -968,15 +957,6 @@
+ #define EDMA_TX_MOD_TIMER_INIT_MASK		0xffff
+ #define EDMA_TX_MOD_TIMER_INIT_SHIFT		0
+ 
+-/* Rx fill ring producer index mask */
+-#define EDMA_RXFILL_PROD_IDX_MASK		0xffff
+-
+-/* Rx fill ring consumer index mask */
+-#define EDMA_RXFILL_CONS_IDX_MASK		0xffff
+-
+-/* Rx fill ring size mask */
+-#define EDMA_RXFILL_RING_SIZE_MASK		0xffff
+-
+ /* Rx fill ring flow control threshold masks */
+ #define EDMA_RXFILL_FC_XON_THRE_MASK		0x7ff
+ #define EDMA_RXFILL_FC_XON_THRE_SHIFT		12
+@@ -986,14 +966,6 @@
+ /* Rx fill ring enable bit */
+ #define EDMA_RXFILL_RING_EN			0x1
+ 
+-/* Rx desc ring producer index mask */
+-#define EDMA_RXDESC_PROD_IDX_MASK		0xffff
+-
+-/* Rx descriptor ring consumer index mask */
+-#define EDMA_RXDESC_CONS_IDX_MASK		0xffff
+-
+-/* Rx descriptor ring size masks */
+-#define EDMA_RXDESC_RING_SIZE_MASK		0xffff
+ #define EDMA_RXDESC_PL_OFFSET_MASK		0x1ff
+ #define EDMA_RXDESC_PL_OFFSET_SHIFT		16
+ #define EDMA_RXDESC_PL_DEFAULT_VALUE		0
+-- 
+2.34.1
+

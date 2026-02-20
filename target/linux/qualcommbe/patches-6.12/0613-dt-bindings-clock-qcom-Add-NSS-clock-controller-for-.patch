@@ -1,0 +1,282 @@
+From 2494214f8061e7f178e7274f9516d0d205bd2279 Mon Sep 17 00:00:00 2001
+From: Luo Jie <quic_luoj@quicinc.com>
+Date: Tue, 11 Feb 2025 17:14:56 +0800
+Subject: [PATCH 613/636] dt-bindings: clock: qcom: Add NSS clock controller
+ for IPQ5424 SoC
+
+NSS clock controller provides the clocks and resets to the networking
+blocks such as PPE (Packet Process Engine) and UNIPHY (PCS) on IPQ5424
+devices.
+
+Add support for the compatible string "qcom,ipq5424-nsscc" based on the
+existing IPQ9574 NSS clock controller Device Tree binding. Additionally,
+update the clock names for PPE and NSS to use generic identifiers,
+increasing flexibility and simplifying future extensions for new hardware
+variants.
+
+Also add master/slave ids for IPQ5424 networking interfaces, which is
+used by nss-ipq5424 driver for providing interconnect services using
+icc-clk framework.
+
+Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
+---
+ .../bindings/clock/qcom,ipq9574-nsscc.yaml    | 62 +++++++++++++++---
+ .../dt-bindings/clock/qcom,ipq5424-nsscc.h    | 65 +++++++++++++++++++
+ .../dt-bindings/interconnect/qcom,ipq5424.h   | 13 ++++
+ .../dt-bindings/reset/qcom,ipq5424-nsscc.h    | 46 +++++++++++++
+ 4 files changed, 178 insertions(+), 8 deletions(-)
+ create mode 100644 include/dt-bindings/clock/qcom,ipq5424-nsscc.h
+ create mode 100644 include/dt-bindings/reset/qcom,ipq5424-nsscc.h
+
+diff --git a/Documentation/devicetree/bindings/clock/qcom,ipq9574-nsscc.yaml b/Documentation/devicetree/bindings/clock/qcom,ipq9574-nsscc.yaml
+index fc604279114f..35e5c1b7dcbe 100644
+--- a/Documentation/devicetree/bindings/clock/qcom,ipq9574-nsscc.yaml
++++ b/Documentation/devicetree/bindings/clock/qcom,ipq9574-nsscc.yaml
+@@ -4,7 +4,7 @@
+ $id: http://devicetree.org/schemas/clock/qcom,ipq9574-nsscc.yaml#
+ $schema: http://devicetree.org/meta-schemas/core.yaml#
+ 
+-title: Qualcomm Networking Sub System Clock & Reset Controller on IPQ9574
++title: Qualcomm Networking Sub System Clock & Reset Controller on IPQ9574 and IPQ5424
+ 
+ maintainers:
+   - Bjorn Andersson <andersson@kernel.org>
+@@ -12,21 +12,29 @@ maintainers:
+ 
+ description: |
+   Qualcomm networking sub system clock control module provides the clocks,
+-  resets on IPQ9574
++  resets on IPQ9574 and IPQ5424
+ 
+-  See also::
++  See also:
++    include/dt-bindings/clock/qcom,ipq5424-nsscc.h
+     include/dt-bindings/clock/qcom,ipq9574-nsscc.h
++    include/dt-bindings/reset/qcom,ipq5424-nsscc.h
+     include/dt-bindings/reset/qcom,ipq9574-nsscc.h
+ 
+ properties:
+   compatible:
+-    const: qcom,ipq9574-nsscc
++    enum:
++      - qcom,ipq5424-nsscc
++      - qcom,ipq9574-nsscc
+ 
+   clocks:
+     items:
+       - description: Board XO source
+-      - description: CMN_PLL NSS 1200MHz (Bias PLL cc) clock source
+-      - description: CMN_PLL PPE 353MHz (Bias PLL ubi nc) clock source
++      - description: CMN_PLL NSS (Bias PLL cc) clock source. This clock rate
++          can vary for different IPQ SoCs. For example, it is 1200 MHz on the
++          IPQ9574 and 300 MHz on the IPQ5424.
++      - description: CMN_PLL PPE (Bias PLL ubi nc) clock source. The clock
++          rate can vary for different IPQ SoCs. For example, it is 353 MHz
++          on the IPQ9574 and 375 MHz on the IPQ5424.
+       - description: GCC GPLL0 OUT AUX clock source
+       - description: Uniphy0 NSS Rx clock source
+       - description: Uniphy0 NSS Tx clock source
+@@ -42,8 +50,12 @@ properties:
+   clock-names:
+     items:
+       - const: xo
+-      - const: nss_1200
+-      - const: ppe_353
++      - enum:
++          - nss_1200
++          - nss
++      - enum:
++          - ppe_353
++          - ppe
+       - const: gpll0_out
+       - const: uniphy0_rx
+       - const: uniphy0_tx
+@@ -61,6 +73,40 @@ required:
+ 
+ allOf:
+   - $ref: qcom,gcc.yaml#
++  - if:
++      properties:
++        compatible:
++          const: qcom,ipq9574-nsscc
++    then:
++      properties:
++        clock-names:
++          items:
++            - const: xo
++            - const: nss_1200
++            - const: ppe_353
++            - const: gpll0_out
++            - const: uniphy0_rx
++            - const: uniphy0_tx
++            - const: uniphy1_rx
++            - const: uniphy1_tx
++            - const: uniphy2_rx
++            - const: uniphy2_tx
++            - const: bus
++    else:
++      properties:
++        clock-names:
++          items:
++            - const: xo
++            - const: nss
++            - const: ppe
++            - const: gpll0_out
++            - const: uniphy0_rx
++            - const: uniphy0_tx
++            - const: uniphy1_rx
++            - const: uniphy1_tx
++            - const: uniphy2_rx
++            - const: uniphy2_tx
++            - const: bus
+ 
+ unevaluatedProperties: false
+ 
+diff --git a/include/dt-bindings/clock/qcom,ipq5424-nsscc.h b/include/dt-bindings/clock/qcom,ipq5424-nsscc.h
+new file mode 100644
+index 000000000000..eeae0dc38042
+--- /dev/null
++++ b/include/dt-bindings/clock/qcom,ipq5424-nsscc.h
+@@ -0,0 +1,65 @@
++/* SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) */
++/*
++ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++ */
++
++#ifndef _DT_BINDINGS_CLOCK_QCOM_IPQ5424_NSSCC_H
++#define _DT_BINDINGS_CLOCK_QCOM_IPQ5424_NSSCC_H
++
++/* NSS_CC clocks */
++#define NSS_CC_CE_APB_CLK					0
++#define NSS_CC_CE_AXI_CLK					1
++#define NSS_CC_CE_CLK_SRC					2
++#define NSS_CC_CFG_CLK_SRC					3
++#define NSS_CC_DEBUG_CLK					4
++#define NSS_CC_EIP_BFDCD_CLK_SRC				5
++#define NSS_CC_EIP_CLK						6
++#define NSS_CC_NSS_CSR_CLK					7
++#define NSS_CC_NSSNOC_CE_APB_CLK				8
++#define NSS_CC_NSSNOC_CE_AXI_CLK				9
++#define NSS_CC_NSSNOC_EIP_CLK					10
++#define NSS_CC_NSSNOC_NSS_CSR_CLK				11
++#define NSS_CC_NSSNOC_PPE_CFG_CLK				12
++#define NSS_CC_NSSNOC_PPE_CLK					13
++#define NSS_CC_PORT1_MAC_CLK					14
++#define NSS_CC_PORT1_RX_CLK					15
++#define NSS_CC_PORT1_RX_CLK_SRC					16
++#define NSS_CC_PORT1_RX_DIV_CLK_SRC				17
++#define NSS_CC_PORT1_TX_CLK					18
++#define NSS_CC_PORT1_TX_CLK_SRC					19
++#define NSS_CC_PORT1_TX_DIV_CLK_SRC				20
++#define NSS_CC_PORT2_MAC_CLK					21
++#define NSS_CC_PORT2_RX_CLK					22
++#define NSS_CC_PORT2_RX_CLK_SRC					23
++#define NSS_CC_PORT2_RX_DIV_CLK_SRC				24
++#define NSS_CC_PORT2_TX_CLK					25
++#define NSS_CC_PORT2_TX_CLK_SRC					26
++#define NSS_CC_PORT2_TX_DIV_CLK_SRC				27
++#define NSS_CC_PORT3_MAC_CLK					28
++#define NSS_CC_PORT3_RX_CLK					29
++#define NSS_CC_PORT3_RX_CLK_SRC					30
++#define NSS_CC_PORT3_RX_DIV_CLK_SRC				31
++#define NSS_CC_PORT3_TX_CLK					32
++#define NSS_CC_PORT3_TX_CLK_SRC					33
++#define NSS_CC_PORT3_TX_DIV_CLK_SRC				34
++#define NSS_CC_PPE_CLK_SRC					35
++#define NSS_CC_PPE_EDMA_CFG_CLK					36
++#define NSS_CC_PPE_EDMA_CLK					37
++#define NSS_CC_PPE_SWITCH_BTQ_CLK				38
++#define NSS_CC_PPE_SWITCH_CFG_CLK				39
++#define NSS_CC_PPE_SWITCH_CLK					40
++#define NSS_CC_PPE_SWITCH_IPE_CLK				41
++#define NSS_CC_UNIPHY_PORT1_RX_CLK				42
++#define NSS_CC_UNIPHY_PORT1_TX_CLK				43
++#define NSS_CC_UNIPHY_PORT2_RX_CLK				44
++#define NSS_CC_UNIPHY_PORT2_TX_CLK				45
++#define NSS_CC_UNIPHY_PORT3_RX_CLK				46
++#define NSS_CC_UNIPHY_PORT3_TX_CLK				47
++#define NSS_CC_XGMAC0_PTP_REF_CLK				48
++#define NSS_CC_XGMAC0_PTP_REF_DIV_CLK_SRC			49
++#define NSS_CC_XGMAC1_PTP_REF_CLK				50
++#define NSS_CC_XGMAC1_PTP_REF_DIV_CLK_SRC			51
++#define NSS_CC_XGMAC2_PTP_REF_CLK				52
++#define NSS_CC_XGMAC2_PTP_REF_DIV_CLK_SRC			53
++
++#endif
+diff --git a/include/dt-bindings/interconnect/qcom,ipq5424.h b/include/dt-bindings/interconnect/qcom,ipq5424.h
+index aea8f29a1397..e1f5d2b7edfa 100644
+--- a/include/dt-bindings/interconnect/qcom,ipq5424.h
++++ b/include/dt-bindings/interconnect/qcom,ipq5424.h
+@@ -41,4 +41,17 @@
+ #define MASTER_SNOC_LPASS		36
+ #define SLAVE_SNOC_LPASS		37
+ 
++#define MASTER_NSSNOC_PPE		0
++#define SLAVE_NSSNOC_PPE		1
++#define MASTER_NSSNOC_PPE_CFG		2
++#define SLAVE_NSSNOC_PPE_CFG		3
++#define MASTER_NSSNOC_NSS_CSR		4
++#define SLAVE_NSSNOC_NSS_CSR		5
++#define MASTER_NSSNOC_CE_AXI		6
++#define SLAVE_NSSNOC_CE_AXI		7
++#define MASTER_NSSNOC_CE_APB		8
++#define SLAVE_NSSNOC_CE_APB		9
++#define MASTER_NSSNOC_EIP		10
++#define SLAVE_NSSNOC_EIP		11
++
+ #endif /* INTERCONNECT_QCOM_IPQ5424_H */
+diff --git a/include/dt-bindings/reset/qcom,ipq5424-nsscc.h b/include/dt-bindings/reset/qcom,ipq5424-nsscc.h
+new file mode 100644
+index 000000000000..9627e3b0ad30
+--- /dev/null
++++ b/include/dt-bindings/reset/qcom,ipq5424-nsscc.h
+@@ -0,0 +1,46 @@
++/* SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) */
++/*
++ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
++ */
++
++#ifndef _DT_BINDINGS_RESET_QCOM_IPQ5424_NSSCC_H
++#define _DT_BINDINGS_RESET_QCOM_IPQ5424_NSSCC_H
++
++#define NSS_CC_CE_APB_CLK_ARES					0
++#define NSS_CC_CE_AXI_CLK_ARES					1
++#define NSS_CC_DEBUG_CLK_ARES					2
++#define NSS_CC_EIP_CLK_ARES					3
++#define NSS_CC_NSS_CSR_CLK_ARES					4
++#define NSS_CC_NSSNOC_CE_APB_CLK_ARES				5
++#define NSS_CC_NSSNOC_CE_AXI_CLK_ARES				6
++#define NSS_CC_NSSNOC_EIP_CLK_ARES				7
++#define NSS_CC_NSSNOC_NSS_CSR_CLK_ARES				8
++#define NSS_CC_NSSNOC_PPE_CLK_ARES				9
++#define NSS_CC_NSSNOC_PPE_CFG_CLK_ARES				10
++#define NSS_CC_PORT1_MAC_CLK_ARES				11
++#define NSS_CC_PORT1_RX_CLK_ARES				12
++#define NSS_CC_PORT1_TX_CLK_ARES				13
++#define NSS_CC_PORT2_MAC_CLK_ARES				14
++#define NSS_CC_PORT2_RX_CLK_ARES				15
++#define NSS_CC_PORT2_TX_CLK_ARES				16
++#define NSS_CC_PORT3_MAC_CLK_ARES				17
++#define NSS_CC_PORT3_RX_CLK_ARES				18
++#define NSS_CC_PORT3_TX_CLK_ARES				19
++#define NSS_CC_PPE_BCR						20
++#define NSS_CC_PPE_EDMA_CLK_ARES				21
++#define NSS_CC_PPE_EDMA_CFG_CLK_ARES				22
++#define NSS_CC_PPE_SWITCH_BTQ_CLK_ARES				23
++#define NSS_CC_PPE_SWITCH_CLK_ARES				24
++#define NSS_CC_PPE_SWITCH_CFG_CLK_ARES				25
++#define NSS_CC_PPE_SWITCH_IPE_CLK_ARES				26
++#define NSS_CC_UNIPHY_PORT1_RX_CLK_ARES				27
++#define NSS_CC_UNIPHY_PORT1_TX_CLK_ARES				28
++#define NSS_CC_UNIPHY_PORT2_RX_CLK_ARES				29
++#define NSS_CC_UNIPHY_PORT2_TX_CLK_ARES				30
++#define NSS_CC_UNIPHY_PORT3_RX_CLK_ARES				31
++#define NSS_CC_UNIPHY_PORT3_TX_CLK_ARES				32
++#define NSS_CC_XGMAC0_PTP_REF_CLK_ARES				33
++#define NSS_CC_XGMAC1_PTP_REF_CLK_ARES				34
++#define NSS_CC_XGMAC2_PTP_REF_CLK_ARES				35
++
++#endif
+-- 
+2.34.1
+

@@ -1,0 +1,46 @@
+From 7aafdbd3f521ba5e8268fd9c405cdf18732a10f3 Mon Sep 17 00:00:00 2001
+From: Sricharan Ramabadhran <quic_srichara@quicinc.com>
+Date: Mon, 28 Oct 2024 11:35:04 +0530
+Subject: [PATCH] dt-bindings: qcom: Add ipq5424 boards
+
+The IPQ5424 is Qualcomm's 802.11be SoC for Routers, Gateways
+and access Points. It has a quad core Cortex-a55 with a per core
+L1, Unified L2 caches and a common Unified L3 cache.
+
+Document the new ipq5424 SoC/board device tree bindings.
+
+Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Signed-off-by: Sricharan Ramabadhran <quic_srichara@quicinc.com>
+Link: https://lore.kernel.org/r/20241028060506.246606-5-quic_srichara@quicinc.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+---
+ Documentation/devicetree/bindings/arm/qcom.yaml | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/arm/qcom.yaml b/Documentation/devicetree/bindings/arm/qcom.yaml
+index 07946418f0bb..7c8c3a97506a 100644
+--- a/Documentation/devicetree/bindings/arm/qcom.yaml
++++ b/Documentation/devicetree/bindings/arm/qcom.yaml
+@@ -25,6 +25,7 @@ description: |
+         ipq4018
+         ipq5018
+         ipq5332
++        ipq5424
+         ipq6018
+         ipq8074
+         ipq9574
+@@ -353,6 +354,11 @@ properties:
+               - qcom,ipq5332-ap-mi01.9
+           - const: qcom,ipq5332
+ 
++      - items:
++          - enum:
++              - qcom,ipq5424-rdp466
++          - const: qcom,ipq5424
++
+       - items:
+           - enum:
+               - mikrotik,rb3011
+-- 
+2.34.1
+

@@ -1,0 +1,38 @@
+From 9e2ca54195af42bf2b52a5c6349e0a751b1828b1 Mon Sep 17 00:00:00 2001
+From: Varadarajan Narayanan <quic_varada@quicinc.com>
+Date: Thu, 21 Nov 2024 10:49:35 +0530
+Subject: [PATCH] arm64: dts: qcom: ipq5424: Add LLCC/system-cache-controller
+
+Add a DT node for Last level cache (aka. system cache) controller
+which provides control over the last level cache present on
+IPQ5424 SoCs.
+
+Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Signed-off-by: Varadarajan Narayanan <quic_varada@quicinc.com>
+Link: https://lore.kernel.org/r/20241121051935.1055222-4-quic_varada@quicinc.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+---
+ arch/arm64/boot/dts/qcom/ipq5424.dtsi | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/ipq5424.dtsi b/arch/arm64/boot/dts/qcom/ipq5424.dtsi
+index 5e79bd450a4e..3277e25d57f5 100644
+--- a/arch/arm64/boot/dts/qcom/ipq5424.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5424.dtsi
+@@ -152,6 +152,13 @@ rng: rng@4c3000 {
+ 			clock-names = "core";
+ 		};
+ 
++		system-cache-controller@800000 {
++			compatible = "qcom,ipq5424-llcc";
++			reg = <0 0x00800000 0 0x200000>;
++			reg-names = "llcc0_base";
++			interrupts = <GIC_SPI 68 IRQ_TYPE_LEVEL_HIGH>;
++		};
++
+ 		tlmm: pinctrl@1000000 {
+ 			compatible = "qcom,ipq5424-tlmm";
+ 			reg = <0 0x01000000 0 0x300000>;
+-- 
+2.34.1
+

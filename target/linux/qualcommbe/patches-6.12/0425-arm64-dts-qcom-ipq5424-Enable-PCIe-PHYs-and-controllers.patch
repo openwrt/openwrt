@@ -1,0 +1,96 @@
+From git@z Thu Jan  1 00:00:00 1970
+Subject: [PATCH v7 2/2] arm64: dts: qcom: ipq5424: Enable PCIe PHYs and controllers
+From: Manikanta Mylavarapu <quic_mmanikan@quicinc.com>
+Date: Wed, 16 Apr 2025 17:55:38 +0530
+Message-Id: <20250416122538.2953658-3-quic_mmanikan@quicinc.com>
+To: <andersson@kernel.org>, <konradybcio@kernel.org>, <robh@kernel.org>, <krzk+dt@kernel.org>, <conor+dt@kernel.org>, <linux-arm-msm@vger.kernel.org>, <devicetree@vger.kernel.org>, <linux-kernel@vger.kernel.org>
+Cc: <quic_srichara@quicinc.com>, <quic_varada@quicinc.com>
+In-Reply-To: <20250416122538.2953658-1-quic_mmanikan@quicinc.com>
+References: <20250416122538.2953658-1-quic_mmanikan@quicinc.com>
+List-Id: <linux-kernel.vger.kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Enable the PCIe controller and PHY nodes corresponding to RDP466.
+The IPQ5424 RDP466 does not have a wake gpio because it does not
+support low power mode. It only supports a perst gpio.
+
+Signed-off-by: Manikanta Mylavarapu <quic_mmanikan@quicinc.com>
+Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+---
+Changes in V7:
+	- Incorporated the information about the absence of wake GPIO
+	  support into the commit message.
+
+ arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts | 41 ++++++++++++++++++++-
+ 1 file changed, 40 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts b/arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts
+index 0fd0ebe0251d..1f89530cb035 100644
+--- a/arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts
++++ b/arch/arm64/boot/dts/qcom/ipq5424-rdp466.dts
+@@ -82,6 +82,32 @@ &dwc_1 {
+ 	dr_mode = "host";
+ };
+ 
++&pcie2 {
++	pinctrl-0 = <&pcie2_default_state>;
++	pinctrl-names = "default";
++
++	perst-gpios = <&tlmm 31 GPIO_ACTIVE_LOW>;
++
++	status = "okay";
++};
++
++&pcie2_phy {
++	status = "okay";
++};
++
++&pcie3 {
++	pinctrl-0 = <&pcie3_default_state>;
++	pinctrl-names = "default";
++
++	perst-gpios = <&tlmm 34 GPIO_ACTIVE_LOW>;
++
++	status = "okay";
++};
++
++&pcie3_phy {
++	status = "okay";
++};
++
+ &qusb_phy_0 {
+ 	vdd-supply = <&vreg_misc_0p925>;
+ 	vdda-pll-supply = <&vreg_misc_1p8>;
+@@ -197,6 +223,20 @@ data-pins {
+ 			bias-pull-up;
+ 		};
+ 	};
++
++	pcie2_default_state: pcie2-default-state {
++		pins = "gpio31";
++		function = "gpio";
++		drive-strength = <8>;
++		bias-pull-up;
++	};
++
++	pcie3_default_state: pcie3-default-state {
++		pins = "gpio34";
++		function = "gpio";
++		drive-strength = <8>;
++		bias-pull-up;
++	};
+ };
+ 
+ &uart1 {
+@@ -216,4 +256,3 @@ &usb3 {
+ &xo_board {
+ 	clock-frequency = <24000000>;
+ };
+-
+
+-- 
+2.34.1
+
+
