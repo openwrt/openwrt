@@ -88,6 +88,10 @@ ipq40xx_setup_interfaces()
 	netgear,rbs20)
 		ucidef_set_interface_lan "lan1 lan2"
 		;;
+	cradlepoint,ibr1700)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+		ucidef_set_interface "wwan0" device "/dev/cdc-wdm0" protocol "qmi"
+		;;
 	devolo,magic-2-wifi-next)
 		ucidef_set_interface_lan "lan1 lan2 ghn"
 		;;
@@ -190,6 +194,15 @@ ipq40xx_setup_macs()
 		local tffsdev=$(find_mtd_chardev "nand-tffs")
 		wan_mac=$(/usr/bin/fritz_tffs_nand -b -d $tffsdev -n macdsl)
 		;;
+<<<<<<< HEAD
+=======
+	cilab,meshpoint-one)
+		label_mac=$(mtd_get_mac_binary "ART" 0x1006)
+		;;
+	cradlepoint,ibr1700)
+		label_mac=$(mtd_get_mac_binary "0:ART" 0x1006)
+		;;
+>>>>>>> 6b1fab2299 (ipq40xx: add support for cradlepoint ibr1700 and aer2200)
 	devolo,magic-2-wifi-next)
 		lan_mac=$(mtd_get_mac_ascii APPSBLENV MacAddress0)
 		label_mac=$lan_mac
@@ -259,11 +272,52 @@ ipq40xx_setup_macs()
 	[ -n "$label_mac" ] && ucidef_set_label_macaddr $label_mac
 }
 
+
+mtd_get_custdata() {
+	local key="$1"
+
+	part=$(find_mtd_part "0:CUSTDATA")
+	if [ -z "$part" ]; then
+		echo "mtd_get_custdata: partition $mtdname not found!" >&2
+		return
+	fi
+
+	echo -n $(strings "$part" | tr -d ' \t' | sed -n 's/^'"$key"'=//p' | head -n 1)
+}
+
+
+# by default, cradlepoints use the serial for wifi PSK and login password
+# let's replicate this for easier OOBE setup
+
+#TODO: make this a bit more resilient to failure
+cradlepoint_setup()
+{
+	local board="$1"
+
+	case "$board" in
+	cradlepoint,ibr1700)
+		serial=$(mtd_get_custdata "SerialNumber")
+		quasi_uid=$(mtd_get_custdata "MAC0" | cut -c 9-)
+
+		if [ -z "$serial" ] || [ -z "$quasi_uid" ]; then
+			echo "cradlepoint_setup: serial number and/or MAC address were unable to be found! Not configuring root password or wifi..." >&2
+			return
+		fi
+
+		ucidef_set_wireless 2g "OpenWRT-$quasi_uid" sae-mixed "$serial"
+		ucidef_set_wireless 5g "OpenWRT-$quasi_uid-5g" sae-mixed "$serial"
+		ucidef_set_root_password_plain "$serial"
+		;;
+	esac
+}
+
+
 board_config_update
 board=$(board_name)
 ipq40xx_setup_interfaces $board
 ipq40xx_setup_dsl $board
 ipq40xx_setup_macs $board
+cradlepoint_setup $board
 board_config_flush
 
 exit 0
