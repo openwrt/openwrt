@@ -270,6 +270,7 @@ ifeq ($(DUMP),1)
   ifeq ($(ARCH),riscv64)
     CPU_TYPE ?= generic
     CPU_CFLAGS_generic:=-mabi=lp64d -march=rv64gc
+    CPU_CFLAGS_rva22u64:= -mabi=lp64d -march=rv64gc_zicbom_zicbop_zicboz_zfhmin_zba_zbb_zbs_zkt
   endif
   ifeq ($(ARCH),loongarch64)
     CPU_TYPE ?= generic
