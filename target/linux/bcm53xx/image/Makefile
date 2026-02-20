@@ -291,6 +291,15 @@ define Device/dlink
   IMAGE/bin := append-ubi | seama-nand
 endef
 
+define Device/dlink_dir-868l-b1
+  DEVICE_MODEL := DIR-868L
+  DEVICE_VARIANT := B1
+  DEVICE_PACKAGES := kmod-brcmfmac $(USB3_PACKAGES)
+  $(Device/dlink)
+  SIGNATURE := wrgac02_dlink.2013gui_dir868lb
+endef
+TARGET_DEVICES += dlink_dir-868l-b1
+
 define Device/dlink_dir-885l
   DEVICE_MODEL := DIR-885L
   DEVICE_PACKAGES := $(BRCMFMAC_4366B1) $(USB3_PACKAGES)
