@@ -735,6 +735,16 @@ define Build/senao-header
 	&& mv $@.new $@ || rm -f $@
 endef
 
+define Build/sercomm-factory-wrap
+	$(TOPDIR)/scripts/sercomm-factory-wrap.py \
+		--hw-id=$(SERCOMM_HWID) --hw-revision=$(SERCOMM_HWREV) \
+		--function-code=$(SERCOMM_FUNCTION_CODE) \
+		--company-code=$(SERCOMM_COMPANY_CODE) \
+		--kernel-split=$(SERCOMM_KERNEL_SPLIT) \
+		$(1) $@ $@.wrapped \
+	&& mv $@.wrapped $@
+endef
+
 define Build/sysupgrade-tar
 	$(eval dtb=$(call param_get,dtb,$(1)))
 	sh $(TOPDIR)/scripts/sysupgrade-tar.sh \
