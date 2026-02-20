@@ -705,6 +705,63 @@ endef
 
 $(eval $(call KernelPackage,dsa-b53-mdio))
 
+
+define KernelPackage/dsa-ksz9477
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Microchip KSZ9477 family managed switch DSA support
+  DEPENDS:=+kmod-dsa +kmod-dsa-notag +kmod-phy-micrel
+  KCONFIG:= \
+	CONFIG_NET_DSA_MICROCHIP_KSZ_COMMON \
+	CONFIG_NET_DSA_MICROCHIP_KSZ_I2C=n \
+	CONFIG_NET_DSA_MICROCHIP_KSZ_SPI=n \
+	CONFIG_NET_DSA_MICROCHIP_KSZ_PTP=n \
+	CONFIG_NET_DSA_MICROCHIP_KSZ8863_SMI=n \
+	CONFIG_NET_DSA_TAG_KSZ=y
+  FILES:= \
+	$(LINUX_DIR)/drivers/net/dsa/microchip/ksz_switch.ko \
+	$(LINUX_DIR)/net/dsa/tag_ksz.ko
+  AUTOLOAD:=$(call AutoProbe,ksz_switch)
+endef
+
+define KernelPackage/dsa-ksz9477/description
+  Microchip KSZ9477 family managed switch support
+endef
+
+$(eval $(call KernelPackage,dsa-ksz9477))
+
+
+define KernelPackage/dsa-ksz9477-i2c
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Microchip KSZ9477 family managed switch DSA support via I2C
+  DEPENDS:=+kmod-dsa-ksz9477 +kmod-i2c-core +kmod-regmap-i2c +kmod-regmap-core
+  KCONFIG:=CONFIG_NET_DSA_MICROCHIP_KSZ9477_I2C
+  FILES:= $(LINUX_DIR)/drivers/net/dsa/microchip/ksz9477_i2c.ko
+  AUTOLOAD:=$(call AutoProbe,ksz9477_i2c)
+endef
+
+define KernelPackage/dsa-ksz9477-i2c/description
+  Microchip KSZ9477 family managed switch support via I2C
+endef
+
+$(eval $(call KernelPackage,dsa-ksz9477-i2c))
+
+
+define KernelPackage/dsa-ksz9477-spi
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Microchip KSZ9477 family managed switch DSA support via SPI
+  DEPENDS:=+kmod-dsa-ksz9477
+  KCONFIG:=CONFIG_NET_DSA_MICROCHIP_KSZ9477_SPI
+  FILES:= $(LINUX_DIR)/drivers/net/dsa/microchip/ksz9477_spi.ko
+  AUTOLOAD:=$(call AutoProbe,ksz9477_spi)
+endef
+
+define KernelPackage/dsa-ksz9477-spi/description
+  Microchip KSZ9477 family managed switch support via SPI
+endef
+
+$(eval $(call KernelPackage,dsa-ksz9477-spi))
+
+
 define KernelPackage/dsa-mv88e6060
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Marvell MV88E6060 DSA Switch
