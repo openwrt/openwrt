@@ -27,3 +27,15 @@ define Device/qcom_rdp433
 	IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-rootfs | pad-rootfs | check-size | append-metadata
 endef
 TARGET_DEVICES += qcom_rdp433
+
+define Device/ubnt_ucgfiber
+	$(call Device/FitImageLzma)
+	$(call Device/EmmcImage)
+	DEVICE_VENDOR := Ubiquiti Networks
+	DEVICE_MODEL := Cloud Gateway Fiber
+	SOC := ipq9574
+	DEVICE_PACKAGES := kmod-gpio-pca953x kmod-iio-st_accel-i2c kmod-hwmon-lm63 \
+			   kmod-phy-rtl8261n kmod-rtc-s35390a kmod-sfp \
+			   -wpad-basic-mbedtls -kmod-usb3 -kmod-usb-dwc3 -kmod-usb-dwc3-qcom
+endef
+TARGET_DEVICES += ubnt_ucgfiber
