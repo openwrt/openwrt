@@ -233,7 +233,7 @@ Signed-off-by: Sander Vanheule <sander@svanheule.net>
 +	return 0;
 +}
 +
-+static const struct regmap_field *rtl8231_led_get_field(struct device *dev, struct regmap *map,
++static struct regmap_field *rtl8231_led_get_field(struct device *dev, struct regmap *map,
 +		unsigned int port_index, unsigned int led_index)
 +{
 +	unsigned int offset = port_index / RTL8231_LED_PER_REG;
