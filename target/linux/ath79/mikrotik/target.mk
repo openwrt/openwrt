@@ -3,7 +3,7 @@ FEATURES += minor nand
 KERNELNAME := vmlinux vmlinuz
 IMAGES_DIR := ../../..
 
-DEFAULT_PACKAGES += wpad-basic-mbedtls yafut
+DEFAULT_PACKAGES += wpad-basic-mbedtls yafut kmod-ag71xx-legacy kmod-phy-at803x
 
 define Target/Description
 	Build firmware images for MikroTik devices based on Qualcomm Atheros
