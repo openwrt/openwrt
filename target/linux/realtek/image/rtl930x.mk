@@ -7,6 +7,15 @@ define Build/xikestor-nosimg
   mv $@.new $@
 endef
 
+define Device/hasivo_s600w-5xgt-1sp
+  SOC := rtl9303
+  DEVICE_VENDOR := Hasivo
+  DEVICE_MODEL := S600W-5XGT-1S+
+  IMAGE_SIZE := 12288k
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += hasivo_s600w-5xgt-1sp
+
 define Device/hasivo_s1100w-8xgt-se
   SOC := rtl9303
   DEVICE_VENDOR := Hasivo
