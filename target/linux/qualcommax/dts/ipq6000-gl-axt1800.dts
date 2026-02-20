@@ -9,7 +9,7 @@
 	compatible = "glinet,gl-axt1800", "qcom,ipq6018";
 
 	aliases {
-		label-mac-device = &dp1;
+		label-mac-device = &swport1;
 	};
 
 	vcc_sd: regulator-vcc-sd {
@@ -135,33 +135,20 @@
 	status = "okay";
 };
 
-&switch {
-	switch_lan_bmp = <(ESS_PORT2 | ESS_PORT3)>;
-	switch_wan_bmp = <ESS_PORT1>;
-};
-
-&dp1 {
-	status = "okay";
-	phy-handle = <&qca8075_0>;
-	label = "wan";
-	nvmem-cells = <&macaddr_wan>;
-	nvmem-cell-names = "mac-address";
-};
-
-&dp2 {
-	status = "okay";
-	phy-handle = <&qca8075_1>;
+&swport2 {
 	label = "lan2";
-	nvmem-cells = <&macaddr_lan>;
-	nvmem-cell-names = "mac-address";
 };
 
-&dp3 {
-	status = "okay";
-	phy-handle = <&qca8075_2>;
+&swport3 {
 	label = "lan1";
-	nvmem-cells = <&macaddr_lan>;
-	nvmem-cell-names = "mac-address";
+};
+
+&swport2 {
+	label = "lan2";
+};
+
+&swport3 {
+	label = "lan1";
 };
 
 &wifi {

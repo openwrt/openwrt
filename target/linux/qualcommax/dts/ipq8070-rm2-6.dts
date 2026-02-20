@@ -24,10 +24,10 @@
 		 * Aliases as required by u-boot
 		 * to patch MAC addresses
 		 */
-		ethernet0 = &dp4;
-		ethernet1 = &dp2;
-		ethernet2 = &dp5;
-		label-mac-device = &dp4;
+		ethernet0 = &swport4;
+		ethernet1 = &swport2;
+		ethernet2 = &swport5;
+		label-mac-device = &swport4;
 	};
 
 	chosen {
@@ -253,53 +253,60 @@
 	};
 };
 
+&uniphy0 {
+	status = "okay";
+};
+
 &switch {
 	status = "okay";
 
-	switch_lan_bmp = <(ESS_PORT2 | ESS_PORT4)>;
-	switch_wan_bmp = <ESS_PORT5>;
-	switch_mac_mode = <MAC_MODE_PSGMII>;
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
 
-	qcom,port_phyinfo {
-		port@2 {
-			port_id = <2>;
-			phy_address = <1>;
+		port@0 {
+			reg = <0>;
+			ethernet = <&edma>;
+			phy-mode = "internal";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
 		};
-		port@4 {
-			port_id = <4>;
-			phy_address = <3>;
+
+		/*
+		 * Directly connect to the Hi5630
+		 * PLC (Power Line Communication)
+		 */
+		swport2: port@2 {
+			reg = <2>;
+			label = "plc";
+			phy-handle = <&qca8075_1>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 1>;
 		};
-		port@5 {
-			port_id = <5>;
-			phy_address = <4>;
+
+		swport4: port@4 {
+			reg = <4>;
+			label = "lan";
+			phy-handle = <&qca8075_3>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 3>;
+		};
+
+		swport5: port@5 {
+			reg = <5>;
+			label = "wan";
+			phy-handle = <&qca8075_4>;
+			phy-mode = "psgmii";
+			pcs-handle = <&uniphy0 4>;
 		};
 	};
 };
 
 &edma {
 	status = "okay";
-};
-
-/*
- * Directly connect to the Hi5630
- * PLC (Power Line Communication)
- */
-&dp2 {
-	status = "okay";
-	phy-handle = <&qca8075_1>;
-	label = "plc";
-};
-
-&dp4 {
-	status = "okay";
-	phy-handle = <&qca8075_3>;
-	label = "lan";
-};
-
-&dp5 {
-	status = "okay";
-	phy-handle = <&qca8075_4>;
-	label = "wan";
 };
 
 &wifi {
