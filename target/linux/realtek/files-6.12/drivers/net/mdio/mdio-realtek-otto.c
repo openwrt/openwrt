@@ -16,12 +16,13 @@
 #define RTMDIO_PHY_AQR113C_A			0x31c31c12
 #define RTMDIO_PHY_AQR113C_B			0x31c31c13
 #define RTMDIO_PHY_AQR813			0x31c31cb2
+#define RTMDIO_PHY_RTL8218D			0x001cc983
+#define RTMDIO_PHY_RTL8218E			0x001cc984
 #define RTMDIO_PHY_RTL8221B_VB_CG		0x001cc849
 #define RTMDIO_PHY_RTL8221B_VM_CG		0x001cc84a
 #define RTMDIO_PHY_RTL8224			0x001ccad0
 #define RTMDIO_PHY_RTL8226			0x001cc838
-#define RTMDIO_PHY_RTL8218D			0x001cc983
-#define RTMDIO_PHY_RTL8218E			0x001cc984
+#define RTMDIO_PHY_RTL8261			0x001ccaf3
 
 #define RTMDIO_PHY_MAC_1G			3
 #define RTMDIO_PHY_MAC_2G_PLUS			1
@@ -636,6 +637,11 @@ static int rtmdio_get_phy_info(struct mii_bus *bus, int addr, struct rtmdio_phy_
 		phyinfo->poll_duplex = RTMDIO_PHY_POLL_MMD(31, 0xa400, 8);
 		phyinfo->poll_adv_1000 = RTMDIO_PHY_POLL_MMD(31, 0xa412, 9);
 		phyinfo->poll_lpa_1000 = RTMDIO_PHY_POLL_MMD(31, 0xa414, 11);
+		break;
+	case RTMDIO_PHY_RTL8261:
+		phyinfo->mac_type = RTMDIO_PHY_MAC_2G_PLUS;
+		phyinfo->has_giga_lite = true;
+		phyinfo->has_res_reg = true;
 		break;
 	default:
 		pr_warn("skip polling setup for unknown PHY %08x on port %d\n", phyid, addr);
