@@ -469,6 +469,18 @@ define U-Boot/mt7981_nokia_ea0326gmp
   DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
 endef
 
+define U-Boot/mt7981_totolink_X30
+  NAME:=TOTOLINK X30
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=totolink_X30
+  UBOOT_CONFIG:=mt7981_totolink_X30
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
+endef
+
 define U-Boot/mt7981_openwrt_one-snand
   NAME:=OpenWrt One NAND
   BUILD_SUBTARGET:=filogic
@@ -1163,6 +1175,7 @@ UBOOT_TARGETS := \
 	mt7981_snr_snr-cpe-ax2 \
 	mt7981_xiaomi_mi-router-ax3000t \
 	mt7981_xiaomi_mi-router-wr30u \
+	mt7981_totolink_X30 \
 	mt7986_acer_predator-w6x \
 	mt7986_bananapi_bpi-r3-emmc \
 	mt7986_bananapi_bpi-r3-sdmmc \
