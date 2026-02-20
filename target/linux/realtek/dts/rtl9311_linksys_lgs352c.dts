@@ -368,24 +368,24 @@
 			managed = "in-band-status";
 			sfp = <&sfp0>;
 		};
-		port@49 {
-			reg = <49>;
+		port@50 {
+			reg = <50>;
 			label = "lan50";
 			pcs-handle = <&serdes9>;
 			phy-mode = "1000base-x";
 			managed = "in-band-status";
 			sfp = <&sfp1>;
 		};
-		port@50 {
-			reg = <50>;
+		port@52 {
+			reg = <52>;
 			label = "lan51";
 			pcs-handle = <&serdes10>;
 			phy-mode = "1000base-x";
 			managed = "in-band-status";
 			sfp = <&sfp2>;
 		};
-		port@51 {
-			reg = <51>;
+		port@53 {
+			reg = <53>;
 			label = "lan52";
 			pcs-handle = <&serdes11>;
 			phy-mode = "1000base-x";
@@ -403,4 +403,20 @@
 			};
 		};
 	};
+};
+
+&serdes8 {
+	realtek,pnswap-tx;
+};
+
+&serdes9 {
+	realtek,pnswap-tx;
+};
+
+&serdes10 {
+	realtek,pnswap-tx;
+};
+
+&serdes11 {
+	realtek,pnswap-tx;
 };
