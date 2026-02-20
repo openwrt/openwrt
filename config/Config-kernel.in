@@ -1388,6 +1388,58 @@ config KERNEL_EROFS_FS_ZIP_LZMA
 	bool
 	default y if KERNEL_EROFS_FS
 
+#
+# Device Mapper Verity support (built-in)
+#
+config KERNEL_CRYPTO
+	def_bool n
+
+config KERNEL_CRYPTO_HASH
+	def_bool n
+
+config KERNEL_MD
+	def_bool n
+
+config KERNEL_BLK_DEV_DM
+	def_bool n
+
+config KERNEL_BLK_DEV_DM_BUILTIN
+	def_bool n
+
+config KERNEL_DM_BUFIO
+	def_bool n
+
+config KERNEL_DAX
+	def_bool n
+
+config KERNEL_DM_INIT
+	def_bool n
+
+config KERNEL_DM_DEBUG_BLOCK_MANAGER_LOCKING
+	def_bool n
+
+config KERNEL_DM_VERITY
+	bool "Compile the kernel with built-in Device Mapper Verity support"
+	select KERNEL_CRYPTO
+	select KERNEL_CRYPTO_HASH
+	select KERNEL_MD
+	select KERNEL_BLK_DEV_DM
+	select KERNEL_BLK_DEV_DM_BUILTIN
+	select KERNEL_DAX
+	select KERNEL_DM_BUFIO
+	select KERNEL_DM_INIT
+	help
+	  This builds Device Mapper Verity support directly into the kernel,
+	  allowing it to be used for authenticating the root filesystem at
+	  boot time without requiring an initramfs.
+
+	  dm-verity is a transparent block device integrity checking target
+	  that validates data against a pre-generated tree of cryptographic
+	  checksums stored on a second device.
+
+	  DM_INIT is also selected to allow configuring dm-verity devices
+	  via the dm-mod.create= kernel command line parameter.
+
 menu "Filesystem ACL and attr support options"
 	config USE_FS_ACL_ATTR
 		bool "Use filesystem ACL and attr support by default"
