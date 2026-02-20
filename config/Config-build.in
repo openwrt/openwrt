@@ -107,10 +107,9 @@ menu "Global build settings"
 
 	config CLEAN_IPKG
 		bool
-		prompt "Remove ipkg/opkg status data files in final images"
-		depends on !USE_APK
+		prompt "Remove ipkg/opkg/apk status data files in final images"
 		help
-		  This removes all ipkg/opkg status data files from the target directory
+		  This removes all ipkg/opkg/apk status data files from the target directory
 		  before building the root filesystem.
 
 	config IPK_FILES_CHECKSUMS
