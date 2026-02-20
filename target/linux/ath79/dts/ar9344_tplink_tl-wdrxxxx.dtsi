@@ -16,12 +16,6 @@
 	leds: leds {
 		compatible = "gpio-leds";
 
-		wlan2g {
-			label = "green:wlan2g";
-			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
-		};
-
 		led_system: system {
 			label = "green:system";
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
@@ -54,6 +48,13 @@
 
 &ref {
 	clock-frequency = <40000000>;
+};
+
+&wmac {
+	led {
+		led-sources = <13>;
+		led-active-low;
+	};
 };
 
 &spi {

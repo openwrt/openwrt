@@ -27,13 +27,6 @@
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 		};
 
-		led-wlan {
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_WLAN;
-			linux,default-trigger = "phy0tpt";
-			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
-		};
-
 		led_status: led-power {
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_POWER;
@@ -56,4 +49,11 @@
 	status = "okay";
 
 	phy-handle = <&phy1>;
+};
+
+&wmac {
+	led {
+		led-sources = <14>;
+		led-active-low;
+	};
 };

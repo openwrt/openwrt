@@ -28,13 +28,6 @@
 			default-state = "on";
 		};
 
-		wifi {
-			function = LED_FUNCTION_WLAN;
-			color = <LED_COLOR_ID_GREEN>;
-			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
-		};
-
 		qss {
 			label = "green:qss";
 			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
@@ -183,4 +176,9 @@
 
 	nvmem-cells = <&macaddr_uboot_1fc00 0>, <&cal_art_1000>;
 	nvmem-cell-names = "mac-address", "calibration";
+
+	led {
+		led-sources = <3>;
+		led-active-low;
+	};
 };

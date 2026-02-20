@@ -36,12 +36,6 @@
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 			default-state = "keep";
 		};
-
-		wlan2g {
-			label = "blue:wlan2g";
-			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
-		};
 	};
 };
 
@@ -121,4 +115,9 @@
 
 	nvmem-cells = <&cal_art_1000>;
 	nvmem-cell-names = "calibration";
+
+	led {
+		led-sources = <13>;
+		led-active-low;
+	};
 };

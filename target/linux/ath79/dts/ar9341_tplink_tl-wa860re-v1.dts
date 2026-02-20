@@ -62,17 +62,17 @@
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 		};
 
-		wlan_green {
-			function = LED_FUNCTION_WLAN;
-			color = <LED_COLOR_ID_GREEN>;
-			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
-		};
-
 		wlan_orange {
 			function = LED_FUNCTION_WLAN;
 			color = <LED_COLOR_ID_ORANGE>;
 			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
 		};
+	};
+};
+
+&wmac {
+	led {
+		led-sources = <2>;
+		led-active-low;
 	};
 };
