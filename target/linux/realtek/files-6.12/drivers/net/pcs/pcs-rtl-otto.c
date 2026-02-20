@@ -1942,11 +1942,11 @@ static void rtpcs_930x_sds_rxcal_vth_get(struct rtpcs_serdes *sds,
 	vth_list[0] = rtpcs_sds_read_bits(sds, 0x1f, 0x14, 2, 0); /* v_thp set bin */
 	vth_list[1] = rtpcs_sds_read_bits(sds, 0x1f, 0x14, 5, 3); /* v_thn set bin */
 
-	pr_info("vth_set_bin = %d", vth_list[0]);
-	pr_info("vth_set_bin = %d", vth_list[1]);
+	pr_info("vthp_set_bin = %d", vth_list[0]);
+	pr_info("vthn_set_bin = %d", vth_list[1]);
 
 	vth_manual = !!rtpcs_sds_read_bits(sds, 0x2e, 0x0f, 13, 13);
-	pr_info("Vth Maunal = %d", vth_manual);
+	pr_info("vth_manual = %d", vth_manual);
 }
 
 static void rtpcs_930x_sds_rxcal_tap_manual(struct rtpcs_serdes *sds,
@@ -2028,9 +2028,9 @@ static void rtpcs_930x_sds_rxcal_tap_get(struct rtpcs_serdes *sds,
 		tap0_coef_bin = rtpcs_sds_read_bits(sds, 0x1f, 0x14, 4, 0);
 
 		if (tap0_sign_out == 1)
-			pr_info("Tap0 Sign : -");
+			pr_info("tap0_sign_out : -");
 		else
-			pr_info("Tap0 Sign : +");
+			pr_info("tap0_sign_out : +");
 
 		pr_info("tap0_coef_bin = %d", tap0_coef_bin);
 
@@ -2082,7 +2082,7 @@ static void rtpcs_930x_sds_do_rx_calibration_1(struct rtpcs_serdes *sds,
 {
 	/* From both rtl9300_rxCaliConf_serdes_myParam and rtl9300_rxCaliConf_phy_myParam */
 	int tap0_init_val = 0x1f; /* Initial Decision Fed Equalizer 0 tap */
-	int vth_min       = 0x0;
+	int vth_min       = 0x1;
 
 	pr_info("start_1.1.1 initial value for sds %d\n", sds->id);
 	rtpcs_sds_write(sds, 6,  0, 0);
@@ -2224,10 +2224,13 @@ static void rtpcs_930x_sds_do_rx_calibration_2_3(struct rtpcs_serdes *sds)
 		pr_info("%s: fgcal_gray: %d, fgcal_binary %d\n",
 			__func__, fgcal_gray, fgcal_binary);
 
-		offset_range = rtpcs_sds_read_bits(sds, 0x2e, 0x15, 15, 14);
-
 		if (fgcal_binary <= 60 && fgcal_binary >= 3)
 			break;
+
+		offset_range = rtpcs_sds_read_bits(sds, 0x2e, 0x15, 15, 14);
+
+		pr_info("%s: offset_range: %d\n",
+			__func__, offset_range);
 
 		if (offset_range == 3) {
 			pr_info("%s: Foreground Calibration result marginal!", __func__);
