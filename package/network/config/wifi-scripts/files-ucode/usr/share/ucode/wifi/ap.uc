@@ -150,6 +150,9 @@ function iface_auth_type(config) {
 			set_default(config, 'sae_password_file', `/var/run/hostapd-${config.ifname}.sae`);
 			touch_file(config.sae_password_file);
 		}
+
+		set_default(config, 'extended_key_id', 1);
+
 		break;
 
 	case 'eap':
@@ -190,7 +193,7 @@ function iface_auth_type(config) {
 		'macaddr_acl', 'wpa_psk_radius', 'wpa_psk', 'wpa_passphrase', 'wpa_psk_file',
 		'eapol_version', 'dynamic_vlan', 'radius_request_cui', 'eap_reauth_period',
 		'radius_das_client', 'radius_das_port', 'own_ip_addr', 'dynamic_own_ip_addr',
-		'wpa_disable_eapol_key_retries', 'auth_algs', 'wpa', 'wpa_pairwise',
+		'wpa_disable_eapol_key_retries', 'auth_algs', 'wpa', 'wpa_pairwise', 'extended_key_id',
 		'erp_domain', 'fils_realm', 'erp_send_reauth_start', 'fils_cache_id'
 	]);
 
