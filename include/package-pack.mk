@@ -348,11 +348,9 @@ endif
       endif
 
       .PHONY: $(PKG_INSTALL_STAMP).$(1)
-      ifeq ($(CONFIG_PACKAGE_$(1)),y)
-        compile: $(PKG_INSTALL_STAMP).$(1)
-      endif
+      compile: $(PKG_INSTALL_STAMP).$(1)
       $(PKG_INSTALL_STAMP).$(1): prepare-package-install
-		echo "$(1)" >> $(PKG_INSTALL_STAMP)
+		$(if $(filter y,$(CONFIG_PACKAGE_$(1))),echo "$(1)" >> $(PKG_INSTALL_STAMP))
     else
       $(if $(CONFIG_PACKAGE_$(1)),$$(warning WARNING: skipping $(1) -- package has no install section))
     endif
