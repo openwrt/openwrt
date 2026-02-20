@@ -1,0 +1,631 @@
+From a38126870488398932e017dd9d76174b4aadbbbb Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Sat, 10 Sep 2022 15:46:09 +0200
+Subject: [PATCH] net: dsa: qca8k: add IPQ4019 built-in switch support
+
+Qualcomm IPQ40xx SoC-s have a variant of QCA8337N switch built-in.
+
+It shares most of the stuff with its external counterpart, however it is
+modified for the SoC.
+Namely, it doesn't have second CPU port (Port 6), so it has 6 ports
+instead of 7.
+It also has no built-in PHY-s but rather requires external PSGMII based
+companion PHY-s (QCA8072 and QCA8075) for which it first needs to carry
+out calibration before using them.
+PSGMII has a SoC built-in PHY that is used to connect to the PHY-s which
+unfortunately requires some magic values as the datasheet doesnt document
+the bits that are being set or the register at all.
+
+Since its built-in it is MMIO like other peripherals and doesn't have its
+own MDIO bus but depends on the SoC provided one.
+
+CPU connection is at Port 0 and it uses some kind of a internal connection
+and no traditional RGMII/SGMII.
+
+It also doesn't use in-band tagging like other qca8k switches so a out of
+band based tagger is used.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+---
+ drivers/net/dsa/qca/Kconfig         |   8 +
+ drivers/net/dsa/qca/Makefile        |   1 +
+ drivers/net/dsa/qca/qca8k-common.c  |   6 +-
+ drivers/net/dsa/qca/qca8k-ipq4019.c | 948 ++++++++++++++++++++++++++++
+ drivers/net/dsa/qca/qca8k.h         |  56 ++
+ 5 files changed, 1016 insertions(+), 3 deletions(-)
+ create mode 100644 drivers/net/dsa/qca/qca8k-ipq4019.c
+
+--- a/drivers/net/dsa/qca/Kconfig
++++ b/drivers/net/dsa/qca/Kconfig
+@@ -24,3 +24,11 @@ config NET_DSA_QCA8K_LEDS_SUPPORT
+ 	help
+ 	  This enabled support for LEDs present on the Qualcomm Atheros
+ 	  QCA8K Ethernet switch chips.
++
++config NET_DSA_QCA8K_IPQ4019
++	tristate "Qualcomm Atheros IPQ4019 Ethernet switch support"
++	select NET_DSA_TAG_OOB
++	select REGMAP_MMIO
++	help
++	  This enables support for the switch built-into Qualcomm Atheros
++	  IPQ4019 SoCs.
+--- a/drivers/net/dsa/qca/Makefile
++++ b/drivers/net/dsa/qca/Makefile
+@@ -5,3 +5,4 @@ qca8k-y 			+= qca8k-common.o qca8k-8xxx.
+ ifdef CONFIG_NET_DSA_QCA8K_LEDS_SUPPORT
+ qca8k-y				+= qca8k-leds.o
+ endif
++obj-$(CONFIG_NET_DSA_QCA8K_IPQ4019)	+= qca8k-ipq4019.o qca8k-common.o
+--- a/drivers/net/dsa/qca/qca8k-common.c
++++ b/drivers/net/dsa/qca/qca8k-common.c
+@@ -412,7 +412,7 @@ static int qca8k_vlan_del(struct qca8k_p
+ 
+ 	/* Check if we're the last member to be removed */
+ 	del = true;
+-	for (i = 0; i < QCA8K_NUM_PORTS; i++) {
++	for (i = 0; i < priv->ds->num_ports; i++) {
+ 		mask = QCA8K_VTU_FUNC0_EG_MODE_PORT_NOT(i);
+ 
+ 		if ((reg & mask) != mask) {
+@@ -616,7 +616,7 @@ static int qca8k_update_port_member(stru
+ 	u32 port_mask = BIT(dp->cpu_dp->index);
+ 	int i, ret;
+ 
+-	for (i = 0; i < QCA8K_NUM_PORTS; i++) {
++	for (i = 0; i < priv->ds->num_ports; i++) {
+ 		if (i == port)
+ 			continue;
+ 		if (dsa_is_cpu_port(priv->ds, i))
+--- /dev/null
++++ b/drivers/net/dsa/qca/qca8k-ipq4019.c
+@@ -0,0 +1,456 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2009 Felix Fietkau <nbd@nbd.name>
++ * Copyright (C) 2011-2012, 2020-2021 Gabor Juhos <juhosg@openwrt.org>
++ * Copyright (c) 2015, 2019, The Linux Foundation. All rights reserved.
++ * Copyright (c) 2016 John Crispin <john@phrozen.org>
++ * Copyright (c) 2022 Robert Marko <robert.marko@sartura.hr>
++ */
++
++#include <linux/module.h>
++#include <linux/phy.h>
++#include <linux/netdevice.h>
++#include <linux/bitfield.h>
++#include <linux/regmap.h>
++#include <net/dsa.h>
++#include <linux/of_net.h>
++#include <linux/of_mdio.h>
++#include <linux/platform_device.h>
++#include <linux/mdio.h>
++#include <linux/phylink.h>
++
++#include "qca8k.h"
++
++static struct regmap_config qca8k_ipq4019_regmap_config = {
++	.reg_bits = 32,
++	.val_bits = 32,
++	.reg_stride = 4,
++	.max_register = 0x16ac, /* end MIB - Port6 range */
++	.rd_table = &qca8k_readable_table,
++};
++
++static struct regmap_config qca8k_ipq4019_psgmii_phy_regmap_config = {
++	.name = "psgmii-phy",
++	.reg_bits = 32,
++	.val_bits = 32,
++	.reg_stride = 4,
++	.max_register = 0x7fc,
++};
++
++static enum dsa_tag_protocol
++qca8k_ipq4019_get_tag_protocol(struct dsa_switch *ds, int port,
++			       enum dsa_tag_protocol mp)
++{
++	return DSA_TAG_PROTO_OOB;
++}
++
++static int qca8k_ipq4019_pcs_config(struct phylink_pcs *pcs, unsigned int mode,
++				    phy_interface_t interface,
++				    const unsigned long *advertising,
++				    bool permit_pause_to_mac)
++{
++	return 0;
++}
++
++static void qca8k_ipq4019_pcs_an_restart(struct phylink_pcs *pcs)
++{
++}
++
++static struct qca8k_pcs *pcs_to_qca8k_pcs(struct phylink_pcs *pcs)
++{
++	return container_of(pcs, struct qca8k_pcs, pcs);
++}
++
++static void qca8k_ipq4019_pcs_get_state(struct phylink_pcs *pcs, unsigned int neg_mode,
++					struct phylink_link_state *state)
++{
++	struct qca8k_priv *priv = pcs_to_qca8k_pcs(pcs)->priv;
++	int port = pcs_to_qca8k_pcs(pcs)->port;
++	u32 reg;
++	int ret;
++
++	ret = qca8k_read(priv, QCA8K_REG_PORT_STATUS(port), &reg);
++	if (ret < 0) {
++		state->link = false;
++		return;
++	}
++
++	state->link = !!(reg & QCA8K_PORT_STATUS_LINK_UP);
++	state->an_complete = state->link;
++	state->duplex = (reg & QCA8K_PORT_STATUS_DUPLEX) ? DUPLEX_FULL :
++							   DUPLEX_HALF;
++
++	switch (reg & QCA8K_PORT_STATUS_SPEED) {
++	case QCA8K_PORT_STATUS_SPEED_10:
++		state->speed = SPEED_10;
++		break;
++	case QCA8K_PORT_STATUS_SPEED_100:
++		state->speed = SPEED_100;
++		break;
++	case QCA8K_PORT_STATUS_SPEED_1000:
++		state->speed = SPEED_1000;
++		break;
++	default:
++		state->speed = SPEED_UNKNOWN;
++		break;
++	}
++
++	if (reg & QCA8K_PORT_STATUS_RXFLOW)
++		state->pause |= MLO_PAUSE_RX;
++	if (reg & QCA8K_PORT_STATUS_TXFLOW)
++		state->pause |= MLO_PAUSE_TX;
++}
++
++static const struct phylink_pcs_ops qca8k_pcs_ops = {
++	.pcs_get_state = qca8k_ipq4019_pcs_get_state,
++	.pcs_config = qca8k_ipq4019_pcs_config,
++	.pcs_an_restart = qca8k_ipq4019_pcs_an_restart,
++};
++
++static void qca8k_ipq4019_setup_pcs(struct qca8k_priv *priv,
++				    struct qca8k_pcs *qpcs,
++				    int port)
++{
++	qpcs->pcs.ops = &qca8k_pcs_ops;
++
++	/* We don't have interrupts for link changes, so we need to poll */
++	qpcs->pcs.poll = true;
++	qpcs->priv = priv;
++	qpcs->port = port;
++}
++
++static void qca8k_ipq4019_phylink_get_caps(struct dsa_switch *ds, int port,
++					   struct phylink_config *config)
++{
++	switch (port) {
++	case 0: /* CPU port */
++		__set_bit(PHY_INTERFACE_MODE_INTERNAL,
++			  config->supported_interfaces);
++		break;
++
++	case 1:
++	case 2:
++	case 3:
++		__set_bit(PHY_INTERFACE_MODE_PSGMII,
++			  config->supported_interfaces);
++		break;
++	case 4:
++	case 5:
++		phy_interface_set_rgmii(config->supported_interfaces);
++		__set_bit(PHY_INTERFACE_MODE_PSGMII,
++			  config->supported_interfaces);
++		break;
++	}
++
++	config->mac_capabilities = MAC_ASYM_PAUSE | MAC_SYM_PAUSE |
++		MAC_10 | MAC_100 | MAC_1000FD;
++}
++
++static int
++qca8k_ipq4019_setup_port(struct dsa_switch *ds, int port)
++{
++	struct qca8k_priv *priv = (struct qca8k_priv *)ds->priv;
++	int ret;
++
++	/* CPU port gets connected to all user ports of the switch */
++	if (dsa_is_cpu_port(ds, port)) {
++		ret = qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(port),
++				QCA8K_PORT_LOOKUP_MEMBER, dsa_user_ports(ds));
++		if (ret)
++			return ret;
++
++		/* Disable CPU ARP Auto-learning by default */
++		ret = regmap_clear_bits(priv->regmap,
++					QCA8K_PORT_LOOKUP_CTRL(port),
++					QCA8K_PORT_LOOKUP_LEARN);
++		if (ret)
++			return ret;
++	}
++
++	/* Individual user ports get connected to CPU port only */
++	if (dsa_is_user_port(ds, port)) {
++		ret = qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(port),
++				QCA8K_PORT_LOOKUP_MEMBER,
++				BIT(QCA8K_IPQ4019_CPU_PORT));
++		if (ret)
++			return ret;
++
++		/* Enable ARP Auto-learning by default */
++		ret = regmap_set_bits(priv->regmap, QCA8K_PORT_LOOKUP_CTRL(port),
++				      QCA8K_PORT_LOOKUP_LEARN);
++		if (ret)
++			return ret;
++
++		/* For port based vlans to work we need to set the
++		 * default egress vid
++		 */
++		ret = qca8k_rmw(priv, QCA8K_EGRESS_VLAN(port),
++				QCA8K_EGREES_VLAN_PORT_MASK(port),
++				QCA8K_EGREES_VLAN_PORT(port, QCA8K_PORT_VID_DEF));
++		if (ret)
++			return ret;
++
++		ret = qca8k_write(priv, QCA8K_REG_PORT_VLAN_CTRL0(port),
++				  QCA8K_PORT_VLAN_CVID(QCA8K_PORT_VID_DEF) |
++				  QCA8K_PORT_VLAN_SVID(QCA8K_PORT_VID_DEF));
++		if (ret)
++			return ret;
++	}
++
++	return 0;
++}
++
++static int
++qca8k_ipq4019_setup(struct dsa_switch *ds)
++{
++	struct qca8k_priv *priv = (struct qca8k_priv *)ds->priv;
++	int ret, i;
++
++	/* Make sure that port 0 is the cpu port */
++	if (!dsa_is_cpu_port(ds, QCA8K_IPQ4019_CPU_PORT)) {
++		dev_err(priv->dev, "port %d is not the CPU port",
++			QCA8K_IPQ4019_CPU_PORT);
++		return -EINVAL;
++	}
++
++	qca8k_ipq4019_setup_pcs(priv, &priv->pcs_port_0, 0);
++
++	/* Enable CPU Port */
++	ret = regmap_set_bits(priv->regmap, QCA8K_REG_GLOBAL_FW_CTRL0,
++			      QCA8K_GLOBAL_FW_CTRL0_CPU_PORT_EN);
++	if (ret) {
++		dev_err(priv->dev, "failed enabling CPU port");
++		return ret;
++	}
++
++	/* Enable MIB counters */
++	ret = qca8k_mib_init(priv);
++	if (ret)
++		dev_warn(priv->dev, "MIB init failed");
++
++	/* Disable forwarding by default on all ports */
++	for (i = 0; i < QCA8K_IPQ4019_NUM_PORTS; i++) {
++		ret = qca8k_rmw(priv, QCA8K_PORT_LOOKUP_CTRL(i),
++				QCA8K_PORT_LOOKUP_MEMBER, 0);
++		if (ret)
++			return ret;
++	}
++
++	/* Enable QCA header mode on the CPU port */
++	ret = qca8k_write(priv, QCA8K_REG_PORT_HDR_CTRL(QCA8K_IPQ4019_CPU_PORT),
++			  FIELD_PREP(QCA8K_PORT_HDR_CTRL_TX_MASK, QCA8K_PORT_HDR_CTRL_ALL) |
++			  FIELD_PREP(QCA8K_PORT_HDR_CTRL_RX_MASK, QCA8K_PORT_HDR_CTRL_ALL));
++	if (ret) {
++		dev_err(priv->dev, "failed enabling QCA header mode");
++		return ret;
++	}
++
++	/* Disable MAC by default on all ports */
++	for (i = 0; i < QCA8K_IPQ4019_NUM_PORTS; i++) {
++		if (dsa_is_user_port(ds, i))
++			qca8k_port_set_status(priv, i, 0);
++	}
++
++	/* Forward all unknown frames to CPU port for Linux processing */
++	ret = qca8k_write(priv, QCA8K_REG_GLOBAL_FW_CTRL1,
++			  FIELD_PREP(QCA8K_GLOBAL_FW_CTRL1_IGMP_DP_MASK, BIT(QCA8K_IPQ4019_CPU_PORT)) |
++			  FIELD_PREP(QCA8K_GLOBAL_FW_CTRL1_BC_DP_MASK, BIT(QCA8K_IPQ4019_CPU_PORT)) |
++			  FIELD_PREP(QCA8K_GLOBAL_FW_CTRL1_MC_DP_MASK, BIT(QCA8K_IPQ4019_CPU_PORT)) |
++			  FIELD_PREP(QCA8K_GLOBAL_FW_CTRL1_UC_DP_MASK, BIT(QCA8K_IPQ4019_CPU_PORT)));
++	if (ret)
++		return ret;
++
++	/* Setup connection between CPU port & user ports */
++	for (i = 0; i < QCA8K_IPQ4019_NUM_PORTS; i++) {
++		ret = qca8k_ipq4019_setup_port(ds, i);
++		if (ret)
++			return ret;
++	}
++
++	/* Setup our port MTUs to match power on defaults */
++	ret = qca8k_write(priv, QCA8K_MAX_FRAME_SIZE, ETH_FRAME_LEN + ETH_FCS_LEN);
++	if (ret)
++		dev_warn(priv->dev, "failed setting MTU settings");
++
++	/* Flush the FDB table */
++	qca8k_fdb_flush(priv);
++
++	/* Set min a max ageing value supported */
++	ds->ageing_time_min = 7000;
++	ds->ageing_time_max = 458745000;
++
++	/* Set max number of LAGs supported */
++	ds->num_lag_ids = QCA8K_NUM_LAGS;
++
++	/* CPU port HW learning doesnt work correctly, so let DSA handle it */
++	ds->assisted_learning_on_cpu_port = true;
++
++	return 0;
++}
++
++static const struct dsa_switch_ops qca8k_ipq4019_switch_ops = {
++	.get_tag_protocol	= qca8k_ipq4019_get_tag_protocol,
++	.setup			= qca8k_ipq4019_setup,
++	.get_strings		= qca8k_get_strings,
++	.get_ethtool_stats	= qca8k_get_ethtool_stats,
++	.get_sset_count		= qca8k_get_sset_count,
++	.set_ageing_time	= qca8k_set_ageing_time,
++	.set_mac_eee		= qca8k_set_mac_eee,
++	.port_enable		= qca8k_port_enable,
++	.port_disable		= qca8k_port_disable,
++	.port_change_mtu	= qca8k_port_change_mtu,
++	.port_max_mtu		= qca8k_port_max_mtu,
++	.port_stp_state_set	= qca8k_port_stp_state_set,
++	.port_pre_bridge_flags	= qca8k_port_pre_bridge_flags,
++	.port_bridge_flags	= qca8k_port_bridge_flags,
++	.port_bridge_join	= qca8k_port_bridge_join,
++	.port_bridge_leave	= qca8k_port_bridge_leave,
++	.port_fast_age		= qca8k_port_fast_age,
++	.port_fdb_add		= qca8k_port_fdb_add,
++	.port_fdb_del		= qca8k_port_fdb_del,
++	.port_fdb_dump		= qca8k_port_fdb_dump,
++	.port_mdb_add		= qca8k_port_mdb_add,
++	.port_mdb_del		= qca8k_port_mdb_del,
++	.port_mirror_add	= qca8k_port_mirror_add,
++	.port_mirror_del	= qca8k_port_mirror_del,
++	.port_vlan_filtering	= qca8k_port_vlan_filtering,
++	.port_vlan_add		= qca8k_port_vlan_add,
++	.port_vlan_del		= qca8k_port_vlan_del,
++	.phylink_get_caps	= qca8k_ipq4019_phylink_get_caps,
++	.port_lag_join		= qca8k_port_lag_join,
++	.port_lag_leave		= qca8k_port_lag_leave,
++};
++
++static const struct qca8k_match_data ipq4019 = {
++	.id = QCA8K_ID_IPQ4019,
++	.mib_count = QCA8K_QCA833X_MIB_COUNT,
++};
++
++static int
++qca8k_ipq4019_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct qca8k_priv *priv;
++	void __iomem *base, *psgmii;
++	struct device_node *np = dev->of_node, *mdio_np, *psgmii_ethphy_np;
++	int ret;
++
++	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++
++	priv->dev = dev;
++	priv->info = &ipq4019;
++
++	/* Start by setting up the register mapping */
++	base = devm_platform_ioremap_resource_byname(pdev, "base");
++	if (IS_ERR(base))
++		return PTR_ERR(base);
++
++	priv->regmap = devm_regmap_init_mmio(dev, base,
++					     &qca8k_ipq4019_regmap_config);
++	if (IS_ERR(priv->regmap)) {
++		ret = PTR_ERR(priv->regmap);
++		dev_err(dev, "base regmap initialization failed, %d\n", ret);
++		return ret;
++	}
++
++	psgmii = devm_platform_ioremap_resource_byname(pdev, "psgmii_phy");
++	if (IS_ERR(psgmii))
++		return PTR_ERR(psgmii);
++
++	priv->psgmii = devm_regmap_init_mmio(dev, psgmii,
++					     &qca8k_ipq4019_psgmii_phy_regmap_config);
++	if (IS_ERR(priv->psgmii)) {
++		ret = PTR_ERR(priv->psgmii);
++		dev_err(dev, "PSGMII regmap initialization failed, %d\n", ret);
++		return ret;
++	}
++
++	mdio_np = of_parse_phandle(np, "mdio", 0);
++	if (!mdio_np) {
++		dev_err(dev, "unable to get MDIO bus phandle\n");
++		of_node_put(mdio_np);
++		return -EINVAL;
++	}
++
++	priv->bus = of_mdio_find_bus(mdio_np);
++	of_node_put(mdio_np);
++	if (!priv->bus) {
++		dev_err(dev, "unable to find MDIO bus\n");
++		return -EPROBE_DEFER;
++	}
++
++	psgmii_ethphy_np = of_parse_phandle(np, "psgmii-ethphy", 0);
++	if (!psgmii_ethphy_np) {
++		dev_dbg(dev, "unable to get PSGMII eth PHY phandle\n");
++		of_node_put(psgmii_ethphy_np);
++	}
++
++	if (psgmii_ethphy_np) {
++		priv->psgmii_ethphy = of_phy_find_device(psgmii_ethphy_np);
++		of_node_put(psgmii_ethphy_np);
++		if (!priv->psgmii_ethphy) {
++			dev_err(dev, "unable to get PSGMII eth PHY\n");
++			return -ENODEV;
++		}
++	}
++
++	/* Check the detected switch id */
++	ret = qca8k_read_switch_id(priv);
++	if (ret)
++		return ret;
++
++	priv->ds = devm_kzalloc(dev, sizeof(*priv->ds), GFP_KERNEL);
++	if (!priv->ds)
++		return -ENOMEM;
++
++	priv->ds->dev = dev;
++	priv->ds->num_ports = QCA8K_IPQ4019_NUM_PORTS;
++	priv->ds->priv = priv;
++	priv->ds->ops = &qca8k_ipq4019_switch_ops;
++	ret = devm_mutex_init(dev, &priv->reg_mutex);
++	if (ret)
++		return ret;
++	platform_set_drvdata(pdev, priv);
++
++	return dsa_register_switch(priv->ds);
++}
++
++static void
++qca8k_ipq4019_remove(struct platform_device *pdev)
++{
++	struct qca8k_priv *priv = dev_get_drvdata(&pdev->dev);
++	int i;
++
++	if (!priv)
++		return;
++
++	for (i = 0; i < QCA8K_IPQ4019_NUM_PORTS; i++)
++		qca8k_port_set_status(priv, i, 0);
++
++	dsa_unregister_switch(priv->ds);
++
++	platform_set_drvdata(pdev, NULL);
++}
++
++static const struct of_device_id qca8k_ipq4019_of_match[] = {
++	{ .compatible = "qca,ipq4019-qca8337n", },
++	{ /* sentinel */ },
++};
++
++static struct platform_driver qca8k_ipq4019_driver = {
++	.probe = qca8k_ipq4019_probe,
++	.remove = qca8k_ipq4019_remove,
++	.driver = {
++		.name = "qca8k-ipq4019",
++		.of_match_table = qca8k_ipq4019_of_match,
++	},
++};
++
++module_platform_driver(qca8k_ipq4019_driver);
++
++MODULE_AUTHOR("Mathieu Olivari, John Crispin <john@phrozen.org>");
++MODULE_AUTHOR("Gabor Juhos <j4g8y7@gmail.com>, Robert Marko <robert.marko@sartura.hr>");
++MODULE_DESCRIPTION("Qualcomm IPQ4019 built-in switch driver");
++MODULE_LICENSE("GPL");
+--- a/drivers/net/dsa/qca/qca8k.h
++++ b/drivers/net/dsa/qca/qca8k.h
+@@ -19,7 +19,10 @@
+ #define QCA8K_ETHERNET_TIMEOUT				msecs_to_jiffies(5)
+ 
+ #define QCA8K_NUM_PORTS					7
++#define QCA8K_IPQ4019_NUM_PORTS				6
+ #define QCA8K_NUM_CPU_PORTS				2
++#define QCA8K_IPQ4019_NUM_CPU_PORTS			1
++#define QCA8K_IPQ4019_CPU_PORT				0
+ #define QCA8K_MAX_MTU					9000
+ #define QCA8K_NUM_LAGS					4
+ #define QCA8K_NUM_PORTS_FOR_LAG				4
+@@ -28,6 +31,7 @@
+ #define QCA8K_ID_QCA8327				0x12
+ #define PHY_ID_QCA8337					0x004dd036
+ #define QCA8K_ID_QCA8337				0x13
++#define QCA8K_ID_IPQ4019				0x14
+ 
+ #define QCA8K_QCA832X_MIB_COUNT				39
+ #define QCA8K_QCA833X_MIB_COUNT				41
+@@ -265,6 +269,7 @@
+ #define   QCA8K_PORT_LOOKUP_STATE_LEARNING		QCA8K_PORT_LOOKUP_STATE(0x3)
+ #define   QCA8K_PORT_LOOKUP_STATE_FORWARD		QCA8K_PORT_LOOKUP_STATE(0x4)
+ #define   QCA8K_PORT_LOOKUP_LEARN			BIT(20)
++#define   QCA8K_PORT_LOOKUP_LOOPBACK_EN			BIT(21)
+ #define   QCA8K_PORT_LOOKUP_ING_MIRROR_EN		BIT(25)
+ 
+ #define QCA8K_REG_GOL_TRUNK_CTRL0			0x700
+@@ -341,6 +346,53 @@
+ #define MII_ATH_MMD_ADDR				0x0d
+ #define MII_ATH_MMD_DATA				0x0e
+ 
++/* IPQ4019 PSGMII PHY registers */
++#define QCA8K_IPQ4019_REG_RGMII_CTRL			0x004
++#define   QCA8K_IPQ4019_RGMII_CTRL_RGMII_RXC		GENMASK(1, 0)
++#define   QCA8K_IPQ4019_RGMII_CTRL_RGMII_TXC		GENMASK(9, 8)
++/* Some kind of CLK selection
++ * 0: gcc_ess_dly2ns
++ * 1: gcc_ess_clk
++ */
++#define   QCA8K_IPQ4019_RGMII_CTRL_CLK				BIT(10)
++#define   QCA8K_IPQ4019_RGMII_CTRL_DELAY_RMII0			GENMASK(17, 16)
++#define   QCA8K_IPQ4019_RGMII_CTRL_INVERT_RMII0_REF_CLK		BIT(18)
++#define   QCA8K_IPQ4019_RGMII_CTRL_DELAY_RMII1			GENMASK(20, 19)
++#define   QCA8K_IPQ4019_RGMII_CTRL_INVERT_RMII1_REF_CLK		BIT(21)
++#define   QCA8K_IPQ4019_RGMII_CTRL_INVERT_RMII0_MASTER_EN	BIT(24)
++#define   QCA8K_IPQ4019_RGMII_CTRL_INVERT_RMII1_MASTER_EN	BIT(25)
++
++#define PSGMIIPHY_MODE_CONTROL				0x1b4
++#define   PSGMIIPHY_MODE_ATHR_CSCO_MODE_25M		BIT(0)
++#define PSGMIIPHY_TX_CONTROL				0x288
++#define   PSGMIIPHY_TX_CONTROL_MAGIC_VALUE		0x8380
++#define PSGMIIPHY_VCO_CALIBRATION_CONTROL_REGISTER_1	0x9c
++#define   PSGMIIPHY_REG_PLL_VCO_CALIB_RESTART		BIT(14)
++#define PSGMIIPHY_VCO_CALIBRATION_CONTROL_REGISTER_2	0xa0
++#define   PSGMIIPHY_REG_PLL_VCO_CALIB_READY		BIT(0)
++
++#define   QCA8K_PSGMII_CALB_NUM				100
++#define   MII_QCA8075_SSTATUS				0x11
++#define   QCA8075_PHY_SPEC_STATUS_LINK			BIT(10)
++#define   QCA8075_MMD7_CRC_AND_PKTS_COUNT		0x8029
++#define   QCA8075_MMD7_PKT_GEN_PKT_NUMB			0x8021
++#define   QCA8075_MMD7_PKT_GEN_PKT_SIZE			0x8062
++#define   QCA8075_MMD7_PKT_GEN_CTRL			0x8020
++#define   QCA8075_MMD7_CNT_SELFCLR			BIT(1)
++#define   QCA8075_MMD7_CNT_FRAME_CHK_EN			BIT(0)
++#define   QCA8075_MMD7_PKT_GEN_START			BIT(13)
++#define   QCA8075_MMD7_PKT_GEN_INPROGR			BIT(15)
++#define   QCA8075_MMD7_IG_FRAME_RECV_CNT_HI		0x802a
++#define   QCA8075_MMD7_IG_FRAME_RECV_CNT_LO		0x802b
++#define   QCA8075_MMD7_IG_FRAME_ERR_CNT			0x802c
++#define   QCA8075_MMD7_EG_FRAME_RECV_CNT_HI		0x802d
++#define   QCA8075_MMD7_EG_FRAME_RECV_CNT_LO		0x802e
++#define   QCA8075_MMD7_EG_FRAME_ERR_CNT			0x802f
++#define   QCA8075_MMD7_MDIO_BRDCST_WRITE		0x8028
++#define   QCA8075_MMD7_MDIO_BRDCST_WRITE_EN 		BIT(15)
++#define   QCA8075_MDIO_BRDCST_PHY_ADDR			0x1f
++#define   QCA8075_PKT_GEN_PKTS_COUNT			4096
++
+ enum {
+ 	QCA8K_PORT_SPEED_10M = 0,
+ 	QCA8K_PORT_SPEED_100M = 1,
+@@ -468,6 +520,10 @@ struct qca8k_priv {
+ 	struct qca8k_pcs pcs_port_6;
+ 	const struct qca8k_match_data *info;
+ 	struct qca8k_led ports_led[QCA8K_LED_COUNT];
++	/* IPQ4019 specific */
++	struct regmap *psgmii;
++	struct phy_device *psgmii_ethphy;
++	bool psgmii_calibrated;
+ };
+ 
+ struct qca8k_mib_desc {
