@@ -30,6 +30,10 @@ function ensure_key_is_generated(cursor, section_name) {
 	return private_key;
 }
 
+function to_array(val) {
+	return type(val) == 'array' ? val : split(val, /\s+/);
+}
+
 function parse_address(addr) {
 	if (index(addr, ':') >= 0) {
 		if (index(addr, '/') >= 0) {
@@ -125,7 +129,7 @@ function proto_setup(proto) {
 		}
 
 		if (peer.allowed_ips) {
-			let allowed_list = type(peer.allowed_ips) == 'array' ? peer.allowed_ips : split(peer.allowed_ips, ' ');
+			let allowed_list = to_array(peer.allowed_ips);
 			wg_config += sprintf('AllowedIPs=%s\n', join(', ', allowed_list));
 
 			if (peer.route_allowed_ips) {
@@ -166,7 +170,7 @@ function proto_setup(proto) {
 	let ipv6_addrs = [];
 
 	if (config.addresses) {
-		let addr_list = split(config.addresses, ' ');
+		let addr_list = to_array(config.addresses);
 		for (let address in addr_list) {
 			let addr_info = parse_address(address);
 			let addr = { ipaddr: addr_info.address, mask: '' + addr_info.mask };
@@ -194,7 +198,7 @@ function proto_setup(proto) {
 		link_data.routes6 = ipv6_routes;
 
 	if (config.ip6prefix) {
-		let prefix_list = split(config.ip6prefix, ' ');
+		let prefix_list = to_array(config.ip6prefix);
 		if (length(prefix_list) > 0)
 			link_data.ip6prefix = prefix_list;
 	}
