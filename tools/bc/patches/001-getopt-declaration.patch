@@ -1,0 +1,11 @@
+--- a/lib/getopt.c
++++ b/lib/getopt.c
+@@ -197,7 +197,7 @@ static char *posixly_correct;
+    whose names are inconsistent.  */
+ 
+ #ifndef getenv
+-extern char *getenv ();
++extern char *getenv (const char *);
+ #endif
+ 
+ #endif /* not __GNU_LIBRARY__ */

@@ -1,0 +1,11 @@
+--- a/configure
++++ b/configure
+@@ -17940,7 +17940,7 @@
+ 	echo "	${STABLE_RELEASE}"
+ 	echo "};"
+ 	echo "static char nftbuildstamp[] = {"
+-	for ((i = 56; i >= 0; i-= 8)); do
++	for i in `seq 56 -8 0`; do
+ 		echo "	((uint64_t)MAKE_STAMP >> $i) & 0xff,"
+ 	done
+ 	echo "};"
