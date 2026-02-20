@@ -103,6 +103,10 @@ load_led() {
 		}
 		printf "\n" >> /var/run/led.state
 
+		# in most LEDs with i.e. 8-bit brightness, brightness should be set for all triggers
+		[ $(cat /sys/class/leds/${sysfs}/max_brightness) -gt 1 ] &&
+			default=1
+
 		[ "$default" = 0 ] &&
 			echo 0 >/sys/class/leds/${sysfs}/brightness
 
