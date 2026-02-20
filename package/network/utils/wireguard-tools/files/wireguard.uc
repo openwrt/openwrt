@@ -123,7 +123,7 @@ function proto_setup(proto) {
 
 		if (peer.endpoint_host) {
 			let eph = peer.endpoint_host;
-			if (index(eph, ':') >= 0 && eph[0] != '[')
+			if (index(eph, ':') >= 0 && substr(eph, 0, 1) != '[')
 				eph = sprintf('[%s]', eph);
 			wg_config += sprintf('Endpoint=%s:%s\n', eph, peer.endpoint_port);
 		}
