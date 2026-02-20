@@ -1,0 +1,44 @@
+From 83366bcc7cb9bb6570363bef7cf05948cb00fe4e Mon Sep 17 00:00:00 2001
+From: Colin Ian King <colin.i.king@gmail.com>
+Date: Wed, 2 Apr 2025 12:13:47 +0100
+Subject: [PATCH] crypto: eip93 - Make read-only arrays static const
+
+Don't populate the read-only arrays sha256_init, sha224_init, sha1_init
+and md5_init on the stack at run time, instead make them static.
+
+Signed-off-by: Colin Ian King <colin.i.king@gmail.com>
+Reviewed-by: Antoine Tenart <atenart@kernel.org>
+Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+---
+ .../crypto/inside-secure/eip93/eip93-hash.c   | 20 +++++++++++++------
+ 1 file changed, 14 insertions(+), 6 deletions(-)
+
+--- a/drivers/crypto/inside-secure/eip93/eip93-hash.c
++++ b/drivers/crypto/inside-secure/eip93/eip93-hash.c
+@@ -97,12 +97,20 @@ void eip93_hash_handle_result(struct cry
+ 
+ static void eip93_hash_init_sa_state_digest(u32 hash, u8 *digest)
+ {
+-	u32 sha256_init[] = { SHA256_H0, SHA256_H1, SHA256_H2, SHA256_H3,
+-			      SHA256_H4, SHA256_H5, SHA256_H6, SHA256_H7 };
+-	u32 sha224_init[] = { SHA224_H0, SHA224_H1, SHA224_H2, SHA224_H3,
+-			      SHA224_H4, SHA224_H5, SHA224_H6, SHA224_H7 };
+-	u32 sha1_init[] = { SHA1_H0, SHA1_H1, SHA1_H2, SHA1_H3, SHA1_H4 };
+-	u32 md5_init[] = { MD5_H0, MD5_H1, MD5_H2, MD5_H3 };
++	static const u32 sha256_init[] = {
++		SHA256_H0, SHA256_H1, SHA256_H2, SHA256_H3,
++		SHA256_H4, SHA256_H5, SHA256_H6, SHA256_H7
++	};
++	static const u32 sha224_init[] = {
++		SHA224_H0, SHA224_H1, SHA224_H2, SHA224_H3,
++		SHA224_H4, SHA224_H5, SHA224_H6, SHA224_H7
++	};
++	static const u32 sha1_init[] = {
++		SHA1_H0, SHA1_H1, SHA1_H2, SHA1_H3, SHA1_H4
++	};
++	static const u32 md5_init[] = {
++		MD5_H0, MD5_H1, MD5_H2, MD5_H3
++	};
+ 
+ 	/* Init HASH constant */
+ 	switch (hash) {
