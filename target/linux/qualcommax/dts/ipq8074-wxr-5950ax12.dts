@@ -19,7 +19,7 @@
 		led-failsafe = &led_power_red;
 		led-running = &led_power_white;
 		led-upgrade = &led_power_white;
-		label-mac-device = &dp5_syn;
+		label-mac-device = &swport5;
 	};
 
 	chosen {
@@ -255,92 +255,90 @@
 	};
 };
 
+&uniphy0 {
+	status = "okay";
+};
+
+&uniphy1 {
+	status = "okay";
+};
+
+&uniphy2 {
+	status = "okay";
+};
+
 &switch {
 	status = "okay";
 
-	switch_lan_bmp = <(ESS_PORT2 | ESS_PORT3 | ESS_PORT4 | ESS_PORT6)>;
-	switch_wan_bmp = <ESS_PORT5>;
-	switch_mac_mode = <MAC_MODE_QSGMII>;
-	switch_mac_mode1 = <MAC_MODE_USXGMII>;
-	switch_mac_mode2 = <MAC_MODE_USXGMII>;
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
 
-	qcom,port_phyinfo {
-		port@2 {
-			port_id = <2>;
-			phy_address = <0x19>;
+		port@0 {
+			reg = <0>;
+			ethernet = <&edma>;
+			phy-mode = "internal";
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
 		};
 
-		port@3 {
-			port_id = <3>;
-			phy_address = <0x1a>;
+		swport2: port@2 {
+			reg = <2>;
+			label = "lan4";
+			phy-handle = <&qca8075_1>;
+			phy-mode = "qsgmii";
+			pcs-handle = <&uniphy0 1>;
+			nvmem-cells = <&macaddr_appsblenv_ethaddr>;
+			nvmem-cell-names = "mac-address";
 		};
 
-		port@4 {
-			port_id = <4>;
-			phy_address = <0x1b>;
+		swport3: port@3 {
+			reg = <3>;
+			label = "lan3";
+			phy-handle = <&qca8075_2>;
+			phy-mode = "qsgmii";
+			pcs-handle = <&uniphy0 2>;
+			nvmem-cells = <&macaddr_appsblenv_ethaddr>;
+			nvmem-cell-names = "mac-address";
 		};
 
-		port@5 {
-			port_id = <5>;
-			ethernet-phy-ieee802.3-c45;
-			phy_address = <0x0>;
+		swport4: port@4 {
+			reg = <4>;
+			label = "lan2";
+			phy-handle = <&qca8075_3>;
+			phy-mode = "qsgmii";
+			pcs-handle = <&uniphy0 3>;
+			nvmem-cells = <&macaddr_appsblenv_ethaddr>;
+			nvmem-cell-names = "mac-address";
 		};
 
-		port@6 {
-			port_id = <6>;
-			ethernet-phy-ieee802.3-c45;
-			phy_address = <0x8>;
+		swport5: port@5 {
+			reg = <5>;
+			label = "wan";
+			phy-handle = <&aqr113c_1>;
+			phy-mode = "usxgmii";
+			pcs-handle = <&uniphy1 0>;
+			nvmem-cells = <&macaddr_appsblenv_ethaddr>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		swport6: port@6 {
+			reg = <6>;
+			label = "lan1";
+			phy-handle = <&aqr113c_2>;
+			phy-mode = "usxgmii";
+			pcs-handle = <&uniphy2 0>;
+			nvmem-cells = <&macaddr_appsblenv_ethaddr>;
+			nvmem-cell-names = "mac-address";
 		};
 	};
 };
 
 &edma {
 	status = "okay";
-};
-
-&dp2 {
-	status = "okay";
-	phy-mode = "qsgmii";
-	phy-handle = <&qca8075_1>;
-	label = "lan4";
-	nvmem-cells = <&macaddr_appsblenv_ethaddr>;
-	nvmem-cell-names = "mac-address";
-};
-
-&dp3 {
-	status = "okay";
-	phy-mode = "qsgmii";
-	phy-handle = <&qca8075_2>;
-	label = "lan3";
-	nvmem-cells = <&macaddr_appsblenv_ethaddr>;
-	nvmem-cell-names = "mac-address";
-};
-
-&dp4 {
-	status = "okay";
-	phy-mode = "qsgmii";
-	phy-handle = <&qca8075_3>;
-	label = "lan2";
-	nvmem-cells = <&macaddr_appsblenv_ethaddr>;
-	nvmem-cell-names = "mac-address";
-};
-
-&dp5_syn {
-	status = "okay";
-	phy-mode = "usxgmii";
-	phy-handle = <&aqr113c_1>;
-	label = "wan";
-	nvmem-cells = <&macaddr_appsblenv_ethaddr>;
-	nvmem-cell-names = "mac-address";
-};
-
-&dp6_syn {
-	status = "okay";
-	phy-mode = "usxgmii";
-	phy-handle = <&aqr113c_2>;
-	label = "lan1";
-	nvmem-cells = <&macaddr_appsblenv_ethaddr>;
-	nvmem-cell-names = "mac-address";
 };
 
 &ssphy_0 {

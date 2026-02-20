@@ -46,33 +46,25 @@
 	};
 };
 
-&dp2 {
-	status = "okay";
-	phy-handle = <&qca8075_1>;
+&swport2 {
 	label = "wan";
 	nvmem-cells = <&mac_address 0>;
 	nvmem-cell-names = "mac-address";
 };
 
-&dp3 {
-	status = "okay";
-	phy-handle = <&qca8075_2>;
+&swport3 {
 	label = "lan3";
 	nvmem-cells = <&mac_address 1>;
 	nvmem-cell-names = "mac-address";
 };
 
-&dp4 {
-	status = "okay";
-	phy-handle = <&qca8075_3>;
+&swport4 {
 	label = "lan2";
 	nvmem-cells = <&mac_address 1>;
 	nvmem-cell-names = "mac-address";
 };
 
-&dp5 {
-	status = "okay";
-	phy-handle = <&qca8075_4>;
+&swport5 {
 	label = "lan1";
 	nvmem-cells = <&mac_address 1>;
 	nvmem-cell-names = "mac-address";
