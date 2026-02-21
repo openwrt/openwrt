@@ -42,6 +42,15 @@
 	};
 };
 
+&gpio0 {
+	ext_reset {
+		gpio-hog;
+		gpios = <1 GPIO_ACTIVE_LOW>;
+		output-low;
+		line-name = "external-peripheral-reset";
+	};
+};
+
 &spi0 {
 	status = "okay";
 
