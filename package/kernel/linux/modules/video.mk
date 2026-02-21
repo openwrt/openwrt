@@ -661,6 +661,48 @@ endef
 
 $(eval $(call KernelPackage,drm-imx-ldb))
 
+
+define KernelPackage/drm-rockchip
+  SUBMENU:=$(VIDEO_MENU)
+  TITLE:=Rockchip DRM support
+  DEPENDS:=@TARGET_rockchip +kmod-drm-kms-helper +kmod-drm-dma-helper +kmod-drm-display-helper
+  KCONFIG:= \
+	CONFIG_DRM_ROCKCHIP \
+	CONFIG_DRM_FBDEV_EMULATION=y \
+	CONFIG_DRM_FBDEV_OVERALLOC=100 \
+	CONFIG_ROCKCHIP_VOP=y \
+	CONFIG_ROCKCHIP_VOP2=y \
+	CONFIG_ROCKCHIP_DW_HDMI=y \
+	CONFIG_DRM_DW_HDMI \
+	CONFIG_ROCKCHIP_DW_HDMI_QP=y \
+	CONFIG_DRM_DW_HDMI_QP \
+	CONFIG_ROCKCHIP_ANALOGIX_DP=y \
+	CONFIG_ROCKCHIP_CDN_DP=y \
+	CONFIG_ROCKCHIP_DW_MIPI_DSI=y \
+	CONFIG_ROCKCHIP_INNO_HDMI=y \
+	CONFIG_ROCKCHIP_LVDS=n \
+	CONFIG_ROCKCHIP_RGB=n \
+	CONFIG_ROCKCHIP_RK3066_HDMI=n \
+	CONFIG_PHY_ROCKCHIP_SAMSUNG_HDPTX=y
+  FILES:= \
+	$(LINUX_DIR)/drivers/gpu/drm/rockchip/rockchipdrm.ko \
+	$(LINUX_DIR)/drivers/gpu/drm/bridge/synopsys/dw-hdmi.ko \
+	$(LINUX_DIR)/drivers/gpu/drm/bridge/synopsys/dw-hdmi-qp.ko \
+	$(LINUX_DIR)/drivers/gpu/drm/bridge/synopsys/dw-mipi-dsi.ko \
+	$(LINUX_DIR)/drivers/gpu/drm/bridge/analogix/analogix_dp.ko
+  AUTOLOAD:=$(call AutoProbe,analogix_dp dw-hdmi dw-hdmi-qp dw-mipi-dsi rockchipdrm)
+endef
+
+define KernelPackage/drm-rockchip/description
+  Direct Rendering Manager (DRM) support for Rockchip SoCs
+  with VOP/VOP2 display controller and HDMI output.
+  Supports both legacy DW-HDMI (RK3288/RK3399/RK3568) and
+  DW-HDMI QP (RK3588) controllers.
+endef
+
+$(eval $(call KernelPackage,drm-rockchip))
+
+
 define KernelPackage/drm-panel-mipi-dbi
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Generic MIPI DBI LCD panel
