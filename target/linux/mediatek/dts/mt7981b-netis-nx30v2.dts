@@ -4,6 +4,7 @@
 #include "mt7981b-netis-common.dtsi"
 
 / {
+	model = "netis NX30V2";
 	compatible = "netis,nx30v2", "mediatek,mt7981";
 
 	aliases {
@@ -34,6 +35,20 @@
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_WPS;
 			gpios = <&pio 5 GPIO_ACTIVE_LOW>;
+		};
+
+		wifi2g {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN_2GHZ;
+			gpios = <&pio 34 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		wifi5g {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN_5GHZ;
+			gpios = <&pio 35 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
 		};
 
 		wan {
