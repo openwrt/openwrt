@@ -1,0 +1,173 @@
+From ae7d0ec078c5f7405c0550fc5024227ee6968617 Mon Sep 17 00:00:00 2001
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Sat, 24 Jan 2026 11:58:10 +0800
+Subject: [PATCH] mtd: spi-nor: add support for BoyaMicro BY25Q128AS
+
+Add new SPI NOR flash vendor BoyaMicro and flash chip BY25Q128AS.
+This chip has 16MB of total capacity, divided into a total of 256
+sectors, each 64KB sized. The chip also supports 4KB sectors.
+Additionally, it supports dual and quad read modes. This chip does
+not support 16 bit SR writing, so we have to introduce a fixup for
+it to handle quad_enable mode correctly. SFDP dump:
+
+00000000  53 46 44 50 00 01 01 ff  00 00 01 09 30 00 00 ff  |SFDP........0...|
+00000010  68 00 01 03 60 00 00 ff  ff ff ff ff ff ff ff ff  |h...`...........|
+00000020  ff ff ff ff ff ff ff ff  ff ff ff ff ff ff ff ff  |................|
+00000030  e5 20 f1 ff ff ff ff 07  44 eb 08 6b 08 3b 42 bb  |. ......D..k.;B.|
+00000040  ee ff ff ff ff ff 00 ff  ff ff 44 eb 0c 20 0f 52  |..........D.. .R|
+00000050  10 d8 00 ff ff ff ff ff  ff ff ff ff ff ff ff ff  |................|
+00000060  00 36 00 27 9e f9 77 64  fc eb ff ff              |.6.'..wd....|
+
+Co-authored-by: David Bauer <mail@david-bauer.net>
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ drivers/mtd/spi-nor/Makefile    |   1 +
+ drivers/mtd/spi-nor/boyamicro.c | 110 ++++++++++++++++++++++++++++++++
+ drivers/mtd/spi-nor/core.c      |   1 +
+ drivers/mtd/spi-nor/core.h      |   1 +
+ 4 files changed, 113 insertions(+)
+ create mode 100644 drivers/mtd/spi-nor/boyamicro.c
+
+--- a/drivers/mtd/spi-nor/Makefile
++++ b/drivers/mtd/spi-nor/Makefile
+@@ -2,6 +2,7 @@
+ 
+ spi-nor-objs			:= core.o sfdp.o swp.o otp.o sysfs.o
+ spi-nor-objs			+= atmel.o
++spi-nor-objs			+= boyamicro.o
+ spi-nor-objs			+= eon.o
+ spi-nor-objs			+= esmt.o
+ spi-nor-objs			+= everspin.o
+--- /dev/null
++++ b/drivers/mtd/spi-nor/boyamicro.c
+@@ -0,0 +1,110 @@
++// SPDX-License-Identifier: GPL-2.0
++
++#include <linux/mtd/spi-nor.h>
++
++#include "core.h"
++
++#define BOYA_SPINOR_OP_WRSR2		0x31
++
++#define BOYA_SPI_NOR_WRSR2_OP(buf)					\
++	SPI_MEM_OP(SPI_MEM_OP_CMD(BOYA_SPINOR_OP_WRSR2, 0),		\
++		   SPI_MEM_OP_NO_ADDR,					\
++		   SPI_MEM_OP_NO_DUMMY,					\
++		   SPI_MEM_OP_DATA_OUT(1, buf, 0))
++
++static int boya_spi_nor_write_sr2(struct spi_nor *nor, const u8 *sr2)
++{
++	int ret;
++
++	ret = spi_nor_write_enable(nor);
++	if (ret)
++		return ret;
++
++	if (nor->spimem) {
++		struct spi_mem_op op = BOYA_SPI_NOR_WRSR2_OP(sr2);
++
++		spi_nor_spimem_setup_op(nor, &op, nor->reg_proto);
++
++		ret = spi_mem_exec_op(nor->spimem, &op);
++	} else {
++		ret = spi_nor_controller_ops_write_reg(nor, BOYA_SPINOR_OP_WRSR2,
++						       sr2, 1);
++	}
++
++	if (ret) {
++		dev_dbg(nor->dev, "error %d writing SR2\n", ret);
++		return ret;
++	}
++
++	return spi_nor_wait_till_ready(nor);
++}
++
++static int by25q128_sr2_bit1_quad_enable(struct spi_nor *nor)
++{
++	int ret;
++	u8 sr2_written;
++	u8 *sr2 = nor->bouncebuf;
++
++	/* Check current Quad Enable bit value. */
++	ret = spi_nor_read_cr(nor, sr2);
++	if (ret)
++		return ret;
++	if (*sr2 & SR2_QUAD_EN_BIT1)
++		return 0;
++
++	/* Update the Quad Enable bit. */
++	*sr2 |= SR2_QUAD_EN_BIT1;
++
++	ret = boya_spi_nor_write_sr2(nor, sr2);
++	if (ret)
++		return ret;
++
++	sr2_written = *sr2;
++
++	/* Read back and check it. */
++	ret = spi_nor_read_cr(nor, sr2);
++	if (ret)
++		return ret;
++
++	if (*sr2 != sr2_written) {
++		dev_dbg(nor->dev, "SR2: Read back test failed\n");
++		return -EIO;
++	}
++
++	return 0;
++}
++
++static int
++by25q128_post_bfpt(struct spi_nor *nor,
++		   const struct sfdp_parameter_header *bfpt_header,
++		   const struct sfdp_bfpt *bfpt)
++{
++	/**
++	 * BY25Q128xS series SFDP table does not define the Quad
++	 * Enable methods. Overwrite the default Quad Enable method.
++	 */
++	nor->params->quad_enable = by25q128_sr2_bit1_quad_enable;
++
++	/* The 01H command can only be used to write SR1 */
++	nor->flags &= ~SNOR_F_HAS_16BIT_SR;
++
++	return 0;
++}
++
++static const struct spi_nor_fixups by25q128_fixups = {
++	.post_bfpt = by25q128_post_bfpt,
++};
++
++static const struct flash_info boyamicro_parts[] = {
++	{
++		/* BY25Q128AS, BY25Q128ES */
++		.id = SNOR_ID(0x68, 0x40, 0x18),
++		.fixups = &by25q128_fixups,
++	},
++};
++
++const struct spi_nor_manufacturer spi_nor_boyamicro = {
++	.name = "boyamicro",
++	.parts = boyamicro_parts,
++	.nparts = ARRAY_SIZE(boyamicro_parts),
++};
+--- a/drivers/mtd/spi-nor/core.c
++++ b/drivers/mtd/spi-nor/core.c
+@@ -1966,6 +1966,7 @@ int spi_nor_sr2_bit7_quad_enable(struct
+ 
+ static const struct spi_nor_manufacturer *manufacturers[] = {
+ 	&spi_nor_atmel,
++	&spi_nor_boyamicro,
+ 	&spi_nor_eon,
+ 	&spi_nor_esmt,
+ 	&spi_nor_everspin,
+--- a/drivers/mtd/spi-nor/core.h
++++ b/drivers/mtd/spi-nor/core.h
+@@ -580,6 +580,7 @@ struct sfdp {
+ 
+ /* Manufacturer drivers. */
+ extern const struct spi_nor_manufacturer spi_nor_atmel;
++extern const struct spi_nor_manufacturer spi_nor_boyamicro;
+ extern const struct spi_nor_manufacturer spi_nor_eon;
+ extern const struct spi_nor_manufacturer spi_nor_esmt;
+ extern const struct spi_nor_manufacturer spi_nor_everspin;
