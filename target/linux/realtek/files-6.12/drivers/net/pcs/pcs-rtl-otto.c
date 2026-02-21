@@ -58,7 +58,6 @@
 #define RTPCS_838X_SDS_CFG_REG			0x34
 #define RTPCS_838X_RST_GLB_CTRL_0		0x3c
 #define RTPCS_838X_SDS_MODE_SEL			0x0028
-#define RTPCS_838X_INT_RW_CTRL			0x0058
 #define RTPCS_838X_INT_MODE_CTRL		0x005c
 #define RTPCS_838X_PLL_CML_CTRL			0x0ff8
 
@@ -135,6 +134,7 @@ struct rtpcs_serdes {
 	struct rtpcs_ctrl *ctrl;
 	u8 id;
 	enum rtpcs_sds_mode mode;
+	bool first_start;
 
 	bool rx_pol_inv;
 	bool tx_pol_inv;
@@ -286,6 +286,9 @@ static struct rtpcs_link *rtpcs_phylink_pcs_to_link(struct phylink_pcs *pcs)
 
 static void rtpcs_838x_sds_patch_01_qsgmii_6275b(struct rtpcs_ctrl *ctrl)
 {
+	/* CKREFBUF_S0S1 for QSGMII */
+	regmap_write_bits(ctrl->map, RTPCS_838X_PLL_CML_CTRL, 0xf, 0xf);
+
 	rtpcs_sds_write(SDS(ctrl, 0), 1, 3, 0xf46f);
 	rtpcs_sds_write(SDS(ctrl, 0), 1, 2, 0x85fa);
 	rtpcs_sds_write(SDS(ctrl, 1), 1, 2, 0x85fa);
@@ -522,17 +525,7 @@ static int rtpcs_838x_sds_patch(struct rtpcs_serdes *sds,
 
 static int rtpcs_838x_init_serdes_common(struct rtpcs_ctrl *ctrl)
 {
-	u32 val;
-
 	dev_dbg(ctrl->dev, "Init RTL838X SerDes common\n");
-
-	/* enable R/W of some protected registers */
-	regmap_write(ctrl->map, RTPCS_838X_INT_RW_CTRL, 0x3);
-
-	regmap_read(ctrl->map, RTPCS_838X_PLL_CML_CTRL, &val);
-	dev_dbg(ctrl->dev, "PLL control register: %x\n", val);
-	regmap_write_bits(ctrl->map, RTPCS_838X_PLL_CML_CTRL, 0xfffffff0,
-			  0xaaaaaaaf & 0xf);
 
 	/* power off and reset all SerDes */
 	regmap_write(ctrl->map, RTPCS_838X_SDS_CFG_REG, 0x3f);
@@ -565,6 +558,20 @@ static int rtpcs_838x_setup_serdes(struct rtpcs_serdes *sds,
 	rtpcs_sds_write(sds, 0, 3, 0x7106);
 
 	rtpcs_838x_sds_power(sds, true);
+
+	/*
+	 * Run a switch queue reset after the first start of a SerDes. This recovers ports that
+	 * were already connected during boot and will not pass traffic. Sometimes the bug can
+	 * be seen in registers INGR_DBG_REG0-INGR_DBG_REG2 but this is quite erratic. The SDK
+	 * seems to have no issues because it starts all SerDes then PHYs and runs a queue reset
+	 * finally during NIC start.
+	 *
+	 * Of course this is totally wrong here and should be part of the DSA driver. But
+	 * implementing it over there requires more tricks than this (e.g. delayed work).
+	 */
+	if (sds->first_start)
+		regmap_write(sds->ctrl->map, RTPCS_838X_RST_GLB_CTRL_0, 0x4);
+
 	return 0;
 }
 
@@ -2946,6 +2953,8 @@ static int rtpcs_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
 		ret = ctrl->cfg->setup_serdes(link->sds, interface);
 		if (ret < 0)
 			goto out;
+
+		link->sds->first_start = false;
 	}
 
 	if (ctrl->cfg->set_autoneg) {
@@ -3078,7 +3087,9 @@ static int rtpcs_probe(struct platform_device *pdev)
 
 	for (i = 0; i < ctrl->cfg->serdes_count; i++) {
 		sds = &ctrl->serdes[i];
+
 		sds->ctrl = ctrl;
+		sds->first_start = true;
 		sds->id = i;
 	}
 
