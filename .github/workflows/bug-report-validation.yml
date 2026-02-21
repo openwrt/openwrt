@@ -1,0 +1,177 @@
+# Validates bug reports to ensure they contain all required information in the correct format.
+#
+# ┌─────────┐     ┌──────────┐     ┌───────────┐     ┌────────┐
+# │ Release │ ──► │ Revision │ ──► │ Target &  │ ──► │ Device │
+# └─────────┘     └──────────┘     │ Subtarget │     └────────┘
+#                                  └───────────┘
+#
+# Each validation:
+# - Fails fast on invalid input
+# - Skips dependent validations
+# - Reports detailed error messages
+#
+# Checkout handling:
+# - Current version for actions and release validation
+# - Referenced release for all other validations
+
+name: Bug Report Validation
+
+on:
+  issues:
+    types: [opened, edited]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    if: >-
+      ${{
+        (github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'bug:new')) ||
+        (github.event.action == 'edited' && contains(github.event.issue.labels.*.name, 'bug:invalid'))
+      }}
+    name: Validate bug report
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current version of the repository
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /.github/
+
+      - name: Parse issue form
+        uses: Ansuel/github-issue-parser@v3
+        id: issue-parser
+        with:
+          template-path: ./.github/ISSUE_TEMPLATE/bug-report.yml
+
+      - name: Validate release identifier
+        uses: ./.github/actions/validate-release-identifier
+        id: validate-release
+        with:
+          identifier: ${{ steps.issue-parser.outputs.issueparser_release }}
+
+      - name: Checkout full commit history for revision validation
+        if: steps.validate-release.outputs.valid == 'true'
+        run: |
+          git fetch --unshallow
+
+      - name: Validate revision identifier
+        if: steps.validate-release.outputs.valid == 'true'
+        uses: ./.github/actions/validate-revision-identifier
+        id: validate-revision
+        with:
+          identifier: ${{ steps.issue-parser.outputs.issueparser_revision }}
+
+      - name: Checkout actual revision for further validation
+        if: steps.validate-revision.outputs.valid == 'true'
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            Makefile
+            rules.mk
+            include/
+            target/
+            package/base-files/
+            scripts/
+
+      - name: Validate target & subtarget
+        if: steps.validate-release.outputs.valid == 'true'
+        uses: ./.github/actions/validate-target-subtarget-identifier
+        id: validate-target-subtarget
+        with:
+          identifier: ${{ steps.issue-parser.outputs.issueparser_target }}
+
+      - name: Validate device name
+        if: steps.validate-target-subtarget.outputs.valid == 'true'
+        uses: ./.github/actions/validate-device-name
+        id: validate-device
+        with:
+          device: ${{ steps.issue-parser.outputs.issueparser_device }}
+          target: ${{ steps.validate-target-subtarget.outputs.target }}
+          subtarget: ${{ steps.validate-target-subtarget.outputs.subtarget }}
+
+      - name: Process validation results
+        id: process-results
+        run: |
+          declare -a results=()
+          has_errors="false"
+
+          # Collect validation results
+          if [[ "${{ steps.validate-release.outputs.valid }}" != "true" ]]; then
+            results+=("- Release: :x: ${{ steps.validate-release.outputs.error }}")
+            has_errors="true"
+          else
+            results+=("- Release: :white_check_mark:")
+          fi
+
+          if [[ "${{ steps.validate-revision.outcome }}" == "skipped" ]]; then
+            results+=("- Revision: :question: Validation skipped due to invalid release")
+          elif [[ "${{ steps.validate-revision.outputs.valid }}" != "true" ]]; then
+            results+=("- Revision: :x: ${{ steps.validate-revision.outputs.error }}")
+            has_errors="true"
+          else
+            results+=("- Revision: :white_check_mark:")
+          fi
+
+          if [[ "${{ steps.validate-revision.outcome }}" == "skipped" ]]; then
+            results+=("- Target & Subtarget: :question: Validation skipped due to invalid release")
+          elif [[ "${{ steps.validate-target-subtarget.outputs.valid }}" != "true" ]]; then
+            results+=("- Target & Subtarget: :x: ${{ steps.validate-target-subtarget.outputs.error }}")
+            has_errors="true"
+          else
+            results+=("- Target & Subtarget: :white_check_mark:")
+          fi
+
+          if [[ "${{ steps.validate-device.outcome }}" == "skipped" ]]; then
+            results+=("- Device: :question: Validation skipped due to invalid target/subtarget")
+          elif [[ "${{ steps.validate-device.outputs.valid }}" != "true" ]]; then
+            results+=("- Device: :x: ${{ steps.validate-device.outputs.error }}")
+            has_errors="true"
+          else
+            results+=("- Device: :white_check_mark:")
+          fi
+
+          # Build comment message
+          header="Hi @${{ github.event.issue.user.login }},\n\nThank you for taking the time to report this issue.\n\n"
+
+          if [[ "$has_errors" == "true" ]]; then
+            status="During validation, we found some items that need your attention:\n\n"
+          else
+            status="All validations passed successfully:\n\n"
+          fi
+
+          printf -v validation_results '%s\n' "${results[@]}"
+
+          footer=""
+          if [[ "$has_errors" == "true" ]]; then
+            footer="\nPlease update your issue with the correct information. Otherwise, it will be closed in seven days."
+          fi
+
+          message="${header}${status}${validation_results}${footer}"
+
+          # Set outputs
+          echo "message<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$message" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "has_errors=$has_errors" >> $GITHUB_OUTPUT
+
+      - name: Create or update comment
+        uses: ./.github/actions/create-or-update-comment
+        with:
+          comment_body: ${{ steps.process-results.outputs.message }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update issue labels
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          remove_labels="bug:new"
+
+          if [[ "${{ steps.process-results.outputs.has_errors }}" == "true" ]]; then
+            add_labels="bug:invalid"
+          else
+            remove_labels+=",bug:invalid"
+          fi
+
+          gh issue edit ${{ github.event.issue.number }} --remove-label "$remove_labels" ${add_labels:+--add-label "$add_labels"}

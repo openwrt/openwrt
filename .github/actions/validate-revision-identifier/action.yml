@@ -1,0 +1,70 @@
+name: Validate Revision Identifier
+description: |
+  Checks if a string represents a known OpenWrt revision (like r12345-abcdef).
+  If the string resembles a valid revision, it will determine the associated git commit hash.
+  If the string is invalid, it will return an error message.
+
+  Requires the repository to be checked out in the workflow before running this action.
+
+inputs:
+  identifier:
+    description: String to validate
+    required: true
+  working-directory:
+    description: Directory to run the validation in
+    required: false
+    default: ${{ github.workspace }}
+
+outputs:
+  valid:
+    description: Whether the revision is valid
+    value: ${{ steps.validate.outputs.valid }}
+  git_hash:
+    description: Git commit hash associated with the revision
+    value: ${{ steps.validate.outputs.git_ref }}
+  error:
+    description: Error message if validation failed
+    value: ${{ steps.validate.outputs.error }}
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      id: validate
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        # Check revision format
+        if [[ ! "${{ inputs.identifier }}" =~ ^r([0-9]+)-([0-9a-f]+)$ ]]; then
+          echo "::notice::Invalid revision format '${{ inputs.identifier }}'"
+          echo "valid=false" >> $GITHUB_OUTPUT
+          echo "error=Invalid revision format" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        revision=${BASH_REMATCH[1]}
+        hash=${BASH_REMATCH[2]}
+
+        if ! git rev-parse --quiet --verify "$hash"; then
+          echo "::notice::Hash '$hash' not found"
+          echo "valid=false" >> $GITHUB_OUTPUT
+          echo "error=Revision hash not found" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        if [[ $(git cat-file -t "$hash") != "commit" ]]; then
+          echo "::notice::Hash '$hash' is not a commit"
+          echo "valid=false" >> $GITHUB_OUTPUT
+          echo "error=Revision hash is not a commit" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        count=$(git rev-list --count reboot..$hash)
+        if [[ $revision -ne $count ]]; then
+          echo "::notice::Revision '$revision' does not match commit count '$count'"
+          echo "error=Invalid revision number" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        echo "::notice::Revision validated successfully"
+        echo "valid=true" >> $GITHUB_OUTPUT
+        echo "git_hash=$hash" >> $GITHUB_OUTPUT
