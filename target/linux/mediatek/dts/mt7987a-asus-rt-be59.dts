@@ -1,0 +1,388 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * Copyright (C) 2025 MediaTek Inc.
+ * Author: Sam.Shih <sam.shih@mediatek.com>
+ */
+
+/dts-v1/;
+#include "mt7987a.dtsi"
+#include <dt-bindings/input/input.h>
+
+/* MT7987A RFB DTS for DT overlay-based device tree */
+/ {
+	model = "ASUS RT-BE59";
+	compatible = "asus,rt-be59", "mediatek,mt7987";
+
+	chosen {
+		bootargs-override = "rootfstype=squashfs ubi.mtd=UBI_DEV console=ttyS0,115200n1 earlycon=uart8250,mmio32,0x11000000 pci=pcie_bus_perf nosmp";
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
+			debounce-interval = <10>;
+		};
+
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
+			debounce-interval = <10>;
+		};
+	};
+	
+	leds {
+		compatible = "gpio-leds";
+
+		wan {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
+		};
+
+		wan-red {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&pio 11 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "default-on";
+		};
+
+		lan {
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&pio 12 GPIO_ACTIVE_LOW>;
+		};
+	};
+	aliases {
+		ethernet0 = "/soc/ethernet@15100000/mac@0";
+		ethernet1 = "/soc/ethernet@15100000/mac@1";
+		ethernet2 = "/soc/ethernet@15100000/mac@2";
+	};
+};
+
+&i2c0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c0_pins>;
+	status = "okay";
+};
+
+&fan {
+	pwms = <&pwm 0 50000 0>;
+	status = "disabled";
+};
+
+&pcie0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie0_pins>;
+	status = "okay";
+	slot0: pcie@0,0 {
+		reg = <0x0000 0 0 0 0>;
+
+		mt7996@0,0 {
+			compatible = "mediatek,mt76";
+			reg = <0x0000 0 0 0 0>;
+			device_type = "pci";
+			mediatek,mtd-eeprom = <&eeprom_factory_0 0x0>;
+		};
+	};
+};
+
+&pcie1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie1_pins>;
+	status = "disabled";
+};
+
+&pwm {
+	status = "disabled";
+};
+
+&ssusb {
+	status = "okay";
+};
+
+&uart0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_pins>;
+	status = "okay";
+};
+
+&spi1 {
+	status = "disabled";
+};
+
+&spi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi0_flash_pins>;
+	status = "okay";
+
+	flash@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+		spi-max-frequency = <52000000>;
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
+		mediatek,nmbm;
+		mediatek,bmt-max-ratio = <1>;
+		mediatek,bmt-max-reserved-blocks = <64>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				reg = <0x0 0x400000>;
+				label = "bootloader";
+				read-only;
+			};
+
+			partition@400000 {
+				compatible = "linux,ubi";
+				reg = <0x400000 0xfc00000>;
+				label = "UBI_DEV";
+
+				volumes {
+					ubi_factory: ubi-volume-factory {
+						volname = "Factory";
+					};
+				};
+			};
+		};
+	};
+};
+
+&ubi_factory {
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		eeprom_factory_0: eeprom@0 {
+			reg = <0x0 0x1E00>;
+		};
+	};
+};
+
+&gmac0 {
+	phy-mode = "2500base-x";
+	status = "okay";
+	fixed-link {
+		speed = <2500>;
+		full-duplex;
+		pause;
+	};
+};
+
+&gmac1 {
+	phy-mode = "internal";
+	phy-handle = <&phy15>;
+	status = "okay";
+};
+
+&gmac2 {
+	phy-handle = <&phy11>;
+	phy-mode = "2500base-x";
+	status = "okay";
+};
+
+&mdio {
+	mfd: mfd@1 {
+		compatible = "airoha,an8855-mfd";
+		reg = <1>;
+		status = "okay";
+
+		efuse {
+			compatible = "airoha,an8855-efuse";
+			#nvmem-cell-cells = <0>;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				shift_sel_port0_tx_a: shift-sel-port0-tx-a@c {
+					reg = <0xc 0x4>;
+				};
+
+				shift_sel_port0_tx_b: shift-sel-port0-tx-b@10 {
+					reg = <0x10 0x4>;
+				};
+
+				shift_sel_port0_tx_c: shift-sel-port0-tx-c@14 {
+					reg = <0x14 0x4>;
+				};
+
+				shift_sel_port0_tx_d: shift-sel-port0-tx-d@18 {
+					reg = <0x18 0x4>;
+				};
+
+				shift_sel_port1_tx_a: shift-sel-port1-tx-a@1c {
+					reg = <0x1c 0x4>;
+				};
+
+				shift_sel_port1_tx_b: shift-sel-port1-tx-b@20 {
+					reg = <0x20 0x4>;
+				};
+
+				shift_sel_port1_tx_c: shift-sel-port1-tx-c@24 {
+					reg = <0x24 0x4>;
+				};
+
+				shift_sel_port1_tx_d: shift-sel-port1-tx-d@28 {
+					reg = <0x28 0x4>;
+				};
+
+				shift_sel_port2_tx_a: shift-sel-port2-tx-a@2c {
+					reg = <0x2c 0x4>;
+				};
+
+				shift_sel_port2_tx_b: shift-sel-port2-tx-b@30 {
+					reg = <0x30 0x4>;
+				};
+
+				shift_sel_port2_tx_c: shift-sel-port2-tx-c@34 {
+					reg = <0x34 0x4>;
+				};
+
+				shift_sel_port2_tx_d: shift-sel-port2-tx-d@38 {
+					reg = <0x38 0x4>;
+				};
+
+				shift_sel_port3_tx_a: shift-sel-port3-tx-a@4c {
+					reg = <0x4c 0x4>;
+				};
+
+				shift_sel_port3_tx_b: shift-sel-port3-tx-b@50 {
+					reg = <0x50 0x4>;
+				};
+
+				shift_sel_port3_tx_c: shift-sel-port3-tx-c@54 {
+					reg = <0x54 0x4>;
+				};
+
+				shift_sel_port3_tx_d: shift-sel-port3-tx-d@58 {
+					reg = <0x58 0x4>;
+				};
+			};
+		};
+
+		ethernet-switch {
+			compatible = "airoha,an8855-switch";
+			reset-gpios = <&pio 42 GPIO_ACTIVE_HIGH>;
+			airoha,ext-surge;
+
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				port@0 {
+					reg = <0>;
+					label = "lan4";
+					phy-mode = "internal";
+					phy-handle = <&internal_phy1>;
+				};
+
+				port@1 {
+					reg = <1>;
+					label = "lan3";
+					phy-mode = "internal";
+					phy-handle = <&internal_phy2>;
+				};
+
+				port@2 {
+					reg = <2>;
+					label = "lan2";
+					phy-mode = "internal";
+					phy-handle = <&internal_phy3>;
+				};
+
+				port@3 {
+					status = "disabled";
+				};
+
+				port@5 {
+					reg = <5>;
+					ethernet = <&gmac0>;
+					phy-mode = "2500base-x";
+
+					fixed-link {
+						speed = <2500>;
+						full-duplex;
+						pause;
+					};
+				};
+			};
+		};
+
+		mdio {
+			compatible = "airoha,an8855-mdio";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			internal_phy1: phy@1 {
+				reg = <1>;
+
+				nvmem-cells = <&shift_sel_port0_tx_a>,
+						<&shift_sel_port0_tx_b>,
+						<&shift_sel_port0_tx_c>,
+						<&shift_sel_port0_tx_d>;
+				nvmem-cell-names = "tx_a", "tx_b", "tx_c", "tx_d";
+			};
+
+			internal_phy2: phy@2 {
+				reg = <2>;
+
+				nvmem-cells = <&shift_sel_port1_tx_a>,
+						<&shift_sel_port1_tx_b>,
+						<&shift_sel_port1_tx_c>,
+						<&shift_sel_port1_tx_d>;
+				nvmem-cell-names = "tx_a", "tx_b", "tx_c", "tx_d";
+			};
+
+			internal_phy3: phy@3 {
+				reg = <3>;
+
+				nvmem-cells = <&shift_sel_port2_tx_a>,
+						<&shift_sel_port2_tx_b>,
+						<&shift_sel_port2_tx_c>,
+						<&shift_sel_port2_tx_d>;
+				nvmem-cell-names = "tx_a", "tx_b", "tx_c", "tx_d";
+			};
+
+			internal_phy4: phy@4 {
+				reg = <4>;
+
+				nvmem-cells = <&shift_sel_port3_tx_a>,
+						<&shift_sel_port3_tx_b>,
+						<&shift_sel_port3_tx_c>,
+						<&shift_sel_port3_tx_d>;
+				nvmem-cell-names = "tx_a", "tx_b", "tx_c", "tx_d";
+			};
+		};
+	};
+
+	/* built-in 2.5G Ethernet PHY */
+	phy15: phy@15 {
+		pinctrl-names = "i2p5gbe-led";
+		pinctrl-0 = <&i2p5gbe_led0_pins>;
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <15>;
+		phy-mode = "internal";
+	};
+
+	phy11: phy@11 {
+		compatible = "ethernet-phy-id03a2.a411";
+		reg = <11>;
+		reset-gpios = <&pio 48 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <10000>;
+		reset-deassert-us = <10000>;
+		full-duplex;
+		pause;
+	};
+};
+

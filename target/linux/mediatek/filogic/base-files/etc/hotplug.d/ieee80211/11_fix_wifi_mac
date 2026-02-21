@@ -61,6 +61,11 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && macaddr_setbit_la $(macaddr_add $addr 1) > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && echo "$addr" > /sys${DEVPATH}/macaddress
 		;;
+	asus,rt-be59)
+		CI_UBIPART="UBI_DEV"
+		addr=$(mtd_get_mac_binary_ubi "Factory" 0x4)
+		[ "$PHYNBR" = "0" ] && echo "$addr" > /sys${DEVPATH}/macaddress
+		;;
 	bananapi,bpi-r3|\
 	bananapi,bpi-r3-mini)
 		addr=$(cat /sys/class/net/eth0/address)

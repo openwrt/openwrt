@@ -346,6 +346,10 @@ zyxel,ex5700-telenor)
 	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:06:amber:wan" "eth1" "link_10 link_100 tx rx"
 	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:06:green:wan" "eth1" "link tx rx"
 	;;
+asus,rt-be59)
+	ucidef_set_led_default "power" "POWER" "white:power" "1"
+	ucidef_set_led_netdev "wan" "WAN" "white:wan" "eth1" "link tx rx"
+	ucidef_set_led_netdev "lan" "LAN" "white:lan" "br-lan" "link tx rx"
 esac
 
 board_config_flush
