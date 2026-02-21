@@ -311,7 +311,10 @@ TARGET_DEVICES += ubnt_unifiac-mesh-pro
 define Device/ubnt_unifiac-pro
   $(Device/ubnt_unifiac)
   DEVICE_MODEL := UniFi AC Pro
-  DEVICE_PACKAGES += kmod-usb2
+  DEVICE_PACKAGES += kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct kmod-usb2 \
+   kmod-dsa-qca8k kmod-phy-qca83xx kmod-libphy \
+   kmod-mii kmod-fixed-phy kmod-phylink kmod-phy-at803x \
+   -kmod-switch-ar8xxx -kmod-swconfig -swconfig
   SUPPORTED_DEVICES += unifiac-pro
 endef
 TARGET_DEVICES += ubnt_unifiac-pro

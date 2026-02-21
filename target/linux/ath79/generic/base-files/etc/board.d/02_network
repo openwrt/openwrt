@@ -603,10 +603,12 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "5:lan" "1:wan"
 		;;
-	ubnt,unifiac-mesh-pro|\
-	ubnt,unifiac-pro)
+	ubnt,unifiac-mesh-pro)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "2:lan:1" "3:lan:2"
+		;;
+	ubnt,unifiac-pro)
+		ucidef_set_interface_lan "eth0 eth1" "dhcp"
 		;;
 	ubnt,unifi-ap-pro)
 		ucidef_add_switch "switch0" \
