@@ -815,6 +815,9 @@ define Device/cudy_wr1300-v3
   DEVICE_VENDOR := Cudy
   DEVICE_MODEL := WR1300
   DEVICE_VARIANT := v3
+  DEVICE_ALT0_VENDOR := Cudy
+  DEVICE_ALT0_MODEL := WR1300
+  DEVICE_ALT0_VARIANT := v4
   DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
 	-uboot-envtools
   SUPPORTED_DEVICES += cudy,wr1300 R30
