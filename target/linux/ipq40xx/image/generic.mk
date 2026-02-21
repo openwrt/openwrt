@@ -393,7 +393,7 @@ define Device/devolo_magic-2-wifi-next
 	IMAGE_SIZE := 26624k
 	IMAGES := sysupgrade.bin
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
-	DEFAULT := n
+	DEVICE_PACKAGES := flock libcap ebtables-nft ethtool-full
 endef
 TARGET_DEVICES += devolo_magic-2-wifi-next
 
