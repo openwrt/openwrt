@@ -1,0 +1,19 @@
+
+. /lib/functions/uci-defaults.sh
+
+board_config_update
+
+board=$(board_name)
+
+case "$board" in
+alta,route10)
+	ucidef_set_led_netdev "wan1-link-1g" "WAN-SFP-PORT-LINK-1G" "led1g_p6" "wan1" "link"
+	ucidef_set_led_netdev "wan1-link-10g" "WAN-SFP-PORT-LINK" "led10g_p6" "wan1" "tx rx"
+	ucidef_set_led_netdev "lan4-link-1g" "LAN-SFP-PORT-LINK-1G" "led1g_p5" "lan4" "link"
+	ucidef_set_led_netdev "lan4-link-10g" "LAN-SFP-PORT-LINK" "led10g_p5" "lan4" "tx rx"
+	;;
+esac
+
+board_config_flush
+
+exit 0
