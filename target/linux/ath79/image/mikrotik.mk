@@ -24,6 +24,7 @@ define Device/mikrotik_routerboard-750-r2
   $(Device/mikrotik_nor)
   SOC := qca9533
   DEVICE_MODEL := RouterBOARD 750 r2 (hEX lite)
+  DEVICE_PACKAGES := -kmod-ath9k -wpad-basic-mbedtls
   IMAGE_SIZE := 16256k
   SUPPORTED_DEVICES += rb-750-r2
 endef
