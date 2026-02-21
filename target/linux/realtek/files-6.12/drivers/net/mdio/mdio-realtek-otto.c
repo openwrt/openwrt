@@ -873,7 +873,7 @@ static int rtmdio_reset(struct mii_bus *bus)
 static int rtmdio_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
-	struct device_node *dn[RTMDIO_MAX_PHY] = {}, *np;
+	struct device_node *np, *dn[RTMDIO_MAX_PHY];
 	struct rtmdio_ctrl *ctrl;
 	struct mii_bus *bus;
 	int ret, addr;
