@@ -1,0 +1,29 @@
+. /lib/functions.sh
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+airoha_setup_interfaces()
+{
+	local board="$1"
+
+	case "$board" in
+		tplink,xx230v,v1)
+			ucidef_set_interface_lan "lan1 lan2 lan3 phy0-ap0 phy1-ap0"
+			ucidef_set_interface_wan "wan"
+		;;
+		tplink,ex530v)
+			ucidef_set_interface_lan "lan1 lan2 lan3 phy0-ap0 phy1-ap0"
+			ucidef_set_interface_wan "wan"
+		;;
+		*)
+			echo "Unsupported hardware. Network interfaces not initialized."
+		;;
+	esac
+}
+
+board_config_update
+board=$(board_name)
+airoha_setup_interfaces $board
+board_config_flush
+
+exit 0

@@ -1,0 +1,486 @@
+From 50407306b526355a7f542bb4eb56899fd5b5c3a2 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 4 Dec 2025 02:28:20 -0300
+Subject: [PATCH] Draft en7523 pcs
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/pcs/airoha/Kconfig      |   7 +
+ drivers/net/pcs/airoha/Makefile     |   4 +
+ drivers/net/pcs/airoha/pcs-en7523.c | 429 ++++++++++++++++++++++++++++
+ 3 files changed, 440 insertions(+)
+ create mode 100644 drivers/net/pcs/airoha/pcs-en7523.c
+
+diff --git a/drivers/net/pcs/airoha/Kconfig b/drivers/net/pcs/airoha/Kconfig
+index c16efa151..084909695 100644
+--- a/drivers/net/pcs/airoha/Kconfig
++++ b/drivers/net/pcs/airoha/Kconfig
+@@ -16,3 +16,10 @@ config PCS_AIROHA_AN7583
+ 	help
+ 	  This module provides helper to phylink for managing the Airoha
+ 	  AN7583 PCS for SoC Ethernet and PON SERDES.
++
++config PCS_AIROHA_EN7523
++	tristate "Airoha EN7523 PCS driver"
++	select PCS_AIROHA
++	help
++	  This module provides helper to phylink for managing the Airoha
++	  EN7523 PCS for SoC Ethernet and PON SERDES.
+diff --git a/drivers/net/pcs/airoha/Makefile b/drivers/net/pcs/airoha/Makefile
+index 69b8b0a02..15f7a879a 100644
+--- a/drivers/net/pcs/airoha/Makefile
++++ b/drivers/net/pcs/airoha/Makefile
+@@ -1,6 +1,7 @@
+ # SPDX-License-Identifier: GPL-2.0
+ 
+ obj-y				:= pcs-airoha.o
++
+ pcs-airoha-objs			:= pcs-airoha-common.o
+ ifdef CONFIG_PCS_AIROHA_AN7581
+ pcs-airoha-objs			+= pcs-an7581.o
+@@ -8,3 +9,6 @@ endif
+ ifdef CONFIG_PCS_AIROHA_AN7583
+ pcs-airoha-objs			+= pcs-an7583.o
+ endif
++ifdef CONFIG_PCS_AIROHA_EN7523
++obj-y			+= pcs-en7523.o
++endif
+diff --git a/drivers/net/pcs/airoha/pcs-en7523.c b/drivers/net/pcs/airoha/pcs-en7523.c
+new file mode 100644
+index 000000000..d3492631b
+--- /dev/null
++++ b/drivers/net/pcs/airoha/pcs-en7523.c
+@@ -0,0 +1,429 @@
++#include <linux/interrupt.h>
++#include <linux/io.h>
++#include <linux/kernel.h>
++#include <linux/mfd/syscon.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/of_platform.h>
++#include <linux/platform_device.h>
++#include <linux/regmap.h>
++#include <linux/types.h>
++#include <linux/device.h>
++#include <linux/bits.h>
++
++// AN
++#define SGMII_REG_AN0 (0x0000)
++#define SGMII_REG_AN_4 (0x0010)
++#define SGMII_REG_AN_5 (0x0014)
++
++// RATE_ADAPT
++#define SGMII_RG_RATE_ADAPT_CTRL_0 (0x0000)
++
++// PCS2
++#define SGMII_RG_HSGMII_PCS_CTROL_1 (0x0a00)
++#define SGMII_RG_HSGMII_PCS_CTROL_6 (0x0a14)
++#define SGMII_RG_HSGMII_MODE_INTERRUPT (0x0a20)
++#define SGMII_RG_HSGMII_PCS_STATE_2 (0x0b04)
++#define SGMII_RG_HSGMII_PCS_INT_STATE (0x0b5c)
++
++// PHYA
++#define SGMII_REG_PHYA_11 (0x002c)
++
++// Settings for SGMII_RG_HSGMII_MODE_INTERRUPT
++#define HSGMII_AN_DONE_INT BIT(0)
++#define HSGMII_RX_SYNC_DONE_INT BIT(1)
++#define HSGMII_AN_DONE_INT_CLR BIT(2)
++#define HSGMII_RX_SYNC_DONE_INT_CLR BIT(3)
++#define HSGMII_AN_CL37_TIMERDONE_INT BIT(8)
++#define HSGMII_AN_CL37_TIMERDONE_INT_CLR BIT(9)
++#define HSGMII_RX_SYNC_LOSS_INT BIT(10)
++#define HSGMII_RX_SYNC_LOSS_INT_CLR BIT(11)
++
++// Settings for SGMII_RG_RATE_ADAPT_CTRL_0
++#define RATE_ADAPT_TX_EN BIT(0)
++#define RATE_ADAPT_RX_EN BIT(4)
++#define RATE_ADAPT_TX_REPLICATE_MODE BIT(8)
++#define RATE_ADAPT_RX_REPLICATE_MODE BIT(9)
++#define RATE_ADAPT_TX_HSGMII_PCH_MODE BIT(10)
++#define RATE_ADAPT_RX_HSGMII_PCH_MODE BIT(11)
++#define RATE_ADAPT_TX_BYPASS BIT(26)
++#define RATE_ADAPT_RX_BYPASS BIT(27)
++
++// Definitions for SGMII_RG_HSGMII_PCS_CTROL_6
++#define SGMII_FORCE_RATEADAPT_VAL_MASK GENMASK(2, 1) // Bits 1-2
++#define SGMII_FORCE_RATEADAPT_VAL_SHIFT 1
++
++// Definitions for SGMII_RG_HSGMII_PCS_CTROL_1
++#define HSGMII_AN_ENABLE BIT(10)
++
++// Definições para SGMII_RG_HSGMII_PCS_STATE_2 (Read Only)
++#define HSGMII_STATE_AN_DONE BIT(0)
++#define HSGMII_STATE_RX_SYNC BIT(5)
++
++#define PON_PCS1_BASE_OFFSET 0x100
++#define PON_INT_EN 0x5f0
++#define PON_INT_STA_CLR 0x5f4
++#define PON_INT_STA 0x5f8
++
++#define PCS1_BASE_OFFSET 0x100
++#define PCS2_BASE_OFFSET 0xA00
++#define AN_BASE_OFFSET 0x000
++#define RATEADAPT_BASE_OFFSET 0x000
++#define PHYA_BASE_OFFSET 0x000
++
++struct sgmii_base {
++	struct device *dev;
++
++	struct regmap *scu;
++	struct regmap *xsi;
++
++	struct regmap *pcs1;
++	struct regmap *pcs2;
++	struct regmap *an;
++	struct regmap *ra;
++	struct regmap *phya;
++	int irq;
++};
++
++enum sgmii_port_type {
++	SGMII_PORT_PCIE0,
++	SGMII_PORT_PCIE1,
++	SGMII_PORT_USB0,
++	SGMII_PORT_PON0,
++	SGMII_PORT_UNKNOW
++};
++
++enum sgmii_reg_type {
++	SGMII_REG_PCS1,
++	SGMII_REG_PCS2,
++	SGMII_REG_AN,
++	SGMII_REG_RATEADAPT,
++	SGMII_REG_PHYA,
++	SGMII_REG_UNKNOW
++};
++
++enum sgmii_speed_type {
++	SGMII_SPEED_2500M,
++	SGMII_SPEED_1000M,
++	SGMII_SPEED_100M,
++	SGMII_SPEED_10M,
++	SGMII_SPEED_UNKNOW
++};
++
++enum sgmii_api_method_type {
++	SGMII_API_METHOD_GET,
++	SGMII_API_METHOD_SET,
++	SGMII_API_METHOD_UNKNOW
++};
++
++enum sgmii_api_type {
++	SGMII_API_MODE,
++	SGMII_API_INFO,
++	SGMII_API_TEST,
++	SGMII_API_UNKNOW
++};
++
++#define get_pon_pcs1_data(ecnt_pon_hsgmii, reg, val) \
++	regmap_read(ecnt_pon_hsgmii->pcs1, (reg - PON_PCS1_BASE_OFFSET), &val);
++
++#define set_pon_pcs1_data(ecnt_pon_hsgmii, reg, val) \
++	regmap_write(ecnt_pon_hsgmii->pcs1, (reg - PON_PCS1_BASE_OFFSET), val)
++
++#define get_pon_pcs2_data(ecnt_pon_hsgmii, reg)                  \
++	({                                                       \
++		u32 val = 0;                                     \
++		regmap_read(ecnt_pon_hsgmii->pcs2,               \
++			    (reg - PON_PCS1_BASE_OFFSET), &val); \
++		return val;                                      \
++	})
++
++static int cmd_wo(struct sgmii_base *sgmii, enum sgmii_reg_type type, u32 reg,
++		  u32 val)
++{
++	struct regmap *map = NULL;
++	u32 offset = 0;
++
++	// get map and offset
++	switch (type) {
++	case SGMII_REG_PCS1:
++		map = sgmii->pcs1;
++		offset = reg - PCS1_BASE_OFFSET;
++		break;
++	case SGMII_REG_PCS2:
++		map = sgmii->pcs2;
++		offset = reg - PCS2_BASE_OFFSET;
++		break;
++	case SGMII_REG_AN:
++		map = sgmii->an;
++		offset = reg - AN_BASE_OFFSET;
++		break;
++	case SGMII_REG_RATEADAPT:
++		map = sgmii->ra;
++		offset = reg - RATEADAPT_BASE_OFFSET;
++		break;
++	case SGMII_REG_PHYA:
++		map = sgmii->phya;
++		offset = reg - PHYA_BASE_OFFSET;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	if (!map)
++		return -ENODEV;
++
++	return regmap_write(map, offset, val);
++}
++
++static u32 cmd_ro(struct sgmii_base *sgmii, enum sgmii_reg_type type, u32 reg)
++{
++	struct regmap *map = NULL;
++	u32 offset = 0;
++	u32 val = 0;
++
++	// get map and offset
++	switch (type) {
++	case SGMII_REG_PCS1:
++		map = sgmii->pcs1;
++		offset = reg - PCS1_BASE_OFFSET;
++		break;
++	case SGMII_REG_PCS2:
++		map = sgmii->pcs2;
++		offset = reg - PCS2_BASE_OFFSET;
++		break;
++	case SGMII_REG_AN:
++		map = sgmii->an;
++		offset = reg - AN_BASE_OFFSET;
++		break;
++	case SGMII_REG_RATEADAPT:
++		map = sgmii->ra;
++		offset = reg - RATEADAPT_BASE_OFFSET;
++		break;
++	case SGMII_REG_PHYA:
++		map = sgmii->phya;
++		offset = reg - PHYA_BASE_OFFSET;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	if (!map)
++		return -ENODEV;
++
++	return regmap_read(map, offset, &val);
++}
++
++static irqreturn_t sgmii_interrupt(int irq, void *dev_id)
++{
++	uint32_t data_t;
++	struct sgmii_base *sgmii = (struct sgmii_base *)dev_id;
++
++	/* clear int */
++	data_t = HSGMII_AN_DONE_INT | HSGMII_AN_DONE_INT_CLR |
++		 HSGMII_RX_SYNC_DONE_INT_CLR |
++		 HSGMII_AN_CL37_TIMERDONE_INT_CLR | HSGMII_RX_SYNC_LOSS_INT_CLR;
++
++	cmd_wo(sgmii, SGMII_REG_PCS2, SGMII_RG_HSGMII_MODE_INTERRUPT, data_t);
++
++	/* set int */
++	data_t = HSGMII_AN_DONE_INT;
++	cmd_wo(sgmii, SGMII_REG_PCS2, SGMII_RG_HSGMII_MODE_INTERRUPT, data_t);
++
++	/* get an */
++	data_t = cmd_ro(sgmii, SGMII_REG_AN, SGMII_REG_AN_5);
++	uint32_t speed_t = (data_t >> 10) & 0x3;
++
++	/* 4. Rate Adapt Set */
++	uint32_t ra_ctrl = RATE_ADAPT_TX_EN | RATE_ADAPT_RX_EN |
++			   RATE_ADAPT_TX_HSGMII_PCH_MODE |
++			   RATE_ADAPT_RX_HSGMII_PCH_MODE;
++
++	switch (speed_t) {
++	case 0x0: // 10M
++		cmd_wo(sgmii, SGMII_REG_PCS2, SGMII_RG_HSGMII_PCS_CTROL_6, 0xb);
++		ra_ctrl &= ~(RATE_ADAPT_TX_BYPASS | RATE_ADAPT_RX_BYPASS);
++		break;
++	case 0x1: // 100M
++		cmd_wo(sgmii, SGMII_REG_PCS2, SGMII_RG_HSGMII_PCS_CTROL_6, 0x7);
++		ra_ctrl &= ~(RATE_ADAPT_TX_BYPASS | RATE_ADAPT_RX_BYPASS);
++		break;
++	case 0x2: // 1G
++		cmd_wo(sgmii, SGMII_REG_PCS2, SGMII_RG_HSGMII_PCS_CTROL_6, 0x3);
++		ra_ctrl |= (RATE_ADAPT_TX_BYPASS | RATE_ADAPT_RX_BYPASS);
++		break;
++	default:
++		break;
++	}
++
++	cmd_wo(sgmii, SGMII_REG_RATEADAPT, SGMII_RG_RATE_ADAPT_CTRL_0, ra_ctrl);
++
++	data_t = cmd_ro(sgmii, SGMII_REG_PCS2, SGMII_RG_HSGMII_PCS_CTROL_6);
++	data_t = cmd_ro(sgmii, SGMII_REG_RATEADAPT, SGMII_RG_RATE_ADAPT_CTRL_0);
++
++	/* read interrupt */
++	data_t = cmd_ro(sgmii, SGMII_REG_PCS2, SGMII_RG_HSGMII_PCS_INT_STATE);
++
++	return IRQ_HANDLED;
++}
++
++static irqreturn_t pon_hsgmii_interrupt(int irq, void *dev_id)
++{
++	u32 pcs1_int_sts = 0;
++	struct sgmii_base *ecnt_pon_hsgmii = (struct sgmii_base *)dev_id;
++
++	/* read to clear interrupt */
++	get_pon_pcs1_data(ecnt_pon_hsgmii, PON_INT_STA, pcs1_int_sts);
++	set_pon_pcs1_data(ecnt_pon_hsgmii, PON_INT_STA_CLR, 0x3ff);
++
++	printk("pon hsgmii interrupt status=0x%x\n", pcs1_int_sts);
++
++	return IRQ_HANDLED;
++}
++
++static int ecnt_sgmii_drv_probe(struct platform_device *pdev)
++{
++	dev_info(&pdev->dev, "%s probe init start",
++		 of_device_is_compatible(pdev->dev.of_node,
++					 "airoha,en7523-hsgmii") ?
++			 "hsgmii" :
++			 "sgmii");
++
++	struct sgmii_base *sgmii = NULL;
++	int ret;
++	struct resource *res;
++
++	sgmii = devm_kzalloc(&pdev->dev, sizeof(*sgmii), GFP_KERNEL);
++	if (!sgmii)
++		return -ENOMEM;
++
++	sgmii->dev = &pdev->dev;
++
++	// XSI Dev
++	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "xsi");
++	if (IS_ERR(res))
++		return PTR_ERR(res);
++	sgmii->xsi = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(sgmii->xsi))
++		return PTR_ERR(sgmii->xsi);
++
++	sgmii->scu = syscon_regmap_lookup_by_phandle(pdev->dev.of_node,
++						     "airoha,scu");
++	if (IS_ERR(sgmii->scu))
++		return PTR_ERR(sgmii->scu);
++
++	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "hsgmii_an");
++	if (IS_ERR(res))
++		return PTR_ERR(res);
++	sgmii->an = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(sgmii->an))
++		return PTR_ERR(sgmii->an);
++
++	res = platform_get_resource_byname(pdev, IORESOURCE_MEM,
++					   "hsgmii_qphy_csr");
++	if (IS_ERR(res))
++		return PTR_ERR(res);
++	sgmii->pcs1 = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(sgmii->pcs1))
++		return PTR_ERR(sgmii->pcs1);
++
++	res = platform_get_resource_byname(pdev, IORESOURCE_MEM,
++					   "hsgmii_rate_adp");
++	if (IS_ERR(res))
++		return PTR_ERR(res);
++	sgmii->ra = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(sgmii->ra))
++		return PTR_ERR(sgmii->ra);
++
++	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "hsgmii_pcs");
++	if (IS_ERR(res))
++		return PTR_ERR(res);
++	sgmii->pcs2 = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(sgmii->pcs2))
++		return PTR_ERR(sgmii->pcs2);
++
++	if (!of_device_is_compatible(pdev->dev.of_node,
++				     "airoha,en7523-hsgmii")) {
++		res = platform_get_resource_byname(pdev, IORESOURCE_MEM,
++						   "hsgmii_phya");
++		if (IS_ERR(res))
++			return PTR_ERR(res);
++		sgmii->phya = devm_ioremap_resource(&pdev->dev, res);
++		if (IS_ERR(sgmii->phya))
++			return PTR_ERR(sgmii->phya);
++	}
++
++	/* get irq num */
++	sgmii->irq = platform_get_irq(pdev, 0);
++	if (sgmii->irq <= 0) {
++		return sgmii->irq;
++	}
++
++	dev_info(&pdev->dev, "Storage data");
++	platform_set_drvdata(pdev, sgmii);
++
++	dev_info(&pdev->dev, "Handle irq data");
++	irq_set_handler_data(sgmii->irq, sgmii);
++
++	// "airoha,en7523-hsgmii"
++	if (of_device_is_compatible(pdev->dev.of_node,
++				    "airoha,en7523-hsgmii")) {
++		dev_info(&pdev->dev, "irq pon hsgmii handle");
++		ret = request_irq(sgmii->irq, pon_hsgmii_interrupt, 0,
++				  "pon_hsgmii", &pdev->dev);
++	} else {
++		dev_info(&pdev->dev, "irq sgmii handle");
++		/* get property */
++		// int_name
++		const char *int_name;
++		ret = of_property_read_string(pdev->dev.of_node, "int_name",
++					      &int_name);
++
++		// int_id
++		uint32_t int_id;
++		ret = of_property_read_u32(pdev->dev.of_node, "int_id",
++					   &int_id);
++
++		ret = request_irq(sgmii->irq, sgmii_interrupt, 0, int_name,
++				  &pdev->dev);
++	}
++
++	/* request irq */
++	if (ret) {
++		return (ret);
++	}
++
++	dev_info(&pdev->dev, "sgmii irq done");
++
++	/* init irq */
++	if (!of_device_is_compatible(pdev->dev.of_node, "airoha,en7523-hsgmii"))
++		// set_pon_pcs1_data(sgmii, PON_INT_EN, 0x22);
++	// else
++		cmd_wo(sgmii, SGMII_REG_PCS2, SGMII_RG_HSGMII_MODE_INTERRUPT,
++		       0x00000000);
++
++	dev_info(&pdev->dev, "sgmii done");
++
++	return 0;
++}
++
++static void ecnt_sgmii_drv_remove(struct platform_device *pdev)
++{
++}
++
++static const struct of_device_id ecnt_sgmii_of_id[] = {
++	{ .compatible = "airoha,en7523-sgmii" },
++	{ .compatible = "airoha,en7523-hsgmii" },
++	{ /* sentinel */ },
++};
++MODULE_DEVICE_TABLE(of, ecnt_sgmii_of_id);
++
++static struct platform_driver ecnt_sgmii_driver = {
++	.probe = ecnt_sgmii_drv_probe,
++	.remove = ecnt_sgmii_drv_remove,
++	.driver = { .name = "ecnt-sgmii", .of_match_table = ecnt_sgmii_of_id },
++};
++module_platform_driver(ecnt_sgmii_driver);
++
++MODULE_DESCRIPTION("EcoNet SGMII Driver");
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Matheus S Queiroga <srherobrine20@gmail.com>");
+\ No newline at end of file
+-- 
+2.53.0
+

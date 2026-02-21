@@ -46,10 +46,21 @@ define U-Boot/an7583_rfb
   BL31_IMAGE:=an7583-bl31.bin
 endef
 
+define U-Boot/en7523_rfb
+  NAME:=EN7523 Reference Board
+  UBOOT_CONFIG:=en7523_evb
+  BUILD_DEVICES:=airoha_en7523-evb tplink_xx230v
+  BUILD_SUBTARGET:=en7523
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_IMAGE:=en7523-bl2.bin
+  BL31_IMAGE:=en7523-bl31.bin
+endef
+
 UBOOT_TARGETS := \
 	en7523_rfb \
 	an7581_rfb \
-	an7583_rfb
+	an7583_rfb \
+	en7523_rfb
 
 UBOOT_CUSTOMIZE_CONFIG := \
 	--disable TOOLS_KWBIMAGE \
