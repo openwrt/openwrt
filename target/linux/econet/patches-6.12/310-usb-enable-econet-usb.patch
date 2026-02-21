@@ -7,7 +7,7 @@
 +	select DMA_NONCOHERENT
  	select DEBUG_ZBOOT if DEBUG_KERNEL
  	select EARLY_PRINTK_8250
- 	select SERIAL_8250
+ 	select ECONET_EN751221_TIMER
 --- a/drivers/usb/host/Kconfig
 +++ b/drivers/usb/host/Kconfig
 @@ -71,7 +71,7 @@ config USB_XHCI_HISTB
