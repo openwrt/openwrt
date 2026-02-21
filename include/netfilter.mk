@@ -13,10 +13,11 @@ P_EBT:=bridge/netfilter/
 endif
 
 # 1: variable
-# 2: kconfig symbols
+# 2: kconfig symbol - multiple symbols are not supported
 # 3: file list
 # 4: version dependency
 define nf_add
+ $(if $(word 2,$(2)),$(warning ### FAIL: nf_add called with multiple symbols for $(1): $(2)))
  $(if $(4),ifeq ($$(strip $$(call CompareKernelPatchVer,$$(KERNEL_PATCHVER),$(firstword $(4)),$(lastword $(4)))),1))
   $(1)-$$($(2)) += $(3)
  $(if $(4),endif)
@@ -30,11 +31,12 @@ endef
 $(eval $(if $(NF_KMOD),$(call nf_add,NF_REJECT,CONFIG_NF_REJECT_IPV4, $(P_V4)nf_reject_ipv4),))
 
 $(eval $(if $(NF_KMOD),$(call nf_add,NF_IPT,CONFIG_IP_NF_IPTABLES, $(P_V4)ip_tables),))
-$(eval $(if $(NF_KMOD),$(call nf_add,NF_IPT,CONFIG_NETFILTER_XTABLES, $(P_XT)x_tables),))
+$(eval $(if $(NF_KMOD),$(call nf_add,NF_IPT,CONFIG_IP_NF_IPTABLES_LEGACY, $(P_V4)ip_tables),))
 
-$(eval $(if $(NF_KMOD),$(call nf_add,IPT_CORE,CONFIG_NETFILTER_XTABLES, $(P_XT)xt_tcpudp),))
 $(eval $(if $(NF_KMOD),$(call nf_add,IPT_CORE,CONFIG_IP_NF_FILTER, $(P_V4)iptable_filter),))
 $(eval $(if $(NF_KMOD),$(call nf_add,IPT_CORE,CONFIG_IP_NF_MANGLE, $(P_V4)iptable_mangle),))
+
+$(eval $(if $(NF_KMOD),$(call nf_add,NF_XTABLES,CONFIG_NETFILTER_XTABLES, $(P_XT)x_tables $(P_XT)xt_tcpudp),))
 
 # userland only
 $(eval $(if $(NF_KMOD),,$(call nf_add,IPT_CORE,CONFIG_IP_NF_IPTABLES, xt_standard ipt_icmp xt_tcp xt_udp xt_comment xt_set xt_SET)))
@@ -145,6 +147,7 @@ $(eval $(call nf_add,IPT_FLOW,CONFIG_NETFILTER_XT_TARGET_FLOWOFFLOAD, $(P_XT)xt_
 $(eval $(if $(NF_KMOD),$(call nf_add,NF_REJECT6,CONFIG_NF_REJECT_IPV6, $(P_V6)nf_reject_ipv6),))
 
 $(eval $(if $(NF_KMOD),$(call nf_add,NF_IPT6,CONFIG_IP6_NF_IPTABLES, $(P_V6)ip6_tables),))
+$(eval $(if $(NF_KMOD),$(call nf_add,NF_IPT6,CONFIG_IP6_NF_IPTABLES_LEGACY, $(P_V6)ip6_tables),))
 
 $(eval $(if $(NF_KMOD),$(call nf_add,NF_CONNTRACK,CONFIG_NF_DEFRAG_IPV6, $(P_V6)nf_defrag_ipv6),))
 
@@ -283,6 +286,7 @@ $(eval $(if $(NF_KMOD),$(call nf_add,NF_CONNCOUNT,CONFIG_NETFILTER_CONNCOUNT, $(
 #
 
 $(eval $(if $(NF_KMOD),$(call nf_add,EBTABLES,CONFIG_BRIDGE_NF_EBTABLES, $(P_EBT)ebtables),))
+$(eval $(if $(NF_KMOD),$(call nf_add,EBTABLES,CONFIG_BRIDGE_NF_EBTABLES_LEGACY, $(P_EBT)ebtables),))
 
 # ebtables: tables
 $(eval $(call nf_add,EBTABLES,CONFIG_BRIDGE_EBT_BROUTE, $(P_EBT)ebtable_broute))
