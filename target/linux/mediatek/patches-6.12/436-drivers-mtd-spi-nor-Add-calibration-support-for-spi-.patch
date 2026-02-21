@@ -10,9 +10,11 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  drivers/mtd/spi-nor/core.c  | 15 +++++++++++++++
  2 files changed, 19 insertions(+), 1 deletion(-)
 
---- a/drivers/mtd/nand/spi/core.c
-+++ b/drivers/mtd/nand/spi/core.c
-@@ -1261,7 +1261,10 @@ static int spinand_cal_read(void *priv,
+Index: linux-6.12.71/drivers/mtd/nand/spi/core.c
+===================================================================
+--- linux-6.12.71.orig/drivers/mtd/nand/spi/core.c	2026-02-18 11:20:35.803588843 +0400
++++ linux-6.12.71/drivers/mtd/nand/spi/core.c	2026-02-18 11:20:35.799588872 +0400
+@@ -1261,7 +1261,10 @@
  	if (ret)
  		return ret;
  
@@ -24,9 +26,11 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  	if (ret < 0)
  		return ret;
  
---- a/drivers/mtd/spi-nor/core.c
-+++ b/drivers/mtd/spi-nor/core.c
-@@ -3300,6 +3300,18 @@ static const struct flash_info *spi_nor_
+Index: linux-6.12.71/drivers/mtd/spi-nor/core.c
+===================================================================
+--- linux-6.12.71.orig/drivers/mtd/spi-nor/core.c	2026-02-18 11:20:35.803588843 +0400
++++ linux-6.12.71/drivers/mtd/spi-nor/core.c	2026-02-18 11:20:35.799588872 +0400
+@@ -3308,6 +3308,18 @@
  	return NULL;
  }
  
@@ -45,7 +49,7 @@ Signed-off-by: SkyLake.Huang <skylake.huang@mediatek.com>
  static const struct flash_info *spi_nor_get_flash_info(struct spi_nor *nor,
  						       const char *name)
  {
-@@ -3474,6 +3486,9 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -3482,6 +3494,9 @@
  	if (ret)
  		return ret;
  
