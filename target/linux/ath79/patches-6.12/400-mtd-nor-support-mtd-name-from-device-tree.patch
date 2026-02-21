@@ -10,7 +10,7 @@ Signed-off-by: Abhimanyu Vishwakarma <Abhimanyu.Vishwakarma@imgtec.com>
 
 --- a/drivers/mtd/spi-nor/core.c
 +++ b/drivers/mtd/spi-nor/core.c
-@@ -3385,12 +3385,19 @@ static int spi_nor_set_mtd_info(struct s
+@@ -3402,12 +3402,19 @@ static int spi_nor_set_mtd_info(struct s
  {
  	struct mtd_info *mtd = &nor->mtd;
  	struct device *dev = nor->dev;
