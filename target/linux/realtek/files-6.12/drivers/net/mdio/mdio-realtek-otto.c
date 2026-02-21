@@ -9,7 +9,7 @@
 #include <linux/regmap.h>
 #include <linux/types.h>
 
-#define RTMDIO_MAX_PORT				57
+#define RTMDIO_MAX_PHY				57
 #define RTMDIO_MAX_SMI_BUS			4
 #define RTMDIO_PAGE_SELECT			0x1f
 
@@ -181,10 +181,10 @@
 struct rtmdio_ctrl {
 	struct regmap *map;
 	const struct rtmdio_config *cfg;
-	int page[RTMDIO_MAX_PORT];
-	bool raw[RTMDIO_MAX_PORT];
-	int smi_bus[RTMDIO_MAX_PORT];
-	int smi_addr[RTMDIO_MAX_PORT];
+	int page[RTMDIO_MAX_PHY];
+	bool raw[RTMDIO_MAX_PHY];
+	int smi_bus[RTMDIO_MAX_PHY];
+	int smi_addr[RTMDIO_MAX_PHY];
 	bool smi_bus_isc45[RTMDIO_MAX_SMI_BUS];
 };
 
@@ -877,7 +877,7 @@ static int rtmdio_reset(struct mii_bus *bus)
 static int rtmdio_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
-	struct device_node *dn[RTMDIO_MAX_PORT] = {}, *np;
+	struct device_node *dn[RTMDIO_MAX_PHY] = {}, *np;
 	struct rtmdio_ctrl *ctrl;
 	struct mii_bus *bus;
 	int ret, addr;
@@ -892,7 +892,7 @@ static int rtmdio_probe(struct platform_device *pdev)
 	if (IS_ERR(ctrl->map))
 		return PTR_ERR(ctrl->map);
 
-	for (addr = 0; addr < RTMDIO_MAX_PORT; addr++)
+	for (addr = 0; addr < RTMDIO_MAX_PHY; addr++)
 		ctrl->smi_bus[addr] = -1;
 
 	for_each_node_by_name(np, "ethernet-phy") {
