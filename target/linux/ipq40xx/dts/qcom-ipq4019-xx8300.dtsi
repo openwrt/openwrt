@@ -25,12 +25,6 @@
 		bootargs-append = " root=/dev/ubiblock0_0 rootfstype=squashfs ro";
 	};
 
-
-	aliases {
-		// TODO: Verify if the ethernet0 alias is needed
-		ethernet0 = &gmac;
-	};
-
 	soc {
 		tcsr@1949000 {
 			compatible = "qcom,tcsr";
@@ -165,6 +159,17 @@
 				label = "devinfo";
 				reg = <0x740000 0x40000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "ascii-eq-delim-env";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					hw_mac_addr: hw_mac_addr {
+						compatible = "mac-base";
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@780000 {
@@ -291,6 +296,9 @@
 
 &gmac {
 	status = "okay";
+
+	nvmem-cells = <&hw_mac_addr 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &switch {
@@ -315,4 +323,7 @@
 
 &swport5 {
 	status = "okay";
+
+	nvmem-cells = <&hw_mac_addr 0>;
+	nvmem-cell-names = "mac-address";
 };

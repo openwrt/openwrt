@@ -293,17 +293,6 @@ ramips_setup_macs()
 		wan_mac=$lan_mac
 		label_mac=$lan_mac
 		;;
-	linksys,e5600|\
-	linksys,ea6350-v4|\
-	linksys,ea7300-v1|\
-	linksys,ea7300-v2|\
-	linksys,ea7500-v2|\
-	linksys,ea8100-v1|\
-	linksys,ea8100-v2)
-		lan_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
-		wan_mac=$lan_mac
-		label_mac=$lan_mac
-		;;
 	belkin,rt1800|\
 	linksys,e7350)
 		lan_mac=$(mtd_get_mac_ascii Config lan_hwaddr)
