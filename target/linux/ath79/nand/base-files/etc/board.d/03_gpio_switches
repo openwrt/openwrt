@@ -14,6 +14,12 @@ zte,mf286c|\
 zte,mf286r)
 	ucidef_add_gpio_switch "power_btn_block" "Power button blocker" "532" "0"
 	;;
+zyxel,nap203|\
+zyxel,nwa1123-ac-pro|\
+zyxel,wac6103d-i)
+	ucidef_add_gpio_switch "radio0_ceiling" "Radio 0 ceiling mount" "radio0_ceiling"
+	ucidef_add_gpio_switch "radio1_ceiling" "Radio 1 ceiling mount" "radio1_ceiling"
+	;;
 esac
 
 board_config_flush
