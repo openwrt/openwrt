@@ -1,0 +1,386 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qcom-ipq8064-v2.0.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "Aruba AP-325";
+	compatible = "aruba,ap-325", "qcom,ipq8064";
+
+	memory@0 {
+		reg = <0x41500000 0x1eb00000>;
+		device_type = "memory";
+	};
+
+	reserved-memory {
+		ramoops@42100000 {
+			compatible = "ramoops";
+			reg = <0x42100000 0x80000>;
+			record-size = <0x10000>;
+			console-size = <0x10000>;
+			ftrace-size = <0x10000>;
+			pmsg-size = <0x10000>;
+		};
+	};
+
+	aliases {
+		serial0 = &gsbi4_serial;
+		serial1 = &gsbi2_serial;
+
+		ethernet0 = &gmac2;
+		ethernet1 = &gmac3;
+
+		led-boot = &led_power_orange;
+		led-failsafe = &led_power_red;
+		led-running = &led_power_green;
+		led-upgrade = &led_power_orange;
+
+		label-mac-device = &gmac2;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs-append = "ubi.mtd=aos1 ubi.block=0,aos1 root=/dev/ubiblock0_0";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		pinctrl-0 = <&button_pins>;
+		pinctrl-names = "default";
+
+		reset {
+			label = "reset";
+			gpios = <&qcom_pinmux 9 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+			debounce-interval = <60>;
+			wakeup-source;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
+
+		led_power_green: power_green {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&qcom_pinmux 28 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_power_orange: power_orange {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_ORANGE>;
+			gpios = <&qcom_pinmux 29 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_power_red: power_red {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&qcom_pinmux 30 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_wlan_green {
+			label = "green:wlan";
+			gpios = <&qcom_pinmux 31 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		led_wlan_orange {
+			label = "orange:wlan";
+			gpios = <&qcom_pinmux 32 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "phy1tpt";
+		};
+	};
+
+	watchdog {
+		compatible = "linux,wdt-gpio";
+		gpios = <&qcom_pinmux 61 GPIO_ACTIVE_LOW>;
+		hw_algo = "toggle";
+		hw_margin_ms = <1000>;
+		always-running;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&watchdog_pins>;
+	};
+
+	i2c {
+		compatible = "i2c-gpio";
+
+		sda-gpios = <&qcom_pinmux 24 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&qcom_pinmux 25 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		at97sc3205t@29 {
+			compatible = "tpm,tpm_i2c_atmel";
+			reg = <0x29>;
+		};
+	};
+};
+
+&qcom_pinmux {
+	led_pins: led_pins {
+		mux {
+			pins = "gpio28", "gpio29", "gpio30", "gpio31", "gpio32";
+			function = "gpio";
+			drive-strength = <12>;
+			bias-pull-up;
+		};
+	};
+
+	button_pins: button_pins {
+		mux {
+			pins = "gpio9";
+			function = "gpio";
+			bias-pull-up;
+		};
+	};
+
+	uart0_pins: uart0_pins {
+		mux {
+			pins = "gpio10", "gpio11";
+			function = "gsbi4";
+			drive-strength = <10>;
+			bias-disable;
+		};
+	};
+
+	uart1_pins: uart1_pins {
+		mux {
+			pins = "gpio22", "gpio23";
+			function = "gsbi2";
+			drive-strength = <10>;
+			bias-disable;
+		};
+	};
+
+	watchdog_pins: watchdog_pins {
+		mux {
+			pins = "gpio61";
+			function = "gpio";
+			drive-strength = <10>;
+			bias-disable;
+		};
+	};
+	/* used for USB over-current detection instead */
+	/delete-node/ pcie2_pins;
+};
+
+&gsbi4 {
+	status = "okay";
+	qcom,mode = <GSBI_PROT_I2C_UART>;
+};
+
+&gsbi4_serial {
+	status = "okay";
+	pinctrl-0 = <&uart0_pins>;
+	pinctrl-names = "default";
+};
+
+&gsbi2 {
+	status = "okay";
+	qcom,mode = <GSBI_PROT_I2C_UART>;
+};
+
+&gsbi2_serial {
+	status = "okay";
+	pinctrl-0 = <&uart1_pins>;
+	pinctrl-names = "default";
+};
+
+&gsbi5 {
+	qcom,mode = <GSBI_PROT_SPI>;
+	status = "okay";
+
+	spi@1a280000 {
+		status = "okay";
+		spi-max-frequency = <50000000>;
+
+		pinctrl-0 = <&spi_pins>;
+		pinctrl-names = "default";
+
+		cs-gpios = <&qcom_pinmux 20 GPIO_ACTIVE_LOW>;
+
+		mx25u3235f@0 {
+			compatible = "jedec,spi-nor";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			spi-max-frequency = <50000000>;
+			reg = <0>;
+
+			partitions {
+				compatible = "qcom,smem-part";
+
+				partition-art {
+					compatible = "nvmem-cells";
+					#address-cells = <1>;
+					#size-cells = <1>;
+					label = "0:art";
+
+					precal_art_1000: precal@1000 {
+						reg = <0x1000 0x2f20>;
+					};
+
+					precal_art_5000: precal@5000 {
+						reg = <0x5000 0x2f20>;
+					};
+				};
+
+				partition-appsblenv {
+					label = "0:appsblenv";
+
+					nvmem-layout {
+						compatible = "u-boot,env";
+
+						macaddr_lan: ethaddr {
+							#nvmem-cell-cells = <1>;
+						};
+					};
+				};
+			};
+		};
+	};
+};
+
+&pcie0 {
+	status = "okay";
+};
+
+&pcie_bridge0 {
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		status = "okay";
+		reg = <0x10000 0 0 0 0>;
+
+		nvmem-cells = <&precal_art_1000>;
+		nvmem-cell-names = "pre-calibration";
+	};
+};
+
+&pcie1 {
+	status = "okay";
+};
+
+&pcie_bridge1 {
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		status = "okay";
+		reg = <0x10000 0 0 0 0>;
+
+		nvmem-cells = <&precal_art_5000>;
+		nvmem-cell-names = "pre-calibration";
+	};
+};
+
+&nand {
+	status = "okay";
+
+	nand@0 {
+		compatible = "qcom,nandcs";
+
+		reg = <0>;
+
+		nand-ecc-strength = <4>;
+		nand-bus-width = <8>;
+		nand-ecc-step-size = <512>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			aos0@0 {
+				label = "aos0";
+				reg = <0x0 0x2000000>;
+			};
+
+			aos1@2000000 {
+				label = "aos1";
+				reg = <0x2000000 0x2000000>;
+			};
+
+			ubifs@4000000 {
+				label = "ubifs";
+				reg = <0x4000000 0x4000000>;
+			};
+		};
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	pinctrl-0 = <&mdio0_pins>;
+	pinctrl-names = "default";
+
+	phy0: ethernet-phy@0 {
+		reg = <0>;
+	};
+
+	phy1: ethernet-phy@1 {
+		reg = <1>;
+	};
+};
+
+&gmac2 {
+	status = "okay";
+
+	qcom,id = <2>;
+	mdiobus = <&mdio0>;
+
+	phy-mode = "sgmii";
+	phy-handle = <&phy0>;
+
+	nvmem-cells = <&macaddr_lan 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gmac3 {
+	status = "okay";
+
+	qcom,id = <3>;
+	mdiobus = <&mdio0>;
+
+	phy-mode = "sgmii";
+	phy-handle = <&phy1>;
+
+	nvmem-cells = <&macaddr_lan 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&adm_dma {
+	status = "okay";
+};
+
+/* USB Port 0 is connected to the onboard BLE SoC.
+ * The stock FW on that doesn't implement USB, so to prevent errors from
+ * being logged when the host fails to initialize it, it's disabled by
+ * default here. */
+&hs_phy_0 {
+	status = "disabled";
+};
+
+&ss_phy_0 {
+	status = "disabled";
+};
+
+&usb3_0 {
+	status = "disabled";
+};
+
+&hs_phy_1 {
+	status = "okay";
+};
+
+&ss_phy_1 {
+	status = "okay";
+};
+
+&usb3_1 {
+	status = "okay";
+};

@@ -14,6 +14,11 @@ ipq806x_setup_interfaces()
 	arris,tr4400-v2)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "eth2"
 		;;
+	aruba,ap-325|\
+	edgecore,ecw5410|\
+	extreme,ap3935)
+		ucidef_set_interfaces_lan_wan "eth1" "eth0"
+		;;
 	askey,rt4230w-rev6|\
 	asrock,g10|\
 	buffalo,wxr-2533dhp|\
@@ -46,10 +51,6 @@ ipq806x_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "lan1" "wan"
 		ucidef_set_network_device_conduit "lan1" "eth1"
 		ucidef_set_network_device_conduit "wan" "eth0"
-		;;
-	edgecore,ecw5410|\
-	extreme,ap3935)
-		ucidef_set_interfaces_lan_wan "eth1" "eth0"
 		;;
 	fortinet,fap-421e|\
 	ignitenet,ss-w2-ac2600|\
