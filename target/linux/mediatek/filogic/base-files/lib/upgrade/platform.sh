@@ -177,7 +177,8 @@ platform_do_upgrade() {
 		fw_setenv sw_tryactive 0
 		nand_do_upgrade "$1"
 		;;
-	elecom,wrc-x3000gs3)
+	elecom,wrc-x3000gs3|\
+	elecom,wrc-x6000qs)
 		local bootnum="$(mstc_rw_bootnum)"
 		case "$bootnum" in
 		1|2)

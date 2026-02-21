@@ -1424,6 +1424,25 @@ define Device/elecom_wrc-x3000gs3
 endef
 TARGET_DEVICES += elecom_wrc-x3000gs3
 
+define Device/elecom_wrc-x6000qs
+  DEVICE_VENDOR := Elecom
+  DEVICE_MODEL := WRC-X6000QS
+  DEVICE_DTS := mt7986b-elecom-wrc-x6000qs
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTS_LOADADDR := 0x47000000
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  UBINIZE_OPTS := -E 5
+  KERNEL_IN_UBI := 1
+  IMAGE_SIZE := 51200k
+  IMAGES := sysupgrade.bin factory.bin
+  IMAGE/factory.bin := sysupgrade-tar | mstc-header 5.04(XZQ.0)b90 COMD | \
+	elecom-product-header WRC-X6000QS
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7986-firmware mt7986-wo-firmware
+endef
+TARGET_DEVICES += elecom_wrc-x6000qs
+
 define Device/gatonetworks_gdsp
   DEVICE_VENDOR := GatoNetworks
   DEVICE_MODEL := gdsp
