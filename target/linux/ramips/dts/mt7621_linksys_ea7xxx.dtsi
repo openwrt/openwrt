@@ -133,25 +133,23 @@
 		};
 
 		partition@180000 {
-			label = "kernel";
+			label = "kernel1";
 			reg = <0x180000 0x400000>;
 		};
 
 		partition@580000 {
-			label = "ubi";
+			label = "rootfs1";
 			reg = <0x580000 0x2400000>;
 		};
 
 		partition@2980000 {
-			label = "alt_kernel";
+			label = "kernel2";
 			reg = <0x2980000 0x400000>;
-			read-only;
 		};
 
 		partition@2d80000 {
-			label = "alt_rootfs";
+			label = "rootfs2";
 			reg = <0x2d80000 0x2400000>;
-			read-only;
 		};
 
 		partition@5180000 {
