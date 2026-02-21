@@ -53,10 +53,6 @@ bcm53xx_setup_macs()
 	wan_macaddr="$(nvram get wan_hwaddr)"
 
 	case "$board" in
-	asus,rt-ac87u)
-		etXmacaddr=$(nvram get et1macaddr)
-		offset=1
-		;;
 	dlink,dir-885l | \
 	linksys,ea9200 | \
 	linksys,panamera | \
