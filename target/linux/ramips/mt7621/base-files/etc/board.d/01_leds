@@ -156,6 +156,10 @@ linksys,ea8100-v2)
 	ucidef_set_led_netdev "lan4" "lan4 link" "green:lan4" "lan4" "link"
 	ucidef_set_led_netdev "wan" "wan link" "green:wan" "wan" "link"
 	;;
+mercury,km08-708h)
+	ucidef_set_led_netdev "lan2" "lan2 link" "green_lan2" "lan2" "link tx rx"
+	ucidef_set_led_netdev "wlan2g" "wlan2g link" "green_wlan" "phy0tpt" "link tx rx"
+	;;
 meig,slt866)
 	ucidef_set_led_netdev "lan" "eth" "blue:lanwan" "lan" "link tx rx"
 	ucidef_set_led_netdev "wwan0" "net" "blue:internet" "wwan0" "link tx rx"

@@ -2189,6 +2189,23 @@ define Device/meig_slt866
 endef
 TARGET_DEVICES += meig_slt866
 
+define Device/mercury_km08-708h
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  PAGESIZE := 2048
+  BLOCKSIZE := 128k
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 115712k
+  DEVICE_VENDOR := Mercury
+  DEVICE_MODEL := KM08-708H
+  UBINIZE_OPTS := -E 5
+  IMAGES += factory.bin sysupgrade.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | check-size
+  DEVICE_PACKAGES := kmod-mt7615-firmware kmod-mt7615e kmod-usb3 uboot-envtools
+endef
+TARGET_DEVICES += mercury_km08-708h
+
 define Device/mercusys_mr70x-v1
   $(Device/dsa-migration)
   $(Device/tplink-safeloader)
