@@ -93,6 +93,10 @@ platform_do_upgrade() {
 	comfast,cf-wr632ax-ubootmod|\
 	cudy,tr3000-v1-ubootmod|\
 	cudy,wbr3000uax-v1-ubootmod|\
+	cudy,wr3000e-v1-ubootmod|\
+	cudy,wr3000s-v1-ubootmod|\
+	cudy,wr3000h-v1-ubootmod|\
+	cudy,wr3000p-v1-ubootmod|\
 	gatonetworks,gdsp|\
 	h3c,magic-nx30-pro|\
 	imou,hx21|\
@@ -287,6 +291,10 @@ platform_check_image() {
 	comfast,cf-wr632ax-ubootmod|\
 	cudy,tr3000-v1-ubootmod|\
 	cudy,wbr3000uax-v1-ubootmod|\
+	cudy,wr3000e-v1-ubootmod|\
+	cudy,wr3000s-v1-ubootmod|\
+	cudy,wr3000h-v1-ubootmod|\
+	cudy,wr3000p-v1-ubootmod|\
 	gatonetworks,gdsp|\
 	h3c,magic-nx30-pro|\
 	jcg,q30-pro|\
