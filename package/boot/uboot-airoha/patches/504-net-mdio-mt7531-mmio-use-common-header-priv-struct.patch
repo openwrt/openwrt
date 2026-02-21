@@ -1,0 +1,114 @@
+From 1a853053a3e44cae45f16b1b30da70da2629c590 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Mon, 9 Feb 2026 12:20:33 +0100
+Subject: [PATCH 14/24] net: mdio-mt7531-mmio: use common header priv struct
+
+Instead of having duplicate priv struct for mdio-mt7531-mmio driver in
+both driver and header, use the one exposed by the header directly.
+
+This make sure we have consistent priv struct if the driver will be
+updated in the future.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/net/mdio-mt7531-mmio.c | 24 +++++++++++-------------
+ 1 file changed, 11 insertions(+), 13 deletions(-)
+
+diff --git a/drivers/net/mdio-mt7531-mmio.c b/drivers/net/mdio-mt7531-mmio.c
+index 5a0725010f2..930454a9b0e 100644
+--- a/drivers/net/mdio-mt7531-mmio.c
++++ b/drivers/net/mdio-mt7531-mmio.c
+@@ -6,6 +6,8 @@
+ #include <linux/iopoll.h>
+ #include <miiphy.h>
+ 
++#include "mdio-mt7531-mmio.h"
++
+ #define MT7531_PHY_IAC			0x701c
+ #define   MT7531_PHY_ACS_ST		BIT(31)
+ #define   MT7531_MDIO_REG_ADDR_CL22	GENMASK(29, 25)
+@@ -25,11 +27,7 @@
+ #define MT7531_MDIO_TIMEOUT		100000
+ #define MT7531_MDIO_SLEEP		20
+ 
+-struct mt7531_mdio_priv {
+-	phys_addr_t switch_regs;
+-};
+-
+-static int mt7531_mdio_wait_busy(struct mt7531_mdio_priv *priv)
++static int mt7531_mdio_wait_busy(struct mt7531_mdio_mmio_priv *priv)
+ {
+ 	unsigned int busy;
+ 
+@@ -38,7 +36,7 @@ static int mt7531_mdio_wait_busy(struct mt7531_mdio_priv *priv)
+ 					MT7531_MDIO_SLEEP, MT7531_MDIO_TIMEOUT);
+ }
+ 
+-static int mt7531_mdio_read(struct mt7531_mdio_priv *priv, int addr, int devad, int reg)
++static int mt7531_mdio_read(struct mt7531_mdio_mmio_priv *priv, int addr, int devad, int reg)
+ {
+ 	u32 val;
+ 
+@@ -75,7 +73,7 @@ static int mt7531_mdio_read(struct mt7531_mdio_priv *priv, int addr, int devad,
+ 	return val & MT7531_MDIO_RW_DATA;
+ }
+ 
+-static int mt7531_mdio_write(struct mt7531_mdio_priv *priv, int addr, int devad,
++static int mt7531_mdio_write(struct mt7531_mdio_mmio_priv *priv, int addr, int devad,
+ 			     int reg, u16 value)
+ {
+ 	u32 val;
+@@ -115,7 +113,7 @@ static int mt7531_mdio_write(struct mt7531_mdio_priv *priv, int addr, int devad,
+ 
+ int mt7531_mdio_mmio_read(struct mii_dev *bus, int addr, int devad, int reg)
+ {
+-	struct mt7531_mdio_priv *priv = bus->priv;
++	struct mt7531_mdio_mmio_priv *priv = bus->priv;
+ 
+ 	return mt7531_mdio_read(priv, addr, devad, reg);
+ }
+@@ -123,14 +121,14 @@ int mt7531_mdio_mmio_read(struct mii_dev *bus, int addr, int devad, int reg)
+ int mt7531_mdio_mmio_write(struct mii_dev *bus, int addr, int devad,
+ 			   int reg, u16 value)
+ {
+-	struct mt7531_mdio_priv *priv = bus->priv;
++	struct mt7531_mdio_mmio_priv *priv = bus->priv;
+ 
+ 	return mt7531_mdio_write(priv, addr, devad, reg, value);
+ }
+ 
+ static int dm_mt7531_mdio_read(struct udevice *dev, int addr, int devad, int reg)
+ {
+-	struct mt7531_mdio_priv *priv = dev_get_priv(dev);
++	struct mt7531_mdio_mmio_priv *priv = dev_get_priv(dev);
+ 
+ 	return mt7531_mdio_read(priv, addr, devad, reg);
+ }
+@@ -138,7 +136,7 @@ static int dm_mt7531_mdio_read(struct udevice *dev, int addr, int devad, int reg
+ static int dm_mt7531_mdio_write(struct udevice *dev, int addr, int devad,
+ 				int reg, u16 value)
+ {
+-	struct mt7531_mdio_priv *priv = dev_get_priv(dev);
++	struct mt7531_mdio_mmio_priv *priv = dev_get_priv(dev);
+ 
+ 	return mt7531_mdio_write(priv, addr, devad, reg, value);
+ }
+@@ -150,7 +148,7 @@ static const struct mdio_ops mt7531_mdio_ops = {
+ 
+ static int mt7531_mdio_probe(struct udevice *dev)
+ {
+-	struct mt7531_mdio_priv *priv = dev_get_priv(dev);
++	struct mt7531_mdio_mmio_priv *priv = dev_get_priv(dev);
+ 	ofnode switch_node;
+ 
+ 	switch_node = ofnode_get_parent(dev_ofnode(dev));
+@@ -169,5 +167,5 @@ U_BOOT_DRIVER(mt7531_mdio) = {
+ 	.id             = UCLASS_MDIO,
+ 	.probe          = mt7531_mdio_probe,
+ 	.ops            = &mt7531_mdio_ops,
+-	.priv_auto	  = sizeof(struct mt7531_mdio_priv),
++	.priv_auto	  = sizeof(struct mt7531_mdio_mmio_priv),
+ };
+-- 
+2.51.0
+
