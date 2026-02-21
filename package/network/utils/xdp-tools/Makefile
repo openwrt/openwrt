@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=xdp-tools
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 PKG_VERSION:=1.5.8
 PKG_HASH:=e7b9717074c511fef34aab6e22b16af55fb33307505a5785d25a82b542e596ae
 
@@ -24,7 +24,7 @@ define Package/libxdp
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=libxdp - Library for use with XDP
-  LICENSE:=LGPL-2.1 OR BSD-2-Clause
+  LICENSE:=BSD-2-Clause LGPL-2.1
   ABI_VERSION:=$(PKG_ABI_VERSION)
   URL:=https://github.com/xdp-project/xdp-tools/
   DEPENDS:=+libbpf $(BPF_DEPENDS)
