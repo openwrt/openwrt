@@ -11,6 +11,7 @@ ipq60xx_setup_interfaces()
 	local board="$1"
 
 	case "$board" in
+	edgecore,eap101|\
 	8devices,mango-dvk|\
 	glinet,gl-axt1800)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
