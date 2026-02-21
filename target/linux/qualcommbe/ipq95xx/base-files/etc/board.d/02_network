@@ -14,6 +14,9 @@ ipq95xx_setup_interfaces()
 	8devices,kiwi-dvk)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
 		;;
+	askey,sbe1v1k)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+		;;
 	qcom,ipq9574-ap-al02-c7)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5" "wan"
 		;;
@@ -23,9 +26,33 @@ ipq95xx_setup_interfaces()
 	esac
 }
 
+ipq95xx_setup_macs()
+{
+	local board="$1"
+	local label_mac=""
+	local wan_mac=""
+	local lan_mac=""
+
+	case "$board" in
+	askey,sbe1v1k)
+		label_mac=$(mmc_get_mac_ascii 0:APPSBLENV ethaddr)
+		wan_mac=$label_mac
+		lan_mac=$(macaddr_add "$label_mac" 1)
+		;;
+	*)
+		echo "Unsupported hardware. MAC addresses not set"
+		;;
+	esac
+
+	[ -n "$label_mac" ] && ucidef_set_label_macaddr $label_mac
+	[ -n "$wan_mac" ] && ucidef_set_interface_macaddr "wan" $wan_mac
+	[ -n "$wan_mac" ] && ucidef_set_interface_macaddr "lan" $lan_mac
+}
+
 board_config_update
 board=$(board_name)
 ipq95xx_setup_interfaces $board
+ipq95xx_setup_macs $board
 board_config_flush
 
 exit 0
