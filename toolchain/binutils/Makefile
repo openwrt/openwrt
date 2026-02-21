@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=binutils
 PKG_VERSION:=$(call qstrip,$(CONFIG_BINUTILS_VERSION))
-BIN_VERSION:=$(PKG_VERSION)
+BASE_VERSION:=$(subst $(space),.,$(wordlist 1,2,$(subst .,$(space),$(PKG_VERSION))))
 
 PKG_SOURCE_URL:=@GNU/binutils/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
@@ -32,9 +32,13 @@ ifeq ($(PKG_VERSION),2.45.1)
   PKG_HASH:=5fe101e6fe9d18fdec95962d81ed670fdee5f37e3f48f0bef87bddf862513aa5
 endif
 
+ifeq ($(PKG_VERSION),2.46.0)
+  PKG_HASH:=d75a94f4d73e7a4086f7513e67e439e8fcdcbb726ffe63f4661744e6256b2cf2
+endif
+
 HOST_BUILD_PARALLEL:=1
 
-PATCH_DIR:=./patches/$(PKG_VERSION)
+PATCH_DIR:=./patches/$(BASE_VERSION)
 
 include $(INCLUDE_DIR)/toolchain-build.mk
 
