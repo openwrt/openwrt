@@ -1,0 +1,33 @@
+From ef250bedb67af7689606141a64843426466b37ae Mon Sep 17 00:00:00 2001
+From: Nick Hainke <vincent@systemli.org>
+Date: Fri, 13 Feb 2026 01:05:35 +0100
+Subject: [PATCH] xdp-dump: fix stdbool.h missing error
+
+Remove stdbool.h include and define bool/_Bool manually for BPF
+compilation, as this header is not available in the BPF toolchain
+when building with musl libc.
+
+Signed-off-by: Nick Hainke <vincent@systemli.org>
+---
+ xdp-dump/xdpdump_bpf.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/xdp-dump/xdpdump_bpf.c
++++ b/xdp-dump/xdpdump_bpf.c
+@@ -3,12 +3,15 @@
+ /*****************************************************************************
+  * Include files
+  *****************************************************************************/
+-#include <stdbool.h>
+ #include <linux/bpf.h>
+ #include <bpf/bpf_helpers.h>
+ #include <bpf/bpf_trace_helpers.h>
+ #include "xdpdump.h"
+ 
++#define bool _Bool
++#define true 1
++#define false 0
++
+ /*****************************************************************************
+  * Macros
+  *****************************************************************************/
