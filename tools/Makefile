@@ -29,6 +29,9 @@ endif
 ifneq ($(CONFIG_SDK)$(CONFIG_TARGET_INITRAMFS_COMPRESSION_LZO),)
   BUILD_LZO_TOOLS = y
 endif
+ifneq ($(CONFIG_SDK)$(CONFIG_BUILD_HOST_PYTHON),)
+  BUILD_PYTHON = y
+endif
 
 tools-y += autoconf
 tools-y += autoconf-archive
@@ -78,6 +81,7 @@ tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(BUILD_ISL),y) += isl
 tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(BUILD_LZ4_TOOLS),y) += lz4
 tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(BUILD_LZO_TOOLS),y) += lzop
 tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(BUILD_TOOLCHAIN),y) += gmp mpc mpfr
+tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(BUILD_PYTHON),y) += python3
 tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_TARGET_apm821xx)$(CONFIG_TARGET_gemini),y) += genext2fs
 tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_TARGET_ath79),y) += lzma-old squashfs3-lzma
 tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_TARGET_mxs),y) += elftosb sdimage
@@ -126,15 +130,24 @@ $(curdir)/mold/compile := $(curdir)/cmake/compile $(curdir)/zlib/compile $(curdi
 $(curdir)/mpc/compile := $(curdir)/mpfr/compile $(curdir)/gmp/compile
 $(curdir)/mpfr/compile := $(curdir)/gmp/compile
 $(curdir)/mtd-utils/compile := $(curdir)/libtool/compile $(curdir)/zlib/compile $(curdir)/util-linux/compile
+$(curdir)/ninja/compile := $(curdir)/python3/compile
 $(curdir)/padjffs2/compile := $(curdir)/findutils/compile
 $(curdir)/patchelf/compile := $(curdir)/libtool/compile
-$(curdir)/pkgconf/compile := $(curdir)/meson/compile
+$(curdir)/python3/compile := $(curdir)/expat/compile $(curdir)/libressl/compile $(curdir)/lzma/compile $(curdir)/util-linux/compile $(curdir)/zlib/compile
 $(curdir)/quilt/compile := $(curdir)/autoconf/compile $(curdir)/findutils/compile
 $(curdir)/sdcc/compile := $(curdir)/bison/compile
 $(curdir)/squashfs3-lzma/compile := $(curdir)/lzma-old/compile
 $(curdir)/squashfs4/compile := $(curdir)/xz/compile $(curdir)/zlib/compile
-$(curdir)/util-linux/compile := $(curdir)/bison/compile $(curdir)/meson/compile
+$(curdir)/util-linux/compile := $(curdir)/bison/compile
 $(curdir)/yafut/compile := $(curdir)/cmake/compile
+
+# Downloads that use scripts/dl_github_archive.py depend on Python.
+ifneq ($(CONFIG_BUILD_ALL_HOST_TOOLS)$(BUILD_PYTHON),)
+  $(curdir)/b43-tools/compile += $(curdir)/python3/compile
+  $(curdir)/cbootimage-configs/compile := $(curdir)/python3/compile
+  $(curdir)/kernel2minor/compile := $(curdir)/python3/compile
+  $(curdir)/sdimage/compile := $(curdir)/python3/compile
+endif
 
 ifneq ($(HOST_OS),Linux)
   tools-y += coreutils
@@ -151,15 +164,39 @@ endif
 ifeq ($(HOST_OS),Darwin)
   tools-y += bash
 else
-  $(curdir)/dwarves/compile += $(curdir)/elfutils/compile
+  $(curdir)/dwarves/compile += $(curdir)/cmake/compile $(curdir)/elfutils/compile
   tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_DWARVES),y) += dwarves
 endif
 
+# CMake and its dependencies cannot depend on Ccache, or it is circular.
 ifneq ($(CONFIG_CCACHE)$(CONFIG_SDK),)
-$(foreach tool, $(filter-out zstd zlib xz pkgconf patch ninja meson libressl expat cmake,$(tools-y)), $(eval $(curdir)/$(tool)/compile += $(curdir)/ccache/compile))
-tools-y += ccache xxhash
-$(curdir)/xxhash/compile := $(curdir)/cmake/compile
-$(curdir)/ccache/compile := $(curdir)/xxhash/compile
+  tools-noccache :=
+  tools-noccache += autoconf
+  tools-noccache += automake
+  tools-noccache += bison
+  tools-noccache += cmake
+  tools-noccache += expat
+  tools-noccache += flex
+  tools-noccache += gnulib
+  tools-noccache += libressl
+  tools-noccache += libtool
+  tools-noccache += lzma
+  tools-noccache += m4
+  tools-noccache += missing-macros
+  tools-noccache += ninja
+  tools-noccache += patch
+  tools-noccache += pkgconf
+  tools-noccache += python3
+  tools-noccache += util-linux
+  tools-noccache += xz
+  tools-noccache += zlib
+  tools-noccache += zstd
+
+  $(foreach tool, $(filter-out $(tools-noccache),$(tools-y)), $(eval $(curdir)/$(tool)/compile += $(curdir)/ccache/compile))
+  tools-y += ccache
+  tools-y += xxhash
+  $(curdir)/xxhash/compile := $(curdir)/cmake/compile
+  $(curdir)/ccache/compile := $(curdir)/xxhash/compile
 endif
 
 # in case there is no patch tool on the host we need to make patch tool a
