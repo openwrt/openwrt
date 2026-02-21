@@ -107,7 +107,7 @@
 #define RTMDIO_931X_SMI_10GPHY_POLLING_SEL3	(0x0CFC)
 #define RTMDIO_931X_SMI_10GPHY_POLLING_SEL4	(0x0D00)
 
-#define for_each_port(ctrl, addr) \
+#define for_each_phy(ctrl, addr) \
 	for (int addr = 0; addr < (ctrl)->cfg->num_phys; addr++) \
 		if ((ctrl)->smi_bus[addr] >= 0)
 
@@ -567,7 +567,7 @@ static void rtmdio_setup_smi_topology(struct mii_bus *bus)
 	struct rtmdio_ctrl *ctrl = bus->priv;
 	u32 reg, mask, val;
 
-	for_each_port(ctrl, addr) {
+	for_each_phy(ctrl, addr) {
 		if (ctrl->cfg->bus_map_base) {
 			reg = (addr / 16) * 4;
 			mask = 0x3 << ((addr % 16) * 2);
@@ -727,7 +727,7 @@ static void rtmdio_930x_setup_polling(struct mii_bus *bus)
 	regmap_write(ctrl->map, RTMDIO_930X_SMI_MAC_TYPE_CTRL, 0);
 
 	/* Define PHY specific polling parameters */
-	for_each_port(ctrl, addr) {
+	for_each_phy(ctrl, addr) {
 		if (rtmdio_get_phy_info(bus, addr, &phyinfo))
 			continue;
 
@@ -804,7 +804,7 @@ static void rtmdio_931x_setup_polling(struct mii_bus *bus)
 			     RTMDIO_931X_SMI_PHY_ABLTY_SDS * 0x55555555U);
 
 	/* Define PHY specific polling parameters */
-	for_each_port(ctrl, addr) {
+	for_each_phy(ctrl, addr) {
 		int smi = ctrl->smi_bus[addr];
 		unsigned int mask, val;
 		
@@ -938,10 +938,7 @@ static int rtmdio_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
-	for (addr = 0; addr < ctrl->cfg->num_phys; addr++) {
-		if (ctrl->smi_bus[addr] < 0)
-			continue;
-
+	for_each_phy(ctrl, addr) {
 		ret = fwnode_mdiobus_register_phy(bus, of_fwnode_handle(dn[addr]), addr);
 		of_node_put(dn[addr]);
 		if (ret)
