@@ -5,7 +5,7 @@ Subject: [PATCH] wpa_supplicant: fix calling channel switch via wpa_cli on
 
 --- a/wpa_supplicant/ap.c
 +++ b/wpa_supplicant/ap.c
-@@ -1851,17 +1851,37 @@ int ap_switch_channel(struct wpa_supplic
+@@ -1855,6 +1855,21 @@ int ap_switch_channel(struct wpa_supplic
  
  
  #ifdef CONFIG_CTRL_IFACE
@@ -27,10 +27,13 @@ Subject: [PATCH] wpa_supplicant: fix calling channel switch via wpa_cli on
  int ap_ctrl_iface_chanswitch(struct wpa_supplicant *wpa_s, const char *pos)
  {
  	struct csa_settings settings;
- 	int ret = hostapd_parse_csa_settings(pos, &settings);
+@@ -1874,12 +1889,18 @@ int ap_ctrl_iface_chanswitch(struct wpa_
+ 		return -1;
  
+ 	ret = hostapd_parse_csa_settings(iface, pos, &settings);
 -	if (ret)
 -		return ret;
++
 +	if (!(wpa_s->ap_iface && wpa_s->ap_iface->bss[0]) &&
 +	    !(wpa_s->ifmsh && wpa_s->ifmsh->bss[0]))
 +		return -1;

@@ -26,15 +26,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -3878,6 +3878,7 @@ int hostapd_add_iface(struct hapd_interf
- 			}
- 
- 			if (hostapd_setup_interface(hapd_iface)) {
-+				hostapd_bss_link_deinit(hapd_iface->bss[0]);
- 				hostapd_deinit_driver(
- 					hapd_iface->bss[0]->driver,
- 					hapd_iface->bss[0]->drv_priv,
-@@ -5135,6 +5136,9 @@ int hostapd_mld_remove_link(struct hosta
+@@ -5163,6 +5163,9 @@ int hostapd_mld_remove_link(struct hosta
  	if (!mld)
  		return -1;
  
