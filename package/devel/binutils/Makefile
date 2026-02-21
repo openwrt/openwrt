@@ -16,6 +16,10 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_VERSION:=$(PKG_VERSION)
 PKG_HASH:=5fe101e6fe9d18fdec95962d81ed670fdee5f37e3f48f0bef87bddf862513aa5
 
+PKG_GPG_KEYS_DIR:=$(CURDIR)/keys
+PKG_SOURCE_SIG:=$(PKG_SOURCE).sig
+PKG_VALIDPGPKEYS:=25A6BB88DD9B764C6B5541C2738409F520DF9190
+
 PKG_FIXUP:=patch-libtool
 PKG_LIBTOOL_PATHS:=. gas bfd opcodes gprof gprofng binutils ld libiberty gold intl libctf libsframe
 PKG_REMOVE_FILES:=libtool.m4
