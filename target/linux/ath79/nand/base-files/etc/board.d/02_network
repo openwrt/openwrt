@@ -17,8 +17,7 @@ ath79_setup_interfaces()
 		;;
 	dongwon,dw02-412h-64m|\
 	dongwon,dw02-412h-128m)
-		ucidef_add_switch "switch0" \
-			"0@eth0" "2:lan:4" "3:lan:3" "4:lan:2" "5:lan:1" "1:wan"
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
 		;;
 	glinet,gl-ar750s-nor|\
 	glinet,gl-ar750s-nor-nand)
