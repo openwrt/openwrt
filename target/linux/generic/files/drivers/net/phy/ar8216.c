@@ -33,7 +33,6 @@
 #include <linux/phy.h>
 #include <linux/etherdevice.h>
 #include <linux/lockdep.h>
-#include <linux/ar8216_platform.h>
 #include <linux/workqueue.h>
 
 #include "ar8216.h"
