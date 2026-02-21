@@ -72,6 +72,7 @@ mediatek_setup_interfaces()
 	netcore,n60-pro|\
 	nradio,c8-668gl|\
 	ruijie,rg-x60-pro|\
+	ruijie,rg-x60-pro-ubootmod|\
 	unielec,u7981-01*|\
 	wavlink,wl-wn536ax6-a|\
 	zbtlink,zbt-z8102ax|\
@@ -276,7 +277,8 @@ mediatek_setup_macs()
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		label_mac=$wan_mac
 		;;
-	ruijie,rg-x60-pro)
+	ruijie,rg-x60-pro|\
+	ruijie,rg-x60-pro-ubootmod)
 		label_mac=$(mtd_get_mac_ascii product_info ethaddr)
 		wan_mac=$label_mac
 		lan_mac=$(macaddr_add "$label_mac" 1)
