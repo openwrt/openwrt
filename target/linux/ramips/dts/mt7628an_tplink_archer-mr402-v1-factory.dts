@@ -1,0 +1,208 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7628an.dtsi"
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+        compatible = "tplink,archer-mr402-v1-factory", "mediatek,mt7628an-soc";
+        model = "TP-Link Archer MR402 v1 Factory";
+
+        aliases {
+                led-boot = &led_power;
+                led-failsafe = &led_power;
+                led-running = &led_power;
+                led-upgrade = &led_power;
+                label-mac-device = &ethernet;
+        };
+
+        chosen {
+                bootargs = "console=ttyS0,115200";
+        };
+
+        leds {
+                compatible = "gpio-leds";
+
+                lan {
+                        function = LED_FUNCTION_LAN;
+                        color = <LED_COLOR_ID_WHITE>;
+                        gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
+                };
+
+                wan {
+                        function = LED_FUNCTION_WAN;
+                        color = <LED_COLOR_ID_WHITE>;
+                        gpios = <&gpio 40 GPIO_ACTIVE_LOW>;
+                };
+
+                led_power: power {
+                        function = LED_FUNCTION_POWER;
+                        color = <LED_COLOR_ID_WHITE>;
+                        gpios = <&gpio 39 GPIO_ACTIVE_LOW>;
+                };
+
+                signal1 {
+                        label = "white:signal1";
+                        gpios = <&gpio 41 GPIO_ACTIVE_LOW>;
+                };
+
+                signal2 {
+                        label = "white:signal2";
+                        gpios = <&gpio 42 GPIO_ACTIVE_LOW>;
+                };
+
+                signal3 {
+                        label = "white:signal3";
+                        gpios = <&gpio 43 GPIO_ACTIVE_LOW>;
+                };
+
+                wlan {
+                        function = LED_FUNCTION_WLAN;
+                        color = <LED_COLOR_ID_WHITE>;
+                        gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+                        linux,default-trigger = "phy0tpt";
+                };
+        };
+
+        keys {
+                compatible = "gpio-keys";
+
+                reset {
+                        label = "reset";
+                        gpios = <&gpio 38 GPIO_ACTIVE_LOW>;
+                        linux,code = <KEY_RESTART>;
+                };
+
+                rfkill {
+                        label = "rfkill";
+                        gpios = <&gpio 46 GPIO_ACTIVE_LOW>;
+                        linux,code = <KEY_RFKILL>;
+                };
+        };
+};
+
+&spi0 {
+        status = "okay";
+
+        flash@0 {
+                compatible = "jedec,spi-nor";
+                reg = <0>;
+                spi-max-frequency = <50000000>;
+                m25p,fast-read;
+                #address-cells = <1>;
+                #size-cells = <1>;
+
+			 partitions {
+                        compatible = "fixed-partitions";
+                        #address-cells = <1>;
+                        #size-cells = <1>;
+
+                        partition@0 {
+                                label = "boot";
+                                reg = <0x00000000 0x00020000>;
+                                read-only;
+                        };
+
+                        partition@20000 {
+                                compatible = "tplink,firmware";
+                                label = "firmware";
+                                reg = <0x00020000 0x00c90000>;
+                        };
+
+                        partition@cb0000 {
+                                label = "ispconfig";
+                                reg = <0x00cb0000 0x00010000>;
+                                read-only;
+                        };
+
+                        partition@cc0000 {
+                                label = "config";
+                                reg = <0x00cc0000 0x00010000>;
+                                read-only;
+                        };
+
+                        partition@cd0000 {
+                                label = "configbak";
+                                reg = <0x00cd0000 0x00010000>;
+                                read-only;
+                        };
+
+                        partition@ce0000 {
+                                label = "romfile";
+                                reg = <0x00ce0000 0x00010000>;
+                                read-only;
+
+                                nvmem-layout {
+                                        compatible = "fixed-layout";
+                                        #address-cells = <1>;
+                                        #size-cells = <1>;
+
+                                        macaddr_romfile_f100: macaddr@f100 {
+                                                reg = <0xf100 0x6>;
+                                        };
+                                };
+                        };
+
+                        partition@cf0000 {
+                                label = "radio";
+                                reg = <0x00cf0000 0x00010000>;
+                                read-only;
+
+                                nvmem-layout {
+                                        compatible = "fixed-layout";
+                                        #address-cells = <1>;
+                                        #size-cells = <1>;
+
+                                        eeprom_radio_0: eeprom@0 {
+                                                reg = <0x0 0x400>;
+                                        };
+
+                                        eeprom_radio_8000: eeprom@8000 {
+                                                reg = <0x8000 0x4da8>;
+                                        };
+                                };
+                        };
+
+                        partition@d00000 {
+                                label = "userdata";
+                                reg = <0x00d00000 0x00300000>;
+                        };
+                };
+        };
+};
+&state_default {
+        gpio {
+                groups = "i2c", "p0led_an", "p1led_an", "p2led_an", "p3led_an", "p4led_an", "uart1", "wdt";
+                function = "gpio";
+        };
+};
+
+&ethernet {
+        nvmem-cells = <&macaddr_romfile_f100>;
+        nvmem-cell-names = "mac-address";
+        status = "okay";
+};
+
+&wmac {
+        nvmem-cells = <&eeprom_radio_0>;
+        nvmem-cell-names = "eeprom";
+        status = "okay";
+};
+
+&esw {
+        mediatek,portdisable = <0x30>;
+};
+
+&pcie {
+        status = "okay";
+};
+
+&pcie0 {
+        wifi@0,0 {
+                reg = <0x0000 0 0 0 0>;
+                nvmem-cells = <&eeprom_radio_8000>;
+                nvmem-cell-names = "eeprom";
+        };
+};
