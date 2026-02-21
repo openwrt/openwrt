@@ -12,7 +12,8 @@ ipq60xx_setup_interfaces()
 
 	case "$board" in
 	8devices,mango-dvk|\
-	glinet,gl-axt1800)
+	glinet,gl-axt1800|\
+	link,nn6000-v1)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
 		;;
 	alfa-network,ap120c-ax)
@@ -24,6 +25,7 @@ ipq60xx_setup_interfaces()
 		;;
 	glinet,gl-ax1800|\
 	jdcloud,re-cs-02|\
+	link,nn6000-v2|\
 	linksys,mr7350|\
 	linksys,mr7500|\
 	yuncore,fap650)
