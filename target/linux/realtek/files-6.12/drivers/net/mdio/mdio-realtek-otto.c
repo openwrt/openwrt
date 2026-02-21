@@ -108,7 +108,7 @@
 #define RTMDIO_931X_SMI_10GPHY_POLLING_SEL4	(0x0D00)
 
 #define for_each_port(ctrl, addr) \
-	for (int addr = 0; addr < (ctrl)->cfg->cpu_port; addr++) \
+	for (int addr = 0; addr < (ctrl)->cfg->num_phys; addr++) \
 		if ((ctrl)->smi_bus[addr] >= 0)
 
 /*
@@ -189,7 +189,7 @@ struct rtmdio_ctrl {
 };
 
 struct rtmdio_config {
-	int cpu_port;
+	int num_phys;
 	int raw_page;
 	int bus_map_base;
 	int port_map_base;
@@ -494,7 +494,7 @@ static int rtmdio_read_c45(struct mii_bus *bus, int addr, int devnum, int regnum
 	struct rtmdio_ctrl *ctrl = bus->priv;
 	int err, val;
 
-	if (addr >= ctrl->cfg->cpu_port)
+	if (addr >= ctrl->cfg->num_phys)
 		return -ENODEV;
 
 	err = (*ctrl->cfg->read_mmd_phy)(bus, addr, devnum, regnum, &val);
@@ -508,7 +508,7 @@ static int rtmdio_read(struct mii_bus *bus, int addr, int regnum)
 	struct rtmdio_ctrl *ctrl = bus->priv;
 	int err, val;
 
-	if (addr >= ctrl->cfg->cpu_port)
+	if (addr >= ctrl->cfg->num_phys)
 		return -ENODEV;
 
 	if (regnum == RTMDIO_PAGE_SELECT && ctrl->page[addr] != ctrl->cfg->raw_page)
@@ -527,7 +527,7 @@ static int rtmdio_write_c45(struct mii_bus *bus, int addr, int devnum, int regnu
 	struct rtmdio_ctrl *ctrl = bus->priv;
 	int err;
 
-	if (addr >= ctrl->cfg->cpu_port)
+	if (addr >= ctrl->cfg->num_phys)
 		return -ENODEV;
 
 	err = (*ctrl->cfg->write_mmd_phy)(bus, addr, devnum, regnum, val);
@@ -541,7 +541,7 @@ static int rtmdio_write(struct mii_bus *bus, int addr, int regnum, u16 val)
 	struct rtmdio_ctrl *ctrl = bus->priv;
 	int err, page;
 
-	if (addr >= ctrl->cfg->cpu_port)
+	if (addr >= ctrl->cfg->num_phys)
 		return -ENODEV;
 
 	page = ctrl->page[addr];
@@ -899,7 +899,7 @@ static int rtmdio_probe(struct platform_device *pdev)
 		if (of_property_read_u32(np, "reg", &addr))
 			continue;
 
-		if (addr < 0 || addr >= ctrl->cfg->cpu_port) {
+		if (addr < 0 || addr >= ctrl->cfg->num_phys) {
 			dev_err(dev, "illegal port number %d\n", addr);
 			of_node_put(np);
 			return -EINVAL;
@@ -938,7 +938,7 @@ static int rtmdio_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
-	for (addr = 0; addr < ctrl->cfg->cpu_port; addr++) {
+	for (addr = 0; addr < ctrl->cfg->num_phys; addr++) {
 		if (ctrl->smi_bus[addr] < 0)
 			continue;
 
@@ -955,7 +955,7 @@ static int rtmdio_probe(struct platform_device *pdev)
 }
 
 static const struct rtmdio_config rtmdio_838x_cfg = {
-	.cpu_port	= 28,
+	.num_phys	= 28,
 	.raw_page	= 4095,
 	.port_map_base	= RTMDIO_838X_SMI_PORT0_5_ADDR_CTRL,
 	.read_mmd_phy	= rtmdio_838x_read_mmd_phy,
@@ -967,7 +967,7 @@ static const struct rtmdio_config rtmdio_838x_cfg = {
 };
 
 static const struct rtmdio_config rtmdio_839x_cfg = {
-	.cpu_port	= 52,
+	.num_phys	= 52,
 	.raw_page	= 8191,
 	.read_mmd_phy	= rtmdio_839x_read_mmd_phy,
 	.read_phy	= rtmdio_839x_read_phy,
@@ -977,7 +977,7 @@ static const struct rtmdio_config rtmdio_839x_cfg = {
 };
 
 static const struct rtmdio_config rtmdio_930x_cfg = {
-	.cpu_port	= 28,
+	.num_phys	= 28,
 	.raw_page	= 4095,
 	.bus_map_base	= RTMDIO_930X_SMI_PORT0_15_POLLING_SEL,
 	.port_map_base	= RTMDIO_930X_SMI_PORT0_5_ADDR_CTRL,
@@ -990,7 +990,7 @@ static const struct rtmdio_config rtmdio_930x_cfg = {
 };
 
 static const struct rtmdio_config rtmdio_931x_cfg = {
-	.cpu_port	= 56,
+	.num_phys	= 56,
 	.raw_page	= 8191,
 	.bus_map_base	= RTMDIO_931X_SMI_PORT_POLLING_SEL,
 	.port_map_base	= RTMDIO_931X_SMI_PORT_ADDR_CTRL,
