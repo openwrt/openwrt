@@ -9,12 +9,12 @@
 
 / {
 	aliases {
-		label-mac-device = &swport5;
+		label-mac-device = &swport1;
 	};
 };
 
 &switch {
-	ports {
+	swports: ports {
 		#address-cells = <1>;
 		#size-cells = <0>;
 
@@ -31,17 +31,17 @@
 
 		swport1: port@1 {
 			reg = <1>;
-			label = "wan";
+			label = "lan1";
 			phy-handle = <&phy0>;
 			phy-mode = "psgmii";
 			pcs-handle = <&uniphy0 0>;
-			nvmem-cells = <&macaddr_boarddata 1>;
+			nvmem-cells = <&macaddr_boarddata 0>;
 			nvmem-cell-names = "mac-address";
 		};
 
 		swport2: port@2 {
 			reg = <2>;
-			label = "lan3";
+			label = "lan2";
 			phy-handle = <&phy1>;
 			phy-mode = "psgmii";
 			pcs-handle = <&uniphy0 1>;
@@ -49,35 +49,35 @@
 			nvmem-cell-names = "mac-address";
 		};
 
-		swport4: port@4 {
-			reg = <4>;
-			label = "lan2";
-			phy-handle = <&phy3>;
+		swport3: port@3 {
+			reg = <3>;
+			label = "lan3";
+			phy-handle = <&phy2>;
 			phy-mode = "psgmii";
-			pcs-handle = <&uniphy0 3>;
-			nvmem-cells = <&macaddr_boarddata 1>;
+			pcs-handle = <&uniphy0 2>;
+			nvmem-cells = <&macaddr_boarddata 2>;
 			nvmem-cell-names = "mac-address";
 		};
 
-		swport5: port@5 {
-			reg = <5>;
-			label = "lan1";
-			phy-handle = <&phy4>;
+		swport4: port@4 {
+			reg = <4>;
+			label = "lan4";
+			phy-handle = <&phy3>;
 			phy-mode = "psgmii";
-			pcs-handle = <&uniphy0 4>;
-			nvmem-cells = <&macaddr_boarddata 0>;
+			pcs-handle = <&uniphy0 3>;
+			nvmem-cells = <&macaddr_boarddata 3>;
 			nvmem-cell-names = "mac-address";
 		};
 	};
 };
 
 &phys {
-	phy4: ethernet-phy@4 {
+	phy2: ethernet-phy@2 {
 		compatible = "ethernet-phy-ieee802.3-c22";
-		reg = <4>;
+		reg = <2>;
 	};
 };
 
 &wifi {
-	qcom,ath11k-calibration-variant = "Netgear-RBK750";
+	qcom,ath11k-calibration-variant = "Netgear-RBK850";
 };
