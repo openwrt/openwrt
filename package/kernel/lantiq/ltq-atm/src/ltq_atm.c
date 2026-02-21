@@ -38,7 +38,7 @@
 #include <linux/atmdev.h>
 #include <linux/mod_devicetable.h>
 #include <linux/platform_device.h>
-#include <linux/of_device.h>
+#include <linux/of.h>
 #include <linux/atm.h>
 #include <linux/clk.h>
 #include <linux/interrupt.h>
@@ -1756,19 +1756,11 @@ MODULE_DEVICE_TABLE(of, ltq_atm_match);
 
 static int ltq_atm_probe(struct platform_device *pdev)
 {
-	const struct of_device_id *match;
-	struct ltq_atm_ops *ops = NULL;
+	const struct ltq_atm_ops *ops;
 	int ret;
 	int port_num;
 	struct port_cell_info port_cell = {0};
 	char ver_str[256];
-
-	match = of_match_device(ltq_atm_match, &pdev->dev);
-	if (!match) {
-		dev_err(&pdev->dev, "failed to find matching device\n");
-		return -ENOENT;
-	}
-	ops = (struct ltq_atm_ops *) match->data;
 
 	check_parameters();
 
@@ -1778,6 +1770,7 @@ static int ltq_atm_probe(struct platform_device *pdev)
 		goto INIT_PRIV_DATA_FAIL;
 	}
 
+	ops = of_device_get_match_data(&pdev->dev);
 	ret = ops->init(pdev);
 	if (ret)
 		return ret;
