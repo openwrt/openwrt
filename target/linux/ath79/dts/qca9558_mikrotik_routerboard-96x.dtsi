@@ -12,6 +12,12 @@
 		led-upgrade = &led_user;
 	};
 
+	beeper {
+		compatible = "gpio-beeper";
+		gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
+		/* Beeper requires PWM for frequency selection */
+	};
+
 	leds {
 		compatible = "gpio-leds";
 
@@ -34,13 +40,6 @@
 
 	gpio-export {
 		compatible = "gpio-export";
-
-		buzzer {
-			/* Beeper requires PWM for frequency selection */
-			gpio-export,name = "buzzer";
-			gpio-export,output = <0>;
-			gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
-		};
 
 		usb_power {
 			gpio-export,name = "usb-power";

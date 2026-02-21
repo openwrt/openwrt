@@ -17,14 +17,9 @@
 		led-upgrade = &led_sig4;
 	};
 
-	gpio-export {
-		compatible = "gpio-export";
-
-		buzzer {
-			gpio-export,name = "buzzer";
-			gpio-export,output = <0>;
-			gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
-		};
+	beeper {
+		compatible = "gpio-beeper";
+		gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
 	};
 
 	keys {
