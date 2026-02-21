@@ -1,0 +1,200 @@
+From add904b3d827e8660a191c999ce150ea91ff6bf3 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Linus=20L=C3=BCssing?= <linus.luessing@c0d3.blue>
+Date: Sun, 13 Apr 2025 23:56:23 +0200
+Subject: [PATCH 01/16] net: bridge: mcast: export ip{4,6}_active state to
+ netlink
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Export the new ip{4,6}_active variables to netlink, to be able to
+check from userspace that they are updated as intended.
+
+Signed-off-by: Linus Lüssing <linus.luessing@c0d3.blue>
+---
+ include/uapi/linux/if_bridge.h |  2 ++
+ include/uapi/linux/if_link.h   | 12 ++++++++++++
+ net/bridge/br_netlink.c        | 16 +++++++++++++++-
+ net/bridge/br_private.h        |  2 +-
+ net/bridge/br_vlan_options.c   | 22 ++++++++++++++++++++--
+ net/core/rtnetlink.c           |  2 +-
+ 6 files changed, 51 insertions(+), 5 deletions(-)
+
+--- a/include/uapi/linux/if_bridge.h
++++ b/include/uapi/linux/if_bridge.h
+@@ -584,6 +584,8 @@ enum {
+ 	BRIDGE_VLANDB_GOPTS_MCAST_ROUTER_PORTS,
+ 	BRIDGE_VLANDB_GOPTS_MCAST_QUERIER_STATE,
+ 	BRIDGE_VLANDB_GOPTS_MSTI,
++	BRIDGE_VLANDB_GOPTS_MCAST_ACTIVE_V4,
++	BRIDGE_VLANDB_GOPTS_MCAST_ACTIVE_V6,
+ 	__BRIDGE_VLANDB_GOPTS_MAX
+ };
+ #define BRIDGE_VLANDB_GOPTS_MAX (__BRIDGE_VLANDB_GOPTS_MAX - 1)
+--- a/include/uapi/linux/if_link.h
++++ b/include/uapi/linux/if_link.h
+@@ -744,6 +744,16 @@ enum in6_addr_gen_mode {
+  * @IFLA_BR_FDB_MAX_LEARNED
+  *   Set the number of max dynamically learned FDB entries for the current
+  *   bridge.
++ *
++ * @IFLA_BR_MCAST_ACTIVE_V4
++ *   Bridge IPv4 mcast active state, read only.
++ *
++ *   1 if an IGMP querier is present, 0 otherwise.
++ *
++ * @IFLA_BR_MCAST_ACTIVE_V6
++ *   Bridge IPv6 mcast active state, read only.
++ *
++ *   1 if an MLD querier is present, 0 otherwise.
+  */
+ enum {
+ 	IFLA_BR_UNSPEC,
+@@ -796,6 +806,8 @@ enum {
+ 	IFLA_BR_MCAST_QUERIER_STATE,
+ 	IFLA_BR_FDB_N_LEARNED,
+ 	IFLA_BR_FDB_MAX_LEARNED,
++	IFLA_BR_MCAST_ACTIVE_V4,
++	IFLA_BR_MCAST_ACTIVE_V6,
+ 	__IFLA_BR_MAX,
+ };
+ 
+--- a/net/bridge/br_netlink.c
++++ b/net/bridge/br_netlink.c
+@@ -1264,7 +1264,9 @@ static const struct nla_policy br_policy
+ 	[IFLA_BR_VLAN_STATS_ENABLED] = { .type = NLA_U8 },
+ 	[IFLA_BR_MCAST_STATS_ENABLED] = { .type = NLA_U8 },
+ 	[IFLA_BR_MCAST_IGMP_VERSION] = { .type = NLA_U8 },
++	[IFLA_BR_MCAST_ACTIVE_V4] = { .type = NLA_REJECT },
+ 	[IFLA_BR_MCAST_MLD_VERSION] = { .type = NLA_U8 },
++	[IFLA_BR_MCAST_ACTIVE_V6] = { .type = NLA_REJECT },
+ 	[IFLA_BR_VLAN_STATS_PER_PORT] = { .type = NLA_U8 },
+ 	[IFLA_BR_MULTI_BOOLOPT] =
+ 		NLA_POLICY_EXACT_LEN(sizeof(struct br_boolopt_multi)),
+@@ -1625,7 +1627,9 @@ static size_t br_get_size(const struct n
+ 	       nla_total_size_64bit(sizeof(u64)) + /* IFLA_BR_MCAST_QUERY_RESPONSE_INTVL */
+ 	       nla_total_size_64bit(sizeof(u64)) + /* IFLA_BR_MCAST_STARTUP_QUERY_INTVL */
+ 	       nla_total_size(sizeof(u8)) +	/* IFLA_BR_MCAST_IGMP_VERSION */
++	       nla_total_size(sizeof(u8)) +     /* IFLA_BR_MCAST_ACTIVE_V4 */
+ 	       nla_total_size(sizeof(u8)) +	/* IFLA_BR_MCAST_MLD_VERSION */
++	       nla_total_size(sizeof(u8)) +     /* IFLA_BR_MCAST_ACTIVE_V6 */
+ 	       br_multicast_querier_state_size() + /* IFLA_BR_MCAST_QUERIER_STATE */
+ #endif
+ #if IS_ENABLED(CONFIG_BRIDGE_NETFILTER)
+@@ -1646,6 +1650,8 @@ static int br_fill_info(struct sk_buff *
+ 	u32 ageing_time = jiffies_to_clock_t(br->ageing_time);
+ 	u32 stp_enabled = br->stp_enabled;
+ 	u16 priority = (br->bridge_id.prio[0] << 8) | br->bridge_id.prio[1];
++	struct ethhdr eth6 = { .h_proto = htons(ETH_P_IPV6) };
++	struct ethhdr eth4 = { .h_proto = htons(ETH_P_IP) };
+ 	u8 vlan_enabled = br_vlan_enabled(br->dev);
+ 	struct br_boolopt_multi bm;
+ 	u64 clockval;
+@@ -1717,12 +1723,20 @@ static int br_fill_info(struct sk_buff *
+ 			br->multicast_ctx.multicast_startup_query_count) ||
+ 	    nla_put_u8(skb, IFLA_BR_MCAST_IGMP_VERSION,
+ 		       br->multicast_ctx.multicast_igmp_version) ||
++	    nla_put_u8(skb, IFLA_BR_MCAST_ACTIVE_V4,
++		       netif_running(brdev) && br_opt_get(br, BROPT_MULTICAST_ENABLED) &&
++		       !br_opt_get(br, BROPT_MCAST_VLAN_SNOOPING_ENABLED) &&
++		       br_multicast_querier_exists(&br->multicast_ctx, &eth4, NULL)) ||
+ 	    br_multicast_dump_querier_state(skb, &br->multicast_ctx,
+ 					    IFLA_BR_MCAST_QUERIER_STATE))
+ 		return -EMSGSIZE;
+ #if IS_ENABLED(CONFIG_IPV6)
+ 	if (nla_put_u8(skb, IFLA_BR_MCAST_MLD_VERSION,
+-		       br->multicast_ctx.multicast_mld_version))
++		       br->multicast_ctx.multicast_mld_version) ||
++	    nla_put_u8(skb, IFLA_BR_MCAST_ACTIVE_V6,
++		       netif_running(brdev) && br_opt_get(br, BROPT_MULTICAST_ENABLED) &&
++		       !br_opt_get(br, BROPT_MCAST_VLAN_SNOOPING_ENABLED) &&
++		       br_multicast_querier_exists(&br->multicast_ctx, &eth6, NULL)))
+ 		return -EMSGSIZE;
+ #endif
+ 	clockval = jiffies_to_clock_t(br->multicast_ctx.multicast_last_member_interval);
+--- a/net/bridge/br_private.h
++++ b/net/bridge/br_private.h
+@@ -1892,7 +1892,7 @@ int br_vlan_rtm_process_global_options(s
+ bool br_vlan_global_opts_can_enter_range(const struct net_bridge_vlan *v_curr,
+ 					 const struct net_bridge_vlan *r_end);
+ bool br_vlan_global_opts_fill(struct sk_buff *skb, u16 vid, u16 vid_range,
+-			      const struct net_bridge_vlan *v_opts);
++			      struct net_bridge_vlan *v_opts);
+ 
+ /* vlan state manipulation helpers using *_ONCE to annotate lock-free access,
+  * while br_vlan_set_state() may access data protected by multicast_lock.
+--- a/net/bridge/br_vlan_options.c
++++ b/net/bridge/br_vlan_options.c
+@@ -347,8 +347,10 @@ bool br_vlan_global_opts_can_enter_range
+ }
+ 
+ bool br_vlan_global_opts_fill(struct sk_buff *skb, u16 vid, u16 vid_range,
+-			      const struct net_bridge_vlan *v_opts)
++			      struct net_bridge_vlan *v_opts)
+ {
++	struct ethhdr eth6 = { .h_proto = htons(ETH_P_IPV6) };
++	struct ethhdr eth4 = { .h_proto = htons(ETH_P_IP) };
+ 	struct nlattr *nest2 __maybe_unused;
+ 	u64 clockval __maybe_unused;
+ 	struct nlattr *nest;
+@@ -369,6 +371,12 @@ bool br_vlan_global_opts_fill(struct sk_
+ 		       !!(v_opts->priv_flags & BR_VLFLAG_GLOBAL_MCAST_ENABLED)) ||
+ 	    nla_put_u8(skb, BRIDGE_VLANDB_GOPTS_MCAST_IGMP_VERSION,
+ 		       v_opts->br_mcast_ctx.multicast_igmp_version) ||
++	    nla_put_u8(skb, BRIDGE_VLANDB_GOPTS_MCAST_ACTIVE_V4,
++		       netif_running(v_opts->br->dev) &&
++		       br_opt_get(v_opts->br, BROPT_MULTICAST_ENABLED) &&
++		       br_opt_get(v_opts->br, BROPT_MCAST_VLAN_SNOOPING_ENABLED) &&
++		       !br_multicast_ctx_vlan_global_disabled(&v_opts->br_mcast_ctx) &&
++		       br_multicast_querier_exists(&v_opts->br_mcast_ctx, &eth4, NULL)) ||
+ 	    nla_put_u32(skb, BRIDGE_VLANDB_GOPTS_MCAST_LAST_MEMBER_CNT,
+ 			v_opts->br_mcast_ctx.multicast_last_member_count) ||
+ 	    nla_put_u32(skb, BRIDGE_VLANDB_GOPTS_MCAST_STARTUP_QUERY_CNT,
+@@ -423,7 +431,13 @@ bool br_vlan_global_opts_fill(struct sk_
+ 
+ #if IS_ENABLED(CONFIG_IPV6)
+ 	if (nla_put_u8(skb, BRIDGE_VLANDB_GOPTS_MCAST_MLD_VERSION,
+-		       v_opts->br_mcast_ctx.multicast_mld_version))
++		       v_opts->br_mcast_ctx.multicast_mld_version) ||
++	    nla_put_u8(skb, BRIDGE_VLANDB_GOPTS_MCAST_ACTIVE_V6,
++		       netif_running(v_opts->br->dev) &&
++		       br_opt_get(v_opts->br, BROPT_MULTICAST_ENABLED) &&
++		       br_opt_get(v_opts->br, BROPT_MCAST_VLAN_SNOOPING_ENABLED) &&
++		       !br_multicast_ctx_vlan_global_disabled(&v_opts->br_mcast_ctx) &&
++		       br_multicast_querier_exists(&v_opts->br_mcast_ctx, &eth6, NULL)))
+ 		goto out_err;
+ #endif
+ #endif
+@@ -448,7 +462,9 @@ static size_t rtnl_vlan_global_opts_nlms
+ #ifdef CONFIG_BRIDGE_IGMP_SNOOPING
+ 		+ nla_total_size(sizeof(u8)) /* BRIDGE_VLANDB_GOPTS_MCAST_SNOOPING */
+ 		+ nla_total_size(sizeof(u8)) /* BRIDGE_VLANDB_GOPTS_MCAST_IGMP_VERSION */
++		+ nla_total_size(sizeof(u8)) /* BRIDGE_VLANDB_GOPTS_MCAST_ACTIVE_V4 */
+ 		+ nla_total_size(sizeof(u8)) /* BRIDGE_VLANDB_GOPTS_MCAST_MLD_VERSION */
++		+ nla_total_size(sizeof(u8)) /* BRIDGE_VLANDB_GOPTS_MCAST_ACTIVE_V6 */
+ 		+ nla_total_size(sizeof(u32)) /* BRIDGE_VLANDB_GOPTS_MCAST_LAST_MEMBER_CNT */
+ 		+ nla_total_size(sizeof(u32)) /* BRIDGE_VLANDB_GOPTS_MCAST_STARTUP_QUERY_CNT */
+ 		+ nla_total_size(sizeof(u64)) /* BRIDGE_VLANDB_GOPTS_MCAST_LAST_MEMBER_INTVL */
+@@ -630,9 +646,11 @@ static const struct nla_policy br_vlan_d
+ 	[BRIDGE_VLANDB_GOPTS_RANGE]	= { .type = NLA_U16 },
+ 	[BRIDGE_VLANDB_GOPTS_MCAST_SNOOPING]	= { .type = NLA_U8 },
+ 	[BRIDGE_VLANDB_GOPTS_MCAST_MLD_VERSION]	= { .type = NLA_U8 },
++	[BRIDGE_VLANDB_GOPTS_MCAST_ACTIVE_V6]	= { .type = NLA_REJECT },
+ 	[BRIDGE_VLANDB_GOPTS_MCAST_QUERY_INTVL]	= { .type = NLA_U64 },
+ 	[BRIDGE_VLANDB_GOPTS_MCAST_QUERIER]	= { .type = NLA_U8 },
+ 	[BRIDGE_VLANDB_GOPTS_MCAST_IGMP_VERSION]	= { .type = NLA_U8 },
++	[BRIDGE_VLANDB_GOPTS_MCAST_ACTIVE_V4]	= { .type = NLA_REJECT },
+ 	[BRIDGE_VLANDB_GOPTS_MCAST_LAST_MEMBER_CNT]	= { .type = NLA_U32 },
+ 	[BRIDGE_VLANDB_GOPTS_MCAST_STARTUP_QUERY_CNT]	= { .type = NLA_U32 },
+ 	[BRIDGE_VLANDB_GOPTS_MCAST_LAST_MEMBER_INTVL]	= { .type = NLA_U64 },
+--- a/net/core/rtnetlink.c
++++ b/net/core/rtnetlink.c
+@@ -62,7 +62,7 @@
+ 
+ #include "dev.h"
+ 
+-#define RTNL_MAX_TYPE		50
++#define RTNL_MAX_TYPE		52
+ #define RTNL_SLAVE_MAX_TYPE	44
+ 
+ struct rtnl_link {
