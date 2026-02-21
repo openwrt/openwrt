@@ -321,6 +321,7 @@ define Image/mkfs/ext4
 		$(if $(CONFIG_TARGET_EXT4_JOURNAL),,-J) \
 		$(if $(SOURCE_DATE_EPOCH),-T $(SOURCE_DATE_EPOCH)) \
 		$@ $(call mkfs_target_dir,$(1))/
+		$(STAGING_DIR_HOST)/bin/e2fsck -fy $@ || true
 endef
 
 # Don't use the mkfs.erofs builtin $SOURCE_DATE_EPOCH behavior
