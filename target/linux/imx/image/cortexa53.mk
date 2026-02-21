@@ -70,7 +70,8 @@ define Device/gateworks_venice
 	kmod-hwmon-gsc kmod-rtc-ds1672 kmod-eeprom-at24 \
 	kmod-gpio-button-hotplug kmod-leds-gpio kmod-pps-gpio \
 	kmod-lan743x kmod-sky2 kmod-iio-st_accel-i2c \
-	kmod-can kmod-can-flexcan kmod-can-mcp251x
+	kmod-can kmod-can-flexcan kmod-can-mcp251x \
+	kmod-dsa-ksz9477-i2c
   IMAGES := img.gz
   IMAGE/img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
 endef
