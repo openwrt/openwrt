@@ -1,0 +1,193 @@
+From: Qingfang Deng <dqfext@gmail.com>
+Date: Tue, 20 Jan 2026 10:54:00 +0800
+Subject: [PATCH] crypto: eip93: fix sleep inside atomic
+
+A crypto request is allowed to sleep only if CRYPTO_TFM_REQ_MAY_SLEEP is
+set. Avoid GFP_KERNEL and usleep_range() if the flag is absent.
+
+Fixes: 9739f5f93b78 ("crypto: eip93 - Add Inside Secure SafeXcel EIP-93 crypto engine support")
+Signed-off-by: Qingfang Deng <dqfext@gmail.com>
+---
+ .../crypto/inside-secure/eip93/eip93-aead.c   |  2 +-
+ .../crypto/inside-secure/eip93/eip93-cipher.c |  2 +-
+ .../crypto/inside-secure/eip93/eip93-cipher.h |  3 +-
+ .../crypto/inside-secure/eip93/eip93-common.c | 36 ++++++++++++-------
+ .../crypto/inside-secure/eip93/eip93-hash.c   |  9 +++--
+ 5 files changed, 35 insertions(+), 17 deletions(-)
+
+--- a/drivers/crypto/inside-secure/eip93/eip93-aead.c
++++ b/drivers/crypto/inside-secure/eip93/eip93-aead.c
+@@ -46,7 +46,7 @@ static int eip93_aead_send_req(struct cr
+ 	struct eip93_cipher_reqctx *rctx = aead_request_ctx(req);
+ 	int err;
+ 
+-	err = check_valid_request(rctx);
++	err = check_valid_request(async, rctx);
+ 	if (err) {
+ 		aead_request_complete(req, err);
+ 		return err;
+--- a/drivers/crypto/inside-secure/eip93/eip93-cipher.c
++++ b/drivers/crypto/inside-secure/eip93/eip93-cipher.c
+@@ -36,7 +36,7 @@ static int eip93_skcipher_send_req(struc
+ 	struct eip93_cipher_reqctx *rctx = skcipher_request_ctx(req);
+ 	int err;
+ 
+-	err = check_valid_request(rctx);
++	err = check_valid_request(async, rctx);
+ 
+ 	if (err) {
+ 		skcipher_request_complete(req, err);
+--- a/drivers/crypto/inside-secure/eip93/eip93-cipher.h
++++ b/drivers/crypto/inside-secure/eip93/eip93-cipher.h
+@@ -44,7 +44,8 @@ struct eip93_cipher_reqctx {
+ 	dma_addr_t			sa_state_ctr_base;
+ };
+ 
+-int check_valid_request(struct eip93_cipher_reqctx *rctx);
++int check_valid_request(struct crypto_async_request *async,
++			struct eip93_cipher_reqctx *rctx);
+ 
+ void eip93_unmap_dma(struct eip93_device *eip93, struct eip93_cipher_reqctx *rctx,
+ 		     struct scatterlist *reqsrc, struct scatterlist *reqdst);
+--- a/drivers/crypto/inside-secure/eip93/eip93-common.c
++++ b/drivers/crypto/inside-secure/eip93/eip93-common.c
+@@ -148,15 +148,16 @@ static void eip93_free_sg_copy(const int
+ }
+ 
+ static int eip93_make_sg_copy(struct scatterlist *src, struct scatterlist **dst,
+-			      const u32 len, const bool copy)
++			      const u32 len, const bool copy, bool maysleep)
+ {
++	gfp_t gfp = maysleep ? GFP_KERNEL : GFP_ATOMIC;
+ 	void *pages;
+ 
+-	*dst = kmalloc(sizeof(**dst), GFP_KERNEL);
++	*dst = kmalloc(sizeof(**dst), gfp);
+ 	if (!*dst)
+ 		return -ENOMEM;
+ 
+-	pages = (void *)__get_free_pages(GFP_KERNEL | GFP_DMA,
++	pages = (void *)__get_free_pages(gfp | GFP_DMA,
+ 					 get_order(len));
+ 	if (!pages) {
+ 		kfree(*dst);
+@@ -198,8 +199,10 @@ static bool eip93_is_sg_aligned(struct s
+ 	return false;
+ }
+ 
+-int check_valid_request(struct eip93_cipher_reqctx *rctx)
++int check_valid_request(struct crypto_async_request *async,
++			struct eip93_cipher_reqctx *rctx)
+ {
++	bool maysleep = async->flags & CRYPTO_TFM_REQ_MAY_SLEEP;
+ 	struct scatterlist *src = rctx->sg_src;
+ 	struct scatterlist *dst = rctx->sg_dst;
+ 	u32 textsize = rctx->textsize;
+@@ -267,13 +270,15 @@ int check_valid_request(struct eip93_cip
+ 
+ 	copy_len = max(totlen_src, totlen_dst);
+ 	if (!src_align) {
+-		err = eip93_make_sg_copy(src, &rctx->sg_src, copy_len, true);
++		err = eip93_make_sg_copy(src, &rctx->sg_src, copy_len, true,
++					 maysleep);
+ 		if (err)
+ 			return err;
+ 	}
+ 
+ 	if (!dst_align) {
+-		err = eip93_make_sg_copy(dst, &rctx->sg_dst, copy_len, false);
++		err = eip93_make_sg_copy(dst, &rctx->sg_dst, copy_len, false,
++					 maysleep);
+ 		if (err)
+ 			return err;
+ 	}
+@@ -379,7 +384,8 @@ void eip93_set_sa_record(struct sa_recor
+  */
+ static int eip93_scatter_combine(struct eip93_device *eip93,
+ 				 struct eip93_cipher_reqctx *rctx,
+-				 u32 datalen, u32 split, int offsetin)
++				 u32 datalen, u32 split, int offsetin,
++				 bool maysleep)
+ {
+ 	struct eip93_descriptor *cdesc = rctx->cdesc;
+ 	struct scatterlist *sgsrc = rctx->sg_src;
+@@ -497,8 +503,11 @@ again:
+ 		scoped_guard(spinlock_irqsave, &eip93->ring->write_lock)
+ 			err = eip93_put_descriptor(eip93, cdesc);
+ 		if (err) {
+-			usleep_range(EIP93_RING_BUSY_DELAY,
+-				     EIP93_RING_BUSY_DELAY * 2);
++			if (maysleep)
++				usleep_range(EIP93_RING_BUSY_DELAY,
++					     EIP93_RING_BUSY_DELAY * 2);
++			else
++				cpu_relax();
+ 			goto again;
+ 		}
+ 		/* Writing new descriptor count starts DMA action */
+@@ -512,6 +521,8 @@ int eip93_send_req(struct crypto_async_r
+ 		   const u8 *reqiv, struct eip93_cipher_reqctx *rctx)
+ {
+ 	struct eip93_crypto_ctx *ctx = crypto_tfm_ctx(async->tfm);
++	bool maysleep = async->flags & CRYPTO_TFM_REQ_MAY_SLEEP;
++	gfp_t gfp = maysleep ? GFP_KERNEL : GFP_ATOMIC;
+ 	struct eip93_device *eip93 = ctx->eip93;
+ 	struct scatterlist *src = rctx->sg_src;
+ 	struct scatterlist *dst = rctx->sg_dst;
+@@ -533,7 +544,7 @@ int eip93_send_req(struct crypto_async_r
+ 
+ 	memcpy(iv, reqiv, rctx->ivsize);
+ 
+-	rctx->sa_state = kzalloc(sizeof(*rctx->sa_state), GFP_KERNEL);
++	rctx->sa_state = kzalloc(sizeof(*rctx->sa_state), gfp);
+ 	if (!rctx->sa_state)
+ 		return -ENOMEM;
+ 
+@@ -562,7 +573,7 @@ int eip93_send_req(struct crypto_async_r
+ 			crypto_inc((u8 *)iv, AES_BLOCK_SIZE);
+ 
+ 			rctx->sa_state_ctr = kzalloc(sizeof(*rctx->sa_state_ctr),
+-						     GFP_KERNEL);
++						     gfp);
+ 			if (!rctx->sa_state_ctr) {
+ 				err = -ENOMEM;
+ 				goto free_sa_state;
+@@ -616,7 +627,8 @@ skip_iv:
+ 		goto free_sg_dma;
+ 	}
+ 
+-	return eip93_scatter_combine(eip93, rctx, datalen, split, offsetin);
++	return eip93_scatter_combine(eip93, rctx, datalen, split, offsetin,
++				     maysleep);
+ 
+ free_sg_dma:
+ 	dma_unmap_sg(eip93->dev, dst, rctx->dst_nents, DMA_BIDIRECTIONAL);
+--- a/drivers/crypto/inside-secure/eip93/eip93-hash.c
++++ b/drivers/crypto/inside-secure/eip93/eip93-hash.c
+@@ -215,6 +215,7 @@ static int eip93_send_hash_req(struct cr
+ 	struct eip93_device *eip93 = ctx->eip93;
+ 	struct eip93_descriptor cdesc = { };
+ 	dma_addr_t src_addr;
++	bool maysleep;
+ 	int ret;
+ 
+ 	/* Map block data to DMA */
+@@ -267,12 +268,16 @@ static int eip93_send_hash_req(struct cr
+ 				 FIELD_PREP(EIP93_PE_USER_ID_DESC_FLAGS, EIP93_DESC_LAST);
+ 	}
+ 
++	maysleep = async->flags & CRYPTO_TFM_REQ_MAY_SLEEP;
+ again:
+ 	scoped_guard(spinlock_irqsave, &eip93->ring->write_lock)
+ 		ret = eip93_put_descriptor(eip93, &cdesc);
+ 	if (ret) {
+-		usleep_range(EIP93_RING_BUSY_DELAY,
+-			     EIP93_RING_BUSY_DELAY * 2);
++		if (maysleep)
++			usleep_range(EIP93_RING_BUSY_DELAY,
++				     EIP93_RING_BUSY_DELAY * 2);
++		else
++			cpu_relax();
+ 		goto again;
+ 	}
+ 

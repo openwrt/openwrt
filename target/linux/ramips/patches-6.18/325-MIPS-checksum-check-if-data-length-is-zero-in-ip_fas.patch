@@ -1,0 +1,28 @@
+From e34037bd3df9d80c96eda35d346a9220c71a3459 Mon Sep 17 00:00:00 2001
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Fri, 30 May 2025 19:56:16 +0800
+Subject: [PATCH] MIPS: checksum: check if data length is zero in
+ ip_fast_csum()
+
+If ihl equals 0, the nonsensical infinite do while loop will
+eventually access an invalid memory address, which will cause
+the system to halt.
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ arch/mips/include/asm/checksum.h | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/arch/mips/include/asm/checksum.h
++++ b/arch/mips/include/asm/checksum.h
+@@ -101,6 +101,10 @@ static inline __sum16 ip_fast_csum(const
+ 	unsigned int csum;
+ 	int carry;
+ 
++	/* ihl should never be zero */
++	if (unlikely(ihl == 0))
++		return 0;
++
+ 	csum = word[0];
+ 	csum += word[1];
+ 	carry = (csum < word[1]);
