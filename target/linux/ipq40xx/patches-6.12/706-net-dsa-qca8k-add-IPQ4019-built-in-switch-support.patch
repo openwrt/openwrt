@@ -557,7 +557,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 +qca8k_do_dsa_sw_ports_self_test(struct qca8k_priv *priv, int parallel_test)
 +{
 +	struct device_node *dn = priv->dev->of_node;
-+	struct device_node *ports, *port;
++	struct device_node *ports;
 +	struct device_node *phy_dn;
 +	struct phy_device *phy;
 +	int reg, err = 0, test_phase;
@@ -575,7 +575,7 @@ Signed-off-by: Robert Marko <robert.marko@sartura.hr>
 +			if (err)
 +				goto error;
 +		}
-+		for_each_available_child_of_node(ports, port) {
++		for_each_available_child_of_node_scoped(ports, port) {
 +			err = of_property_read_u32(port, "reg", &reg);
 +			if (err)
 +				goto error;

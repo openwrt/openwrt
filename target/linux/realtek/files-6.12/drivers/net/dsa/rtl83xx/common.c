@@ -1329,14 +1329,14 @@ static int rtl83xx_fib_event(struct notifier_block *this, unsigned long event, v
 static int rtldsa_ethernet_loaded(struct platform_device *pdev)
 {
 	struct device_node *dn = pdev->dev.of_node;
-	struct device_node *ports, *port;
+	struct device_node *ports;
 	int ret = -EPROBE_DEFER;
 
 	ports = of_get_child_by_name(dn, "ports");
 	if (!ports)
 		return -ENODEV;
 
-	for_each_child_of_node(ports, port) {
+	for_each_child_of_node_scoped(ports, port) {
 		struct device_node *eth_np;
 		struct platform_device *eth_pdev;
 
