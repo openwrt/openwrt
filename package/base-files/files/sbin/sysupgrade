@@ -307,6 +307,14 @@ create_backup_archive() {
 			tar c${TAR_V} -C / -T "$CONFFILES" || ret=1
 		fi
 
+		# Add provisioning uci-defaults scripts extracted from firmware metadata
+		if [ $ret -eq 0 ] && [ -d /tmp/sysupgrade.d ]; then
+			for script in /tmp/sysupgrade.d/*; do
+				[ -f "$script" ] || continue
+				tar_print_member "/etc/uci-defaults/${script##*/}" "$(cat "$script")" || ret=1
+			done
+		fi
+
 		[ $ret -eq 0 ]
 	} | gzip > "${conf_tar:-/proc/self/fd/1}"
 	err=$?
@@ -318,6 +326,7 @@ create_backup_archive() {
 	fi
 
 	rm -f "$CONFFILES"
+	rm -rf /tmp/sysupgrade.d
 
 	return "$err"
 }
@@ -393,6 +402,27 @@ json_get_var forceable "forceable"
 		exit 1
 	fi
 }
+
+# Notify user about provisioning scripts extracted from firmware metadata
+if [ -d /tmp/sysupgrade.d ] && [ -n "$(ls /tmp/sysupgrade.d 2>/dev/null)" ]; then
+	echo "Provisioning scripts found in firmware image:"
+	for script in /tmp/sysupgrade.d/*; do
+		[ -f "$script" ] && echo "  - ${script##*/}"
+	done
+	echo "These scripts will run on first boot after upgrade."
+	ask_bool 0 "View provisioning scripts" && {
+		for script in /tmp/sysupgrade.d/*; do
+			[ -f "$script" ] || continue
+			echo "=== ${script##*/} ==="
+			cat "$script"
+			echo ""
+		done
+	}
+	ask_bool 1 "Continue with upgrade" || {
+		rm -rf /tmp/sysupgrade.d
+		exit 0
+	}
+fi
 
 if [ -n "$CONF_IMAGE" ]; then
 	case "$(get_magic_word $CONF_IMAGE cat)" in
