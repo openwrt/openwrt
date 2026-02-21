@@ -1,0 +1,129 @@
+From 3d3dbdfe3611d66761cadf2729a096151607f5ab Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jakub=20Van=C4=9Bk?= <linuxtardis@gmail.com>
+Date: Sat, 21 Feb 2026 22:31:46 +0100
+Subject: [PATCH net v1] net: phy: motorcomm: yt8821: disable MDIO broadcast address 0
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The YT8821 PHY responds on two MDIO addresses by default: the address
+selected by its strapping pins and the broadcast address 0.
+
+On platforms where another PHY is hardwired to respond only on address 0
+(e.g. the internal Gigabit PHY in the MediaTek MT7981B SoC), this can lead
+to MDIO bus conflicts. The YT8821 may incorrectly respond to transactions
+intended for the other PHY, leaving it in an inconsistent state. The
+following issues were observed:
+
+- Achieving just 100 Mbps speeds on gigabit links. Dmesg would show
+  messages like
+
+    [ 133.997177] YT8821 2.5Gbps PHY mdio-bus:01: Downshift occurred from negotiated speed 1Gbps to actual speed 100Mbps, check cabling!
+    [ 134.009400] mtk_soc_eth 15100000.ethernet eth0: Link is Up - 100Mbps/Full - flow control off
+
+- Having the PHY report that the link is up, yet no data would flow.
+- The YT8821 would be affected by an "ip link set dev eth1 down"
+  command aimed at the other PHY.
+
+Avoid this conflict by disabling the broadcast address 0 early in
+the PHY configuration process. The .probe callback is called early
+enough to stop the issues from occurring. The .config_init callback
+re-establishes the workaround after the PHY undergoes a hardware
+reset.
+
+This change makes the YT8821 work reliably on the Cudy M3000 router
+when running the current OpenWrt main branch with a small device tree
+patch.
+
+Link: https://github.com/openwrt/openwrt/pull/21584
+Fixes: b671105b88c3 ("net: phy: Add driver for Motorcomm yt8821 2.5G ethernet phy")
+Signed-off-by: Jakub Vaněk <linuxtardis@gmail.com>
+---
+ drivers/net/phy/motorcomm.c | 48 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 48 insertions(+)
+
+--- a/drivers/net/phy/motorcomm.c
++++ b/drivers/net/phy/motorcomm.c
+@@ -214,6 +214,9 @@
+ #define YT8521_RC1R_RGMII_2_100_NS		14
+ #define YT8521_RC1R_RGMII_2_250_NS		15
+ 
++#define YTPHY_MDIO_ADDRESS_CONTROL_REG		0xA005
++#define YTPHY_MACR_EN_PHY_ADDR_0		BIT(6)
++
+ #define YTPHY_MISC_CONFIG_REG			0xA006
+ #define YTPHY_MCR_FIBER_SPEED_MASK		BIT(0)
+ #define YTPHY_MCR_FIBER_1000BX			(0x1 << 0)
+@@ -2648,6 +2651,30 @@ static int yt8821_soft_reset(struct phy_
+ }
+ 
+ /**
++ * yt8821_disable_mdio_address_zero() - disable MDIO broadcast address 0
++ * @phydev: a pointer to a &struct phy_device
++ *
++ * The YT8821 responds on two MDIO addresses by default:
++ *  - the address selected by its strapping pins
++ *  - the broadcast address 0
++ *
++ * Some other PHYs (e.g. the MT7981B internal Gigabit PHY) are hardwired to
++ * respond only on MDIO address 0. If the YT8821 also listens on address 0,
++ * it may incorrectly react to transactions intended for those PHYs.
++ *
++ * Disabling address 0 on the YT8821 early avoids such MDIO bus conflicts.
++ *
++ * Returns: 0 or negative errno code
++ */
++static int yt8821_disable_mdio_address_zero(struct phy_device *phydev)
++{
++	return ytphy_modify_ext(phydev,
++				YTPHY_MDIO_ADDRESS_CONTROL_REG,
++				YTPHY_MACR_EN_PHY_ADDR_0,
++				0);
++}
++
++/**
+  * yt8821_config_init() - phy initializatioin
+  * @phydev: a pointer to a &struct phy_device
+  *
+@@ -2682,6 +2709,10 @@ static int yt8821_config_init(struct phy
+ 		phydev->rate_matching = RATE_MATCH_PAUSE;
+ 	}
+ 
++	ret = yt8821_disable_mdio_address_zero(phydev);
++	if (ret < 0)
++		return ret;
++
+ 	ret = yt8821_serdes_init(phydev);
+ 	if (ret < 0)
+ 		return ret;
+@@ -2700,6 +2731,22 @@ static int yt8821_config_init(struct phy
+ }
+ 
+ /**
++ * yt8821_probe() - early PHY initialization
++ * @phydev: a pointer to a &struct phy_device
++ *
++ * Returns: 0 or negative errno code
++ */
++static int yt8821_probe(struct phy_device *phydev)
++{
++	/*
++	 * Disable the MDIO broadcast address (0) as early as possible.
++	 * This prevents the YT8821 from responding to transactions
++	 * intended for a different PHY that is fixed at address 0.
++	 */
++	return yt8821_disable_mdio_address_zero(phydev);
++}
++
++/**
+  * yt8821_adjust_status() - update speed and duplex to phydev
+  * @phydev: a pointer to a &struct phy_device
+  * @val: read from YTPHY_SPECIFIC_STATUS_REG
+@@ -2954,6 +3001,7 @@ static struct phy_driver motorcomm_phy_d
+ 		PHY_ID_MATCH_EXACT(PHY_ID_YT8821),
+ 		.name			= "YT8821 2.5Gbps PHY",
+ 		.get_features		= yt8821_get_features,
++		.probe			= yt8821_probe,
+ 		.read_page		= yt8521_read_page,
+ 		.write_page		= yt8521_write_page,
+ 		.get_wol		= ytphy_get_wol,
