@@ -1,0 +1,11 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -4,7 +4,7 @@ PROJECT(ubus C)
+ 
+ ADD_COMPILE_OPTIONS(-Wall -Werror)
+ IF(CMAKE_C_COMPILER_VERSION VERSION_GREATER 6)
+-  ADD_COMPILE_OPTIONS(-Wextra -Wformat -Werror=format-security -Werror=format-nonliteral)
++  ADD_COMPILE_OPTIONS(-Wextra -Wformat -Werror=format-security)
+   ADD_COMPILE_OPTIONS($<$<COMPILE_LANGUAGE:C>:-Werror=implicit-function-declaration>)
+ ENDIF()
+ ADD_COMPILE_OPTIONS(-Os -g3 -Wmissing-declarations -Wno-unused-parameter)
