@@ -73,7 +73,8 @@ static nvram_tuple_t * _nvram_realloc( nvram_handle_t *h, nvram_tuple_t *t,
 		return NULL;
 
 	if (!t) {
-		if (!(t = malloc(sizeof(nvram_tuple_t) + strlen(name) + 1)))
+		t = malloc(sizeof(nvram_tuple_t) + strlen(name) + 1);
+		if (!t)
 			return NULL;
 
 		/* Copy name */
@@ -85,7 +86,8 @@ static nvram_tuple_t * _nvram_realloc( nvram_handle_t *h, nvram_tuple_t *t,
 	/* Copy value */
 	if (!t->value || strcmp(t->value, value))
 	{
-		if(!(t->value = (char *) realloc(t->value, strlen(value)+1)))
+		t->value = realloc(t->value, strlen(value) + 1);
+		if(!t->value)
 			return NULL;
 
 		strcpy(t->value, value);
@@ -184,7 +186,8 @@ int nvram_set(nvram_handle_t *h, const char *name, const char *value)
 		 t && strcmp(t->name, name); prev = &t->next, t = *prev);
 
 	/* (Re)allocate tuple */
-	if (!(u = _nvram_realloc(h, t, name, value)))
+	u = _nvram_realloc(h, t, name, value);
+	if (!u)
 		return -12; /* -ENOMEM */
 
 	/* Value reallocated */
@@ -241,17 +244,13 @@ nvram_tuple_t * nvram_getall(nvram_handle_t *h)
 
 	for (i = 0; i < NVRAM_ARRAYSIZE(h->nvram_hash); i++) {
 		for (t = h->nvram_hash[i]; t; t = t->next) {
-			if( (x = malloc(sizeof(*x) + strlen(t->name) + 1)) != NULL )
-			{
-				strcpy(x->name, t->name);
-				x->value = t->value;
-				x->next  = l;
-				l = x;
-			}
-			else
-			{
+			x = malloc(sizeof(*x) + strlen(t->name) + 1);
+			if(!x)
 				break;
-			}
+			strcpy(x->name, t->name);
+			x->value = t->value;
+			x->next  = l;
+			l = x;
 		}
 	}
 
@@ -388,10 +387,9 @@ nvram_handle_t * nvram_open(const char *file, int rdonly)
 				close(fd);
 				return NULL;
 			}
-			else if( (h = malloc(sizeof(nvram_handle_t))) != NULL )
+			h = calloc(1, sizeof(nvram_handle_t));
+			if(h)
 			{
-				memset(h, 0, sizeof(nvram_handle_t));
-
 				h->fd     = fd;
 				h->mmap   = mmap_area;
 				h->length = nvram_part_size;
@@ -450,7 +448,8 @@ char * nvram_find_mtd(void)
 				sprintf(dev, "/dev/mtdblock%d", i);
 				if( stat(dev, &s) > -1 && (s.st_mode & S_IFBLK) )
 				{
-					if( (path = (char *) malloc(strlen(dev)+1)) != NULL )
+					path = malloc(strlen(dev) + 1);
+					if(path)
 					{
 						strncpy(path, dev, strlen(dev)+1);
 						break;
