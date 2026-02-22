@@ -1,0 +1,34 @@
+From a8b289f0f2dcbadd8c207ad8f33cf7ba2b4eb088 Mon Sep 17 00:00:00 2001
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Thu, 10 Jul 2025 10:00:12 +0200
+Subject: [PATCH] irqchip/irq-msi-lib: Fix build with PCI disabled
+
+The armada-370-xp irqchip fails in some randconfig builds because
+of a missing declaration:
+
+In file included from drivers/irqchip/irq-armada-370-xp.c:23:
+include/linux/irqchip/irq-msi-lib.h:25:39: error: 'struct msi_domain_info' declared inside parameter list will not be visible outside of this definition or declaration [-Werror]
+
+Add a forward declaration for the msi_domain_info structure.
+
+[ tglx: Fixed up the subsystem prefix. Is it really that hard to get right? ]
+
+Fixes: e51b27438a10 ("irqchip: Make irq-msi-lib.h globally available")
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Acked-by: Marc Zyngier <maz@kernel.org>
+Link: https://lore.kernel.org/all/20250710080021.2303640-1-arnd@kernel.org
+---
+ include/linux/irqchip/irq-msi-lib.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/include/linux/irqchip/irq-msi-lib.h
++++ b/include/linux/irqchip/irq-msi-lib.h
+@@ -17,6 +17,7 @@
+ 
+ #define MATCH_PLATFORM_MSI	BIT(DOMAIN_BUS_PLATFORM_MSI)
+ 
++struct msi_domain_info;
+ int msi_lib_irq_domain_select(struct irq_domain *d, struct irq_fwspec *fwspec,
+ 			      enum irq_domain_bus_token bus_token);
+ 
