@@ -1,0 +1,11 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -7,7 +7,7 @@ PROJECT(ubox C)
+ ADD_DEFINITIONS(-Wall -Werror)
+ IF(CMAKE_C_COMPILER_VERSION VERSION_GREATER 6)
+ 	ADD_DEFINITIONS(-Wextra -Werror=implicit-function-declaration)
+-	ADD_DEFINITIONS(-Wformat -Werror=format-security -Werror=format-nonliteral)
++	ADD_DEFINITIONS(-Wformat -Werror=format-security)
+ ENDIF()
+ ADD_DEFINITIONS(-Os -std=gnu99 -g3 -Wmissing-declarations -Wno-unused-parameter)
+ 
