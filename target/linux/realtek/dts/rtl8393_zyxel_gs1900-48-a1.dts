@@ -2,8 +2,9 @@
 
 #include "rtl839x.dtsi"
 
-#include <dt-bindings/input/input.h>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	compatible = "zyxel,gs1900-48-a1", "realtek,rtl8393-soc";
@@ -83,8 +84,97 @@
 	};
 };
 
+#define PORT_LED(lan, p, l) \
+	led@p,l { \
+		reg = <p l>; \
+		color = <LED_COLOR_ID_GREEN>; \
+		function = LED_FUNCTION_LAN; \
+		function-enumerator = <lan>; \
+	}
+
 &mdio_aux {
 	status = "okay";
+
+	port_leds: expander@0 {
+		compatible = "realtek,rtl8231";
+		reg = <0>;
+
+		gpio-controller;
+		#gpio-cells = <2>;
+		gpio-ranges = <&port_leds 0 0 37>;
+
+		led_matrix: led-scan-single {
+			pins = "gpio0", "gpio1", "gpio2", "gpio3", "gpio4", "gpio5",
+			       "gpio6", "gpio7", "gpio8", "gpio9", "gpio10", "gpio11",
+			       "gpio12", "gpio13", "gpio14", "gpio15", "gpio16", "gpio17",
+			       "gpio18", "gpio19";
+			function = "led";
+		};
+
+		led-controller {
+			compatible = "realtek,rtl8231-leds";
+			#address-cells = <2>;
+			#size-cells = <0>;
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&port_led_offload>, <&led_matrix>;
+
+			realtek,led-scan-mode = "single-color";
+
+			// RJ45 ports
+			PORT_LED(1, 0, 0);
+			PORT_LED(2, 0, 1);
+			PORT_LED(3, 0, 2);
+			PORT_LED(4, 1, 0);
+			PORT_LED(5, 1, 1);
+			PORT_LED(6, 1, 2);
+			PORT_LED(7, 2, 0);
+			PORT_LED(8, 2, 1);
+			PORT_LED(9, 2, 2);
+			PORT_LED(10, 3, 0);
+			PORT_LED(11, 3, 1);
+			PORT_LED(12, 3, 2);
+			PORT_LED(13, 4, 0);
+			PORT_LED(14, 4, 1);
+			PORT_LED(15, 4, 2);
+			PORT_LED(16, 5, 0);
+			PORT_LED(17, 5, 1);
+			PORT_LED(18, 5, 2);
+			PORT_LED(19, 6, 0);
+			PORT_LED(20, 6, 1);
+			PORT_LED(21, 6, 2);
+			PORT_LED(22, 7, 0);
+			PORT_LED(23, 7, 1);
+			PORT_LED(24, 7, 2);
+			PORT_LED(25, 8, 0);
+			PORT_LED(26, 8, 1);
+			PORT_LED(27, 8, 2);
+			PORT_LED(28, 9, 0);
+			PORT_LED(29, 9, 1);
+			PORT_LED(30, 9, 2);
+			PORT_LED(31, 10, 0);
+			PORT_LED(32, 10, 1);
+			PORT_LED(33, 10, 2);
+			PORT_LED(34, 11, 0);
+			PORT_LED(35, 11, 1);
+			PORT_LED(36, 11, 2);
+			PORT_LED(37, 12, 0);
+			PORT_LED(38, 12, 1);
+			PORT_LED(39, 12, 2);
+			PORT_LED(40, 13, 0);
+			PORT_LED(41, 13, 1);
+			PORT_LED(42, 13, 2);
+			PORT_LED(43, 14, 0);
+			PORT_LED(44, 14, 1);
+			PORT_LED(45, 14, 2);
+			PORT_LED(46, 15, 0);
+			PORT_LED(47, 15, 1);
+			PORT_LED(48, 15, 2);
+			// SFP ports
+			PORT_LED(49, 16, 0);
+			PORT_LED(50, 16, 1);
+		};
+	};
 
 	gpio1: expander@3 {
 		compatible = "realtek,rtl8231";
