@@ -85,8 +85,7 @@ ipq806x_setup_macs()
 		hw_mac_addr=$(mtd_get_mac_ascii hwconfig HW.WAN.MAC.Address)
 		ucidef_set_interface_macaddr "wan" "$(macaddr_add $hw_mac_addr 1)"
 		;;
-	linksys,e8350-v1|\
-	zyxel,nbg6817)
+	linksys,e8350-v1)
 		hw_mac_addr=$(mtd_get_mac_ascii 0:appsblenv ethaddr)
 		ucidef_set_interface_macaddr "lan" "$(macaddr_add $hw_mac_addr 2)"
 		ucidef_set_interface_macaddr "wan" "$(macaddr_add $hw_mac_addr 3)"

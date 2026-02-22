@@ -175,6 +175,39 @@
 
 			partitions {
 				compatible = "qcom,smem-part";
+
+				partition-0-art {
+					label = "0:art";
+					read-only;
+
+					nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						precal_art_1000: pre-calibration@1000 {
+							reg = <0x1000 0x2f20>;
+						};
+
+						precal_art_5000: pre-calibration@5000 {
+							reg = <0x5000 0x2f20>;
+						};
+					};
+				};
+
+				partition-0-appsblenv {
+					label = "0:appsblenv";
+					read-only;
+
+					nvmem-layout {
+						compatible = "u-boot,env";
+						env-size = <0x40000>;
+
+						macaddr_uboot_ethaddr: ethaddr {
+							#nvmem-cell-cells = <1>;
+						};
+					};
+				};
 			};
 		};
 	};
@@ -201,6 +234,8 @@
 		compatible = "qcom,ath10k";
 		reg = <0x00010000 0 0 0 0>;
 		qcom,ath10k-calibration-variant = "Nokia-AC400i";
+		nvmem-cells = <&precal_art_1000>, <&macaddr_uboot_ethaddr 2>;
+		nvmem-cell-names = "pre-calibration", "mac-address";
 	};
 };
 
@@ -217,6 +252,8 @@
 		compatible = "qcom,ath10k";
 		reg = <0x00010000 0 0 0 0>;
 		qcom,ath10k-calibration-variant = "Nokia-AC400i";
+		nvmem-cells = <&precal_art_5000>, <&macaddr_uboot_ethaddr 3>;
+		nvmem-cell-names = "pre-calibration", "mac-address";
 	};
 };
 
