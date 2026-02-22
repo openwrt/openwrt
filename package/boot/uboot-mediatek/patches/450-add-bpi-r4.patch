@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/configs/mt7988a_bananapi_bpi-r4-emmc_defconfig
-@@ -0,0 +1,140 @@
+@@ -0,0 +1,143 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -76,6 +76,7 @@
 +CONFIG_CMD_UBI=y
 +CONFIG_CMD_UBI_RENAME=y
 +CONFIG_CMD_MEMSIZE=y
++CONFIG_CMD_NVME=y
 +CONFIG_OF_EMBED=y
 +CONFIG_ENV_OVERWRITE=y
 +CONFIG_ENV_IS_IN_MMC=y
@@ -114,7 +115,9 @@
 +CONFIG_MTD_UBI_FASTMAP=y
 +CONFIG_PHY_FIXED=y
 +CONFIG_MEDIATEK_ETH=y
-+CONFIG_PCIE_MEDIATEK=y
++CONFIG_PCIE_MEDIATEK_GEN3=y
++CONFIG_NVME_PCI=y
++CONFIG_BLK=y
 +CONFIG_PHY=y
 +CONFIG_PHY_MTK_TPHY=y
 +CONFIG_PINCTRL=y
@@ -143,7 +146,7 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/configs/mt7988a_bananapi_bpi-r4-sdmmc_defconfig
-@@ -0,0 +1,139 @@
+@@ -0,0 +1,142 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -218,6 +221,7 @@
 +CONFIG_CMD_FS_UUID=y
 +CONFIG_CMD_UBI=y
 +CONFIG_CMD_UBI_RENAME=y
++CONFIG_CMD_NVME=y
 +CONFIG_OF_EMBED=y
 +CONFIG_ENV_OVERWRITE=y
 +CONFIG_ENV_IS_IN_MMC=y
@@ -256,7 +260,9 @@
 +CONFIG_MTD_UBI_FASTMAP=y
 +CONFIG_PHY_FIXED=y
 +CONFIG_MEDIATEK_ETH=y
-+CONFIG_PCIE_MEDIATEK=y
++CONFIG_PCIE_MEDIATEK_GEN3=y
++CONFIG_NVME_PCI=y
++CONFIG_BLK=y
 +CONFIG_PHY=y
 +CONFIG_PHY_MTK_TPHY=y
 +CONFIG_PINCTRL=y
@@ -285,7 +291,7 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/configs/mt7988a_bananapi_bpi-r4-snand_defconfig
-@@ -0,0 +1,140 @@
+@@ -0,0 +1,143 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -358,6 +364,7 @@
 +CONFIG_CMD_UBI=y
 +CONFIG_CMD_UBI_RENAME=y
 +CONFIG_CMD_MEMSIZE=y
++CONFIG_CMD_NVME=y
 +CONFIG_OF_EMBED=y
 +CONFIG_ENV_OVERWRITE=y
 +CONFIG_ENV_IS_IN_UBI=y
@@ -399,7 +406,9 @@
 +CONFIG_MTD_UBI_FASTMAP=y
 +CONFIG_PHY_FIXED=y
 +CONFIG_MEDIATEK_ETH=y
-+CONFIG_PCIE_MEDIATEK=y
++CONFIG_PCIE_MEDIATEK_GEN3=y
++CONFIG_NVME_PCI=y
++CONFIG_BLK=y
 +CONFIG_PHY=y
 +CONFIG_PHY_MTK_TPHY=y
 +CONFIG_PINCTRL=y
@@ -629,7 +638,7 @@
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- /dev/null
 +++ b/arch/arm/dts/mt7988a-bananapi-bpi-r4.dtsi
-@@ -0,0 +1,199 @@
+@@ -0,0 +1,211 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2022 MediaTek Inc.
@@ -828,6 +837,18 @@
 +			};
 +		};
 +	};
++};
++
++&pcie0 {
++	status = "okay";
++};
++
++&pcie1 {
++	status = "okay";
++};
++
++&pcie3 {
++	status = "okay";
 +};
 --- /dev/null
 +++ b/arch/arm/dts/mt7988a-bananapi-bpi-r4-sd.dts
