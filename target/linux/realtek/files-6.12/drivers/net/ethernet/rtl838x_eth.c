@@ -24,8 +24,6 @@
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 #include "rtl838x_eth.h"
 
-int rtl83xx_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type_data);
-
 #define RTETH_OWN_CPU		1
 #define RTETH_RX_RING_SIZE	128
 #define RTETH_RX_RINGS		2
@@ -1366,6 +1364,23 @@ static struct phylink_pcs *rteth_mac_select_pcs(struct phylink_config *config,
 	return &ctrl->pcs;
 }
 
+static int rteth_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type_data)
+{
+    struct dsa_switch *ds;
+    struct dsa_port *dp;
+
+    if (!netdev_uses_dsa(dev))
+        return -EOPNOTSUPP;
+
+    dp = dev->dsa_ptr;
+    ds = dp->ds;
+
+    if (!ds->ops->port_setup_tc)
+        return -EOPNOTSUPP;
+
+    return ds->ops->port_setup_tc(ds, dp->index, type, type_data);
+}
+
 static const struct net_device_ops rteth_838x_netdev_ops = {
 	.ndo_open = rteth_open,
 	.ndo_stop = rteth_stop,
@@ -1376,7 +1391,7 @@ static const struct net_device_ops rteth_838x_netdev_ops = {
 	.ndo_tx_timeout = rteth_tx_timeout,
 	.ndo_set_features = rteth_83xx_set_features,
 	.ndo_fix_features = rteth_fix_features,
-	.ndo_setup_tc = rtl83xx_setup_tc,
+	.ndo_setup_tc = rteth_setup_tc,
 };
 
 static const struct rteth_config rteth_838x_cfg = {
@@ -1423,7 +1438,7 @@ static const struct net_device_ops rteth_839x_netdev_ops = {
 	.ndo_tx_timeout = rteth_tx_timeout,
 	.ndo_set_features = rteth_83xx_set_features,
 	.ndo_fix_features = rteth_fix_features,
-	.ndo_setup_tc = rtl83xx_setup_tc,
+	.ndo_setup_tc = rteth_setup_tc,
 };
 
 static const struct rteth_config rteth_839x_cfg = {
@@ -1470,7 +1485,7 @@ static const struct net_device_ops rteth_930x_netdev_ops = {
 	.ndo_tx_timeout = rteth_tx_timeout,
 	.ndo_set_features = rteth_93xx_set_features,
 	.ndo_fix_features = rteth_fix_features,
-	.ndo_setup_tc = rtl83xx_setup_tc,
+	.ndo_setup_tc = rteth_setup_tc,
 };
 
 static const struct rteth_config rteth_930x_cfg = {
@@ -1520,6 +1535,7 @@ static const struct net_device_ops rteth_931x_netdev_ops = {
 	.ndo_tx_timeout = rteth_tx_timeout,
 	.ndo_set_features = rteth_93xx_set_features,
 	.ndo_fix_features = rteth_fix_features,
+	.ndo_setup_tc = rteth_setup_tc,
 };
 
 static const struct rteth_config rteth_931x_cfg = {

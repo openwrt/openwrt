@@ -39,6 +39,8 @@
 #define soc_w32(val, reg)		writel(val, RTL_SOC_BASE + reg)
 
 struct rtl83xx_soc_info soc_info;
+EXPORT_SYMBOL(soc_info);
+
 const void *fdt;
 
 static char rtl_soc_name[16];
