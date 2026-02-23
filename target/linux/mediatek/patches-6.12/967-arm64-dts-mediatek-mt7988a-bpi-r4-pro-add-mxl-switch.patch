@@ -1,0 +1,103 @@
+--- a/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro.dtsi
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro.dtsi
+@@ -198,6 +198,100 @@
+ 	status = "okay";
+ };
+ 
++&gmac2 {
++	phy-mode = "10gbase-r";
++	phy-connection-type = "10gbase-r";
++	status = "okay";
++
++	fixed-link {
++		speed = <10000>;
++		full-duplex;
++		pause;
++	};
++};
++
++&mdio_bus {
++	clock-frequency = <12500000>;
++
++	switch16: switch@16 {
++		compatible = "maxlinear,mxl86252";
++		reg = <16>;
++		dsa,member = <0 0>;
++		status = "okay";
++
++		ports {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			port@1 {
++				reg = <1>;
++				label = "lan1";
++				phy-handle = <&phy0>;
++				phy-mode = "internal";
++				status = "okay";
++			};
++
++			port@2 {
++				reg = <2>;
++				label = "lan2";
++				phy-handle = <&phy1>;
++				phy-mode = "internal";
++				status = "okay";
++			};
++
++			port@3 {
++				reg = <3>;
++				label = "lan3";
++				phy-handle = <&phy2>;
++				phy-mode = "internal";
++				status = "okay";
++			};
++
++			port@4 {
++				reg = <4>;
++				label = "lan4";
++				phy-handle = <&phy3>;
++				phy-mode = "internal";
++				status = "okay";
++			};
++
++			port@9 {
++				reg = <9>;
++				label = "cpu";
++				ethernet = <&gmac2>;
++				phy-mode = "usxgmii";
++				dsa-tag-protocol = "mxl862_8021q";
++
++				fixed-link {
++					speed = <10000>;
++					full-duplex;
++				};
++			};
++		};
++
++		mdio {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			phy0: ethernet-phy@0 {
++				reg = <0>;
++			};
++
++			phy1: ethernet-phy@1 {
++				reg = <1>;
++			};
++
++			phy2: ethernet-phy@2 {
++				reg = <2>;
++			};
++
++			phy3: ethernet-phy@3 {
++				reg = <3>;
++			};
++		};
++	};
++};
++
+ &gsw_phy0 {
+ 	pinctrl-0 = <&gbe0_led0_pins>;
+ 	pinctrl-names = "gbe-led";

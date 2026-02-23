@@ -1,0 +1,54 @@
+--- a/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro.dtsi
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro.dtsi
+@@ -198,6 +198,14 @@
+ 	status = "okay";
+ };
+ 
++&gmac1 {
++	sfp = <&sfp2>;
++	managed = "in-band-status";
++	phy-mode = "usxgmii";
++	openwrt,netdev-name = "sfp-wan";
++	status = "okay";
++};
++
+ &gmac2 {
+ 	phy-mode = "10gbase-r";
+ 	phy-connection-type = "10gbase-r";
+@@ -267,6 +275,15 @@
+ 					full-duplex;
+ 				};
+ 			};
++
++			port@13 {
++				reg = <13>;
++				sfp = <&sfp1>;
++				managed = "in-band-status";
++				phy-mode = "usxgmii";
++				label = "sfp-lan";
++				status = "okay";
++			};
+ 		};
+ 
+ 		mdio {
+@@ -292,6 +309,20 @@
+ 	};
+ };
+ 
++&pio {
++	sfp-lan-hog {
++		gpio-hog;
++		gpios = <54 GPIO_ACTIVE_HIGH>;
++		output-low; /* select sfp */
++	};
++
++	sfp-wan-hog {
++		gpio-hog;
++		gpios = <3 GPIO_ACTIVE_HIGH>;
++		output-high; /* select sfp */
++	};
++};
++
+ &gsw_phy0 {
+ 	pinctrl-0 = <&gbe0_led0_pins>;
+ 	pinctrl-names = "gbe-led";
