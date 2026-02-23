@@ -1,0 +1,112 @@
+--- a/drivers/staging/octeon/ethernet-rx.c
++++ b/drivers/staging/octeon/ethernet-rx.c
+@@ -17,6 +17,7 @@
+ #include <linux/ratelimit.h>
+ #include <linux/smp.h>
+ #include <linux/interrupt.h>
++#include <linux/if_vlan.h>
+ #include <net/dst.h>
+ #ifdef CONFIG_XFRM
+ #include <linux/xfrm.h>
+@@ -37,6 +38,21 @@ static struct oct_rx_group {
+ 	struct napi_struct napi;
+ } oct_rx_group[16];
+ 
++/*
++ * Match stock ER-12 behavior: tag rewrite on interface 1 only when
++ * VLAN-aware fabric mode is enabled.
++ */
++static inline bool cvm_oct_er12_vlan_aware_port(int port)
++{
++	if (!of_machine_is_compatible("ubnt,edgerouter-12"))
++		return false;
++
++	if (!cvm_oct_get_vlan_aware_state())
++		return false;
++
++	return cvmx_helper_get_interface_num(port) == 1;
++}
++
+ /**
+  * cvm_oct_do_interrupt - interrupt handler.
+  * @irq: Interrupt number.
+@@ -333,23 +349,56 @@ static int cvm_oct_poll(struct oct_rx_gr
+ 			 * currently up.
+ 			 */
+ 			if (likely(dev->flags & IFF_UP)) {
+-				skb->protocol = eth_type_trans(skb, dev);
+-				skb->dev = dev;
++				bool drop_packet = false;
+ 
+-				if (unlikely(work->word2.s.not_IP ||
+-					     work->word2.s.IP_exc ||
+-					     work->word2.s.L4_error ||
+-					     !work->word2.s.tcp_or_udp))
+-					skb->ip_summed = CHECKSUM_NONE;
+-				else
+-					skb->ip_summed = CHECKSUM_UNNECESSARY;
+-
+-				/* Increment RX stats for virtual ports */
+-				if (port >= CVMX_PIP_NUM_INPUT_PORTS) {
+-					dev->stats.rx_packets++;
+-					dev->stats.rx_bytes += skb->len;
++				if (cvm_oct_er12_vlan_aware_port(port)) {
++					u16 vlan_tci = 0;
++					int vlan_rc;
++
++					vlan_rc = __vlan_get_tag(skb, &vlan_tci);
++					if (vlan_rc) {
++						/*
++						 * Untagged ingress from QCA8511 must be presented
++						 * through switch0 (VID 4094 in stock-style fabric).
++						 */
++						skb = vlan_insert_tag(skb, htons(ETH_P_8021Q),
++								      cvm_oct_get_vlan_switch0_vid());
++					} else {
++						u16 vlan_id = vlan_tci & VLAN_VID_MASK;
++
++						if (vlan_id > 0 &&
++						    vlan_id < cvm_oct_get_vlan_base_vid())
++							skb = vlan_insert_tag(skb, htons(ETH_P_8021Q),
++								      cvm_oct_get_vlan_switch0_vid());
++					}
++
++					if (unlikely(!skb))
++						drop_packet = true;
++				}
++
++				if (!drop_packet) {
++					skb->protocol = eth_type_trans(skb, dev);
++					skb->dev = dev;
++
++					if (unlikely(work->word2.s.not_IP ||
++						     work->word2.s.IP_exc ||
++						     work->word2.s.L4_error ||
++						     !work->word2.s.tcp_or_udp))
++						skb->ip_summed = CHECKSUM_NONE;
++					else
++						skb->ip_summed = CHECKSUM_UNNECESSARY;
++
++					/* Increment RX stats for virtual ports */
++					if (port >= CVMX_PIP_NUM_INPUT_PORTS) {
++						dev->stats.rx_packets++;
++						dev->stats.rx_bytes += skb->len;
++					}
++					netif_receive_skb(skb);
++				} else {
++					dev->stats.rx_dropped++;
++					if (skb)
++						dev_kfree_skb_irq(skb);
+ 				}
+-				netif_receive_skb(skb);
+ 			} else {
+ 				/*
+ 				 * Drop any packet received for a device that
+@@ -358,6 +407,7 @@ static int cvm_oct_poll(struct oct_rx_gr
+ 				dev->stats.rx_dropped++;
+ 				dev_kfree_skb_irq(skb);
+ 			}
++
+ 		} else {
+ 			/*
+ 			 * Drop any packet received for a device that

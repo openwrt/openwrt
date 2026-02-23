@@ -1,0 +1,43 @@
+--- a/arch/mips/cavium-octeon/executive/cvmx-helper-sgmii.c
++++ b/arch/mips/cavium-octeon/executive/cvmx-helper-sgmii.c
+@@ -136,6 +136,12 @@ static int __cvmx_helper_need_g15618(voi
+ 		return 0;
+ }
+ 
++static int __cvmx_helper_sgmii_er12_qca8511_path(int interface, int index)
++{
++	return cvmx_sysinfo_get()->board_type == CVMX_BOARD_TYPE_UBNT_E300 &&
++		(interface == 1 || interface == 2) && index >= 0 && index < 4;
++}
++
+ /**
+  * Initialize the SERTES link for the first time or after a loss
+  * of link.
+@@ -166,10 +172,24 @@ static int __cvmx_helper_sgmii_hardware_
+ 		if (CVMX_WAIT_FOR_FIELD64
+ 		    (CVMX_PCSX_MRX_CONTROL_REG(index, interface),
+ 		     union cvmx_pcsx_mrx_control_reg, reset, ==, 0, 10000)) {
+-			cvmx_dprintf("SGMII%d: Timeout waiting for port %d "
++			if (__cvmx_helper_sgmii_er12_qca8511_path(interface, index)) {
++				/*
++				 * ER-12 ports 0-3 sit behind QCA8511 and can keep RESET
++				 * asserted after warm boot. Deassert manually and continue
++				 * through PCS power-cycle/link init.
++				 */
++				control_reg.u64 =
++					cvmx_read_csr(CVMX_PCSX_MRX_CONTROL_REG(index, interface));
++				control_reg.s.reset = 0;
++				cvmx_write_csr(CVMX_PCSX_MRX_CONTROL_REG(index, interface),
++					       control_reg.u64);
++				cvmx_read_csr(CVMX_PCSX_MRX_CONTROL_REG(index, interface));
++			} else {
++				cvmx_dprintf("SGMII%d: Timeout waiting for port %d "
+ 				     "to finish reset\n",
+-			     interface, index);
+-			return -1;
++				     interface, index);
++				return -1;
++			}
+ 		}
+ 	}
+ 

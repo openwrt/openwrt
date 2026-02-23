@@ -1,0 +1,63 @@
+--- a/drivers/staging/octeon/ethernet.c
++++ b/drivers/staging/octeon/ethernet.c
+@@ -82,6 +82,46 @@ MODULE_PARM_DESC(pow_send_list, "\n"
+ 	"\t\"eth2,spi3,spi7\" would cause these three devices to transmit\n"
+ 	"\tusing the pow_send_group.");
+ 
++/*
++ * Stock ER-12 datapath enables special VLAN handling only in VLAN-aware
++ * switch-fabric mode.
++ */
++static u32 er12_vlan_aware_enabled;
++static u16 er12_vlan_base_vid = 4086;
++static u16 er12_vlan_switch0_vid = 4094;
++
++int cvm_oct_get_vlan_aware_state(void)
++{
++	return er12_vlan_aware_enabled ? 1 : 0;
++}
++EXPORT_SYMBOL(cvm_oct_get_vlan_aware_state);
++
++int cvm_oct_get_vlan_base_vid(void)
++{
++	return er12_vlan_base_vid;
++}
++EXPORT_SYMBOL(cvm_oct_get_vlan_base_vid);
++
++int cvm_oct_get_vlan_switch0_vid(void)
++{
++	return er12_vlan_switch0_vid;
++}
++EXPORT_SYMBOL(cvm_oct_get_vlan_switch0_vid);
++
++void cvm_oct_set_vlan_aware_cb(u32 status, u16 base_vid, u16 sw0_vid)
++{
++	er12_vlan_aware_enabled = status ? 1 : 0;
++	if (base_vid)
++		er12_vlan_base_vid = base_vid;
++	if (sw0_vid)
++		er12_vlan_switch0_vid = sw0_vid;
++}
++EXPORT_SYMBOL(cvm_oct_set_vlan_aware_cb);
++
++module_param_named(er12_vlan_aware, er12_vlan_aware_enabled, uint, 0644);
++module_param_named(er12_vlan_base_vid, er12_vlan_base_vid, ushort, 0644);
++module_param_named(er12_vlan_switch0_vid, er12_vlan_switch0_vid, ushort, 0644);
++
+ int rx_napi_weight = 32;
+ module_param(rx_napi_weight, int, 0444);
+ MODULE_PARM_DESC(rx_napi_weight, "The NAPI WEIGHT parameter.");
+--- a/drivers/staging/octeon/octeon-ethernet.h
++++ b/drivers/staging/octeon/octeon-ethernet.h
+@@ -94,6 +94,11 @@ void cvm_oct_note_carrier(struct octeon_
+ 			  union cvmx_helper_link_info li);
+ void cvm_oct_link_poll(struct net_device *dev);
+ 
++int cvm_oct_get_vlan_aware_state(void);
++int cvm_oct_get_vlan_base_vid(void);
++int cvm_oct_get_vlan_switch0_vid(void);
++void cvm_oct_set_vlan_aware_cb(u32 status, u16 base_vid, u16 sw0_vid);
++
+ extern int always_use_pow;
+ extern int pow_send_group;
+ extern int pow_receive_groups;
