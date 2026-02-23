@@ -98,9 +98,6 @@
 #define RTPCS_930X_SDS_SUBMODE_USXGMII_SX	0x0
 #define RTPCS_930X_SDS_SUBMODE_USXGMII_QX	0x2
 
-#define RTPCS_930X_PLL_LC		0x3
-#define RTPCS_930X_PLL_RING		0x1
-
 /* Registers of the internal SerDes of the 9310 */
 #define RTPCS_931X_MAC_GROUP0_1_CTRL		(0x13a4)
 #define RTPCS_931X_MAC_GROUP2_3_CTRL		(0x13a8)
@@ -150,8 +147,8 @@ enum rtpcs_port_media {
 };
 
 enum rtpcs_sds_pll_type {
-	RTPCS_SDS_PLL_TYPE_RING,
-	RTPCS_SDS_PLL_TYPE_LC,
+	RTPCS_SDS_PLL_TYPE_RING = 0,
+	RTPCS_SDS_PLL_TYPE_LC = 1,
 	RTPCS_SDS_PLL_TYPE_END,
 };
 
@@ -1255,7 +1252,9 @@ static void rtpcs_930x_sds_get_pll_data(struct rtpcs_serdes *sds, enum rtpcs_sds
 	 */
 
 	pll_val = rtpcs_sds_read_bits(even_sds, 0x20, 0x12, pbit + 1, pbit);
-	*pll = pll_val == RTPCS_930X_PLL_LC ? RTPCS_SDS_PLL_TYPE_LC : RTPCS_SDS_PLL_TYPE_RING;
+
+	/* bit 0 is force-bit, bit 1 is PLL selector */
+	*pll = (enum rtpcs_sds_pll_type)(pll_val >> 1);
 
 	sbit = *pll == RTPCS_SDS_PLL_TYPE_LC ? 8 : 12;
 	speed_val = rtpcs_sds_read_bits(even_sds, 0x20, 0x12, sbit + 3, sbit);
@@ -1270,7 +1269,6 @@ static int rtpcs_930x_sds_set_pll_data(struct rtpcs_serdes *sds, enum rtpcs_sds_
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
 	int sbit = pll == RTPCS_SDS_PLL_TYPE_LC ? 8 : 12;
 	int pbit = (sds == even_sds) ? 4 : 6;
-	int pll_val;
 
 	if (speed >= RTPCS_SDS_PLL_SPD_END)
 		return -EINVAL;
@@ -1287,9 +1285,10 @@ static int rtpcs_930x_sds_set_pll_data(struct rtpcs_serdes *sds, enum rtpcs_sds_
 	 * always activate both.
 	 */
 
-	pll_val = pll == RTPCS_SDS_PLL_TYPE_LC ? RTPCS_930X_PLL_LC : RTPCS_930X_PLL_RING;
 	rtpcs_sds_write_bits(even_sds, 0x20, 0x12, 3, 0, 0xf);
-	rtpcs_sds_write_bits(even_sds, 0x20, 0x12, pbit + 1, pbit, pll_val);
+
+	/* bit 0 is force-bit, bit 1 is PLL selector */
+	rtpcs_sds_write_bits(even_sds, 0x20, 0x12, pbit + 1, pbit, (pll << 1) | BIT(0));
 
 	/* bit 0 is force-bit, bits [3:1] are speed selector */
 	rtpcs_sds_write_bits(even_sds, 0x20, 0x12, sbit + 3, sbit, (speed << 1) | BIT(0));
