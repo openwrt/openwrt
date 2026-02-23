@@ -564,6 +564,29 @@
 	emmc@0 {
 		compatible = "mmc-card";
 		reg = <0>;
+
+		block {
+			compatible = "block-device";
+			partitions {
+				block-partition-art {
+					partname = "ART";
+
+					nvmem-layout {
+						compatible = "fixed-layout";
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						precal_art_1000: pre-calibration@1000 {
+							reg = <0x1000 0x2f20>;
+						};
+
+						precal_art_5000: pre-calibration@5000 {
+							reg = <0x5000 0x2f20>;
+						};
+					};
+				};
+			};
+		};
 	};
 };
 
@@ -621,11 +644,15 @@
 &wifi0 {
 	status = "okay";
 	qcom,ath10k-calibration-variant = "Sony-NCP-HG100-Cellular";
+	nvmem-cells = <&precal_art_1000>;
+	nvmem-cell-names = "pre-calibration";
 };
 
 &wifi1 {
 	status = "okay";
 	qcom,ath10k-calibration-variant = "Sony-NCP-HG100-Cellular";
+	nvmem-cells = <&precal_art_5000>;
+	nvmem-cell-names = "pre-calibration";
 };
 
 &watchdog {
