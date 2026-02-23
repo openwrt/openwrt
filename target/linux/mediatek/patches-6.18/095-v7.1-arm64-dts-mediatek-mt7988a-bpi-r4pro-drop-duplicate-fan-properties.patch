@@ -1,0 +1,31 @@
+From 99b09353644a8211423515642805e66e19d8d58a Mon Sep 17 00:00:00 2001
+From: Frank Wunderlich <frank-w@public-files.de>
+Date: Sun, 12 Apr 2026 11:23:30 +0200
+Subject: arm64: dts: mediatek: mt7988a-bpi-r4pro: drop duplicate fan
+ properties
+
+These properties are already set in the original node and do not need
+to be defined again.
+
+Signed-off-by: Frank Wunderlich <frank-w@public-files.de>
+Signed-off-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>
+---
+ arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro.dtsi | 7 -------
+ 1 file changed, 7 deletions(-)
+
+--- a/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro.dtsi
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro.dtsi
+@@ -185,13 +185,6 @@
+ 	status = "okay";
+ };
+ 
+-&fan {
+-	pinctrl-0 = <&pwm0_pins>;
+-	pinctrl-names = "default";
+-	pwms = <&pwm 0 50000>;
+-	status = "okay";
+-};
+-
+ &gmac0 {
+ 	status = "okay";
+ };

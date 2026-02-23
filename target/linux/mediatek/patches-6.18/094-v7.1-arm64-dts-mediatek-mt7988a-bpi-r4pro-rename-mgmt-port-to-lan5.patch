@@ -1,0 +1,28 @@
+From 2e5bfbff390beba28b9526b8eca9e63a3881a309 Mon Sep 17 00:00:00 2001
+From: Frank Wunderlich <frank-w@public-files.de>
+Date: Sun, 12 Apr 2026 11:23:29 +0200
+Subject: arm64: dts: mediatek: mt7988a-bpi-r4pro: rename mgmt port to lan5
+
+It turns out that the label mgmt confuses users and now official case is
+released where the port is labeled with number 5. So just rename it to
+lan5 to follow naming convension (lan1-4 from mxl switch and lan6 for lan-
+combo).
+
+Signed-off-by: Frank Wunderlich <frank-w@public-files.de>
+Reviewed-by: Daniel Golle <daniel@makrotopia.org>
+Signed-off-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>
+---
+ arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro.dtsi
++++ b/arch/arm64/boot/dts/mediatek/mt7988a-bananapi-bpi-r4-pro.dtsi
+@@ -207,7 +207,7 @@
+ };
+ 
+ &gsw_port0 {
+-	label = "mgmt";
++	label = "lan5";
+ };
+ 
+ /* R4Pro has only port 0 connected, so disable the others */
