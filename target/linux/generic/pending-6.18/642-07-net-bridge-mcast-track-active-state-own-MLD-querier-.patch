@@ -1,0 +1,36 @@
+From 33d347ab54a2856901469bb0947147950862bfeb Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Linus=20L=C3=BCssing?= <linus.luessing@c0d3.blue>
+Date: Sat, 9 Aug 2025 07:31:37 +0200
+Subject: [PATCH 07/16] net: bridge: mcast: track active state, own MLD querier
+ disappearance
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This change ensures that the new multicast active state variable is
+immediately unset if our internal IGMP/MLD querier was elected and
+now disabled.
+
+If no IGMP/MLD querier exists on the link then we can't reliably receive
+IGMP/MLD reports and in turn can't ensure the completeness of our MDB
+anymore either.
+
+No functional change for the fast/data path yet. This is the last
+necessary check before using the new multicast active state variable
+in the fast/data path, too.
+
+Signed-off-by: Linus Lüssing <linus.luessing@c0d3.blue>
+---
+ net/bridge/br_multicast.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/net/bridge/br_multicast.c
++++ b/net/bridge/br_multicast.c
+@@ -4904,6 +4904,7 @@ int br_multicast_set_querier(struct net_
+ #endif
+ 
+ unlock:
++	br_multicast_update_active(brmctx);
+ 	spin_unlock_bh(&brmctx->br->multicast_lock);
+ 
+ 	return 0;
