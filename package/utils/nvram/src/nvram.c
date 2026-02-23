@@ -448,12 +448,9 @@ char * nvram_find_mtd(void)
 				sprintf(dev, "/dev/mtdblock%d", i);
 				if( stat(dev, &s) > -1 && (s.st_mode & S_IFBLK) )
 				{
-					path = malloc(strlen(dev) + 1);
-					if(path)
-					{
-						strncpy(path, dev, strlen(dev)+1);
+					path = strdup(dev);
+					if (path)
 						break;
-					}
 				}
 			}
 		}
