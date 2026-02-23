@@ -1,0 +1,45 @@
+--- a/drivers/staging/octeon/ethernet-tx.c
++++ b/drivers/staging/octeon/ethernet-tx.c
+@@ -12,6 +12,7 @@
+ #include <linux/ip.h>
+ #include <linux/ratelimit.h>
+ #include <linux/string.h>
++#include <linux/if_vlan.h>
+ #include <linux/interrupt.h>
+ #include <net/dst.h>
+ #ifdef CONFIG_XFRM
+@@ -30,6 +31,18 @@
+ #define CVM_OCT_SKB_CB(skb)	((u64 *)((skb)->cb))
+ 
+ /*
++ * Match stock ER-12 behavior: tag pop on interface 1 only when
++ * VLAN-aware fabric mode is enabled.
++ */
++static inline bool cvm_oct_er12_vlan_aware_egress(struct octeon_ethernet *priv)
++{
++	if (!of_machine_is_compatible("ubnt,edgerouter-12"))
++		return false;
++
++	return cvm_oct_get_vlan_aware_state() && INTERFACE(priv->port) == 1;
++}
++
++/*
+  * You can define GET_SKBUFF_QOS() to override how the skbuff output
+  * function determines which output queue is used. The default
+  * implementation always uses the base queue for the port. If, for
+@@ -148,6 +161,15 @@ netdev_tx_t cvm_oct_xmit(struct sk_buff
+ 	 */
+ 	prefetch(priv);
+ 
++	if (unlikely(cvm_oct_er12_vlan_aware_egress(priv))) {
++		u16 vlan_tci = 0;
++
++		__vlan_get_tag(skb, &vlan_tci);
++		if (vlan_tci == cvm_oct_get_vlan_switch0_vid() &&
++		    skb_vlan_tagged_multi(skb))
++			__skb_vlan_pop(skb, &vlan_tci);
++	}
++
+ 	/*
+ 	 * The check on CVMX_PKO_QUEUES_PER_PORT_* is designed to
+ 	 * completely remove "qos" in the event neither interface
