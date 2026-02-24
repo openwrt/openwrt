@@ -516,6 +516,34 @@ static void rtpcs_generic_sds_restart_autoneg(struct rtpcs_serdes *sds)
 	rtpcs_sds_write_field(sds, &sds->regs->an_restart, 0x1);
 }
 
+static int rtpcs_sds_select_pll_speed(enum rtpcs_sds_mode hw_mode, enum rtpcs_sds_pll_speed *speed)
+{
+	switch (hw_mode) {
+	case RTPCS_SDS_MODE_1000BASEX:
+	case RTPCS_SDS_MODE_SGMII:
+	case RTPCS_SDS_MODE_QSGMII:
+		*speed = RTPCS_SDS_PLL_SPD_1000;
+		break;
+	case RTPCS_SDS_MODE_2500BASEX:
+		*speed = RTPCS_SDS_PLL_SPD_2500;
+		break;
+	case RTPCS_SDS_MODE_10GBASER:
+	case RTPCS_SDS_MODE_XSGMII:
+	case RTPCS_SDS_MODE_USXGMII_10GSXGMII:
+	case RTPCS_SDS_MODE_USXGMII_10GDXGMII:
+	case RTPCS_SDS_MODE_USXGMII_10GQXGMII:
+	case RTPCS_SDS_MODE_USXGMII_5GSXGMII:
+	case RTPCS_SDS_MODE_USXGMII_5GDXGMII:
+	case RTPCS_SDS_MODE_USXGMII_2_5GSXGMII:
+		*speed = RTPCS_SDS_PLL_SPD_10000;
+		break;
+	default:
+		return -ENOTSUPP;
+	}
+
+	return 0;
+}
+
 /* Variant-specific functions */
 
 /* RTL838X */
@@ -1449,15 +1477,9 @@ static int rtpcs_930x_sds_config_pll(struct rtpcs_serdes *sds,
 
 	rtpcs_930x_sds_get_pll_data(nb_sds, neighbor_pll, &neighbor_speed);
 
-	if ((hw_mode == RTPCS_SDS_MODE_1000BASEX) ||
-	    (hw_mode == RTPCS_SDS_MODE_SGMII))
-		speed = RTPCS_SDS_PLL_SPD_1000;
-	else if (hw_mode == RTPCS_SDS_MODE_2500BASEX)
-		speed = RTPCS_SDS_PLL_SPD_2500;
-	else if (hw_mode == RTPCS_SDS_MODE_10GBASER)
-		speed = RTPCS_SDS_PLL_SPD_10000;
-	else
-		return -ENOTSUPP;
+	ret = rtpcs_sds_select_pll_speed(hw_mode, &speed);
+	if (ret < 0)
+		return ret;
 
 	if (!neighbor_mode)
 		pll = speed == RTPCS_SDS_PLL_SPD_10000 ? RTPCS_SDS_PLL_TYPE_LC
