@@ -1312,6 +1312,29 @@ static int rtpcs_930x_sds_set_pll_select(struct rtpcs_serdes *sds, enum rtpcs_sd
 	return rtpcs_sds_write_bits(even_sds, 0x20, 0x12, pbit + 1, pbit, (pll << 1) | BIT(0));
 }
 
+static void rtpcs_930x_sds_reset_cmu(struct rtpcs_serdes *sds)
+{
+	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
+	int reset_sequence[4] = { 3, 2, 3, 1 };
+	enum rtpcs_sds_pll_type pll;
+	int bit, i, ret;
+
+	/*
+	 * After the PLL speed has changed, the CMU must take over the new values. The models
+	 * of the Otto platform have different reset sequences. Luckily it always boils down
+	 * to flipping two bits in a special sequence.
+	 */
+	ret = rtpcs_930x_sds_get_pll_select(sds, &pll);
+	if (ret < 0)
+		return;
+
+	bit = pll == RTPCS_SDS_PLL_TYPE_LC ? 2 : 0;
+
+	for (i = 0; i < ARRAY_SIZE(reset_sequence); i++)
+		rtpcs_sds_write_bits(even_sds, 0x21, 0x0b, bit + 1, bit,
+				     reset_sequence[i]);
+}
+
 static int rtpcs_930x_sds_set_pll_data(struct rtpcs_serdes *sds, enum rtpcs_sds_pll_type pll,
 				       enum rtpcs_sds_pll_speed speed)
 {
@@ -1338,31 +1361,8 @@ static int rtpcs_930x_sds_set_pll_data(struct rtpcs_serdes *sds, enum rtpcs_sds_
 	/* bit 0 is force-bit, bits [3:1] are speed selector */
 	rtpcs_sds_write_bits(even_sds, 0x20, 0x12, sbit + 3, sbit, (speed << 1) | BIT(0));
 
+	rtpcs_930x_sds_reset_cmu(sds);
 	return 0;
-}
-
-static void rtpcs_930x_sds_reset_cmu(struct rtpcs_serdes *sds)
-{
-	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
-	int reset_sequence[4] = { 3, 2, 3, 1 };
-	enum rtpcs_sds_pll_type pll;
-	int ret, i, bit;
-
-	/*
-	 * After the PLL speed has changed, the CMU must take over the new values. The models
-	 * of the Otto platform have different reset sequences. Luckily it always boils down
-	 * to flipping two bits in a special sequence.
-	 */
-
-	ret = rtpcs_930x_sds_get_pll_select(sds, &pll);
-	if (ret < 0)
-		return;
-
-	bit = pll == RTPCS_SDS_PLL_TYPE_LC ? 2 : 0;
-
-	for (i = 0; i < ARRAY_SIZE(reset_sequence); i++)
-		rtpcs_sds_write_bits(even_sds, 0x21, 0x0b, bit + 1, bit,
-				     reset_sequence[i]);
 }
 
 static int rtpcs_930x_sds_wait_clock_ready(struct rtpcs_serdes *sds)
@@ -1428,7 +1428,6 @@ static void rtpcs_930x_sds_reconfigure_pll(struct rtpcs_serdes *sds, enum rtpcs_
 	__rtpcs_930x_sds_set_ip_mode(sds, RTPCS_930X_SDS_OFF);
 
 	rtpcs_930x_sds_set_pll_data(sds, pll, speed);
-	rtpcs_930x_sds_reset_cmu(sds);
 
 	ret = rtpcs_930x_sds_set_pll_select(sds, sds->hw_mode, pll);
 	if (ret < 0)
@@ -1497,10 +1496,8 @@ static int rtpcs_930x_sds_config_pll(struct rtpcs_serdes *sds,
 	} else
 		pll = RTPCS_SDS_PLL_TYPE_RING;
 
-	rtpcs_930x_sds_set_pll_data(sds, pll, speed);
-
 	if (speed_changed)
-		rtpcs_930x_sds_reset_cmu(sds);
+		rtpcs_930x_sds_set_pll_data(sds, pll, speed);
 
 	ret = rtpcs_930x_sds_set_pll_select(sds, hw_mode, pll);
 	if (ret < 0)
