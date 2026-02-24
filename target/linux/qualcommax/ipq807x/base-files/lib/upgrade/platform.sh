@@ -288,6 +288,13 @@ platform_do_upgrade() {
 		nand_do_upgrade "$1"
 		;;
 	zbtlink,zbt-z800ax)
+		# Migrate U-Boot from vendor 'bootipq' to OpenWrt boot commands
+		if fw_printenv bootcmd 2>/dev/null | grep -q "bootipq"; then
+			echo "Z800AX: Factory firmware detected. Migrating U-Boot..."
+			fw_setenv bootargs 'console=ttyMSM0,115200n8 ubi.mtd=rootfs root=mtd:ubi_rootfs rootfstype=squashfs rootwait'
+			fw_setenv bootcmd 'setenv mtdids nand0=nand0; setenv mtdparts mtdparts=nand0:0x3400000@0x0(rootfs); ubi part rootfs && ubi read 0x44000000 kernel && bootm 0x44000000'
+		fi
+
 		local mtdnum="$(find_mtd_index 0:bootconfig)"
 		local alt_mtdnum="$(find_mtd_index 0:bootconfig1)"
 		part_num="$(hexdump -e '1/1 "%01x|"' -n 1 -s 168 -C /dev/mtd$mtdnum | cut -f 1 -d "|" | head -n1)"
