@@ -138,7 +138,8 @@ main() {
         code_openwrt=30
         code_factory=31
         ;;
-    dasan,h660gm-a)
+    dasan,h660gm-a-airtel|\
+    dasan,h660gm-a-generic)
         # bootflag stored in dzs partition at offset 0x49
         part=$(part_named '"dzs"')
         offset_blocks=0
