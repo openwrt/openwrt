@@ -1239,28 +1239,49 @@ static void rtpcs_930x_sds_rx_reset(struct rtpcs_serdes *sds,
 	rtpcs_sds_write_bits(sds, page, 0x15, 4, 4, 0x0);
 }
 
-static void rtpcs_930x_sds_get_pll_data(struct rtpcs_serdes *sds, enum rtpcs_sds_pll_type *pll,
+static int rtpcs_930x_sds_get_pll_select(struct rtpcs_serdes *sds, enum rtpcs_sds_pll_type *pll)
+{
+	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
+	int pbit = (sds == even_sds) ? 4 : 6;
+	int pll_sel;
+
+	pll_sel = rtpcs_sds_read_bits(even_sds, 0x20, 0x12, pbit + 1, pbit);
+	if (pll_sel < 0)
+		return pll_sel;
+
+	/* bit 0 is force-bit, bit 1 is PLL selector */
+	*pll = (enum rtpcs_sds_pll_type)(pll_sel >> 1);
+	return 0;
+}
+
+static void rtpcs_930x_sds_get_pll_data(struct rtpcs_serdes *sds, enum rtpcs_sds_pll_type pll,
 					enum rtpcs_sds_pll_speed *speed)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
-	int sbit, pbit = (sds == even_sds) ? 4 : 6;
-	int pll_val, speed_val;
+	int sbit, speed_val;
 
 	/*
 	 * PLL data is shared between adjacent SerDes in the even lane. Each SerDes defines
 	 * what PLL it needs (ring or LC) while the PLL itself stores the current speed.
 	 */
 
-	pll_val = rtpcs_sds_read_bits(even_sds, 0x20, 0x12, pbit + 1, pbit);
-
-	/* bit 0 is force-bit, bit 1 is PLL selector */
-	*pll = (enum rtpcs_sds_pll_type)(pll_val >> 1);
-
-	sbit = *pll == RTPCS_SDS_PLL_TYPE_LC ? 8 : 12;
+	sbit = pll == RTPCS_SDS_PLL_TYPE_LC ? 8 : 12;
 	speed_val = rtpcs_sds_read_bits(even_sds, 0x20, 0x12, sbit + 3, sbit);
 
 	/* bit 0 is force-bit, bits [3:1] are speed selector */
 	*speed = (enum rtpcs_sds_pll_speed)(speed_val >> 1);
+}
+
+static int rtpcs_930x_sds_set_pll_select(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode,
+					 enum rtpcs_sds_pll_type pll)
+{
+	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
+	int pbit = (sds == even_sds) ? 4 : 6;
+
+	/* Selecting the PLL a SerDes is done in the even lane register */
+
+	/* bit 0 is force-bit, bit 1 is PLL selector */
+	return rtpcs_sds_write_bits(even_sds, 0x20, 0x12, pbit + 1, pbit, (pll << 1) | BIT(0));
 }
 
 static int rtpcs_930x_sds_set_pll_data(struct rtpcs_serdes *sds, enum rtpcs_sds_pll_type pll,
@@ -1268,7 +1289,6 @@ static int rtpcs_930x_sds_set_pll_data(struct rtpcs_serdes *sds, enum rtpcs_sds_
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
 	int sbit = pll == RTPCS_SDS_PLL_TYPE_LC ? 8 : 12;
-	int pbit = (sds == even_sds) ? 4 : 6;
 
 	if (speed >= RTPCS_SDS_PLL_SPD_END)
 		return -EINVAL;
@@ -1287,9 +1307,6 @@ static int rtpcs_930x_sds_set_pll_data(struct rtpcs_serdes *sds, enum rtpcs_sds_
 
 	rtpcs_sds_write_bits(even_sds, 0x20, 0x12, 3, 0, 0xf);
 
-	/* bit 0 is force-bit, bit 1 is PLL selector */
-	rtpcs_sds_write_bits(even_sds, 0x20, 0x12, pbit + 1, pbit, (pll << 1) | BIT(0));
-
 	/* bit 0 is force-bit, bits [3:1] are speed selector */
 	rtpcs_sds_write_bits(even_sds, 0x20, 0x12, sbit + 3, sbit, (speed << 1) | BIT(0));
 
@@ -1300,9 +1317,8 @@ static void rtpcs_930x_sds_reset_cmu(struct rtpcs_serdes *sds)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
 	int reset_sequence[4] = { 3, 2, 3, 1 };
-	enum rtpcs_sds_pll_speed speed;
 	enum rtpcs_sds_pll_type pll;
-	int i, bit;
+	int ret, i, bit;
 
 	/*
 	 * After the PLL speed has changed, the CMU must take over the new values. The models
@@ -1310,7 +1326,10 @@ static void rtpcs_930x_sds_reset_cmu(struct rtpcs_serdes *sds)
 	 * to flipping two bits in a special sequence.
 	 */
 
-	rtpcs_930x_sds_get_pll_data(sds, &pll, &speed);
+	ret = rtpcs_930x_sds_get_pll_select(sds, &pll);
+	if (ret < 0)
+		return;
+
 	bit = pll == RTPCS_SDS_PLL_TYPE_LC ? 2 : 0;
 
 	for (i = 0; i < ARRAY_SIZE(reset_sequence); i++)
@@ -1366,17 +1385,26 @@ static void rtpcs_930x_sds_set_power(struct rtpcs_serdes *sds, bool on)
 static void rtpcs_930x_sds_reconfigure_pll(struct rtpcs_serdes *sds, enum rtpcs_sds_pll_type pll)
 {
 	enum rtpcs_sds_pll_speed speed;
-	enum rtpcs_sds_pll_type tmp;
-	int mode;
+	enum rtpcs_sds_pll_type old_pll;
+	int mode, ret;
 
 	mode = __rtpcs_930x_sds_get_ip_mode(sds);
-	rtpcs_930x_sds_get_pll_data(sds, &tmp, &speed);
+
+	ret = rtpcs_930x_sds_get_pll_select(sds, &old_pll);
+	if (ret < 0)
+		return;
+
+	rtpcs_930x_sds_get_pll_data(sds, old_pll, &speed);
 
 	rtpcs_930x_sds_set_power(sds, false);
 	__rtpcs_930x_sds_set_ip_mode(sds, RTPCS_930X_SDS_OFF);
 
 	rtpcs_930x_sds_set_pll_data(sds, pll, speed);
 	rtpcs_930x_sds_reset_cmu(sds);
+
+	ret = rtpcs_930x_sds_set_pll_select(sds, sds->hw_mode, pll);
+	if (ret < 0)
+		return;
 
 	__rtpcs_930x_sds_set_ip_mode(sds, mode);
 	if (rtpcs_930x_sds_wait_clock_ready(sds))
@@ -1392,7 +1420,7 @@ static int rtpcs_930x_sds_config_pll(struct rtpcs_serdes *sds,
 	enum rtpcs_sds_pll_speed speed, neighbor_speed;
 	enum rtpcs_sds_pll_type pll, neighbor_pll;
 	bool speed_changed = true;
-	int neighbor_mode;
+	int neighbor_mode, ret;
 
 	/*
 	 * A SerDes pair on the RTL930x is driven by two PLLs. A low speed ring PLL can generate
@@ -1414,7 +1442,12 @@ static int rtpcs_930x_sds_config_pll(struct rtpcs_serdes *sds,
 	 */
 
 	neighbor_mode = __rtpcs_930x_sds_get_ip_mode(nb_sds);
-	rtpcs_930x_sds_get_pll_data(nb_sds, &neighbor_pll, &neighbor_speed);
+
+	ret = rtpcs_930x_sds_get_pll_select(sds, &neighbor_pll);
+	if (ret < 0)
+		return ret;
+
+	rtpcs_930x_sds_get_pll_data(nb_sds, neighbor_pll, &neighbor_speed);
 
 	if ((hw_mode == RTPCS_SDS_MODE_1000BASEX) ||
 	    (hw_mode == RTPCS_SDS_MODE_SGMII))
@@ -1446,6 +1479,10 @@ static int rtpcs_930x_sds_config_pll(struct rtpcs_serdes *sds,
 
 	if (speed_changed)
 		rtpcs_930x_sds_reset_cmu(sds);
+
+	ret = rtpcs_930x_sds_set_pll_select(sds, hw_mode, pll);
+	if (ret < 0)
+		return ret;
 
 	pr_info("%s: SDS %d using %s PLL for mode %d\n", __func__, sds->id,
 		pll == RTPCS_SDS_PLL_TYPE_LC ? "LC" : "ring", hw_mode);
