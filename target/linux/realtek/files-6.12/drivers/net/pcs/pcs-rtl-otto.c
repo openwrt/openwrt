@@ -179,6 +179,14 @@ struct rtpcs_serdes_ops {
 	int (*set_autoneg)(struct rtpcs_serdes *sds, unsigned int neg_mode,
 			   const unsigned long *advertising);
 	void (*restart_autoneg)(struct rtpcs_serdes *sds);
+
+	/* CMU management */
+	int (*get_pll_select)(struct rtpcs_serdes *sds, enum rtpcs_sds_pll_type *pll);
+	int (*set_pll_select)(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode,
+			      enum rtpcs_sds_pll_type pll);
+	int (*reset_cmu)(struct rtpcs_serdes *sds, enum rtpcs_sds_pll_type pll);
+	/* online reconfiguration of a running SerDes to another PLL */
+	int (*reconfigure_to_pll)(struct rtpcs_serdes *sds, enum rtpcs_sds_pll_type pll);
 };
 
 struct rtpcs_sds_reg_field {
