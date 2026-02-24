@@ -1161,7 +1161,6 @@ static int rtpcs_93xx_sds_set_pll_config(struct rtpcs_serdes *sds, enum rtpcs_sd
 	 * LC PLL. As it is unclear if disabling PLLs has any positive or negative effect,
 	 * always activate both.
 	 */
-
 	ret = rtpcs_sds_write_bits(even_sds, 0x20, 0x12, 3, 0, 0xf);
 	if (ret < 0)
 		return ret;
@@ -1186,23 +1185,38 @@ static int rtpcs_93xx_sds_config_cmu(struct rtpcs_serdes *sds, enum rtpcs_sds_mo
 	int ret;
 
 	/*
-	 * A SerDes pair on the RTL930x is driven by two PLLs. A low speed ring PLL can generate
-	 * signals of 1.25G and 3.125G for link speeds of 1G/2.5G. A high speed LC PLL can
-	 * additionally generate a 10.3125G signal for 10G speeds. To drive the pair at different
-	 * speeds each SerDes must use its own PLL. But what if the SerDess attached to the ring
-	 * PLL suddenly needs 10G but the LC PLL is running at 1G? To avoid reconfiguring the
-	 * "partner" SerDes we must choose wisely what assignment serves the current needs. The
-	 * logic boils down to the following rules:
+	 * A SerDes pair on RTL93xx is driven by a shared CMU with two PLLs:
 	 *
-	 * - Use ring PLL for slow 1G speeds
-	 * - Use LC PLL for fast 10G speeds
-	 * - For 2.5G prefer ring over LC PLL
+	 * - a low speed ring PLL which can generate signals of 1.25G and 3.125G for link
+	 *   speeds of 1G/2.5G
+	 * - a high speed LC PLL which can additionally generate a 10.3125G signal for
+	 *   10G link speeds
 	 *
-	 * However, when we want to configure 10G speed while the other SerDes is already using
-	 * the LC PLL for a slower speed, there is no way to avoid reconfiguration. Note that
-	 * this can even happen when the other SerDes is not actually in use, because changing
-	 * the state of a SerDes back to RTL930X_SDS_OFF is not (yet) implemented.
+	 * To drive the pair at different speeds, each SerDes must use its own PLL and we
+	 * must wisely assign the PLLs to the SerDes based on their needs. The logic boils
+	 * down to the following rules:
+	 *
+	 * - use ring PLL for slow 1G speeds
+	 * - use LC PLL for fast 10G speeds
+	 * - for 2.5G prefer ring over LC PLL
+	 *
+	 * For the case that we want to configure 10G speed but the LC PLL is already used
+	 * by the neighbor SerDes and running with a slower speed, there's no way to avoid
+	 * reconfiguration. The neighbor SerDes is reconfigured online to the ring PLL.
 	 */
+
+	if (hw_mode == RTPCS_SDS_MODE_OFF)
+		return 0;
+
+	ret = rtpcs_sds_select_pll_speed(hw_mode, &speed);
+	if (ret < 0)
+		return ret;
+
+	if (nb_sds->hw_mode == RTPCS_SDS_MODE_OFF) {
+		pll = (speed == RTPCS_SDS_PLL_SPD_10000) ? RTPCS_SDS_PLL_TYPE_LC
+							 : RTPCS_SDS_PLL_TYPE_RING;
+		goto pll_setup;
+	}
 
 	ret = nb_sds->ops->get_pll_select(nb_sds, &neighbor_pll);
 	if (ret < 0)
@@ -1212,14 +1226,7 @@ static int rtpcs_93xx_sds_config_cmu(struct rtpcs_serdes *sds, enum rtpcs_sds_mo
 	if (ret < 0)
 		return ret;
 
-	ret = rtpcs_sds_select_pll_speed(hw_mode, &speed);
-	if (ret < 0)
-		return ret;
-
-	if (nb_sds->hw_mode == RTPCS_SDS_MODE_OFF)
-		pll = speed == RTPCS_SDS_PLL_SPD_10000 ? RTPCS_SDS_PLL_TYPE_LC
-						       : RTPCS_SDS_PLL_TYPE_RING;
-	else if (speed == neighbor_speed) {
+	if (speed == neighbor_speed) {
 		speed_changed = false;
 		pll = neighbor_pll;
 	} else if (neighbor_pll == RTPCS_SDS_PLL_TYPE_RING)
@@ -1227,6 +1234,7 @@ static int rtpcs_93xx_sds_config_cmu(struct rtpcs_serdes *sds, enum rtpcs_sds_mo
 	else if (speed == RTPCS_SDS_PLL_SPD_10000) {
 		pr_info("%s: SDS %d needs LC PLL, reconfigure SDS %d to use ring PLL\n",
 			__func__, sds->id, nb_sds->id);
+
 		ret = nb_sds->ops->reconfigure_to_pll(nb_sds, RTPCS_SDS_PLL_TYPE_RING);
 		if (ret < 0)
 			return ret;
@@ -1235,8 +1243,12 @@ static int rtpcs_93xx_sds_config_cmu(struct rtpcs_serdes *sds, enum rtpcs_sds_mo
 	} else
 		pll = RTPCS_SDS_PLL_TYPE_RING;
 
-	if (speed_changed)
+pll_setup:
+	if (speed_changed) {
 		ret = rtpcs_93xx_sds_set_pll_config(sds, pll, speed);
+		if (ret < 0)
+			return ret;
+	}
 
 	ret = sds->ops->set_pll_select(sds, hw_mode, pll);
 	if (ret < 0)
@@ -1244,7 +1256,6 @@ static int rtpcs_93xx_sds_config_cmu(struct rtpcs_serdes *sds, enum rtpcs_sds_mo
 
 	pr_info("%s: SDS %d using %s PLL for mode %d\n", __func__, sds->id,
 		pll == RTPCS_SDS_PLL_TYPE_LC ? "LC" : "ring", hw_mode);
-
 	return ret;
 }
 
