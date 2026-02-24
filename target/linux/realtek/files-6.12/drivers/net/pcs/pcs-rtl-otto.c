@@ -1282,8 +1282,8 @@ static int rtpcs_930x_sds_get_pll_select(struct rtpcs_serdes *sds, enum rtpcs_sd
 	return 0;
 }
 
-static void rtpcs_930x_sds_get_pll_data(struct rtpcs_serdes *sds, enum rtpcs_sds_pll_type pll,
-					enum rtpcs_sds_pll_speed *speed)
+static int rtpcs_930x_sds_get_pll_config(struct rtpcs_serdes *sds, enum rtpcs_sds_pll_type pll,
+					  enum rtpcs_sds_pll_speed *speed)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
 	int sbit, speed_val;
@@ -1295,9 +1295,12 @@ static void rtpcs_930x_sds_get_pll_data(struct rtpcs_serdes *sds, enum rtpcs_sds
 
 	sbit = pll == RTPCS_SDS_PLL_TYPE_LC ? 8 : 12;
 	speed_val = rtpcs_sds_read_bits(even_sds, 0x20, 0x12, sbit + 3, sbit);
+	if (speed_val < 0)
+		return speed_val;
 
 	/* bit 0 is force-bit, bits [3:1] are speed selector */
 	*speed = (enum rtpcs_sds_pll_speed)(speed_val >> 1);
+	return 0;
 }
 
 static int rtpcs_930x_sds_set_pll_select(struct rtpcs_serdes *sds, enum rtpcs_sds_mode hw_mode,
@@ -1312,7 +1315,7 @@ static int rtpcs_930x_sds_set_pll_select(struct rtpcs_serdes *sds, enum rtpcs_sd
 	return rtpcs_sds_write_bits(even_sds, 0x20, 0x12, pbit + 1, pbit, (pll << 1) | BIT(0));
 }
 
-static void rtpcs_930x_sds_reset_cmu(struct rtpcs_serdes *sds)
+static int rtpcs_930x_sds_reset_cmu(struct rtpcs_serdes *sds)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
 	int reset_sequence[4] = { 3, 2, 3, 1 };
@@ -1326,20 +1329,25 @@ static void rtpcs_930x_sds_reset_cmu(struct rtpcs_serdes *sds)
 	 */
 	ret = rtpcs_930x_sds_get_pll_select(sds, &pll);
 	if (ret < 0)
-		return;
+		return ret;
 
 	bit = pll == RTPCS_SDS_PLL_TYPE_LC ? 2 : 0;
 
-	for (i = 0; i < ARRAY_SIZE(reset_sequence); i++)
-		rtpcs_sds_write_bits(even_sds, 0x21, 0x0b, bit + 1, bit,
-				     reset_sequence[i]);
+	for (i = 0; i < ARRAY_SIZE(reset_sequence); i++) {
+		ret = rtpcs_sds_write_bits(even_sds, 0x21, 0x0b, bit + 1, bit,
+					   reset_sequence[i]);
+		if (ret < 0)
+			return ret;
+	}
+	return 0;
 }
 
-static int rtpcs_930x_sds_set_pll_data(struct rtpcs_serdes *sds, enum rtpcs_sds_pll_type pll,
-				       enum rtpcs_sds_pll_speed speed)
+static int rtpcs_930x_sds_set_pll_config(struct rtpcs_serdes *sds, enum rtpcs_sds_pll_type pll,
+				         enum rtpcs_sds_pll_speed speed)
 {
 	struct rtpcs_serdes *even_sds = rtpcs_sds_get_even(sds);
 	int sbit = pll == RTPCS_SDS_PLL_TYPE_LC ? 8 : 12;
+	int ret;
 
 	if (speed >= RTPCS_SDS_PLL_SPD_END)
 		return -EINVAL;
@@ -1356,13 +1364,16 @@ static int rtpcs_930x_sds_set_pll_data(struct rtpcs_serdes *sds, enum rtpcs_sds_
 	 * always activate both.
 	 */
 
-	rtpcs_sds_write_bits(even_sds, 0x20, 0x12, 3, 0, 0xf);
+	ret = rtpcs_sds_write_bits(even_sds, 0x20, 0x12, 3, 0, 0xf);
+	if (ret < 0)
+		return ret;
 
 	/* bit 0 is force-bit, bits [3:1] are speed selector */
-	rtpcs_sds_write_bits(even_sds, 0x20, 0x12, sbit + 3, sbit, (speed << 1) | BIT(0));
+	ret = rtpcs_sds_write_bits(even_sds, 0x20, 0x12, sbit + 3, sbit, (speed << 1) | BIT(0));
+	if (ret < 0)
+		return ret;
 
-	rtpcs_930x_sds_reset_cmu(sds);
-	return 0;
+	return rtpcs_930x_sds_reset_cmu(sds);
 }
 
 static int rtpcs_930x_sds_wait_clock_ready(struct rtpcs_serdes *sds)
@@ -1410,7 +1421,7 @@ static void rtpcs_930x_sds_set_power(struct rtpcs_serdes *sds, bool on)
 	rtpcs_sds_write_bits(sds, 0x20, 0x00, 5, 4, rx_enable);
 }
 
-static void rtpcs_930x_sds_reconfigure_pll(struct rtpcs_serdes *sds, enum rtpcs_sds_pll_type pll)
+static int rtpcs_930x_sds_reconfigure_to_pll(struct rtpcs_serdes *sds, enum rtpcs_sds_pll_type pll)
 {
 	enum rtpcs_sds_pll_speed speed;
 	enum rtpcs_sds_pll_type old_pll;
@@ -1420,27 +1431,32 @@ static void rtpcs_930x_sds_reconfigure_pll(struct rtpcs_serdes *sds, enum rtpcs_
 
 	ret = rtpcs_930x_sds_get_pll_select(sds, &old_pll);
 	if (ret < 0)
-		return;
+		return ret;
 
-	rtpcs_930x_sds_get_pll_data(sds, old_pll, &speed);
+	ret = rtpcs_930x_sds_get_pll_config(sds, old_pll, &speed);
+	if (ret < 0)
+		return ret;
 
 	rtpcs_930x_sds_set_power(sds, false);
 	__rtpcs_930x_sds_set_ip_mode(sds, RTPCS_930X_SDS_OFF);
 
-	rtpcs_930x_sds_set_pll_data(sds, pll, speed);
+	ret = rtpcs_930x_sds_set_pll_config(sds, pll, speed);
+	if (ret < 0)
+		return ret;
 
 	ret = rtpcs_930x_sds_set_pll_select(sds, sds->hw_mode, pll);
 	if (ret < 0)
-		return;
+		return ret;
 
 	__rtpcs_930x_sds_set_ip_mode(sds, mode);
 	if (rtpcs_930x_sds_wait_clock_ready(sds))
 		pr_err("%s: SDS %d could not sync clock\n", __func__, sds->id);
 
 	rtpcs_930x_sds_set_power(sds, true);
+	return 0;
 }
 
-static int rtpcs_930x_sds_config_pll(struct rtpcs_serdes *sds,
+static int rtpcs_930x_sds_config_cmu(struct rtpcs_serdes *sds,
 				     enum rtpcs_sds_mode hw_mode)
 {
 	struct rtpcs_serdes *nb_sds = rtpcs_sds_get_neighbor(sds);
@@ -1474,7 +1490,9 @@ static int rtpcs_930x_sds_config_pll(struct rtpcs_serdes *sds,
 	if (ret < 0)
 		return ret;
 
-	rtpcs_930x_sds_get_pll_data(nb_sds, neighbor_pll, &neighbor_speed);
+	ret = rtpcs_930x_sds_get_pll_config(nb_sds, neighbor_pll, &neighbor_speed);
+	if (ret < 0)
+		return ret;
 
 	ret = rtpcs_sds_select_pll_speed(hw_mode, &speed);
 	if (ret < 0)
@@ -1491,13 +1509,16 @@ static int rtpcs_930x_sds_config_pll(struct rtpcs_serdes *sds,
 	else if (speed == RTPCS_SDS_PLL_SPD_10000) {
 		pr_info("%s: SDS %d needs LC PLL, reconfigure SDS %d to use ring PLL\n",
 			__func__, sds->id, nb_sds->id);
-		rtpcs_930x_sds_reconfigure_pll(nb_sds, RTPCS_SDS_PLL_TYPE_RING);
+		ret = rtpcs_930x_sds_reconfigure_to_pll(nb_sds, RTPCS_SDS_PLL_TYPE_RING);
+		if (ret < 0)
+			return ret;
+
 		pll = RTPCS_SDS_PLL_TYPE_LC;
 	} else
 		pll = RTPCS_SDS_PLL_TYPE_RING;
 
 	if (speed_changed)
-		rtpcs_930x_sds_set_pll_data(sds, pll, speed);
+		ret = rtpcs_930x_sds_set_pll_config(sds, pll, speed);
 
 	ret = rtpcs_930x_sds_set_pll_select(sds, hw_mode, pll);
 	if (ret < 0)
@@ -1506,7 +1527,7 @@ static int rtpcs_930x_sds_config_pll(struct rtpcs_serdes *sds,
 	pr_info("%s: SDS %d using %s PLL for mode %d\n", __func__, sds->id,
 		pll == RTPCS_SDS_PLL_TYPE_LC ? "LC" : "ring", hw_mode);
 
-	return 0;
+	return ret;
 }
 
 static void rtpcs_930x_sds_reset_state_machine(struct rtpcs_serdes *sds)
@@ -1598,9 +1619,10 @@ static int rtpcs_930x_sds_set_ip_mode(struct rtpcs_serdes *sds,
 	if (hw_mode == RTPCS_SDS_MODE_OFF)
 		return 0;
 
-	if (rtpcs_930x_sds_config_pll(sds, hw_mode))
-		pr_err("%s: SDS %d could not configure PLL for mode %d\n", __func__,
-		       sds->id, hw_mode);
+	ret = rtpcs_930x_sds_config_cmu(sds, hw_mode);
+	if (ret < 0)
+		pr_err("%s: SDS %d could not configure PLL for mode %d: %d\n", __func__,
+		       sds->id, hw_mode, ret);
 
 	ret = __rtpcs_930x_sds_set_ip_mode(sds, mode_val);
 	if (ret < 0)
