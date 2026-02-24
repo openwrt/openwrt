@@ -3427,21 +3427,24 @@ static int rtpcs_931x_sds_cmu_page_get(enum rtpcs_sds_mode hw_mode)
 {
 	switch (hw_mode) {
 	case RTPCS_SDS_MODE_SGMII:
-	case RTPCS_SDS_MODE_1000BASEX:		/* MII_1000BX_FIBER / 100BX_FIBER / 1000BX100BX_AUTO */
-		return 0x24;
-	case RTPCS_SDS_MODE_2500BASEX:		/* MII_2500Base_X: */
-		return 0x28;
-/*	case MII_HISGMII_5G: */
-/*		return 0x2a; */
+	case RTPCS_SDS_MODE_1000BASEX:
+		return 0x24;			/* ANA_1G */
+	case RTPCS_SDS_MODE_2500BASEX:
+		return 0x28;			/* ANA_3G */
 	case RTPCS_SDS_MODE_QSGMII:
-		return 0x2a;			/* Code also has 0x34 */
-/*	case MII_RXAUI_LITE: */
-/*		return 0x2c; */
-	case RTPCS_SDS_MODE_XSGMII:		/* MII_XSGMII */
-	case RTPCS_SDS_MODE_10GBASER:		/* MII_10GR */
-		return 0x2e;
+		return 0x2a;			/* ANA_5G/6G */
+	//	return 0x34;
+	case RTPCS_SDS_MODE_XSGMII:
+	case RTPCS_SDS_MODE_USXGMII_10GSXGMII:
+	case RTPCS_SDS_MODE_USXGMII_10GDXGMII:
+	case RTPCS_SDS_MODE_USXGMII_10GQXGMII:
+	case RTPCS_SDS_MODE_USXGMII_5GSXGMII:
+	case RTPCS_SDS_MODE_USXGMII_5GDXGMII:
+	case RTPCS_SDS_MODE_USXGMII_2_5GSXGMII:
+	case RTPCS_SDS_MODE_10GBASER:
+		return 0x2e;			/* ANA_10G */
 	default:
-		return -EINVAL;
+		return -ENOTSUPP;
 	}
 }
 
