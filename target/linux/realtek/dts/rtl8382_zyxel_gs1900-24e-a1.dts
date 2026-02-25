@@ -8,6 +8,16 @@
 	model = "Zyxel GS1900-24E A1";
 };
 
+&gpio0 {
+	/* Shared between the main and aux MDIO busses */
+	mdio_reset {
+		gpio-hog;
+		gpios = <1 GPIO_ACTIVE_LOW>;
+		output-low;
+		line-name = "mdio-reset";
+	};
+};
+
 &mdio_bus0 {
 	EXTERNAL_PHY(0)
 	EXTERNAL_PHY(1)
