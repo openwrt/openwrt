@@ -1,5 +1,7 @@
 /dts-v1/;
 
+#include <dt-bindings/clock/mediatek,mtmips-sysc.h>
+
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
@@ -51,7 +53,7 @@
 			compatible = "ralink,rt2880-timer";
 			reg = <0x100 0x20>;
 
-			clocks = <&sysc 7>;
+			clocks = <&sysc MT7620_CLK_TIMER>;
 
 			interrupt-parent = <&intc>;
 			interrupts = <1>;
@@ -61,7 +63,7 @@
 			compatible = "ralink,rt2880-wdt";
 			reg = <0x120 0x10>;
 
-			clocks = <&sysc 8>;
+			clocks = <&sysc MT7620_CLK_WATCHDOG>;
 
 			resets = <&sysc 8>;
 			reset-names = "wdt";
@@ -171,7 +173,7 @@
 			compatible = "ralink,rt2880-i2c";
 			reg = <0x900 0x100>;
 
-			clocks = <&sysc 10>;
+			clocks = <&sysc MT7620_CLK_I2C>;
 
 			resets = <&sysc 16>;
 			reset-names = "i2c";
@@ -189,7 +191,7 @@
 			compatible = "ralink,rt2880-spi";
 			reg = <0xb00 0x40>;
 
-			clocks = <&sysc 12>;
+			clocks = <&sysc MT7620_CLK_SPI1>;
 
 			resets = <&sysc 18>;
 			reset-names = "spi";
@@ -207,7 +209,7 @@
 			compatible = "ralink,rt2880-spi";
 			reg = <0xb40 0x60>;
 
-			clocks = <&sysc 13>;
+			clocks = <&sysc MT7620_CLK_SPI2>;
 
 			resets = <&sysc 18>;
 			reset-names = "spi";
@@ -225,7 +227,7 @@
 			compatible = "ralink,mt7620a-uart", "ralink,rt2880-uart", "ns16550a";
 			reg = <0xc00 0x100>;
 
-			clocks = <&sysc 14>;
+			clocks = <&sysc MT7620_CLK_UARTLITE>;
 
 			resets = <&sysc 19>;
 
@@ -372,7 +374,7 @@
 		compatible = "ralink,rt7620-wifi", "ralink,rt2880-wifi";
 		reg = <0x10180000 0x40000>;
 
-		clocks = <&sysc 16>;
+		clocks = <&sysc MT7620_CLK_WMAC>;
 
 		interrupt-parent = <&cpuintc>;
 		interrupts = <6>;

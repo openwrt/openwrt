@@ -1,5 +1,7 @@
 /dts-v1/;
 
+#include <dt-bindings/clock/mediatek,mtmips-sysc.h>
+
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
@@ -50,7 +52,7 @@
 			compatible = "ralink,rt2880-timer";
 			reg = <0x100 0x20>;
 
-			clocks = <&sysc 3>;
+			clocks = <&sysc RT305X_CLK_TIMER>;
 
 			interrupt-parent = <&intc>;
 			interrupts = <1>;
@@ -60,7 +62,7 @@
 			compatible = "ralink,rt2880-wdt";
 			reg = <0x120 0x10>;
 
-			clocks = <&sysc 4>;
+			clocks = <&sysc RT305X_CLK_WATCHDOG>;
 
 			resets = <&sysc 8>;
 			reset-names = "wdt";
@@ -92,7 +94,7 @@
 			compatible = "ralink,rt3052-uart", "ralink,rt2880-uart", "ns16550a";
 			reg = <0x500 0x100>;
 
-			clocks = <&sysc 5>;
+			clocks = <&sysc RT305X_CLK_UART>;
 
 			resets = <&sysc 12>;
 
@@ -183,7 +185,7 @@
 			compatible = "ralink,rt2880-i2c";
 			reg = <0x900 0x100>;
 
-			clocks = <&sysc 6>;
+			clocks = <&sysc RT305X_CLK_I2C>;
 
 			resets = <&sysc 16>;
 			reset-names = "i2c";
@@ -201,7 +203,7 @@
 			compatible = "ralink,rt3050-i2s";
 			reg = <0xa00 0x100>;
 
-			clocks = <&sysc 7>;
+			clocks = <&sysc RT305X_CLK_I2S>;
 
 			resets = <&sysc 17>;
 			reset-names = "i2s";
@@ -224,7 +226,7 @@
 			resets = <&sysc 18>;
 			reset-names = "spi";
 
-			clocks = <&sysc 8>;
+			clocks = <&sysc RT305X_CLK_SPI1>;
 
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -239,7 +241,7 @@
 			compatible = "ralink,rt3052-uart", "ralink,rt2880-uart", "ns16550a";
 			reg = <0xc00 0x100>;
 
-			clocks = <&sysc 10>;
+			clocks = <&sysc RT305X_CLK_UARTLITE>;
 
 			resets = <&sysc 19>;
 
@@ -308,7 +310,7 @@
 		compatible = "ralink,rt3050-eth";
 		reg = <0x10100000 0x10000>;
 
-		clocks = <&sysc 11>;
+		clocks = <&sysc RT305X_CLK_ETHERNET>;
 
 		resets = <&sysc 21>, <&sysc 23>;
 		reset-names = "fe", "esw";
@@ -334,7 +336,7 @@
 		compatible = "ralink,rt3050-wifi", "ralink,rt2880-wifi";
 		reg = <0x10180000 0x40000>;
 
-		clocks = <&sysc 12>;
+		clocks = <&sysc RT305X_CLK_WMAC>;
 
 		interrupt-parent = <&cpuintc>;
 		interrupts = <6>;
