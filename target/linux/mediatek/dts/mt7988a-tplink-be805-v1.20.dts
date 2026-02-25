@@ -1,0 +1,36 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+// Author: Yanase Yuki <dev@zpc.st>
+/dts-v1/;
+#include "mt7988a-tplink-be805.dtsi"
+
+/ {
+	compatible = "tplink,be805-v1.20", "tplink,be805", "mediatek,mt7988a";
+	model = "TP-Link BE805 v1.20";
+};
+
+&gmac1 {
+	phy-handle = <&eth_phy1>;
+};
+
+&gmac2 {
+	phy-handle = <&eth_phy0>;
+};
+
+&mdio_bus {
+	reset-gpios = <&pio 71 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <100000>;
+	reset-post-delay-us = <221000>;
+
+	eth_phy0: ethernet-phy@0 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <0>;
+		max-speed = <10000>;
+	};
+
+	eth_phy1: ethernet-phy@1 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <1>;
+		max-speed = <10000>;
+	};
+};
+
