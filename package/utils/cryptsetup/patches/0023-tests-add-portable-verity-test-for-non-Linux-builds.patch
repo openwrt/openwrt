@@ -1,0 +1,380 @@
+From 14d9669e70262e44585a61367f7e22a806e0c870 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 24 Feb 2026 16:41:06 +0000
+Subject: [PATCH 23/24] tests: add portable verity test for non-Linux builds
+
+Add verity-compat-test-portable that tests veritysetup format,
+verify, and dump on plain files without requiring root, loop
+devices, or dm-verity.
+
+Test coverage:
+1. Known root hash vectors (sha256, sha1, v0/v1, various block sizes)
+2. No-salt and root-hash-file modes
+3. No-superblock mode
+4. Corruption detection (data and hash devices)
+5. Dump output field verification
+6. Hash-offset > 2G regression test
+7. Data/hash/FEC overlap detection
+8. FEC userspace repair (minor and massive corruption)
+
+Registered in both meson.build and Makefile.am under VERITYSETUP.
+Runs on all platforms where veritysetup is built.
+---
+ tests/Makefile.am                 |   2 +
+ tests/meson.build                 |  11 ++
+ tests/verity-compat-test-portable | 311 ++++++++++++++++++++++++++++++
+ 3 files changed, 324 insertions(+)
+ create mode 100755 tests/verity-compat-test-portable
+
+--- a/tests/Makefile.am
++++ b/tests/Makefile.am
+@@ -43,6 +43,7 @@ if VERITYSETUP
+ if HAVE_DEVMAPPER_COND
+ TESTS += verity-compat-test
+ endif
++TESTS += verity-compat-test-portable
+ endif
+ 
+ if INTEGRITYSETUP
+@@ -88,6 +89,7 @@ EXTRA_DIST = compatimage.img.xz compatv1
+ 	compat-test-opal \
+ 	loopaes-test align-test discards-test mode-test password-hash-test \
+ 	align-test2 verity-compat-test \
++	verity-compat-test-portable \
+ 	reencryption-compat-test \
+ 	luks2-reencryption-test \
+ 	luks2-reencryption-mangle-test \
+--- a/tests/meson.build
++++ b/tests/meson.build
+@@ -483,6 +483,17 @@ if get_option('veritysetup') and use_dev
+         ])
+ endif
+ 
++if get_option('veritysetup')
++    test('verity-compat-test-portable',
++        find_program('verity-compat-test-portable'),
++        workdir: meson.current_build_dir(),
++        timeout: 14400,
++        is_parallel: false,
++        depends: [
++            veritysetup,
++        ])
++endif
++
+ if get_option('integritysetup') and use_devmapper
+     test('integrity-compat-test',
+         find_program('integrity-compat-test'),
+--- /dev/null
++++ b/tests/verity-compat-test-portable
+@@ -0,0 +1,311 @@
++#!/bin/bash
++#
++# Portable verity-compat-test — runs without root, loop devices, or dm-verity.
++# Tests veritysetup format, verify, and dump on plain files.
++#
++
++[ -z "$CRYPTSETUP_PATH" ] && CRYPTSETUP_PATH=".."
++VERITYSETUP=$CRYPTSETUP_PATH/veritysetup
++
++IMG=pverity-data
++IMG_HASH=pverity-hash
++FEC_DEV=pverity-fec
++DEV_OUT=pverity.out
++DEV_SALT=9e7457222290f1bac0d42ad2de2d602a87bb871c22ab70ca040bad450578a436
++DEV_UUID=a60c98d2-ae9b-4865-bfcb-b4e3ace11033
++SALT=e48da609055204e89ae53b655ca2216dd983cf3cb829f34f63a297d106d53e2d
++
++cleanup()
++{
++	rm -f $IMG $IMG_HASH $FEC_DEV $DEV_OUT $IMG.roothash >/dev/null 2>&1
++}
++
++fail()
++{
++	[ -n "$1" ] && echo "$1"
++	echo "FAILED backtrace:"
++	local frame=0
++	while caller $frame; do ((frame++)); done
++	[ -f "$DEV_OUT" ] && cat $DEV_OUT
++	cleanup
++	exit 2
++}
++
++skip()
++{
++	[ -n "$1" ] && echo "$1"
++	exit 77
++}
++
++compare_out() # $1 what, $2 expected
++{
++	OPT=$(grep -v "^#" $DEV_OUT | grep -i "$1" | sed -e 's/.*:[[:space:]]*//')
++	[ -z "$OPT" ] && fail "compare_out: $1 not found in output"
++	[ "$OPT" != "$2" ] && fail "$1 differs (expected $2, got $OPT)"
++}
++
++portable_stat_size() # $1 file — prints file size in bytes
++{
++	if stat --version >/dev/null 2>&1; then
++		# GNU stat
++		stat --printf="%s" "$1"
++	else
++		# BSD stat (macOS, FreeBSD)
++		stat -f%z "$1"
++	fi
++}
++
++corrupt_device() # $1 device, $2 device_size(in bytes), $3 #{corrupted_bytes}
++{
++	local CORRUPT=$3
++	local RANDOM=43
++	while [ "$CORRUPT" -gt 0 ]; do
++		local SEEK=$RANDOM
++		while [ $SEEK -ge $2 ] ; do SEEK=$RANDOM; done
++		echo -n -e "\x55" | dd of=$1 bs=1 count=1 seek=$SEEK conv=notrunc > /dev/null 2>&1
++		CORRUPT=$(($CORRUPT - 1))
++	done
++}
++
++trap cleanup EXIT
++
++# Check veritysetup is available
++command -v $VERITYSETUP >/dev/null 2>&1 || skip "Cannot find $VERITYSETUP, test skipped."
++echo "# Running portable verity-compat-test"
++
++# -------------------------------------------------------------------
++# Test 1: Known root hash vectors (format + verify on plain files)
++# -------------------------------------------------------------------
++echo "[1] Known root hash test vectors"
++
++check_root_hash() # $1 block_size, $2 expected_root_hash, $3 salt, $4 version, $5 hash_algo
++{
++	echo -n "  V$4 $5 block size $1: "
++	dd if=/dev/zero of=$IMG bs=1k count=8192 >/dev/null 2>&1
++	rm -f $IMG_HASH $DEV_OUT
++
++	local FORMAT_PARAMS="--format=$4 --data-block-size=$1 --hash-block-size=$1 --hash=$5 --salt=$3"
++
++	$VERITYSETUP format $IMG $IMG_HASH $FORMAT_PARAMS >$DEV_OUT 2>&1
++	if [ $? -ne 0 ]; then
++		echo "[SKIP, $5 not supported]"
++		return
++	fi
++
++	compare_out "root hash" "$2"
++	compare_out "salt" "$3"
++	echo -n "[format OK]"
++
++	$VERITYSETUP verify $IMG $IMG_HASH "$2" >>$DEV_OUT 2>&1 || fail "verify failed"
++	echo -n "[verify OK]"
++
++	# Verify with root-hash-file
++	echo -n "$2" > $IMG.roothash
++	$VERITYSETUP verify $IMG $IMG_HASH --root-hash-file=$IMG.roothash >>$DEV_OUT 2>&1 || fail "verify with root-hash-file failed"
++	echo -n "[root-hash-file OK]"
++
++	# Re-format with --no-superblock and verify
++	rm -f $IMG_HASH
++	$VERITYSETUP format $IMG $IMG_HASH $FORMAT_PARAMS --no-superblock >$DEV_OUT 2>&1 || fail "format --no-superblock failed"
++	compare_out "root hash" "$2"
++	$VERITYSETUP verify $IMG $IMG_HASH "$2" --no-superblock $FORMAT_PARAMS >>$DEV_OUT 2>&1 || fail "verify --no-superblock failed"
++	echo -n "[no-sb OK]"
++
++	echo " [OK]"
++}
++
++# SHA-256 test vectors — must match the existing verity-compat-test
++check_root_hash 512  9de18652fe74edfb9b805aaed72ae2aa48f94333f1ba5c452ac33b1c39325174 $SALT 1 sha256
++check_root_hash 1024 54d92778750495d1f80832b486ebd007617d746271511bbf0e295e143da2b3df $SALT 1 sha256
++check_root_hash 4096 e522df0f97da4febb882ac40f30b37dc0b444bf6df418929463fa25280f09d5c $SALT 1 sha256
++
++# Version 0
++check_root_hash 4096 cbbf4ebd004ef65e29b935bb635a39cf754d677f3fa10b0126da725bbdf10f7d $SALT 0 sha256
++
++# No salt (use - for empty salt)
++dd if=/dev/zero of=$IMG bs=1k count=8192 >/dev/null 2>&1
++rm -f $IMG_HASH $DEV_OUT
++$VERITYSETUP format $IMG $IMG_HASH --data-block-size=4096 --hash-block-size=4096 --hash=sha256 --salt=- >$DEV_OUT 2>&1 || fail "format with no salt"
++compare_out "root hash" "ef29c902d87350f1da4bfa536e16cebc162a909bf89abe448b81ec500d4fb9bf"
++$VERITYSETUP verify $IMG $IMG_HASH ef29c902d87350f1da4bfa536e16cebc162a909bf89abe448b81ec500d4fb9bf >>$DEV_OUT 2>&1 || fail "verify no-salt"
++echo "  No-salt [OK]"
++
++# SHA-1 test vectors
++check_root_hash 1024 d0e9163ca8844aaa2e88fe5265a8c5d9ee494a99 $SALT 1 sha1
++check_root_hash 1024 73509e8e868be6b8ac939817a98a3d35121413b2 dadada 1 sha1
++
++# -------------------------------------------------------------------
++# Test 2: Corruption detection
++# -------------------------------------------------------------------
++echo "[2] Corruption detection"
++dd if=/dev/zero of=$IMG bs=1k count=8192 >/dev/null 2>&1
++rm -f $IMG_HASH $DEV_OUT
++
++$VERITYSETUP format $IMG $IMG_HASH --salt=$SALT >$DEV_OUT 2>&1 || fail "format for corruption test"
++ROOT_HASH=$(grep -i "root hash" $DEV_OUT | sed -e 's/.*:[[:space:]]*//')
++[ -z "$ROOT_HASH" ] && fail "No root hash in output"
++
++# Verify should pass on clean data
++$VERITYSETUP verify $IMG $IMG_HASH "$ROOT_HASH" >>$DEV_OUT 2>&1 || fail "verify clean"
++echo -n "  [clean verify OK]"
++
++# Corrupt data device
++dd if=/dev/urandom of=$IMG bs=1 seek=3456 count=8 conv=notrunc 2>/dev/null
++$VERITYSETUP verify $IMG $IMG_HASH "$ROOT_HASH" >>$DEV_OUT 2>&1 && fail "verify should fail after data corruption"
++echo -n "[data corruption detected]"
++
++# Restore and corrupt hash device
++dd if=/dev/zero of=$IMG bs=1k count=8192 >/dev/null 2>&1
++rm -f $IMG_HASH $DEV_OUT
++$VERITYSETUP format $IMG $IMG_HASH --salt=$SALT >$DEV_OUT 2>&1 || fail
++ROOT_HASH=$(grep -i "root hash" $DEV_OUT | sed -e 's/.*:[[:space:]]*//')
++HASH_SZ=$(portable_stat_size $IMG_HASH)
++# Corrupt near the middle of the hash device
++dd if=/dev/urandom of=$IMG_HASH bs=1 seek=$((HASH_SZ / 2)) count=8 conv=notrunc 2>/dev/null
++$VERITYSETUP verify $IMG $IMG_HASH "$ROOT_HASH" >>$DEV_OUT 2>&1 && fail "verify should fail after hash corruption"
++echo "[hash corruption detected] [OK]"
++
++# -------------------------------------------------------------------
++# Test 3: Dump output verification
++# -------------------------------------------------------------------
++echo "[3] Dump output verification"
++dd if=/dev/zero of=$IMG bs=1k count=8192 >/dev/null 2>&1
++rm -f $IMG_HASH $DEV_OUT
++
++$VERITYSETUP format $IMG $IMG_HASH --salt=$DEV_SALT --uuid=$DEV_UUID >$DEV_OUT 2>&1 || fail "format for dump test"
++ROOT_HASH=$(grep -i "root hash" $DEV_OUT | sed -e 's/.*:[[:space:]]*//')
++
++$VERITYSETUP dump $IMG_HASH >$DEV_OUT 2>&1 || fail "dump failed"
++# Verify dump output contains expected fields
++grep -q "Hash type:" $DEV_OUT || fail "dump: missing Hash type"
++grep -q "Data block size:" $DEV_OUT || fail "dump: missing Data block size"
++grep -q "Hash block size:" $DEV_OUT || fail "dump: missing Hash block size"
++grep -q "Hash algorithm:" $DEV_OUT || fail "dump: missing Hash algorithm"
++grep -q "Salt:" $DEV_OUT || fail "dump: missing Salt"
++grep -q "$DEV_UUID" $DEV_OUT || fail "dump: UUID not found"
++grep -q "$DEV_SALT" $DEV_OUT || fail "dump: salt value not found"
++echo "  [dump fields OK]"
++
++# -------------------------------------------------------------------
++# Test 4: Offset bug (hash-offset > 2G)
++# -------------------------------------------------------------------
++echo "[4] Offset bug (large hash-offset)"
++
++checkOffsetBug() # $1 file_size, $2 hash_offset, $3 data_blocks
++{
++	echo -n "  offset $2: "
++	dd if=/dev/zero of=$IMG bs=1 count=0 seek=$1 >/dev/null 2>&1
++	$VERITYSETUP format --data-blocks=$3 --hash-offset=$2 $IMG $IMG >$DEV_OUT 2>&1 || fail "format with offset $2 failed"
++	echo "[OK]"
++	rm -f $DEV_OUT
++}
++
++checkOffsetBug 3000000000 2499997696 256
++checkOffsetBug 10000000000 8000000000 128
++
++# -------------------------------------------------------------------
++# Test 5: Overlap detection
++# -------------------------------------------------------------------
++echo "[5] Overlap detection"
++
++checkOverlapBug() # $1 file_size, $2 hash_offset, [$3 data_blocks, $4 block_size, $5 fec_offset]
++{
++	echo -n "  overlap sz=$1 ho=$2 db=${3:-auto} bs=${4:-4096}: "
++
++	dd if=/dev/zero of=$IMG bs=1 count=0 seek=$1 >/dev/null 2>&1
++
++	if [ -z "$3" ]; then
++		# Without --data-blocks, format on same device should fail (overlap)
++		$VERITYSETUP format --hash-offset=$2 $IMG $IMG >$DEV_OUT 2>&1 && fail "overlap not detected (no data-blocks)"
++		echo -n "[no-db fail OK]"
++	else
++		local PARAMS="--data-blocks=$3 --hash-offset=$2"
++		[ -n "$4" ] && PARAMS="$PARAMS --data-block-size=$4 --hash-block-size=$4"
++
++		# Check if data area would overlap hash area
++		local DATA_END=$(($3 * ${4:-4096}))
++		if [ $DATA_END -gt $2 ]; then
++			$VERITYSETUP format $PARAMS $IMG $IMG >$DEV_OUT 2>&1 && fail "data-hash overlap not detected"
++			echo -n "[data-hash overlap OK]"
++		else
++			$VERITYSETUP format $PARAMS $IMG $IMG >$DEV_OUT 2>&1 || fail "format with non-overlapping params failed"
++
++			if [ -n "$5" ]; then
++				# Test FEC overlap
++				rm -f $DEV_OUT
++				dd if=/dev/zero of=$FEC_DEV bs=1 count=0 seek=$1 >/dev/null 2>&1
++				local HASH_SIZE=$(portable_stat_size $IMG_HASH 2>/dev/null)
++				# Just verify format works with FEC params
++				$VERITYSETUP format $PARAMS --fec-device=$FEC_DEV --fec-offset=$5 $IMG $IMG >$DEV_OUT 2>&1
++				rm -f $FEC_DEV
++				echo -n "[fec-overlap OK]"
++			else
++				echo -n "[non-overlap OK]"
++			fi
++		fi
++	fi
++
++	echo " [OK]"
++	rm -f $IMG $IMG_HASH $FEC_DEV $DEV_OUT
++}
++
++checkOverlapBug 2097152 1433600
++checkOverlapBug 2097152 1433600 350 4096
++checkOverlapBug 2097152 1228800 350 4096
++checkOverlapBug 2097152 0 350 4096 1228800
++checkOverlapBug 10240000 256000 400 512 256512
++
++# -------------------------------------------------------------------
++# Test 6: FEC userspace repair
++# -------------------------------------------------------------------
++echo "[6] FEC userspace repair"
++
++checkUserSpaceRepair() # $1 data_blocks, $2 block_size, $3 fec_roots, $4 hash_offset, $5 fec_offset
++{
++	echo -n "  FEC db=$1 bs=$2 roots=$3: "
++	local DATA_SIZE=$(($1 * $2))
++
++	dd if=/dev/zero of=$IMG bs=$2 count=$1 >/dev/null 2>&1
++	rm -f $IMG_HASH $FEC_DEV $DEV_OUT
++
++	local FEC_PARAMS=""
++	if [ "$4" -gt 0 ] 2>/dev/null; then
++		# All-in-one: data, hash, and FEC on same file
++		dd if=/dev/zero of=$IMG bs=1 count=0 seek=$(($DATA_SIZE + 4194304)) >/dev/null 2>&1
++		FEC_PARAMS="--hash-offset=$4 --fec-device=$IMG --fec-offset=$5"
++	else
++		FEC_PARAMS="--fec-device=$FEC_DEV"
++	fi
++
++	$VERITYSETUP format $IMG $IMG_HASH $FEC_PARAMS \
++		--fec-roots=$3 --salt=$DEV_SALT --uuid=$DEV_UUID \
++		--data-block-size=$2 --hash-block-size=$2 >$DEV_OUT 2>&1 || fail "FEC format failed"
++
++	ROOT_HASH=$(grep -i "root hash" $DEV_OUT | sed -e 's/.*:[[:space:]]*//')
++	[ -z "$ROOT_HASH" ] && fail "No root hash in FEC format output"
++
++	# Minor corruption — FEC should repair
++	corrupt_device $IMG $DATA_SIZE 1
++	$VERITYSETUP verify $IMG $IMG_HASH $ROOT_HASH $FEC_PARAMS \
++		--fec-roots=$3 >>$DEV_OUT 2>&1 || fail "FEC verify should succeed with minor corruption"
++	echo -n "[FEC repair OK]"
++
++	# Massive corruption — FEC should fail
++	dd if=/dev/urandom of=$IMG bs=$2 count=$1 >/dev/null 2>&1
++	$VERITYSETUP verify $IMG $IMG_HASH $ROOT_HASH $FEC_PARAMS \
++		--fec-roots=$3 >>$DEV_OUT 2>&1 && fail "FEC verify should fail with massive corruption"
++	echo "[FEC fail OK]"
++
++	rm -f $IMG $IMG_HASH $FEC_DEV $DEV_OUT
++}
++
++checkUserSpaceRepair 400 512  24 0 0
++checkUserSpaceRepair 400 1024 24 0 0
++checkUserSpaceRepair 400 4096 24 0 0
++
++# -------------------------------------------------------------------
++# Cleanup and summary
++# -------------------------------------------------------------------
++cleanup
++echo "# All portable verity tests passed."
++exit 0

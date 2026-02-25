@@ -1,0 +1,28 @@
+From b753e64cebd7da93ea12c2ea49132493173ef1e8 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 25 Feb 2026 02:06:52 +0000
+Subject: [PATCH 01/24] meson: propagate crypto backend library dependency to
+ all targets
+
+When building libcryptsetup as a static library, the crypto backend
+(e.g. LibreSSL's libcrypto) must be linked into every final executable.
+The crypto_backend_library dependency was only listed for
+libcrypto_backend (a static lib), but meson does not transitively
+propagate static library dependencies to consumers via link_with.
+
+Add crypto_backend_library to libcryptsetup_deps so it is propagated
+to all tools and tests that link against libcryptsetup.
+---
+ lib/meson.build | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/lib/meson.build
++++ b/lib/meson.build
+@@ -9,6 +9,7 @@ libutils_io = static_library('utils_io',
+ libcryptsetup_sym_path = join_paths(meson.current_source_dir(), 'libcryptsetup.sym')
+ 
+ libcryptsetup_deps = [
++    crypto_backend_library,
+     uuid,
+     devmapper,
+     libargon2_external,

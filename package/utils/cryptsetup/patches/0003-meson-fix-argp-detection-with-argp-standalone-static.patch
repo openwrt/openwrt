@@ -1,0 +1,28 @@
+From b4839db665345a131d539d60ca2435d2a4db698f Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 25 Feb 2026 04:25:22 +0000
+Subject: [PATCH 03/24] meson: fix argp detection with argp-standalone
+ (static-only)
+
+argp-standalone only ships a static library (libargp.a). The
+find_library call passed 'static: enable_static', which when false
+caused meson to look exclusively for a shared library and fail.
+
+Drop the static: parameter so meson accepts whichever variant is
+available, matching the autotools AC_SEARCH_LIBS behaviour.
+---
+ meson.build | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/meson.build
++++ b/meson.build
+@@ -423,8 +423,7 @@ if get_option('ssh-token')
+     argp = []
+ 
+     if not cc.has_function('argp_parse', prefix: '#include <argp.h>', dependencies: argp)
+-        argp = cc.find_library('argp',
+-            static: enable_static)
++        argp = cc.find_library('argp')
+     endif
+ 
+     libssh = dependency('libssh')
