@@ -1,0 +1,44 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+// Author: Tuan Phan <pttuan@gmail.com>
+// Author: Yanase Yuki <dev@zpc.st>
+/dts-v1/;
+#include "mt7988a-tplink-be805.dtsi"
+
+/ {
+	compatible = "tplink,be805-v1", "tplink,be805", "mediatek,mt7988a";
+	model = "TP-Link BE805 v1";
+};
+
+&gmac1 {
+	phy-handle = <&eth_phy0>;
+	managed = "in-band-status";
+};
+
+&gmac2 {
+	phy-handle = <&eth_phy8>;
+	managed = "in-band-status";
+};
+
+&mdio_bus {
+	reset-gpios = <&pio 71 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <100000>;
+	reset-post-delay-us = <1000000>;
+	clock-frequency = <10500000>;
+
+	eth_phy0: ethernet-phy@0 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <0>;
+		max-speed = <10000>;
+		firmware-name = "Rhe-05.06-Candidate9-AQR_Mediatek_23B_P5_ID45824_LCLVER1.cld";
+		marvell,mdi-cfg-order = <0>;
+	};
+
+	eth_phy8: ethernet-phy@8 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <8>;
+		max-speed = <10000>;
+		firmware-name = "Rhe-05.06-Candidate9-AQR_Mediatek_23B_P5_ID45824_LCLVER1.cld";
+		marvell,mdi-cfg-order = <0>;
+	};
+};
+
