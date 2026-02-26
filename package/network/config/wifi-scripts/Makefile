@@ -48,6 +48,9 @@ define Package/wifi-scripts/install
 ifeq ($(CONFIG_WIFI_SCRIPTS_UCODE),y)
 	$(CP) ./files-ucode/* $(1)/
 endif
+ifeq ($(CONFIG_WIFI_SCRIPTS_WPS_BUTTON_DISABLED),y)
+	rm -f $(1)/etc/rc.button/wps
+endif
 endef
 
 $(eval $(call BuildPackage,wifi-scripts))
