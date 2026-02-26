@@ -288,14 +288,24 @@ platform_do_upgrade() {
 		nand_do_upgrade "$1"
 		;;
 	zbtlink,zbt-z800ax)
+		# Migrate U-Boot from vendor 'bootipq' to standard OpenWrt boot commands
+		if fw_printenv bootcmd 2>/dev/null | grep -q "bootipq"; then
+			echo "Z800AX: Factory firmware detected. Migrating U-Boot..."
+			fw_setenv bootargs 'console=ttyMSM0,115200n8 ubi.mtd=rootfs root=mtd:ubi_rootfs rootfstype=squashfs rootwait'
+			fw_setenv bootcmd 'setenv mtdids nand0=nand0; setenv mtdparts mtdparts=nand0:0x3400000@0x0(rootfs); ubi part rootfs && ubi read 0x44000000 kernel && bootm 0x44000000'
+		fi
+
 		local mtdnum="$(find_mtd_index 0:bootconfig)"
 		local alt_mtdnum="$(find_mtd_index 0:bootconfig1)"
-		part_num="$(hexdump -e '1/1 "%01x|"' -n 1 -s 168 -C /dev/mtd$mtdnum | cut -f 1 -d "|" | head -n1)"
-		# vendor firmware may swap the rootfs partition location, u-boot append: ubi.mtd=rootfs
-		# since we use fixed-partitions, need to force boot from the first rootfs partition
-		if [ "$part_num" -eq "1" ]; then
-			mtd erase /dev/mtd$mtdnum
-			mtd erase /dev/mtd$alt_mtdnum
+		if [ -n "$mtdnum" ]; then
+			part_num="$(hexdump -e '1/1 "%01x|"' -n 1 -s 168 -C /dev/mtd$mtdnum | cut -f 1 -d "|" | head -n1)"
+			# Vendor firmware may swap rootfs partitions. Force Slot 0 to avoid
+			# known unbootable/dirty factory state of Slot 1 (mtd2).
+			if [ "$part_num" -eq "1" ]; then
+				echo "Z800AX: Slot 1 active. Resetting bootconfig to Slot 0..."
+				mtd erase /dev/mtd$mtdnum
+				[ -n "$alt_mtdnum" ] && mtd erase /dev/mtd$alt_mtdnum
+			fi
 		fi
 		nand_do_upgrade "$1"
 		;;
