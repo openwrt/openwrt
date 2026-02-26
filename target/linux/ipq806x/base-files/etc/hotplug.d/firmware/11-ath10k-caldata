@@ -34,13 +34,6 @@ case "$FIRMWARE" in
 		;;
 	esac
 	;;
-"ath10k/pre-cal-pci-0000:01:00.0.bin")
-	case $board in
-	asrock,g10)
-		caldata_extract "0:art" 0x1000 0x2f20
-		;;
-	esac
-	;;
 "ath10k/cal-pci-0001:01:00.0.bin")
 	case "$board" in
 	asus,onhub|\
@@ -49,28 +42,11 @@ case "$FIRMWARE" in
 		;;
 	esac
 	;;
-"ath10k/pre-cal-pci-0001:01:00.0.bin")
-	case $board in
-	asrock,g10)
-		caldata_extract "0:art" 0x5000 0x2f20
-		;;
-	edgecore,ecw5410)
-		caldata_extract "0:art" 0x1000 0x2f20
-		;;
-	esac
-	;;
 "ath10k/cal-pci-0002:01:00.0.bin")
 	case "$board" in
 	asus,onhub|\
 	tplink,onhub)
 		base64_extract /sys/firmware/vpd/ro/wifi_base64_calibration2
-		;;
-	esac
-	;;
-"ath10k/pre-cal-pci-0002:01:00.0.bin")
-	case $board in
-	edgecore,ecw5410)
-		caldata_extract "0:art" 0x5000 0x2f20
 		;;
 	esac
 	;;
