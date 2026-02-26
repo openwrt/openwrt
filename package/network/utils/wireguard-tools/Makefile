@@ -10,12 +10,12 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=wireguard-tools
 
-PKG_VERSION:=1.0.20250521
+PKG_VERSION:=1.0.20260223
 PKG_RELEASE:=1
 
 PKG_SOURCE:=wireguard-tools-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=https://git.zx2c4.com/wireguard-tools/snapshot/
-PKG_HASH:=b6f2628b85b1b23cc06517ec9c74f82d52c4cdbd020f3dd2f00c972a1782950e
+PKG_HASH:=af459827b80bfd31b83b08077f4b5843acb7d18ad9a33a2ef532d3090f291fbf
 
 PKG_LICENSE:=GPL-2.0
 PKG_LICENSE_FILES:=COPYING
