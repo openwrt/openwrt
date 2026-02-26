@@ -193,19 +193,29 @@
 	};
 };
 
+&art_nvmem {
+	precal_art_1000: pre-calibration@1000 {
+		reg = <0x1000 0x2f20>;
+	};
+
+	cal_art_9000: calibration@9000 {
+		reg = <0x9000 0x844>;
+	};
+};
+
 &wifi0 {
-	nvmem-cells = <&mac_address 1>;
-	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&precal_art_1000>, <&mac_address 1>;
+	nvmem-cell-names = "pre-calibration", "mac-address";
 };
 
 &wifi1 {
-	nvmem-cells = <&mac_address 2>;
-	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&precal_art_5000>, <&mac_address 2>;
+	nvmem-cell-names = "pre-calibration", "mac-address";
 };
 
 &wifi2 {
-	nvmem-cells = <&mac_address 3>;
-	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&cal_art_9000>, <&mac_address 3>;
+	nvmem-cell-names = "calibration", "mac-address";
 };
 
 &hs_phy_0 {

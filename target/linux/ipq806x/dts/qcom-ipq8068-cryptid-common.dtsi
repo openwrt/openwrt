@@ -194,6 +194,22 @@
 			partition@36c0000 {
 				label = "ubi";
 				reg = <0x36c0000 0x46c0000>;
+
+				volumes {
+					ubi-volume-art {
+						volname = "ART";
+
+						art_nvmem: nvmem-layout {
+							compatible = "fixed-layout";
+							#address-cells = <1>;
+							#size-cells = <1>;
+
+							precal_art_5000: pre-calibration@5000 {
+								reg = <0x5000 0x2f20>;
+							};
+						};
+					};
+				};
 			};
 
 			partition@7d80000 {
