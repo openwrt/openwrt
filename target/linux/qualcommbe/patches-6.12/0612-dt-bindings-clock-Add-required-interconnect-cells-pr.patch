@@ -1,0 +1,37 @@
+From 5335d676fe5e895b34f0fffb0cbcc49e4b7c8e3a Mon Sep 17 00:00:00 2001
+From: Luo Jie <quic_luoj@quicinc.com>
+Date: Thu, 24 Jul 2025 15:35:49 +0800
+Subject: [PATCH 612/636] dt-bindings: clock: Add required "interconnect-cells"
+ property
+
+ICC clocks are always provided by the NSS clock controller of IPQ9574,
+so add interconnect-cells as required DT property.
+
+Fixes: 28300ecedce4 ("dt-bindings: clock: Add ipq9574 NSSCC clock and reset definitions")
+Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
+---
+ Documentation/devicetree/bindings/clock/qcom,ipq9574-nsscc.yaml | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/clock/qcom,ipq9574-nsscc.yaml b/Documentation/devicetree/bindings/clock/qcom,ipq9574-nsscc.yaml
+index 17252b6ea3be..fc604279114f 100644
+--- a/Documentation/devicetree/bindings/clock/qcom,ipq9574-nsscc.yaml
++++ b/Documentation/devicetree/bindings/clock/qcom,ipq9574-nsscc.yaml
+@@ -57,6 +57,7 @@ required:
+   - compatible
+   - clocks
+   - clock-names
++  - '#interconnect-cells'
+ 
+ allOf:
+   - $ref: qcom,gcc.yaml#
+@@ -94,5 +95,6 @@ examples:
+                     "bus";
+       #clock-cells = <1>;
+       #reset-cells = <1>;
++      #interconnect-cells = <1>;
+     };
+ ...
+-- 
+2.34.1
+
