@@ -13,7 +13,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/arch/arm64/boot/dts/qcom/ipq9574-rdp-common.dtsi
 +++ b/arch/arm64/boot/dts/qcom/ipq9574-rdp-common.dtsi
-@@ -189,6 +189,34 @@
+@@ -189,6 +189,35 @@
  		nand-ecc-engine = <&qpic_nand>;
  		nand-ecc-strength = <4>;
  		nand-ecc-step-size = <512>;
@@ -38,6 +38,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +			partition@c0000 {
 +				label = "rootfs";
 +				reg = <0xc0000 0x3c00000>;
++				linux,rootfs;
 +			};
 +
 +			partition@3cc0000 {
@@ -47,4 +48,4 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +		};
  	};
  };
- 
+
