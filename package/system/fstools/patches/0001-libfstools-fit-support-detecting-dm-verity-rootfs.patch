@@ -1,0 +1,53 @@
+From 5104b63be47aeaed499155eed97eecba88f1ba81 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 20 Feb 2026 00:14:36 +0000
+Subject: [PATCH] libfstools: fit: support detecting dm-verity rootfs
+
+Allow using dm-verity for rootfs inside uImage.FIT filesystem subimage.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ libfstools/fit.c | 23 +++++++++++++++++++++--
+ 1 file changed, 21 insertions(+), 2 deletions(-)
+
+--- a/libfstools/fit.c
++++ b/libfstools/fit.c
+@@ -1,5 +1,7 @@
+ // SPDX-License-Identifier: GPL-2.0-or-later
+ 
++#include <glob.h>
++
+ #include "common.h"
+ 
+ #define BUFLEN 64
+@@ -62,11 +64,28 @@ static struct volume *fit_volume_find(ch
+ {
+ 	struct fit_volume *p;
+ 	struct stat buf;
+-	const char *fname;
++	const char *fname, *rootfs = fit0;
++	char *tmp, *end, verity_rootfs[16];
+ 	int ret;
++	glob_t gl;
++
++	if (!glob("/sys/block/dm-*/slaves/fit0", GLOB_NOESCAPE, NULL, &gl) &&
++	    gl.gl_pathc == 1) {
++		tmp = gl.gl_pathv[0] + 11;
++		end = strchr(tmp, '/');
++		if (!end)
++			goto no_dm_verity;
++		*end = '\0';
++
++		if (snprintf(verity_rootfs, sizeof(verity_rootfs), "/dev/%s", tmp) < 9)
++			return NULL;
++
++		rootfs = verity_rootfs;
++	}
+ 
++no_dm_verity:
+ 	if (!strcmp(name, "rootfs"))
+-		fname = fit0;
++		fname = rootfs;
+ 	else if (!strcmp(name, "rootfs_data"))
+ 		fname = fitrw;
+ 	else
