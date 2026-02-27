@@ -153,6 +153,11 @@ case "$board" in
 	jdcloud,re-cp-03)
 		[ "$PHYNBR" = "1" ] && mmc_get_mac_binary factory 0xa > /sys${DEVPATH}/macaddress
 		;;
+	jiorouter,ax6000-v1)
+		addr=$(macaddr_canonicalize "$(strings /dev/mtd1 | grep "^mac=" | cut -d= -f2)")
+		[ "$PHYNBR" = "0" ] && macaddr_add $addr 2 > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_add $addr 3 > /sys${DEVPATH}/macaddress
+		;;
 	keenetic,kap-630|\
 	keenetic,kn-3711|\
 	keenetic,kn-3811|\

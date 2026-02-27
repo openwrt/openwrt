@@ -155,6 +155,9 @@ mediatek_setup_interfaces()
 	yuncore,ax835)
 		ucidef_set_interfaces_lan_wan lan wan
 		;;
+	jiorouter,ax6000-v1)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" wan
+		;;
 	keenetic,kn-1812|\
 	netcraze,nc-1812)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 lan5" "wan"
@@ -247,6 +250,11 @@ mediatek_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii pdt_data_1 ethaddr)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		label_mac=$wan_mac
+		;;
+	jiorouter,ax6000-v1)
+		label_mac=$(macaddr_canonicalize $(strings /dev/mtd1 | grep "^mac=" | cut -d= -f2))
+		wan_mac=$label_mac
+		lan_mac=$(macaddr_add "$label_mac" 1)
 		;;
 	mercusys,mr80x-v3|\
 	mercusys,mr85x)
