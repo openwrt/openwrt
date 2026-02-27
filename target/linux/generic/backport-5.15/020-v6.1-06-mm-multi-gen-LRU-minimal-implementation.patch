@@ -353,7 +353,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  
 --- a/mm/Kconfig
 +++ b/mm/Kconfig
-@@ -897,6 +897,7 @@ config IO_MAPPING
+@@ -901,6 +901,7 @@ config IO_MAPPING
  config SECRETMEM
  	def_bool ARCH_HAS_SET_DIRECT_MAP && !EMBEDDED
  
@@ -361,7 +361,7 @@ Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
  config LRU_GEN
  	bool "Multi-Gen LRU"
  	depends on MMU
-@@ -905,6 +906,16 @@ config LRU_GEN
+@@ -909,6 +910,16 @@ config LRU_GEN
  	help
  	  A high performance LRU implementation to overcommit memory.
  
