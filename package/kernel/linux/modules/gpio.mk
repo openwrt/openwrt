@@ -40,22 +40,6 @@ endef
 $(eval $(call KernelPackage,gpio-beeper))
 
 
-define KernelPackage/gpio-cascade
-  SUBMENU:=$(GPIO_MENU)
-  TITLE:=Generic GPIO cascade
-  KCONFIG:=CONFIG_GPIO_CASCADE
-  DEPENDS:=@GPIO_SUPPORT +kmod-mux-core
-  FILES:=$(LINUX_DIR)/drivers/gpio/gpio-cascade.ko
-  AUTOLOAD:=$(call AutoLoad,29,gpio-cascade,1)
-endef
-
-define KernelPackage/gpio-cascade/description
-  Kernel module for Generic GPIO cascade
-endef
-
-$(eval $(call KernelPackage,gpio-cascade))
-
-
 define KernelPackage/gpio-f7188x
   SUBMENU:=$(GPIO_MENU)
   TITLE:=Fintek F718xx/F818xx GPIO Support
