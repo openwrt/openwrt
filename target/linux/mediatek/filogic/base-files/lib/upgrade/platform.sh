@@ -24,6 +24,27 @@ buffalo_initial_setup()
 	ubiformat /dev/mtd$mtdnum -y
 }
 
+jiorouter_initial_setup()
+{
+	[ "$(rootfs_type)" = "tmpfs" ] || return 0
+
+	local mtdnum="$( find_mtd_index ubi )"
+	if [ ! "$mtdnum" ]; then
+		echo "unable to find mtd partition ubi"
+		return 1
+	fi
+
+	ubidetach -m "$mtdnum" 2>/dev/null
+	ubiformat /dev/mtd$mtdnum -y
+	ubiattach -m "$mtdnum"
+	ubimkvol /dev/ubi0 -n 0 -N u-boot-env -s 0x80000
+
+	# Set boot arguments in freshly created U-Boot environment
+	fw_setenv bootcmd 'ubi read 46000000 kernel;fdt addr $(fdtcontroladdr);fdt rm /signature;bootm 0x46000000'
+	fw_setenv bootdelay 0
+	fw_setenv ipaddr ''
+}
+
 xiaomi_initial_setup()
 {
 	# initialize UBI and setup uboot-env if it's running on initramfs
@@ -208,7 +229,8 @@ platform_do_upgrade() {
 	buffalo,wsr-6000ax8|\
 	cudy,wr3000h-v1|\
 	cudy,wr3000p-v1|\
-	huasifei,wh3000-pro-nand)
+	huasifei,wh3000-pro-nand|\
+	jiorouter,ax6000-jidu6101)
 		CI_UBIPART="ubi"
 		nand_do_upgrade "$1"
 		;;
@@ -452,6 +474,9 @@ platform_pre_upgrade() {
 
 		[ -z "$delay" ] || [ "$delay" -eq "0" ] && \
 			fw_setenv bootmenu_delay 3
+		;;
+	jiorouter,ax6000-jidu6101)
+		jiorouter_initial_setup
 		;;
 	xiaomi,mi-router-ax3000t|\
 	xiaomi,mi-router-wr30u-stock|\
