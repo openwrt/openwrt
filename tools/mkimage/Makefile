@@ -41,11 +41,13 @@ define Host/Compile
 endef
 
 define Host/Install
+	$(CP) $(HOST_BUILD_DIR)/tools/fit_set_uuid $(STAGING_DIR_HOST)/bin/
 	$(CP) $(HOST_BUILD_DIR)/tools/mkimage $(STAGING_DIR_HOST)/bin/
 	$(CP) $(HOST_BUILD_DIR)/tools/mkenvimage $(STAGING_DIR_HOST)/bin/
 endef
 
 define Host/Clean
+	rm -f $(STAGING_DIR_HOST)/bin/fit_set_uuid
 	rm -f $(STAGING_DIR_HOST)/bin/mkimage
 	rm -f $(STAGING_DIR_HOST)/bin/mkenvimage
 endef

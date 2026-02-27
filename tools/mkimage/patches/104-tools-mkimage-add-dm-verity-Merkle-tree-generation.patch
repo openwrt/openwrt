@@ -1,0 +1,584 @@
+From a97f224aaeedfab5b91e565fabbed317ba1e0cac Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Thu, 26 Feb 2026 19:03:38 +0000
+Subject: [PATCH 5/6] tools: mkimage: add dm-verity Merkle-tree generation
+
+When mkimage encounters a dm-verity subnode inside a component image
+node it now automatically invokes veritysetup(8) to generate the
+Merkle hash tree, screen-scrapes the Root hash and Salt from the tool
+output, and writes the computed properties back into the FIT blob.
+
+The user only needs to specify algorithm, data-block-size, and
+hash-block-size in the ITS; mkimage fills in digest, salt,
+num-data-blocks, and hash-start-block.
+
+The image data property is replaced with the expanded content (original
+data + hash tree) so that subsequent hash and signature subnodes operate
+on the complete image.
+
+fit_image_add_verification_data() is restructured into two passes:
+dm-verity first (may grow data), then hashes and signatures.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ tools/fit_image.c  | 102 ++++++++++++-
+ tools/image-host.c | 363 ++++++++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 451 insertions(+), 14 deletions(-)
+
+--- a/tools/fit_image.c
++++ b/tools/fit_image.c
+@@ -39,10 +39,10 @@ static int fit_estimate_hash_sig_size(st
+ 		return -EIO;
+ 
+ 	/*
+-	 * Walk the FIT image, looking for nodes named hash* and
+-	 * signature*. Since the interesting nodes are subnodes of an
+-	 * image or configuration node, we are only interested in
+-	 * those at depth exactly 3.
++	 * Walk the FIT image, looking for nodes named hash*,
++	 * signature*, and dm-verity.  Since the interesting nodes are
++	 * subnodes of an image or configuration node, we are only
++	 * interested in those at depth exactly 3.
+ 	 *
+ 	 * The estimate for a hash node is based on a sha512 digest
+ 	 * being 64 bytes, with another 64 bytes added to account for
+@@ -54,6 +54,10 @@ static int fit_estimate_hash_sig_size(st
+ 	 * account for fdt overhead and the various other properties
+ 	 * (hashed-nodes etc.) that will also be filled in.
+ 	 *
++	 * For a dm-verity node the small metadata properties (digest,
++	 * salt, two u32s and a temp-file path) are written into the
++	 * FDT by fit_image_process_verity().
++	 *
+ 	 * One could try to be more precise in the estimates by
+ 	 * looking at the "algo" property and, in the case of
+ 	 * configuration signatures, the sign-images property. Also,
+@@ -75,6 +79,18 @@ static int fit_estimate_hash_sig_size(st
+ 
+ 		if (signing && !strncmp(name, FIT_SIG_NODENAME, strlen(FIT_SIG_NODENAME)))
+ 			estimate += 1024;
++
++		if (!strcmp(name, FIT_VERITY_NODENAME)) {
++			if (!params->external_data) {
++				fprintf(stderr,
++					"%s: dm-verity requires external data (-E)\n",
++					params->cmdname);
++				munmap(fdt, sbuf.st_size);
++				close(fd);
++				return -EINVAL;
++			}
++			estimate += 256;
++		}
+ 	}
+ 
+ 	munmap(fdt, sbuf.st_size);
+@@ -629,10 +645,33 @@ static int fit_extract_data(struct image
+ 	image_number = fdtdec_get_child_count(fdt, images);
+ 
+ 	/*
++	 * When dm-verity is active the external data for an image is
++	 * larger than the embedded data property (original + hash tree).
++	 * Walk images once more to account for the difference.
++	 */
++	int verity_extra = 0;
++
++	fdt_for_each_subnode(node, fdt, images) {
++		int vn = fdt_subnode_offset(fdt, node, FIT_VERITY_NODENAME);
++		const char *vf;
++		struct stat vst;
++		int orig_len = 0;
++
++		if (vn < 0)
++			continue;
++		vf = fdt_getprop(fdt, vn, "verity-data-file", NULL);
++		if (!vf)
++			continue;
++		fdt_getprop(fdt, node, FIT_DATA_PROP, &orig_len);
++		if (!stat(vf, &vst) && vst.st_size > orig_len)
++			verity_extra += vst.st_size - orig_len;
++	}
++
++	/*
+ 	 * Allocate space to hold the image data we will extract,
+ 	 * extral space allocate for image alignment to prevent overflow.
+ 	 */
+-	buf = calloc(1, fit_size + (align_size * image_number));
++	buf = calloc(1, fit_size + (align_size * image_number) + verity_extra);
+ 	if (!buf) {
+ 		ret = -ENOMEM;
+ 		goto err_munmap;
+@@ -648,7 +687,58 @@ static int fit_extract_data(struct image
+ 		data = fdt_getprop(fdt, node, FIT_DATA_PROP, &len);
+ 		if (!data)
+ 			continue;
+-		memcpy(buf + buf_ptr, data, len);
++
++		/*
++		 * When dm-verity is active, fit_image_process_verity()
++		 * left a temp-file path in the dm-verity subnode.
++		 * Read the expanded image (data + hash tree) from that
++		 * file instead of copying the embedded data property.
++		 */
++		{
++			int vn = fdt_subnode_offset(fdt, node,
++						    FIT_VERITY_NODENAME);
++			const char *vfile = NULL;
++			char vfile_buf[256];
++
++			if (vn >= 0)
++				vfile = fdt_getprop(fdt, vn,
++						    "verity-data-file",
++						    NULL);
++			if (vfile) {
++				struct stat vst;
++				int vfd;
++
++				/* Copy path — FDT shifts after delprop */
++				snprintf(vfile_buf, sizeof(vfile_buf),
++					 "%s", vfile);
++				fdt_delprop(fdt, vn, "verity-data-file");
++
++				if (stat(vfile_buf, &vst)) {
++					fprintf(stderr,
++						"Can't stat verity data: %s\n",
++						strerror(errno));
++					ret = -EIO;
++					goto err_munmap;
++				}
++				vfd = open(vfile_buf, O_RDONLY);
++				if (vfd < 0 ||
++				    read(vfd, buf + buf_ptr, vst.st_size) !=
++						vst.st_size) {
++					fprintf(stderr,
++						"Can't read verity data: %s\n",
++						strerror(errno));
++					if (vfd >= 0)
++						close(vfd);
++					ret = -EIO;
++					goto err_munmap;
++				}
++				close(vfd);
++				len = vst.st_size;
++				unlink(vfile_buf);
++			} else {
++				memcpy(buf + buf_ptr, data, len);
++			}
++		}
+ 		debug("Extracting data size %x\n", len);
+ 
+ 		ret = fdt_delprop(fdt, node, FIT_DATA_PROP);
+--- a/tools/image-host.c
++++ b/tools/image-host.c
+@@ -14,6 +14,8 @@
+ #include <image.h>
+ #include <version.h>
+ 
++#include <sys/stat.h>
++
+ #if CONFIG_IS_ENABLED(FIT_SIGNATURE)
+ #include <openssl/pem.h>
+ #include <openssl/evp.h>
+@@ -25,6 +27,35 @@
+ #endif
+ 
+ /**
++ * fit_hex2bin() - convert an ASCII hex string to binary
++ *
++ * @dst:   output buffer (at least @count bytes)
++ * @src:   NUL-terminated hex string (at least 2*@count characters)
++ * @count: number of bytes to produce
++ * Return: 0 on success, -1 on invalid input
++ */
++static int fit_hex2bin(uint8_t *dst, const char *src, size_t count)
++{
++	while (count--) {
++		int hi, lo;
++		char c;
++
++		c = *src++;
++		hi = (c >= '0' && c <= '9') ? c - '0' :
++		     (c >= 'a' && c <= 'f') ? c - 'a' + 10 :
++		     (c >= 'A' && c <= 'F') ? c - 'A' + 10 : -1;
++		c = *src++;
++		lo = (c >= '0' && c <= '9') ? c - '0' :
++		     (c >= 'a' && c <= 'f') ? c - 'a' + 10 :
++		     (c >= 'A' && c <= 'F') ? c - 'A' + 10 : -1;
++		if (hi < 0 || lo < 0)
++			return -1;
++		*dst++ = (hi << 4) | lo;
++	}
++	return 0;
++}
++
++/**
+  * fit_set_hash_value - set hash value in requested has node
+  * @fit: pointer to the FIT format image header
+  * @noffset: hash node offset
+@@ -652,6 +683,293 @@ int fit_image_cipher_data(const char *ke
+  *
+  * For signature details, please see doc/usage/fit/signature.rst
+  *
++ * For dm-verity details, please see doc/usage/fit/dm-verity.rst
++ */
++
++/**
++ * fit_image_process_verity() - Run veritysetup and fill dm-verity properties
++ *
++ * Extracts the embedded image data to a temporary file, runs
++ * ``veritysetup format`` to generate the Merkle hash tree (appended to the
++ * same file), parses Root hash / Salt from its stdout, and writes the
++ * computed properties (digest, salt, num-data-blocks, hash-start-block)
++ * back into the FIT dm-verity subnode.
++ *
++ * The expanded data (original + hash tree) is returned through
++ * @expanded_data / @expanded_size so that hash and signature subnodes can be
++ * computed over the complete image.  The FIT ``data`` property is
++ * intentionally NOT replaced — the expanded content is kept in a temporary
++ * file whose path is stored in the ``verity-data-file`` property;
++ * ``fit_extract_data()`` picks it up later.
++ *
++ * @fit:		FIT blob (read-write)
++ * @image_name:		image unit name (for diagnostics)
++ * @image_noffset:	image node offset (parent of dm-verity)
++ * @verity_noffset:	dm-verity subnode offset
++ * @data:		embedded image data
++ * @data_size:		size of @data in bytes
++ * @expanded_data:	output — malloc'd buffer with expanded content
++ * @expanded_size:	output — size of @expanded_data
++ * Return: 0 on success, -ve on error (-ENOSPC when the FIT blob is full)
++ */
++static int fit_image_process_verity(void *fit, const char *image_name,
++				    int image_noffset, int verity_noffset,
++				    const void *data, size_t data_size,
++				    void **expanded_data, size_t *expanded_size)
++{
++	const char *algo_prop;
++	char algo[64];
++	const fdt32_t *val;
++	int data_block_size, hash_block_size;
++	size_t num_data_blocks;
++	uint32_t hash_start_block;
++	char tmpfile[] = "/tmp/mkimage-verity-XXXXXX";
++	char cmd[512];
++	FILE *fp;
++	char line[256];
++	char root_hash_hex[256] = {0};
++	char salt_hex[256] = {0};
++	uint8_t digest_bin[FIT_MAX_HASH_LEN];
++	uint8_t salt_bin[FIT_MAX_HASH_LEN];
++	int digest_len = 0, salt_len = 0;
++	void *expanded = NULL;
++	struct stat st;
++	int fd, ret;
++
++	*expanded_data = NULL;
++	*expanded_size = 0;
++
++	/* --- read user-provided properties --- */
++	algo_prop = fdt_getprop(fit, verity_noffset, FIT_VERITY_ALGO_PROP,
++				NULL);
++	if (!algo_prop) {
++		fprintf(stderr,
++			"Missing '%s' in dm-verity node of '%s'\n",
++			FIT_VERITY_ALGO_PROP, image_name);
++		return -EINVAL;
++	}
++	/* Local copy — the FDT pointer goes stale after fdt_setprop(). */
++	snprintf(algo, sizeof(algo), "%s", algo_prop);
++
++	val = fdt_getprop(fit, verity_noffset, FIT_VERITY_DBS_PROP, NULL);
++	if (!val) {
++		fprintf(stderr,
++			"Missing '%s' in dm-verity node of '%s'\n",
++			FIT_VERITY_DBS_PROP, image_name);
++		return -EINVAL;
++	}
++	data_block_size = fdt32_to_cpu(*val);
++
++	val = fdt_getprop(fit, verity_noffset, FIT_VERITY_HBS_PROP, NULL);
++	if (!val) {
++		fprintf(stderr,
++			"Missing '%s' in dm-verity node of '%s'\n",
++			FIT_VERITY_HBS_PROP, image_name);
++		return -EINVAL;
++	}
++	hash_block_size = fdt32_to_cpu(*val);
++
++	if (data_block_size < 512 || hash_block_size < 512) {
++		fprintf(stderr,
++			"Invalid block sizes in dm-verity node of '%s'\n",
++			image_name);
++		return -EINVAL;
++	}
++
++	if (data_size % data_block_size) {
++		fprintf(stderr,
++			"Image '%s' size %zu not a multiple of data-block-size %d\n",
++			image_name, data_size, data_block_size);
++		return -EINVAL;
++	}
++
++	num_data_blocks = data_size / data_block_size;
++
++	/* --- write data to a temporary file --- */
++	fd = mkstemp(tmpfile);
++	if (fd < 0) {
++		fprintf(stderr, "Can't create temp file: %s\n",
++			strerror(errno));
++		return -EIO;
++	}
++
++	if (write(fd, data, data_size) != (ssize_t)data_size) {
++		fprintf(stderr, "Can't write temp file: %s\n",
++			strerror(errno));
++		ret = -EIO;
++		goto err_unlink;
++	}
++	close(fd);
++	fd = -1;
++
++	/* --- run veritysetup format --- */
++	snprintf(cmd, sizeof(cmd),
++		 "veritysetup format \"%s\" \"%s\" "
++		 "--no-superblock "
++		 "--hash=%s --data-block-size=%d --hash-block-size=%d "
++		 "--hash-offset=%zu 2>&1",
++		 tmpfile, tmpfile,
++		 algo, data_block_size, hash_block_size, data_size);
++
++	fp = popen(cmd, "r");
++	if (!fp) {
++		fprintf(stderr, "Can't run veritysetup: %s\n",
++			strerror(errno));
++		ret = -EIO;
++		goto err_unlink;
++	}
++
++	/* parse key: value lines from veritysetup stdout */
++	while (fgets(line, sizeof(line), fp)) {
++		char *colon, *value, *end;
++
++		colon = strchr(line, ':');
++		if (!colon)
++			continue;
++		value = colon + 1;
++		while (*value == ' ' || *value == '\t')
++			value++;
++		end = value + strlen(value) - 1;
++		while (end > value && (*end == '\n' || *end == '\r' ||
++		       *end == ' '))
++			*end-- = '\0';
++
++		if (!strncmp(line, "Root hash:", 10))
++			snprintf(root_hash_hex, sizeof(root_hash_hex),
++				 "%s", value);
++		else if (!strncmp(line, "Salt:", 5))
++			snprintf(salt_hex, sizeof(salt_hex), "%s", value);
++	}
++
++	ret = pclose(fp);
++	if (ret) {
++		fprintf(stderr,
++			"veritysetup failed (exit %d) for '%s'\n",
++			WEXITSTATUS(ret), image_name);
++		ret = -EIO;
++		goto err_unlink;
++	}
++
++	if (!root_hash_hex[0] || !salt_hex[0]) {
++		fprintf(stderr,
++			"Failed to parse veritysetup output for '%s'\n",
++			image_name);
++		ret = -EIO;
++		goto err_unlink;
++	}
++
++	/* --- convert hex strings to binary --- */
++	digest_len = strlen(root_hash_hex) / 2;
++	salt_len   = strlen(salt_hex) / 2;
++
++	if (digest_len > (int)sizeof(digest_bin) ||
++	    salt_len > (int)sizeof(salt_bin)) {
++		fprintf(stderr, "Hash/salt too long for '%s'\n", image_name);
++		ret = -EINVAL;
++		goto err_unlink;
++	}
++
++	if (fit_hex2bin(digest_bin, root_hash_hex, digest_len) ||
++	    fit_hex2bin(salt_bin, salt_hex, salt_len)) {
++		fprintf(stderr,
++			"Invalid hex in veritysetup output for '%s'\n",
++			image_name);
++		ret = -EINVAL;
++		goto err_unlink;
++	}
++
++	/* --- read back expanded file (data + hash tree) --- */
++	if (stat(tmpfile, &st)) {
++		fprintf(stderr, "Can't stat temp file: %s\n",
++			strerror(errno));
++		ret = -EIO;
++		goto err_unlink;
++	}
++
++	expanded = malloc(st.st_size);
++	if (!expanded) {
++		ret = -ENOMEM;
++		goto err_unlink;
++	}
++
++	fd = open(tmpfile, O_RDONLY);
++	if (fd < 0 || read(fd, expanded, st.st_size) != st.st_size) {
++		fprintf(stderr, "Can't read back temp file: %s\n",
++			strerror(errno));
++		ret = -EIO;
++		goto err_free;
++	}
++	close(fd);
++	fd = -1;
++
++	hash_start_block = data_size / hash_block_size;
++
++	/* --- update FIT blob (metadata only, NOT the data property) --- */
++
++	ret = fdt_setprop(fit, verity_noffset, FIT_VERITY_DIGEST_PROP,
++			  digest_bin, digest_len);
++	if (ret) {
++		ret = (ret == -FDT_ERR_NOSPACE) ? -ENOSPC : -EIO;
++		goto err_free;
++	}
++
++	ret = fdt_setprop(fit, verity_noffset, FIT_VERITY_SALT_PROP,
++			  salt_bin, salt_len);
++	if (ret) {
++		ret = (ret == -FDT_ERR_NOSPACE) ? -ENOSPC : -EIO;
++		goto err_free;
++	}
++
++	ret = fdt_setprop_u32(fit, verity_noffset, FIT_VERITY_NBLK_PROP,
++			      num_data_blocks);
++	if (ret) {
++		ret = (ret == -FDT_ERR_NOSPACE) ? -ENOSPC : -EIO;
++		goto err_free;
++	}
++
++	ret = fdt_setprop_u32(fit, verity_noffset, FIT_VERITY_HBLK_PROP,
++			      hash_start_block);
++	if (ret) {
++		ret = (ret == -FDT_ERR_NOSPACE) ? -ENOSPC : -EIO;
++		goto err_free;
++	}
++
++	/*
++	 * Stash the temp-file path so that fit_extract_data() can use
++	 * the expanded content for the external-data section.
++	 */
++	ret = fdt_setprop_string(fit, verity_noffset,
++				 "verity-data-file", tmpfile);
++	if (ret) {
++		ret = (ret == -FDT_ERR_NOSPACE) ? -ENOSPC : -EIO;
++		goto err_free;
++	}
++
++	*expanded_data = expanded;
++	*expanded_size = st.st_size;
++	return 0;
++
++err_free:
++	free(expanded);
++err_unlink:
++	if (fd >= 0)
++		close(fd);
++	unlink(tmpfile);
++	return ret;
++}
++
++/**
++ * fit_image_add_verification_data() - add hashes / signatures / verity data
++ *
++ * Process all subnodes of a component image node.  dm-verity subnodes are
++ * handled first because they produce the Merkle hash tree; hash and
++ * signature subnodes then operate on the expanded data (original image
++ * data + hash tree).
++ *
++ * The expanded data is only kept in memory (and a temp file for later use
++ * by ``fit_extract_data()``).  The embedded ``data`` FDT property is NOT
++ * replaced, so no extra FDT space is needed for the hash tree.
++ *
+  * @keydir	Directory containing *.key and *.crt files (or NULL)
+  * @keydest	FDT Blob to write public keys into (NULL if none)
+  * @fit:	Pointer to the FIT format image header
+@@ -669,7 +987,9 @@ int fit_image_add_verification_data(cons
+ 	const char *image_name;
+ 	const void *data;
+ 	size_t size;
++	void *verity_data = NULL;
+ 	int noffset;
++	int ret;
+ 
+ 	/* Get image data and data length */
+ 	if (fit_image_get_emb_data(fit, image_noffset, &data, &size)) {
+@@ -679,18 +999,41 @@ int fit_image_add_verification_data(cons
+ 
+ 	image_name = fit_get_name(fit, image_noffset, NULL);
+ 
+-	/* Process all hash subnodes of the component image node */
++	/*
++	 * Pass 1 — dm-verity: run veritysetup to produce the Merkle
++	 * hash tree and fill in computed metadata.  The expanded
++	 * content (original data + hash tree) is returned in
++	 * verity_data so that pass 2 hashes the complete image.
++	 */
++	for (noffset = fdt_first_subnode(fit, image_noffset);
++	     noffset >= 0;
++	     noffset = fdt_next_subnode(fit, noffset)) {
++		if (!strcmp(fit_get_name(fit, noffset, NULL),
++			   FIT_VERITY_NODENAME)) {
++			ret = fit_image_process_verity(fit, image_name,
++						       image_noffset,
++						       noffset,
++						       data, size,
++						       &verity_data,
++						       &size);
++			if (ret)
++				return ret;
++			if (verity_data)
++				data = verity_data;
++			break;
++		}
++	}
++
++	/*
++	 * Pass 2 — hashes and signatures: compute over the (possibly
++	 * expanded) image data.
++	 */
+ 	for (noffset = fdt_first_subnode(fit, image_noffset);
+ 	     noffset >= 0;
+ 	     noffset = fdt_next_subnode(fit, noffset)) {
+ 		const char *node_name;
+-		int ret = 0;
+ 
+-		/*
+-		 * Check subnode name, must be equal to "hash" or "signature".
+-		 * Multiple hash nodes require unique unit node
+-		 * names, e.g. hash-1, hash-2, signature-1, etc.
+-		 */
++		ret = 0;
+ 		node_name = fit_get_name(fit, noffset, NULL);
+ 		if (!strncmp(node_name, FIT_HASH_NODENAME,
+ 			     strlen(FIT_HASH_NODENAME))) {
+@@ -704,10 +1047,13 @@ int fit_image_add_verification_data(cons
+ 				comment, require_keys, engine_id, cmdname,
+ 				algo_name);
+ 		}
+-		if (ret < 0)
++		if (ret < 0) {
++			free(verity_data);
+ 			return ret;
++		}
+ 	}
+ 
++	free(verity_data);
+ 	return 0;
+ }
+ 
