@@ -90,6 +90,22 @@ endef
 $(eval $(call KernelPackage,gpio-it87))
 
 
+define KernelPackage/gpio-line-mux
+  SUBMENU:=$(GPIO_MENU)
+  TITLE:=Virtual GPIO line multiplexer
+  KCONFIG:=CONFIG_GPIO_LINE_MUX
+  DEPENDS:=@GPIO_SUPPORT +kmod-mux-core
+  FILES:=$(LINUX_DIR)/drivers/gpio/gpio-line-mux.ko
+  AUTOLOAD:=$(call AutoLoad,29,gpio-line-mux,1)
+endef
+
+define KernelPackage/gpio-line-mux/description
+  Kernel module for Virtual GPIO line multiplexer
+endef
+
+$(eval $(call KernelPackage,gpio-line-mux))
+
+
 define KernelPackage/gpio-nxp-74hc164
   SUBMENU:=$(GPIO_MENU)
   TITLE:=NXP 74HC164 GPIO expander support
