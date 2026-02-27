@@ -11,7 +11,17 @@
  	help
 --- a/arch/mips/econet/Kconfig
 +++ b/arch/mips/econet/Kconfig
-@@ -28,9 +28,11 @@ choice
+@@ -14,7 +14,9 @@ choice
+ 		select COMMON_CLK
+ 		select CPU_BIG_ENDIAN
+ 		select ECONET_EN751221_INTC
++		select HAVE_PCI
+ 		select IRQ_MIPS_CPU
++		select PCI_DRIVERS_GENERIC
+ 		select SMP
+ 		select SMP_UP
+ 		select SYS_SUPPORTS_SMP
+@@ -28,9 +30,11 @@ choice
  		bool "EN7528 family"
  		select COMMON_CLK
  		select CPU_LITTLE_ENDIAN
@@ -205,7 +215,7 @@
  					   broadcom/	\
 --- /dev/null
 +++ b/drivers/phy/phy-en7528-pcie.c
-@@ -0,0 +1,119 @@
+@@ -0,0 +1,155 @@
 +// SPDX-License-Identifier: GPL-2.0+
 +/*
 + * Copyright (C) 2026 Ahmed Naseef <naseefkm@gmail.com>
@@ -220,41 +230,71 @@
 +#include <linux/platform_device.h>
 +#include <linux/regmap.h>
 +
-+struct en7528_pcie_phy_data {
++struct en7528_pcie_phy_op {
 +	u32 reg;
 +	u32 mask;
 +	u32 val;
-+	u32 max_reg;
 +};
 +
 +struct en7528_pcie_phy {
 +	struct regmap *regmap;
-+	const struct en7528_pcie_phy_data *data;
++	const struct en7528_pcie_phy_op *data;
 +};
 +
 +/* Port 0 PHY: set LCDDS_CLK_PH_INV for PLL operation */
-+static const struct en7528_pcie_phy_data en7528_phy_port0 = {
-+	.reg = 0x4a0,
-+	.mask = BIT(5),
-+	.val = BIT(5),
-+	.max_reg = 0x4a0,
++static const struct en7528_pcie_phy_op en7528_phy_port0[] = {
++	{
++		.reg = 0x4a0,
++		.mask = BIT(5),
++		.val = BIT(5),
++	},
++	{ /* sentinel */ }
 +};
 +
 +/* Port 1 PHY: Rx impedance tuning, target R -5 Ohm */
-+static const struct en7528_pcie_phy_data en7528_phy_port1 = {
-+	.reg = 0xb2c,
-+	.mask = GENMASK(13, 12),
-+	.val = BIT(12),
-+	.max_reg = 0xb2c,
++static const struct en7528_pcie_phy_op en7528_phy_port1[] = {
++	{
++		.reg = 0xb2c,
++		.mask = GENMASK(13, 12),
++		.val = BIT(12),
++	},
++	{ /* sentinel */ }
++};
++
++/* EN751221 Port 1 PHY */
++static const struct en7528_pcie_phy_op en751221_phy_port1[] = {
++	/* Rx Detection Timing for 7512 E1, 16*8 clock cycles  */
++	{
++		.reg = 0xa28,
++		.mask = GENMASK(17, 9),
++		.val = 16 << 9,
++	},
++	/* Same for different power mode */
++        {
++		.reg = 0xa2c,
++		.mask = GENMASK(8, 0),
++		.val = 16,
++	},
++	{ /* sentinel */ }
 +};
 +
 +static int en7528_pcie_phy_init(struct phy *phy)
 +{
 +	struct en7528_pcie_phy *ephy = phy_get_drvdata(phy);
-+	const struct en7528_pcie_phy_data *data = ephy->data;
++	const struct en7528_pcie_phy_op *data = ephy->data;
++	int i, ret;
 +
-+	return regmap_update_bits(ephy->regmap, data->reg,
-+				  data->mask, data->val);
++	for (i = 0; data[i].mask || data[i].val; i++) {
++		if (i)
++			usleep_range(1000, 2000);
++
++		ret = regmap_update_bits(ephy->regmap, data[i].reg,
++					 data[i].mask, data[i].val);
++		if (ret)
++			return ret;
++	}
++
++	return 0;
 +}
 +
 +static const struct phy_ops en7528_pcie_phy_ops = {
@@ -265,7 +305,7 @@
 +static int en7528_pcie_phy_probe(struct platform_device *pdev)
 +{
 +	struct device *dev = &pdev->dev;
-+	const struct en7528_pcie_phy_data *data;
++	const struct en7528_pcie_phy_op *data;
 +	struct regmap_config regmap_config = {
 +		.reg_bits = 32,
 +		.val_bits = 32,
@@ -275,6 +315,7 @@
 +	struct en7528_pcie_phy *ephy;
 +	void __iomem *base;
 +	struct phy *phy;
++	int i;
 +
 +	data = of_device_get_match_data(dev);
 +	if (!data)
@@ -290,7 +331,10 @@
 +	if (IS_ERR(base))
 +		return PTR_ERR(base);
 +
-+	regmap_config.max_register = data->max_reg;
++	for (i = 0; data[i].mask || data[i].val; i++)
++		if (data[i].reg > regmap_config.max_register)
++			regmap_config.max_register = data[i].reg;
++
 +	ephy->regmap = devm_regmap_init_mmio(dev, base, &regmap_config);
 +	if (IS_ERR(ephy->regmap))
 +		return PTR_ERR(ephy->regmap);
@@ -307,8 +351,10 @@
 +}
 +
 +static const struct of_device_id en7528_pcie_phy_ids[] = {
-+	{ .compatible = "econet,en7528-pcie-phy0", .data = &en7528_phy_port0 },
-+	{ .compatible = "econet,en7528-pcie-phy1", .data = &en7528_phy_port1 },
++	{ .compatible = "econet,en7528-pcie-phy0", .data = en7528_phy_port0 },
++	{ .compatible = "econet,en7528-pcie-phy1", .data = en7528_phy_port1 },
++	{ .compatible = "econet,en751221-pcie-phy0", .data = en7528_phy_port0 },
++	{ .compatible = "econet,en751221-pcie-phy1", .data = en751221_phy_port1 },
 +	{ /* sentinel */ }
 +};
 +MODULE_DEVICE_TABLE(of, en7528_pcie_phy_ids);
