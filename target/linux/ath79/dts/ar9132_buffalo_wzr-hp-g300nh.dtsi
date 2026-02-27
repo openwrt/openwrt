@@ -24,25 +24,27 @@
 	};
 
 	gpio2: key-mux1 {
-		compatible = "gpio-cascade";
+		compatible = "gpio-line-mux";
 		mux-controls = <&mux>;
 
 		gpio-controller;
 		#gpio-cells = <2>;
 
 		// GPIOs used by this node, the mux pin
-		upstream-gpios = <&gpio 12 GPIO_ACTIVE_HIGH>; /* 1y */
+		muxed-gpios = <&gpio 12 GPIO_ACTIVE_HIGH>; /* 1y */
+		gpio-line-mux-states = <0>, <1>, <2>, <3>;
 	};
 
 	gpio3: key-mux2 {
-		compatible = "gpio-cascade";
+		compatible = "gpio-line-mux";
 		mux-controls = <&mux>;
 
 		gpio-controller;
 		#gpio-cells = <2>;
 
 		// GPIOs used by this node, the mux pin
-		upstream-gpios = <&gpio 14 GPIO_ACTIVE_HIGH>; /* 2y */
+		muxed-gpios = <&gpio 14 GPIO_ACTIVE_HIGH>; /* 2y */
+		gpio-line-mux-states = <1>, <2>, <3>;
 	};
 
 	keys {
@@ -80,21 +82,21 @@
 		usb {
 			label = "usb";
 			linux,code = <BTN_2>;
-			gpios = <&gpio3 1 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 			debounce-interval = <60>;
 		};
 
 		router_auto {
 			label = "router_auto";
 			linux,code = <BTN_6>;
-			gpios = <&gpio3 2 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio3 1 GPIO_ACTIVE_HIGH>;
 			debounce-interval = <60>;
 		};
 
 		movie_on {
 			label = "movie_on";
 			linux,code = <BTN_4>;
-			gpios = <&gpio3 3 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio3 2 GPIO_ACTIVE_HIGH>;
 			debounce-interval = <60>;
 		};
 	};
