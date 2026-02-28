@@ -1,0 +1,35 @@
+// Corrected DTS for mt7986a Zyxel WX3600
+
+/dts-v1/;
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/nvmem/nvmem.h>
+
+/ {
+	model = "Zyxel WX3600";
+	compatible = "zyxel,wx3600";
+
+	memory {
+		device_type = "memory";
+		reg = <0x0 0x0 0x2000000>;
+	};
+
+	nvmem {
+		cells = <NVMEM_CELL_1>;
+	};
+
+	// Additional configuration for other nodes...
+
+	spi {
+		status = "okay";
+		speed = <52000000>;
+	};
+
+	reserved-memory {
+		#size-cells = <1>;
+		#address-cells = <1>;
+		external { 
+			reg = <0x0 0x400000 0x40000>;
+			size = <0x40000>;
+		};
+	};
+};
