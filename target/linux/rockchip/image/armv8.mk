@@ -52,6 +52,16 @@ define Device/rk3588s
   KERNEL_LOADADDR := 0x03000000
 endef
 
+define Device/ariaboard_photonicat-2
+  $(Device/rk3576)
+  DEVICE_VENDOR := Ariaboard
+  DEVICE_MODEL := Photonicat 2
+  UBOOT_DEVICE_NAME := generic-rk3576
+  DEVICE_PACKAGES := ath12k-firmware-wcn7850 kmod-ath12k \
+	kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi wpad-basic-mbedtls
+endef
+TARGET_DEVICES += ariaboard_photonicat-2
+
 define Device/armsom_sige7
   $(Device/rk3588)
   DEVICE_VENDOR := ArmSoM
