@@ -1262,6 +1262,7 @@ struct rtldsa_config {
 	int stat_rst;
 	int stat_port_std_mib;
 	int stat_port_prv_mib;
+	const struct rtldsa_mib_desc *mib_desc;
 	u64 (*stat_port_table_read)(int port, unsigned int mib_size, unsigned int offset, bool is_pvt);
 	void (*stat_counters_lock)(struct rtl838x_switch_priv *priv, int port);
 	void (*stat_counters_unlock)(struct rtl838x_switch_priv *priv, int port);

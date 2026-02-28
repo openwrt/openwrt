@@ -124,6 +124,104 @@ static enum template_field_id fixed_templates[N_FIXED_TEMPLATES][N_FIXED_FIELDS]
 	},
 };
 
+const struct rtldsa_mib_list_item rtldsa_930x_mib_list[] = {
+	MIB_LIST_ITEM("ifOutDiscards", MIB_ITEM(MIB_REG_STD, 0xbc, 1)),
+	MIB_LIST_ITEM("dot1dTpPortInDiscards", MIB_ITEM(MIB_REG_STD, 0xb8, 1)),
+	MIB_LIST_ITEM("DropEvents", MIB_ITEM(MIB_REG_STD, 0x90, 1)),
+	MIB_LIST_ITEM("tx_BroadcastPkts", MIB_ITEM(MIB_REG_STD, 0x8c, 1)),
+	MIB_LIST_ITEM("tx_MulticastPkts", MIB_ITEM(MIB_REG_STD, 0x88, 1)),
+	MIB_LIST_ITEM("tx_CRCAlignErrors", MIB_ITEM(MIB_REG_STD, 0x84, 1)),
+	MIB_LIST_ITEM("tx_UndersizePkts", MIB_ITEM(MIB_REG_STD, 0x7c, 1)),
+	MIB_LIST_ITEM("tx_OversizePkts", MIB_ITEM(MIB_REG_STD, 0x74, 1)),
+	MIB_LIST_ITEM("tx_Fragments", MIB_ITEM(MIB_REG_STD, 0x6c, 1)),
+	MIB_LIST_ITEM("tx_Jabbers", MIB_ITEM(MIB_REG_STD, 0x64, 1)),
+	MIB_LIST_ITEM("tx_Collisions", MIB_ITEM(MIB_REG_STD, 0x5c, 1)),
+	MIB_LIST_ITEM("rx_UndersizeDropPkts", MIB_ITEM(MIB_REG_PRV, 0x7c, 1)),
+	MIB_LIST_ITEM("tx_PktsFlexibleOctetsSet1", MIB_ITEM(MIB_REG_PRV, 0x68, 1)),
+	MIB_LIST_ITEM("rx_PktsFlexibleOctetsSet1", MIB_ITEM(MIB_REG_PRV, 0x64, 1)),
+	MIB_LIST_ITEM("tx_PktsFlexibleOctetsCRCSet1", MIB_ITEM(MIB_REG_PRV, 0x60, 1)),
+	MIB_LIST_ITEM("rx_PktsFlexibleOctetsCRCSet1", MIB_ITEM(MIB_REG_PRV, 0x5c, 1)),
+	MIB_LIST_ITEM("tx_PktsFlexibleOctetsSet0", MIB_ITEM(MIB_REG_PRV, 0x58, 1)),
+	MIB_LIST_ITEM("rx_PktsFlexibleOctetsSet0", MIB_ITEM(MIB_REG_PRV, 0x54, 1)),
+	MIB_LIST_ITEM("tx_PktsFlexibleOctetsCRCSet0", MIB_ITEM(MIB_REG_PRV, 0x50, 1)),
+	MIB_LIST_ITEM("rx_PktsFlexibleOctetsCRCSet0", MIB_ITEM(MIB_REG_PRV, 0x4c, 1)),
+	MIB_LIST_ITEM("LengthFieldError", MIB_ITEM(MIB_REG_PRV, 0x48, 1)),
+	MIB_LIST_ITEM("FalseCarrierTimes", MIB_ITEM(MIB_REG_PRV, 0x44, 1)),
+	MIB_LIST_ITEM("UndersizeOctets", MIB_ITEM(MIB_REG_PRV, 0x40, 1)),
+	MIB_LIST_ITEM("FramingErrors", MIB_ITEM(MIB_REG_PRV, 0x3c, 1)),
+	MIB_LIST_ITEM("ParserErrors", MIB_ITEM(MIB_REG_PRV, 0x38, 1)),
+	MIB_LIST_ITEM("rx_MacDiscards", MIB_ITEM(MIB_REG_PRV, 0x34, 1)),
+	MIB_LIST_ITEM("rx_MacIPGShortDrop", MIB_ITEM(MIB_REG_PRV, 0x30, 1))
+};
+
+const struct rtldsa_mib_desc rtldsa_930x_mib_desc = {
+	.symbol_errors = MIB_ITEM(MIB_REG_STD, 0xa0, 1),
+
+	.if_in_octets = MIB_ITEM(MIB_REG_STD, 0xf8, 2),
+	.if_out_octets = MIB_ITEM(MIB_REG_STD, 0xf0, 2),
+	.if_in_ucast_pkts = MIB_ITEM(MIB_REG_STD, 0xe8, 2),
+	.if_in_mcast_pkts = MIB_ITEM(MIB_REG_STD, 0xe0, 2),
+	.if_in_bcast_pkts = MIB_ITEM(MIB_REG_STD, 0xd8, 2),
+	.if_out_ucast_pkts = MIB_ITEM(MIB_REG_STD, 0xd0, 2),
+	.if_out_mcast_pkts = MIB_ITEM(MIB_REG_STD, 0xc8, 2),
+	.if_out_bcast_pkts = MIB_ITEM(MIB_REG_STD, 0xc0, 2),
+	.if_out_discards = MIB_ITEM(MIB_REG_STD, 0xbc, 1),
+	.single_collisions = MIB_ITEM(MIB_REG_STD, 0xb4, 1),
+	.multiple_collisions = MIB_ITEM(MIB_REG_STD, 0xb0, 1),
+	.deferred_transmissions = MIB_ITEM(MIB_REG_STD, 0xac, 1),
+	.late_collisions = MIB_ITEM(MIB_REG_STD, 0xa8, 1),
+	.excessive_collisions = MIB_ITEM(MIB_REG_STD, 0xa4, 1),
+	.crc_align_errors = MIB_ITEM(MIB_REG_STD, 0x80, 1),
+	.rx_pkts_over_max_octets = MIB_ITEM(MIB_REG_PRV, 0x6c, 1),
+
+	.unsupported_opcodes = MIB_ITEM(MIB_REG_STD, 0x9c, 1),
+
+	.rx_undersize_pkts = MIB_ITEM(MIB_REG_STD, 0x78, 1),
+	.rx_oversize_pkts = MIB_ITEM(MIB_REG_STD, 0x70, 1),
+	.rx_fragments = MIB_ITEM(MIB_REG_STD, 0x68, 1),
+	.rx_jabbers = MIB_ITEM(MIB_REG_STD, 0x60, 1),
+
+	.tx_pkts = {
+		MIB_ITEM(MIB_REG_STD, 0x58, 1),
+		MIB_ITEM(MIB_REG_STD, 0x50, 1),
+		MIB_ITEM(MIB_REG_STD, 0x48, 1),
+		MIB_ITEM(MIB_REG_STD, 0x40, 1),
+		MIB_ITEM(MIB_REG_STD, 0x38, 1),
+		MIB_ITEM(MIB_REG_STD, 0x30, 1),
+		MIB_ITEM(MIB_REG_PRV, 0x78, 1),
+		MIB_ITEM(MIB_REG_PRV, 0x70, 1)
+	},
+	.rx_pkts = {
+		MIB_ITEM(MIB_REG_STD, 0x54, 1),
+		MIB_ITEM(MIB_REG_STD, 0x4c, 1),
+		MIB_ITEM(MIB_REG_STD, 0x44, 1),
+		MIB_ITEM(MIB_REG_STD, 0x3c, 1),
+		MIB_ITEM(MIB_REG_STD, 0x34, 1),
+		MIB_ITEM(MIB_REG_STD, 0x2c, 1),
+		MIB_ITEM(MIB_REG_PRV, 0x74, 1),
+		MIB_ITEM(MIB_REG_PRV, 0x6c, 1),
+	},
+	.rmon_ranges = {
+		{ 0, 64 },
+		{ 65, 127 },
+		{ 128, 255 },
+		{ 256, 511 },
+		{ 512, 1023 },
+		{ 1024, 1518 },
+		{ 1519, 12288 },
+		{ 12289, 65535 }
+	},
+
+	.drop_events = MIB_ITEM(MIB_REG_STD, 0x90, 1),
+	.collisions = MIB_ITEM(MIB_REG_STD, 0x5c, 1),
+
+	.rx_pause_frames = MIB_ITEM(MIB_REG_STD, 0x98, 1),
+	.tx_pause_frames = MIB_ITEM(MIB_REG_STD, 0x94, 1),
+
+	.list_count = ARRAY_SIZE(rtldsa_930x_mib_list),
+	.list = rtldsa_930x_mib_list
+};
+
 void rtldsa_930x_print_matrix(void)
 {
 	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 6);
@@ -2656,6 +2754,7 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.stat_rst = RTL930X_STAT_RST,
 	.stat_port_std_mib = RTL930X_STAT_PORT_MIB_CNTR,
 	.stat_port_prv_mib = RTL930X_STAT_PORT_PRVTE_CNTR,
+	.mib_desc = &rtldsa_930x_mib_desc,
 	.stat_counters_lock = rtldsa_counters_lock_register,
 	.stat_counters_unlock = rtldsa_counters_unlock_register,
 	.stat_update_counters_atomically = rtldsa_update_counters_atomically,

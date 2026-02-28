@@ -111,6 +111,83 @@ static enum template_field_id fixed_templates[N_FIXED_TEMPLATES][N_FIXED_FIELDS]
 	},
 };
 
+const struct rtldsa_mib_list_item rtldsa_838x_mib_list[] = {
+	MIB_LIST_ITEM("dot1dTpPortInDiscards", MIB_ITEM(MIB_REG_STD, 0xec, 1)),
+	MIB_LIST_ITEM("ifOutDiscards", MIB_ITEM(MIB_REG_STD, 0xd0, 1)),
+	MIB_LIST_ITEM("DropEvents", MIB_ITEM(MIB_REG_STD, 0xa8, 1)),
+	MIB_LIST_ITEM("tx_BroadcastPkts", MIB_ITEM(MIB_REG_STD, 0xa4, 1)),
+	MIB_LIST_ITEM("tx_MulticastPkts", MIB_ITEM(MIB_REG_STD, 0xa0, 1)),
+	MIB_LIST_ITEM("tx_UndersizePkts", MIB_ITEM(MIB_REG_STD, 0x98, 1)),
+	MIB_LIST_ITEM("rx_UndersizeDropPkts", MIB_ITEM(MIB_REG_STD, 0x90, 1)),
+	MIB_LIST_ITEM("tx_OversizePkts", MIB_ITEM(MIB_REG_STD, 0x8c, 1)),
+	MIB_LIST_ITEM("Collisions", MIB_ITEM(MIB_REG_STD, 0x7c, 1)),
+	MIB_LIST_ITEM("rx_MacDiscards", MIB_ITEM(MIB_REG_STD, 0x40, 1))
+};
+
+const struct rtldsa_mib_desc rtldsa_838x_mib_desc = {
+	.symbol_errors = MIB_ITEM(MIB_REG_STD, 0xb8, 1),
+
+	.if_in_octets = MIB_ITEM(MIB_REG_STD, 0xf8, 2),
+	.if_out_octets = MIB_ITEM(MIB_REG_STD, 0xf0, 2),
+	.if_in_ucast_pkts = MIB_ITEM(MIB_REG_STD, 0xe8, 1),
+	.if_in_mcast_pkts = MIB_ITEM(MIB_REG_STD, 0xe4, 1),
+	.if_in_bcast_pkts = MIB_ITEM(MIB_REG_STD, 0xe0, 1),
+	.if_out_ucast_pkts = MIB_ITEM(MIB_REG_STD, 0xdc, 1),
+	.if_out_mcast_pkts = MIB_ITEM(MIB_REG_STD, 0xd8, 1),
+	.if_out_bcast_pkts = MIB_ITEM(MIB_REG_STD, 0xd4, 1),
+	.if_out_discards = MIB_ITEM(MIB_REG_STD, 0xd0, 1),
+	.single_collisions = MIB_ITEM(MIB_REG_STD, 0xcc, 1),
+	.multiple_collisions = MIB_ITEM(MIB_REG_STD, 0xc8, 1),
+	.deferred_transmissions = MIB_ITEM(MIB_REG_STD, 0xc4, 1),
+	.late_collisions = MIB_ITEM(MIB_REG_STD, 0xc0, 1),
+	.excessive_collisions = MIB_ITEM(MIB_REG_STD, 0xbc, 1),
+	.crc_align_errors = MIB_ITEM(MIB_REG_STD, 0x9c, 1),
+
+	.unsupported_opcodes = MIB_ITEM(MIB_REG_STD, 0xb4, 1),
+
+	.rx_undersize_pkts = MIB_ITEM(MIB_REG_STD, 0x94, 1),
+	.rx_oversize_pkts = MIB_ITEM(MIB_REG_STD, 0x88, 1),
+	.rx_fragments = MIB_ITEM(MIB_REG_STD, 0x84, 1),
+	.rx_jabbers = MIB_ITEM(MIB_REG_STD, 0x80, 1),
+
+	.tx_pkts = {
+		MIB_ITEM(MIB_REG_STD, 0x78, 1),
+		MIB_ITEM(MIB_REG_STD, 0x70, 1),
+		MIB_ITEM(MIB_REG_STD, 0x68, 1),
+		MIB_ITEM(MIB_REG_STD, 0x60, 1),
+		MIB_ITEM(MIB_REG_STD, 0x58, 1),
+		MIB_ITEM(MIB_REG_STD, 0x50, 1),
+		MIB_ITEM(MIB_REG_STD, 0x48, 1)
+	},
+	.rx_pkts = {
+		MIB_ITEM(MIB_REG_STD, 0x74, 1),
+		MIB_ITEM(MIB_REG_STD, 0x6c, 1),
+		MIB_ITEM(MIB_REG_STD, 0x64, 1),
+		MIB_ITEM(MIB_REG_STD, 0x5c, 1),
+		MIB_ITEM(MIB_REG_STD, 0x54, 1),
+		MIB_ITEM(MIB_REG_STD, 0x4c, 1),
+		MIB_ITEM(MIB_REG_STD, 0x44, 1)
+	},
+	.rmon_ranges = {
+		{ 0, 64 },
+		{ 65, 127 },
+		{ 128, 255 },
+		{ 256, 511 },
+		{ 512, 1023 },
+		{ 1024, 1518 },
+		{ 1519, 10000 }
+	},
+
+	.drop_events = MIB_ITEM(MIB_REG_STD, 0xa8, 1),
+	.collisions = MIB_ITEM(MIB_REG_STD, 0x7c, 1),
+
+	.rx_pause_frames = MIB_ITEM(MIB_REG_STD, 0xb0, 1),
+	.tx_pause_frames = MIB_ITEM(MIB_REG_STD, 0xac, 1),
+
+	.list_count = ARRAY_SIZE(rtldsa_838x_mib_list),
+	.list = rtldsa_838x_mib_list
+};
+
 void rtldsa_838x_print_matrix(void)
 {
 	unsigned volatile int *ptr8;
@@ -1723,6 +1800,7 @@ const struct rtldsa_config rtldsa_838x_cfg = {
 	.stat_port_rst = RTL838X_STAT_PORT_RST,
 	.stat_rst = RTL838X_STAT_RST,
 	.stat_port_std_mib = RTL838X_STAT_PORT_STD_MIB,
+	.mib_desc = &rtldsa_838x_mib_desc,
 	.stat_counters_lock = rtldsa_counters_lock_register,
 	.stat_counters_unlock = rtldsa_counters_unlock_register,
 	.stat_update_counters_atomically = rtldsa_update_counters_atomically,
