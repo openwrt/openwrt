@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ruslan Isaev <legale.legale@gmail.com>
+Date: Sat, 28 Feb 2026 00:00:00 +0000
+Subject: [PATCH] wifi: ath11k: fix monitor RX packet length (OpenWrt #16183)
+
+In monitor path the MSDU length was taken from the link descriptor
+(REO/firmware). For IPQ6018/IPQ807x the firmware reports 8 extra bytes,
+causing radiotap frames to end with garbage. Wireshark showed "Tag Length
+is longer than remaining payload" and "Malformed Packet".
+
+Fix by using the length from hal_rx_desc in the buffer (same source as
+normal RX path) for non-fragmented MSDUs. For fragmented MSDUs the link
+descriptor is still needed; apply rx_buf_size -= 8 workaround there.
+
+Fixes: OpenWrt issue #16183
+Link: https://github.com/openwrt/openwrt/issues/16183
+
+Index: backports-6.18.7/drivers/net/wireless/ath/ath11k/dp_rx.c
+===================================================================
+--- backports-6.18.7.orig/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ backports-6.18.7/drivers/net/wireless/ath/ath11k/dp_rx.c
+@@ -5444,6 +5444,16 @@ ath11k_dp_rx_full_mon_mpdu_pop(struct at
+ 
+ 			rx_buf_size = rx_pkt_offset + l2_hdr_offset + frag_len;
+ 
++			if (!is_frag) {
++				rx_buf_size = rx_pkt_offset + l2_hdr_offset +
++					ath11k_dp_rx_h_msdu_start_msdu_len(ar->ab, rx_desc);
++		  } else {
++				rx_buf_size = rx_pkt_offset + l2_hdr_offset + frag_len;
++				if (rx_buf_size >= 8) {
++					rx_buf_size -= 8;
++				}
++			}
++
+ 			ath11k_dp_pkt_set_pktlen(msdu, rx_buf_size);
+ 
+ 			if (!(*head_msdu))
