@@ -1,6 +1,6 @@
-From 14022b103616ec01417e6c707095d57d61162450 Mon Sep 17 00:00:00 2001
+From 893faf67438cb7642d8c2da7650a436716155416 Mon Sep 17 00:00:00 2001
 From: Rosen Penev <rosenp@gmail.com>
-Date: Sun, 1 Mar 2026 16:01:04 -0800
+Date: Sun, 1 Mar 2026 16:07:36 -0800
 Subject: [PATCH] ARM: dts: BCM5301X: add root pcie bridges
 
 They are always required and instead of duplicating a definition in each
@@ -11,6 +11,8 @@ Also changed each bridge@ to pcie@ to get extra dtc static analysis.
 Fixed bridge numbers as a result.
 
 Signed-off-by: Rosen Penev <rosenp@gmail.com>
+Link: https://lore.kernel.org/r/20260302000736.592422-1-rosenp@gmail.com
+Signed-off-by: Florian Fainelli <florian.fainelli@broadcom.com>
 ---
  arch/arm/boot/dts/broadcom/bcm-ns.dtsi        | 30 ++++++++
  .../dts/broadcom/bcm4709-netgear-r8000.dts    | 73 ++++++++-----------
