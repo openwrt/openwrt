@@ -529,11 +529,6 @@ static void rtldsa_93xx_phylink_mac_link_up(struct dsa_switch *ds, int port,
 	sw_w32_mask(0, 0x3, priv->r->mac_port_ctrl(port));
 }
 
-static const struct rtldsa_mib_desc *rtldsa_get_mib_desc(struct rtl838x_switch_priv *priv)
-{
-	return priv->r->mib_desc;
-}
-
 static bool rtldsa_read_mib_item(struct rtl838x_switch_priv *priv, int port,
 				 const struct rtldsa_mib_item *mib_item,
 				 u64 *data)
@@ -641,9 +636,7 @@ static void rtldsa_update_port_counters(struct rtl838x_switch_priv *priv, int po
 	const struct rtldsa_mib_desc *mib_desc;
 	ktime_t now;
 
-	mib_desc = rtldsa_get_mib_desc(priv);
-	if (!mib_desc)
-		return;
+	mib_desc = priv->r->mib_desc;
 
 	/* Prevent unnecessary updates when the user accesses different stats quickly.
 	 * This compensates a bit for always updating all stats, even when just a
@@ -818,9 +811,7 @@ static void rtldsa_get_strings(struct dsa_switch *ds,
 	if (port < 0 || port >= priv->cpu_port)
 		return;
 
-	mib_desc = rtldsa_get_mib_desc(priv);
-	if (!mib_desc)
-		return;
+	mib_desc = priv->r->mib_desc;
 
 	for (int i = 0; i < mib_desc->list_count; i++)
 		ethtool_puts(&data, mib_desc->list[i].name);
@@ -836,10 +827,7 @@ static void rtldsa_get_ethtool_stats(struct dsa_switch *ds, int port,
 	if (port < 0 || port >= priv->cpu_port)
 		return;
 
-	mib_desc = rtldsa_get_mib_desc(priv);
-	if (!mib_desc)
-		return;
-
+	mib_desc = priv->r->mib_desc;
 	for (int i = 0; i < mib_desc->list_count; i++) {
 		mib_item = &mib_desc->list[i].item;
 		rtldsa_read_mib_item(priv, port, mib_item, &data[i]);
@@ -849,7 +837,6 @@ static void rtldsa_get_ethtool_stats(struct dsa_switch *ds, int port,
 static int rtldsa_get_sset_count(struct dsa_switch *ds, int port, int sset)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	const struct rtldsa_mib_desc *mib_desc;
 
 	if (sset != ETH_SS_STATS)
 		return 0;
@@ -857,11 +844,7 @@ static int rtldsa_get_sset_count(struct dsa_switch *ds, int port, int sset)
 	if (port < 0 || port >= priv->cpu_port)
 		return 0;
 
-	mib_desc = rtldsa_get_mib_desc(priv);
-	if (!mib_desc)
-		return 0;
-
-	return mib_desc->list_count;
+	return priv->r->mib_desc->list_count;
 }
 
 static void rtldsa_get_eth_phy_stats(struct dsa_switch *ds, int port,
@@ -871,9 +854,6 @@ static void rtldsa_get_eth_phy_stats(struct dsa_switch *ds, int port,
 	struct rtldsa_counter_state *counters = &priv->ports[port].counters;
 
 	if (port < 0 || port >= priv->cpu_port)
-		return;
-
-	if (!rtldsa_get_mib_desc(priv))
 		return;
 
 	rtldsa_counters_lock(priv, port);
@@ -892,9 +872,6 @@ static void rtldsa_get_eth_mac_stats(struct dsa_switch *ds, int port,
 	struct rtldsa_counter_state *counters = &priv->ports[port].counters;
 
 	if (port < 0 || port >= priv->cpu_port)
-		return;
-
-	if (!rtldsa_get_mib_desc(priv))
 		return;
 
 	rtldsa_counters_lock(priv, port);
@@ -943,9 +920,6 @@ static void rtldsa_get_eth_ctrl_stats(struct dsa_switch *ds, int port,
 	if (port < 0 || port >= priv->cpu_port)
 		return;
 
-	if (!rtldsa_get_mib_desc(priv))
-		return;
-
 	rtldsa_counters_lock(priv, port);
 
 	rtldsa_update_port_counters(priv, port);
@@ -966,9 +940,7 @@ static void rtldsa_get_rmon_stats(struct dsa_switch *ds, int port,
 	if (port < 0 || port >= priv->cpu_port)
 		return;
 
-	mib_desc = rtldsa_get_mib_desc(priv);
-	if (!mib_desc)
-		return;
+	mib_desc = priv->r->mib_desc;
 
 	rtldsa_counters_lock(priv, port);
 
@@ -1014,11 +986,6 @@ static void rtldsa_get_stats64(struct dsa_switch *ds, int port,
 	if (port < 0 || port >= priv->cpu_port)
 		return;
 
-	if (!rtldsa_get_mib_desc(priv)) {
-		dev_get_tstats64(dsa_to_port(ds, port)->user, s);
-		return;
-	}
-
 	if (priv->r->stat_update_counters_atomically)
 		priv->r->stat_update_counters_atomically(priv, port);
 
@@ -1035,9 +1002,6 @@ static void rtldsa_get_pause_stats(struct dsa_switch *ds, int port,
 	struct rtldsa_counter_state *counters = &priv->ports[port].counters;
 
 	if (port < 0 || port >= priv->cpu_port)
-		return;
-
-	if (!rtldsa_get_mib_desc(priv))
 		return;
 
 	rtldsa_counters_lock(priv, port);
