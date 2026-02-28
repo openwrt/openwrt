@@ -1,0 +1,32 @@
+From 98b3033826d7315a167563830dce7c6a444aa1f1 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Sat, 20 Jun 2026 12:56:04 -0700
+Subject: [PATCH] ARM: dts: BCM5301X: drop extra AXI bus ranges that break PCIe
+
+These addresses overlap with DRAM on BCM5301X/BCM470X SoCs, causing the OF
+address translation code to route PCIe MMIO accesses through the AXI bus
+space instead of directly to memory, breaking PCIe. Remove the extra
+ranges to restore the original single-entry mapping that only covers the
+AXI peripheral register space.
+
+Assisted-by: opencode:big-pickle
+Fixes: 767012397976 ("ARM: dts: BCM5301X: Describe PCIe controllers fully")
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ arch/arm/boot/dts/broadcom/bcm-ns.dtsi | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+--- a/arch/arm/boot/dts/broadcom/bcm-ns.dtsi
++++ b/arch/arm/boot/dts/broadcom/bcm-ns.dtsi
+@@ -95,10 +95,7 @@
+ 	axi@18000000 {
+ 		compatible = "brcm,bus-axi";
+ 		reg = <0x18000000 0x1000>;
+-		ranges = <0x00000000 0x18000000 0x00100000>,
+-			 <0x08000000 0x08000000 0x08000000>,
+-			 <0x20000000 0x20000000 0x08000000>,
+-			 <0x28000000 0x28000000 0x08000000>;
++		ranges = <0x00000000 0x18000000 0x00100000>;
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+ 

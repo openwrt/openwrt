@@ -1,0 +1,26 @@
+From 66cb59e3669be17d8b7db37d022600332b66a3f2 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Thu, 18 Jun 2026 17:04:30 -0700
+Subject: [PATCH] ARM: dts: bcm-ns: fix PCIe controller 2 second interrupt
+
+PCIe controller 2 has interrupts 0-4 mapping to GIC SPI 138-142. The
+mapping for interrupt 1 was incorrectly set to 138 due to a copy-paste
+error. Fix it to 139.
+
+Assisted-by: opencode:big-pickle
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ arch/arm/boot/dts/broadcom/bcm-ns.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm/boot/dts/broadcom/bcm-ns.dtsi
++++ b/arch/arm/boot/dts/broadcom/bcm-ns.dtsi
+@@ -138,7 +138,7 @@
+ 
+ 			/* PCIe Controller 2 */
+ 			<0x00014000 0 &gic GIC_SPI 138 IRQ_TYPE_LEVEL_HIGH>,
+-			<0x00014000 1 &gic GIC_SPI 138 IRQ_TYPE_LEVEL_HIGH>,
++			<0x00014000 1 &gic GIC_SPI 139 IRQ_TYPE_LEVEL_HIGH>,
+ 			<0x00014000 2 &gic GIC_SPI 140 IRQ_TYPE_LEVEL_HIGH>,
+ 			<0x00014000 3 &gic GIC_SPI 141 IRQ_TYPE_LEVEL_HIGH>,
+ 			<0x00014000 4 &gic GIC_SPI 142 IRQ_TYPE_LEVEL_HIGH>,
