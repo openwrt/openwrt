@@ -24,12 +24,12 @@
 #include <asm/mach-rtl-otto/mach-rtl-otto.h>
 #include "rtl838x_eth.h"
 
-#define RTETH_OWN_CPU		1
-#define RTETH_RX_RING_SIZE	128
-#define RTETH_RX_RINGS		2
-#define RTETH_TX_RING_SIZE	16
-#define RTETH_TX_RINGS		2
-#define RTETH_TX_TRIGGER	0x16
+#define RTETH_OWN_CPU			1
+#define RTETH_RX_RING_SIZE		128
+#define RTETH_RX_RINGS			2
+#define RTETH_TX_RING_SIZE		16
+#define RTETH_TX_RINGS			2
+#define RTETH_TX_TRIGGER(ctrl, ring)	((0x16 >> ring) & ctrl->r->tx_trigger_mask)
 
 #define NOTIFY_EVENTS	10
 #define NOTIFY_BLOCKS	10
@@ -925,7 +925,7 @@ static void rteth_tx_timeout(struct net_device *ndev, unsigned int txqueue)
 static int rteth_start_xmit(struct sk_buff *skb, struct net_device *netdev)
 {
 	struct rteth_ctrl *ctrl = netdev_priv(netdev);
-	int slot, len = skb->len, dest_port = -1;
+	int val, slot, len = skb->len, dest_port = -1;
 	int ring = skb_get_queue_mapping(skb);
 	struct device *dev = &ctrl->pdev->dev;
 	struct rteth_packet *packet;
@@ -990,18 +990,16 @@ static int rteth_start_xmit(struct sk_buff *skb, struct net_device *netdev)
 
 	spin_lock(&ctrl->tx_lock);
 
-	/* Before starting TX, prevent a Lexra bus bug on RTL8380 SoCs */
-	if (ctrl->r->family_id == RTL8380_FAMILY_ID) {
-		for (int i = 0; i < 10; i++) {
-			u32 val = sw_r32(ctrl->r->dma_if_ctrl);
-			if ((val & ctrl->r->tx_rx_enable) == ctrl->r->tx_rx_enable)
-				break;
-		}
-	}
+	/*
+	 * Issue send for 1 or 2 triggers. On some SoCs (especially RTL838x) there is a known
+	 * bug, where the hardware sometimes reads empty values from the register. Work around
+	 * that with a poll that checks if TX/RX is enabled in the register.
+	 */
+	if (read_poll_timeout(sw_r32, val, val & ctrl->r->tx_rx_enable,
+			     0, 5000, false, ctrl->r->dma_if_ctrl))
+		dev_warn_once(dev, "DMA interface ctrl register read failed\n");
 
-	/* issue SoC independent send for 1 or 2 triggers with some bit vodoo */
-	sw_w32_mask(0, (RTETH_TX_TRIGGER >> ring) & ctrl->r->tx_trigger_mask,
-		    ctrl->r->dma_if_ctrl);
+	sw_w32(val | RTETH_TX_TRIGGER(ctrl, ring), ctrl->r->dma_if_ctrl);
 
 	netdev->stats.tx_packets++;
 	netdev->stats.tx_bytes += len;
