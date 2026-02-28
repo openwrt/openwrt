@@ -1202,24 +1202,20 @@ static void rteth_mac_link_up(struct phylink_config *config,
 
 static void rteth_set_mac_hw(struct net_device *dev, u8 *mac)
 {
-	struct rteth_ctrl *ctrl = netdev_priv(dev);
+	u32 mac_lo = (mac[2] << 24) | (mac[3] << 16) | (mac[4] << 8) | mac[5];
+	u32 mac_hi = (mac[0] << 8) | mac[1];
+	struct rteth_ctrl *ctrl;
 	unsigned long flags;
 
+	ctrl = netdev_priv(dev);
 	spin_lock_irqsave(&ctrl->lock, flags);
-	pr_debug("In %s\n", __func__);
-	sw_w32((mac[0] << 8) | mac[1], ctrl->r->mac);
-	sw_w32((mac[2] << 24) | (mac[3] << 16) | (mac[4] << 8) | mac[5], ctrl->r->mac + 4);
 
-	if (ctrl->r->family_id == RTL8380_FAMILY_ID) {
-		/* 2 more registers, ALE/MAC block */
-		sw_w32((mac[0] << 8) | mac[1], RTL838X_MAC_ALE);
-		sw_w32((mac[2] << 24) | (mac[3] << 16) | (mac[4] << 8) | mac[5],
-		       (RTL838X_MAC_ALE + 4));
+	for (int i = 0; i < RTETH_MAX_MAC_REGS; i++)
+		if (ctrl->r->mac_reg[i]) {
+			sw_w32(mac_hi, ctrl->r->mac_reg[i]);
+			sw_w32(mac_lo, ctrl->r->mac_reg[i] + 4);
+		}
 
-		sw_w32((mac[0] << 8) | mac[1], RTL838X_MAC2);
-		sw_w32((mac[2] << 24) | (mac[3] << 16) | (mac[4] << 8) | mac[5],
-		       RTL838X_MAC2 + 4);
-	}
 	spin_unlock_irqrestore(&ctrl->lock, flags);
 }
 
@@ -1414,7 +1410,9 @@ static const struct rteth_config rteth_838x_cfg = {
 	.get_mac_link_spd_sts = rtl838x_get_mac_link_spd_sts,
 	.get_mac_rx_pause_sts = rtl838x_get_mac_rx_pause_sts,
 	.get_mac_tx_pause_sts = rtl838x_get_mac_tx_pause_sts,
-	.mac = RTL838X_MAC,
+	.mac_reg = { RTETH_838X_MAC_ADDR_CTRL,
+		     RTETH_838X_MAC_ADDR_CTRL_ALE,
+		     RTETH_838X_MAC_ADDR_CTRL_MAC },
 	.l2_tbl_flush_ctrl = RTL838X_L2_TBL_FLUSH_CTRL,
 	.update_counter = rteth_83xx_update_counter,
 	.create_tx_header = rteth_838x_create_tx_header,
@@ -1461,7 +1459,7 @@ static const struct rteth_config rteth_839x_cfg = {
 	.get_mac_link_spd_sts = rtl839x_get_mac_link_spd_sts,
 	.get_mac_rx_pause_sts = rtl839x_get_mac_rx_pause_sts,
 	.get_mac_tx_pause_sts = rtl839x_get_mac_tx_pause_sts,
-	.mac = RTL839X_MAC,
+	.mac_reg = { RTETH_839X_MAC_ADDR_CTRL },
 	.l2_tbl_flush_ctrl = RTL839X_L2_TBL_FLUSH_CTRL,
 	.update_counter = rteth_83xx_update_counter,
 	.create_tx_header = rteth_839x_create_tx_header,
@@ -1509,7 +1507,7 @@ static const struct rteth_config rteth_930x_cfg = {
 	.get_mac_link_spd_sts = rtl930x_get_mac_link_spd_sts,
 	.get_mac_rx_pause_sts = rtl930x_get_mac_rx_pause_sts,
 	.get_mac_tx_pause_sts = rtl930x_get_mac_tx_pause_sts,
-	.mac = RTL930X_MAC_L2_ADDR_CTRL,
+	.mac_reg = { RTETH_930X_MAC_L2_ADDR_CTRL },
 	.l2_tbl_flush_ctrl = RTL930X_L2_TBL_FLUSH_CTRL,
 	.update_counter = rteth_93xx_update_counter,
 	.create_tx_header = rteth_930x_create_tx_header,
@@ -1557,7 +1555,7 @@ static const struct rteth_config rteth_931x_cfg = {
 	.get_mac_link_spd_sts = rtl931x_get_mac_link_spd_sts,
 	.get_mac_rx_pause_sts = rtl931x_get_mac_rx_pause_sts,
 	.get_mac_tx_pause_sts = rtl931x_get_mac_tx_pause_sts,
-	.mac = RTL931X_MAC_L2_ADDR_CTRL,
+	.mac_reg = { RTETH_930X_MAC_L2_ADDR_CTRL },
 	.l2_tbl_flush_ctrl = RTL931X_L2_TBL_FLUSH_CTRL,
 	.update_counter = rteth_93xx_update_counter,
 	.create_tx_header = rteth_931x_create_tx_header,
@@ -1666,12 +1664,12 @@ static int rtl838x_eth_probe(struct platform_device *pdev)
 	if (is_valid_ether_addr(mac_addr)) {
 		rteth_set_mac_hw(dev, mac_addr);
 	} else {
-		mac_addr[0] = (sw_r32(ctrl->r->mac) >> 8) & 0xff;
-		mac_addr[1] = sw_r32(ctrl->r->mac) & 0xff;
-		mac_addr[2] = (sw_r32(ctrl->r->mac + 4) >> 24) & 0xff;
-		mac_addr[3] = (sw_r32(ctrl->r->mac + 4) >> 16) & 0xff;
-		mac_addr[4] = (sw_r32(ctrl->r->mac + 4) >> 8) & 0xff;
-		mac_addr[5] = sw_r32(ctrl->r->mac + 4) & 0xff;
+		mac_addr[0] = (sw_r32(ctrl->r->mac_reg[0]) >> 8) & 0xff;
+		mac_addr[1] = sw_r32(ctrl->r->mac_reg[0]) & 0xff;
+		mac_addr[2] = (sw_r32(ctrl->r->mac_reg[0] + 4) >> 24) & 0xff;
+		mac_addr[3] = (sw_r32(ctrl->r->mac_reg[0] + 4) >> 16) & 0xff;
+		mac_addr[4] = (sw_r32(ctrl->r->mac_reg[0] + 4) >> 8) & 0xff;
+		mac_addr[5] = sw_r32(ctrl->r->mac_reg[0] + 4) & 0xff;
 	}
 	dev_addr_set(dev, mac_addr);
 	/* if the address is invalid, use a random value */

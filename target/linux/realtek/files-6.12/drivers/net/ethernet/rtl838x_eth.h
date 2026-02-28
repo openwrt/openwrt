@@ -3,11 +3,16 @@
 #ifndef _RTL838X_ETH_H
 #define _RTL838X_ETH_H
 
+#define RTETH_MAX_MAC_REGS			3
+
 /* Register definition */
 
 #define RTETH_838X_CPU_PORT			28
 #define RTETH_838X_DMA_IF_INTR_MSK		(0x9f50)
 #define RTETH_838X_DMA_IF_INTR_STS		(0x9f54)
+#define RTETH_838X_MAC_ADDR_CTRL		(0xa9ec)
+#define RTETH_838X_MAC_ADDR_CTRL_ALE		(0x6b04)
+#define RTETH_838X_MAC_ADDR_CTRL_MAC		(0xa320)
 #define RTETH_838X_MAC_FORCE_MODE_CTRL		(0xa104 + RTETH_838X_CPU_PORT * 4)
 #define RTETH_838X_MAC_L2_PORT_CTRL		(0xd560 + RTETH_838X_CPU_PORT * 128)
 #define RTETH_838X_QM_PKT2CPU_INTPRI_MAP	(0x5f10)
@@ -17,6 +22,7 @@
 #define RTETH_839X_CPU_PORT			52
 #define RTETH_839X_DMA_IF_INTR_MSK		(0x7864)
 #define RTETH_839X_DMA_IF_INTR_STS		(0x7868)
+#define RTETH_839X_MAC_ADDR_CTRL		(0x02b4)
 #define RTETH_839X_MAC_FORCE_MODE_CTRL		(0x02bc + RTETH_839X_CPU_PORT * 4)
 #define RTETH_839X_MAC_L2_PORT_CTRL		(0x8004 + RTETH_839X_CPU_PORT * 128)
 #define RTETH_839X_QM_PKT2CPU_INTPRI_MAP	(0x1154)
@@ -27,6 +33,7 @@
 #define RTETH_930X_DMA_IF_INTR_MSK		(0xe010)
 #define RTETH_930X_DMA_IF_INTR_STS		(0xe01c)
 #define RTETH_930X_MAC_FORCE_MODE_CTRL		(0xca1c + RTETH_930X_CPU_PORT * 4)
+#define RTETH_930X_MAC_L2_ADDR_CTRL		(0xc714)
 #define RTETH_930X_MAC_L2_PORT_CTRL		(0x3268 + RTETH_930X_CPU_PORT * 64)
 #define RTETH_930X_QM_RSN2CPUQID_CTRL_0		(0xa344)
 #define RTETH_930X_QM_RSN2CPUQID_CTRL_CNT	11
@@ -35,6 +42,7 @@
 #define RTETH_931X_DMA_IF_INTR_MSK		(0x0910)
 #define RTETH_931X_DMA_IF_INTR_STS		(0x091c)
 #define RTETH_931X_MAC_FORCE_MODE_CTRL		(0x0dcc + RTETH_931X_CPU_PORT * 4)
+#define RTETH_931X_MAC_L2_ADDR_CTRL		(0x135c)
 #define RTETH_931X_MAC_L2_PORT_CTRL		(0x6000 + RTETH_931X_CPU_PORT * 128)
 #define RTETH_931X_QM_RSN2CPUQID_CTRL_0		(0xa9f4)
 #define RTETH_931X_QM_RSN2CPUQID_CTRL_CNT	14
@@ -73,14 +81,6 @@
 #define RTL931X_L2_NTFY_IF_INTR_STS		(0x09E8)
 
 #define RTL839X_DMA_IF_INTR_NOTIFY_MASK		GENMASK(22, 20)
-
-/* MAC address settings */
-#define RTL838X_MAC				(0xa9ec)
-#define RTL839X_MAC				(0x02b4)
-#define RTL838X_MAC_ALE				(0x6b04)
-#define RTL838X_MAC2				(0xa320)
-#define RTL930X_MAC_L2_ADDR_CTRL		(0xC714)
-#define RTL931X_MAC_L2_ADDR_CTRL		(0x135c)
 
 /* Ringbuffer setup */
 #define RTL838X_DMA_RX_BASE			(0x9f00)
@@ -419,7 +419,7 @@ struct rteth_config {
 	u32 (*get_mac_link_spd_sts)(int port);
 	u32 (*get_mac_rx_pause_sts)(int port);
 	u32 (*get_mac_tx_pause_sts)(int port);
-	int mac;
+	u32 mac_reg[RTETH_MAX_MAC_REGS];
 	int l2_tbl_flush_ctrl;
 	void (*create_tx_header)(struct rteth_packet *h, unsigned int dest_port, int prio);
 	bool (*decode_tag)(struct rteth_packet *h, struct dsa_tag *tag);
