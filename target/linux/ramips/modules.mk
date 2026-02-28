@@ -27,6 +27,23 @@ endef
 
 $(eval $(call KernelPackage,mmc-mtk))
 
+define KernelPackage/pwm-mediatek
+  SUBMENU:=Other modules
+  TITLE:=MediaTek PWM support
+  DEPENDS:=@TARGET_ramips_mt76x8
+  KCONFIG:= \
+	CONFIG_PWM=y \
+	CONFIG_PWM_MEDIATEK
+  FILES:=$(LINUX_DIR)/drivers/pwm/pwm-mediatek.ko
+  AUTOLOAD:=$(call AutoProbe,pwm-mediatek)
+endef
+
+define KernelPackage/pwm-mediatek/description
+  Generic PWM framework driver for Mediatek SoC.
+endef
+
+$(eval $(call KernelPackage,pwm-mediatek))
+
 define KernelPackage/pwm-mediatek-ramips
   SUBMENU:=Other modules
   TITLE:=MT7628 PWM
