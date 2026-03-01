@@ -164,7 +164,7 @@ as adding/removing interfaces.
  ifdef CONFIG_CODE_COVERAGE
 --- a/hostapd/ctrl_iface.c
 +++ b/hostapd/ctrl_iface.c
-@@ -6061,6 +6061,7 @@ try_again:
+@@ -6071,6 +6071,7 @@ try_again:
  		return -1;
  	}
  
@@ -172,7 +172,7 @@ as adding/removing interfaces.
  	wpa_msg_register_cb(hostapd_ctrl_iface_msg_cb);
  
  	return 0;
-@@ -6162,6 +6163,7 @@ fail:
+@@ -6172,6 +6173,7 @@ fail:
  	os_free(fname);
  
  	interface->global_ctrl_sock = s;
@@ -182,7 +182,7 @@ as adding/removing interfaces.
  
 --- a/hostapd/main.c
 +++ b/hostapd/main.c
-@@ -1074,6 +1074,7 @@ int main(int argc, char *argv[])
+@@ -1081,6 +1081,7 @@ int main(int argc, char *argv[])
  	}
  
  	hostapd_global_ctrl_iface_init(&interfaces);
@@ -190,7 +190,7 @@ as adding/removing interfaces.
  
  	if (hostapd_global_run(&interfaces, daemonize, pid_file)) {
  		wpa_printf(MSG_ERROR, "Failed to start eloop");
-@@ -1083,6 +1084,7 @@ int main(int argc, char *argv[])
+@@ -1090,6 +1091,7 @@ int main(int argc, char *argv[])
  	ret = 0;
  
   out:
