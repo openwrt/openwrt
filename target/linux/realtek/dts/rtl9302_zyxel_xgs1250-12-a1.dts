@@ -10,10 +10,9 @@
 
 &mdio_bus1 {
 	/* External Aquantia 113C PHYs */
-	phy24: ethernet-phy@24 {
-		reg = <24>;
+	phy24: ethernet-phy@8 {
+		reg = <8>;
 		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <8>;
 		// Disabled because we do not know how to bring up again
 		// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 		#thermal-sensor-cells = <0>;
@@ -21,10 +20,9 @@
 };
 
 &mdio_bus2 {
-	phy25: ethernet-phy@25 {
-		reg = <25>;
+	phy25: ethernet-phy@8 {
+		reg = <8>;
 		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <8>;
 		// Disabled because we do not know how to bring up again
 		// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 		#thermal-sensor-cells = <0>;
@@ -32,10 +30,9 @@
 };
 
 &mdio_bus3 {
-	phy26: ethernet-phy@26 {
-		reg = <26>;
+	phy26: ethernet-phy@8 {
+		reg = <8>;
 		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <8>;
 		// Disabled because we do not know how to bring up again
 		// reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 		#thermal-sensor-cells = <0>;
