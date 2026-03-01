@@ -126,6 +126,23 @@ define Host/Install
 		install
 	$(call FixupLibdir,$(TOOLCHAIN_DIR))
 	$(CP) $(TOOLCHAIN_DIR)/bin/$(REAL_GNU_TARGET_NAME)-readelf $(HOST_BUILD_PREFIX)/bin/readelf
+
+	: # deduplicate ld.*
+	: # "ld.bfd" is the implementation, "ld" is the variant selector,
+	: # so the link should be "ld" -> "ld.bfd"
+	_ld='$(HOST_BUILD_PREFIX)/usr/bin/$(REAL_GNU_TARGET_NAME)-ld'; \
+	[ -f "$$$${_ld}" ] || exit 0; \
+	find "$$$${_ld%/*}/" -follow -name "$$$${_ld##*/}*" -type f \
+	| grep -Fxv -e "$$$${_ld}" | sort -V \
+	| while read -r _ld_variant; do \
+		cmp -s "$$$${_ld}" "$$$${_ld_variant}" || continue; \
+		cp -L "$$$${_ld_variant}" "$$$${_ld_variant}.new"; \
+		rm -f "$$$${_ld_variant}"; \
+		mv "$$$${_ld_variant}.new" "$$$${_ld_variant}"; \
+		rm -f "$$$${_ld}"; \
+		ln -s "$$$${_ld_variant##*/}" "$$$${_ld}"; \
+		break; \
+	done
 endef
 
 define Host/Clean
