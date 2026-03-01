@@ -108,6 +108,10 @@
 						reg = <0x0 0x400>;
 					};
 
+					macaddr_factory_4: macaddr@4 {
+						reg = <0x4 0x6>;
+					};
+
 					eeprom_factory_8000: eeprom@8000 {
 						reg = <0x8000 0x4da8>;
 					};
@@ -145,8 +149,8 @@
 	wifi0: wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&eeprom_factory_0>;
-		nvmem-cell-names = "eeprom";
+		nvmem-cells = <&eeprom_factory_0>, <&macaddr_factory_4>;
+		nvmem-cell-names = "eeprom", "mac-address";
 	};
 };
 
