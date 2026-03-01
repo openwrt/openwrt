@@ -173,17 +173,19 @@ function setup_sta(data, config) {
 	config.basic_rate = ratelist(config.basic_rate);
 	config.mcast_rate = ratestr(config.mcast_rate);
 
-	network_append_string_vars(config, [ 'ssid' ]);
+	network_append_string_vars(config, [ 'ssid',
+		'identity', 'anonymous_identity', 'password',
+		'ca_cert', 'ca_cert2', 'client_cert', 'client_cert2', 'subject_match',
+		'private_key', 'private_key_passwd', 'private_key2', 'private_key2_passwd',
+		 ]);
 	network_append_vars(config, [
 		'rsn_overriding', 'scan_ssid', 'noscan', 'disabled', 'multi_ap_profile', 'multi_ap_backhaul_sta',
 		'ocv', 'beacon_prot', 'key_mgmt', 'sae_pwe', 'psk', 'sae_password', 'pairwise', 'group', 'bssid',
 		'proto', 'mesh_fwding', 'mesh_rssi_threshold', 'frequency', 'fixed_freq',
 		'disable_ht', 'disable_ht40', 'disable_vht', 'vht', 'max_oper_chwidth',
 		'ht40', 'beacon_int', 'ieee80211w', 'basic_rate', 'mcast_rate',
-		'bssid_blacklist', 'bssid_whitelist', 'erp', 'ca_cert', 'identity',
-		'anonymous_identity', 'client_cert', 'private_key', 'private_key_passwd',
-		'subject_match', 'altsubject_match', 'domain_match', 'domain_suffix_match',
-		'ca_cert2', 'client_cert2', 'private_key2', 'private_key2_passwd', 'password'
+		'altsubject_match', 'domain_match', 'domain_suffix_match',
+		'bssid_blacklist', 'bssid_whitelist', 'erp',
 	]);
 }
 
