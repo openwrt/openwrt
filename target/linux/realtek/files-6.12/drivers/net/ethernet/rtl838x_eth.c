@@ -121,47 +121,18 @@ static void rteth_839x_create_tx_header(struct rteth_packet *h, unsigned int des
 		h->cpu_tag[2] |= ((prio & 0x7) | BIT(3)) << 8;
 }
 
-static void rteth_930x_create_tx_header(struct rteth_packet *h, unsigned int dest_port, int prio)
+static void rteth_93xx_create_tx_header(struct rteth_packet *h, unsigned int dest_port, int prio)
 {
 	h->cpu_tag[0] = 0x8000;  /* CPU tag marker */
+	h->cpu_tag[1] = FIELD_PREP(RTL93XX_CPU_TAG1_FWD_MASK, RTL93XX_CPU_TAG1_FWD_PHYSICAL) |
+		        FIELD_PREP(RTL93XX_CPU_TAG1_IGNORE_STP_MASK, 1);
 
-	h->cpu_tag[1] = FIELD_PREP(RTL93XX_CPU_TAG1_FWD_MASK,
-				   RTL93XX_CPU_TAG1_FWD_PHYSICAL);
-	h->cpu_tag[1] |= FIELD_PREP(RTL93XX_CPU_TAG1_IGNORE_STP_MASK, 1);
-	h->cpu_tag[2] = 0;
+	h->cpu_tag[2] = (prio >= 0) ? (BIT(5) | (prio & 0x1f)) << 8 : 0;
 	h->cpu_tag[3] = 0;
-	h->cpu_tag[4] = 0;
-	h->cpu_tag[5] = 0;
-	h->cpu_tag[6] = BIT(dest_port) >> 16;
-	h->cpu_tag[7] = BIT(dest_port) & 0xffff;
-
-	/* Enable (AS_QID) and set priority queue (QID) */
-	if (prio >= 0)
-		h->cpu_tag[2] = (BIT(5) | (prio & 0x1f)) << 8;
-}
-
-static void rteth_931x_create_tx_header(struct rteth_packet *h, unsigned int dest_port, int prio)
-{
-	h->cpu_tag[0] = 0x8000;  /* CPU tag marker */
-
-	h->cpu_tag[1] = FIELD_PREP(RTL93XX_CPU_TAG1_FWD_MASK,
-				   RTL93XX_CPU_TAG1_FWD_PHYSICAL);
-	h->cpu_tag[1] |= FIELD_PREP(RTL93XX_CPU_TAG1_IGNORE_STP_MASK, 1);
-	h->cpu_tag[2] = 0;
-	h->cpu_tag[3] = 0;
-	h->cpu_tag[4] = h->cpu_tag[5] = h->cpu_tag[6] = h->cpu_tag[7] = 0;
-	if (dest_port >= 32) {
-		dest_port -= 32;
-		h->cpu_tag[4] = BIT(dest_port) >> 16;
-		h->cpu_tag[5] = BIT(dest_port) & 0xffff;
-	} else {
-		h->cpu_tag[6] = BIT(dest_port) >> 16;
-		h->cpu_tag[7] = BIT(dest_port) & 0xffff;
-	}
-
-	/* Enable (AS_QID) and set priority queue (QID) */
-	if (prio >= 0)
-		h->cpu_tag[2] = (BIT(5) | (prio & 0x1f)) << 8;
+	h->cpu_tag[4] = BIT_ULL(dest_port) >> 48;
+	h->cpu_tag[5] = BIT_ULL(dest_port) >> 32;
+	h->cpu_tag[6] = BIT_ULL(dest_port) >> 16;
+	h->cpu_tag[7] = BIT_ULL(dest_port) & 0xffff;
 }
 
 struct rtl838x_rx_q {
@@ -1510,7 +1481,7 @@ static const struct rteth_config rteth_930x_cfg = {
 	.mac_reg = { RTETH_930X_MAC_L2_ADDR_CTRL },
 	.l2_tbl_flush_ctrl = RTL930X_L2_TBL_FLUSH_CTRL,
 	.update_counter = rteth_93xx_update_counter,
-	.create_tx_header = rteth_930x_create_tx_header,
+	.create_tx_header = rteth_93xx_create_tx_header,
 	.decode_tag = rteth_930x_decode_tag,
 	.hw_reset = &rteth_93xx_hw_reset,
 	.init_mac = &rteth_930x_init_mac,
@@ -1558,7 +1529,7 @@ static const struct rteth_config rteth_931x_cfg = {
 	.mac_reg = { RTETH_930X_MAC_L2_ADDR_CTRL },
 	.l2_tbl_flush_ctrl = RTL931X_L2_TBL_FLUSH_CTRL,
 	.update_counter = rteth_93xx_update_counter,
-	.create_tx_header = rteth_931x_create_tx_header,
+	.create_tx_header = rteth_93xx_create_tx_header,
 	.decode_tag = rteth_931x_decode_tag,
 	.hw_reset = &rteth_93xx_hw_reset,
 	.init_mac = &rteth_931x_init_mac,
