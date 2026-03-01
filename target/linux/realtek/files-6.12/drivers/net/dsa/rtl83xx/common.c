@@ -1540,19 +1540,13 @@ static int rtl83xx_fib_event(struct notifier_block *this, unsigned long event, v
  */
 static int rtldsa_ethernet_loaded(struct platform_device *pdev)
 {
-	struct device_node *dn = pdev->dev.of_node;
-	struct device_node *ports, *port;
+	struct platform_device *eth_pdev;
+	struct device_node *port_np;
+	struct device_node *eth_np;
 	int ret = -EPROBE_DEFER;
 
-	ports = of_get_child_by_name(dn, "ethernet-ports");
-	if (!ports)
-		return -ENODEV;
-
-	for_each_child_of_node(ports, port) {
-		struct device_node *eth_np;
-		struct platform_device *eth_pdev;
-
-		eth_np = of_parse_phandle(port, "ethernet", 0);
+	for_each_node_with_property(port_np, "ethernet") {
+		eth_np = of_parse_phandle(port_np, "ethernet", 0);
 		if (!eth_np)
 			continue;
 
@@ -1564,9 +1558,9 @@ static int rtldsa_ethernet_loaded(struct platform_device *pdev)
 
 		if (eth_pdev->dev.driver)
 			ret = 0;
-	}
 
-	of_node_put(ports);
+		put_device(&eth_pdev->dev);
+	}
 
 	return ret;
 }
