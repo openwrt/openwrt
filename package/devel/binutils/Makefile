@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=binutils
-PKG_VERSION:=2.45.1
+PKG_VERSION:=2.46.0
 PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=@GNU/binutils
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_VERSION:=$(PKG_VERSION)
-PKG_HASH:=5fe101e6fe9d18fdec95962d81ed670fdee5f37e3f48f0bef87bddf862513aa5
+PKG_HASH:=d75a94f4d73e7a4086f7513e67e439e8fcdcbb726ffe63f4661744e6256b2cf2
 
 PKG_FIXUP:=patch-libtool
 PKG_LIBTOOL_PATHS:=. gas bfd opcodes gprof gprofng binutils ld libiberty gold intl libctf libsframe
@@ -85,16 +85,43 @@ CONFIGURE_ARGS += \
 	--host=$(REAL_GNU_TARGET_NAME) \
 	--target=$(REAL_GNU_TARGET_NAME) \
 	--enable-shared \
+	--enable-dependency-tracking \
+	--enable-serial-configure \
+	--enable-obsolete \
+	--enable-deterministic-archives \
 	--enable-install-libiberty \
 	--enable-install-libbfd \
 	--enable-install-libctf \
+	--disable-werror \
+	--disable-gprofng \
+	--disable-sim \
 	--with-system-zlib \
-	--without-zstd \
+	--without-debuginfod \
 	--without-msgpack \
-	--disable-gprofng
+	--without-zstd \
 
-MAKE_VARS+= \
-	CPPFLAGS="$(TARGET_CPPFLAGS)"
+
+BINUTILS_VARS = \
+	ac_cv_path_EXPECT= \
+	ac_cv_prog_CARGO= \
+	ac_cv_prog_EXPECT= \
+	ac_cv_prog_GDC= \
+	ac_cv_prog_GNATBIND= \
+	ac_cv_prog_GNATMAKE= \
+	ac_cv_prog_MAKEINFO= \
+	ac_cv_prog_ac_ct_GDC= \
+	ac_cv_prog_ac_ct_GNATBIND= \
+	ac_cv_prog_ac_ct_GNATMAKE= \
+	ac_cv_dejagnu_compat=no \
+	ac_cv_libctf_tcl_try=no \
+	acx_cv_cc_gcc_supports_ada=no \
+	acx_cv_d_compiler_works=no \
+
+
+CONFIGURE_VARS += $(BINUTILS_VARS)
+
+MAKE_VARS += $(BINUTILS_VARS) \
+	CPPFLAGS="$(TARGET_CPPFLAGS) $(EXTRA_CPPFLAGS)"
 
 define Build/Install
 	$(call Build/Install/Default)
