@@ -1,0 +1,164 @@
+#include "mt7981-nradio-common.dtsi"
+
+/ {
+	compatible = "HCMT7981-EMMC", "mediatek,mt7981-emmc-rfb";
+	chosen {
+		bootargs = "console=ttyS0,115200n1 loglevel=8  \
+				earlycon=uart8250,mmio32,0x11002000 \
+				root=PARTLABEL=rootfs rootfstype=squashfs,f2fs";
+	};
+	memory {
+		// fpga ddr4: 1GB
+		reg = <0 0x40000000 0 0x40000000>;
+	};
+};
+
+&mmc0 {
+         pinctrl-names = "default", "state_uhs";
+         pinctrl-0 = <&mmc0_pins_default>;
+         pinctrl-1 = <&mmc0_pins_uhs>;
+         bus-width = <8>;
+         max-frequency = <52000000>;
+         cap-mmc-highspeed;
+         vmmc-supply = <&reg_3p3v>;
+         non-removable;
+         status = "okay";
+};
+
+&spi1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spic_pins>;
+	status = "disabled";
+};
+
+&pio {
+
+	spic_pins: spi1-pins {
+		mux {
+			function = "spi";
+			groups = "spi1_1";
+		};
+	};
+
+	mmc0_pins_default: mmc0-pins-default {
+		mux {
+			function = "flash";
+			groups = "emmc_45";
+		};
+	};
+
+	mmc0_pins_uhs: mmc0-pins-uhs {
+		mux {
+			function = "flash";
+			groups = "emmc_45";
+		};
+	};
+};
+
+&eth {
+	status = "okay";
+
+	gmac0: mac@0 {
+		compatible = "mediatek,eth-mac";
+		reg = <0>;
+		phy-mode = "2500base-x";
+
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+			pause;
+		};
+	};
+
+	gmac1: mac@1 {
+		compatible = "mediatek,eth-mac";
+		reg = <1>;
+		phy-mode = "2500base-x";
+
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+			pause;
+		};
+	};
+
+	mdio: mdio-bus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		phy5: phy@5 {
+			compatible = "ethernet-phy-id67c9.de0a";
+			reg = <5>;
+			reset-gpios = <&pio 7 1>;
+			reset-assert-us = <600>;
+			reset-deassert-us = <20000>;
+			phy-mode = "2500base-x";
+		};
+
+		phy6: phy@6 {
+			compatible = "ethernet-phy-id67c9.de0a";
+			reg = <21>;
+			reset-gpios = <&pio 8 1>;
+			reset-assert-us = <600>;
+			reset-deassert-us = <20000>;
+			phy-mode = "2500base-x";
+		};
+
+		switch@0 {
+			compatible = "mediatek,mt7531";
+			reg = <31>;
+			reset-gpios = <&pio 39 0>;
+
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				port@1 {
+					reg = <1>;
+					label = "port1";
+				};
+
+				port@2 {
+					reg = <2>;
+					label = "port2";
+				};
+
+				port@3 {
+					reg = <3>;
+					label = "port3";
+				};
+
+				port@5 {
+					reg = <5>;
+					label = "port5";
+					phy-mode = "2500base-x";
+					phy-handle = <&phy5>;
+				};
+
+				port@6 {
+					reg = <6>;
+					label = "cpu";
+					ethernet = <&gmac0>;
+					phy-mode = "2500base-x";
+
+					fixed-link {
+						speed = <2500>;
+						full-duplex;
+						pause;
+					};
+				};
+			};
+		};
+	};
+};
+
+&xhci {
+	status = "okay";
+};
+
+&hnat {
+	mtketh-wan = "eth1";
+	mtketh-lan = "port";
+	mtketh-max-gmac = <2>;
+	status = "okay";
+};
