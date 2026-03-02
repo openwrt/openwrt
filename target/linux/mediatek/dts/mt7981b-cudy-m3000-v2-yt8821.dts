@@ -5,13 +5,13 @@
 #include "mt7981b-cudy-m3000.dtsi"
 
 / {
-	model = "Cudy M3000 v1";
-	compatible = "cudy,m3000-v1", "mediatek,mt7981";
+	model = "Cudy M3000 v2 with Motorcomm YT8821";
+	compatible = "cudy,m3000-v2-yt8821", "mediatek,mt7981";
 };
 
 &mdio_bus {
 	wan_phy: ethernet-phy@1 {
-		compatible = "ethernet-phy-ieee802.3-c45";
+		compatible = "ethernet-phy-id4f51.ea19";
 		reg = <1>;
 		reset-assert-us = <100000>;
 		reset-deassert-us = <100000>;
