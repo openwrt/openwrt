@@ -38,6 +38,18 @@ define Package/dumpimage/description
 	position to outfile.
 endef
 
+define Package/fit-set-uuid
+	SECTION:=utils
+	CATEGORY:=Utilities
+	SUBMENU:=Boot Loaders
+	TITLE:=set FIT install-uuid
+endef
+
+define Package/fit-set-uuid/description
+	fit_set_uuid is a small tool to set or read the unique install-uuid
+	of a FIT
+endef
+
 define Package/fit-check-sign
 	SECTION:=utils
 	CATEGORY:=Utilities
@@ -102,6 +114,11 @@ define Package/fit-check-sign/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/tools/fit_check_sign $(1)/usr/bin
 endef
 
+define Package/fit-set-uuid/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/tools/fit_set_uuid $(1)/usr/bin
+endef
+
 define Package/uboot-envtools/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/tools/env/fw_printenv $(1)/usr/sbin
@@ -125,5 +142,6 @@ define Package/uboot-envtools/install
 endef
 
 $(eval $(call BuildPackage,dumpimage))
+$(eval $(call BuildPackage,fit-set-uuid))
 $(eval $(call BuildPackage,fit-check-sign))
 $(eval $(call BuildPackage,uboot-envtools))
