@@ -594,7 +594,7 @@ define Device/bananapi_bpi-r3
 				   pad-to 17k | mt7986-bl2 sdmmc-ddr4 |\
 				   pad-to 6656k | mt7986-bl31-uboot bananapi_bpi-r3-sdmmc |\
 				$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),\
-				   pad-to 12M | append-image-stage initramfs-recovery.itb | check-size 44m |\
+				   pad-to 12M | append-image-stage initramfs-recovery.itb | stamp-fit-uuid 12M | check-size 44m |\
 				) \
 				   pad-to 44M | mt7986-bl2 spim-nand-ubi-ddr4 |\
 				   pad-to 45M | mt7986-bl31-uboot bananapi_bpi-r3-snand |\
@@ -604,7 +604,7 @@ define Device/bananapi_bpi-r3
 				   pad-to 52M | mt7986-bl31-uboot bananapi_bpi-r3-emmc |\
 				   pad-to 56M | mt798x-gpt emmc |\
 				$(if $(CONFIG_TARGET_ROOTFS_SQUASHFS),\
-				   pad-to 64M | append-image squashfs-sysupgrade.itb | check-size |\
+				   pad-to 64M | append-image squashfs-sysupgrade.itb | stamp-fit-uuid 64M | check-size |\
 				) \
 				  gzip
 ifeq ($(DUMP),)
