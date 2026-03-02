@@ -1624,7 +1624,8 @@ static void rtl931x_set_egr_filter(int port,  enum egr_filter state)
 		    RTL931X_VLAN_PORT_EGR_FLTR + (((port >> 5) << 2)));
 }
 
-static void rtl931x_set_distribution_algorithm(int group, int algoidx, u32 algomsk)
+static int rtl931x_set_distribution_algorithm(struct rtl838x_switch_priv *priv, int group,
+					      int algoidx, u32 algomsk)
 {
 	u32 l3shift = 0;
 	u32 newmask = 0;
@@ -1662,6 +1663,7 @@ static void rtl931x_set_distribution_algorithm(int group, int algoidx, u32 algom
 	}
 
 	sw_w32(newmask << l3shift, RTL931X_TRK_HASH_CTRL + (algoidx << 2));
+	return 0;
 }
 
 static void rtldsa_931x_led_get_forced(const struct device_node *node,
@@ -1950,7 +1952,6 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.rma_bpdu_fld_pmask = RTL931X_RMA_BPDU_FLD_PMSK,
 	.set_vlan_igr_filter = rtl931x_set_igr_filter,
 	.set_vlan_egr_filter = rtl931x_set_egr_filter,
-	.set_distribution_algorithm = rtl931x_set_distribution_algorithm,
 	.l2_hash_key = rtl931x_l2_hash_key,
 	.l2_hash_seed = rtldsa_931x_l2_hash_seed,
 	.read_mcast_pmask = rtl931x_read_mcast_pmask,
@@ -1965,4 +1966,5 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.enable_flood = rtldsa_931x_enable_flood,
 	.set_receive_management_action = rtldsa_931x_set_receive_management_action,
 	.qos_init = rtldsa_931x_qos_init,
+	.lag_set_distribution_algorithm = rtl931x_set_distribution_algorithm,
 };
