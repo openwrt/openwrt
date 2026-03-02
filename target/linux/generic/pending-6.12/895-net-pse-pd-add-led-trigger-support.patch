@@ -1,0 +1,212 @@
+From: Carlo Szelinsky <github@szelinsky.de>
+Subject: net: pse-pd: add LED trigger support
+
+Add LED trigger registration and polling to the PSE core, following the
+established drivers/net/phy/phy_led_triggers.c precedent. Per-PI
+"delivering" and "enabled" triggers are registered for each PSE
+controller, with a configurable poll interval via the DT property
+"led-poll-interval-ms".
+
+This patch is temporary for OpenWrt 6.12. It will be submitted upstream
+for review and should later be backported to 6.12. An option is to wait
+for the upstream backport or replace it later with a proper upstream
+patch.
+
+Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
+---
+--- a/drivers/net/pse-pd/pse_core.c
++++ b/drivers/net/pse-pd/pse_core.c
+@@ -15,6 +15,7 @@
+ #include <linux/regulator/machine.h>
+ #include <linux/rtnetlink.h>
+ #include <net/net_trackers.h>
++#include <linux/leds.h>
+ 
+ #define PSE_PW_D_LIMIT INT_MAX
+ 
+@@ -1030,6 +1031,119 @@ static void pse_send_ntf_worker(struct w
+ 	}
+ }
+ 
++#if IS_ENABLED(CONFIG_LEDS_TRIGGERS)
++static void pse_led_poll_work(struct work_struct *work)
++{
++	struct pse_controller_dev *pcdev =
++		container_of(work, struct pse_controller_dev,
++			     led_poll_work.work);
++	int i;
++
++	mutex_lock(&pcdev->lock);
++	for (i = 0; i < pcdev->nr_lines; i++) {
++		struct pse_pi_led_triggers *trigs = &pcdev->pi_led_trigs[i];
++		struct pse_pw_status pw_status = {};
++		struct pse_admin_state admin_state = {};
++		bool delivering, enabled;
++
++		if (!pcdev->pi[i].rdev)
++			continue;
++
++		if (pcdev->ops->pi_get_pw_status(pcdev, i, &pw_status))
++			continue;
++		if (pcdev->ops->pi_get_admin_state(pcdev, i, &admin_state))
++			continue;
++
++		delivering = pw_status.c33_pw_status ==
++			ETHTOOL_C33_PSE_PW_D_STATUS_DELIVERING;
++		enabled = admin_state.c33_admin_state ==
++			ETHTOOL_C33_PSE_ADMIN_STATE_ENABLED;
++
++		if (trigs->last_delivering != delivering) {
++			trigs->last_delivering = delivering;
++			led_trigger_event(&trigs->delivering,
++					  delivering ? LED_FULL : LED_OFF);
++		}
++
++		if (trigs->last_enabled != enabled) {
++			trigs->last_enabled = enabled;
++			led_trigger_event(&trigs->enabled,
++					  enabled ? LED_FULL : LED_OFF);
++		}
++	}
++	mutex_unlock(&pcdev->lock);
++
++	schedule_delayed_work(&pcdev->led_poll_work,
++			      msecs_to_jiffies(pcdev->led_poll_interval_ms));
++}
++
++static int pse_led_triggers_register(struct pse_controller_dev *pcdev)
++{
++	struct device *dev = pcdev->dev;
++	const char *node_name;
++	int i, ret;
++
++	node_name = dev->of_node ? dev->of_node->name : dev_name(dev);
++
++	of_property_read_u32(dev->of_node, "led-poll-interval-ms",
++			     &pcdev->led_poll_interval_ms);
++	if (!pcdev->led_poll_interval_ms)
++		pcdev->led_poll_interval_ms = 500;
++
++	pcdev->pi_led_trigs = devm_kcalloc(dev, pcdev->nr_lines,
++					    sizeof(*pcdev->pi_led_trigs),
++					    GFP_KERNEL);
++	if (!pcdev->pi_led_trigs)
++		return -ENOMEM;
++
++	for (i = 0; i < pcdev->nr_lines; i++) {
++		struct pse_pi_led_triggers *trigs = &pcdev->pi_led_trigs[i];
++
++		if (!pcdev->pi[i].rdev)
++			continue;
++
++		trigs->delivering.name = devm_kasprintf(dev, GFP_KERNEL,
++					"%s:port%d:delivering", node_name, i);
++		if (!trigs->delivering.name)
++			return -ENOMEM;
++
++		ret = devm_led_trigger_register(dev, &trigs->delivering);
++		if (ret)
++			return ret;
++
++		trigs->enabled.name = devm_kasprintf(dev, GFP_KERNEL,
++					"%s:port%d:enabled", node_name, i);
++		if (!trigs->enabled.name)
++			return -ENOMEM;
++
++		ret = devm_led_trigger_register(dev, &trigs->enabled);
++		if (ret)
++			return ret;
++	}
++
++	INIT_DELAYED_WORK(&pcdev->led_poll_work, pse_led_poll_work);
++	schedule_delayed_work(&pcdev->led_poll_work,
++			      msecs_to_jiffies(pcdev->led_poll_interval_ms));
++
++	return 0;
++}
++
++static void pse_led_triggers_cancel(struct pse_controller_dev *pcdev)
++{
++	if (pcdev->pi_led_trigs)
++		cancel_delayed_work_sync(&pcdev->led_poll_work);
++}
++#else
++static int pse_led_triggers_register(struct pse_controller_dev *pcdev)
++{
++	return 0;
++}
++
++static void pse_led_triggers_cancel(struct pse_controller_dev *pcdev)
++{
++}
++#endif /* CONFIG_LEDS_TRIGGERS */
++
+ /**
+  * pse_controller_register - register a PSE controller device
+  * @pcdev: a pointer to the initialized PSE controller device
+@@ -1104,6 +1216,11 @@ int pse_controller_register(struct pse_c
+ 	list_add(&pcdev->list, &pse_controller_list);
+ 	mutex_unlock(&pse_list_mutex);
+ 
++	ret = pse_led_triggers_register(pcdev);
++	if (ret)
++		dev_warn(pcdev->dev, "Failed to register LED triggers: %d\n",
++			 ret);
++
+ 	return 0;
+ }
+ EXPORT_SYMBOL_GPL(pse_controller_register);
+@@ -1114,6 +1231,7 @@ EXPORT_SYMBOL_GPL(pse_controller_registe
+  */
+ void pse_controller_unregister(struct pse_controller_dev *pcdev)
+ {
++	pse_led_triggers_cancel(pcdev);
+ 	pse_flush_pw_ds(pcdev);
+ 	pse_release_pis(pcdev);
+ 	if (pcdev->irq)
+--- a/include/linux/pse-pd/pse.h
++++ b/include/linux/pse-pd/pse.h
+@@ -11,6 +11,7 @@
+ #include <uapi/linux/ethtool.h>
+ #include <uapi/linux/ethtool_netlink_generated.h>
+ #include <linux/regulator/driver.h>
++#include <linux/leds.h>
+ 
+ /* Maximum current in uA according to IEEE 802.3-2022 Table 145-1 */
+ #define MAX_PI_CURRENT 1920000
+@@ -260,6 +261,23 @@ struct pse_pi {
+ 	int pw_allocated_mW;
+ };
+ 
++#if IS_ENABLED(CONFIG_LEDS_TRIGGERS)
++/**
++ * struct pse_pi_led_triggers - LED trigger state for a PSE PI
++ *
++ * @delivering: LED trigger for power delivering state
++ * @enabled: LED trigger for admin enabled state
++ * @last_delivering: cached delivering state for change detection
++ * @last_enabled: cached enabled state for change detection
++ */
++struct pse_pi_led_triggers {
++	struct led_trigger delivering;
++	struct led_trigger enabled;
++	bool last_delivering;
++	bool last_enabled;
++};
++#endif
++
+ /**
+  * struct pse_ntf - PSE notification element
+  *
+@@ -311,6 +329,11 @@ struct pse_controller_dev {
+ 	struct work_struct ntf_work;
+ 	DECLARE_KFIFO_PTR(ntf_fifo, struct pse_ntf);
+ 	spinlock_t ntf_fifo_lock; /* Protect @ntf_fifo writer */
++#if IS_ENABLED(CONFIG_LEDS_TRIGGERS)
++	struct pse_pi_led_triggers *pi_led_trigs;
++	struct delayed_work led_poll_work;
++	unsigned int led_poll_interval_ms;
++#endif
+ };
+ 
+ /**
