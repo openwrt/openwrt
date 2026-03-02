@@ -1366,6 +1366,8 @@ struct rtldsa_config {
 	void (*led_init)(struct rtl838x_switch_priv *priv);
 	void (*qos_init)(struct rtl838x_switch_priv *priv);
 	int (*trk_mbr_ctr)(int group);
+	void (*lag_switch_init)(struct rtl838x_switch_priv *priv);
+	void (*prepare_lag_fdb)(struct rtl838x_l2_entry *e, int lag_group);
 	int (*lag_set_port_members)(struct rtl838x_switch_priv *priv, int group, u64 members,
 				    struct netdev_lag_upper_info *info);
 	int (*lag_setup_algomask)(struct rtl838x_switch_priv *priv, int group,
@@ -1448,6 +1450,8 @@ void rtl838x_dbgfs_init(struct rtl838x_switch_priv *priv);
 void rtl930x_dbgfs_init(struct rtl838x_switch_priv *priv);
 int rtldsa_93xx_lag_set_distribution_algorithm(struct rtl838x_switch_priv *priv,
 					       int group, int algoidx, u32 algomsk);
+
+void rtldsa_93xx_prepare_lag_fdb(struct rtl838x_l2_entry *e, int lag_group);
 
 void rtldsa_counters_lock_register(struct rtl838x_switch_priv *priv, int port)
 	__acquires(&priv->ports[port].counters.lock);
