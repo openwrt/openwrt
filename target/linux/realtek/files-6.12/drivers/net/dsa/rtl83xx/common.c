@@ -1332,7 +1332,7 @@ static int rtldsa_ethernet_loaded(struct platform_device *pdev)
 	struct device_node *ports, *port;
 	int ret = -EPROBE_DEFER;
 
-	ports = of_get_child_by_name(dn, "ports");
+	ports = of_get_child_by_name(dn, "ethernet-ports");
 	if (!ports)
 		return -ENODEV;
 
