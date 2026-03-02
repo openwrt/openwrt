@@ -84,6 +84,104 @@
 		status = "okay";
 
 		clock-frequency = <100000>;
+
+		pse0: pse0@d {
+			compatible = "hasivo,hs104";
+			reg = <0x0d>;
+			#pse-cells = <1>;
+			led-poll-interval-ms = <500>;
+			status = "okay";
+		};
+
+		pse1: pse1@15 {
+			compatible = "hasivo,hs104";
+			reg = <0x15>;
+			#pse-cells = <1>;
+			led-poll-interval-ms = <500>;
+			status = "okay";
+		};
+
+		stc8: stc8@4d {
+			compatible = "hasivo,stc8-mfd", "syscon";
+			reg = <0x4d>;
+			#address-cells = <2>;
+			#size-cells = <0>;
+			hasivo,execute-bit = <0x40>;
+			hasivo,execute-bit-registers = <0x01 0x02>;
+			status = "okay";
+
+			led_lan1_poe: led@1,0 {
+				compatible = "register-bit-led";
+				reg = <0x01 0x00>;
+				mask = <0x08>;
+				label = "orange:lan1_poe";
+				linux,default-trigger = "pse0:port0:delivering";
+				default-state = "off";
+			};
+
+			led_lan2_poe: led@1,1 {
+				compatible = "register-bit-led";
+				reg = <0x01 0x01>;
+				mask = <0x04>;
+				label = "orange:lan2_poe";
+				linux,default-trigger = "pse0:port1:delivering";
+				default-state = "off";
+			};
+
+			led_lan3_poe: led@1,2 {
+				compatible = "register-bit-led";
+				reg = <0x01 0x02>;
+				mask = <0x02>;
+				label = "orange:lan3_poe";
+				linux,default-trigger = "pse0:port2:delivering";
+				default-state = "off";
+			};
+
+			led_lan4_poe: led@1,3 {
+				compatible = "register-bit-led";
+				reg = <0x01 0x03>;
+				mask = <0x01>;
+				label = "orange:lan4_poe";
+				linux,default-trigger = "pse0:port3:delivering";
+				default-state = "off";
+			};
+
+			led_lan5_poe: led@2,0 {
+				compatible = "register-bit-led";
+				reg = <0x02 0x00>;
+				mask = <0x08>;
+				label = "orange:lan5_poe";
+				linux,default-trigger = "pse1:port0:delivering";
+				default-state = "off";
+			};
+
+			led_lan6_poe: led@2,1 {
+				compatible = "register-bit-led";
+				reg = <0x02 0x01>;
+				mask = <0x04>;
+				label = "orange:lan6_poe";
+				linux,default-trigger = "pse1:port1:delivering";
+				default-state = "off";
+			};
+
+			led_lan7_poe: led@2,2 {
+				compatible = "register-bit-led";
+				reg = <0x02 0x02>;
+				mask = <0x02>;
+				label = "orange:lan7_poe";
+				linux,default-trigger = "pse1:port2:delivering";
+				default-state = "off";
+			};
+
+			led_lan8_poe: led@2,3 {
+				compatible = "register-bit-led";
+				reg = <0x02 0x03>;
+				mask = <0x01>;
+				label = "orange:lan8_poe";
+				linux,default-trigger = "pse1:port3:delivering";
+				default-state = "off";
+			};
+		};
 	};
 };
 
@@ -180,6 +278,7 @@
 		reg = <0>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		realtek,smi-address = <1>;
+		pses = <&pse0 0>;
 	};
 
 	/* External RTL8221B PHY */
@@ -187,6 +286,7 @@
 		reg = <8>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		realtek,smi-address = <2>;
+		pses = <&pse0 1>;
 	};
 
 	/* External RTL8221B PHY */
@@ -194,6 +294,7 @@
 		reg = <16>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		realtek,smi-address = <3>;
+		pses = <&pse0 2>;
 	};
 
 	/* External RTL8221B PHY */
@@ -201,6 +302,7 @@
 		reg = <20>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		realtek,smi-address = <4>;
+		pses = <&pse0 3>;
 	};
 };
 
@@ -210,6 +312,7 @@
 		reg = <24>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		realtek,smi-address = <1>;
+		pses = <&pse1 0>;
 	};
 
 	/* External RTL8221B PHY */
@@ -217,6 +320,7 @@
 		reg = <25>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		realtek,smi-address = <2>;
+		pses = <&pse1 1>;
 	};
 
 	/* External RTL8221B PHY */
@@ -224,6 +328,7 @@
 		reg = <26>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		realtek,smi-address = <3>;
+		pses = <&pse1 2>;
 	};
 
 	/* External RTL8221B PHY */
@@ -231,6 +336,7 @@
 		reg = <27>;
 		compatible = "ethernet-phy-ieee802.3-c45";
 		realtek,smi-address = <4>;
+		pses = <&pse1 3>;
 	};
 };
 
