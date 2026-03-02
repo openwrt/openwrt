@@ -875,3 +875,17 @@ define Build/zyxel-ras-image
 			$(if $(findstring separate-kernel,$(word 1,$(1))),-k $(IMAGE_KERNEL)) \
 		&& mv $@.new $@
 endef
+
+# Stamp the install-uuid of a FIT image embedded at a byte offset inside $@.
+# Generates a reproducible UUIDv5 (SHA-1) from SOURCE_DATE_EPOCH, the device
+# name, and the offset so that different FITs in the same image get distinct
+# UUIDs while remaining build-reproducible.
+# Usage: stamp-fit-uuid <offset>      e.g. stamp-fit-uuid 64M
+define Build/stamp-fit-uuid
+	uuid="$$(uuidgen --sha1 --namespace @url \
+		--name "fitblk:$${SOURCE_DATE_EPOCH:-0}:$(DEVICE_NAME):$(1)")"; \
+	dd if="$@" of="$@.fit_uuid" bs=$(1) skip=1 2>/dev/null; \
+	$(STAGING_DIR_HOST)/bin/fit_set_uuid -f "$@.fit_uuid" -u "$$uuid" >/dev/null; \
+	dd if="$@.fit_uuid" of="$@" bs=$(1) seek=1 conv=notrunc 2>/dev/null; \
+	rm -f "$@.fit_uuid"
+endef
