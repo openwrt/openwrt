@@ -27,3 +27,15 @@ define Device/qcom_rdp433
 	IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-rootfs | pad-rootfs | check-size | append-metadata
 endef
 TARGET_DEVICES += qcom_rdp433
+
+define Device/tplink_archer-be550-v1
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := TP-Link
+	DEVICE_MODEL := Archer BE550
+	DEVICE_VARIANT := v1
+	SOC := ipq9554
+	IMAGE_SIZE := 38m
+	DEVICE_PACKAGES := kmod-ath12k
+	IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-rootfs | pad-rootfs | check-size | append-metadata
+endef
+TARGET_DEVICES += tplink_archer-be550-v1
