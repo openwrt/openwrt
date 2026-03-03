@@ -50,10 +50,12 @@ check_peer_activity() {
   [ -n "${IPV4}" -o -n "${IPV6}" ] && return 0;
 
   # re-resolve endpoint hostname if not responding for too long
+  # use doubled persistent_keepalive as threshold
   last_handshake=$(wg show ${iface} latest-handshakes | grep ${public_key} | awk '{print $2}')
   [ -z ${last_handshake} ] && return 0;
   idle_seconds=$(($(date +%s)-${last_handshake}))
-  [ ${idle_seconds} -lt 150 ] && return 0;
+  local threshold=$((persistent_keepalive * 2))
+  [ ${idle_seconds} -lt ${threshold} ] && return 0;
   logger -t "wireguard_monitor" "${iface} endpoint ${endpoint_host}:${endpoint_port} is not responding for ${idle_seconds} seconds, trying to re-resolve hostname"
   wg set ${iface} peer ${public_key} endpoint "${endpoint_host}:${endpoint_port}"
 }
