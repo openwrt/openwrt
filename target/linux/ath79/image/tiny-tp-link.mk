@@ -7,7 +7,7 @@ define Device/tplink_rex5x
   IMAGE_SIZE := 7680k
   KERNEL_SIZE := 6016k
   DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct
-  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_VERSION := 3.0
   DEVICE_COMPAT_MESSAGE := Partition layout and blocksize changed. Use sysupgrade -F; image must not exceed 6016 KiB (5.875 MB).
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size | append-metadata
 endef
