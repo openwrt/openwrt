@@ -1360,10 +1360,10 @@ static void rtldsa_update_port_member(struct rtl838x_switch_priv *priv, int port
 				      __must_hold(&priv->reg_mutex)
 {
 	struct dsa_port *dp = dsa_to_port(priv->ds, port);
-	struct rtl838x_port *p = &priv->ports[port];
+	struct rtldsa_port *p = &priv->ports[port];
 	struct dsa_port *cpu_dp = dp->cpu_dp;
 	u64 port_mask = BIT_ULL(cpu_dp->index);
-	struct rtl838x_port *other_p;
+	struct rtldsa_port *other_p;
 	struct dsa_port *other_dp;
 	int other_port;
 	bool isolated;
@@ -2467,7 +2467,7 @@ static int rtldsa_cls_flower_add(struct dsa_switch *ds, int port,
 				 bool ingress)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	struct rtl838x_port *p = &priv->ports[port];
+	struct rtldsa_port *p = &priv->ports[port];
 	const struct flow_action_entry *act;
 	int ret;
 
@@ -2513,7 +2513,7 @@ static int rtldsa_cls_flower_del(struct dsa_switch *ds, int port,
 				 bool ingress)
 {
 	struct rtl838x_switch_priv *priv = ds->priv;
-	struct rtl838x_port *p = &priv->ports[port];
+	struct rtldsa_port *p = &priv->ports[port];
 	int ret;
 
 	if (!priv->r->port_rate_police_del)
