@@ -305,11 +305,11 @@ static int rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 		}
 
 		if (pcs_node) {
-			priv->pcs[pn] = rtpcs_create(priv->dev, pcs_node, pn);
-			if (IS_ERR(priv->pcs[pn])) {
+			priv->ports[pn].pcs = rtpcs_create(priv->dev, pcs_node, pn);
+			if (IS_ERR(priv->ports[pn].pcs)) {
 				dev_err(priv->dev, "port %u failed to create PCS instance: %ld\n",
-					pn, PTR_ERR(priv->pcs[pn]));
-				priv->pcs[pn] = NULL;
+					pn, PTR_ERR(priv->ports[pn].pcs));
+				priv->ports[pn].pcs = NULL;
 				continue;
 			}
 		}
@@ -338,7 +338,7 @@ static int rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 		}
 
 		if (!phy_node) {
-			if (priv->pcs[pn])
+			if (priv->ports[pn].pcs)
 				priv->ports[pn].phy_is_integrated = true;
 
 			continue;

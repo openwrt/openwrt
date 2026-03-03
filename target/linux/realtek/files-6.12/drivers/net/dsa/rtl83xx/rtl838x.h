@@ -886,6 +886,7 @@ struct rtl838x_port {
 	u16 pvid;
 	bool eee_enabled;
 	enum phy_type phy;
+	struct phylink_pcs *pcs;
 	int led_set;
 	int leds_on_this_port;
 	struct rtldsa_counter_state counters;
@@ -1375,7 +1376,6 @@ struct rtl838x_switch_priv {
 	u16 id;
 	u16 family_id;
 	struct rtl838x_port ports[57];
-	struct phylink_pcs *pcs[57];
 	struct mutex reg_mutex;		/* Mutex for individual register manipulations */
 	struct mutex pie_mutex;		/* Mutex for Packet Inspection Engine */
 	int link_state_irq;
