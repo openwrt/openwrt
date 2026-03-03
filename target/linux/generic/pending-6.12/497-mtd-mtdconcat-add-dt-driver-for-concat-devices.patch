@@ -85,7 +85,7 @@ Signed-off-by: Bernhard Frauendienst <kernel@nospam.obeliks.de>
 +obj-$(CONFIG_MTD_VIRT_CONCAT)   += virt_concat.o
 --- /dev/null
 +++ b/drivers/mtd/composite/virt_concat.c
-@@ -0,0 +1,127 @@
+@@ -0,0 +1,121 @@
 +// SPDX-License-Identifier: GPL-2.0+
 +/*
 + * Virtual concat MTD device driver
@@ -113,7 +113,7 @@ Signed-off-by: Bernhard Frauendienst <kernel@nospam.obeliks.de>
 +struct of_virt_concat {
 +	struct mtd_info	*cmtd;
 +	int num_devices;
-+	struct mtd_info	**devices;
++	struct mtd_info	*devices[];
 +};
 +
 +static void virt_concat_remove(struct platform_device *pdev)
@@ -151,15 +151,9 @@ Signed-off-by: Bernhard Frauendienst <kernel@nospam.obeliks.de>
 +	if (count <= 0)
 +		return -EINVAL;
 +
-+	info = devm_kzalloc(&pdev->dev, sizeof(*info), GFP_KERNEL);
++	info = devm_kzalloc(&pdev->dev, struct_size(info, devices, count), GFP_KERNEL);
 +	if (!info)
 +		return -ENOMEM;
-+	info->devices = devm_kcalloc(&pdev->dev, count,
-+				     sizeof(*(info->devices)), GFP_KERNEL);
-+	if (!info->devices) {
-+		err = -ENOMEM;
-+		goto err_remove;
-+	}
 +
 +	platform_set_drvdata(pdev, info);
 +
