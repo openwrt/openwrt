@@ -433,23 +433,41 @@ find_mtd_part() {
 	echo "${INDEX:+$PREFIX$INDEX}"
 }
 
+export_blk_part() {
+	local UEVENT PARENT DEVNAME PARTNAME ROOTDEV
+
+	if [ -n "$3" ]; then
+		ROOTDEV="$3"
+	else
+		ROOTDEV="*"
+	fi
+
+	for UEVENT in /sys/block/$ROOTDEV/*/uevent; do
+		PARENT="${UEVENT#/sys/block/}"
+		PARENT="${PARENT%%/*}"
+		DEVNAME="${UEVENT#/sys/block/$PARENT/}"
+		DEVNAME="${DEVNAME%%/*}"
+		case "$DEVNAME" in
+		"$PARENT"*)
+			;;
+		*)
+			continue
+			;;
+		esac
+
+		grep -q "^PARTNAME=$2$" $UEVENT && export "$1=/dev/$DEVNAME" && return 0
+	done
+}
+
 find_mmc_part() {
-	local DEVNAME PARTNAME ROOTDEV
+	local devname
 
 	if grep -q "$1" /proc/mtd; then
 		echo "" && return 0
 	fi
 
-	if [ -n "$2" ]; then
-		ROOTDEV="$2"
-	else
-		ROOTDEV="mmcblk*"
-	fi
-
-	for DEVNAME in /sys/block/$ROOTDEV/mmcblk*p*; do
-		PARTNAME="$(grep PARTNAME ${DEVNAME}/uevent | cut -f2 -d'=' 2>/dev/null)"
-		[ "$PARTNAME" = "$1" ] && echo "/dev/$(basename $DEVNAME)" && return 0
-	done
+	export_blk_part devname "$@"
+	echo "$devname"
 }
 
 group_add() {
