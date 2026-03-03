@@ -1,0 +1,42 @@
+{
+	"luci-app-photonicat": {
+		"description": "Grant access to Photonicat 2 system status and controls",
+		"read": {
+			"ubus": {
+				"luci.photonicat": [
+					"get_status"
+				]
+			},
+			"file": {
+				"/sys/class/thermal/thermal_zone*/temp": ["read"],
+				"/sys/class/thermal/thermal_zone*/type": ["read"],
+				"/sys/class/thermal/cooling_device*/cur_state": ["read"],
+				"/sys/class/thermal/cooling_device*/max_state": ["read"],
+				"/sys/class/thermal/cooling_device*/type": ["read"],
+				"/sys/class/hwmon/hwmon*/temp1_input": ["read"],
+				"/sys/class/hwmon/hwmon*/fan1_input": ["read"],
+				"/sys/class/hwmon/hwmon*/name": ["read"],
+				"/sys/class/power_supply/battery/*": ["read"],
+				"/sys/class/power_supply/charger/*": ["read"],
+				"/sys/devices/system/cpu/cpufreq/policy*/scaling_governor": ["read"],
+				"/sys/devices/system/cpu/cpufreq/policy*/scaling_available_governors": ["read"],
+				"/sys/devices/system/cpu/cpufreq/policy*/scaling_cur_freq": ["read"]
+			},
+			"uci": ["photonicat"]
+		},
+		"write": {
+			"ubus": {
+				"luci.photonicat": [
+					"set_fan_mode",
+					"set_fan_level",
+					"set_fan_curve",
+					"set_cpu_governor"
+				]
+			},
+			"uci": ["photonicat"],
+			"file": {
+				"/sys/devices/system/cpu/cpufreq/policy*/scaling_governor": ["write"]
+			}
+		}
+	}
+}

@@ -1,0 +1,140 @@
+#!/bin/sh
+# photonicat-fan — Smart fan control daemon for Photonicat 2
+#
+# Reads temperature sensors and adjusts fan speed with:
+#   - Smooth stepping (one level per interval, no sudden jumps)
+#   - Temperature hysteresis (prevents rapid oscillation)
+#   - Emergency override (full speed at critical temps)
+#   - Three modes: auto / manual / off
+
+. /lib/functions.sh
+
+# ── sysfs handles (discovered at startup) ──────────────────────
+COOLING_DEV=""
+HWMON_TEMP=""
+current_level=0
+
+# ── configuration (reloaded periodically from UCI) ─────────────
+FAN_MODE="auto"
+MANUAL_LEVEL=3
+MIN_TEMP=45
+MAX_TEMP=85
+HYSTERESIS=3
+INTERVAL=3
+
+# ── discover sysfs paths by name ──────────────────────────────
+find_sysfs_paths() {
+	local dir
+	for dir in /sys/class/hwmon/hwmon*; do
+		[ -f "$dir/name" ] || continue
+		case "$(cat "$dir/name" 2>/dev/null)" in
+			pcat_pm_hwmon_temp_mb)  HWMON_TEMP="$dir" ;;
+		esac
+	done
+	for dir in /sys/class/thermal/cooling_device*; do
+		[ -f "$dir/type" ] || continue
+		[ "$(cat "$dir/type" 2>/dev/null)" = "pcat-pm-fan" ] && COOLING_DEV="$dir"
+	done
+}
+
+# ── reload UCI configuration ──────────────────────────────────
+load_config() {
+	config_load photonicat
+	config_get FAN_MODE    fan mode         "auto"
+	config_get MANUAL_LEVEL fan manual_level "3"
+	config_get MIN_TEMP    fan min_temp      "45"
+	config_get MAX_TEMP    fan max_temp      "85"
+	config_get HYSTERESIS  fan hysteresis    "3"
+	config_get INTERVAL    fan interval      "3"
+}
+
+# ── read highest temperature across all sensors ───────────────
+get_max_temp() {
+	local max=0 temp
+	for zone in /sys/class/thermal/thermal_zone*; do
+		[ -f "$zone/temp" ] || continue
+		temp=$(cat "$zone/temp" 2>/dev/null)
+		[ -z "$temp" ] && continue
+		temp=$((temp / 1000))
+		[ "$temp" -gt "$max" ] && max=$temp
+	done
+	if [ -n "$HWMON_TEMP" ] && [ -f "$HWMON_TEMP/temp1_input" ]; then
+		temp=$(cat "$HWMON_TEMP/temp1_input" 2>/dev/null)
+		[ -n "$temp" ] && temp=$((temp / 1000))
+		[ "$temp" -gt "$max" ] && max=$temp
+	fi
+	echo "$max"
+}
+
+# ── map temperature → fan level (0-9), linear between min/max ─
+temp_to_level() {
+	local temp=$1
+	[ "$temp" -le "$MIN_TEMP" ] && { echo 0; return; }
+	[ "$temp" -ge "$MAX_TEMP" ] && { echo 9; return; }
+	local range=$((MAX_TEMP - MIN_TEMP))
+	local delta=$((temp - MIN_TEMP))
+	echo $(( (delta * 9 + range / 2) / range ))
+}
+
+# ── write fan level to cooling device ─────────────────────────
+set_fan() {
+	local level=$1
+	[ "$level" -lt 0 ] && level=0
+	[ "$level" -gt 9 ] && level=9
+	[ -n "$COOLING_DEV" ] && echo "$level" > "$COOLING_DEV/cur_state" 2>/dev/null
+	current_level=$level
+}
+
+# ── main loop ─────────────────────────────────────────────────
+main() {
+	find_sysfs_paths
+
+	if [ -z "$COOLING_DEV" ]; then
+		logger -t photonicat-fan "ERROR: Fan cooling device not found, exiting"
+		exit 1
+	fi
+
+	load_config
+	current_level=$(cat "$COOLING_DEV/cur_state" 2>/dev/null || echo 0)
+	logger -t photonicat-fan "Started: mode=$FAN_MODE min=${MIN_TEMP}C max=${MAX_TEMP}C hyst=${HYSTERESIS}C interval=${INTERVAL}s"
+
+	while true; do
+		# Reload config every iteration for responsive control via LuCI
+		load_config
+
+		case "$FAN_MODE" in
+			auto)
+				local temp=$(get_max_temp)
+				local desired=$(temp_to_level "$temp")
+
+				# Hysteresis: only decrease fan if temp + hysteresis still
+				# maps to a lower level than the current one
+				if [ "$desired" -lt "$current_level" ]; then
+					local hyst_level=$(temp_to_level "$((temp + HYSTERESIS))")
+					[ "$hyst_level" -ge "$current_level" ] && desired=$current_level
+				fi
+
+				# Emergency: jump directly to max at critical temps
+				if [ "$temp" -ge "$MAX_TEMP" ]; then
+					set_fan 9
+				elif [ "$desired" -gt "$current_level" ]; then
+					# Ramp up one step at a time
+					set_fan $((current_level + 1))
+				elif [ "$desired" -lt "$current_level" ]; then
+					# Ramp down one step at a time
+					set_fan $((current_level - 1))
+				fi
+				;;
+			manual)
+				[ "$current_level" -ne "$MANUAL_LEVEL" ] && set_fan "$MANUAL_LEVEL"
+				;;
+			off)
+				[ "$current_level" -ne 0 ] && set_fan 0
+				;;
+		esac
+
+		sleep "$INTERVAL"
+	done
+}
+
+main
