@@ -877,8 +877,6 @@ struct rtldsa_counter_state {
 struct rtldsa_port {
 	bool enable:1;
 	bool phy_is_integrated:1;
-	bool is10G:1;
-	bool is2G5:1;
 	bool isolated:1;
 	bool rate_police_egress:1;
 	bool rate_police_ingress:1;

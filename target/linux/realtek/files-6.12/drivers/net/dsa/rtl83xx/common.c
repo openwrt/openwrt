@@ -287,7 +287,6 @@ static int rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 	led_node = of_find_compatible_node(NULL, NULL, "realtek,rtl9300-leds");
 
 	for_each_node_by_name(dn, "port") {
-		phy_interface_t interface;
 		u32 led_set;
 		char led_set_str[16] = {0};
 
@@ -313,15 +312,6 @@ static int rtl83xx_mdio_probe(struct rtl838x_switch_priv *priv)
 				continue;
 			}
 		}
-
-		if (of_get_phy_mode(dn, &interface))
-			interface = PHY_INTERFACE_MODE_NA;
-		if (interface == PHY_INTERFACE_MODE_10G_QXGMII)
-			priv->ports[pn].is2G5 = true;
-		if (interface == PHY_INTERFACE_MODE_USXGMII)
-			priv->ports[pn].is2G5 = priv->ports[pn].is10G = true;
-		if (interface == PHY_INTERFACE_MODE_10GBASER)
-			priv->ports[pn].is10G = true;
 
 		priv->ports[pn].leds_on_this_port = 0;
 		if (led_node) {
