@@ -13,7 +13,7 @@ include $(INCLUDE_DIR)/host-build.mk
 
 define U-Boot/Default
   BUILD_TARGET:=airoha
-  FIP_COMPRESS:=1
+  LZMA_COMPRESS:=1
 endef
 
 define U-Boot/an7581_rfb
@@ -54,15 +54,15 @@ define Build/fip-image-bl2
 endef
 
 define Build/fip-image
-	$(if $(FIP_COMPRESS), $(STAGING_DIR_HOST)/bin/lzma e \
+	$(if $(LZMA_COMPRESS), $(STAGING_DIR_HOST)/bin/lzma e \
 		$(PKG_BUILD_DIR)/u-boot.bin \
 		$(PKG_BUILD_DIR)/u-boot.bin.lzma)
-	$(if $(FIP_COMPRESS), $(STAGING_DIR_HOST)/bin/lzma e \
+	$(if $(LZMA_COMPRESS), $(STAGING_DIR_HOST)/bin/lzma e \
 		files/$(BL31_IMAGE) \
 		$(PKG_BUILD_DIR)/bl31.bin.lzma)
 	$(STAGING_DIR_HOST)/bin/fiptool create \
-		--soc-fw $(PKG_BUILD_DIR)/bl31.bin$(if $(FIP_COMPRESS),.lzma) \
-		--nt-fw $(PKG_BUILD_DIR)/u-boot.bin$(if $(FIP_COMPRESS),.lzma) \
+		--soc-fw $(PKG_BUILD_DIR)/bl31.bin$(if $(LZMA_COMPRESS),.lzma) \
+		--nt-fw $(PKG_BUILD_DIR)/u-boot.bin$(if $(LZMA_COMPRESS),.lzma) \
 		$(PKG_BUILD_DIR)/u-boot.fip
 endef
 
