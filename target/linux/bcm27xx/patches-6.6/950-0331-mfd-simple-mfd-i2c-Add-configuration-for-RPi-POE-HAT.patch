@@ -18,7 +18,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
 
 --- a/drivers/mfd/Kconfig
 +++ b/drivers/mfd/Kconfig
-@@ -1170,6 +1170,16 @@ config MFD_SY7636A
+@@ -1194,6 +1194,16 @@ config MFD_SY7636A
  	  To enable support for building sub-devices as modules,
  	  choose M here.
  
@@ -53,11 +53,11 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  static int simple_mfd_i2c_probe(struct i2c_client *i2c)
  {
  	const struct simple_mfd_data *simple_mfd_data;
-@@ -88,6 +97,7 @@ static const struct of_device_id simple_
- 	{ .compatible = "silergy,sy7636a", .data = &silergy_sy7636a},
+@@ -117,6 +126,7 @@ static const struct of_device_id simple_
  	{ .compatible = "maxim,max5970", .data = &maxim_max5970},
  	{ .compatible = "maxim,max5978", .data = &maxim_max5970},
+ 	{ .compatible = "maxim,max77705-battery", .data = &maxim_mon_max77705},
 +	{ .compatible = "raspberrypi,poe-core", &rpi_poe_core },
+ 	{ .compatible = "silergy,sy7636a", .data = &silergy_sy7636a},
+ 	{ .compatible = "spacemit,p1", .data = &spacemit_p1, },
  	{}
- };
- MODULE_DEVICE_TABLE(of, simple_mfd_i2c_of_match);

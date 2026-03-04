@@ -30,9 +30,9 @@ Acked-by: Bjorn Helgaas <bhelgaas@google.com>
 
 --- a/drivers/pci/pci.h
 +++ b/drivers/pci/pci.h
-@@ -22,6 +22,22 @@
-  */
- #define PCIE_PME_TO_L2_TIMEOUT_US	10000
+@@ -47,6 +47,22 @@
+ #define PCI_EXP_AER_FLAGS	(PCI_EXP_DEVCTL_CERE | PCI_EXP_DEVCTL_NFERE | \
+ 				 PCI_EXP_DEVCTL_FERE | PCI_EXP_DEVCTL_URRE)
  
 +/*
 + * As described in PCI base specification r6.0, section 6.6.1 <Conventional

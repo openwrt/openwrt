@@ -252,7 +252,7 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  	ret = map_regs(v3d, &v3d->hub_regs, "hub");
  	if (ret)
  		return ret;
-@@ -253,6 +258,11 @@ static int v3d_platform_drm_probe(struct
+@@ -255,6 +260,11 @@ static int v3d_platform_drm_probe(struct
  	ident1 = V3D_READ(V3D_HUB_IDENT1);
  	v3d->ver = (V3D_GET_FIELD(ident1, V3D_HUB_IDENT1_TVER) * 10 +
  		    V3D_GET_FIELD(ident1, V3D_HUB_IDENT1_REV));
@@ -264,7 +264,7 @@ Signed-off-by: Maíra Canal <mcanal@igalia.com>
  	v3d->cores = V3D_GET_FIELD(ident1, V3D_HUB_IDENT1_NCORES);
  	WARN_ON(v3d->cores > 1); /* multicore not yet implemented */
  
-@@ -300,7 +310,7 @@ static int v3d_platform_drm_probe(struct
+@@ -302,7 +312,7 @@ static int v3d_platform_drm_probe(struct
  	v3d->clk_down_rate =
  		(clk_get_rate(clk_get_parent(v3d->clk)) / (1 << 4)) + 10000;
  
