@@ -745,7 +745,7 @@ define Device/linksys_mr8300
 	UBINIZE_OPTS := -E 5    # EOD marks to "hide" factory sig at EOF
 	IMAGES += factory.bin
 	IMAGE/factory.bin  := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | linksys-image type=MR8300
-	DEVICE_PACKAGES := ath10k-firmware-qca9888-ct kmod-usb-ledtrig-usbport
+	DEVICE_PACKAGES := -kmod-ath10k-ct -ath10k-firmware-qca4019-ct kmod-ath10k ath10k-firmware-qca4019 ath10k-firmware-qca9888 kmod-usb-ledtrig-usbport
 endef
 TARGET_DEVICES += linksys_mr8300
 
