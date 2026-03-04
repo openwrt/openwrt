@@ -308,7 +308,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  	dwc->tx_fifo_resize_max_num = tx_fifo_resize_max_num;
  }
  
-@@ -2187,6 +2234,12 @@ static int dwc3_probe(struct platform_de
+@@ -2202,6 +2249,12 @@ static int dwc3_probe(struct platform_de
  	if (IS_ERR(dwc->usb_psy))
  		return dev_err_probe(dev, PTR_ERR(dwc->usb_psy), "couldn't get usb power supply\n");
  
@@ -333,7 +333,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
  /* Global Debug LSP MUX Select */
  #define DWC3_GDBGLSPMUX_ENDBC		BIT(15)	/* Host only */
  #define DWC3_GDBGLSPMUX_HOSTSELECT(n)	((n) & 0x3fff)
-@@ -1087,6 +1090,7 @@ struct dwc3_scratchpad_array {
+@@ -1089,6 +1092,7 @@ struct dwc3_scratchpad_array {
   * @tx_max_burst_prd: max periodic ESS transmit burst size
   * @tx_fifo_resize_max_num: max number of fifos allocated during txfifo resize
   * @clear_stall_protocol: endpoint number that requires a delayed status phase
@@ -341,7 +341,7 @@ Signed-off-by: Jonathan Bell <jonathan@raspberrypi.com>
   * @hsphy_interface: "utmi" or "ulpi"
   * @connected: true when we're connected to a host, false otherwise
   * @softconnect: true when gadget connect is called, false when disconnect runs
-@@ -1338,6 +1342,7 @@ struct dwc3 {
+@@ -1342,6 +1346,7 @@ struct dwc3 {
  	u8			tx_max_burst_prd;
  	u8			tx_fifo_resize_max_num;
  	u8			clear_stall_protocol;

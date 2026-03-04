@@ -58,9 +58,9 @@ Signed-off-by: Mathias Kresin <openwrt@kresin.me>
  
  	/* Pull of_node from the master device node */
  	mtd_node = mtd_get_of_node(master);
-@@ -98,6 +132,14 @@ static int parse_fixed_partitions(struct
- 	if (!parts)
+@@ -105,6 +139,14 @@ static int parse_fixed_partitions(struct
  		return -ENOMEM;
+ 	}
  
 +	part_nodes = kcalloc(nr_parts, sizeof(*part_nodes), GFP_KERNEL);
 +	if (!part_nodes) {
@@ -73,7 +73,7 @@ Signed-off-by: Mathias Kresin <openwrt@kresin.me>
  	i = 0;
  	for_each_child_of_node(ofpart_node,  pp) {
  		const __be32 *reg;
-@@ -166,6 +208,11 @@ static int parse_fixed_partitions(struct
+@@ -173,6 +215,11 @@ static int parse_fixed_partitions(struct
  		if (of_property_read_bool(pp, "slc-mode"))
  			parts[i].add_flags |= MTD_SLC_ON_MLC_EMULATION;
  
@@ -85,9 +85,9 @@ Signed-off-by: Mathias Kresin <openwrt@kresin.me>
  		i++;
  	}
  
-@@ -175,6 +222,11 @@ static int parse_fixed_partitions(struct
- 	if (quirks && quirks->post_parse)
- 		quirks->post_parse(master, parts, nr_parts);
+@@ -185,6 +232,11 @@ static int parse_fixed_partitions(struct
+ 	if (dedicated)
+ 		of_node_put(ofpart_node);
  
 +	if (proot_id)
 +		brnboot_set_active_root_part(parts, part_nodes, nr_parts, proot_id);
@@ -97,8 +97,8 @@ Signed-off-by: Mathias Kresin <openwrt@kresin.me>
  	*pparts = parts;
  	return nr_parts;
  
-@@ -185,6 +237,7 @@ ofpart_fail:
- ofpart_none:
+@@ -197,6 +249,7 @@ ofpart_none:
+ 		of_node_put(ofpart_node);
  	of_node_put(pp);
  	kfree(parts);
 +	kfree(part_nodes);
