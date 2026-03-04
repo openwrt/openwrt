@@ -2861,6 +2861,7 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.set_vlan_egr_filter = rtl930x_set_egr_filter,
 	.stp_get = rtldsa_930x_stp_get,
 	.stp_set = rtl930x_stp_set,
+	.mac_link_sts = RTL930X_MAC_LINK_STS,
 	.mac_force_mode_ctrl = rtl930x_mac_force_mode_ctrl,
 	.mac_port_ctrl = rtl930x_mac_port_ctrl,
 	.l2_port_new_salrn = rtl930x_l2_port_new_salrn,

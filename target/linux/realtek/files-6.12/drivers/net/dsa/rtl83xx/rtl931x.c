@@ -2008,6 +2008,7 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.stp_get = rtldsa_931x_stp_get,
 	.stp_set = rtl931x_stp_set,
 	.mac_force_mode_ctrl = rtl931x_mac_force_mode_ctrl,
+	.mac_link_sts = RTL931X_MAC_LINK_STS,
 	.mac_port_ctrl = rtl931x_mac_port_ctrl,
 	.l2_port_new_salrn = rtl931x_l2_port_new_salrn,
 	.l2_port_new_sa_fwd = rtl931x_l2_port_new_sa_fwd,
