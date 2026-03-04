@@ -1898,27 +1898,3 @@ const struct rtldsa_config rtldsa_838x_cfg = {
 	.lag_set_port_members = rtldsa_838x_lag_set_port_members,
 	.lag_setup_algomask = rtldsa_83xx_lag_setup_algomask,
 };
-
-irqreturn_t rtl838x_switch_irq(int irq, void *dev_id)
-{
-	struct dsa_switch *ds = dev_id;
-	u32 status = sw_r32(RTL838X_ISR_GLB_SRC);
-	u32 ports = sw_r32(RTL838X_ISR_PORT_LINK_STS_CHG);
-	u32 link;
-
-	/* Clear status */
-	sw_w32(ports, RTL838X_ISR_PORT_LINK_STS_CHG);
-	pr_debug("RTL8380 Link change: status: %x, ports %x\n", status, ports);
-
-	for (int i = 0; i < 28; i++) {
-		if (ports & BIT(i)) {
-			link = sw_r32(RTL838X_MAC_LINK_STS);
-			if (link & BIT(i))
-				dsa_port_phylink_mac_change(ds, i, true);
-			else
-				dsa_port_phylink_mac_change(ds, i, false);
-		}
-	}
-
-	return IRQ_HANDLED;
-}

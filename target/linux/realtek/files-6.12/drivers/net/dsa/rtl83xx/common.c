@@ -1532,6 +1532,27 @@ static int rtl83xx_fib_event(struct notifier_block *this, unsigned long event, v
 	return NOTIFY_DONE;
 }
 
+static irqreturn_t rtldsa_switch_irq(int irq, void *dev_id)
+{
+	struct rtl838x_switch_priv *priv;
+	struct dsa_switch *ds = dev_id;
+	u64 link, ports;
+
+	priv = ds->priv;
+	ports = priv->r->get_port_reg_le(priv->r->isr_port_link_sts_chg);
+	priv->r->set_port_reg_le(ports, priv->r->isr_port_link_sts_chg);
+
+	/* read latched */
+	link = priv->r->get_port_reg_le(priv->r->mac_link_sts);
+	link = priv->r->get_port_reg_le(priv->r->mac_link_sts);
+
+	for (int port = 0; port < priv->cpu_port; port++)
+		if (ports & BIT_ULL(port))
+			dsa_port_phylink_mac_change(ds, port, link & BIT_ULL(port));
+
+	return IRQ_HANDLED;
+}
+
 /*
  * TODO: This check is usually built into the DSA initialization functions. After carving
  * out the mdio driver from the ethernet driver, there are two drivers that must be loaded
@@ -1699,24 +1720,8 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 
 	priv->link_state_irq = platform_get_irq(pdev, 0);
 	pr_info("LINK state irq: %d\n", priv->link_state_irq);
-	switch (priv->family_id) {
-	case RTL8380_FAMILY_ID:
-		err = request_irq(priv->link_state_irq, rtl838x_switch_irq,
-				  IRQF_SHARED, "rtl838x-link-state", priv->ds);
-		break;
-	case RTL8390_FAMILY_ID:
-		err = request_irq(priv->link_state_irq, rtl839x_switch_irq,
-				  IRQF_SHARED, "rtl839x-link-state", priv->ds);
-		break;
-	case RTL9300_FAMILY_ID:
-		err = request_irq(priv->link_state_irq, rtldsa_930x_switch_irq,
-				  IRQF_SHARED, "rtl930x-link-state", priv->ds);
-		break;
-	case RTL9310_FAMILY_ID:
-		err = request_irq(priv->link_state_irq, rtl931x_switch_irq,
-				  IRQF_SHARED, "rtl931x-link-state", priv->ds);
-		break;
-	}
+	err = request_irq(priv->link_state_irq, rtldsa_switch_irq,
+			  IRQF_SHARED, "rtldsa-link-state", priv->ds);
 	if (err) {
 		dev_err(dev, "Error setting up switch interrupt.\n");
 		/* Need to free allocated switch here */
