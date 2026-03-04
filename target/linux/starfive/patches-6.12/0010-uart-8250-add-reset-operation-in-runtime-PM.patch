@@ -21,9 +21,9 @@ Signed-off-by: William Qiu <william.qiu@starfivetech.com>
  	clk_disable_unprepare(data->clk);
  
  	clk_disable_unprepare(data->pclk);
-@@ -727,6 +729,8 @@ static int dw8250_runtime_resume(struct
- 
- 	clk_prepare_enable(data->clk);
+@@ -734,6 +736,8 @@ static int dw8250_runtime_resume(struct
+ 		return ret;
+ 	}
  
 +	reset_control_deassert(data->rst);
 +

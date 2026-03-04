@@ -55,9 +55,9 @@ Signed-off-by: Martin K. Petersen <martin.petersen@oracle.com>
  {
 --- a/include/ufs/ufshcd.h
 +++ b/include/ufs/ufshcd.h
-@@ -1368,6 +1368,8 @@ extern int ufshcd_system_thaw(struct dev
+@@ -1364,6 +1364,8 @@ extern int ufshcd_system_freeze(struct d
+ extern int ufshcd_system_thaw(struct device *dev);
  extern int ufshcd_system_restore(struct device *dev);
- #endif
  
 +extern int ufshcd_dme_reset(struct ufs_hba *hba);
 +extern int ufshcd_dme_enable(struct ufs_hba *hba);
