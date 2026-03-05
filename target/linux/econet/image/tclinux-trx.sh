@@ -3,9 +3,6 @@
 
 set -e
 
-# This is not necessary, but it makes finding the rootfs easier.
-PAD_ROOTFS_OFFSET_TO=4194304
-
 # Constant
 HDRLEN=256
 
@@ -86,29 +83,13 @@ which zytrx >/dev/null || die "zytrx not found in PATH $PATH"
 [ -z "$model" ] || [ "$(printf '%s' "$model" | wc -c)" -lt 32 ] || die "Model string too long: $model"
 
 kernel_len=$(stat -c '%s' "$kernel")
-header_plus_kernel_len=$(($HDRLEN + $kernel_len))
 rootfs_len=$(stat -c '%s' "$rootfs")
-
-if [ "$PAD_ROOTFS_OFFSET_TO" -gt "$header_plus_kernel_len" ]; then
-    padding_len=$(($PAD_ROOTFS_OFFSET_TO - $header_plus_kernel_len))
-else
-    padding_len=0
-fi
+total_len=$(($HDRLEN + $kernel_len + $rootfs_len))
 
 echo "endian: $endian" >&2
-echo "padding_len: $padding_len" >&2
-
-padded_rootfs_len=$(($padding_len + $rootfs_len))
-
-echo "padded_rootfs_len: $padded_rootfs_len" >&2
-
-total_len=$(($header_plus_kernel_len + $padded_rootfs_len))
-
+echo "kernel_len: $kernel_len" >&2
+echo "rootfs_len: $rootfs_len" >&2
 echo "total_len: $total_len" >&2
-
-padding() {
-    head -c $padding_len /dev/zero | tr '\0' '\377'
-}
 
 to_hex() {
     hexdump -v -e '1/1 "%02x"'
@@ -134,7 +115,6 @@ trx_crc32() {
     tmpfile=$(mktemp)
     outtmpfile=$(mktemp)
     cat "$kernel" > "$tmpfile"
-    padding >> "$tmpfile"
     cat "$rootfs" >> "$tmpfile"
     # We just need a CRC-32/JAMCRC of the concatnated files
     # There's no readily available tool for this, but zytrx does create one when
@@ -177,7 +157,7 @@ tclinux_trx_hdr() {
     hex32 "$kernel_len"
 
     # rootfs length
-    hex32 "$padded_rootfs_len"
+    hex32 "$rootfs_len"
 
     # romfile length (0)
     hex32 0
@@ -199,5 +179,4 @@ tclinux_trx_hdr() {
 
 tclinux_trx_hdr | from_hex
 cat "$kernel"
-padding
 cat "$rootfs"

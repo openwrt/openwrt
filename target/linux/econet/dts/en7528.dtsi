@@ -10,6 +10,17 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		bootloader_flag: bootloader-flag@1f000 {
+			reg = <0x0001f000 0x1000>;
+			no-map;
+		};
+	};
+
 	hpt_clock: clock {
 		compatible = "fixed-clock";
 		#clock-cells = <0>;
