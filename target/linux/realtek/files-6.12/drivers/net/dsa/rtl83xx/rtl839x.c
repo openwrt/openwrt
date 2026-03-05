@@ -117,6 +117,90 @@ static enum template_field_id fixed_templates[N_FIXED_TEMPLATES][N_FIXED_FIELDS]
 	},
 };
 
+const struct rtldsa_mib_list_item rtldsa_839x_mib_list[] = {
+	MIB_LIST_ITEM("ifOutDiscards", MIB_ITEM(MIB_REG_STD, 0xd4, 1)),
+	MIB_LIST_ITEM("dot1dTpPortInDiscards", MIB_ITEM(MIB_REG_STD, 0xd0, 1)),
+	MIB_LIST_ITEM("DropEvents", MIB_ITEM(MIB_REG_STD, 0xa8, 1)),
+	MIB_LIST_ITEM("tx_BroadcastPkts", MIB_ITEM(MIB_REG_STD, 0xa4, 1)),
+	MIB_LIST_ITEM("tx_MulticastPkts", MIB_ITEM(MIB_REG_STD, 0xa0, 1)),
+	MIB_LIST_ITEM("tx_UndersizePkts", MIB_ITEM(MIB_REG_STD, 0x98, 1)),
+	MIB_LIST_ITEM("rx_UndersizeDropPkts", MIB_ITEM(MIB_REG_STD, 0x90, 1)),
+	MIB_LIST_ITEM("tx_OversizePkts", MIB_ITEM(MIB_REG_STD, 0x8c, 1)),
+	MIB_LIST_ITEM("Collisions", MIB_ITEM(MIB_REG_STD, 0x7c, 1)),
+	MIB_LIST_ITEM("rx_LengthFieldError", MIB_ITEM(MIB_REG_STD, 0x40, 1)),
+	MIB_LIST_ITEM("rx_FalseCarrierTimes", MIB_ITEM(MIB_REG_STD, 0x3c, 1)),
+	MIB_LIST_ITEM("rx_UnderSizeOctets", MIB_ITEM(MIB_REG_STD, 0x38, 1)),
+	MIB_LIST_ITEM("tx_Fragments", MIB_ITEM(MIB_REG_STD, 0x34, 1)),
+	MIB_LIST_ITEM("tx_Jabbers", MIB_ITEM(MIB_REG_STD, 0x30, 1)),
+	MIB_LIST_ITEM("tx_CRCAlignErrors", MIB_ITEM(MIB_REG_STD, 0x2c, 1)),
+	MIB_LIST_ITEM("rx_FramingErrors", MIB_ITEM(MIB_REG_STD, 0x28, 1)),
+	MIB_LIST_ITEM("rx_MacDiscards", MIB_ITEM(MIB_REG_STD, 0x24, 1))
+};
+
+const struct rtldsa_mib_desc rtldsa_839x_mib_desc = {
+	.symbol_errors = MIB_ITEM(MIB_REG_STD, 0xb8, 1),
+
+	.if_in_octets = MIB_ITEM(MIB_REG_STD, 0xf8, 2),
+	.if_out_octets = MIB_ITEM(MIB_REG_STD, 0xf0, 2),
+	.if_in_ucast_pkts = MIB_ITEM(MIB_REG_STD, 0xec, 1),
+	.if_in_mcast_pkts = MIB_ITEM(MIB_REG_STD, 0xe8, 1),
+	.if_in_bcast_pkts = MIB_ITEM(MIB_REG_STD, 0xe4, 1),
+	.if_out_ucast_pkts = MIB_ITEM(MIB_REG_STD, 0xe0, 1),
+	.if_out_mcast_pkts = MIB_ITEM(MIB_REG_STD, 0xdc, 1),
+	.if_out_bcast_pkts = MIB_ITEM(MIB_REG_STD, 0xd8, 1),
+	.if_out_discards = MIB_ITEM(MIB_REG_STD, 0xd4, 1),
+	.single_collisions = MIB_ITEM(MIB_REG_STD, 0xcc, 1),
+	.multiple_collisions = MIB_ITEM(MIB_REG_STD, 0xc8, 1),
+	.deferred_transmissions = MIB_ITEM(MIB_REG_STD, 0xc4, 1),
+	.late_collisions = MIB_ITEM(MIB_REG_STD, 0xc0, 1),
+	.excessive_collisions = MIB_ITEM(MIB_REG_STD, 0xbc, 1),
+	.crc_align_errors = MIB_ITEM(MIB_REG_STD, 0x9c, 1),
+
+	.unsupported_opcodes = MIB_ITEM(MIB_REG_STD, 0xb4, 1),
+
+	.rx_undersize_pkts = MIB_ITEM(MIB_REG_STD, 0x94, 1),
+	.rx_oversize_pkts = MIB_ITEM(MIB_REG_STD, 0x88, 1),
+	.rx_fragments = MIB_ITEM(MIB_REG_STD, 0x84, 1),
+	.rx_jabbers = MIB_ITEM(MIB_REG_STD, 0x80, 1),
+
+	.tx_pkts = {
+		MIB_ITEM(MIB_REG_STD, 0x78, 1),
+		MIB_ITEM(MIB_REG_STD, 0x70, 1),
+		MIB_ITEM(MIB_REG_STD, 0x68, 1),
+		MIB_ITEM(MIB_REG_STD, 0x60, 1),
+		MIB_ITEM(MIB_REG_STD, 0x58, 1),
+		MIB_ITEM(MIB_REG_STD, 0x50, 1),
+		MIB_ITEM(MIB_REG_STD, 0x48, 1)
+	},
+	.rx_pkts = {
+		MIB_ITEM(MIB_REG_STD, 0x74, 1),
+		MIB_ITEM(MIB_REG_STD, 0x6c, 1),
+		MIB_ITEM(MIB_REG_STD, 0x64, 1),
+		MIB_ITEM(MIB_REG_STD, 0x5c, 1),
+		MIB_ITEM(MIB_REG_STD, 0x54, 1),
+		MIB_ITEM(MIB_REG_STD, 0x4c, 1),
+		MIB_ITEM(MIB_REG_STD, 0x44, 1)
+	},
+	.rmon_ranges = {
+		{ 0, 64 },
+		{ 65, 127 },
+		{ 128, 255 },
+		{ 256, 511 },
+		{ 512, 1023 },
+		{ 1024, 1518 },
+		{ 1519, 12288 }
+	},
+
+	.drop_events = MIB_ITEM(MIB_REG_STD, 0xa8, 1),
+	.collisions = MIB_ITEM(MIB_REG_STD, 0x7c, 1),
+
+	.rx_pause_frames = MIB_ITEM(MIB_REG_STD, 0xb0, 1),
+	.tx_pause_frames = MIB_ITEM(MIB_REG_STD, 0xac, 1),
+
+	.list_count = ARRAY_SIZE(rtldsa_839x_mib_list),
+	.list = rtldsa_839x_mib_list
+};
+
 void rtldsa_839x_print_matrix(void)
 {
 	volatile u64 *ptr9;
@@ -519,6 +603,30 @@ static void rtl839x_write_mcast_pmask(int idx, u64 portmask)
 	rtl_table_release(q);
 }
 
+static int
+rtldsa_839x_vlan_profile_get(int idx, struct rtldsa_vlan_profile *profile)
+{
+	u32 p[2];
+
+	if (idx < 0 || idx > RTL839X_VLAN_PROFILE_MAX)
+		return -EINVAL;
+
+	p[0] = sw_r32(RTL839X_VLAN_PROFILE(idx));
+	p[1] = sw_r32(RTL839X_VLAN_PROFILE(idx) + 4);
+
+	*profile = (struct rtldsa_vlan_profile) {
+		.l2_learn = RTL839X_VLAN_L2_LEARN_EN_R(p),
+		.unkn_mc_fld.pmsks_idx = {
+			.l2 = RTL839X_VLAN_L2_UNKN_MC_FLD_PMSK(p),
+			.ip = RTL839X_VLAN_IP4_UNKN_MC_FLD_PMSK(p),
+			.ip6 = RTL839X_VLAN_IP6_UNKN_MC_FLD_PMSK(p),
+		},
+		.pmsk_is_idx = 1,
+	};
+
+	return 0;
+}
+
 static void rtl839x_vlan_profile_setup(int profile)
 {
 	u32 p[2] = { 0, 0 };
@@ -530,8 +638,6 @@ static void rtl839x_vlan_profile_setup(int profile)
 
 	sw_w32(p[0], RTL839X_VLAN_PROFILE(profile));
 	sw_w32(p[1], RTL839X_VLAN_PROFILE(profile) + 4);
-
-	rtl839x_write_mcast_pmask(MC_PMASK_ALL_PORTS_IDX, RTL839X_MC_PMASK_ALL_PORTS);
 }
 
 static void rtl839x_traffic_set(int source, u64 dest_matrix)
@@ -626,22 +732,21 @@ irqreturn_t rtl839x_switch_irq(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-void rtl839x_vlan_profile_dump(int profile)
+static void
+rtldsa_839x_vlan_profile_dump(struct rtl838x_switch_priv *priv, int idx)
 {
-	u32 p[2];
+	struct rtldsa_vlan_profile p;
 
-	if (profile < 0 || profile > RTL839X_VLAN_PROFILE_MAX)
+	if (rtldsa_839x_vlan_profile_get(idx, &p) < 0)
 		return;
 
-	p[0] = sw_r32(RTL839X_VLAN_PROFILE(profile));
-	p[1] = sw_r32(RTL839X_VLAN_PROFILE(profile) + 4);
-
-	pr_debug("VLAN profile %d: L2 learning: %d, UNKN L2MC FLD PMSK %d, UNKN IPMC FLD PMSK %d, UNKN IPv6MC FLD PMSK: %d\n",
-		 profile, RTL839X_VLAN_L2_LEARN_EN_R(p),
-		 RTL839X_VLAN_L2_UNKN_MC_FLD_PMSK(p),
-		 RTL839X_VLAN_IP4_UNKN_MC_FLD_PMSK(p),
-		 RTL839X_VLAN_IP6_UNKN_MC_FLD_PMSK(p));
-	pr_debug("VLAN profile %d: raw %08x, %08x\n", profile, p[0], p[1]);
+	dev_dbg(priv->dev,
+		"VLAN profile %d: L2 learning: %d, UNKN L2MC FLD PMSK %d, UNKN IPMC FLD PMSK %d, UNKN IPv6MC FLD PMSK: %d\n"
+		"VLAN profile %d: raw %08x, %08x\n", idx,
+		p.l2_learn, p.unkn_mc_fld.pmsks_idx.l2,
+		p.unkn_mc_fld.pmsks_idx.ip, p.unkn_mc_fld.pmsks_idx.ip6, idx,
+		sw_r32(RTL839X_VLAN_PROFILE(idx)),
+		sw_r32(RTL839X_VLAN_PROFILE(idx) + 4));
 }
 
 static int rtldsa_839x_stp_get(struct rtl838x_switch_priv *priv, u16 msti, int port, u32 port_state[])
@@ -1554,6 +1659,20 @@ static void rtl839x_vlan_port_pvid_set(int port, enum pbvlan_type type, int pvid
 		sw_w32_mask(0xfff << 16, pvid << 16, RTL839X_VLAN_PORT_PB_VLAN + (port << 2));
 }
 
+static int rtldsa_839x_fast_age(struct rtl838x_switch_priv *priv, int port, int vid)
+{
+	u32 val;
+
+	val = BIT(28) | BIT(25) | (port << 6);
+	if (vid >= 0)
+		val |= BIT(26) | (vid << 12);
+
+	sw_w32(val, priv->r->l2_tbl_flush_ctrl);
+	do { } while (sw_r32(priv->r->l2_tbl_flush_ctrl) & BIT(28));
+
+	return 0;
+}
+
 static int rtl839x_set_ageing_time(unsigned long msec)
 {
 	int t = sw_r32(RTL839X_L2_CTRL_1);
@@ -1619,6 +1738,7 @@ const struct rtldsa_config rtldsa_839x_cfg = {
 	.stat_port_rst = RTL839X_STAT_PORT_RST,
 	.stat_rst = RTL839X_STAT_RST,
 	.stat_port_std_mib = RTL839X_STAT_PORT_STD_MIB,
+	.mib_desc = &rtldsa_839x_mib_desc,
 	.stat_counters_lock = rtldsa_counters_lock_register,
 	.stat_counters_unlock = rtldsa_counters_unlock_register,
 	.stat_update_counters_atomically = rtldsa_update_counters_atomically,
@@ -1646,7 +1766,8 @@ const struct rtldsa_config rtldsa_839x_cfg = {
 	.vlan_tables_read = rtl839x_vlan_tables_read,
 	.vlan_set_tagged = rtl839x_vlan_set_tagged,
 	.vlan_set_untagged = rtl839x_vlan_set_untagged,
-	.vlan_profile_dump = rtl839x_vlan_profile_dump,
+	.vlan_profile_get = rtldsa_839x_vlan_profile_get,
+	.vlan_profile_dump = rtldsa_839x_vlan_profile_dump,
 	.vlan_profile_setup = rtl839x_vlan_profile_setup,
 	.vlan_fwd_on_inner = rtl839x_vlan_fwd_on_inner,
 	.vlan_port_keep_tag_set = rtl839x_vlan_port_keep_tag_set,
@@ -1671,6 +1792,7 @@ const struct rtldsa_config rtldsa_839x_cfg = {
 	.write_l2_entry_using_hash = rtl839x_write_l2_entry_using_hash,
 	.read_cam = rtl839x_read_cam,
 	.write_cam = rtl839x_write_cam,
+	.fast_age = rtldsa_839x_fast_age,
 	.trk_mbr_ctr = rtl839x_trk_mbr_ctr,
 	.rma_bpdu_fld_pmask = RTL839X_RMA_BPDU_FLD_PMSK,
 	.spcl_trap_eapol_ctrl = RTL839X_SPCL_TRAP_EAPOL_CTRL,

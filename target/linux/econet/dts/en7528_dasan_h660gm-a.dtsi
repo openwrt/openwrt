@@ -119,7 +119,7 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&macaddr_dzs 8>, <&eeprom_reservearea_40000>;
+		nvmem-cells = <&macaddr_dzs 8>, <&eeprom_reservearea_1c0000>;
 		nvmem-cell-names = "mac-address", "eeprom";
 		ieee80211-freq-limit = <2400000 2500000>;
 	};
@@ -131,7 +131,7 @@
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&macaddr_dzs 9>, <&eeprom_reservearea_1c0000>;
+		nvmem-cells = <&macaddr_dzs 9>, <&eeprom_reservearea_40000>;
 		nvmem-cell-names = "mac-address", "eeprom";
 		ieee80211-freq-limit = <5000000 6000000>;
 	};

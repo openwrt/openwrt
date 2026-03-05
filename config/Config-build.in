@@ -73,6 +73,16 @@ menu "Global build settings"
 		bool "Use APK instead of OPKG to build distribution"
 		default y
 
+	config SIGN_EACH_PACKAGE
+		bool "Cryptographically sign each package .apk file"
+		depends on USE_APK
+		default n if BUILDBOT
+		default y
+		help
+		  Sign also the individual package .apk file. Removes the need for
+		  --allow-untrusted when installing self-compiled packages to a
+		  firmware compiled by the same buildhost as public key matches.
+
 	comment "General build options"
 
 	config TESTING_KERNEL

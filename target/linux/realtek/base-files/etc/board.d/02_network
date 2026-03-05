@@ -65,6 +65,7 @@ realtek_setup_macs()
 	xikestor,sks8300-8t|\
 	xikestor,sks8300-12e2t2x|\
 	xikestor,sks8300-12x-v1|\
+	xikestor,sks8310-8x|\
 	zyxel,xgs1210-12-a1|\
 	zyxel,xgs1210-12-b1)
 		lan_mac=$(get_mac_label)
@@ -97,12 +98,6 @@ realtek_setup_macs()
 		;;
 	xikestor,sks8300-8x)
 		lan_mac=$(mtd_get_mac_binary board-info 0x1f1)
-		lan_mac_start=$lan_mac
-		eth0_mac=$lan_mac
-		;;
-	xikestor,sks8310-8x)
-		lan_mac=$(mtd_get_mac_binary factory 0x80)
-		label_mac="$lan_mac"
 		lan_mac_start=$lan_mac
 		eth0_mac=$lan_mac
 		;;

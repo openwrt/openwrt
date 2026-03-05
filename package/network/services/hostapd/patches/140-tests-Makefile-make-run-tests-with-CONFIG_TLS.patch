@@ -61,7 +61,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
 
 --- a/hostapd/Makefile
 +++ b/hostapd/Makefile
-@@ -709,6 +709,7 @@ CFLAGS += -DCONFIG_TLSV12
+@@ -714,6 +714,7 @@ CFLAGS += -DCONFIG_TLSV12
  endif
  
  ifeq ($(CONFIG_TLS), wolfssl)
@@ -69,7 +69,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  CFLAGS += -DCRYPTO_RSA_OAEP_SHA256
  CONFIG_CRYPTO=wolfssl
  ifdef TLS_FUNCS
-@@ -730,6 +731,7 @@ endif
+@@ -735,6 +736,7 @@ endif
  endif
  
  ifeq ($(CONFIG_TLS), openssl)
@@ -77,7 +77,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  CFLAGS += -DCRYPTO_RSA_OAEP_SHA256
  CONFIG_CRYPTO=openssl
  ifdef TLS_FUNCS
-@@ -760,6 +762,7 @@ CFLAGS += -DTLS_DEFAULT_CIPHERS=\"$(CONF
+@@ -765,6 +767,7 @@ CFLAGS += -DTLS_DEFAULT_CIPHERS=\"$(CONF
  endif
  
  ifeq ($(CONFIG_TLS), mbedtls)
@@ -85,7 +85,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  ifndef CONFIG_CRYPTO
  CONFIG_CRYPTO=mbedtls
  endif
-@@ -790,6 +793,7 @@ endif
+@@ -795,6 +798,7 @@ endif
  endif
  
  ifeq ($(CONFIG_TLS), gnutls)
@@ -93,7 +93,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  ifndef CONFIG_CRYPTO
  # default to libgcrypt
  CONFIG_CRYPTO=gnutls
-@@ -820,6 +824,7 @@ endif
+@@ -825,6 +829,7 @@ endif
  endif
  
  ifeq ($(CONFIG_TLS), internal)
@@ -101,7 +101,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  ifndef CONFIG_CRYPTO
  CONFIG_CRYPTO=internal
  endif
-@@ -898,6 +903,7 @@ endif
+@@ -903,6 +908,7 @@ endif
  endif
  
  ifeq ($(CONFIG_TLS), linux)
@@ -979,7 +979,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
              raise HwsimSkip("Crypto library does not support Brainpool curves: " + tls)
      capa = dev.request("GET_CAPABILITY dpp")
      ver = 1
-@@ -3925,6 +3926,9 @@ def test_dpp_proto_auth_req_no_i_proto_k
+@@ -3940,6 +3941,9 @@ def test_dpp_proto_auth_req_no_i_proto_k
  
  def test_dpp_proto_auth_req_invalid_i_proto_key(dev, apdev):
      """DPP protocol testing - invalid I-proto key in Auth Req"""
@@ -989,7 +989,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
      run_dpp_proto_auth_req_missing(dev, 66, "Invalid Initiator Protocol Key")
  
  def test_dpp_proto_auth_req_no_i_nonce(dev, apdev):
-@@ -4020,7 +4024,12 @@ def test_dpp_proto_auth_resp_no_r_proto_
+@@ -4035,7 +4039,12 @@ def test_dpp_proto_auth_resp_no_r_proto_
  
  def test_dpp_proto_auth_resp_invalid_r_proto_key(dev, apdev):
      """DPP protocol testing - invalid R-Proto Key in Auth Resp"""
@@ -1003,7 +1003,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  
  def test_dpp_proto_auth_resp_no_r_nonce(dev, apdev):
      """DPP protocol testing - no R-nonce in Auth Resp"""
-@@ -4382,11 +4391,17 @@ def test_dpp_proto_pkex_exchange_resp_in
+@@ -4397,11 +4406,17 @@ def test_dpp_proto_pkex_exchange_resp_in
  
  def test_dpp_proto_pkex_cr_req_invalid_bootstrap_key(dev, apdev):
      """DPP protocol testing - invalid Bootstrap Key in PKEX Commit-Reveal Request"""
@@ -1124,7 +1124,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
      heavy_groups = [14, 15, 16]
      suitable_groups = [15, 16, 17, 18, 19, 20, 21]
      groups = [str(g) for g in sae_groups]
-@@ -2387,6 +2392,8 @@ def run_sae_pwe_group(dev, apdev, group)
+@@ -2561,6 +2566,8 @@ def run_sae_pwe_group(dev, apdev, group)
              logger.info("Add Brainpool EC groups since OpenSSL is new enough")
          elif tls.startswith("wolfSSL"):
              logger.info("Make sure Brainpool EC groups were enabled when compiling wolfSSL")
@@ -1289,7 +1289,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  		if (need_more_data) {
 --- a/wpa_supplicant/Makefile
 +++ b/wpa_supplicant/Makefile
-@@ -1192,6 +1192,7 @@ TLS_FUNCS=y
+@@ -1214,6 +1214,7 @@ TLS_FUNCS=y
  endif
  
  ifeq ($(CONFIG_TLS), wolfssl)
@@ -1297,7 +1297,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  CFLAGS += -DCRYPTO_RSA_OAEP_SHA256
  ifdef TLS_FUNCS
  CFLAGS += -DWOLFSSL_DER_LOAD
-@@ -1208,6 +1209,7 @@ LIBS_p += -lwolfssl -lm
+@@ -1230,6 +1231,7 @@ LIBS_p += -lwolfssl -lm
  endif
  
  ifeq ($(CONFIG_TLS), openssl)
@@ -1305,7 +1305,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  CFLAGS += -DCRYPTO_RSA_OAEP_SHA256
  ifdef TLS_FUNCS
  CFLAGS += -DEAP_TLS_OPENSSL
-@@ -1235,6 +1237,7 @@ CFLAGS += -DTLS_DEFAULT_CIPHERS=\"$(CONF
+@@ -1257,6 +1259,7 @@ CFLAGS += -DTLS_DEFAULT_CIPHERS=\"$(CONF
  endif
  
  ifeq ($(CONFIG_TLS), mbedtls)
@@ -1313,7 +1313,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  ifndef CONFIG_CRYPTO
  CONFIG_CRYPTO=mbedtls
  endif
-@@ -1254,6 +1257,7 @@ endif
+@@ -1276,6 +1279,7 @@ endif
  endif
  
  ifeq ($(CONFIG_TLS), gnutls)
@@ -1321,7 +1321,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  ifndef CONFIG_CRYPTO
  # default to libgcrypt
  CONFIG_CRYPTO=gnutls
-@@ -1284,6 +1288,7 @@ endif
+@@ -1306,6 +1310,7 @@ endif
  endif
  
  ifeq ($(CONFIG_TLS), internal)
@@ -1329,7 +1329,7 @@ Signed-off-by: Glenn Strauss <gstrauss@gluelogic.com>
  ifndef CONFIG_CRYPTO
  CONFIG_CRYPTO=internal
  endif
-@@ -1364,6 +1369,7 @@ endif
+@@ -1386,6 +1391,7 @@ endif
  endif
  
  ifeq ($(CONFIG_TLS), linux)

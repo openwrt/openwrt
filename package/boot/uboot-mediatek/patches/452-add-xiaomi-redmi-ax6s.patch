@@ -194,7 +194,7 @@ Subject: [PATCH] add xiaomi redmi ax6s
 +};
 --- /dev/null
 +++ b/configs/mt7622_xiaomi_redmi-router-ax6s-ubi-loader_defconfig
-@@ -0,0 +1,99 @@
+@@ -0,0 +1,102 @@
 +CONFIG_ARM=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
@@ -238,6 +238,7 @@ Subject: [PATCH] add xiaomi redmi ax6s
 +CONFIG_CMD_FS_UUID=y
 +CONFIG_CMD_MTDPARTS=y
 +CONFIG_MTDPARTS_DEFAULT="mtdparts=spi-nand0:512k(preloader),2816k(reserved),117248k(ubi)"
++CONFIG_CMD_RNG=y
 +CONFIG_CMD_UBI=y
 +CONFIG_CMD_UBI_RENAME=y
 +CONFIG_DOS_PARTITION=y
@@ -285,6 +286,8 @@ Subject: [PATCH] add xiaomi redmi ax6s
 +CONFIG_DM_REGULATOR_FIXED=y
 +CONFIG_DM_REGULATOR_GPIO=y
 +CONFIG_RAM=y
++CONFIG_DM_RNG=y
++CONFIG_RNG_MTK=y
 +CONFIG_DM_SERIAL=y
 +CONFIG_SERIAL_RX_BUFFER=y
 +CONFIG_MTK_SERIAL=y

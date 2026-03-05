@@ -130,7 +130,7 @@ inline void rtl_table_data_w(struct table_reg *r, u32 v, int i);
 void rtldsa_838x_qos_init(struct rtl838x_switch_priv *priv);
 void rtldsa_839x_qos_init(struct rtl838x_switch_priv *priv);
 
-void rtldsa_83xx_fast_age(struct dsa_switch *ds, int port);
+void rtldsa_port_fast_age(struct dsa_switch *ds, int port);
 int rtl83xx_packet_cntr_alloc(struct rtl838x_switch_priv *priv);
 int rtldsa_port_get_stp_state(struct rtl838x_switch_priv *priv, int port);
 int rtl83xx_port_is_under(const struct net_device *dev, struct rtl838x_switch_priv *priv);
@@ -157,13 +157,11 @@ int rtl838x_set_egress_rate(struct rtl838x_switch_priv *priv, int port, u32 rate
 /* RTL838x-specific */
 u32 rtl838x_hash(struct rtl838x_switch_priv *priv, u64 seed);
 irqreturn_t rtl838x_switch_irq(int irq, void *dev_id);
-void rtl838x_vlan_profile_dump(int index);
 void rtldsa_838x_print_matrix(void);
 
 /* RTL839x-specific */
 u32 rtl839x_hash(struct rtl838x_switch_priv *priv, u64 seed);
 irqreturn_t rtl839x_switch_irq(int irq, void *dev_id);
-void rtl839x_vlan_profile_dump(int index);
 void rtl839x_exec_tbl2_cmd(u32 cmd);
 void rtldsa_839x_print_matrix(void);
 
@@ -171,7 +169,6 @@ void rtldsa_839x_print_matrix(void);
 u32 rtl930x_hash(struct rtl838x_switch_priv *priv, u64 seed);
 irqreturn_t rtldsa_930x_switch_irq(int irq, void *dev_id);
 irqreturn_t rtl839x_switch_irq(int irq, void *dev_id);
-void rtl930x_vlan_profile_dump(int index);
 void rtldsa_930x_print_matrix(void);
 
 /* RTL931x-specific */

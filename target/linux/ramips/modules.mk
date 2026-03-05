@@ -84,13 +84,14 @@ I2C_MT7621_MODULES:= \
 
 define KernelPackage/i2c-mt7628
   $(call i2c_defaults,$(I2C_MT7621_MODULES),59)
-  TITLE:=MT7628/88 I2C Controller
+  TITLE:=MT7621/MT7628/MT7688 I2C Controller
   DEPENDS:=+kmod-i2c-core \
-	@(TARGET_ramips_mt76x8)
+	@(TARGET_ramips_mt7621||TARGET_ramips_mt76x8)
 endef
 
 define KernelPackage/i2c-mt7628/description
- Kernel modules for enable mt7621 i2c controller.
+  Driver support for I2C controller in the MediaTek
+  MT7621/MT7628/MT7688 SoCs.
 endef
 
 $(eval $(call KernelPackage,i2c-mt7628))

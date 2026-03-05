@@ -10,6 +10,10 @@
 	compatible = "xikestor,sks8310-8x", "realtek,rtl9303-soc";
 	model = "XikeStor SKS8310-8X";
 
+	aliases {
+		label-mac-device = &ethernet0;
+	};
+
 	memory@0 {
 		device_type = "memory";
 		reg = <0x00000000 0x10000000>, /* first 256 MiB */
@@ -27,16 +31,6 @@
 			label = "reset";
 			gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
-		};
-	};
-
-	leds {
-		compatible = "gpio-leds";
-
-		led_sys: led-0 {
-			gpios = <&gpio0 23 GPIO_ACTIVE_HIGH>;
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_STATUS;
 		};
 	};
 
@@ -138,9 +132,14 @@
 &i2c_mst1 {
 	status = "okay";
 
-	/* SDA0-7 correspond to GPIO9-16 */
 	i2c0: i2c@0 {
 		reg = <0>;
+
+		/* NXP LM75BD */
+		sensor@48 {
+			compatible = "national,lm75b";
+			reg = <0x48>;
+		};
 	};
 	i2c1: i2c@1 {
 		reg = <1>;
@@ -217,6 +216,18 @@
 				label = "factory";
 				reg = <0x1e0000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					factory_macaddr: macaddr@80 {
+						compatible = "mac-base";
+						reg = <0x80 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@1f0000 {
@@ -240,8 +251,13 @@
 	};
 };
 
+&ethernet0 {
+	nvmem-cells = <&factory_macaddr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
 &switch0 {
-	ports {
+	ethernet-ports {
 		#address-cells = <1>;
 		#size-cells = <0>;
 

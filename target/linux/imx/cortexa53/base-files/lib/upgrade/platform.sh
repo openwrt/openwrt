@@ -1,6 +1,7 @@
 
 enable_image_metadata_check() {
 	case "$(board_name)" in
+	gateworks,imx8m*|\
 	gw,imx8m*)
 		REQUIRE_IMAGE_METADATA=1
 		;;

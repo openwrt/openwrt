@@ -186,6 +186,13 @@
 	lantiq,gphy-mode = <GPHY_MODE_FE>;
 };
 
+/* This PHY is not used, but try to load the 100M FW too */
+&gphy1 {
+	status = "disabled";
+
+	lantiq,gphy-mode = <GPHY_MODE_FE>;
+};
+
 &gswip_mdio {
 	phy11: ethernet-phy@11 {
 		reg = <0x11>;

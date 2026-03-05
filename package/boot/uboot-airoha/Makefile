@@ -13,7 +13,7 @@ include $(INCLUDE_DIR)/host-build.mk
 
 define U-Boot/Default
   BUILD_TARGET:=airoha
-  FIP_COMPRESS:=1
+  LZMA_COMPRESS:=1
 endef
 
 define U-Boot/en7523_rfb
@@ -46,10 +46,19 @@ define U-Boot/an7583_rfb
   BL31_IMAGE:=an7583-bl31.bin
 endef
 
+define U-Boot/an7581_gemtek_w1700k
+  NAME:=Gemtek W1700K (UBI)
+  UBOOT_CONFIG:=an7581_w1700k
+  BUILD_DEVICES:=gemtek_w1700k-ubi
+  BUILD_SUBTARGET:=an7581
+  UBOOT_IMAGE:=u-boot.bin
+endef
+
 UBOOT_TARGETS := \
 	en7523_rfb \
 	an7581_rfb \
-	an7583_rfb
+	an7583_rfb \
+	an7581_gemtek_w1700k
 
 UBOOT_CUSTOMIZE_CONFIG := \
 	--disable TOOLS_KWBIMAGE \
@@ -65,15 +74,12 @@ define Build/fip-image-bl2
 endef
 
 define Build/fip-image
-	$(if $(FIP_COMPRESS), $(STAGING_DIR_HOST)/bin/lzma e \
-		$(PKG_BUILD_DIR)/u-boot.bin \
-		$(PKG_BUILD_DIR)/u-boot.bin.lzma)
-	$(if $(FIP_COMPRESS), $(STAGING_DIR_HOST)/bin/lzma e \
+	$(if $(LZMA_COMPRESS), $(STAGING_DIR_HOST)/bin/lzma e \
 		files/$(BL31_IMAGE) \
 		$(PKG_BUILD_DIR)/bl31.bin.lzma)
 	$(STAGING_DIR_HOST)/bin/fiptool create \
-		--soc-fw $(PKG_BUILD_DIR)/bl31.bin$(if $(FIP_COMPRESS),.lzma) \
-		--nt-fw $(PKG_BUILD_DIR)/u-boot.bin$(if $(FIP_COMPRESS),.lzma) \
+		--soc-fw $(PKG_BUILD_DIR)/bl31.bin$(if $(LZMA_COMPRESS),.lzma) \
+		--nt-fw $(PKG_BUILD_DIR)/u-boot.bin$(if $(LZMA_COMPRESS),.lzma) \
 		$(PKG_BUILD_DIR)/u-boot.fip
 endef
 
@@ -84,6 +90,9 @@ endef
 
 define Build/Compile
 	$(call Build/Compile/U-Boot)
+	$(if $(LZMA_COMPRESS), $(STAGING_DIR_HOST)/bin/lzma e \
+		$(PKG_BUILD_DIR)/u-boot.bin \
+		$(PKG_BUILD_DIR)/u-boot.bin.lzma)
 ifeq ($(UBOOT_IMAGE),u-boot.fip)
 	$(call Build/fip-image-bl2)
 	$(call Build/fip-image)
@@ -99,6 +108,11 @@ define Build/InstallDev
 ifeq ($(UBOOT_IMAGE),u-boot.fip)
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/bl2.fip $(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-bl2.fip
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/u-boot.fip $(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-bl31-u-boot.fip
+else
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/u-boot.bin$(if $(LZMA_COMPRESS),.lzma) \
+		$(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-u-boot.bin$(if $(LZMA_COMPRESS),.lzma)
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/u-boot.dtb \
+		$(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-u-boot.dtb
 endif
 endef
 

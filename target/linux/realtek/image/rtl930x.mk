@@ -132,6 +132,7 @@ define Device/xikestor_sks8310-8x
   UIMAGE_MAGIC := 0x93000000
   DEVICE_VENDOR := XikeStor
   DEVICE_MODEL := SKS8310-8X
+  DEVICE_PACKAGES := kmod-hwmon-lm75
   IMAGE_SIZE := 20480k
   $(Device/kernel-lzma)
   IMAGE/sysupgrade.bin := \

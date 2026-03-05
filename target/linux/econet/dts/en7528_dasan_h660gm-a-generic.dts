@@ -81,6 +81,11 @@
 };
 
 &partitions {
+	partition@60c0000 {
+		label = "unknown";
+		reg = <0x60c0000 0xd00000>;
+	};
+
 	partition@6dc0000 {
 		label = "reservearea";
 		reg = <0x6dc0000 0x240000>;
@@ -90,11 +95,11 @@
 			#size-cells = <1>;
 
 			eeprom_reservearea_40000: eeprom@40000 {
-				reg = <0x40000 0x400>;
+				reg = <0x40000 0x4da8>;
 			};
 
 			eeprom_reservearea_1c0000: eeprom@1c0000 {
-				reg = <0x1c0000 0x1000>;
+				reg = <0x1c0000 0x400>;
 			};
 		};
 	};

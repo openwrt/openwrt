@@ -124,6 +124,104 @@ static enum template_field_id fixed_templates[N_FIXED_TEMPLATES][N_FIXED_FIELDS]
 	},
 };
 
+const struct rtldsa_mib_list_item rtldsa_930x_mib_list[] = {
+	MIB_LIST_ITEM("ifOutDiscards", MIB_ITEM(MIB_REG_STD, 0xbc, 1)),
+	MIB_LIST_ITEM("dot1dTpPortInDiscards", MIB_ITEM(MIB_REG_STD, 0xb8, 1)),
+	MIB_LIST_ITEM("DropEvents", MIB_ITEM(MIB_REG_STD, 0x90, 1)),
+	MIB_LIST_ITEM("tx_BroadcastPkts", MIB_ITEM(MIB_REG_STD, 0x8c, 1)),
+	MIB_LIST_ITEM("tx_MulticastPkts", MIB_ITEM(MIB_REG_STD, 0x88, 1)),
+	MIB_LIST_ITEM("tx_CRCAlignErrors", MIB_ITEM(MIB_REG_STD, 0x84, 1)),
+	MIB_LIST_ITEM("tx_UndersizePkts", MIB_ITEM(MIB_REG_STD, 0x7c, 1)),
+	MIB_LIST_ITEM("tx_OversizePkts", MIB_ITEM(MIB_REG_STD, 0x74, 1)),
+	MIB_LIST_ITEM("tx_Fragments", MIB_ITEM(MIB_REG_STD, 0x6c, 1)),
+	MIB_LIST_ITEM("tx_Jabbers", MIB_ITEM(MIB_REG_STD, 0x64, 1)),
+	MIB_LIST_ITEM("tx_Collisions", MIB_ITEM(MIB_REG_STD, 0x5c, 1)),
+	MIB_LIST_ITEM("rx_UndersizeDropPkts", MIB_ITEM(MIB_REG_PRV, 0x7c, 1)),
+	MIB_LIST_ITEM("tx_PktsFlexibleOctetsSet1", MIB_ITEM(MIB_REG_PRV, 0x68, 1)),
+	MIB_LIST_ITEM("rx_PktsFlexibleOctetsSet1", MIB_ITEM(MIB_REG_PRV, 0x64, 1)),
+	MIB_LIST_ITEM("tx_PktsFlexibleOctetsCRCSet1", MIB_ITEM(MIB_REG_PRV, 0x60, 1)),
+	MIB_LIST_ITEM("rx_PktsFlexibleOctetsCRCSet1", MIB_ITEM(MIB_REG_PRV, 0x5c, 1)),
+	MIB_LIST_ITEM("tx_PktsFlexibleOctetsSet0", MIB_ITEM(MIB_REG_PRV, 0x58, 1)),
+	MIB_LIST_ITEM("rx_PktsFlexibleOctetsSet0", MIB_ITEM(MIB_REG_PRV, 0x54, 1)),
+	MIB_LIST_ITEM("tx_PktsFlexibleOctetsCRCSet0", MIB_ITEM(MIB_REG_PRV, 0x50, 1)),
+	MIB_LIST_ITEM("rx_PktsFlexibleOctetsCRCSet0", MIB_ITEM(MIB_REG_PRV, 0x4c, 1)),
+	MIB_LIST_ITEM("LengthFieldError", MIB_ITEM(MIB_REG_PRV, 0x48, 1)),
+	MIB_LIST_ITEM("FalseCarrierTimes", MIB_ITEM(MIB_REG_PRV, 0x44, 1)),
+	MIB_LIST_ITEM("UndersizeOctets", MIB_ITEM(MIB_REG_PRV, 0x40, 1)),
+	MIB_LIST_ITEM("FramingErrors", MIB_ITEM(MIB_REG_PRV, 0x3c, 1)),
+	MIB_LIST_ITEM("ParserErrors", MIB_ITEM(MIB_REG_PRV, 0x38, 1)),
+	MIB_LIST_ITEM("rx_MacDiscards", MIB_ITEM(MIB_REG_PRV, 0x34, 1)),
+	MIB_LIST_ITEM("rx_MacIPGShortDrop", MIB_ITEM(MIB_REG_PRV, 0x30, 1))
+};
+
+const struct rtldsa_mib_desc rtldsa_930x_mib_desc = {
+	.symbol_errors = MIB_ITEM(MIB_REG_STD, 0xa0, 1),
+
+	.if_in_octets = MIB_ITEM(MIB_REG_STD, 0xf8, 2),
+	.if_out_octets = MIB_ITEM(MIB_REG_STD, 0xf0, 2),
+	.if_in_ucast_pkts = MIB_ITEM(MIB_REG_STD, 0xe8, 2),
+	.if_in_mcast_pkts = MIB_ITEM(MIB_REG_STD, 0xe0, 2),
+	.if_in_bcast_pkts = MIB_ITEM(MIB_REG_STD, 0xd8, 2),
+	.if_out_ucast_pkts = MIB_ITEM(MIB_REG_STD, 0xd0, 2),
+	.if_out_mcast_pkts = MIB_ITEM(MIB_REG_STD, 0xc8, 2),
+	.if_out_bcast_pkts = MIB_ITEM(MIB_REG_STD, 0xc0, 2),
+	.if_out_discards = MIB_ITEM(MIB_REG_STD, 0xbc, 1),
+	.single_collisions = MIB_ITEM(MIB_REG_STD, 0xb4, 1),
+	.multiple_collisions = MIB_ITEM(MIB_REG_STD, 0xb0, 1),
+	.deferred_transmissions = MIB_ITEM(MIB_REG_STD, 0xac, 1),
+	.late_collisions = MIB_ITEM(MIB_REG_STD, 0xa8, 1),
+	.excessive_collisions = MIB_ITEM(MIB_REG_STD, 0xa4, 1),
+	.crc_align_errors = MIB_ITEM(MIB_REG_STD, 0x80, 1),
+	.rx_pkts_over_max_octets = MIB_ITEM(MIB_REG_PRV, 0x6c, 1),
+
+	.unsupported_opcodes = MIB_ITEM(MIB_REG_STD, 0x9c, 1),
+
+	.rx_undersize_pkts = MIB_ITEM(MIB_REG_STD, 0x78, 1),
+	.rx_oversize_pkts = MIB_ITEM(MIB_REG_STD, 0x70, 1),
+	.rx_fragments = MIB_ITEM(MIB_REG_STD, 0x68, 1),
+	.rx_jabbers = MIB_ITEM(MIB_REG_STD, 0x60, 1),
+
+	.tx_pkts = {
+		MIB_ITEM(MIB_REG_STD, 0x58, 1),
+		MIB_ITEM(MIB_REG_STD, 0x50, 1),
+		MIB_ITEM(MIB_REG_STD, 0x48, 1),
+		MIB_ITEM(MIB_REG_STD, 0x40, 1),
+		MIB_ITEM(MIB_REG_STD, 0x38, 1),
+		MIB_ITEM(MIB_REG_STD, 0x30, 1),
+		MIB_ITEM(MIB_REG_PRV, 0x78, 1),
+		MIB_ITEM(MIB_REG_PRV, 0x70, 1)
+	},
+	.rx_pkts = {
+		MIB_ITEM(MIB_REG_STD, 0x54, 1),
+		MIB_ITEM(MIB_REG_STD, 0x4c, 1),
+		MIB_ITEM(MIB_REG_STD, 0x44, 1),
+		MIB_ITEM(MIB_REG_STD, 0x3c, 1),
+		MIB_ITEM(MIB_REG_STD, 0x34, 1),
+		MIB_ITEM(MIB_REG_STD, 0x2c, 1),
+		MIB_ITEM(MIB_REG_PRV, 0x74, 1),
+		MIB_ITEM(MIB_REG_PRV, 0x6c, 1),
+	},
+	.rmon_ranges = {
+		{ 0, 64 },
+		{ 65, 127 },
+		{ 128, 255 },
+		{ 256, 511 },
+		{ 512, 1023 },
+		{ 1024, 1518 },
+		{ 1519, 12288 },
+		{ 12289, 65535 }
+	},
+
+	.drop_events = MIB_ITEM(MIB_REG_STD, 0x90, 1),
+	.collisions = MIB_ITEM(MIB_REG_STD, 0x5c, 1),
+
+	.rx_pause_frames = MIB_ITEM(MIB_REG_STD, 0x98, 1),
+	.tx_pause_frames = MIB_ITEM(MIB_REG_STD, 0x94, 1),
+
+	.list_count = ARRAY_SIZE(rtldsa_930x_mib_list),
+	.list = rtldsa_930x_mib_list
+};
+
 void rtldsa_930x_print_matrix(void)
 {
 	struct table_reg *r = rtl_table_get(RTL9300_TBL_0, 6);
@@ -306,31 +404,59 @@ static void rtl930x_vlan_set_tagged(u32 vlan, struct rtl838x_vlan_info *info)
 	rtl_table_release(r);
 }
 
-void rtl930x_vlan_profile_dump(int profile)
+static int
+rtldsa_930x_vlan_profile_get(int idx, struct rtldsa_vlan_profile *profile)
 {
 	u32 p[5];
 
-	if (profile < 0 || profile > RTL930X_VLAN_PROFILE_MAX)
+	if (idx < 0 || idx > RTL930X_VLAN_PROFILE_MAX)
+		return -EINVAL;
+
+	for (int i = 0; i < 5; i++)
+		p[i] = sw_r32(RTL930X_VLAN_PROFILE_SET(idx) + i * 4);
+
+	*profile = (struct rtldsa_vlan_profile) {
+		.l2_learn = RTL930X_VLAN_L2_LEARN_EN_R(p),
+		.unkn_mc_fld.pmsks = {
+			.l2 = RTL930X_VLAN_L2_UNKN_MC_FLD_PMSK(p),
+			.ip = RTL930X_VLAN_IP4_UNKN_MC_FLD_PMSK(p),
+			.ip6 = RTL930X_VLAN_IP6_UNKN_MC_FLD_PMSK(p),
+		},
+		.pmsk_is_idx = 0,
+		.routing_ipuc = p[0] & BIT(17),
+		.routing_ip6uc = p[0] & BIT(16),
+		.routing_ipmc = p[0] & BIT(13),
+		.routing_ip6mc = p[0] & BIT(12),
+		.bridge_ipmc = p[0] & BIT(15),
+		.bridge_ip6mc = p[0] & BIT(14),
+	};
+
+	return 0;
+}
+
+static void
+rtldsa_930x_vlan_profile_dump(struct rtl838x_switch_priv *priv, int idx)
+{
+	struct rtldsa_vlan_profile p;
+
+	if (rtldsa_930x_vlan_profile_get(idx, &p) < 0)
 		return;
 
-	p[0] = sw_r32(RTL930X_VLAN_PROFILE_SET(profile));
-	p[1] = sw_r32(RTL930X_VLAN_PROFILE_SET(profile) + 4);
-	p[2] = sw_r32(RTL930X_VLAN_PROFILE_SET(profile) + 8);
-	p[3] = sw_r32(RTL930X_VLAN_PROFILE_SET(profile) + 12);
-	p[4] = sw_r32(RTL930X_VLAN_PROFILE_SET(profile) + 16);
-
-	pr_debug("VLAN %d: L2 learn: %d; Unknown MC PMasks: L2 %0lx, IPv4 %0lx, IPv6: %0lx",
-		 profile, RTL930X_VLAN_L2_LEARN_EN_R(p),
-		 RTL930X_VLAN_L2_UNKN_MC_FLD_PMSK(p),
-		 RTL930X_VLAN_IP4_UNKN_MC_FLD_PMSK(p),
-		 RTL930X_VLAN_IP6_UNKN_MC_FLD_PMSK(p));
-	pr_debug("  Routing enabled: IPv4 UC %c, IPv6 UC %c, IPv4 MC %c, IPv6 MC %c\n",
-		 p[0] & BIT(17) ? 'y' : 'n', p[0] & BIT(16) ? 'y' : 'n',
-		 p[0] & BIT(13) ? 'y' : 'n', p[0] & BIT(12) ? 'y' : 'n');
-	pr_debug("  Bridge enabled: IPv4 MC %c, IPv6 MC %c,\n",
-		 p[0] & BIT(15) ? 'y' : 'n', p[0] & BIT(14) ? 'y' : 'n');
-	pr_debug("VLAN profile %d: raw %08x %08x %08x %08x %08x\n",
-		 profile, p[0], p[1], p[2], p[3], p[4]);
+	dev_dbg(priv->dev,
+		"VLAN %d: L2 learn: %d; Unknown MC PMasks: L2 %llx, IPv4 %llx, IPv6: %llx\n"
+		"  Routing enabled: IPv4 UC %c, IPv6 UC %c, IPv4 MC %c, IPv6 MC %c\n"
+		"  Bridge enabled: IPv4 MC %c, IPv6 MC %c\n"
+		"VLAN profile %d: raw %08x %08x %08x %08x %08x\n",
+		idx, p.l2_learn, p.unkn_mc_fld.pmsks.l2,
+		p.unkn_mc_fld.pmsks.ip, p.unkn_mc_fld.pmsks.ip6,
+		p.routing_ipuc ? 'y' : 'n', p.routing_ip6uc ? 'y' : 'n',
+		p.routing_ipmc ? 'y' : 'n', p.routing_ip6mc ? 'y' : 'n',
+		p.bridge_ipmc ? 'y' : 'n', p.bridge_ip6mc ? 'y' : 'n', idx,
+		sw_r32(RTL930X_VLAN_PROFILE_SET(idx)),
+		sw_r32(RTL930X_VLAN_PROFILE_SET(idx) + 4),
+		sw_r32(RTL930X_VLAN_PROFILE_SET(idx) + 8) & 0x1FFFFFFF,
+		sw_r32(RTL930X_VLAN_PROFILE_SET(idx) + 12) & 0x1FFFFFFF,
+		sw_r32(RTL930X_VLAN_PROFILE_SET(idx) + 16) & 0x1FFFFFFF);
 }
 
 static void rtl930x_vlan_set_untagged(u32 vlan, u64 portmask)
@@ -2338,17 +2464,20 @@ static void rtl930x_vlan_port_pvid_set(int port, enum pbvlan_type type, int pvid
 		sw_w32_mask(0xfff << 16, pvid << 16, RTL930X_VLAN_PORT_PB_VLAN + (port << 2));
 }
 
-static int rtldsa_930x_vlan_port_fast_age(struct rtl838x_switch_priv *priv, int port, u16 vid)
+static int rtldsa_930x_fast_age(struct rtl838x_switch_priv *priv, int port, int vid)
 {
 	u32 val;
 
 	sw_w32(port << 11, RTL930X_L2_TBL_FLUSH_CTRL + 4);
 
 	val = 0;
-	val |= vid << 12;
 	val |= BIT(26); /* compare port id */
-	val |= BIT(28); /* compare VID */
 	val |= BIT(30); /* status - trigger flush */
+	if (vid >= 0) {
+		val |= BIT(28); /* compare VID */
+		val |= vid << 12;
+	}
+
 	sw_w32(val, RTL930X_L2_TBL_FLUSH_CTRL);
 
 	do { } while (sw_r32(priv->r->l2_tbl_flush_ctrl) & BIT(30));
@@ -2508,7 +2637,7 @@ static void rtl930x_led_init(struct rtl838x_switch_priv *priv)
 		sw_w32_mask(0x3 << pos, 0, RTL930X_LED_PORT_FIB_SET_SEL_CTRL(i));
 		sw_w32_mask(0x3 << pos, 0, RTL930X_LED_PORT_COPR_SET_SEL_CTRL(i));
 
-		if (!priv->ports[i].phy && !priv->pcs[i] && !(forced_leds_per_port[i]))
+		if (!priv->ports[i].phy && !priv->ports[i].pcs && !(forced_leds_per_port[i]))
 			continue;
 
 		if (forced_leds_per_port[i] > 0)
@@ -2625,6 +2754,7 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.stat_rst = RTL930X_STAT_RST,
 	.stat_port_std_mib = RTL930X_STAT_PORT_MIB_CNTR,
 	.stat_port_prv_mib = RTL930X_STAT_PORT_PRVTE_CNTR,
+	.mib_desc = &rtldsa_930x_mib_desc,
 	.stat_counters_lock = rtldsa_counters_lock_register,
 	.stat_counters_unlock = rtldsa_counters_unlock_register,
 	.stat_update_counters_atomically = rtldsa_update_counters_atomically,
@@ -2651,7 +2781,8 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.vlan_tables_read = rtl930x_vlan_tables_read,
 	.vlan_set_tagged = rtl930x_vlan_set_tagged,
 	.vlan_set_untagged = rtl930x_vlan_set_untagged,
-	.vlan_profile_dump = rtl930x_vlan_profile_dump,
+	.vlan_profile_get = rtldsa_930x_vlan_profile_get,
+	.vlan_profile_dump = rtldsa_930x_vlan_profile_dump,
 	.vlan_profile_setup = rtl930x_vlan_profile_setup,
 	.vlan_fwd_on_inner = rtl930x_vlan_fwd_on_inner,
 	.set_vlan_igr_filter = rtl930x_set_igr_filter,
@@ -2673,7 +2804,7 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.vlan_port_keep_tag_set = rtl930x_vlan_port_keep_tag_set,
 	.vlan_port_pvidmode_set = rtl930x_vlan_port_pvidmode_set,
 	.vlan_port_pvid_set = rtl930x_vlan_port_pvid_set,
-	.vlan_port_fast_age = rtldsa_930x_vlan_port_fast_age,
+	.fast_age = rtldsa_930x_fast_age,
 	.trk_mbr_ctr = rtl930x_trk_mbr_ctr,
 	.rma_bpdu_fld_pmask = RTL930X_RMA_BPDU_FLD_PMSK,
 	.init_eee = rtl930x_init_eee,

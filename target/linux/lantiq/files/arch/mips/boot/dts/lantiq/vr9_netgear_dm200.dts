@@ -97,6 +97,13 @@
 	nvmem-cell-names = "mac-address";
 };
 
+/* This PHY is not used, but try to load the 100M FW too */
+&gphy0 {
+	status = "disabled";
+
+	lantiq,gphy-mode = <GPHY_MODE_FE>;
+};
+
 &gphy1 {
 	lantiq,gphy-mode = <GPHY_MODE_FE>;
 };

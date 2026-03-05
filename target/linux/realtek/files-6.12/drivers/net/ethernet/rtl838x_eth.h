@@ -64,23 +64,15 @@
 #define RTL839X_DMA_IF_CTRL			(0x786c)
 
 #define RTL930X_DMA_IF_CTRL			(0xe028)
-#define RTL930X_DMA_IF_INTR_TX_DONE_STS		(0xe024)
-#define RTL930X_DMA_IF_INTR_RX_DONE_MSK		(0xe014)
 #define RTL930X_L2_NTFY_IF_INTR_MSK		(0xe04C)
 #define RTL930X_L2_NTFY_IF_INTR_STS		(0xe050)
 
 /* TODO: RTL931X_DMA_IF_CTRL has different bits meanings */
 #define RTL931X_DMA_IF_CTRL			(0x0928)
-#define RTL931X_DMA_IF_INTR_TX_DONE_STS		(0x0924)
-#define RTL931X_DMA_IF_INTR_RX_DONE_MSK		(0x0914)
 #define RTL931X_L2_NTFY_IF_INTR_MSK		(0x09E4)
 #define RTL931X_L2_NTFY_IF_INTR_STS		(0x09E8)
 
 #define RTL839X_DMA_IF_INTR_NOTIFY_MASK		GENMASK(22, 20)
-#define RTL83XX_DMA_IF_INTR_RX_DONE_MASK	GENMASK(15, 8)
-#define RTL83XX_DMA_IF_INTR_RX_RUN_OUT_MASK	GENMASK(7, 0)
-#define RTL83XX_DMA_IF_INTR_RX_MASK(ring)	(BIT(ring + 8))
-#define RTL93XX_DMA_IF_INTR_RX_MASK(ring)	(BIT(ring))
 
 /* MAC address settings */
 #define RTL838X_MAC				(0xa9ec)
@@ -413,8 +405,6 @@ struct rteth_config {
 	int qm_rsn2cpuqid_cnt;
 	int dma_if_intr_sts;
 	int dma_if_intr_msk;
-	int dma_if_intr_tx_done_sts;
-	int dma_if_intr_rx_done_msk;
 	int l2_ntfy_if_intr_sts;
 	int l2_ntfy_if_intr_msk;
 	int dma_if_ctrl;

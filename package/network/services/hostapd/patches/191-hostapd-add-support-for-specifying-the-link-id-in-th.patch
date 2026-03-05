@@ -9,7 +9,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
 
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -4934,6 +4934,8 @@ static int hostapd_config_fill(struct ho
+@@ -4957,6 +4957,8 @@ static int hostapd_config_fill(struct ho
  		conf->punct_acs_threshold = val;
  	} else if (os_strcmp(buf, "mld_ap") == 0) {
  		bss->mld_ap = !!atoi(pos);
@@ -20,20 +20,19 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  			wpa_printf(MSG_ERROR, "Line %d: Invalid mld_addr",
 --- a/src/ap/ap_config.c
 +++ b/src/ap/ap_config.c
-@@ -177,6 +177,10 @@ void hostapd_config_defaults_bss(struct
- 	bss->pasn_comeback_after = 10;
- 	bss->pasn_noauth = 1;
+@@ -179,6 +179,9 @@ void hostapd_config_defaults_bss(struct
  #endif /* CONFIG_PASN */
-+
+ 	bss->urnm_mfpr_x20 = -1;
+ 	bss->urnm_mfpr = -1;
 +#ifdef CONFIG_IEEE80211BE
 +	bss->mld_link_id = -1;
 +#endif
- }
- 
- 
+ #ifdef CONFIG_ENC_ASSOC
+ 	bss->assoc_frame_encryption = 0;
+ 	bss->pmksa_caching_privacy = 0;
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -967,6 +967,8 @@ struct hostapd_bss_config {
+@@ -979,6 +979,8 @@ struct hostapd_bss_config {
  	/* The AP's MLD MAC address within the AP MLD */
  	u8 mld_addr[ETH_ALEN];
  
@@ -44,7 +43,7 @@ Signed-off-by: Felix Fietkau <nbd@nbd.name>
  	 * If set indicate the AP as disabled in the RNR element included in the
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -3105,7 +3105,10 @@ struct hostapd_iface * hostapd_alloc_ifa
+@@ -3120,7 +3120,10 @@ struct hostapd_iface * hostapd_alloc_ifa
  #ifdef CONFIG_IEEE80211BE
  static void hostapd_bss_alloc_link_id(struct hostapd_data *hapd)
  {

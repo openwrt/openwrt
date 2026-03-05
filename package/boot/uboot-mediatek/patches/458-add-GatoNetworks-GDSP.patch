@@ -253,8 +253,9 @@ Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
 +};
 --- /dev/null
 +++ b/configs/mt7981_gatonetworks_gdsp_defconfig
-@@ -0,0 +1,146 @@
+@@ -0,0 +1,150 @@
 +CONFIG_ARM=y
++CONFIG_ARM_SMCCC=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -304,6 +305,7 @@ Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
 +CONFIG_LOOPW=y
 +CONFIG_CMD_MEMINFO=y
 +CONFIG_CMD_MEMTEST=y
++CONFIG_CMD_RNG=y
 +CONFIG_CMD_STRINGS=y
 +# CONFIG_CMD_UNLZ4 is not set
 +# CONFIG_CMD_UNZIP is not set
@@ -386,6 +388,8 @@ Signed-off-by: Enrico Mioso <mrkiko.rs@gmail.com>
 +CONFIG_MTK_POWER_DOMAIN=y
 +CONFIG_DM_PWM=y
 +CONFIG_PWM_MTK=y
++CONFIG_DM_RNG=y
++CONFIG_RNG_MTK_V2=y
 +CONFIG_DM_SERIAL=y
 +CONFIG_SERIAL_RX_BUFFER=y
 +CONFIG_MTK_SERIAL=y

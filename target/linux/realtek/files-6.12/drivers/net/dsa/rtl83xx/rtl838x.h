@@ -874,11 +874,9 @@ struct rtldsa_counter_state {
 	struct rtnl_link_stats64 link_stat;
 };
 
-struct rtl838x_port {
+struct rtldsa_port {
 	bool enable:1;
 	bool phy_is_integrated:1;
-	bool is10G:1;
-	bool is2G5:1;
 	bool isolated:1;
 	bool rate_police_egress:1;
 	bool rate_police_ingress:1;
@@ -886,6 +884,7 @@ struct rtl838x_port {
 	u16 pvid;
 	bool eee_enabled;
 	enum phy_type phy;
+	struct phylink_pcs *pcs;
 	int led_set;
 	int leds_on_this_port;
 	struct rtldsa_counter_state counters;
@@ -912,6 +911,26 @@ struct rtldsa_mst {
 
 	/** @refcount: number of vlans currently using this msti, undefined when unused */
 	struct kref refcount;
+};
+
+struct rtldsa_vlan_profile {
+	union {
+		struct {
+			u64 l2;
+			u64 ip;
+			u64 ip6;
+		} pmsks;
+		struct {
+			u16 l2;
+			u16 ip;
+			u16 ip6;
+		} pmsks_idx;
+	} unkn_mc_fld;
+
+	int l2_learn;
+
+	u8 pmsk_is_idx:1, routing_ipuc:1, routing_ip6uc:1,
+	   routing_ipmc:1, routing_ip6mc:1, bridge_ipmc:1, bridge_ip6mc:1;
 };
 
 enum l2_entry_type {
@@ -1242,6 +1261,7 @@ struct rtldsa_config {
 	int stat_rst;
 	int stat_port_std_mib;
 	int stat_port_prv_mib;
+	const struct rtldsa_mib_desc *mib_desc;
 	u64 (*stat_port_table_read)(int port, unsigned int mib_size, unsigned int offset, bool is_pvt);
 	void (*stat_counters_lock)(struct rtl838x_switch_priv *priv, int port);
 	void (*stat_counters_unlock)(struct rtl838x_switch_priv *priv, int port);
@@ -1279,12 +1299,13 @@ struct rtldsa_config {
 	void (*vlan_tables_read)(u32 vlan, struct rtl838x_vlan_info *info);
 	void (*vlan_set_tagged)(u32 vlan, struct rtl838x_vlan_info *info);
 	void (*vlan_set_untagged)(u32 vlan, u64 portmask);
-	void (*vlan_profile_dump)(int index);
+	int (*vlan_profile_get)(int index, struct rtldsa_vlan_profile *profile);
+	void (*vlan_profile_dump)(struct rtl838x_switch_priv *priv, int index);
 	void (*vlan_profile_setup)(int profile);
 	void (*vlan_port_pvidmode_set)(int port, enum pbvlan_type type, enum pbvlan_mode mode);
 	void (*vlan_port_pvid_set)(int port, enum pbvlan_type type, int pvid);
 	void (*vlan_port_keep_tag_set)(int port, bool keep_outer, bool keep_inner);
-	int (*vlan_port_fast_age)(struct rtl838x_switch_priv *priv, int port, u16 vid);
+	int (*fast_age)(struct rtl838x_switch_priv *priv, int port, int vid);
 	void (*set_vlan_igr_filter)(int port, enum igr_filter state);
 	void (*set_vlan_egr_filter)(int port, enum egr_filter state);
 	void (*enable_learning)(int port, bool enable);
@@ -1352,8 +1373,7 @@ struct rtl838x_switch_priv {
 	struct device *dev;
 	u16 id;
 	u16 family_id;
-	struct rtl838x_port ports[57];
-	struct phylink_pcs *pcs[57];
+	struct rtldsa_port ports[57];
 	struct mutex reg_mutex;		/* Mutex for individual register manipulations */
 	struct mutex pie_mutex;		/* Mutex for Packet Inspection Engine */
 	int link_state_irq;

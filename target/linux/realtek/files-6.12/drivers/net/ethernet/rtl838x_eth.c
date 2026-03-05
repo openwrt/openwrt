@@ -194,18 +194,32 @@ struct rteth_ctrl {
 	struct rteth_tx		*tx_data;
 };
 
+static inline void rteth_reenable_irq(struct rteth_ctrl *ctrl, int ring)
+{
+	u32 shift = ctrl->r->rx_rings % 32;
+	u32 reg = ctrl->r->rx_rings / 32;
+	unsigned long flags;
+
+	spin_lock_irqsave(&ctrl->lock, flags);
+	sw_w32_mask(0, BIT(ring + shift), ctrl->r->dma_if_intr_msk + reg * 4);
+	spin_unlock_irqrestore(&ctrl->lock, flags);
+}
+
 static inline void rteth_confirm_and_disable_irqs(struct rteth_ctrl *ctrl,
 						  unsigned long *rings, bool *l2)
 {
 	u32 mask = GENMASK(ctrl->r->rx_rings - 1, 0);
 	u32 shift = ctrl->r->rx_rings % 32;
 	u32 reg = ctrl->r->rx_rings / 32;
+	unsigned long flags;
 	u32 active;
 
 	/* get all irqs, disable only rx (on RTL839x this keeps L2), confirm all */
+	spin_lock_irqsave(&ctrl->lock, flags);
 	active = sw_r32(ctrl->r->dma_if_intr_sts + reg * 4);
 	sw_w32_mask(active & (mask << shift), 0, ctrl->r->dma_if_intr_msk + reg * 4);
 	sw_w32(active, ctrl->r->dma_if_intr_sts + reg * 4);
+	spin_unlock_irqrestore(&ctrl->lock, flags);
 
 	/* ~mask filters out RTL93xx devices */
 	*l2 = !!(active & ~mask & RTL839X_DMA_IF_INTR_NOTIFY_MASK);
@@ -1071,31 +1085,15 @@ static int rteth_hw_receive(struct net_device *dev, int ring, int budget)
 	return work_done;
 }
 
-static int rtl838x_poll_rx(struct napi_struct *napi, int budget)
+static int rteth_poll_rx(struct napi_struct *napi, int budget)
 {
 	struct rtl838x_rx_q *rx_q = container_of(napi, struct rtl838x_rx_q, napi);
 	struct rteth_ctrl *ctrl = rx_q->ctrl;
-	unsigned long flags;
-	int ring = rx_q->id;
-	int work_done = 0;
+	int work_done, ring = rx_q->id;
 
-	while (work_done < budget) {
-		int work = rteth_hw_receive(ctrl->netdev, ring, budget - work_done);
-
-		if (!work)
-			break;
-		work_done += work;
-	}
-
-	if (work_done < budget && napi_complete_done(napi, work_done)) {
-		/* Re-enable rx interrupts */
-		spin_lock_irqsave(&ctrl->lock, flags);
-		if (ctrl->r->family_id == RTL9300_FAMILY_ID || ctrl->r->family_id == RTL9310_FAMILY_ID)
-			sw_w32_mask(0, RTL93XX_DMA_IF_INTR_RX_MASK(ring), ctrl->r->dma_if_intr_rx_done_msk);
-		else
-			sw_w32_mask(0, RTL83XX_DMA_IF_INTR_RX_MASK(ring), ctrl->r->dma_if_intr_msk);
-		spin_unlock_irqrestore(&ctrl->lock, flags);
-	}
+	work_done = rteth_hw_receive(ctrl->netdev, ring, budget);
+	if (work_done < budget && napi_complete_done(napi, work_done))
+		rteth_reenable_irq(ctrl, ring);
 
 	return work_done;
 }
@@ -1498,9 +1496,7 @@ static const struct rteth_config rteth_930x_cfg = {
 	.qm_rsn2cpuqid_ctrl = RTETH_930X_QM_RSN2CPUQID_CTRL_0,
 	.qm_rsn2cpuqid_cnt = RTETH_930X_QM_RSN2CPUQID_CTRL_CNT,
 	.dma_if_intr_sts = RTETH_930X_DMA_IF_INTR_STS,
-	.dma_if_intr_tx_done_sts = RTL930X_DMA_IF_INTR_TX_DONE_STS,
 	.dma_if_intr_msk = RTETH_930X_DMA_IF_INTR_MSK,
-	.dma_if_intr_rx_done_msk = RTL930X_DMA_IF_INTR_RX_DONE_MSK,
 	.l2_ntfy_if_intr_sts = RTL930X_L2_NTFY_IF_INTR_STS,
 	.l2_ntfy_if_intr_msk = RTL930X_L2_NTFY_IF_INTR_MSK,
 	.dma_if_ctrl = RTL930X_DMA_IF_CTRL,
@@ -1548,9 +1544,7 @@ static const struct rteth_config rteth_931x_cfg = {
 	.qm_rsn2cpuqid_ctrl = RTETH_931X_QM_RSN2CPUQID_CTRL_0,
 	.qm_rsn2cpuqid_cnt = RTETH_931X_QM_RSN2CPUQID_CTRL_CNT,
 	.dma_if_intr_sts = RTETH_931X_DMA_IF_INTR_STS,
-	.dma_if_intr_tx_done_sts = RTL931X_DMA_IF_INTR_TX_DONE_STS,
 	.dma_if_intr_msk = RTETH_931X_DMA_IF_INTR_MSK,
-	.dma_if_intr_rx_done_msk = RTL931X_DMA_IF_INTR_RX_DONE_MSK,
 	.l2_ntfy_if_intr_sts = RTL931X_L2_NTFY_IF_INTR_STS,
 	.l2_ntfy_if_intr_msk = RTL931X_L2_NTFY_IF_INTR_MSK,
 	.dma_if_ctrl = RTL931X_DMA_IF_CTRL,
@@ -1701,7 +1695,7 @@ static int rtl838x_eth_probe(struct platform_device *pdev)
 	for (int i = 0; i < RTETH_RX_RINGS; i++) {
 		ctrl->rx_qs[i].id = i;
 		ctrl->rx_qs[i].ctrl = ctrl;
-		netif_napi_add(dev, &ctrl->rx_qs[i].napi, rtl838x_poll_rx);
+		netif_napi_add(dev, &ctrl->rx_qs[i].napi, rteth_poll_rx);
 	}
 
 	platform_set_drvdata(pdev, dev);

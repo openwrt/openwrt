@@ -8,7 +8,7 @@ as adding/removing interfaces.
 
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -4983,7 +4983,14 @@ struct hostapd_config * hostapd_config_r
+@@ -5008,7 +5008,14 @@ struct hostapd_config * hostapd_config_r
  	int errors = 0;
  	size_t i;
  
@@ -26,7 +26,7 @@ as adding/removing interfaces.
  			   "for reading.", fname);
 --- a/wpa_supplicant/config_file.c
 +++ b/wpa_supplicant/config_file.c
-@@ -390,8 +390,13 @@ struct wpa_config * wpa_config_read(cons
+@@ -391,8 +391,13 @@ struct wpa_config * wpa_config_read(cons
  	while (identity_tail && identity_tail->next)
  		identity_tail = identity_tail->next;
  
@@ -39,11 +39,11 @@ as adding/removing interfaces.
  	wpa_printf(MSG_DEBUG, "Reading configuration file '%s'", name);
 -	f = fopen(name, "r");
  	if (f == NULL) {
- 		wpa_printf(MSG_ERROR, "Failed to open config file '%s', "
- 			   "error: %s", name, strerror(errno));
+ 		if (show_details)
+ 			wpa_printf(MSG_ERROR,
 --- a/hostapd/main.c
 +++ b/hostapd/main.c
-@@ -406,7 +406,11 @@ hostapd_interface_init(struct hapd_inter
+@@ -407,7 +407,11 @@ hostapd_interface_init(struct hapd_inter
  	struct hostapd_iface *iface;
  	int k;
  
@@ -58,7 +58,7 @@ as adding/removing interfaces.
  		return NULL;
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -3399,8 +3399,13 @@ hostapd_interface_init_bss(struct hapd_i
+@@ -3414,8 +3414,13 @@ hostapd_interface_init_bss(struct hapd_i
  		}
  	}
  
