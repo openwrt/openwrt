@@ -21,7 +21,6 @@
 
 	chosen {
 		stdout-path = "/serial@1fbf0000:115200";
-		linux,usable-memory-range = <0x00020000 0x0ffe0000>;
 	};
 
 	leds {
@@ -153,6 +152,8 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		econet,boot-flag = <&bootloader_flag 0xfff>;
+
 		partition@0 {
 			label = "bootloader";
 			reg = <0x0 0x40000>;
@@ -176,20 +177,18 @@
 		};
 
 		partition@80000 {
+			compatible = "econet,trx";
 			label = "tclinux";
 			reg = <0x80000 0x2000000>;
 			econet,enable-remap;
-		};
-
-		partition@480000 {
-			label = "rootfs";
-			reg = <0x480000 0x1c00000>;
-			linux,rootfs;
+			econet,boot-flag-value = <0>;
 		};
 
 		partition@2080000 {
+			compatible = "econet,trx";
 			label = "tclinux_slave";
 			reg = <0x2080000 0x2000000>;
+			econet,boot-flag-value = <1>;
 		};
 
 		partition@4080000 {
