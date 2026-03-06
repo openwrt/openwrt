@@ -11,6 +11,7 @@ if len(argv) != 2:
     exit(1)
 
 output_path = Path(argv[1])
+output_dir = output_path.parent
 
 assert getenv("WORK_DIR"), "$WORK_DIR required"
 
@@ -26,6 +27,12 @@ def get_initial_output(image_info):
         if profiles["version_code"] == image_info["version_code"]:
             return profiles
     return image_info
+
+
+def add_artifact(artifact, prefix="openwrt-"):
+    files = list(output_dir.glob(f"{prefix}{artifact}-*"))
+    if len(files) == 1:
+        output[artifact] = str(files[0].name)
 
 
 for json_file in work_dir.glob("*.json"):
@@ -78,6 +85,11 @@ if output:
         "release": linux_release,
         "vermagic": linux_vermagic,
     }
+
+    for artifact in "imagebuilder", "sdk", "toolchain":
+        filename = add_artifact(artifact)
+    add_artifact("llvm-bpf", prefix="")
+
     output_path.write_text(json.dumps(output, sort_keys=True, separators=(",", ":")))
 else:
     print("JSON info file script could not find any JSON files for target")

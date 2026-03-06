@@ -48,7 +48,7 @@
  	if (sdata->wdev.links[link_id].cac_started)
 --- a/net/mac80211/chan.c
 +++ b/net/mac80211/chan.c
-@@ -644,10 +644,11 @@ ieee80211_find_chanctx(struct ieee80211_
+@@ -646,10 +646,11 @@ ieee80211_find_chanctx(struct ieee80211_
  	return NULL;
  }
  
@@ -61,7 +61,7 @@
  	struct ieee80211_link_data *link;
  	struct ieee80211_channel *chan;
  	int radio_idx;
-@@ -658,14 +659,25 @@ bool ieee80211_is_radar_required(struct
+@@ -660,14 +661,25 @@ bool ieee80211_is_radar_required(struct
  		return false;
  
  	for_each_sdata_link(local, link) {
