@@ -1,0 +1,123 @@
+/dts-v1/;
+
+#include "mt7981-nradio-emmc.dtsi"
+
+/ {
+	compatible = "nradio,c5800", "HCMT7981-emmc", "mediatek,mt7981";
+	model = "NRadio C5800-688";
+	
+	aliases {
+		led-boot = &led_status;
+		led-failsafe = &led_status;
+		led-running = &led_status;
+		led-upgrade = &led_status;
+	};
+
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		cpepower {
+			gpio-export,name = "cpe-pwr";
+			gpio-export,output = <0>;
+			gpios = <&pio 31 GPIO_ACTIVE_LOW>;
+		};
+
+		cpesel0 {
+			gpio-export,name = "cpe-sel0";
+			gpio-export,output = <1>;
+			gpios = <&pio 29 GPIO_ACTIVE_LOW>;
+		};
+
+		cpesel1 {
+			gpio-export,name = "cpe-sel1";
+			gpio-export,output = <1>;
+			gpios = <&pio 30 GPIO_ACTIVE_LOW>;
+		};
+
+		cpesel2 {
+			gpio-export,name = "cpe-sel2";
+			gpio-export,output = <1>;
+			gpios = <&pio 28 GPIO_ACTIVE_LOW>;
+		};
+
+		cpesel3 {
+			gpio-export,name = "cpe-sel3";
+			gpio-export,output = <1>;
+			gpios = <&pio 27 GPIO_ACTIVE_LOW>;
+		};
+
+		cpe1power {
+			gpio-export,name = "cpe1-pwr";
+			gpio-export,output = <0>;
+			gpios = <&pio 4 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		led_sig1: sig1 {
+			label = "hc:blue:sig1";
+			gpios = <&pio 27 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+
+		led_sig2: sig2 {
+			label = "hc:blue:sig2";
+			gpios = <&pio 5 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+
+		led_sig3: sig3 {
+			label = "hc:blue:sig3";
+			gpios = <&pio 6 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+
+		led_int: int {
+			label = "hc:blue:int";
+			gpios = <&pio 9 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+
+		led_status: status {
+			label = "hc:blue:status";
+			gpios = <&pio 10 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+
+		led_cmode5: cmode5 {
+			label = "hc:blue:cmode5";
+			gpios = <&pio 11 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+
+		led_cmode4: cmode4 {
+			label = "hc:blue:cmode4";
+			gpios = <&pio 12 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+
+		led_wifi: wifi {
+			label = "hc:blue:wifi";
+			gpios = <&pio 13 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+		};
+	};
+};
+
+&pio {
+	pwm0_pin: pwm0-pin-g0 {
+		mux {
+			function = "pwm";
+			groups = "pwm0_0";
+		};
+	};
+};
+
+&pwm {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pwm0_pin>;
+	status = "okay";
+};
