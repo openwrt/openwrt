@@ -1,0 +1,151 @@
+From: Ryan Chen <rchen14b@gmail.com>
+Date: Thu, 06 Mar 2026 12:00:00 -0600
+Subject: [PATCH 1/2] net: pcs: airoha: fix USXGMII rate adaptation on speed
+ changes
+
+The USXGMII rate adaptation code in airoha_pcs_link_up() is inside an
+else branch that only executes when neg_mode is not
+PHYLINK_PCS_NEG_INBAND_ENABLED. However, USXGMII uses in-band
+autonegotiation, so this code path is never reached on speed changes.
+The RATE_UPDATE_MODE and FORCE_RATE_ADAPT_MODE registers remain
+configured for the previous speed.
+
+Fix this by moving the USXGMII rate adaptation block out of the
+forced-mode-only branch so it runs regardless of the negotiation mode.
+The SGMII in-band FIFO threshold adjustment and the SGMII/1000BASEX
+forced-mode speed configuration remain gated on their respective
+negotiation modes as before.
+
+Signed-off-by: Ryan Chen <rchen14b@gmail.com>
+---
+ drivers/net/pcs/airoha/pcs-airoha-common.c | 127 +++++++++++---------
+ 1 file changed, 69 insertions(+), 58 deletions(-)
+
+--- a/drivers/net/pcs/airoha/pcs-airoha-common.c
++++ b/drivers/net/pcs/airoha/pcs-airoha-common.c
+@@ -635,64 +635,69 @@
+
+ 	data = priv->data;
+
+-	if (neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED) {
+-		if (interface == PHY_INTERFACE_MODE_SGMII) {
+-			regmap_update_bits(priv->hsgmii_rate_adp,
+-					   AIROHA_PCS_HSGMII_RATE_ADAPT_CTRL_1,
+-					   AIROHA_PCS_HSGMII_RATE_ADAPT_RX_AFIFO_WR_THR |
+-					   AIROHA_PCS_HSGMII_RATE_ADAPT_RX_AFIFO_RD_THR,
+-					   FIELD_PREP(AIROHA_PCS_HSGMII_RATE_ADAPT_RX_AFIFO_WR_THR, 0x0) |
+-					   FIELD_PREP(AIROHA_PCS_HSGMII_RATE_ADAPT_RX_AFIFO_RD_THR, 0x0));
+-			udelay(1);
+-			regmap_update_bits(priv->hsgmii_rate_adp,
+-					   AIROHA_PCS_HSGMII_RATE_ADAPT_CTRL_1,
+-					   AIROHA_PCS_HSGMII_RATE_ADAPT_RX_AFIFO_WR_THR |
+-					   AIROHA_PCS_HSGMII_RATE_ADAPT_RX_AFIFO_RD_THR,
+-					   FIELD_PREP(AIROHA_PCS_HSGMII_RATE_ADAPT_RX_AFIFO_WR_THR, 0xf) |
+-					   FIELD_PREP(AIROHA_PCS_HSGMII_RATE_ADAPT_RX_AFIFO_RD_THR, 0x5));
+-		}
+-	} else {
+-		if (interface == PHY_INTERFACE_MODE_USXGMII ||
+-		    interface == PHY_INTERFACE_MODE_10GBASER) {
+-			u32 mode;
+-			u32 rate_adapt;
+-
+-			switch (speed) {
+-			case SPEED_10000:
+-				rate_adapt = AIROHA_PCS_HSGMII_RATE_ADPT_FORCE_RATE_ADAPT_MODE_10000;
+-				mode = AIROHA_PCS_USXGMII_MODE_10000;
+-				break;
+-			case SPEED_5000:
+-				rate_adapt = AIROHA_PCS_HSGMII_RATE_ADPT_FORCE_RATE_ADAPT_MODE_5000;
+-				mode = AIROHA_PCS_USXGMII_MODE_5000;
+-				break;
+-			case SPEED_2500:
+-				rate_adapt = AIROHA_PCS_HSGMII_RATE_ADPT_FORCE_RATE_ADAPT_MODE_2500;
+-				mode = AIROHA_PCS_USXGMII_MODE_2500;
+-				break;
+-			case SPEED_1000:
+-				rate_adapt = AIROHA_PCS_HSGMII_RATE_ADPT_FORCE_RATE_ADAPT_MODE_1000;
+-				mode = AIROHA_PCS_USXGMII_MODE_1000;
+-				break;
+-			case SPEED_100:
+-				rate_adapt = AIROHA_PCS_HSGMII_RATE_ADPT_FORCE_RATE_ADAPT_MODE_100;
+-				mode = AIROHA_PCS_USXGMII_MODE_100;
+-				break;
+-			}
+-
+-			/* Trigger USXGMII change mode and force selected speed */
+-			regmap_update_bits(priv->usxgmii_pcs, AIROHA_PCS_USXGMII_PCS_AN_CONTROL_7,
+-					   AIROHA_PCS_USXGMII_RATE_UPDATE_MODE |
+-					   AIROHA_PCS_USXGMII_MODE,
+-					   AIROHA_PCS_USXGMII_RATE_UPDATE_MODE | mode);
+-
+-			regmap_update_bits(priv->hsgmii_rate_adp, AIROHA_PCS_HSGMII_RATE_ADAPT_CTRL_11,
+-					   AIROHA_PCS_HSGMII_RATE_ADPT_FORCE_RATE_ADAPT_MODE_EN |
+-					   AIROHA_PCS_HSGMII_RATE_ADPT_FORCE_RATE_ADAPT_MODE,
+-					   AIROHA_PCS_HSGMII_RATE_ADPT_FORCE_RATE_ADAPT_MODE_EN |
+-					   rate_adapt);
++	if (neg_mode == PHYLINK_PCS_NEG_INBAND_ENABLED &&
++	    interface == PHY_INTERFACE_MODE_SGMII) {
++		regmap_update_bits(priv->hsgmii_rate_adp,
++				   AIROHA_PCS_HSGMII_RATE_ADAPT_CTRL_1,
++				   AIROHA_PCS_HSGMII_RATE_ADAPT_RX_AFIFO_WR_THR |
++				   AIROHA_PCS_HSGMII_RATE_ADAPT_RX_AFIFO_RD_THR,
++				   FIELD_PREP(AIROHA_PCS_HSGMII_RATE_ADAPT_RX_AFIFO_WR_THR, 0x0) |
++				   FIELD_PREP(AIROHA_PCS_HSGMII_RATE_ADAPT_RX_AFIFO_RD_THR, 0x0));
++		udelay(1);
++		regmap_update_bits(priv->hsgmii_rate_adp,
++				   AIROHA_PCS_HSGMII_RATE_ADAPT_CTRL_1,
++				   AIROHA_PCS_HSGMII_RATE_ADAPT_RX_AFIFO_WR_THR |
++				   AIROHA_PCS_HSGMII_RATE_ADAPT_RX_AFIFO_RD_THR,
++				   FIELD_PREP(AIROHA_PCS_HSGMII_RATE_ADAPT_RX_AFIFO_WR_THR, 0xf) |
++				   FIELD_PREP(AIROHA_PCS_HSGMII_RATE_ADAPT_RX_AFIFO_RD_THR, 0x5));
++	}
++
++	/* Update USXGMII rate adaptation for the current speed.
++	 * This must run regardless of negotiation mode because USXGMII
++	 * uses in-band autoneg but still requires the rate adaptation
++	 * registers to be updated when the link speed changes.
++	 */
++	if (interface == PHY_INTERFACE_MODE_USXGMII ||
++	    interface == PHY_INTERFACE_MODE_10GBASER) {
++		u32 mode;
++		u32 rate_adapt;
++
++		switch (speed) {
++		case SPEED_10000:
++			rate_adapt = AIROHA_PCS_HSGMII_RATE_ADPT_FORCE_RATE_ADAPT_MODE_10000;
++			mode = AIROHA_PCS_USXGMII_MODE_10000;
++			break;
++		case SPEED_5000:
++			rate_adapt = AIROHA_PCS_HSGMII_RATE_ADPT_FORCE_RATE_ADAPT_MODE_5000;
++			mode = AIROHA_PCS_USXGMII_MODE_5000;
++			break;
++		case SPEED_2500:
++			rate_adapt = AIROHA_PCS_HSGMII_RATE_ADPT_FORCE_RATE_ADAPT_MODE_2500;
++			mode = AIROHA_PCS_USXGMII_MODE_2500;
++			break;
++		case SPEED_1000:
++			rate_adapt = AIROHA_PCS_HSGMII_RATE_ADPT_FORCE_RATE_ADAPT_MODE_1000;
++			mode = AIROHA_PCS_USXGMII_MODE_1000;
++			break;
++		case SPEED_100:
++			rate_adapt = AIROHA_PCS_HSGMII_RATE_ADPT_FORCE_RATE_ADAPT_MODE_100;
++			mode = AIROHA_PCS_USXGMII_MODE_100;
++			break;
+ 		}
+
++		regmap_update_bits(priv->usxgmii_pcs, AIROHA_PCS_USXGMII_PCS_AN_CONTROL_7,
++				   AIROHA_PCS_USXGMII_RATE_UPDATE_MODE |
++				   AIROHA_PCS_USXGMII_MODE,
++				   AIROHA_PCS_USXGMII_RATE_UPDATE_MODE | mode);
++
++		regmap_update_bits(priv->hsgmii_rate_adp, AIROHA_PCS_HSGMII_RATE_ADAPT_CTRL_11,
++				   AIROHA_PCS_HSGMII_RATE_ADPT_FORCE_RATE_ADAPT_MODE_EN |
++				   AIROHA_PCS_HSGMII_RATE_ADPT_FORCE_RATE_ADAPT_MODE,
++				   AIROHA_PCS_HSGMII_RATE_ADPT_FORCE_RATE_ADAPT_MODE_EN |
++				   rate_adapt);
++	}
++
++	if (neg_mode != PHYLINK_PCS_NEG_INBAND_ENABLED) {
+ 		if (interface == PHY_INTERFACE_MODE_SGMII ||
+ 		    interface == PHY_INTERFACE_MODE_1000BASEX) {
+ 			u32 force_speed;

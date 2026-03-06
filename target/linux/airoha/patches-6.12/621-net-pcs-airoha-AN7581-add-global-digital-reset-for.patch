@@ -1,0 +1,114 @@
+From: Ryan Chen <rchen14b@gmail.com>
+Date: Thu, 06 Mar 2026 12:00:00 -0600
+Subject: [PATCH 2/2] net: pcs: airoha: AN7581: add global digital reset for
+ USXGMII speed changes
+
+On the EN7581, when phylink renegotiates a new speed within the same
+USXGMII interface mode, only link_up() is called (not pcs_config()).
+The existing link_up() only resets the TXPCS, which is insufficient:
+the RX data path (RXPCS, FIFOs, PMA digital logic) remains configured
+for the previous speed and no traffic flows.
+
+Fix this by adding a global digital reset sequence to the AN7581
+link_up callback for USXGMII and 10GBASE-R interfaces.
+
+Guard the global reset with a needs_full_init flag set by pcs_config()
+after bringup(). On the first link_up after bringup, skip the global
+reset since bringup already performed full PCS/PMA initialization.
+During this window the PHY firmware may still be loading and its SerDes
+is unstable — a global PCS reset can corrupt the USXGMII autoneg state
+permanently. On subsequent link_up calls (cable replug, speed changes),
+the global reset fires normally since the PHY is fully initialized.
+
+Signed-off-by: Ryan Chen <rchen14b@gmail.com>
+---
+ drivers/net/pcs/airoha/pcs-airoha-common.c |  1 +
+ drivers/net/pcs/airoha/pcs-airoha.h        |  1 +
+ drivers/net/pcs/airoha/pcs-an7581.c        | 55 +++++++++++++++++++++
+ 3 files changed, 57 insertions(+)
+
+--- a/drivers/net/pcs/airoha/pcs-airoha.h
++++ b/drivers/net/pcs/airoha/pcs-airoha.h
+@@ -1188,6 +1188,7 @@
+ 	struct reset_control_bulk_data rsts[AIROHA_PCS_MAX_NUM_RSTS];
+ 
+ 	bool manual_rx_calib;
++	bool needs_full_init;
+ };
+ 
+ struct airoha_pcs_port {
+--- a/drivers/net/pcs/airoha/pcs-airoha-common.c
++++ b/drivers/net/pcs/airoha/pcs-airoha-common.c
+@@ -422,6 +422,7 @@
+ 		ret = data->bringup(priv, interface);
+ 		if (ret)
+ 			return ret;
++		priv->needs_full_init = true;
+ 	}
+ 
+ 	/* Set final configuration for various modes */
+--- a/drivers/net/pcs/airoha/pcs-an7581.c
++++ b/drivers/net/pcs/airoha/pcs-an7581.c
+@@ -1363,6 +1363,29 @@
+ 
+ void an7581_pcs_phya_link_up(struct airoha_pcs_priv *priv)
+ {
++	u32 rst_mask = AIROHA_PCS_PMA_SW_HSG_RXPCS_RST_N |
++		       AIROHA_PCS_PMA_SW_HSG_TXPCS_RST_N |
++		       AIROHA_PCS_PMA_SW_XFI_RXPCS_BIST_RST_N |
++		       AIROHA_PCS_PMA_SW_XFI_RXPCS_RST_N |
++		       AIROHA_PCS_PMA_SW_XFI_TXPCS_RST_N |
++		       AIROHA_PCS_PMA_SW_TX_FIFO_RST_N |
++		       AIROHA_PCS_PMA_SW_REF_RST_N |
++		       AIROHA_PCS_PMA_SW_ALLPCS_RST_N |
++		       AIROHA_PCS_PMA_SW_PMA_RST_N |
++		       AIROHA_PCS_PMA_SW_TX_RST_N |
++		       AIROHA_PCS_PMA_SW_RX_RST_N |
++		       AIROHA_PCS_PMA_SW_RX_FIFO_RST_N;
++	u32 val;
++	int i;
++
++	/* Wait for any ongoing PCS reset to complete before proceeding. */
++	for (i = 0; i < 50; i++) {
++		regmap_read(priv->xfi_pma, AIROHA_PCS_PMA_SW_RST_SET, &val);
++		if ((val & rst_mask) == rst_mask)
++			break;
++		usleep_range(1000, 2000);
++	}
++
+ 	/* Reset TXPCS on link up */
+ 	regmap_clear_bits(priv->xfi_pma, AIROHA_PCS_PMA_SW_RST_SET,
+ 			  AIROHA_PCS_PMA_SW_HSG_TXPCS_RST_N);
+@@ -1371,6 +1394,32 @@
+ 
+ 	regmap_set_bits(priv->xfi_pma, AIROHA_PCS_PMA_SW_RST_SET,
+ 			AIROHA_PCS_PMA_SW_HSG_TXPCS_RST_N);
++
++	if (priv->interface == PHY_INTERFACE_MODE_USXGMII ||
++	    priv->interface == PHY_INTERFACE_MODE_10GBASER) {
++		if (priv->needs_full_init) {
++			priv->needs_full_init = false;
++			dev_dbg(priv->dev, "link_up: skipping global reset (bringup just ran)\n");
++			return;
++		}
++
++		dev_dbg(priv->dev, "link_up: performing global digital reset\n");
++		an7581_pcs_cdr_reset(priv, priv->interface, false);
++
++		/* Assert global reset (keep REF_RST_N high) */
++		regmap_update_bits(priv->xfi_pma, AIROHA_PCS_PMA_SW_RST_SET,
++				   rst_mask, AIROHA_PCS_PMA_SW_REF_RST_N);
++
++		usleep_range(100, 200);
++
++		/* Deassert global reset */
++		regmap_set_bits(priv->xfi_pma, AIROHA_PCS_PMA_SW_RST_SET,
++				rst_mask);
++
++		usleep_range(5000, 7000);
++
++		an7581_pcs_cdr_reset(priv, priv->interface, false);
++	}
+ }
+ 
+ static bool an7581_pcs_have_rx_signal(struct airoha_pcs_priv *priv)
