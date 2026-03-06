@@ -22,10 +22,8 @@ This patch:
 This targets monitor capture length correctness only and keeps the fix scoped
 to the monitor RX delivery path.
 
-Index: backports-6.18.7/drivers/net/wireless/ath/ath11k/dp_rx.c
-===================================================================
---- backports-6.18.7.orig/drivers/net/wireless/ath/ath11k/dp_rx.c
-+++ backports-6.18.7/drivers/net/wireless/ath/ath11k/dp_rx.c
+--- a/drivers/net/wireless/ath/ath11k/dp_rx.c
++++ b/drivers/net/wireless/ath/ath11k/dp_rx.c
 @@ -4931,8 +4931,13 @@ ath11k_dp_rx_mon_merg_msdus(struct ath11
  		}
  
