@@ -390,6 +390,25 @@ endef
 $(eval $(call KernelPackage,iio-ccs811))
 
 
+define KernelPackage/iio-richtek-rtq6056
+  TITLE:=Richtek RTQ6056 Current and Power Monitor ADC
+  DEPENDS:=+kmod-i2c-core +kmod-regmap-i2c +kmod-industrialio-triggered-buffer
+  KCONFIG:= CONFIG_RICHTEK_RTQ6056
+  FILES:=$(LINUX_DIR)/drivers/iio/adc/rtq6056.ko
+  AUTOLOAD:=$(call AutoProbe,rtq6056)
+  $(call AddDepends/iio)
+endef
+
+define KernelPackage/iio-richtek-rtq6056/description
+ Support for Richtek RTQ6056 Current and Power Monitor ADC.
+ RTQ6056 is a high accuracy current-sense monitor with I2C and SMBus
+ compatible interface, and the device provides full information for
+ system by reading out the load current and power.
+endef
+
+$(eval $(call KernelPackage,iio-richtek-rtq6056))
+
+
 define KernelPackage/iio-si7020
   DEPENDS:=+kmod-i2c-core
   TITLE:=Silicon Labs Si7020 sensor
