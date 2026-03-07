@@ -9,7 +9,7 @@ Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
 ---
 --- a/drivers/net/pse-pd/Kconfig
 +++ b/drivers/net/pse-pd/Kconfig
-@@ -38,4 +38,13 @@ config PSE_TPS23881
+@@ -38,4 +38,12 @@ config PSE_TPS23881
 
  	  To compile this driver as a module, choose M here: the
  	  module will be called tps23881.
@@ -17,7 +17,6 @@ Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
 +config PSE_HASIVO_HS104
 +	tristate "Hasivo HS104 PoE PSE Controller"
 +	depends on I2C
-+	default y if MACH_REALTEK_RTL
 +	help
 +	  Support for the Hasivo HS104 PoE PSE Controller chip.
 +	  This driver allows control and monitoring of PoE ports via I2C.

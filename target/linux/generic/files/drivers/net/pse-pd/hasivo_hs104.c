@@ -38,7 +38,7 @@
  * relative to sequential PORT registers (PORT0_POWER, PORT0_CLASS).
  * Map PSE PI index to the hardware bit position.
  */
-#define HS104_PORT_BIT(id)	BIT(HS104_MAX_PORTS - 1 - (id))
+#define HS104_PORT_BIT(id)	(0x08 >> (id))
 
 /* Protocol encoding (2 bits per port in PROTOCOL register) */
 #define HS104_PROTO_MASK	0x3
