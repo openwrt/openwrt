@@ -58,7 +58,7 @@
 		 * register chain. Force it into the serial LED stream
 		 * to align all LED positions correctly.
 		 */
-		realtek,led-set0-force-port-mask = <0x2000000>;
+		realtek,led-set0-force-port-mask = <(1 << 25)>;
 
 		led_set0 = <
 		(	// GREEN LEFT RJ45 - 1G link, blink on activity
@@ -90,11 +90,13 @@
 			RTL93XX_LED_SET_LINK |
 			RTL93XX_LED_SET_ACT
 		)
-		0x0000	// spacer to keep 3 slots per port
+		(	// spacer to keep 3 slots per port
+			RTL93XX_LED_SET_NONE
+		)
 		>;
 	};
 
-	i2c_scl23_sda22 {
+	i2c_scl23_sda22: i2c-scl23-sda22 {
 		compatible = "i2c-gpio";
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -106,6 +108,25 @@
 		clock-frequency = <100000>;
 	};
 
+	sfp0: sfp-p26 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c0>;
+	};
+
+	sfp1: sfp-p27 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c4>;
+	};
+};
+
+&i2c_mst1 {
+	status = "okay";
+
+	/* SFP+ lan6 (port 26) I2C */
+	i2c0: i2c@0 { reg = <0>; };
+
+	/* SFP+ lan7 (port 27) I2C */
+	i2c4: i2c@4 { reg = <4>; };
 };
 
 &spi0 {
@@ -296,6 +317,7 @@
 			pcs-handle = <&serdes8>;
 			phy-mode = "10gbase-r";
 			managed = "in-band-status";
+			sfp = <&sfp0>;
 			led-set = <3>;
 		};
 
@@ -305,6 +327,7 @@
 			pcs-handle = <&serdes9>;
 			phy-mode = "10gbase-r";
 			managed = "in-band-status";
+			sfp = <&sfp1>;
 			led-set = <3>;
 		};
 
