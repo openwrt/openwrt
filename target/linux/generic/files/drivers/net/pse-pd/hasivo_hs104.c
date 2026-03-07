@@ -24,14 +24,18 @@
 #define HS104_REG_INPUT_V	0x02	/* Input voltage, 16-bit BE, 10mV */
 #define HS104_REG_PORT0_I	0x04	/* Port current, 16-bit BE, 1mA (not yet implemented) */
 #define HS104_REG_DEVID		0x0C	/* Device ID */
+#define   HS104_DEVICE_ID	0x91
 #define HS104_REG_PORT0_CLASS	0x0D	/* Port power class */
 #define HS104_REG_PW_EN		0x14	/* Port enable control */
+#define   HS104_EXECUTE		0x40	/* Execute bit for writes */
 #define HS104_REG_PROTOCOL	0x19	/* Protocol per port (2 bits each) */
+#define   HS104_PROTO_MASK	0x3
+#define   HS104_PROTO_BT	0	/* 802.3bt - 60W */
+#define   HS104_PROTO_HIPO	1	/* Hi-PoE - 90W */
+#define   HS104_PROTO_AT	2	/* 802.3at - 30W */
+#define   HS104_PROTO_AF	3	/* 802.3af - 15.4W */
 #define HS104_REG_TOTAL_POWER	0x1D	/* Total power, 16-bit BE, 10mW (not yet implemented) */
 #define HS104_REG_PORT0_POWER	0x21	/* Port power, 16-bit BE, 10mW */
-
-#define HS104_DEVICE_ID		0x91
-#define HS104_EXECUTE		0x40	/* Execute bit for writes */
 
 /*
  * BIT-field registers (PW_EN, PW_STATUS) use reversed bit ordering
@@ -39,13 +43,6 @@
  * Map PSE PI index to the hardware bit position.
  */
 #define HS104_PORT_BIT(id)	(0x08 >> (id))
-
-/* Protocol encoding (2 bits per port in PROTOCOL register) */
-#define HS104_PROTO_MASK	0x3
-#define HS104_PROTO_BT		0	/* 802.3bt - 60W */
-#define HS104_PROTO_HIPO	1	/* Hi-PoE - 90W */
-#define HS104_PROTO_AT		2	/* 802.3at - 30W */
-#define HS104_PROTO_AF		3	/* 802.3af - 15.4W */
 
 /* Power limits in mW */
 #define HS104_PW_AF		15400
