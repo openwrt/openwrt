@@ -1,0 +1,117 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qcom-ipq4019-orbi.dtsi"
+
+/ {
+	chosen {
+		bootargs = "ubi.mtd=ubi root=/dev/ubiblock0_0";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led-0 {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&tlmm 22 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		led-1 {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&tlmm 23 GPIO_ACTIVE_LOW>;
+			panic-indicator;
+		};
+
+		led_status_green: led-2 {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&tlmm 24 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_red: led-3 {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&tlmm 25 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_blue: led-4 {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&tlmm 26 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status_white: led-5 {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&tlmm 27 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&sdhci {
+	status = "disabled";
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&i2c_0_pins {
+	pinmux {
+		function = "blsp_i2c0";
+		pins = "gpio20", "gpio21";
+		bias-disable;
+	};
+};
+
+&tlmm {
+	nand_pins: nand-pins {
+		pullups {
+			pins = "gpio52", "gpio53", "gpio58", "gpio59";
+			function = "qpic";
+			bias-pull-up;
+		};
+
+		pulldowns {
+			pins = "gpio54", "gpio55", "gpio56",
+				"gpio57", "gpio60", "gpio61",
+				"gpio62", "gpio63", "gpio64",
+				"gpio65", "gpio66", "gpio67",
+				"gpio68", "gpio69";
+			function = "qpic";
+			bias-pull-down;
+		};
+	};
+};
+
+&gmac {
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&mac_address_lan 0>;
+};
+
+&pcie_bridge0 {
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x00010000 0 0 0 0>;
+		ieee80211-freq-limit = <5470000 5875000>;
+		nvmem-cell-names = "pre-calibration", "mac-address";
+		nvmem-cells = <&precal_art_9000>, <&mac_address_wlan_2nd5g 0>;
+		qcom,ath10k-calibration-variant = "Netgear-Orbi-Pro-SRK60";
+	};
+};
+
+&wifi0 {
+	status = "okay";
+	nvmem-cell-names = "pre-calibration", "mac-address";
+	nvmem-cells = <&precal_art_1000>, <&mac_address_lan 0>;
+	qcom,ath10k-calibration-variant = "Netgear-Orbi-Pro-SRK60";
+};
+
+&wifi1 {
+	status = "okay";
+	nvmem-cell-names = "pre-calibration", "mac-address";
+	nvmem-cells = <&precal_art_5000>, <&mac_address_wlan_5g 0>;
+	qcom,ath10k-calibration-variant = "Netgear-Orbi-Pro-SRK60";
+};

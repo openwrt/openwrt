@@ -216,6 +216,10 @@ platform_do_upgrade() {
 	netgear,srs60)
 		platform_do_upgrade_netgear_orbi_upgrade "$1"
 		;;
+	netgear,rbr50-v2|\
+	netgear,rbs50-v2)
+		nand_do_upgrade "$1"
+		;;
 	openmesh,a42|\
 	openmesh,a62|\
 	plasmacloud,pa1200|\
