@@ -3,9 +3,9 @@ Subject: net: pse-pd: add LED trigger support
 
 Add LED trigger registration and polling to the PSE core, following the
 established drivers/net/phy/phy_led_triggers.c precedent. Per-PI
-"delivering" and "enabled" triggers are registered for each PSE
+"delivering", "enabled" and "faulted" triggers are registered for each PSE
 controller, with a configurable poll interval via the DT property
-"led-poll-interval-ms".
+"poll-interval-ms".
 
 This patch is temporary for OpenWrt 6.12. It will be submitted upstream
 for review and should later be backported to 6.12. An option is to wait
@@ -24,7 +24,7 @@ Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
  
  #define PSE_PW_D_LIMIT INT_MAX
  
-@@ -1030,6 +1031,119 @@ static void pse_send_ntf_worker(struct w
+@@ -1030,6 +1031,136 @@ static void pse_send_ntf_worker(struct w
  	}
  }
  
@@ -41,7 +41,7 @@ Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
 +		struct pse_pi_led_triggers *trigs = &pcdev->pi_led_trigs[i];
 +		struct pse_pw_status pw_status = {};
 +		struct pse_admin_state admin_state = {};
-+		bool delivering, enabled;
++		bool delivering, enabled, faulted;
 +
 +		if (!pcdev->pi[i].rdev)
 +			continue;
@@ -55,6 +55,8 @@ Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
 +			ETHTOOL_C33_PSE_PW_D_STATUS_DELIVERING;
 +		enabled = admin_state.c33_admin_state ==
 +			ETHTOOL_C33_PSE_ADMIN_STATE_ENABLED;
++		faulted = pw_status.c33_pw_status ==
++			ETHTOOL_C33_PSE_PW_D_STATUS_FAULT;
 +
 +		if (trigs->last_delivering != delivering) {
 +			trigs->last_delivering = delivering;
@@ -67,11 +69,17 @@ Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
 +			led_trigger_event(&trigs->enabled,
 +					  enabled ? LED_FULL : LED_OFF);
 +		}
++
++		if (trigs->last_faulted != faulted) {
++			trigs->last_faulted = faulted;
++			led_trigger_event(&trigs->faulted,
++					  faulted ? LED_FULL : LED_OFF);
++		}
 +	}
 +	mutex_unlock(&pcdev->lock);
 +
 +	schedule_delayed_work(&pcdev->led_poll_work,
-+			      msecs_to_jiffies(pcdev->led_poll_interval_ms));
++			      msecs_to_jiffies(pcdev->poll_interval_ms));
 +}
 +
 +static int pse_led_triggers_register(struct pse_controller_dev *pcdev)
@@ -82,10 +90,10 @@ Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
 +
 +	node_name = dev->of_node ? dev->of_node->name : dev_name(dev);
 +
-+	of_property_read_u32(dev->of_node, "led-poll-interval-ms",
-+			     &pcdev->led_poll_interval_ms);
-+	if (!pcdev->led_poll_interval_ms)
-+		pcdev->led_poll_interval_ms = 500;
++	of_property_read_u32(dev->of_node, "poll-interval-ms",
++			     &pcdev->poll_interval_ms);
++	if (!pcdev->poll_interval_ms)
++		pcdev->poll_interval_ms = 500;
 +
 +	pcdev->pi_led_trigs = devm_kcalloc(dev, pcdev->nr_lines,
 +					    sizeof(*pcdev->pi_led_trigs),
@@ -116,11 +124,20 @@ Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
 +		ret = devm_led_trigger_register(dev, &trigs->enabled);
 +		if (ret)
 +			return ret;
++
++		trigs->faulted.name = devm_kasprintf(dev, GFP_KERNEL,
++					"%s:port%dfaulted", node_name, i);
++		if (!trigs->faulted.name)
++			return -ENOMEM;
++
++		ret = devm_led_trigger_register(dev, &trigs->faulted);
++		if (ret)
++			return ret;
 +	}
 +
 +	INIT_DELAYED_WORK(&pcdev->led_poll_work, pse_led_poll_work);
 +	schedule_delayed_work(&pcdev->led_poll_work,
-+			      msecs_to_jiffies(pcdev->led_poll_interval_ms));
++			      msecs_to_jiffies(pcdev->poll_interval_ms));
 +
 +	return 0;
 +}
@@ -144,7 +161,7 @@ Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
  /**
   * pse_controller_register - register a PSE controller device
   * @pcdev: a pointer to the initialized PSE controller device
-@@ -1104,6 +1216,11 @@ int pse_controller_register(struct pse_c
+@@ -1104,6 +1235,11 @@ int pse_controller_register(struct pse_c
  	list_add(&pcdev->list, &pse_controller_list);
  	mutex_unlock(&pse_list_mutex);
  
@@ -156,7 +173,7 @@ Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
  	return 0;
  }
  EXPORT_SYMBOL_GPL(pse_controller_register);
-@@ -1114,6 +1231,7 @@ EXPORT_SYMBOL_GPL(pse_controller_registe
+@@ -1114,6 +1250,7 @@ EXPORT_SYMBOL_GPL(pse_controller_registe
   */
  void pse_controller_unregister(struct pse_controller_dev *pcdev)
  {
@@ -174,7 +191,7 @@ Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
  
  /* Maximum current in uA according to IEEE 802.3-2022 Table 145-1 */
  #define MAX_PI_CURRENT 1920000
-@@ -260,6 +261,23 @@ struct pse_pi {
+@@ -260,6 +261,27 @@ struct pse_pi {
  	int pw_allocated_mW;
  };
  
@@ -184,28 +201,32 @@ Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
 + *
 + * @delivering: LED trigger for power delivering state
 + * @enabled: LED trigger for admin enabled state
++ * @faulted: LED trigger for fault state
 + * @last_delivering: cached delivering state for change detection
 + * @last_enabled: cached enabled state for change detection
++ * @last_faulted: cached faulted state for change detection
 + */
 +struct pse_pi_led_triggers {
 +	struct led_trigger delivering;
 +	struct led_trigger enabled;
++	struct led_trigger faulted;
 +	bool last_delivering;
 +	bool last_enabled;
++	bool last_faulted;
 +};
 +#endif
 +
  /**
   * struct pse_ntf - PSE notification element
   *
-@@ -311,6 +329,11 @@ struct pse_controller_dev {
+@@ -311,6 +333,11 @@ struct pse_controller_dev {
  	struct work_struct ntf_work;
  	DECLARE_KFIFO_PTR(ntf_fifo, struct pse_ntf);
  	spinlock_t ntf_fifo_lock; /* Protect @ntf_fifo writer */
 +#if IS_ENABLED(CONFIG_LEDS_TRIGGERS)
 +	struct pse_pi_led_triggers *pi_led_trigs;
 +	struct delayed_work led_poll_work;
-+	unsigned int led_poll_interval_ms;
++	unsigned int poll_interval_ms;
 +#endif
  };
  

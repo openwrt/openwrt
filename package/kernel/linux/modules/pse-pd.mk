@@ -89,3 +89,24 @@ define KernelPackage/pse-tps23881/description
 endef
 
 $(eval $(call KernelPackage,pse-tps23881))
+
+define KernelPackage/pse-hasivo-hs104
+  TITLE:=Hasivo HS104 PSE controller support
+  KCONFIG:= \
+	CONFIG_REGULATOR=y \
+	CONFIG_REGULATOR_FIXED_VOLTAGE=y \
+	CONFIG_PSE_HASIVO_HS104=y
+  DEPENDS:=+kmod-i2c-core
+ifneq ($(wildcard $(LINUX_DIR)/drivers/net/pse-pd/hasivo_hs104.ko),)
+  FILES:=$(LINUX_DIR)/drivers/net/pse-pd/hasivo_hs104.ko
+endif
+  $(call AddDepends/pse-pd)
+endef
+
+define KernelPackage/pse-hasivo-hs104/description
+ Kernel module for Hasivo HS104 PoE PSE controller chips.
+ Supports the HS104PTI/HS104PBI single-chip PoE PSE controllers
+ managing 4 delivery channels for 802.3af/at/bt power over I2C.
+endef
+
+$(eval $(call KernelPackage,pse-hasivo-hs104))
