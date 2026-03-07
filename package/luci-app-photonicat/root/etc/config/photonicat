@@ -8,3 +8,14 @@ config fan 'fan'
 
 config cpu 'cpu'
 	option governor 'schedutil'
+
+# display settings (used by pcat2-display daemon)
+config display 'display'
+	# pages to cycle through on short power-button press
+	option pages 'clock cellular battery network system'
+	# long-press duration in ms to trigger shutdown (default 2000)
+	option poweroff_ms '2000'
+	# screen auto-off after N seconds idle on battery (0 = never)
+	option screen_off_battery '30'
+	# screen auto-off after N seconds idle on AC/charger (0 = never)
+	option screen_off_ac '0'
