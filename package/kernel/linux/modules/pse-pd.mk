@@ -95,11 +95,12 @@ define KernelPackage/pse-hasivo-hs104
   KCONFIG:= \
 	CONFIG_REGULATOR=y \
 	CONFIG_REGULATOR_FIXED_VOLTAGE=y \
-	CONFIG_PSE_HASIVO_HS104=y
+	CONFIG_PSE_HASIVO_HS104
   DEPENDS:=+kmod-i2c-core
 ifneq ($(wildcard $(LINUX_DIR)/drivers/net/pse-pd/hasivo_hs104.ko),)
   FILES:=$(LINUX_DIR)/drivers/net/pse-pd/hasivo_hs104.ko
 endif
+  AUTOLOAD:=$(call AutoProbe,hasivo_hs104)
   $(call AddDepends/pse-pd)
 endef
 
