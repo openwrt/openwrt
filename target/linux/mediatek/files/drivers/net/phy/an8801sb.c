@@ -18,7 +18,7 @@
 #include <linux/debugfs.h>
 #include <linux/of.h>
 
-#include "air_an8801.h"
+#include "an8801sb.h"
 
 MODULE_DESCRIPTION("Airoha AN8801 PHY drivers");
 MODULE_AUTHOR("Airoha");
