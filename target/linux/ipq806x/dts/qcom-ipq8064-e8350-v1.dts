@@ -210,6 +210,14 @@
 					label = "0:appsblenv";
 					reg = <0x0130000 0x0040000>;
 					read-only;
+
+					nvmem-layout {
+						compatible = "u-boot,env";
+
+						macaddr_uboot_ethaddr: ethaddr {
+							#nvmem-cell-cells = <1>;
+						};
+					};
 				};
 
 				art: partition@170000 {
@@ -399,6 +407,9 @@
 	pinctrl-0 = <&rgmii2_pins>;
 	pinctrl-names = "default";
 
+	nvmem-cells = <&macaddr_uboot_ethaddr 3>;
+	nvmem-cell-names = "mac-address";
+
 	fixed-link {
 		speed = <1000>;
 		full-duplex;
@@ -410,6 +421,9 @@
 
 	phy-mode = "sgmii";
 	qcom,id = <2>;
+
+	nvmem-cells = <&macaddr_uboot_ethaddr 2>;
+	nvmem-cell-names = "mac-address";
 
 	fixed-link {
 		speed = <1000>;
