@@ -274,6 +274,14 @@
 			compatible = "realtek,rtl8380-thermal";
 			#thermal-sensor-cells = <0>;
 		};
+
+		switch0: ethernet-switch {
+			compatible = "realtek,rtl8380-switch", "realtek,otto-switch";
+			status = "okay";
+
+			interrupt-parent = <&intc>;
+			interrupts = <20 2>;
+		};
 	};
 
 	pinmux@1b000144 {
@@ -352,13 +360,6 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges = <0 0x9f000000 0x10000>;
-	};
-
-	switch0: switch@1b000000 {
-		compatible = "realtek,rtl8380-switch", "realtek,otto-switch";
-
-		interrupt-parent = <&intc>;
-		interrupts = <20 2>;
 	};
 
 	thermal_zones: thermal-zones {

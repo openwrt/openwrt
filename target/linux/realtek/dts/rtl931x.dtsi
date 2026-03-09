@@ -325,6 +325,15 @@
 				reg = <13>;
 			};
 		};
+
+		switch0: switch@1b000000 {
+			compatible = "realtek,rtl9311-switch", "realtek,otto-switch";
+			status = "okay";
+
+			interrupt-parent = <&gic>;
+			#interrupt-cells = <3>;
+			interrupts = <GIC_SHARED 15 IRQ_TYPE_LEVEL_HIGH>;
+		};
 	};
 
 	pinmux@1b00103c {
@@ -418,14 +427,5 @@
 		pinmux_gpio_mdio_en: gpio-mdio-en {
 			pinctrl-single,bits = <0x0 0x100 0x100>;
 		};
-	};
-
-	switch0: switch@1b000000 {
-		compatible = "realtek,rtl9311-switch", "realtek,otto-switch";
-		status = "okay";
-
-		interrupt-parent = <&gic>;
-		#interrupt-cells = <3>;
-		interrupts = <GIC_SHARED 15 IRQ_TYPE_LEVEL_HIGH>;
 	};
 };
