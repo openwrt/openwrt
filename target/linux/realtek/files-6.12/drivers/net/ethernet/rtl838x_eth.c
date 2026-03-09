@@ -150,7 +150,6 @@ struct rteth_ctrl {
 	struct rtl838x_rx_q rx_qs[RTETH_RX_RINGS];
 	struct phylink *phylink;
 	struct phylink_config phylink_config;
-	struct phylink_pcs pcs;
 	const struct rteth_config *r;
 	u32 lastEvent;
 	/* receive handling */
@@ -1078,74 +1077,6 @@ static void rteth_mac_config(struct phylink_config *config,
 	pr_info("In %s, mode %x\n", __func__, mode);
 }
 
-static void rteth_pcs_an_restart(struct phylink_pcs *pcs)
-{
-	struct rteth_ctrl *ctrl = container_of(pcs, struct rteth_ctrl, pcs);
-
-	/* This works only on RTL838x chips */
-	if (ctrl->r->family_id != RTL8380_FAMILY_ID)
-		return;
-
-	pr_debug("In %s\n", __func__);
-	/* Restart by disabling and re-enabling link */
-	sw_w32(0x6192D, ctrl->r->mac_force_mode_ctrl);
-	mdelay(20);
-	sw_w32(0x6192F, ctrl->r->mac_force_mode_ctrl);
-}
-
-static void rteth_pcs_get_state(struct phylink_pcs *pcs,
-				struct phylink_link_state *state)
-{
-	u32 speed;
-	struct rteth_ctrl *ctrl = container_of(pcs, struct rteth_ctrl, pcs);
-	int port = ctrl->r->cpu_port;
-
-	pr_info("In %s\n", __func__);
-
-	state->link = ctrl->r->get_mac_link_sts(port) ? 1 : 0;
-	state->duplex = ctrl->r->get_mac_link_dup_sts(port) ? 1 : 0;
-
-	pr_info("%s link status is %d\n", __func__, state->link);
-	speed = ctrl->r->get_mac_link_spd_sts(port);
-	switch (speed) {
-	case 0:
-		state->speed = SPEED_10;
-		break;
-	case 1:
-		state->speed = SPEED_100;
-		break;
-	case 2:
-		state->speed = SPEED_1000;
-		break;
-	case 5:
-		state->speed = SPEED_2500;
-		break;
-	case 6:
-		state->speed = SPEED_5000;
-		break;
-	case 4:
-		state->speed = SPEED_10000;
-		break;
-	default:
-		state->speed = SPEED_UNKNOWN;
-		break;
-	}
-
-	state->pause &= (MLO_PAUSE_RX | MLO_PAUSE_TX);
-	if (ctrl->r->get_mac_rx_pause_sts(port))
-		state->pause |= MLO_PAUSE_RX;
-	if (ctrl->r->get_mac_tx_pause_sts(port))
-		state->pause |= MLO_PAUSE_TX;
-}
-
-static int rteth_pcs_config(struct phylink_pcs *pcs, unsigned int neg_mode,
-			    phy_interface_t interface,
-			    const unsigned long *advertising,
-			    bool permit_pause_to_mac)
-{
-	return 0;
-}
-
 static void rteth_mac_link_down(struct phylink_config *config,
 				unsigned int mode,
 				phy_interface_t interface)
@@ -1318,15 +1249,6 @@ static int rteth_93xx_set_features(struct net_device *dev, netdev_features_t fea
 	return 0;
 }
 
-static struct phylink_pcs *rteth_mac_select_pcs(struct phylink_config *config,
-						phy_interface_t interface)
-{
-	struct net_device *dev = to_net_dev(config->dev);
-	struct rteth_ctrl *ctrl = netdev_priv(dev);
-
-	return &ctrl->pcs;
-}
-
 static int rteth_setup_tc(struct net_device *dev, enum tc_setup_type type, void *type_data)
 {
     struct dsa_switch *ds;
@@ -1376,11 +1298,6 @@ static const struct rteth_config rteth_838x_cfg = {
 	.dma_if_rx_ring_size = rtl838x_dma_if_rx_ring_size,
 	.dma_if_rx_ring_cntr = rtl838x_dma_if_rx_ring_cntr,
 	.rst_glb_ctrl = RTL838X_RST_GLB_CTRL_0,
-	.get_mac_link_sts = rtl838x_get_mac_link_sts,
-	.get_mac_link_dup_sts = rtl838x_get_mac_link_dup_sts,
-	.get_mac_link_spd_sts = rtl838x_get_mac_link_spd_sts,
-	.get_mac_rx_pause_sts = rtl838x_get_mac_rx_pause_sts,
-	.get_mac_tx_pause_sts = rtl838x_get_mac_tx_pause_sts,
 	.mac_reg = { RTETH_838X_MAC_ADDR_CTRL,
 		     RTETH_838X_MAC_ADDR_CTRL_ALE,
 		     RTETH_838X_MAC_ADDR_CTRL_MAC },
@@ -1425,11 +1342,6 @@ static const struct rteth_config rteth_839x_cfg = {
 	.dma_if_rx_ring_size = rtl839x_dma_if_rx_ring_size,
 	.dma_if_rx_ring_cntr = rtl839x_dma_if_rx_ring_cntr,
 	.rst_glb_ctrl = RTL839X_RST_GLB_CTRL,
-	.get_mac_link_sts = rtl839x_get_mac_link_sts,
-	.get_mac_link_dup_sts = rtl839x_get_mac_link_dup_sts,
-	.get_mac_link_spd_sts = rtl839x_get_mac_link_spd_sts,
-	.get_mac_rx_pause_sts = rtl839x_get_mac_rx_pause_sts,
-	.get_mac_tx_pause_sts = rtl839x_get_mac_tx_pause_sts,
 	.mac_reg = { RTETH_839X_MAC_ADDR_CTRL },
 	.l2_tbl_flush_ctrl = RTL839X_L2_TBL_FLUSH_CTRL,
 	.update_counter = rteth_83xx_update_counter,
@@ -1473,11 +1385,6 @@ static const struct rteth_config rteth_930x_cfg = {
 	.dma_if_rx_ring_size = rtl930x_dma_if_rx_ring_size,
 	.dma_if_rx_ring_cntr = rtl930x_dma_if_rx_ring_cntr,
 	.rst_glb_ctrl = RTL930X_RST_GLB_CTRL_0,
-	.get_mac_link_sts = rtl930x_get_mac_link_sts,
-	.get_mac_link_dup_sts = rtl930x_get_mac_link_dup_sts,
-	.get_mac_link_spd_sts = rtl930x_get_mac_link_spd_sts,
-	.get_mac_rx_pause_sts = rtl930x_get_mac_rx_pause_sts,
-	.get_mac_tx_pause_sts = rtl930x_get_mac_tx_pause_sts,
 	.mac_reg = { RTETH_930X_MAC_L2_ADDR_CTRL },
 	.l2_tbl_flush_ctrl = RTL930X_L2_TBL_FLUSH_CTRL,
 	.update_counter = rteth_93xx_update_counter,
@@ -1521,11 +1428,6 @@ static const struct rteth_config rteth_931x_cfg = {
 	.dma_if_rx_ring_size = rtl931x_dma_if_rx_ring_size,
 	.dma_if_rx_ring_cntr = rtl931x_dma_if_rx_ring_cntr,
 	.rst_glb_ctrl = RTL931X_RST_GLB_CTRL,
-	.get_mac_link_sts = rtldsa_931x_get_mac_link_sts,
-	.get_mac_link_dup_sts = rtl931x_get_mac_link_dup_sts,
-	.get_mac_link_spd_sts = rtl931x_get_mac_link_spd_sts,
-	.get_mac_rx_pause_sts = rtl931x_get_mac_rx_pause_sts,
-	.get_mac_tx_pause_sts = rtl931x_get_mac_tx_pause_sts,
 	.mac_reg = { RTETH_930X_MAC_L2_ADDR_CTRL },
 	.l2_tbl_flush_ctrl = RTL931X_L2_TBL_FLUSH_CTRL,
 	.update_counter = rteth_93xx_update_counter,
@@ -1536,14 +1438,7 @@ static const struct rteth_config rteth_931x_cfg = {
 	.netdev_ops = &rteth_931x_netdev_ops,
 };
 
-static const struct phylink_pcs_ops rteth_pcs_ops = {
-	.pcs_get_state = rteth_pcs_get_state,
-	.pcs_an_restart = rteth_pcs_an_restart,
-	.pcs_config = rteth_pcs_config,
-};
-
 static const struct phylink_mac_ops rteth_mac_ops = {
-	.mac_select_pcs = rteth_mac_select_pcs,
 	.mac_config = rteth_mac_config,
 	.mac_link_down = rteth_mac_link_down,
 	.mac_link_up = rteth_mac_link_up,
@@ -1678,7 +1573,6 @@ static int rtl838x_eth_probe(struct platform_device *pdev)
 		return -EINVAL;
 	}
 
-	ctrl->pcs.ops = &rteth_pcs_ops;
 	ctrl->phylink_config.dev = &dev->dev;
 	ctrl->phylink_config.type = PHYLINK_NETDEV;
 	ctrl->phylink_config.mac_capabilities =
