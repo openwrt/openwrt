@@ -178,6 +178,22 @@ SUBMAKE:=$(NO_TRACE_MAKE) $(if $(CUR_MAKEFILE),-f $(CUR_MAKEFILE))
 PKG_CONFIG_PATH=$(STAGING_DIR)/usr/lib/pkgconfig:$(STAGING_DIR)/usr/share/pkgconfig
 unexport QUIET CONFIG_SITE
 
+# Build sandbox: restrict Build/Compile + Build/Install to only write
+# inside PKG_BUILD_DIR, with no network access.
+ifneq ($(CONFIG_BUILD_SANDBOX),)
+  SANDBOX_RUN := $(SCRIPT_DIR)/build-sandbox.sh $(PKG_BUILD_DIR)
+  SANDBOX_TMPDIR = $(PKG_BUILD_DIR)/.sandbox-tmp
+  SANDBOX_EXTRA_RW_PATHS :=
+  ifneq ($(CONFIG_CCACHE),)
+    SANDBOX_EXTRA_RW_PATHS += $(if $(CCACHE_DIR),$(CCACHE_DIR),$(TOPDIR)/.ccache)
+  endif
+  ifneq ($(CONFIG_BUILD_LOG),)
+    SANDBOX_EXTRA_RW_PATHS += $(if $(BUILD_LOG_DIR),$(BUILD_LOG_DIR),$(TOPDIR)/logs)
+  endif
+  SANDBOX_EXTRA_RW := $(subst $(space),:,$(strip $(SANDBOX_EXTRA_RW_PATHS)))
+  export SANDBOX_EXTRA_RW
+endif
+
 ifeq ($(DUMP)$(filter prereq clean refresh update,$(MAKECMDGOALS)),)
   ifneq ($(if $(QUILT),,$(CONFIG_AUTOREBUILD)),)
     define Build/Autoclean
@@ -267,13 +283,34 @@ define Build/CoreTargets
 	touch $$@
 
   $(call Build/Exports,$(STAMP_BUILT))
+ifneq ($(CONFIG_BUILD_SANDBOX),)
+  $(call Build/Exports,$(STAMP_BUILT)_compile)
+  .PHONY: $(STAMP_BUILT)_compile
+  $(STAMP_BUILT)_compile:
+	$(Build/Compile)
+
+  $(call Build/Exports,$(STAMP_BUILT)_install)
+  .PHONY: $(STAMP_BUILT)_install
+  $(STAMP_BUILT)_install:
+	$(Build/Install)
+endif
   $(STAMP_BUILT): $(STAMP_CONFIGURED) $(STAMP_BUILT_DEPENDS)
 	rm -f $$@
 	touch $$@_check
 	$(foreach hook,$(Hooks/Compile/Pre),$(call $(hook))$(sep))
+ifneq ($(CONFIG_BUILD_SANDBOX),)
+	mkdir -p $(SANDBOX_TMPDIR)
+	+$(SANDBOX_RUN) $(SUBMAKE) $(STAMP_BUILT)_compile TMP_DIR=$(SANDBOX_TMPDIR)
+else
 	$(Build/Compile)
+endif
 	$(foreach hook,$(Hooks/Compile/Post),$(call $(hook))$(sep))
+ifneq ($(CONFIG_BUILD_SANDBOX),)
+	+$(SANDBOX_RUN) $(SUBMAKE) $(STAMP_BUILT)_install TMP_DIR=$(SANDBOX_TMPDIR)
+	rm -rf $(SANDBOX_TMPDIR)
+else
 	$(Build/Install)
+endif
 	$(foreach hook,$(Hooks/Install/Post),$(call $(hook))$(sep))
 	touch $$@
 

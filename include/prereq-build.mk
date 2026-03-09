@@ -237,6 +237,14 @@ ifeq ($(HOST_OS),Linux)
 	Missing libintl.h Please install the musl-libintl package if musl libc))
 endif
 
+ifneq ($(CONFIG_BUILD_SANDBOX),)
+ifeq ($(HOST_OS),Linux)
+$(eval $(call SetupHostCommand,bwrap,\
+	Please install bubblewrap (bwrap) for CONFIG_BUILD_SANDBOX, \
+	bwrap --version 2>&1 | grep bubblewrap))
+endif
+endif
+
 $(STAGING_DIR_HOST)/bin/mkhash: $(SCRIPT_DIR)/mkhash.c
 	mkdir -p $(dir $@)
 	$(STAGING_DIR_HOST)/bin/gcc -O2 -I$(TOPDIR)/tools/include -o $@ $<
