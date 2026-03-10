@@ -210,6 +210,9 @@ mediatek_setup_interfaces()
 	zyxel,wx5600-t0-ubootmod)
 		ucidef_set_interface_lan "lan1 lan2"
 		;;
+	beeconmini,seed-ac1)
+		ucidef_set_interfaces_lan_wan "sfp1 lan1 lan2 lan3 lan4 lan5" eth1
+		;;
 	*)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" wan
 		;;
@@ -305,6 +308,9 @@ mediatek_setup_macs()
 	yuncore,ax835)
 		label_mac=$(mtd_get_mac_binary "Factory" 0x4)
 		;;
+	beeconmini,seed-ac1)
+		lan_mac=$(mtd_get_mac_binary "art" 0x0)
+		wan_mac=$(macaddr_add "$lan_mac" 1)
 	esac
 
 	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" $lan_mac
