@@ -3,7 +3,6 @@
 #include <linux/of_mdio.h>
 #include <linux/of_platform.h>
 #include <net/arp.h>
-#include <net/lag.h>
 #include <net/nexthop.h>
 #include <net/neighbour.h>
 #include <net/netevent.h>
@@ -566,9 +565,7 @@ static int rtldsa_93xx_lag_set_group2ports(struct rtl838x_switch_priv *priv, int
 
 	table_pos = 0;
 	for_each_set_bit(i, ports, ARRAY_SIZE(priv->ports)) {
-		struct net_device *lag_slave = priv->ports[i].dp->user;
-
-		if (lag_slave && !net_lag_port_dev_txable(lag_slave))
+		if (!priv->ports[i].dp->lag_tx_enabled)
 			continue;
 
 		group_ports[table_pos] = i;
