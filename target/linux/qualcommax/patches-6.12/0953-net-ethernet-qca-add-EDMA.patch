@@ -1,0 +1,24 @@
+--- a/drivers/net/ethernet/qualcomm/Kconfig
++++ b/drivers/net/ethernet/qualcomm/Kconfig
+@@ -67,6 +67,11 @@ config QCOM_80211AX_PPE
+ 	help
+ 	  Driver for Qualcomm 802.11ax PPE (Packet Processing Engine) switches.
+ 
++config QCOM_EDMA
++	tristate "EDMA dataplane ethernet driver for Qualcomm IPQ platforms"
++	help
++	  EDMA dataplane ethernet driver for Qualcomm IPQ platforms.
++
+ 
+ source "drivers/net/ethernet/qualcomm/rmnet/Kconfig"
+ 
+--- a/drivers/net/ethernet/qualcomm/Makefile
++++ b/drivers/net/ethernet/qualcomm/Makefile
+@@ -10,6 +10,7 @@ obj-$(CONFIG_QCA7000_UART) += qcauart.o
+ qcauart-objs := qca_uart.o
+ obj-$(CONFIG_QCOM_80211AX_PPE) += qca_ppe.o
+ qca_ppe-objs := qca_ppe_main.o qca_ppe_vlan.o qca_ppe_scheduler.o
++obj-$(CONFIG_QCOM_EDMA) += qca_edma.o
+ 
+ obj-y += emac/
+ 
