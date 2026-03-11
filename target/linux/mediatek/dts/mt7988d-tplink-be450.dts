@@ -27,7 +27,7 @@
 	};
 
 	memory@40000000 {
-		reg = <0x0 0x40000000 0x0 0x40000000>;
+		reg = <0x0 0x40000000 0x0 0x20000000>;
 		device_type = "memory";
 	};
 
@@ -68,6 +68,12 @@
 			label = "wps";
 			linux,code = <KEY_WPS_BUTTON>;
 			gpios = <&pio 14 GPIO_ACTIVE_LOW>;
+		};
+
+		wifi {
+			label = "wlan";
+			linux,code = <KEY_WLAN>;
+			gpios = <&pio 34 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -121,7 +127,7 @@
 			gpios = <&pio 68 GPIO_ACTIVE_HIGH>;
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_USB;
-		};		
+		};
 	};
 };
 
@@ -148,7 +154,6 @@
 
 	spi_nand: spi_nand@0 {
 		compatible = "spi-nand";
-		
 		reg = <0>;
 
 		spi-cal-addr = /bits/ 32 <0x0 0x0 0x0 0x0 0x0>;
@@ -156,7 +161,7 @@
 		spi-cal-data = /bits/ 8 <0x53 0x50 0x49 0x4E 0x41 0x4E 0x44>;
 		spi-cal-datalen = <7>;
 		spi-cal-enable;
-		spi-cal-mode = "read-data";		
+		spi-cal-mode = "read-data";
 
 		spi-max-frequency = <52000000>;
 		spi-rx-bus-width = <4>;
@@ -240,7 +245,7 @@
 
 		reset-gpios = <&pio 3 GPIO_ACTIVE_LOW>;
 		reset-assert-us = <100000>;
-		reset-deassert-us = <100000>;
+		reset-deassert-us = <221000>;
 	};
 };
 
@@ -323,8 +328,8 @@
 
 &pio {
 	button_pins: button-pins {
-		pins = "GPIO_RESET", "GPIO_WPS";
-		bias-disable; /* bias-disable */
+		pins = "GPIO_RESET", "GPIO_WPS", "SPI2_MISO";
+		bias-disable;
 	};
 
 	mdio0_pins: mdio0-pins {
@@ -361,11 +366,11 @@
 	};
 
 	enable-usb-power {
-        gpio-hog;
-        gpios = <32 GPIO_ACTIVE_HIGH>;
-        output-high;
-        line-name = "USB power";
-    };
+		gpio-hog;
+		gpios = <32 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "USB power";
+	};
 };
 
 &ssusb1 {
