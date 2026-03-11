@@ -54,11 +54,20 @@ define U-Boot/an7581_gemtek_w1700k
   UBOOT_IMAGE:=u-boot.bin
 endef
 
+define U-Boot/an7581_gemtek_xr1710g
+  NAME:=Gemtek XR1710G (UBI)
+  UBOOT_CONFIG:=an7581_xr1710g
+  BUILD_DEVICES:=gemtek_xr1710g-ubi
+  BUILD_SUBTARGET:=an7581
+  UBOOT_IMAGE:=u-boot.bin
+endef
+
 UBOOT_TARGETS := \
 	en7523_rfb \
 	an7581_rfb \
 	an7583_rfb \
-	an7581_gemtek_w1700k
+	an7581_gemtek_w1700k \
+	an7581_gemtek_xr1710g
 
 UBOOT_CUSTOMIZE_CONFIG := \
 	--disable TOOLS_KWBIMAGE \
