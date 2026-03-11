@@ -18,7 +18,7 @@
 	// Top panel LEDs, above Linksys logo
 	leds {
 		compatible = "gpio-leds";
-		
+
 		led_blue: led-blue {
 			color = <LED_COLOR_ID_BLUE>;
 			function = LED_FUNCTION_STATUS;
@@ -64,7 +64,7 @@
 	reset-delay-us = <2000>;
 	reset-post-delay-us = <5000>;
 };
-	
+
 &tlmm {
 	status = "okay";
 

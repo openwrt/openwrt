@@ -25,12 +25,6 @@
 		bootargs-append = " root=/dev/ubiblock0_0 rootfstype=squashfs ro";
 	};
 
-
-	aliases {
-		// TODO: Verify if the ethernet0 alias is needed
-		ethernet0 = &gmac;
-	};
-
 	soc {
 		tcsr@1949000 {
 			compatible = "qcom,tcsr";
@@ -141,6 +135,24 @@
 				label = "ART";
 				reg = <0x400000 0x80000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					precal_art_1000: pre-calibration@1000 {
+						reg = <0x1000 0x2f20>;
+					};
+
+					precal_art_5000: pre-calibration@5000 {
+						reg = <0x5000 0x2f20>;
+					};
+
+					precal_art_9000: pre-calibration@9000 {
+						reg = <0x9000 0x2f20>;
+					};
+				};
 			};
 
 			partition@480000 {
@@ -165,6 +177,17 @@
 				label = "devinfo";
 				reg = <0x740000 0x40000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "ascii-eq-delim-env";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					hw_mac_addr: hw_mac_addr {
+						compatible = "mac-base";
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@780000 {
@@ -291,6 +314,9 @@
 
 &gmac {
 	status = "okay";
+
+	nvmem-cells = <&hw_mac_addr 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &switch {
@@ -315,4 +341,28 @@
 
 &swport5 {
 	status = "okay";
+
+	nvmem-cells = <&hw_mac_addr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&wifi0 {
+	nvmem-cells = <&precal_art_1000>, <&hw_mac_addr 2>;
+	nvmem-cell-names = "pre-calibration", "mac-address";
+};
+
+&wifi1 {
+	nvmem-cells = <&precal_art_5000>, <&hw_mac_addr 3>;
+	nvmem-cell-names = "pre-calibration", "mac-address";
+};
+
+&pcie_bridge0 {
+	wifi2: wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0x00010000 0 0 0 0>;
+		nvmem-cells = <&precal_art_9000>, <&hw_mac_addr 4>;
+		nvmem-cell-names = "pre-calibration", "mac-address";
+
+		status = "disabled";
+	};
 };

@@ -501,7 +501,6 @@ static long rtc_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
 static const struct file_operations rtc_fops = {
 	.owner		= THIS_MODULE,
-	.llseek		= no_llseek,
 	.read		= rtc_read,
 	.write		= rtc_write,
 	.unlocked_ioctl	= rtc_ioctl,
