@@ -14,7 +14,6 @@
 
 	chosen {
 		stdout-path = "/serial@1fbf0000:115200";
-		linux,usable-memory-range = <0x00020000 0x07fe0000>;
 	};
 };
 
@@ -26,6 +25,8 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+
+		econet,boot-flag = <&part_reserve 0x60fff>;
 
 		partition@0 {
 			label = "bootloader";
@@ -40,23 +41,19 @@
 		};
 
 		partition@80000 {
+			compatible = "econet,trx";
 			label = "tclinux";
 			reg = <0x80000 0x3800000>;
-			read-only;
 			econet,enable-remap;
-		};
-
-		/* Nested inside of tclinux */
-		partition@480000 {
-			label = "rootfs";
-			reg = <0x480000 0x3400000>;
-			linux,rootfs;
-			read-only;
+			econet,boot-flag-value = <0x30>;
 		};
 
 		partition@3880000 {
+			compatible = "econet,trx";
 			label = "tclinux_alt";
 			reg = <0x3880000 0x0036c0000>;
+			econet,enable-remap;
+			econet,boot-flag-value = <0x31>;
 		};
 
 		partition@6f40000 {
@@ -74,7 +71,7 @@
 			reg = <0x007440000 0x000100000>;
 		};
 
-		partition@7540000 {
+		part_reserve: partition@7540000 {
 			label = "reservearea";
 			reg = <0x007540000 0x000080000>;
 		};

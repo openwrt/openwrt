@@ -14,7 +14,6 @@
 
 	chosen {
 		stdout-path = "/serial@1fbf0000:115200";
-		linux,usable-memory-range = <0x00020000 0x1bfe0000>;
 	};
 };
 
@@ -26,6 +25,8 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+
+		econet,boot-flag = <&part_reserve 0x180000>;
 
 		partition@0 {
 			label = "bootloader";
@@ -51,38 +52,37 @@
 		};
 
 		partition@80000 {
+			compatible = "econet,trx";
 			label = "tclinux";
-			reg = <0x80000 0x1400000>;
+			reg = <0x80000 0x1000000>;
 			econet,enable-remap;
+			econet,boot-flag-value = <0x30>;
 		};
 
-		partition@480000 {
-			label = "rootfs";
-			reg = <0x480000 0xf80000>;
-			linux,rootfs;
-		};
-
-		partition@1480000 {
+		partition@1080000 {
+			compatible = "econet,trx";
 			label = "tclinux_alt";
-			reg = <0x1480000 0x1400000>;
+			reg = <0x1080000 0x1000000>;
+			econet,enable-remap;
+			econet,boot-flag-value = <0x31>;
 		};
 
-		partition@2880000 {
-			label = "openjdk";
-			reg = <0x2880000 0x2000000>;
+		partition@2080000 {
+			label = "cert";
+			reg = <0x2080000 0x100000>;
 		};
 
-		partition@4880000 {
-			label = "ubifs";
-			reg = <0x4880000 0x9100000>;
+		partition@2180000 {
+			label = "yaffs";
+			reg = <0x2180000 0x2800000>;
 		};
 
-		partition@d980000 {
+		partition@4980000 {
 			label = "unknown";
-			reg = <0xd980000 0x4c0000>;
+			reg = <0x04980000 0x94c0000>;
 		};
 
-		partition@de40000 {
+		part_reserve: partition@de40000 {
 			label = "reservearea";
 			reg = <0xde40000 0x1c0000>;
 
