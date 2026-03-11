@@ -964,7 +964,7 @@ define Device/comfast_cf-wa933
   DEVICE_DTS_DIR := ../dts
   DEVICE_DTC_FLAGS := --pad 4096
   DEVICE_DTS_LOADADDR := 0x43f00000
-  DEVICE_PACKAGES := -wpad-basic-mbedtls kmod-mt7981-firmware mt7981-wo-firmware kmod-mt7915-firmware kmod-phy-aquantia wpad-mbedtls kmod-nft-counter kmod-nft-objref
+  DEVICE_PACKAGES := kmod-mt7981-firmware mt7981-wo-firmware kmod-mt7915-firmware kmod-phy-aquantia
   KERNEL_LOADADDR := 0x44000000
   KERNEL = kernel-bin | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
