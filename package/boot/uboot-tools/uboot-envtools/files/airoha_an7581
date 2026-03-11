@@ -12,7 +12,8 @@ touch /etc/config/ubootenv
 board=$(board_name)
 
 case "$board" in
-gemtek,w1700k-ubi)
+gemtek,w1700k-ubi|\
+gemtek,xr1710g-ubi)
 	ubootenv_add_ubi_default
 	;;
 esac

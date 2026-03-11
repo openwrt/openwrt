@@ -20,7 +20,8 @@ find_nct7802()
 boot()
 {
 	case $(board_name) in
-	gemtek,w1700k-ubi)
+	gemtek,w1700k-ubi|\
+	gemtek,xr1710g-ubi)
 		hwmon=$(find_nct7802)
 
 		# Temporarily disable automatic fan control to configure curve
