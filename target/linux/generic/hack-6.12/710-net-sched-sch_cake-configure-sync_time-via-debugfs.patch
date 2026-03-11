@@ -1,0 +1,53 @@
+From e379c0fc2a18830761d29e43d9b4024068ffd9c5 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Jonas=20K=C3=B6ppeler?= <j.koeppeler@tu-berlin.de>
+Date: Wed, 11 Mar 2026 17:42:44 +0100
+Subject: [PATCH] net/sched: sch_cake: configure sync_time via debugfs
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Exposing the sync_time parameter via debugfs. This allows for the adjustment
+the sync_time value if needed.
+
+Signed-off-by: Jonas Köppeler <j.koeppeler@tu-berlin.de>
+---
+ net/sched/sch_cake.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+--- a/net/sched/sch_cake.c
++++ b/net/sched/sch_cake.c
+@@ -71,6 +71,7 @@
+ #include <net/pkt_cls.h>
+ #include <net/tcp.h>
+ #include <net/flow_dissector.h>
++#include <linux/debugfs.h>
+ 
+ #if IS_ENABLED(CONFIG_NF_CONNTRACK)
+ #include <net/netfilter/nf_conntrack_core.h>
+@@ -81,6 +82,7 @@
+ #define CAKE_QUEUES (1024)
+ #define CAKE_FLOW_MASK 63
+ #define CAKE_FLOW_NAT_FLAG 64
++static u64 g_sync_time = 200;
+ 
+ /* struct cobalt_params - contains codel and blue parameters
+  * @interval:	codel initial drop rate
+@@ -2810,7 +2812,7 @@ static void cake_config_init(struct cake
+ 			       */
+ 	q->rate_flags |= CAKE_FLAG_SPLIT_GSO;
+ 	q->is_shared = is_shared;
+-	q->sync_time = 200 * NSEC_PER_USEC;
++	q->sync_time = g_sync_time * NSEC_PER_USEC;
+ }
+ 
+ static int cake_init(struct Qdisc *sch, struct nlattr *opt,
+@@ -3355,6 +3357,9 @@ static int __init cake_module_init(void)
+ 	if (ret)
+ 		unregister_qdisc(&cake_qdisc_ops);
+ 
++	struct dentry *root = debugfs_create_dir("cake_mq", NULL);
++	debugfs_create_u64("sync_time", 0666, root, &g_sync_time);
++
+ 	return ret;
+ }
+ 
