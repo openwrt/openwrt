@@ -78,9 +78,21 @@ static int rtlsmp_register(void)
 
 static void __init apply_early_quirks(void)
 {
-	/* Open up write protected registers. Never mess with this elsewhere */
-	if (soc_info.family == RTL8380_FAMILY_ID)
+	if (soc_info.family == RTL8380_FAMILY_ID) {
+		/*
+		 * Open up write protected registers. SDK opens/closes this whenever needed. For
+		 * simplicity always work with an "open" register set.
+		 */
 		sw_w32(0x3, RTL838X_INT_RW_CTRL);
+		/*
+		 * Disable 4 byte address mode of flash controller. If this bit is not cleared
+		 * the watchdog cannot reset the SoC. The SDK changes this short before restart.
+		 * Until this quirk was implemented all RTL838x devices ran with this disabled
+		 * because of a coding error. As no issues were detected keep the behaviour
+		 * until more details are known.
+		 */
+		sw_w32_mask(BIT(30), 0, RTL838X_PLL_CML_CTRL);
+	}
 }
 
 void __init device_tree_init(void)
