@@ -36,8 +36,9 @@ def add_artifact(artifact, prefix="openwrt-"):
         output[artifact] = {}
         for file in files:
             file = str(file.name)
-            arch = re.match(r".*Linux-([^.]*)\.", file).group(1)
-            output[artifact][arch] = file
+            arch = re.match(r".*Linux-([^.]*)\.", file)
+            if arch:
+                output[artifact][arch.group(1)] = file
 
 
 for json_file in work_dir.glob("*.json"):
