@@ -5,7 +5,8 @@ platform_do_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
-		gemtek,w1700k-ubi)
+		gemtek,w1700k-ubi|\
+		gemtek,xr1710g-ubi)
 			fit_do_upgrade "$1"
 			;;
 		*)

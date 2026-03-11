@@ -122,6 +122,20 @@ define Device/gemtek_w1700k-ubi
 endef
 TARGET_DEVICES += gemtek_w1700k-ubi
 
+define Device/gemtek_xr1710g-ubi
+  DEVICE_VENDOR := Gemtek
+  DEVICE_MODEL := XR1710G
+  DEVICE_VARIANT := UBI
+  DEVICE_ALT0_VENDOR := Brightspeed
+  DEVICE_ALT0_MODEL := XR1710G
+  DEVICE_ALT0_VARIANT := UBI
+  DEVICE_DTS := an7581-xr1710g-ubi
+  ARTIFACT/chainload-uboot.itb := an7581-chainloader gemtek_xr1710g
+  $(Device/gemtek_17xx-common)
+  DEVICE_PACKAGES += kmod-phy-rtl8261n
+endef
+TARGET_DEVICES += gemtek_xr1710g-ubi
+
 define Device/nokia_valyrian
   DEVICE_VENDOR := Nokia
   DEVICE_MODEL := Valyrian
