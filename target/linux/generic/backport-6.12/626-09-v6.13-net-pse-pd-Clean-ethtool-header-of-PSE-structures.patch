@@ -1,0 +1,92 @@
+From 5385f1e1923ca8131eb143567d509b101a344e06 Mon Sep 17 00:00:00 2001
+From: Kory Maincent <kory.maincent@bootlin.com>
+Date: Fri, 10 Jan 2025 10:40:31 +0100
+Subject: [PATCH] net: pse-pd: Clean ethtool header of PSE structures
+
+Remove PSE-specific structures from the ethtool header to improve code
+modularity, maintain independent headers, and reduce incremental build
+time.
+
+Signed-off-by: Kory Maincent <kory.maincent@bootlin.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
+---
+ drivers/net/pse-pd/pse_core.c |  1 +
+ include/linux/ethtool.h       | 20 --------------------
+ include/linux/pse-pd/pse.h    | 22 +++++++++++++++++++++-
+ 3 files changed, 22 insertions(+), 21 deletions(-)
+--- a/drivers/net/pse-pd/pse_core.c
++++ b/drivers/net/pse-pd/pse_core.c
+@@ -6,6 +6,7 @@
+ //
+ 
+ #include <linux/device.h>
++#include <linux/ethtool.h>
+ #include <linux/of.h>
+ #include <linux/pse-pd/pse.h>
+ #include <linux/regulator/driver.h>
+--- a/include/linux/ethtool.h
++++ b/include/linux/ethtool.h
+@@ -1322,24 +1322,4 @@ struct ethtool_forced_speed_map {
+ 
+ void
+ ethtool_forced_speed_maps_init(struct ethtool_forced_speed_map *maps, u32 size);
+-
+-/* C33 PSE extended state and substate. */
+-struct ethtool_c33_pse_ext_state_info {
+-	enum ethtool_c33_pse_ext_state c33_pse_ext_state;
+-	union {
+-		enum ethtool_c33_pse_ext_substate_error_condition error_condition;
+-		enum ethtool_c33_pse_ext_substate_mr_pse_enable mr_pse_enable;
+-		enum ethtool_c33_pse_ext_substate_option_detect_ted option_detect_ted;
+-		enum ethtool_c33_pse_ext_substate_option_vport_lim option_vport_lim;
+-		enum ethtool_c33_pse_ext_substate_ovld_detected ovld_detected;
+-		enum ethtool_c33_pse_ext_substate_power_not_available power_not_available;
+-		enum ethtool_c33_pse_ext_substate_short_detected short_detected;
+-		u32 __c33_pse_ext_substate;
+-	};
+-};
+-
+-struct ethtool_c33_pse_pw_limit_range {
+-	u32 min;
+-	u32 max;
+-};
+ #endif /* _LINUX_ETHTOOL_H */
+--- a/include/linux/pse-pd/pse.h
++++ b/include/linux/pse-pd/pse.h
+@@ -5,7 +5,6 @@
+ #ifndef _LINUX_PSE_CONTROLLER_H
+ #define _LINUX_PSE_CONTROLLER_H
+ 
+-#include <linux/ethtool.h>
+ #include <linux/list.h>
+ #include <uapi/linux/ethtool.h>
+ 
+@@ -16,6 +15,27 @@
+ 
+ struct phy_device;
+ struct pse_controller_dev;
++struct netlink_ext_ack;
++
++/* C33 PSE extended state and substate. */
++struct ethtool_c33_pse_ext_state_info {
++	enum ethtool_c33_pse_ext_state c33_pse_ext_state;
++	union {
++		enum ethtool_c33_pse_ext_substate_error_condition error_condition;
++		enum ethtool_c33_pse_ext_substate_mr_pse_enable mr_pse_enable;
++		enum ethtool_c33_pse_ext_substate_option_detect_ted option_detect_ted;
++		enum ethtool_c33_pse_ext_substate_option_vport_lim option_vport_lim;
++		enum ethtool_c33_pse_ext_substate_ovld_detected ovld_detected;
++		enum ethtool_c33_pse_ext_substate_power_not_available power_not_available;
++		enum ethtool_c33_pse_ext_substate_short_detected short_detected;
++		u32 __c33_pse_ext_substate;
++	};
++};
++
++struct ethtool_c33_pse_pw_limit_range {
++	u32 min;
++	u32 max;
++};
+ 
+ /**
+  * struct pse_control_config - PSE control/channel configuration.
