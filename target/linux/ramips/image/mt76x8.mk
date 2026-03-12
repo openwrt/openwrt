@@ -903,6 +903,41 @@ define Device/tplink_archer-mr200-v6
 endef
 TARGET_DEVICES += tplink_archer-mr200-v6
 
+define Device/tplink_archer-mr402-v1
+  $(Device/tplink-v2)
+  IMAGE_SIZE := 12864k
+  DEVICE_MODEL := Archer MR402
+  DEVICE_VARIANT := v1
+  TPLINK_FLASHLAYOUT := 16Mmtk
+  TPLINK_HWID := 0x20000001
+  TPLINK_HWREV := 0x1
+  TPLINK_HWREVADD := 0x1
+  DEVICE_PACKAGES := kmod-mt76x0e kmod-usb2 kmod-usb-serial-option \
+	kmod-mt7615e kmod-mt7663-firmware-ap kmod-usb-net-cdc-ether \
+	kmod-usb-net-cdc-ncm
+  KERNEL := kernel-bin | append-dtb | lzma -d22
+  KERNEL_INITRAMFS := kernel-bin | append-dtb
+  IMAGES := sysupgrade.bin
+endef
+TARGET_DEVICES += tplink_archer-mr402-v1
+
+define Device/tplink_archer-mr402-v1-factory
+  $(Device/tplink-v2)
+  IMAGE_SIZE := 7808k
+  DEVICE_MODEL := Archer MR402
+  DEVICE_VARIANT := v1 Factory
+  TPLINK_FLASHLAYOUT := 16Mmtk
+  TPLINK_HWID := 0x20000001
+  TPLINK_HWREV := 0x1
+  TPLINK_HWREVADD := 0x1
+  DEVICE_PACKAGES := kmod-mt76x0e
+  KERNEL := kernel-bin | append-dtb | lzma -d22
+  IMAGES := tftp-recovery.bin
+  IMAGE/tftp-recovery.bin := pad-extra 128k | $$(IMAGE/factory.bin)
+endef
+TARGET_DEVICES += tplink_archer-mr402-v1-factory
+
+
 define Device/tplink_re200-v2
   $(Device/tplink-safeloader)
   IMAGE_SIZE := 7808k
