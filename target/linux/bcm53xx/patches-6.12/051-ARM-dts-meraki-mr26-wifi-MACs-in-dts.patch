@@ -25,7 +25,7 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
  	status = "disabled";
  };
  
-+&pcie0 {
++&pcie_bridge0 {
 +	wifi@0,0 {
 +		reg = <0x0000 0 0 0 0>;
 +		compatible = "brcm,bcm43431";
@@ -34,7 +34,7 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +	};
 +};
 +
-+&pcie1 {
++&pcie_bridge1 {
 +	wifi@0,0 {
 +		reg = <0x0000 0 0 0 0>;
 +		compatible = "brcm,bcm43431";
@@ -43,7 +43,7 @@ Signed-off-by: Rosen Penev <rosenp@gmail.com>
 +	};
 +};
 +
-+&pcie2 {
++&pcie_bridge2 {
 +	wifi@0,0 {
 +		reg = <0x0000 0 0 0 0>;
 +		compatible = "brcm,bcm43428";
