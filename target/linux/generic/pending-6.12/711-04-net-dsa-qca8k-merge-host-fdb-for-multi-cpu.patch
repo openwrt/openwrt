@@ -1,5 +1,5 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-From: kevin staley <glaciertablet@gmail.com>
+From: Kevin Staley <glaciertablet@gmail.com>
 Date: Mon, 29 Dec 2025 00:00:00 +0000
 Subject: [PATCH] net: dsa: qca8k: merge host FDB for multi-CPU setups
 
@@ -14,7 +14,7 @@ Use the existing search-and-insert/delete helpers for CPU and DSA ports
 so the destination port mask is merged instead of replaced.
 
 Fixes: openwrt/openwrt#17891
-Signed-off-by: kevin staley <glaciertablet@gmail.com>
+Signed-off-by: Kevin Staley <glaciertablet@gmail.com>
 ---
  drivers/net/dsa/qca/qca8k-common.c | 10 ++++++++++
  1 file changed, 10 insertions(+)
