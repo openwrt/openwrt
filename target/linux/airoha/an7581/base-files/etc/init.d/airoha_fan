@@ -1,3 +1,4 @@
+#!/bin/sh /etc/rc.common
 #
 # Copyright (C) 2025 openwrt.org
 #
@@ -14,7 +15,7 @@ find_nct7802()
 			return
 		fi
 	done
-	echo "/sys/class/hwmon/hwmon5" # fallback
+	echo "/sys/class/hwmon/hwmon3" # fallback
 }
 
 boot()
