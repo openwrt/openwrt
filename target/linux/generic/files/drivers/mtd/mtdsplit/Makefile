@@ -5,6 +5,7 @@ obj-$(CONFIG_MTD_SPLIT_CFE_BOOTFS) += mtdsplit_cfe_bootfs.o
 obj-$(CONFIG_MTD_SPLIT_SEAMA_FW) += mtdsplit_seama.o
 obj-$(CONFIG_MTD_SPLIT_SEIL_FW) += mtdsplit_seil.o
 obj-$(CONFIG_MTD_SPLIT_SQUASHFS_ROOT) += mtdsplit_squashfs.o
+obj-$(CONFIG_MTD_SPLIT_EROFS_ROOT) += mtdsplit_erofs.o
 obj-$(CONFIG_MTD_SPLIT_UIMAGE_FW) += mtdsplit_uimage.o
 obj-$(CONFIG_MTD_SPLIT_FIT_FW) += mtdsplit_fit.o
 obj-$(CONFIG_MTD_SPLIT_LZMA_FW) += mtdsplit_lzma.o
