@@ -8,6 +8,8 @@ include ./common-tp-link.mk
 DEFAULT_SOC := mt7621
 
 DEVICE_VARS += BUFFALO_TRX_MAGIC ELECOM_HWNAME LINKSYS_HWNAME DLINK_HWID
+DEVICE_VARS += SUPPORTED_TELTONIKA_DEVICES
+DEVICE_VARS += SUPPORTED_TELTONIKA_HW_MODS
 
 define Image/Prepare
 	# For UBI we want only one extra block
@@ -2830,6 +2832,45 @@ define Device/tenbay_t-mb5eu-v01
   SUPPORTED_DEVICES += mt7621-dm2-t-mb5eu-v01-nor
 endef
 TARGET_DEVICES += tenbay_t-mb5eu-v01
+
+define Device/teltonika_rutm_common
+  $(Device/nand)
+  DEVICE_VENDOR := Teltonika
+  SUPPORTED_TELTONIKA_DEVICES := teltonika,rutm
+  SUPPORTED_TELTONIKA_HW_MODS := W25N02KV
+  KERNEL_IN_UBI := 1
+  FILESYSTEMS := squashfs
+  IMAGE_SIZE := 147456k
+  DEVICE_PACKAGES := kmod-mt7615-firmware kmod-usb3 kmod-usb-serial-option \
+	kmod-gpio-nxp-74hc164 kmod-spi-gpio -uboot-envtools
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-ubi | check-size | append-teltonika-metadata
+endef
+
+define Device/teltonika_rutm50
+  $(Device/teltonika_rutm_common)
+  DEVICE_MODEL := RUTM50
+  DEVICE_ALT0_VENDOR := Teltonika
+  DEVICE_ALT0_MODEL := RUTM51
+  DEVICE_PACKAGES += kmod-usb-net-qmi-wwan kmod-usb-net-cdc-ncm
+endef
+TARGET_DEVICES += teltonika_rutm50
+
+define Device/teltonika_rutm30
+  $(Device/teltonika_rutm_common)
+  DEVICE_MODEL := RUTM30
+  DEVICE_ALT0_VENDOR := Teltonika
+  DEVICE_ALT0_MODEL := RUTM31
+  DEVICE_PACKAGES += kmod-usb-net-qmi-wwan kmod-usb-net-cdc-ncm
+endef
+TARGET_DEVICES += teltonika_rutm30
+
+define Device/teltonika_rutm11
+  $(Device/teltonika_rutm_common)
+  DEVICE_MODEL := RUTM11
+  DEVICE_PACKAGES += kmod-usb-net-qmi-wwan kmod-usb-net-cdc-mbim
+endef
+TARGET_DEVICES += teltonika_rutm11
 
 define Device/thunder_timecloud
   $(Device/dsa-migration)
