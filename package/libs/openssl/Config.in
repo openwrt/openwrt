@@ -4,7 +4,7 @@ comment "Build Options"
 
 config OPENSSL_OPTIMIZE_SPEED
 	bool
-	default y if x86_64 || i386
+	default y if x86_64 || i386 || riscv64
 	prompt "Enable optimization for speed instead of size"
 	select OPENSSL_WITH_ASM
 	help
