@@ -29,3 +29,22 @@ define Device/watchguard_xtm330
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
 TARGET_DEVICES += watchguard_xtm330
+
+define Device/mikrotik_rb1100ahx2
+  DEVICE_VENDOR := MikroTik
+  DEVICE_MODEL := RouterBOARD 1100AHx2
+  DEVICE_DTS := rb1100ahx2
+  DEVICE_PACKAGES := kmod-dsa-qca8k kmod-alx \
+    kmod-phy-qca83xx kmod-libphy kmod-mii \
+    kmod-fixed-phy kmod-phylink kmod-phy-at803x
+  BLOCKSIZE := 128k
+  KERNEL_IN_UBI := 1
+  KERNEL = kernel-bin | fit none $$(KDIR)/image-$$(DEVICE_DTS).dtb
+  KERNEL_NAME := zImage.la3000000
+  KERNEL_ENTRY := 0x3000000
+  KERNEL_LOADADDR := 0x3000000
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | \
+	pad-rootfs $$(BLOCKSIZE) | append-metadata
+endef
+TARGET_DEVICES += mikrotik_rb1100ahx2
