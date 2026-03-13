@@ -28,6 +28,7 @@ drv_mac80211_init_device_config() {
 
 	config_add_string path phy 'macaddr:macaddr'
 	config_add_string tx_burst
+	config_add_string channel2
 	config_add_string distance
 	config_add_string ifname_prefix
 	config_add_string macaddr_base
@@ -144,7 +145,7 @@ mac80211_hostapd_setup_base() {
 	[ -n "$acs_exclude_dfs" ] && [ "$acs_exclude_dfs" -gt 0 ] &&
 		append base_cfg "acs_exclude_dfs=1" "$N"
 
-	json_get_vars noscan ht_coex min_tx_power:0 tx_burst
+	json_get_vars noscan ht_coex min_tx_power:0 tx_burst channel2
 	json_get_values ht_capab_list ht_capab
 	json_get_values channel_list channels
 
@@ -166,7 +167,7 @@ mac80211_hostapd_setup_base() {
 		ht_capab=
 		case "$htmode" in
 			VHT20|HT20|HE20|EHT20) ;;
-			HT40*|VHT40|VHT80|VHT160|HE40|HE80|HE160|EHT40|EHT80|EHT160)
+			HT40*|VHT40|VHT80|VHT160|VHT80P80|HE40|HE80|HE160|HE80P80|EHT40|EHT80|EHT160)
 				case "$hwmode" in
 					a)
 						case "$(( (($channel / 4) + $chan_ofs) % 2 ))" in
@@ -239,8 +240,10 @@ mac80211_hostapd_setup_base() {
 	enable_ac=0
 	vht_oper_chwidth=0
 	vht_center_seg0=
+	vht_center_seg1=
 
 	idx="$channel"
+	idx2="$channel2"
 	case "$htmode" in
 		VHT20|HE20|EHT20) enable_ac=1;;
 		VHT40|HE40|EHT40)
@@ -251,7 +254,7 @@ mac80211_hostapd_setup_base() {
 			enable_ac=1
 			vht_center_seg0=$idx
 		;;
-		VHT80|HE80|EHT80)
+		VHT80|VHT80P80|HE80|HE80P80|EHT80)
 			case "$(( (($channel / 4) + $chan_ofs) % 4 ))" in
 				1) idx=$(($channel + 6));;
 				2) idx=$(($channel + 2));;
@@ -261,6 +264,19 @@ mac80211_hostapd_setup_base() {
 			enable_ac=1
 			vht_oper_chwidth=1
 			vht_center_seg0=$idx
+			if [ "$band" != "6g" ]; then
+				case "$htmode" in
+					VHT80P80|HE80P80)
+						case "$(( (($channel2 / 4) + $chan_ofs) % 4 ))" in
+							1) idx2=$(($channel2 + 6));;
+							2) idx2=$(($channel2 + 2));;
+							3) idx2=$(($channel2 - 2));;
+							0) idx2=$(($channel2 - 6));;
+						esac
+						vht_oper_chwidth=3
+						vht_center_seg1=$idx2
+				esac
+			fi
 		;;
 		VHT160|HE160|EHT160|EHT320)
 			if [ "$band" = "6g" ]; then
@@ -348,6 +364,7 @@ mac80211_hostapd_setup_base() {
 
 		append base_cfg "vht_oper_chwidth=$vht_oper_chwidth" "$N"
 		append base_cfg "vht_oper_centr_freq_seg0_idx=$vht_center_seg0" "$N"
+		append base_cfg "vht_oper_centr_freq_seg1_idx=$vht_center_seg1" "$N"
 
 		cap_rx_stbc=$((($vht_cap >> 8) & 7))
 		[ "$rx_stbc" -lt "$cap_rx_stbc" ] && cap_rx_stbc="$rx_stbc"
@@ -465,6 +482,7 @@ mac80211_hostapd_setup_base() {
 		[ "$hwmode" = "a" ] && {
 			append base_cfg "he_oper_chwidth=$vht_oper_chwidth" "$N"
 			append base_cfg "he_oper_centr_freq_seg0_idx=$vht_center_seg0" "$N"
+			append base_cfg "he_oper_centr_freq_seg1_idx=$vht_center_seg1" "$N"
 		}
 
 		mac80211_add_he_capabilities \
