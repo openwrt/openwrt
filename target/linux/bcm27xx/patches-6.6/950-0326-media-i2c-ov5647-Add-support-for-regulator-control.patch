@@ -96,7 +96,7 @@ Signed-off-by: Dave Stevenson <dave.stevenson@raspberrypi.com>
  static int ov5647_init_controls(struct ov5647 *sensor, struct device *dev)
  {
  	struct i2c_client *client = v4l2_get_subdevdata(&sensor->sd);
-@@ -1511,6 +1542,12 @@ static int ov5647_probe(struct i2c_clien
+@@ -1513,6 +1544,12 @@ static int ov5647_probe(struct i2c_clien
  		return -EINVAL;
  	}
  

@@ -267,7 +267,7 @@ This reverts commit 09dfdf6129532e19b2cfd4992d1d09e7119ccd48.
  	dwc->tx_fifo_resize_max_num = tx_fifo_resize_max_num;
  }
  
-@@ -1981,6 +2028,12 @@ static int dwc3_probe(struct platform_de
+@@ -1996,6 +2043,12 @@ static int dwc3_probe(struct platform_de
  	if (IS_ERR(dwc->usb_psy))
  		return dev_err_probe(dev, PTR_ERR(dwc->usb_psy), "couldn't get usb power supply\n");
  
@@ -292,7 +292,7 @@ This reverts commit 09dfdf6129532e19b2cfd4992d1d09e7119ccd48.
  /* Global Debug LSP MUX Select */
  #define DWC3_GDBGLSPMUX_ENDBC		BIT(15)	/* Host only */
  #define DWC3_GDBGLSPMUX_HOSTSELECT(n)	((n) & 0x3fff)
-@@ -1070,6 +1073,7 @@ struct dwc3_scratchpad_array {
+@@ -1072,6 +1075,7 @@ struct dwc3_scratchpad_array {
   * @tx_max_burst_prd: max periodic ESS transmit burst size
   * @tx_fifo_resize_max_num: max number of fifos allocated during txfifo resize
   * @clear_stall_protocol: endpoint number that requires a delayed status phase
@@ -300,7 +300,7 @@ This reverts commit 09dfdf6129532e19b2cfd4992d1d09e7119ccd48.
   * @hsphy_interface: "utmi" or "ulpi"
   * @connected: true when we're connected to a host, false otherwise
   * @softconnect: true when gadget connect is called, false when disconnect runs
-@@ -1312,6 +1316,7 @@ struct dwc3 {
+@@ -1316,6 +1320,7 @@ struct dwc3 {
  	u8			tx_max_burst_prd;
  	u8			tx_fifo_resize_max_num;
  	u8			clear_stall_protocol;

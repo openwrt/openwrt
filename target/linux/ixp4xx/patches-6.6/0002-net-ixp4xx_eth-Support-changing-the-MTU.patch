@@ -48,7 +48,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  #define RX_BUFF_SIZE		ALIGN((NET_IP_ALIGN) + MAX_MRU, 4)
  
  #define NAPI_WEIGHT		16
-@@ -1182,6 +1191,54 @@ static void destroy_queues(struct port *
+@@ -1174,6 +1183,54 @@ static void destroy_queues(struct port *
  	}
  }
  
@@ -103,7 +103,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  static int eth_open(struct net_device *dev)
  {
  	struct port *port = netdev_priv(dev);
-@@ -1232,6 +1289,8 @@ static int eth_open(struct net_device *d
+@@ -1224,6 +1281,8 @@ static int eth_open(struct net_device *d
  	if (npe_send_recv_message(port->npe, &msg, "ETH_SET_FIREWALL_MODE"))
  		return -EIO;
  
@@ -112,15 +112,15 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  	if ((err = request_queues(port)) != 0)
  		return err;
  
-@@ -1374,6 +1433,7 @@ static int eth_close(struct net_device *
+@@ -1366,6 +1425,7 @@ static int eth_close(struct net_device *
  static const struct net_device_ops ixp4xx_netdev_ops = {
  	.ndo_open = eth_open,
  	.ndo_stop = eth_close,
 +	.ndo_change_mtu = ixp4xx_eth_change_mtu,
  	.ndo_start_xmit = eth_xmit,
  	.ndo_set_rx_mode = eth_set_mcast_list,
- 	.ndo_eth_ioctl = eth_ioctl,
-@@ -1488,6 +1548,9 @@ static int ixp4xx_eth_probe(struct platf
+ 	.ndo_eth_ioctl = phy_do_ioctl_running,
+@@ -1482,6 +1542,9 @@ static int ixp4xx_eth_probe(struct platf
  	ndev->dev.dma_mask = dev->dma_mask;
  	ndev->dev.coherent_dma_mask = dev->coherent_dma_mask;
  

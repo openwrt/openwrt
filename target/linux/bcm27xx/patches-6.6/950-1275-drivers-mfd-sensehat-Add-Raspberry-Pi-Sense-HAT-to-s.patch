@@ -19,11 +19,11 @@ Signed-off-by: Charles Mirabile <cmirabil@redhat.com>
 
 --- a/drivers/mfd/simple-mfd-i2c.c
 +++ b/drivers/mfd/simple-mfd-i2c.c
-@@ -98,6 +98,7 @@ static const struct of_device_id simple_
- 	{ .compatible = "maxim,max5970", .data = &maxim_max5970},
+@@ -127,6 +127,7 @@ static const struct of_device_id simple_
  	{ .compatible = "maxim,max5978", .data = &maxim_max5970},
+ 	{ .compatible = "maxim,max77705-battery", .data = &maxim_mon_max77705},
  	{ .compatible = "raspberrypi,poe-core", &rpi_poe_core },
 +	{ .compatible = "raspberrypi,sensehat" },
+ 	{ .compatible = "silergy,sy7636a", .data = &silergy_sy7636a},
+ 	{ .compatible = "spacemit,p1", .data = &spacemit_p1, },
  	{}
- };
- MODULE_DEVICE_TABLE(of, simple_mfd_i2c_of_match);
