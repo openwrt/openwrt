@@ -82,7 +82,6 @@
 	pinctrl-0 = <&spi_0_pins>;
 	pinctrl-names = "default";
 	status = "okay";
-	cs-gpios = <&tlmm 54 GPIO_ACTIVE_LOW>;
 
 	flash@0 {
 		compatible = "jedec,spi-nor";
@@ -217,7 +216,7 @@
 			bias-disable;
 		};
 		mux_cs {
-			function = "gpio";
+			function = "blsp_spi0";
 			pins = "gpio54";
 			drive-strength = <2>;
 			bias-disable;
