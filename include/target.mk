@@ -148,9 +148,15 @@ ifeq ($(TARGET_BUILD),1)
   endif
 endif
 
-GENERIC_PLATFORM_DIR := $(TOPDIR)/target/linux/generic
+GENERIC_PLATFORM_DIR := $(firstword $(wildcard $(TOPDIR)/target/linux/feeds/$(BOARD)/../linux/generic $(TOPDIR)/target/linux/generic))
 
 ifneq ($(TARGET_BUILD)$(if $(DUMP),,1),)
+  # On generating the index for an external feed, use the SCAN_DIR path as
+  # the target still needs to be installed (with scripts/feeds install ...)
+  # and the link in target/linux/feeds created.
+  ifneq ($(filter feeds/%,$(SCAN_DIR)),)
+    GENERIC_PLATFORM_DIR := $(firstword $(wildcard $(TOPDIR)/$(SCAN_DIR)/linux/generic $(TOPDIR)/target/linux/generic))
+  endif
   include $(INCLUDE_DIR)/kernel-version.mk
 endif
 
@@ -158,6 +164,7 @@ GENERIC_BACKPORT_DIR := $(GENERIC_PLATFORM_DIR)/backport$(if $(wildcard $(GENERI
 GENERIC_PATCH_DIR := $(GENERIC_PLATFORM_DIR)/pending$(if $(wildcard $(GENERIC_PLATFORM_DIR)/pending-$(KERNEL_PATCHVER)),-$(KERNEL_PATCHVER))
 GENERIC_HACK_DIR := $(GENERIC_PLATFORM_DIR)/hack$(if $(wildcard $(GENERIC_PLATFORM_DIR)/hack-$(KERNEL_PATCHVER)),-$(KERNEL_PATCHVER))
 GENERIC_FILES_DIR := $(foreach dir,$(wildcard $(GENERIC_PLATFORM_DIR)/files $(GENERIC_PLATFORM_DIR)/files-$(KERNEL_PATCHVER)),"$(dir)")
+GENERIC_OTHER_FILES_DIR := $(TOPDIR)/target/linux/generic/other-files
 
 __config_name_list = $(1)/config-$(KERNEL_PATCHVER) $(1)/config-default
 __config_list = $(firstword $(wildcard $(call __config_name_list,$(1))))
