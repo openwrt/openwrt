@@ -1,0 +1,301 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	compatible = "lantiq,xway", "lantiq,grx390";
+
+	aliases {
+		serial0 = &asc1;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	cpus {
+		cpu@0 {
+			compatible = "mips,mips34Kc";
+		};
+	};
+
+	memory@0 {
+		device_type = "memory";
+	};
+
+	biu@1f800000 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "lantiq,biu", "simple-bus";
+		reg = <0x1f800000 0x800000>;
+		ranges = <0x0 0x1f800000 0x7fffff>;
+
+		icu0: icu@80200 {
+			#interrupt-cells = <1>;
+			interrupt-controller;
+			compatible = "lantiq,icu";
+			reg = <0x80200 0xc8	/* icu0 */
+			       0x80300 0xc8>;	/* icu1 */
+		};
+
+		watchdog@803f0 {
+			compatible = "lantiq,xrx300-wdt", "lantiq,xrx100-wdt";
+			reg = <0x803f0 0x10>;
+
+			regmap = <&rcu0>;
+		};
+	};
+
+	sram@1f000000 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "lantiq,sram", "simple-bus";
+		reg = <0x1f000000 0x800000>;
+		ranges = <0x0 0x1f000000 0x7fffff>;
+
+		eiu@101000 {
+			#interrupt-cells = <1>;
+			interrupt-controller;
+			compatible = "lantiq,eiu-xway";
+			reg = <0x101000 0x1000>;
+			interrupt-parent = <&icu0>;
+			lantiq,eiu-irqs = <166 135 66 40 41 42>;
+		};
+
+		pmu@102000 {
+			compatible = "lantiq,pmu-xway";
+			reg = <0x102000 0x1000>;
+		};
+
+		cgu@103000 {
+			compatible = "lantiq,cgu-xway";
+			reg = <0x103000 0x1000>;
+		};
+
+		rcu0: rcu@203000 {
+			compatible = "lantiq,xrx200-rcu", "simple-mfd", "syscon";
+			reg = <0x203000 0x1000>;
+			ranges = <0x0 0x203000 0x1000>;
+			big-endian;
+
+			reset0: reset-controller@10 {
+				compatible = "lantiq,xrx200-reset";
+				reg = <0x10 4>, <0x14 4>;
+
+				#reset-cells = <2>;
+			};
+
+			reset1: reset-controller@48 {
+				compatible = "lantiq,xrx200-reset";
+				reg = <0x48 4>, <0x24 4>;
+
+				#reset-cells = <2>;
+			};
+
+			usb_phy0: usb2-phy@18 {
+				compatible = "lantiq,xrx300-usb2-phy";
+				reg = <0x18 4>, <0x38 4>;
+				status = "disabled";
+
+				resets = <&reset1 4 4>, <&reset0 4 4>;
+				reset-names = "phy", "ctrl";
+				#phy-cells = <0>;
+			};
+
+			usb_phy1: usb2-phy@34 {
+				compatible = "lantiq,xrx300-usb2-phy";
+				reg = <0x34 4>, <0x3c 4>;
+				status = "disabled";
+
+				resets = <&reset1 5 4>, <&reset0 4 4>;
+				reset-names = "phy", "ctrl";
+				#phy-cells = <0>;
+			};
+
+			reboot@10 {
+				compatible = "syscon-reboot";
+				reg = <0x10 4>;
+
+				regmap = <&rcu0>;
+				offset = <0x10>;
+				mask = <0xe0000000>;
+			};
+		};
+	};
+
+	fpi@10000000 {
+		compatible = "lantiq,xrx200-fpi", "simple-bus";
+		ranges = <0x0 0x10000000 0xf000000>;
+		reg =	<0x1f400000 0x1000>,
+			<0x10000000 0xf000000>;
+		regmap = <&rcu0>;
+		offset-endianness = <0x4c>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		localbus: localbus@0 {
+			#address-cells = <2>;
+			#size-cells = <1>;
+			ranges = <0 0 0x0 0x3ffffff /* addrsel0 */
+				1 0 0x4000000 0x4000010>; /* addsel1 */
+			compatible = "lantiq,localbus", "simple-bus";
+		};
+
+		gptu@e100a00 {
+			compatible = "lantiq,gptu-xway";
+			reg = <0xe100a00 0x100>;
+			interrupt-parent = <&icu0>;
+			interrupts = <126 127 128 129 130 131>;
+		};
+
+		gpio: pinmux@e100b10 {
+			compatible = "lantiq,xrx300-pinctrl";
+			#gpio-cells = <2>;
+			gpio-controller;
+			reg = <0xe100b10 0xa0>;
+		};
+
+		stp: stp@e100bb0 {
+			status = "disabled";
+			compatible = "lantiq,gpio-stp-xway";
+			reg = <0xe100bb0 0x40>;
+			#gpio-cells = <2>;
+			gpio-controller;
+
+			lantiq,shadow = <0xffffff>;
+			lantiq,groups = <0x7>;
+			lantiq,dsl = <0x0>;
+			lantiq,phy1 = <0x0>;
+			lantiq,phy2 = <0x0>;
+			lantiq,phy3 = <0x0>;
+			lantiq,phy4 = <0x0>;
+		};
+
+		asc1: serial@e100c00 {
+			compatible = "lantiq,asc";
+			reg = <0xe100c00 0x400>;
+			interrupt-parent = <&icu0>;
+			interrupts = <112 113 114>;
+		};
+
+		deu@e103100 {
+			compatible = "lantiq,deu-xrx200";
+			reg = <0xe103100 0xf00>;
+		};
+
+		dma@e104100 {
+			compatible = "lantiq,dma-xway";
+			reg = <0xe104100 0x800>;
+		};
+
+		ebu@6000000 {
+			compatible = "lantiq,ebu-xway";
+			reg = <0x6000000 0x100>;
+		};
+
+		usb0: usb@e101000 {
+			status = "disabled";
+			compatible = "lantiq,xrx200-usb";
+			reg = <0xe101000 0x1000
+				0xe120000 0x3f000>;
+			interrupt-parent = <&icu0>;
+			interrupts = <62 91>;
+			dr_mode = "host";
+			phys = <&usb_phy0>;
+			phy-names = "usb2-phy";
+		};
+
+		usb1: usb@e106000 {
+			status = "disabled";
+			compatible = "lantiq,xrx200-usb";
+			reg = <0xe106000 0x1000>;
+			interrupt-parent = <&icu0>;
+			interrupts = <91>;
+			dr_mode = "host";
+			phys = <&usb_phy1>;
+			phy-names = "usb2-phy";
+		};
+
+		gswip: switch@e108000 {
+			compatible = "lantiq,xrx330-gswip";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = < 0xe108000 0x3000 /* switch */
+				0xe10b100 0x70   /* mdio */
+				0xe10b1d8 0x30   /* mii */
+				>;
+
+			dsa,member = <0 0>;
+
+			gswip_ports: ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				port@6 {
+					reg = <0x6>;
+					label = "cpu";
+					ethernet = <&eth0>;
+				};
+			};
+
+			gswip_mdio: mdio {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				compatible = "lantiq,xrx200-mdio";
+			};
+
+			gphy-fw {
+				compatible = "lantiq,xrx330-gphy-fw", "lantiq,gphy-fw";
+				lantiq,rcu = <&rcu0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				gphy0: gphy@20 {
+					reg = <0x20>;
+
+					resets = <&reset0 31 30>, <&reset1 6 6>;
+					reset-names = "gphy", "gphy2";
+				};
+
+				gphy1: gphy@58 {
+					reg = <0x58>;
+
+					resets = <&reset0 29 28>, <&reset1 7 7>;
+					reset-names = "gphy", "gphy2";
+				};
+
+				gphy2: gphy@ac {
+					reg = <0xac>;
+
+					resets = <&reset0 28 13>, <&reset1 8 8>;
+					reset-names = "gphy", "gphy2";
+				};
+
+				gphy3: gphy@264 {
+					reg = <0x264>;
+
+					resets = <&reset0 10 10>;
+					reset-names = "gphy";
+				};
+			};
+		};
+
+		eth0: eth@e10b308 {
+			compatible = "lantiq,xrx200-net";
+			reg = <0xe10b308 0x30>; /* pmac */
+			interrupt-parent = <&icu0>;
+			interrupts = <73>, <72>;
+			interrupt-names = "tx", "rx";
+			resets = <&reset0 21 16>, <&reset0 8 8>, <&reset0 3 3>;
+			reset-names = "switch", "ppe", "ppe_dsp";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+	};
+};
