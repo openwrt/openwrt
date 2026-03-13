@@ -1,0 +1,25 @@
+--- a/arch/mips/cavium-octeon/executive/cvmx-helper-sgmii.c
++++ b/arch/mips/cavium-octeon/executive/cvmx-helper-sgmii.c
+@@ -139,7 +139,7 @@ static int __cvmx_helper_need_g15618(voi
+ static int __cvmx_helper_sgmii_er12_qca8511_path(int interface, int index)
+ {
+ 	return cvmx_sysinfo_get()->board_type == CVMX_BOARD_TYPE_UBNT_E300 &&
+-		(interface == 1 || interface == 2) && index >= 0 && index < 4;
++		interface == 1 && index >= 0 && index < 4;
+ }
+ 
+ /**
+@@ -468,6 +468,13 @@ union cvmx_helper_link_info __cvmx_helpe
+ 
+ 	result.u64 = 0;
+ 
++	/*
++	 * ER-12 switched fabric is a fixed MAC-side link to QCA8511.
++	 * Use board/DT fixed-link status instead of PHY-mode autoneg.
++	 */
++	if (__cvmx_helper_sgmii_er12_qca8511_path(interface, index))
++		return __cvmx_helper_board_link_get(ipd_port);
++
+ 	if (cvmx_sysinfo_get()->board_type == CVMX_BOARD_TYPE_SIM) {
+ 		/* The simulator gives you a simulated 1Gbps full duplex link */
+ 		result.s.link_up = 1;

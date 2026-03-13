@@ -1,0 +1,87 @@
+--- a/drivers/staging/octeon/ethernet-mdio.c
++++ b/drivers/staging/octeon/ethernet-mdio.c
+@@ -10,9 +10,11 @@
+ #include <linux/phy.h>
+ #include <linux/ratelimit.h>
+ #include <linux/of_mdio.h>
++#include <linux/delay.h>
+ #include <net/dst.h>
+ 
+ #include "octeon-ethernet.h"
++#include <asm/octeon/cvmx-pcsx-defs.h>
+ #include "ethernet-defines.h"
+ #include "ethernet-mdio.h"
+ #include "ethernet-util.h"
+@@ -35,6 +37,62 @@ static int cvm_oct_nway_reset(struct net
+ 	return -EINVAL;
+ }
+ 
++static bool cvm_oct_need_pcs_reset_on_open(struct octeon_ethernet *priv)
++{
++	return priv->of_node &&
++		of_property_read_bool(priv->of_node, "cavium,pcs-reset-on-open");
++}
++
++/*
++ * Some Qualcomm/Atheros SGMII paths only recover after a PCS power cycle.
++ * Keep this DT-driven so board DTS decides which ports require it.
++ */
++static void cvm_oct_set_port_pcs(struct net_device *dev, bool up)
++{
++	struct octeon_ethernet *priv = netdev_priv(dev);
++	int interface = cvmx_helper_get_interface_num(priv->port);
++	int index = cvmx_helper_get_interface_index_num(priv->port);
++	union cvmx_pcsx_mrx_control_reg control_reg;
++	union cvmx_gmxx_prtx_cfg gmx_cfg;
++	union cvmx_pcsx_miscx_ctl_reg pcsx_miscx_ctl_reg;
++
++	control_reg.u64 = cvmx_read_csr(CVMX_PCSX_MRX_CONTROL_REG(index, interface));
++	control_reg.s.an_en = 1;
++	control_reg.s.spdmsb = 1;
++	control_reg.s.spdlsb = 0;
++	control_reg.s.dup = 1;
++	control_reg.s.pwr_dn = up ? 0 : 1;
++	cvmx_write_csr(CVMX_PCSX_MRX_CONTROL_REG(index, interface), control_reg.u64);
++	cvmx_read_csr(CVMX_PCSX_MRX_CONTROL_REG(index, interface));
++
++	if (!up)
++		return;
++
++	gmx_cfg.u64 = cvmx_read_csr(CVMX_GMXX_PRTX_CFG(index, interface));
++	gmx_cfg.s.speed = 1;
++	gmx_cfg.s.speed_msb = 0;
++	gmx_cfg.s.slottime = 1;
++	cvmx_write_csr(CVMX_GMXX_PRTX_CFG(index, interface), gmx_cfg.u64);
++
++	pcsx_miscx_ctl_reg.u64 = cvmx_read_csr(CVMX_PCSX_MISCX_CTL_REG(index, interface));
++	pcsx_miscx_ctl_reg.s.samp_pt = 1;
++	cvmx_write_csr(CVMX_PCSX_MISCX_CTL_REG(index, interface), pcsx_miscx_ctl_reg.u64);
++	cvmx_read_csr(CVMX_PCSX_MISCX_CTL_REG(index, interface));
++}
++
++static void cvm_oct_pcs_recover_path(struct net_device *dev)
++{
++	struct octeon_ethernet *priv = netdev_priv(dev);
++
++	if (!cvm_oct_need_pcs_reset_on_open(priv))
++		return;
++
++	cvm_oct_set_port_pcs(dev, false);
++	msleep(30);
++	cvm_oct_set_port_pcs(dev, true);
++	msleep(20);
++}
++
+ const struct ethtool_ops cvm_oct_ethtool_ops = {
+ 	.get_drvinfo = cvm_oct_get_drvinfo,
+ 	.nway_reset = cvm_oct_nway_reset,
+@@ -140,6 +198,9 @@ int cvm_oct_phy_setup_device(struct net_
+ 	struct device_node *phy_node;
+ 	struct phy_device *phydev = NULL;
+ 
++	/* Run board-selected PCS recovery before probing/starting PHY. */
++	cvm_oct_pcs_recover_path(dev);
++
+ 	if (!priv->of_node)
+ 		goto no_phy;
+ 

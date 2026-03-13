@@ -1,0 +1,12 @@
+--- a/drivers/staging/octeon/ethernet-tx.c
++++ b/drivers/staging/octeon/ethernet-tx.c
+@@ -165,8 +165,7 @@ netdev_tx_t cvm_oct_xmit(struct sk_buff
+ 		u16 vlan_tci = 0;
+ 
+ 		__vlan_get_tag(skb, &vlan_tci);
+-		if (vlan_tci == cvm_oct_get_vlan_switch0_vid() &&
+-		    skb_vlan_tagged_multi(skb))
++		if (vlan_tci == cvm_oct_get_vlan_switch0_vid())
+ 			__skb_vlan_pop(skb, &vlan_tci);
+ 	}
+ 
