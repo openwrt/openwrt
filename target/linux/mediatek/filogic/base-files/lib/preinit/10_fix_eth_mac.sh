@@ -4,13 +4,17 @@ preinit_set_mac_address() {
 	case $(board_name) in
 	acer,predator-w6|\
 	acer,predator-w6d)
-		$(mmc_get_mac_ascii u-boot-env WANMAC)
-		$(mmc_get_mac_ascii u-boot-env LANMAC)
-		ip link set dev lan1 address "$lan_mac"
-		ip link set dev lan2 address "$lan_mac"
-		ip link set dev lan3 address "$lan_mac"
-		ip link set dev game address "$lan_mac"
-		ip link set dev eth1 address "$wan_mac"
+		wan_mac=$(mmc_get_mac_ascii u-boot-env WANMAC)
+		lan_mac=$(mmc_get_mac_ascii u-boot-env LANMAC)
+		if [ -n "$lan_mac" ] ; then
+			ip link set dev lan1 address "$lan_mac"
+			ip link set dev lan2 address "$lan_mac"
+			ip link set dev lan3 address "$lan_mac"
+			ip link set dev game address "$lan_mac"
+		fi
+		if [ -n "$wan_mac" ] ; then
+			ip link set dev eth1 address "$wan_mac"
+		fi
 		;;
 	acer,predator-w6x-stock|\
 	acer,predator-w6x-ubootmod)
@@ -25,10 +29,14 @@ preinit_set_mac_address() {
 	acer,vero-w6m)
 		wan_mac=$(mmc_get_mac_ascii u-boot-env WANMAC)
 		lan_mac=$(mmc_get_mac_ascii u-boot-env LANMAC)
-		ip link set dev lan1 address "$lan_mac"
-		ip link set dev lan2 address "$lan_mac"
-		ip link set dev lan3 address "$lan_mac"
-		ip link set dev internet address "$wan_mac"
+		if [ -n "$lan_mac" ] ; then
+			ip link set dev lan1 address "$lan_mac"
+			ip link set dev lan2 address "$lan_mac"
+			ip link set dev lan3 address "$lan_mac"
+		fi
+		if [ -n "$wan_mac" ] ; then
+			ip link set dev internet address "$wan_mac"
+		fi
 		;;
 	asus,tuf-ax4200|\
 	asus,tuf-ax4200q|\
