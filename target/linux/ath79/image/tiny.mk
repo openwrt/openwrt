@@ -1,3 +1,4 @@
+include ./common-alpha.mk
 include ./common-buffalo.mk
 include ./common-nec.mk
 include ./common-senao.mk
@@ -15,14 +16,16 @@ TARGET_DEVICES += buffalo_whr-g301n
 
 define Device/dlink_dap-1720-a1
   $(Device/seama)
+  $(Device/alpha-encimg)
   SOC := qca9563
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DAP-1720
   DEVICE_VARIANT := A1
   IMAGE_SIZE := 15872k
   SEAMA_SIGNATURE := wapac28_dlink.2015_dap1720
-  DEVICE_PACKAGES := -swconfig ath10k-firmware-qca988x-ct \
-	kmod-ath10k-ct-smallbuffers rssileds
+  ALPHA_KEY_IV := qBiz6o/1RVQTtJBd3FS7FDbqogE8yoBm EfDMqWWxHCOhEqgY
+  DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct-smallbuffers \
+		     -swconfig rssileds
 endef
 TARGET_DEVICES += dlink_dap-1720-a1
 
@@ -46,11 +49,13 @@ TARGET_DEVICES += dlink_dir-615-e4
 
 define Device/dlink_dir-859-a
   $(Device/seama)
+  $(Device/alpha-encimg)
   SOC := qca9563
   DEVICE_VENDOR := D-Link
   DEVICE_MODEL := DIR-859
   IMAGE_SIZE := 15872k
   SEAMA_SIGNATURE := wrgac37_dlink.2013gui_dir859
+  ALPHA_KEY_IV := KY0H9R2PDL3eu1J4uCVd1CK7BJ7vF1kc qbStAzIRvWeQHz5U
   DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct-smallbuffers
 endef
 
