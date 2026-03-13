@@ -3254,6 +3254,24 @@ define Device/zbtlink_zbt-z8103ax-c
 endef
 TARGET_DEVICES += zbtlink_zbt-z8103ax-c
 
+define Device/zbtlink_zbt-z8106ax-m2-t
+  DEVICE_VENDOR := Zbtlink
+  DEVICE_MODEL := ZBT-Z8106AX-M2-T 128M
+  SUPPORTED_DEVICES += zbtlink,z8106ax-2sim
+  DEVICE_DTS := mt7981b-zbtlink-zbt-z8106ax-m2-t
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-usb3 kmod-usb-net-qmi-wwan kmod-usb-serial-option
+  KERNEL_IN_UBI := 1
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 65536k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-ubi | check-size $$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += zbtlink_zbt-z8106ax-m2-t
+
 define Device/zyxel_ex5601-t0-stock
   DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := EX5601-T0
