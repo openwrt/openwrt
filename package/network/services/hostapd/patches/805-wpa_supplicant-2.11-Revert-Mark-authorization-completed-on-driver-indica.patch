@@ -1,0 +1,53 @@
+Bug: https://bugs.gentoo.org/937452
+Bug: https://bugzilla.redhat.com/show_bug.cgi?id=2302577
+
+From 071336247683d82a74f3567abf67a0b37db856ae Mon Sep 17 00:00:00 2001
+From: Christopher Byrne <salah.coronya@gmail.com>
+Date: Fri, 21 Feb 2025 18:58:19 -0600
+Subject: [PATCH] Revert "Mark authorization completed on driver indication
+ during 4-way HS offload"
+
+This reverts commit 41638606054a09867fe3f9a2b5523aa4678cbfa5.
+---
+ wpa_supplicant/events.c | 25 ++++++++-----------------
+ 1 file changed, 8 insertions(+), 17 deletions(-)
+
+diff --git a/wpa_supplicant/events.c b/wpa_supplicant/events.c
+index 49917f7aa..bbb3a3eda 100644
+--- a/wpa_supplicant/events.c
++++ b/wpa_supplicant/events.c
+@@ -4327,23 +4327,14 @@ static void wpa_supplicant_event_assoc(struct wpa_supplicant *wpa_s,
+ 		eapol_sm_notify_eap_success(wpa_s->eapol, true);
+ 	} else if ((wpa_s->drv_flags & WPA_DRIVER_FLAGS_4WAY_HANDSHAKE_PSK) &&
+ 		   wpa_key_mgmt_wpa_psk(wpa_s->key_mgmt)) {
+-		if (already_authorized) {
+-			/*
+-			 * We are done; the driver will take care of RSN 4-way
+-			 * handshake.
+-			 */
+-			wpa_supplicant_cancel_auth_timeout(wpa_s);
+-			wpa_supplicant_set_state(wpa_s, WPA_COMPLETED);
+-			eapol_sm_notify_portValid(wpa_s->eapol, true);
+-			eapol_sm_notify_eap_success(wpa_s->eapol, true);
+-		} else {
+-			/* Update port, WPA_COMPLETED state from the
+-			 * EVENT_PORT_AUTHORIZED handler when the driver is done
+-			 * with the 4-way handshake.
+-			 */
+-			wpa_msg(wpa_s, MSG_DEBUG,
+-				"ASSOC INFO: wait for driver port authorized indication");
+-		}
++		/*
++		 * We are done; the driver will take care of RSN 4-way
++		 * handshake.
++		 */
++		wpa_supplicant_cancel_auth_timeout(wpa_s);
++		wpa_supplicant_set_state(wpa_s, WPA_COMPLETED);
++		eapol_sm_notify_portValid(wpa_s->eapol, true);
++		eapol_sm_notify_eap_success(wpa_s->eapol, true);
+ 	} else if ((wpa_s->drv_flags & WPA_DRIVER_FLAGS_4WAY_HANDSHAKE_8021X) &&
+ 		   wpa_key_mgmt_wpa_ieee8021x(wpa_s->key_mgmt)) {
+ 		/*
+-- 
+2.45.3
+
