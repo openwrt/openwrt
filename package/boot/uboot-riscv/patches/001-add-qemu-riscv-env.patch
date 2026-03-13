@@ -1,0 +1,50 @@
+--- a/board/emulation/qemu-riscv/qemu-riscv.env
++++ b/board/emulation/qemu-riscv/qemu-riscv.env
+@@ -0,0 +1,47 @@
++/* SPDX-License-Identifier: GPL-2.0+ */
++
++/* environment for qemu-riscv with FIT image boot (pflash or virtio-blk) */
++
++flash_addr=0x22000000
++flash_node=/flash@20000000
++fw_phandle=0xff
++vio_phandle=0xfe
++vio_node=/soc/virtio_mmio@10008000
++loadaddr=0x84000000
++fdt_copy_addr=0x86000000
++bootargs=root=/dev/fit0 rootfstype=squashfs rootwait console=ttyS0
++bootcmd=run fdt_fixup; run bootcmd_flash; run bootcmd_virtio
++fdt_fixup=
++	fdt addr ${fdtcontroladdr};
++	fdt move ${fdtcontroladdr} ${fdt_copy_addr} 0x10000;
++	fdt addr ${fdt_copy_addr} 0x10000;
++	fdt mknode ${flash_node} partitions;
++	fdt set ${flash_node}/partitions compatible "fixed-partitions";
++	fdt set ${flash_node}/partitions "#address-cells" <1>;
++	fdt set ${flash_node}/partitions "#size-cells" <1>;
++	fdt mknode ${flash_node}/partitions partition@0;
++	fdt set ${flash_node}/partitions/partition@0 label "opensbi";
++	fdt set ${flash_node}/partitions/partition@0 reg <0x0 0x2000000>;
++	fdt set ${flash_node}/partitions/partition@0 read-only;
++	fdt mknode ${flash_node}/partitions partition@2000000;
++	fdt set ${flash_node}/partitions/partition@2000000 label "firmware";
++	fdt set ${flash_node}/partitions/partition@2000000 reg <0x2000000 0x2000000>;
++	fdt set ${flash_node}/partitions/partition@2000000 compatible "denx,fit";
++	fdt set ${flash_node}/partitions/partition@2000000 phandle <${fw_phandle}>;
++	fdt mknode ${vio_node} partitions;
++	fdt set ${vio_node}/partitions compatible "gpt-partitions";
++	fdt mknode ${vio_node}/partitions block-partition-fit;
++	fdt set ${vio_node}/partitions/block-partition-fit partname "FIT";
++	fdt set ${vio_node}/partitions/block-partition-fit phandle <${vio_phandle}>
++bootcmd_flash=
++	fdt set /chosen rootdisk <${fw_phandle}>;
++	bootm ${flash_addr}#config-1 - ${fdt_copy_addr}
++bootcmd_virtio=
++	virtio scan;
++	part start virtio 0 FIT part_addr;
++	part size virtio 0 FIT part_size;
++	virtio read ${loadaddr} ${part_addr} 0x100;
++	imszb ${loadaddr} image_size;
++	virtio read ${loadaddr} ${part_addr} ${image_size};
++	fdt set /chosen rootdisk <${vio_phandle}>;
++	bootm ${loadaddr}#config-1 - ${fdt_copy_addr}
