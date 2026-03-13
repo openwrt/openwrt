@@ -256,7 +256,7 @@ Signed-off-by: Sander Vanheule <sander@svanheule.net>
 +MODULE_LICENSE("GPL");
 --- /dev/null
 +++ b/include/linux/mfd/rtl8231.h
-@@ -0,0 +1,71 @@
+@@ -0,0 +1,73 @@
 +/* SPDX-License-Identifier: GPL-2.0-or-later */
 +/*
 + * Register definitions the RTL8231 GPIO and LED expander chip
@@ -280,6 +280,8 @@ Signed-off-by: Sander Vanheule <sander@svanheule.net>
 +#define RTL8231_FUNC0_SCAN_MODE		BIT(0)
 +#define RTL8231_FUNC0_SCAN_SINGLE	0
 +#define RTL8231_FUNC0_SCAN_BICOLOR	BIT(0)
++#define RTL8231_ENABLE_SYNC_LED		BIT(14)
++#define RTL8231_ENABLE_SYNC_GPIO	BIT(15)
 +
 +#define RTL8231_REG_FUNC1		0x01
 +#define RTL8231_FUNC1_READY_CODE_VALUE	0x37

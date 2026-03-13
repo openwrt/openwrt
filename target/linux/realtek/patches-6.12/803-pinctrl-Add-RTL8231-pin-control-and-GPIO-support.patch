@@ -53,7 +53,7 @@ Signed-off-by: Sander Vanheule <sander@svanheule.net>
  obj-$(CONFIG_PINCTRL_ST) 	+= pinctrl-st.o
 --- /dev/null
 +++ b/drivers/pinctrl/pinctrl-rtl8231.c
-@@ -0,0 +1,525 @@
+@@ -0,0 +1,530 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +
 +#include <linux/bitfield.h>
@@ -431,6 +431,11 @@ Signed-off-by: Sander Vanheule <sander@svanheule.net>
 +	unsigned int mode;
 +	unsigned int dir;
 +	int err;
++
++	/* Enable immediate GPIO changes, otherwise we need to latch updates */
++	err = regmap_update_bits(map, RTL8231_REG_FUNC0, RTL8231_ENABLE_SYNC_GPIO, 0);
++	if (err)
++		return err;
 +
 +	for (unsigned int i = 0; i < ARRAY_SIZE(pin_fields); i++) {
 +		field_data = devm_regmap_field_alloc(dev, map, pin_fields[i].gpio_data);
