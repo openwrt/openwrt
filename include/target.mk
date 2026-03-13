@@ -31,8 +31,7 @@ DEFAULT_PACKAGES:=\
 	netifd \
 	uci \
 	uclient-fetch \
-	urandom-seed \
-	urngd
+	urandom-seed
 
 ##@
 # @brief Default packages for @DEVICE_TYPE basic.
