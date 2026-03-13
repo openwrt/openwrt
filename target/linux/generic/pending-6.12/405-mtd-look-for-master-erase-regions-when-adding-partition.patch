@@ -1,0 +1,20 @@
+When adding new MTD partitions there is no sense to check numeraseregionw of the parent node if this node is not master it will alwasy have numeraseregions 0
+Index: linux-6.6.122/drivers/mtd/mtdpart.c
+===================================================================
+--- linux-6.6.122.orig/drivers/mtd/mtdpart.c	2026-02-17 12:12:18.349712783 +0400
++++ linux-6.6.122/drivers/mtd/mtdpart.c	2026-02-17 13:12:46.471427849 +0400
+@@ -148,11 +148,11 @@
+ 			part->name, parent->name, child->part.size);
+ 	}
+ 
+-	if (parent->numeraseregions > 1) {
++	if (master->numeraseregions >= 1) {
+ 		/* Deal with variable erase size stuff */
+-		int i, max = parent->numeraseregions;
++		int i, max = master->numeraseregions;
+ 		u64 end = child->part.offset + child->part.size;
+-		struct mtd_erase_region_info *regions = parent->eraseregions;
++		struct mtd_erase_region_info *regions = master->eraseregions;
+ 
+ 		/* Find the first erase regions which is part of this
+ 		 * partition. */

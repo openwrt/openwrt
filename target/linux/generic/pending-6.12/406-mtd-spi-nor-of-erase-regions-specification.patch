@@ -1,0 +1,162 @@
+Support for the specification of erase region sizes for SPI-NOR via OF.
+
+Many flashes support for erase blocks other than 64K. But to the moment
+OpenWRT supports only switch to 4K blocks which is not good for JFFS2.
+
+Ideally we'd better have a way to specify 4K for bootloader and its env
+and 32K for the firmware partition.
+
+That way JFFS2 needs only 5x32K blocks, i.e. only 160Kb of flash.
+
+Important: for this to work SFDP read shouldn't be inhibited, otherwise
+driver wouldn't know opcodes for the needed commands. For a unknown reason
+some manufacturer quirks inhibit SFDP parsing.
+
+This patch implements this using OF/DTS, like below:
+	regions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		region@0 {
+			reg = <0x0 0x20000>;
+			erase-block = <0x1000>;
+		};
+
+		region@20000 {
+			reg = <0x20000 0x3e0000>;
+			erase-block = <0x8000>;
+		};
+	};
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "breed";
+			reg = <0x0 0x1e000>;
+			read-only;
+		};
+
+		partition@1e000 {
+			label = "breed_env";
+			reg = <0x1e000 0x1000>;
+		};
+
+		partition@1f000 {
+			label = "factory";
+			reg = <0x1f000 0x1000>;
+			read-only;
+            
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom_factory_0: eeprom@c00 {
+					reg = <0xc00 0x400>;
+				};
+
+				macaddr_uboot_wmac: macaddr@1fc04 {
+					reg = <0xc04 0x6>;
+				};
+
+				macaddr_uboot_eth: macaddr@1fc28 {
+					reg = <0xc28 0x6>;
+				};
+			};
+
+		};
+
+		partition@20000 {
+			compatible = "denx,uimage";
+			label = "firmware";
+			reg = <0x20000 0x3e0000>;
+		};
+	};
+Index: linux-6.12.71/drivers/mtd/spi-nor/Kconfig
+===================================================================
+--- linux-6.12.71.orig/drivers/mtd/spi-nor/Kconfig	2026-02-18 03:02:13.362417089 +0400
++++ linux-6.12.71/drivers/mtd/spi-nor/Kconfig	2026-02-18 03:02:13.358417107 +0400
+@@ -20,6 +20,20 @@
+ 	  For example: A 68K erase will use one 64K erase, and one 4K erase
+ 	  on supporting hardware.
+ 
++config MTD_SPI_NOR_OF_ERASE_REGIONS
++	bool "Support OpenFirmware erase regions specification"
++	depends on OF
++	depends on !MTD_SPI_NOR_USE_4K_SECTORS
++	select MTD_SPI_NOR_USE_VARIABLE_ERASE
++	help
++	  Normaly SPI NOR devices are seen by the driver as the single uniform
++	  erase region. MTD device usually uses the largest erase block
++	  size supported by the flash. If you select this option the kernel
++	  will parse the device tree to split the single region into
++	  multiple regions with custom erase block sizes. Still this requires
++	  for the flash to support requested erase block size and for the region
++	  to be properly aligned.
++
+ config MTD_SPI_NOR_USE_4K_SECTORS
+ 	bool "Use small 4096 B erase sectors"
+ 	default y
+Index: linux-6.12.71/drivers/mtd/spi-nor/Makefile
+===================================================================
+--- linux-6.12.71.orig/drivers/mtd/spi-nor/Makefile	2026-02-18 03:02:13.362417089 +0400
++++ linux-6.12.71/drivers/mtd/spi-nor/Makefile	2026-02-18 03:02:13.358417107 +0400
+@@ -15,6 +15,7 @@
+ spi-nor-objs			+= winbond.o
+ spi-nor-objs			+= xmc.o
+ spi-nor-$(CONFIG_DEBUG_FS)	+= debugfs.o
++spi-nor-$(CONFIG_MTD_SPI_NOR_OF_ERASE_REGIONS) += of_regions.o
+ obj-$(CONFIG_MTD_SPI_NOR)	+= spi-nor.o
+ 
+ obj-$(CONFIG_MTD_SPI_NOR)	+= controllers/
+Index: linux-6.12.71/drivers/mtd/spi-nor/core.h
+===================================================================
+--- linux-6.12.71.orig/drivers/mtd/spi-nor/core.h	2026-02-18 03:02:13.362417089 +0400
++++ linux-6.12.71/drivers/mtd/spi-nor/core.h	2026-02-18 11:14:18.538459067 +0400
+@@ -673,6 +673,10 @@
+ int spi_nor_check_sfdp_signature(struct spi_nor *nor);
+ int spi_nor_parse_sfdp(struct spi_nor *nor);
+ 
++#ifdef CONFIG_MTD_SPI_NOR_OF_ERASE_REGIONS
++int spi_nor_parse_of_override(struct spi_nor *nor);
++#endif
++
+ static inline struct spi_nor *mtd_to_spi_nor(struct mtd_info *mtd)
+ {
+ 	return container_of(mtd, struct spi_nor, mtd);
+@@ -690,7 +694,13 @@
+ 	 * indicator whether we need SFDP parsing for a particular flash. I.e.
+ 	 * non-legacy flash entries in flash_info will have a size of zero iff
+ 	 * SFDP should be used.
++	 *
++	 * But when erase regions feature is enabled the SFDP needs to be read
++	 * in order to find all supported sizes and opcode.
+ 	 */
++	if(IS_ENABLED(CONFIG_MTD_SPI_NOR_OF_ERASE_REGIONS))
++		return true;
++
+ 	return !nor->info->size;
+ }
+ 
+Index: linux-6.12.71/drivers/mtd/spi-nor/core.c
+===================================================================
+--- linux-6.12.71.orig/drivers/mtd/spi-nor/core.c	2026-02-18 02:46:08.038277385 +0400
++++ linux-6.12.71/drivers/mtd/spi-nor/core.c	2026-02-18 11:07:50.270008702 +0400
+@@ -3009,6 +3009,14 @@
+ 			dev_err(nor->dev, "BFPT parsing failed. Please consider using SPI_NOR_SKIP_SFDP when declaring the flash\n");
+ 			return ret;
+ 		}
++#ifdef CONFIG_MTD_SPI_NOR_OF_ERASE_REGIONS
++		err = spi_nor_parse_of_override(nor);
++		if (err < 0) {
++			dev_warn(dev, "Failed to parse device tree erase regions.\n");
++
++			err = 0;
++		}
++#endif
+ 	} else if (nor->info->no_sfdp_flags & SPI_NOR_SKIP_SFDP) {
+ 		spi_nor_no_sfdp_init_params(nor);
+ 	} else {
