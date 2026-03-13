@@ -34,6 +34,9 @@ function set_fixed_freq(data, config) {
 
 	if (wildcard(data.htmode, 'VHT*'))
 		set_default(config, 'vht', 1);
+
+	if (config.mode in [ 'sta', 'adhoc', 'mesh' ])
+		set_default(config, 'noscan', true);
 }
 
 export function ratestr(rate) {
