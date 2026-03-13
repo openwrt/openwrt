@@ -27,24 +27,22 @@ endef
 
 $(eval $(call KernelPackage,mmc-mtk))
 
-define KernelPackage/pwm-mediatek-ramips
+define KernelPackage/pwm-mediatek
   SUBMENU:=Other modules
-  TITLE:=MT7628 PWM
-  DEPENDS:=@(TARGET_ramips_mt76x8)
+  TITLE:=MediaTek PWM support
+  DEPENDS:=@TARGET_ramips_mt76x8
   KCONFIG:= \
 	CONFIG_PWM=y \
-	CONFIG_PWM_MEDIATEK_RAMIPS \
-	CONFIG_PWM_SYSFS=y
-  FILES:= \
-	$(LINUX_DIR)/drivers/pwm/pwm-mediatek-ramips.ko
-  AUTOLOAD:=$(call AutoProbe,pwm-mediatek-ramips)
+	CONFIG_PWM_MEDIATEK
+  FILES:=$(LINUX_DIR)/drivers/pwm/pwm-mediatek.ko
+  AUTOLOAD:=$(call AutoProbe,pwm-mediatek)
 endef
 
-define KernelPackage/pwm-mediatek-ramips/description
-  Kernel modules for MediaTek Pulse Width Modulator
+define KernelPackage/pwm-mediatek/description
+  Generic PWM framework driver for Mediatek SoC.
 endef
 
-$(eval $(call KernelPackage,pwm-mediatek-ramips))
+$(eval $(call KernelPackage,pwm-mediatek))
 
 define KernelPackage/sdhci-mt7620
   SUBMENU:=Other modules
