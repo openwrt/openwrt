@@ -1,0 +1,14 @@
+--- a/tools/fiptool/fiptool.c
++++ b/tools/fiptool/fiptool.c
+@@ -318,7 +318,11 @@
+ 
+ #ifdef BLKGETSIZE64
+ 	if ((st.st_mode & S_IFBLK) != 0)
++#ifdef __MUSL__
++		if (ioctl(fileno(fp), (int)BLKGETSIZE64, &st_size) == -1)
++#else
+ 		if (ioctl(fileno(fp), BLKGETSIZE64, &st_size) == -1)
++#endif
+ 			log_err("ioctl %s", filename);
+ #endif
+ 
