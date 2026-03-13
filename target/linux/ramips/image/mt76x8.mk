@@ -1476,30 +1476,36 @@ define Device/zyxel_keenetic-extra-ii
 endef
 TARGET_DEVICES += zyxel_keenetic-extra-ii
 
-define Device/teltonika_rut200
+define Device/teltonika_rut2xx_common
   DEVICE_VENDOR := Teltonika
-  DEVICE_MODEL := RUT200
-  DEVICE_VARIANT := v1-v4
   SUPPORTED_TELTONIKA_DEVICES := teltonika,rut2m
   IMAGE_SIZE := 15424k
   BLOCKSIZE := 64k
-  DEVICE_PACKAGES +=kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-usb-serial-option kmod-usb-net-cdc-ether
+  DEVICE_PACKAGES += uqmi kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-usb-serial-option kmod-usb-net-cdc-ether
   IMAGES += factory.bin
   IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-teltonika-metadata
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-metadata
 endef
-TARGET_DEVICES += teltonika_rut200
 
 define Device/teltonika_rut241
-  DEVICE_VENDOR := Teltonika
+  $(Device/teltonika_rut2xx_common)
   DEVICE_MODEL := RUT241
   DEVICE_VARIANT := v1-v4
-  SUPPORTED_TELTONIKA_DEVICES := teltonika,rut2m
-  IMAGE_SIZE := 15424k
-  BLOCKSIZE := 64k
-  DEVICE_PACKAGES += uqmi kmod-mt76x2 kmod-usb2 kmod-usb-ohci kmod-usb-serial-option
-  IMAGES += factory.bin
-  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-teltonika-metadata
-  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size | append-metadata
+  DEVICE_ALT0_VENDOR := Teltonika
+  DEVICE_ALT0_MODEL := RUT200
+  DEVICE_ALT0_VARIANT := v1-v4
+  SUPPORTED_TELTONIKA_HW_MODS := ala440
+  SUPPORTED_DEVICES += teltonika,rut200
 endef
 TARGET_DEVICES += teltonika_rut241
+
+define Device/teltonika_rut241-v5
+  $(Device/teltonika_rut2xx_common)
+  DEVICE_MODEL := RUT241
+  DEVICE_VARIANT := v5
+  DEVICE_ALT0_VENDOR := Teltonika
+  DEVICE_ALT0_MODEL := RUT200
+  DEVICE_ALT0_VARIANT := v5
+  SUPPORTED_TELTONIKA_HW_MODS := 241v5 200v5 ala440
+endef
+TARGET_DEVICES += teltonika_rut241-v5
