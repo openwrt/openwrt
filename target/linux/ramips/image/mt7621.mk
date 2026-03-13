@@ -3168,14 +3168,17 @@ endef
 TARGET_DEVICES += ubnt_edgerouter-x-sfp
 
 define Device/ubnt_unifi-6-lite
-  $(Device/dsa-migration)
+  DEVICE_COMPAT_VERSION := 2.0
+  DEVICE_COMPAT_MESSAGE := \
+	Dual kernel paritition merged due to size constraints. \
+	Upgrade requires a new factory install. Regular sysupgrade is not possible.
   DEVICE_VENDOR := Ubiquiti
   DEVICE_MODEL := UniFi U6 Lite
   DEVICE_DTS_CONFIG := config@1
   DEVICE_DTS_LOADADDR := 0x87000000
   DEVICE_PACKAGES += kmod-mt7603 kmod-mt7915-firmware -uboot-envtools
   KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
-  IMAGE_SIZE := 15424k
+  IMAGE_SIZE := 30848k
 endef
 TARGET_DEVICES += ubnt_unifi-6-lite
 
