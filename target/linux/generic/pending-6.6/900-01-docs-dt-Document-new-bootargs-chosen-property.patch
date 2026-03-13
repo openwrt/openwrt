@@ -1,0 +1,42 @@
+From a71b56fdb26ba0e942dda0b780e0c584ccb921d9 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Fri, 10 May 2024 17:49:42 +0200
+Subject: [PATCH 1/4] docs: dt: Document new bootargs chosen property
+
+The bootargs property might be overridden by bootloaders on kernel load,
+in such scenario, bootargs-override might be used instead. With
+bootargs-override set, any value set in bootargs will be ignored.
+
+The bootargs-append can be used to append additional kernel arguments
+to the bootargs property. This can be useful in the context of a
+bootargs overridden by the bootloader that contains correct that but
+the kernel require additional one to be correctly setup.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ Documentation/devicetree/usage-model.rst | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/Documentation/devicetree/usage-model.rst b/Documentation/devicetree/usage-model.rst
+index 0717426856b2..885be3e582fc 100644
+--- a/Documentation/devicetree/usage-model.rst
++++ b/Documentation/devicetree/usage-model.rst
+@@ -217,6 +217,15 @@ On ARM, the function setup_machine_fdt() is responsible for early
+ scanning of the device tree after selecting the correct machine_desc
+ that supports the board.
+ 
++The bootargs property might be overridden by bootloaders on kernel load,
++in such scenario, bootargs-override might be used instead. With
++bootargs-override set, any value set in bootargs will be ignored.
++
++The bootargs-append can be used to append additional kernel arguments
++to the bootargs property. This can be useful in the context of a
++bootargs overridden by the bootloader that contains correct that but
++the kernel require additional one to be correctly setup.
++
+ 2.4 Device population
+ ---------------------
+ After the board has been identified, and after the early configuration data
+-- 
+2.43.0
+

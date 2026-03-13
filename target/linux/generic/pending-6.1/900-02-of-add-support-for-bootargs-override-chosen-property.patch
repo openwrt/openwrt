@@ -1,0 +1,49 @@
+From ca6be4504e4a2afed8de712d38486bf5f1d2e166 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Fri, 10 May 2024 17:29:47 +0200
+Subject: [PATCH 2/4] of: add support for bootargs-override chosen property
+
+On some devices bootloader may hardcoded and overwrite the
+bootargs DT property passed in "/chosen" when the kernel is
+loaded resulting in the value dropped.
+
+While CMDLINE_FORCE can be used, this is not a good option for
+kernels that are shared across devices.
+
+This setting enables using "/chosen/bootargs-override" as the
+cmdline if it exists in the device tree.
+
+This broken behaviour was found in various devices from ipq806x Soc,
+to Mediatek and even PowerPC.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/of/fdt.c | 12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/of/fdt.c b/drivers/of/fdt.c
+index a8a04f27915b..253315421591 100644
+--- a/drivers/of/fdt.c
++++ b/drivers/of/fdt.c
+@@ -1068,8 +1068,16 @@ int __init early_init_dt_scan_chosen(char *cmdline)
+ 				fdt_totalsize(initial_boot_params));
+ 	}
+ 
+-	/* Retrieve command line */
+-	p = of_get_flat_dt_prop(node, "bootargs", &l);
++	/*
++	 * Retrieve command line
++	 * bootargs might be hardcoded and overwrite by bootloader on
++	 * kernel load.
++	 * Check if alternative bootargs-override is present instead
++	 * first.
++	 */
++	p = of_get_flat_dt_prop(node, "bootargs-override", &l);
++	if (p == NULL || l == 0)
++		p = of_get_flat_dt_prop(node, "bootargs", &l);
+ 	if (p != NULL && l > 0)
+ 		strscpy(cmdline, p, min(l, COMMAND_LINE_SIZE));
+ 
+-- 
+2.43.0
+
