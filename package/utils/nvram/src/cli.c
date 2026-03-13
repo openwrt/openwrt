@@ -91,14 +91,13 @@ static int do_unset(nvram_handle_t *nvram, const char *var)
 static int do_set(nvram_handle_t *nvram, const char *pair)
 {
 	char *val = strstr(pair, "=");
-	char var[strlen(pair)];
+	char *var;
 	int stat = 1;
 
-	if( val != NULL )
-	{
-		memset(var, 0, sizeof(var));
-		strncpy(var, pair, (int)(val-pair));
+	if (val) {
+		var = strndup(pair, val - pair);
 		stat = nvram_set(nvram, var, (char *)(val + 1));
+		free(var);
 	}
 
 	return stat;
