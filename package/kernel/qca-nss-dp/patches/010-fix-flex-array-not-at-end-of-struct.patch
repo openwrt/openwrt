@@ -1,0 +1,49 @@
+From 297db12147d43141fa7f328613e378862e2049c6 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Thu, 12 Feb 2026 15:54:21 -0800
+Subject: [PATCH] fix flex array not at end of struct
+
+A struct is being over allocated to account for a priv flex array in a
+nested struct. Fix this by placing it at the end.
+
+Use struct_size to describe what's going on.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ hal/dp_ops/edma_dp/edma_v2/edma_ppeds.c      | 4 ++--
+ hal/dp_ops/edma_dp/edma_v2/edma_ppeds_priv.h | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+--- a/hal/dp_ops/edma_dp/edma_v2/edma_ppeds.c
++++ b/hal/dp_ops/edma_dp/edma_v2/edma_ppeds.c
+@@ -1428,7 +1428,7 @@ nss_dp_ppeds_handle_t *edma_ppeds_inst_a
+ 	struct edma_ppeds *ppeds_node;
+ 	uint32_t i;
+ 	struct edma_ppeds_drv *drv = &edma_gbl_ctx.ppeds_drv;
+-	int size = priv_size + sizeof(struct edma_ppeds);
++	size_t size = struct_size(ppeds_node, ppeds_handle.priv, priv_size);
+ 
+ 	if (!ops || !ops->rx || !ops->rx_fill || !ops->rx_release
+ 			|| !ops->tx_cmpl) {
+@@ -1436,7 +1436,7 @@ nss_dp_ppeds_handle_t *edma_ppeds_inst_a
+ 		return NULL;
+ 	}
+ 
+-	edma_debug("ppeds node size %lu total size %d\n", sizeof(struct edma_ppeds),  size);
++	edma_debug("ppeds node size %zu total size %zu\n", sizeof(struct edma_ppeds),  size);
+ 	ppeds_node = (struct edma_ppeds *)kzalloc(size, GFP_KERNEL);
+ 	if (!ppeds_node) {
+ 		edma_err("Cannot allocate memory for ppeds node\n");
+--- a/hal/dp_ops/edma_dp/edma_v2/edma_ppeds_priv.h
++++ b/hal/dp_ops/edma_dp/edma_v2/edma_ppeds_priv.h
+@@ -95,9 +95,9 @@ struct edma_ppeds {
+ 	uint32_t rxfill_intr;			/* PPE-DS EDMA Rxfill IRQ */
+ 	uint32_t rxdesc_intr;			/* PPE-DS EDMA Rx IRQ */
+ 	uint8_t db_idx;				/* PPE-DS node index */
+-	nss_dp_ppeds_handle_t ppeds_handle;	/* PPE-DS handle */
+ 	uint32_t umac_reset_inprogress;		/* Umac reset progress status */
+ 	unsigned long service_running;		/* PPE-DS ring usage service status */
++	nss_dp_ppeds_handle_t ppeds_handle;	/* PPE-DS handle */
+ };
+ 
+ /*
