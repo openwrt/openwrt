@@ -1,0 +1,36 @@
+From 3482a3f37240826c825d05fceebbfe5877f587d4 Mon Sep 17 00:00:00 2001
+From: Rosen Penev <rosenp@gmail.com>
+Date: Tue, 17 Feb 2026 20:20:16 -0800
+Subject: [PATCH] ARM: dts: BCM5301X: EA9200: set WAN MAC from nvram
+
+The MAC address from the stock firmare is offset by 1. Define it
+properly to avoid having to override it in userspace.
+
+Signed-off-by: Rosen Penev <rosenp@gmail.com>
+---
+ arch/arm/boot/dts/broadcom/bcm4709-linksys-ea9200.dts | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/arch/arm/boot/dts/broadcom/bcm4709-linksys-ea9200.dts
++++ b/arch/arm/boot/dts/broadcom/bcm4709-linksys-ea9200.dts
+@@ -25,6 +25,10 @@
+ 	nvram@1c080000 {
+ 		compatible = "brcm,nvram";
+ 		reg = <0x1c080000 0x180000>;
++
++		et2macaddr: et2macaddr {
++			#nvmem-cell-cells = <1>;
++		};
+ 	};
+ 
+ 	gpio-keys {
+@@ -70,6 +74,9 @@
+ 
+ 		port@4 {
+ 			label = "wan";
++
++			nvmem-cells = <&et2macaddr 1>;
++			nvmem-cell-names = "mac-address";
+ 		};
+ 
+ 		port@5 {
