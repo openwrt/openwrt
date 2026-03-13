@@ -1,0 +1,269 @@
+name: Build staging snapshot
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Targets to build (x86/64 ath79/genric)"
+        required: false
+        default: "x86/64 ath79/generic"
+      config:
+        description: "Extra lines to append to the config"
+        required: false
+        default: ""
+
+jobs:
+  determine_targets:
+    name: Set targets
+    runs-on: ubuntu-latest
+    outputs:
+      target: ${{ steps.find_targets.outputs.target }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set targets
+        id: find_targets
+        run: |
+          if [ "${{ github.event.inputs.target }}" = "all" ]; then
+            export TARGETS="$(perl ./scripts/dump-target-info.pl targets 2>/dev/null | awk '{ print $1 }')"
+          else
+            export TARGETS="${{ github.event.inputs.target }}"
+          fi
+
+          JSON='['
+          FIRST=1
+          for TARGET in $TARGETS; do
+            [[ $FIRST -ne 1 ]] && JSON="$JSON"','
+            JSON="$JSON"'"'"${TARGET}"'"'
+            FIRST=0
+          done
+          JSON="$JSON"']'
+
+          echo -e "\n---- targets ----\n"
+          echo "$JSON"
+          echo -e "\n---- targets ----\n"
+
+          echo "::set-output name=target::$JSON"
+
+  build:
+    name: Build ${{ matrix.os }}/${{ matrix.target }}
+    needs: determine_targets
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: False
+      matrix:
+        os: [ubuntu-latest]
+        target: ${{fromJson(needs.determine_targets.outputs.target)}}
+        include:
+          - os: macos-latest
+            target: "x86/64"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          path: openwrt
+
+
+      - name: Setup MacOS
+        if: ${{ matrix.os == 'macos-latest' }}
+        run: |
+          echo "WORKPATH=/Volumes/OpenWrt/openwrt/" >> "$GITHUB_ENV"
+          hdiutil create -size 20g -type SPARSE -fs "Case-sensitive HFS+" -volname OpenWrt OpenWrt.sparseimage
+          hdiutil attach OpenWrt.sparseimage
+          mv "$GITHUB_WORKSPACE/openwrt" /Volumes/OpenWrt/
+          cd "$WORKPATH"
+
+          brew install \
+            coreutils \
+            findutils \
+            gawk \
+            grep \
+            gnu-getopt \
+            gnu-tar \
+            wget \
+            diffutils \
+            git-extras \
+            quilt \
+            make \
+            ncurses \
+            pkg-config
+
+            echo "/usr/local/opt/make/libexec/gnubin" >> "$GITHUB_PATH"
+            echo "/usr/local/opt/gnu-getopt/bin" >> "$GITHUB_PATH"
+            echo "/usr/local/opt/gettext/bin" >> "$GITHUB_PATH"
+            echo "/usr/local/opt/coreutils/bin" >> "$GITHUB_PATH"
+            echo "/usr/local/opt/findutils/libexec/gnubin" >> "$GITHUB_PATH"
+            pwd
+
+      - name: Setup Ubuntu
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get -y install libncurses-dev qemu-utils
+          echo "WORKPATH=$GITHUB_WORKSPACE/openwrt/" >> "$GITHUB_ENV"
+          cd "$WORKPATH"
+          pwd
+
+      - name: Make prereq
+        run: |
+          cd "$WORKPATH"
+          pwd
+          make defconfig
+
+      - name: Initialization environment
+        run: |
+          TARGET=$(echo ${{ matrix.target }} | cut -d "/" -f 1)
+          SUBTARGET=$(echo ${{ matrix.target }} | cut -d "/" -f 2)
+          echo "TARGET=$TARGET" >> "$GITHUB_ENV"
+          echo "SUBTARGET=$SUBTARGET" >> "$GITHUB_ENV"
+
+      - name: Update & Install feeds
+        run: |
+          cd "$WORKPATH"
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Set configuration
+        run: |
+          cd "$WORKPATH"
+          curl "https://downloads.openwrt.org/snapshots/targets/${{ matrix.target }}/config.buildinfo" > .config
+          for CONFIG in ${{ github.event.inputs.config }}; do
+            echo "CONFIG_$CONFIG" >> .config
+          done
+
+          echo -e "\n---- config input ----\n"
+          cat .config
+          echo -e "\n---- config input ----\n"
+
+          make defconfig
+
+          echo -e "\n---- config post-defconfig ----\n"
+          cat .config
+          echo -e "\n---- config post-defconfig ----\n"
+
+      - name: Download package
+        run: |
+          cd "$WORKPATH"
+          make download -j$(nproc)
+
+      - name: Build tools
+        run: |
+          cd "$WORKPATH"
+          make tools/install -j$(nproc) || \
+            make tools/install V=s
+
+      - name: Build toolchain
+        run: |
+          cd "$WORKPATH"
+          make toolchain/install -j$(nproc) || \
+            make toolchain/install V=s
+
+      - name: Build target
+        run: |
+          cd "$WORKPATH"
+          make target/compile -j$(nproc) IGNORE_ERRORS='n m' || \
+            make target/compile IGNORE_ERRORS='n m' V=s
+
+      - name: Build packages
+        run: |
+          cd "$WORKPATH"
+          make package/compile -j$(nproc) IGNORE_ERRORS='n m' || \
+            make package/compile IGNORE_ERRORS='n m' V=s
+
+          make package/install -j$(nproc) || \
+            make package/install V=s
+
+          make package/index CONFIG_SIGNED_PACKAGES= V=s
+
+      - name: Add kmods feed
+        run: |
+          cd "$WORKPATH"
+          TOPDIR=$(pwd)
+          export TOPDIR
+          STAGE_ROOT="$(make --no-print-directory val.STAGING_DIR_ROOT)"
+          KERNEL_VERSION="$(make --no-print-directory -C target/linux \
+              val.LINUX_VERSION val.LINUX_RELEASE val.LINUX_VERMAGIC | \
+              tr '\n' '-' | head -c -1)"
+
+          mkdir -p files/etc/opkg/
+          sed -e 's#^\(src/gz .*\)_core \(.*\)/packages$#&\n\1_kmods \2/kmods/'"${KERNEL_VERSION}#" \
+            "${STAGE_ROOT}/etc/opkg/distfeeds.conf" > files/etc/opkg/distfeeds.conf
+
+          echo -e "\n---- distfeeds.conf ----\n"
+          cat files/etc/opkg/distfeeds.conf
+          echo -e "\n---- distfeeds.conf ----\n"
+
+      - name: Build firmware
+        run: |
+          cd "$WORKPATH"
+          make target/install -j$(nproc) || \
+            make target/install V=s
+
+      - name: Buildinfo
+        run: |
+          cd "$WORKPATH"
+          make buildinfo V=s
+
+      - name: JSON overview
+        run: |
+          cd "$WORKPATH"
+          make json_overview_image_info V=s
+
+      - name: Checksum
+        run: |
+          cd "$WORKPATH"
+          make checksum V=s
+
+      - name: Sanitize target
+        run: echo "target_sani=$(echo ${{ matrix.target }} | tr '/' '-')" >> "$GITHUB_ENV"
+
+      - name: Move everything back in place
+        run: mv "$WORKPATH" "$GITHUB_WORKSPACE"
+  
+      - name: Upload images
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ env.target_sani }}-images
+          path: bin/targets/${{ matrix.target }}/openwrt-${{ env.TARGET }}-*
+  
+      - name: Upload packages
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ env.target_sani }}-packages
+          path: |
+            bin/targets/${{ matrix.target }}/packages/*.ipk
+            !bin/targets/${{ matrix.target }}/packages/kmod-*.ipk
+      - name: Upload kmods
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ env.target_sani }}-kmods
+          path: bin/targets/${{ matrix.target }}/packages/kmod-*.ipk
+  
+      - name: Upload supplementary
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ env.target_sani }}-supplementary
+          path: |
+            bin/targets/${{ matrix.target }}/*.buildinfo
+            bin/targets/${{ matrix.target }}/*.json
+            bin/targets/${{ matrix.target }}/*.manifest
+            bin/targets/${{ matrix.target }}/kernel-debug.tar.zst
+            bin/targets/${{ matrix.target }}/openwrt-imagebuilder*
+            bin/targets/${{ matrix.target }}/openwrt-sdk*
+            bin/targets/${{ matrix.target }}/sha256sums*
+      - name: Upload logs
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ env.target_sani }}-logs
+          path: logs/
+  
+      - name: Prepare upload of kmods
+        run: |
+          mkdir -p bin/targets/${{ matrix.target }}/kmods/${{ env.kernel_version }}/
+          cp bin/targets/${{ matrix.target }}/packages/kmod-*.ipk \
+              bin/targets/${{ matrix.target }}/kmods/${{ env.kernel_version }}/
