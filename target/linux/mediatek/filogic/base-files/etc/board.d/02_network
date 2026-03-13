@@ -65,8 +65,8 @@ mediatek_setup_interfaces()
 		;;
 	asus,tuf-ax4200|\
 	iptime,ax3000sm|\
-	iptime,ax7800m-6e|\
 	iptime,ax6000m|\
+	iptime,ax7800m-6e|\
 	jdcloud,re-cp-03|\
 	mediatek,mt7981-rfb|\
 	netcore,n60|\
@@ -252,6 +252,12 @@ mediatek_setup_macs()
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		label_mac=$wan_mac
 		;;
+	iptime,ax6000m)
+		base_mac=$(mtd_get_mac_binary "Factory" 0x4)
+		wan_mac=$(macaddr_add "$base_mac" 1)
+		lan_mac=$(macaddr_add "$base_mac" 3)
+		label_mac=$base_mac
+		;;
 	mercusys,mr80x-v3|\
 	mercusys,mr85x)
 		mac_dirty=$(cat "/tmp/tp_data/default-mac" | sed -n 's/^'"MAC"'://p')
@@ -301,12 +307,6 @@ mediatek_setup_macs()
 	xiaomi,redmi-router-ax6000-ubootmod)
 		wan_mac=$(mtd_get_mac_ascii Bdata ethaddr_wan)
 		label_mac=$wan_mac
-		;;
-	iptime,ax6000m)
-		base_mac=$(mtd_get_mac_binary "Factory" 0x4)
-		wan_mac=$(macaddr_add "$base_mac" 1)
-		lan_mac=$(macaddr_add "$base_mac" 3)
-		label_mac=$base_mac
 		;;
 	yuncore,ax835)
 		label_mac=$(mtd_get_mac_binary "Factory" 0x4)
