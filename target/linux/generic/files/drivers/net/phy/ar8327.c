@@ -21,7 +21,6 @@
 #include <linux/delay.h>
 #include <linux/phy.h>
 #include <linux/lockdep.h>
-#include <linux/ar8216_platform.h>
 #include <linux/workqueue.h>
 #include <linux/of.h>
 #include <linux/of_device.h>
@@ -33,100 +32,6 @@
 
 extern const struct ar8xxx_mib_desc ar8236_mibs[39];
 extern const struct switch_attr ar8xxx_sw_attr_vlan[1];
-
-static u32
-ar8327_get_pad_cfg(struct ar8327_pad_cfg *cfg)
-{
-	u32 t;
-
-	if (!cfg)
-		return 0;
-
-	t = 0;
-	switch (cfg->mode) {
-	case AR8327_PAD_NC:
-		break;
-
-	case AR8327_PAD_MAC2MAC_MII:
-		t = AR8327_PAD_MAC_MII_EN;
-		if (cfg->rxclk_sel)
-			t |= AR8327_PAD_MAC_MII_RXCLK_SEL;
-		if (cfg->txclk_sel)
-			t |= AR8327_PAD_MAC_MII_TXCLK_SEL;
-		break;
-
-	case AR8327_PAD_MAC2MAC_GMII:
-		t = AR8327_PAD_MAC_GMII_EN;
-		if (cfg->rxclk_sel)
-			t |= AR8327_PAD_MAC_GMII_RXCLK_SEL;
-		if (cfg->txclk_sel)
-			t |= AR8327_PAD_MAC_GMII_TXCLK_SEL;
-		break;
-
-	case AR8327_PAD_MAC_SGMII:
-		t = AR8327_PAD_SGMII_EN;
-
-		/*
-		 * WAR for the QUalcomm Atheros AP136 board.
-		 * It seems that RGMII TX/RX delay settings needs to be
-		 * applied for SGMII mode as well, The ethernet is not
-		 * reliable without this.
-		 */
-		t |= cfg->txclk_delay_sel << AR8327_PAD_RGMII_TXCLK_DELAY_SEL_S;
-		t |= cfg->rxclk_delay_sel << AR8327_PAD_RGMII_RXCLK_DELAY_SEL_S;
-		if (cfg->rxclk_delay_en)
-			t |= AR8327_PAD_RGMII_RXCLK_DELAY_EN;
-		if (cfg->txclk_delay_en)
-			t |= AR8327_PAD_RGMII_TXCLK_DELAY_EN;
-
-		if (cfg->sgmii_delay_en)
-			t |= AR8327_PAD_SGMII_DELAY_EN;
-
-		break;
-
-	case AR8327_PAD_MAC2PHY_MII:
-		t = AR8327_PAD_PHY_MII_EN;
-		if (cfg->rxclk_sel)
-			t |= AR8327_PAD_PHY_MII_RXCLK_SEL;
-		if (cfg->txclk_sel)
-			t |= AR8327_PAD_PHY_MII_TXCLK_SEL;
-		break;
-
-	case AR8327_PAD_MAC2PHY_GMII:
-		t = AR8327_PAD_PHY_GMII_EN;
-		if (cfg->pipe_rxclk_sel)
-			t |= AR8327_PAD_PHY_GMII_PIPE_RXCLK_SEL;
-		if (cfg->rxclk_sel)
-			t |= AR8327_PAD_PHY_GMII_RXCLK_SEL;
-		if (cfg->txclk_sel)
-			t |= AR8327_PAD_PHY_GMII_TXCLK_SEL;
-		break;
-
-	case AR8327_PAD_MAC_RGMII:
-		t = AR8327_PAD_RGMII_EN;
-		t |= cfg->txclk_delay_sel << AR8327_PAD_RGMII_TXCLK_DELAY_SEL_S;
-		t |= cfg->rxclk_delay_sel << AR8327_PAD_RGMII_RXCLK_DELAY_SEL_S;
-		if (cfg->rxclk_delay_en)
-			t |= AR8327_PAD_RGMII_RXCLK_DELAY_EN;
-		if (cfg->txclk_delay_en)
-			t |= AR8327_PAD_RGMII_TXCLK_DELAY_EN;
-		break;
-
-	case AR8327_PAD_PHY_GMII:
-		t = AR8327_PAD_PHYX_GMII_EN;
-		break;
-
-	case AR8327_PAD_PHY_RGMII:
-		t = AR8327_PAD_PHYX_RGMII_EN;
-		break;
-
-	case AR8327_PAD_PHY_MII:
-		t = AR8327_PAD_PHYX_MII_EN;
-		break;
-	}
-
-	return t;
-}
 
 static void
 ar8327_phy_rgmii_set(struct ar8xxx_priv *priv, struct phy_device *phydev)
@@ -192,34 +97,6 @@ ar8327_phy_fixup(struct ar8xxx_priv *priv, int phy)
 		ar8xxx_phy_dbg_write(priv, phy, 0x3c, 0x6000);
 		break;
 	}
-}
-
-static u32
-ar8327_get_port_init_status(struct ar8327_port_cfg *cfg)
-{
-	u32 t;
-
-	if (!cfg->force_link)
-		return AR8216_PORT_STATUS_LINK_AUTO;
-
-	t = AR8216_PORT_STATUS_TXMAC | AR8216_PORT_STATUS_RXMAC;
-	t |= cfg->duplex ? AR8216_PORT_STATUS_DUPLEX : 0;
-	t |= cfg->rxpause ? AR8216_PORT_STATUS_RXFLOW : 0;
-	t |= cfg->txpause ? AR8216_PORT_STATUS_TXFLOW : 0;
-
-	switch (cfg->speed) {
-	case AR8327_PORT_SPEED_10:
-		t |= AR8216_PORT_SPEED_10M;
-		break;
-	case AR8327_PORT_SPEED_100:
-		t |= AR8216_PORT_SPEED_100M;
-		break;
-	case AR8327_PORT_SPEED_1000:
-		t |= AR8216_PORT_SPEED_1000M;
-		break;
-	}
-
-	return t;
 }
 
 #define AR8327_LED_ENTRY(_num, _reg, _shift) \
@@ -442,7 +319,7 @@ ar8327_led_create(struct ar8xxx_priv *priv,
 	if (led_info->led_num >= AR8327_NUM_LEDS)
 		return -EINVAL;
 
-	aled = kzalloc(sizeof(*aled) + strlen(led_info->name) + 1,
+	aled = kzalloc(struct_size(aled, name, strlen(led_info->name) + 1),
 		       GFP_KERNEL);
 	if (!aled)
 		return -ENOMEM;
@@ -456,7 +333,6 @@ ar8327_led_create(struct ar8xxx_priv *priv,
 	if (aled->mode == AR8327_LED_MODE_HW)
 		aled->enable_hw_mode = true;
 
-	aled->name = (char *)(aled + 1);
 	strcpy(aled->name, led_info->name);
 
 	aled->cdev.name = aled->name;
@@ -532,89 +408,6 @@ ar8327_leds_cleanup(struct ar8xxx_priv *priv)
 }
 
 static int
-ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
-		       struct ar8327_platform_data *pdata)
-{
-	struct ar8327_led_cfg *led_cfg;
-	struct ar8327_data *data = priv->chip_data;
-	u32 pos, new_pos;
-	u32 t;
-
-	if (!pdata)
-		return -EINVAL;
-
-	priv->get_port_link = pdata->get_port_link;
-
-	data->port0_status = ar8327_get_port_init_status(&pdata->port0_cfg);
-	data->port6_status = ar8327_get_port_init_status(&pdata->port6_cfg);
-
-	t = ar8327_get_pad_cfg(pdata->pad0_cfg);
-	if (chip_is_ar8337(priv) && !pdata->pad0_cfg->mac06_exchange_dis)
-	    t |= AR8337_PAD_MAC06_EXCHANGE_EN;
-	ar8xxx_write(priv, AR8327_REG_PAD0_MODE, t);
-
-	t = ar8327_get_pad_cfg(pdata->pad5_cfg);
-	ar8xxx_write(priv, AR8327_REG_PAD5_MODE, t);
-	t = ar8327_get_pad_cfg(pdata->pad6_cfg);
-	ar8xxx_write(priv, AR8327_REG_PAD6_MODE, t);
-
-	pos = ar8xxx_read(priv, AR8327_REG_POWER_ON_STRAP);
-	new_pos = pos;
-
-	led_cfg = pdata->led_cfg;
-	if (led_cfg) {
-		if (led_cfg->open_drain)
-			new_pos |= AR8327_POWER_ON_STRAP_LED_OPEN_EN;
-		else
-			new_pos &= ~AR8327_POWER_ON_STRAP_LED_OPEN_EN;
-
-		ar8xxx_write(priv, AR8327_REG_LED_CTRL0, led_cfg->led_ctrl0);
-		ar8xxx_write(priv, AR8327_REG_LED_CTRL1, led_cfg->led_ctrl1);
-		ar8xxx_write(priv, AR8327_REG_LED_CTRL2, led_cfg->led_ctrl2);
-		ar8xxx_write(priv, AR8327_REG_LED_CTRL3, led_cfg->led_ctrl3);
-
-		if (new_pos != pos)
-			new_pos |= AR8327_POWER_ON_STRAP_POWER_ON_SEL;
-	}
-
-	if (pdata->sgmii_cfg) {
-		t = pdata->sgmii_cfg->sgmii_ctrl;
-		if (priv->chip_rev == 1)
-			t |= AR8327_SGMII_CTRL_EN_PLL |
-			     AR8327_SGMII_CTRL_EN_RX |
-			     AR8327_SGMII_CTRL_EN_TX;
-		else
-			t &= ~(AR8327_SGMII_CTRL_EN_PLL |
-			       AR8327_SGMII_CTRL_EN_RX |
-			       AR8327_SGMII_CTRL_EN_TX);
-
-		ar8xxx_write(priv, AR8327_REG_SGMII_CTRL, t);
-
-		if (pdata->sgmii_cfg->serdes_aen)
-			new_pos &= ~AR8327_POWER_ON_STRAP_SERDES_AEN;
-		else
-			new_pos |= AR8327_POWER_ON_STRAP_SERDES_AEN;
-	}
-
-	ar8xxx_write(priv, AR8327_REG_POWER_ON_STRAP, new_pos);
-
-	if (pdata->leds && pdata->num_leds) {
-		int i;
-
-		data->leds = kzalloc(pdata->num_leds * sizeof(void *),
-				     GFP_KERNEL);
-		if (!data->leds)
-			return -ENOMEM;
-
-		for (i = 0; i < pdata->num_leds; i++)
-			ar8327_led_create(priv, &pdata->leds[i]);
-	}
-
-	return 0;
-}
-
-#ifdef CONFIG_OF
-static int
 ar8327_hw_config_of(struct ar8xxx_priv *priv, struct device_node *np)
 {
 	struct ar8327_data *data = priv->chip_data;
@@ -684,13 +477,6 @@ ar8327_hw_config_of(struct ar8xxx_priv *priv, struct device_node *np)
 	of_node_put(leds);
 	return 0;
 }
-#else
-static inline int
-ar8327_hw_config_of(struct ar8xxx_priv *priv, struct device_node *np)
-{
-	return -EINVAL;
-}
-#endif
 
 static int
 ar8327_hw_init(struct ar8xxx_priv *priv)
@@ -701,12 +487,7 @@ ar8327_hw_init(struct ar8xxx_priv *priv)
 	if (!priv->chip_data)
 		return -ENOMEM;
 
-	if (priv->pdev->of_node)
-		ret = ar8327_hw_config_of(priv, priv->pdev->of_node);
-	else
-		ret = ar8327_hw_config_pdata(priv,
-					     priv->phy->mdio.dev.platform_data);
-
+	ret = ar8327_hw_config_of(priv, priv->pdev->of_node);
 	if (ret)
 		return ret;
 

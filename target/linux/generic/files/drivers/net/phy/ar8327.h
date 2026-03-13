@@ -303,11 +303,42 @@ struct ar8327_led_entry {
 	unsigned shift;
 };
 
+enum ar8327_led_num {
+	AR8327_LED_PHY0_0 = 0,
+	AR8327_LED_PHY0_1,
+	AR8327_LED_PHY0_2,
+	AR8327_LED_PHY1_0,
+	AR8327_LED_PHY1_1,
+	AR8327_LED_PHY1_2,
+	AR8327_LED_PHY2_0,
+	AR8327_LED_PHY2_1,
+	AR8327_LED_PHY2_2,
+	AR8327_LED_PHY3_0,
+	AR8327_LED_PHY3_1,
+	AR8327_LED_PHY3_2,
+	AR8327_LED_PHY4_0,
+	AR8327_LED_PHY4_1,
+	AR8327_LED_PHY4_2,
+};
+
+enum ar8327_led_mode {
+       AR8327_LED_MODE_HW = 0,
+       AR8327_LED_MODE_SW,
+};
+
+struct ar8327_led_info {
+	const char *name;
+	const char *default_trigger;
+	bool active_low;
+	enum ar8327_led_num led_num;
+	enum ar8327_led_mode mode;
+	struct fwnode_handle *fwnode;
+};
+
 struct ar8327_led {
 	struct led_classdev cdev;
 	struct ar8xxx_priv *sw_priv;
 
-	char *name;
 	bool active_low;
 	u8 led_num;
 	enum ar8327_led_mode mode;
@@ -318,6 +349,7 @@ struct ar8327_led {
 	bool enable_hw_mode;
 	enum ar8327_led_pattern pattern;
 	struct fwnode_handle *fwnode;
+	char name[];
 };
 
 struct ar8327_data {
