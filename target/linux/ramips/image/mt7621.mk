@@ -3263,6 +3263,17 @@ define Device/unielec_u7621-06-64m
 endef
 TARGET_DEVICES += unielec_u7621-06-64m
 
+define Device/wavlink_halo_base_pro
+  $(Device/dts-igmp)
+  IMAGE_SIZE := 15552k
+  DEVICE_VENDOR := Wavlink
+  DEVICE_MODEL := Halo Base Pro
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma | pad-to 64k
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615-firmware kmod-mt7663-firmware-ap
+  SUPPORTED_DEVICES += wavlink,halo-base-pro
+endef
+TARGET_DEVICES += wavlink_halo_base_pro
+
 define Device/wavlink_wl-wn531a6
   $(Device/dsa-migration)
   DEVICE_VENDOR := Wavlink

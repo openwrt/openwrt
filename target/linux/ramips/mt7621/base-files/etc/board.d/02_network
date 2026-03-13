@@ -137,7 +137,8 @@ ramips_setup_interfaces()
 	zyxel,lte3301-plus)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		;;
-	elecom,wsc-x1800gs)
+	elecom,wsc-x1800gs|\
+	wavlink,halo-base-pro)
 		ucidef_set_interface_lan "lan1 lan2"
 		;;
 	gnubee,gb-pc1)
@@ -329,6 +330,9 @@ ramips_setup_macs()
 	netgear,wax214v2)
 		lan_mac=$(mtd_get_mac_ascii Config ethaddr)
 		label_mac=$lan_mac
+		;;
+	wavlink,halo-base-pro)
+		label_mac=$(get_mac_binary /dev/mtd2 0x8004)
 		;;
 	yuncore,ax820)
 		label_mac=$(mtd_get_mac_binary Factory 0x4)
