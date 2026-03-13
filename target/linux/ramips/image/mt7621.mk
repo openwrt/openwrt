@@ -1250,6 +1250,22 @@ define Device/edup_ep-rt2960s
 endef
 TARGET_DEVICES += edup_ep-rt2960s
 
+define Device/edup_ep-rt2983
+  $(Device/dsa-migration)
+  $(Device/nand)
+  IMAGE_SIZE := 121344k
+  DEVICE_VENDOR := EDUP
+  DEVICE_MODEL := EP-RT2983
+  KERNEL_LOADADDR := 0x82000000
+  KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | \
+	append-ubi | check-size
+  DEVICE_PACKAGES += kmod-mt7915-firmware
+endef
+TARGET_DEVICES += edup_ep-rt2983
+
 define Device/elecom_wrc-gs
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
