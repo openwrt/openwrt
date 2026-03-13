@@ -211,6 +211,11 @@ oraybox,x3a)
 snr,snr-cpe-me1)
 	ucidef_set_led_usbport "usb" "USB" "green:usb" "usb1-port1" "usb2-port1"
 	;;
+snr,snr-keep-ac10|\
+yuncore,ax820)
+	ucidef_set_led_netdev "lan" "LAN" "green:lan" "lan"
+	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
+	;;
 tplink,archer-a6-v3|\
 tplink,archer-ax21-v4|\
 tplink,archer-ax23-v1|\
@@ -267,10 +272,6 @@ youhua,wr1200js)
 	;;
 yuncore,fap690)
 	ucidef_set_led_netdev "eth_link" "LAN link" "blue:status" "lan" "link"
-	;;
-yuncore,ax820)
-	ucidef_set_led_netdev "lan" "LAN" "green:lan" "lan"
-	ucidef_set_led_netdev "wan" "WAN" "green:wan" "wan"
 	;;
 z-router,zr-2660)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "br-lan" "link tx rx"
