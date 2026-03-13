@@ -9,6 +9,12 @@ PROG=/sbin/urngd
 start_service() {
 	procd_open_instance
 	procd_set_param command "$PROG"
+	[ -x /sbin/ujail -a -e /etc/capabilities/urngd.json ] && {
+		procd_add_jail urngd
+		procd_set_param user urngd
+		procd_set_param group urngd
+		procd_set_param capabilities /etc/capabilities/urngd.json
+	}
 	procd_close_instance
 }
 
