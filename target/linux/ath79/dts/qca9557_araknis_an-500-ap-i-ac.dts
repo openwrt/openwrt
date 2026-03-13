@@ -37,12 +37,6 @@
 			default-state = "off";
 		};
 
-		wifi2g {
-			label = "blue:wifi2g";
-			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
-		};
-
 		wifi5g {
 			label = "blue:wifi5g";
 			gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
@@ -112,6 +106,11 @@
 
 	nvmem-cells = <&macaddr_art_0 1>, <&cal_art_1000>;
 	nvmem-cell-names = "mac-address", "calibration";
+
+	led {
+		led-sources = <13>;
+		led-active-low;
+	};
 };
 
 &pcie0 {
