@@ -108,25 +108,50 @@
 		clock-frequency = <100000>;
 	};
 
+	/*
+	 * SFP I2C buses use GPIO bit-bang, not the hardware I2C controller.
+	 * The board routes SFP EEPROM I2C to GPIO pins that are outside
+	 * the hardware I2C controller's SDA mux range (SDA0-7 = GPIO 9-16).
+	 *
+	 * SFP0 (port 26): SDA = GPIO 6, SCK = GPIO 7
+	 * SFP1 (port 27): SDA = GPIO 10, SCK = GPIO 11
+	 *
+	 * Note: GPIO 10/11 are shared with SFP0 control signals
+	 * (MOD_DEF0 / TX_DISABLE) in the stock firmware, which
+	 * time-multiplexes them. Linux cannot do this, so SFP0
+	 * control GPIOs that conflict are omitted.
+	 */
+	i2c_sfp0: i2c-sfp0 {
+		compatible = "i2c-gpio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		sda-gpios = <&gpio0 6 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio0 7 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <5>;
+	};
+
+	i2c_sfp1: i2c-sfp1 {
+		compatible = "i2c-gpio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		sda-gpios = <&gpio0 10 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpio0 11 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <5>;
+	};
+
 	sfp0: sfp-p26 {
 		compatible = "sff,sfp";
-		i2c-bus = <&i2c0>;
+		i2c-bus = <&i2c_sfp0>;
+		maximum-power-milliwatt = <2500>;
 	};
 
 	sfp1: sfp-p27 {
 		compatible = "sff,sfp";
-		i2c-bus = <&i2c4>;
+		i2c-bus = <&i2c_sfp1>;
+		maximum-power-milliwatt = <2500>;
 	};
-};
-
-&i2c_mst1 {
-	status = "okay";
-
-	/* SFP+ lan6 (port 26) I2C */
-	i2c0: i2c@0 { reg = <0>; };
-
-	/* SFP+ lan7 (port 27) I2C */
-	i2c4: i2c@4 { reg = <4>; };
 };
 
 &spi0 {
