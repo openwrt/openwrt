@@ -122,6 +122,13 @@ define U-Boot/Hummingbird_A31
   BUILD_DEVICES:=merrii_hummingbird
 endef
 
+define U-Boot/kaiserbaas_kba03042
+  BUILD_SUBTARGET:=cortexa7
+  NAME:=Kaiser Baas Smart Media Player KBA03042
+  BUILD_DEVICES:=kaiserbaas_kba03042
+  # UENV:=nc
+endef
+
 define U-Boot/Marsboard_A10
   BUILD_SUBTARGET:=cortexa8
   NAME:=HAOYU Marsboard A10
@@ -421,6 +428,7 @@ UBOOT_TARGETS := \
 	Cubieboard2 \
 	Cubietruck \
 	Hummingbird_A31 \
+	kaiserbaas_kba03042 \
 	Marsboard_A10 \
 	Mele_M9 \
 	OLIMEX_A13_SOM \
