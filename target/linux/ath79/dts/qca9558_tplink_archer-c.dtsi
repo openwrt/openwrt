@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
 #include "qca955x.dtsi"
+#include "tplink_classic_flash_layout.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
@@ -100,16 +101,10 @@
 &spi {
 	status = "okay";
 
-	flash@0 {
+	flash: flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 		spi-max-frequency = <25000000>;
-
-		mtdparts: partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
-		};
 	};
 };
 
