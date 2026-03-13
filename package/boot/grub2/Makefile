@@ -122,14 +122,6 @@ define Package/grub2/install
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)/grub2
 	$(CP) $(PKG_BUILD_DIR)/grub-core/boot.img $(STAGING_DIR_IMAGE)/grub2/
 	$(CP) $(PKG_BUILD_DIR)/grub-core/cdboot.img $(STAGING_DIR_IMAGE)/grub2/
-	sed 's#msdos1#gpt1#g' ./files/grub-early.cfg >$(PKG_BUILD_DIR)/grub-early.cfg
-	$(STAGING_DIR_HOST)/bin/grub-mkimage \
-		-d $(PKG_BUILD_DIR)/grub-core \
-		-p /boot/grub \
-		-O i386-pc \
-		-c $(PKG_BUILD_DIR)/grub-early.cfg \
-		-o $(STAGING_DIR_IMAGE)/grub2/gpt-core.img \
-		at_keyboard biosdisk boot chain configfile fat linux ls part_gpt reboot search serial test vga
 	$(STAGING_DIR_HOST)/bin/grub-mkimage \
 		-d $(PKG_BUILD_DIR)/grub-core \
 		-p /boot/grub \
@@ -154,21 +146,23 @@ define Package/grub2/install
 endef
 
 define Package/grub2-efi/install
-	sed 's#msdos1#gpt1#g' ./files/grub-early.cfg >$(PKG_BUILD_DIR)/grub-early.cfg
+	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)/grub2
 	$(STAGING_DIR_HOST)/bin/grub-mkimage \
 		-d $(PKG_BUILD_DIR)/grub-core \
 		-p /boot/grub \
 		-O $(CONFIG_ARCH)-efi \
-		-c $(PKG_BUILD_DIR)/grub-early.cfg \
+		-c ./files/grub-early-efi.cfg \
 		-o $(STAGING_DIR_IMAGE)/grub2/boot$(if $(CONFIG_x86_64),x64,ia32).efi \
-		at_keyboard boot chain configfile fat linux ls part_gpt reboot serial test efi_gop efi_uga
+		at_keyboard boot chain configfile ext2 fat linux loadenv ls part_gpt \
+		reboot search_label serial test usb_keyboard efi_gop efi_uga
 	$(STAGING_DIR_HOST)/bin/grub-mkimage \
 		-d $(PKG_BUILD_DIR)/grub-core \
 		-p /boot/grub \
 		-O $(CONFIG_ARCH)-efi \
 		-c ./files/grub-early.cfg \
 		-o $(STAGING_DIR_IMAGE)/grub2/iso-boot$(if $(CONFIG_x86_64),x64,ia32).efi \
-		boot chain configfile fat iso9660 linux ls part_msdos part_gpt reboot serial test efi_gop efi_uga
+		boot chain configfile ext2 fat iso9660 linux loadenv ls part_gpt \
+		reboot search_label serial test usb_keyboard efi_gop efi_uga
 endef
 
 define Package/grub2-efi-arm/install

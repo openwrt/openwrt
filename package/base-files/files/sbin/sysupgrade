@@ -417,6 +417,14 @@ if [ $TEST -eq 1 ]; then
 	exit 0
 fi
 
+COMMAND='/lib/upgrade/do_stage2'
+
+if is_efi_system; then
+	ask_bool 1 "Proceed with upgrade?" && IMAGE=$IMAGE $COMMAND
+	rm -f /tmp/sysupgrade.*
+	exit 0
+fi
+
 install_bin /sbin/upgraded
 v "Commencing upgrade. Closing all shell sessions."
 
