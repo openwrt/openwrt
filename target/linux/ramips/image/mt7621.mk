@@ -3272,6 +3272,23 @@ define Device/wavlink_wl-wn531a6
 endef
 TARGET_DEVICES += wavlink_wl-wn531a6
 
+define Device/wavlink_wl-wn531ax2
+  $(Device/dsa-migration)
+  DEVICE_VENDOR := Wavlink
+  DEVICE_MODEL := WL-WN531AX2
+  DEVICE_DTS_CONFIG := config@1
+  DEVICE_PACKAGES += kmod-usb3 kmod-mt7915-firmware
+  KERNEL_SIZE := 4096k
+  IMAGE_SIZE := 15040k
+  KERNEL_LOADADDR := 0x83000000
+  SUPPORTED_DEVICES += mt7621-rfb-ax-nor
+  KERNEL := kernel-bin | relocate-kernel $(loadaddr-y) | lzma | \
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
+	append-rootfs | pad-rootfs | check-size | append-metadata
+endef
+TARGET_DEVICES += wavlink_wl-wn531ax2
+
 define Device/wavlink_wl-wn533a8
   $(Device/dsa-migration)
   DEVICE_VENDOR := Wavlink
