@@ -731,10 +731,55 @@ static int rteth_open(struct net_device *ndev)
 	return 0;
 }
 
+static void rteth_838x_hw_stop(struct rteth_ctrl *ctrl)
+{
+	/* Block all ports */
+	sw_w32(0x03000000, RTL838X_TBL_ACCESS_DATA_0(0));
+	sw_w32(0x00000000, RTL838X_TBL_ACCESS_DATA_0(1));
+	sw_w32(1 << 15 | 2 << 12, RTL838X_TBL_ACCESS_CTRL_0);
+
+	/* Disable FAST_AGE_OUT otherwise flush will hang */
+	sw_w32_mask(BIT(23), 0, RTL838X_L2_CTRL_1);
+
+	/* Flush L2 address cache */
+	for (int i = 0; i <= ctrl->r->cpu_port; i++) {
+		sw_w32(BIT(26) | BIT(23) | i << 5, ctrl->r->l2_tbl_flush_ctrl);
+		do { } while (sw_r32(ctrl->r->l2_tbl_flush_ctrl) & BIT(26));
+	}
+
+	/* CPU-Port: Link down */
+	sw_w32(0x6192C, ctrl->r->mac_force_mode_ctrl);
+}
+
+static void rteth_839x_hw_stop(struct rteth_ctrl *ctrl)
+{
+	/* Flush L2 address cache */
+	for (int i = 0; i <= ctrl->r->cpu_port; i++) {
+		sw_w32(BIT(28) | BIT(25) | i << 5, ctrl->r->l2_tbl_flush_ctrl);
+		do { } while (sw_r32(ctrl->r->l2_tbl_flush_ctrl) & BIT(28));
+	}
+
+	sw_w32(0x75, ctrl->r->mac_force_mode_ctrl);
+}
+
+static void rteth_930x_hw_stop(struct rteth_ctrl *ctrl)
+{
+	/* TODO: L2 flush needed */
+
+	/* CPU-Port: Link down */
+	sw_w32_mask(0x3, 0, ctrl->r->mac_force_mode_ctrl);
+}
+
+static void rteth_931x_hw_stop(struct rteth_ctrl *ctrl)
+{
+	/* TODO: L2 flush needed */
+
+	/* CPU-Port: Link down */
+	sw_w32_mask(BIT(0) | BIT(9), 0, ctrl->r->mac_force_mode_ctrl);
+}
+
 static void rteth_hw_stop(struct rteth_ctrl *ctrl)
 {
-	u32 force_mac = ctrl->r->family_id == RTL8380_FAMILY_ID ? 0x6192C : 0x75;
-
 	/* Disable RX/TX from/to CPU-port */
 	sw_w32_mask(0x3, 0, ctrl->r->mac_l2_port_ctrl);
 
@@ -742,36 +787,8 @@ static void rteth_hw_stop(struct rteth_ctrl *ctrl)
 	sw_w32_mask(ctrl->r->tx_rx_enable, 0, ctrl->r->dma_if_ctrl);
 	mdelay(200); /* Test, whether this is needed */
 
-	/* Block all ports */
-	if (ctrl->r->family_id == RTL8380_FAMILY_ID) {
-		sw_w32(0x03000000, RTL838X_TBL_ACCESS_DATA_0(0));
-		sw_w32(0x00000000, RTL838X_TBL_ACCESS_DATA_0(1));
-		sw_w32(1 << 15 | 2 << 12, RTL838X_TBL_ACCESS_CTRL_0);
-	}
-
-	/* Flush L2 address cache */
-	if (ctrl->r->family_id == RTL8380_FAMILY_ID) {
-		/* Disable FAST_AGE_OUT otherwise flush will hang */
-		sw_w32_mask(BIT(23), 0, RTL838X_L2_CTRL_1);
-		for (int i = 0; i <= ctrl->r->cpu_port; i++) {
-			sw_w32(BIT(26) | BIT(23) | i << 5, ctrl->r->l2_tbl_flush_ctrl);
-			do { } while (sw_r32(ctrl->r->l2_tbl_flush_ctrl) & BIT(26));
-		}
-	} else if (ctrl->r->family_id == RTL8390_FAMILY_ID) {
-		for (int i = 0; i <= ctrl->r->cpu_port; i++) {
-			sw_w32(BIT(28) | BIT(25) | i << 5, ctrl->r->l2_tbl_flush_ctrl);
-			do { } while (sw_r32(ctrl->r->l2_tbl_flush_ctrl) & BIT(28));
-		}
-	}
-	/* TODO: L2 flush register is 64 bit on RTL931X and 930X */
-
-	/* CPU-Port: Link down */
-	if (ctrl->r->family_id == RTL8380_FAMILY_ID || ctrl->r->family_id == RTL8390_FAMILY_ID)
-		sw_w32(force_mac, ctrl->r->mac_force_mode_ctrl);
-	else if (ctrl->r->family_id == RTL9300_FAMILY_ID)
-		sw_w32_mask(0x3, 0, ctrl->r->mac_force_mode_ctrl);
-	else if (ctrl->r->family_id == RTL9310_FAMILY_ID)
-		sw_w32_mask(BIT(0) | BIT(9), 0, ctrl->r->mac_force_mode_ctrl);
+	/* family specific stop */
+	ctrl->r->hw_stop(ctrl);
 	mdelay(100);
 
 	rteth_disable_all_irqs(ctrl);
@@ -1305,6 +1322,7 @@ static const struct rteth_config rteth_838x_cfg = {
 	.update_counter = rteth_83xx_update_counter,
 	.create_tx_header = rteth_838x_create_tx_header,
 	.decode_tag = rteth_838x_decode_tag,
+	.hw_stop = &rteth_838x_hw_stop,
 	.hw_reset = &rteth_838x_hw_reset,
 	.init_mac = &rteth_838x_init_mac,
 	.netdev_ops = &rteth_838x_netdev_ops,
@@ -1347,6 +1365,7 @@ static const struct rteth_config rteth_839x_cfg = {
 	.update_counter = rteth_83xx_update_counter,
 	.create_tx_header = rteth_839x_create_tx_header,
 	.decode_tag = rteth_839x_decode_tag,
+	.hw_stop = &rteth_839x_hw_stop,
 	.hw_reset = &rteth_839x_hw_reset,
 	.init_mac = &rteth_839x_init_mac,
 	.netdev_ops = &rteth_839x_netdev_ops,
@@ -1390,6 +1409,7 @@ static const struct rteth_config rteth_930x_cfg = {
 	.update_counter = rteth_93xx_update_counter,
 	.create_tx_header = rteth_93xx_create_tx_header,
 	.decode_tag = rteth_930x_decode_tag,
+	.hw_stop = &rteth_930x_hw_stop,
 	.hw_reset = &rteth_93xx_hw_reset,
 	.init_mac = &rteth_930x_init_mac,
 	.netdev_ops = &rteth_930x_netdev_ops,
@@ -1433,6 +1453,7 @@ static const struct rteth_config rteth_931x_cfg = {
 	.update_counter = rteth_93xx_update_counter,
 	.create_tx_header = rteth_93xx_create_tx_header,
 	.decode_tag = rteth_931x_decode_tag,
+	.hw_stop = &rteth_931x_hw_stop,
 	.hw_reset = &rteth_93xx_hw_reset,
 	.init_mac = &rteth_931x_init_mac,
 	.netdev_ops = &rteth_931x_netdev_ops,

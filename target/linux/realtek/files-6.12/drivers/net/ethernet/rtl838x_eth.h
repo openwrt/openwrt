@@ -263,6 +263,7 @@ struct rteth_config {
 	int l2_tbl_flush_ctrl;
 	void (*create_tx_header)(struct rteth_packet *h, unsigned int dest_port, int prio);
 	bool (*decode_tag)(struct rteth_packet *h, struct dsa_tag *tag);
+	void (*hw_stop)(struct rteth_ctrl *ctrl);
 	void (*hw_reset)(struct rteth_ctrl *ctrl);
 	int (*init_mac)(struct rteth_ctrl *ctrl);
 	void (*update_counter)(struct rteth_ctrl *ctrl, int ring, int released);
