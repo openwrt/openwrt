@@ -17,16 +17,16 @@ Signed-off-by: Josh Martinez <8892161+joshermar@users.noreply.github.com>
 
 --- a/drivers/hwmon/aht10.c
 +++ b/drivers/hwmon/aht10.c
-@@ -37,6 +37,8 @@
- #define AHT10_CMD_MEAS	0b10101100
- #define AHT10_CMD_RST	0b10111010
+@@ -41,6 +41,8 @@
+ 
+ #define DHT20_CMD_INIT	0b01110001
  
 +#define AHT20_CMD_INIT	0b10111110
 +
  /*
   * Flags in the answer byte/command
   */
-@@ -59,6 +61,7 @@ MODULE_DEVICE_TABLE(i2c, aht10_id);
+@@ -64,6 +66,7 @@ MODULE_DEVICE_TABLE(i2c, aht10_id);
  
  static const struct of_device_id aht10_of_id[] = {
  	{ .compatible = "aosong,aht10", },
@@ -34,11 +34,11 @@ Signed-off-by: Josh Martinez <8892161+joshermar@users.noreply.github.com>
  	{ }
  };
  MODULE_DEVICE_TABLE(of, aht10_of_id);
-@@ -107,8 +110,13 @@ struct aht10_data {
+@@ -114,8 +117,13 @@ struct aht10_data {
   */
  static int aht10_init(struct aht10_data *data)
  {
--	const u8 cmd_init[] = {AHT10_CMD_INIT, AHT10_CAL_ENABLED | AHT10_MODE_CYC,
+-	const u8 cmd_init[] = {data->init_cmd, AHT10_CAL_ENABLED | AHT10_MODE_CYC,
 -			       0x00};
 +	u8 cmd_init[] = {AHT10_CMD_INIT, AHT10_CAL_ENABLED | AHT10_MODE_CYC, 0x00};
 +
