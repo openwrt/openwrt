@@ -663,6 +663,42 @@ static void rtl839x_setup_notify_ring_buffer(struct rteth_ctrl *ctrl)
 	ctrl->lastEvent = 0;
 }
 
+static void rteth_838x_hw_init(struct rteth_ctrl *ctrl)
+{
+	rteth_838x_hw_en_rxtx(ctrl);
+	/* Trap IGMP/MLD traffic to CPU-Port */
+	sw_w32(0x3, RTL838X_SPCL_TRAP_IGMP_CTRL);
+	/* Flush learned FDB entries on link down of a port */
+	sw_w32_mask(0, BIT(7), RTL838X_L2_CTRL_0);
+}
+
+static void rteth_839x_hw_init(struct rteth_ctrl *ctrl)
+{
+	rteth_839x_hw_en_rxtx(ctrl);
+	/* Trap MLD and IGMP messages to CPU_PORT */
+	sw_w32(0x3, RTL839X_SPCL_TRAP_IGMP_CTRL);
+	/* Flush learned FDB entries on link down of a port */
+	sw_w32_mask(0, BIT(7), RTL839X_L2_CTRL_0);
+}
+
+static void rteth_930x_hw_init(struct rteth_ctrl *ctrl)
+{
+	rteth_93xx_hw_en_rxtx(ctrl);
+	/* Flush learned FDB entries on link down of a port */
+	sw_w32_mask(0, BIT(7), RTL930X_L2_CTRL);
+	/* Trap MLD and IGMP messages to CPU_PORT */
+	sw_w32((0x2 << 3) | 0x2,  RTL930X_VLAN_APP_PKT_CTRL);
+}
+
+static void rteth_931x_hw_init(struct rteth_ctrl *ctrl)
+{
+	rteth_93xx_hw_en_rxtx(ctrl);
+	/* Trap MLD and IGMP messages to CPU_PORT */
+	sw_w32((0x2 << 3) | 0x2,  RTL931X_VLAN_APP_PKT_CTRL);
+	/* Set PCIE_PWR_DOWN */
+	sw_w32_mask(0, BIT(1), RTL931X_PS_SOC_CTRL);
+}
+
 static int rteth_open(struct net_device *ndev)
 {
 	unsigned long flags;
@@ -688,44 +724,8 @@ static int rteth_open(struct net_device *ndev)
 	for (int i = 0; i < RTETH_RX_RINGS; i++)
 		napi_enable(&ctrl->rx_qs[i].napi);
 
-	switch (ctrl->r->family_id) {
-	case RTL8380_FAMILY_ID:
-		rteth_838x_hw_en_rxtx(ctrl);
-		/* Trap IGMP/MLD traffic to CPU-Port */
-		sw_w32(0x3, RTL838X_SPCL_TRAP_IGMP_CTRL);
-		/* Flush learned FDB entries on link down of a port */
-		sw_w32_mask(0, BIT(7), RTL838X_L2_CTRL_0);
-		break;
-
-	case RTL8390_FAMILY_ID:
-		rteth_839x_hw_en_rxtx(ctrl);
-		/* Trap MLD and IGMP messages to CPU_PORT */
-		sw_w32(0x3, RTL839X_SPCL_TRAP_IGMP_CTRL);
-		/* Flush learned FDB entries on link down of a port */
-		sw_w32_mask(0, BIT(7), RTL839X_L2_CTRL_0);
-		break;
-
-	case RTL9300_FAMILY_ID:
-		rteth_93xx_hw_en_rxtx(ctrl);
-		/* Flush learned FDB entries on link down of a port */
-		sw_w32_mask(0, BIT(7), RTL930X_L2_CTRL);
-		/* Trap MLD and IGMP messages to CPU_PORT */
-		sw_w32((0x2 << 3) | 0x2,  RTL930X_VLAN_APP_PKT_CTRL);
-		break;
-
-	case RTL9310_FAMILY_ID:
-		rteth_93xx_hw_en_rxtx(ctrl);
-
-		/* Trap MLD and IGMP messages to CPU_PORT */
-		sw_w32((0x2 << 3) | 0x2,  RTL931X_VLAN_APP_PKT_CTRL);
-
-		/* Set PCIE_PWR_DOWN */
-		sw_w32_mask(0, BIT(1), RTL931X_PS_SOC_CTRL);
-		break;
-	}
-
+	ctrl->r->hw_init(ctrl);
 	netif_tx_start_all_queues(ndev);
-
 	spin_unlock_irqrestore(&ctrl->lock, flags);
 
 	return 0;
@@ -1322,6 +1322,7 @@ static const struct rteth_config rteth_838x_cfg = {
 	.update_counter = rteth_83xx_update_counter,
 	.create_tx_header = rteth_838x_create_tx_header,
 	.decode_tag = rteth_838x_decode_tag,
+	.hw_init = &rteth_838x_hw_init,
 	.hw_stop = &rteth_838x_hw_stop,
 	.hw_reset = &rteth_838x_hw_reset,
 	.init_mac = &rteth_838x_init_mac,
@@ -1365,6 +1366,7 @@ static const struct rteth_config rteth_839x_cfg = {
 	.update_counter = rteth_83xx_update_counter,
 	.create_tx_header = rteth_839x_create_tx_header,
 	.decode_tag = rteth_839x_decode_tag,
+	.hw_init = &rteth_839x_hw_init,
 	.hw_stop = &rteth_839x_hw_stop,
 	.hw_reset = &rteth_839x_hw_reset,
 	.init_mac = &rteth_839x_init_mac,
@@ -1409,6 +1411,7 @@ static const struct rteth_config rteth_930x_cfg = {
 	.update_counter = rteth_93xx_update_counter,
 	.create_tx_header = rteth_93xx_create_tx_header,
 	.decode_tag = rteth_930x_decode_tag,
+	.hw_init = &rteth_930x_hw_init,
 	.hw_stop = &rteth_930x_hw_stop,
 	.hw_reset = &rteth_93xx_hw_reset,
 	.init_mac = &rteth_930x_init_mac,
@@ -1453,6 +1456,7 @@ static const struct rteth_config rteth_931x_cfg = {
 	.update_counter = rteth_93xx_update_counter,
 	.create_tx_header = rteth_93xx_create_tx_header,
 	.decode_tag = rteth_931x_decode_tag,
+	.hw_init = &rteth_931x_hw_init,
 	.hw_stop = &rteth_931x_hw_stop,
 	.hw_reset = &rteth_93xx_hw_reset,
 	.init_mac = &rteth_931x_init_mac,
