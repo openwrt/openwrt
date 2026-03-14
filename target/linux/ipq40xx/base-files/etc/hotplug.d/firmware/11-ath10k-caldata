@@ -77,6 +77,10 @@ case "$FIRMWARE" in
 		caldata_extract "ART" 0x1000 0x2f20
 		ath10k_patch_mac $(mtd_get_mac_ascii CFG1 RADIOADDR0)
 		;;
+	huawei,ap4050dn)
+		caldata_extract "0:ART" 0x1000 0x2f20
+		ath10k_patch_mac $(macaddr_add "$(cat /sys/class/net/eth0/address)" 1)
+		;;
 	mikrotik,cap-ac|\
 	mikrotik,hap-ac2|\
 	mikrotik,hap-ac3|\
@@ -158,6 +162,10 @@ case "$FIRMWARE" in
 	extreme-networks,ws-ap391x)
 		caldata_extract "ART" 0x5000 0x2f20
 		ath10k_patch_mac $(mtd_get_mac_ascii CFG1 RADIOADDR1)
+		;;
+	huawei,ap4050dn)
+		caldata_extract "0:ART" 0x5000 0x2f20
+		ath10k_patch_mac $(macaddr_add "$(cat /sys/class/net/eth0/address)" 2)
 		;;
 	mikrotik,cap-ac|\
 	mikrotik,hap-ac2|\

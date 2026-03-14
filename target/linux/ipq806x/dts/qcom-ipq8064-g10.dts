@@ -279,6 +279,25 @@
 
 		partitions {
 			compatible = "qcom,smem-part";
+
+			partition-0-art {
+				label = "0:art";
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					precal_art_1000: pre-calibration@1000 {
+						reg = <0x1000 0x2f20>;
+					};
+
+					precal_art_5000: pre-calibration@5000 {
+						reg = <0x5000 0x2f20>;
+					};
+				};
+			};
 		};
 	};
 };
@@ -292,6 +311,8 @@
 		compatible = "qcom,ath10k";
 		reg = <0x00010000 0 0 0 0>;
 		qcom,ath10k-calibration-variant = "ASRock-G10";
+		nvmem-cells = <&precal_art_1000>;
+		nvmem-cell-names = "pre-calibration";
 	};
 };
 
@@ -304,6 +325,8 @@
 		compatible = "qcom,ath10k";
 		reg = <0x00010000 0 0 0 0>;
 		qcom,ath10k-calibration-variant = "ASRock-G10";
+		nvmem-cells = <&precal_art_5000>;
+		nvmem-cell-names = "pre-calibration";
 	};
 };
 

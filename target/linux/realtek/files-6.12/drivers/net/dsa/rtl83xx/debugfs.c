@@ -268,6 +268,13 @@ static void l2_table_print_entry(struct seq_file *m, struct rtl838x_switch_priv 
 			   e->vid, e->rvid);
 
 		seq_printf(m, "  port %d age %d", e->port, e->age);
+		if (e->is_trunk) {
+			seq_printf(m, "  trunk %d trunk_members: 0x%08llx non-primary: 0x%08llx primary-port: %d",
+				   e->trunk,
+				   priv->lags_port_members[e->trunk],
+				   priv->lag_non_primary,
+				   priv->lag_primary[e->trunk]);
+		}
 		if (e->is_static)
 			seq_puts(m, " static");
 		if (e->block_da)

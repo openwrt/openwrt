@@ -1701,11 +1701,14 @@ static void rtl839x_set_egr_filter(int port,  enum egr_filter state)
 		    RTL839X_VLAN_PORT_EGR_FLTR + (((port >> 5) << 2)));
 }
 
-static void rtl839x_set_distribution_algorithm(int group, int algoidx, u32 algomsk)
+static int rtldsa_839x_set_distribution_algorithm(struct rtl838x_switch_priv *priv,
+						  int group, int algoidx, u32 algomsk)
 {
 	sw_w32_mask(3 << ((group & 0xf) << 1), algoidx << ((group & 0xf) << 1),
 		    RTL839X_TRK_HASH_IDX_CTRL + ((group >> 4) << 2));
 	sw_w32(algomsk, RTL839X_TRK_HASH_CTRL + (algoidx << 2));
+
+	return 0;
 }
 
 static void rtl839x_set_receive_management_action(int port, rma_ctrl_t type, action_type_t action)
@@ -1727,6 +1730,20 @@ static void rtl839x_set_receive_management_action(int port, rma_ctrl_t type, act
 		break;
 	}
 }
+
+static int rtldsa_839x_lag_set_port_members(struct rtl838x_switch_priv *priv, int group,
+					    u64 members, struct netdev_lag_upper_info *info)
+{
+	priv->lags_port_members[group] = members;
+
+	priv->r->set_port_reg_be(priv->lags_port_members[group],
+				 priv->r->trk_mbr_ctr(group));
+
+	return 0;
+}
+
+int rtldsa_83xx_lag_setup_algomask(struct rtl838x_switch_priv *priv, int group,
+				   struct netdev_lag_upper_info *info);
 
 const struct rtldsa_config rtldsa_839x_cfg = {
 	.mask_port_reg_be = rtl839x_mask_port_reg_be,
@@ -1813,7 +1830,9 @@ const struct rtldsa_config rtldsa_839x_cfg = {
 	.route_read = rtl839x_route_read,
 	.route_write = rtl839x_route_write,
 	.l3_setup = rtl839x_l3_setup,
-	.set_distribution_algorithm = rtl839x_set_distribution_algorithm,
 	.set_receive_management_action = rtl839x_set_receive_management_action,
 	.qos_init = rtldsa_839x_qos_init,
+	.lag_set_distribution_algorithm = rtldsa_839x_set_distribution_algorithm,
+	.lag_set_port_members = rtldsa_839x_lag_set_port_members,
+	.lag_setup_algomask = rtldsa_83xx_lag_setup_algomask,
 };

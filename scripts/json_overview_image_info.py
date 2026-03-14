@@ -5,6 +5,7 @@ from pathlib import Path
 from subprocess import run, PIPE
 from sys import argv
 import json
+import re
 
 if len(argv) != 2:
     print("JSON info files script requires output file as argument")
@@ -31,8 +32,13 @@ def get_initial_output(image_info):
 
 def add_artifact(artifact, prefix="openwrt-"):
     files = list(output_dir.glob(f"{prefix}{artifact}-*"))
-    if len(files) == 1:
-        output[artifact] = str(files[0].name)
+    if len(files):
+        output[artifact] = {}
+        for file in files:
+            file = str(file.name)
+            arch = re.match(r".*Linux-([^.]*)\.", file)
+            if arch:
+                output[artifact][arch.group(1)] = file
 
 
 for json_file in work_dir.glob("*.json"):
