@@ -45,7 +45,7 @@
  #define PCIE_AHB_TRANS_BASE0_L	0x438
  #define PCIE_AHB_TRANS_BASE0_H	0x43c
  #define AHB2PCIE_SIZE(x)	((x) & GENMASK(4, 0))
-@@ -748,6 +754,86 @@ static int mtk_pcie_startup_port_v2(stru
+@@ -750,6 +756,86 @@ static int mtk_pcie_startup_port_v2(stru
  	return 0;
  }
  
@@ -132,7 +132,7 @@
  static void __iomem *mtk_pcie_map_bus(struct pci_bus *bus,
  				      unsigned int devfn, int where)
  {
-@@ -1114,6 +1200,20 @@ static int mtk_pcie_probe(struct platfor
+@@ -1116,6 +1202,20 @@ static int mtk_pcie_probe(struct platfor
  	if (err)
  		goto put_resources;
  
@@ -153,7 +153,7 @@
  	return 0;
  
  put_resources:
-@@ -1223,12 +1323,19 @@ static const struct mtk_pcie_soc mtk_pci
+@@ -1225,12 +1325,19 @@ static const struct mtk_pcie_soc mtk_pci
  	.setup_irq = mtk_pcie_setup_irq,
  };
  
