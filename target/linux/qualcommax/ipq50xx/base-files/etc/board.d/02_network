@@ -17,7 +17,6 @@ ipq50xx_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
 		;;
 	cmcc,mr3000d-ci|\
-	cmcc,pz-l8|\
 	linksys,mx2000|\
 	linksys,mx5500|\
 	linksys,spnmx56|\
@@ -28,6 +27,13 @@ ipq50xx_setup_interfaces()
 	yuncore,ax830|\
 	yuncore,ax850)
 		ucidef_set_interfaces_lan_wan "lan" "wan"
+		;;
+	cmcc,pz-l8)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+		ucidef_set_network_device_conduit "lan1" "eth1"
+		ucidef_set_network_device_conduit "lan2" "eth1"
+		ucidef_set_network_device_conduit "lan3" "eth1"
+		ucidef_set_network_device_conduit "wan" "eth0"
 		;;
 	esac
 }
