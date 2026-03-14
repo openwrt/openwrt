@@ -74,12 +74,6 @@
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 		};
 
-		wlan2g_green {
-			label = "green:wlan2g";
-			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
-		};
-
 		wps_green {
 			function = LED_FUNCTION_WPS;
 			color = <LED_COLOR_ID_GREEN>;
@@ -265,6 +259,11 @@
 
 	nvmem-cells = <&macaddr_caldata_0>, <&cal_art_1000>;
 	nvmem-cell-names = "mac-address", "calibration";
+
+	led {
+		led-sources = <19>;
+		led-active-low;
+	};
 };
 
 &pcie {

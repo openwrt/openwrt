@@ -32,12 +32,6 @@
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 
-		wlan2g {
-			label = "blue:wlan2";
-			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
-		};
-
 		wlan5g {
 			label = "blue:wlan5";
 			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
@@ -110,6 +104,11 @@
 
 &wmac {
 	status = "okay";
+
+	led {
+		led-sources = <13>;
+		led-active-low;
+	};
 };
 
 // This node is required for the Ethernet ports to work correctly.

@@ -31,13 +31,6 @@
 	leds {
 		compatible = "gpio-leds";
 
-		wifi2g {
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_WLAN_2GHZ;
-			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
-		};
-
 		led_wifi5g: wifi5g {
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_WLAN_5GHZ;
@@ -45,4 +38,9 @@
 			linux,default-trigger = "phy0tpt";
 		};
 	};
+};
+
+&wmac {
+	led-sources = <14>;
+	led-active-low;
 };

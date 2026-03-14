@@ -29,10 +29,6 @@
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 		};
 
-		led-wlan2g {
-			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
-		};
-
 		led-wlan5g {
 			gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
 		};
@@ -60,6 +56,13 @@
 	wifi@0,0 {
 		nvmem-cells = <&macaddr_sysinfo_50 2>, <&cal_art_5000>;
 		nvmem-cell-names = "mac-address", "calibration";
+	};
+};
+
+&wmac {
+	led {
+		led-sources = <21>;
+		led-active-low;
 	};
 };
 

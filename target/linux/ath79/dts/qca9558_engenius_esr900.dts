@@ -25,16 +25,10 @@
 			default-state = "on";
 		};
 
-		wlan2g {
-			label = "blue:wlan2g";
-			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
-		};
-
 		wlan5g {
 			label = "blue:wlan5g";
 			gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
+			linux,default-trigger = "phy1tpt";
 		};
 
 		wps_amber {
@@ -82,6 +76,11 @@
 &wmac {
 	nvmem-cells = <&calibration_art_1000>, <&macaddr_uboot_eth 0>;
 	nvmem-cell-names = "calibration", "mac-address";
+
+	led {
+		led-sources = <13>;
+		led-active-low;
+	};
 };
 
 &wifi0 {
