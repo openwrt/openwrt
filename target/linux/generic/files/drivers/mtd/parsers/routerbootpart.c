@@ -229,7 +229,7 @@ static int routerboot_partitions_parse(struct mtd_info *master,
 
 	/* First count the subnodes */
 	np = 0;
-	for_each_child_of_node(rbpart_node,  pp)
+	for_each_child_of_node_scoped(rbpart_node, pp)
 		np++;
 
 	if (!np)
@@ -244,7 +244,7 @@ static int routerboot_partitions_parse(struct mtd_info *master,
 
 	np = 0;
 	master_ofs = 0;
-	for_each_child_of_node(rbpart_node, pp) {
+	for_each_child_of_node_scoped(rbpart_node, pp) {
 		const __be32 *reg, *sz;
 		size_t offset, size;
 		int i, len, a_cells, s_cells;
@@ -342,7 +342,6 @@ static int routerboot_partitions_parse(struct mtd_info *master,
 rbpart_fail:
 	pr_err("%s: error parsing routerboot partition %pOF (%pOF)\n",
 	       master->name, pp, rbpart_node);
-	of_node_put(pp);
 	kfree(parts);
 	return -EINVAL;
 }
