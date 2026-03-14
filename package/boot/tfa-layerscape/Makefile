@@ -162,7 +162,7 @@ TFA_TARGETS := \
   lx2160a-rdb-sdboot
 
 TFA_MAKE_FLAGS += \
-	$(if $(CONFIG_BINUTILS_VERSION_2_37)$(CONFIG_BINUTILS_VERSION_2_38),,LDFLAGS="-Wl,--no-warn-rwx-segments") \
+	LDFLAGS="-Wl,--no-warn-rwx-segments" \
 	fip pbl \
 	BOOT_MODE=$(BOOT_MODE) \
 	RCW=$(STAGING_DIR_IMAGE)/fsl_$(BUILD_VARIANT)-rcw.bin \
