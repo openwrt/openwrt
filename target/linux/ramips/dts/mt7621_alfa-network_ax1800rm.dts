@@ -124,7 +124,7 @@
 						reg = <0x0 0xe00>;
 					};
 
-					macaddr: macaddr@4 {
+					macaddr_factory_4: macaddr@4 {
 						compatible = "mac-base";
 						reg = <0x4 0x6>;
 						#nvmem-cell-cells = <1>;
@@ -152,18 +152,30 @@
 };
 
 &pcie1 {
-	wifi0: wifi@0,0 {
+	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 
 		nvmem-cells = <&eeprom>;
 		nvmem-cell-names = "eeprom";
 		mediatek,disable-radar-background;
+
+		wifi0: band@0 {
+			reg = <0>;
+			nvmem-cells = <&macaddr_factory_4 0>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		band@1 {
+			reg = <1>;
+			nvmem-cells = <&macaddr_factory_4 1>;
+			nvmem-cell-names = "mac-address";
+		};
 	};
 };
 
 &gmac0 {
-	nvmem-cells = <&macaddr 2>;
+	nvmem-cells = <&macaddr_factory_4 2>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -172,7 +184,7 @@
 	label = "wan";
 	phy-handle = <&ethphy4>;
 
-	nvmem-cells = <&macaddr 3>;
+	nvmem-cells = <&macaddr_factory_4 3>;
 	nvmem-cell-names = "mac-address";
 };
 

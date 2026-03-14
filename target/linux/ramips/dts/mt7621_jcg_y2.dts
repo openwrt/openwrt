@@ -13,6 +13,7 @@
 		led-boot = &led_internet;
 		led-failsafe = &led_internet;
 		led-upgrade = &led_internet;
+		label-mac-device = &wifi0;
 	};
 
 	leds {
@@ -75,6 +76,10 @@
 						reg = <0x0 0x4da8>;
 					};
 
+					macaddr_factory_4: macaddr@4 {
+						reg = <0x4 0x6>;
+					};
+
 					macaddr_factory_e000: macaddr@e000 {
 						reg = <0xe000 0x6>;
 					};
@@ -104,6 +109,12 @@
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&eeprom_factory_0>;
 		nvmem-cell-names = "eeprom";
+
+		wifi0: band@0 {
+			reg = <0>;
+			nvmem-cells = <&macaddr_factory_4>;
+			nvmem-cell-names = "mac-address";
+		};
 	};
 };
 
