@@ -1,0 +1,89 @@
+From 1357636b826cadf15e410b64f1c98bde930dfb4e Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Thu, 23 Oct 2025 19:07:45 +0200
+Subject: [PATCH 10/24] net: airoha: bind MDIO controller on Ethernet load
+
+Bind MDIO controller on Ethernet Controller load. The Airoha AN7581 SoC
+have an integrated Switch based on MT7531 (or more saying MT7988).
+
+Attach it to the mdio node in the switch node to support scanning for
+MDIO devices on the BUS with DM API.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/net/Kconfig      |  1 +
+ drivers/net/airoha_eth.c | 32 ++++++++++++++++++++++++++++++++
+ 2 files changed, 33 insertions(+)
+
+diff --git a/drivers/net/Kconfig b/drivers/net/Kconfig
+index 544e302d600..f382a7752d5 100644
+--- a/drivers/net/Kconfig
++++ b/drivers/net/Kconfig
+@@ -126,6 +126,7 @@ config AIROHA_ETH
+ 	depends on ARCH_AIROHA
+ 	select PHYLIB
+ 	select DM_RESET
++	select MDIO_MT7531
+ 	help
+ 	  This Driver support Airoha Ethernet QDMA Driver
+ 	  Say Y to enable support for the Airoha Ethernet QDMA.
+diff --git a/drivers/net/airoha_eth.c b/drivers/net/airoha_eth.c
+index 75af93f182d..661b6ac19f0 100644
+--- a/drivers/net/airoha_eth.c
++++ b/drivers/net/airoha_eth.c
+@@ -10,6 +10,7 @@
+ 
+ #include <dm.h>
+ #include <dm/devres.h>
++#include <dm/lists.h>
+ #include <mapmem.h>
+ #include <net.h>
+ #include <regmap.h>
+@@ -1064,6 +1065,36 @@ static int arht_eth_write_hwaddr(struct udevice *dev)
+ 	return 0;
+ }
+ 
++static int airoha_eth_bind(struct udevice *dev)
++{
++	ofnode switch_node, mdio_node;
++	struct udevice *mdio_dev;
++	int ret = 0;
++
++	if (!CONFIG_IS_ENABLED(MDIO_MT7531))
++		return 0;
++
++	switch_node = ofnode_by_compatible(ofnode_null(),
++					   "airoha,en7581-switch");
++	if (!ofnode_valid(switch_node)) {
++		debug("Warning: missing switch node\n");
++		return 0;
++	}
++
++	mdio_node = ofnode_find_subnode(switch_node, "mdio");
++	if (!ofnode_valid(mdio_node)) {
++		debug("Warning: missing mdio node\n");
++		return 0;
++	}
++
++	ret = device_bind_driver_to_node(dev, "mt7531-mdio", "mdio",
++					 mdio_node, &mdio_dev);
++	if (ret)
++		debug("Warning: failed to bind mdio controller\n");
++
++	return 0;
++}
++
+ static const struct airoha_eth_soc_data en7523_data = {
+ 	.xsi_rsts_names = en7523_xsi_rsts_names,
+ 	.num_xsi_rsts = ARRAY_SIZE(en7523_xsi_rsts_names),
+@@ -1109,6 +1140,7 @@ U_BOOT_DRIVER(airoha_eth) = {
+ 	.id = UCLASS_ETH,
+ 	.of_match = airoha_eth_ids,
+ 	.probe = airoha_eth_probe,
++	.bind = airoha_eth_bind,
+ 	.ops = &airoha_eth_ops,
+ 	.priv_auto = sizeof(struct airoha_eth),
+ 	.plat_auto = sizeof(struct eth_pdata),
+-- 
+2.51.0
+

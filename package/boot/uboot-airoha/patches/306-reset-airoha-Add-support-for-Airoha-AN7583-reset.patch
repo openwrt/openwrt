@@ -1,7 +1,7 @@
-From 23031ad51d55361be507b83307f55995e0204188 Mon Sep 17 00:00:00 2001
+From 6b54d65d6b247d06d94c28c6df92ed5b45d7468a Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
 Date: Tue, 29 Apr 2025 13:33:35 +0200
-Subject: [PATCH 4/6] reset: airoha: Add support for Airoha AN7583 reset
+Subject: [PATCH 06/24] reset: airoha: Add support for Airoha AN7583 reset
 
 Adapt the Airoha reset driver to support Airoha AN7583 node structure.
 In AN7583 the register is exposed by the parent syscon hence a different
@@ -10,33 +10,24 @@ a dedicated table is needed.
 
 Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 ---
- drivers/reset/reset-airoha.c                  | 94 ++++++++++++++++++-
- .../dt-bindings/reset/airoha,an7583-reset.h   | 61 ++++++++++++
- 2 files changed, 153 insertions(+), 2 deletions(-)
+ drivers/reset/reset-airoha.c                  | 60 ++++++++++++++++++
+ .../dt-bindings/reset/airoha,an7583-reset.h   | 62 +++++++++++++++++++
+ 2 files changed, 122 insertions(+)
  create mode 100644 include/dt-bindings/reset/airoha,an7583-reset.h
 
+diff --git a/drivers/reset/reset-airoha.c b/drivers/reset/reset-airoha.c
+index ef8c47a067b..071f29b6f22 100644
 --- a/drivers/reset/reset-airoha.c
 +++ b/drivers/reset/reset-airoha.c
-@@ -11,8 +11,10 @@
- #include <linux/io.h>
- #include <reset-uclass.h>
- #include <regmap.h>
-+#include <syscon.h>
+@@ -15,6 +15,7 @@
  
+ #include <dt-bindings/reset/airoha,en7523-reset.h>
  #include <dt-bindings/reset/airoha,en7581-reset.h>
 +#include <dt-bindings/reset/airoha,an7583-reset.h>
  
  #define RST_NR_PER_BANK			32
  
-@@ -22,6 +24,7 @@
- struct airoha_reset_priv {
- 	const u16 *bank_ofs;
- 	const u16 *idx_map;
-+	int num_rsts;
- 	struct regmap *map;
- };
- 
-@@ -88,6 +91,59 @@ static const u16 en7581_rst_map[] = {
+@@ -138,6 +139,60 @@ static const u16 en7581_rst_map[] = {
  	[EN7581_XPON_MAC_RST]		= RST_NR_PER_BANK + 31,
  };
  
@@ -57,6 +48,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +	[AN7583_DUAL_HSI1_RST]		= 14,
 +	[AN7583_DUAL_HSI0_MAC_RST]	= 16,
 +	[AN7583_DUAL_HSI1_MAC_RST]	= 17,
++	[AN7583_XPON_XFI_RST]		= 18,
 +	[AN7583_WDMA_RST]		= 19,
 +	[AN7583_WOE0_RST]		= 20,
 +	[AN7583_HSDMA_RST]		= 22,
@@ -96,73 +88,25 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  static int airoha_reset_update(struct airoha_reset_priv *priv,
  			       unsigned long id, bool assert)
  {
-@@ -135,7 +191,7 @@ static int airoha_reset_xlate(struct reset_ctl *reset_ctl,
- {
- 	struct airoha_reset_priv *priv = dev_get_priv(reset_ctl->dev);
+@@ -227,6 +282,11 @@ static int airoha_reset_probe(struct udevice *dev)
+ 		return reset_init(dev, en7581_rst_map,
+ 				  ARRAY_SIZE(en7581_rst_map));
  
--	if (args->args[0] >= ARRAY_SIZE(en7581_rst_map))
-+	if (args->args[0] >= priv->num_rsts)
- 		return -EINVAL;
- 
- 	reset_ctl->id = priv->idx_map[args->args[0]];
-@@ -150,7 +206,7 @@ static struct reset_ops airoha_reset_ops = {
- 	.rst_status = airoha_reset_status,
- };
- 
--static int airoha_reset_probe(struct udevice *dev)
-+static int an7581_reset_probe(struct udevice *dev)
- {
- 	struct airoha_reset_priv *priv = dev_get_priv(dev);
- 	int ret;
-@@ -161,10 +217,44 @@ static int airoha_reset_probe(struct udevice *dev)
- 
- 	priv->bank_ofs = en7581_rst_ofs;
- 	priv->idx_map = en7581_rst_map;
-+	priv->num_rsts = ARRAY_SIZE(en7581_rst_map);
-+
-+	return 0;
-+}
-+
-+static int an7583_reset_probe(struct udevice *dev)
-+{
-+	struct airoha_reset_priv *priv = dev_get_priv(dev);
-+	ofnode pnode, scu_node = dev_ofnode(dev);
-+
-+	pnode = ofnode_get_parent(scu_node);
-+	if (!ofnode_valid(pnode))
-+		return -EINVAL;
-+
-+	priv->map = syscon_node_to_regmap(pnode);
-+	if (IS_ERR(priv->map))
-+		return PTR_ERR(priv->map);
-+
-+	priv->bank_ofs = en7581_rst_ofs;
-+	priv->idx_map = an7583_rst_map;
-+	priv->num_rsts = ARRAY_SIZE(an7583_rst_map);
- 
- 	return 0;
- }
- 
-+static int airoha_reset_probe(struct udevice *dev)
-+{
-+	if (ofnode_device_is_compatible(dev_ofnode(dev),
-+					"airoha,en7581-scu"))
-+		return an7581_reset_probe(dev);
-+
 +	if (ofnode_device_is_compatible(dev_ofnode(dev),
 +					"airoha,an7583-scu"))
-+		return an7583_reset_probe(dev);
++		return reset_init(dev, an7583_rst_map,
++				 ARRAY_SIZE(an7583_rst_map));
 +
-+	return -ENODEV;
-+}
-+
- U_BOOT_DRIVER(airoha_reset) = {
- 	.name = "airoha-reset",
- 	.id = UCLASS_RESET,
+ 	return -ENODEV;
+ }
+ 
+diff --git a/include/dt-bindings/reset/airoha,an7583-reset.h b/include/dt-bindings/reset/airoha,an7583-reset.h
+new file mode 100644
+index 00000000000..be80d0e0bf5
 --- /dev/null
 +++ b/include/dt-bindings/reset/airoha,an7583-reset.h
-@@ -0,0 +1,61 @@
-+// SPDX-License-Identifier: GPL-2.0-only
+@@ -0,0 +1,62 @@
++/* SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) */
 +/*
 + * Copyright (c) 2024 AIROHA Inc
 + * Author: Christian Marangi <ansuelsmth@gmail.com>
@@ -187,40 +131,43 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +#define AN7583_DUAL_HSI1_RST		12
 +#define AN7583_DUAL_HSI0_MAC_RST	13
 +#define AN7583_DUAL_HSI1_MAC_RST	14
-+#define AN7583_WDMA_RST			15
-+#define AN7583_WOE0_RST			16
-+#define AN7583_HSDMA_RST		17
-+#define AN7583_TDMA_RST			18
-+#define AN7583_EMMC_RST			19
-+#define AN7583_SOE_RST			20
-+#define AN7583_XFP_MAC_RST		21
-+#define AN7583_MDIO0    		22
-+#define AN7583_MDIO1            	23
++#define AN7583_XPON_XFI_RST     	15
++#define AN7583_WDMA_RST			16
++#define AN7583_WOE0_RST			17
++#define AN7583_HSDMA_RST		18
++#define AN7583_TDMA_RST			19
++#define AN7583_EMMC_RST			20
++#define AN7583_SOE_RST			21
++#define AN7583_XFP_MAC_RST		22
++#define AN7583_MDIO0                    23
++#define AN7583_MDIO1                    24
 +/* RST_CTRL1 */
-+#define AN7583_PCM1_ZSI_ISI_RST		24
-+#define AN7583_FE_PDMA_RST		25
-+#define AN7583_FE_QDMA_RST		26
-+#define AN7583_PCM_SPIWP_RST		27
-+#define AN7583_CRYPTO_RST		28
-+#define AN7583_TIMER_RST		29
-+#define AN7583_PCM1_RST			30
-+#define AN7583_UART_RST			31
-+#define AN7583_GPIO_RST			32
-+#define AN7583_GDMA_RST			33
-+#define AN7583_I2C_MASTER_RST		34
-+#define AN7583_PCM2_ZSI_ISI_RST		35
-+#define AN7583_SFC_RST			36
-+#define AN7583_UART2_RST		37
-+#define AN7583_GDMP_RST			38
-+#define AN7583_FE_RST			39
-+#define AN7583_USB_HOST_P0_RST		40
-+#define AN7583_GSW_RST			41
-+#define AN7583_SFC2_PCM_RST		42
-+#define AN7583_PCIE0_RST		43
-+#define AN7583_PCIE1_RST		44
-+#define AN7583_CPU_TIMER_RST		45
-+#define AN7583_PCIE_HB_RST		46
-+#define AN7583_XPON_MAC_RST		47
++#define AN7583_PCM1_ZSI_ISI_RST		25
++#define AN7583_FE_PDMA_RST		26
++#define AN7583_FE_QDMA_RST		27
++#define AN7583_PCM_SPIWP_RST		28
++#define AN7583_CRYPTO_RST		29
++#define AN7583_TIMER_RST		30
++#define AN7583_PCM1_RST			31
++#define AN7583_UART_RST			32
++#define AN7583_GPIO_RST			33
++#define AN7583_GDMA_RST			34
++#define AN7583_I2C_MASTER_RST		35
++#define AN7583_PCM2_ZSI_ISI_RST		36
++#define AN7583_SFC_RST			37
++#define AN7583_UART2_RST		38
++#define AN7583_GDMP_RST			39
++#define AN7583_FE_RST			40
++#define AN7583_USB_HOST_P0_RST		41
++#define AN7583_GSW_RST			42
++#define AN7583_SFC2_PCM_RST		43
++#define AN7583_PCIE0_RST		44
++#define AN7583_PCIE1_RST		45
++#define AN7583_CPU_TIMER_RST		46
++#define AN7583_PCIE_HB_RST		47
++#define AN7583_XPON_MAC_RST		48
 +
 +#endif /* __DT_BINDINGS_RESET_CONTROLLER_AIROHA_AN7583_H_ */
+-- 
+2.51.0
 
