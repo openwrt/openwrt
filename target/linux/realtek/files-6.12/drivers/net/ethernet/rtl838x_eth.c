@@ -731,7 +731,7 @@ static int rteth_open(struct net_device *ndev)
 	return 0;
 }
 
-static void rtl838x_hw_stop(struct rteth_ctrl *ctrl)
+static void rteth_hw_stop(struct rteth_ctrl *ctrl)
 {
 	u32 force_mac = ctrl->r->family_id == RTL8380_FAMILY_ID ? 0x6192C : 0x75;
 
@@ -788,7 +788,7 @@ static int rteth_stop(struct net_device *ndev)
 	pr_info("in %s\n", __func__);
 
 	phylink_stop(ctrl->phylink);
-	rtl838x_hw_stop(ctrl);
+	rteth_hw_stop(ctrl);
 
 	for (int i = 0; i < RTETH_RX_RINGS; i++)
 		napi_disable(&ctrl->rx_qs[i].napi);
@@ -884,7 +884,7 @@ static void rteth_tx_timeout(struct net_device *ndev, unsigned int txqueue)
 
 	pr_warn("%s\n", __func__);
 	spin_lock_irqsave(&ctrl->lock, flags);
-	rtl838x_hw_stop(ctrl);
+	rteth_hw_stop(ctrl);
 	rteth_hw_ring_setup(ctrl);
 	rtl838x_hw_en_rxtx(ctrl);
 	netif_trans_update(ndev);
@@ -1597,7 +1597,7 @@ static void rtl838x_eth_remove(struct platform_device *pdev)
 
 	if (dev) {
 		pr_info("Removing platform driver for rtl838x-eth\n");
-		rtl838x_hw_stop(ctrl);
+		rteth_hw_stop(ctrl);
 
 		netif_tx_stop_all_queues(dev);
 
