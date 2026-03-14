@@ -90,6 +90,7 @@ platform_do_upgrade() {
 	bazis,ax3000wm|\
 	cmcc,a10-ubootmod|\
 	cmcc,rax3000m|\
+	clx,s20p|\
 	comfast,cf-wr632ax-ubootmod|\
 	cudy,tr3000-v1-ubootmod|\
 	cudy,wbr3000uax-v1-ubootmod|\
@@ -344,6 +345,7 @@ platform_copy_config() {
 	bananapi,bpi-r4-poe|\
 	bananapi,bpi-r4-lite|\
 	cmcc,rax3000m|\
+	clx,s20p|\
 	gatonetworks,gdsp|\
 	mediatek,mt7988a-rfb)
 		if [ "$CI_METHOD" = "emmc" ]; then
