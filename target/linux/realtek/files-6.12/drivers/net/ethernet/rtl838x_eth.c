@@ -460,11 +460,16 @@ static void rteth_93xx_hw_reset(struct rteth_ctrl *ctrl)
 	rteth_nic_reset(ctrl, 0x6);
 
 	/* Setup Head of Line */
-	for (int i = 0; i < RTETH_RX_RINGS; i++) {
-		int pos = (i % 3) * 10;
+	for (int r = 0; r < RTETH_RX_RINGS; r++) {
+		int cnt = min(RTETH_RX_RING_SIZE, 0x3ff);
+		int pos = (r % 3) * 10;
+		u32 v;
 
-		sw_w32_mask(0x3ff << pos, 0, ctrl->r->dma_if_rx_ring_size(i));
-		sw_w32_mask(0x3ff << pos, RTETH_RX_RING_SIZE, ctrl->r->dma_if_rx_ring_cntr(i));
+		/* set ring size */
+		sw_w32_mask(0x3ff << pos, cnt << pos, ctrl->r->dma_if_rx_ring_size(r));
+		/* clear counters */
+		v = (sw_r32(ctrl->r->dma_if_rx_ring_cntr(r)) >> pos) & 0x3ff;
+		sw_w32_mask(0x3ff << pos, v, ctrl->r->dma_if_rx_ring_cntr(r));
 	}
 }
 
@@ -575,18 +580,6 @@ static void rteth_93xx_hw_en_rxtx(struct rteth_ctrl *ctrl)
 {
 	/* Setup CPU-Port: RX Buffer truncated at DEFAULT_MTU Bytes */
 	sw_w32((DEFAULT_MTU << 16) | RX_TRUNCATE_EN_93XX, ctrl->r->dma_if_ctrl);
-
-	for (int i = 0; i < RTETH_RX_RINGS; i++) {
-		int cnt = min(RTETH_RX_RING_SIZE - 2, 0x3ff);
-		int pos = (i % 3) * 10;
-		u32 v;
-
-		sw_w32_mask(0x3ff << pos, cnt << pos, ctrl->r->dma_if_rx_ring_size(i));
-
-		/* Some SoCs have issues with missing underflow protection */
-		v = (sw_r32(ctrl->r->dma_if_rx_ring_cntr(i)) >> pos) & 0x3ff;
-		sw_w32_mask(0x3ff << pos, v, ctrl->r->dma_if_rx_ring_cntr(i));
-	}
 
 	rteth_enable_all_rx_irqs(ctrl);
 
