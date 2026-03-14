@@ -14,7 +14,6 @@
 
 	chosen {
 		stdout-path = "/serial@1fbf0000:115200";
-		linux,usable-memory-range = <0x00020000 0x0ffe0000>;
 	};
 };
 
@@ -26,6 +25,8 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+
+		econet,boot-flag = <&part_flag 0x17>;
 
 		partition@0 {
 			label = "bootloader";
@@ -39,35 +40,24 @@
 		};
 
 		partition@80000 {
+			compatible = "econet,trx";
 			label = "tclinux";
 			reg = <0x80000 0x2200000>;
 			econet,enable-remap;
-		};
-
-		partition@480000 {
-			label = "rootfs";
-			reg = <0x480000 0x1e00000>;
-			linux,rootfs;
+			econet,boot-flag-value = <0x00>;
 		};
 
 		partition@2280000 {
-			label = "kernel_slave";
-			reg = <0x2280000 0x300000>;
-		};
-
-		partition@2580000 {
-			label = "rootfs_slave";
-			reg = <0x2580000 0x1f00000>;
+			compatible = "econet,trx";
+			label = "tclinux_alt";
+			reg = <0x2280000 0x2200000>;
+			econet,enable-remap;
+			econet,boot-flag-value = <0x01>;
 		};
 
 		partition@4480000 {
-			label = "kernel_oflt";
-			reg = <0x4480000 0x300000>;
-		};
-
-		partition@4780000 {
-			label = "rootfs_oflt";
-			reg = <0x4780000 0xc00000>;
+			label = "tclinux_oflt";
+			reg = <0x4480000 0xf00000>;
 		};
 
 		partition@5380000 {
@@ -90,7 +80,7 @@
 			reg = <0x6d80000 0x40000>;
 		};
 
-		partition@6dc0000 {
+		part_flag: partition@6dc0000 {
 			label = "flag";
 			reg = <0x6dc0000 0x40000>;
 		};
