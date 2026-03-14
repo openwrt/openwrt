@@ -54,6 +54,11 @@
 			no-map;
 			reg = <0x0 0x90c00000 0x0 0x6800>;
 		};
+
+		npu_ba: npu-ba@90c06800 {
+			no-map;
+			reg = <0x0 0x90c06800 0x0 0x200000>;
+		};
 	};
 
 	psci {
@@ -855,9 +860,10 @@
 				     <GIC_SPI 122 IRQ_TYPE_LEVEL_HIGH>,
 				     <GIC_SPI 123 IRQ_TYPE_LEVEL_HIGH>;
 			memory-region = <&npu_binary>, <&npu_pkt>, <&npu_txpkt>,
-					<&npu_txbufid>;
+					<&npu_txbufid>, <&npu_ba>;
 			memory-region-names = "binary", "pkt", "tx-pkt",
-					      "tx-bufid";
+					      "tx-bufid", "ba";
+			status = "disabled";
 		};
 
 		eth: ethernet@1fb50000 {
