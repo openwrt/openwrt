@@ -525,7 +525,7 @@ static void rteth_hw_ring_setup(struct rteth_ctrl *ctrl)
 		       ctrl->r->dma_tx_base + r * 4);
 }
 
-static void rtl838x_hw_en_rxtx(struct rteth_ctrl *ctrl)
+static void rteth_838x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 {
 	/* Truncate RX buffer to DEFAULT_MTU bytes, pad TX */
 	sw_w32((DEFAULT_MTU << 16) | RX_TRUNCATE_EN_83XX | TX_PAD_EN_838X, ctrl->r->dma_if_ctrl);
@@ -548,7 +548,7 @@ static void rtl838x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 	sw_w32_mask(0, BIT(3), ctrl->r->mac_l2_port_ctrl);
 }
 
-static void rtl839x_hw_en_rxtx(struct rteth_ctrl *ctrl)
+static void rteth_839x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 {
 	/* Setup CPU-Port: RX Buffer */
 	sw_w32((DEFAULT_MTU << 5) | RX_TRUNCATE_EN_83XX, ctrl->r->dma_if_ctrl);
@@ -571,7 +571,7 @@ static void rtl839x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 	sw_w32_mask(0, 3, ctrl->r->mac_force_mode_ctrl);
 }
 
-static void rtl93xx_hw_en_rxtx(struct rteth_ctrl *ctrl)
+static void rteth_93xx_hw_en_rxtx(struct rteth_ctrl *ctrl)
 {
 	/* Setup CPU-Port: RX Buffer truncated at DEFAULT_MTU Bytes */
 	sw_w32((DEFAULT_MTU << 16) | RX_TRUNCATE_EN_93XX, ctrl->r->dma_if_ctrl);
@@ -690,7 +690,7 @@ static int rteth_open(struct net_device *ndev)
 
 	switch (ctrl->r->family_id) {
 	case RTL8380_FAMILY_ID:
-		rtl838x_hw_en_rxtx(ctrl);
+		rteth_838x_hw_en_rxtx(ctrl);
 		/* Trap IGMP/MLD traffic to CPU-Port */
 		sw_w32(0x3, RTL838X_SPCL_TRAP_IGMP_CTRL);
 		/* Flush learned FDB entries on link down of a port */
@@ -698,7 +698,7 @@ static int rteth_open(struct net_device *ndev)
 		break;
 
 	case RTL8390_FAMILY_ID:
-		rtl839x_hw_en_rxtx(ctrl);
+		rteth_839x_hw_en_rxtx(ctrl);
 		/* Trap MLD and IGMP messages to CPU_PORT */
 		sw_w32(0x3, RTL839X_SPCL_TRAP_IGMP_CTRL);
 		/* Flush learned FDB entries on link down of a port */
@@ -706,7 +706,7 @@ static int rteth_open(struct net_device *ndev)
 		break;
 
 	case RTL9300_FAMILY_ID:
-		rtl93xx_hw_en_rxtx(ctrl);
+		rteth_93xx_hw_en_rxtx(ctrl);
 		/* Flush learned FDB entries on link down of a port */
 		sw_w32_mask(0, BIT(7), RTL930X_L2_CTRL);
 		/* Trap MLD and IGMP messages to CPU_PORT */
@@ -714,7 +714,7 @@ static int rteth_open(struct net_device *ndev)
 		break;
 
 	case RTL9310_FAMILY_ID:
-		rtl93xx_hw_en_rxtx(ctrl);
+		rteth_93xx_hw_en_rxtx(ctrl);
 
 		/* Trap MLD and IGMP messages to CPU_PORT */
 		sw_w32((0x2 << 3) | 0x2,  RTL931X_VLAN_APP_PKT_CTRL);
@@ -903,7 +903,7 @@ static void rteth_tx_timeout(struct net_device *ndev, unsigned int txqueue)
 	spin_lock_irqsave(&ctrl->lock, flags);
 	rteth_hw_stop(ctrl);
 	rteth_hw_ring_setup(ctrl);
-	rtl838x_hw_en_rxtx(ctrl);
+	rteth_838x_hw_en_rxtx(ctrl);
 	netif_trans_update(ndev);
 	netif_start_queue(ndev);
 	spin_unlock_irqrestore(&ctrl->lock, flags);
