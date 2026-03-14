@@ -83,6 +83,9 @@ spectrum,sax1v1k)
 tcl,linkhub-hh500v)
 	ubootenv_add_uci_config $(ubootenv_mtdinfo)
 	;;
+zbtlink,zbt-z800ax)
+	ubootenv_add_mtd "0:appsblenv" "0x0" "0x10000" "0x10000"
+	;;
 esac
 
 config_load ubootenv
