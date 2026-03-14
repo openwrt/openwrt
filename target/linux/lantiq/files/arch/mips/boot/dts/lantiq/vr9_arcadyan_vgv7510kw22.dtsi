@@ -230,6 +230,10 @@
 						reg = <0x16 0x6>;
 						#nvmem-cell-cells = <1>;
 					};
+
+					eeprom_boardconfig_410: eeprom@410 {
+						reg = <0x410 0x200>;
+					};
 				};
 			};
 		};
@@ -243,10 +247,8 @@
 	wifi@e,0 {
 		compatible = "pci1814,3592";
 		reg = <0x7000 0 0 0 0>;
-		ralink,mtd-eeprom = <&boardconfig 0x410>;
-		ralink,eeprom-swap;
-		nvmem-cells = <&macaddr_boardconfig_16 1>;
-		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&eeprom_boardconfig_410>, <&macaddr_boardconfig_16 1>;
+		nvmem-cell-names = "eeprom", "mac-address";
 	};
 };
 
