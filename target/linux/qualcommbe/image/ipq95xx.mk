@@ -12,6 +12,22 @@ define Device/8devices_kiwi-dvk
 endef
 TARGET_DEVICES += 8devices_kiwi-dvk
 
+define Device/askey_sbe1v1k
+	$(call Device/FitImage)
+	$(call Device/EmmcImage)
+	DEVICE_VENDOR := Askey
+	DEVICE_MODEL := SBE1V1K
+	DEVICE_ALT0_VENDOR := Askey
+	DEVICE_ALT0_MODEL := RTQ7300T
+	DEVICE_ALT1_VENDOR := Spectrum
+	DEVICE_ALT1_MODEL := SBE1V1K
+	DEVICE_DTS_CONFIG := config@rtq7300t-rev0
+	KERNEL_LOADADDR := 0x42080000
+	SOC := ipq9570
+	DEVICE_PACKAGES := kmod-ath12k kmod-hwmon-pwmfan kmod-phy-rtl8261n ath12k-firmware-qcn9274 ipq-wifi-askey_sbe1v1k f2fsck mkfsck mkf2fs
+endef
+TARGET_DEVICES += askey_sbe1v1k
+
 define Device/qcom_rdp433
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := Qualcomm Technologies, Inc.
