@@ -3,43 +3,62 @@
 . /lib/functions.sh
 . /lib/netifd/netifd-proto.sh
 
-setup_interface () {
+setup_interface_neigh () {
 	local device="$1"
-	local prefsig=""
-	local addrsig=""
 
 	# Apply IPv6 / ND configuration
 	HOPLIMIT=$(cat /proc/sys/net/ipv6/conf/$device/hop_limit)
 	[ -n "$RA_HOPLIMIT" -a -n "$HOPLIMIT" ] && [ "$RA_HOPLIMIT" -gt "$HOPLIMIT" ] && echo "$RA_HOPLIMIT" > /proc/sys/net/ipv6/conf/$device/hop_limit
 	[ -n "$RA_MTU" ] && [ "$RA_MTU" -ge 1280 ] && echo "$RA_MTU" > /proc/sys/net/ipv6/conf/$device/mtu 2>/dev/null
-	[ -n "$RA_REACHABLE" ] && [ "$RA_REACHABLE" -gt 0 ] && echo "$RA_REACHABLE" > /proc/sys/net/ipv6/neigh/$device/base_reachable_time_ms
 	[ -n "$RA_RETRANSMIT" ] && [ "$RA_RETRANSMIT" -gt 0 ] && echo "$RA_RETRANSMIT" > /proc/sys/net/ipv6/neigh/$device/retrans_time_ms
+	REACHABLE=$(cat /proc/sys/net/ipv6/neigh/$device/base_reachable_time_ms)
+	if [ -n "$RA_REACHABLE" ] && [ "$RA_REACHABLE" -gt 0 ] && [ "$RA_REACHABLE" -ne "$REACHABLE" ]; then
+		echo "$RA_REACHABLE" > /proc/sys/net/ipv6/neigh/$device/base_reachable_time_ms
+		GC_STALE_TIME=$((RA_REACHABLE / 1000 * 3))
+		echo "$GC_STALE_TIME" > /proc/sys/net/ipv6/neigh/$device/gc_stale_time
+	fi
+}
+
+setup_interface () {
+	local device="$1"
+	local prefsig=""
+	local addrsig=""
 
 	proto_init_update "*" 1
 
 	# Merge RA-DNS
-	for radns in $RA_DNS; do
+	for entry in $RA_DNS; do
 		local duplicate=0
-		for dns in $RDNSS; do
+		local radns="${entry%%,*}"
+		for dentry in $RDNSS; do
+			local dns="${dentry%%,*}"
 			[ "$radns" = "$dns" ] && duplicate=1
 		done
-		[ "$duplicate" = 0 ] && RDNSS="$RDNSS $radns"
+		[ "$duplicate" = 0 ] && RDNSS="$RDNSS $entry"
 	done
 
-	for dns in $RDNSS; do
-		proto_add_dns_server "$dns"
+	for entry in $RDNSS; do
+		local dns="${entry%%,*}"
+		entry="${entry#*,}"
+		local lifetime="${entry%%,*}"
+		proto_add_dns_server "$dns" "$lifetime"
 	done
 
-	for radomain in $RA_DOMAINS; do
+	for entry in $RA_DOMAINS; do
 		local duplicate=0
-		for domain in $DOMAINS; do
+		local radomain="${entry%%,*}"
+		for dentry in $DOMAINS; do
+			local domain="${dentry%%,*}"
 			[ "$radomain" = "$domain" ] && duplicate=1
 		done
-		[ "$duplicate" = 0 ] && DOMAINS="$DOMAINS $radomain"
+		[ "$duplicate" = 0 ] && DOMAINS="$DOMAINS $entry"
 	done
 
-	for domain in $DOMAINS; do
-		proto_add_dns_search "$domain"
+	for entry in $DOMAINS; do
+		local domain="${entry%%,*}"
+		entry="${entry#*,}"
+		local lifetime="${entry%%,*}"
+		proto_add_dns_search "$domain" "$lifetime"
 	done
 
 	for prefix in $PREFIXES; do
@@ -222,12 +241,15 @@ teardown_interface() {
 case "$2" in
 	bound)
 		teardown_interface "$1"
+		setup_interface_neigh "$1"
 		setup_interface "$1"
 	;;
 	informed|updated|rebound)
+		setup_interface_neigh "$1"
 		setup_interface "$1"
 	;;
 	ra-updated)
+		setup_interface_neigh "$1"
 		[ -n "$ADDRESSES$RA_ADDRESSES$PREFIXES$USERPREFIX" ] && setup_interface "$1"
 	;;
 	started|stopped|unbound)
