@@ -1933,9 +1933,25 @@ endef
 $(eval $(call KernelPackage,usb-xhci-hcd))
 
 
+define KernelPackage/phy-mtk-tphy
+  TITLE:=MediaTek T-PHY controller support
+  HIDDEN:=1
+  KCONFIG:= \
+	CONFIG_GENERIC_PHY=y \
+	CONFIG_PHY_MTK_TPHY
+  DEPENDS:=@(TARGET_mediatek||TARGET_ramips_mt7621)
+  FILES:=$(LINUX_DIR)/drivers/phy/mediatek/phy-mtk-tphy.ko
+  AUTOLOAD:=$(call AutoProbe,phy-mtk-tphy,1)
+endef
+
+$(eval $(call KernelPackage,phy-mtk-tphy))
+
+
 define KernelPackage/usb-xhci-mtk
   TITLE:=xHCI support for MediaTek SoCs
-  DEPENDS:=+kmod-usb-xhci-hcd
+  DEPENDS:= \
+	+kmod-usb-xhci-hcd \
+	+(TARGET_mediatek||TARGET_ramips_mt7621):kmod-phy-mtk-tphy
   KCONFIG:=CONFIG_USB_XHCI_MTK
   HIDDEN:=1
   FILES:= \
