@@ -29,7 +29,7 @@ LOAD=$(ubus call poe info | grep consumption | head -n 1 | awk -F'"consumption":
 FAULT=$(find /sys/devices/platform/gpio_fan_array/hwmon/hwmon[0-9] -name "fan1_alarm" 2>/dev/null)
 if [ $FAULT -eq 1 ]; then
     echo 100 > $PWM
-    logger FAN FAULT DETECTED! FANS SET TO HIGH! FAN CONTROL SCRIPT TERMINATING! MQTT REPORT SENT!
+    logger FAN FAULT DETECTED! FANS SET TO HIGH! FAN CONTROL SCRIPT TERMINATING!
     exit 0
 elif [ $TEMP -gt $TEMP_HIGH -o $LOAD -gt $LOAD_HIGH ]; then
     echo 100 > $PWM
