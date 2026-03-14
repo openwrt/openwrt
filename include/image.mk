@@ -209,8 +209,9 @@ DTCO_FLAGS += $(DTC_WARN_FLAGS)
 # @param 2: Padding.
 ##
 define Image/pad-to
-	dd if=$(1) of=$(1).new bs=$(2) conv=sync
-	mv $(1).new $(1)
+    @dd if=$1 of=$1.new bs=4096 count=$$((($2) / 4096)) conv=sync
+    @dd if=/dev/zero bs=$$((($2) % 4096)) count=1 >>$1.new 2>/dev/null || true
+    @mv $1.new $1
 endef
 
 ifeq ($(DUMP),)
