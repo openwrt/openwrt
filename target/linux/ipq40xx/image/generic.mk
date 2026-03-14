@@ -1038,6 +1038,48 @@ define Device/netgear_rbs50
 endef
 TARGET_DEVICES += netgear_rbs50
 
+define Device/netgear_rbx50-v2
+	$(call Device/DniImage)
+	DEVICE_VENDOR := NETGEAR
+	NETGEAR_HW_ID := 29765352+0+4000+512+2x2+2x2+4x4
+	SOC := qcom-ipq4019
+	DEVICE_DTS_CONFIG := config@2
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	UBINIZE_OPTS := -E 5
+	IMAGE/factory.img := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | \
+		append-uImage-fakehdr filesystem | pad-to $$$$(KERNEL_SIZE) | \
+		append-ubi | netgear-dni
+	IMAGE/sysupgrade.bin := append-kernel | pad-offset $$$$(BLOCKSIZE) 64 | \
+		append-uImage-fakehdr filesystem | sysupgrade-tar kernel=$$$$@ | \
+		append-metadata
+	DEVICE_PACKAGES += ath10k-firmware-qca9984-ct
+endef
+
+define Device/netgear_rbr50-v2
+	$(call Device/netgear_rbx50-v2)
+	DEVICE_MODEL := RBR50
+	DEVICE_VARIANT := v2
+	NAND_SIZE := 512m
+	KERNEL_SIZE := 6815744
+	ROOTFS_SIZE := 98041856
+	IMAGE_SIZE := 104857600
+	NETGEAR_BOARD_ID := RBR50
+endef
+TARGET_DEVICES += netgear_rbr50-v2
+
+define Device/netgear_rbs50-v2
+	$(call Device/netgear_rbx50-v2)
+	DEVICE_MODEL := RBS50
+	DEVICE_VARIANT := v2
+	NAND_SIZE := 128m
+	KERNEL_SIZE := 6815744
+	ROOTFS_SIZE := 74448896
+	IMAGE_SIZE := 81264640
+	NETGEAR_BOARD_ID := RBS50
+endef
+TARGET_DEVICES += netgear_rbs50-v2
+
 define Device/netgear_srx60
 	$(call Device/netgear_orbi)
 	NETGEAR_HW_ID := 29765352+0+4096+512+2x2+2x2+4x4
