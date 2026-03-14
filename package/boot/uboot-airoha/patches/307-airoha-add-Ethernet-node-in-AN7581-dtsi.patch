@@ -1,0 +1,52 @@
+From 6ecd1312f85bdd0a9be8cc1cdada58c83f68ad99 Mon Sep 17 00:00:00 2001
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Fri, 6 Mar 2026 06:26:03 +0000
+Subject: [PATCH] uboot-airoha: add ethernet node for an7581 dtsi
+
+The ethernet driver (airoha_eth) supports an7581 however it is
+not declared in the dtsi. Add the ethernet node for the built in
+airoha ethernet controller.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+ dts/upstream/src/arm64/airoha/en7581.dtsi | 36 +++++++++++++++++++
+ 1 file changed, 36 insertions(+)
+
+diff --git a/dts/upstream/src/arm64/airoha/en7581.dtsi b/dts/upstream/src/arm64/airoha/en7581.dtsi
+index 69265e4a1fea97..3b319e7b72fb57 100644
+--- a/dts/upstream/src/arm64/airoha/en7581.dtsi
++++ b/dts/upstream/src/arm64/airoha/en7581.dtsi
+@@ -346,5 +346,33 @@
+ 
+ 			status = "disabled";
+ 		};
++
++		eth: ethernet@1fb50000 {
++			compatible = "airoha,en7581-eth";
++			reg = <0 0x1fb50000 0 0x2600>,
++			      <0 0x1fb54000 0 0x2000>,
++			      <0 0x1fb56000 0 0x2000>;
++			reg-names = "fe", "qdma0", "qdma1";
++
++			resets = <&scuclk EN7581_FE_RST>,
++				 <&scuclk EN7581_FE_PDMA_RST>,
++				 <&scuclk EN7581_FE_QDMA_RST>,
++				 <&scuclk EN7581_DUAL_HSI0_MAC_RST>,
++				 <&scuclk EN7581_DUAL_HSI1_MAC_RST>,
++				 <&scuclk EN7581_HSI_MAC_RST>,
++				 <&scuclk EN7581_XFP_MAC_RST>;
++			reset-names = "fe", "pdma", "qdma",
++				      "hsi0-mac", "hsi1-mac",
++				      "hsi-mac", "xfp-mac";
++
++			status = "disabled";
++		};
++
++		switch: switch@1fb58000 {
++			compatible = "airoha,en7581-switch";
++			reg = <0 0x1fb58000 0 0x8000>;
++
++			status = "disabled";
++		};
+ 	};
+ };
