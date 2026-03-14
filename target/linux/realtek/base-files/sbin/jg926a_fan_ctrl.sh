@@ -36,5 +36,5 @@ elif [ $TEMP -gt $TEMP_HIGH -o $LOAD -gt $LOAD_HIGH ]; then
 else
     echo 0 > $PWM
 fi
-sleep 15
+sleep 360
 done
