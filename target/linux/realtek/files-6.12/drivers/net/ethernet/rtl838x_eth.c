@@ -647,7 +647,7 @@ static void rteth_setup_ring_buffer(struct rteth_ctrl *ctrl)
 	}
 }
 
-static void rtl839x_setup_notify_ring_buffer(struct rteth_ctrl *ctrl)
+static void rteth_839x_setup_notify_ring_buffer(struct rteth_ctrl *ctrl)
 {
 	struct notify_b *b = ctrl->membase;
 
@@ -664,6 +664,10 @@ static void rtl839x_setup_notify_ring_buffer(struct rteth_ctrl *ctrl)
 	/* Enable Notification */
 	sw_w32_mask(0, 1 << 0, RTL839X_L2_NOTIFICATION_CTRL);
 	ctrl->lastEvent = 0;
+
+	/* Make sure the ring structure is visible to the ASIC */
+	mb();
+	flush_cache_all();
 }
 
 static void rteth_838x_hw_init(struct rteth_ctrl *ctrl)
@@ -714,12 +718,8 @@ static int rteth_open(struct net_device *ndev)
 	ctrl->r->hw_reset(ctrl);
 	rteth_setup_cpu_rx_rings(ctrl);
 	rteth_setup_ring_buffer(ctrl);
-	if (ctrl->r->family_id == RTL8390_FAMILY_ID) {
-		rtl839x_setup_notify_ring_buffer(ctrl);
-		/* Make sure the ring structure is visible to the ASIC */
-		mb();
-		flush_cache_all();
-	}
+	if (ctrl->r->setup_notify_ring_buffer)
+		ctrl->r->setup_notify_ring_buffer(ctrl);
 
 	rteth_hw_ring_setup(ctrl);
 	phylink_start(ctrl->phylink);
@@ -1300,7 +1300,6 @@ static const struct net_device_ops rteth_838x_netdev_ops = {
 };
 
 static const struct rteth_config rteth_838x_cfg = {
-	.family_id = RTL8380_FAMILY_ID,
 	.cpu_port = RTETH_838X_CPU_PORT,
 	.rx_rings = 8,
 	.tx_rx_enable = 0xc,
@@ -1346,7 +1345,6 @@ static const struct net_device_ops rteth_839x_netdev_ops = {
 };
 
 static const struct rteth_config rteth_839x_cfg = {
-	.family_id = RTL8390_FAMILY_ID,
 	.cpu_port = RTETH_839X_CPU_PORT,
 	.rx_rings = 8,
 	.tx_rx_enable = 0xc,
@@ -1373,6 +1371,7 @@ static const struct rteth_config rteth_839x_cfg = {
 	.hw_stop = &rteth_839x_hw_stop,
 	.hw_reset = &rteth_839x_hw_reset,
 	.init_mac = &rteth_839x_init_mac,
+	.setup_notify_ring_buffer = &rteth_839x_setup_notify_ring_buffer,
 	.netdev_ops = &rteth_839x_netdev_ops,
 };
 
@@ -1390,7 +1389,6 @@ static const struct net_device_ops rteth_930x_netdev_ops = {
 };
 
 static const struct rteth_config rteth_930x_cfg = {
-	.family_id = RTL9300_FAMILY_ID,
 	.cpu_port = RTETH_930X_CPU_PORT,
 	.rx_rings = 32,
 	.tx_rx_enable = 0x30,
@@ -1435,7 +1433,6 @@ static const struct net_device_ops rteth_931x_netdev_ops = {
 };
 
 static const struct rteth_config rteth_931x_cfg = {
-	.family_id = RTL9310_FAMILY_ID,
 	.cpu_port = RTETH_931X_CPU_PORT,
 	.rx_rings = 32,
 	.tx_rx_enable = 0x30,

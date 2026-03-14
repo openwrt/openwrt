@@ -239,7 +239,6 @@ struct rteth_ctrl;
 struct rteth_packet;
 
 struct rteth_config {
-	int family_id;
 	int cpu_port;
 	int rx_rings;
 	int tx_rx_enable;
@@ -267,6 +266,7 @@ struct rteth_config {
 	void (*hw_stop)(struct rteth_ctrl *ctrl);
 	void (*hw_reset)(struct rteth_ctrl *ctrl);
 	int (*init_mac)(struct rteth_ctrl *ctrl);
+	void (*setup_notify_ring_buffer)(struct rteth_ctrl *ctrl);
 	void (*update_counter)(struct rteth_ctrl *ctrl, int ring, int released);
 	const struct net_device_ops *netdev_ops;
 };
