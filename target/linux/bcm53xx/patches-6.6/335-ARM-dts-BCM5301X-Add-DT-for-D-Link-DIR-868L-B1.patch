@@ -1,0 +1,150 @@
+Index: linux-6.6.114/arch/arm/boot/dts/broadcom/bcm47081-dlink-dir-868l-b1.dts
+===================================================================
+--- /dev/null
++++ linux-6.6.114/arch/arm/boot/dts/broadcom/bcm47081-dlink-dir-868l-b1.dts
+@@ -0,0 +1,133 @@
++// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
++
++/dts-v1/;
++
++#include "bcm47081.dtsi"
++#include "bcm5301x-nand-cs0-bch8.dtsi"
++
++/ {
++	compatible = "dlink,dir-868l-b1", "brcm,bcm47081", "brcm,bcm4708";
++	model = "D-Link DIR-868L B1";
++
++	chosen {
++		bootargs = "console=ttyS0,115200";
++	};
++
++	memory@0 {
++		device_type = "memory";
++		reg = <0x00000000 0x10000000>; /* 256 MB */
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		power_green {
++			label = "green:power";
++			gpios = <&chipcommon 2 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "default-on";
++		};
++
++		power_amber {
++			label = "amber:power";
++			gpios = <&chipcommon 0 GPIO_ACTIVE_LOW>;
++		};
++
++		wan_amber {
++			label = "amber:wan";
++			gpios = <&chipcommon 1 GPIO_ACTIVE_LOW>;
++		};
++
++		wan_green {
++			label = "green:wan";
++			gpios = <&chipcommon 3 GPIO_ACTIVE_LOW>;
++		};
++
++		usb {
++			label = "white:usb";
++			gpios = <&chipcommon 10 GPIO_ACTIVE_LOW>;
++			trigger-sources = <&ohci_port1>, <&ehci_port1>,
++					  <&xhci_port1>;
++			linux,default-trigger = "usbport";
++		};
++	};
++
++	gpio_keys {
++		compatible = "gpio-keys";
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		wps {
++			label = "WPS";
++			linux,code = <KEY_WPS_BUTTON>;
++			gpios = <&chipcommon 7 GPIO_ACTIVE_LOW>;
++		};
++
++		restart {
++			label = "Reset";
++			linux,code = <KEY_RESTART>;
++			gpios = <&chipcommon 11 GPIO_ACTIVE_LOW>;
++		};
++	};
++};
++
++&spi_nor {
++	status = "okay";
++};
++
++&nandcs {
++	partitions {
++		compatible = "fixed-partitions";
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		partition@0 {
++			compatible = "seama";
++			label = "firmware";
++			reg = <0x00000000 0x08000000>;
++		};
++	};
++};
++
++&usb3 {
++	status = "okay";
++};
++
++&usb3_phy {
++	status = "okay";
++};
++
++&srab {
++	status = "okay";
++
++	ports {
++		port@0 {
++			label = "lan1";
++		};
++
++		port@1 {
++			label = "lan2";
++		};
++
++		port@2 {
++			label = "lan3";
++		};
++
++		port@3 {
++			label = "lan4";
++		};
++
++		port@4 {
++			label = "wan";
++		};
++
++		port@5 {
++			label = "cpu";
++			ethernet = <&gmac0>;
++
++			fixed-link {
++				speed = <1000>;
++				full-duplex;
++			};
++		};
++	};
++};
+Index: linux-6.6.114/arch/arm/boot/dts/broadcom/Makefile
+===================================================================
+--- linux-6.6.114.orig/arch/arm/boot/dts/broadcom/Makefile
++++ linux-6.6.114/arch/arm/boot/dts/broadcom/Makefile
+@@ -61,6 +61,7 @@ dtb-$(CONFIG_ARCH_BCM_5301X) += \
+ 	bcm47081-asus-rt-n18u.dtb \
+ 	bcm47081-buffalo-wzr-600dhp2.dtb \
+ 	bcm47081-buffalo-wzr-900dhp.dtb \
++	bcm47081-dlink-dir-868l-b1.dtb \
+ 	bcm47081-luxul-xap-1410.dtb \
+ 	bcm47081-luxul-xwr-1200.dtb \
+ 	bcm47081-tplink-archer-c5-v2.dtb \
