@@ -85,6 +85,9 @@ endif
 
 JFFS2OPTS += $(MKFS_DEVTABLE_OPT)
 
+SMART_SORT_CMD = python3 $(TOPDIR)/scripts/sort_image.py
+SORT_TPL = $(TOPDIR)/scripts/rootfs.sort.template
+
 SQUASHFS_BLOCKSIZE := $(CONFIG_TARGET_SQUASHFS_BLOCK_SIZE)k
 SQUASHFSOPT := -b $(SQUASHFS_BLOCKSIZE)
 SQUASHFSOPT += -p '/dev d 755 0 0' -p '/dev/console c 600 0 0 5 1'
@@ -280,9 +283,12 @@ $(eval $(foreach S,$(JFFS2_BLOCKSIZE),$(call Image/mkfs/jffs2/template,$(S))))
 $(eval $(foreach S,$(NAND_BLOCKSIZE),$(call Image/mkfs/jffs2-nand/template,$(S))))
 
 define Image/mkfs/squashfs-common
+	$(SMART_SORT_CMD) $(TARGET_DIR) $(SORT_TPL) $(KDIR)/unsorted.txt > $(KDIR)/rootfs.sort
+
 	$(STAGING_DIR_HOST)/bin/mksquashfs4 $(call mkfs_target_dir,$(1)) $@ \
 		-nopad -noappend -root-owned \
-		-comp $(SQUASHFSCOMP) $(SQUASHFSOPT)
+		-comp $(SQUASHFSCOMP) $(SQUASHFSOPT) \
+        -sort $(KDIR)/rootfs.sort
 endef
 
 ifeq ($(CONFIG_TARGET_ROOTFS_SECURITY_LABELS),y)
