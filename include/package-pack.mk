@@ -597,7 +597,7 @@ else
 	  --info "description:$$(call description_escape,$$(strip $$(Package/$(1)/description)))" \
 	  $(if $(findstring all,$(PKGARCH)),--info "arch:noarch",--info "arch:$(PKGARCH)") \
 	  --info "license:$(LICENSE)" \
-	  --info "origin:$(SOURCE)" \
+	  --info "origin:$(SOURCE)/$(1)" \
 	  --info "url:$(URL)" \
 	  --info "maintainer:$(MAINTAINER)" \
 	  $$(if $$(Package/$(1)/PROVIDES),--info "provides:$$(Package/$(1)/PROVIDES)") \
