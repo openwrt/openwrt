@@ -9,6 +9,15 @@ define Device/en751221_generic
 endef
 TARGET_DEVICES += en751221_generic
 
+define Device/genexis_platinum-4410
+  DEVICE_VENDOR := Genexis
+  DEVICE_MODEL := Platinum 4410
+  DEVICE_DTS := en751221_genexis_platinum-4410
+  IMAGES := tclinux.trx
+  IMAGE/tclinux.trx := append-kernel | lzma | tclinux-trx
+endef
+TARGET_DEVICES += genexis_platinum-4410
+
 define Device/nokia_g240g-e
   DEVICE_VENDOR := Nokia
   DEVICE_MODEL := G-240G-E
