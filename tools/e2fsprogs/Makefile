@@ -35,7 +35,9 @@ HOST_CONFIGURE_ARGS += \
 
 # The following uses pkg-config the wrong way around. Just override it.
 HOST_CONFIGURE_VARS += \
-	ac_cv_lib_uuid_uuid_generate=yes
+	ac_cv_lib_uuid_uuid_generate=yes \
+	ac_cv_header_blkid_blkid_h=no \
+	ac_cv_lib_blkid_blkid_get_cache=no
 
 define Host/Prepare
 	$(call Host/Prepare/Default)
