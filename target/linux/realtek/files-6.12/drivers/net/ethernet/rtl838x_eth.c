@@ -576,7 +576,7 @@ static void rteth_839x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 	sw_w32_mask(0, 3, ctrl->r->mac_force_mode_ctrl);
 }
 
-static void rteth_93xx_hw_en_rxtx(struct rteth_ctrl *ctrl)
+static void rteth_930x_hw_en_rxtx(struct rteth_ctrl *ctrl)
 {
 	/* Setup CPU-Port: RX Buffer truncated at DEFAULT_MTU Bytes */
 	sw_w32((DEFAULT_MTU << 16) | RX_TRUNCATE_EN_93XX, ctrl->r->dma_if_ctrl);
@@ -589,15 +589,25 @@ static void rteth_93xx_hw_en_rxtx(struct rteth_ctrl *ctrl)
 	/* Restart TX/RX to CPU port, enable CRC checking */
 	sw_w32_mask(0x0, 0x3 | BIT(4), ctrl->r->mac_l2_port_ctrl);
 
-	if (ctrl->r->family_id == RTL9300_FAMILY_ID)
-		sw_w32_mask(0, BIT(ctrl->r->cpu_port), RTL930X_L2_UNKN_UC_FLD_PMSK);
-	else
-		sw_w32_mask(0, BIT(ctrl->r->cpu_port), RTL931X_L2_UNKN_UC_FLD_PMSK);
+	sw_w32_mask(0, BIT(ctrl->r->cpu_port), RTL930X_L2_UNKN_UC_FLD_PMSK);
+	sw_w32(0x217, ctrl->r->mac_force_mode_ctrl);
+}
 
-	if (ctrl->r->family_id == RTL9300_FAMILY_ID)
-		sw_w32(0x217, ctrl->r->mac_force_mode_ctrl);
-	else
-		sw_w32(0x2a1d, ctrl->r->mac_force_mode_ctrl);
+static void rteth_931x_hw_en_rxtx(struct rteth_ctrl *ctrl)
+{
+	/* Setup CPU-Port: RX Buffer truncated at DEFAULT_MTU Bytes */
+	sw_w32((DEFAULT_MTU << 16) | RX_TRUNCATE_EN_93XX, ctrl->r->dma_if_ctrl);
+
+	rteth_enable_all_rx_irqs(ctrl);
+
+	/* Enable DMA */
+	sw_w32_mask(0, ctrl->r->tx_rx_enable, ctrl->r->dma_if_ctrl);
+
+	/* Restart TX/RX to CPU port, enable CRC checking */
+	sw_w32_mask(0x0, 0x3 | BIT(4), ctrl->r->mac_l2_port_ctrl);
+
+	sw_w32_mask(0, BIT(ctrl->r->cpu_port), RTL931X_L2_UNKN_UC_FLD_PMSK);
+	sw_w32(0x2a1d, ctrl->r->mac_force_mode_ctrl);
 }
 
 static void rteth_setup_ring_buffer(struct rteth_ctrl *ctrl)
@@ -676,7 +686,7 @@ static void rteth_839x_hw_init(struct rteth_ctrl *ctrl)
 
 static void rteth_930x_hw_init(struct rteth_ctrl *ctrl)
 {
-	rteth_93xx_hw_en_rxtx(ctrl);
+	rteth_930x_hw_en_rxtx(ctrl);
 	/* Flush learned FDB entries on link down of a port */
 	sw_w32_mask(0, BIT(7), RTL930X_L2_CTRL);
 	/* Trap MLD and IGMP messages to CPU_PORT */
@@ -685,7 +695,7 @@ static void rteth_930x_hw_init(struct rteth_ctrl *ctrl)
 
 static void rteth_931x_hw_init(struct rteth_ctrl *ctrl)
 {
-	rteth_93xx_hw_en_rxtx(ctrl);
+	rteth_931x_hw_en_rxtx(ctrl);
 	/* Trap MLD and IGMP messages to CPU_PORT */
 	sw_w32((0x2 << 3) | 0x2,  RTL931X_VLAN_APP_PKT_CTRL);
 	/* Set PCIE_PWR_DOWN */
