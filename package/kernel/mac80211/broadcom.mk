@@ -68,7 +68,6 @@ else
 endif
 endif
 endif
-endif
 ifneq ($(CONFIG_B43_OPENFIRMWARE),)
   PKG_B43_FWV4_NAME:=broadcom-wl
   PKG_B43_FWV4_VERSION:=5.2
