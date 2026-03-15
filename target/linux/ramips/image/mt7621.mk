@@ -2797,6 +2797,16 @@ define Device/snr_snr-cpe-me2-sfp
 endef
 TARGET_DEVICES += snr_snr-cpe-me2-sfp
 
+define Device/snr_snr-keep-ac10
+  $(Device/dts-igmp)
+  DEVICE_VENDOR := SNR
+  DEVICE_MODEL := SNR-KEEP-AC10
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
+	kmod-leds-aw2026 -uboot-envtools
+  IMAGE_SIZE := 16064k
+endef
+TARGET_DEVICES += snr_snr-keep-ac10
+
 define Device/storylink_sap-g3200u3
   $(Device/dsa-migration)
   $(Device/uimage-lzma-loader)
