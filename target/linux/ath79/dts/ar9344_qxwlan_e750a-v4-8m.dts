@@ -35,9 +35,12 @@
 &eth1 {
 	status = "okay";
 
+	phy-handle = <&swphy0>;
+
 	nvmem-cells = <&macaddr_pridata_400 0>;
 	nvmem-cell-names = "mac-address";
 
+	/delete-node/ fixed-link;
 	gmac-config {
 		device = <&gmac>;
 		switch-phy-swap = <0>;
