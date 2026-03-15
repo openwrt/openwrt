@@ -12,6 +12,16 @@ define Device/8devices_kiwi-dvk
 endef
 TARGET_DEVICES += 8devices_kiwi-dvk
 
+define Device/alta_route10
+	$(call Device/FitImage)
+	$(call Device/EmmcImage)
+	DEVICE_VENDOR := Alta Labs
+	DEVICE_MODEL := Route10
+	SOC := ipq9574
+	DEVICE_PACKAGES := f2fsck mkf2fs kmod-sfp
+endef
+TARGET_DEVICES += alta_route10
+
 define Device/qcom_rdp433
 	$(call Device/FitImageLzma)
 	DEVICE_VENDOR := Qualcomm Technologies, Inc.
