@@ -1,0 +1,33 @@
+From 1310cea063a8d158cf25d954179cea17b7181ea1 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Mon, 16 Feb 2026 00:10:55 +0000
+Subject: [PATCH 11/26] mtd: set flash_node on DT-created partitions
+
+add_mtd_partitions_of() creates MTD partition slaves from device-tree
+sub-nodes but never stores the originating ofnode on the partition.
+This means there is no way to match a registered MTD partition back
+to its DT node.
+
+Set slave->flash_node = child right after allocate_partition() so
+that every DT-created partition carries a reference to its DT node.
+This will be used by the imagemap UBI backend to find the MTD
+partition that corresponds to a 'compatible = "linux,ubi"' node.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+Unchanged from RFC.
+---
+ drivers/mtd/mtdpart.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/mtd/mtdpart.c
++++ b/drivers/mtd/mtdpart.c
+@@ -940,6 +940,8 @@ int add_mtd_partitions_of(struct mtd_inf
+ 		if (IS_ERR(slave))
+ 			return PTR_ERR(slave);
+ 
++		slave->flash_node = child;
++
+ 		mutex_lock(&mtd_partitions_mutex);
+ 		list_add_tail(&slave->node, &master->partitions);
+ 		mutex_unlock(&mtd_partitions_mutex);

@@ -1,0 +1,583 @@
+From 85e100d87198b998b9ed1ea76c1a28b5894a4dbc Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 24 Feb 2026 15:48:12 +0000
+Subject: [PATCH 07/24] build: make device-mapper support optional
+ (HAVE_DEVMAPPER)
+
+Introduce a HAVE_DEVMAPPER feature flag to both meson and autoconf
+build systems, allowing cryptsetup to be built without libdevmapper.
+
+Meson: add a 'devmapper' feature option (auto by default). When the
+dependency is not found or explicitly disabled, set
+conf.set10('HAVE_DEVMAPPER', false) and skip HAVE_DECL_* checks.
+All tools (cryptsetup, veritysetup, integritysetup) are still built;
+operations requiring device-mapper will fail at runtime with -ENOTSUP.
+
+Autoconf: add --disable-devmapper flag with auto/yes/no semantics.
+When disabled or not found, skip PKG_CHECK_MODULES, AC_CHECK_DECLS,
+and static library detection for devmapper.
+
+Guard the full libdevmapper.c implementation behind #if HAVE_DEVMAPPER
+and provide stub functions (returning -ENOTSUP/NULL/0) in the #else
+branch, following the existing pattern from utils_blkid.c.
+---
+ configure.ac       | 107 ++++++++++++++--------
+ lib/libdevmapper.c | 215 +++++++++++++++++++++++++++++++++++++++++++++
+ lib/meson.build    |   4 +-
+ meson.build        | 110 +++++++++++++++--------
+ meson_options.txt  |   1 +
+ 5 files changed, 361 insertions(+), 76 deletions(-)
+
+--- a/configure.ac
++++ b/configure.ac
+@@ -89,7 +89,20 @@ AC_CHECK_DECLS([O_CLOEXEC],,[AC_DEFINE([
+ ]])
+ 
+ AC_CHECK_HEADERS(uuid/uuid.h,,[AC_MSG_ERROR([You need the uuid library.])])
+-AC_CHECK_HEADER(libdevmapper.h,,[AC_MSG_ERROR([You need the device-mapper library.])])
++
++AC_ARG_ENABLE([devmapper],
++	AS_HELP_STRING([--disable-devmapper], [disable device-mapper support]),
++	[], [enable_devmapper=auto])
++use_devmapper=no
++if test "x$enable_devmapper" != "xno"; then
++	AC_CHECK_HEADER(libdevmapper.h,
++		[use_devmapper=yes],
++		[if test "x$enable_devmapper" = "xyes"; then
++			AC_MSG_ERROR([You need the device-mapper library.])
++		else
++			AC_MSG_WARN([device-mapper header not found, disabling device-mapper support.])
++		fi])
++fi
+ 
+ AC_ARG_ENABLE([keyring],
+ 	AS_HELP_STRING([--disable-keyring], [disable kernel keyring support and builtin kernel keyring token]),
+@@ -432,6 +445,10 @@ AM_CONDITIONAL(STATIC_TOOLS, test "x$ena
+ AC_ARG_ENABLE([cryptsetup],
+ 	AS_HELP_STRING([--disable-cryptsetup], [disable cryptsetup support]),
+ 	[], [enable_cryptsetup=yes])
++if test "x$use_devmapper" != "xyes" -a "x$enable_cryptsetup" = "xyes"; then
++	AC_MSG_WARN([Disabling cryptsetup (requires device-mapper).])
++	enable_cryptsetup=no
++fi
+ AM_CONDITIONAL(CRYPTSETUP, test "x$enable_cryptsetup" = "xyes")
+ 
+ AC_ARG_ENABLE([veritysetup],
+@@ -442,6 +459,10 @@ AM_CONDITIONAL(VERITYSETUP, test "x$enab
+ AC_ARG_ENABLE([integritysetup],
+ 	AS_HELP_STRING([--disable-integritysetup], [disable integritysetup support]),
+ 	[], [enable_integritysetup=yes])
++if test "x$use_devmapper" != "xyes" -a "x$enable_integritysetup" = "xyes"; then
++	AC_MSG_WARN([Disabling integritysetup (requires device-mapper).])
++	enable_integritysetup=no
++fi
+ AM_CONDITIONAL(INTEGRITYSETUP, test "x$enable_integritysetup" = "xyes")
+ 
+ AC_ARG_ENABLE([selinux],
+@@ -453,32 +474,41 @@ AC_ARG_ENABLE([udev],
+ 	[], [enable_udev=yes])
+ 
+ dnl Try to use pkg-config for devmapper, but fallback to old detection
+-PKG_CHECK_MODULES([DEVMAPPER], [devmapper >= 1.02.03],, [
+-	AC_CHECK_LIB(devmapper, dm_task_set_name,,
+-		[AC_MSG_ERROR([You need the device-mapper library.])])
+-	AC_CHECK_LIB(devmapper, dm_task_set_message,,
+-		[AC_MSG_ERROR([The device-mapper library on your system is too old.])])
+-	DEVMAPPER_LIBS=$LIBS
+-])
+-LIBS=$saved_LIBS
++if test "x$use_devmapper" = "xyes"; then
++	PKG_CHECK_MODULES([DEVMAPPER], [devmapper >= 1.02.03],, [
++		AC_CHECK_LIB(devmapper, dm_task_set_name,,
++			[AC_MSG_ERROR([You need the device-mapper library.])])
++		AC_CHECK_LIB(devmapper, dm_task_set_message,,
++			[AC_MSG_ERROR([The device-mapper library on your system is too old.])])
++		DEVMAPPER_LIBS=$LIBS
++	])
++	LIBS=$saved_LIBS
+ 
+-LIBS="$LIBS $DEVMAPPER_LIBS"
+-AC_CHECK_DECLS([dm_task_secure_data], [], [], [#include <libdevmapper.h>])
+-AC_CHECK_DECLS([dm_task_retry_remove], [], [], [#include <libdevmapper.h>])
+-AC_CHECK_DECLS([dm_task_deferred_remove], [], [], [#include <libdevmapper.h>])
+-AC_CHECK_DECLS([dm_device_has_mounted_fs], [], [], [#include <libdevmapper.h>])
+-AC_CHECK_DECLS([dm_device_has_holders], [], [], [#include <libdevmapper.h>])
+-AC_CHECK_DECLS([dm_device_get_name], [], [], [#include <libdevmapper.h>])
+-AC_CHECK_DECLS([DM_DEVICE_GET_TARGET_VERSION], [], [], [#include <libdevmapper.h>])
+-AC_CHECK_DECLS([DM_UDEV_DISABLE_DISK_RULES_FLAG], [have_cookie=yes], [have_cookie=no], [#include <libdevmapper.h>])
+-if test "x$enable_udev" = xyes; then
+-	if test "x$have_cookie" = xno; then
+-		AC_MSG_WARN([The device-mapper library on your system has no udev support, udev support disabled.])
+-	else
+-		AC_DEFINE(USE_UDEV, 1, [Try to use udev synchronisation?])
++	AC_DEFINE([HAVE_DEVMAPPER], [1], [Define to 1 if device-mapper is available.])
++
++	LIBS="$LIBS $DEVMAPPER_LIBS"
++	AC_CHECK_DECLS([dm_task_secure_data], [], [], [#include <libdevmapper.h>])
++	AC_CHECK_DECLS([dm_task_retry_remove], [], [], [#include <libdevmapper.h>])
++	AC_CHECK_DECLS([dm_task_deferred_remove], [], [], [#include <libdevmapper.h>])
++	AC_CHECK_DECLS([dm_device_has_mounted_fs], [], [], [#include <libdevmapper.h>])
++	AC_CHECK_DECLS([dm_device_has_holders], [], [], [#include <libdevmapper.h>])
++	AC_CHECK_DECLS([dm_device_get_name], [], [], [#include <libdevmapper.h>])
++	AC_CHECK_DECLS([DM_DEVICE_GET_TARGET_VERSION], [], [], [#include <libdevmapper.h>])
++	AC_CHECK_DECLS([DM_UDEV_DISABLE_DISK_RULES_FLAG], [have_cookie=yes], [have_cookie=no], [#include <libdevmapper.h>])
++	if test "x$enable_udev" = xyes; then
++		if test "x$have_cookie" = xno; then
++			AC_MSG_WARN([The device-mapper library on your system has no udev support, udev support disabled.])
++		else
++			AC_DEFINE(USE_UDEV, 1, [Try to use udev synchronisation?])
++		fi
+ 	fi
++	LIBS=$saved_LIBS
++else
++	DEVMAPPER_LIBS=""
++	DEVMAPPER_STATIC_LIBS=""
+ fi
+-LIBS=$saved_LIBS
++AC_SUBST([DEVMAPPER_LIBS])
++AC_SUBST([DEVMAPPER_STATIC_LIBS])
+ 
+ dnl Check for JSON-C used in LUKS2
+ PKG_CHECK_MODULES([JSON_C], [json-c])
+@@ -641,18 +671,20 @@ if test "x$enable_static_cryptsetup" = "
+ 		AC_MSG_ERROR([Cannot find static popt library.]))
+ 
+ 	dnl Try to detect needed device-mapper static libraries, try pkg-config first.
+-	LIBS="$saved_LIBS -static"
+-	PKG_CHECK_MODULES([DEVMAPPER_STATIC], [devmapper >= 1.02.27],,[
+-		DEVMAPPER_STATIC_LIBS=$DEVMAPPER_LIBS
+-		if test "x$enable_selinux" = "xyes"; then
+-			AC_CHECK_LIB(sepol, sepol_bool_set)
+-			AC_CHECK_LIB(selinux, is_selinux_enabled)
+-			DEVMAPPER_STATIC_LIBS="$DEVMAPPER_STATIC_LIBS $LIBS"
+-		fi
+-	])
+-	LIBS="$saved_LIBS $DEVMAPPER_STATIC_LIBS"
+-	AC_CHECK_LIB(devmapper, dm_task_set_uuid,,
+-		AC_MSG_ERROR([Cannot link with static device-mapper library.]))
++	if test "x$use_devmapper" = "xyes"; then
++		LIBS="$saved_LIBS -static"
++		PKG_CHECK_MODULES([DEVMAPPER_STATIC], [devmapper >= 1.02.27],,[
++			DEVMAPPER_STATIC_LIBS=$DEVMAPPER_LIBS
++			if test "x$enable_selinux" = "xyes"; then
++				AC_CHECK_LIB(sepol, sepol_bool_set)
++				AC_CHECK_LIB(selinux, is_selinux_enabled)
++				DEVMAPPER_STATIC_LIBS="$DEVMAPPER_STATIC_LIBS $LIBS"
++			fi
++		])
++		LIBS="$saved_LIBS $DEVMAPPER_STATIC_LIBS"
++		AC_CHECK_LIB(devmapper, dm_task_set_uuid,,
++			AC_MSG_ERROR([Cannot link with static device-mapper library.]))
++	fi
+ 
+ 	dnl Try to detect uuid static library.
+ 	LIBS="$saved_LIBS -static"
+@@ -712,9 +744,6 @@ else
+ fi
+ AC_MSG_RESULT([$systemd_tmpfilesdir])
+ 
+-AC_SUBST([DEVMAPPER_LIBS])
+-AC_SUBST([DEVMAPPER_STATIC_LIBS])
+-
+ AC_SUBST([PWQUALITY_LIBS])
+ AC_SUBST([PWQUALITY_STATIC_LIBS])
+ 
+--- a/lib/libdevmapper.c
++++ b/lib/libdevmapper.c
+@@ -8,6 +8,8 @@
+  * Copyright (C) 2009-2025 Milan Broz
+  */
+ 
++#if HAVE_DEVMAPPER
++
+ #include <stdio.h>
+ #include <stdbool.h>
+ #include <ctype.h>
+@@ -3478,3 +3480,216 @@ int dm_zero_target_set(struct dm_target
+ 
+ 	return 0;
+ }
++
++#else /* HAVE_DEVMAPPER */
++
++#include <errno.h>
++#include <stddef.h>
++#include <stdint.h>
++#include <stdbool.h>
++#include "internal.h"
++
++#pragma GCC diagnostic ignored "-Wunused-parameter"
++
++void dm_backend_init(struct crypt_device *cd)
++{
++}
++
++void dm_backend_exit(struct crypt_device *cd)
++{
++}
++
++int dm_targets_allocate(struct dm_target *first, unsigned count)
++{
++	return -ENOTSUP;
++}
++
++void dm_targets_free(struct crypt_device *cd, struct crypt_dm_active_device *dmd)
++{
++}
++
++int dm_crypt_target_set(struct dm_target *tgt, uint64_t seg_offset, uint64_t seg_size,
++	struct device *data_device, struct volume_key *vk, const char *cipher,
++	uint64_t iv_offset, uint64_t data_offset,
++	const char *integrity, uint32_t integrity_key_size, uint32_t tag_size,
++	uint32_t sector_size)
++{
++	return -ENOTSUP;
++}
++
++int dm_verity_target_set(struct dm_target *tgt, uint64_t seg_offset, uint64_t seg_size,
++	struct device *data_device, struct device *hash_device, struct device *fec_device,
++	const char *root_hash, uint32_t root_hash_size, const char *root_hash_sig_key_desc,
++	uint64_t hash_offset_block, uint64_t fec_blocks, struct crypt_params_verity *vp)
++{
++	return -ENOTSUP;
++}
++
++int dm_integrity_target_set(struct crypt_device *cd,
++	struct dm_target *tgt, uint64_t seg_offset, uint64_t seg_size,
++	struct device *meta_device,
++	struct device *data_device, uint64_t tag_size, uint64_t offset, uint32_t sector_size,
++	struct volume_key *vk,
++	struct volume_key *journal_crypt_key, struct volume_key *journal_mac_key,
++	const struct crypt_params_integrity *ip)
++{
++	return -ENOTSUP;
++}
++
++int dm_linear_target_set(struct dm_target *tgt, uint64_t seg_offset, uint64_t seg_size,
++	struct device *data_device, uint64_t data_offset)
++{
++	return -ENOTSUP;
++}
++
++int dm_zero_target_set(struct dm_target *tgt, uint64_t seg_offset, uint64_t seg_size)
++{
++	return -ENOTSUP;
++}
++
++int dm_remove_device(struct crypt_device *cd, const char *name, uint32_t flags)
++{
++	return -ENOTSUP;
++}
++
++int dm_status_device(struct crypt_device *cd, const char *name)
++{
++	return -ENOTSUP;
++}
++
++int dm_status_suspended(struct crypt_device *cd, const char *name)
++{
++	return -ENOTSUP;
++}
++
++int dm_status_verity_ok(struct crypt_device *cd, const char *name)
++{
++	return -ENOTSUP;
++}
++
++int dm_status_integrity_failures(struct crypt_device *cd, const char *name, uint64_t *count)
++{
++	return -ENOTSUP;
++}
++
++int dm_status_verity_repaired(struct crypt_device *cd, const char *name, uint64_t *repaired)
++{
++	return -ENOTSUP;
++}
++
++int dm_query_device(struct crypt_device *cd, const char *name,
++		    uint64_t get_flags, struct crypt_dm_active_device *dmd)
++{
++	return -ENOTSUP;
++}
++
++int dm_device_deps(struct crypt_device *cd, const char *name, const char *prefix,
++		   char **names, size_t names_length)
++{
++	return -ENOTSUP;
++}
++
++int dm_create_device(struct crypt_device *cd, const char *name,
++		     const char *type, struct crypt_dm_active_device *dmd)
++{
++	return -ENOTSUP;
++}
++
++int dm_reload_device(struct crypt_device *cd, const char *name,
++		     struct crypt_dm_active_device *dmd, uint64_t dmflags, unsigned resume)
++{
++	return -ENOTSUP;
++}
++
++int dm_suspend_device(struct crypt_device *cd, const char *name, uint64_t dmflags)
++{
++	return -ENOTSUP;
++}
++
++int dm_resume_device(struct crypt_device *cd, const char *name, uint64_t dmflags)
++{
++	return -ENOTSUP;
++}
++
++int dm_resume_and_reinstate_key(struct crypt_device *cd, const char *name,
++				const struct volume_key *vk)
++{
++	return -ENOTSUP;
++}
++
++int dm_error_device(struct crypt_device *cd, const char *name)
++{
++	return -ENOTSUP;
++}
++
++int dm_clear_device(struct crypt_device *cd, const char *name)
++{
++	return -ENOTSUP;
++}
++
++int dm_cancel_deferred_removal(const char *name)
++{
++	return -ENOTSUP;
++}
++
++int dm_flags(struct crypt_device *cd, dm_target_type target, uint64_t *flags)
++{
++	return -ENOTSUP;
++}
++
++const char *dm_get_dir(void)
++{
++	return "";
++}
++
++int dm_get_iname(const char *name, char **iname, bool with_path)
++{
++	return -ENOTSUP;
++}
++
++char *dm_get_active_iname(struct crypt_device *cd, const char *name)
++{
++	return NULL;
++}
++
++int dm_uuid_cmp(const char *dm_uuid, const char *hdr_uuid)
++{
++	return -ENOTSUP;
++}
++
++int dm_uuid_type_cmp(const char *dm_uuid, const char *type)
++{
++	return -ENOTSUP;
++}
++
++int dm_uuid_integrity_cmp(const char *dm_uuid, const char *dmi_uuid)
++{
++	return -ENOTSUP;
++}
++
++int lookup_dm_dev_by_uuid(struct crypt_device *cd, const char *uuid, const char *type)
++{
++	return -ENOTSUP;
++}
++
++int dm_is_dm_device(int major)
++{
++	return 0;
++}
++
++int dm_is_dm_kernel_name(const char *name)
++{
++	return 0;
++}
++
++char *dm_device_path(const char *prefix, int major, int minor)
++{
++	return NULL;
++}
++
++char *dm_device_name(const char *path)
++{
++	return NULL;
++}
++
++#endif /* HAVE_DEVMAPPER */
+--- a/lib/meson.build
++++ b/lib/meson.build
+@@ -11,12 +11,14 @@ libcryptsetup_sym_path = join_paths(meso
+ libcryptsetup_deps = [
+     crypto_backend_library,
+     uuid,
+-    devmapper,
+     libargon2_external,
+     jsonc,
+     blkid,
+     dl,
+ ]
++if use_devmapper
++    libcryptsetup_deps += devmapper
++endif
+ 
+ libcryptsetup_sources = files(
+     'bitlk/bitlk.c',
+--- a/meson.build
++++ b/meson.build
+@@ -19,6 +19,7 @@ pkgconfig = import('pkgconfig')
+ cc = meson.get_compiler('c')
+ nop_command = find_program('echo')
+ conf = configuration_data()
++is_linux = host_machine.system() == 'linux'
+ 
+ PACKAGE_VERSION = meson.project_version()
+ conf.set_quoted('PACKAGE_VERSION', PACKAGE_VERSION)
+@@ -360,51 +361,84 @@ endif
+ # ==========================================================================
+ # libdevmapper
+ 
++opt_devmapper = get_option('devmapper')
+ devmapper = dependency('devmapper',
+     version: '>= 1.02.03',
+-    required: false,
++    required: opt_devmapper,
+     static: enable_static)
+-if not devmapper.found()
+-    message('devmapper not found using pkgconf')
++if not devmapper.found() and not opt_devmapper.disabled()
+     devmapper = cc.find_library('devmapper',
++        required: opt_devmapper,
+         static: enable_static)
+-    assert(cc.has_function('dm_task_set_name',
+-            prefix: '#include <libdevmapper.h>', dependencies: devmapper),
+-        'You need the device-mapper library.')
+-
+-    assert(cc.has_function('dm_task_set_message',
+-            prefix: '#include <libdevmapper.h>', dependencies: devmapper),
+-        'The device-mapper library on your system is too old.')
++    if devmapper.found()
++        assert(cc.has_function('dm_task_set_name',
++                prefix: '#include <libdevmapper.h>', dependencies: devmapper),
++            'You need the device-mapper library.')
++
++        assert(cc.has_function('dm_task_set_message',
++                prefix: '#include <libdevmapper.h>', dependencies: devmapper),
++            'The device-mapper library on your system is too old.')
++    endif
+ endif
++use_devmapper = devmapper.found()
++conf.set10('HAVE_DEVMAPPER', use_devmapper)
+ 
+-foreach function : [
+-    'dm_device_get_name',
+-    'dm_device_has_holders',
+-    'dm_device_has_mounted_fs',
+-    'dm_task_deferred_remove',
+-    'dm_task_retry_remove',
+-    'dm_task_secure_data',
+-]
+-    has_function = cc.has_function(function,
+-        prefix: '#include <libdevmapper.h>', dependencies: devmapper)
+-    conf.set10('HAVE_DECL_' + function.underscorify().to_upper(), has_function)
+-endforeach
+-
+-foreach symbol : [
+-    'DM_DEVICE_GET_TARGET_VERSION',
+-    'DM_UDEV_DISABLE_DISK_RULES_FLAG',
+-]
+-    has_symbol = cc.has_header_symbol('libdevmapper.h', symbol,
+-        dependencies: devmapper)
+-    conf.set10('HAVE_DECL_' + symbol.underscorify().to_upper(), has_symbol)
+-endforeach
+-
+-if cc.has_header_symbol('libdevmapper.h', 'DM_UDEV_DISABLE_DISK_RULES_FLAG',
+-        dependencies: devmapper)
+-    conf.set10('USE_UDEV', true,
+-        description: 'Try to use udev synchronisation?')
++if use_devmapper
++    foreach function : [
++        'dm_device_get_name',
++        'dm_device_has_holders',
++        'dm_device_has_mounted_fs',
++        'dm_task_deferred_remove',
++        'dm_task_retry_remove',
++        'dm_task_secure_data',
++    ]
++        has_function = cc.has_function(function,
++            prefix: '#include <libdevmapper.h>', dependencies: devmapper)
++        conf.set10('HAVE_DECL_' + function.underscorify().to_upper(), has_function)
++    endforeach
++
++    foreach symbol : [
++        'DM_DEVICE_GET_TARGET_VERSION',
++        'DM_UDEV_DISABLE_DISK_RULES_FLAG',
++    ]
++        has_symbol = cc.has_header_symbol('libdevmapper.h', symbol,
++            dependencies: devmapper)
++        conf.set10('HAVE_DECL_' + symbol.underscorify().to_upper(), has_symbol)
++    endforeach
++
++    if cc.has_header_symbol('libdevmapper.h', 'DM_UDEV_DISABLE_DISK_RULES_FLAG',
++            dependencies: devmapper)
++        conf.set10('USE_UDEV', true,
++            description: 'Try to use udev synchronisation?')
++    else
++        warning('The device-mapper library on your system has no udev support, udev support disabled.')
++    endif
+ else
+-    warning('The device-mapper library on your system has no udev support, udev support disabled.')
++    # Provide fallback values so that config.h is complete even without devmapper.
++    foreach function : [
++        'dm_device_get_name',
++        'dm_device_has_holders',
++        'dm_device_has_mounted_fs',
++        'dm_task_deferred_remove',
++        'dm_task_retry_remove',
++        'dm_task_secure_data',
++    ]
++        conf.set10('HAVE_DECL_' + function.underscorify().to_upper(), false)
++    endforeach
++    foreach symbol : [
++        'DM_DEVICE_GET_TARGET_VERSION',
++        'DM_UDEV_DISABLE_DISK_RULES_FLAG',
++    ]
++        conf.set10('HAVE_DECL_' + symbol.underscorify().to_upper(), false)
++    endforeach
++
++    # Auto-disable tools that require device-mapper.
++    if get_option('cryptsetup')
++        warning('Disabling cryptsetup (requires device-mapper).')
++    endif
++    if get_option('integritysetup')
++        warning('Disabling integritysetup (requires device-mapper).')
++    endif
+ endif
+ 
+ # ==========================================================================
+@@ -451,6 +485,10 @@ crypto_backend_library = []
+ use_internal_pbkdf2 = false
+ use_internal_argon2 = true
+ 
++if get_option('crypto-backend') == 'kernel' and not is_linux
++    error('The kernel crypto backend (AF_ALG) is only available on Linux.')
++endif
++
+ if get_option('crypto-backend') == 'gcrypt'
+     req_version = '1.1.42'
+     if get_option('fips')
+--- a/meson_options.txt
++++ b/meson_options.txt
+@@ -5,6 +5,7 @@ option('crypto-backend', type : 'combo',
+ option('cryptsetup', type : 'boolean', description : 'cryptsetup support', value : true)
+ option('default-integrity-keyfile-size-maxkb', type : 'integer', description : 'maximum integritysetup keyfile size (in KiB)', value : 4)
+ option('default-keyfile-size-maxkb', type : 'integer', description : 'maximum keyfile size (in KiB)', value : 8192)
++option('devmapper', type : 'feature', description : 'device-mapper support', value : 'auto')
+ option('default-loopaes-cipher', type : 'string', description : 'cipher for loop-AES mode', value : 'aes')
+ option('default-loopaes-keybits', type : 'integer', description : 'key length in bits for loop-AES mode', value : 256)
+ option('default-luks1-cipher', type : 'string', description : 'cipher for LUKS1', value : 'aes')

@@ -1,0 +1,29 @@
+From a5ea055e8f6adc4ae5b8139a2f9af28e38ecac55 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Mon, 2 Mar 2026 12:32:34 +0000
+Subject: [PATCH 27/30] image: add FIT install-uuid property defines
+
+Define FIT_INSTALL_UUID_PROP ("install-uuid") and FIT_INSTALL_UUID_LEN
+(16) in image.h alongside the existing FIT property name macros.
+
+These constants are used by the bootmeth fixup_fdt callback, the host
+tool fit_set_uuid, and the console command "fit setuuid" to refer to
+the 16-byte UUIDv4 property in the FIT root node that uniquely
+identifies a particular installation of a FIT image.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ include/image.h | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/include/image.h
++++ b/include/image.h
+@@ -1142,6 +1142,8 @@ int booti_setup(ulong image, ulong *relo
+ 
+ #define FIT_IMAGES_PATH		"/images"
+ #define FIT_CONFS_PATH		"/configurations"
++#define FIT_INSTALL_UUID_PROP	"install-uuid"
++#define FIT_INSTALL_UUID_LEN	16
+ 
+ /* hash/signature/key node */
+ #define FIT_HASH_NODENAME	"hash"

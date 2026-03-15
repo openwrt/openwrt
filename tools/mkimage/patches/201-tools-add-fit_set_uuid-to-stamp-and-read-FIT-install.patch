@@ -1,0 +1,322 @@
+From 0fd899633f3a61adf9b3333d1fdaaf5a18a66fb6 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Mon, 2 Mar 2026 12:50:14 +0000
+Subject: [PATCH 1/3] tools: add fit_set_uuid to stamp and read FIT
+ install-uuid
+
+Add a host tool for managing the install-uuid property in FIT images.
+
+Stamp mode (-f <file>) generates a random UUIDv4, writes it into the
+FIT root node, and prints the canonical UUID string to stdout.  An
+explicit UUID may be supplied with -u.  Get mode (-g -f <file>) reads
+an existing install-uuid from a FIT file or raw block/MTD/UBI device
+and prints it, which is used by recovery userspace to discover the
+boot device.
+
+The tool is built as a standalone host binary (fit_set_uuid) alongside
+the other FIT utilities.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ tools/Makefile       |   5 +-
+ tools/fit_set_uuid.c | 266 +++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 270 insertions(+), 1 deletion(-)
+ create mode 100644 tools/fit_set_uuid.c
+
+--- a/tools/Makefile
++++ b/tools/Makefile
+@@ -63,7 +63,7 @@ HOSTCFLAGS_img2srec.o := -pedantic
+ hostprogs-y += mkenvimage
+ mkenvimage-objs := mkenvimage.o os_support.o generated/lib/crc32.o
+ 
+-hostprogs-y += dumpimage mkimage fit_info
++hostprogs-y += dumpimage mkimage fit_info fit_set_uuid
+ hostprogs-$(CONFIG_FIT_SIGNATURE) += fit_check_sign
+ hostprogs-$(CONFIG_TOOLS_LIBCRYPTO) += fdt_add_pubkey
+ hostprogs-$(CONFIG_TOOLS_LIBCRYPTO) += preload_check_sign
+@@ -165,6 +165,8 @@ dumpimage-mkimage-objs := aisimage.o \
+ dumpimage-objs := $(dumpimage-mkimage-objs) dumpimage.o
+ mkimage-objs   := $(dumpimage-mkimage-objs) mkimage.o
+ fit_info-objs   := $(dumpimage-mkimage-objs) fit_info.o
++fit_set_uuid-objs := $(dumpimage-mkimage-objs) fit_set_uuid.o \
++	generated/lib/uuid.o
+ fit_check_sign-objs   := $(dumpimage-mkimage-objs) fit_check_sign.o
+ fdt_add_pubkey-objs   := $(dumpimage-mkimage-objs) fdt_add_pubkey.o
+ file2include-objs := file2include.o
+@@ -206,6 +208,7 @@ HOSTCFLAGS_fit_image.o += -DMKIMAGE_DTC=
+ 
+ HOSTLDLIBS_dumpimage := $(HOSTLDLIBS_mkimage)
+ HOSTLDLIBS_fit_info := $(HOSTLDLIBS_mkimage)
++HOSTLDLIBS_fit_set_uuid := $(HOSTLDLIBS_mkimage)
+ HOSTLDLIBS_fit_check_sign := $(HOSTLDLIBS_mkimage)
+ HOSTLDLIBS_fdt_add_pubkey := $(HOSTLDLIBS_mkimage)
+ HOSTLDLIBS_preload_check_sign := $(HOSTLDLIBS_mkimage)
+--- /dev/null
++++ b/tools/fit_set_uuid.c
+@@ -0,0 +1,266 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * fit_set_uuid - stamp, read, or manage install-uuid in FIT images
++ *
++ * Copyright (C) 2026 Daniel Golle <daniel@makrotopia.org>
++ *
++ * Modes:
++ *   fit_set_uuid -f <file>              Generate and stamp a new UUID
++ *   fit_set_uuid -f <file> -u <uuid>    Stamp a specific UUID
++ *   fit_set_uuid -g -f <file>           Print existing UUID to stdout
++ */
++
++#include "mkimage.h"
++#include "fit_common.h"
++#include <image.h>
++#include <u-boot/uuid.h>
++
++#define UUID_V4_VERSION_BYTE	6	/* offset of version nibble */
++#define UUID_V4_VARIANT_BYTE	8	/* offset of variant bits */
++
++static void usage(const char *cmdname)
++{
++	fprintf(stderr,
++		"Usage: %s [options]\n"
++		"  -f <file>    FIT image file (or raw device for -g)\n"
++		"  -u <uuid>    UUID string to stamp (optional; generates random if omitted)\n"
++		"  -g           Get mode: print existing UUID and exit\n"
++		"  -h           Show this help\n",
++		cmdname);
++	exit(EXIT_FAILURE);
++}
++
++/**
++ * gen_uuid_v4() - generate a random UUIDv4
++ * @uuid_bin: output buffer (16 bytes)
++ *
++ * Reads 16 random bytes from /dev/urandom and sets the version (4)
++ * and variant (RFC 4122) bits.
++ *
++ * Return: 0 on success, -1 on error
++ */
++static int gen_uuid_v4(unsigned char *uuid_bin)
++{
++	FILE *f;
++	size_t n;
++
++	f = fopen("/dev/urandom", "rb");
++	if (!f) {
++		fprintf(stderr, "Cannot open /dev/urandom: %s\n",
++			strerror(errno));
++		return -1;
++	}
++
++	n = fread(uuid_bin, 1, UUID_BIN_LEN, f);
++	fclose(f);
++
++	if (n != UUID_BIN_LEN) {
++		fprintf(stderr, "Short read from /dev/urandom\n");
++		return -1;
++	}
++
++	/* Set version 4 (bits 12-15 of time_hi_and_version) */
++	uuid_bin[UUID_V4_VERSION_BYTE] &= 0x0f;
++	uuid_bin[UUID_V4_VERSION_BYTE] |= 0x40;
++
++	/* Set variant to RFC 4122 (10xx xxxx) */
++	uuid_bin[UUID_V4_VARIANT_BYTE] &= 0x3f;
++	uuid_bin[UUID_V4_VARIANT_BYTE] |= 0x80;
++
++	return 0;
++}
++
++/**
++ * do_get_uuid() - read and print the install-uuid from a FIT file/device
++ * @fname: path to FIT image file or raw device
++ *
++ * Reads FDT_READ_SIZE bytes, validates the FDT header, extracts the
++ * install-uuid property and prints it as a hex string to stdout.
++ *
++ * Return: EXIT_SUCCESS or EXIT_FAILURE
++ */
++static int do_get_uuid(const char *fname)
++{
++	struct fdt_header hdr;
++	char uuid_str[UUID_STR_LEN + 1];
++	const void *uuid;
++	uint32_t totalsize;
++	void *buf;
++	int is_mmap = 0;
++	ssize_t n;
++	int len, fd;
++
++	fd = open(fname, O_RDONLY);
++	if (fd < 0) {
++		fprintf(stderr, "Cannot open %s: %s\n", fname,
++			strerror(errno));
++		return EXIT_FAILURE;
++	}
++
++	n = read(fd, &hdr, sizeof(hdr));
++	if (n < (ssize_t)sizeof(hdr)) {
++		fprintf(stderr, "%s: too short to be a FIT\n", fname);
++		close(fd);
++		return EXIT_FAILURE;
++	}
++
++	if (fdt_check_header(&hdr)) {
++		fprintf(stderr, "%s: bad FDT header\n", fname);
++		close(fd);
++		return EXIT_FAILURE;
++	}
++
++	totalsize = fdt_totalsize(&hdr);
++
++	/* Try mmap first (works for files and block devices) */
++	buf = mmap(NULL, totalsize, PROT_READ, MAP_PRIVATE, fd, 0);
++	if (buf != MAP_FAILED) {
++		is_mmap = 1;
++	} else {
++		/* Fall back to read for character devices (e.g. UBI volumes) */
++		buf = malloc(totalsize);
++		if (!buf) {
++			fprintf(stderr, "Out of memory (%u bytes)\n",
++				totalsize);
++			close(fd);
++			return EXIT_FAILURE;
++		}
++		memcpy(buf, &hdr, sizeof(hdr));
++		n = read(fd, (char *)buf + sizeof(hdr),
++			 totalsize - sizeof(hdr));
++		if (n < (ssize_t)(totalsize - sizeof(hdr))) {
++			fprintf(stderr, "%s: short read\n", fname);
++			free(buf);
++			close(fd);
++			return EXIT_FAILURE;
++		}
++	}
++	close(fd);
++
++	uuid = fdt_getprop(buf, 0, FIT_INSTALL_UUID_PROP, &len);
++	if (!uuid || len != FIT_INSTALL_UUID_LEN) {
++		fprintf(stderr, "%s: no valid install-uuid property\n", fname);
++		if (is_mmap)
++			munmap(buf, totalsize);
++		else
++			free(buf);
++		return EXIT_FAILURE;
++	}
++
++	uuid_bin_to_str(uuid, uuid_str, UUID_STR_FORMAT_STD);
++	printf("%s\n", uuid_str);
++
++	if (is_mmap)
++		munmap(buf, totalsize);
++	else
++		free(buf);
++
++	return EXIT_SUCCESS;
++}
++
++/**
++ * do_set_uuid() - stamp an install-uuid into a FIT image file
++ * @fname:    path to FIT image file
++ * @uuid_arg: UUID string to write, or NULL to generate a random one
++ *
++ * Opens the FIT file via mmap, generates or parses the UUID, and writes
++ * it into the install-uuid property.  If the property already exists with
++ * the correct size (16 bytes), uses fdt_setprop_inplace(); otherwise
++ * uses fdt_setprop() which may grow the FDT.
++ *
++ * Return: EXIT_SUCCESS or EXIT_FAILURE
++ */
++static int do_set_uuid(const char *cmdname, const char *fname,
++		       const char *uuid_arg)
++{
++	unsigned char uuid_bin[UUID_BIN_LEN];
++	char uuid_str[UUID_STR_LEN + 1];
++	struct stat fsbuf;
++	void *fit_blob;
++	const void *prop;
++	int ffd, len, ret;
++
++	ffd = mmap_fdt(cmdname, fname, FIT_INSTALL_UUID_LEN + 256,
++		       &fit_blob, &fsbuf, false, false);
++	if (ffd < 0) {
++		fprintf(stderr, "Could not open %s\n", fname);
++		return EXIT_FAILURE;
++	}
++
++	/* Generate or parse UUID */
++	if (uuid_arg) {
++		ret = uuid_str_to_bin(uuid_arg, uuid_bin, UUID_STR_FORMAT_STD);
++		if (ret) {
++			fprintf(stderr, "Invalid UUID string: %s\n", uuid_arg);
++			goto err;
++		}
++	} else {
++		if (gen_uuid_v4(uuid_bin)) {
++			fprintf(stderr, "Failed to generate UUID\n");
++			goto err;
++		}
++	}
++
++	/* Write UUID into FIT */
++	prop = fdt_getprop(fit_blob, 0, FIT_INSTALL_UUID_PROP, &len);
++	if (prop && len == FIT_INSTALL_UUID_LEN) {
++		ret = fdt_setprop_inplace(fit_blob, 0, FIT_INSTALL_UUID_PROP,
++					  uuid_bin, FIT_INSTALL_UUID_LEN);
++	} else {
++		ret = fdt_setprop(fit_blob, 0, FIT_INSTALL_UUID_PROP,
++				  uuid_bin, FIT_INSTALL_UUID_LEN);
++	}
++
++	if (ret) {
++		fprintf(stderr, "Failed to set install-uuid: %s\n",
++			fdt_strerror(ret));
++		goto err;
++	}
++
++	uuid_bin_to_str(uuid_bin, uuid_str, UUID_STR_FORMAT_STD);
++	printf("%s\n", uuid_str);
++
++	munmap(fit_blob, fsbuf.st_size + FIT_INSTALL_UUID_LEN + 256);
++	close(ffd);
++	return EXIT_SUCCESS;
++
++err:
++	munmap(fit_blob, fsbuf.st_size + FIT_INSTALL_UUID_LEN + 256);
++	close(ffd);
++	return EXIT_FAILURE;
++}
++
++int main(int argc, char **argv)
++{
++	const char *fname = NULL;
++	const char *uuid_arg = NULL;
++	int get_mode = 0;
++	int c;
++
++	while ((c = getopt(argc, argv, "f:u:gh")) != -1) {
++		switch (c) {
++		case 'f':
++			fname = optarg;
++			break;
++		case 'u':
++			uuid_arg = optarg;
++			break;
++		case 'g':
++			get_mode = 1;
++			break;
++		case 'h':
++		default:
++			usage(argv[0]);
++		}
++	}
++
++	if (!fname) {
++		fprintf(stderr, "%s: -f <file> is required\n", argv[0]);
++		usage(argv[0]);
++	}
++
++	if (get_mode)
++		return do_get_uuid(fname);
++
++	return do_set_uuid(argv[0], fname, uuid_arg);
++}

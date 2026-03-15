@@ -1,0 +1,26 @@
+From 35018efa7bceaee205b64427c6964da5316594dd Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 25 Feb 2026 16:53:46 +0000
+Subject: [PATCH 17/26] configs: sandbox: enable CONFIG_IMAGEMAP
+
+Enable the imagemap framework so the corresponding unit tests can be run
+in the sandbox via:
+$ ./u-boot -T -c "ut imagemap"
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+New patch in v2.
+---
+ configs/sandbox_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/configs/sandbox_defconfig
++++ b/configs/sandbox_defconfig
+@@ -21,6 +21,7 @@ CONFIG_FIT=y
+ CONFIG_FIT_RSASSA_PSS=y
+ CONFIG_FIT_CIPHER=y
+ CONFIG_FIT_VERBOSE=y
++CONFIG_IMAGEMAP=y
+ CONFIG_BOOTMETH_ANDROID=y
+ CONFIG_UPL=y
+ CONFIG_LEGACY_IMAGE_FORMAT=y

@@ -1,0 +1,235 @@
+From 678b6e491b90057b03d7791a75d4fc2bb7387bca Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 24 Feb 2026 16:34:05 +0000
+Subject: [PATCH 22/24] tests: guard Linux-only and dm-dependent tests
+
+Guard api-test, api-test-2 and all cryptsetup/integritysetup test
+registrations behind use_devmapper. Guard 00modules-test,
+blockwise-compat-test, unit-wipe-test, and run-all-symbols behind
+is_linux. Guard verity-compat-test behind use_devmapper (it requires
+root, losetup, dmsetup).
+
+Add AM_CONDITIONAL HAVE_DEVMAPPER_COND and IS_LINUX to configure.ac
+and restructure tests/Makefile.am accordingly.
+
+This allows meson setup and build to succeed with -Ddevmapper=disabled.
+---
+ configure.ac      |  3 +++
+ tests/Makefile.am | 37 ++++++++++++++++++++++++++++---------
+ tests/meson.build | 22 ++++++++++++++++++----
+ 3 files changed, 49 insertions(+), 13 deletions(-)
+
+--- a/configure.ac
++++ b/configure.ac
+@@ -522,6 +522,9 @@ fi
+ AC_SUBST([DEVMAPPER_LIBS])
+ AC_SUBST([DEVMAPPER_STATIC_LIBS])
+ 
++AM_CONDITIONAL([HAVE_DEVMAPPER_COND], [test "x$use_devmapper" = "xyes"])
++AM_CONDITIONAL([IS_LINUX], [case "$host_os" in linux*) true ;; *) false ;; esac])
++
+ dnl Check for JSON-C used in LUKS2
+ PKG_CHECK_MODULES([JSON_C], [json-c])
+ AC_CHECK_DECLS([json_object_object_add_ex], [], [], [#include <json-c/json.h>])
+--- a/tests/Makefile.am
++++ b/tests/Makefile.am
+@@ -1,7 +1,13 @@
+-TESTS = 00modules-test \
++TESTS = \
++	compat-args-test \
++	keyring-test \
++	vectors-test \
++	unit-utils-crypt-test
++
++if HAVE_DEVMAPPER_COND
++TESTS += \
+ 	api-test \
+ 	api-test-2 \
+-	compat-args-test \
+ 	compat-test \
+ 	compat-test2 \
+ 	compat-test-opal \
+@@ -14,25 +20,30 @@ TESTS = 00modules-test \
+ 	tcrypt-compat-test \
+ 	luks1-compat-test \
+ 	device-test \
+-	keyring-test \
+ 	keyring-compat-test \
+ 	keyring-trusted-test \
+ 	luks2-validation-test \
+ 	luks2-integrity-test \
+-	vectors-test \
+-	blockwise-compat-test \
+ 	bitlk-compat-test \
+ 	fvault2-compat-test \
+-	run-all-symbols \
+-	unit-utils-crypt-test \
+-	unit-wipe-test \
+ 	reencryption-compat-test \
+ 	luks2-reencryption-test \
+ 	luks2-reencryption-mangle-test
++endif
++
++if IS_LINUX
++TESTS += \
++	00modules-test \
++	blockwise-compat-test \
++	run-all-symbols \
++	unit-wipe-test
++endif
+ 
+ if VERITYSETUP
++if HAVE_DEVMAPPER_COND
+ TESTS += verity-compat-test
+ endif
++endif
+ 
+ if INTEGRITYSETUP
+ TESTS += integrity-compat-test
+@@ -167,7 +178,15 @@ all_symbols_test_LDFLAGS = $(AM_LDFLAGS)
+ all_symbols_test_CFLAGS = $(AM_CFLAGS)
+ all_symbols_test_CPPFLAGS = $(AM_CPPFLAGS) -D_GNU_SOURCE
+ 
+-check_PROGRAMS = api-test api-test-2 differ crypto-check vectors-test unit-utils-io unit-utils-crypt-test unit-wipe all-symbols-test
++check_PROGRAMS = differ crypto-check vectors-test unit-utils-io unit-utils-crypt-test
++
++if HAVE_DEVMAPPER_COND
++check_PROGRAMS += api-test api-test-2
++endif
++
++if IS_LINUX
++check_PROGRAMS += unit-wipe all-symbols-test
++endif
+ 
+ check-programs: test-symbols-list.h $(check_PROGRAMS) fake_systemd_tpm_path.so
+ 
+--- a/tests/meson.build
++++ b/tests/meson.build
+@@ -37,6 +37,7 @@ foreach file : test_files_to_copy
+     fs.copyfile(file)
+ endforeach
+ 
++if use_devmapper
+ api_test = executable('api-test',
+     [
+         'api-test.c',
+@@ -58,6 +59,7 @@ api_test_2 = executable('api-test-2',
+         '-DNO_CRYPTSETUP_PATH',
+     ],
+     include_directories: includes_lib)
++endif
+ 
+ crypto_check = executable('crypto-check',
+     [
+@@ -108,6 +110,7 @@ unit_utils_crypt_test = executable('unit
+     ],
+     include_directories: includes_lib)
+ 
++if is_linux
+ unit_wipe = executable('unit-wipe',
+     [
+         'unit-wipe.c',
+@@ -117,7 +120,9 @@ unit_wipe = executable('unit-wipe',
+         '-DNO_CRYPTSETUP_PATH',
+     ],
+     include_directories: includes_lib)
++endif
+ 
++if is_linux
+ generate_symbols_list = find_program('generate-symbols-list')
+ test_symbols_list_h = custom_target('test-symbols-list.h',
+     output: 'test-symbols-list.h',
+@@ -141,6 +146,7 @@ all_symbols_test = executable('all-symbo
+         '-DNO_CRYPTSETUP_PATH',
+     ],
+     include_directories: includes_lib)
++endif
+ 
+ fake_systemd_tpm_path = shared_library('fake_systemd_tpm_path',
+     [
+@@ -170,6 +176,7 @@ add_test_setup('valgrind',
+     exclude_suites: [ 'not-in-valgrind' ]
+ )
+ 
++if is_linux
+ test('00modules-test',
+     find_program('./00modules-test'),
+     workdir: meson.current_build_dir(),
+@@ -177,6 +184,8 @@ test('00modules-test',
+     is_parallel: false,
+     suite: 'not-in-valgrind',
+     priority: 9999)
++endif
++if use_devmapper
+ test('api-test',
+     api_test,
+     workdir: meson.current_build_dir(),
+@@ -207,6 +216,8 @@ test('valg-api-test-2',
+     timeout: 14400,
+     is_parallel: false,
+     suite: 'valgrind-only')
++endif
++if is_linux
+ test('blockwise-compat-test',
+     find_program('./blockwise-compat-test'),
+     workdir: meson.current_build_dir(),
+@@ -216,6 +227,7 @@ test('blockwise-compat-test',
+     depends: [
+         unit_utils_io,
+     ])
++endif
+ test('keyring-test',
+     find_program('./keyring-test'),
+     workdir: meson.current_build_dir(),
+@@ -237,6 +249,7 @@ test('valg-vectors-test',
+     timeout: 14400,
+     is_parallel: false,
+     suite: 'valgrind-only')
++if is_linux
+ test('unit-wipe-test',
+     find_program('./unit-wipe-test'),
+     workdir: meson.current_build_dir(),
+@@ -246,6 +259,7 @@ test('unit-wipe-test',
+     depends: [
+         unit_wipe,
+     ])
++endif
+ test('unit-utils-crypt-test',
+     unit_utils_crypt_test,
+     workdir: meson.current_build_dir(),
+@@ -262,7 +276,7 @@ test('valg-unit-utils-crypt-test',
+     is_parallel: false,
+     suite: 'valgrind-only')
+ 
+-if not enable_static
++if not enable_static and is_linux
+     test('run-all-symbols',
+         find_program('./run-all-symbols'),
+         workdir: meson.current_build_dir(),
+@@ -275,7 +289,7 @@ if not enable_static
+         ])
+ endif
+ 
+-if get_option('cryptsetup')
++if get_option('cryptsetup') and use_devmapper
+     test('compat-args-test',
+         find_program('./compat-args-test'),
+         workdir: meson.current_build_dir(),
+@@ -458,7 +472,7 @@ if get_option('cryptsetup')
+         ])
+ endif
+ 
+-if get_option('veritysetup')
++if get_option('veritysetup') and use_devmapper
+     test('verity-compat-test',
+         find_program('verity-compat-test'),
+         workdir: meson.current_build_dir(),
+@@ -469,7 +483,7 @@ if get_option('veritysetup')
+         ])
+ endif
+ 
+-if get_option('integritysetup')
++if get_option('integritysetup') and use_devmapper
+     test('integrity-compat-test',
+         find_program('integrity-compat-test'),
+         workdir: meson.current_build_dir(),

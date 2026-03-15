@@ -1,0 +1,32 @@
+From f165e7801be4efdd238ac10aa60f45313d1e6ade Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 24 Feb 2026 16:28:49 +0000
+Subject: [PATCH 21/24] meson: add build configuration summary for platform
+ features
+
+Display detected platform features (device-mapper, loop devices,
+block ioctls, device paths, RNG functions, utsname) in meson
+setup output.
+---
+ meson.build | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+--- a/meson.build
++++ b/meson.build
+@@ -845,3 +845,16 @@ subdir('src')
+ subdir('scripts')
+ subdir('tokens')
+ subdir('tests')
++
++# ==========================================================================
++# Build configuration summary
++
++summary({
++    'device-mapper': use_devmapper,
++    'loop devices': conf.get('HAVE_LOOP') == 1,
++    'linux block ioctls': conf.get('HAVE_LINUX_BLKDEV') == 1,
++    'linux device paths': conf.get('HAVE_LINUX_DEVPATH') == 1,
++    'arc4random_buf': conf.get('HAVE_ARC4RANDOM') == 1,
++    'getentropy': conf.get('HAVE_GETENTROPY') == 1,
++    'sys/utsname.h': conf.get('HAVE_SYS_UTSNAME_H') == 1,
++}, section: 'Platform features')

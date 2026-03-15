@@ -81,7 +81,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  swim_mod-y	:= swim.o swim_asm.o
 --- /dev/null
 +++ b/drivers/block/fitblk.c
-@@ -0,0 +1,660 @@
+@@ -0,0 +1,792 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * uImage.FIT virtual block device driver.
@@ -180,10 +180,16 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +#define FIT_FIRMWARE_PROP	"firmware"
 +#define FIT_STANDALONE_PROP	"standalone"
 +
++/* install-uuid: per-installation identity for FIT device discovery */
++#define FIT_INSTALL_UUID_PROP	"install-uuid"
++#define FIT_INSTALL_UUID_LEN	16
++
 +/* fitblk driver data */
 +static const char *_fitblk_claim_ptr = "I belong to fitblk";
 +static const char *ubootver;
 +struct device_node *rootdisk;
++static u8 install_uuid[FIT_INSTALL_UUID_LEN];
++static bool have_install_uuid;
 +static struct platform_device *pdev;
 +static LIST_HEAD(fitblk_devices);
 +static DEFINE_MUTEX(devices_mutex);
@@ -701,11 +707,117 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	return device_match_of_node(dev->parent, np);
 +}
 +
++/*
++ * Scan a block device for a FIT image whose root-node install-uuid matches
++ * the expected UUID passed in @data.  Used by class_find_device() to iterate
++ * over all block devices and locate the one containing the booted FIT.
++ *
++ * Opens the device non-exclusively for read, reads the FDT metadata, and
++ * compares the install-uuid property.  Returns 1 on match, 0 otherwise.
++ */
++static int fitblk_match_install_uuid(struct device *dev, const void *data)
++{
++	const u8 *expected_uuid = data;
++	struct file *bdev_file;
++	struct block_device *bdev;
++	struct address_space *mapping;
++	struct folio *folio;
++	void *pre_fit, *fit, *fit_c;
++	const u8 *fit_uuid;
++	int uuid_len;
++	u32 size;
++	u64 dsectors, dsize;
++	size_t bytes_left, bytes_to_copy;
++	pgoff_t f_index = 0;
++	int match = 0;
++
++	if (!dev->devt || MAJOR(dev->devt) == 0)
++		return 0;
++
++	/* Non-exclusive read-only open for scanning */
++	bdev_file = bdev_file_open_by_dev(dev->devt, BLK_OPEN_READ,
++					  NULL, NULL);
++	if (IS_ERR_OR_NULL(bdev_file))
++		return 0;
++
++	bdev = file_bdev(bdev_file);
++	mapping = bdev_file->f_mapping;
++
++	/* Read first page to validate FDT header */
++	folio = read_mapping_folio(mapping, f_index++, NULL);
++	if (IS_ERR(folio))
++		goto out_close;
++
++	pre_fit = folio_address(folio) + offset_in_folio(folio, 0);
++
++	if (fdt_check_header(pre_fit)) {
++		folio_put(folio);
++		goto out_close;
++	}
++
++	size = fdt_totalsize(pre_fit);
++	if (size > PAGE_SIZE * FIT_MAX_PAGES) {
++		folio_put(folio);
++		goto out_close;
++	}
++
++	/* Ensure FDT metadata does not exceed device size */
++	dsectors = bdev_nr_sectors(bdev);
++	dsize = dsectors << SECTOR_SHIFT;
++	if (size >= dsize) {
++		folio_put(folio);
++		goto out_close;
++	}
++
++	fit = kmalloc(size, GFP_KERNEL);
++	if (!fit) {
++		folio_put(folio);
++		goto out_close;
++	}
++
++	/* Read the full FDT structure (needed for string table lookups) */
++	bytes_left = size;
++	fit_c = fit;
++	while (bytes_left > 0) {
++		bytes_to_copy = min_t(size_t, bytes_left,
++				      folio_size(folio) - offset_in_folio(folio, 0));
++		memcpy(fit_c, pre_fit, bytes_to_copy);
++		fit_c += bytes_to_copy;
++		bytes_left -= bytes_to_copy;
++		if (bytes_left) {
++			folio_put(folio);
++			folio = read_mapping_folio(mapping, f_index++, NULL);
++			if (IS_ERR(folio))
++				goto out_free;
++			pre_fit = folio_address(folio) + offset_in_folio(folio, 0);
++		}
++	}
++	folio_put(folio);
++
++	/* Check install-uuid in the FIT root node */
++	fit_uuid = fdt_getprop(fit, 0, FIT_INSTALL_UUID_PROP, &uuid_len);
++	if (fit_uuid && uuid_len == FIT_INSTALL_UUID_LEN &&
++	    !memcmp(fit_uuid, expected_uuid, FIT_INSTALL_UUID_LEN))
++		match = 1;
++
++out_free:
++	kfree(fit);
++out_close:
++	fput(bdev_file);
++	return match;
++}
++
 +static int fitblk_probe(struct platform_device *pdev)
 +{
 +	struct device *dev;
 +
-+	dev = class_find_device(&block_class, NULL, rootdisk, fitblk_match_of_node);
++	if (have_install_uuid)
++		dev = class_find_device(&block_class, NULL, install_uuid,
++					fitblk_match_install_uuid);
++	else
++		dev = class_find_device(&block_class, NULL, rootdisk,
++					fitblk_match_of_node);
++
 +	if (!dev)
 +		return -EPROBE_DEFER;
 +
@@ -721,15 +833,35 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
 +static int __init fitblk_init(void)
 +{
++	static const u8 zero_uuid[FIT_INSTALL_UUID_LEN] = {};
++	const u8 *uuid_prop;
++	int uuid_len;
++
 +	/* detect U-Boot firmware */
 +	ubootver = of_get_property(of_chosen, "u-boot,version", NULL);
 +	if (!ubootver)
 +		return 0;
 +
-+	/* parse 'rootdisk' property phandle */
-+	rootdisk = of_parse_phandle(of_chosen, "rootdisk", 0);
-+	if (!rootdisk)
-+		return 0;
++	/*
++	 * Prefer UUID-based device discovery.  The bootloader copies the
++	 * FIT's install-uuid into /chosen so the kernel can locate the
++	 * exact storage device the booted image lives on.
++	 */
++	uuid_prop = of_get_property(of_chosen, "u-boot,fit-install-uuid",
++				   &uuid_len);
++	if (uuid_prop && uuid_len == FIT_INSTALL_UUID_LEN &&
++	    memcmp(uuid_prop, zero_uuid, FIT_INSTALL_UUID_LEN)) {
++		memcpy(install_uuid, uuid_prop, FIT_INSTALL_UUID_LEN);
++		have_install_uuid = true;
++		pr_info("FIT: using install-uuid for device discovery\n");
++	}
++
++	/* Fall back to legacy rootdisk phandle */
++	if (!have_install_uuid) {
++		rootdisk = of_parse_phandle(of_chosen, "rootdisk", 0);
++		if (!rootdisk)
++			return 0;
++	}
 +
 +	if (platform_driver_register(&fitblk_driver))
 +		return -ENODEV;

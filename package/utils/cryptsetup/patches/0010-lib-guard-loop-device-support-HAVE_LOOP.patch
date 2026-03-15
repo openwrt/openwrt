@@ -1,0 +1,93 @@
+From c3b692768900a85f032aef661913ad97d9438255 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Tue, 24 Feb 2026 16:01:45 +0000
+Subject: [PATCH 10/24] lib: guard loop device support (HAVE_LOOP)
+
+Add HAVE_LOOP feature flag that checks for <linux/loop.h> in both
+meson and autoconf build systems.
+
+Guard the full utils_loop.c implementation behind #if HAVE_LOOP and
+provide stubs in the #else branch: crypt_loop_attach() returns -1,
+crypt_loop_detach()/crypt_loop_resize() return 0,
+crypt_loop_backing_file() returns NULL, crypt_loop_device() returns 0.
+
+This allows building on systems without Linux loop device headers.
+---
+ configure.ac     |  3 +++
+ lib/utils_loop.c | 37 +++++++++++++++++++++++++++++++++++++
+ meson.build      |  2 ++
+ 3 files changed, 42 insertions(+)
+
+--- a/configure.ac
++++ b/configure.ac
+@@ -104,6 +104,9 @@ if test "x$enable_devmapper" != "xno"; t
+ 		fi])
+ fi
+ 
++AC_CHECK_HEADER([linux/loop.h],
++	[AC_DEFINE([HAVE_LOOP], [1], [Define to 1 if linux/loop.h is available.])])
++
+ AC_ARG_ENABLE([keyring],
+ 	AS_HELP_STRING([--disable-keyring], [disable kernel keyring support and builtin kernel keyring token]),
+ 	[], [enable_keyring=yes])
+--- a/lib/utils_loop.c
++++ b/lib/utils_loop.c
+@@ -6,6 +6,8 @@
+  * Copyright (C) 2009-2025 Milan Broz
+  */
+ 
++#if HAVE_LOOP
++
+ #include <stdlib.h>
+ #include <string.h>
+ #include <stdio.h>
+@@ -316,3 +318,38 @@ int crypt_loop_device(const char *loop)
+ 
+ 	return 1;
+ }
++
++#else /* HAVE_LOOP */
++
++#include <stddef.h>
++#include "utils_loop.h"
++
++#pragma GCC diagnostic ignored "-Wunused-parameter"
++
++int crypt_loop_attach(char **loop, const char *file, int offset,
++		      int autoclear, int *readonly, size_t blocksize)
++{
++	return -1;
++}
++
++int crypt_loop_detach(const char *loop)
++{
++	return 0;
++}
++
++int crypt_loop_resize(const char *loop)
++{
++	return 0;
++}
++
++char *crypt_loop_backing_file(const char *loop)
++{
++	return NULL;
++}
++
++int crypt_loop_device(const char *loop)
++{
++	return 0;
++}
++
++#endif /* HAVE_LOOP */
+--- a/meson.build
++++ b/meson.build
+@@ -110,6 +110,8 @@ foreach header : required_headers
+     conf.set10('HAVE_' + header.underscorify().to_upper(), cc.has_header(header))
+ endforeach
+ 
++conf.set10('HAVE_LOOP', cc.has_header('linux/loop.h'))
++
+ fcntl_header = conf.get('HAVE_FCNTL_H') == 1 ? 'fcntl.h' : 'stdio.h'
+ if cc.has_header_symbol(fcntl_header, 'O_CLOEXEC')
+     conf.set10('HAVE_DECL_O_CLOEXEC', true)

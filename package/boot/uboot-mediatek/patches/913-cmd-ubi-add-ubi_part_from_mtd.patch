@@ -1,0 +1,63 @@
+From 3f943b6af4268b65fe4354517e3770b697c1ec29 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Mon, 16 Feb 2026 00:15:33 +0000
+Subject: [PATCH 13/26] cmd: ubi: add ubi_part_from_mtd()
+
+Add ubi_part_from_mtd() which attaches UBI to a given struct mtd_info
+directly, without going through the name-based lookup that ubi_part()
+uses. This is useful for callers that already hold a reference to the
+MTD device, e.g. after finding it via its device-tree node.
+
+If the same MTD device is already attached, the function returns
+immediately.
+
+Declared in include/ubi_uboot.h alongside ubi_part().
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+Unchanged from RFC.
+---
+ cmd/ubi.c           | 21 +++++++++++++++++++++
+ include/ubi_uboot.h |  1 +
+ 2 files changed, 22 insertions(+)
+
+--- a/cmd/ubi.c
++++ b/cmd/ubi.c
+@@ -666,6 +666,27 @@ static int ubi_detach(void)
+ 	return 0;
+ }
+ 
++int ubi_part_from_mtd(struct mtd_info *mtd)
++{
++	int err;
++
++	if (ubi && ubi->mtd == mtd)
++		return 0;
++
++	ubi_detach();
++
++	err = ubi_dev_scan(mtd, NULL);
++	if (err) {
++		printf("UBI init error %d\n", err);
++		printf("Please check, if the correct MTD partition is used (size big enough?)\n");
++		return err;
++	}
++
++	ubi = ubi_devices[0];
++
++	return 0;
++}
++
+ int ubi_part(char *part_name, const char *vid_header_offset)
+ {
+ 	struct mtd_info *mtd;
+--- a/include/ubi_uboot.h
++++ b/include/ubi_uboot.h
+@@ -48,6 +48,7 @@ extern int ubi_mtd_param_parse(const cha
+ extern int ubi_init(void);
+ extern void ubi_exit(void);
+ extern int ubi_part(char *part_name, const char *vid_header_offset);
++int ubi_part_from_mtd(struct mtd_info *mtd);
+ extern int ubi_volume_write(char *volume, void *buf, loff_t offset, size_t size);
+ extern int ubi_volume_read(char *volume, char *buf, loff_t offset, size_t size);
+ extern int ubi_create_vol(char *volume, int64_t size, int dynamic, int vol_id,

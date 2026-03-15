@@ -15,6 +15,7 @@ sub target_config_features(@) {
 		/^broken$/ and $ret .= "\tdepends on BROKEN\n";
 		/^cpiogz$/ and $ret .= "\tselect USES_CPIOGZ\n";
 		/^display$/ and $ret .= "\tselect DISPLAY_SUPPORT\n";
+		/^dm-verity$/ and $ret .= "\tselect USES_DM_VERITY\n";
 		/^dt$/ and $ret .= "\tselect USES_DEVICETREE\n";
 		/^dt-overlay$/ and $ret .= "\tselect HAS_DT_OVERLAY_SUPPORT\n";
 		/^emmc$/ and $ret .= "\tselect EMMC_SUPPORT\n";

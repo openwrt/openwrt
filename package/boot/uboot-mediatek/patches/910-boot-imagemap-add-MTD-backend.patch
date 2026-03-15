@@ -1,0 +1,194 @@
+From f3c68883290d38a88be1a3b20f70b4db5bf53833 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Fri, 20 Feb 2026 17:04:45 +0000
+Subject: [PATCH 10/26] boot: imagemap: add MTD backend
+
+Add an MTD storage backend for the imagemap framework. The init
+function resolves the MTD device by name and installs a read callback
+that translates byte-offset reads into mtd_read_skip_bad() calls,
+transparently skipping bad erase blocks on NAND.
+
+The cleanup callback releases the MTD device reference obtained
+during init.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+Changes since RFC:
+  - Renamed image_loader to imagemap
+  - Converted to a proper DM driver, child of the MTD device
+---
+ boot/Kconfig        |   8 +++
+ boot/Makefile       |   1 +
+ boot/imagemap-mtd.c | 139 ++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 148 insertions(+)
+ create mode 100644 boot/imagemap-mtd.c
+
+--- a/boot/Kconfig
++++ b/boot/Kconfig
+@@ -1217,6 +1217,14 @@ config IMAGEMAP_BLK
+ 	  USB, etc.) using the imagemap framework. Partitions can
+ 	  be identified by number or name.
+ 
++config IMAGEMAP_MTD
++	bool "MTD backend for imagemap"
++	depends on IMAGEMAP && DM_MTD
++	help
++	  Allows loading images from MTD partitions (SPI-NOR, SPI-NAND,
++	  parallel NAND, etc.) using the imagemap framework.
++	  NAND bad blocks are skipped transparently.
++
+ config DISTRO_DEFAULTS
+ 	bool "(deprecated) Script-based booting of Linux distributions"
+ 	select CMDLINE
+--- a/boot/Makefile
++++ b/boot/Makefile
+@@ -75,6 +75,7 @@ obj-$(CONFIG_$(PHASE_)BOOTMETH_ANDROID)
+ 
+ obj-$(CONFIG_IMAGEMAP) += imagemap.o
+ obj-$(CONFIG_IMAGEMAP_BLK) += imagemap-blk.o
++obj-$(CONFIG_IMAGEMAP_MTD) += imagemap-mtd.o
+ 
+ obj-$(CONFIG_$(PHASE_)BOOTMETH_VBE_ABREC) += vbe_abrec.o vbe_common.o
+ obj-$(CONFIG_$(PHASE_)BOOTMETH_VBE_ABREC_FW) += vbe_abrec_fw.o
+--- /dev/null
++++ b/boot/imagemap-mtd.c
+@@ -0,0 +1,139 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * MTD backend for imagemap (UCLASS_IMAGEMAP driver)
++ *
++ * Copyright (C) 2026 Daniel Golle <daniel@makrotopia.org>
++ */
++
++#include <dm.h>
++#include <imagemap.h>
++#include <mtd.h>
++#include <dm/device-internal.h>
++#include <dm/lists.h>
++#include <dm/root.h>
++#include <linux/err.h>
++#include <log.h>
++
++/**
++ * struct imagemap_mtd_plat - Platform data set before probe
++ *
++ * @mtd:	MTD device (resolved by create function, ref held)
++ */
++struct imagemap_mtd_plat {
++	struct mtd_info *mtd;
++};
++
++/**
++ * struct imagemap_mtd_priv - Runtime private data
++ *
++ * @mtd:	MTD device
++ */
++struct imagemap_mtd_priv {
++	struct mtd_info *mtd;
++};
++
++static int imagemap_mtd_read(struct udevice *dev, loff_t src,
++			     ulong size, void *dst)
++{
++	struct imagemap_mtd_priv *priv = dev_get_priv(dev);
++	struct mtd_info *mtd = priv->mtd;
++	size_t retlen;
++	int ret;
++
++	ret = mtd_read_skip_bad(mtd, src, size, &retlen, dst);
++	if (ret)
++		return ret;
++
++	return (retlen == size) ? 0 : -EIO;
++}
++
++static int imagemap_mtd_probe(struct udevice *dev)
++{
++	struct imagemap_mtd_plat *plat = dev_get_plat(dev);
++	struct imagemap_mtd_priv *priv = dev_get_priv(dev);
++
++	priv->mtd = plat->mtd;
++
++	return 0;
++}
++
++static int imagemap_mtd_remove(struct udevice *dev)
++{
++	struct imagemap_mtd_priv *priv = dev_get_priv(dev);
++
++	if (priv->mtd)
++		put_mtd_device(priv->mtd);
++
++	return 0;
++}
++
++static int imagemap_create_mtd(const char *name, struct udevice **devp)
++{
++	struct imagemap_mtd_plat *plat;
++	struct udevice *parent;
++	struct udevice *dev;
++	struct mtd_info *mtd;
++	int ret;
++
++	mtd_probe_devices();
++
++	mtd = get_mtd_device_nm(name);
++	if (IS_ERR_OR_NULL(mtd)) {
++		log_debug("imagemap_mtd: MTD device \"%s\" not found\n", name);
++		return -ENODEV;
++	}
++
++	/* Use the MTD's DM device as parent if available */
++	parent = mtd->dev ? mtd->dev : dm_root();
++
++	ret = device_bind_driver(parent, "imagemap_mtd",
++				 name, &dev);
++	if (ret) {
++		put_mtd_device(mtd);
++		return ret;
++	}
++
++	plat = dev_get_plat(dev);
++	plat->mtd = mtd;
++
++	ret = device_probe(dev);
++	if (ret) {
++		device_unbind(dev);
++		put_mtd_device(mtd);
++		return ret;
++	}
++
++	*devp = dev;
++
++	return 0;
++}
++
++static const struct imagemap_ops imagemap_mtd_ops = {
++	.read	= imagemap_mtd_read,
++};
++
++U_BOOT_DRIVER(imagemap_mtd) = {
++	.name		= "imagemap_mtd",
++	.id		= UCLASS_IMAGEMAP,
++	.ops		= &imagemap_mtd_ops,
++	.probe		= imagemap_mtd_probe,
++	.remove		= imagemap_mtd_remove,
++	.plat_auto	= sizeof(struct imagemap_mtd_plat),
++	.priv_auto	= sizeof(struct imagemap_mtd_priv),
++};
++
++static int imagemap_mtd_dev_create(struct udevice *dev, const char *name,
++				   int part, struct udevice **devp)
++{
++	return imagemap_create_mtd(name, devp);
++}
++
++IMAGEMAP_BACKEND(imagemap_mtd) = {
++	.uclass	= UCLASS_MTD,
++	.create	= imagemap_mtd_dev_create,
++};
++
++IMAGEMAP_BACKEND(imagemap_mtd_sf) = {
++	.uclass	= UCLASS_SPI_FLASH,
++	.create	= imagemap_mtd_dev_create,
++};

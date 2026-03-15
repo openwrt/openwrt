@@ -1,0 +1,41 @@
+From 7ff176831784e5c3d66d5043725328b9b2bed856 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 25 Feb 2026 02:46:10 +0000
+Subject: [PATCH 02/24] meson: allow external tokens without dlvsym (musl)
+
+dlvsym is a glibc extension that some libc implementations (notably
+musl) do not provide. The C code already handles this gracefully since
+commit 5f2c751d ("Use dlsym() for token load if dlvsym() is not
+available"), falling back to dlsym when HAVE_DLVSYM is not set.
+
+However, the meson build had an assert requiring HAVE_DLVSYM for
+external-tokens, making it impossible to build with external token
+support on musl.
+
+Remove the assert and always set HAVE_DLVSYM via conf.set10() so that
+config.h gets the correct value, matching the autotools behaviour.
+---
+ meson.build | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/meson.build
++++ b/meson.build
+@@ -201,14 +201,14 @@ if not cc.has_function('dlsym',
+         error('dlsym not found')
+     endif
+ endif
+-if cc.has_function('dlvsym',
++have_dlvsym = cc.has_function('dlvsym',
+         dependencies: dl)
+-    conf.set10('HAVE_DLVSYM', true)
++conf.set10('HAVE_DLVSYM', have_dlvsym)
++if not have_dlvsym
++    warning('dlvsym not found, external token plugins will use dlsym as fallback.')
+ endif
+ 
+ if get_option('external-tokens')
+-    assert(conf.has('HAVE_DLVSYM') and conf.get('HAVE_DLVSYM') == 1,
+-        'dl library has no dlvsym function')
+     conf.set10('USE_EXTERNAL_TOKENS', true,
+         description: 'Use external tokens')
+ endif

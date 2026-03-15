@@ -23,7 +23,10 @@ PKG_REMOVE_FILES:=autogen.sh aclocal.m4
 PKG_INSTALL:=1
 PKG_BUILD_PARALLEL:=1
 
+HOST_BUILD_PREFIX:=$(STAGING_DIR_HOST)
+
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/host-build.mk
 
 TARGET_CFLAGS += $(FPIC)
 
@@ -52,4 +55,4 @@ define Package/libpopt/install
 endef
 
 $(eval $(call BuildPackage,libpopt))
-
+$(eval $(call HostBuild))
