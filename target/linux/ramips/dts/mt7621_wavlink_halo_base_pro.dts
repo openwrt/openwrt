@@ -1,0 +1,178 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "wavlink,halo-base-pro", "mediatek,mt7621-soc";
+	/*
+		The only model number printed on the device is simply "Halo Base Pro", however, their webpage URL shows WL-WN535M3.
+		Here I'm using the model number as written on the device label, as there appears to be nothing physically indicating WL-WN535M3.
+	*/
+	model = "Wavlink Halo Base Pro";
+	chosen {
+		bootargs = "console=ttyS0,57600n8 pci=realloc";
+	};
+	aliases {
+		led-boot = &status_blue;
+		led-failsafe = &status_red;
+		led-running = &status_blue;
+		led-upgrade = &status_red;
+	};
+	keys {
+		compatible = "gpio-keys";
+		pair {
+				label = "pair";
+				gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+				linux,code = <KEY_WPS_BUTTON>;			/* On stock firmware, this button pairs the mesh devices together */
+		};
+		touch {
+				label = "touch";
+				gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+				linux,code = <BTN_0>;								/* This touch sensor was originally for WPS */
+		};
+		reset {
+				label = "reset";
+				gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+				linux,code = <KEY_RESTART>;					/* This is the reset pinhole button */
+		};
+	};
+	leds {
+		compatible = "gpio-leds";
+		/*
+			The following LEDs are for lighting up the top part of the device.
+			On stock firmware, red=error, purple=booting, blue=working.
+			Purple is achieved by lighting both red+blue together.
+		*/
+		status_blue: status_blue {
+				label = "blue:status";
+				gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
+		};
+		status_red: status_red {
+				label = "red:status";
+				gpios = <&gpio 17 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&spi0 {
+	status = "okay";
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		/* I'm not certain on what the max SPI frequency should be, the flash chip is GD25Q127C */
+		spi-max-frequency = <40000000>;
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			partition@0 {
+				label = "u-boot";				/* Labelled "Bootloader" on stock */
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+			partition@30000 {
+				label = "u-boot-env";		/* Labelled "Config" on stock */
+				reg = <0x30000 0x10000>;
+				compatible = "u-boot,env";
+				read-only;
+			};
+			factory: partition@40000 {
+				label = "factory";			/* Labelled "Factory" on stock, contains unique WiFi EEPROM + MAC addresses */
+				reg = <0x40000 0x10000>;
+				read-only;
+				nvmem-layout {
+					/*
+						Example MAC allocation used on stock:
+							LAN1:			xx:xx:xx:xx:xx:80
+							LAN2/WAN:	xx:xx:xx:xx:xx:81
+							WiFi 2.4G: xx:xx:xx:xx:xx:82
+							WiFi 5G:	 xx:xx:xx:xx:xx:83
+					*/
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+					eeprom_factory_0: eeprom@0 {					/* For 2.4GHz WiFi */
+						reg = <0x0 0x400>;
+					};
+					eeprom_factory_8000: eeprom@8000 {		/* For 5GHz WiFi */
+						reg = <0x8000 0x4da8>;
+					};
+					macaddr_factory_e000: macaddr@e000 {	/* LAN1 MAC address */
+						reg = <0xe000 0x6>;
+					};
+					macaddr_factory_e006: macaddr@e006 {	/* WAN/LAN2 MAC address */
+						reg = <0xe006 0x6>;
+					};
+				};
+			};
+			partition@50000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x50000 0xF30000>;
+			};
+			partition@F80000 {
+				label = "vendor";													/* Labelled "Vendor" on stock, unknown purpose */
+				reg = <0xF80000 0x80000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_factory_e000>;
+	nvmem-cell-names = "mac-address";
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie0 {
+	wifi@0,0 {			/* 2.4GHz */
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_0>;
+		nvmem-cell-names = "eeprom";
+		ieee80211-freq-limit = <2400000 2500000>;
+	};
+};
+
+&pcie1 {
+	wifi@0,0 {			/* 5GHz */
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_8000>;
+		nvmem-cell-names = "eeprom";
+		ieee80211-freq-limit = <5000000 6000000>;
+	};
+};
+
+&switch0 {
+	compatible = "mediatek,mt7530";
+	mediatek,eth-led-mode = <0>;
+	ports {
+		port@0 {
+			status = "okay";
+			label = "lan1";		/* This is the plain LAN port. */
+			nvmem-cells = <&macaddr_factory_e000>;
+			nvmem-cell-names = "mac-address";
+		};
+		port@4 {
+			status = "okay";
+			label = "lan2";		/* This is the grey LAN/Backhaul port. Assigned to LAN (not WAN) because this is intended to be a WiFi mesh device. */
+			nvmem-cells = <&macaddr_factory_e006>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "i2c", "jtag", "wdt";
+		function = "gpio";
+	};
+};
