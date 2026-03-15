@@ -1,0 +1,12 @@
+--- a/drivers/bus/mhi/host/pci_generic.c	2026-03-06 11:27:42.256078685 +0300
++++ b/drivers/bus/mhi/host/pci_generic.c	2026-03-06 11:28:41.960751652 +0300
+@@ -874,6 +874,9 @@
+ 	/* NETPRISMA FCUN69 (SDX6X) */
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_NETPRISMA, 0x1001),
+ 		.driver_data = (kernel_ulong_t) &mhi_netprisma_fcun69_info },
++	/* T99W175 (sdx55), my variant */
++	{ PCI_DEVICE(PCI_VENDOR_ID_FOXCONN, 0xe0c0),
++		.driver_data = (kernel_ulong_t) &mhi_foxconn_t99w175_info },
+ 	{  }
+ };
+ MODULE_DEVICE_TABLE(pci, mhi_pci_id_table);
