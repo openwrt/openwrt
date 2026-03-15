@@ -1,0 +1,13 @@
+Index: dsl_cpe_mei-ugw_8.5.2.10/src/Makefile.am
+===================================================================
+--- dsl_cpe_mei-ugw_8.5.2.10.orig/src/Makefile.am
++++ dsl_cpe_mei-ugw_8.5.2.10/src/Makefile.am
+@@ -377,7 +377,7 @@ drv_mei_cpe.ko: $(drv_mei_cpe_SOURCES)
+ 	@echo -e "# drv_mei_cpe: Generated to build Linux 2.6.x kernel object" > $(PWD)/Kbuild
+ 	@echo -e "obj-m := $(subst .ko,.o,$@)"			>> $(PWD)/Kbuild
+ 	@echo -e "$(subst .ko,,$@)-y := $(drv_mei_cpe_OBJS)"	>> $(PWD)/Kbuild
+-	@echo -e "EXTRA_CFLAGS := $(drv_mei_cpe_CFLAGS) -I@abs_srcdir@ -I@abs_srcdir@/auto_header $(IFXOS_INCLUDE_PATH)" >> $(PWD)/Kbuild
++	@echo -e "ccflags-y := $(drv_mei_cpe_CFLAGS) -I@abs_srcdir@ -I@abs_srcdir@/auto_header $(IFXOS_INCLUDE_PATH)" >> $(PWD)/Kbuild
+ 	$(MAKE) ARCH=@KERNEL_ARCH@ -C @KERNEL_BUILD_PATH@ O=@KERNEL_BUILD_PATH@ M=$(PWD) modules
+ 
+ clean-generic:
