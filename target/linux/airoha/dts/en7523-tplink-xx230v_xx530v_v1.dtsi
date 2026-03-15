@@ -1,0 +1,222 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include "en7523.dtsi"
+
+/ {
+	chosen {
+		bootargs = "console=ttyS0,115200 earlycon";
+		stdout-path = "serial0:115200n8";
+	};
+
+	aliases {
+		serial0 = &uart1;
+		led-boot = &led_power;
+		led-failsafe = &led_power;
+		led-upgrade = &led_power;
+		led-running = &led_power;
+	};
+
+	memory@80000000 {
+		device_type = "memory";
+		reg = <0x80000000 0x40000000>;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pinctrl 0 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pinctrl 7 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		// Power
+		led_power: led@0 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <0>;
+			gpios = <&pinctrl 11 GPIO_ACTIVE_LOW>;
+		};
+
+		// GPON
+		led@1 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <1>;
+			gpios = <&pinctrl 10 GPIO_ACTIVE_LOW>;
+		};
+
+		// internet
+		led@3 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <3>;
+			gpios = <&pinctrl 1 GPIO_ACTIVE_LOW>;
+		};
+
+		// Wireless
+		led@4 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <0>;
+			gpios = <&pinctrl 6 GPIO_ACTIVE_LOW>;
+		};
+
+		// Phone
+		led@5 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <4>;
+			gpios = <&pinctrl 5 GPIO_ACTIVE_HIGH>;
+		};
+
+		// LOS
+		led@2 {
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <0>;
+			gpios = <&pinctrl 3 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&pinctrl {
+	gpio-ranges = <&pinctrl 0 0 32>;
+};
+
+&usb0 {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+};
+
+&pcie0 {
+	status = "okay";
+};
+
+&pcie1 {
+	status = "okay";
+
+	pcie@1,0 {
+		reg = <0x00000800 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+
+		mt76: mt7915@0,0 {
+			reg = <0x0000 0 0 0 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			airoha,npu = <&npu>;
+			airoha,eth = <&eth>;
+
+			// 2.4 GHz
+			band@0 {
+				reg = <0>;
+			};
+
+			// 5 GHz
+			band@1 {
+				reg = <1>;
+			};
+		};
+	};
+};
+
+&xpon_phy {
+	status = "okay";
+};
+
+&xpon {
+	status = "okay";
+};
+
+&npu {
+	status = "okay";
+};
+
+&eth {
+	status = "okay";
+};
+
+&gdm1 {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+	ports {
+		port@1 {
+			label = "lan1";
+			status = "okay";
+		};
+
+		port@2 {
+			label = "lan2";
+			status = "okay";
+		};
+
+		port@3 {
+			label = "lan3";
+			status = "okay";
+		};
+
+		port@4 {
+			label = "wan";
+			status = "okay";
+		};
+	};
+
+	mdio {
+		ethernet-phy@9 {
+			leds {
+				led0@0 {
+					status = "okay";
+				};
+			};
+		};
+
+		ethernet-phy@10 {
+			leds {
+				led0@0 {
+					status = "okay";
+				};
+			};
+		};
+
+		ethernet-phy@11 {
+			leds {
+				led0@0 {
+					status = "okay";
+				};
+			};
+		};
+
+		ethernet-phy@12 {
+			leds {
+				led0@0 {
+					status = "okay";
+					function = LED_FUNCTION_WAN;
+				};
+			};
+		};
+	};
+};

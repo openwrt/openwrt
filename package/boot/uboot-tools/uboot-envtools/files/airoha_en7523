@@ -1,0 +1,24 @@
+[ -e /etc/config/ubootenv ] && exit 0
+
+touch /etc/config/ubootenv
+
+. /lib/uboot-envtools.sh
+. /lib/functions.sh
+
+board=$(board_name)
+
+case "$board" in
+	airoha,en7523-evb)
+		ubootenv_add_mtd "u-boot-env" "0x0" "0x4000" "0x4000"
+		;;
+	tplink,ex530v,v1 | \
+	tplink,xx230v,v1 | \
+	tplink,xx530v,v1)
+		ubootenv_add_mtd "uboot-atf" "0x7C000" "0x4000" "0x4000"
+		;;
+esac
+
+config_load ubootenv
+config_foreach ubootenv_add_app_config
+
+exit 0

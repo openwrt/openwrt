@@ -1,0 +1,128 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+#include "en7523-tplink-xx230v_xx530v_v1.dtsi"
+
+/ {
+	model = "TP-Link XX230V v1";
+	compatible = "tplink,xx230v-v1", "airoha,en7523";
+};
+
+/* xx230v v1
+	0x000000000000-0x000004000000 : "whole"
+	0x000000000000-0x000000080000 : "boot"
+	0x000000080000-0x0000000a0000 : "romfile"
+	0x0000000a0000-0x0000001a0000 : "misc"
+	0x0000001a0000-0x000002000000 : "firmware"
+	0x000002000000-0x000003e60000 : "firmware_slave"
+	0x000003fe0000-0x000004000000 : "reserve"
+*/
+&nand {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "uboot-atf";
+			reg = <0x00000000 0x00080000>;
+			read-only;
+		};
+
+		partition@1 {
+			label = "romfile";
+			reg = <0x80000 0xa0000>;
+			read-only;
+		};
+
+		partition@2 {
+			label = "misc";
+			reg = <0x0a0000 0x1a0000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				macaddr: macaddr@4f100 {
+					#nvmem-cell-cells = <1>;
+					compatible = "mac-base";
+					reg = <0x4f100 0x6>;
+				};
+
+				eeprom0: eeprom@80000 {
+					reg = <0x80000 0x1000>;
+				};
+
+				en7571_bob: en7571_bob@c0000 {
+					reg = <0xc0000 0xff>;
+				};
+			};
+		};
+
+		// Fist 512 have header of kernel
+		// flash write 0x01a0000 0x$filesize $loadaddr
+		partition@3 {
+			label = "firmware";
+			reg = <0x01a0000 0x7360000>;
+		};
+
+		partition@4 {
+			label = "kernel";
+			reg = <0x01a0000 0x1000000>;
+		};
+
+		partition@5 {
+			label = "rootfs";
+			reg = <0x11a0000 0x6360000>;
+		};
+
+		/* reserved for bad block table */
+		partition@6 {
+			label = "reserved_bmt";
+			reg = <0x7500000 0x0b00000>;
+			read-only;
+		};
+	};
+};
+
+&xpon_phy {
+	nvmem-cells = <&en7571_bob>;
+	nvmem-cell-names = "phy-bob";
+};
+
+&xpon {
+	nvmem-cells = <&macaddr 0>;
+	nvmem-cell-names = "mac-address";
+	pon,sn = "TPLG";
+};
+
+&mt76 {
+	nvmem-cells = <&eeprom0>;
+	nvmem-cell-names = "eeprom";
+
+	// 2.4 GHz
+	band@0 {
+		nvmem-cells = <&macaddr 0>;
+		nvmem-cell-names = "mac-address";
+	};
+
+	// 5 GHz
+	band@1 {
+		nvmem-cells = <&macaddr 2>;
+		nvmem-cell-names = "mac-address";
+	};
+};
+
+&gdm1 {
+	nvmem-cells = <&macaddr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch {
+	ports {
+		port@6 {
+			nvmem-cells = <&macaddr 0>;
+			nvmem-cell-names = "mac-address";
+		};
+	};
+};

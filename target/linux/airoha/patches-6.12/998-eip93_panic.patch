@@ -1,0 +1,25 @@
+diff --git a/drivers/crypto/inside-secure/eip93/eip93-hash.c b/drivers/crypto/inside-secure/eip93/eip93-hash.c
+index 899bcb984..a468f8dbe 100644
+--- a/drivers/crypto/inside-secure/eip93/eip93-hash.c
++++ b/drivers/crypto/inside-secure/eip93/eip93-hash.c
+@@ -115,10 +115,11 @@ static int _eip93_hash_init(struct ahash_request *req, struct sa_state *sa_state
+ 	struct crypto_ahash *ahash = crypto_ahash_reqtfm(req);
+ 	struct eip93_hash_ctx *ctx = crypto_ahash_ctx(ahash);
+ 	struct sa_record *sa_record, *sa_record_hmac;
+-	struct eip93_device *mtk = rctx->mtk;
++	struct eip93_device *mtk = ctx->mtk;
+ 	int digestsize;
+ 	int ret;
+ 
++	rctx->mtk = mtk;
+ 	sa_record = kzalloc(sizeof(*sa_record), GFP_KERNEL);
+ 	if (!sa_record)
+ 		return -ENOMEM;
+@@ -164,7 +165,6 @@ static int _eip93_hash_init(struct ahash_request *req, struct sa_state *sa_state
+ 		sa_record->sa_cmd1_word &= ~EIP93_SA_CMD_HMAC;
+ 	}
+ 
+-	rctx->mtk = ctx->mtk;
+ 	rctx->sa_record = sa_record;
+ 	rctx->sa_record_base = dma_map_single(mtk->dev, rctx->sa_record,
+ 					      sizeof(*rctx->sa_record),
