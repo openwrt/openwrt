@@ -142,12 +142,16 @@ setup_interface () {
 	done
 
 	proto_add_data
-	[ -n "$CER" ] && json_add_string cer "$CER"
 	[ -n "$PASSTHRU" ] && json_add_string passthru "$PASSTHRU"
 	[ -n "$ZONE" ] && json_add_string zone "$ZONE"
 	proto_close_data
 
 	proto_send_update "$INTERFACE"
+
+	# If the flag '$DYNAMIC' is set to '0' (default=1), then the dynamic
+	# interfaces for the proto 'map', 'dslite' or '464xlat' are not
+	# created, even if the requirements are met.
+	[ "$DYNAMIC" = 0 ] && return
 
 	MAPTYPE=""
 	MAPRULE=""
@@ -165,7 +169,7 @@ setup_interface () {
 
 	[ -n "$ZONE" ] || ZONE=$(fw3 -q network $INTERFACE 2>/dev/null)
 
-	if [ "$IFACE_MAP" != 0 -a -n "$MAPTYPE" -a -n "$MAPRULE" ]; then
+	if [ "$IFACE_MAP" != 0 ] && [ -n "$MAPTYPE" ] && [ -n "$MAPRULE" ]; then
 		[ -z "$IFACE_MAP" -o "$IFACE_MAP" = 1 ] && IFACE_MAP=${INTERFACE}_4
 		json_init
 		json_add_string name "$IFACE_MAP"
@@ -182,7 +186,7 @@ setup_interface () {
 		[ -n "$IFACE_MAP_DELEGATE" ] && json_add_boolean delegate "$IFACE_MAP_DELEGATE"
 		json_close_object
 		ubus call network add_dynamic "$(json_dump)"
-	elif [ -n "$AFTR" -a "$IFACE_DSLITE" != 0 -a -f /lib/netifd/proto/dslite.sh ]; then
+	elif [ -n "$AFTR" ] && [ "$IFACE_DSLITE" != 0 ] && [ -f /lib/netifd/proto/dslite.sh ]; then
 		[ -z "$IFACE_DSLITE" -o "$IFACE_DSLITE" = 1 ] && IFACE_DSLITE=${INTERFACE}_4
 		json_init
 		json_add_string name "$IFACE_DSLITE"
@@ -192,11 +196,12 @@ setup_interface () {
 		json_add_string tunlink "$INTERFACE"
 		[ -n "$ZONE_DSLITE" ] || ZONE_DSLITE=$ZONE
 		[ -n "$ZONE_DSLITE" ] && json_add_string zone "$ZONE_DSLITE"
+		[ -n "$MTU_DSLITE" ] && json_add_string mtu "$MTU_DSLITE"
 		[ -n "$ENCAPLIMIT_DSLITE" ] && json_add_string encaplimit "$ENCAPLIMIT_DSLITE"
 		[ -n "$IFACE_DSLITE_DELEGATE" ] && json_add_boolean delegate "$IFACE_DSLITE_DELEGATE"
 		json_close_object
 		ubus call network add_dynamic "$(json_dump)"
-	elif [ "$IFACE_464XLAT" != 0 -a -f /lib/netifd/proto/464xlat.sh ]; then
+	elif [ "$IFACE_464XLAT" != 0 ] && [ -f /lib/netifd/proto/464xlat.sh ]; then
 		[ -z "$IFACE_464XLAT" -o "$IFACE_464XLAT" = 1 ] && IFACE_464XLAT=${INTERFACE}_4
 		json_init
 		json_add_string name "$IFACE_464XLAT"

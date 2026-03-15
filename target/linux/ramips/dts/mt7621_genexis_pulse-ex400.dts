@@ -1,0 +1,103 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7621_genexis_pulse-ex400-common.dtsi"
+
+/ {
+	compatible = "genexis,pulse-ex400", "mediatek,mt7621-soc";
+	model = "Genexis Pulse EX400";
+
+	aliases {
+		led-boot = &led_status_red;
+		led-failsafe = &led_status_red;
+		led-running = &led_status_green;
+		led-upgrade = &led_status_red;
+	};
+};
+
+&leds {
+	led_wps_green: led-2 {
+		color = <LED_COLOR_ID_GREEN>;
+		function = LED_FUNCTION_WPS;
+		gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&i2c_gpio {
+	touch@2b {
+		compatible = "semtech,sx9512";
+
+		reg = <0x2b>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		poll-interval = <150>;
+
+		/* Touch area 2.4 GHz */
+		channel@1 {
+			reg = <1>;
+
+			semtech,cin-delta = <0x3>;
+			semtech,sense-threshold = <0x04>;
+
+			linux,keycodes = <KEY_A>;
+		};
+
+		/* Touch area 5 GHz */
+		channel@2 {
+			reg = <2>;
+
+			semtech,cin-delta = <0x3>;
+			semtech,sense-threshold = <0x04>;
+
+			linux,keycodes = <KEY_B>;
+		};
+		/* Touch area WPS */
+		channel@3 {
+			reg = <3>;
+
+			semtech,cin-delta = <0x3>;
+			semtech,sense-threshold = <0x04>;
+
+			linux,keycodes = <KEY_WPS_BUTTON>;
+		};
+
+		channel@4 {
+			reg = <4>;
+
+			led {
+				color = <LED_COLOR_ID_RED>;
+				function = LED_FUNCTION_WAN;
+			};
+		};
+
+		channel@5 {
+			reg = <5>;
+
+			led {
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_WAN;
+			};
+		};
+
+		channel@6 {
+			reg = <6>;
+
+			led {
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_WLAN_5GHZ;
+				linux,default-trigger = "phy1tpt";
+			};
+		};
+
+		channel@7 {
+			reg = <7>;
+
+			led {
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_WLAN_2GHZ;
+				linux,default-trigger = "phy0tpt";
+			};
+		};
+	};
+};

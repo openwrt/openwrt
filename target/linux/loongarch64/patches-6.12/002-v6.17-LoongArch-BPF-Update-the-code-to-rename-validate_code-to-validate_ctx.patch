@@ -1,0 +1,52 @@
+From ed1a1fe6ec5e73b23b310b434ace07d1e5060657 Mon Sep 17 00:00:00 2001
+From: Chenghao Duan <duanchenghao@kylinos.cn>
+Date: Tue, 5 Aug 2025 19:00:18 +0800
+Subject: [PATCH 02/12] LoongArch: BPF: Rename and refactor validate_code()
+
+1. Rename the existing validate_code() to validate_ctx()
+2. Factor out the code validation handling into a new helper
+   validate_code()
+
+Then:
+
+* validate_code() is used to check the validity of code.
+* validate_ctx() is used to check both code validity and table entry
+  correctness.
+
+The new validate_code() will be used in subsequent changes.
+
+Reviewed-by: Hengqi Chen <hengqi.chen@gmail.com>
+Co-developed-by: George Guo <guodongtai@kylinos.cn>
+Signed-off-by: George Guo <guodongtai@kylinos.cn>
+Signed-off-by: Chenghao Duan <duanchenghao@kylinos.cn>
+Signed-off-by: Huacai Chen <chenhuacai@loongson.cn>
+---
+ arch/loongarch/net/bpf_jit.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+--- a/arch/loongarch/net/bpf_jit.c
++++ b/arch/loongarch/net/bpf_jit.c
+@@ -1188,6 +1188,14 @@ static int validate_code(struct jit_ctx
+ 			return -1;
+ 	}
+ 
++	return 0;
++}
++
++static int validate_ctx(struct jit_ctx *ctx)
++{
++	if (validate_code(ctx))
++		return -1;
++
+ 	if (WARN_ON_ONCE(ctx->num_exentries != ctx->prog->aux->num_exentries))
+ 		return -1;
+ 
+@@ -1296,7 +1304,7 @@ skip_init_ctx:
+ 	build_epilogue(&ctx);
+ 
+ 	/* 3. Extra pass to validate JITed code */
+-	if (validate_code(&ctx)) {
++	if (validate_ctx(&ctx)) {
+ 		bpf_jit_binary_free(header);
+ 		prog = orig_prog;
+ 		goto out_offset;

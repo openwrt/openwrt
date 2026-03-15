@@ -25,5 +25,17 @@
 &pci0 {
 	status = "okay";
 
-	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
+	reset-gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
+};
+
+&boardconfig {
+	cal_boardconfig_21000: calibration@21000 {
+		reg = <0x21000 0x3d8>;
+	};
+};
+
+&ath9k {
+	compatible = "pci168c,002e";
+	nvmem-cells = <&macaddr_ath9k_cal_f100 2>, <&cal_boardconfig_21000>;
+	nvmem-cell-names = "mac-address", "calibration";
 };

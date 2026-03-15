@@ -4,6 +4,29 @@
 
 OTHER_MENU:=Other modules
 
+define KernelPackage/mmc-mtk
+  SUBMENU:=Other modules
+  TITLE:=MediaTek SD/MMC Card Interface support
+  DEPENDS:=@(TARGET_ramips_mt7620||TARGET_ramips_mt76x8||TARGET_ramips_mt7621) +kmod-mmc
+  KCONFIG:= \
+	CONFIG_MMC \
+	CONFIG_MMC_CQHCI \
+	CONFIG_MMC_HSQ \
+	CONFIG_MMC_MTK
+  FILES:= \
+	$(LINUX_DIR)/drivers/mmc/host/cqhci.ko \
+	$(LINUX_DIR)/drivers/mmc/host/mmc_hsq.ko \
+	$(LINUX_DIR)/drivers/mmc/host/mtk-sd.ko
+  AUTOLOAD:=$(call AutoProbe,cqhci mmc_hsq mtk-sd,1)
+endef
+
+define KernelPackage/mmc-mtk/description
+  MediaTek(R) Secure digital and Multimedia card Interface.
+  This is needed if support for any SD/SDIO/MMC devices is required.
+endef
+
+$(eval $(call KernelPackage,mmc-mtk))
+
 define KernelPackage/pwm-mediatek-ramips
   SUBMENU:=Other modules
   TITLE:=MT7628 PWM
@@ -26,6 +49,7 @@ $(eval $(call KernelPackage,pwm-mediatek-ramips))
 define KernelPackage/sdhci-mt7620
   SUBMENU:=Other modules
   TITLE:=MT7620 SDCI
+  CONFLICTS:=kmod-mmc-mtk
   DEPENDS:=@(TARGET_ramips_mt7620||TARGET_ramips_mt76x8||TARGET_ramips_mt7621) +kmod-mmc
   KCONFIG:= \
 	CONFIG_MTK_MMC \
@@ -60,13 +84,14 @@ I2C_MT7621_MODULES:= \
 
 define KernelPackage/i2c-mt7628
   $(call i2c_defaults,$(I2C_MT7621_MODULES),59)
-  TITLE:=MT7628/88 I2C Controller
+  TITLE:=MT7621/MT7628/MT7688 I2C Controller
   DEPENDS:=+kmod-i2c-core \
-	@(TARGET_ramips_mt76x8)
+	@(TARGET_ramips_mt7621||TARGET_ramips_mt76x8)
 endef
 
 define KernelPackage/i2c-mt7628/description
- Kernel modules for enable mt7621 i2c controller.
+  Driver support for I2C controller in the MediaTek
+  MT7621/MT7628/MT7688 SoCs.
 endef
 
 $(eval $(call KernelPackage,i2c-mt7628))
@@ -74,19 +99,18 @@ $(eval $(call KernelPackage,i2c-mt7628))
 define KernelPackage/dma-ralink
   SUBMENU:=Other modules
   TITLE:=Ralink GDMA Engine
-  DEPENDS:=@TARGET_ramips
+  DEPENDS:=@TARGET_ramips @!TARGET_ramips_rt288x
   KCONFIG:= \
 	CONFIG_DMADEVICES=y \
-	CONFIG_DW_DMAC_PCI=n \
-	CONFIG_DMA_RALINK
+	CONFIG_RALINK_GDMA
   FILES:= \
 	$(LINUX_DIR)/drivers/dma/virt-dma.ko \
-	$(LINUX_DIR)/drivers/staging/ralink-gdma/ralink-gdma.ko
+	$(LINUX_DIR)/drivers/dma/ralink-gdma.ko
   AUTOLOAD:=$(call AutoLoad,52,ralink-gdma)
 endef
 
 define KernelPackage/dma-ralink/description
- Kernel modules for enable ralink dma engine.
+ Kernel modules for enable ralink gdma engine.
 endef
 
 $(eval $(call KernelPackage,dma-ralink))
@@ -97,7 +121,6 @@ define KernelPackage/hsdma-mtk
   DEPENDS:=@TARGET_ramips @TARGET_ramips_mt7621
   KCONFIG:= \
 	CONFIG_DMADEVICES=y \
-	CONFIG_DW_DMAC_PCI=n \
 	CONFIG_MTK_HSDMA
   FILES:= \
 	$(LINUX_DIR)/drivers/dma/virt-dma.ko \
@@ -132,3 +155,21 @@ define KernelPackage/sound-mt7620/description
 endef
 
 $(eval $(call KernelPackage,sound-mt7620))
+
+
+define KernelPackage/keyboard-sx951x
+  SUBMENU:=Other modules
+  TITLE:=Semtech SX9512/SX9513
+  DEPENDS:=@TARGET_ramips_mt7621 +kmod-input-core
+  KCONFIG:= \
+	CONFIG_KEYBOARD_SX951X \
+	CONFIG_INPUT_KEYBOARD=y
+  FILES:=$(LINUX_DIR)/drivers/input/keyboard/sx951x.ko
+  AUTOLOAD:=$(call AutoProbe,sx951x)
+endef
+
+define KernelPackage/keyboard-sx951x/description
+ Enable support for SX9512/SX9513 capacitive touch controllers
+endef
+
+$(eval $(call KernelPackage,keyboard-sx951x))

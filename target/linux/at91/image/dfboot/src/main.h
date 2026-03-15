@@ -12,7 +12,7 @@
 //*
 //* 1.0 27/03/03 HIi    : Creation
 //* 1.01 03/05/04 HIi   : AT9C_VERSION incremented to 1.01
-//* 1.02 15/06/04 HIi   : AT9C_VERSION incremented to 1.02 ==> 
+//* 1.02 15/06/04 HIi   : AT9C_VERSION incremented to 1.02 ==>
 //*                       Add crc32 to verify dataflash download
 //* 1.03 18/04/05 MLC   : AT91C_VERSION incremented to 1.03g
 //*			  Repeat boot on CRC Failure

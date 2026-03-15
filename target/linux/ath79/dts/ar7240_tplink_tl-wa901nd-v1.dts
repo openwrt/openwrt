@@ -6,3 +6,11 @@
 	model = "TP-Link TL-WA901ND v1";
 	compatible = "tplink,tl-wa901nd-v1", "qca,ar7240";
 };
+
+&ath9k {
+	compatible = "pci168c,002b";
+};
+
+&calibration_art_1000 {
+	reg = <0x1000 0x200>;
+};

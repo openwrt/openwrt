@@ -1,0 +1,19 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca9557_sophos_ap15.dtsi"
+
+/ {
+	compatible = "sophos,ap15c", "qca,qca9557";
+	model = "Sophos AP15C";
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+};

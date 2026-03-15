@@ -296,7 +296,7 @@
  	priv->tc_ops.umt_start = plat_umt_start;
 --- a/dcdp/atm_tc.c
 +++ b/dcdp/atm_tc.c
-@@ -3650,7 +3650,7 @@ static void atm_aca_ring_config_init(str
+@@ -3569,7 +3569,7 @@ static void atm_aca_ring_config_init(str
  static int atm_ring_init(struct atm_priv *priv)
  {
  	atm_aca_ring_config_init(priv);
@@ -305,7 +305,7 @@
  }
  
  static int atm_init(struct tc_priv *tcpriv, u32 ep_id)
-@@ -4020,7 +4020,7 @@ void atm_tc_unload(void)
+@@ -3939,7 +3939,7 @@ void atm_tc_unload(void)
  	/* unregister device */
  	if (priv->tc_priv->tc_ops.dev_unreg != NULL)
  		priv->tc_priv->tc_ops.dev_unreg(NULL,

@@ -6,7 +6,7 @@ PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://gitlab.com/prpl-foundation/intel/ppa_drv.git
 PKG_SOURCE_DATE:=2019-05-20
 PKG_SOURCE_VERSION:=4fa7ac30fcc8ec4eddae9debba5f4230981f469f
-PKG_MIRROR_HASH:=444eb823dd9ddd25453976bf7a3230955e4148b8bf92f35f165ecffee32c4555
+PKG_MIRROR_HASH:=53ae72a929db598202a4e9c3df43b65fa0778cd165c1ec2ddf9361993795b930
 PKG_LICENSE:=GPL-2.0 BSD-2-Clause
 
 MAKE_PATH:=src/vectoring
@@ -20,7 +20,7 @@ define KernelPackage/ltq-vectoring
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=driver for sending vectoring error samples
-  DEPENDS:=@TARGET_lantiq_xrx200
+  DEPENDS:=@(TARGET_lantiq_xrx200||TARGET_lantiq_xrx200_legacy)
   FILES:=$(PKG_BUILD_DIR)/$(MAKE_PATH)/ltq_vectoring.ko
   AUTOLOAD:=$(call AutoLoad,49,ltq_vectoring)
 endef
@@ -38,7 +38,7 @@ define KernelPackage/ltq-vectoring-test
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=driver for testing the vectoring driver
-  DEPENDS:=@TARGET_lantiq_xrx200 +kmod-ltq-vectoring
+  DEPENDS:=@(TARGET_lantiq_xrx200||TARGET_lantiq_xrx200_legacy) +kmod-ltq-vectoring
   FILES:=$(PKG_BUILD_DIR)/$(MAKE_PATH)/ltq_vectoring_test.ko
 endef
 

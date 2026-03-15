@@ -6,9 +6,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=https://github.com/openwrt/bcm63xx-cfe.git
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_DATE:=2021-06-22
-PKG_SOURCE_VERSION:=e5050f37150b34deb547b50feccd0e7439cb5bd7
-PKG_MIRROR_HASH:=85fed9f4bdf23cf7d33a02f549ffe9073666890f786d5ffa484c0368552b75ae
+PKG_SOURCE_DATE:=2025-04-02
+PKG_SOURCE_VERSION:=b8128fa4bdcdaf97549138965b00d5d7ceb7bb0f
+PKG_MIRROR_HASH:=d33fad4fb5f4419bb287f3c3df6cceabab01fc7852c24cf29a15befa38cc0d45
 
 PKG_FLAGS:=nonshared
 
@@ -35,9 +35,9 @@ define Package/bcm63xx-cfe/install
 endef
 
 define Build/InstallDev
-	rm -rf $(KERNEL_BUILD_DIR)/$(PKG_NAME)
-	mkdir -p $(KERNEL_BUILD_DIR)/$(PKG_NAME)
-	$(CP) -r $(PKG_BUILD_DIR)/* $(KERNEL_BUILD_DIR)/$(PKG_NAME)
+	rm -rf $(STAGING_DIR_IMAGE)/$(PKG_NAME)
+	mkdir -p $(STAGING_DIR_IMAGE)/$(PKG_NAME)
+	$(CP) -r $(PKG_BUILD_DIR)/* $(STAGING_DIR_IMAGE)/$(PKG_NAME)
 endef
 
 $(eval $(call BuildPackage,bcm63xx-cfe))

@@ -1,0 +1,97 @@
+--- a/src/common/drv_dsl_cpe_os_linux.c
++++ b/src/common/drv_dsl_cpe_os_linux.c
+@@ -431,7 +431,11 @@ static int DSL_DRV_DevNodeInit(DSL_void_
+    }
+ 
+    /* create a device class used for createing /dev/ entries */
++#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 4, 0)
+    dsl_class = class_create(THIS_MODULE, DRV_DSL_CPE_API_DEV_NAME);
++#else
++   dsl_class = class_create(DRV_DSL_CPE_API_DEV_NAME);
++#endif
+    if (IS_ERR(dsl_class)) {
+       DSL_DEBUG(DSL_DBG_ERR,
+          (DSL_NULL, SYS_DBG_ERR""DSL_DRV_CRLF DSL_DRV_CRLF
+--- a/src/common/drv_dsl_cpe_api.c
++++ b/src/common/drv_dsl_cpe_api.c
+@@ -1370,7 +1370,8 @@ DSL_boolean_t DSL_DRV_BondingEnableCheck
+       nDslMode = DSL_DRV_VRX_DslModeIndexGet(pContext);
+ 
+       DSL_CHECK_DSLMODE(nDslMode);
+-      DSL_CHECK_ERR_CODE();
++      if (nErrCode != DSL_SUCCESS)
++         return bPafEnable;
+ 
+       /* Bonding is always enabled for both lines/devices together so using the
+          configuration from the current line/device is ok. */
+@@ -3886,7 +3887,7 @@ DSL_Error_t DSL_DRV_RetxStatisticsGet(
+ 
+    DSL_CHECK_POINTER(pContext, pData);
+    DSL_CHECK_ERR_CODE();
+-   DSL_CHECK_DIRECTION(pData->nDirection);
++   DSL_CHECK_ATU_DIRECTION(pData->nDirection);
+    DSL_CHECK_ERR_CODE();
+ 
+    DSL_DEBUG(DSL_DBG_MSG,
+--- a/src/device/drv_dsl_cpe_device_vrx.c
++++ b/src/device/drv_dsl_cpe_device_vrx.c
+@@ -2760,7 +2760,7 @@ static DSL_Error_t DSL_DRV_VRX_ChannelSt
+    DSL_CHECK_CHANNEL_RANGE(nChannel);
+    DSL_CHECK_ERR_CODE();
+ 
+-   DSL_CHECK_ATU_DIRECTION(nDirection);
++   DSL_CHECK_DIRECTION(nDirection);
+    DSL_CHECK_ERR_CODE();
+ 
+    DSL_DEBUG(DSL_DBG_MSG,
+@@ -2807,8 +2807,8 @@ static DSL_Error_t DSL_DRV_VRX_ChannelSt
+       if (nVerCheck >= DSL_VERSION_EQUAL)
+       {
+          bRocEnable = nDirection == DSL_UPSTREAM ?
+-                     (DSL_boolean_t)sAckLs.FUS.ROCstatus_us :
+-                     (DSL_boolean_t)sAckLs.FDS.ROCstatus_ds;
++                     (DSL_FeatureSupport_t)sAckLs.FUS.ROCstatus_us :
++                     (DSL_FeatureSupport_t)sAckLs.FDS.ROCstatus_ds;
+ 
+          DSL_CTX_WRITE_SCALAR(
+             pContext, nErrCode, lineFeatureDataSts[nDirection].bRocEnable,
+@@ -4885,7 +4885,7 @@ DSL_Error_t DSL_DRV_DEV_FwDownload(
+ 
+          /* Set VRX device FW mode*/
+          fwModeSelect.firmwareFeatures.nPlatformId = nFwFeatures.nPlatformId;
+-         fwModeSelect.firmwareFeatures.eFirmwareXdslModes = nFwFeatures.nFirmwareXdslModes;
++         fwModeSelect.firmwareFeatures.eFirmwareXdslModes = (IOCTL_MEI_firmwareXdslMode_t)nFwFeatures.nFirmwareXdslModes;
+ 
+          if( DSL_DRV_VRX_InternalFwModeCtrlSet((MEI_DYN_CNTRL_T*)dev, &fwModeSelect) != 0 )
+          {
+@@ -7420,7 +7420,7 @@ DSL_Error_t DSL_DRV_VRX_ChannelStatusGet
+ {
+    DSL_Error_t nErrCode = DSL_SUCCESS;
+ 
+-   DSL_CHECK_ATU_DIRECTION(nDirection);
++   DSL_CHECK_DIRECTION(nDirection);
+    DSL_CHECK_ERR_CODE();
+ 
+    DSL_CTX_READ_SCALAR(pContext, nErrCode,
+--- a/src/bnd/drv_dsl_cpe_api_bnd_vrx.c
++++ b/src/bnd/drv_dsl_cpe_api_bnd_vrx.c
+@@ -480,7 +480,8 @@ DSL_Error_t DSL_DRV_BND_DEV_PafBndStatus
+    else
+    {
+       pData->nRemotePafSupported =
+-         pafHsStatus.bPafEnable ? DSL_BND_ENABLE_ON : DSL_BND_ENABLE_OFF;
++         pafHsStatus.bPafEnable ? (DSL_BND_Supported_t)DSL_BND_ENABLE_ON :
++                                  (DSL_BND_Supported_t)DSL_BND_ENABLE_OFF;
+    }
+ 
+    DSL_DEBUG(DSL_DBG_MSG, (pContext,
+@@ -517,7 +518,8 @@ DSL_Error_t DSL_DRV_BND_DEV_ImapBndStatu
+    else
+    {
+       pData->nRemoteImapSupported =
+-         imapHsStatus.bImapEnable ? DSL_BND_ENABLE_ON : DSL_BND_ENABLE_OFF;
++         imapHsStatus.bImapEnable ? (DSL_BND_Supported_t)DSL_BND_ENABLE_ON :
++                                    (DSL_BND_Supported_t)DSL_BND_ENABLE_OFF;
+    }
+ 
+    DSL_DEBUG(DSL_DBG_MSG, (pContext,

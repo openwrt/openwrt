@@ -14,7 +14,7 @@ KERNEL_LOADADDR := 0x00008000
 define Build/boot-scr
 	rm -f $@-boot.scr
 	sed \
-		-e 's#@ROOT@#$(IMG_PART_SIGNATURE)#g' \
+		-e 's#@ROOT@#$(if $(1),$(1),$(IMG_PART_SIGNATURE))#g' \
 		-e 's#@DTB@#$(firstword $(DEVICE_DTS))#g' \
 		$(BOOT_SCRIPT).bootscript > $@-new.bootscript
 	mkimage -A arm -O linux -T script -C none -a 0 -e 0 -d $@-new.bootscript $@-boot.scr
@@ -138,17 +138,21 @@ endef
 
 define Build/uDPU-firmware
 	(rm -fR $@-fw; mkdir -p $@-fw)
-	$(CP) $(BIN_DIR)/$(DEVICE_IMG_PREFIX)-initramfs.itb $@-fw/recovery.itb
+	$(CP) $(BIN_DIR)/$(KERNEL_INITRAMFS_IMAGE) $@-fw/recovery.itb
+	$(CP) $(IMAGE_ROOTFS) $@-fw/rootfs.tgz
 	$(CP) $@-boot.scr $@-fw/boot.scr
-	$(TAR) -cvzp --numeric-owner --owner=0 --group=0 --sort=name \
-		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
-		-f $@-fw/rootfs.tgz -C $(TARGET_DIR) .
-	$(TAR) -cvzp --numeric-owner --owner=0 --group=0 --sort=name \
+	$(TAR) -czp --numeric-owner --owner=0 --group=0 --sort=name \
 		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
 		-f $@-fw/boot.tgz -C $@.boot .
-	$(TAR) -cvzp --numeric-owner --owner=0 --group=0 --sort=name \
+	$(TAR) -czp --numeric-owner --owner=0 --group=0 --sort=name \
 		$(if $(SOURCE_DATE_EPOCH),--mtime="@$(SOURCE_DATE_EPOCH)") \
 		-f $(KDIR_TMP)/$(DEVICE_IMG_PREFIX)-firmware.tgz -C $@-fw .
+endef
+
+define Device/FitImage
+  KERNEL_SUFFIX := -uImage.itb
+  KERNEL = kernel-bin | libdeflate-gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
+  KERNEL_NAME := Image
 endef
 
 define Device/Default

@@ -38,7 +38,7 @@ static int alg_speed_test(const char *alg, const char *driver,
 			  struct cipher_speed_template *t,
 			  unsigned int tcount, u8 *keysize);
 
-static struct cipher_speed_template des3_speed_template[] = {
+static const struct cipher_speed_template des3_speed_template[] = {
 	{
 		.key	= "\x01\x23\x45\x67\x89\xab\xcd\xef"
 			  "\x55\x55\x55\x55\x55\x55\x55\x55"
@@ -50,18 +50,18 @@ static struct cipher_speed_template des3_speed_template[] = {
 /*
  * Cipher speed tests
  */
-static u8 speed_template_8[] = {8, 0};
-static u8 speed_template_24[] = {24, 0};
-static u8 speed_template_8_32[] = {8, 32, 0};
-static u8 speed_template_16_32[] = {16, 32, 0};
-static u8 speed_template_16_24_32[] = {16, 24, 32, 0};
-static u8 speed_template_32_40_48[] = {32, 40, 48, 0};
-static u8 speed_template_32_48_64[] = {32, 48, 64, 0};
+static const u8 speed_template_8[] = {8, 0};
+static const u8 speed_template_24[] = {24, 0};
+static const u8 speed_template_8_32[] = {8, 32, 0};
+static const u8 speed_template_16_32[] = {16, 32, 0};
+static const u8 speed_template_16_24_32[] = {16, 24, 32, 0};
+static const u8 speed_template_32_40_48[] = {32, 40, 48, 0};
+static const u8 speed_template_32_48_64[] = {32, 48, 64, 0};
 
 /*
  * Digest speed tests
  */
-static struct hash_speed generic_hash_speed_template[] = {
+static const struct hash_speed generic_hash_speed_template[] = {
 	{ .blen = 16,	.plen = 16, },
 	{ .blen = 64,	.plen = 16, },
 	{ .blen = 64,	.plen = 64, },

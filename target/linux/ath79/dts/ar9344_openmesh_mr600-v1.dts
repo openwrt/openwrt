@@ -18,12 +18,6 @@
 	leds {
 		compatible = "gpio-leds";
 
-		wifi5g_green {
-			label = "green:wifi5g";
-			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
-		};
-
 		wps_blue {
 			function = LED_FUNCTION_WPS;
 			color = <LED_COLOR_ID_BLUE>;
@@ -37,14 +31,18 @@
 			default-state = "on";
 		};
 	};
+};
 
-	leds-ath9k {
-		compatible = "gpio-leds";
+&wmac {
+	led {
+		led-sources = <12>;
+		led-active-low;
+	};
+};
 
-		wifi2g {
-			label = "blue:wifi2g";
-			gpios = <&ath9k 0 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
-		};
+&ath9k {
+	led {
+		led-sources = <0>;
+		led-active-low;
 	};
 };

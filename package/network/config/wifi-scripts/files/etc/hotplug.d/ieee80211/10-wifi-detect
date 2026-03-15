@@ -2,4 +2,5 @@
 
 [ "${ACTION}" = "add" ] && {
 	/sbin/wifi config
+	ubus call network.wireless retry
 }

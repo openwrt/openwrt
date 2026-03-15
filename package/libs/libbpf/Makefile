@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2020-2023 Tony Ambardar <itugrok@yahoo.com>
+# Copyright (C) 2020-2024 Tony Ambardar <itugrok@yahoo.com>
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,19 +8,19 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libbpf
-PKG_VERSION:=1.3.0
+PKG_VERSION:=1.6.2
 PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=https://github.com/libbpf/libbpf
-PKG_MIRROR_HASH:=ff597a3635c2c099419d7e9e8bc44084f7f9e0c4ba2dcd571130165a19ed4ef4
+PKG_MIRROR_HASH:=9620f45b4fc0ee5e0f43502634fe48fbcb34ab49d2553b7275fa92f7e02d3dc7
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_VERSION:=v1.3.0
+PKG_SOURCE_VERSION:=v$(PKG_VERSION)
 PKG_ABI_VERSION:=$(firstword $(subst .,$(space),$(PKG_VERSION)))
 
 PKG_MAINTAINER:=Tony Ambardar <itugrok@yahoo.com>
 PKG_CPE_ID:=cpe:/a:libbpf_project:libbpf
 
-PKG_BUILD_FLAGS:=no-mips16
+PKG_BUILD_FLAGS:=no-mips16 no-gc-sections no-lto
 PKG_BUILD_PARALLEL:=1
 PKG_INSTALL:=1
 
@@ -33,17 +33,13 @@ define Package/libbpf
   TITLE:=libbpf - eBPF helper library
   LICENSE:=LGPL-2.1 OR BSD-2-Clause
   ABI_VERSION:=$(PKG_ABI_VERSION)
-  URL:=http://www.kernel.org
+  URL:=https://www.kernel.org
   DEPENDS:=+libelf
 endef
 
 define Package/libbpf/description
   libbpf is a library for loading eBPF programs and reading and manipulating eBPF objects from user-space.
 endef
-
-MAKE_VARS = \
-	EXTRA_CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS)" \
-	LDFLAGS="$(TARGET_LDFLAGS)"
 
 MAKE_FLAGS += \
 	$(if $(findstring c,$(OPENWRT_VERBOSE)),V=1,V='') \

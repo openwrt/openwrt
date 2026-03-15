@@ -9,9 +9,12 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=spidev-test
-PKG_RELEASE:=$(LINUX_VERSION)
+PKG_VERSION:=$(LINUX_VERSION)
+PKG_RELEASE:=1
 PKG_BUILD_DIR:=$(LINUX_DIR)/tools/spi-$(TARGET_DIR_NAME)
 PKG_BUILD_PARALLEL:=1
+
+PKG_LICENSE:=GPL-2.0-only
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -20,8 +23,8 @@ define Package/spidev-test
   CATEGORY:=Utilities
   DEPENDS:=+kmod-spi-dev
   TITLE:=SPI testing utility
-  VERSION:=$(LINUX_VERSION)-$(PKG_RELEASE)
-  URL:=http://www.kernel.org
+  VERSION:=$(LINUX_VERSION)-r$(PKG_RELEASE)
+  URL:=https://www.kernel.org
 endef
 
 define Package/spidev-test/description

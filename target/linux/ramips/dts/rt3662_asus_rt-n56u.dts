@@ -71,14 +71,13 @@
 
 	rtl8367 {
 		compatible = "realtek,rtl8367";
-		gpio-sda = <&gpio0 1 GPIO_ACTIVE_HIGH>;
-		gpio-sck = <&gpio0 2 GPIO_ACTIVE_HIGH>;
-		realtek,extif1 = <1 0 1 1 1 1 1 1 2>;
+		sda-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+		sck-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+		realtek,extif = <8 1 0 1 1 1 1 1 1 2>;
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <100>;
+		compatible = "gpio-keys";
 
 		reset {
 			label = "reset";
@@ -149,7 +148,7 @@
 &pci1 {
 	status = "okay";
 
-	wifi@0,0 {
+	wifi@1,0 {
 		compatible = "pci1814,3091";
 		reg = <0x10000 0 0 0 0>;
 		nvmem-cells = <&eeprom_factory_8000>;

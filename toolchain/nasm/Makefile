@@ -5,12 +5,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=nasm
-PKG_VERSION:=2.16.01
+PKG_VERSION:=3.01
 
 PKG_SOURCE_URL:=https://www.nasm.us/pub/nasm/releasebuilds/$(PKG_VERSION)/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-PKG_HASH:=c77745f4802375efeee2ec5c0ad6b7f037ea9c87c92b149a9637ff099f162558
-PKG_CPE_ID:=cpe:/a:nasm:nasm
+PKG_HASH:=b7324cbe86e767b65f26f467ed8b12ad80e124e3ccb89076855c98e43a9eddd4
+PKG_CPE_ID:=cpe:/a:nasm:netwide_assembler
 
 HOST_BUILD_PARALLEL:=1
 

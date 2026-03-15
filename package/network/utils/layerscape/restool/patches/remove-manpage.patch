@@ -1,6 +1,6 @@
 --- a/Makefile
 +++ b/Makefile
-@@ -53,14 +53,13 @@ restool: $(OBJ)
+@@ -55,14 +55,13 @@ restool: $(OBJ)
  %.1: %.md
  	pandoc --standalone --to man $^ -o $@
  

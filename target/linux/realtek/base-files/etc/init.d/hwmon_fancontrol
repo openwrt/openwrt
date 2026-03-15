@@ -1,0 +1,45 @@
+#!/bin/sh /etc/rc.common
+
+START=18
+
+plasmacloud_common() {
+	# configuring onboard temp/fan controller to run the fan on its own
+	# for more information, please read https://www.kernel.org/doc/Documentation/hwmon/sysfs-interface
+
+	local path_to_hwmon="$(find /sys/devices/platform/1b000000.switchcore/1b000000.switchcore:i2c@100c/i2c-4/4-002e/hwmon/ -type d -maxdepth 1 -mindepth 1 -name 'hwmon*')"
+
+	# adt7476 fan control chip
+	# 3 temp sensors. Set to lowest speed at 35C and max speed at 70C
+	# set critical temp to 80 as per the datasheet
+	echo 7 > "$path_to_hwmon/pwm2_auto_channels_temp"
+	echo 1 > "$path_to_hwmon/pwm2_auto_point1_pwm"
+	echo 255 > "$path_to_hwmon/pwm2_auto_point2_pwm"
+	echo 22500 > "$path_to_hwmon/pwm2_freq"
+
+	echo 80000 > "$path_to_hwmon/temp1_crit"
+	echo 80000 > "$path_to_hwmon/temp2_crit"
+	echo 80000 > "$path_to_hwmon/temp3_crit"
+
+	echo 75000 > "$path_to_hwmon/temp1_crit_hyst"
+	echo 75000 > "$path_to_hwmon/temp2_crit_hyst"
+	echo 75000 > "$path_to_hwmon/temp3_crit_hyst"
+
+	echo 50000 > "$path_to_hwmon/temp1_auto_point1_temp"
+	echo 50000 > "$path_to_hwmon/temp2_auto_point1_temp"
+	echo 50000 > "$path_to_hwmon/temp3_auto_point1_temp"
+
+	echo 70000 > "$path_to_hwmon/temp1_auto_point2_temp"
+	echo 70000 > "$path_to_hwmon/temp2_auto_point2_temp"
+	echo 70000 > "$path_to_hwmon/temp3_auto_point2_temp"
+
+	echo 2 > "$path_to_hwmon/pwm2_enable"
+}
+
+boot() {
+	case $(board_name) in
+	plasmacloud,esx28|\
+	plasmacloud,psx28)
+		plasmacloud_common
+		;;
+	esac
+}

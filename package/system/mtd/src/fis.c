@@ -67,12 +67,12 @@ fis_open(void)
 	if (fis_fd >= 0)
 		fis_close();
 
-	fis_fd = mtd_check_open("FIS directory");
+	fis_fd = mtd_check_open("FIS directory", true);
 	if (fis_fd < 0)
 		goto error;
 
 	close(fis_fd);
-	fis_fd = mtd_open("FIS directory", true);
+	fis_fd = mtd_open("FIS directory", true, true);
 	if (fis_fd < 0)
 		goto error;
 

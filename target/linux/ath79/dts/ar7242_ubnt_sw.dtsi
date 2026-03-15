@@ -46,7 +46,7 @@
 
 		sck-gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
 		mosi-gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
-		cs-gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
+		cs-gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 		num-chipselects = <1>;
 
 		gpio_hc595: gpio_spi@0 {
@@ -100,7 +100,7 @@
 				read-only;
 			};
 
-			art: partition@7f0000 {
+			partition@7f0000 {
 				reg = <0x7f0000 0x010000>;
 				label = "art";
 				read-only;

@@ -6,3 +6,11 @@
 	model = "TP-Link TL-WR740N v1/v2";
 	compatible = "tplink,tl-wr740n-v1", "qca,ar7240";
 };
+
+&ath9k {
+	compatible = "pci168c,002b";
+};
+
+&calibration_art_1000 {
+	reg = <0x1000 0x200>;
+};

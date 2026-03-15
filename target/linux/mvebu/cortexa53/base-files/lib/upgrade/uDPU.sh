@@ -42,7 +42,7 @@ udpu_do_part_check() {
 		# Format the /misc part right away as we will need it for the firmware
 		printf "Formating /misc partition, this make take a while..\n"
 		udpu_part_prep ${emmc_dev}p4
-		if mkfs.f2fs -q -l misc ${emmc_dev}p4; then
+		if mkfs.f2fs -q -l misc -O extra_attr,compression ${emmc_dev}p4; then
 			printf "/misc partition formated successfully\n"
 		else
 			printf "/misc partition formatting failed\n"
@@ -66,7 +66,7 @@ udpu_do_misc_prep() {
 			format_count=0
 			while [ "$format_count" -lt "1" ]; do
 				udpu_part_prep ${emmc_dev}p4
-				mkfs.f2fs -q -l misc ${emmc_dev}p4
+				mkfs.f2fs -q -l misc -O extra_attr,compression ${emmc_dev}p4
 				if ! mount ${emmc_dev}p4 /misc; then
 					umount -l /misc
 					printf "Failed while mounting /misc\n"
@@ -92,7 +92,7 @@ udpu_do_initial_setup() {
 	# Prepare /root partition
 	printf "Formating /root partition, this may take a while..\n"
 	udpu_part_prep ${emmc_dev}p3
-	mkfs.f2fs -q -l rootfs ${emmc_dev}p3 && printf "/root partition reformated\n"
+	mkfs.f2fs -q -l rootfs -O extra_attr,compression ${emmc_dev}p3 && printf "/root partition reformated\n"
 }
 
 udpu_do_regular_upgrade() {

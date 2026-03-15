@@ -1,5 +1,45 @@
 include ./common-tp-link.mk
 
+define Device/tplink_rex5x
+  $(Device/tplink-safeloader)
+  SOC := qca9558
+  BLOCKSIZE := 4k
+  IMAGE_SIZE := 7680k
+  KERNEL_SIZE := 6016k
+  DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct
+  DEVICE_COMPAT_VERSION := 3.0
+  DEVICE_COMPAT_MESSAGE := Partition layout and blocksize changed. Use sysupgrade -F; image must not exceed 6016 KiB (5.875 MB).
+  IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size | append-metadata
+endef
+
+define Device/tplink_re355-v1
+  $(Device/tplink_rex5x)
+  DEVICE_MODEL := RE355
+  DEVICE_VARIANT := v1
+  TPLINK_BOARD_ID := RE355
+  SUPPORTED_DEVICES += re355
+endef
+TARGET_DEVICES += tplink_re355-v1
+
+define Device/tplink_re450-v1
+  $(Device/tplink_rex5x)
+  DEVICE_MODEL := RE450
+  DEVICE_VARIANT := v1
+  TPLINK_BOARD_ID := RE450
+  SUPPORTED_DEVICES += re450
+endef
+TARGET_DEVICES += tplink_re450-v1
+
+define Device/tplink_re450-v2
+  $(Device/tplink_rex5x)
+  SOC := qca9563
+  DEVICE_MODEL := RE450
+  DEVICE_VARIANT := v2
+  TPLINK_BOARD_ID := RE450-V2
+  LOADER_TYPE := elf
+endef
+TARGET_DEVICES += tplink_re450-v2
+
 define Device/tplink_tl-mr10u
   $(Device/tplink-4mlzma)
   SOC := ar9331
@@ -481,6 +521,7 @@ define Device/tplink_tl-wr941-v2
   $(Device/tplink-4m)
   SOC := ar9132
   DEVICE_MODEL := TL-WR941ND
+  DEVICE_PACKAGES := kmod-dsa-mv88e6060
   DEVICE_VARIANT := v2/v3
   DEVICE_ALT0_VENDOR := TP-Link
   DEVICE_ALT0_MODEL := TL-WR941N

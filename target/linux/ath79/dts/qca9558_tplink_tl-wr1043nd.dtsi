@@ -66,7 +66,6 @@
 
 	gpio-export {
 		compatible = "gpio-export";
-		#size-cells = <0>;
 
 		gpio_usb_power {
 			gpio-export,name = "tp-link:power:usb";
@@ -121,10 +120,20 @@
 				reg = <0x020000 0x7d0000>;
 			};
 
-			art: partition@7f0000 {
+			partition@7f0000 {
 				label = "art";
 				reg = <0x7f0000 0x010000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+				};
 			};
 		};
 	};
@@ -133,8 +142,10 @@
 &mdio0 {
 	status = "okay";
 
-	phy0: ethernet-phy@0 {
-		reg = <0>;
+	switch@1f {
+		compatible = "qca,ar8327";
+		reg = <0x1f>;
+
 		qca,ar8327-initvals = <
 			0x04 0x00080080 /* PORT0 PAD MODE CTRL */
 			0x0c 0x07600000 /* PORT6 PAD MODE CTRL */
@@ -146,6 +157,47 @@
 			0x7c 0x0000007e /* PORT0_STATUS */
 			0x94 0x0000007e /* PORT6 STATUS */
 		>;
+
+		leds {
+			led@0 {
+				reg = <0>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_LAN;
+				function-enumerator = <4>;
+				qca,led-mode = <0>;
+			};
+
+			led@3 {
+				reg = <3>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_LAN;
+				function-enumerator = <3>;
+				qca,led-mode = <0>;
+			};
+
+			led@6 {
+				reg = <6>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_LAN;
+				function-enumerator = <2>;
+				qca,led-mode = <0>;
+			};
+
+			led@9 {
+				reg = <9>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_LAN;
+				function-enumerator = <1>;
+				qca,led-mode = <0>;
+			};
+
+			led@12 {
+				reg = <12>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_WAN;
+				qca,led-mode = <0>;
+			};
+		};
 	};
 };
 
@@ -156,7 +208,11 @@
 
 	nvmem-cells = <&macaddr_uboot_1fc00 1>;
 	nvmem-cell-names = "mac-address";
-	phy-handle = <&phy0>;
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
 };
 
 &eth1 {
@@ -175,7 +231,7 @@
 
 &wmac {
 	status = "okay";
-	mtd-cal-data = <&art 0x1000>;
-	nvmem-cells = <&macaddr_uboot_1fc00 0>;
-	nvmem-cell-names = "mac-address";
+
+	nvmem-cells = <&macaddr_uboot_1fc00 0>, <&cal_art_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
 };

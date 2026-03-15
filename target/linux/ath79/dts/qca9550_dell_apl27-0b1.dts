@@ -1,0 +1,78 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca9550_dell_apl2x.dtsi"
+
+/ {
+	model = "Dell SonicPoint ACi (APL27-0B1)";
+	compatible = "dell,apl27-0b1", "qca,qca9550", "qca,qca9558";
+
+	keys {
+		button-reset {
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	leds {
+		led-lan1-amber {
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+		};
+
+		led-lan1-green {
+			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
+		};
+
+		led-lan2-amber {
+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
+		};
+
+		led-lan2-green {
+			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
+		};
+
+		led-wlan2g {
+			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
+		};
+
+		led-wlan5g {
+			gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
+		};
+
+		led-wrench {
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	reg_usb_vbus: regulator-usb-vbus {
+		compatible = "regulator-fixed";
+		regulator-name = "usb-vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+	};
+
+	output-usb-vbus {
+		compatible = "regulator-output";
+		vout-supply = <&reg_usb_vbus>;
+	};
+};
+
+&pcie0 {
+	wifi@0,0 {
+		nvmem-cells = <&macaddr_sysinfo_50 2>, <&cal_art_5000>;
+		nvmem-cell-names = "mac-address", "calibration";
+	};
+};
+
+&spi {
+	flash@0 {
+		partitions {
+			partition@100000 {
+				nvmem-layout {
+					cal_art_5000: calibration@5000 {
+						reg = <0x5000 0x844>;
+					};
+				};
+			};
+		};
+	};
+};

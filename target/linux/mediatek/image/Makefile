@@ -22,7 +22,7 @@ define Device/Default
   KERNEL_INITRAMFS = kernel-bin | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd
   KERNEL_LOADADDR = $(loadaddr-y)
-  FILESYSTEMS := squashfs
+  FILESYSTEMS := squashfs erofs
   DEVICE_DTS_DIR := $(DTS_DIR)
   NETGEAR_ENC_MODEL :=
   NETGEAR_ENC_REGION :=
@@ -31,6 +31,11 @@ define Device/Default
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := append-kernel | pad-to 128k | append-rootfs | \
 	pad-rootfs | append-metadata
+endef
+
+define Build/asus-trx
+	$(STAGING_DIR_HOST)/bin/asusuimage $(wordlist 1,$(words $(1)),$(1)) -i $@ -o $@.new
+	mv $@.new $@
 endef
 
 include $(SUBTARGET).mk

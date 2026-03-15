@@ -9,13 +9,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=firewall
-PKG_RELEASE:=3
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/firewall3.git
-PKG_SOURCE_DATE:=2022-02-17
-PKG_SOURCE_VERSION:=4cd7d4f36bea731bf901cb067456f1d460294926
-PKG_MIRROR_HASH:=ce9e8ac1bcf22afbb0a80c3da1a8e8e887851299681097e3dfbfc347f2c4c80f
+PKG_SOURCE_DATE:=2025-10-03
+PKG_SOURCE_VERSION:=3a65fde5a3e675fdf2a24cb3f5d12d0a426be36e
+PKG_MIRROR_HASH:=1cc9756d9a35353c9437355a622b6a4bd53e2d2db4596f1001fe3d90c5983e68
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
 PKG_LICENSE:=ISC
 
@@ -30,7 +30,7 @@ define Package/firewall
   SECTION:=net
   CATEGORY:=Base system
   TITLE:=OpenWrt C Firewall
-  DEPENDS:=+libubox +libubus +libuci +libip4tc +IPV6:libip6tc +libiptext +IPV6:libiptext6 +libxtables +kmod-ipt-core +kmod-ipt-conntrack +IPV6:kmod-nf-conntrack6 +kmod-ipt-nat
+  DEPENDS:=+libubox +libubus +libuci +libip4tc +IPV6:libip6tc +libiptext +IPV6:libiptext6 +libxtables +kmod-ipt-core +kmod-ipt-conntrack +kmod-ipt-nat
   PROVIDES:=uci-firewall
   CONFLICTS:=firewall4
 endef

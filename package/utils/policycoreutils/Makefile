@@ -6,12 +6,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=policycoreutils
-PKG_VERSION:=3.5
+PKG_VERSION:=3.9
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/SELinuxProject/selinux/releases/download/$(PKG_VERSION)
-PKG_HASH:=78453e1529fbbf800e88860094d555e781ce1fba11a7ef77b5aabb43e1173276
+PKG_HASH:=44a294139876cf4c7969cb6a75d1932cb42543d74a7661760ded44a20bf7ebe8
 PKG_INSTALL:=1
 HOST_BUILD_DEPENDS:=libsemanage/host gettext-full/host
 PKG_BUILD_DEPENDS:=BUSYBOX_CONFIG_PAM:libpam gettext-full/host
@@ -75,11 +75,11 @@ ALTS_setfiles:=300:/sbin/restorecon:/sbin/policycoreutils-setfiles 300:/sbin/set
 
 DEPENDS_genhomedircon:=+libsemanage $(INTL_DEPENDS)
 DEPENDS_load_policy:=+libselinux $(INTL_DEPENDS)
-DEPENDS_newrole:=+libselinux +libaudit +BUSYBOX_CONFIG_PAM:libpam $(INTL_DEPENDS)
+DEPENDS_newrole:= +USE_GLIBC:libcrypt-compat +libselinux +libaudit +BUSYBOX_CONFIG_PAM:libpam $(INTL_DEPENDS)
 DEPENDS_open_init_pty:=$(INTL_DEPENDS)
 DEPENDS_pp:=+libsepol $(INTL_DEPENDS)
 DEPENDS_restorecon_xattr:=+libselinux +libsepol +libaudit $(INTL_DEPENDS)
-DEPENDS_run_init:=+libselinux +libaudit +BUSYBOX_CONFIG_PAM:libpam $(INTL_DEPENDS)
+DEPENDS_run_init:= +USE_GLIBC:libcrypt-compat +libselinux +libaudit +BUSYBOX_CONFIG_PAM:libpam $(INTL_DEPENDS)
 DEPENDS_secon:=+libselinux $(INTL_DEPENDS)
 DEPENDS_semanage:=+libsemanage
 DEPENDS_semodule:=+libsemanage $(INTL_DEPENDS)
@@ -91,7 +91,7 @@ define Package/policycoreutils/Default
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=SELinux policy utility
-  URL:=http://selinuxproject.org/page/Main_Page
+  URL:=https://github.com/selinuxproject
 endef
 
 define Package/policycoreutils

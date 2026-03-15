@@ -20,8 +20,7 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <100>;
+		compatible = "gpio-keys";
 
 		reset {
 			label = "reset";
@@ -70,7 +69,7 @@
 
 	gpio_export {
 		compatible = "gpio-export";
-		#size-cells = <0>;
+
 		/* gpio 12 and 13 handle the OC input */
 
 		usb0 {

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
 /include/ "octeon_3xxx.dtsi"
+#include <dt-bindings/gpio/gpio.h>
 
 / {
 	compatible = "cisco,vedge1000", "cavium,cn6130";
@@ -168,8 +169,8 @@
 				reg = <0x00>;
 				voltage-ranges = <0xce4 0xce4>;
 				max-frequency = <0x3197500>;
-				wp-gpios = <&gpio 0x02 0x00>;
-				cd-gpios = <&gpio 0x03 0x01>;
+				wp-gpios = <&gpio 0x02 GPIO_ACTIVE_HIGH>;
+				cd-gpios = <&gpio 0x03 GPIO_ACTIVE_LOW>;
 				cavium,bus-max-width = <0x04>;
 			};
 		};

@@ -16,8 +16,7 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
 
 		wps {
 			label = "wps";
@@ -64,7 +63,6 @@
 
 	gpio-export {
 		compatible = "gpio-export";
-		#size-cells = <0>;
 
 		slic_int {
 			gpio-export,name = "slic_int";

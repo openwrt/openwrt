@@ -1,7 +1,55 @@
+define Build/append-bootscript
+	cat $@-boot.scr >> $@
+endef
+
+define Device/UbiFit
+  KERNEL_IN_UBI := 1
+  IMAGES := factory.ubi sysupgrade.bin
+  IMAGE/factory.ubi := append-ubi
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+
+define Device/checkpoint_v-80
+  $(call Device/Default-arm64)
+  DEVICE_VENDOR := Check Point
+  DEVICE_MODEL := V-80
+  SOC := armada-7040
+  BOOT_SCRIPT := v-80
+  IMAGES += sysupgrade.gz
+  IMAGE/sysupgrade.gz := boot-scr eMMC | append-bootscript | pad-to 2048 | \
+	append-kernel | \
+	sysupgrade-tar kernel=$$$$@ dtb=$$(KDIR)/image-$$(DEVICE_DTS).dtb | \
+	gzip | append-metadata
+  ARTIFACTS := initramfs.dtb initramfs.scr
+  ARTIFACT/initramfs.dtb := append-dtb
+  ARTIFACT/initramfs.scr := boot-scr INIT | append-bootscript
+  DEVICE_PACKAGES := kmod-dsa-mv88e6xxx kmod-hwmon-nct7802 kmod-rtc-ds1307
+endef
+TARGET_DEVICES += checkpoint_v-80
+
+define Device/checkpoint_v-81
+  $(call Device/Default-arm64)
+  DEVICE_VENDOR := Check Point
+  DEVICE_MODEL := V-81
+  SOC := armada-8040
+  BOOT_SCRIPT := v-80
+  IMAGES += sysupgrade.gz
+  IMAGE/sysupgrade.gz := boot-scr eMMC | append-bootscript | pad-to 2048 | \
+	append-kernel | \
+	sysupgrade-tar kernel=$$$$@ dtb=$$(KDIR)/image-$$(DEVICE_DTS).dtb | \
+	gzip | append-metadata
+  ARTIFACTS := initramfs.dtb initramfs.scr
+  ARTIFACT/initramfs.dtb := append-dtb
+  ARTIFACT/initramfs.scr := boot-scr INIT | append-bootscript
+  DEVICE_PACKAGES := kmod-dsa-mv88e6xxx kmod-hwmon-nct7802 kmod-rtc-ds1307
+endef
+TARGET_DEVICES += checkpoint_v-81
+
 define Device/globalscale_mochabin
   $(call Device/Default-arm64)
   DEVICE_VENDOR := Globalscale
   DEVICE_MODEL := MOCHAbin
+  DEVICE_PACKAGES += kmod-dsa-mv88e6xxx
   SOC := armada-7040
 endef
 TARGET_DEVICES += globalscale_mochabin
@@ -52,6 +100,19 @@ define Device/marvell_macchiatobin-singleshot
 endef
 TARGET_DEVICES += marvell_macchiatobin-singleshot
 
+define Device/mikrotik_rb5009
+  $(call Device/Default-arm64)
+  $(Device/NAND-128K)
+  $(call Device/FitImage)
+  $(call Device/UbiFit)
+  DEVICE_VENDOR := MikroTik
+  DEVICE_MODEL := RB5009
+  SOC := armada-7040
+  KERNEL_LOADADDR := 0x22000000
+  DEVICE_PACKAGES += kmod-i2c-gpio yafut kmod-dsa-mv88e6xxx
+endef
+TARGET_DEVICES += mikrotik_rb5009
+
 define Device/marvell_clearfog-gt-8k
   $(call Device/Default-arm64)
   DEVICE_VENDOR := SolidRun
@@ -86,7 +147,7 @@ define Device/solidrun_clearfog-pro
   SOC := cn9130
   DEVICE_VENDOR := SolidRun
   DEVICE_MODEL := ClearFog Pro
-  DEVICE_PACKAGES += kmod-i2c-mux-pca954x
+  DEVICE_PACKAGES += kmod-i2c-mux-pca954x kmod-dsa-mv88e6xxx
   BOOT_SCRIPT := clearfog-pro
 endef
 TARGET_DEVICES += solidrun_clearfog-pro

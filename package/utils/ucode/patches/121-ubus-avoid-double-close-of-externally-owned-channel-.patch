@@ -1,0 +1,130 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 6 Feb 2026 20:19:59 +0000
+Subject: [PATCH] ubus: avoid double close of externally owned channel fds
+
+When a channel is opened via an fd obtained through fileno(), the fd is
+owned by an external resource. Track this in fd_handle and detach from
+uloop without closing the fd on disconnect/shutdown.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/lib/ubus.c
++++ b/lib/ubus.c
+@@ -132,6 +132,7 @@ typedef struct {
+ 	struct ubus_context ctx;
+ 	struct blob_buf buf;
+ 	int timeout;
++	bool fd_handle;
+ 
+ 	uc_vm_t *vm;
+ 	uc_value_t *res;
+@@ -739,7 +740,7 @@ uc_ubus_call_timeout_cb(struct uloop_tim
+ }
+ 
+ static int
+-get_fd(uc_vm_t *vm, uc_value_t *val)
++get_fd(uc_vm_t *vm, uc_value_t *val, bool *handle)
+ {
+ 	uc_value_t *fn;
+ 	int64_t n;
+@@ -747,6 +748,9 @@ get_fd(uc_vm_t *vm, uc_value_t *val)
+ 	fn = ucv_property_get(val, "fileno");
+ 
+ 	if (ucv_is_callable(fn)) {
++		if (handle)
++			*handle = true;
++
+ 		uc_vm_stack_push(vm, ucv_get(val));
+ 		uc_vm_stack_push(vm, ucv_get(fn));
+ 
+@@ -816,7 +820,7 @@ uc_ubus_call_common(uc_vm_t *vm, uc_ubus
+ 		ucv_object_to_blob(funargs, &c->buf);
+ 
+ 	if (fd) {
+-		fd_val = get_fd(vm, fd);
++		fd_val = get_fd(vm, fd, NULL);
+ 
+ 		if (fd_val < 0)
+ 			errval_return(UBUS_STATUS_INVALID_ARGUMENT,
+@@ -938,7 +942,7 @@ uc_ubus_defer_common(uc_vm_t *vm, uc_ubu
+ 		ucv_object_to_blob(funargs, &c->buf);
+ 
+ 	if (fd) {
+-		fd_val = get_fd(vm, fd);
++		fd_val = get_fd(vm, fd, NULL);
+ 
+ 		if (fd_val < 0)
+ 			errval_return(UBUS_STATUS_INVALID_ARGUMENT,
+@@ -1174,7 +1178,7 @@ uc_ubus_request_set_fd(uc_vm_t *vm, size
+ 	if (!callctx)
+ 		err_return(UBUS_STATUS_INVALID_ARGUMENT, "Invalid call context");
+ 
+-	fd = get_fd(vm, uc_fn_arg(0));
++	fd = get_fd(vm, uc_fn_arg(0), NULL);
+ 
+ 	if (fd < 0)
+ 		err_return(UBUS_STATUS_INVALID_ARGUMENT, "Invalid file descriptor");
+@@ -2313,6 +2317,10 @@ uc_ubus_disconnect(uc_vm_t *vm, size_t n
+ #ifdef HAVE_UBUS_FLUSH_REQUESTS
+ 	ubus_flush_requests(&c->ctx);
+ #endif
++	if (c->fd_handle) {
++		uloop_fd_delete(&c->ctx.sock);
++		c->ctx.sock.fd = -1;
++	}
+ 	ubus_shutdown(&c->ctx);
+ 	c->ctx.sock.fd = -1;
+ 	uc_ubus_put_res(&c->res);
+@@ -2422,6 +2430,10 @@ uc_ubus_channel_disconnect_cb(struct ubu
+ 	blob_buf_free(&c->buf);
+ 
+ 	if (c->ctx.sock.fd >= 0) {
++		if (c->fd_handle) {
++			uloop_fd_delete(&c->ctx.sock);
++			c->ctx.sock.fd = -1;
++		}
+ 		ubus_shutdown(&c->ctx);
+ 		c->ctx.sock.fd = -1;
+ 	}
+@@ -2486,6 +2498,7 @@ uc_ubus_channel_connect(uc_vm_t *vm, siz
+ {
+ #ifdef HAVE_UBUS_CHANNEL_SUPPORT
+ 	uc_value_t *fd, *cb, *disconnect_cb, *timeout;
++	bool handle = false;
+ 	uc_ubus_connection_t *c;
+ 	int fd_val;
+ 
+@@ -2495,7 +2508,7 @@ uc_ubus_channel_connect(uc_vm_t *vm, siz
+ 	         "disconnect_cb", UC_CLOSURE, true, &disconnect_cb,
+ 	         "timeout", UC_INTEGER, true, &timeout);
+ 
+-	fd_val = get_fd(vm, fd);
++	fd_val = get_fd(vm, fd, &handle);
+ 
+ 	if (fd_val < 0)
+ 		err_return(UBUS_STATUS_INVALID_ARGUMENT, "Invalid file descriptor argument");
+@@ -2505,6 +2518,8 @@ uc_ubus_channel_connect(uc_vm_t *vm, siz
+ 	if (!c)
+ 		return NULL;
+ 
++	c->fd_handle = handle;
++
+ 	if (ubus_channel_connect(&c->ctx, fd_val, cb ? uc_ubus_channel_req_cb : NULL)) {
+ 		ucv_put(c->res);
+ 		err_return(UBUS_STATUS_UNKNOWN_ERROR, "Unable to create ubus channel");
+@@ -2602,8 +2617,13 @@ static void free_connection(void *ud) {
+ 
+ 	blob_buf_free(&conn->buf);
+ 
+-	if (conn->ctx.sock.fd >= 0)
++	if (conn->ctx.sock.fd >= 0) {
++		if (conn->fd_handle) {
++			uloop_fd_delete(&conn->ctx.sock);
++			conn->ctx.sock.fd = -1;
++		}
+ 		ubus_shutdown(&conn->ctx);
++	}
+ }
+ 
+ static void free_deferred(void *ud) {

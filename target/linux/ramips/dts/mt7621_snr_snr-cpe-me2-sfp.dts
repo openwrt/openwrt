@@ -58,24 +58,12 @@
 		tx-disable-gpios = <&gpio 9 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <1000>;
 	};
+};
 
-	reg_usb_vbus: regulator-usb {
-		compatible = "regulator-fixed";
-		regulator-name = "usb_vbus";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		gpio = <&gpio 17 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-	};
-
-	reg_3p3v: regulator-3p3v {
-		compatible = "regulator-fixed";
-		regulator-name = "fixed-3.3V";
-		regulator-min-microvolt = <3300000>;
-		regulator-max-microvolt = <3300000>;
-		regulator-boot-on;
-		regulator-always-on;
-	};
+&reg_vbus {
+	/delete-property/ regulator-always-on;
+	gpios = <&gpio 17 GPIO_ACTIVE_HIGH>;
+	enable-active-high;
 };
 
 &state_default {
@@ -121,6 +109,10 @@
 
 					eeprom_factory_0: eeprom@0 {
 						reg = <0x0 0x4da8>;
+					};
+
+					macaddr_factory_8004: macaddr@8004 {
+						reg = <0x8004 0x6>;
 					};
 
 					macaddr_factory_e000: macaddr@e000 {
@@ -202,11 +194,6 @@
 	};
 };
 
-&xhci {
-	vusb33-supply = <&reg_3p3v>;
-	vbus-supply = <&reg_usb_vbus>;
-};
-
 &pcie {
 	status = "okay";
 };
@@ -217,5 +204,14 @@
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&eeprom_factory_0>;
 		nvmem-cell-names = "eeprom";
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		band@1 {
+			reg = <1>;
+			nvmem-cells = <&macaddr_factory_8004>;
+			nvmem-cell-names = "mac-address";
+		};
 	};
 };

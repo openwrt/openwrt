@@ -105,7 +105,7 @@
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 
-		gpio = <&gpio 14 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
 };
@@ -192,7 +192,7 @@
 		    <&pci_req1_pins>, <&pci_req2_pins>;
 	pinctrl-names = "default";
 
-	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
+	reset-gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 	req-mask = <0xf>;
 };
 

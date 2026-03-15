@@ -1,0 +1,36 @@
+From 52bead95d2957437c691891fcdc49bd6afccdd49 Mon Sep 17 00:00:00 2001
+From: Fabrice Fontaine <fontaine.fabrice@gmail.com>
+Date: Fri, 12 Apr 2024 18:45:13 +0200
+Subject: Create.c: fix uclibc build
+
+Define FALLOC_FL_ZERO_RANGE if needed as FALLOC_FL_ZERO_RANGE is only
+defined for aarch64 on uclibc-ng resulting in the following or1k build
+failure since commit 577fd10486d8d1472a6b559066f344ac30a3a391:
+
+Create.c: In function 'write_zeroes_fork':
+Create.c:155:35: error: 'FALLOC_FL_ZERO_RANGE' undeclared (first use in this function)
+  155 |                 if (fallocate(fd, FALLOC_FL_ZERO_RANGE | FALLOC_FL_KEEP_SIZE,
+      |                                   ^~~~~~~~~~~~~~~~~~~~
+
+Fixes:
+ - http://autobuild.buildroot.org/results/0e04bcdb591ca5642053e1f7e31384f06581e989
+
+Signed-off-by: Fabrice Fontaine <fontaine.fabrice@gmail.com>
+Signed-off-by: Mariusz Tkaczyk <mariusz.tkaczyk@linux.intel.com>
+---
+ Create.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/Create.c
++++ b/Create.c
+@@ -32,6 +32,10 @@
+ #include	<sys/signalfd.h>
+ #include	<sys/wait.h>
+ 
++#ifndef FALLOC_FL_ZERO_RANGE
++#define FALLOC_FL_ZERO_RANGE 16
++#endif
++
+ static int round_size_and_verify(unsigned long long *size, int chunk)
+ {
+ 	if (*size == 0)

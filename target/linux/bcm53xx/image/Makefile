@@ -127,6 +127,8 @@ define Build/dwl8610ap-image
 	mv $@.new $@
 endef
 
+DTS_DIR := $(DTS_DIR)/broadcom
+
 DEVICE_VARS += ASUS_PRODUCTID
 DEVICE_VARS += BUFFALO_TAG_PLATFORM BUFFALO_TAG_VERSION BUFFALO_TAG_MINOR
 DEVICE_VARS += SIGNATURE
@@ -173,6 +175,22 @@ define Device/asus_rt-ac3100
   ASUS_PRODUCTID := RT-AC3100
 endef
 TARGET_DEVICES += asus_rt-ac3100
+
+define Device/asus_rt-ac3200
+  $(call Device/asus)
+  DEVICE_MODEL := RT-AC3200
+  DEVICE_PACKAGES := $(BRCMFMAC_43602A1) $(USB3_PACKAGES)
+  ASUS_PRODUCTID := RT-AC3200
+endef
+TARGET_DEVICES += asus_rt-ac3200
+
+define Device/asus_rt-ac5300
+  $(call Device/asus)
+  DEVICE_MODEL := RT-AC5300
+  DEVICE_PACKAGES := $(BRCMFMAC_4366C0) $(USB3_PACKAGES)
+  ASUS_PRODUCTID := RT-AC5300
+endef
+TARGET_DEVICES += asus_rt-ac5300
 
 define Device/asus_rt-ac56u
   $(call Device/asus)
@@ -343,45 +361,46 @@ define Device/luxul
   IMAGE/lxl := append-ubi | trx-nand | luxul-lxl
 endef
 
-define Device/luxul_abr-4500
+define Device/luxul_abr-4500-v1
   $(Device/luxul)
   DEVICE_MODEL := ABR-4500
   DEVICE_PACKAGES := $(USB3_PACKAGES)
+  DEVICE_DTS := bcm47094-luxul-abr-4500
   LUXUL_BOARD := ABR-4500
 endef
-TARGET_DEVICES += luxul_abr-4500
+TARGET_DEVICES += luxul_abr-4500-v1
 
-define Device/luxul_xap-1610
+define Device/luxul_xap-1610-v1
   $(Device/luxul)
   DEVICE_MODEL := XAP-1610
   DEVICE_PACKAGES := $(BRCMFMAC_4366C0)
+  DEVICE_DTS := bcm47094-luxul-xap-1610
   IMAGE/lxl := append-rootfs | trx-serial | luxul-lxl
   LUXUL_BOARD := XAP-1610
 endef
-TARGET_DEVICES += luxul_xap-1610
+TARGET_DEVICES += luxul_xap-1610-v1
 
-define Device/luxul_xbr-4500
+define Device/luxul_xbr-4500-v1
   $(Device/luxul)
   DEVICE_MODEL := XBR-4500
   DEVICE_PACKAGES := $(USB3_PACKAGES)
+  DEVICE_DTS := bcm47094-luxul-xbr-4500
   LUXUL_BOARD := XBR-4500
 endef
-TARGET_DEVICES += luxul_xbr-4500
+TARGET_DEVICES += luxul_xbr-4500-v1
 
-define Device/luxul_xwr-3150
+define Device/luxul_xwr-3150-v1
   $(Device/luxul)
   DEVICE_MODEL := XWR-3150
   DEVICE_PACKAGES := $(BRCMFMAC_4366C0) $(USB3_PACKAGES)
-  DEVICE_DTS := bcm47094-luxul-xwr-3150-v1
   LUXUL_BOARD := XWR-3150
 endef
-TARGET_DEVICES += luxul_xwr-3150
+TARGET_DEVICES += luxul_xwr-3150-v1
 
 define Device/meraki_mr26
   DEVICE_VENDOR := Meraki
   DEVICE_MODEL := MR26
-  DEVICE_PACKAGES := $(B43) kmod-i2c-bcm-iproc kmod-eeprom-at24 \
-	kmod-hwmon-ina2xx kmod-leds-uleds nu801
+  DEVICE_PACKAGES := $(B43) kmod-hwmon-ina2xx kmod-leds-uleds nu801
   DEVICE_DTS := bcm53015-meraki-mr26
 # resize the initramfs to fit the size of the existing part.safe.
   KERNEL_LOADADDR := 0x00008000
@@ -397,8 +416,7 @@ TARGET_DEVICES += meraki_mr26
 define Device/meraki_mr32
   DEVICE_VENDOR := Meraki
   DEVICE_MODEL := MR32
-  DEVICE_PACKAGES := $(B43) kmod-i2c-bcm-iproc kmod-eeprom-at24 \
-	kmod-leds-pwm kmod-hwmon-ina2xx kmod-bluetooth
+  DEVICE_PACKAGES := $(B43) kmod-leds-pwm kmod-hwmon-ina2xx kmod-hci-uart
   DEVICE_DTS := bcm53016-meraki-mr32
 # Meraki FW r23 tries to resize the part.safe partition before it will
 # flash the image. This is a bit of a problem, since resizing will fail
@@ -420,6 +438,43 @@ define Device/meraki_mr32
 endef
 TARGET_DEVICES += meraki_mr32
 
+define Device/meraki_mx6x
+  KERNEL_IN_UBI := 1
+  KERNEL_LOADADDR := 0x60008000
+  DEVICE_PACKAGES := -oseama kmod-leds-pwm kmod-usb-ehci \
+	kmod-usb-ohci kmod-usb2
+  DEVICE_VENDOR := Cisco Meraki
+  KERNEL = kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
+  KERNEL_INITRAMFS := kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
+  KERNEL_INITRAMFS_SUFFIX := .bin
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+
+define Device/meraki_mx64
+  $(call Device/meraki_mx6x)
+  DEVICE_MODEL := MX64
+  DEVICE_DTS_CONFIG := config@4
+  DEVICE_DTS := bcm958625-meraki-mx64
+endef
+TARGET_DEVICES += meraki_mx64
+
+define Device/meraki_mx64-a0
+  $(call Device/meraki_mx64)
+  DEVICE_VARIANT := A0
+  DEVICE_DTS_CONFIG := config@2
+  DEVICE_DTS := bcm958625-meraki-mx64-a0
+endef
+TARGET_DEVICES += meraki_mx64-a0
+
+define Device/meraki_mx65
+  $(call Device/meraki_mx6x)
+  DEVICE_MODEL := MX65
+  DEVICE_DTS_CONFIG := config@3
+  DEVICE_DTS := bcm958625-meraki-mx65
+endef
+TARGET_DEVICES += meraki_mx65
+
 define Device/netgear
   DEVICE_VENDOR := NETGEAR
   IMAGES := chk
@@ -427,13 +482,14 @@ define Device/netgear
   NETGEAR_REGION := 1
 endef
 
-define Device/netgear_r6250
+define Device/netgear_r6250-v1
   DEVICE_MODEL := R6250
   DEVICE_PACKAGES := $(B43) $(USB3_PACKAGES)
+  DEVICE_DTS := bcm4708-netgear-r6250
   $(Device/netgear)
   NETGEAR_BOARD_ID := U12H245T00_NETGEAR
 endef
-TARGET_DEVICES += netgear_r6250
+TARGET_DEVICES += netgear_r6250-v1
 
 define Device/netgear_r6300-v2
   DEVICE_MODEL := R6300

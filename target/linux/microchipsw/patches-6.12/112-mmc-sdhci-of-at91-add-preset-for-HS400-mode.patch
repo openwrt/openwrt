@@ -1,0 +1,36 @@
+From 01a24658497ed31d5b2de4c686772d27dcd19bbe Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Mon, 3 Aug 2020 15:29:37 +0300
+Subject: [PATCH 090/110] mmc: sdhci-of-at91: add preset for HS400 mode
+
+Add clock and driver strength preset for HS400 mode.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+(cherry picked from linux-6.1-trunk/at91/mmc)
+Signed-off-by: Andrei Simion <andrei.simion@microchip.com>
+---
+ drivers/mmc/host/sdhci-of-at91.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/drivers/mmc/host/sdhci-of-at91.c
++++ b/drivers/mmc/host/sdhci-of-at91.c
+@@ -39,6 +39,9 @@
+ 
+ #define SDHCI_AT91_PRESET_COMMON_CONF	0x400 /* drv type B, programmable clock mode */
+ 
++/* drv type A, programmable clock mode */
++#define SDHCI_AT91_PRESET_DRVA_CONF	(SDHCI_AT91_PRESET_COMMON_CONF \
++					 | 0x4000)
+ struct sdhci_at91_soc_data {
+ 	const struct sdhci_pltfm_data *pdata;
+ 	bool baseclk_is_generated_internally;
+@@ -294,6 +297,9 @@ static int sdhci_at91_set_clks_presets(s
+ 	preset_div = DIV_ROUND_UP(gck_rate, 50000000) - 1;
+ 	writew(SDHCI_AT91_PRESET_COMMON_CONF | preset_div,
+ 	       host->ioaddr + SDHCI_PRESET_FOR_DDR50);
++	preset_div = DIV_ROUND_UP(gck_rate, priv->soc_data->max_sdr104_clk) - 1;
++	writew(SDHCI_AT91_PRESET_DRVA_CONF | preset_div,
++	       host->ioaddr + SDHCI_PRESET_FOR_HS400);
+ 
+ 	clk_prepare_enable(priv->mainck);
+ 	clk_prepare_enable(priv->gck);

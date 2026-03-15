@@ -1,4 +1,4 @@
-Package/mt7601u-firmware = $(call Package/firmware-default,MediaTek MT7601U firmware)
+Package/mt7601u-firmware = $(call Package/firmware-default,MediaTek MT7601U firmware,,LICENCE.mediatek)
 define Package/mt7601u-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/mediatek
 	$(INSTALL_DATA) \
@@ -42,7 +42,7 @@ define Package/rt73-usb-firmware/install
 endef
 $(eval $(call BuildPackage,rt73-usb-firmware))
 
-Package/mt7622bt-firmware = $(call Package/firmware-default,mt7622bt firmware)
+Package/mt7622bt-firmware = $(call Package/firmware-default,mt7622bt firmware,,LICENCE.mediatek)
 define Package/mt7622bt-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/mediatek
 	$(INSTALL_DATA) \
@@ -51,7 +51,7 @@ define Package/mt7622bt-firmware/install
 endef
 $(eval $(call BuildPackage,mt7622bt-firmware))
 
-Package/mt7921bt-firmware = $(call Package/firmware-default,mt7921bt firmware)
+Package/mt7921bt-firmware = $(call Package/firmware-default,mt7921bt firmware,,LICENCE.mediatek)
 define Package/mt7921bt-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/mediatek
 	$(INSTALL_DATA) \
@@ -60,7 +60,7 @@ define Package/mt7921bt-firmware/install
 endef
 $(eval $(call BuildPackage,mt7921bt-firmware))
 
-Package/mt7922bt-firmware = $(call Package/firmware-default,mt7922bt firmware)
+Package/mt7922bt-firmware = $(call Package/firmware-default,mt7922bt firmware,,LICENCE.mediatek)
 define Package/mt7922bt-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/mediatek
 	$(INSTALL_DATA) \
@@ -69,7 +69,16 @@ define Package/mt7922bt-firmware/install
 endef
 $(eval $(call BuildPackage,mt7922bt-firmware))
 
-Package/mt7981-wo-firmware = $(call Package/firmware-default,MT7981 offload firmware)
+Package/mt7925bt-firmware = $(call Package/firmware-default,mt7925bt firmware,,LICENCE.mediatek)
+define Package/mt7925bt-firmware/install
+	$(INSTALL_DIR) $(1)/lib/firmware/mediatek/mt7925
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/mediatek/mt7925/BT_RAM_CODE_MT7925_1_1_hdr.bin \
+		$(1)/lib/firmware/mediatek/mt7925
+endef
+$(eval $(call BuildPackage,mt7925bt-firmware))
+
+Package/mt7981-wo-firmware = $(call Package/firmware-default,MT7981 offload firmware,,LICENCE.mediatek)
 define Package/mt7981-wo-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/mediatek
 	$(INSTALL_DATA) \
@@ -78,7 +87,7 @@ define Package/mt7981-wo-firmware/install
 endef
 $(eval $(call BuildPackage,mt7981-wo-firmware))
 
-Package/mt7986-wo-firmware = $(call Package/firmware-default,MT7986 offload firmware)
+Package/mt7986-wo-firmware = $(call Package/firmware-default,MT7986 offload firmware,,LICENCE.mediatek)
 define Package/mt7986-wo-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/mediatek
 	$(INSTALL_DATA) \
@@ -88,7 +97,17 @@ define Package/mt7986-wo-firmware/install
 endef
 $(eval $(call BuildPackage,mt7986-wo-firmware))
 
-Package/mt7988-2p5g-phy-firmware = $(call Package/firmware-default,MT7988 built-in 2.5G Ethernet PHY firmware)
+Package/mt7987-2p5g-phy-firmware = $(call Package/firmware-default,MT7987 built-in 2.5G Ethernet PHY firmware,,LICENCE.mediatek)
+define Package/mt7987-2p5g-phy-firmware/install
+	$(INSTALL_DIR) $(1)/lib/firmware/mediatek/mt7987
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/mediatek/mt7987/i2p5ge-phy-DSPBitTb.bin \
+		$(PKG_BUILD_DIR)/mediatek/mt7987/i2p5ge-phy-pmb.bin \
+		$(1)/lib/firmware/mediatek/mt7987
+endef
+$(eval $(call BuildPackage,mt7987-2p5g-phy-firmware))
+
+Package/mt7988-2p5g-phy-firmware = $(call Package/firmware-default,MT7988 built-in 2.5G Ethernet PHY firmware,,LICENCE.mediatek)
 define Package/mt7988-2p5g-phy-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/mediatek/mt7988
 	$(INSTALL_DATA) \
@@ -96,3 +115,13 @@ define Package/mt7988-2p5g-phy-firmware/install
 		$(1)/lib/firmware/mediatek/mt7988
 endef
 $(eval $(call BuildPackage,mt7988-2p5g-phy-firmware))
+
+Package/mt7988-wo-firmware = $(call Package/firmware-default,MT7988 offload firmware,,LICENCE.mediatek)
+define Package/mt7988-wo-firmware/install
+	$(INSTALL_DIR) $(1)/lib/firmware/mediatek/mt7988
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/mediatek/mt7988/mt7988_wo_0.bin \
+		$(PKG_BUILD_DIR)/mediatek/mt7988/mt7988_wo_1.bin \
+		$(1)/lib/firmware/mediatek/mt7988
+endef
+$(eval $(call BuildPackage,mt7988-wo-firmware))

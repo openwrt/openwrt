@@ -22,12 +22,6 @@
 		serial0 = &uart2;
 	};
 
-	bootstrap {
-		compatible = "mediatek,linkit";
-
-		status = "okay";
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -144,6 +138,15 @@
 	};
 };
 
+&gpio {
+	bootstrap {
+		gpio-hog;
+		line-name = "bootstrap";
+		output-low;
+		gpios = <11 GPIO_ACTIVE_LOW>;
+	};
+};
+
 &i2c {
 	status = "okay";
 };
@@ -165,9 +168,28 @@
 	nvmem-cell-names = "mac-address";
 };
 
+&pinctrl {
+	ephy-digital;
+
+	sdxc_iot_mode: sdxc_iot_mode {
+		esd {
+			groups = "esd";
+			function = "iot";
+		};
+
+		sdxc {
+			groups = "sdmode";
+			function = "sdxc";
+		};
+	};
+};
+
 &sdhci {
 	status = "okay";
-	mediatek,cd-high;
+
+	pinctrl-0 = <&sdxc_iot_mode>;
+	pinctrl-1 = <&sdxc_iot_mode>;
+	cd-inverted;
 };
 
 &wmac {

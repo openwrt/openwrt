@@ -20,7 +20,6 @@
 #include <linux/pm_domain.h>
 #include <linux/pm_runtime.h>
 #include <linux/reset.h>
-#include <linux/version.h>
 
 /* TODO: Bigger frames may work but we do not trust that they are safe on all
  * platforms so more research is needed, a max frame size of 2048 has been
@@ -1077,11 +1076,7 @@ static int bcm6368_enetsw_probe(struct platform_device *pdev)
 	ndev->min_mtu = ETH_ZLEN;
 	ndev->mtu = ETH_DATA_LEN;
 	ndev->max_mtu = ENETSW_MAX_MTU;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,1,0)
-	netif_napi_add(ndev, &priv->napi, bcm6368_enetsw_poll);
-#else
-	netif_napi_add(ndev, &priv->napi, bcm6368_enetsw_poll, 16);
-#endif
+	netif_napi_add_weight(ndev, &priv->napi, bcm6368_enetsw_poll, 16);
 
 	ret = devm_register_netdev(dev, ndev);
 	if (ret) {
@@ -1105,7 +1100,7 @@ out_disable_clk:
 	return ret;
 }
 
-static int bcm6368_enetsw_remove(struct platform_device *pdev)
+static void bcm6368_enetsw_remove(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
 	struct net_device *ndev = platform_get_drvdata(pdev);
@@ -1123,8 +1118,6 @@ static int bcm6368_enetsw_remove(struct platform_device *pdev)
 
 	for (i = 0; i < priv->num_clocks; i++)
 		clk_disable_unprepare(priv->clock[i]);
-
-	return 0;
 }
 
 static const struct of_device_id bcm6368_enetsw_of_match[] = {
@@ -1140,7 +1133,7 @@ MODULE_DEVICE_TABLE(of, bcm6368_enetsw_of_match);
 static struct platform_driver bcm6368_enetsw_driver = {
 	.driver = {
 		.name = "bcm6368-enetsw",
-		.of_match_table = of_match_ptr(bcm6368_enetsw_of_match),
+		.of_match_table = bcm6368_enetsw_of_match,
 	},
 	.probe	= bcm6368_enetsw_probe,
 	.remove	= bcm6368_enetsw_remove,

@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ls-rcw
-PKG_VERSION:=lf-6.1.1-1.0.0
+PKG_VERSION:=6.12.20.2.0.0
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/nxp-qoriq/rcw
-PKG_SOURCE_VERSION:=lf-6.1.1-1.0.0
-PKG_MIRROR_HASH:=3127285549a0a7dd3cded20c2fbfb67b06943faa8dab529f61936dc1bea177db
+PKG_SOURCE_VERSION:=lf-6.12.20-2.0.0
+PKG_MIRROR_HASH:=8436e04a01fa7a0da3512dae035b47122691fc860fa2c36da20552bceec9246a
 
 PKG_FLAGS:=nonshared
 
@@ -24,7 +24,9 @@ define Package/layerscape-rcw
   SECTION:=firmware
   CATEGORY:=Firmware
   TITLE:=NXP Layerscape RCW binaries
-  DEPENDS:=@TARGET_layerscape
+  DEPENDS:=@TARGET_layerscape||TARGET_qoriq
+  DEFAULT:=y if TARGET_layerscape_armv7||TARGET_qoriq
+  HIDDEN:=1
 endef
 
 BOARDS := \
@@ -44,7 +46,8 @@ BOARDS := \
   ls2088a-rdb \
   lx2160a-rdb \
   lx2160a-rdb-sdboot \
-  ls1021a-twr
+  ls1021a-twr \
+  T4240RDB \
 
 RCW_ls1012a-rdb         :=ls1012ardb/R_SPNH_3508/rcw_1000_default.bin
 RCW_ls1012a-frdm        :=ls1012afrdm/N_SSNP_3305/rcw_800.bin
@@ -63,6 +66,7 @@ RCW_ls2088a-rdb         :=ls2088ardb/FFFFFFFF_PP_HH_0x2a_0x41/rcw_1800.bin
 RCW_lx2160a-rdb         :=lx2160ardb_rev2/XGGFF_PP_HHHH_RR_19_5_2/rcw_2000_700_2900_19_5_2.bin
 RCW_lx2160a-rdb-sdboot  :=lx2160ardb_rev2/XGGFF_PP_HHHH_RR_19_5_2/rcw_2000_700_2900_19_5_2.bin
 RCW_ls1021a-twr         :=ls1021atwr/SSR_PNS_30/rcw_1200.bin
+RCW_T4240RDB            :=t4240rdb/SSFFPPH_27_55_1_9/rcw_27_55_1_9_1666MHz.bin
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)

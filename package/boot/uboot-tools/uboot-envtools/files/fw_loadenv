@@ -1,0 +1,26 @@
+#!/usr/bin/ucode
+
+'use strict';
+
+const path = '/var/run/uboot-env/';
+
+import * as fs from 'fs';
+
+if (fs.lsdir(path)) {
+	warn(`env has already been loaded to ${path}\n`);
+	exit(0);
+}
+
+let fp = fs.popen('fw_printenv');
+let raw = fp.read('all');
+fp.close();
+
+if (!length(raw))
+	exit(0);
+
+fs.mkdir(path);
+for (let line in split(raw, '\n')) {
+	let vals = split(line, '=');
+	if (vals[0] && vals[1])
+		fs.writefile(path + vals[0], vals[1]);
+}

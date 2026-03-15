@@ -30,13 +30,13 @@
 
 		led_usb: usb {
 			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_STATUS;
+			function = LED_FUNCTION_USB;
 			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_power: power {
 			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_STATUS;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 			default-state = "on";
 		};
@@ -58,24 +58,6 @@
 			linux,code = <KEY_RESTART>;
 		};
 	};
-
-	reg_usb_vbus: regulator-usb {
-		compatible = "regulator-fixed";
-		regulator-name = "usb_vbus";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		gpio = <&gpio 10 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-	};
-
-	reg_3p3v: regulator-3p3v {
-		compatible = "regulator-fixed";
-		regulator-name = "fixed-3.3V";
-		regulator-min-microvolt = <3300000>;
-		regulator-max-microvolt = <3300000>;
-		regulator-boot-on;
-		regulator-always-on;
-	};
 };
 
 &gmac0 {
@@ -84,7 +66,7 @@
 
 &gmac1 {
 	status = "okay";
-	label = "eth0";
+	label = "wan1";
 	phy-handle = <&ethphy0>;
 };
 
@@ -97,22 +79,22 @@
 
 		port@1 {
 			status = "okay";
-			label = "eth1";
+			label = "lan2";
 		};
 
 		port@2 {
 			status = "okay";
-			label = "eth2";
+			label = "lan3";
 		};
 
 		port@3 {
 			status = "okay";
-			label = "eth3";
+			label = "lan4";
 		};
 
 		port@4 {
 			status = "okay";
-			label = "eth4";
+			label = "lan5";
 		};
 	};
 };
@@ -155,11 +137,14 @@
 	};
 };
 
+&ethphy0 {
+	/delete-property/ interrupts;
+};
 
-&mdio {
-	ethphy0: ethernet-phy@0 {
-		reg = <0>;
-	};
+&reg_vbus {
+	/delete-property/ regulator-always-on;
+	gpios = <&gpio 10 GPIO_ACTIVE_HIGH>;
+	enable-active-high;
 };
 
 &state_default {
@@ -172,9 +157,3 @@
 &spi0 {
 	status = "disabled";
 };
-
-&xhci {
-	vusb33-supply = <&reg_3p3v>;
-	vbus-supply = <&reg_usb_vbus>;
-};
-

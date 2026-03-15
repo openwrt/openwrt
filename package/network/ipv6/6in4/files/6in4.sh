@@ -25,7 +25,7 @@ test_6in4_rfc1918()
 
 proto_6in4_update() {
 	sh -c '
-		timeout=5
+		timeout=15
 
 		(while [ $((timeout--)) -gt 0 ]; do
 			sleep 1
@@ -44,18 +44,35 @@ proto_6in4_setup() {
 	local cfg="$1"
 	local iface="$2"
 	local link="6in4-$cfg"
+	local remoteip
 
-	local mtu ttl tos ipaddr peeraddr ip6addr ip6prefix ip6prefixes tunlink tunnelid username password updatekey
-	json_get_vars mtu ttl tos ipaddr peeraddr ip6addr tunlink tunnelid username password updatekey
+	local mtu ttl tos ipaddr peeraddr ip6addr ip6prefix ip6prefixes tunlink tunnelid username password updatekey device nohostroute
+	json_get_vars mtu ttl tos ipaddr peeraddr ip6addr tunlink tunnelid username password updatekey device nohostroute
 	json_for_each_item proto_6in4_add_prefix ip6prefix ip6prefixes
 
+	[ -n "$device" ] && link="$device"
+
 	[ -z "$peeraddr" ] && {
-		proto_notify_error "$cfg" "MISSING_ADDRESS"
+		proto_notify_error "$cfg" "MISSING_PEER_ADDRESS"
 		proto_block_restart "$cfg"
 		return
 	}
 
-	( proto_add_host_dependency "$cfg" "$peeraddr" "$tunlink" )
+	remoteip=$(resolveip -t 10 -4 "$peeraddr")
+
+	if [ -z "$remoteip" ]; then
+		proto_notify_error "$cfg" "PEER_RESOLVE_FAIL"
+		return
+	fi
+
+	for ip in $remoteip; do
+		peeraddr=$ip
+		break
+	done
+
+	if [ "${nohostroute}" != "1" ]; then
+		( proto_add_host_dependency "$cfg" "$peeraddr" "$tunlink" )
+	fi
 
 	[ -z "$ipaddr" ] && {
 		local wanif="$tunlink"
@@ -106,7 +123,7 @@ proto_6in4_setup() {
 		local ca_path="${SSL_CERT_DIR:-/etc/ssl/certs}"
 
 		[ -f /lib/libustream-ssl.so ] && http=https
-		[ "$http" = "https" -a -z "$(find $ca_path -name "*.0" 2>/dev/null)" ] && {
+		[ "$http" = "https" -a -z "$(find "$ca_path" \( -name "*.0" -o -name "*.crt" \) 2>/dev/null)" ] && {
 			urlget_opts="$urlget_opts --no-check-certificate"
 		}
 
@@ -118,10 +135,12 @@ proto_6in4_setup() {
 
 		local try=0
 		local max=3
+		local retry_delay=5
 
 		(
 			set -o pipefail
-			while [ $((++try)) -le $max ]; do
+			while true; do
+				try=$((try + 1))
 				if proto_6in4_update $urlget $urlget_opts --user="$username" --password="$password" "$url" 2>&1 | \
 					sed -e 's,^Killed$,timeout,' -e "s,^,update $try/$max: ," | \
 					logger -t "$link";
@@ -129,7 +148,11 @@ proto_6in4_setup() {
 					logger -t "$link" "updated"
 					return 0
 				fi
-				sleep 5
+
+				[ "$try" -ge "$max" ] && break
+
+				sleep "$retry_delay"
+				retry_delay=$((retry_delay * 2))
 			done
 			logger -t "$link" "update failed"
 		)
@@ -156,6 +179,8 @@ proto_6in4_init_config() {
 	proto_config_add_int "mtu"
 	proto_config_add_int "ttl"
 	proto_config_add_string "tos"
+	proto_config_add_string "device"
+	proto_config_add_boolean "nohostroute"
 }
 
 [ -n "$INCLUDE_ONLY" ] || {

@@ -54,13 +54,6 @@
 			linux,default-trigger = "phy1tpt";
 		};
 
-		wlan_green {
-			function = LED_FUNCTION_WLAN;
-			color = <LED_COLOR_ID_GREEN>;
-			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
-		};
-
 		lan_amber {
 			function = LED_FUNCTION_LAN;
 			color = <LED_COLOR_ID_AMBER>;
@@ -110,7 +103,7 @@
 				reg = <0x050000 0x0fa0000>;
 			};
 
-			art: partition@7f0000 {
+			partition@7f0000 {
 				label = "art";
 				reg = <0xff0000 0x010000>;
 				read-only;
@@ -125,6 +118,14 @@
 						reg = <0x0 0x6>;
 						#nvmem-cell-cells = <1>;
 					};
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+
+					cal_art_5000: calibration@5000 {
+						reg = <0x5000 0x440>;
+					};
 				};
 			};
 		};
@@ -134,13 +135,11 @@
 &pcie {
 	status = "okay";
 
-	ath9k: wifi@0,0 {
-		compatible = "168c,0030";
+	wifi@0,0 {
+		compatible = "pci168c,0030";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&macaddr_art_0 (-2)>;
-		nvmem-cell-names = "mac-address";
-		mtd-cal-data = <&art 0x5000>;
-		qca,no-eeprom;
+		nvmem-cells = <&macaddr_art_0 (-2)>, <&cal_art_5000>;
+		nvmem-cell-names = "mac-address", "calibration";
 		ieee80211-freq-limit = <2402000 2482000>;
 		#gpio-cells = <2>;
 		gpio-controller;
@@ -151,9 +150,13 @@
 	status = "okay";
 
 	ieee80211-freq-limit = <4900000 5990000>;
-	mtd-cal-data = <&art 0x1000>;
-	nvmem-cells = <&macaddr_art_0 (-1)>;
-	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_art_0 (-1)>, <&cal_art_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
+
+	led {
+		led-sources = <18>;
+		led-active-low;
+	};
 };
 
 &mdio0 {

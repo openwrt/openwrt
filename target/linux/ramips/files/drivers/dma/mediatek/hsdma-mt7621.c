@@ -733,7 +733,7 @@ err_uninit_hsdma:
 	return ret;
 }
 
-static int mtk_hsdma_remove(struct platform_device *pdev)
+static void mtk_hsdma_remove(struct platform_device *pdev)
 {
 	struct mtk_hsdam_engine *hsdma = platform_get_drvdata(pdev);
 
@@ -741,12 +741,10 @@ static int mtk_hsdma_remove(struct platform_device *pdev)
 
 	of_dma_controller_free(pdev->dev.of_node);
 	dma_async_device_unregister(&hsdma->ddev);
-
-	return 0;
 }
 
 static struct platform_driver mtk_hsdma_driver = {
-	.probe = mtk_hsdma_probe,
+	.probe  = mtk_hsdma_probe,
 	.remove = mtk_hsdma_remove,
 	.driver = {
 		.name = KBUILD_MODNAME,

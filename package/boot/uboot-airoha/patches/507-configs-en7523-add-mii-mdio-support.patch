@@ -1,0 +1,29 @@
+From 6efbdacd79d253507e62ae93358953fff6fb3173 Mon Sep 17 00:00:00 2001
+From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Date: Sat, 31 Jan 2026 01:06:28 +0300
+Subject: [PATCH 17/24] configs: en7523: add mii/mdio support
+
+This enables mdio/mii command support.
+
+Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+---
+ configs/en7523_evb_defconfig | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/configs/en7523_evb_defconfig b/configs/en7523_evb_defconfig
+index 113ddb46a7f..ebd99d133c9 100644
+--- a/configs/en7523_evb_defconfig
++++ b/configs/en7523_evb_defconfig
+@@ -51,6 +51,9 @@ CONFIG_MTD=y
+ CONFIG_DM_MTD=y
+ CONFIG_MTD_SPI_NAND=y
+ CONFIG_AIROHA_ETH=y
++CONFIG_DM_MDIO=y
++CONFIG_CMD_MII=y
++CONFIG_CMD_MDIO=y
+ CONFIG_PHY=y
+ CONFIG_PINCTRL=y
+ CONFIG_PINCONF=y
+-- 
+2.51.0
+

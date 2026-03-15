@@ -1,6 +1,6 @@
 --- a/src/g997/drv_dsl_cpe_api_g997_danube.c
 +++ b/src/g997/drv_dsl_cpe_api_g997_danube.c
-@@ -2512,6 +2524,7 @@ DSL_Error_t DSL_DRV_DEV_G997_PowerManagementStateForcedTrigger(
+@@ -2524,6 +2524,7 @@ DSL_Error_t DSL_DRV_DEV_G997_PowerManage
                    else
                    {
                       /* read L3 request failure reason */
@@ -8,7 +8,7 @@
                       nErrCode = DSL_DRV_DANUBE_CmvRead(pContext, DSL_CMV_GROUP_STAT,
                          DSL_CMV_ADDRESS_STAT_L3_FAILURE_REASON, 0, 1, &nVal);
                       DSL_DEBUG(DSL_DBG_MSG,
-@@ -2525,11 +2538,13 @@ DSL_Error_t DSL_DRV_DEV_G997_PowerManagementStateForcedTrigger(
+@@ -2537,11 +2538,13 @@ DSL_Error_t DSL_DRV_DEV_G997_PowerManage
                          nErrCode = DSL_ERR_MSG_EXCHANGE;
                          break;
                       }

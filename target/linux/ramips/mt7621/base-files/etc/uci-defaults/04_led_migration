@@ -4,6 +4,13 @@
 board=$(board_name)
 
 case "$board" in
+dlink,dir-1960-a1|\
+dlink,dir-2640-a1|\
+dlink,dir-2660-a1|\
+dlink,dir-3040-a1|\
+dlink,dir-3060-a1)
+	migrate_leds ':net=:wan'
+	;;
 tplink,archer-a6-v3|\
 tplink,archer-c6-v3)
 	migrate_leds ':wifi2g$=:wlan-2' ':wifi5g$=:wlan-5'

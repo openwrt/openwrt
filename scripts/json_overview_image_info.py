@@ -5,12 +5,14 @@ from pathlib import Path
 from subprocess import run, PIPE
 from sys import argv
 import json
+import re
 
 if len(argv) != 2:
     print("JSON info files script requires output file as argument")
     exit(1)
 
 output_path = Path(argv[1])
+output_dir = output_path.parent
 
 assert getenv("WORK_DIR"), "$WORK_DIR required"
 
@@ -26,6 +28,17 @@ def get_initial_output(image_info):
         if profiles["version_code"] == image_info["version_code"]:
             return profiles
     return image_info
+
+
+def add_artifact(artifact, prefix="openwrt-"):
+    files = list(output_dir.glob(f"{prefix}{artifact}-*"))
+    if len(files):
+        output[artifact] = {}
+        for file in files:
+            file = str(file.name)
+            arch = re.match(r".*Linux-([^.]*)\.", file)
+            if arch:
+                output[artifact][arch.group(1)] = file
 
 
 for json_file in work_dir.glob("*.json"):
@@ -47,7 +60,13 @@ for device_id, profile in output.get("profiles", {}).items():
 
 
 if output:
-    default_packages, output["arch_packages"] = run(
+    (
+        default_packages,
+        output["arch_packages"],
+        linux_version,
+        linux_release,
+        linux_vermagic,
+    ) = run(
         [
             "make",
             "--no-print-directory",
@@ -55,6 +74,9 @@ if output:
             "target/linux/",
             "val.DEFAULT_PACKAGES",
             "val.ARCH_PACKAGES",
+            "val.LINUX_VERSION",
+            "val.LINUX_RELEASE",
+            "val.LINUX_VERMAGIC",
             "V=s",
         ],
         stdout=PIPE,
@@ -64,6 +86,15 @@ if output:
     ).stdout.splitlines()
 
     output["default_packages"] = sorted(default_packages.split())
+    output["linux_kernel"] = {
+        "version": linux_version,
+        "release": linux_release,
+        "vermagic": linux_vermagic,
+    }
+
+    for artifact in "imagebuilder", "sdk", "toolchain":
+        filename = add_artifact(artifact)
+    add_artifact("llvm-bpf", prefix="")
 
     output_path.write_text(json.dumps(output, sort_keys=True, separators=(",", ":")))
 else:

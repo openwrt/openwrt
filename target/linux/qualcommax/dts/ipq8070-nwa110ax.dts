@@ -1,0 +1,33 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/*
+ * Copyright (c) 2026 Michael Lotz <mmlr@mlotz.ch>
+ */
+
+/dts-v1/;
+
+#include "ipq807x-nwax10ax.dtsi"
+
+/ {
+	model = "Zyxel NWA110AX";
+	compatible = "zyxel,nwa110ax", "qcom,ipq8074";
+
+	aliases {
+		ethernet0 = &dp1;
+		label-mac-device = &dp1;
+	};
+};
+
+&switch {
+	switch_lan_bmp = <ESS_PORT1>;
+	switch_mac_mode = <MAC_MODE_SGMII0_RGMII4>;
+};
+
+&dp1 {
+	label = "uplink";
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&label_mac 0>;
+};
+
+&wifi {
+	qcom,ath11k-calibration-variant = "Zyxel-NWA110AX";
+};

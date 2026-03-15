@@ -59,7 +59,6 @@
 
 	gpio-export {
 		compatible = "gpio-export";
-		#size-cells = <0>;
 
 		4g1-pwr {
 			gpio-export,name = "4g1-pwr";
@@ -71,12 +70,6 @@
 			gpio-export,name = "4g2-pwr";
 			gpio-export,output = <1>;
 			gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
-		};
-
-		ext-usb {
-			gpio-export,name = "ext-usb";
-			gpio-export,output = <1>;
-			gpios = <&gpio 6 GPIO_ACTIVE_LOW>;
 		};
 	};
 };
@@ -152,7 +145,7 @@
 
 &pcie0 {
 	wifi0: wifi@0,0 {
-		compatible = "pci14c3,7603";
+		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&eeprom_factory_0>;
 		nvmem-cell-names = "eeprom";
@@ -161,7 +154,7 @@
 
 &pcie1 {
 	wifi1: wifi@0,0 {
-		compatible = "pci14c3,7662";
+		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&eeprom_factory_8000>;
 		nvmem-cell-names = "eeprom";
@@ -187,10 +180,14 @@
 	nvmem-cell-names = "mac-address";
 };
 
-&mdio {
-	ethphy4: ethernet-phy@4 {
-		reg = <4>;
-	};
+&ethphy4 {
+	/delete-property/ interrupts;
+};
+
+&reg_vbus {
+	/delete-property/ regulator-always-on;
+	gpios = <&gpio 6 GPIO_ACTIVE_HIGH>;
+	enable-active-high;
 };
 
 &switch0 {

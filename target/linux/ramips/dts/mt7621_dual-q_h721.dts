@@ -21,23 +21,6 @@
 		bootargs = "console=ttyS0,115200";
 	};
 
-	gpio-export {
-		compatible = "gpio-export";
-		#size-cells = <0>;
-
-		usb-30-power {
-			gpio-export,name = "usb-30-power";
-			gpio-export,output = <0>;
-			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
-		};
-
-		usb-20-power {
-			gpio-export,name = "usb-20-power";
-			gpio-export,output = <0>;
-			gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
-		};
-	};
-
 	keys {
 		compatible = "gpio-keys";
 
@@ -152,6 +135,16 @@
 
 &pcie {
 	status = "okay";
+};
+
+&reg_vbus {
+	/delete-property/ regulator-always-on;
+	gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
+};
+
+&reg_vusb33 {
+	/delete-property/ regulator-always-on;
+	gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
 };
 
 &switch0 {

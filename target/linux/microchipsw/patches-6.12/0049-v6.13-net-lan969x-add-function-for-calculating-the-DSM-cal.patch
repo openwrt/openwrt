@@ -1,0 +1,359 @@
+From bb44231712c296fa992cf7e0f7206b0798a1b84c Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Thu, 24 Oct 2024 00:01:30 +0200
+Subject: [PATCH 54/82] net: lan969x: add function for calculating the DSM
+ calendar
+
+Lan969x has support for RedBox / HSR / PRP (not implemented yet). In
+order to accommodate for this in the future, we need to give lan969x it's
+own function for calculating the DSM calendar.
+
+The function calculates the calendar for each taxi bus. The calendar is
+used for bandwidth allocation towards the ports attached to the taxi
+bus. A calendar configuration consists of up-to 64 slots, which may be
+allocated to ports or left unused. Each slot accounts for 1 clock cycle.
+
+Also expose sparx5_cal_speed_to_value(), sparx5_get_port_cal_speed,
+sparx5_cal_bw and SPX5_DSM_CAL_EMPTY for use by lan969x.
+
+Reviewed-by: Steen Hegelund <Steen.Hegelund@microchip.com>
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Link: https://patch.msgid.link/20241024-sparx5-lan969x-switch-driver-2-v2-11-a0b5fae88a0f@microchip.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ .../net/ethernet/microchip/lan969x/Makefile   |   2 +-
+ .../net/ethernet/microchip/lan969x/lan969x.c  |   1 +
+ .../net/ethernet/microchip/lan969x/lan969x.h  |   3 +
+ .../microchip/lan969x/lan969x_calendar.c      | 191 ++++++++++++++++++
+ .../microchip/sparx5/sparx5_calendar.c        |  20 +-
+ .../ethernet/microchip/sparx5/sparx5_main.h   |  15 ++
+ 6 files changed, 215 insertions(+), 17 deletions(-)
+ create mode 100644 drivers/net/ethernet/microchip/lan969x/lan969x_calendar.c
+
+--- a/drivers/net/ethernet/microchip/lan969x/Makefile
++++ b/drivers/net/ethernet/microchip/lan969x/Makefile
+@@ -5,7 +5,7 @@
+ 
+ obj-$(CONFIG_LAN969X_SWITCH) += lan969x-switch.o
+ 
+-lan969x-switch-y := lan969x_regs.o lan969x.o
++lan969x-switch-y := lan969x_regs.o lan969x.o lan969x_calendar.o
+ 
+ # Provide include files
+ ccflags-y += -I$(srctree)/drivers/net/ethernet/microchip/fdma
+--- a/drivers/net/ethernet/microchip/lan969x/lan969x.c
++++ b/drivers/net/ethernet/microchip/lan969x/lan969x.c
+@@ -332,6 +332,7 @@ static const struct sparx5_ops lan969x_o
+ 	.get_sdlb_group          = &lan969x_get_sdlb_group,
+ 	.set_port_mux            = &lan969x_port_mux_set,
+ 	.ptp_irq_handler         = &lan969x_ptp_irq_handler,
++	.dsm_calendar_calc       = &lan969x_dsm_calendar_calc,
+ };
+ 
+ const struct sparx5_match_data lan969x_desc = {
+--- a/drivers/net/ethernet/microchip/lan969x/lan969x.h
++++ b/drivers/net/ethernet/microchip/lan969x/lan969x.h
+@@ -51,4 +51,7 @@ static inline bool lan969x_port_is_25g(i
+ 	return false;
+ }
+ 
++/* lan969x_calendar.c */
++int lan969x_dsm_calendar_calc(struct sparx5 *sparx5, u32 taxi,
++			      struct sparx5_calendar_data *data);
+ #endif
+--- /dev/null
++++ b/drivers/net/ethernet/microchip/lan969x/lan969x_calendar.c
+@@ -0,0 +1,191 @@
++// SPDX-License-Identifier: GPL-2.0+
++/* Microchip lan969x Switch driver
++ *
++ * Copyright (c) 2024 Microchip Technology Inc. and its subsidiaries.
++ */
++
++#include "lan969x.h"
++
++#define LAN969X_DSM_CAL_DEVS_PER_TAXI 10
++#define LAN969X_DSM_CAL_TAXIS 5
++
++enum lan969x_dsm_cal_dev {
++	DSM_CAL_DEV_2G5,
++	DSM_CAL_DEV_5G,
++	DSM_CAL_DEV_10G,
++	DSM_CAL_DEV_OTHER, /* 1G or less */
++	DSM_CAL_DEV_MAX
++};
++
++/* Each entry in the following struct defines properties for a given speed
++ * (10G, 5G, 2.5G, or 1G or less).
++ */
++struct lan969x_dsm_cal_dev_speed {
++	/* Number of devices that requires this speed. */
++	u32 n_devs;
++
++	/* Array of devices that requires this speed. */
++	u32 devs[LAN969X_DSM_CAL_DEVS_PER_TAXI];
++
++	/* Number of slots required for one device running this speed. */
++	u32 n_slots;
++
++	/* Gap between two slots for one device running this speed. */
++	u32 gap;
++};
++
++static u32
++lan969x_taxi_ports[LAN969X_DSM_CAL_TAXIS][LAN969X_DSM_CAL_DEVS_PER_TAXI] = {
++	{  0,  4,  1,  2,  3,  5,  6,  7, 28, 29 },
++	{  8, 12,  9, 13, 10, 11, 14, 15, 99, 99 },
++	{ 16, 20, 17, 21, 18, 19, 22, 23, 99, 99 },
++	{ 24, 25, 99, 99, 99, 99, 99, 99, 99, 99 },
++	{ 26, 27, 99, 99, 99, 99, 99, 99, 99, 99 }
++};
++
++static int lan969x_dsm_cal_idx_get(u32 *calendar, u32 cal_len, u32 *cal_idx)
++{
++	if (*cal_idx >= cal_len)
++		return -EINVAL;
++
++	do {
++		if (calendar[*cal_idx] == SPX5_DSM_CAL_EMPTY)
++			return 0;
++
++		(*cal_idx)++;
++	} while (*cal_idx < cal_len);
++
++	return -ENOENT;
++}
++
++static enum lan969x_dsm_cal_dev lan969x_dsm_cal_get_dev(int speed)
++{
++	return (speed == 10000 ? DSM_CAL_DEV_10G :
++		speed == 5000  ? DSM_CAL_DEV_5G :
++		speed == 2500  ? DSM_CAL_DEV_2G5 :
++				 DSM_CAL_DEV_OTHER);
++}
++
++static int lan969x_dsm_cal_get_speed(enum lan969x_dsm_cal_dev dev)
++{
++	return (dev == DSM_CAL_DEV_10G ? 10000 :
++		dev == DSM_CAL_DEV_5G  ? 5000 :
++		dev == DSM_CAL_DEV_2G5 ? 2500 :
++					 1000);
++}
++
++int lan969x_dsm_calendar_calc(struct sparx5 *sparx5, u32 taxi,
++			      struct sparx5_calendar_data *data)
++{
++	struct lan969x_dsm_cal_dev_speed dev_speeds[DSM_CAL_DEV_MAX] = {};
++	u32 cal_len, n_slots, taxi_bw, n_devs = 0, required_bw  = 0;
++	struct lan969x_dsm_cal_dev_speed *speed;
++	int err;
++
++	/* Maximum bandwidth for this taxi */
++	taxi_bw = (128 * 1000000) / sparx5_clk_period(sparx5->coreclock);
++
++	memcpy(data->taxi_ports, &lan969x_taxi_ports[taxi],
++	       LAN969X_DSM_CAL_DEVS_PER_TAXI * sizeof(u32));
++
++	for (int i = 0; i < LAN969X_DSM_CAL_DEVS_PER_TAXI; i++) {
++		u32 portno = data->taxi_ports[i];
++		enum sparx5_cal_bw bw;
++
++		bw = sparx5_get_port_cal_speed(sparx5, portno);
++
++		if (portno < sparx5->data->consts->n_ports_all)
++			data->taxi_speeds[i] = sparx5_cal_speed_to_value(bw);
++		else
++			data->taxi_speeds[i] = 0;
++	}
++
++	/* Determine the different port types (10G, 5G, 2.5G, <= 1G) in the
++	 * this taxi map.
++	 */
++	for (int i = 0; i < LAN969X_DSM_CAL_DEVS_PER_TAXI; i++) {
++		u32 taxi_speed = data->taxi_speeds[i];
++		enum lan969x_dsm_cal_dev dev;
++
++		if (taxi_speed == 0)
++			continue;
++
++		required_bw += taxi_speed;
++
++		dev = lan969x_dsm_cal_get_dev(taxi_speed);
++		speed = &dev_speeds[dev];
++		speed->devs[speed->n_devs++] = i;
++		n_devs++;
++	}
++
++	if (required_bw > taxi_bw) {
++		pr_err("Required bandwidth: %u is higher than total taxi bandwidth: %u",
++		       required_bw, taxi_bw);
++		return -EINVAL;
++	}
++
++	if (n_devs == 0) {
++		data->schedule[0] = SPX5_DSM_CAL_EMPTY;
++		return 0;
++	}
++
++	cal_len = n_devs;
++
++	/* Search for a calendar length that fits all active devices. */
++	while (cal_len < SPX5_DSM_CAL_LEN) {
++		u32 bw_per_slot = taxi_bw / cal_len;
++
++		n_slots = 0;
++
++		for (int i = 0; i < DSM_CAL_DEV_MAX; i++) {
++			speed = &dev_speeds[i];
++
++			if (speed->n_devs == 0)
++				continue;
++
++			required_bw = lan969x_dsm_cal_get_speed(i);
++			speed->n_slots = DIV_ROUND_UP(required_bw, bw_per_slot);
++
++			if (speed->n_slots)
++				speed->gap = DIV_ROUND_UP(cal_len,
++							  speed->n_slots);
++			else
++				speed->gap = 0;
++
++			n_slots += speed->n_slots * speed->n_devs;
++		}
++
++		if (n_slots <= cal_len)
++			break; /* Found a suitable calendar length. */
++
++		/* Not good enough yet. */
++		cal_len = n_slots;
++	}
++
++	if (cal_len > SPX5_DSM_CAL_LEN) {
++		pr_err("Invalid length: %u for taxi: %u", cal_len, taxi);
++		return -EINVAL;
++	}
++
++	for (u32 i = 0; i < SPX5_DSM_CAL_LEN; i++)
++		data->schedule[i] = SPX5_DSM_CAL_EMPTY;
++
++	/* Place the remaining devices */
++	for (u32 i = 0; i < DSM_CAL_DEV_MAX; i++) {
++		speed = &dev_speeds[i];
++		for (u32 dev = 0; dev < speed->n_devs; dev++) {
++			u32 idx = 0;
++
++			for (n_slots = 0; n_slots < speed->n_slots; n_slots++) {
++				err = lan969x_dsm_cal_idx_get(data->schedule,
++							      cal_len, &idx);
++				if (err)
++					return err;
++				data->schedule[idx] = speed->devs[dev];
++				idx += speed->gap;
++			}
++		}
++	}
++
++	return 0;
++}
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_calendar.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_calendar.c
+@@ -15,7 +15,6 @@
+ #define SPX5_CALBITS_PER_PORT          3   /* Bit per port in calendar register */
+ 
+ /* DSM calendar information */
+-#define SPX5_DSM_CAL_EMPTY             0xFFFF
+ #define SPX5_DSM_CAL_TAXIS             8
+ #define SPX5_DSM_CAL_BW_LOSS           553
+ 
+@@ -74,18 +73,6 @@ static u32 sparx5_target_bandwidth(struc
+ 	}
+ }
+ 
+-/* This is used in calendar configuration */
+-enum sparx5_cal_bw {
+-	SPX5_CAL_SPEED_NONE = 0,
+-	SPX5_CAL_SPEED_1G   = 1,
+-	SPX5_CAL_SPEED_2G5  = 2,
+-	SPX5_CAL_SPEED_5G   = 3,
+-	SPX5_CAL_SPEED_10G  = 4,
+-	SPX5_CAL_SPEED_25G  = 5,
+-	SPX5_CAL_SPEED_0G5  = 6,
+-	SPX5_CAL_SPEED_12G5 = 7
+-};
+-
+ static u32 sparx5_clk_to_bandwidth(enum sparx5_core_clockfreq cclock)
+ {
+ 	switch (cclock) {
+@@ -98,7 +85,7 @@ static u32 sparx5_clk_to_bandwidth(enum
+ 	return 0;
+ }
+ 
+-static u32 sparx5_cal_speed_to_value(enum sparx5_cal_bw speed)
++u32 sparx5_cal_speed_to_value(enum sparx5_cal_bw speed)
+ {
+ 	switch (speed) {
+ 	case SPX5_CAL_SPEED_1G:   return 1000;
+@@ -111,6 +98,7 @@ static u32 sparx5_cal_speed_to_value(enu
+ 	default: return 0;
+ 	}
+ }
++EXPORT_SYMBOL_GPL(sparx5_cal_speed_to_value);
+ 
+ static u32 sparx5_bandwidth_to_calendar(u32 bw)
+ {
+@@ -128,8 +116,7 @@ static u32 sparx5_bandwidth_to_calendar(
+ 	}
+ }
+ 
+-static enum sparx5_cal_bw sparx5_get_port_cal_speed(struct sparx5 *sparx5,
+-						    u32 portno)
++enum sparx5_cal_bw sparx5_get_port_cal_speed(struct sparx5 *sparx5, u32 portno)
+ {
+ 	struct sparx5_port *port;
+ 
+@@ -163,6 +150,7 @@ static enum sparx5_cal_bw sparx5_get_por
+ 		return SPX5_CAL_SPEED_NONE;
+ 	return sparx5_bandwidth_to_calendar(port->conf.bandwidth);
+ }
++EXPORT_SYMBOL_GPL(sparx5_get_port_cal_speed);
+ 
+ /* Auto configure the QSYS calendar based on port configuration */
+ int sparx5_config_auto_calendar(struct sparx5 *sparx5)
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
+@@ -63,6 +63,18 @@ enum sparx5_vlan_port_type {
+ 	SPX5_VLAN_PORT_TYPE_S_CUSTOM /* S-port using custom type */
+ };
+ 
++/* This is used in calendar configuration */
++enum sparx5_cal_bw {
++	SPX5_CAL_SPEED_NONE = 0,
++	SPX5_CAL_SPEED_1G   = 1,
++	SPX5_CAL_SPEED_2G5  = 2,
++	SPX5_CAL_SPEED_5G   = 3,
++	SPX5_CAL_SPEED_10G  = 4,
++	SPX5_CAL_SPEED_25G  = 5,
++	SPX5_CAL_SPEED_0G5  = 6,
++	SPX5_CAL_SPEED_12G5 = 7
++};
++
+ #define SPX5_PORTS             65
+ #define SPX5_PORTS_ALL         70 /* Total number of ports */
+ 
+@@ -113,6 +125,7 @@ enum sparx5_vlan_port_type {
+ 
+ #define SPX5_DSM_CAL_LEN               64
+ #define SPX5_DSM_CAL_MAX_DEVS_PER_TAXI 13
++#define SPX5_DSM_CAL_EMPTY             0xFFFF
+ 
+ #define SPARX5_MAX_PTP_ID	512
+ 
+@@ -454,6 +467,8 @@ int sparx5_config_auto_calendar(struct s
+ int sparx5_config_dsm_calendar(struct sparx5 *sparx5);
+ int sparx5_dsm_calendar_calc(struct sparx5 *sparx5, u32 taxi,
+ 			     struct sparx5_calendar_data *data);
++u32 sparx5_cal_speed_to_value(enum sparx5_cal_bw speed);
++enum sparx5_cal_bw sparx5_get_port_cal_speed(struct sparx5 *sparx5, u32 portno);
+ 
+ 
+ /* sparx5_ethtool.c */

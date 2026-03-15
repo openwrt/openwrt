@@ -1,0 +1,47 @@
+From 3a01b5f14a8ae2d45aea5aeed30001ac1655de86 Mon Sep 17 00:00:00 2001
+From: Jonas Karlman <jonas@kwiboo.se>
+Date: Wed, 5 Mar 2025 21:41:04 +0000
+Subject: [PATCH] arm64: dts: rockchip: Enable onboard eMMC on Radxa E20C
+
+The Radxa E20C may come with an onboard eMMC (8GB / 16GB / 32GB / 64GB).
+
+Enable support for the onboard eMMC on Radxa E20C.
+
+Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Link: https://lore.kernel.org/r/20250305214108.1327208-4-jonas@kwiboo.se
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ .../arm64/boot/dts/rockchip/rk3528-radxa-e20c.dts | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3528-radxa-e20c.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3528-radxa-e20c.dts
+@@ -15,6 +15,10 @@
+ 	model = "Radxa E20C";
+ 	compatible = "radxa,e20c", "rockchip,rk3528";
+ 
++	aliases {
++		mmc0 = &sdhci;
++	};
++
+ 	chosen {
+ 		stdout-path = "serial0:1500000n8";
+ 	};
+@@ -133,6 +137,17 @@
+ 	status = "okay";
+ };
+ 
++&sdhci {
++	bus-width = <8>;
++	cap-mmc-highspeed;
++	no-sd;
++	no-sdio;
++	non-removable;
++	vmmc-supply = <&vcc_3v3>;
++	vqmmc-supply = <&vcc_1v8>;
++	status = "okay";
++};
++
+ &uart0 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&uart0m0_xfer>;

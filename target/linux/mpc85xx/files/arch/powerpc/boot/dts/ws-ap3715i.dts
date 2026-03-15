@@ -25,7 +25,7 @@
 		device_type = "memory";
 		reg = <0x0 0x0 0x0 0x10000000>;
 	};
-	
+
 	leds {
 		compatible = "gpio-leds";
 
@@ -140,6 +140,9 @@
 	};
 
 	ifc: ifc@ffe1e000 {
+		reg = <0x0 0xffe1e000 0 0x2000>;
+
+		status = "disabled";
 	};
 
 	pci0: pcie@ffe09000 {
@@ -175,7 +178,7 @@
 				  0x1000000 0x0 0x0
 				  0x1000000 0x0 0x0
 				  0x0 0x100000>;
-			
+
 			wifi@0,0 {
 				compatible = "pci168c,0033";
 				reg = <0x0 0 0 0 0>;

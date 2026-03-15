@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mdadm
-PKG_VERSION:=4.2
+PKG_VERSION:=4.3
 PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/utils/raid/mdadm
-PKG_HASH:=461c215670864bb74a4d1a3620684aa2b2f8296dffa06743f26dda5557acf01d
+PKG_HASH:=416727ae1f1080ea6e3090cea36dd076826fc369151e36ab736557ba92196f9f
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_CPE_ID:=cpe:/a:mdadm_project:mdadm

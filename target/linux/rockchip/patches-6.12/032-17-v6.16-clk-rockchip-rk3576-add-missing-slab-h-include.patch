@@ -1,0 +1,27 @@
+From 92da5c3cba23ee4be2c043bb63a551c89c48de18 Mon Sep 17 00:00:00 2001
+From: Heiko Stuebner <heiko@sntech.de>
+Date: Thu, 15 May 2025 10:26:51 +0200
+Subject: [PATCH] clk: rockchip: rk3576: add missing slab.h include
+
+The change for auxiliary GRFs introduced kzalloc usage into the rk3576 clock
+driver, but missed adding the header for its prototype. Add it now.
+
+Reported-by: kernel test robot <lkp@intel.com>
+Closes: https://lore.kernel.org/oe-kbuild-all/202505150941.KWKskr2c-lkp@intel.com/
+Fixes: 70a114daf207 ("clk: rockchip: introduce auxiliary GRFs")
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+Link: https://lore.kernel.org/r/20250515082652.2503063-1-heiko@sntech.de
+---
+ drivers/clk/rockchip/clk-rk3576.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/clk/rockchip/clk-rk3576.c
++++ b/drivers/clk/rockchip/clk-rk3576.c
+@@ -10,6 +10,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/syscore_ops.h>
+ #include <linux/mfd/syscon.h>
++#include <linux/slab.h>
+ #include <dt-bindings/clock/rockchip,rk3576-cru.h>
+ #include "clk.h"
+ 

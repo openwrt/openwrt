@@ -4,6 +4,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 
 / {
 	aliases {
@@ -115,8 +116,9 @@
 &mdio0 {
 	status = "okay";
 
-	phy0: ethernet-phy@0 {
-		reg = <0>;
+	switch@1f {
+		compatible = "qca,ar8327";
+		reg = <0x1f>;
 
 		qca,ar8327-initvals = <
 			0x04 0x00080080 /* PORT0 PAD MODE CTRL */
@@ -128,14 +130,59 @@
 			0x7c 0x0000007e /* PORT0_STATUS */
 			0x94 0x0000007e /* PORT6 STATUS */
 			>;
+
+		leds {
+			led@0 {
+				reg = <0>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_WAN;
+				qca,led-mode = <0>;
+			};
+
+			led@3 {
+				reg = <3>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_LAN;
+				function-enumerator = <1>;
+				qca,led-mode = <0>;
+			};
+
+			led@6 {
+				reg = <6>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_LAN;
+				function-enumerator = <2>;
+				qca,led-mode = <0>;
+			};
+
+			led@9 {
+				reg = <9>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_LAN;
+				function-enumerator = <3>;
+				qca,led-mode = <0>;
+			};
+
+			led@12 {
+				reg = <12>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_LAN;
+				function-enumerator = <4>;
+				qca,led-mode = <0>;
+			};
+		};
 	};
 };
 
 &eth0 {
 	status = "okay";
 
-	phy-handle = <&phy0>;
 	pll-data = <0x56000000 0x00000101 0x00001616>;
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
 
 	gmac-config {
 		device = <&gmac>;

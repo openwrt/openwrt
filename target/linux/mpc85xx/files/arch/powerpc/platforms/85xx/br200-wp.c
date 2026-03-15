@@ -13,7 +13,6 @@
 #include <linux/kernel.h>
 #include <linux/delay.h>
 #include <linux/interrupt.h>
-#include <linux/of_platform.h>
 
 #include <asm/time.h>
 #include <asm/machdep.h>
@@ -29,7 +28,7 @@
 
 #include "mpc85xx.h"
 
-void __init br200_wp_pic_init(void)
+static void __init br200_wp_pic_init(void)
 {
 	struct mpic *mpic;
 
@@ -57,19 +56,9 @@ static void __init br200_wp_setup_arch(void)
 
 machine_arch_initcall(br200_wp, mpc85xx_common_publish_devices);
 
-/*
- * Called very early, device-tree isn't unflattened
- */
-static int __init br200_wp_probe(void)
-{
-	if (of_machine_is_compatible("aerohive,br200-wp"))
-		return 1;
-	return 0;
-}
-
 define_machine(br200_wp) {
 	.name			= "P1020 RDB",
-	.probe			= br200_wp_probe,
+	.compatible		= "aerohive,br200-wp",
 	.setup_arch		= br200_wp_setup_arch,
 	.init_IRQ		= br200_wp_pic_init,
 #ifdef CONFIG_PCI
@@ -77,6 +66,5 @@ define_machine(br200_wp) {
 	.pcibios_fixup_phb      = fsl_pcibios_fixup_phb,
 #endif
 	.get_irq		= mpic_get_irq,
-	.calibrate_decr		= generic_calibrate_decr,
 	.progress		= udbg_progress,
 };

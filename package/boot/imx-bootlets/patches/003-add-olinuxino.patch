@@ -121,7 +121,7 @@
  
  all: build_prep gen_bootstream
  
-@@ -94,6 +97,8 @@ distclean: clean
+@@ -101,6 +104,8 @@ distclean: clean
  clean:
  	-rm -rf *.sb
  	rm -f sd_mmc_bootstream.raw
@@ -130,14 +130,3 @@
  	$(MAKE) -C linux_prep clean ARCH=$(ARCH)
  	$(MAKE) -C boot_prep clean ARCH=$(ARCH)
  	$(MAKE) -C power_prep clean ARCH=$(ARCH)
---- a/uboot.db
-+++ b/uboot.db
-@@ -3,7 +3,7 @@
- sources {
- 	power_prep="./power_prep/power_prep";
- 	sdram_prep="./boot_prep/boot_prep";
--	image="/home/b18647/repos/ltib_latest/rootfs/boot/u-boot";
-+	image="../boot/u-boot";
- }
- 
- section (0) {

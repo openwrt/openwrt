@@ -18,6 +18,7 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/imx-kobs-$(PKG_VERSION)
 
 PKG_LICENSE:=GPLv2
 PKG_LICENSE_FILES:=COPYING
+PKG_FLAGS:=nonshared
 
 include $(INCLUDE_DIR)/package.mk
 

@@ -116,15 +116,33 @@ I2C_DWPCI_MODULES:= \
 
 define KernelPackage/i2c-designware-pci
   $(call i2c_defaults,$(I2C_DWPCI_MODULES),59)
-  TITLE:=Synopsys DesignWare PCI
+  TITLE:=Synopsys DesignWare I2C PCI
   DEPENDS:=@PCI_SUPPORT +kmod-i2c-designware-core +kmod-i2c-ccgs-ucsi
 endef
 
 define KernelPackage/i2c-designware-pci/description
- Support for Synopsys DesignWare I2C controller. Only master mode is supported.
+ Support for Synopsys DesignWare I2C PCI controller. Only master mode is
+ supported.
 endef
 
 $(eval $(call KernelPackage,i2c-designware-pci))
+
+
+I2C_DWPLAT_MODULES:= \
+  CONFIG_I2C_DESIGNWARE_PLATFORM:drivers/i2c/busses/i2c-designware-platform
+
+define KernelPackage/i2c-designware-platform
+  $(call i2c_defaults,$(I2C_DWPLAT_MODULES),59)
+  TITLE:=Synopsys DesignWare I2C Platform
+  DEPENDS:=+kmod-i2c-designware-core
+endef
+
+define KernelPackage/i2c-designware-platform/description
+ Support for Synopsys DesignWare I2C Platform controller. Only master mode
+ is supported.
+endef
+
+$(eval $(call KernelPackage,i2c-designware-platform))
 
 
 I2C_GPIO_MODULES:= \
@@ -144,13 +162,47 @@ endef
 $(eval $(call KernelPackage,i2c-gpio))
 
 
+I2C_HID_MODULES:= \
+  CONFIG_I2C_HID_CORE:drivers/hid/i2c-hid/i2c-hid
+
+define KernelPackage/i2c-hid
+  $(call i2c_defaults,$(I2C_HID_MODULES),60)
+  TITLE:=I2C HID support
+  KCONFIG+= CONFIG_I2C_HID
+  DEPENDS:=+kmod-drm +kmod-hid
+  HIDDEN:=1
+endef
+
+$(eval $(call KernelPackage,i2c-hid))
+
+
+I2C_HID_ACPI_MODULES:= \
+  CONFIG_I2C_HID_ACPI:drivers/hid/i2c-hid/i2c-hid-acpi
+
+define KernelPackage/i2c-hid-acpi
+  $(call i2c_defaults,$(I2C_HID_ACPI_MODULES),61)
+  TITLE:=HID over I2C transport layer ACPI driver
+  DEPENDS:=@TARGET_armsr_armv8||TARGET_loongarch64||TARGET_x86 +kmod-i2c-hid
+endef
+
+define KernelPackage/i2c-hid-acpi/description
+  Support for keyboard, touchpad, touchscreen, or any
+  other HID based devices which is connected to your computer via I2C.
+  This driver supports ACPI-based systems.
+endef
+
+$(eval $(call KernelPackage,i2c-hid-acpi))
+
+
 I2C_I801_MODULES:= \
   CONFIG_I2C_I801:drivers/i2c/busses/i2c-i801
 
 define KernelPackage/i2c-i801
   $(call i2c_defaults,$(I2C_I801_MODULES),59)
   TITLE:=Intel I801 and compatible I2C interfaces
-  DEPENDS:=@PCI_SUPPORT @TARGET_x86 +kmod-i2c-core +kmod-i2c-smbus
+  DEPENDS:= \
+    @PCI_SUPPORT @TARGET_x86 +kmod-i2c-core +kmod-i2c-smbus \
+    PACKAGE_kmod-i2c-mux-gpio:kmod-i2c-mux-gpio
 endef
 
 define KernelPackage/i2c-i801/description
@@ -167,6 +219,24 @@ define KernelPackage/i2c-i801/description
 endef
 
 $(eval $(call KernelPackage,i2c-i801))
+
+
+I2C_MLXCPLD_MODULES:= \
+  CONFIG_I2C_MLXCPLD:drivers/i2c/busses/i2c-mlxcpld
+
+define KernelPackage/i2c-mlxcpld
+  $(call i2c_defaults,$(I2C_MLXCPLD_MODULES),59)
+  TITLE:=Mellanox I2C driver
+  DEPENDS:=@TARGET_x86_64 +kmod-regmap-core
+endef
+
+define KernelPackage/i2c-mlxcpld/description
+ This exposes the Mellanox platform I2C busses
+ to the linux I2C layer for X86 based systems.
+ Controller is implemented as CPLD logic.
+endef
+
+$(eval $(call KernelPackage,i2c-mlxcpld))
 
 
 I2C_MUX_MODULES:= \
@@ -198,6 +268,40 @@ define KernelPackage/i2c-mux-gpio/description
 endef
 
 $(eval $(call KernelPackage,i2c-mux-gpio))
+
+
+I2C_MUX_MLXCPLD_MODULES:= \
+  CONFIG_I2C_MUX_MLXCPLD:drivers/i2c/muxes/i2c-mux-mlxcpld
+
+define KernelPackage/i2c-mux-mlxcpld
+  $(call i2c_defaults,$(I2C_MUX_MLXCPLD_MODULES),51)
+  TITLE:=Mellanox CPLD based I2C multiplexer
+  DEPENDS:=+kmod-i2c-mlxcpld +kmod-i2c-mux
+endef
+
+define KernelPackage/i2c-mux-mlxcpld/description
+ This driver provides access to
+ I2C busses connected through a MUX, which is controlled
+ by a CPLD register.
+endef
+
+$(eval $(call KernelPackage,i2c-mux-mlxcpld))
+
+
+I2C_MUX_PINCTRL_MODULES:= \
+  CONFIG_I2C_MUX_PINCTRL:drivers/i2c/muxes/i2c-mux-pinctrl
+
+define KernelPackage/i2c-mux-pinctrl
+  $(call i2c_defaults,$(I2C_MUX_PINCTRL_MODULES),51)
+  TITLE:=Pinctrl-based I2C mux/switches
+  DEPENDS:=@PINCTRL_SUPPORT @USES_DEVICETREE +kmod-i2c-mux
+endef
+
+define KernelPackage/i2c-mux-pinctrl/description
+ Kernel modules for Pinctrl-based I2C bus mux/switching devices
+endef
+
+$(eval $(call KernelPackage,i2c-mux-pinctrl))
 
 
 I2C_MUX_REG_MODULES:= \
@@ -253,7 +357,7 @@ I2C_PIIX4_MODULES:= \
 define KernelPackage/i2c-piix4
   $(call i2c_defaults,$(I2C_PIIX4_MODULES),59)
   TITLE:=Intel PIIX4 and compatible I2C interfaces
-  DEPENDS:=@PCI_SUPPORT @TARGET_x86 +kmod-i2c-core
+  DEPENDS:=@PCI_SUPPORT @TARGET_x86 +kmod-i2c-core +kmod-i2c-smbus
 endef
 
 define KernelPackage/i2c-piix4/description

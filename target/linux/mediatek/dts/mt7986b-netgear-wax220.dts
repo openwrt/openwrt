@@ -4,6 +4,7 @@
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/leds/common.h>
+#include <dt-bindings/pinctrl/mt65xx.h>
 
 #include "mt7986b.dtsi"
 
@@ -67,6 +68,7 @@
 		wlan2g_blue {
 			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
 			label = "blue:wlan2g";
+			linux,default-trigger = "phy0tpt";
 		};
 
 		lan_green {
@@ -84,6 +86,7 @@
 		wlan5g_blue {
 			gpios = <&pio 2 GPIO_ACTIVE_LOW>;
 			label = "blue:wlan5g";
+			linux,default-trigger = "phy1tpt";
 		};
 	};
 };
@@ -129,13 +132,13 @@
 		};
 		conf-pu {
 			pins = "SPI2_CS", "SPI2_HOLD", "SPI2_WP";
-			drive-strength = <8>;
-			mediatek,pull-up-adv = <0>; /* bias-disable */
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-disable; /* bias-disable */
 		};
 		conf-pd {
 			pins = "SPI2_CLK", "SPI2_MOSI", "SPI2_MISO";
-			drive-strength = <8>;
-			mediatek,pull-down-adv = <0>; /* bias-disable */
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-disable; /* bias-disable */
 		};
 	};
 
@@ -152,7 +155,7 @@
 			       "WF1_HB2", "WF1_HB3", "WF1_HB4", "WF1_HB0",
 			       "WF1_HB5", "WF1_HB6", "WF1_HB7", "WF1_HB8",
 			       "WF1_TOP_CLK", "WF1_TOP_DATA";
-			drive-strength = <4>;
+			drive-strength = <MTK_DRIVE_4mA>;
 		};
 	};
 
@@ -166,7 +169,7 @@
 			       "WF0_HB0", "WF0_HB0_B", "WF0_HB5", "WF0_HB6",
 			       "WF0_HB7", "WF0_HB8", "WF0_HB9", "WF0_HB10",
 			       "WF0_TOP_CLK", "WF0_TOP_DATA";
-			drive-strength = <4>;
+			drive-strength = <MTK_DRIVE_4mA>;
 		};
 	};
 };
@@ -177,8 +180,6 @@
 	status = "okay";
 
 	spi_nand_flash: flash@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "spi-nand";
 		reg = <0>;
 

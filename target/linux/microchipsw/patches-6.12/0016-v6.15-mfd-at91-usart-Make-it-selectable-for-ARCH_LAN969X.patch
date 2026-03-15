@@ -1,0 +1,26 @@
+From 04d0fbaff226d574e698ba1f6220be173b3b554d Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Fri, 31 Jan 2025 18:14:10 +0100
+Subject: [PATCH 18/25] mfd: at91-usart: Make it selectable for ARCH_LAN969X
+
+LAN969x uses the AT91 USART IP so make it selectable for ARCH_LAN969X.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+Acked-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Link: https://lore.kernel.org/r/20250131171739.1044701-2-robert.marko@sartura.hr
+Signed-off-by: Lee Jones <lee@kernel.org>
+---
+ drivers/mfd/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/mfd/Kconfig
++++ b/drivers/mfd/Kconfig
+@@ -138,7 +138,7 @@ config MFD_AAT2870_CORE
+ config MFD_AT91_USART
+ 	tristate "AT91 USART Driver"
+ 	select MFD_CORE
+-	depends on ARCH_AT91 || COMPILE_TEST
++	depends on ARCH_AT91 || ARCH_LAN969X || COMPILE_TEST
+ 	help
+ 	  Select this to get support for AT91 USART IP. This is a wrapper
+ 	  over at91-usart-serial driver and usart-spi-driver. Only one function

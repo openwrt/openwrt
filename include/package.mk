@@ -134,9 +134,38 @@ endef
 
 PKG_INSTALL_STAMP:=$(PKG_INFO_DIR)/$(PKG_DIR_NAME).$(if $(BUILD_VARIANT),$(BUILD_VARIANT),default).install
 
+# Normalize package SOURCE entry to pack reproducible package
+# If we are packing a package with OpenWrt buildroot:
+# - Replace package/... with feeds/base/...
+# If we are packing a package with SDK:
+# - Replace feeds/.*_root/... with feeds/.*/... and remove
+#   the intermediate directory to reflect what the symbolic link
+#   points to.
+#   Example:
+#   Feed link: feeds/base_root/package -> feeds/base
+#   Package: feeds/base_root/package/system/uci -> feeds/base/system/uci
+ifeq ($(DUMP),)
+  __pkg_base_path:=$(patsubst $(TOPDIR)/%,%,$(CURDIR))
+  __pkg_provider_path:=$(word 1,$(subst /, ,$(__pkg_base_path)))
+  ifeq ($(__pkg_provider_path), feeds)
+    __pkg_feed_path:=$(word 2,$(subst /, ,$(__pkg_base_path)))
+    __pkg_feed_name:=$(patsubst %_root,%,$(__pkg_feed_path))
+    ifneq (__pkg_feed_path, __pkg_feed_name)
+      __pkg_feed_realpath:=$(realpath $(TOPDIR)/feeds/$(__pkg_feed_name))
+      __pkg_feed_dir:=$(patsubst $(TOPDIR)/feeds/$(__pkg_feed_path)/%,%,$(__pkg_feed_realpath))
+      __pkg_path:=$(patsubst feeds/$(__pkg_feed_path)/$(__pkg_feed_dir)/%,%,$(__pkg_base_path))
+    else
+      __pkg_path:=$(patsubst feeds/$(__pkg_feed_path)/%,%,$(__pkg_base_path))
+    endif
+    __pkg_source_makefile:=$(TOPDIR)/feeds/$(__pkg_feed_name)/$(__pkg_path)
+  else ifeq ($(__pkg_provider_path), package)
+    __pkg_source_makefile:=$(TOPDIR)/feeds/base/$(patsubst package/%,%,$(__pkg_base_path))
+  endif
+endif
+
 include $(INCLUDE_DIR)/package-defaults.mk
 include $(INCLUDE_DIR)/package-dumpinfo.mk
-include $(INCLUDE_DIR)/package-ipkg.mk
+include $(INCLUDE_DIR)/package-pack.mk
 include $(INCLUDE_DIR)/package-bin.mk
 include $(INCLUDE_DIR)/autotools.mk
 
@@ -303,9 +332,12 @@ define BuildPackage
   $(eval $(Package/Default))
   $(eval $(Package/$(1)))
 
-ifdef DESCRIPTION
-$$(error DESCRIPTION:= is obsolete, use Package/PKG_NAME/description)
-endif
+  # Add an implicit self-provide. apk can't handle self provides, be it
+  # versioned or virtual, so opt for a suffix instead. This allows several
+  # variants to provide the same virtual package without adding extra provides
+  # to the default one, e.g. wget implicitly provides wget-any and is marked as
+  # default, so wget-ssl can explicitly provide @wget-any as well.
+  $(eval PROVIDES:=$(strip @$(1)-any $(PROVIDES)))
 
 ifndef Package/$(1)/description
 define Package/$(1)/description
@@ -343,7 +375,7 @@ endef
 
 Build/Prepare=$(call Build/Prepare/Default,)
 Build/Configure=$(call Build/Configure/Default,)
-Build/Compile=$(call Build/Compile/Default,)
+Build/Compile=$(call Build/Compile/Default,$(if $(PKG_SUBDIRS),SUBDIRS='$$$$(wildcard $(PKG_SUBDIRS))'))
 Build/Install=$(if $(PKG_INSTALL),$(call Build/Install/Default,))
 Build/Dist=$(call Build/Dist/Default,)
 Build/DistCheck=$(call Build/DistCheck/Default,)
@@ -359,7 +391,7 @@ prepare-package-install:
 $(PACKAGE_DIR):
 	mkdir -p $@
 
-compile:
+compile: prepare-package-install
 .install: .compile
 install: compile
 

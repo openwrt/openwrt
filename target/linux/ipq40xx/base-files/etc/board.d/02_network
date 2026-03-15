@@ -17,6 +17,7 @@ ipq40xx_setup_interfaces()
 	asus,rt-ac58u|\
 	linksys,ea6350v3|\
 	linksys,ea8300|\
+	linksys,mr6350|\
 	linksys,mr8300|\
 	mikrotik,hap-ac2|\
 	mikrotik,hap-ac3|\
@@ -31,15 +32,18 @@ ipq40xx_setup_interfaces()
 		;;
 	8dev,jalapeno|\
 	alfa-network,ap120c-ac|\
+	asus,map-ac1300|\
 	asus,map-ac2200|\
 	cilab,meshpoint-one|\
 	edgecore,ecw5211|\
 	glinet,gl-ap1300|\
 	glinet,gl-b2200|\
 	google,wifi|\
+	linksys,whw03|\
 	linksys,whw03v2|\
 	luma,wrtq-329acn|\
 	mikrotik,cap-ac|\
+	netgear,rbr20|\
 	netgear,wac510|\
 	sony,ncp-hg100-cellular|\
 	wallys,dr40x9|\
@@ -51,8 +55,12 @@ ipq40xx_setup_interfaces()
 	aruba,ap-365|\
 	avm,fritzrepeater-1200|\
 	dlink,dap-2610|\
+	engenius,eap1300|\
 	extreme-networks,ws-ap3915i|\
+	huawei,ap4050dn|\
+	meraki,mr20|\
 	meraki,mr33|\
+	meraki,mr70|\
 	meraki,mr74|\
 	mikrotik,lhgg-60ad|\
 	mikrotik,sxtsq-5-ac|\
@@ -61,14 +69,24 @@ ipq40xx_setup_interfaces()
 	zte,mf282plus)
 		ucidef_set_interface_lan "lan"
 		;;
-	avm,fritzbox-7530)
+	aruba,ap-303h|\
+	buffalo,wtr-m2133hp|\
+	ezviz,cs-w3-wd1200g-eup|\
+	netgear,rbr40|\
+	netgear,rbr50|\
+	netgear,srr60)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+		;;
+	avm,fritzbox-7530|\
+	netgear,rbs40|\
+	netgear,rbs50|\
+	netgear,srs60)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		;;
 	avm,fritzrepeater-3000|\
-	cellc,rtl30vw)
-		ucidef_set_interface_lan "lan1 lan2"
-		;;
-	compex,wpj428)
+	cellc,rtl30vw|\
+	compex,wpj428|\
+	netgear,rbs20)
 		ucidef_set_interface_lan "lan1 lan2"
 		;;
 	devolo,magic-2-wifi-next)
@@ -82,24 +100,25 @@ ipq40xx_setup_interfaces()
 		;;
 	glinet,gl-a1300|\
 	glinet,gl-b1300|\
+	glinet,gl-s1300|\
 	mobipromo,cm520-79f)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
+		;;
+	meraki,gx20|\
+	meraki,z3)
+		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan"
+		;;
+	meraki,mr30h)
+		ucidef_set_interface_lan "lan1 lan2 lan3 lan4 lan5"
 		;;
 	mikrotik,wap-ac|\
 	mikrotik,wap-ac-lte|\
 	mikrotik,wap-r-ac)
 		ucidef_set_interface_lan "sw-eth1 sw-eth2"
 		;;
-	aruba,ap-303h|\
-	buffalo,wtr-m2133hp|\
-	ezviz,cs-w3-wd1200g-eup|\
-	netgear,rbr40|\
-	netgear,rbs40|\
-	netgear,rbr50|\
-	netgear,rbs50|\
-	netgear,srr60|\
-	netgear,srs60)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+	netgear,lbr20)
+		ucidef_set_interface_lan "lan1 lan2"
+		ucidef_set_interface "wan" device "/dev/cdc-wdm0" protocol "qmi"
 		;;
 	openmesh,a42|\
 	openmesh,a62)
@@ -115,6 +134,9 @@ ipq40xx_setup_interfaces()
 	qxwlan,e2600ac-c2)
 		ucidef_set_interfaces_lan_wan "sw-eth1 sw-eth2" "sw-eth3"
 		;;
+	skspruce,wia3300-20)
+		ucidef_set_interfaces_lan_wan "ETH2" "ETH1"
+		;;
 	zte,mf286d)
 		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4" "wan"
 		;;
@@ -122,10 +144,6 @@ ipq40xx_setup_interfaces()
 	zte,mf287plus|\
 	zte,mf287pro)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
-		ucidef_set_interface "wan" device "/dev/cdc-wdm0" protocol "qmi"
-		;;
-	netgear,lbr20)
-		ucidef_set_interface_lan "lan1 lan2"
 		ucidef_set_interface "wan" device "/dev/cdc-wdm0" protocol "qmi"
 		;;
 	*)
@@ -162,23 +180,16 @@ ipq40xx_setup_macs()
 	local label_mac=""
 
 	case "$board" in
-	8dev,habanero-dvk)
+	8dev,habanero-dvk|\
+	cilab,meshpoint-one)
 		label_mac=$(mtd_get_mac_binary "ART" 0x1006)
 		;;
 	asus,rt-ac42u)
 		label_mac=$(mtd_get_mac_binary_ubi Factory 0x1006)
 		;;
-	asus,rt-ac58u)
-		wan_mac=$(mtd_get_mac_binary_ubi Factory 0x1006)
-		lan_mac=$(mtd_get_mac_binary_ubi Factory 0x5006)
-		label_mac=$wan_mac
-		;;
 	avm,fritzbox-7530)
 		local tffsdev=$(find_mtd_chardev "nand-tffs")
 		wan_mac=$(/usr/bin/fritz_tffs_nand -b -d $tffsdev -n macdsl)
-		;;
-	cilab,meshpoint-one)
-		label_mac=$(mtd_get_mac_binary "ART" 0x1006)
 		;;
 	devolo,magic-2-wifi-next)
 		lan_mac=$(mtd_get_mac_ascii APPSBLENV MacAddress0)
@@ -202,6 +213,9 @@ ipq40xx_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		;;
+	extreme-networks,ws-ap3915i)
+		label_mac="$(mtd_get_mac_ascii CFG1 ethaddr)"
+		;;
 	ezviz,cs-w3-wd1200g-eup)
 		label_mac=$(mtd_get_mac_binary "ART" 0x6)
 		;;
@@ -209,13 +223,7 @@ ipq40xx_setup_macs()
 		wan_mac=$(get_mac_label)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		;;
-	linksys,ea6350v3|\
-	linksys,ea8300  |\
-	linksys,mr8300)
-		wan_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
-		lan_mac=$(macaddr_add "$wan_mac" 1)
-		;;
-	mikrotik,cap-ac |\
+	mikrotik,cap-ac|\
 	mikrotik,hap-ac2|\
 	mikrotik,hap-ac3|\
 	mikrotik,hap-ac3-lte6-kit)
@@ -228,10 +236,9 @@ ipq40xx_setup_macs()
 		lan_mac=$(cat /sys/firmware/mikrotik/hard_config/mac_base)
 		label_mac="$lan_mac"
 		;;
+	netgear,rbr40|\
 	netgear,rbr50|\
-	netgear,rbs50|\
 	netgear,srr60|\
-	netgear,srs60|\
 	pakedge,wr-1)
 		wan_mac=$(macaddr_add $(get_mac_label) 1)
 		;;

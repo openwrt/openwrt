@@ -1,0 +1,166 @@
+From 4a4336e333f869544dabc729812f57f99f5f2ff8 Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Fri, 1 Nov 2024 08:09:12 +0100
+Subject: [PATCH 63/82] net: lan969x: add VCAP configuration data
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Add configuration data (for consumption by the VCAP API) for the four
+VCAP's that we are going to support. The following VCAP's will be
+supported:
+
+ - VCAP CLM: (also known as IS0) is part of the analyzer and enables
+   frame classification using VCAP functionality.
+
+ - VCAP IS2: is part of ANA_ACL and enables access control lists, using
+   VCAP functionality.
+
+ - VCAP ES0: is part of the rewriter and enables rewriting of frames
+   using VCAP functionality.
+
+ - VCAP ES2: is part of EACL and enables egress access control lists
+   using VCAP functionality
+
+The two VCAP's: CLM and IS2 use shared resources from the SUPER VCAP.
+The SUPER VCAP is a shared pool of 6 blocks that can be distributed
+freely among CLM and IS2.  Each block in the pool has 3,072 addresses
+with entries, actions, and counters. ES0 and ES2 does not use shared
+resources.
+
+In the configuration data for lan969x CLM uses blocks 2-4 with a total
+of 6 lookups. IS2 uses blocks 0-1 with a total of 4 lookups.
+
+Reviewed-by: Steen Hegelund <Steen.Hegelund@microchip.com>
+Reviewed-by: Jens Emil Schulz Østergaard <jensemil.schulzostergaard@microchip.com>
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ .../net/ethernet/microchip/lan969x/Makefile   |  2 +-
+ .../net/ethernet/microchip/lan969x/lan969x.c  |  1 +
+ .../net/ethernet/microchip/lan969x/lan969x.h  |  3 +
+ .../microchip/lan969x/lan969x_vcap_impl.c     | 85 +++++++++++++++++++
+ 4 files changed, 90 insertions(+), 1 deletion(-)
+ create mode 100644 drivers/net/ethernet/microchip/lan969x/lan969x_vcap_impl.c
+
+--- a/drivers/net/ethernet/microchip/lan969x/Makefile
++++ b/drivers/net/ethernet/microchip/lan969x/Makefile
+@@ -6,7 +6,7 @@
+ obj-$(CONFIG_LAN969X_SWITCH) += lan969x-switch.o
+ 
+ lan969x-switch-y := lan969x_regs.o lan969x.o lan969x_calendar.o \
+- lan969x_vcap_ag_api.o
++ lan969x_vcap_ag_api.o lan969x_vcap_impl.o
+ 
+ # Provide include files
+ ccflags-y += -I$(srctree)/drivers/net/ethernet/microchip/fdma
+--- a/drivers/net/ethernet/microchip/lan969x/lan969x.c
++++ b/drivers/net/ethernet/microchip/lan969x/lan969x.c
+@@ -321,6 +321,7 @@ static const struct sparx5_consts lan969
+ 	.tod_pin             = 4,
+ 	.vcaps               = lan969x_vcaps,
+ 	.vcap_stats          = &lan969x_vcap_stats,
++	.vcaps_cfg           = lan969x_vcap_inst_cfg,
+ };
+ 
+ static const struct sparx5_ops lan969x_ops = {
+--- a/drivers/net/ethernet/microchip/lan969x/lan969x.h
++++ b/drivers/net/ethernet/microchip/lan969x/lan969x.h
+@@ -18,6 +18,9 @@ extern const struct sparx5_match_data la
+ extern const struct vcap_statistics lan969x_vcap_stats;
+ extern const struct vcap_info lan969x_vcaps[];
+ 
++/* lan969x_vcap_impl.c */
++extern const struct sparx5_vcap_inst lan969x_vcap_inst_cfg[];
++
+ /* lan969x_regs.c */
+ extern const unsigned int lan969x_tsize[TSIZE_LAST];
+ extern const unsigned int lan969x_raddr[RADDR_LAST];
+--- /dev/null
++++ b/drivers/net/ethernet/microchip/lan969x/lan969x_vcap_impl.c
+@@ -0,0 +1,85 @@
++// SPDX-License-Identifier: GPL-2.0+
++
++#include "vcap_api.h"
++#include "lan969x.h"
++
++const struct sparx5_vcap_inst lan969x_vcap_inst_cfg[] = {
++	{
++		.vtype = VCAP_TYPE_IS0, /* CLM-0 */
++		.vinst = 0,
++		.map_id = 1,
++		.lookups = SPARX5_IS0_LOOKUPS,
++		.lookups_per_instance = SPARX5_IS0_LOOKUPS / 3,
++		.first_cid = SPARX5_VCAP_CID_IS0_L0,
++		.last_cid = SPARX5_VCAP_CID_IS0_L2 - 1,
++		.blockno = 2,
++		.blocks = 1,
++		.ingress = true,
++	},
++	{
++		.vtype = VCAP_TYPE_IS0, /* CLM-1 */
++		.vinst = 1,
++		.map_id = 2,
++		.lookups = SPARX5_IS0_LOOKUPS,
++		.lookups_per_instance = SPARX5_IS0_LOOKUPS / 3,
++		.first_cid = SPARX5_VCAP_CID_IS0_L2,
++		.last_cid = SPARX5_VCAP_CID_IS0_L4 - 1,
++		.blockno = 3,
++		.blocks = 1,
++		.ingress = true,
++	},
++	{
++		.vtype = VCAP_TYPE_IS0, /* CLM-2 */
++		.vinst = 2,
++		.map_id = 3,
++		.lookups = SPARX5_IS0_LOOKUPS,
++		.lookups_per_instance = SPARX5_IS0_LOOKUPS / 3,
++		.first_cid = SPARX5_VCAP_CID_IS0_L4,
++		.last_cid = SPARX5_VCAP_CID_IS0_MAX,
++		.blockno = 4,
++		.blocks = 1,
++		.ingress = true,
++	},
++	{
++		.vtype = VCAP_TYPE_IS2, /* IS2-0 */
++		.vinst = 0,
++		.map_id = 4,
++		.lookups = SPARX5_IS2_LOOKUPS,
++		.lookups_per_instance = SPARX5_IS2_LOOKUPS / 2,
++		.first_cid = SPARX5_VCAP_CID_IS2_L0,
++		.last_cid = SPARX5_VCAP_CID_IS2_L2 - 1,
++		.blockno = 0,
++		.blocks = 1,
++		.ingress = true,
++	},
++	{
++		.vtype = VCAP_TYPE_IS2, /* IS2-1 */
++		.vinst = 1,
++		.map_id = 5,
++		.lookups = SPARX5_IS2_LOOKUPS,
++		.lookups_per_instance = SPARX5_IS2_LOOKUPS / 2,
++		.first_cid = SPARX5_VCAP_CID_IS2_L2,
++		.last_cid = SPARX5_VCAP_CID_IS2_MAX,
++		.blockno = 1,
++		.blocks = 1,
++		.ingress = true,
++	},
++	{
++		.vtype = VCAP_TYPE_ES0,
++		.lookups = SPARX5_ES0_LOOKUPS,
++		.lookups_per_instance = SPARX5_ES0_LOOKUPS,
++		.first_cid = SPARX5_VCAP_CID_ES0_L0,
++		.last_cid = SPARX5_VCAP_CID_ES0_MAX,
++		.count = 1536,
++		.ingress = false,
++	},
++	{
++		.vtype = VCAP_TYPE_ES2,
++		.lookups = SPARX5_ES2_LOOKUPS,
++		.lookups_per_instance = SPARX5_ES2_LOOKUPS,
++		.first_cid = SPARX5_VCAP_CID_ES2_L0,
++		.last_cid = SPARX5_VCAP_CID_ES2_MAX,
++		.count = 1024,
++		.ingress = false,
++	},
++};

@@ -9,11 +9,11 @@ SHELL:=sh
 PKG_NAME:=Build dependency
 
 $(eval $(call TestHostCommand,true, \
-	Please install GNU 'coreutils', \
+	Please install 'coreutils', \
 	$(TRUE)))
 
 $(eval $(call TestHostCommand,false, \
-	Please install GNU 'coreutils', \
+	Please install 'coreutils', \
 	$(FALSE); [ $$$$$$$$? = 1 ] && $(TRUE)))
 
 # Required for the toolchain
@@ -97,7 +97,7 @@ $(eval $(call TestHostCommand,perl-thread-queue, \
 	perl -MThread::Queue -e 1))
 
 $(eval $(call TestHostCommand,perl-ipc-cmd, \
-	Please install the Perl IPC:Cmd module, \
+	Please install the Perl IPC::Cmd module, \
 	perl -MIPC::Cmd -e 1))
 
 $(eval $(call SetupHostCommand,tar,Please install GNU 'tar', \
@@ -126,10 +126,12 @@ $(eval $(call SetupHostCommand,diff,Please install GNU diffutils, \
 	diff --version 2>&1 | grep GNU))
 
 $(eval $(call SetupHostCommand,cp,Please install GNU fileutils, \
+	$(TOPDIR)/staging_dir/host/bin/gcp --help 2>&1 | grep 'Copy SOURCE', \
 	gcp --help 2>&1 | grep 'Copy SOURCE', \
 	cp --help 2>&1 | grep 'Copy SOURCE'))
 
 $(eval $(call SetupHostCommand,seq,Please install seq, \
+	$(TOPDIR)/staging_dir/host/bin/gseq --version, \
 	gseq --version, \
 	seq --version 2>&1 | grep seq))
 
@@ -153,10 +155,12 @@ $(eval $(call SetupHostCommand,getopt, \
 	/opt/local/bin/getopt -o t --long test -- --test | grep '^ *--test *--'))
 
 $(eval $(call SetupHostCommand,realpath,Please install a 'realpath' utility, \
+	$(TOPDIR)/staging_dir/host/bin/grealpath /, \
 	grealpath /, \
 	realpath /))
 
 $(eval $(call SetupHostCommand,stat,Cannot find a file stat utility, \
+	$(TOPDIR)/staging_dir/host/bin/gstat -c%s $(TOPDIR)/Makefile, \
 	gnustat -c%s $(TOPDIR)/Makefile, \
 	gstat -c%s $(TOPDIR)/Makefile, \
 	stat -c%s $(TOPDIR)/Makefile))
@@ -174,14 +178,17 @@ $(eval $(call SetupHostCommand,bzip2,Please install 'bzip2', \
 $(eval $(call SetupHostCommand,wget,Please install GNU 'wget', \
 	wget --version | grep GNU))
 
-$(eval $(call SetupHostCommand,install,Please install GNU 'install', \
-	install --version | grep GNU, \
+$(eval $(call SetupHostCommand,install,Please install 'install', \
+	$(TOPDIR)/staging_dir/host/bin/ginstall --version | grep GNU, \
+	install --version | grep 'GNU\|uutils', \
 	ginstall --version | grep GNU))
 
 $(eval $(call SetupHostCommand,perl,Please install Perl 5.x, \
 	perl --version | grep "perl.*v5"))
 
 $(eval $(call SetupHostCommand,python,Please install Python >= 3.7, \
+	python3.13 -V 2>&1 | grep 'Python 3', \
+	python3.12 -V 2>&1 | grep 'Python 3', \
 	python3.11 -V 2>&1 | grep 'Python 3', \
 	python3.10 -V 2>&1 | grep 'Python 3', \
 	python3.9 -V 2>&1 | grep 'Python 3', \
@@ -190,6 +197,8 @@ $(eval $(call SetupHostCommand,python,Please install Python >= 3.7, \
 	python3 -V 2>&1 | grep -E 'Python 3\.([7-9]|[0-9][0-9])\.?'))
 
 $(eval $(call SetupHostCommand,python3,Please install Python >= 3.7, \
+	python3.13 -V 2>&1 | grep 'Python 3', \
+	python3.12 -V 2>&1 | grep 'Python 3', \
 	python3.11 -V 2>&1 | grep 'Python 3', \
 	python3.10 -V 2>&1 | grep 'Python 3', \
 	python3.9 -V 2>&1 | grep 'Python 3', \
@@ -199,7 +208,8 @@ $(eval $(call SetupHostCommand,python3,Please install Python >= 3.7, \
 
 $(eval $(call TestHostCommand,python3-distutils, \
 	Please install the Python3 distutils module, \
-	$(STAGING_DIR_HOST)/bin/python3 -c 'from distutils import util'))
+	printf 'from sys import version_info\nif version_info < (3, 12):\n\tfrom distutils import util' | \
+		$(STAGING_DIR_HOST)/bin/python3 -))
 
 $(eval $(call TestHostCommand,python3-stdlib, \
 	Please install the Python3 stdlib module, \
@@ -229,7 +239,7 @@ endif
 
 $(STAGING_DIR_HOST)/bin/mkhash: $(SCRIPT_DIR)/mkhash.c
 	mkdir -p $(dir $@)
-	$(CC) -O2 -I$(TOPDIR)/tools/include -o $@ $<
+	$(STAGING_DIR_HOST)/bin/gcc -O2 -I$(TOPDIR)/tools/include -o $@ $<
 
 $(STAGING_DIR_HOST)/bin/xxd: $(SCRIPT_DIR)/xxdi.pl
 	$(LN) $< $@

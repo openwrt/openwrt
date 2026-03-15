@@ -40,22 +40,6 @@ endef
 $(eval $(call KernelPackage,gpio-beeper))
 
 
-define KernelPackage/gpio-cascade
-  SUBMENU:=$(GPIO_MENU)
-  TITLE:=Generic GPIO cascade
-  KCONFIG:=CONFIG_GPIO_CASCADE
-  DEPENDS:=@GPIO_SUPPORT +kmod-mux-core
-  FILES:=$(LINUX_DIR)/drivers/gpio/gpio-cascade.ko
-  AUTOLOAD:=$(call AutoLoad,29,gpio-cascade,1)
-endef
-
-define KernelPackage/gpio-cascade/description
-  Kernel module for Generic GPIO cascade
-endef
-
-$(eval $(call KernelPackage,gpio-cascade))
-
-
 define KernelPackage/gpio-f7188x
   SUBMENU:=$(GPIO_MENU)
   TITLE:=Fintek F718xx/F818xx GPIO Support
@@ -90,6 +74,22 @@ endef
 $(eval $(call KernelPackage,gpio-it87))
 
 
+define KernelPackage/gpio-line-mux
+  SUBMENU:=$(GPIO_MENU)
+  TITLE:=Virtual GPIO line multiplexer
+  KCONFIG:=CONFIG_GPIO_LINE_MUX
+  DEPENDS:=@GPIO_SUPPORT +kmod-mux-core
+  FILES:=$(LINUX_DIR)/drivers/gpio/gpio-line-mux.ko
+  AUTOLOAD:=$(call AutoLoad,29,gpio-line-mux,1)
+endef
+
+define KernelPackage/gpio-line-mux/description
+  Kernel module for Virtual GPIO line multiplexer
+endef
+
+$(eval $(call KernelPackage,gpio-line-mux))
+
+
 define KernelPackage/gpio-nxp-74hc164
   SUBMENU:=$(GPIO_MENU)
   TITLE:=NXP 74HC164 GPIO expander support
@@ -109,7 +109,8 @@ define KernelPackage/gpio-pca953x
   SUBMENU:=$(GPIO_MENU)
   DEPENDS:=@GPIO_SUPPORT +kmod-i2c-core +kmod-regmap-i2c
   TITLE:=PCA95xx, TCA64xx, and MAX7310 I/O ports
-  KCONFIG:=CONFIG_GPIO_PCA953X
+  KCONFIG:=CONFIG_GPIO_PCA953X \
+	   CONFIG_GPIO_PCA953X_IRQ=y
   FILES:=$(LINUX_DIR)/drivers/gpio/gpio-pca953x.ko
   AUTOLOAD:=$(call AutoLoad,55,gpio-pca953x)
 endef
@@ -136,3 +137,20 @@ define KernelPackage/gpio-pcf857x/description
 endef
 
 $(eval $(call KernelPackage,gpio-pcf857x))
+
+
+define KernelPackage/gpio-pwm
+  SUBMENU:=$(GPIO_MENU)
+  DEPENDS:=@GPIO_SUPPORT @PWM_SUPPORT
+  TITLE:=PWM GPIO support
+  KCONFIG:=CONFIG_PWM_GPIO
+  FILES:=$(LINUX_DIR)/drivers/pwm/pwm-gpio.ko
+  AUTOLOAD:=$(call AutoProbe,pwm-gpio)
+endef
+
+define KernelPackage/gpio-pwm/description
+ Generic PWM framework driver for software PWM toggling a GPIO pin from
+ kernel high-resolution timers.
+endef
+
+$(eval $(call KernelPackage,gpio-pwm))

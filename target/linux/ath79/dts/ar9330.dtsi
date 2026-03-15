@@ -120,7 +120,6 @@
 
 			interrupts = <3>;
 			resets = <&rst 5>;
-			reset-names = "usb-host";
 
 			phy-names = "usb-phy";
 			phys = <&usb_phy>;
@@ -154,7 +153,7 @@
 		};
 
 		wmac: wmac@18100000 {
-			compatible = "qca,ar9330-wmac";
+			compatible = "qca,ar9330-wifi";
 			reg = <0x18100000 0x20000>;
 
 			interrupts = <2>;
@@ -166,7 +165,7 @@
 	usb_phy: usb-phy {
 		compatible = "qca,ar7200-usb-phy";
 
-		reset-names = "usb-phy", "usb-suspend-override";
+		reset-names = "phy", "suspend-override";
 		resets = <&rst 4>, <&rst 3>;
 
 		#phy-cells = <0>;

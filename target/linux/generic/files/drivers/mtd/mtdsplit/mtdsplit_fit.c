@@ -210,7 +210,7 @@ mtdsplit_fit_parse(struct mtd_info *mtd,
 
 	of_property_read_string(np, "openwrt,cmdline-match", &cmdline_match);
 	if (cmdline_match && !strstr(saved_command_line, cmdline_match))
-		return -ENODEV;
+		return -ENOENT;
 
 	of_property_read_u32(np, "openwrt,fit-offset", &offset_start);
 
@@ -247,7 +247,7 @@ mtdsplit_fit_parse(struct mtd_info *mtd,
 	if (fit_size == 0) {
 		pr_err("FIT image in \"%s\" at offset %llx has null size\n",
 		       mtd->name, (unsigned long long) fit_offset);
-		return -ENODEV;
+		return -ENOENT;
 	}
 
 	/*
@@ -258,7 +258,7 @@ mtdsplit_fit_parse(struct mtd_info *mtd,
 	 * hence we need to parse FDT structure to find the end of the
 	 * last external data refernced.
 	 */
-	if (fit_size > 0x1000) {
+	if (fit_size > 0x80000) {
 		enum mtdsplit_part_type type;
 
 		/* Search for the rootfs partition after the FIT image */
@@ -278,7 +278,7 @@ mtdsplit_fit_parse(struct mtd_info *mtd,
 
 		parts[0].name = KERNEL_PART_NAME;
 		parts[0].offset = fit_offset;
-		parts[0].size = mtd_rounddown_to_eb(fit_size + offset_start, mtd) + mtd->erasesize;
+		parts[0].size = mtd_roundup_to_eb(fit_size + offset_start, mtd);
 
 		if (type == MTDSPLIT_PART_TYPE_UBI)
 			parts[1].name = UBI_PART_NAME;
@@ -304,7 +304,7 @@ mtdsplit_fit_parse(struct mtd_info *mtd,
 		if (images_noffset < 0) {
 			pr_err("Can't find images parent node '%s' (%s)\n",
 			FIT_IMAGES_PATH, fdt_strerror(images_noffset));
-			return -ENODEV;
+			return -ENOENT;
 		}
 
 		for (ndepth = 0,
@@ -327,7 +327,7 @@ mtdsplit_fit_parse(struct mtd_info *mtd,
 			return -ENOMEM;
 
 		parts[0].name = ROOTFS_SPLIT_NAME;
-		parts[0].offset = fit_offset + mtd_rounddown_to_eb(max_size, mtd) + mtd->erasesize;
+		parts[0].offset = fit_offset + mtd_roundup_to_eb(max_size, mtd);
 		parts[0].size = mtd->size - parts[0].offset;
 
 		*pparts = parts;

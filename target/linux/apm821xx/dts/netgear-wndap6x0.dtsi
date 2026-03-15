@@ -47,24 +47,27 @@
 			};
 
 			partition@100000 {
-				compatible = "u-boot,env";
 				label = "u-boot-env";
 				reg = <0x00100000 0x0004000>;
 				read-only;
 
-				ethaddr {
-				};
+				nvmem-layout {
+					compatible = "u-boot,env";
 
-				bootcmd {
-				};
+					ethaddr {
+					};
 
-				serno {
-				};
+					bootcmd {
+					};
 
-				ProductID {
-				};
+					serno {
+					};
 
-				HardwareVer {
+					ProductID {
+					};
+
+					HardwareVer {
+					};
 				};
 			};
 
@@ -224,8 +227,7 @@
 
 	rtl8367b {
 		compatible = "realtek,rtl8367b";
-		cpu_port = <5>;
-		realtek,extif0 = <1 2 1 1 1 1 1 1 2>;
+		realtek,extif = <5 1 2 1 1 1 1 1 1 2>;
 		mii-bus = <&mdio0>;
 	};
 };

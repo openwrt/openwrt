@@ -181,9 +181,32 @@
 			#size-cells = <1>;
 
 			partition@0 {
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
 				label = "uboot";
 				reg = <0x00000000 0x00180000>;
 				read-only;
+
+				partition@40000 {
+					label = "u-boot-env-main";
+					reg = <0x00040000 0x20000>; /* one block is 128k */
+					status = "disabled";
+
+					nvmem-layout {
+						compatible = "u-boot,env-redundant-count";
+					};
+				};
+
+				partition@60000 {
+					label = "u-boot-env-redundant";
+					reg = <0x00060000 0x20000>;
+					status = "disabled";
+
+					nvmem-layout {
+						compatible = "u-boot,env-redundant-count";
+					};
+				};
 			};
 
 			partition@180000 {
@@ -196,7 +219,7 @@
 
 				partition@0 {
 					label = "kernel";
-					reg = <0x00000000 0x00380000>;
+					reg = <0x00000000 0x00480000>;
 
 					compatible = "fixed-partitions";
 					#address-cells = <1>;
@@ -218,9 +241,9 @@
 				 */
 				};
 
-				partition@380000 {
+				partition@480000 {
 					label = "ubi";
-					reg = <0x00380000 0x014e0000>;
+					reg = <0x00480000 0x013e0000>;
 				};
 			};
 
@@ -330,24 +353,93 @@
 
 &EMAC0 {
 	status = "okay";
-	phy-handle = <&phy0>;
 	fifo-entry-size = <10>;
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
 
 	mdio {
 		#address-cells = <1>;
 		#size-cells = <0>;
-		phy0: ethernet-phy@0 {
-			device_type = "ethernet-phy";
-			reg = <0>;
-			qca,mib-poll-interval = <500>;
 
-			qca,ar8327-initvals = <
-				0x0010 0x40000000
-				0x0624 0x007f7f7f
-				0x0004 0x07a00000	/* PAD0_MODE */
-				0x000c 0x01000000	/* PAD6_MODE */
-				0x007c 0x0000007e	/* PORT0_STATUS */
-			>;
+		phy_port1: phy@0 {
+			reg = <0>;
+		};
+
+		phy_port2: phy@1 {
+			reg = <1>;
+		};
+
+		phy_port3: phy@2 {
+			reg = <2>;
+		};
+
+		phy_port4: phy@3 {
+			reg = <3>;
+		};
+
+		phy_port5: phy@4 {
+			reg = <4>;
+		};
+
+		switch0@10 {
+			compatible = "qca,qca8327";
+			reg = <0x10>;
+
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				port@0 {
+					reg = <0>;
+					label = "cpu";
+					ethernet = <&EMAC0>;
+					phy-mode = "rgmii-id";
+					tx-internal-delay-ps = <2000>;
+
+					fixed-link {
+						speed = <1000>;
+						full-duplex;
+					};
+				};
+
+				port@1 {
+					reg = <1>;
+					label = "lan4";
+					phy-mode = "internal";
+					phy-handle = <&phy_port1>;
+				};
+
+				port@2 {
+					reg = <2>;
+					label = "lan3";
+					phy-mode = "internal";
+					phy-handle = <&phy_port2>;
+				};
+
+				port@3 {
+					reg = <3>;
+					label = "lan2";
+					phy-mode = "internal";
+					phy-handle = <&phy_port3>;
+				};
+
+				port@4 {
+					reg = <4>;
+					label = "lan1";
+					phy-mode = "internal";
+					phy-handle = <&phy_port4>;
+				};
+
+				port@5 {
+					reg = <5>;
+					label = "wan";
+					phy-mode = "internal";
+					phy-handle = <&phy_port5>;
+				};
+			};
 		};
 	};
 };
@@ -471,13 +563,13 @@
 	 *
 	 */
 
-	bridge@64,0 {
+	bridge@0,0 {
 		reg = <0x00400000 0 0 0 0>;
 		#address-cells = <3>;
 		#size-cells = <2>;
 		ranges;
 
-		bridge@65,0 {
+		bridge@0,0 {
 			/* IDT PES4T4 PCI Express Switch */
 			compatible = "pci111d,803a";
 			reg = <0x00410000 0 0 0 0>;
@@ -485,14 +577,14 @@
 			#size-cells = <2>;
 			ranges;
 
-			bridge@66,2 {
+			bridge@2,0 {
 				compatible = "pci111d,803a";
 				reg = <0x00421000 0 0 0 0>;
 				#address-cells = <3>;
 				#size-cells = <2>;
 				ranges;
 
-				wifi0: wifi@67,0 {
+				wifi0: wifi@0,0 {
 					/* Atheros AR9380 5GHz */
 					compatible = "pci168c,0030";
 					reg = <0x00430000 0 0 0 0>;
@@ -508,14 +600,14 @@
 				};
 			};
 
-			bridge@66,3 {
+			bridge@3,0 {
 				compatible = "pci111d,803a";
 				reg = <0x00421800 0 0 0 0>;
 				#address-cells = <3>;
 				#size-cells = <2>;
 				ranges;
 
-				wifi1: wifi@68,0 {
+				wifi1: wifi@0,0 {
 					/* Atheros AR9381 2.4GHz */
 					compatible = "pci168c,0033";
 					reg = <0x00440000 0 0 0 0>;
@@ -525,14 +617,14 @@
 				};
 			};
 
-			bridge@66,4 {
+			bridge@4,0 {
 				compatible = "pci111d,803a";
 				reg = <0x00422000 0 0 0 0>;
 				#address-cells = <3>;
 				#size-cells = <2>;
 				ranges;
 
-				usb1: usb@69,0 {
+				usb1: usb@0,0 {
 					/* Renesas uPD720202 */
 					compatible = "pci1912,0015";
 					reg = <0x00450000 0 0 0 0>;

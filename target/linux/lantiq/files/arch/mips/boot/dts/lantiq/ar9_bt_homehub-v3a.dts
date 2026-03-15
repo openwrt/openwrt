@@ -101,7 +101,7 @@
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 
-		gpio = <&gpio 33 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 33 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
 };
@@ -121,6 +121,14 @@
 
 &gsw {
 	phy-mode = "rgmii";
+
+	nvmem-cells = <&macaddr_uboot_ethaddr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&ppe {
+	nvmem-cells = <&macaddr_uboot_ethaddr 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &localbus {
@@ -154,6 +162,14 @@
 			partition@64000 {
 				label = "u-boot-env";
 				reg = <0x64000 0x004000>;
+
+				nvmem-layout {
+					compatible = "u-boot,env";
+
+					macaddr_uboot_ethaddr: ethaddr {
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 			ath9k_cal: partition@68000 {
 				label = "art-copy";
@@ -177,11 +193,13 @@
 	pinctrl-0 = <&pci_gnt1_pins>, <&pci_req1_pins>;
 	pinctrl-names = "default";
 
-	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
+	reset-gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 
-	wifi@7000 {
+	wifi@e,0 {
 		reg = <0x7000 0 0 0 0>;
 		qca,no-eeprom; /* load from ath9k-eeprom-pci-0000:00:0e.0.bin */
+		nvmem-cells = <&macaddr_uboot_ethaddr 2>;
+		nvmem-cell-names = "mac-address";
 	};
 };
 

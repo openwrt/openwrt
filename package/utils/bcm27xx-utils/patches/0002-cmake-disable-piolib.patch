@@ -1,0 +1,24 @@
+From 5249e68da31d11e0beaf9fd76a6d17ac04198b26 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
+Date: Sat, 28 Dec 2024 09:42:00 +0100
+Subject: [PATCH] cmake: disable piolib
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+---
+ CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -10,7 +10,7 @@ add_subdirectory(otpset)
+ add_subdirectory(overlaycheck)
+ add_subdirectory(ovmerge)
+ add_subdirectory(pinctrl)
+-add_subdirectory(piolib)
++# add_subdirectory(piolib)
+ add_subdirectory(raspinfo)
+ add_subdirectory(vcgencmd)
+ add_subdirectory(vclog)

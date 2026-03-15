@@ -1,5 +1,24 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
+define Device/actiontec_t1200h
+  $(Device/bcm63xx-nand)
+  DEVICE_VENDOR := Actiontec
+  DEVICE_MODEL := T1200H
+  CHIP_ID := 63268
+  SOC := bcm63168
+  CFE_RAM_FILE := actiontec,t1200h/cferam.000
+  CFE_RAM_JFFS2_NAME := cferam.000
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  SUBPAGESIZE := 512
+  VID_HDR_OFFSET := 2048
+  DEVICE_PACKAGES += $(USB2_PACKAGES) \
+    kmod-leds-gpio
+  CFE_WFI_FLASH_TYPE := 3
+  CFE_WFI_VERSION := 0x5732
+endef
+TARGET_DEVICES += actiontec_t1200h
+
 define Device/comtrend_vg-8050
   $(Device/bcm63xx-nand)
   DEVICE_VENDOR := Comtrend
@@ -37,6 +56,27 @@ define Device/comtrend_vr-3032u
   CFE_WFI_VERSION := 0x5732
 endef
 TARGET_DEVICES += comtrend_vr-3032u
+
+define Device/sagem_fast-3864-op
+  $(Device/bcm63xx-nand)
+  DEVICE_VENDOR := Sagemcom
+  DEVICE_MODEL := F@ST 3864
+  DEVICE_VARIANT := OP
+  CHIP_ID := 63268
+  SOC := bcm63168
+  CFE_RAM_FILE := sagem,fast-3864-op/cferam.000
+  CFE_RAM_JFFS2_NAME := cferam.000
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  SUBPAGESIZE := 512
+  VID_HDR_OFFSET := 2048
+  DEVICE_PACKAGES += $(USB2_PACKAGES) \
+    kmod-leds-gpio \
+    kmod-leds-bcm6328
+  CFE_WFI_FLASH_TYPE := 3
+  CFE_WFI_VERSION := 0x5732
+endef
+TARGET_DEVICES += sagem_fast-3864-op
 
 define Device/sercomm_h500-s-lowi
   $(Device/sercomm-nand)

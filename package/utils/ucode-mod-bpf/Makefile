@@ -32,7 +32,7 @@ define Build/Configure
 endef
 
 define Build/Compile
-	$(TARGET_CC) $(TARGET_CFLAGS) $(TARGET_LDFLAGS) $(FPIC) \
+	$(TARGET_CC) $(TARGET_CPPFLAGS) $(TARGET_CFLAGS) $(TARGET_LDFLAGS) $(FPIC) \
 		-Wall -ffunction-sections -Wl,--gc-sections -shared -Wl,--no-as-needed -lbpf \
 		-o $(PKG_BUILD_DIR)/bpf.so $(PKG_BUILD_DIR)/bpf.c
 endef

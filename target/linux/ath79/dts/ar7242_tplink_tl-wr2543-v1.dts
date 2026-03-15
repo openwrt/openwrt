@@ -76,9 +76,9 @@
 
 	rtl8367 {
 		compatible = "realtek,rtl8367";
-		gpio-sda = <&gpio 1 GPIO_ACTIVE_HIGH>;
-		gpio-sck = <&gpio 6 GPIO_ACTIVE_HIGH>;
-		realtek,extif0 = <1 0 1 1 1 1 1 1 2>;
+		sda-gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
+		sck-gpios = <&gpio 6 GPIO_ACTIVE_HIGH>;
+		realtek,extif = <9 1 0 1 1 1 1 1 1 2>;
 
 		mdio-bus {
 			#address-cells = <1>;
@@ -128,7 +128,7 @@
 				reg = <0x020000 0x7d0000>;
 			};
 
-			art: partition@7f0000 {
+			partition@7f0000 {
 				label = "art";
 				reg = <0x7f0000 0x010000>;
 				read-only;
@@ -159,6 +159,7 @@
 	status = "okay";
 
 	ath9k: wifi@0,0 {
+		compatible = "pci168c,0030";
 		reg = <0x0000 0 0 0 0>;
 		#gpio-cells = <2>;
 		gpio-controller;

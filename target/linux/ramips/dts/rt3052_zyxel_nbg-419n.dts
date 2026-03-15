@@ -6,7 +6,7 @@
 
 / {
 	compatible = "zyxel,nbg-419n", "ralink,rt3052-soc";
-	model = "ZyXEL NBG-419N";
+	model = "Zyxel NBG-419N";
 
 	aliases {
 		led-boot = &led_power;
@@ -83,8 +83,7 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
 
 		reset {
 			label = "reset";

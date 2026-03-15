@@ -89,23 +89,29 @@
 
 	gpio_export {
 		compatible = "gpio-export";
-		#size-cells = <0>;
 
 		switch {
 			gpio-export,name = "switch";
 			gpio-export,output = <1>;
 			gpios = <&gpio 38 GPIO_ACTIVE_HIGH>;
 		};
-		usb {
-			gpio-export,name = "usb";
-			gpio-export,output = <1>;
-			gpios = <&gpio 28 GPIO_ACTIVE_HIGH>;
-		};
 		wifi {
 			gpio-export,name = "wifi";
 			gpio-export,output = <1>;
 			gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
 		};
+	};
+
+	usb_phy: regulator-usb-phy {
+		compatible = "regulator-fixed";
+
+		regulator-name = "USB_PHY";
+
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+
+		gpios = <&gpio 28 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
 	};
 
 	usb_vbus: regulator-usb-vbus {
@@ -116,7 +122,7 @@
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 
-		gpio = <&gpio 36 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 36 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
 };
@@ -166,6 +172,7 @@
 
 &usb_phy0 {
 	status = "okay";
+	phy-supply = <&usb_phy>;
 };
 
 

@@ -96,6 +96,7 @@ echo "COUNT=$count"
 
 # if there's no range, we're done
 [ $# -eq 0 ] && exit 0
+[ -z "$1$2" ] && exit 0
 
 if [ "$prefix" -le 30 ]; then
     lower=$((network + 1))
@@ -111,6 +112,8 @@ start=$((network | (start & hostmask)))
 
 if [ "$prefix" -le 30 ]; then
     upper=$(((network | hostmask) - 1))
+elif [ "$prefix" -eq 31 ]; then
+    upper=$((network | hostmask))
 else
     upper="$network"
 fi
@@ -130,8 +133,7 @@ _ip2str START "$start"
 _ip2str END "$end"
 
 if [ "$start" -le "$ipaddr" ] && [ "$ipaddr" -le "$end" ]; then
-    echo "error: address $IP inside range $START..$END" >&2
-    exit 1
+    echo "warning: address $IP inside range $START..$END" >&2
 fi
 
 echo "START=$START"

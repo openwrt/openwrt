@@ -32,7 +32,6 @@
 #include <linux/bug.h>
 #include <linux/netfilter.h>
 #include <net/netfilter/nf_flow_table.h>
-#include <linux/of_gpio.h>
 #include <linux/gpio.h>
 #include <linux/gpio/consumer.h>
 
@@ -487,7 +486,7 @@ static void fe_get_stats64(struct net_device *dev,
 	}
 
 	do {
-		start = u64_stats_fetch_begin_irq(&hwstats->syncp);
+		start = u64_stats_fetch_begin(&hwstats->syncp);
 		storage->rx_packets = hwstats->rx_packets;
 		storage->tx_packets = hwstats->tx_packets;
 		storage->rx_bytes = hwstats->rx_bytes;
@@ -499,7 +498,7 @@ static void fe_get_stats64(struct net_device *dev,
 		storage->rx_crc_errors = hwstats->rx_fcs_errors;
 		storage->rx_errors = hwstats->rx_checksum_errors;
 		storage->tx_aborted_errors = hwstats->tx_skip;
-	} while (u64_stats_fetch_retry_irq(&hwstats->syncp, start));
+	} while (u64_stats_fetch_retry(&hwstats->syncp, start));
 
 	storage->tx_errors = priv->netdev->stats.tx_errors;
 	storage->rx_dropped = priv->netdev->stats.rx_dropped;
@@ -1354,23 +1353,11 @@ static int __init fe_init(struct net_device *dev)
 
 	if (priv->soc->switch_init) {
 		err = priv->soc->switch_init(priv);
-		if (err) {
-			if (err == -EPROBE_DEFER)
-				return err;
-
-			netdev_err(dev, "failed to initialize switch core\n");
-			return -ENODEV;
-		}
+		if (err)
+			return dev_err_probe(&dev->dev, err, "failed to initialize switch core");
 	}
 
 	fe_reset_phy(priv);
-
-	/* Set the MAC address if it is correct, if not use a random MAC address  */
-	if (of_get_ethdev_address(priv->dev->of_node, dev)) {
-		eth_hw_addr_random(dev);
-		dev_err(priv->dev, "generated random MAC address %pM\n",
-			dev->dev_addr);
-	}
 
 	err = fe_mdio_init(priv);
 	if (err)
@@ -1414,7 +1401,6 @@ static void fe_uninit(struct net_device *dev)
 	fe_mdio_cleanup(priv);
 
 	fe_reg_w32(0, FE_REG_FE_INT_ENABLE);
-	free_irq(dev->irq, dev);
 }
 
 static int fe_do_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
@@ -1480,7 +1466,7 @@ static const struct net_device_ops fe_netdev_ops = {
 	.ndo_start_xmit		= fe_start_xmit,
 	.ndo_set_mac_address	= fe_set_mac_address,
 	.ndo_validate_addr	= eth_validate_addr,
-	.ndo_do_ioctl		= fe_do_ioctl,
+	.ndo_eth_ioctl		= fe_do_ioctl,
 	.ndo_change_mtu		= fe_change_mtu,
 	.ndo_tx_timeout		= fe_tx_timeout,
 	.ndo_get_stats64        = fe_get_stats64,
@@ -1528,7 +1514,6 @@ static void fe_pending_work(struct work_struct *work)
 
 static int fe_probe(struct platform_device *pdev)
 {
-	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	const struct of_device_id *match;
 	struct fe_soc_data *soc;
 	struct net_device *netdev;
@@ -1548,36 +1533,41 @@ static int fe_probe(struct platform_device *pdev)
 	else
 		soc->reg_table = fe_reg_table;
 
-	fe_base = devm_ioremap_resource(&pdev->dev, res);
-	if (IS_ERR(fe_base)) {
-		err = -EADDRNOTAVAIL;
-		goto err_out;
-	}
+	fe_base = devm_platform_ioremap_resource(pdev, 0);
+	if (IS_ERR(fe_base))
+		return PTR_ERR(fe_base);
 
-	netdev = alloc_etherdev(sizeof(*priv));
+	netdev = devm_alloc_etherdev(&pdev->dev, sizeof(*priv));
 	if (!netdev) {
 		dev_err(&pdev->dev, "alloc_etherdev failed\n");
-		err = -ENOMEM;
-		goto err_iounmap;
+		return -ENOMEM;
 	}
 
 	SET_NETDEV_DEV(netdev, &pdev->dev);
 	netdev->netdev_ops = &fe_netdev_ops;
 	netdev->base_addr = (unsigned long)fe_base;
 
-	netdev->irq = platform_get_irq(pdev, 0);
-	if (netdev->irq < 0) {
-		dev_err(&pdev->dev, "no IRQ resource found\n");
-		err = -ENXIO;
-		goto err_free_dev;
+	/* Set the MAC address if it is correct, if not use a random MAC address  */
+	err = of_get_ethdev_address(pdev->dev.of_node, netdev);
+	if (err == -EPROBE_DEFER)
+		return err;
+
+	if (err) {
+		eth_hw_addr_random(netdev);
+		dev_err(&pdev->dev, "generated random MAC address %pM\n",
+			netdev->dev_addr);
 	}
+
+	netdev->irq = platform_get_irq(pdev, 0);
+	if (netdev->irq < 0)
+		return -ENXIO;
 
 	priv = netdev_priv(netdev);
 	spin_lock_init(&priv->page_lock);
-	priv->resets = devm_reset_control_array_get_exclusive(&pdev->dev);
+	priv->resets = devm_reset_control_array_get_optional_exclusive(&pdev->dev);
 	if (IS_ERR(priv->resets)) {
 		dev_err(&pdev->dev, "Failed to get resets for FE and ESW cores: %pe\n", priv->resets);
-		priv->resets = NULL;
+		return PTR_ERR(priv->resets);
 	}
 
 	if (soc->init_data)
@@ -1595,11 +1585,9 @@ static int fe_probe(struct platform_device *pdev)
 		netdev->features |= NETIF_F_HW_VLAN_CTAG_FILTER;
 
 	if (fe_reg_table[FE_REG_FE_COUNTER_BASE]) {
-		priv->hw_stats = kzalloc(sizeof(*priv->hw_stats), GFP_KERNEL);
-		if (!priv->hw_stats) {
-			err = -ENOMEM;
-			goto err_free_dev;
-		}
+		priv->hw_stats = devm_kzalloc(&pdev->dev, sizeof(*priv->hw_stats), GFP_KERNEL);
+		if (!priv->hw_stats)
+			return -ENOMEM;
 		spin_lock_init(&priv->hw_stats->stats_lock);
 		u64_stats_init(&priv->hw_stats->syncp);
 	}
@@ -1609,15 +1597,13 @@ static int fe_probe(struct platform_device *pdev)
 		priv->sysclk = clk_get_rate(sysclk);
 	} else if ((priv->flags & FE_FLAG_CALIBRATE_CLK)) {
 		dev_err(&pdev->dev, "this soc needs a clk for calibration\n");
-		err = -ENXIO;
-		goto err_free_dev;
+		return -ENXIO;
 	}
 
 	priv->switch_np = of_parse_phandle(pdev->dev.of_node, "mediatek,switch", 0);
 	if ((priv->flags & FE_FLAG_HAS_SWITCH) && !priv->switch_np) {
 		dev_err(&pdev->dev, "failed to read switch phandle\n");
-		err = -ENODEV;
-		goto err_free_dev;
+		return -ENODEV;
 	}
 
 	priv->netdev = netdev;
@@ -1639,10 +1625,10 @@ static int fe_probe(struct platform_device *pdev)
 	netif_napi_add_weight(netdev, &priv->rx_napi, fe_poll, napi_weight);
 	fe_set_ethtool_ops(netdev);
 
-	err = register_netdev(netdev);
+	err = devm_register_netdev(&pdev->dev, netdev);
 	if (err) {
 		dev_err(&pdev->dev, "error bringing up device\n");
-		goto err_free_dev;
+		return err;
 	}
 
 	platform_set_drvdata(pdev, netdev);
@@ -1651,30 +1637,18 @@ static int fe_probe(struct platform_device *pdev)
 		   netdev->base_addr, netdev->irq);
 
 	return 0;
-
-err_free_dev:
-	free_netdev(netdev);
-err_iounmap:
-	devm_iounmap(&pdev->dev, fe_base);
-err_out:
-	return err;
 }
 
-static int fe_remove(struct platform_device *pdev)
+static void fe_remove(struct platform_device *pdev)
 {
 	struct net_device *dev = platform_get_drvdata(pdev);
 	struct fe_priv *priv = netdev_priv(dev);
 
 	netif_napi_del(&priv->rx_napi);
-	kfree(priv->hw_stats);
 
 	cancel_work_sync(&priv->pending_work);
 
-	unregister_netdev(dev);
-	free_netdev(dev);
 	platform_set_drvdata(pdev, NULL);
-
-	return 0;
 }
 
 static struct platform_driver fe_driver = {
@@ -1682,7 +1656,6 @@ static struct platform_driver fe_driver = {
 	.remove = fe_remove,
 	.driver = {
 		.name = "mtk_soc_eth",
-		.owner = THIS_MODULE,
 		.of_match_table = of_fe_match,
 	},
 };

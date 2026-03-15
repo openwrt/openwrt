@@ -16,7 +16,7 @@
 	keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <100>;
-		
+
 		reset {
 			label = "reset";
 			gpios = <&gpio 32 GPIO_ACTIVE_LOW>;
@@ -60,9 +60,6 @@
 		spi-tx-bus-width = <2>;
 		spi-rx-bus-width = <2>;
 		reg = <0>;
-
-		#address-cells = <1>;
-		#size-cells = <1>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -180,7 +177,7 @@
 &pinctrl {
 	pinctrl_leds: leds {
 		function = "led";
-		pins = "gpio1", "gpio8", 
+		pins = "gpio1", "gpio8",
 			"gpio9", "gpio10",
 			"gpio11", "gpio12",
 			"gpio14", "gpio15",

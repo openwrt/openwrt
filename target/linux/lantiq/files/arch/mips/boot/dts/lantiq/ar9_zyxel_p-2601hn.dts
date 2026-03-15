@@ -5,7 +5,7 @@
 
 / {
 	compatible = "zyxel,p-2601hn", "lantiq,xway", "lantiq,ar9";
-	model = "ZyXEL P-2601HN-Fx";
+	model = "Zyxel P-2601HN-Fx";
 
 	chosen {
 		bootargs = "console=ttyLTQ0,115200";
@@ -89,7 +89,6 @@
 
 	gpio_export {
 		compatible = "gpio-export";
-		#size-cells = <0>;
 
 		switch {
 			gpio-export,name = "switch";
@@ -106,7 +105,7 @@
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 
-		gpio = <&gpio 9 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 9 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
 };

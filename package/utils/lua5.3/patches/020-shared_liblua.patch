@@ -304,7 +304,7 @@
 -$(LUA_T): $(LUA_O) $(LUA_A)
 -	$(CC) -o $@ $(LDFLAGS) $(LUA_O) $(LUA_A) $(LIBS)
 +$(LUA_SO): $(CORE_O) $(LIB_O)
-+	$(CC) -o $@ -Wl,-Bsymbolic-functions -shared -Wl,-soname="$@" $?
++	$(CC) -o $@ $(MYLDFLAGS) -Wl,-Bsymbolic-functions -shared -Wl,-soname="$@" $?
 +	ln -fs $@ liblua$V.so.0.0
 +	ln -fs $@ liblua$V.so.0
 +	ln -fs $@ liblua$V.so

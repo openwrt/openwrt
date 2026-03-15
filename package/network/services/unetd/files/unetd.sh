@@ -18,11 +18,23 @@ proto_unet_init_config() {
 	proto_config_add_string domain
 	proto_config_add_boolean dht
 	proto_config_add_array "tunnels:list(string)"
+	proto_config_add_array "local_network:list(string)"
 	proto_config_add_array "connect:list(string)"
 	proto_config_add_array "peer_data:list(string)"
 	no_device=1
 	available=1
 	no_proto_task=1
+}
+
+add_array() {
+	local name="$1"
+	local val="$2"
+
+	json_add_array "$name"
+	for c in $val; do
+		json_add_string "" "$c"
+	done
+	json_close_array
 }
 
 proto_unet_setup() {
@@ -33,6 +45,7 @@ proto_unet_setup() {
 	json_get_values tunnels tunnels
 	json_get_values connect connect
 	json_get_values peer_data peer_data
+	json_get_values local_network local_network
 	device="${device:-$config}"
 
 	[ -n "$auth_key" ] && type="${type:-dynamic}"
@@ -58,17 +71,9 @@ proto_unet_setup() {
 	done
 	json_close_object
 
-	json_add_array auth_connect
-	for c in $connect; do
-		json_add_string "" "$c"
-	done
-	json_close_array
-
-	json_add_array peer_data
-	for c in $peer_data; do
-		json_add_string "" "$c"
-	done
-	json_close_array
+	add_array local_network "$local_network"
+	add_array auth_connect "$connect"
+	add_array peer_data "$peer_data"
 
 	ip link del dev "$device" >/dev/null 2>&1
 	ip link add dev "$device" type wireguard || {
@@ -82,11 +87,10 @@ proto_unet_setup() {
 
 proto_unet_teardown() {
 	local config="$1"
-	local iface="$2"
 
 	local device
 	json_get_vars device
-	device="${device:-$iface}"
+	device="${device:-$config}"
 
 	json_init
 	json_add_string name "$device"

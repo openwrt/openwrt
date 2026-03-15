@@ -1,0 +1,27 @@
+From 52b3b329d8e589575d16d8d9adbca9e08041ee82 Mon Sep 17 00:00:00 2001
+From: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Date: Fri, 7 Mar 2025 10:33:09 +0100
+Subject: [PATCH] dt-bindings: rng: rockchip,rk3588-rng: Drop unnecessary
+ status from example
+
+Device nodes are enabled by default, so no need for 'status = "okay"' in
+the DTS example.
+
+Reviewed-by: Heiko Stuebner <heiko@sntech.de>
+Signed-off-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Acked-by: Rob Herring (Arm) <robh@kernel.org>
+Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+---
+ Documentation/devicetree/bindings/rng/rockchip,rk3588-rng.yaml | 1 -
+ 1 file changed, 1 deletion(-)
+
+--- a/Documentation/devicetree/bindings/rng/rockchip,rk3588-rng.yaml
++++ b/Documentation/devicetree/bindings/rng/rockchip,rk3588-rng.yaml
+@@ -53,7 +53,6 @@ examples:
+         interrupts = <GIC_SPI 400 IRQ_TYPE_LEVEL_HIGH 0>;
+         clocks = <&scmi_clk SCMI_HCLK_SECURE_NS>;
+         resets = <&scmi_reset SCMI_SRST_H_TRNG_NS>;
+-        status = "okay";
+       };
+     };
+ 

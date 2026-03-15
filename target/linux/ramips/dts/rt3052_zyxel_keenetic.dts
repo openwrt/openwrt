@@ -6,7 +6,7 @@
 
 / {
 	compatible = "zyxel,keenetic", "ralink,rt3052-soc";
-	model = "ZyXEL Keenetic";
+	model = "Zyxel Keenetic";
 
 	aliases {
 		led-boot = &led_power;
@@ -91,8 +91,7 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
 
 		reset {
 			label = "reset";

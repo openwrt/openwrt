@@ -27,6 +27,7 @@ struct hostapd_iface;
 struct hostapd_data;
 struct hapd_interfaces;
 struct rrm_measurement_beacon_report;
+struct sta_info;
 
 #ifdef UBUS_SUPPORT
 
@@ -67,6 +68,12 @@ int hostapd_ubus_notify_bss_transition_query(
 	const u8 *candidate_list, u16 candidate_list_len);
 void hostapd_ubus_notify_authorized(struct hostapd_data *hapd, struct sta_info *sta,
 				    const char *auth_alg);
+void hostapd_ubus_notify_csa(struct hostapd_data *hapd, int freq);
+
+#ifdef CONFIG_APUP
+void hostapd_ubus_notify_apup_newpeer(
+	struct hostapd_data *hapd, const u8 *addr, const char *ifname);
+#endif // def CONFIG_APUP
 
 #else
 
@@ -146,6 +153,11 @@ static inline int hostapd_ubus_notify_bss_transition_query(
 static inline void
 hostapd_ubus_notify_authorized(struct hostapd_data *hapd, struct sta_info *sta,
 			       const char *auth_alg)
+{
+}
+
+static inline void
+hostapd_ubus_notify_csa(struct hostapd_data *hapd, int freq)
 {
 }
 

@@ -108,6 +108,11 @@
 
 &wmac {
 	status = "okay";
-	nvmem-cells = <&eeprom_factory_28000>, <&macaddr_factory_f100 0>;
+	nvmem-cells = <&eeprom_factory_20000>, <&macaddr_factory_f100 0>;
 	nvmem-cell-names = "eeprom", "mac-address";
+};
+
+&ethernet {
+	nvmem-cells = <&macaddr_factory_f100 0>;
+	nvmem-cell-names = "mac-address";
 };

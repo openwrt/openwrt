@@ -1,0 +1,115 @@
+From 1593303768bbf218cb4a7a8f9a9b1968e5e63aa7 Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Fri, 20 Dec 2024 14:48:42 +0100
+Subject: [PATCH 70/82] net: sparx5: use is_port_rgmii() throughout
+
+Now that we can check if a given port is an RGMII port, use it in the
+following cases:
+
+ - To set RGMII PHY modes for RGMII port devices.
+
+ - To avoid checking for a SerDes node in the devicetree, when the port
+   is an RGMII port.
+
+ - To bail out of sparx5_port_init() when the common configuration is
+   done.
+
+Reviewed-by: Steen Hegelund <Steen.Hegelund@microchip.com>
+Reviewed-by: Horatiu Vultur <horatiu.vultur@microchip.com>
+Tested-by: Robert Marko <robert.marko@sartura.hr>
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Link: https://patch.msgid.link/20241220-sparx5-lan969x-switch-driver-4-v5-3-fa8ba5dff732@microchip.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ .../ethernet/microchip/sparx5/sparx5_main.c   | 28 +++++++++++++------
+ .../ethernet/microchip/sparx5/sparx5_port.c   |  3 ++
+ 2 files changed, 23 insertions(+), 8 deletions(-)
+
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
+@@ -313,10 +313,13 @@ static int sparx5_create_port(struct spa
+ 			      struct initial_port_config *config)
+ {
+ 	struct sparx5_port *spx5_port;
++	const struct sparx5_ops *ops;
+ 	struct net_device *ndev;
+ 	struct phylink *phylink;
+ 	int err;
+ 
++	ops = sparx5->data->ops;
++
+ 	ndev = sparx5_create_netdev(sparx5, config->portno);
+ 	if (IS_ERR(ndev)) {
+ 		dev_err(sparx5->dev, "Could not create net device: %02u\n",
+@@ -357,6 +360,9 @@ static int sparx5_create_port(struct spa
+ 		MAC_SYM_PAUSE | MAC_10 | MAC_100 | MAC_1000FD |
+ 		MAC_2500FD | MAC_5000FD | MAC_10000FD | MAC_25000FD;
+ 
++	if (ops->is_port_rgmii(spx5_port->portno))
++		phy_interface_set_rgmii(spx5_port->phylink_config.supported_interfaces);
++
+ 	__set_bit(PHY_INTERFACE_MODE_SGMII,
+ 		  spx5_port->phylink_config.supported_interfaces);
+ 	__set_bit(PHY_INTERFACE_MODE_QSGMII,
+@@ -830,6 +836,7 @@ static int mchp_sparx5_probe(struct plat
+ 	struct initial_port_config *configs, *config;
+ 	struct device_node *np = pdev->dev.of_node;
+ 	struct device_node *ports, *portnp;
++	const struct sparx5_ops *ops;
+ 	struct reset_control *reset;
+ 	struct sparx5 *sparx5;
+ 	int idx = 0, err = 0;
+@@ -851,6 +858,7 @@ static int mchp_sparx5_probe(struct plat
+ 		return -EINVAL;
+ 
+ 	regs = sparx5->data->regs;
++	ops = sparx5->data->ops;
+ 
+ 	/* Do switch core reset if available */
+ 	reset = devm_reset_control_get_optional_shared(&pdev->dev, "switch");
+@@ -880,7 +888,7 @@ static int mchp_sparx5_probe(struct plat
+ 
+ 	for_each_available_child_of_node(ports, portnp) {
+ 		struct sparx5_port_config *conf;
+-		struct phy *serdes;
++		struct phy *serdes = NULL;
+ 		u32 portno;
+ 
+ 		err = of_property_read_u32(portnp, "reg", &portno);
+@@ -910,13 +918,17 @@ static int mchp_sparx5_probe(struct plat
+ 			conf->sd_sgpio = ~0;
+ 		else
+ 			sparx5->sd_sgpio_remapping = true;
+-		serdes = devm_of_phy_get(sparx5->dev, portnp, NULL);
+-		if (IS_ERR(serdes)) {
+-			err = dev_err_probe(sparx5->dev, PTR_ERR(serdes),
+-					    "port %u: missing serdes\n",
+-					    portno);
+-			of_node_put(portnp);
+-			goto cleanup_config;
++		/* There is no SerDes node for RGMII ports. */
++		if (!ops->is_port_rgmii(portno)) {
++			serdes = devm_of_phy_get(sparx5->dev, portnp, NULL);
++			if (IS_ERR(serdes)) {
++				err = dev_err_probe(sparx5->dev,
++						    PTR_ERR(serdes),
++						    "port %u: missing serdes\n",
++						    portno);
++				of_node_put(portnp);
++				goto cleanup_config;
++			}
+ 		}
+ 		config->portno = portno;
+ 		config->node = portnp;
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_port.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_port.c
+@@ -1090,6 +1090,9 @@ int sparx5_port_init(struct sparx5 *spar
+ 		 ANA_CL_FILTER_CTRL_FILTER_SMAC_MC_DIS,
+ 		 sparx5, ANA_CL_FILTER_CTRL(port->portno));
+ 
++	if (ops->is_port_rgmii(port->portno))
++		return 0; /* RGMII device - nothing more to configure */
++
+ 	/* Configure MAC vlan awareness */
+ 	err = sparx5_port_max_tags_set(sparx5, port);
+ 	if (err)

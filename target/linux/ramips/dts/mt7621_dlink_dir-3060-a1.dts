@@ -37,56 +37,67 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led_power_orange: power_orange {
+		led_power_orange: led-0 {
 			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_ORANGE>;
 			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
 		};
 
-		led_power_white: power_white {
+		led_power_white: led-1 {
 			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 		};
 
-		led_net_orange: net_orange {
-			label = "orange:net";
+		led_net_orange: led-2 {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_ORANGE>;
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 
-		net_white {
-			label = "white:net";
+		led-3 {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 		};
 
-		usb2_white {
-			label = "white:usb2";
+		led-4 {
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_WHITE>;
+			function-enumerator = <2>;
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&ehci_port2>;
 			linux,default-trigger = "usbport";
 		};
 
-		usb3_white {
-			label = "white:usb3";
+		led-5 {
+			function = LED_FUNCTION_USB;
+			color = <LED_COLOR_ID_WHITE>;
+			function-enumerator = <3>;
 			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
 			trigger-sources = <&xhci_ehci_port1>;
 			linux,default-trigger = "usbport";
 		};
 
-		wlan2g {
-			label = "white:wlan2g";
+		led-6 {
+			function = LED_FUNCTION_WLAN_2GHZ;
+			color = <LED_COLOR_ID_WHITE>;
 			gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy0radio";
 		};
 
-		wlan5glb {
-			label = "white:wlan5glb";
+		led-7 {
+			function = LED_FUNCTION_WLAN_5GHZ;
+			color = <LED_COLOR_ID_WHITE>;
+			function-enumerator = <0>;
 			gpios = <&gpio 9 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy1radio";
 		};
 
-		wlan5ghb {
-			label = "white:wlan5ghb";
+		led-8 {
+			function = LED_FUNCTION_WLAN_5GHZ;
+			color = <LED_COLOR_ID_WHITE>;
+			function-enumerator = <1>;
 			gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy2radio";
 		};

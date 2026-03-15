@@ -17,7 +17,8 @@ define Build/boot-img
 
 	# convert it to revision 1 - needed for u-boot ext2load
 	$(STAGING_DIR_HOST)/bin/tune2fs -O filetype $@.boot
-	$(STAGING_DIR_HOST)/bin/e2fsck -pDf $@.boot > /dev/null
+	# Ignore errors because file system was intentionally broken with tune2fs
+	-$(STAGING_DIR_HOST)/bin/e2fsck -pDf $@.boot > /dev/null
 endef
 
 define Build/boot-script

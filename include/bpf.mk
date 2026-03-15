@@ -1,30 +1,40 @@
-BPF_DEPENDS := @HAS_BPF_TOOLCHAIN
-LLVM_VER:=
+BPF_DEPENDS := @HAS_BPF_TOOLCHAIN +@NEED_BPF_TOOLCHAIN
 
 CLANG_MIN_VER:=12
 
 ifneq ($(CONFIG_USE_LLVM_HOST),)
+  find-llvm-tool=$(firstword $(shell PATH='$(BPF_PATH)' command -v $(1) || echo '$(firstword $(1))-not-found'))
+
   BPF_TOOLCHAIN_HOST_PATH:=$(call qstrip,$(CONFIG_BPF_TOOLCHAIN_HOST_PATH))
   ifneq ($(BPF_TOOLCHAIN_HOST_PATH),)
     BPF_PATH:=$(BPF_TOOLCHAIN_HOST_PATH)/bin:$(PATH)
   else
     BPF_PATH:=$(PATH)
   endif
-  CLANG:=$(firstword $(shell PATH='$(BPF_PATH)' command -v clang clang-13 clang-12 clang-11))
+  CLANG:=$(call find-llvm-tool,clang clang-13 clang-12)
   LLVM_VER:=$(subst clang,,$(notdir $(CLANG)))
-endif
-ifneq ($(CONFIG_USE_LLVM_PREBUILT),)
-  CLANG:=$(TOPDIR)/llvm-bpf/bin/clang
-endif
-ifneq ($(CONFIG_USE_LLVM_BUILD),)
-  CLANG:=$(STAGING_DIR_HOST)/llvm-bpf/bin/clang
-endif
 
-LLVM_PATH:=$(dir $(CLANG))
-LLVM_LLC:=$(LLVM_PATH)/llc$(LLVM_VER)
-LLVM_DIS:=$(LLVM_PATH)/llvm-dis$(LLVM_VER)
-LLVM_OPT:=$(LLVM_PATH)/opt$(LLVM_VER)
-LLVM_STRIP:=$(LLVM_PATH)/llvm-strip$(LLVM_VER)
+  BPF_PATH:=$(dir $(CLANG)):$(BPF_PATH)
+  LLVM_LLC:=$(call find-llvm-tool,llc$(LLVM_VER))
+  LLVM_DIS:=$(call find-llvm-tool,llvm-dis$(LLVM_VER))
+  LLVM_OPT:=$(call find-llvm-tool,opt$(LLVM_VER))
+  LLVM_STRIP:=$(call find-llvm-tool,llvm-strip$(LLVM_VER))
+else
+  LLVM_PATH:=/invalid
+
+  ifneq ($(CONFIG_USE_LLVM_PREBUILT),)
+    LLVM_PATH:=$(TOPDIR)/llvm-bpf/bin
+  endif
+  ifneq ($(CONFIG_USE_LLVM_BUILD),)
+    LLVM_PATH:=$(STAGING_DIR_HOST)/llvm-bpf/bin
+  endif
+
+  CLANG:=$(LLVM_PATH)/clang
+  LLVM_LLC:=$(LLVM_PATH)/llc
+  LLVM_DIS:=$(LLVM_PATH)/llvm-dis
+  LLVM_OPT:=$(LLVM_PATH)/opt
+  LLVM_STRIP:=$(LLVM_PATH)/llvm-strip
+endif
 
 BPF_KARCH:=mips
 BPF_ARCH:=mips$(if $(CONFIG_ARCH_64BIT),64)$(if $(CONFIG_BIG_ENDIAN),,el)
@@ -33,7 +43,8 @@ BPF_TARGET:=bpf$(if $(CONFIG_BIG_ENDIAN),eb,el)
 BPF_HEADERS_DIR:=$(STAGING_DIR)/bpf-headers
 
 BPF_KERNEL_INCLUDE := \
-	-nostdinc -isystem $(TOOLCHAIN_INC_DIRS) \
+	-nostdinc -isystem $(TOOLCHAIN_ROOT_DIR)/lib/gcc/*/*/include \
+	$(patsubst %,-isystem%,$(TOOLCHAIN_INC_DIRS)) \
 	-I$(BPF_HEADERS_DIR)/arch/$(BPF_KARCH)/include \
 	-I$(BPF_HEADERS_DIR)/arch/$(BPF_KARCH)/include/asm/mach-generic \
 	-I$(BPF_HEADERS_DIR)/arch/$(BPF_KARCH)/include/generated \
@@ -65,7 +76,7 @@ BPF_CFLAGS := \
 
 ifneq ($(CONFIG_HAS_BPF_TOOLCHAIN),)
 ifeq ($(DUMP)$(filter download refresh,$(MAKECMDGOALS)),)
-  CLANG_VER:=$(shell $(CLANG) -dM -E - < /dev/null | grep __clang_major__ | cut -d' ' -f3)
+  CLANG_VER:=$(shell $(CLANG) --target=$(BPF_TARGET) -dM -E - < /dev/null | grep __clang_major__ | cut -d' ' -f3)
   CLANG_VER_VALID:=$(shell [ "$(CLANG_VER)" -ge "$(CLANG_MIN_VER)" ] && echo 1 )
   ifeq ($(CLANG_VER_VALID),)
     $(error ERROR: LLVM/clang version too old. Minimum required: $(CLANG_MIN_VER), found: $(CLANG_VER))

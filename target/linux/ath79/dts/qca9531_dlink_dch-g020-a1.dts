@@ -11,6 +11,7 @@
 	model = "D-Link DCH-G020 A1";
 
 	aliases {
+		label-mac-device = &eth0;
 		led-boot = &led_power;
 		led-failsafe = &led_power;
 		led-running = &led_power;
@@ -109,16 +110,44 @@
 				read-only;
 			};
 
-			art: partition@10000 {
+			partition@10000 {
 				label = "art";
 				reg = <0x10000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
+				};
 			};
 
 			partition@20000 {
 				label = "mp";
 				reg = <0x20000 0x10000>;
 				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_mp_1: macaddr@1 {
+						compatible = "mac-base";
+						reg = <0x1 0x11>;
+						#nvmem-cell-cells = <1>;
+					};
+
+					macaddr_mp_13: macaddr@13 {
+						compatible = "mac-base";
+						reg = <0x13 0x11>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@30000 {
@@ -158,10 +187,14 @@
 
 &eth0 {
 	status = "okay";
+
+	nvmem-cells = <&macaddr_mp_1 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &wmac {
 	status = "okay";
 
-	mtd-cal-data = <&art 0x1000>;
+	nvmem-cells = <&cal_art_1000>, <&macaddr_mp_13 0>;
+	nvmem-cell-names = "calibration", "mac-address";
 };

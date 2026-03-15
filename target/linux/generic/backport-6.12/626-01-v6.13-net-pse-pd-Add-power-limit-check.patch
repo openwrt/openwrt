@@ -1,0 +1,41 @@
+From 6e56a6d47a7fad705a1a1d088237b0858c01a770 Mon Sep 17 00:00:00 2001
+From: Kory Maincent <kory.maincent@bootlin.com>
+Date: Fri, 10 Jan 2025 10:40:22 +0100
+Subject: [PATCH] net: pse-pd: Add power limit check
+
+Checking only the current limit is not sufficient. According to the
+standard, voltage can reach up to 57V and current up to 1.92A, which
+exceeds the power limit described in the standard (99.9W). Add a power
+limit check to prevent this.
+
+Acked-by: Oleksij Rempel <o.rempel@pengutronix.de>
+Signed-off-by: Kory Maincent <kory.maincent@bootlin.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
+---
+ drivers/net/pse-pd/pse_core.c | 3 +++
+ include/linux/pse-pd/pse.h    | 2 ++
+ 2 files changed, 5 insertions(+)
+--- a/drivers/net/pse-pd/pse_core.c
++++ b/drivers/net/pse-pd/pse_core.c
+@@ -868,6 +868,9 @@ int pse_ethtool_set_pw_limit(struct pse_
+ 	int uV, uA, ret;
+ 	s64 tmp_64;
+ 
++	if (pw_limit > MAX_PI_PW)
++		return -ERANGE;
++
+ 	ret = regulator_get_voltage(psec->ps);
+ 	if (!ret) {
+ 		NL_SET_ERR_MSG(extack,
+--- a/include/linux/pse-pd/pse.h
++++ b/include/linux/pse-pd/pse.h
+@@ -11,6 +11,8 @@
+ 
+ /* Maximum current in uA according to IEEE 802.3-2022 Table 145-1 */
+ #define MAX_PI_CURRENT 1920000
++/* Maximum power in mW according to IEEE 802.3-2022 Table 145-16 */
++#define MAX_PI_PW 99900
+ 
+ struct phy_device;
+ struct pse_controller_dev;

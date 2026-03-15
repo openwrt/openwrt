@@ -1,13 +1,13 @@
 #!/usr/bin/env ucode
 'use strict';
-import { vlist_new, is_equal, wdev_create, wdev_set_mesh_params, wdev_remove, wdev_set_up, phy_open } from "/usr/share/hostap/common.uc";
+import { vlist_new, is_equal, wdev_set_mesh_params, wdev_remove, wdev_set_up, phy_open } from "/usr/share/hostap/common.uc";
 import { readfile, writefile, basename, readlink, glob } from "fs";
 let libubus = require("ubus");
 
 let keep_devices = {};
-let phy = shift(ARGV);
+let phy_name = shift(ARGV);
 let command = shift(ARGV);
-let phydev;
+let phy, phydev;
 
 function iface_stop(wdev)
 {
@@ -30,12 +30,13 @@ function iface_start(wdev)
 		wdev_config[key] = wdev[key];
 	if (!wdev_config.macaddr && wdev.mode != "monitor")
 		wdev_config.macaddr = phydev.macaddr_next();
-	wdev_create(phy, ifname, wdev_config);
+	phydev.wdev_add(ifname, wdev_config);
 	wdev_set_up(ifname, true);
+	let htmode = wdev.htmode || "NOHT";
 	if (wdev.freq)
-		system(`iw dev ${ifname} set freq ${wdev.freq} ${wdev.htmode}`);
+		system(`iw dev ${ifname} set freq ${wdev.freq} ${htmode}`);
 	if (wdev.mode == "adhoc") {
-		let cmd = ["iw", "dev", ifname, "ibss", "join", wdev.ssid, wdev.freq, wdev.htmode, "fixed-freq" ];
+		let cmd = ["iw", "dev", ifname, "ibss", "join", wdev.ssid, wdev.freq, htmode, "fixed-freq" ];
 		if (wdev.bssid)
 			push(cmd, wdev.bssid);
 		for (let key in [ "beacon-interval", "basic-rates", "mcast-rate", "keys" ])
@@ -43,8 +44,13 @@ function iface_start(wdev)
 				push(cmd, key, wdev[key]);
 		system(cmd);
 	} else if (wdev.mode == "mesh") {
-		let cmd = [ "iw", "dev", ifname, "mesh", "join", wdev.ssid, "freq", wdev.freq, wdev.htmode ];
-		for (let key in [ "mcast-rate", "beacon-interval" ])
+		let cmd = [ "iw", "dev", ifname, "mesh", "join", wdev.ssid ];
+		if (wdev.freq) {
+			push(cmd, "freq", wdev.freq);
+			if (htmode && htmode != "NOHT")
+				push(cmd, htmode);
+		}
+		for (let key in [ "basic-rates", "mcast-rate", "beacon-interval" ])
 			if (wdev[key])
 				push(cmd, key, wdev[key]);
 		system(cmd);
@@ -84,20 +90,15 @@ function delete_ifname(config)
 		delete config[key].ifname;
 }
 
-function add_existing(phy, config)
+function add_existing(phydev, config)
 {
-	let wdevs = glob(`/sys/class/ieee80211/${phy}/device/net/*`);
-	wdevs = map(wdevs, (arg) => basename(arg));
-	for (let wdev in wdevs) {
+	phydev.for_each_wdev((wdev) => {
 		if (config[wdev])
-			continue;
-
-		if (basename(readlink(`/sys/class/net/${wdev}/phy80211`)) != phy)
-			continue;
+			return;
 
 		if (trim(readfile(`/sys/class/net/${wdev}/operstate`)) == "down")
 			config[wdev] = {};
-	}
+	});
 }
 
 function usage()
@@ -113,7 +114,7 @@ Commands:
 
 const commands = {
 	set_config: function(args) {
-		let statefile = `/var/run/wdev-${phy}.json`;
+		let statefile = `/var/run/wdev-${phy_name}.json`;
 
 		let new_config = shift(args);
 		for (let dev in ARGV)
@@ -136,12 +137,12 @@ const commands = {
 		if (type(old_config) == "object")
 			config.data = old_config;
 
-		add_existing(phy, config.data);
+		add_existing(phydev, config.data);
 		add_ifname(config.data);
 		drop_inactive(config.data);
 
 		let ubus = libubus.connect();
-		let data = ubus.call("hostapd", "config_get_macaddr_list", { phy: phy });
+		let data = ubus.call("hostapd", "config_get_macaddr_list", { phy: phydev.name, radio: phydev.radio ?? -1 });
 		let macaddr_list = [];
 		if (type(data) == "object" && data.macaddr)
 			macaddr_list = data.macaddr;
@@ -165,7 +166,7 @@ const commands = {
 
 		let macaddr = phydev.macaddr_generate(data);
 		if (!macaddr) {
-			warn(`Could not get MAC address for phy ${phy}\n`);
+			warn(`Could not get MAC address for phy ${phy_name}\n`);
 			exit(1);
 		}
 
@@ -173,12 +174,14 @@ const commands = {
 	},
 };
 
-if (!phy || !command | !commands[command])
+if (!phy_name || !command | !commands[command])
 	usage();
 
-phydev = phy_open(phy);
+let phy_split = split(phy_name, ":");
+phydev = phy_open(phy_split[0], phy_split[1]);
+phy = phydev.phy;
 if (!phydev) {
-	warn(`PHY ${phy} does not exist\n`);
+	warn(`PHY ${phy_name} does not exist\n`);
 	exit(1);
 }
 

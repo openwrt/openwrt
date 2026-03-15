@@ -120,7 +120,7 @@
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 
-		gpio = <&gpio 14 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
 };
@@ -225,11 +225,11 @@
 	pinctrl-0 = <&pci_gnt1_pins>, <&pci_req1_pins>;
 	pinctrl-names = "default";
 
-	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
+	reset-gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 	lantiq,external-clock;
 	req-mask = <0xf>;
 
-	wifi@168c,0029 {
+	wifi@e,0 {
 		compatible = "pci168c,0029";
 		reg = <0x7000 0 0 0 0>;
 		qca,no-eeprom; /* load from ath9k-eeprom-pci-0000:00:0e.0.bin */

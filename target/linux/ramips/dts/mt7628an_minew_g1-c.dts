@@ -17,8 +17,7 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
 
 		reset {
 			label = "reset";
@@ -39,7 +38,6 @@
 
 	gpio-export {
 		compatible = "gpio-export";
-		#size-cells = <0>;
 
 		ws2812 {
 			gpio-export,name = "ws2812";
@@ -151,5 +149,5 @@
 
 &sdhci {
 	status = "okay";
-	mediatek,cd-high;
+	cd-inverted;
 };

@@ -2,7 +2,7 @@
 
 / {
 	compatible = "zyxel,p-2812hnu-f1", "zyxel,p-2812hnu", "lantiq,xway", "lantiq,vr9";
-	model = "ZyXEL P-2812HNU-F1";
+	model = "Zyxel P-2812HNU-F1";
 
 	leds {
 		usb1 {
@@ -44,21 +44,30 @@
 			partition@40000 {
 				label = "u-boot-env";
 				reg = <0x40000 0x20000>;
+
+				nvmem-layout {
+					compatible = "u-boot,env";
+					env-size = <0x2000>;
+
+					macaddr_uboot_ethaddr: ethaddr {
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 			partition@60000 {
 				label = "kernel";
-				reg = <0x60000 0x300000>;
+				reg = <0x60000 0x500000>;
 			};
-			partition@360000 {
+			partition@560000 {
 				label = "ubi";
-				reg = <0x360000 0x7ca0000>;
+				reg = <0x560000 0x7aa0000>;
 			};
 		};
 	};
 };
 
 &pci0 {
-	wifi@1814,3062 {
+	wifi@e,0 {
 		compatible = "pci1814,3062";
 		reg = <0x7000 0 0 0 0>;
 		ralink,eeprom = "RT3062.eeprom";

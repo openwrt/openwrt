@@ -1,0 +1,189 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7620a.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "hongdian,h8922-v30", "ralink,mt7620a-soc";
+	model = "Hongdian H8922 v30";
+
+	aliases {
+		led-boot = &led_sys;
+		led-failsafe = &led_sys;
+		led-running = &led_sys;
+		led-upgrade = &led_sys;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led-wps {
+			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WPS;
+		};
+
+		led-rf-2 {
+			gpios = <&gpio1 0 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = "rf";
+			function-enumerator = <2>;
+		};
+
+		led_sys: led-sys {
+			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			default-state = "on";
+		};
+
+		led-net-1 {
+			gpios = <&gpio2 26 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_MOBILE;
+			function-enumerator = <1>;
+		};
+
+		led-rf-1 {
+			gpios = <&gpio2 27 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = "rf";
+			function-enumerator = <1>;
+		};
+
+		led-net-2 {
+			gpios = <&gpio2 31 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_MOBILE;
+			function-enumerator = <2>;
+		};
+
+		led-wlan {
+			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+			linux,default-trigger = "phy0tpt";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	watchdog {
+		compatible = "linux,wdt-gpio";
+
+		gpios = <&gpio2 22 GPIO_ACTIVE_HIGH>;
+		hw_algo = "toggle";
+		hw_margin_ms = <600>;
+		always-running;
+	};
+};
+
+&watchdog {
+	status = "disabled";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <50000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x2f000>;
+				read-only;
+			};
+
+			partition@2f000 {
+				label = "u-boot-env";
+				reg = <0x2f000 0x1000>;
+				read-only;
+			};
+
+			partition@30000 {
+				compatible = "denx,uimage";
+				label = "firmware";
+				reg = <0x30000 0xffd000>;
+			};
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "uartf", "wled", "rgmii1", "rgmii2";
+		function = "gpio";
+	};
+};
+
+&ethernet {
+	pinctrl-names = "default";
+	pinctrl-0 = <&ephy_pins>;
+
+	mediatek,portmap = "llllw";
+};
+
+&pcie {
+	status = "okay";
+};
+
+&wmac {
+	ralink,eeprom-data = <0x20760501 0x000c4376 0x2058ffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff
+			      0xffffffff 0xffffffff 0x000c4376 0x2077000c 0x43762066 0x220c0000 0xffffb701 0x5577a8aa
+			      0x8c88ffff 0x0a000000 0x00000000 0x0000ffff 0xffff0a0a 0x0a0a0808 0x08080808 0x08080808
+			      0x0e0e0e0e 0x0e0e0e0e 0x0e0e0e0e 0x0e0e80ff 0xffff80ff 0xffff0000 0xffffffff 0xffffffff
+			      0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff
+			      0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff
+			      0xffffffff 0xffffffff 0xffffffff 0xffffffff 0x20ffffff 0xffffffff 0xffffffff 0xffff0606
+			      0x06060402 0x06060400 0x06060400 0x07070400 0xffffffff 0xffffffff 0xffffffff 0xffffffff
+			      0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff
+			      0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff
+			      0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff
+			      0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff
+			      0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff
+			      0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff
+			      0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff
+			      0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff 0xffffffff>;
+};
+
+&ehci {
+	status = "okay";
+};
+
+&ohci {
+	status = "okay";
+};

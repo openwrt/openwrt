@@ -1,0 +1,56 @@
+From b681f2be8cc81de83fdd4c56cdb35755ca0409eb Mon Sep 17 00:00:00 2001
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Sat, 31 Jan 2026 10:33:50 +0800
+Subject: [PATCH] pinctrl: mediatek: set MT798x rev as MTK_PINCTRL_V1
+
+The MT798x series SoCs have IES regiter definitions. They should
+belong to the pinctrl v1 revision.
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ drivers/pinctrl/mediatek/pinctrl-mt7981.c | 1 +
+ drivers/pinctrl/mediatek/pinctrl-mt7986.c | 1 +
+ drivers/pinctrl/mediatek/pinctrl-mt7987.c | 1 +
+ drivers/pinctrl/mediatek/pinctrl-mt7988.c | 1 +
+ 4 files changed, 4 insertions(+)
+
+--- a/drivers/pinctrl/mediatek/pinctrl-mt7981.c
++++ b/drivers/pinctrl/mediatek/pinctrl-mt7981.c
+@@ -1070,6 +1070,7 @@ static const struct mtk_pinctrl_soc mt79
+ 	.gpio_mode = 0,
+ 	.base_names = mt7981_pinctrl_register_base_names,
+ 	.nbase_names = ARRAY_SIZE(mt7981_pinctrl_register_base_names),
++	.rev = MTK_PINCTRL_V1,
+ 	.base_calc = 1,
+ };
+ 
+--- a/drivers/pinctrl/mediatek/pinctrl-mt7986.c
++++ b/drivers/pinctrl/mediatek/pinctrl-mt7986.c
+@@ -755,6 +755,7 @@ static const struct mtk_pinctrl_soc mt79
+ 	.gpio_mode = 0,
+ 	.base_names = mt7986_pinctrl_register_base_names,
+ 	.nbase_names = ARRAY_SIZE(mt7986_pinctrl_register_base_names),
++	.rev = MTK_PINCTRL_V1,
+ 	.base_calc = 1,
+ };
+ 
+--- a/drivers/pinctrl/mediatek/pinctrl-mt7987.c
++++ b/drivers/pinctrl/mediatek/pinctrl-mt7987.c
+@@ -712,6 +712,7 @@ static const struct mtk_pinctrl_soc mt79
+ 	.gpio_mode = 0,
+ 	.base_names = mt7987_pinctrl_register_base_names,
+ 	.nbase_names = ARRAY_SIZE(mt7987_pinctrl_register_base_names),
++	.rev = MTK_PINCTRL_V1,
+ 	.base_calc = 1,
+ };
+ 
+--- a/drivers/pinctrl/mediatek/pinctrl-mt7988.c
++++ b/drivers/pinctrl/mediatek/pinctrl-mt7988.c
+@@ -1250,6 +1250,7 @@ static const struct mtk_pinctrl_soc mt79
+ 	.gpio_mode = 0,
+ 	.base_names = mt7988_pinctrl_register_base_names,
+ 	.nbase_names = ARRAY_SIZE(mt7988_pinctrl_register_base_names),
++	.rev = MTK_PINCTRL_V1,
+ 	.base_calc = 1,
+ };
+ 

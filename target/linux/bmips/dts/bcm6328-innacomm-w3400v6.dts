@@ -62,9 +62,6 @@
 		spi-rx-bus-width = <2>;
 		reg = <0>;
 
-		#address-cells = <1>;
-		#size-cells = <1>;
-
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
@@ -131,7 +128,6 @@
 		active-low;
 		function = LED_FUNCTION_POWER;
 		color = <LED_COLOR_ID_GREEN>;
-		default-state = "on";
 	};
 
 	led_power_red: led@5 {

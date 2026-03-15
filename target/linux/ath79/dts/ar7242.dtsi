@@ -6,7 +6,7 @@
 	usb_phy: usb-phy {
 		compatible = "qca,ar7200-usb-phy";
 
-		reset-names = "usb-phy", "usb-suspend-override";
+		reset-names = "phy", "suspend-override";
 		resets = <&rst 4>, <&rst 3>;
 
 		#phy-cells = <0>;
@@ -16,7 +16,7 @@
 };
 
 &gpio {
-	ngpios = <20>;
+	ngpios = <18>;
 };
 
 &ahb {
@@ -27,12 +27,11 @@
 		interrupts = <3>;
 
 		resets = <&rst 5>;
-		reset-names = "usb-host";
 
 		has-transaction-translator;
 		caps-offset = <0x100>;
 
-		phy-names = "usb-phy";
+		phy-names = "usb";
 		phys = <&usb_phy>;
 
 		status = "disabled";

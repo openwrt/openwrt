@@ -1,6 +1,6 @@
 #!/bin/sh /etc/rc.common
 # Copyright (C) 2008-2015 OpenWrt.org
-# shellcheck disable=1091,2034,3037,3043,3045
+# shellcheck disable=1091,2034,3037,3043,3045,3057
 
 START=90
 STOP=01
@@ -24,13 +24,61 @@ LLDPD_RESTART_HASH=${LLDPD_RUN}/lldpd.restart_hash
 
 . "$IPKG_INSTROOT/lib/functions/network.sh"
 
+# Load release info once for all 'find_*' functions
+[ -s /etc/os-release ] && . /etc/os-release
+
+# Helper function to truncate output to 31 characters
+truncate_output() {
+	# Some devices have trouble decoding inventory TLV strings > 31 chars
+	# lldpd truncates inventory TLV to a total TLV length of 36 (of which string = 32)
+	echo "${1:0:31}"
+}
+
 find_release_info()
 {
-	[ -s /etc/os-release ] && . /etc/os-release
 	[ -z "$PRETTY_NAME" ] && [ -s /etc/openwrt_version ] && \
 		PRETTY_NAME="$(cat /etc/openwrt_version)"
 
 	echo "${PRETTY_NAME:-Unknown OpenWrt release} @ $(cat /proc/sys/kernel/hostname)"
+}
+
+find_hardware_revision()
+{
+	echo "${OPENWRT_DEVICE_REVISION:-Unknown hardware revision}"
+}
+
+find_firmware_info()
+{
+	echo "${PRETTY_NAME:-Unknown firmware release}"
+}
+
+find_software_revision()
+{
+	echo "${BUILD_ID:-Unknown software revision}"
+}
+
+# Helper function to extract JSON values using jsonfilter
+extract_json_field() {
+	local _path="$1"
+	jsonfilter -q -i /etc/board.json -e "$_path" 2>/dev/null
+}
+
+find_manufacturer_info()
+{
+	local _id
+	# extract the model->id field, e.g.: "id": "glinet,gl-mt6000",
+	_id=$(extract_json_field '@.model.id')
+	# stash text up to first comma
+	_id="${_id%%,*}"
+	echo "${_id:-Unknown manufacturer}"
+}
+
+find_model_info()
+{
+	local _name
+	# extract the model->name field, e.g.: "name": "GL.iNet GL-MT6000"
+	_name=$(extract_json_field '@.model.name')
+	echo "${_name:-Unknown model name}"
 }
 
 get_config_restart_hash() {
@@ -39,7 +87,6 @@ get_config_restart_hash() {
 
 	config_load 'lldpd'
 
-	config_get      v 'config' 'lldp_class'; append _string "$v" ","
 	if [ "$CONFIG_LLDPD_WITH_SNMP" = "y" ]; then
 		config_get      v 'config' 'agentxsocket'; append _string "$v" ","
 	fi
@@ -49,6 +96,7 @@ get_config_restart_hash() {
 	config_get_bool v 'config' 'lldp_no_version'; append _string "$v" ","
 	if [ "$CONFIG_LLDPD_WITH_LLDPMED" = "y" ]; then
 		config_get_bool v 'config' 'lldpmed_no_inventory'; append _string "$v" ","
+		config_get      v 'config' 'lldp_class'; append _string "$v" ","
 	fi
 	config_get_bool v 'config' 'enable_lldp' 1; append _string "$v" ","
 	config_get_bool v 'config' 'force_lldp'; append _string "$v" ","
@@ -75,19 +123,42 @@ get_config_restart_hash() {
 	export -n "$var=$_hash"
 }
 
-get_config_cid_ifaces() {
+get_interface_csv() {
 	local _ifaces
-	config_get _ifaces 'config' "$2"
+	config_get _ifaces "$2" "$3"
 
 	local _iface _ifnames=""
+	# Set noglob to prevent '*' capturing diverse file names in the for ... in
+	set -o noglob
 	for _iface in $_ifaces; do
-		local _ifname=""
-		if network_get_device _ifname "$_iface" || [ -e "/sys/class/net/$_iface" ]; then
-			append _ifnames "${_ifname:-$_iface}" ","
+
+		local _l2device=""
+		if network_get_physdev _l2device "$_iface" || [ -e "/sys/class/net/$_iface" ]; then
+			append _ifnames "${_l2device:-$_iface}" ","
+		else
+			# Glob case (interface is e.g. '!eth1' or 'eth*' or '*')
+			append _ifnames "$_iface" ","
 		fi
 	done
+	# Turn noglob off i.e. enable glob again
+	set +o noglob
 
 	export -n "${1}=$_ifnames"
+}
+
+add_custom_tlv_callback()
+{
+	# syntax: configure [ports ethX[,…]] lldp custom-tlv [add|replace] oui XX,XX,XX subtype XX oui-info XX[,XX,...]
+	# ex: configure ports br-lan,eth0 lldp custom-tlv replace oui 33,44,55 subtype 254 oui-info 55,55,55,55,55
+	# ex: configure lldp custom-tlv oui 33,44,44 subtype 232
+
+	local _ports
+	local _tlv
+	# CSV of device ports
+	get_interface_csv _ports "$1" 'ports'
+	config_get _tlv "$1" 'tlv'
+
+	echo "configure ${_ports:+ports $_ports }lldp custom-tlv $_tlv" >> "$LLDPD_CONF"
 }
 
 write_lldpd_conf()
@@ -97,25 +168,78 @@ write_lldpd_conf()
 	config_load 'lldpd'
 	config_get lldp_description 'config' 'lldp_description' "$(find_release_info)"
 
+	# Check the 'do not send inventory' flag
+	local lldpmed_no_inventory
+	config_get_bool lldpmed_no_inventory 'config' 'lldpmed_no_inventory' 0
+
+	if [ "$lldpmed_no_inventory" = 0 ]; then
+		# lldpmed_no_inventory=1 ('-i' in start_service()) prevents these from being sent
+		# TIA TR-41 TLV 127 subtype 0x05
+		local lldp_med_inv_hardware_revision
+		config_get lldp_med_inv_hardware_revision 'config' 'lldp_med_inv_hardware_revision' "$(find_hardware_revision)"
+		lldp_med_inv_hardware_revision=$(truncate_output "$lldp_med_inv_hardware_revision")
+
+		# TIA TR-41 TLV 127 subtype 0x06
+		local lldp_med_inv_firmware_revision
+		config_get lldp_med_inv_firmware_revision 'config' 'lldp_med_inv_firmware_revision' "$(find_firmware_info)"
+		lldp_med_inv_firmware_revision=$(truncate_output "$lldp_med_inv_firmware_revision")
+
+		# TIA TR-41 TLV 127 subtype 0x07
+		local lldp_med_inv_software_revision
+		config_get lldp_med_inv_software_revision 'config' 'lldp_med_inv_software_revision' "$(find_software_revision)"
+		lldp_med_inv_software_revision=$(truncate_output "$lldp_med_inv_software_revision")
+
+		# TIA TR-41 TLV 127 subtype 0x08
+		local lldp_med_inv_serial_number
+		config_get lldp_med_inv_serial_number 'config' 'lldp_med_inv_serial_number'
+		lldp_med_inv_serial_number=$(truncate_output "$lldp_med_inv_serial_number")
+
+		# TIA TR-41 TLV 127 subtype 0x09
+		local lldp_med_inv_manufacturer_name
+		config_get lldp_med_inv_manufacturer_name 'config' 'lldp_med_inv_manufacturer_name' "$(find_manufacturer_info)"
+		lldp_med_inv_manufacturer_name=$(truncate_output "$lldp_med_inv_manufacturer_name")
+
+		# TIA TR-41 TLV 127 subtype 0x0a
+		local lldp_med_inv_model_name
+		config_get lldp_med_inv_model_name 'config' 'lldp_med_inv_model_name' "$(find_model_info)"
+		lldp_med_inv_model_name=$(truncate_output "$lldp_med_inv_model_name")
+
+		# TIA TR-41 TLV 127 subtype 0x0b
+		local lldp_med_inv_asset_id
+		config_get lldp_med_inv_asset_id 'config' 'lldp_med_inv_asset_id'
+		lldp_med_inv_asset_id=$(truncate_output "$lldp_med_inv_asset_id")
+	fi
+
 	local lldp_hostname
 	config_get lldp_hostname 'config' 'lldp_hostname' "$(cat /proc/sys/kernel/hostname)"
 
 	local ifnames
-	get_config_cid_ifaces ifnames "interface"
+	get_interface_csv ifnames 'config' "interface"
 
 	local lldp_mgmt_ip
 	config_get lldp_mgmt_ip 'config' 'lldp_mgmt_ip'
 
+	# Configurable capabilities in lldpd >= v1.0.15: defaults to 'unconfigured' i.e. kernel info
 	local lldp_syscapabilities
 	config_get lldp_syscapabilities 'config' 'lldp_syscapabilities'
 
+	# Configurable capabilities in lldpd >= v1.0.15: defaults to on in lldpd
+	local lldp_capability_advertisements
+	config_get_bool lldp_capability_advertisements 'config' 'lldp_capability_advertisements' 1
+
+	# Broadcast management address in lldpd >= 0.7.15: defaults to on in lldpd
+	local lldp_mgmt_addr_advertisements
+	config_get_bool lldp_mgmt_addr_advertisements 'config' 'lldp_mgmt_addr_advertisements' 1
+
+	# lldpd 1.0.20 configure med fast-start -> configure lldp fast-start (doesn't depend on med, enabled unconditionally)
+	# See: https://github.com/lldpd/lldpd/commit/f2ea6e6a86e7d70104e1428a94ec37a24fe604ef
+	local lldp_fast_start
+	config_get_bool lldp_fast_start 'config' 'lldpmed_fast_start' 0
+
+	local lldp_fast_start_tx_interval
+	config_get lldp_fast_start_tx_interval 'config' 'lldpmed_fast_start_tx_interval' 0
+
 	if [ "$CONFIG_LLDPD_WITH_LLDPMED" = "y" ]; then
-		local lldpmed_fast_start
-		config_get_bool lldpmed_fast_start 'config' 'lldpmed_fast_start' 0
-
-		local lldpmed_fast_start_tx_interval
-		config_get lldpmed_fast_start_tx_interval 'config' 'lldpmed_fast_start_tx_interval' 0
-
 		local lldp_location
 		config_get lldp_location 'config' 'lldp_location'
 
@@ -149,11 +273,23 @@ write_lldpd_conf()
 	[ -n "$lldp_hostname" ] && echo "configure system hostname" "\"$lldp_hostname\"" >> "$LLDPD_CONF"
 	[ -n "$lldp_mgmt_ip" ] && echo "configure system ip management pattern" "\"$lldp_mgmt_ip\"" >> "$LLDPD_CONF"
 	[ -n "$lldp_syscapabilities" ] && echo "configure system capabilities enabled $lldp_syscapabilities" >> "$LLDPD_CONF"
-	if [ "$CONFIG_LLDPD_WITH_LLDPMED" = "y" ] && [ "$lldpmed_fast_start" -gt 0 ]; then
-		if [ "$lldpmed_fast_start_tx_interval" -gt 0 ]; then
-			echo "configure med fast-start tx-interval $lldpmed_fast_start_tx_interval" >> "$LLDPD_CONF"
+
+	if [ "$lldpmed_no_inventory" = 0 ]; then
+		# Hardware inventory info
+		[ -n "$lldp_med_inv_hardware_revision" ] && echo "configure inventory hardware-revision \"$lldp_med_inv_hardware_revision\"" >> "$LLDPD_CONF"
+		[ -n "$lldp_med_inv_firmware_revision" ] && echo "configure inventory firmware-revision \"$lldp_med_inv_firmware_revision\"" >> "$LLDPD_CONF"
+		[ -n "$lldp_med_inv_software_revision" ] && echo "configure inventory software-revision \"$lldp_med_inv_software_revision\"" >> "$LLDPD_CONF"
+		[ -n "$lldp_med_inv_serial_number" ] && echo "configure inventory serial-number \"$lldp_med_inv_serial_number\"" >> "$LLDPD_CONF"
+		[ -n "$lldp_med_inv_manufacturer_name" ] && echo "configure inventory manufacturer \"$lldp_med_inv_manufacturer_name\"" >> "$LLDPD_CONF"
+		[ -n "$lldp_med_inv_model_name" ] && echo "configure inventory model \"$lldp_med_inv_model_name\"" >> "$LLDPD_CONF"
+		[ -n "$lldp_med_inv_asset_id" ] && echo "configure inventory asset \"$lldp_med_inv_asset_id\"" >> "$LLDPD_CONF"
+	fi
+
+	if [ "$lldp_fast_start" -gt 0 ]; then
+		if [ "$lldp_fast_start_tx_interval" -gt 0 ]; then
+			echo "configure lldp fast-start tx-interval $lldp_fast_start_tx_interval" >> "$LLDPD_CONF"
 		else
-			echo "configure med fast-start enable" >> "$LLDPD_CONF"
+			echo "configure lldp fast-start enable" >> "$LLDPD_CONF"
 		fi
 	fi
 	if [ "$CONFIG_LLDPD_WITH_LLDPMED" = "y" ]; then
@@ -174,6 +310,13 @@ write_lldpd_conf()
 	[ -n "$lldp_platform" ] && echo "configure system platform" "\"$lldp_platform\"" >> "$LLDPD_CONF"
 	[ -n "$lldp_tx_interval" ] && echo "configure lldp tx-interval $lldp_tx_interval" >> "$LLDPD_CONF"
 	[ "$lldp_tx_hold" -gt 0 ] && echo "configure lldp tx-hold $lldp_tx_hold" >> "$LLDPD_CONF"
+	[ "$lldp_capability_advertisements" -gt 0 ] && echo "configure lldp capabilities-advertisements" >> "$LLDPD_CONF" ||\
+		echo "unconfigure lldp capabilities-advertisements" >> "$LLDPD_CONF"
+	[ "$lldp_mgmt_addr_advertisements" -gt 0 ] && echo "configure lldp management-addresses-advertisements" >> "$LLDPD_CONF" ||\
+		echo "unconfigure lldp management-addresses-advertisements" >> "$LLDPD_CONF"
+
+	# Custom TLV handling
+	config_foreach add_custom_tlv_callback 'custom-tlv'
 
 	# Since lldpd's sysconfdir is /tmp, we'll symlink /etc/lldpd.d to /tmp/$LLDPD_CONFS_DIR
 	[ -e "$LLDPD_CONFS_DIR" ] || ln -s /etc/lldpd.d "$LLDPD_CONFS_DIR"
@@ -221,10 +364,10 @@ start_service() {
 		config_get_bool enable_edp 'config' 'enable_edp' 0
 		config_get_bool force_edp 'config' 'force_edp' 0
 	fi
-	config_get lldp_class 'config' 'lldp_class'
 	config_get_bool lldp_no_version 'config' 'lldp_no_version' 0
 	if [ "$CONFIG_LLDPD_WITH_LLDPMED" = "y" ]; then
 		config_get_bool lldpmed_no_inventory 'config' 'lldpmed_no_inventory' 0
+		config_get lldp_class 'config' 'lldp_class'
 	fi
 	config_get_bool readonly_mode 'config' 'readonly_mode' 0
 	if [ "$CONFIG_LLDPD_WITH_SNMP" = "y" ]; then
@@ -313,7 +456,7 @@ start_service() {
 
     # ChassisID interfaces
 	local ifnames
-	get_config_cid_ifaces ifnames "cid_interface"
+	get_interface_csv ifnames 'config' "cid_interface"
 
 	[ -n "$ifnames" ] && procd_append_param command -C "$ifnames"
 
@@ -349,27 +492,41 @@ reload_service() {
 		return 0
 	fi
 
-	$LLDPCLI -u "$LLDPSOCKET" 2>&1 /dev/null <<-EOF
+	$LLDPCLI -u "$LLDPSOCKET" >/dev/null 2>&1 <<-EOF
 		pause
 		unconfigure lldp custom-tlv
+		unconfigure lldp fast-start
+		unconfigure lldp capabilities-advertisements
+		unconfigure lldp management-addresses-advertisements
+		# unconfigures user-configured system capabilities, and instead uses the kernel information:
+		unconfigure system capabilities enabled
 		unconfigure system interface pattern
 		unconfigure system description
 		unconfigure system hostname
 		unconfigure system ip management pattern
 		unconfigure system platform
+		# Hardware inventory info
+		unconfigure inventory hardware-revision
+		unconfigure inventory firmware-revision
+		unconfigure inventory software-revision
+		unconfigure inventory serial-number
+		unconfigure inventory manufacturer
+		unconfigure inventory model
+		unconfigure inventory asset
 	EOF
-	if [ "$CONFIG_LLDPD_WITH_LLDPMED" = "y" ]; then
-		$LLDPCLI -u "$LLDPSOCKET" 2>&1 /dev/null <<-EOF
-			unconfigure med fast-start
-		EOF
 
+	if [ "$CONFIG_LLDPD_WITH_LLDPMED" = "y" ]; then
+		$LLDPCLI -u "$LLDPSOCKET" >/dev/null 2>&1 <<-EOF
+			# unconfigure med xxxxxxx
+		EOF
 	fi
+
 	# Rewrite lldpd.conf
 	# If something changed it should be included by the lldpcli call
 	write_lldpd_conf
-	$LLDPCLI -u "$LLDPSOCKET" -c "$LLDPD_CONF" -c "$LLDPD_CONFS_DIR" 2>&1 /dev/null
+	$LLDPCLI -u "$LLDPSOCKET" -c "$LLDPD_CONF" -c "$LLDPD_CONFS_DIR" >/dev/null 2>&1 
 	# Broadcast update over the wire
-	$LLDPCLI -u "$LLDPSOCKET" 2>&1 /dev/null <<-EOF
+	$LLDPCLI -u "$LLDPSOCKET" >/dev/null 2>&1 <<-EOF
 		resume
 		update
 	EOF
@@ -377,6 +534,6 @@ reload_service() {
 }
 
 stop_service() {
-	rm -rf ${LLDPD_RUN} "$LLDPSOCKET" 2> /dev/null
+	rm -rf ${LLDPD_RUN} "$LLDPSOCKET" >/dev/null 2>&1
 }
 

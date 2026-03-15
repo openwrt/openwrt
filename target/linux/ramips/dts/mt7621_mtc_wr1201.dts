@@ -166,12 +166,23 @@
 	status = "okay";
 };
 
+&pcie_pins {
+	uart3 {
+		groups = "uart3";
+		function = "gpio";
+	};
+};
+
 &pcie {
 	status = "okay";
+
+	reset-gpios = <&gpio 8 GPIO_ACTIVE_LOW>,
+		      <&gpio 19 GPIO_ACTIVE_LOW>;
 };
 
 &pcie0 {
 	wifi@0,0 {
+		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 		ieee80211-freq-limit = <5000000 6000000>;
 		nvmem-cells = <&eeprom_factory_8000>;
@@ -186,6 +197,7 @@
 
 &pcie1 {
 	wifi@0,0 {
+		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 		ieee80211-freq-limit = <2400000 2500000>;
 		nvmem-cells = <&eeprom_factory_0>;

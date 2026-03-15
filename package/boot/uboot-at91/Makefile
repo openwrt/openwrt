@@ -12,7 +12,7 @@ PKG_RELEASE:=3
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/linux4sam/u-boot-at91.git
-PKG_MIRROR_HASH:=56bbac45f71aaf39b365661db2a76c6c8415e27f7147b27bb58312b12756c8f3
+PKG_MIRROR_HASH:=82229503800d9a624bb8de5f8d7a84cb35fd512a1550c6f1d46958cd47d4807b
 PKG_SOURCE_VERSION:=7b59654a486d39dc8e0343e2554699b8a79c7a54
 
 include $(INCLUDE_DIR)/u-boot.mk
@@ -177,6 +177,11 @@ define Build/Compile
 		KCFLAGS="$(filter-out -fstack-protector \
 		-mfloat-abi=hard, $(TARGET_CFLAGS)) -mfloat-abi=soft" \
 		$(UBOOT_MAKE_FLAGS)
+endef
+
+define Build/InstallDev
+	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(UBOOT_IMAGE) $(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-$(UBOOT_IMAGE)
 endef
 
 $(eval $(call BuildPackage/U-Boot))

@@ -5,8 +5,12 @@
 set_from_redboot () {
 	for npe in eth0 eth1 eth2
 	do
+		mac="$(fconfig -s -r -d /dev/$1 -n npe_"$npe"_esa)"
+		if [ -z $mac ] ; then
+			mac="$(fconfig -s -r -d /dev/$1 -n zcom_npe_esa)"
+		fi
 		if ip link show dev $npe > /dev/null 2>&1; then
-			ip link set dev $npe address $(fconfig -s -r -d /dev/$1 -n npe_"$npe"_esa)
+			ip link set dev $npe address $mac
 		fi
 	done
 

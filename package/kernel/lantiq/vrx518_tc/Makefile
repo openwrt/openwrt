@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=vrx518_tc
 PKG_VERSION:=1.5.12.4
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 PKG_BASE_NAME:=vrx518_tc_drv
 
 UGW_VERSION=8.5.2.10
@@ -28,8 +28,6 @@ include $(INCLUDE_DIR)/package.mk
 PLAT_DIR:=dcdp
 PKG_EXTMOD_SUBDIRS:=$(PLAT_DIR)
 
-# TODO this driver depends on the vrx518 ppe firmware, add this dependency if
-# that ever gets a compatible license
 define KernelPackage/$(PKG_NAME)
   SECTION:=sys
   CATEGORY:=Kernel modules
@@ -39,7 +37,7 @@ define KernelPackage/$(PKG_NAME)
     CONFIG_ATM_LANE=m \
     CONFIG_ATM_MPOA=m \
     CONFIG_ATM_MPOA_INTEL_DSL_PHY_SUPPORT=y
-  DEPENDS:=@TARGET_ipq40xx +kmod-vrx518_ep +kmod-crypto-md5 +kmod-atm +kmod-ipoa +br2684ctl
+  DEPENDS:=@TARGET_ipq40xx +kmod-vrx518_ep +vrx518_ppe_fw +kmod-crypto-md5 +kmod-atm +kmod-ipoa +br2684ctl
   AUTOLOAD:=$(call AutoLoad,27,vrx518_tc)
   FILES:=$(PKG_BUILD_DIR)/$(PLAT_DIR)/$(PKG_NAME).ko
 endef

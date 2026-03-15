@@ -43,12 +43,6 @@
 			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
-
-		wifi2g {
-			label = "amber:wifi2g";
-			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
-		};
 	};
 
 	virtual_flash {
@@ -73,6 +67,11 @@
 
 	nvmem-cells = <&calibration_wmac>, <&macaddr_uboot_3ff80 1>;
 	nvmem-cell-names = "calibration", "mac-address";
+
+	led {
+		led-sources = <19>;
+		led-active-low;
+	};
 };
 
 &art {

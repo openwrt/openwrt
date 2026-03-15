@@ -66,12 +66,6 @@
 			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
 		};
 
-		wlan2g {
-			label = "green:wlan2g";
-			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
-		};
-
 		wlan5g {
 			label = "green:wlan5g";
 			gpios = <&gpio 20 GPIO_ACTIVE_HIGH>;
@@ -121,7 +115,7 @@
 	status = "okay";
 
 	wifi@0,0 {
-		compatible = "pci168c,0046";
+		compatible = "qcom,ath10k";
 		reg = <0 0 0 0 0>;
 
 		nvmem-cells = <&macaddr_info_8 (-1)>, <&precal_art_5000>;
@@ -246,4 +240,9 @@
 
 	nvmem-cells = <&cal_art_1000>, <&macaddr_info_8 0>;
 	nvmem-cell-names = "calibration", "mac-address";
+
+	led {
+		led-sources = <15>;
+		led-active-low;
+	};
 };

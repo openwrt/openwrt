@@ -176,7 +176,7 @@
 		};
 
 		wmac: wmac@180c0000 {
-			compatible = "qca,ar9130-wmac";
+			compatible = "qca,ar9130-wifi";
 			reg = <0x180c0000 0x230000>;
 
 			interrupts = <2>;
@@ -188,7 +188,7 @@
 	usb_phy: usb-phy {
 		compatible = "qca,ar7200-usb-phy";
 
-		reset-names = "usb-phy", "usb-suspend-override";
+		reset-names = "phy", "suspend-override";
 		resets = <&rst 4>, <&rst 3>;
 
 		#phy-cells = <0>;

@@ -20,7 +20,6 @@
 
 	gpio-export {
 		compatible = "gpio-export";
-		#size-cells = <0>;
 
 		usb-power {
 			gpio-export,name = "usb-power";
@@ -87,13 +86,6 @@
 			function = LED_FUNCTION_WAN;
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
-		};
-
-		wlan {
-			function = LED_FUNCTION_WLAN;
-			color = <LED_COLOR_ID_BLUE>;
-			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
 		};
 	};
 };
@@ -236,4 +228,9 @@
 
 	nvmem-cells = <&cal_ath9k>;
 	nvmem-cell-names = "calibration";
+
+	led {
+		led-sources = <0>;
+		led-active-low;
+	};
 };

@@ -6,9 +6,10 @@
 
 / {
 	compatible = "zyxel,nbg6716", "qca,qca9558";
-	model = "ZyXEL NBG6716";
+	model = "Zyxel NBG6716";
 
 	aliases {
+		label-mac-device = &wmac;
 		led-boot = &led_power;
 		led-failsafe = &led_power;
 		led-running = &led_power;
@@ -96,18 +97,26 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			uboot: partition@0 {
+			partition@0 {
 				label = "u-boot";
 				reg = <0x000000 0x040000>;
 				read-only;
 			};
 
-			uboot_env: partition@40000 {
+			partition@40000 {
 				label = "u-boot-env";
 				reg = <0x040000 0x010000>;
+
+				nvmem-layout {
+					compatible = "u-boot,env";
+
+					macaddr_uboot_ethaddr: ethaddr {
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
-			art: partition@50000 {
+			partition@50000 {
 				label = "art";
 				reg = <0x050000 0x010000>;
 				read-only;
@@ -116,6 +125,10 @@
 					compatible = "fixed-layout";
 					#address-cells = <1>;
 					#size-cells = <1>;
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
 
 					cal_art_5000: calibration@5000 {
 						reg = <0x5000 0x844>;
@@ -181,8 +194,8 @@
 	wifi@0,0 {
 		compatible = "qcom,ath10k";
 		reg = <0 0 0 0 0>;
-		nvmem-cells = <&cal_art_5000>;
-		nvmem-cell-names = "calibration";
+		nvmem-cells = <&cal_art_5000>, <&macaddr_uboot_ethaddr 1>;
+		nvmem-cell-names = "calibration", "mac-address";
 		qcom,ath10k-calibration-variant = "ZyXEL-NBG6716";
 	};
 };

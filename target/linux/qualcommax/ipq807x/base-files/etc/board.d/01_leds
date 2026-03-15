@@ -11,7 +11,13 @@ arcadyan,aw1000)
 	ucidef_set_led_netdev "wan" "WAN" "green:internet" "wan"
 	ucidef_set_led_netdev "wan-port-link" "WAN-PORT-LINK" "90000.mdio-1:1c:green:wan" "wan" "tx rx link_10 link_100 link_1000 link_2500"
 	;;
-dynalink,dl-wrx36)
+asus,rt-ax89x)
+	ucidef_set_led_netdev "aqr" "AQR" "white:aqr10g" "10g-copper"
+	ucidef_set_led_netdev "sfp" "SFP" "white:sfp" "10g-sfp"
+	ucidef_set_led_netdev "wan" "WAN" "white:wan" "wan"
+	;;
+dynalink,dl-wrx36|\
+spectrum,sax1v1k)
 	ucidef_set_led_netdev "wan-port-link-green" "WAN-PORT-LINK-GREEN" "90000.mdio-1:1c:green:wan" "wan" "link_2500"
 	ucidef_set_led_netdev "wan-port-link-yellow" "WAN-PORT-LINK-YELLOW" "90000.mdio-1:1c:yellow:wan" "wan" "tx rx link_10 link_100 link_1000"
 	;;
@@ -35,6 +41,9 @@ netgear,wax630)
 	;;
 redmi,ax6)
 	ucidef_set_led_netdev "wan" "WAN" "blue:network" "wan"
+	;;
+tcl,linkhub-hh500v)
+	ucidef_set_led_wlan "wlan5g" "WiFi 5GHz" "blue:wlan" "phy0radio"
 	;;
 xiaomi,ax3600)
 	ucidef_set_led_netdev "wan-port-link" "WAN-PORT-LINK" "90000.mdio-1:01:green:wan" "wan" "tx rx link_10 link_100 link_1000"
@@ -61,6 +70,9 @@ qnap,301w)
 yuncore,ax880)
 	ucidef_set_led_netdev "wan-port-link" "WAN-PORT-LINK" "90000.mdio-1:18:green:wan" "wan" "tx rx link_10 link_100 link_1000 link_2500"
 	ucidef_set_led_netdev "lan-port-link" "LAN-PORT-LINK" "90000.mdio-1:1c:green:lan" "lan" "tx rx link_10 link_100 link_1000 link_2500"
+	;;
+zbtlink,zbt-z800ax)
+	ucidef_set_led_netdev "internet" "Internet" "green:wan-online" "wan"
 	;;
 esac
 

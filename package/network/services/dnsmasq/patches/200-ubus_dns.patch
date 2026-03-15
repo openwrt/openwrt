@@ -1,23 +1,19 @@
-diff --git a/src/dnsmasq.c b/src/dnsmasq.c
-index 30fb419..776351a 100644
 --- a/src/dnsmasq.c
 +++ b/src/dnsmasq.c
-@@ -2025,6 +2025,10 @@ static void check_dns_listeners(time_t now)
- 		  daemon->pipe_to_parent = pipefd[1];
- 		}
+@@ -2123,6 +2123,10 @@ static void do_tcp_connection(struct lis
+       daemon->pipe_to_parent = pipefd[1];
+     }
  
 +#ifdef HAVE_UBUS
-+	      drop_ubus_listeners();
++	  drop_ubus_listeners();
 +#endif
 +
- 	      /* start with no upstream connections. */
- 	      for (s = daemon->servers; s; s = s->next)
- 		 s->tcpfd = -1; 
-diff --git a/src/dnsmasq.h b/src/dnsmasq.h
-index e455c3f..c84ba48 100644
+   /* The connected socket inherits non-blocking
+      attribute from the listening socket. 
+      Reset that here. */
 --- a/src/dnsmasq.h
 +++ b/src/dnsmasq.h
-@@ -1673,14 +1673,26 @@ void emit_dbus_signal(int action, struct dhcp_lease *lease, char *hostname);
+@@ -1722,14 +1722,26 @@ void emit_dbus_signal(int action, struct
  
  /* ubus.c */
  #ifdef HAVE_UBUS
@@ -44,11 +40,9 @@ index e455c3f..c84ba48 100644
  #endif
  
  /* ipset.c */
-diff --git a/src/forward.c b/src/forward.c
-index 32f37e4..3d28963 100644
 --- a/src/forward.c
 +++ b/src/forward.c
-@@ -803,7 +803,7 @@ static size_t process_reply(struct dns_header *header, time_t now, struct server
+@@ -803,7 +803,7 @@ static size_t process_reply(struct dns_h
  	  cache_secure = 0;
  	}
        
@@ -56,9 +50,7 @@ index 32f37e4..3d28963 100644
 +      if ((daemon->doctors || ubus_dns_notify_has_subscribers()) && do_doctor(header, n, daemon->namebuff))
  	cache_secure = 0;
        
-       /* check_for_bogus_wildcard() does it's own caching, so
-diff --git a/src/rfc1035.c b/src/rfc1035.c
-index 387d894..7bf7967 100644
+       /* check_for_bogus_wildcard() does its own caching, so
 --- a/src/rfc1035.c
 +++ b/src/rfc1035.c
 @@ -13,8 +13,10 @@
@@ -71,9 +63,9 @@ index 387d894..7bf7967 100644
 +#include <libubox/blobmsg.h>
 +#endif
  
- int extract_name(struct dns_header *header, size_t plen, unsigned char **pp, 
- 		 char *name, int isExtract, int extrabytes)
-@@ -384,10 +386,65 @@ static int private_net6(struct in6_addr *a, int ban_localhost)
+ /* EXTR_NAME_EXTRACT -> extract name
+    EXTR_NAME_COMPARE -> compare name, case insensitive
+@@ -444,10 +446,65 @@ int private_net6(struct in6_addr *a, int
      ((u32 *)a)[0] == htonl(0x20010db8); /* RFC 6303 4.6 */
  }
  
@@ -140,7 +132,7 @@ index 387d894..7bf7967 100644
    int done = 0;
    
    if (!(p = skip_questions(header, qlen)))
-@@ -404,7 +461,7 @@ int do_doctor(struct dns_header *header, size_t qlen, char *namebuff)
+@@ -464,7 +521,7 @@ int do_doctor(struct dns_header *header,
        
        GETSHORT(qtype, p); 
        GETSHORT(qclass, p);
@@ -149,7 +141,7 @@ index 387d894..7bf7967 100644
        GETSHORT(rdlen, p);
        
        if (qclass == C_IN && qtype == T_A)
-@@ -415,6 +472,9 @@ int do_doctor(struct dns_header *header, size_t qlen, char *namebuff)
+@@ -475,6 +532,9 @@ int do_doctor(struct dns_header *header,
  	  if (!CHECK_LEN(header, p, qlen, INADDRSZ))
  	    return done;
  	  
@@ -159,7 +151,7 @@ index 387d894..7bf7967 100644
  	  /* alignment */
  	  memcpy(&addr.addr4, p, INADDRSZ);
  	  
-@@ -444,6 +504,14 @@ int do_doctor(struct dns_header *header, size_t qlen, char *namebuff)
+@@ -504,6 +564,14 @@ int do_doctor(struct dns_header *header,
  	      break;
  	    }
  	}
@@ -174,11 +166,9 @@ index 387d894..7bf7967 100644
        
        if (!ADD_RDLEN(header, p, qlen, rdlen))
  	 return done; /* bad packet */
-diff --git a/src/ubus.c b/src/ubus.c
-index a5758e7..f2a75a8 100644
 --- a/src/ubus.c
 +++ b/src/ubus.c
-@@ -72,6 +72,13 @@ static struct ubus_object ubus_object = {
+@@ -72,6 +72,13 @@ static struct ubus_object ubus_object =
    .subscribe_cb = ubus_subscribe_cb,
  };
  
@@ -192,7 +182,7 @@ index a5758e7..f2a75a8 100644
  static void ubus_subscribe_cb(struct ubus_context *ctx, struct ubus_object *obj)
  {
    (void)ctx;
-@@ -105,13 +112,21 @@ static void ubus_disconnect_cb(struct ubus_context *ubus)
+@@ -105,13 +112,21 @@ static void ubus_disconnect_cb(struct ub
  char *ubus_init()
  {
    struct ubus_context *ubus = NULL;
@@ -232,7 +222,7 @@ index a5758e7..f2a75a8 100644
  static int ubus_handle_metrics(struct ubus_context *ctx, struct ubus_object *obj,
  			       struct ubus_request_data *req, const char *method,
  			       struct blob_attr *msg)
-@@ -328,6 +354,53 @@ fail:
+@@ -333,6 +359,53 @@ fail:
        } \
    } while (0)
  

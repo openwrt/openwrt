@@ -47,12 +47,6 @@
 	nvmem-cell-names = "mac-address";
 };
 
-&mdio {
-	ethphy4: ethernet-phy@4 {
-		reg = <4>;
-	};
-};
-
 &pcie {
 	status = "okay";
 };
@@ -116,17 +110,6 @@
 				reg = <0x90000 0xf70000>;
 			};
 		};
-	};
-};
-
-&gmac0 {
-	nvmem-cells = <&macaddr_factory_3fff4>;
-	nvmem-cell-names = "mac-address";
-};
-
-&mdio {
-	ethphy4: ethernet-phy@4 {
-		reg = <4>;
 	};
 };
 

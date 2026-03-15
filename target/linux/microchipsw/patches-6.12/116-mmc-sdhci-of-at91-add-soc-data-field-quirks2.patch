@@ -1,0 +1,50 @@
+From 63c7037be0a9c8e1155b78ce6448cc012401e441 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Mon, 19 Dec 2022 12:17:42 +0200
+Subject: [PATCH 094/110] mmc: sdhci-of-at91: add soc data field quirks2
+
+Add a quirks2 field in the soc_data struct, this replaces
+the hs200_broken bool. The purpose is to be able to add multiple
+quirks in the soc_data without having bools for each of them.
+Storing them in a single variable makes the code cleaner.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+(cherry picked from linux-6.1-trunk/at91/mmc)
+Signed-off-by: Andrei Simion <andrei.simion@microchip.com>
+---
+ drivers/mmc/host/sdhci-of-at91.c | 8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
+
+--- a/drivers/mmc/host/sdhci-of-at91.c
++++ b/drivers/mmc/host/sdhci-of-at91.c
+@@ -47,8 +47,8 @@ struct sdhci_at91_soc_data {
+ 	bool baseclk_is_generated_internally;
+ 	unsigned int divider_for_baseclk;
+ 	unsigned int max_sdr104_clk;
+-	bool hs200_broken;
+ 	bool pm_runtime_disable_clks;
++	u32 quirks2;
+ };
+ 
+ struct sdhci_at91_priv {
+@@ -216,8 +216,8 @@ static const struct sdhci_at91_soc_data
+ 	.pdata = &sdhci_sama5d2_pdata,
+ 	.baseclk_is_generated_internally = false,
+ 	.max_sdr104_clk = 120000000,
+-	.hs200_broken = true,
+ 	.pm_runtime_disable_clks = true,
++	.quirks2 = SDHCI_QUIRK2_BROKEN_HS200,
+ };
+ 
+ static const struct sdhci_at91_soc_data soc_data_sam9x60 = {
+@@ -506,9 +506,7 @@ static int sdhci_at91_probe(struct platf
+ 	pm_runtime_set_autosuspend_delay(&pdev->dev, 50);
+ 	pm_runtime_use_autosuspend(&pdev->dev);
+ 
+-	/* check if HS200 is broken on this platform */
+-	if (priv->soc_data->hs200_broken)
+-		host->quirks2 |= SDHCI_QUIRK2_BROKEN_HS200;
++	host->quirks2 |= priv->soc_data->quirks2;
+ 
+ 	ret = sdhci_add_host(host);
+ 	if (ret)

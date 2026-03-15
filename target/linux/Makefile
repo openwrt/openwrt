@@ -4,6 +4,7 @@
 
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/target.mk
+include $(INCLUDE_DIR)/default-packages.mk
 
 export TARGET_BUILD=1
 

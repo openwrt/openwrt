@@ -104,7 +104,7 @@
 &pcie1 {
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
-		reg = <0x0 0 0 0 0>;
+		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&eeprom_factory_0>;
 		nvmem-cell-names = "eeprom";
 		mediatek,disable-radar-background;
@@ -125,10 +125,8 @@
 	nvmem-cell-names = "mac-address";
 };
 
-&mdio {
-	ethphy0: ethernet-phy@0 {
-		reg = <0>;
-	};
+&ethphy0 {
+	/delete-property/ interrupts;
 };
 
 &switch0 {

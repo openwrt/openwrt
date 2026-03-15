@@ -13,7 +13,7 @@
 };
 
 &gmac1 {
-	nvmem-cells = <&macaddr_factory_e006>;
+	nvmem-cells = <&macaddr_factory_e006 0>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -50,8 +50,8 @@
 };
 
 &wifi {
-	nvmem-cells = <&macaddr_factory_e006 1>;
-	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&eeprom_factory_0>, <&macaddr_factory_e006 1>;
+	nvmem-cell-names = "eeprom", "mac-address";
 };
 
 &factory {

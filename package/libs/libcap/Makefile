@@ -66,6 +66,7 @@ MAKE_FLAGS += \
     BUILD_CC="$(CC)" \
     BUILD_CFLAGS="$(FPIC) -I$(PKG_BUILD_DIR)/libcap/include" \
     CFLAGS="$(TARGET_CFLAGS)" \
+    TARGET_CPPFLAGS="$(TARGET_CPPFLAGS)" \
     LD="$(TARGET_CC) -Wl,-x -shared" \
     LDFLAGS="$(TARGET_LDFLAGS)" \
     INDENT="| true" \

@@ -254,6 +254,7 @@ start_service() {
 			${mode} \
 			${tc_layer} \
 			$autoboot
+	procd_set_param term_timeout 10
 	procd_close_instance
 }
 

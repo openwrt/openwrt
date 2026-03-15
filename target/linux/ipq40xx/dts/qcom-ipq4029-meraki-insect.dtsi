@@ -1,0 +1,122 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Device Tree Source for Meraki devices
+ *
+ * Copyright (C) 2017 Chris Blake <chrisrblake93@gmail.com>
+ * Copyright (C) 2017 Christian Lamparter <chunkeey@googlemail.com>
+ * Copyright (C) 2025 Hal Martin <halmartin@googlemail.com>
+ *
+ * Based on Cisco Meraki DTS from GPL release r25-linux-3.14-20170427
+ *
+ * This file is licensed under the terms of the GNU General Public
+ * License version 2.  This program is licensed "as is" without
+ * any warranty of any kind, whether express or implied.
+ */
+
+#include "qcom-ipq4029-meraki-common.dtsi"
+
+/ {
+	aliases {
+		led-boot = &status_green;
+		led-failsafe = &status_red;
+		led-running = &status_green;
+		led-upgrade = &power_orange;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		power_orange: power {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_ORANGE>;
+			gpios = <&tlmm 49 GPIO_ACTIVE_LOW>;
+			panic-indicator;
+		};
+	};
+};
+
+&blsp1_i2c3 {
+	eeprom@50 {
+		compatible = "atmel,24c64";
+		pagesize = <32>;
+		reg = <0x50>;
+		read-only; /* This holds our MAC & Meraki board-data */
+
+		nvmem-layout {
+			compatible = "fixed-layout";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mac_address: mac-address@66 {
+				compatible = "mac-base";
+				reg = <0x66 0x6>;
+				#nvmem-cell-cells = <1>;
+			};
+		};
+	};
+};
+
+&blsp1_i2c4 {
+	pinctrl-0 = <&i2c_1_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	tricolor: led-controller@30 {
+		compatible = "ti,lp5562";
+		reg = <0x30>;
+		clock-mode = /bits/8 <2>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/* RGB led */
+		status_red: chan@0 {
+			chan-name = "red:status";
+			led-cur = /bits/ 8 <0x20>;
+			max-cur = /bits/ 8 <0x60>;
+			reg = <0>;
+			color = <LED_COLOR_ID_RED>;
+		};
+
+		status_green: chan@1 {
+			chan-name = "green:status";
+			led-cur = /bits/ 8 <0x20>;
+			max-cur = /bits/ 8 <0x60>;
+			reg = <1>;
+			color = <LED_COLOR_ID_GREEN>;
+		};
+
+		chan@2 {
+			chan-name = "blue:status";
+			led-cur = /bits/ 8 <0x20>;
+			max-cur = /bits/ 8 <0x60>;
+			reg = <2>;
+			color = <LED_COLOR_ID_BLUE>;
+		};
+
+		chan@3 {
+			chan-name = "white:status";
+			led-cur = /bits/ 8 <0x20>;
+			max-cur = /bits/ 8 <0x60>;
+			reg = <3>;
+			color = <LED_COLOR_ID_WHITE>;
+		};
+	};
+};
+
+&gmac {
+	status = "okay";
+	nvmem-cells = <&mac_address 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&wifi0 {
+	status = "disabled";
+	nvmem-cells = <&mac_address 2>, <&precal_factory_1000>;
+	nvmem-cell-names = "mac-address", "pre-calibration";
+};
+
+&wifi1 {
+	status = "disabled";
+	nvmem-cells = <&mac_address 3>, <&precal_factory_5000>;
+	nvmem-cell-names = "mac-address", "pre-calibration";
+};

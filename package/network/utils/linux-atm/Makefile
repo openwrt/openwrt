@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=linux-atm
 PKG_VERSION:=2.5.2
-PKG_RELEASE:=7
+PKG_RELEASE:=8
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/$(PKG_NAME)
@@ -35,7 +35,7 @@ define Package/linux-atm
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Linux ATM library
-  URL:=http://linux-atm.sourceforge.net/
+  URL:=https://linux-atm.sourceforge.net/
 endef
 
 define Package/linux-atm/description
@@ -46,7 +46,7 @@ define Package/linux-atm/Default
   SECTION:=net
   CATEGORY:=Network
   DEPENDS:=+linux-atm
-  URL:=http://linux-atm.sourceforge.net/
+  URL:=https://linux-atm.sourceforge.net/
   SUBMENU:=Linux ATM tools
 endef
 

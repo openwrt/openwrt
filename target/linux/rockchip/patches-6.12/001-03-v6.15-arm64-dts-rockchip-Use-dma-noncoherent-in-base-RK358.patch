@@ -1,0 +1,51 @@
+From 33b561eb66f1e271f2899e103c857d20425076f4 Mon Sep 17 00:00:00 2001
+From: Dragan Simic <dsimic@manjaro.org>
+Date: Wed, 8 Jan 2025 05:26:45 +0100
+Subject: arm64: dts: rockchip: Use "dma-noncoherent" in base RK3588 SoC dtsi
+
+The preferred way to denote hardware with non-coherent DMA is to use the
+"dma-noncoherent" DT property, at both the GIC redistributor and the GIC ITS
+levels, [1] instead of relying on the compatibles to handle hardware errata,
+in this case the Rockchip 3588001 errata. [2]
+
+Let's have the preferred way employed in the base Rockchip RK3588 SoC dtsi,
+which also goes along with adding initial support for the Rockchip RK3582 SoC
+variant, with its separate compatible. [2][3]
+
+[1] Documentation/devicetree/bindings/interrupt-controller/arm,gic-v3.yaml
+[2] https://lore.kernel.org/linux-rockchip/86msgoozqa.wl-maz@kernel.org/
+[3] https://lore.kernel.org/linux-rockchip/20241222030355.2246-4-naoki@radxa.com/
+
+Cc: Marc Zyngier <maz@kernel.org>
+Cc: FUKAUMI Naoki <naoki@radxa.com>
+Acked-by: Marc Zyngier <maz@kernel.org>
+Signed-off-by: Dragan Simic <dsimic@manjaro.org>
+Link: https://lore.kernel.org/r/fa1a672dae3644bb3caa58f03216d0ca349db88b.1736279094.git.dsimic@manjaro.org
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+
+--- a/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3588-base.dtsi
+@@ -2020,6 +2020,7 @@
+ 		      <0x0 0xfe680000 0 0x100000>; /* GICR */
+ 		interrupts = <GIC_PPI 9 IRQ_TYPE_LEVEL_HIGH 0>;
+ 		interrupt-controller;
++		dma-noncoherent;
+ 		mbi-alias = <0x0 0xfe610000>;
+ 		mbi-ranges = <424 56>;
+ 		msi-controller;
+@@ -2031,6 +2032,7 @@
+ 		its0: msi-controller@fe640000 {
+ 			compatible = "arm,gic-v3-its";
+ 			reg = <0x0 0xfe640000 0x0 0x20000>;
++			dma-noncoherent;
+ 			msi-controller;
+ 			#msi-cells = <1>;
+ 		};
+@@ -2038,6 +2040,7 @@
+ 		its1: msi-controller@fe660000 {
+ 			compatible = "arm,gic-v3-its";
+ 			reg = <0x0 0xfe660000 0x0 0x20000>;
++			dma-noncoherent;
+ 			msi-controller;
+ 			#msi-cells = <1>;
+ 		};

@@ -9,6 +9,38 @@ define Device/d-link_dgs-1210-52
 endef
 TARGET_DEVICES += d-link_dgs-1210-52
 
+define Device/edgecore_ecs4100-12ph
+  $(Device/uimage-rt-loader)
+  SOC := rtl8393
+  DEVICE_VENDOR := Edgecore
+  DEVICE_MODEL := ECS4100-12PH
+  IMAGE_SIZE := 14336k
+  DEVICE_PACKAGES := \
+	kmod-eeprom-at24 \
+	kmod-hwmon-adt7470 \
+	kmod-hwmon-lm75 \
+	kmod-thermal \
+	realtek-poe
+endef
+TARGET_DEVICES += edgecore_ecs4100-12ph
+
+define Device/hpe_1920-48g
+  $(Device/hpe_1920)
+  SOC := rtl8393
+  DEVICE_MODEL := 1920-48G (JG927A)
+  H3C_DEVICE_ID := 0x0001002a
+endef
+TARGET_DEVICES += hpe_1920-48g
+
+define Device/hpe_1920-48g-poe
+  $(Device/hpe_1920)
+  SOC := rtl8393
+  DEVICE_MODEL := 1920-48G-PoE (JG928A)
+  DEVICE_PACKAGES += realtek-poe kmod-hwmon-gpiofan
+  H3C_DEVICE_ID := 0x0001002b
+endef
+TARGET_DEVICES += hpe_1920-48g-poe
+
 # When the factory image won't fit anymore, it can be removed.
 # New installation will be performed booting the initramfs image from
 # ram and then flashing the sysupgrade image from OpenWrt
@@ -56,10 +88,53 @@ define Device/tplink_sg2452p-v4
 endef
 TARGET_DEVICES += tplink_sg2452p-v4
 
-define Device/zyxel_gs1900-48
+define Device/zyxel_gs1900-48-a1
   $(Device/zyxel_gs1900)
   SOC := rtl8393
   DEVICE_MODEL := GS1900-48
+  DEVICE_VARIANT := A1
   ZYXEL_VERS := AAHN
+  SUPPORTED_DEVICES += zyxel,gs1900-48
 endef
-TARGET_DEVICES += zyxel_gs1900-48
+TARGET_DEVICES += zyxel_gs1900-48-a1
+
+define Device/zyxel_gs1920-24hp
+ifeq ($(IB),)
+  ARTIFACTS := loader.bin
+  ARTIFACT/loader.bin := \
+    rt-loader-standalone | \
+    zynsig
+endif
+  DEVICE_VENDOR := Zyxel
+  DEVICE_MODEL := GS1920-24HP
+  DEVICE_PACKAGES := \
+	  kmod-hwmon-lm85
+  KERNEL := \
+    kernel-bin | \
+    append-dtb | \
+    rt-compress | \
+    uImage lzma
+  KERNEL_INITRAMFS := \
+    kernel-bin | \
+    append-dtb | \
+    rt-compress | \
+    rt-loader
+endef
+
+define Device/zyxel_gs1920-24hp-v1
+  $(Device/zyxel_gs1920-24hp)
+  SOC := rtl8392
+  FLASH_ADDR := 0xb40c0000
+  IMAGE_SIZE := 12144k
+  DEVICE_VARIANT := v1
+endef
+TARGET_DEVICES += zyxel_gs1920-24hp-v1
+
+define Device/zyxel_gs1920-24hp-v2
+  $(Device/zyxel_gs1920-24hp)
+  SOC := rtl8391
+  FLASH_ADDR := 0xb4210000
+  IMAGE_SIZE := 30720k
+  DEVICE_VARIANT := v2
+endef
+TARGET_DEVICES += zyxel_gs1920-24hp-v2

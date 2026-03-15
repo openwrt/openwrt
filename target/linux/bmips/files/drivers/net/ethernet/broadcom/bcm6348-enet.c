@@ -25,7 +25,6 @@
 #include <linux/phy.h>
 #include <linux/platform_device.h>
 #include <linux/reset.h>
-#include <linux/version.h>
 
 /* DMA channels */
 #define DMA_CHAN_WIDTH			0x10
@@ -286,7 +285,7 @@ MODULE_DEVICE_TABLE(of, bcm6348_emac_of_match);
 static struct platform_driver bcm6348_iudma_driver = {
 	.driver = {
 		.name = "bcm6348-iudma",
-		.of_match_table = of_match_ptr(bcm6348_iudma_of_match),
+		.of_match_table = bcm6348_iudma_of_match,
 	},
 	.probe	= bcm6348_iudma_probe,
 };
@@ -1611,7 +1610,7 @@ static int bcm6348_emac_probe(struct platform_device *pdev)
 					   GFP_KERNEL);
 		if (IS_ERR_OR_NULL(emac->reset))
 			return PTR_ERR(emac->reset);
-		
+
 	}
 	for (i = 0; i < emac->num_resets; i++) {
 		emac->reset[i] = devm_reset_control_get_by_index(dev, i);
@@ -1647,11 +1646,7 @@ static int bcm6348_emac_probe(struct platform_device *pdev)
 	ndev->min_mtu = ETH_ZLEN - ETH_HLEN;
 	ndev->mtu = ETH_DATA_LEN - VLAN_ETH_HLEN;
 	ndev->max_mtu = ENET_MAX_MTU - VLAN_ETH_HLEN;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,1,0)
-	netif_napi_add(ndev, &emac->napi, bcm6348_emac_poll);
-#else
-	netif_napi_add(ndev, &emac->napi, bcm6348_emac_poll, 16);
-#endif
+	netif_napi_add_weight(ndev, &emac->napi, bcm6348_emac_poll, 16);
 	SET_NETDEV_DEV(ndev, dev);
 
 	ret = devm_register_netdev(dev, ndev);
@@ -1680,7 +1675,7 @@ out_disable_clk:
 	return ret;
 }
 
-static int bcm6348_emac_remove(struct platform_device *pdev)
+static void bcm6348_emac_remove(struct platform_device *pdev)
 {
 	struct net_device *ndev = platform_get_drvdata(pdev);
 	struct bcm6348_emac *emac = netdev_priv(ndev);
@@ -1693,8 +1688,6 @@ static int bcm6348_emac_remove(struct platform_device *pdev)
 
 	for (i = 0; i < emac->num_clocks; i++)
 		clk_disable_unprepare(emac->clock[i]);
-
-	return 0;
 }
 
 static const struct of_device_id bcm6348_emac_of_match[] = {
@@ -1708,7 +1701,7 @@ MODULE_DEVICE_TABLE(of, bcm6348_emac_of_match);
 static struct platform_driver bcm6348_emac_driver = {
 	.driver = {
 		.name = "bcm6348-emac",
-		.of_match_table = of_match_ptr(bcm6348_emac_of_match),
+		.of_match_table = bcm6348_emac_of_match,
 	},
 	.probe	= bcm6348_emac_probe,
 	.remove	= bcm6348_emac_remove,

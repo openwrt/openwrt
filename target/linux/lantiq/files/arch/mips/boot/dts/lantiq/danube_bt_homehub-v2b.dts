@@ -52,55 +52,55 @@
 
 		upgrading-orange {
 			label = "orange:upgrading";
-			gpios = <&gpios 5 GPIO_ACTIVE_HIGH>;
+			gpios = <&stp0 5 GPIO_ACTIVE_HIGH>;
 		};
 
 		phone-orange {
 			label = "orange:phone";
-			gpios = <&gpios 6 GPIO_ACTIVE_HIGH>;
+			gpios = <&stp0 6 GPIO_ACTIVE_HIGH>;
 		};
 		phone-blue {
 			label = "blue:phone";
-			gpios = <&gpios 7 GPIO_ACTIVE_HIGH>;
+			gpios = <&stp0 7 GPIO_ACTIVE_HIGH>;
 		};
 
 		wireless-orange {
 			label = "orange:wireless";
-			gpios = <&gpios 8 GPIO_ACTIVE_HIGH>;
+			gpios = <&stp0 8 GPIO_ACTIVE_HIGH>;
 		};
 		wireless_blue: wireless-blue {
 			label = "blue:wireless";
-			gpios = <&gpios 9 GPIO_ACTIVE_HIGH>;
+			gpios = <&stp0 9 GPIO_ACTIVE_HIGH>;
 		};
 
 		broadband-red {
 			label = "red:broadband";
-			gpios = <&gpios 10 GPIO_ACTIVE_HIGH>;
+			gpios = <&stp0 10 GPIO_ACTIVE_HIGH>;
 		};
 		broadband-orange {
 			label = "orange:broadband";
-			gpios = <&gpios 11 GPIO_ACTIVE_HIGH>;
+			gpios = <&stp0 11 GPIO_ACTIVE_HIGH>;
 		};
 		broadband_blue: broadband-blue {
 			label = "blue:broadband";
-			gpios = <&gpios 12 GPIO_ACTIVE_HIGH>;
+			gpios = <&stp0 12 GPIO_ACTIVE_HIGH>;
 		};
 
 		power_red: power-red {
 			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_RED>;
-			gpios = <&gpios 13 GPIO_ACTIVE_HIGH>;
+			gpios = <&stp0 13 GPIO_ACTIVE_HIGH>;
 		};
 		power_orange: power-orange {
 			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_ORANGE>;
-			gpios = <&gpios 14 GPIO_ACTIVE_HIGH>;
+			gpios = <&stp0 14 GPIO_ACTIVE_HIGH>;
 			default-state = "keep";
 		};
 		power_blue: power-blue {
 			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_BLUE>;
-			gpios = <&gpios 15 GPIO_ACTIVE_HIGH>;
+			gpios = <&stp0 15 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };
@@ -130,12 +130,20 @@
 	};
 };
 
-&gpios {
+&stp0 {
 	status = "okay";
 };
 
 &gsw {
 	phy-mode = "rmii";
+
+	nvmem-cells = <&macaddr_uboot_ethaddr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&ppe {
+	nvmem-cells = <&macaddr_uboot_ethaddr 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &localbus {
@@ -158,6 +166,14 @@
 			partition@40000 {
 				label = "u-boot-env";
 				reg = <0x40000 0x10000>; /* 64KB */
+
+				nvmem-layout {
+					compatible = "u-boot,env";
+
+					macaddr_uboot_ethaddr: ethaddr {
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 
 			partition@50000 {
@@ -219,12 +235,15 @@
 	pinctrl-0 = <&pci_gnt1_pins>, <&pci_req1_pins>;
 	pinctrl-names = "default";
 
-	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
+	reset-gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 
-	wifi@168c,0027 {
+	wifi@e,0 {
 		compatible = "pci168c,0027";
 		reg = <0x7000 0 0 0 0>;
 		qca,no-eeprom; /* load from ath9k-eeprom-pci-0000:00:0e.0.bin */
+
+		nvmem-cells = <&macaddr_uboot_ethaddr 2>;
+		nvmem-cell-names = "mac-address";
 	};
 };
 

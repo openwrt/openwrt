@@ -41,8 +41,7 @@
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <20>;
+		compatible = "gpio-keys";
 
 		bat {
 			label = "bat";
@@ -66,7 +65,6 @@
 
 	gpio_export {
 		compatible = "gpio-export";
-		#size-cells = <0>;
 
 		usb-mode {
 			gpio-export,name = "usb-mode";

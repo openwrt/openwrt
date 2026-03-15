@@ -62,13 +62,12 @@
 
 	rtl8366s {
 		compatible = "realtek,rtl8366s";
-		gpio-sda = <&gpio0 1 GPIO_ACTIVE_HIGH>;
-		gpio-sck = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+		sda-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+		sck-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
 	};
 
 	keys {
-		compatible = "gpio-keys-polled";
-		poll-interval = <100>;
+		compatible = "gpio-keys";
 
 		reset {
 			label = "reset";

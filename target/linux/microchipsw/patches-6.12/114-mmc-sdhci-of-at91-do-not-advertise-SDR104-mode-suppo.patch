@@ -1,0 +1,40 @@
+From 0538f47fa414e52843c75c3cc72790ad0ec196b8 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Fri, 20 Sep 2019 12:09:29 +0300
+Subject: [PATCH 092/110] mmc: sdhci-of-at91: do not advertise SDR104 mode
+ support
+
+There are several issues with SDR104 mode and tuning so remove it from
+the capabilities of the host controller.
+
+Signed-off-by: Ludovic Desroches <ludovic.desroches@microchip.com>
+[eugen.hristev@microchip.com: re-pick this commit was removed with upstream patch]
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+Signed-off-by: Tudor Ambarus <tudor.ambarus@microchip.com>
+(cherry picked from linux-6.1-trunk/at91/mmc)
+Signed-off-by: Andrei Simion <andrei.simion@microchip.com>
+---
+ drivers/mmc/host/sdhci-of-at91.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+--- a/drivers/mmc/host/sdhci-of-at91.c
++++ b/drivers/mmc/host/sdhci-of-at91.c
+@@ -256,6 +256,18 @@ static int sdhci_at91_set_clks_presets(s
+ 	caps0 = readl(host->ioaddr + SDHCI_CAPABILITIES);
+ 	caps1 = readl(host->ioaddr + SDHCI_CAPABILITIES_1);
+ 
++	/*
++	* We experience some issues with SDR104. If the SD clock is higher
++	* than 100 MHz, we can get data corruption. With a 100 MHz clock,
++	* the tuning procedure may fail. For those reasons, it is useless to
++	* advertise that we can use SDR104 mode, so remove it from
++	* the capabilities.
++	*/
++	writel(SDMMC_CACR_KEY | SDMMC_CACR_CAPWREN, host->ioaddr + SDMMC_CACR);
++	caps1 &= (~SDHCI_SUPPORT_SDR104);
++	writel(caps1, host->ioaddr + SDHCI_CAPABILITIES_1);
++	writel(0, host->ioaddr + SDMMC_CACR);
++
+ 	gck_rate = clk_get_rate(priv->gck);
+ 	if (priv->soc_data->baseclk_is_generated_internally)
+ 		clk_base_rate = gck_rate / priv->soc_data->divider_for_baseclk;

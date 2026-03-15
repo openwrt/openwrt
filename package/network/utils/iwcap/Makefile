@@ -33,7 +33,7 @@ define Build/Configure
 endef
 
 define Build/Compile
-	$(TARGET_CC) $(TARGET_CFLAGS) \
+	$(TARGET_CC) $(TARGET_CPPFLAGS) $(TARGET_CFLAGS) \
 		-o $(PKG_BUILD_DIR)/iwcap $(PKG_BUILD_DIR)/iwcap.c
 endef
 

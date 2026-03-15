@@ -1,0 +1,26 @@
+From 48a8c9defc691a038c1fa515b2b6c8edb6e55aa4 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Wed, 8 Jan 2025 14:09:28 +0100
+Subject: [PATCH 17/25] tty: serial: atmel: make it selectable for ARCH_LAN969X
+
+LAN969x uses the Atmel serial, so make it selectable for ARCH_LAN969X.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+Acked-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+Link: https://lore.kernel.org/r/20250108131045.40642-3-robert.marko@sartura.hr
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/tty/serial/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/tty/serial/Kconfig
++++ b/drivers/tty/serial/Kconfig
+@@ -128,7 +128,7 @@ config SERIAL_SB1250_DUART_CONSOLE
+ config SERIAL_ATMEL
+ 	bool "AT91 on-chip serial port support"
+ 	depends on COMMON_CLK
+-	depends on ARCH_AT91 || COMPILE_TEST
++	depends on ARCH_AT91 || ARCH_LAN969X || COMPILE_TEST
+ 	select SERIAL_CORE
+ 	select SERIAL_MCTRL_GPIO if GPIOLIB
+ 	select MFD_AT91_USART

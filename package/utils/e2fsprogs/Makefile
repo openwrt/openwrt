@@ -8,18 +8,18 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=e2fsprogs
-PKG_VERSION:=1.47.0
-PKG_RELEASE:=2
+PKG_VERSION:=1.47.3
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/kernel/people/tytso/e2fsprogs/v$(PKG_VERSION)/
-PKG_HASH:=144af53f2bbd921cef6f8bea88bb9faddca865da3fbc657cc9b4d2001097d5db
+PKG_HASH:=857e6ef800feaa2bb4578fbc810214be5d3c88b072ea53c5384733a965737329
 
 PKG_LICENSE:=GPL-2.0
 PKG_LICENSE_FILES:=NOTICE
 PKG_CPE_ID:=cpe:/a:e2fsprogs_project:e2fsprogs
 
-PKG_BUILD_DEPENDS:=util-linux e2fsprogs/host
+PKG_BUILD_DEPENDS:=util-linux
 PKG_INSTALL:=1
 
 PKG_BUILD_PARALLEL:=1
@@ -33,7 +33,7 @@ define Package/e2fsprogs
   CATEGORY:=Utilities
   SUBMENU:=Filesystem
   TITLE:=Ext2/3/4 filesystem utilities
-  URL:=http://e2fsprogs.sourceforge.net/
+  URL:=https://e2fsprogs.sourceforge.net/
   DEPENDS:=+libuuid +libext2fs +libe2p
 endef
 
@@ -46,7 +46,7 @@ define Package/libext2fs
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=ext2/3/4 filesystem library
-  URL:=http://e2fsprogs.sourceforge.net/
+  URL:=https://e2fsprogs.sourceforge.net/
   DEPENDS:=+libuuid +libblkid +libss +libcomerr
   ABI_VERSION:=2
 endef
@@ -59,7 +59,7 @@ define Package/libe2p
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=ext2fs userspace programs utility library
-  URL:=http://e2fsprogs.sourceforge.net/
+  URL:=https://e2fsprogs.sourceforge.net/
   DEPENDS:=+libuuid
   ABI_VERSION:=2
 endef
@@ -73,7 +73,7 @@ define Package/libss
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=command-line interface parsing library
-  URL:=http://e2fsprogs.sourceforge.net/
+  URL:=https://e2fsprogs.sourceforge.net/
   DEPENDS:=+libcomerr
   ABI_VERSION:=2
 endef
@@ -87,7 +87,7 @@ define Package/libcomerr
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=common error description library
-  URL:=http://e2fsprogs.sourceforge.net/
+  URL:=https://e2fsprogs.sourceforge.net/
   DEPENDS:=+libuuid
   ABI_VERSION:=0
 endef
@@ -168,7 +168,8 @@ CONFIGURE_ARGS += \
 	--disable-tls		\
 	--disable-nls		\
 	--disable-rpath		\
-	--disable-fuse2fs
+	--disable-fuse2fs	\
+	--without-libmagic
 
 ifneq ($(CONFIG_USE_MUSL),)
   CONFIGURE_VARS += ac_cv_func_lseek64=yes
@@ -223,23 +224,6 @@ define Build/InstallDev
 		$(1)/usr/include/ss/
 	$(INSTALL_DIR) $(1)/usr/include/e2p
 	$(CP) $(PKG_BUILD_DIR)/lib/e2p/e2p.h $(1)/usr/include/e2p
-endef
-
-define Host/Compile
-	$(MAKE) $(PKG_JOBS) -C $(HOST_BUILD_DIR)/lib/ss mk_cmds
-	$(MAKE) $(PKG_JOBS) -C $(HOST_BUILD_DIR)/lib/et compile_et
-endef
-
-define Host/Install
-	$(INSTALL_DIR) $(1)/share/et
-	$(CP) $(HOST_BUILD_DIR)/lib/et/et_[ch].awk $(1)/share/et/
-	$(INSTALL_DIR) $(1)/share/ss
-	$(CP) $(HOST_BUILD_DIR)/lib/ss/ct_c.{sed,awk} $(1)/share/ss/
-	$(INSTALL_DIR) $(1)/bin
-	$(CP) \
-		$(HOST_BUILD_DIR)/lib/et/compile_et \
-		$(HOST_BUILD_DIR)/lib/ss/mk_cmds \
-		$(1)/bin/
 endef
 
 define Package/e2fsprogs/conffiles
@@ -354,4 +338,3 @@ $(eval $(call BuildPackage,filefrag))
 $(eval $(call BuildPackage,debugfs))
 $(eval $(call BuildPackage,chattr))
 $(eval $(call BuildPackage,lsattr))
-$(eval $(call HostBuild))

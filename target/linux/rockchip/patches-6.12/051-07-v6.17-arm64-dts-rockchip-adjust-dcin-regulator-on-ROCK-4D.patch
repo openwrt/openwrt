@@ -1,0 +1,59 @@
+From 9a625a284bfdb902f27f2949063731d189adda3c Mon Sep 17 00:00:00 2001
+From: Nicolas Frattaroli <nicolas.frattaroli@collabora.com>
+Date: Mon, 30 Jun 2025 17:36:33 +0200
+Subject: [PATCH] arm64: dts: rockchip: adjust dcin regulator on ROCK 4D
+
+The ROCK 4D's actual DC input is 5V, and the schematic names it as being
+5V as well.
+
+Rename the regulator, and change the voltage it claims to be at.
+Furthermore, fix vcc_1v1_nldo_s3's vin-supply as coming from
+vcc_5v0_sys, and not the DCIN, as per the schematic. This makes no
+functional change; both regulators are always on, and one feeds into the
+other.
+
+Signed-off-by: Nicolas Frattaroli <nicolas.frattaroli@collabora.com>
+Link: https://lore.kernel.org/r/20250630-rock4d-reg-usb-wifi-v1-1-1057f412d98c@collabora.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3576-rock-4d.dts | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3576-rock-4d.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3576-rock-4d.dts
+@@ -57,13 +57,13 @@
+ 		};
+ 	};
+ 
+-	vcc_12v0_dcin: regulator-vcc-12v0-dcin {
++	vcc_5v0_dcin: regulator-vcc-5v0-dcin {
+ 		compatible = "regulator-fixed";
+ 		regulator-always-on;
+ 		regulator-boot-on;
+-		regulator-min-microvolt = <12000000>;
+-		regulator-max-microvolt = <12000000>;
+-		regulator-name = "vcc_12v0_dcin";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-name = "vcc_5v0_dcin";
+ 	};
+ 
+ 	vcc_1v1_nldo_s3: regulator-vcc-1v1-nldo-s3 {
+@@ -166,7 +166,7 @@
+ 		regulator-min-microvolt = <5000000>;
+ 		regulator-max-microvolt = <5000000>;
+ 		regulator-name = "vcc_5v0_device";
+-		vin-supply = <&vcc_12v0_dcin>;
++		vin-supply = <&vcc_5v0_sys>;
+ 	};
+ 
+ 	vcc_5v0_host: regulator-vcc-5v0-host {
+@@ -190,7 +190,7 @@
+ 		regulator-min-microvolt = <5000000>;
+ 		regulator-max-microvolt = <5000000>;
+ 		regulator-name = "vcc_5v0_sys";
+-		vin-supply = <&vcc_12v0_dcin>;
++		vin-supply = <&vcc_5v0_dcin>;
+ 	};
+ };
+ 

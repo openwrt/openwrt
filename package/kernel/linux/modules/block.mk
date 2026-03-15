@@ -65,7 +65,7 @@ define KernelPackage/ata-ahci-platform
     $(LINUX_DIR)/drivers/ata/ahci_platform.ko \
     $(LINUX_DIR)/drivers/ata/libahci_platform.ko
   AUTOLOAD:=$(call AutoLoad,40,libahci libahci_platform ahci_platform,1)
-  $(call AddDepends/ata,@TARGET_ipq806x||TARGET_layerscape||TARGET_sunxi)
+  $(call AddDepends/ata,@TARGET_ipq806x||TARGET_layerscape||TARGET_rockchip||TARGET_sunxi)
 endef
 
 define KernelPackage/ata-ahci-platform/description
@@ -89,6 +89,18 @@ endef
 
 $(eval $(call KernelPackage,ata-artop))
 
+define KernelPackage/ata-ahci-dwc
+  TITLE:=Synopsys DWC AHCI SATA
+  KCONFIG:= \
+	CONFIG_AHCI_DWC \
+	CONFIG_SATA_HOST=y
+  FILES:=$(LINUX_DIR)/drivers/ata/ahci_dwc.ko
+  DEPENDS:=+kmod-ata-ahci-platform
+  AUTOLOAD:=$(call AutoLoad,41,ahci_dwc,1)
+  $(call AddDepends/ata,@TARGET_rockchip)
+endef
+
+$(eval $(call KernelPackage,ata-ahci-dwc))
 
 define KernelPackage/ata-nvidia-sata
   TITLE:=Nvidia Serial ATA support
@@ -404,21 +416,6 @@ define KernelPackage/md-raid456/description
 endef
 
 $(eval $(call KernelPackage,md-raid456))
-
-
-define KernelPackage/md-multipath
-$(call KernelPackage/md/Depends,)
-  TITLE:=MD Multipath Module
-  KCONFIG:=CONFIG_MD_MULTIPATH
-  FILES:=$(LINUX_DIR)/drivers/md/multipath.ko
-  AUTOLOAD:=$(call AutoLoad,29,multipath)
-endef
-
-define KernelPackage/md-multipath/description
- Multipath driver module (multipath.ko)
-endef
-
-$(eval $(call KernelPackage,md-multipath))
 
 
 define KernelPackage/libsas

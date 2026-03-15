@@ -1,11 +1,9 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-KERNEL_LOADADDR := 0x80208000
-
-define Target/Description
-	Build firmware images for Airoha EN7523 ARM based boards.
-endef
+loadaddr-$(CONFIG_TARGET_airoha_an7581) := 0x80200000
+loadaddr-$(CONFIG_TARGET_airoha_an7583) := 0x80200000
+loadaddr-$(CONFIG_TARGET_airoha_en7523) := 0x80200000
 
 # default all platform image(fit) build
 define Device/Default
@@ -14,24 +12,20 @@ define Device/Default
   KERNEL = kernel-bin | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   KERNEL_INITRAMFS = kernel-bin | lzma | \
-	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd
+	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL_LOADADDR = $(loadaddr-y)
   FILESYSTEMS := squashfs
-  DEVICE_DTS_DIR := $(DTS_DIR)
+  DEVICE_DTS = $$(SOC)-$(lastword $(subst _, ,$(1)))
+  DEVICE_DTS_DIR := ../dts
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := append-kernel | pad-to 128k | append-rootfs | \
 	pad-rootfs | append-metadata
 endef
 
+include $(SUBTARGET).mk
+
 define Image/Build
 	$(call Image/Build/$(1),$(1))
 endef
-
-define Device/airoha_en7523-evb
-  DEVICE_VENDOR := Airoha
-  DEVICE_MODEL := EN7523 Evaluation Board
-  DEVICE_DTS := en7523-evb
-  DEVICE_DTS_DIR := ../dts
-endef
-TARGET_DEVICES += airoha_en7523-evb
 
 $(eval $(call BuildImage))

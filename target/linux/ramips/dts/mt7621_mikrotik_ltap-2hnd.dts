@@ -11,6 +11,7 @@
 		led-failsafe = &led_usr;
 		led-running = &led_usr;
 		led-upgrade = &led_usr;
+		label-mac-device = &ethernet;
 	};
 
 	ath9k-leds {
@@ -101,7 +102,7 @@
 
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
-		gpio = <&gpio 10 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 10 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 		regulator-boot-on;
 	};
@@ -112,7 +113,7 @@
 
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
-		gpio = <&gpio 11 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 		regulator-boot-on;
 	};
@@ -128,6 +129,9 @@
 
 &ethernet {
 	pinctrl-0 = <&mdio_pins>, <&rgmii1_pins>;
+
+	nvmem-cells = <&macaddr_hard 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &switch0 {
@@ -146,6 +150,8 @@
 		compatible = "pci168c,0030";
 		reg = <0x0000 0 0 0 0>;
 		qca,no-eeprom;
+		nvmem-cells = <&macaddr_hard 1>;
+		nvmem-cell-names = "mac-address";
 		gpio-controller;
 		#gpio-cells = <2>;
 	};

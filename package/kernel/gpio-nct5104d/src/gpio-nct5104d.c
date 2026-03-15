@@ -13,7 +13,7 @@
 #include <linux/init.h>
 #include <linux/platform_device.h>
 #include <linux/io.h>
-#include <linux/gpio.h>
+#include <linux/gpio/driver.h>
 #include <linux/version.h>
 #include <linux/dmi.h>
 #include <linux/string.h>
@@ -124,8 +124,11 @@ static int nct5104d_gpio_direction_in(struct gpio_chip *chip, unsigned offset);
 static int nct5104d_gpio_get(struct gpio_chip *chip, unsigned offset);
 static int nct5104d_gpio_direction_out(struct gpio_chip *chip,
 				     unsigned offset, int value);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,17,0)
+static int nct5104d_gpio_set(struct gpio_chip *chip, unsigned offset, int value);
+#else
 static void nct5104d_gpio_set(struct gpio_chip *chip, unsigned offset, int value);
-
+#endif
 #define NCT5104D_GPIO_BANK(_base, _ngpio, _regbase)			\
 	{								\
 		.chip = {						\
@@ -153,8 +156,7 @@ static struct nct5104d_gpio_bank nct5104d_gpio_bank[] = {
 static int nct5104d_gpio_direction_in(struct gpio_chip *chip, unsigned offset)
 {
 	int err;
-	struct nct5104d_gpio_bank *bank =
-		container_of(chip, struct nct5104d_gpio_bank, chip);
+	struct nct5104d_gpio_bank *bank = gpiochip_get_data(chip);
 	struct nct5104d_sio *sio = bank->data->sio;
 	u8 dir;
 
@@ -175,8 +177,7 @@ static int nct5104d_gpio_direction_in(struct gpio_chip *chip, unsigned offset)
 static int nct5104d_gpio_get(struct gpio_chip *chip, unsigned offset)
 {
 	int err;
-	struct nct5104d_gpio_bank *bank =
-		container_of(chip, struct nct5104d_gpio_bank, chip);
+	struct nct5104d_gpio_bank *bank = gpiochip_get_data(chip);
 	struct nct5104d_sio *sio = bank->data->sio;
 	u8 data;
 
@@ -196,8 +197,7 @@ static int nct5104d_gpio_direction_out(struct gpio_chip *chip,
 				     unsigned offset, int value)
 {
 	int err;
-	struct nct5104d_gpio_bank *bank =
-		container_of(chip, struct nct5104d_gpio_bank, chip);
+	struct nct5104d_gpio_bank *bank = gpiochip_get_data(chip);
 	struct nct5104d_sio *sio = bank->data->sio;
 	u8 dir, data_out;
 
@@ -222,17 +222,24 @@ static int nct5104d_gpio_direction_out(struct gpio_chip *chip,
 	return 0;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,17,0)
+static int nct5104d_gpio_set(struct gpio_chip *chip, unsigned offset, int value)
+#else
 static void nct5104d_gpio_set(struct gpio_chip *chip, unsigned offset, int value)
+#endif
 {
 	int err;
-	struct nct5104d_gpio_bank *bank =
-		container_of(chip, struct nct5104d_gpio_bank, chip);
+	struct nct5104d_gpio_bank *bank = gpiochip_get_data(chip);
 	struct nct5104d_sio *sio = bank->data->sio;
 	u8 data_out;
 
 	err = superio_enter(sio->addr);
 	if (err)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,17,0)
+		return err;
+#else
 		return;
+#endif
 	superio_select(sio->addr, SIO_LD_GPIO);
 
 	data_out = superio_inb(sio->addr, gpio_data(bank->regbase));
@@ -243,6 +250,10 @@ static void nct5104d_gpio_set(struct gpio_chip *chip, unsigned offset, int value
 	superio_outb(sio->addr, gpio_data(bank->regbase), data_out);
 
 	superio_exit(sio->addr);
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,17,0)
+	return 0;
+#endif
 }
 
 /*
@@ -270,8 +281,6 @@ static int nct5104d_gpio_probe(struct platform_device *pdev)
 	}
 	data->sio = sio;
 
-	platform_set_drvdata(pdev, data);
-
 	/* For each GPIO bank, register a GPIO chip. */
 	for (i = 0; i < data->nr_bank; i++) {
 		struct nct5104d_gpio_bank *bank = &data->bank[i];
@@ -279,36 +288,10 @@ static int nct5104d_gpio_probe(struct platform_device *pdev)
 		bank->chip.parent = &pdev->dev;
 		bank->data = data;
 
-		err = gpiochip_add(&bank->chip);
-		if (err) {
-			dev_err(&pdev->dev,
-				"Failed to register gpiochip %d: %d\n",
-				i, err);
-			goto err_gpiochip;
-		}
-	}
-
-	return 0;
-
-err_gpiochip:
-	for (i = i - 1; i >= 0; i--) {
-		struct nct5104d_gpio_bank *bank = &data->bank[i];
-
-		gpiochip_remove (&bank->chip);
-	}
-
-	return err;
-}
-
-static int nct5104d_gpio_remove(struct platform_device *pdev)
-{
-	int i;
-	struct nct5104d_gpio_data *data = platform_get_drvdata(pdev);
-
-	for (i = 0; i < data->nr_bank; i++) {
-		struct nct5104d_gpio_bank *bank = &data->bank[i];
-
-		gpiochip_remove (&bank->chip);
+		err = devm_gpiochip_add_data(&pdev->dev, &bank->chip, bank);
+		if (err)
+			return dev_err_probe(&pdev->dev, err,
+				"Failed to register gpiochip %d", err);
 	}
 
 	return 0;
@@ -398,11 +381,9 @@ err:
 
 static struct platform_driver nct5104d_gpio_driver = {
 	.driver = {
-		.owner	= THIS_MODULE,
 		.name	= DRVNAME,
 	},
 	.probe		= nct5104d_gpio_probe,
-	.remove		= nct5104d_gpio_remove,
 };
 
 static int __init nct5104d_gpio_init(void)

@@ -24,25 +24,27 @@
 	};
 
 	gpio2: key-mux1 {
-		compatible = "gpio-cascade";
+		compatible = "gpio-line-mux";
 		mux-controls = <&mux>;
 
 		gpio-controller;
 		#gpio-cells = <2>;
 
 		// GPIOs used by this node, the mux pin
-		upstream-gpios = <&gpio 12 GPIO_ACTIVE_HIGH>; /* 1y */
+		muxed-gpios = <&gpio 12 GPIO_ACTIVE_HIGH>; /* 1y */
+		gpio-line-mux-states = <0>, <1>, <2>, <3>;
 	};
 
 	gpio3: key-mux2 {
-		compatible = "gpio-cascade";
+		compatible = "gpio-line-mux";
 		mux-controls = <&mux>;
 
 		gpio-controller;
 		#gpio-cells = <2>;
 
 		// GPIOs used by this node, the mux pin
-		upstream-gpios = <&gpio 14 GPIO_ACTIVE_HIGH>; /* 2y */
+		muxed-gpios = <&gpio 14 GPIO_ACTIVE_HIGH>; /* 2y */
+		gpio-line-mux-states = <1>, <2>, <3>;
 	};
 
 	keys {
@@ -80,21 +82,21 @@
 		usb {
 			label = "usb";
 			linux,code = <BTN_2>;
-			gpios = <&gpio3 1 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 			debounce-interval = <60>;
 		};
 
 		router_auto {
 			label = "router_auto";
 			linux,code = <BTN_6>;
-			gpios = <&gpio3 2 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio3 1 GPIO_ACTIVE_HIGH>;
 			debounce-interval = <60>;
 		};
 
 		movie_on {
 			label = "movie_on";
 			linux,code = <BTN_4>;
-			gpios = <&gpio3 3 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio3 2 GPIO_ACTIVE_HIGH>;
 			debounce-interval = <60>;
 		};
 	};
@@ -134,7 +136,7 @@
 				read-only;
 			};
 
-			art: partition@1fe0000 {
+			partition@1fe0000 {
 				label = "art";
 				reg = <0x1fe0000 0x020000>;
 				read-only;
@@ -143,6 +145,10 @@
 					compatible = "fixed-layout";
 					#address-cells = <1>;
 					#size-cells = <1>;
+
+					cal_art_11000: calibration@11000 {
+						reg = <0x11000 0xeb8>;
+					};
 
 					macaddr_art_1120c: macaddr@1120c {
 						reg = <0x1120c 0x6>;
@@ -188,8 +194,8 @@
 	switch: switch {
 		status = "disabled";
 
-		gpio-sda = <&gpio 19 GPIO_ACTIVE_HIGH>;
-		gpio-sck = <&gpio 20 GPIO_ACTIVE_HIGH>;
+		sda-gpios = <&gpio 19 GPIO_ACTIVE_HIGH>;
+		sck-gpios = <&gpio 20 GPIO_ACTIVE_HIGH>;
 
 		mdio-bus {
 			status = "okay";
@@ -248,7 +254,8 @@
 &wmac {
 	status = "okay";
 
-	mtd-cal-data = <&art 0x11000>;
+	nvmem-cells = <&cal_art_11000>;
+	nvmem-cell-names = "calibration";
 };
 
 &uart {

@@ -1,0 +1,310 @@
+// SPDX-License-Identifier: GPL-2.0-only OR MIT
+
+/dts-v1/;
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/pinctrl/mt65xx.h>
+
+#include "mt7986a.dtsi"
+
+/ {
+	compatible = "tplink,eap683-lr", "mediatek,mt7986a";
+	model = "TP-Link EAP683-LR";
+
+	aliases {
+		serial0 = &uart0;
+		led-boot = &led_sys;
+		led-running = &led_sys;
+		led-upgrade = &led_sys;
+		led-failsafe = &led_sys;
+	};
+
+	/*
+	 * OEM U-Boot overwrites bootargs set in u-boot-env when running the mtkboardboot command
+	 *
+	 * with tp_boot_idx unset or set != 1:
+	 * console=ttyS0,115200n1 ubi.mtd=rootfs root=/dev/ubiblock0_0 rootfstype=squashfs rootwait loglevel=8 earlycon=uart8250,mmio32,0x11002000
+	 *
+	 * with tp_boot_idx set to 1:
+	 * console=ttyS0,115200n1 ubi.mtd=rootfs_1 root=/dev/ubiblock0_0 rootfstype=squashfs rootwait loglevel=8 earlycon=uart8250,mmio32,0x11002000
+	 */
+
+	chosen {
+		bootargs-append = " ubi.mtd=ubi root=/dev/ubiblock0_1";
+		stdout-path = "serial0:115200n8";
+	};
+
+	memory@40000000 {
+		reg = <0 0x40000000 0 0x20000000>;
+		device_type = "memory";
+	};
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		cc2652_backdoor {
+			gpio-export,name = "cc2652_backdoor";
+			gpio-export,output = <1>;
+			gpios = <&pio 44 GPIO_ACTIVE_HIGH>;
+		};
+
+		cc2652_reset {
+			gpio-export,name = "cc2652_reset";
+			gpio-export,output = <1>;
+			gpios = <&pio 7 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		key-restart {
+			label = "Reset";
+			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_sys: led-0 {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&pio 11 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&crypto {
+	status = "okay";
+};
+
+&eth {
+	status = "okay";
+
+	mac@1 {
+		compatible = "mediatek,eth-mac";
+		reg = <1>;
+		phy-handle = <&phy5>;
+		phy-mode = "2500base-x";
+	};
+
+	mdio-bus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reset-gpios = <&pio 10 GPIO_ACTIVE_LOW>;
+		reset-delay-us = <600>;
+		reset-post-delay-us = <20000>;
+
+		phy5: ethernet-phy@5 {
+			compatible = "maxlinear,gpy211", "ethernet-phy-ieee802.3-c45";
+			reg = <5>;
+			phy-mode = "2500base-x";
+		};
+	};
+};
+
+&pcie {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie_pins>;
+	status = "okay";
+};
+
+&pcie_phy {
+	status = "okay";
+};
+
+&pio {
+	pcie_pins: pcie-pins {
+		mux {
+			function = "pcie";
+			groups = "pcie_clk", "pcie_wake", "pcie_pereset";
+		};
+	};
+
+	spi_flash_pins: spi-flash-pins-33-to-38 {
+		mux {
+			function = "spi";
+			groups = "spi0", "spi0_wp_hold";
+		};
+		conf-pu {
+			pins = "SPI2_CS", "SPI2_HOLD", "SPI2_WP";
+			drive-strength = <MTK_DRIVE_8mA>;
+			mediatek,pull-up-adv = <MTK_PUPD_SET_R1R0_11>;
+		};
+		conf-pd {
+			pins = "SPI2_CLK", "SPI2_MOSI", "SPI2_MISO";
+			drive-strength = <MTK_DRIVE_8mA>;
+			mediatek,pull-down-adv = <MTK_PUPD_SET_R1R0_11>;
+		};
+	};
+
+	uart2_pins: uart2-pins {
+		mux {
+			function = "uart";
+			groups = "uart2_0_rx_tx", "uart2_0_cts_rts";
+		};
+	};
+
+	wf_2g_5g_pins: wf_2g_5g-pins {
+		mux {
+			function = "wifi";
+			groups = "wf_2g", "wf_5g";
+		};
+		conf {
+			pins = "WF0_HB1", "WF0_HB2", "WF0_HB3", "WF0_HB4",
+			       "WF0_HB0", "WF0_HB0_B", "WF0_HB5", "WF0_HB6",
+			       "WF0_HB7", "WF0_HB8", "WF0_HB9", "WF0_HB10",
+			       "WF0_TOP_CLK", "WF0_TOP_DATA", "WF1_HB1",
+			       "WF1_HB2", "WF1_HB3", "WF1_HB4", "WF1_HB0",
+			       "WF1_HB5", "WF1_HB6", "WF1_HB7", "WF1_HB8",
+			       "WF1_TOP_CLK", "WF1_TOP_DATA";
+			drive-strength = <MTK_DRIVE_4mA>;
+		};
+	};
+
+	wf_dbdc_pins: wf-dbdc-pins {
+		mux {
+			function = "wifi";
+			groups = "wf_dbdc";
+		};
+		conf {
+			pins = "WF0_HB1", "WF0_HB2", "WF0_HB3", "WF0_HB4",
+				"WF0_HB0", "WF0_HB0_B", "WF0_HB5", "WF0_HB6",
+				"WF0_HB7", "WF0_HB8", "WF0_HB9", "WF0_HB10",
+				"WF0_TOP_CLK", "WF0_TOP_DATA", "WF1_HB1",
+				"WF1_HB2", "WF1_HB3", "WF1_HB4", "WF1_HB0",
+				"WF1_HB5", "WF1_HB6", "WF1_HB7", "WF1_HB8",
+				"WF1_TOP_CLK", "WF1_TOP_DATA";
+			drive-strength = <MTK_DRIVE_4mA>;
+		};
+	};
+};
+
+&spi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi_flash_pins>;
+	status = "okay";
+
+	flash@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		spi-max-frequency = <52000000>;
+		spi-rx-bus-width = <4>;
+		spi-tx-bus-width = <4>;
+		mediatek,nmbm;
+		mediatek,bmt-max-ratio = <1>;
+		mediatek,bmt-max-reserved-blocks = <64>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				reg = <0x0 0x100000>;
+				label = "BL2";
+				read-only;
+			};
+
+			partition@100000 {
+				reg = <0x100000 0x100000>;
+				label = "boot-config";
+				read-only;
+			};
+
+			partition@200000 {
+				reg = <0x200000 0x100000>;
+				label = "boot-config1";
+				read-only;
+			};
+
+			partition@300000 {
+				compatible = "u-boot,env";
+				reg = <0x300000 0x100000>;
+				label = "u-boot-env";
+			};
+
+			partition@400000 {
+				reg = <0x400000 0x200000>;
+				label = "FIP0";
+				read-only;
+			};
+
+			partition@600000 {
+				reg = <0x600000 0x200000>;
+				label = "FIP1";
+				read-only;
+			};
+
+			partition@800000 {
+				reg = <0x800000 0x100000>;
+				label = "oops";
+			};
+
+			partition@900000 {
+				reg = <0x900000 0x2680000>;
+				label = "ubi";
+			};
+
+			partition@2f80000 {
+				reg = <0x2f80000 0x2680000>;
+				label = "ubi1";
+				read-only;
+			};
+
+			partition@5600000 {
+				reg = <0x5600000 0x800000>;
+				label = "factory";
+				read-only;
+			};
+
+			partition@5e00000 {
+				reg = <0x5e00000 0xc00000>;
+				label = "runtime_data";
+				read-only;
+			};
+
+			partition@6a00000 {
+				reg = <0x6a00000 0x800000>;
+				label = "backup_data";
+				read-only;
+			};
+
+			partition@7200000 {
+				reg = <0x7200000 0x600000>;
+				label = "runtime_backup";
+				read-only;
+			};
+		};
+	};
+};
+
+&trng {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&uart2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart2_pins>;
+	status = "okay";
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&wifi {
+	pinctrl-names = "default", "dbdc";
+	pinctrl-0 = <&wf_2g_5g_pins>;
+	pinctrl-1 = <&wf_dbdc_pins>;
+	status = "okay";
+};

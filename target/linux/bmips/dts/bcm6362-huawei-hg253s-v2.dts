@@ -41,12 +41,12 @@
 	leds {
 		compatible = "gpio-leds";
 
-		led_phone_green: led@28 {
+		led_phone_green: led-28 {
 			label = "green:phone";
 			gpios = <&gpio 28 GPIO_ACTIVE_LOW>;
 		};
 
-		led@30 {
+		led-30 {
 			function = LED_FUNCTION_USB;
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio 30 GPIO_ACTIVE_LOW>;
@@ -121,7 +121,7 @@
 			port@8 {
 				reg = <8>;
 
-				phy-mode = "rgmii";
+				phy-mode = "rgmii-id";
 				ethernet = <&switch0port4>;
 
 				fixed-link {
@@ -210,7 +210,7 @@
 			reg = <4>;
 			label = "extsw";
 
-			phy-mode = "rgmii";
+			phy-mode = "rgmii-id";
 
 			fixed-link {
 				speed = <1000>;
@@ -223,7 +223,7 @@
 			label = "wan";
 
 			phy-handle = <&phy24>;
-			phy-mode = "rgmii-txid";
+			phy-mode = "rgmii-id";
 		};
 	};
 };

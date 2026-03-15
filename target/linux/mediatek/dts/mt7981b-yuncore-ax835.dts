@@ -2,14 +2,15 @@
 
 /dts-v1/;
 
-#include "mt7981.dtsi"
+#include <dt-bindings/pinctrl/mt65xx.h>
+
+#include "mt7981b.dtsi"
 
 / {
 	compatible = "yuncore,ax835", "mediatek,mt7981";
 	model = "YunCore AX835";
 
 	aliases {
-		ethernet0 = &gmac0;
 		led-boot = &led_system;
 		led-failsafe = &led_system;
 		led-running = &led_system;
@@ -36,8 +37,9 @@
 		regulator-name = "led_vbus";
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
+		enable-active-high;
 		regulator-always-on;
-		gpio = <&pio 5 GPIO_ACTIVE_HIGH>;
+		gpios = <&pio 5 GPIO_ACTIVE_HIGH>;
 	};
 
 	leds {
@@ -119,14 +121,14 @@
 
 		conf-pu {
 			pins = "SPI2_CS", "SPI2_HOLD", "SPI2_WP";
-			drive-strength = <8>;
-			bias-pull-up = <103>;
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-pull-up = <MTK_PUPD_SET_R1R0_11>;
 		};
 
 		conf-pd {
 			pins = "SPI2_CLK", "SPI2_MOSI", "SPI2_MISO";
-			drive-strength = <8>;
-			bias-pull-down = <103>;
+			drive-strength = <MTK_DRIVE_8mA>;
+			bias-pull-down = <MTK_PUPD_SET_R1R0_11>;
 		};
 	};
 };
@@ -143,9 +145,6 @@
 	status = "okay";
 
 	flash@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
-
 		compatible = "jedec,spi-nor";
 		reg = <0>;
 
@@ -158,7 +157,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			partition@00000 {
+			partition@0 {
 				label = "BL2";
 				reg = <0x00000 0x40000>;
 				read-only;

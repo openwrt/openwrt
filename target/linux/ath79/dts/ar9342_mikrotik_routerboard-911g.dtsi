@@ -22,7 +22,7 @@
 	};
 
 	gpio_latch: gpio_latch {
-		compatible = "gpio-latch";
+		compatible = "gpio-latch-mikrotik";
 		gpio-controller;
 		#gpio-cells = <2>;
 		gpios = <&gpio 0 GPIO_ACTIVE_HIGH>,
@@ -144,10 +144,6 @@
 			gpios = <&ssr 7 GPIO_ACTIVE_HIGH>;
 		};
 	};
-};
-
-&ref {
-	clock-frequency = <40000000>;
 };
 
 &spi {

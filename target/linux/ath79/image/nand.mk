@@ -281,6 +281,12 @@ TARGET_DEVICES += glinet_gl-x1200-nor
 
 define Device/linksys_ea4500-v3
   SOC := qca9558
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Partition table has been changed. Please \
+	install kmod-mtd-rw and erase mtd8 (syscfg) before upgrade \
+	to keep configures, or forcibly flash factory image to mtd5 \
+	(firmware) partition with mtd tool to discard configures but \
+	claim additional space immediately.
   DEVICE_VENDOR := Linksys
   DEVICE_MODEL := EA4500
   DEVICE_VARIANT := v3
@@ -288,7 +294,7 @@ define Device/linksys_ea4500-v3
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   KERNEL_SIZE := 4096k
-  IMAGE_SIZE := 81920k
+  IMAGE_SIZE := 128256k
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   LINKSYS_HWNAME := EA4500V3
   IMAGES += factory.img
@@ -307,10 +313,9 @@ define Device/meraki_mr18
   BLOCKSIZE := 128k
   PAGESIZE := 2048
   LOADER_TYPE := bin
+  LZMA_TEXT_START := 0x82800000
   KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | meraki-header MR18
-# Initramfs-build fails due to size issues
-# KERNEL_INITRAMFS := $$(KERNEL)
-  KERNEL_INITRAMFS :=
+  KERNEL_INITRAMFS := $$(KERNEL)
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   SUPPORTED_DEVICES += mr18
 endef
@@ -436,6 +441,10 @@ define Device/zte_mf28x_common
   DEVICE_PACKAGES := kmod-usb2 kmod-ath10k-ct
   BLOCKSIZE := 128k
   PAGESIZE := 2048
+  LOADER_TYPE := bin
+  LZMA_TEXT_START := 0x82800000
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | uImage none
+  KERNEL_INITRAMFS := $$(KERNEL)
   KERNEL_SIZE := 4096k
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
@@ -449,6 +458,7 @@ define Device/zte_mf281
   IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | append-ubi | \
 	check-size
   DEVICE_PACKAGES += ath10k-firmware-qca9888-ct kmod-usb-net-rndis \
+	-ath10k-board-qca9888 ipq-wifi-zte_mf286c \
 	kmod-usb-acm comgt-ncm
 endef
 TARGET_DEVICES += zte_mf281
@@ -465,6 +475,7 @@ define Device/zte_mf286
   $(Device/zte_mf28x_common)
   DEVICE_MODEL := MF286
   DEVICE_PACKAGES += ath10k-firmware-qca988x-ct ath10k-firmware-qca9888-ct \
+	-ath10k-board-qca9888 ipq-wifi-zte_mf286ar \
 	kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
 endef
 TARGET_DEVICES += zte_mf286
@@ -473,9 +484,19 @@ define Device/zte_mf286a
   $(Device/zte_mf28x_common)
   DEVICE_MODEL := MF286A
   DEVICE_PACKAGES += ath10k-firmware-qca9888-ct kmod-usb-net-qmi-wwan \
+	-ath10k-board-qca9888 ipq-wifi-zte_mf286ar \
 	kmod-usb-serial-option uqmi
 endef
 TARGET_DEVICES += zte_mf286a
+
+define Device/zte_mf286c
+  $(Device/zte_mf28x_common)
+  DEVICE_MODEL := MF286C
+  DEVICE_PACKAGES += ath10k-firmware-qca9888-ct kmod-usb-net-qmi-wwan \
+	-ath10k-board-qca9888 ipq-wifi-zte_mf286c \
+	kmod-usb-serial-option uqmi
+endef
+TARGET_DEVICES += zte_mf286c
 
 define Device/zte_mf286r
   $(Device/zte_mf28x_common)
@@ -487,7 +508,7 @@ TARGET_DEVICES += zte_mf286r
 
 define Device/zyxel_nbg6716
   SOC := qca9558
-  DEVICE_VENDOR := ZyXEL
+  DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := NBG6716
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ledtrig-usbport kmod-ath10k-ct \
 	ath10k-firmware-qca988x-ct

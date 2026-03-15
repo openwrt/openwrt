@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=f2fs-tools
 PKG_VERSION:=1.16.0
-PKG_RELEASE:=2
+PKG_RELEASE:=4
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://git.kernel.org/pub/scm/linux/kernel/git/jaegeuk/f2fs-tools.git/snapshot/
@@ -31,7 +31,7 @@ define Package/f2fs-tools/Default
   CATEGORY:=Utilities
   SUBMENU:=Filesystem
   DEPENDS:=+libf2fs
-  URL:=http://git.kernel.org/cgit/linux/kernel/git/jaegeuk/f2fs-tools.git
+  URL:=https://git.kernel.org/pub/scm/linux/kernel/git/jaegeuk/f2fs-tools.git
   VARIANT:=default
 endef
 
@@ -40,7 +40,7 @@ define Package/f2fs-tools/SELinux
   CATEGORY:=Utilities
   SUBMENU:=Filesystem
   DEPENDS:=+libf2fs-selinux +libselinux
-  URL:=http://git.kernel.org/cgit/linux/kernel/git/jaegeuk/f2fs-tools.git
+  URL:=https://git.kernel.org/pub/scm/linux/kernel/git/jaegeuk/f2fs-tools.git
   VARIANT:=selinux
 endef
 
@@ -48,6 +48,7 @@ define Package/mkf2fs
   $(Package/f2fs-tools/Default)
   TITLE:=Utility for creating a Flash-Friendly File System (F2FS)
   CONFLICTS:=mkf2fs-selinux
+  DEFAULT_VARIANT:=1
 endef
 
 define Package/mkf2fs-selinux
@@ -87,6 +88,7 @@ define Package/libf2fs
   ABI_VERSION:=6
   CONFLICTS:=libf2fs-selinux
   VARIANT:=default
+  DEFAULT_VARIANT:=1
 endef
 
 define Package/libf2fs-selinux
@@ -137,6 +139,7 @@ define Package/f2fsck/install
 	$(LN) ../sbin/fsck.f2fs $(1)/usr/sbin/dump.f2fs
 	$(LN) ../sbin/fsck.f2fs $(1)/usr/sbin/sload.f2fs
 	$(LN) ../sbin/fsck.f2fs $(1)/usr/sbin/resize.f2fs
+	$(LN) ../sbin/fsck.f2fs $(1)/usr/sbin/f2fslabel
 endef
 
 Package/f2fsck-selinux/install = $(Package/f2fsck/install)

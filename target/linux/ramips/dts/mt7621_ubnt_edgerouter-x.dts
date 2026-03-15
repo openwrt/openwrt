@@ -7,17 +7,15 @@
 
 &gmac1 {
 	status = "okay";
-	label = "eth0";
+	openwrt,netdev-name = "eth0";
 	phy-handle = <&ethphy0>;
 
 	nvmem-cells = <&macaddr_factory_22 0>;
 	nvmem-cell-names = "mac-address";
 };
 
-&mdio {
-	ethphy0: ethernet-phy@0 {
-		reg = <0>;
-	};
+&ethphy0 {
+	/delete-property/ interrupts;
 };
 
 &switch0 {

@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gdb
-PKG_VERSION:=14.1
+PKG_VERSION:=16.3
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/gdb
-PKG_HASH:=d66df51276143451fcbff464cc8723d68f1e9df45a6a2d5635a54e71643edb80
+PKG_HASH:=bcfcd095528a987917acf9fff3f1672181694926cc18d609c99d0042c00224c5
 
 PKG_BUILD_PARALLEL:=1
 PKG_INSTALL:=1
@@ -37,7 +37,7 @@ $(call Package/gdb/Default)
 endef
 
 define Package/gdb/description
-GDB, the GNU Project debugger, allows you to see what is going on `inside'
+GDB, the GNU Project debugger, allows you to see what is going on 'inside'
 another program while it executes -- or what another program was doing at the
 moment it crashed.
 endef
@@ -76,10 +76,12 @@ TARGET_LDFLAGS+= \
 	-static-libstdc++ \
 	-Wl,--gc-sections
 
+MAKE_VARS+= \
+	CPPFLAGS="$(TARGET_CPPFLAGS)"
+
 define Build/Install
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
-		CPPFLAGS="$(TARGET_CPPFLAGS)" \
 		install-gdb install-gdbserver
 endef
 

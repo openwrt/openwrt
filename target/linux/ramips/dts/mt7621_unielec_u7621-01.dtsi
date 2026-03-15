@@ -11,7 +11,6 @@
 
 	gpio-export {
 		compatible = "gpio-export";
-		#size-cells = <0>;
 
 		modem_reset {
 			gpio-export,name = "modem_reset";
@@ -64,10 +63,8 @@
 	phy-handle = <&ethphy0>;
 };
 
-&mdio {
-	ethphy0: ethernet-phy@0 {
-		reg = <0>;
-	};
+&ethphy0 {
+	/delete-property/ interrupts;
 };
 
 &switch0 {

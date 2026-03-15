@@ -18,6 +18,19 @@ define Device/ubnt_aircube-isp
 endef
 TARGET_DEVICES += ubnt_aircube-isp
 
+define Device/ubnt_amplifi-router-hd
+  IMAGE_SIZE := 11264k
+  UBNT_BOARD := AFi-R-HD
+  UBNT_TYPE := AFi-R
+  UBNT_VERSION := 3.6.3
+  SOC := qca9563
+  DEVICE_VENDOR := Ubiquiti
+  DEVICE_MODEL := AmpliFi Router HD
+  UBNT_CHIP := qca956x
+  DEVICE_PACKAGES += kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct kmod-usb2
+endef
+TARGET_DEVICES += ubnt_amplifi-router-hd
+
 define Device/ubnt_bullet-ac
   $(Device/ubnt-2wa)
   DEVICE_MODEL := Bullet AC
@@ -45,8 +58,9 @@ TARGET_DEVICES += ubnt_edgeswitch-5xp
 define Device/ubnt_edgeswitch-8xp
   $(Device/ubnt-sw)
   DEVICE_MODEL := EdgeSwitch 8XP
-  DEVICE_PACKAGES += kmod-switch-bcm53xx-mdio
-  DEFAULT := n
+  DEVICE_PACKAGES += kmod-dsa-b53-mdio
+  DEVICE_COMPAT_VERSION := 1.1
+  DEVICE_COMPAT_MESSAGE := Config cannot be migrated from swconfig to DSA
 endef
 TARGET_DEVICES += ubnt_edgeswitch-8xp
 

@@ -1,3 +1,11 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 16 Mar 2023 11:35:50 +0100
+Subject: [PATCH] hostapd: add experimental radius server
+
+This can be used to run a standalone EAP server that can be used from
+other APs. It uses json as user database format and can automatically
+handle reload.
+
 --- a/hostapd/Makefile
 +++ b/hostapd/Makefile
 @@ -63,6 +63,10 @@ endif
@@ -13,7 +21,7 @@
  OBJS += ../src/ap/drv_callbacks.o
 --- a/hostapd/main.c
 +++ b/hostapd/main.c
-@@ -40,6 +40,7 @@ struct hapd_global {
+@@ -41,6 +41,7 @@ struct hapd_global {
  
  static struct hapd_global global;
  
@@ -21,7 +29,7 @@
  
  #ifndef CONFIG_NO_HOSTAPD_LOGGER
  static void hostapd_logger_cb(void *ctx, const u8 *addr, unsigned int module,
-@@ -771,6 +772,11 @@ int main(int argc, char *argv[])
+@@ -848,6 +849,11 @@ int main(int argc, char *argv[])
  	if (os_program_init())
  		return -1;
  
@@ -48,7 +56,7 @@
  /**
   * struct radius_session - Internal RADIUS server data for a session
   */
-@@ -90,7 +96,7 @@ struct radius_session {
+@@ -89,7 +95,7 @@ struct radius_session {
  	unsigned int macacl:1;
  	unsigned int t_c_filtering:1;
  
@@ -57,15 +65,15 @@
  
  	u32 t_c_timestamp; /* Last read T&C timestamp from user DB */
  };
-@@ -394,6 +400,7 @@ static void radius_server_session_free(s
+@@ -373,6 +379,7 @@ static void radius_server_session_free(s
  	radius_msg_free(sess->last_reply);
  	os_free(sess->username);
  	os_free(sess->nas_ip);
 +	os_free(sess->accept_attr);
  	os_free(sess);
- 	data->num_sess--;
- }
-@@ -554,6 +561,36 @@ radius_server_erp_find_key(struct radius
+ 	if (data)
+ 		data->num_sess--;
+@@ -534,6 +541,36 @@ radius_server_erp_find_key(struct radius
  }
  #endif /* CONFIG_ERP */
  
@@ -102,7 +110,7 @@
  
  static struct radius_session *
  radius_server_get_new_session(struct radius_server_data *data,
-@@ -607,7 +644,7 @@ radius_server_get_new_session(struct rad
+@@ -587,7 +624,7 @@ radius_server_get_new_session(struct rad
  		eap_user_free(tmp);
  		return NULL;
  	}
@@ -111,7 +119,7 @@
  	sess->macacl = tmp->macacl;
  	eap_user_free(tmp);
  
-@@ -1118,11 +1155,10 @@ radius_server_encapsulate_eap(struct rad
+@@ -924,11 +961,10 @@ radius_server_encapsulate_eap(struct rad
  	}
  
  	if (code == RADIUS_CODE_ACCESS_ACCEPT) {
@@ -127,7 +135,7 @@
  				wpa_printf(MSG_ERROR, "Could not add RADIUS attribute");
  				radius_msg_free(msg);
  				return NULL;
-@@ -1211,11 +1247,10 @@ radius_server_macacl(struct radius_serve
+@@ -1024,11 +1060,10 @@ radius_server_macacl(struct radius_serve
  	}
  
  	if (code == RADIUS_CODE_ACCESS_ACCEPT) {
@@ -143,12 +151,12 @@
  				wpa_printf(MSG_ERROR, "Could not add RADIUS attribute");
  				radius_msg_free(msg);
  				return NULL;
-@@ -2512,7 +2547,7 @@ static int radius_server_get_eap_user(vo
+@@ -2336,7 +2371,7 @@ static int radius_server_get_eap_user(vo
  	ret = data->get_eap_user(data->conf_ctx, identity, identity_len,
  				 phase2, user);
  	if (ret == 0 && user) {
 -		sess->accept_attr = user->accept_attr;
 +		sess->accept_attr = radius_server_copy_attr(user->accept_attr);
- 		sess->remediation = user->remediation;
  		sess->macacl = user->macacl;
  		sess->t_c_timestamp = user->t_c_timestamp;
+ 	}

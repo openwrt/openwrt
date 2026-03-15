@@ -73,6 +73,7 @@ ath79_setup_interfaces()
 		;;
 	zte,mf286|\
 	zte,mf286a|\
+	zte,mf286c|\
 	zte,mf286r)
 		ucidef_add_switch "switch0" \
 			"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "5:lan:1"
@@ -102,9 +103,6 @@ ath79_setup_macs()
 	glinet,gl-x1200-nor-nand)
 		wan_mac=$(mtd_get_mac_binary art 0x0)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
-		;;
-	meraki,mr18)
-		lan_mac=$(mtd_get_mac_binary_ubi board-config 102)
 		;;
 	netgear,wndr3700-v4|\
 	netgear,wndr4300|\

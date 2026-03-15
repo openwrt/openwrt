@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=ncurses
 PKG_CPE_ID:=cpe:/a:gnu:ncurses
 PKG_VERSION:=6.4
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@GNU/$(PKG_NAME)
@@ -31,14 +31,14 @@ define Package/terminfo
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Terminal Info Database (ncurses)
-  URL:=http://www.gnu.org/software/ncurses/
+  URL:=https://www.gnu.org/software/ncurses/
 endef
 
 define Package/libncurses
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Terminal handling library (Unicode)
-  URL:=http://www.gnu.org/software/ncurses/
+  URL:=https://www.gnu.org/software/ncurses/
   PROVIDES:=libncursesw
   DEPENDS:= +terminfo
   ABI_VERSION:=6
@@ -52,7 +52,7 @@ define Package/libncurses-dev
   TITLE:=Development files for the ncurses library
 endef
 
-TARGET_CFLAGS += $(FPIC)
+TARGET_CFLAGS += $(FPIC) -std=gnu17
 
 CONFIGURE_ARGS += \
 	--enable-echo \
@@ -82,6 +82,7 @@ CONFIGURE_VARS += \
 HOST_CFLAGS += $(HOST_FPIC)
 
 HOST_CONFIGURE_ARGS += \
+	--enable-pc-files \
 	--without-cxx \
 	--without-cxx-binding \
 	--without-ada \
@@ -125,6 +126,7 @@ ifneq ($(HOST_OS),FreeBSD)
 		a/ansi \
 		a/alacritty \
 		d/dumb \
+		f/foot \
 		l/linux \
 		r/rxvt \
 		r/rxvt-unicode \
@@ -179,6 +181,8 @@ define Build/InstallDev
 	$(SED) 's,^\(prefix\|exec_prefix\)=.*,\1=$(STAGING_DIR)/usr,g' -e 's/$$$$INCS //g' \
 		$(2)/bin/ncursesw6-config
 	ln -sf $(STAGING_DIR)/host/bin/ncursesw6-config $(1)/usr/bin/ncursesw6-config
+	$(SED) 's,$(TOOLCHAIN_DIR),$(STAGING_DIR),g' \
+		$(1)/usr/lib/pkgconfig/ncursesw.pc
 endef
 
 define Host/Compile

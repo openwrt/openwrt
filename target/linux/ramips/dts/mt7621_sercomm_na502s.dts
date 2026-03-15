@@ -297,7 +297,7 @@
 	status = "okay";
 };
 
-&pcie0 {
+&pcie1 {
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
@@ -307,10 +307,10 @@
 	};
 };
 
-&pcie1 {
+&pcie2 {
 	wifi@0,0 {
 		compatible = "mediatek,mt76";
-		reg = <0x0 0 0 0 0>;
+		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&eeprom_factory_0>, <&macaddr_factory_e000 2>;
 		nvmem-cell-names = "eeprom", "mac-address";
 		ieee80211-freq-limit = <2400000 2500000>;

@@ -1,0 +1,57 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * Copyright (C) 2023 SmartRG Inc.
+ * Author: Chad Monroe <chad.monroe@smartrg.com>
+ */
+
+#include "mt7988a-smartrg-mt-stuart.dtsi"
+
+/ {
+	model = "SmartRG SDG-8734";
+	compatible = "smartrg,sdg-8734", "mediatek,mt7988a";
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		sfp_green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "sfp";
+			gpios = <&pio 69 GPIO_ACTIVE_HIGH>;
+		};
+
+		sfp_red {
+			color = <LED_COLOR_ID_RED>;
+			function = "sfp";
+			gpios = <&pio 70 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	i2c_sfp1: i2c-gpio-0 {
+		pinctrl-names = "default";
+		pinctrl-0 = <&sfp_i2c_pins>;
+
+		compatible = "i2c-gpio";
+		sda-gpios = <&pio 27 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&pio 22 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <2>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	sfp1: sfp1 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c_sfp1>;
+		los-gpios = <&pio 32 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpios = <&pio 35 GPIO_ACTIVE_LOW>;
+		rate-select0-gpios = <&pio 34 GPIO_ACTIVE_HIGH>;
+		rate-select1-gpios = <&pio 33 GPIO_ACTIVE_HIGH>;
+		tx-disable-gpios = <&pio 36 GPIO_ACTIVE_HIGH>;
+		tx-fault-gpios = <&pio 37 GPIO_ACTIVE_HIGH>;
+		maximum-power-milliwatt = <4000>;
+	};
+};
+
+&gmac1 {
+	sfp = <&sfp1>;
+	managed = "in-band-status";
+};

@@ -17,6 +17,17 @@ platform_check_image() {
 	ubnt,routerstation-pro)
 		platform_check_image_redboot_fis "$1"
 		;;
+	nec,wg1400hp|\
+	nec,wg1800hp|\
+	nec,wg1800hp2)
+		local uboot_mtd=$(find_mtd_part "bootloader")
+
+		# check "U-Boot <year>.<month>" string in the "bootloader" partition
+		if ! grep -q "U-Boot [0-9]\{4\}\.[0-9]\{2\}" $uboot_mtd; then
+			v "The bootloader doesn't seem to be replaced to U-Boot!"
+			return 1
+		fi
+		;;
 	*)
 		return 0
 		;;
@@ -40,6 +51,7 @@ platform_do_upgrade() {
 	engenius,eap300-v2|\
 	engenius,eap600|\
 	engenius,ecb600|\
+	engenius,ens1750|\
 	engenius,ens202ext-v1|\
 	engenius,enstationac-v1|\
 	engenius,ews660ap|\
@@ -56,7 +68,8 @@ platform_do_upgrade() {
 		platform_do_upgrade_failsafe_datachk "$1"
 		;;
 	fortinet,fap-220-b|\
-	fortinet,fap-221-b)
+	fortinet,fap-221-b|\
+	fortinet,fap-221-c)
 		SKIP_HASH="1"
 		ENV_SCRIPT="/dev/null"
 		IMAGE_LIST="tar tzf $1"
@@ -66,6 +79,15 @@ platform_do_upgrade() {
 		KERNEL_FILE="uImage-lzma.bin"
 		ROOTFS_FILE="root.squashfs"
 		platform_do_upgrade_failsafe_datachk "$1"
+		;;
+	huawei,ap5030dn|\
+	huawei,ap6010dn)
+		# Store beginning address of the "firmware" partition
+		# as KernelA address and KernelB address, each to BootupA & BootupB
+		# This is the address from which the bootloader will try to load the kernel.
+		echo -n -e "\x9e\x10\x00\x00\x9e\x10\x00\x00" | dd of=$(find_mtd_part BootupA) bs=1 seek=$((0x254)) conv=notrunc
+		echo -n -e "\x9e\x10\x00\x00\x9e\x10\x00\x00" | dd of=$(find_mtd_part BootupB) bs=1 seek=$((0x254)) conv=notrunc
+		default_do_upgrade "$1"
 		;;
 	jjplus,ja76pf2)
 		platform_do_upgrade_redboot_fis "$1" linux

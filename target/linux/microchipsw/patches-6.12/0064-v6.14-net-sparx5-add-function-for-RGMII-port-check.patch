@@ -1,0 +1,82 @@
+From b479572cf00c11a1b57c2fc61e2d2e0f4fb84c4e Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Fri, 20 Dec 2024 14:48:41 +0100
+Subject: [PATCH 69/82] net: sparx5: add function for RGMII port check
+
+The lan969x device contains two RGMII port interfaces, sitting at port
+28 and 29. Add function: is_port_rgmii() to the match data ops, that
+checks if a given port is an RGMII port or not. For Sparx5, this
+function always returns false.
+
+Reviewed-by: Steen Hegelund <Steen.Hegelund@microchip.com>
+Reviewed-by: Horatiu Vultur <horatiu.vultur@microchip.com>
+Tested-by: Robert Marko <robert.marko@sartura.hr>
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Link: https://patch.msgid.link/20241220-sparx5-lan969x-switch-driver-4-v5-2-fa8ba5dff732@microchip.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/ethernet/microchip/sparx5/lan969x/lan969x.c | 1 +
+ drivers/net/ethernet/microchip/sparx5/lan969x/lan969x.h | 5 +++++
+ drivers/net/ethernet/microchip/sparx5/sparx5_main.c     | 1 +
+ drivers/net/ethernet/microchip/sparx5/sparx5_main.h     | 1 +
+ drivers/net/ethernet/microchip/sparx5/sparx5_port.h     | 5 +++++
+ 5 files changed, 13 insertions(+)
+
+--- a/drivers/net/ethernet/microchip/sparx5/lan969x/lan969x.c
++++ b/drivers/net/ethernet/microchip/sparx5/lan969x/lan969x.c
+@@ -329,6 +329,7 @@ static const struct sparx5_ops lan969x_o
+ 	.is_port_5g              = &lan969x_port_is_5g,
+ 	.is_port_10g             = &lan969x_port_is_10g,
+ 	.is_port_25g             = &lan969x_port_is_25g,
++	.is_port_rgmii           = &lan969x_port_is_rgmii,
+ 	.get_port_dev_index      = &lan969x_port_dev_mapping,
+ 	.get_port_dev_bit        = &lan969x_get_dev_mode_bit,
+ 	.get_hsch_max_group_rate = &lan969x_get_hsch_max_group_rate,
+--- a/drivers/net/ethernet/microchip/sparx5/lan969x/lan969x.h
++++ b/drivers/net/ethernet/microchip/sparx5/lan969x/lan969x.h
+@@ -59,6 +59,11 @@ static inline bool lan969x_port_is_25g(i
+ 	return false;
+ }
+ 
++static inline bool lan969x_port_is_rgmii(int portno)
++{
++	return portno == 28 || portno == 29;
++}
++
+ /* lan969x_calendar.c */
+ int lan969x_dsm_calendar_calc(struct sparx5 *sparx5, u32 taxi,
+ 			      struct sparx5_calendar_data *data);
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
+@@ -1072,6 +1072,7 @@ static const struct sparx5_ops sparx5_op
+ 	.is_port_5g              = &sparx5_port_is_5g,
+ 	.is_port_10g             = &sparx5_port_is_10g,
+ 	.is_port_25g             = &sparx5_port_is_25g,
++	.is_port_rgmii           = &sparx5_port_is_rgmii,
+ 	.get_port_dev_index      = &sparx5_port_dev_mapping,
+ 	.get_port_dev_bit        = &sparx5_port_dev_mapping,
+ 	.get_hsch_max_group_rate = &sparx5_get_hsch_max_group_rate,
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
+@@ -313,6 +313,7 @@ struct sparx5_ops {
+ 	bool (*is_port_5g)(int portno);
+ 	bool (*is_port_10g)(int portno);
+ 	bool (*is_port_25g)(int portno);
++	bool (*is_port_rgmii)(int portno);
+ 	u32  (*get_port_dev_index)(struct sparx5 *sparx5, int port);
+ 	u32  (*get_port_dev_bit)(struct sparx5 *sparx5, int port);
+ 	u32  (*get_hsch_max_group_rate)(int grp);
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_port.h
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_port.h
+@@ -40,6 +40,11 @@ static inline bool sparx5_port_is_25g(in
+ 	return portno >= 56 && portno <= 63;
+ }
+ 
++static inline bool sparx5_port_is_rgmii(int portno)
++{
++	return false;
++}
++
+ static inline u32 sparx5_to_high_dev(struct sparx5 *sparx5, int port)
+ {
+ 	const struct sparx5_ops *ops = sparx5->data->ops;

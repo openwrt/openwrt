@@ -9,8 +9,10 @@ platform_check_image() {
 
 platform_do_upgrade() {
 	case "$(board_name)" in
+	actiontec,t1200h |\
 	comtrend,vg-8050 |\
-	comtrend,vr-3032u)
+	comtrend,vr-3032u |\
+	sagem,fast-3864-op)
 		CI_JFFS2_CLEAN_MARKERS=1
 		nand_do_upgrade "$1"
 		;;

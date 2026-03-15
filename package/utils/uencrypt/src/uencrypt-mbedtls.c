@@ -9,6 +9,58 @@
 #include <unistd.h>
 #include "uencrypt.h"
 
+#if MBEDTLS_VERSION_NUMBER < 0x03010000 /* mbedtls 3.1.0 */
+static inline mbedtls_cipher_mode_t mbedtls_cipher_info_get_mode(
+    const mbedtls_cipher_info_t *info)
+{
+    if (info == NULL) {
+        return MBEDTLS_MODE_NONE;
+    } else {
+        return info->mode;
+    }
+}
+
+static inline size_t mbedtls_cipher_info_get_key_bitlen(
+    const mbedtls_cipher_info_t *info)
+{
+    if (info == NULL) {
+        return 0;
+    } else {
+        return info->key_bitlen;
+    }
+}
+
+static inline const char *mbedtls_cipher_info_get_name(
+    const mbedtls_cipher_info_t *info)
+{
+    if (info == NULL) {
+        return NULL;
+    } else {
+        return info->name;
+    }
+}
+
+static inline size_t mbedtls_cipher_info_get_iv_size(
+    const mbedtls_cipher_info_t *info)
+{
+    if (info == NULL) {
+        return 0;
+    }
+
+    return info->iv_size;
+}
+
+static inline size_t mbedtls_cipher_info_get_block_size(
+    const mbedtls_cipher_info_t *info)
+{
+    if (info == NULL) {
+        return 0;
+    }
+
+    return info->block_size;
+}
+#endif
+
 unsigned char *hexstr2buf(const char *str, long *len)
 {
     unsigned char *buf;
@@ -50,7 +102,7 @@ const cipher_t *get_cipher_or_print_error(char *name)
 	cipher = mbedtls_cipher_info_from_type(*list);
 	if (!cipher)
 	    continue;
-	fprintf(stderr, "\t%s\n", cipher->name);
+	fprintf(stderr, "\t%s\n", mbedtls_cipher_info_get_name(cipher));
     }
     return NULL;
 }
@@ -59,14 +111,14 @@ int get_cipher_ivsize(const cipher_t *cipher)
 {
     const mbedtls_cipher_info_t *c = cipher;
 
-    return c->iv_size;
+    return mbedtls_cipher_info_get_iv_size(c);
 }
 
 int get_cipher_keysize(const cipher_t *cipher)
 {
     const mbedtls_cipher_info_t *c = cipher;
 
-    return c->key_bitlen >> 3;
+    return mbedtls_cipher_info_get_key_bitlen(c) >> 3;
 }
 
 ctx_t *create_ctx(const cipher_t *cipher, const unsigned char *key,
@@ -103,7 +155,7 @@ ctx_t *create_ctx(const cipher_t *cipher, const unsigned char *key,
 	}
     }
 
-    if (cipher_info->mode == MBEDTLS_MODE_CBC) {
+    if (mbedtls_cipher_info_get_mode(cipher_info) == MBEDTLS_MODE_CBC) {
 	ret = mbedtls_cipher_set_padding_mode(ctx, padding ?
 						   MBEDTLS_PADDING_PKCS7 :
 						   MBEDTLS_PADDING_NONE);
@@ -113,7 +165,7 @@ ctx_t *create_ctx(const cipher_t *cipher, const unsigned char *key,
 	    goto abort;
 	}
     } else {
-	if (cipher_info->block_size > 1 && padding) {
+	if (mbedtls_cipher_info_get_block_size(cipher_info) > 1 && padding) {
 	    fprintf(stderr,
 		    "Error: mbedTLS only allows padding with CBC ciphers.\n");
 	    goto abort;

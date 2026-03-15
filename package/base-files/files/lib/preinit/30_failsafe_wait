@@ -21,8 +21,8 @@ fs_wait_for_key () {
 		touch $keypress_sec
 	fi
 
-	trap "echo 'true' >$keypress_true; lock -u $keypress_wait ; rm -f $keypress_wait" INT
-	trap "echo 'true' >$keypress_true; lock -u $keypress_wait ; rm -f $keypress_wait" USR1
+	trap "echo 'true' >$keypress_true; lock -u $keypress_wait ; rm -f $keypress_wait 2>/dev/null" INT
+	trap "echo 'true' >$keypress_true; lock -u $keypress_wait ; rm -f $keypress_wait 2>/dev/null" USR1
 
 	[ -n "$timeout" ] || timeout=1
 	[ $timeout -ge 1 ] || timeout=1
@@ -37,10 +37,10 @@ fs_wait_for_key () {
 			sleep 1
 		done
 		lock -u $keypress_wait
-		rm -f $keypress_wait
+		rm -f $keypress_wait 2>/dev/null
 	} &
 
-	local consoles="$(sed -e 's/ /\n/g' /proc/cmdline | grep '^console=' | sed -e 's/^console=//' -e 's/,.*//')"
+	local consoles="$(cat /sys/class/tty/console/active)"
 	[ -n "$consoles" ] || consoles=console
 	for console in $consoles; do
 		[ -c "/dev/$console" ] || continue
@@ -68,7 +68,7 @@ fs_wait_for_key () {
 						;;
 					esac
 					lock -u $keypress_wait
-					rm -f $keypress_wait
+					rm -f $keypress_wait 2>/dev/null
 				}
 			done
 		} &
@@ -77,6 +77,9 @@ fs_wait_for_key () {
 
 	keypressed=1
 	[ "$(cat $keypress_true)" = "true" ] && keypressed=0
+
+	trap - INT
+	trap - USR1
 
 	rm -f $keypress_true
 	rm -f $keypress_wait

@@ -8,7 +8,8 @@ mediatek_setup_interfaces()
 	local board="$1"
 
 	case $board in
-	iptime,a6004mx)
+	iptime,a6004mx|\
+	linksys,ea7500-v3)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "eth1"
 		;;
 	mediatek,mt7629-rfb)

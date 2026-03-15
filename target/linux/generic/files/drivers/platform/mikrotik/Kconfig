@@ -15,4 +15,17 @@ config MIKROTIK_RB_SYSFS
 	help
 	  This driver exposes RouterBoot configuration in sysfs.
 
+config NVMEM_LAYOUT_MIKROTIK
+	tristate "RouterBoot NVMEM layout support"
+	depends on NVMEM_LAYOUTS
+	help
+	  This driver exposes MikroTik hard_config via NVMEM layout.
+
+config MIKROTIK_WLAN_DECOMPRESS_LZ77
+	tristate "Mikrotik factory Wi-Fi caldata LZ77 decompression support"
+	depends on MIKROTIK_RB_SYSFS
+	help
+	  Allow Mikrotik LZ77 factory flashed Wi-Fi calibration data to be
+	  decompressed
+
 endif # MIKROTIK

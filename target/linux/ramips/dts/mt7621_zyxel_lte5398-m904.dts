@@ -8,7 +8,7 @@
 
 / {
 	compatible = "zyxel,lte5398-m904", "mediatek,mt7621-soc";
-	model = "ZyXEL LTE5398-M904";
+	model = "Zyxel LTE5398-M904";
 
 	aliases {
 		label-mac-device = &gmac0;
@@ -85,18 +85,11 @@
 
 	gpio_export {
 		compatible = "gpio-export";
-		#size-cells = <0>;
 
 		lte_power {
 			gpio-export,name = "lte_power";
 			gpio-export,output = <0>;
 			gpios = <&gpio 27 GPIO_ACTIVE_LOW>;
-		};
-
-		usb_power {
-			gpio-export,name = "usb_power";
-			gpio-export,output = <1>;
-			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };
@@ -231,4 +224,11 @@
 		nvmem-cells = <&eeprom_factory_8000>;
 		nvmem-cell-names = "eeprom";
 	};
+};
+
+&reg_vbus {
+	/delete-property/ regulator-always-on;
+	gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
+	enable-active-high;
+	regulator-boot-on;
 };

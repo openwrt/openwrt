@@ -69,7 +69,6 @@
 
 	gpio_export {
 		compatible = "gpio-export";
-		#size-cells = <0>;
 
 		usb {
 			gpio-export,name = "usb";
@@ -97,7 +96,7 @@
 	flash@0 {
 		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <80000000>;
+		spi-max-frequency = <50000000>;
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -164,6 +163,7 @@
 
 &pcie0 {
 	wifi@0,0 {
+		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&eeprom_config_e083>, <&macaddr_config_e496 2>;
 		nvmem-cell-names = "eeprom", "mac-address";

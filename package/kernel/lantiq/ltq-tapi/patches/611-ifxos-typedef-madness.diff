@@ -1,0 +1,87 @@
+--- a/src/drv_tapi_linux.c
++++ b/src/drv_tapi_linux.c
+@@ -274,7 +274,7 @@ IFX_return_t TAPI_OS_RegisterLLDrv (IFX_
+       TRACE( TAPI_DRV, DBG_LEVEL_HIGH,
+            ("IFX_TAPI_Register_LL_Drv: unable to register chrdev major number "
+             "%d\n", majorNumber));
+-      return TAPI_statusErr;
++      return IFX_ERROR;
+    }
+ 
+ #if 0
+@@ -290,7 +290,7 @@ IFX_return_t TAPI_OS_RegisterLLDrv (IFX_
+ #endif /* LINUX_2_6 */
+ #endif /* 0 */
+ 
+-   return TAPI_statusOk;
++   return IFX_SUCCESS;
+ }
+ 
+ 
+@@ -316,7 +316,7 @@ IFX_return_t TAPI_OS_UnregisterLLDrv (IF
+ {
+    unregister_chrdev (pLLDrvCtx->majorNumber, pHLDrvCtx->registeredDrvName);
+ 
+-   return TAPI_statusOk;
++   return IFX_SUCCESS;
+ }
+ 
+ 
+@@ -3589,7 +3589,7 @@ static IFX_void_t Deferred_Worker (struc
+ */
+ IFX_return_t TAPI_DeferWork (IFX_void_t *pFunc, IFX_void_t *pParam)
+ {
+-   IFX_return_t ret = TAPI_statusOk;
++   IFX_return_t ret = IFX_SUCCESS;
+    IFX_TAPI_EXT_EVENT_PARAM_t *pEvParam = (IFX_TAPI_EXT_EVENT_PARAM_t *) pParam;
+ #ifdef LINUX_2_6
+    struct work_struct         *pTapiWs;
+@@ -3605,7 +3605,7 @@ IFX_return_t TAPI_DeferWork (IFX_void_t
+ 
+    if (queue_work (pTapiWq, pTapiWs) == 0)
+    {
+-      ret = TAPI_statusWorkFail;
++      ret = IFX_ERROR;
+    }
+ #else
+    struct tq_struct           *pTapiTq;
+@@ -3617,7 +3617,7 @@ IFX_return_t TAPI_DeferWork (IFX_void_t
+    pTapiTq->sync     = 0;
+    if (schedule_task (pTapiTq) == 0)
+    {
+-      ret = TAPI_statusWorkFail;
++      ret = IFX_ERROR;
+    }
+ #endif /* LINUX_2_6 */
+    return ret;
+--- a/src/drv_tapi_event.c
++++ b/src/drv_tapi_event.c
+@@ -1394,7 +1394,7 @@ IFX_return_t IFX_TAPI_Event_Dispatch (TA
+          pTapiDev->error.nCode =
+             (IFX_uint32_t)pTapiEvent->data.error->nLlCode;
+       }
+-      return TAPI_statusOk;
++      return IFX_SUCCESS;
+    }
+ 
+    /* global irq lock - multiple drivers may be loaded and all share this
+@@ -2660,7 +2660,7 @@ IFX_return_t TAPI_EVENT_PKT_EV_Generate
+       /* start/stop generation of rfc 2833 pkt */
+       (IFX_void_t)pDrvCtx->COD.RTP_EV_Generate(pChannel->pLLChannel,
+                                    pPacketEvent->event,
+-                                   pPacketEvent->action,
++                                   (IFX_boolean_t)pPacketEvent->action,
+                                    pPacketEvent->duration,
+                                    nVolume);
+    }
+--- a/src/drv_tapi_cid.c
++++ b/src/drv_tapi_cid.c
+@@ -2278,7 +2278,7 @@ static FSM_STATUS_t cid_fsm_ack_exec(TAP
+ 
+          memset(&tapiEvent, 0, sizeof(IFX_TAPI_EVENT_t));
+          tapiEvent.id = IFX_TAPI_EVENT_CID_TX_NOACK_ERR;
+-         ret = IFX_TAPI_Event_Dispatch(pChannel,&tapiEvent);
++         ret = (FSM_STATUS_t)IFX_TAPI_Event_Dispatch(pChannel,&tapiEvent);
+          TRACE (TAPI_DRV,DBG_LEVEL_HIGH, ("no CID ack received!\n"));
+       }
+       ret = E_FSM_ERROR;

@@ -7,6 +7,9 @@ define Device/mediatek_mt7629-rfb
   DEVICE_MODEL := MT7629 rfb AP
   DEVICE_DTS := mt7629-rfb
   DEVICE_PACKAGES := swconfig
+  UBOOT_PATH := $(STAGING_DIR_IMAGE)/mt7629_rfb-u-boot-mtk.bin
+  ARTIFACTS := u-boot.bin
+  ARTIFACT/u-boot.bin := append-uboot
 endef
 TARGET_DEVICES += mediatek_mt7629-rfb
 
@@ -26,6 +29,22 @@ define Device/iptime_a6004mx
   IMAGE/recovery.bin := append-kernel | pad-to 128k | append-ubi | append-metadata
 endef
 TARGET_DEVICES += iptime_a6004mx
+
+define Device/linksys_ea7500-v3
+  $(Device/uimage-lzma-loader)
+  DEVICE_VENDOR := Linksys
+  DEVICE_MODEL := EA7500
+  DEVICE_VARIANT := v3
+  DEVICE_DTS := mt7629-linksys-ea7500-v3
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-usb3 uboot-envtools
+  IMAGE_SIZE := 40m
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata | check-size
+endef
+TARGET_DEVICES += linksys_ea7500-v3
 
 define Device/netgear_ex6250-v2
   DEVICE_VENDOR := NETGEAR

@@ -5,6 +5,14 @@
 # See /LICENSE for more information.
 #
 
+config EXTRA_IMAGE_NAME
+	string
+	prompt "Extra image filename" if IMAGEOPT
+	default ""
+	help
+		Add this to the output image filenames, to distinguish between
+		different builds for the same hardware type.
+
 config TARGET_DEFAULT_LAN_IP_FROM_PREINIT
 	bool "Use preinit IP configuration as default LAN IP" if IMAGEOPT
 	default n
@@ -44,7 +52,7 @@ config TARGET_PREINIT_DISABLE_FAILSAFE
 config TARGET_PREINIT_TIMEOUT
 	int
 	prompt "Failsafe/Debug wait timeout" if PREINITOPT
-	default 2
+	default 4
 	help
 		How long to wait for failsafe mode to be entered or for
 		a debug option to be pressed before continuing with a
@@ -240,6 +248,12 @@ if VERSIONOPT
 		prompt "Support URL"
 		help
 			This an URL to provide users seeking support
+
+	config VERSION_FIRMWARE_URL
+		string
+		prompt "Firmware URL"
+		help
+			This is an URL to provide users for downloading firmware
 
 	config VERSION_PRODUCT
 		string

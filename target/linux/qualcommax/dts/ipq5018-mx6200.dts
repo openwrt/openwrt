@@ -1,0 +1,128 @@
+/dts-v1/;
+
+#include "ipq5018.dtsi"
+#include "ipq5018-mx-base.dtsi"
+#include "ipq5018-qcn6122.dtsi"
+
+/ {
+	model = "Linksys MX6200";
+	compatible = "linksys,mx6200", "qcom,ipq5018";
+
+	chosen {
+		bootargs-append = " root=/dev/ubiblock0_1 coherent_pool=2M";
+		stdout-path = "serial0:115200n8";
+	};
+};
+
+/*
+* =================================================================
+*     _______________________             ____________
+*    |        IPQ5018        |           |            |
+*    | +------+   +--------+ |           | +--------+ |
+*    | | MAC0 |---| GE Phy |-+--- MDI ---+ | RJ45   | +
+*    | +------+   +--------+ |           | +--------+ |
+*    |                       |           |____________|
+*    |                       |            _______________________
+*    |                       |           |    MXL GPY115C Phy    |
+*    | +------+   +--------+ |           | +--------+   +------+ |
+*    | | MAC1 |---| Uniphy |-+-- SGMII---+ | Phy    |---| RJ45 | |
+*    | +------+   +--------+ |           | +--------+   +------+ |
+*    |_______________________|           |_______________________|
+*
+* =================================================================
+ */
+
+&switch {
+	status = "okay";
+
+	switch_mac_mode = <MAC_MODE_SGMII_CHANNEL0>;
+
+	qcom,port_phyinfo {
+		// MAC0 -> GE Phy -> MDI --> RJ45
+		port@1 {
+			port_id = <1>;
+			mdiobus = <&mdio0>;
+			phy_address = <7>;
+		};
+
+		// MAC1 ---SGMII---> MaxLinear PHY -> RJ45
+		port@2 {
+			port_id = <2>;
+			mdiobus = <&mdio1>;
+			phy_address = <15>;
+			port_mac_sel = "QGMAC_PORT";
+		};
+	};
+};
+
+// MAC0 ---MDI---> IPQ5018 GE PHY
+&dp1 {
+	status = "okay";
+
+	label = "lan";
+	phy-handle = <&ge_phy>;
+	nvmem-cells = <&hw_mac_addr 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+// MAC1 ---SGMII---> MXL Phy
+&dp2 {
+	status = "okay";
+
+	label = "wan";
+	phy-handle = <&gpy115c>;
+	nvmem-cells = <&hw_mac_addr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&mdio0 {
+	status = "okay";
+};
+
+&mdio1 {
+	status = "okay";
+
+	pinctrl-0 = <&mdio1_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 24 GPIO_ACTIVE_LOW>;
+
+	// Maxlinear Ethernet GPY115C
+	gpy115c: ethernet-phy@f {
+		compatible = "ethernet-phy-id67c9.df10";
+		reg = <15>;
+	};
+};
+
+&q6_region {
+	reg = <0x0 0x4b000000 0x0 0x4d00000>;
+};
+
+&wifi {
+	status = "okay";
+
+	qcom,rproc = <&q6_wcss_pd1>;
+	qcom,ath11k-calibration-variant = "Linksys-MX6200";
+	qcom,ath11k-fw-memory-mode = <1>;
+	qcom,bdf-addr = <0x4c400000>;
+};
+
+&wifi1 {
+	status = "okay";
+
+	qcom,rproc = <&q6_wcss_pd2>;
+	qcom,userpd-subsys-name = "q6v5_wcss_userpd2";
+	qcom,ath11k-calibration-variant = "Linksys-MX6200-5G";
+	qcom,ath11k-fw-memory-mode = <1>;
+	qcom,m3-dump-addr = <0x4df00000>;
+};
+
+&wifi2 {
+	status = "okay";
+
+	qcom,rproc = <&q6_wcss_pd3>;
+	qcom,userpd-subsys-name = "q6v5_wcss_userpd3";
+	qcom,ath11k-calibration-variant = "Linksys-MX6200-6G";
+	qcom,ath11k-fw-memory-mode = <1>;
+	qcom,bdf-addr = <0x4e500000>;
+	qcom,m3-dump-addr = <0x4f200000>;
+};

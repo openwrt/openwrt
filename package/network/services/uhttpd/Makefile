@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uhttpd
-PKG_RELEASE:=3
+PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/uhttpd.git
-PKG_SOURCE_DATE:=2023-06-25
-PKG_SOURCE_VERSION:=34a8a74dbdec3c0de38abc1b08f6a73c51263792
-PKG_MIRROR_HASH:=8206885eebed5d1827763bcc5bcf9ca3510ae22b0ad1f6432114f1136c32dde2
+PKG_SOURCE_DATE:=2025-10-03
+PKG_SOURCE_VERSION:=ebb92e6b339b88bbc6b76501b6603c52d4887ba1
+PKG_MIRROR_HASH:=2d00da72db0ec08132bb169f2bad0b153bd998ea1eee0700b4ec01e65c35127d
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=ISC
 
@@ -34,7 +34,7 @@ endef
 
 define Package/uhttpd
   $(Package/uhttpd/default)
-  DEPENDS:=+libubox +libblobmsg-json +libjson-script +libjson-c
+  DEPENDS:= +USE_GLIBC:libcrypt-compat +libubox +libblobmsg-json +libjson-script +libjson-c
 endef
 
 define Package/uhttpd/description

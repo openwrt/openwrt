@@ -96,9 +96,19 @@
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 
-		gpio = <&gpio 33 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 33 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
+};
+
+&eth0 {
+	nvmem-cells = <&macaddr_uboot_ethaddr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&ppe {
+	nvmem-cells = <&macaddr_uboot_ethaddr 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &gphy0 {
@@ -190,6 +200,8 @@
 		label = "wan";
 		phy-mode = "rgmii";
 		phy-handle = <&phy5>;
+		nvmem-cells = <&macaddr_uboot_ethaddr 1>;
+		nvmem-cell-names = "mac-address";
 	};
 };
 

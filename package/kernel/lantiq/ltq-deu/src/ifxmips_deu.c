@@ -65,7 +65,7 @@
 #include "ifxmips_deu_ar9.h"
 #elif defined(CONFIG_VR9) || defined(CONFIG_AR10)
 #include "ifxmips_deu_vr9.h"
-#else 
+#else
 #error "Platform unknown!"
 #endif /* CONFIG_xxxx */
 
@@ -77,10 +77,10 @@ void chip_version(void);
 
 /*! \fn static int __init deu_init (void)
  *  \ingroup IFX_DEU_FUNCTIONS
- *  \brief link all modules that have been selected in kernel config for ifx hw crypto support   
- *  \return ret 
-*/  
-                               
+ *  \brief link all modules that have been selected in kernel config for ifx hw crypto support
+ *  \return ret
+*/
+
 static int ltq_deu_probe(struct platform_device *pdev)
 {
     int ret = -ENOSYS;
@@ -88,7 +88,7 @@ static int ltq_deu_probe(struct platform_device *pdev)
 
     START_DEU_POWER;
     CRTCL_SECT_HASH_INIT;
-    
+
 #define IFX_DEU_DRV_VERSION         "2.0.0"
          printk(KERN_INFO "Infineon Technologies DEU driver version %s \n", IFX_DEU_DRV_VERSION);
 
@@ -141,9 +141,9 @@ static int ltq_deu_probe(struct platform_device *pdev)
 
 /*! \fn static void __exit deu_fini (void)
  *  \ingroup IFX_DEU_FUNCTIONS
- *  \brief remove the loaded crypto algorithms   
-*/                                 
-static int ltq_deu_remove(struct platform_device *pdev)
+ *  \brief remove the loaded crypto algorithms
+*/
+static void ltq_deu_remove(struct platform_device *pdev)
 {
 //#ifdef CONFIG_CRYPTO_DEV_PWR_SAVE_MODE
     #if defined(CONFIG_CRYPTO_DEV_DES)
@@ -168,8 +168,6 @@ static int ltq_deu_remove(struct platform_device *pdev)
     ifxdeu_fini_md5_hmac ();
     #endif
     printk("DEU has exited successfully\n");
-
-	return 0;
 }
 
 
@@ -192,11 +190,10 @@ MODULE_DEVICE_TABLE(of, ltq_deu_match);
 
 
 static struct platform_driver ltq_deu_driver = {
-	.probe = ltq_deu_probe,
+	.probe  = ltq_deu_probe,
 	.remove = ltq_deu_remove,
 	.driver = {
 		.name = "deu",
-		.owner = THIS_MODULE,
 		.of_match_table = ltq_deu_match,
 	},
 };

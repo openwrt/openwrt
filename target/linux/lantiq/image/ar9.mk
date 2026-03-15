@@ -159,7 +159,7 @@ endef
 TARGET_DEVICES += zte_h201l
 
 define Device/zyxel_p-2601hn
-  DEVICE_VENDOR := ZyXEL
+  DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := P-2601HN
   DEVICE_VARIANT := F1/F3
   IMAGE_SIZE := 15616k

@@ -1,6 +1,6 @@
 --- a/Incremental.c
 +++ b/Incremental.c
-@@ -983,6 +983,10 @@ static int array_try_spare(char *devname
+@@ -985,6 +985,10 @@ static int array_try_spare(char *devname
  				goto next;
  		}
  
@@ -13,7 +13,7 @@
  			/* domain test fails */
 --- a/util.c
 +++ b/util.c
-@@ -1147,7 +1147,9 @@ void wait_for(char *dev, int fd)
+@@ -1192,7 +1192,9 @@ void wait_for(char *dev, int fd)
  struct superswitch *superlist[] =
  {
  	&super0, &super1,

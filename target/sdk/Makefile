@@ -18,7 +18,7 @@ SDK_BUILD_DIR:=$(BUILD_DIR)/$(SDK_NAME)
 
 STAGING_SUBDIR_HOST := staging_dir/host
 STAGING_SUBDIR_TARGET := staging_dir/$(TARGET_DIR_NAME)
-STAGING_SUBDIR_TOOLCHAIN := staging_dir/toolchain-$(ARCH)$(ARCH_SUFFIX)_gcc-$(GCCV)_$(LIBC)$(if $(CONFIG_arm),_eabi)
+STAGING_SUBDIR_TOOLCHAIN := staging_dir/$(TOOLCHAIN_DIR_NAME)
 
 BUNDLER_PATH := $(subst $(space),:,$(filter-out $(TOPDIR)/%,$(subst :,$(space),$(PATH))))
 BUNDLER_COMMAND := PATH=$(BUNDLER_PATH) $(XARGS) $(SCRIPT_DIR)/bundle-libraries.sh $(SDK_BUILD_DIR)/$(STAGING_SUBDIR_HOST)
@@ -41,13 +41,13 @@ SDK_DIRS = \
 GIT_URL:=$(shell git config --get remote.origin.url 2>/dev/null)
 GIT_URL:=$(if $(CONFIG_BUILDBOT),$(filter git://% http://% https://%,$(GIT_URL)),$(GIT_URL))
 GIT_COMMIT:=$(shell git rev-parse HEAD 2>/dev/null)
-GIT_BRANCH:=$(filter-out master HEAD,$(shell git rev-parse --abbrev-ref HEAD 2>/dev/null))
+GIT_BRANCH:=$(filter-out master main HEAD,$(shell git rev-parse --abbrev-ref HEAD 2>/dev/null))
 GIT_TAGNAME:=$(shell git show-ref --tags --dereference 2>/dev/null | sed -ne '/^$(GIT_COMMIT) / { s|^.*/||; s|\^.*||; p }')
 
-BASE_FEED:=$(if $(GIT_URL),src-git-full base $(GIT_URL)$(if $(GIT_BRANCH),;$(GIT_BRANCH),$(if $(GIT_TAGNAME),;$(GIT_TAGNAME))))
-BASE_FEED:=$(if $(BASE_FEED),$(BASE_FEED),$(shell cd $(TOPDIR); LC_ALL=C git svn info 2>/dev/null | sed -ne 's/^URL: /src-gitsvn base /p'))
-BASE_FEED:=$(if $(BASE_FEED),$(BASE_FEED),$(shell cd $(TOPDIR); LC_ALL=C svn info 2>/dev/null | sed -ne 's/^URL: /src-svn base /p'))
-BASE_FEED:=$(if $(BASE_FEED),$(BASE_FEED),src-git-full base $(PROJECT_GIT)/openwrt/openwrt.git$(if $(GIT_BRANCH),;$(GIT_BRANCH),$(if $(GIT_TAGNAME),;$(GIT_TAGNAME))))
+BASE_FEED:=$(if $(GIT_URL),src-git --root=package base $(GIT_URL)$(if $(CONFIG_BUILDBOT),^$(GIT_COMMIT),$(if $(GIT_TAGNAME),;$(GIT_TAGNAME),$(if $(GIT_BRANCH),;$(GIT_BRANCH)))))
+BASE_FEED:=$(if $(BASE_FEED),$(BASE_FEED),$(shell cd $(TOPDIR); LC_ALL=C git svn info 2>/dev/null | sed -ne 's/^URL: /src-gitsvn --root=package base /p'))
+BASE_FEED:=$(if $(BASE_FEED),$(BASE_FEED),$(shell cd $(TOPDIR); LC_ALL=C svn info 2>/dev/null | sed -ne 's/^URL: /src-svn --root=package base /p'))
+BASE_FEED:=$(if $(BASE_FEED),$(BASE_FEED),src-git --root=package base $(PROJECT_GIT)/openwrt/openwrt.git$(if $(CONFIG_BUILDBOT),^$(GIT_COMMIT),$(if $(GIT_TAGNAME),;$(GIT_TAGNAME),$(if $(GIT_BRANCH),;$(GIT_BRANCH)))))
 
 KDIR_BASE = $(patsubst $(TOPDIR)/%,%,$(LINUX_DIR))
 KDIR_ARCHES = $(LINUX_KARCH)
@@ -67,6 +67,10 @@ KERNEL_FILES_ARCH = \
 	scripts \
 	kernel/asm-offsets.s \
 	kernel/module.lds
+
+ifeq ($(LINUX_KARCH),powerpc)
+  KERNEL_FILES_ARCH += lib/crtsavres.o
+endif
 
 KERNEL_FILES_BASE := \
 	.config \
@@ -97,7 +101,7 @@ USERSPACE_FILES := $(patsubst $(TOPDIR)/%,%,$(wildcard $(addprefix $(LINUX_DIR)/
 
 all: compile
 
-$(BIN_DIR)/$(SDK_NAME).tar.xz: clean
+$(BIN_DIR)/$(SDK_NAME).tar.zst: clean
 	mkdir -p \
 		$(SDK_BUILD_DIR)/dl \
 		$(SDK_BUILD_DIR)/package \
@@ -117,6 +121,7 @@ $(BIN_DIR)/$(SDK_NAME).tar.xz: clean
 		$(TAR) -xf - -C $(SDK_BUILD_DIR)
 
 	(cd $(SDK_BUILD_DIR); find $(STAGING_SUBDIR_HOST)/bin $(STAGING_SUBDIR_HOST)/usr/bin \
+		$(STAGING_SUBDIR_HOST)/llvm-bpf/bin $(STAGING_SUBDIR_HOST)/llvm-bpf/libexec \
 		$(STAGING_SUBDIR_TOOLCHAIN)/bin $(STAGING_SUBDIR_TOOLCHAIN)/*/bin $(STAGING_SUBDIR_TOOLCHAIN)/libexec \
 		$(KDIR_BASE) \
 		-type f | $(BUNDLER_COMMAND))
@@ -125,12 +130,15 @@ $(BIN_DIR)/$(SDK_NAME).tar.xz: clean
 		find \
 			$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_HOST)/bin \
 			$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_HOST)/usr/bin \
+			$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_HOST)/llvm-bpf/bin \
+			$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_HOST)/llvm-bpf/libexec \
 			$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_TOOLCHAIN)/bin \
 			$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_TOOLCHAIN)/*/bin \
 			$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_TOOLCHAIN)/libexec \
 			-type f; \
 		find \
 			$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_HOST)/lib \
+			$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_HOST)/llvm-bpf/lib \
 			$(SDK_BUILD_DIR)/$(STAGING_SUBDIR_HOST)/usr/lib \
 			-type f -name \*.so\*; \
 	) | xargs strip 2>/dev/null >/dev/null
@@ -175,17 +183,17 @@ $(BIN_DIR)/$(SDK_NAME).tar.xz: clean
 	$(SED) '/LINUX_VERMAGIC:=/ { s,unknown,$(LINUX_VERMAGIC),g }' $(SDK_BUILD_DIR)/include/kernel.mk
 	find $(SDK_BUILD_DIR) -name .git | $(XARGS) rm -rf
 	find $(SDK_BUILD_DIR) -name .svn | $(XARGS) rm -rf
-	find $(SDK_BUILD_DIR) -name CVS | $(XARGS) rm -rf
 	-make -C $(SDK_BUILD_DIR)/scripts/config clean
+
 	(cd $(BUILD_DIR); \
-		tar -I '$(STAGING_DIR_HOST)/bin/xz -7e -T$(if $(filter 1,$(NPROC)),2,0)' -cf $@ $(SDK_NAME) \
+		tar -I '$(STAGING_DIR_HOST)/bin/zstd -T0 --ultra -20' -cf $@ $(SDK_NAME) \
 		--mtime="$(shell date --date=@$(SOURCE_DATE_EPOCH))"; \
 	)
 
 download:
 prepare:
-compile: $(BIN_DIR)/$(SDK_NAME).tar.xz
+compile: $(BIN_DIR)/$(SDK_NAME).tar.zst
 install: compile
 
 clean:
-	rm -rf $(SDK_BUILD_DIR) $(BIN_DIR)/$(SDK_NAME).tar.xz
+	rm -rf $(SDK_BUILD_DIR) $(BIN_DIR)/$(SDK_NAME).tar.zst

@@ -1,0 +1,22 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+/dts-v1/;
+
+#include "mt7981b-cudy-m3000.dtsi"
+
+/ {
+	model = "Cudy M3000 v1/v2";
+	compatible = "cudy,m3000-v1", "mediatek,mt7981";
+};
+
+&mdio_bus {
+	wan_phy: ethernet-phy@1 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <1>;
+		reset-assert-us = <100000>;
+		reset-deassert-us = <100000>;
+		reset-gpios = <&pio 39 GPIO_ACTIVE_LOW>;
+		interrupts = <38 IRQ_TYPE_LEVEL_LOW>;
+		interrupt-parent = <&pio>;
+	};
+};

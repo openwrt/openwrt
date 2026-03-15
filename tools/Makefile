@@ -40,6 +40,7 @@ tools-y += cpio
 tools-y += dosfstools
 tools-y += e2fsprogs
 tools-y += elfutils
+tools-y += erofs-utils
 tools-y += expat
 tools-y += fakeroot
 tools-y += findutils
@@ -67,9 +68,9 @@ tools-y += quilt
 tools-y += squashfs4
 tools-y += sstrip
 tools-y += util-linux
+tools-y += xz
 tools-y += zip
 tools-y += zlib
-tools-y += zstd
 tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS),y) += liblzo
 tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(BUILD_B43_TOOLS),y) += b43-tools
 tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(BUILD_BZIP2_TOOLS),y) += bzip2
@@ -82,7 +83,7 @@ tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_TARGET_ath79),y) += lzma-old s
 tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_TARGET_mxs),y) += elftosb sdimage
 tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_TARGET_realtek),y) += 7z
 tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_TARGET_tegra),y) += cbootimage cbootimage-configs
-tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USES_MINOR),y) += kernel2minor
+tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USES_MINOR),y) += yafut
 tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USE_SPARSE),y) += sparse
 tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USE_LLVM_BUILD),y) += llvm-bpf
 tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USE_MOLD),y) += mold
@@ -93,11 +94,14 @@ $(curdir)/automake/compile := $(curdir)/autoconf/compile $(curdir)/pkgconf/compi
 $(curdir)/b43-tools/compile := $(curdir)/bison/compile
 $(curdir)/bc/compile := $(curdir)/bison/compile $(curdir)/libtool/compile
 $(curdir)/bison/compile := $(curdir)/flex/compile
+$(curdir)/bzip2/compile := $(curdir)/cmake/compile
 $(curdir)/cbootimage/compile += $(curdir)/automake/compile
 $(curdir)/cmake/compile += $(curdir)/libressl/compile $(curdir)/ninja/compile $(curdir)/expat/compile $(curdir)/xz/compile $(curdir)/zlib/compile $(curdir)/zstd/compile
+$(curdir)/coreutils/compile := $(curdir)/automake/compile $(curdir)/bison/compile $(curdir)/gnulib/compile
 $(curdir)/dosfstools/compile := $(curdir)/automake/compile
-$(curdir)/e2fsprogs/compile := $(curdir)/libtool/compile
-$(curdir)/elfutils/compile := $(curdir)/m4/compile $(curdir)/zlib/compile $(curdir)/gnulib/compile $(curdir)/libtool/compile
+$(curdir)/e2fsprogs/compile := $(curdir)/libtool/compile $(curdir)/util-linux/compile
+$(curdir)/elfutils/compile := $(curdir)/bison/compile $(curdir)/gnulib/compile $(curdir)/m4/compile $(curdir)/zlib/compile
+$(curdir)/erofs-utils/compile := $(curdir)/libtool/compile $(curdir)/xz/compile $(curdir)/lz4/compile $(curdir)/util-linux/compile
 $(curdir)/fakeroot/compile := $(curdir)/libtool/compile
 $(curdir)/findutils/compile := $(curdir)/bison/compile
 $(curdir)/firmware-utils/compile += $(curdir)/cmake/compile
@@ -121,7 +125,7 @@ $(curdir)/mklibs/compile := $(curdir)/libtool/compile
 $(curdir)/mold/compile := $(curdir)/cmake/compile $(curdir)/zlib/compile $(curdir)/zstd/compile
 $(curdir)/mpc/compile := $(curdir)/mpfr/compile $(curdir)/gmp/compile
 $(curdir)/mpfr/compile := $(curdir)/gmp/compile
-$(curdir)/mtd-utils/compile := $(curdir)/libtool/compile $(curdir)/e2fsprogs/compile $(curdir)/zlib/compile
+$(curdir)/mtd-utils/compile := $(curdir)/libtool/compile $(curdir)/zlib/compile $(curdir)/util-linux/compile
 $(curdir)/padjffs2/compile := $(curdir)/findutils/compile
 $(curdir)/patchelf/compile := $(curdir)/libtool/compile
 $(curdir)/pkgconf/compile := $(curdir)/meson/compile
@@ -129,14 +133,21 @@ $(curdir)/quilt/compile := $(curdir)/autoconf/compile $(curdir)/findutils/compil
 $(curdir)/sdcc/compile := $(curdir)/bison/compile
 $(curdir)/squashfs3-lzma/compile := $(curdir)/lzma-old/compile
 $(curdir)/squashfs4/compile := $(curdir)/xz/compile $(curdir)/zlib/compile
-$(curdir)/util-linux/compile := $(curdir)/bison/compile
-$(curdir)/zstd/compile := $(curdir)/meson/compile
+$(curdir)/util-linux/compile := $(curdir)/bison/compile $(curdir)/meson/compile
+$(curdir)/yafut/compile := $(curdir)/cmake/compile
 
 ifneq ($(HOST_OS),Linux)
-  $(curdir)/coreutils/compile += $(curdir)/automake/compile $(curdir)/bison/compile $(curdir)/gnulib/compile
-  $(curdir)/squashfs4/compile += $(curdir)/coreutils/compile
   tools-y += coreutils
+else
+  tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_SDK),y) += coreutils
 endif
+ifneq ($(filter coreutils,$(tools-y)),)
+  $(curdir)/elfutils/compile += $(curdir)/coreutils/compile
+  $(curdir)/findutils/compile += $(curdir)/coreutils/compile
+  $(curdir)/squashfs4/compile += $(curdir)/coreutils/compile
+  $(curdir)/util-linux/compile += $(curdir)/coreutils/compile
+endif
+
 ifeq ($(HOST_OS),Darwin)
   tools-y += bash
 else
@@ -146,30 +157,32 @@ endif
 
 ifneq ($(CONFIG_CCACHE)$(CONFIG_SDK),)
 $(foreach tool, $(filter-out zstd zlib xz pkgconf patch ninja meson libressl expat cmake,$(tools-y)), $(eval $(curdir)/$(tool)/compile += $(curdir)/ccache/compile))
-tools-y += ccache
-$(curdir)/ccache/compile := $(curdir)/cmake/compile
+tools-y += ccache xxhash
+$(curdir)/xxhash/compile := $(curdir)/cmake/compile
+$(curdir)/ccache/compile := $(curdir)/xxhash/compile
 endif
 
 # in case there is no patch tool on the host we need to make patch tool a
 # dependency for tools which have patches directory
 $(foreach tool, $(tools-y), $(if $(wildcard $(curdir)/$(tool)/patches),$(eval $(curdir)/$(tool)/compile += $(curdir)/patch/compile)))
 
-$(foreach tool, $(filter-out xz,$(tools-y)), $(eval $(curdir)/$(tool)/compile += $(curdir)/xz/compile))
+$(foreach tool, $(filter-out zstd,$(tools-y)), $(eval $(curdir)/$(tool)/compile += $(curdir)/zstd/compile))
 
 # make any tool depend on the following to ensure that archives can be unpacked and patched properly
 tools-core += libdeflate
 tools-core += patch
 tools-core += tar
-tools-core += xz
+tools-core += zstd
 
 $(foreach tool, $(tools-y), $(eval $(curdir)/$(tool)/compile += $(patsubst %,$(curdir)/%/compile,$(tools-core))))
 tools-y += $(tools-core)
 
-# make core tools depend on sed and flock
-$(foreach tool, $(filter-out xz,$(tools-core)), $(eval $(curdir)/$(tool)/compile += $(curdir)/sed/compile))
-$(curdir)/xz/compile += $(curdir)/flock/compile
+# make some core tools depend on sed and flock
+$(curdir)/patch/compile += $(curdir)/sed/compile
+$(curdir)/tar/compile += $(curdir)/sed/compile
+$(curdir)/zstd/compile += $(curdir)/libdeflate/compile
 
-$(curdir)/sed/compile := $(curdir)/flock/compile $(curdir)/xz/compile
+$(curdir)/sed/compile := $(curdir)/flock/compile $(curdir)/zstd/compile
 tools-y += flock sed
 
 $(curdir)/autoremove := 1

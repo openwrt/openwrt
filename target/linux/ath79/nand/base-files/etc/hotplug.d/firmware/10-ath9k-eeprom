@@ -9,9 +9,6 @@ board=$(board_name)
 case "$FIRMWARE" in
 "ath9k-eeprom-ahb-18100000.wmac.bin")
 	case $board in
-	8dev,rambutan)
-		caldata_extract "caldata" 0x1000 0x800
-		;;
 	meraki,mr18)
 		. /lib/upgrade/nand.sh
 
@@ -20,7 +17,6 @@ case "$FIRMWARE" in
 		else
 			caldata_extract "odm-caldata" 0x1000 0x440
 		fi
-		ath9k_patch_mac $(macaddr_add $(mtd_get_mac_binary_ubi board-config 102) 1)
 		;;
 	*)
 		caldata_die "board $board is not supported yet"
@@ -37,7 +33,6 @@ case "$FIRMWARE" in
 		else
 			caldata_extract "odm-caldata" 0x5000 0x440
 		fi
-		ath9k_patch_mac $(macaddr_add $(mtd_get_mac_binary_ubi board-config 102) 2)
 		;;
 	*)
 		caldata_die "board $board is not supported yet"
@@ -54,7 +49,6 @@ case "$FIRMWARE" in
 		else
 			caldata_extract "odm-caldata" 0x9000 0x440
 		fi
-		ath9k_patch_mac $(macaddr_add $(mtd_get_mac_binary_ubi board-config 102) 3)
 		;;
 	*)
 		caldata_die "board $board is not supported yet"

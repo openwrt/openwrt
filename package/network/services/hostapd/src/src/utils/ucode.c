@@ -3,6 +3,7 @@
 #include "utils/eloop.h"
 #include "crypto/crypto.h"
 #include "crypto/sha1.h"
+#include "crypto/sha256.h"
 #include "common/ieee802_11_common.h"
 #include <linux/netlink.h>
 #include <linux/genetlink.h>
@@ -13,7 +14,6 @@
 
 static uc_value_t *registry;
 static uc_vm_t vm;
-static struct uloop_timeout gc_timer;
 static struct udebug ud;
 static struct udebug_buf ud_log, ud_nl[3];
 static const struct udebug_buf_meta meta_log = {
@@ -69,11 +69,6 @@ static struct udebug_ubus_ring udebug_rings[] = {
 };
 char *udebug_service;
 struct udebug_ubus ud_ubus;
-
-static void uc_gc_timer(struct uloop_timeout *timeout)
-{
-	ucv_gc(&vm);
-}
 
 uc_value_t *uc_wpa_printf(uc_vm_t *vm, size_t nargs)
 {
@@ -171,7 +166,7 @@ uc_value_t *uc_wpa_freq_info(uc_vm_t *vm, size_t nargs)
 	ucv_object_add(ret, "op_class", ucv_int64_new(op_class));
 	ucv_object_add(ret, "channel", ucv_int64_new(channel));
 	ucv_object_add(ret, "hw_mode", ucv_int64_new(hw_mode));
-	ucv_object_add(ret, "hw_mode_str", ucv_get(ucv_string_new(modestr)));
+	ucv_object_add(ret, "hw_mode_str", ucv_string_new(modestr));
 	ucv_object_add(ret, "sec_channel", ucv_int64_new(sec_channel));
 	ucv_object_add(ret, "frequency", ucv_int64_new(freq_val));
 
@@ -253,7 +248,6 @@ uc_vm_t *wpa_ucode_create_vm(void)
 
 	uc_stdlib_load(uc_vm_scope_get(&vm));
 	eloop_add_uloop();
-	gc_timer.cb = uc_gc_timer;
 
 	return &vm;
 }
@@ -425,7 +419,7 @@ uc_value_t *wpa_ucode_global_init(const char *name, uc_resource_type_t *global_t
 
 	uc_vm_registry_set(&vm, "hostap.global", global);
 	proto = ucv_prototype_get(global);
-	ucv_object_add(proto, "data", ucv_get(ucv_object_new(&vm)));
+	ucv_object_add(proto, "data", ucv_object_new(&vm));
 
 #define ADD_CONST(x) ucv_object_add(proto, #x, ucv_int64_new(x))
 	ADD_CONST(MSG_EXCESSIVE);
@@ -470,6 +464,7 @@ uc_value_t *wpa_ucode_registry_remove(uc_value_t *reg, int idx)
 	if (!val)
 		return NULL;
 
+	ucv_get(val);
 	ucv_array_set(reg, idx - 1, NULL);
 	dataptr = ucv_resource_dataptr(val, NULL);
 	if (dataptr)
@@ -483,9 +478,6 @@ uc_value_t *wpa_ucode_call(size_t nargs)
 {
 	if (uc_vm_call(&vm, true, nargs) != EXCEPTION_NONE)
 		return NULL;
-
-	if (!gc_timer.pending)
-		uloop_timeout_set(&gc_timer, 10);
 
 	return uc_vm_stack_pop(&vm);
 }

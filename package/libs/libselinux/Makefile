@@ -6,12 +6,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libselinux
-PKG_VERSION:=3.5
+PKG_VERSION:=3.9
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://github.com/SELinuxProject/selinux/releases/download/$(PKG_VERSION)
-PKG_HASH:=9a3a3705ac13a2ccca2de6d652b6356fead10f36fb33115c185c5ccdf29eec19
+PKG_HASH:=e7ee2c01dba64a0c35c9d7c9c0e06209d8186b325b0638a0d83f915cc3c101e8
 
 PKG_LICENSE:=libselinux-1.0
 PKG_LICENSE_FILES:=LICENSE
@@ -66,7 +66,7 @@ $(eval $(foreach a,$(LIBSELINUX_ALTS),ALTS_$(a):=300:/usr/sbin/$(a):/usr/sbin/li
 
 define Package/libselinux/Default
   TITLE:=Runtime SELinux library
-  URL:=http://selinuxproject.org/page/Main_Page
+  URL:=https://github.com/selinuxproject
 endef
 
 define Package/libselinux

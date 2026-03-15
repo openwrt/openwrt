@@ -6,7 +6,7 @@ Subject: [PATCH] tfa-layerscape: Restore ls1012afrdm support
 Signed-off-by: Wojciech Dubowik <Wojciech.Dubowik@protonmail.ch>
 ---
  plat/nxp/soc-ls1012a/ls1012afrdm/ddr_init.c   | 34 +++++++
- plat/nxp/soc-ls1012a/ls1012afrdm/plat_def.h   | 92 +++++++++++++++++++
+ plat/nxp/soc-ls1012a/ls1012afrdm/plat_def.h   | 83 +++++++++++++++++++
  plat/nxp/soc-ls1012a/ls1012afrdm/platform.mk  | 25 +++++
  .../soc-ls1012a/ls1012afrdm/platform_def.h    | 13 +++
  plat/nxp/soc-ls1012a/ls1012afrdm/policy.h     | 16 ++++
@@ -17,9 +17,6 @@ Signed-off-by: Wojciech Dubowik <Wojciech.Dubowik@protonmail.ch>
  create mode 100644 plat/nxp/soc-ls1012a/ls1012afrdm/platform_def.h
  create mode 100644 plat/nxp/soc-ls1012a/ls1012afrdm/policy.h
 
-diff --git a/plat/nxp/soc-ls1012a/ls1012afrdm/ddr_init.c b/plat/nxp/soc-ls1012a/ls1012afrdm/ddr_init.c
-new file mode 100644
-index 000000000..8cb518540
 --- /dev/null
 +++ b/plat/nxp/soc-ls1012a/ls1012afrdm/ddr_init.c
 @@ -0,0 +1,34 @@
@@ -57,12 +54,9 @@ index 000000000..8cb518540
 +
 +	return NXP_DRAM0_SIZE;
 +}
-diff --git a/plat/nxp/soc-ls1012a/ls1012afrdm/plat_def.h b/plat/nxp/soc-ls1012a/ls1012afrdm/plat_def.h
-new file mode 100644
-index 000000000..eb745a0a3
 --- /dev/null
 +++ b/plat/nxp/soc-ls1012a/ls1012afrdm/plat_def.h
-@@ -0,0 +1,92 @@
+@@ -0,0 +1,83 @@
 +/*
 + * Copyright 2022 NXP
 + *
@@ -129,15 +123,6 @@ index 000000000..eb745a0a3
 +#define MAX_FIP_DEVICES		1
 +#endif
 +
-+#ifdef PLAT_FIP_OFFSET
-+#undef PLAT_FIP_OFFSET
-+#endif
-+#ifdef PLAT_FIP_MAX_SIZE
-+#undef PLAT_FIP_MAX_SIZE
-+#endif
-+#define PLAT_FIP_OFFSET		0x60000
-+#define PLAT_FIP_MAX_SIZE	0x170000
-+
 +/*
 + * ID of the secure physical generic timer interrupt used by the BL32.
 + */
@@ -155,9 +140,6 @@ index 000000000..eb745a0a3
 +#define PLAT_LS_G0_IRQ_PROPS(grp)
 +
 +#endif
-diff --git a/plat/nxp/soc-ls1012a/ls1012afrdm/platform.mk b/plat/nxp/soc-ls1012a/ls1012afrdm/platform.mk
-new file mode 100644
-index 000000000..270e92420
 --- /dev/null
 +++ b/plat/nxp/soc-ls1012a/ls1012afrdm/platform.mk
 @@ -0,0 +1,25 @@
@@ -186,9 +168,6 @@ index 000000000..270e92420
 +
 +# Adding SoC build info
 +include plat/nxp/soc-ls1012a/soc.mk
-diff --git a/plat/nxp/soc-ls1012a/ls1012afrdm/platform_def.h b/plat/nxp/soc-ls1012a/ls1012afrdm/platform_def.h
-new file mode 100644
-index 000000000..7daf1c02c
 --- /dev/null
 +++ b/plat/nxp/soc-ls1012a/ls1012afrdm/platform_def.h
 @@ -0,0 +1,13 @@
@@ -205,9 +184,6 @@ index 000000000..7daf1c02c
 +#include <plat_default_def.h>
 +
 +#endif /* PLATFORM_DEF_H */
-diff --git a/plat/nxp/soc-ls1012a/ls1012afrdm/policy.h b/plat/nxp/soc-ls1012a/ls1012afrdm/policy.h
-new file mode 100644
-index 000000000..a782d01c7
 --- /dev/null
 +++ b/plat/nxp/soc-ls1012a/ls1012afrdm/policy.h
 @@ -0,0 +1,16 @@
@@ -227,6 +203,3 @@ index 000000000..a782d01c7
 +#define POLICY_SMMU_PAGESZ_64K 0x0
 +
 +#endif /* POLICY_H */
--- 
-2.34.1
-

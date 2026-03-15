@@ -46,8 +46,8 @@
 #endif
 
 struct bh_priv {
-	unsigned long		*seen;
 	struct input_handle	handle;
+	unsigned long		seen[];
 };
 
 struct bh_event {
@@ -72,7 +72,7 @@ extern u64 uevent_next_seqnum(void);
 		.name = (_name),	\
 	}
 
-static struct bh_map button_map[] = {
+static const struct bh_map button_map[] = {
 	BH_MAP(BTN_0,		"BTN_0"),
 	BH_MAP(BTN_1,		"BTN_1"),
 	BH_MAP(BTN_2,		"BTN_2"),
@@ -254,13 +254,10 @@ static int button_hotplug_connect(struct input_handler *handler,
 	if (i == ARRAY_SIZE(button_map))
 		return -ENODEV;
 
-	priv = kzalloc(sizeof(*priv) +
-		       (sizeof(unsigned long) * ARRAY_SIZE(button_map)),
-		       GFP_KERNEL);
+	priv = kzalloc(struct_size(priv, seen, ARRAY_SIZE(button_map)), GFP_KERNEL);
 	if (!priv)
 		return -ENOMEM;
 
-	priv->seen = (unsigned long *) &priv[1];
 	priv->handle.private = priv;
 	priv->handle.dev = dev;
 	priv->handle.handler = handler;

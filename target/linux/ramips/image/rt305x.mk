@@ -1220,7 +1220,7 @@ TARGET_DEVICES += zte_mf283plus
 define Device/zyxel_keenetic
   SOC := rt3052
   IMAGE_SIZE := 7872k
-  DEVICE_VENDOR := ZyXEL
+  DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := Keenetic
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ehci kmod-usb-ledtrig-usbport \
 	kmod-usb-dwc2
@@ -1233,7 +1233,7 @@ define Device/zyxel_keenetic-4g-b
   $(Device/uimage-lzma-loader)
   SOC := rt5350
   IMAGE_SIZE := 7872k
-  DEVICE_VENDOR := ZyXEL
+  DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := Keenetic 4G
   DEVICE_VARIANT := B
   DEFAULT := n
@@ -1244,7 +1244,7 @@ define Device/zyxel_keenetic-lite-b
   $(Device/uimage-lzma-loader)
   SOC := rt5350
   IMAGE_SIZE := 7872k
-  DEVICE_VENDOR := ZyXEL
+  DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := Keenetic Lite
   DEVICE_VARIANT := B
   DEFAULT := n
@@ -1254,7 +1254,7 @@ TARGET_DEVICES += zyxel_keenetic-lite-b
 define Device/zyxel_keenetic-start
   SOC := rt5350
   IMAGE_SIZE := 3776k
-  DEVICE_VENDOR := ZyXEL
+  DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := Keenetic Start
   DEFAULT := n
 endef
@@ -1263,7 +1263,7 @@ TARGET_DEVICES += zyxel_keenetic-start
 define Device/zyxel_nbg-419n
   SOC := rt3052
   IMAGE_SIZE := 3776k
-  DEVICE_VENDOR := ZyXEL
+  DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := NBG-419N
   SUPPORTED_DEVICES += nbg-419n
   DEFAULT := n
@@ -1274,7 +1274,7 @@ define Device/zyxel_nbg-419n-v2
   $(Device/uimage-lzma-loader)
   SOC := rt3352
   IMAGE_SIZE := 7872k
-  DEVICE_VENDOR := ZyXEL
+  DEVICE_VENDOR := Zyxel
   DEVICE_MODEL := NBG-419N
   DEVICE_VARIANT := v2
   SUPPORTED_DEVICES += nbg-419n2

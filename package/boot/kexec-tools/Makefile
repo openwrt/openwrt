@@ -8,14 +8,18 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=kexec-tools
-PKG_VERSION:=2.0.28
-PKG_RELEASE:=1
+PKG_VERSION:=2.0.32
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/utils/kernel/kexec
-PKG_HASH:=d2f0ef872f39e2fe4b1b01feb62b0001383207239b9f8041f98a95564161d053
+PKG_HASH:=8f81422a5fd2362cf6cb001b511e535565ed0f32c2f4451fb5eb68fed6710a5d
 
-PKG_CONFIG_DEPENDS := CONFIG_KEXEC_ZLIB CONFIG_KEXEC_LZMA
+PKG_LICENSE:=GPL-2.0-only
+PKG_LICENSE_FILES:=COPYING
+PKG_CPE_ID:=cpe:/a:kernel:kexec-tools
+
+PKG_CONFIG_DEPENDS := CONFIG_KEXEC_ZLIB CONFIG_KEXEC_LZMA CONFIG_KEXEC_ZSTD
 
 PKG_BUILD_FLAGS:=gc-sections
 
@@ -24,7 +28,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/kexec-tools/Default
   SECTION:=utils
   CATEGORY:=Utilities
-  URL:=http://kernel.org/pub/linux/kernel/people/horms/kexec-tools/
+  URL:=https://github.com/horms/kexec-tools
 endef
 
 define Package/kexec-tools
@@ -43,8 +47,8 @@ define Package/kexec
   $(call Package/kexec-tools/Default)
   TITLE:=Kernel boots kernel
   DEPENDS:=\
-	@(armeb||arm||i386||x86_64||powerpc64||mipsel||mips) \
-	+KEXEC_ZLIB:zlib +KEXEC_LZMA:liblzma @KERNEL_KEXEC
+	@(armeb||arm||aarch64||i386||x86_64||powerpc64||mipsel||mips) \
+	+KEXEC_ZLIB:zlib +KEXEC_LZMA:liblzma +KEXEC_ZSTD:libzstd @KERNEL_KEXEC
 endef
 
 define Package/kexec/description
@@ -54,7 +58,7 @@ endef
 define Package/kdump
   $(call Package/kexec-tools/Default)
   TITLE:=Kernel crash analysis
-  DEPENDS:=+kexec @(i386||x86_64||arm) @KERNEL_CRASH_DUMP
+  DEPENDS:=+kexec @(i386||x86_64||arm||aarch64) @KERNEL_CRASH_DUMP
 endef
 
 define Package/kdump/description
@@ -82,6 +86,7 @@ CONFIGURE_ARGS = \
 		--sysconfdir=/etc \
 		$(if $(CONFIG_KEXEC_ZLIB),--with,--without)-zlib \
 		$(if $(CONFIG_KEXEC_LZMA),--with,--without)-lzma \
+		$(if $(CONFIG_KEXEC_ZSTD),--with,--without)-zstd \
 		TARGET_LD="$(TARGET_CROSS)ld"
 
 CONFIGURE_VARS += \

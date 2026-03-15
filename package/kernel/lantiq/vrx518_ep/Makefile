@@ -15,14 +15,12 @@ PKG_LICENSE:=GPL-2.0
 
 include $(INCLUDE_DIR)/package.mk
 
-# TODO this driver depends on the vrx518 aca firmware, add this dependency if
-# that ever gets a compatible license
 define KernelPackage/vrx518_ep
   SECTION:=sys
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=VRX518 EP Support
-  DEPENDS:=@TARGET_ipq40xx
+  DEPENDS:=@TARGET_ipq40xx +vrx518_aca_fw
   AUTOLOAD:=$(call AutoLoad,26,vrx518)
   FILES:=$(PKG_BUILD_DIR)/vrx518.ko
 endef

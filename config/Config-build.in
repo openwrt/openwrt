@@ -68,6 +68,21 @@ menu "Global build settings"
 		bool "Enable TLS certificate verification during package download"
 		default y
 
+	config USE_APK
+		imply PACKAGE_apk-mbedtls
+		bool "Use APK instead of OPKG to build distribution"
+		default y
+
+	config SIGN_EACH_PACKAGE
+		bool "Cryptographically sign each package .apk file"
+		depends on USE_APK
+		default n if BUILDBOT
+		default y
+		help
+		  Sign also the individual package .apk file. Removes the need for
+		  --allow-untrusted when installing self-compiled packages to a
+		  firmware compiled by the same buildhost as public key matches.
+
 	comment "General build options"
 
 	config TESTING_KERNEL
@@ -103,6 +118,7 @@ menu "Global build settings"
 	config CLEAN_IPKG
 		bool
 		prompt "Remove ipkg/opkg status data files in final images"
+		depends on !USE_APK
 		help
 		  This removes all ipkg/opkg status data files from the target directory
 		  before building the root filesystem.
@@ -110,6 +126,7 @@ menu "Global build settings"
 	config IPK_FILES_CHECKSUMS
 		bool
 		prompt "Record files checksums in package metadata"
+		depends on !USE_APK
 		help
 		  This makes file checksums part of package metadata. It increases size
 		  but provides you with pkg_check command to check for flash corruptions.
@@ -168,8 +185,8 @@ menu "Global build settings"
 		  Packages can choose to opt-out via setting PKG_BUILD_FLAGS:=no-lto
 
 	config MOLD
-		depends on (aarch64 || arm || i386 || i686 || m68k || powerpc || powerpc64 || sh4 || x86_64)
-		depends on !GCC_USE_VERSION_11
+		depends on (aarch64 || arm || i386 || i686 || loongarch64 || m68k || powerpc || powerpc64 || riscv64 || sh4 || x86_64)
+		depends on !HOST_OS_MACOS
 		def_bool $(shell, ./config/check-hostcxx.sh 10 2 12)
 
 	config USE_MOLD
@@ -228,6 +245,7 @@ menu "Global build settings"
 
 	config STRIP_KERNEL_EXPORTS
 		bool "Strip unnecessary exports from the kernel image"
+		depends on BROKEN
 		help
 		  Reduces kernel size by stripping unused kernel exports from the kernel
 		  image.  Note that this might make the kernel incompatible with any kernel
@@ -242,6 +260,15 @@ menu "Global build settings"
 		  not selected during the build process.
 
 	comment "Hardening build options"
+
+	config PKG_FANALYZER
+		bool
+		prompt "Enable gcc fanalyzer"
+		default n
+		help
+		  Add -fanalyzer to the CFLAGS. As a result of this option, a static analysis
+		  of the program flow is conducted, allowing interprocedural paths to be
+		  identified and warnings to be issued if problems are identified.
 
 	config PKG_CHECK_FORMAT_SECURITY
 		bool
@@ -289,12 +316,22 @@ menu "Global build settings"
 		  Enable GCC Stack Smashing Protection (SSP) for userspace applications
 		config PKG_CC_STACKPROTECTOR_NONE
 			bool "None"
+			help
+				No stack smashing protection.
 		config PKG_CC_STACKPROTECTOR_REGULAR
 			bool "Regular"
+			help
+				Protects functions with vulnerable objects.
+				This includes functions with buffers larger than 8 bytes or calls to alloca.
 		config PKG_CC_STACKPROTECTOR_STRONG
 			bool "Strong"
+			help
+				Like Regular, but also protects functions with
+				local arrays or references to local frame addresses.
 		config PKG_CC_STACKPROTECTOR_ALL
 			bool "All"
+			help
+				Protects all functions.
 	endchoice
 
 	choice
@@ -304,10 +341,18 @@ menu "Global build settings"
 		  Enable GCC Stack-Smashing Protection (SSP) for the kernel
 		config KERNEL_CC_STACKPROTECTOR_NONE
 			bool "None"
+			help
+				No stack smashing protection.
 		config KERNEL_CC_STACKPROTECTOR_REGULAR
 			bool "Regular"
+			help
+				Protects functions with vulnerable objects.
+				This includes functions with buffers larger than 8 bytes or calls to alloca.
 		config KERNEL_CC_STACKPROTECTOR_STRONG
 			bool "Strong"
+			help
+				Like Regular, but also protects functions with
+				local arrays or references to local frame addresses.
 	endchoice
 
 	config KERNEL_STACKPROTECTOR
@@ -333,9 +378,11 @@ menu "Global build settings"
 		config PKG_FORTIFY_SOURCE_NONE
 			bool "None"
 		config PKG_FORTIFY_SOURCE_1
-			bool "Conservative"
+			bool "Conservative Level 1"
 		config PKG_FORTIFY_SOURCE_2
-			bool "Aggressive"
+			bool "Aggressive Level 2"
+		config PKG_FORTIFY_SOURCE_3
+			bool "Aggressive Level 3"
 	endchoice
 
 	choice
@@ -356,9 +403,19 @@ menu "Global build settings"
 			bool "Full"
 	endchoice
 
+	config PKG_DT_RELR
+		bool "Link with relative relocations (RELR)"
+		depends on (aarch64 || i386 || loongarch64 || x86_64)
+		default y
+		help
+		  Link all applications with -Wl,-z,pack-relative-relocs.
+		  This will reduce the size of many applications.
+		  This is only supported on a limited number of architectures.
+
 	config TARGET_ROOTFS_SECURITY_LABELS
 		bool
 		select KERNEL_SQUASHFS_XATTR
+		select KERNEL_EROFS_FS_SECURITY
 		select KERNEL_EXT4_FS_SECURITY
 		select KERNEL_F2FS_FS_SECURITY
 		select KERNEL_UBIFS_FS_SECURITY
@@ -398,11 +455,10 @@ menu "Global build settings"
 
 	endchoice
 
-	config SECCOMP
+	config USE_SECCOMP
 		bool "Enable SECCOMP"
 		select KERNEL_SECCOMP
-		select PACKAGE_procd-seccomp
-		depends on (aarch64 || arm || armeb || mips || mipsel || mips64 || mips64el || i386 || powerpc || x86_64)
+		depends on (aarch64 || arm || armeb || mips || mipsel || mips64 || mips64el || i386 || loongarch64 || powerpc || x86_64)
 		depends on !TARGET_uml
 		default y
 		help

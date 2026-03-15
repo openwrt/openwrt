@@ -1,5 +1,4 @@
 SUBTARGET:=ipq60xx
-FEATURES += source-only
 BOARDNAME:=Qualcomm Atheros IPQ60xx
 DEFAULT_PACKAGES += ath11k-firmware-ipq6018
 

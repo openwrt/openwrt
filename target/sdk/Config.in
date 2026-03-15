@@ -1,6 +1,6 @@
 config SDK
 	bool "Build the OpenWrt SDK"
-	depends on !EXTERNAL_TOOLCHAIN
+	depends on !EXTERNAL_TOOLCHAIN || EXTERNAL_TOOLCHAIN_SDK
 	default BUILDBOT
 	help
 	  This is essentially a stripped-down version of the buildroot
@@ -10,6 +10,7 @@ config SDK
 config SDK_LLVM_BPF
 	bool "Build the LLVM-BPF toolchain tarball"
 	depends on BPF_TOOLCHAIN_BUILD_LLVM
+	select NEED_BPF_TOOLCHAIN
 	default BUILDBOT
 	help
 	  This is a tarball of the precompiled LLVM toolchain suitable

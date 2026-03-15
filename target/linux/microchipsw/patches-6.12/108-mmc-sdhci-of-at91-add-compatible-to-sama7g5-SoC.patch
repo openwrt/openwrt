@@ -1,0 +1,73 @@
+From 31cf8b12619925d2229f1f7dfbed7025372acf24 Mon Sep 17 00:00:00 2001
+From: Eugen Hristev <eugen.hristev@microchip.com>
+Date: Wed, 1 Jul 2020 16:30:33 +0300
+Subject: [PATCH 086/110] mmc: sdhci-of-at91: add compatible to sama7g5 SoC
+
+Add compatible and support for sama7g5 SDMMC block.
+
+Signed-off-by: Eugen Hristev <eugen.hristev@microchip.com>
+(cherry picked from linux-6.1-trunk/at91/mmc)
+Signed-off-by: Andrei Simion <andrei.simion@microchip.com>
+---
+ drivers/mmc/host/sdhci-of-at91.c | 19 ++++++++++++++++---
+ 1 file changed, 16 insertions(+), 3 deletions(-)
+
+--- a/drivers/mmc/host/sdhci-of-at91.c
++++ b/drivers/mmc/host/sdhci-of-at91.c
+@@ -40,6 +40,8 @@ struct sdhci_at91_soc_data {
+ 	const struct sdhci_pltfm_data *pdata;
+ 	bool baseclk_is_generated_internally;
+ 	unsigned int divider_for_baseclk;
++	unsigned int max_sdr104_clk;
++	bool hs200_broken;
+ };
+ 
+ struct sdhci_at91_priv {
+@@ -192,6 +194,8 @@ static const struct sdhci_pltfm_data sdh
+ static const struct sdhci_at91_soc_data soc_data_sama5d2 = {
+ 	.pdata = &sdhci_sama5d2_pdata,
+ 	.baseclk_is_generated_internally = false,
++	.max_sdr104_clk = 120000000,
++	.hs200_broken = true,
+ };
+ 
+ static const struct sdhci_at91_soc_data soc_data_sam9x60 = {
+@@ -200,9 +204,17 @@ static const struct sdhci_at91_soc_data
+ 	.divider_for_baseclk = 2,
+ };
+ 
++static const struct sdhci_at91_soc_data soc_data_sama7g5 = {
++	.pdata = &sdhci_sama5d2_pdata,
++	.baseclk_is_generated_internally = true,
++	.divider_for_baseclk = 2,
++	.max_sdr104_clk = 200000000,
++};
++
+ static const struct of_device_id sdhci_at91_dt_match[] = {
+ 	{ .compatible = "atmel,sama5d2-sdhci", .data = &soc_data_sama5d2 },
+ 	{ .compatible = "microchip,sam9x60-sdhci", .data = &soc_data_sam9x60 },
++	{ .compatible = "microchip,sama7g5-sdhci", .data = &soc_data_sama7g5 },
+ 	{}
+ };
+ MODULE_DEVICE_TABLE(of, sdhci_at91_dt_match);
+@@ -259,7 +271,7 @@ static int sdhci_at91_set_clks_presets(s
+ 	preset_div = DIV_ROUND_UP(gck_rate, 100000000) - 1;
+ 	writew(SDHCI_AT91_PRESET_COMMON_CONF | preset_div,
+ 	       host->ioaddr + SDHCI_PRESET_FOR_SDR50);
+-	preset_div = DIV_ROUND_UP(gck_rate, 120000000) - 1;
++	preset_div = DIV_ROUND_UP(gck_rate, priv->soc_data->max_sdr104_clk) - 1;
+ 	writew(SDHCI_AT91_PRESET_COMMON_CONF | preset_div,
+ 	       host->ioaddr + SDHCI_PRESET_FOR_SDR104);
+ 	preset_div = DIV_ROUND_UP(gck_rate, 50000000) - 1;
+@@ -425,8 +437,9 @@ static int sdhci_at91_probe(struct platf
+ 	pm_runtime_set_autosuspend_delay(&pdev->dev, 50);
+ 	pm_runtime_use_autosuspend(&pdev->dev);
+ 
+-	/* HS200 is broken at this moment */
+-	host->quirks2 |= SDHCI_QUIRK2_BROKEN_HS200;
++	/* check if HS200 is broken on this platform */
++	if (priv->soc_data->hs200_broken)
++		host->quirks2 |= SDHCI_QUIRK2_BROKEN_HS200;
+ 
+ 	ret = sdhci_add_host(host);
+ 	if (ret)

@@ -34,16 +34,6 @@
 		};
 	};
 
-	ath9k-leds {
-		compatible = "gpio-leds";
-
-		wlan5g {
-			label = "green:wlan5g";
-			gpios = <&ath9k 0 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
-		};
-	};
-
 	keys {
 		compatible = "gpio-keys";
 
@@ -103,7 +93,7 @@
 				reg = <0x020000 0x7d0000>;
 			};
 
-			art: partition@7f0000 {
+			partition@7f0000 {
 				label = "art";
 				reg = <0x7f0000 0x010000>;
 				read-only;

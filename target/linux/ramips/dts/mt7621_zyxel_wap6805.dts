@@ -8,7 +8,7 @@
 
 / {
 	compatible = "zyxel,wap6805", "mediatek,mt7621-soc";
-	model = "ZyXEL WAP6805";
+	model = "Zyxel WAP6805";
 
 	aliases {
 		led-boot = &led_status_green;
@@ -138,7 +138,8 @@
 };
 
 &pcie0 {
-	mt76@0,0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&eeprom_factory_0>;
 		nvmem-cell-names = "eeprom";

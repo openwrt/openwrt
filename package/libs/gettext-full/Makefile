@@ -8,26 +8,25 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gettext-full
-PKG_VERSION:=0.21.1
-PKG_RELEASE:=2
+PKG_VERSION:=0.24.1
+PKG_RELEASE:=1
 
 PKG_SOURCE:=gettext-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/gettext
-PKG_HASH:=50dbc8f39797950aa2c98e939947c527e5ac9ebd2c1b99dd7b06ba33a6767ae6
+PKG_HASH:=6164ec7aa61653ac9cdfb41d5c2344563b21f707da1562712e48715f1d2052a6
 PKG_BUILD_DIR:=$(BUILD_DIR)/gettext-$(PKG_VERSION)
 HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/gettext-$(PKG_VERSION)
 
 PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
-PKG_LICENSE:=GPL-3.0-or-later
+PKG_LICENSE:=LGPL-2.1-or-later
+PKG_LICENSE_FILES:=gettext-runtime/intl/COPYING.LIB
 PKG_CPE_ID:=cpe:/a:gnu:gettext
 
 PKG_INSTALL:=1
 PKG_BUILD_DEPENDS:=gettext-full/host libunistring libxml2
 PKG_BUILD_PARALLEL:=0
 
-PKG_FIXUP:=autoreconf
-
-HOST_BUILD_DEPENDS:=gperf/host libunistring/host libxml2/host
+HOST_BUILD_DEPENDS:=gnulib-l10n/host gperf/host libiconv-full/host libunistring/host libxml2/host
 HOST_BUILD_PARALLEL:=0
 
 PKG_SUBDIRS:= \
@@ -66,13 +65,14 @@ define Package/libintl-full
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=GNU Internationalization library
-  URL:=http://www.gnu.org/software/gettext/
+  URL:=https://www.gnu.org/software/gettext/
   ABI_VERSION:=8
 endef
 
 export GNULIB_SRCDIR:=$(HOST_GNULIB_SRCDIR)
 
 TARGET_CFLAGS += $(FPIC)
+TARGET_CFLAGS += -std=gnu23
 ifneq ($(HOST_OS),Linux)
   TARGET_CFLAGS += -I$(STAGING_DIR_HOSTPKG)/include
 endif
@@ -101,14 +101,12 @@ HOST_CONFIGURE_ARGS += \
 	--disable-java \
 	--disable-openmp \
 	--without-emacs \
+	--with-libiconv-prefix=$(STAGING_DIR_HOSTPKG) \
 	--with-libunistring-prefix=$(STAGING_DIR_HOSTPKG) \
 	--with-libxml2-prefix=$(STAGING_DIR_HOSTPKG)
 
 HOST_CONFIGURE_VARS += \
 	EMACS="no" \
-	am_cv_lib_iconv=no \
-	am_cv_func_iconv=no \
-	ac_cv_header_iconv_h=no \
 
 HOST_CFLAGS += $(HOST_FPIC)
 
@@ -165,8 +163,8 @@ define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/lib/libintl-full/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libintl.{a,so*} $(1)/usr/lib/libintl-full/lib/
 
-	$(INSTALL_DIR) $(1)/usr/share/aclocal
-	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/share/aclocal/* $(1)/usr/share/aclocal/
+	$(INSTALL_DIR) $(1)/usr/share/gettext/m4
+	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/share/gettext/m4/* $(1)/usr/share/gettext/m4/
 
 	$(SED) '/read dummy/d' $(STAGING_DIR_HOSTPKG)/bin/gettextize
 endef

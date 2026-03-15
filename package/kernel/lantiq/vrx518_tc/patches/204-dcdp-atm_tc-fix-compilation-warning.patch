@@ -1,6 +1,6 @@
 --- a/dcdp/atm_tc.c
 +++ b/dcdp/atm_tc.c
-@@ -746,7 +746,8 @@ static void atm_aca_init(struct atm_priv
+@@ -688,7 +688,8 @@ static void atm_aca_init(struct atm_priv
  		ACA_TXOUT_EN | ACA_RXIN_EN | ACA_RXOUT_EN, 1);
  }
  
@@ -10,7 +10,7 @@
  {
  	struct tm nowtm;
  	char tmbuf[64];
-@@ -765,7 +766,8 @@ static int print_datetime(char *buffer,
+@@ -707,7 +708,8 @@ static int print_datetime(char *buffer,
  			nowtm.tm_hour,
  			nowtm.tm_min,
  			nowtm.tm_sec);
@@ -20,7 +20,7 @@
  
  	return 0;
  }
-@@ -967,7 +969,7 @@ void show_atm_pvc(struct seq_file *seq,
+@@ -909,7 +911,7 @@ void show_atm_pvc(struct seq_file *seq,
  	char buf[64];
  
  	seq_printf(seq, "\tNet device: %s\n", pvc->dev->name);

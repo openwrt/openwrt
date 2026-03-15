@@ -66,7 +66,7 @@ get_mac_ascii() {
 	local key="$2"
 	local mac_dirty
 
-	mac_dirty=$(strings "$part" | sed -n 's/^'"$key"'=//p')
+	mac_dirty=$(strings "$part" | tr -d ' \t' | sed -n 's/^'"$key"'=//p' | head -n 1)
 
 	# "canonicalize" mac
 	[ -n "$mac_dirty" ] && macaddr_canonicalize "$mac_dirty"
@@ -205,6 +205,7 @@ mmc_get_mac_ascii() {
 	part=$(find_mmc_part "$part_name")
 	if [ -z "$part" ]; then
 		echo "mmc_get_mac_ascii: partition $part_name not found!" >&2
+		return
 	fi
 
 	get_mac_ascii "$part" "$key"
@@ -278,12 +279,6 @@ macaddr_random() {
 	echo "$(macaddr_unsetbit_mc "$(macaddr_setbit_la "${randsrc}")")"
 }
 
-macaddr_2bin() {
-	local mac=$1
-
-	echo -ne \\x${mac//:/\\x}
-}
-
 macaddr_canonicalize() {
 	local mac="$1"
 	local canon=""
@@ -319,4 +314,11 @@ macaddr_canonicalize() {
 
 dt_is_enabled() {
 	grep -q okay "/proc/device-tree/$1/status"
+}
+
+get_linux_version() {
+	local ver=$(uname -r)
+	local minor=${ver%\.*}
+
+	printf "%d%02d%03d" ${ver%%\.*} ${minor#*\.} ${ver##*\.} 2>/dev/null
 }

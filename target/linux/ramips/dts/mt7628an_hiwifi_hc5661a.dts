@@ -1,33 +1,67 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
 #include "mt7628an_hiwifi_hc5x61a.dtsi"
 
 / {
 	compatible = "hiwifi,hc5661a", "mediatek,mt7628an-soc";
 	model = "HiWiFi HC5661A";
 
+	aliases {
+		label-mac-device = &ethernet;
+		led-boot = &led_status;
+		led-failsafe = &led_status;
+		led-running = &led_status;
+		led-upgrade = &led_status;
+	};
+
 	leds {
 		compatible = "gpio-leds";
 
-		led_system: system {
-			label = "blue:system";
+		led_status: led-0 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 37 GPIO_ACTIVE_HIGH>;
 		};
 
-		internet {
-			label = "blue:internet";
+		led-1 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WAN;
 			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
 		};
 
-		wlan2g {
-			label = "blue:wlan2g";
+		led-2 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN;
 			gpios = <&gpio 44 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy0tpt";
 		};
 	};
 };
 
+&esw {
+	mediatek,portmap = <0x2f>;
+	mediatek,portdisable = <0x20>;
+};
+
+&pinctrl {
+	ephy-analog;
+
+	sdxc_router_mode: sdxc_router_mode {
+		groups = "esd", "gpio", "i2c", "sdmode", "uart1";
+		function = "gpio";
+	};
+};
+
+&sdhci {
+	status = "okay";
+
+	pinctrl-0 = <&sdxc_router_mode>;
+	pinctrl-1 = <&sdxc_router_mode>;
+};
+
 &state_default {
 	gpio {
-		groups = "i2c", "refclk", "wdt", "wled_an";
+		groups = "i2s", "refclk", "wdt", "wled_an";
 		function = "gpio";
 	};
 };
@@ -37,5 +71,9 @@
 };
 
 &ohci {
+	status = "disabled";
+};
+
+&usbphy {
 	status = "disabled";
 };

@@ -19,8 +19,7 @@
 		compatible = "reset-leds";
 
 		usb_led {
-			function = LED_FUNCTION_USB;
-			color = <LED_COLOR_ID_GREEN>;
+			label = "green:usb";
 			resets = <&rst 12>;
 			trigger-sources = <&usb_ohci_port>, <&usb_ehci_port>;
 			linux,default-trigger = "usbport";
@@ -102,8 +101,8 @@
 	rtl8366s {
 		compatible = "realtek,rtl8366s";
 
-		gpio-sda = <&gpio 5 GPIO_ACTIVE_HIGH>;
-		gpio-sck = <&gpio 7 GPIO_ACTIVE_HIGH>;
+		sda-gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
+		sck-gpios = <&gpio 7 GPIO_ACTIVE_HIGH>;
 
 		mdio-bus {
 			#address-cells = <1>;

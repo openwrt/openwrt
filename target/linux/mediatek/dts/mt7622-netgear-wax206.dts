@@ -13,6 +13,7 @@
 
 	aliases {
 		ethernet0 = &gmac0;
+		label-mac-device = &gmac0;
 		led-boot = &led_power_r;
 		led-failsafe = &led_power_r;
 		led-running = &led_power_g;
@@ -84,6 +85,7 @@
 			default-state = "off";
 			gpios = <&pio 85 GPIO_ACTIVE_LOW>;
 			label = "wifin:green";
+			linux,default-trigger = "phy0tpt";
 		};
 
 		wifin_blue {
@@ -96,6 +98,7 @@
 			default-state = "off";
 			gpios = <&pio 2 GPIO_ACTIVE_HIGH>;
 			label = "wifia:green";
+			linux,default-trigger = "phy1tpt";
 		};
 
 		wifia_blue {
@@ -105,8 +108,9 @@
 		};
 	};
 
-	memory {
+	memory@40000000 {
 		reg = <0 0x40000000 0 0x40000000>;
+		device_type = "memory";
 	};
 };
 
@@ -143,13 +147,13 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		switch@0 {
+		switch@1f {
 			compatible = "mediatek,mt7531";
+			reg = <31>;
 			#interrupt-cells = <1>;
 			interrupt-controller;
 			interrupt-parent = <&pio>;
 			interrupts = <53 IRQ_TYPE_LEVEL_HIGH>;
-			reg = <0>;
 			reset-gpios = <&pio 54 GPIO_ACTIVE_HIGH>;
 
 			ports {
@@ -203,7 +207,8 @@
 			compatible = "ethernet-phy-ieee802.3-c45";
 			reg = <7>;
 			reset-gpios = <&pio 101 GPIO_ACTIVE_LOW>;
-			interrupts = <52 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&pio>;
+			interrupts = <77 IRQ_TYPE_LEVEL_LOW>;
 			reset-assert-us = <100000>;
 			reset-deassert-us = <100000>;
 		};

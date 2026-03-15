@@ -23,10 +23,13 @@ try_git() {
 		BASE_REV="$(git rev-list ${REBOOT}..HEAD 2>/dev/null | wc -l | awk '{print $1}')"
 		[ $((BASE_REV - GET_REV)) -ge 0 ] && REV="$(git rev-parse HEAD~$((BASE_REV - GET_REV)))"
 		;;
+	*-*-*)  # ISO date format - for approximating when packages were removed or renamed
+		GET_REV="$(git log -n 1 --format="%h" --until "$GET_REV")"
+		;&  # FALLTHROUGH
 	*)
 		BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 		ORIGIN="$(git rev-parse --verify --symbolic-full-name ${BRANCH}@{u} 2>/dev/null)"
-		[ -n "$ORIGIN" ] || ORIGIN="$(git rev-parse --verify --symbolic-full-name master@{u} 2>/dev/null)"
+		[ -n "$ORIGIN" ] || ORIGIN="$(git rev-parse --verify --symbolic-full-name main@{u} 2>/dev/null)"
 		REV="$(git rev-list ${REBOOT}..$GET_REV 2>/dev/null | wc -l | awk '{print $1}')"
 
 		if [ -n "$ORIGIN" ]; then
@@ -40,7 +43,7 @@ try_git() {
 			REV="${UPSTREAM_REV}+$((REV - UPSTREAM_REV))"
 		fi
 
-		REV="${REV:+r$REV-$(git log -n 1 --format="%h" $UPSTREAM_BASE)}"
+		REV="${REV:+r$REV-$(git log -n 1 --no-show-signature --format="%h" $UPSTREAM_BASE)}"
 
 		;;
 	esac

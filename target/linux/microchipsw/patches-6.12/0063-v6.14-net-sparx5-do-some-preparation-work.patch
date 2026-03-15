@@ -1,0 +1,78 @@
+From 4bb216d318259f940eb2248dc91ade01edea1cc4 Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Fri, 20 Dec 2024 14:48:40 +0100
+Subject: [PATCH 68/82] net: sparx5: do some preparation work
+
+The sparx5_port_init() does initial configuration of a variety of
+different features and options for each port. Some are shared for all
+types of devices, some are not. As it is now, common configuration is
+done after configuration of low-speed devices. This will not work when
+adding RGMII support in a subsequent patch.
+
+In preparation for lan969x RGMII support, move a block of code, that
+configures 2g5 devices, down. This ensures that the configuration common
+to all devices is done before configuration of 2g5, 5g, 10g and 25g
+devices.
+
+Reviewed-by: Steen Hegelund <Steen.Hegelund@microchip.com>
+Reviewed-by: Horatiu Vultur <horatiu.vultur@microchip.com>
+Tested-by: Robert Marko <robert.marko@sartura.hr>
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Link: https://patch.msgid.link/20241220-sparx5-lan969x-switch-driver-4-v5-1-fa8ba5dff732@microchip.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ .../ethernet/microchip/sparx5/sparx5_port.c   | 36 +++++++++----------
+ 1 file changed, 18 insertions(+), 18 deletions(-)
+
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_port.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_port.c
+@@ -1067,24 +1067,6 @@ int sparx5_port_init(struct sparx5 *spar
+ 	if (err)
+ 		return err;
+ 
+-	/* Configure MAC vlan awareness */
+-	err = sparx5_port_max_tags_set(sparx5, port);
+-	if (err)
+-		return err;
+-
+-	/* Set Max Length */
+-	spx5_rmw(DEV2G5_MAC_MAXLEN_CFG_MAX_LEN_SET(ETH_MAXLEN),
+-		 DEV2G5_MAC_MAXLEN_CFG_MAX_LEN,
+-		 sparx5,
+-		 DEV2G5_MAC_MAXLEN_CFG(port->portno));
+-
+-	/* 1G/2G5: Signal Detect configuration */
+-	spx5_wr(DEV2G5_PCS1G_SD_CFG_SD_POL_SET(sd_pol) |
+-		DEV2G5_PCS1G_SD_CFG_SD_SEL_SET(sd_sel) |
+-		DEV2G5_PCS1G_SD_CFG_SD_ENA_SET(sd_ena),
+-		sparx5,
+-		DEV2G5_PCS1G_SD_CFG(port->portno));
+-
+ 	/* Set Pause WM hysteresis */
+ 	spx5_rmw(QSYS_PAUSE_CFG_PAUSE_START_SET(pause_start) |
+ 		 QSYS_PAUSE_CFG_PAUSE_STOP_SET(pause_stop) |
+@@ -1108,6 +1090,24 @@ int sparx5_port_init(struct sparx5 *spar
+ 		 ANA_CL_FILTER_CTRL_FILTER_SMAC_MC_DIS,
+ 		 sparx5, ANA_CL_FILTER_CTRL(port->portno));
+ 
++	/* Configure MAC vlan awareness */
++	err = sparx5_port_max_tags_set(sparx5, port);
++	if (err)
++		return err;
++
++	/* Set Max Length */
++	spx5_rmw(DEV2G5_MAC_MAXLEN_CFG_MAX_LEN_SET(ETH_MAXLEN),
++		 DEV2G5_MAC_MAXLEN_CFG_MAX_LEN,
++		 sparx5,
++		 DEV2G5_MAC_MAXLEN_CFG(port->portno));
++
++	/* 1G/2G5: Signal Detect configuration */
++	spx5_wr(DEV2G5_PCS1G_SD_CFG_SD_POL_SET(sd_pol) |
++		DEV2G5_PCS1G_SD_CFG_SD_SEL_SET(sd_sel) |
++		DEV2G5_PCS1G_SD_CFG_SD_ENA_SET(sd_ena),
++		sparx5,
++		DEV2G5_PCS1G_SD_CFG(port->portno));
++
+ 	if (conf->portmode == PHY_INTERFACE_MODE_QSGMII ||
+ 	    conf->portmode == PHY_INTERFACE_MODE_SGMII) {
+ 		err = sparx5_serdes_set(sparx5, port, conf);

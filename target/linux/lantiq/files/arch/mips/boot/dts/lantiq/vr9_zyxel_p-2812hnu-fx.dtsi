@@ -110,7 +110,7 @@
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 
-		gpio = <&gpio 33 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 33 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
 };
@@ -157,6 +157,16 @@
 		    <&gphy0_led1_pins>, <&gphy0_led2_pins>,
 		    <&gphy1_led1_pins>, <&gphy1_led2_pins>;
 	pinctrl-names = "default";
+};
+
+&eth0 {
+	nvmem-cells = <&macaddr_uboot_ethaddr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&ppe {
+	nvmem-cells = <&macaddr_uboot_ethaddr 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &gswip_mdio {
@@ -207,6 +217,8 @@
 		label = "wan";
 		phy-mode = "rgmii";
 		phy-handle = <&phy5>;
+		nvmem-cells = <&macaddr_uboot_ethaddr 1>;
+		nvmem-cell-names = "mac-address";
 	};
 };
 
@@ -216,7 +228,7 @@
 	pinctrl-0 = <&pci_gnt1_pins>, <&pci_req1_pins>;
 	pinctrl-names = "default";
 
-	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
+	reset-gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 };
 
 &stp {

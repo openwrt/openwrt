@@ -20,8 +20,11 @@ proto_mbim_init_config() {
 	proto_config_add_string username
 	proto_config_add_string password
 	[ -e /proc/sys/net/ipv6 ] && proto_config_add_string ipv6
+	proto_config_add_string devpath
 	proto_config_add_string dhcp
 	proto_config_add_string dhcpv6
+	proto_config_add_boolean sourcefilter
+	proto_config_add_boolean delegate
 	proto_config_add_string pdptype
 	proto_config_add_int mtu
 	proto_config_add_defaults
@@ -44,14 +47,42 @@ _proto_mbim_setup() {
 	local tid=2
 	local ret
 
-	local device apn pincode delay auth username password allow_roaming allow_partner
-	local dhcp dhcpv6 pdptype ip4table ip6table mtu $PROTO_DEFAULT_OPTIONS
-	json_get_vars device apn pincode delay auth username password allow_roaming allow_partner
-	json_get_vars dhcp dhcpv6 pdptype ip4table ip6table mtu $PROTO_DEFAULT_OPTIONS
+	local allow_partner allow_roaming apn auth delay device devpath password pincode username
+	json_get_vars allow_partner allow_roaming apn auth delay device devpath password pincode username
+
+	local dhcp dhcpv6 pdptype
+	json_get_vars dhcp dhcpv6 pdptype
+
+	local delegate ip4table ip6table mtu sourcefilter $PROTO_DEFAULT_OPTIONS
+	json_get_vars delegate ip4table ip6table mtu sourcefilter $PROTO_DEFAULT_OPTIONS
 
 	[ ! -e /proc/sys/net/ipv6 ] && ipv6=0 || json_get_var ipv6 ipv6
 
 	[ -n "$ctl_device" ] && device=$ctl_device
+
+	if [ -n "$devpath" ]; then
+		local usbmisc_or_wwan_path
+		# For usbmisc:
+		# /sys/devices/platform/1e1c0000.xhci/usb1/1-2/1-2:1.4/usbmisc/cdc-wdm0
+		# Numbers after ":" are the configuration and interface number
+		# of the connected modem. There can be multiple interfaces but
+		# there will only be a single interface that provides the
+		# control channel device. Therefore, check also /*/usbmisc to
+		# allow specifying the USB port number the modem is directly
+		# connected to.
+		# For wwan:
+		# /sys/devices/platform/soc/11280000.pcie/pci0003:00/0003:00:00.0/0003:01:00.0/wwan/wwan0/wwan0mbim0
+		# /sys/devices/platform/soc/11280000.pcie/pci0003:00/0003:00:00.0/0003:01:00.0/mhi0/wwan/wwan0/wwan0mbim0
+		for usbmisc_or_wwan_path in \
+		    "$devpath"/usbmisc/cdc-wdm* \
+		    "$devpath"/*/usbmisc/cdc-wdm* \
+		    "$devpath"/*/wwan[0-9]*/wwan[0-9]*mbim* \
+		    "$devpath"/*/*/wwan[0-9]*/wwan[0-9]*mbim*; do
+			[ ! -e "$usbmisc_or_wwan_path" ] && continue
+			device="/dev/${usbmisc_or_wwan_path##*/}"
+			break
+		done
+	fi
 
 	[ -n "$device" ] || {
 		echo "mbim[$$]" "No control device specified"
@@ -67,7 +98,7 @@ _proto_mbim_setup() {
 	}
 
 	devname="$(basename "$device")"
-	devpath="$(readlink -f /sys/class/usbmisc/$devname/device/)"
+	devpath="$(readlink -f /sys/class/usbmisc/$devname/device/ || readlink -f /sys/class/wwan/$devname/device/)"
 	ifname="$( ls "$devpath"/net )"
 
 	[ -n "$ifname" ] || {
@@ -263,6 +294,8 @@ _proto_mbim_setup() {
 			echo "mbim[$$]" "Starting DHCPv6 on $ifname"
 			json_add_string proto "dhcpv6"
 			json_add_string extendprefix 1
+			[ "$delegate" = "0" ] && json_add_boolean delegate "0"
+			[ "$sourcefilter" = "0" ] && json_add_boolean sourcefilter "0"
 		fi
 
 		[ "$peerdns" = 0 -a "$dhcpv6" != 1 ] || {
@@ -313,11 +346,22 @@ proto_mbim_setup() {
 proto_mbim_teardown() {
 	local interface="$1"
 
-	local device
-	json_get_vars device
+	local device devpath
+	json_get_vars device devpath
 	local tid=$(uci_get_state network $interface tid)
 
 	[ -n "$ctl_device" ] && device=$ctl_device
+
+	if [ -n "$devpath" ]; then
+		local usbmisc_or_wwan_path
+		for usbmisc_or_wwan_path in \
+		    "$devpath"/usbmisc/cdc-wdm* \
+		    "$devpath"/*/usbmisc/cdc-wdm* \
+		    "$devpath"/*/wwan[0-9]*/wwan[0-9]*mbim* \
+		    "$devpath"/*/*/wwan[0-9]*/wwan[0-9]*mbim*; do
+			device="/dev/${usbmisc_or_wwan_path##*/}"
+		done
+	fi
 
 	echo "mbim[$$]" "Stopping network"
 	[ -n "$tid" ] && {

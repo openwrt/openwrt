@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=comgt
 PKG_VERSION:=0.32
-PKG_RELEASE:=35
+PKG_RELEASE:=36
 
 PKG_SOURCE:=$(PKG_NAME).$(PKG_VERSION).tgz
 PKG_SOURCE_URL:=@SF/comgt
@@ -35,7 +35,7 @@ define Package/comgt
 $(call Package/comgt/Default)
   TITLE:=Option/Vodafone 3G/GPRS control tool
   DEPENDS:=+chat
-  URL:=http://manpages.ubuntu.com/manpages/trusty/man1/comgt.1.html
+  URL:=https://manpages.ubuntu.com/manpages/trusty/man1/comgt.1.html
 endef
 
 define Package/comgt-directip
@@ -60,7 +60,7 @@ define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		$(TARGET_CONFIGURE_OPTS) \
 		CFLAGS="$(TARGET_CFLAGS)" \
-		LDFLAGS="" \
+		LDFLAGS="$(TARGET_LDFLAGS)" \
 		comgt
 endef
 

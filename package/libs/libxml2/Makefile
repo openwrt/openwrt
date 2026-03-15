@@ -1,16 +1,17 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libxml2
-PKG_VERSION:=2.12.5
+PKG_VERSION:=2.15.1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNOME/libxml2/$(basename $(PKG_VERSION))
-PKG_HASH:=a972796696afd38073e0f59c283c3a2f5a560b5268b4babc391b286166526b21
+PKG_HASH:=c008bac08fd5c7b4a87f7b8a71f283fa581d80d80ff8d2efd3b26224c39bc54c
 
 PKG_LICENSE:=MIT
-PKG_LICENSE_FILES:=COPYING
+PKG_LICENSE_FILES:=Copyright
 PKG_CPE_ID:=cpe:/a:xmlsoft:libxml2
+HOST_BUILD_DEPENDS := libiconv-full/host
 
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
@@ -21,8 +22,9 @@ define Package/libxml2
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Gnome XML library
-  URL:=http://xmlsoft.org/
+  URL:=https://gitlab.gnome.org/GNOME/libxml2
   DEPENDS:=+libpthread +zlib $(ICONV_DEPENDS)
+  ABI_VERSION:=16
 endef
 
 define Package/libxml2/description
@@ -34,7 +36,7 @@ define Package/libxml2-dev
   CATEGORY:=Development
   SUBMENU:=Libraries
   TITLE:=Development files for libxml2
-  URL:=http://xmlsoft.org/
+  URL:=https://gitlab.gnome.org/GNOME/libxml2
   DEPENDS:=+libxml2
 endef
 
@@ -48,7 +50,7 @@ define Package/libxml2-utils
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=XML command line utilities (xmllint...)
-  URL:=http://xmlsoft.org/
+  URL:=https://gitlab.gnome.org/GNOME/libxml2
   DEPENDS:=+libxml2
 endef
 
@@ -60,7 +62,7 @@ endef
 CMAKE_HOST_OPTIONS += \
 	-DBUILD_SHARED_LIBS=OFF \
 	-DLIBXML2_WITH_C14N=ON \
-	-DLIBXML2_WITH_CATALOG=OFF \
+	-DLIBXML2_WITH_CATALOG=ON \
 	-DLIBXML2_WITH_DEBUG=ON \
 	-DLIBXML2_WITH_FTP=OFF \
 	-DLIBXML2_WITH_HTML=ON \
@@ -98,7 +100,7 @@ CMAKE_HOST_OPTIONS += \
 CMAKE_OPTIONS += \
 	-DBUILD_SHARED_LIBS=ON \
 	-DLIBXML2_WITH_C14N=ON \
-	-DLIBXML2_WITH_CATALOG=OFF \
+	-DLIBXML2_WITH_CATALOG=ON \
 	-DLIBXML2_WITH_DEBUG=ON \
 	-DLIBXML2_WITH_FTP=OFF \
 	-DLIBXML2_WITH_HTML=ON \
@@ -154,14 +156,11 @@ define Build/InstallDev
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libxml2.so* $(1)/usr/lib/
 
 	$(INSTALL_DIR) $(1)/usr/lib/cmake/libxml2
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/cmake/libxml2-$(PKG_VERSION)/*.cmake \
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/cmake/libxml2/*.cmake \
 		$(1)/usr/lib/cmake/libxml2
 
 	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/libxml-2.0.pc $(1)/usr/lib/pkgconfig/
-
-	$(INSTALL_DIR) $(2)/share/aclocal/
-	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/share/aclocal/* $(2)/share/aclocal
 endef
 
 define Host/Install
@@ -189,9 +188,6 @@ define Package/libxml2-dev/install
 	$(INSTALL_DIR) $(1)/usr/lib/{cmake,pkgconfig}
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/{cmake,pkgconfig} $(1)/usr/lib/
 	$(SED) "s,$(STAGING_DIR),,g" $(1)/usr/lib/pkgconfig/*.pc
-
-	$(INSTALL_DIR) $(1)/usr/share/aclocal
-	$(CP) $(PKG_INSTALL_DIR)/usr/share/aclocal/* $(1)/usr/share/aclocal
 endef
 
 define Package/libxml2-utils/install

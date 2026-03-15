@@ -1,38 +1,36 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ninja
-PKG_VERSION:=1.11.1
+PKG_VERSION:=1.13.2
 PKG_RELEASE:=1
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=https://codeload.github.com/ninja-build/ninja/tar.gz/v$(PKG_VERSION)?
-PKG_HASH:=31747ae633213f1eda3842686f83c2aa1412e0f5691d1c14dbbcc67fe7400cea
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_URL:=https://github.com/ninja-build/ninja
+PKG_SOURCE_VERSION:=v$(PKG_VERSION)
+PKG_MIRROR_HASH:=592d95e3529d65bddd65a6f6ee831a762e3d7959d4ef64cd5f7e97c1becd2020
 
 include $(INCLUDE_DIR)/host-build.mk
 
-CONFIGURE_ARGS:=
-ifneq ($(findstring c,$(OPENWRT_VERBOSE)),)
-  CONFIGURE_ARGS+=--verbose
-endif
-
 define Host/Configure
+	cd $(HOST_BUILD_DIR) && \
+		$(HOST_MAKE_VARS) \
+		CXX="$(HOSTCXX_NOCACHE)" \
+		$(STAGING_DIR_HOST)/bin/$(PYTHON) configure.py \
+			$(if $(shell $(STAGING_DIR_HOST)/bin/ninja --version),,--bootstrap) \
+			--no-rebuild \
+			--verbose
+	-$(Host/Install)
 endef
 
 define Host/Compile
-	cd $(HOST_BUILD_DIR) && \
-		CXX="$(HOSTCXX_NOCACHE)" \
-		CXXFLAGS="$(HOST_CXXFLAGS) $(HOST_CPPFLAGS)" \
-		LDFLAGS="$(HOST_LDFLAGS)" \
-		$(STAGING_DIR_HOST)/bin/$(PYTHON) configure.py --bootstrap $(CONFIGURE_ARGS)
+	+$(NINJA) -C $(HOST_BUILD_DIR)
 endef
 
 define Host/Install
-	$(INSTALL_DIR) $(STAGING_DIR_HOST)/bin
 	$(INSTALL_BIN) $(HOST_BUILD_DIR)/ninja $(STAGING_DIR_HOST)/bin/
 endef
 
 define Host/Clean
-	$(call Host/Clean/Default)
 	rm -f $(STAGING_DIR_HOST)/bin/ninja
 endef
 

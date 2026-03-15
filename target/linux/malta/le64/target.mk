@@ -1,7 +1,6 @@
 ARCH:=mips64el
 CPU_TYPE:=mips64r2
 SUBTARGET:=le64
-FEATURES+=source-only
 BOARDNAME:=Little Endian (64-bits)
 
 define Target/Description

@@ -30,7 +30,7 @@ int AT91F_DataflashInit(void)
 	int i;
 	int dfcode;
 	int Nb_device = 0;
-		
+
 	AT91F_SpiInit();
 
 	for (i = 0; i < CFG_MAX_DATAFLASH_BANKS; i++) {
@@ -88,7 +88,7 @@ int AT91F_DataflashInit(void)
 		default:
 			break;
 		}
-	}			
+	}
 	return (Nb_device);
 }
 
@@ -111,7 +111,7 @@ void AT91F_DataflashPrintInfo(void)
 			case AT45DB642:
 				printf ("642");
 				break;
-			case AT45DB128:				
+			case AT45DB128:
 				printf ("128");
 				break;
 			}
@@ -166,7 +166,7 @@ int read_dataflash(unsigned long addr, unsigned long size, char *result)
 	AT91PS_DataFlash pFlash = &DataFlashInst;
 
 	pFlash = AT91F_DataflashSelect (pFlash, &AddrToRead);
-	if (pFlash == 0)
+	if (!pFlash)
 		return -1;
 
 	return (AT91F_DataFlashRead(pFlash, AddrToRead, size, result));

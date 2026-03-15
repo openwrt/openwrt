@@ -1,0 +1,97 @@
+From 6deea25857672a2ae9742499634b07f83508b35a Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Fri, 1 Nov 2024 08:09:09 +0100
+Subject: [PATCH 60/82] net: sparx5: add new VCAP constants to match data
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+In preparation for lan969x VCAP support, add the following three new
+VCAP constants to match data:
+
+    - vcaps_cfg (contains configuration data for each VCAP).
+
+    - vcaps (contains auto-generated information about VCAP keys and
+      actions).
+
+    - vcap_stats: (contains auto-generated string names of all the keys
+      and actions)
+
+Add these constants to the Sparx5 match data constants and use them to
+initialize the VCAP's in sparx5_vcap_init().
+
+Reviewed-by: Steen Hegelund <Steen.Hegelund@microchip.com>
+Reviewed-by: Jens Emil Schulz Østergaard <jensemil.schulzostergaard@microchip.com>
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/ethernet/microchip/sparx5/sparx5_main.c        | 5 +++++
+ drivers/net/ethernet/microchip/sparx5/sparx5_main.h        | 3 +++
+ drivers/net/ethernet/microchip/sparx5/sparx5_vcap_ag_api.h | 2 ++
+ drivers/net/ethernet/microchip/sparx5/sparx5_vcap_impl.c   | 6 +++---
+ 4 files changed, 13 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
+@@ -30,6 +30,8 @@
+ #include "sparx5_main.h"
+ #include "sparx5_port.h"
+ #include "sparx5_qos.h"
++#include "sparx5_vcap_ag_api.h"
++#include "sparx5_vcap_impl.h"
+ 
+ const struct sparx5_regs *regs;
+ 
+@@ -1062,6 +1064,9 @@ static const struct sparx5_consts sparx5
+ 	.qres_max_prio_idx   = 630,
+ 	.qres_max_colour_idx = 638,
+ 	.tod_pin             = 4,
++	.vcaps               = sparx5_vcaps,
++	.vcaps_cfg           = sparx5_vcap_inst_cfg,
++	.vcap_stats          = &sparx5_vcap_stats,
+ };
+ 
+ static const struct sparx5_ops sparx5_ops = {
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
+@@ -303,6 +303,9 @@ struct sparx5_consts {
+ 	u32 qres_max_prio_idx;   /* Maximum QRES prio index */
+ 	u32 qres_max_colour_idx; /* Maximum QRES colour index */
+ 	u32 tod_pin;             /* PTP TOD pin */
++	const struct sparx5_vcap_inst *vcaps_cfg;
++	const struct vcap_info *vcaps;
++	const struct vcap_statistics *vcap_stats;
+ };
+ 
+ struct sparx5_ops {
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_vcap_ag_api.h
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_vcap_ag_api.h
+@@ -10,6 +10,8 @@
+ #ifndef __SPARX5_VCAP_AG_API_H__
+ #define __SPARX5_VCAP_AG_API_H__
+ 
++#include "vcap_api.h"
++
+ /* VCAPs */
+ extern const struct vcap_info sparx5_vcaps[];
+ extern const struct vcap_statistics sparx5_vcap_stats;
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_vcap_impl.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_vcap_impl.c
+@@ -2053,14 +2053,14 @@ int sparx5_vcap_init(struct sparx5 *spar
+ 
+ 	sparx5->vcap_ctrl = ctrl;
+ 	/* select the sparx5 VCAP model */
+-	ctrl->vcaps = sparx5_vcaps;
+-	ctrl->stats = &sparx5_vcap_stats;
++	ctrl->vcaps = consts->vcaps;
++	ctrl->stats = consts->vcap_stats;
+ 	/* Setup callbacks to allow the API to use the VCAP HW */
+ 	ctrl->ops = &sparx5_vcap_ops;
+ 
+ 	INIT_LIST_HEAD(&ctrl->list);
+ 	for (idx = 0; idx < ARRAY_SIZE(sparx5_vcap_inst_cfg); ++idx) {
+-		cfg = &sparx5_vcap_inst_cfg[idx];
++		cfg = &consts->vcaps_cfg[idx];
+ 		admin = sparx5_vcap_admin_alloc(sparx5, ctrl, cfg);
+ 		if (IS_ERR(admin)) {
+ 			err = PTR_ERR(admin);

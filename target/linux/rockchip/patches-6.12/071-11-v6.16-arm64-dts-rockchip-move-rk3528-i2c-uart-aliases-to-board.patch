@@ -1,0 +1,61 @@
+From 34d2730fbbddfdffd656d36a13f8fdb886a3b5e1 Mon Sep 17 00:00:00 2001
+From: Heiko Stuebner <heiko@sntech.de>
+Date: Sun, 11 May 2025 00:01:06 +0200
+Subject: [PATCH] arm64: dts: rockchip: move rk3528 i2c+uart aliases to board
+ files
+
+Even though they will be the same for all boards, i2c and uart aliases
+are supposed to live in the individual board files, to not create
+aliases for disabled nodes.
+
+So move the newly added aliases for rk3528 over to the Radxa E20C board,
+which is the only rk3528 board right now.
+
+Fixes: d3a05f490d04 ("arm64: dts: rockchip: Add I2C controllers for RK3528")
+Suggested-by: Arnd Bergmann <arnd@arndb.de>
+Reviewed-by: Yao Zi <ziyao@disroot.org>
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+Link: https://lore.kernel.org/r/20250510220106.2108414-1-heiko@sntech.de
+---
+ .../boot/dts/rockchip/rk3528-radxa-e20c.dts      |  2 ++
+ arch/arm64/boot/dts/rockchip/rk3528.dtsi         | 16 ----------------
+ 2 files changed, 2 insertions(+), 16 deletions(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3528-radxa-e20c.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3528-radxa-e20c.dts
+@@ -18,8 +18,10 @@
+ 
+ 	aliases {
+ 		ethernet0 = &gmac1;
++		i2c1 = &i2c1;
+ 		mmc0 = &sdhci;
+ 		mmc1 = &sdmmc;
++		serial0 = &uart0;
+ 	};
+ 
+ 	chosen {
+--- a/arch/arm64/boot/dts/rockchip/rk3528.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3528.dtsi
+@@ -26,22 +26,6 @@
+ 		gpio2 = &gpio2;
+ 		gpio3 = &gpio3;
+ 		gpio4 = &gpio4;
+-		i2c0 = &i2c0;
+-		i2c1 = &i2c1;
+-		i2c2 = &i2c2;
+-		i2c3 = &i2c3;
+-		i2c4 = &i2c4;
+-		i2c5 = &i2c5;
+-		i2c6 = &i2c6;
+-		i2c7 = &i2c7;
+-		serial0 = &uart0;
+-		serial1 = &uart1;
+-		serial2 = &uart2;
+-		serial3 = &uart3;
+-		serial4 = &uart4;
+-		serial5 = &uart5;
+-		serial6 = &uart6;
+-		serial7 = &uart7;
+ 	};
+ 
+ 	cpus {

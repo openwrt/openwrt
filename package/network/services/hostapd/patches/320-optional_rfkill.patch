@@ -1,3 +1,7 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Thu, 8 Jul 2010 18:36:22 +0000
+Subject: [PATCH] hostapd: make rfkill support optional
+
 --- a/src/drivers/drivers.mak
 +++ b/src/drivers/drivers.mak
 @@ -54,7 +54,6 @@ NEED_SME=y
@@ -8,7 +12,7 @@
  NEED_RADIOTAP=y
  NEED_LIBNL=y
  endif
-@@ -111,7 +110,6 @@ DRV_WPA_CFLAGS += -DCONFIG_DRIVER_WEXT
+@@ -91,7 +90,6 @@ DRV_WPA_CFLAGS += -DCONFIG_DRIVER_WEXT
  CONFIG_WIRELESS_EXTENSION=y
  NEED_NETLINK=y
  NEED_LINUX_IOCTL=y
@@ -16,7 +20,7 @@
  endif
  
  ifdef CONFIG_DRIVER_NDIS
-@@ -137,7 +135,6 @@ endif
+@@ -117,7 +115,6 @@ endif
  ifdef CONFIG_WIRELESS_EXTENSION
  DRV_WPA_CFLAGS += -DCONFIG_WIRELESS_EXTENSION
  DRV_WPA_OBJS += ../src/drivers/driver_wext.o
@@ -24,7 +28,7 @@
  endif
  
  ifdef NEED_NETLINK
-@@ -146,6 +143,7 @@ endif
+@@ -126,6 +123,7 @@ endif
  
  ifdef NEED_RFKILL
  DRV_OBJS += ../src/drivers/rfkill.o

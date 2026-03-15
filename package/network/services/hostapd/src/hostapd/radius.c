@@ -568,6 +568,7 @@ static int radius_setup(struct radius_state *s, struct radius_config *c)
 	eap->max_auth_rounds = 100;
 	eap->max_auth_rounds_short = 50;
 	eap->ssl_ctx = tls_init(&conf);
+	eap->pwd_group = 19;
 	if (!eap->ssl_ctx) {
 		wpa_printf(MSG_INFO, "TLS init failed\n");
 		return 1;
@@ -624,7 +625,6 @@ int radius_main(int argc, char **argv)
 	int ch;
 
 	wpa_debug_setup_stdout();
-	wpa_debug_level = 0;
 
 	if (eloop_init()) {
 		wpa_printf(MSG_ERROR, "Failed to initialize event loop");
@@ -634,10 +634,13 @@ int radius_main(int argc, char **argv)
 	eap_server_register_methods();
 	radius_init(&state);
 
-	while ((ch = getopt(argc, argv, "6C:c:d:i:k:K:p:P:s:u:")) != -1) {
+	while ((ch = getopt(argc, argv, "6l:C:c:d:i:k:K:p:P:s:u:")) != -1) {
 		switch (ch) {
 		case '6':
 			config.radius.ipv6 = 1;
+			break;
+		case 'l':
+			wpa_debug_level = atoi(optarg);
 			break;
 		case 'C':
 			config.tls.ca_cert = optarg;

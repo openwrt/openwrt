@@ -4,20 +4,35 @@
 	compatible = "hiwifi,hc5861b", "mediatek,mt7628an-soc";
 	model = "HiWiFi HC5861B";
 
+	aliases {
+		label-mac-device = &ethernet;
+		led-boot = &led_status;
+		led-failsafe = &led_status;
+		led-running = &led_status;
+		led-upgrade = &led_status;
+	};
+
 	leds {
 		compatible = "gpio-leds";
 
-		led_system: system {
-			label = "green:system";
+		led_status: led-0 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio 37 GPIO_ACTIVE_LOW>;
 		};
 
-		wlan2g {
-			label = "green:wlan2g";
+		led-1 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_2GHZ;
 			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
 	};
+};
+
+&esw {
+	mediatek,portmap = <0x3e>;
+	mediatek,portdisable = <0x20>;
 };
 
 &state_default {
@@ -35,15 +50,20 @@
 	status = "disabled";
 };
 
+&usbphy {
+	status = "disabled";
+};
+
 &pcie {
 	status = "okay";
 };
 
 &pcie0 {
 	wifi@0,0 {
+		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 		ieee80211-freq-limit = <5000000 6000000>;
-		nvmem-cells = <&eeprom_factory_8000>, <&macaddr_factory_2e>;
+		nvmem-cells = <&eeprom_factory_8000>, <&macaddr_bdinfo_18a 0>;
 		nvmem-cell-names = "eeprom", "mac-address";
 
 		led {

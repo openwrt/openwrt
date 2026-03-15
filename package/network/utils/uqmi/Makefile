@@ -1,13 +1,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uqmi
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=$(PROJECT_GIT)/project/uqmi.git
-PKG_SOURCE_DATE:=2024-01-16
-PKG_SOURCE_VERSION:=c3488b831ce6285c8107704156b9b8ed7d59deb3
-PKG_MIRROR_HASH:=3ca47f2ae22bc1adcb05560e6dbea824063fa914670c13f107e7e78f33399779
+PKG_SOURCE_DATE:=2025-07-30
+PKG_SOURCE_VERSION:=7914da43cddaaf6cfba116260c81e6e9adffd5ab
+PKG_MIRROR_HASH:=5972a5f90bd60d34b5c7a8cec14ae98f13dbb6ea5b35d845ce5da7a8a3b0e59c
 PKG_MAINTAINER:=Matti Laakso <malaakso@elisanet.fi>
 
 PKG_LICENSE:=GPL-2.0
@@ -34,7 +34,6 @@ endef
 
 TARGET_CFLAGS += \
 	-I$(STAGING_DIR)/usr/include \
-	-Wno-error=dangling-pointer \
 	-Wno-error=maybe-uninitialized
 
 CMAKE_OPTIONS += \
@@ -42,7 +41,7 @@ CMAKE_OPTIONS += \
 
 define Package/uqmi/install
 	$(INSTALL_DIR) $(1)/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/uqmi $(1)/sbin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/uqmi/uqmi $(1)/sbin/
 	$(CP) ./files/* $(1)/
 endef
 

@@ -17,6 +17,7 @@
 	compatible = "meraki,mr24", "meraki,ikarem", "apm,bluestone";
 
 	aliases {
+		/delete-property/ ethernet0;
 		serial0 = &UART1;
 	};
 
@@ -63,10 +64,21 @@
 				 * blocks (64KiB) in order to have spares
 				 * around for bad block management
 				 */
+				compatible = "fixed-partitions";
 				label = "u-boot-env";
-				compatible = "u-boot,env";
 				reg = <0x00150000 0x00010000>;
-				read-only;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					reg = <0x0 0x10000>;
+					label = "u-boot-env-main";
+					status = "disabled";
+
+					nvmem-layout {
+						compatible = "u-boot,env-redundant-count";
+					};
+				};
 			};
 
 			partition@160000 {
@@ -75,9 +87,21 @@
 				 * has to be kept it in sync with the
 				 * data in "u-boot-env".
 				 */
+				compatible = "fixed-partitions";
 				label = "u-boot-env-redundant";
 				reg = <0x00160000 0x00010000>;
-				read-only;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					reg = <0x0 0x10000>;
+					label = "u-boot-env-redundant";
+					status = "disabled";
+
+					nvmem-layout {
+						compatible = "u-boot,env-redundant-count";
+					};
+				};
 			};
 
 			partition@170000 {
@@ -86,8 +110,25 @@
 			};
 
 			partition@180000 {
+				compatible = "linux,ubi";
 				label = "ubi";
 				reg = <0x00180000 0x01e80000>;
+
+				volumes {
+					ubi-volume-board-config {
+						volname = "board-config";
+
+						nvmem-layout {
+							compatible = "fixed-layout";
+							#address-cells = <1>;
+							#size-cells = <1>;
+
+							macaddr_board_66: macaddr@66 {
+								reg = <0x66 0x6>;
+							};
+						};
+					};
+				};
 			};
 		};
 	};
@@ -109,6 +150,9 @@
 
 &EMAC0 {
 	status = "okay";
+
+	nvmem-cells = <&macaddr_board_66>;
+	nvmem-cell-names = "mac-address";
 
 	phy-mode = "rgmii-id";
 	phy-map = <0x2>;
@@ -203,13 +247,13 @@
 	 *
 	 */
 
-	bridge@64,0 {
+	bridge@0,0 {
 		reg = <0x00400000 0 0 0 0>;
 		#address-cells = <3>;
 		#size-cells = <2>;
 		ranges;
 
-		bridge@65,0 {
+		bridge@0,0 {
 			/* IDT PES3T3 PCI Express Switch */
 			compatible = "pci111d,8039";
 			reg = <0x00410000 0 0 0 0>;
@@ -217,14 +261,14 @@
 			#size-cells = <2>;
 			ranges;
 
-			bridge@66,2 {
+			bridge@2,0 {
 				compatible = "pci111d,8039";
 				reg = <0x00421000 0 0 0 0>;
 				#address-cells = <3>;
 				#size-cells = <2>;
 				ranges;
 
-				wifi0: wifi@67,0 {
+				wifi0: wifi@0,0 {
 					/* Atheros AR9380 2.4GHz */
 					compatible = "pci168c,0030";
 					reg = <0x00430000 0 0 0 0>;
@@ -232,14 +276,14 @@
 				};
 			};
 
-			bridge@66,3 {
+			bridge@3,0 {
 				compatible = "pci111d,8039";
 				reg = <0x00421800 0 0 0 0>;
 				#address-cells = <3>;
 				#size-cells = <2>;
 				ranges;
 
-				wifi1: wifi@68,0 {
+				wifi1: wifi@0,0 {
 					/* Atheros AR9380 5GHz */
 					compatible = "pci168c,0030";
 					reg = <0x00440000 0 0 0 0>;

@@ -40,7 +40,7 @@
 #include <asm/mach-ath79/ar71xx_regs.h>
 #include <asm/mach-ath79/ath79.h>
 
-#define AG71XX_DRV_NAME		"ag71xx"
+#define AG71XX_DRV_NAME		"ag71xx-legacy"
 
 /*
  * For our NAPI weight bigger does *NOT* mean better - it means more
@@ -68,7 +68,7 @@
 #define AG71XX_TX_RING_SIZE_MAX		256
 #define AG71XX_RX_RING_SIZE_MAX		256
 
-#ifdef CONFIG_AG71XX_DEBUG
+#ifdef CONFIG_AG71XX_LEGACY_DEBUG
 #define DBG(fmt, args...)	pr_debug(fmt, ## args)
 #else
 #define DBG(fmt, args...)	do {} while (0)
@@ -195,7 +195,7 @@ struct ag71xx {
 	u32			pllreg[3];
 	struct regmap		*pllregmap;
 
-#ifdef CONFIG_AG71XX_DEBUG_FS
+#ifdef CONFIG_AG71XX_LEGACY_DEBUG_FS
 	struct ag71xx_debug	debug;
 #endif
 };
@@ -425,7 +425,7 @@ static inline void ag71xx_int_disable(struct ag71xx *ag, u32 ints)
 	ag71xx_cb(ag, AG71XX_REG_INT_ENABLE, ints);
 }
 
-#ifdef CONFIG_AG71XX_DEBUG_FS
+#ifdef CONFIG_AG71XX_LEGACY_DEBUG_FS
 int ag71xx_debugfs_root_init(void);
 void ag71xx_debugfs_root_exit(void);
 int ag71xx_debugfs_init(struct ag71xx *ag);
@@ -441,7 +441,7 @@ static inline void ag71xx_debugfs_update_int_stats(struct ag71xx *ag,
 						   u32 status) {}
 static inline void ag71xx_debugfs_update_napi_stats(struct ag71xx *ag,
 						    int rx, int tx) {}
-#endif /* CONFIG_AG71XX_DEBUG_FS */
+#endif /* CONFIG_AG71XX_LEGACY_DEBUG_FS */
 
 int ag71xx_ar7240_init(struct ag71xx *ag, struct device_node *np);
 void ag71xx_ar7240_cleanup(struct ag71xx *ag);

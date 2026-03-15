@@ -9,6 +9,7 @@
 		led-failsafe = &led_usr;
 		led-running = &led_usr;
 		led-upgrade = &led_usr;
+		label-mac-device = &ethernet;
 	};
 
 	leds {
@@ -51,7 +52,7 @@
 
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
-		gpio = <&gpio 9 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 9 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 		regulator-boot-on;
 		regulator-always-on;
@@ -68,6 +69,9 @@
 
 &ethernet {
 	pinctrl-0 = <&mdio_pins>, <&rgmii1_pins>;
+
+	nvmem-cells = <&macaddr_hard 0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &switch0 {
@@ -75,6 +79,9 @@
 		port@0 {
 			status = "okay";
 			label = "lan";
+
+			nvmem-cells = <&macaddr_hard 1>;
+			nvmem-cell-names = "mac-address";
 		};
 	};
 };

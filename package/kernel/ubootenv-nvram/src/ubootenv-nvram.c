@@ -132,21 +132,19 @@ static int ubootenv_probe(struct platform_device *pdev)
 	return misc_register(&data->misc);
 }
 
-static int ubootenv_remove(struct platform_device *pdev)
+static void ubootenv_remove(struct platform_device *pdev)
 {
 	struct ubootenv_drvdata *data = platform_get_drvdata(pdev);
 
 	data->env = NULL;
 	misc_deregister(&data->misc);
-	return 0;
 }
 
 static struct platform_driver ubootenv_driver = {
-	.probe = ubootenv_probe,
+	.probe  = ubootenv_probe,
 	.remove = ubootenv_remove,
 	.driver = {
 		.name           = NAME,
-		.owner          = THIS_MODULE,
 		.of_match_table = of_ubootenv_match,
 	},
 };

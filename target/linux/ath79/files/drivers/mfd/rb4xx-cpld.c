@@ -21,7 +21,7 @@
 #include <linux/mfd/core.h>
 #include <linux/spi/spi.h>
 #include <linux/module.h>
-#include <linux/of_platform.h>
+#include <linux/platform_device.h>
 
 #include <mfd/rb4xx-cpld.h>
 
@@ -162,7 +162,7 @@ static struct spi_driver rb4xx_cpld_driver = {
 	.driver = {
 		.name = "rb4xx-cpld",
 		.bus = &spi_bus_type,
-		.of_match_table = of_match_ptr(rb4xx_cpld_dt_match),
+		.of_match_table = rb4xx_cpld_dt_match,
 	},
 };
 

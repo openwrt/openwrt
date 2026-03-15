@@ -1,0 +1,28 @@
+From 25e23abbc37484862c411b7317878d448b47fad5 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Wed, 13 Aug 2025 19:44:44 +0200
+Subject: [PATCH 24/25] char: hw_random: atmel: make it selectable for
+ ARCH_MICROCHIP
+
+LAN969x uses the Atmel HWRNG, so make it selectable for ARCH_MICROCHIP to
+avoid needing to update depends in future if other Microchip SoC-s use it
+as well.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+Acked-by: Daniel Machon <daniel.machon@microchip.com>
+Signed-off-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+---
+ drivers/char/hw_random/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/char/hw_random/Kconfig
++++ b/drivers/char/hw_random/Kconfig
+@@ -64,7 +64,7 @@ config HW_RANDOM_AMD
+ 
+ config HW_RANDOM_ATMEL
+ 	tristate "Atmel Random Number Generator support"
+-	depends on (ARCH_AT91 || COMPILE_TEST)
++	depends on (ARCH_MICROCHIP || COMPILE_TEST)
+ 	default HW_RANDOM
+ 	help
+ 	  This driver provides kernel-side support for the Random Number

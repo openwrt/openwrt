@@ -1,0 +1,44 @@
+From 646bfc52bbe184c0579060c3919e5d70885b0dcc Mon Sep 17 00:00:00 2001
+From: Yao Zi <ziyao@disroot.org>
+Date: Wed, 26 Mar 2025 11:35:56 +0000
+Subject: [PATCH] clk: rockchip: Drop empty init callback for rk3588 PLL type
+
+Unlike PLLs in previous geneation of SoCs, PLLs in RK3588 type don't
+require any platform-specific initialization. Drop callback
+rockchip_rk3588_pll_init() that does nothing in fact to clean the
+driver up.
+
+Signed-off-by: Yao Zi <ziyao@disroot.org>
+Link: https://lore.kernel.org/r/20250326113556.21039-1-ziyao@disroot.org
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ drivers/clk/rockchip/clk-pll.c | 11 -----------
+ 1 file changed, 11 deletions(-)
+
+--- a/drivers/clk/rockchip/clk-pll.c
++++ b/drivers/clk/rockchip/clk-pll.c
+@@ -1025,16 +1025,6 @@ static int rockchip_rk3588_pll_is_enable
+ 	return !(pllcon & RK3588_PLLCON1_PWRDOWN);
+ }
+ 
+-static int rockchip_rk3588_pll_init(struct clk_hw *hw)
+-{
+-	struct rockchip_clk_pll *pll = to_rockchip_clk_pll(hw);
+-
+-	if (!(pll->flags & ROCKCHIP_PLL_SYNC_RATE))
+-		return 0;
+-
+-	return 0;
+-}
+-
+ static const struct clk_ops rockchip_rk3588_pll_clk_norate_ops = {
+ 	.recalc_rate = rockchip_rk3588_pll_recalc_rate,
+ 	.enable = rockchip_rk3588_pll_enable,
+@@ -1049,7 +1039,6 @@ static const struct clk_ops rockchip_rk3
+ 	.enable = rockchip_rk3588_pll_enable,
+ 	.disable = rockchip_rk3588_pll_disable,
+ 	.is_enabled = rockchip_rk3588_pll_is_enabled,
+-	.init = rockchip_rk3588_pll_init,
+ };
+ 
+ /*

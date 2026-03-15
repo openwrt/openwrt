@@ -79,7 +79,9 @@
 					#size-cells = <1>;
 
 					macaddr: macaddr@8 {
+						compatible = "mac-base";
 						reg = <0x8 0x6>;
+						#nvmem-cell-cells = <1>;
 					};
 				};
 			};
@@ -145,11 +147,26 @@
 		nvmem-cells = <&eeprom_radio_0>;
 		nvmem-cell-names = "eeprom";
 		mediatek,disable-radar-background;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		band@0 {
+			reg = <0>;
+			nvmem-cells = <&macaddr 0>;
+			nvmem-cell-names = "mac-address";
+		};
+
+		band@1 {
+			reg = <1>;
+			nvmem-cells = <&macaddr 1>;
+			nvmem-cell-names = "mac-address";
+		};
 	};
 };
 
 &gmac0 {
-	nvmem-cells = <&macaddr>;
+	nvmem-cells = <&macaddr 0>;
 	nvmem-cell-names = "mac-address";
 };
 

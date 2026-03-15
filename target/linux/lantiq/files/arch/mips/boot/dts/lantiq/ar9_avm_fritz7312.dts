@@ -115,6 +115,11 @@
 	};
 };
 
+&ppe {
+	nvmem-cells = <&macaddr_ath9k_cal_a91 1>;
+	nvmem-cell-names = "mac-address";
+};
+
 &localbus {
 	flash@0 {
 		compatible = "lantiq,nor";
@@ -135,6 +140,10 @@
 					compatible = "fixed-layout";
 					#address-cells = <1>;
 					#size-cells = <1>;
+
+					cal_ath9k_cal_985: calibration@985 {
+						reg = <0x985 0x3d8>;
+					};
 
 					macaddr_ath9k_cal_a91: macaddr@a91 {
 						compatible = "mac-base";
@@ -177,11 +186,12 @@
 	pinctrl-names = "default";
 
 	req-mask = <0xf>;
-	gpio-reset = <&gpio 21 GPIO_ACTIVE_LOW>;
+	reset-gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 
-	wifi@0,0 {
-		compatible = "pci0,0";
+	wifi@e,0 {
+		compatible = "pci168c,002d";
 		reg = <0x7000 0 0 0 0>;
-		qca,no-eeprom; /* load from ath9k-eeprom-pci-0000:00:0e.0.bin */
+		nvmem-cells = <&cal_ath9k_cal_985>;
+		nvmem-cell-names = "calibration";
 	};
 };

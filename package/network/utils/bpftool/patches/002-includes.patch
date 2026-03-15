@@ -1,17 +1,6 @@
---- a/libbpf/include/linux/list.h
-+++ b/libbpf/include/linux/list.h
-@@ -3,6 +3,8 @@
- #ifndef __LINUX_LIST_H
- #define __LINUX_LIST_H
- 
-+#include <linux/types.h>
-+
- #define LIST_HEAD_INIT(name) { &(name), &(name) }
- #define LIST_HEAD(name) \
-         struct list_head name = LIST_HEAD_INIT(name)
 --- a/src/Makefile
 +++ b/src/Makefile
-@@ -73,10 +73,10 @@ CFLAGS += -W -Wall -Wextra -Wno-unused-p
+@@ -72,10 +72,10 @@ CFLAGS += -Wno-missing-field-initializer
  CFLAGS += $(filter-out -Wswitch-enum -Wnested-externs,$(EXTRA_WARNINGS))
  CFLAGS += -DPACKAGE='"bpftool"' -D__EXPORTED_HEADERS__ \
  	-I$(or $(OUTPUT),.) \

@@ -75,9 +75,9 @@
 
 	rtl8367rb {
 		compatible = "realtek,rtl8367b";
-		gpio-sda = <&gpio0 22 GPIO_ACTIVE_HIGH>;
-		gpio-sck = <&gpio0 23 GPIO_ACTIVE_HIGH>;
-		realtek,extif1 = <1 0 1 1 1 1 1 1 2>;
+		sda-gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
+		sck-gpios = <&gpio0 23 GPIO_ACTIVE_HIGH>;
+		realtek,extif = <6 1 0 1 1 1 1 1 1 2>;
 	};
 };
 

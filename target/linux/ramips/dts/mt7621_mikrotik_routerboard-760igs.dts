@@ -4,13 +4,14 @@
 
 / {
 	compatible = "mikrotik,routerboard-760igs", "mediatek,mt7621-soc";
-	model = "MikroTik RouterBOARD 760iGS";
+	model = "MikroTik RouterBOARD 760iGS (hEX S)";
 
 	aliases {
 		led-boot = &led_pwr;
 		led-failsafe = &led_pwr;
 		led-running = &led_pwr;
 		led-upgrade = &led_pwr;
+		label-mac-device = &port0;
 	};
 
 	leds {
@@ -51,6 +52,9 @@
 	label = "sfp";
 	phy-mode = "rgmii-rxid";
 	phy-handle = <&ephy7>;
+
+	nvmem-cells = <&macaddr_hard 5>;
+	nvmem-cell-names = "mac-address";
 };
 
 &i2c {

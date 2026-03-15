@@ -126,13 +126,18 @@
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 
-		gpio = <&gpio 32 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 32 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
 };
 
 &eth0 {
 	nvmem-cells = <&macaddr_boardconfig_16 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&ppe {
+	nvmem-cells = <&macaddr_boardconfig_16 0>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -211,6 +216,8 @@
 		label = "wan";
 		phy-mode = "rgmii";
 		phy-handle = <&phy5>;
+		nvmem-cells = <&macaddr_boardconfig_16 0>;
+		nvmem-cell-names = "mac-address";
 	};
 };
 
@@ -248,9 +255,9 @@
 
 &pci0 {
 	status = "okay";
-	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
+	reset-gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 
-	wifi@1814,3091 {
+	wifi@e,0 {
 		compatible = "pci1814,3091";
 		reg = <0x7000 0 0 0 0>;
 		ralink,mtd-eeprom = <&boardconfig 0x410>;

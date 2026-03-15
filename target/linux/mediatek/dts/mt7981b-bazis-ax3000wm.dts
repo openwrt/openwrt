@@ -1,0 +1,297 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+/*
+ * Copyright (c) 2026
+ * Author: Fil Dunsky <filipp.dunsky@gmail.com>
+ */
+
+/dts-v1/;
+#include <dt-bindings/leds/common.h>
+#include "mt7981b.dtsi"
+
+/ {
+	model = "Bazis AX3000WM";
+	compatible = "bazis,ax3000wm", "mediatek,mt7981";
+
+	aliases {
+		label-mac-device = &gmac1;
+		led-boot = &led_status;
+		led-failsafe = &led_warning;
+		led-running = &led_status;
+		led-upgrade = &led_warning;
+		serial0 = &uart0;
+	};
+
+	chosen: chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs = "root=/dev/fit0 rootwait";
+		rootdisk = <&ubi_rootdisk>;
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
+		};
+
+		mesh {
+			label = "mesh";
+			linux,code = <KEY_RFKILL>;
+			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_wlan-2ghz {
+			function = LED_FUNCTION_WLAN_2GHZ;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&pio 4 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+		
+		led_warning: led_fault {
+			function = LED_FUNCTION_FAULT;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&pio 34 GPIO_ACTIVE_LOW>;
+		};
+
+		led_internet {
+			function = LED_FUNCTION_WAN_ONLINE;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
+		};
+
+		led_status: led_power {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		led_wlan-5ghz {
+			function = LED_FUNCTION_WLAN_5GHZ;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&pio 35 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+		
+		led_lan_back {
+			function = LED_FUNCTION_LAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&pio 6 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	usb_vbus: regulator-usb {
+		compatible = "regulator-fixed";
+		regulator-name = "usb-vbus";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&pio 7 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-boot-on;
+	};
+};
+
+&eth {
+	pinctrl-names = "default";
+	pinctrl-0 = <&mdio_pins>;
+	status = "okay";
+
+	gmac0: mac@0 {
+		compatible = "mediatek,eth-mac";
+		reg = <0>;
+		phy-mode = "2500base-x";
+		phy-handle = <&phy5>;
+		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&mac_wan>;
+	};
+
+	gmac1: mac@1 {
+		compatible = "mediatek,eth-mac";
+		reg = <1>;
+		phy-mode = "gmii";
+		phy-handle = <&int_gbe_phy>;
+		nvmem-cell-names = "mac-address";
+		nvmem-cells = <&mac_lan>;
+	};
+};
+
+&mdio_bus {
+	reset-gpios = <&pio 14 GPIO_ACTIVE_LOW>;
+	reset-delay-us = <600>;
+	reset-post-delay-us = <20000>;
+
+	/* MaxLinear GPY211C 2.5G PHY */
+	phy5: phy@5 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <5>;
+		
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led@2 {
+				reg = <2>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_WAN;
+			};
+
+			led@3 {
+				reg = <3>;
+				color = <LED_COLOR_ID_AMBER>;
+				function = LED_FUNCTION_WAN;
+			};
+		};
+	};
+};
+
+&spi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi0_flash_pins>;
+	status = "okay";
+
+	spi_nand: flash@0 {
+		compatible = "spi-nand";
+		reg = <0>;
+
+		spi-max-frequency = <52000000>;
+		spi-tx-bus-width = <4>;
+		spi-rx-bus-width = <4>;
+
+		spi-cal-enable;
+		spi-cal-mode = "read-data";
+		spi-cal-datalen = <7>;
+		spi-cal-data = /bits/ 8 <0x53 0x50 0x49 0x4E 0x41 0x4E 0x44>;
+		spi-cal-addrlen = <5>;
+		spi-cal-addr = /bits/ 32 <0x0 0x0 0x0 0x0 0x0>;
+
+		mediatek,nmbm;
+		mediatek,bmt-max-ratio = <1>;
+		mediatek,bmt-max-reserved-blocks = <64>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "BL2";
+				reg = <0x00000 0x0100000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "u-boot-env";
+				reg = <0x0100000 0x0080000>;
+			};
+
+			factory: partition@180000 {
+				label = "Factory";
+				reg = <0x180000 0x0200000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_factory_0: eeprom@0 {
+						reg = <0x0 0x1000>;
+					};
+					
+					mac_lan: macaddr@4 {
+						reg = <0x4 0x6>;
+					};
+					
+					mac_wan: macaddr@a {
+						reg = <0xa 0x6>;
+					};
+
+					mac_wlan_2ghz: macaddr@2a {
+						reg = <0x2a 0x6>;
+					};
+
+					mac_wlan_5ghz: macaddr@24 {
+						reg = <0x24 0x6>;
+					};	
+					
+				};
+			};
+
+			partition@380000 {
+				label = "FIP";
+				reg = <0x380000 0x0200000>;
+				read-only;
+			};
+
+			ubi: partition@580000 {
+				label = "ubi";
+				reg = <0x580000 0x7a40000>;
+				compatible = "linux,ubi";
+			
+				volumes {
+					ubi_rootdisk: ubi-volume-fit {
+						volname = "fit";
+					};
+					
+					ubi_ubootenv: ubi-volume-ubootenv {
+						volname = "ubootenv";
+					};
+
+					ubi_ubootenv2: ubi-volume-ubootenv2 {
+						volname = "ubootenv2";
+					};
+				};
+			};
+		};
+	};
+};
+
+&pio {
+	spi0_flash_pins: spi0-pins {
+		mux {
+			function = "spi";
+			groups = "spi0", "spi0_wp_hold";
+		};
+	};
+};
+
+&usb_phy {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+	nvmem-cells = <&eeprom_factory_0>;
+	nvmem-cell-names = "eeprom";
+	
+	band@0 {
+		reg = <0>;
+		nvmem-cells = <&mac_wlan_2ghz>;
+		nvmem-cell-names = "mac-address";
+	};
+
+	band@1 {
+		reg = <1>;
+		nvmem-cells = <&mac_wlan_5ghz>;
+		nvmem-cell-names = "mac-address";
+	};
+};
+
+&xhci {
+	status = "okay";
+	vbus-supply = <&usb_vbus>;
+};

@@ -40,6 +40,9 @@ else
   include tools/Makefile
   include toolchain/Makefile
 
+# Include the test suite Makefile if it exists
+-include tests/Makefile
+
 $(toolchain/stamp-compile): $(tools/stamp-compile) $(if $(CONFIG_BUILDBOT),toolchain_rebuild_check)
 $(target/stamp-compile): $(toolchain/stamp-compile) $(tools/stamp-compile) $(BUILD_DIR)/.prepared
 $(package/stamp-compile): $(target/stamp-compile) $(package/stamp-cleanup)

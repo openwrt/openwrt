@@ -33,9 +33,15 @@
 	keys {
 		compatible = "gpio-keys";
 
+		wps {
+			label = "wps";
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+
 		reset {
 			label = "reset";
-			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 		};
 	};
@@ -137,10 +143,8 @@
 	nvmem-cell-names = "mac-address";
 };
 
-&mdio {
-	ethphy4: ethernet-phy@4 {
-		reg = <4>;
-	};
+&ethphy4 {
+	/delete-property/ interrupts;
 };
 
 &switch0 {

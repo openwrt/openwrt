@@ -6,9 +6,9 @@
 
 board=$(board_name)
 
-dt_base64_extract() {
+base64_extract() {
 	local target_dir="/sys$DEVPATH"
-	local source="$target_dir/../../of_node/qcom,ath10k-calibration-data-base64"
+	local source="$1"
 
 	[ -e "$source" ] || caldata_die "cannot find base64 calibration data: $source"
 	[ -d "$target_dir" ] || \
@@ -28,96 +28,25 @@ dt_base64_extract() {
 case "$FIRMWARE" in
 "ath10k/cal-pci-0000:01:00.0.bin")
 	case "$board" in
-	asus,onhub |\
+	asus,onhub|\
 	tplink,onhub)
-		dt_base64_extract
-		;;
-	meraki,mr52)
-		CI_UBIPART=art
-		caldata_extract_ubi "ART" 0x1000 0x844
-		;;
-	esac
-	;;
-"ath10k/pre-cal-pci-0000:01:00.0.bin")
-	case $board in
-	asrock,g10)
-		caldata_extract "0:art" 0x1000 0x2f20
-		;;
-	linksys,ea7500-v1 |\
-	linksys,ea8500)
-		caldata_extract "art" 0x1000 0x2f20
-		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii devinfo hw_mac_addr) 1)
-		;;
-	meraki,mr42)
-		CI_UBIPART=art
-		caldata_extract_ubi "ART" 0x1000 0x2f20
-		;;
-	nokia,ac400i)
-		caldata_extract "0:art" 0x1000 0x2f20
-		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii 0:appsblenv ethaddr) +2)
-		;;
-	zyxel,nbg6817)
-		caldata_extract "0:art" 0x1000 0x2f20
-		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii 0:appsblenv ethaddr) 1)
+		base64_extract /sys/firmware/vpd/ro/wifi_base64_calibration0
 		;;
 	esac
 	;;
 "ath10k/cal-pci-0001:01:00.0.bin")
 	case "$board" in
-	asus,onhub |\
+	asus,onhub|\
 	tplink,onhub)
-		dt_base64_extract
-		;;
-	esac
-	;;
-"ath10k/pre-cal-pci-0001:01:00.0.bin")
-	case $board in
-	asrock,g10)
-		caldata_extract "0:art" 0x5000 0x2f20
-		;;
-	edgecore,ecw5410)
-		caldata_extract "0:art" 0x1000 0x2f20
-		;;
-	linksys,ea7500-v1 |\
-	linksys,ea8500)
-		caldata_extract "art" 0x5000 0x2f20
-		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii devinfo hw_mac_addr) 2)
-		;;
-	meraki,mr42 |\
-	meraki,mr52)
-		CI_UBIPART=art
-		caldata_extract_ubi "ART" 0x5000 0x2f20
-		;;
-	nokia,ac400i)
-		caldata_extract "0:art" 0x5000 0x2f20
-		ath10k_patch_mac $(macaddr_add $(mtd_get_mac_ascii 0:appsblenv ethaddr) +3)
-		;;
-	zyxel,nbg6817)
-		caldata_extract "0:art" 0x5000 0x2f20
-		ath10k_patch_mac $(mtd_get_mac_ascii 0:appsblenv ethaddr)
+		base64_extract /sys/firmware/vpd/ro/wifi_base64_calibration1
 		;;
 	esac
 	;;
 "ath10k/cal-pci-0002:01:00.0.bin")
 	case "$board" in
-	asus,onhub |\
+	asus,onhub|\
 	tplink,onhub)
-		dt_base64_extract
-		;;
-	meraki,mr42)
-		CI_UBIPART=art
-		caldata_extract_ubi "ART" 0x9000 0x844
-		;;
-	esac
-	;;
-"ath10k/pre-cal-pci-0002:01:00.0.bin")
-	case $board in
-	edgecore,ecw5410)
-		caldata_extract "0:art" 0x5000 0x2f20
-		;;
-	meraki,mr52)
-		CI_UBIPART=art
-		caldata_extract_ubi "ART" 0x9000 0x2f20
+		base64_extract /sys/firmware/vpd/ro/wifi_base64_calibration2
 		;;
 	esac
 	;;

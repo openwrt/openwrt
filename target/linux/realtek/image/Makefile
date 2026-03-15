@@ -6,6 +6,8 @@ include $(INCLUDE_DIR)/image.mk
 KERNEL_LOADADDR = 0x80100000
 
 DEVICE_VARS += \
+	BELKIN_HEADER \
+	BELKIN_MODEL \
         CAMEO_BOARD_MODEL \
         CAMEO_BOARD_VERSION \
         CAMEO_CUSTOMER_SIGNATURE \
@@ -14,7 +16,32 @@ DEVICE_VARS += \
         CAMEO_ROOTFS_PART \
         H3C_DEVICE_ID \
         H3C_PRODUCT_ID \
+	LINKSYS_HEADER \
         ZYXEL_VERS
+
+define Build/rt-compress
+	$(STAGING_DIR_HOST)/bin/xz -9 --format=lzma --stdout "$@" > "$@.new"
+	mv "$@.new" "$@"
+endef
+
+define Build/rt-loader
+	$(MAKE) all clean -C rt-loader CROSS_COMPILE="$(TARGET_CROSS)" \
+		KERNEL_IMG_IN="$@" KERNEL_IMG_OUT="$@.new" BUILD_DIR="$@.build"
+	mv "$@.new" "$@"
+endef
+
+define Build/rt-loader-no-uimage
+        $(MAKE) all clean -C rt-loader CROSS_COMPILE="$(TARGET_CROSS)" \
+                KERNEL_ADDR="$(KERNEL_LOADADDR)" KERNEL_IMG_IN="$@" \
+                KERNEL_IMG_OUT="$@.new" BUILD_DIR="$@.build"
+        mv "$@.new" "$@"
+endef
+
+define Build/rt-loader-standalone
+	$(MAKE) all clean -C rt-loader CROSS_COMPILE="$(TARGET_CROSS)" \
+		FLASH_ADDR=$(FLASH_ADDR) KERNEL_IMG_OUT="$@.new" BUILD_DIR="$@.build"
+	mv "$@.new" "$@"
+endef
 
 define Build/zyxel-vers
        ( echo VERS;\
@@ -71,6 +98,27 @@ define Build/h3c-vfs
 	mv $@.new $@
 endef
 
+define Build/belkin-header
+	$(SCRIPT_DIR)/belkin-header.py $(@) $(@).new $(BELKIN_HEADER) ${BELKIN_MODEL}
+	mv $@.new $@
+endef
+
+define Build/linksys-image
+	$(SCRIPT_DIR)/linksys-image.sh $(@) $(@).new $(LINKSYS_MODEL)
+	mv $@.new $@
+endef
+
+define Build/xikestor-nosimg
+	$(STAGING_DIR_HOST)/bin/nosimg-enc -i $@ -o $@.new
+	mv $@.new $@
+endef
+
+define Build/zynsig
+	$(STAGING_DIR_HOST)/bin/zynsig -i $@ \
+		-o $@.new
+	mv $@.new $@
+endef
+
 define Device/Default
   PROFILES = Default
   KERNEL := \
@@ -83,7 +131,7 @@ define Device/Default
 	append-dtb | \
 	libdeflate-gzip | \
 	uImage gzip
-  DEVICE_DTS_DIR := ../dts-$(KERNEL_PATCHVER)
+  DEVICE_DTS_DIR := ../dts
   DEVICE_DTS = $$(SOC)_$(1)
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := \
@@ -93,6 +141,25 @@ define Device/Default
 	pad-rootfs | \
 	check-size | \
 	append-metadata
+endef
+
+define Device/kernel-lzma
+  KERNEL := \
+	kernel-bin | \
+	append-dtb | \
+	lzma | \
+	uImage lzma
+  KERNEL_INITRAMFS := \
+	kernel-bin | \
+	append-dtb | \
+	lzma | \
+	uImage lzma
+endef
+
+define Device/uimage-rt-loader
+	KERNEL/rt-loader := kernel-bin | append-dtb | rt-compress | rt-loader
+	KERNEL := $$(KERNEL/rt-loader) | uImage none
+	KERNEL_INITRAMFS := $$(KERNEL/rt-loader) | uImage none
 endef
 
 include $(SUBTARGET).mk

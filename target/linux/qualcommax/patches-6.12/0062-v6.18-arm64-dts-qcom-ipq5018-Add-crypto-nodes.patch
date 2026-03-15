@@ -1,0 +1,58 @@
+From ed5789ba7c2ce548f01ebbdbd7488dd9cccc4513 Mon Sep 17 00:00:00 2001
+From: George Moussalem <george.moussalem@outlook.com>
+Date: Mon, 21 Jul 2025 10:23:15 +0400
+Subject: arm64: dts: qcom: ipq5018: Add crypto nodes
+
+IPQ5018 uses Qualcomm QCE crypto engine v5.1 which is already supported.
+So let's add the dts nodes for its DMA v1.7.4 and QCE itself.
+
+Reviewed-by: Konrad Dybcio <konrad.dybcio@oss.qualcomm.com>
+Signed-off-by: George Moussalem <george.moussalem@outlook.com>
+Reviewed-by: Dmitry Baryshkov <dmitry.baryshkov@oss.qualcomm.com>
+Link: https://lore.kernel.org/r/20250721-ipq5018-crypto-v3-1-b9cd9b0ef147@outlook.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+---
+ arch/arm64/boot/dts/qcom/ipq5018.dtsi | 30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
+
+(limited to 'arch/arm64/boot/dts/qcom/ipq5018.dtsi')
+
+--- a/arch/arm64/boot/dts/qcom/ipq5018.dtsi
++++ b/arch/arm64/boot/dts/qcom/ipq5018.dtsi
+@@ -348,6 +348,36 @@
+ 			#thermal-sensor-cells = <1>;
+ 		};
+ 
++		cryptobam: dma-controller@704000 {
++			compatible = "qcom,bam-v1.7.4", "qcom,bam-v1.7.0";
++			reg = <0x00704000 0x20000>;
++			interrupts = <GIC_SPI 207 IRQ_TYPE_LEVEL_HIGH>;
++
++			clocks = <&gcc GCC_CRYPTO_AHB_CLK>;
++			clock-names = "bam_clk";
++
++			#dma-cells = <1>;
++			qcom,ee = <1>;
++			qcom,controlled-remotely;
++		};
++
++		crypto: crypto@73a000 {
++			compatible = "qcom,crypto-v5.1";
++			reg = <0x0073a000 0x6000>;
++
++			clocks = <&gcc GCC_CRYPTO_AHB_CLK>,
++				 <&gcc GCC_CRYPTO_AXI_CLK>,
++				 <&gcc GCC_CRYPTO_CLK>;
++			clock-names = "iface",
++				      "bus",
++				      "core";
++
++			dmas = <&cryptobam 2>,
++			       <&cryptobam 3>;
++			dma-names = "rx",
++				    "tx";
++		};
++
+ 		tlmm: pinctrl@1000000 {
+ 			compatible = "qcom,ipq5018-tlmm";
+ 			reg = <0x01000000 0x300000>;

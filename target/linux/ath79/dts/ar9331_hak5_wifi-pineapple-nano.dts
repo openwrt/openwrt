@@ -18,7 +18,6 @@
 
 	gpio-export {
 		compatible = "gpio-export";
-		#size-cells = <0>;
 
 		microsd-detect {
 			gpio-export,name = "microsd-detect";
@@ -28,12 +27,6 @@
 		usb-alarm {
 			gpio-export,name = "usb-alarm";
 			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
-		};
-
-		usb-power {
-			gpio-export,name = "usb-power";
-			gpio-export,output = <0>;
-			gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -56,6 +49,14 @@
 			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
+	};
+
+	reg_power_usb: regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "power_usb";
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		gpios = <&gpio 23 GPIO_ACTIVE_LOW>;
 	};
 };
 
@@ -98,7 +99,7 @@
 				compatible = "tplink,firmware";
 			};
 
-			art: partition@ff0000 {
+			partition@ff0000 {
 				label = "art";
 				reg = <0xff0000 0x010000>;
 				read-only;
@@ -111,6 +112,10 @@
 					macaddr_art_6: macaddr@6 {
 						reg = <0x6 0x6>;
 					};
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x440>;
+					};
 				};
 			};
 		};
@@ -119,6 +124,8 @@
 
 &usb {
 	status = "okay";
+
+	vbus-supply = <&reg_power_usb>;
 };
 
 &usb_phy {
@@ -128,5 +135,6 @@
 &wmac {
 	status = "okay";
 
-	mtd-cal-data = <&art 0x1000>;
+	nvmem-cells = <&cal_art_1000>;
+	nvmem-cell-names = "calibration";
 };

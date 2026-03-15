@@ -7,6 +7,9 @@ board=$(board_name)
 board_config_update
 
 case $board in
+7links,wlr-1230)
+	ucidef_set_led_switch "lan" "lan" "orange:lan" "switch0" "0x10"
+	;;
 alfa-network,awusfree1)
 	ucidef_set_led_netdev "wifi_led" "wifi" "blue:wlan" "wlan0"
 	;;
@@ -15,9 +18,22 @@ asus,rt-n11p-b1|\
 asus,rt-n12-vp-b1|\
 netgear,r6020|\
 netgear,r6080|\
-netgear,r6120)
+netgear,r6120|\
+yuncore,cpe200|\
+yuncore,m300)
 	ucidef_set_led_switch "lan" "lan" "green:lan" "switch0" "0xf"
 	ucidef_set_led_switch "wan" "wan" "green:wan" "switch0" "0x10"
+	;;
+creality,wb-01)
+	ucidef_set_led_switch "lan" "lan" "blue:lan" "switch0" "0x1"
+	;;
+cudy,lt400e-v1)
+	ucidef_set_led_switch "lan1" "lan1" "blue:lan-1" "switch0" "0x08"
+	ucidef_set_led_switch "lan2" "lan2" "blue:lan-2" "switch0" "0x04"
+	ucidef_set_led_switch "lan3" "lan3" "blue:lan-3" "switch0" "0x02"
+	ucidef_set_led_switch "lan4" "lan4" "blue:lan-4" "switch0" "0x01"
+	ucidef_set_led_netdev "wifi" "wifi" "blue:wlan" "phy0-ap0"
+	ucidef_set_led_netdev "internet" "internet" "blue:internet" "usb0"
 	;;
 cudy,wr1000)
 	ucidef_set_led_switch "wan" "wan" "blue:wan" "switch0" "0x10"
@@ -47,14 +63,19 @@ hilink,hlk-7688a)
 	ucidef_set_led_wlan "wlan" "WLAN" "green:wlan" "phy0tpt"
 	;;
 hiwifi,hc5611)
-	ucidef_set_led_netdev "internet" "internet" "red:internet" "br-lan" "tx rx"
+	ucidef_set_led_netdev "wan" "WAN" "red:wan" "br-lan" "tx rx"
 	;;
 hiwifi,hc5661a|\
 hiwifi,hc5761a)
-	ucidef_set_led_switch "internet" "internet" "blue:internet" "switch0" "0x10"
+	ucidef_set_led_switch "wan" "WAN" "blue:wan" "switch0" "0x10"
 	;;
-keenetic,kn-1613)
-	ucidef_set_led_switch "internet" "internet" "green:internet" "switch0" "0x01"
+keenetic,kn-1112|\
+keenetic,kn-1212|\
+keenetic,kn-1221|\
+keenetic,kn-1613|\
+keenetic,kn-1711|\
+keenetic,kn-1713)
+	ucidef_set_led_switch "wan" "WAN" "green:wan" "switch0" "0x01"
 	;;
 mediatek,linkit-smart-7688)
 	ucidef_set_led_wlan "wifi" "wifi" "orange:wifi" "phy0tpt"
@@ -68,6 +89,19 @@ rakwireless,rak633)
 tama,w06)
 	ucidef_set_led_netdev "wan" "WAN" "green:wan" "eth0"
 	ucidef_set_led_wlan "wlan" "WLAN" "green:wlan" "phy0tpt"
+	;;
+teltonika,rut200|\
+teltonika,rut241)
+	ucidef_set_led_switch "lan" "lan" "green:lan" "switch0" "0x02"
+	ucidef_set_led_switch "wan" "wan" "green:wan" "switch0" "0x01"
+	;;
+teltonika,rut976|\
+teltonika,rut9x1|\
+teltonika,rut9x6)
+	ucidef_set_led_switch "lan1" "lan1" "green:lan-1" "switch0" "0x1"
+	ucidef_set_led_switch "lan2" "lan2" "green:lan-2" "switch0" "0x2"
+	ucidef_set_led_switch "lan3" "lan3" "green:lan-3" "switch0" "0x4"
+	ucidef_set_led_switch "wan" "wan" "green:wan" "switch0" "0x10"
 	;;
 tplink,archer-c20-v4|\
 tplink,archer-c20-v5|\
@@ -83,6 +117,13 @@ tplink,archer-c50-v6)
 	ucidef_set_led_wlan "wlan2g" "wlan2g" "green:wlan2g" "phy0tpt"
 	ucidef_set_led_wlan "wlan5g" "wlan5g" "green:wlan5g" "phy1tpt"
 	;;
+tplink,archer-mr200-v5|\
+tplink,archer-mr200-v6)
+	ucidef_set_led_netdev "lan" "lan" "white:lan" "eth0"
+	ucidef_set_led_netdev "wan" "wan" "white:wan" "wwan0"
+	;;
+cudy,re1200-outdoor-v1|\
+mercusys,mb130-4g-v1|\
 tplink,re200-v2|\
 tplink,re200-v3|\
 tplink,re200-v4|\
@@ -90,6 +131,9 @@ tplink,re220-v2|\
 tplink,tl-mr3020-v3|\
 tplink,tl-wa801nd-v5)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0"
+	;;
+tplink,re205-v3)
+	ucidef_set_led_netdev "lan" "lan" "blue:signal" "eth0"
 	;;
 tplink,re365-v1)
 	ucidef_set_led_netdev "lan" "lan" "blue:lan" "eth0"
@@ -105,7 +149,8 @@ tplink,tl-mr6400-v4)
 	ucidef_set_led_switch "lan" "lan" "white:lan" "switch0" "0x0e"
 	ucidef_set_led_switch "wan" "wan" "white:wan" "switch0" "0x10"
 	;;
-tplink,tl-mr6400-v5)
+tplink,tl-mr6400-v5|\
+tplink,tl-mr6400-v7)
 	ucidef_set_led_switch "lan" "lan" "white:lan" "switch0" "0x07"
 	ucidef_set_led_switch "wan" "wan" "white:wan" "switch0" "0x08"
 	;;
@@ -146,6 +191,13 @@ wavlink,wl-wn570ha1)
 	ucidef_set_led_rssi "wifi-high" "wifi-high" "green:wifi-high" "wlan0" "85" "100"
 	ucidef_set_led_netdev "wifi_led" "wifi" "green:wifi" "wlan0"
 	;;
+wavlink,wl-wn570ha2)
+	ucidef_set_led_switch "lan" "lan" "blue:lan" "switch0" "0x01"
+	ucidef_set_rssimon "phy1-ap0" "200000" "1"
+	ucidef_set_led_rssi "wifi-low" "wifi-low" "blue:wifi-low" "phy1-ap0" "1" "100"
+	ucidef_set_led_rssi "wifi-med" "wifi-med" "blue:wifi-med" "phy1-ap0" "50" "100"
+	ucidef_set_led_rssi "wifi-high" "wifi-high" "blue:wifi-high" "phy1-ap0" "85" "100"
+	;;
 wavlink,wl-wn575a3)
 	ucidef_set_rssimon "wlan1" "200000" "1"
 	ucidef_set_led_rssi "wifi-low" "wifi-low" "green:wifi-low" "wlan1" "1" "49"
@@ -161,7 +213,8 @@ wavlink,wl-wn578a2)
 	ucidef_set_led_switch "wan" "wan" "green:wan" "switch0" "0x10"
 	;;
 xiaomi,mi-router-4a-100m|\
-xiaomi,mi-router-4a-100m-intl)
+xiaomi,mi-router-4a-100m-intl|\
+xiaomi,mi-router-4a-100m-intl-v2)
 	ucidef_set_led_switch "wan" "WAN" "blue:wan" "switch0" "0x01"
 	;;
 xiaomi,mi-router-4c)
@@ -172,6 +225,13 @@ zbtlink,zbt-we1226)
 	ucidef_set_led_switch "lan1" "LAN1" "green:lan1" "switch0" "0x01"
 	ucidef_set_led_switch "lan2" "LAN2" "green:lan2" "switch0" "0x02"
 	ucidef_set_led_switch "wan" "WAN" "green:wan" "switch0" "0x10"
+	;;
+zbtlink,zbt-we2426-b)
+	ucidef_set_led_switch "wan" "wan" "green:wan" "switch0" "0x10"
+	ucidef_set_led_switch "lan1" "lan1" "green:lan-1" "switch0" "0x01"
+	ucidef_set_led_switch "lan2" "lan2" "green:lan-2" "switch0" "0x02"
+	ucidef_set_led_switch "lan3" "lan3" "green:lan-3" "switch0" "0x04"
+	ucidef_set_led_switch "lan4" "lan4" "green:lan-4" "switch0" "0x08"
 	;;
 zyxel,keenetic-extra-ii)
 	ucidef_set_led_netdev "wifi_led" "wifi" "green:wifi" "wlan0"

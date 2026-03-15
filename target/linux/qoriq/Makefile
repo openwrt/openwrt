@@ -8,10 +8,10 @@ ARCH:=powerpc64
 BOARD:=qoriq
 BOARDNAME:=NXP QorIQ (PowerPC)
 CPU_TYPE:=e5500
-FEATURES:=boot-part ext4 fpu legacy-sdcard powerpc64 ramdisk rootfs-part rtc source-only
+FEATURES:=boot-part ext4 fpu legacy-sdcard powerpc64 ramdisk rootfs-part rtc squashfs
 SUBTARGETS:=generic
 
-KERNEL_PATCHVER:=5.15
+KERNEL_PATCHVER:=6.12
 
 KERNELNAME:=zImage
 

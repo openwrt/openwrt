@@ -29,7 +29,7 @@ endef
 define KernelPackage/mt7621-qtn-rgmii/description
   Enable RGMII connected Quantenna module on MT7621.
 
-  The Mitrastar designed ZyXEL WAP6805 has a Quantenna QV840
+  The Mitrastar designed Zyxel WAP6805 has a Quantenna QV840
   module connected to the RGMII pins of the MT7621 SoC. For
   unknown reasons, it is necessary to change the value of
   the register at 0x1e110008 from default (usually 0xc000c)

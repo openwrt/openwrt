@@ -1,10 +1,18 @@
+From: David Bauer <mail@david-bauer.net>
+Date: Tue, 24 Oct 2023 03:07:48 +0200
+Subject: [PATCH] hostapd: fix OWE association with mbedtls
+
 The code for hostapd-mbedtls did not work when used for OWE association.
 
-When handling association requests, the buffer offsets and length assumptions were incorrect, leading to never calculating the y point, thus denying association.
+When handling association requests, the buffer offsets and length
+assumptions were incorrect, leading to never calculating the y point,
+thus denying association.
 
-Also when crafting the association response, the buffer contained the trailing key-type.
+Also when crafting the association response, the buffer contained the
+trailing key-type.
 
-Fix up both issues to adhere to the specification and make hostapd-mbedtls work with the OWE security type.
+Fix up both issues to adhere to the specification and make
+hostapd-mbedtls work with the OWE security type.
 
 --- a/src/crypto/crypto_mbedtls.c
 +++ b/src/crypto/crypto_mbedtls.c

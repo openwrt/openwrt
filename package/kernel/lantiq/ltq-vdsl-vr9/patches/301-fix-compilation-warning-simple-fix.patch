@@ -1,6 +1,6 @@
 --- a/src/common/drv_dsl_cpe_os_linux.c
 +++ b/src/common/drv_dsl_cpe_os_linux.c
-@@ -54,7 +54,7 @@ static int DSL_DRV_Release(DSL_DRV_inode_t * ino, DSL_DRV_file_t * fil);
+@@ -54,7 +54,7 @@ static int DSL_DRV_Release(DSL_DRV_inode
  
  static DSL_uint_t DSL_DRV_Poll(DSL_DRV_file_t *pFile, DSL_DRV_Poll_Table_t *wait);
  
@@ -9,7 +9,7 @@
  static void DSL_DRV_NlSendMsg(DSL_char_t* pMsg);
  #endif
  
-@@ -368,10 +368,10 @@ int DSL_DRV_debug_printf(DSL_Context_t const *pContext, DSL_char_t const *fmt, .
+@@ -368,10 +368,10 @@ int DSL_DRV_debug_printf(DSL_Context_t c
  {
     DSL_int_t nRet = 0;
  #ifndef _lint
@@ -22,7 +22,7 @@
     DSL_char_t debugString[DSL_DBG_MAX_DEBUG_PRINT_CHAR + 1] = {0};
     va_list ap;   /* points to each unnamed arg in turn */
  
-@@ -406,6 +406,8 @@ int DSL_DRV_debug_printf(DSL_Context_t const *pContext, DSL_char_t const *fmt, .
+@@ -406,6 +406,8 @@ int DSL_DRV_debug_printf(DSL_Context_t c
  #endif /* DSL_DEBUG_DISABLE */
     return nRet;
  #else
@@ -51,7 +51,7 @@
  
 --- a/src/device/drv_dsl_cpe_msg_vrx.c
 +++ b/src/device/drv_dsl_cpe_msg_vrx.c
-@@ -2456,32 +2456,32 @@ DSL_Error_t DSL_DRV_VRX_SendMsgSnrPerGroupesGet(
+@@ -2456,32 +2456,32 @@ DSL_Error_t DSL_DRV_VRX_SendMsgSnrPerGro
  #endif /* defined(INCLUDE_DSL_G997_PER_TONE) || defined(INCLUDE_DSL_DELT)*/
  
  #ifdef INCLUDE_DSL_DELT
@@ -78,9 +78,6 @@
 -         memcpy(pDst,pSrc,valueSize);
 -      }
 -   }
--
--   return DSL_SUCCESS;
--}
 +// static DSL_Error_t DSL_DRV_VRX_SpreadArray(
 +//    DSL_void_t* pArray,
 +//    DSL_uint16_t valueSize,
@@ -104,7 +101,9 @@
 +//          memcpy(pDst,pSrc,valueSize);
 +//       }
 +//    }
-+
+ 
+-   return DSL_SUCCESS;
+-}
 +//    return DSL_SUCCESS;
 +// }
  
@@ -112,7 +111,7 @@
     This function requests a set of up to 60 entries of the DELT data.
 --- a/src/device/drv_dsl_cpe_device_vrx.c
 +++ b/src/device/drv_dsl_cpe_device_vrx.c
-@@ -3356,7 +3356,9 @@ static DSL_Error_t DSL_DRV_VRX_TestParametersFeUpdate(
+@@ -3356,7 +3356,9 @@ static DSL_Error_t DSL_DRV_VRX_TestParam
     DSL_Error_t nErrCode = DSL_SUCCESS;
     DSL_uint16_t i = 0;
     DSL_uint16_t nDataLen = 0;
@@ -122,7 +121,7 @@
  
     DSL_DEBUG( DSL_DBG_MSG,
        (pContext, SYS_DBG_MSG"DSL[%02d]: IN - DSL_DRV_VRX_TestParametersFeUpdate"
-@@ -8312,6 +8314,7 @@ DSL_Error_t DSL_DRV_DEV_AutobootHandleTraining(
+@@ -8312,6 +8314,7 @@ DSL_Error_t DSL_DRV_DEV_AutobootHandleTr
              (pContext, SYS_DBG_MSG"DSL[%02d]: ORDERLY_SHUTDOWN state reached"
              DSL_DRV_CRLF, DSL_DEV_NUM(pContext)));
           /* do not use break here, continue handling */

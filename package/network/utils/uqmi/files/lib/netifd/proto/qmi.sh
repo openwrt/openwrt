@@ -21,8 +21,11 @@ proto_qmi_init_config() {
 	proto_config_add_string pdptype
 	proto_config_add_int profile
 	proto_config_add_int v6profile
+	proto_config_add_string devpath
 	proto_config_add_boolean dhcp
 	proto_config_add_boolean dhcpv6
+	proto_config_add_boolean sourcefilter
+	proto_config_add_boolean delegate
 	proto_config_add_boolean autoconnect
 	proto_config_add_int plmn
 	proto_config_add_int timeout
@@ -32,23 +35,50 @@ proto_qmi_init_config() {
 
 proto_qmi_setup() {
 	local interface="$1"
-	local dataformat connstat plmn_mode mcc mnc
-	local device apn v6apn auth username password pincode delay modes pdptype
-	local profile v6profile dhcp dhcpv6 autoconnect plmn timeout mtu $PROTO_DEFAULT_OPTIONS
-	local ip4table ip6table
-	local cid_4 pdh_4 cid_6 pdh_6
-	local ip_6 ip_prefix_length gateway_6 dns1_6 dns2_6
+
+	local connstat dataformat mcc mnc plmn_mode
+	local cid_4 cid_6 pdh_4 pdh_6
+	local dns1_6 dns2_6 gateway_6 ip_6 ip_prefix_length
 	local profile_pdptype
 
-	json_get_vars device apn v6apn auth username password pincode delay modes
-	json_get_vars pdptype profile v6profile dhcp dhcpv6 autoconnect plmn ip4table
-	json_get_vars ip6table timeout mtu $PROTO_DEFAULT_OPTIONS
+	local delegate ip4table ip6table mtu sourcefilter $PROTO_DEFAULT_OPTIONS
+	json_get_vars delegate ip4table ip6table mtu sourcefilter $PROTO_DEFAULT_OPTIONS
+
+	local apn auth delay device modes password pdptype pincode username v6apn
+	json_get_vars apn auth delay device modes password pdptype pincode username v6apn
+
+	local profile v6profile devpath dhcp dhcpv6 autoconnect plmn timeout
+	json_get_vars profile v6profile devpath dhcp dhcpv6 autoconnect plmn timeout
 
 	[ "$timeout" = "" ] && timeout="10"
 
 	[ "$metric" = "" ] && metric="0"
 
 	[ -n "$ctl_device" ] && device=$ctl_device
+
+	if [ -n "$devpath" ]; then
+		local usbmisc_or_wwan_path
+		# For usbmisc:
+		# /sys/devices/platform/1e1c0000.xhci/usb1/1-2/1-2:1.4/usbmisc/cdc-wdm0
+		# Numbers after ":" are the configuration and interface number
+		# of the connected modem. There can be multiple interfaces but
+		# there will only be a single interface that provides the
+		# control channel device. Therefore, check also /*/usbmisc to
+		# allow specifying the USB port number the modem is directly
+		# connected to.
+		# For wwan:
+		# /sys/devices/platform/soc/11280000.pcie/pci0003:00/0003:00:00.0/0003:01:00.0/wwan/wwan0/wwan0qmi0
+		# /sys/devices/platform/soc/11280000.pcie/pci0003:00/0003:00:00.0/0003:01:00.0/mhi0/wwan/wwan0/wwan0qmi0
+		for usbmisc_or_wwan_path in \
+		    "$devpath"/usbmisc/cdc-wdm* \
+		    "$devpath"/*/usbmisc/cdc-wdm* \
+		    "$devpath"/*/wwan[0-9]*/wwan[0-9]*qmi* \
+		    "$devpath"/*/*/wwan[0-9]*/wwan[0-9]*qmi*; do
+			[ ! -e "$usbmisc_or_wwan_path" ] && continue
+			device="/dev/${usbmisc_or_wwan_path##*/}"
+			break
+		done
+	fi
 
 	[ -n "$device" ] || {
 		echo "No control device specified"
@@ -102,7 +132,7 @@ proto_qmi_setup() {
 	# Check if UIM application is stuck in illegal state
 	local uim_state_timeout=0
 	while true; do
-		json_load "$(uqmi -s -d "$device" -t 1000 --uim-get-sim-state)"
+		json_load "$(uqmi -s -d "$device" -t 2000 --uim-get-sim-state)"
 		json_get_var card_application_state card_application_state
 
 		# SIM card is either completely absent or state is labeled as illegal
@@ -117,7 +147,7 @@ proto_qmi_setup() {
 
 			if [ "$uim_state_timeout" -lt "$timeout" ] || [ "$timeout" = "0" ]; then
 				let uim_state_timeout++
-				sleep 1
+				sleep 5
 				continue
 			fi
 
@@ -227,9 +257,10 @@ proto_qmi_setup() {
 	# Set IP format
 	uqmi -s -d "$device" -t 1000 --set-data-format 802.3 > /dev/null 2>&1
 	uqmi -s -d "$device" -t 1000 --wda-set-data-format 802.3 > /dev/null 2>&1
-	dataformat="$(uqmi -s -d "$device" -t 1000 --wda-get-data-format)"
+	json_load "$(uqmi -s -d "$device" -t 1000 --wda-get-data-format)"
+	json_get_var dataformat link-layer-protocol
 
-	if [ "$dataformat" = '"raw-ip"' ]; then
+	if [ "$dataformat" = "raw-ip" ]; then
 
 		[ -f /sys/class/net/$ifname/qmi/raw_ip ] || {
 			echo "Device only supports raw-ip mode but is missing this required driver attribute: /sys/class/net/$ifname/qmi/raw_ip"
@@ -264,10 +295,13 @@ proto_qmi_setup() {
 	echo "Waiting for network registration"
 	sleep 5
 	local registration_timeout=0
+	local serving_system=""
 	local registration_state=""
 	while true; do
-		registration_state=$(uqmi -s -d "$device" -t 1000 --get-serving-system 2>/dev/null | jsonfilter -e "@.registration" 2>/dev/null)
+		serving_system="$(uqmi -s -d "$device" -t 1000 --get-serving-system 2>/dev/null)"
+		registration_state=$(echo "$serving_system" | jsonfilter -e "@.registration" 2>/dev/null)
 
+		[ "$serving_system" = "\"Invalid QMI command\"" ] && break
 		[ "$registration_state" = "registered" ] && break
 
 		if [ "$registration_state" = "searching" ] || [ "$registration_state" = "not_registered" ]; then
@@ -441,6 +475,8 @@ proto_qmi_setup() {
 			proto_add_dynamic_defaults
 			# RFC 7278: Extend an IPv6 /64 Prefix to LAN
 			json_add_string extendprefix 1
+			[ "$delegate" = "0" ] && json_add_boolean delegate "0"
+			[ "$sourcefilter" = "0" ] && json_add_boolean sourcefilter "0"
 			[ -n "$zone" ] && json_add_string zone "$zone"
 			json_close_object
 			ubus call network add_dynamic "$(json_dump)"
@@ -508,10 +544,21 @@ qmi_wds_stop() {
 proto_qmi_teardown() {
 	local interface="$1"
 
-	local device cid_4 pdh_4 cid_6 pdh_6
-	json_get_vars device
+	local device devpath cid_4 pdh_4 cid_6 pdh_6
+	json_get_vars device devpath
 
 	[ -n "$ctl_device" ] && device=$ctl_device
+
+	if [ -n "$devpath" ]; then
+		local usbmisc_or_wwan_path
+		for usbmisc_or_wwan_path in \
+		    "$devpath"/usbmisc/cdc-wdm* \
+		    "$devpath"/*/usbmisc/cdc-wdm* \
+		    "$devpath"/*/wwan[0-9]*/wwan[0-9]*qmi* \
+		    "$devpath"/*/*/wwan[0-9]*/wwan[0-9]*qmi*; do
+			device="/dev/${usbmisc_or_wwan_path##*/}"
+		done
+	fi
 
 	echo "Stopping network $interface"
 

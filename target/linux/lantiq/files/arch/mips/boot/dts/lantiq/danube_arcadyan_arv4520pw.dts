@@ -125,7 +125,7 @@
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 
-		gpio = <&gpio 28 GPIO_ACTIVE_HIGH>;
+		gpios = <&gpio 28 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
 	};
 };
@@ -218,7 +218,7 @@
 	pinctrl-names = "default";
 
 	lantiq,external-clock;
-	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
+	reset-gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
 };
 
 &usb_phy {
