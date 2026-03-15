@@ -77,6 +77,49 @@
 		partition@7540000 {
 			label = "reservearea";
 			reg = <0x007540000 0x000080000>;
+			nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_reserve_60000: eeprom@60000 {
+							/* MT7592 */
+							/* This overlaps the MT7612E EEPROM, but MT7603E demands
+							 * 1024 bytes of EEPROM even though only 512 bytes are used.
+							 */
+							reg = <0x60000 0x400>;
+					};
+
+					eeprom_reserve_60200: eeprom@60200 {
+							/* MT7612E */
+							reg = <0x60200 0x200>;
+					};
+			};
 		};
+	};
+};
+
+&pcie0 {
+	status = "okay";
+};
+&slot0 {
+	wifi@0,0 {
+		/* MT7592 */
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_reserve_60000>;
+		nvmem-cell-names = "eeprom";
+	};
+};
+&pcie1 {
+	status = "okay";
+};
+&slot1 {
+	wifi@0,0 {
+		/* MT7612E */
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_reserve_60200>;
+		nvmem-cell-names = "eeprom";
 	};
 };
