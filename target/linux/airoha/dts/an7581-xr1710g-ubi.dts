@@ -5,56 +5,22 @@
 #include "an7581-gemtek-17xx-common.dtsi"
 
 / {
-	model = "Gemtek W1700K (OpenWrt U-Boot layout)";
-	compatible = "gemtek,w1700k-ubi", "airoha,an7581", "airoha,en7581";
-
-	chosen {
-		rootdisk = <&ubi_rootfs>;
-		bootargs = "console=ttyS0,115200 earlycon ubi.block=0,fit root=/dev/fit0 rootwait";
-		stdout-path = "serial0:115200n8";
-	};
-
-	leds {
-		led-4 {
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_LAN;
-			function-enumerator = <3>;
-			gpios = <&en7581_pinctrl 9 GPIO_ACTIVE_LOW>;
-		};
-
-		led-5 {
-			color = <LED_COLOR_ID_YELLOW>;
-			function = LED_FUNCTION_LAN;
-			function-enumerator = <3>;
-			gpios = <&en7581_pinctrl 10 GPIO_ACTIVE_LOW>;
-		};
-
-		led-6 {
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_LAN;
-			function-enumerator = <4>;
-			gpios = <&en7581_pinctrl 27 GPIO_ACTIVE_LOW>;
-		};
-
-		led-7 {
-			color = <LED_COLOR_ID_YELLOW>;
-			function = LED_FUNCTION_LAN;
-			function-enumerator = <4>;
-			gpios = <&en7581_pinctrl 28 GPIO_ACTIVE_LOW>;
-		};
-	};
+	model = "Gemtek XR1710G (OpenWrt U-Boot layout)";
+	compatible = "gemtek,xr1710g-ubi", "airoha,an7581", "airoha,en7581";
 };
 
 &en7581_pinctrl {
-	/* W1700K does not use the built-in LED controller. Instead, it uses GPIO.
-	 * The driver fails to probe without gswpX_led0_pins defined, so put a dummy
-	 * here.
-	 */
-
 	gswp1_led0_pins: gswp1-led0-pins {
 		mux {
 			function = "phy1_led0";
 			pins = "gpio33";
+		};
+	};
+
+	gswp1_led1_pins: gswp1-led1-pins {
+		mux {
+			function = "phy1_led1";
+			pins = "gpio43";
 		};
 	};
 
@@ -65,17 +31,10 @@
 		};
 	};
 
-	uart2_pins: uart2-pins {
+	gswp2_led1_pins: gswp2-led1-pins {
 		mux {
-			function = "uart";
-			groups = "uart2";
-		};
-	};
-
-	hsuart_pins: hsuart-pins {
-		mux {
-			function = "uart";
-			groups = "hsuart";
+			function = "phy2_led1";
+			pins = "gpio44";
 		};
 	};
 };
@@ -139,6 +98,7 @@
 	status = "okay";
 	pinctrl-names = "gbe-led";
 	pinctrl-0 = <&gswp1_led0_pins>;
+	pinctrl-1 = <&gswp1_led1_pins>;
 };
 
 &gsw_port1 {
@@ -146,10 +106,25 @@
 	label = "lan3";
 };
 
+&gsw_phy1_led0 {
+	function = LED_FUNCTION_LAN;
+	color = <LED_COLOR_ID_GREEN>;
+	status = "okay";
+	active-low;
+};
+
+&gsw_phy1_led1 {
+	function = LED_FUNCTION_LAN;
+	color = <LED_COLOR_ID_AMBER>;
+	status = "okay";
+	active-low;
+};
+
 &gsw_phy2 {
 	status = "okay";
 	pinctrl-names = "gbe-led";
 	pinctrl-0 = <&gswp2_led0_pins>;
+	pinctrl-1 = <&gswp2_led1_pins>;
 };
 
 &gsw_port2 {
@@ -157,14 +132,16 @@
 	label = "lan4";
 };
 
-&uart2 {
+&gsw_phy2_led0 {
+	function = LED_FUNCTION_LAN;
+	color = <LED_COLOR_ID_GREEN>;
 	status = "okay";
-	pinctrl-names = "default";
-	pinctrl-0 = <&uart2_pins>;
+	active-low;
 };
 
-&hsuart3 {
+&gsw_phy2_led1 {
+	function = LED_FUNCTION_LAN;
+	color = <LED_COLOR_ID_AMBER>;
 	status = "okay";
-	pinctrl-names = "default";
-	pinctrl-0 = <&hsuart_pins>;
+	active-low;
 };

@@ -70,20 +70,7 @@ define Device/airoha_an7581-evb-emmc
 endef
 TARGET_DEVICES += airoha_an7581-evb-emmc
 
-define Device/gemtek_w1700k-ubi
-  DEVICE_VENDOR := Gemtek
-  DEVICE_MODEL := W1700K
-  DEVICE_VARIANT := UBI
-  DEVICE_ALT0_VENDOR := CenturyLink
-  DEVICE_ALT0_MODEL := W1700K
-  DEVICE_ALT0_VARIANT := UBI
-  DEVICE_ALT1_VENDOR := Lumen
-  DEVICE_ALT1_MODEL := W1700K
-  DEVICE_ALT1_VARIANT := UBI
-  DEVICE_ALT2_VENDOR := Quantum Fiber
-  DEVICE_ALT2_MODEL := W1700K
-  DEVICE_ALT2_VARIANT := UBI
-  DEVICE_DTS := an7581-w1700k-ubi
+define Device/gemtek_17xx-common
   DEVICE_PACKAGES := airoha-en7581-mt7996-npu-firmware \
 		    fitblk kmod-i2c-an7581 kmod-hwmon-nct7802 \
 		    kmod-mt7996-firmware kmod-phy-rtl8261n \
@@ -100,7 +87,37 @@ define Device/gemtek_w1700k-ubi
   IMAGES := sysupgrade.itb
   IMAGE/sysupgrade.itb := append-kernel | fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | append-metadata
   ARTIFACTS := chainload-uboot.itb
-  ARTIFACT/chainload-uboot.itb := an7581-chainloader gemtek_w1700k
   SOC := an7581
 endef
+
+define Device/gemtek_w1700k-ubi
+  DEVICE_VENDOR := Gemtek
+  DEVICE_MODEL := W1700K
+  DEVICE_VARIANT := UBI
+  DEVICE_ALT0_VENDOR := CenturyLink
+  DEVICE_ALT0_MODEL := W1700K
+  DEVICE_ALT0_VARIANT := UBI
+  DEVICE_ALT1_VENDOR := Lumen
+  DEVICE_ALT1_MODEL := W1700K
+  DEVICE_ALT1_VARIANT := UBI
+  DEVICE_ALT2_VENDOR := Quantum Fiber
+  DEVICE_ALT2_MODEL := W1700K
+  DEVICE_ALT2_VARIANT := UBI
+  DEVICE_DTS := an7581-w1700k-ubi
+  ARTIFACT/chainload-uboot.itb := an7581-chainloader gemtek_w1700k
+  $(Device/gemtek_17xx-common)
+endef
 TARGET_DEVICES += gemtek_w1700k-ubi
+
+define Device/gemtek_xr1710g-ubi
+  DEVICE_VENDOR := Gemtek
+  DEVICE_MODEL := XR1710G
+  DEVICE_VARIANT := UBI
+  DEVICE_ALT0_VENDOR := Brightspeed
+  DEVICE_ALT0_MODEL := XR1710G
+  DEVICE_ALT0_VARIANT := UBI
+  DEVICE_DTS := an7581-xr1710g-ubi
+  ARTIFACT/chainload-uboot.itb := an7581-chainloader gemtek_xr1710g
+  $(Device/gemtek_17xx-common)
+endef
+TARGET_DEVICES += gemtek_xr1710g-ubi
