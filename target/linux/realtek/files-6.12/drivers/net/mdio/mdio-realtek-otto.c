@@ -181,6 +181,7 @@ struct rtmdio_ctrl {
 	bool raw[RTMDIO_MAX_PHY];
 	int smi_bus[RTMDIO_MAX_PHY];
 	int smi_addr[RTMDIO_MAX_PHY];
+	struct device_node *phy_node[RTMDIO_MAX_PHY];
 	bool smi_bus_isc45[RTMDIO_MAX_SMI_BUS];
 };
 
@@ -870,13 +871,67 @@ static int rtmdio_reset(struct mii_bus *bus)
 	return ctrl->cfg->reset(bus);
 }
 
+static int rtmdio_map_ports(struct device *dev)
+{
+	struct rtmdio_ctrl *ctrl = dev_get_drvdata(dev);
+	int bus_addr, addr;
+
+	struct device_node *switch_node __free(device_node) =
+		of_get_child_by_name(dev->of_node->parent, "ethernet-switch");
+	if (!switch_node)
+		return dev_err_probe(dev, -ENODEV, "%pfwP missing ethernet-switch\n",
+				     of_fwnode_handle(dev->of_node->parent));
+
+	struct device_node *ports __free(device_node) =
+		of_get_child_by_name(switch_node, "ethernet-ports");
+	if (!ports)
+		return dev_err_probe(dev, -ENODEV, "%pfwP missing ethernet-ports\n",
+				     of_fwnode_handle(switch_node));
+
+	for (addr = 0; addr < RTMDIO_MAX_PHY; addr++)
+		ctrl->smi_bus[addr] = -1;
+
+	for_each_child_of_node_scoped(ports, port) {
+		if (of_property_read_u32(port, "reg", &addr))
+			continue;
+
+		struct device_node *phy __free(device_node) =
+			of_parse_phandle(port, "phy-handle", 0);
+		if (!phy)
+			continue;
+
+		if (addr >= ctrl->cfg->num_phys)
+			return dev_err_probe(dev, -EINVAL, "%pfwP illegal port number\n",
+					     of_fwnode_handle(port));
+
+		if (of_property_read_u32(phy, "reg", &ctrl->smi_addr[addr]))
+			return dev_err_probe(dev, -EINVAL, "%pfwP no phy address\n",
+					     of_fwnode_handle(phy));
+
+		if (of_property_read_u32(phy->parent, "reg", &bus_addr))
+			return dev_err_probe(dev, -EINVAL, "%pfwP no bus address\n",
+					     of_fwnode_handle(phy->parent));
+
+		if (bus_addr >= RTMDIO_MAX_SMI_BUS)
+			return dev_err_probe(dev, -EINVAL, "%pfwP illegal bus number\n",
+					     of_fwnode_handle(phy->parent));
+
+		if (of_device_is_compatible(phy, "ethernet-phy-ieee802.3-c45"))
+			ctrl->smi_bus_isc45[bus_addr] = true;
+
+		ctrl->smi_bus[addr] = bus_addr;
+		ctrl->phy_node[addr] = of_node_get(phy);
+	}
+
+	return 0;
+}
+
 static int rtmdio_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
-	struct device_node *np, *dn[RTMDIO_MAX_PHY];
 	struct rtmdio_ctrl *ctrl;
 	struct mii_bus *bus;
-	int ret, addr;
+	int ret;
 
 	bus = devm_mdiobus_alloc_size(dev, sizeof(*ctrl));
 	if (!bus)
@@ -888,33 +943,12 @@ static int rtmdio_probe(struct platform_device *pdev)
 	if (IS_ERR(ctrl->map))
 		return PTR_ERR(ctrl->map);
 
-	for (addr = 0; addr < RTMDIO_MAX_PHY; addr++)
-		ctrl->smi_bus[addr] = -1;
-
-	for_each_node_by_name(np, "ethernet-phy") {
-		if (of_property_read_u32(np, "reg", &addr))
-			continue;
-
-		if (addr < 0 || addr >= ctrl->cfg->num_phys) {
-			dev_err(dev, "illegal address number %d\n", addr);
-			of_node_put(np);
-			return -EINVAL;
-		}
-
-		of_property_read_u32(np->parent, "reg", &ctrl->smi_bus[addr]);
-		if (of_property_read_u32(np, "realtek,smi-address", &ctrl->smi_addr[addr]))
-			ctrl->smi_addr[addr] = addr;
-
-		if (ctrl->smi_bus[addr] < 0 || ctrl->smi_bus[addr] >= RTMDIO_MAX_SMI_BUS) {
-			dev_err(dev, "illegal SMI bus number %d\n", ctrl->smi_bus[addr]);
-			of_node_put(np);
-			return -EINVAL;
-		}
-
-		if (of_device_is_compatible(np, "ethernet-phy-ieee802.3-c45"))
-			ctrl->smi_bus_isc45[ctrl->smi_bus[addr]] = true;
-
-		dn[addr] = of_node_get(np);
+	platform_set_drvdata(pdev, ctrl);
+	ret = rtmdio_map_ports(dev);
+	if (ret) {
+		for_each_phy(ctrl, addr)
+			of_node_put(ctrl->phy_node[addr]);
+		return ret;
 	}
 
 	bus->name = "Realtek MDIO bus";
@@ -935,11 +969,13 @@ static int rtmdio_probe(struct platform_device *pdev)
 		return ret;
 
 	for_each_phy(ctrl, addr) {
-		ret = fwnode_mdiobus_register_phy(bus, of_fwnode_handle(dn[addr]), addr);
-		of_node_put(dn[addr]);
-		if (ret)
-			return ret;
+		if (!ret)
+			ret = fwnode_mdiobus_register_phy(bus,
+				of_fwnode_handle(ctrl->phy_node[addr]), addr);
+		of_node_put(ctrl->phy_node[addr]);
 	}
+	if (ret)
+		return ret;
 
 	if (ctrl->cfg->setup_polling)
 		ctrl->cfg->setup_polling(bus);

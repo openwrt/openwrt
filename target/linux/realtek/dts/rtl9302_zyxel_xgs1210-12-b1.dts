@@ -8,10 +8,16 @@
 	model = "Zyxel XGS1210-12 B1 Switch";
 };
 
-&phy24 {
-	realtek,smi-address = <1>;
+&mdio_bus1 {
+	phy24: ethernet-phy@1 {
+		reg = <1>;
+		compatible = "ethernet-phy-ieee802.3-c45";
+	};
 };
 
-&phy25 {
-	realtek,smi-address = <2>;
+&mdio_bus2 {
+	phy25: ethernet-phy@2 {
+		reg = <2>;
+		compatible = "ethernet-phy-ieee802.3-c45";
+	};
 };
