@@ -1,0 +1,27 @@
+--- a/drivers/net/wireless/ath/ath12k/qmi.c
++++ b/drivers/net/wireless/ath/ath12k/qmi.c
+@@ -2818,6 +2818,7 @@ int ath12k_qmi_request_target_cap(struct
+ 	int ret = 0;
+ 	int r;
+ 	int i;
++	u32 val;
+ 
+ 	ret = qmi_txn_init(&ab->qmi.handle, &txn,
+ 			   qmi_wlanfw_cap_resp_msg_v01_ei, &resp);
+@@ -2858,6 +2859,16 @@ int ath12k_qmi_request_target_cap(struct
+ 	else
+ 		ab->qmi.target.board_id = board_id;
+ 
++	if (ab->qmi.target.board_id == ATH12K_BOARD_ID_DEFAULT) {
++		//try to get from DT
++		ret = of_property_read_u32(ab->dev->of_node, "qcom,board_id", &val);
++		if (ret) {
++			ath12k_warn(ab, "failed to read qcom,board_id: %d\n", ret);
++		} else {
++			ab->qmi.target.board_id = val;
++		}
++	}
++
+ 	if (resp.soc_info_valid)
+ 		ab->qmi.target.soc_id = resp.soc_info.soc_id;
+ 
