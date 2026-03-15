@@ -2726,6 +2726,23 @@ define Device/samknows_whitebox-v8
 endef
 TARGET_DEVICES += samknows_whitebox-v8
 
+define Device/securifi_almond-3s
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  DEVICE_VENDOR := Securifi
+  DEVICE_MODEL := Almond
+  DEVICE_VARIANT := 3S
+  IMAGE_SIZE := 65216k
+  KERNEL_LOADADDR := 0x80001000
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-kernel
+  IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-rootfs | \
+        pad-rootfs | check-size | append-metadata
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
+  	kmod-mt76x2 kmod-usb3 -uboot-envtools \
+  	kmod-usb-net-qmi-wwan kmod-usb-serial-option uqmi
+endef
+TARGET_DEVICES += securifi_almond-3s
+
 define Device/sercomm_na502
   $(Device/nand)
   $(Device/uimage-lzma-loader)
