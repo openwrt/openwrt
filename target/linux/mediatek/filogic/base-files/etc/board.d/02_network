@@ -65,6 +65,7 @@ mediatek_setup_interfaces()
 		;;
 	asus,tuf-ax4200|\
 	iptime,ax3000sm|\
+	iptime,ax6000m|\
 	iptime,ax7800m-6e|\
 	jdcloud,re-cp-03|\
 	mediatek,mt7981-rfb|\
@@ -251,6 +252,12 @@ mediatek_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii pdt_data_1 ethaddr)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
 		label_mac=$wan_mac
+		;;
+	iptime,ax6000m)
+		base_mac=$(mtd_get_mac_binary "Factory" 0x4)
+		wan_mac=$(macaddr_add "$base_mac" 1)
+		lan_mac=$(macaddr_add "$base_mac" 3)
+		label_mac=$base_mac
 		;;
 	mercusys,mr80x-v3|\
 	mercusys,mr85x)
