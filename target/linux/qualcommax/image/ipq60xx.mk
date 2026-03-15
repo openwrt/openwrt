@@ -141,7 +141,7 @@ define Device/linksys_mr7350
 	NAND_SIZE := 256m
 	IMAGE_SIZE := 75776k
 	SOC := ipq6000
-	DEVICE_PACKAGES += ipq-wifi-linksys_mr7350 kmod-leds-pca963x
+	DEVICE_PACKAGES += ipq-wifi-linksys_mr7350 kmod-leds-pca963x -kmod-qca-nss-dp kmod-qca-edma
 endef
 TARGET_DEVICES += linksys_mr7350
 

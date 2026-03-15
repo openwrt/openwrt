@@ -1,0 +1,33 @@
+From: John Crispin <john@phrozen.org>
+Date: Wed, 05 Mar 2026 12:00:00 +0100
+Subject: dt-bindings: clock: qcom: Add CMN PLL support for IPQ6018
+
+The CMN PLL block in the IPQ6018 SoC takes 48 MHz as the reference
+input clock. Its output clocks are the bias_pll_cc_clk (300 MHz) and
+bias_pll_nss_noc_clk (416.5 MHz) clocks used by the networking
+subsystem.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
+ include/dt-bindings/clock/qcom,ipq6018-cmn-pll.h | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+ create mode 100644 include/dt-bindings/clock/qcom,ipq6018-cmn-pll.h
+
+--- /dev/null
++++ b/include/dt-bindings/clock/qcom,ipq6018-cmn-pll.h
+@@ -0,0 +1,15 @@
++/* SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) */
++/*
++ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
++ */
++
++#ifndef _DT_BINDINGS_CLK_QCOM_IPQ6018_CMN_PLL_H
++#define _DT_BINDINGS_CLK_QCOM_IPQ6018_CMN_PLL_H
++
++/* CMN PLL core clock. */
++#define IPQ6018_CMN_PLL_CLK			0
++
++/* The output clocks from CMN PLL of IPQ6018. */
++#define IPQ6018_BIAS_PLL_CC_CLK			1
++#define IPQ6018_BIAS_PLL_NSS_NOC_CLK		2
++#endif

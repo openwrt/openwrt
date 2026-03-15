@@ -1,0 +1,186 @@
+#include <dt-bindings/clock/qcom,ipq8074-cmn-pll.h>
+
+&soc {
+	cmn_pll_ref_clk: cmn-pll-ref-clk {
+		compatible = "fixed-clock";
+		clock-frequency = <48000000>;
+		#clock-cells = <0>;
+	};
+
+	cmn_pll: clock-controller@9b000 {
+		compatible = "qcom,ipq8074-cmn-pll";
+		reg = <0x0009b000 0x800>;
+		clocks = <&cmn_pll_ref_clk>,
+			 <&gcc GCC_CMN_12GPLL_AHB_CLK>,
+			 <&gcc GCC_CMN_12GPLL_SYS_CLK>;
+		clock-names = "ref", "ahb", "sys";
+		#clock-cells = <1>;
+		assigned-clocks = <&cmn_pll IPQ8074_CMN_PLL_CLK>;
+		assigned-clock-rates-u64 = /bits/ 64 <12000000000>;
+	};
+
+	uniphy0: ethernet-pcs@7a00000 {
+		compatible = "qualcomm,ipq8074-uniphy";
+		reg = <0x07a00000 0x10000>;
+		#pcs-cells = <1>;
+		clocks = <&gcc GCC_UNIPHY0_AHB_CLK>,
+			 <&gcc GCC_UNIPHY0_SYS_CLK>,
+			 <&gcc GCC_UNIPHY0_PORT1_RX_CLK>,
+			 <&gcc GCC_UNIPHY0_PORT1_TX_CLK>,
+			 <&gcc GCC_UNIPHY0_PORT2_RX_CLK>,
+			 <&gcc GCC_UNIPHY0_PORT2_TX_CLK>,
+			 <&gcc GCC_UNIPHY0_PORT3_RX_CLK>,
+			 <&gcc GCC_UNIPHY0_PORT3_TX_CLK>,
+			 <&gcc GCC_UNIPHY0_PORT4_RX_CLK>,
+			 <&gcc GCC_UNIPHY0_PORT4_TX_CLK>,
+			 <&gcc GCC_UNIPHY0_PORT5_RX_CLK>,
+			 <&gcc GCC_UNIPHY0_PORT5_TX_CLK>;
+		clock-names = "ahb", "sys",
+			      "port1_rx", "port1_tx",
+			      "port2_rx", "port2_tx",
+			      "port3_rx", "port3_tx",
+			      "port4_rx", "port4_tx",
+			      "port5_rx", "port5_tx";
+		clock-output-names = "uniphy0_gcc_tx_clk",
+				     "uniphy0_gcc_rx_clk";
+		resets = <&gcc GCC_UNIPHY0_SOFT_RESET>,
+			 <&gcc GCC_UNIPHY0_XPCS_RESET>;
+		reset-names = "soft", "xpcs";
+		status = "disabled";
+	};
+
+	uniphy1: ethernet-pcs@7a10000 {
+		compatible = "qualcomm,ipq8074-uniphy";
+		reg = <0x07a10000 0x10000>;
+		#pcs-cells = <1>;
+		clocks = <&gcc GCC_UNIPHY1_AHB_CLK>,
+			 <&gcc GCC_UNIPHY1_SYS_CLK>,
+			 <&gcc GCC_UNIPHY1_PORT5_RX_CLK>,
+			 <&gcc GCC_UNIPHY1_PORT5_TX_CLK>;
+		clock-names = "ahb", "sys",
+			      "port5_rx", "port5_tx";
+		clock-output-names = "uniphy1_gcc_tx_clk",
+				     "uniphy1_gcc_rx_clk";
+		resets = <&gcc GCC_UNIPHY1_SOFT_RESET>,
+			 <&gcc GCC_UNIPHY1_XPCS_RESET>;
+		reset-names = "soft", "xpcs";
+		status = "disabled";
+	};
+
+	uniphy2: ethernet-pcs@7a20000 {
+		compatible = "qualcomm,ipq8074-uniphy";
+		reg = <0x07a20000 0x10000>;
+		#pcs-cells = <1>;
+		clocks = <&gcc GCC_UNIPHY2_AHB_CLK>,
+			 <&gcc GCC_UNIPHY2_SYS_CLK>,
+			 <&gcc GCC_UNIPHY2_PORT6_RX_CLK>,
+			 <&gcc GCC_UNIPHY2_PORT6_TX_CLK>;
+		clock-names = "ahb", "sys",
+			      "port6_rx", "port6_tx";
+		clock-output-names = "uniphy2_gcc_tx_clk",
+				     "uniphy2_gcc_rx_clk";
+		resets = <&gcc GCC_UNIPHY2_SOFT_RESET>,
+			 <&gcc GCC_UNIPHY2_XPCS_RESET>;
+		reset-names = "soft", "xpcs";
+		status = "disabled";
+	};
+
+	edma: edma@3ab00000 {
+		compatible = "qualcomm,ipq8074-edma";
+		reg = <0x3ab00000 0xb0000>;
+		interrupts = <GIC_SPI 345 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 353 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 361 IRQ_TYPE_LEVEL_HIGH>,
+			     <GIC_SPI 344 IRQ_TYPE_LEVEL_HIGH>;
+		resets = <&gcc GCC_EDMA_HW_RESET>;
+		reset-names = "edma_rst";
+		clocks = <&gcc GCC_NSS_EDMA_CLK>,
+			 <&gcc GCC_NSS_EDMA_CFG_CLK>,
+			 <&gcc GCC_NSS_PPE_CLK>,
+			 <&gcc GCC_NSS_PPE_CFG_CLK>,
+			 <&gcc GCC_NSSNOC_PPE_CLK>,
+			 <&gcc GCC_NSSNOC_PPE_CFG_CLK>,
+			 <&gcc GCC_NSS_NOC_CLK>,
+			 <&gcc GCC_NSSNOC_SNOC_CLK>,
+			 <&gcc GCC_MEM_NOC_NSS_AXI_CLK>;
+		clock-names = "nss_edma_clk", "nss_edma_cfg_clk",
+			      "nss_ppe_clk", "nss_ppe_cfg_clk",
+			      "nssnoc_ppe_clk", "nssnoc_ppe_cfg_clk",
+			      "gcc_nss_noc_clk", "gcc_nssnoc_snoc_clk",
+			      "gcc_mem_noc_nss_axi_clk";
+		status = "disabled";
+	};
+
+	switch: ppe@3a000000 {
+		compatible = "qualcomm,ipq8074-ppe";
+		reg = <0x3a000000 0x900000>;
+		clocks = <&gcc GCC_CMN_12GPLL_AHB_CLK>,
+			 <&gcc GCC_CMN_12GPLL_SYS_CLK>,
+			 <&gcc GCC_PORT1_MAC_CLK>,
+			 <&gcc GCC_PORT2_MAC_CLK>,
+			 <&gcc GCC_PORT3_MAC_CLK>,
+			 <&gcc GCC_PORT4_MAC_CLK>,
+			 <&gcc GCC_PORT5_MAC_CLK>,
+			 <&gcc GCC_PORT6_MAC_CLK>,
+			 <&gcc GCC_NSS_PPE_CLK>,
+			 <&gcc GCC_NSS_PPE_CFG_CLK>,
+			 <&gcc GCC_NSSNOC_PPE_CLK>,
+			 <&gcc GCC_NSSNOC_PPE_CFG_CLK>,
+			 <&gcc GCC_NSS_PPE_IPE_CLK>,
+			 <&gcc GCC_NSS_PPE_BTQ_CLK>,
+			 <&gcc GCC_MDIO_AHB_CLK>,
+			 <&gcc GCC_NSS_NOC_CLK>,
+			 <&gcc GCC_NSSNOC_SNOC_CLK>,
+			 <&gcc GCC_MEM_NOC_NSS_AXI_CLK>,
+			 <&gcc GCC_NSS_CRYPTO_CLK>,
+			 <&gcc GCC_NSS_IMEM_CLK>,
+			 <&gcc GCC_NSS_PTP_REF_CLK>,
+			 <&gcc GCC_NSS_PORT1_RX_CLK>,
+			 <&gcc GCC_NSS_PORT1_TX_CLK>,
+			 <&gcc GCC_NSS_PORT2_RX_CLK>,
+			 <&gcc GCC_NSS_PORT2_TX_CLK>,
+			 <&gcc GCC_NSS_PORT3_RX_CLK>,
+			 <&gcc GCC_NSS_PORT3_TX_CLK>,
+			 <&gcc GCC_NSS_PORT4_RX_CLK>,
+			 <&gcc GCC_NSS_PORT4_TX_CLK>,
+			 <&gcc GCC_NSS_PORT5_RX_CLK>,
+			 <&gcc GCC_NSS_PORT5_TX_CLK>,
+			 <&gcc GCC_NSS_PORT6_RX_CLK>,
+			 <&gcc GCC_NSS_PORT6_TX_CLK>;
+		clock-names = "cmn_ahb_clk", "cmn_sys_clk",
+			      "port1_mac_clk", "port2_mac_clk",
+			      "port3_mac_clk", "port4_mac_clk",
+			      "port5_mac_clk", "port6_mac_clk",
+			      "nss_ppe_clk", "nss_ppe_cfg_clk",
+			      "nssnoc_ppe_clk", "nssnoc_ppe_cfg_clk",
+			      "nss_ppe_ipe_clk", "nss_ppe_btq_clk",
+			      "gcc_mdio_ahb_clk", "gcc_nss_noc_clk",
+			      "gcc_nssnoc_snoc_clk",
+			      "gcc_mem_noc_nss_axi_clk",
+			      "gcc_nss_crypto_clk",
+			      "gcc_nss_imem_clk",
+			      "gcc_nss_ptp_ref_clk",
+			      "port1_rx", "port1_tx",
+			      "port2_rx", "port2_tx",
+			      "port3_rx", "port3_tx",
+			      "port4_rx", "port4_tx",
+			      "port5_rx", "port5_tx",
+			      "port6_rx", "port6_tx";
+		assigned-clocks = <&gcc GCC_NSS_PPE_CLK>,
+				  <&gcc GCC_NSS_CRYPTO_CLK>,
+				  <&gcc GCC_NSS_IMEM_CLK>;
+		assigned-clock-rates = <300000000>, <600000000>, <400000000>;
+		resets = <&gcc GCC_PPE_FULL_RESET>,
+			 <&gcc GCC_NSSPORT1_RESET>,
+			 <&gcc GCC_NSSPORT2_RESET>,
+			 <&gcc GCC_NSSPORT3_RESET>,
+			 <&gcc GCC_NSSPORT4_RESET>,
+			 <&gcc GCC_NSSPORT5_RESET>,
+			 <&gcc GCC_NSSPORT6_RESET>;
+		reset-names = "ppe_rst", "nss_port1_rst",
+			      "nss_port2_rst", "nss_port3_rst",
+			      "nss_port4_rst", "nss_port5_rst",
+			      "nss_port6_rst";
+		status = "disabled";
+	};
+};
