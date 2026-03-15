@@ -21,6 +21,7 @@ proto_qmi_init_config() {
 	proto_config_add_string pdptype
 	proto_config_add_int profile
 	proto_config_add_int v6profile
+	proto_config_add_string devpath
 	proto_config_add_boolean dhcp
 	proto_config_add_boolean dhcpv6
 	proto_config_add_boolean sourcefilter
@@ -46,14 +47,38 @@ proto_qmi_setup() {
 	local apn auth delay device modes password pdptype pincode username v6apn
 	json_get_vars apn auth delay device modes password pdptype pincode username v6apn
 
-	local profile v6profile dhcp dhcpv6 autoconnect plmn timeout
-	json_get_vars profile v6profile dhcp dhcpv6 autoconnect plmn timeout
+	local profile v6profile devpath dhcp dhcpv6 autoconnect plmn timeout
+	json_get_vars profile v6profile devpath dhcp dhcpv6 autoconnect plmn timeout
 
 	[ "$timeout" = "" ] && timeout="10"
 
 	[ "$metric" = "" ] && metric="0"
 
 	[ -n "$ctl_device" ] && device=$ctl_device
+
+	if [ -n "$devpath" ]; then
+		local usbmisc_or_wwan_path
+		# For usbmisc:
+		# /sys/devices/platform/1e1c0000.xhci/usb1/1-2/1-2:1.4/usbmisc/cdc-wdm0
+		# Numbers after ":" are the configuration and interface number
+		# of the connected modem. There can be multiple interfaces but
+		# there will only be a single interface that provides the
+		# control channel device. Therefore, check also /*/usbmisc to
+		# allow specifying the USB port number the modem is directly
+		# connected to.
+		# For wwan:
+		# /sys/devices/platform/soc/11280000.pcie/pci0003:00/0003:00:00.0/0003:01:00.0/wwan/wwan0/wwan0qmi0
+		# /sys/devices/platform/soc/11280000.pcie/pci0003:00/0003:00:00.0/0003:01:00.0/mhi0/wwan/wwan0/wwan0qmi0
+		for usbmisc_or_wwan_path in \
+		    "$devpath"/usbmisc/cdc-wdm* \
+		    "$devpath"/*/usbmisc/cdc-wdm* \
+		    "$devpath"/*/wwan[0-9]*/wwan[0-9]*qmi* \
+		    "$devpath"/*/*/wwan[0-9]*/wwan[0-9]*qmi*; do
+			[ ! -e "$usbmisc_or_wwan_path" ] && continue
+			device="/dev/${usbmisc_or_wwan_path##*/}"
+			break
+		done
+	fi
 
 	[ -n "$device" ] || {
 		echo "No control device specified"
@@ -519,10 +544,21 @@ qmi_wds_stop() {
 proto_qmi_teardown() {
 	local interface="$1"
 
-	local device cid_4 pdh_4 cid_6 pdh_6
-	json_get_vars device
+	local device devpath cid_4 pdh_4 cid_6 pdh_6
+	json_get_vars device devpath
 
 	[ -n "$ctl_device" ] && device=$ctl_device
+
+	if [ -n "$devpath" ]; then
+		local usbmisc_or_wwan_path
+		for usbmisc_or_wwan_path in \
+		    "$devpath"/usbmisc/cdc-wdm* \
+		    "$devpath"/*/usbmisc/cdc-wdm* \
+		    "$devpath"/*/wwan[0-9]*/wwan[0-9]*qmi* \
+		    "$devpath"/*/*/wwan[0-9]*/wwan[0-9]*qmi*; do
+			device="/dev/${usbmisc_or_wwan_path##*/}"
+		done
+	fi
 
 	echo "Stopping network $interface"
 
