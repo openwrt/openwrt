@@ -191,7 +191,7 @@ Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
  	platform_set_drvdata(userpd_pdev, rproc);
  	qcom_add_ssr_subdev(rproc, &upd->ssr_subdev, userpd_pdev->name);
  	return 0;
-@@ -729,10 +736,10 @@ static int q6_wcss_probe(struct platform
+@@ -724,10 +731,10 @@ static int q6_wcss_probe(struct platform
  
  	/* Iterate over userpd child's and register with rproc */
  	for_each_available_child_of_node(pdev->dev.of_node, userpd_np) {

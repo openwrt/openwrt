@@ -88,7 +88,7 @@ Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
  			     wcss->mem_phys, wcss->mem_size,
  			     NULL);
  }
-@@ -776,6 +800,12 @@ static void q6_wcss_remove(struct platfo
+@@ -771,6 +795,12 @@ static void q6_wcss_remove(struct platfo
  	rproc_free(rproc);
  }
  
@@ -101,7 +101,7 @@ Signed-off-by: Ziyang Huang <hzyitc@outlook.com>
  static const struct wcss_data q6_ipq5332_res_init = {
  	.pasid = MPD_WCNSS_PAS_ID,
  	.share_upd_info_to_q6 = true,
-@@ -786,6 +816,7 @@ static const struct wcss_data q6_ipq9574
+@@ -781,6 +811,7 @@ static const struct wcss_data q6_ipq9574
  };
  
  static const struct of_device_id q6_wcss_of_match[] = {
