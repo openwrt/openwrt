@@ -1,0 +1,80 @@
+From: Chad Monroe <chad@monroe.io>
+Date: Fri, 11 Oct 2024 16:35:40 -0700
+Subject: [PATCH] net: dsa: mxl862xx: add driver for Maxlinear 862xx
+
+Add DSA driver for Maxlinear 86252 and 86282 switches
+
+Signed-off-by: Chad Monroe <chad@monroe.io>
+---
+ drivers/net/dsa/Kconfig  |    2 ++
+ drivers/net/dsa/Makefile |    1 +
+ include/net/dsa.h        |    4 ++++
+ net/dsa/Kconfig          |   13 +++++++++++++
+ net/dsa/Makefile         |    2 ++
+ 5 files changed, 22 insertions(+)
+
+--- a/drivers/net/dsa/Kconfig
++++ b/drivers/net/dsa/Kconfig
+@@ -92,6 +92,8 @@ source "drivers/net/dsa/ocelot/Kconfig"
+ 
+ source "drivers/net/dsa/qca/Kconfig"
+ 
++source "drivers/net/dsa/mxl862xx/Kconfig"
++
+ source "drivers/net/dsa/sja1105/Kconfig"
+ 
+ source "drivers/net/dsa/xrs700x/Kconfig"
+--- a/drivers/net/dsa/Makefile
++++ b/drivers/net/dsa/Makefile
+@@ -23,6 +23,7 @@ obj-y				+= b53/
+ obj-y				+= hirschmann/
+ obj-y				+= microchip/
+ obj-y				+= mv88e6xxx/
++obj-y				+= mxl862xx/
+ obj-y				+= ocelot/
+ obj-y				+= qca/
+ obj-y				+= realtek/
+--- a/include/net/dsa.h
++++ b/include/net/dsa.h
+@@ -55,6 +55,7 @@ struct tc_action;
+ #define DSA_TAG_PROTO_LAN937X_VALUE		27
+ #define DSA_TAG_PROTO_VSC73XX_8021Q_VALUE	28
+ #define DSA_TAG_PROTO_BRCM_LEGACY_FCS_VALUE	29
++#define DSA_TAG_PROTO_MXL862_8021Q_VALUE	31
+ 
+ enum dsa_tag_protocol {
+ 	DSA_TAG_PROTO_NONE		= DSA_TAG_PROTO_NONE_VALUE,
+@@ -87,6 +88,7 @@ enum dsa_tag_protocol {
+ 	DSA_TAG_PROTO_RZN1_A5PSW	= DSA_TAG_PROTO_RZN1_A5PSW_VALUE,
+ 	DSA_TAG_PROTO_LAN937X		= DSA_TAG_PROTO_LAN937X_VALUE,
+ 	DSA_TAG_PROTO_VSC73XX_8021Q	= DSA_TAG_PROTO_VSC73XX_8021Q_VALUE,
++	DSA_TAG_PROTO_MXL862_8021Q	= DSA_TAG_PROTO_MXL862_8021Q_VALUE,
+ };
+ 
+ struct dsa_switch;
+--- a/net/dsa/Kconfig
++++ b/net/dsa/Kconfig
+@@ -137,6 +137,13 @@ config NET_DSA_TAG_QCA
+ 	  Say Y or M if you want to enable support for tagging frames for
+ 	  the Qualcomm Atheros QCA8K switches.
+ 
++config NET_DSA_TAG_MXL862_8021Q
++	tristate "Tag driver for MxL862xx switches, based on VLAN tags"
++	help
++	  Say Y or M if you want to enable support for tagging frames for the
++	  Maxlinear MxL862xx switches. This tagging variant is based on 4-byte wide VLAN
++	  tags
++
+ config NET_DSA_TAG_RTL4_A
+ 	tristate "Tag driver for Realtek 4 byte protocol A tags"
+ 	help
+--- a/net/dsa/Makefile
++++ b/net/dsa/Makefile
+@@ -28,6 +28,7 @@ obj-$(CONFIG_NET_DSA_TAG_HELLCREEK) += t
+ obj-$(CONFIG_NET_DSA_TAG_KSZ) += tag_ksz.o
+ obj-$(CONFIG_NET_DSA_TAG_LAN9303) += tag_lan9303.o
+ obj-$(CONFIG_NET_DSA_TAG_MTK) += tag_mtk.o
++obj-$(CONFIG_NET_DSA_TAG_MXL862_8021Q) += tag_mxl862xx_8021q.o
+ obj-$(CONFIG_NET_DSA_TAG_NONE) += tag_none.o
+ obj-$(CONFIG_NET_DSA_TAG_OCELOT) += tag_ocelot.o
+ obj-$(CONFIG_NET_DSA_TAG_OCELOT_8021Q) += tag_ocelot_8021q.o
