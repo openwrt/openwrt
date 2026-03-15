@@ -123,6 +123,9 @@ iptime,ax3000sm)
 iptime,ax7800m-6e)
 	ucidef_set_led_netdev "wan" "wan" "mdio-bus:06:blue:wan" "eth1" "link tx rx"
 	;;
+jio,jidu6701)
+	ucidef_set_led_netdev "internet" "internet" "green:status" "wan" "link"
+	;;
 keenetic,kn-1812|\
 netcraze,nc-1812)
 	ucidef_set_led_netdev "wlan2g" "WLAN2G" "green:indicator-1" "phy0.0-ap0"
