@@ -155,6 +155,23 @@ menu "Global build settings"
 		  Useful for release builds, so that kernel issues can be debugged offline
 		  later.
 
+	config BUILD_SANDBOX
+		bool "Sandbox package Build/Compile and Build/Install"
+		depends on HOST_OS_LINUX || HOST_OS_MACOS
+		default BUILDBOT
+		help
+		  Run upstream package Build/Compile and Build/Install steps
+		  inside a filesystem and network sandbox.
+
+		  On Linux this uses bubblewrap (bwrap) to create a mount
+		  namespace where the entire filesystem is read-only except the
+		  package build directory, with network access blocked.
+
+		  On macOS this uses sandbox-exec with a restrictive Seatbelt
+		  profile achieving the same effect.
+
+		  If unsure, say N.
+
 	menu "Kernel build options"
 
 	source "config/Config-kernel.in"
