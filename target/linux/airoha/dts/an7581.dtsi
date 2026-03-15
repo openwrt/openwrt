@@ -156,6 +156,8 @@
 	};
 
 	cpufreq: cpufreq {
+		reg = <0x0 0x1fa20000 0x0 0x2c0>, <0x0 0x1efbe000 0x0 0x800>;
+		reg-names = "chip-scu", "mcucfg";
 		compatible = "airoha,en7581-cpufreq";
 
 		operating-points-v2 = <&cpu_smcc_opp_table>;
