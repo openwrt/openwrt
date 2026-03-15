@@ -1,0 +1,47 @@
+From 17f4f23d5a7b78b0e563ebfdd78852ce3eeffe7e Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sat, 28 Feb 2026 20:19:50 +0100
+Subject: pad sections for relro to multiply of common page size
+
+Since commit 9833b7757d24 ("PR28824, relro security issues") in binutils
+2.39 the linker pads the relro sections to a multiply of max page size
+and not to a multiply of common page size any more. On MIPS the common
+page size is 4K and the max page size is 64K.
+
+A system can only mark full pages as read, write or executable.
+When a system uses a bigger page size than common page size, relro will
+not work fully any more with this change, because not the full section
+can be marked read only. On systems which are using common page size
+this has no affect.
+
+With this change the size of many binaries will decrease because they
+are are now padded to a multiple of the smaller common page size and not
+a multiply of max page size any more.
+
+Link: https://sourceware.org/git/?p=binutils-gdb.git;a=commitdiff;h=9833b7757d246f22db4eb24b8e5db7eb5e05b6d9
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ ld/ldexp.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+--- a/ld/ldexp.c
++++ b/ld/ldexp.c
+@@ -474,8 +474,7 @@ fold_segment_align (etree_value_type *lh
+ 	}
+       else
+ 	{
+-	  if (!link_info.relro)
+-	    expld.result.value += expld.dot & (maxpage - 1);
++	  expld.result.value += expld.dot & (maxpage - 1);
+ 	  if (seg->phase == exp_seg_done)
+ 	    {
+ 	      /* OK.  */
+@@ -486,7 +485,7 @@ fold_segment_align (etree_value_type *lh
+ 	      seg->base = expld.result.value;
+ 	      seg->commonpagesize = commonpage;
+ 	      seg->maxpagesize = maxpage;
+-	      seg->relropagesize = maxpage;
++	      seg->relropagesize = commonpage;
+ 	      seg->relro_end = 0;
+ 	    }
+ 	  else
