@@ -1621,6 +1621,26 @@ define Device/huasifei_wh3000-pro
 endef
 TARGET_DEVICES += huasifei_wh3000-pro
 
+define Device/huasifei_ws1610
+  DEVICE_VENDOR := Huasifei
+  DEVICE_MODEL := WS1610
+  DEVICE_DTS := mt7981b-huasifei-ws1610
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-usb3 \
+	kmod-usb-net-qmi-wwan kmod-usb-net-cdc-ether kmod-usb-net-cdc-ncm \
+	kmod-usb-serial-option kmod-usbmon mdio-tools uqmi
+  SUPPORTED_DEVICES := huasifei,ws1610
+  KERNEL_IN_UBI := 1
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 114688k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-ubi | check-size $$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += huasifei_ws1610
+
 define Device/imou_hx21
   DEVICE_VENDOR := Imou
   DEVICE_MODEL := HX21
