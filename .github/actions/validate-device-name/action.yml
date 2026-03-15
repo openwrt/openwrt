@@ -1,0 +1,37 @@
+name: Validate Device Name
+description: Validates the device name for a given target/subtarget
+
+inputs:
+  device:
+    description: The device name to validate
+    required: true
+  target:
+    description: The target platform
+    required: true
+  subtarget:
+    description: The target variant
+    required: true
+  working-directory:
+    description: Directory containing OpenWrt source
+    required: false
+    default: ${{ github.workspace }}
+
+outputs:
+  valid:
+    description: Whether the device name is valid
+    value: ${{ steps.validate.outputs.valid }}
+  error:
+    description: Error message if validation failed
+    value: ${{ steps.validate.outputs.error }}
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      id: validate
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        TARGET: ${{ inputs.target }}
+        SUBTARGET: ${{ inputs.subtarget }}
+        DEVICE: ${{ inputs.device }}
+      run: python3 $GITHUB_ACTION_PATH/validate.py >> $GITHUB_OUTPUT
