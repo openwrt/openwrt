@@ -1,0 +1,31 @@
+From: Bevan Weiss <bevan.weiss@gmail.com>
+Subject: kernel: pse-pd: add Hasivo HS104 PoE PSE controller driver
+
+Add Kconfig and Makefile entries for the Hasivo HS104 PoE PSE controller
+driver, which manages 4 PoE delivery channels over I2C.
+
+Signed-off-by: Bevan Weiss <bevan.weiss@gmail.com>
+Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
+---
+--- a/drivers/net/pse-pd/Kconfig
++++ b/drivers/net/pse-pd/Kconfig
+@@ -52,4 +52,12 @@ config PSE_TPS23881
+ 
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called tps23881.
++
++config PSE_HASIVO_HS104
++	tristate "Hasivo HS104 PoE PSE Controller"
++	depends on I2C
++	help
++	  Support for the Hasivo HS104 PoE PSE Controller chip.
++	  This driver allows control and monitoring of PoE ports via I2C.
++
+ endif
+--- a/drivers/net/pse-pd/Makefile
++++ b/drivers/net/pse-pd/Makefile
+@@ -7,3 +7,4 @@ obj-$(CONFIG_PSE_REGULATOR) += pse_regul
+ obj-$(CONFIG_PSE_PD692X0) += pd692x0.o
+ obj-$(CONFIG_PSE_SI3474) += si3474.o
+ obj-$(CONFIG_PSE_TPS23881) += tps23881.o
++obj-$(CONFIG_PSE_HASIVO_HS104) += hasivo_hs104.o
