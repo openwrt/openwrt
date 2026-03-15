@@ -45,7 +45,8 @@ preinit_set_mac_address() {
 		addr=$(get_mac_binary "/tmp/tp_data/default-mac" 0)
 		ip link set dev eth1 address "$(macaddr_add $addr 1)"
 		;;
-	tplink,be450)
+	tplink,be450|\
+	tplink,be805)
 		addr=$(get_mac_binary "/tmp/tp_data/default-mac" 0)
 		ip link set dev eth1 address "$(macaddr_add $addr 1)"
 		ip link set dev eth2 address "$(macaddr_add $addr 2)"

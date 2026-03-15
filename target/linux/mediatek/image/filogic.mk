@@ -2803,6 +2803,21 @@ define Device/tplink_be450
 endef
 TARGET_DEVICES += tplink_be450
 
+define Device/tplink_be805
+  DEVICE_VENDOR := TP-Link
+  DEVICE_MODEL := BE805
+  DEVICE_DTS := mt7988a-tplink-be805
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-leds-lp5523 kmod-mt7996-firmware \
+	kmod-phy-aquantia kmod-usb3 mt7988-wo-firmware
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 51200k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += tplink_be805
+
 define Device/tplink_eap683-lr
   DEVICE_VENDOR := TP-Link
   DEVICE_MODEL := EAP683-LR
