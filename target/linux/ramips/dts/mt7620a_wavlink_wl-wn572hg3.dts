@@ -11,6 +11,7 @@
 	model = "Wavlink WL-WN572HG3";
 
 	aliases {
+		label-mac-device = &ethernet;
 		led-boot = &led_status_high;
 		led-failsafe = &led_status_high;
 		led-running = &led_activity_mid;
@@ -33,7 +34,7 @@
 		};
 
 		led-2 {
-			function = LED_FUNCTION_WLAN;
+			function = LED_FUNCTION_WLAN_2GHZ;
 			color = <LED_COLOR_ID_GREEN>;
 			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy1tpt";
@@ -159,7 +160,7 @@
 
 &ethernet {
 	pinctrl-names = "default";
-	pinctrl-0 = <&rgmii1_pins &rgmii2_pins &mdio_pins>;
+	pinctrl-0 = <&rgmii2_pins>, <&mdio_pins>;
 
 	nvmem-cells = <&macaddr_factory_28 0>;
 	nvmem-cell-names = "mac-address";
@@ -170,7 +171,6 @@
 		status = "okay";
 		phy-handle = <&phy4>;
 		phy-mode = "rgmii";
-		mediatek,fixed-link = <1000 1 1 1>;
 	};
 
 	mdio-bus {
