@@ -11,6 +11,7 @@
 	model = "Linksys LGS310C";
 
 	aliases {
+		label-mac-device = &ethernet0;
 		led-boot = &led_power;
 		led-failsafe = &led_fault;
 		led-running = &led_power;
@@ -84,6 +85,12 @@
 	};
 };
 
+
+&ethernet0 {
+	nvmem-cells = <&macaddr_ubootenv_ethaddr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
 &mdio_aux {
 	status = "okay";
 
@@ -122,6 +129,14 @@
 			partition@80000 {
 				label = "u-boot-env";
 				reg = <0x00080000 0x10000>;
+
+				nvmem-layout {
+					compatible = "u-boot,env";
+
+					macaddr_ubootenv_ethaddr: ethaddr {
+						#nvmem-cell-cells = <1>;
+					};
+				};
 			};
 			partition@90000 {
 				label = "u-boot-env2";

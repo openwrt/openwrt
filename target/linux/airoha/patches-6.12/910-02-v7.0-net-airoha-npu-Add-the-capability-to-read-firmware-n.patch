@@ -20,8 +20,6 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  drivers/net/ethernet/airoha/airoha_npu.c | 46 ++++++++++++++++++++----
  1 file changed, 40 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/net/ethernet/airoha/airoha_npu.c b/drivers/net/ethernet/airoha/airoha_npu.c
-index a56b3780bb627c..89f22f3f47dc56 100644
 --- a/drivers/net/ethernet/airoha/airoha_npu.c
 +++ b/drivers/net/ethernet/airoha/airoha_npu.c
 @@ -16,6 +16,8 @@
@@ -33,7 +31,7 @@ index a56b3780bb627c..89f22f3f47dc56 100644
  #define NPU_AN7583_FIRMWARE_DATA		"airoha/an7583_npu_data.bin"
  #define NPU_AN7583_FIRMWARE_RV32		"airoha/an7583_npu_rv32.bin"
  #define NPU_EN7581_FIRMWARE_RV32_MAX_SIZE	0x200000
-@@ -195,18 +197,18 @@ static int airoha_npu_send_msg(struct airoha_npu *npu, int func_id,
+@@ -195,18 +197,18 @@ static int airoha_npu_send_msg(struct ai
  }
  
  static int airoha_npu_load_firmware(struct device *dev, void __iomem *addr,
@@ -56,7 +54,7 @@ index a56b3780bb627c..89f22f3f47dc56 100644
  		ret = -E2BIG;
  		goto out;
  	}
-@@ -218,6 +220,28 @@ static int airoha_npu_load_firmware(struct device *dev, void __iomem *addr,
+@@ -218,6 +220,28 @@ out:
  	return ret;
  }
  
@@ -83,9 +81,9 @@ index a56b3780bb627c..89f22f3f47dc56 100644
 +}
 +
  static int airoha_npu_run_firmware(struct device *dev, void __iomem *base,
- 				   struct resource *res)
+ 				   struct reserved_mem *rmem)
  {
-@@ -233,14 +257,22 @@ static int airoha_npu_run_firmware(struct device *dev, void __iomem *base,
+@@ -233,14 +257,22 @@ static int airoha_npu_run_firmware(struc
  	if (IS_ERR(addr))
  		return PTR_ERR(addr);
  
@@ -110,7 +108,7 @@ index a56b3780bb627c..89f22f3f47dc56 100644
  }
  
  static irqreturn_t airoha_npu_mbox_handler(int irq, void *npu_instance)
-@@ -790,6 +822,8 @@ module_platform_driver(airoha_npu_driver);
+@@ -791,6 +823,8 @@ module_platform_driver(airoha_npu_driver
  
  MODULE_FIRMWARE(NPU_EN7581_FIRMWARE_DATA);
  MODULE_FIRMWARE(NPU_EN7581_FIRMWARE_RV32);

@@ -11,7 +11,6 @@
 	compatible = "pakedge,wr-1";
 
 	aliases {
-		// TODO: Verify if the ethernet0 alias is needed
 		ethernet0 = &gmac;
 		label-mac-device = &gmac;
 		led-boot = &led_power;
@@ -46,14 +45,14 @@
 		wlan2g {
 			gpios = <&tlmm 1 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_BLUE>;
-			function = LED_FUNCTION_WLAN;
+			function = LED_FUNCTION_WLAN_2GHZ;
 			linux,default-trigger = "phy0tpt";
 		};
 
 		wlan5g {
 			gpios = <&tlmm 2 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_BLUE>;
-			function = LED_FUNCTION_WLAN;
+			function = LED_FUNCTION_WLAN_5GHZ;
 			linux,default-trigger = "phy1tpt";
 		};
 	};
@@ -175,6 +174,80 @@
 
 &cryptobam {
 	status = "okay";
+};
+
+&ethphy0 {
+	leds {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		led@1 {
+			reg = <1>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <4>;
+			default-state = "keep";
+		};
+	};
+};
+
+&ethphy1 {
+	leds {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		led@1 {
+			reg = <1>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <3>;
+			default-state = "keep";
+		};
+	};
+};
+
+&ethphy2 {
+	leds {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		led@1 {
+			reg = <1>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <2>;
+			default-state = "keep";
+		};
+	};
+};
+
+&ethphy3 {
+	leds {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		led@1 {
+			reg = <1>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_LAN;
+			function-enumerator = <1>;
+			default-state = "keep";
+		};
+	};
+};
+
+&ethphy4 {
+	leds {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		led@1 {
+			reg = <1>;
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WAN;
+			default-state = "keep";
+		};
+	};
 };
 
 &gmac {

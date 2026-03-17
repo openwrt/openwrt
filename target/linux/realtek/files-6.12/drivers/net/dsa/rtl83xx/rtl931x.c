@@ -462,37 +462,6 @@ static int rtldsa_931x_port_rate_police_del(struct dsa_switch *ds, int port,
 	return 0;
 }
 
-irqreturn_t rtl931x_switch_irq(int irq, void *dev_id)
-{
-	struct dsa_switch *ds = dev_id;
-	u32 status = sw_r32(RTL931X_ISR_GLB_SRC);
-	u64 ports = rtl839x_get_port_reg_le(RTL931X_ISR_PORT_LINK_STS_CHG);
-	u64 link;
-
-	/* Clear status */
-	rtl839x_set_port_reg_le(ports, RTL931X_ISR_PORT_LINK_STS_CHG);
-	pr_debug("RTL931X Link change: status: %x, ports %016llx\n", status, ports);
-
-	link = rtl839x_get_port_reg_le(RTL931X_MAC_LINK_STS);
-	/* Must re-read this to get correct status */
-	link = rtl839x_get_port_reg_le(RTL931X_MAC_LINK_STS);
-	pr_debug("RTL931X Link change: status: %x, link status %016llx\n", status, link);
-
-	for (int i = 0; i < 56; i++) {
-		if (ports & BIT_ULL(i)) {
-			if (link & BIT_ULL(i)) {
-				pr_debug("%s port %d up\n", __func__, i);
-				dsa_port_phylink_mac_change(ds, i, true);
-			} else {
-				pr_debug("%s port %d down\n", __func__, i);
-				dsa_port_phylink_mac_change(ds, i, false);
-			}
-		}
-	}
-
-	return IRQ_HANDLED;
-}
-
 void rtldsa_931x_print_matrix(void)
 {
 	struct table_reg *r = rtl_table_get(RTL9310_TBL_2, 1);
@@ -2008,6 +1977,7 @@ const struct rtldsa_config rtldsa_931x_cfg = {
 	.stp_get = rtldsa_931x_stp_get,
 	.stp_set = rtl931x_stp_set,
 	.mac_force_mode_ctrl = rtl931x_mac_force_mode_ctrl,
+	.mac_link_sts = RTL931X_MAC_LINK_STS,
 	.mac_port_ctrl = rtl931x_mac_port_ctrl,
 	.l2_port_new_salrn = rtl931x_l2_port_new_salrn,
 	.l2_port_new_sa_fwd = rtl931x_l2_port_new_sa_fwd,
