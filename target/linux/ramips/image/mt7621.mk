@@ -2968,6 +2968,12 @@ define Device/tplink_eap613-v1
   $(Device/tplink-safeloader)
   DEVICE_MODEL := EAP613
   DEVICE_VARIANT := v1
+  DEVICE_ALT0_VENDOR := TP-Link
+  DEVICE_ALT0_MODEL := Festa F61
+  DEVICE_ALT0_VARIANT := v1
+  DEVICE_ALT1_VENDOR := TP-Link
+  DEVICE_ALT1_MODEL := EAP610
+  DEVICE_ALT1_VARIANT := v3
   DEVICE_PACKAGES := kmod-mt7915-firmware -uboot-envtools
   TPLINK_BOARD_ID := EAP610-V3
   KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | pad-to 64k
