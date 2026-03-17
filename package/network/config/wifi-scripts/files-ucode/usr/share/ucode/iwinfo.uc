@@ -533,22 +533,27 @@ function scan_extension(ext, cell) {
 
 	switch(ord(ext, 0)) {
 	case 36:
-		let offset = 7;
+		cell.he = {};
 
-		if (!(ord(ext, 3) & 0x2))
-			break;
+		if (cell.band == '6') {
+			let offset = 7;
 
-		if (ord(ext, 2) & 0x40)
-			offset += 3;
+			if (ord(ext, 2) & 0x40)
+				offset += 3;
 
-		if (ord(ext, 2) & 0x80)
-			offset += 1;
+			if (ord(ext, 2) & 0x80)
+				offset += 1;
 
-		cell.he = {
-			chan_width: eht_chan_width[ord(ext, offset + 1) & 0x3],
-			center_chan_1: ord(ext, offset + 2),
-			center_chan_2: ord(ext, offset + 3),
-		};
+			cell.he.chan_width = eht_chan_width[ord(ext, offset + 1) & 0x3];
+			cell.he.center_chan_1 = ord(ext, offset + 2);
+			cell.he.center_chan_2 = ord(ext, offset + 3);
+		} else if (cell.vht) {
+			cell.he.chan_width = cell.vht.chan_width;
+			cell.he.center_chan_1 = cell.vht.center_chan_1;
+			cell.he.center_chan_2 = cell.vht.center_chan_2;
+		} else if (cell.ht) {
+			cell.he.chan_width = cell.ht.chan_width;
+		}
 		break;
 
 	case 106:
