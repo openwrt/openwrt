@@ -1214,6 +1214,9 @@ hostapd_rrm_beacon_req(struct ubus_context *ctx, struct ubus_object *obj,
 	if (tb[BEACON_REQ_REPORTING_DETAIL])
 		reporting_detail = blobmsg_get_u32(tb[BEACON_REQ_REPORTING_DETAIL]);
 
+	if (reporting_detail >= 0 && reporting_detail < 3)
+		buf_len += 3;
+
 	req = wpabuf_alloc(buf_len);
 	if (!req)
 		return UBUS_STATUS_UNKNOWN_ERROR;
