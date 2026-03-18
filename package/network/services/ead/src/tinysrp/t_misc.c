@@ -39,15 +39,17 @@
  *    of this copyright notice and list of conditions.
  */
 
+#include <stdlib.h>
+#include <string.h>
+
 #include "t_defines.h"
 
-#ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#endif /* HAVE_UNISTD_H */
 
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <fcntl.h>
 
 #include "t_sha.h"
@@ -140,10 +142,14 @@ t_fshash(out)
   if(fstat(0, &st) >= 0)
     SHA1Update(&ctxt, (unsigned char *) &st, sizeof(st));
 
-  sprintf(dotpath, "/tmp/rnd.%d", getpid());
-  if(creat(dotpath, 0600) >= 0 && stat(dotpath, &st) >= 0)
-    SHA1Update(&ctxt, (unsigned char *) &st, sizeof(st));
-  unlink(dotpath);
+  strcpy(dotpath, "/tmp/rnd.XXXXXX");
+  int fd = mkstemp(dotpath);
+  if(fd >= 0) {
+    if (fstat(fd, &st) >= 0)
+      SHA1Update(&ctxt, (unsigned char *) &st, sizeof(st));
+    close(fd);
+    unlink(dotpath);
+  }
 
   SHA1Final(out, &ctxt);
 }
