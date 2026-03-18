@@ -1250,7 +1250,7 @@ hostapd_rrm_beacon_req(struct ubus_context *ctx, struct ubus_object *obj,
 		/* as per 9-104 */
 		wpabuf_put_u8(req, 2);
 		wpabuf_put_u8(req, 1);
-		wpabuf_put_le16(req, reporting_detail);
+		wpabuf_put_u8(req, reporting_detail);
 	}
 
 	ret = hostapd_send_beacon_req(hapd, addr, 0, req);
