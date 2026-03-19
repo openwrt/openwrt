@@ -21,6 +21,7 @@ rootfs_create() {
 
 rootfs_prepare() {
 	case $(board_name) in
+	glinet,gl-be10000|\
 	netgear,wax220)
 		if ! ubinfo /dev/ubi0 -N rootfs_data &>/dev/null; then
 			echo "Creating \"rootfs_data\" UBI volume"
