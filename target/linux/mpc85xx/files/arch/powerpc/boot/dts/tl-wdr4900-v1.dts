@@ -458,6 +458,8 @@
 			label = "RFKILL switch";
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RFKILL>;
+			linux,input-type = <EV_SW>;
+			debounce-interval = <60>;
 		};
 	};
 };
