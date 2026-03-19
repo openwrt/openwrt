@@ -242,7 +242,8 @@ send_username(void)
 {
 	msg->type = htonl(EAD_TYPE_SET_USERNAME);
 	msg->len = htonl(sizeof(struct ead_msg_user));
-	strcpy(EAD_DATA(msg, user)->username, username);
+	strncpy(EAD_DATA(msg, user)->username, username, sizeof(EAD_DATA(msg, user)->username) - 1);
+	EAD_DATA(msg, user)->username[sizeof(EAD_DATA(msg, user)->username) - 1] = '\0';
 	return send_packet(EAD_TYPE_ACK_USERNAME, handle_none, 1);
 }
 
