@@ -8,6 +8,18 @@ define Image/Prepare
 	echo -ne '\xde\xad\xc0\xde' > $(KDIR)/ubi_mark
 endef
 
+define Build/append-dlink-covr-metadata
+  # workaround pad-to adding 8 more bytes for no reason
+  echo -ne '\x00\x00\x00\x00' >> $@
+	echo -ne '{"supported_devices":"$(1)", "firmware": "' > $@metadata.tmp
+	$(MKHASH) md5 "$@" | head -c32 >> $@metadata.tmp
+	echo '"}' >> $@metadata.tmp
+  # add null space to fill the remainder of the json that we don't populate
+  $(call Image/pad-to,$@metadata.tmp,320)
+	fwtool -I $@metadata.tmp $@
+	rm $@metadata.tmp
+endef
+
 define Build/bl2
 	cat $(STAGING_DIR_IMAGE)/mt7622-$1-bl2.img >> $@
 endef
@@ -172,6 +184,27 @@ define Device/buffalo_wsr-3200ax4s
   DEVICE_PACKAGES := kmod-mt7915-firmware
 endef
 TARGET_DEVICES += buffalo_wsr-3200ax4s
+
+define Device/dlink_dir-x3260-a1
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DIR-X3260
+  DEVICE_VARIANT := A1
+  DEVICE_DTS := mt7622-dlink-dir-x3260-a1
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915-firmware
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  KERNEL_SIZE := 8192k
+  IMAGE_SIZE := 40960k
+  UBINIZE_OPTS := -E 5
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  IMAGES += recovery.bin
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  IMAGE/recovery.bin := append-kernel | pad-to $$(KERNEL_SIZE) | \
+    append-ubi | pad-to 20736k | \
+    append-dlink-covr-metadata $$(DEVICE_MODEL) | check-size
+endef
+TARGET_DEVICES += dlink_dir-x3260-a1
 
 define Device/dlink_eagle-pro-ai-ax3200-a1
   IMAGE_SIZE := 46080k
