@@ -54,11 +54,6 @@
 			no-map;
 			reg = <0x0 0x90c00000 0x0 0x6800>;
 		};
-
-		npu_ba: npu-ba@90c06800 {
-			no-map;
-			reg = <0x0 0x90c06800 0x0 0x200000>;
-		};
 	};
 
 	psci {
@@ -156,6 +151,8 @@
 	};
 
 	cpufreq: cpufreq {
+		reg = <0x0 0x1fa20000 0x0 0x2c0>, <0x0 0x1efbe000 0x0 0x800>;
+		reg-names = "chip-scu", "mcucfg";
 		compatible = "airoha,en7581-cpufreq";
 
 		operating-points-v2 = <&cpu_smcc_opp_table>;
@@ -860,10 +857,9 @@
 				     <GIC_SPI 122 IRQ_TYPE_LEVEL_HIGH>,
 				     <GIC_SPI 123 IRQ_TYPE_LEVEL_HIGH>;
 			memory-region = <&npu_binary>, <&npu_pkt>, <&npu_txpkt>,
-					<&npu_txbufid>, <&npu_ba>;
+					<&npu_txbufid>;
 			memory-region-names = "binary", "pkt", "tx-pkt",
-					      "tx-bufid", "ba";
-			status = "disabled";
+					      "tx-bufid";
 		};
 
 		eth: ethernet@1fb50000 {
