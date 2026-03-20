@@ -487,6 +487,8 @@ handle_send_cmd(struct ead_packet *pkt, int len, int *nstate)
 	datalen = ead_decrypt_message(msg) - sizeof(struct ead_msg_cmd);
 	if (datalen <= 0)
 		return false;
+	if (datalen > 1024)
+		return false;
 
 	type = ntohs(cmd->type);
 	timeout = ntohs(cmd->timeout);
