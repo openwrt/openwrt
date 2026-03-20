@@ -146,7 +146,7 @@ list_conffiles() {
 		' /usr/lib/opkg/status
 	elif [ -d /lib/apk/packages ]; then
 		conffiles=""
-		for file in /lib/apk/packages/*.conffiles_static; do
+		for file in $(find /lib/apk/packages -name "*.conffiles_static" -type f); do
 			conffiles="$(echo -e "$(cat $file)\n$conffiles")"
 		done
 		echo "$conffiles"

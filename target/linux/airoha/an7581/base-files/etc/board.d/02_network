@@ -19,6 +19,7 @@ an7581_setup_interfaces()
 		;;
 	nokia,valyrian)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 10g" "wan"
+		;;
 	*)
 		echo "Unsupported hardware. Network interfaces not initialized"
 		;;
