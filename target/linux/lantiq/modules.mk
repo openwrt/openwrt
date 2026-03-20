@@ -27,7 +27,7 @@ define KernelPackage/dsa-gswip
   FILES:= \
 	$(LINUX_DIR)/drivers/net/dsa/lantiq_gswip.ko \
   	$(LINUX_DIR)/net/dsa/tag_gswip.ko
-  AUTOLOAD:=$(call AutoLoad,41,lantiq_gswip)
+  AUTOLOAD:=$(call AutoLoad,41,tag_gswip lantiq_gswip,1)
 endef
 
 define KernelPackage/dsa-gswip/description
