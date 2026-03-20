@@ -479,6 +479,13 @@ define Device/asus_rt-ax53u
   IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | \
 	check-size
   DEVICE_PACKAGES := kmod-mt7915-firmware kmod-usb3 kmod-usb-ledtrig-usbport
+ifeq ($(IB),)
+ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+  ARTIFACTS := initramfs-factory.trx
+  ARTIFACT/initramfs-factory.trx := append-image-stage initramfs-kernel.bin | \
+	check-size 16m | asus-trx -v 2 -n $$(DEVICE_MODEL) -b 386 -e 19999
+endif
+endif
 endef
 TARGET_DEVICES += asus_rt-ax53u
 

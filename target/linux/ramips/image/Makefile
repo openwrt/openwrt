@@ -29,6 +29,14 @@ LOADER_FLASH_START := $(ldrflashstart-y)
 
 KERNEL_DTB = kernel-bin | append-dtb | lzma
 
+define Build/asus-trx
+	# don't stop the whole build if check-size removed the input file
+	[ ! -e $@ ] || { \
+		$(STAGING_DIR_HOST)/bin/asusuimage $(wordlist 1,$(words $(1)),$(1)) -i $@ -o $@.new; \
+		mv $@.new $@; \
+	}
+endef
+
 define Build/jcg-header
 	$(STAGING_DIR_HOST)/bin/jcgimage -v $(1) \
 		$(if $(JCG_MAXSIZE), -m $$(($(call exp_units,$(JCG_MAXSIZE)))),) \
