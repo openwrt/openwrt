@@ -6,6 +6,10 @@ board=$(board_name)
 board_config_update
 
 case $board in
+dlink,dir-x3260-a1)
+	ucidef_set_led_netdev "wan-white" "WAN Link" "white:wan-online" "wan" "link"
+	ucidef_set_led_netdev "wan-orange" "WAN Activity" "orange:wan" "wan" "tx rx"
+	;;
 linksys,e8450|\
 linksys,e8450-ubi|\
 netgear,wax206)
