@@ -10,7 +10,6 @@ unusable by the ASU server.  The version 2 format contains package names that
 have been stripped of their ABI version.
 """
 
-import email.parser
 import json
 
 
