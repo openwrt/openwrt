@@ -58,6 +58,8 @@
 struct hs104_priv {
 	struct regmap		*regmap;
 	struct pse_controller_dev pcdev;
+	unsigned int		last_pw_status;
+	unsigned int		last_pw_en;
 };
 
 static inline struct hs104_priv *to_hs104(struct pse_controller_dev *pcdev)
@@ -259,6 +261,38 @@ static int hs104_pi_get_pw_limit_ranges(struct pse_controller_dev *pcdev,
 	return ARRAY_SIZE(hs104_pw_ranges);
 }
 
+static int hs104_map_event(int irq, struct pse_controller_dev *pcdev,
+			   unsigned long *notifs, unsigned long *notifs_mask)
+{
+	struct hs104_priv *priv = to_hs104(pcdev);
+	unsigned int pw_status, pw_en, changed;
+	int ret, i;
+
+	ret = regmap_read(priv->regmap, HS104_REG_PW_STATUS, &pw_status);
+	if (ret)
+		return ret;
+
+	ret = regmap_read(priv->regmap, HS104_REG_PW_EN, &pw_en);
+	if (ret)
+		return ret;
+
+	/* Detect any changes in power status or enable state */
+	changed = (pw_status ^ priv->last_pw_status) |
+		  (pw_en ^ priv->last_pw_en);
+
+	priv->last_pw_status = pw_status;
+	priv->last_pw_en = pw_en;
+
+	for (i = 0; i < HS104_MAX_PORTS; i++) {
+		if (changed & HS104_PORT_BIT(i)) {
+			*notifs_mask |= BIT(i);
+			notifs[i] = ETHTOOL_PSE_EVENT_OVER_CURRENT;
+		}
+	}
+
+	return 0;
+}
+
 static const struct pse_controller_ops hs104_ops = {
 	.pi_enable		= hs104_pi_enable,
 	.pi_disable		= hs104_pi_disable,
@@ -274,9 +308,39 @@ static const struct pse_controller_ops hs104_ops = {
 
 /* Driver initialization */
 
+static const struct regmap_range hs104_rd_ranges[] = {
+	regmap_reg_range(HS104_REG_PW_STATUS, HS104_REG_DEVID),		/* 0x01-0x0C */
+	regmap_reg_range(HS104_REG_PORT0_CLASS,
+			 HS104_REG_PORT0_CLASS + HS104_MAX_PORTS - 1),	/* 0x0D-0x10 */
+	regmap_reg_range(HS104_REG_PW_EN, HS104_REG_PW_EN),		/* 0x14 */
+	regmap_reg_range(HS104_REG_PROTOCOL, HS104_REG_PROTOCOL),	/* 0x19 */
+	regmap_reg_range(HS104_REG_TOTAL_POWER,
+			 HS104_REG_TOTAL_POWER + 1),			/* 0x1D-0x1E */
+	regmap_reg_range(HS104_REG_PORT0_POWER,
+			 HS104_REG_PORT0_POWER + HS104_MAX_PORTS * 2 - 1),/* 0x21-0x28 */
+};
+
+static const struct regmap_range hs104_wr_ranges[] = {
+	regmap_reg_range(HS104_REG_PW_EN, HS104_REG_PW_EN),		/* 0x14 */
+	regmap_reg_range(HS104_REG_PROTOCOL, HS104_REG_PROTOCOL),	/* 0x19 */
+};
+
+static const struct regmap_access_table hs104_rd_table = {
+	.yes_ranges = hs104_rd_ranges,
+	.n_yes_ranges = ARRAY_SIZE(hs104_rd_ranges),
+};
+
+static const struct regmap_access_table hs104_wr_table = {
+	.yes_ranges = hs104_wr_ranges,
+	.n_yes_ranges = ARRAY_SIZE(hs104_wr_ranges),
+};
+
 static const struct regmap_config hs104_regmap_config = {
 	.reg_bits = 8,
 	.val_bits = 8,
+	.max_register = HS104_REG_PORT0_POWER + HS104_MAX_PORTS * 2 - 1,
+	.rd_table = &hs104_rd_table,
+	.wr_table = &hs104_wr_table,
 };
 
 static int hs104_probe(struct i2c_client *client)
@@ -328,6 +392,17 @@ static int hs104_probe(struct i2c_client *client)
 	ret = devm_pse_controller_register(dev, &priv->pcdev);
 	if (ret)
 		return dev_err_probe(dev, ret, "Failed to register PSE controller\n");
+
+	{
+		static const struct pse_irq_desc poll_desc = {
+			.name = "hs104-poll",
+			.map_event = hs104_map_event,
+		};
+
+		ret = devm_pse_poll_helper(&priv->pcdev, &poll_desc);
+		if (ret)
+			dev_warn(dev, "Failed to register poll helper: %d\n", ret);
+	}
 
 	dev_info(dev, "HS104 PSE controller initialized\n");
 	return 0;

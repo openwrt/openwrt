@@ -1,0 +1,465 @@
+From: Carlo Szelinsky <github@szelinsky.de>
+Subject: net: pse-pd: add poll helper and LED triggers
+
+Combine three related changes for PSE controllers that lack IRQ support:
+
+1. Extract the event handling loop from pse_isr() into a shared
+   pse_handle_events() function, and add devm_pse_poll_helper() as a
+   generic poll-based alternative to the IRQ path. The poll interval is
+   configurable via the DT property "poll-interval-ms" (default 500ms).
+
+2. Add per-PI "delivering" and "enabled" LED triggers to the PSE core.
+   LED state is updated from pse_handle_events() whenever the IRQ or
+   poll path detects a state change, reusing the existing notification
+   pipeline. LED triggers are registered based on DT-described PIs
+   (not rdev) so they work before any PHY claims a PSE control.
+
+3. Add dt-bindings documentation for poll-interval-ms.
+
+Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
+---
+--- a/Documentation/devicetree/bindings/net/pse-pd/pse-controller.yaml
++++ b/Documentation/devicetree/bindings/net/pse-pd/pse-controller.yaml
+@@ -27,6 +27,14 @@ properties:
+       subnode. This property is deprecated, please use pse-pis instead.
+     enum: [0, 1]
+ 
++  poll-interval-ms:
++    description:
++      Polling interval in milliseconds for PSE controllers using
++      poll-based event detection instead of interrupts. Used when the
++      controller lacks IRQ support or the IRQ line is not wired.
++    default: 500
++    minimum: 50
++
+   pse-pis:
+     type: object
+     description:
+--- a/drivers/net/pse-pd/pse_core.c
++++ b/drivers/net/pse-pd/pse_core.c
+@@ -12,12 +12,20 @@
+ #include <linux/phy.h>
+ #include <linux/pse-pd/pse.h>
+ #include <linux/regulator/driver.h>
++#include <linux/leds.h>
+ #include <linux/regulator/machine.h>
+ #include <linux/rtnetlink.h>
+ #include <net/net_trackers.h>
+ 
+ #define PSE_PW_D_LIMIT INT_MAX
+ 
++/*
++ * Default poll interval for controllers without IRQ support.
++ * 500ms provides a reasonable trade-off between responsiveness
++ * (LED updates, PD detection) and I2C bus utilization.
++ */
++#define PSE_DEFAULT_POLL_INTERVAL_MS 500
++
+ static DEFINE_MUTEX(pse_list_mutex);
+ static LIST_HEAD(pse_controller_list);
+ static DEFINE_XARRAY_ALLOC(pse_pw_d_map);
+@@ -1030,6 +1038,107 @@ static void pse_send_ntf_worker(struct w
+ 	}
+ }
+ 
++#if IS_ENABLED(CONFIG_LEDS_TRIGGERS)
++/**
++ * pse_led_update - Update LED triggers for a PI based on current state
++ * @pcdev: PSE controller device
++ * @id: PI index
++ *
++ * Queries the current power status and admin state of the PI and
++ * fires LED trigger events on state changes. Called from the
++ * notification path whenever any event occurs for this PI.
++ *
++ * Must be called with pcdev->lock held.
++ */
++static void pse_led_update(struct pse_controller_dev *pcdev, int id)
++{
++	struct pse_pi_led_triggers *trigs;
++	struct pse_pw_status pw_status = {};
++	struct pse_admin_state admin_state = {};
++	bool delivering, enabled;
++
++	if (!pcdev->pi_led_trigs)
++		return;
++
++	trigs = &pcdev->pi_led_trigs[id];
++	if (!trigs->delivering.name)
++		return;
++
++	if (pcdev->ops->pi_get_pw_status(pcdev, id, &pw_status))
++		return;
++	if (pcdev->ops->pi_get_admin_state(pcdev, id, &admin_state))
++		return;
++
++	delivering = pw_status.c33_pw_status ==
++		ETHTOOL_C33_PSE_PW_D_STATUS_DELIVERING;
++	enabled = admin_state.c33_admin_state ==
++		ETHTOOL_C33_PSE_ADMIN_STATE_ENABLED;
++
++	if (trigs->last_delivering != delivering) {
++		trigs->last_delivering = delivering;
++		led_trigger_event(&trigs->delivering,
++				  delivering ? LED_FULL : LED_OFF);
++	}
++
++	if (trigs->last_enabled != enabled) {
++		trigs->last_enabled = enabled;
++		led_trigger_event(&trigs->enabled,
++				  enabled ? LED_FULL : LED_OFF);
++	}
++}
++
++static int pse_led_triggers_register(struct pse_controller_dev *pcdev)
++{
++	struct device *dev = pcdev->dev;
++	const char *node_name;
++	int i, ret;
++
++	node_name = dev->of_node ? dev->of_node->name : dev_name(dev);
++
++	pcdev->pi_led_trigs = devm_kcalloc(dev, pcdev->nr_lines,
++					   sizeof(*pcdev->pi_led_trigs),
++					   GFP_KERNEL);
++	if (!pcdev->pi_led_trigs)
++		return -ENOMEM;
++
++	for (i = 0; i < pcdev->nr_lines; i++) {
++		struct pse_pi_led_triggers *trigs = &pcdev->pi_led_trigs[i];
++
++		/* Skip PIs not described in device tree */
++		if (!pcdev->no_of_pse_pi && !pcdev->pi[i].np)
++			continue;
++
++		trigs->delivering.name = devm_kasprintf(dev, GFP_KERNEL,
++							"%s:port%d:delivering",
++							node_name, i);
++		if (!trigs->delivering.name)
++			return -ENOMEM;
++
++		ret = devm_led_trigger_register(dev, &trigs->delivering);
++		if (ret)
++			return ret;
++
++		trigs->enabled.name = devm_kasprintf(dev, GFP_KERNEL,
++						     "%s:port%d:enabled",
++						     node_name, i);
++		if (!trigs->enabled.name)
++			return -ENOMEM;
++
++		ret = devm_led_trigger_register(dev, &trigs->enabled);
++		if (ret)
++			return ret;
++	}
++
++	return 0;
++}
++#else
++static inline void pse_led_update(struct pse_controller_dev *pcdev, int id) {}
++static int pse_led_triggers_register(struct pse_controller_dev *pcdev)
++{
++	return 0;
++}
++#endif /* CONFIG_LEDS_TRIGGERS */
++
+ /**
+  * pse_controller_register - register a PSE controller device
+  * @pcdev: a pointer to the initialized PSE controller device
+@@ -1104,6 +1213,14 @@ int pse_controller_register(struct pse_c
+ 	list_add(&pcdev->list, &pse_controller_list);
+ 	mutex_unlock(&pse_list_mutex);
+ 
++	ret = pse_led_triggers_register(pcdev);
++	if (ret) {
++		dev_warn(pcdev->dev, "Failed to register LED triggers: %d\n",
++			 ret);
++		/* Ensure pse_led_update() is a no-op on partial failure */
++		pcdev->pi_led_trigs = NULL;
++	}
++
+ 	return 0;
+ }
+ EXPORT_SYMBOL_GPL(pse_controller_register);
+@@ -1114,6 +1231,8 @@ EXPORT_SYMBOL_GPL(pse_controller_registe
+  */
+ void pse_controller_unregister(struct pse_controller_dev *pcdev)
+ {
++	if (pcdev->polling)
++		cancel_delayed_work_sync(&pcdev->poll_work);
+ 	pse_flush_pw_ds(pcdev);
+ 	pse_release_pis(pcdev);
+ 	if (pcdev->irq)
+@@ -1238,66 +1357,110 @@ static int pse_set_config_isr(struct pse
+ }
+ 
+ /**
+- * pse_isr - IRQ handler for PSE
+- * @irq: irq number
+- * @data: pointer to user interrupt structure
++ * pse_handle_events - Process PSE events for all PIs
++ * @pcdev: a pointer to the PSE controller device
++ * @notifs: per-PI notification array
++ * @notifs_mask: bitmask of PIs with events
+  *
+- * Return: irqreturn_t - status of IRQ
++ * Common event handling shared between IRQ and poll paths.
++ * Caller must hold pcdev->lock.
+  */
+-static irqreturn_t pse_isr(int irq, void *data)
++static void pse_handle_events(struct pse_controller_dev *pcdev,
++			      unsigned long *notifs,
++			      unsigned long notifs_mask)
+ {
+-	struct pse_controller_dev *pcdev;
+-	unsigned long notifs_mask = 0;
+-	struct pse_irq_desc *desc;
+-	struct pse_irq *h = data;
+-	int ret, i;
+-
+-	desc = &h->desc;
+-	pcdev = h->pcdev;
+-
+-	/* Clear notifs mask */
+-	memset(h->notifs, 0, pcdev->nr_lines * sizeof(*h->notifs));
+-	mutex_lock(&pcdev->lock);
+-	ret = desc->map_event(irq, pcdev, h->notifs, &notifs_mask);
+-	if (ret || !notifs_mask) {
+-		mutex_unlock(&pcdev->lock);
+-		return IRQ_NONE;
+-	}
++	int i;
+ 
+ 	for_each_set_bit(i, &notifs_mask, pcdev->nr_lines) {
+-		unsigned long notifs, rnotifs;
++		unsigned long pi_notifs, rnotifs;
+ 		struct pse_ntf ntf = {};
++		int ret;
+ 
+-		/* Do nothing PI not described */
++		/* Update LEDs for described PIs regardless of consumer state.
++		 * LED triggers are registered at controller init, before any
++		 * PHY claims a PSE control, so rdev may still be NULL here.
++		 */
++		if (pcdev->no_of_pse_pi || pcdev->pi[i].np)
++			pse_led_update(pcdev, i);
++
++		/* Skip regulator/netlink path for PIs without consumers */
+ 		if (!pcdev->pi[i].rdev)
+ 			continue;
+ 
+-		notifs = h->notifs[i];
++		pi_notifs = notifs[i];
+ 		if (pse_pw_d_is_sw_pw_control(pcdev, pcdev->pi[i].pw_d)) {
+-			ret = pse_set_config_isr(pcdev, i, notifs);
++			ret = pse_set_config_isr(pcdev, i, pi_notifs);
+ 			if (ret)
+-				notifs |= ETHTOOL_PSE_EVENT_SW_PW_CONTROL_ERROR;
++				pi_notifs |= ETHTOOL_PSE_EVENT_SW_PW_CONTROL_ERROR;
+ 		}
+ 
+-		dev_dbg(h->pcdev->dev,
+-			"Sending PSE notification EVT 0x%lx\n", notifs);
++		dev_dbg(pcdev->dev,
++			"Sending PSE notification EVT 0x%lx\n", pi_notifs);
+ 
+-		ntf.notifs = notifs;
++		ntf.notifs = pi_notifs;
+ 		ntf.id = i;
+ 		kfifo_in_spinlocked(&pcdev->ntf_fifo, &ntf, 1,
+ 				    &pcdev->ntf_fifo_lock);
+ 		schedule_work(&pcdev->ntf_work);
+ 
+-		rnotifs = pse_to_regulator_notifs(notifs);
++		rnotifs = pse_to_regulator_notifs(pi_notifs);
+ 		regulator_notifier_call_chain(pcdev->pi[i].rdev, rnotifs,
+ 					      NULL);
+ 	}
++}
++
++/**
++ * pse_isr - IRQ handler for PSE
++ * @irq: irq number
++ * @data: pointer to user interrupt structure
++ *
++ * Return: irqreturn_t - status of IRQ
++ */
++static irqreturn_t pse_isr(int irq, void *data)
++{
++	struct pse_controller_dev *pcdev;
++	unsigned long notifs_mask = 0;
++	struct pse_irq *h = data;
++	int ret;
++
++	pcdev = h->pcdev;
++
++	/* Clear notifs mask */
++	memset(h->notifs, 0, pcdev->nr_lines * sizeof(*h->notifs));
++	mutex_lock(&pcdev->lock);
++	ret = h->desc.map_event(irq, pcdev, h->notifs, &notifs_mask);
++	if (ret || !notifs_mask) {
++		mutex_unlock(&pcdev->lock);
++		return IRQ_NONE;
++	}
+ 
++	pse_handle_events(pcdev, h->notifs, notifs_mask);
+ 	mutex_unlock(&pcdev->lock);
+ 
+ 	return IRQ_HANDLED;
+ }
+ 
++static void pse_poll_worker(struct work_struct *work)
++{
++	struct pse_controller_dev *pcdev =
++		container_of(work, struct pse_controller_dev,
++			     poll_work.work);
++	unsigned long notifs_mask = 0;
++	int ret;
++
++	memset(pcdev->poll_notifs, 0,
++	       pcdev->nr_lines * sizeof(*pcdev->poll_notifs));
++	mutex_lock(&pcdev->lock);
++	ret = pcdev->poll_desc.map_event(0, pcdev, pcdev->poll_notifs,
++					 &notifs_mask);
++	if (!ret && notifs_mask)
++		pse_handle_events(pcdev, pcdev->poll_notifs, notifs_mask);
++	mutex_unlock(&pcdev->lock);
++
++	schedule_delayed_work(&pcdev->poll_work,
++			      msecs_to_jiffies(pcdev->poll_interval_ms));
++}
++
+ /**
+  * devm_pse_irq_helper - Register IRQ based PSE event notifier
+  * @pcdev: a pointer to the PSE
+@@ -1351,6 +1514,48 @@ int devm_pse_irq_helper(struct pse_contr
+ }
+ EXPORT_SYMBOL_GPL(devm_pse_irq_helper);
+ 
++/**
++ * devm_pse_poll_helper - Register poll-based PSE event notifier
++ * @pcdev: a pointer to the PSE controller device
++ * @d: PSE event description (uses same pse_irq_desc as IRQ path)
++ *
++ * For PSE controllers without IRQ support or with IRQ not wired. Sets
++ * up a delayed work that periodically calls the driver's map_event
++ * callback to detect state changes, feeding events into the standard
++ * notification pipeline.
++ *
++ * Return: 0 on success and errno on failure
++ */
++int devm_pse_poll_helper(struct pse_controller_dev *pcdev,
++			 const struct pse_irq_desc *d)
++{
++	struct device *dev = pcdev->dev;
++
++	if (!d || !d->map_event || !d->name)
++		return -EINVAL;
++
++	pcdev->poll_desc = *d;
++	pcdev->poll_notifs = devm_kcalloc(dev, pcdev->nr_lines,
++					  sizeof(*pcdev->poll_notifs),
++					  GFP_KERNEL);
++	if (!pcdev->poll_notifs)
++		return -ENOMEM;
++
++	of_property_read_u32(dev->of_node, "poll-interval-ms",
++			     &pcdev->poll_interval_ms);
++	if (!pcdev->poll_interval_ms)
++		pcdev->poll_interval_ms = PSE_DEFAULT_POLL_INTERVAL_MS;
++
++	INIT_DELAYED_WORK(&pcdev->poll_work, pse_poll_worker);
++	pcdev->polling = true;
++
++	schedule_delayed_work(&pcdev->poll_work,
++			      msecs_to_jiffies(pcdev->poll_interval_ms));
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(devm_pse_poll_helper);
++
+ /* PSE control section */
+ 
+ static void __pse_control_release(struct kref *kref)
+--- a/include/linux/pse-pd/pse.h
++++ b/include/linux/pse-pd/pse.h
+@@ -10,6 +10,7 @@
+ #include <linux/kfifo.h>
+ #include <uapi/linux/ethtool.h>
+ #include <uapi/linux/ethtool_netlink_generated.h>
++#include <linux/leds.h>
+ #include <linux/regulator/driver.h>
+ 
+ /* Maximum current in uA according to IEEE 802.3-2022 Table 145-1 */
+@@ -260,6 +261,23 @@ struct pse_pi {
+ 	int pw_allocated_mW;
+ };
+ 
++#if IS_ENABLED(CONFIG_LEDS_TRIGGERS)
++/**
++ * struct pse_pi_led_triggers - LED trigger state for a PSE PI
++ *
++ * @delivering: LED trigger for power delivering state
++ * @enabled: LED trigger for admin enabled state
++ * @last_delivering: cached delivering state for change detection
++ * @last_enabled: cached enabled state for change detection
++ */
++struct pse_pi_led_triggers {
++	struct led_trigger delivering;
++	struct led_trigger enabled;
++	bool last_delivering;
++	bool last_enabled;
++};
++#endif
++
+ /**
+  * struct pse_ntf - PSE notification element
+  *
+@@ -286,12 +304,18 @@ struct pse_ntf {
+  * @pi: table of PSE PIs described in this controller device
+  * @no_of_pse_pi: flag set if the pse_pis devicetree node is not used
+  * @irq: PSE interrupt
++ * @polling: flag indicating poll-based event detection is active
++ * @poll_interval_ms: poll interval in milliseconds
++ * @poll_work: delayed work for poll-based event detection
++ * @poll_desc: copy of the driver's event descriptor for polling
++ * @poll_notifs: per-PI notification scratch space for poll worker
+  * @pis_prio_max: Maximum value allowed for the PSE PIs priority
+  * @supp_budget_eval_strategies: budget evaluation strategies supported
+  *				 by the PSE
+  * @ntf_work: workqueue for PSE notification management
+  * @ntf_fifo: PSE notifications FIFO
+  * @ntf_fifo_lock: protect @ntf_fifo writer
++ * @pi_led_trigs: per-PI LED trigger state array
+  */
+ struct pse_controller_dev {
+ 	const struct pse_controller_ops *ops;
+@@ -306,11 +330,19 @@ struct pse_controller_dev {
+ 	struct pse_pi *pi;
+ 	bool no_of_pse_pi;
+ 	int irq;
++	bool polling;
++	unsigned int poll_interval_ms;
++	struct delayed_work poll_work;
++	struct pse_irq_desc poll_desc;
++	unsigned long *poll_notifs;
+ 	unsigned int pis_prio_max;
+ 	u32 supp_budget_eval_strategies;
+ 	struct work_struct ntf_work;
+ 	DECLARE_KFIFO_PTR(ntf_fifo, struct pse_ntf);
+ 	spinlock_t ntf_fifo_lock; /* Protect @ntf_fifo writer */
++#if IS_ENABLED(CONFIG_LEDS_TRIGGERS)
++	struct pse_pi_led_triggers *pi_led_trigs;
++#endif
+ };
+ 
+ /**
+@@ -339,6 +371,8 @@ int devm_pse_controller_register(struct
+ 				 struct pse_controller_dev *pcdev);
+ int devm_pse_irq_helper(struct pse_controller_dev *pcdev, int irq,
+ 			int irq_flags, const struct pse_irq_desc *d);
++int devm_pse_poll_helper(struct pse_controller_dev *pcdev,
++			 const struct pse_irq_desc *d);
+ 
+ struct pse_control *of_pse_control_get(struct device_node *node,
+ 				       struct phy_device *phydev);
