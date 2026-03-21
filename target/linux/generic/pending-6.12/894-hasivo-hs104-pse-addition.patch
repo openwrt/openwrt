@@ -9,8 +9,8 @@ Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
 ---
 --- a/drivers/net/pse-pd/Kconfig
 +++ b/drivers/net/pse-pd/Kconfig
-@@ -38,4 +38,12 @@ config PSE_TPS23881
-
+@@ -52,4 +52,12 @@ config PSE_TPS23881
+ 
  	  To compile this driver as a module, choose M here: the
  	  module will be called tps23881.
 +
@@ -24,8 +24,8 @@ Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
  endif
 --- a/drivers/net/pse-pd/Makefile
 +++ b/drivers/net/pse-pd/Makefile
-@@ -6,3 +6,4 @@ obj-$(CONFIG_PSE_CONTROLLER) += pse_core
- obj-$(CONFIG_PSE_REGULATOR) += pse_regulator.o
+@@ -7,3 +7,4 @@ obj-$(CONFIG_PSE_REGULATOR) += pse_regul
  obj-$(CONFIG_PSE_PD692X0) += pd692x0.o
+ obj-$(CONFIG_PSE_SI3474) += si3474.o
  obj-$(CONFIG_PSE_TPS23881) += tps23881.o
 +obj-$(CONFIG_PSE_HASIVO_HS104) += hasivo_hs104.o
