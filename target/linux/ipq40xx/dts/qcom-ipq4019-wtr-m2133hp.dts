@@ -29,8 +29,6 @@
 	};
 
 	aliases {
-		// TODO: Verify if the ethernet0 alias is needed
-		ethernet0 = &gmac;
 		led-boot = &led_power_blue;
 		led-failsafe = &led_power_orange;
 		led-running = &led_power_white;
@@ -445,6 +443,7 @@
 
 &gmac {
 	status = "okay";
+
 	nvmem-cell-names = "mac-address";
 	nvmem-cells = <&macaddr_orgdata_20>;
 };
