@@ -197,7 +197,7 @@ define Device/dlink_dir-x3260-a1
   KERNEL_SIZE := 8192k
   IMAGE_SIZE := 40960k
   UBINIZE_OPTS := -E 5
-  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | pad-offset $$(PAGESIZE) 0 | append-squashfs4-fakeroot
   IMAGES += recovery.bin
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
   IMAGE/recovery.bin := append-kernel | pad-to $$(KERNEL_SIZE) | \

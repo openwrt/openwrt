@@ -113,6 +113,23 @@
 		regulator-boot-on;
 		regulator-always-on;
 	};
+
+	virtual_flash {
+		compatible = "mtd-concat";
+
+		devices = <&fwconcat0 &fwconcat1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "ubi";
+				reg = <0x0 0x0>;
+			};
+		};
+	};
 };
 
 &bch {
@@ -365,14 +382,24 @@
 			};
 
 			partition@300000 {
-				label = "firmware";
-				reg = <0x300000 0x2000000>;
+				label = "kernel";
+				reg = <0x300000 0x800000>;
+			};
+
+			fwconcat0: partition@B00000 {
+				label = "fwconcat0";
+				reg = <0xB00000 0x1800000>;
 			};
 
 			partition@2300000 {
-				label = "firmware1";
-				reg = <0x2300000 0x2000000>;
+				label = "kernel2";
+				reg = <0x2300000 0x800000>;
 				read-only;
+			};
+
+			fwconcat1: partition@2B00000 {
+				label = "fwconcat1";
+				reg = <0x2B00000 0x1800000>;
 			};
 
 			partition@4300000 {
