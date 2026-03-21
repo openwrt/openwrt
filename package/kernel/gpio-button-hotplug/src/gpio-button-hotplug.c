@@ -365,6 +365,7 @@ gpio_keys_get_devtree_pdata(struct device *dev)
 {
 	struct device_node *node = dev->of_node;
 	struct gpio_keys_platform_data *pdata;
+	struct gpio_keys_button *buttons;
 	int nbuttons;
 	int i = 0;
 
@@ -372,21 +373,12 @@ gpio_keys_get_devtree_pdata(struct device *dev)
 	if (nbuttons == 0)
 		return ERR_PTR(-EINVAL);
 
-	pdata = devm_kzalloc(dev, sizeof(struct gpio_keys_platform_data), GFP_KERNEL);
-	if (!pdata)
+	buttons = devm_kmalloc_array(dev, nbuttons, sizeof(struct gpio_keys_button), GFP_KERNEL);
+	if (!buttons)
 		return ERR_PTR(-ENOMEM);
-
-	pdata->buttons = devm_kmalloc_array(dev, nbuttons, sizeof(struct gpio_keys_button), GFP_KERNEL);
-	if (!pdata->buttons)
-		return ERR_PTR(-ENOMEM);
-
-	pdata->nbuttons = nbuttons;
-
-	pdata->rep = of_property_present(node, "autorepeat");
-	of_property_read_u32(node, "poll-interval", &pdata->poll_interval);
 
 	for_each_available_child_of_node_scoped(node, pp) {
-		struct gpio_keys_button *button = (struct gpio_keys_button *)&pdata->buttons[i++];
+		struct gpio_keys_button *button = &buttons[i++];
 
 		if (of_property_read_u32(pp, "linux,code", &button->code)) {
 			dev_err(dev, "Button node '%s' without keycode\n",
@@ -408,6 +400,15 @@ gpio_keys_get_devtree_pdata(struct device *dev)
 		button->irq = irq_of_parse_and_map(pp, 0);
 		button->gpio = -ENOENT; /* mark this as device-tree */
 	}
+
+	pdata = devm_kzalloc(dev, sizeof(struct gpio_keys_platform_data), GFP_KERNEL);
+	if (!pdata)
+		return ERR_PTR(-ENOMEM);
+
+	pdata->nbuttons = nbuttons;
+	pdata->buttons = buttons;
+	pdata->rep = of_property_present(node, "autorepeat");
+	of_property_read_u32(node, "poll-interval", &pdata->poll_interval);
 
 	return pdata;
 }
