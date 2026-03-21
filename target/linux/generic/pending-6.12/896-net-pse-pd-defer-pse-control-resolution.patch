@@ -1,0 +1,157 @@
+From: Carlo Szelinsky <github@szelinsky.de>
+Subject: [PATCH] net: pse-pd: support module-based PSE controller drivers
+
+When a PSE controller driver is built as a module, it may not be probed
+yet when PHYs are registered. This causes of_pse_control_get() to
+return -EPROBE_DEFER, destroying the PHY device. Later,
+regulator_init_complete disables unclaimed PSE regulators, killing PoE.
+
+Fix this by:
+- Treating PSE -EPROBE_DEFER as non-fatal during PHY registration.
+- Resolving PSE controls lazily on first ethtool access.
+- Returning admin_state_enabled from pse_pi_is_enabled() so
+  regulator_init_complete skips unclaimed PSE regulators.
+- Syncing the regulator refcount when a PSE control is acquired.
+- Re-enabling PIs from the LED poll worker after hardware resets.
+
+Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
+---
+--- a/drivers/net/mdio/fwnode_mdio.c
++++ b/drivers/net/mdio/fwnode_mdio.c
+@@ -166,8 +166,12 @@ int fwnode_mdiobus_register_phy(struct m
+ 
+ 	psec = fwnode_find_pse_control(child, phy);
+ 	if (IS_ERR(psec)) {
+-		rc = PTR_ERR(psec);
+-		goto unregister_phy;
++		if (PTR_ERR(psec) == -EPROBE_DEFER) {
++			psec = NULL;
++		} else {
++			rc = PTR_ERR(psec);
++			goto unregister_phy;
++		}
+ 	}
+ 
+ 	phy->psec = psec;
+--- a/drivers/net/pse-pd/pse_core.c
++++ b/drivers/net/pse-pd/pse_core.c
+@@ -413,26 +413,11 @@ static bool pse_pw_d_is_sw_pw_control(st
+ static int pse_pi_is_enabled(struct regulator_dev *rdev)
+ {
+ 	struct pse_controller_dev *pcdev = rdev_get_drvdata(rdev);
+-	const struct pse_controller_ops *ops;
+-	int id, ret;
+-
+-	ops = pcdev->ops;
+-	if (!ops->pi_get_admin_state)
+-		return -EOPNOTSUPP;
++	int id;
+ 
+ 	id = rdev_get_id(rdev);
+-	mutex_lock(&pcdev->lock);
+-	if (pse_pw_d_is_sw_pw_control(pcdev, pcdev->pi[id].pw_d)) {
+-		ret = pcdev->pi[id].admin_state_enabled;
+-		goto out;
+-	}
+-
+-	ret = pse_pi_is_hw_enabled(pcdev, id);
+ 
+-out:
+-	mutex_unlock(&pcdev->lock);
+-
+-	return ret;
++	return pcdev->pi[id].admin_state_enabled;
+ }
+ 
+ /**
+@@ -1061,6 +1046,17 @@ static void pse_led_poll_work(struct wor
+ 		faulted = pw_status.c33_pw_status ==
+ 			ETHTOOL_C33_PSE_PW_D_STATUS_FAULT;
+ 
++		/* Recover from hardware reset: if software says this
++		 * PI should be enabled but hardware shows disabled,
++		 * re-enable it. Handles external events (e.g. SerDes
++		 * reconfiguration) that reset the PSE controller.
++		 */
++		if (pcdev->pi[i].admin_state_enabled && !enabled &&
++		    pcdev->ops->pi_enable) {
++			pcdev->ops->pi_enable(pcdev, i);
++			continue;
++		}
++
+ 		if (trigs->last_delivering != delivering) {
+ 			trigs->last_delivering = delivering;
+ 			led_trigger_event(&trigs->delivering,
+@@ -1575,6 +1571,15 @@ pse_control_get_internal(struct pse_cont
+ 		goto put_module;
+ 	}
+ 
++	/* Always enable the regulator when a PSE control is acquired.
++	 * This keeps the use_count in sync with the hardware state and
++	 * ensures ports are re-enabled after PHY teardown/rebuild cycles
++	 * (e.g. during DSA SerDes reconfiguration).
++	 */
++	ret = regulator_enable(psec->ps);
++	if (ret)
++		goto put_module;
++
+ 	psec->pcdev = pcdev;
+ 	list_add(&psec->list, &pcdev->pse_control_head);
+ 	psec->id = index;
+--- a/net/ethtool/pse-pd.c
++++ b/net/ethtool/pse-pd.c
+@@ -8,11 +8,36 @@
+ 
+ #include "common.h"
+ #include "linux/pse-pd/pse.h"
++#include <linux/of.h>
+ #include "netlink.h"
+ #include <linux/ethtool_netlink.h>
+ #include <linux/ethtool.h>
+ #include <linux/phy.h>
+ 
++/*
++ * Attempt to resolve a PSE control that was deferred during MDIO bus
++ * registration because the PSE controller had not probed yet.
++ * Called under RTNL lock from ethtool PSE handlers.
++ */
++static void pse_try_resolve(struct phy_device *phydev)
++{
++	struct device_node *np;
++	struct pse_control *psec;
++
++	if (phydev->psec)
++		return;
++
++	np = phydev->mdio.dev.of_node;
++	if (!np || !of_property_present(np, "pses"))
++		return;
++
++	psec = of_pse_control_get(np, phydev);
++	if (IS_ERR(psec))
++		return;
++
++	phydev->psec = psec;
++}
++
+ struct pse_req_info {
+ 	struct ethnl_req_info base;
+ };
+@@ -40,6 +65,8 @@ static int pse_get_pse_attributes(struct
+ 		return -EOPNOTSUPP;
+ 	}
+ 
++	pse_try_resolve(phydev);
++
+ 	if (!phydev->psec) {
+ 		NL_SET_ERR_MSG(extack, "No PSE is attached");
+ 		return -EOPNOTSUPP;
+@@ -247,6 +274,8 @@ ethnl_set_pse_validate(struct phy_device
+ 		return -EOPNOTSUPP;
+ 	}
+ 
++	pse_try_resolve(phydev);
++
+ 	if (!phydev->psec) {
+ 		NL_SET_ERR_MSG(info->extack, "No PSE is attached");
+ 		return -EOPNOTSUPP;
