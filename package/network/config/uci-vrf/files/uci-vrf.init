@@ -1,0 +1,23 @@
+#!/bin/sh /etc/rc.common
+
+START=21
+STOP=89
+USE_PROCD=1
+
+PROG=/usr/sbin/uci-vrf
+
+start_service() {
+	"$PROG" apply
+}
+
+reload_service() {
+	"$PROG" apply
+}
+
+stop_service() {
+	"$PROG" teardown
+}
+
+service_triggers() {
+	procd_add_reload_trigger network
+}

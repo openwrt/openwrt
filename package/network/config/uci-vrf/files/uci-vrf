@@ -1,0 +1,255 @@
+#!/bin/sh
+
+: "${UCI_VRF_PATH:=/sbin:/bin:/usr/sbin:/usr/bin}"
+: "${UCI_VRF_STATE_FILE:=/var/run/uci-vrf.state}"
+: "${UCI_VRF_LOG_TAG:=uci-vrf}"
+: "${UCI_VRF_FUNCTIONS:=/lib/functions.sh}"
+: "${UCI_VRF_NETWORK_FUNCTIONS:=/lib/functions/network.sh}"
+
+PATH="$UCI_VRF_PATH"
+STATE_FILE="$UCI_VRF_STATE_FILE"
+LOG_TAG="$UCI_VRF_LOG_TAG"
+
+. "$UCI_VRF_FUNCTIONS"
+. "$UCI_VRF_NETWORK_FUNCTIONS"
+
+log_msg() {
+	logger -t "$LOG_TAG" "$*"
+}
+
+device_exists() {
+	ip link show dev "$1" >/dev/null 2>&1
+}
+
+is_vrf_device() {
+	ip -d link show dev "$1" 2>/dev/null | grep -q " vrf table "
+}
+
+state_add_vrf() {
+	local name="$1"
+
+	list_contains STATE_VRFS "$name" || append STATE_VRFS "$name"
+}
+
+state_add_member() {
+	local name="$1"
+
+	list_contains STATE_MEMBERS "$name" || append STATE_MEMBERS "$name"
+}
+
+save_state() {
+	local item
+
+	: > "$STATE_FILE"
+
+	for item in $STATE_MEMBERS; do
+		echo "member $item" >> "$STATE_FILE"
+	done
+
+	for item in $STATE_VRFS; do
+		echo "vrf $item" >> "$STATE_FILE"
+	done
+}
+
+teardown_state() {
+	local type name
+
+	[ -f "$STATE_FILE" ] || return 0
+
+	while read -r type name; do
+		[ "$type" = "member" ] || continue
+		[ -n "$name" ] || continue
+		ip link set dev "$name" nomaster 2>/dev/null
+	done < "$STATE_FILE"
+
+	while read -r type name; do
+		[ "$type" = "vrf" ] || continue
+		[ -n "$name" ] || continue
+		ip link del dev "$name" 2>/dev/null
+	done < "$STATE_FILE"
+
+	rm -f "$STATE_FILE"
+}
+
+resolve_vrf_name() {
+	local ref="$1"
+	local cfgtype name
+
+	[ -n "$ref" ] || return 1
+
+	config_get cfgtype "$ref" TYPE
+	if [ "$cfgtype" = "vrf" ]; then
+		config_get name "$ref" name "$ref"
+		printf '%s\n' "$name"
+		return 0
+	fi
+
+	printf '%s\n' "$ref"
+}
+
+resolve_member_device() {
+	local ref="$1"
+	local dev
+
+	[ -n "$ref" ] || return 1
+
+	network_get_device dev "$ref" && [ -n "$dev" ] && {
+		printf '%s\n' "$dev"
+		return 0
+	}
+
+	network_get_physdev dev "$ref" && [ -n "$dev" ] && {
+		printf '%s\n' "$dev"
+		return 0
+	}
+
+	printf '%s\n' "$ref"
+}
+
+ensure_vrf() {
+	local cfg="$1"
+	local enabled name table mtu
+
+	config_get_bool enabled "$cfg" enabled 1
+	[ "$enabled" -eq 1 ] || return 0
+
+	config_get name "$cfg" name "$cfg"
+	config_get table "$cfg" table
+	config_get mtu "$cfg" mtu
+
+	if [ -z "$table" ]; then
+		log_msg "Skipping VRF '$cfg': missing table"
+		return 0
+	fi
+
+	if device_exists "$name"; then
+		if ! is_vrf_device "$name"; then
+			log_msg "Skipping VRF '$cfg': device '$name' exists and is not a VRF"
+			return 0
+		fi
+	else
+		if ! ip link add "$name" type vrf table "$table" 2>/dev/null; then
+			log_msg "Failed to create VRF '$name' with table '$table'"
+			return 0
+		fi
+	fi
+
+	[ -n "$mtu" ] && ip link set dev "$name" mtu "$mtu" 2>/dev/null
+	ip link set dev "$name" up 2>/dev/null
+	state_add_vrf "$name"
+}
+
+attach_member_device() {
+	local ref="$1"
+	local vrf_name="$2"
+	local dev
+
+	dev="$(resolve_member_device "$ref")" || return 0
+	[ -n "$dev" ] || return 0
+
+	if [ "$dev" = "$vrf_name" ]; then
+		log_msg "Skipping member '$dev': device equals VRF '$vrf_name'"
+		return 0
+	fi
+
+	if ! device_exists "$vrf_name"; then
+		log_msg "Skipping member '$dev': VRF '$vrf_name' is not present"
+		return 0
+	fi
+
+	if ! device_exists "$dev"; then
+		log_msg "Skipping member '$dev': device not present"
+		return 0
+	fi
+
+	if ! ip link set dev "$dev" master "$vrf_name" 2>/dev/null; then
+		log_msg "Failed to enslave '$dev' to VRF '$vrf_name'"
+		return 0
+	fi
+
+	state_add_member "$dev"
+}
+
+attach_vrf_device() {
+	local ref="$1"
+	local cfg="$2"
+	local vrf_name
+
+	vrf_name="$(resolve_vrf_name "$cfg")" || return 0
+	attach_member_device "$ref" "$vrf_name"
+}
+
+attach_members_from_vrf() {
+	local cfg="$1"
+	local enabled
+
+	config_get_bool enabled "$cfg" enabled 1
+	[ "$enabled" -eq 1 ] || return 0
+
+	config_list_foreach "$cfg" devices attach_vrf_device "$cfg"
+	config_list_foreach "$cfg" interfaces attach_vrf_device "$cfg"
+}
+
+attach_member_section() {
+	local cfg="$1"
+	local enabled vrf_ref vrf_name device_ref iface_ref
+
+	config_get_bool enabled "$cfg" enabled 1
+	[ "$enabled" -eq 1 ] || return 0
+
+	config_get vrf_ref "$cfg" vrf
+	config_get device_ref "$cfg" device
+	config_get iface_ref "$cfg" interface
+
+	if [ -z "$vrf_ref" ]; then
+		log_msg "Skipping vrf_member '$cfg': missing vrf"
+		return 0
+	fi
+
+	vrf_name="$(resolve_vrf_name "$vrf_ref")" || return 0
+	[ -n "$vrf_name" ] || return 0
+
+	[ -n "$device_ref" ] && attach_member_device "$device_ref" "$vrf_name"
+	[ -n "$iface_ref" ] && attach_member_device "$iface_ref" "$vrf_name"
+}
+
+load_and_apply() {
+	STATE_VRFS=
+	STATE_MEMBERS=
+	unset __NETWORK_CACHE
+
+	config_load network
+	config_foreach ensure_vrf vrf
+	config_foreach attach_members_from_vrf vrf
+	config_foreach attach_member_section vrf_member
+	save_state
+}
+
+cmd_apply() {
+	teardown_state
+	load_and_apply
+}
+
+cmd_attach() {
+	load_and_apply
+}
+
+cmd_teardown() {
+	teardown_state
+}
+
+case "$1" in
+	apply|"")
+		cmd_apply
+	;;
+	attach)
+		cmd_attach
+	;;
+	teardown)
+		cmd_teardown
+	;;
+	*)
+		echo "Usage: $0 [apply|attach|teardown]" >&2
+		exit 1
+	;;
+esac

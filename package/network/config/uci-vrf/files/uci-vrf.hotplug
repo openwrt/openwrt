@@ -1,0 +1,10 @@
+#!/bin/sh
+
+[ -x /etc/init.d/uci-vrf ] || exit 0
+/etc/init.d/uci-vrf enabled || exit 0
+
+case "$ACTION" in
+	ifup|ifupdate|add|register)
+		/usr/sbin/uci-vrf attach
+	;;
+esac
