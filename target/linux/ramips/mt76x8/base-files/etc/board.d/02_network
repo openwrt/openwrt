@@ -214,7 +214,8 @@ ramips_setup_interfaces()
 			"1:lan" "2:lan" "3:lan" "4:wan" "6@eth0"
 		;;
 	tplink,tl-mr6400-v5|\
-	tplink,tl-mr6400-v7)
+	tplink,tl-mr6400-v7|\
+	tplink,archer-mr402-v1)
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:wan" "6@eth0"
 		;;
@@ -365,6 +366,9 @@ ramips_setup_macs()
 	tplink,archer-c50-v4|\
 	tplink,archer-c50-v6)
 		wan_mac=$(macaddr_add "$(mtd_get_mac_binary rom 0xf100)" 1)
+		;;
+	tplink,archer-mr402-v1)
+		wan_mac=$(macaddr_add "$(mtd_get_mac_binary romfile 0xf100)" 1)
 		;;
 	wavlink,wl-wn570ha1|\
 	zbtlink,zbt-we1226)
