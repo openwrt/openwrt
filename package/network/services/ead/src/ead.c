@@ -945,7 +945,7 @@ int main(int argc, char **argv)
 	}
 
 	if (pidfile) {
-		char pid[8];
+		char pid[32];
 		int len;
 
 		unlink(pidfile);

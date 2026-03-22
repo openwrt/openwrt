@@ -10,3 +10,7 @@
 **Vulnerability:** In `package/network/services/ead/src/ead.c`, `handle_send_cmd` decrypts a message from the network and subtracts a header size to get `datalen`. Without an upper bound check, `datalen` could exceed the fixed buffer size (`msgbuf`), allowing `cmd->data[datalen] = 0;` to write a null byte out-of-bounds, potentially causing a crash or remote code execution.
 **Learning:** Decrypted network payloads must always have their length validated against an upper limit before being used as an index, especially when writing to static buffers in C network services.
 **Prevention:** Always add explicit upper bounds checks on decrypted data lengths (e.g., `if (datalen > 1024) return false;`) immediately after lower bounds checks.
+## 2025-03-21 - Stack Buffer Overflow in PID file Creation
+**Vulnerability:** The `ead` service writes its process ID to a file using `sprintf(pid, "%d\n", getpid())` into a stack-allocated buffer `char pid[8];`. Since `getpid()` can return up to 7 digits on modern Linux systems, adding `\n` and `\0` requires at least 9 bytes, overflowing the 8-byte buffer.
+**Learning:** Hardcoded small buffer sizes for formatting integer PIDs can lead to stack memory corruption (CWE-121) as OS configurations like `kernel.pid_max` allow PIDs to exceed traditional limits.
+**Prevention:** Always allocate sufficiently large stack buffers (e.g., 32 bytes) when formatting PIDs, or preferably use `snprintf` with `sizeof(buffer)` to enforce explicit bounds checking.
