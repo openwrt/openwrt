@@ -133,6 +133,12 @@ tplink,archer-mr200-v6)
 	ucidef_set_led_netdev "lan" "lan" "white:lan" "eth0"
 	ucidef_set_led_netdev "wan" "wan" "white:wan" "wwan0"
 	;;
+tplink,archer-mr402-v1|\
+tplink,tl-mr6400-v5|\
+tplink,tl-mr6400-v7)
+	ucidef_set_led_switch "lan" "lan" "white:lan" "switch0" "0x07"
+	ucidef_set_led_switch "wan" "wan" "white:wan" "switch0" "0x08"
+	;;
 cudy,lt500-outdoor-v1)
 	ucidef_set_led_switch "lan" "lan" "green:lan" "switch0" "0x01"
 	ucidef_set_led_netdev "internet" "internet" "green:wan-online" "usb0"
@@ -163,11 +169,6 @@ tplink,tl-wr842n-v5)
 tplink,tl-mr6400-v4)
 	ucidef_set_led_switch "lan" "lan" "white:lan" "switch0" "0x0e"
 	ucidef_set_led_switch "wan" "wan" "white:wan" "switch0" "0x10"
-	;;
-tplink,tl-mr6400-v5|\
-tplink,tl-mr6400-v7)
-	ucidef_set_led_switch "lan" "lan" "white:lan" "switch0" "0x07"
-	ucidef_set_led_switch "wan" "wan" "white:wan" "switch0" "0x08"
 	;;
 tplink,tl-wr841n-v13)
 	ucidef_set_led_wlan "wlan2g" "wlan2g" "green:wlan" "phy0tpt"
