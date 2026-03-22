@@ -288,12 +288,17 @@ static int
 send_command(const char *command)
 {
 	struct ead_msg_cmd *cmd = EAD_ENC_DATA(msg, cmd);
+	int cmdlen = strlen(command);
+
+	if (cmdlen >= 1024)
+		cmdlen = 1023;
 
 	msg->type = htonl(EAD_TYPE_SEND_CMD);
 	cmd->type = htons(EAD_CMD_NORMAL);
 	cmd->timeout = htons(10);
-	strncpy((char *)cmd->data, command, 1024);
-	ead_encrypt_message(msg, sizeof(struct ead_msg_cmd) + strlen(command) + 1);
+	strncpy((char *)cmd->data, command, cmdlen);
+	cmd->data[cmdlen] = '\0';
+	ead_encrypt_message(msg, sizeof(struct ead_msg_cmd) + cmdlen + 1);
 	return send_packet(EAD_TYPE_RESULT_CMD, handle_cmd_data, 1);
 }
 
