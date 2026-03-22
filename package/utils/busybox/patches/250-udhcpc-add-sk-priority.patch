@@ -1,0 +1,371 @@
+Index: busybox-1.37.0/networking/udhcp/common.h
+===================================================================
+--- busybox-1.37.0.orig/networking/udhcp/common.h
++++ busybox-1.37.0/networking/udhcp/common.h
+@@ -367,12 +367,12 @@ int udhcp_recv_kernel_packet(struct dhcp
+ int udhcp_send_raw_packet(struct dhcp_packet *dhcp_pkt,
+ 		uint32_t source_nip, int source_port,
+ 		uint32_t dest_nip, int dest_port, const uint8_t *dest_arp,
+-		int ifindex) FAST_FUNC;
++		int ifindex, int sk_prio) FAST_FUNC;
+ 
+ int udhcp_send_kernel_packet(struct dhcp_packet *dhcp_pkt,
+ 		uint32_t source_nip, int source_port,
+ 		uint32_t dest_nip, int dest_port,
+-		const char *ifname) FAST_FUNC;
++		const char *ifname, int sk_prio) FAST_FUNC;
+ 
+ void udhcp_sp_setup(void) FAST_FUNC;
+ void udhcp_sp_fd_set(struct pollfd *pfds, int extra_fd) FAST_FUNC;
+Index: busybox-1.37.0/networking/udhcp/d6_common.h
+===================================================================
+--- busybox-1.37.0.orig/networking/udhcp/d6_common.h
++++ busybox-1.37.0/networking/udhcp/d6_common.h
+@@ -180,12 +180,14 @@ int FAST_FUNC d6_send_raw_packet_from_cl
+ 		struct d6_packet *d6_pkt, unsigned d6_pkt_size,
+ 		struct in6_addr *src_ipv6, int source_port,
+ 		struct in6_addr *dst_ipv6, int dest_port, const uint8_t *dest_arp
++		, int sk_prio
+ );
+ 
+ int FAST_FUNC d6_send_kernel_packet_from_client_data_ifindex(
+ 		struct d6_packet *d6_pkt, unsigned d6_pkt_size,
+ 		struct in6_addr *src_ipv6, int source_port,
+ 		struct in6_addr *dst_ipv6, int dest_port
++		, int sk_prio
+ );
+ 
+ #if defined CONFIG_UDHCP_DEBUG && CONFIG_UDHCP_DEBUG >= 2
+Index: busybox-1.37.0/networking/udhcp/d6_dhcpc.c
+===================================================================
+--- busybox-1.37.0.orig/networking/udhcp/d6_dhcpc.c
++++ busybox-1.37.0/networking/udhcp/d6_dhcpc.c
+@@ -127,6 +127,7 @@ static const char udhcpc6_longopts[] ALI
+ 	USE_FOR_MMU(
+ 	"background\0"     No_argument       "b"
+ 	)
++	"sk-priority\0"    Required_argument "K"
+ ///	IF_FEATURE_UDHCPC_ARPING("arping\0"	No_argument       "a")
+ 	IF_FEATURE_UDHCP_PORT("client-port\0"	Required_argument "P")
+ 	;
+@@ -152,12 +153,14 @@ enum {
+ 	OPT_d = 1 << 16,
+ /* The rest has variable bit positions, need to be clever */
+ 	OPTBIT_d = 16,
+-	USE_FOR_MMU(             OPTBIT_b,)
+-	///IF_FEATURE_UDHCPC_ARPING(OPTBIT_a,)
+-	IF_FEATURE_UDHCP_PORT(   OPTBIT_P,)
+-	USE_FOR_MMU(             OPT_b = 1 << OPTBIT_b,)
+-	///IF_FEATURE_UDHCPC_ARPING(OPT_a = 1 << OPTBIT_a,)
+-	IF_FEATURE_UDHCP_PORT(   OPT_P = 1 << OPTBIT_P,)
++	USE_FOR_MMU(              OPTBIT_b,)
++	OPTBIT_K,
++	///IF_FEATURE_UDHCPC_ARPING( OPTBIT_a,)
++	IF_FEATURE_UDHCP_PORT(    OPTBIT_P,)
++	USE_FOR_MMU(              OPT_b = 1 << OPTBIT_b,)
++	OPT_K = 1 << OPTBIT_K,
++	///IF_FEATURE_UDHCPC_ARPING( OPT_a = 1 << OPTBIT_a,)
++	IF_FEATURE_UDHCP_PORT(    OPT_P = 1 << OPTBIT_P,)
+ };
+ 
+ #if ENABLE_FEATURE_UDHCPC6_RFC4704
+@@ -561,6 +564,7 @@ static int d6_mcast_from_client_data_ifi
+ 		packet, (end - (uint8_t*) packet),
+ 		/*src*/ &client6_data.ll_ip6, CLIENT_PORT6,
+ 		/*dst*/ (struct in6_addr*)FF02__1_2, SERVER_PORT6, MAC_DHCP6MCAST_ADDR
++		, client_data.sk_prio
+ 	);
+ }
+ 
+@@ -866,6 +870,7 @@ static NOINLINE int send_d6_renew(struct
+ 			&packet, (opt_ptr - (uint8_t*) &packet),
+ 			our_cur_ipv6, CLIENT_PORT6,
+ 			server_ipv6, SERVER_PORT6
++			, client_data.sk_prio
+ 		);
+ 	return d6_mcast_from_client_data_ifindex(&packet, opt_ptr);
+ }
+@@ -899,6 +904,7 @@ int send_d6_release(struct in6_addr *ser
+ 		&packet, (opt_ptr - (uint8_t*) &packet),
+ 		our_cur_ipv6, CLIENT_PORT6,
+ 		server_ipv6, SERVER_PORT6
++		, client_data.sk_prio
+ 	);
+ }
+ 
+@@ -1130,7 +1136,7 @@ static void client_background(void)
+ //usage:# define IF_UDHCP_VERBOSE(...)
+ //usage:#endif
+ //usage:#define udhcpc6_trivial_usage
+-//usage:       "[-fbq"IF_UDHCP_VERBOSE("v")"R] [-t N] [-T SEC] [-A SEC|-n] [-i IFACE] [-s PROG]\n"
++//usage:       "[-fbq"IF_UDHCP_VERBOSE("v")"R] [-K PRIO] [-t N] [-T SEC] [-A SEC|-n] [-i IFACE] [-s PROG]\n"
+ //usage:       "	[-p PIDFILE]"IF_FEATURE_UDHCP_PORT(" [-P PORT]")" [-ldo] [-r IPv6] [-x OPT:VAL]... [-O OPT]..."
+ //usage:#define udhcpc6_full_usage "\n"
+ //usage:     "\n	-i IFACE	Interface to use (default "CONFIG_UDHCPC_DEFAULT_INTERFACE")"
+@@ -1151,6 +1157,7 @@ static void client_background(void)
+ //usage:	IF_FEATURE_UDHCP_PORT(
+ //usage:     "\n	-P PORT		Use PORT (default 546)"
+ //usage:	)
++//usage:     "\n	-K PRIO		Set kernel packet priority (0-7, default 0)"
+ ////usage:	IF_FEATURE_UDHCPC_ARPING(
+ ////usage:     "\n	-a		Use arping to validate offered address"
+ ////usage:	)
+@@ -1200,6 +1207,7 @@ int udhcpc6_main(int argc UNUSED_PARAM,
+ 	/* Default options */
+ 	IF_FEATURE_UDHCP_PORT(SERVER_PORT6 = 547;)
+ 	IF_FEATURE_UDHCP_PORT(CLIENT_PORT6 = 546;)
++	client_data.sk_prio = 0;
+ 	client_data.interface = CONFIG_UDHCPC_DEFAULT_INTERFACE;
+ 	client_data.script = CONFIG_UDHCPC6_DEFAULT_SCRIPT;
+ 	client_data.sockfd = -1;
+@@ -1213,6 +1221,7 @@ int udhcpc6_main(int argc UNUSED_PARAM,
+ 		/* O,x: list; -T,-t,-A take numeric param */
+ 		"i:np:qRr:s:T:+t:+SA:+O:*ox:*fld"
+ 		USE_FOR_MMU("b")
++		"K:+"
+ 		///IF_FEATURE_UDHCPC_ARPING("a")
+ 		IF_FEATURE_UDHCP_PORT("P:")
+ 		"v"
+@@ -1223,6 +1232,7 @@ int udhcpc6_main(int argc UNUSED_PARAM,
+ 		, &discover_timeout, &discover_retries, &tryagain_timeout /* T,t,A */
+ 		, &list_O
+ 		, &list_x
++		, &client_data.sk_prio
+ 		IF_FEATURE_UDHCP_PORT(, &str_P)
+ 		IF_UDHCP_VERBOSE(, &dhcp_verbose)
+ 	);
+Index: busybox-1.37.0/networking/udhcp/d6_packet.c
+===================================================================
+--- busybox-1.37.0.orig/networking/udhcp/d6_packet.c
++++ busybox-1.37.0/networking/udhcp/d6_packet.c
+@@ -54,7 +54,8 @@ int FAST_FUNC d6_recv_kernel_packet(stru
+ int FAST_FUNC d6_send_raw_packet_from_client_data_ifindex(
+ 		struct d6_packet *d6_pkt, unsigned d6_pkt_size,
+ 		struct in6_addr *src_ipv6, int source_port,
+-		struct in6_addr *dst_ipv6, int dest_port, const uint8_t *dest_arp)
++		struct in6_addr *dst_ipv6, int dest_port, const uint8_t *dest_arp
++		, int sk_prio)
+ {
+ 	struct sockaddr_ll dest_sll;
+ 	struct ip6_udp_d6_packet packet;
+@@ -68,6 +69,13 @@ int FAST_FUNC d6_send_raw_packet_from_cl
+ 		goto ret_msg;
+ 	}
+ 
++	if (sk_prio > 0 && sk_prio <= 7) {
++		if (setsockopt_SOL_SOCKET_int(fd, SO_PRIORITY, sk_prio) < 0) {
++			msg = "setsockopt(%s)";
++			goto ret_close;
++		}
++	}
++
+ 	memset(&dest_sll, 0, sizeof(dest_sll));
+ 	memset(&packet, 0, offsetof(struct ip6_udp_d6_packet, data));
+ 	packet.data = *d6_pkt; /* struct copy */
+@@ -139,7 +147,8 @@ int FAST_FUNC d6_send_raw_packet_from_cl
+ int FAST_FUNC d6_send_kernel_packet_from_client_data_ifindex(
+ 		struct d6_packet *d6_pkt, unsigned d6_pkt_size,
+ 		struct in6_addr *src_ipv6, int source_port,
+-		struct in6_addr *dst_ipv6, int dest_port)
++		struct in6_addr *dst_ipv6, int dest_port
++		, int sk_prio)
+ {
+ 	struct sockaddr_in6 sa;
+ 	int fd;
+@@ -151,6 +160,14 @@ int FAST_FUNC d6_send_kernel_packet_from
+ 		msg = "socket(%s)";
+ 		goto ret_msg;
+ 	}
++
++        if (sk_prio > 0 && sk_prio <= 7) {
++                if (setsockopt_SOL_SOCKET_int(fd, SO_PRIORITY, sk_prio) < 0) {
++                        msg = "setsockopt(%s)";
++                        goto ret_close;
++                }
++        }
++
+ 	setsockopt_reuseaddr(fd);
+ 
+ 	memset(&sa, 0, sizeof(sa));
+Index: busybox-1.37.0/networking/udhcp/dhcpc.c
+===================================================================
+--- busybox-1.37.0.orig/networking/udhcp/dhcpc.c
++++ busybox-1.37.0/networking/udhcp/dhcpc.c
+@@ -75,6 +75,7 @@ static const char udhcpc_longopts[] ALIG
+ 	"background\0"     No_argument       "b"
+ 	)
+ 	"broadcast\0"      No_argument       "B"
++	"sk-priority\0"    Required_argument "K"
+ 	IF_FEATURE_UDHCPC_ARPING("arping\0"	Optional_argument "a")
+ 	IF_FEATURE_UDHCP_PORT("client-port\0"	Required_argument "P")
+ 	;
+@@ -102,12 +103,14 @@ enum {
+ 	OPT_B = 1 << 18,
+ /* The rest has variable bit positions, need to be clever */
+ 	OPTBIT_B = 18,
+-	USE_FOR_MMU(             OPTBIT_b,)
+-	IF_FEATURE_UDHCPC_ARPING(OPTBIT_a,)
+-	IF_FEATURE_UDHCP_PORT(   OPTBIT_P,)
+-	USE_FOR_MMU(             OPT_b = 1 << OPTBIT_b,)
+-	IF_FEATURE_UDHCPC_ARPING(OPT_a = 1 << OPTBIT_a,)
+-	IF_FEATURE_UDHCP_PORT(   OPT_P = 1 << OPTBIT_P,)
++	USE_FOR_MMU(              OPTBIT_b,)
++	OPTBIT_K,
++	IF_FEATURE_UDHCPC_ARPING( OPTBIT_a,)
++	IF_FEATURE_UDHCP_PORT(    OPTBIT_P,)
++	USE_FOR_MMU(              OPT_b = 1 << OPTBIT_b,)
++	OPT_K = 1 << OPTBIT_K,
++	IF_FEATURE_UDHCPC_ARPING( OPT_a = 1 << OPTBIT_a,)
++	IF_FEATURE_UDHCP_PORT(    OPT_P = 1 << OPTBIT_P,)
+ };
+ 
+ 
+@@ -693,7 +696,8 @@ static int raw_bcast_from_client_data_if
+ 	return udhcp_send_raw_packet(packet,
+ 		/*src*/ src_nip, CLIENT_PORT,
+ 		/*dst*/ INADDR_BROADCAST, SERVER_PORT, MAC_BCAST_ADDR,
+-		client_data.ifindex);
++		client_data.ifindex
++		, client_data.sk_prio);
+ }
+ 
+ static int bcast_or_ucast(struct dhcp_packet *packet, uint32_t ciaddr, uint32_t server)
+@@ -702,7 +706,8 @@ static int bcast_or_ucast(struct dhcp_pa
+ 		return udhcp_send_kernel_packet(packet,
+ 			ciaddr, CLIENT_PORT,
+ 			server, SERVER_PORT,
+-			client_data.interface);
++			client_data.interface
++			, client_data.sk_prio);
+ 	return raw_bcast_from_client_data_ifindex(packet, ciaddr);
+ }
+ 
+@@ -1153,7 +1158,7 @@ static void client_background(void)
+ //usage:# define IF_UDHCP_VERBOSE(...)
+ //usage:#endif
+ //usage:#define udhcpc_trivial_usage
+-//usage:       "[-fbq"IF_UDHCP_VERBOSE("v")"RB]"IF_FEATURE_UDHCPC_ARPING(" [-a[MSEC]]")" [-t N] [-T SEC] [-A SEC|-n]\n"
++//usage:       "[-fbq"IF_UDHCP_VERBOSE("v")"RB] [-K PRIO]"IF_FEATURE_UDHCPC_ARPING(" [-a[MSEC]]")" [-t N] [-T SEC] [-A SEC|-n]\n"
+ //usage:       "	[-i IFACE]"IF_FEATURE_UDHCP_PORT(" [-P PORT]")" [-s PROG] [-p PIDFILE]\n"
+ //usage:       "	[-oC] [-r IP] [-V VENDOR] [-F NAME] [-x OPT:VAL]... [-O OPT]..."
+ //usage:#define udhcpc_full_usage "\n"
+@@ -1175,6 +1180,7 @@ static void client_background(void)
+ //usage:     "\n	-R		Release IP on exit"
+ //usage:     "\n	-f		Run in foreground"
+ //usage:     "\n	-S		Log to syslog too"
++//usage:     "\n	-K PRIO		Set kernel packet priority (0-7, default 0)"
+ //usage:	IF_FEATURE_UDHCPC_ARPING(
+ //usage:     "\n	-a[MSEC]	Validate offered address with ARP ping"
+ //usage:	)
+@@ -1224,6 +1230,7 @@ int udhcpc_main(int argc UNUSED_PARAM, c
+ 	/* Default options */
+ 	IF_FEATURE_UDHCP_PORT(SERVER_PORT = 67;)
+ 	IF_FEATURE_UDHCP_PORT(CLIENT_PORT = 68;)
++	client_data.sk_prio = 0;
+ 	client_data.interface = CONFIG_UDHCPC_DEFAULT_INTERFACE;
+ 	client_data.script = CONFIG_UDHCPC_DEFAULT_SCRIPT;
+ 	client_data.sockfd = -1;
+@@ -1238,6 +1245,7 @@ int udhcpc_main(int argc UNUSED_PARAM, c
+ 		/* O,x: list; -T,-t,-A take numeric param */
+ 		"CV:F:i:np:qRr:s:T:+t:+SA:+O:*ox:*fB"
+ 		USE_FOR_MMU("b")
++		"K:+"
+ 		IF_FEATURE_UDHCPC_ARPING("a::")
+ 		IF_FEATURE_UDHCP_PORT("P:")
+ 		"v"
+@@ -1250,6 +1258,7 @@ int udhcpc_main(int argc UNUSED_PARAM, c
+ 		, &discover_timeout, &discover_retries, &tryagain_timeout /* T,t,A */
+ 		, &list_O
+ 		, &list_x
++		, &client_data.sk_prio
+ 		IF_FEATURE_UDHCPC_ARPING(, &str_a)
+ 		IF_FEATURE_UDHCP_PORT(, &str_P)
+ 		IF_UDHCP_VERBOSE(, &dhcp_verbose)
+Index: busybox-1.37.0/networking/udhcp/dhcpc.h
+===================================================================
+--- busybox-1.37.0.orig/networking/udhcp/dhcpc.h
++++ busybox-1.37.0/networking/udhcp/dhcpc.h
+@@ -9,6 +9,7 @@ PUSH_AND_SET_FUNCTION_VISIBILITY_TO_HIDD
+ 
+ struct client_data_t {
+ 	uint8_t client_mac[6];          /* Our mac address */
++	int sk_prio;
+ 	IF_FEATURE_UDHCP_PORT(uint16_t port;)
+ 	int ifindex;                    /* Index number of the interface to use */
+ 	uint32_t xid;
+Index: busybox-1.37.0/networking/udhcp/dhcpd.c
+===================================================================
+--- busybox-1.37.0.orig/networking/udhcp/dhcpd.c
++++ busybox-1.37.0/networking/udhcp/dhcpd.c
+@@ -603,7 +603,8 @@ static void send_packet_to_client(struct
+ 	udhcp_send_raw_packet(dhcp_pkt,
+ 		/*src*/ server_data.server_nip, SERVER_PORT,
+ 		/*dst*/ ciaddr, CLIENT_PORT, chaddr,
+-		server_data.ifindex);
++		server_data.ifindex
++		, 0);
+ }
+ 
+ /* Send a packet to gateway_nip using the kernel ip stack */
+@@ -618,7 +619,8 @@ static void send_packet_to_relay(struct
+ 	 * even those which are clients' requests and would normally
+ 	 * (i.e. without relay) use CLIENT_PORT. See RFC 1542.
+ 	 */
+-			server_data.interface);
++			server_data.interface
++			, 0);
+ }
+ 
+ static void send_packet(struct dhcp_packet *dhcp_pkt, int force_broadcast)
+Index: busybox-1.37.0/networking/udhcp/packet.c
+===================================================================
+--- busybox-1.37.0.orig/networking/udhcp/packet.c
++++ busybox-1.37.0/networking/udhcp/packet.c
+@@ -109,7 +109,8 @@ int FAST_FUNC udhcp_recv_kernel_packet(s
+ int FAST_FUNC udhcp_send_raw_packet(struct dhcp_packet *dhcp_pkt,
+ 		uint32_t source_nip, int source_port,
+ 		uint32_t dest_nip, int dest_port, const uint8_t *dest_arp,
+-		int ifindex)
++		int ifindex
++		, int sk_prio)
+ {
+ 	struct sockaddr_ll dest_sll;
+ 	struct ip_udp_dhcp_packet packet;
+@@ -124,6 +125,13 @@ int FAST_FUNC udhcp_send_raw_packet(stru
+ 		goto ret_msg;
+ 	}
+ 
++	if (sk_prio > 0 && sk_prio <= 7) {
++		if (setsockopt_SOL_SOCKET_int(fd, SO_PRIORITY, sk_prio) < 0) {
++			msg = "setsockopt(%s)";
++			goto ret_close;
++		}
++	}
++
+ 	memset(&dest_sll, 0, sizeof(dest_sll));
+ 	memset(&packet, 0, offsetof(struct ip_udp_dhcp_packet, data));
+ 	packet.data = *dhcp_pkt; /* struct copy */
+@@ -195,7 +203,8 @@ int FAST_FUNC udhcp_send_raw_packet(stru
+ int FAST_FUNC udhcp_send_kernel_packet(struct dhcp_packet *dhcp_pkt,
+ 		uint32_t source_nip, int source_port,
+ 		uint32_t dest_nip, int dest_port,
+-		const char *ifname)
++		const char *ifname
++		, int sk_prio)
+ {
+ 	struct sockaddr_in sa;
+ 	unsigned padding;
+@@ -224,6 +233,13 @@ int FAST_FUNC udhcp_send_kernel_packet(s
+ 			goto ret_close;
+ 		}
+ 	}
++
++	if (sk_prio > 0 && sk_prio <= 7) {
++		if (setsockopt_SOL_SOCKET_int(fd, SO_PRIORITY, sk_prio) < 0) {
++			msg = "setsockopt(%s)";
++			goto ret_close;
++		}
++	}
+ 
+ 	memset(&sa, 0, sizeof(sa));
+ 	sa.sin_family = AF_INET;
