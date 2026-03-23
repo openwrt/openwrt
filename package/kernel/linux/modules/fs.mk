@@ -700,7 +700,6 @@ define KernelPackage/pstore
 	CONFIG_PSTORE \
 	CONFIG_PSTORE_COMPRESS=y
   FILES:= $(LINUX_DIR)/fs/pstore/pstore.ko
-  AUTOLOAD:=$(call AutoLoad,30,pstore,1)
   DEPENDS:=+kmod-lib-zlib-deflate +kmod-lib-zlib-inflate
 endef
 
