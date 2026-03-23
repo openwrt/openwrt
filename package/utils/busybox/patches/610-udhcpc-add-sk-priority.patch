@@ -1,15 +1,14 @@
 
-This adds a command line option (-K) to set the (kernel) packet
-priority (SO_PRIORITY).
+This adds a command line option (-K) to udhcpc to set the kernel
+packet priority (SK_PRIORITY).
 
-This makes it straightforward to set some PCP VLAN priority for DHCP
-requests through an egress QoS map. Packet matching for firewall
-or scheduler marking is otherwise broken due to the use of raw
-packets. Such priority tag is a hard requirement for some ISPs,
- such as Orange France.
+This makes it straightforward to set some VLAN priority for DHCP
+requests through an egress QoS map. This is a hard requirement
+for some ISPs (such as Orange in France).
 
-Co-authored-by: Clément Péron <peron.clem@gmail.com>
-Signed-off-by: Pacien TRAN-GIRARD <pacien.trangirard@pacien.net>
+Co-authored-by: ClÃ©ment PÃ©ron <peron.clem@gmail.com>
+Co-authored-by: Pacien TRAN-GIRARD <pacien.trangirard@pacien.net>
+Signed-off-by: bigboo3000 <bigboo3000@hotmail.com>
 ---
 
 
