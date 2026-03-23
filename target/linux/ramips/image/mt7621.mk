@@ -1833,6 +1833,18 @@ define Device/iptime_a3004ns-dual
 endef
 TARGET_DEVICES += iptime_a3004ns-dual
 
+define Device/iptime_a3004ns-m
+  $(Device/dsa-migration)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 16128k
+  UIMAGE_NAME := a3004nm
+  DEVICE_VENDOR := ipTIME
+  DEVICE_MODEL := A3004NS-M
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7615e kmod-mt7615-firmware \
+	kmod-usb-ledtrig-usbport -uboot-envtools
+endef
+TARGET_DEVICES += iptime_a3004ns-m
+
 define Device/iptime_a3004t
   $(Device/nand)
   $(Device/uimage-lzma-loader)
