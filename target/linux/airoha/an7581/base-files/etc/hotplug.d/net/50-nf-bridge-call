@@ -1,0 +1,19 @@
+#!/bin/sh
+#
+# Enable netfilter on br-lan only, so bridged IP traffic traverses the
+# netfilter forward chain where nft_flow_offload can pick it up for
+# hardware PPE offload.
+#
+# Scoped to br-lan to avoid imposing netfilter overhead on user-created
+# bridges (e.g. docker, guest networks) which may not need it.
+
+[ "$ACTION" = "add" ] || exit 0
+[ "$DEVICENAME" = "br-lan" ] || exit 0
+
+bridge=/sys/devices/virtual/net/br-lan/bridge
+[ -d "$bridge" ] || exit 0
+
+echo 1 > "$bridge/nf_call_iptables" 2>/dev/null
+echo 1 > "$bridge/nf_call_ip6tables" 2>/dev/null
+
+exit 0
