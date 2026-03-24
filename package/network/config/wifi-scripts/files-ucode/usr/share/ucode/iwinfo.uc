@@ -370,6 +370,7 @@ export function assoclist(dev) {
 				flags: assoc_flags(station.sta_info.tx_bitrate ?? {}),
 			},
 			expected_throughput: format_expected_throughput(station.sta_info.expected_throughput ?? 0),
+			connected_time: station.sta_info.connected_time ?? 0,
 		};
 		ret[sta.mac] = sta;
 	}
