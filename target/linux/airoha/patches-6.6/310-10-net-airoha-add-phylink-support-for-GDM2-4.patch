@@ -35,7 +35,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  static void airoha_set_macaddr(struct airoha_gdm_port *port, const u8 *addr)
  {
  	struct airoha_eth *eth = port->qdma->eth;
-@@ -1623,6 +1629,17 @@ static int airoha_dev_open(struct net_de
+@@ -1638,6 +1644,17 @@ static int airoha_dev_open(struct net_de
  	struct airoha_qdma *qdma = port->qdma;
  	u32 pse_port = FE_PSE_PORT_PPE1;
  
@@ -53,7 +53,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	netif_tx_start_all_queues(dev);
  	err = airoha_set_vip_for_gdm_port(port, true);
  	if (err)
-@@ -1687,6 +1704,11 @@ static int airoha_dev_stop(struct net_de
+@@ -1702,6 +1719,11 @@ static int airoha_dev_stop(struct net_de
  		}
  	}
  
@@ -199,7 +199,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	return airoha_metadata_dst_alloc(port);
  }
  
-@@ -3080,6 +3215,10 @@ error_hw_cleanup:
+@@ -3075,6 +3210,10 @@ error_napi_stop:
  
  		if (port->dev->reg_state == NETREG_REGISTERED)
  			unregister_netdev(port->dev);
@@ -209,8 +209,8 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +		}
  		airoha_metadata_dst_free(port);
  	}
- 	free_netdev(eth->napi_dev);
-@@ -3106,6 +3245,10 @@ static void airoha_remove(struct platfor
+ 	airoha_hw_cleanup(eth);
+@@ -3101,6 +3240,10 @@ static void airoha_remove(struct platfor
  
  		unregister_netdev(port->dev);
  		airoha_metadata_dst_free(port);
@@ -219,7 +219,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +			airoha_pcs_destroy(port->pcs);
 +		}
  	}
- 	free_netdev(eth->napi_dev);
+ 	airoha_hw_cleanup(eth);
  
 --- a/drivers/net/ethernet/airoha/airoha_eth.h
 +++ b/drivers/net/ethernet/airoha/airoha_eth.h
@@ -236,7 +236,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
  	DECLARE_BITMAP(qos_sq_bmap, AIROHA_NUM_QOS_CHANNELS);
 --- a/drivers/net/ethernet/airoha/airoha_regs.h
 +++ b/drivers/net/ethernet/airoha/airoha_regs.h
-@@ -359,6 +359,18 @@
+@@ -358,6 +358,18 @@
  #define IP_FRAGMENT_PORT_MASK		GENMASK(8, 5)
  #define IP_FRAGMENT_NBQ_MASK		GENMASK(4, 0)
  
