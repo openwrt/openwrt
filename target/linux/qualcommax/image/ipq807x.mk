@@ -605,7 +605,7 @@ define Device/zyxel_nbg7815
 endef
 TARGET_DEVICES += zyxel_nbg7815
 
-define Device/zyxel_nwax10ax_common
+define Device/zyxel_nwa_wax_common
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
 	DEVICE_VENDOR := Zyxel
@@ -614,24 +614,47 @@ define Device/zyxel_nwax10ax_common
 	IMAGE_SIZE := 61440k
 	IMAGES += factory.bin
 	IMAGE/factory.bin := append-ubi | check-size $$$$(IMAGE_SIZE) | zyxel-nwax10ax-fit
+	DEVICE_PACKAGES := zyxel-bootconfig-ipq807x kmod-leds-lp5562
+endef
+
+define Device/zyxel_nwa110ax_wax510d_common
+	$(call Device/zyxel_nwa_wax_common)
+	DEVICE_DTS_CONFIG := config@ac01
+	SOC := ipq8070
+	DEVICE_PACKAGES += ipq-wifi-zyxel_nwa110ax
+endef
+
+define Device/zyxel_nwa210ax_wax610d_common
+	$(call Device/zyxel_nwa_wax_common)
+	DEVICE_DTS_CONFIG := config@ac02
+	SOC := ipq8071
+	DEVICE_PACKAGES += ipq-wifi-zyxel_nwa210ax
 endef
 
 define Device/zyxel_nwa110ax
-	$(call Device/zyxel_nwax10ax_common)
+	$(call Device/zyxel_nwa110ax_wax510d_common)
 	DEVICE_MODEL := NWA110AX
-	DEVICE_DTS_CONFIG := config@ac01
-	SOC := ipq8070
-	DEVICE_PACKAGES := ipq-wifi-zyxel_nwa110ax zyxel-bootconfig-ipq807x kmod-leds-lp5562
 	ZYXEL_MODEL_ID := 59 e1
 endef
 TARGET_DEVICES += zyxel_nwa110ax
 
 define Device/zyxel_nwa210ax
-	$(call Device/zyxel_nwax10ax_common)
+	$(call Device/zyxel_nwa210ax_wax610d_common)
 	DEVICE_MODEL := NWA210AX
-	DEVICE_DTS_CONFIG := config@ac02
-	SOC := ipq8071
-	DEVICE_PACKAGES := ipq-wifi-zyxel_nwa210ax zyxel-bootconfig-ipq807x kmod-leds-lp5562
 	ZYXEL_MODEL_ID := 5c e1
 endef
 TARGET_DEVICES += zyxel_nwa210ax
+
+define Device/zyxel_wax510d
+	$(call Device/zyxel_nwa110ax_wax510d_common)
+	DEVICE_MODEL := WAX510D
+	ZYXEL_MODEL_ID := 56 e1
+endef
+TARGET_DEVICES += zyxel_wax510d
+
+define Device/zyxel_wax610d
+	$(call Device/zyxel_nwa210ax_wax610d_common)
+	DEVICE_MODEL := WAX610D
+	ZYXEL_MODEL_ID := 5b e1
+endef
+TARGET_DEVICES += zyxel_wax610d
