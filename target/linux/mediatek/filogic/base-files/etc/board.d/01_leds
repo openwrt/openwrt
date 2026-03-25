@@ -308,6 +308,9 @@ tplink,be450)
 	ucidef_set_led_netdev "wlan2g" "WLAN2G" "blue:wlan-2ghz" "phy0.0-ap0"
 	ucidef_set_led_netdev "wlan5g" "WLAN5G" "blue:wlan-5ghz" "phy0.1-ap0"
 	;;
+tplink,deco-x50-poe-v2)
+	ucidef_set_led_netdev "wan" "WAN" "green:status" "eth0" "link tx rx"
+	;;
 tplink,fr365-v1)
 	ucidef_set_led_netdev "port2-green-act" "port-2" "green:port2_act" "port2" "link tx rx"
 	ucidef_set_led_netdev "port1-green-act" "port-1" "green:sfp" "port1" "link tx rx"
