@@ -190,7 +190,8 @@ mediatek_setup_interfaces()
 	glinet,gl-x3000|\
 	glinet,gl-xe3000|\
 	openembed,som7981|\
-	openwrt,one)
+	openwrt,one|\
+	tplink,deco-x50-poe-v2)
 		ucidef_set_interfaces_lan_wan eth1 eth0
 		;;
 	dlink,aquila-pro-ai-e30-a1|\
@@ -388,6 +389,11 @@ mediatek_setup_macs()
 		;;
 	smartrg,sdg-9000)
 		lan_mac=$(macaddr_add "$(mmc_get_mac_ascii mfginfo MFG_MAC)" 1)
+		;;
+	tplink,deco-x50-poe-v2)
+		label_mac=$(get_mac_binary "/tmp/factory_data/default-mac" 0)
+		wan_mac=$label_mac
+		lan_mac=$(macaddr_add "$label_mac" 1)
 		;;
 	tplink,eap683-lr|\
 	tplink,f65-v1)
