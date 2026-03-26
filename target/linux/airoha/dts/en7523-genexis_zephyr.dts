@@ -1,0 +1,190 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later OR MIT */
+/dts-v1/;
+
+#include "en7523-genexis.dtsi"
+
+/ {
+	model = "Heimgard/Genexis HX30";
+	compatible = "genexis,zephyr", "airoha,en7523";
+
+	aliases {
+		led-boot = &power;
+		led-failsafe = &iot_red;
+		led-upgrade = &power;
+		led-running = &power;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pinctrl 0 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pinctrl 17 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		wireless {
+			label = "wifi";
+			linux,code = <KEY_WLAN>;
+			gpios = <&pinctrl 27 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		/* power:white */
+		power: led@2 {
+			gpios = <&pinctrl 2 GPIO_ACTIVE_LOW>;
+			function-enumerator = <2>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_STATUS;
+		};
+
+		/* iot:red */
+		iot_red: led@3 {
+			gpios = <&pinctrl 3 GPIO_ACTIVE_LOW>;
+			function-enumerator = <3>;
+			color = <LED_COLOR_ID_RED>;
+			function = LED_FUNCTION_STATUS;
+		};
+
+		/* iot:white */
+		iot_white: led@10 {
+			gpios = <&pinctrl 10 GPIO_ACTIVE_LOW>;
+			function-enumerator = <10>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_STATUS;
+		};
+
+		/* internet:white */
+		internet_white: led@1 {
+			gpios = <&pinctrl 1 GPIO_ACTIVE_LOW>;
+			function-enumerator = <1>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_WAN_ONLINE;
+		};
+
+		/* wifi:white */
+		wifi2_white: led@6 {
+			gpios = <&pinctrl 6 GPIO_ACTIVE_LOW>;
+			function-enumerator = <6>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_WLAN;
+		};
+
+		/* wps:white */
+		wps_white: led@5 {
+			gpios = <&pinctrl 5 GPIO_ACTIVE_LOW>;
+			function-enumerator = <5>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_WPS;
+		};
+
+		/* fxs1:white */
+		fxs1_white: led@7 {
+			gpios = <&pinctrl 7 GPIO_ACTIVE_LOW>;
+			function-enumerator = <7>;
+			color = <LED_COLOR_ID_WHITE>;
+			function = LED_FUNCTION_STATUS;
+		};
+	};
+
+	bitbang-mdio {
+		compatible = "virtual,mdio-gpio";
+		pinctrl-names = "default";
+		gpios = <&pinctrl 8 GPIO_ACTIVE_HIGH>,
+		        <&pinctrl 9 GPIO_ACTIVE_HIGH>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		eth01: ethernet-phy@0 {
+			compatible = "ethernet-phy-id03a2.a411";
+			reg = <14>;
+			reset-gpios = <&pinctrl 19 GPIO_ACTIVE_LOW>;
+			reset-assert-us = <10000>;
+			reset-deassert-us = <10000>;
+			phy-mode = "2500base-x";
+			full-duplex;
+			pause;
+		};
+
+		eth00: ethernet-phy@1 {
+			compatible = "ethernet-phy-id03a2.a411";
+			reg = <15>;
+			reset-gpios = <&pinctrl 18 GPIO_ACTIVE_LOW>;
+			reset-assert-us = <10000>;
+			reset-deassert-us = <10000>;
+			phy-mode = "2500base-x";
+			full-duplex;
+			pause;
+		};
+	};
+
+	// ae_wan {
+	// 	wan-sel = <0x00>;
+	// 	phy-handle = <&eth00>;
+	// };
+	// hsgmii_lan {
+	// 	usb-phy-handle = <&eth01>;
+	// };
+};
+
+&switch {
+	status = "okay";
+	ports {
+		port@1 {
+			label = "lan1";
+			status = "okay";
+		};
+
+		port@2 {
+			label = "lan2";
+			status = "okay";
+		};
+
+		port@3 {
+			label = "lan3";
+			status = "okay";
+		};
+	};
+
+	mdio {
+		ethernet-phy@9 {
+			status = "okay";
+			leds {
+				led0@0 {
+					status = "okay";
+				};
+			};
+		};
+
+		ethernet-phy@10 {
+			status = "okay";
+			leds {
+				led0@0 {
+					status = "okay";
+				};
+			};
+		};
+
+		ethernet-phy@11 {
+			status = "okay";
+			leds {
+				led0@0 {
+					status = "okay";
+				};
+			};
+		};
+	};
+};

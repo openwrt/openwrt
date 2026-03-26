@@ -10,7 +10,7 @@ define KernelPackage/i2c-an7581
   $(call i2c_defaults,$(I2C_MT7621_MODULES),79)
   TITLE:=Airoha I2C Controller
   DEPENDS:=+kmod-i2c-core \
-	  @(TARGET_airoha_an7581)
+    @(TARGET_airoha_an7581)
 endef
 
 define KernelPackage/i2c-an7581/description
@@ -22,8 +22,8 @@ $(eval $(call KernelPackage,i2c-an7581))
 
 define KernelPackage/pwm-airoha
   SUBMENU:=$(OTHER_MENU)
-  TITLE:=Airoha AN7581 and AN7583 PWM
-  DEPENDS:=@TARGET_airoha_an7581||TARGET_airoha_an7583
+  TITLE:=Airoha PWM
+  DEPENDS:=@TARGET_airoha
   KCONFIG:= \
         CONFIG_PWM=y \
         CONFIG_PWM_AIROHA=y \
@@ -34,7 +34,7 @@ define KernelPackage/pwm-airoha
 endef
 
 define KernelPackage/pwm-airoha/description
- Kernel module to use the PWM channel on Airoha SoC
+  Kernel module to use the PWM channel on Airoha SoC
 endef
 
 $(eval $(call KernelPackage,pwm-airoha))

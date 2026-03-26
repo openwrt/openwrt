@@ -1,0 +1,267 @@
+From 86996be36ce5845b2c09385b912b34827d221764 Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Mon, 4 May 2026 09:36:45 -0300
+Subject: [PATCH] airoha: draft: pcie phy
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/phy/airoha/phy-airoha-pcie.c | 182 ++++++++++++++++++++++++---
+ 1 file changed, 162 insertions(+), 20 deletions(-)
+
+diff --git a/drivers/phy/airoha/phy-airoha-pcie.c b/drivers/phy/airoha/phy-airoha-pcie.c
+index 56e9ade8a..ab853e0e1 100644
+--- a/drivers/phy/airoha/phy-airoha-pcie.c
++++ b/drivers/phy/airoha/phy-airoha-pcie.c
+@@ -7,16 +7,19 @@
+ #include <linux/bitfield.h>
+ #include <linux/delay.h>
+ #include <linux/io.h>
++#include <linux/mfd/syscon.h>
+ #include <linux/module.h>
+ #include <linux/of.h>
+ #include <linux/phy/phy.h>
+ #include <linux/platform_device.h>
+ #include <linux/slab.h>
++#include <linux/regmap.h>
+ 
+ #include "phy-airoha-pcie-regs.h"
+ 
+ #define LEQ_LEN_CTRL_MAX_VAL	7
+ #define FREQ_LOCK_MAX_ATTEMPT	10
++#define SCU_XTAL_SEL		0x254
+ 
+ /* PCIe-PHY initialization time in ms needed by the hw to complete */
+ #define PHY_HW_INIT_TIME_MS	30
+@@ -31,6 +34,8 @@ enum airoha_pcie_port_gen {
+  * struct airoha_pcie_phy - PCIe phy driver main structure
+  * @dev: pointer to device
+  * @phy: pointer to generic phy
++ * @pcie0_base: en7523 PCIe0 lane IO mapped register base address
++ * @pcie1_base: en7523 PCIe1 lane IO mapped register base address
+  * @csr_2l: Analogic lane IO mapped register base address
+  * @pma0: IO mapped register base address of PMA0-PCIe
+  * @pma1: IO mapped register base address of PMA1-PCIe
+@@ -41,6 +46,9 @@ enum airoha_pcie_port_gen {
+ struct airoha_pcie_phy {
+ 	struct device *dev;
+ 	struct phy *phy;
++	struct regmap *chip_scu;
++	void __iomem *pcie0_base;
++	void __iomem *pcie1_base;
+ 	void __iomem *csr_2l;
+ 	void __iomem *pma0;
+ 	void __iomem *pma1;
+@@ -49,6 +57,18 @@ struct airoha_pcie_phy {
+ 	void __iomem *rx_aeq;
+ };
+ 
++struct airoha_pcie_probe_data {
++	const struct phy_ops* ops;
++	int (*probe)(struct airoha_pcie_phy *pcie_phy, struct platform_device *pdev);
++};
++
++static int airoha_scu_xtal_sel(struct airoha_pcie_phy *pcie_phy)
++{
++	u32 val;
++	regmap_read(pcie_phy->chip_scu, SCU_XTAL_SEL, &val);
++	return (val >> 19)&1;
++}
++
+ static void airoha_phy_clear_bits(void __iomem *reg, u32 mask)
+ {
+ 	u32 val = readl(reg) & ~mask;
+@@ -1206,22 +1226,9 @@ static int airoha_pcie_phy_exit(struct phy *phy)
+ 	return 0;
+ }
+ 
+-static const struct phy_ops airoha_pcie_phy_ops = {
+-	.init = airoha_pcie_phy_init,
+-	.exit = airoha_pcie_phy_exit,
+-	.owner = THIS_MODULE,
+-};
+-
+-static int airoha_pcie_phy_probe(struct platform_device *pdev)
++static int airoha_an7581_probe(struct airoha_pcie_phy *pcie_phy, struct platform_device *pdev)
+ {
+-	struct airoha_pcie_phy *pcie_phy;
+ 	struct device *dev = &pdev->dev;
+-	struct phy_provider *provider;
+-
+-	pcie_phy = devm_kzalloc(dev, sizeof(*pcie_phy), GFP_KERNEL);
+-	if (!pcie_phy)
+-		return -ENOMEM;
+-
+ 	pcie_phy->csr_2l = devm_platform_ioremap_resource_byname(pdev, "csr-2l");
+ 	if (IS_ERR(pcie_phy->csr_2l))
+ 		return dev_err_probe(dev, PTR_ERR(pcie_phy->csr_2l),
+@@ -1237,11 +1244,6 @@ static int airoha_pcie_phy_probe(struct platform_device *pdev)
+ 		return dev_err_probe(dev, PTR_ERR(pcie_phy->pma1),
+ 				     "Failed to map phy-pma1 base\n");
+ 
+-	pcie_phy->phy = devm_phy_create(dev, dev->of_node, &airoha_pcie_phy_ops);
+-	if (IS_ERR(pcie_phy->phy))
+-		return dev_err_probe(dev, PTR_ERR(pcie_phy->phy),
+-				     "Failed to create PCIe phy\n");
+-
+ 	pcie_phy->p0_xr_dtime =
+ 		devm_platform_ioremap_resource_byname(pdev, "p0-xr-dtime");
+ 	if (IS_ERR(pcie_phy->p0_xr_dtime))
+@@ -1259,6 +1261,145 @@ static int airoha_pcie_phy_probe(struct platform_device *pdev)
+ 		return dev_err_probe(dev, PTR_ERR(pcie_phy->rx_aeq),
+ 				     "Failed to map Rx AEQ base\n");
+ 
++	return 0;
++}
++
++static const struct phy_ops airoha_pcie_phy_ops = {
++	.init = airoha_pcie_phy_init,
++	.exit = airoha_pcie_phy_exit,
++	.owner = THIS_MODULE,
++};
++
++static const struct airoha_pcie_probe_data airoha_an7581_data = {
++	.ops = &airoha_pcie_phy_ops,
++	.probe = airoha_an7581_probe,
++};
++
++#define set_pc0_reg(pcie_phy, reg, val) \
++	writel(val, (pcie_phy)->pcie0_base + (reg))
++#define set_pc1_reg(pcie_phy, reg, val) \
++	writel(val, (pcie_phy)->pcie1_base + (reg))
++#define get_pc0_reg(pcie_phy, reg) \
++	readl((pcie_phy)->pcie0_base + (reg))
++#define get_pc1_reg(pcie_phy, reg) \
++	readl((pcie_phy)->pcie1_base + (reg))
++
++static int airoha_pcie_phy_en7523_init(struct phy *phy)
++{
++	struct airoha_pcie_phy *pcie_phy = phy_get_drvdata(phy);
++	u32 val;
++
++	if (airoha_scu_xtal_sel(pcie_phy) != 0)
++		goto power_saving;
++	dev_info(pcie_phy->dev, "PCIe PLL init for 20MHz clk source");
++
++	set_pc0_reg(pcie_phy, 0x40c, 0x7d000001);
++	set_pc0_reg(pcie_phy, 0x410, 0xf9e00008);
++	set_pc0_reg(pcie_phy, 0x414, 0x140);
++	set_pc0_reg(pcie_phy, 0x538, 0x380047);
++	set_pc0_reg(pcie_phy, 0x53c, 0x380038);
++	set_pc0_reg(pcie_phy, 0x540, 0x430038);
++	set_pc0_reg(pcie_phy, 0x544, 0x360036);
++	set_pc0_reg(pcie_phy, 0x548, 0x360036);
++	msleep(10);
++	set_pc0_reg(pcie_phy, 0x110, 0x43000000);
++	set_pc0_reg(pcie_phy, 0x10c, 0xe0000000);
++	msleep(1);
++	set_pc0_reg(pcie_phy, 0x110, 0x40000000);
++	set_pc0_reg(pcie_phy, 0x10c, 0x40000000);
++
++	set_pc1_reg(pcie_phy, 0x40c, 0x7d000001);
++	set_pc1_reg(pcie_phy, 0x410, 0xf9e00008);
++	set_pc1_reg(pcie_phy, 0x414, 0x140);
++	set_pc1_reg(pcie_phy, 0x538, 0x380047);
++	set_pc1_reg(pcie_phy, 0x53c, 0x380038);
++	set_pc1_reg(pcie_phy, 0x540, 0x430038);
++	set_pc1_reg(pcie_phy, 0x544, 0x360036);
++	set_pc1_reg(pcie_phy, 0x548, 0x360036);
++	msleep(10);
++	set_pc1_reg(pcie_phy, 0x110, 0x43000000);
++	set_pc1_reg(pcie_phy, 0x10c, 0xe0000000);
++	msleep(1);
++	set_pc1_reg(pcie_phy, 0x110, 0x40000000);
++	set_pc1_reg(pcie_phy, 0x10c, 0x40000000);
++
++power_saving:
++	val = get_pc0_reg(pcie_phy, 0x304) & (0xffff80ff | 0x6400);
++	set_pc0_reg(pcie_phy, 0x304, val);
++	val = get_pc0_reg(pcie_phy, 0x428) & (0xfffffff8 | 0x1);
++	set_pc0_reg(pcie_phy, 0x428, val);
++
++	val = get_pc1_reg(pcie_phy, 0x304) & (0xffff80ff | 0x6400);
++	set_pc1_reg(pcie_phy, 0x304, val);
++	val = get_pc1_reg(pcie_phy, 0x428) & (0xfffffff8 | 0x1);
++	set_pc1_reg(pcie_phy, 0x428, val);
++
++	return 0;
++}
++
++static int airoha_en7523_probe(struct airoha_pcie_phy *pcie_phy, struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct device_node *np;
++
++	np = of_parse_phandle(dev->of_node, "airoha,chip_scu", 0);
++	if (!np)
++		return dev_err_probe(dev, -EINVAL, "cannot get scu schip node");
++
++	pcie_phy->chip_scu = syscon_node_to_regmap(np);
++	of_node_put(np);
++	if (!pcie_phy->chip_scu)
++		return dev_err_probe(dev, -ENOMEM, "Failed to map scu base\n");
++
++	pcie_phy->pcie0_base = devm_platform_ioremap_resource_byname(pdev, "pcie0");
++	if (IS_ERR(pcie_phy->pcie0_base))
++		return dev_err_probe(dev, PTR_ERR(pcie_phy->pcie0_base),
++				     "Failed to map pcie0 base\n");
++
++	pcie_phy->pcie1_base = devm_platform_ioremap_resource_byname(pdev, "pcie1");
++	if (IS_ERR(pcie_phy->pcie1_base))
++		return dev_err_probe(dev, PTR_ERR(pcie_phy->pcie1_base),
++				     "Failed to map pcie1 base\n");
++
++	return 0;
++}
++
++static const struct phy_ops airoha_pcie_phy_en7523_ops = {
++	.init = airoha_pcie_phy_en7523_init,
++	.owner = THIS_MODULE,
++};
++
++static const struct airoha_pcie_probe_data airoha_en7523_data = {
++	.ops = &airoha_pcie_phy_en7523_ops,
++	.probe = airoha_en7523_probe,
++};
++
++static int airoha_pcie_phy_probe(struct platform_device *pdev)
++{
++	struct airoha_pcie_phy *pcie_phy;
++	struct device *dev = &pdev->dev;
++	struct phy_provider *provider;
++	const struct airoha_pcie_probe_data *data;
++	int err;
++
++	pcie_phy = devm_kzalloc(dev, sizeof(*pcie_phy), GFP_KERNEL);
++	if (!pcie_phy)
++		return -ENOMEM;
++
++	data = of_device_get_match_data(dev);
++	if (!data)
++		return dev_err_probe(dev, -EINVAL,
++				    "No matching driver data found");
++
++	err = data->probe(pcie_phy, pdev);
++	if (err)
++		return err;
++
++	pcie_phy->phy = devm_phy_create(dev, dev->of_node, data->ops);
++	if (IS_ERR(pcie_phy->phy))
++		return dev_err_probe(dev, PTR_ERR(pcie_phy->phy),
++				     "Failed to create PCIe phy\n");
++
+ 	pcie_phy->dev = dev;
+ 	phy_set_drvdata(pcie_phy->phy, pcie_phy);
+ 
+@@ -1271,7 +1412,8 @@ static int airoha_pcie_phy_probe(struct platform_device *pdev)
+ }
+ 
+ static const struct of_device_id airoha_pcie_phy_of_match[] = {
+-	{ .compatible = "airoha,en7581-pcie-phy" },
++	{ .compatible = "airoha,en7581-pcie-phy", .data = &airoha_an7581_data },
++	{ .compatible = "airoha,en7523-pcie-phy", .data = &airoha_en7523_data },
+ 	{ /* sentinel */ }
+ };
+ MODULE_DEVICE_TABLE(of, airoha_pcie_phy_of_match);
+-- 
+2.54.0
+

@@ -1,18 +1,14 @@
 // SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
 /dts-v1/;
 
-/* Bootloader installs ATF here */
-/memreserve/ 0x80000000 0x200000;
-
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
 #include "en7523.dtsi"
 
 / {
 	model = "Airoha EN7523 Evaluation Board";
 	compatible = "airoha,en7523-evb", "airoha,en7523";
-
-	aliases {
-		serial0 = &uart1;
-	};
 
 	chosen {
 		bootargs = "console=ttyS0,115200 earlycon";
@@ -20,18 +16,110 @@
 		linux,usable-memory-range = <0x80200000 0x1fe00000>;
 	};
 
-	memory@80000000 {
-		device_type = "memory";
-		reg = <0x80000000 0x20000000>;
+	aliases {
+		serial0 = &uart1;
+		led-boot = &power_led;
+		led-failsafe = &power_led;
+		led-upgrade = &power_led;
+		led-running = &power_led;
+	};
+
+	keys {
+		compatible = "gpio-keys-polled";
+		poll-interval = <100>;
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&pinctrl 0 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+
+		wps {
+			label = "wps";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&pinctrl 7 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		// internet
+		led@1 {
+			gpios = <&pinctrl 1 GPIO_ACTIVE_LOW>;
+			function = LED_FUNCTION_WAN_ONLINE;
+			function-enumerator = <1>;
+		};
+		
+		// phy_tx_power_disable
+		led@16le {
+			gpios = <&pinctrl 16 GPIO_ACTIVE_HIGH>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <16>;
+		};
+		
+		// power
+		power_led: led@11 {
+			gpios = <&pinctrl 11 GPIO_ACTIVE_LOW>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <11>;
+		};
+		
+		// usb_0
+		led@4 {
+			gpios = <&pinctrl 4 GPIO_ACTIVE_HIGH>;
+			function = LED_FUNCTION_USB;
+			function-enumerator = <4>;
+		};
+		
+		// voip_hook
+		led@5 {
+			gpios = <&pinctrl 5 GPIO_ACTIVE_HIGH>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <5>;
+		};
+		
+		// voip_hook2
+		led@27 {
+			gpios = <&pinctrl 27 GPIO_ACTIVE_LOW>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <27>;
+		};
+		
+		// wlan
+		led@6 {
+			gpios = <&pinctrl 6 GPIO_ACTIVE_LOW>;
+			function = LED_FUNCTION_WLAN;
+			function-enumerator = <6>;
+		};
+		
+		// wps
+		led@26 {
+			gpios = <&pinctrl 26 GPIO_ACTIVE_LOW>;
+			function = LED_FUNCTION_WPS;
+			function-enumerator = <26>;
+		};
+		
+		// xponLos
+		led@3 {
+			gpios = <&pinctrl 3 GPIO_ACTIVE_HIGH>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <3>;
+		};
+		
+		// xponStatus
+		led@10 {
+			gpios = <&pinctrl 10 GPIO_ACTIVE_LOW>;
+			function = LED_FUNCTION_STATUS;
+			function-enumerator = <10>;
+		};
 	};
 };
 
-&gpio0 {
-	status = "okay";
-};
-
-&gpio1 {
-	status = "okay";
+&pinctrl {
+	gpio-ranges = <&pinctrl 0 0 32>;
 };
 
 &pcie0 {
@@ -42,32 +130,40 @@
 	status = "okay";
 };
 
-&nand {
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
+&spi0 {
+	flash@0 {
+		reg = <0>;
+		compatible = "spi-nand";
+		spi-max-frequency = <50000000>;
+		spi-tx-bus-width = <1>;
+		spi-rx-bus-width = <2>;
 
-		partition@0 {
-			label = "u-boot";
-			reg = <0x0 0x7C000>;
-			read-only;
-		};
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-		partition@1 {
-			label = "u-boot-env";
-			reg = <0x7C000 0x4000>;
-		};
+			partition@0 {
+				label = "u-boot";
+				reg = <0x0 0x7C000>;
+				read-only;
+			};
 
-		partition@2 {
-			label = "art";
-			reg = <0x80000 0x40000>;
-			read-only;
-		};
+			partition@1 {
+				label = "u-boot-env";
+				reg = <0x7C000 0x4000>;
+			};
 
-		partition@3 {
-			label = "firmware";
-			reg = <0xC0000 0xDF40000>;
+			partition@2 {
+				label = "art";
+				reg = <0x80000 0x40000>;
+				read-only;
+			};
+
+			partition@3 {
+				label = "firmware";
+				reg = <0xC0000 0xDF40000>;
+			};
 		};
 	};
 };
