@@ -1,0 +1,672 @@
+From 0ce1cc9b7f847613ec15d6b802b74e61e7e21b2d Mon Sep 17 00:00:00 2001
+From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+Date: Thu, 8 Jan 2026 23:09:42 -0300
+Subject: [PATCH 4/5] net: airoha: npu: Add EN7523 SoC support
+
+Support for en7523 has been added to the Airoha NPU. Some changes have been implemented to start the cores, as they are different generations but with the same code base.
+
+In addition to introducing the correct values for l2c size and fpga stage, which are taken from the SCU, and obtaining the version of the loaded firmware.
+
+** Core 4 boot make kernel panic **
+
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c  |  19 +-
+ drivers/net/ethernet/airoha/airoha_npu.c  | 366 ++++++++++++++++++----
+ include/linux/soc/airoha/airoha_offload.h |  28 +-
+ 3 files changed, 336 insertions(+), 77 deletions(-)
+
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -512,15 +512,18 @@ static int airoha_fe_init(struct airoha_
+ 
+ 	/* init fragment and assemble Force Port */
+ 	/* NPU Core-3, NPU Bridge Channel-3 */
+-	airoha_fe_rmw(eth, REG_IP_FRAG_FP,
+-		      IP_FRAGMENT_PORT_MASK | IP_FRAGMENT_NBQ_MASK,
+-		      FIELD_PREP(IP_FRAGMENT_PORT_MASK, 6) |
+-		      FIELD_PREP(IP_FRAGMENT_NBQ_MASK, 3));
++	// airoha_fe_rmw(eth, REG_IP_FRAG_FP,
++	// 	      IP_FRAGMENT_PORT_MASK | IP_FRAGMENT_NBQ_MASK,
++	// 	      FIELD_PREP(IP_FRAGMENT_PORT_MASK, 6) |
++	// 	      FIELD_PREP(IP_FRAGMENT_NBQ_MASK, 3));
+ 	/* QDMA LAN, RX Ring-22 */
+-	airoha_fe_rmw(eth, REG_IP_FRAG_FP,
+-		      IP_ASSEMBLE_PORT_MASK | IP_ASSEMBLE_NBQ_MASK,
+-		      FIELD_PREP(IP_ASSEMBLE_PORT_MASK, 0) |
+-		      FIELD_PREP(IP_ASSEMBLE_NBQ_MASK, 22));
++	// airoha_fe_rmw(eth, REG_IP_FRAG_FP,
++	// 	      IP_ASSEMBLE_PORT_MASK | IP_ASSEMBLE_NBQ_MASK,
++	// 	      FIELD_PREP(IP_ASSEMBLE_PORT_MASK, 0) |
++	// 	      FIELD_PREP(IP_ASSEMBLE_NBQ_MASK, 22));
++
++	/* set rx queue for lan->wifi traffic to Q1 */
++	/* CDMA1_CRSN_QSEL */
+ 
+ 	airoha_fe_set(eth, REG_GDM_FWD_CFG(AIROHA_GDM3_IDX),
+ 		      GDM_PAD_EN_MASK | GDM_STRIP_CRC_MASK);
+--- a/drivers/net/ethernet/airoha/airoha_npu.c
++++ b/drivers/net/ethernet/airoha/airoha_npu.c
+@@ -11,9 +11,12 @@
+ #include <linux/of_platform.h>
+ #include <linux/of_reserved_mem.h>
+ #include <linux/regmap.h>
++#include <linux/mfd/syscon.h>
+ 
+ #include "airoha_eth.h"
+ 
++#define NPU_EN7523_FIRMWARE_DATA		"airoha/en7523_npu_data.bin"
++#define NPU_EN7523_FIRMWARE_RV32		"airoha/en7523_npu_rv32.bin"
+ #define NPU_EN7581_FIRMWARE_DATA		"airoha/en7581_npu_data.bin"
+ #define NPU_EN7581_FIRMWARE_RV32		"airoha/en7581_npu_rv32.bin"
+ #define NPU_EN7581_7996_FIRMWARE_DATA		"airoha/en7581_MT7996_npu_data.bin"
+@@ -26,14 +29,10 @@
+ 
+ #define REG_NPU_LOCAL_SRAM		0x0
+ 
+-#define NPU_PC_BASE_ADDR		0x305000
+-#define REG_PC_DBG(_n)			(0x305000 + ((_n) * 0x100))
+-
+-#define NPU_CLUSTER_BASE_ADDR		0x306000
+-
+-#define REG_CR_BOOT_TRIGGER		(NPU_CLUSTER_BASE_ADDR + 0x000)
+-#define REG_CR_BOOT_CONFIG		(NPU_CLUSTER_BASE_ADDR + 0x004)
+-#define REG_CR_BOOT_BASE(_n)		(NPU_CLUSTER_BASE_ADDR + 0x020 + ((_n) << 2))
++#define REG_PC_DBG(_soc, _n)		((_soc->pc_base_addr) + ((_n) * 0x100))
++#define REG_CR_BOOT_TRIGGER(_soc)	((_soc->cluster_base_addr) + 0x000)
++#define REG_CR_BOOT_CONFIG(_soc)	((_soc->cluster_base_addr) + 0x004)
++#define REG_CR_BOOT_BASE(_soc, _n)	((_soc->cluster_base_addr) + 0x020 + ((_n) << 2))
+ 
+ #define NPU_MBOX_BASE_ADDR		0x30c000
+ 
+@@ -113,8 +112,123 @@ struct airoha_npu_fw {
+ };
+ 
+ struct airoha_npu_soc_data {
++	enum airoha_npu_version version;
++	int max_cores;
++	int cluster_base_addr;
++	int pc_base_addr;
++
+ 	struct airoha_npu_fw fw_rv32;
+ 	struct airoha_npu_fw fw_data;
++
++	void (*boot_core)(struct airoha_npu *npu, struct reserved_mem *rmem);
++};
++
++static const u32 VERSIONS_GET_WAIT[2][12] = {
++	[NPU_V1] = {
++		[WLAN_FUNC_GET_WAIT_NPU_INFO] = WLAN_FUNC_GET_WAIT_NPU_INFO,
++		[WLAN_FUNC_GET_WAIT_LAST_RATE] = WLAN_FUNC_GET_WAIT_LAST_RATE,
++		[WLAN_FUNC_GET_WAIT_COUNTER] = WLAN_FUNC_GET_WAIT_COUNTER,
++		[WLAN_FUNC_GET_WAIT_DBG_COUNTER] = WLAN_FUNC_GET_WAIT_DBG_COUNTER,
++		[WLAN_FUNC_GET_WAIT_RXDESC_BASE] = WLAN_FUNC_GET_WAIT_RXDESC_BASE,
++		[WLAN_FUNC_GET_WAIT_WCID_DBG_COUNTER] = WLAN_FUNC_GET_WAIT_WCID_DBG_COUNTER,
++
++		[WLAN_FUNC_GET_WAIT_DMA_ADDR] = WLAN_FUNC_GET_WAIT_MAX,
++		[WLAN_FUNC_GET_WAIT_RING_SIZE] = WLAN_FUNC_GET_WAIT_MAX,
++		[WLAN_FUNC_GET_WAIT_NPU_SUPPORT_MAP] = WLAN_FUNC_GET_WAIT_MAX,
++		[WLAN_FUNC_GET_WAIT_MDC_LOCK_ADDRESS] = WLAN_FUNC_GET_WAIT_MAX,
++		[WLAN_FUNC_GET_WAIT_NPU_VERSION] = WLAN_FUNC_GET_WAIT_MAX,
++	},
++	[NPU_V2] = {
++		[WLAN_FUNC_GET_WAIT_NPU_INFO] = WLAN_FUNC_GET_WAIT_NPU_INFO,
++		[WLAN_FUNC_GET_WAIT_LAST_RATE] = WLAN_FUNC_GET_WAIT_LAST_RATE,
++		[WLAN_FUNC_GET_WAIT_COUNTER] = WLAN_FUNC_GET_WAIT_COUNTER,
++		[WLAN_FUNC_GET_WAIT_DBG_COUNTER] = WLAN_FUNC_GET_WAIT_DBG_COUNTER,
++		[WLAN_FUNC_GET_WAIT_RXDESC_BASE] = WLAN_FUNC_GET_WAIT_RXDESC_BASE,
++		[WLAN_FUNC_GET_WAIT_WCID_DBG_COUNTER] = WLAN_FUNC_GET_WAIT_WCID_DBG_COUNTER,
++		[WLAN_FUNC_GET_WAIT_DMA_ADDR] = WLAN_FUNC_GET_WAIT_DMA_ADDR,
++		[WLAN_FUNC_GET_WAIT_RING_SIZE] = WLAN_FUNC_GET_WAIT_RING_SIZE,
++		[WLAN_FUNC_GET_WAIT_NPU_SUPPORT_MAP] = WLAN_FUNC_GET_WAIT_NPU_SUPPORT_MAP,
++		[WLAN_FUNC_GET_WAIT_MDC_LOCK_ADDRESS] = WLAN_FUNC_GET_WAIT_MDC_LOCK_ADDRESS,
++		[WLAN_FUNC_GET_WAIT_NPU_VERSION] = WLAN_FUNC_GET_WAIT_NPU_VERSION,
++	},
++};
++
++static const s32 VERSIONS_SET_WAIT[2][50] = {
++	[NPU_V1] = {
++		[WLAN_FUNC_SET_WAIT_PCIE_ADDR] = WLAN_FUNC_SET_WAIT_PCIE_ADDR,
++		[WLAN_FUNC_SET_WAIT_DESC] = WLAN_FUNC_SET_WAIT_DESC,
++		[WLAN_FUNC_SET_WAIT_NPU_INIT_DONE] = WLAN_FUNC_SET_WAIT_NPU_INIT_DONE,
++		[WLAN_FUNC_SET_WAIT_TRAN_TO_CPU] = WLAN_FUNC_SET_WAIT_TRAN_TO_CPU,
++		[WLAN_FUNC_SET_WAIT_BA_WIN_SIZE] = WLAN_FUNC_SET_WAIT_BA_WIN_SIZE,
++		[WLAN_FUNC_SET_WAIT_DRIVER_MODEL] = WLAN_FUNC_SET_WAIT_DRIVER_MODEL,
++		[WLAN_FUNC_SET_WAIT_DEL_STA] = WLAN_FUNC_SET_WAIT_DEL_STA,
++		// [WLAN_FUNC_SET_WAIT_DRAM_BA_ENTRY_ADDR] = WLAN_FUNC_SET_WAIT_DRAM_BA_ENTRY_ADDR,
++		[WLAN_FUNC_SET_WAIT_DRAM_BA_NODE_ADDR] = WLAN_FUNC_SET_WAIT_DRAM_BA_NODE_ADDR + 1,
++		[WLAN_FUNC_SET_WAIT_PKT_BUF_ADDR] = WLAN_FUNC_SET_WAIT_PKT_BUF_ADDR + 1,
++		[WLAN_FUNC_SET_WAIT_IS_TEST_NOBA] = WLAN_FUNC_SET_WAIT_IS_TEST_NOBA + 1,
++		[WLAN_FUNC_SET_WAIT_FLUSHONE_TIMEOUT] = WLAN_FUNC_SET_WAIT_FLUSHONE_TIMEOUT + 1,
++		[WLAN_FUNC_SET_WAIT_FLUSHALL_TIMEOUT] = WLAN_FUNC_SET_WAIT_FLUSHALL_TIMEOUT + 1,
++		[WLAN_FUNC_SET_WAIT_IS_FORCE_TO_CPU] = WLAN_FUNC_SET_WAIT_IS_FORCE_TO_CPU + 1,
++		[WLAN_FUNC_SET_WAIT_PCIE_STATE] = WLAN_FUNC_SET_WAIT_PCIE_STATE + 1,
++		[WLAN_FUNC_SET_WAIT_PCIE_PORT_TYPE] = WLAN_FUNC_SET_WAIT_PCIE_PORT_TYPE + 1,
++		[WLAN_FUNC_SET_WAIT_ERROR_RETRY_TIMES] = WLAN_FUNC_SET_WAIT_ERROR_RETRY_TIMES + 1,
++		[WLAN_FUNC_SET_WAIT_BAR_INFO] = WLAN_FUNC_SET_WAIT_BAR_INFO + 1,
++
++		/* v1 NPU not supported this calls */
++		[WLAN_FUNC_SET_WAIT_FAST_FLAG] = WLAN_FUNC_SET_WAIT_MAX,
++		[WLAN_FUNC_SET_WAIT_NPU_BAND0_ONCPU] = WLAN_FUNC_SET_WAIT_MAX,
++		[WLAN_FUNC_SET_WAIT_TX_RING_PCIE_ADDR] = WLAN_FUNC_SET_WAIT_MAX,
++		[WLAN_FUNC_SET_WAIT_TX_DESC_HW_BASE] = WLAN_FUNC_SET_WAIT_MAX,
++		[WLAN_FUNC_SET_WAIT_TX_BUF_SPACE_HW_BASE] = WLAN_FUNC_SET_WAIT_MAX,
++		[WLAN_FUNC_SET_WAIT_RX_RING_FOR_TXDONE_HW_BASE] = WLAN_FUNC_SET_WAIT_MAX,
++		[WLAN_FUNC_SET_WAIT_TX_PKT_BUF_ADDR] = WLAN_FUNC_SET_WAIT_MAX,
++		[WLAN_FUNC_SET_WAIT_INODE_TXRX_REG_ADDR] = WLAN_FUNC_SET_WAIT_MAX,
++		[WLAN_FUNC_SET_WAIT_INODE_DEBUG_FLAG] = WLAN_FUNC_SET_WAIT_MAX,
++		[WLAN_FUNC_SET_WAIT_INODE_HW_CFG_INFO] = WLAN_FUNC_SET_WAIT_MAX,
++		[WLAN_FUNC_SET_WAIT_INODE_STOP_ACTION] = WLAN_FUNC_SET_WAIT_MAX,
++		[WLAN_FUNC_SET_WAIT_INODE_PCIE_SWAP] = WLAN_FUNC_SET_WAIT_MAX,
++		[WLAN_FUNC_SET_WAIT_RATELIMIT_CTRL] = WLAN_FUNC_SET_WAIT_MAX,
++		[WLAN_FUNC_SET_WAIT_HWNAT_INIT] = WLAN_FUNC_SET_WAIT_MAX,
++		[WLAN_FUNC_SET_WAIT_ARHT_CHIP_INFO] = WLAN_FUNC_SET_WAIT_MAX,
++		[WLAN_FUNC_SET_WAIT_TX_BUF_CHECK_ADDR] = WLAN_FUNC_SET_WAIT_MAX,
++		[WLAN_FUNC_SET_WAIT_TOKEN_ID_SIZE] = WLAN_FUNC_SET_WAIT_MAX,
++	},
++	[NPU_V2] = {
++		[WLAN_FUNC_SET_WAIT_PCIE_ADDR] = WLAN_FUNC_SET_WAIT_PCIE_ADDR,
++		[WLAN_FUNC_SET_WAIT_DESC] = WLAN_FUNC_SET_WAIT_DESC,
++		[WLAN_FUNC_SET_WAIT_NPU_INIT_DONE] = WLAN_FUNC_SET_WAIT_NPU_INIT_DONE,
++		[WLAN_FUNC_SET_WAIT_TRAN_TO_CPU] = WLAN_FUNC_SET_WAIT_TRAN_TO_CPU,
++		[WLAN_FUNC_SET_WAIT_BA_WIN_SIZE] = WLAN_FUNC_SET_WAIT_BA_WIN_SIZE,
++		[WLAN_FUNC_SET_WAIT_DRIVER_MODEL] = WLAN_FUNC_SET_WAIT_DRIVER_MODEL,
++		[WLAN_FUNC_SET_WAIT_DEL_STA] = WLAN_FUNC_SET_WAIT_DEL_STA,
++		[WLAN_FUNC_SET_WAIT_DRAM_BA_NODE_ADDR] = WLAN_FUNC_SET_WAIT_DRAM_BA_NODE_ADDR,
++		[WLAN_FUNC_SET_WAIT_PKT_BUF_ADDR] = WLAN_FUNC_SET_WAIT_PKT_BUF_ADDR,
++		[WLAN_FUNC_SET_WAIT_IS_TEST_NOBA] = WLAN_FUNC_SET_WAIT_IS_TEST_NOBA,
++		[WLAN_FUNC_SET_WAIT_FLUSHONE_TIMEOUT] = WLAN_FUNC_SET_WAIT_FLUSHONE_TIMEOUT,
++		[WLAN_FUNC_SET_WAIT_FLUSHALL_TIMEOUT] = WLAN_FUNC_SET_WAIT_FLUSHALL_TIMEOUT,
++		[WLAN_FUNC_SET_WAIT_IS_FORCE_TO_CPU] = WLAN_FUNC_SET_WAIT_IS_FORCE_TO_CPU,
++		[WLAN_FUNC_SET_WAIT_PCIE_STATE] = WLAN_FUNC_SET_WAIT_PCIE_STATE,
++		[WLAN_FUNC_SET_WAIT_PCIE_PORT_TYPE] = WLAN_FUNC_SET_WAIT_PCIE_PORT_TYPE,
++		[WLAN_FUNC_SET_WAIT_ERROR_RETRY_TIMES] = WLAN_FUNC_SET_WAIT_ERROR_RETRY_TIMES,
++		[WLAN_FUNC_SET_WAIT_BAR_INFO] = WLAN_FUNC_SET_WAIT_BAR_INFO,
++		[WLAN_FUNC_SET_WAIT_FAST_FLAG] = WLAN_FUNC_SET_WAIT_FAST_FLAG,
++		[WLAN_FUNC_SET_WAIT_NPU_BAND0_ONCPU] = WLAN_FUNC_SET_WAIT_NPU_BAND0_ONCPU,
++		[WLAN_FUNC_SET_WAIT_TX_RING_PCIE_ADDR] = WLAN_FUNC_SET_WAIT_TX_RING_PCIE_ADDR,
++		[WLAN_FUNC_SET_WAIT_TX_DESC_HW_BASE] = WLAN_FUNC_SET_WAIT_TX_DESC_HW_BASE,
++		[WLAN_FUNC_SET_WAIT_TX_BUF_SPACE_HW_BASE] = WLAN_FUNC_SET_WAIT_TX_BUF_SPACE_HW_BASE,
++		[WLAN_FUNC_SET_WAIT_RX_RING_FOR_TXDONE_HW_BASE] = WLAN_FUNC_SET_WAIT_RX_RING_FOR_TXDONE_HW_BASE,
++		[WLAN_FUNC_SET_WAIT_TX_PKT_BUF_ADDR] = WLAN_FUNC_SET_WAIT_TX_PKT_BUF_ADDR,
++		[WLAN_FUNC_SET_WAIT_INODE_TXRX_REG_ADDR] = WLAN_FUNC_SET_WAIT_INODE_TXRX_REG_ADDR,
++		[WLAN_FUNC_SET_WAIT_INODE_DEBUG_FLAG] = WLAN_FUNC_SET_WAIT_INODE_DEBUG_FLAG,
++		[WLAN_FUNC_SET_WAIT_INODE_HW_CFG_INFO] = WLAN_FUNC_SET_WAIT_INODE_HW_CFG_INFO,
++		[WLAN_FUNC_SET_WAIT_INODE_STOP_ACTION] = WLAN_FUNC_SET_WAIT_INODE_STOP_ACTION,
++		[WLAN_FUNC_SET_WAIT_INODE_PCIE_SWAP] = WLAN_FUNC_SET_WAIT_INODE_PCIE_SWAP,
++		[WLAN_FUNC_SET_WAIT_RATELIMIT_CTRL] = WLAN_FUNC_SET_WAIT_RATELIMIT_CTRL,
++		[WLAN_FUNC_SET_WAIT_HWNAT_INIT] = WLAN_FUNC_SET_WAIT_HWNAT_INIT,
++		[WLAN_FUNC_SET_WAIT_ARHT_CHIP_INFO] = WLAN_FUNC_SET_WAIT_ARHT_CHIP_INFO,
++		[WLAN_FUNC_SET_WAIT_TX_BUF_CHECK_ADDR] = WLAN_FUNC_SET_WAIT_TX_BUF_CHECK_ADDR,
++		[WLAN_FUNC_SET_WAIT_TOKEN_ID_SIZE] = WLAN_FUNC_SET_WAIT_TOKEN_ID_SIZE,
++	},
+ };
+ 
+ #define MBOX_MSG_FUNC_ID	GENMASK(14, 11)
+@@ -168,6 +282,9 @@ static int airoha_npu_send_msg(struct ai
+ 	dma_addr_t dma_addr;
+ 	int ret;
+ 
++	if (npu->soc_data->version == NPU_V1 && func_id >= NPU_FUNC_DBA)
++		return -EOPNOTSUPP;
++
+ 	dma_addr = dma_map_single(npu->dev, p, size, DMA_TO_DEVICE);
+ 	ret = dma_mapping_error(npu->dev, dma_addr);
+ 	if (ret)
+@@ -253,7 +370,7 @@ static int airoha_npu_run_firmware(struc
+ 	if (!soc)
+ 		return -EINVAL;
+ 
+-	addr = devm_ioremap(dev, rmem->base, rmem->size);
++	addr = devm_memremap(dev, rmem->base, rmem->size, MEMREMAP_WB);
+ 	if (IS_ERR(addr))
+ 		return PTR_ERR(addr);
+ 
+@@ -278,6 +395,7 @@ static int airoha_npu_run_firmware(struc
+ static irqreturn_t airoha_npu_mbox_handler(int irq, void *npu_instance)
+ {
+ 	struct airoha_npu *npu = npu_instance;
++	dev_info(npu->dev, "mbox handle: irq %d", irq);
+ 
+ 	/* clear mbox interrupt status */
+ 	regmap_write(npu->regmap, REG_CR_MBOX_INT_STATUS,
+@@ -306,7 +424,7 @@ static void airoha_npu_wdt_work(struct w
+ 		return;
+ 
+ 	c = core - &npu->cores[0];
+-	regmap_bulk_read(npu->regmap, REG_PC_DBG(c), val, ARRAY_SIZE(val));
++	regmap_bulk_read(npu->regmap, REG_PC_DBG(npu->soc_data, c), val, ARRAY_SIZE(val));
+ 	snprintf(dump, NPU_DUMP_SIZE, "PC: %08x SP: %08x LR: %08x\n",
+ 		 val[0], val[1], val[2]);
+ 
+@@ -464,6 +582,8 @@ static int airoha_npu_wlan_msg_send(stru
+ {
+ 	struct wlan_mbox_data *wlan_data;
+ 	int err, len;
++	if (VERSIONS_SET_WAIT[npu->soc_data->version][func_id] == WLAN_FUNC_SET_WAIT_MAX)
++		return -EOPNOTSUPP;
+ 
+ 	len = sizeof(*wlan_data) + data_len;
+ 	wlan_data = kzalloc(len, gfp);
+@@ -472,7 +592,7 @@ static int airoha_npu_wlan_msg_send(stru
+ 
+ 	wlan_data->ifindex = ifindex;
+ 	wlan_data->func_type = NPU_OP_SET;
+-	wlan_data->func_id = func_id;
++	wlan_data->func_id = VERSIONS_SET_WAIT[npu->soc_data->version][func_id];
+ 	memcpy(wlan_data->d, data, data_len);
+ 
+ 	err = airoha_npu_send_msg(npu, NPU_FUNC_WIFI, wlan_data, len);
+@@ -488,6 +608,10 @@ static int airoha_npu_wlan_msg_get(struc
+ 	struct wlan_mbox_data *wlan_data;
+ 	int err, len;
+ 
++	dev_info(npu->dev, "wlan get msg: id %d, core %d, body size %d", func_id, ifindex, data_len);
++	if (VERSIONS_GET_WAIT[npu->soc_data->version][func_id] == WLAN_FUNC_GET_WAIT_MAX)
++		return -EOPNOTSUPP;
++
+ 	len = sizeof(*wlan_data) + data_len;
+ 	wlan_data = kzalloc(len, gfp);
+ 	if (!wlan_data)
+@@ -495,7 +619,7 @@ static int airoha_npu_wlan_msg_get(struc
+ 
+ 	wlan_data->ifindex = ifindex;
+ 	wlan_data->func_type = NPU_OP_GET;
+-	wlan_data->func_id = func_id;
++	wlan_data->func_id = VERSIONS_GET_WAIT[npu->soc_data->version][func_id];
+ 
+ 	err = airoha_npu_send_msg(npu, NPU_FUNC_WIFI, wlan_data, len);
+ 	if (!err)
+@@ -531,25 +655,24 @@ static int airoha_npu_wlan_init_memory(s
+ 	u32 val = 0;
+ 	int err;
+ 
+-	err = airoha_npu_wlan_msg_send(npu, 1, cmd, &val, sizeof(val),
+-				       GFP_KERNEL);
+-	if (err)
+-		return err;
+-
+-	cmd = WLAN_FUNC_SET_WAIT_TX_BUF_CHECK_ADDR;
+-	err = airoha_npu_wlan_set_reserved_memory(npu, 0, "tx-bufid", cmd);
+-	if (err)
+-		return err;
++	if (npu->soc_data->version >= NPU_V2) {
++		err = airoha_npu_wlan_msg_send(npu, 1, cmd, &val, sizeof(val),
++					       GFP_KERNEL);
++		if (err)
++			return err;
++	}
+ 
+ 	cmd = WLAN_FUNC_SET_WAIT_PKT_BUF_ADDR;
+ 	err = airoha_npu_wlan_set_reserved_memory(npu, 0, "pkt", cmd);
+ 	if (err)
+ 		return err;
+ 
+-	cmd = WLAN_FUNC_SET_WAIT_TX_PKT_BUF_ADDR;
+-	err = airoha_npu_wlan_set_reserved_memory(npu, 0, "tx-pkt", cmd);
+-	if (err)
+-		return err;
++	if (npu->soc_data->version >= NPU_V2) {
++		cmd = WLAN_FUNC_SET_WAIT_TX_PKT_BUF_ADDR;
++		err = airoha_npu_wlan_set_reserved_memory(npu, 0, "tx-pkt", cmd);
++		if (err)
++			return err;
++	}
+ 
+ 	if (of_property_match_string(npu->dev->of_node, "memory-region-names",
+ 				     "ba") >= 0) {
+@@ -607,7 +730,6 @@ struct airoha_npu *airoha_npu_get(struct
+ 		return ERR_PTR(-ENODEV);
+ 
+ 	pdev = of_find_device_by_node(np);
+-
+ 	if (!pdev) {
+ 		dev_err(dev, "cannot find device node %s\n", np->name);
+ 		of_node_put(np);
+@@ -653,7 +775,82 @@ void airoha_npu_put(struct airoha_npu *n
+ }
+ EXPORT_SYMBOL_GPL(airoha_npu_put);
+ 
++static void airoha_boot_core_v1(struct airoha_npu *npu, struct reserved_mem *rmem) {
++	u32 val, coreToStop;
++	coreToStop = of_property_read_bool(npu->dev->of_node, "core_to_stop");
++	if (coreToStop)
++		of_property_read_u32(npu->dev->of_node, "core_to_stop", &coreToStop);
++
++	/* setting booting address */
++	for (int core = 0; core < npu->soc_data->max_cores; core++) {
++		regmap_write(npu->regmap, REG_CR_BOOT_BASE(npu->soc_data, core), rmem->base);
++		usleep_range(1000, 2000);
++
++		if (core == 0) {
++			regmap_write(npu->regmap, REG_CR_BOOT_CONFIG(npu->soc_data), 0x1);
++			regmap_write(npu->regmap, REG_CR_BOOT_TRIGGER(npu->soc_data), 0x1);
++		} else {
++			regmap_read(npu->regmap, REG_CR_BOOT_CONFIG(npu->soc_data), &val);
++			val &= 0xff;          // keep old enabled bits
++			val |= (0x1<<core);   // add new enable bit for CoreX
++			val |= (0x100<<core); // add reboot bit for CoreX
++			regmap_write(npu->regmap, REG_CR_BOOT_CONFIG(npu->soc_data), val);
++			regmap_write(npu->regmap, REG_CR_BOOT_TRIGGER(npu->soc_data), 0x2);
++		}
++
++		msleep(100);
++		if (coreToStop == core+1)
++			break;
++	}
++}
++
++static void airoha_boot_core_v2(struct airoha_npu *npu, struct reserved_mem *rmem) {
++	/* setting booting address */
++	for (int i = 0; i < npu->soc_data->max_cores; i++)
++		regmap_write(npu->regmap, REG_CR_BOOT_BASE(npu->soc_data, i), rmem->base);
++	usleep_range(1000, 2000);
++
++	/* enable NPU cores */
++	regmap_write(npu->regmap, REG_CR_BOOT_CONFIG(npu->soc_data), 0xff);
++	regmap_write(npu->regmap, REG_CR_BOOT_TRIGGER(npu->soc_data), 0x1);
++	msleep(100);
++}
++
++static bool isFpga(struct regmap *scuclk)
++{
++	u32 isFPGA;
++	regmap_read(scuclk, 0x9c, &isFPGA);
++	return (isFPGA & 0x1) == 0;
++}
++static int l2CSramSize(struct regmap *scuclk)
++{
++	u32 l2c_sram_size;
++	regmap_read(scuclk, 0x280, &l2c_sram_size);
++	return l2c_sram_size;
++}
++
++static const struct airoha_npu_soc_data en7523_npu_soc_data = {
++	.version = NPU_V1,
++	.max_cores = 4,
++	.cluster_base_addr = 0x308000,
++	.pc_base_addr = 0x308800,
++	.boot_core = airoha_boot_core_v1,
++	.fw_rv32 = {
++		.name = NPU_EN7523_FIRMWARE_RV32,
++		.max_size = NPU_EN7581_FIRMWARE_RV32_MAX_SIZE,
++	},
++	.fw_data = {
++		.name = NPU_EN7523_FIRMWARE_DATA,
++		.max_size = NPU_EN7581_FIRMWARE_DATA_MAX_SIZE,
++	},
++};
++
+ static const struct airoha_npu_soc_data en7581_npu_soc_data = {
++	.version = NPU_V2,
++	.max_cores = 8,
++	.cluster_base_addr = 0x306000,
++	.pc_base_addr = 0x305000,
++	.boot_core = airoha_boot_core_v2,
+ 	.fw_rv32 = {
+ 		.name = NPU_EN7581_FIRMWARE_RV32,
+ 		.max_size = NPU_EN7581_FIRMWARE_RV32_MAX_SIZE,
+@@ -665,6 +862,11 @@ static const struct airoha_npu_soc_data
+ };
+ 
+ static const struct airoha_npu_soc_data an7583_npu_soc_data = {
++	.version = NPU_V2,
++	.max_cores = 8,
++	.cluster_base_addr = 0x306000,
++	.pc_base_addr = 0x305000,
++	.boot_core = airoha_boot_core_v2,
+ 	.fw_rv32 = {
+ 		.name = NPU_AN7583_FIRMWARE_RV32,
+ 		.max_size = NPU_EN7581_FIRMWARE_RV32_MAX_SIZE,
+@@ -676,6 +878,7 @@ static const struct airoha_npu_soc_data
+ };
+ 
+ static const struct of_device_id of_airoha_npu_match[] = {
++	{ .compatible = "airoha,en7523-npu", .data = &en7523_npu_soc_data },
+ 	{ .compatible = "airoha,en7581-npu", .data = &en7581_npu_soc_data },
+ 	{ .compatible = "airoha,an7583-npu", .data = &an7583_npu_soc_data },
+ 	{ /* sentinel */ }
+@@ -698,7 +901,7 @@ static int airoha_npu_probe(struct platf
+ 	struct device_node *np;
+ 	void __iomem *base;
+ 	int i, irq, err;
+-	u32 val;
++	u32 l2c_sram_size, isFPGA;
+ 
+ 	base = devm_platform_ioremap_resource(pdev, 0);
+ 	if (IS_ERR(base))
+@@ -708,6 +911,10 @@ static int airoha_npu_probe(struct platf
+ 	if (!npu)
+ 		return -ENOMEM;
+ 
++	npu->soc_data = of_device_get_match_data(dev);
++	if (!npu->soc_data)
++		return -ENODEV;
++
+ 	npu->dev = dev;
+ 	npu->ops.ppe_init = airoha_npu_ppe_init;
+ 	npu->ops.ppe_deinit = airoha_npu_ppe_deinit;
+@@ -737,73 +944,96 @@ static int airoha_npu_probe(struct platf
+ 	if (!rmem)
+ 		return -ENODEV;
+ 
++	np = of_parse_phandle(dev->of_node, "airoha,scu", 0);
++	if (!np)
++		return dev_err_probe(dev, -EINVAL, "cannot get scuclk");
++
++	npu->scu_regmap = syscon_node_to_regmap(np);
++	of_node_put(np);
++	if (IS_ERR(npu->scu_regmap))
++		return PTR_ERR(npu->scu_regmap);
++
++	isFPGA = isFpga(npu->scu_regmap);
++	l2c_sram_size = l2CSramSize(npu->scu_regmap);
++	dev_info(dev, "L2C sram: 0x%02x, FPGA Stage: %d", l2c_sram_size, isFPGA);
++
++	npu->cores = devm_kzalloc(&pdev->dev,
++				npu->soc_data->max_cores * sizeof(*npu->cores),
++				GFP_KERNEL);
++	if (!npu->cores)
++		return -ENOMEM;
++
+ 	irq = platform_get_irq(pdev, 0);
+ 	if (irq < 0)
+ 		return irq;
+ 
++	// NPU mbox host irq
+ 	err = devm_request_irq(dev, irq, airoha_npu_mbox_handler,
+ 			       IRQF_SHARED, "airoha-npu-mbox", npu);
+ 	if (err)
+ 		return err;
+ 
+-	for (i = 0; i < ARRAY_SIZE(npu->cores); i++) {
+-		struct airoha_npu_core *core = &npu->cores[i];
+-
+-		spin_lock_init(&core->lock);
+-		core->npu = npu;
+-
++	/* wlan IRQ lines */
++	for (i = 0; i < ARRAY_SIZE(npu->irqs); i++) {
+ 		irq = platform_get_irq(pdev, i + 1);
+ 		if (irq < 0)
+ 			return irq;
+ 
+-		err = devm_request_irq(dev, irq, airoha_npu_wdt_handler,
+-				       IRQF_SHARED, "airoha-npu-wdt", core);
++		npu->irqs[i] = irq;
++	}
++
++	if (npu->soc_data->version >= NPU_V2) {
++		err = dma_set_coherent_mask(dev, 0xbfffffff /*DMA_BIT_MASK(32)*/);
+ 		if (err)
+-			return err;
++			return dev_err_probe(dev, err, "No usable coherent DMA configuration");
+ 
+-		INIT_WORK(&core->wdt_work, airoha_npu_wdt_work);
+-	}
++		for (i = 0; i < npu->soc_data->max_cores; i++) {
++			struct airoha_npu_core *core = &npu->cores[i];
+ 
+-	/* wlan IRQ lines */
+-	for (i = 0; i < ARRAY_SIZE(npu->irqs); i++) {
+-		irq = platform_get_irq(pdev, i + ARRAY_SIZE(npu->cores) + 1);
+-		if (irq < 0)
+-			return irq;
++			spin_lock_init(&core->lock);
++			core->npu = npu;
+ 
+-		npu->irqs[i] = irq;
+-	}
++			irq = platform_get_irq(pdev, i + npu->soc_data->max_cores + 1);
++			if (irq < 0)
++				return irq;
+ 
+-	err = dma_set_coherent_mask(dev, DMA_BIT_MASK(32));
+-	if (err)
+-		return err;
++			err = devm_request_irq(dev, irq, airoha_npu_wdt_handler,
++					       IRQF_SHARED, "airoha-npu-wdt", core);
++			if (err)
++				return err;
++
++			INIT_WORK(&core->wdt_work, airoha_npu_wdt_work);
++		}
++	}
+ 
+ 	err = airoha_npu_run_firmware(dev, base, rmem);
+ 	if (err)
+ 		return dev_err_probe(dev, err, "failed to run npu firmware\n");
+ 
++	// set npu info needed
+ 	regmap_write(npu->regmap, REG_CR_NPU_MIB(10),
+-		     rmem->base + NPU_EN7581_FIRMWARE_RV32_MAX_SIZE);
+-	regmap_write(npu->regmap, REG_CR_NPU_MIB(11), 0x40000); /* SRAM 256K */
+-	regmap_write(npu->regmap, REG_CR_NPU_MIB(12), 0);
+-	regmap_write(npu->regmap, REG_CR_NPU_MIB(21), 1);
++		     ((unsigned int)rmem->base) + npu->soc_data->fw_rv32.max_size);
++	regmap_write(npu->regmap, REG_CR_NPU_MIB(11), l2c_sram_size);
++	regmap_write(npu->regmap, REG_CR_NPU_MIB(12), isFPGA);
++	regmap_write(npu->regmap, REG_CR_NPU_MIB(21),
++		!of_property_present(dev->of_node, "airoha,enable_npu_tx_uart"));
+ 	msleep(100);
+ 
+-	/* setting booting address */
+-	for (i = 0; i < NPU_NUM_CORES; i++)
+-		regmap_write(npu->regmap, REG_CR_BOOT_BASE(i), rmem->base);
+-	usleep_range(1000, 2000);
+-
+-	/* enable NPU cores */
+-	regmap_write(npu->regmap, REG_CR_BOOT_CONFIG, 0xff);
+-	regmap_write(npu->regmap, REG_CR_BOOT_TRIGGER, 0x1);
+-	msleep(100);
+-
+-	if (!airoha_npu_wlan_msg_get(npu, 0, WLAN_FUNC_GET_WAIT_NPU_VERSION,
+-				     &val, sizeof(val), GFP_KERNEL))
+-		dev_info(dev, "NPU fw version: %0d.%d\n",
+-			 (val >> 16) & 0xffff, val & 0xffff);
++	/* setting booting address and enable NPU cores */
++	npu->soc_data->boot_core(npu, rmem);
+ 
+ 	platform_set_drvdata(pdev, npu);
++	msleep(400);
++
++	// Get NPU Version
++	int npu_version;
++	err = airoha_npu_wlan_msg_get(npu, 0, WLAN_FUNC_GET_WAIT_NPU_VERSION, &npu_version, sizeof(npu_version), GFP_KERNEL);
++	if (!err)
++		dev_info(npu->dev, "Airoha NPU fw version: v%0d.%0d (0x%x)\n", (npu_version >> 16) & 0xffff, npu_version & 0xffff, npu_version);
++	else if (err == -EOPNOTSUPP)
++		dev_info(npu->dev, "NPU not support get version");
++	else
++		dev_err(npu->dev, "cannot get NPU Version, error %d", err);
+ 
+ 	return 0;
+ }
+@@ -813,7 +1043,7 @@ static void airoha_npu_remove(struct pla
+ 	struct airoha_npu *npu = platform_get_drvdata(pdev);
+ 	int i;
+ 
+-	for (i = 0; i < ARRAY_SIZE(npu->cores); i++)
++	for (i = 0; i < npu->soc_data->max_cores; i++)
+ 		cancel_work_sync(&npu->cores[i].wdt_work);
+ }
+ 
+@@ -827,6 +1057,8 @@ static struct platform_driver airoha_npu
+ };
+ module_platform_driver(airoha_npu_driver);
+ 
++MODULE_FIRMWARE(NPU_EN7523_FIRMWARE_DATA);
++MODULE_FIRMWARE(NPU_EN7523_FIRMWARE_RV32);
+ MODULE_FIRMWARE(NPU_EN7581_FIRMWARE_DATA);
+ MODULE_FIRMWARE(NPU_EN7581_FIRMWARE_RV32);
+ MODULE_FIRMWARE(NPU_EN7581_7996_FIRMWARE_DATA);
+--- a/include/linux/soc/airoha/airoha_offload.h
++++ b/include/linux/soc/airoha/airoha_offload.h
+@@ -65,7 +65,6 @@ static inline void airoha_ppe_dev_check_
+ }
+ #endif
+ 
+-#define NPU_NUM_CORES		8
+ #define NPU_NUM_IRQ		6
+ #define NPU_RX0_DESC_NUM	512
+ #define NPU_RX1_DESC_NUM	512
+@@ -112,6 +111,11 @@ struct airoha_npu_tx_dma_desc {
+ 	u8 txwi[NPU_TXWI_LEN];
+ } __packed;
+ 
++enum airoha_npu_version {
++	NPU_V1,
++	NPU_V2,
++};
++
+ enum airoha_npu_wlan_set_cmd {
+ 	WLAN_FUNC_SET_WAIT_PCIE_ADDR,
+ 	WLAN_FUNC_SET_WAIT_DESC,
+@@ -147,6 +151,8 @@ enum airoha_npu_wlan_set_cmd {
+ 	WLAN_FUNC_SET_WAIT_ARHT_CHIP_INFO,
+ 	WLAN_FUNC_SET_WAIT_TX_BUF_CHECK_ADDR,
+ 	WLAN_FUNC_SET_WAIT_TOKEN_ID_SIZE,
++
++	WLAN_FUNC_SET_WAIT_MAX = 0xffff,
+ };
+ 
+ enum airoha_npu_wlan_get_cmd {
+@@ -161,19 +167,37 @@ enum airoha_npu_wlan_get_cmd {
+ 	WLAN_FUNC_GET_WAIT_NPU_SUPPORT_MAP,
+ 	WLAN_FUNC_GET_WAIT_MDC_LOCK_ADDRESS,
+ 	WLAN_FUNC_GET_WAIT_NPU_VERSION,
++
++	WLAN_FUNC_GET_WAIT_MAX = 0xffff,
++};
++
++enum airoha_npu_v1_drive_model {
++	WLAN_MT7915A,
++	WLAN_MT7915D,
++	WLAN_MT7916_DBDC,
++};
++
++enum airoha_npu_v1_port_type {
++	WLAN_PORT0,
++	WLAN_PORT1,
++	WLAN_PORT00,
++	WLAN_PORT01,
+ };
+ 
+ struct airoha_npu {
+ #if (IS_BUILTIN(CONFIG_NET_AIROHA_NPU) || IS_MODULE(CONFIG_NET_AIROHA_NPU))
+ 	struct device *dev;
+ 	struct regmap *regmap;
++	struct regmap *scu_regmap;
++
++	const struct airoha_npu_soc_data *soc_data;
+ 
+ 	struct airoha_npu_core {
+ 		struct airoha_npu *npu;
+ 		/* protect concurrent npu memory accesses */
+ 		spinlock_t lock;
+ 		struct work_struct wdt_work;
+-	} cores[NPU_NUM_CORES];
++	} *cores;
+ 
+ 	int irqs[NPU_NUM_IRQ];
+ 
