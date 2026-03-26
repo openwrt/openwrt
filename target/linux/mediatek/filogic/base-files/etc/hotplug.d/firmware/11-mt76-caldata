@@ -9,23 +9,25 @@ board=$(board_name)
 case "$FIRMWARE" in
 "mediatek/mt7981_eeprom_mt7976_dbdc.bin")
 	case "$board" in
-	mercusys,mr80x-v3|\
-	mercusys,mr85x)
+	mercusys,mr80x-v3)
 		ln -sf /tmp/tp_data/MT7981_EEPROM.bin \
 			/lib/firmware/$FIRMWARE
 		;;
-	tplink,fr365-v1)
-		ln -sf /tmp/wlan/radio /lib/firmware/$FIRMWARE
+	ubnt,unifi-6-plus)
+		caldata_extract_mmc "factory" 0x0 0x1000
 		;;
 	esac
 	;;
 "mediatek/mt7986_eeprom_mt7975_dual.bin")
 	case "$board" in
 	mercusys,mr90x-v1|\
-	tplink,archer-ax80-v1-eu|\
 	tplink,re6000xd)
 		ln -sf /tmp/tp_data/MT7986_EEPROM.bin \
 			/lib/firmware/$FIRMWARE
+		;;
+	tplink,vx830v)
+		dd if=/tmp/misc_ro/0x003A0000 of=/lib/firmware/$FIRMWARE \
+			bs=4096 count=1 2>/dev/null
 		;;
 	esac
 	;;
@@ -33,17 +35,6 @@ case "$FIRMWARE" in
 	case "$board" in
 	tplink,archer-ax80-v1)
 		ln -sf /tmp/tp_data/MT7986_EEPROM.bin \
-			/lib/firmware/$FIRMWARE
-		;;
-	tplink,eap683-lr)
-		ln -sf /tmp/factory/radio /lib/firmware/$FIRMWARE
-		;;
-	esac
-	;;
-"mediatek/mt7996/mt7992_eeprom.bin")
-	case "$board" in
-	tplink,be450)
-		ln -sf /tmp/tp_data/MT7992_EEPROM.bin \
 			/lib/firmware/$FIRMWARE
 		;;
 	esac
