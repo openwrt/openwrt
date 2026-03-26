@@ -16,29 +16,29 @@
 		#size-cells = <1>;
 		ranges;
 
-		npu_binary@84000000 {
+		atf@80000000 {
 			no-map;
-			reg = <0x84000000 0xA00000>;
+			reg = <0x80000000 0x40000>;
 		};
 
-		npu_flag@84B0000 {
+		npu_binary: npu_binary@84000000 {
 			no-map;
-			reg = <0x84B00000 0x100000>;
+			reg = <0x84000000 0x100000>;
 		};
 
-		npu_pkt@85000000 {
+		qdma0_buf: qdma0-buf@84100000 {
 			no-map;
-			reg = <0x85000000 0x1A00000>;
+			reg = <0x84100000 0x400000>;
 		};
 
-		npu_phyaddr@86B00000 {
+		qdma1_buf: qdma1-buf@84900000 {
 			no-map;
-			reg = <0x86B00000 0x100000>;
+			reg = <0x84900000 0x400000>;
 		};
 
-		npu_rxdesc@86D00000 {
+		npu_pkt: npu-pkt@84d00000 {
 			no-map;
-			reg = <0x86D00000 0x100000>;
+			reg = <0x84d00000 0x1600000>;
 		};
 	};
 
@@ -105,6 +105,18 @@
 		      <0x09500000 0x2000>,
 		      <0x09600000 0x20000>;
 		interrupts = <GIC_PPI 9 IRQ_TYPE_LEVEL_LOW>;
+
+		its: gic-its@09020000 {
+			compatible = "arm,gic-v3-its";
+			msi-controller;
+			#msi-cell = <1>;
+			reg = <0x090200000 0x20000>;
+		};
+	};
+
+	pmu {
+		compatible = "arm,cortex-a15-pmu";
+		interrupts = <GIC_PPI 7 IRQ_TYPE_LEVEL_HIGH>;
 	};
 
 	timer {
