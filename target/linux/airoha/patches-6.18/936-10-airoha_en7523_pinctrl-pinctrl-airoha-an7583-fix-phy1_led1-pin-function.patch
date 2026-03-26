@@ -1,0 +1,31 @@
+From e6418fae5b22796fe9bb588040aa366e88ccbc2c Mon Sep 17 00:00:00 2001
+From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Date: Sun, 7 Jun 2026 03:16:46 +0300
+Subject: [PATCH 10/19] pinctrl: airoha: an7583: fix phy1_led1 pin function
+
+phy1_led1 pin function wrongly refers to gpio1 instead of gpio11.
+Fix it.
+
+Fixes: 3ffeb17a9a27 ("pinctrl: airoha: add support for Airoha AN7583 PINs")
+Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/pinctrl/mediatek/pinctrl-airoha.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/pinctrl/mediatek/pinctrl-airoha.c b/drivers/pinctrl/mediatek/pinctrl-airoha.c
+index 45f710368..6dee63e0b 100644
+--- a/drivers/pinctrl/mediatek/pinctrl-airoha.c
++++ b/drivers/pinctrl/mediatek/pinctrl-airoha.c
+@@ -1794,7 +1794,7 @@ static const struct airoha_pinctrl_func_group an7583_phy1_led1_func_group[] = {
+ 				LAN1_LED_MAPPING_MASK, LAN1_PHY_LED_MAP(0)),
+ 	AIROHA_PINCTRL_PHY_LED1("gpio10", GPIO_LAN2_LED1_MODE_MASK,
+ 				LAN2_LED_MAPPING_MASK, LAN2_PHY_LED_MAP(0)),
+-	AIROHA_PINCTRL_PHY_LED1("gpio1", GPIO_LAN3_LED1_MODE_MASK,
++	AIROHA_PINCTRL_PHY_LED1("gpio11", GPIO_LAN3_LED1_MODE_MASK,
+ 				LAN3_LED_MAPPING_MASK, LAN3_PHY_LED_MAP(0)),
+ };
+ 
+-- 
+2.54.0
+

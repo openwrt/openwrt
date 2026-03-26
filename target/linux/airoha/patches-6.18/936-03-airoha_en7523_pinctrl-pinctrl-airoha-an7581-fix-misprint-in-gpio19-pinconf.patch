@@ -1,0 +1,59 @@
+From ddecf875d6bbfe96cf35a1ed88ec4a0418d84acb Mon Sep 17 00:00:00 2001
+From: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Date: Sun, 7 Jun 2026 03:16:39 +0300
+Subject: [PATCH 03/19] pinctrl: airoha: an7581: fix misprint in gpio19 pinconf
+
+Pin 32 (gpio19) duplicate pinconf settings of pin 31. Fix it using
+a proper bit number in the configuration register.
+
+Fixes: 1c8ace2d0725 ("pinctrl: airoha: Add support for EN7581 SoC")
+Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
+Reviewed-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
+Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
+---
+ drivers/pinctrl/mediatek/pinctrl-airoha.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/pinctrl/mediatek/pinctrl-airoha.c b/drivers/pinctrl/mediatek/pinctrl-airoha.c
+index beb0f9c58..81a25786d 100644
+--- a/drivers/pinctrl/mediatek/pinctrl-airoha.c
++++ b/drivers/pinctrl/mediatek/pinctrl-airoha.c
+@@ -1838,7 +1838,7 @@ static const struct airoha_pinctrl_conf en7581_pinctrl_pullup_conf[] = {
+ 	PINCTRL_CONF_DESC(29, REG_GPIO_L_PU, BIT(16)),
+ 	PINCTRL_CONF_DESC(30, REG_GPIO_L_PU, BIT(17)),
+ 	PINCTRL_CONF_DESC(31, REG_GPIO_L_PU, BIT(18)),
+-	PINCTRL_CONF_DESC(32, REG_GPIO_L_PU, BIT(18)),
++	PINCTRL_CONF_DESC(32, REG_GPIO_L_PU, BIT(19)),
+ 	PINCTRL_CONF_DESC(33, REG_GPIO_L_PU, BIT(20)),
+ 	PINCTRL_CONF_DESC(34, REG_GPIO_L_PU, BIT(21)),
+ 	PINCTRL_CONF_DESC(35, REG_GPIO_L_PU, BIT(22)),
+@@ -1955,7 +1955,7 @@ static const struct airoha_pinctrl_conf en7581_pinctrl_pulldown_conf[] = {
+ 	PINCTRL_CONF_DESC(29, REG_GPIO_L_PD, BIT(16)),
+ 	PINCTRL_CONF_DESC(30, REG_GPIO_L_PD, BIT(17)),
+ 	PINCTRL_CONF_DESC(31, REG_GPIO_L_PD, BIT(18)),
+-	PINCTRL_CONF_DESC(32, REG_GPIO_L_PD, BIT(18)),
++	PINCTRL_CONF_DESC(32, REG_GPIO_L_PD, BIT(19)),
+ 	PINCTRL_CONF_DESC(33, REG_GPIO_L_PD, BIT(20)),
+ 	PINCTRL_CONF_DESC(34, REG_GPIO_L_PD, BIT(21)),
+ 	PINCTRL_CONF_DESC(35, REG_GPIO_L_PD, BIT(22)),
+@@ -2072,7 +2072,7 @@ static const struct airoha_pinctrl_conf en7581_pinctrl_drive_e2_conf[] = {
+ 	PINCTRL_CONF_DESC(29, REG_GPIO_L_E2, BIT(16)),
+ 	PINCTRL_CONF_DESC(30, REG_GPIO_L_E2, BIT(17)),
+ 	PINCTRL_CONF_DESC(31, REG_GPIO_L_E2, BIT(18)),
+-	PINCTRL_CONF_DESC(32, REG_GPIO_L_E2, BIT(18)),
++	PINCTRL_CONF_DESC(32, REG_GPIO_L_E2, BIT(19)),
+ 	PINCTRL_CONF_DESC(33, REG_GPIO_L_E2, BIT(20)),
+ 	PINCTRL_CONF_DESC(34, REG_GPIO_L_E2, BIT(21)),
+ 	PINCTRL_CONF_DESC(35, REG_GPIO_L_E2, BIT(22)),
+@@ -2189,7 +2189,7 @@ static const struct airoha_pinctrl_conf en7581_pinctrl_drive_e4_conf[] = {
+ 	PINCTRL_CONF_DESC(29, REG_GPIO_L_E4, BIT(16)),
+ 	PINCTRL_CONF_DESC(30, REG_GPIO_L_E4, BIT(17)),
+ 	PINCTRL_CONF_DESC(31, REG_GPIO_L_E4, BIT(18)),
+-	PINCTRL_CONF_DESC(32, REG_GPIO_L_E4, BIT(18)),
++	PINCTRL_CONF_DESC(32, REG_GPIO_L_E4, BIT(19)),
+ 	PINCTRL_CONF_DESC(33, REG_GPIO_L_E4, BIT(20)),
+ 	PINCTRL_CONF_DESC(34, REG_GPIO_L_E4, BIT(21)),
+ 	PINCTRL_CONF_DESC(35, REG_GPIO_L_E4, BIT(22)),
+-- 
+2.54.0
+
