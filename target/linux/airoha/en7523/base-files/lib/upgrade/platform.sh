@@ -11,6 +11,7 @@ platform_do_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
+		tplink,ex530v-v1 | \
 		tplink,xx230v-v1 | \
 		tplink,xx530v-v1)
 			fit_do_upgrade "$1"

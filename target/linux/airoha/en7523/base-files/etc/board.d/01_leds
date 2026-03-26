@@ -6,6 +6,16 @@ board=$(board_name)
 board_config_update
 
 case $board in
+	tplink,ex530v-v1)
+		ucidef_set_led_netdev "phy0-ap0" "phy0-ap0" "blue:wlan-6" "phy0-ap0" "link tx rx"
+		ucidef_set_led_netdev "phy0-ap0" "phy0-ap0" "blue:wlan-6" "phy1-ap0" "link tx rx"
+		ucidef_set_led_netdev "lan1" "lan1" "blue:lan-3" "lan1" "link tx rx"
+		ucidef_set_led_netdev "lan2" "lan2" "blue:lan-3" "lan2" "link tx rx"
+		ucidef_set_led_netdev "lan3" "lan3" "blue:lan-3" "lan3" "link tx rx"
+		ucidef_set_led_netdev "wan" "wan" "blue:wan-online-1" "wan" "link tx rx"
+		ucidef_set_led_usbdev "usb" "usb" "blue:usb-4" "1-1"
+		ucidef_set_led_default "wan_err" "wan_err" "red:wan-10" "default-off"
+		;;
 	tplink,xx230v-v1 | \
 	tplink,xx530v-v1)
 		ucidef_set_led_netdev "phy0-ap0" "phy0-ap0" "green:wlan-4" "phy0-ap0" "link tx rx"
