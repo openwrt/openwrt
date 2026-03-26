@@ -7,6 +7,12 @@ airoha_setup_interfaces()
 	local board="$1"
 
 	case "$board" in
+		tplink,xx230v-v1 | \
+		tplink,xx530v-v1)
+			# Needs write pon driver to use pon0 with wan interface
+			# ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "pon0"
+			ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+			;;
 		*)
 			echo "Unsupported hardware. Network interfaces not initialized."
 			;;

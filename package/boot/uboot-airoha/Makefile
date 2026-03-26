@@ -25,6 +25,7 @@ define U-Boot/en7523_rfb
   BL2_IMAGE:=en7523-bl2.bin
   BL31_IMAGE:=en7523-bl31.bin
 endef
+UBOOT_TARGETS := en7523_rfb
 
 define U-Boot/an7581_rfb
   NAME:=AN7581 Reference Board
@@ -35,6 +36,7 @@ define U-Boot/an7581_rfb
   BL2_IMAGE:=an7581-bl2.bin
   BL31_IMAGE:=an7581-bl31.bin
 endef
+UBOOT_TARGETS += an7581_rfb
 
 define U-Boot/an7583_rfb
   NAME:=AN7583 Reference Board
@@ -45,6 +47,25 @@ define U-Boot/an7583_rfb
   BL2_IMAGE:=an7583-bl2.bin
   BL31_IMAGE:=an7583-bl31.bin
 endef
+UBOOT_TARGETS += an7583_rfb
+
+define U-Boot/en7523_tplink_xx230v_v1
+  NAME:=TP-Link xx230v v1
+  UBOOT_IMAGE:=u-boot.bin
+  UBOOT_CONFIG:=en7523_tplink_xx230v_v1
+  BUILD_SUBTARGET:=en7523
+  BUILD_DEVICES:=tplink_xx230v_v1
+endef
+UBOOT_TARGETS += en7523_tplink_xx230v_v1
+
+define U-Boot/en7523_tplink_xx530v_v1
+  NAME:=TP-Link xx530v v1
+  UBOOT_IMAGE:=u-boot.bin
+  UBOOT_CONFIG:=en7523_tplink_xx530v_v1
+  BUILD_SUBTARGET:=en7523
+  BUILD_DEVICES:=tplink_xx530v_v1
+endef
+UBOOT_TARGETS += en7523_tplink_xx530v_v1
 
 define U-Boot/an7581_gemtek_w1700k
   NAME:=Gemtek W1700K (UBI)
@@ -53,6 +74,7 @@ define U-Boot/an7581_gemtek_w1700k
   BUILD_SUBTARGET:=an7581
   UBOOT_IMAGE:=u-boot.bin
 endef
+UBOOT_TARGETS += an7581_gemtek_w1700k
 
 define U-Boot/an7581_nokia_valyrian
   NAME:=Nokia Valyrian
@@ -63,13 +85,7 @@ define U-Boot/an7581_nokia_valyrian
   BL2_IMAGE:=an7581-bl2.bin
   BL31_IMAGE:=an7581-bl31.bin
 endef
-
-UBOOT_TARGETS := \
-	en7523_rfb \
-	an7581_rfb \
-	an7583_rfb \
-	an7581_gemtek_w1700k \
-	an7581_nokia_valyrian
+UBOOT_TARGETS += an7581_nokia_valyrian
 
 UBOOT_CUSTOMIZE_CONFIG := \
 	--disable TOOLS_KWBIMAGE \

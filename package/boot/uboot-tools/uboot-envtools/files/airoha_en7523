@@ -11,6 +11,10 @@ case "$board" in
 	airoha,en7523-evb)
 		ubootenv_add_mtd "u-boot-env" "0x0" "0x4000" "0x4000"
 		;;
+	tplink,xx230v,v1 | \
+	tplink,xx530v,v1)
+		ubootenv_add_ubi_default
+		;;
 esac
 
 config_load ubootenv

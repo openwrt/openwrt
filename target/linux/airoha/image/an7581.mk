@@ -49,7 +49,7 @@ endef
 TARGET_DEVICES += airoha_an7581-evb-emmc-kite
 
 define Device/gemtek_w1700k-ubi
-  $(Device/FitImage)
+  $(Device/ubi_firmware_chainload)
   DEVICE_VENDOR := Gemtek
   DEVICE_MODEL := W1700K
   DEVICE_VARIANT := UBI
@@ -67,17 +67,7 @@ define Device/gemtek_w1700k-ubi
 		    fitblk kmod-i2c-an7581 kmod-hwmon-nct7802 \
 		    kmod-mt7996-firmware kmod-phy-rtl8261n \
 		    wpad-basic-mbedtls
-  UBINIZE_OPTS := -E 5
-  BLOCKSIZE := 128k
-  PAGESIZE := 2048
-  UBOOTENV_IN_UBI := 1
-  KERNEL_IN_UBI := 1
-  KERNEL := kernel-bin | gzip
-  KERNEL_INITRAMFS := kernel-bin | lzma | \
-	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 128k
   KERNEL_INITRAMFS_SUFFIX := -recovery.itb
-  IMAGES := sysupgrade.itb
-  IMAGE/sysupgrade.itb := append-kernel | fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-static-with-rootfs | append-metadata
   ARTIFACTS := chainload-uboot.itb
   ARTIFACT/chainload-uboot.itb := uboot-chainloader gemtek_w1700k
   SOC := an7581
