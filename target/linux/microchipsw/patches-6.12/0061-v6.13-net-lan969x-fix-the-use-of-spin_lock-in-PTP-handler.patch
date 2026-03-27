@@ -1,0 +1,33 @@
+From f7a21fee946712acc54102479f0ebaaff48164e4 Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Thu, 5 Dec 2024 14:54:25 +0100
+Subject: [PATCH 66/82] net: lan969x: fix the use of spin_lock in PTP handler
+
+We are mixing the use of spin_lock() and spin_lock_irqsave() functions
+in the PTP handler of lan969x. Fix this by correctly using the _irqsave
+variants.
+
+Fixes: 24fe83541755 ("net: lan969x: add PTP handler function")
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+
+[1]: https://lore.kernel.org/netdev/20241024-sparx5-lan969x-switch-driver-2-v2-10-a0b5fae88a0f@microchip.com/
+
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/microchip/sparx5/lan969x/lan969x.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/ethernet/microchip/sparx5/lan969x/lan969x.c
++++ b/drivers/net/ethernet/microchip/sparx5/lan969x/lan969x.c
+@@ -273,9 +273,9 @@ static irqreturn_t lan969x_ptp_irq_handl
+ 		if (WARN_ON(!skb_match))
+ 			continue;
+ 
+-		spin_lock(&sparx5->ptp_ts_id_lock);
++		spin_lock_irqsave(&sparx5->ptp_ts_id_lock, flags);
+ 		sparx5->ptp_skbs--;
+-		spin_unlock(&sparx5->ptp_ts_id_lock);
++		spin_unlock_irqrestore(&sparx5->ptp_ts_id_lock, flags);
+ 
+ 		/* Get the h/w timestamp */
+ 		sparx5_get_hwtimestamp(sparx5, &ts, delay);

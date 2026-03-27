@@ -1,0 +1,37 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca9558_mikrotik_routerboard-96x.dtsi"
+
+/ {
+	compatible = "mikrotik,routerboard-962uigs-5hact2hnt", "qca,qca9558";
+	model = "MikroTik RouterBOARD 962UiGS-5HacT2HnT (hAP ac)";
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		port5_poe {
+			gpio-export,name = "port5-poe";
+			gpio-export,output = <1>;
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&gpio {
+	input-poe-out-compat {
+		gpio-hog;
+		gpios = <2 GPIO_ACTIVE_HIGH>;
+		input;
+		line-name = "PoE out compat";
+	};
+};
+
+&wmac {
+	status = "okay";
+
+	qca,no-eeprom;
+};
+
+&pcie1 {
+	status = "okay";
+};

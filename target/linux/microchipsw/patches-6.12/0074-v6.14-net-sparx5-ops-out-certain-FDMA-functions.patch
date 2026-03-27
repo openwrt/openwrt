@@ -1,0 +1,146 @@
+From 72d96799c80510f1bec9d72e6b4f9b5273069201 Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Mon, 13 Jan 2025 20:36:08 +0100
+Subject: [PATCH 79/82] net: sparx5: ops out certain FDMA functions
+
+We are going to implement the RX  and TX paths a bit differently on
+lan969x and therefore need to introduce new ops for FDMA functions:
+init, deinit, xmit and poll. Assign the Sparx5 equivalents for these and
+update the code throughout. Also add a 'struct net_device' argument to
+the xmit() function, as we will be needing that for lan969x.
+
+Reviewed-by: Steen Hegelund <Steen.Hegelund@microchip.com>
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Link: https://patch.msgid.link/20250113-sparx5-lan969x-switch-driver-5-v2-4-c468f02fd623@microchip.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/ethernet/microchip/sparx5/sparx5_fdma.c   | 8 +++++---
+ drivers/net/ethernet/microchip/sparx5/sparx5_main.c   | 9 +++++++--
+ drivers/net/ethernet/microchip/sparx5/sparx5_main.h   | 9 ++++++++-
+ drivers/net/ethernet/microchip/sparx5/sparx5_packet.c | 5 ++++-
+ 4 files changed, 24 insertions(+), 7 deletions(-)
+
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_fdma.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_fdma.c
+@@ -183,7 +183,7 @@ static bool sparx5_fdma_rx_get_frame(str
+ 	return true;
+ }
+ 
+-static int sparx5_fdma_napi_callback(struct napi_struct *napi, int weight)
++int sparx5_fdma_napi_callback(struct napi_struct *napi, int weight)
+ {
+ 	struct sparx5_rx *rx = container_of(napi, struct sparx5_rx, napi);
+ 	struct sparx5 *sparx5 = container_of(rx, struct sparx5, rx);
+@@ -213,7 +213,8 @@ static int sparx5_fdma_napi_callback(str
+ 	return counter;
+ }
+ 
+-int sparx5_fdma_xmit(struct sparx5 *sparx5, u32 *ifh, struct sk_buff *skb)
++int sparx5_fdma_xmit(struct sparx5 *sparx5, u32 *ifh, struct sk_buff *skb,
++		     struct net_device *dev)
+ {
+ 	struct sparx5_tx *tx = &sparx5->tx;
+ 	struct fdma *fdma = &tx->fdma;
+@@ -450,12 +451,13 @@ static u32 sparx5_fdma_port_ctrl(struct
+ 
+ int sparx5_fdma_start(struct sparx5 *sparx5)
+ {
++	const struct sparx5_ops *ops = sparx5->data->ops;
+ 	struct sparx5_rx *rx = &sparx5->rx;
+ 	struct sparx5_tx *tx = &sparx5->tx;
+ 
+ 	netif_napi_add_weight(rx->ndev,
+ 			      &rx->napi,
+-			      sparx5_fdma_napi_callback,
++			      ops->fdma_poll,
+ 			      FDMA_WEIGHT);
+ 
+ 	napi_enable(&rx->napi);
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
+@@ -793,7 +793,7 @@ static int sparx5_start(struct sparx5 *s
+ 					       0,
+ 					       "sparx5-fdma", sparx5);
+ 		if (!err) {
+-			err = sparx5_fdma_init(sparx5);
++			err = ops->fdma_init(sparx5);
+ 			if (!err)
+ 				sparx5_fdma_start(sparx5);
+ 		}
+@@ -1030,6 +1030,7 @@ cleanup_pnode:
+ static void mchp_sparx5_remove(struct platform_device *pdev)
+ {
+ 	struct sparx5 *sparx5 = platform_get_drvdata(pdev);
++	const struct sparx5_ops *ops = sparx5->data->ops;
+ 
+ 	debugfs_remove_recursive(sparx5->debugfs_root);
+ 	if (sparx5->xtr_irq) {
+@@ -1041,7 +1042,7 @@ static void mchp_sparx5_remove(struct pl
+ 		sparx5->fdma_irq = -ENXIO;
+ 	}
+ 	sparx5_ptp_deinit(sparx5);
+-	sparx5_fdma_stop(sparx5);
++	ops->fdma_deinit(sparx5);
+ 	sparx5_cleanup_ports(sparx5);
+ 	sparx5_vcap_destroy(sparx5);
+ 	/* Unregister netdevs */
+@@ -1096,6 +1097,10 @@ static const struct sparx5_ops sparx5_op
+ 	.set_port_mux            = &sparx5_port_mux_set,
+ 	.ptp_irq_handler         = &sparx5_ptp_irq_handler,
+ 	.dsm_calendar_calc       = &sparx5_dsm_calendar_calc,
++	.fdma_init               = &sparx5_fdma_init,
++	.fdma_deinit             = &sparx5_fdma_deinit,
++	.fdma_poll               = &sparx5_fdma_napi_callback,
++	.fdma_xmit               = &sparx5_fdma_xmit,
+ };
+ 
+ static const struct sparx5_match_data sparx5_desc = {
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
+@@ -326,6 +326,11 @@ struct sparx5_ops {
+ 				 struct sparx5_calendar_data *data);
+ 	int (*port_config_rgmii)(struct sparx5_port *port,
+ 				 struct sparx5_port_config *conf);
++	int (*fdma_init)(struct sparx5 *sparx5);
++	int (*fdma_deinit)(struct sparx5 *sparx5);
++	int (*fdma_poll)(struct napi_struct *napi, int weight);
++	int (*fdma_xmit)(struct sparx5 *sparx5, u32 *ifh, struct sk_buff *skb,
++			 struct net_device *dev);
+ };
+ 
+ struct sparx5_main_io_resource {
+@@ -440,7 +445,9 @@ int sparx5_fdma_init(struct sparx5 *spar
+ int sparx5_fdma_deinit(struct sparx5 *sparx5);
+ int sparx5_fdma_start(struct sparx5 *sparx5);
+ int sparx5_fdma_stop(struct sparx5 *sparx5);
+-int sparx5_fdma_xmit(struct sparx5 *sparx5, u32 *ifh, struct sk_buff *skb);
++int sparx5_fdma_napi_callback(struct napi_struct *napi, int weight);
++int sparx5_fdma_xmit(struct sparx5 *sparx5, u32 *ifh, struct sk_buff *skb,
++		     struct net_device *dev);
+ irqreturn_t sparx5_fdma_handler(int irq, void *args);
+ 
+ /* sparx5_mactable.c */
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_packet.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_packet.c
+@@ -232,9 +232,12 @@ netdev_tx_t sparx5_port_xmit_impl(struct
+ 	struct net_device_stats *stats = &dev->stats;
+ 	struct sparx5_port *port = netdev_priv(dev);
+ 	struct sparx5 *sparx5 = port->sparx5;
++	const struct sparx5_ops *ops;
+ 	u32 ifh[IFH_LEN];
+ 	netdev_tx_t ret;
+ 
++	ops = sparx5->data->ops;
++
+ 	memset(ifh, 0, IFH_LEN * 4);
+ 	sparx5_set_port_ifh(sparx5, ifh, port->portno);
+ 
+@@ -254,7 +257,7 @@ netdev_tx_t sparx5_port_xmit_impl(struct
+ 	skb_tx_timestamp(skb);
+ 	spin_lock(&sparx5->tx_lock);
+ 	if (sparx5->fdma_irq > 0)
+-		ret = sparx5_fdma_xmit(sparx5, ifh, skb);
++		ret = ops->fdma_xmit(sparx5, ifh, skb, dev);
+ 	else
+ 		ret = sparx5_inject(sparx5, ifh, skb, dev);
+ 	spin_unlock(&sparx5->tx_lock);

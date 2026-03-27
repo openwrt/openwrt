@@ -1,0 +1,6 @@
+[ "$ACTION" = "ifup" ] && uci -q get "network.$INTERFACE" >/dev/null && {
+	uci_toggle_state network "$INTERFACE" up 1
+	[ -n "$DEVICE" ] && {
+		uci_toggle_state network "$INTERFACE" ifname "$DEVICE"
+	}
+}

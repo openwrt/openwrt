@@ -1,0 +1,25 @@
+From 9c059700fee595142676a9bbaff6e40e3fcd9cbb Mon Sep 17 00:00:00 2001
+From: Sebastian Reichel <sebastian.reichel@collabora.com>
+Date: Mon, 18 Aug 2025 19:18:40 +0200
+Subject: [PATCH] arm64: dts: rockchip: Enable RK3576 watchdog
+
+The RK3576 watchdog does not need any board specific resources, so
+let's enable it by default just like we do for RK3588.
+
+Signed-off-by: Sebastian Reichel <sebastian.reichel@collabora.com>
+Link: https://lore.kernel.org/r/20250818-rk3576-watchdog-v1-1-28f82e01029c@kernel.org
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3576.dtsi | 1 -
+ 1 file changed, 1 deletion(-)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3576.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3576.dtsi
+@@ -2275,7 +2275,6 @@
+ 			clocks = <&cru TCLK_WDT0>, <&cru PCLK_WDT0>;
+ 			clock-names = "tclk", "pclk";
+ 			interrupts = <GIC_SPI 40 IRQ_TYPE_LEVEL_HIGH>;
+-			status = "disabled";
+ 		};
+ 
+ 		spi0: spi@2acf0000 {

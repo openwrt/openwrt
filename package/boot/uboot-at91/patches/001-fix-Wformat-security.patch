@@ -1,0 +1,45 @@
+From 3b05406c02070df3e7f19399d81ebd35ed6deae5 Mon Sep 17 00:00:00 2001
+From: Claudiu Beznea <claudiu.beznea@microchip.com>
+Date: Tue, 12 Oct 2021 17:43:28 +0300
+Subject: [PATCH] fix -Wformat-security
+
+Signed-off-by: Claudiu Beznea <claudiu.beznea@microchip.com>
+---
+ cmd/panic.c                      | 2 +-
+ cmd/version.c                    | 2 +-
+ drivers/pinctrl/pinctrl-uclass.c | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+--- a/cmd/panic.c
++++ b/cmd/panic.c
+@@ -11,7 +11,7 @@ static int do_panic(struct cmd_tbl *cmdt
+ {
+ 	char *text = (argc < 2) ? "" : argv[1];
+ 
+-	panic(text);
++	panic("%s\n", text);
+ 
+ 	return CMD_RET_SUCCESS;
+ }
+--- a/cmd/version.c
++++ b/cmd/version.c
+@@ -24,7 +24,7 @@ static int do_version(struct cmd_tbl *cm
+ {
+ 	char buf[DISPLAY_OPTIONS_BANNER_LENGTH];
+ 
+-	printf(display_options_get_banner(false, buf, sizeof(buf)));
++	printf("%s", display_options_get_banner(false, buf, sizeof(buf)));
+ #ifdef CC_VERSION_STRING
+ 	puts(CC_VERSION_STRING "\n");
+ #endif
+--- a/drivers/pinctrl/pinctrl-uclass.c
++++ b/drivers/pinctrl/pinctrl-uclass.c
+@@ -375,7 +375,7 @@ int pinctrl_get_pin_name(struct udevice
+ 	if (!ops->get_pin_name)
+ 		return -ENOSYS;
+ 
+-	snprintf(buf, size, ops->get_pin_name(dev, selector));
++	snprintf(buf, size, "%s", ops->get_pin_name(dev, selector));
+ 
+ 	return 0;
+ }

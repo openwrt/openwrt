@@ -1,0 +1,64 @@
+From a90c30902e6dc4d220738248dd7785e51bb19904 Mon Sep 17 00:00:00 2001
+From: Nick Hainke <vincent@systemli.org>
+Date: Tue, 10 Feb 2026 19:59:42 +0100
+Subject: [PATCH] xdp: avoid stddef.h and size_t in BPF headers
+
+Remove <stddef.h> includes that break BPF builds on some toolchains.
+Replace size_t in xdp_sample_shared.h with unsigned long long to keep
+structs usable without stddef definitions.
+
+Signed-off-by: Nick Hainke <vincent@systemli.org>
+---
+ headers/xdp/parsing_helpers.h       |  1 -
+ headers/xdp/xdp_sample_common.bpf.h |  1 -
+ headers/xdp/xdp_sample_shared.h     | 16 +++++++---------
+ 3 files changed, 7 insertions(+), 11 deletions(-)
+
+--- a/headers/xdp/parsing_helpers.h
++++ b/headers/xdp/parsing_helpers.h
+@@ -15,7 +15,6 @@
+ #ifndef __PARSING_HELPERS_H
+ #define __PARSING_HELPERS_H
+ 
+-#include <stddef.h>
+ #include <linux/if_ether.h>
+ #include <linux/if_packet.h>
+ #include <linux/ip.h>
+--- a/headers/xdp/xdp_sample_common.bpf.h
++++ b/headers/xdp/xdp_sample_common.bpf.h
+@@ -6,7 +6,6 @@
+ #include "xdp_sample.bpf.h"
+ 
+ #include <bpf/vmlinux.h>
+-#include <stddef.h>
+ #include <stdbool.h>
+ #include <bpf/bpf_tracing.h>
+ #include <bpf/bpf_core_read.h>
+--- a/headers/xdp/xdp_sample_shared.h
++++ b/headers/xdp/xdp_sample_shared.h
+@@ -2,18 +2,16 @@
+ #ifndef _XDP_SAMPLE_SHARED_H
+ #define _XDP_SAMPLE_SHARED_H
+ 
+-#include <stddef.h>
+-
+ struct datarec {
+-	size_t processed;
+-	size_t dropped;
+-	size_t issue;
++	unsigned long long processed;
++	unsigned long long dropped;
++	unsigned long long issue;
+ 	union {
+-		size_t xdp_pass;
+-		size_t info;
++		unsigned long long xdp_pass;
++		unsigned long long info;
+ 	};
+-	size_t xdp_drop;
+-	size_t xdp_redirect;
++	unsigned long long xdp_drop;
++	unsigned long long xdp_redirect;
+ } __attribute__((aligned(64)));
+ 
+ #endif

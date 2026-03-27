@@ -1,0 +1,103 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+
+/dts-v1/;
+
+#include "mt7981b-cudy-wr3000-nand.dtsi"
+
+/ {
+	model = "Cudy WR3000S v1";
+	compatible = "cudy,wr3000s-v1", "mediatek,mt7981";
+
+	aliases {
+		label-mac-device = &gmac0;
+		led-boot = &led_status;
+		led-failsafe = &led_status;
+		led-running = &led_status;
+		led-upgrade = &led_status;
+		serial0 = &uart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_status: led-status {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&pio 10 GPIO_ACTIVE_LOW>;
+		};
+
+		led-internet {
+			function = LED_FUNCTION_WAN_ONLINE;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&pio 11 GPIO_ACTIVE_LOW>;
+		};
+
+		led-wps {
+			function = LED_FUNCTION_WPS;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&pio 9 GPIO_ACTIVE_LOW>;
+		};
+
+		led-wlan2g {
+			function = LED_FUNCTION_WLAN_2GHZ;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&pio 6 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		led-wlan5g {
+			function = LED_FUNCTION_WLAN_5GHZ;
+			color = <LED_COLOR_ID_WHITE>;
+			gpios = <&pio 7 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+	};
+};
+
+&switch {
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@0 {
+			reg = <0>;
+			label = "wan";
+
+			nvmem-cell-names = "mac-address";
+			nvmem-cells = <&macaddr_bdinfo_de00 1>;
+		};
+
+		port@1 {
+			reg = <1>;
+			label = "lan1";
+		};
+
+		port@2 {
+			reg = <2>;
+			label = "lan2";
+		};
+
+		port@3 {
+			reg = <3>;
+			label = "lan3";
+		};
+
+		port@4 {
+			reg = <4>;
+			label = "lan4";
+		};
+
+		port@6 {
+			reg = <6>;
+			label = "cpu";
+			ethernet = <&gmac0>;
+			phy-mode = "2500base-x";
+
+			fixed-link {
+				speed = <2500>;
+				full-duplex;
+				pause;
+			};
+		};
+	};
+};

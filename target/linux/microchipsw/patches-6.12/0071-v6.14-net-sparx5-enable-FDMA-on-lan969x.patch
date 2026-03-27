@@ -1,0 +1,32 @@
+From f7c39a31269c23cba94476b0fa99f547cde1a4ed Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Mon, 13 Jan 2025 20:36:05 +0100
+Subject: [PATCH 76/82] net: sparx5: enable FDMA on lan969x
+
+In a previous series, we made sure that FDMA was not initialized and
+started on lan969x. Now that we are going to support it, undo that
+change. In addition, make sure the chip ID check is only applicable on
+Sparx5, as this is a check that is only relevant on this platform.
+
+Reviewed-by: Steen Hegelund <Steen.Hegelund@microchip.com>
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Link: https://patch.msgid.link/20250113-sparx5-lan969x-switch-driver-5-v2-1-c468f02fd623@microchip.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/ethernet/microchip/sparx5/sparx5_main.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
+@@ -784,8 +784,9 @@ static int sparx5_start(struct sparx5 *s
+ 
+ 	/* Start Frame DMA with fallback to register based INJ/XTR */
+ 	err = -ENXIO;
+-	if (sparx5->fdma_irq >= 0 && is_sparx5(sparx5)) {
+-		if (GCB_CHIP_ID_REV_ID_GET(sparx5->chip_id) > 0)
++	if (sparx5->fdma_irq >= 0) {
++		if (GCB_CHIP_ID_REV_ID_GET(sparx5->chip_id) > 0 ||
++		    !is_sparx5(sparx5))
+ 			err = devm_request_irq(sparx5->dev,
+ 					       sparx5->fdma_irq,
+ 					       sparx5_fdma_handler,

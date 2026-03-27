@@ -1,0 +1,52 @@
+// SPDX-License-Identifier: GPL-2.0-only OR MIT
+
+#include "mt7981b-routerich-ax3000-common.dtsi"
+
+/ {
+	model = "Routerich AX3000 (OpenWrt U-Boot layout)";
+	compatible = "routerich,ax3000-ubootmod", "mediatek,mt7981";
+};
+
+&chosen {
+	rootdisk = <&ubi_fit_volume>;
+};
+
+&partitions {
+	partition@100000 {
+		label = "u-boot-env-orig";
+		reg = <0x100000 0x80000>;
+		read-only;
+	};
+
+	partition@580000 {
+		label = "ubi";
+		reg = <0x580000 0x7a80000>;
+		compatible = "linux,ubi";
+
+		volumes {
+			ubi_fit_volume: ubi-volume-fit {
+				volname = "fit";
+			};
+
+			ubi_ubootenv: ubi-volume-ubootenv {
+				volname = "ubootenv";
+			};
+
+			ubi_ubootenv2: ubi-volume-ubootenv2 {
+				volname = "ubootenv2";
+			};
+		};
+	};
+};
+
+&ubi_ubootenv {
+	nvmem-layout {
+		compatible = "u-boot,env-redundant-bool";
+	};
+};
+
+&ubi_ubootenv2 {
+	nvmem-layout {
+		compatible = "u-boot,env-redundant-bool";
+	};
+};

@@ -1,0 +1,80 @@
+From cc1814ae3a2cd34a345c7d638f5da991d8d22d33 Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Fri, 4 Oct 2024 15:19:35 +0200
+Subject: [PATCH 37/82] net: sparx5: ops out chip port to device index/bit
+ functions
+
+The chip port device index and mode bit can be obtained using the port
+number.  However the mapping of port number to chip device index and
+mode bit differs on Sparx5 and lan969x. Therefore ops out the function.
+
+Reviewed-by: Steen Hegelund <Steen.Hegelund@microchip.com>
+Reviewed-by: Jacob Keller <jacob.e.keller@intel.com>
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/ethernet/microchip/sparx5/sparx5_main.c | 2 ++
+ drivers/net/ethernet/microchip/sparx5/sparx5_main.h | 2 ++
+ drivers/net/ethernet/microchip/sparx5/sparx5_port.c | 4 +++-
+ drivers/net/ethernet/microchip/sparx5/sparx5_port.h | 7 ++++++-
+ 4 files changed, 13 insertions(+), 2 deletions(-)
+
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
+@@ -987,6 +987,8 @@ static const struct sparx5_ops sparx5_op
+ 	.is_port_5g              = &sparx5_port_is_5g,
+ 	.is_port_10g             = &sparx5_port_is_10g,
+ 	.is_port_25g             = &sparx5_port_is_25g,
++	.get_port_dev_index      = &sparx5_port_dev_mapping,
++	.get_port_dev_bit        = &sparx5_port_dev_mapping,
+ };
+ 
+ static const struct sparx5_match_data sparx5_desc = {
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
+@@ -263,6 +263,8 @@ struct sparx5_ops {
+ 	bool (*is_port_5g)(int portno);
+ 	bool (*is_port_10g)(int portno);
+ 	bool (*is_port_25g)(int portno);
++	u32  (*get_port_dev_index)(struct sparx5 *sparx5, int port);
++	u32  (*get_port_dev_bit)(struct sparx5 *sparx5, int port);
+ };
+ 
+ struct sparx5_main_io_resource {
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_port.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_port.c
+@@ -847,8 +847,10 @@ static int sparx5_port_pcs_high_set(stru
+ /* Switch between 1G/2500 and 5G/10G/25G devices */
+ static void sparx5_dev_switch(struct sparx5 *sparx5, int port, bool hsd)
+ {
+-	int bt_indx = BIT(sparx5_port_dev_index(sparx5, port));
+ 	const struct sparx5_ops *ops = sparx5->data->ops;
++	int bt_indx;
++
++	bt_indx = BIT(ops->get_port_dev_bit(sparx5, port));
+ 
+ 	if (ops->is_port_5g(port)) {
+ 		spx5_rmw(hsd ? 0 : bt_indx,
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_port.h
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_port.h
+@@ -62,7 +62,7 @@ static inline u32 sparx5_to_pcs_dev(stru
+ 	return TARGET_PCS25G_BR;
+ }
+ 
+-static inline int sparx5_port_dev_index(struct sparx5 *sparx5, int port)
++static inline u32 sparx5_port_dev_mapping(struct sparx5 *sparx5, int port)
+ {
+ 	if (sparx5_port_is_2g5(port))
+ 		return port;
+@@ -74,6 +74,11 @@ static inline int sparx5_port_dev_index(
+ 	return (port - 56);
+ }
+ 
++static inline u32 sparx5_port_dev_index(struct sparx5 *sparx5, int port)
++{
++	return sparx5->data->ops->get_port_dev_index(sparx5, port);
++}
++
+ int sparx5_port_init(struct sparx5 *sparx5,
+ 		     struct sparx5_port *spx5_port,
+ 		     struct sparx5_port_config *conf);

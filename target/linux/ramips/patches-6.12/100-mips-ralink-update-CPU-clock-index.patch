@@ -1,0 +1,58 @@
+From ef57412d070fe663a66a5473ffc708bd89671259 Mon Sep 17 00:00:00 2001
+From: Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+Date: Sun, 2 Feb 2025 17:10:14 +0800
+Subject: [PATCH] mips: ralink: update CPU clock index
+
+Some clock indexes have been reorganized in commit d34db686a3d7
+("clk: ralink: mtmips: fix clocks probe order in oldest ralink SoCs").
+Update CPU clock index to match the clock driver changes.
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+Co-authored-by: Mieczyslaw Nalewaj <namiltd@yahoo.com>
+---
+ arch/mips/ralink/clk.c | 11 ++---------
+ 1 file changed, 2 insertions(+), 9 deletions(-)
+
+--- a/arch/mips/ralink/clk.c
++++ b/arch/mips/ralink/clk.c
+@@ -19,27 +19,22 @@
+ 
+ static const char *clk_cpu(int *idx)
+ {
++	*idx = 1;
++
+ 	switch (ralink_soc) {
+ 	case RT2880_SOC:
+-		*idx = 0;
+ 		return "ralink,rt2880-sysc";
+ 	case RT3883_SOC:
+-		*idx = 0;
+ 		return "ralink,rt3883-sysc";
+ 	case RT305X_SOC_RT3050:
+-		*idx = 0;
+ 		return "ralink,rt3050-sysc";
+ 	case RT305X_SOC_RT3052:
+-		*idx = 0;
+ 		return "ralink,rt3052-sysc";
+ 	case RT305X_SOC_RT3350:
+-		*idx = 1;
+ 		return "ralink,rt3350-sysc";
+ 	case RT305X_SOC_RT3352:
+-		*idx = 1;
+ 		return "ralink,rt3352-sysc";
+ 	case RT305X_SOC_RT5350:
+-		*idx = 1;
+ 		return "ralink,rt5350-sysc";
+ 	case MT762X_SOC_MT7620A:
+ 		*idx = 2;
+@@ -48,10 +43,8 @@ static const char *clk_cpu(int *idx)
+ 		*idx = 2;
+ 		return "ralink,mt7620-sysc";
+ 	case MT762X_SOC_MT7628AN:
+-		*idx = 1;
+ 		return "ralink,mt7628-sysc";
+ 	case MT762X_SOC_MT7688:
+-		*idx = 1;
+ 		return "ralink,mt7688-sysc";
+ 	default:
+ 		*idx = -1;

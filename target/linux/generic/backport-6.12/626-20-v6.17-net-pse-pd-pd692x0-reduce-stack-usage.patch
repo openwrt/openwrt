@@ -1,0 +1,55 @@
+From d12b3dc106090b358fb67b7c0c717a0884327ddf Mon Sep 17 00:00:00 2001
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Wed, 9 Jul 2025 17:32:04 +0200
+Subject: [PATCH] net: pse-pd: pd692x0: reduce stack usage in
+ pd692x0_setup_pi_matrix
+
+The pd692x0_manager array in this function is really too big to fit on the
+stack, though this never triggered a warning until a recent patch made
+it slightly bigger:
+
+drivers/net/pse-pd/pd692x0.c: In function 'pd692x0_setup_pi_matrix':
+drivers/net/pse-pd/pd692x0.c:1210:1: error: the frame size of 1584 bytes is larger than 1536 bytes [-Werror=frame-larger-than=]
+
+Change the function to dynamically allocate the array here.
+
+Fixes: 359754013e6a ("net: pse-pd: pd692x0: Add support for PSE PI priority feature")
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Reviewed-by: Kory Maincent <kory.maincent@bootlin.com>
+Link: https://patch.msgid.link/20250709153210.1920125-1-arnd@kernel.org
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
+---
+ drivers/net/pse-pd/pd692x0.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+--- a/drivers/net/pse-pd/pd692x0.c
++++ b/drivers/net/pse-pd/pd692x0.c
+@@ -860,7 +860,7 @@ out:
+ 
+ static int
+ pd692x0_of_get_managers(struct pd692x0_priv *priv,
+-			struct pd692x0_manager manager[PD692X0_MAX_MANAGERS])
++			struct pd692x0_manager *manager)
+ {
+ 	struct device_node *managers_node, *node;
+ 	int ret, nmanagers, i, j;
+@@ -1164,7 +1164,7 @@ pd692x0_write_ports_matrix(struct pd692x
+ 
+ static int pd692x0_setup_pi_matrix(struct pse_controller_dev *pcdev)
+ {
+-	struct pd692x0_manager manager[PD692X0_MAX_MANAGERS] = {0};
++	struct pd692x0_manager *manager __free(kfree) = NULL;
+ 	struct pd692x0_priv *priv = to_pd692x0_priv(pcdev);
+ 	struct pd692x0_matrix port_matrix[PD692X0_MAX_PIS];
+ 	int ret, i, j, nmanagers;
+@@ -1174,6 +1174,10 @@ static int pd692x0_setup_pi_matrix(struc
+ 	    priv->fw_state != PD692X0_FW_COMPLETE)
+ 		return 0;
+ 
++	manager = kcalloc(PD692X0_MAX_MANAGERS, sizeof(*manager), GFP_KERNEL);
++	if (!manager)
++		return -ENOMEM;
++
+ 	ret = pd692x0_of_get_managers(priv, manager);
+ 	if (ret < 0)
+ 		return ret;

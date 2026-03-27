@@ -1,0 +1,78 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include <dt-bindings/leds/common.h>
+
+#include "mt7628an_xiaomi_mi-router-4.dtsi"
+
+/ {
+	compatible = "xiaomi,mi-router-4c", "mediatek,mt7628an-soc";
+	model = "Xiaomi Mi Router 4C";
+
+	aliases {
+		led-boot = &led_power_yellow;
+		led-failsafe = &led_power_yellow;
+		led-running = &led_power_blue;
+		led-upgrade = &led_power_yellow;
+		label-mac-device = &ethernet;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power_blue: power_blue {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+		};
+
+		led_power_yellow: power_yellow {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_YELLOW>;
+			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
+		};
+
+		wan {
+			function = LED_FUNCTION_WAN;
+			color = <LED_COLOR_ID_BLUE>;
+			gpios = <&gpio 37 GPIO_ACTIVE_LOW>;
+		};
+
+	};
+
+};
+
+&flash0 {
+	spi-max-frequency = <40000000>;
+};
+
+&partitions {
+	partition@60000 {
+		label = "overlay";
+		reg = <0x60000 0x100000>;
+		read-only;
+	};
+
+	partition@160000 {
+		label = "firmware";
+		reg = <0x160000 0xea0000>;
+		compatible = "denx,uimage";
+	};
+};
+
+&ehci {
+	status = "disabled";
+};
+
+&ohci {
+	status = "disabled";
+};
+
+&ethernet {
+	nvmem-cells = <&macaddr_factory_28>;
+	nvmem-cell-names = "mac-address";
+};
+
+&esw {
+	mediatek,portmap = <0x3d>;
+	mediatek,portdisable = <0x29>;
+};

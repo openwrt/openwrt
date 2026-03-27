@@ -1,0 +1,158 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include <dt-bindings/leds/common.h>
+
+#include "ar934x_ruckus_zf73xx.dtsi"
+
+/ {
+	model = "Ruckus ZoneFlex 7352/7372[-E/-U]";
+	compatible = "ruckus,zf7372", "qca,ar9344";
+
+	leds {
+		air-green {
+			label = "green:air";
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+		};
+
+		air-yellow {
+			label = "yellow:air";
+			gpios = <&gpio 11 GPIO_ACTIVE_LOW>;
+		};
+
+		dir-green {
+			label = "green:dir";
+			gpios = <&gpio 17 GPIO_ACTIVE_LOW>;
+		};
+
+		eth1-green {
+			label = "green:eth1";
+			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
+		};
+
+		power_red: power-red {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;
+			panic-indicator;
+		};
+
+		wlan2g-green {
+			label = "green:wlan2g";
+			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0assoc";
+		};
+
+		wlan2g-yellow {
+			label = "yellow:wlan2g";
+			gpios = <&gpio 20 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		wlan5g-green {
+			label = "green:wlan5g";
+			gpios = <&gpio 21 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1assoc";
+		};
+
+		wlan5g-yellow {
+			label = "yellow:wlan5g";
+			gpios = <&gpio 22 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1tpt";
+		};
+	};
+
+	beamforming-2g-spi {
+		compatible = "spi-gpio";
+		mosi-gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
+		sck-gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;
+		num-chipselects = <0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		beamforming-2g-gpio@0 {
+			compatible = "fairchild,74hc595";
+			reg = <0>;
+			registers-number = <1>;
+			spi-max-frequency = <24000000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+	};
+
+	beamforming-5g-spi {
+		compatible = "spi-gpio";
+		mosi-gpios = <&ath9k 15 GPIO_ACTIVE_HIGH>;
+		sck-gpios = <&ath9k 14 GPIO_ACTIVE_HIGH>;
+		num-chipselects = <0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		beamforming-5g-gpio@0 {
+			compatible = "fairchild,74hc595";
+			reg = <0>;
+			registers-number = <1>;
+			spi-max-frequency = <24000000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+	};
+};
+
+&eth0 {
+	nvmem-cells = <&macaddr_board_data_6c>;
+};
+
+&eth1 {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_board_data_66>;
+	nvmem-cell-names = "mac-address";
+
+	gmac-config {
+		device = <&gmac>;
+		switch-phy-swap = <0>;
+		switch-only-mode = <1>;
+	};
+};
+
+&pcie {
+	status = "okay";
+
+	ath9k: wifi@0,0 {
+		compatible = "pci168c,0033";
+		reg = <0x0000 0 0 0 0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+
+		nvmem-cells = <&macaddr_board_data_76>;
+		nvmem-cell-names = "mac-address";
+	};
+};
+
+&board_data {
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		macaddr_board_data_60: macaddr@60 {
+			reg = <0x60 0x6>;
+		};
+
+		macaddr_board_data_66: macaddr@66 {
+			reg = <0x66 0x6>;
+		};
+
+		macaddr_board_data_6c: macaddr@6c {
+			reg = <0x6c 0x6>;
+		};
+
+		macaddr_board_data_76: macaddr@76 {
+			reg = <0x76 0x6>;
+		};
+
+		cal_board_data_41000: cal@41000 {
+			reg = <0x41000 0x440>;
+		};
+	};
+};

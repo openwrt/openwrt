@@ -1,0 +1,170 @@
+From 54a152e60ab7b7fb64211ee6a3defec095fb796e Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Fri, 4 Oct 2024 15:19:36 +0200
+Subject: [PATCH 38/82] net: sparx5: ops out functions for getting certain
+ array values
+
+Add getters for getting values in arrays: sdlb_groups and
+sparx5_hsch_max_group_rate and ops out the getters, as these arrays will
+differ on lan969x.
+
+Reviewed-by: Steen Hegelund <Steen.Hegelund@microchip.com>
+Reviewed-by: Jacob Keller <jacob.e.keller@intel.com>
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/ethernet/microchip/sparx5/sparx5_main.c   |  2 ++
+ drivers/net/ethernet/microchip/sparx5/sparx5_main.h   |  3 +++
+ drivers/net/ethernet/microchip/sparx5/sparx5_police.c |  3 ++-
+ drivers/net/ethernet/microchip/sparx5/sparx5_psfp.c   |  3 ++-
+ drivers/net/ethernet/microchip/sparx5/sparx5_qos.c    |  8 +++++++-
+ drivers/net/ethernet/microchip/sparx5/sparx5_qos.h    |  2 ++
+ drivers/net/ethernet/microchip/sparx5/sparx5_sdlb.c   | 11 +++++++++--
+ 7 files changed, 27 insertions(+), 5 deletions(-)
+
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
+@@ -989,6 +989,8 @@ static const struct sparx5_ops sparx5_op
+ 	.is_port_25g             = &sparx5_port_is_25g,
+ 	.get_port_dev_index      = &sparx5_port_dev_mapping,
+ 	.get_port_dev_bit        = &sparx5_port_dev_mapping,
++	.get_hsch_max_group_rate = &sparx5_get_hsch_max_group_rate,
++	.get_sdlb_group          = &sparx5_get_sdlb_group,
+ };
+ 
+ static const struct sparx5_match_data sparx5_desc = {
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
+@@ -265,6 +265,8 @@ struct sparx5_ops {
+ 	bool (*is_port_25g)(int portno);
+ 	u32  (*get_port_dev_index)(struct sparx5 *sparx5, int port);
+ 	u32  (*get_port_dev_bit)(struct sparx5 *sparx5, int port);
++	u32  (*get_hsch_max_group_rate)(int grp);
++	struct sparx5_sdlb_group *(*get_sdlb_group)(int idx);
+ };
+ 
+ struct sparx5_main_io_resource {
+@@ -501,6 +503,7 @@ struct sparx5_sdlb_group {
+ };
+ 
+ extern struct sparx5_sdlb_group sdlb_groups[SPX5_SDLB_GROUP_CNT];
++struct sparx5_sdlb_group *sparx5_get_sdlb_group(int idx);
+ int sparx5_sdlb_pup_token_get(struct sparx5 *sparx5, u32 pup_interval,
+ 			      u64 rate);
+ 
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_police.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_police.c
+@@ -11,10 +11,11 @@ static int sparx5_policer_service_conf_s
+ 					   struct sparx5_policer *pol)
+ {
+ 	u32 idx, pup_tokens, max_pup_tokens, burst, thres;
++	const struct sparx5_ops *ops = sparx5->data->ops;
+ 	struct sparx5_sdlb_group *g;
+ 	u64 rate;
+ 
+-	g = &sdlb_groups[pol->group];
++	g = ops->get_sdlb_group(pol->group);
+ 	idx = pol->idx;
+ 
+ 	rate = pol->rate * 1000;
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_psfp.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_psfp.c
+@@ -319,11 +319,12 @@ int sparx5_psfp_fm_del(struct sparx5 *sp
+ 
+ void sparx5_psfp_init(struct sparx5 *sparx5)
+ {
++	const struct sparx5_ops *ops = sparx5->data->ops;
+ 	const struct sparx5_sdlb_group *group;
+ 	int i;
+ 
+ 	for (i = 0; i < sparx5->data->consts->n_lb_groups; i++) {
+-		group = &sdlb_groups[i];
++		group = ops->get_sdlb_group(i);
+ 		sparx5_sdlb_group_init(sparx5, group->max_rate,
+ 				       group->min_burst, group->frame_size, i);
+ 	}
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_qos.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_qos.c
+@@ -74,6 +74,11 @@ static const u32 spx5_hsch_max_group_rat
+ 	26214200 /* 26.214 Gbps */
+ };
+ 
++u32 sparx5_get_hsch_max_group_rate(int grp)
++{
++	return spx5_hsch_max_group_rate[grp];
++}
++
+ static struct sparx5_layer layers[SPX5_HSCH_LAYER_CNT];
+ 
+ static u32 sparx5_lg_get_leak_time(struct sparx5 *sparx5, u32 layer, u32 group)
+@@ -385,6 +390,7 @@ static int sparx5_dwrr_conf_set(struct s
+ 
+ static int sparx5_leak_groups_init(struct sparx5 *sparx5)
+ {
++	const struct sparx5_ops *ops = sparx5->data->ops;
+ 	struct sparx5_layer *layer;
+ 	u32 sys_clk_per_100ps;
+ 	struct sparx5_lg *lg;
+@@ -397,7 +403,7 @@ static int sparx5_leak_groups_init(struc
+ 		layer = &layers[i];
+ 		for (ii = 0; ii < SPX5_HSCH_LEAK_GRP_CNT; ii++) {
+ 			lg = &layer->leak_groups[ii];
+-			lg->max_rate = spx5_hsch_max_group_rate[ii];
++			lg->max_rate = ops->get_hsch_max_group_rate(i);
+ 
+ 			/* Calculate the leak time in us, to serve a maximum
+ 			 * rate of 'max_rate' for this group
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_qos.h
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_qos.h
+@@ -79,4 +79,6 @@ int sparx5_tc_ets_add(struct sparx5_port
+ 
+ int sparx5_tc_ets_del(struct sparx5_port *port);
+ 
++u32 sparx5_get_hsch_max_group_rate(int grp);
++
+ #endif	/* __SPARX5_QOS_H__ */
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_sdlb.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_sdlb.c
+@@ -20,6 +20,11 @@ struct sparx5_sdlb_group sdlb_groups[SPX
+ 	{     5000000ULL,              8192 / 8, 64 }  /*   5 M */
+ };
+ 
++struct sparx5_sdlb_group *sparx5_get_sdlb_group(int idx)
++{
++	return &sdlb_groups[idx];
++}
++
+ int sparx5_sdlb_clk_hz_get(struct sparx5 *sparx5)
+ {
+ 	u32 clk_per_100ps;
+@@ -178,6 +183,7 @@ static int sparx5_sdlb_group_get_count(s
+ 
+ int sparx5_sdlb_group_get_by_rate(struct sparx5 *sparx5, u32 rate, u32 burst)
+ {
++	const struct sparx5_ops *ops = sparx5->data->ops;
+ 	const struct sparx5_sdlb_group *group;
+ 	u64 rate_bps;
+ 	int i, count;
+@@ -185,7 +191,7 @@ int sparx5_sdlb_group_get_by_rate(struct
+ 	rate_bps = rate * 1000;
+ 
+ 	for (i = sparx5->data->consts->n_lb_groups - 1; i >= 0; i--) {
+-		group = &sdlb_groups[i];
++		group = ops->get_sdlb_group(i);
+ 
+ 		count = sparx5_sdlb_group_get_count(sparx5, i);
+ 
+@@ -303,11 +309,12 @@ int sparx5_sdlb_group_del(struct sparx5
+ void sparx5_sdlb_group_init(struct sparx5 *sparx5, u64 max_rate, u32 min_burst,
+ 			    u32 frame_size, u32 idx)
+ {
++	const struct sparx5_ops *ops = sparx5->data->ops;
+ 	u32 thres_shift, mask = 0x01, power = 0;
+ 	struct sparx5_sdlb_group *group;
+ 	u64 max_token;
+ 
+-	group = &sdlb_groups[idx];
++	group = ops->get_sdlb_group(idx);
+ 
+ 	/* Number of positions to right-shift LB's threshold value. */
+ 	while ((min_burst & mask) == 0) {
