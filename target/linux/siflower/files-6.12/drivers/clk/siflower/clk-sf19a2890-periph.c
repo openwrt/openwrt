@@ -22,11 +22,6 @@ struct sf19a2890_periphclk {
 	u32 idx;
 };
 
-struct sf19a2890_periphclk_priv {
-	struct sf19a2890_periphclk *gates;
-	struct clk_hw_onecell_data clk_data;
-};
-
 static inline struct sf19a2890_periphclk *hw_to_periphclk(struct clk_hw *hw)
 {
 	return container_of(hw, struct sf19a2890_periphclk, hw);
@@ -69,7 +64,8 @@ static const struct clk_ops sf19a28_periphclk_ops = {
 static void __init sf19a2890_periphclk_init(struct device_node *node)
 {
 	struct clk_init_data init = {};
-	struct sf19a2890_periphclk_priv *priv;
+	struct clk_hw_onecell_data *clk_data;
+	struct sf19a2890_periphclk *gates;
 	u32 reg, valid_gates, critical_gates;
 	int num_clks, i, ret, idx;
 	const char *name, *parent;
@@ -87,15 +83,14 @@ static void __init sf19a2890_periphclk_init(struct device_node *node)
 	if (ret < 0)
 		critical_gates = 0;
 
-	priv = kzalloc(struct_size(priv, clk_data.hws, num_clks), GFP_KERNEL);
-	if (!priv)
+	clk_data = kzalloc(struct_size(clk_data, hws, num_clks), GFP_KERNEL);
+	if (!clk_data)
 		return;
 
-	priv->clk_data.num = num_clks;
+	clk_data->num = num_clks;
 
-	priv->gates = kcalloc(num_clks, sizeof(struct sf19a2890_periphclk),
-			      GFP_KERNEL);
-	if (!priv->gates)
+	gates = kcalloc(num_clks, sizeof(struct sf19a2890_periphclk), GFP_KERNEL);
+	if (!gates)
 		goto err1;
 
 	base = of_iomap(node, 0);
@@ -132,26 +127,25 @@ static void __init sf19a2890_periphclk_init(struct device_node *node)
 			}
 		}
 
-		priv->gates[i].base = base;
-		priv->gates[i].idx = idx;
+		gates[i].base = base;
+		gates[i].idx = idx;
 		init.name = name;
 		init.ops = &sf19a28_periphclk_ops;
 		init.parent_names = &parent;
 		init.num_parents = 1;
 		init.flags = (critical_gates & BIT(idx)) ? CLK_IS_CRITICAL : 0;
-		priv->gates[i].hw.init = &init;
+		gates[i].hw.init = &init;
 
-		ret = clk_hw_register(NULL, &priv->gates[i].hw);
+		ret = clk_hw_register(NULL, &gates[i].hw);
 		if (ret) {
 			pr_err("failed to register the %dth gate: %d.\n", i,
 			       ret);
 			goto err3;
 		}
-		priv->clk_data.hws[i] = &priv->gates[i].hw;
+		clk_data->hws[i] = &gates[i].hw;
 	}
 
-	ret = of_clk_add_hw_provider(node, of_clk_hw_onecell_get,
-				     &priv->clk_data);
+	ret = of_clk_add_hw_provider(node, of_clk_hw_onecell_get, clk_data);
 	if (ret) {
 		pr_err("failed to add hw provider.\n");
 		goto err3;
@@ -159,11 +153,11 @@ static void __init sf19a2890_periphclk_init(struct device_node *node)
 	return;
 err3:
 	for (i--; i >= 0; i--)
-		clk_hw_unregister_gate(priv->clk_data.hws[i]);
+		clk_hw_unregister_gate(clk_data->hws[i]);
 err2:
-	kfree(priv->gates);
+	kfree(gates);
 err1:
-	kfree(priv);
+	kfree(clk_data);
 }
 
 CLK_OF_DECLARE(sf19a2890_periphclk, "siflower,sf19a2890-periph-clk",
