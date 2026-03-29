@@ -807,7 +807,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	state->duplex = DUPLEX_FULL;
 +}
 +
-+static void mxl862xx_pcs_get_state(struct phylink_pcs *pcs,
++static void mxl862xx_pcs_get_state(struct phylink_pcs *pcs, unsigned int mode,
 +				   struct phylink_link_state *state)
 +{
 +	struct mxl862xx_priv *priv = pcs_to_mxl862xx_pcs(pcs)->priv;
@@ -845,7 +845,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		bmsr = BMSR_LSTATUS;
 +		if (st.an_complete)
 +			bmsr |= BMSR_ANEGCOMPLETE;
-+		phylink_mii_c22_pcs_decode_state(state, bmsr, lpa);
++		phylink_mii_c22_pcs_decode_state(state, mode, bmsr, lpa);
 +
 +		/* Override speed/duplex with firmware's resolved values
 +		 * for downshift detection.

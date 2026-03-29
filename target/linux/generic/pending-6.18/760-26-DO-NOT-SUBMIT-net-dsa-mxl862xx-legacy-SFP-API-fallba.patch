@@ -113,7 +113,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +	return MXL862XX_API_WRITE(priv, SYS_MISC_SFP_SET, ser_intf);
 +}
 +
-+static void mxl862xx_legacy_pcs_get_state(struct phylink_pcs *pcs,
++static void mxl862xx_legacy_pcs_get_state(struct phylink_pcs *pcs, unsigned int mode,
 +					  struct phylink_link_state *state)
 +{
 +	struct mxl862xx_priv *priv = pcs_to_mxl862xx_pcs(pcs)->priv;
