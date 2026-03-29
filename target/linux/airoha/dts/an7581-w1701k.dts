@@ -1,0 +1,157 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "an7581-gemtek.dtsi"
+
+/ {
+	model = "Gemtek W1701K";
+	compatible = "gemtek,w1701k", "airoha,an7581", "airoha,en7581";
+
+	chosen {
+		bootargs = "console=ttyS0,115200 earlycon";
+	};
+};
+
+&gdm1 {
+	nvmem-cells = <&lan_mac 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gdm2 {
+	phy-handle = <&phy15>;
+	phy-mode = "2500base-x";
+
+	nvmem-cells = <&wan_mac 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gdm4 {
+	phy-handle = <&phy14>;
+	phy-mode = "2500base-x";
+
+	nvmem-cells = <&lan_mac 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&mdio {
+	phy14: ethernet-phy@14 {
+		reg = <14>;
+		reset-assert-us = <10000>;
+		reset-deassert-us = <20000>;
+		reset-gpios = <&en7581_pinctrl 46 GPIO_ACTIVE_LOW>;
+
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led@0 {
+				reg = <0>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_LAN;
+				default-state = "keep";
+			};
+
+			led@1 {
+				reg = <1>;
+				color = <LED_COLOR_ID_AMBER>;
+				function = LED_FUNCTION_LAN;
+				default-state = "keep";
+			};
+		};
+	};
+
+	phy15: ethernet-phy@15 {
+		reg = <15>;
+		reset-assert-us = <10000>;
+		reset-deassert-us = <20000>;
+		reset-gpios = <&en7581_pinctrl 27 GPIO_ACTIVE_LOW>;
+
+		leds {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			led@0 {
+				reg = <0>;
+				color = <LED_COLOR_ID_GREEN>;
+				function = LED_FUNCTION_WAN;
+				default-state = "keep";
+			};
+
+			led@1 {
+				reg = <1>;
+				color = <LED_COLOR_ID_AMBER>;
+				function = LED_FUNCTION_WAN;
+				default-state = "keep";
+			};
+		};
+	};
+};
+
+&spi_nand {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "bootloader";
+			reg = <0x00000000 0x00200000>;
+			read-only;
+		};
+
+		partition@200000 {
+			label = "uenv";
+			reg = <0x00200000 0x00200000>;
+		};
+
+		dsd: partition@400000 {
+			label = "dsd";
+			reg = <0x00400000 0x00200000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "ascii-eq-delim-env";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				lan_mac: lan_mac {
+					compatible = "mac-base";
+					#nvmem-cell-cells = <1>;
+				};
+
+				wan_mac: wan_mac {
+					compatible = "mac-base";
+					#nvmem-cell-cells = <1>;
+				};
+			};
+		};
+
+		partition@600000 {
+			label = "kernel";
+			reg = <0x00600000 0x01000000>;
+		};
+
+		partition@1600000 {
+			label = "rootfs";
+			reg = <0x01600000 0x1e800000>;
+			compatible = "linux,ubi";
+		};
+
+		/* reserved for bad block table */
+		reserved@1fe00000 {
+			label = "reserved";
+			reg = <0x1fe00000 0x00200000>;
+			read-only;
+		};
+	};
+};
+
+&wifi {
+	mediatek,mtd-eeprom = <&dsd 0x5000>;
+	nvmem-cells = <&lan_mac 1>;
+	nvmem-cell-names = "mac-address";
+};
