@@ -1,7 +1,7 @@
 'use strict';
 
 import * as libuci from 'uci';
-import { md5 } from 'digest';
+import { md5, sha256 } from 'digest';
 import * as fs from 'fs';
 
 import { append, append_raw, append_value, append_vars, append_string_vars, comment, push_config, set_default, touch_file } from 'wifi.common';
@@ -383,7 +383,7 @@ function iface_roaming(config) {
 			if (!config.auth_secret && !config.key)
 				netifd.setup_failed('FT_KEY_CANT_BE_DERIVED');
 
-			let ft_key = md5(`${config.mobility_domain}/${config.auth_secret ?? config.key}`);
+			let ft_key = sha256(`${config.mobility_domain}/${config.auth_secret ?? config.key}`);
 
 			set_default(config, 'r0kh', [ 'ff:ff:ff:ff:ff:ff,*,' + ft_key ]);
 			set_default(config, 'r1kh', [ '00:00:00:00:00:00,00:00:00:00:00:00,' + ft_key ]);
