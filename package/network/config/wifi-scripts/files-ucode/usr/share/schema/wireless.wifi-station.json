@@ -19,6 +19,13 @@
 		"vid": {
 			"description": "The VLAN Id used by the station",
 			"type": "string"
+		},
+		"iface": {
+			"description": "List of interfaces this station is allowed to connect to",
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
 		}
 	}
 }
