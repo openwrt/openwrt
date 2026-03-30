@@ -464,7 +464,7 @@ function iface_interworking(config) {
 		config.domain_name = join(',', config.domain_name);
 
 	if (config.anqp_3gpp_cell_net)
-		config.domain_name = join(',', config.anqp_3gpp_cell_net);
+		config.anqp_3gpp_cell_net = join(';', config.anqp_3gpp_cell_net);
 
 	append_vars(config, [
 		'interworking', 'internet', 'asra', 'uesa', 'access_network_type', 'hessid', 'venue_group',
