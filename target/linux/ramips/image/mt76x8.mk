@@ -1242,3 +1242,10 @@ define Device/zyxel_keenetic-extra-ii
 	check-size | zyimage -d 6162 -v "ZyXEL Keenetic Extra II"
 endef
 TARGET_DEVICES += zyxel_keenetic-extra-ii
+
+define Device/sensecap_wm7628n
+  IMAGE_SIZE := 32448k
+  DEVICE_VENDOR := SenseCAP
+  DEVICE_MODEL := WM7628N
+endef
+TARGET_DEVICES += sensecap_wm7628n

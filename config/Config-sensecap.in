@@ -1,0 +1,37 @@
+menu "SenseCAP Hardware"
+	config HAVE_LTE
+		bool "Have 4G"
+		default y
+		help
+			If the hardware contains 4G, please enable it.
+
+	config HAVE_GPS
+		bool "Have GPS"
+		default y
+		help
+			If the hardware contains GPS, please enable it.
+
+	choice
+		prompt "REGION"
+		default REGION_US915
+		
+		config REGION_CN470
+			bool "CN470"
+		config REGION_US915
+			bool "US915"
+		config REGION_EU868
+			bool "EU868"
+		config REGION_AS923
+			bool "AS923"
+		config REGION_AU915
+			bool "AU915"
+		config REGION_IN865
+			bool "IN865"
+		config REGION_KR920
+			bool "KR920"
+		config REGION_RU864
+			bool "RU864"
+
+	endchoice
+
+endmenu

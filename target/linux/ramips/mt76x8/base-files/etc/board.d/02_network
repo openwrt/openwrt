@@ -44,6 +44,10 @@ ramips_setup_interfaces()
 	asus,rt-ac1200|\
 	asus,rt-ac1200-v2|\
 	hilink,hlk-7628n|\
+sensecap,wm7628n)
+        lan_mac=$(macaddr_setbit_la "$(cat /sys/class/net/eth0/address)")
+        wan_mac=$(cat /sys/class/net/eth0/address)
+        ;;
 	hilink,hlk-7688a|\
 	hiwifi,hc5861b|\
 	kroks,kndrt31r16|\
@@ -113,6 +117,10 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"1:lan" "0:wan" "6@eth0"
 		;;
+sensecap,wm7628n)
+	ucidef_add_switch "switch0" \
+		"1:lan" "0:wan" "6@eth0"
+	;;
 	hiwifi,hc5761a)
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "4:wan" "6@eth0"
@@ -251,6 +259,10 @@ ramips_setup_macs()
                 ;;
 	cudy,wr1000|\
 	hilink,hlk-7628n|\
+sensecap,wm7628n)
+        lan_mac=$(macaddr_setbit_la "$(cat /sys/class/net/eth0/address)")
+        wan_mac=$(cat /sys/class/net/eth0/address)
+        ;;
 	hilink,hlk-7688a|\
 	wavlink,wl-wn531a3|\
 	wavlink,wl-wn577a2|\
