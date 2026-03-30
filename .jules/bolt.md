@@ -24,3 +24,7 @@
 ## 2024-05-27 - [Python Hashlib Chunked File I/O for Large Binaries]
 **Learning:** Loading large files entirely into memory to calculate hashes (e.g. `hashlib.md5(f.read())`) causes huge memory spikes and slows down execution due to memory allocation overhead, especially in firmware packaging scripts dealing with large images.
 **Action:** Always use a chunked reading approach in a `while True` loop with `f.read(65536)` and `hash.update(chunk)` when hashing large binary files like firmware images.
+
+## 2024-05-28 - [Python dict get with default vs `in` check for list iterations]
+**Learning:** When parsing large JSON index files containing lists of dictionaries (like APK package indexes), iterating over a list field by calling `package.get("tags", [])` forces the creation of a new empty list on every miss. A simple `if "tags" in package:` check avoids this allocation entirely and is measurably faster. Additionally, using string slicing (`tag[19:]`) instead of `tag.split("=")[-1]` for a known prefix is considerably faster.
+**Action:** In high-volume parsing loops over dictionaries (e.g., thousands of packages), avoid using `.get(key, [])` if the key is frequently missing. Use an explicit `if key in dict:` check instead. For extracting values past known string prefixes, use slicing (e.g., `s[len(prefix):]`) instead of `.split()`.
