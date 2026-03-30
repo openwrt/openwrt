@@ -166,7 +166,8 @@ define KernelPackage/mlxreg
 	CONFIG_SENSORS_MLXREG_FAN \
 	CONFIG_LEDS_MLXREG
   FILES:= \
-	$(LINUX_DIR)/drivers/platform/x86/mlx-platform.ko \
+	$(LINUX_DIR)/drivers/platform/x86/mlx-platform.ko@lt6.18 \
+	$(LINUX_DIR)/drivers/platform/mellanox/mlx-platform.ko@ge6.18 \
 	$(LINUX_DIR)/drivers/platform/mellanox/mlxreg-hotplug.ko \
 	$(LINUX_DIR)/drivers/platform/mellanox/mlxreg-io.ko \
 	$(LINUX_DIR)/drivers/hwmon/mlxreg-fan.ko \
@@ -619,7 +620,7 @@ define KernelPackage/serial-8250-exar
   KCONFIG:= CONFIG_SERIAL_8250_EXAR
   FILES:=$(LINUX_DIR)/drivers/tty/serial/8250/8250_exar.ko
   AUTOLOAD:=$(call AutoProbe,8250 8250_base 8250_exar)
-  DEPENDS:=@PCI_SUPPORT +kmod-serial-8250
+  DEPENDS:=@PCI_SUPPORT +kmod-serial-8250 +!LINUX_6_12:kmod-eeprom-93cx6
 endef
 
 define KernelPackage/serial-8250-exar/description

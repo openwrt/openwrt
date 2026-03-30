@@ -98,7 +98,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		if (airoha_ppe_is_enabled(eth, 1)) {
  			/* For PPE2 always use secondary cpu port. */
  			fe_cpu_port = FE_PSE_PORT_CDM2;
-@@ -3101,14 +3103,14 @@ static const char * const en7581_xsi_rst
+@@ -3100,14 +3102,14 @@ static const char * const en7581_xsi_rst
  static int airoha_en7581_get_src_port_id(struct airoha_gdm_port *port, int nbq)
  {
  	switch (port->id) {
@@ -115,7 +115,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		/* 7581 SoC supports eth and usb serdes on GDM4 port */
  		if (!nbq)
  			return HSGMII_LAN_7581_ETH_SRCPORT;
-@@ -3132,12 +3134,12 @@ static const char * const an7583_xsi_rst
+@@ -3131,12 +3133,12 @@ static const char * const an7583_xsi_rst
  static int airoha_an7583_get_src_port_id(struct airoha_gdm_port *port, int nbq)
  {
  	switch (port->id) {

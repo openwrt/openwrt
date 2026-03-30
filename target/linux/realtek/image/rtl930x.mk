@@ -2,6 +2,16 @@
 
 include ./common.mk
 
+define Device/d-link_dgs-1250-28x
+  SOC := rtl9301
+  DEVICE_VENDOR := D-Link
+  DEVICE_MODEL := DGS-1250-28X
+  DEVICE_PACKAGES += kmod-hwmon-lm75
+  IMAGE_SIZE := 24576k
+  $(Device/kernel-lzma)
+endef
+TARGET_DEVICES += d-link_dgs-1250-28x
+
 define Device/hasivo_s1100w-8xgt-se
   SOC := rtl9303
   DEVICE_VENDOR := Hasivo
