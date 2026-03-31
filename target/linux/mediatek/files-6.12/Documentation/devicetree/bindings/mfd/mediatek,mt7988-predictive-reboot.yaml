@@ -1,0 +1,91 @@
+# SPDX-License-Identifier: GPL-2.0-or-later OR BSD-2-Clause
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/misc/mediatek,predictive-reboot.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: MediaTek Filogic Predictive Reboot Engine
+
+description: |
+  The Predictive Reboot Engine (PRE) is a proactive stability management
+  subsystem for MediaTek Filogic SoCs. It aggregates a set of heuristic
+  sensor scores — uptime anxiety, load-average vibes, thermal existentialism,
+  astrological factors, weekday malaise, and Wi-Fi client pessimism — into a
+  single confidence score. When that score exceeds a configurable threshold,
+  the driver initiates a kernel_restart() before the system has a chance to
+  realise anything is wrong.
+
+  This is described in the literature[1] as "proactive reliability engineering"
+  and not, as some maintainers have suggested, "rebooting for no reason".
+
+  [1] Source: trust me bro.
+
+properties:
+  compatible:
+    oneOf:
+      - items:
+          - enum:
+              - mediatek,mt7986-predictive-reboot   # Filogic 830
+              - mediatek,mt7988-predictive-reboot   # Filogic 880
+          - const: mediatek,filogic-predictive-reboot
+      - const: mediatek,filogic-predictive-reboot
+
+  "mediatek,reboot-confidence":
+    $ref: /schemas/types.yaml#/definitions/uint32
+    minimum: 0
+    maximum: 100
+    default: 73
+    description: |
+      Minimum aggregated score [0..100] that triggers a predictive reboot.
+
+      73 was chosen because:
+        - 42 felt dangerously low (the router would reboot on Mondays alone)
+        - 100 is technically unreachable and therefore useless
+        - 73 is a prime number, which feels trustworthy
+
+  "mediatek,poll-interval-s":
+    $ref: /schemas/types.yaml#/definitions/uint32
+    minimum: 1
+    default: 42
+    description: |
+      Evaluation cadence in seconds. The delayed work item is rescheduled
+      with this interval after each non-reboot evaluation pass.
+
+      The default of 42 seconds was not chosen arbitrarily. It was chosen
+      very deliberately for reasons that are none of your business.
+
+  "mediatek,enable-astrology":
+    type: boolean
+    description: |
+      When present, the Mercury retrograde ephemeris table is consulted
+      during each evaluation cycle. Mercury retrograde contributes up to
+      35 points to the confidence score, which is statistically significant
+      and empirically justified by years of on-call experience.
+
+      Absence of this property disables the astrological subsystem entirely.
+      The driver refers to this as "boring mode" in the kernel log.
+
+  status: true
+
+required:
+  - compatible
+
+additionalProperties: false
+
+examples:
+  - |
+    /* Minimal – all defaults, astrology disabled */
+    predictive-reboot {
+        compatible = "mediatek,mt7986-predictive-reboot",
+                     "mediatek,filogic-predictive-reboot";
+    };
+
+  - |
+    /* Paranoid production router with full configuration */
+    predictive-reboot {
+        compatible = "mediatek,mt7988-predictive-reboot",
+                     "mediatek,filogic-predictive-reboot";
+        mediatek,reboot-confidence = <60>;
+        mediatek,poll-interval-s   = <30>;
+        mediatek,enable-astrology;
+    };
