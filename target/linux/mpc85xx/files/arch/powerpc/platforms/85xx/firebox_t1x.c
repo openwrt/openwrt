@@ -59,8 +59,19 @@ static void __init firebox_t1x_setup_arch(void)
 	pr_info("Firebox T10/T15 from Watchguard\n");
 }
 
+static void __init firebox_t30w_setup_arch(void)
+{
+	if (ppc_md.progress)
+		ppc_md.progress("firebox_t30w_setup_arch()", 0);
+
+	fsl_pci_assign_primary();
+
+	pr_info("Firebox T30-W from WatchGuard\n");
+}
+
 machine_arch_initcall(firebox_t10, mpc85xx_common_publish_devices);
 machine_arch_initcall(firebox_t15, mpc85xx_common_publish_devices);
+machine_arch_initcall(firebox_t30w, mpc85xx_common_publish_devices);
 
 define_machine(firebox_t10) {
 	.name			= "P1010 RDB",
@@ -87,3 +98,17 @@ define_machine(firebox_t15) {
 	.get_irq		= mpic_get_irq,
 	.progress		= udbg_progress,
 };
+
+define_machine(firebox_t30w) {
+	.name			= "P1011E",
+	.compatible		= "watchguard,firebox-t30",
+	.setup_arch		= firebox_t30w_setup_arch,
+	.init_IRQ		= firebox_t1x_pic_init,
+#ifdef CONFIG_PCI
+	.pcibios_fixup_bus	= fsl_pcibios_fixup_bus,
+	.pcibios_fixup_phb	= fsl_pcibios_fixup_phb,
+#endif
+	.get_irq		= mpic_get_irq,
+	.progress		= udbg_progress,
+};
+
