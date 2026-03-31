@@ -28,6 +28,15 @@ define U-Boot/apalis_imx6
   BUILD_DEVICES:=toradex_apalis
 endef
 
+define U-Boot/kontron-osm-s-mx8mp
+  NAME:=Kontron OSM-S/BL i.MX8MP
+  DEPENDS:=+firmware-imx +trusted-firmware-a-imx8mp
+  ATF:=bl31_imx8mp.bin
+  UBOOT_IMAGE:=flash.bin
+  BUILD_SUBTARGET:=cortexa53
+  BUILD_DEVICES:=kontron_osm-s-imx8mp
+endef
+
 define U-Boot/mx6cuboxi
   NAME:=SolidRun Cubox-i boards
   UBOOT_IMAGE:=SPL u-boot-dtb.img
@@ -52,17 +61,27 @@ endef
 
 UBOOT_TARGETS := \
 	apalis_imx6 \
+	kontron-osm-s-mx8mp \
 	mx6cuboxi \
 	pico-pi-imx7d \
 	wandboard
 
+ifneq ($(SUBTARGET),cortexa53)
 UBOOT_MAKE_FLAGS += u-boot.imx
+else
+UBOOT_MAKE_FLAGS += \
+	BL31=$(STAGING_DIR_IMAGE)/$(ATF) \
+	BINMAN_INDIRS="$(STAGING_DIR_IMAGE)/firmware-imx $(STAGING_DIR_IMAGE)"
+endif
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(STAGING_DIR_IMAGE)
 	$(foreach img,$(UBOOT_IMAGE), \
 		$(CP) $(PKG_BUILD_DIR)/$(img) $(STAGING_DIR_IMAGE)/$(BUILD_VARIANT)-$(img); \
 	)
+endef
+
+define Package/u-boot/install/default
 endef
 
 $(eval $(call BuildPackage/U-Boot))
