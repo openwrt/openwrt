@@ -22,3 +22,7 @@
 **Vulnerability:** Off-by-one out-of-bounds null-byte poisoning write and missing strict null-terminations when using `strncpy` in C network components (`ead`).
 **Learning:** `datalen` checking allowed `datalen` to be equal to the max buffer size constraint (`1024`) leading to out-of-bounds index writing (`cmd->data[1024] = 0;` on a 1024-byte buffer). Additionally, using `strncpy` to write into an uninitialized bounded buffer without a subsequent explicit null-termination can result in a non-terminated string if the source length equals the buffer length.
 **Prevention:** Always bounds-check network payloads strictly against constraints using `>=` when determining lengths for null-termination array indexes. Additionally, always manually null-terminate strings copied with `strncpy` explicitly via `buf[sizeof(buf) - 1] = '\0'`.
+
+## 2024-05-30 - [github actions: migrate toolchain archives from .tar.xz to .tar.zst]
+**Learning:** OpenWrt has migrated toolchain snapshots to `.tar.zst` format instead of `.tar.xz`, which caused the Github Actions CI to fail with `404 Not Found` when trying to download `openwrt-toolchain-*.tar.xz` or `openwrt-sdk-*.tar.xz`.
+**Action:** Always check the `.tar.zst` archive format for toolchains/SDKs in `build.yml` when fetching from `downloads.cdn.openwrt.org`. Ensure that `tar --zstd -xf -` is used in place of `tar --xz -xf -`.
