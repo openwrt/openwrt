@@ -10,3 +10,7 @@
 **Vulnerability:** The `network_keygen` function in `unet.uc` constructed shell command strings without validating configuration variables like `config.rounds` and `config.salt`, leading to a command injection vulnerability. An attacker capable of modifying config JSON files could inject arbitrary commands.
 **Learning:** Even internal configuration objects like `config.salt` must be strictly validated before being interpolated into `system()` strings to prevent command injection, especially when restoring configurations from JSON.
 **Prevention:** Use strict regex whitelists (e.g., `match(salt, /[^a-fA-F0-9]/)`) to validate integer and hex inputs before using them in shell commands.
+## 2024-05-24 - [CRITICAL] Fix buffer overflow in ead client
+**Vulnerability:** ead-client.c and t_pw.c used strcpy to copy user input into fixed-size character arrays without checking the length, causing buffer overflows.
+**Learning:** Legacy string handling mechanisms that map structures onto network packets or directly copy from command line arguments are vulnerable when using unsafe functions like strcpy.
+**Prevention:** Always use safe string operations like strncpy, and ensure that buffers are correctly bounded and null-terminated.
