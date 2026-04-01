@@ -28,7 +28,7 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  
  static void airoha_set_macaddr(struct airoha_gdm_port *port, const u8 *addr)
  {
-@@ -1647,6 +1649,7 @@ static int airoha_dev_open(struct net_de
+@@ -1663,6 +1665,7 @@ static int airoha_dev_open(struct net_de
  	struct airoha_qdma *qdma = port->qdma;
  	u32 pse_port = FE_PSE_PORT_PPE1;
  
@@ -36,7 +36,7 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  	if (airhoa_is_phy_external(port)) {
  		err = phylink_of_phy_connect(port->phylink, dev->dev.of_node, 0);
  		if (err) {
-@@ -1657,6 +1660,7 @@ static int airoha_dev_open(struct net_de
+@@ -1673,6 +1676,7 @@ static int airoha_dev_open(struct net_de
  
  		phylink_start(port->phylink);
  	}
@@ -44,7 +44,7 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  
  	netif_tx_start_all_queues(dev);
  	err = airoha_set_vip_for_gdm_port(port, true);
-@@ -1722,10 +1726,12 @@ static int airoha_dev_stop(struct net_de
+@@ -1738,10 +1742,12 @@ static int airoha_dev_stop(struct net_de
  		}
  	}
  
@@ -57,7 +57,7 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  
  	return 0;
  }
-@@ -2858,6 +2864,7 @@ static const struct ethtool_ops airoha_e
+@@ -2874,6 +2880,7 @@ static const struct ethtool_ops airoha_e
  	.get_link		= ethtool_op_get_link,
  };
  
@@ -65,7 +65,7 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  static struct phylink_pcs *airoha_phylink_mac_select_pcs(struct phylink_config *config,
  							 phy_interface_t interface)
  {
-@@ -2871,6 +2878,7 @@ static void airoha_mac_config(struct phy
+@@ -2887,6 +2894,7 @@ static void airoha_mac_config(struct phy
  			      const struct phylink_link_state *state)
  {
  }
@@ -73,7 +73,7 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  
  static int airoha_metadata_dst_alloc(struct airoha_gdm_port *port)
  {
-@@ -2916,6 +2924,7 @@ bool airoha_is_valid_gdm_port(struct air
+@@ -2932,6 +2940,7 @@ bool airoha_is_valid_gdm_port(struct air
  	return false;
  }
  
@@ -81,7 +81,7 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  static void airoha_mac_link_up(struct phylink_config *config, struct phy_device *phy,
  			       unsigned int mode, phy_interface_t interface,
  			       int speed, int duplex, bool tx_pause, bool rx_pause)
-@@ -3008,6 +3017,7 @@ static int airoha_setup_phylink(struct n
+@@ -3024,6 +3033,7 @@ static int airoha_setup_phylink(struct n
  
  	return 0;
  }
@@ -89,7 +89,7 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  
  static int airoha_alloc_gdm_port(struct airoha_eth *eth,
  				 struct device_node *np)
-@@ -3080,11 +3090,13 @@ static int airoha_alloc_gdm_port(struct
+@@ -3096,11 +3106,13 @@ static int airoha_alloc_gdm_port(struct
  	port->id = id;
  	eth->ports[p] = port;
  
@@ -103,7 +103,7 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  
  	return airoha_metadata_dst_alloc(port);
  }
-@@ -3213,10 +3225,12 @@ error_napi_stop:
+@@ -3231,10 +3243,12 @@ error_napi_stop:
  
  		if (port->dev->reg_state == NETREG_REGISTERED)
  			unregister_netdev(port->dev);
@@ -116,7 +116,7 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  		airoha_metadata_dst_free(port);
  	}
  	airoha_hw_cleanup(eth);
-@@ -3243,10 +3257,12 @@ static void airoha_remove(struct platfor
+@@ -3261,10 +3275,12 @@ static void airoha_remove(struct platfor
  
  		unregister_netdev(port->dev);
  		airoha_metadata_dst_free(port);
@@ -131,7 +131,7 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  
 --- a/drivers/net/ethernet/airoha/airoha_eth.h
 +++ b/drivers/net/ethernet/airoha/airoha_eth.h
-@@ -537,9 +537,11 @@ struct airoha_gdm_port {
+@@ -538,9 +538,11 @@ struct airoha_gdm_port {
  	struct net_device *dev;
  	int id;
  
