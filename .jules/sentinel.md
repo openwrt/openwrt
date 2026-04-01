@@ -18,3 +18,7 @@
 **Vulnerability:** The `ead` service writes its process ID to a file using `sprintf(pid, "%d\n", getpid())` into a stack-allocated buffer `char pid[8];`. Since `getpid()` can return up to 7 digits on modern Linux systems, adding `\n` and `\0` requires at least 9 bytes, overflowing the 8-byte buffer.
 **Learning:** Hardcoded small buffer sizes for formatting integer PIDs can lead to stack memory corruption (CWE-121) as OS configurations like `kernel.pid_max` allow PIDs to exceed traditional limits.
 **Prevention:** Always allocate sufficiently large stack buffers (e.g., 32 bytes) when formatting PIDs, or preferably use `snprintf` with `sizeof(buffer)` to enforce explicit bounds checking.
+## 2024-11-20 - Fix buffer overflow risk in t_pw.c
+**Vulnerability:** Unbounded `strcpy` operations copying external usernames into fixed-size struct buffers (`userbuf`, `pebuf.name`) of size `MAXUSERLEN` in `ead/src/tinysrp/t_pw.c`.
+**Learning:** Legacy C code in the `tinysrp` dependency relied on upstream parser constraints (`t_nextfield`) for bounds-checking, exposing the credential structures to stack smashing if parser limits changed or failed to explicitly null-terminate strings.
+**Prevention:** Use explicitly bounded `strncpy(dest, src, MAXUSERLEN - 1)` with manual null-termination (`dest[MAXUSERLEN - 1] = '\0'`) when persisting credential strings within fixed structs.
