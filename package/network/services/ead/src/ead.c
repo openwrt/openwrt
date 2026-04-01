@@ -379,8 +379,8 @@ handle_ping(struct ead_packet *pkt, int len, int *nstate)
 	int slen;
 
 	slen = strlen(dev_name);
-	if (slen > 1024)
-		slen = 1024;
+	if (slen >= 1024)
+		slen = 1023;
 
 	msg->len = htonl(sizeof(struct ead_msg_pong) + slen);
 	strncpy(pong->name, dev_name, slen);

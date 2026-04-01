@@ -86,6 +86,7 @@ jobs:
           SUBTARGET=$(echo ${{ inputs.target }} | cut -d "/" -f 2)
           echo "TARGET=$TARGET" >> "$GITHUB_ENV"
           echo "SUBTARGET=$SUBTARGET" >> "$GITHUB_ENV"
+          apt-get update && apt-get install -y zstd
 
       - name: Extract prebuilt tools
         shell: su buildbot -c "sh -e {0}"

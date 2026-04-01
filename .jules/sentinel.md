@@ -26,3 +26,6 @@
 ## 2024-05-30 - [github actions: migrate toolchain archives from .tar.xz to .tar.zst]
 **Learning:** OpenWrt has migrated toolchain snapshots to `.tar.zst` format instead of `.tar.xz`, which caused the Github Actions CI to fail with `404 Not Found` when trying to download `openwrt-toolchain-*.tar.xz` or `openwrt-sdk-*.tar.xz`.
 **Action:** Always check the `.tar.zst` archive format for toolchains/SDKs in `build.yml` when fetching from `downloads.cdn.openwrt.org`. Ensure that `tar --zstd -xf -` is used in place of `tar --xz -xf -`.
+## 2024-05-30 - [github actions: install missing zstd package for toolchains]
+**Learning:** After OpenWrt's migration from `.tar.xz` to `.tar.zst` for toolchain archives, the `ghcr.io/zektopic/tools:latest` container lacks the `zstd` binary, causing tar extractions to fail (`tar (grandchild): zstd: Cannot exec: No such file or directory`).
+**Action:** When migrating tar archives from `.xz` to `.zst`, ensure the CI container environment is capable of unpacking them by installing `zstd` via `apt-get install -y zstd` in the environment initialization step.
