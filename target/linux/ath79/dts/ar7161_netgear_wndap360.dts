@@ -10,6 +10,10 @@
 	compatible = "netgear,wndap360", "qca,ar7161";
 	model = "Netgear WNDAP360";
 
+	chosen {
+		/delete-property/ bootargs;
+	};
+
 	aliases {
 		led-boot = &led_power_orange;
 		led-failsafe = &led_power_orange;
