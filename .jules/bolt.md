@@ -28,3 +28,7 @@
 ## 2024-05-28 - [Python dict get with default vs `in` check for list iterations]
 **Learning:** When parsing large JSON index files containing lists of dictionaries (like APK package indexes), iterating over a list field by calling `package.get("tags", [])` forces the creation of a new empty list on every miss. A simple `if "tags" in package:` check avoids this allocation entirely and is measurably faster. Additionally, using string slicing (`tag[19:]`) instead of `tag.split("=")[-1]` for a known prefix is considerably faster.
 **Action:** In high-volume parsing loops over dictionaries (e.g., thousands of packages), avoid using `.get(key, [])` if the key is frequently missing. Use an explicit `if key in dict:` check instead. For extracting values past known string prefixes, use slicing (e.g., `s[len(prefix):]`) instead of `.split()`.
+
+## 2024-05-29 - [Avoid reading entire large files into memory in Sercomm payload script]
+**Learning:** Reading massive binary files directly into memory before hashing (e.g. `f.read(in_size)`) causes huge memory allocations that scale linearly with the file size, making $O(N)$ memory usage and unnecessary GC sweeps.
+**Action:** Always process large binary files using a chunked approach inside a `while True:` loop (e.g., `f.read(65536)`). If a file must be written with a prepended hash of its contents, initially inject a byte placeholder, stream the incoming data chunks to the output, and seek back to insert the finalized hash when finished, keeping memory usage constant $O(1)$.
