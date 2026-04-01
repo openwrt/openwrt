@@ -99,7 +99,7 @@ define Device/gemtek_w1700k-ubi
   DEVICE_DTS := an7581-w1700k-ubi
   DEVICE_PACKAGES := airoha-en7581-mt7996-npu-firmware \
 		    fitblk kmod-i2c-an7581 kmod-hwmon-nct7802 \
-		    kmod-mt7996-firmware kmod-phy-rtl8261n \
+		    kmod-mt7996-firmware kmod-phy-realtek rtl8261n-firmware \
 		    wpad-basic-mbedtls
   UBINIZE_OPTS := -E 5
   BLOCKSIZE := 128k

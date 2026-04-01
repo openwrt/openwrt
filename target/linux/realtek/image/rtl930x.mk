@@ -17,6 +17,7 @@ define Device/hasivo_s1100w-8xgt-se
   DEVICE_VENDOR := Hasivo
   DEVICE_MODEL := S1100W-8XGT-SE
   IMAGE_SIZE := 12288k
+  DEVICE_PACKAGES := kmod-phy-realtek rtl8264b-firmware
   $(Device/kernel-lzma)
 endef
 TARGET_DEVICES += hasivo_s1100w-8xgt-se
@@ -99,7 +100,7 @@ define Device/xikestor_sks8300-8t
   UIMAGE_MAGIC := 0x93000000
   DEVICE_VENDOR := XikeStor
   DEVICE_MODEL := SKS8300-8T
-  DEVICE_PACKAGES := kmod-hwmon-lm75
+  DEVICE_PACKAGES := kmod-hwmon-lm75 kmod-phy-realtek rtl8261n-firmware
   IMAGE_SIZE := 20480k
   $(Device/kernel-lzma)
   IMAGE/sysupgrade.bin := \
@@ -133,6 +134,7 @@ define Device/xikestor_sks8300-12e2t2x
   UIMAGE_MAGIC := 0x93000000
   DEVICE_VENDOR := XikeStor
   DEVICE_MODEL := SKS8300-12E2T2X
+  DEVICE_PACKAGES := kmod-phy-realtek rtl8261n-firmware
   IMAGE_SIZE := 20480k
   $(Device/kernel-lzma)
   IMAGE/sysupgrade.bin := \
@@ -187,6 +189,7 @@ TARGET_DEVICES += zyxel_xgs1210-12-a1
 define Device/zyxel_xgs1210-12-b1
   $(Device/zyxel_xgs1210-12)
   DEVICE_VARIANT := B1
+  DEVICE_PACKAGES := kmod-phy-realtek rtl8261n-firmware
 endef
 TARGET_DEVICES += zyxel_xgs1210-12-b1
 
