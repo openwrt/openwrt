@@ -430,7 +430,7 @@ handle_send_a(struct ead_packet *pkt, int len, int *nstate)
 	struct ead_msg_number *number = EAD_DATA(msg, number);
 	len = ntohl(msg->len) - sizeof(struct ead_msg_number);
 
-	if (len > MAXPARAMLEN + 1)
+	if (len <= 0 || len > MAXPARAMLEN + 1)
 		return false;
 
 	A.len = len;
@@ -487,7 +487,7 @@ handle_send_cmd(struct ead_packet *pkt, int len, int *nstate)
 	datalen = ead_decrypt_message(msg) - sizeof(struct ead_msg_cmd);
 	if (datalen <= 0)
 		return false;
-	if (datalen > 1024)
+	if (datalen > 1024 || datalen >= sizeof(pktbuf_b) - sizeof(struct ead_msg) - sizeof(struct ead_msg_encrypted) - sizeof(struct ead_msg_cmd))
 		return false;
 
 	type = ntohs(cmd->type);

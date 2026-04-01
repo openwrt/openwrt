@@ -151,7 +151,7 @@ handle_pong(void)
 	struct ead_msg_pong *pong = EAD_DATA(msg, pong);
 	int len = ntohl(msg->len) - sizeof(struct ead_msg_pong);
 
-	if (len <= 0)
+	if (len <= 0 || len >= sizeof(msgbuf) - sizeof(struct ead_msg) - sizeof(struct ead_msg_pong))
 		return false;
 
 	pong->name[len] = 0;
@@ -166,6 +166,9 @@ static bool
 handle_prime(void)
 {
 	struct ead_msg_salt *sb = EAD_DATA(msg, salt);
+
+	if (sb->len > MAXSALTLEN)
+		return false;
 
 	salt.len = sb->len;
 	memcpy(salt.data, sb->salt, salt.len);
@@ -190,6 +193,9 @@ handle_b(void)
 {
 	struct ead_msg_number *num = EAD_DATA(msg, number);
 	int len = ntohl(msg->len) - sizeof(struct ead_msg_number);
+
+	if (len <= 0 || len > MAXPARAMLEN)
+		return false;
 
 	B.data = bbuf;
 	B.len = len;
@@ -220,7 +226,7 @@ handle_cmd_data(void)
 	struct ead_msg_cmd_data *cmd = EAD_ENC_DATA(msg, cmd_data);
 	int datalen = ead_decrypt_message(msg) - sizeof(struct ead_msg_cmd_data);
 
-	if (datalen < 0)
+	if (datalen < 0 || datalen > sizeof(msgbuf) - sizeof(struct ead_msg) - sizeof(struct ead_msg_encrypted) - sizeof(struct ead_msg_cmd_data))
 		return false;
 
 	if (datalen > 0) {
