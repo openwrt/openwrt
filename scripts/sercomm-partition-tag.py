@@ -3,6 +3,7 @@
 import argparse
 import os
 import struct
+import shutil
 
 def create_header(args, size):
 	header = struct.pack('32s32s32s32s32s',
@@ -21,14 +22,11 @@ def create_output(args):
 	header = create_header(args, in_size)
 	print(header)
 
-	in_f = open(args.input_file, 'r+b')
-	in_bytes = in_f.read(in_size)
-	in_f.close()
-
-	out_f = open(args.output_file, 'w+b')
-	out_f.write(header)
-	out_f.write(in_bytes)
-	out_f.close()
+	# Optimization: stream file contents with shutil.copyfileobj to avoid loading entire file in memory
+	with open(args.output_file, 'wb') as out_f:
+		out_f.write(header)
+		with open(args.input_file, 'rb') as in_f:
+			shutil.copyfileobj(in_f, out_f)
 
 def main():
 	global args

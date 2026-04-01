@@ -44,15 +44,16 @@ import argparse
 import os
 import struct
 import binascii
+import shutil
 
 
 def auto_int(x):
     return int(x, 0)
 
 
-def create_tag(args, in_bytes):
+def create_tag(args, crc):
     # JAM CRC32 is bitwise not and unsigned
-    crc = ~binascii.crc32(in_bytes) & 0xFFFFFFFF
+    crc = ~crc & 0xFFFFFFFF
     tag = struct.pack(
         ">IIIII",
         crc,
@@ -68,16 +69,23 @@ def create_output(args):
     in_st = os.stat(args.input_file)
     in_size = in_st.st_size
 
-    in_f = open(args.input_file, "r+b")
-    in_bytes = in_f.read(in_size)
-    in_f.close()
+    # Optimization: compute CRC32 in 64K chunks instead of loading entire file into memory
+    # This prevents O(N) memory allocation and improves performance for large files.
+    crc = 0
+    with open(args.input_file, "rb") as in_f:
+        while True:
+            chunk = in_f.read(65536)
+            if not chunk:
+                break
+            crc = binascii.crc32(chunk, crc)
 
-    tag = create_tag(args, in_bytes)
+    tag = create_tag(args, crc)
 
-    out_f = open(args.output_file, "w+b")
-    out_f.write(in_bytes)
-    out_f.write(tag)
-    out_f.close()
+    # Optimization: use shutil.copyfileobj to stream the file contents without O(N) memory overhead
+    with open(args.output_file, "wb") as out_f:
+        with open(args.input_file, "rb") as in_f:
+            shutil.copyfileobj(in_f, out_f)
+        out_f.write(tag)
 
 
 def main():
