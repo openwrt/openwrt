@@ -8,10 +8,10 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_VERSION:=2021.07
-PKG_RELEASE:=21
+PKG_VERSION:=2024.07
+PKG_RELEASE:=1
 
-PKG_HASH:=312b7eeae44581d1362c3a3f02c28d806647756c82ba8c72241c7cdbe68ba77e
+PKG_HASH:=f591da9ab90ef3d6b3d173766d0ddff90c4ed7330680897486117df390d83c8f
 
 include $(INCLUDE_DIR)/u-boot.mk
 include $(INCLUDE_DIR)/package.mk
@@ -38,6 +38,9 @@ define U-Boot/omap3_beagle
 endef
 
 UBOOT_TARGETS:=omap4_panda am335x_evm omap3_beagle
+
+UBOOT_CUSTOMIZE_CONFIG:=\
+	--enable LEGACY_IMAGE_FORMAT
 
 define Build/InstallDev
 	$(foreach device,$(BUILD_DEVICES), \
