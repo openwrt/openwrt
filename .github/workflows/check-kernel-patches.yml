@@ -87,11 +87,6 @@ jobs:
           echo "TARGET=$TARGET" >> "$GITHUB_ENV"
           echo "SUBTARGET=$SUBTARGET" >> "$GITHUB_ENV"
 
-      - name: Install dependencies
-        shell: su buildbot -c "sh -e {0}"
-        run: |
-          sudo apt-get update && sudo apt-get install -y python3-pyelftools python3-cryptography
-
       - name: Extract prebuilt tools
         shell: su buildbot -c "sh -e {0}"
         working-directory: openwrt
