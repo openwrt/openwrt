@@ -210,6 +210,11 @@ jobs:
           restore-keys: |
             ccache-kernel-${{ env.TARGET }}/${{ env.SUBTARGET }}-
 
+      - name: Install dependencies
+        shell: su buildbot -c "sh -e {0}"
+        run: |
+          sudo apt-get update && sudo apt-get install -y zstd python3-pyelftools python3-cryptography
+
       - name: Download external toolchain/sdk
         if: inputs.build_toolchain == false && steps.cache-external-toolchain.outputs.cache-hit != 'true'
         shell: su buildbot -c "sh -e {0}"
