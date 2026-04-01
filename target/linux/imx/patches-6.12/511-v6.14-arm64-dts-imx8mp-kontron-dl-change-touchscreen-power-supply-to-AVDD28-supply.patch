@@ -1,0 +1,33 @@
+From e2bc14a13e434417e5a606ddac9d121003289a7d Mon Sep 17 00:00:00 2001
+From: Frank Li <Frank.Li@nxp.com>
+Date: Wed, 23 Oct 2024 11:26:36 -0400
+Subject: arm64: dts: imx8mp-kontron-dl: change touchscreen power-supply to
+ AVDD28-supply
+
+Update the touchscreen power-supply from 'power-supply' to 'AVDD28-supply' and
+'VDDIO-supply' as per the binding documentation in goodix.yaml.
+
+Fix below warning:
+arch/arm64/boot/dts/freescale/imx8mp-kontron-dl.dtb: touchscreen@5d:
+    'power-supply' does not match any of the regexes: 'pinctrl-[0-9]+'
+        from schema $id: http://devicetree.org/schemas/input/touchscreen/goodix.yaml
+
+Signed-off-by: Frank Li <Frank.Li@nxp.com>
+Reviewed-by: Frieder Schrempf <frieder.schrempf@kontron.de>
+Signed-off-by: Shawn Guo <shawnguo@kernel.org>
+---
+ arch/arm64/boot/dts/freescale/imx8mp-kontron-dl.dtso | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/arch/arm64/boot/dts/freescale/imx8mp-kontron-dl.dtso
++++ b/arch/arm64/boot/dts/freescale/imx8mp-kontron-dl.dtso
+@@ -80,7 +80,8 @@
+ 		interrupt-parent = <&gpio1>;
+ 		interrupts = <6 8>;
+ 		irq-gpios = <&gpio1 6 0>;
+-		power-supply = <&reg_vcc_panel>;
++		AVDD28-supply = <&reg_vcc_panel>;
++		VDDIO-supply = <&reg_vcc_panel>;
+ 		reset-gpios = <&gpio1 7 0>;
+ 	};
+ };
