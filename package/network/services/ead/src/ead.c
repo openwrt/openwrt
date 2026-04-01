@@ -487,7 +487,7 @@ handle_send_cmd(struct ead_packet *pkt, int len, int *nstate)
 	datalen = ead_decrypt_message(msg) - sizeof(struct ead_msg_cmd);
 	if (datalen <= 0)
 		return false;
-	if (datalen > 1024)
+	if (datalen >= 1024)
 		return false;
 
 	type = ntohs(cmd->type);
@@ -845,7 +845,8 @@ check_bridge_port(const char *br, const char *port, void *arg)
 		if (strcmp(in->bridge, br) == 0)
 			break;
 
-		strncpy(in->bridge, br, sizeof(in->bridge));
+		strncpy(in->bridge, br, sizeof(in->bridge) - 1);
+		in->bridge[sizeof(in->bridge) - 1] = '\0';
 		DEBUG(2, "assigning port %s to bridge %s\n", in->ifname, in->bridge);
 		stop_server(in, false);
 	}
@@ -910,6 +911,7 @@ int main(int argc, char **argv)
 			memset(in, 0, sizeof(struct ead_instance));
 			INIT_LIST_HEAD(&in->list);
 			strncpy(in->ifname, optarg, sizeof(in->ifname) - 1);
+			in->ifname[sizeof(in->ifname) - 1] = '\0';
 			list_add(&in->list, &instances);
 			in->id = n_iface++;
 			break;
