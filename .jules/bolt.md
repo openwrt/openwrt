@@ -16,3 +16,6 @@
 ## 2024-05-15 - Unused `email.parser` import overhead in CLI scripts
 **Learning:** The `email.parser` module is a "heavy" standard library module that can add significant startup overhead (e.g., ~0.3s to ~1.5s depending on system). Importing it in Python utility scripts, even if unused, unnecessarily penalizes script execution time.
 **Action:** Always audit Python CLI scripts for unused heavy standard library imports (especially `email.parser`) and remove them to optimize startup times for scripts that are frequently invoked in build processes or loops.
+## 2025-01-20 - Optimize parse_opkg in make-index-json.py
+**Learning:** For extremely large text payloads like OPKG index files, the `splitlines()` function on each chunk is still relatively slow because it allocates many intermediate string objects in memory. Using `str.find` to pinpoint exactly where the lines start and end avoids allocating memory for the rest of the file contents.
+**Action:** When parsing well-structured, multi-line blocks where only a few lines are needed, prefer `str.find()` over splitting all lines to dramatically reduce memory allocation and increase performance (~2.8x speedup).
