@@ -65,20 +65,21 @@ function network_keygen(pw_file, args, config, out_file, extra_args)
 		out_file = "/dev/fd/" + output.fileno();
 	}
 
+	let cmd = [ "sh", "-c", "unet-tool " + args ];
 	if (extra_args)
 		extra_args = '"' + extra_args + '"';
 	else
 		extra_args = "";
-	args += ` -s ${rounds},${salt} -o ${out_file}`;
+	cmd[2] += ` -s ${rounds},${salt} -o ${out_file}`;
 
 	if (config.xorkey) {
 		xorkey = network_get_string_file(config.xorkey);
-		args += " -x /dev/fd/" + xorkey.fileno();
+		cmd[2] += " -x /dev/fd/" + xorkey.fileno();
 	}
 
 	pw_file.seek();
-	args += " <&" + pw_file.fileno() + " " + extra_args;
-	let rc = system("unet-tool " + args);
+	cmd[2] += " <&" + pw_file.fileno() + " " + extra_args;
+	let rc = system(cmd);
 
 	if (xorkey)
 		xorkey.close();
@@ -180,7 +181,7 @@ function network_sign_data(ctx, name, network, pw_file, upload)
 	if (!upload)
 		return true;
 
-	ret = system(`unet-tool -U 127.0.0.1 "${bin_file}"`);
+	ret = system([ "unet-tool", "-U", "127.0.0.1", bin_file ]);
 	unlink(bin_file);
 	if (ret) {
 		if (ctx.command_failed)
@@ -201,7 +202,7 @@ function network_create_uci(model, name, iface)
 		cur.set("network", name, key, val);
 	cur.commit();
 
-	system("reload_config");
+		system([ "reload_config" ]);
 }
 
 const config_editor = {
@@ -349,7 +350,7 @@ function network_create(ctx, argv, named) {
 	let rounds = 10000;
 
 	let xorkey_file = mkstemp();
-	system(`unet-tool -G >&${xorkey_file.fileno()}`);
+	system([ "sh", "-c", `unet-tool -G >&${xorkey_file.fileno()}` ]);
 	let xorkey = network_get_file_string(xorkey_file);
 
 	let network = {
@@ -369,12 +370,12 @@ function network_create(ctx, argv, named) {
 	let pubkey = network_get_pubkey(pw_file, network);
 
 	let hostkey_file = mkstemp();
-	if (system(`unet-tool -G >&${hostkey_file.fileno()}`))
+	if (system([ "sh", "-c", `unet-tool -G >&${hostkey_file.fileno()}` ]))
 		return ctx.command_failed("Failed to generate host key");
 
 	hostkey_file.seek();
 	let host_pubkey_file = mkstemp();
-	if (system(`unet-tool -H -K - <&${hostkey_file.fileno()} >&${host_pubkey_file.fileno()}`))
+	if (system([ "sh", "-c", `unet-tool -H -K - <&${hostkey_file.fileno()} >&${host_pubkey_file.fileno()}` ]))
 		return ctx.command_failed("Failed to generate host public key");
 
 	let host_key = network_get_file_string(hostkey_file);
@@ -414,7 +415,7 @@ function network_delete(ctx, argv) {
 		return ctx.command_failed("Command failed");
 
 	cur.commit();
-	system("reload_config");
+	system([ "reload_config" ]);
 	return ctx.ok("Network deleted");
 }
 
@@ -813,7 +814,8 @@ function network_edit(ctx, argv) {
 			delete iface_data[name];
 
 	let json_file = mkstemp();
-	if (system(`unet-tool -T -b /etc/unetd/${network}.bin >&${json_file.fileno()}`))
+	let bin_path = "/etc/unetd/" + network + ".bin";
+	if (system([ "sh", "-c", `unet-tool -T -b '${bin_path}' >&${json_file.fileno()}` ]))
 		return;
 
 	let json_data;
