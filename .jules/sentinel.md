@@ -18,3 +18,8 @@
 **Vulnerability:** The `ead` service writes its process ID to a file using `sprintf(pid, "%d\n", getpid())` into a stack-allocated buffer `char pid[8];`. Since `getpid()` can return up to 7 digits on modern Linux systems, adding `\n` and `\0` requires at least 9 bytes, overflowing the 8-byte buffer.
 **Learning:** Hardcoded small buffer sizes for formatting integer PIDs can lead to stack memory corruption (CWE-121) as OS configurations like `kernel.pid_max` allow PIDs to exceed traditional limits.
 **Prevention:** Always allocate sufficiently large stack buffers (e.g., 32 bytes) when formatting PIDs, or preferably use `snprintf` with `sizeof(buffer)` to enforce explicit bounds checking.
+
+## 2024-05-18 - Missing Buffer Overflows Bounds in Network Parsing
+**Vulnerability:** Bounds checks were missing on values read directly from network payloads in the Emergency Access Daemon service (ead & ead-client), specifically regarding string boundaries and payload length integer checking.
+**Learning:** `ead-client.c` lacked bounds checking on network message values resulting in possible Buffer Overflow scenarios such as when `handle_pong` null terminates an unbounded network string, or when `memcpy` calls assume the length is within allocation boundaries. An integer wrap-around could also be induced by negative payloads passing unsigned comparisons.
+**Prevention:** Always bound dynamically decoded/deserialized values from network packets (e.g. `ntohl()`) and assert that they are within memory constraints prior to executing unsafe string manipulation functions or memory copy operations. Use minimum bound checks, ensure sizes correctly restrict payload bounds to allocated structures, and clamp buffer pointers to structure max allocation lengths.

@@ -154,6 +154,9 @@ handle_pong(void)
 	if (len <= 0)
 		return false;
 
+	if (len >= 1024)
+		len = 1023;
+
 	pong->name[len] = 0;
 	auth_type = ntohs(pong->auth_type);
 	if (nid == 0xffff)
@@ -166,6 +169,9 @@ static bool
 handle_prime(void)
 {
 	struct ead_msg_salt *sb = EAD_DATA(msg, salt);
+
+	if (sb->len > MAXSALTLEN)
+		return false;
 
 	salt.len = sb->len;
 	memcpy(salt.data, sb->salt, salt.len);
@@ -190,6 +196,9 @@ handle_b(void)
 {
 	struct ead_msg_number *num = EAD_DATA(msg, number);
 	int len = ntohl(msg->len) - sizeof(struct ead_msg_number);
+
+	if (len <= 0 || len > MAXPARAMLEN)
+		return false;
 
 	B.data = bbuf;
 	B.len = len;
