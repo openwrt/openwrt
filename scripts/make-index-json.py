@@ -71,22 +71,42 @@ def parse_opkg(text: str) -> dict:
     # as it avoids the overhead of full RFC 822/2822 compliance checks.
     chunks: list[str] = text.strip().split("\n\n")
     for chunk in chunks:
-        package_name = ""
-        package_version = ""
-        package_abi = ""
+        pkg_idx = chunk.find("\nPackage: ")
+        if pkg_idx == -1:
+            if chunk.startswith("Package: "):
+                pkg_idx = 0
+            else:
+                continue
+        else:
+            pkg_idx += 1
 
-        for line in chunk.split("\n"):
-            if line.startswith("Package: "):
-                package_name = line[9:].strip()
-            elif line.startswith("Version: "):
-                package_version = line[9:].strip()
-            elif line.startswith("ABIVersion: "):
-                package_abi = line[12:].strip()
+        end_idx = chunk.find("\n", pkg_idx)
+        package_name = chunk[pkg_idx+9:end_idx if end_idx != -1 else len(chunk)].strip()
 
-        if package_name:
-            if package_abi:
-                package_name = removesuffix(package_name, package_abi)
-            packages[package_name] = package_version
+        ver_idx = chunk.find("\nVersion: ")
+        if ver_idx == -1:
+            if chunk.startswith("Version: "):
+                ver_idx = 0
+
+        if ver_idx != -1:
+            ver_idx += 1 if chunk[ver_idx] == '\n' else 0
+            end_idx = chunk.find("\n", ver_idx)
+            package_version = chunk[ver_idx+9:end_idx if end_idx != -1 else len(chunk)].strip()
+        else:
+            package_version = ""
+
+        abi_idx = chunk.find("\nABIVersion: ")
+        if abi_idx == -1:
+            if chunk.startswith("ABIVersion: "):
+                abi_idx = 0
+
+        if abi_idx != -1:
+            abi_idx += 1 if chunk[abi_idx] == '\n' else 0
+            end_idx = chunk.find("\n", abi_idx)
+            package_abi = chunk[abi_idx+12:end_idx if end_idx != -1 else len(chunk)].strip()
+            package_name = removesuffix(package_name, package_abi)
+
+        packages[package_name] = package_version
 
     return packages
 
