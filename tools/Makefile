@@ -87,6 +87,10 @@ tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USES_MINOR),y) += yafut
 tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USE_SPARSE),y) += sparse
 tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USE_LLVM_BUILD),y) += llvm-bpf
 tools-$(if $(CONFIG_BUILD_ALL_HOST_TOOLS)$(CONFIG_USE_MOLD),y) += mold
+tools-$(CONFIG_USE_RUST_TOOLCHAIN) += rust
+tools-$(CONFIG_BUILD_BINDGEN) += bindgen
+tools-$(CONFIG_USE_CBINDGEN) += cbindgen
+tools-$(CONFIG_USE_CORROSION) += corrosion
 
 # builddir dependencies
 $(curdir)/autoconf/compile := $(curdir)/m4/compile
@@ -117,6 +121,10 @@ $(curdir)/lz4/compile := $(curdir)/meson/compile
 $(curdir)/lzma-old/compile := $(curdir)/zlib/compile
 $(curdir)/lzop/compile := $(curdir)/cmake/compile $(curdir)/liblzo/compile
 $(curdir)/llvm-bpf/compile := $(curdir)/cmake/compile
+$(curdir)/rust/compile := $(curdir)/xz/compile
+$(curdir)/bindgen/compile := $(curdir)/rust/compile $(curdir)/llvm-bpf/compile
+$(curdir)/cbindgen/compile := $(curdir)/rust/compile
+$(curdir)/corrosion/compile := $(curdir)/rust/compile $(curdir)/cmake/compile
 $(curdir)/make-ext4fs/compile := $(curdir)/zlib/compile
 $(curdir)/meson/compile := $(curdir)/ninja/compile
 $(curdir)/missing-macros/compile := $(curdir)/autoconf/compile
