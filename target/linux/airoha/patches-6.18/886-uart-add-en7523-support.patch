@@ -201,6 +201,6 @@
  			       unsigned int quot);
  int fsl8250_handle_irq(struct uart_port *port);
 +int en7523_set_uart_baud_rate(struct uart_port *port, unsigned int baud);
+ void serial8250_handle_irq_locked(struct uart_port *port, unsigned int iir);
  int serial8250_handle_irq(struct uart_port *port, unsigned int iir);
  u16 serial8250_rx_chars(struct uart_8250_port *up, u16 lsr);
- void serial8250_read_char(struct uart_8250_port *up, u16 lsr);

@@ -1,7 +1,7 @@
 From 1552ad5d649cff9d170e5bc1d13ab1487333b4b7 Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
 Date: Fri, 7 Nov 2025 00:57:06 +0100
-Subject: [PATCH 3/5] pinctrl: airoha: convert PWM GPIO to macro
+Subject: [PATCH] pinctrl: airoha: convert PWM GPIO to macro
 
 The PWM GPIO struct definition follow the same pattern for every GPIO
 pin hence it can be converted to a macro.
@@ -15,9 +15,11 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  drivers/pinctrl/mediatek/pinctrl-airoha.c | 465 ++++------------------
  1 file changed, 68 insertions(+), 397 deletions(-)
 
+diff --git a/drivers/pinctrl/mediatek/pinctrl-airoha.c b/drivers/pinctrl/mediatek/pinctrl-airoha.c
+index cb0edc2a66a1e6..f3cf48bdd1f83d 100644
 --- a/drivers/pinctrl/mediatek/pinctrl-airoha.c
 +++ b/drivers/pinctrl/mediatek/pinctrl-airoha.c
-@@ -1073,404 +1073,75 @@ static const struct airoha_pinctrl_func_
+@@ -1073,404 +1073,75 @@ static const struct airoha_pinctrl_func_group pcie_reset_func_group[] = {
  };
  
  /* PWM */

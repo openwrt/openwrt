@@ -28,20 +28,19 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 
 --- a/drivers/net/pcs/Kconfig
 +++ b/drivers/net/pcs/Kconfig
-@@ -51,4 +51,6 @@ config PCS_RZN1_MIIC
- 	  on RZ/N1 SoCs. This PCS converts MII to RMII/RGMII or can be set in
- 	  pass-through mode for MII.
+@@ -55,4 +55,6 @@ config PCS_RZN1_MIIC
+ 	  Renesas RZ/N1, RZ/N2H, and RZ/T2H SoCs. This PCS converts MII to
+ 	  RMII/RGMII, or can be set in pass-through mode for MII.
  
 +source "drivers/net/pcs/airoha/Kconfig"
 +
  endmenu
 --- a/drivers/net/pcs/Makefile
 +++ b/drivers/net/pcs/Makefile
-@@ -10,3 +10,5 @@ obj-$(CONFIG_PCS_LYNX)		+= pcs-lynx.o
+@@ -10,3 +10,4 @@ obj-$(CONFIG_PCS_LYNX)		+= pcs-lynx.o
  obj-$(CONFIG_PCS_MTK_LYNXI)	+= pcs-mtk-lynxi.o
- obj-$(CONFIG_PCS_RZN1_MIIC)	+= pcs-rzn1-miic.o
  obj-$(CONFIG_PCS_MTK_USXGMII)	+= pcs-mtk-usxgmii.o
-+
+ obj-$(CONFIG_PCS_RZN1_MIIC)	+= pcs-rzn1-miic.o
 +obj-$(CONFIG_PCS_AIROHA)	+= airoha/
 --- /dev/null
 +++ b/drivers/net/pcs/airoha/Kconfig
@@ -70,7 +69,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +endif
 --- /dev/null
 +++ b/drivers/net/pcs/airoha/pcs-airoha-common.c
-@@ -0,0 +1,1312 @@
+@@ -0,0 +1,1313 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Copyright (c) 2024 AIROHA Inc
@@ -387,7 +386,8 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +}
 +
 +static void airoha_pcs_get_state_sgmii(struct airoha_pcs_priv *priv,
-+				       int index, struct phylink_link_state *state)
++				       int index, unsigned int neg_mode,
++				       struct phylink_link_state *state)
 +{
 +	struct airoha_pcs_maps *maps = &priv->maps[index];
 +	u32 bmsr, lpa;
@@ -403,7 +403,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +		AIROHA_PCS_HSGMII_AN_SGMII_LINK_STATUS) & bmsr;
 +	lpa = AIROHA_PCS_HSGMII_AN_SGMII_PARTNER_ABILITY & lpa;
 +
-+	phylink_mii_c22_pcs_decode_state(state, bmsr, lpa);
++	phylink_mii_c22_pcs_decode_state(state, neg_mode, bmsr, lpa);
 +}
 +
 +static void airoha_pcs_get_state_hsgmii(struct airoha_pcs_priv *priv, int index,
@@ -493,6 +493,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +}
 +
 +static void airoha_pcs_get_state(struct phylink_pcs *pcs,
++				 unsigned int neg_mode,
 +				 struct phylink_link_state *state)
 +{
 +	struct airoha_pcs_port *port = to_airoha_pcs_port(pcs);
@@ -501,7 +502,7 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +	switch (state->interface) {
 +	case PHY_INTERFACE_MODE_SGMII:
 +	case PHY_INTERFACE_MODE_1000BASEX:
-+		airoha_pcs_get_state_sgmii(priv, port->index, state);
++		airoha_pcs_get_state_sgmii(priv, port->index, neg_mode, state);
 +		break;
 +	case PHY_INTERFACE_MODE_2500BASEX:
 +		airoha_pcs_get_state_hsgmii(priv, port->index, state);
@@ -1282,7 +1283,6 @@ Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
 +		port->priv = priv;
 +		port->index = index;
 +		port->pcs.poll = true;
-+		port->pcs.neg_mode = true;
 +		port->pcs.ops = &airoha_pcs_ops;
 +
 +		switch (data->port_type) {

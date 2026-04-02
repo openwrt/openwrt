@@ -1,7 +1,7 @@
 From 0850ae496d534847ec2c26744521c1bce04ec59d Mon Sep 17 00:00:00 2001
 From: Lorenzo Bianconi <lorenzo@kernel.org>
 Date: Mon, 13 Oct 2025 15:58:50 +0200
-Subject: [PATCH 2/3] net: airoha: npu: Add airoha_npu_soc_data struct
+Subject: [PATCH] net: airoha: npu: Add airoha_npu_soc_data struct
 
 Introduce airoha_npu_soc_data structure in order to generalize per-SoC
 NPU firmware info. Introduce airoha_npu_load_firmware utility routine.
@@ -15,6 +15,8 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  drivers/net/ethernet/airoha/airoha_npu.c | 77 ++++++++++++++++--------
  1 file changed, 51 insertions(+), 26 deletions(-)
 
+diff --git a/drivers/net/ethernet/airoha/airoha_npu.c b/drivers/net/ethernet/airoha/airoha_npu.c
+index 8c883f2b2d36b7..41944cc5f6b062 100644
 --- a/drivers/net/ethernet/airoha/airoha_npu.c
 +++ b/drivers/net/ethernet/airoha/airoha_npu.c
 @@ -103,6 +103,16 @@ enum {
@@ -34,12 +36,12 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  #define MBOX_MSG_FUNC_ID	GENMASK(14, 11)
  #define MBOX_MSG_STATIC_BUF	BIT(5)
  #define MBOX_MSG_STATUS		GENMASK(4, 2)
-@@ -182,49 +192,53 @@ static int airoha_npu_send_msg(struct ai
+@@ -182,49 +192,53 @@ static int airoha_npu_send_msg(struct airoha_npu *npu, int func_id,
  	return ret;
  }
  
 -static int airoha_npu_run_firmware(struct device *dev, void __iomem *base,
--				   struct reserved_mem *rmem)
+-				   struct resource *res)
 +static int airoha_npu_load_firmware(struct device *dev, void __iomem *addr,
 +				    const struct airoha_npu_fw *fw_info)
  {
@@ -61,7 +63,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  		goto out;
  	}
  
--	addr = devm_ioremap(dev, rmem->base, rmem->size);
+-	addr = devm_ioremap_resource(dev, res);
 -	if (IS_ERR(addr)) {
 -		ret = PTR_ERR(addr);
 -		goto out;
@@ -84,7 +86,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 -		goto out;
 -	}
 +static int airoha_npu_run_firmware(struct device *dev, void __iomem *base,
-+				   struct reserved_mem *rmem)
++				   struct resource *res)
 +{
 +	const struct airoha_npu_soc_data *soc;
 +	void __iomem *addr;
@@ -98,7 +100,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
 +		return -EINVAL;
  
 -	return ret;
-+	addr = devm_ioremap(dev, rmem->base, rmem->size);
++	addr = devm_ioremap_resource(dev, res);
 +	if (IS_ERR(addr))
 +		return PTR_ERR(addr);
 +
@@ -113,7 +115,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  }
  
  static irqreturn_t airoha_npu_mbox_handler(int irq, void *npu_instance)
-@@ -596,8 +610,19 @@ void airoha_npu_put(struct airoha_npu *n
+@@ -597,8 +611,19 @@ void airoha_npu_put(struct airoha_npu *npu)
  }
  EXPORT_SYMBOL_GPL(airoha_npu_put);
  

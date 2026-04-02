@@ -1,0 +1,38 @@
+From: Christian Marangi <ansuelsmth@gmail.com>
+To: Lorenzo Bianconi <lorenzo@kernel.org>,
+	Andrew Lunn <andrew+netdev@lunn.ch>,
+	"David S. Miller" <davem@davemloft.net>,
+	Eric Dumazet <edumazet@google.com>,
+	Jakub Kicinski <kuba@kernel.org>, Paolo Abeni <pabeni@redhat.com>,
+	Russell King <linux@armlinux.org.uk>,
+	linux-arm-kernel@lists.infradead.org,
+	linux-mediatek@lists.infradead.org, netdev@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+Cc: Christian Marangi <ansuelsmth@gmail.com>
+Subject: [net-next PATCH v2 1/2] net: airoha: use device_set_node helper to setup GDM node
+Date: Thu, 23 Oct 2025 16:58:48 +0200	[thread overview]
+Message-ID: <20251023145850.28459-2-ansuelsmth@gmail.com> (raw)
+In-Reply-To: <20251023145850.28459-1-ansuelsmth@gmail.com>
+
+Use device_set_node helper to setup GDM node instead of manually setting
+the dev.of_node to also fill the fwnode entry.
+
+This is to address some API that use fwnode instead of of_node (for
+example phylink_create)
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -3079,7 +3079,7 @@ static int airoha_alloc_gdm_port(struct
+ 			   NETIF_F_HW_TC;
+ 	dev->features |= dev->hw_features;
+ 	dev->vlan_features = dev->hw_features;
+-	dev->dev.of_node = np;
++	device_set_node(&dev->dev, of_fwnode_handle(np));
+ 	SET_NETDEV_DEV(dev, eth->dev);
+ 
+ 	/* reserve hw queues for HTB offloading */
