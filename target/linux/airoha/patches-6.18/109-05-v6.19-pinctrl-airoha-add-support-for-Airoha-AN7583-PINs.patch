@@ -1,7 +1,7 @@
 From 3ffeb17a9a27a668efb6fbd074835e187910a9bb Mon Sep 17 00:00:00 2001
 From: Christian Marangi <ansuelsmth@gmail.com>
 Date: Fri, 7 Nov 2025 00:57:08 +0100
-Subject: [PATCH 5/5] pinctrl: airoha: add support for Airoha AN7583 PINs
+Subject: [PATCH] pinctrl: airoha: add support for Airoha AN7583 PINs
 
 Add all the required entry to add suppot for Airoha AN7583 PINs.
 
@@ -14,6 +14,8 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  drivers/pinctrl/mediatek/pinctrl-airoha.c | 747 +++++++++++++++++++++-
  1 file changed, 740 insertions(+), 7 deletions(-)
 
+diff --git a/drivers/pinctrl/mediatek/pinctrl-airoha.c b/drivers/pinctrl/mediatek/pinctrl-airoha.c
+index f3cf48bdd1f83d..bfcedc7f920b1e 100644
 --- a/drivers/pinctrl/mediatek/pinctrl-airoha.c
 +++ b/drivers/pinctrl/mediatek/pinctrl-airoha.c
 @@ -70,6 +70,7 @@
@@ -94,7 +96,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  #define UART1_RXD_PD_MASK			BIT(3)
  #define UART1_TXD_PD_MASK			BIT(2)
  #define I2C_SCL_PD_MASK				BIT(1)
-@@ -625,10 +642,223 @@ static const struct pingroup en7581_pinc
+@@ -625,10 +642,223 @@ static const struct pingroup en7581_pinctrl_groups[] = {
  	PINCTRL_PIN_GROUP("pcie_reset2", en7581_pcie_reset2),
  };
  
@@ -318,7 +320,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  static const char *const uart_groups[] = { "uart2", "uart2_cts_rts", "hsuart",
  					   "hsuart_cts_rts", "uart4",
  					   "uart5" };
-@@ -641,11 +871,16 @@ static const char *const pcm_spi_groups[
+@@ -641,11 +871,16 @@ static const char *const pcm_spi_groups[] = { "pcm_spi", "pcm_spi_int",
  					      "pcm_spi_cs2_p156",
  					      "pcm_spi_cs2_p128",
  					      "pcm_spi_cs3", "pcm_spi_cs4" };
@@ -335,7 +337,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  static const char *const pwm_groups[] = { "gpio0", "gpio1",
  					  "gpio2", "gpio3",
  					  "gpio4", "gpio5",
-@@ -684,6 +919,22 @@ static const char *const phy3_led1_group
+@@ -684,6 +919,22 @@ static const char *const phy3_led1_groups[] = { "gpio43", "gpio44",
  						"gpio45", "gpio46" };
  static const char *const phy4_led1_groups[] = { "gpio43", "gpio44",
  						"gpio45", "gpio46" };
@@ -358,7 +360,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  
  static const struct airoha_pinctrl_func_group pon_func_group[] = {
  	{
-@@ -761,6 +1012,25 @@ static const struct airoha_pinctrl_func_
+@@ -761,6 +1012,25 @@ static const struct airoha_pinctrl_func_group mdio_func_group[] = {
  	},
  };
  
@@ -384,7 +386,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  static const struct airoha_pinctrl_func_group uart_func_group[] = {
  	{
  		.name = "uart2",
-@@ -1002,6 +1272,73 @@ static const struct airoha_pinctrl_func_
+@@ -1002,6 +1272,73 @@ static const struct airoha_pinctrl_func_group pcm_spi_func_group[] = {
  	},
  };
  
@@ -458,7 +460,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  static const struct airoha_pinctrl_func_group i2s_func_group[] = {
  	{
  		.name = "i2s",
-@@ -1072,6 +1409,28 @@ static const struct airoha_pinctrl_func_
+@@ -1072,6 +1409,28 @@ static const struct airoha_pinctrl_func_group pcie_reset_func_group[] = {
  	},
  };
  
@@ -487,7 +489,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  /* PWM */
  #define AIROHA_PINCTRL_PWM(gpio, mux_val)		\
  	{						\
-@@ -1268,6 +1627,94 @@ static const struct airoha_pinctrl_func_
+@@ -1268,6 +1627,94 @@ static const struct airoha_pinctrl_func_group phy4_led1_func_group[] = {
  				LAN3_LED_MAPPING_MASK, LAN3_PHY_LED_MAP(2)),
  };
  
@@ -582,7 +584,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  static const struct airoha_pinctrl_func en7581_pinctrl_funcs[] = {
  	PINCTRL_FUNC_DESC("pon", pon),
  	PINCTRL_FUNC_DESC("tod_1pps", tod_1pps),
-@@ -1294,6 +1741,31 @@ static const struct airoha_pinctrl_func
+@@ -1294,6 +1741,31 @@ static const struct airoha_pinctrl_func en7581_pinctrl_funcs[] = {
  	PINCTRL_FUNC_DESC("phy4_led1", phy4_led1),
  };
  
@@ -614,7 +616,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  static const struct airoha_pinctrl_conf en7581_pinctrl_pullup_conf[] = {
  	PINCTRL_CONF_DESC(0, REG_I2C_SDA_PU, UART1_TXD_PU_MASK),
  	PINCTRL_CONF_DESC(1, REG_I2C_SDA_PU, UART1_RXD_PU_MASK),
-@@ -1355,6 +1827,62 @@ static const struct airoha_pinctrl_conf
+@@ -1355,6 +1827,62 @@ static const struct airoha_pinctrl_conf en7581_pinctrl_pullup_conf[] = {
  	PINCTRL_CONF_DESC(63, REG_I2C_SDA_PU, PCIE2_RESET_PU_MASK),
  };
  
@@ -677,7 +679,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  static const struct airoha_pinctrl_conf en7581_pinctrl_pulldown_conf[] = {
  	PINCTRL_CONF_DESC(0, REG_I2C_SDA_PD, UART1_TXD_PD_MASK),
  	PINCTRL_CONF_DESC(1, REG_I2C_SDA_PD, UART1_RXD_PD_MASK),
-@@ -1416,6 +1944,62 @@ static const struct airoha_pinctrl_conf
+@@ -1416,6 +1944,62 @@ static const struct airoha_pinctrl_conf en7581_pinctrl_pulldown_conf[] = {
  	PINCTRL_CONF_DESC(63, REG_I2C_SDA_PD, PCIE2_RESET_PD_MASK),
  };
  
@@ -740,7 +742,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  static const struct airoha_pinctrl_conf en7581_pinctrl_drive_e2_conf[] = {
  	PINCTRL_CONF_DESC(0, REG_I2C_SDA_E2, UART1_TXD_E2_MASK),
  	PINCTRL_CONF_DESC(1, REG_I2C_SDA_E2, UART1_RXD_E2_MASK),
-@@ -1477,6 +2061,62 @@ static const struct airoha_pinctrl_conf
+@@ -1477,6 +2061,62 @@ static const struct airoha_pinctrl_conf en7581_pinctrl_drive_e2_conf[] = {
  	PINCTRL_CONF_DESC(63, REG_I2C_SDA_E2, PCIE2_RESET_E2_MASK),
  };
  
@@ -803,7 +805,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  static const struct airoha_pinctrl_conf en7581_pinctrl_drive_e4_conf[] = {
  	PINCTRL_CONF_DESC(0, REG_I2C_SDA_E4, UART1_TXD_E4_MASK),
  	PINCTRL_CONF_DESC(1, REG_I2C_SDA_E4, UART1_RXD_E4_MASK),
-@@ -1538,12 +2178,73 @@ static const struct airoha_pinctrl_conf
+@@ -1538,12 +2178,73 @@ static const struct airoha_pinctrl_conf en7581_pinctrl_drive_e4_conf[] = {
  	PINCTRL_CONF_DESC(63, REG_I2C_SDA_E4, PCIE2_RESET_E4_MASK),
  };
  
@@ -877,7 +879,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  static int airoha_convert_pin_to_reg_offset(struct pinctrl_dev *pctrl_dev,
  					    struct pinctrl_gpio_range *range,
  					    int pin)
-@@ -1709,7 +2410,7 @@ static const struct irq_chip airoha_gpio
+@@ -1708,7 +2409,7 @@ static const struct irq_chip airoha_gpio_irq_chip = {
  };
  
  static int airoha_pinctrl_add_gpiochip(struct airoha_pinctrl *pinctrl,
@@ -886,7 +888,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  {
  	struct airoha_pinctrl_gpiochip *chip = &pinctrl->gpiochip;
  	struct gpio_chip *gc = &chip->chip;
-@@ -1744,7 +2445,7 @@ static int airoha_pinctrl_add_gpiochip(s
+@@ -1743,7 +2444,7 @@ static int airoha_pinctrl_add_gpiochip(struct airoha_pinctrl *pinctrl,
  		return irq;
  
  	err = devm_request_irq(dev, irq, airoha_irq_handler, IRQF_SHARED,
@@ -895,7 +897,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  	if (err) {
  		dev_err(dev, "error requesting irq %d: %d\n", irq, err);
  		return err;
-@@ -1808,8 +2509,8 @@ static int airoha_pinmux_set_mux(struct
+@@ -1807,8 +2508,8 @@ static int airoha_pinmux_set_mux(struct pinctrl_dev *pctrl_dev,
  }
  
  static int airoha_pinmux_set_direction(struct pinctrl_dev *pctrl_dev,
@@ -906,7 +908,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  {
  	struct airoha_pinctrl *pinctrl = pinctrl_dev_get_drvdata(pctrl_dev);
  	u32 mask, index;
-@@ -1899,7 +2600,7 @@ static int airoha_pinctrl_set_conf(struc
+@@ -1898,7 +2599,7 @@ static int airoha_pinctrl_set_conf(struct airoha_pinctrl *pinctrl,
  
  
  	if (regmap_update_bits(pinctrl->chip_scu, reg->offset, reg->mask,
@@ -915,7 +917,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  		return -EINVAL;
  
  	return 0;
-@@ -2118,8 +2819,8 @@ static int airoha_pinconf_group_get(stru
+@@ -2115,8 +2816,8 @@ static int airoha_pinconf_group_get(struct pinctrl_dev *pctrl_dev,
  
  	for (i = 0; i < pinctrl->grps[group].npins; i++) {
  		if (airoha_pinconf_get(pctrl_dev,
@@ -926,7 +928,7 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  			return -ENOTSUPP;
  
  		if (i && cur_config != *config)
-@@ -2280,8 +2981,40 @@ static const struct airoha_pinctrl_match
+@@ -2275,8 +2976,40 @@ static const struct airoha_pinctrl_match_data en7581_pinctrl_match_data = {
  	},
  };
  
