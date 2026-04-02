@@ -1,0 +1,27 @@
+From 2f1ee9a2d314f2c9a43889f5731fc14a957fe476 Mon Sep 17 00:00:00 2001
+From: Kenneth Kasilag <kenneth@kasilag.me>
+Date: Thu, 2 Apr 2026 06:14:36 +0000
+Subject: [PATCH] airoha: cpufreq: fix function signature
+
+The `config_clks_t` definition changed between 6.12 and 6.18.
+Revise the airoha-cpufreq driver with the proper signature.
+
+Signed-off-by: Kenneth Kasilag <kenneth@kasilag.me>
+---
+ drivers/cpufreq/airoha-cpufreq.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/cpufreq/airoha-cpufreq.c b/drivers/cpufreq/airoha-cpufreq.c
+index 544a1b9741874d..edf80c06d05f88
+--- a/drivers/cpufreq/airoha-cpufreq.c
++++ b/drivers/cpufreq/airoha-cpufreq.c
+@@ -21,7 +21,8 @@ static struct platform_device *cpufreq_p
+ /* NOP function to disable OPP from setting clock */
+ static int airoha_cpufreq_config_clks_nop(struct device *dev,
+ 					  struct opp_table *opp_table,
+-					  struct dev_pm_opp *opp,
++					  struct dev_pm_opp *old_opp,
++					  struct dev_pm_opp *new_opp,
+ 					  void *data, bool scaling_down)
+ {
+ 	return 0;
