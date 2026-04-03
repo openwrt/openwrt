@@ -10,7 +10,6 @@ unusable by the ASU server.  The version 2 format contains package names that
 have been stripped of their ABI version.
 """
 
-import email.parser
 import json
 
 
@@ -51,11 +50,13 @@ def parse_apk(text: str) -> dict:
     for package in data:
         package_name: str = package["name"]
 
-        for tag in package.get("tags", []):
-            if tag.startswith("openwrt:abiversion="):
-                package_abi: str = tag.split("=")[-1]
-                package_name = removesuffix(package_name, package_abi)
-                break
+        if "tags" in package:
+            for tag in package["tags"]:
+                if tag.startswith("openwrt:abiversion="):
+                    # string slicing is faster than split
+                    package_abi: str = tag[19:]
+                    package_name = removesuffix(package_name, package_abi)
+                    break
 
         packages[package_name] = package["version"]
 

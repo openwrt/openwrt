@@ -1,0 +1,52 @@
+From 18a6dfff79b6357aada21bec506442ed96bb34da Mon Sep 17 00:00:00 2001
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Thu, 5 Mar 2026 00:13:35 +0800
+Subject: [PATCH] deflate: workaround elfutils link error on MacOS
+
+duplicate symbol '_crc32' in:
+    /Volumes/OpenWrt/openwrt/build_dir/host/elfutils-0.192/libdw/libdw.a[392](crc32.o)
+    /Volumes/OpenWrt/openwrt/staging_dir/host/lib/libz.a[3](crc32.o)
+
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+---
+ deflate.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+--- a/deflate.c
++++ b/deflate.c
+@@ -970,12 +970,21 @@ local void flush_pending(z_streamp strm)
+ /* ===========================================================================
+  * Update the header CRC with the bytes s->pending_buf[beg..s->pending - 1].
+  */
++#if defined(__APPLE__)
++#define HCRC_UPDATE(beg) \
++    do { \
++        if (s->gzhead->hcrc && s->pending > (beg)) \
++            strm->adler = crc32(strm->adler, s->pending_buf + (beg), \
++                                s->pending - (beg)); \
++    } while (0)
++#else
+ #define HCRC_UPDATE(beg) \
+     do { \
+         if (s->gzhead->hcrc && s->pending > (beg)) \
+             strm->adler = crc32_z(strm->adler, s->pending_buf + (beg), \
+                                   s->pending - (beg)); \
+     } while (0)
++#endif
+ 
+ /* ========================================================================= */
+ int ZEXPORT deflate(z_streamp strm, int flush) {
+@@ -1108,8 +1117,13 @@ int ZEXPORT deflate(z_streamp strm, int
+                 put_byte(s, (s->gzhead->extra_len >> 8) & 0xff);
+             }
+             if (s->gzhead->hcrc)
++#if defined(__APPLE__)
++                strm->adler = crc32(strm->adler, s->pending_buf,
++                                    s->pending);
++#else
+                 strm->adler = crc32_z(strm->adler, s->pending_buf,
+                                       s->pending);
++#endif
+             s->gzindex = 0;
+             s->status = EXTRA_STATE;
+         }

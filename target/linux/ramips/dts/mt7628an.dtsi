@@ -232,6 +232,15 @@
 			reg = <0x5000 0x1000>;
 			#pwm-cells = <2>;
 
+			clocks = <&sysc MT76X8_CLK_PWM_TOP>,
+				 <&sysc MT76X8_CLK_PWM_MAIN>,
+				 <&sysc MT76X8_CLK_PWM_CH1>,
+				 <&sysc MT76X8_CLK_PWM_CH2>,
+				 <&sysc MT76X8_CLK_PWM_CH3>,
+				 <&sysc MT76X8_CLK_PWM_CH4>;
+			clock-names = "top", "main",
+				      "pwm1", "pwm2", "pwm3", "pwm4";
+
 			pinctrl-names = "default";
 			pinctrl-0 = <&pwm0_pins>, <&pwm1_pins>;
 

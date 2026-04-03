@@ -865,7 +865,7 @@ static struct phy_driver sf_phy_drivers[] = {
 /* for linux 4.x */
 module_phy_driver(sf_phy_drivers);
 
-static struct mdio_device_id __maybe_unused siflower_phy_tbl[] = {
+static const struct mdio_device_id __maybe_unused siflower_phy_tbl[] = {
 	{ SF1211F_PHY_ID, SIFLOWER_PHY_ID_MASK },
 	{ SF1240_PHY_ID, SIFLOWER_PHY_ID_MASK },
 	{},

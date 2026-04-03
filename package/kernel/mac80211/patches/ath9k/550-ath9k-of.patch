@@ -164,3 +164,26 @@
  	return 0;
  }
  
+--- a/drivers/net/wireless/ath/ath9k/hw.c
++++ b/drivers/net/wireless/ath/ath9k/hw.c
+@@ -2429,6 +2429,7 @@ static bool ath9k_hw_dfs_tested(struct ath_hw *ah)
+ static void ath9k_gpio_cap_init(struct ath_hw *ah)
+ {
+ 	struct ath9k_hw_capabilities *pCap = &ah->caps;
++	u32 gpio_mask = pCap->gpio_mask;
+ 
+ 	if (AR_SREV_9271(ah)) {
+ 		pCap->num_gpio_pins = AR9271_NUM_GPIO;
+@@ -2479,6 +2480,12 @@ static void ath9k_gpio_cap_init(struct ath_hw *ah)
+ 		pCap->num_gpio_pins = AR_NUM_GPIO;
+ 		pCap->gpio_mask = AR_GPIO_MASK;
+ 	}
++
++	if (gpio_mask) {
++		pCap->gpio_mask = gpio_mask;
++		ath_info(ath9k_hw_common(ah), "Use overridden gpio mask 0x%x\n",
++			 gpio_mask);
++	}
+ }
+ 
+ int ath9k_hw_fill_cap_info(struct ath_hw *ah)

@@ -85,7 +85,7 @@ static u16_t nid = 0xffff; /* node id */
 static char username[32] = "";
 static int state = EAD_TYPE_SET_USERNAME;
 static const char *passwd_file = PASSWD_FILE;
-static const char password[MAXPARAMLEN];
+static char password[MAXPARAMLEN];
 static bool child_pending = false;
 
 static unsigned char abuf[MAXPARAMLEN + 1];
@@ -215,7 +215,8 @@ prepare_password(void)
 		if (s2 - str >= MAXPARAMLEN)
 			continue;
 
-		strncpy((char *)password, str, MAXPARAMLEN);
+		strncpy(password, str, MAXPARAMLEN - 1);
+		password[MAXPARAMLEN - 1] = '\0';
 		fclose(f);
 		goto hash_password;
 	}
@@ -397,8 +398,8 @@ handle_set_username(struct ead_packet *pkt, int len, int *nstate)
 	struct ead_msg_user *user = EAD_DATA(msg, user);
 
 	set_state(EAD_TYPE_SET_USERNAME); /* clear old state */
-	strncpy(username, user->username, sizeof(username));
-	username[sizeof(username) - 1] = 0;
+	strncpy(username, user->username, sizeof(username) - 1);
+	username[sizeof(username) - 1] = '\0';
 
 	msg = &pktbuf->msg;
 	msg->len = 0;
@@ -430,7 +431,7 @@ handle_send_a(struct ead_packet *pkt, int len, int *nstate)
 	struct ead_msg_number *number = EAD_DATA(msg, number);
 	len = ntohl(msg->len) - sizeof(struct ead_msg_number);
 
-	if (len > MAXPARAMLEN + 1)
+	if (len <= 0 || len > MAXPARAMLEN + 1)
 		return false;
 
 	A.len = len;
@@ -486,6 +487,8 @@ handle_send_cmd(struct ead_packet *pkt, int len, int *nstate)
 
 	datalen = ead_decrypt_message(msg) - sizeof(struct ead_msg_cmd);
 	if (datalen <= 0)
+		return false;
+	if (datalen > 1024)
 		return false;
 
 	type = ntohs(cmd->type);
@@ -843,7 +846,8 @@ check_bridge_port(const char *br, const char *port, void *arg)
 		if (strcmp(in->bridge, br) == 0)
 			break;
 
-		strncpy(in->bridge, br, sizeof(in->bridge));
+		strncpy(in->bridge, br, sizeof(in->bridge) - 1);
+		in->bridge[sizeof(in->bridge) - 1] = '\0';
 		DEBUG(2, "assigning port %s to bridge %s\n", in->ifname, in->bridge);
 		stop_server(in, false);
 	}
@@ -943,7 +947,7 @@ int main(int argc, char **argv)
 	}
 
 	if (pidfile) {
-		char pid[8];
+		char pid[32];
 		int len;
 
 		unlink(pidfile);

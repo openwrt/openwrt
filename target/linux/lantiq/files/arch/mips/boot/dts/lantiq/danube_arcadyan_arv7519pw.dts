@@ -194,6 +194,10 @@
 						reg = <0x16 0x6>;
 						#nvmem-cell-cells = <1>;
 					};
+
+					eeprom_boardconfig_410: eeprom@410 {
+						reg = <0x410 0x200>;
+					};
 				};
 			};
 		};
@@ -211,10 +215,10 @@
 	req-mask = <0xf>;
 
 	wifi@e,0 {
-		compatible = "pci0,0";
+		compatible = "pci1814,0601";
 		reg = <0x7000 0 0 0 0>;
-		ralink,mtd-eeprom = <&boardconfig 0x410>;
-		ralink,eeprom-swap;
+		nvmem-cells = <&eeprom_boardconfig_410>;
+		nvmem-cell-names = "eeprom";
 	};
 };
 
