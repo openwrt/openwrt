@@ -22,6 +22,8 @@ asus,rt-ac42u)
 asus,rt-ac58u)
 	ucidef_set_led_netdev "wan" "WAN" "blue:wan" "wan"
 	ucidef_set_led_netdev "lan" "LAN" "blue:lan" "br-lan"
+	ucidef_set_led_wlan "wlan2g" "WLAN 2.4GHz" "blue:wlan-2" "phy0tpt"
+	ucidef_set_led_wlan "wlan5g" "WLAN 5GHz" "blue:wlan-5" "phy1tpt"
 	;;
 avm,fritzbox-4040)
 	ucidef_set_led_wlan "wlan" "WLAN" "green:wlan" "phy0tpt" "phy1tpt"
