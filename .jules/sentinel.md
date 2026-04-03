@@ -1,3 +1,23 @@
+## 2024-03-13 - [Fix SSL Certificate Verification in GitHub Archive Downloader]
+**Vulnerability:** `scripts/dl_github_archive.py` created an unverified SSL context (`ssl._create_unverified_context()`) when making requests to the GitHub API, disabling SSL/TLS certificate verification. This left the script vulnerable to Man-in-the-Middle (MITM) attacks.
+**Learning:** This vulnerability existed likely to bypass SSL errors on developer machines with outdated or missing CA certificates.
+**Prevention:** Always use `ssl.create_default_context()` or let the system use its default verified context when making HTTPS requests. Do not disable SSL verification in production scripts, especially when downloading source code archives.
+## 2025-05-18 - [CRITICAL] Fix command injection in unet.uc
+**Vulnerability:** The network name parameter was only checked for forward slashes before being directly substituted into shell strings, leading to command injection and path traversal risks via `system()` calls.
+**Learning:** `ucode` scripts using `system()` with backticks or string concatenation are highly vulnerable to injection if variables are not rigorously validated, especially in user-facing configuration paths.
+**Prevention:** Always use regex matching (e.g., `match(name, /[^a-zA-Z0-9_-]/)`) to strictly whitelist input characters for system parameters before interpolating them into shell commands.
+## 2024-05-23 - [CRITICAL] Fix command injection in unet.uc via network_keygen config
+**Vulnerability:** The `network_keygen` function in `unet.uc` constructed shell command strings without validating configuration variables like `config.rounds` and `config.salt`, leading to a command injection vulnerability. An attacker capable of modifying config JSON files could inject arbitrary commands.
+**Learning:** Even internal configuration objects like `config.salt` must be strictly validated before being interpolated into `system()` strings to prevent command injection, especially when restoring configurations from JSON.
+**Prevention:** Use strict regex whitelists (e.g., `match(salt, /[^a-fA-F0-9]/)`) to validate integer and hex inputs before using them in shell commands.
+## 2025-05-18 - [CRITICAL] Fix command injection in ucode network scripts
+**Vulnerability:** Several ucode scripts (`unet.uc`, `mac80211.sh`, `wdev.uc`, `packet-steering.uc`) used string interpolation to construct shell commands passed to `system()`. If configuration parameters like `config.txpower`, `config.country`, `config.distance`, or `wdev.freq` were malicious, an attacker could execute arbitrary code by injecting shell metacharacters.
+**Learning:** `system()` in ucode acts like `os.system` when passed a string, invoking the shell interpreter (`sh -c`). However, when passed an array (e.g., `system(["iw", "phy", phy, "set", "txpower", config.txpower])`), it acts like `execvp`, directly executing the binary without shell parsing. This completely eliminates command injection risks without the need for complex, manual regex validation.
+**Prevention:** Always use the array-based syntax for `system()` calls in ucode scripts to safely pass variables as discrete arguments. Only use string-based `system()` when explicit shell features like redirection (`>`) are required, and carefully validate or quote variables in those specific cases (or wrap them explicitly in `system(["sh", "-c", "..."])` for clarity).
+## 2024-05-24 - [CRITICAL] Fix buffer overflow in ead client
+**Vulnerability:** ead-client.c and t_pw.c used strcpy to copy user input into fixed-size character arrays without checking the length, causing buffer overflows.
+**Learning:** Legacy string handling mechanisms that map structures onto network packets or directly copy from command line arguments are vulnerable when using unsafe functions like strcpy.
+**Prevention:** Always use safe string operations like strncpy, and ensure that buffers are correctly bounded and null-terminated.
 ## 2025-02-18 - Insecure Temporary File Creation in t_misc.c
 **Vulnerability:** Predictable temporary file creation using `sprintf(dotpath, "/tmp/rnd.%d", getpid())` followed by `creat()` in `t_fshash()`.
 **Learning:** This classic pattern (CWE-377) allows local attackers to pre-create symlinks at predictable paths, potentially causing arbitrary file overwrite or manipulation. `getpid()` is easily predictable.
@@ -29,3 +49,28 @@
 ## 2024-05-30 - [github actions: install missing zstd package for toolchains]
 **Learning:** After OpenWrt's migration from `.tar.xz` to `.tar.zst` for toolchain archives, the `ghcr.io/zektopic/tools:latest` container lacks the `zstd` binary, causing tar extractions to fail (`tar (grandchild): zstd: Cannot exec: No such file or directory`).
 **Action:** When migrating tar archives from `.xz` to `.zst`, ensure the CI container environment is capable of unpacking them by installing `zstd` via `apt-get install -y zstd` in the environment initialization step.
+## 2024-11-20 - Fix buffer overflow risk in t_pw.c
+**Vulnerability:** Unbounded `strcpy` operations copying external usernames into fixed-size struct buffers (`userbuf`, `pebuf.name`) of size `MAXUSERLEN` in `ead/src/tinysrp/t_pw.c`.
+**Learning:** Legacy C code in the `tinysrp` dependency relied on upstream parser constraints (`t_nextfield`) for bounds-checking, exposing the credential structures to stack smashing if parser limits changed or failed to explicitly null-terminate strings.
+**Prevention:** Use explicitly bounded `strncpy(dest, src, MAXUSERLEN - 1)` with manual null-termination (`dest[MAXUSERLEN - 1] = '\0'`) when persisting credential strings within fixed structs.
+## 2024-05-24 - Buffer Overflow in ead.c Bridge Assignment
+**Vulnerability:** The `check_bridge_port` function in `ead.c` copies a bridge name into a fixed-size 16-byte buffer (`in->bridge`) using `strncpy(in->bridge, br, sizeof(in->bridge));` without explicit null termination. If the bridge name `br` is 16 bytes or longer, it won't be null-terminated, which leads to out-of-bounds reads in the subsequent `DEBUG` log and in a call to `ead_open_pcap`.
+**Learning:** `strncpy` does not guarantee null-termination if the source string length is greater than or equal to the buffer size. This classic pitfall can lead to out-of-bounds reads when the buffer is later used as a C string.
+**Prevention:** Always explicitly null-terminate the destination buffer after calling `strncpy`, or use safer alternatives like `strlcpy` or `snprintf` when available.
+## $(date +%Y-%m-%d) - [CRITICAL] Fix undefined behavior and buffer termination in EAD
+**Vulnerability:** A `static const char password[MAXPARAMLEN]` buffer was being cast to `char *` and modified directly via `strncpy`, resulting in undefined behavior. Additionally, multiple `strncpy` calls in the `ead` and `ead-client` code failed to correctly ensure explicit null-termination if the source string exactly matched or exceeded the destination buffer length.
+**Learning:** Legacy C network services frequently mix `strncpy` with incorrect length bounds or forget manual null-termination, leading to out-of-bounds reads when subsequent string operations process the buffer. Furthermore, using `const` arrays for mutable global state via pointer casting is a dangerous pattern that can lead to subtle bugs or compiler-optimized crashes.
+**Prevention:** Always declare buffers intended for mutation without the `const` qualifier. When using `strncpy`, ensure the maximum length copied is `buffer_size - 1` and explicitly set the final byte to `\0` (`buffer[buffer_size - 1] = '\0'`) to guarantee safety across all string operations.
+
+## 2024-05-18 - Missing Buffer Overflows Bounds in Network Parsing
+**Vulnerability:** Bounds checks were missing on values read directly from network payloads in the Emergency Access Daemon service (ead & ead-client), specifically regarding string boundaries and payload length integer checking.
+**Learning:** `ead-client.c` lacked bounds checking on network message values resulting in possible Buffer Overflow scenarios such as when `handle_pong` null terminates an unbounded network string, or when `memcpy` calls assume the length is within allocation boundaries. An integer wrap-around could also be induced by negative payloads passing unsigned comparisons.
+**Prevention:** Always bound dynamically decoded/deserialized values from network packets (e.g. `ntohl()`) and assert that they are within memory constraints prior to executing unsafe string manipulation functions or memory copy operations. Use minimum bound checks, ensure sizes correctly restrict payload bounds to allocated structures, and clamp buffer pointers to structure max allocation lengths.
+## 2024-05-09 - [ead-client.c buffer overflow vulnerabilities]
+**Vulnerability:** Multiple buffer overflows in the OpenWrt Emergency Access Daemon client (`ead-client.c`) due to missing bounds checks on variables `len` (derived from attacker-controlled `msg->len`) before using them as index assignments (`pong->name[len] = 0;`) or size limits in `memcpy` operations.
+**Learning:** Decrypting untrusted network data (`ead_decrypt_message()`) does not guarantee the contents or length of the data are valid for local struct allocations. Values computed from network headers (like `msg->len`) must be strictly validated against constant bounds before being used in memory operations.
+**Prevention:** Always implement explicit maximum bounds checks on derived length variables before using them in functions like `memcpy` or array assignments, particularly when the length affects fixed-size buffers. Also ensure lengths don't evaluate to <= 0 before doing arithmetic or using them as indices.
+## 2025-04-03 - Buffer Overflow in tinysrp Usernames
+**Vulnerability:** The `tinysrp` library in `ead` used legacy `strcpy` to copy credentials like usernames into fixed-size buffers (`tpw->userbuf`), leading to a potential stack-smashing buffer overflow if the username exceeds `MAXUSERLEN`.
+**Learning:** Legacy C code often relies on unbounded string operations. Usernames, being external input, should not be trusted to fit within statically allocated memory limits like `MAXUSERLEN`.
+**Prevention:** Always replace legacy `strcpy` calls with `strncpy` bounded by the target buffer size minus one (e.g., `MAXUSERLEN - 1`) and append explicit null-termination when handling credentials to prevent buffer overflow vulnerabilities.
