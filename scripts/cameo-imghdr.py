@@ -14,7 +14,7 @@ import struct
 MODEL_LEN = 20
 SIGNATURE_LEN = 16
 LINUXLOAD_LEN = 10
-BUFSIZE = 4096
+BUFSIZE = 65536
 
 parser = argparse.ArgumentParser(description='Generate Cameo firmware header.')
 parser.add_argument('source_file', type=argparse.FileType('rb'))
@@ -60,7 +60,8 @@ while True:
     buf = args.source_file.read(BUFSIZE)
     if not buf:
         break
-    checksum = sum(iter(buf),checksum) % (1<<32)
+    # Optimization: natively sum the byte values directly
+    checksum = sum(buf, checksum) % (1<<32)
     size += len(buf)
 
 args.dest_file.write(struct.pack('!I', checksum))
