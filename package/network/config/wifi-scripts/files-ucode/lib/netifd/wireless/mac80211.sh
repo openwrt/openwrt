@@ -39,7 +39,7 @@ function reset_config(phy, radio) {
 	global.ubus.call('wpa_supplicant', 'config_set', { phy, radio, config: []});
 
 	name = phy + phy_suffix(radio, ":");
-	system(`ucode /usr/share/hostap/wdev.uc ${name} set_config '{}'`);
+	system([ "ucode", "/usr/share/hostap/wdev.uc", name, "set_config", "{}" ]);
 }
 
 function get_channel_frequency(band, channel) {
@@ -72,7 +72,7 @@ function setup_phy(phy, config, data) {
 
 	if (config.country) {
 		log(`Setting country code to ${config.country}`);
-		system(`iw reg set ${config.country}`);
+		system([ "iw", "reg", "set", config.country ]);
 	}
 
 	set_default(config, 'rxantenna', 0xffffffff);
@@ -99,14 +99,16 @@ function setup_phy(phy, config, data) {
 		config.txpower = 'auto';
 
 	log(`Configuring '${phy}' txantenna: ${config.txantenna}, rxantenna: ${config.rxantenna} distance: ${config.distance}`);
-	system(`iw phy ${phy} set antenna ${config.txantenna} ${config.rxantenna}`);
-	system(`iw phy ${phy} set distance ${config.distance}`);
-	system(`iw phy ${phy} set txpower ${config.txpower}`);
+	system([ "iw", "phy", phy, "set", "antenna", config.txantenna, config.rxantenna ]);
+	system([ "iw", "phy", phy, "set", "distance", config.distance ]);
+
+	let txpower_args = split(config.txpower, ' ');
+	system([ "iw", "phy", phy, "set", "txpower", ...txpower_args ]);
 
 	if (config.frag)
-		system(`iw phy ${phy} set frag ${config.frag}`);
+		system([ "iw", "phy", phy, "set", "frag", config.frag ]);
 	if (config.rts)
-		system(`iw phy ${phy} set rts ${config.rts}`);
+		system([ "iw", "phy", phy, "set", "rts", config.rts ]);
 }
 
 function iw_htmode(config) {
@@ -295,7 +297,7 @@ function setup() {
 		let if_config = {
 			[ifname]: wdev_data[ifname]
 		};
-		system(`ucode /usr/share/hostap/wdev.uc ${data.phy}${data.phy_suffix} set_config '${if_config}'`);
+		system([ "ucode", "/usr/share/hostap/wdev.uc", data.phy + data.phy_suffix, "set_config", sprintf("%J", if_config) ]);
 	}
 
 	if (fs.access('/usr/sbin/wpa_supplicant', 'x'))

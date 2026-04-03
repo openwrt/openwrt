@@ -34,7 +34,7 @@ function iface_start(wdev)
 	wdev_set_up(ifname, true);
 	let htmode = wdev.htmode || "NOHT";
 	if (wdev.freq)
-		system(`iw dev ${ifname} set freq ${wdev.freq} ${htmode}`);
+		system([ "iw", "dev", ifname, "set", "freq", wdev.freq, htmode ]);
 	if (wdev.mode == "adhoc") {
 		let cmd = ["iw", "dev", ifname, "ibss", "join", wdev.ssid, wdev.freq, htmode, "fixed-freq" ];
 		if (wdev.bssid)
