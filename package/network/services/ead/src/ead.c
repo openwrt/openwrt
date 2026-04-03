@@ -846,7 +846,8 @@ check_bridge_port(const char *br, const char *port, void *arg)
 		if (strcmp(in->bridge, br) == 0)
 			break;
 
-		strncpy(in->bridge, br, sizeof(in->bridge));
+		strncpy(in->bridge, br, sizeof(in->bridge) - 1);
+		in->bridge[sizeof(in->bridge) - 1] = '\0';
 		DEBUG(2, "assigning port %s to bridge %s\n", in->ifname, in->bridge);
 		stop_server(in, false);
 	}
