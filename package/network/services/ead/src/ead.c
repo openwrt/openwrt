@@ -431,7 +431,7 @@ handle_send_a(struct ead_packet *pkt, int len, int *nstate)
 	struct ead_msg_number *number = EAD_DATA(msg, number);
 	len = ntohl(msg->len) - sizeof(struct ead_msg_number);
 
-	if (len > MAXPARAMLEN + 1)
+	if (len <= 0 || len > MAXPARAMLEN + 1)
 		return false;
 
 	A.len = len;
