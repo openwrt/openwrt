@@ -380,8 +380,8 @@ handle_ping(struct ead_packet *pkt, int len, int *nstate)
 	int slen;
 
 	slen = strlen(dev_name);
-	if (slen > 1024)
-		slen = 1024;
+	if (slen >= 1024)
+		slen = 1023;
 
 	msg->len = htonl(sizeof(struct ead_msg_pong) + slen);
 	strncpy(pong->name, dev_name, slen);
@@ -488,7 +488,7 @@ handle_send_cmd(struct ead_packet *pkt, int len, int *nstate)
 	datalen = ead_decrypt_message(msg) - sizeof(struct ead_msg_cmd);
 	if (datalen <= 0)
 		return false;
-	if (datalen > 1024)
+	if (datalen >= 1024)
 		return false;
 
 	type = ntohs(cmd->type);
@@ -912,6 +912,7 @@ int main(int argc, char **argv)
 			memset(in, 0, sizeof(struct ead_instance));
 			INIT_LIST_HEAD(&in->list);
 			strncpy(in->ifname, optarg, sizeof(in->ifname) - 1);
+			in->ifname[sizeof(in->ifname) - 1] = '\0';
 			list_add(&in->list, &instances);
 			in->id = n_iface++;
 			break;

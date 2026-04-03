@@ -38,6 +38,17 @@
 **Vulnerability:** The `ead` service writes its process ID to a file using `sprintf(pid, "%d\n", getpid())` into a stack-allocated buffer `char pid[8];`. Since `getpid()` can return up to 7 digits on modern Linux systems, adding `\n` and `\0` requires at least 9 bytes, overflowing the 8-byte buffer.
 **Learning:** Hardcoded small buffer sizes for formatting integer PIDs can lead to stack memory corruption (CWE-121) as OS configurations like `kernel.pid_max` allow PIDs to exceed traditional limits.
 **Prevention:** Always allocate sufficiently large stack buffers (e.g., 32 bytes) when formatting PIDs, or preferably use `snprintf` with `sizeof(buffer)` to enforce explicit bounds checking.
+## 2024-05-30 - [ead: fix buffer caps and string null-terminations]
+**Vulnerability:** Off-by-one out-of-bounds null-byte poisoning write and missing strict null-terminations when using `strncpy` in C network components (`ead`).
+**Learning:** `datalen` checking allowed `datalen` to be equal to the max buffer size constraint (`1024`) leading to out-of-bounds index writing (`cmd->data[1024] = 0;` on a 1024-byte buffer). Additionally, using `strncpy` to write into an uninitialized bounded buffer without a subsequent explicit null-termination can result in a non-terminated string if the source length equals the buffer length.
+**Prevention:** Always bounds-check network payloads strictly against constraints using `>=` when determining lengths for null-termination array indexes. Additionally, always manually null-terminate strings copied with `strncpy` explicitly via `buf[sizeof(buf) - 1] = '\0'`.
+
+## 2024-05-30 - [github actions: migrate toolchain archives from .tar.xz to .tar.zst]
+**Learning:** OpenWrt has migrated toolchain snapshots to `.tar.zst` format instead of `.tar.xz`, which caused the Github Actions CI to fail with `404 Not Found` when trying to download `openwrt-toolchain-*.tar.xz` or `openwrt-sdk-*.tar.xz`.
+**Action:** Always check the `.tar.zst` archive format for toolchains/SDKs in `build.yml` when fetching from `downloads.cdn.openwrt.org`. Ensure that `tar --zstd -xf -` is used in place of `tar --xz -xf -`.
+## 2024-05-30 - [github actions: install missing zstd package for toolchains]
+**Learning:** After OpenWrt's migration from `.tar.xz` to `.tar.zst` for toolchain archives, the `ghcr.io/zektopic/tools:latest` container lacks the `zstd` binary, causing tar extractions to fail (`tar (grandchild): zstd: Cannot exec: No such file or directory`).
+**Action:** When migrating tar archives from `.xz` to `.zst`, ensure the CI container environment is capable of unpacking them by installing `zstd` via `apt-get install -y zstd` in the environment initialization step.
 ## 2024-11-20 - Fix buffer overflow risk in t_pw.c
 **Vulnerability:** Unbounded `strcpy` operations copying external usernames into fixed-size struct buffers (`userbuf`, `pebuf.name`) of size `MAXUSERLEN` in `ead/src/tinysrp/t_pw.c`.
 **Learning:** Legacy C code in the `tinysrp` dependency relied on upstream parser constraints (`t_nextfield`) for bounds-checking, exposing the credential structures to stack smashing if parser limits changed or failed to explicitly null-terminate strings.

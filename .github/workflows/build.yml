@@ -136,6 +136,7 @@ jobs:
           SUBTARGET=$(echo ${{ inputs.target }} | cut -d "/" -f 2)
           echo "TARGET=$TARGET" >> "$GITHUB_ENV"
           echo "SUBTARGET=$SUBTARGET" >> "$GITHUB_ENV"
+          apt-get update && apt-get install -y zstd
 
       - name: Update & Install feeds
         if: inputs.include_feeds == true
@@ -176,15 +177,15 @@ jobs:
           fi
 
           SUMS_FILE="https://downloads.cdn.openwrt.org/$TOOLCHAIN_PATH/targets/${{ env.TARGET }}/${{ env.SUBTARGET }}/sha256sums"
-          if curl $SUMS_FILE | grep -q ".*openwrt-toolchain.*tar.xz"; then
-            TOOLCHAIN_STRING="$( curl $SUMS_FILE | grep ".*openwrt-toolchain.*tar.xz")"
-            TOOLCHAIN_FILE=$(echo "$TOOLCHAIN_STRING" | sed -n -e 's/.*\(openwrt-toolchain.*\).tar.xz/\1/p')
+          if curl $SUMS_FILE | grep -q ".*openwrt-toolchain.*tar.zst"; then
+            TOOLCHAIN_STRING="$( curl $SUMS_FILE | grep ".*openwrt-toolchain.*tar.zst")"
+            TOOLCHAIN_FILE=$(echo "$TOOLCHAIN_STRING" | sed -n -e 's/.*\(openwrt-toolchain.*\).tar.zst/\1/p')
             TOOLCHAIN_SHA256=$(echo "$TOOLCHAIN_STRING" | cut -d ' ' -f 1)
             
             echo "toolchain-type=external_toolchain" >> $GITHUB_OUTPUT
-          elif curl $SUMS_FILE | grep -q ".*openwrt-sdk.*tar.xz"; then
-            TOOLCHAIN_STRING="$( curl $SUMS_FILE | grep ".*openwrt-sdk.*tar.xz")"
-            TOOLCHAIN_FILE=$(echo "$TOOLCHAIN_STRING" | sed -n -e 's/.*\(openwrt-sdk.*\).tar.xz/\1/p')
+          elif curl $SUMS_FILE | grep -q ".*openwrt-sdk.*tar.zst"; then
+            TOOLCHAIN_STRING="$( curl $SUMS_FILE | grep ".*openwrt-sdk.*tar.zst")"
+            TOOLCHAIN_FILE=$(echo "$TOOLCHAIN_STRING" | sed -n -e 's/.*\(openwrt-sdk.*\).tar.zst/\1/p')
             TOOLCHAIN_SHA256=$(echo "$TOOLCHAIN_STRING" | cut -d ' ' -f 1)
 
             echo "toolchain-type=external_sdk" >> $GITHUB_OUTPUT
@@ -215,8 +216,8 @@ jobs:
         shell: su buildbot -c "sh -e {0}"
         working-directory: openwrt
         run: |
-          wget -O - https://downloads.cdn.openwrt.org/$TOOLCHAIN_PATH/targets/$TARGET/$SUBTARGET/$TOOLCHAIN_FILE.tar.xz \
-            | tar --xz -xf -
+          wget -O - https://downloads.cdn.openwrt.org/$TOOLCHAIN_PATH/targets/$TARGET/$SUBTARGET/$TOOLCHAIN_FILE.tar.zst \
+            | tar --zstd -xf -
 
       - name: Extract prebuilt tools
         shell: su buildbot -c "sh -e {0}"
