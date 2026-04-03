@@ -3264,6 +3264,19 @@ define Device/wavlink_wl-wn573hx3
 endef
 TARGET_DEVICES += wavlink_wl-wn573hx3
 
+define Device/wavlink_wl-wnt100x3
+  DEVICE_VENDOR := WAVLINK
+  DEVICE_MODEL := WL-WNT100X3
+  DEVICE_DTS := mt7981b-wavlink-wl-wnt100x3
+  DEVICE_DTS_DIR := ../dts
+  IMAGE_SIZE := 65536k
+  DEVICE_PACKAGES := kmod-usb3 kmod-mt7915e kmod-mt7981-firmware \
+  	mt7981-wo-firmware kmod-hwmon-pwmfan
+  SUPPORTED_DEVICES += mediatek,mt7981-spim-snand-rfb
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += wavlink_wl-wnt100x3
+
 define Device/widelantech_wap430x
   DEVICE_VENDOR := Widelantech
   DEVICE_MODEL := WAP430X
