@@ -55,6 +55,8 @@
 #include <io.h>
 #endif
 
+#include <stdlib.h>
+#include <string.h>
 #include "t_pwd.h"
 #include "t_read.h"
 #include "t_sha.h"
