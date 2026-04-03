@@ -18,6 +18,10 @@
 **Vulnerability:** The `ead` service writes its process ID to a file using `sprintf(pid, "%d\n", getpid())` into a stack-allocated buffer `char pid[8];`. Since `getpid()` can return up to 7 digits on modern Linux systems, adding `\n` and `\0` requires at least 9 bytes, overflowing the 8-byte buffer.
 **Learning:** Hardcoded small buffer sizes for formatting integer PIDs can lead to stack memory corruption (CWE-121) as OS configurations like `kernel.pid_max` allow PIDs to exceed traditional limits.
 **Prevention:** Always allocate sufficiently large stack buffers (e.g., 32 bytes) when formatting PIDs, or preferably use `snprintf` with `sizeof(buffer)` to enforce explicit bounds checking.
+## $(date +%Y-%m-%d) - [CRITICAL] Fix undefined behavior and buffer termination in EAD
+**Vulnerability:** A `static const char password[MAXPARAMLEN]` buffer was being cast to `char *` and modified directly via `strncpy`, resulting in undefined behavior. Additionally, multiple `strncpy` calls in the `ead` and `ead-client` code failed to correctly ensure explicit null-termination if the source string exactly matched or exceeded the destination buffer length.
+**Learning:** Legacy C network services frequently mix `strncpy` with incorrect length bounds or forget manual null-termination, leading to out-of-bounds reads when subsequent string operations process the buffer. Furthermore, using `const` arrays for mutable global state via pointer casting is a dangerous pattern that can lead to subtle bugs or compiler-optimized crashes.
+**Prevention:** Always declare buffers intended for mutation without the `const` qualifier. When using `strncpy`, ensure the maximum length copied is `buffer_size - 1` and explicitly set the final byte to `\0` (`buffer[buffer_size - 1] = '\0'`) to guarantee safety across all string operations.
 
 ## 2024-05-18 - Missing Buffer Overflows Bounds in Network Parsing
 **Vulnerability:** Bounds checks were missing on values read directly from network payloads in the Emergency Access Daemon service (ead & ead-client), specifically regarding string boundaries and payload length integer checking.

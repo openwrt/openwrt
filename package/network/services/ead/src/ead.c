@@ -85,7 +85,7 @@ static u16_t nid = 0xffff; /* node id */
 static char username[32] = "";
 static int state = EAD_TYPE_SET_USERNAME;
 static const char *passwd_file = PASSWD_FILE;
-static const char password[MAXPARAMLEN];
+static char password[MAXPARAMLEN];
 static bool child_pending = false;
 
 static unsigned char abuf[MAXPARAMLEN + 1];
@@ -215,7 +215,8 @@ prepare_password(void)
 		if (s2 - str >= MAXPARAMLEN)
 			continue;
 
-		strncpy((char *)password, str, MAXPARAMLEN);
+		strncpy(password, str, MAXPARAMLEN - 1);
+		password[MAXPARAMLEN - 1] = '\0';
 		fclose(f);
 		goto hash_password;
 	}
@@ -397,8 +398,8 @@ handle_set_username(struct ead_packet *pkt, int len, int *nstate)
 	struct ead_msg_user *user = EAD_DATA(msg, user);
 
 	set_state(EAD_TYPE_SET_USERNAME); /* clear old state */
-	strncpy(username, user->username, sizeof(username));
-	username[sizeof(username) - 1] = 0;
+	strncpy(username, user->username, sizeof(username) - 1);
+	username[sizeof(username) - 1] = '\0';
 
 	msg = &pktbuf->msg;
 	msg->len = 0;
