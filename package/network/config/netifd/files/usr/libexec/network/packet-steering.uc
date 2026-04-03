@@ -52,7 +52,7 @@ function set_task_cpu(pid, cpu) {
 	if (debug || do_nothing)
 		warn(`taskset -p -c ${cpu} ${name}\n`);
 	if (!do_nothing)
-		system(`taskset -p -c ${cpu} ${pid}`);
+		system([ "taskset", "-p", "-c", cpu, pid ]);
 }
 
 function cpu_mask(cpu)

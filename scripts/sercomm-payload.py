@@ -5,13 +5,6 @@ import hashlib
 import os
 
 def create_output(args):
-	in_st = os.stat(args.input_file)
-	in_size = in_st.st_size
-
-	in_f = open(args.input_file, 'r+b')
-	in_bytes = in_f.read(in_size)
-	in_f.close()
-
 	if (args.pid_file):
 		pid_st = os.stat(args.pid_file)
 		pid_size = pid_st.st_size
@@ -23,12 +16,30 @@ def create_output(args):
 		pid_bytes = bytes.fromhex(args.pid)
 
 	sha256 = hashlib.sha256()
-	sha256.update(in_bytes)
 
 	out_f = open(args.output_file, 'w+b')
+	# Write PID bytes first
 	out_f.write(pid_bytes)
+
+	# Save position and write placeholder for the 32-byte SHA256 digest
+	hash_pos = out_f.tell()
+	out_f.write(b'\0' * 32)
+
+	# Read input file in chunks to calculate hash and stream directly to output
+	# This avoids loading large firmware files into memory at once (O(1) memory usage)
+	in_f = open(args.input_file, 'r+b')
+	while True:
+		chunk = in_f.read(65536)
+		if not chunk:
+			break
+		sha256.update(chunk)
+		out_f.write(chunk)
+	in_f.close()
+
+	# Seek back and write the actual hash digest
+	out_f.seek(hash_pos)
 	out_f.write(sha256.digest())
-	out_f.write(in_bytes)
+
 	out_f.close()
 
 def main():
