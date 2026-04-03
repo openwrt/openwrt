@@ -386,7 +386,7 @@ Signed-off-by: Sky Huang <skylake.huang@mediatek.com>
 +
 +module_phy_driver(mtk_2p5gephy_driver);
 +
-+static struct mdio_device_id __maybe_unused mtk_2p5ge_phy_tbl[] = {
++static const struct mdio_device_id __maybe_unused mtk_2p5ge_phy_tbl[] = {
 +	{ PHY_ID_MATCH_VENDOR(0x00339c00) },
 +	{ }
 +};

@@ -130,6 +130,7 @@ mediatek_setup_interfaces()
 		;;
 	bazis,ax3000wm|\
 	cudy,m3000-v1|\
+	cudy,m3000-v2-yt8821|\
 	cudy,tr3000-256mb-v1|\
 	cudy,tr3000-v1|\
 	cudy,tr3000-v1-ubootmod|\
@@ -177,7 +178,7 @@ mediatek_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "lan0 lan1 lan2" eth1
 		;;
 	tenda,be12-pro)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 eth1" eth2
+		ucidef_set_interfaces_lan_wan "lan3 lan4 lan5 eth1" eth2
 		;;
 	tplink,fr365-v1)
 		ucidef_set_interfaces_lan_wan "port1 port3 port4 port5 port6" "port2"

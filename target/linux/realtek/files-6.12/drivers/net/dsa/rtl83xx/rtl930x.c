@@ -1112,29 +1112,6 @@ void rtl9300_dump_debug(void)
 	);
 }
 
-irqreturn_t rtldsa_930x_switch_irq(int irq, void *dev_id)
-{
-	struct dsa_switch *ds = dev_id;
-	struct rtl838x_switch_priv *priv = ds->priv;
-	unsigned long ports = sw_r32(RTL930X_ISR_PORT_LINK_STS_CHG);
-	unsigned int i;
-	u32 link;
-
-	/* Clear status */
-	sw_w32(ports, RTL930X_ISR_PORT_LINK_STS_CHG);
-
-	/* Read the register twice because of issues with latency at least
-	 * with the external RTL8226 PHY on the XGS1210
-	 */
-	link = sw_r32(RTL930X_MAC_LINK_STS);
-	link = sw_r32(RTL930X_MAC_LINK_STS);
-
-	for_each_set_bit(i, &ports, priv->cpu_port)
-		dsa_port_phylink_mac_change(ds, i, link & BIT(i));
-
-	return IRQ_HANDLED;
-}
-
 /* Calculate both the block 0 and the block 1 hash, and return in
  * lower and higher word of the return value since only 12 bit of
  * the hash are significant
@@ -2861,6 +2838,7 @@ const struct rtldsa_config rtldsa_930x_cfg = {
 	.set_vlan_egr_filter = rtl930x_set_egr_filter,
 	.stp_get = rtldsa_930x_stp_get,
 	.stp_set = rtl930x_stp_set,
+	.mac_link_sts = RTL930X_MAC_LINK_STS,
 	.mac_force_mode_ctrl = rtl930x_mac_force_mode_ctrl,
 	.mac_port_ctrl = rtl930x_mac_port_ctrl,
 	.l2_port_new_salrn = rtl930x_l2_port_new_salrn,

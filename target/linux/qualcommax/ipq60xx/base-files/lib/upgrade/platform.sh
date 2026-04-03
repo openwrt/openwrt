@@ -205,7 +205,7 @@ platform_do_upgrade() {
 		;;
 	tplink,eap610-outdoor|\
 	tplink,eap620-hd-v3|\
-	tplink,eap623od-hd-v1|\
+	tplink,eap623-outdoor-hd-v1|\
 	tplink,eap625-outdoor-hd-v1)
 		tplink_do_upgrade "$1"
 		;;

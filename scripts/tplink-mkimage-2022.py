@@ -128,7 +128,14 @@ def write_image(output_image, header):
         size = out_file.tell()
 
         out_file.seek(4)
-        md5_sum = hashlib.md5(out_file.read())
+        md5_sum = hashlib.md5()
+        # Optimization: use explicit while loop with chunked read
+        # to avoid reading the whole file into memory and lambdas.
+        while True:
+            chunk = out_file.read(65536)
+            if not chunk:
+                break
+            md5_sum.update(chunk)
 
         out_file.seek(0)
         out_file.write(struct.pack('>I16s', size, md5_sum.digest()))

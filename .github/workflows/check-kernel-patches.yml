@@ -15,7 +15,7 @@ permissions:
 jobs:
   setup_build:
     name: Setup build
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     outputs:
       owner_lc: ${{ steps.lower_owner.outputs.owner_lc }}
       container_tag: ${{ steps.determine_tools_container.outputs.container_tag }}
@@ -62,7 +62,7 @@ jobs:
   check-patch:
     name: Check Kernel patches
     needs: setup_build
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
 
     container: ghcr.io/${{ needs.setup_build.outputs.owner_lc }}/tools:${{ needs.setup_build.outputs.container_tag }}
 
