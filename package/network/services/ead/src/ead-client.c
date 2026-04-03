@@ -154,6 +154,9 @@ handle_pong(void)
 	if (len <= 0 || len >= 1024)
 		return false;
 
+	if (len >= 1024)
+		len = 1023;
+
 	pong->name[len] = 0;
 	auth_type = ntohs(pong->auth_type);
 	if (nid == 0xffff)
