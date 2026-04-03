@@ -273,6 +273,90 @@ macaddr_unsetbit_mc() {
 	printf "%02x:%s" $((0x${mac%%:*} & ~0x01)) ${mac#*:}
 }
 
+macaddr_type() {
+	case "${1:-}" in
+	'01'[:-]'00'[:-]'5'[eE][:-][0-9A-Fa-f][0-9A-Fa-f][:-][0-9A-Fa-f][0-9A-Fa-f][:-][0-9A-Fa-f][0-9A-Fa-f])
+		echo 'multicast'
+		;;
+	[fF][fF][:-][fF][fF][:-][fF][fF][:-][fF][fF][:-][fF][fF][:-][fF][fF])
+		echo 'broadcast'
+		;;
+	[0-9A-Fa-f][048Cc][:-][0-9A-Fa-f][0-9A-Fa-f][:-][0-9A-Fa-f][0-9A-Fa-f][:-][0-9A-Fa-f][0-9A-Fa-f][:-][0-9A-Fa-f][0-9A-Fa-f][:-][0-9A-Fa-f][0-9A-Fa-f])
+		echo 'ucua'
+		;;
+	[0-9A-Fa-f][159Dd][:-][0-9A-Fa-f][0-9A-Fa-f][:-][0-9A-Fa-f][0-9A-Fa-f][:-][0-9A-Fa-f][0-9A-Fa-f][:-][0-9A-Fa-f][0-9A-Fa-f][:-][0-9A-Fa-f][0-9A-Fa-f])
+		echo 'mcua'
+		;;
+	[0-9A-Fa-f][26AEae][:-][0-9A-Fa-f][0-9A-Fa-f][:-][0-9A-Fa-f][0-9A-Fa-f][:-][0-9A-Fa-f][0-9A-Fa-f][:-][0-9A-Fa-f][0-9A-Fa-f][:-][0-9A-Fa-f][0-9A-Fa-f])
+		echo 'ucla'
+		;;
+	[0-9A-Fa-f][37BFbf][:-][0-9A-Fa-f][0-9A-Fa-f][:-][0-9A-Fa-f][0-9A-Fa-f][:-][0-9A-Fa-f][0-9A-Fa-f][:-][0-9A-Fa-f][0-9A-Fa-f][:-][0-9A-Fa-f][0-9A-Fa-f])
+		echo 'mcla'
+		;;
+	*)
+		return 1
+		;;
+	esac
+}
+
+macaddr_valid() {
+	local mac="${1:-}"
+
+	if ! macaddr_type "${mac}" > '/dev/null'; then
+		return 1
+	fi
+
+	printf '%s' "${mac}"
+}
+
+macaddr_unicast() {
+	local addr_type
+	local mac="${1:-}"
+
+	addr_type="$(macaddr_type "${mac}")"
+	if [ -n "${addr_type%'uc'*}" ]; then
+		return 1
+	fi
+
+	printf '%s' "${mac}"
+}
+
+macaddr_multicast() {
+	local addr_type
+	local mac="${1:-}"
+
+	addr_type="$(macaddr_type "${mac}")"
+	if [ -n "${addr_type%'mc'*}" ]; then
+		return 1
+	fi
+
+	printf '%s' "${mac}"
+}
+
+macaddr_localadmin() {
+	local addr_type
+	local mac="${1:-}"
+
+	addr_type="$(macaddr_type "${mac}")"
+	if [ -n "${addr_type#*'la'}" ]; then
+		return 1
+	fi
+
+	printf '%s' "${mac}"
+}
+
+macaddr_uniadmin() {
+	local addr_type
+	local mac="${1:-}"
+
+	addr_type="$(macaddr_type "${mac}")"
+	if [ -n "${addr_type#*'ua'}" ]; then
+		return 1
+	fi
+
+	printf '%s' "${mac}"
+}
+
 macaddr_random() {
 	local randsrc=$(get_mac_binary /dev/urandom 0)
 	
