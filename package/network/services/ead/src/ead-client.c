@@ -151,7 +151,7 @@ handle_pong(void)
 	struct ead_msg_pong *pong = EAD_DATA(msg, pong);
 	int len = ntohl(msg->len) - sizeof(struct ead_msg_pong);
 
-	if (len <= 0)
+	if (len <= 0 || len >= 1024)
 		return false;
 
 	if (len >= 1024)
