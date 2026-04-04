@@ -1,0 +1,35 @@
+diff --git a/drivers/pinctrl/Makefile b/drivers/pinctrl/Makefile
+index 97823f52b972..638a7b90a921 100644
+--- a/drivers/pinctrl/Makefile
++++ b/drivers/pinctrl/Makefile
+@@ -73,6 +73,7 @@ obj-y				+= nxp/
+ obj-$(CONFIG_PINCTRL_PXA)	+= pxa/
+ obj-y				+= qcom/
+ obj-$(CONFIG_ARCH_REALTEK)      += realtek/
++obj-$(CONFIG_MACH_REALTEK_RTL)  += realtek/
+ obj-$(CONFIG_PINCTRL_RENESAS)	+= renesas/
+ obj-$(CONFIG_PINCTRL_SAMSUNG)	+= samsung/
+ obj-y				+= sophgo/
+diff --git a/drivers/pinctrl/realtek/Kconfig b/drivers/pinctrl/realtek/Kconfig
+index 0fc6bd4fcb7e..c2ab37117173 100644
+--- a/drivers/pinctrl/realtek/Kconfig
++++ b/drivers/pinctrl/realtek/Kconfig
+@@ -21,3 +21,9 @@ config PINCTRL_RTD1315E
+ 	tristate "Realtek DHC 1315E pin controller driver"
+ 	depends on PINCTRL_RTD
+ 	default y
++
++config PINCTRL_RTL9607C
++	tristate "Realtek RTL9607C pin controller driver"
++	depends on RTL960X
++	select PINMUX
++	default y
+diff --git a/drivers/pinctrl/realtek/Makefile b/drivers/pinctrl/realtek/Makefile
+index c7bace0001e9..4b4243eb5aa3 100644
+--- a/drivers/pinctrl/realtek/Makefile
++++ b/drivers/pinctrl/realtek/Makefile
+@@ -4,3 +4,4 @@ obj-$(CONFIG_PINCTRL_RTD)		+= pinctrl-rtd.o
+ obj-$(CONFIG_PINCTRL_RTD1619B)		+= pinctrl-rtd1619b.o
+ obj-$(CONFIG_PINCTRL_RTD1319D)		+= pinctrl-rtd1319d.o
+ obj-$(CONFIG_PINCTRL_RTD1315E)		+= pinctrl-rtd1315e.o
++obj-$(CONFIG_PINCTRL_RTL9607C)		+= pinctrl-rtl9607c.o

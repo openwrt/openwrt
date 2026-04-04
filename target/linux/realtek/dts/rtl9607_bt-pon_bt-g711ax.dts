@@ -12,6 +12,7 @@
 
 	model = "BT-PON BT-G711AX";
 
+#if 0
 	aliases {
 		led-boot = &led_power;
 		led-failsafe = &led_power;
@@ -116,6 +117,7 @@
 			gpios = <&gpio1 24 GPIO_ACTIVE_HIGH>;
 		};
 	};
+#endif
 };
 
 &pinmux {

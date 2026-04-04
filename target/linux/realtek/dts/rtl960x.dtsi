@@ -255,6 +255,8 @@
 			realtek,scl = <0>;
 
 			status = "disabled";
+			pinctrl-0 = <&pinmux_i2c0>;
+		pinctrl-names = "default";
 		};
 
 		i2c_mst2: i2c@b8 {
@@ -275,13 +277,17 @@
 	};
 
 	pinmux: pinmux@1b000038 {
-		compatible = "pinctrl-single";
-		reg = <0x1b000038 0xc>;
+		compatible = "realtek,rtl9607c-pinctrl";
+//		reg = <0x1b000038 0xc>;
 
-		pinctrl-single,bit-per-mux;
-		pinctrl-single,register-width = <32>;
-		pinctrl-single,function-mask = <0x1>;
-		#pinctrl-cells = <2>;
+//		pinctrl-single,bit-per-mux;
+//		pinctrl-single,register-width = <32>;
+//		pinctrl-single,function-mask = <0x1>;
+//		#pinctrl-cells = <2>;
+		pinmux_i2c0:state_2_node_a {
+			function = "i2c0";
+			groups = "i2c0";
+		};
 	};
 
 	thermal_zones: thermal-zones {
