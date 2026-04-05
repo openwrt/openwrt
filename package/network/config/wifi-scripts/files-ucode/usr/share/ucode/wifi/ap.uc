@@ -530,13 +530,15 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 		config.rsn_override_mfp ??= config.ieee80211w;
 		config.rsn_override_key_mgmt ??= config.wpa_key_mgmt;
 		config.rsn_override_pairwise ??= config.wpa_pairwise;
+		set_default(config, 'rsn_override_omit_rsnxe', 1);
 		append_vars(config, [
 			'rsn_override_key_mgmt',
 			'rsn_override_pairwise',
-			'rsn_override_mfp'
+			'rsn_override_mfp',
+			'rsn_override_omit_rsnxe'
 		]);
 
-		if (config.mlo) {
+		if (config.mlo || config.rsn_override_key_mgmt_2 || config.rsn_override_pairwise_2) {
 			config.rsn_override_mfp_2 ??= config.rsn_override_mfp;
 			config.rsn_override_key_mgmt_2 ??= config.rsn_override_key_mgmt;
 			config.rsn_override_pairwise_2 ??= config.rsn_override_pairwise;

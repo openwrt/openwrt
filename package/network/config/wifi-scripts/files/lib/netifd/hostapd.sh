@@ -555,7 +555,7 @@ hostapd_set_bss_options() {
 
 	wireless_vif_parse_encryption
 
-	local bss_conf bss_md5sum ft_key rxkhs
+	local bss_conf bss_md5sum ft_key rxkhs rsn_override_mfp
 	local wep_rekey wpa_group_rekey wpa_pair_rekey wpa_master_rekey wpa_key_mgmt
 
 	json_get_vars \
@@ -660,6 +660,7 @@ hostapd_set_bss_options() {
 			else
 				set_default ieee80211w 1
 			fi
+			[ "$rsn_override" -gt 0 ] && rsn_override_mfp=2
 			set_default sae_require_mfp 1
 			[ "$ppsk" -eq 0 ] && set_default sae_pwe 2
 		;;
@@ -937,7 +938,13 @@ hostapd_set_bss_options() {
 		[ -n "$rsn_override_key_mgmt" -o -n "$rsn_override_pairwise" ] && {
 			append bss_conf "rsn_override_key_mgmt=${rsn_override_key_mgmt:-$wpa_key_mgmt}" "$N"
 			append bss_conf "rsn_override_pairwise=${rsn_override_pairwise:-$wpa_pairwise}" "$N"
-			append bss_conf "rsn_override_mfp=$ieee80211w" "$N"
+			append bss_conf "rsn_override_mfp=${rsn_override_mfp:-$ieee80211w}" "$N"
+			append bss_conf "rsn_override_omit_rsnxe=1" "$N"
+			if [ -n "$rsn_override_key_mgmt_2" ] || [ -n "$rsn_override_pairwise_2" ] || [ "$mlo" -gt 0 ]; then
+				append bss_conf "rsn_override_key_mgmt_2=${rsn_override_key_mgmt_2:-$rsn_override_key_mgmt}" "$N"
+				append bss_conf "rsn_override_pairwise_2=${rsn_override_pairwise_2:-$rsn_override_pairwise}" "$N"
+				append bss_conf "rsn_override_mfp_2=${rsn_override_mfp_2:-$rsn_override_mfp}" "$N"
+			fi
 		}
 	fi
 
