@@ -655,7 +655,7 @@ hostapd_set_bss_options() {
 			[ "$ppsk" -eq 0 ] && set_default sae_pwe 2
 		;;
 		psk-sae|eap-eap2)
-			if [ "$band" = 6g ]; then
+			if [ "$band" = "6g" ]; then
 				set_default ieee80211w 2
 			else
 				set_default ieee80211w 1
@@ -1373,7 +1373,11 @@ wpa_supplicant_add_network() {
 			set_default ieee80211w 2
 		;;
 		psk-sae)
-			set_default ieee80211w 1
+			if [ "$band" = "6g" ]; then
+				set_default ieee80211w 2
+			else
+				set_default ieee80211w 1
+			fi
 		;;
 	esac
 

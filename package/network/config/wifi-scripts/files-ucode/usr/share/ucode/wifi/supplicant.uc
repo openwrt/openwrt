@@ -60,6 +60,8 @@ function setup_sta(data, config) {
 
 	if (config.auth_type in [ 'sae', 'owe', 'eap2', 'eap192', 'dpp' ])
 		config.ieee80211w = 2;
+	else if (config.auth_type == 'psk-sae' && data.band == '6g')
+		set_default(config, 'ieee80211w', 2);
 	else if (config.auth_type in [ 'psk-sae' ] && !config.ieee80211w)
 		config.ieee80211w = 1;
 	if ((wildcard(data.htmode, 'EHT*') || wildcard(data.htmode, 'HE*')) &&
