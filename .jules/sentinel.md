@@ -74,7 +74,3 @@
 **Vulnerability:** The `tinysrp` library in `ead` used legacy `strcpy` to copy credentials like usernames into fixed-size buffers (`tpw->userbuf`), leading to a potential stack-smashing buffer overflow if the username exceeds `MAXUSERLEN`.
 **Learning:** Legacy C code often relies on unbounded string operations. Usernames, being external input, should not be trusted to fit within statically allocated memory limits like `MAXUSERLEN`.
 **Prevention:** Always replace legacy `strcpy` calls with `strncpy` bounded by the target buffer size minus one (e.g., `MAXUSERLEN - 1`) and append explicit null-termination when handling credentials to prevent buffer overflow vulnerabilities.
-## 2024-05-18 - Missing Null Termination with strncpy in tinysrp
-**Vulnerability:** The `strncpy` function was used to copy usernames into fixed-size buffers (`MAXUSERLEN`) in `tphrase.c` and `t_client.c` without explicitly bounding to `MAXUSERLEN - 1` and adding a null terminator. If a username larger than the buffer is provided, the buffer will lack a null terminator, leading to potential out-of-bounds reads or writes during subsequent string operations.
-**Learning:** `strncpy` does not guarantee null-termination if the source string length is equal to or greater than the specified `n` bound. When copying strings into fixed-size C buffers, you cannot rely solely on `strncpy` for safety.
-**Prevention:** Always bound the `strncpy` copy to `sizeof(buffer) - 1` and explicitly set the null terminator at `buffer[sizeof(buffer) - 1] = '\0'` immediately following the copy.

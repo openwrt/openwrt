@@ -208,8 +208,7 @@ t_makepwent(tpw, user, pass, salt, confent)
   tpw->pebuf.password.data = tpw->pwbuf;
   tpw->pebuf.salt.data = tpw->saltbuf;
 
-  strncpy(tpw->pebuf.name, user, MAXUSERLEN - 1);
-  tpw->pebuf.name[MAXUSERLEN - 1] = '\0';
+  strncpy(tpw->pebuf.name, user, MAXUSERLEN);
   tpw->pebuf.index = confent->index;
 
   if(salt) {
