@@ -86,7 +86,10 @@ jobs:
           SUBTARGET=$(echo ${{ inputs.target }} | cut -d "/" -f 2)
           echo "TARGET=$TARGET" >> "$GITHUB_ENV"
           echo "SUBTARGET=$SUBTARGET" >> "$GITHUB_ENV"
-          apt-get update && apt-get install -y zstd
+          sed -i 's/deb.debian.org/archive.debian.org/g' /etc/apt/sources.list || true
+          sed -i 's|security.debian.org/debian-security|archive.debian.org/debian-security/|g' /etc/apt/sources.list || true
+          sed -i '/buster-updates/d' /etc/apt/sources.list || true
+          apt-get update -o Acquire::Check-Valid-Until=false && apt-get install -y zstd python3-pyelftools
 
       - name: Extract prebuilt tools
         shell: su buildbot -c "sh -e {0}"
