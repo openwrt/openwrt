@@ -1,0 +1,240 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "zte,mf258", "mediatek,mt7621-soc";
+	model = "ZTE MF258";
+
+	aliases {
+		led-boot = &led_wan;
+		led-failsafe = &led_wan;
+		led-running = &led_wan;
+		led-upgrade = &led_wan;
+	};
+
+	/*
+	 * AW9523B P0_4 switches the 24V passive PoE on the WAN port, which
+	 * powers the outdoor LTE unit. Low cuts the power.
+	 */
+	gpio-export {
+		compatible = "gpio-export";
+
+		poe {
+			gpio-export,name = "poe";
+			gpio-export,output = <1>;
+			gpios = <&aw9523 4 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 18 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led-0 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "sig1";
+			gpios = <&aw9523 0 GPIO_ACTIVE_LOW>;
+		};
+
+		led-1 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "sig2";
+			gpios = <&aw9523 1 GPIO_ACTIVE_LOW>;
+		};
+
+		led-2 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "sig3";
+			gpios = <&aw9523 2 GPIO_ACTIVE_LOW>;
+		};
+
+		led-3 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = "sig4";
+			gpios = <&aw9523 3 GPIO_ACTIVE_LOW>;
+		};
+
+		led_wan: led-4 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN;
+			gpios = <&aw9523 8 GPIO_ACTIVE_LOW>;
+		};
+
+		led-5 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_5GHZ;
+			gpios = <&aw9523 10 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy1radio";
+		};
+
+		led-6 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_2GHZ;
+			gpios = <&aw9523 12 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0radio";
+		};
+	};
+};
+
+&state_default {
+	gpio {
+		groups = "wdt";
+		function = "gpio";
+	};
+};
+
+&i2c {
+	status = "okay";
+
+	/*
+	 * RSTN of the AW9523B is not routed to any SoC GPIO, so the chip
+	 * is reset over I2C. The pinctrl-aw9523 driver requires
+	 * reset-gpios, so SoC GPIO0, which has no known function on this
+	 * board, is claimed as a placeholder and kept as an output by the
+	 * driver.
+	 */
+	aw9523: gpio-expander@5b {
+		compatible = "awinic,aw9523-pinctrl";
+		reg = <0x5b>;
+		reset-gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		gpio-ranges = <&aw9523 0 0 16>;
+	};
+};
+
+&nand {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			label = "Bootloader";
+			reg = <0x0 0x80000>;
+			read-only;
+		};
+
+		partition@80000 {
+			label = "Config";
+			reg = <0x80000 0x80000>;
+		};
+
+		partition@100000 {
+			label = "Factory";
+			reg = <0x100000 0x100000>;
+			read-only;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom_factory_0: eeprom@0 {
+					reg = <0x0 0x400>;
+				};
+
+				eeprom_factory_8000: eeprom@8000 {
+					reg = <0x8000 0x4da8>;
+				};
+
+				macaddr_lan: macaddr@e000 {
+					reg = <0xe000 0x6>;
+				};
+
+				macaddr_wan: macaddr@e006 {
+					reg = <0xe006 0x6>;
+				};
+			};
+		};
+
+		/* 0x200000 - 0xf00000: OEM partitions, left untouched */
+
+		/* U-Boot loads the kernel from this fixed offset */
+		partition@f00000 {
+			label = "kernel";
+			reg = <0xf00000 0x800000>;
+		};
+
+		partition@1700000 {
+			label = "ubi";
+			reg = <0x1700000 0x6880000>;
+		};
+	};
+};
+
+&gmac0 {
+	nvmem-cells = <&macaddr_lan>;
+	nvmem-cell-names = "mac-address";
+};
+
+&gmac1 {
+	status = "okay";
+	label = "wan";
+	phy-handle = <&ethphy0>;
+
+	nvmem-cells = <&macaddr_wan>;
+	nvmem-cell-names = "mac-address";
+};
+
+&ethphy0 {
+	/delete-property/ interrupts;
+};
+
+&switch0 {
+	ports {
+		port@2 {
+			status = "okay";
+			label = "lan1";
+		};
+
+		port@4 {
+			status = "okay";
+			label = "lan2";
+		};
+	};
+};
+
+&pcie {
+	status = "okay";
+};
+
+&pcie0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_0>;
+		nvmem-cell-names = "eeprom";
+	};
+};
+
+&pcie1 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		nvmem-cells = <&eeprom_factory_8000>;
+		nvmem-cell-names = "eeprom";
+	};
+};
+
+&xhci {
+	status = "disabled";
+};
