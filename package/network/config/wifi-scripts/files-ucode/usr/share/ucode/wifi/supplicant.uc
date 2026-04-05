@@ -64,8 +64,7 @@ function setup_sta(data, config) {
 		set_default(config, 'ieee80211w', 2);
 	else if (config.auth_type in [ 'psk-sae' ] && !config.ieee80211w)
 		config.ieee80211w = 1;
-	if ((wildcard(data.htmode, 'EHT*') || wildcard(data.htmode, 'HE*')) &&
-		config.rsn_override)
+	if (wildcard(data.htmode, 'EHT*') || wildcard(data.htmode, 'HE*'))
 		config.rsn_overriding = 1;
 	else
 		config.rsn_overriding = 0;

@@ -355,7 +355,6 @@ hostapd_common_add_bss_config() {
 	config_add_array r0kh r1kh
 
 	config_add_int ieee80211w_max_timeout ieee80211w_retry_timeout
-	config_add_int rsn_override
 
 	config_add_string macfilter 'macfile:file'
 	config_add_array 'maclist:list(macaddr)'
@@ -572,9 +571,14 @@ hostapd_set_bss_options() {
 		ppsk airtime_bss_weight airtime_bss_limit airtime_sta_weight \
 		multicast_to_unicast_all proxy_arp per_sta_vif na_mcast_to_ucast \
 		eap_server eap_user_file ca_cert server_cert private_key private_key_passwd server_id radius_server_clients radius_server_auth_port \
-		vendor_elements fils ocv beacon_prot spp_amsdu apup rsn_override dpp
+		vendor_elements fils ocv beacon_prot spp_amsdu apup dpp
 
-	set_default rsn_override 1
+	rsn_override=0
+	case "$auth_type" in
+		eap-eap2)
+			rsn_override=1
+		;;
+	esac
 	set_default dpp 0
 	set_default fils 0
 	set_default isolate 0
@@ -1365,15 +1369,13 @@ wpa_supplicant_add_network() {
 	wireless_vif_parse_encryption
 
 	json_get_vars \
-		ssid bssid key rsn_override \
+		ssid bssid key \
 		mcast_rate \
 		ieee80211w ieee80211r fils ocv beacon_prot \
 		multi_ap \
 		default_disabled
 
 	json_get_values basic_rate_list basic_rate
-
-	set_default rsn_override 1
 
 	case "$auth_type" in
 		sae|owe|eap2|eap192|dpp)
@@ -1433,7 +1435,7 @@ wpa_supplicant_add_network() {
 
 	rsn_overriding=0
 	case "$htmode" in
-	EHT*|HE*) [ "$rsn_override" -gt 0 ] && rsn_overriding=1;;
+	HE*|EHT*) rsn_overriding=1;;
 	esac
 	append network_data "rsn_overriding=$rsn_overriding" "$N$T"
 

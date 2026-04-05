@@ -89,6 +89,8 @@ function iface_auth_type(config) {
 			set_default(config, 'sae_pwe', 2);
 	}
 
+	set_default(config, 'rsn_override', (config.auth_type == 'eap-eap2') ? 1 : 0);
+
 	if (config.auth_type in [ 'psk-sae', 'eap-eap2' ]) {
 		set_default(config, 'ieee80211w', 1);
 		if (config.rsn_override)
