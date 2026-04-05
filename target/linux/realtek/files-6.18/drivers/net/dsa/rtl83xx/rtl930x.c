@@ -2793,6 +2793,12 @@ static void rtldsa_930x_qos_init(struct rtl838x_switch_priv *priv)
 }
 
 const struct rtldsa_config rtldsa_930x_cfg = {
+	.switch_ops = &rtldsa_93xx_switch_ops,
+	.phylink_mac_ops = &rtldsa_93xx_phylink_mac_ops,
+	.spanning_tree_ctrl = RTL930X_ST_CTRL,
+	.l2_bucket_size = 8,
+	.n_mst = 64,
+	.num_lag_ids = 16,
 	.cpu_port = RTL930X_CPU_PORT,
 	.fib_entries = 16384,
 	.mask_port_reg_be = rtl838x_mask_port_reg,

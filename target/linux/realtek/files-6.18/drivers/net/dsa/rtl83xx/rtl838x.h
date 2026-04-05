@@ -292,8 +292,10 @@
 #define MV_ACT_TRAP2CPU				2
 #define MV_ACT_COPY2CPU				3
 
+#define RTL838X_VLAN_STP_CTRL			(0x3b20)
+#define RTL839X_ST_CTRL				(0x27e4)
 #define RTL930X_ST_CTRL				(0x8798)
-#define RTL931x_ST_CTRL				(0x8000)
+#define RTL931X_ST_CTRL				(0x8000)
 
 #define RTL930X_L2_PORT_SABLK_CTRL		(0x905c)
 #define RTL930X_L2_PORT_DABLK_CTRL		(0x9060)
@@ -1368,6 +1370,8 @@ struct rtldsa_mirror_config {
 };
 
 struct rtldsa_config {
+	const struct dsa_switch_ops *switch_ops;
+	const struct phylink_mac_ops *phylink_mac_ops;
 	void (*mask_port_reg_be)(u64 clear, u64 set, int reg);
 	void (*set_port_reg_be)(u64 set, int reg);
 	u64 (*get_port_reg_be)(int reg);
@@ -1412,11 +1416,15 @@ struct rtldsa_config {
 	int imr_glb;
 	int n_counters;
 	int n_pie_blocks;
+	u8 num_lag_ids;
 	u8 cpu_port;
 	u8 port_ignore;
+	u8 l2_bucket_size;
+	u16 n_mst;
 	u32 fib_entries;
 	int trk_ctrl;
 	int trk_hash_ctrl;
+	int spanning_tree_ctrl;
 	void (*vlan_tables_read)(u32 vlan, struct rtl838x_vlan_info *info);
 	void (*vlan_set_tagged)(u32 vlan, struct rtl838x_vlan_info *info);
 	void (*vlan_set_untagged)(u32 vlan, u64 portmask);
@@ -1518,8 +1526,6 @@ struct rtl838x_switch_priv {
 	struct mii_bus *parent_bus;
 	const struct rtldsa_config *r;
 	u64 irq_mask;
-	int l2_bucket_size;
-	u16 n_mst;
 	struct dentry *dbgfs_dir;
 
 	/** @lags_port_members: Port (bit) is part of a specific LAG */

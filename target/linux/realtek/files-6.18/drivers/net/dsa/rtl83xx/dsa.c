@@ -1191,7 +1191,7 @@ static int rtldsa_mst_find(struct rtl838x_switch_priv *priv, u16 msti)
 		return -EINVAL;
 
 	/* search for existing entry */
-	for (i = 0; i < priv->n_mst - 1; i++) {
+	for (i = 0; i < priv->r->n_mst - 1; i++) {
 		if (priv->msts[i].msti != msti)
 			continue;
 
@@ -1233,7 +1233,7 @@ static int rtldsa_mst_get(struct rtl838x_switch_priv *priv, u16 msti)
 		return ret;
 
 	/* search for free slot */
-	for (i = 0; i < priv->n_mst - 1; i++) {
+	for (i = 0; i < priv->r->n_mst - 1; i++) {
 		if (priv->msts[i].msti != 0)
 			continue;
 
@@ -1279,7 +1279,7 @@ static int rtldsa_mst_recycle_slot(struct rtl838x_switch_priv *priv, u16 msti, u
 	if (msti > 4095)
 		return -EINVAL;
 
-	if (old_mst_slot >= priv->n_mst)
+	if (old_mst_slot >= priv->r->n_mst)
 		return -EINVAL;
 
 	index = old_mst_slot - 1;
@@ -1320,7 +1320,7 @@ static bool rtldsa_mst_put_slot(struct rtl838x_switch_priv *priv, u16 mst_slot)
 	if (mst_slot == 0)
 		return 0;
 
-	if (mst_slot >= priv->n_mst)
+	if (mst_slot >= priv->r->n_mst)
 		return 0;
 
 	index = mst_slot - 1;
@@ -1419,7 +1419,7 @@ static int rtldsa_port_bridge_join(struct dsa_switch *ds, int port, struct dsa_b
 		priv->r->set_static_move_action(port, false);
 
 	/* Set to disabled in all MSTs, common code will take care of CIST */
-	for (i = 1; i < priv->n_mst; i++)
+	for (i = 1; i < priv->r->n_mst; i++)
 		rtldsa_port_xstp_state_set(priv, port, BR_STATE_DISABLED, i);
 
 	mutex_unlock(&priv->reg_mutex);
@@ -1442,7 +1442,7 @@ static void rtldsa_port_bridge_leave(struct dsa_switch *ds, int port, struct dsa
 		priv->r->set_static_move_action(port, true);
 
 	/* Set to forwarding in all MSTs, common code will take care of CIST */
-	for (i = 1; i < priv->n_mst; i++)
+	for (i = 1; i < priv->r->n_mst; i++)
 		rtldsa_port_xstp_state_set(priv, port, BR_STATE_FORWARDING, i);
 
 	mutex_unlock(&priv->reg_mutex);
@@ -1513,7 +1513,7 @@ void rtldsa_port_stp_state_set(struct dsa_switch *ds, int port, u8 state)
 		goto unlock;
 
 	/* for unbridged ports, also force the same state to the MSTIs */
-	for (i = 1; i < priv->n_mst; i++)
+	for (i = 1; i < priv->r->n_mst; i++)
 		rtldsa_port_xstp_state_set(priv, port, state, i);
 
 unlock:
@@ -1828,7 +1828,7 @@ static int rtldsa_find_l2_hash_entry(struct rtl838x_switch_priv *priv, u64 seed,
 
 	pr_debug("%s: using key %x, for seed %016llx\n", __func__, key, seed);
 	/* Loop over all entries in the hash-bucket and over the second block on 93xx SoCs */
-	for (int i = 0; i < priv->l2_bucket_size; i++) {
+	for (int i = 0; i < priv->r->l2_bucket_size; i++) {
 		entry = priv->r->read_l2_entry_using_hash(key, i, e);
 		pr_debug("valid %d, mac %016llx\n", e->valid, ether_addr_to_u64(&e->mac[0]));
 		if (must_exist && !e->valid)

@@ -1807,6 +1807,12 @@ int rtldsa_83xx_lag_setup_algomask(struct rtl838x_switch_priv *priv, int group,
 				   struct netdev_lag_upper_info *info);
 
 const struct rtldsa_config rtldsa_838x_cfg = {
+	.switch_ops = &rtldsa_83xx_switch_ops,
+	.phylink_mac_ops = &rtldsa_83xx_phylink_mac_ops,
+	.spanning_tree_ctrl = RTL838X_VLAN_STP_CTRL,
+	.l2_bucket_size = 4,
+	.n_mst = 64,
+	.num_lag_ids = 8,
 	.cpu_port = RTL838X_CPU_PORT,
 	.fib_entries = 8192,
 	.mask_port_reg_be = rtl838x_mask_port_reg,
