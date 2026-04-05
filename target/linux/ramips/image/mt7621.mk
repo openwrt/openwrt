@@ -3867,3 +3867,15 @@ define Device/zyxel_wsm20
   KERNEL_INITRAMFS := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb | znet-header V1.00(ABZF.0)C0
 endef
 TARGET_DEVICES += zyxel_wsm20
+
+define Device/zte_mf258
+  $(Device/nand)
+  $(Device/uimage-lzma-loader)
+  IMAGE_SIZE := 36352k
+  KERNEL_SIZE := 8192k
+  DEVICE_VENDOR := ZTE
+  DEVICE_MODEL := MF258
+  DEVICE_PACKAGES := kmod-mt7603 kmod-mt7615e kmod-mt7663-firmware-ap \
+	kmod-i2c-mt7621 kmod-8021q
+endef
+TARGET_DEVICES += zte_mf258
