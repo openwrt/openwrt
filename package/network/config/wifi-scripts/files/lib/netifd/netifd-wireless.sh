@@ -223,6 +223,8 @@ wireless_vif_parse_encryption() {
 	else
 		wpa_cipher="CCMP"
 		case "$encryption" in
+			sae-compat*)
+			;;
 			wpa3-mixed*)
 				wpa_override_cipher="${wpa3_cipher}$wpa_cipher"
 			;;
@@ -283,6 +285,9 @@ wireless_vif_parse_encryption() {
 		;;
 		wpa3*)
 			auth_type=eap2
+		;;
+		sae-compat*)
+			auth_type=psk-sae-compat
 		;;
 		psk3-mixed*|sae-mixed*)
 			auth_type=psk-sae

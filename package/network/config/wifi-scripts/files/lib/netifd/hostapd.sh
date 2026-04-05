@@ -40,6 +40,14 @@ hostapd_append_wep_key() {
 hostapd_append_wpa_key_mgmt() {
 	local auth_type_l="$(echo $auth_type | tr 'a-z' 'A-Z')"
 
+	wpa_key_mgmt=
+	rsn_override_key_mgmt=
+	rsn_override_pairwise=
+	rsn_override_mfp=
+	rsn_override_key_mgmt_2=
+	rsn_override_pairwise_2=
+	rsn_override_mfp_2=
+
 	case "$auth_type" in
 		psk|eap)
 			append wpa_key_mgmt "WPA-$auth_type_l"
@@ -64,6 +72,28 @@ hostapd_append_wpa_key_mgmt() {
 			append wpa_key_mgmt "SAE"
 			[ "${ieee80211r:-0}" -gt 0 ] && append wpa_key_mgmt "FT-SAE"
 		;;
+		psk-sae-compat)
+			if [ "$band" = "6g" ]; then
+				append wpa_key_mgmt "SAE"
+				rsn_rsno2=0
+				case "$htmode" in
+					EHT*) rsn_rsno2=1 ;;
+				esac
+				[ "$mlo" -gt 0 ] && rsn_rsno2=1
+				if [ "$rsn_rsno2" -gt 0 ]; then
+					rsn_override_key_mgmt="SAE"
+					rsn_override_pairwise="GCMP-256"
+					rsn_override_mfp=2
+					rsn_override_key_mgmt_2="SAE-EXT-KEY"
+					rsn_override_pairwise_2="GCMP-256"
+					rsn_override_mfp_2=2
+				fi
+			else
+				append wpa_key_mgmt "WPA-PSK"
+				rsn_override_key_mgmt="SAE"
+				rsn_override_pairwise="CCMP"
+			fi
+		;;
 		psk-sae)
 			append wpa_key_mgmt "SAE"
 			[ "${ieee80211r:-0}" -gt 0 ] && append wpa_key_mgmt "FT-SAE"
@@ -83,7 +113,7 @@ hostapd_append_wpa_key_mgmt() {
 		;;
 	esac
 
-	[ "$dpp" -gt 0 ] && [ "$auth_type" != "dpp" ] && append wpa_key_mgmt "DPP"
+	[ "$dpp" -gt 0 ] && [ "$auth_type" != "dpp" ] && [ "$auth_type" != "psk-sae-compat" ] && append wpa_key_mgmt "DPP"
 
 	[ "$fils" -gt 0 ] && {
 		case "$auth_type" in
@@ -449,7 +479,7 @@ hostapd_set_psk() {
 
 	rm -f /var/run/hostapd-${ifname}.psk
 	case "$auth_type" in
-		psk|psk-sae) ;;
+		psk|psk-sae|psk-sae-compat) ;;
 		*) return ;;
 	esac
 	for_each_station hostapd_set_psk_file ${ifname}
@@ -475,7 +505,7 @@ hostapd_set_sae() {
 
 	rm -f /var/run/hostapd-${ifname}.sae
 	case "$auth_type" in
-		sae|psk-sae) ;;
+		sae|psk-sae|psk-sae-compat) ;;
 		*) return ;;
 	esac
 	for_each_station hostapd_set_sae_file ${ifname}
@@ -571,12 +601,31 @@ hostapd_set_bss_options() {
 		ppsk airtime_bss_weight airtime_bss_limit airtime_sta_weight \
 		multicast_to_unicast_all proxy_arp per_sta_vif na_mcast_to_ucast \
 		eap_server eap_user_file ca_cert server_cert private_key private_key_passwd server_id radius_server_clients radius_server_auth_port \
-		vendor_elements fils ocv beacon_prot spp_amsdu apup dpp
+		vendor_elements fils ocv beacon_prot spp_amsdu apup mlo dpp
+
+	json_get_vars mlo
+	set_default mlo 0
 
 	rsn_override=0
 	case "$auth_type" in
 		eap-eap2)
 			rsn_override=1
+		;;
+		psk-sae-compat)
+			if [ "$band" = "6g" ]; then
+				rsn_rsno2=0
+				case "$htmode" in
+					EHT*) rsn_rsno2=1 ;;
+				esac
+				[ "$mlo" -gt 0 ] && rsn_rsno2=1
+				if [ "$rsn_rsno2" -gt 0 ]; then
+					rsn_override=1
+				else
+					rsn_override=0
+				fi
+			else
+				rsn_override=1
+			fi
 		;;
 	esac
 	set_default dpp 0
@@ -658,6 +707,16 @@ hostapd_set_bss_options() {
 			set_default sae_require_mfp 1
 			[ "$ppsk" -eq 0 ] && set_default sae_pwe 2
 		;;
+		psk-sae-compat)
+			if [ "$band" = "6g" ]; then
+				set_default ieee80211w 2
+			else
+				set_default ieee80211w 0
+				rsn_override_mfp=2
+			fi
+			set_default sae_require_mfp 1
+			[ "$ppsk" -eq 0 ] && set_default sae_pwe 2
+		;;
 		psk-sae|eap-eap2)
 			if [ "$band" = "6g" ]; then
 				set_default ieee80211w 2
@@ -695,7 +754,7 @@ hostapd_set_bss_options() {
 			[ -n "$dpp_csign" ] && append bss_conf "dpp_csign=$dpp_csign" "$N"
 			[ -n "$dpp_netaccesskey" ] && append bss_conf "dpp_netaccesskey=$dpp_netaccesskey" "$N"
 		;;
-		psk|sae|psk-sae)
+		psk|sae|psk-sae|psk-sae-compat)
 			json_get_vars key wpa_psk_file sae_password_file
 			if [ "$ppsk" -ne 0 ]; then
 				json_get_vars auth_secret auth_port
@@ -712,12 +771,12 @@ hostapd_set_bss_options() {
 				return 1
 			fi
 			[ -z "$wpa_psk_file" ] && set_default wpa_psk_file /var/run/hostapd-$ifname.psk
-			[ -n "$wpa_psk_file" ] && [ "$auth_type" = "psk" -o "$auth_type" = "psk-sae" ] && {
+			[ -n "$wpa_psk_file" ] && [ "$auth_type" = "psk" -o "$auth_type" = "psk-sae" -o "$auth_type" = "psk-sae-compat" ] && {
 				[ -e "$wpa_psk_file" ] || touch "$wpa_psk_file"
 				append bss_conf "wpa_psk_file=$wpa_psk_file" "$N"
 			}
 			[ -z "$sae_password_file" ] && set_default sae_password_file /var/run/hostapd-$ifname.sae
-			[ -n "$sae_password_file" ] && [ "$auth_type" = "sae" -o "$auth_type" = "psk-sae" ] && {
+			[ -n "$sae_password_file" ] && [ "$auth_type" = "sae" -o "$auth_type" = "psk-sae" -o "$auth_type" = "psk-sae-compat" ] && {
 				[ -e "$sae_password_file" ] || touch "$sae_password_file"
 				append bss_conf "sae_password_file=$sae_password_file" "$N"
 			}
@@ -806,7 +865,7 @@ hostapd_set_bss_options() {
 	esac
 
 	case "$auth_type" in
-		none|owe|psk|sae|psk-sae|wep)
+		none|owe|psk|sae|psk-sae|psk-sae-compat|wep)
 			json_get_vars \
 			auth_server auth_port auth_secret \
 			ownip radius_client_addr
@@ -929,6 +988,12 @@ hostapd_set_bss_options() {
 
 	json_get_vars ieee80211r
 	set_default ieee80211r 0
+
+	if [ "$auth_type" = "psk-sae-compat" ] && [ "$ieee80211r" -gt 0 ]; then
+		logger -t hostapd-common "ieee80211r ignored for sae-compat (WPA3-Personal Compatibility): FT AKM suites are disallowed per WPA3 spec section 2.4"
+		ieee80211r=0
+	fi
+
 	if [ "$wpa" -ge "1" ]; then
 		if [ "$fils" -gt 0 ]; then
 			json_get_vars fils_realm
@@ -1022,7 +1087,7 @@ hostapd_set_bss_options() {
 			append bss_conf "rsn_preauth_interfaces=$network_bridge" "$N"
 		else
 			case "$auth_type" in
-			sae|psk-sae|owe)
+			sae|psk-sae|psk-sae-compat|owe)
 				set_default auth_cache 1
 			;;
 			*)
@@ -1367,6 +1432,10 @@ wpa_supplicant_add_network() {
 
 	_wpa_supplicant_common "$1"
 	wireless_vif_parse_encryption
+
+	# WPA3-Personal Compatibility Mode is AP-only (spec v3.5 s2.4);
+	# STA connects as psk-sae and uses RSN Overriding to negotiate SAE
+	[ "$auth_type" = "psk-sae-compat" ] && auth_type=psk-sae
 
 	json_get_vars \
 		ssid bssid key \

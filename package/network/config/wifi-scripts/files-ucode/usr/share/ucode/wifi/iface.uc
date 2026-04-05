@@ -65,6 +65,11 @@ export function parse_encryption(config, dev_config) {
 		config.auth_type = 'psk-sae';
 		break;
 
+	case 'sae-compat':
+		config.auth_type = 'psk-sae-compat';
+		wpa3_pairwise = null;
+		break;
+
 	case 'wpa':
 	case 'wpa2':
 	case 'wpa-mixed':
@@ -116,7 +121,7 @@ export function parse_encryption(config, dev_config) {
 		if (!wpa3_pairwise)
 			break;
 
-		if (config.rsn_override && wpa3_pairwise != config.wpa_pairwise)
+		if (config.auth_type == 'psk-sae-compat' && wpa3_pairwise && wpa3_pairwise != config.wpa_pairwise)
 			config.rsn_override_pairwise = wpa3_pairwise;
 		else
 			config.wpa_pairwise = wpa3_pairwise;
@@ -125,9 +130,11 @@ export function parse_encryption(config, dev_config) {
 
 };
 
-export function wpa_key_mgmt(config) {
+export function wpa_key_mgmt(config, radio) {
 	if (!config.wpa)
 		return;
+
+	radio ??= {};
 
 	switch(config.auth_type) {
 	case 'psk':
@@ -176,6 +183,25 @@ export function wpa_key_mgmt(config) {
 			append_value(config, 'wpa_key_mgmt', 'FT-SAE');
 		break;
 
+	case 'psk-sae-compat':
+		if (radio.band == '6g') {
+			config.wpa_key_mgmt = 'SAE';
+			let rsno2 = config.mlo || wildcard(radio.htmode, 'EHT*');
+			if (rsno2) {
+				config.rsn_override_key_mgmt = 'SAE';
+				config.rsn_override_pairwise = 'GCMP-256';
+				config.rsn_override_mfp = 2;
+				append_value(config, 'rsn_override_key_mgmt_2', 'SAE-EXT-KEY');
+				config.rsn_override_pairwise_2 = 'GCMP-256';
+				config.rsn_override_mfp_2 = 2;
+			}
+		} else {
+			config.wpa_key_mgmt = 'WPA-PSK';
+			config.rsn_override_key_mgmt = 'SAE';
+			config.rsn_override_pairwise = 'CCMP';
+		}
+		break;
+
 	case 'psk-sae':
 		append_value(config, 'wpa_key_mgmt', 'SAE');
 		if (config.ieee80211r)
@@ -208,7 +234,7 @@ export function wpa_key_mgmt(config) {
 		break;
 	}
 
-	if (config.dpp && config.auth_type != 'dpp')
+	if (config.dpp && config.auth_type != 'dpp' && config.auth_type != 'psk-sae-compat')
 		append_value(config, 'wpa_key_mgmt', 'DPP');
 
 	if (config.fils) {

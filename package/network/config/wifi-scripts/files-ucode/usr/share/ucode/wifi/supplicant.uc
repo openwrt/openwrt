@@ -58,6 +58,11 @@ export function ratelist(rates) {
 function setup_sta(data, config) {
 	iface.parse_encryption(config);
 
+	// WPA3-Personal Compatibility Mode is AP-only (spec v3.5 s2.4);
+	// STA connects as psk-sae and uses RSN Overriding to negotiate SAE
+	if (config.auth_type == 'psk-sae-compat')
+		config.auth_type = 'psk-sae';
+
 	if (config.auth_type in [ 'sae', 'owe', 'eap2', 'eap192', 'dpp' ])
 		config.ieee80211w = 2;
 	else if (config.auth_type == 'psk-sae' && data.band == '6g')
@@ -120,11 +125,11 @@ function setup_sta(data, config) {
 		break;
 
 	case 'owe':
-		iface.wpa_key_mgmt(config);
+		iface.wpa_key_mgmt(config, data);
 		break;
 
 	case 'dpp':
-		iface.wpa_key_mgmt(config);
+		iface.wpa_key_mgmt(config, data);
 		break;
 
 	case 'wps':
@@ -136,7 +141,7 @@ function setup_sta(data, config) {
 	case 'sae':
 	case 'psk-sae':
 		if (config.mode != 'mesh')
-			iface.wpa_key_mgmt(config);
+			iface.wpa_key_mgmt(config, data);
 
 		if (config.mode == 'mesh' || config.auth_type == 'sae')
 			config.sae_password = `"${config.key}"`;
@@ -148,7 +153,7 @@ function setup_sta(data, config) {
 	case 'eap':
 	case 'eap2':
 	case 'eap192':
-		iface.wpa_key_mgmt(config);
+		iface.wpa_key_mgmt(config, data);
 		set_default(config, 'erp', config.fils);
 
 		if (config.ca_cert_usesystem && fs.stat('/etc/ssl/certs/ca-certificates.crt'))
