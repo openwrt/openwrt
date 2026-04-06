@@ -836,9 +836,9 @@ ifndef CONFIG_TARGET_x86_64
     FILES+= \
 	$(LINUX_DIR)/arch/x86/crypto/twofish-i586.ko \
 	$(LINUX_DIR)/arch/x86/crypto/serpent-sse2-i586.ko \
-	$(LINUX_DIR)/crypto/cryptd.ko \
-	$(LINUX_DIR)/crypto/crypto_simd.ko
-    AUTOLOAD+= $(call AutoLoad,10,cryptd \
+	$(LINUX_DIR)/crypto/cryptd.ko@lt6.18 \
+	$(LINUX_DIR)/crypto/crypto_simd.ko@lt6.18
+    AUTOLOAD+= $(call AutoLoad,10,LINUX_6_12:cryptd \
 	serpent-sse2-i586 twofish-i586 blowfish_generic)
   endef
 endif

@@ -129,15 +129,15 @@ Signed-off-by: Sander Vanheule <sander@svanheule.net>
 +	.toggle_rates = rtl8231_toggle_rates,
 +};
 +
-+static void rtl8231_led_brightness_set(struct led_classdev *led_cdev,
++static int rtl8231_led_brightness_set(struct led_classdev *led_cdev,
 +	enum led_brightness brightness)
 +{
 +	struct rtl8231_led *pled = to_rtl8231_led(led_cdev);
 +
 +	if (brightness)
-+		regmap_field_write(pled->reg_field, pled->modes->on);
++		return regmap_field_write(pled->reg_field, pled->modes->on);
 +	else
-+		regmap_field_write(pled->reg_field, pled->modes->off);
++		return regmap_field_write(pled->reg_field, pled->modes->off);
 +}
 +
 +static enum led_brightness rtl8231_led_brightness_get(struct led_classdev *led_cdev)
@@ -276,7 +276,7 @@ Signed-off-by: Sander Vanheule <sander@svanheule.net>
 +
 +	pled->led.max_brightness = 1;
 +	pled->led.brightness_get = rtl8231_led_brightness_get;
-+	pled->led.brightness_set = rtl8231_led_brightness_set;
++	pled->led.brightness_set_blocking = rtl8231_led_brightness_set;
 +	pled->led.blink_set = rtl8231_led_blink_set;
 +
 +	init_data.fwnode = fwnode;

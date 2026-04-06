@@ -224,108 +224,36 @@
 };
 
 &mdio_bus0 {
-	phy0: ethernet-phy@0 {
-		reg = <0>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy1: ethernet-phy@1 {
-		reg = <1>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy2: ethernet-phy@2 {
-		reg = <2>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy3: ethernet-phy@3 {
-		reg = <3>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy4: ethernet-phy@4 {
-		reg = <4>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy5: ethernet-phy@5 {
-		reg = <5>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy6: ethernet-phy@6 {
-		reg = <6>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy7: ethernet-phy@7 {
-		reg = <7>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
+	PHY_C22(0, 0)
+	PHY_C22(1, 1)
+	PHY_C22(2, 2)
+	PHY_C22(3, 3)
+	PHY_C22(4, 4)
+	PHY_C22(5, 5)
+	PHY_C22(6, 6)
+	PHY_C22(7, 7)
 };
 
 &mdio_bus1 {
-	phy8: ethernet-phy@8 {
-		reg = <8>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy9: ethernet-phy@9 {
-		reg = <9>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy10: ethernet-phy@10 {
-		reg = <10>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy11: ethernet-phy@11 {
-		reg = <11>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy12: ethernet-phy@12 {
-		reg = <12>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy13: ethernet-phy@13 {
-		reg = <13>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy14: ethernet-phy@14 {
-		reg = <14>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy15: ethernet-phy@15 {
-		reg = <15>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
+	PHY_C22(8, 8)
+	PHY_C22(9, 9)
+	PHY_C22(10, 10)
+	PHY_C22(11, 11)
+	PHY_C22(12, 12)
+	PHY_C22(13, 13)
+	PHY_C22(14, 14)
+	PHY_C22(15, 15)
 };
 
 &mdio_bus2 {
-	phy16: ethernet-phy@16 {
-		reg = <16>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy17: ethernet-phy@17 {
-		reg = <17>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy18: ethernet-phy@18 {
-		reg = <18>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy19: ethernet-phy@19 {
-		reg = <19>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy20: ethernet-phy@20 {
-		reg = <20>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy21: ethernet-phy@21 {
-		reg = <21>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy22: ethernet-phy@22 {
-		reg = <22>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy23: ethernet-phy@23 {
-		reg = <23>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
+	PHY_C22(16, 16)
+	PHY_C22(17, 17)
+	PHY_C22(18, 18)
+	PHY_C22(19, 19)
+	PHY_C22(20, 20)
+	PHY_C22(21, 21)
+	PHY_C22(22, 22)
+	PHY_C22(23, 23)
 };
 
 &switch0 {

@@ -287,35 +287,16 @@ static bool rteth_839x_decode_tag(struct rteth_packet *h, struct dsa_tag *t)
 	return t->l2_offloaded;
 }
 
-static bool rteth_930x_decode_tag(struct rteth_packet *h, struct dsa_tag *t)
+static bool rteth_93xx_decode_tag(struct rteth_packet *h, struct dsa_tag *t)
 {
-	t->reason = h->cpu_tag[7] & 0x3f;
-	t->queue =  (h->cpu_tag[2] >> 11) & 0x1f;
-	t->port = (h->cpu_tag[0] >> 8) & 0x1f;
-	t->crc_error = h->cpu_tag[1] & BIT(6);
-
-	pr_debug("Reason %d, port %d, queue %d\n", t->reason, t->port, t->queue);
-	if (t->reason >= 19 && t->reason <= 27)
-		t->l2_offloaded = 0;
-	else
-		t->l2_offloaded = 1;
-
-	return t->l2_offloaded;
-}
-
-static bool rteth_931x_decode_tag(struct rteth_packet *h, struct dsa_tag *t)
-{
-	t->reason = h->cpu_tag[7] & 0x3f;
-	t->queue =  (h->cpu_tag[2] >> 11) & 0x1f;
 	t->port = (h->cpu_tag[0] >> 8) & 0x3f;
+	t->queue = (h->cpu_tag[2] >> 11) & 0x1f;
+	t->reason = h->cpu_tag[7] & 0x3f;
 	t->crc_error = h->cpu_tag[1] & BIT(6);
+	t->l2_offloaded = (t->reason >= 19 && t->reason <= 27) ? 0 : 1;
 
 	if (t->reason != 63)
 		pr_debug("%s: Reason %d, port %d, queue %d\n", __func__, t->reason, t->port, t->queue);
-	if (t->reason >= 19 && t->reason <= 27)	/* NIC_RX_REASON_RMA */
-		t->l2_offloaded = 0;
-	else
-		t->l2_offloaded = 1;
 
 	return t->l2_offloaded;
 }
@@ -1410,7 +1391,7 @@ static const struct rteth_config rteth_930x_cfg = {
 	.l2_tbl_flush_ctrl = RTL930X_L2_TBL_FLUSH_CTRL,
 	.update_counter = rteth_93xx_update_counter,
 	.create_tx_header = rteth_93xx_create_tx_header,
-	.decode_tag = rteth_930x_decode_tag,
+	.decode_tag = rteth_93xx_decode_tag,
 	.hw_en_rxtx = rteth_930x_hw_en_rxtx,
 	.hw_init = &rteth_930x_hw_init,
 	.hw_stop = &rteth_930x_hw_stop,
@@ -1455,7 +1436,7 @@ static const struct rteth_config rteth_931x_cfg = {
 	.l2_tbl_flush_ctrl = RTL931X_L2_TBL_FLUSH_CTRL,
 	.update_counter = rteth_93xx_update_counter,
 	.create_tx_header = rteth_93xx_create_tx_header,
-	.decode_tag = rteth_931x_decode_tag,
+	.decode_tag = rteth_93xx_decode_tag,
 	.hw_en_rxtx = rteth_931x_hw_en_rxtx,
 	.hw_init = &rteth_931x_hw_init,
 	.hw_stop = &rteth_931x_hw_stop,

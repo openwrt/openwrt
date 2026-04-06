@@ -843,6 +843,7 @@ define KernelPackage/ptp
   DEPENDS:=+kmod-pps
   KCONFIG:= \
 	CONFIG_PTP_1588_CLOCK \
+	CONFIG_PTP_1588_CLOCK_OPTIONAL \
 	CONFIG_NET_PTP_CLASSIFY=y
   FILES:=$(LINUX_DIR)/drivers/ptp/ptp.ko
   AUTOLOAD:=$(call AutoLoad,18,ptp,1)
