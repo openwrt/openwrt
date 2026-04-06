@@ -1,0 +1,22 @@
+--- a/mt7915/mac.c
++++ b/mt7915/mac.c
+@@ -901,6 +901,9 @@
+ 			u16 idx;
+
+ 			idx = FIELD_GET(MT_TX_FREE_WLAN_ID, info);
++			if (idx >= mt7915_wtbl_size(dev))
++				continue;
++
+ 			wcid = mt76_wcid_ptr(dev, idx);
+ 			sta = wcid_to_sta(wcid);
+ 			if (!sta)
+@@ -992,6 +995,9 @@
+ 	u8 pid;
+
+ 	wcidx = le32_get_bits(txs_data[2], MT_TXS2_WCID);
++	if (wcidx >= mt7915_wtbl_size(dev))
++		return;
++
+ 	pid = le32_get_bits(txs_data[3], MT_TXS3_PID);
+
+ 	if (pid < MT_PACKET_ID_WED)
