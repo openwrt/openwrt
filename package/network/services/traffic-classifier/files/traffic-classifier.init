@@ -1,0 +1,35 @@
+#!/bin/sh /etc/rc.common
+
+START=95
+STOP=10
+
+USE_PROCD=1
+PROG=/usr/sbin/traffic-classifier
+
+start_service() {
+	local interface model max_flows
+
+	config_load traffic-classifier
+	config_get interface daemon interface 'br-lan'
+	config_get model daemon model '/etc/traffic-classifier/model.json'
+	config_get max_flows daemon max_flows '8192'
+
+	procd_open_instance
+	procd_set_param command "$PROG" \
+		-i "$interface" \
+		-m "$model" \
+		-n "$max_flows"
+	procd_set_param respawn
+	procd_set_param stdout 1
+	procd_set_param stderr 1
+	procd_close_instance
+}
+
+service_triggers() {
+	procd_add_reload_trigger "traffic-classifier"
+}
+
+reload_service() {
+	stop
+	start
+}

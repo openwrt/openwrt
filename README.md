@@ -1,108 +1,176 @@
-![OpenWrt logo](include/logo.png)
+# openwrt-traffic-classifier
 
-OpenWrt Project is a Linux operating system targeting embedded devices. Instead
-of trying to create a single, static firmware, OpenWrt provides a fully
-writable filesystem with package management. This frees you from the
-application selection and configuration provided by the vendor and allows you
-to customize the device through the use of packages to suit any application.
-For developers, OpenWrt is the framework to build an application without having
-to build a complete firmware around it; for users this means the ability for
-full customization, to use the device in ways never envisioned.
+Edge AI network traffic classification daemon for OpenWRT/OpenWiFi access points.
 
-Sunshine!
+Classifies what each Wi-Fi client is doing in real time — video streaming, gaming, social media, web browsing, VoIP, downloads — and maps it to the client's MAC address and SSID. Runs entirely on the AP with no cloud dependency.
 
-## Download
-
-Built firmware images are available for many architectures and come with a
-package selection to be used as WiFi home router. To quickly find a factory
-image usable to migrate from a vendor stock firmware to OpenWrt, try the
-*Firmware Selector*.
-
-* [OpenWrt Firmware Selector](https://firmware-selector.openwrt.org/)
-
-If your device is supported, please follow the **Info** link to see install
-instructions or consult the support resources listed below.
-
-## 
-
-An advanced user may require additional or specific package. (Toolchain, SDK, ...) For everything else than simple firmware download, try the wiki download page:
-
-* [OpenWrt Wiki Download](https://openwrt.org/downloads)
-
-## Development
-
-To build your own firmware you need a GNU/Linux, BSD or macOS system (case
-sensitive filesystem required). Cygwin is unsupported because of the lack of a
-case sensitive file system.
-
-### Requirements
-
-You need the following tools to compile OpenWrt, the package names vary between
-distributions. A complete list with distribution specific packages is found in
-the [Build System Setup](https://openwrt.org/docs/guide-developer/build-system/install-buildsystem)
-documentation.
+## Architecture
 
 ```
-binutils bzip2 diff find flex gawk gcc-6+ getopt grep install libc-dev libz-dev
-make4.1+ perl python3.7+ rsync subversion unzip which
+┌─────────────────────────────────────────────────────────────────────┐
+│                        OpenWRT Access Point                        │
+│                                                                     │
+│  ┌──────────┐    ┌────────────┐    ┌─────────────┐    ┌──────────┐ │
+│  │  br-lan   │───>│  Capture   │───>│  Flow Table │───>│Classifier│ │
+│  │ (pcap)    │    │  Engine    │    │  (5-tuple   │    │(heuristic│ │
+│  │           │    │            │    │   + stats)  │    │  + ML)   │ │
+│  └──────────┘    └────────────┘    └─────────────┘    └────┬─────┘ │
+│                                                            │       │
+│  ┌──────────────┐    ┌─────────────────────────────────────┘       │
+│  │ STA Tracker   │    │                                             │
+│  │ (hostapd ubus)│    │                                             │
+│  │ MAC → SSID    │<───┘                                             │
+│  └──────┬───────┘                                                   │
+│         │           ┌──────────────────┐                            │
+│         └──────────>│   ubus API       │                            │
+│                     │  get_flows       │                            │
+│                     │  get_clients     │                            │
+│                     │  get_stats       │                            │
+│                     │  status          │                            │
+│                     └──────────────────┘                            │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
-### Quickstart
+## How It Works
 
-1. Run `./scripts/feeds update -a` to obtain all the latest package definitions
-   defined in feeds.conf / feeds.conf.default
+1. **Packet Capture** — Listens on `br-lan` via libpcap in non-blocking mode, integrated into the uloop event loop. Only reads L3/L4 headers (128-byte snaplen), never inspects payload.
 
-2. Run `./scripts/feeds install -a` to install symlinks for all obtained
-   packages into package/feeds/
+2. **Flow Aggregation** — Each unique 5-tuple (srcIP, dstIP, srcPort, dstPort, protocol) becomes a flow entry with accumulated statistics: packet counts, byte counts, inter-arrival times, packet size distributions, TCP flags — split by direction.
 
-3. Run `make menuconfig` to select your preferred configuration for the
-   toolchain, target system & firmware packages.
+3. **Feature Extraction** — Every 5 seconds, each flow is converted into a 20-dimensional feature vector:
 
-4. Run `make` to build your firmware. This will download all sources, build the
-   cross-compile toolchain and then cross-compile the GNU/Linux kernel & all chosen
-   applications for your target system.
+   | # | Feature | # | Feature |
+   |---|---------|---|---------|
+   | 0 | flow_duration_sec | 10 | min_packet_size |
+   | 1 | total_fwd_packets | 11 | max_packet_size |
+   | 2 | total_bwd_packets | 12 | packets_per_second |
+   | 3 | total_fwd_bytes | 13 | bytes_per_second |
+   | 4 | total_bwd_bytes | 14 | fwd_pkt_ratio |
+   | 5 | fwd_bwd_bytes_ratio | 15 | avg_fwd_pkt_size |
+   | 6 | avg_packet_size | 16 | avg_bwd_pkt_size |
+   | 7 | std_packet_size | 17 | tcp_flags_or |
+   | 8 | avg_iat_usec | 18 | syn_count |
+   | 9 | std_iat_usec | 19 | protocol |
 
-### Related Repositories
+4. **Classification** — Heuristic engine now, XGBoost model (compiled to C via treelite) in Phase 2.
 
-The main repository uses multiple sub-repositories to manage packages of
-different categories. All packages are installed via the OpenWrt package
-manager called `opkg`. If you're looking to develop the web interface or port
-packages to OpenWrt, please find the fitting repository below.
+5. **STA Tracking** — Queries `hostapd.<iface>` via ubus to map MAC addresses to SSIDs.
 
-* [LuCI Web Interface](https://github.com/openwrt/luci): Modern and modular
-  interface to control the device via a web browser.
+6. **ubus API** — Exposes `get_flows`, `get_clients`, `get_stats`, `status`.
 
-* [OpenWrt Packages](https://github.com/openwrt/packages): Community repository
-  of ported packages.
+## Traffic Classes
 
-* [OpenWrt Routing](https://github.com/openwrt/routing): Packages specifically
-  focused on (mesh) routing.
+| Class | Description | Example Apps |
+|-------|-------------|--------------|
+| `video` | High-bandwidth streaming, large packets, asymmetric | YouTube, Netflix, Hotstar |
+| `gaming` | Low-latency, small UDP packets, bidirectional | BGMI, Free Fire, Genshin |
+| `social` | Moderate HTTPS, mixed packet sizes | Instagram, WhatsApp, X |
+| `browsing` | HTTP/HTTPS, bursty request-response | Chrome, Safari, news apps |
+| `download` | Sustained high throughput, extremely asymmetric | APK downloads, OTA updates |
+| `voip` | Small UDP packets at steady rate | JioMeet, Google Meet |
+| `other` | Unclassified | Background sync, IoT |
 
-* [OpenWrt Video](https://github.com/openwrt/video): Packages specifically
-  focused on display servers and clients (Xorg and Wayland).
+## Building
 
-## Support Information
+### Integration with OpenWRT
 
-For a list of supported devices see the [OpenWrt Hardware Database](https://openwrt.org/supported_devices)
+```bash
+# Symlink into your OpenWRT tree
+ln -s $(pwd)/package/network/services/traffic-classifier \
+      /path/to/openwrt/package/network/services/traffic-classifier
 
-### Documentation
+# Select and build
+cd /path/to/openwrt
+make menuconfig   # Network → traffic-classifier → <*>
+make package/traffic-classifier/compile V=s
+```
 
-* [Quick Start Guide](https://openwrt.org/docs/guide-quick-start/start)
-* [User Guide](https://openwrt.org/docs/guide-user/start)
-* [Developer Documentation](https://openwrt.org/docs/guide-developer/start)
-* [Technical Reference](https://openwrt.org/docs/techref/start)
+### Install on Device
 
-### Support Community
+```bash
+scp bin/packages/aarch64_cortex-a53/base/traffic-classifier_*.ipk root@192.168.1.1:/tmp/
+ssh root@192.168.1.1 'opkg install /tmp/traffic-classifier_*.ipk'
+```
 
-* [Forum](https://forum.openwrt.org): For usage, projects, discussions and hardware advise.
-* [Support Chat](https://webchat.oftc.net/#openwrt): Channel `#openwrt` on **oftc.net**.
+## Configuration
 
-### Developer Community
+UCI config: `/etc/config/traffic-classifier`
 
-* [Bug Reports](https://bugs.openwrt.org): Report bugs in OpenWrt
-* [Dev Mailing List](https://lists.openwrt.org/mailman/listinfo/openwrt-devel): Send patches
-* [Dev Chat](https://webchat.oftc.net/#openwrt-devel): Channel `#openwrt-devel` on **oftc.net**.
+```
+config daemon
+    option interface 'br-lan'
+    option model '/etc/traffic-classifier/model.json'
+    option max_flows '8192'
+```
+
+## ubus API Examples
+
+```bash
+# Daemon health
+ubus call traffic-classifier status
+
+# All flows with classification
+ubus call traffic-classifier get_flows
+
+# Per-client app usage breakdown
+ubus call traffic-classifier get_clients
+
+# Aggregate stats
+ubus call traffic-classifier get_stats
+```
+
+### Sample `get_clients` output
+
+```json
+{
+    "clients": [
+        {
+            "mac": "a4:b1:c1:23:45:67",
+            "ssid": "MyHomeWiFi",
+            "total_bytes": 52431200,
+            "total_flows": 18,
+            "app_usage": {
+                "video": 3,
+                "browsing": 8,
+                "social": 5,
+                "gaming": 2
+            }
+        }
+    ]
+}
+```
+
+## Project Structure
+
+```
+package/network/services/traffic-classifier/
+├── Makefile                          # OpenWRT package definition
+├── files/
+│   ├── traffic-classifier.init       # procd init script
+│   ├── traffic-classifier.conf       # UCI default config
+│   └── model_stub.json               # Placeholder model definition
+└── src/
+    ├── main.c                        # Daemon entry, uloop event loop
+    ├── capture.c / capture.h         # libpcap packet capture + L3/L4 parsing
+    ├── flow_table.c / flow_table.h   # Hash table of flows + stats
+    ├── features.c / features.h       # Flow → 20-feature vector
+    ├── classifier.c / classifier.h   # Heuristic + ML classification
+    ├── sta_tracker.c / sta_tracker.h  # hostapd ubus → MAC/SSID mapping
+    └── ubus_api.c / ubus_api.h       # ubus RPC interface
+```
+
+## Roadmap
+
+- **Phase 2** — Train XGBoost on MIRAGE-2019 dataset, export to C via treelite
+- **Phase 3** — LuCI dashboard for per-client traffic visualization
+- **Phase 4** — QoS integration with nftables/tc/qosify
+- **Phase 5** — uCentral telemetry push
+
+## Target Hardware
+
+- Qualcomm IPQ60xx (Cortex-A53, aarch64) — primary target
+- Any OpenWRT device with 64MB+ RAM
 
 ## License
 
-OpenWrt is licensed under GPL-2.0
+GPL-2.0
