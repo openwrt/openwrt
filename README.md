@@ -168,7 +168,7 @@ package/network/services/traffic-classifier/
 
 ## Target Hardware
 
-- Qualcomm IPQ60xx (Cortex-A53, aarch64) — primary target
+- Qualcomm IPQ60xx/IPQ50xx (Cortex-A53, aarch64) — primary target
 - Any OpenWRT device with 64MB+ RAM
 
 ## License
