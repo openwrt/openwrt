@@ -38,6 +38,9 @@ mediatek_setup_interfaces()
 	acer,vero-w6m)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" internet
 		;;
+	airtel,aap4221zy)
+		ucidef_set_interfaces_lan_wan "lan1 lan2" wan
+		;;
 	arcadyan,mozart)
 		ucidef_set_interfaces_lan_wan "lan0 eth1" eth2
 		;;
