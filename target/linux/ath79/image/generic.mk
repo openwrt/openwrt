@@ -2213,13 +2213,12 @@ define Device/netgear_wndap360
   DEVICE_MODEL := WNDAP360
   DEVICE_PACKAGES := kmod-owl-loader
   IMAGE_SIZE := 7744k
-  BLOCKSIZE := 256k
   LOADER_TYPE := bin
   KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | uImage none
   KERNEL_INITRAMFS := $$(KERNEL)
   IMAGES := sysupgrade.bin
-  IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-rootfs | pad-rootfs | \
-	check-size | append-metadata
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | check-size | append-metadata
 endef
 TARGET_DEVICES += netgear_wndap360
 
