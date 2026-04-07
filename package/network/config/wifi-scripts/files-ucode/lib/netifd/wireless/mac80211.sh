@@ -232,7 +232,7 @@ function setup() {
 		case 'adhoc':
 		case 'mesh':
 			if (mode != "ap")
-				data.config.noscan = true;
+				set_default(data.config, 'noscan', true);
 			validate('iface', v.config);
 			iface.prepare(v.config, data.phy + data.phy_suffix, data.config.num_global_macaddr, data.config.macaddr_base);
 			netifd.set_vif(k, v.config.ifname);
