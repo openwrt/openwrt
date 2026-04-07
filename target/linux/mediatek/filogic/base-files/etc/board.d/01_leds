@@ -180,6 +180,11 @@ mercusys,mr90x-v1-ubi)
 	ucidef_set_led_netdev "lan-2" "lan-2" "green:lan-2" "lan2" "link tx rx"
 	ucidef_set_led_netdev "wan" "wan" "green:wan" "eth1" "link tx rx"
 	;;
+netcore,n30pro)
+	ucidef_set_led_netdev "wanact" "WANACT" "green:wan-online" "eth1" "tx rx"
+	ucidef_set_led_netdev "wanlink" "WANLINK" "green:wan" "eth1" "link"
+	ucidef_set_led_usbport "usb" "USB" "green:usb" "usb1-port1" "usb2-port1"
+	;;
 netcore,n60)
 	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:06:green:wan" "eth1" "link tx rx"
 	;;

@@ -172,6 +172,7 @@ platform_do_upgrade() {
 	netis,nx32u|\
 	nokia,ea0326gmp|\
 	openwrt,one|\
+	netcore,n30pro|\
 	netcore,n60|\
 	netcore,n60-pro|\
 	qihoo,360t7|\
