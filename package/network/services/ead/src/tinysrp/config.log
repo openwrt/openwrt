@@ -1,0 +1,219 @@
+This file contains any messages produced by compilers while
+running configure, to aid debugging if configure makes a mistake.
+
+configure:559: checking for a BSD compatible install
+configure:612: checking whether build environment is sane
+configure:669: checking whether make sets ${MAKE}
+configure:716: checking for working aclocal
+configure:729: checking for working autoconf
+configure:742: checking for working automake
+configure:755: checking for working autoheader
+configure:768: checking for working makeinfo
+configure:788: checking for gcc
+configure:901: checking whether the C compiler (gcc -O2 ) works
+configure:917: gcc -o conftest -O2   conftest.c  1>&5
+configure:914:1: warning: return type defaults to 'int' [-Wimplicit-int]
+  914 | main(){return(0);}
+      | ^~~~
+configure:943: checking whether the C compiler (gcc -O2 ) is a cross-compiler
+configure:948: checking whether we are using GNU C
+configure:957: gcc -E conftest.c
+configure:976: checking whether gcc accepts -g
+configure:1019: checking for a BSD compatible install
+configure:1072: checking whether ln -s works
+configure:1095: checking for ranlib
+configure:1144: checking how to run the C preprocessor
+configure:1165: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1224: checking for ANSI C header files
+configure:1237: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1304: gcc -o conftest -O2   conftest.c  1>&5
+configure: In function 'main':
+configure:1299:67: warning: implicit declaration of function 'exit' [-Wimplicit-function-declaration]
+ 1299 | if (XOR (islower (i), ISLOWER (i)) || toupper (i) != TOUPPER (i)) exit(2);
+      |                                                                   ^~~~
+configure:1295:1: note: include '<stdlib.h>' or provide a declaration of 'exit'
+ 1294 | #include <ctype.h>
+  +++ |+#include <stdlib.h>
+ 1295 | #define ISLOWER(c) ('a' <= (c) && (c) <= 'z')
+configure:1299:67: warning: incompatible implicit declaration of built-in function 'exit' [-Wbuiltin-declaration-mismatch]
+ 1299 | if (XOR (islower (i), ISLOWER (i)) || toupper (i) != TOUPPER (i)) exit(2);
+      |                                                                   ^~~~
+configure:1299:67: note: include '<stdlib.h>' or provide a declaration of 'exit'
+configure:1300:1: warning: incompatible implicit declaration of built-in function 'exit' [-Wbuiltin-declaration-mismatch]
+ 1300 | exit (0); }
+      | ^~~~
+configure:1300:1: note: include '<stdlib.h>' or provide a declaration of 'exit'
+configure:1331: checking for sgtty.h
+configure:1341: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1331: checking for sys/ioctl.h
+configure:1341: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1331: checking for sys/time.h
+configure:1341: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1331: checking for termio.h
+configure:1341: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1331: checking for termios.h
+configure:1341: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1331: checking for unistd.h
+configure:1341: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1370: checking for working const
+configure:1424: gcc -c -O2  conftest.c 1>&5
+configure:1445: checking for inline
+configure:1459: gcc -c -O2  conftest.c 1>&5
+configure:1455:10: warning: return type defaults to 'int' [-Wimplicit-int]
+ 1455 | } $ac_kw foo() {
+      |          ^~~
+configure:1485: checking whether time.h and sys/time.h may both be included
+configure:1499: gcc -c -O2  conftest.c 1>&5
+configure:1520: checking whether byte ordering is bigendian
+configure:1538: gcc -c -O2  conftest.c 1>&5
+configure:1553: gcc -c -O2  conftest.c 1>&5
+configure: In function 'main':
+configure:1548:2: error: unknown type name 'not'; did you mean 'ino_t'?
+ 1548 |  not big endian
+      |  ^~~
+      |  ino_t
+configure:1548:10: error: expected '=', ',', ';', 'asm' or '__attribute__' before 'endian'
+ 1548 |  not big endian
+      |          ^~~~~~
+configure: failed program was:
+#line 1542 "configure"
+#include "confdefs.h"
+#include <sys/types.h>
+#include <sys/param.h>
+int main() {
+
+#if BYTE_ORDER != BIG_ENDIAN
+ not big endian
+#endif
+; return 0; }
+configure:1610: checking size of short
+configure:1629: gcc -o conftest -O2   conftest.c  1>&5
+configure:1620:1: warning: return type defaults to 'int' [-Wimplicit-int]
+ 1620 | main()
+      | ^~~~
+configure: In function 'main':
+configure:1623:11: warning: implicit declaration of function 'exit' [-Wimplicit-function-declaration]
+ 1623 |   if (!f) exit(1);
+      |           ^~~~
+configure:1620:1: note: include '<stdlib.h>' or provide a declaration of 'exit'
+ 1619 | #include <stdio.h>
+  +++ |+#include <stdlib.h>
+ 1620 | main()
+configure:1623:11: warning: incompatible implicit declaration of built-in function 'exit' [-Wbuiltin-declaration-mismatch]
+ 1623 |   if (!f) exit(1);
+      |           ^~~~
+configure:1623:11: note: include '<stdlib.h>' or provide a declaration of 'exit'
+configure:1624:14: warning: format '%d' expects argument of type 'int', but argument 3 has type 'long unsigned int' [-Wformat=]
+ 1624 |   fprintf(f, "%d\n", sizeof(short));
+      |              ^~~~~~  ~~~~~~~~~~~~~
+      |                      |
+      |                      long unsigned int
+configure:1625:3: warning: incompatible implicit declaration of built-in function 'exit' [-Wbuiltin-declaration-mismatch]
+ 1625 |   exit(0);
+      |   ^~~~
+configure:1625:3: note: include '<stdlib.h>' or provide a declaration of 'exit'
+configure:1649: checking size of int
+configure:1668: gcc -o conftest -O2   conftest.c  1>&5
+configure:1659:1: warning: return type defaults to 'int' [-Wimplicit-int]
+ 1659 | main()
+      | ^~~~
+configure: In function 'main':
+configure:1662:11: warning: implicit declaration of function 'exit' [-Wimplicit-function-declaration]
+ 1662 |   if (!f) exit(1);
+      |           ^~~~
+configure:1659:1: note: include '<stdlib.h>' or provide a declaration of 'exit'
+ 1658 | #include <stdio.h>
+  +++ |+#include <stdlib.h>
+ 1659 | main()
+configure:1662:11: warning: incompatible implicit declaration of built-in function 'exit' [-Wbuiltin-declaration-mismatch]
+ 1662 |   if (!f) exit(1);
+      |           ^~~~
+configure:1662:11: note: include '<stdlib.h>' or provide a declaration of 'exit'
+configure:1663:14: warning: format '%d' expects argument of type 'int', but argument 3 has type 'long unsigned int' [-Wformat=]
+ 1663 |   fprintf(f, "%d\n", sizeof(int));
+      |              ^~~~~~  ~~~~~~~~~~~
+      |                      |
+      |                      long unsigned int
+configure:1664:3: warning: incompatible implicit declaration of built-in function 'exit' [-Wbuiltin-declaration-mismatch]
+ 1664 |   exit(0);
+      |   ^~~~
+configure:1664:3: note: include '<stdlib.h>' or provide a declaration of 'exit'
+configure:1688: checking size of long
+configure:1707: gcc -o conftest -O2   conftest.c  1>&5
+configure:1698:1: warning: return type defaults to 'int' [-Wimplicit-int]
+ 1698 | main()
+      | ^~~~
+configure: In function 'main':
+configure:1701:11: warning: implicit declaration of function 'exit' [-Wimplicit-function-declaration]
+ 1701 |   if (!f) exit(1);
+      |           ^~~~
+configure:1698:1: note: include '<stdlib.h>' or provide a declaration of 'exit'
+ 1697 | #include <stdio.h>
+  +++ |+#include <stdlib.h>
+ 1698 | main()
+configure:1701:11: warning: incompatible implicit declaration of built-in function 'exit' [-Wbuiltin-declaration-mismatch]
+ 1701 |   if (!f) exit(1);
+      |           ^~~~
+configure:1701:11: note: include '<stdlib.h>' or provide a declaration of 'exit'
+configure:1702:14: warning: format '%d' expects argument of type 'int', but argument 3 has type 'long unsigned int' [-Wformat=]
+ 1702 |   fprintf(f, "%d\n", sizeof(long));
+      |              ^~~~~~  ~~~~~~~~~~~~
+      |                      |
+      |                      long unsigned int
+configure:1703:3: warning: incompatible implicit declaration of built-in function 'exit' [-Wbuiltin-declaration-mismatch]
+ 1703 |   exit(0);
+      |   ^~~~
+configure:1703:3: note: include '<stdlib.h>' or provide a declaration of 'exit'
+configure:1727: checking size of long long
+configure:1746: gcc -o conftest -O2   conftest.c  1>&5
+configure:1737:1: warning: return type defaults to 'int' [-Wimplicit-int]
+ 1737 | main()
+      | ^~~~
+configure: In function 'main':
+configure:1740:11: warning: implicit declaration of function 'exit' [-Wimplicit-function-declaration]
+ 1740 |   if (!f) exit(1);
+      |           ^~~~
+configure:1737:1: note: include '<stdlib.h>' or provide a declaration of 'exit'
+ 1736 | #include <stdio.h>
+  +++ |+#include <stdlib.h>
+ 1737 | main()
+configure:1740:11: warning: incompatible implicit declaration of built-in function 'exit' [-Wbuiltin-declaration-mismatch]
+ 1740 |   if (!f) exit(1);
+      |           ^~~~
+configure:1740:11: note: include '<stdlib.h>' or provide a declaration of 'exit'
+configure:1741:14: warning: format '%d' expects argument of type 'int', but argument 3 has type 'long unsigned int' [-Wformat=]
+ 1741 |   fprintf(f, "%d\n", sizeof(long long));
+      |              ^~~~~~  ~~~~~~~~~~~~~~~~~
+      |                      |
+      |                      long unsigned int
+configure:1742:3: warning: incompatible implicit declaration of built-in function 'exit' [-Wbuiltin-declaration-mismatch]
+ 1742 |   exit(0);
+      |   ^~~~
+configure:1742:3: note: include '<stdlib.h>' or provide a declaration of 'exit'
+configure:1773: gcc -c -O2  conftest.c 1>&5
+configure:1786: checking whether char is unsigned
+configure:1857: checking for sigaction
+configure:1885: gcc -o conftest -O2   conftest.c  1>&5
+configure:1857: checking for strchr
+configure:1885: gcc -o conftest -O2   conftest.c  1>&5
+configure:1869:6: warning: conflicting types for built-in function 'strchr'; expected 'char *(const char *, int)' [-Wbuiltin-declaration-mismatch]
+ 1869 | char $ac_func();
+      |      ^~~~~~
+configure:1866:1: note: 'strchr' is declared in header '<string.h>'
+ 1865 | #include <assert.h>
+  +++ |+#include <string.h>
+ 1866 | /* Override any gcc2 internal prototype to avoid an error.  */
+configure:1857: checking for memcpy
+configure:1885: gcc -o conftest -O2   conftest.c  1>&5
+configure:1869:6: warning: conflicting types for built-in function 'memcpy'; expected 'void *(void *, const void *, long unsigned int)' [-Wbuiltin-declaration-mismatch]
+ 1869 | char $ac_func();
+      |      ^~~~~~
+configure:1866:1: note: 'memcpy' is declared in header '<string.h>'
+ 1865 | #include <assert.h>
+  +++ |+#include <string.h>
+ 1866 | /* Override any gcc2 internal prototype to avoid an error.  */
+configure:1911: checking POSIX signal handlers
+configure:1928: gcc -c -O2  conftest.c 1>&5
+configure:1964: checking for termios.h
+configure:1991: checking for cfsetispeed
+configure:2019: gcc -o conftest -O2   conftest.c  1>&5
