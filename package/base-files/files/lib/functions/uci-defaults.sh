@@ -448,6 +448,9 @@ ucidef_set_led_default() {
 	_ucidef_set_led_common "$1" "$2" "$3"
 
 	json_add_string default "$default"
+	[ "$default" = 1 ] && {
+		json_add_string trigger default-on
+	}
 	json_select ..
 
 	json_select ..

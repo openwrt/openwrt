@@ -409,7 +409,6 @@ generate_led() {
 
 	# set color_* variables, add to `colors' array
 	for attr in $attrs; do
-		echo $attr
 		echo "$attr" | grep -q "^color_.*" || continue
 		json_get_var "${attr}_val" "$attr" 	#
 		eval local $attr="\$${attr}_val"	# ex. color_blue=$color_blue_val
@@ -419,7 +418,6 @@ generate_led() {
 
 	for color in $colors; do
 		eval local color_val=\$$color
-		echo uci set system.$cfg.$color="$color_val"
 		uci set system.$cfg.$color="$color_val"
 	done
 
