@@ -1560,6 +1560,7 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 {
 	struct rtl838x_switch_priv *priv;
 	struct device *dev = &pdev->dev;
+	const struct rtldsa_config *r;
 	u64 bpdu_mask;
 	int err = 0;
 
@@ -1579,11 +1580,12 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 	/* Initialize access to RTL switch tables */
 	rtl_table_init();
 
-	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
+	r = device_get_match_data(&pdev->dev);
+	priv = devm_kzalloc(dev, struct_size(priv, msts, r->n_mst - 1), GFP_KERNEL);
 	if (!priv)
 		return -ENOMEM;
 
-	priv->r = device_get_match_data(&pdev->dev);
+	priv->r = r;
 
 	priv->ds = devm_kzalloc(dev, sizeof(*priv->ds), GFP_KERNEL);
 	if (!priv->ds)
@@ -1619,12 +1621,6 @@ static int rtl83xx_sw_probe(struct platform_device *pdev)
 		 */
 		return err;
 	}
-
-	priv->msts = devm_kcalloc(priv->dev,
-				  priv->r->n_mst - 1, sizeof(struct rtldsa_mst),
-				  GFP_KERNEL);
-	if (!priv->msts)
-		return -ENOMEM;
 
 	priv->wq = create_singlethread_workqueue("rtl83xx");
 	if (!priv->wq) {

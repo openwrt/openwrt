@@ -1555,11 +1555,6 @@ struct rtl838x_switch_priv {
 	u16 intf_mtus[MAX_INTF_MTUS];
 	int intf_mtu_count[MAX_INTF_MTUS];
 
-	/**
-	 * @msts: MSTI to HW MST slot allocations. index 0 is for HW slot 1 because CIST is
-	 * not stored in @msts
-	 */
-	struct rtldsa_mst *msts;
 	struct delayed_work counters_work;
 
 	/**
@@ -1568,6 +1563,12 @@ struct rtl838x_switch_priv {
 	 * periodically.
 	 */
 	struct mutex counters_lock;
+
+	/**
+	 * @msts: MSTI to HW MST slot allocations. index 0 is for HW slot 1 because CIST is
+	 * not stored in @msts
+	 */
+	struct rtldsa_mst msts[];
 };
 
 struct fdb_update_work {
