@@ -165,9 +165,9 @@ export function wpa_key_mgmt(config) {
 		break;
 
 	case 'eap2':
-		append_value(config, 'wpa_key_mgmt', 'WPA-EAP-SHA256');
 		if (config.ieee80211r)
 			append_value(config, 'wpa_key_mgmt', 'FT-EAP');
+		append_value(config, 'wpa_key_mgmt', 'WPA-EAP-SHA256');
 		break;
 
 	case 'sae':
