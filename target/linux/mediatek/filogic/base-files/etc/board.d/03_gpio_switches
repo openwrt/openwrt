@@ -5,7 +5,8 @@ board_config_update
 board=$(board_name)
 
 case "$board" in
-huasifei,wh3000-pro)
+huasifei,wh3000-pro-emmc|\
+huasifei,wh3000-pro-nand)
 	ucidef_add_gpio_switch "modem_power" "Modem power" "modem_power" "0"
 	;;
 teltonika,rutc50)

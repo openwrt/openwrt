@@ -199,6 +199,19 @@ define Package/colrm/description
  standard input. Output is sent to standard output.
 endef
 
+define Package/column
+$(call Package/util-linux/Default)
+  TITLE:=column formats input into multiple columns
+  DEPENDS:= +libsmartcols
+  LICENSE:=LGPL-2.1-or-later
+  LICENSE_FILES:=Documentation/licenses/COPYING.LGPL-2.1-or-later
+endef
+
+define Package/column/description
+  The column utility formats its input into multiple columns.  Input
+  can be from a file or standard input and empty lines are ignored.
+endef
+
 define Package/dmesg
 $(call Package/util-linux/Default)
   TITLE:=print or control the kernel ring buffer
@@ -827,6 +840,11 @@ define Package/colrm/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/colrm $(1)/usr/bin/
 endef
 
+define Package/column/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/column $(1)/usr/bin/
+endef
+
 define Package/dmesg/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/dmesg $(1)/usr/bin/
@@ -1038,6 +1056,7 @@ $(eval $(call BuildPackage,blockdev))
 $(eval $(call BuildPackage,cal))
 $(eval $(call BuildPackage,cfdisk))
 $(eval $(call BuildPackage,colrm))
+$(eval $(call BuildPackage,column))
 $(eval $(call BuildPackage,dmesg))
 $(eval $(call BuildPackage,eject))
 $(eval $(call BuildPackage,fdisk))

@@ -139,7 +139,7 @@ platform_do_upgrade() {
 	glinet,gl-x3000|\
 	glinet,gl-xe3000|\
 	huasifei,wh3000|\
-	huasifei,wh3000-pro|\
+	huasifei,wh3000-pro-emmc|\
 	smartrg,sdg-8612|\
 	smartrg,sdg-8614|\
 	smartrg,sdg-8622|\
@@ -164,7 +164,8 @@ platform_do_upgrade() {
 		;;
 	buffalo,wsr-6000ax8|\
 	cudy,wr3000h-v1|\
-	cudy,wr3000p-v1)
+	cudy,wr3000p-v1|\
+	huasifei,wh3000-pro-nand)
 		CI_UBIPART="ubi"
 		nand_do_upgrade "$1"
 		;;
@@ -369,7 +370,7 @@ platform_copy_config() {
 	glinet,gl-x3000|\
 	glinet,gl-xe3000|\
 	huasifei,wh3000|\
-	huasifei,wh3000-pro|\
+	huasifei,wh3000-pro-emmc|\
 	jdcloud,re-cp-03|\
 	nradio,c8-668gl|\
 	smartrg,sdg-8612|\

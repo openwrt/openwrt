@@ -1710,18 +1710,38 @@ define Device/huasifei_wh3000
 endef
 TARGET_DEVICES += huasifei_wh3000
 
-define Device/huasifei_wh3000-pro
+define Device/huasifei_wh3000-pro-emmc
   DEVICE_VENDOR := Huasifei
   DEVICE_MODEL := WH3000 Pro
-  DEVICE_DTS := mt7981b-huasifei-wh3000-pro
+  DEVICE_VARIANT := eMMC
+  DEVICE_DTS := mt7981b-huasifei-wh3000-pro-emmc
   DEVICE_DTS_DIR := ../dts
-  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-hwmon-pwmfan kmod-usb3 f2fsck mkf2fs
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware \
+	kmod-hwmon-pwmfan kmod-usb3 f2fsck mkf2fs
+  SUPPORTED_DEVICES += huasifei,wh3000-pro
   KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
   KERNEL_INITRAMFS := kernel-bin | lzma | \
 	fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
   IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 endef
-TARGET_DEVICES += huasifei_wh3000-pro
+TARGET_DEVICES += huasifei_wh3000-pro-emmc
+
+define Device/huasifei_wh3000-pro-nand
+  DEVICE_VENDOR := Huasifei
+  DEVICE_MODEL := WH3000 Pro
+  DEVICE_VARIANT := NAND
+  DEVICE_DTS := mt7981b-huasifei-wh3000-pro-nand
+  DEVICE_DTS_DIR := ../dts
+  UBINIZE_OPTS := -E 5
+  BLOCKSIZE := 128k
+  PAGESIZE := 2048
+  IMAGE_SIZE := 229376k
+  KERNEL_IN_UBI := 1
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware \
+	kmod-usb3 kmod-hwmon-pwmfan
+endef
+TARGET_DEVICES += huasifei_wh3000-pro-nand
 
 define Device/imou_hx21
   DEVICE_VENDOR := Imou

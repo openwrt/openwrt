@@ -2267,6 +2267,23 @@ endef
 $(eval $(call KernelPackage,hinic))
 
 
+define KernelPackage/hinic3
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Huawei 3rd generation network adapters (HINIC3) support
+  DEPENDS:=@PCI_SUPPORT @TARGET_x86||TARGET_armsr_armv8 @LINUX_6_18
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/huawei/hinic3/hinic3.ko
+  KCONFIG:=CONFIG_HINIC3
+  AUTOLOAD:=$(call AutoProbe,hinic3)
+endef
+
+define KernelPackage/hinic3/description
+  This driver supports HiNIC 3rd gen Network Adapter (HINIC3).
+  The driver is supported on X86_64 and ARM64 little endian.
+endef
+
+$(eval $(call KernelPackage,hinic3))
+
+
 define KernelPackage/sfc
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Solarflare SFC9000/SFC9100/EF100-family support
