@@ -225,9 +225,11 @@ function iface_wps(config) {
 
 		if (config.multi_ap && config.multi_ap_backhaul_ssid) {
 			append_string_vars(config, [ 'multi_ap_backhaul_ssid' ]);
-			if (length(config.multi_ap_backhaul_key) == 64)
+			if (!config.multi_ap_backhaul_key) {
+				/* no key - open backhaul */
+			} else if (length(config.multi_ap_backhaul_key) == 64)
 				append('multi_ap_backhaul_wpa_psk', config.multi_ap_backhaul_key);
-			else if (length(config.multi_ap_backhaul_key) > 8)
+			else if (length(config.multi_ap_backhaul_key) >= 8)
 				append('multi_ap_backhaul_wpa_passphrase', config.multi_ap_backhaul_key);
 			else
 				netifd.setup_failed('INVALID_WPA_PSK');
