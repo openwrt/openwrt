@@ -1,0 +1,14 @@
+{
+	"luci-app-traffic-classifier": {
+		"description": "Grant access to traffic classifier",
+		"read": {
+			"ubus": {
+				"traffic-classifier": ["status", "get_flows", "get_clients", "get_stats"]
+			},
+			"uci": ["traffic-classifier"]
+		},
+		"write": {
+			"uci": ["traffic-classifier"]
+		}
+	}
+}

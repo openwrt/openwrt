@@ -1,0 +1,37 @@
+{
+	"admin/network/traffic-classifier": {
+		"title": "Traffic Classifier",
+		"order": 80,
+		"action": {
+			"type": "firstchild"
+		},
+		"depends": {
+			"acl": ["luci-app-traffic-classifier"],
+			"uci": { "traffic-classifier": true }
+		}
+	},
+	"admin/network/traffic-classifier/overview": {
+		"title": "Overview",
+		"order": 1,
+		"action": {
+			"type": "view",
+			"path": "traffic-classifier/overview"
+		}
+	},
+	"admin/network/traffic-classifier/clients": {
+		"title": "Clients",
+		"order": 2,
+		"action": {
+			"type": "view",
+			"path": "traffic-classifier/clients"
+		}
+	},
+	"admin/network/traffic-classifier/flows": {
+		"title": "Flows",
+		"order": 3,
+		"action": {
+			"type": "view",
+			"path": "traffic-classifier/flows"
+		}
+	}
+}
