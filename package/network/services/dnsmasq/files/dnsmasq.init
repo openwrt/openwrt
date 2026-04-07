@@ -596,7 +596,7 @@ dhcp_add() {
 	}
 	config_list_foreach "$cfg" tag add_tag
 
-	nettag="${networkid:+set:${networkid},}"
+	nettag="${networkid:+tag:${networkid},}"
 
 	# make sure the DHCP range is not empty
 	if [ "$dhcpv4" != "disabled" ]; then
