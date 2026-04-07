@@ -2642,6 +2642,31 @@ define Device/mercusys_mr90x-v1-ubi
 endef
 TARGET_DEVICES += mercusys_mr90x-v1-ubi
 
+define Device/netcore_n30-pro
+  DEVICE_VENDOR := Netcore
+  DEVICE_MODEL := N30 Pro
+  DEVICE_ALT0_VENDOR := netis
+  DEVICE_ALT0_MODEL := NX35U
+  DEVICE_DTS := mt7981b-netcore-n30-pro
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_DTC_FLAGS := --pad 4096
+  DEVICE_DTS_LOADADDR := 0x43f00000
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-usb3
+  KERNEL_LOADADDR := 0x44000000
+  KERNEL := kernel-bin | libdeflate-gzip
+  KERNEL_INITRAMFS := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  KERNEL_INITRAMFS_SUFFIX := .itb
+  KERNEL_IN_UBI := 1
+  UBOOTENV_IN_UBI := 1
+  IMAGES := sysupgrade.itb
+  IMAGE_SIZE := 117248k
+  IMAGE/sysupgrade.itb := append-kernel | fit gzip $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb external-with-rootfs | pad-rootfs | append-metadata
+  ARTIFACTS := spim-nand-preloader.bin spim-nand-bl31-uboot.fip
+  ARTIFACT/spim-nand-preloader.bin	:= mt7981-bl2 spim-nand-ddr3
+  ARTIFACT/spim-nand-bl31-uboot.fip	:= mt7981-bl31-uboot netcore_n30-pro
+endef
+TARGET_DEVICES += netcore_n30-pro
+
 define Device/netcore_n60
   DEVICE_VENDOR := Netcore
   DEVICE_MODEL := N60
@@ -2828,14 +2853,12 @@ define Device/netis_nx30v2
   DEVICE_VARIANT := V2
   DEVICE_ALT0_VENDOR := Netcore
   DEVICE_ALT0_MODEL := POWER 30AX
-  DEVICE_ALT1_VENDOR := Netcore
-  DEVICE_ALT1_MODEL := N30 Pro
-  DEVICE_ALT2_VENDOR := GWBN
-  DEVICE_ALT2_MODEL := GW3001
-  DEVICE_ALT3_VENDOR := GLC
-  DEVICE_ALT3_MODEL := W7
-  DEVICE_ALT4_VENDOR := netis
-  DEVICE_ALT4_MODEL := MEX605
+  DEVICE_ALT1_VENDOR := GWBN
+  DEVICE_ALT1_MODEL := GW3001
+  DEVICE_ALT2_VENDOR := GLC
+  DEVICE_ALT2_MODEL := W7
+  DEVICE_ALT3_VENDOR := netis
+  DEVICE_ALT3_MODEL := MEX605
   DEVICE_DTS := mt7981b-netis-nx30v2
   DEVICE_DTS_DIR := ../dts
   DEVICE_DTC_FLAGS := --pad 4096
