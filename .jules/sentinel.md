@@ -74,3 +74,8 @@
 **Vulnerability:** The `tinysrp` library in `ead` used legacy `strcpy` to copy credentials like usernames into fixed-size buffers (`tpw->userbuf`), leading to a potential stack-smashing buffer overflow if the username exceeds `MAXUSERLEN`.
 **Learning:** Legacy C code often relies on unbounded string operations. Usernames, being external input, should not be trusted to fit within statically allocated memory limits like `MAXUSERLEN`.
 **Prevention:** Always replace legacy `strcpy` calls with `strncpy` bounded by the target buffer size minus one (e.g., `MAXUSERLEN - 1`) and append explicit null-termination when handling credentials to prevent buffer overflow vulnerabilities.
+
+## $(date +%Y-%m-%d) - Buffer Overflow Prevention in t_misc.c
+**Vulnerability:** In `package/network/services/ead/src/tinysrp/t_misc.c`, the `t_fshash` function utilized unbounded `strcpy` and `strcat` calls into a fixed size 128 byte buffer `dotpath` in a loop modifying paths. If the loop bounds were altered or an unpredictable temporary file suffix increased the length, this could lead to stack buffer overflows.
+**Learning:** Legacy string manipulation functions (`strcpy`, `strcat`) easily introduce memory corruption bugs and are vulnerable to future modifications changing implicit bounds.
+**Prevention:** Always replace `strcat` and `strcpy` with explicitly bounded calls such as `strncpy` and `strncat`, and calculate remaining capacities properly (e.g. `sizeof(buf) - strlen(buf) - 1`). Explicit null-termination `buf[sizeof(buf) - 1] = '\0'` should also be added for safety.

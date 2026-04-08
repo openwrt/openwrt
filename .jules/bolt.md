@@ -41,3 +41,6 @@
 ## 2025-01-20 - [Optimize dictionary population in dl_cleanup.py]
 **Learning:** Using `in dict.keys()` within a loop is an anti-pattern that creates unnecessary view objects on every iteration, leading to reduced performance.
 **Action:** Use `dict.setdefault()` or `collections.defaultdict` when grouping items into lists within dictionaries to improve performance and code readability.
+## 2025-01-20 - [Python CRC32 Chunked File I/O for Large Binaries]
+**Learning:** Reading a large file into memory entirely to compute its CRC32 checksum (`in_bytes = f.read(in_size); crc = binascii.crc32(in_bytes)`) creates massive memory bloat, causing O(N) memory complexity and potentially crashing the script on systems building large firmware images.
+**Action:** Use a chunked reading approach inside a `while True:` loop (e.g., `chunk = f.read(65536)`) and calculate the CRC incrementally by passing the previous CRC value into the function call (e.g., `crc = binascii.crc32(chunk, crc)`). This brings memory complexity down to O(1).
