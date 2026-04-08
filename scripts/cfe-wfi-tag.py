@@ -42,6 +42,7 @@ Flags:
 
 import argparse
 import os
+import shutil
 import struct
 import binascii
 
@@ -50,9 +51,9 @@ def auto_int(x):
     return int(x, 0)
 
 
-def create_tag(args, in_bytes):
+def create_tag(args, crc):
     # JAM CRC32 is bitwise not and unsigned
-    crc = ~binascii.crc32(in_bytes) & 0xFFFFFFFF
+    crc = ~crc & 0xFFFFFFFF
     tag = struct.pack(
         ">IIIII",
         crc,
@@ -65,19 +66,23 @@ def create_tag(args, in_bytes):
 
 
 def create_output(args):
-    in_st = os.stat(args.input_file)
-    in_size = in_st.st_size
+    # If input and output are different, copy the file first.
+    # Otherwise, we can just read and append in place.
+    if os.path.abspath(args.input_file) != os.path.abspath(args.output_file):
+        shutil.copyfile(args.input_file, args.output_file)
 
-    in_f = open(args.input_file, "r+b")
-    in_bytes = in_f.read(in_size)
-    in_f.close()
+    crc = 0
+    # Optimization: read the file in 64KB chunks to calculate the CRC32
+    # avoiding loading the entire file into memory and reducing memory complexity to O(1).
+    with open(args.output_file, "r+b") as f:
+        while True:
+            chunk = f.read(65536)
+            if not chunk:
+                break
+            crc = binascii.crc32(chunk, crc)
 
-    tag = create_tag(args, in_bytes)
-
-    out_f = open(args.output_file, "w+b")
-    out_f.write(in_bytes)
-    out_f.write(tag)
-    out_f.close()
+        tag = create_tag(args, crc)
+        f.write(tag)
 
 
 def main():
