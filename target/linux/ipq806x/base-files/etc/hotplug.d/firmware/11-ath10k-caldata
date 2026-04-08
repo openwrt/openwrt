@@ -30,7 +30,11 @@ case "$FIRMWARE" in
 	case "$board" in
 	asus,onhub|\
 	tplink,onhub)
-		base64_extract /sys/firmware/vpd/ro/wifi_base64_calibration0
+		if [ -f /sys/firmware/vpd/ro/wifi_base64_calibration0 ]; then
+			base64_extract /sys/firmware/vpd/ro/wifi_base64_calibration0
+		else
+			base64_extract /sys/firmware/devicetree/base/soc/pci@1b500000/pcie@0/ath10k@0,0/qcom,ath10k-calibration-data-base64
+		fi
 		;;
 	esac
 	;;
@@ -38,7 +42,11 @@ case "$FIRMWARE" in
 	case "$board" in
 	asus,onhub|\
 	tplink,onhub)
-		base64_extract /sys/firmware/vpd/ro/wifi_base64_calibration1
+		if [ -f /sys/firmware/vpd/ro/wifi_base64_calibration1 ]; then
+			base64_extract /sys/firmware/vpd/ro/wifi_base64_calibration1
+		else
+			base64_extract /sys/firmware/devicetree/base/soc/pci@1b700000/pcie@0/ath10k@0,0/qcom,ath10k-calibration-data-base64
+		fi
 		;;
 	esac
 	;;
@@ -46,7 +54,11 @@ case "$FIRMWARE" in
 	case "$board" in
 	asus,onhub|\
 	tplink,onhub)
-		base64_extract /sys/firmware/vpd/ro/wifi_base64_calibration2
+		if [ -f /sys/firmware/vpd/ro/wifi_base64_calibration2 ]; then
+			base64_extract /sys/firmware/vpd/ro/wifi_base64_calibration2
+		else
+			base64_extract /sys/firmware/devicetree/base/soc/pci@1b900000/pcie@0/ath10k@0,0/qcom,ath10k-calibration-data-base64
+		fi
 		;;
 	esac
 	;;
