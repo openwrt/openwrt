@@ -38,6 +38,9 @@
 ## 2025-01-20 - [Python `shutil.copyfileobj` optimization for I/O bounds]
 **Learning:** When appending/prepending headers to large binary files like firmware images in Python scripts, simply reading the entire input file into memory (`in_bytes = f.read()`) and then writing it back (`out_f.write(in_bytes)`) scales linearly in memory size O(N) and can cause high overhead and memory exhaustion.
 **Action:** Use `shutil.copyfileobj(in_f, out_f)` to stream the contents of the file directly without reading the entire file contents into memory, reducing memory complexity to O(1) and performing the copy faster since it is optimized at the C level.
+## 2025-01-20 - [Optimize dictionary population in dl_cleanup.py]
+**Learning:** Using `in dict.keys()` within a loop is an anti-pattern that creates unnecessary view objects on every iteration, leading to reduced performance.
+**Action:** Use `dict.setdefault()` or `collections.defaultdict` when grouping items into lists within dictionaries to improve performance and code readability.
 ## 2025-01-20 - [Python CRC32 Chunked File I/O for Large Binaries]
 **Learning:** Reading a large file into memory entirely to compute its CRC32 checksum (`in_bytes = f.read(in_size); crc = binascii.crc32(in_bytes)`) creates massive memory bloat, causing O(N) memory complexity and potentially crashing the script on systems building large firmware images.
 **Action:** Use a chunked reading approach inside a `while True:` loop (e.g., `chunk = f.read(65536)`) and calculate the CRC incrementally by passing the previous CRC value into the function call (e.g., `crc = binascii.crc32(chunk, crc)`). This brings memory complexity down to O(1).

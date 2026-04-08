@@ -308,12 +308,7 @@ def main(argv):
     # Create a map of programs
     progmap = {}
     for entry in entries:
-        if entry.progname in progmap.keys():
-            progmap[entry.progname].append(entry)
-        else:
-            progmap[entry.progname] = [
-                entry,
-            ]
+        progmap.setdefault(entry.progname, []).append(entry)
 
     # Traverse the program map and delete everything but the last version
     for prog in progmap:
