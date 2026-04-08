@@ -23,7 +23,9 @@ ubootenv_add_nor_default() {
 
 case "$board" in
 abt,asr3000|\
-acer,predator-w6x-ubootmod|\
+acer,predator-w6x-ubootmod)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x10000"
+	;;
 asus,zenwifi-bt8-ubootmod|\
 cmcc,a10-ubootmod|\
 comfast,cf-wr632ax-ubootmod|\
@@ -137,7 +139,8 @@ smartrg,sdg-8733a|\
 smartrg,sdg-8734)
 	ubootenv_add_mmc "u-boot-env" "mmcblk0" "0x0" "0x8000" "0x8000"
 	;;
-teltonika,rutc50)
+teltonika,rutc50|\
+alwaylink,m01k43)
 	ubootenv_add_mtd "u-boot-env" "0x0" "0x10000" "0x10000"
 	;;
 tplink,archer-ax80-v1|\
