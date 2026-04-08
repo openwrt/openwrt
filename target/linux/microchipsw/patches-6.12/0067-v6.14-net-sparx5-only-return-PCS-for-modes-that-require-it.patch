@@ -1,0 +1,40 @@
+From be45d246122e57af37216fa846439205ed2cf671 Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Fri, 20 Dec 2024 14:48:44 +0100
+Subject: [PATCH 72/82] net: sparx5: only return PCS for modes that require it
+
+The RGMII ports have no PCS to configure. Make sure we only return the
+PCS for port modes that require it.
+
+Reviewed-by: Russell King (Oracle) <rmk+kernel@armlinux.org.uk>
+Tested-by: Robert Marko <robert.marko@sartura.hr>
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Link: https://patch.msgid.link/20241220-sparx5-lan969x-switch-driver-4-v5-5-fa8ba5dff732@microchip.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ .../net/ethernet/microchip/sparx5/sparx5_phylink.c | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_phylink.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_phylink.c
+@@ -32,7 +32,19 @@ sparx5_phylink_mac_select_pcs(struct phy
+ {
+ 	struct sparx5_port *port = netdev_priv(to_net_dev(config->dev));
+ 
+-	return &port->phylink_pcs;
++	/* Return the PCS for all the modes that require it. */
++	switch (interface) {
++	case PHY_INTERFACE_MODE_SGMII:
++	case PHY_INTERFACE_MODE_QSGMII:
++	case PHY_INTERFACE_MODE_1000BASEX:
++	case PHY_INTERFACE_MODE_2500BASEX:
++	case PHY_INTERFACE_MODE_5GBASER:
++	case PHY_INTERFACE_MODE_10GBASER:
++	case PHY_INTERFACE_MODE_25GBASER:
++		return &port->phylink_pcs;
++	default:
++		return NULL;
++	}
+ }
+ 
+ static void sparx5_phylink_mac_config(struct phylink_config *config,

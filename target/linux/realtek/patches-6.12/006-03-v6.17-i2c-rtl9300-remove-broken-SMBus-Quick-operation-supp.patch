@@ -1,0 +1,77 @@
+From ede965fd555ac2536cf651893a998dbfd8e57b86 Mon Sep 17 00:00:00 2001
+From: Jonas Jelonek <jelonek.jonas@gmail.com>
+Date: Sun, 31 Aug 2025 10:04:48 +0000
+Subject: [PATCH] i2c: rtl9300: remove broken SMBus Quick operation support
+
+Remove the SMBus Quick operation from this driver because it is not
+natively supported by the hardware and is wrongly implemented in the
+driver.
+
+The I2C controllers in Realtek RTL9300 and RTL9310 are SMBus-compliant
+but there doesn't seem to be native support for the SMBus Quick
+operation. It is not explicitly mentioned in the documentation but
+looking at the registers which configure an SMBus transaction, one can
+see that the data length cannot be set to 0. This suggests that the
+hardware doesn't allow any SMBus message without data bytes (except for
+those it does on it's own, see SMBus Block Read).
+
+The current implementation of SMBus Quick operation passes a length of
+0 (which is actually invalid). Before the fix of a bug in a previous
+commit, this led to a read operation of 16 bytes from any register (the
+one of a former transaction or any other value.
+
+This caused issues like soft-bricked SFP modules after a simple probe
+with i2cdetect which uses Quick by default. Running this with SFP
+modules whose EEPROM isn't write-protected, some of the initial bytes
+are overwritten because a 16-byte write operation is executed instead of
+a Quick Write. (This temporarily soft-bricked one of my DAC cables.)
+
+Because SMBus Quick operation is obviously not supported on these
+controllers (because a length of 0 cannot be set, even when no register
+address is set), remove that instead of claiming there is support. There
+also shouldn't be any kind of emulated 'Quick' which just does another
+kind of operation in the background. Otherwise, specific issues occur
+in case of a 'Quick' Write which actually writes unknown data to an
+unknown register.
+
+Fixes: c366be720235 ("i2c: Add driver for the RTL9300 I2C controller")
+Cc: stable@vger.kernel.org # v6.13+
+Signed-off-by: Jonas Jelonek <jelonek.jonas@gmail.com>
+Tested-by: Sven Eckelmann <sven@narfation.org>
+Reviewed-by: Chris Packham <chris.packham@alliedtelesis.co.nz>
+Tested-by: Chris Packham <chris.packham@alliedtelesis.co.nz> # On RTL9302C based board
+Tested-by: Markus Stockhausen <markus.stockhausen@gmx.de>
+Signed-off-by: Andi Shyti <andi.shyti@kernel.org>
+Link: https://lore.kernel.org/r/20250831100457.3114-4-jelonek.jonas@gmail.com
+
+--- a/drivers/i2c/busses/i2c-rtl9300.c
++++ b/drivers/i2c/busses/i2c-rtl9300.c
+@@ -225,15 +225,6 @@ static int rtl9300_i2c_smbus_xfer(struct
+ 	}
+ 
+ 	switch (size) {
+-	case I2C_SMBUS_QUICK:
+-		ret = rtl9300_i2c_config_xfer(i2c, chan, addr, 0);
+-		if (ret)
+-			goto out_unlock;
+-		ret = rtl9300_i2c_reg_addr_set(i2c, 0, 0);
+-		if (ret)
+-			goto out_unlock;
+-		break;
+-
+ 	case I2C_SMBUS_BYTE:
+ 		if (read_write == I2C_SMBUS_WRITE) {
+ 			ret = rtl9300_i2c_config_xfer(i2c, chan, addr, 0);
+@@ -315,9 +306,9 @@ out_unlock:
+ 
+ static u32 rtl9300_i2c_func(struct i2c_adapter *a)
+ {
+-	return I2C_FUNC_SMBUS_QUICK | I2C_FUNC_SMBUS_BYTE |
+-	       I2C_FUNC_SMBUS_BYTE_DATA | I2C_FUNC_SMBUS_WORD_DATA |
+-	       I2C_FUNC_SMBUS_BLOCK_DATA;
++	return I2C_FUNC_SMBUS_BYTE | I2C_FUNC_SMBUS_BYTE_DATA |
++	       I2C_FUNC_SMBUS_WORD_DATA | I2C_FUNC_SMBUS_BLOCK_DATA |
++	       I2C_FUNC_SMBUS_I2C_BLOCK;
+ }
+ 
+ static const struct i2c_algorithm rtl9300_i2c_algo = {

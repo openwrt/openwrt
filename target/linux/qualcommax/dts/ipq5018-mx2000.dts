@@ -1,0 +1,183 @@
+/dts-v1/;
+
+#include "ipq5018.dtsi"
+#include "ipq5018-mx-base.dtsi"
+#include "ipq5018-qcn6122.dtsi"
+
+/ {
+	model = "Linksys MX2000";
+	compatible = "linksys,mx2000", "qcom,ipq5018";
+
+	chosen {
+		bootargs-append = " root=/dev/ubiblock0_0 coherent_pool=2M";
+		stdout-path = "serial0:115200n8";
+	};
+};
+
+/*
+ * ===============================================================
+ *     _______________________         _______________________
+ *    |        IPQ5018        |       |        QCA8337        |
+ *    | +------+   +--------+ |       | +--------+   +------+ |
+ *    | | MAC0 |---| GE Phy | |       | |  Phy0  |---| MAC1 | |
+ *    | +------+   +--------+ |       | +--------+   +------+ |
+ *    | +------+   +--------+ |       | +--------+   +------+ |
+ *    | | MAC1 |---| Uniphy |-+-SGMII-+-| SerDes |---| MAC6 | |
+ *    | +------+   +--------+ |       | +--------+   +------+ |
+ *    |_______________________|       |_______________________|
+ *
+ * ===============================================================
+ */
+
+&switch {
+	status = "okay";
+
+	switch_mac_mode = <MAC_MODE_SGMII_CHANNEL0>;
+
+	qcom,port_phyinfo {
+		// MAC0 -> GE Phy -> QCA8337 Phy4
+		port@1 {
+			port_id = <1>;
+			mdiobus = <&mdio0>;
+			phy_address = <7>;
+		};
+
+		// MAC1 ---SGMII---> QCA8337 SerDes
+		port@2 {
+			port_id = <2>;
+			forced-speed = <1000>;
+			forced-duplex = <1>;
+		};
+	};
+};
+
+// MAC1 ---SGMII---> QCA8337 SerDes
+&dp2 {
+	status = "okay";
+
+	nvmem-cells = <&hw_mac_addr 0>;
+	nvmem-cell-names = "mac-address";
+
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
+&mdio0 {
+	status = "okay";
+};
+
+&mdio1 {
+	status = "okay";
+
+	pinctrl-0 = <&mdio1_pins>;
+	pinctrl-names = "default";
+	reset-gpios = <&tlmm 39 GPIO_ACTIVE_LOW>;
+
+	// QCA8337 Phy0 not connected
+	qca8337_0: ethernet-phy@0 {
+		reg = <0>;
+	};
+
+	// QCA8337 Phy1 -> WAN
+	qca8337_1: ethernet-phy@1 {
+		reg = <1>;
+	};
+
+	// QCA8337 Phy2 -> LAN1
+	qca8337_2: ethernet-phy@2 {
+		reg = <2>;
+	};
+
+	// QCA8337 Phy3 -> LAN2
+	qca8337_3: ethernet-phy@3 {
+		reg = <3>;
+	};
+
+	// QCA8337 Phy4 -> LAN3
+	qca8337_4: ethernet-phy@4 {
+		reg = <4>;
+	};
+
+	// QCA8337 switch
+	switch1: ethernet-switch@17 {
+		compatible = "qca,qca8337";
+		reg = <17>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@2 {
+				reg = <2>;
+				label = "wan";
+				phy-handle = <&qca8337_1>;
+			};
+
+			port@3 {
+				reg = <3>;
+				label = "lan3";
+				phy-handle = <&qca8337_2>;
+			};
+
+			port@4 {
+				reg = <4>;
+				label = "lan2";
+				phy-handle = <&qca8337_3>;
+			};
+
+			port@5 {
+				reg = <5>;
+				label = "lan1";
+				phy-handle = <&qca8337_4>;
+			};
+
+			port@6 {
+				reg = <6>;
+				label = "cpu";
+				phy-mode = "sgmii";
+				ethernet = <&dp2>;
+				qca,sgmii-enable-pll;
+
+				fixed-link {
+					speed = <1000>;
+					full-duplex;
+				};
+			};
+		};
+	};
+};
+
+&q6v5_wcss {
+	/* The QCN6102 radio should map to UPD ID 2. Without       */
+	/* bootargs, the firmware will expect it to be on UPD ID 3 */
+	boot-args = <
+			/*       type:	*/	0x1	/* PCIE0	*/
+			/*     length:	*/	4
+			/*     UPD ID:	*/	2
+			/* reset GPIO:	*/	15
+			/*   reserved:	*/	0 0>;
+};
+
+&wifi {
+	status = "okay";
+
+	qcom,rproc = <&q6_wcss_pd1>;
+	qcom,ath11k-calibration-variant = "Linksys-MX2000";
+	qcom,ath11k-fw-memory-mode = <1>;
+	qcom,bdf-addr = <0x4c400000>;
+};
+
+&wifi1 {
+	status = "okay";
+
+	qcom,rproc = <&q6_wcss_pd2>;
+	qcom,userpd-subsys-name = "q6v5_wcss_userpd2";
+	qcom,ath11k-calibration-variant = "Linksys-MX2000";
+	qcom,ath11k-fw-memory-mode = <1>;
+	qcom,bdf-addr = <0x4d100000>;
+	qcom,m3-dump-addr = <0x4df00000>;
+};

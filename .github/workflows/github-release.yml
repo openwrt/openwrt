@@ -1,0 +1,24 @@
+name: Create GitHub release
+
+permissions:
+  contents: write
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          draft: true
+          prerelease: true

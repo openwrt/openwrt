@@ -1,0 +1,42 @@
+From e647f95a65d299fbb58ef8d44795abab3bc63d41 Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Thu, 5 Dec 2024 14:54:27 +0100
+Subject: [PATCH 67/82] net: sparx5: fix default value of monitor ports
+
+When doing port mirroring, the physical port to send the frame to, is
+written to the FRMC_PORT_VAL field of the QFWD_FRAME_COPY_CFG register.
+This field is 7 bits wide on sparx5 and 6 bits wide on lan969x, and has
+a default value of 65 and 30, respectively (the number of front ports).
+
+On mirror deletion, we set the default value of the monitor port to
+65 for this field, in case no more ports exists for the mirror. Needless
+to say, this will not fit the 6 bits on lan969x.
+
+Fix this by correctly using the n_ports constant instead.
+
+Fixes: 3f9e46347a46 ("net: sparx5: use SPX5_CONST for constants which already have a symbol")
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ drivers/net/ethernet/microchip/sparx5/sparx5_mirror.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_mirror.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_mirror.c
+@@ -12,7 +12,6 @@
+ #define SPX5_MIRROR_DISABLED 0
+ #define SPX5_MIRROR_EGRESS 1
+ #define SPX5_MIRROR_INGRESS 2
+-#define SPX5_MIRROR_MONITOR_PORT_DEFAULT 65
+ #define SPX5_QFWD_MP_OFFSET 9 /* Mirror port offset in the QFWD register */
+ 
+ /* Convert from bool ingress/egress to mirror direction */
+@@ -200,7 +199,7 @@ void sparx5_mirror_del(struct sparx5_mal
+ 
+ 	sparx5_mirror_monitor_set(sparx5,
+ 				  mirror_idx,
+-				  SPX5_MIRROR_MONITOR_PORT_DEFAULT);
++				  sparx5->data->consts->n_ports);
+ }
+ 
+ void sparx5_mirror_stats(struct sparx5_mall_entry *entry,

@@ -1,0 +1,42 @@
+name: Build Kernel
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/check-kernel-patches.yml'
+      - '.github/workflows/build.yml'
+      - '.github/workflows/kernel.yml'
+      - 'include/kernel*'
+      - 'package/kernel/**'
+      - 'target/linux/**'
+  push:
+    paths:
+      - '.github/workflows/check-kernel-patches.yml'
+      - '.github/workflows/build.yml'
+      - '.github/workflows/kernel.yml'
+      - 'include/kernel*'
+      - 'package/kernel/**'
+      - 'target/linux/**'
+    branches-ignore:
+      - master
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build-kernels:
+    name: Build all affected Kernels
+    permissions:
+      contents: read
+      packages: read
+      actions: write
+    secrets:
+      ccache_s3_endpoint: ${{ secrets.CCACHE_S3_ENDPOINT }}
+      ccache_s3_bucket: ${{ secrets.CCACHE_S3_BUCKET }}
+      ccache_s3_access_key: ${{ secrets.CCACHE_S3_ACCESS_KEY }}
+      ccache_s3_secret_key: ${{ secrets.CCACHE_S3_SECRET_KEY }}
+    uses: openwrt/actions-shared-workflows/.github/workflows/kernel.yml@main

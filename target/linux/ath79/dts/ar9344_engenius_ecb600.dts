@@ -1,0 +1,66 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include <dt-bindings/leds/common.h>
+
+#include "ar9344_senao_ap-dual.dtsi"
+
+/ {
+	model = "EnGenius ECB600";
+	compatible = "engenius,ecb600", "qca,ar9344";
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_power: power {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_AMBER>;
+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+
+		wifi5g {
+			label = "blue:wifi5g";
+			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
+		};
+	};
+};
+
+&eth0 {
+	nvmem-cells = <&macaddr_art_0 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&pcie {
+	wifi@0,0 {
+		nvmem-cells = <&macaddr_art_0 (-2)>, <&calibration_art_5000>;
+		nvmem-cell-names = "mac-address", "calibration";
+	};
+};
+
+&wmac {
+	nvmem-cells = <&macaddr_art_0 (-1)>, <&calibration_art_1000>;
+	nvmem-cell-names = "mac-address", "calibration";
+};
+
+&art {
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		macaddr_art_0: macaddr@0 {
+			compatible = "mac-base";
+			reg = <0x0 0x6>;
+			#nvmem-cell-cells = <1>;
+		};
+
+		calibration_art_1000: calibration@1000 {
+			reg = <0x1000 0x440>;
+		};
+
+		calibration_art_5000: calibration@5000 {
+			reg = <0x5000 0x440>;
+		};
+	};
+};

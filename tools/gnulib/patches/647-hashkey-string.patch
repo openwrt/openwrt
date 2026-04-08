@@ -1,0 +1,215 @@
+From 52738dcd0f522b16653cc8b21adfcb758702f2ab Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Wed, 30 Apr 2025 01:20:17 +0200
+Subject: [PATCH] New module hashkey-string.
+
+* lib/hashkey-string.h: New file.
+* lib/hashkey-string.c: New file, based on lib/clean-temp-simple.c.
+* modules/hashkey-string: New file.
+* lib/clean-temp-simple.c: Include hashkey-string.h. Don't include
+<limits.h>.
+(clean_temp_string_equals, clean_temp_string_hash): Remove functions.
+(SIZE_BITS): Remove macro.
+(register_temporary_file): Use hashkey_string_equals and
+hashkey_string_hash.
+* modules/clean-temp-simple (Depends-on): Add hashkey-string.
+---
+ ChangeLog                 | 14 ++++++++++++
+ lib/clean-temp-simple.c   | 33 +++------------------------
+ lib/hashkey-string.c      | 48 +++++++++++++++++++++++++++++++++++++++
+ lib/hashkey-string.h      | 35 ++++++++++++++++++++++++++++
+ modules/clean-temp-simple |  1 +
+ modules/hashkey-string    | 23 +++++++++++++++++++
+ 6 files changed, 124 insertions(+), 30 deletions(-)
+ create mode 100644 lib/hashkey-string.c
+ create mode 100644 lib/hashkey-string.h
+ create mode 100644 modules/hashkey-string
+
+--- a/lib/clean-temp-simple.c
++++ b/lib/clean-temp-simple.c
+@@ -22,7 +22,6 @@
+ #include "clean-temp-private.h"
+ 
+ #include <errno.h>
+-#include <limits.h>
+ #include <signal.h>
+ #include <stdlib.h>
+ #include <string.h>
+@@ -36,6 +35,7 @@
+ #include "thread-optim.h"
+ #include "gl_list.h"
+ #include "gl_linkedhash_list.h"
++#include "hashkey-string.h"
+ #include "gettext.h"
+ 
+ #define _(msgid) dgettext ("gnulib", msgid)
+@@ -106,33 +106,6 @@ gl_list_t /* <closeable_fd *> */ volatil
+         asynchronous signal.
+  */
+ 
+-/* String equality and hash code functions used by the lists.  */
+-
+-bool
+-clean_temp_string_equals (const void *x1, const void *x2)
+-{
+-  const char *s1 = (const char *) x1;
+-  const char *s2 = (const char *) x2;
+-  return strcmp (s1, s2) == 0;
+-}
+-
+-#define SIZE_BITS (sizeof (size_t) * CHAR_BIT)
+-
+-/* A hash function for NUL-terminated char* strings using
+-   the method described by Bruno Haible.
+-   See https://www.haible.de/bruno/hashfunc.html.  */
+-size_t
+-clean_temp_string_hash (const void *x)
+-{
+-  const char *s = (const char *) x;
+-  size_t h = 0;
+-
+-  for (; *s; s++)
+-    h = *s + ((h << 9) | (h >> (SIZE_BITS - 9)));
+-
+-  return h;
+-}
+-
+ 
+ /* The set of fatal signal handlers.
+    Cached here because we are not allowed to call get_fatal_signal_set ()
+@@ -326,8 +299,8 @@ register_temporary_file (const char *abs
+         }
+       file_cleanup_list =
+         gl_list_nx_create_empty (GL_LINKEDHASH_LIST,
+-                                 clean_temp_string_equals,
+-                                 clean_temp_string_hash,
++                                 hashkey_string_equals,
++                                 hashkey_string_hash,
+                                  NULL, false);
+       if (file_cleanup_list == NULL)
+         {
+--- /dev/null
++++ b/lib/hashkey-string.c
+@@ -0,0 +1,48 @@
++/* Support for using a string as a hash key.
++   Copyright (C) 2006-2025 Free Software Foundation, Inc.
++
++   This file is free software: you can redistribute it and/or modify
++   it under the terms of the GNU Lesser General Public License as
++   published by the Free Software Foundation; either version 2.1 of the
++   License, or (at your option) any later version.
++
++   This file is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++#include <config.h>
++
++/* Specification.  */
++#include "hashkey-string.h"
++
++#include <limits.h>
++#include <string.h>
++
++bool
++hashkey_string_equals (const void *x1, const void *x2)
++{
++  const char *s1 = (const char *) x1;
++  const char *s2 = (const char *) x2;
++  return strcmp (s1, s2) == 0;
++}
++
++#define SIZE_BITS (sizeof (size_t) * CHAR_BIT)
++
++/* A hash function for NUL-terminated 'const char *' strings using
++   the method described by Bruno Haible.
++   See https://www.haible.de/bruno/hashfunc.html.  */
++size_t
++hashkey_string_hash (const void *x)
++{
++  const char *s = (const char *) x;
++  size_t h = 0;
++
++  for (; *s; s++)
++    h = *s + ((h << 9) | (h >> (SIZE_BITS - 9)));
++
++  return h;
++}
+--- /dev/null
++++ b/lib/hashkey-string.h
+@@ -0,0 +1,35 @@
++/* Support for using a string as a hash key.
++   Copyright (C) 2006-2025 Free Software Foundation, Inc.
++
++   This file is free software: you can redistribute it and/or modify
++   it under the terms of the GNU Lesser General Public License as
++   published by the Free Software Foundation; either version 2.1 of the
++   License, or (at your option) any later version.
++
++   This file is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++#ifndef _GL_HASHKEY_STRING_H
++#define _GL_HASHKEY_STRING_H
++
++#include <stddef.h>
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++/* String equality and hash code functions that operate on plain C strings
++   ('const char *').  */
++extern bool hashkey_string_equals (const void *x1, const void *x2);
++extern size_t hashkey_string_hash (const void *x);
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* _GL_HASHKEY_STRING_H */
+--- a/modules/clean-temp-simple
++++ b/modules/clean-temp-simple
+@@ -19,6 +19,7 @@ error
+ fatal-signal
+ rmdir
+ linkedhash-list
++hashkey-string
+ gettext-h
+ gnulib-i18n
+ 
+--- /dev/null
++++ b/modules/hashkey-string
+@@ -0,0 +1,23 @@
++Description:
++Support for using a string as a hash key in the hash-set and hash-map modules.
++
++Files:
++lib/hashkey-string.h
++lib/hashkey-string.c
++
++Depends-on:
++bool
++
++configure.ac:
++
++Makefile.am:
++lib_SOURCES += hashkey-string.h hashkey-string.c
++
++Include:
++"hashkey-string.h"
++
++License:
++LGPLv2+
++
++Maintainer:
++all

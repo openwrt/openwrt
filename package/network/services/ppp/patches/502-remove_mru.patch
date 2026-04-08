@@ -1,0 +1,28 @@
+From f691c224e12ee13a1b317a1838d150f1ffef14a1 Mon Sep 17 00:00:00 2001
+From: Mateusz Poliwczak <mpoliwczak34@gmail.com>
+Date: Wed, 11 Feb 2026 00:40:14 +0100
+Subject: [PATCH] Remove MRU limit on PPPoE (#573)
+
+Fixes #331
+
+Signed-off-by: Mateusz Poliwczak <mpoliwczak34@gmail.com>
+---
+ pppd/plugins/pppoe/plugin.c | 5 -----
+ 1 file changed, 5 deletions(-)
+
+diff --git a/pppd/plugins/pppoe/plugin.c b/pppd/plugins/pppoe/plugin.c
+index b429a2fd..0f672166 100644
+--- a/pppd/plugins/pppoe/plugin.c
++++ b/pppd/plugins/pppoe/plugin.c
+@@ -446,11 +446,6 @@ void pppoe_check_options(void)
+     lcp_allowoptions[0].neg_pcompression = 0;
+     lcp_wantoptions[0].neg_pcompression = 0;
+ 
+-    if (lcp_allowoptions[0].mru > MAX_PPPOE_MTU)
+-	lcp_allowoptions[0].mru = MAX_PPPOE_MTU;
+-    if (lcp_wantoptions[0].mru > MAX_PPPOE_MTU)
+-	lcp_wantoptions[0].mru = MAX_PPPOE_MTU;
+-
+     /* Save configuration */
+     conn->storedmtu = lcp_allowoptions[0].mru;
+     conn->storedmru = lcp_wantoptions[0].mru;

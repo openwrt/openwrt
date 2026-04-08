@@ -1,0 +1,32 @@
+From 8c977646a9a7eca0fc70f785606154581cf26be3 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Mon, 1 Dec 2025 23:48:36 +0100
+Subject: [PATCH] mac80211: support kernel version 6.18
+
+Support mac80211 kernel version 6.18 with new radio_idx arg.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ mac80211.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/mac80211.c
++++ b/mac80211.c
+@@ -308,7 +308,7 @@ static void mwl_mac80211_remove_interfac
+ 	mwl_mac80211_remove_vif(priv, vif);
+ }
+ 
+-static int mwl_mac80211_config(struct ieee80211_hw *hw,
++static int mwl_mac80211_config(struct ieee80211_hw *hw, int radio_idx,
+ 			       u32 changed)
+ {
+ 	struct ieee80211_conf *conf = &hw->conf;
+@@ -564,7 +564,7 @@ out:
+ 	return rc;
+ }
+ 
+-static int mwl_mac80211_set_rts_threshold(struct ieee80211_hw *hw,
++static int mwl_mac80211_set_rts_threshold(struct ieee80211_hw *hw, int radio_idx,
+ 					  u32 value)
+ {
+ 	return mwl_fwcmd_set_rts_threshold(hw, value);

@@ -1,0 +1,23 @@
+From 6e8e5ccfbee7a531b035ffce3f95f3901946fa9d Mon Sep 17 00:00:00 2001
+From: Robert Nelson <robertcnelson@gmail.com>
+Date: Wed, 9 Jan 2019 14:33:24 -0600
+Subject: [PATCH] ARM: imx7d-pico-pi.dts: add default stdout-path
+
+Signed-off-by: Robert Nelson <robertcnelson@gmail.com>
+---
+ arch/arm/boot/dts/nxp/imx/imx7d-pico-pi.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/arch/arm/boot/dts/nxp/imx/imx7d-pico-pi.dts
++++ b/arch/arm/boot/dts/nxp/imx/imx7d-pico-pi.dts
+@@ -16,6 +16,10 @@
+ 		label-mac-device = &fec1;
+ 	};
+ 
++	chosen {
++		stdout-path = "serial4:115200n8";
++	};
++
+ 	leds {
+ 		compatible = "gpio-leds";
+ 		pinctrl-names = "default";

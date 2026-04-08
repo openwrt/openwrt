@@ -1,0 +1,27 @@
+From 12a3ccb90a3e88ac60ccb06ea3e5aa1eabe565ac Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 4 Mar 2026 01:32:35 +0000
+Subject: [PATCH 7/8] mediatek: mt7988: add RNG node
+
+Add node representing the hardware random number generator
+found in the MediaTek MT7988 SoC family to the corresponding
+device tree.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ arch/arm/dts/mt7988.dtsi | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/arch/arm/dts/mt7988.dtsi
++++ b/arch/arm/dts/mt7988.dtsi
+@@ -92,6 +92,10 @@
+ 		reg = <0 0x8000000 0 0x1000>;
+ 	};
+ 
++	rng {
++		compatible = "mediatek,mt7988-rng";
++	};
++
+ 	timer {
+ 		compatible = "arm,armv8-timer";
+ 		interrupt-parent = <&gic>;

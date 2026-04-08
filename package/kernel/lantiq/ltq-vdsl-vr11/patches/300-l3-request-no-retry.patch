@@ -1,0 +1,46 @@
+Add option for L3 request without retry on failure
+
+This allows to attempt an orderly shutdown via L3 request while avoiding
+excessive delay in the failure case (up to 6 seconds with the currently
+hard-coded 3 attempts).
+--- a/src/g997/drv_dsl_cpe_api_g997_vrx.c
++++ b/src/g997/drv_dsl_cpe_api_g997_vrx.c
+@@ -1053,6 +1053,7 @@ DSL_Error_t DSL_DRV_DEV_G997_PowerManage
+ {
+    DSL_Error_t nErrCode = DSL_SUCCESS, nRet = DSL_SUCCESS;
+    DSL_int_t nAttempt = 0, i = 0;
++   DSL_int_t nAttemptCount = DSL_LX_TO_L3_ATTEMPT_COUNT;
+    const DSL_int_t nMaxRetry = DSL_LX_TO_L3_TIMEOUT/DSL_L3_WAIT_INTERVAL;
+    DSL_G997_PowerManagementStatusData_t PmStatus = {DSL_G997_PMS_NA};
+    DSL_VRX_L3RequestStatus_t L3RequestStatus = DSL_VRX_L3_STATUS_NA;
+@@ -1095,11 +1096,15 @@ DSL_Error_t DSL_DRV_DEV_G997_PowerManage
+       nErrCode = DSL_ERR_NOT_SUPPORTED_BY_DEVICE;
+       break;
+ 
++   case DSL_G997_PMSF_LX_TO_L3_NO_RETRY:
++      nAttemptCount = 1;
++      fallthrough;
++
+    case DSL_G997_PMSF_LX_TO_L3:
+       if (PmStatus.nPowerManagementStatus != DSL_G997_PMS_L3)
+       {
+          /* retry it DSL_LX_TO_L3_ATTEMPT_COUNT times */
+-         for (nAttempt = 0; nAttempt < DSL_LX_TO_L3_ATTEMPT_COUNT; nAttempt++)
++         for (nAttempt = 0; nAttempt < nAttemptCount; nAttempt++)
+          {
+             /* L3 shutdown request*/
+             nErrCode = DSL_DRV_VRX_SendMsgShutdownRequest(pContext);
+--- a/src/include/drv_dsl_cpe_api_g997.h
++++ b/src/include/drv_dsl_cpe_api_g997.h
+@@ -1199,7 +1199,10 @@ typedef enum
+    procedure. After reaching the L3 state, the line shall remain in the L3 idle
+    state until it is forced into another state through this configuration
+    parameter. */
+-   DSL_G997_PMSF_LX_TO_L3 = 3
++   DSL_G997_PMSF_LX_TO_L3 = 3,
++   /**
++   Same as above, but does not retry in case of failure. */
++   DSL_G997_PMSF_LX_TO_L3_NO_RETRY = 4
+ } DSL_G997_PowerManagementStateForce_t;
+ 
+ /**

@@ -1,0 +1,130 @@
+From 77520fd6b40f129f2b8d6d81d27bd311d30c3250 Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Thu, 24 Oct 2024 00:01:34 +0200
+Subject: [PATCH 57/82] net: sparx5: add feature support
+
+Lan969x supports a number of different features, depending on the
+target. Add new field sparx5->features and initialize the features based
+on the target. Also add the function sparx5_has_feature() and use it
+throughout. For now, we only need to handle features: PSFP and PTP -
+more will come in the future.
+
+[1] https://www.microchip.com/en-us/product/lan9698
+
+Reviewed-by: Steen Hegelund <Steen.Hegelund@microchip.com>
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Link: https://patch.msgid.link/20241024-sparx5-lan969x-switch-driver-2-v2-15-a0b5fae88a0f@microchip.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ .../ethernet/microchip/sparx5/sparx5_main.c   | 40 ++++++++++++++++++-
+ .../ethernet/microchip/sparx5/sparx5_main.h   |  7 ++++
+ .../microchip/sparx5/sparx5_tc_flower.c       |  5 +++
+ 3 files changed, 51 insertions(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
+@@ -229,6 +229,40 @@ bool is_sparx5(struct sparx5 *sparx5)
+ 	}
+ }
+ 
++static void sparx5_init_features(struct sparx5 *sparx5)
++{
++	switch (sparx5->target_ct) {
++	case SPX5_TARGET_CT_7546:
++	case SPX5_TARGET_CT_7549:
++	case SPX5_TARGET_CT_7552:
++	case SPX5_TARGET_CT_7556:
++	case SPX5_TARGET_CT_7558:
++	case SPX5_TARGET_CT_7546TSN:
++	case SPX5_TARGET_CT_7549TSN:
++	case SPX5_TARGET_CT_7552TSN:
++	case SPX5_TARGET_CT_7556TSN:
++	case SPX5_TARGET_CT_7558TSN:
++	case SPX5_TARGET_CT_LAN9691VAO:
++	case SPX5_TARGET_CT_LAN9694TSN:
++	case SPX5_TARGET_CT_LAN9694RED:
++	case SPX5_TARGET_CT_LAN9692VAO:
++	case SPX5_TARGET_CT_LAN9696TSN:
++	case SPX5_TARGET_CT_LAN9696RED:
++	case SPX5_TARGET_CT_LAN9693VAO:
++	case SPX5_TARGET_CT_LAN9698TSN:
++	case SPX5_TARGET_CT_LAN9698RED:
++		sparx5->features = (SPX5_FEATURE_PSFP | SPX5_FEATURE_PTP);
++		break;
++	default:
++		break;
++	}
++}
++
++bool sparx5_has_feature(struct sparx5 *sparx5, enum sparx5_feature feature)
++{
++	return sparx5->features & feature;
++}
++
+ static int sparx5_create_targets(struct sparx5 *sparx5)
+ {
+ 	const struct sparx5_main_io_resource *iomap = sparx5->data->iomap;
+@@ -770,7 +804,8 @@ static int sparx5_start(struct sparx5 *s
+ 		sparx5->xtr_irq = -ENXIO;
+ 	}
+ 
+-	if (sparx5->ptp_irq >= 0) {
++	if (sparx5->ptp_irq >= 0 &&
++	    sparx5_has_feature(sparx5, SPX5_FEATURE_PTP)) {
+ 		err = devm_request_threaded_irq(sparx5->dev, sparx5->ptp_irq,
+ 						NULL, ops->ptp_irq_handler,
+ 						IRQF_ONESHOT, "sparx5-ptp",
+@@ -914,6 +949,9 @@ static int mchp_sparx5_probe(struct plat
+ 	sparx5->target_ct = (enum spx5_target_chiptype)
+ 		GCB_CHIP_ID_PART_ID_GET(sparx5->chip_id);
+ 
++	/* Initialize the features based on the target */
++	sparx5_init_features(sparx5);
++
+ 	/* Initialize Switchcore and internal RAMs */
+ 	err = sparx5_init_switchcore(sparx5);
+ 	if (err) {
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
+@@ -75,6 +75,11 @@ enum sparx5_cal_bw {
+ 	SPX5_CAL_SPEED_12G5 = 7
+ };
+ 
++enum sparx5_feature {
++	SPX5_FEATURE_PSFP = BIT(0),
++	SPX5_FEATURE_PTP  = BIT(1),
++};
++
+ #define SPX5_PORTS             65
+ #define SPX5_PORTS_ALL         70 /* Total number of ports */
+ 
+@@ -337,6 +342,7 @@ struct sparx5 {
+ 	struct device *dev;
+ 	u32 chip_id;
+ 	enum spx5_target_chiptype target_ct;
++	u32 features;
+ 	void __iomem *regs[NUM_TARGETS];
+ 	int port_count;
+ 	struct mutex lock; /* MAC reg lock */
+@@ -404,6 +410,7 @@ struct sparx5 {
+ 
+ /* sparx5_main.c */
+ bool is_sparx5(struct sparx5 *sparx5);
++bool sparx5_has_feature(struct sparx5 *sparx5, enum sparx5_feature feature);
+ 
+ /* sparx5_switchdev.c */
+ int sparx5_register_notifier_blocks(struct sparx5 *sparx5);
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_tc_flower.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_tc_flower.c
+@@ -1284,6 +1284,11 @@ static int sparx5_tc_flower_replace(stru
+ 
+ 	/* Setup PSFP */
+ 	if (tc_sg_idx >= 0 || tc_pol_idx >= 0) {
++		if (!sparx5_has_feature(sparx5, SPX5_FEATURE_PSFP)) {
++			err = -EOPNOTSUPP;
++			goto out;
++		}
++
+ 		err = sparx5_tc_flower_psfp_setup(sparx5, vrule, tc_sg_idx,
+ 						  tc_pol_idx, &sg, &fm, &sf);
+ 		if (err)

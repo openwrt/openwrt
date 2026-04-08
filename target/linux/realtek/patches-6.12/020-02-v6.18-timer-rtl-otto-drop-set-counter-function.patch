@@ -1,0 +1,51 @@
+From 85e27f218121bdaa8e8afd68674262aa154d2cb4 Mon Sep 17 00:00:00 2001
+From: Markus Stockhausen <markus.stockhausen@gmx.de>
+Date: Mon, 4 Aug 2025 04:03:26 -0400
+Subject: clocksource/drivers/timer-rtl-otto: Drop set_counter function
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The current counter value is a read only register. It will be
+reset when writing a new target timer value with rttm_set_period().
+rttm_set_counter() is essentially a noop. Drop it.
+
+While this makes rttm_start_timer() and rttm_enable_timer() the
+same functions keep both to make the established abstraction layers
+for register and control functions active.
+
+Downstream has already tested and confirmed a patch. See
+https://github.com/openwrt/openwrt/pull/19468
+https://forum.openwrt.org/t/support-for-rtl838x-based-managed-switches/57875/3788
+
+Tested-by: Stephen Howell <howels@allthatwemight.be>
+Tested-by: Bjørn Mork <bjorn@mork.no>
+Signed-off-by: Markus Stockhausen <markus.stockhausen@gmx.de>
+Link: https://lore.kernel.org/r/20250804080328.2609287-3-markus.stockhausen@gmx.de
+Signed-off-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+---
+ drivers/clocksource/timer-rtl-otto.c | 6 ------
+ 1 file changed, 6 deletions(-)
+
+--- a/drivers/clocksource/timer-rtl-otto.c
++++ b/drivers/clocksource/timer-rtl-otto.c
+@@ -56,11 +56,6 @@ struct rttm_cs {
+ };
+ 
+ /* Simple internal register functions */
+-static inline void rttm_set_counter(void __iomem *base, unsigned int counter)
+-{
+-	iowrite32(counter, base + RTTM_CNT);
+-}
+-
+ static inline unsigned int rttm_get_counter(void __iomem *base)
+ {
+ 	return ioread32(base + RTTM_CNT);
+@@ -137,7 +132,6 @@ static void rttm_stop_timer(void __iomem
+ 
+ static void rttm_start_timer(struct timer_of *to, u32 mode)
+ {
+-	rttm_set_counter(to->of_base.base, 0);
+ 	rttm_enable_timer(to->of_base.base, mode, to->of_clk.rate / RTTM_TICKS_PER_SEC);
+ }
+ 

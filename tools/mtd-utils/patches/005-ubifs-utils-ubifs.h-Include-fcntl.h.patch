@@ -1,0 +1,45 @@
+From 12bc9ad824bd8f18a5ec9c7154ad2374cf8c7ae3 Mon Sep 17 00:00:00 2001
+From: Fabio Estevam <festevam@gmail.com>
+Date: Wed, 19 Feb 2025 10:02:41 -0300
+Subject: ubifs-utils: ubifs.h: Include <fcntl.h>
+
+Include the <fcntl.h> header file to fix the following error
+when building with musl:
+
+| In file included from ../git/ubifs-utils/common/compr.c:42:
+| ../git/ubifs-utils/libubifs/ubifs.h:313:9: error: unknown type name 'loff_t'; did you mean 'off_t'?
+|   313 |         loff_t ui_size;
+|       |         ^~~~~~
+|       |         off_t
+| ../git/ubifs-utils/libubifs/ubifs.h:1341:9: error: unknown type name 'loff_t'; did you mean 'off_t'?
+|  1341 |         loff_t i_size;
+|       |         ^~~~~~
+|       |         off_t
+| ../git/ubifs-utils/libubifs/ubifs.h:1342:9: error: unknown type name 'loff_t'; did you mean 'off_t'?
+|  1342 |         loff_t d_size;
+|       |         ^~~~~~
+|       |         off_t
+| ../git/ubifs-utils/libubifs/ubifs.h:1899:44: error: unknown type name 'loff_t'; did you mean 'off_t'?
+|  1899 |                              int deletion, loff_t new_size);
+|       |                                            ^~~~~~
+|       |                                            off_t
+| make: *** [Makefile:4878: ubifs-utils/common/mkfs_ubifs-compr.o] Error 1
+
+Signed-off-by: Fabio Estevam <festevam@gmail.com>
+Reviewed-by: Zhihao Cheng <chengzhihao1@huawei.com>
+Reviewed-by: Khem Raj <raj.khem@gmail.com>
+Signed-off-by: David Oberhollenzer <david.oberhollenzer@sigma-star.at>
+---
+ ubifs-utils/libubifs/ubifs.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/ubifs-utils/libubifs/ubifs.h
++++ b/ubifs-utils/libubifs/ubifs.h
+@@ -11,6 +11,7 @@
+ #ifndef __UBIFS_H__
+ #define __UBIFS_H__
+ 
++#include <fcntl.h>
+ #include <string.h>
+ 
+ #include "linux_types.h"

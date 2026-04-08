@@ -1,0 +1,306 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Device Tree Source for Meraki devices
+ *
+ * Copyright (C) 2017 Chris Blake <chrisrblake93@gmail.com>
+ * Copyright (C) 2017 Christian Lamparter <chunkeey@googlemail.com>
+ * Copyright (C) 2025 Hal Martin <halmartin@googlemail.com>
+ *
+ * Based on Cisco Meraki DTS from GPL release r25-linux-3.14-20170427
+ *
+ * This file is licensed under the terms of the GNU General Public
+ * License version 2.  This program is licensed "as is" without
+ * any warranty of any kind, whether express or implied.
+ */
+
+#include "qcom-ipq4019.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/soc/qcom,tcsr.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	soc {
+		/* It is a 56-bit counter that supplies the count to the ARM arch
+		   timers and without upstream driver */
+		counter@4a1000 {
+			compatible = "qcom,qca-gcnt";
+			reg = <0x4a1000 0x4>;
+		};
+
+		ess_tcsr@1953000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1953000 0x1000>;
+		};
+
+		tcsr@1949000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1949000 0x100>;
+			qcom,wifi_glb_cfg = <TCSR_WIFI_GLB_CFG>;
+		};
+
+		tcsr@1957000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1957000 0x100>;
+			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			gpios = <&tlmm 18 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+};
+
+&watchdog {
+	status = "okay";
+};
+
+&prng {
+	status = "okay";
+};
+
+&crypto {
+	status = "okay";
+};
+
+&blsp_dma {
+	status = "okay";
+};
+
+&blsp1_uart1 {
+	pinctrl-0 = <&serial_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&cryptobam {
+	status = "okay";
+};
+
+&blsp1_i2c3 {
+	pinctrl-0 = <&i2c_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&nand {
+	pinctrl-0 = <&nand_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	nand@0 {
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "sbl1";
+				reg = <0x00000000 0x00100000>;
+				read-only;
+			};
+			partition@100000 {
+				label = "mibib";
+				reg = <0x00100000 0x00100000>;
+				read-only;
+			};
+			partition@200000 {
+				label = "bootconfig";
+				reg = <0x00200000 0x00100000>;
+				read-only;
+			};
+			partition@300000 {
+				label = "qsee";
+				reg = <0x00300000 0x00100000>;
+				read-only;
+			};
+			partition@400000 {
+				label = "qsee_alt";
+				reg = <0x00400000 0x00100000>;
+				read-only;
+			};
+			partition@500000 {
+				label = "cdt";
+				reg = <0x00500000 0x00080000>;
+				read-only;
+			};
+			partition@580000 {
+				label = "cdt_alt";
+				reg = <0x00580000 0x00080000>;
+				read-only;
+			};
+			partition@600000 {
+				label = "ddrparams";
+				reg = <0x00600000 0x00080000>;
+				read-only;
+			};
+			partition@700000 {
+				label = "u-boot";
+				reg = <0x00700000 0x00200000>;
+				read-only;
+			};
+			partition@900000 {
+				label = "u-boot-backup";
+				reg = <0x00900000 0x00200000>;
+				read-only;
+			};
+			partition@b00000 {
+				label = "ART";
+				reg = <0x00b00000 0x00080000>;
+				read-only;
+			};
+			partition@c00000 {
+				label = "ubi";
+				reg = <0x00c00000 0x07000000>;
+				/*
+				 * Do not try to allocate the remaining
+				 * 4 MiB to this ubi partition. It will
+				 * confuse the u-boot and it might not
+				 * find the kernel partition anymore.
+				 */
+				volumes {
+					ubi_art: ubi-volume-art {
+						volname = "ART";
+					};
+				};
+			};
+		};
+	};
+};
+
+&pcie0 {
+	status = "disabled";
+	perst-gpios = <&tlmm 38 GPIO_ACTIVE_LOW>;
+	wake-gpios = <&tlmm 50 GPIO_ACTIVE_LOW>;
+};
+
+&ubi_art {
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		precal_factory_1000: precal@1000 {
+			reg = <0x1000 0x2f20>;
+		};
+
+		precal_factory_5000: precal@5000 {
+			reg = <0x5000 0x2f20>;
+		};
+
+		cal_factory_9000: cal@9000 {
+			reg = <0x9000 0x844>;
+		};
+	};
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&tlmm {
+	mdio_pins: mdio_pinmux {
+		mux_1 {
+			pins = "gpio6";
+			function = "mdio";
+			bias-pull-up;
+		};
+		mux_2 {
+			pins = "gpio7";
+			function = "mdc";
+			bias-pull-up;
+		};
+	};
+
+	serial_0_pins: serial_pinmux {
+		mux {
+			pins = "gpio16", "gpio17";
+			function = "blsp_uart0";
+			bias-disable;
+		};
+	};
+
+	serial_1_pins: serial1_pinmux {
+		mux {
+			/* We use the i2c-0 pins for serial_1 */
+			pins = "gpio8", "gpio9";
+			function = "blsp_uart1";
+			bias-disable;
+		};
+	};
+
+	i2c_0_pins: i2c_0_pinmux {
+		function = "blsp_i2c0";
+		pins = "gpio20", "gpio21";
+		drive-strength = <16>;
+		bias-disable;
+	};
+
+	i2c_1_pins: i2c_1_pinmux {
+		function = "blsp_i2c1";
+		pins = "gpio34", "gpio35";
+		drive-strength = <16>;
+		bias-disable;
+	};
+
+	nand_pins: nand_pins {
+		/*
+		 * There are 18 pins. 15 pins are common between LCD and NAND.
+		 * The QPIC controller arbitrates between LCD and NAND. Of the
+		 * remaining 4, 2 are for NAND and 2 are for LCD exclusively.
+		 *
+		 * The meraki source hints that the bluetooth module claims
+		 * pin 52 as well. But sadly, there's no data whenever this
+		 * is a NAND or LCD exclusive pin or not.
+		 */
+
+		pullups {
+			pins = "gpio53", "gpio58", "gpio59";
+			function = "qpic";
+			bias-pull-up;
+		};
+
+		pulldowns {
+			pins = "gpio55", "gpio56", "gpio57",
+				"gpio60", "gpio62", "gpio63",
+				"gpio64", "gpio65", "gpio66",
+				"gpio67", "gpio68", "gpio69";
+			function = "qpic";
+			bias-pull-down;
+		};
+	};
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_pins>;
+	pinctrl-names = "default";
+};
+
+&switch {
+	status = "okay";
+};
+
+&gmac {
+	status = "okay";
+	nvmem-cells = <&mac_address 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&wifi0 {
+	status = "disabled";
+	nvmem-cells = <&mac_address 2>, <&precal_factory_1000>;
+	nvmem-cell-names = "mac-address", "pre-calibration";
+};
+
+&wifi1 {
+	status = "disabled";
+	nvmem-cells = <&mac_address 3>, <&precal_factory_5000>;
+	nvmem-cell-names = "mac-address", "pre-calibration";
+};

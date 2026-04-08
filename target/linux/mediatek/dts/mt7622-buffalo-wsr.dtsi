@@ -1,0 +1,230 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/dts-v1/;
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+
+#include "mt7622.dtsi"
+#include "mt6380.dtsi"
+
+/ {
+	aliases {
+		serial0 = &uart0;
+		led-boot = &power_green;
+		led-failsafe = &power_amber;
+		led-running = &power_green;
+		led-upgrade = &power_green;
+	};
+
+	chosen {
+		bootargs = "earlycon=uart8250,mmio32,0x11002000 console=ttyS0,115200n8 swiotlb=512";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led-0 {
+			gpios = <&pio 2 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_WLAN;
+		};
+
+		power_amber: led-1 {
+			gpios = <&pio 3 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_AMBER>;
+			function = LED_FUNCTION_POWER;
+		};
+
+		power_green: led-2 {
+			gpios = <&pio 4 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+		};
+
+		led-3 {
+			gpios = <&pio 15 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN;
+		};
+
+		led-4 {
+			gpios = <&pio 19 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WAN;
+		};
+
+		led-5 {
+			gpios = <&pio 20 GPIO_ACTIVE_HIGH>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_INDICATOR;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		key-reset {
+			label = "reset";
+			gpios = <&pio 0 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+
+		/* GPIO 1 and 16 are a tri-state switch button with
+		 * ROUTER / AP / WB.
+		 */
+		key-router {
+			label = "router";
+			gpios = <&pio 1 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_0>;
+			linux,input-type = <EV_SW>;
+		};
+
+		key-bridge {
+			label = "wb";
+			gpios = <&pio 16 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_1>;
+			linux,input-type = <EV_SW>;
+		};
+
+		/* GPIO 18 is a switch button with AUTO / MANUAL. */
+		key-manual {
+			label = "manual";
+			gpios = <&pio 18 GPIO_ACTIVE_LOW>;
+			linux,code = <BTN_2>;
+			linux,input-type = <EV_SW>;
+		};
+
+		key-wps {
+			label = "wps";
+			gpios = <&pio 102 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+	};
+};
+
+&cpu0 {
+	proc-supply = <&mt6380_vcpu_reg>;
+	sram-supply = <&mt6380_vm_reg>;
+};
+
+&cpu1 {
+	proc-supply = <&mt6380_vcpu_reg>;
+	sram-supply = <&mt6380_vm_reg>;
+};
+
+&pcie0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pcie0_pins>;
+	status = "okay";
+};
+
+&slot0 {
+	status = "okay";
+
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
+		reg = <0x0000 0 0 0 0>;
+		mediatek,mtd-eeprom = <&factory 0x5000>;
+		ieee80211-freq-limit = <5000000 6000000>;
+	};
+};
+
+&pio {
+	eth_pins: eth-pins {
+		mux {
+			function = "eth";
+			groups = "mdc_mdio", "rgmii_via_gmac2";
+		};
+	};
+
+	pcie0_pins: pcie0-pins {
+		mux {
+			function = "pcie";
+			groups = "pcie0_pad_perst",
+				 "pcie0_1_waken",
+				 "pcie0_1_clkreq";
+		};
+	};
+
+	pmic_bus_pins: pmic-bus-pins {
+		mux {
+			function = "pmic";
+			groups = "pmic_bus";
+		};
+	};
+
+	uart0_pins: uart0-pins {
+		mux {
+			function = "uart";
+			groups = "uart0_0_tx_rx" ;
+		};
+	};
+
+	watchdog_pins: watchdog-pins {
+		mux {
+			function = "watchdog";
+			groups = "watchdog";
+		};
+	};
+};
+
+&eth {
+	pinctrl-names = "default";
+	pinctrl-0 = <&eth_pins>;
+	status = "okay";
+
+	gmac0: mac@0 {
+		compatible = "mediatek,eth-mac";
+		reg = <0>;
+
+		phy-connection-type = "2500base-x";
+
+		fixed-link {
+			speed = <2500>;
+			full-duplex;
+			pause;
+		};
+	};
+
+	mdio: mdio-bus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+};
+
+&bch {
+	status = "okay";
+};
+
+&pwm {
+	status = "okay";
+};
+
+&pwrap {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pmic_bus_pins>;
+	status = "okay";
+};
+
+&uart0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_pins>;
+	status = "okay";
+};
+
+&watchdog {
+	pinctrl-names = "default";
+	pinctrl-0 = <&watchdog_pins>;
+	status = "okay";
+};
+
+&wmac {
+	status = "okay";
+
+	mediatek,mtd-eeprom = <&factory 0x0>;
+};
+
+&rtc {
+	status = "disabled";
+};

@@ -1,0 +1,30 @@
+From 40890db6a0447632697dfaa6933099b08787218d Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Wed, 4 Mar 2026 01:34:32 +0000
+Subject: [PATCH 4/8] mediatek: mt7622: add RNG node
+
+Add node representing the hardware random number generator
+found in the MediaTek MT7622 SoC family to the corresponding
+device tree.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
+ arch/arm/dts/mt7622.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/arch/arm/dts/mt7622.dtsi
++++ b/arch/arm/dts/mt7622.dtsi
+@@ -168,6 +168,13 @@
+ 		#clock-cells = <1>;
+ 	};
+ 
++	rng: rng@1020f000 {
++		compatible = "mediatek,mt7623-rng";
++		reg = <0x1020f000 0x1000>;
++		clocks = <&infracfg CLK_INFRA_TRNG>;
++		clock-names = "rng";
++	};
++
+ 	topckgen: topckgen@10210000 {
+ 		compatible = "mediatek,mt7622-topckgen";
+ 		reg = <0x10210000 0x1000>;

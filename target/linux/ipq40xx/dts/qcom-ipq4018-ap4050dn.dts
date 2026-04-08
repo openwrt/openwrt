@@ -1,0 +1,381 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qcom-ipq4019.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/soc/qcom,tcsr.h>
+
+/ {
+	model = "Huawei AP4050DN";
+	compatible = "huawei,ap4050dn", "qcom,ipq40xx";
+
+	chosen {
+		bootargs = "console=ttyMSM0,9600n8";
+	};
+
+	aliases {
+		ethernet0 = &gmac;
+		led-boot = &led_function_green;
+		led-failsafe = &led_function_red;
+		led-running = &led_function_green;
+		led-upgrade = &led_function_red;
+		label-mac-device = &gmac;
+	};
+
+	soc {
+		rng@22000 {
+			status = "okay";
+		};
+
+		counter@4a1000 {
+			compatible = "qcom,qca-gcnt";
+			reg = <0x4a1000 0x4>;
+		};
+
+		tcsr@1949000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1949000 0x100>;
+			qcom,wifi_glb_cfg = <TCSR_WIFI_GLB_CFG>;
+		};
+
+		ess_tcsr@1953000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1953000 0x1000>;
+			qcom,ess-interface-select = <TCSR_ESS_PSGMII>;
+		};
+
+		tcsr@1957000 {
+			compatible = "qcom,tcsr";
+			reg = <0x1957000 0x100>;
+			qcom,wifi_noc_memtype_m0_m2 = <TCSR_WIFI_NOC_MEMTYPE_M0_M2>;
+		};
+
+		crypto@8e3a000 {
+			status = "okay";
+		};
+
+		watchdog@b017000 {
+			status = "okay";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		restart {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&tlmm 63 GPIO_ACTIVE_LOW>;
+			debounce-interval = <60>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_function_green: led-status-green {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&tlmm 0 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_function_red: led-status-red {
+			function = LED_FUNCTION_STATUS;
+			color = <LED_COLOR_ID_RED>;
+			gpios = <&tlmm 4 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	watchdog {
+		compatible = "linux,wdt-gpio";
+		gpios = <&tlmm 3 GPIO_ACTIVE_LOW>;
+		hw_algo = "toggle";
+		hw_margin_ms = <2>;
+		always-running;
+	};
+
+	virtual_flash {
+		compatible = "mtd-concat";
+		devices = <&fwconcat0 &fwconcat1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "firmware";
+				reg = <0x0 0x3200000>;
+				compatible = "denx,fit";
+			};
+		};
+	};
+};
+
+&tlmm {
+	serial_pins: serial_pinmux {
+		mux {
+			pins = "gpio60", "gpio61";
+			function = "blsp_uart0";
+			bias-disable;
+		};
+	};
+
+	spi_0_pins: spi_0_pinmux {
+		pin {
+			function = "blsp_spi0";
+			pins = "gpio55", "gpio56", "gpio57";
+			drive-strength = <12>;
+			bias-disable;
+		};
+		pin_cs {
+			function = "gpio";
+			pins = "gpio54";
+			drive-strength = <2>;
+			bias-disable;
+			output-high;
+		};
+	};
+};
+
+&blsp_dma {
+	status = "okay";
+};
+
+&blsp1_spi1 {
+	pinctrl-0 = <&spi_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+	cs-gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>;
+
+	flash@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <24000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition-flash-all@0 {
+				label = "flash-all";
+				reg = <0x00000000 0x4000000>;
+				read-only;
+			};
+
+			partition@0 {
+				label = "0:SBL1";
+				reg = <0x00 0x40000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "0:MIBIB";
+				reg = <0x40000 0x40000>;
+				read-only;
+			};
+
+			partition@80000 {
+				label = "0:QSEE";
+				reg = <0x80000 0x80000>;
+				read-only;
+			};
+
+			partition@100000 {
+				label = "0:CDT";
+				reg = <0x100000 0x40000>;
+				read-only;
+			};
+
+			partition@140000 {
+				label = "0:DDRPARAMS";
+				reg = <0x140000 0x40000>;
+				read-only;
+			};
+
+			partition@180000 {
+				label = "0:APPSBL";
+				reg = <0x180000 0x100000>;
+				read-only;
+			};
+
+			partition@280000 {
+				label = "0:ART";
+				reg = <0x280000 0x40000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					precal_art_1000: precal@1000 {
+						reg = <0x1000 0x2f20>;
+					};
+
+					precal_art_5000: precal@5000 {
+						reg = <0x5000 0x2f20>;
+					};
+
+					precal_art_9000: precal@9000 {
+						reg = <0x9000 0x2f20>;
+					};
+				};
+			};
+
+			partition@2c0000 {
+				label = "0:APPSBLENV";
+				reg = <0x2c0000 0x40000>;
+				read-only;
+			};
+
+			partition@300000 {
+				label = "ResultA";
+				reg = <0x300000 0x80000>;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_resulta_10190: macaddr@10190 {
+						reg = <0x10190 0x6>;
+					};
+				};
+			};
+
+			partition@380000 {
+				label = "configA";
+				reg = <0x380000 0x280000>;
+				read-only;
+			};
+
+			partition@600000 {
+				label = "bootimageA";
+				reg = <0x600000 0x100000>;
+				read-only;
+			};
+
+			// In the vendor layout, the partition "SysImageA" lies here
+			// which encompassed the space of "uboot" and "fwconcat0"
+			partition@700000 {
+				label = "uboot";
+				reg = <0x700000 0x80000>;
+			};
+
+			fwconcat0: partition@780000 {
+				label = "fwconcat0";
+				reg = <0x780000 0x1880000>;
+			};
+
+			partition@2000000 {
+				label = "1:SBL1";
+				reg = <0x2000000 0x40000>;
+				read-only;
+			};
+
+			partition@2040000 {
+				label = "1:MIBIB";
+				reg = <0x2040000 0x40000>;
+				read-only;
+			};
+
+			partition@2080000 {
+				label = "1:QSEE";
+				reg = <0x2080000 0x80000>;
+				read-only;
+			};
+
+			partition@2100000 {
+				label = "1:CDT";
+				reg = <0x2100000 0x40000>;
+				read-only;
+			};
+
+			partition@2140000 {
+				label = "1:DDRPARAMS";
+				reg = <0x2140000 0x40000>;
+				read-only;
+			};
+
+			partition@2180000 {
+				label = "1:APPSBL";
+				reg = <0x2180000 0x100000>;
+				read-only;
+			};
+
+			partition@2280000 {
+				label = "Reservel";
+				reg = <0x2280000 0x80000>;
+				read-only;
+			};
+
+			partition@2300000 {
+				label = "ResultB";
+				reg = <0x2300000 0x80000>;
+			};
+
+			partition@2380000 {
+				label = "configB";
+				reg = <0x2380000 0x280000>;
+				read-only;
+			};
+
+			partition@2600000 {
+				label = "bootimageB";
+				reg = <0x2600000 0x100000>;
+				read-only;
+			};
+
+			// In the vendor layout, the partition "SysImageB" lies here
+			fwconcat1: partition@2700000 {
+				label = "fwconcat1";
+				reg = <0x2700000 0x1900000>;
+			};
+		};
+	};
+};
+
+&blsp1_uart1 {
+	pinctrl-0 = <&serial_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&wifi0 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "huawei-ap4050dn";
+};
+
+&wifi1 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "huawei-ap4050dn";
+};
+
+&cryptobam {
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+};
+
+&gmac {
+	status = "okay";
+
+	nvmem-cells = <&macaddr_resulta_10190 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&switch {
+	status = "okay";
+};
+
+&swport4 {
+	status = "okay";
+	label = "lan";
+};

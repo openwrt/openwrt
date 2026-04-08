@@ -1,0 +1,43 @@
+From e6066edc9413191479b05596ba06c40908f44e22 Mon Sep 17 00:00:00 2001
+From: Nicolas Frattaroli <nicolas.frattaroli@collabora.com>
+Date: Mon, 30 Jun 2025 12:19:27 +0200
+Subject: [PATCH] arm64: dts: rockchip: add HDMI audio on ROCK 4D
+
+Much like the Sige5, the ROCK 4D also has an HDMI port, so is capable of
+providing HDMI audio output as well.
+
+Enable the SoC's hdmi_sound card, and also enable the SoC audio
+controller (sai6) that feeds into it.
+
+Signed-off-by: Nicolas Frattaroli <nicolas.frattaroli@collabora.com>
+Tested-by: Cristian Ciocaltea <cristian.ciocaltea@collabora.com>
+Link: https://lore.kernel.org/r/20250630-rock4d-audio-v1-4-0b3c8e8fda9c@collabora.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3576-rock-4d.dts | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3576-rock-4d.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3576-rock-4d.dts
+@@ -304,6 +304,10 @@
+ 	};
+ };
+ 
++&hdmi_sound {
++	status = "okay";
++};
++
+ &hdptxphy {
+ 	status = "okay";
+ };
+@@ -752,6 +756,10 @@
+ 	};
+ };
+ 
++&sai6 {
++	status = "okay";
++};
++
+ &sdmmc {
+ 	bus-width = <4>;
+ 	cap-mmc-highspeed;

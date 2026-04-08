@@ -1,0 +1,21 @@
+#!/bin/sh
+
+[ -e /lib/firmware/$FIRMWARE ] && exit 0
+
+. /lib/functions/caldata.sh
+
+board=$(board_name)
+
+case "$FIRMWARE" in
+"mediatek/mt7915_eeprom_dbdc.bin")
+	case "$board" in
+	netis,n6)
+		EEPROM=/lib/firmware/$FIRMWARE
+		head -c $((0xe00)) /dev/mtd2 > $EEPROM
+		printf "\x92" | \
+			dd of=$EEPROM seek=$((0x190)) bs=1 conv=notrunc \
+			2>/dev/null
+		;;
+	esac
+	;;
+esac

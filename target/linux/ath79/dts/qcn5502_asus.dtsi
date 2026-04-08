@@ -1,0 +1,116 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "qca956x.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	aliases {
+		label-mac-device = &eth0;
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	pll-data = <0x03000101 0x00000101 0x00001919>;
+
+	phy-mode = "sgmii";
+	phy-handle = <&phy0>;
+
+	nvmem-cells = <&macaddr_factory_1002>;
+	nvmem-cell-names = "mac-address";
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy0: ethernet-phy@0 {
+		reg = <0>;
+		phy-mode = "sgmii";
+		qca,mib-poll-interval = <500>;
+
+		qca,ar8327-initvals = <
+			0x04 0x80080080 /* PORT0 PAD MODE CTRL */
+			0x08 0x00000000 /* PORT5 PAD MODE CTRL */
+			0x0c 0x00000000 /* PORT6 PAD MODE CTRL */
+			0x10 0x00000080 /* POWER_ON_STRAP */
+			0x7c 0x0000007e /* PORT0_STATUS */
+			0x94 0x00000200 /* PORT6_STATUS */
+			>;
+	};
+};
+
+&pcie {
+	status = "okay";
+
+	wifi@0,0 {
+		compatible = "qcom,ath10k";
+		reg = <0 0 0 0 0>;
+
+		nvmem-cells = <&precal_factory_5000>;
+		nvmem-cell-names = "pre-calibration";
+	};
+};
+
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+		m25p,fast-read;
+
+		mtdparts: partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "Bootloader";
+				reg = <0x000000 0x040000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "nvram";
+				reg = <0x040000 0x010000>;
+				read-only;
+			};
+
+			partition@50000 {
+				label = "Factory";
+				reg = <0x050000 0x010000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					cal_factory_1000: cal@1000 {
+						reg = <0x1000 0x440>;
+					};
+
+					macaddr_factory_1002: macaddr@1002 {
+						reg = <0x1002 0x6>;
+					};
+
+					precal_factory_5000: precal@5000 {
+						reg = <0x5000 0x2f20>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&wmac {
+	/* Does not work due to lack of QCN5502 support in ath9k. */
+	status = "disabled";
+
+	nvmem-cells = <&cal_factory_1000>;
+	nvmem-cell-names = "calibration";
+};

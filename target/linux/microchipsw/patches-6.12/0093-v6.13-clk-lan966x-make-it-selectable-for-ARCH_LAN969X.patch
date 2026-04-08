@@ -1,0 +1,26 @@
+From e7b012cb4db7253d186fd485ab07c7346c645dab Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Fri, 8 Nov 2024 12:22:34 +0100
+Subject: [PATCH] clk: lan966x: make it selectable for ARCH_LAN969X
+
+LAN969x uses the same LAN966x clock driver so make it selectable for
+ARCH_LAN969X.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+Link: https://lore.kernel.org/r/20241108112355.20251-1-robert.marko@sartura.hr
+Signed-off-by: Stephen Boyd <sboyd@kernel.org>
+---
+ drivers/clk/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/clk/Kconfig
++++ b/drivers/clk/Kconfig
+@@ -259,7 +259,7 @@ config COMMON_CLK_LAN966X
+ 	tristate "Generic Clock Controller driver for LAN966X SoC"
+ 	depends on HAS_IOMEM
+ 	depends on OF
+-	depends on SOC_LAN966 || COMPILE_TEST
++	depends on SOC_LAN966 || ARCH_LAN969X || COMPILE_TEST
+ 	help
+ 	  This driver provides support for Generic Clock Controller(GCK) on
+ 	  LAN966X SoC. GCK generates and supplies clock to various peripherals

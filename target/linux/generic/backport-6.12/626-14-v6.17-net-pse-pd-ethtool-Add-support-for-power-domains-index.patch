@@ -1,0 +1,78 @@
+# ADAPTED FOR OPENWRT 6.12.67 - Documentation changes removed
+# Original commit: 1176978ed851
+From 1176978ed851952652ddea3685e2f71a0e5d61ff Mon Sep 17 00:00:00 2001
+From: "Kory Maincent (Dent Project)" <kory.maincent@bootlin.com>
+Date: Tue, 17 Jun 2025 14:12:04 +0200
+Subject: [PATCH] net: ethtool: Add support for new power domains index
+ description
+
+Report the index of the newly introduced PSE power domain to the user,
+enabling improved management of the power budget for PSE devices.
+
+Signed-off-by: Kory Maincent (Dent Project) <kory.maincent@bootlin.com>
+Reviewed-by: Oleksij Rempel <o.rempel@pengutronix.de>
+Link: https://patch.msgid.link/20250617-feature_poe_port_prio-v14-5-78a1a645e2ee@bootlin.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
+---
+ Documentation/netlink/specs/ethtool.yaml       | 5 +++++
+ Documentation/networking/ethtool-netlink.rst   | 4 ++++
+ drivers/net/pse-pd/pse_core.c                  | 3 +++
+ include/linux/pse-pd/pse.h                     | 2 ++
+ include/uapi/linux/ethtool_netlink_generated.h | 1 +
+ net/ethtool/pse-pd.c                           | 7 +++++++
+ 6 files changed, 22 insertions(+)
+
+--- a/drivers/net/pse-pd/pse_core.c
++++ b/drivers/net/pse-pd/pse_core.c
+@@ -1098,6 +1098,9 @@ int pse_ethtool_get_status(struct pse_co
+ 	pcdev = psec->pcdev;
+ 	ops = pcdev->ops;
+ 	mutex_lock(&pcdev->lock);
++	if (pcdev->pi[psec->id].pw_d)
++		status->pw_d_id = pcdev->pi[psec->id].pw_d->id;
++
+ 	ret = ops->pi_get_admin_state(pcdev, psec->id, &admin_state);
+ 	if (ret)
+ 		goto out;
+--- a/include/linux/pse-pd/pse.h
++++ b/include/linux/pse-pd/pse.h
+@@ -114,6 +114,7 @@ struct pse_pw_limit_ranges {
+ /**
+  * struct ethtool_pse_control_status - PSE control/channel status.
+  *
++ * @pw_d_id: PSE power domain index.
+  * @podl_admin_state: operational state of the PoDL PSE
+  *	functions. IEEE 802.3-2018 30.15.1.1.2 aPoDLPSEAdminState
+  * @podl_pw_status: power detection status of the PoDL PSE.
+@@ -135,6 +136,7 @@ struct pse_pw_limit_ranges {
+  *	ranges
+  */
+ struct ethtool_pse_control_status {
++	u32 pw_d_id;
+ 	enum ethtool_podl_pse_admin_state podl_admin_state;
+ 	enum ethtool_podl_pse_pw_d_status podl_pw_status;
+ 	enum ethtool_c33_pse_admin_state c33_admin_state;
+--- a/net/ethtool/pse-pd.c
++++ b/net/ethtool/pse-pd.c
+@@ -83,6 +83,8 @@ static int pse_reply_size(const struct e
+ 	const struct ethtool_pse_control_status *st = &data->status;
+ 	int len = 0;
+ 
++	if (st->pw_d_id)
++		len += nla_total_size(sizeof(u32)); /* _PSE_PW_D_ID */
+ 	if (st->podl_admin_state > 0)
+ 		len += nla_total_size(sizeof(u32)); /* _PODL_PSE_ADMIN_STATE */
+ 	if (st->podl_pw_status > 0)
+@@ -148,6 +150,11 @@ static int pse_fill_reply(struct sk_buff
+ 	const struct pse_reply_data *data = PSE_REPDATA(reply_base);
+ 	const struct ethtool_pse_control_status *st = &data->status;
+ 
++	if (st->pw_d_id &&
++	    nla_put_u32(skb, ETHTOOL_A_PSE_PW_D_ID,
++			st->pw_d_id))
++		return -EMSGSIZE;
++
+ 	if (st->podl_admin_state > 0 &&
+ 	    nla_put_u32(skb, ETHTOOL_A_PODL_PSE_ADMIN_STATE,
+ 			st->podl_admin_state))

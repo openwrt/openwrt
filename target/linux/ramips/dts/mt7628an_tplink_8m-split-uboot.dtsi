@@ -1,0 +1,115 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+#include "mt7628an.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	aliases {
+		label-mac-device = &ethernet;
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "factory-uboot";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "boot";
+				reg = <0x30000 0x20000>;
+				read-only;
+			};
+
+			partition@50000 {
+				compatible = "tplink,firmware";
+				label = "firmware";
+				reg = <0x50000 0x770000>;
+			};
+
+			partition@7c0000 {
+				label = "config";
+				reg = <0x7c0000 0x10000>;
+				read-only;
+			};
+
+			partition@7d0000 {
+				label = "rom";
+				reg = <0x7d0000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_rom_f100: macaddr@f100 {
+						compatible = "mac-base";
+						reg = <0xf100 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition@7e0000 {
+				label = "romfile";
+				reg = <0x7e0000 0x10000>;
+			};
+
+			partition@7f0000 {
+				label = "radio";
+				reg = <0x7f0000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					eeprom_radio_0: eeprom@0 {
+						reg = <0x0 0x400>;
+					};
+
+					eeprom_radio_8000: eeprom@8000 {
+						reg = <0x8000 0x200>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&wmac {
+	status = "okay";
+
+	nvmem-cells = <&eeprom_radio_0>, <&macaddr_rom_f100 0>;
+	nvmem-cell-names = "eeprom", "mac-address";
+};
+
+&ethernet {
+	nvmem-cells = <&macaddr_rom_f100 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&esw {
+	mediatek,portmap = <0x3e>;
+};

@@ -1,0 +1,64 @@
+From f47c5f2e21d0ccedb271b406e35b6963b23a64c4 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Wed, 30 Apr 2025 13:11:01 +0200
+Subject: [PATCH] clean-temp: Fix link error (regression yesterday).
+
+* lib/clean-temp.c: Include hashkey-string.h.
+(create_temp_dir): Use hashkey_string_* functions instead of
+clean_temp_string_*.
+* lib/clean-temp-private.h (clean_temp_string_equals,
+clean_temp_string_hash): Remove declarations.
+* modules/clean-temp (Depends-on): Add hashkey-string.
+---
+ ChangeLog                | 10 ++++++++++
+ lib/clean-temp-private.h |  3 ---
+ lib/clean-temp.c         |  5 +++--
+ modules/clean-temp       |  1 +
+ 4 files changed, 14 insertions(+), 5 deletions(-)
+
+--- a/lib/clean-temp-private.h
++++ b/lib/clean-temp-private.h
+@@ -68,9 +68,6 @@ struct closeable_fd
+ #define descriptors clean_temp_descriptors
+ extern gl_list_t /* <closeable_fd *> */ volatile descriptors;
+ 
+-extern bool clean_temp_string_equals (const void *x1, const void *x2);
+-extern size_t clean_temp_string_hash (const void *x);
+-
+ extern _GL_ASYNC_SAFE int clean_temp_asyncsafe_close (struct closeable_fd *element);
+ extern void clean_temp_init_asyncsafe_close (void);
+ 
+--- a/lib/clean-temp.c
++++ b/lib/clean-temp.c
+@@ -45,6 +45,7 @@
+ #include "xmalloca.h"
+ #include "glthread/lock.h"
+ #include "thread-optim.h"
++#include "hashkey-string.h"
+ #include "gl_xlist.h"
+ #include "gl_linkedhash_list.h"
+ #include "gl_linked_list.h"
+@@ -221,11 +222,11 @@ create_temp_dir (const char *prefix, con
+   tmpdir->cleanup_verbose = cleanup_verbose;
+   tmpdir->subdirs =
+     gl_list_create_empty (GL_LINKEDHASH_LIST,
+-                          clean_temp_string_equals, clean_temp_string_hash,
++                          hashkey_string_equals, hashkey_string_hash,
+                           NULL, false);
+   tmpdir->files =
+     gl_list_create_empty (GL_LINKEDHASH_LIST,
+-                          clean_temp_string_equals, clean_temp_string_hash,
++                          hashkey_string_equals, hashkey_string_hash,
+                           NULL, false);
+ 
+   /* Create the temporary directory.  */
+--- a/modules/clean-temp
++++ b/modules/clean-temp
+@@ -24,6 +24,7 @@ rmdir
+ xalloc
+ xalloc-die
+ xmalloca
++hashkey-string
+ linkedhash-list
+ linked-list
+ xlist

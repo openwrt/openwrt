@@ -1,0 +1,57 @@
+From 0c25ae62f5dc6a438b563536b5fe7fb6da3612b8 Mon Sep 17 00:00:00 2001
+From: Luo Jie <quic_luoj@quicinc.com>
+Date: Tue, 10 Jun 2025 18:35:18 +0800
+Subject: [PATCH] dt-bindings: clock: qcom: Add CMN PLL support for IPQ5424 SoC
+
+The CMN PLL block in the IPQ5424 SoC takes 48 MHZ as the reference
+input clock. The output clocks are the same as IPQ9574 SoC, except
+for the clock rate of output clocks to PPE and NSS.
+
+Also, add the new header file to export the CMN PLL output clock
+specifiers for IPQ5424 SoC.
+
+Acked-by: Rob Herring (Arm) <robh@kernel.org>
+Signed-off-by: Luo Jie <quic_luoj@quicinc.com>
+Link: https://lore.kernel.org/r/20250610-qcom_ipq5424_cmnpll-v3-1-ceada8165645@quicinc.com
+Signed-off-by: Bjorn Andersson <andersson@kernel.org>
+---
+ .../bindings/clock/qcom,ipq9574-cmn-pll.yaml  |  1 +
+ .../dt-bindings/clock/qcom,ipq5424-cmn-pll.h  | 22 +++++++++++++++++++
+ 2 files changed, 23 insertions(+)
+ create mode 100644 include/dt-bindings/clock/qcom,ipq5424-cmn-pll.h
+
+--- a/Documentation/devicetree/bindings/clock/qcom,ipq9574-cmn-pll.yaml
++++ b/Documentation/devicetree/bindings/clock/qcom,ipq9574-cmn-pll.yaml
+@@ -24,6 +24,7 @@ description:
+ properties:
+   compatible:
+     enum:
++      - qcom,ipq5424-cmn-pll
+       - qcom,ipq9574-cmn-pll
+ 
+   reg:
+--- /dev/null
++++ b/include/dt-bindings/clock/qcom,ipq5424-cmn-pll.h
+@@ -0,0 +1,22 @@
++/* SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause) */
++/*
++ * Copyright (c) 2025 Qualcomm Innovation Center, Inc. All rights reserved.
++ */
++
++#ifndef _DT_BINDINGS_CLK_QCOM_IPQ5424_CMN_PLL_H
++#define _DT_BINDINGS_CLK_QCOM_IPQ5424_CMN_PLL_H
++
++/* CMN PLL core clock. */
++#define IPQ5424_CMN_PLL_CLK			0
++
++/* The output clocks from CMN PLL of IPQ5424. */
++#define IPQ5424_XO_24MHZ_CLK			1
++#define IPQ5424_SLEEP_32KHZ_CLK			2
++#define IPQ5424_PCS_31P25MHZ_CLK		3
++#define IPQ5424_NSS_300MHZ_CLK			4
++#define IPQ5424_PPE_375MHZ_CLK			5
++#define IPQ5424_ETH0_50MHZ_CLK			6
++#define IPQ5424_ETH1_50MHZ_CLK			7
++#define IPQ5424_ETH2_50MHZ_CLK			8
++#define IPQ5424_ETH_25MHZ_CLK			9
++#endif

@@ -1,0 +1,69 @@
+From 0da6f7a0ab5322eb6d091a9c89d799adfeae078d Mon Sep 17 00:00:00 2001
+From: Aleksander Jan Bajkowski <olek2@wp.pl>
+Date: Sun, 7 Sep 2025 13:15:09 +0200
+Subject: [PATCH] arm64: dts: mediatek: add thermal sensor support on mt7981
+
+The temperature sensor in the MT7981 is same as in the MT7986.
+
+Signed-off-by: Aleksander Jan Bajkowski <olek2@wp.pl>
+Reviewed-by: AngeloGioacchino Del Regno <angelogioacchino.delregno@collabora.com>
+Link: https://lore.kernel.org/r/20250907111742.23195-2-olek2@wp.pl
+Signed-off-by: Matthias Brugger <matthias.bgg@gmail.com>
+---
+ arch/arm64/boot/dts/mediatek/mt7981b.dtsi | 31 ++++++++++++++++++++++-
+ 1 file changed, 30 insertions(+), 1 deletion(-)
+
+--- a/arch/arm64/boot/dts/mediatek/mt7981b.dtsi
++++ b/arch/arm64/boot/dts/mediatek/mt7981b.dtsi
+@@ -76,7 +76,7 @@
+ 			#reset-cells = <1>;
+ 		};
+ 
+-		clock-controller@1001e000 {
++		apmixedsys: clock-controller@1001e000 {
+ 			compatible = "mediatek,mt7981-apmixedsys";
+ 			reg = <0 0x1001e000 0 0x1000>;
+ 			#clock-cells = <1>;
+@@ -184,6 +184,31 @@
+ 			status = "disabled";
+ 		};
+ 
++		thermal@1100c800 {
++			compatible = "mediatek,mt7981-thermal",
++				     "mediatek,mt7986-thermal";
++			reg = <0 0x1100c800 0 0x800>;
++			interrupts = <GIC_SPI 138 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&infracfg CLK_INFRA_THERM_CK>,
++				 <&infracfg CLK_INFRA_ADC_26M_CK>;
++			clock-names = "therm", "auxadc";
++			nvmem-cells = <&thermal_calibration>;
++			nvmem-cell-names = "calibration-data";
++			#thermal-sensor-cells = <1>;
++			mediatek,auxadc = <&auxadc>;
++			mediatek,apmixedsys = <&apmixedsys>;
++		};
++
++		auxadc: adc@1100d000 {
++			compatible = "mediatek,mt7981-auxadc",
++				     "mediatek,mt7986-auxadc";
++			reg = <0 0x1100d000 0 0x1000>;
++			clocks = <&infracfg CLK_INFRA_ADC_26M_CK>;
++			clock-names = "main";
++			#io-channel-cells = <1>;
++			status = "disabled";
++		};
++
+ 		pio: pinctrl@11d00000 {
+ 			compatible = "mediatek,mt7981-pinctrl";
+ 			reg = <0 0x11d00000 0 0x1000>,
+@@ -211,6 +236,10 @@
+ 			reg = <0 0x11f20000 0 0x1000>;
+ 			#address-cells = <1>;
+ 			#size-cells = <1>;
++
++			thermal_calibration: thermal-calib@274 {
++				reg = <0x274 0xc>;
++			};
+ 		};
+ 
+ 		clock-controller@15000000 {

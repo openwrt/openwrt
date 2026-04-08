@@ -1,0 +1,22 @@
+. /lib/functions.sh
+
+# don't modify FW data when booting with initramfs image
+fstype="$(/bin/mount | awk '($3 ~ /^\/$/) && ($5 !~ /rootfs/) { print $5 }')"
+[ "$fstype" = "tmpfs" ] && \
+	exit 0
+
+fixup_trx_crc() {
+	local trx_magic="$1"
+	local kernel_size=$(sed -n 's/mtd[0-9]*: \([0-9a-f]*\).*"\(kernel\|linux\)".*/\1/p' /proc/mtd)
+
+	mtd -M $trx_magic ${kernel_size:+-c 0x$kernel_size} fixtrx firmware
+}
+
+case "$(board_name)" in
+buffalo,wsr-2533dhpl2)
+	fixup_trx_crc 0x50484c32
+	;;
+buffalo,wsr-2533dhpls)
+	fixup_trx_crc 0x44484C53
+	;;
+esac

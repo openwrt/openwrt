@@ -1,0 +1,26 @@
+--- a/arch/arm64/boot/dts/rockchip/rk3576-rock-4d.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3576-rock-4d.dts
+@@ -18,6 +18,10 @@
+ 	compatible = "radxa,rock-4d", "rockchip,rk3576";
+ 
+ 	aliases {
++		led-boot = &power_led;
++		led-failsafe = &power_led;
++		led-running = &power_led;
++		led-upgrade = &power_led;
+ 		ethernet0 = &gmac0;
+ 		mmc0 = &sdmmc;
+ 	};
+@@ -50,11 +54,10 @@
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&led_rgb_g &led_rgb_r>;
+ 
+-		power-led {
++		power_led: power-led {
+ 			color = <LED_COLOR_ID_GREEN>;
+ 			function = LED_FUNCTION_STATUS;
+ 			gpios = <&gpio0 RK_PB4 GPIO_ACTIVE_HIGH>;
+-			linux,default-trigger = "default-on";
+ 		};
+ 
+ 		user-led {

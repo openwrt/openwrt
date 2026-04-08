@@ -1,0 +1,91 @@
+// SPDX-License-Identifier: (GPL-2.0 OR MIT)
+/*
+ * Copyright (C) 2021 MediaTek Inc.
+ * Author: Sam.Shih <sam.shih@mediatek.com>
+ */
+
+/dts-v1/;
+#include "mt7986a-zyxel-ex5601-t0-common.dtsi"
+
+/ {
+	model = "Zyxel EX5601-T0 ubootmod";
+	compatible = "zyxel,ex5601-t0-ubootmod", "mediatek,mt7986a";
+
+	chosen {
+		bootargs-append = " root=/dev/fit0 rootwait";
+		rootdisk = <&ubi_rootdisk>;
+	};
+};
+
+&nand_partitions {
+	partition@0 {
+		label = "bl2";
+		reg = <0x0 0x100000>;
+		read-only;
+	};
+
+	partition@100000 {
+		label = "u-boot-env";
+		reg = <0x100000 0x80000>;
+		read-only;
+	};
+
+	factory: partition@180000 {
+		label = "factory";
+		reg = <0x180000 0x200000>;
+		read-only;
+
+		nvmem-layout {
+			compatible = "fixed-layout";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			eeprom_factory: eeprom@0 {
+				#size-cells = <1>;
+				reg = <0x0 0x1000>;
+			};
+
+			macaddr_factory_4: macaddr@4 {
+				compatible = "mac-base";
+				reg = <0x4 0x6>;
+				#nvmem-cell-cells = <1>;
+			};
+
+			macaddr_factory_24: macaddr@24 {
+				compatible = "mac-base";
+				reg = <0x24 0x6>;
+				#nvmem-cell-cells = <1>;
+			};
+
+			macaddr_factory_2a: macaddr@2a {
+				compatible = "mac-base";
+				reg = <0x2a 0x6>;
+				#nvmem-cell-cells = <1>;
+			};
+		};
+	};
+
+	partition@380000 {
+		label = "fip";
+		reg = <0x380000 0x1c0000>;
+		read-only;
+	};
+
+	partition@540000 {
+		label = "zloader";
+		reg = <0x540000 0x40000>;
+		read-only;
+	};
+
+	partition@580000 {
+		label = "ubi";
+		reg = <0x580000 0x1da80000>;
+		compatible = "linux,ubi";
+
+		volumes {
+			ubi_rootdisk: ubi-volume-fit {
+				volname = "fit";
+			};
+		};
+	};
+};

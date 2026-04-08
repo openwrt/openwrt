@@ -1,0 +1,72 @@
+From dc4024894c9deefc56f8dd6b2d2822b277f268a5 Mon Sep 17 00:00:00 2001
+From: Christian Marangi <ansuelsmth@gmail.com>
+Date: Sun, 30 Jul 2023 11:18:48 +0200
+Subject: [PATCH 2/5] treewide: fix always TRUE condition warning
+
+Fix always TRUE condition warning an drop redundant check.
+
+Signed-off-by: Christian Marangi <ansuelsmth@gmail.com>
+---
+ core/rtw_sta_mgt.c            |  3 +--
+ hal/OUTSRC/phydm_debug.c      | 16 ++++++----------
+ os_dep/linux/ioctl_cfg80211.c |  3 +--
+ 3 files changed, 8 insertions(+), 14 deletions(-)
+
+--- a/core/rtw_sta_mgt.c
++++ b/core/rtw_sta_mgt.c
+@@ -207,8 +207,7 @@ void rtw_mfree_stainfo(struct sta_info *
+ {
+ 	_func_enter_;
+ 
+-	if(&psta->lock != NULL)
+-		_rtw_spinlock_free(&psta->lock);
++	_rtw_spinlock_free(&psta->lock);
+ 
+ 	_rtw_free_sta_xmit_priv_lock(&psta->sta_xmitpriv);
+ 	_rtw_free_sta_recv_priv_lock(&psta->sta_recvpriv);
+--- a/hal/OUTSRC/phydm_debug.c
++++ b/hal/OUTSRC/phydm_debug.c
+@@ -870,12 +870,10 @@ phydm_cmd_parser(
+ 	case PHYDM_RA:
+ 
+ 		for(i=0; i<5; i++) {
+-			if(input[i+1]) {
+-				PHYDM_SSCANF(input[i+1], DCMD_DECIMAL, &var1[i]);
++			PHYDM_SSCANF(input[i+1], DCMD_DECIMAL, &var1[i]);
+ 
+-				PHYDM_SNPRINTF((output+used, out_len-used, "new SET, RA_var[%d]= (( %d ))\n", i , var1[i]));
+-				input_idx++;
+-			}
++			PHYDM_SNPRINTF((output+used, out_len-used, "new SET, RA_var[%d]= (( %d ))\n", i , var1[i]));
++			input_idx++;
+ 		}
+ 
+ 		if(input_idx>=1) {
+@@ -891,12 +889,10 @@ phydm_cmd_parser(
+ 	case PHYDM_PATHDIV:
+ 
+ 		for(i=0; i<5; i++) {
+-			if(input[i+1]) {
+-				PHYDM_SSCANF(input[i+1], DCMD_HEX, &var1[i]);
++			PHYDM_SSCANF(input[i+1], DCMD_HEX, &var1[i]);
+ 
+-				PHYDM_SNPRINTF((output+used, out_len-used, "new SET, PATHDIV_var[%d]= (( %d ))\n", i , var1[i]));
+-				input_idx++;
+-			}
++			PHYDM_SNPRINTF((output+used, out_len-used, "new SET, PATHDIV_var[%d]= (( %d ))\n", i , var1[i]));
++			input_idx++;
+ 		}
+ 
+ 		if(input_idx>=1) {
+--- a/os_dep/linux/ioctl_cfg80211.c
++++ b/os_dep/linux/ioctl_cfg80211.c
+@@ -2185,8 +2185,7 @@ static int cfg80211_rtw_scan(struct wiph
+ 
+ #ifdef CONFIG_P2P
+ 	if( pwdinfo->driver_interface == DRIVER_CFG80211 ) {
+-		if(ssids->ssid != NULL
+-		   && _rtw_memcmp(ssids->ssid, "DIRECT-", 7)
++		if(_rtw_memcmp(ssids->ssid, "DIRECT-", 7)
+ 		   && rtw_get_p2p_ie((u8 *)request->ie, request->ie_len, NULL, NULL)
+ 		  ) {
+ 			if(rtw_p2p_chk_state(pwdinfo, P2P_STATE_NONE)) {

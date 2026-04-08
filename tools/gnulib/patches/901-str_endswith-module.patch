@@ -1,0 +1,119 @@
+From d89ac9373d9748f7601babf52c9129fcbcf0c907 Mon Sep 17 00:00:00 2001
+From: Bruno Haible <bruno@clisp.org>
+Date: Fri, 3 Jan 2025 09:54:14 +0100
+Subject: [PATCH] str_endswith: New module.
+
+* lib/string.in.h (str_endswith): New declaration.
+* lib/str_endswith.c: New file.
+* m4/string_h.m4 (gl_STRING_H_REQUIRE_DEFAULTS): Initialize
+GNULIB_STR_ENDSWITH.
+* modules/string-h (Makefile.am): Substitute GNULIB_STR_ENDSWITH.
+* modules/str_endswith: New file.
+---
+ ChangeLog            | 10 ++++++++++
+ lib/str_endswith.c   | 31 +++++++++++++++++++++++++++++++
+ lib/string.in.h      |  8 ++++++++
+ m4/string_h.m4       |  3 ++-
+ modules/str_endswith | 23 +++++++++++++++++++++++
+ modules/string-h     |  1 +
+ 6 files changed, 75 insertions(+), 1 deletion(-)
+ create mode 100644 lib/str_endswith.c
+ create mode 100644 modules/str_endswith
+
+--- /dev/null
++++ b/lib/str_endswith.c
+@@ -0,0 +1,31 @@
++/* str_endswith function.
++   Copyright (C) 2025 Free Software Foundation, Inc.
++
++   This file is free software: you can redistribute it and/or modify
++   it under the terms of the GNU Lesser General Public License as
++   published by the Free Software Foundation, either version 3 of the
++   License, or (at your option) any later version.
++
++   This file is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++   GNU Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public License
++   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
++
++/* Written by Bruno Haible <bruno@clisp.org>, 2025.  */
++
++#include "config.h"
++
++/* Specification.  */
++#include <string.h>
++
++
++int
++str_endswith (const char *string, const char *suffix)
++{
++  size_t len = strlen (string);
++  size_t n = strlen (suffix);
++  return len >= n && strcmp (string + len - n, suffix) == 0;
++}
+--- a/lib/string.in.h
++++ b/lib/string.in.h
+@@ -1087,6 +1087,14 @@ _GL_EXTERN_C int str_startswith (const c
+      _GL_ARG_NONNULL ((1, 2));
+ #endif
+ 
++#if @GNULIB_STR_ENDSWITH@
++/* Returns true if STRING ends with SUFFIX.
++   Returns false otherwise.  */
++_GL_EXTERN_C int str_endswith (const char *string, const char *prefix)
++     _GL_ATTRIBUTE_PURE
++     _GL_ARG_NONNULL ((1, 2));
++#endif
++
+ #if @GNULIB_MBSLEN@
+ /* Return the number of multibyte characters in the character string STRING.
+    This considers multibyte characters, unlike strlen, which counts bytes.  */
+--- a/m4/string_h.m4
++++ b/m4/string_h.m4
+@@ -71,6 +71,7 @@ AC_DEFUN([gl_STRING_H_REQUIRE_DEFAULTS],
+     gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_STRCASESTR])
+     gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_STRTOK_R])
+     gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_STR_STARTSWITH])
++    gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_STR_ENDSWITH])
+     gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_MBSLEN])
+     gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_MBSNLEN])
+     gl_MODULE_INDICATOR_INIT_VARIABLE([GNULIB_MBSCHR])
+--- /dev/null
++++ b/modules/str_endswith
+@@ -0,0 +1,23 @@
++Description:
++str_endswith() function: test whether a string ends with a given suffix.
++
++Files:
++lib/str_endswith.c
++
++Depends-on:
++string-h
++
++configure.ac:
++gl_STRING_MODULE_INDICATOR([str_endswith])
++
++Makefile.am:
++lib_SOURCES += str_endswith.c
++
++Include:
++<string.h>
++
++License:
++LGPLv2+
++
++Maintainer:
++all
+--- a/modules/string-h
++++ b/modules/string-h
+@@ -69,6 +69,7 @@ string.h: string.in.h $(top_builddir)/co
+ 	      -e 's/@''GNULIB_STRSTR''@/$(GNULIB_STRSTR)/g' \
+ 	      -e 's/@''GNULIB_STRCASESTR''@/$(GNULIB_STRCASESTR)/g' \
+ 	      -e 's/@''GNULIB_STRTOK_R''@/$(GNULIB_STRTOK_R)/g' \
++	      -e 's/@''GNULIB_STR_ENDSWITH''@/$(GNULIB_STR_ENDSWITH)/g' \
+ 	      -e 's/@''GNULIB_STR_STARTSWITH''@/$(GNULIB_STR_STARTSWITH)/g' \
+ 	      -e 's/@''GNULIB_STRERROR''@/$(GNULIB_STRERROR)/g' \
+ 	      -e 's/@''GNULIB_STRERROR_R''@/$(GNULIB_STRERROR_R)/g' \
