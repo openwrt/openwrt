@@ -7,6 +7,7 @@
 #include <dt-bindings/leds/common.h>
 #include <dt-bindings/gpio/gpio.h>
 #include "an7581.dtsi"
+#include "an7581-npu-mt7996.dtsi"
 
 / {
 	model = "Airoha AN7581 Evaluation Board";
@@ -215,8 +216,6 @@
 };
 
 &npu {
-	firmware-name = "airoha/en7581_MT7996_npu_rv32.bin",
-			"airoha/en7581_MT7996_npu_data.bin";
 	status = "okay";
 };
 
