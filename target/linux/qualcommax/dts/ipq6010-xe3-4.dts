@@ -213,7 +213,7 @@
 			reg = <4>;
 			label = "lan2";
 			phy-handle = <&qca8072>;
-			phy-mode = "psgmii";
+			phy-mode = "qsgmii";
 			pcs-handle = <&uniphy0 3>;
 			nvmem-cell-names = "mac-address";
 			nvmem-cells = <&eth1addr 0>;
@@ -245,7 +245,7 @@
 		compatible = "qcom,qca8075-package";
 		reg = <0>;
 
-		qcom,package-mode = "psgmii";
+		qcom,package-mode = "qsgmii";
 
 		qca8072: ethernet-phy@3 {
 			compatible = "ethernet-phy-ieee802.3-c22";
