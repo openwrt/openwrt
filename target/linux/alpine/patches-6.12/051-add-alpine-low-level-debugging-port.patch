@@ -1,0 +1,41 @@
+--- a/arch/arm/Kconfig.debug
++++ b/arch/arm/Kconfig.debug
+@@ -1470,6 +1470,13 @@ choice
+ 		  options; the platform specific options are deprecated
+ 		  and will be soon removed.
+ 
++	config DEBUG_ALPINE_UART
++		bool "Kernel low-level debugging messages via ALPINE UART"
++		depends on ARCH_ALPINE
++		help
++		  Say Y here if you want kernel low-level debugging support
++		  on ALPINE based platforms.
++
+ endchoice
+ 
+ config DEBUG_AT91_UART
+--- a/arch/arm/include/debug/8250.S
++++ b/arch/arm/include/debug/8250.S
+@@ -6,10 +6,12 @@
+  */
+ #include <linux/serial_reg.h>
+ 
++#ifdef CONFIG_DEBUG_UART_PHYS
+ 		.macro	addruart, rp, rv, tmp
+ 		ldr	\rp, =CONFIG_DEBUG_UART_PHYS
+ 		ldr	\rv, =CONFIG_DEBUG_UART_VIRT
+ 		.endm
++#endif
+ 
+ #ifdef CONFIG_DEBUG_UART_8250_WORD
+ 		.macro	store, rd, rx:vararg
+@@ -32,7 +34,9 @@
+ 		.endm
+ #endif
+ 
++#ifdef CONFIG_DEBUG_UART_8250_SHIFT
+ #define UART_SHIFT CONFIG_DEBUG_UART_8250_SHIFT
++#endif
+ 
+ 		.macro	senduart,rd,rx
+ 		store	\rd, [\rx, #UART_TX << UART_SHIFT]

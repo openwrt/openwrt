@@ -1,0 +1,25 @@
+--- a/drivers/net/mdio/Kconfig
++++ b/drivers/net/mdio/Kconfig
+@@ -272,6 +272,12 @@ config MDIO_BUS_MUX_MMIOREG
+ 
+ 	  Currently, only 8/16/32 bits registers are supported.
+ 
++config MDIO_AL_GPIO
++	tristate "Alpine MDIO GPIO bus controller"
++	depends on ARCH_ALPINE
++	help
++	  This module provides a driver for the MDIO GPIO bus found in the
++	  Alpine SoC.
+ 
+ endif
+ endif
+--- a/drivers/net/mdio/Makefile
++++ b/drivers/net/mdio/Makefile
+@@ -22,6 +22,7 @@ obj-$(CONFIG_MDIO_OCTEON)		+= mdio-octeo
+ obj-$(CONFIG_MDIO_SUN4I)		+= mdio-sun4i.o
+ obj-$(CONFIG_MDIO_THUNDER)		+= mdio-thunder.o
+ obj-$(CONFIG_MDIO_XGENE)		+= mdio-xgene.o
++obj-$(CONFIG_MDIO_AL_GPIO)		+= mdio-al-gpio.o
+ 
+ obj-$(CONFIG_MDIO_BUS_MUX)		+= mdio-mux.o
+ obj-$(CONFIG_MDIO_BUS_MUX_BCM6368)	+= mdio-mux-bcm6368.o

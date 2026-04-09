@@ -1,0 +1,28 @@
+#
+# Copyright (c) 2015 The Linux Foundation. All rights reserved.
+# Copyright (c) 2011-2015 OpenWrt.org
+#
+
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+board_config_update
+
+board=$(board_name)
+
+case "$board" in
+mikrotik,rb1100ahx4)
+	#
+	# DSA switches: lan1-5 (Switch A), lan6-10 (Switch B), lan11-13 (Switch C)
+	# Abdulkader Alrezej
+	#
+	ucidef_set_interface_lan "lan1 lan2 lan3 lan4 lan5 lan6 lan7 lan8 lan9 lan10 lan11 lan12 lan13"
+	;;
+*)
+	echo "Unsupported hardware. Network interfaces not intialized"
+	;;
+esac
+
+board_config_flush
+
+exit 0

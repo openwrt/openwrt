@@ -1,0 +1,56 @@
+--- a/drivers/net/phy/ar8327.c
++++ b/drivers/net/phy/ar8327.c
+@@ -541,6 +541,7 @@ ar8327_hw_config_pdata(struct ar8xxx_pri
+ 	priv->get_port_link = pdata->get_port_link;
+ 
+ 	data->port0_status = ar8327_get_port_init_status(&pdata->port0_cfg);
++	data->port5_status = ar8327_get_port_init_status(&pdata->port5_cfg);
+ 	data->port6_status = ar8327_get_port_init_status(&pdata->port6_cfg);
+ 
+ 	t = ar8327_get_pad_cfg(pdata->pad0_cfg);
+@@ -634,6 +635,9 @@ ar8327_hw_config_of(struct ar8xxx_priv *
+ 		case AR8327_REG_PORT_STATUS(0):
+ 			data->port0_status = val;
+ 			break;
++		case AR8327_REG_PORT_STATUS(5):
++			data->port5_status = val;
++			break;
+ 		case AR8327_REG_PORT_STATUS(6):
+ 			data->port6_status = val;
+ 			break;
+@@ -723,12 +727,14 @@ ar8327_init_port(struct ar8xxx_priv *pri
+ 
+ 	if (port == AR8216_PORT_CPU)
+ 		t = data->port0_status;
++	else if (port == 5)
++		t = data->port5_status;
+ 	else if (port == 6)
+ 		t = data->port6_status;
+ 	else
+ 		t = AR8216_PORT_STATUS_LINK_AUTO;
+ 
+-	if (port != AR8216_PORT_CPU && port != 6) {
++	if (port != AR8216_PORT_CPU && port != 5 && port != 6) {
+ 		/*hw limitation:if configure mac when there is traffic,
+ 		port MAC may work abnormal. Need disable lan&wan mac at fisrt*/
+ 		ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), 0);
+--- a/drivers/net/phy/ar8327.h
++++ b/drivers/net/phy/ar8327.h
+@@ -321,6 +321,7 @@ struct ar8327_led {
+ 
+ struct ar8327_data {
+ 	u32 port0_status;
++	u32 port5_status;
+ 	u32 port6_status;
+ 
+ 	struct ar8327_led **leds;
+--- a/include/linux/ar8216_platform.h
++++ b/include/linux/ar8216_platform.h
+@@ -120,6 +120,7 @@ struct ar8327_platform_data {
+ 	struct ar8327_pad_cfg *pad6_cfg;
+ 	struct ar8327_sgmii_cfg *sgmii_cfg;
+ 	struct ar8327_port_cfg port0_cfg;
++	struct ar8327_port_cfg port5_cfg;
+ 	struct ar8327_port_cfg port6_cfg;
+ 	struct ar8327_led_cfg *led_cfg;
+ 

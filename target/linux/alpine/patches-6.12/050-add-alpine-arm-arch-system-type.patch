@@ -1,0 +1,41 @@
+--- a/arch/arm/mach-alpine/Kconfig
++++ b/arch/arm/mach-alpine/Kconfig
+@@ -2,13 +2,26 @@
+ config ARCH_ALPINE
+ 	bool "Annapurna Labs Alpine platform"
+ 	depends on ARCH_MULTI_V7
+-	select ALPINE_MSI
++	select CPU_V7
++	select HAVE_SMP
+ 	select ARM_AMBA
++	select SPARSE_IRQ
+ 	select ARM_GIC
+ 	select GENERIC_IRQ_CHIP
++	select GENERIC_IRQ_MULTI_HANDLER
+ 	select HAVE_ARM_ARCH_TIMER
++	select ARM_TIMER_SP804
++	select CLKDEV_LOOKUP
++	select GENERIC_CLOCKEVENTS
++	select HAVE_CLK
++	select HAVE_ARCH_TIMERS
++	select COMMON_CLK
++	select HAVE_SCHED_CLOCK
++	select ARCH_SCHED_CLOCK
+ 	select MFD_SYSCON
++	select ARM_HWCC_FLAG
++	select ARM_HAS_SG_CHAIN
++	select ARCH_SUPPORTS_BIG_ENDIAN
+ 	select FORCE_PCI
+-	select PCI_HOST_GENERIC
+ 	help
+ 	  This enables support for the Annapurna Labs Alpine V1 boards.
+--- a/arch/arm/Makefile
++++ b/arch/arm/Makefile
+@@ -229,6 +229,7 @@ machine-$(CONFIG_PLAT_SPEAR)		+= spear
+ machdirs-$(CONFIG_ARCH_FOOTBRIDGE)	+= arch/arm/mach-footbridge
+ machdirs-$(CONFIG_ARCH_RPC)		+= arch/arm/mach-rpc
+ machdirs-$(CONFIG_ARCH_SA1100)		+= arch/arm/mach-sa1100
++machdirs-$(CONFIG_ARCH_ALPINE)		+= arch/arm/mach-alpine
+ KBUILD_CPPFLAGS += $(patsubst %,-I$(srctree)/%/include,$(machdirs-y))
+ 
+ # The byte offset of the kernel image in RAM from the start of RAM.

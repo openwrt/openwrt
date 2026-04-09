@@ -1,0 +1,20 @@
+--- a/drivers/net/ethernet/Kconfig
++++ b/drivers/net/ethernet/Kconfig
+@@ -20,6 +20,7 @@
+ source "drivers/net/ethernet/adaptec/Kconfig"
+ source "drivers/net/ethernet/aeroflex/Kconfig"
+ source "drivers/net/ethernet/agere/Kconfig"
++source "drivers/net/ethernet/al/Kconfig"
+ source "drivers/net/ethernet/alacritech/Kconfig"
+ source "drivers/net/ethernet/allwinner/Kconfig"
+ source "drivers/net/ethernet/alteon/Kconfig"
+--- a/drivers/net/ethernet/Makefile
++++ b/drivers/net/ethernet/Makefile
+@@ -10,6 +10,7 @@
+ obj-$(CONFIG_GRETH) += aeroflex/
+ obj-$(CONFIG_NET_VENDOR_ADI) += adi/
+ obj-$(CONFIG_NET_VENDOR_AGERE) += agere/
++obj-$(CONFIG_NET_AL_ETH) += al/
+ obj-$(CONFIG_NET_VENDOR_ALACRITECH) += alacritech/
+ obj-$(CONFIG_NET_VENDOR_ALLWINNER) += allwinner/
+ obj-$(CONFIG_NET_VENDOR_ALTEON) += alteon/

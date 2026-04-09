@@ -1,0 +1,12 @@
+--- a/drivers/pci/quirks.c
++++ b/drivers/pci/quirks.c
+@@ -3125,6 +3125,9 @@ DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_AT
+ DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_AMAZON_ANNAPURNA_LABS,
+ 			PCI_DEVICE_ID_AMAZON_ANNAPURNA_LABS_RAID_DMA,
+ 			quirk_msi_intx_disable_bug);
++DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_AMAZON_ANNAPURNA_LABS,
++			PCI_DEVICE_ID_AMAZON_ANNAPURNA_LABS_ETH,
++			quirk_msi_intx_disable_bug);
+ #endif /* CONFIG_PCI_MSI */
+ 
+ /*

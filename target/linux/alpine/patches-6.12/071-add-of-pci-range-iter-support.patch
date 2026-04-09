@@ -1,0 +1,117 @@
+--- a/drivers/of/address.c
++++ b/drivers/of/address.c
+@@ -672,6 +672,59 @@ const __be32 *__of_get_address(struct de
+ }
+ EXPORT_SYMBOL(__of_get_address);
+ 
++struct of_pci_range_iter *of_pci_process_ranges(struct of_pci_range_iter *iter,
++						struct device_node *node)
++{
++	const int na = 3, ns = 2;
++	int rlen;
++
++	if (!iter->range) {
++		iter->pna = of_n_addr_cells(node);
++		iter->np = iter->pna + na + ns;
++
++		iter->range = of_get_property(node, "ranges", &rlen);
++		if (iter->range == NULL)
++			return NULL;
++
++		iter->end = iter->range + rlen / sizeof(__be32);
++	}
++
++	if (iter->range + iter->np > iter->end)
++		return NULL;
++
++	iter->pci_space = be32_to_cpup(iter->range);
++	iter->flags = of_bus_pci_get_flags(iter->range);
++	iter->pci_addr = of_read_number(iter->range + 1, ns);
++	iter->cpu_addr = of_translate_address(node, iter->range + na);
++	iter->size = of_read_number(iter->range + iter->pna + na, ns);
++
++	iter->range += iter->np;
++
++	/* Now consume following elements while they are contiguous */
++	while (iter->range + iter->np <= iter->end) {
++		u32 flags, pci_space;
++		u64 pci_addr, cpu_addr, size;
++
++		pci_space = be32_to_cpup(iter->range);
++		flags = of_bus_pci_get_flags(iter->range);
++		pci_addr = of_read_number(iter->range + 1, ns);
++		cpu_addr = of_translate_address(node, iter->range + na);
++		size = of_read_number(iter->range + iter->pna + na, ns);
++
++		if (flags != iter->flags)
++			break;
++		if (pci_addr != iter->pci_addr + iter->size ||
++		    cpu_addr != iter->cpu_addr + iter->size)
++			break;
++
++		iter->size += size;
++		iter->range += iter->np;
++	}
++
++	return iter;
++}
++EXPORT_SYMBOL_GPL(of_pci_process_ranges);
++
+ static int parser_init(struct of_pci_range_parser *parser,
+ 			struct device_node *node, const char *name)
+ {
+--- a/include/linux/of_address.h
++++ b/include/linux/of_address.h
+@@ -8,6 +8,30 @@
+ 
+ struct of_bus;
+ 
++struct of_pci_range_iter {
++	const __be32 *range, *end;
++	int np, pna;
++
++	u32 pci_space;
++	u64 pci_addr;
++	u64 cpu_addr;
++	u64 size;
++	u32 flags;
++};
++
++#define for_each_of_pci_range_compat(iter, np) \
++	for (memset((iter), 0, sizeof(struct of_pci_range_iter)); \
++	     of_pci_process_ranges(iter, np);)
++
++#define range_iter_fill_resource(iter, np, res) \
++	do { \
++		(res)->flags = (iter).flags; \
++		(res)->start = (iter).cpu_addr; \
++		(res)->end = (iter).cpu_addr + (iter).size - 1; \
++		(res)->parent = (res)->child = (res)->sibling = NULL; \
++		(res)->name = (np)->full_name; \
++	} while (0)
++
+ struct of_pci_range_parser {
+ 	struct device_node *node;
+ 	struct of_bus *bus;
+@@ -67,6 +91,8 @@ extern int of_pci_range_to_resource(stru
+ 				    struct device_node *np,
+ 				    struct resource *res);
+ extern bool of_dma_is_coherent(struct device_node *np);
++struct of_pci_range_iter *of_pci_process_ranges(struct of_pci_range_iter *iter,
++						struct device_node *node);
+ #else /* CONFIG_OF_ADDRESS */
+ static inline void __iomem *of_io_request_and_map(struct device_node *device,
+ 						  int index, const char *name)
+@@ -122,6 +148,12 @@ static inline bool of_dma_is_coherent(st
+ {
+ 	return false;
+ }
++
++static inline struct of_pci_range_iter *of_pci_process_ranges(struct of_pci_range_iter *iter,
++						struct device_node *node)
++{
++	return NULL;
++}
+ #endif /* CONFIG_OF_ADDRESS */
+ 
+ #ifdef CONFIG_OF

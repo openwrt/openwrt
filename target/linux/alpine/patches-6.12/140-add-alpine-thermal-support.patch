@@ -1,0 +1,21 @@
+--- a/drivers/thermal/Makefile
++++ b/drivers/thermal/Makefile
+@@ -35,3 +35,4 @@
+ # platform thermal drivers
+ obj-y				+= broadcom/
++obj-$(CONFIG_AL_THERMAL)	+= al/
+ obj-$(CONFIG_THERMAL_MMIO)		+= thermal_mmio.o
+--- a/drivers/thermal/Kconfig
++++ b/drivers/thermal/Kconfig
+@@ -499,4 +499,12 @@
+ 	  temperature threshold, the interrupt will occur.
+ 
++config AL_THERMAL
++	bool "Annapurna Labs thermal sensor driver"
++	depends on ARCH_ALPINE
++	depends on OF
++	help
++	  Enable this to plug the Annapurna Labs thermal sensor driver into the
++	  Linux thermal framework
++
+ endif

@@ -1,0 +1,9 @@
+--- a/drivers/edac/Kconfig
++++ b/drivers/edac/Kconfig
+@@ -541,4 +541,6 @@ config EDAC_DMC520
+ 	  Support for error detection and correction on the
+ 	  SoCs with ARM DMC-520 DRAM controller.
+ 
++source "drivers/edac/al/Kconfig"
++
+ endif # EDAC

@@ -2329,6 +2329,40 @@ endef
 
 $(eval $(call KernelPackage,amazon-ena))
 
+define KernelPackage/mdio-al-gpio
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Alpine MDIO GPIO bus controller
+  DEPENDS:=@TARGET_alpine +kmod-mdio
+  KCONFIG:=CONFIG_MDIO_AL_GPIO
+  FILES:=$(LINUX_DIR)/drivers/net/mdio/mdio-al-gpio.ko
+  AUTOLOAD:=$(call AutoLoad,11,mdio-al-gpio,1)
+endef
+
+define KernelPackage/mdio-gpio/description
+ Supports Alpine MDIO GPIO bus controller
+endef
+
+$(eval $(call KernelPackage,mdio-al-gpio))
+
+define KernelPackage/al-eth
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Annapurna Labs unified 1G/10G Ethernet driver
+  DEPENDS:=@PCI_SUPPORT @TARGET_alpine +kmod-mdio
+  KCONFIG:= \
+	CONFIG_NET_AL_ETH \
+	CONFIG_AL_ETH_ALLOC_FRAG=y \
+	CONFIG_AL_ETH_ALLOC_PAGE=n \
+	CONFIG_AL_ETH_ALLOC_SKB=n
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/al/al_eth_drv.ko
+  AUTOLOAD:=$(call AutoLoad,10,al-eth-drv,1)
+endef
+
+define KernelPackage/al-eth/description
+  Kernel modules for Annapurna Labs unified 1G/10G Ethernet driver
+endef
+
+$(eval $(call KernelPackage,al-eth))
+
 define KernelPackage/enc28j60
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Microchip ENC28J60 SPI Ethernet driver

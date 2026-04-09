@@ -1,0 +1,12 @@
+--- a/lib/sg_split.c
++++ b/lib/sg_split.c
+@@ -91,7 +91,8 @@
+ 				out_sg->length -= split->skip_sg0;
+ 			}
+ 			sg_dma_address(out_sg) = 0;
+-			sg_dma_len(out_sg) = 0;
++			if (IS_ENABLED(CONFIG_NEED_SG_DMA_LENGTH))
++				sg_dma_len(out_sg) = 0;
+ 			in_sg = sg_next(in_sg);
+ 		}
+ 		out_sg[-1].length = split->length_last_sg;

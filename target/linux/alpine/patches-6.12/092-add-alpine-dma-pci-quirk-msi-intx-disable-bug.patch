@@ -1,0 +1,13 @@
+--- a/drivers/pci/quirks.c
++++ b/drivers/pci/quirks.c
+@@ -3239,6 +3239,10 @@ DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_AT
+ 			quirk_msi_intx_disable_qca_bug);
+ DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_ATTANSIC, 0xe091,
+ 			quirk_msi_intx_disable_qca_bug);
++
++DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_AMAZON_ANNAPURNA_LABS,
++			PCI_DEVICE_ID_AMAZON_ANNAPURNA_LABS_RAID_DMA,
++			quirk_msi_intx_disable_bug);
+ #endif /* CONFIG_PCI_MSI */
+ 
+ /*

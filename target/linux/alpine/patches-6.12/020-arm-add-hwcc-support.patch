@@ -1,0 +1,29 @@
+--- a/arch/arm/include/asm/device.h
++++ b/arch/arm/include/asm/device.h
+@@ -10,6 +10,9 @@ struct dev_archdata {
+ 	struct dma_iommu_mapping	*mapping;
+ #endif
+ 	unsigned int dma_ops_setup:1;
++#ifdef CONFIG_ARM_HWCC_FLAG
++	int hwcc; /* 1 - HW cache coherency, 0 - SW cache coherency */
++#endif
+ };
+ 
+ struct omap_device;
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -187,6 +187,14 @@ config ARM_DMA_IOMMU_ALIGNMENT
+ 
+ endif
+ 
++config ARM_HWCC_FLAG
++	bool
++	default n
++	help
++	  Select if you want the ARM specific device structure to inclue a flag
++	  for determining whether HW cache coherency is enabled.
++	  If unsure, say 'N'.
++
+ config SYS_SUPPORTS_APM_EMULATION
+ 	bool
+ 
