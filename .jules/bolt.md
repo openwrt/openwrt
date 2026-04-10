@@ -44,3 +44,6 @@
 ## 2025-01-20 - [Python CRC32 Chunked File I/O for Large Binaries]
 **Learning:** Reading a large file into memory entirely to compute its CRC32 checksum (`in_bytes = f.read(in_size); crc = binascii.crc32(in_bytes)`) creates massive memory bloat, causing O(N) memory complexity and potentially crashing the script on systems building large firmware images.
 **Action:** Use a chunked reading approach inside a `while True:` loop (e.g., `chunk = f.read(65536)`) and calculate the CRC incrementally by passing the previous CRC value into the function call (e.g., `crc = binascii.crc32(chunk, crc)`). This brings memory complexity down to O(1).
+## 2025-01-20 - [Python CRC32 Chunked File I/O in sercomm-kernel-header]
+**Learning:** In `scripts/sercomm-kernel-header.py`, reading entire kernel and rootfs files into memory with `.read()` and `.read(rootfs_size)` causes excessive memory bloat (O(N) complexity). Memory limit issues can easily happen on large firmware images.
+**Action:** Use an incremental CRC approach over chunked reads for large files (`crc = binascii.crc32(chunk, crc)`). This maintains O(1) memory usage, improving efficiency and memory footprint.
