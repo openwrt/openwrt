@@ -50,7 +50,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
  config ENV_RANGE
  	hex "Length of the region in which the environment can be written"
  	depends on ENV_IS_IN_NAND
-@@ -592,7 +608,7 @@ config ENV_ADDR_REDUND
+@@ -603,7 +619,7 @@ config ENV_ADDR_REDUND
  config ENV_OFFSET
  	hex "Environment offset"
  	depends on ENV_IS_IN_EEPROM || ENV_IS_IN_MMC || ENV_IS_IN_NAND || \

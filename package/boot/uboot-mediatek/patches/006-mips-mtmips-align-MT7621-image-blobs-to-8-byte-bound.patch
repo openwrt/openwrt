@@ -1,0 +1,43 @@
+From de79075f0f6b8795d1f9e30ff36435583b1a119a Mon Sep 17 00:00:00 2001
+From: Shiji Yang <yangshiji66@outlook.com>
+Date: Sun, 12 Apr 2026 20:12:25 +0800
+Subject: [PATCH] mips: mtmips: align MT7621 image blobs to 8-byte boundary
+
+MT7621 doesn't boot on u-boot v2026.04. Fix it by correcting the
+u-boot aligned offset.
+
+Fixes: d9e183a04c92 ("MIPS: Assure end of U-Boot is at 8-byte aligned offset")
+Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
+Reviewed-by: Weijie Gao <weijie.gao@mediatek.com>
+---
+ arch/mips/dts/mt7621-u-boot.dtsi | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/arch/mips/dts/mt7621-u-boot.dtsi
++++ b/arch/mips/dts/mt7621-u-boot.dtsi
+@@ -47,13 +47,13 @@
+ 
+ &binman {
+ 	u-boot-spl-ddr {
+-		align = <4>;
+-		align-size = <4>;
++		align = <8>;
++		align-size = <8>;
+ 		filename = "u-boot-spl-ddr.bin";
+ 		pad-byte = <0xff>;
+ 
+ 		u-boot-spl {
+-			align-end = <4>;
++			align-end = <8>;
+ 			filename = "u-boot-spl.bin";
+ 		};
+ 
+@@ -90,7 +90,7 @@
+ 
+ #ifndef CONFIG_MT7621_BOOT_FROM_NAND
+ 		u-boot-tpl {
+-			align-end = <4>;
++			align-end = <8>;
+ 			filename = "u-boot-tpl.bin";
+ 		};
+ #endif
