@@ -40,7 +40,7 @@ const ubi_proto = {
 	commit: function(data) {
 		let len = HDR_LEN + length(data);
 
-		let file = fs.popen(`ubiupdatevol ${this.dev} -s ${len} -`, "w");
+		let file = fs.popen([ "ubiupdatevol", this.dev, "-s", len, "-" ], "w");
 		file.write(hdr.pack(MAGIC, length(data), 0));
 		file.write(data);
 
@@ -48,7 +48,7 @@ const ubi_proto = {
 	},
 	destroy: function() {
 		let dev = replace(this.dev, /_\d+$/, "");
-		return system(`ubirmvol ${dev} -N provisioning`) == 0;
+		return system([ "ubirmvol", dev, "-N", "provisioning" ]) == 0;
 	}
 };
 
@@ -79,7 +79,7 @@ function create_ubi()
 
 	let dev = fs.basename(fs.dirname(found[0]));
 	dev = "/dev/" + replace(dev, /_\d+$/, "");
-	if (system(`ubimkvol ${dev} -N provisioning -s 131072`) != 0)
+	if (system([ "ubimkvol", dev, "-N", "provisioning", "-s", "131072" ]) != 0)
 		return;
 
 	return open_ubi();
