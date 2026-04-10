@@ -1354,11 +1354,6 @@ endif
 endef
 endif
 
-define Build/Configure
-	$(call Build/Configure/U-Boot)
-	sed -i 's/CONFIG_TOOLS_LIBCRYPTO=y/# CONFIG_TOOLS_LIBCRYPTO is not set/' $(PKG_BUILD_DIR)/.config
-endef
-
 define Build/Compile
 	$(call Build/Compile/U-Boot)
 ifeq ($(UBOOT_IMAGE),u-boot.fip)
