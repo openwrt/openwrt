@@ -43,6 +43,18 @@ define Download/kernel
   HASH:=$(LINUX_KERNEL_HASH)
 endef
 
+# GPG signature verification for kernel source
+# Note that upstream signs the uncompressed tarball not the xz or gz which
+# is why we use the call to basename
+LINUX_GPG_KEYS_DIR:=$(TOPDIR)/target/linux/generic/keys
+LINUX_SOURCE_SIG:=$(basename $(LINUX_SOURCE)).sign
+LINUX_VALIDPGPKEYS:=647F28654894E3BD457199BE38DBBDC86092693E
+
+# Map kernel GPG variables to package GPG variables for download.mk
+PKG_SOURCE_SIG:=$(LINUX_SOURCE_SIG)
+PKG_GPG_KEYS_DIR:=$(LINUX_GPG_KEYS_DIR)
+PKG_VALIDPGPKEYS:=$(LINUX_VALIDPGPKEYS)
+
 KERNEL_GIT_OPTS:=
 ifneq ($(strip $(CONFIG_KERNEL_GIT_LOCAL_REPOSITORY)),"")
   KERNEL_GIT_OPTS+=--reference $(CONFIG_KERNEL_GIT_LOCAL_REPOSITORY)
