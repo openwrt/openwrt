@@ -47,3 +47,6 @@
 ## 2025-01-20 - [Python CRC32 Chunked File I/O in sercomm-kernel-header]
 **Learning:** In `scripts/sercomm-kernel-header.py`, reading entire kernel and rootfs files into memory with `.read()` and `.read(rootfs_size)` causes excessive memory bloat (O(N) complexity). Memory limit issues can easily happen on large firmware images.
 **Action:** Use an incremental CRC approach over chunked reads for large files (`crc = binascii.crc32(chunk, crc)`). This maintains O(1) memory usage, improving efficiency and memory footprint.
+## 2026-04-11 - [string.join deprecation and performance issue]
+**Learning:** In Python 3, string.join() was removed. The native ''.join(iterable) is the correct alternative, and also yields a performance improvement.
+**Action:** Replace string.join with ''.join in the codebase where encountered.
