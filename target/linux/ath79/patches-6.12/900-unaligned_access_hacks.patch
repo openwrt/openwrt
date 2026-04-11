@@ -259,7 +259,7 @@ SVN-Revision: 35130
  #include <linux/uaccess.h>
  #include <linux/ipv6.h>
  #include <linux/icmpv6.h>
-@@ -914,10 +915,10 @@ static void tcp_v6_send_response(const s
+@@ -915,10 +916,10 @@ static void tcp_v6_send_response(const s
  	topt = (__be32 *)(t1 + 1);
  
  	if (tsecr) {
@@ -312,7 +312,7 @@ SVN-Revision: 35130
  		case IPV6_2292HOPOPTS:
 --- a/net/ipv6/exthdrs.c
 +++ b/net/ipv6/exthdrs.c
-@@ -980,7 +980,7 @@ static bool ipv6_hop_jumbo(struct sk_buf
+@@ -986,7 +986,7 @@ static bool ipv6_hop_jumbo(struct sk_buf
  		goto drop;
  	}
  
@@ -556,8 +556,8 @@ SVN-Revision: 35130
  static inline struct neighbour *__ipv6_neigh_lookup_noref(struct net_device *dev, const void *pkey)
 --- a/net/sched/cls_u32.c
 +++ b/net/sched/cls_u32.c
-@@ -167,7 +167,7 @@ next_knode:
- 			data = skb_header_pointer(skb, toff, 4, &hdata);
+@@ -165,7 +165,7 @@ next_knode:
+ 							  &hdata);
  			if (!data)
  				goto out;
 -			if ((*data ^ key->val) & key->mask) {
@@ -565,8 +565,8 @@ SVN-Revision: 35130
  				n = rcu_dereference_bh(n->next);
  				goto next_knode;
  			}
-@@ -218,8 +218,8 @@ check_terminal:
- 						  &hdata);
+@@ -217,8 +217,8 @@ check_terminal:
+ 							  4, &hdata);
  			if (!data)
  				goto out;
 -			sel = ht->divisor & u32_hash_fold(*data, &n->sel,
@@ -829,7 +829,7 @@ SVN-Revision: 35130
  		*sum = csum_fold(csum_partial(diff, sizeof(diff),
 --- a/include/linux/etherdevice.h
 +++ b/include/linux/etherdevice.h
-@@ -559,7 +559,7 @@ static inline bool is_etherdev_addr(cons
+@@ -560,7 +560,7 @@ static inline bool is_etherdev_addr(cons
   * @b: Pointer to Ethernet header
   *
   * Compare two Ethernet headers, returns 0 if equal.
@@ -838,7 +838,7 @@ SVN-Revision: 35130
   * aligned OR the platform can handle unaligned access.  This is the
   * case for all packets coming into netif_receive_skb or similar
   * entry points.
-@@ -582,11 +582,12 @@ static inline unsigned long compare_ethe
+@@ -583,11 +583,12 @@ static inline unsigned long compare_ethe
  	fold |= *(unsigned long *)(a + 6) ^ *(unsigned long *)(b + 6);
  	return fold;
  #else
@@ -866,7 +866,7 @@ SVN-Revision: 35130
  	    iph->daddr == iph2->daddr && iph->saddr == iph2->saddr)
  		return segs;
  
-@@ -267,7 +267,7 @@ struct sk_buff *tcp_gro_lookup(struct li
+@@ -268,7 +268,7 @@ struct sk_buff *tcp_gro_lookup(struct li
  			continue;
  
  		th2 = tcp_hdr(p);
@@ -875,7 +875,7 @@ SVN-Revision: 35130
  			NAPI_GRO_CB(p)->same_flow = 0;
  			continue;
  		}
-@@ -331,8 +331,8 @@ struct sk_buff *tcp_gro_receive(struct l
+@@ -332,8 +332,8 @@ struct sk_buff *tcp_gro_receive(struct l
  		  ~(TCP_FLAG_CWR | TCP_FLAG_FIN | TCP_FLAG_PSH));
  	flush |= (__force int)(th->ack_seq ^ th2->ack_seq);
  	for (i = sizeof(*th); i < thlen; i += 4)

@@ -67,6 +67,15 @@ case "$FIRMWARE" in
 		ath11k_patch_mac $(mtd_get_mac_binary boarddata1 0x6) 2
 		ath11k_set_macflag
 		;;
+	netgear,rbr750|\
+	netgear,rbs750)
+		caldata_extract "0:art" 0x1000 0x20000
+		label_mac=$(get_mac_label_dt)
+		ath11k_patch_mac $(macaddr_add $label_mac 3) 0
+		ath11k_patch_mac $(macaddr_add $label_mac 2) 1
+		ath11k_patch_mac $(macaddr_add $label_mac 4) 2
+		ath11k_set_macflag
+		;;
 	netgear,sxr80|\
 	netgear,sxs80)
 		caldata_extract "0:art" 0x1000 0x20000
@@ -130,6 +139,13 @@ case "$FIRMWARE" in
 		ath11k_patch_mac $(macaddr_add $label_mac 3) 0
 		ath11k_patch_mac $(macaddr_add $label_mac 2) 1
 		ath11k_patch_mac $(macaddr_add $label_mac 4) 2
+		ath11k_set_macflag
+		;;
+	zyxel,nwa110ax)
+		caldata_extract "0:art" 0x1000 0x20000
+		label_mac=$(get_mac_label)
+		ath11k_patch_mac $(macaddr_add $label_mac 2) 0
+		ath11k_patch_mac $(macaddr_add $label_mac 1) 1
 		ath11k_set_macflag
 		;;
 	zyxel,nwa210ax)

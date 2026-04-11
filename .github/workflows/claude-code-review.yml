@@ -1,0 +1,33 @@
+name: Claude Code Review
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: write
+  actions: read
+
+jobs:
+  code-review:
+    name: Claude Code Review
+    # Only run on PR comments containing "/claude" from users with write access
+    if: >-
+      github.event.issue.pull_request &&
+      contains(github.event.comment.body, '/claude') &&
+      contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'),
+               github.event.comment.author_association)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 1
+
+      - name: PR Review
+        uses: hauke/claude-code-action@95d07da986168a9998e8e4713ec29b7c162b4dd9 # v1.0.77-fixed
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          trigger_phrase: "/claude"

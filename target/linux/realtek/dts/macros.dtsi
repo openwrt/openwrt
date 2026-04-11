@@ -13,10 +13,23 @@
 		phy-is-integrated; \
 	};
 
-#define EXTERNAL_PHY(n) \
-	phy##n: ethernet-phy@##n { \
+#define PHY_C22(p, n) \
+	phy##p: ethernet-phy@n { \
 		reg = <##n>; \
 		compatible = "ethernet-phy-ieee802.3-c22"; \
+	};
+
+#define PHY_C45(p, n) \
+	phy##p: ethernet-phy@n { \
+		reg = <##n>; \
+		compatible = "ethernet-phy-ieee802.3-c45"; \
+	};
+
+#define PHY_C45_PAIR_ORDER(p, n, po) \
+	phy##p: ethernet-phy@n { \
+		reg = <##n>; \
+		compatible = "ethernet-phy-ieee802.3-c45"; \
+		enet-phy-pair-order = <##po>; \
 	};
 
 #define EXTERNAL_SFP_PHY(n) \
@@ -46,6 +59,16 @@
 	port##p: port@##p { \
 		reg = <##p>; \
 		label = SWITCH_PORT_LABEL(l) ; \
+		pcs-handle = <&serdes##s>; \
+		phy-handle = <&phy##p>; \
+		phy-mode = #m ; \
+	};
+
+#define SWITCH_PORT_LED(p, l, s, c, m) \
+	port##p: port@##p { \
+		reg = <##p>; \
+		label = SWITCH_PORT_LABEL(l) ; \
+		led-set = <##c>; \
 		pcs-handle = <&serdes##s>; \
 		phy-handle = <&phy##p>; \
 		phy-mode = #m ; \

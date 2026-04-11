@@ -55,6 +55,15 @@
 		partition@80000 {
 			label = "u-boot-env";
 			reg = <0x80000 0xc0000>;
+
+			nvmem-layout {
+				compatible = "u-boot,env";
+				env-size = <0x1000>;
+
+				macaddr_uboot_ethaddr: ethaddr {
+					#nvmem-cell-cells = <1>;
+				};
+			};
 		};
 
 		partition@140000 {
@@ -85,10 +94,18 @@
 	};
 };
 
+&gmac0 {
+	nvmem-cells = <&macaddr_uboot_ethaddr 0>;
+	nvmem-cell-names = "mac-address";
+};
+
 &gmac1 {
 	status = "okay";
 	label = "wan";
 	phy-handle = <&ethphy0>;
+
+	nvmem-cells = <&macaddr_uboot_ethaddr 1>;
+	nvmem-cell-names = "mac-address";
 };
 
 &ethphy0 {
@@ -117,6 +134,10 @@
 			label = "lan1";
 		};
 	};
+};
+
+&usb_phy {
+	status = "disabled";
 };
 
 &xhci {

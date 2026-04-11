@@ -236,9 +236,9 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	}
  	free_netdev(eth->napi_dev);
  	platform_set_drvdata(pdev, NULL);
-@@ -2414,6 +2526,7 @@ static void airoha_remove(struct platfor
+@@ -2413,6 +2525,7 @@ static void airoha_remove(struct platfor
+ 			continue;
  
- 		airoha_dev_stop(port->dev);
  		unregister_netdev(port->dev);
 +		airoha_metadata_dst_free(port);
  	}

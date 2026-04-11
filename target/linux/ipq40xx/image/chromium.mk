@@ -1,3 +1,5 @@
+DTS_DIR := $(DTS_DIR)/qcom
+
 define Build/cros-gpt
 	cp $@ $@.tmp 2>/dev/null || true
 	ptgen -o $@.tmp -g \

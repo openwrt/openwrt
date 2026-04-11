@@ -56,34 +56,47 @@ gemini_check_redboot_parts() {
 	fi
 }
 
-gemini_do_platform_upgrade() {
-	echo "Extract the three firmware parts"
-	echo 3 > /proc/sys/vm/drop_caches
-	echo "COMMENCING UPGRADE. BE PATIENT, THIS IS NOT FAST!"
-	KFSZ=$(tar xfz "$1" zImage -O | wc -c)
-	echo "Upgrade Kern partition (kernel part 1, size ${KFSZ})"
-	tar xfz "$1" zImage -O | mtd write - Kern
-	[ $? -ne 0 ] && exit 1
-	RFSZ=$(tar xfz "$1" rd.gz -O | wc -c)
-	echo "Upgrade Ramdisk partition (kernel part 2, size ${RFSZ})"
-	tar xfz "$1" rd.gz -O | mtd write - Ramdisk
-	[ $? -ne 0 ] && exit 1
-	AFSZ=$(tar xfz "$1" hddapp.tgz -O | wc -c)
-	echo "Upgrade Application partition (rootfs, size ${AFSZ})"
-	tar xfz "$1" hddapp.tgz -O | mtd write - Application
-	[ $? -ne 0 ] && exit 1
+# This converts the old RedBoot partitioning to the new shared
+# "firmware" partition.
+gemini_do_flat_redboot_upgrade() {
+	ESZ=131072
+	KSZ=$(($ESZ * $2))
+	RSZ=$(($ESZ * $3))
+	KRSZ=$(($KSZ + $RSZ))
+	ASZ=$(($ESZ * $4))
+	echo "Partition sizes: Kern ${KSZ}, Ramdisk ${RSZ}, Application ${ASZ}"
+	echo "Extract Kern from flat image ${1}"
+	echo "Write Kern from flat image ${1}"
+	dd if="$1" bs=1 count=${KSZ} | mtd write - Kern
+	echo "Write rd.gz from flat image ${1}"
+	dd if="$1" bs=1 skip=${KSZ} count=${RSZ} | mtd write - Ramdisk
+	echo "Write hddapp.tgz from flat image ${1}"
+	dd if="$1" bs=1 skip=${KRSZ} count=${ASZ} | mtd write - Application
+}
+
+# Check if we have the new partition scheme, else do it the old
+# way.
+gemini_do_combined_upgrade() {
+	NAME=`cat ${MTDSYSFS}/mtd1/name`
+	if test "x${NAME}" == "xfirmware" ; then
+		PART_NAME=firmware
+		default_do_upgrade "$1"
+	else
+		gemini_check_redboot_parts "$1" $2 $3 $4
+		gemini_do_flat_redboot_upgrade "$1" $2 $3 $4
+	fi
 }
 
 platform_check_image() {
 	local board=$(board_name)
 
 	case "$board" in
-	dlink,dir-685)
-		return 0
-		;;
-	raidsonic,ib-4220-b|\
+	dlink,dir-685|\
 	itian,sq201|\
-	storlink,gemini324)
+	storlink,gemini324|\
+	raidsonic,ib-4210-b|\
+	raidsonic,ib-4220-b|\
+	verbatim,s08v1901-d1)
 		return 0
 		;;
 	esac
@@ -100,14 +113,14 @@ platform_do_upgrade() {
 		PART_NAME=firmware
 		default_do_upgrade "$1"
 		;;
-	itian,sq201|\
-	storlink,gemini324)
-		gemini_check_redboot_parts "$1" 16 48 48
-		gemini_do_platform_upgrade "$1"
+	raidsonic,ib-4210-b|\
+	raidsonic,ib-4220-b|\
+	storlink,gemini324|\
+	verbatim,s08v1901-d1)
+		gemini_do_combined_upgrade "$1" 24 48 48
 		;;
-	raidsonic,ib-4220-b)
-		gemini_check_redboot_parts "$1" 24 48 48
-		gemini_do_platform_upgrade "$1"
+	itian,sq201)
+		gemini_do_combined_upgrade "$1" 16 48 48
 		;;
 	esac
 }

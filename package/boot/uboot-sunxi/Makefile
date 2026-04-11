@@ -9,8 +9,8 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_VERSION:=2025.01
-PKG_HASH:=cdef7d507c93f1bbd9f015ea9bc21fa074268481405501945abc6f854d5b686f
+PKG_VERSION:=2025.10
+PKG_HASH:=b4f032848e56cc8f213ad59f9132c084dbbb632bc29176d024e58220e0efdf4a
 
 PKG_MAINTAINER:=Zoltan HERPAI <wigyori@uid0.hu>
 
@@ -264,6 +264,12 @@ define U-Boot/pangolin
   UENV:=pangolin
 endef
 
+define U-Boot/pinecube
+  BUILD_SUBTARGET:=cortexa7
+  NAME:=Pine64 PineCube
+  BUILD_DEVICES:=pine64_pinecube
+endef
+
 define U-Boot/popstick
   BUILD_SUBTARGET:=arm926ejs
   NAME:=PopStick
@@ -451,6 +457,7 @@ UBOOT_TARGETS := \
 	orangepi_zero2w \
 	orangepi_zero3 \
 	pangolin \
+	pinecube \
 	popstick \
 	pine64_plus \
 	Sinovoip_BPI_M3 \

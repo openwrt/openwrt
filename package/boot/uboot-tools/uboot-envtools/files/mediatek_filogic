@@ -29,6 +29,10 @@ cmcc,a10-ubootmod|\
 comfast,cf-wr632ax-ubootmod|\
 cudy,tr3000-v1-ubootmod|\
 cudy,wbr3000uax-v1-ubootmod|\
+cudy,wr3000e-v1-ubootmod|\
+cudy,wr3000s-v1-ubootmod|\
+cudy,wr3000h-v1-ubootmod|\
+cudy,wr3000p-v1-ubootmod|\
 h3c,magic-nx30-pro|\
 imou,hx21|\
 jcg,q30-pro|\
@@ -38,6 +42,7 @@ netcore,n60|\
 netcore,n60-pro|\
 netis,nx30v2|\
 netis,nx31|\
+netis,nx32u|\
 nokia,ea0326gmp|\
 openwrt,one|\
 qihoo,360t7|\
@@ -50,14 +55,14 @@ tplink,tl-xdr6088|\
 tplink,tl-xtr8488|\
 xiaomi,mi-router-ax3000t-ubootmod|\
 xiaomi,mi-router-wr30u-ubootmod|\
-xiaomi,redmi-router-ax6000-ubootmod|\
-zyxel,ex5601-t0-ubootmod)
+xiaomi,redmi-router-ax6000-ubootmod)
 	ubootenv_add_ubi_default
 	;;
 acer,predator-w6|\
 acer,predator-w6d|\
 acer,vero-w6m|\
 glinet,gl-mt2500|\
+glinet,gl-mt2500-airoha|\
 glinet,gl-mt6000|\
 glinet,gl-x3000|\
 glinet,gl-xe3000|\
@@ -151,6 +156,11 @@ xiaomi,redmi-router-ax6000-stock)
 	;;
 zyxel,ex5601-t0)
 	ubootenv_add_mtd "u-boot-env" "0x0" "0x20000" "0x40000" "2"
+	;;
+zyxel,ex5601-t0-ubootmod|\
+zyxel,wx5600-t0-ubootmod)
+	ubootenv_add_ubi_default
+	ubootenv_add_sys_mtd "u-boot-env" "0x0" "0x20000" "0x40000" "2"
 	;;
 zyxel,ex5700-telenor)
 	ubootenv_add_uci_config "/dev/ubootenv" "0x0" "0x4000" "0x4000" "1"

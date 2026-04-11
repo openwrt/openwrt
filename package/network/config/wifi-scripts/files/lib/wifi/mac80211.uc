@@ -83,7 +83,7 @@ for (let phy_name, phy in board.wlan) {
 			country = '00';
 			encryption = 'owe';
 		} else {
-			encryption = 'open';
+			encryption = 'none';
 		}
 		if (board.wlan.defaults) {
 			defaults = board.wlan.defaults.ssids?.[band_name]?.ssid ? board.wlan.defaults.ssids?.[band_name] : board.wlan.defaults.ssids?.all;

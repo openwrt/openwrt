@@ -19,7 +19,7 @@ include $(INCLUDE_DIR)/target.mk
 
 DEFAULT_PACKAGES += \
 	kmod-input-core kmod-input-gpio-keys kmod-button-hotplug \
-	kmod-leds-gpio swconfig kmod-ath9k wpad-basic-mbedtls kmod-usb2 \
+	kmod-leds-gpio kmod-ath9k wpad-basic-mbedtls kmod-usb2 \
 	uboot-envtools kmod-crypto-hw-talitos
 
 $(eval $(call BuildTarget))

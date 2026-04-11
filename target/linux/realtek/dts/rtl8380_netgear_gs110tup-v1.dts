@@ -46,11 +46,11 @@
 };
 
 &mdio_bus0 {
-	EXTERNAL_PHY(16)
+	PHY_C22(16, 16)
 };
 
 &switch0 {
-	ports {
+	ethernet-ports {
 		SWITCH_PORT_SDS(16, 9, 2, qsgmii)
 
 		port@24 {

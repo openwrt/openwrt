@@ -459,13 +459,13 @@ define Device/meraki_mx64
 endef
 TARGET_DEVICES += meraki_mx64
 
-define Device/meraki_mx64_a0
+define Device/meraki_mx64-a0
   $(call Device/meraki_mx64)
   DEVICE_VARIANT := A0
   DEVICE_DTS_CONFIG := config@2
   DEVICE_DTS := bcm958625-meraki-mx64-a0
 endef
-TARGET_DEVICES += meraki_mx64_a0
+TARGET_DEVICES += meraki_mx64-a0
 
 define Device/meraki_mx65
   $(call Device/meraki_mx6x)

@@ -69,7 +69,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_I2C_QUP)		+= i2c-qup.o
 --- /dev/null
 +++ b/drivers/i2c/busses/i2c-ralink.c
-@@ -0,0 +1,397 @@
+@@ -0,0 +1,396 @@
 +/*
 + * drivers/i2c/busses/i2c-ralink.c
 + *
@@ -99,7 +99,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#include <linux/init.h>
 +#include <linux/errno.h>
 +#include <linux/platform_device.h>
-+#include <linux/of_platform.h>
 +#include <linux/i2c.h>
 +#include <linux/io.h>
 +#include <linux/err.h>

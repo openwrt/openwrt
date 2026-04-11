@@ -38,6 +38,7 @@ sub target_config_features(@) {
 		/^powerpc64$/ and $ret .= "\tselect powerpc64\n";
 		/^pwm$/ and $ret .= "\select PWM_SUPPORT\n";
 		/^ramdisk$/ and $ret .= "\tselect USES_INITRAMFS\n";
+		/^regulator$/ and $ret .= "\tselect REGULATOR_SUPPORT\n";
 		/^rfkill$/ and $ret .= "\tselect RFKILL_SUPPORT\n";
 		/^rootfs-part$/ and $ret .= "\tselect USES_ROOTFS_PART\n";
 		/^rtc$/ and $ret .= "\tselect RTC_SUPPORT\n";

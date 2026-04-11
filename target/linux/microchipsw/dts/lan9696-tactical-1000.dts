@@ -58,7 +58,7 @@
 			    <&sgpio_out 0 3 GPIO_ACTIVE_HIGH>;
 		settle-time-us = <100>;
 
-		i2c_sfp0: i2c@0 {
+		i2c_sfp2: i2c@0 {
 			reg = <0x0>;
 		};
 
@@ -66,7 +66,7 @@
 			reg = <0x1>;
 		};
 
-		i2c_sfp2: i2c@2 {
+		i2c_sfp0: i2c@2 {
 			reg = <0x2>;
 		};
 
@@ -195,6 +195,8 @@
 		los-gpios = <&sgpio_in 6 0 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpios = <&sgpio_in 6 1 GPIO_ACTIVE_LOW>;
 		tx-fault-gpios = <&sgpio_in 6 2 GPIO_ACTIVE_HIGH>;
+		/* RS1 is internally tied to RS0 */
+		rate-select0-gpios = <&sgpio_out 6 3 GPIO_ACTIVE_HIGH>;
 	};
 
 	sfp1: sfp1 {
@@ -204,6 +206,8 @@
 		los-gpios = <&sgpio_in 7 0 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpios = <&sgpio_in 7 1 GPIO_ACTIVE_LOW>;
 		tx-fault-gpios = <&sgpio_in 7 2 GPIO_ACTIVE_HIGH>;
+		/* RS1 is internally tied to RS0 */
+		rate-select0-gpios = <&sgpio_out 7 3 GPIO_ACTIVE_HIGH>;
 	};
 
 	sfp2: sfp2 {
@@ -213,6 +217,8 @@
 		los-gpios = <&sgpio_in 8 0 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpios = <&sgpio_in 8 1 GPIO_ACTIVE_LOW>;
 		tx-fault-gpios = <&sgpio_in 8 2 GPIO_ACTIVE_HIGH>;
+		/* RS1 is internally tied to RS0 */
+		rate-select0-gpios = <&sgpio_out 8 3 GPIO_ACTIVE_HIGH>;
 	};
 
 	sfp3: sfp3 {
@@ -222,6 +228,8 @@
 		los-gpios = <&sgpio_in 9 0 GPIO_ACTIVE_HIGH>;
 		mod-def0-gpios = <&sgpio_in 9 1 GPIO_ACTIVE_LOW>;
 		tx-fault-gpios = <&sgpio_in 9 2 GPIO_ACTIVE_HIGH>;
+		/* RS1 is internally tied to RS0 */
+		rate-select0-gpios = <&sgpio_out 9 3 GPIO_ACTIVE_HIGH>;
 	};
 };
 
@@ -585,6 +593,7 @@
 			phy-mode = "qsgmii";
 			phys = <&serdes 0>;
 			microchip,bandwidth = <1000>;
+			openwrt,netdev-name = "lan4";
 		};
 
 		port1: port@1 {
@@ -593,6 +602,7 @@
 			phy-mode = "qsgmii";
 			phys = <&serdes 0>;
 			microchip,bandwidth = <1000>;
+			openwrt,netdev-name = "lan3";
 		};
 
 		port2: port@2 {
@@ -601,6 +611,7 @@
 			phy-mode = "qsgmii";
 			phys = <&serdes 0>;
 			microchip,bandwidth = <1000>;
+			openwrt,netdev-name = "lan2";
 		};
 
 		port3: port@3 {
@@ -609,6 +620,7 @@
 			phy-mode = "qsgmii";
 			phys = <&serdes 0>;
 			microchip,bandwidth = <1000>;
+			openwrt,netdev-name = "lan1";
 		};
 
 		port4: port@4 {
@@ -617,6 +629,7 @@
 			phy-mode = "qsgmii";
 			phys = <&serdes 1>;
 			microchip,bandwidth = <1000>;
+			openwrt,netdev-name = "lan8";
 		};
 
 		port5: port@5 {
@@ -625,6 +638,7 @@
 			phy-mode = "qsgmii";
 			phys = <&serdes 1>;
 			microchip,bandwidth = <1000>;
+			openwrt,netdev-name = "lan7";
 		};
 
 		port6: port@6 {
@@ -633,6 +647,7 @@
 			phy-mode = "qsgmii";
 			phys = <&serdes 1>;
 			microchip,bandwidth = <1000>;
+			openwrt,netdev-name = "lan6";
 		};
 
 		port7: port@7 {
@@ -641,6 +656,7 @@
 			phy-mode = "qsgmii";
 			phys = <&serdes 1>;
 			microchip,bandwidth = <1000>;
+			openwrt,netdev-name = "lan5";
 		};
 
 		port8: port@8 {
@@ -649,6 +665,7 @@
 			phy-mode = "qsgmii";
 			phys = <&serdes 2>;
 			microchip,bandwidth = <1000>;
+			openwrt,netdev-name = "lan12";
 		};
 
 		port9: port@9 {
@@ -657,6 +674,7 @@
 			phy-mode = "qsgmii";
 			phys = <&serdes 2>;
 			microchip,bandwidth = <1000>;
+			openwrt,netdev-name = "lan11";
 		};
 
 		port10: port@10 {
@@ -665,6 +683,7 @@
 			phy-mode = "qsgmii";
 			phys = <&serdes 2>;
 			microchip,bandwidth = <1000>;
+			openwrt,netdev-name = "lan10";
 		};
 
 		port11: port@11 {
@@ -673,6 +692,7 @@
 			phy-mode = "qsgmii";
 			phys = <&serdes 2>;
 			microchip,bandwidth = <1000>;
+			openwrt,netdev-name = "lan9";
 		};
 
 		port12: port@12 {
@@ -681,6 +701,7 @@
 			phy-mode = "qsgmii";
 			phys = <&serdes 3>;
 			microchip,bandwidth = <1000>;
+			openwrt,netdev-name = "lan16";
 		};
 
 		port13: port@13 {
@@ -689,6 +710,7 @@
 			phy-mode = "qsgmii";
 			phys = <&serdes 3>;
 			microchip,bandwidth = <1000>;
+			openwrt,netdev-name = "lan15";
 		};
 
 		port14: port@14 {
@@ -697,6 +719,7 @@
 			phy-mode = "qsgmii";
 			phys = <&serdes 3>;
 			microchip,bandwidth = <1000>;
+			openwrt,netdev-name = "lan14";
 		};
 
 		port15: port@15 {
@@ -705,6 +728,7 @@
 			phy-mode = "qsgmii";
 			phys = <&serdes 3>;
 			microchip,bandwidth = <1000>;
+			openwrt,netdev-name = "lan13";
 		};
 
 		port16: port@16 {
@@ -713,6 +737,7 @@
 			phy-mode = "qsgmii";
 			phys = <&serdes 4>;
 			microchip,bandwidth = <1000>;
+			openwrt,netdev-name = "lan20";
 		};
 
 		port17: port@17 {
@@ -721,6 +746,7 @@
 			phy-mode = "qsgmii";
 			phys = <&serdes 4>;
 			microchip,bandwidth = <1000>;
+			openwrt,netdev-name = "lan19";
 		};
 
 		port18: port@18 {
@@ -729,6 +755,7 @@
 			phy-mode = "qsgmii";
 			phys = <&serdes 4>;
 			microchip,bandwidth = <1000>;
+			openwrt,netdev-name = "lan18";
 		};
 
 		port19: port@19 {
@@ -737,6 +764,7 @@
 			phy-mode = "qsgmii";
 			phys = <&serdes 4>;
 			microchip,bandwidth = <1000>;
+			openwrt,netdev-name = "lan17";
 		};
 
 		port20: port@20 {
@@ -745,6 +773,7 @@
 			phy-mode = "qsgmii";
 			phys = <&serdes 5>;
 			microchip,bandwidth = <1000>;
+			openwrt,netdev-name = "lan24";
 		};
 
 		port21: port@21 {
@@ -753,6 +782,7 @@
 			phy-mode = "qsgmii";
 			phys = <&serdes 5>;
 			microchip,bandwidth = <1000>;
+			openwrt,netdev-name = "lan23";
 		};
 
 		port22: port@22 {
@@ -761,6 +791,7 @@
 			phy-mode = "qsgmii";
 			phys = <&serdes 5>;
 			microchip,bandwidth = <1000>;
+			openwrt,netdev-name = "lan22";
 		};
 
 		port23: port@23 {
@@ -769,6 +800,7 @@
 			phy-mode = "qsgmii";
 			phys = <&serdes 5>;
 			microchip,bandwidth = <1000>;
+			openwrt,netdev-name = "lan21";
 		};
 
 		port24: port@24 {
@@ -779,6 +811,7 @@
 			managed = "in-band-status";
 			microchip,bandwidth = <10000>;
 			microchip,sd-sgpio = <24>;
+			openwrt,netdev-name = "sfp1";
 		};
 
 		port25: port@25 {
@@ -789,6 +822,7 @@
 			managed = "in-band-status";
 			microchip,bandwidth = <10000>;
 			microchip,sd-sgpio = <28>;
+			openwrt,netdev-name = "sfp2";
 		};
 
 		port26: port@26 {
@@ -799,6 +833,7 @@
 			managed = "in-band-status";
 			microchip,bandwidth = <10000>;
 			microchip,sd-sgpio = <32>;
+			openwrt,netdev-name = "sfp3";
 		};
 
 		port27: port@27 {
@@ -809,6 +844,7 @@
 			managed = "in-band-status";
 			microchip,bandwidth = <10000>;
 			microchip,sd-sgpio = <36>;
+			openwrt,netdev-name = "sfp4";
 		};
 
 		port29: port@29 {
@@ -817,6 +853,7 @@
 			phy-handle = <&phy3>;
 			phy-mode = "rgmii-id";
 			microchip,bandwidth = <1000>;
+			openwrt,netdev-name = "mgmt";
 		};
 	};
 };

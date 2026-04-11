@@ -7,7 +7,7 @@ Some servers use the NAS-IP-Address attribute as a destination address
 
 --- a/hostapd/config_file.c
 +++ b/hostapd/config_file.c
-@@ -2632,6 +2632,8 @@ static int hostapd_config_fill(struct ho
+@@ -2636,6 +2636,8 @@ static int hostapd_config_fill(struct ho
  	} else if (os_strcmp(buf, "iapp_interface") == 0) {
  		wpa_printf(MSG_INFO, "DEPRECATED: iapp_interface not used");
  #endif /* CONFIG_IAPP */
@@ -18,7 +18,7 @@ Some servers use the NAS-IP-Address attribute as a destination address
  			wpa_printf(MSG_ERROR,
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
-@@ -312,6 +312,7 @@ struct hostapd_bss_config {
+@@ -315,6 +315,7 @@ struct hostapd_bss_config {
  	unsigned int eap_sim_db_timeout;
  	int eap_server_erp; /* Whether ERP is enabled on internal EAP server */
  	struct hostapd_ip_addr own_ip_addr;

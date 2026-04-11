@@ -120,6 +120,38 @@ endef
 $(eval $(call KernelPackage,atl1e))
 
 
+define KernelPackage/libie-adminq
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Intel Ethernet common library - adminq helpers
+  DEPENDS:=@!LINUX_6_12 +kmod-libie
+  KCONFIG:=CONFIG_LIBIE_ADMINQ
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/libie/libie_adminq.ko
+endef
+
+define KernelPackage/libie-adminq/description
+ Intel Ethernet common library - adminq helpers
+endef
+
+$(eval $(call KernelPackage,libie-adminq))
+
+
+define KernelPackage/libie-fwlog
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Intel Ethernet library fw log
+  DEPENDS:=@!LINUX_6_12 +kmod-libie
+  KCONFIG:=CONFIG_LIBIE_FWLOG
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/libie/libie_fwlog.ko
+endef
+
+define KernelPackage/libie-fwlog/description
+ Intel Ethernet library FW Log
+endef
+
+$(eval $(call KernelPackage,libie-fwlog))
+
+
 define KernelPackage/libie
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel Ethernet library
@@ -155,9 +187,11 @@ define KernelPackage/libphy
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=PHY library
   KCONFIG:=CONFIG_PHYLIB \
-	   CONFIG_PHYLIB_LEDS=y
-  FILES:=$(LINUX_DIR)/drivers/net/phy/libphy.ko
-  AUTOLOAD:=$(call AutoLoad,15,libphy,1)
+	   CONFIG_PHYLIB_LEDS=y \
+	   CONFIG_MDIO_BUS
+  FILES:=$(LINUX_DIR)/drivers/net/phy/libphy.ko \
+    $(LINUX_DIR)/drivers/net/phy/mdio-bus.ko@ge6.18
+  AUTOLOAD:=$(call AutoLoad,15,libphy !LINUX_6_12:mdio-bus,1)
 endef
 
 define KernelPackage/libphy/description
@@ -202,7 +236,9 @@ define KernelPackage/mdio-devres
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Supports MDIO device registration
   DEPENDS:=+kmod-libphy +(TARGET_armsr||TARGET_bcm27xx_bcm2708||TARGET_loongarch64||TARGET_malta||TARGET_tegra):kmod-of-mdio
+ifeq ($(KERNEL_PATCHVER),6.12)
   KCONFIG:=CONFIG_MDIO_DEVRES
+endif
   HIDDEN:=1
   FILES:=$(LINUX_DIR)/drivers/net/phy/mdio_devres.ko
   AUTOLOAD:=$(call AutoProbe,mdio-devres)
@@ -490,12 +526,27 @@ endef
 
 $(eval $(call KernelPackage,phy-marvell-10g))
 
+define KernelPackage/phy-package
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Generic PHY Framework
+  DEPENDS:=@!LINUX_6_12 +kmod-libphy
+  KCONFIG:=CONFIG_PHY_PACKAGE
+  HIDDEN:=1
+  FILES:=$(LINUX_DIR)/drivers/net/phy/phy_package.ko
+  AUTOLOAD:=$(call AutoLoad,15,phy-package,1)
+endef
+
+define KernelPackage/phy-package/description
+ Generic PHY Framework
+endef
+
+$(eval $(call KernelPackage,phy-package))
 
 define KernelPackage/phy-micrel
    SUBMENU:=$(NETWORK_DEVICES_MENU)
    TITLE:=Micrel PHYs
    KCONFIG:=CONFIG_MICREL_PHY
-   DEPENDS:=+kmod-libphy +kmod-ptp
+   DEPENDS:=+kmod-libphy +kmod-ptp +!LINUX_6_12:kmod-phy-package
    FILES:=$(LINUX_DIR)/drivers/net/phy/micrel.ko
    AUTOLOAD:=$(call AutoLoad,18,micrel,1)
 endef
@@ -705,6 +756,64 @@ endef
 
 $(eval $(call KernelPackage,dsa-b53-mdio))
 
+
+define KernelPackage/dsa-ksz9477
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Microchip KSZ9477 family managed switch DSA support
+  DEPENDS:=@TARGET_imx_cortexa53 +kmod-dsa +kmod-dsa-notag +kmod-phy-micrel +kmod-regmap-core
+  KCONFIG:= \
+	CONFIG_NET_DSA_MICROCHIP_KSZ_COMMON \
+	CONFIG_NET_DSA_MICROCHIP_KSZ9477_I2C=n \
+	CONFIG_NET_DSA_MICROCHIP_KSZ_SPI=n \
+	CONFIG_NET_DSA_MICROCHIP_KSZ_PTP=n \
+	CONFIG_NET_DSA_MICROCHIP_KSZ8863_SMI=n \
+	CONFIG_NET_DSA_TAG_KSZ=y
+  FILES:= \
+	$(LINUX_DIR)/drivers/net/dsa/microchip/ksz_switch.ko \
+	$(LINUX_DIR)/net/dsa/tag_ksz.ko
+  AUTOLOAD:=$(call AutoProbe,ksz_switch)
+endef
+
+define KernelPackage/dsa-ksz9477/description
+  Microchip KSZ9477 family managed switch support. Note that this should be target
+  specific as the driver enables DCB which grows the static kernel code.
+endef
+
+$(eval $(call KernelPackage,dsa-ksz9477))
+
+
+define KernelPackage/dsa-ksz9477-i2c
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Microchip KSZ9477 family managed switch DSA support via I2C
+  DEPENDS:=+kmod-dsa-ksz9477 +kmod-regmap-i2c
+  KCONFIG:=CONFIG_NET_DSA_MICROCHIP_KSZ9477_I2C
+  FILES:= $(LINUX_DIR)/drivers/net/dsa/microchip/ksz9477_i2c.ko
+  AUTOLOAD:=$(call AutoProbe,ksz9477_i2c)
+endef
+
+define KernelPackage/dsa-ksz9477-i2c/description
+  Microchip KSZ9477 family managed switch support via I2C
+endef
+
+$(eval $(call KernelPackage,dsa-ksz9477-i2c))
+
+
+define KernelPackage/dsa-ksz9477-spi
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Microchip KSZ9477 family managed switch DSA support via SPI
+  DEPENDS:=+kmod-dsa-ksz9477 +kmod-regmap-spi
+  KCONFIG:=CONFIG_NET_DSA_MICROCHIP_KSZ_SPI
+  FILES:= $(LINUX_DIR)/drivers/net/dsa/microchip/ksz_spi.ko
+  AUTOLOAD:=$(call AutoProbe,ksz_spi)
+endef
+
+define KernelPackage/dsa-ksz9477-spi/description
+  Microchip KSZ9477 family managed switch support via SPI
+endef
+
+$(eval $(call KernelPackage,dsa-ksz9477-spi))
+
+
 define KernelPackage/dsa-mv88e6060
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Marvell MV88E6060 DSA Switch
@@ -746,10 +855,27 @@ endef
 
 $(eval $(call KernelPackage,dsa-mv88e6xxx))
 
+define KernelPackage/dsa-mxl862xx
+  SUBMENU:=Network Devices
+  TITLE:=MaxLinear MXL862 switch support
+  KCONFIG:= \
+    CONFIG_NET_DSA_TAG_MXL_862XX \
+    CONFIG_NET_DSA_TAG_MXL_862XX_8021Q \
+    CONFIG_NET_DSA_MXL862
+  DEPENDS:=+kmod-dsa +kmod-lib-crc16 +kmod-phy-maxlinear
+  FILES:= \
+    $(LINUX_DIR)/drivers/net/dsa/mxl862xx/mxl862xx_dsa.ko \
+    $(LINUX_DIR)/net/dsa/tag_mxl862xx.ko \
+    $(LINUX_DIR)/net/dsa/tag_mxl862xx_8021q.ko
+  AUTOLOAD:=$(call AutoProbe,mxl862xx_dsa)
+endef
+
+$(eval $(call KernelPackage,dsa-mxl862xx))
+
 define KernelPackage/dsa-qca8k
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Qualcomm Atheros QCA8xxx switch family DSA support
-  DEPENDS:=+kmod-dsa +kmod-regmap-core
+  DEPENDS:=+kmod-dsa +kmod-regmap-core +!LINUX_6_12:kmod-mdio-devres
   KCONFIG:= \
 	CONFIG_NET_DSA_QCA8K \
 	CONFIG_NET_DSA_QCA8K_LEDS_SUPPORT=y \
@@ -1344,7 +1470,7 @@ $(eval $(call KernelPackage,igbvf))
 define KernelPackage/ixgbe
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel(R) 82598/82599 PCI-Express 10 Gigabit Ethernet support
-  DEPENDS:=@PCI_SUPPORT +kmod-mdio +kmod-ptp +kmod-hwmon-core +kmod-libphy +kmod-mdio-devres
+  DEPENDS:=@PCI_SUPPORT +kmod-mdio +kmod-ptp +kmod-hwmon-core +kmod-libphy +kmod-mdio-devres +!LINUX_6_12:kmod-libie-fwlog
   KCONFIG:=CONFIG_IXGBE \
     CONFIG_IXGBE_HWMON=y \
     CONFIG_IXGBE_DCA=n \
@@ -1381,7 +1507,7 @@ $(eval $(call KernelPackage,ixgbevf))
 define KernelPackage/i40e
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel(R) Ethernet Controller XL710 Family support
-  DEPENDS:=@PCI_SUPPORT +kmod-ptp +kmod-libie
+  DEPENDS:=@PCI_SUPPORT +kmod-ptp +kmod-libie +!LINUX_6_12:kmod-libie-adminq
   KCONFIG:=CONFIG_I40E \
     CONFIG_I40E_DCB=y
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/i40e/i40e.ko
@@ -1398,7 +1524,7 @@ $(eval $(call KernelPackage,i40e))
 define KernelPackage/ice
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel(R) Ethernet Controller E810 Series support
-  DEPENDS:=@PCI_SUPPORT +kmod-ptp +kmod-hwmon-core +kmod-libie
+  DEPENDS:=@PCI_SUPPORT +kmod-ptp +kmod-hwmon-core +kmod-libie +!LINUX_6_12:kmod-libie-adminq +!LINUX_6_12:kmod-libie-fwlog
   KCONFIG:=CONFIG_ICE \
     CONFIG_ICE_HWMON=y \
     CONFIG_ICE_HWTS=n \
@@ -1417,7 +1543,7 @@ $(eval $(call KernelPackage,ice))
 define KernelPackage/iavf
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Intel(R) Ethernet Adaptive Virtual Function support
-  DEPENDS:=@PCI_SUPPORT +kmod-libie
+  DEPENDS:=@PCI_SUPPORT +kmod-libie +!LINUX_6_12:kmod-libie-adminq +!LINUX_6_12:kmod-ptp
   KCONFIG:= \
        CONFIG_I40EVF \
        CONFIG_IAVF
@@ -1775,7 +1901,7 @@ $(eval $(call KernelPackage,bnx2))
 define KernelPackage/bnx2x
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=QLogic 5771x/578xx 10/20-Gigabit ethernet adapter driver
-  DEPENDS:=@PCI_SUPPORT +bnx2x-firmware +kmod-lib-crc32c +kmod-mdio +kmod-ptp +kmod-lib-zlib-inflate
+  DEPENDS:=@PCI_SUPPORT +bnx2x-firmware +LINUX_6_12:kmod-lib-crc32c +kmod-mdio +kmod-ptp +kmod-lib-zlib-inflate
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/broadcom/bnx2x/bnx2x.ko
   KCONFIG:= \
 	CONFIG_BNX2X \
@@ -1792,7 +1918,7 @@ $(eval $(call KernelPackage,bnx2x))
 define KernelPackage/bnxt-en
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Broadcom NetXtreme-C/E network driver
-  DEPENDS:=@PCI_SUPPORT +kmod-hwmon-core +kmod-lib-crc32c +kmod-mdio +kmod-ptp
+  DEPENDS:=@PCI_SUPPORT +kmod-hwmon-core +LINUX_6_12:kmod-lib-crc32c +kmod-mdio +kmod-ptp
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/broadcom/bnxt/bnxt_en.ko
   KCONFIG:= \
 	  CONFIG_BNXT \
@@ -2141,10 +2267,27 @@ endef
 $(eval $(call KernelPackage,hinic))
 
 
+define KernelPackage/hinic3
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Huawei 3rd generation network adapters (HINIC3) support
+  DEPENDS:=@PCI_SUPPORT @TARGET_x86||TARGET_armsr_armv8 @LINUX_6_18
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/huawei/hinic3/hinic3.ko
+  KCONFIG:=CONFIG_HINIC3
+  AUTOLOAD:=$(call AutoProbe,hinic3)
+endef
+
+define KernelPackage/hinic3/description
+  This driver supports HiNIC 3rd gen Network Adapter (HINIC3).
+  The driver is supported on X86_64 and ARM64 little endian.
+endef
+
+$(eval $(call KernelPackage,hinic3))
+
+
 define KernelPackage/sfc
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Solarflare SFC9000/SFC9100/EF100-family support
-  DEPENDS:=@PCI_SUPPORT +kmod-mdio +kmod-lib-crc32c +kmod-ptp +kmod-hwmon-core
+  DEPENDS:=@PCI_SUPPORT +kmod-mdio +LINUX_6_12:kmod-lib-crc32c +kmod-ptp +kmod-hwmon-core
   KCONFIG:= \
 	CONFIG_SFC \
 	CONFIG_SFC_MTD=y \
@@ -2165,7 +2308,7 @@ $(eval $(call KernelPackage,sfc))
 define KernelPackage/sfc-falcon
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Solarflare SFC4000 support
-  DEPENDS:=@PCI_SUPPORT +kmod-mdio +kmod-lib-crc32c +kmod-i2c-algo-bit
+  DEPENDS:=@PCI_SUPPORT +kmod-mdio +LINUX_6_12:kmod-lib-crc32c +kmod-i2c-algo-bit
   KCONFIG:= \
 	CONFIG_SFC_FALCON \
 	CONFIG_SFC_FALCON_MTD=y
@@ -2183,7 +2326,7 @@ $(eval $(call KernelPackage,sfc-falcon))
 define KernelPackage/sfc-siena
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Solarflare SFN5000/6000 'Siena' based card support
-  DEPENDS:=@PCI_SUPPORT +kmod-mdio +kmod-lib-crc32c +kmod-i2c-algo-bit +kmod-ptp +kmod-hwmon-core
+  DEPENDS:=@PCI_SUPPORT +kmod-mdio +LINUX_6_12:kmod-lib-crc32c +kmod-i2c-algo-bit +kmod-ptp +kmod-hwmon-core
   KCONFIG:= \
 	CONFIG_SFC_SIENA \
 	CONFIG_SFC_SIENA_MTD=y \

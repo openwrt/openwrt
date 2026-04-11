@@ -1,5 +1,7 @@
 /dts-v1/;
 
+#include <dt-bindings/clock/mediatek,mtmips-sysc.h>
+
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
@@ -108,7 +110,7 @@
 			compatible = "mediatek,mt7621-i2c";
 			reg = <0x900 0x100>;
 
-			clocks = <&sysc 9>;
+			clocks = <&sysc MT76X8_CLK_I2C>;
 			clock-names = "i2c";
 
 			resets = <&sysc 16>;
@@ -127,7 +129,7 @@
 			compatible = "mediatek,mt7628-i2s";
 			reg = <0xa00 0x100>;
 
-			clocks = <&sysc 10>;
+			clocks = <&sysc MT76X8_CLK_I2S>;
 
 			resets = <&sysc 17>;
 			reset-names = "i2s";
@@ -149,7 +151,7 @@
 			compatible = "ralink,mt7621-spi";
 			reg = <0xb00 0x100>;
 
-			clocks = <&sysc 11>;
+			clocks = <&sysc MT76X8_CLK_SPI1>;
 			clock-names = "spi";
 
 			resets = <&sysc 18>;
@@ -164,7 +166,7 @@
 			status = "disabled";
 		};
 
-		uartlite: uart0@c00 {
+		uartlite: serial@c00 {
 			compatible = "ns16550a";
 			reg = <0xc00 0x100>;
 
@@ -172,7 +174,7 @@
 			reg-io-width = <4>;
 			no-loopback-test;
 
-			clocks = <&sysc 13>;
+			clocks = <&sysc MT76X8_CLK_UART0>;
 
 			resets = <&sysc 12>;
 
@@ -183,7 +185,7 @@
 			pinctrl-0 = <&uart0_pins>;
 		};
 
-		uart1: uart1@d00 {
+		uart1: serial@d00 {
 			compatible = "ns16550a";
 			reg = <0xd00 0x100>;
 
@@ -191,7 +193,7 @@
 			reg-io-width = <4>;
 			no-loopback-test;
 
-			clocks = <&sysc 14>;
+			clocks = <&sysc MT76X8_CLK_UART1>;
 
 			resets = <&sysc 19>;
 
@@ -204,7 +206,7 @@
 			status = "disabled";
 		};
 
-		uart2: uart2@e00 {
+		uart2: serial@e00 {
 			compatible = "ns16550a";
 			reg = <0xe00 0x100>;
 
@@ -212,7 +214,7 @@
 			reg-io-width = <4>;
 			no-loopback-test;
 
-			clocks = <&sysc 15>;
+			clocks = <&sysc MT76X8_CLK_UART2>;
 
 			resets = <&sysc 20>;
 
@@ -229,6 +231,15 @@
 			compatible = "mediatek,mt7628-pwm";
 			reg = <0x5000 0x1000>;
 			#pwm-cells = <2>;
+
+			clocks = <&sysc MT76X8_CLK_PWM_TOP>,
+				 <&sysc MT76X8_CLK_PWM_MAIN>,
+				 <&sysc MT76X8_CLK_PWM_CH1>,
+				 <&sysc MT76X8_CLK_PWM_CH2>,
+				 <&sysc MT76X8_CLK_PWM_CH3>,
+				 <&sysc MT76X8_CLK_PWM_CH4>;
+			clock-names = "top", "main",
+				      "pwm1", "pwm2", "pwm3", "pwm4";
 
 			pinctrl-names = "default";
 			pinctrl-0 = <&pwm0_pins>, <&pwm1_pins>;
@@ -389,7 +400,7 @@
 		disable-wp;
 		no-1-8-v;
 
-		clocks = <&sysc 16>, <&sysc 16>;
+		clocks = <&sysc MT76X8_CLK_MMC>, <&sysc MT76X8_CLK_MMC>;
 		clock-names = "source", "hclk";
 
 		interrupt-parent = <&intc>;
@@ -470,8 +481,7 @@
 
 	pcie: pcie@10140000 {
 		compatible = "mediatek,mt7620-pci";
-		reg = <0x10140000 0x100
-		       0x10142000 0x8000>;
+		reg = <0x10140000 0x100>, <0x10142000 0x8000>;
 
 		#address-cells = <3>;
 		#size-cells = <2>;
@@ -511,7 +521,7 @@
 		compatible = "mediatek,mt7628-wmac";
 		reg = <0x10300000 0x100000>;
 
-		clocks = <&sysc 17>;
+		clocks = <&sysc MT76X8_CLK_WMAC>;
 
 		interrupt-parent = <&cpuintc>;
 		interrupts = <6>;

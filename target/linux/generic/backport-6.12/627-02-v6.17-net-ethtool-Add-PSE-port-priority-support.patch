@@ -1,0 +1,68 @@
+# ADAPTED FOR OPENWRT 6.12 - Documentation changes removed
+# Original commit: eeb0c8f72f49
+From eeb0c8f72f49a21984981188404cfd3700edbaff Mon Sep 17 00:00:00 2001
+From: "Kory Maincent (Dent Project)" <kory.maincent@bootlin.com>
+Date: Tue, 17 Jun 2025 14:12:07 +0200
+Subject: [PATCH] net: ethtool: Add PSE port priority support feature
+
+This patch expands the status information provided by ethtool for PSE c33
+with current port priority and max port priority. It also adds a call to
+pse_ethtool_set_prio() to configure the PSE port priority.
+
+Signed-off-by: Kory Maincent (Dent Project) <kory.maincent@bootlin.com>
+Reviewed-by: Oleksij Rempel <o.rempel@pengutronix.de>
+Link: https://patch.msgid.link/20250617-feature_poe_port_prio-v14-8-78a1a645e2ee@bootlin.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+Signed-off-by: Carlo Szelinsky <github@szelinsky.de>
+---
+ net/ethtool/pse-pd.c | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+--- a/net/ethtool/pse-pd.c
++++ b/net/ethtool/pse-pd.c
+@@ -111,6 +111,9 @@ static int pse_reply_size(const struct e
+ 		len += st->c33_pw_limit_nb_ranges *
+ 		       (nla_total_size(0) +
+ 			nla_total_size(sizeof(u32)) * 2);
++	if (st->prio_max)
++		/* _PSE_PRIO_MAX + _PSE_PRIO */
++		len += nla_total_size(sizeof(u32)) * 2;
+ 
+ 	return len;
+ }
+@@ -205,6 +208,11 @@ static int pse_fill_reply(struct sk_buff
+ 	    pse_put_pw_limit_ranges(skb, st))
+ 		return -EMSGSIZE;
+ 
++	if (st->prio_max &&
++	    (nla_put_u32(skb, ETHTOOL_A_PSE_PRIO_MAX, st->prio_max) ||
++	     nla_put_u32(skb, ETHTOOL_A_PSE_PRIO, st->prio)))
++		return -EMSGSIZE;
++
+ 	return 0;
+ }
+ 
+@@ -226,6 +234,7 @@ const struct nla_policy ethnl_pse_set_po
+ 		NLA_POLICY_RANGE(NLA_U32, ETHTOOL_C33_PSE_ADMIN_STATE_DISABLED,
+ 				 ETHTOOL_C33_PSE_ADMIN_STATE_ENABLED),
+ 	[ETHTOOL_A_C33_PSE_AVAIL_PW_LIMIT] = { .type = NLA_U32 },
++	[ETHTOOL_A_PSE_PRIO] = { .type = NLA_U32 },
+ };
+ 
+ static int
+@@ -283,6 +292,15 @@ ethnl_set_pse(struct ethnl_req_info *req
+ 		if (ret)
+ 			return ret;
+ 	}
++
++	if (tb[ETHTOOL_A_PSE_PRIO]) {
++		unsigned int prio;
++
++		prio = nla_get_u32(tb[ETHTOOL_A_PSE_PRIO]);
++		ret = pse_ethtool_set_prio(phydev->psec, info->extack, prio);
++		if (ret)
++			return ret;
++	}
+ 
+ 	/* These values are already validated by the ethnl_pse_set_policy */
+ 	if (tb[ETHTOOL_A_PODL_PSE_ADMIN_CONTROL] ||

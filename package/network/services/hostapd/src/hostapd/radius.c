@@ -568,6 +568,7 @@ static int radius_setup(struct radius_state *s, struct radius_config *c)
 	eap->max_auth_rounds = 100;
 	eap->max_auth_rounds_short = 50;
 	eap->ssl_ctx = tls_init(&conf);
+	eap->pwd_group = 19;
 	if (!eap->ssl_ctx) {
 		wpa_printf(MSG_INFO, "TLS init failed\n");
 		return 1;

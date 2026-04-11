@@ -108,6 +108,11 @@ define Build/linksys-image
 	mv $@.new $@
 endef
 
+define Build/xikestor-nosimg
+	$(STAGING_DIR_HOST)/bin/nosimg-enc -i $@ -o $@.new
+	mv $@.new $@
+endef
+
 define Build/zynsig
 	$(STAGING_DIR_HOST)/bin/zynsig -i $@ \
 		-o $@.new

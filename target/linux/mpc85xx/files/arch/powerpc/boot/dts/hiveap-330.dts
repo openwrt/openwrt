@@ -49,7 +49,6 @@
 			d-cache-sets = <0x80>;
 			d-cache-size = <0x8000>;
 			d-cache-block-size = <0x20>;
-			status = "okay";
 			clock-frequency = <533333328>; /* 533.33 MHz */
 			bus-frequency = <266666664>;  /* 266.66 MHz */
 			timebase-frequency = <33333333>; /* 33.33 MHz */
@@ -130,8 +129,6 @@
 		ranges = <0x0 0x0 0x0 0xec000000 0x4000000>;
 
 		nor@0 {
-			#address-cells = <1>;
-			#size-cells = <1>;
 			compatible = "cfi-flash";
 			reg = <0x0 0x0 0x4000000>;
 			bank-width = <2>;
@@ -334,7 +331,6 @@
 			rx-stash-idx = <0x00>;
 			rx-stash-len = <0x60>;
 			bd-stash;
-			status = "okay";
 			phy-handle = <&phy0>;
 			phy-connection-type = "rgmii-id";
 			nvmem-cells = <&macaddr_hwinfo_0 0>;
@@ -349,7 +345,6 @@
 			rx-stash-idx = <0x00>;
 			rx-stash-len = <0x60>;
 			bd-stash;
-			status = "okay";
 			phy-handle = <&phy1>;
 			phy-connection-type = "rgmii-id";
 			nvmem-cells = <&macaddr_hwinfo_0 1>;

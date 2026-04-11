@@ -116,6 +116,44 @@ tplink_do_upgrade() {
 	nand_do_upgrade "$1"
 }
 
+linksys_mr_pre_upgrade() {
+	local setenv_script="/tmp/fw_env_upgrade"
+
+	CI_UBIPART="rootfs"
+	boot_part="$(fw_printenv -n boot_part)"
+	if [ -n "$UPGRADE_OPT_USE_CURR_PART" ]; then
+		if [ "$boot_part" -eq "2" ]; then
+			CI_KERNPART="alt_kernel"
+			CI_UBIPART="alt_rootfs"
+		fi
+	else
+		if [ "$boot_part" -eq "1" ]; then
+			echo "boot_part 2" >> $setenv_script
+			CI_KERNPART="alt_kernel"
+			CI_UBIPART="alt_rootfs"
+		else
+			echo "boot_part 1" >> $setenv_script
+		fi
+	fi
+
+	boot_part_ready="$(fw_printenv -n boot_part_ready)"
+	if [ "$boot_part_ready" -ne "3" ]; then
+		echo "boot_part_ready 3" >> $setenv_script
+	fi
+
+	auto_recovery="$(fw_printenv -n auto_recovery)"
+	if [ "$auto_recovery" != "yes" ]; then
+		echo "auto_recovery yes" >> $setenv_script
+	fi
+
+	if [ -f "$setenv_script" ]; then
+		fw_setenv -s $setenv_script || {
+			echo "failed to update U-Boot environment"
+			return 1
+		}
+	fi
+}
+
 platform_check_image() {
 	return 0;
 }
@@ -156,6 +194,8 @@ platform_do_upgrade() {
 		;;
 	glinet,gl-ax1800|\
 	glinet,gl-axt1800|\
+	netgear,rbr350|\
+	netgear,rbs350|\
 	netgear,wax214)
 		nand_do_upgrade "$1"
 		;;
@@ -168,7 +208,9 @@ platform_do_upgrade() {
 		;;
 	jdcloud,re-cs-02|\
 	jdcloud,re-cs-07|\
-	jdcloud,re-ss-01)
+	jdcloud,re-ss-01|\
+	link,nn6000-v1|\
+	link,nn6000-v2)
 		local cfgpart=$(find_mmc_part "0:BOOTCONFIG")
 		part_num="$(hexdump -e '1/1 "%01x|"' -n 1 -s 148 -C $cfgpart | cut -f 1 -d "|" | head -n1)"
 		if [ "$part_num" -eq "1" ]; then
@@ -188,22 +230,13 @@ platform_do_upgrade() {
 		;;
 	linksys,mr7350|\
 	linksys,mr7500)
-		boot_part="$(fw_printenv -n boot_part)"
-		if [ "$boot_part" -eq "1" ]; then
-			fw_setenv boot_part 2
-			CI_KERNPART="alt_kernel"
-			CI_UBIPART="alt_rootfs"
-		else
-			fw_setenv boot_part 1
-			CI_UBIPART="rootfs"
-		fi
-		fw_setenv boot_part_ready 3
-		fw_setenv auto_recovery yes
+		linksys_mr_pre_upgrade "$1"
+		remove_oem_ubi_volume squashfs
 		nand_do_upgrade "$1"
 		;;
 	tplink,eap610-outdoor|\
 	tplink,eap620-hd-v3|\
-	tplink,eap623od-hd-v1|\
+	tplink,eap623-outdoor-hd-v1|\
 	tplink,eap625-outdoor-hd-v1)
 		tplink_do_upgrade "$1"
 		;;

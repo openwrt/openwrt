@@ -24,13 +24,13 @@
 		wlan5g {
 			label = "green:wifi5g";
 			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
+			linux,default-trigger = "phy0tpt";
 		};
 
 		wlan2g {
 			label = "green:wifi2g";
 			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
+			linux,default-trigger = "phy1tpt";
 		};
 
 		led_status_green: status_green {

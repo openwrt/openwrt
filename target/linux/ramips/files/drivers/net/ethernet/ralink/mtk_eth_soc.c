@@ -34,6 +34,7 @@
 #include <net/netfilter/nf_flow_table.h>
 #include <linux/gpio.h>
 #include <linux/gpio/consumer.h>
+#include <linux/version.h>
 
 #include <asm/mach-ralink/ralink_regs.h>
 
@@ -243,10 +244,18 @@ static void fe_clean_rx(struct fe_priv *priv)
 		ring->rx_dma = NULL;
 	}
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,13,0)
+	void *vaddr = (void *)(ring->frag_cache.encoded_page & PAGE_MASK);
+	if (!vaddr)
+		return;
+
+	page = virt_to_page(vaddr);
+#else
 	if (!ring->frag_cache.va)
 	    return;
 
 	page = virt_to_page(ring->frag_cache.va);
+#endif
 	__page_frag_cache_drain(page, ring->frag_cache.pagecnt_bias);
 	memset(&ring->frag_cache, 0, sizeof(ring->frag_cache));
 }
@@ -1359,13 +1368,6 @@ static int __init fe_init(struct net_device *dev)
 
 	fe_reset_phy(priv);
 
-	/* Set the MAC address if it is correct, if not use a random MAC address  */
-	if (of_get_ethdev_address(priv->dev->of_node, dev)) {
-		eth_hw_addr_random(dev);
-		dev_err(priv->dev, "generated random MAC address %pM\n",
-			dev->dev_addr);
-	}
-
 	err = fe_mdio_init(priv);
 	if (err)
 		return err;
@@ -1553,6 +1555,17 @@ static int fe_probe(struct platform_device *pdev)
 	SET_NETDEV_DEV(netdev, &pdev->dev);
 	netdev->netdev_ops = &fe_netdev_ops;
 	netdev->base_addr = (unsigned long)fe_base;
+
+	/* Set the MAC address if it is correct, if not use a random MAC address  */
+	err = of_get_ethdev_address(pdev->dev.of_node, netdev);
+	if (err == -EPROBE_DEFER)
+		return err;
+
+	if (err) {
+		eth_hw_addr_random(netdev);
+		dev_err(&pdev->dev, "generated random MAC address %pM\n",
+			netdev->dev_addr);
+	}
 
 	netdev->irq = platform_get_irq(pdev, 0);
 	if (netdev->irq < 0)

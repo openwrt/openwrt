@@ -127,58 +127,21 @@
 };
 
 &mdio_bus0 {
-	phy0: ethernet-phy@0 {
-		compatible = "ethernet-phy-ieee802.3-c45";
-		reg = <0>;
-	};
-
-	phy8: ethernet-phy@8 {
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <1>;
-		reg = <8>;
-	};
-
-	phy16: ethernet-phy@16 {
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <2>;
-		reg = <16>;
-	};
-
-	phy20: ethernet-phy@20 {
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <3>;
-		reg = <20>;
-	};
+	PHY_C45(0, 0)
+	PHY_C45(8, 1)
+	PHY_C45(16, 2)
+	PHY_C45(20, 3)
 };
 
 &mdio_bus3 {
-	phy24: ethernet-phy@24 {
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <16>;
-		reg = <24>;
-	};
-
-	phy25: ethernet-phy@25 {
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <17>;
-		reg = <25>;
-	};
-
-	phy26: ethernet-phy@26 {
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <18>;
-		reg = <26>;
-	};
-
-	phy27: ethernet-phy@27 {
-		compatible = "ethernet-phy-ieee802.3-c45";
-		realtek,smi-address = <19>;
-		reg = <27>;
-	};
+	PHY_C45(24, 16)
+	PHY_C45(25, 17)
+	PHY_C45(26, 18)
+	PHY_C45(27, 19)
 };
 
 &switch0 {
-	ports {
+	ethernet-ports {
 		#address-cells = <1>;
 		#size-cells = <0>;
 
@@ -261,7 +224,7 @@
 			phy-mode = "internal";
 
 			fixed-link {
-				speed = <10000>;
+				speed = <1000>;
 				full-duplex;
 			};
 		};

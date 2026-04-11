@@ -33,6 +33,7 @@ ramips_setup_interfaces()
 	xiaomi,mi-router-cr6609|\
 	xiaomi,redmi-router-ac2100|\
 	z-router,zr-2660|\
+	z-router,zr-2662|\
 	zyxel,wsm20)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
@@ -46,9 +47,6 @@ ramips_setup_interfaces()
 	cudy,ap1300-outdoor-v1|\
 	dlink,dap-1620-b1|\
 	dlink,dap-x1860-a1|\
-	dlink,dir-1360-a1)
-		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
-		;;
 	dlink,dra-1360-a1|\
 	edimax,re23s|\
 	linksys,re7000|\
@@ -140,7 +138,8 @@ ramips_setup_interfaces()
 	zyxel,lte3301-plus)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		;;
-	elecom,wsc-x1800gs)
+	elecom,wsc-x1800gs|\
+	wavlink,halo-base-pro)
 		ucidef_set_interface_lan "lan1 lan2"
 		;;
 	gnubee,gb-pc1)
@@ -264,43 +263,14 @@ ramips_setup_macs()
 		;;
 	edimax,ra21s|\
 	edimax,rg21s)
-		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
-		;;
-	elecom,wrc-2533ghbk2-t|\
-	elecom,wrc-2533ghbk-i)
-		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
-		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
-		label_mac=$wan_mac
-		;;
-	h3c,tx1800-plus|\
-	h3c,tx1801-plus|\
-	h3c,tx1806)
-		label_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
-		lan_mac=$(macaddr_add "$label_mac" 1)
-		wan_mac=$label_mac
 		;;
 	iodata,wnpr2600g)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env wanaddr)
 		label_mac=$wan_mac
 		;;
-	iptime,t5004)
-		lan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
-		wan_mac=$(macaddr_add "$lan_mac" 1)
-		;;
 	jdcloud,re-sp-01b)
 		lan_mac=$(mtd_get_mac_ascii config mac)
-		wan_mac=$lan_mac
-		label_mac=$lan_mac
-		;;
-	linksys,e5600|\
-	linksys,ea6350-v4|\
-	linksys,ea7300-v1|\
-	linksys,ea7300-v2|\
-	linksys,ea7500-v2|\
-	linksys,ea8100-v1|\
-	linksys,ea8100-v2)
-		lan_mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
 		wan_mac=$lan_mac
 		label_mac=$lan_mac
 		;;

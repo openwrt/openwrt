@@ -92,6 +92,7 @@ case "$board" in
 	cudy,ap3000wall-v1|\
 	cudy,ap3000-v1|\
 	cudy,m3000-v1|\
+	cudy,m3000-v2-yt8821|\
 	cudy,re3000-v1|\
 	cudy,tr3000-256mb-v1|\
 	cudy,tr3000-v1|\
@@ -99,9 +100,13 @@ case "$board" in
 	cudy,wbr3000uax-v1|\
 	cudy,wbr3000uax-v1-ubootmod|\
 	cudy,wr3000e-v1|\
+	cudy,wr3000e-v1-ubootmod|\
 	cudy,wr3000s-v1|\
+	cudy,wr3000s-v1-ubootmod|\
 	cudy,wr3000h-v1|\
+	cudy,wr3000h-v1-ubootmod|\
 	cudy,wr3000p-v1|\
+	cudy,wr3000p-v1-ubootmod|\
 	cudy,wr3000-v1)
 		addr=$(mtd_get_mac_binary bdinfo 0xde00)
 		# Originally, phy0 is phy1 mac with LA bit set. However, this would conflict
@@ -153,9 +158,11 @@ case "$board" in
 	jdcloud,re-cp-03)
 		[ "$PHYNBR" = "1" ] && mmc_get_mac_binary factory 0xa > /sys${DEVPATH}/macaddress
 		;;
+	keenetic,kap-630|\
 	keenetic,kn-3711|\
 	keenetic,kn-3811|\
-	keenetic,kn-3911)
+	keenetic,kn-3911|\
+	netcraze,nap-630)
 		[ "$PHYNBR" = "1" ] && \
 			macaddr_setbit_la "$(mtd_get_mac_binary rf-eeprom 0x4)" > /sys${DEVPATH}/macaddress
 		;;
@@ -180,7 +187,8 @@ case "$board" in
 		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 3 > /sys${DEVPATH}/macaddress
 		;;
-	netis,nx31)
+	netis,nx31|\
+	netis,nx32u)
 		addr=$(mtd_get_mac_binary "Factory" 0x4)
 		addr=$(macaddr_unsetbit $(macaddr_setbit_la $addr) 25)
 		addr_2g=$(macaddr_unsetbit $(macaddr_unsetbit $addr 26) 27)
@@ -207,6 +215,11 @@ case "$board" in
 		addr=$(mtd_get_mac_ascii product_info ethaddr)
 		[ "$PHYNBR" = "0" ] && macaddr_add $addr 2 > /sys${DEVPATH}/macaddress
 		[ "$PHYNBR" = "1" ] && macaddr_add $addr 3 > /sys${DEVPATH}/macaddress
+		;;
+	tplink,eap683-lr)
+		addr=$(get_mac_label)
+		[ "$PHYNBR" = "0" ] && echo $addr > /sys${DEVPATH}/macaddress
+		[ "$PHYNBR" = "1" ] && macaddr_add $addr 1 > /sys${DEVPATH}/macaddress
 		;;
 	tplink,fr365-v1)
 		addr=$(strings /dev/mtd11 | grep 'option macaddr' | awk -F"'" '{print $2}')

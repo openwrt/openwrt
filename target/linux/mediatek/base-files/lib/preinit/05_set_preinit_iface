@@ -1,10 +1,13 @@
 set_preinit_iface() {
 	case $(board_name) in
+	bazis,ax3000wm|\
 	cudy,m3000-v1|\
+	cudy,m3000-v2-yt8821|\
 	cudy,tr3000-256mb-v1|\
 	cudy,tr3000-v1|\
 	cudy,tr3000-v1-ubootmod|\
 	glinet,gl-mt2500|\
+	glinet,gl-mt2500-airoha|\
 	glinet,gl-mt3000|\
 	openembed,som7981|\
 	wavlink,wl-wn573hx3)
@@ -34,6 +37,9 @@ set_preinit_iface() {
 	xiaomi,redmi-router-ax6000-ubootmod)
 		ip link set eth0 up
 		ifname=lan4
+		;;
+	zyxel,wx5600-t0-ubootmod)
+		ifname=lan1
 		;;
 	*)
 		ip link set eth0 up

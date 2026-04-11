@@ -142,8 +142,13 @@ function wdev_config_init(wdev)
 
 function wdev_setup_cb(wdev)
 {
-	if (wdev.state != "setup")
+	if (wdev.state != "setup") {
+		if (wdev.state == "up" && wdev.config_change) {
+			wdev_config_init(wdev);
+			wdev.setup();
+		}
 		return;
+	}
 
 	if (wdev.retry > 0)
 		wdev.retry--;
@@ -448,11 +453,6 @@ function wdev_mark_up(wdev)
 	if (wdev.state != "setup")
 		return;
 
-	if (wdev.config_change) {
-		wdev.setup();
-		return;
-	}
-
 	for (let section, data in wdev.handler_data) {
 		if (data.ifname)
 			handle_link(data.ifname, data, true);
@@ -465,7 +465,7 @@ function wdev_mark_up(wdev)
 function wdev_set_data(wdev, vif, vlan, data)
 {
 	let config = wdev.handler_config;
-	let cur = wdev;
+	let cur = { name: wdev.name };
 	let cur_type = "device";
 	if (!config)
 		return ubus.STATUS_INVALID_ARGUMENT;

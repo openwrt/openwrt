@@ -82,21 +82,20 @@ function iface_accounting_server(config) {
 }
 
 function iface_auth_type(config) {
-	if (config.auth_type in [ 'sae', 'owe', 'eap2', 'eap192' ]) {
+	if (config.auth_type in [ 'sae', 'owe', 'eap2', 'eap192', 'dpp' ]) {
 		config.ieee80211w = 2;
 		config.sae_require_mfp = 1;
 		if (!config.ppsk)
-			config.sae_pwe = 2;
+			set_default(config, 'sae_pwe', 2);
 	}
 
 	if (config.auth_type in [ 'psk-sae', 'eap-eap2' ]) {
-		if (!config.ieee80211w)
-			config.ieee80211w = 1;
+		set_default(config, 'ieee80211w', 1);
 		if (config.rsn_override)
 			config.rsn_override_mfp = 2;
 		config.sae_require_mfp = 1;
 		if (!config.ppsk)
-			config.sae_pwe = 2;
+			set_default(config, 'sae_pwe', 2);
 	}
 
 	if (config.own_ip_addr)
@@ -117,6 +116,12 @@ function iface_auth_type(config) {
 		]);
 		break;
 
+	case 'dpp':
+		append_vars(config, [
+			'dpp_connector', 'dpp_csign', 'dpp_netaccesskey',
+		]);
+		break;
+
 	case 'psk':
 	case 'psk2':
 	case 'sae':
@@ -129,7 +134,7 @@ function iface_auth_type(config) {
 			config.macaddr_acl = 2;
 			config.wpa_psk_radius = 2;
 		} else if (length(config.key) == 64) {
-			config.wpa_psk = key;
+			config.wpa_psk = config.key;
 		} else if (length(config.key) >= 8 && length(config.key) <= 63) {
 			config.wpa_passphrase = config.key;
 		} else if (config.key) {
@@ -154,10 +159,11 @@ function iface_auth_type(config) {
 		config.vlan_possible = 1;
 
 		if (config.fils) {
-			set_default(config, 'erp_domain', substr(md5(config.ssid), 0, 4));
+			set_default(config, 'erp_domain', config.mobility_domain);
+			set_default(config, 'erp_domain', substr(md5(config.ssid + '\n'), 0, 8));
 			set_default(config, 'fils_realm', config.erp_domain);
 			set_default(config, 'erp_send_reauth_start', 1);
-			set_default(config, 'fils_cache_id', substr(md5(config.fils_realm), 0, 4));
+			set_default(config, 'fils_cache_id', substr(md5(config.fils_realm + '\n'), 0, 4));
 		}
 
 		if (!config.eap_server) {
@@ -188,6 +194,11 @@ function iface_auth_type(config) {
 		'wpa_disable_eapol_key_retries', 'auth_algs', 'wpa', 'wpa_pairwise',
 		'erp_domain', 'fils_realm', 'erp_send_reauth_start', 'fils_cache_id'
 	]);
+
+	if (config.dpp && config.auth_type != 'dpp')
+		append_vars(config, [
+			'dpp_connector', 'dpp_csign', 'dpp_netaccesskey',
+		]);
 }
 
 function iface_ppsk(config) {
@@ -224,7 +235,7 @@ function iface_wps(config) {
 
 		append_vars(config, [
 			'wps_state', 'device_type', 'device_name', 'config_methods', 'wps_independent', 'eap_server',
-			'ap_pin', 'ap_setup_locked', 'upnp_iface'
+			'ap_pin', 'ap_setup_locked', 'upnp_iface', 'uuid'
 		]);
 	}
 }

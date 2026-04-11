@@ -54,11 +54,6 @@ case "$board" in
 		[ "$PHYNBR" = "1" ] && \
 			macaddr_add $label_mac 2 > /sys${DEVPATH}/macaddress
 		;;
-	dlink,dir-3040-a1)
-		lan_mac_addr="$(mtd_get_mac_binary factory 0xe000)"
-		[ "$PHYNBR" = "0" ] && \
-			macaddr_add $lan_mac_addr 2 > /sys${DEVPATH}/macaddress
-		;;
 	dlink,dir-853-a3)
 		[ "$PHYNBR" = "0" ] && \
 			macaddr_setbit_la "$(mtd_get_mac_binary factory 0xe000)" \
@@ -116,17 +111,6 @@ case "$board" in
 	keenetic,kn-3510)
 		[ "$PHYNBR" = "1" ] && \
 			macaddr_setbit_la "$(mtd_get_mac_binary rf-eeprom 0x4)" > /sys${DEVPATH}/macaddress
-		;;
-	linksys,e5600|\
-	linksys,ea6350-v4|\
-	linksys,ea7300-v1|\
-	linksys,ea7300-v2|\
-	linksys,ea7500-v2|\
-	linksys,ea8100-v1|\
-	linksys,ea8100-v2)
-		hw_mac_addr=$(mtd_get_mac_ascii devinfo hw_mac_addr)
-		[ "$PHYNBR" = "0" ] && macaddr_add $hw_mac_addr 1 > /sys${DEVPATH}/macaddress
-		[ "$PHYNBR" = "1" ] && macaddr_add $hw_mac_addr 2 > /sys${DEVPATH}/macaddress
 		;;
 	belkin,rt1800|\
 	linksys,e7350)

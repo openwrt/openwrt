@@ -117,7 +117,7 @@ define Device/ocedo_panda
   DEVICE_VENDOR := OCEDO
   DEVICE_MODEL := Panda
   DEVICE_PACKAGES := kmod-rtc-ds1307
-  KERNEL = kernel-bin | gzip | fit gzip $(KDIR)/image-$$(DEVICE_DTS).dtb
+  KERNEL = kernel-bin | libdeflate-gzip | fit gzip $(KDIR)/image-$$(DEVICE_DTS).dtb
   PAGESIZE := 2048
   SUBPAGESIZE := 512
   BLOCKSIZE := 128k

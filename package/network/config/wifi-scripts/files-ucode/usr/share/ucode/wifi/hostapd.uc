@@ -351,12 +351,12 @@ function device_htmode_append(config) {
 		if (vht_capab & 0x800 && config.su_beamformer)
 			config.vht_capab += '[SOUNDING-DIMENSION-' + min(((vht_capab >> 16) & 3) + 1, config.beamformer_antennas) + ']';
 		if (vht_capab & 0x1000 && config.su_beamformee)
-			config.vht_capab += '[BF-ANTENNA-' + min(((vht_capab >> 13) & 3) + 1, config.beamformer_antennas) + ']';
+			config.vht_capab += '[BF-ANTENNA-' + min(((vht_capab >> 13) & 3) + 1, config.beamformee_antennas) + ']';
 
 		/* supported Channel widths */
-		if ((vht_capab & 0xc) == 8 && config.vht160 <= 2)
+		if ((vht_capab & 0xc) == 8 && config.vht160 >= 2)
 			config.vht_capab += '[VHT160-80PLUS80]';
-		else if ((vht_capab & 0xc) == 4 && config.vht160 <= 2)
+		else if (((vht_capab & 0xc) == 4 || (vht_capab & 0xc) == 8) && config.vht160 >= 1)
 			config.vht_capab += '[VHT160]';
 
 		/* maximum MPDU length */
@@ -426,12 +426,15 @@ function device_htmode_append(config) {
 			config.he_mu_beamformer = false;
 		if (!(he_phy_cap[7] & 0x1))
 			config.he_spr_psr_enabled = false;
-		if (!(he_mac_cap[0] & 0x1))
+		if (!(he_mac_cap[0] & 0x4))
+			config.he_twt_responder = false;
+		if (!config.he_twt_responder)
 			config.he_twt_required= false;
 
 		append_vars(config, [
 			'ieee80211ax', 'he_oper_chwidth', 'he_oper_centr_freq_seg0_idx',
-			'he_su_beamformer', 'he_su_beamformee', 'he_mu_beamformer', 'he_twt_required',
+			'he_su_beamformer', 'he_su_beamformee', 'he_mu_beamformer',
+			'he_twt_required', 'he_twt_responder',
 			'he_default_pe_duration', 'he_rts_threshold', 'he_mu_edca_qos_info_param_count',
 			'he_mu_edca_qos_info_q_ack', 'he_mu_edca_qos_info_queue_request', 'he_mu_edca_qos_info_txop_request',
 			'he_mu_edca_ac_be_aifsn', 'he_mu_edca_ac_be_aci', 'he_mu_edca_ac_be_ecwmin',

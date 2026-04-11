@@ -106,6 +106,12 @@
  *   blocks. If econet,can-write-factory-bbt is set, this will overwrite the
  *   BBT with the specified bad blocks.
  *
+ * - econet,bbt-table-size = <u32>;
+ *   Number of entries in the BBT table. Different vendor firmware versions
+ *   use different sizes (250 or 1000). The checksum is calculated over the
+ *   entire table, so this must match the firmware that created the BBT. If
+ *   not specified, defaults to 1000.
+ *
  * Copyright (C) 2025 Caleb James DeLisle <cjd@cjdns.fr>
  */
 
@@ -119,8 +125,11 @@
 
 #define MAX_BMT_SIZE				256
 
-/* Size field is a u8 but vendor firmware checksums over all 1000 places. */
+/* Maximum BBT table size (structure allocation limit). */
 #define MAX_BBT_SIZE				1000
+
+/* Default BBT table size if not specified in DTS. */
+#define DEFAULT_BBT_TABLE_SIZE			1000
 
 /* Vendor firmware calls this POOL_GOOD_BLOCK_PERCENT */
 #define REQUIRED_GOOD_BLOCKS(total_blocks)	((total_blocks) * 8 / 100)
@@ -150,6 +159,7 @@ const char *name_can_write_factory_bbt	= "econet,can-write-factory-bbt";
 const char *name_factory_badblocks	= "econet,factory-badblocks";
 const char *name_enable_remap		= "econet,enable-remap";
 const char *name_assert_reserve_size	= "econet,assert-reserve-size";
+const char *name_bbt_table_size	= "econet,bbt-table-size";
 
 /* To promote readability, most functions must have their inputs passed in. */
 #define bmtd dont_directly_reference_mtk_bmtd
@@ -252,6 +262,9 @@ struct en75_bmt_m {
 	/* In-memory copy of the BBT */
 	struct bbt_table bbt;
 
+	/* BBT table size, from DTS or default */
+	u16 bbt_table_size;
+
 	/* In-memory copy of the BMT */
 	struct bmt_table bmt;
 
@@ -282,12 +295,12 @@ struct en75_bmt_m {
  * In-memory functions (do not read or write)
  */
 
-static u16 bbt_checksum(const struct bbt_table *bbt)
+static u16 bbt_checksum(const struct bbt_table *bbt, u16 table_size)
 {
 	const u8 *data = (u8 *)bbt->table;
 	u16 checksum = bbt->header.version + bbt->header.size;
 
-	for (int i = 0; i < MAX_BBT_SIZE * sizeof(bbt->table[0]); i++)
+	for (int i = 0; i < table_size * sizeof(bbt->table[0]); i++)
 		checksum += data[i];
 
 	return checksum;
@@ -588,15 +601,17 @@ static int w_sync_tables(struct en75_bmt_m *ctx)
 	} else if (ctx->bbt_dirty) {
 		int dirty = ctx->bbt_dirty;
 		struct block_info *new_bbt_block;
+		size_t bbt_write_size = sizeof(ctx->bbt.header) +
+					ctx->bbt_table_size * sizeof(ctx->bbt.table[0]);
 
-		for (int i = ctx->bbt.header.size; i < MAX_BBT_SIZE; i++)
+		for (int i = ctx->bbt.header.size; i < ctx->bbt_table_size; i++)
 			ctx->bbt.table[i] = 0;
-		ctx->bbt.header.checksum = bbt_checksum(&ctx->bbt);
+		ctx->bbt.header.checksum = bbt_checksum(&ctx->bbt, ctx->bbt_table_size);
 		new_bbt_block = w_update_table(
 			ctx,
 			false,
 			"BBT",
-			sizeof(ctx->bbt),
+			bbt_write_size,
 			(u8 *)&ctx->bbt);
 
 		if (IS_ERR(new_bbt_block)) {
@@ -884,7 +899,7 @@ static int r_reconstruct_bbt(struct bbt_table *bbt_out, const struct en75_bmt_m 
 
 	memset(bbt_out, 0xff, sizeof(bbt_out->header));
 	/* Vendor firmware checksums the entire table, no matter how much is used. */
-	memset(bbt_out->table, 0x00, sizeof(bbt_out->table));
+	memset(bbt_out->table, 0x00, ctx->bbt_table_size * sizeof(bbt_out->table[0]));
 	memcpy(bbt_out->header.signature, "RAWB", 4);
 	bbt_out->header.version = 1;
 	bbt_out->header.size = 0;
@@ -931,24 +946,25 @@ static bool block_is_erased(u8 *data, u32 datalen, u8 *oob, u32 ooblen)
 	return true;
 }
 
-static int try_parse_bbt(struct bbt_table *out, u8 *buf, int len)
+static int try_parse_bbt(struct bbt_table *out, u8 *buf, int len, u16 table_size)
 {
 	static struct bbt_table workspace;
+	size_t bbt_size = sizeof(workspace.header) + table_size * sizeof(workspace.table[0]);
 
-	if (len < sizeof(*out))
+	if (len < bbt_size)
 		return -EINVAL;
 
-	memcpy(&workspace, buf, sizeof(workspace));
+	memcpy(&workspace, buf, bbt_size);
 
 	if (strncmp(workspace.header.signature, "RAWB", 4))
 		return -EINVAL;
 
-	if (workspace.header.checksum != bbt_checksum(&workspace))
+	if (workspace.header.checksum != bbt_checksum(&workspace, table_size))
 		return -EINVAL;
 
 	sort_bbt(&workspace);
 
-	memcpy(out, &workspace, sizeof(workspace));
+	memcpy(out, &workspace, bbt_size);
 	return 0;
 }
 
@@ -968,7 +984,7 @@ static int try_parse_bmt(struct bmt_table *out, u8 *buf, int len)
 	 * The vendor firmware checksums over rblocks entries, but zero
 	 * values do not affect the checksum so this works.
 	 * We don't know rblocks while we're scanning and in any case
-	 * it's a moving target, if a block fails in the reserve area,
+	 * it's a moving target, if a block fails in the reserve area,
 	 * rblocks will increase by one. So we use the size from the
 	 * header and if the vendor firmware left some trash in the
 	 * buffer after the last entry, we're going to have an invalid
@@ -1025,7 +1041,7 @@ static int r_scan_reserve(struct en75_bmt_m *ctx)
 		} else if (fdm_is_mapped(fdm)) {
 			pr_debug("%s: found mapped block %d\n", log_pfx, cursor);
 			bif.status = BS_MAPPED;
-		} else if (!try_parse_bbt(&ctx->bbt, data_buf, pg_size)) {
+		} else if (!try_parse_bbt(&ctx->bbt, data_buf, pg_size, ctx->bbt_table_size)) {
 			pr_info("%s: found BBT in block %d\n", log_pfx, cursor);
 			bif.status = BS_BBT;
 		} else if (!try_parse_bmt(&ctx->bmt, data_buf, pg_size)) {
@@ -1069,9 +1085,9 @@ static int w_factory_badblocks(struct en75_bmt_m *ctx, const u32 *blocks, int co
 		}
 	}
 
-	if (count > MAX_BBT_SIZE) {
+	if (count > ctx->bbt_table_size) {
 		pr_err("%s: Can't set %d factory bad blocks, limit is %d\n",
-		       log_pfx, count, MAX_BBT_SIZE);
+		       log_pfx, count, ctx->bbt_table_size);
 		return -ENOSPC;
 	}
 
@@ -1195,7 +1211,18 @@ static int w_init(struct en75_bmt_m *ctx, struct device_node *np)
 	u32 factory_badblocks[MAX_FACTORY_BAD_BLOCKS_OF];
 	int factory_badblocks_count = -1;
 	int assert_reserve_size = -1;
+	u32 bbt_table_size;
 	int ret;
+
+	if (of_property_read_u32(np, name_bbt_table_size, &bbt_table_size))
+		bbt_table_size = DEFAULT_BBT_TABLE_SIZE;
+
+	if (bbt_table_size > MAX_BBT_SIZE) {
+		pr_err("%s: %s=%d exceeds MAX_BBT_SIZE=%d\n",
+		       log_pfx, name_bbt_table_size, bbt_table_size, MAX_BBT_SIZE);
+		return -EINVAL;
+	}
+	ctx->bbt_table_size = bbt_table_size;
 
 	ret = r_scan_reserve(ctx);
 	if (ret)

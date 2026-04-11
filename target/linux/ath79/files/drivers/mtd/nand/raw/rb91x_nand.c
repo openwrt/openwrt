@@ -20,7 +20,6 @@
 #include <linux/platform_device.h>
 #include <linux/gpio/consumer.h>
 #include <linux/version.h>
-#include <linux/of_platform.h>
 
 #include <asm/mach-ath79/ar71xx_regs.h>
 

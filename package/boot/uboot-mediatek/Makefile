@@ -231,6 +231,18 @@ define U-Boot/mt7981_abt_asr3000
   DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
 endef
 
+define U-Boot/mt7981_bazis-ax3000wm
+  NAME:=BAZIS AX3000WM
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=bazis_ax3000wm
+  UBOOT_CONFIG:=mt7981_bazis_ax3000wm
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
+endef
+
 define U-Boot/mt7981_cmcc_a10
   NAME:=CMCC A10
   BUILD_SUBTARGET:=filogic
@@ -323,6 +335,54 @@ define U-Boot/mt7981_cudy_wbr3000uax-v1
   BL2_BOOTDEV:=cudy-ddr3
   BL2_SOC:=mt7981
   DEPENDS:=+trusted-firmware-a-mt7981-cudy-ddr3
+endef
+
+define U-Boot/mt7981_cudy_wr3000e-v1
+  NAME:=Cudy WR3000E v1
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=cudy_wr3000e-v1-ubootmod
+  UBOOT_CONFIG:=mt7981_cudy_wr3000e-v1
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=cudy
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-cudy-ddr3
+endef
+
+define U-Boot/mt7981_cudy_wr3000s-v1
+  NAME:=Cudy WR3000S v1
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=cudy_wr3000s-v1-ubootmod
+  UBOOT_CONFIG:=mt7981_cudy_wr3000s-v1
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=cudy
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-cudy-ddr3
+endef
+
+define U-Boot/mt7981_cudy_wr3000h-v1
+  NAME:=Cudy WR3000H v1
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=cudy_wr3000h-v1-ubootmod
+  UBOOT_CONFIG:=mt7981_cudy_wr3000h-v1
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=cudy
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-cudy-ddr3
+endef
+
+define U-Boot/mt7981_cudy_wr3000p-v1
+  NAME:=Cudy WR3000P v1
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=cudy_wr3000p-v1-ubootmod
+  UBOOT_CONFIG:=mt7981_cudy_wr3000p-v1
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=cudy
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr4
+  DEPENDS:=+trusted-firmware-a-mt7981-cudy-ddr4
 endef
 
 define U-Boot/mt7981_glinet_gl-mt2500
@@ -426,6 +486,18 @@ define U-Boot/mt7981_netis_nx31
   BUILD_SUBTARGET:=filogic
   BUILD_DEVICES:=netis_nx31
   UBOOT_CONFIG:=mt7981_netis_nx31
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand
+  BL2_SOC:=mt7981
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7981-spim-nand-ddr3
+endef
+
+define U-Boot/mt7981_netis_nx32u
+  NAME:=netis NX32U
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=netis_nx32u
+  UBOOT_CONFIG:=mt7981_netis_nx32u
   UBOOT_IMAGE:=u-boot.fip
   BL2_BOOTDEV:=spim-nand
   BL2_SOC:=mt7981
@@ -832,6 +904,18 @@ define U-Boot/mt7986_zyxel_ex5601-t0
   DEPENDS:=+trusted-firmware-a-mt7986-spim-nand-4k-ddr4
 endef
 
+define U-Boot/mt7986_zyxel_wx5600-t0
+  NAME:=Zyxel WX5600-T0
+  BUILD_SUBTARGET:=filogic
+  BUILD_DEVICES:=zyxel_wx5600-t0-ubootmod
+  UBOOT_CONFIG:=mt7986_zyxel_wx5600-t0
+  UBOOT_IMAGE:=u-boot.fip
+  BL2_BOOTDEV:=spim-nand-4k
+  BL2_SOC:=mt7986
+  BL2_DDRTYPE:=ddr3
+  DEPENDS:=+trusted-firmware-a-mt7986-spim-nand-4k-ddr3
+endef
+
 define U-Boot/mt7987_bananapi_bpi-r4-lite-emmc
   NAME:=BananaPi BPi-R4 Lite
   BUILD_SUBTARGET:=filogic
@@ -1106,6 +1190,7 @@ UBOOT_TARGETS := \
 	mt7628_ravpower_rp-wd009 \
 	mt7629_rfb \
 	mt7981_abt_asr3000 \
+	mt7981_bazis-ax3000wm \
 	mt7981_cmcc_a10 \
 	mt7981_cmcc_rax3000m-emmc-ddr3 \
 	mt7981_cmcc_rax3000m-emmc-ddr4 \
@@ -1114,6 +1199,10 @@ UBOOT_TARGETS := \
 	mt7981_comfast_cf-wr632ax \
 	mt7981_cudy_tr3000-v1 \
 	mt7981_cudy_wbr3000uax-v1 \
+	mt7981_cudy_wr3000e-v1 \
+	mt7981_cudy_wr3000s-v1 \
+	mt7981_cudy_wr3000h-v1 \
+	mt7981_cudy_wr3000p-v1 \
 	mt7981_gatonetworks_gdsp \
 	mt7981_glinet_gl-mt2500 \
 	mt7981_glinet_gl-x3000 \
@@ -1124,6 +1213,7 @@ UBOOT_TARGETS := \
 	mt7981_konka_komi-a31 \
 	mt7981_netis_nx30v2 \
 	mt7981_netis_nx31 \
+	mt7981_netis_nx32u \
 	mt7981_nokia_ea0326gmp \
 	mt7981_openwrt_one-snand \
 	mt7981_openwrt_one-nor \
@@ -1155,6 +1245,7 @@ UBOOT_TARGETS := \
 	mt7986_tplink_tl-xtr8488 \
 	mt7986_xiaomi_redmi-router-ax6000 \
 	mt7986_zyxel_ex5601-t0 \
+	mt7986_zyxel_wx5600-t0 \
 	mt7986_rfb \
 	mt7987_bananapi_bpi-r4-lite-emmc \
 	mt7987_bananapi_bpi-r4-lite-sdmmc \

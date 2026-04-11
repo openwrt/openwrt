@@ -1,4 +1,4 @@
-
+DTS_DIR := $(DTS_DIR)/qcom
 DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
 DEVICE_VARS += RAS_BOARD RAS_ROOTFS_SIZE RAS_VERSION
 DEVICE_VARS += WRGG_DEVNAME WRGG_SIGNATURE
@@ -343,8 +343,7 @@ define Device/cilab_meshpoint-one
 	DEVICE_MODEL := MeshPoint.One
 	DEVICE_PACKAGES += kmod-i2c-gpio kmod-iio-bmp280-i2c kmod-hwmon-ina2xx kmod-rtc-pcf2127
 endef
-# Missing DSA Setup
-#TARGET_DEVICES += cilab_meshpoint-one
+TARGET_DEVICES += cilab_meshpoint-one
 
 define Device/compex_wpj419
 	$(call Device/FitImage)
@@ -393,7 +392,6 @@ define Device/devolo_magic-2-wifi-next
 	IMAGE_SIZE := 26624k
 	IMAGES := sysupgrade.bin
 	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
-	DEFAULT := n
 endef
 TARGET_DEVICES += devolo_magic-2-wifi-next
 
@@ -646,6 +644,18 @@ define Device/glinet_gl-s1300
 endef
 TARGET_DEVICES += glinet_gl-s1300
 
+define Device/huawei_ap4050dn
+	$(call Device/FitImageLzma)
+	DEVICE_VENDOR := Huawei
+	DEVICE_MODEL := AP4050DN
+	SOC := qcom-ipq4018
+	IMAGE_SIZE := 51200k
+	DEVICE_PACKAGES := ipq-wifi-huawei_ap4050dn
+	KERNEL = kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(DEVICE_DTS).dtb
+	IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | check-size | append-metadata
+endef
+TARGET_DEVICES += huawei_ap4050dn
+
 define Device/kernel-size-6350-8300
 	DEVICE_COMPAT_VERSION := 2.0
 	DEVICE_COMPAT_MESSAGE := Kernel partition size must be increased for \
@@ -843,6 +853,14 @@ define Device/meraki_mr33
 	DEVICE_MODEL := MR33
 endef
 TARGET_DEVICES += meraki_mr33
+
+define Device/meraki_mr70
+	$(call Device/meraki_common)
+	DEVICE_MODEL := MR70
+	DEVICE_DTS_CONFIG := config@5
+	DEVICE_PACKAGES := ipq-wifi-meraki_underdog
+endef
+TARGET_DEVICES += meraki_mr70
 
 define Device/meraki_mr74
 	$(call Device/meraki_common)

@@ -80,229 +80,61 @@
 };
 
 &mdio_bus0 {
-	phy0: ethernet-phy@0 {
-		reg = <0>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy1: ethernet-phy@1 {
-		reg = <1>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy2: ethernet-phy@2 {
-		reg = <2>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy3: ethernet-phy@3 {
-		reg = <3>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy4: ethernet-phy@4 {
-		reg = <4>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy5: ethernet-phy@5 {
-		reg = <5>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy6: ethernet-phy@6 {
-		reg = <6>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy7: ethernet-phy@7 {
-		reg = <7>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy8: ethernet-phy@8 {
-		reg = <8>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy9: ethernet-phy@9 {
-		reg = <9>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy10: ethernet-phy@10 {
-		reg = <10>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy11: ethernet-phy@11 {
-		reg = <11>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy12: ethernet-phy@12 {
-		reg = <12>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy13: ethernet-phy@13 {
-		reg = <13>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy14: ethernet-phy@14 {
-		reg = <14>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy15: ethernet-phy@15 {
-		reg = <15>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy16: ethernet-phy@16 {
-		reg = <16>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy17: ethernet-phy@17 {
-		reg = <17>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy18: ethernet-phy@18 {
-		reg = <18>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy19: ethernet-phy@19 {
-		reg = <19>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy20: ethernet-phy@20 {
-		reg = <20>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy21: ethernet-phy@21 {
-		reg = <21>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy22: ethernet-phy@22 {
-		reg = <22>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
-	phy23: ethernet-phy@23 {
-		reg = <23>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-	};
+	PHY_C22(0, 0)
+	PHY_C22(1, 1)
+	PHY_C22(2, 2)
+	PHY_C22(3, 3)
+	PHY_C22(4, 4)
+	PHY_C22(5, 5)
+	PHY_C22(6, 6)
+	PHY_C22(7, 7)
+	PHY_C22(8, 8)
+	PHY_C22(9, 9)
+	PHY_C22(10, 10)
+	PHY_C22(11, 11)
+	PHY_C22(12, 12)
+	PHY_C22(13, 13)
+	PHY_C22(14, 14)
+	PHY_C22(15, 15)
+	PHY_C22(16, 16)
+	PHY_C22(17, 17)
+	PHY_C22(18, 18)
+	PHY_C22(19, 19)
+	PHY_C22(20, 20)
+	PHY_C22(21, 21)
+	PHY_C22(22, 22)
+	PHY_C22(23, 23)
 };
 
 &mdio_bus1 {
-	phy24: ethernet-phy@24 {
-		reg = <24>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-		realtek,smi-address = <0>;
-	};
-	phy25: ethernet-phy@25 {
-		reg = <25>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-		realtek,smi-address = <1>;
-	};
-	phy26: ethernet-phy@26 {
-		reg = <26>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-		realtek,smi-address = <2>;
-	};
-	phy27: ethernet-phy@27 {
-		reg = <27>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-		realtek,smi-address = <3>;
-	};
-	phy28: ethernet-phy@28 {
-		reg = <28>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-		realtek,smi-address = <4>;
-	};
-	phy29: ethernet-phy@29 {
-		reg = <29>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-		realtek,smi-address = <5>;
-	};
-	phy30: ethernet-phy@30 {
-		reg = <30>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-		realtek,smi-address = <6>;
-	};
-	phy31: ethernet-phy@31 {
-		reg = <31>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-		realtek,smi-address = <7>;
-	};
-	phy32: ethernet-phy@32 {
-		reg = <32>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-		realtek,smi-address = <8>;
-	};
-	phy33: ethernet-phy@33 {
-		reg = <33>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-		realtek,smi-address = <9>;
-	};
-	phy34: ethernet-phy@34 {
-		reg = <34>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-		realtek,smi-address = <10>;
-	};
-	phy35: ethernet-phy@35 {
-		reg = <35>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-		realtek,smi-address = <11>;
-	};
-	phy36: ethernet-phy@36 {
-		reg = <36>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-		realtek,smi-address = <12>;
-	};
-	phy37: ethernet-phy@37 {
-		reg = <37>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-		realtek,smi-address = <13>;
-	};
-	phy38: ethernet-phy@38 {
-		reg = <38>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-		realtek,smi-address = <14>;
-	};
-	phy39: ethernet-phy@39 {
-		reg = <39>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-		realtek,smi-address = <15>;
-	};
-	phy40: ethernet-phy@40 {
-		reg = <40>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-		realtek,smi-address = <16>;
-	};
-	phy41: ethernet-phy@41 {
-		reg = <41>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-		realtek,smi-address = <17>;
-	};
-	phy42: ethernet-phy@42 {
-		reg = <42>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-		realtek,smi-address = <18>;
-	};
-	phy43: ethernet-phy@43 {
-		reg = <43>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-		realtek,smi-address = <19>;
-	};
-	phy44: ethernet-phy@44 {
-		reg = <44>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-		realtek,smi-address = <20>;
-	};
-	phy45: ethernet-phy@45 {
-		reg = <45>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-		realtek,smi-address = <21>;
-	};
-	phy46: ethernet-phy@46 {
-		reg = <46>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-		realtek,smi-address = <22>;
-	};
-	phy47: ethernet-phy@47 {
-		reg = <47>;
-		compatible = "ethernet-phy-ieee802.3-c22";
-		realtek,smi-address = <23>;
-	};
+	PHY_C22(24, 0)
+	PHY_C22(25, 1)
+	PHY_C22(26, 2)
+	PHY_C22(27, 3)
+	PHY_C22(28, 4)
+	PHY_C22(29, 5)
+	PHY_C22(30, 6)
+	PHY_C22(31, 7)
+	PHY_C22(32, 8)
+	PHY_C22(33, 9)
+	PHY_C22(34, 10)
+	PHY_C22(35, 11)
+	PHY_C22(36, 12)
+	PHY_C22(37, 13)
+	PHY_C22(38, 14)
+	PHY_C22(39, 15)
+	PHY_C22(40, 16)
+	PHY_C22(41, 17)
+	PHY_C22(42, 18)
+	PHY_C22(43, 19)
+	PHY_C22(44, 20)
+	PHY_C22(45, 21)
+	PHY_C22(46, 22)
+	PHY_C22(47, 23)
 };
 
 &switch0 {
-	ports {
+	ethernet-ports {
 		#address-cells = <1>;
 		#size-cells = <0>;
 
@@ -368,24 +200,24 @@
 			managed = "in-band-status";
 			sfp = <&sfp0>;
 		};
-		port@49 {
-			reg = <49>;
+		port@50 {
+			reg = <50>;
 			label = "lan50";
 			pcs-handle = <&serdes9>;
 			phy-mode = "1000base-x";
 			managed = "in-band-status";
 			sfp = <&sfp1>;
 		};
-		port@50 {
-			reg = <50>;
+		port@52 {
+			reg = <52>;
 			label = "lan51";
 			pcs-handle = <&serdes10>;
 			phy-mode = "1000base-x";
 			managed = "in-band-status";
 			sfp = <&sfp2>;
 		};
-		port@51 {
-			reg = <51>;
+		port@53 {
+			reg = <53>;
 			label = "lan52";
 			pcs-handle = <&serdes11>;
 			phy-mode = "1000base-x";
@@ -398,9 +230,25 @@
 			reg = <56>;
 			phy-mode = "internal";
 			fixed-link {
-				speed = <10000>;
+				speed = <1000>;
 				full-duplex;
 			};
 		};
 	};
+};
+
+&serdes8 {
+	realtek,pnswap-tx;
+};
+
+&serdes9 {
+	realtek,pnswap-tx;
+};
+
+&serdes10 {
+	realtek,pnswap-tx;
+};
+
+&serdes11 {
+	realtek,pnswap-tx;
 };

@@ -165,7 +165,7 @@ function config_init(uci)
 		let mlo_vif = parse_bool(data.mlo);
 		let radios = map(dev_names, (v) => radio_idx[v]);
 		radios = filter(radios, (v) => v != null);
-		let radio_config = map(dev_names, (v) => devices[v].config);
+		let radio_config = map(dev_names, (v) => devices[v]?.config);
 		let ifname;
 		let mlo_created = false;
 

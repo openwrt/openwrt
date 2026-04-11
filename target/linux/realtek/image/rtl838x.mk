@@ -91,6 +91,19 @@ define Device/d-link_dgs-1210-28p-f
 endef
 TARGET_DEVICES += d-link_dgs-1210-28p-f
 
+define Device/datto_l8
+  $(Device/uimage-rt-loader)
+  SOC := rtl8380
+  DEVICE_VENDOR := Datto
+  DEVICE_MODEL := L8
+  DEVICE_ALT0_VENDOR := Open Mesh
+  DEVICE_ALT0_MODEL := S8-L
+  DEVICE_PACKAGES += realtek-poe
+  UIMAGE_MAGIC := 0x00703400
+  IMAGE_SIZE := 13504k
+endef
+TARGET_DEVICES += datto_l8
+
 define Device/engenius_ews2910p-v1
   $(Device/engenius_ews2910p)
   SOC := rtl8380

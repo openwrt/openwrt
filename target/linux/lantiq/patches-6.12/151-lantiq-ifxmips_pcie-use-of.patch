@@ -23,7 +23,7 @@ Signed-off-by: Eddi De Pieri <eddi@depieri.net>
  obj-$(CONFIG_SOC_TX4938)	+= pci-tx4938.o
 --- a/arch/mips/pci/ifxmips_pcie.c
 +++ b/arch/mips/pci/ifxmips_pcie.c
-@@ -16,8 +16,16 @@
+@@ -16,8 +16,15 @@
  #include <asm/paccess.h>
  #include <linux/pci.h>
  #include <linux/pci_regs.h>
@@ -34,13 +34,12 @@ Signed-off-by: Eddi De Pieri <eddi@depieri.net>
  #include <linux/module.h>
  
 +#include <linux/of_gpio.h>
-+#include <linux/of_platform.h>
 +#include <linux/platform_device.h>
 +
  #include "ifxmips_pcie.h"
  #include "ifxmips_pcie_reg.h"
  
-@@ -25,11 +33,6 @@
+@@ -25,11 +32,6 @@
  #define IFX_PCIE_ERROR_INT
  #define IFX_PCIE_IO_32BIT
  
@@ -52,7 +51,7 @@ Signed-off-by: Eddi De Pieri <eddi@depieri.net>
  #define MS(_v, _f)  (((_v) & (_f)) >> _f##_S)
  #define SM(_v, _f)  (((_v) << _f##_S) & (_f))
  #define IFX_REG_SET_BIT(_f, _r) \
-@@ -40,30 +43,30 @@
+@@ -40,30 +42,30 @@
  static DEFINE_SPINLOCK(ifx_pcie_lock);
  
  u32 g_pcie_debug_flag = PCIE_MSG_ANY & (~PCIE_MSG_CFG);
@@ -88,7 +87,7 @@ Signed-off-by: Eddi De Pieri <eddi@depieri.net>
              },
          },
      },
-@@ -82,6 +85,22 @@ void ifx_pcie_debug(const char *fmt, ...
+@@ -82,6 +84,22 @@ void ifx_pcie_debug(const char *fmt, ...
  	printk("%s", buf);
  }
  
@@ -111,7 +110,7 @@ Signed-off-by: Eddi De Pieri <eddi@depieri.net>
  
  static inline int pcie_ltssm_enable(int pcie_port)
  {
-@@ -857,7 +876,8 @@ pcie_rc_core_int_init(int pcie_port)
+@@ -857,7 +875,8 @@ pcie_rc_core_int_init(int pcie_port)
  	ret = request_irq(pcie_irqs[pcie_port].ir_irq.irq, pcie_rc_core_isr, 0,
  		pcie_irqs[pcie_port].ir_irq.name, &ifx_pcie_controller[pcie_port]);
  	if (ret)
@@ -121,7 +120,7 @@ Signed-off-by: Eddi De Pieri <eddi@depieri.net>
  
  	return ret;
  }
-@@ -988,10 +1008,26 @@ int  ifx_pcie_bios_plat_dev_init(struct
+@@ -988,10 +1007,26 @@ int  ifx_pcie_bios_plat_dev_init(struct
  static int
  pcie_rc_initialize(int pcie_port)
  {
@@ -150,7 +149,7 @@ Signed-off-by: Eddi De Pieri <eddi@depieri.net>
  
  	pcie_ep_gpio_rst_init(pcie_port);
  
-@@ -1000,26 +1036,21 @@ pcie_rc_initialize(int pcie_port)
+@@ -1000,26 +1035,21 @@ pcie_rc_initialize(int pcie_port)
  	* reset PCIe PHY will solve this issue 
  	*/
  	for (i = 0; i < IFX_PCIE_PHY_LOOP_CNT; i++) {
@@ -187,7 +186,7 @@ Signed-off-by: Eddi De Pieri <eddi@depieri.net>
  
  		/* Enable PCIe PHY and Clock */
  		pcie_core_pmu_setup(pcie_port);
-@@ -1035,6 +1066,10 @@ pcie_rc_initialize(int pcie_port)
+@@ -1035,6 +1065,10 @@ pcie_rc_initialize(int pcie_port)
  		/* Once link is up, break out */
  		if (pcie_app_loigc_setup(pcie_port) == 0)
  			break;
@@ -198,7 +197,7 @@ Signed-off-by: Eddi De Pieri <eddi@depieri.net>
  	}
  	if (i >= IFX_PCIE_PHY_LOOP_CNT) {
  		printk(KERN_ERR "%s link up failed!!!!!\n", __func__);
-@@ -1045,17 +1080,73 @@ pcie_rc_initialize(int pcie_port)
+@@ -1045,17 +1079,73 @@ pcie_rc_initialize(int pcie_port)
  	return 0;
  }
  
@@ -274,7 +273,7 @@ Signed-off-by: Eddi De Pieri <eddi@depieri.net>
      for (pcie_port = startup_port; pcie_port < IFX_PCIE_CORE_NR; pcie_port++){
  	if (pcie_rc_initialize(pcie_port) == 0) {
  	    IFX_PCIE_PRINT(PCIE_MSG_INIT, "%s: ifx_pcie_cfg_base 0x%p\n", 
-@@ -1066,7 +1157,19 @@ static int __init ifx_pcie_bios_init(voi
+@@ -1066,7 +1156,19 @@ static int __init ifx_pcie_bios_init(voi
                  IFX_PCIE_PRINT(PCIE_MSG_ERR, "%s io space ioremap failed\n", __func__);
                  return -ENOMEM;
              }
@@ -294,7 +293,7 @@ Signed-off-by: Eddi De Pieri <eddi@depieri.net>
  
              register_pci_controller(&ifx_pcie_controller[pcie_port].pcic);
              /* XXX, clear error status */
-@@ -1083,6 +1186,29 @@ static int __init ifx_pcie_bios_init(voi
+@@ -1083,6 +1185,29 @@ static int __init ifx_pcie_bios_init(voi
  
      return 0;
  }

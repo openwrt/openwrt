@@ -53,7 +53,7 @@ Cc: Robert Marko <robert.marko@sartura.hr>
  obj-$(CONFIG_SENSORS_IBMPOWERNV)+= ibmpowernv.o
 --- /dev/null
 +++ b/drivers/hwmon/iei-wt61p803-puzzle-hwmon.c
-@@ -0,0 +1,447 @@
+@@ -0,0 +1,444 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/* IEI WT61P803 PUZZLE MCU HWMON Driver
 + *
@@ -83,18 +83,18 @@ Cc: Robert Marko <robert.marko@sartura.hr>
 + * @tcdev:		Thermal cooling device pointer
 + * @name:		Thermal cooling device name
 + * @pwm_channel:	Controlled PWM channel (0 or 1)
-+ * @cooling_levels:	Thermal cooling device cooling levels (DT)
 + * @cur_level:		Current cooling level
 + * @num_levels:	Number of cooling levels
++ * @cooling_levels:	Thermal cooling device cooling levels (DT)
 + */
 +struct iei_wt61p803_puzzle_thermal_cooling_device {
 +	struct iei_wt61p803_puzzle_hwmon *mcu_hwmon;
 +	struct thermal_cooling_device *tcdev;
 +	char name[THERMAL_NAME_LENGTH];
 +	int pwm_channel;
-+	u32 *cooling_levels;
 +	int cur_level;
 +	u8 num_levels;
++	u32 cooling_levels[] __counted_by(num_levels);
 +};
 +
 +/**
@@ -401,13 +401,11 @@ Cc: Robert Marko <robert.marko@sartura.hr>
 +	if (!num_levels)
 +		return -EINVAL;
 +
-+	cdev = devm_kzalloc(dev, sizeof(*cdev), GFP_KERNEL);
++	cdev = devm_kzalloc(dev, struct_size(cdev, cooling_levels, num_levels), GFP_KERNEL);
 +	if (!cdev)
 +		return -ENOMEM;
 +
-+	cdev->cooling_levels = devm_kmalloc_array(dev, num_levels, sizeof(u32), GFP_KERNEL);
-+	if (!cdev->cooling_levels)
-+		return -ENOMEM;
++	cdev->num_levels = num_levels;
 +
 +	ret = fwnode_property_read_u32_array(child, "cooling-levels",
 +					     cdev->cooling_levels,
@@ -429,7 +427,6 @@ Cc: Robert Marko <robert.marko@sartura.hr>
 +
 +	cdev->mcu_hwmon = mcu_hwmon;
 +	cdev->pwm_channel = pwm_channel;
-+	cdev->num_levels = num_levels;
 +	cdev->cur_level = -1;
 +	mcu_hwmon->cdev[pwm_channel] = cdev;
 +

@@ -39,6 +39,7 @@ ipq807x_setup_interfaces()
 	linksys,mx4200v1|\
 	linksys,mx4200v2|\
 	linksys,mx4300|\
+	netgear,rbr750|\
 	prpl,haze|\
 	redmi,ax6|\
 	spectrum,sax1v1k|\
@@ -59,6 +60,7 @@ ipq807x_setup_interfaces()
 	netgear,wax620)
 		ucidef_set_interface_lan "lan" "dhcp"
 		;;
+	netgear,rbs750|\
 	netgear,wax630)
 		ucidef_set_interface_lan "lan1 lan2" "dhcp"
 		;;
@@ -71,6 +73,9 @@ ipq807x_setup_interfaces()
 		;;
 	zyxel,nbg7815)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4 10g" "wan"
+		;;
+	zyxel,nwa110ax)
+		ucidef_set_interface_lan "uplink" "dhcp"
 		;;
 	zyxel,nwa210ax)
 		ucidef_set_interface_lan "uplink lan1" "dhcp"
@@ -108,6 +113,7 @@ ipq807x_setup_macs()
 		label_mac=$(get_mac_binary /tmp/factory_data/default-mac 0)
 		lan_mac=$label_mac
 		;;
+	zyxel,nwa110ax|\
 	zyxel,nwa210ax)
 		label_mac=$(get_mac_label_dt)
 		lan_mac=$label_mac

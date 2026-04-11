@@ -4,11 +4,10 @@
 
 include $(TOPDIR)/rules.mk
 
-ARCH:=mips
 BOARD:=econet
 BOARDNAME:=EcoNet EN75xx MIPS
 FEATURES:=dt source-only squashfs nand usb
-SUBTARGETS:=en751221
+SUBTARGETS:=en751221 en7528
 
 KERNEL_PATCHVER:=6.12
 
@@ -20,6 +19,6 @@ endef
 include $(INCLUDE_DIR)/target.mk
 
 # nand-utils is used by base-files/sbin/en75_chboot
-DEFAULT_PACKAGES += nand-utils
+DEFAULT_PACKAGES += nand-utils kmod-econet-eth
 
 $(eval $(call BuildTarget))

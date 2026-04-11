@@ -35,6 +35,9 @@ case "$FIRMWARE" in
 		ln -sf /tmp/tp_data/MT7986_EEPROM.bin \
 			/lib/firmware/$FIRMWARE
 		;;
+	tplink,eap683-lr)
+		ln -sf /tmp/factory/radio /lib/firmware/$FIRMWARE
+		;;
 	esac
 	;;
 "mediatek/mt7996/mt7992_eeprom.bin")

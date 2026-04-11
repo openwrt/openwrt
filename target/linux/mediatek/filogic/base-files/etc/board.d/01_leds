@@ -62,17 +62,26 @@ bananapi,bpi-r4-poe)
 bananapi,bpi-r4-lite)
 	ucidef_set_led_netdev "sfp0" "sfp0" "green:sfp" "sfp0" "link tx rx"
 	;;
+bazis,ax3000wm)
+	ucidef_set_led_netdev "wanact" "WANACT" "mdio-bus:05:amber:wan" "eth0" "rx tx"
+	ucidef_set_led_netdev "wanlink" "WANLINK" "mdio-bus:05:green:wan" "eth0" "link"
+	ucidef_set_led_netdev "lanlink" "LANLINK" "green:lan" "eth1" "link"
+	ucidef_set_led_netdev "internet" "internet" "blue:wan-online" "wan" "link"
+	;;
 cudy,re3000-v1|\
 kebidumei,ax3000-u22|\
 wavlink,wl-wn573hx3)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "eth0" "link tx rx"
 	;;
 cudy,wr3000-v1|\
-cudy,wr3000e-v1)
+cudy,wr3000e-v1|\
+cudy,wr3000e-v1-ubootmod)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "wan"
 	;;
 cudy,wr3000h-v1|\
-cudy,wr3000p-v1)
+cudy,wr3000h-v1-ubootmod|\
+cudy,wr3000p-v1|\
+cudy,wr3000p-v1-ubootmod)
 	ucidef_set_led_netdev "lan1" "lan1" "white:lan-1" "lan1" "link tx rx"
 	ucidef_set_led_netdev "lan2" "lan2" "white:lan-2" "lan2" "link tx rx"
 	ucidef_set_led_netdev "lan3" "lan3" "white:lan-3" "lan3" "link tx rx"
@@ -174,6 +183,9 @@ netis,nx30v2)
 	;;
 netis,nx31)
 	ucidef_set_led_netdev "wan" "wan" "blue:wan" "eth1" "link tx rx"
+	;;
+netis,nx32u)
+	ucidef_set_led_netdev "internet" "internet" "green:wan-online" "wan" "link"
 	;;
 imou,hx21|\
 nokia,ea0326gmp)
@@ -336,6 +348,11 @@ zyxel,ex5700-telenor)
 	ucidef_set_led_netdev "lan4" "LAN4" "mdio-bus:05:green:lan" "lan4" "link tx rx"
 	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:06:amber:wan" "eth1" "link_10 link_100 tx rx"
 	ucidef_set_led_netdev "wan" "WAN" "mdio-bus:06:green:wan" "eth1" "link tx rx"
+	;;
+zyxel,wx5600-t0-ubootmod)
+	ucidef_set_led_netdev "lan1" "LAN1" "mdio-bus:06:green:lan" "lan1" "link tx rx"
+	ucidef_set_led_netdev "lan2" "LAN2" "mdio-bus:05:green:lan" "lan2" "link tx rx"
+	ucidef_set_led_netdev "wlan5" "wlan5" "green:wlan-0" "phy1-ap0" "link tx rx"
 	;;
 esac
 
