@@ -221,6 +221,23 @@ endef
 
 $(eval $(call KernelPackage,rtc-rs5c372a))
 
+define KernelPackage/rtc-rv3028
+  SUBMENU:=$(RTC_MENU)
+  TITLE:=Micro Crystal RV3028
+  DEFAULT:=m if ALL_KMODS && RTC_SUPPORT
+  DEPENDS:=+kmod-i2c-core  +kmod-regmap-i2c
+  KCONFIG:=CONFIG_RTC_DRV_RV3028 \
+	CONFIG_RTC_CLASS=y
+  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-rv3028.ko
+  AUTOLOAD:=$(call AutoLoad,50,rtc-rv3028,1)
+endef
+
+define KernelPackage/rtc-rv3028/description
+ Kernel module for Micro Crystal RV3028 I2C RTC chip
+endef
+
+$(eval $(call KernelPackage,rtc-rv3028))
+
 define KernelPackage/rtc-rx8025
   SUBMENU:=$(RTC_MENU)
   TITLE:=Epson RX-8025 / RX-8035
