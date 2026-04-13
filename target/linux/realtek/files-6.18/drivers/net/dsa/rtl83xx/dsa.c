@@ -187,6 +187,7 @@ static int rtldsa_83xx_setup(struct dsa_switch *ds)
 	}
 	priv->r->traffic_set(priv->r->cpu_port, BIT_ULL(priv->r->cpu_port));
 
+
 	/* For standalone ports, forward packets even if a static fdb
 	 * entry for the source address exists on another port.
 	 */
@@ -259,6 +260,10 @@ static int rtldsa_93xx_setup(struct dsa_switch *ds)
 		}
 	}
 	priv->r->traffic_set(priv->r->cpu_port, BIT_ULL(priv->r->cpu_port));
+
+	/* Configure per-port PHY ability source for RTL931x */
+	if (priv->family_id == RTL9310_FAMILY_ID)
+		rtldsa_931x_config_phy_ability_source(priv);
 	priv->r->print_matrix();
 
 	/* TODO: Initialize statistics */
@@ -528,6 +533,28 @@ static void rtldsa_93xx_phylink_mac_link_up(struct phylink_config *config,
 			mcr |= RTL930X_DUPLEX_MODE;
 		if (dsa_port_is_cpu(dp) || priv->ports[port].phy)
 			mcr |= RTL930X_FORCE_EN;
+	} else if (priv->family_id == RTL9310_FAMILY_ID) {
+		/* RTL931x: only force mode on CPU port. Data ports use
+		 * PHY/PCS-managed link — force mode destabilizes the
+		 * PCS link on SFP ports and overrides PHY negotiation
+		 * on copper ports.
+		 */
+		if (dsa_port_is_cpu(dp)) {
+			mcr &= ~RTL931X_RX_PAUSE_EN;
+			mcr &= ~RTL931X_TX_PAUSE_EN;
+			mcr &= ~RTL931X_DUPLEX_MODE;
+			mcr &= ~RTL931X_SPEED_MASK;
+			mcr |= RTL931X_FORCE_EN;
+			mcr |= RTL931X_FORCE_LINK_EN;
+			mcr |= spdsel << RTL931X_SPEED_SHIFT;
+
+			if (tx_pause)
+				mcr |= RTL931X_TX_PAUSE_EN;
+			if (rx_pause)
+				mcr |= RTL931X_RX_PAUSE_EN;
+			if (duplex == DUPLEX_FULL || priv->lagmembers & BIT_ULL(port))
+				mcr |= RTL931X_DUPLEX_MODE;
+		}
 	}
 
 	pr_debug("%s port %d, mode %x, speed %d, duplex %d, txpause %d, rxpause %d: set mcr=%08x\n",

@@ -172,6 +172,7 @@ void rtldsa_930x_print_matrix(void);
 
 /* RTL931x-specific */
 void rtldsa_931x_print_matrix(void);
+void rtldsa_931x_config_phy_ability_source(struct rtl838x_switch_priv *priv);
 
 int rtl83xx_lag_add(struct dsa_switch *ds, int group, int port, struct netdev_lag_upper_info *info);
 int rtl83xx_lag_del(struct dsa_switch *ds, int group, int port);

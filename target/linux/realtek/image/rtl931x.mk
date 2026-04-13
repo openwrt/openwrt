@@ -1,5 +1,18 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
+define Device/ienron_hg2406xgm
+  SOC := rtl9313
+  DEVICE_VENDOR := ienRon
+  DEVICE_MODEL := HG2406XGM
+  BLOCKSIZE := 64k
+  KERNEL_SIZE := 12288k
+  IMAGE_SIZE := 12288k
+  UIMAGE_MAGIC := 0x83800000
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(KERNEL_SIZE) | \
+	append-rootfs | pad-rootfs | check-size
+endef
+TARGET_DEVICES += ienron_hg2406xgm
+
 define Device/plasmacloud-common
   SOC := rtl9312
   UIMAGE_MAGIC := 0x93100000

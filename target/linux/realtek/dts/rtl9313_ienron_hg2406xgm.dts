@@ -1,0 +1,339 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+// ienRon HG2406XGM - 24x 2.5GBASE-T + 6x 10G SFP+ Managed Switch
+// RTL9313 SoC, 6x RTL8224 quad-port 2.5G PHY chips
+//
+//   Bus 0: chip1(local 0-3), chip5(local 4-7), chip6(local 8-11)
+//   Bus 1: chip2(local 0-3), chip3(local 4-7), chip4(local 8-11)
+//
+// SFP GPIO MAP (RTL8231 gpiochip1, confirmed from /sys/kernel/debug/gpio):
+//   gpio1[ 0] los  gpio1[ 1] mod-def0  gpio1[ 2] tx-dis  -> sfp_p6
+//   gpio1[ 3] los  gpio1[ 4] mod-def0  gpio1[ 5] tx-dis  -> sfp_p5
+//   gpio1[ 6] los  gpio1[ 7] mod-def0  gpio1[ 8] tx-dis  -> sfp_p4
+//   gpio1[ 9] los  gpio1[10] mod-def0  gpio1[11] tx-dis  -> sfp_p3
+//   gpio1[12] los  gpio1[13] mod-def0  gpio1[14] tx-dis  -> sfp_p2
+//   gpio1[15] los  gpio1[16] mod-def0  gpio1[17] tx-dis  -> sfp_p1
+//
+// sfp_p4 LOS is ACTIVE_LOW on this PCB (reads hi with module inserted).
+
+#include "rtl931x.dtsi"
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	compatible = "ienron,hg2406xgm", "realtek,rtl9313-soc";
+	model = "ienRon HG2406XGM";
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x8000000>; /* 128 MB */
+	};
+
+	aliases {
+		led-boot = &led_sys;
+		led-failsafe = &led_sys;
+		led-running = &led_sys;
+		led-upgrade = &led_sys;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		button-reset {
+			label = "reset";
+			gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led_sys: led-sys {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	/* SFP cage descriptors — GPIOs on RTL8231 (gpio1), I2C on i2c_mst1 ch0-5.
+	 * maximum-power-milliwatt=3000 enables Class 2 modules (10G-T, active DAC).
+	 * sfp_p4 LOS polarity confirmed inverted on PCB (hi=present). */
+
+	sfp_p1: sfp-p1 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c1_ch0>;
+		los-gpio        = <&gpio1 15 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio   = <&gpio1 16 GPIO_ACTIVE_LOW>;
+		tx-disable-gpio = <&gpio1 17 GPIO_ACTIVE_HIGH>;
+		maximum-power-milliwatt = <3000>;
+	};
+
+	sfp_p2: sfp-p2 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c1_ch1>;
+		los-gpio        = <&gpio1 12 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio   = <&gpio1 13 GPIO_ACTIVE_LOW>;
+		tx-disable-gpio = <&gpio1 14 GPIO_ACTIVE_HIGH>;
+		maximum-power-milliwatt = <3000>;
+	};
+
+	sfp_p3: sfp-p3 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c1_ch2>;
+		los-gpio        = <&gpio1  9 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio   = <&gpio1 10 GPIO_ACTIVE_LOW>;
+		tx-disable-gpio = <&gpio1 11 GPIO_ACTIVE_HIGH>;
+		maximum-power-milliwatt = <3000>;
+	};
+
+	sfp_p4: sfp-p4 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c1_ch3>;
+		los-gpio        = <&gpio1 6 GPIO_ACTIVE_LOW>;
+		mod-def0-gpio   = <&gpio1 7 GPIO_ACTIVE_LOW>;
+		tx-disable-gpio = <&gpio1 8 GPIO_ACTIVE_HIGH>;
+		maximum-power-milliwatt = <3000>;
+	};
+
+	sfp_p5: sfp-p5 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c1_ch4>;
+		los-gpio        = <&gpio1 3 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio   = <&gpio1 4 GPIO_ACTIVE_LOW>;
+		tx-disable-gpio = <&gpio1 5 GPIO_ACTIVE_HIGH>;
+		maximum-power-milliwatt = <3000>;
+	};
+
+	sfp_p6: sfp-p6 {
+		compatible = "sff,sfp";
+		i2c-bus = <&i2c1_ch5>;
+		los-gpio        = <&gpio1 0 GPIO_ACTIVE_HIGH>;
+		mod-def0-gpio   = <&gpio1 1 GPIO_ACTIVE_LOW>;
+		tx-disable-gpio = <&gpio1 2 GPIO_ACTIVE_HIGH>;
+		maximum-power-milliwatt = <3000>;
+	};
+};
+
+&ethernet0 {
+	mac-address = [00 E0 4C 88 81 A2];
+};
+
+&spi0 {
+	status = "okay";
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			partition@0 {
+				label = "LOADER";
+				reg = <0x000000 0x0e0000>;
+				read-only;
+			};
+			partition@e0000 {
+				label = "BDINFO";
+				reg = <0x0e0000 0x010000>;
+				read-only;
+			};
+			partition@f0000 {
+				label = "SYSINFO";
+				reg = <0x0f0000 0x010000>;
+				read-only;
+			};
+			partition@100000 {
+				label = "JFFS2 CFG";
+				reg = <0x100000 0x100000>;
+			};
+			partition@200000 {
+				label = "JFFS2 LOG";
+				reg = <0x200000 0x100000>;
+			};
+			partition@300000 {
+				label = "firmware";
+				reg = <0x300000 0xc00000>;
+				compatible = "denx,uimage";
+			};
+			partition@f00000 {
+				label = "OEMINFO";
+				reg = <0xf00000 0x100000>;
+				read-only;
+			};
+		};
+	};
+};
+
+&mdio_ctrl {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinmux_enable_mdc_mdio_0>,
+		    <&pinmux_enable_mdc_mdio_1>;
+};
+
+/* Bus 0: chips 1,5,6 — PHY_C45(switch_port, LOCAL_BUS_ADDR 0-11) */
+&mdio_bus0 {
+	PHY_C45(0,  0)  PHY_C45(1,  1)  PHY_C45(4,  2)  PHY_C45(5,  3)
+	PHY_C45(32, 4)  PHY_C45(33, 5)  PHY_C45(36, 6)  PHY_C45(37, 7)
+	PHY_C45(40, 8)  PHY_C45(41, 9)  PHY_C45(44, 10) PHY_C45(45, 11)
+};
+
+/* Bus 1: chips 2,3,4 — PHY_C45(switch_port, LOCAL_BUS_ADDR 0-11) */
+&mdio_bus1 {
+	PHY_C45(8,  0)  PHY_C45(9,  1)  PHY_C45(12, 2)  PHY_C45(13, 3)
+	PHY_C45(16, 4)  PHY_C45(17, 5)  PHY_C45(20, 6)  PHY_C45(21, 7)
+	PHY_C45(24, 8)  PHY_C45(25, 9)  PHY_C45(28, 10) PHY_C45(29, 11)
+};
+
+&switch0 {
+	ethernet-ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/* Chip 1 <-> SerDes 2 */
+		SWITCH_PORT_SDS(0,  1,  2, 10g-qxgmii)
+		SWITCH_PORT_SDS(1,  2,  2, 10g-qxgmii)
+		SWITCH_PORT_SDS(4,  3,  2, 10g-qxgmii)
+		SWITCH_PORT_SDS(5,  4,  2, 10g-qxgmii)
+		/* Chip 2 <-> SerDes 3 */
+		SWITCH_PORT_SDS(8,  5,  3, 10g-qxgmii)
+		SWITCH_PORT_SDS(9,  6,  3, 10g-qxgmii)
+		SWITCH_PORT_SDS(12, 7,  3, 10g-qxgmii)
+		SWITCH_PORT_SDS(13, 8,  3, 10g-qxgmii)
+		/* Chip 3 <-> SerDes 4 */
+		SWITCH_PORT_SDS(16, 9,  4, 10g-qxgmii)
+		SWITCH_PORT_SDS(17, 10, 4, 10g-qxgmii)
+		SWITCH_PORT_SDS(20, 11, 4, 10g-qxgmii)
+		SWITCH_PORT_SDS(21, 12, 4, 10g-qxgmii)
+		/* Chip 4 <-> SerDes 5 */
+		SWITCH_PORT_SDS(24, 13, 5, 10g-qxgmii)
+		SWITCH_PORT_SDS(25, 14, 5, 10g-qxgmii)
+		SWITCH_PORT_SDS(28, 15, 5, 10g-qxgmii)
+		SWITCH_PORT_SDS(29, 16, 5, 10g-qxgmii)
+		/* Chip 5 <-> SerDes 6 */
+		SWITCH_PORT_SDS(32, 17, 6, 10g-qxgmii)
+		SWITCH_PORT_SDS(33, 18, 6, 10g-qxgmii)
+		SWITCH_PORT_SDS(36, 19, 6, 10g-qxgmii)
+		SWITCH_PORT_SDS(37, 20, 6, 10g-qxgmii)
+		/* Chip 6 <-> SerDes 7 */
+		SWITCH_PORT_SDS(40, 21, 7, 10g-qxgmii)
+		SWITCH_PORT_SDS(41, 22, 7, 10g-qxgmii)
+		SWITCH_PORT_SDS(44, 23, 7, 10g-qxgmii)
+		SWITCH_PORT_SDS(45, 24, 7, 10g-qxgmii)
+
+		/* 6x SFP+ ports */
+		port@48 {
+			reg = <48>;
+			label = "sfp1";
+			pcs-handle = <&serdes8>;
+			phy-mode = "1000base-x";
+			managed = "in-band-status";
+			sfp = <&sfp_p1>;
+		};
+		port@50 {
+			reg = <50>;
+			label = "sfp2";
+			pcs-handle = <&serdes9>;
+			phy-mode = "1000base-x";
+			managed = "in-band-status";
+			sfp = <&sfp_p2>;
+		};
+		port@52 {
+			reg = <52>;
+			label = "sfp3";
+			pcs-handle = <&serdes10>;
+			phy-mode = "1000base-x";
+			managed = "in-band-status";
+			sfp = <&sfp_p3>;
+		};
+		port@53 {
+			reg = <53>;
+			label = "sfp4";
+			pcs-handle = <&serdes11>;
+			phy-mode = "1000base-x";
+			managed = "in-band-status";
+			sfp = <&sfp_p4>;
+		};
+		port@54 {
+			reg = <54>;
+			label = "sfp5";
+			pcs-handle = <&serdes12>;
+			phy-mode = "1000base-x";
+			managed = "in-band-status";
+			sfp = <&sfp_p5>;
+		};
+		port@55 {
+			reg = <55>;
+			label = "sfp6";
+			pcs-handle = <&serdes13>;
+			phy-mode = "1000base-x";
+			managed = "in-band-status";
+			sfp = <&sfp_p6>;
+		};
+
+		/* CPU port */
+		port@56 {
+			ethernet = <&ethernet0>;
+			reg = <56>;
+			phy-mode = "internal";
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+		};
+	};
+};
+
+/* RTL8231 GPIO expander on auxiliary MDIO bus — provides all SFP control GPIOs */
+&mdio_aux {
+	status = "okay";
+
+	gpio1: gpio@0 {
+		compatible = "realtek,rtl8231";
+		reg = <0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		gpio-ranges = <&gpio1 0 0 37>;
+
+		led-controller {
+			compatible = "realtek,rtl8231-leds";
+			status = "disabled";
+		};
+	};
+};
+
+/* I2C masters for SFP EEPROM access
+ * i2c_mst1 ch0-5 = sfp_p1 through sfp_p6
+ * WARNING: ch2 (sfp_p3) and ch4 (sfp_p5) showed identical i2c addrs on live
+ * hardware — possible PCB i2c bus bridge. Verify isolation before mass config. */
+&i2c_mst1 {
+	status = "okay";
+	i2c1_ch0: i2c@0 { reg = <0>; };
+	i2c1_ch1: i2c@1 { reg = <1>; };
+	i2c1_ch2: i2c@2 { reg = <2>; };
+	i2c1_ch3: i2c@3 { reg = <3>; };
+	i2c1_ch4: i2c@4 { reg = <4>; };
+	i2c1_ch5: i2c@5 { reg = <5>; };
+};
+
+/* TX polarity inversion for correct 10GBASE-R signaling.
+&serdes8  { realtek,pnswap-tx; };
+&serdes9  { realtek,pnswap-tx; };
+&serdes10 { realtek,pnswap-tx; };
+&serdes11 { realtek,pnswap-tx; };
+&serdes12 { realtek,pnswap-tx; };
+&serdes13 { realtek,pnswap-tx; };
+
+/* PHY reset GPIO hog — release all 6 RTL8224 PHY chips
+ * from hardware reset before MDIO probing begins.
+&gpio0 {
+	phy-reset-hog {
+		gpio-hog;
+		gpios = <5 0>;
+		output-low;
+		line-name = "phy-reset-n";
+	};
+};

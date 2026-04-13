@@ -1933,6 +1933,33 @@ static void rtldsa_931x_qos_init(struct rtl838x_switch_priv *priv)
 	rtldsa_931x_qos_set_scheduling_queue_weights(priv);
 }
 
+
+/*
+ * Configure per-port PHY ability source on RTL931x.
+ * Copper ports with external PHYs use outband MDIO polling.
+ * SFP ports with integrated PCS use the SerDes ability bus.
+ */
+#define  RTLDSA_931X_PHY_ABLTY_OUTBAND_MDIO		0x0
+#define  RTLDSA_931X_PHY_ABLTY_SDS_ABLTY_BUS		0x2
+
+void rtldsa_931x_config_phy_ability_source(struct rtl838x_switch_priv *priv)
+{
+	u32 phy_ablty_sel[4] = {0};
+
+	for (int port = 0; port < priv->r->cpu_port; port++) {
+		u32 val = RTLDSA_931X_PHY_ABLTY_OUTBAND_MDIO;
+
+		/* Ports driven by SerDes PCS (SFP) need SerDes ability bus */
+		if (!priv->ports[port].phy && priv->ports[port].pcs)
+			val = RTLDSA_931X_PHY_ABLTY_SDS_ABLTY_BUS;
+
+		phy_ablty_sel[port / 16] |= (val & 0x3) << ((port % 16) * 2);
+	}
+
+	for (int i = 0; i < 4; i++)
+		sw_w32(phy_ablty_sel[i],
+		       RTL931X_SMI_PHY_ABLTY_GET_SEL + i * 4);
+}
 const struct rtldsa_config rtldsa_931x_cfg = {
 	.switch_ops = &rtldsa_93xx_switch_ops,
 	.phylink_mac_ops = &rtldsa_93xx_phylink_mac_ops,

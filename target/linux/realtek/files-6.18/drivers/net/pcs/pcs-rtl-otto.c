@@ -3665,6 +3665,67 @@ static int rtpcs_931x_sds_config_hw_mode(struct rtpcs_serdes *sds,
 	return 0;
 }
 
+
+/*
+ * RTL931x SerDes TX equalization configuration.
+ * Sets impedance termination, driver amplitude, and pre/post emphasis
+ * per SerDes mode. Parameters match rtpcs_930x_sds_tx_config() with
+ * mode-specific register pages.
+ *
+ * Without TX impedance configuration (particularly for 10GBASE-R),
+ * the 100-ohm differential termination is not enabled and the far-end
+ * receiver cannot decode the signal despite valid optical power.
+ */
+static void rtpcs_931x_sds_tx_config(struct rtpcs_serdes *sds,
+				     enum rtpcs_sds_mode hw_mode)
+{
+	int impedance = 0x8;
+	int pre_amp = 0x2;
+	int main_amp = 0x9;
+	int post_amp = 0x2;
+	int pre_en = 0x1;
+	int post_en = 0x1;
+	int page;
+
+	switch (hw_mode) {
+	case RTPCS_SDS_MODE_1000BASEX:
+	case RTPCS_SDS_MODE_SGMII:
+		pre_amp = 0x1;
+		main_amp = 0x9;
+		post_amp = 0x1;
+		page = 0x25;
+		break;
+	case RTPCS_SDS_MODE_2500BASEX:
+		pre_amp = 0;
+		post_amp = 0x8;
+		pre_en = 0;
+		page = 0x29;
+		break;
+	case RTPCS_SDS_MODE_10GBASER:
+	case RTPCS_SDS_MODE_USXGMII_10GSXGMII:
+	case RTPCS_SDS_MODE_USXGMII_10GQXGMII:
+	case RTPCS_SDS_MODE_XSGMII:
+		pre_en = 0;
+		pre_amp = 0;
+		main_amp = 0x10;
+		post_amp = 0;
+		post_en = 0;
+		page = 0x2f;
+		break;
+	case RTPCS_SDS_MODE_QSGMII:
+		return;
+	default:
+		pr_err("%s: unsupported SerDes mode %d\n", __func__, hw_mode);
+		return;
+	}
+
+	rtpcs_sds_write_bits(sds, page, 0x01, 15, 11, pre_amp);  /* pre-emphasis amplitude */
+	rtpcs_sds_write_bits(sds, page, 0x06,  4,  0, post_amp); /* post-emphasis amplitude */
+	rtpcs_sds_write_bits(sds, page, 0x07,  0,  0, pre_en);   /* pre-emphasis enable */
+	rtpcs_sds_write_bits(sds, page, 0x07,  3,  3, post_en);  /* post-emphasis enable */
+	rtpcs_sds_write_bits(sds, page, 0x07,  8,  4, main_amp); /* main driver amplitude */
+	rtpcs_sds_write_bits(sds, page, 0x18, 15, 12, impedance); /* termination impedance */
+}
 static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 				   enum rtpcs_sds_mode hw_mode)
 {
@@ -3738,7 +3799,7 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 		break;
 	}
 
-	if (sds_id >= 2) {
+	if (sds_id >= 2 && sds_id - 2 < ARRAY_SIZE(board_sds_tx)) {
 		if (ctrl->chip_version == RTPCS_CHIP_V2)
 			/* consider 9311 etc. RTL9313_CHIP_ID == HWP_CHIP_ID(unit)) */
 			rtpcs_sds_write(sds, 0x2E, 0x1, board_sds_tx2[sds_id - 2]);
@@ -3747,6 +3808,9 @@ static int rtpcs_931x_setup_serdes(struct rtpcs_serdes *sds,
 	}
 
 	rtpcs_931x_sds_set_polarity(sds, sds->tx_pol_inv, sds->rx_pol_inv);
+
+	/* Configure TX equalization (impedance, amplitude, emphasis) */
+	rtpcs_931x_sds_tx_config(sds, hw_mode);
 
 	rtpcs_931x_sds_power(sds, true);
 
