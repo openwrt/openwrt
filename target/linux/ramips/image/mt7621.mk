@@ -2951,7 +2951,7 @@ TARGET_DEVICES += tplink_deco-m4r-v4
 define Device/tplink_deco-x20-v3
   $(Device/dsa-migration)
   $(Device/tplink-safeloader)
-  DEVICE_MODEL := DECO-X20
+  DEVICE_MODEL := Deco X20
   DEVICE_VARIANT := v3
   DEVICE_PACKAGES := kmod-mt7915-firmware uboot-envtools
   TPLINK_BOARD_ID := DECO-X20-V3
