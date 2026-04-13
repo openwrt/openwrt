@@ -1,0 +1,34 @@
+From 9a39bca30a65f571fae33ac9c76e67ebca44b2a4 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Bence=20Cs=C3=B3k=C3=A1s?= <csokas.bence@prolan.hu>
+Date: Mon, 3 Feb 2025 16:12:49 +0100
+Subject: [PATCH 102/112] spi: atmel-quadspi: Fix warning in doc-comment
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The doc-comment for `struct atmel_qspi_pcal` had a typo in one of the
+struct members' name, causing a warning with the `W=1` option.
+
+Fixes: 5af42209a4d2 ("spi: atmel-quadspi: Add support for sama7g5 QSPI")
+Reported-by: kernel test robot <lkp@intel.com>
+Closes: https://lore.kernel.org/oe-kbuild-all/202501311707.Ltj0qXse-lkp@intel.com/
+Signed-off-by: Bence Csókás <csokas.bence@prolan.hu>
+Link: https://patch.msgid.link/20250203151249.79876-2-csokas.bence@prolan.hu
+Signed-off-by: Mark Brown <broonie@kernel.org>
+---
+ drivers/spi/atmel-quadspi.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/spi/atmel-quadspi.c
++++ b/drivers/spi/atmel-quadspi.c
+@@ -235,8 +235,8 @@
+ /**
+  * struct atmel_qspi_pcal - Pad Calibration Clock Division
+  * @pclk_rate: peripheral clock rate.
+- * @pclkdiv: calibration clock division. The clock applied to the calibration
+- *           cell is divided by pclkdiv + 1.
++ * @pclk_div: calibration clock division. The clock applied to the calibration
++ *           cell is divided by pclk_div + 1.
+  */
+ struct atmel_qspi_pcal {
+ 	u32 pclk_rate;

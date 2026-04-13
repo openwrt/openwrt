@@ -62,12 +62,30 @@
 			};
 
 			partition@100000 {
-				label = "u-boot-env";
+				compatible = "fixed-partitions";
 				reg = <0x00100000 0x00100000>;
-				read-only;
+				label = "u-boot-env";
+				#address-cells = <1>;
+				#size-cells = <1>;
 
-				nvmem-layout {
-					compatible = "u-boot,env";
+				partition@0 {
+					reg = <0x0 0x20000>;
+					label = "u-boot-env-main";
+					status = "disabled";
+
+					nvmem-layout {
+						compatible = "u-boot,env-redundant-count";
+					};
+				};
+
+				partition@80000 {
+					reg = <0x80000 0x20000>;
+					label= "u-boot-env-redundant";
+					status = "disabled";
+
+					nvmem-layout {
+						compatible = "u-boot,env-redundant-count";
+					};
 				};
 			};
 
@@ -443,13 +461,13 @@
 	 *	-+-[0000:40]---00.0-[41-7f]----00.0
 	 */
 
-	bridge@64,0 {
+	bridge@0,0 {
 		reg = <0x00400000 0 0 0 0>;
 		#address-cells = <3>;
 		#size-cells = <2>;
 		ranges;
 
-		wifi0: wifi@65,0 {
+		wifi0: wifi@0,0 {
 			/* Atheros AR9380 2.4/5GHz */
 			compatible = "pci168c,0030";
 			reg = <0x00410000 0 0 0 0>;

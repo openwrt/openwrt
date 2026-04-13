@@ -65,17 +65,6 @@
 		los-gpios = <&gpio 17 GPIO_ACTIVE_HIGH>;
 		maximum-power-milliwatt = <1000>;
 	};
-
-	leds {
-		compatible = "gpio-leds";
-
-		led-0 {
-			color = <LED_COLOR_ID_GREEN>;
-			function = LED_FUNCTION_WLAN_2GHZ;
-			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
-		};
-	};
 };
 
 &ref {
@@ -341,4 +330,9 @@
 	status = "okay";
 
 	qca,no-eeprom;
+
+	led {
+		led-sources = <4>;
+		led-active-low;
+	};
 };

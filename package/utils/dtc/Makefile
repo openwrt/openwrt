@@ -5,11 +5,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dtc
-PKG_VERSION:=1.7.1
+PKG_VERSION:=1.7.2
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_HASH:=9532f10098455711a4da37816fd567dfc8523bb01f59ad6c44887a112e553d9e
+PKG_HASH:=f200e5ebd7afd20d4b3804a3085af0870fcf3c194f8d7f0f6985cf8bbb4ac0f4
 PKG_SOURCE_URL:=@KERNEL/software/utils/dtc
 
 PKG_MAINTAINER:=Yousong Zhou <yszhou4tech@gmail.com>

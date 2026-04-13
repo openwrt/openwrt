@@ -121,6 +121,32 @@ define Device/engenius_enh202-v1
 endef
 TARGET_DEVICES += engenius_enh202-v1
 
+define Device/nec_wf1200hp
+  DEVICE_MODEL := Aterm WF1200HP
+  SOC := ar9344
+  BLOCKSIZE := 4k
+  IMAGE_SIZE := 7936k
+  NEC_FW_TYPE := H047
+  $(Device/nec-netbsd-aterm)
+  DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct \
+	-uboot-envtools
+  UBOOT_PATH := $$(STAGING_DIR_IMAGE)/$$(SOC)_nec_aterm_fe-u-boot.bin
+endef
+TARGET_DEVICES += nec_wf1200hp
+
+define Device/nec_wf1200hp2
+  DEVICE_MODEL := Aterm WF1200HP2
+  SOC := ar9344
+  BLOCKSIZE := 4k
+  IMAGE_SIZE := 7936k
+  NEC_FW_TYPE := H053
+  $(Device/nec-netbsd-aterm)
+  DEVICE_PACKAGES := kmod-ath10k-ct-smallbuffers ath10k-firmware-qca988x-ct \
+	-uboot-envtools
+  UBOOT_PATH := $$(STAGING_DIR_IMAGE)/$$(SOC)_nec_aterm_fe-u-boot.bin
+endef
+TARGET_DEVICES += nec_wf1200hp2
+
 define Device/nec_wg600hp
   DEVICE_MODEL := Aterm WG600HP
   SOC := ar9344

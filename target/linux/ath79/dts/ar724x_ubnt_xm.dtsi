@@ -63,7 +63,7 @@
 				reg = <0x7f0000 0x010000>;
 				read-only;
 
-				nvmem-layout {
+				art: nvmem-layout {
 					compatible = "fixed-layout";
 					#address-cells = <1>;
 					#size-cells = <1>;
@@ -83,11 +83,6 @@
 
 &pcie {
 	status = "okay";
-
-	wifi: wifi@0,0 {
-		reg = <0x0000 0 0 0 0>;
-		qca,no-eeprom;
-	};
 };
 
 &eth0 {

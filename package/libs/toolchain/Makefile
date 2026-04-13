@@ -7,7 +7,7 @@
 
 include $(TOPDIR)/rules.mk
 PKG_NAME:=toolchain
-PKG_RELEASE:=4
+PKG_RELEASE:=5
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@nbd.name>
 PKG_LICENSE:=GPL-3.0-with-GCC-exception
@@ -26,7 +26,7 @@ endif
 define Package/gcc/Default
   SECTION:=libs
   CATEGORY:=Base system
-  URL:=http://gcc.gnu.org/
+  URL:=https://gcc.gnu.org/
   VERSION:=$(LIBGCC_VERSION)-r$(PKG_RELEASE)
 endef
 
@@ -555,7 +555,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 	$(CP) \
 		$(TOOLCHAIN_DIR)/lib/ld*.so.* \
 		$(1)/lib/
-	for file in libanl libc libcidn libcrypt libdl libm libnsl libnss_dns libnss_files libresolv libutil; do \
+	for file in libanl libc libcidn libdl libm libnsl libnss_dns libnss_files libresolv libutil; do \
 		for file in $(TOOLCHAIN_DIR)/lib/$$$$file.so.*; do \
 			if [ -e "$$$$file" ]; then \
 				$(CP) $$$$file $(1)/lib/; \
@@ -578,7 +578,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   endef
 
   define Package/libc/install
-    echo $(LIBC_VERSION)-r$(PKG_RELEASE) > $(TMP_DIR)/libc.version; \
+    echo $(LIBC_VERSION)-r$(PKG_RELEASE) > $(STAGING_DIR)/libc.version; \
     $(call Package/$(LIBC)/install,$1)
   endef
 
@@ -698,8 +698,14 @@ else
   endef
 
   define Package/libc/install
-	echo $(LIBC_VERSION)-r$(PKG_RELEASE) > $(TMP_DIR)/libc.version; \
+	echo $(LIBC_VERSION)-r$(PKG_RELEASE) > $(STAGING_DIR)/libc.version; \
 	for file in $(call qstrip,$(CONFIG_LIBC_FILE_SPEC)); do \
+		if [ '$(CONFIG_USE_GLIBC)' != '' ] ; then \
+			case "$${file}" in \
+			libcrypt.* | libcrypt-* | */libcrypt.* | */libcrypt-* ) \
+				continue ;; \
+			esac ; \
+		fi ; \
 		$(INSTALL_DIR) $(1)/lib ; \
 		$(CP) $(call qstrip,$(CONFIG_LIBC_ROOT_DIR))/$$$$file $(1)/lib/ ; \
 	done ; \
@@ -775,8 +781,9 @@ else
 
 endif
 
-$(eval $(call BuildPackage,libc))
 $(eval $(call BuildPackage,libgcc))
+# libc depends on knowing libgcc's ABI, so it needs to be evaluated first
+$(eval $(call BuildPackage,libc))
 $(eval $(call BuildPackage,libatomic))
 $(eval $(call BuildPackage,libquadmath))
 $(eval $(call BuildPackage,libstdcpp))

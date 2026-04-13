@@ -193,6 +193,10 @@
 					macaddr_art_6: macaddr@6 {
 						reg = <0x6 0x6>;
 					};
+
+					cal_art_1000: calibration@1000 {
+						reg = <0x1000 0x3d8>;
+					};
 				};
 			};
 		};
@@ -219,9 +223,8 @@
 	ath9k: wifi@0,0 {
 		compatible = "pci168c,002e";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&macaddr_art_0 1>;
-		nvmem-cell-names = "mac-address";
-		qca,no-eeprom;
+		nvmem-cells = <&cal_art_1000>, <&macaddr_art_0 1>;
+		nvmem-cell-names = "calibration", "mac-address";
 		#gpio-cells = <2>;
 		gpio-controller;
 	};

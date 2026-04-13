@@ -12,7 +12,7 @@ Signed-off-by: Konstantin Demin <rockdrilla@gmail.com>
 
 --- a/libatomic/Makefile.am
 +++ b/libatomic/Makefile.am
-@@ -130,7 +130,6 @@ libatomic_la_LIBADD = $(foreach s,$(SIZES),$(addsuffix _$(s)_.lo,$(SIZEOBJS)))
+@@ -130,7 +130,6 @@ libatomic_la_LIBADD = $(foreach s,$(SIZE
  ## On a target-specific basis, include alternates to be selected by IFUNC.
  if HAVE_IFUNC
  if ARCH_AARCH64_LINUX
@@ -22,7 +22,7 @@ Signed-off-by: Konstantin Demin <rockdrilla@gmail.com>
  endif
 --- a/libatomic/Makefile.in
 +++ b/libatomic/Makefile.in
-@@ -452,7 +452,6 @@ M_SRC = $(firstword $(filter %/$(M_FILE), $(all_c_files)))
+@@ -452,7 +452,6 @@ M_SRC = $(firstword $(filter %/$(M_FILE)
  libatomic_la_LIBADD = $(foreach s,$(SIZES),$(addsuffix \
  	_$(s)_.lo,$(SIZEOBJS))) $(am__append_1) $(am__append_2) \
  	$(am__append_3) $(am__append_4)

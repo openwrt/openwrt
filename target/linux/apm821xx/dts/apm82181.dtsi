@@ -115,8 +115,7 @@
 
 	L2C0: l2c {
 		compatible = "ibm,l2-cache-apm82181", "ibm,l2-cache";
-		dcr-reg = <0x020 0x008
-			   0x030 0x008>;
+		dcr-reg = <0x020 0x008>, <0x030 0x008>;
 		cache-line-size = <32>;
 		cache-size = <262144>;
 		interrupt-parent = <&UIC1>;
@@ -418,6 +417,7 @@
 			#size-cells = <0>;
 		};
 
+		/* u-boot of meraki mx60 match the node name to disable it. Please keep. */
 		PCIE0: pciex@d00000000 {
 			device_type = "pci"; /* see ppc4xx_pci_find_bridge */
 			#interrupt-cells = <1>;

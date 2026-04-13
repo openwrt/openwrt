@@ -22,6 +22,7 @@ proto_ncm_init_config() {
 	proto_config_add_boolean sourcefilter
 	proto_config_add_boolean delegate
 	proto_config_add_int profile
+	proto_config_add_int mtu
 	proto_config_add_defaults
 }
 
@@ -30,8 +31,8 @@ proto_ncm_setup() {
 
 	local connect context_type devname devpath finalize ifpath initialize manufacturer setmode
 
-	local delegate sourcefilter $PROTO_DEFAULT_OPTIONS
-	json_get_vars delegate sourcefilter $PROTO_DEFAULT_OPTIONS
+	local delegate ip4table ip6table mtu sourcefilter $PROTO_DEFAULT_OPTIONS
+	json_get_vars delegate ip4table ip6table mtu sourcefilter $PROTO_DEFAULT_OPTIONS
 
 	local apn auth delay device ifname mode password pdptype pincode profile username
 	json_get_vars apn auth delay device ifname mode password pdptype pincode profile username
@@ -192,9 +193,9 @@ proto_ncm_setup() {
 		json_add_string ifname "@$interface"
 		json_add_string proto "dhcp"
 		proto_add_dynamic_defaults
-		[ -n "$zone" ] && {
-			json_add_string zone "$zone"
-		}
+		[ -n "$zone" ] && json_add_string zone "$zone"
+		[ -n "$ip4table" ] && json_add_string ip4table "$ip4table"
+
 		json_close_object
 		ubus call network add_dynamic "$(json_dump)"
 	}
@@ -208,11 +209,16 @@ proto_ncm_setup() {
 		[ "$delegate" = "0" ] && json_add_boolean delegate "0"
 		[ "$sourcefilter" = "0" ] && json_add_boolean sourcefilter "0"
 		proto_add_dynamic_defaults
-		[ -n "$zone" ] && {
-			json_add_string zone "$zone"
-		}
+		[ -n "$zone" ] && json_add_string zone "$zone"
+		[ -n "$ip6table" ] && json_add_string ip6table "$ip6table"
+
 		json_close_object
 		ubus call network add_dynamic "$(json_dump)"
+	}
+
+	[ -n "$mtu" -a "$mtu" != 0 ] && {
+		echo "Setting MTU of $ifname to $mtu"
+		/sbin/ip link set dev $ifname mtu $mtu
 	}
 
 	[ -n "$finalize" ] && {

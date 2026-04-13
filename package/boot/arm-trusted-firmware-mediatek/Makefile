@@ -13,9 +13,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=https://github.com/mtk-openwrt/arm-trusted-firmware.git
-PKG_SOURCE_DATE:=2025-02-12
-PKG_SOURCE_VERSION:=e090770684e775711a624e68e0b28112227a4c38
-PKG_MIRROR_HASH:=1ff9d60f3677aadd9a6716e860985987ba7157bd28ce831112e05c0b3170939a
+PKG_SOURCE_DATE:=2026-01-23
+PKG_SOURCE_VERSION:=e06f258664198a901ff1c7c0c87802a115179451
+PKG_MIRROR_HASH:=e094f5c2838f366e9b2d87e85e0c324ac3b955dd02a493adced843031cf6b517
 
 PKG_MAINTAINER:=Daniel Golle <daniel@makrotopia.org>
 
@@ -29,12 +29,17 @@ define Trusted-Firmware-A/Default
   HIDDEN:=y
   BOOT_DEVICE:=
   DDR3_FLYBY:=
+  DDR3_FREQ_1866:=
+  DDR4_4BG_MODE:=
   DDR_TYPE:=
   NAND_TYPE:=
   BOARD_QFN:=
   DRAM_USE_COMB:=
   RAM_BOOT_UART_DL:=
+  USE_SPI2:=
   USE_UBI:=
+  FIP_OFFSET:=
+  FIP_SIZE:=
 endef
 
 define Trusted-Firmware-A/mt7622-nor-1ddr
@@ -135,6 +140,14 @@ define Trusted-Firmware-A/mt7622-sdmmc-2ddr
   DDR3_FLYBY:=1
 endef
 
+define Trusted-Firmware-A/mt7981-nor-ddr4
+  NAME:=MediaTek MT7981 (SPI-NOR, DDR4)
+  BOOT_DEVICE:=nor
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7981
+  DDR_TYPE:=ddr4
+endef
+
 define Trusted-Firmware-A/mt7981-ram-ddr4
   NAME:=MediaTek MT7981 (RAM, DDR4)
   BOOT_DEVICE:=ram
@@ -149,6 +162,14 @@ endef
 define Trusted-Firmware-A/mt7981-emmc-ddr4
   NAME:=MediaTek MT7981 (eMMC, DDR4)
   BOOT_DEVICE:=emmc
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7981
+  DDR_TYPE:=ddr4
+endef
+
+define Trusted-Firmware-A/mt7981-sdmmc-ddr4
+  NAME:=MediaTek MT7981 (SD card, DDR4)
+  BOOT_DEVICE:=sdmmc
   BUILD_SUBTARGET:=filogic
   PLAT:=mt7981
   DDR_TYPE:=ddr4
@@ -176,17 +197,10 @@ define Trusted-Firmware-A/mt7981-ram-ddr3
   BUILD_SUBTARGET:=filogic
   PLAT:=mt7981
   DDR_TYPE:=ddr3
+  DDR3_FREQ_1866:=1
   RAM_BOOT_UART_DL:=1
   HIDDEN:=
   DEFAULT:=TARGET_mediatek_filogic
-endef
-
-define Trusted-Firmware-A/mt7981-nor-ddr4
-  NAME:=MediaTek MT7981 (SPI-NOR, DDR4)
-  BOOT_DEVICE:=nor
-  BUILD_SUBTARGET:=filogic
-  PLAT:=mt7981
-  DDR_TYPE:=ddr4
 endef
 
 define Trusted-Firmware-A/mt7981-emmc-ddr3
@@ -195,6 +209,15 @@ define Trusted-Firmware-A/mt7981-emmc-ddr3
   BUILD_SUBTARGET:=filogic
   PLAT:=mt7981
   DDR_TYPE:=ddr3
+endef
+
+define Trusted-Firmware-A/mt7981-emmc-ddr3-1866
+  NAME:=MediaTek MT7981 (eMMC, DDR3 1866 MT/s)
+  BOOT_DEVICE:=emmc
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7981
+  DDR_TYPE:=ddr3
+  DDR3_FREQ_1866:=1
 endef
 
 define Trusted-Firmware-A/mt7981-sdmmc-ddr3
@@ -221,15 +244,13 @@ define Trusted-Firmware-A/mt7981-spim-nand-ddr3
   DDR_TYPE:=ddr3
 endef
 
-define Trusted-Firmware-A/mt7986-ram-ddr4
-  NAME:=MediaTek MT7986 (RAM, DDR4)
-  BOOT_DEVICE:=ram
+define Trusted-Firmware-A/mt7981-spim-nand-ddr3-1866
+  NAME:=MediaTek MT7981 (SPI-NAND via SPIM, DDR3 1866 MT/s)
+  BOOT_DEVICE:=spim-nand
   BUILD_SUBTARGET:=filogic
-  PLAT:=mt7986
-  DDR_TYPE:=ddr4
-  RAM_BOOT_UART_DL:=1
-  HIDDEN:=
-  DEFAULT:=TARGET_mediatek_filogic
+  PLAT:=mt7981
+  DDR_TYPE:=ddr3
+  DDR3_FREQ_1866:=1
 endef
 
 define Trusted-Firmware-A/mt7981-spim-nand-ubi-ddr4
@@ -239,6 +260,37 @@ define Trusted-Firmware-A/mt7981-spim-nand-ubi-ddr4
   PLAT:=mt7981
   DDR_TYPE:=ddr4
   USE_UBI:=1
+endef
+
+define Trusted-Firmware-A/mt7981-cudy-ddr3
+  NAME:=Cudy (SPI-NAND via SPIM, DDR3)
+  BOOT_DEVICE:=spim-nand
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7981
+  DDR_TYPE:=ddr3
+  FIP_OFFSET:=0x3c0000
+  FIP_SIZE:=0x200000
+endef
+
+define Trusted-Firmware-A/mt7981-cudy-ddr4
+  NAME:=Cudy (SPI-NAND via SPIM, DDR4)
+  BOOT_DEVICE:=spim-nand
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7981
+  DDR_TYPE:=ddr4
+  FIP_OFFSET:=0x3c0000
+  FIP_SIZE:=0x200000
+endef
+
+define Trusted-Firmware-A/mt7986-ram-ddr4
+  NAME:=MediaTek MT7986 (RAM, DDR4)
+  BOOT_DEVICE:=ram
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7986
+  DDR_TYPE:=ddr4
+  RAM_BOOT_UART_DL:=1
+  HIDDEN:=
+  DEFAULT:=TARGET_mediatek_filogic
 endef
 
 define Trusted-Firmware-A/mt7986-nor-ddr4
@@ -293,7 +345,7 @@ define Trusted-Firmware-A/mt7986-spim-nand-ubi-ddr4
 endef
 
 define Trusted-Firmware-A/mt7986-spim-nand-4k-ddr4
-  NAME:=MediaTek MT7986 (SPI-NAND via SPIM, DDR4)
+  NAME:=MediaTek MT7986 (SPI-NAND 4k+256 via SPIM, DDR4)
   BOOT_DEVICE:=spim-nand
   BUILD_SUBTARGET:=filogic
   PLAT:=mt7986
@@ -359,6 +411,86 @@ define Trusted-Firmware-A/mt7986-spim-nand-ubi-ddr3
   PLAT:=mt7986
   DDR_TYPE:=ddr3
   USE_UBI:=1
+endef
+
+define Trusted-Firmware-A/mt7986-spim-nand-4k-ddr3
+  NAME:=MediaTek MT7986 (SPI-NAND 4k+256 via SPIM, DDR3)
+  BOOT_DEVICE:=spim-nand
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7986
+  DDR_TYPE:=ddr3
+  NAND_TYPE:=spim:4k+256
+endef
+
+define Trusted-Firmware-A/mt7987-emmc-comb
+  NAME:=MediaTek MT7987 (eMMC)
+  BOOT_DEVICE:=emmc
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7987
+endef
+
+define Trusted-Firmware-A/mt7987-emmc-ddr4-4bg
+  NAME:=MediaTek MT7987 (eMMC, DDR4 4GB)
+  BOOT_DEVICE:=emmc
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7987
+  DDR4_4BG_MODE:=1
+endef
+
+define Trusted-Firmware-A/mt7987-nor-comb
+  NAME:=MediaTek MT7987 (NOR)
+  BOOT_DEVICE:=nor
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7987
+endef
+
+define Trusted-Firmware-A/mt7987-sdmmc-comb
+  NAME:=MediaTek MT7987 (SD card)
+  BOOT_DEVICE:=sdmmc
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7987
+endef
+
+define Trusted-Firmware-A/mt7987-sdmmc-ddr4-4bg
+  NAME:=MediaTek MT7987 (SD card, DDR4 4GB)
+  BOOT_DEVICE:=sdmmc
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7987
+  DDR4_4BG_MODE:=1
+endef
+
+define Trusted-Firmware-A/mt7987-spim-nand0
+  NAME:=MediaTek MT7987 (SPI-NAND via SPIM)
+  BOOT_DEVICE:=spim-nand
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7987
+endef
+
+define Trusted-Firmware-A/mt7987-spim-nand0-ubi-comb
+  NAME:=MediaTek MT7987 (SPI-NAND via SPIM, UBI)
+  BOOT_DEVICE:=spim-nand
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7987
+  USE_UBI:=1
+endef
+
+define Trusted-Firmware-A/mt7987-spim-nand2-ubi-comb
+  NAME:=MediaTek MT7987 (SPI-NAND via SPIM, UBI)
+  BOOT_DEVICE:=spim-nand
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7987
+  USE_SPI2:=1
+  USE_UBI:=1
+endef
+
+define Trusted-Firmware-A/mt7987-ram-comb
+  NAME:=MediaTek MT7987 (RAM)
+  BOOT_DEVICE:=ram
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7987
+  RAM_BOOT_UART_DL:=1
+  HIDDEN:=
+  DEFAULT:=TARGET_mediatek_filogic
 endef
 
 define Trusted-Firmware-A/mt7988-nor-ddr3
@@ -530,6 +662,34 @@ define Trusted-Firmware-A/mt7988-spim-nand-ubi-ddr4
   USE_UBI:=1
 endef
 
+define Trusted-Firmware-A/mt7988-emmc-comb-4bg
+  NAME:=MediaTek MT7988 (eMMC, DDR4 8GB)
+  BOOT_DEVICE:=emmc
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7988
+  DRAM_USE_COMB:=1
+  DDR4_4BG_MODE:=1
+endef
+
+define Trusted-Firmware-A/mt7988-sdmmc-comb-4bg
+  NAME:=MediaTek MT7988 (SD card, DDR4 8GB)
+  BOOT_DEVICE:=sdmmc
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7988
+  DRAM_USE_COMB:=1
+  DDR4_4BG_MODE:=1
+endef
+
+define Trusted-Firmware-A/mt7988-spim-nand-ubi-comb-4bg
+  NAME:=MediaTek MT7988 (SPI-NAND via SPIM, UBI, DDR4 8GB)
+  BOOT_DEVICE:=spim-nand
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7988
+  DRAM_USE_COMB:=1
+  DDR4_4BG_MODE:=1
+  USE_UBI:=1
+endef
+
 TFA_TARGETS:= \
 	mt7622-nor-1ddr \
 	mt7622-nor-2ddr \
@@ -545,15 +705,20 @@ TFA_TARGETS:= \
 	mt7622-sdmmc-2ddr \
 	mt7981-ram-ddr3 \
 	mt7981-emmc-ddr3 \
+	mt7981-emmc-ddr3-1866 \
 	mt7981-nor-ddr3 \
 	mt7981-nor-ddr4 \
 	mt7981-sdmmc-ddr3 \
 	mt7981-snand-ddr3 \
 	mt7981-spim-nand-ddr3 \
+	mt7981-spim-nand-ddr3-1866 \
 	mt7981-spim-nand-ubi-ddr4 \
 	mt7981-ram-ddr4 \
 	mt7981-emmc-ddr4 \
+	mt7981-sdmmc-ddr4 \
 	mt7981-spim-nand-ddr4 \
+	mt7981-cudy-ddr3 \
+	mt7981-cudy-ddr4 \
 	mt7986-ram-ddr3 \
 	mt7986-emmc-ddr3 \
 	mt7986-nor-ddr3 \
@@ -561,6 +726,7 @@ TFA_TARGETS:= \
 	mt7986-snand-ddr3 \
 	mt7986-spim-nand-ddr3 \
 	mt7986-spim-nand-ubi-ddr3 \
+	mt7986-spim-nand-4k-ddr3 \
 	mt7986-ram-ddr4 \
 	mt7986-emmc-ddr4 \
 	mt7986-nor-ddr4 \
@@ -569,6 +735,15 @@ TFA_TARGETS:= \
 	mt7986-spim-nand-ddr4 \
 	mt7986-spim-nand-ubi-ddr4 \
 	mt7986-spim-nand-4k-ddr4 \
+	mt7987-emmc-comb \
+	mt7987-emmc-ddr4-4bg \
+	mt7987-nor-comb \
+	mt7987-sdmmc-comb \
+	mt7987-sdmmc-ddr4-4bg \
+	mt7987-spim-nand0 \
+	mt7987-spim-nand0-ubi-comb \
+	mt7987-spim-nand2-ubi-comb \
+	mt7987-ram-comb \
 	mt7988-emmc-ddr3 \
 	mt7988-nor-ddr3 \
 	mt7988-sdmmc-ddr3 \
@@ -588,7 +763,10 @@ TFA_TARGETS:= \
 	mt7988-snand-ubi-comb \
 	mt7988-spim-nand-comb \
 	mt7988-spim-nand-ubi-comb \
-	mt7988-spim-nand-ubi-ddr4
+	mt7988-spim-nand-ubi-ddr4 \
+	mt7988-emmc-comb-4bg \
+	mt7988-sdmmc-comb-4bg \
+	mt7988-spim-nand-ubi-comb-4bg
 
 TFA_MAKE_FLAGS += \
 	BOOT_DEVICE=$(BOOT_DEVICE) \
@@ -598,11 +776,16 @@ TFA_MAKE_FLAGS += \
 	$(if $(NAND_TYPE),NAND_TYPE=$(NAND_TYPE)) \
 	HAVE_DRAM_OBJ_FILE=yes \
 	$(if $(DDR3_FLYBY),DDR3_FLYBY=1) \
+	$(if $(DDR3_FREQ_1866),DDR3_FREQ_1866=1) \
+	$(if $(DDR4_4BG_MODE),DDR4_4BG_MODE=1) \
 	$(if $(DRAM_USE_COMB),DRAM_USE_COMB=1) \
 	$(if $(RAM_BOOT_UART_DL),RAM_BOOT_UART_DL=1) \
 	$(if $(USE_UBI),UBI=1 $(if $(findstring mt7622,$(PLAT)),OVERRIDE_UBI_START_ADDR=0x80000)) \
 	$(if $(USE_UBI),UBI=1 $(if $(findstring mt7981,$(PLAT)),OVERRIDE_UBI_START_ADDR=0x100000)) \
 	$(if $(USE_UBI),UBI=1 $(if $(findstring mt7986,$(PLAT)),OVERRIDE_UBI_START_ADDR=0x200000)) \
+	$(if $(FIP_OFFSET),OVERRIDE_FIP_BASE=$(FIP_OFFSET)) \
+	$(if $(FIP_SIZE),OVERRIDE_FIP_SIZE=$(FIP_SIZE)) \
+	$(if $(USE_SPI2),SPIM_NAND_PREFER_SPI2=1) \
 	$(if $(RAM_BOOT_UART_DL),bl2,all)
 
 define Package/trusted-firmware-a-ram/install
@@ -615,6 +798,7 @@ Package/trusted-firmware-a-mt7981-ram-ddr3/install = $(Package/trusted-firmware-
 Package/trusted-firmware-a-mt7981-ram-ddr4/install = $(Package/trusted-firmware-a-ram/install)
 Package/trusted-firmware-a-mt7986-ram-ddr3/install = $(Package/trusted-firmware-a-ram/install)
 Package/trusted-firmware-a-mt7986-ram-ddr4/install = $(Package/trusted-firmware-a-ram/install)
+Package/trusted-firmware-a-mt7987-ram-comb/install = $(Package/trusted-firmware-a-ram/install)
 Package/trusted-firmware-a-mt7988-ram-comb/install = $(Package/trusted-firmware-a-ram/install)
 Package/trusted-firmware-a-mt7988-ram-ddr4/install = $(Package/trusted-firmware-a-ram/install)
 

@@ -810,7 +810,7 @@ static bool nmbm_write_signature(struct nmbm_instance *ni, uint32_t limit,
 
 	next_block:
 		ba--;
-	};
+	}
 
 	return false;
 }
@@ -2069,7 +2069,7 @@ static bool nmbm_find_signature(struct nmbm_instance *ni,
 				return true;
 			}
 		}
-	};
+	}
 
 	return false;
 }

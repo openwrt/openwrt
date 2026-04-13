@@ -9,7 +9,7 @@ IIO_MENU:=Industrial I/O Modules
 define KernelPackage/iio-core
   SUBMENU:=$(IIO_MENU)
   TITLE:=Industrial IO core
-  DEPENDS:=+!LINUX_6_6:kmod-dma-buf
+  DEPENDS:=+kmod-dma-buf
   KCONFIG:= \
 	CONFIG_IIO \
 	CONFIG_IIO_BUFFER=y \
@@ -45,6 +45,26 @@ define KernelPackage/iio-kfifo-buf/description
 endef
 
 $(eval $(call KernelPackage,iio-kfifo-buf))
+
+
+define KernelPackage/industrialio-backend
+  TITLE:=IIO Backend support
+  HIDDEN:=1
+  KCONFIG=CONFIG_IIO_BACKEND
+  FILES:=$(LINUX_DIR)/drivers/iio/industrialio-backend.ko
+  AUTOLOAD:=$(call AutoProbe,industrialio-backend)
+  $(call AddDepends/iio)
+endef
+
+define KernelPackage/industrialio-backend/description
+  Framework to handle complex IIO aggregate devices. The typical
+  architecture that can make use of this framework is to have one
+  device as the frontend device which can be "linked" against one or
+  multiple backend devices. The framework then makes it easy to get
+  and control such backend devices.
+endef
+
+$(eval $(call KernelPackage,industrialio-backend))
 
 
 define KernelPackage/industrialio-hw-consumer
@@ -129,6 +149,20 @@ endef
 
 $(eval $(call KernelPackage,iio-ads1015))
 
+define KernelPackage/iio-mcp3422
+  TITLE:=Microchip MCP342x ADC driver
+  KCONFIG:=CONFIG_MCP3422
+  FILES:=$(LINUX_DIR)/drivers/iio/adc/mcp3422.ko
+  AUTOLOAD:=$(call AutoProbe,mcp3422)
+  $(call AddDepends/iio, +kmod-i2c-core)
+endef
+
+define KernelPackage/iio-mcp3422/description
+  Kernel module for the Microchip MCP342x I2C ADCs.
+endef
+
+$(eval $(call KernelPackage,iio-mcp3422))
+
 define KernelPackage/iio-hmc5843
   DEPENDS:=+kmod-i2c-core +kmod-regmap-i2c +kmod-industrialio-triggered-buffer
   TITLE:=Honeywell HMC58x3 Magnetometer
@@ -209,7 +243,7 @@ $(eval $(call KernelPackage,iio-dht11))
 
 define KernelPackage/iio-bme680
   TITLE:=BME680 gas/humidity/pressure/temperature sensor
-  DEPENDS:=+kmod-regmap-core
+  DEPENDS:=+kmod-regmap-core +!LINUX_6_12:kmod-industrialio-triggered-buffer
   KCONFIG:=CONFIG_BME680
   FILES:=$(LINUX_DIR)/drivers/iio/chemical/bme680_core.ko
   $(call AddDepends/iio)
@@ -253,7 +287,7 @@ $(eval $(call KernelPackage,iio-bme680-spi))
 
 define KernelPackage/iio-bmp280
   TITLE:=BMP180/BMP280/BME280 pressure/temperatur sensor
-  DEPENDS:=+kmod-regmap-core +!LINUX_6_6:kmod-industrialio-triggered-buffer
+  DEPENDS:=+kmod-regmap-core +kmod-industrialio-triggered-buffer
   KCONFIG:=CONFIG_BMP280
   FILES:=$(LINUX_DIR)/drivers/iio/pressure/bmp280.ko
   $(call AddDepends/iio)
@@ -299,6 +333,23 @@ endef
 
 $(eval $(call KernelPackage,iio-bmp280-spi))
 
+
+define KernelPackage/iio-dps310
+  TITLE:=DPS310/DPS368/DPS422 pressure temperatur sensor
+  DEPENDS:=+kmod-regmap-i2c
+  KCONFIG:=CONFIG_DPS310
+  FILES:=$(LINUX_DIR)/drivers/iio/pressure/dps310.ko
+  AUTOLOAD:=$(call AutoProbe,dps310)
+  $(call AddDepends/iio)
+endef
+define KernelPackage/iio-dps310/description
+  Kernel module for Infineon DPS310/DPS368/DPS422 pressure and
+  temperature I2C sensor.
+endef
+
+$(eval $(call KernelPackage,iio-dps310))
+
+
 define KernelPackage/iio-htu21
   DEPENDS:=+kmod-i2c-core
   TITLE:=HTU21 humidity & temperature sensor
@@ -337,6 +388,25 @@ define KernelPackage/iio-ccs811/description
 endef
 
 $(eval $(call KernelPackage,iio-ccs811))
+
+
+define KernelPackage/iio-richtek-rtq6056
+  TITLE:=Richtek RTQ6056 Current and Power Monitor ADC
+  DEPENDS:=+kmod-i2c-core +kmod-regmap-i2c +kmod-industrialio-triggered-buffer
+  KCONFIG:= CONFIG_RICHTEK_RTQ6056
+  FILES:=$(LINUX_DIR)/drivers/iio/adc/rtq6056.ko
+  AUTOLOAD:=$(call AutoProbe,rtq6056)
+  $(call AddDepends/iio)
+endef
+
+define KernelPackage/iio-richtek-rtq6056/description
+ Support for Richtek RTQ6056 Current and Power Monitor ADC.
+ RTQ6056 is a high accuracy current-sense monitor with I2C and SMBus
+ compatible interface, and the device provides full information for
+ system by reading out the load current and power.
+endef
+
+$(eval $(call KernelPackage,iio-richtek-rtq6056))
 
 
 define KernelPackage/iio-si7020
@@ -434,7 +504,8 @@ $(eval $(call KernelPackage,iio-lsm6dsx))
 define KernelPackage/iio-lsm6dsx-i2c
   DEPENDS:=+kmod-iio-lsm6dsx +kmod-i2c-core +kmod-regmap-i2c
   TITLE:=ST LSM6DSx driver for IMU MEMS sensors (I2C)
-  KCONFIG:=CONFIG_IIO_ST_LSM6DSX
+  KCONFIG:=CONFIG_IIO_ST_LSM6DSX \
+	CONFIG_IIO_ST_LSM6DSX_I2C
   FILES:=$(LINUX_DIR)/drivers/iio/imu/st_lsm6dsx/st_lsm6dsx_i2c.ko
   AUTOLOAD:=$(call AutoProbe,st_lsm6dsx-i2c)
   $(call AddDepends/iio)
@@ -450,7 +521,8 @@ $(eval $(call KernelPackage,iio-lsm6dsx-i2c))
 define KernelPackage/iio-lsm6dsx-spi
   DEPENDS:=+kmod-iio-lsm6dsx +kmod-regmap-spi
   TITLE:=ST LSM6DSx driver for IMU MEMS sensors (SPI)
-  KCONFIG:=CONFIG_IIO_ST_LSM6DSX
+  KCONFIG:=CONFIG_IIO_ST_LSM6DSX \
+	CONFIG_IIO_ST_LSM6DSX_SPI
   FILES:=$(LINUX_DIR)/drivers/iio/imu/st_lsm6dsx/st_lsm6dsx_spi.ko
   AUTOLOAD:=$(call AutoProbe,st_lsm6dsx-spi)
   $(call AddDepends/iio)

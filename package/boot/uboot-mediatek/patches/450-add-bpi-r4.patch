@@ -1,7 +1,8 @@
 --- /dev/null
 +++ b/configs/mt7988a_bananapi_bpi-r4-emmc_defconfig
-@@ -0,0 +1,138 @@
+@@ -0,0 +1,144 @@
 +CONFIG_ARM=y
++CONFIG_ARM_SMCCC=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -32,6 +33,7 @@
 +CONFIG_LOGLEVEL=7
 +CONFIG_PRE_CONSOLE_BUFFER=y
 +CONFIG_LOG=y
++# CONFIG_BOARD_INIT is not set
 +CONFIG_BOARD_LATE_INIT=y
 +CONFIG_HUSH_PARSER=y
 +CONFIG_SYS_PROMPT="MT7988> "
@@ -42,6 +44,7 @@
 +CONFIG_CMD_ASKENV=y
 +CONFIG_CMD_ERASEENV=y
 +CONFIG_CMD_ENV_FLAGS=y
++CONFIG_CMD_RNG=y
 +CONFIG_CMD_STRINGS=y
 +CONFIG_CMD_DM=y
 +CONFIG_CMD_GPIO=y
@@ -74,13 +77,14 @@
 +CONFIG_CMD_FS_UUID=y
 +CONFIG_CMD_UBI=y
 +CONFIG_CMD_UBI_RENAME=y
++CONFIG_CMD_MEMSIZE=y
 +CONFIG_OF_EMBED=y
 +CONFIG_ENV_OVERWRITE=y
 +CONFIG_ENV_IS_IN_MMC=y
-+CONFIG_SYS_REDUNDAND_ENVIRONMENT=y
-+CONFIG_SYS_RELOC_GD_ENV_ADDR=y
-+CONFIG_USE_DEFAULT_ENV_FILE=y
-+CONFIG_DEFAULT_ENV_FILE="defenvs/bananapi_bpi-r4_emmc_env"
++CONFIG_ENV_REDUNDANT=y
++CONFIG_ENV_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/bananapi_bpi-r4_emmc_env"
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
 +CONFIG_VERSION_VARIABLE=y
 +CONFIG_NETCONSOLE=y
@@ -126,6 +130,8 @@
 +CONFIG_DM_PWM=y
 +CONFIG_PWM_MTK=y
 +CONFIG_RAM=y
++CONFIG_DM_RNG=y
++CONFIG_RNG_MTK_V2=y
 +CONFIG_SCSI=y
 +CONFIG_DM_SERIAL=y
 +CONFIG_SERIAL_RX_BUFFER=y
@@ -141,8 +147,9 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/configs/mt7988a_bananapi_bpi-r4-sdmmc_defconfig
-@@ -0,0 +1,138 @@
+@@ -0,0 +1,143 @@
 +CONFIG_ARM=y
++CONFIG_ARM_SMCCC=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -173,6 +180,7 @@
 +CONFIG_LOGLEVEL=7
 +CONFIG_PRE_CONSOLE_BUFFER=y
 +CONFIG_LOG=y
++# CONFIG_BOARD_INIT is not set
 +CONFIG_BOARD_LATE_INIT=y
 +CONFIG_HUSH_PARSER=y
 +CONFIG_SYS_PROMPT="MT7988> "
@@ -183,6 +191,7 @@
 +CONFIG_CMD_ASKENV=y
 +CONFIG_CMD_ERASEENV=y
 +CONFIG_CMD_ENV_FLAGS=y
++CONFIG_CMD_RNG=y
 +CONFIG_CMD_STRINGS=y
 +CONFIG_CMD_DM=y
 +CONFIG_CMD_GPIO=y
@@ -218,10 +227,10 @@
 +CONFIG_OF_EMBED=y
 +CONFIG_ENV_OVERWRITE=y
 +CONFIG_ENV_IS_IN_MMC=y
-+CONFIG_SYS_REDUNDAND_ENVIRONMENT=y
-+CONFIG_SYS_RELOC_GD_ENV_ADDR=y
-+CONFIG_USE_DEFAULT_ENV_FILE=y
-+CONFIG_DEFAULT_ENV_FILE="defenvs/bananapi_bpi-r4_sdmmc_env"
++CONFIG_ENV_REDUNDANT=y
++CONFIG_ENV_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/bananapi_bpi-r4_sdmmc_env"
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
 +CONFIG_VERSION_VARIABLE=y
 +CONFIG_NETCONSOLE=y
@@ -267,6 +276,8 @@
 +CONFIG_DM_PWM=y
 +CONFIG_PWM_MTK=y
 +CONFIG_RAM=y
++CONFIG_DM_RNG=y
++CONFIG_RNG_MTK_V2=y
 +CONFIG_SCSI=y
 +CONFIG_DM_SERIAL=y
 +CONFIG_SERIAL_RX_BUFFER=y
@@ -282,8 +293,9 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/configs/mt7988a_bananapi_bpi-r4-snand_defconfig
-@@ -0,0 +1,138 @@
+@@ -0,0 +1,144 @@
 +CONFIG_ARM=y
++CONFIG_ARM_SMCCC=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -311,6 +323,7 @@
 +CONFIG_LOGLEVEL=7
 +CONFIG_PRE_CONSOLE_BUFFER=y
 +CONFIG_LOG=y
++# CONFIG_BOARD_INIT is not set
 +CONFIG_BOARD_LATE_INIT=y
 +CONFIG_HUSH_PARSER=y
 +CONFIG_SYS_PROMPT="MT7988> "
@@ -321,6 +334,7 @@
 +CONFIG_CMD_ASKENV=y
 +CONFIG_CMD_ERASEENV=y
 +CONFIG_CMD_ENV_FLAGS=y
++CONFIG_CMD_RNG=y
 +CONFIG_CMD_STRINGS=y
 +CONFIG_CMD_DM=y
 +CONFIG_CMD_GPIO=y
@@ -353,16 +367,17 @@
 +CONFIG_CMD_FS_UUID=y
 +CONFIG_CMD_UBI=y
 +CONFIG_CMD_UBI_RENAME=y
++CONFIG_CMD_MEMSIZE=y
 +CONFIG_OF_EMBED=y
 +CONFIG_ENV_OVERWRITE=y
 +CONFIG_ENV_IS_IN_UBI=y
-+CONFIG_SYS_REDUNDAND_ENVIRONMENT=y
++CONFIG_ENV_REDUNDANT=y
 +CONFIG_ENV_UBI_PART="ubi"
 +CONFIG_ENV_UBI_VOLUME="ubootenv"
 +CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
-+CONFIG_SYS_RELOC_GD_ENV_ADDR=y
-+CONFIG_USE_DEFAULT_ENV_FILE=y
-+CONFIG_DEFAULT_ENV_FILE="defenvs/bananapi_bpi-r4_snand_env"
++CONFIG_ENV_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/bananapi_bpi-r4_snand_env"
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
 +CONFIG_VERSION_VARIABLE=y
 +CONFIG_NETCONSOLE=y
@@ -408,6 +423,8 @@
 +CONFIG_DM_PWM=y
 +CONFIG_PWM_MTK=y
 +CONFIG_RAM=y
++CONFIG_DM_RNG=y
++CONFIG_RNG_MTK_V2=y
 +CONFIG_SCSI=y
 +CONFIG_DM_SERIAL=y
 +CONFIG_SERIAL_RX_BUFFER=y
@@ -492,7 +509,7 @@
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- /dev/null
 +++ b/defenvs/bananapi_bpi-r4_snand_env
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,68 @@
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
 +loadaddr=0x50000000
@@ -557,12 +574,13 @@
 +emmc_write_production=part start mmc 0 $part_default part_addr && part size mmc 0 $part_default part_size && run mmc_write_vol
 +emmc_write_recovery=part start mmc 0 $part_recovery part_addr && part size mmc 0 $part_recovery part_size && run mmc_write_vol
 +_init_env=setenv _init_env ; run ubi_create_env ; saveenv ; saveenv
-+_firstboot=setenv _firstboot ; run _switch_to_menu ; run _init_env ; run boot_first
++_firstboot=setenv _firstboot ; run _select_bl2 ; run _switch_to_menu ; run _init_env ; run boot_first
++_select_bl2=setenv _select_bl2 ; msize g ramsize; if test ${ramsize} = 8; then setenv bootfile_bl2 openwrt-mediatek-filogic-bananapi_bpi-r4-snand-preloader-8g.bin;fi
 +_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- /dev/null
 +++ b/defenvs/bananapi_bpi-r4_emmc_env
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,58 @@
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
 +loadaddr=0x50000000
@@ -617,7 +635,8 @@
 +emmc_write_production=part start mmc 0 $part_default part_addr && part size mmc 0 $part_default part_size && run mmc_write_vol
 +emmc_write_recovery=part start mmc 0 $part_recovery part_addr && part size mmc 0 $part_recovery part_size && run mmc_write_vol
 +_init_env=setenv _init_env ; setenv _create_env ; saveenv ; saveenv
-+_firstboot=setenv _firstboot ; run _switch_to_menu ; run _init_env ; run boot_first
++_firstboot=setenv _firstboot ; run _select_bl2 ; run _switch_to_menu ; run _init_env ; run boot_first
++_select_bl2=setenv _select_bl2 ; msize g ramsize; if test ${ramsize} = 8; then setenv bootfile_bl2 openwrt-mediatek-filogic-bananapi_bpi-r4-emmc-preloader-8g.bin;fi
 +_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- /dev/null
@@ -671,7 +690,7 @@
 +		wps {
 +			label = "reset";
 +			linux,code = <KEY_RESTART>;
-+			gpios = <&gpio 14 GPIO_ACTIVE_LOW>;
++			gpios = <&pio 14 GPIO_ACTIVE_LOW>;
 +		};
 +	};
 +
@@ -680,12 +699,12 @@
 +
 +		led_status_green: led-green {
 +			label = "green:status";
-+			gpios = <&gpio 79 GPIO_ACTIVE_HIGH>;
++			gpios = <&pio 79 GPIO_ACTIVE_HIGH>;
 +		};
 +
 +		led_status_blue: led-blue {
 +			label = "blue:status";
-+			gpios = <&gpio 63 GPIO_ACTIVE_HIGH>;
++			gpios = <&pio 63 GPIO_ACTIVE_HIGH>;
 +		};
 +	};
 +};
@@ -713,7 +732,7 @@
 +	};
 +};
 +
-+&pinctrl {
++&pio {
 +	i2c1_pins: i2c1-pins {
 +		mux {
 +			function = "i2c";
@@ -870,8 +889,9 @@
 +};
 --- /dev/null
 +++ b/configs/mt7988a_bananapi_bpi-r4-poe-emmc_defconfig
-@@ -0,0 +1,138 @@
+@@ -0,0 +1,144 @@
 +CONFIG_ARM=y
++CONFIG_ARM_SMCCC=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -902,6 +922,7 @@
 +CONFIG_LOGLEVEL=7
 +CONFIG_PRE_CONSOLE_BUFFER=y
 +CONFIG_LOG=y
++# CONFIG_BOARD_INIT is not set
 +CONFIG_BOARD_LATE_INIT=y
 +CONFIG_HUSH_PARSER=y
 +CONFIG_SYS_PROMPT="MT7988> "
@@ -912,6 +933,7 @@
 +CONFIG_CMD_ASKENV=y
 +CONFIG_CMD_ERASEENV=y
 +CONFIG_CMD_ENV_FLAGS=y
++CONFIG_CMD_RNG=y
 +CONFIG_CMD_STRINGS=y
 +CONFIG_CMD_DM=y
 +CONFIG_CMD_GPIO=y
@@ -944,13 +966,14 @@
 +CONFIG_CMD_FS_UUID=y
 +CONFIG_CMD_UBI=y
 +CONFIG_CMD_UBI_RENAME=y
++CONFIG_CMD_MEMSIZE=y
 +CONFIG_OF_EMBED=y
 +CONFIG_ENV_OVERWRITE=y
 +CONFIG_ENV_IS_IN_MMC=y
-+CONFIG_SYS_REDUNDAND_ENVIRONMENT=y
-+CONFIG_SYS_RELOC_GD_ENV_ADDR=y
-+CONFIG_USE_DEFAULT_ENV_FILE=y
-+CONFIG_DEFAULT_ENV_FILE="defenvs/bananapi_bpi-r4-poe_emmc_env"
++CONFIG_ENV_REDUNDANT=y
++CONFIG_ENV_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/bananapi_bpi-r4-poe_emmc_env"
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
 +CONFIG_VERSION_VARIABLE=y
 +CONFIG_NETCONSOLE=y
@@ -996,6 +1019,8 @@
 +CONFIG_DM_PWM=y
 +CONFIG_PWM_MTK=y
 +CONFIG_RAM=y
++CONFIG_DM_RNG=y
++CONFIG_RNG_MTK_V2=y
 +CONFIG_SCSI=y
 +CONFIG_DM_SERIAL=y
 +CONFIG_SERIAL_RX_BUFFER=y
@@ -1011,8 +1036,9 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/configs/mt7988a_bananapi_bpi-r4-poe-sdmmc_defconfig
-@@ -0,0 +1,138 @@
+@@ -0,0 +1,143 @@
 +CONFIG_ARM=y
++CONFIG_ARM_SMCCC=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -1043,6 +1069,7 @@
 +CONFIG_LOGLEVEL=7
 +CONFIG_PRE_CONSOLE_BUFFER=y
 +CONFIG_LOG=y
++# CONFIG_BOARD_INIT is not set
 +CONFIG_BOARD_LATE_INIT=y
 +CONFIG_HUSH_PARSER=y
 +CONFIG_SYS_PROMPT="MT7988> "
@@ -1053,6 +1080,7 @@
 +CONFIG_CMD_ASKENV=y
 +CONFIG_CMD_ERASEENV=y
 +CONFIG_CMD_ENV_FLAGS=y
++CONFIG_CMD_RNG=y
 +CONFIG_CMD_STRINGS=y
 +CONFIG_CMD_DM=y
 +CONFIG_CMD_GPIO=y
@@ -1088,10 +1116,10 @@
 +CONFIG_OF_EMBED=y
 +CONFIG_ENV_OVERWRITE=y
 +CONFIG_ENV_IS_IN_MMC=y
-+CONFIG_SYS_REDUNDAND_ENVIRONMENT=y
-+CONFIG_SYS_RELOC_GD_ENV_ADDR=y
-+CONFIG_USE_DEFAULT_ENV_FILE=y
-+CONFIG_DEFAULT_ENV_FILE="defenvs/bananapi_bpi-r4-poe_sdmmc_env"
++CONFIG_ENV_REDUNDANT=y
++CONFIG_ENV_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/bananapi_bpi-r4-poe_sdmmc_env"
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
 +CONFIG_VERSION_VARIABLE=y
 +CONFIG_NETCONSOLE=y
@@ -1137,6 +1165,8 @@
 +CONFIG_DM_PWM=y
 +CONFIG_PWM_MTK=y
 +CONFIG_RAM=y
++CONFIG_DM_RNG=y
++CONFIG_RNG_MTK_V2=y
 +CONFIG_SCSI=y
 +CONFIG_DM_SERIAL=y
 +CONFIG_SERIAL_RX_BUFFER=y
@@ -1152,8 +1182,9 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/configs/mt7988a_bananapi_bpi-r4-poe-snand_defconfig
-@@ -0,0 +1,138 @@
+@@ -0,0 +1,144 @@
 +CONFIG_ARM=y
++CONFIG_ARM_SMCCC=y
 +CONFIG_SYS_HAS_NONCACHED_MEMORY=y
 +CONFIG_POSITION_INDEPENDENT=y
 +CONFIG_ARCH_MEDIATEK=y
@@ -1181,6 +1212,7 @@
 +CONFIG_LOGLEVEL=7
 +CONFIG_PRE_CONSOLE_BUFFER=y
 +CONFIG_LOG=y
++# CONFIG_BOARD_INIT is not set
 +CONFIG_BOARD_LATE_INIT=y
 +CONFIG_HUSH_PARSER=y
 +CONFIG_SYS_PROMPT="MT7988> "
@@ -1191,6 +1223,7 @@
 +CONFIG_CMD_ASKENV=y
 +CONFIG_CMD_ERASEENV=y
 +CONFIG_CMD_ENV_FLAGS=y
++CONFIG_CMD_RNG=y
 +CONFIG_CMD_STRINGS=y
 +CONFIG_CMD_DM=y
 +CONFIG_CMD_GPIO=y
@@ -1223,16 +1256,17 @@
 +CONFIG_CMD_FS_UUID=y
 +CONFIG_CMD_UBI=y
 +CONFIG_CMD_UBI_RENAME=y
++CONFIG_CMD_MEMSIZE=y
 +CONFIG_OF_EMBED=y
 +CONFIG_ENV_OVERWRITE=y
 +CONFIG_ENV_IS_IN_UBI=y
-+CONFIG_SYS_REDUNDAND_ENVIRONMENT=y
++CONFIG_ENV_REDUNDANT=y
 +CONFIG_ENV_UBI_PART="ubi"
 +CONFIG_ENV_UBI_VOLUME="ubootenv"
 +CONFIG_ENV_UBI_VOLUME_REDUND="ubootenv2"
-+CONFIG_SYS_RELOC_GD_ENV_ADDR=y
-+CONFIG_USE_DEFAULT_ENV_FILE=y
-+CONFIG_DEFAULT_ENV_FILE="defenvs/bananapi_bpi-r4-poe_snand_env"
++CONFIG_ENV_RELOC_GD_ENV_ADDR=y
++CONFIG_ENV_USE_DEFAULT_ENV_TEXT_FILE=y
++CONFIG_ENV_DEFAULT_ENV_TEXT_FILE="defenvs/bananapi_bpi-r4-poe_snand_env"
 +CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG=y
 +CONFIG_VERSION_VARIABLE=y
 +CONFIG_NETCONSOLE=y
@@ -1278,6 +1312,8 @@
 +CONFIG_DM_PWM=y
 +CONFIG_PWM_MTK=y
 +CONFIG_RAM=y
++CONFIG_DM_RNG=y
++CONFIG_RNG_MTK_V2=y
 +CONFIG_SCSI=y
 +CONFIG_DM_SERIAL=y
 +CONFIG_SERIAL_RX_BUFFER=y
@@ -1293,7 +1329,7 @@
 +CONFIG_HEXDUMP=y
 --- /dev/null
 +++ b/defenvs/bananapi_bpi-r4-poe_emmc_env
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,58 @@
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
 +loadaddr=0x50000000
@@ -1348,7 +1384,8 @@
 +emmc_write_production=part start mmc 0 $part_default part_addr && part size mmc 0 $part_default part_size && run mmc_write_vol
 +emmc_write_recovery=part start mmc 0 $part_recovery part_addr && part size mmc 0 $part_recovery part_size && run mmc_write_vol
 +_init_env=setenv _init_env ; setenv _create_env ; saveenv ; saveenv
-+_firstboot=setenv _firstboot ; run _switch_to_menu ; run _init_env ; run boot_first
++_firstboot=setenv _firstboot ; run _select_bl2 ; run _switch_to_menu ; run _init_env ; run boot_first
++_select_bl2=setenv _select_bl2 ; msize g ramsize ; if test ${ramsize} = 8 ; then setenv bootfile_bl2 openwrt-mediatek-filogic-bananapi_bpi-r4-poe-emmc-preloader-8g.bin ; fi
 +_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- /dev/null
@@ -1422,7 +1459,7 @@
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- /dev/null
 +++ b/defenvs/bananapi_bpi-r4-poe_snand_env
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,68 @@
 +ipaddr=192.168.1.1
 +serverip=192.168.1.254
 +loadaddr=0x50000000
@@ -1487,6 +1524,7 @@
 +emmc_write_production=part start mmc 0 $part_default part_addr && part size mmc 0 $part_default part_size && run mmc_write_vol
 +emmc_write_recovery=part start mmc 0 $part_recovery part_addr && part size mmc 0 $part_recovery part_size && run mmc_write_vol
 +_init_env=setenv _init_env ; run ubi_create_env ; saveenv ; saveenv
-+_firstboot=setenv _firstboot ; run _switch_to_menu ; run _init_env ; run boot_first
++_firstboot=setenv _firstboot ; run _select_bl2 ; run _switch_to_menu ; run _init_env ; run boot_first
++_select_bl2=setenv _select_bl2 ; msize g ramsize; if test ${ramsize} = 8; then setenv bootfile_bl2 openwrt-mediatek-filogic-bananapi_bpi-r4-poe-snand-preloader-8g.bin ; fi
 +_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"

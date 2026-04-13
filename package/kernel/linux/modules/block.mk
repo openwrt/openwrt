@@ -380,7 +380,7 @@ $(eval $(call KernelPackage,md-raid10))
 
 
 define KernelPackage/md-raid456
-$(call KernelPackage/md/Depends,+kmod-lib-raid6 +kmod-lib-xor +kmod-lib-crc32c)
+$(call KernelPackage/md/Depends,+kmod-lib-raid6 +kmod-lib-xor +LINUX_6_12:kmod-lib-crc32c)
   TITLE:=RAID Level 456 Driver
   KCONFIG:= \
        CONFIG_ASYNC_CORE \
@@ -416,21 +416,6 @@ define KernelPackage/md-raid456/description
 endef
 
 $(eval $(call KernelPackage,md-raid456))
-
-
-define KernelPackage/md-multipath
-$(call KernelPackage/md/Depends,)
-  TITLE:=MD Multipath Module
-  KCONFIG:=CONFIG_MD_MULTIPATH
-  FILES:=$(LINUX_DIR)/drivers/md/multipath.ko
-  AUTOLOAD:=$(call AutoLoad,29,multipath)
-endef
-
-define KernelPackage/md-multipath/description
- Multipath driver module (multipath.ko)
-endef
-
-$(eval $(call KernelPackage,md-multipath))
 
 
 define KernelPackage/libsas

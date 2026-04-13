@@ -71,6 +71,7 @@ define Device/sagem_fast-3864-op
   SUBPAGESIZE := 512
   VID_HDR_OFFSET := 2048
   DEVICE_PACKAGES += $(USB2_PACKAGES) \
+    kmod-leds-gpio \
     kmod-leds-bcm6328
   CFE_WFI_FLASH_TYPE := 3
   CFE_WFI_VERSION := 0x5732

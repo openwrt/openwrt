@@ -9,8 +9,8 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_VERSION:=2025.01
-PKG_HASH:=cdef7d507c93f1bbd9f015ea9bc21fa074268481405501945abc6f854d5b686f
+PKG_VERSION:=2025.10
+PKG_HASH:=b4f032848e56cc8f213ad59f9132c084dbbb632bc29176d024e58220e0efdf4a
 
 PKG_MAINTAINER:=Zoltan HERPAI <wigyori@uid0.hu>
 
@@ -92,6 +92,12 @@ define U-Boot/Bananapro
   BUILD_DEVICES:=lemaker_bananapro
 endef
 
+define U-Boot/beelink_x2
+  BUILD_SUBTARGET:=cortexa7
+  NAME:=Beelink X2 (H3)
+  BUILD_DEVICES:=roofull_beelink-x2
+endef
+
 define U-Boot/Cubieboard
   BUILD_SUBTARGET:=cortexa8
   NAME:=Cubieboard
@@ -131,7 +137,14 @@ endef
 define U-Boot/OLIMEX_A13_SOM
   BUILD_SUBTARGET:=cortexa8
   NAME:=Olimex A13 SOM
-  BUILD_DEVICES:=olimex_a13-olimex-som
+  BUILD_DEVICES:=olimex_a13-olinuxino
+endef
+
+define U-Boot/licheepi_nano
+  BUILD_SUBTARGET:=arm926ejs
+  NAME:=LicheePi Nano
+  UENV:=f1c
+  BUILD_DEVICES:=licheepi_licheepi-nano
 endef
 
 define U-Boot/Linksprite_pcDuino
@@ -251,6 +264,19 @@ define U-Boot/pangolin
   UENV:=pangolin
 endef
 
+define U-Boot/pinecube
+  BUILD_SUBTARGET:=cortexa7
+  NAME:=Pine64 PineCube
+  BUILD_DEVICES:=pine64_pinecube
+endef
+
+define U-Boot/popstick
+  BUILD_SUBTARGET:=arm926ejs
+  NAME:=PopStick
+  UENV:=f1c
+  BUILD_DEVICES:=sourceparts_popstick-v1.1
+endef
+
 define U-Boot/libretech_all_h3_cc_h5
   BUILD_SUBTARGET:=cortexa53
   NAME:=Libre Computer ALL-H3-CC H5
@@ -299,13 +325,13 @@ endef
 define U-Boot/bananapi_m2_plus_h3
   BUILD_SUBTARGET:=cortexa7
   NAME:=Bananapi M2 Plus H3
-  BUILD_DEVICES:=sinovoip_bananapi-m2-plus
+  BUILD_DEVICES:=sinovoip_bpi-m2-plus
 endef
 
 define U-Boot/Sinovoip_BPI_M3
   BUILD_SUBTARGET:=cortexa7
   NAME:=Bananapi M3
-  BUILD_DEVICES:=sinovoip_bananapi-m3
+  BUILD_DEVICES:=sinovoip_bpi-m3
 endef
 
 define U-Boot/sopine_baseboard
@@ -316,7 +342,6 @@ define U-Boot/sopine_baseboard
   UENV:=a64
   ATF:=a64
 endef
-
 
 define U-Boot/orangepi_zero_plus
   BUILD_SUBTARGET:=cortexa53
@@ -345,6 +370,15 @@ define U-Boot/orangepi_zero2
   ATF:=h616
 endef
 
+define U-Boot/orangepi_zero2w
+  BUILD_SUBTARGET:=cortexa53
+  NAME:=Xunlong Orange Pi Zero2W
+  BUILD_DEVICES:=xunlong_orangepi-zero2w
+  DEPENDS:=+PACKAGE_u-boot-orangepi_zero2w:trusted-firmware-a-sunxi-h616
+  UENV:=h616
+  ATF:=h616
+endef
+
 define U-Boot/orangepi_zero3
   BUILD_SUBTARGET:=cortexa53
   NAME:=Xunlong Orange Pi Zero3
@@ -357,19 +391,19 @@ endef
 define U-Boot/Bananapi_M2_Ultra
   BUILD_SUBTARGET:=cortexa7
   NAME:=Bananapi M2 Ultra
-  BUILD_DEVICES:=sinovoip_bananapi-m2-ultra
+  BUILD_DEVICES:=sinovoip_bpi-m2-ultra
 endef
 
 define U-Boot/bananapi_m2_berry
   BUILD_SUBTARGET:=cortexa7
   NAME:=Bananapi M2 Berry
-  BUILD_DEVICES:=sinovoip_bananapi-m2-berry
+  BUILD_DEVICES:=sinovoip_bpi-m2-berry
 endef
 
 define U-Boot/bananapi_p2_zero
   BUILD_SUBTARGET:=cortexa7
   NAME:=Bananapi P2 Zero
-  BUILD_DEVICES:=sinovoip_bananapi-p2-zero
+  BUILD_DEVICES:=sinovoip_bpi-p2-zero
 endef
 
 
@@ -388,6 +422,7 @@ UBOOT_TARGETS := \
 	bananapi_p2_zero \
 	Bananapi_M2_Ultra \
 	Bananapro \
+	beelink_x2 \
 	Cubieboard \
 	Cubieboard2 \
 	Cubietruck \
@@ -395,6 +430,7 @@ UBOOT_TARGETS := \
 	Marsboard_A10 \
 	Mele_M9 \
 	OLIMEX_A13_SOM \
+	licheepi_nano \
 	LicheePi_Zero \
 	Linksprite_pcDuino \
 	Linksprite_pcDuino3 \
@@ -418,8 +454,11 @@ UBOOT_TARGETS := \
 	orangepi_2 \
 	orangepi_pc2 \
 	orangepi_zero2 \
+	orangepi_zero2w \
 	orangepi_zero3 \
 	pangolin \
+	pinecube \
+	popstick \
 	pine64_plus \
 	Sinovoip_BPI_M3 \
 	sopine_baseboard \

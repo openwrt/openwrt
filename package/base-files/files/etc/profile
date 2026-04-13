@@ -1,61 +1,39 @@
+unset FAILSAFE
 [ -e /tmp/.failsafe ] && export FAILSAFE=1
 
 [ -f /etc/banner ] && cat /etc/banner
-[ -n "$FAILSAFE" ] && cat /etc/banner.failsafe
+[ -n "$FAILSAFE" ] && [ -f /etc/banner.failsafe ] && cat /etc/banner.failsafe
 
-grep -Fsq '/ overlay ro,' /proc/mounts && {
-	echo 'Your JFFS2-partition seems full and overlayfs is mounted read-only.'
-	echo 'Please try to remove files from /overlay/upper/... and reboot!'
-}
+if grep -Fsq '/ overlay ro,' /proc/mounts ; then
+cat << EOF
+
+ === WARNING! ======================================
+ Your JFFS2-partition seems full and overlayfs is
+ mounted as READ-ONLY!
+ Please try to remove files from /overlay/upper/...
+ and reboot!
+ ---------------------------------------------------
+
+EOF
+fi
 
 export PATH="%PATH%"
-export HOME=$(grep -e "^${USER:-root}:" /etc/passwd | cut -d ":" -f 6)
-export HOME=${HOME:-/root}
+HOME=$(grep -E "^${USER:-root}:" /etc/passwd | cut -d ":" -f 6)
+HOME=${HOME:-/root}
+export HOME
 export PS1='\u@\h:\w\$ '
 export ENV=/etc/shinit
 
 case "$TERM" in
 	xterm*|rxvt*)
-		export PS1='\[\e]0;\u@\h: \w\a\]'$PS1
-		;;
+		export PS1='\[\e]0;\u@\h: \w\a\]'"$PS1"
+	;;
 esac
 
-[ -n "$FAILSAFE" ] || {
-	for FILE in /etc/profile.d/*.sh; do
-		[ -e "$FILE" ] && . "$FILE"
+if [ -z "$FAILSAFE" ] ; then
+	for FILE in /etc/profile.d/*.sh ; do
+		[ -f "${FILE%.sh}.hush" ] && continue
+		[ -f "$FILE" ] && . "$FILE"
 	done
 	unset FILE
-}
-
-if ( grep -qs '^root::' /etc/shadow && \
-     [ -z "$FAILSAFE" ] )
-then
-cat << EOF
-=== WARNING! =====================================
-There is no root password defined on this device!
-Use the "passwd" command to set up a new password
-in order to prevent unauthorized SSH logins.
---------------------------------------------------
-EOF
-fi
-
-if [ -x /usr/bin/apk ]; then
-cat << EOF
-
- OpenWrt recently switched to the "apk" package manager!
-
- OPKG Command           APK Equivalent      Description
- ------------------------------------------------------------------
- opkg install <pkg>     apk add <pkg>       Install a package
- opkg remove <pkg>      apk del <pkg>       Remove a package
- opkg upgrade           apk upgrade         Upgrade all packages
- opkg files <pkg>       apk info -L <pkg>   List package contents
- opkg list-installed    apk info            List installed packages
- opkg update            apk update          Update package lists
- opkg search <pkg>      apk search <pkg>    Search for packages
- ------------------------------------------------------------------
-
-For more https://openwrt.org/docs/guide-user/additional-software/opkg-to-apk-cheatsheet
-
-EOF
 fi

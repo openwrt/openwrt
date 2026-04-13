@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ltq-ptm
-PKG_RELEASE:=4
+PKG_RELEASE:=6
 
 PKG_MAINTAINER:=John Crispin <john@phrozen.org>
 PKG_LICENSE:=GPL-2.0+
@@ -20,7 +20,6 @@ define KernelPackage/ltq-ptm-template
   CATEGORY:=Kernel modules
   SUBMENU:=Network Devices
   TITLE:=ptm driver for $(1)
-  URL:=http://www.lantiq.com/
   VARIANT:=$(1)
   DEPENDS:=@$(2)
 ifeq ($(1),vr9)

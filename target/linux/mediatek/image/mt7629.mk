@@ -7,6 +7,9 @@ define Device/mediatek_mt7629-rfb
   DEVICE_MODEL := MT7629 rfb AP
   DEVICE_DTS := mt7629-rfb
   DEVICE_PACKAGES := swconfig
+  UBOOT_PATH := $(STAGING_DIR_IMAGE)/mt7629_rfb-u-boot-mtk.bin
+  ARTIFACTS := u-boot.bin
+  ARTIFACT/u-boot.bin := append-uboot
 endef
 TARGET_DEVICES += mediatek_mt7629-rfb
 

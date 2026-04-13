@@ -135,6 +135,16 @@ define Device/fortinet_fg-30e
 endef
 TARGET_DEVICES += fortinet_fg-30e
 
+define Device/fortinet_fwf-30e
+  $(Device/fortinet)
+  DEVICE_MODEL := FortiWiFi 30E
+  DEVICE_DTS := armada-385-fortinet-fwf-30e
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | fortigate-header | \
+    gzip-filename FWF30E
+  DEVICE_PACKAGES += kmod-ath9k wpad-basic-mbedtls
+endef
+TARGET_DEVICES += fortinet_fwf-30e
+
 define Device/fortinet_fg-50e
   $(Device/fortinet)
   DEVICE_MODEL := FortiGate 50E
@@ -452,6 +462,23 @@ define Device/synology_ds213j
     -ppp -kmod-nft-offload -dnsmasq -odhcpd-ipv6only
 endef
 TARGET_DEVICES += synology_ds213j
+
+define Device/wd_cloud-ex2-ultra
+  $(Device/NAND-128K)
+  DEVICE_VENDOR := Western Digital
+  DEVICE_MODEL := MyCloud EX2 Ultra
+  DEVICE_PACKAGES += -uboot-envtools mkf2fs e2fsprogs \
+	partx-utils kmod-hwmon-drivetemp -ppp -kmod-nft-offload -dnsmasq \
+	-odhcpd-ipv6only 
+  DEVICE_DTS := armada-385-wd_cloud-ex2-ultra
+  KERNEL_SIZE := 5120k
+  KERNEL := kernel-bin | append-dtb | uImage none
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none
+  IMAGES += image-cfs-factory.bin uImage-factory.bin
+  IMAGE/image-cfs-factory.bin := append-ubi
+  IMAGE/uImage-factory.bin := append-kernel
+endef
+TARGET_DEVICES += wd_cloud-ex2-ultra
 
 define Device/wd_cloud-mirror-gen2
   $(Device/NAND-128K)

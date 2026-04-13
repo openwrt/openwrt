@@ -400,33 +400,33 @@ static struct phy_driver b53_phy_driver_id3 = {
 	.read_status	= b53_phy_read_status,
 };
 
-int __init b53_phy_driver_register(void)
+static int __init b53_phy_driver_register(void)
 {
 	int ret;
 
-	ret = phy_driver_register(&b53_phy_driver_id1, THIS_MODULE);
+	ret = phy_drivers_register(&b53_phy_driver_id1, 1, THIS_MODULE);
 	if (ret)
 		return ret;
 
-	ret = phy_driver_register(&b53_phy_driver_id2, THIS_MODULE);
+	ret = phy_drivers_register(&b53_phy_driver_id2, 1, THIS_MODULE);
 	if (ret)
 		goto err1;
 
-	ret = phy_driver_register(&b53_phy_driver_id3, THIS_MODULE);
+	ret = phy_drivers_register(&b53_phy_driver_id3, 1, THIS_MODULE);
 	if (!ret)
 		return 0;
 
-	phy_driver_unregister(&b53_phy_driver_id2);
+	phy_drivers_unregister(&b53_phy_driver_id2, 1);
 err1:
-	phy_driver_unregister(&b53_phy_driver_id1);
+	phy_drivers_unregister(&b53_phy_driver_id1, 1);
 	return ret;
 }
 
-void __exit b53_phy_driver_unregister(void)
+static void __exit b53_phy_driver_unregister(void)
 {
-	phy_driver_unregister(&b53_phy_driver_id3);
-	phy_driver_unregister(&b53_phy_driver_id2);
-	phy_driver_unregister(&b53_phy_driver_id1);
+	phy_drivers_unregister(&b53_phy_driver_id3, 1);
+	phy_drivers_unregister(&b53_phy_driver_id2, 1);
+	phy_drivers_unregister(&b53_phy_driver_id1, 1);
 }
 
 module_init(b53_phy_driver_register);

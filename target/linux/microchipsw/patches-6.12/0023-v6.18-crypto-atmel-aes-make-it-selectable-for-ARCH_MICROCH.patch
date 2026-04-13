@@ -1,0 +1,29 @@
+From 405fad723d71997ca9ad894ba7ac755a75fa5443 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Wed, 13 Aug 2025 19:44:45 +0200
+Subject: [PATCH 25/25] crypto: atmel-aes: make it selectable for
+ ARCH_MICROCHIP
+
+LAN969x uses the Atmel crypto, so make it selectable for ARCH_MICROCHIP to
+avoid needing to update depends in future if other Microchip SoC-s use it
+as well.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+Acked-by: Herbert Xu <herbert@gondor.apana.org.au>
+Acked-by: Daniel Machon <daniel.machon@microchip.com>
+Signed-off-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+---
+ drivers/crypto/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/crypto/Kconfig
++++ b/drivers/crypto/Kconfig
+@@ -421,7 +421,7 @@ config CRYPTO_DEV_ATMEL_AUTHENC
+ 
+ config CRYPTO_DEV_ATMEL_AES
+ 	tristate "Support for Atmel AES hw accelerator"
+-	depends on ARCH_AT91 || COMPILE_TEST
++	depends on ARCH_MICROCHIP || COMPILE_TEST
+ 	select CRYPTO_AES
+ 	select CRYPTO_AEAD
+ 	select CRYPTO_SKCIPHER

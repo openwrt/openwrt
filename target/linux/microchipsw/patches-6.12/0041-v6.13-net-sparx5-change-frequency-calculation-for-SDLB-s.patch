@@ -1,0 +1,55 @@
+From 6e50593002ad4886e2d74e99b67e735cbab0c606 Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Thu, 24 Oct 2024 00:01:22 +0200
+Subject: [PATCH 46/82] net: sparx5: change frequency calculation for SDLB's
+
+In preparation for lan969x, rework the function that calculates the SDLB
+(Service Dual Leacky Bucket) clock. This is required, as the
+HSCH_SYS_CLK_PER register is Sparx5-exclusive. Instead derive the clock
+from the core clock, using the sparx5_clk_period() function. The clock
+stays the same before and after this patch, only now,
+sparx5_sdlb_clk_hz_get() can be used for lan969x too.
+
+Reviewed-by: Steen Hegelund <Steen.Hegelund@microchip.com>
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Link: https://patch.msgid.link/20241024-sparx5-lan969x-switch-driver-2-v2-3-a0b5fae88a0f@microchip.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+---
+ drivers/net/ethernet/microchip/sparx5/sparx5_main.h |  2 +-
+ drivers/net/ethernet/microchip/sparx5/sparx5_sdlb.c | 10 +++-------
+ 2 files changed, 4 insertions(+), 8 deletions(-)
+
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
+@@ -552,7 +552,7 @@ struct sparx5_sdlb_group *sparx5_get_sdl
+ int sparx5_sdlb_pup_token_get(struct sparx5 *sparx5, u32 pup_interval,
+ 			      u64 rate);
+ 
+-int sparx5_sdlb_clk_hz_get(struct sparx5 *sparx5);
++u64 sparx5_sdlb_clk_hz_get(struct sparx5 *sparx5);
+ int sparx5_sdlb_group_get_by_rate(struct sparx5 *sparx5, u32 rate, u32 burst);
+ int sparx5_sdlb_group_get_by_index(struct sparx5 *sparx5, u32 idx, u32 *group);
+ 
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_sdlb.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_sdlb.c
+@@ -25,17 +25,13 @@ struct sparx5_sdlb_group *sparx5_get_sdl
+ 	return &sdlb_groups[idx];
+ }
+ 
+-int sparx5_sdlb_clk_hz_get(struct sparx5 *sparx5)
++u64 sparx5_sdlb_clk_hz_get(struct sparx5 *sparx5)
+ {
+-	u32 clk_per_100ps;
+ 	u64 clk_hz;
+ 
+-	clk_per_100ps = HSCH_SYS_CLK_PER_100PS_GET(spx5_rd(sparx5,
+-							   HSCH_SYS_CLK_PER));
+-	if (!clk_per_100ps)
+-		clk_per_100ps = SPX5_CLK_PER_100PS_DEFAULT;
++	clk_hz = (10 * 1000 * 1000) /
++		 (sparx5_clk_period(sparx5->coreclock) / 100);
+ 
+-	clk_hz = (10 * 1000 * 1000) / clk_per_100ps;
+ 	return clk_hz *= 1000;
+ }
+ 

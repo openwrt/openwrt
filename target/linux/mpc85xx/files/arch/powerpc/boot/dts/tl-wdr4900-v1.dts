@@ -349,7 +349,6 @@
 				reg = <0x0000 0 0 0 0>;
 				#gpio-cells = <2>;
 				gpio-controller;
-				qca,led-pin = /bits/ 8 <0>;
 				nvmem-cells = <&cal_caldata_1000>, <&macaddr_uboot_4fc00 0>;
 				nvmem-cell-names = "calibration", "mac-address";
 			};
@@ -380,14 +379,20 @@
 				*/
 				device-id = <0x0030>;
 				class-code = <0x028000>;
-				qca,led-pin = /bits/ 8 <0>;
 				nvmem-cells = <&cal_caldata_5000>, <&macaddr_uboot_4fc00 (-1)>;
 				nvmem-cell-names = "calibration", "mac-address";
+
+				led {
+					led-sources = <0>;
+					led-active-low;
+				};
 			};
 		};
 	};
 
 	ifc: ifc@ffe1e000 {
+		reg = <0x0 0xffe1e000 0 0x2000>;
+
 		status = "disabled";
 	};
 
@@ -395,18 +400,25 @@
 		compatible = "gpio-leds";
 
 		led-0 {
+			gpios = <&ath9k 0 GPIO_ACTIVE_LOW>;
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_WLAN_5GHZ;
+			linux,default-trigger = "phy0tpt";
+		};
+
+		led-1 {
 			gpios = <&ath9k 1 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_WPS;
 		};
 
-		system_green: led-1 {
+		system_green: led-2 {
 			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_STATUS;
 		};
 
-		led-2 {
+		led-3 {
 			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_USB;
@@ -415,7 +427,7 @@
 			trigger-sources = <&hub_port1>;
 		};
 
-		led-3 {
+		led-4 {
 			gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
 			color = <LED_COLOR_ID_GREEN>;
 			function = LED_FUNCTION_USB;

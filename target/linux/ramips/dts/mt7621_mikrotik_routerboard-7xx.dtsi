@@ -13,20 +13,6 @@
 			gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;
 		};
 	};
-
-	reg_usb_power: regulator {
-		compatible = "regulator-fixed";
-		regulator-name = "usb_power";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		gpios = <&gpio 12 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-		regulator-boot-on;
-	};
-};
-
-&xhci {
-	vbus-supply = <&reg_usb_power>;
 };
 
 &keys {
@@ -43,6 +29,13 @@
 		label = "firmware";
 		reg = <0x040000 0xfc0000>;
 	};
+};
+
+&reg_vbus {
+	/delete-property/ regulator-always-on;
+	gpios = <&gpio 12 GPIO_ACTIVE_HIGH>;
+	enable-active-high;
+	regulator-boot-on;
 };
 
 &switch0 {

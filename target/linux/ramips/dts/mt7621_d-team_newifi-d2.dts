@@ -79,16 +79,6 @@
 			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
-
-	reg_power_usb3: regulator {
-		compatible = "regulator-fixed";
-		regulator-name = "power_usb3";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-		regulator-boot-on;
-	};
 };
 
 &spi0 {
@@ -154,16 +144,13 @@
 	};
 };
 
-&xhci {
-	vbus-supply = <&reg_power_usb3>;
-};
-
 &pcie {
 	status = "okay";
 };
 
 &pcie0 {
-	mt76@0,0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&eeprom_factory_8000>;
 		nvmem-cell-names = "eeprom";
@@ -172,7 +159,8 @@
 };
 
 &pcie1 {
-	mt76@0,0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&eeprom_factory_0>;
 		nvmem-cell-names = "eeprom";
@@ -182,6 +170,13 @@
 &gmac0 {
 	nvmem-cells = <&macaddr_factory_e000>;
 	nvmem-cell-names = "mac-address";
+};
+
+&reg_vbus {
+	/delete-property/ regulator-always-on;
+	gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
+	enable-active-high;
+	regulator-boot-on;
 };
 
 &switch0 {

@@ -58,18 +58,31 @@ const types = {
 			return;
 		}
 	},
+	json: {
+		parse: function(ctx, name, val) {
+			try {
+				val = json(val);
+			} catch (e) {
+				return ctx.invalid_argument('Invalid JSON data');
+			}
+			if (this.data_type != null && type(val) != this.data_type)
+				ctx.invalid_argument(`Invalid data type: %s, expected: %s`, type(val), this.data_type);
+			return val;
+		}
+	},
 	enum: {
 		parse: function(ctx, name, val) {
 			if (this.no_validate)
 				return val;
 
 			let list = this.value;
+			if (type(list) == "object")
+				list = keys(list);
 			if (this.ignore_case) {
 				val = lc(val);
 				val = filter(list, (v) => val == lc(v))[0];
 			} else {
-				if (index(list, val) < 0)
-					val = null;
+				val = filter(list, (v) => val == v)[0];
 			}
 
 			if (val == null)
@@ -174,6 +187,15 @@ const types = {
 			     length(iptoarr(m[0])) == 4))
 				return val;
 			ctx.invalid_argument("value for %s is not cidr4 (e.g. 192.168.1.1/24)", name);
+			return;
+		}
+	},
+	cidr6: {
+		parse: function(ctx, name, val) {
+			let m = split(val, '/', 2);
+			if (m && +m[1] <= 128 && length(iptoarr(m[0])) == 16)
+				return val;
+			ctx.invalid_argument("value for %s is not cidr6 (e.g. 2001:db8::1/64)", name);
 			return;
 		}
 	},

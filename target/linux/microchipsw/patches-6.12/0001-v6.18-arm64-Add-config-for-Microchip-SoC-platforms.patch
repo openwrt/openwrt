@@ -1,0 +1,74 @@
+From 83647d5b9b5b1f7315c908c8c35632cd46a47801 Mon Sep 17 00:00:00 2001
+From: Robert Marko <robert.marko@sartura.hr>
+Date: Wed, 13 Aug 2025 19:44:37 +0200
+Subject: [PATCH 01/25] arm64: Add config for Microchip SoC platforms
+
+Currently, Microchip SparX-5 SoC is supported and it has its own symbol.
+
+However, this means that new Microchip platforms that share drivers need
+to constantly keep updating depends on various drivers.
+
+So, to try and reduce this lets add ARCH_MICROCHIP symbol that drivers
+could instead depend on.
+
+LAN969x is being worked on and it will be added under ARCH_MICROCHIP.
+
+Signed-off-by: Robert Marko <robert.marko@sartura.hr>
+Acked-by: Daniel Machon <daniel.machon@microchip.com>
+Signed-off-by: Nicolas Ferre <nicolas.ferre@microchip.com>
+---
+ arch/arm64/Kconfig.platforms | 36 ++++++++++++++++++++++--------------
+ 1 file changed, 22 insertions(+), 14 deletions(-)
+
+--- a/arch/arm64/Kconfig.platforms
++++ b/arch/arm64/Kconfig.platforms
+@@ -114,20 +114,6 @@ config ARCH_EXYNOS
+ 	help
+ 	  This enables support for ARMv8 based Samsung Exynos SoC family.
+ 
+-config ARCH_SPARX5
+-	bool "Microchip Sparx5 SoC family"
+-	select PINCTRL
+-	select DW_APB_TIMER_OF
+-	help
+-	  This enables support for the Microchip Sparx5 ARMv8-based
+-	  SoC family of TSN-capable gigabit switches.
+-
+-	  The SparX-5 Ethernet switch family provides a rich set of
+-	  switching features such as advanced TCAM-based VLAN and QoS
+-	  processing enabling delivery of differentiated services, and
+-	  security through TCAM-based frame processing using versatile
+-	  content aware processor (VCAP).
+-
+ config ARCH_K3
+ 	bool "Texas Instruments Inc. K3 multicore SoC architecture"
+ 	select PM_GENERIC_DOMAINS if PM
+@@ -175,6 +161,28 @@ config ARCH_MESON
+ 	  This enables support for the arm64 based Amlogic SoCs
+ 	  such as the s905, S905X/D, S912, A113X/D or S905X/D2
+ 
++menu "Microchip SoC support"
++
++config ARCH_MICROCHIP
++	bool
++
++config ARCH_SPARX5
++	bool "Microchip Sparx5 SoC family"
++	select PINCTRL
++	select DW_APB_TIMER_OF
++	select ARCH_MICROCHIP
++	help
++	  This enables support for the Microchip Sparx5 ARMv8-based
++	  SoC family of TSN-capable gigabit switches.
++
++	  The SparX-5 Ethernet switch family provides a rich set of
++	  switching features such as advanced TCAM-based VLAN and QoS
++	  processing enabling delivery of differentiated services, and
++	  security through TCAM-based frame processing using versatile
++	  content aware processor (VCAP).
++
++endmenu
++
+ config ARCH_MVEBU
+ 	bool "Marvell EBU SoC Family"
+ 	select ARMADA_AP806_SYSCON

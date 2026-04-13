@@ -32,6 +32,12 @@ define U-Boot/bcm4912
   SOC:=bcm4912
 endef
 
+KBUILD_CFLAGS := \
+	-Wno-error=implicit-function-declaration \
+	-Wno-error=implicit-int \
+	-Wno-error=incompatible-pointer-types \
+	-Wno-error=int-conversion
+
 UBOOT_TARGETS := \
 	bcm4908 \
 	bcm4912

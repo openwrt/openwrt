@@ -21,7 +21,7 @@ Signed-off-by: Petr Štetiar <ynezz@true.cz>
 
 --- a/src/signkey.c
 +++ b/src/signkey.c
-@@ -652,10 +652,18 @@ int buf_verify(buffer * buf, sign_key *k
+@@ -656,10 +656,18 @@ int buf_verify(buffer * buf, sign_key *k
  	sigtype = signature_type_from_name(type_name, type_name_len);
  	m_free(type_name);
  

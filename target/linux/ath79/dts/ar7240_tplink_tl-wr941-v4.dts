@@ -6,3 +6,11 @@
 	model = "TP-Link TL-WR941N/ND v4";
 	compatible = "tplink,tl-wr941-v4", "qca,ar7240";
 };
+
+&ath9k {
+	compatible = "pci168c,002a";
+};
+
+&calibration_art_1000 {
+	reg = <0x1000 0xeb8>;
+};

@@ -1,14 +1,22 @@
 #!/bin/sh
 
-CFG=$1
+REAL_CFG=$1
 
-[ -n "$CFG" ] || CFG=/etc/board.json
+[ -n "$REAL_CFG" ] || REAL_CFG=/etc/board.json
 
-[ -d "/etc/board.d/" -a ! -s "$CFG" ] && {
+if [ -d "/etc/board.d/" ] && [ ! -s "$REAL_CFG" ]; then
+	# Use temp file to prevent incomplete file on power-cut, CFG is used by the sourced script to read/write the file
+	CFG="$(dirname "$REAL_CFG")/.$(basename "$REAL_CFG").tmp"
+	rm -f "$CFG" || exit
 	for a in $(ls /etc/board.d/*); do
-		[ -s $a ] || continue;
-		$(. $a)
+		[ -s "$a" ] || continue
+		(. "$a")
 	done
-}
+fi
 
-[ -s "$CFG" ] || return 1
+if [ -s "$CFG" ]; then
+	mv "$CFG" "$REAL_CFG" || exit
+else
+	rm -f "$CFG"
+	exit 1
+fi

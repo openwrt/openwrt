@@ -447,7 +447,7 @@ static void pilot_tones_status(int fd) {
 }
 
 static void band_border_status(int fd, DSL_AccessDir_t direction) {
-	IOCTL(DSL_BandBorderStatus_t, DSL_FIO_BAND_BORDER_STATUS_GET);
+	IOCTL_DIR(DSL_BandBorderStatus_t, DSL_FIO_BAND_BORDER_STATUS_GET, direction);
 
 	void *c, *c2;
 

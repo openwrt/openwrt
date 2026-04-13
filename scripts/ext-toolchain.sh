@@ -154,6 +154,11 @@ test_feature() {
 find_libs() {
 	local spec="$(echo "$LIB_SPECS" | sed -ne "s#^[[:space:]]*$1:##ip")"
 
+	# glibc doesn't have libcrypt since 2.39
+	if [ "$LIBC_TYPE" = "glibc" ]; then
+		spec=$(printf '%s' "${spec}" | sed 's/,crypt,//')
+	fi
+
 	if [ -n "$spec" ] && probe_cpp; then
 		local libdir libdirs
 		for libdir in $(
@@ -277,6 +282,9 @@ wrap_bins() {
 				fi
 
 				case "${cmd##*/}" in
+					*-gcc-ar|*-gcc-nm|*-gcc-ranlib)
+						wrap_bin_other "$out" "$bin"
+					;;
 					*-*cc|*-*cc-*|*-*++|*-*++-*|*-cpp)
 						wrap_bin_cc "$out" "$bin"
 					;;

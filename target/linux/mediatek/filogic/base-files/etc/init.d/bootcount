@@ -23,6 +23,28 @@ boot() {
 		EOF
 		logger "bootcount: rd23 model detected, nvram was updated"
 		;;
+	teltonika,rutc50)
+		#Bootloader expect successfull startup value after update, we need to write success value to bootconfig partition
+		#otherwise bootloader will fallback to previous root partition
+		. /lib/functions.sh
+		local PART="$(cmdline_get_var ubi.mtd)"
+		local MTD_INDEX=$(find_mtd_index bootconfig-a)
+
+		case "$PART" in
+		rutos-a)
+			[ "$(md5sum /dev/mtd$MTD_INDEX | awk '{print $1}')" = "adc4a78e76efc6b4afdc41925e4017c6" ] || {
+				logger -t "bootcount" "saving new failsafe boot config in /dev/mtd$MTD_INDEX bootconfig-a partition rutos-a"
+				echo -ne "\xe1\xb0\xba\xba\x01\x00\xf9\x01\xf8\x01\xf0\x00\x3d\xd4\xfb\x95" | mtd -e bootconfig-a write - bootconfig-a
+			}
+			;;
+		rutos-b)
+			[ "$(md5sum /dev/mtd$MTD_INDEX | awk '{print $1}')" = "2904b3476604ef153d1925acdde062e8" ] || {
+				logger -t "bootcount" "saving new failsafe boot config in /dev/mtd$MTD_INDEX bootconfig-a partition rutos-b"
+				echo -ne "\xe1\xb0\xba\xba\x01\x01\xf7\x01\xf8\x00\xf0\x00\xce\xd4\x44\x08" | mtd -e bootconfig-a write - bootconfig-a
+				}
+			;;
+		esac
+		;;
 	zyxel,ex5700-telenor)
 		fw_setenv uboot_bootcount 0
 		;;

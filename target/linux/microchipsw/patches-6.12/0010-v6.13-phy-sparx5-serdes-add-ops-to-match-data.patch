@@ -1,0 +1,120 @@
+From 06d4a10a636ef4c97680007abb4625b9eebbf169 Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Mon, 9 Sep 2024 17:14:44 +0200
+Subject: [PATCH 11/25] phy: sparx5-serdes: add ops to match data
+
+We need to handle code differently in a few places. Add a struct:
+sparx5_serdes_ops for this purpose, and populate it a with function to
+set the SERDES type.
+
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Reviewed-by: Steen Hegelund <Steen.Hegelund@microchip.com>
+Link: https://lore.kernel.org/r/20240909-sparx5-lan969x-serdes-driver-v2-4-d695bcb57b84@microchip.com
+Signed-off-by: Vinod Koul <vkoul@kernel.org>
+---
+ drivers/phy/microchip/sparx5_serdes.c | 29 ++++++++++++++++++---------
+ drivers/phy/microchip/sparx5_serdes.h | 27 +++++++++++++++----------
+ 2 files changed, 35 insertions(+), 21 deletions(-)
+
+--- a/drivers/phy/microchip/sparx5_serdes.c
++++ b/drivers/phy/microchip/sparx5_serdes.c
+@@ -2373,6 +2373,20 @@ static const struct phy_ops sparx5_serde
+ 	.owner		= THIS_MODULE,
+ };
+ 
++static void sparx5_serdes_type_set(struct sparx5_serdes_macro *macro, int sidx)
++{
++	if (sidx < SPX5_SERDES_10G_START) {
++		macro->serdestype = SPX5_SDT_6G;
++		macro->stpidx = macro->sidx;
++	} else if (sidx < SPX5_SERDES_25G_START) {
++		macro->serdestype = SPX5_SDT_10G;
++		macro->stpidx = macro->sidx - SPX5_SERDES_10G_START;
++	} else {
++		macro->serdestype = SPX5_SDT_25G;
++		macro->stpidx = macro->sidx - SPX5_SERDES_25G_START;
++	}
++}
++
+ static int sparx5_phy_create(struct sparx5_serdes_private *priv,
+ 			   int idx, struct phy **phy)
+ {
+@@ -2389,16 +2403,8 @@ static int sparx5_phy_create(struct spar
+ 	macro->sidx = idx;
+ 	macro->priv = priv;
+ 	macro->speed = SPEED_UNKNOWN;
+-	if (idx < SPX5_SERDES_10G_START) {
+-		macro->serdestype = SPX5_SDT_6G;
+-		macro->stpidx = macro->sidx;
+-	} else if (idx < SPX5_SERDES_25G_START) {
+-		macro->serdestype = SPX5_SDT_10G;
+-		macro->stpidx = macro->sidx - SPX5_SERDES_10G_START;
+-	} else {
+-		macro->serdestype = SPX5_SDT_25G;
+-		macro->stpidx = macro->sidx - SPX5_SERDES_25G_START;
+-	}
++
++	priv->data->ops.serdes_type_set(macro, idx);
+ 
+ 	phy_set_drvdata(*phy, macro);
+ 
+@@ -2512,6 +2518,9 @@ static const struct sparx5_serdes_match_
+ 		.sd_max       = 33,
+ 		.cmu_max      = 14,
+ 	},
++	.ops = {
++		.serdes_type_set      = &sparx5_serdes_type_set,
++	},
+ };
+ 
+ /* Client lookup function, uses serdes index */
+--- a/drivers/phy/microchip/sparx5_serdes.h
++++ b/drivers/phy/microchip/sparx5_serdes.h
+@@ -26,13 +26,29 @@ enum sparx5_serdes_mode {
+ 	SPX5_SD_MODE_SFI,
+ };
+ 
++struct sparx5_serdes_macro {
++	struct sparx5_serdes_private *priv;
++	u32 sidx;
++	u32 stpidx;
++	enum sparx5_serdes_type serdestype;
++	enum sparx5_serdes_mode serdesmode;
++	phy_interface_t portmode;
++	int speed;
++	enum phy_media media;
++};
++
+ struct sparx5_serdes_consts {
+ 	int sd_max;
+ 	int cmu_max;
+ };
+ 
++struct sparx5_serdes_ops {
++	void (*serdes_type_set)(struct sparx5_serdes_macro *macro, int sidx);
++};
++
+ struct sparx5_serdes_match_data {
+ 	const struct sparx5_serdes_consts consts;
++	const struct sparx5_serdes_ops ops;
+ 	const struct sparx5_serdes_io_resource *iomap;
+ 	int iomap_size;
+ };
+@@ -45,17 +61,6 @@ struct sparx5_serdes_private {
+ 	const struct sparx5_serdes_match_data *data;
+ };
+ 
+-struct sparx5_serdes_macro {
+-	struct sparx5_serdes_private *priv;
+-	u32 sidx;
+-	u32 stpidx;
+-	enum sparx5_serdes_type serdestype;
+-	enum sparx5_serdes_mode serdesmode;
+-	phy_interface_t portmode;
+-	int speed;
+-	enum phy_media media;
+-};
+-
+ /* Read, Write and modify registers content.
+  * The register definition macros start at the id
+  */

@@ -32,12 +32,3 @@ Signed-off-by: Shiji Yang <yangshiji66@outlook.com>
  }
  
  static const struct of_device_id ltq_dsl_cpe_mei_match[] = {
-@@ -2267,7 +2266,7 @@ static struct platform_driver ltq_dsl_cp
-       .owner          = THIS_MODULE,
-       .of_match_table = ltq_dsl_cpe_mei_match,
-    },
--   .remove = ltq_dsl_cpe_mei_remove,
-+   .remove_new = ltq_dsl_cpe_mei_remove,
- };
- 
- static int ltq_dsl_cpe_mei_reboot_notifier(struct notifier_block *nb,

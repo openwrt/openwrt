@@ -5,6 +5,23 @@
 / {
 	compatible = "tplink,re305-v1", "mediatek,mt7628an-soc";
 	model = "TP-Link RE305 v1";
+
+	virtual_flash {
+		compatible = "mtd-concat";
+		devices = <&fwconcat0>, <&fwconcat1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				compatible = "tplink,firmware";
+				label = "firmware";
+				reg = <0x0 0x0>;
+			};
+		};
+	};
 };
 
 &spi0 {
@@ -26,9 +43,8 @@
 				read-only;
 			};
 
-			partition@20000 {
-				compatible = "tplink,firmware";
-				label = "firmware";
+			fwconcat0: partition@20000 {
+				label = "fwconcat0";
 				reg = <0x20000 0x5e0000>;
 			};
 
@@ -50,10 +66,10 @@
 				};
 			};
 
-			/*
-				The flash space between 0x650000 and 0x7f0000 is blank in the
-				stock firmware so it is left out as well.
-			*/
+			fwconcat1: partition@650000 {
+				label = "fwconcat1";
+				reg = <0x650000 0x1a0000>;
+			};
 
 			partition@7f0000 {
 				label = "radio";

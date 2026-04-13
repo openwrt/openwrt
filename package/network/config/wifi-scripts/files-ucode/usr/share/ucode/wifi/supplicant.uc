@@ -1,7 +1,10 @@
 'use strict';
 
-import { append, append_raw, append_vars, network_append, network_append_raw, network_append_vars,
-	 set_default, dump_network, flush_network } from 'wifi.common';
+import {
+	append, append_raw, append_vars, network_append, network_append_raw, network_append_vars,
+	network_append_string_vars, set_default, dump_network, flush_network,
+	wiphy_info, wiphy_band
+} from 'wifi.common';
 import * as netifd from 'wifi.netifd';
 import * as iface from 'wifi.iface';
 import * as fs from 'fs';
@@ -13,20 +16,22 @@ function set_fixed_freq(data, config) {
 	set_default(config, 'fixed_freq', 1);
 	set_default(config, 'frequency', data.frequency);
 
-	if (data.htmode in [ 'VHT80', 'HE80' ])
+	if (data.htmode in [ 'VHT80', 'HE80', 'EHT80' ])
 		set_default(config, 'max_oper_chwidth', 1);
-	else if (data.htmode in [ 'VHT160', 'HE160' ])
+	else if (data.htmode in [ 'VHT160', 'HE160', 'EHT160' ])
 		set_default(config, 'max_oper_chwidth', 2);
-	else if (data.htmode in [ 'VHT20', 'VHT40', 'HE20', 'HE40' ])
+	else if (data.htmode in [ 'EHT320' ])
+		set_default(config, 'max_oper_chwidth', 9);
+	else if (data.htmode in [ 'VHT20', 'VHT40', 'HE20', 'HE40', 'EHT20', 'EHT40' ])
 		set_default(config, 'max_oper_chwidth', 0);
 	else
 		set_default(config, 'disable_vht', true);
 
 	if (data.htmode in [ 'NOHT' ])
 		set_default(config, 'disable_ht', true);
-	else if (data.htmode in [ 'HT20', 'VHT20', 'HE20' ])
+	else if (data.htmode in [ 'HT20', 'VHT20', 'HE20', 'EHT20' ])
 		set_default(config, 'disable_ht40', true);
-	else if (data.htmode in [ 'VHT40', 'VHT80', 'VHT160', 'HE40', 'HE80', 'HE160' ])
+	else if (data.htmode in [ 'VHT40', 'VHT80', 'VHT160', 'HE40', 'HE80', 'HE160', 'EHT40', 'EHT80', 'EHT160', 'EHT320' ])
 		set_default(config, 'ht40', true);
 
 	if (wildcard(data.htmode, 'VHT*'))
@@ -55,16 +60,22 @@ export function ratelist(rates) {
 function setup_sta(data, config) {
 	iface.parse_encryption(config);
 
-	if (config.auth_type in [ 'sae', 'owe', 'eap2', 'eap192' ])
-		set_default(config, 'ieee80211w', 2);
-	else if (config.auth_type in [ 'psk-sae' ])
-		set_default(config, 'ieee80211w', 1);
+	if (config.auth_type in [ 'sae', 'owe', 'eap2', 'eap192', 'dpp' ])
+		config.ieee80211w = 2;
+	else if (config.auth_type in [ 'psk-sae' ] && !config.ieee80211w)
+		config.ieee80211w = 1;
+	if ((wildcard(data.htmode, 'EHT*') || wildcard(data.htmode, 'HE*')) &&
+		config.rsn_override)
+		config.rsn_overriding = 1;
+	else
+		config.rsn_overriding = 0;
 
 	set_default(config, 'ieee80211r', 0);
+	set_default(config, 'sae_pwe', 2);
 	set_default(config, 'multi_ap', 0);
+	set_default(config, 'multi_profile', 1);
 	set_default(config, 'default_disabled', 0);
 
-//multiap_flag_file="${_config}.is_multiap"
 	config.scan_ssid = 1;
 
 	switch(config.mode) {
@@ -113,6 +124,14 @@ function setup_sta(data, config) {
 		iface.wpa_key_mgmt(config);
 		break;
 
+	case 'dpp':
+		iface.wpa_key_mgmt(config);
+		break;
+
+	case 'wps':
+		config.key_mgmt = 'WPS';
+		break;
+
 	case 'psk':
 	case 'psk2':
 	case 'sae':
@@ -155,22 +174,60 @@ function setup_sta(data, config) {
 		config.group = 'GCMP';
 	}
 
+	config.key_mgmt ??= 'NONE';
+
 	config.basic_rate = ratelist(config.basic_rate);
 	config.mcast_rate = ratestr(config.mcast_rate);
-	config.ssid = `"${config.ssid}"`;
 
+	network_append_string_vars(config, [ 'ssid',
+		'identity', 'anonymous_identity', 'password',
+		'ca_cert', 'ca_cert2', 'client_cert', 'client_cert2', 'subject_match',
+		'private_key', 'private_key_passwd', 'private_key2', 'private_key2_passwd',
+		 ]);
 	network_append_vars(config, [
-		'scan_ssid', 'noscan', 'disabled', 'multi_ap_backhaul_sta',
-		'ocv', 'key_mgmt', 'psk', 'sae_password', 'pairwise', 'group', 'bssid',
+		'rsn_overriding', 'scan_ssid', 'noscan', 'disabled', 'multi_ap_profile', 'multi_ap_backhaul_sta',
+		'ocv', 'beacon_prot', 'key_mgmt', 'sae_pwe', 'psk', 'sae_password', 'pairwise', 'group', 'bssid',
 		'proto', 'mesh_fwding', 'mesh_rssi_threshold', 'frequency', 'fixed_freq',
 		'disable_ht', 'disable_ht40', 'disable_vht', 'vht', 'max_oper_chwidth',
-		'ht40', 'ssid', 'beacon_int', 'ieee80211w', 'basic_rate', 'mcast_rate',
-		'bssid_blacklist', 'bssid_whitelist', 'erp', 'ca_cert', 'identity',
-		'anonymous_identity', 'client_cert', 'private_key', 'private_key_passwd',
-		'subject_match', 'altsubject_match', 'domain_match', 'domain_suffix_match',
-		'ca_cert2', 'client_cert2', 'private_key2', 'private_key2_passwd', 'password'
+		'ht40', 'beacon_int', 'ieee80211w', 'basic_rate', 'mcast_rate',
+		'altsubject_match', 'domain_match', 'domain_suffix_match',
+		'bssid_blacklist', 'bssid_whitelist', 'erp',
+		'dpp_connector', 'dpp_csign', 'dpp_netaccesskey',
 	]);
 }
+
+
+function freq_in_range(freq_ranges, freq)
+{
+	if (!freq_ranges)
+		return true;
+
+	freq *= 1000;
+	for (let range in freq_ranges)
+		if (freq >= range.start && freq <= range.end)
+			return true;
+}
+
+function wiphy_frequencies(phy, band, radio) {
+	phy = wiphy_info(phy);
+	band = wiphy_band(phy, band);
+	if (!band)
+		return;
+
+	let ranges;
+	for (let r in phy.radios)
+		if (r.index == radio)
+			ranges = r.freq_ranges;
+
+	let freqs = [];
+	for (let chan in band.freqs)
+		if (!chan.disabled && freq_in_range(ranges, chan.freq))
+			push(freqs, chan.freq);
+
+	if (length(freqs) > 0)
+		return freqs;
+}
+
 
 export function generate(config_list, data, interface) {
 	flush_network();
@@ -184,8 +241,13 @@ export function generate(config_list, data, interface) {
 
 	interface.config.country = data.config.country_code;
 	interface.config.beacon_int = data.config.beacon_int;
+	if (!data.config.scan_list)
+		data.config.scan_list = wiphy_frequencies(data.phy, data.config.band, data.config.radio);
 
-	append_vars(interface.config, [ 'country', 'beacon_int' ]);
+	if (data.config.scan_list)
+		interface.config.freq_list = join(" ", data.config.scan_list);
+
+	append_vars(interface.config, [ 'country', 'beacon_int', 'freq_list' ]);
 
 	setup_sta(data.config, interface.config);
 
@@ -200,6 +262,8 @@ export function generate(config_list, data, interface) {
 		iface: interface.config.ifname,
 		config: file_name,
 		'4addr': !!interface.config.wds,
+		mlo: !!interface.config.mlo,
+		freq_list: data.config.scan_list,
 		powersave: false
 	};
 
@@ -215,6 +279,8 @@ export function generate(config_list, data, interface) {
 };
 
 export function setup(config, data) {
+	if (!global.ubus.list('wpa_supplicant'))
+		system('ubus wait_for wpa_supplicant');
 	let ret = global.ubus.call('wpa_supplicant', 'config_set', {
 		phy: data.phy,
 		radio: data.config.radio,

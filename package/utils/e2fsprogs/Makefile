@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=e2fsprogs
-PKG_VERSION:=1.47.2
+PKG_VERSION:=1.47.4
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/kernel/people/tytso/e2fsprogs/v$(PKG_VERSION)/
-PKG_HASH:=08242e64ca0e8194d9c1caad49762b19209a06318199b63ce74ae4ef2d74e63c
+PKG_HASH:=fd5bf388cbdbe006a3d3b318d983b2948382440acc85a87f1e7d108653e8db0b
 
 PKG_LICENSE:=GPL-2.0
 PKG_LICENSE_FILES:=NOTICE
@@ -33,7 +33,7 @@ define Package/e2fsprogs
   CATEGORY:=Utilities
   SUBMENU:=Filesystem
   TITLE:=Ext2/3/4 filesystem utilities
-  URL:=http://e2fsprogs.sourceforge.net/
+  URL:=https://e2fsprogs.sourceforge.net/
   DEPENDS:=+libuuid +libext2fs +libe2p
 endef
 
@@ -46,7 +46,7 @@ define Package/libext2fs
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=ext2/3/4 filesystem library
-  URL:=http://e2fsprogs.sourceforge.net/
+  URL:=https://e2fsprogs.sourceforge.net/
   DEPENDS:=+libuuid +libblkid +libss +libcomerr
   ABI_VERSION:=2
 endef
@@ -59,7 +59,7 @@ define Package/libe2p
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=ext2fs userspace programs utility library
-  URL:=http://e2fsprogs.sourceforge.net/
+  URL:=https://e2fsprogs.sourceforge.net/
   DEPENDS:=+libuuid
   ABI_VERSION:=2
 endef
@@ -73,7 +73,7 @@ define Package/libss
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=command-line interface parsing library
-  URL:=http://e2fsprogs.sourceforge.net/
+  URL:=https://e2fsprogs.sourceforge.net/
   DEPENDS:=+libcomerr
   ABI_VERSION:=2
 endef
@@ -87,7 +87,7 @@ define Package/libcomerr
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=common error description library
-  URL:=http://e2fsprogs.sourceforge.net/
+  URL:=https://e2fsprogs.sourceforge.net/
   DEPENDS:=+libuuid
   ABI_VERSION:=0
 endef
@@ -168,7 +168,8 @@ CONFIGURE_ARGS += \
 	--disable-tls		\
 	--disable-nls		\
 	--disable-rpath		\
-	--disable-fuse2fs
+	--disable-fuse2fs	\
+	--without-libmagic
 
 ifneq ($(CONFIG_USE_MUSL),)
   CONFIGURE_VARS += ac_cv_func_lseek64=yes

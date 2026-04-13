@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -29,6 +29,11 @@
+@@ -28,6 +28,11 @@
  
  #include "ath9k.h"
  
@@ -12,7 +12,7 @@
  struct ath9k_eeprom_ctx {
  	struct completion complete;
  	struct ath_hw *ah;
-@@ -243,6 +248,81 @@ static unsigned int ath9k_reg_rmw(void *
+@@ -242,6 +247,81 @@ static unsigned int ath9k_reg_rmw(void *
  	return val;
  }
  
@@ -94,22 +94,18 @@
  /**************************/
  /*     Initialization     */
  /**************************/
-@@ -670,6 +750,8 @@ static int ath9k_of_init(struct ath_soft
+@@ -626,6 +706,7 @@ static int ath9k_of_init(struct ath_soft
  	struct ath_common *common = ath9k_hw_common(ah);
  	enum ath_bus_type bus_type = common->bus_ops->ath_bus_type;
  	char eeprom_name[100];
-+	u8 led_pin;
 +	u32 mask;
  	int ret;
  
  	if (!of_device_is_available(np))
-@@ -677,6 +759,49 @@ static int ath9k_of_init(struct ath_soft
+@@ -633,6 +714,43 @@ static int ath9k_of_init(struct ath_soft
  
  	ath_dbg(common, CONFIG, "parsing configuration from OF node\n");
  
-+	if (!of_property_read_u8(np, "qca,led-pin", &led_pin))
-+		ah->led_pin = led_pin;
-+
 +	if (!of_property_read_u32(np, "qca,gpio-mask", &mask))
 +		ah->caps.gpio_mask = mask;
 +
@@ -119,17 +115,15 @@
 +#ifdef CONFIG_ATH79
 +	if (ah->hw_version.devid == AR5416_AR9100_DEVID) {
 +		ah->external_reset = ar913x_wmac_reset;
-+		ah->external_reset();
 +	} else if (ah->hw_version.devid == AR9300_DEVID_AR9330) {
 +		ah->get_mac_revision = ar9330_get_soc_revision;
 +		u32 t = ath79_reset_rr(AR933X_RESET_REG_BOOTSTRAP);
 +		ah->is_clk_25mhz = !(t & AR933X_BOOTSTRAP_REF_CLK_40);
 +		ah->external_reset = ar933x_wmac_reset;
-+		ah->external_reset();
 +	} else if (ah->hw_version.devid == AR9300_DEVID_AR9340) {
 +		ah->get_mac_revision = ath79_get_soc_revision;
 +		u32 t = ath79_reset_rr(AR934X_RESET_REG_BOOTSTRAP);
-+		ah->is_clk_25mhz = !(t & AR933X_BOOTSTRAP_REF_CLK_40);
++		ah->is_clk_25mhz = !(t & AR934X_BOOTSTRAP_REF_CLK_40);
 +	} else if (ah->hw_version.devid == AR9300_DEVID_AR953X) {
 +		ah->get_mac_revision = ath79_get_soc_revision;
 +		/*
@@ -142,7 +136,6 @@
 +		u32 t = ath79_reset_rr(QCA955X_RESET_REG_BOOTSTRAP);
 +		ah->is_clk_25mhz = !(t & QCA955X_BOOTSTRAP_REF_CLK_40);
 +		ah->external_reset = qca955x_wmac_reset;
-+		ah->external_reset();
 +	} else if (ah->hw_version.devid == AR9300_DEVID_QCA956X) {
 +		ah->get_mac_revision = ath79_get_soc_revision;
 +		u32 t = ath79_reset_rr(QCA956X_RESET_REG_BOOTSTRAP);
@@ -153,3 +146,44 @@
  	if (of_property_read_bool(np, "qca,no-eeprom")) {
  		/* ath9k-eeprom-<bus>-<id>.bin */
  		scnprintf(eeprom_name, sizeof(eeprom_name),
+@@ -651,6 +769,17 @@ static int ath9k_of_init(struct ath_soft
+ 	if (ret == -EPROBE_DEFER)
+ 		return ret;
+ 
++	np = of_get_child_by_name(np, "led");
++	if (np && of_device_is_available(np)) {
++		u32 led_pin;
++
++		if (!of_property_read_u32(np, "led-sources", &led_pin))
++			ah->led_pin = led_pin;
++
++		ah->config.led_active_high = !of_property_read_bool(np, "led-active-low");
++		of_node_put(np);
++	}
++
+ 	return 0;
+ }
+ 
+--- a/drivers/net/wireless/ath/ath9k/hw.c
++++ b/drivers/net/wireless/ath/ath9k/hw.c
+@@ -2429,6 +2429,7 @@ static bool ath9k_hw_dfs_tested(struct ath_hw *ah)
+ static void ath9k_gpio_cap_init(struct ath_hw *ah)
+ {
+ 	struct ath9k_hw_capabilities *pCap = &ah->caps;
++	u32 gpio_mask = pCap->gpio_mask;
+ 
+ 	if (AR_SREV_9271(ah)) {
+ 		pCap->num_gpio_pins = AR9271_NUM_GPIO;
+@@ -2479,6 +2480,12 @@ static void ath9k_gpio_cap_init(struct ath_hw *ah)
+ 		pCap->num_gpio_pins = AR_NUM_GPIO;
+ 		pCap->gpio_mask = AR_GPIO_MASK;
+ 	}
++
++	if (gpio_mask) {
++		pCap->gpio_mask = gpio_mask;
++		ath_info(ath9k_hw_common(ah), "Use overridden gpio mask 0x%x\n",
++			 gpio_mask);
++	}
+ }
+ 
+ int ath9k_hw_fill_cap_info(struct ath_hw *ah)

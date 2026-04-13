@@ -136,10 +136,18 @@ export function remove_call(ctx, argv, named)
 			continue;
 
 		for (let idx in val) {
+			let orig_idx = idx;
 			if (idx != "" + +idx) {
 				let cur_idx = index(data, idx);
 				if (cur_idx >= 0)
 					idx = cur_idx + 1;
+				else
+					idx = null;
+			} else if (+idx > length(data))
+				idx = null;
+			if (idx == null) {
+				ctx.invalid_argument('Invalid value: %s', orig_idx);
+				continue;
 			}
 			data[+idx - 1] = null;
 		}
@@ -148,6 +156,8 @@ export function remove_call(ctx, argv, named)
 		if (cur.attribute_allow_empty && !length(cur_obj[name]))
 			delete cur_obj[name];
 	}
+	if (length(ctx.result.errors) > 0)
+		return;
 	call_change_cb(ctx, this, argv, named);
 	return ctx.ok();
 };
@@ -249,6 +259,7 @@ function remove_params(orig_params)
 			type: "enum",
 			get_object: val.get_object,
 			attribute: val.attribute ?? name,
+			no_validate: true,
 			value: param_values,
 			force_helptext: true,
 		};
@@ -546,12 +557,13 @@ export function edit_create_destroy(info, node)
 		required: false,
 	};
 
+	let named_args = info.named_args ?? {};
 	let create_params = {};
 	if (info.types) {
 		for (let name, val in info.types)
-			create_params[name] = object_create_params(val.node);
+			create_params[name] = { ...object_create_params(val.node), ...named_args };
 	} else {
-		create_params = object_create_params(info.type.node);
+		create_params = { ...object_create_params(info.type.node), ...named_args };
 	}
 
 	let types_info = info.types ? "(" + join(", ", keys(info.types)) + ")" : info.type.name;

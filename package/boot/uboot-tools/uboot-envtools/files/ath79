@@ -46,6 +46,7 @@ librerouter,librerouter-v1|\
 moxa,awk-1137c|\
 netgear,ex7300|\
 netgear,ex7300-v2|\
+netgear,wndap360|\
 netgear,wndr4300-v2|\
 netgear,wndr4500-v3|\
 netgear,wnr1000-v2|\
@@ -101,9 +102,7 @@ glinet,gl-ar300m-nor|\
 glinet,gl-ar300m16|\
 glinet,gl-s200-nor|\
 glinet,gl-s200-nor-nand)
-	idx="$(find_mtd_index u-boot-env)"
-	[ -n "$idx" ] && \
-		ubootenv_add_uci_config "/dev/mtd$idx" "0x0" "0x10000" "0x10000"
+	ubootenv_add_mtd "u-boot-env" "0x0" "0x10000" "0x10000"
 	;;
 buffalo,wzr-hp-ag300h)
 	ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x10000" "0x10000"
@@ -113,7 +112,8 @@ buffalo,wzr-hp-g300nh-s|\
 linksys,ea4500-v3)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
 	;;
-dell,apl26-0ae)
+dell,apl26-0ae|\
+dell,apl27-0b1)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x40000" "0x10000"
 	;;
 domywifi,dw33d)

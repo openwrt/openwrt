@@ -1,0 +1,85 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/dts-v1/;
+
+#include "ipq8174-mx4x00.dtsi"
+
+/ {
+	model = "Linksys HomeWRK";
+	compatible = "linksys,homewrk", "qcom,ipq8074";
+
+	chosen {
+		bootargs-append = " root=/dev/ubiblock0_1";
+	};
+};
+
+&qpic_nand {
+	status = "okay";
+
+	nand@0 {
+		reg = <0>;
+		/*
+		 * Some devices use Micron NAND with with 8 bit ECC
+		 * other AMD/Spansion NAND with 4 bit ECC
+		 *nand-ecc-strength = <4>;
+		 *nand-ecc-step-size = <512>;
+		 */
+		nand-bus-width = <8>;
+
+		partitions {
+			compatible = "qcom,smem-part";
+
+			partition-devinfo {
+				label = "devinfo";
+				read-only;
+
+				nvmem-layout {
+					compatible = "ascii-eq-delim-env";
+
+					mac_address: mac_address {
+						compatible = "mac-base";
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+		};
+	};
+};
+
+&dp2 {
+	status = "okay";
+	phy-handle = <&qca8075_1>;
+	label = "wan";
+	nvmem-cells = <&mac_address 0>;
+	nvmem-cell-names = "mac-address";
+};
+
+&dp3 {
+	status = "okay";
+	phy-handle = <&qca8075_2>;
+	label = "lan3";
+	nvmem-cells = <&mac_address 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&dp4 {
+	status = "okay";
+	phy-handle = <&qca8075_3>;
+	label = "lan2";
+	nvmem-cells = <&mac_address 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&dp5 {
+	status = "okay";
+	phy-handle = <&qca8075_4>;
+	label = "lan1";
+	nvmem-cells = <&mac_address 1>;
+	nvmem-cell-names = "mac-address";
+};
+
+&wifi {
+	status = "okay";
+
+	qcom,ath11k-calibration-variant = "Linksys-HomeWRK";
+};

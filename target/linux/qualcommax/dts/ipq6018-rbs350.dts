@@ -1,0 +1,18 @@
+// SPDX-License-Identifier: (GPL-2.0+)
+
+/dts-v1/;
+
+#include "ipq6018-rbx350.dtsi"
+
+/ {
+	model = "Netgear RBS350";
+	compatible = "netgear,rbs350", "qcom,ipq6018";
+};
+
+&dp2 {
+	status = "disabled";
+};
+
+&dp3 {
+	status = "disabled";
+};

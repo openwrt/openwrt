@@ -78,6 +78,7 @@ define prepare_rootfs
 		cd $(1); \
 		if [ -n "$(CONFIG_USE_APK)" ]; then \
 			IPKG_POSTINST_PATH=./lib/apk/db/*.post-install; \
+			$(STAGING_DIR_HOST)/bin/gzip -d ./lib/apk/db/scripts.tar; \
 			$(STAGING_DIR_HOST)/bin/tar -C ./lib/apk/db/ -xf ./lib/apk/db/scripts.tar --wildcards "*.post-install"; \
 		else \
 			IPKG_POSTINST_PATH=./usr/lib/opkg/info/*.postinst; \
@@ -91,6 +92,7 @@ define prepare_rootfs
 			fi; \
 			[ -n "$(CONFIG_USE_APK)" ] && $(STAGING_DIR_HOST)/bin/tar --delete -f ./lib/apk/db/scripts.tar $$(basename $$script); \
 		done; \
+		[ -n "$(CONFIG_USE_APK)" ] && $(STAGING_DIR_HOST)/bin/gzip -f -9n -S ".gz" ./lib/apk/db/scripts.tar; \
 		if [ -z "$(CONFIG_USE_APK)" ]; then \
 			$(if $(IB),,awk -i inplace \
 				'/^Status:/ { \
@@ -111,7 +113,7 @@ define prepare_rootfs
 		done || true \
 	)
 
-	@-find $(1) -name CVS -o -name .svn -o -name .git -o -name '.#*' | $(XARGS) rm -rf
+	@-find $(1) -name .svn -o -name .git -o -name '.#*' | $(XARGS) rm -rf
 	rm -rf \
 		$(1)/boot \
 		$(1)/tmp/* \

@@ -1,7 +1,9 @@
+. /lib/functions/bootconfig.sh
+
 PART_NAME=firmware
 REQUIRE_IMAGE_METADATA=1
 
-RAMFS_COPY_BIN='fw_printenv fw_setenv head'
+RAMFS_COPY_BIN='fw_printenv fw_setenv head seq'
 RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
 
 remove_oem_ubi_volume() {
@@ -25,6 +27,43 @@ remove_oem_ubi_volume() {
 		oem_ubivol=$(nand_find_volume "$ubidev" "$oem_volume_name")
 		[ "$oem_ubivol" ] && ubirmvol "/dev/$ubidev" --name="$oem_volume_name"
 	fi
+}
+
+qihoo_bootconfig_toggle_rootfs() {
+	local partname=$1
+	local tempfile
+	local mtdidx
+
+	mtdidx=$(find_mtd_index "$partname")
+	[ ! "$mtdidx" ] && {
+		echo "cannot find mtd index for $partname"
+		return 1
+	}
+
+	tempfile=/tmp/mtd"$mtdidx".bin
+	dd if=/dev/mtd"$mtdidx" of="$tempfile" bs=1 count=336 2>/dev/null
+	[ $? -ne 0 ] || [ ! -f "$tempfile" ] && {
+		echo "failed to create a temp copy of /dev/mtd$mtdidx"
+		return 1
+	}
+
+	toggle_bootconfig_primaryboot "$tempfile" "rootfs"
+	[ $? -ne 0 ] && {
+		echo "failed to toggle primaryboot for rootfs partition"
+		return 1
+	}
+
+	mtd write "$tempfile" /dev/mtd"$mtdidx" 2>/dev/null
+	[ $? -ne 0 ] && {
+		echo "failed to write temp copy back to /dev/mtd$mtdidx"
+		return 1
+	}
+
+	# Update bootconfig1 if exists
+	local mtdidx1=$(find_mtd_index "${partname}1")
+	[ -n "$mtdidx1" ] && mtd write "$tempfile" /dev/mtd"$mtdidx1" 2>/dev/null
+
+	return 0
 }
 
 tplink_get_boot_part() {
@@ -77,6 +116,44 @@ tplink_do_upgrade() {
 	nand_do_upgrade "$1"
 }
 
+linksys_mr_pre_upgrade() {
+	local setenv_script="/tmp/fw_env_upgrade"
+
+	CI_UBIPART="rootfs"
+	boot_part="$(fw_printenv -n boot_part)"
+	if [ -n "$UPGRADE_OPT_USE_CURR_PART" ]; then
+		if [ "$boot_part" -eq "2" ]; then
+			CI_KERNPART="alt_kernel"
+			CI_UBIPART="alt_rootfs"
+		fi
+	else
+		if [ "$boot_part" -eq "1" ]; then
+			echo "boot_part 2" >> $setenv_script
+			CI_KERNPART="alt_kernel"
+			CI_UBIPART="alt_rootfs"
+		else
+			echo "boot_part 1" >> $setenv_script
+		fi
+	fi
+
+	boot_part_ready="$(fw_printenv -n boot_part_ready)"
+	if [ "$boot_part_ready" -ne "3" ]; then
+		echo "boot_part_ready 3" >> $setenv_script
+	fi
+
+	auto_recovery="$(fw_printenv -n auto_recovery)"
+	if [ "$auto_recovery" != "yes" ]; then
+		echo "auto_recovery yes" >> $setenv_script
+	fi
+
+	if [ -f "$setenv_script" ]; then
+		fw_setenv -s $setenv_script || {
+			echo "failed to update U-Boot environment"
+			return 1
+		}
+	fi
+}
+
 platform_check_image() {
 	return 0;
 }
@@ -106,35 +183,60 @@ EOF
 
 platform_do_upgrade() {
 	case "$(board_name)" in
+	alfa-network,ap120c-ax)
+		CI_UBIPART="rootfs_1"
+		alfa_bootconfig_rootfs_rotate "0:BOOTCONFIG" "148"
+		nand_do_upgrade "$1"
+		;;
 	cambiumnetworks,xe3-4)
 		fw_setenv bootcount 0
 		nand_do_upgrade "$1"
 		;;
 	glinet,gl-ax1800|\
 	glinet,gl-axt1800|\
-	netgear,wax214|\
-	netgear,wax610|\
-	netgear,wax610y|\
+	netgear,rbr350|\
+	netgear,rbs350|\
+	netgear,wax214)
+		nand_do_upgrade "$1"
+		;;
 	qihoo,360v6)
+		CI_UBIPART="rootfs_1"
+		qihoo_bootconfig_toggle_rootfs "0:bootconfig"
+		remove_oem_ubi_volume wifi_fw
+		remove_oem_ubi_volume ubi_rootfs
+		nand_do_upgrade "$1"
+		;;
+	jdcloud,re-cs-02|\
+	jdcloud,re-cs-07|\
+	jdcloud,re-ss-01|\
+	link,nn6000-v1|\
+	link,nn6000-v2)
+		local cfgpart=$(find_mmc_part "0:BOOTCONFIG")
+		part_num="$(hexdump -e '1/1 "%01x|"' -n 1 -s 148 -C $cfgpart | cut -f 1 -d "|" | head -n1)"
+		if [ "$part_num" -eq "1" ]; then
+			CI_KERNPART="0:HLOS_1"
+			CI_ROOTPART="rootfs_1"
+		else
+			CI_KERNPART="0:HLOS"
+			CI_ROOTPART="rootfs"
+		fi
+		emmc_do_upgrade "$1"
+		;;
+	netgear,wax610|\
+	netgear,wax610y)
+		remove_oem_ubi_volume wifi_fw
+		remove_oem_ubi_volume ubi_rootfs
 		nand_do_upgrade "$1"
 		;;
 	linksys,mr7350|\
 	linksys,mr7500)
-		boot_part="$(fw_printenv -n boot_part)"
-		if [ "$boot_part" -eq "1" ]; then
-			fw_setenv boot_part 2
-			CI_KERNPART="alt_kernel"
-			CI_UBIPART="alt_rootfs"
-		else
-			fw_setenv boot_part 1
-			CI_UBIPART="rootfs"
-		fi
-		fw_setenv boot_part_ready 3
-		fw_setenv auto_recovery yes
+		linksys_mr_pre_upgrade "$1"
+		remove_oem_ubi_volume squashfs
 		nand_do_upgrade "$1"
 		;;
 	tplink,eap610-outdoor|\
-	tplink,eap623od-hd-v1|\
+	tplink,eap620-hd-v3|\
+	tplink,eap623-outdoor-hd-v1|\
 	tplink,eap625-outdoor-hd-v1)
 		tplink_do_upgrade "$1"
 		;;

@@ -55,16 +55,6 @@
 			linux,code = <KEY_RESTART>;
 		};
 	};
-
-	reg_power_usb: regulator {
-		compatible = "regulator-fixed";
-		regulator-name = "power:usb";
-		regulator-min-microvolt = <5000000>;
-		regulator-max-microvolt = <5000000>;
-		gpios = <&gpio 8 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-		regulator-boot-on;
-	};
 };
 
 &spi0 {
@@ -131,10 +121,6 @@
 	};
 };
 
-&xhci {
-	vbus-supply = <&reg_power_usb>;
-};
-
 &pcie {
 	status = "okay";
 };
@@ -175,6 +161,13 @@
 
 &ethphy0 {
 	/delete-property/ interrupts;
+};
+
+&reg_vbus {
+	/delete-property/ regulator-always-on;
+	gpios = <&gpio 8 GPIO_ACTIVE_HIGH>;
+	enable-active-high;
+	regulator-boot-on;
 };
 
 &switch0 {

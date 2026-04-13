@@ -145,7 +145,7 @@
 				reg = <5>;
 				label = "wifi";
 
-				phy-mode = "rgmii";
+				phy-mode = "rgmii-id";
 
 				fixed-link {
 					speed = <1000>;
@@ -156,7 +156,7 @@
 			port@8 {
 				reg = <8>;
 
-				phy-mode = "rgmii-txid";
+				phy-mode = "rgmii-id";
 				ethernet = <&switch0port4>;
 
 				fixed-link {
@@ -272,7 +272,7 @@
 			reg = <4>;
 			label = "extsw";
 
-			phy-mode = "rgmii-txid";
+			phy-mode = "rgmii-id";
 
 			fixed-link {
 				speed = <1000>;

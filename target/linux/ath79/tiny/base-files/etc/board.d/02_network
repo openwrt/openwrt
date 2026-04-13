@@ -72,6 +72,12 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth1" "4:lan:1"
 		;;
+	nec,wf1200hp|\
+	nec,wf1200hp2)
+		ucidef_set_interface_wan "eth1"
+		ucidef_add_switch "switch0" \
+			"0@eth0" "2:lan:3" "3:lan:2" "4:lan:1"
+		;;
 	nec,wg600hp|\
 	nec,wr8750n|\
 	nec,wr9500n|\
@@ -148,14 +154,7 @@ ath79_setup_macs()
 		lan_mac=$(get_mac_label)
 		wan_mac=$(macaddr_add "$lan_mac" 3)
 		;;
-	engenius,enh202-v1|\
-	ubnt,airrouter|\
-	ubnt,bullet-m-ar7240|\
-	ubnt,bullet-m-ar7241|\
-	ubnt,nanobridge-m|\
-	ubnt,nanostation-loco-m|\
-	ubnt,nanostation-m|\
-	ubnt,picostation-m)
+	engenius,enh202-v1)
 		label_mac=$(cat /sys/class/ieee80211/phy0/macaddress)
 		;;
 	nec,wg600hp|\

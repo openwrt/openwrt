@@ -101,7 +101,9 @@ function wdev_create(phy, name, data)
 		req["4addr"] = data["4addr"];
 	if (data.macaddr)
 		req.mac = data.macaddr;
-	if (data.radio != null && data.radio >= 0)
+	if (data.radio_mask > 0)
+		req.vif_radio_mask = data.radio_mask;
+	else if (data.radio != null && data.radio >= 0)
 		req.vif_radio_mask = 1 << data.radio;
 
 	nl80211.error();
@@ -315,7 +317,7 @@ const phy_proto = {
 			if (wdev.iftype == nl80211.const.NL80211_IFTYPE_AP_VLAN)
 				continue;
 			if (this.radio != null && wdev.vif_radio_mask != null &&
-			    !(wdev.vif_radio_mask & (1 << this.radio)))
+			    wdev.vif_radio_mask != (1 << this.radio))
 				continue;
 			mac_wdev[wdev.mac] = wdev;
 		}

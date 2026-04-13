@@ -39,7 +39,6 @@ define Package/dsl-vrx200-firmware-xdsl-a
   SECTION:=firmware
   CATEGORY:=Firmware
   TITLE:=VRX200 / VR9 CPE xDSL Annex A firmware
-  URL:=http://www.lantiq.com/
   DEPENDS:=@(TARGET_lantiq_xrx200||TARGET_lantiq_xrx200_legacy)
 endef
 
@@ -51,7 +50,6 @@ define Package/dsl-vrx200-firmware-xdsl-b
   SECTION:=firmware
   CATEGORY:=Firmware
   TITLE:=VRX200 / VR9 CPE xDSL Annex B firmware
-  URL:=http://www.lantiq.com/
   DEPENDS:=@(TARGET_lantiq_xrx200||TARGET_lantiq_xrx200_legacy)
 endef
 
@@ -63,7 +61,6 @@ define Package/dsl-vrx200-firmware-xdsl-a-patch
   SECTION:=firmware
   CATEGORY:=Firmware
   TITLE:=VRX200 / VR9 CPE xDSL Annex B to Annex A firmware patch
-  URL:=http://www.lantiq.com/
   DEPENDS:=@(TARGET_lantiq_xrx200||TARGET_lantiq_xrx200_legacy) +dsl-vrx200-firmware-xdsl-b +bspatch
 endef
 
@@ -75,7 +72,6 @@ define Package/dsl-vrx200-firmware-xdsl-b-patch
   SECTION:=firmware
   CATEGORY:=Firmware
   TITLE:=VRX200 / VR9 CPE xDSL Annex A to Annex B firmware patch
-  URL:=http://www.lantiq.com/
   DEPENDS:=@(TARGET_lantiq_xrx200||TARGET_lantiq_xrx200_legacy) +dsl-vrx200-firmware-xdsl-a +bspatch
 endef
 

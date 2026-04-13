@@ -16,30 +16,25 @@
 #include <linux/init.h>
 #include <linux/device.h>
 #include <linux/delay.h>
+#include <linux/gpio/consumer.h>
 #include <linux/of_mdio.h>
 #include <linux/of_platform.h>
-#include <linux/of_gpio.h>
+#include <linux/platform_device.h>
 
 
 #include  "./rtl8367c/include/rtk_switch.h"
 #include  "./rtl8367c/include/port.h"
 #include  "./rtl8367c/include/vlan.h"
 #include  "./rtl8367c/include/rtl8367c_asicdrv_port.h"
+#include  "./rtl8367c/include/rtl8367c_asicdrv_mii_mgr.h"
 
 struct rtk_gsw {
  	struct device           *dev;
  	struct mii_bus          *bus;
-	int reset_pin;
+	struct gpio_desc        *reset_gpiod;
 };
 
 static struct rtk_gsw *_gsw;
-
-extern int gsw_debug_proc_init(void);
-extern void gsw_debug_proc_exit(void);
-
-#ifdef CONFIG_SWCONFIG
-extern int rtl8367s_swconfig_init( void (*reset_func)(void) );
-#endif
 
 /*mii_mgr_read/mii_mgr_write is the callback API for rtl8367 driver*/
 unsigned int mii_mgr_read(unsigned int phy_addr,unsigned int phy_register,unsigned int *read_data)
@@ -72,14 +67,14 @@ static int rtl8367s_hw_reset(void)
 {
 	struct rtk_gsw *gsw = _gsw;
 
-	if (gsw->reset_pin < 0)
+	if (!gsw->reset_gpiod)
 		return 0;
 
-	gpio_direction_output(gsw->reset_pin, 0);
+	gpiod_set_value_cansleep(gsw->reset_gpiod, 1);
 
 	usleep_range(1000, 1100);
 
-	gpio_set_value(gsw->reset_pin, 1);
+	gpiod_set_value_cansleep(gsw->reset_gpiod, 0);
 
 	mdelay(500);
 
@@ -204,7 +199,7 @@ static void set_rtl8367s_rgmii(void)
 
 }
 
-void init_gsw(void)
+static void init_gsw(void)
 {
 	rtl8367s_hw_init();
 	set_rtl8367s_sgmii();
@@ -226,7 +221,6 @@ static int rtk_gsw_probe(struct platform_device *pdev)
 	struct mii_bus *mdio_bus;
 	struct rtk_gsw *gsw;
 	const char *pm;
-	int ret;
 
 	mdio = of_parse_phandle(np, "mediatek,mdio", 0);
 
@@ -247,12 +241,9 @@ static int rtk_gsw_probe(struct platform_device *pdev)
 
 	gsw->bus = mdio_bus;
 
-	gsw->reset_pin = of_get_named_gpio(np, "mediatek,reset-pin", 0);
-	if (gsw->reset_pin >= 0) {
-		ret = devm_gpio_request(gsw->dev, gsw->reset_pin, "mediatek,reset-pin");
-		if (ret)
-			printk("fail to devm_gpio_request\n");
-	}
+	gsw->reset_gpiod = devm_gpiod_get_optional(&pdev->dev, "reset", GPIOD_OUT_HIGH);
+	if (IS_ERR(gsw->reset_gpiod))
+		return dev_err_probe(&pdev->dev, PTR_ERR(gsw->reset_gpiod), "Failed to reset gpio");
 
 	_gsw = gsw;
 
@@ -290,8 +281,8 @@ static void rtk_gsw_remove(struct platform_device *pdev)
 }
 
 static struct platform_driver gsw_driver = {
-	.probe = rtk_gsw_probe,
-	.remove_new = rtk_gsw_remove,
+	.probe  = rtk_gsw_probe,
+	.remove = rtk_gsw_remove,
 	.driver = {
 		.name = "rtk-gsw",
 		.of_match_table = rtk_gsw_match,

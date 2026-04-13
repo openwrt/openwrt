@@ -634,7 +634,7 @@
  	TP_printk("%s", __get_str(msg))
 --- a/drivers/net/wireless/intel/iwlwifi/iwl-devtrace.h
 +++ b/drivers/net/wireless/intel/iwlwifi/iwl-devtrace.h
-@@ -87,7 +87,11 @@ static inline void trace_ ## name(proto)
+@@ -88,7 +88,11 @@ static inline void trace_ ## name(proto)
  #endif
  
  #define DEV_ENTRY	__string(dev, dev_name(dev))
@@ -680,7 +680,7 @@
  
 --- a/net/wireless/trace.h
 +++ b/net/wireless/trace.h
-@@ -446,7 +446,11 @@ TRACE_EVENT(rdev_add_virtual_intf,
+@@ -478,7 +478,11 @@ TRACE_EVENT(rdev_add_virtual_intf,
  	),
  	TP_fast_assign(
  		WIPHY_ASSIGN;

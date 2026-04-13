@@ -1,0 +1,105 @@
+From 9e701ad7c3551b3ab87ed5fa439569696ddf42e4 Mon Sep 17 00:00:00 2001
+From: Chukun Pan <amadeus@jmu.edu.cn>
+Date: Tue, 1 Apr 2025 20:00:19 +0800
+Subject: [PATCH] arm64: dts: rockchip: Add pwm nodes for RK3528
+
+Add pwm nodes for RK3528. The PWM core on RK3528 is the same as
+RK3328, but the driver does not support interrupts yet.
+
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+Reviewed-by: Jonas Karlman <jonas@kwiboo.se>
+Link: https://lore.kernel.org/r/20250401120020.976343-2-amadeus@jmu.edu.cn
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3528.dtsi | 80 ++++++++++++++++++++++++
+ 1 file changed, 80 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3528.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3528.dtsi
+@@ -575,6 +575,86 @@
+ 			status = "disabled";
+ 		};
+ 
++		pwm0: pwm@ffa90000 {
++			compatible = "rockchip,rk3528-pwm",
++				     "rockchip,rk3328-pwm";
++			reg = <0x0 0xffa90000 0x0 0x10>;
++			clocks = <&cru CLK_PWM0>, <&cru PCLK_PWM0>;
++			clock-names = "pwm", "pclk";
++			#pwm-cells = <3>;
++			status = "disabled";
++		};
++
++		pwm1: pwm@ffa90010 {
++			compatible = "rockchip,rk3528-pwm",
++				     "rockchip,rk3328-pwm";
++			reg = <0x0 0xffa90010 0x0 0x10>;
++			clocks = <&cru CLK_PWM0>, <&cru PCLK_PWM0>;
++			clock-names = "pwm", "pclk";
++			#pwm-cells = <3>;
++			status = "disabled";
++		};
++
++		pwm2: pwm@ffa90020 {
++			compatible = "rockchip,rk3528-pwm",
++				     "rockchip,rk3328-pwm";
++			reg = <0x0 0xffa90020 0x0 0x10>;
++			clocks = <&cru CLK_PWM0>, <&cru PCLK_PWM0>;
++			clock-names = "pwm", "pclk";
++			#pwm-cells = <3>;
++			status = "disabled";
++		};
++
++		pwm3: pwm@ffa90030 {
++			compatible = "rockchip,rk3528-pwm",
++				     "rockchip,rk3328-pwm";
++			reg = <0x0 0xffa90030 0x0 0x10>;
++			clocks = <&cru CLK_PWM0>, <&cru PCLK_PWM0>;
++			clock-names = "pwm", "pclk";
++			#pwm-cells = <3>;
++			status = "disabled";
++		};
++
++		pwm4: pwm@ffa98000 {
++			compatible = "rockchip,rk3528-pwm",
++				     "rockchip,rk3328-pwm";
++			reg = <0x0 0xffa98000 0x0 0x10>;
++			clocks = <&cru CLK_PWM1>, <&cru PCLK_PWM1>;
++			clock-names = "pwm", "pclk";
++			#pwm-cells = <3>;
++			status = "disabled";
++		};
++
++		pwm5: pwm@ffa98010 {
++			compatible = "rockchip,rk3528-pwm",
++				     "rockchip,rk3328-pwm";
++			reg = <0x0 0xffa98010 0x0 0x10>;
++			clocks = <&cru CLK_PWM1>, <&cru PCLK_PWM1>;
++			clock-names = "pwm", "pclk";
++			#pwm-cells = <3>;
++			status = "disabled";
++		};
++
++		pwm6: pwm@ffa98020 {
++			compatible = "rockchip,rk3528-pwm",
++				     "rockchip,rk3328-pwm";
++			reg = <0x0 0xffa98020 0x0 0x10>;
++			clocks = <&cru CLK_PWM1>, <&cru PCLK_PWM1>;
++			clock-names = "pwm", "pclk";
++			#pwm-cells = <3>;
++			status = "disabled";
++		};
++
++		pwm7: pwm@ffa98030 {
++			compatible = "rockchip,rk3528-pwm",
++				     "rockchip,rk3328-pwm";
++			reg = <0x0 0xffa98030 0x0 0x10>;
++			clocks = <&cru CLK_PWM1>, <&cru PCLK_PWM1>;
++			clock-names = "pwm", "pclk";
++			#pwm-cells = <3>;
++			status = "disabled";
++		};
++
+ 		saradc: adc@ffae0000 {
+ 			compatible = "rockchip,rk3528-saradc";
+ 			reg = <0x0 0xffae0000 0x0 0x10000>;

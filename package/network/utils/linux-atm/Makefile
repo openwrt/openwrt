@@ -35,7 +35,7 @@ define Package/linux-atm
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Linux ATM library
-  URL:=http://linux-atm.sourceforge.net/
+  URL:=https://linux-atm.sourceforge.net/
 endef
 
 define Package/linux-atm/description
@@ -46,7 +46,7 @@ define Package/linux-atm/Default
   SECTION:=net
   CATEGORY:=Network
   DEPENDS:=+linux-atm
-  URL:=http://linux-atm.sourceforge.net/
+  URL:=https://linux-atm.sourceforge.net/
   SUBMENU:=Linux ATM tools
 endef
 

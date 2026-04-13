@@ -8,6 +8,7 @@ define Build/boot-img-ext4
 	rm -fR $@.boot
 	mkdir -p $@.boot
 	$(foreach dts,$(DEVICE_DTS), $(CP) $(KDIR)/image-$(dts).dtb $@.boot/$(dts).dtb;)
+	$(foreach dtbo,$(DEVICE_DTS_OVERLAY), $(CP) $(KDIR)/image-$(dtbo).dtbo $@.boot/$(dtbo).dtbo;)
 	$(CP) $(IMAGE_KERNEL) $@.boot/$(KERNEL_NAME)
 	-$(CP) $@-boot.scr $@.boot/boot.scr
 	make_ext4fs -J -L kernel -l $(CONFIG_TARGET_KERNEL_PARTSIZE)M \
@@ -57,18 +58,24 @@ define Device/gateworks_venice
 	gw,imx8mn-gw7902 \
 	gw,imx8mm-gw7903 \
 	gateworks,imx8mp-gw71xx-2x \
+	gateworks,imx8mp-gw72xx-2x \
+	gateworks,imx8mp-gw73xx-2x \
 	gateworks,imx8mp-gw74xx \
+	gateworks,imx8mm-gw75xx-0x \
+	gateworks,imx8mp-gw75xx-2x \
 	gateworks,imx8mm-gw7904 \
 	gateworks,imx8mm-gw7905-0x \
 	gateworks,imx8mp-gw7905-2x
   BOOT_SCRIPT := gateworks_venice
   PARTITION_OFFSET := 16M
   DEVICE_DTS := $(basename $(notdir $(wildcard $(DTS_DIR)/freescale/imx8m*-venice*.dts)))
+  DEVICE_DTS_OVERLAY := $(basename $(notdir $(wildcard $(DTS_DIR)/freescale/imx8m*-venice*.dtso)))
   DEVICE_PACKAGES := \
 	kmod-hwmon-gsc kmod-rtc-ds1672 kmod-eeprom-at24 \
 	kmod-gpio-button-hotplug kmod-leds-gpio kmod-pps-gpio \
 	kmod-lan743x kmod-sky2 kmod-iio-st_accel-i2c \
-	kmod-can kmod-can-flexcan kmod-can-mcp251x
+	kmod-can kmod-can-flexcan kmod-can-mcp251x \
+	kmod-dsa-ksz9477-i2c
   IMAGES := img.gz
   IMAGE/img.gz := boot-scr | boot-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
 endef

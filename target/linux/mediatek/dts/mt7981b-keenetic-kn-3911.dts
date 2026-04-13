@@ -2,14 +2,14 @@
 
 /dts-v1/;
 
-#include "mt7981.dtsi"
+#include "mt7981b.dtsi"
 
 / {
 	model = "Keenetic KN-3911";
 	compatible = "keenetic,kn-3911", "mediatek,mt7981";
 
 	aliases {
-		label-mac-device = &gmac0;
+		label-mac-device = &gmac1;
 		led-boot = &status_led;
 		led-failsafe = &status_led;
 		led-running = &status_led;
@@ -73,7 +73,7 @@
 				reg = <0x0 0x600000>;
 			};
 
-			partition@400000 {
+			partition@600000 {
 				label = "ubi";
 				reg = <0x600000 0x0>;
 			};
@@ -94,7 +94,7 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&mdio_pins>;
 
-	gmac0: mac@0 {
+	mac@0 {
 		compatible = "mediatek,eth-mac";
 		reg = <0>;
 		phy-mode = "2500base-x";
@@ -102,7 +102,7 @@
 		label = "lan";
 
 		nvmem-cell-names = "mac-address";
-		nvmem-cells = <&macaddr_factory_4 0>;
+		nvmem-cells = <&macaddr_factory_4>;
 	};
 
 	gmac1: mac@1 {
@@ -113,7 +113,7 @@
 		label = "wan";
 
 		nvmem-cell-names = "mac-address";
-		nvmem-cells = <&macaddr_factory_a 0>;
+		nvmem-cells = <&macaddr_factory_a>;
 	};
 };
 
@@ -165,21 +165,12 @@
 
 	/* Winbond W25N01GVZEIG (128M) */
 	spi_nand@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "spi-nand";
 		reg = <0>;
 
 		spi-max-frequency = <52000000>;
 		spi-tx-buswidth = <4>;
 		spi-rx-buswidth = <4>;
-
-		spi-cal-enable;
-		spi-cal-mode = "read-data";
-		spi-cal-datalen = <7>;
-		spi-cal-data = /bits/ 8 <0x53 0x50 0x49 0x4e 0x41 0x4e 0x44>;
-		spi-cal-addrlen = <5>;
-		spi-cal-addr = /bits/ 32 <0x0 0x0 0x0 0x0 0x0>;
 
 		mediatek,nmbm;
 		mediatek,bmt-max-ratio = <1>;
@@ -226,16 +217,12 @@
 
 					/* lan mac */
 					macaddr_factory_4: macaddr@4 {
-						compatible = "mac-base";
 						reg = <0x4 0x6>;
-						#nvmem-cell-cells = <1>;
 					};
 
 					/* wan mac */
 					macaddr_factory_a: macaddr@a {
-						compatible = "mac-base";
 						reg = <0xa 0x6>;
-						#nvmem-cell-cells = <1>;
 					};
 				};
 			};
@@ -293,8 +280,4 @@
 	nvmem-cell-names = "eeprom";
 	nvmem-cells = <&eeprom_factory_0>;
 	status = "okay";
-};
-
-&sgmiisys0 {
-	/delete-node/ mediatek,pnswap;
 };

@@ -26,8 +26,9 @@
 		bootargs = "earlycon=uart8250,mmio32,0x11002000 swiotlb=512 ubi.block=0,fit root=/dev/fit0";
 	};
 
-	memory {
+	memory@40000000 {
 		reg = <0 0x40000000 0 0x8000000>;
+		device_type = "memory";
 	};
 
 	leds {

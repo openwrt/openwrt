@@ -1,37 +1,42 @@
 #include "mt7620a_hiwifi_hc5x61.dtsi"
 
 / {
-	compatible = "hiwifi,hc5761", "hiwifi,hc5x61", "ralink,mt7620a-soc";
+	compatible = "hiwifi,hc5761", "ralink,mt7620a-soc";
 	model = "HiWiFi HC5761";
 
 	aliases {
-		led-boot = &led_system;
-		led-failsafe = &led_system;
-		led-running = &led_system;
-		led-upgrade = &led_system;
+		label-mac-device = &ethernet;
+		led-boot = &led_status;
+		led-failsafe = &led_status;
+		led-running = &led_status;
+		led-upgrade = &led_status;
 	};
 
 	leds {
 		compatible = "gpio-leds";
 
-		led_system: system {
-			label = "blue:system";
+		led_status: led-0 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
 			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
 		};
 
-		internet {
-			label = "blue:internet";
+		led-1 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WAN;
 			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		};
 
-		wlan2g {
-			label = "blue:wlan2g";
+		led-2 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN_2GHZ;
 			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy1tpt";
 		};
 
-		wlan5g {
-			label = "blue:wlan5g";
+		led-3 {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_WLAN_5GHZ;
 			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
@@ -61,10 +66,11 @@
 };
 
 &pcie0 {
-	mt76@0,0 {
+	wifi@0,0 {
+		compatible = "mediatek,mt76";
 		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&eeprom_factory_8000>;
-		nvmem-cell-names = "eeprom";
+		nvmem-cells = <&eeprom_factory_8000>, <&macaddr_bdinfo_18a 0>;
+		nvmem-cell-names = "eeprom", "mac-address";
 		ieee80211-freq-limit = <5000000 6000000>;
 	};
 };

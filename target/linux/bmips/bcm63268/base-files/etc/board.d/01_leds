@@ -23,6 +23,10 @@ sercomm,shg2500)
 	ucidef_set_led_usbport "usb1" "USB1" "blue:modem" "usb1-port1" "usb2-port1"
 	ucidef_set_led_usbport "usb2" "USB2" "green:modem" "usb1-port2" "usb2-port2"
 	;;
+sagem,fast-3864-op)
+	ucidef_set_led_netdev "wan_link" "WAN_LINK" "amber:wan" "wan" "link"
+	ucidef_set_led_netdev "wan_act" "WAN_ACT" "green:wan" "wan" "rx tx"
+	;;
 esac
 
 board_config_flush

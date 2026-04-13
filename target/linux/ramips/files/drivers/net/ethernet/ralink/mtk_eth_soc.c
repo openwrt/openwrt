@@ -21,7 +21,6 @@
 #include <linux/etherdevice.h>
 #include <linux/ethtool.h>
 #include <linux/platform_device.h>
-#include <linux/of_device.h>
 #include <linux/clk.h>
 #include <linux/of_net.h>
 #include <linux/of_mdio.h>
@@ -32,9 +31,9 @@
 #include <linux/bug.h>
 #include <linux/netfilter.h>
 #include <net/netfilter/nf_flow_table.h>
-#include <linux/of_gpio.h>
 #include <linux/gpio.h>
 #include <linux/gpio/consumer.h>
+#include <linux/version.h>
 
 #include <asm/mach-ralink/ralink_regs.h>
 
@@ -244,10 +243,18 @@ static void fe_clean_rx(struct fe_priv *priv)
 		ring->rx_dma = NULL;
 	}
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,13,0)
+	void *vaddr = (void *)(ring->frag_cache.encoded_page & PAGE_MASK);
+	if (!vaddr)
+		return;
+
+	page = virt_to_page(vaddr);
+#else
 	if (!ring->frag_cache.va)
 	    return;
 
 	page = virt_to_page(ring->frag_cache.va);
+#endif
 	__page_frag_cache_drain(page, ring->frag_cache.pagecnt_bias);
 	memset(&ring->frag_cache, 0, sizeof(ring->frag_cache));
 }
@@ -1360,13 +1367,6 @@ static int __init fe_init(struct net_device *dev)
 
 	fe_reset_phy(priv);
 
-	/* Set the MAC address if it is correct, if not use a random MAC address  */
-	if (of_get_ethdev_address(priv->dev->of_node, dev)) {
-		eth_hw_addr_random(dev);
-		dev_err(priv->dev, "generated random MAC address %pM\n",
-			dev->dev_addr);
-	}
-
 	err = fe_mdio_init(priv);
 	if (err)
 		return err;
@@ -1522,7 +1522,6 @@ static void fe_pending_work(struct work_struct *work)
 
 static int fe_probe(struct platform_device *pdev)
 {
-	const struct of_device_id *match;
 	struct fe_soc_data *soc;
 	struct net_device *netdev;
 	struct fe_priv *priv;
@@ -1533,9 +1532,7 @@ static int fe_probe(struct platform_device *pdev)
 	if (err)
 		dev_err(&pdev->dev, "failed to reset device\n");
 
-	match = of_match_device(of_fe_match, &pdev->dev);
-	soc = (struct fe_soc_data *)match->data;
-
+	soc = (struct fe_soc_data *)of_device_get_match_data(&pdev->dev);
 	if (soc->reg_table)
 		fe_reg_table = soc->reg_table;
 	else
@@ -1555,11 +1552,20 @@ static int fe_probe(struct platform_device *pdev)
 	netdev->netdev_ops = &fe_netdev_ops;
 	netdev->base_addr = (unsigned long)fe_base;
 
-	netdev->irq = platform_get_irq(pdev, 0);
-	if (netdev->irq < 0) {
-		dev_err(&pdev->dev, "no IRQ resource found\n");
-		return -ENXIO;
+	/* Set the MAC address if it is correct, if not use a random MAC address  */
+	err = of_get_ethdev_address(pdev->dev.of_node, netdev);
+	if (err == -EPROBE_DEFER)
+		return err;
+
+	if (err) {
+		eth_hw_addr_random(netdev);
+		dev_err(&pdev->dev, "generated random MAC address %pM\n",
+			netdev->dev_addr);
 	}
+
+	netdev->irq = platform_get_irq(pdev, 0);
+	if (netdev->irq < 0)
+		return -ENXIO;
 
 	priv = netdev_priv(netdev);
 	spin_lock_init(&priv->page_lock);
@@ -1652,7 +1658,7 @@ static void fe_remove(struct platform_device *pdev)
 
 static struct platform_driver fe_driver = {
 	.probe = fe_probe,
-	.remove_new = fe_remove,
+	.remove = fe_remove,
 	.driver = {
 		.name = "mtk_soc_eth",
 		.of_match_table = of_fe_match,

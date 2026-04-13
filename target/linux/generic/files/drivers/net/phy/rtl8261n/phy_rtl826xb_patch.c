@@ -66,7 +66,7 @@ static uint16 _phy_rtl826xb_mmd_convert(uint16 page, uint16 addr)
     return reg;
 }
 
-int32
+static int32
 _phy_rtl826xb_patch_wait(uint32 unit, rtk_port_t port, uint32 mmdAddr, uint32 mmdReg, uint32 data, uint32 mask, uint8 patch_mode)
 {
     int32  ret = 0;
@@ -211,7 +211,7 @@ _phy_rtl826xb_patch_wait(uint32 unit, rtk_port_t port, uint32 mmdAddr, uint32 mm
     return RT_ERR_OK;
 }
 
-int32
+static int32
 _phy_rtl826xb_patch_wait_not_equal(uint32 unit, rtk_port_t port, uint32 mmdAddr, uint32 mmdReg, uint32 data, uint32 mask, uint8 patch_mode)
 {
     int32  ret = 0;
@@ -355,7 +355,7 @@ _phy_rtl826xb_patch_wait_not_equal(uint32 unit, rtk_port_t port, uint32 mmdAddr,
     return RT_ERR_OK;
 }
 
-int32
+static int32
 _phy_rtl826xb_patch_top_get(uint32 unit, rtk_port_t port, uint32 topPage, uint32 topReg, uint32 *pData)
 {
     int32  ret = 0;
@@ -368,7 +368,7 @@ _phy_rtl826xb_patch_top_get(uint32 unit, rtk_port_t port, uint32 topPage, uint32
     return RT_ERR_OK;
 }
 
-int32
+static int32
 _phy_rtl826xb_patch_top_set(uint32 unit, rtk_port_t port, uint32 topPage, uint32 topReg, uint32 wData)
 {
     int32  ret = 0;
@@ -378,7 +378,7 @@ _phy_rtl826xb_patch_top_set(uint32 unit, rtk_port_t port, uint32 topPage, uint32
     return RT_ERR_OK;
 }
 
-int32
+static int32
 _phy_rtl826xb_patch_sds_get(uint32 unit, rtk_port_t port, uint32 sdsPage, uint32 sdsReg, uint32 *pData)
 {
     int32  ret = 0;
@@ -393,7 +393,7 @@ _phy_rtl826xb_patch_sds_get(uint32 unit, rtk_port_t port, uint32 sdsPage, uint32
     return _phy_rtl826xb_patch_wait(unit, port, PHY_MMD_VEND1, 0x143, 0, BIT_15, PHY_PATCH_MODE_NORMAL);
 }
 
-int32
+static int32
 _phy_rtl826xb_patch_sds_set(uint32 unit, rtk_port_t port, uint32 sdsPage, uint32 sdsReg, uint32 wData, uint8 patch_mode)
 {
     int32  ret = 0;
@@ -693,7 +693,7 @@ static int32 _phy_rtl826xb_flow_s(uint32 unit, rtk_port_t port, uint8 portOffset
     return RT_ERR_OK;
 }
 
-int32 phy_rtl826xb_patch_op(uint32 unit, rtk_port_t port, uint8 portOffset, rtk_hwpatch_t *pPatch_data, uint8 patch_mode)
+static int32 phy_rtl826xb_patch_op(uint32 unit, rtk_port_t port, uint8 portOffset, rtk_hwpatch_t *pPatch_data, uint8 patch_mode)
 {
     int32 ret = RT_ERR_OK;
     uint32 rData = 0, wData = 0;
@@ -803,7 +803,7 @@ int32 phy_rtl826xb_patch_op(uint32 unit, rtk_port_t port, uint8 portOffset, rtk_
     return ret;
 }
 
-int32 phy_rtl826xb_patch_flow(uint32 unit, rtk_port_t port, uint8 portOffset, uint8 patch_flow, uint8 patch_mode)
+static int32 phy_rtl826xb_patch_flow(uint32 unit, rtk_port_t port, uint8 portOffset, uint8 patch_flow, uint8 patch_mode)
 {
     int32 ret = RT_ERR_OK;
 

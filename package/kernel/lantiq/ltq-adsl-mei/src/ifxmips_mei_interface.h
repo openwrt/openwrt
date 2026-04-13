@@ -418,7 +418,7 @@ typedef struct _arc_img_hdr {
 	u32 size;		//      Size of binary image in bytes
 	u32 checksum;		//      Checksum for image
 	u32 count;		//      Count of swp pages in image
-	ARC_SWP_PAGE_HDR page[1];	//      Should be "count" pages - '1' to make compiler happy
+	ARC_SWP_PAGE_HDR page[];	//      Should be "count" pages - '1' to make compiler happy
 } ARC_IMG_HDR;
 
 typedef struct smmu_mem_info {

@@ -83,8 +83,8 @@ define Device/extreme-networks_ws-ap3825i
   DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca988x-ct
   BLOCKSIZE := 128k
   KERNEL_NAME := simpleImage.ws-ap3825i
-  KERNEL_ENTRY := 0x1500000
-  KERNEL_LOADADDR := 0x1500000
+  KERNEL_ENTRY := 0x3000000
+  KERNEL_LOADADDR := 0x3000000
   KERNEL = kernel-bin | fit none $(KDIR)/image-$$(DEVICE_DTS).dtb
   IMAGES := sysupgrade.bin
   IMAGE/sysupgrade.bin := append-kernel | append-rootfs | pad-rootfs | append-metadata
@@ -94,6 +94,10 @@ TARGET_DEVICES += extreme-networks_ws-ap3825i
 define Device/hpe_msm460
   DEVICE_VENDOR := Hewlett-Packard
   DEVICE_MODEL := MSM460
+  DEVICE_ALT0_VENDOR := Hewlett-Packard
+  DEVICE_ALT0_MODEL := MSM430
+  DEVICE_ALT1_VENDOR := Hewlett-Packard
+  DEVICE_ALT1_MODEL := MSM466
   KERNEL = kernel-bin | fit none $(KDIR)/image-$$(DEVICE_DTS).dtb
   KERNEL_NAME := zImage.la3000000
   KERNEL_ENTRY := 0x3000000
@@ -113,7 +117,7 @@ define Device/ocedo_panda
   DEVICE_VENDOR := OCEDO
   DEVICE_MODEL := Panda
   DEVICE_PACKAGES := kmod-rtc-ds1307
-  KERNEL = kernel-bin | gzip | fit gzip $(KDIR)/image-$$(DEVICE_DTS).dtb
+  KERNEL = kernel-bin | libdeflate-gzip | fit gzip $(KDIR)/image-$$(DEVICE_DTS).dtb
   PAGESIZE := 2048
   SUBPAGESIZE := 512
   BLOCKSIZE := 128k

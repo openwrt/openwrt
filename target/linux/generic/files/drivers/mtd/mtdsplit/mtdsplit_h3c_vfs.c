@@ -98,8 +98,11 @@ static int mtdsplit_h3c_vfs_parse(struct mtd_info *mtd,
 	if (retlen != sizeof(format_flag))
 		return -EIO;
 
-	if (format_flag != FORMAT_FLAG)
-		return -EINVAL;
+	if (format_flag != FORMAT_FLAG) {
+		pr_debug("mtdsplit_h3c_vfs: unexpected format flag %08x\n",
+			 format_flag);
+		return -ENOENT;
+	}
 
 	/* Check file entry */
 	err = mtd_read(mtd, FILE_ENTRY_OFFSET, sizeof(file_entry), &retlen,
@@ -111,19 +114,19 @@ static int mtdsplit_h3c_vfs_parse(struct mtd_info *mtd,
 		return -EIO;
 
 	if (file_entry.flags != FILE_ENTRY_FLAGS)
-		return -EINVAL;
+		return -ENOENT;
 
 	if (file_entry.parent_block != FILE_ENTRY_PARENT_BLOCK)
-		return -EINVAL;
+		return -ENOENT;
 
 	if (file_entry.parent_index != FILE_ENTRY_PARENT_INDEX)
-		return -EINVAL;
+		return -ENOENT;
 
 	if (file_entry.data_block != FILE_ENTRY_DATA_BLOCK)
-		return -EINVAL;
+		return -ENOENT;
 
 	if (strncmp(file_entry.name, FILE_ENTRY_NAME, sizeof(file_entry.name)) != 0)
-		return -EINVAL;
+		return -ENOENT;
 
 	/* Find rootfs offset */
 	kernel_size = block_offset(file_entry.data_block +

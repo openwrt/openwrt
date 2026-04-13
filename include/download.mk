@@ -34,11 +34,9 @@ $(strip \
       $(if $(filter @OPENWRT @APACHE/% @DEBIAN/% @GITHUB/% @GNOME/% @GNU/% @KERNEL/% @SF/% @SAVANNAH/% ftp://% http://% https://% file://%,$(1)),default, \
         $(if $(filter git://%,$(1)),$(call dl_method_git,$(1),$(2)), \
           $(if $(filter svn://%,$(1)),svn, \
-            $(if $(filter cvs://%,$(1)),cvs, \
-              $(if $(filter hg://%,$(1)),hg, \
-                $(if $(filter sftp://%,$(1)),bzr, \
-                  unknown \
-                ) \
+            $(if $(filter hg://%,$(1)),hg, \
+              $(if $(filter sftp://%,$(1)),bzr, \
+                unknown \
               ) \
             ) \
           ) \
@@ -49,7 +47,7 @@ $(strip \
 )
 endef
 
-# code for creating tarballs from cvs/svn/git/bzr/hg/darcs checkouts - useful for mirror support
+# code for creating tarballs from svn/git/bzr/hg/darcs checkouts - useful for mirror support
 dl_pack/bz2=bzip2 -c > $(1)
 dl_pack/gz=gzip -nc > $(1)
 dl_pack/xz=xz -zc -7e > $(1)
@@ -154,26 +152,21 @@ endef
 # $(2): "PKG_" if <name> as in Download/<name> is "default", otherwise "Download/<name>:"
 # $(3): shell command sequence to do the download
 define wrap_mirror
-$(if $(if $(MIRROR),$(filter-out x,$(MIRROR_HASH))),$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(FILE)" "$(MIRROR_HASH)" "" || ( $(3) ),$(3)) \
+$(if $(if $(MIRROR), \
+	$(filter-out x,$(MIRROR_HASH))),$(SCRIPT_DIR)/download.pl "$(DL_DIR)" "$(FILE)" "$(MIRROR_HASH)" "" || \
+		( $(3) ) \
+		$(if $(filter-out x,$(MIRROR_HASH)), && ( \
+			file_hash="$$$$($(MKHASH) sha256 "$(DL_DIR)/$(FILE)")"; \
+			[ "$$$$file_hash" = "$(MIRROR_HASH)" ] || [ "$(MIRROR_HASH)" = "skip" ] || { \
+				echo "Hash mismatch for file $(FILE): expected $(MIRROR_HASH), got $$$$file_hash"; \
+				false; \
+			}; \
+		)),
+	$(3)) \
 $(if $(filter check,$(1)), \
 	$(call check_hash,$(FILE),$(MIRROR_HASH),$(2)MIRROR_$(call hash_var,$(MIRROR_MD5SUM))) \
 	$(call check_md5,$(MIRROR_MD5SUM),$(2)MIRROR_MD5SUM,$(2)MIRROR_HASH) \
 )
-endef
-
-define DownloadMethod/cvs
-	$(call wrap_mirror,$(1),$(2), \
-		echo "Checking out files from the cvs repository..."; \
-		mkdir -p $(TMP_DIR)/dl && \
-		cd $(TMP_DIR)/dl && \
-		rm -rf $(SUBDIR) && \
-		[ \! -d $(SUBDIR) ] && \
-		cvs -d $(URL) export $(SOURCE_VERSION) $(SUBDIR) && \
-		echo "Packing checkout..." && \
-		$(call dl_tar_pack,$(TMP_DIR)/dl/$(FILE),$(SUBDIR)) && \
-		mv $(TMP_DIR)/dl/$(FILE) $(DL_DIR)/ && \
-		rm -rf $(SUBDIR); \
-	)
 endef
 
 define DownloadMethod/svn
@@ -228,11 +221,13 @@ define DownloadMethod/rawgit
 	[ \! -d $(SUBDIR) ] && \
 	git clone $(OPTS) $(URL) $(SUBDIR) && \
 	(cd $(SUBDIR) && git checkout $(SOURCE_VERSION)) && \
-	export TAR_TIMESTAMP=`cd $(SUBDIR) && git log -1 --format='@%ct'` && \
+	export TAR_TIMESTAMP=`cd $(SUBDIR) && git log -1 --no-show-signature --format='@%ct'` && \
 	echo "Generating formal git archive (apply .gitattributes rules)" && \
 	(cd $(SUBDIR) && git config core.abbrev 8 && \
 	git archive --format=tar HEAD --output=../$(SUBDIR).tar.git) && \
-	$(if $(filter skip,$(SUBMODULES)),true,$(TAR) --ignore-failed-read -C $(SUBDIR) -f $(SUBDIR).tar.git -r .git .gitmodules 2>/dev/null) && \
+	$(if $(filter skip,$(SUBMODULES)),true, \
+		$(TAR) --numeric-owner --owner=0 --group=0 --ignore-failed-read -C $(SUBDIR) -f $(SUBDIR).tar.git -r .git .gitmodules 2>/dev/null \
+	) && \
 	rm -rf $(SUBDIR) && mkdir $(SUBDIR) && \
 	$(TAR) -C $(SUBDIR) -xf $(SUBDIR).tar.git && \
 	(cd $(SUBDIR) && $(if $(filter skip,$(SUBMODULES)),true,git submodule update --init --recursive -- $(SUBMODULES) && \
@@ -293,7 +288,6 @@ define DownloadMethod/darcs
 	)
 endef
 
-Validate/cvs=SOURCE_VERSION SUBDIR
 Validate/svn=SOURCE_VERSION SUBDIR
 Validate/git=SOURCE_VERSION SUBDIR
 Validate/bzr=SOURCE_VERSION SUBDIR

@@ -8,11 +8,11 @@ let wifi_devices = json(readfile('/usr/share/wifi_devices.json'));
 let countries = json(readfile('/usr/share/iso3166.json'));
 let board_data = json(readfile('/etc/board.json'));
 
-export let phys = nl80211.request(nl80211.const.NL80211_CMD_GET_WIPHY, nl80211.const.NLM_F_DUMP, { split_wiphy_dump: true });
-let interfaces = nl80211.request(nl80211.const.NL80211_CMD_GET_INTERFACE, nl80211.const.NLM_F_DUMP);
-
 let ubus = libubus.connect();
-let wireless_status = ubus.call('network.wireless', 'status');
+
+export let phys;
+let interfaces;
+let wireless_status;
 
 function find_phy(wiphy) {
 	for (let k,  phy in phys)
@@ -21,15 +21,16 @@ function find_phy(wiphy) {
 	return null;
 }
 
-function get_noise(iface) {
-	for (let phy in phys) {
-		let channels = nl80211.request(nl80211.const.NL80211_CMD_GET_SURVEY, nl80211.const.NLM_F_DUMP, { dev: iface.ifname });
-		for (let k, channel in channels)
-			if (channel.survey_info.frequency == iface.wiphy_freq)
-				return channel.survey_info.noise;
-	}
+function get_survey(iface) {
+	let channels = nl80211.request(nl80211.const.NL80211_CMD_GET_SURVEY, nl80211.const.NLM_F_DUMP, { dev: iface.ifname });
+	for (let channel in channels)
+		if (channel.survey_info?.frequency == iface.wiphy_freq)
+			return channel.survey_info;
+	return null;
+}
 
-	return -100;
+function get_noise(iface) {
+	return iface.survey?.noise ?? -100;
 }
 
 function get_country(iface) {
@@ -93,39 +94,48 @@ const iftypes = [
 ];
 
 export let ifaces = {};
-for (let k, v in interfaces) {
-	let iface = ifaces[v.ifname] = v;
 
-	iface.mode = iftypes[iface.iftype] ?? 'unknonw',
-	iface.noise = get_noise(iface);
-	iface.country = get_country(iface);
-	iface.max_power = get_max_power(iface);
-	iface.assoclist = nl80211.request(nl80211.const.NL80211_CMD_GET_STATION, nl80211.const.NLM_F_DUMP, { dev: v.ifname }) ?? [];
-	iface.hardware = get_hardware_id(iface);
+export function update() {
+	phys = nl80211.request(nl80211.const.NL80211_CMD_GET_WIPHY, nl80211.const.NLM_F_DUMP, { split_wiphy_dump: true });
+	interfaces = nl80211.request(nl80211.const.NL80211_CMD_GET_INTERFACE, nl80211.const.NLM_F_DUMP);
+	wireless_status = ubus.call('network.wireless', 'status');
 
-	iface.bss_info = ubus.call('hostapd', 'bss_info', { iface: v.ifname });
-	if (!iface.bss_info)
-		iface.bss_info = ubus.call('wpa_supplicant', 'bss_info', { iface: v.ifname });
-}
+	ifaces = {};
+	for (let k, v in interfaces) {
+		let iface = ifaces[v.ifname] = v;
 
-for (let radio, data in wireless_status)
-	for (let k, v in data.interfaces) {
-		if (!v.ifname || !ifaces[v.ifname])
-			continue;
+		iface.mode = iftypes[iface.iftype] ?? 'unknown',
+		iface.survey = get_survey(iface);
+		iface.noise = get_noise(iface);
+		iface.country = get_country(iface);
+		iface.max_power = get_max_power(iface);
+		iface.assoclist = nl80211.request(nl80211.const.NL80211_CMD_GET_STATION, nl80211.const.NLM_F_DUMP, { dev: v.ifname }) ?? [];
+		iface.hardware = get_hardware_id(iface);
 
-		ifaces[v.ifname].ssid = v.config.ssid || v.config.mesh_id;
-		ifaces[v.ifname].radio = data.config;
-		
-		let bss_info = ifaces[v.ifname].bss_info;
-		let owe_transition_ifname = bss_info?.owe_transition_ifname;
-
-		if (v.config.owe_transition && ifaces[owe_transition_ifname]) {
-			ifaces[v.ifname].owe_transition_ifname = owe_transition_ifname;
-			ifaces[owe_transition_ifname].ssid = v.config.ssid;
-			ifaces[owe_transition_ifname].radio = data.config;
-			ifaces[owe_transition_ifname].owe_transition_ifname = v.ifname
-		}
+		iface.bss_info = ubus.call('hostapd', 'bss_info', { iface: v.ifname });
+		if (!iface.bss_info)
+			iface.bss_info = ubus.call('wpa_supplicant', 'bss_info', { iface: v.ifname });
 	}
+
+	for (let radio, data in wireless_status)
+		for (let k, v in data.interfaces) {
+			if (!v.ifname || !ifaces[v.ifname])
+				continue;
+
+			ifaces[v.ifname].ssid = v.config.ssid || v.config.mesh_id;
+			ifaces[v.ifname].radio = data.config;
+
+			let bss_info = ifaces[v.ifname].bss_info;
+			let owe_transition_ifname = bss_info?.owe_transition_ifname;
+
+			if (v.config.owe_transition && ifaces[owe_transition_ifname]) {
+				ifaces[v.ifname].owe_transition_ifname = owe_transition_ifname;
+				ifaces[owe_transition_ifname].ssid = v.config.ssid;
+				ifaces[owe_transition_ifname].radio = data.config;
+				ifaces[owe_transition_ifname].owe_transition_ifname = v.ifname
+			}
+		}
+};
 
 function format_channel(freq) {
 	if (freq < 1000)
@@ -169,32 +179,66 @@ function format_rate(rate) {
 	return rate ? sprintf('%.01f', rate / 10.0) : 'unknown';
 }
 
+function format_expected_throughput(rate) {
+	return rate ? sprintf('%.01f', rate / 1000.0) : 'unknown';
+}
+
 function format_mgmt_key(key) {
 	switch(+key) {
 	case 1:
-	case 11:
-	case 12:
-	case 13:
-	case 14:
-	case 15:
-	case 16:
-	case 17:
 		return '802.1x';
 
 	case 2:
 		return 'WPA PSK';
 
+	case 3:
+		return 'FT 802.1x';
+
 	case 4:
 		return 'FT PSK';
 
-	case 6:
-		return 'WPA PSK2';
+	case 5:
+	case 11: // deprecated 802.1x-suiteB-SHA256
+		return '802.1x-SHA256';
 
-	case 8: 
+	case 6:
+		return 'WPA PSK-SHA256';
+
+	case 8: // SAE with SHA256
+	case 24: // SAE using group-dependent hash
 		return 'SAE';
+
+	case 9: // FT SAE with SHA256
+	case 25: // FT SAE using group-dependent hash
+		return 'FT SAE';
+
+	case 12:
+		return '802.1x-192bit';
+
+	case 13:
+		return 'FT 802.1x-SHA384';
+
+	case 14:
+		return 'FILS-SHA256';
+
+	case 15:
+		return 'FILS-SHA384';
+
+	case 16:
+		return 'FT FILS-SHA256';
+
+	case 17:
+		return 'FT FILS-SHA384';
 
 	case 18:
 		return 'OWE';
+
+	case 19:
+		return 'FT PSK-SHA384';
+
+	case 20:
+		return 'WPA PSK-SHA384';
+
 	}
 
 	return null;
@@ -282,10 +326,10 @@ function dbm2quality(dbm) {
 }
 
 function hwmodelist(name) {
-	const mode = { 'HT*': 'n', 'VHT*': 'ac', 'HE*': 'ax' };
+	const mode = { 'HT*': 'n', 'VHT*': 'ac', 'HE*': 'ax', 'EHT*': 'be' };
 	let iface = ifaces[name];
 	let phy = board_data.wlan?.['phy' + iface.wiphy];
-	if (!phy)
+	if (!phy || !iface.radio?.band)
 		return '';
 	let htmodes = phy.info.bands[uc(iface.radio.band)].modes;
 	let list = [];
@@ -322,7 +366,7 @@ export function assoclist(dev) {
 				packets: station.sta_info.tx_packets ?? 0,
 				flags: assoc_flags(station.sta_info.tx_bitrate ?? {}),
 			},
-			expected_throughput: station.sta_info.expected_throughput ?? 'unknown',
+			expected_throughput: format_expected_throughput(station.sta_info.expected_throughput ?? 0),
 		};
 		ret[sta.mac] = sta;
 	}
@@ -393,7 +437,7 @@ export function info(name) {
 			mode: data.mode,
 			channel: format_channel(data.wiphy_freq),
 			freq: format_frequency(data.wiphy_freq),
-			htmode: data.radio.htmode,
+			htmode: data.radio?.htmode,
 			center_freq1: format_channel(data.center_freq1) || 'unknown',
 			center_freq2: format_channel(data.center_freq2) || 'unknown',
 			txpower: data.wiphy_tx_power_level / 100,
@@ -411,7 +455,7 @@ export function info(name) {
 		};
 
 		let phy = find_phy(data.wiphy);
-		for (let limit in phy.interface_combinations[0]?.limits)
+		for (let limit in phy.interface_combinations?.[0]?.limits)
 			if (limit.types?.ap && limit.max > 1)
 				dev.vaps = 'yes';
 
@@ -446,7 +490,7 @@ export function info(name) {
 export function htmodelist(name) {
 	let iface = ifaces[name];
 	let phy = board_data.wlan?.['phy' + iface.wiphy];
-	if (!phy)
+	if (!phy || !iface.radio.band)
 		return [];
 
 	return filter(phy.info.bands[uc(iface.radio.band)].modes, (v) => v != 'NOHT');
@@ -479,6 +523,42 @@ export function countrylist(dev) {
 	};
 
 	return list;
+};
+
+function scan_extension(ext, cell) {
+	const eht_chan_width = [ '20 MHz', '40 MHz', '80 MHz', '160 MHz', '320 MHz'];
+
+	switch(ord(ext, 0)) {
+	case 36:
+		let offset = 7;
+
+		if (!(ord(ext, 3) & 0x2))
+			break;
+
+		if (ord(ext, 2) & 0x40)
+			offset += 3;
+
+		if (ord(ext, 2) & 0x80)
+			offset += 1;
+
+		cell.he = {
+			chan_width: eht_chan_width[ord(ext, offset + 1) & 0x3],
+			center_chan_1: ord(ext, offset + 2),
+			center_chan_2: ord(ext, offset + 3),
+		};
+		break;
+
+	case 106:
+		if (!(ord(ext, 1) & 0x1))
+			break;
+
+		cell.eht = {
+			chan_width: eht_chan_width[ord(ext, 6) & 0x7],
+			center_chan_1: ord(ext, 7),
+			center_chan_2: ord(ext, 8),
+		};
+		break;
+	}
 };
 
 export function scan(dev) {
@@ -591,6 +671,10 @@ export function scan(dev) {
 					center_chan_2: ord(ie.data, 2),
 				};
 				break;
+
+			case 255:
+				scan_extension(ie.data, cell);
+				break;
 			};
 
 		
@@ -600,3 +684,5 @@ export function scan(dev) {
 
 	return cells;
 };
+
+update();

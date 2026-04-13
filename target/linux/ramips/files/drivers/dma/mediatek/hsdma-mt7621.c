@@ -16,7 +16,6 @@
 #include <linux/irq.h>
 #include <linux/of_dma.h>
 #include <linux/reset.h>
-#include <linux/of_device.h>
 
 #include "../virt-dma.h"
 
@@ -644,7 +643,6 @@ static const struct of_device_id mtk_hsdma_of_match[] = {
 
 static int mtk_hsdma_probe(struct platform_device *pdev)
 {
-	const struct of_device_id *match;
 	struct mtk_hsdma_chan *chan;
 	struct mtk_hsdam_engine *hsdma;
 	struct dma_device *dd;
@@ -655,10 +653,6 @@ static int mtk_hsdma_probe(struct platform_device *pdev)
 	ret = dma_set_mask_and_coherent(&pdev->dev, DMA_BIT_MASK(32));
 	if (ret)
 		return ret;
-
-	match = of_match_device(mtk_hsdma_of_match, &pdev->dev);
-	if (!match)
-		return -EINVAL;
 
 	hsdma = devm_kzalloc(&pdev->dev, sizeof(*hsdma), GFP_KERNEL);
 	if (!hsdma)
@@ -744,8 +738,8 @@ static void mtk_hsdma_remove(struct platform_device *pdev)
 }
 
 static struct platform_driver mtk_hsdma_driver = {
-	.probe = mtk_hsdma_probe,
-	.remove_new = mtk_hsdma_remove,
+	.probe  = mtk_hsdma_probe,
+	.remove = mtk_hsdma_remove,
 	.driver = {
 		.name = KBUILD_MODNAME,
 		.of_match_table = mtk_hsdma_of_match,

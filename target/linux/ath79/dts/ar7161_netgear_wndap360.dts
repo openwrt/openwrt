@@ -10,36 +10,30 @@
 	compatible = "netgear,wndap360", "qca,ar7161";
 	model = "Netgear WNDAP360";
 
+	chosen {
+		bootargs = "console=ttyS0,9600";
+	};
+
 	aliases {
 		led-boot = &led_power_orange;
 		led-failsafe = &led_power_orange;
-		led-running = &led_power_orange;
+		led-running = &led_power_green;
 		led-upgrade = &led_power_orange;
 	};
 
 	leds {
 		compatible = "gpio-leds";
 
+		led_power_green: power_green {
+			function = LED_FUNCTION_POWER;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+		};
+
 		led_power_orange: power_orange {
 			function = LED_FUNCTION_POWER;
 			color = <LED_COLOR_ID_ORANGE>;
 			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
-		};
-	};
-
-	ath9k-leds {
-		compatible = "gpio-leds";
-
-		wifi_2g_green {
-			label = "green:wlan2g";
-			gpios = <&ath9k0 5 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
-		};
-
-		wifi_5g_green {
-			label = "green:wlan5g";
-			gpios = <&ath9k1 5 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
 		};
 	};
 
@@ -64,6 +58,8 @@
 
 &eth0 {
 	status = "okay";
+
+	pll-data = <0x11110000 0x00001099 0x00991099>;
 
 	phy-mode = "rgmii";
 	phy-handle = <&phy1>;
@@ -149,21 +145,27 @@
 &pcie0 {
 	status = "okay";
 
-	ath9k0: wifi@11,0 {
+	wifi@11,0 {
 		compatible = "pci168c,0029";
 		reg = <0x8800 0 0 0 0>;
 		nvmem-cells = <&macaddr_art_120c>, <&calibration_art_1000>;
 		nvmem-cell-names = "mac-address", "calibration";
-		#gpio-cells = <2>;
-		gpio-controller;
+
+		led {
+			led-sources = <5>;
+			led-active-low;
+		};
 	};
 
-	ath9k1: wifi@12,0 {
+	wifi@12,0 {
 		compatible = "pci168c,0029";
 		reg = <0x9000 0 0 0 0>;
 		nvmem-cells = <&macaddr_art_520c 1>, <&calibration_art_5000>;
 		nvmem-cell-names = "mac-address", "calibration";
-		#gpio-cells = <2>;
-		gpio-controller;
+
+		led {
+			led-sources = <5>;
+			led-active-low;
+		};
 	};
 };

@@ -124,8 +124,11 @@ static int nct5104d_gpio_direction_in(struct gpio_chip *chip, unsigned offset);
 static int nct5104d_gpio_get(struct gpio_chip *chip, unsigned offset);
 static int nct5104d_gpio_direction_out(struct gpio_chip *chip,
 				     unsigned offset, int value);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,17,0)
+static int nct5104d_gpio_set(struct gpio_chip *chip, unsigned offset, int value);
+#else
 static void nct5104d_gpio_set(struct gpio_chip *chip, unsigned offset, int value);
-
+#endif
 #define NCT5104D_GPIO_BANK(_base, _ngpio, _regbase)			\
 	{								\
 		.chip = {						\
@@ -219,7 +222,11 @@ static int nct5104d_gpio_direction_out(struct gpio_chip *chip,
 	return 0;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,17,0)
+static int nct5104d_gpio_set(struct gpio_chip *chip, unsigned offset, int value)
+#else
 static void nct5104d_gpio_set(struct gpio_chip *chip, unsigned offset, int value)
+#endif
 {
 	int err;
 	struct nct5104d_gpio_bank *bank = gpiochip_get_data(chip);
@@ -228,7 +235,11 @@ static void nct5104d_gpio_set(struct gpio_chip *chip, unsigned offset, int value
 
 	err = superio_enter(sio->addr);
 	if (err)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,17,0)
+		return err;
+#else
 		return;
+#endif
 	superio_select(sio->addr, SIO_LD_GPIO);
 
 	data_out = superio_inb(sio->addr, gpio_data(bank->regbase));
@@ -239,6 +250,10 @@ static void nct5104d_gpio_set(struct gpio_chip *chip, unsigned offset, int value
 	superio_outb(sio->addr, gpio_data(bank->regbase), data_out);
 
 	superio_exit(sio->addr);
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,17,0)
+	return 0;
+#endif
 }
 
 /*

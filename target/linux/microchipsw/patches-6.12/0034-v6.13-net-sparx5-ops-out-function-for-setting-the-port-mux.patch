@@ -1,0 +1,74 @@
+From def4582837fa546a00860649a253c47107123060 Mon Sep 17 00:00:00 2001
+From: Daniel Machon <daniel.machon@microchip.com>
+Date: Fri, 4 Oct 2024 15:19:37 +0200
+Subject: [PATCH 39/82] net: sparx5: ops out function for setting the port mux
+
+Port muxing is configured based on the supported port modes. As these
+modes can differ on Sparx5 and lan969x we ops out the port muxing
+function.
+
+Reviewed-by: Steen Hegelund <Steen.Hegelund@microchip.com>
+Reviewed-by: Jacob Keller <jacob.e.keller@intel.com>
+Signed-off-by: Daniel Machon <daniel.machon@microchip.com>
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/ethernet/microchip/sparx5/sparx5_main.c | 1 +
+ drivers/net/ethernet/microchip/sparx5/sparx5_main.h | 6 ++++++
+ drivers/net/ethernet/microchip/sparx5/sparx5_port.c | 7 +++----
+ 3 files changed, 10 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.c
+@@ -991,6 +991,7 @@ static const struct sparx5_ops sparx5_op
+ 	.get_port_dev_bit        = &sparx5_port_dev_mapping,
+ 	.get_hsch_max_group_rate = &sparx5_get_hsch_max_group_rate,
+ 	.get_sdlb_group          = &sparx5_get_sdlb_group,
++	.set_port_mux            = &sparx5_port_mux_set,
+ };
+ 
+ static const struct sparx5_match_data sparx5_desc = {
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_main.h
+@@ -267,6 +267,8 @@ struct sparx5_ops {
+ 	u32  (*get_port_dev_bit)(struct sparx5 *sparx5, int port);
+ 	u32  (*get_hsch_max_group_rate)(int grp);
+ 	struct sparx5_sdlb_group *(*get_sdlb_group)(int idx);
++	int (*set_port_mux)(struct sparx5 *sparx5, struct sparx5_port *port,
++			    struct sparx5_port_config *conf);
+ };
+ 
+ struct sparx5_main_io_resource {
+@@ -485,6 +487,10 @@ int sparx5_pool_get(struct sparx5_pool_e
+ int sparx5_pool_get_with_idx(struct sparx5_pool_entry *pool, int size, u32 idx,
+ 			     u32 *id);
+ 
++/* sparx5_port.c */
++int sparx5_port_mux_set(struct sparx5 *sparx5, struct sparx5_port *port,
++			struct sparx5_port_config *conf);
++
+ /* sparx5_sdlb.c */
+ #define SPX5_SDLB_PUP_TOKEN_DISABLE 0x1FFF
+ #define SPX5_SDLB_PUP_TOKEN_MAX (SPX5_SDLB_PUP_TOKEN_DISABLE - 1)
+--- a/drivers/net/ethernet/microchip/sparx5/sparx5_port.c
++++ b/drivers/net/ethernet/microchip/sparx5/sparx5_port.c
+@@ -516,9 +516,8 @@ static int sparx5_port_fifo_sz(struct sp
+ /* Configure port muxing:
+  * QSGMII:     4x2G5 devices
+  */
+-static int sparx5_port_mux_set(struct sparx5 *sparx5,
+-			       struct sparx5_port *port,
+-			       struct sparx5_port_config *conf)
++int sparx5_port_mux_set(struct sparx5 *sparx5, struct sparx5_port *port,
++			struct sparx5_port_config *conf)
+ {
+ 	u32 portno = port->portno;
+ 	u32 inst;
+@@ -1039,7 +1038,7 @@ int sparx5_port_init(struct sparx5 *spar
+ 	pcsinst = spx5_inst_get(sparx5, pcs, pix);
+ 
+ 	/* Set the mux port mode  */
+-	err = sparx5_port_mux_set(sparx5, port, conf);
++	err = ops->set_port_mux(sparx5, port, conf);
+ 	if (err)
+ 		return err;
+ 

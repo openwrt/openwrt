@@ -1,0 +1,27 @@
+From 00abee2b18342d6c2f6f37225682fa7ca0d33142 Mon Sep 17 00:00:00 2001
+From: Detlev Casanova <detlev.casanova@collabora.com>
+Date: Tue, 8 Jul 2025 11:50:10 -0400
+Subject: [PATCH] arm64: dts: rockchip: Add UFS support on the ROCK 4D
+
+This device supports removable UFS chips, add support for it.
+
+Signed-off-by: Detlev Casanova <detlev.casanova@collabora.com>
+Link: https://lore.kernel.org/r/20250708155010.401446-1-detlev.casanova@collabora.com
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3576-rock-4d.dts | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3576-rock-4d.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3576-rock-4d.dts
+@@ -745,6 +745,10 @@
+ 	status = "okay";
+ };
+ 
++&ufshc {
++	status = "okay";
++};
++
+ &usb_drd1_dwc3 {
+ 	dr_mode = "host";
+ 	status = "okay";

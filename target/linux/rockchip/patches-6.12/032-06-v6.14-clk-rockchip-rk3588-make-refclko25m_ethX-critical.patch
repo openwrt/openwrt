@@ -1,0 +1,54 @@
+From cd8b5366636bdff0449b789fb2d33abb20804255 Mon Sep 17 00:00:00 2001
+From: Heiko Stuebner <heiko.stuebner@cherry.de>
+Date: Sat, 14 Dec 2024 23:48:19 +0100
+Subject: [PATCH] clk: rockchip: rk3588: make refclko25m_ethX critical
+
+Ethernet phys normally need a 25MHz refclk input. On a lot of boards
+this is done with a dedicated 25MHz crystal. But the rk3588 CRU also
+provides a means for that via the refclko25m_ethX clock outputs that
+can be used for that function.
+
+The mdio bus normally probes devices on the bus at runtime, by reading
+specific phy registers. This requires the phy to be running and thus
+also being supplied by its reference clock.
+
+While there exist the possibility and dt-binding to declare these
+input clocks for each phy in the phy-dt-node, this is only relevant
+_after_ the phy has been detected and during the drivers probe-run.
+
+This results in a chicken-and-egg-problem. The refclks in the CRU are
+running on boot of course, but phy-probing can very well happen after
+clk_disable_unused has run.
+
+In the past I tried to make clock-handling part of the mdio bus code [0]
+but that wasn't very well received, due to it being specific to OF and
+clocks with the consensus being that resources needed for detection
+need to be enabled before.
+
+So to make probing ethernet phys using the internal refclks possible,
+make those 2 clocks critical.
+
+[0] https://lore.kernel.org/netdev/13590315.F0gNSz5aLb@diego/T/
+
+Signed-off-by: Heiko Stuebner <heiko.stuebner@cherry.de>
+Link: https://lore.kernel.org/r/20241214224820.200665-1-heiko@sntech.de
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ drivers/clk/rockchip/clk-rk3588.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/clk/rockchip/clk-rk3588.c
++++ b/drivers/clk/rockchip/clk-rk3588.c
+@@ -772,10 +772,10 @@ static struct rockchip_clk_branch rk3588
+ 	COMPOSITE(MCLK_GMAC0_OUT, "mclk_gmac0_out", gpll_cpll_p, 0,
+ 			RK3588_CLKSEL_CON(15), 7, 1, MFLAGS, 0, 7, DFLAGS,
+ 			RK3588_CLKGATE_CON(5), 3, GFLAGS),
+-	COMPOSITE(REFCLKO25M_ETH0_OUT, "refclko25m_eth0_out", gpll_cpll_p, 0,
++	COMPOSITE(REFCLKO25M_ETH0_OUT, "refclko25m_eth0_out", gpll_cpll_p, CLK_IS_CRITICAL,
+ 			RK3588_CLKSEL_CON(15), 15, 1, MFLAGS, 8, 7, DFLAGS,
+ 			RK3588_CLKGATE_CON(5), 4, GFLAGS),
+-	COMPOSITE(REFCLKO25M_ETH1_OUT, "refclko25m_eth1_out", gpll_cpll_p, 0,
++	COMPOSITE(REFCLKO25M_ETH1_OUT, "refclko25m_eth1_out", gpll_cpll_p, CLK_IS_CRITICAL,
+ 			RK3588_CLKSEL_CON(16), 7, 1, MFLAGS, 0, 7, DFLAGS,
+ 			RK3588_CLKGATE_CON(5), 5, GFLAGS),
+ 	COMPOSITE(CLK_CIFOUT_OUT, "clk_cifout_out", gpll_cpll_24m_spll_p, 0,

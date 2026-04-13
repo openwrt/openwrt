@@ -3,6 +3,7 @@
 #include <dt-bindings/clock/mt7621-clk.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/interrupt-controller/mips-gic.h>
+#include <dt-bindings/phy/phy.h>
 #include <dt-bindings/reset/mt7621-reset.h>
 
 / {
@@ -42,26 +43,36 @@
 		bootargs = "console=ttyS0,57600";
 	};
 
-	mmc_reg_1v8: regulator-1v8 {
+	reg_vmmc: regulator-vmmc {
 		compatible = "regulator-fixed";
-
-		enable-active-high;
-
-		regulator-always-on;
-		regulator-max-microvolt = <1800000>;
-		regulator-min-microvolt = <1800000>;
-		regulator-name = "mmc_io";
-	};
-
-	mmc_reg_3v3: regulator-3v3 {
-		compatible = "regulator-fixed";
-
-		enable-active-high;
-
 		regulator-always-on;
 		regulator-max-microvolt = <3300000>;
 		regulator-min-microvolt = <3300000>;
 		regulator-name = "mmc_power";
+	};
+
+	reg_vqmmc: regulator-vqmmc {
+		compatible = "regulator-fixed";
+		regulator-always-on;
+		regulator-max-microvolt = <3300000>;
+		regulator-min-microvolt = <3300000>;
+		regulator-name = "mmc_io";
+	};
+
+	reg_vbus: regulator-vbus {
+		compatible = "regulator-fixed";
+		regulator-always-on;
+		regulator-max-microvolt = <5000000>;
+		regulator-min-microvolt = <5000000>;
+		regulator-name = "usb_power";
+	};
+
+	reg_vusb33: regulator-vusb33 {
+		compatible = "regulator-fixed";
+		regulator-always-on;
+		regulator-max-microvolt = <3300000>;
+		regulator-min-microvolt = <3300000>;
+		regulator-name = "usb_io";
 	};
 
 	palmbus: palmbus@1e000000 {
@@ -147,7 +158,7 @@
 			reg = <0x5000 0x1000>;
 		};
 
-		uartlite: uartlite@c00 {
+		uartlite: serial@c00 {
 			compatible = "ns16550a";
 			reg = <0xc00 0x100>;
 
@@ -161,9 +172,12 @@
 			reg-shift = <2>;
 			reg-io-width = <4>;
 			no-loopback-test;
+
+			pinctrl-0 = <&uart1_pins>;
+			pinctrl-names = "default";
 		};
 
-		uartlite2: uartlite2@d00 {
+		uartlite2: serial@d00 {
 			compatible = "ns16550a";
 			reg = <0xd00 0x100>;
 
@@ -183,7 +197,7 @@
 			status = "disabled";
 		};
 
-		uartlite3: uartlite3@e00 {
+		uartlite3: serial@e00 {
 			compatible = "ns16550a";
 			reg = <0xe00 0x100>;
 
@@ -350,22 +364,20 @@
 
 	sdhci: mmc@1e130000 {
 		compatible = "mediatek,mt7620-mmc", "ralink,mt7620-sdhci";
-		reg = <0x1e130000 0x4000>;
+		reg = <0x1e130000 0x8000>;
 
 		bus-width = <4>;
-
+		max-frequency = <50000000>;
 		cap-mmc-highspeed;
 		cap-sd-highspeed;
+		disable-wp;
+		no-1-8-v;
 
 		clocks = <&sysc MT7621_CLK_SHXC>, <&sysc MT7621_CLK_SHXC>;
 		clock-names = "source", "hclk";
 
-		disable-wp;
-
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SHARED 20 IRQ_TYPE_LEVEL_HIGH>;
-
-		max-frequency = <48000000>;
 
 		pinctrl-names = "default", "state_uhs";
 		pinctrl-0 = <&sdhci_pins>;
@@ -374,19 +386,17 @@
 		resets = <&sysc MT7621_RST_SDXC>;
 		reset-names = "hrst";
 
-		vmmc-supply = <&mmc_reg_3v3>;
-		vqmmc-supply = <&mmc_reg_1v8>;
+		vmmc-supply = <&reg_vmmc>;
+		vqmmc-supply = <&reg_vqmmc>;
 
 		status = "disabled";
 	};
 
 	xhci: xhci@1e1c0000 {
+		compatible = "mediatek,mtk-xhci";
 		#address-cells = <1>;
 		#size-cells = <0>;
-
-		compatible = "mediatek,mt8173-xhci";
-		reg = <0x1e1c0000 0x1000
-		       0x1e1d0700 0x0100>;
+		reg = <0x1e1c0000 0x1000>, <0x1e1d0700 0x0100>;
 		reg-names = "mac", "ippc";
 
 		clocks = <&sysc MT7621_CLK_XTAL>;
@@ -394,6 +404,13 @@
 
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SHARED 22 IRQ_TYPE_LEVEL_HIGH>;
+
+		phys = <&u2port0 PHY_TYPE_USB2>,
+		       <&u3port0 PHY_TYPE_USB3>,
+		       <&u2port1 PHY_TYPE_USB2>;
+
+		vbus-supply = <&reg_vbus>;
+		vusb33-supply = <&reg_vusb33>;
 
 		/*
 		 * Port 1 of both hubs is one usb slot and referenced here.
@@ -415,9 +432,32 @@
 		};
 	};
 
+	usb_phy: t-phy@1e1d0000 {
+		compatible = "mediatek,generic-tphy-v1";
+		reg = <0x1e1d0000 0x0700>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		u2port0: usb-phy@1e1d0800 {
+			reg = <0x1e1d0800 0x0100>;
+			#phy-cells = <1>;
+		};
+
+		u3port0: usb-phy@1e1d0900 {
+			reg = <0x1e1d0900 0x0700>;
+			#phy-cells = <1>;
+		};
+
+		u2port1: usb-phy@1e1d1000 {
+			reg = <0x1e1d1000 0x0100>;
+			#phy-cells = <1>;
+		};
+	};
+
 	gic: interrupt-controller@1fbc0000 {
 		compatible = "mti,gic";
-		reg = <0x1fbc0000 0x2000>;
+		reg = <0x1fbc0000 0x20000>;
 
 		interrupt-controller;
 		#interrupt-cells = <3>;
@@ -445,8 +485,7 @@
 		status = "disabled";
 
 		compatible = "mediatek,mt7621-nfc";
-		reg = <0x1e003000 0x800
-			0x1e003800 0x800>;
+		reg = <0x1e003000 0x800>, <0x1e003800 0x800>;
 		reg-names = "nfi", "ecc";
 
 		clocks = <&sysc MT7621_CLK_NAND>;
@@ -463,7 +502,7 @@
 
 	ethernet: ethernet@1e100000 {
 		compatible = "mediatek,mt7621-eth";
-		reg = <0x1e100000 0x10000>;
+		reg = <0x1e100000 0xe000>;
 
 		clocks = <&sysc MT7621_CLK_FE>, <&sysc MT7621_CLK_ETH>;
 		clock-names = "fe", "ethif";
@@ -522,26 +561,36 @@
 					ethphy0: ethernet-phy@0 {
 						reg = <0>;
 						interrupts = <0>;
+						eee-broken-100tx;
+						eee-broken-1000t;
 					};
 
 					ethphy1: ethernet-phy@1 {
 						reg = <1>;
 						interrupts = <1>;
+						eee-broken-100tx;
+						eee-broken-1000t;
 					};
 
 					ethphy2: ethernet-phy@2 {
 						reg = <2>;
 						interrupts = <2>;
+						eee-broken-100tx;
+						eee-broken-1000t;
 					};
 
 					ethphy3: ethernet-phy@3 {
 						reg = <3>;
 						interrupts = <3>;
+						eee-broken-100tx;
+						eee-broken-1000t;
 					};
 
 					ethphy4: ethernet-phy@4 {
 						reg = <4>;
 						interrupts = <4>;
+						eee-broken-100tx;
+						eee-broken-1000t;
 					};
 				};
 

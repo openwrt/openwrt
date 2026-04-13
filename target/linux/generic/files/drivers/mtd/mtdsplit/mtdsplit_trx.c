@@ -100,7 +100,7 @@ mtdsplit_parse_trx(struct mtd_info *master,
 
 	if (trx_size == 0) {
 		pr_debug("no trx header found in \"%s\"\n", master->name);
-		ret = -ENODEV;
+		ret = -ENOENT;
 		goto err;
 	}
 
@@ -111,7 +111,7 @@ mtdsplit_parse_trx(struct mtd_info *master,
 
 	if (rootfs_size == 0) {
 		pr_debug("no rootfs found in \"%s\"\n", master->name);
-		ret = -ENODEV;
+		ret = -ENOENT;
 		goto err;
 	}
 

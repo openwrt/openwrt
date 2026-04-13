@@ -5055,7 +5055,7 @@
  AC_ARG_WITH([selinux],
  	[AS_HELP_STRING([--with-selinux],
  		[Support for selinux extended attributes])],
-@@ -269,6 +273,7 @@ fi
+@@ -283,6 +287,7 @@ fi
  AM_CONDITIONAL([WITH_LZO], [test "x$with_lzo" = "xyes"])
  AM_CONDITIONAL([WITH_ZLIB], [test "x$with_zlib" = "xyes"])
  AM_CONDITIONAL([WITH_ZSTD], [test "x$with_zstd" = "xyes"])
@@ -5063,7 +5063,7 @@
  AM_CONDITIONAL([WITH_XATTR], [test "x$with_xattr" = "xyes"])
  AM_CONDITIONAL([WITH_SELINUX], [test "x$with_selinux" = "xyes"])
  AM_CONDITIONAL([WITH_CRYPTO], [test "x$with_crypto" = "xyes"])
-@@ -313,6 +318,7 @@ AC_MSG_RESULT([
+@@ -339,6 +344,7 @@ AC_MSG_RESULT([
  	lzo support:       ${with_lzo}
  	zlib support:      ${with_zlib}
  	zstd support:      ${with_zstd}

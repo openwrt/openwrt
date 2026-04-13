@@ -19,15 +19,54 @@ clear_partialboots() {
 
 set_wireless_led_behaviour() {
 	# set Broadcom wireless LED behaviour for both radios
-	# 0:ledbh9 -> Behaviour of 2.4GHz LED
-	# 1:ledbh9 -> Behaviour of 5GHz LED
+	# 0:ledbh9 -> Behaviour of 2.4GHz LED of Broadcom BCM4366
+	# 1:ledbh9 -> Behaviour of 5GHz LED of Broadcom BCM4366
+	# 0:ledbh10 -> Behaviour of 2.4GHz LED of Broadcom BCM43602
+	# 1:ledbh10 -> Behaviour of 5GHz LED of Broadcom BCM43602
 	# 0x7 makes the wireless LEDs on, when radios are enabled, and blink when there's activity
 
 	case $(board_name) in
 		asus,rt-ac3100|\
+		asus,rt-ac5300|\
 		asus,rt-ac88u)
 			COMMIT=1
 			nvram set 0:ledbh9=0x7 set 1:ledbh9=0x7
+			;;
+		asus,rt-ac3200)
+			COMMIT=1
+			nvram set 0:ledbh10=0x7 set 1:ledbh10=0x7
+			;;
+	esac
+}
+
+set_bcm43602_variables() {
+	# set variables needed for Broadcom BCM43602
+
+	case $(board_name) in
+		asus,rt-ac3200)
+			COMMIT=1
+
+			# radio 0 (5 GHz)
+			nvram set devpath0=pcie/1/3
+			nvram set 0:devpath0=sb/1/
+			nvram set 0:devid=0x43bc
+			nvram set 0:sromrev=11
+			nvram set 0:boardflags=0x30040000
+
+			# radio 1 (2.4 GHz)
+			nvram set devpath1=pcie/1/4
+			nvram set 1:devpath1=sb/1/
+			nvram set 1:devid=0x43bb
+			nvram set 1:boardrev=0x1421
+			nvram set 1:sromrev=11
+			nvram set 1:boardflags=0x20001000
+
+			# radio 2 (5 GHz)
+			nvram set devpath2=pcie/2/1
+			nvram set 2:devpath2=sb/1/
+			nvram set 2:devid=0x43bc
+			nvram set 2:sromrev=11
+			nvram set 2:boardflags=0x30040000
 			;;
 	esac
 }
@@ -37,6 +76,7 @@ boot() {
 
 	clear_partialboots
 	set_wireless_led_behaviour
+	set_bcm43602_variables
 
 	[ "$COMMIT" = "1" ] && nvram commit
 }

@@ -311,7 +311,7 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  /**
   * ip6_tnl_addr_conflict - compare packet addresses to tunnel's own
   *   @t: the outgoing tunnel device
-@@ -1294,6 +1442,7 @@ ipxip6_tnl_xmit(struct sk_buff *skb, str
+@@ -1293,6 +1441,7 @@ ipxip6_tnl_xmit(struct sk_buff *skb, str
  		u8 protocol)
  {
  	struct ip6_tnl *t = netdev_priv(dev);
@@ -319,7 +319,7 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  	struct ipv6hdr *ipv6h;
  	const struct iphdr  *iph;
  	int encap_limit = -1;
-@@ -1393,6 +1542,18 @@ ipxip6_tnl_xmit(struct sk_buff *skb, str
+@@ -1392,6 +1541,18 @@ ipxip6_tnl_xmit(struct sk_buff *skb, str
  	fl6.flowi6_uid = sock_net_uid(dev_net(dev), NULL);
  	dsfield = INET_ECN_encapsulate(dsfield, orig_dsfield);
  
@@ -338,7 +338,7 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  	if (iptunnel_handle_offloads(skb, SKB_GSO_IPXIP6))
  		return -1;
  
-@@ -1546,6 +1707,14 @@ ip6_tnl_change(struct ip6_tnl *t, const
+@@ -1545,6 +1706,14 @@ ip6_tnl_change(struct ip6_tnl *t, const
  	t->parms.link = p->link;
  	t->parms.proto = p->proto;
  	t->parms.fwmark = p->fwmark;
@@ -353,7 +353,7 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  	dst_cache_reset(&t->dst_cache);
  	ip6_tnl_link_config(t);
  }
-@@ -1580,6 +1749,7 @@ ip6_tnl_parm_from_user(struct __ip6_tnl_
+@@ -1579,6 +1748,7 @@ ip6_tnl_parm_from_user(struct __ip6_tnl_
  	p->flowinfo = u->flowinfo;
  	p->link = u->link;
  	p->proto = u->proto;
@@ -361,7 +361,7 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  	memcpy(p->name, u->name, sizeof(u->name));
  }
  
-@@ -1963,6 +2133,15 @@ static int ip6_tnl_validate(struct nlatt
+@@ -1962,6 +2132,15 @@ static int ip6_tnl_validate(struct nlatt
  	return 0;
  }
  
@@ -377,7 +377,7 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  static void ip6_tnl_netlink_parms(struct nlattr *data[],
  				  struct __ip6_tnl_parm *parms)
  {
-@@ -2000,6 +2179,46 @@ static void ip6_tnl_netlink_parms(struct
+@@ -1999,6 +2178,46 @@ static void ip6_tnl_netlink_parms(struct
  
  	if (data[IFLA_IPTUN_FWMARK])
  		parms->fwmark = nla_get_u32(data[IFLA_IPTUN_FWMARK]);

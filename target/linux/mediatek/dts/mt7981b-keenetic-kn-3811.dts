@@ -2,14 +2,14 @@
 
 /dts-v1/;
 
-#include "mt7981.dtsi"
+#include "mt7981b.dtsi"
 
 / {
 	model = "Keenetic KN-3811";
 	compatible = "keenetic,kn-3811", "mediatek,mt7981";
 
 	aliases {
-		label-mac-device = &gmac0;
+		label-mac-device = &gmac1;
 		led-boot = &power_led;
 		led-failsafe = &power_led;
 		led-running = &power_led;
@@ -98,7 +98,7 @@
 				reg = <0x0 0x600000>;
 			};
 
-			partition@400000 {
+			partition@600000 {
 				label = "ubi";
 				reg = <0x600000 0x0>;
 			};
@@ -123,7 +123,7 @@
 		phy-mode = "2500base-x";
 
 		nvmem-cell-names = "mac-address";
-		nvmem-cells = <&macaddr_factory_4 0>;
+		nvmem-cells = <&macaddr_factory_4>;
 
 		fixed-link {
 			speed = <2500>;
@@ -140,7 +140,7 @@
 		label = "wan";
 
 		nvmem-cell-names = "mac-address";
-		nvmem-cells = <&macaddr_factory_a 0>;
+		nvmem-cells = <&macaddr_factory_a>;
 	};
 };
 
@@ -218,21 +218,12 @@
 
 	/* Winbond W25N02KV (256M) */
 	spi_nand@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "spi-nand";
 		reg = <0>;
 
 		spi-max-frequency = <52000000>;
 		spi-tx-buswidth = <4>;
 		spi-rx-buswidth = <4>;
-
-		spi-cal-enable;
-		spi-cal-mode = "read-data";
-		spi-cal-datalen = <7>;
-		spi-cal-data = /bits/ 8 <0x53 0x50 0x49 0x4e 0x41 0x4e 0x44>;
-		spi-cal-addrlen = <5>;
-		spi-cal-addr = /bits/ 32 <0x0 0x0 0x0 0x0 0x0>;
 
 		mediatek,nmbm;
 		mediatek,bmt-max-ratio = <1>;
@@ -279,16 +270,12 @@
 
 					/* lan mac */
 					macaddr_factory_4: macaddr@4 {
-						compatible = "mac-base";
 						reg = <0x4 0x6>;
-						#nvmem-cell-cells = <1>;
 					};
 
 					/* wan mac */
 					macaddr_factory_a: macaddr@a {
-						compatible = "mac-base";
 						reg = <0xa 0x6>;
-						#nvmem-cell-cells = <1>;
 					};
 				};
 			};

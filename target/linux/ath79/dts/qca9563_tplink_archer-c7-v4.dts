@@ -25,7 +25,7 @@
 
 		sck-gpios = <&gpio 15 GPIO_ACTIVE_HIGH>;	// 74HC595 SRCLK (Serial Clock)
 		mosi-gpios = <&gpio 14 GPIO_ACTIVE_HIGH>;	// 74HC595 SER (Serial)
-		cs-gpios = <&gpio 16 GPIO_ACTIVE_HIGH>;		// 74HC595 RCLK (Register Clock)
+		cs-gpios = <&gpio 16 GPIO_ACTIVE_LOW>;		// 74HC595 RCLK (Register Clock)
 		num-chipselects = <1>;
 
 		led_gpio: led_gpio@0 {

@@ -10,12 +10,14 @@ define KernelPackage/mmc-mtk
   DEPENDS:=@(TARGET_ramips_mt7620||TARGET_ramips_mt76x8||TARGET_ramips_mt7621) +kmod-mmc
   KCONFIG:= \
 	CONFIG_MMC \
-	CONFIG_MMC_MTK \
-	CONFIG_MMC_CQHCI
+	CONFIG_MMC_CQHCI \
+	CONFIG_MMC_HSQ \
+	CONFIG_MMC_MTK
   FILES:= \
 	$(LINUX_DIR)/drivers/mmc/host/cqhci.ko \
+	$(LINUX_DIR)/drivers/mmc/host/mmc_hsq.ko \
 	$(LINUX_DIR)/drivers/mmc/host/mtk-sd.ko
-  AUTOLOAD:=$(call AutoProbe,cqhci mtk-sd,1)
+  AUTOLOAD:=$(call AutoProbe,cqhci mmc_hsq mtk-sd,1)
 endef
 
 define KernelPackage/mmc-mtk/description
@@ -25,24 +27,22 @@ endef
 
 $(eval $(call KernelPackage,mmc-mtk))
 
-define KernelPackage/pwm-mediatek-ramips
+define KernelPackage/pwm-mediatek
   SUBMENU:=Other modules
-  TITLE:=MT7628 PWM
-  DEPENDS:=@(TARGET_ramips_mt76x8)
+  TITLE:=MediaTek PWM support
+  DEPENDS:=@TARGET_ramips_mt76x8
   KCONFIG:= \
 	CONFIG_PWM=y \
-	CONFIG_PWM_MEDIATEK_RAMIPS \
-	CONFIG_PWM_SYSFS=y
-  FILES:= \
-	$(LINUX_DIR)/drivers/pwm/pwm-mediatek-ramips.ko
-  AUTOLOAD:=$(call AutoProbe,pwm-mediatek-ramips)
+	CONFIG_PWM_MEDIATEK
+  FILES:=$(LINUX_DIR)/drivers/pwm/pwm-mediatek.ko
+  AUTOLOAD:=$(call AutoProbe,pwm-mediatek)
 endef
 
-define KernelPackage/pwm-mediatek-ramips/description
-  Kernel modules for MediaTek Pulse Width Modulator
+define KernelPackage/pwm-mediatek/description
+  Generic PWM framework driver for Mediatek SoC.
 endef
 
-$(eval $(call KernelPackage,pwm-mediatek-ramips))
+$(eval $(call KernelPackage,pwm-mediatek))
 
 define KernelPackage/sdhci-mt7620
   SUBMENU:=Other modules
@@ -82,13 +82,14 @@ I2C_MT7621_MODULES:= \
 
 define KernelPackage/i2c-mt7628
   $(call i2c_defaults,$(I2C_MT7621_MODULES),59)
-  TITLE:=MT7628/88 I2C Controller
+  TITLE:=MT7621/MT7628/MT7688 I2C Controller
   DEPENDS:=+kmod-i2c-core \
-	@(TARGET_ramips_mt76x8)
+	@(TARGET_ramips_mt7621||TARGET_ramips_mt76x8)
 endef
 
 define KernelPackage/i2c-mt7628/description
- Kernel modules for enable mt7621 i2c controller.
+  Driver support for I2C controller in the MediaTek
+  MT7621/MT7628/MT7688 SoCs.
 endef
 
 $(eval $(call KernelPackage,i2c-mt7628))

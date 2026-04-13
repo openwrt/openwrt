@@ -18,6 +18,7 @@ menu "Target Images"
 			default TARGET_INITRAMFS_COMPRESSION_LZMA if TARGET_mpc85xx
 			default TARGET_INITRAMFS_COMPRESSION_LZMA if TARGET_ramips
 			default TARGET_INITRAMFS_COMPRESSION_ZSTD if TARGET_qualcommax
+			default TARGET_INITRAMFS_COMPRESSION_ZSTD if TARGET_microchipsw
 			default TARGET_INITRAMFS_COMPRESSION_XZ if USES_SEPARATE_INITRAMFS
 			default TARGET_INITRAMFS_COMPRESSION_NONE
 			depends on TARGET_ROOTFS_INITRAMFS
@@ -86,6 +87,23 @@ menu "Target Images"
 		  Build a compressed tar archive of the root filesystem.
 
 	comment "Root filesystem images"
+
+	menuconfig TARGET_ROOTFS_EROFS
+		bool "erofs"
+		default y if USES_EROFS
+		select KERNEL_EROFS_FS
+		help
+		  Build a EROFS root filesystem.
+
+		config TARGET_EROFS_PCLUSTER_SIZE
+			int "physical cluster size (in KiB)"
+			depends on TARGET_ROOTFS_EROFS
+			default 64 if LOW_MEMORY_FOOTPRINT
+			default 1024 if (SMALL_FLASH && !LOW_MEMORY_FOOTPRINT)
+			default 256
+			help
+			  Specify the EROFS physical cluster size (must be equal
+			  to or a multiple of the filesystem block size).
 
 	menuconfig TARGET_ROOTFS_EXT4FS
 		bool "ext4"
@@ -160,6 +178,22 @@ menu "Target Images"
 			  Select squashfs block size, must be one of:
 			    4, 8, 16, 32, 64, 128, 256, 512, 1024
 
+		config TARGET_SQUASHFS_BLOCK_READERS
+			int "mksquashfs tool parallel block reader threads"
+			depends on TARGET_ROOTFS_SQUASHFS
+			default 4
+			help
+			  Specify the number of parallel block reader threads
+			  (for files equal or larger than the squashfs block size).
+
+		config TARGET_SQUASHFS_SMALL_READERS
+			int "mksquashfs tool parallel small file reader threads"
+			depends on TARGET_ROOTFS_SQUASHFS
+			default 4
+			help
+			  Specify the number of parallel small file reader threads
+			  (for files less than the squashfs block size).
+
 	menuconfig TARGET_ROOTFS_UBIFS
 		bool "ubifs"
 		default y if USES_UBIFS
@@ -198,7 +232,7 @@ menu "Target Images"
 	config GRUB_IMAGES
 		bool "Build GRUB images (Linux x86 or x86_64 host only)"
 		depends on TARGET_x86
-		depends on TARGET_ROOTFS_EXT4FS || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS
+		depends on TARGET_ROOTFS_EXT4FS || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS || TARGET_ROOTFS_EROFS
 		select PACKAGE_grub2
 		select PACKAGE_grub2-bios-setup
 		default y
@@ -206,7 +240,7 @@ menu "Target Images"
 	config GRUB_EFI_IMAGES
 		bool "Build GRUB EFI images"
 		depends on TARGET_x86 || TARGET_armsr || TARGET_loongarch64
-		depends on TARGET_ROOTFS_EXT4FS || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS
+		depends on TARGET_ROOTFS_EXT4FS || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS || TARGET_ROOTFS_EROFS
 		select PACKAGE_grub2 if TARGET_x86
 		select PACKAGE_grub2-efi if TARGET_x86
 		select PACKAGE_grub2-bios-setup if TARGET_x86
@@ -302,7 +336,7 @@ menu "Target Images"
 		int "Root filesystem partition size (in MiB)"
 		depends on USES_ROOTFS_PART || TARGET_ROOTFS_EXT4FS
 		default 232 if TARGET_loongarch64
-		default 448 if TARGET_mediatek
+		default 448 if TARGET_mediatek || TARGET_microchipsw
 		default 104
 		help
 		  Select the root filesystem partition size.

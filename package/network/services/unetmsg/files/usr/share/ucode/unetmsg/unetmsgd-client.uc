@@ -65,14 +65,14 @@ function client_request(cl, req)
 	if (type(name) != "string" || type(args.type) != "string" || type(args.data) != "object")
 		return libubus.STATUS_INVALID_ARGUMENT;
 
-	let data = prepare_data(req.args);
+	let data = prepare_data(args);
 	let handle;
 	switch (req.type) {
 	case "message":
 		handle = cl.publish[name];
 	    if (!handle)
 			return libubus.STATUS_INVALID_ARGUMENT;
-		return core.handle_message(handle, data, true);
+		return core.handle_message(handle, data, true, args.host);
 	case "request":
 		handle = cl.subscribe[name];
 		if (!handle &&
@@ -80,7 +80,7 @@ function client_request(cl, req)
 			return libubus.STATUS_PERMISSION_DENIED;
 
 		handle ??= { client: cl.id };
-		return core.handle_request(handle, req, data, true);
+		return core.handle_request(handle, req, data, true, args.host);
 	}
 }
 

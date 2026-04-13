@@ -38,7 +38,7 @@
 #include <linux/atmdev.h>
 #include <linux/mod_devicetable.h>
 #include <linux/platform_device.h>
-#include <linux/of_device.h>
+#include <linux/of.h>
 #include <linux/atm.h>
 #include <linux/clk.h>
 #include <linux/interrupt.h>
@@ -1503,17 +1503,10 @@ static inline void clear_priv_data(void)
 		}
 	}
 
-	if ( g_atm_priv_data.tx_skb_base != NULL )
-		kfree(g_atm_priv_data.tx_skb_base);
-
-	if ( g_atm_priv_data.tx_desc_base != NULL )
-		kfree(g_atm_priv_data.tx_desc_base);
-
-	if ( g_atm_priv_data.oam_buf_base != NULL )
-		kfree(g_atm_priv_data.oam_buf_base);
-
-	if ( g_atm_priv_data.oam_desc_base != NULL )
-		kfree(g_atm_priv_data.oam_desc_base);
+	kfree(g_atm_priv_data.tx_skb_base);
+	kfree(g_atm_priv_data.tx_desc_base);
+	kfree(g_atm_priv_data.oam_buf_base);
+	kfree(g_atm_priv_data.oam_desc_base);
 
 	if ( g_atm_priv_data.aal_desc_base != NULL ) {
 		for ( i = 0; i < dma_rx_descriptor_length; i++ ) {
@@ -1522,8 +1515,9 @@ static inline void clear_priv_data(void)
 				dev_kfree_skb_any(skb);
 			}
 		}
-		kfree(g_atm_priv_data.aal_desc_base);
 	}
+
+	kfree(g_atm_priv_data.aal_desc_base);
 }
 
 static inline void init_rx_tables(void)
@@ -1762,19 +1756,11 @@ MODULE_DEVICE_TABLE(of, ltq_atm_match);
 
 static int ltq_atm_probe(struct platform_device *pdev)
 {
-	const struct of_device_id *match;
-	struct ltq_atm_ops *ops = NULL;
+	const struct ltq_atm_ops *ops;
 	int ret;
 	int port_num;
 	struct port_cell_info port_cell = {0};
 	char ver_str[256];
-
-	match = of_match_device(ltq_atm_match, &pdev->dev);
-	if (!match) {
-		dev_err(&pdev->dev, "failed to find matching device\n");
-		return -ENOENT;
-	}
-	ops = (struct ltq_atm_ops *) match->data;
 
 	check_parameters();
 
@@ -1784,6 +1770,7 @@ static int ltq_atm_probe(struct platform_device *pdev)
 		goto INIT_PRIV_DATA_FAIL;
 	}
 
+	ops = of_device_get_match_data(&pdev->dev);
 	ret = ops->init(pdev);
 	if (ret)
 		return ret;
@@ -1890,8 +1877,8 @@ static void ltq_atm_remove(struct platform_device *pdev)
 }
 
 static struct platform_driver ltq_atm_driver = {
-	.probe = ltq_atm_probe,
-	.remove_new = ltq_atm_remove,
+	.probe  = ltq_atm_probe,
+	.remove = ltq_atm_remove,
 	.driver = {
 		.name = "atm",
 		.of_match_table = ltq_atm_match,

@@ -35,6 +35,9 @@ setup_gadget() {
 	local strings_path="${gadget_path}/strings/0x409"
 	mkdir "$strings_path"
 	apply_configs "$strings_path" "$cfg"
+
+	local os_desc_path="${gadget_path}/os_desc"
+	apply_configs "$os_desc_path" "$cfg"
 }
 
 setup_configuration() {
@@ -54,6 +57,8 @@ setup_configuration() {
 	local strings_path="${cfg_path}/strings/0x409"
 	mkdir "$strings_path"
 	apply_configs "$strings_path" "$cfg"
+
+	ln -s "$cfg_path" "${GADGET_FS}/${GADGET_PREFIX}${gadget}/os_desc"
 }
 
 setup_function() {
@@ -77,6 +82,9 @@ setup_function() {
 	}
 
 	apply_configs "$fun_path" "$cfg"
+
+	local os_desc_path="$(find ${fun_path}/os_desc/* -type d)"
+	apply_configs "$os_desc_path" "$cfg"
 
 	ln -s "$fun_path" "$cfg_path"
 }
@@ -134,6 +142,7 @@ stop() {
 	for gadget_path in ${GADGET_FS}/${GADGET_PREFIX}* ; do
 		[ -d "$gadget_path" ] || continue
 		echo "" > ${gadget_path}/UDC
+		find ${gadget_path}/os_desc -maxdepth 1 -type l -exec rm '{}' ';'
 		find ${gadget_path}/configs -maxdepth 2 -type l -exec rm '{}' ';'
 		rmdir ${gadget_path}/configs/*/strings/*
 		rmdir ${gadget_path}/configs/*

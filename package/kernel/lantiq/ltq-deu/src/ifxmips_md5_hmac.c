@@ -308,7 +308,7 @@ static int md5_hmac_final_impl(struct shash_desc *desc, u8 *out, bool hash_final
     {
         for (i = 0; i < 16; i++) {
             hashs->MR = in[i];
-        };
+        }
 
         hashs->controlr.GO = 1;
         asm("sync");
@@ -355,9 +355,9 @@ static int md5_hmac_init_tfm(struct crypto_tfm *tfm)
 {
     struct md5_hmac_ctx *mctx = crypto_tfm_ctx(tfm);
     mctx->temp = kzalloc(4 * MD5_HMAC_DBN_TEMP_SIZE, GFP_KERNEL);
-    if (IS_ERR(mctx->temp)) return PTR_ERR(mctx->temp);
+    if (!mctx->temp) return -ENOMEM;
     mctx->desc = kzalloc(sizeof(struct shash_desc), GFP_KERNEL);
-    if (IS_ERR(mctx->desc)) return PTR_ERR(mctx->desc);
+    if (!mctx->desc) return -ENOMEM;
 
     return 0;
 }

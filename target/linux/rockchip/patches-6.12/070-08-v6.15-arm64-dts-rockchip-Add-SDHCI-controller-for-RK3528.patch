@@ -1,0 +1,50 @@
+From a98cc47f79ab5b8059b748bf0bd59335edfff7d9 Mon Sep 17 00:00:00 2001
+From: Jonas Karlman <jonas@kwiboo.se>
+Date: Wed, 5 Mar 2025 21:41:03 +0000
+Subject: [PATCH] arm64: dts: rockchip: Add SDHCI controller for RK3528
+
+The SDHCI controller in Rockchip RK3528 is similar to the one included
+in RK3588.
+
+Add device tree node for the SDHCI controller in RK3528.
+
+Signed-off-by: Jonas Karlman <jonas@kwiboo.se>
+Link: https://lore.kernel.org/r/20250305214108.1327208-3-jonas@kwiboo.se
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3528.dtsi | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3528.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3528.dtsi
+@@ -468,6 +468,30 @@
+ 			status = "disabled";
+ 		};
+ 
++		sdhci: mmc@ffbf0000 {
++			compatible = "rockchip,rk3528-dwcmshc",
++				     "rockchip,rk3588-dwcmshc";
++			reg = <0x0 0xffbf0000 0x0 0x10000>;
++			assigned-clocks = <&cru BCLK_EMMC>, <&cru TCLK_EMMC>,
++					  <&cru CCLK_SRC_EMMC>;
++			assigned-clock-rates = <200000000>, <24000000>,
++					       <200000000>;
++			clocks = <&cru CCLK_SRC_EMMC>, <&cru HCLK_EMMC>,
++				 <&cru ACLK_EMMC>, <&cru BCLK_EMMC>,
++				 <&cru TCLK_EMMC>;
++			clock-names = "core", "bus", "axi", "block", "timer";
++			interrupts = <GIC_SPI 136 IRQ_TYPE_LEVEL_HIGH>;
++			max-frequency = <200000000>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&emmc_bus8>, <&emmc_clk>, <&emmc_cmd>,
++				    <&emmc_strb>;
++			resets = <&cru SRST_C_EMMC>, <&cru SRST_H_EMMC>,
++				 <&cru SRST_A_EMMC>, <&cru SRST_B_EMMC>,
++				 <&cru SRST_T_EMMC>;
++			reset-names = "core", "bus", "axi", "block", "timer";
++			status = "disabled";
++		};
++
+ 		pinctrl: pinctrl {
+ 			compatible = "rockchip,rk3528-pinctrl";
+ 			rockchip,grf = <&ioc_grf>;

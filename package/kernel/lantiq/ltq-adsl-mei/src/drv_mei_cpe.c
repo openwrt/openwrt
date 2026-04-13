@@ -1286,8 +1286,7 @@ IFX_MEI_RunAdslModem (DSL_DEV_Device_t *pDev)
 //	DSL_DEV_WinHost_Message_t m;
 
 	if (mei_arc_swap_buff == NULL) {
-		mei_arc_swap_buff =
-			(u32 *) kmalloc (MAXSWAPSIZE * 4, GFP_KERNEL);
+		mei_arc_swap_buff = kmalloc (MAXSWAPSIZE * 4, GFP_KERNEL);
 		if (mei_arc_swap_buff == NULL) {
 			IFX_MEI_EMSG (">>> malloc fail for codeswap buff!!! <<<\n");
 			return DSL_DEV_MEI_ERR_FAILURE;
@@ -1787,6 +1786,7 @@ extern void ifx_usb_enable_afe_oc(void);
  */
 static irqreturn_t IFX_MEI_IrqHandle (int int1, void *void0)
 {
+	u32 stat;
 	u32 scratch;
 	DSL_DEV_Device_t *pDev = (DSL_DEV_Device_t *) void0;
 #if defined(CONFIG_LTQ_MEI_FW_LOOPBACK) && defined(DFE_PING_TEST)
@@ -1820,6 +1820,12 @@ static irqreturn_t IFX_MEI_IrqHandle (int int1, void *void0)
                 if (dsl_bsp_event_callback[event].function)
                         (*dsl_bsp_event_callback[event].function)(pDev, event, dsl_bsp_event_callback[event].pData);
         } else { // normal message
+                IFX_MEI_LongWordReadOffset (pDev, (u32) ME_ARC2ME_STAT, &stat);
+                if (!(stat & ARC_TO_MEI_MSGAV)) {
+                        // status register indicates there is no message
+                        return IRQ_NONE;
+                }
+
                 IFX_MEI_MailboxRead (pDev, DSL_DEV_PRIVATE(pDev)->CMV_RxMsg, MSG_LENGTH);
                 if (DSL_DEV_PRIVATE(pDev)-> cmv_waiting == 1) {
                         DSL_DEV_PRIVATE(pDev)-> arcmsgav = 1;
@@ -2802,8 +2808,8 @@ static const struct of_device_id ltq_mei_match[] = {
 };
 
 static struct platform_driver ltq_mei_driver = {
-	.probe = ltq_mei_probe,
-	.remove_new = ltq_mei_remove,
+	.probe  = ltq_mei_probe,
+	.remove = ltq_mei_remove,
 	.driver = {
 		.name = "lantiq,mei-xway",
 		.of_match_table = ltq_mei_match,

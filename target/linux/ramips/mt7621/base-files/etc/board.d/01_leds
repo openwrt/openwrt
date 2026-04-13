@@ -58,12 +58,15 @@ wifire,s1500-nbn)
 belkin,rt1800)
 	ucidef_set_led_netdev "wan" "wan" "white:wan" "wan"
 	;;
+cudy,ap1300-outdoor-v1)
+	ucidef_set_led_netdev "lan" "lan" "green:lan" "lan"
+	;;
 confiabits,mt7621-v1|\
+edup,ep-rt2983|\
 genexis,pulse-ex400|\
 netis,n6)
 	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan" "link tx rx"
 	;;
-cudy,r700|\
 cudy,wr2100)
 	ucidef_set_led_netdev "lan1" "lan1" "green:lan1" "lan1"
 	ucidef_set_led_netdev "lan2" "lan2" "green:lan2" "lan2"
@@ -96,6 +99,10 @@ dlink,dap-x1860-a1)
 	ucidef_set_led_rssi "rssimediumlow" "RSSIMEDIUMLOW" "green:rssilow" "wlan1" "26" "100"
 	ucidef_set_led_rssi "rssimediumhigh" "RSSIMEDIUMHIGH" "green:rssimedium" "wlan1" "51" "100"
 	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "green:rssihigh" "wlan1" "76" "100"
+	;;
+dlink,dir-1360-a1)
+	ucidef_set_led_default "power" "Power" "white:power" "1"
+	ucidef_set_led_netdev "internet" "Internet" "white:wan" "wan"
 	;;
 dlink,dir-1960-a1|\
 dlink,dir-2055-a1|\
@@ -206,6 +213,7 @@ snr,snr-cpe-me1)
 	ucidef_set_led_usbport "usb" "USB" "green:usb" "usb1-port1" "usb2-port1"
 	;;
 tplink,archer-a6-v3|\
+tplink,archer-ax21-v4|\
 tplink,archer-ax23-v1|\
 tplink,archer-c6-v3|\
 tplink,archer-c6u-v1|\
@@ -267,6 +275,10 @@ yuncore,ax820)
 	;;
 z-router,zr-2660)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "br-lan" "link tx rx"
+	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan" "link tx rx"
+	ucidef_set_led_netdev "wan-off" "wan-off" "red:wan" "wan" "link"
+	;;
+z-router,zr-2662)
 	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan" "link tx rx"
 	ucidef_set_led_netdev "wan-off" "wan-off" "red:wan" "wan" "link"
 	;;

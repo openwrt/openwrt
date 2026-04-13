@@ -8,11 +8,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=bpftool
-PKG_VERSION:=7.5.0
+PKG_VERSION:=7.6.0
 PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=https://github.com/libbpf/bpftool
-PKG_MIRROR_HASH:=1da7c08959e7819772145774322ffd876f3180065be1c3759336dca98ac9f666
+PKG_MIRROR_HASH:=7406a424375642fda35cae6eccaa8e27c21e4f132123c0207a83f763ef6fe899
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_VERSION:=v$(PKG_VERSION)
 
@@ -33,7 +33,7 @@ define Package/bpftool/Default
   CATEGORY:=Network
   TITLE:=bpftool - eBPF subsystem utility
   LICENSE:=GPL-2.0-only OR BSD-2-Clause
-  URL:=http://www.kernel.org
+  URL:=https://www.kernel.org
   DEPENDS:=+libelf
 endef
 

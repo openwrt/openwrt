@@ -75,8 +75,8 @@
 
 	rtl8367b {
 		compatible = "realtek,rtl8367b";
-		gpio-sda = <&gpio0 1 GPIO_ACTIVE_HIGH>;
-		gpio-sck = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+		sda-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+		sck-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
 		realtek,extif = <5 1 0 1 1 1 1 1 1 2>;
 	};
 };
@@ -113,7 +113,7 @@
 &pci1 {
 	status = "okay";
 
-	wifi@0,0 {
+	wifi@1,0 {
 		compatible = "pci1814,3091";
 		reg = <0x10000 0 0 0 0>;
 		nvmem-cells = <&eeprom_factory_8000>;

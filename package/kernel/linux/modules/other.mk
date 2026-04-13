@@ -155,7 +155,9 @@ $(eval $(call KernelPackage,mlx_wdt))
 define KernelPackage/mlxreg
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Mellanox platform register access
-  DEPENDS:=@TARGET_x86 +kmod-i2c-mux-mlxcpld
+  DEPENDS:=@TARGET_x86 \
+	+kmod-i2c-mux-mlxcpld \
+	+kmod-i2c-mux-reg
   KCONFIG:= \
 	CONFIG_MELLANOX_PLATFORM=y \
 	CONFIG_MLX_PLATFORM \
@@ -164,7 +166,8 @@ define KernelPackage/mlxreg
 	CONFIG_SENSORS_MLXREG_FAN \
 	CONFIG_LEDS_MLXREG
   FILES:= \
-	$(LINUX_DIR)/drivers/platform/x86/mlx-platform.ko \
+	$(LINUX_DIR)/drivers/platform/x86/mlx-platform.ko@lt6.18 \
+	$(LINUX_DIR)/drivers/platform/mellanox/mlx-platform.ko@ge6.18 \
 	$(LINUX_DIR)/drivers/platform/mellanox/mlxreg-hotplug.ko \
 	$(LINUX_DIR)/drivers/platform/mellanox/mlxreg-io.ko \
 	$(LINUX_DIR)/drivers/hwmon/mlxreg-fan.ko \
@@ -220,7 +223,7 @@ define KernelPackage/pinctrl-mcp23s08
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Microchip MCP23xxx I/O expander
   HIDDEN:=1
-  DEPENDS:=@GPIO_SUPPORT +kmod-regmap-core
+  DEPENDS:=@GPIO_SUPPORT @PINCTRL_SUPPORT +kmod-regmap-core
   KCONFIG:=CONFIG_PINCTRL_MCP23S08
   FILES:=$(LINUX_DIR)/drivers/pinctrl/pinctrl-mcp23s08.ko
   AUTOLOAD:=$(call AutoLoad,40,pinctrl-mcp23s08)
@@ -563,10 +566,9 @@ $(eval $(call KernelPackage,reed-solomon))
 define KernelPackage/serial-8250
   SUBMENU:=$(OTHER_MENU)
   TITLE:=8250 UARTs
+  DEPENDS:=@!TARGET_uml
   KCONFIG:= CONFIG_SERIAL_8250 \
 	CONFIG_SERIAL_8250_PCI \
-	CONFIG_SERIAL_8250_NR_UARTS=16 \
-	CONFIG_SERIAL_8250_RUNTIME_UARTS=16 \
 	CONFIG_SERIAL_8250_EXTENDED=y \
 	CONFIG_SERIAL_8250_MANY_PORTS=y \
 	CONFIG_SERIAL_8250_SHARE_IRQ=y \
@@ -584,6 +586,31 @@ define KernelPackage/serial-8250/description
  Kernel module for 8250 UART based serial ports
 endef
 
+define KernelPackage/serial-8250/config
+menu "Configuration"
+	depends on PACKAGE_kmod-serial-8250
+
+config KERNEL_SERIAL_8250_NR_UARTS
+	int "Maximum number of 8250/16550 serial ports"
+	default "16"
+	help
+	  Set this to the number of serial ports you want the driver
+	  to support.  This includes any ports discovered via ACPI or
+	  PCI enumeration and any ports that may be added at run-time
+	  via hot-plug, or any ISA multi-port serial cards.
+
+config KERNEL_SERIAL_8250_RUNTIME_UARTS
+	int "Number of 8250/16550 serial ports to register at runtime"
+	range 0 KERNEL_SERIAL_8250_NR_UARTS
+	default "16"
+	help
+	  Set this to the maximum number of serial ports you want
+	  the kernel to register at boot time.  This can be overridden
+	  with the module parameter "nr_uarts", or boot-time parameter
+	  8250.nr_uarts
+endmenu
+endef
+
 $(eval $(call KernelPackage,serial-8250))
 
 
@@ -593,7 +620,7 @@ define KernelPackage/serial-8250-exar
   KCONFIG:= CONFIG_SERIAL_8250_EXAR
   FILES:=$(LINUX_DIR)/drivers/tty/serial/8250/8250_exar.ko
   AUTOLOAD:=$(call AutoProbe,8250 8250_base 8250_exar)
-  DEPENDS:=@PCI_SUPPORT +kmod-serial-8250
+  DEPENDS:=@PCI_SUPPORT +kmod-serial-8250 +!LINUX_6_12:kmod-eeprom-93cx6
 endef
 
 define KernelPackage/serial-8250-exar/description
@@ -623,7 +650,7 @@ $(eval $(call KernelPackage,regmap-core))
 define KernelPackage/regmap-spi
   SUBMENU:=$(OTHER_MENU)
   TITLE:=SPI register map support
-  DEPENDS:=+kmod-regmap-core
+  DEPENDS:=+kmod-regmap-core @!TARGET_uml
   HIDDEN:=1
   KCONFIG:=CONFIG_REGMAP_SPI \
 	   CONFIG_SPI=y
@@ -711,46 +738,46 @@ endef
 
 define KernelPackage/zram/config
   if PACKAGE_kmod-zram
-    if !LINUX_6_6
-        config KERNEL_ZRAM_BACKEND_LZO
-                bool "lzo and lzo-rle compression support" if KERNEL_ZRAM_BACKEND_LZ4 || \
-                    KERNEL_ZRAM_BACKEND_LZ4HC || KERNEL_ZRAM_BACKEND_ZSTD
-                default !KERNEL_ZRAM_BACKEND_LZ4 && \
-                    !KERNEL_ZRAM_BACKEND_LZ4HC && !KERNEL_ZRAM_BACKEND_ZSTD
+    config KERNEL_ZRAM_BACKEND_LZO
+            bool "lzo and lzo-rle compression support"
 
-        config KERNEL_ZRAM_BACKEND_LZ4
-                bool "lz4 compression support"
+    config KERNEL_ZRAM_BACKEND_LZ4
+            bool "lz4 compression support"
 
-        config KERNEL_ZRAM_BACKEND_LZ4HC
-                bool "lz4hc compression support"
+    config KERNEL_ZRAM_BACKEND_LZ4HC
+            bool "lz4hc compression support"
 
-        config KERNEL_ZRAM_BACKEND_ZSTD
-                bool "zstd compression support"
+    config KERNEL_ZRAM_BACKEND_ZSTD
+            bool "zstd compression support"
 
-    endif
+    config KERNEL_ZRAM_BACKEND_FORCE_LZO
+            def_bool !KERNEL_ZRAM_BACKEND_LZ4 && \
+                     !KERNEL_ZRAM_BACKEND_LZ4HC && \
+                     !KERNEL_ZRAM_BACKEND_ZSTD
+            select KERNEL_ZRAM_BACKEND_LZO
     choice
       prompt "ZRAM Default compressor"
       default KERNEL_ZRAM_DEF_COMP_LZORLE
 
     config KERNEL_ZRAM_DEF_COMP_LZORLE
             bool "lzo-rle"
-            depends on KERNEL_ZRAM_BACKEND_LZO || LINUX_6_6
+            depends on KERNEL_ZRAM_BACKEND_LZO
 
     config KERNEL_ZRAM_DEF_COMP_LZO
             bool "lzo"
-            depends on KERNEL_ZRAM_BACKEND_LZO || LINUX_6_6
+            depends on KERNEL_ZRAM_BACKEND_LZO
 
     config KERNEL_ZRAM_DEF_COMP_LZ4
             bool "lz4"
-            depends on KERNEL_ZRAM_BACKEND_LZ4 || LINUX_6_6
+            depends on KERNEL_ZRAM_BACKEND_LZ4
 
     config KERNEL_ZRAM_DEF_COMP_LZ4HC
             bool "lz4-hc"
-            depends on KERNEL_ZRAM_BACKEND_LZ4HC || LINUX_6_6
+            depends on KERNEL_ZRAM_BACKEND_LZ4HC
 
     config KERNEL_ZRAM_DEF_COMP_ZSTD
             bool "zstd"
-            depends on KERNEL_ZRAM_BACKEND_ZSTD || LINUX_6_6
+            depends on KERNEL_ZRAM_BACKEND_ZSTD
 
     endchoice
   endif
@@ -816,6 +843,7 @@ define KernelPackage/ptp
   DEPENDS:=+kmod-pps
   KCONFIG:= \
 	CONFIG_PTP_1588_CLOCK \
+	CONFIG_PTP_1588_CLOCK_OPTIONAL \
 	CONFIG_NET_PTP_CLASSIFY=y
   FILES:=$(LINUX_DIR)/drivers/ptp/ptp.ko
   AUTOLOAD:=$(call AutoLoad,18,ptp,1)
@@ -964,7 +992,7 @@ $(eval $(call KernelPackage,tpm))
 define KernelPackage/tpm-tis
   SUBMENU:=$(OTHER_MENU)
   TITLE:=TPM TIS 1.2 Interface / TPM 2.0 FIFO Interface
-	DEPENDS:= @TARGET_x86 +kmod-tpm
+	DEPENDS:= @(TARGET_x86||TARGET_armsr||TARGET_imx) +kmod-tpm
   KCONFIG:= CONFIG_TCG_TIS
   FILES:= \
 	$(LINUX_DIR)/drivers/char/tpm/tpm_tis.ko \
@@ -980,6 +1008,27 @@ define KernelPackage/tpm-tis/description
 endef
 
 $(eval $(call KernelPackage,tpm-tis))
+
+define KernelPackage/tpm-tis-spi
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=TPM TIS 1.3 Interface SPI Interface
+	DEPENDS:= +kmod-tpm-tis +kmod-spi-dev
+  KCONFIG:= CONFIG_TCG_TIS_SPI \
+	CONFIG_TCG_TIS_SPI_CR50=n
+  FILES:= \
+	$(LINUX_DIR)/drivers/char/tpm/tpm_tis_spi.ko
+  AUTOLOAD:=$(call AutoLoad,20,tpm_tis_spi,1)
+endef
+
+define KernelPackage/tpm-tis-spi/description
+	If you have a TPM security chip which is connected to a regular,
+	non-tcg SPI master that is compliant with the
+	TCG TIS 1.3 TPM specification (TPM1.2) or the TCG PTP FIFO
+	specification (TPM2.0) say Yes and it will be accessible from
+	within Linux.
+endef
+
+$(eval $(call KernelPackage,tpm-tis-spi))
 
 define KernelPackage/tpm-i2c-atmel
   SUBMENU:=$(OTHER_MENU)
@@ -1059,3 +1108,20 @@ define KernelPackage/mhi-pci-generic/description
 endef
 
 $(eval $(call KernelPackage,mhi-pci-generic))
+
+
+define KernelPackage/regulator-userspace-consumer
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Userspace regulator consumer support
+  KCONFIG:=CONFIG_REGULATOR_USERSPACE_CONSUMER
+  FILES:=$(LINUX_DIR)/drivers/regulator/userspace-consumer.ko
+  AUTOLOAD:=$(call AutoLoad,10,userspace-consumer,1)
+endef
+
+define KernelPackage/regulator-userspace-consumer/description
+  There are some classes of devices that are controlled entirely
+  from user space. Userspace consumer driver provides ability to
+  control power supplies for such devices.
+endef
+
+$(eval $(call KernelPackage,regulator-userspace-consumer))

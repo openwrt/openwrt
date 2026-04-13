@@ -51,6 +51,7 @@
 		led-failsafe = &led_status_red;
 		led-running = &led_status_blue;
 		led-upgrade = &led_status_red;
+		label-mac-device = &gmac0;
 	};
 };
 
@@ -64,6 +65,15 @@
 		reg = <0x0000 0 0 0 0>;
 		nvmem-cells = <&eeprom_factory_0>;
 		nvmem-cell-names = "eeprom";
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		band@1 {
+			reg = <1>;
+			nvmem-cells = <&macaddr_factory_8004>;
+			nvmem-cell-names = "mac-address";
+		};
 	};
 };
 
@@ -102,6 +112,10 @@
 
 					eeprom_factory_0: eeprom@0 {
 						reg = <0x0 0xe00>;
+					};
+
+					macaddr_factory_8004: macaddr@8004 {
+						reg = <0x8004 0x6>;
 					};
 
 					macaddr_factory_e000: macaddr@e000 {

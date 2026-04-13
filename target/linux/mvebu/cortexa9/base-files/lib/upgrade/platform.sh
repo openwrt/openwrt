@@ -32,6 +32,7 @@ platform_do_upgrade() {
 		nand_do_upgrade "$1"
 		;;
 	buffalo,ls421de|\
+	wd,cloud-ex2-ultra|\
 	wd,cloud-mirror-gen2)
 		nand_do_upgrade "$1"
 		;;
@@ -53,6 +54,7 @@ platform_do_upgrade() {
 		legacy_sdcard_do_upgrade "$1"
 		;;
 	fortinet,fg-30e|\
+	fortinet,fwf-30e|\
 	fortinet,fg-50e|\
 	fortinet,fg-51e|\
 	fortinet,fg-52e|\

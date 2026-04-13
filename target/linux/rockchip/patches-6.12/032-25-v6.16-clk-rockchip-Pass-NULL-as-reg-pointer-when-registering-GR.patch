@@ -1,0 +1,30 @@
+From 61bf658a4d95e8f982b6e66dea763bff57996349 Mon Sep 17 00:00:00 2001
+From: Yao Zi <ziyao@disroot.org>
+Date: Sat, 10 May 2025 07:52:49 +0000
+Subject: [PATCH] clk: rockchip: Pass NULL as reg pointer when registering GRF
+ MMC clocks
+
+This corrects the type and suppresses sparse warnings about passing
+plain integers as NULL pointer.
+
+Fixes: 621ba4d9f6db ("clk: rockchip: Support MMC clocks in GRF region")
+Reported-by: kernel test robot <lkp@intel.com>
+Closes: https://lore.kernel.org/oe-kbuild-all/202505100302.YVtB1zhF-lkp@intel.com/
+Signed-off-by: Yao Zi <ziyao@disroot.org>
+Link: https://lore.kernel.org/r/20250510075248.34006-2-ziyao@disroot.org
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ drivers/clk/rockchip/clk.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/clk/rockchip/clk.c
++++ b/drivers/clk/rockchip/clk.c
+@@ -622,7 +622,7 @@ void rockchip_clk_register_branches(stru
+ 			clk = rockchip_clk_register_mmc(
+ 				list->name,
+ 				list->parent_names, list->num_parents,
+-				0,
++				NULL,
+ 				grf, list->muxdiv_offset,
+ 				list->div_shift
+ 			);

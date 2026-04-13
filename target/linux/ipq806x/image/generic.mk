@@ -1,3 +1,4 @@
+DTS_DIR := $(DTS_DIR)/qcom
 DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
 DEVICE_VARS += TPLINK_BOARD_ID
 
@@ -200,6 +201,21 @@ define Device/fortinet_fap-421e
 	DEVICE_PACKAGES := ath10k-firmware-qca99x0-ct
 endef
 TARGET_DEVICES += fortinet_fap-421e
+
+define Device/ignitenet_ss-w2-ac2600
+	$(call Device/FitImage)
+	$(call Device/UbiFit)
+	DEVICE_VENDOR := IgniteNet
+	DEVICE_MODEL := SunSpot AC Wave2
+	DEVICE_ALT0_VENDOR := Accton Technology Corporation
+	DEVICE_ALT0_MODEL := EAP1024A
+	DEVICE_ALT0_VARIANT := V2
+	SOC := qcom-ipq8068
+	BLOCKSIZE := 128k
+	PAGESIZE := 2048
+	DEVICE_PACKAGES := ath10k-firmware-qca9984-ct ipq-wifi-ignitenet_ss-w2-ac2600
+endef
+TARGET_DEVICES += ignitenet_ss-w2-ac2600
 
 define Device/linksys_e8350-v1
 	$(call Device/LegacyImage)

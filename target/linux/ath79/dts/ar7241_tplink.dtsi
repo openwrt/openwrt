@@ -84,7 +84,7 @@
 				label = "firmware";
 			};
 
-			partition@3f0000 {
+			art_part: partition@3f0000 {
 				reg = <0x3f0000 0x10000>;
 				label = "art";
 				read-only;
@@ -95,15 +95,6 @@
 
 &pcie {
 	status = "okay";
-
-	ath9k: wifi@0,0 {
-		reg = <0x0000 0 0 0 0>;
-		#gpio-cells = <2>;
-		gpio-controller;
-		qca,no-eeprom;
-		nvmem-cells = <&macaddr_uboot_1fc00 0>;
-		nvmem-cell-names = "mac-address";
-	};
 };
 
 &eth0 {		/* WAN interface, initialized last as eth1 */

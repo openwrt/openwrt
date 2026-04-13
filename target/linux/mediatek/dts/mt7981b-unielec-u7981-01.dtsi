@@ -4,15 +4,13 @@
  */
 
 /dts-v1/;
-#include "mt7981.dtsi"
+#include "mt7981b.dtsi"
 / {
 	model = "Unielec U7981-01 (EMMC)";
 	compatible = "unielec,u7981-01-emmc", "mediatek,mt7981";
 
 	chosen {
-		bootargs = "console=ttyS0,115200n1 loglevel=8  \
-				earlycon=uart8250,mmio32,0x11002000 \
-				";
+		bootargs = "console=ttyS0,115200n1 earlycon=uart8250,mmio32,0x11002000";
 	};
 
 	gpio-keys {
@@ -35,7 +33,7 @@
 
 &eth {
 	pinctrl-names = "default";
-	pinctrl-0 = <&mdio_pins &gbe_led0_pins &gbe_led1_pins>;
+	pinctrl-0 = <&mdio_pins>;
 	status = "okay";
 
 	gmac0: mac@0 {

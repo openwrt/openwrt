@@ -81,8 +81,8 @@
         volatile struct aes_t *aes = (volatile struct aes_t *) AES_START; \
         for (i = 0; i < 10; i++)      \
             udelay(DELAY_PERIOD);     \
-        while (dma->controlr.BSY) {}; \
-        while (aes->controlr.BUS) {}; \
+        while (dma->controlr.BSY) {}  \
+        while (aes->controlr.BUS) {}  \
     } while (0)
 
 #define WAIT_DES_DMA_READY()          \
@@ -92,8 +92,8 @@
         volatile struct des_t *des = (struct des_t *) DES_3DES_START; \
         for (i = 0; i < 10; i++)      \
             udelay(DELAY_PERIOD);     \
-        while (dma->controlr.BSY) {}; \
-        while (des->controlr.BUS) {}; \
+        while (dma->controlr.BSY) {}  \
+        while (des->controlr.BUS) {}  \
     } while (0)
 
 #define SHA_HASH_INIT                  \

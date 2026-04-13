@@ -21,8 +21,8 @@ fs_wait_for_key () {
 		touch $keypress_sec
 	fi
 
-	trap "echo 'true' >$keypress_true; lock -u $keypress_wait ; rm -f $keypress_wait" INT
-	trap "echo 'true' >$keypress_true; lock -u $keypress_wait ; rm -f $keypress_wait" USR1
+	trap "echo 'true' >$keypress_true; lock -u $keypress_wait ; rm -f $keypress_wait 2>/dev/null" INT
+	trap "echo 'true' >$keypress_true; lock -u $keypress_wait ; rm -f $keypress_wait 2>/dev/null" USR1
 
 	[ -n "$timeout" ] || timeout=1
 	[ $timeout -ge 1 ] || timeout=1
@@ -37,7 +37,7 @@ fs_wait_for_key () {
 			sleep 1
 		done
 		lock -u $keypress_wait
-		rm -f $keypress_wait
+		rm -f $keypress_wait 2>/dev/null
 	} &
 
 	local consoles="$(cat /sys/class/tty/console/active)"
@@ -68,7 +68,7 @@ fs_wait_for_key () {
 						;;
 					esac
 					lock -u $keypress_wait
-					rm -f $keypress_wait
+					rm -f $keypress_wait 2>/dev/null
 				}
 			done
 		} &
