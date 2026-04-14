@@ -1,6 +1,6 @@
 --- a/src/mps/drv_mps_vmmc_common.c
 +++ b/src/mps/drv_mps_vmmc_common.c
-@@ -117,8 +117,8 @@ IFX_void_t ifx_mps_mbx_event_upstream (I
+@@ -100,8 +100,8 @@ IFX_void_t ifx_mps_mbx_event_upstream (I
  #endif /* CONFIG_MPS_EVENT_MBX */
  IFX_void_t *ifx_mps_fastbuf_malloc (IFX_size_t size, IFX_int32_t priority);
  IFX_void_t ifx_mps_fastbuf_free (const IFX_void_t * ptr);
@@ -13,7 +13,7 @@
  extern IFX_uint32_t danube_get_cpu_ver (IFX_void_t);
 --- a/src/mps/drv_mps_vmmc_device.h
 +++ b/src/mps/drv_mps_vmmc_device.h
-@@ -216,8 +216,8 @@ typedef struct /**< mps buffer monitorin
+@@ -211,8 +211,8 @@ typedef struct /**< mps buffer monitorin
     mps_buffer_state_e buf_state;
     IFX_void_t *(*malloc) (IFX_size_t size, IFX_int32_t priority); /**< Buffer alloc function (def. kmalloc) */
     IFX_void_t (*free) (const IFX_void_t *ptr);  /**< Buffer free  function (def. kfree) */

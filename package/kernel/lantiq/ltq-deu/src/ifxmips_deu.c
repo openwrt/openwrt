@@ -40,7 +40,6 @@
 */
 
 /* Project header */
-#include <linux/version.h>
 #if defined(CONFIG_MODVERSIONS)
 #define MODVERSIONS
 #include <linux/modversions.h>
