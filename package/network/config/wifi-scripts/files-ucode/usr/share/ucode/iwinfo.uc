@@ -577,23 +577,24 @@ export function scan(dev) {
 		scan_ssids: [ '' ],
 	};
 
-	let res = nl80211.request(nl80211.const.NL80211_CMD_TRIGGER_SCAN, 0, params);
-	if (res === false) {
-		printf("Unable to trigger scan: " + nl80211.error() + "\n");
-		exit(1);
+	nl80211.request(nl80211.const.NL80211_CMD_TRIGGER_SCAN, 0, params);
+	let err = nl80211.error();
+	if (err) {
+		warn("Unable to trigger scan on " + dev + ": " + err + "\n");
+		return null;
 	}
 
-	res = nl80211.waitfor([
+	let res = nl80211.waitfor([
 		nl80211.const.NL80211_CMD_NEW_SCAN_RESULTS,
 		nl80211.const.NL80211_CMD_SCAN_ABORTED
 	], 5000);
 
 	if (!res) {
-		printf("Netlink error while awaiting scan results: " + nl80211.error() + "\n");
-		exit(1);
+		warn("Netlink error while awaiting scan results on " + dev + ": " + nl80211.error() + "\n");
+		return null;
 	} else if (res.cmd == nl80211.const.NL80211_CMD_SCAN_ABORTED) {
-		printf("Scan aborted by kernel\n");
-		exit(1);
+		warn("Scan aborted by kernel on " + dev + "\n");
+		return null;
 	}
 
 	let scan = nl80211.request(nl80211.const.NL80211_CMD_GET_SCAN, nl80211.const.NLM_F_DUMP, { dev });
