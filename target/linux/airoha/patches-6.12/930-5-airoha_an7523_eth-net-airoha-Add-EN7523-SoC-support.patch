@@ -1,4 +1,4 @@
-From 92609bdc3bc26e15a5538d48d1ff0b378c567d5a Mon Sep 17 00:00:00 2001
+From 3069f605427df4192325ef91c2472b82d2c5ba1d Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Wed, 25 Mar 2026 16:19:05 -0300
 Subject: [PATCH 5/5] net: airoha: Add EN7523 SoC support
@@ -7,11 +7,11 @@ Introduce support for EN7523 ethernet controller to airoha-eth dirver
 
 Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 ---
- drivers/net/ethernet/airoha/airoha_eth.c  | 334 +++++++++++++++++-----
+ drivers/net/ethernet/airoha/airoha_eth.c  | 329 +++++++++++++++++-----
  drivers/net/ethernet/airoha/airoha_eth.h  | 119 +++++---
  drivers/net/ethernet/airoha/airoha_ppe.c  |  40 +--
  drivers/net/ethernet/airoha/airoha_regs.h |  59 +++-
- 4 files changed, 421 insertions(+), 131 deletions(-)
+ 4 files changed, 418 insertions(+), 129 deletions(-)
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
@@ -44,7 +44,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  	airoha_ppe_init_upd_mem(port);
  }
  
-@@ -150,6 +163,8 @@ static void airoha_fe_maccr_init(struct
+@@ -138,6 +151,8 @@ static void airoha_fe_maccr_init(struct
  
  	airoha_fe_rmw(eth, REG_CDM_VLAN_CTRL(1), CDM_VLAN_MASK,
  		      FIELD_PREP(CDM_VLAN_MASK, 0x8100));
@@ -53,7 +53,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  
  	airoha_fe_set(eth, REG_FE_CPORT_CFG, FE_CPORT_PAD);
  }
-@@ -223,7 +238,8 @@ static u32 airoha_fe_get_pse_queue_rsv_p
+@@ -211,7 +226,8 @@ static u32 airoha_fe_get_pse_queue_rsv_p
  {
  	u32 val;
  
@@ -63,7 +63,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  		      PSE_CFG_PORT_ID_MASK | PSE_CFG_QUEUE_ID_MASK,
  		      FIELD_PREP(PSE_CFG_PORT_ID_MASK, port) |
  		      FIELD_PREP(PSE_CFG_QUEUE_ID_MASK, queue));
-@@ -237,7 +253,8 @@ static void airoha_fe_set_pse_queue_rsv_
+@@ -225,7 +241,8 @@ static void airoha_fe_set_pse_queue_rsv_
  {
  	airoha_fe_rmw(eth, REG_FE_PSE_QUEUE_CFG_VAL, PSE_CFG_OQ_RSV_MASK,
  		      FIELD_PREP(PSE_CFG_OQ_RSV_MASK, val));
@@ -73,7 +73,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  		      PSE_CFG_PORT_ID_MASK | PSE_CFG_QUEUE_ID_MASK |
  		      PSE_CFG_WR_EN_MASK | PSE_CFG_OQRSV_SEL_MASK,
  		      FIELD_PREP(PSE_CFG_PORT_ID_MASK, port) |
-@@ -266,6 +283,12 @@ static int airoha_fe_set_pse_oq_rsv(stru
+@@ -254,6 +271,12 @@ static int airoha_fe_set_pse_oq_rsv(stru
  	airoha_fe_rmw(eth, REG_FE_PSE_BUF_SET, PSE_ALLRSV_MASK,
  		      FIELD_PREP(PSE_ALLRSV_MASK, all_rsv));
  
@@ -86,17 +86,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  	/* modify hthd */
  	tmp = airoha_fe_rr(eth, PSE_FQ_CFG);
  	fq_limit = FIELD_GET(PSE_FQ_LIMIT_MASK, tmp);
-@@ -310,7 +333,8 @@ static void airoha_fe_pse_ports_init(str
- 		all_rsv += PSE_RSV_PAGES *
- 			   pse_port_num_queues[FE_PSE_PORT_PPE2];
- 	}
--	airoha_fe_set(eth, REG_FE_PSE_BUF_SET, all_rsv);
-+	if (!airoha_is(eth, an7523))
-+		airoha_fe_set(eth, REG_FE_PSE_BUF_SET, all_rsv);
- 
- 	/* CMD1 */
- 	for (q = 0; q < pse_port_num_queues[FE_PSE_PORT_CDM1]; q++)
-@@ -412,45 +436,45 @@ static void airoha_fe_crsn_qsel_init(str
+@@ -402,45 +425,45 @@ static void airoha_fe_crsn_qsel_init(str
  {
  	/* CDM1_CRSN_QSEL */
  	airoha_fe_rmw(eth, REG_CDM_CRSN_QSEL(1, CRSN_22 >> 2),
@@ -162,9 +152,9 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  				 CDM_CRSN_QSEL_Q1));
  }
  
-@@ -470,12 +494,17 @@ static int airoha_fe_init(struct airoha_
- 	airoha_fe_wr(eth, REG_FE_PCE_CFG,
- 		     PCE_DPI_EN_MASK | PCE_KA_EN_MASK | PCE_MC_EN_MASK);
+@@ -459,12 +482,17 @@ static int airoha_fe_init(struct airoha_
+ 	/* enable FE copy engine for KA/DPI */
+ 	airoha_fe_wr(eth, REG_FE_PCE_CFG, PCE_DPI_EN_MASK | PCE_KA_EN_MASK);
  	/* set vip queue selection to ring 1 */
 -	airoha_fe_rmw(eth, REG_CDM_FWD_CFG(1), CDM_VIP_QSEL_MASK,
 -		      FIELD_PREP(CDM_VIP_QSEL_MASK, 0x4));
@@ -185,7 +175,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  		      GDM_SPORT_OFF2_MASK |
  		      GDM_SPORT_OFF1_MASK |
  		      GDM_SPORT_OFF0_MASK,
-@@ -486,8 +515,14 @@ static int airoha_fe_init(struct airoha_
+@@ -475,8 +503,14 @@ static int airoha_fe_init(struct airoha_
  	/* set PSE Page as 128B */
  	airoha_fe_rmw(eth, REG_FE_DMA_GLO_CFG,
  		      FE_DMA_GLO_L2_SPACE_MASK | FE_DMA_GLO_PG_SZ_MASK,
@@ -201,7 +191,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  	airoha_fe_wr(eth, REG_FE_RST_GLO_CFG,
  		     FE_RST_CORE_MASK | FE_RST_GDM3_MBI_ARB_MASK |
  		     FE_RST_GDM4_MBI_ARB_MASK);
-@@ -507,8 +542,14 @@ static int airoha_fe_init(struct airoha_
+@@ -496,8 +530,14 @@ static int airoha_fe_init(struct airoha_
  	airoha_fe_set(eth, REG_GDM_MISC_CFG,
  		      GDM2_RDM_ACK_WAIT_PREF_MASK |
  		      GDM2_CHN_VLD_MODE_MASK);
@@ -218,7 +208,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  
  	/* init fragment and assemble Force Port */
  	/* NPU Core-3, NPU Bridge Channel-3 */
-@@ -533,7 +574,13 @@ static int airoha_fe_init(struct airoha_
+@@ -522,7 +562,13 @@ static int airoha_fe_init(struct airoha_
  	airoha_fe_crsn_qsel_init(eth);
  
  	airoha_fe_clear(eth, REG_FE_CPORT_CFG, FE_CPORT_QUEUE_XFC_MASK);
@@ -233,7 +223,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  
  	/* default aging mode for mbi unlock issue */
  	airoha_fe_rmw(eth, REG_GDM_CHN_RLS(2),
-@@ -544,9 +591,21 @@ static int airoha_fe_init(struct airoha_
+@@ -533,9 +579,21 @@ static int airoha_fe_init(struct airoha_
  	/* disable IFC by default */
  	airoha_fe_clear(eth, REG_FE_CSR_IFC_CFG, FE_IFC_EN_MASK);
  
@@ -255,7 +245,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  	return airoha_fe_mc_vlan_clear(eth);
  }
  
-@@ -576,7 +635,9 @@ static int airoha_qdma_fill_rx_queue(str
+@@ -565,7 +623,9 @@ static int airoha_qdma_fill_rx_queue(str
  		e->dma_addr = page_pool_get_dma_addr(page) + offset;
  		e->dma_len = SKB_WITH_OVERHEAD(q->buf_size);
  
@@ -266,9 +256,9 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  		WRITE_ONCE(desc->ctrl, cpu_to_le32(val));
  		WRITE_ONCE(desc->addr, cpu_to_le32(e->dma_addr));
  		val = FIELD_PREP(QDMA_DESC_NEXT_ID_MASK, q->head);
-@@ -599,7 +660,9 @@ static int airoha_qdma_get_gdm_port(stru
+@@ -589,7 +649,9 @@ static int airoha_qdma_get_gdm_port(stru
  {
- 	u32 port, sport, msg1 = le32_to_cpu(desc->msg1);
+ 	u32 port, sport, msg1 = le32_to_cpu(READ_ONCE(desc->msg1));
  
 -	sport = FIELD_GET(QDMA_ETH_RXMSG_SPORT_MASK, msg1);
 +	sport = airoha_is(eth, an7523) ?
@@ -277,10 +267,10 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  	switch (sport) {
  	case 0x18:
  		port = 3; /* GDM4 */
-@@ -646,7 +709,9 @@ static int airoha_qdma_rx_process(struct
- 		dma_sync_single_for_cpu(eth->dev, e->dma_addr,
+@@ -639,7 +701,9 @@ static int airoha_qdma_rx_process(struct
  					SKB_WITH_OVERHEAD(q->buf_size), dir);
  
+ 		page = virt_to_head_page(e->buf);
 -		len = FIELD_GET(QDMA_DESC_LEN_MASK, desc_ctrl);
 +		len = airoha_is(qdma->eth, an7523) ?
 +			FIELD_GET(AN7523_QDMA_DESC_LEN_MASK, desc_ctrl) :
@@ -288,7 +278,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  		data_len = q->skb ? q->buf_size
  				  : SKB_WITH_OVERHEAD(q->buf_size);
  		if (!len || data_len < len)
-@@ -741,7 +806,7 @@ static int airoha_qdma_rx_napi_poll(stru
+@@ -734,7 +798,7 @@ static int airoha_qdma_rx_napi_poll(stru
  		int intr_reg = qid < RX_DONE_HIGH_OFFSET ? QDMA_INT_REG_IDX1
  							 : QDMA_INT_REG_IDX2;
  
@@ -297,7 +287,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  			if (!(BIT(qid) & RX_IRQ_BANK_PIN_MASK(i)))
  				continue;
  
-@@ -847,7 +912,7 @@ static int airoha_qdma_init_rx(struct ai
+@@ -845,7 +909,7 @@ static int airoha_qdma_init_rx(struct ai
  {
  	int i;
  
@@ -306,7 +296,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  		int err;
  
  		if (!(RX_DONE_INT_MASK & BIT(i))) {
-@@ -899,7 +964,7 @@ static int airoha_qdma_tx_napi_poll(stru
+@@ -897,7 +961,7 @@ static int airoha_qdma_tx_napi_poll(stru
  		done++;
  
  		qid = FIELD_GET(IRQ_RING_IDX_MASK, val);
@@ -315,7 +305,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  			continue;
  
  		q = &qdma->q_tx[qid];
-@@ -998,7 +1063,8 @@ static int airoha_qdma_init_tx_queue(str
+@@ -996,7 +1060,8 @@ static int airoha_qdma_init_tx_queue(str
  	}
  
  	/* xmit ring drop default setting */
@@ -325,7 +315,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  			TX_RING_IRQ_BLOCKING_TX_DROP_EN_MASK);
  
  	airoha_qdma_wr(qdma, REG_TX_RING_BASE(qid), dma_addr);
-@@ -1048,9 +1114,9 @@ static int airoha_qdma_init_tx(struct ai
+@@ -1046,9 +1111,9 @@ static int airoha_qdma_init_tx(struct ai
  			return err;
  	}
  
@@ -337,7 +327,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  		if (err)
  			return err;
  	}
-@@ -1094,7 +1160,7 @@ static int airoha_qdma_init_hfwd_queues(
+@@ -1092,7 +1157,7 @@ static int airoha_qdma_init_hfwd_queues(
  	if (!name)
  		return -ENOMEM;
  
@@ -346,7 +336,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  	index = of_property_match_string(eth->dev->of_node,
  					 "memory-region-names", name);
  	if (index >= 0) {
-@@ -1223,7 +1289,7 @@ static int airoha_qdma_hw_init(struct ai
+@@ -1221,7 +1286,7 @@ static int airoha_qdma_hw_init(struct ai
  {
  	int i;
  
@@ -355,7 +345,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  		/* clear pending irqs */
  		airoha_qdma_wr(qdma, REG_INT_STATUS(i), 0xffffffff);
  		/* setup rx irqs */
-@@ -1242,8 +1308,17 @@ static int airoha_qdma_hw_init(struct ai
+@@ -1240,8 +1305,17 @@ static int airoha_qdma_hw_init(struct ai
  	airoha_qdma_irq_enable(&qdma->irq_banks[0], QDMA_INT_REG_IDX4,
  			       TX_COHERENT_HIGH_INT_MASK);
  
@@ -374,7 +364,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  		if (!qdma->q_tx[i].ndesc)
  			continue;
  
-@@ -1253,6 +1328,15 @@ static int airoha_qdma_hw_init(struct ai
+@@ -1251,6 +1325,15 @@ static int airoha_qdma_hw_init(struct ai
  		else
  			airoha_qdma_clear(qdma, REG_TX_RING_BLOCKING(i),
  					  TX_RING_IRQ_BLOCKING_CFG_MASK);
@@ -390,7 +380,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  	}
  
  	airoha_qdma_wr(qdma, REG_QDMA_GLOBAL_CFG,
-@@ -1268,7 +1352,7 @@ static int airoha_qdma_hw_init(struct ai
+@@ -1266,7 +1349,7 @@ static int airoha_qdma_hw_init(struct ai
  	airoha_qdma_init_qos(qdma);
  
  	/* disable qdma rx delay interrupt */
@@ -399,7 +389,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  		if (!qdma->q_rx[i].ndesc)
  			continue;
  
-@@ -1312,7 +1396,7 @@ static irqreturn_t airoha_irq_handler(in
+@@ -1310,7 +1393,7 @@ static irqreturn_t airoha_irq_handler(in
  		rx_intr_mask |= (rx_intr2 << 16);
  	}
  
@@ -408,7 +398,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  		if (!qdma->q_rx[i].ndesc)
  			continue;
  
-@@ -1339,8 +1423,10 @@ static int airoha_qdma_init_irq_banks(st
+@@ -1337,8 +1420,10 @@ static int airoha_qdma_init_irq_banks(st
  {
  	struct airoha_eth *eth = qdma->eth;
  	int i, id = qdma - &eth->qdma[0];
@@ -420,7 +410,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  		struct airoha_irq_bank *irq_bank = &qdma->irq_banks[i];
  		int err, irq_index = 4 * id + i;
  		const char *name;
-@@ -1407,7 +1493,7 @@ static void airoha_qdma_cleanup(struct a
+@@ -1405,7 +1490,7 @@ static void airoha_qdma_cleanup(struct a
  {
  	int i;
  
@@ -429,7 +419,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  		if (!qdma->q_rx[i].ndesc)
  			continue;
  
-@@ -1422,7 +1508,7 @@ static void airoha_qdma_cleanup(struct a
+@@ -1420,7 +1505,7 @@ static void airoha_qdma_cleanup(struct a
  	for (i = 0; i < ARRAY_SIZE(qdma->q_tx_irq); i++)
  		netif_napi_del(&qdma->q_tx_irq[i].napi);
  
@@ -438,7 +428,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  		if (!qdma->q_tx[i].ndesc)
  			continue;
  
-@@ -1459,6 +1545,13 @@ static int airoha_hw_init(struct platfor
+@@ -1457,6 +1542,13 @@ static int airoha_hw_init(struct platfor
  		return err;
  
  	for (i = 0; i < ARRAY_SIZE(eth->qdma); i++) {
@@ -452,7 +442,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  		err = airoha_qdma_init(pdev, eth, &eth->qdma[i]);
  		if (err)
  			goto error;
-@@ -1494,7 +1587,7 @@ static void airoha_qdma_start_napi(struc
+@@ -1492,7 +1584,7 @@ static void airoha_qdma_start_napi(struc
  	for (i = 0; i < ARRAY_SIZE(qdma->q_tx_irq); i++)
  		napi_enable(&qdma->q_tx_irq[i].napi);
  
@@ -461,7 +451,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  		if (!qdma->q_rx[i].ndesc)
  			continue;
  
-@@ -1509,7 +1602,7 @@ static void airoha_qdma_stop_napi(struct
+@@ -1507,7 +1599,7 @@ static void airoha_qdma_stop_napi(struct
  	for (i = 0; i < ARRAY_SIZE(qdma->q_tx_irq); i++)
  		napi_disable(&qdma->q_tx_irq[i].napi);
  
@@ -470,7 +460,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  		if (!qdma->q_rx[i].ndesc)
  			continue;
  
-@@ -1694,6 +1787,9 @@ static int airoha_dev_open(struct net_de
+@@ -1692,6 +1784,9 @@ static int airoha_dev_open(struct net_de
  		airoha_fe_clear(qdma->eth, REG_GDM_INGRESS_CFG(port->id),
  				GDM_STAG_EN_MASK);
  
@@ -480,7 +470,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  	airoha_fe_rmw(qdma->eth, REG_GDM_LEN_CFG(port->id),
  		      GDM_SHORT_LEN_MASK | GDM_LONG_LEN_MASK,
  		      FIELD_PREP(GDM_SHORT_LEN_MASK, 60) |
-@@ -1726,7 +1822,7 @@ static int airoha_dev_stop(struct net_de
+@@ -1724,7 +1819,7 @@ static int airoha_dev_stop(struct net_de
  	if (err)
  		return err;
  
@@ -489,7 +479,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  		netdev_tx_reset_subqueue(dev, i);
  
  	airoha_set_gdm_port_fwd_cfg(qdma->eth, REG_GDM_FWD_CFG(port->id),
-@@ -1737,7 +1833,7 @@ static int airoha_dev_stop(struct net_de
+@@ -1735,7 +1830,7 @@ static int airoha_dev_stop(struct net_de
  				  GLOBAL_CFG_TX_DMA_EN_MASK |
  				  GLOBAL_CFG_RX_DMA_EN_MASK);
  
@@ -498,7 +488,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  			if (!qdma->q_tx[i].ndesc)
  				continue;
  
-@@ -1787,7 +1883,7 @@ static int airhoha_set_gdm2_loopback(str
+@@ -1785,7 +1880,7 @@ static int airoha_set_gdm2_loopback(stru
  	airoha_fe_wr(eth, REG_GDM_TXCHN_EN(AIROHA_GDM2_IDX), 0xffffffff);
  	airoha_fe_wr(eth, REG_GDM_RXCHN_EN(AIROHA_GDM2_IDX), 0xffff);
  
@@ -507,32 +497,16 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  	airoha_fe_rmw(eth, REG_GDM_LPBK_CFG(AIROHA_GDM2_IDX),
  		      LPBK_CHAN_MASK | LPBK_MODE_MASK | LPBK_EN_MASK,
  		      FIELD_PREP(LPBK_CHAN_MASK, chan) |
-@@ -1803,13 +1899,13 @@ static int airhoha_set_gdm2_loopback(str
- 	airoha_fe_clear(eth, REG_FE_IFC_PORT_EN, BIT(AIROHA_GDM2_IDX));
- 
- 	/* XXX: handle XSI_USB_PORT and XSI_PCE1_PORT */
--	nbq = port->id == AIROHA_GDM3_IDX && airoha_is_7581(eth) ? 4 : 0;
-+	nbq = port->id == AIROHA_GDM3_IDX && airoha_is(eth, en7581, an7523) ? 4 : 0;
- 	src_port = eth->soc->ops.get_src_port_id(port, nbq);
- 	if (src_port < 0)
- 		return src_port;
- 
- 	airoha_fe_rmw(eth, REG_FE_WAN_PORT,
--		      WAN1_EN_MASK | WAN1_MASK | WAN0_MASK,
-+		      airoha_is(eth, an7523) ? WAN0_MASK : WAN1_EN_MASK | WAN1_MASK | WAN0_MASK,
- 		      FIELD_PREP(WAN0_MASK, src_port));
- 	val = src_port & SP_CPORT_DFT_MASK;
- 	airoha_fe_rmw(eth,
-@@ -1817,7 +1913,7 @@ static int airhoha_set_gdm2_loopback(str
+@@ -1813,7 +1908,7 @@ static int airoha_set_gdm2_loopback(stru
  		      SP_CPORT_MASK(val),
  		      __field_prep(SP_CPORT_MASK(val), FE_PSE_PORT_CDM2));
  
 -	if (port->id == AIROHA_GDM4_IDX && airoha_is_7581(eth)) {
 +	if (port->id == AIROHA_GDM4_IDX && airoha_is(eth, en7581, an7523)) {
- 		u32 mask = FC_ID_OF_SRC_PORT_MASK(nbq);
+ 		u32 mask = FC_ID_OF_SRC_PORT_MASK(port->nbq);
  
  		airoha_fe_rmw(eth, REG_SRC_PORT_FC_MAP6, mask,
-@@ -1854,6 +1950,17 @@ static int airoha_dev_init(struct net_de
+@@ -1850,6 +1945,17 @@ static int airoha_dev_init(struct net_de
  		break;
  	}
  
@@ -550,7 +524,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  	for (i = 0; i < eth->soc->num_ppe; i++)
  		airoha_ppe_set_cpu_port(port, i);
  
-@@ -1958,6 +2065,12 @@ static u32 airoha_get_dsa_tag(struct sk_
+@@ -1954,6 +2060,12 @@ static u32 airoha_get_dsa_tag(struct sk_
  #endif
  }
  
@@ -563,7 +537,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  int airoha_get_fe_port(struct airoha_gdm_port *port)
  {
  	struct airoha_qdma *qdma = port->qdma;
-@@ -1967,6 +2080,7 @@ int airoha_get_fe_port(struct airoha_gdm
+@@ -1963,6 +2075,7 @@ int airoha_get_fe_port(struct airoha_gdm
  	case 0x7583:
  		return port->id == AIROHA_GDM3_IDX ? FE_PSE_PORT_GDM3
  						   : port->id;
@@ -571,7 +545,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  	case 0x7581:
  	default:
  		return port->id == AIROHA_GDM4_IDX ? FE_PSE_PORT_GDM4
-@@ -1985,14 +2099,19 @@ static netdev_tx_t airoha_dev_xmit(struc
+@@ -1981,14 +2094,19 @@ static netdev_tx_t airoha_dev_xmit(struc
  	struct airoha_queue *q;
  	LIST_HEAD(tx_list);
  	void *data;
@@ -594,7 +568,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  			  qid / AIROHA_NUM_QOS_QUEUES) |
  	       FIELD_PREP(QDMA_ETH_TXMSG_QUEUE_MASK,
  			  qid % AIROHA_NUM_QOS_QUEUES) |
-@@ -2063,7 +2182,9 @@ static netdev_tx_t airoha_dev_xmit(struc
+@@ -2059,7 +2177,9 @@ static netdev_tx_t airoha_dev_xmit(struc
  				     list);
  		index = e - q->entry;
  
@@ -605,7 +579,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  		if (i < nr_frags - 1)
  			val |= FIELD_PREP(QDMA_DESC_MORE_MASK, 1);
  		WRITE_ONCE(desc->ctrl, cpu_to_le32(val));
-@@ -2072,7 +2193,8 @@ static netdev_tx_t airoha_dev_xmit(struc
+@@ -2068,7 +2188,8 @@ static netdev_tx_t airoha_dev_xmit(struc
  		WRITE_ONCE(desc->data, cpu_to_le32(val));
  		WRITE_ONCE(desc->msg0, cpu_to_le32(msg0));
  		WRITE_ONCE(desc->msg1, cpu_to_le32(msg1));
@@ -615,8 +589,8 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  
  		data = skb_frag_address(frag);
  		len = skb_frag_size(frag);
-@@ -2188,7 +2310,7 @@ static int airoha_qdma_set_chan_tx_sched
- {
+@@ -2185,7 +2306,7 @@ static int airoha_qdma_set_chan_tx_sched
+ 	struct airoha_gdm_port *port = netdev_priv(dev);
  	int i;
  
 -	for (i = 0; i < AIROHA_NUM_TX_RING; i++)
@@ -624,7 +598,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  		airoha_qdma_clear(port->qdma, REG_QUEUE_CLOSE_CFG(channel),
  				  TXQ_DISABLE_CHAN_QUEUE_MASK(channel, i));
  
-@@ -2592,7 +2714,7 @@ static int airoha_tc_htb_alloc_leaf_queu
+@@ -2588,7 +2709,7 @@ static int airoha_tc_htb_alloc_leaf_queu
  	}
  
  	set_bit(channel, port->qos_sq_bmap);
@@ -633,7 +607,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  
  	return 0;
  }
-@@ -2604,7 +2726,7 @@ static int airoha_qdma_set_rx_meter(stru
+@@ -2600,7 +2721,7 @@ static int airoha_qdma_set_rx_meter(stru
  	struct airoha_qdma *qdma = port->qdma;
  	int i;
  
@@ -642,7 +616,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  		int err;
  
  		if (!qdma->q_rx[i].ndesc)
-@@ -2816,7 +2938,7 @@ static int airoha_tc_get_htb_get_leaf_qu
+@@ -2815,7 +2936,7 @@ static int airoha_tc_get_htb_get_leaf_qu
  		return -EINVAL;
  	}
  
@@ -651,7 +625,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  
  	return 0;
  }
-@@ -3066,8 +3188,8 @@ static int airoha_alloc_gdm_port(struct
+@@ -3063,8 +3184,8 @@ static int airoha_alloc_gdm_port(struct
  	}
  
  	dev = devm_alloc_etherdev_mqs(eth->dev, sizeof(*port),
@@ -662,7 +636,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  	if (!dev) {
  		dev_err(eth->dev, "alloc_etherdev failed\n");
  		return -ENOMEM;
-@@ -3087,7 +3209,7 @@ static int airoha_alloc_gdm_port(struct
+@@ -3084,7 +3205,7 @@ static int airoha_alloc_gdm_port(struct
  	SET_NETDEV_DEV(dev, eth->dev);
  
  	/* reserve hw queues for HTB offloading */
@@ -671,7 +645,16 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  	if (err)
  		return err;
  
-@@ -3169,6 +3291,11 @@ static int airoha_probe(struct platform_
+@@ -3105,7 +3226,7 @@ static int airoha_alloc_gdm_port(struct
+ 	port->dev = dev;
+ 	port->id = id;
+ 	/* XXX: Read nbq from DTS */
+-	port->nbq = id == AIROHA_GDM3_IDX && airoha_is_7581(eth) ? 4 : 0;
++	port->nbq = id == AIROHA_GDM3_IDX && airoha_is(eth, en7581, an7523) ? 4 : 0;
+ 	eth->ports[p] = port;
+ 
+ #if defined(CONFIG_PCS_AIROHA)
+@@ -3168,6 +3289,11 @@ static int airoha_probe(struct platform_
  		return dev_err_probe(eth->dev, PTR_ERR(eth->fe_regs),
  				     "failed to iomap fe regs\n");
  
@@ -683,7 +666,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  	eth->rsts[0].id = "fe";
  	eth->rsts[1].id = "pdma";
  	eth->rsts[2].id = "qdma";
-@@ -3291,6 +3418,34 @@ static void airoha_remove(struct platfor
+@@ -3290,6 +3416,34 @@ static void airoha_remove(struct platfor
  	platform_set_drvdata(pdev, NULL);
  }
  
@@ -718,10 +701,10 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  static const char * const en7581_xsi_rsts_names[] = {
  	"hsi0-mac",
  	"hsi1-mac",
-@@ -3350,27 +3505,62 @@ static int airoha_an7583_get_src_port_id
- 	return -EINVAL;
- }
+@@ -3390,12 +3544,38 @@ static u32 airoha_an7583_get_vip_port(st
  
+ 	return 0;
+ }
 +static const struct airoha_eth_soc_data an7523_soc_data = {
 +	.version = an7523,
 +	.xsi_rsts_names = an7523_xsi_rsts_names,
@@ -737,9 +720,10 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 +	.ppe_entries_size = 64,
 +	.ops = {
 +		.get_src_port_id = airoha_an7523_get_src_port_id,
++		.get_vip_port = airoha_en7581_get_vip_port,
 +	},
 +};
-+
+ 
  static const struct airoha_eth_soc_data en7581_soc_data = {
 -	.version = 0x7581,
 +	.version = en7581,
@@ -756,7 +740,8 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 +	.ppe_entries_size = 80,
  	.ops = {
  		.get_src_port_id = airoha_en7581_get_src_port_id,
- 	},
+ 		.get_vip_port = airoha_en7581_get_vip_port,
+@@ -3403,10 +3583,18 @@ static const struct airoha_eth_soc_data
  };
  
  static const struct airoha_eth_soc_data an7583_soc_data = {
@@ -775,7 +760,8 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 +	.ppe_entries_size = 80,
  	.ops = {
  		.get_src_port_id = airoha_an7583_get_src_port_id,
- 	},
+ 		.get_vip_port = airoha_an7583_get_vip_port,
+@@ -3414,6 +3602,7 @@ static const struct airoha_eth_soc_data
  };
  
  static const struct of_device_id of_airoha_match[] = {
@@ -935,9 +921,9 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  	struct net_device *dev;
 +	struct airoha_eth_soc_data *soc;
  	int id;
+ 	int nbq;
  
- #if defined(CONFIG_PCS_AIROHA)
-@@ -579,8 +606,15 @@ struct airoha_ppe {
+@@ -580,8 +607,15 @@ struct airoha_ppe {
  struct airoha_eth_soc_data {
  	u16 version;
  	const char * const *xsi_rsts_names;
@@ -952,8 +938,8 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 +	int ppe_entries_size;
  	struct {
  		int (*get_src_port_id)(struct airoha_gdm_port *port, int nbq);
- 	} ops;
-@@ -593,6 +627,7 @@ struct airoha_eth {
+ 		u32 (*get_vip_port)(struct airoha_gdm_port *port, int nbq);
+@@ -595,6 +629,7 @@ struct airoha_eth {
  
  	unsigned long state;
  	void __iomem *fe_regs;
@@ -961,7 +947,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  
  	struct airoha_npu __rcu *npu;
  
-@@ -643,15 +678,23 @@ static inline bool airoha_is_lan_gdm_por
+@@ -645,15 +680,23 @@ static inline bool airoha_is_lan_gdm_por
  	return port->id == 1;
  }
  
@@ -1044,7 +1030,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  
  	sram_num_stats_entries = airoha_ppe_get_num_stats_entries(ppe);
  	if (sram_num_stats_entries > 0)
-@@ -298,7 +298,7 @@ static int airoha_ppe_foe_entry_prepare(
+@@ -306,7 +306,7 @@ static int airoha_ppe_foe_entry_prepare(
  	struct airoha_foe_mac_info_common *l2;
  	u8 smac_id = 0xf;
  
@@ -1053,7 +1039,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  
  	val = FIELD_PREP(AIROHA_FOE_IB1_BIND_STATE, AIROHA_FOE_STATE_BIND) |
  	      FIELD_PREP(AIROHA_FOE_IB1_BIND_PACKET_TYPE, type) |
-@@ -538,7 +538,7 @@ static int airoha_ppe_foe_get_flow_stats
+@@ -546,7 +546,7 @@ static int airoha_ppe_foe_get_flow_stats
  	if (ppe_num_stats_entries < 0)
  		return ppe_num_stats_entries;
  
@@ -1062,7 +1048,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  					       : hash;
  
  	return 0;
-@@ -628,8 +628,8 @@ airoha_ppe_foe_get_entry_locked(struct a
+@@ -636,8 +636,8 @@ airoha_ppe_foe_get_entry_locked(struct a
  	lockdep_assert_held(&ppe_lock);
  
  	if (hash < sram_num_entries) {
@@ -1073,7 +1059,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  		struct airoha_eth *eth = ppe->eth;
  		u32 val;
  		int i;
-@@ -643,13 +643,13 @@ airoha_ppe_foe_get_entry_locked(struct a
+@@ -651,13 +651,13 @@ airoha_ppe_foe_get_entry_locked(struct a
  					     REG_PPE_RAM_CTRL(ppe2)))
  			return NULL;
  
@@ -1089,7 +1075,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  }
  
  struct airoha_foe_entry *airoha_ppe_foe_get_entry(struct airoha_ppe *ppe,
-@@ -683,12 +683,12 @@ static bool airoha_ppe_foe_compare_entry
+@@ -691,12 +691,12 @@ static bool airoha_ppe_foe_compare_entry
  
  static int airoha_ppe_foe_commit_sram_entry(struct airoha_ppe *ppe, u32 hash)
  {
@@ -1105,7 +1091,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  		airoha_fe_wr(ppe->eth, REG_PPE_RAM_ENTRY(ppe2, i), ptr[i]);
  
  	wmb();
-@@ -707,13 +707,13 @@ static int airoha_ppe_foe_commit_entry(s
+@@ -715,13 +715,13 @@ static int airoha_ppe_foe_commit_entry(s
  				       u32 hash, bool rx_wlan)
  {
  	u32 sram_num_entries = airoha_ppe_get_total_sram_num_entries(ppe);
@@ -1121,7 +1107,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  	wmb();
  
  	e->ib1 &= ~AIROHA_FOE_IB1_BIND_TIMESTAMP;
-@@ -1325,7 +1325,7 @@ static int airoha_ppe_flush_sram_entries
+@@ -1333,7 +1333,7 @@ static int airoha_ppe_flush_sram_entries
  	for (i = 0; i < sram_num_entries; i++) {
  		int err;
  
@@ -1130,7 +1116,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
  		err = airoha_ppe_foe_commit_sram_entry(ppe, i);
  		if (err)
  			break;
-@@ -1518,7 +1518,7 @@ int airoha_ppe_init(struct airoha_eth *e
+@@ -1526,7 +1526,7 @@ int airoha_ppe_init(struct airoha_eth *e
  	eth->ppe = ppe;
  
  	ppe_num_entries = airoha_ppe_get_total_num_entries(ppe);

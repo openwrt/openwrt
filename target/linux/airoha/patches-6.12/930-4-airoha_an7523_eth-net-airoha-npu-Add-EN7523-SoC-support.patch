@@ -1,4 +1,4 @@
-From 0ce1cc9b7f847613ec15d6b802b74e61e7e21b2d Mon Sep 17 00:00:00 2001
+From 5d8e68729a94f624b66e3ded519e2cbd0bf2c8ad Mon Sep 17 00:00:00 2001
 From: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 Date: Thu, 8 Jan 2026 23:09:42 -0300
 Subject: [PATCH 4/5] net: airoha: npu: Add EN7523 SoC support
@@ -18,7 +18,7 @@ Signed-off-by: Matheus Sampaio Queiroga <srherobrine20@gmail.com>
 
 --- a/drivers/net/ethernet/airoha/airoha_eth.c
 +++ b/drivers/net/ethernet/airoha/airoha_eth.c
-@@ -512,15 +512,18 @@ static int airoha_fe_init(struct airoha_
+@@ -501,15 +501,18 @@ static int airoha_fe_init(struct airoha_
  
  	/* init fragment and assemble Force Port */
  	/* NPU Core-3, NPU Bridge Channel-3 */
