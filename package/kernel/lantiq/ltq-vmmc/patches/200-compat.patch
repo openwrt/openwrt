@@ -1,6 +1,6 @@
 --- a/src/drv_vmmc_linux.c
 +++ b/src/drv_vmmc_linux.c
-@@ -54,6 +54,8 @@
+@@ -49,6 +49,8 @@
  #include "drv_vmmc_res.h"
  #endif /* (VMMC_CFG_FEATURES & VMMC_FEAT_HDLC) */
  
@@ -9,19 +9,17 @@
  /* ============================= */
  /* Local Macros & Definitions    */
  /* ============================= */
-@@ -862,7 +864,9 @@ void  vmmc_module_exit(void)
+@@ -857,7 +859,6 @@ void  vmmc_module_exit(void)
  #ifdef MODULE
  MODULE_DESCRIPTION("VMMC(VoiceMacroMipsCore) device driver - www.lantiq.com");
  MODULE_AUTHOR("Lantiq Deutschland GmbH");
-+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5,11,0))
- MODULE_SUPPORTED_DEVICE("DANUBE, TWINPASS, INCA-IP2, AR9, VR9");
-+#endif
+-MODULE_SUPPORTED_DEVICE("DANUBE, TWINPASS, INCA-IP2, AR9, VR9");
  MODULE_LICENSE("Dual BSD/GPL");
  
  #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,17))
 --- a/src/mps/drv_mps_vmmc_linux.c
 +++ b/src/mps/drv_mps_vmmc_linux.c
-@@ -80,11 +80,15 @@
+@@ -65,11 +65,15 @@
  /* ============================= */
  #define IFX_MPS_DEV_NAME       "ifx_mps"
  
@@ -37,7 +35,7 @@
  /* ============================= */
  /* Global variable definition    */
  /* ============================= */
-@@ -2257,7 +2261,7 @@ IFX_int32_t __init ifx_mps_init_module (
+@@ -2216,7 +2220,7 @@ IFX_int32_t __init ifx_mps_init_module (
     ifx_mps_reset ();
     result = request_irq (INT_NUM_IM4_IRL18,
  #ifdef LINUX_2_6
@@ -46,7 +44,7 @@
  #else /* */
                           (irqreturn_t (*)(int, IFX_void_t *, struct pt_regs *))
                           ifx_mps_ad0_irq, SA_INTERRUPT
-@@ -2267,7 +2271,7 @@ IFX_int32_t __init ifx_mps_init_module (
+@@ -2226,7 +2230,7 @@ IFX_int32_t __init ifx_mps_init_module (
        return result;
     result = request_irq (INT_NUM_IM4_IRL19,
  #ifdef LINUX_2_6
@@ -55,7 +53,7 @@
  #else /* */
                           (irqreturn_t (*)(int, IFX_void_t *, struct pt_regs *))
                           ifx_mps_ad1_irq, SA_INTERRUPT
-@@ -2282,7 +2286,7 @@ IFX_int32_t __init ifx_mps_init_module (
+@@ -2241,7 +2245,7 @@ IFX_int32_t __init ifx_mps_init_module (
        sprintf (&voice_channel_int_name[i][0], "mps_mbx vc%d", i);
        result = request_irq (INT_NUM_IM4_IRL14 + i,
  #ifdef LINUX_2_6

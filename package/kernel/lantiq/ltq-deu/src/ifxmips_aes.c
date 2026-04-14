@@ -45,7 +45,6 @@
 #include <linux/modeversions>
 #endif
 
-#include <linux/version.h>
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/proc_fs.h>
