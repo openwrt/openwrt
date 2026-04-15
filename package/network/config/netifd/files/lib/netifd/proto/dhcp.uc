@@ -100,19 +100,26 @@ netifd.add_proto({
 			push(argv, '-R');
 
 		let clientid = cfg.clientid;
-		if (!clientid) {
-			let duid = cfg._duid;
-			if (!duid) {
-				let cursor = uci.cursor();
-				duid = cursor.get('network', '@globals[0]', 'dhcp_default_duid');
+		if (clientid == '*') {
+			push(argv, '-C');
+		} else {
+			if (!clientid) {
+				let duid = cfg._duid;
+				// dhcp_default_duid is written by another netifd module after the
+				// config callback runs, so cfg._duid may still be null even though
+				// a fresh cursor sees it.
+				if (!duid) {
+					let cursor = uci.cursor();
+					duid = cursor.get('network', '@globals[0]', 'dhcp_default_duid');
+				}
+				if (duid) {
+					let iaid = substr(md5(dev), 0, 8);
+					clientid = 'ff' + iaid + duid;
+				}
 			}
-			if (duid) {
-				let iaid = substr(md5(dev), 0, 8);
-				clientid = 'ff' + iaid + duid;
-			}
+			if (clientid)
+				push(argv, '-x', `0x3d:${replace(clientid, /:/g, '')}`);
 		}
-		if (clientid)
-			push(argv, '-x', `0x3d:${replace(clientid, /:/g, '')}`);
 
 		if (cfg.vendorid && !has_opt60) {
 			push(argv, '-x', `0x3c:${hexenc(cfg.vendorid)}`);
