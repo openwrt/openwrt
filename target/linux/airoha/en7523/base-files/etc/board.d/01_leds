@@ -6,6 +6,17 @@ board=$(board_name)
 board_config_update
 
 case $board in
+	heimgard,cx30)
+		;;
+	heimgard,hx30)
+		ucidef_set_led_netdev "phy0-ap0" "phy0-ap0" "green:wlan-4" "phy0-ap0" "link tx rx"
+		ucidef_set_led_netdev "phy1-ap0" "phy1-ap0" "green:wlan-4" "phy1-ap0" "link tx rx"
+		ucidef_set_led_netdev "lan1" "lan1" "mt7530-0:09::lan" "lan1" "link tx rx"
+		ucidef_set_led_netdev "lan2" "lan2" "mt7530-0:0a::lan" "lan2" "link tx rx"
+		ucidef_set_led_netdev "lan3" "lan3" "mt7530-0:0b::lan" "lan3" "link tx rx"
+		ucidef_set_led_netdev "lan4" "lan4" "mt7530-0:0c::lan" "lan4" "link tx rx"
+		# ucidef_set_led_netdev "wan" "wan" "wan" "wan" "link tx rx"
+		;;
 	tplink,ex530v-v1)
 		ucidef_set_led_netdev "phy0-ap0" "phy0-ap0" "blue:wlan-6" "phy0-ap0" "link tx rx"
 		ucidef_set_led_netdev "phy0-ap0" "phy0-ap0" "blue:wlan-6" "phy1-ap0" "link tx rx"
@@ -25,7 +36,6 @@ case $board in
 		ucidef_set_led_netdev "lan3" "lan3" "mt7530-0:0b::lan" "lan3" "link tx rx"
 		ucidef_set_led_netdev "wan" "wan" "mt7530-0:0c::wan" "wan" "link tx rx"
 		;;
-	*);;
 esac
 
 board_config_flush

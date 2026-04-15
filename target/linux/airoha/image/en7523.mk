@@ -10,6 +10,20 @@ define Device/airoha_en7523-evb
 endef
 TARGET_DEVICES += airoha_en7523-evb
 
+define Device/heimgard_cx30
+	$(Device/FitImage)
+  DEVICE_VENDOR := Heimgard
+  DEVICE_MODEL := CX30
+  DEVICE_ALT0_VENDOR := Heimgard
+  DEVICE_ALT0_MODEL := Pixly R2
+
+	KERNEL_LOADADDR := 0x80088000
+  DEVICE_PACKAGES += uboot-envtools hostapd-mbedtls wpad-mbedtls \
+                     wpa-supplicant-mbedtls kmod-usb-ohci kmod-usb2 \
+                     kmod-mt7915e kmod-mt7916-firmware
+endef
+TARGET_DEVICES += heimgard_cx30
+
 define Device/tplink_ex530v_v1
 	$(Device/FitImage)
   DEVICE_VENDOR := TP-Link
