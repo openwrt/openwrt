@@ -36,7 +36,7 @@ BOOTOPTS:=$(call qstrip,$(CONFIG_GRUB_BOOTOPTS))
 
 define Build/combined
 	$(CP) $(KDIR)/$(KERNEL_NAME) $@.boot/boot/vmlinuz
-	-$(CP) $(STAGING_DIR_ROOT)/boot/. $@.boot/boot/
+	-$(CP) $(TARGET_DIR_ORIG)/boot/. $@.boot/boot/
 	$(CP) $(STAGING_DIR_IMAGE)/grub2/boot.img $@.boot/boot/grub/
 	$(CP) $(STAGING_DIR_IMAGE)/grub2/$(if $(filter $(1),efi),gpt,$(GRUB2_VARIANT))-core.img \
 		$@.boot/boot/grub/core.img
@@ -63,6 +63,7 @@ define Build/grub-config
 		-e 's#@CMDLINE@#$(BOOTOPTS) $(GRUB_CONSOLE_CMDLINE)#g' \
 		-e 's#@TIMEOUT@#$(GRUB_TIMEOUT)#g' \
 		-e 's#@TITLE@#$(GRUB_TITLE)#g' \
+		-e 's#@INITRD_ACPI@#$(if $(wildcard $(TARGET_DIR_ORIG)/boot/initrd-acpi),initrd /boot/initrd-acpi)#g' \
 		./grub-$(1).cfg > $@.boot/boot/grub/grub.cfg
 endef
 
@@ -85,7 +86,7 @@ define Build/iso
 		$(STAGING_DIR_IMAGE)/grub2/cdboot.img \
 		$(STAGING_DIR_IMAGE)/grub2/eltorito.img \
 		> $@.boot/boot/grub/eltorito.img
-	-$(CP) $(STAGING_DIR_ROOT)/boot/. $@.boot/boot/
+	-$(CP) $(TARGET_DIR_ORIG)/boot/. $@.boot/boot/
 	$(if $(filter $(1),efi),
 		mkfs.fat -C $@.boot/boot/grub/isoboot.img -S 512 1440
 		mmd -i $@.boot/boot/grub/isoboot.img ::/efi ::/efi/boot
