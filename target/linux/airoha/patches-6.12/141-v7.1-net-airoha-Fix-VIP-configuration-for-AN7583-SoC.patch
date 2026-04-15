@@ -63,6 +63,15 @@ Signed-off-by: Paolo Abeni <pabeni@redhat.com>
  	if (src_port < 0)
  		return src_port;
  
+@@ -1784,7 +1770,7 @@ static int airhoha_set_gdm2_loopback(str
+ 		      __field_prep(SP_CPORT_MASK(val), FE_PSE_PORT_CDM2));
+ 
+ 	if (port->id == AIROHA_GDM4_IDX && airoha_is_7581(eth)) {
+-		u32 mask = FC_ID_OF_SRC_PORT_MASK(nbq);
++		u32 mask = FC_ID_OF_SRC_PORT_MASK(port->nbq);
+ 
+ 		airoha_fe_rmw(eth, REG_SRC_PORT_FC_MAP6, mask,
+ 			      __field_prep(mask, AIROHA_GDM2_IDX));
 @@ -2962,6 +2948,8 @@ static int airoha_alloc_gdm_port(struct
  	port->eth = eth;
  	port->dev = dev;
