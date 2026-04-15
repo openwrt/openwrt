@@ -124,32 +124,36 @@ netifd.add_proto({
 			push(argv, '-V', '');
 
 		let clientid = cfg.clientid;
-		if (clientid) {
-			clientid = validate_hex(clientid);
-			if (!clientid)
-				warn(`dhcp: ${iface}: ignoring invalid clientid value\n`);
+		if (clientid == '*') {
+			push(argv, '-C');
+		} else {
+			if (clientid) {
+				clientid = validate_hex(clientid);
+				if (!clientid)
+					warn(`dhcp: ${iface}: ignoring invalid clientid value\n`);
+			}
+			if (!clientid) {
+				let duid = cfg._duid;
+				// dhcp_default_duid is written by another netifd module after the
+				// config callback runs, so cfg._duid may still be null even though
+				// a fresh cursor sees it.
+				if (!duid) {
+					let cursor = uci.cursor();
+					duid = cursor.get('network', '@globals[0]', 'dhcp_default_duid');
+				}
+				if (duid) {
+					duid = validate_hex(duid);
+					if (!duid)
+						warn(`dhcp: ${iface}: ignoring invalid dhcp_default_duid value\n`);
+				}
+				if (duid) {
+					let iaid = substr(md5(dev), 0, 8);
+					clientid = 'ff' + iaid + duid;
+				}
+			}
+			if (clientid)
+				push(argv, '-x', `0x3d:${clientid}`);
 		}
-		if (!clientid) {
-			let duid = cfg._duid;
-			// dhcp_default_duid is written by another netifd module after the
-			// config callback runs, so cfg._duid may still be null even though
-			// a fresh cursor sees it.
-			if (!duid) {
-				let cursor = uci.cursor();
-				duid = cursor.get('network', '@globals[0]', 'dhcp_default_duid');
-			}
-			if (duid) {
-				duid = validate_hex(duid);
-				if (!duid)
-					warn(`dhcp: ${iface}: ignoring invalid dhcp_default_duid value\n`);
-			}
-			if (duid) {
-				let iaid = substr(md5(dev), 0, 8);
-				clientid = 'ff' + iaid + duid;
-			}
-		}
-		if (clientid)
-			push(argv, '-x', `0x3d:${clientid}`);
 
 		if (bool(cfg.defaultreqopts) == '0')
 			push(argv, '-o');
