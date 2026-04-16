@@ -3534,6 +3534,7 @@ TARGET_DEVICES += zbtlink_zbt-z8102ax
 define Device/zbtlink_zbt-z8102ax-v2
   DEVICE_VENDOR := Zbtlink
   DEVICE_MODEL := ZBT-Z8102AX-V2
+  DEVICE_VARIANT := (SPI-NAND)
   DEVICE_DTS := mt7981b-zbtlink-zbt-z8102ax-v2
   DEVICE_DTS_DIR := ../dts
   DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-usb3 kmod-usb-net-qmi-wwan kmod-usb-serial-option
@@ -3549,6 +3550,19 @@ define Device/zbtlink_zbt-z8102ax-v2
   DEVICE_COMPAT_MESSAGE := Partition layout has been changed to fit the bootloader
 endef
 TARGET_DEVICES += zbtlink_zbt-z8102ax-v2
+
+define Device/zbtlink_zbt-z8102ax-v2-emmc
+  DEVICE_VENDOR := Zbtlink
+  DEVICE_MODEL := ZBT-Z8102AX-V2
+  DEVICE_VARIANT := (EMMC)
+  DEVICE_DTS := mt7981b-zbtlink-zbt-z8102ax-v2-emmc
+  DEVICE_DTS_DIR := ../dts
+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware kmod-usb3 kmod-usb-net-qmi-wwan kmod-usb-serial-option kmod-usb-net-cdc-ether kmod-fs-f2fs f2fsck mkf2fs
+  KERNEL := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb
+  KERNEL_INITRAMFS := kernel-bin | lzma | fit lzma $$(KDIR)/image-$$(firstword $$(DEVICE_DTS)).dtb with-initrd | pad-to 64k
+  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
+endef
+TARGET_DEVICES += zbtlink_zbt-z8102ax-v2-emmc
 
 define Device/zbtlink_zbt-z8103ax
   DEVICE_VENDOR := Zbtlink

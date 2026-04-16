@@ -140,6 +140,9 @@ jiorouter,ax6000-jidu6101)
 	envdev=/dev/$(nand_find_volume "$envubi" u-boot-env)
 	ubootenv_add_uci_config "$envdev" "0x0" "0x80000" "0x80000" "1"
 	;;
+zbtlink,zbt-z8102ax-v2-emmc)
+	ubootenv_add_uci_config "/dev/mmcblk0p2" "0x0" "0x80000" "0x200"
+	;;
 openembed,som7981)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x80000" "0x80000"
 	ubootenv_add_uci_sys_config "/dev/mtd3" "0x0" "0x100000" "0x100000"
