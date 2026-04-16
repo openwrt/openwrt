@@ -79,3 +79,8 @@
 **Vulnerability:** In `package/network/services/ead/src/tinysrp/t_misc.c`, the `t_fshash` function utilized unbounded `strcpy` and `strcat` calls into a fixed size 128 byte buffer `dotpath` in a loop modifying paths. If the loop bounds were altered or an unpredictable temporary file suffix increased the length, this could lead to stack buffer overflows.
 **Learning:** Legacy string manipulation functions (`strcpy`, `strcat`) easily introduce memory corruption bugs and are vulnerable to future modifications changing implicit bounds.
 **Prevention:** Always replace `strcat` and `strcpy` with explicitly bounded calls such as `strncpy` and `strncat`, and calculate remaining capacities properly (e.g. `sizeof(buf) - strlen(buf) - 1`). Explicit null-termination `buf[sizeof(buf) - 1] = '\0'` should also be added for safety.
+
+## 2025-05-24 - Buffer Overflow Prevention in trelay.c
+**Vulnerability:** In `package/kernel/trelay/src/trelay.c`, the function `trelay_do_add` used unbounded `strcpy` to copy strings to a dynamically allocated structure using a flexible array member. While the allocation size included `strlen(name) + 1`, a discrepancy between evaluation and usage could theoretically lead to overflows or TOCTOU issues.
+**Learning:** Separate calculation of bounds when dealing with variable length allocations combined with unbounded string routines can be fragile.
+**Prevention:** Always use safe bounded string copy mechanisms like `strscpy`, use variables to reuse the calculated `strlen` for the memory allocation size, and rely on this same value to constrain the subsequent copy operations to guarantee safety.
