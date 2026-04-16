@@ -1,15 +1,5 @@
---- a/arch/arm/dts/Makefile
-+++ b/arch/arm/dts/Makefile
-@@ -655,6 +655,7 @@ dtb-$(CONFIG_MACH_SUN8I_R528) += \
- 	sun8i-t113s-mangopi-mqdual-t113.dtb \
- 	sun8i-t113s-myir-myd-yt113x-emmc.dtb \
- 	sun8i-t113s-myir-myd-yt113x-spi.dtb \
-+	sun8i-t113s-olinuxino.dtb \
- 	sun8i-t113s-rongpin-rp-t113.dtb
- dtb-$(CONFIG_MACH_SUN50I_H5) += \
- 	sun50i-h5-bananapi-m2-plus.dtb \
 --- /dev/null
-+++ b/arch/arm/dts/sun8i-t113s-olinuxino.dts
++++ b/dts/upstream/src/arm/allwinner/sun8i-t113s-olinuxino.dts
 @@ -0,0 +1,193 @@
 +// SPDX-License-Identifier: (GPL-2.0+ or MIT)
 +// Copyright (C) 2022 Arm Ltd.
@@ -209,7 +199,7 @@
 @@ -0,0 +1,41 @@
 +CONFIG_ARM=y
 +CONFIG_ARCH_SUNXI=y
-+CONFIG_DEFAULT_DEVICE_TREE="sun8i-t113s-olinuxino"
++CONFIG_DEFAULT_DEVICE_TREE="allwinner/sun8i-t113s-olinuxino"
 +CONFIG_SUNXI_MINIMUM_DRAM_MB=128
 +CONFIG_SPL=y
 +CONFIG_MACH_SUN8I_R528=y
