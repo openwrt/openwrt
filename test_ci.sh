@@ -1,6 +1,6 @@
 BRANCH="main"
 RET=0
-for commit in $(git rev-list HEAD ^$BRANCH); do
+for commit in $(git rev-list HEAD ^origin/$BRANCH); do
   echo "=== Checking commit '$commit'"
   if git show --format='%P' -s $commit | grep -qF ' '; then
     echo "Pull request should not include merge commits"
