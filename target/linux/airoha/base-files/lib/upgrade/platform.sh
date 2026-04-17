@@ -5,7 +5,10 @@ platform_do_upgrade() {
 	local board=$(board_name)
 
 	case "$board" in
-		gemtek,w1700k-ubi)
+		gemtek,w1700k-ubi | \
+		tplink,ex530v-v1 | \
+		tplink,xx230v-v1 | \
+		tplink,xx530v-v1)
 			fit_do_upgrade "$1"
 			;;
 		*)

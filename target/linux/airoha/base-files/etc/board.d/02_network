@@ -1,0 +1,58 @@
+#
+# Copyright (c) 2015 The Linux Foundation. All rights reserved.
+# Copyright (c) 2011-2015 OpenWrt.org
+#
+
+. /lib/functions/uci-defaults.sh
+. /lib/functions/system.sh
+
+setup_interfaces()
+{
+	local board="$1"
+
+	case "$board" in
+	airoha,en7523-evb)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "eth1"
+		;;
+	airoha,an7581-evb)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "eth1"
+		;;
+	airoha,an7583-evb)
+		ucidef_set_interface_lan "lan1 lan2 lan3 lan4 eth1"
+		;;
+	gemtek,w1700k-ubi)
+		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4" "wan"
+		;;
+	nokia,valyrian)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 10g" "wan"
+		;;
+	heimgard,cx30)
+		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
+		;;
+	heimgard,hx30)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "wan"
+		;;
+	mikrotik,e60iugs)
+		ucidef_set_interfaces_lan_wan "lan2 lan3 lan4 lan5" "wan sfp"
+		;;
+	tplink,ex530v-v1)
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+		;;
+	tplink,xx230v-v1 | \
+	tplink,xx530v-v1)
+		# Needs write pon driver to use pon0 with wan interface
+		# ucidef_set_interfaces_lan_wan "lan1 lan2 lan3 lan4" "pon0"
+		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
+		;;
+	*)
+		echo "Unsupported hardware. Network interfaces not initialized"
+		;;
+	esac
+}
+
+board_config_update
+board=$(board_name)
+setup_interfaces $board
+board_config_flush
+
+exit 0
