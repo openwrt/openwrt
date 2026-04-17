@@ -56,7 +56,7 @@
  		case SHIFT_JIS:
  			if (c < 128) break;
  			if (c-0xa1 <= 0xdf-0xa1) {
-@@ -518,6 +525,7 @@ size_t iconv(iconv_t cd, char **restrict
+@@ -525,6 +532,7 @@ size_t iconv(iconv_t cd, char **restrict
  			c = ksc[c][d];
  			if (!c) goto ilseq;
  			break;
@@ -64,7 +64,7 @@
  		default:
  			if (!c) break;
  			c = legacy_map(map, c);
-@@ -559,6 +567,7 @@ size_t iconv(iconv_t cd, char **restrict
+@@ -570,6 +578,7 @@ size_t iconv(iconv_t cd, char **restrict
  				}
  			}
  			goto subst;
@@ -72,7 +72,7 @@
  		case SHIFT_JIS:
  			if (c < 128) goto revout;
  			if (c == 0xa5) {
-@@ -632,6 +641,7 @@ size_t iconv(iconv_t cd, char **restrict
+@@ -643,6 +652,7 @@ size_t iconv(iconv_t cd, char **restrict
  			*(*out)++ = 'B';
  			*outb -= 8;
  			break;
