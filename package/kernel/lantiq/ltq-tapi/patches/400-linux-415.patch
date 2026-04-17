@@ -1,48 +1,36 @@
 --- a/src/drv_tapi_linux.c
 +++ b/src/drv_tapi_linux.c
-@@ -119,7 +119,11 @@ struct _TAPI_FD_PRIV_DATA
- /* ============================= */
- /* Local Functions               */
- /* ============================= */
-+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,15,0)
- static IFX_void_t TAPI_timer_call_back (IFX_ulong_t arg);
-+#else
+@@ -140,7 +140,7 @@ typedef struct
+ /*lint -save
+    -esym(528,TAPI_timer_call_back)
+    -esym(528,TAPI_tqueue) */
+-static IFX_void_t TAPI_timer_call_back (IFX_ulong_t arg);
 +static IFX_void_t TAPI_timer_call_back (struct timer_list *t);
-+#endif
  #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20))
  static IFX_void_t TAPI_tqueue (IFX_void_t *pWork);
  #else /* for Kernel newer or equal 2.6.20 */
-@@ -3384,11 +3388,15 @@ Timer_ID TAPI_Create_Timer(TIMER_ENTRY p
+@@ -3536,11 +3536,7 @@ Timer_ID TAPI_Create_Timer(TIMER_ENTRY p
     pTimerData->nArgument = nArgument;
     pTimerData->bStopped = IFX_FALSE;
  
-+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4,15,0))
-    init_timer(&(pTimerData->Timer_List));
- 
-    /* set timer call back function */
-    pTimerData->Timer_List.function = TAPI_timer_call_back;
-    pTimerData->Timer_List.data = (IFX_ulong_t) pTimerData;
-+#else
+-   init_timer(&(pTimerData->Timer_List));
+-
+-   /* set timer call back function */
+-   pTimerData->Timer_List.function = TAPI_timer_call_back;
+-   pTimerData->Timer_List.data = (IFX_ulong_t) pTimerData;
 +   timer_setup(&(pTimerData->Timer_List), TAPI_timer_call_back, 0);
-+#endif
  
     /* Initialize Timer Task */
- #ifdef LINUX_2_6
-@@ -3529,9 +3537,17 @@ static IFX_void_t TAPI_tqueue (struct wo
+ #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
+@@ -3733,9 +3729,9 @@ static IFX_void_t TAPI_tqueue (struct wo
  
     \param  arg          Pointer to corresponding timer ID.
  */
-+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,15,0)
- static IFX_void_t TAPI_timer_call_back (IFX_ulong_t arg)
-+#else
+-static IFX_void_t TAPI_timer_call_back (IFX_ulong_t arg)
 +static IFX_void_t TAPI_timer_call_back (struct timer_list *t)
-+#endif
  {
-+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,15,0)
-    Timer_ID Timer = (Timer_ID) arg;
-+#else
-+   Timer_ID Timer = from_timer(Timer, t, Timer_List);
-+#endif
+-   struct Timer_ID_s *pTimerData = (struct Timer_ID_s *) arg;
++   struct Timer_ID_s *pTimerData = from_timer(pTimerData, t, Timer_List);
     /* do the operation in process context,
        not in interrupt context */
- #ifdef LINUX_2_6
+ #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))

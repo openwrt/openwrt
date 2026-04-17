@@ -9,15 +9,14 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=drv_tapi
-PKG_VERSION:=3.13.0
-PKG_RELEASE:=6
+PKG_VERSION:=4.18.1.0
+PKG_RELEASE:=1
 
-PKG_SOURCE:=drv_tapi-$(PKG_VERSION).tar.bz2
+PKG_SOURCE:=drv_tapi-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@OPENWRT
-PKG_HASH:=109374d52872716570fca3fef3b93c9a93159a804dfd42484b19152b825af5c0
+PKG_HASH:=7d9452659fd5ddfa2ec8ef8a53d4b5b29b01f938ffe2ec9b65802301482ac7e1
 PKG_MAINTAINER:=John Crispin <john@phrozen.org>
 
-PKG_CHECK_FORMAT_SECURITY:=0
 PKG_FIXUP:=autoreconf
 PKG_EXTMOD_SUBDIRS:=src
 
@@ -44,6 +43,7 @@ MAKE_FLAGS += \
 
 CONFIGURE_ARGS += \
 	ARCH=$(LINUX_KARCH) \
+	--enable-tapi3 \
 	--enable-linux-26 \
 	--enable-kernelbuild="$(LINUX_DIR)" \
 	--enable-kernelincl="$(LINUX_DIR)/include" \
