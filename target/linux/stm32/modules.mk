@@ -193,6 +193,17 @@ endef
 $(eval $(call KernelPackage,stm32-cryp))
 
 
+define KernelPackage/stm32-csi
+  TITLE:=STM32 Camera Serial Interface (CSI) support
+  KCONFIG:=CONFIG_VIDEO_STM32_CSI
+  FILES:=$(LINUX_DIR)/drivers/media/platform/st/stm32/stm32-csi.ko
+  AUTOLOAD:=$(call AutoProbe,stm32-csi)
+  $(call AddDepends/video,@LINUX_6_18 @TARGET_stm32 +kmod-video-async +kmod-video-fwnode)
+endef
+
+$(eval $(call KernelPackage,stm32-csi))
+
+
 define KernelPackage/stm32-dac
   TITLE:=STM32 DAC
   DEPENDS:=@TARGET_stm32
