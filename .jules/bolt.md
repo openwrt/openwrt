@@ -50,3 +50,7 @@
 ## 2026-04-11 - [string.join deprecation and performance issue]
 **Learning:** In Python 3, string.join() was removed. The native ''.join(iterable) is the correct alternative, and also yields a performance improvement.
 **Action:** Replace string.join with ''.join in the codebase where encountered.
+
+## 2026-04-18 - [Use enumerate instead of range(len) for list iteration]
+**Learning:** In Python, using `range(len(list))` or `range(0, len(list))` to iterate over a list and access its elements by index is an anti-pattern. Index lookups (`list[i]`) are slower than using `enumerate(list)` which yields the index and the item directly without the overhead of an extra lookup.
+**Action:** When an item must be found and removed from a list (or when both index and item are needed), use `for i, item in enumerate(list):` with `del list[i]` and `break` instead of `range(len(list))` to avoid unidiomatic index lookups, thereby improving performance and code readability.
