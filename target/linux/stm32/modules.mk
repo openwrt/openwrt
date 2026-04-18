@@ -279,6 +279,20 @@ endef
 $(eval $(call KernelPackage,stm32-hash))
 
 
+define KernelPackage/stm32-omm
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=STM32 Octo Memory Manager
+  DEPENDS:=@LINUX_6_18 \
+	   @TARGET_stm32 \
+	   +kmod-spi-stm32-ospi
+  KCONFIG:=CONFIG_STM32_OMM
+  FILES:=$(LINUX_DIR)/drivers/memory/stm32_omm.ko
+  AUTOLOAD:=$(call AutoProbe,stm32_omm)
+endef
+
+$(eval $(call KernelPackage,stm32-omm))
+
+
 define KernelPackage/stm32-timers
   TITLE:=STM32 Timers
   DEPENDS:=@TARGET_stm32 +kmod-mfd
