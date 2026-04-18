@@ -10,7 +10,7 @@ Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
 
 --- a/board/sunxi/board.c
 +++ b/board/sunxi/board.c
-@@ -419,6 +419,13 @@ static void mmc_pinmux_setup(int sdc)
+@@ -428,6 +428,13 @@ static void mmc_pinmux_setup(int sdc)
  		sunxi_gpio_set_cfgpin(SUNXI_GPC(24), SUNXI_GPC_SDC2);
  		sunxi_gpio_set_pull(SUNXI_GPC(24), SUNXI_GPIO_PULL_UP);
  		sunxi_gpio_set_drv(SUNXI_GPC(24), 2);
