@@ -42,7 +42,7 @@ static void ath79_intc_irq_handler(struct irq_desc *desc)
 			if (pending & intc->irq_mask[i]) {
 				if (intc->irq_wb_chan[i] != 0xffffffff)
 					ath79_ddr_wb_flush(intc->irq_wb_chan[i]);
-				generic_handle_irq(irq_find_mapping(domain, i));
+				generic_handle_domain_irq(domain, i);
 			}
 	} else {
 		spurious_interrupt();
