@@ -7,6 +7,7 @@
 
 #include <linux/interrupt.h>
 #include <linux/irqchip.h>
+#include <linux/irqchip/chained_irq.h>
 #include <linux/of.h>
 #include <linux/of_irq.h>
 #include <linux/irqdomain.h>
@@ -30,24 +31,30 @@ struct ath79_intc {
 static void ath79_intc_irq_handler(struct irq_desc *desc)
 {
 	struct irq_domain *domain = irq_desc_get_handler_data(desc);
+	struct irq_chip *chip = irq_desc_get_chip(desc);
 	struct ath79_intc *intc = domain->host_data;
 	u32 pending;
+	int i;
+
+	chained_irq_enter(chip, desc);
 
 	pending = ath79_reset_rr(intc->int_status);
 	pending &= intc->enable_mask;
 
-	if (pending) {
-		int i;
-
-		for (i = 0; i < intc->num_irqs; i++)
-			if (pending & intc->irq_mask[i]) {
-				if (intc->irq_wb_chan[i] != 0xffffffff)
-					ath79_ddr_wb_flush(intc->irq_wb_chan[i]);
-				generic_handle_domain_irq(domain, i);
-			}
-	} else {
+	if (!pending) {
 		spurious_interrupt();
+		chained_irq_exit(chip, desc);
+		return;
 	}
+
+	for (i = 0; i < intc->num_irqs; i++)
+		if (pending & intc->irq_mask[i]) {
+			if (intc->irq_wb_chan[i] != 0xffffffff)
+				ath79_ddr_wb_flush(intc->irq_wb_chan[i]);
+			generic_handle_domain_irq(domain, i);
+		}
+
+	chained_irq_exit(chip, desc);
 }
 
 static void ath79_intc_irq_enable(struct irq_data *d)
