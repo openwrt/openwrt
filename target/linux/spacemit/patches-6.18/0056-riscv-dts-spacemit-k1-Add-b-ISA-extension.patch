@@ -1,0 +1,123 @@
+From a9afc90d158cc326e794180edf1eaec920846b42 Mon Sep 17 00:00:00 2001
+From: Guodong Xu <guodong@riscstar.com>
+Date: Thu, 15 Jan 2026 07:19:00 +0800
+Subject: [PATCH] riscv: dts: spacemit: k1: Add "b" ISA extension
+
+"b" is ratified (Apr/2024) much later than its components zba/zbb/zbs
+(Jun/2021). With "b" added into riscv/extensions.yaml, a dependency
+checking rule is now enforced, which requires that when zba, zbb, and zbs
+are all specified, "b" must be added as well. Failing to do this will
+cause dtbs_check schema check warnings.
+
+According to uabi.rst, as a single-letter extension, "b" should be added
+after "c" in canonical order.
+
+Update k1.dtsi to conform to this rule.
+
+Signed-off-by: Guodong Xu <guodong@riscstar.com>
+Reviewed-by: Yixun Lan <dlan@gentoo.org>
+Link: https://lore.kernel.org/r/20260115-adding-b-dtsi-v2-4-254dd61cf947@riscstar.com
+Signed-off-by: Yixun Lan <dlan@gentoo.org>
+(cherry picked from commit 4168630825f95bf57729dad46d2a097096e73e4d)
+---
+ arch/riscv/boot/dts/spacemit/k1.dtsi | 32 ++++++++++++++--------------
+ 1 file changed, 16 insertions(+), 16 deletions(-)
+
+--- a/arch/riscv/boot/dts/spacemit/k1.dtsi
++++ b/arch/riscv/boot/dts/spacemit/k1.dtsi
+@@ -54,9 +54,9 @@
+ 			compatible = "spacemit,x60", "riscv";
+ 			device_type = "cpu";
+ 			reg = <0>;
+-			riscv,isa = "rv64imafdcv_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
++			riscv,isa = "rv64imafdcbv_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
+ 			riscv,isa-base = "rv64i";
+-			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "v", "zicbom",
++			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "b", "v", "zicbom",
+ 					       "zicbop", "zicboz", "zicntr", "zicond", "zicsr",
+ 					       "zifencei", "zihintpause", "zihpm", "zfh", "zba",
+ 					       "zbb", "zbc", "zbs", "zkt", "zvfh", "zvkt",
+@@ -84,9 +84,9 @@
+ 			compatible = "spacemit,x60", "riscv";
+ 			device_type = "cpu";
+ 			reg = <1>;
+-			riscv,isa = "rv64imafdcv_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
++			riscv,isa = "rv64imafdcbv_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
+ 			riscv,isa-base = "rv64i";
+-			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "v", "zicbom",
++			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "b", "v", "zicbom",
+ 					       "zicbop", "zicboz", "zicntr", "zicond", "zicsr",
+ 					       "zifencei", "zihintpause", "zihpm", "zfh", "zba",
+ 					       "zbb", "zbc", "zbs", "zkt", "zvfh", "zvkt",
+@@ -114,9 +114,9 @@
+ 			compatible = "spacemit,x60", "riscv";
+ 			device_type = "cpu";
+ 			reg = <2>;
+-			riscv,isa = "rv64imafdcv_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
++			riscv,isa = "rv64imafdcbv_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
+ 			riscv,isa-base = "rv64i";
+-			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "v", "zicbom",
++			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "b", "v", "zicbom",
+ 					       "zicbop", "zicboz", "zicntr", "zicond", "zicsr",
+ 					       "zifencei", "zihintpause", "zihpm", "zfh", "zba",
+ 					       "zbb", "zbc", "zbs", "zkt", "zvfh", "zvkt",
+@@ -144,9 +144,9 @@
+ 			compatible = "spacemit,x60", "riscv";
+ 			device_type = "cpu";
+ 			reg = <3>;
+-			riscv,isa = "rv64imafdcv_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
++			riscv,isa = "rv64imafdcbv_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
+ 			riscv,isa-base = "rv64i";
+-			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "v", "zicbom",
++			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "b", "v", "zicbom",
+ 					       "zicbop", "zicboz", "zicntr", "zicond", "zicsr",
+ 					       "zifencei", "zihintpause", "zihpm", "zfh", "zba",
+ 					       "zbb", "zbc", "zbs", "zkt", "zvfh", "zvkt",
+@@ -174,9 +174,9 @@
+ 			compatible = "spacemit,x60", "riscv";
+ 			device_type = "cpu";
+ 			reg = <4>;
+-			riscv,isa = "rv64imafdcv_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
++			riscv,isa = "rv64imafdcbv_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
+ 			riscv,isa-base = "rv64i";
+-			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "v", "zicbom",
++			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "b", "v", "zicbom",
+ 					       "zicbop", "zicboz", "zicntr", "zicond", "zicsr",
+ 					       "zifencei", "zihintpause", "zihpm", "zfh", "zba",
+ 					       "zbb", "zbc", "zbs", "zkt", "zvfh", "zvkt",
+@@ -204,9 +204,9 @@
+ 			compatible = "spacemit,x60", "riscv";
+ 			device_type = "cpu";
+ 			reg = <5>;
+-			riscv,isa = "rv64imafdcv_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
++			riscv,isa = "rv64imafdcbv_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
+ 			riscv,isa-base = "rv64i";
+-			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "v", "zicbom",
++			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "b", "v", "zicbom",
+ 					       "zicbop", "zicboz", "zicntr", "zicond", "zicsr",
+ 					       "zifencei", "zihintpause", "zihpm", "zfh", "zba",
+ 					       "zbb", "zbc", "zbs", "zkt", "zvfh", "zvkt",
+@@ -234,9 +234,9 @@
+ 			compatible = "spacemit,x60", "riscv";
+ 			device_type = "cpu";
+ 			reg = <6>;
+-			riscv,isa = "rv64imafdcv_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
++			riscv,isa = "rv64imafdcbv_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
+ 			riscv,isa-base = "rv64i";
+-			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "v", "zicbom",
++			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "b", "v", "zicbom",
+ 					       "zicbop", "zicboz", "zicntr", "zicond", "zicsr",
+ 					       "zifencei", "zihintpause", "zihpm", "zfh", "zba",
+ 					       "zbb", "zbc", "zbs", "zkt", "zvfh", "zvkt",
+@@ -264,9 +264,9 @@
+ 			compatible = "spacemit,x60", "riscv";
+ 			device_type = "cpu";
+ 			reg = <7>;
+-			riscv,isa = "rv64imafdcv_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
++			riscv,isa = "rv64imafdcbv_zicbom_zicbop_zicboz_zicntr_zicond_zicsr_zifencei_zihintpause_zihpm_zfh_zba_zbb_zbc_zbs_zkt_zvfh_zvkt_sscofpmf_sstc_svinval_svnapot_svpbmt";
+ 			riscv,isa-base = "rv64i";
+-			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "v", "zicbom",
++			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "b", "v", "zicbom",
+ 					       "zicbop", "zicboz", "zicntr", "zicond", "zicsr",
+ 					       "zifencei", "zihintpause", "zihpm", "zfh", "zba",
+ 					       "zbb", "zbc", "zbs", "zkt", "zvfh", "zvkt",

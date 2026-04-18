@@ -1,0 +1,169 @@
+From 99cfb26f7fbe421aa9bccb8788797dbe16a89f78 Mon Sep 17 00:00:00 2001
+From: Han Gao <gaohan@iscas.ac.cn>
+Date: Tue, 7 Apr 2026 23:28:15 +0800
+Subject: [PATCH] riscv: dts: spacemit: Define the P1 PMIC regulators for
+ OrangePi RV2
+
+Define the DC power input and the 4v power as fixed regulator supplies.
+
+Define the SpacemiT P1 PMIC voltage regulators and their constraints.
+
+Co-developed-by: Chukun Pan <amadeus@jmu.edu.cn>
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+Tested-by: Vincent Legoll <legoll@online.fr> # OrangePi-RV2
+Signed-off-by: Han Gao <gaohan@iscas.ac.cn>
+Reviewed-by: Yixun Lan <dlan@kernel.org>
+Link: https://lore.kernel.org/r/193370a69e1cc3e4d8c4eb57bfea208e29ac75d8.1775575436.git.gaohan@iscas.ac.cn
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit c02c047b925c0ed101ec6834e1c07a53a45f98d4)
+---
+ .../boot/dts/spacemit/k1-orangepi-rv2.dts     | 131 ++++++++++++++++++
+ 1 file changed, 131 insertions(+)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-orangepi-rv2.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-orangepi-rv2.dts
+@@ -23,6 +23,25 @@
+ 		stdout-path = "serial0";
+ 	};
+ 
++	vcc_5v0: regulator-vcc-5v0 {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc_5v0";
++		regulator-always-on;
++		regulator-boot-on;
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++	};
++
++	vcc4v0: regulator-vcc4v0 {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc4v0";
++		regulator-always-on;
++		regulator-boot-on;
++		regulator-min-microvolt = <4000000>;
++		regulator-max-microvolt = <4000000>;
++		vin-supply = <&vcc_5v0>;
++	};
++
+ 	leds {
+ 		compatible = "gpio-leds";
+ 
+@@ -91,6 +110,118 @@
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&i2c8_cfg>;
+ 	status = "okay";
++
++	pmic@41 {
++		compatible = "spacemit,p1";
++		reg = <0x41>;
++		interrupts = <64>;
++		vin1-supply = <&vcc4v0>;
++		vin2-supply = <&vcc4v0>;
++		vin3-supply = <&vcc4v0>;
++		vin4-supply = <&vcc4v0>;
++		vin5-supply = <&vcc4v0>;
++		vin6-supply = <&vcc4v0>;
++		aldoin-supply = <&vcc4v0>;
++		dldoin1-supply = <&buck5>;
++		dldoin2-supply = <&buck5>;
++
++		regulators {
++			buck1 {
++				regulator-min-microvolt = <500000>;
++				regulator-max-microvolt = <3450000>;
++				regulator-ramp-delay = <5000>;
++				regulator-always-on;
++			};
++
++			buck2 {
++				regulator-min-microvolt = <500000>;
++				regulator-max-microvolt = <3450000>;
++				regulator-ramp-delay = <5000>;
++				regulator-always-on;
++			};
++
++			buck3_1v8: buck3 {
++				regulator-min-microvolt = <500000>;
++				regulator-max-microvolt = <1800000>;
++				regulator-ramp-delay = <5000>;
++				regulator-always-on;
++			};
++
++			buck4_3v3: buck4 {
++				regulator-min-microvolt = <500000>;
++				regulator-max-microvolt = <3300000>;
++				regulator-ramp-delay = <5000>;
++				regulator-always-on;
++			};
++
++			buck5: buck5 {
++				regulator-min-microvolt = <500000>;
++				regulator-max-microvolt = <3450000>;
++				regulator-ramp-delay = <5000>;
++				regulator-always-on;
++			};
++
++			buck6 {
++				regulator-min-microvolt = <500000>;
++				regulator-max-microvolt = <3450000>;
++				regulator-ramp-delay = <5000>;
++				regulator-always-on;
++			};
++
++			aldo1 {
++				regulator-min-microvolt = <500000>;
++				regulator-max-microvolt = <3400000>;
++				regulator-boot-on;
++			};
++
++			aldo2 {
++				/* not connected */
++			};
++
++			aldo3 {
++				/* not connected */
++			};
++
++			aldo4 {
++				/* not connected */
++			};
++
++			dldo1 {
++				regulator-min-microvolt = <500000>;
++				regulator-max-microvolt = <3400000>;
++				regulator-boot-on;
++			};
++
++			dldo2 {
++				/* not connected */
++			};
++
++			dldo3 {
++				/* not connected */
++			};
++
++			dldo4 {
++				regulator-min-microvolt = <500000>;
++				regulator-max-microvolt = <3400000>;
++				regulator-always-on;
++			};
++
++			dldo5 {
++				regulator-min-microvolt = <500000>;
++				regulator-max-microvolt = <3400000>;
++			};
++
++			dldo6 {
++				regulator-min-microvolt = <500000>;
++				regulator-max-microvolt = <3400000>;
++				regulator-always-on;
++			};
++
++			dldo7 {
++				/* not connected */
++			};
++		};
++	};
+ };
+ 
+ &uart0 {

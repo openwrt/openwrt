@@ -1,0 +1,27 @@
+From c44ce8e58743d471fb3d19e31c95abe39148e326 Mon Sep 17 00:00:00 2001
+From: Yixun Lan <dlan@kernel.org>
+Date: Tue, 28 Apr 2026 10:57:29 +0000
+Subject: [PATCH] dts: riscv: spacemit: correct 32k clock frequency
+
+The 32k oscillator's clock frequency is actually 32768Hz, so correct it.
+
+Fixes: 67072c8cd48c ("riscv: dts: spacemit: k3: add clock tree")
+Fixes: a6fafa64b03a ("riscv: dts: spacemit: Add clock tree for SpacemiT K1")
+Link: https://patch.msgid.link/20260428-06-k3-clk-osc32k-v1-1-e2378da7cb9b@kernel.org
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit 3c350f6284d8ea5e7a9648241b2e9604f2262d42)
+---
+ arch/riscv/boot/dts/spacemit/k1.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/riscv/boot/dts/spacemit/k1.dtsi
++++ b/arch/riscv/boot/dts/spacemit/k1.dtsi
+@@ -333,7 +333,7 @@
+ 
+ 		osc_32k: clock-32k {
+ 			compatible = "fixed-clock";
+-			clock-frequency = <32000>;
++			clock-frequency = <32768>;
+ 			clock-output-names = "osc_32k";
+ 			#clock-cells = <0>;
+ 		};

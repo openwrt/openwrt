@@ -1,0 +1,77 @@
+From 0b0708da792905e60cea81fe70054d6d639eef0e Mon Sep 17 00:00:00 2001
+From: Troy Mitchell <troy.mitchell@linux.dev>
+Date: Mon, 30 Mar 2026 17:58:53 +0800
+Subject: [PATCH] riscv: disable local interrupts and stop other CPUs before
+ reboot/shutdown
+
+Currently, the RISC-V implementation of machine_restart(), machine_halt(),
+and machine_power_off() invokes the kernel teardown chains (e.g.,
+do_kernel_restart()) with local interrupts enabled and other CPUs still
+running.
+
+This implementation fails to provide a deterministic execution environment
+for registered handlers in the restart or power-off notifier chains. These
+chains are intended to be executed in a strict atomic and single-threaded
+context.
+
+Specifically, under CONFIG_PREEMPT_RCU, rcu_read_lock() does not increment
+the preempt_count. If local interrupts remain enabled, the environment
+is not guaranteed to be atomic. This can lead to a context misidentification
+within generic kernel teardown code, causing it to incorrectly enter
+non-atomic paths (such as attempting to acquire sleeping locks), which
+results in fatal "scheduling while atomic" splats or system hangs.
+
+Additionally, stopping other CPUs ensures the primary CPU has exclusive
+access to the hardware state during the final teardown phase, preventing
+unpredictable interference from other active cores.
+
+Align RISC-V with other major architectures by disabling local interrupts
+and stopping other CPUs at the beginning of the shutdown sequences. This
+guarantees the architectural expectations of the kernel's restart and
+power-off handlers are met.
+
+Signed-off-by: Troy Mitchell <troy.mitchell@linux.dev>
+Tested-by: Aurelien Jarno <aurelien@aurel32.net>
+Link: https://lore.kernel.org/all/abEP80FoCn4S4-WG@aurel32.net/ [1]
+---
+ arch/riscv/kernel/reset.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+--- a/arch/riscv/kernel/reset.c
++++ b/arch/riscv/kernel/reset.c
+@@ -5,6 +5,7 @@
+ 
+ #include <linux/reboot.h>
+ #include <linux/pm.h>
++#include <linux/smp.h>
+ 
+ static void default_power_off(void)
+ {
+@@ -17,18 +18,27 @@ EXPORT_SYMBOL(pm_power_off);
+ 
+ void machine_restart(char *cmd)
+ {
++	local_irq_disable();
++	smp_send_stop();
++
+ 	do_kernel_restart(cmd);
+ 	while (1);
+ }
+ 
+ void machine_halt(void)
+ {
++	local_irq_disable();
++	smp_send_stop();
++
+ 	do_kernel_power_off();
+ 	default_power_off();
+ }
+ 
+ void machine_power_off(void)
+ {
++	local_irq_disable();
++	smp_send_stop();
++
+ 	do_kernel_power_off();
+ 	default_power_off();
+ }

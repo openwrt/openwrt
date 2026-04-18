@@ -1,0 +1,56 @@
+From 4bb83afb0d8abbd12c7ebf7070a5f640dabd607d Mon Sep 17 00:00:00 2001
+From: Frank Li <Frank.Li@nxp.com>
+Date: Mon, 29 Sep 2025 10:24:16 -0400
+Subject: [PATCH] usb: dwc3: dwc3-generic-plat: Add layerscape dwc3 support
+
+Add layerscape dwc3 support by using flatten dwc3 core library. Layerscape
+dwc3 need set gsbuscfg0-reqinfo as 0x2222 when dma-coherence set.
+
+Signed-off-by: Frank Li <Frank.Li@nxp.com>
+Acked-by: Thinh Nguyen <Thinh.Nguyen@synopsys.com>
+Link: https://lore.kernel.org/r/20250929-ls_dma_coherence-v5-3-2ebee578eb7e@nxp.com
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+(cherry picked from commit 1c97fc901fb6318aca0160da96736d0bc136ddcd)
+---
+ drivers/usb/dwc3/dwc3-generic-plat.c | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+
+--- a/drivers/usb/dwc3/dwc3-generic-plat.c
++++ b/drivers/usb/dwc3/dwc3-generic-plat.c
+@@ -29,6 +29,7 @@ static void dwc3_generic_reset_control_a
+ 
+ static int dwc3_generic_probe(struct platform_device *pdev)
+ {
++	const struct dwc3_properties *properties;
+ 	struct dwc3_probe_data probe_data = {};
+ 	struct device *dev = &pdev->dev;
+ 	struct dwc3_generic *dwc3g;
+@@ -75,7 +76,13 @@ static int dwc3_generic_probe(struct pla
+ 	probe_data.dwc = &dwc3g->dwc;
+ 	probe_data.res = res;
+ 	probe_data.ignore_clocks_and_resets = true;
+-	probe_data.properties = DWC3_DEFAULT_PROPERTIES;
++
++	properties = of_device_get_match_data(dev);
++	if (properties)
++		probe_data.properties = *properties;
++	else
++		probe_data.properties = DWC3_DEFAULT_PROPERTIES;
++
+ 	ret = dwc3_core_probe(&probe_data);
+ 	if (ret)
+ 		return dev_err_probe(dev, ret, "failed to register DWC3 Core\n");
+@@ -143,8 +150,13 @@ static const struct dev_pm_ops dwc3_gene
+ 		       dwc3_generic_runtime_idle)
+ };
+ 
++static const struct dwc3_properties fsl_ls1028_dwc3 = {
++	.gsbuscfg0_reqinfo = 0x2222,
++};
++
+ static const struct of_device_id dwc3_generic_of_match[] = {
+ 	{ .compatible = "spacemit,k1-dwc3", },
++	{ .compatible = "fsl,ls1028a-dwc3", &fsl_ls1028_dwc3},
+ 	{ /* sentinel */ }
+ };
+ MODULE_DEVICE_TABLE(of, dwc3_generic_of_match);

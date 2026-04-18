@@ -1,0 +1,29 @@
+From 84f1519a20cdd873301501e85d0c30aeefa96aed Mon Sep 17 00:00:00 2001
+From: Aurelien Jarno <aurelien@aurel32.net>
+Date: Tue, 19 May 2026 06:12:39 +0200
+Subject: [PATCH] riscv: dts: spacemit: fix uboot partition offset on Milk-V
+ Jupiter
+
+Correct the uboot partition node name to match its actual offset.
+
+Fixes: 2829823956f0 ("riscv: dts: spacemit: enable QSPI and add SPI NOR on Milk-V Jupiter")
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+Reviewed-by: Yixun Lan <dlan@kernel.org>
+Link: https://patch.msgid.link/20260519041458.3287843-6-aurelien@aurel32.net
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit 6edd9a0d32e1ef81133b8cb5b3bb3157a44da4d1)
+---
+ arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts
+@@ -379,7 +379,7 @@
+ 			opensbi@70000 {
+ 				reg = <0x70000 0x30000>;
+ 			};
+-			uboot@a00000 {
++			uboot@a0000 {
+ 				reg = <0xa0000 0x760000>;
+ 			};
+ 		};

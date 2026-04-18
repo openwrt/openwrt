@@ -1,0 +1,122 @@
+From 47b1bcf85a6c54f1cc95b24ed0e39535088efaf7 Mon Sep 17 00:00:00 2001
+From: Frank Li <Frank.Li@nxp.com>
+Date: Mon, 29 Sep 2025 10:24:15 -0400
+Subject: [PATCH] usb: dwc3: Add software-managed properties for flattened
+ model
+
+Add software-managed properties for the flattened model, which does not
+need to use device tree properties to pass down information to the
+common DWC3 core.
+
+Add 'properties' in dwc3_probe_data and set default values for existing
+users (dwc3-qcom, dwc3-generic-plat).
+
+No functional changes.
+
+Acked-by: Thinh Nguyen <Thinh.Nguyen@synopsys.com>
+Signed-off-by: Frank Li <Frank.Li@nxp.com>
+Link: https://lore.kernel.org/r/20250929-ls_dma_coherence-v5-2-2ebee578eb7e@nxp.com
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+(cherry picked from commit 7298c06d58e23c1c6e60180ab1ce069087ae38e2)
+---
+ drivers/usb/dwc3/core.c              | 12 ++++++++++--
+ drivers/usb/dwc3/dwc3-generic-plat.c |  1 +
+ drivers/usb/dwc3/dwc3-qcom.c         |  1 +
+ drivers/usb/dwc3/glue.h              | 14 ++++++++++++++
+ 4 files changed, 26 insertions(+), 2 deletions(-)
+
+--- a/drivers/usb/dwc3/core.c
++++ b/drivers/usb/dwc3/core.c
+@@ -1669,7 +1669,8 @@ static void dwc3_core_exit_mode(struct d
+ 	dwc3_set_prtcap(dwc, DWC3_GCTL_PRTCAP_DEVICE, true);
+ }
+ 
+-static void dwc3_get_software_properties(struct dwc3 *dwc)
++static void dwc3_get_software_properties(struct dwc3 *dwc,
++					 const struct dwc3_properties *properties)
+ {
+ 	struct device *tmpdev;
+ 	u16 gsbuscfg0_reqinfo;
+@@ -1677,6 +1678,12 @@ static void dwc3_get_software_properties
+ 
+ 	dwc->gsbuscfg0_reqinfo = DWC3_GSBUSCFG0_REQINFO_UNSPECIFIED;
+ 
++	if (properties->gsbuscfg0_reqinfo !=
++	    DWC3_GSBUSCFG0_REQINFO_UNSPECIFIED) {
++		dwc->gsbuscfg0_reqinfo = properties->gsbuscfg0_reqinfo;
++		return;
++	}
++
+ 	/*
+ 	 * Iterate over all parent nodes for finding swnode properties
+ 	 * and non-DT (non-ABI) properties.
+@@ -2224,7 +2231,7 @@ int dwc3_core_probe(const struct dwc3_pr
+ 
+ 	dwc3_get_properties(dwc);
+ 
+-	dwc3_get_software_properties(dwc);
++	dwc3_get_software_properties(dwc, &data->properties);
+ 
+ 	dwc->usb_psy = dwc3_get_usb_power_supply(dwc);
+ 	if (IS_ERR(dwc->usb_psy))
+@@ -2374,6 +2381,7 @@ static int dwc3_probe(struct platform_de
+ 
+ 	probe_data.dwc = dwc;
+ 	probe_data.res = res;
++	probe_data.properties = DWC3_DEFAULT_PROPERTIES;
+ 
+ 	return dwc3_core_probe(&probe_data);
+ }
+--- a/drivers/usb/dwc3/dwc3-generic-plat.c
++++ b/drivers/usb/dwc3/dwc3-generic-plat.c
+@@ -75,6 +75,7 @@ static int dwc3_generic_probe(struct pla
+ 	probe_data.dwc = &dwc3g->dwc;
+ 	probe_data.res = res;
+ 	probe_data.ignore_clocks_and_resets = true;
++	probe_data.properties = DWC3_DEFAULT_PROPERTIES;
+ 	ret = dwc3_core_probe(&probe_data);
+ 	if (ret)
+ 		return dev_err_probe(dev, ret, "failed to register DWC3 Core\n");
+--- a/drivers/usb/dwc3/dwc3-qcom.c
++++ b/drivers/usb/dwc3/dwc3-qcom.c
+@@ -704,6 +704,7 @@ static int dwc3_qcom_probe(struct platfo
+ 	probe_data.dwc = &qcom->dwc;
+ 	probe_data.res = &res;
+ 	probe_data.ignore_clocks_and_resets = true;
++	probe_data.properties = DWC3_DEFAULT_PROPERTIES;
+ 	ret = dwc3_core_probe(&probe_data);
+ 	if (ret)  {
+ 		ret = dev_err_probe(dev, ret, "failed to register DWC3 Core\n");
+--- a/drivers/usb/dwc3/glue.h
++++ b/drivers/usb/dwc3/glue.h
+@@ -10,16 +10,30 @@
+ #include "core.h"
+ 
+ /**
++ * dwc3_properties: DWC3 core properties
++ * @gsbuscfg0_reqinfo: Value to be programmed in the GSBUSCFG0.REQINFO field
++ */
++struct dwc3_properties {
++	u32 gsbuscfg0_reqinfo;
++};
++
++#define DWC3_DEFAULT_PROPERTIES ((struct dwc3_properties){		\
++	.gsbuscfg0_reqinfo = DWC3_GSBUSCFG0_REQINFO_UNSPECIFIED,	\
++	})
++
++/**
+  * dwc3_probe_data: Initialization parameters passed to dwc3_core_probe()
+  * @dwc: Reference to dwc3 context structure
+  * @res: resource for the DWC3 core mmio region
+  * @ignore_clocks_and_resets: clocks and resets defined for the device should
+  *		be ignored by the DWC3 core, as they are managed by the glue
++ * @properties: dwc3 software manage properties
+  */
+ struct dwc3_probe_data {
+ 	struct dwc3 *dwc;
+ 	struct resource *res;
+ 	bool ignore_clocks_and_resets;
++	struct dwc3_properties properties;
+ };
+ 
+ int dwc3_core_probe(const struct dwc3_probe_data *data);

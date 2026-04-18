@@ -1,0 +1,60 @@
+From dfec85567e76c7697a830ebe169557de6a38ac10 Mon Sep 17 00:00:00 2001
+From: Iker Pedrosa <ikerpedrosam@gmail.com>
+Date: Mon, 11 May 2026 10:53:57 +0200
+Subject: [PATCH] mmc: sdhci-of-k1: enable essential clock infrastructure for
+ SD operation
+
+Ensure SD card pins receive clock signals by enabling pad clock
+generation and overriding automatic clock gating. Required for all SD
+operation modes.
+
+The SDHC_GEN_PAD_CLK_ON setting in LEGACY_CTRL_REG is safe for both SD
+and eMMC operation as both protocols use the same physical MMC interface
+pins and require proper clock signal generation at the hardware level
+for signal integrity and timing.
+
+Additional SD-specific clock overrides (SDHC_OVRRD_CLK_OEN and
+SDHC_FORCE_CLK_ON) are conditionally applied only for SD-only
+controllers to handle removable card scenarios.
+
+Tested-by: Anand Moon <linux.amoon@gmail.com>
+Acked-by: Adrian Hunter <adrian.hunter@intel.com>
+Tested-by: Trevor Gamblin <tgamblin@baylibre.com>
+Reviewed-by: Troy Mitchell <troy.mitchell@linux.dev>
+Tested-by: Vincent Legoll <legoll@online.fr>
+Signed-off-by: Iker Pedrosa <ikerpedrosam@gmail.com>
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+(cherry picked from commit f87b273e4b6dfe57dcd63c24cbe3764d1f6954ae)
+---
+ drivers/mmc/host/sdhci-of-k1.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+--- a/drivers/mmc/host/sdhci-of-k1.c
++++ b/drivers/mmc/host/sdhci-of-k1.c
+@@ -21,6 +21,13 @@
+ #include "sdhci.h"
+ #include "sdhci-pltfm.h"
+ 
++#define SPACEMIT_SDHC_OP_EXT_REG	0x108
++#define  SDHC_OVRRD_CLK_OEN		BIT(11)
++#define  SDHC_FORCE_CLK_ON		BIT(12)
++
++#define SPACEMIT_SDHC_LEGACY_CTRL_REG	0x10C
++#define  SDHC_GEN_PAD_CLK_ON		BIT(6)
++
+ #define SPACEMIT_SDHC_MMC_CTRL_REG	0x114
+ #define  SDHC_MISC_INT_EN		BIT(1)
+ #define  SDHC_MISC_INT			BIT(2)
+@@ -101,6 +108,12 @@ static void spacemit_sdhci_reset(struct
+ 
+ 	if (!(host->mmc->caps2 & MMC_CAP2_NO_MMC))
+ 		spacemit_sdhci_setbits(host, SDHC_MMC_CARD_MODE, SPACEMIT_SDHC_MMC_CTRL_REG);
++
++	spacemit_sdhci_setbits(host, SDHC_GEN_PAD_CLK_ON, SPACEMIT_SDHC_LEGACY_CTRL_REG);
++
++	if (host->mmc->caps2 & MMC_CAP2_NO_MMC)
++		spacemit_sdhci_setbits(host, SDHC_OVRRD_CLK_OEN | SDHC_FORCE_CLK_ON,
++				       SPACEMIT_SDHC_OP_EXT_REG);
+ }
+ 
+ static void spacemit_sdhci_set_uhs_signaling(struct sdhci_host *host, unsigned int timing)

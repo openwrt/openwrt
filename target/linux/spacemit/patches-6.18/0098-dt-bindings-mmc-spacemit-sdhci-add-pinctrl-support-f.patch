@@ -1,0 +1,54 @@
+From 9b7646ece9148b042ac120baec6c9808f8e63023 Mon Sep 17 00:00:00 2001
+From: Iker Pedrosa <ikerpedrosam@gmail.com>
+Date: Mon, 11 May 2026 10:53:56 +0200
+Subject: [PATCH] dt-bindings: mmc: spacemit,sdhci: add pinctrl support for
+ voltage switching
+
+Document pinctrl properties to support voltage-dependent pin
+configuration switching for UHS-I SD card modes.
+
+Add optional pinctrl-names property with two states:
+- "default": For 3.3V operation with standard drive strength
+- "state_uhs": For 1.8V operation with optimized drive strength
+
+These pinctrl states allow the SDHCI driver to coordinate voltage
+switching with pin configuration changes, ensuring proper signal
+integrity during UHS-I mode transitions.
+
+Acked-by: Conor Dooley <conor.dooley@microchip.com>
+Signed-off-by: Iker Pedrosa <ikerpedrosam@gmail.com>
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+(cherry picked from commit 04a8ddc39e5cfebffb06f383350a6ee393ba89a6)
+---
+ .../devicetree/bindings/mmc/spacemit,sdhci.yaml   | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+--- a/Documentation/devicetree/bindings/mmc/spacemit,sdhci.yaml
++++ b/Documentation/devicetree/bindings/mmc/spacemit,sdhci.yaml
+@@ -42,6 +42,18 @@ properties:
+       - const: axi
+       - const: sdh
+ 
++  pinctrl-names:
++    minItems: 1
++    items:
++      - const: default
++      - const: uhs
++
++  pinctrl-0:
++    description: Default pinctrl state for 3.3V operation
++
++  pinctrl-1:
++    description: Optional pinctrl state for 1.8V UHS operation with "uhs" name
++
+ required:
+   - compatible
+   - reg
+@@ -60,4 +72,7 @@ examples:
+       interrupt-parent = <&plic>;
+       clocks = <&clk_apmu 10>, <&clk_apmu 13>;
+       clock-names = "core", "io";
++      pinctrl-names = "default", "uhs";
++      pinctrl-0 = <&sdhci_default_cfg>;
++      pinctrl-1 = <&sdhci_uhs_cfg>;
+     };
