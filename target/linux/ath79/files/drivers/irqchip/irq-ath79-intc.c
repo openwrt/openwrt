@@ -143,7 +143,7 @@ static int __init ath79_intc_of_init(
 		goto err;
 	}
 
-	domain = irq_domain_add_linear(node, cnt, &ath79_irq_domain_ops, intc);
+	domain = irq_domain_create_linear(of_fwnode_handle(node), cnt, &ath79_irq_domain_ops, intc);
 	irq_set_chained_handler_and_data(intc->irq, ath79_intc_irq_handler, domain);
 
 	return 0;
