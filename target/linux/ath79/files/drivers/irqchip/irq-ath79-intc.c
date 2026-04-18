@@ -86,19 +86,26 @@ static int __init ath79_intc_of_init(
 	int cnt, cntwb, i, err;
 
 	cnt = of_property_count_u32_elems(node, "qca,pending-bits");
-	if (cnt > ATH79_MAX_INTC_CASCADE)
-		panic("Too many INTC pending bits\n");
+	if (cnt > ATH79_MAX_INTC_CASCADE) {
+		pr_err("Too many INTC pending bits\n");
+		return -ENOMEM;
+	}
 
 	intc = kzalloc(sizeof(*intc), GFP_KERNEL);
-	if (!intc)
-		panic("Failed to allocate INTC memory\n");
+	if (!intc) {
+		pr_err("Failed to allocate INTC memory\n");
+		return -EINVAL;
+	}
+
 	intc->chip = dummy_irq_chip;
 	intc->chip.name = "INTC";
 	intc->chip.irq_disable = ath79_intc_irq_disable;
 	intc->chip.irq_enable = ath79_intc_irq_enable;
 
 	if (of_property_read_u32(node, "qca,int-status-addr", &intc->int_status) < 0) {
-		panic("Missing address of interrupt status register\n");
+		pr_err("Missing address of interrupt status register\n");
+		err = -EINVAL;
+		goto err;
 	}
 
 	of_property_read_u32_array(node, "qca,pending-bits", intc->irq_mask, cnt);
@@ -124,19 +131,26 @@ static int __init ath79_intc_of_init(
 			"#qca,ddr-wb-channel-cells",
 			i, &args);
 		if (err)
-			return err;
+			goto err;
 
 		intc->irq_wb_chan[irq] = args.args[0];
 	}
 
 	intc->irq = irq_of_parse_and_map(node, 0);
-	if (!intc->irq)
-		panic("Failed to get INTC IRQ");
+	if (!intc->irq) {
+		pr_err("Failed to get INTC IRQ");
+		err = -EINVAL;
+		goto err;
+	}
 
 	domain = irq_domain_add_linear(node, cnt, &ath79_irq_domain_ops, intc);
 	irq_set_chained_handler_and_data(intc->irq, ath79_intc_irq_handler, domain);
 
 	return 0;
+
+err:
+	kfree(intc);
+	return err;
 }
 IRQCHIP_DECLARE(ath79_intc, "qca,ar9340-intc",
 		ath79_intc_of_init);
