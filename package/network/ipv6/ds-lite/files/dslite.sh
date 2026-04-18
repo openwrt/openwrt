@@ -21,8 +21,8 @@ tnl_setup() {
 	local link="$tnl_type-$cfg"
 	local remoteip6
 
-	local mtu ttl peeraddr ip6addr tunlink zone weakif encaplimit
-	json_get_vars mtu ttl peeraddr ip6addr tunlink zone weakif encaplimit
+	local mtu ttl peeraddr ip6addr tunlink zone weakif encaplimit metric
+	json_get_vars mtu ttl peeraddr ip6addr tunlink zone weakif encaplimit metric
 
 	[ -z "$peeraddr" ] && {
 		proto_notify_error "$cfg" "MISSING_ADDRESS"
@@ -64,7 +64,10 @@ tnl_setup() {
 	}
 
 	proto_init_update "$link" 1
-	proto_add_ipv4_route "0.0.0.0" 0
+	if [ -z "$metric" ] && [ -n "$tunlink" ]; then
+    	network_get_metric metric "$tunlink"
+	fi
+	proto_add_ipv4_route "0.0.0.0" 0 "" "" "${metric:-}"
 	proto_add_ipv4_address "$ip4addr" "" "" "$ip4gateway"
 
 	proto_add_tunnel
