@@ -1,0 +1,31 @@
+From b1a3b221d86d899e3d8594e28d4d46529d51afff Mon Sep 17 00:00:00 2001
+From: Yixun Lan <dlan@kernel.org>
+Date: Fri, 30 Jan 2026 19:22:15 +0800
+Subject: [PATCH] dt-bindings: pinctrl: spacemit: fix drive-strength check
+ warning
+
+The problem is that one value from drive-strength may match to more than
+two different enum groups which lead to DT complaint, switch to use 'anyOf'
+to fix this kind warning.
+
+Fixes: c3efac0592f8 ("dt-bindings: pinctrl: spacemit: convert drive strength to schema format")
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+Acked-by: Conor Dooley <conor.dooley@microchip.com>
+Reported-by: Conor Dooley <conor.dooley@microchip.com>
+Signed-off-by: Linus Walleij <linusw@kernel.org>
+(cherry picked from commit 0a4614fe85ef130ab3769afdf9d174cc9e645dea)
+---
+ .../devicetree/bindings/pinctrl/spacemit,k1-pinctrl.yaml        | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/Documentation/devicetree/bindings/pinctrl/spacemit,k1-pinctrl.yaml
++++ b/Documentation/devicetree/bindings/pinctrl/spacemit,k1-pinctrl.yaml
+@@ -78,7 +78,7 @@ patternProperties:
+           drive-strength:
+             description:
+               typical current (in mA) when the output at high level.
+-            oneOf:
++            anyOf:
+               - enum: [ 11, 21, 32, 42 ]
+                 description: For K1 SoC, 1.8V voltage output
+ 

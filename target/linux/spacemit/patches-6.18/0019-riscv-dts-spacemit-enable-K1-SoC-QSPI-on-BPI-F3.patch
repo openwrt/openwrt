@@ -1,0 +1,88 @@
+From 743e58aff8017c38bf14d5201dde096c03275f28 Mon Sep 17 00:00:00 2001
+From: Alex Elder <elder@riscstar.com>
+Date: Mon, 27 Oct 2025 08:30:06 -0500
+Subject: [PATCH] riscv: dts: spacemit: enable K1 SoC QSPI on BPI-F3
+
+Define DTS nodes to enable support for QSPI on the K1 SoC, including the
+pin control configuration used.  Enable QSPI on the Banana Pi BPI-F3 board.
+
+Signed-off-by: Alex Elder <elder@riscstar.com>
+Link: https://lore.kernel.org/r/20251027133008.360237-9-elder@riscstar.com
+Signed-off-by: Yixun Lan <dlan@gentoo.org>
+(cherry picked from commit 41d34e0b5497f919229d32580fbe34386087458f)
+---
+ .../boot/dts/spacemit/k1-bananapi-f3.dts      |  6 ++++++
+ arch/riscv/boot/dts/spacemit/k1-pinctrl.dtsi  | 21 +++++++++++++++++++
+ arch/riscv/boot/dts/spacemit/k1.dtsi          | 16 ++++++++++++++
+ 3 files changed, 43 insertions(+)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts
+@@ -113,6 +113,12 @@
+ 	status = "okay";
+ };
+ 
++&qspi {
++	pinctrl-names = "default";
++	pinctrl-0 = <&qspi_cfg>;
++	status = "okay";
++};
++
+ &i2c2 {
+ 	pinctrl-0 = <&i2c2_0_cfg>;
+ 	pinctrl-names = "default";
+--- a/arch/riscv/boot/dts/spacemit/k1-pinctrl.dtsi
++++ b/arch/riscv/boot/dts/spacemit/k1-pinctrl.dtsi
+@@ -73,6 +73,27 @@
+ 		};
+ 	};
+ 
++	qspi_cfg: qspi-cfg {
++		qspi-pins {
++			pinmux = <K1_PADCONF(98, 0)>,    /* QSPI_DATA3 */
++				 <K1_PADCONF(99, 0)>,    /* QSPI_DATA2 */
++				 <K1_PADCONF(100, 0)>,   /* QSPI_DATA1 */
++				 <K1_PADCONF(101, 0)>,   /* QSPI_DATA0 */
++				 <K1_PADCONF(102, 0)>;   /* QSPI_CLK */
++
++			bias-disable;
++			drive-strength = <19>;
++			power-source = <3300>;
++		};
++
++		qspi-cs1-pins {
++			pinmux = <K1_PADCONF(103, 0)>;   /* QSPI_CS1 */
++			bias-pull-up = <0>;
++			drive-strength = <19>;
++			power-source = <3300>;
++		};
++	};
++
+ 	/omit-if-no-ref/
+ 	uart0_0_cfg: uart0-0-cfg {
+ 		uart0-0-pins {
+--- a/arch/riscv/boot/dts/spacemit/k1.dtsi
++++ b/arch/riscv/boot/dts/spacemit/k1.dtsi
+@@ -823,6 +823,22 @@
+ 				status = "disabled";
+ 			};
+ 
++			qspi: spi@d420c000 {
++				compatible = "spacemit,k1-qspi";
++				#address-cells = <1>;
++				#size-cells = <0>;
++				reg = <0x0 0xd420c000 0x0 0x1000>,
++				      <0x0 0xb8000000 0x0 0xc00000>;
++				reg-names = "QuadSPI", "QuadSPI-memory";
++				clocks = <&syscon_apmu CLK_QSPI_BUS>,
++					 <&syscon_apmu CLK_QSPI>;
++				clock-names = "qspi_en", "qspi";
++				resets = <&syscon_apmu RESET_QSPI>,
++					 <&syscon_apmu RESET_QSPI_BUS>;
++				interrupts = <117>;
++				status = "disabled";
++			};
++
+ 			/* sec_uart1: 0xf0612000, not available from Linux */
+ 		};
+ 

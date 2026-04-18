@@ -1,0 +1,101 @@
+From 8f81f91cd8d0a604d4ca612ae275a8bb9de0fe59 Mon Sep 17 00:00:00 2001
+From: Troy Mitchell <troy.mitchell@linux.spacemit.com>
+Date: Sat, 7 Feb 2026 23:08:21 +0800
+Subject: [PATCH] i2c: spacemit: move i2c_xfer_msg()
+
+The upcoming PIO support requires a wait_pio_xfer() helper, which is
+invoked from xfer_msg().
+
+Since wait_pio_xfer() depends on err_check(), move the definition of
+xfer_msg() after err_check() to avoid a forward declaration of
+err_check().
+
+Reviewed-by: Aurelien Jarno <aurelien@aurel32.net>
+Reviewed-by: Alex Elder <elder@riscstar.com>
+Signed-off-by: Troy Mitchell <troy.mitchell@linux.spacemit.com>
+Tested-by: Aurelien Jarno <aurelien@aurel32.net>
+Signed-off-by: Andi Shyti <andi.shyti@kernel.org>
+Link: https://lore.kernel.org/r/20260207-b4-k3-i2c-pio-v7-1-626942d94d91@linux.spacemit.com
+(cherry picked from commit 5b74da8e6cf7e2b5aed0836c733238c0fd7235af)
+---
+ drivers/i2c/busses/i2c-k1.c | 62 ++++++++++++++++++-------------------
+ 1 file changed, 31 insertions(+), 31 deletions(-)
+
+--- a/drivers/i2c/busses/i2c-k1.c
++++ b/drivers/i2c/busses/i2c-k1.c
+@@ -305,37 +305,6 @@ static void spacemit_i2c_start(struct sp
+ 	writel(val, i2c->base + SPACEMIT_ICR);
+ }
+ 
+-static int spacemit_i2c_xfer_msg(struct spacemit_i2c_dev *i2c)
+-{
+-	unsigned long time_left;
+-	struct i2c_msg *msg;
+-
+-	for (i2c->msg_idx = 0; i2c->msg_idx < i2c->msg_num; i2c->msg_idx++) {
+-		msg = &i2c->msgs[i2c->msg_idx];
+-		i2c->msg_buf = msg->buf;
+-		i2c->unprocessed = msg->len;
+-		i2c->status = 0;
+-
+-		reinit_completion(&i2c->complete);
+-
+-		spacemit_i2c_start(i2c);
+-
+-		time_left = wait_for_completion_timeout(&i2c->complete,
+-							i2c->adapt.timeout);
+-		if (!time_left) {
+-			dev_err(i2c->dev, "msg completion timeout\n");
+-			spacemit_i2c_conditionally_reset_bus(i2c);
+-			spacemit_i2c_reset(i2c);
+-			return -ETIMEDOUT;
+-		}
+-
+-		if (i2c->status & SPACEMIT_SR_ERR)
+-			return spacemit_i2c_handle_err(i2c);
+-	}
+-
+-	return 0;
+-}
+-
+ static bool spacemit_i2c_is_last_msg(struct spacemit_i2c_dev *i2c)
+ {
+ 	if (i2c->msg_idx != i2c->msg_num - 1)
+@@ -419,6 +388,37 @@ static void spacemit_i2c_err_check(struc
+ 	complete(&i2c->complete);
+ }
+ 
++static int spacemit_i2c_xfer_msg(struct spacemit_i2c_dev *i2c)
++{
++	unsigned long time_left;
++	struct i2c_msg *msg;
++
++	for (i2c->msg_idx = 0; i2c->msg_idx < i2c->msg_num; i2c->msg_idx++) {
++		msg = &i2c->msgs[i2c->msg_idx];
++		i2c->msg_buf = msg->buf;
++		i2c->unprocessed = msg->len;
++		i2c->status = 0;
++
++		reinit_completion(&i2c->complete);
++
++		spacemit_i2c_start(i2c);
++
++		time_left = wait_for_completion_timeout(&i2c->complete,
++							i2c->adapt.timeout);
++		if (!time_left) {
++			dev_err(i2c->dev, "msg completion timeout\n");
++			spacemit_i2c_conditionally_reset_bus(i2c);
++			spacemit_i2c_reset(i2c);
++			return -ETIMEDOUT;
++		}
++
++		if (i2c->status & SPACEMIT_SR_ERR)
++			return spacemit_i2c_handle_err(i2c);
++	}
++
++	return 0;
++}
++
+ static irqreturn_t spacemit_i2c_irq_handler(int irq, void *devid)
+ {
+ 	struct spacemit_i2c_dev *i2c = devid;

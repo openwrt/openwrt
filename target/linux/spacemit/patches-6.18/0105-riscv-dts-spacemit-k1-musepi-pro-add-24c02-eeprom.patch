@@ -1,0 +1,83 @@
+From 3618bccd89eec0ecf88da20e19d58ee16f166a93 Mon Sep 17 00:00:00 2001
+From: Andre Heider <a.heider@gmail.com>
+Date: Wed, 13 May 2026 09:19:50 +0200
+Subject: [PATCH] riscv: dts: spacemit: k1-musepi-pro: add 24c02 eeprom
+
+Enable i2c2 and add the connected GT24C02B EEPROM.
+
+It contains an ONIE TLV table:
+=> tlv_eeprom
+TLV: 0
+[  12.162] TlvInfo Header:
+[  12.162]    Id String:    TlvInfo
+[  12.165]    Version:      1
+[  12.168]    Total Length: 58
+[  12.171] TLV Name             Code Len Value
+[  12.175] -------------------- ---- --- -----
+[  12.179] Product Name         0x21  16 k1-x_MUSE-Pi-Pro
+[  12.184] Serial Number        0x23  17 BPMIMXXXXXXXXXXXX
+[  12.189] Unknown              0x41   1  0x02
+[  12.194] Base MAC Address     0x24   6 FE:FE:FE:XX:XX:XX
+[  12.199] MAC Addresses        0x2A   2 2
+[  12.203] CRC-32               0xFE   4 0x395ECD34
+[  12.207] Checksum is valid.
+
+(With 0x41 as TLV_CODE_DDR_CSNUM)
+
+Signed-off-by: Andre Heider <a.heider@gmail.com>
+Link: https://patch.msgid.link/20260513071958.29574-3-a.heider@gmail.com
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit 6bc75cfa56e885c2eab80e215f0a610075505846)
+---
+ .../riscv/boot/dts/spacemit/k1-musepi-pro.dts | 33 +++++++++++++++++++
+ 1 file changed, 33 insertions(+)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-musepi-pro.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-musepi-pro.dts
+@@ -17,6 +17,7 @@
+ 	aliases {
+ 		ethernet0 = &eth0;
+ 		serial0 = &uart0;
++		i2c2 = &i2c2;
+ 		i2c8 = &i2c8;
+ 	};
+ 
+@@ -82,6 +83,38 @@
+ 	status = "okay";
+ };
+ 
++&i2c2 {
++	pinctrl-0 = <&i2c2_0_cfg>;
++	pinctrl-names = "default";
++	status = "okay";
++
++	eeprom@50 {
++		compatible = "atmel,24c02";
++		reg = <0x50>;
++		vcc-supply = <&buck3_1v8>; /* EEPROM_VCC1V8 */
++		pagesize = <8>;
++		read-only;
++		size = <256>;
++
++		nvmem-layout {
++			compatible = "onie,tlv-layout";
++
++			product-name {
++			};
++
++			serial-number {
++			};
++
++			mac-address {
++				#nvmem-cell-cells = <1>;
++			};
++
++			num-macs {
++			};
++		};
++	};
++};
++
+ &i2c8 {
+ 	pinctrl-0 = <&i2c8_cfg>;
+ 	pinctrl-names = "default";

@@ -1,0 +1,61 @@
+From 68f14a936056cdb4488caf246282083cc3dff1b7 Mon Sep 17 00:00:00 2001
+From: Yixun Lan <dlan@gentoo.org>
+Date: Tue, 23 Dec 2025 10:24:50 +0800
+Subject: [PATCH] mmc: sdhci-of-k1: add reset support
+
+The SDHCI controller of SpacemiT K1 SoC requires two resets, add
+support to explicitly request the reset line and deassert during
+initialization phase. Still using devm_xx_get_optional() API to
+make the request optional.
+
+Signed-off-by: Yixun Lan <dlan@gentoo.org>
+Reviewed-by: Javier Martinez Canillas <javierm@redhat.com>
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+(cherry picked from commit 658b716c048684ad13d78280d69b883f181251da)
+---
+ drivers/mmc/host/sdhci-of-k1.c | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+--- a/drivers/mmc/host/sdhci-of-k1.c
++++ b/drivers/mmc/host/sdhci-of-k1.c
+@@ -15,6 +15,7 @@
+ #include <linux/module.h>
+ #include <linux/of.h>
+ #include <linux/of_device.h>
++#include <linux/reset.h>
+ #include <linux/platform_device.h>
+ 
+ #include "sdhci.h"
+@@ -223,6 +224,21 @@ static inline int spacemit_sdhci_get_clo
+ 	return 0;
+ }
+ 
++static inline int spacemit_sdhci_get_resets(struct device *dev)
++{
++	struct reset_control *rst;
++
++	rst = devm_reset_control_get_optional_shared_deasserted(dev, "axi");
++	if (IS_ERR(rst))
++		return PTR_ERR(rst);
++
++	rst = devm_reset_control_get_optional_exclusive_deasserted(dev, "sdh");
++	if (IS_ERR(rst))
++		return PTR_ERR(rst);
++
++	return 0;
++}
++
+ static const struct sdhci_ops spacemit_sdhci_ops = {
+ 	.get_max_clock		= spacemit_sdhci_clk_get_max_clock,
+ 	.reset			= spacemit_sdhci_reset,
+@@ -284,6 +300,10 @@ static int spacemit_sdhci_probe(struct p
+ 	if (ret)
+ 		goto err_pltfm;
+ 
++	ret = spacemit_sdhci_get_resets(dev);
++	if (ret)
++		goto err_pltfm;
++
+ 	ret = sdhci_add_host(host);
+ 	if (ret)
+ 		goto err_pltfm;

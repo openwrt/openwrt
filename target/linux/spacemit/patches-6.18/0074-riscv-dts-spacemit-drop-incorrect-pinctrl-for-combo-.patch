@@ -1,0 +1,35 @@
+From ca3dce56f7a863ce4e6ba83b1b8fdf3fbca22003 Mon Sep 17 00:00:00 2001
+From: Aurelien Jarno <aurelien@aurel32.net>
+Date: Sun, 22 Mar 2026 21:25:01 +0100
+Subject: [PATCH] riscv: dts: spacemit: drop incorrect pinctrl for combo PHY
+
+The combo PHY on the Banana Pi F3 is used for the USB 3.0 port. The high
+speed differential lanes are always configured as such, and do not
+require a pinctrl entry.
+
+The existing pinctrl entry only configures PCIe secondary pins, which
+are unused for USB and instead routed to the MIPI CSI1 connector.
+
+Remove this incorrect pinctrl entry.
+
+Fixes: 0be016a4b5d1b9 ("riscv: dts: spacemit: PCIe and PHY-related updates")
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+Reviewed-by: Yixun Lan <dlan@kernel.org>
+Link: https://lore.kernel.org/r/20260322202502.2205755-1-aurelien@aurel32.net
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit c68360c0d636dae71f766b7b296ddfcf2827ccc7)
+---
+ arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts | 2 --
+ 1 file changed, 2 deletions(-)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts
+@@ -81,8 +81,6 @@
+ };
+ 
+ &combo_phy {
+-	pinctrl-names = "default";
+-	pinctrl-0 = <&pcie0_3_cfg>;
+ 	status = "okay";
+ };
+ 

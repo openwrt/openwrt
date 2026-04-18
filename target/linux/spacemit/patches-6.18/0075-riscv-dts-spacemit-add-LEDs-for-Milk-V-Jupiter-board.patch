@@ -1,0 +1,53 @@
+From fef1152e32ebb0ba13aa161fce260d7434736672 Mon Sep 17 00:00:00 2001
+From: Aurelien Jarno <aurelien@aurel32.net>
+Date: Thu, 26 Mar 2026 19:35:29 +0100
+Subject: [PATCH] riscv: dts: spacemit: add LEDs for Milk-V Jupiter board
+
+The Milk-V Jupiter board provides support for two LEDs through the front
+panel header. The "Power LED" indicates the system is running, and the
+"HDD LED" shows disk activity. Configure the corresponding LED triggers
+accordingly.
+
+Caveats:
+- The LEDs are driven through a 4.7k series resistor, making them
+  quite faint.
+- The disk activity trigger requires a storage controller on the M.2 or
+  PCIe interface. That said, it matches the purpose and the vendor
+  kernel.
+
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+Reviewed-by: Javier Martinez Canillas <javierm@redhat.com>
+Reviewed-by: Yixun Lan <dlan@kernel.org>
+Link: https://lore.kernel.org/r/20260326183745.1370642-2-aurelien@aurel32.net
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit 334e64abacd3df4005de80b082d0dbf02b453c76)
+---
+ .../boot/dts/spacemit/k1-milkv-jupiter.dts      | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts
+@@ -21,6 +21,23 @@
+ 		stdout-path = "serial0";
+ 	};
+ 
++	leds {
++		compatible = "gpio-leds";
++
++		led1 {
++			label = "pwr-led";
++			gpios = <&gpio K1_GPIO(96) GPIO_ACTIVE_HIGH>;
++			linux,default-trigger = "default-on";
++			default-state = "on";
++		};
++
++		led2 {
++			label = "hdd-led";
++			gpios = <&gpio K1_GPIO(92) GPIO_ACTIVE_HIGH>;
++			linux,default-trigger = "disk-activity";
++		};
++	};
++
+ 	reg_dc_in: regulator-dc-in-12v {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "dc_in_12v";

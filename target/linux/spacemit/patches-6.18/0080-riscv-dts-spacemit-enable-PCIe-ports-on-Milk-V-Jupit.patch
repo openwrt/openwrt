@@ -1,0 +1,79 @@
+From f7e2207b75690a6487aa2fed8fbfca7f0b59078e Mon Sep 17 00:00:00 2001
+From: Aurelien Jarno <aurelien@aurel32.net>
+Date: Thu, 26 Mar 2026 19:35:34 +0100
+Subject: [PATCH] riscv: dts: spacemit: enable PCIe ports on Milk-V Jupiter
+
+Enable the two PCIe controller along with and their associated PHY. They
+are routed to the M.2 M-key connector and to the PCIe x8 slot.
+
+Add an always-on regulator sourcing 3.3V from the DC-IN input, to power
+the PCIe ports.
+
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+Reviewed-by: Javier Martinez Canillas <javierm@redhat.com>
+Reviewed-by: Yixun Lan <dlan@kernel.org>
+Link: https://lore.kernel.org/r/20260326183745.1370642-7-aurelien@aurel32.net
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit 2b8bd26bbfcdeb1a06127dcd8f9101080133f2a1)
+---
+ .../boot/dts/spacemit/k1-milkv-jupiter.dts    | 42 +++++++++++++++++++
+ 1 file changed, 42 insertions(+)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts
+@@ -40,6 +40,16 @@
+ 		};
+ 	};
+ 
++	pcie_vcc_3v3: regulator-pcie-vcc3v3 {
++		compatible = "regulator-fixed";
++		regulator-name = "pcie_vcc3v3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-boot-on;
++		regulator-always-on;
++		vin-supply = <&reg_dc_in>;
++	};
++
+ 	reg_dc_in: regulator-dc-in-12v {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "dc_in_12v";
+@@ -291,6 +301,38 @@
+ 	};
+ };
+ 
++&pcie1_phy {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pcie1_3_cfg>;
++	status = "okay";
++};
++
++&pcie1_port {
++	phys = <&pcie1_phy>;
++	vpcie3v3-supply = <&pcie_vcc_3v3>;
++};
++
++&pcie1 {
++	vpcie3v3-supply = <&pcie_vcc_3v3>;
++	status = "okay";
++};
++
++&pcie2_phy {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pcie2_4_cfg>;
++	status = "okay";
++};
++
++&pcie2_port {
++	phys = <&pcie2_phy>;
++	vpcie3v3-supply = <&pcie_vcc_3v3>;
++};
++
++&pcie2 {
++	vpcie3v3-supply = <&pcie_vcc_3v3>;
++	status = "okay";
++};
++
+ &qspi {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&qspi_cfg>;

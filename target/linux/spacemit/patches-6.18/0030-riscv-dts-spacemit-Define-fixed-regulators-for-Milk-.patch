@@ -1,0 +1,45 @@
+From e12ca4ef82666012280fb49febbc8f1ec14aebd7 Mon Sep 17 00:00:00 2001
+From: Javier Martinez Canillas <javierm@redhat.com>
+Date: Sat, 6 Dec 2025 14:44:54 +0100
+Subject: [PATCH] riscv: dts: spacemit: Define fixed regulators for Milk-V
+ Jupiter
+
+Define the DC power input and the 4v power as fixed regulator supplies.
+
+Signed-off-by: Javier Martinez Canillas <javierm@redhat.com>
+Reviewed-by: Yixun Lan <dlan@gentoo.org>
+Link: https://lore.kernel.org/r/20251206134532.1741648-3-javierm@redhat.com
+Signed-off-by: Yixun Lan <dlan@gentoo.org>
+(cherry picked from commit ae9d03f8aec76c1bff21083b67c211238d7c57b1)
+---
+ .../boot/dts/spacemit/k1-milkv-jupiter.dts    | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts
+@@ -20,6 +20,25 @@
+ 	chosen {
+ 		stdout-path = "serial0";
+ 	};
++
++	reg_dc_in: dc-in-12v {
++		compatible = "regulator-fixed";
++		regulator-name = "dc_in_12v";
++		regulator-min-microvolt = <12000000>;
++		regulator-max-microvolt = <12000000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++
++	reg_vcc_4v: vcc-4v {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc_4v";
++		regulator-min-microvolt = <4000000>;
++		regulator-max-microvolt = <4000000>;
++		regulator-boot-on;
++		regulator-always-on;
++		vin-supply = <&reg_dc_in>;
++	};
+ };
+ 
+ &eth0 {

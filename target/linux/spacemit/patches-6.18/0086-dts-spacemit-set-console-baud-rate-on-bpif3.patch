@@ -1,0 +1,31 @@
+From 80c6e3a5351d8198b2249f9c30896f4ce69612e1 Mon Sep 17 00:00:00 2001
+From: Conor Dooley <conor.dooley@microchip.com>
+Date: Thu, 30 Apr 2026 19:52:12 +0100
+Subject: [PATCH] dts: spacemit: set console baud rate on bpif3
+
+Because the default console's baud rate is not set, defconfig kernels do
+not have any serial output on this platform. Set the baud rate to
+115200, matching what is used by U-Boot etc on this platform.
+
+Suggested-by: Vivian Wang <wangruikang@iscas.ac.cn>
+Fixes: d60d57ab6b2a8 ("riscv: dts: spacemit: add Banana Pi BPI-F3 board device tree")
+Signed-off-by: Conor Dooley <conor.dooley@microchip.com>
+Reviewed-by: Yixun Lan <dlan@kernel.org>
+Link: https://lore.kernel.org/r/20260430-reword-overstep-3be08b7eab25@spud
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit 24c12ca43b12c104389d9a159207d0b25779d0af)
+---
+ arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts
+@@ -19,7 +19,7 @@
+ 	};
+ 
+ 	chosen {
+-		stdout-path = "serial0";
++		stdout-path = "serial0:115200n8";
+ 	};
+ 
+ 	leds {

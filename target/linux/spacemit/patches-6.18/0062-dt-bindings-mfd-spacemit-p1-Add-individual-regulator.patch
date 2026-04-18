@@ -1,0 +1,97 @@
+From d6fc041c19f1885e98b293e013d9559b1a615863 Mon Sep 17 00:00:00 2001
+From: Guodong Xu <guodong@riscstar.com>
+Date: Fri, 6 Feb 2026 10:32:02 +0800
+Subject: [PATCH] dt-bindings: mfd: spacemit,p1: Add individual regulator
+ supply properties
+
+Add supply properties that match the P1 PMIC's actual hardware topology
+where each buck converter has its own VIN pin and LDO groups share
+common input pins. Supply names are defined according to the pinout
+names in the P1 datasheet.
+
+The existing "vin-supply" is dropped from the binding document as the
+updated spacemit P1 driver no longer parses it. Only the per-rail names
+("vin1-supply", "vin2-supply", ...) are supported.
+
+Signed-off-by: Guodong Xu <guodong@riscstar.com>
+Acked-by: Conor Dooley <conor.dooley@microchip.com>
+Reviewed-by: Alex Elder <elder@riscstar.com>
+Link: https://patch.msgid.link/20260206-spacemit-p1-v4-1-8f695d93811e@riscstar.com
+Signed-off-by: Mark Brown <broonie@kernel.org>
+(cherry picked from commit 82ffa9610ba39d3628a9bec968ddc68fe2fe6612)
+---
+ .../devicetree/bindings/mfd/spacemit,p1.yaml  | 49 ++++++++++++++++++-
+ 1 file changed, 47 insertions(+), 2 deletions(-)
+
+--- a/Documentation/devicetree/bindings/mfd/spacemit,p1.yaml
++++ b/Documentation/devicetree/bindings/mfd/spacemit,p1.yaml
+@@ -27,8 +27,41 @@ properties:
+   interrupts:
+     maxItems: 1
+ 
+-  vin-supply:
+-    description: Input supply phandle.
++  vin1-supply:
++    description:
++      Power supply for BUCK1. Required if BUCK1 is defined.
++
++  vin2-supply:
++    description:
++      Power supply for BUCK2. Required if BUCK2 is defined.
++
++  vin3-supply:
++    description:
++      Power supply for BUCK3. Required if BUCK3 is defined.
++
++  vin4-supply:
++    description:
++      Power supply for BUCK4. Required if BUCK4 is defined.
++
++  vin5-supply:
++    description:
++      Power supply for BUCK5. Required if BUCK5 is defined.
++
++  vin6-supply:
++    description:
++      Power supply for BUCK6. Required if BUCK6 is defined.
++
++  aldoin-supply:
++    description:
++      Power supply for ALDO1-4. Required if any are defined.
++
++  dldoin1-supply:
++    description:
++      Power supply for DLDO1-4. Required if any are defined.
++
++  dldoin2-supply:
++    description:
++      Power supply for DLDO5-7. Required if any are defined.
+ 
+   regulators:
+     type: object
+@@ -58,6 +91,10 @@ examples:
+             compatible = "spacemit,p1";
+             reg = <0x41>;
+             interrupts = <64>;
++            vin1-supply = <&reg_vcc_5v>;
++            vin5-supply = <&reg_vcc_5v>;
++            aldoin-supply = <&reg_vcc_5v>;
++            dldoin1-supply = <&buck5>;
+ 
+             regulators {
+                 buck1 {
+@@ -65,6 +102,14 @@ examples:
+                     regulator-min-microvolt = <500000>;
+                     regulator-max-microvolt = <3450000>;
+                     regulator-ramp-delay = <5000>;
++                    regulator-always-on;
++                };
++
++                buck5: buck5 {
++                    regulator-name = "buck5";
++                    regulator-min-microvolt = <500000>;
++                    regulator-max-microvolt = <3450000>;
++                    regulator-ramp-delay = <5000>;
+                     regulator-always-on;
+                 };
+ 

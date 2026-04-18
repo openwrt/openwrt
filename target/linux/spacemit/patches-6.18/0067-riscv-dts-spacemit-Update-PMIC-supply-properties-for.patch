@@ -1,0 +1,75 @@
+From 927135873f4eee503d1e5a05323b134697af3f4d Mon Sep 17 00:00:00 2001
+From: Guodong Xu <guodong@riscstar.com>
+Date: Fri, 6 Feb 2026 10:32:04 +0800
+Subject: [PATCH] riscv: dts: spacemit: Update PMIC supply properties for
+ BPI-F3 and Jupiter
+
+Use per-regulator supply names in pmic "spacemit,p1" node to specify
+each board's power tree topology and match the updated dt-binding.
+
+Signed-off-by: Guodong Xu <guodong@riscstar.com>
+Reviewed-by: Alex Elder <elder@riscstar.com>
+Link: https://lore.kernel.org/r/20260206-spacemit-p1-v4-3-8f695d93811e@riscstar.com
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit 108c77b34b929e6bdb7ac9613ed65c90da8bcb9f)
+---
+ arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts   | 12 ++++++++++--
+ arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts | 12 ++++++++++--
+ 2 files changed, 20 insertions(+), 4 deletions(-)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts
+@@ -190,7 +190,15 @@
+ 		compatible = "spacemit,p1";
+ 		reg = <0x41>;
+ 		interrupts = <64>;
+-		vin-supply = <&reg_vcc_4v>;
++		vin1-supply = <&reg_vcc_4v>;
++		vin2-supply = <&reg_vcc_4v>;
++		vin3-supply = <&reg_vcc_4v>;
++		vin4-supply = <&reg_vcc_4v>;
++		vin5-supply = <&reg_vcc_4v>;
++		vin6-supply = <&reg_vcc_4v>;
++		aldoin-supply = <&reg_vcc_4v>;
++		dldoin1-supply = <&buck5>;
++		dldoin2-supply = <&buck5>;
+ 
+ 		regulators {
+ 			buck1 {
+@@ -221,7 +229,7 @@
+ 				regulator-always-on;
+ 			};
+ 
+-			buck5 {
++			buck5: buck5 {
+ 				regulator-min-microvolt = <500000>;
+ 				regulator-max-microvolt = <3450000>;
+ 				regulator-ramp-delay = <5000>;
+--- a/arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts
+@@ -100,7 +100,15 @@
+ 		compatible = "spacemit,p1";
+ 		reg = <0x41>;
+ 		interrupts = <64>;
+-		vin-supply = <&reg_vcc_4v>;
++		vin1-supply = <&reg_vcc_4v>;
++		vin2-supply = <&reg_vcc_4v>;
++		vin3-supply = <&reg_vcc_4v>;
++		vin4-supply = <&reg_vcc_4v>;
++		vin5-supply = <&reg_vcc_4v>;
++		vin6-supply = <&reg_vcc_4v>;
++		aldoin-supply = <&reg_vcc_4v>;
++		dldoin1-supply = <&buck5>;
++		dldoin2-supply = <&buck5>;
+ 
+ 		regulators {
+ 			buck1 {
+@@ -131,7 +139,7 @@
+ 				regulator-always-on;
+ 			};
+ 
+-			buck5 {
++			buck5: buck5 {
+ 				regulator-min-microvolt = <500000>;
+ 				regulator-max-microvolt = <3450000>;
+ 				regulator-ramp-delay = <5000>;

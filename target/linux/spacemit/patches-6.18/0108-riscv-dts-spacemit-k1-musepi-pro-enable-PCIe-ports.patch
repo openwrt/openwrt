@@ -1,0 +1,70 @@
+From 90aa13d3fbe112ae73f9cd4dfe86b51d42134436 Mon Sep 17 00:00:00 2001
+From: Andre Heider <a.heider@gmail.com>
+Date: Wed, 13 May 2026 09:19:53 +0200
+Subject: [PATCH] riscv: dts: spacemit: k1-musepi-pro: enable PCIe ports
+
+Enable the two PCIe controllers along with their associated PHYs. They
+are routed to the M.2 M-key connector and to the PCIe slot.
+
+Signed-off-by: Andre Heider <a.heider@gmail.com>
+Link: https://patch.msgid.link/20260513071958.29574-6-a.heider@gmail.com
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit d9ab0a855ba13f1db3ae16539348714c74010a22)
+---
+ .../riscv/boot/dts/spacemit/k1-musepi-pro.dts | 38 +++++++++++++++++++
+ 1 file changed, 38 insertions(+)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-musepi-pro.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-musepi-pro.dts
+@@ -36,6 +36,14 @@
+ 		};
+ 	};
+ 
++	reg_pcie_vcc_3v3: regulator-pcie-vcc3v3 {
++		compatible = "regulator-fixed";
++		regulator-name = "PCIE_VCC3V3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-always-on;
++	};
++
+ 	reg_vcc_4v: regulator-vcc-4v {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "VCC4V0";
+@@ -272,6 +280,36 @@
+ 	};
+ };
+ 
++&pcie1_phy {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pcie1_3_cfg>;
++	status = "okay";
++};
++
++&pcie1_port {
++	phys = <&pcie1_phy>;
++	vpcie3v3-supply = <&reg_pcie_vcc_3v3>;
++};
++
++&pcie1 {
++	status = "okay";
++};
++
++&pcie2_phy {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pcie2_4_cfg>;
++	status = "okay";
++};
++
++&pcie2_port {
++	phys = <&pcie2_phy>;
++	vpcie3v3-supply = <&reg_pcie_vcc_3v3>;
++};
++
++&pcie2 {
++	status = "okay";
++};
++
+ &qspi {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&qspi_cfg>;

@@ -1,0 +1,25 @@
+From a7d2de12928e5172d474ddcb9ece332963eda84e Mon Sep 17 00:00:00 2001
+From: Aurelien Jarno <aurelien@aurel32.net>
+Date: Mon, 3 Nov 2025 00:02:00 +0100
+Subject: [PATCH] mfd: simple-mfd-i2c: add a reboot cell for the SpacemiT P1
+ chip
+
+Add a "spacemit-p1-reboot" cell for the SpacemiT P1 chip.
+
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+Reviewed-by: Troy Mitchell <troy.mitchell@linux.spacemit.com>
+Link: https://lore.kernel.org/all/adfVk82OC1c3Zn8a@zenone.zhora.eu/
+---
+ drivers/mfd/simple-mfd-i2c.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/mfd/simple-mfd-i2c.c
++++ b/drivers/mfd/simple-mfd-i2c.c
+@@ -99,6 +99,7 @@ static const struct regmap_config spacem
+ };
+ 
+ static const struct mfd_cell spacemit_p1_cells[] = {
++	{ .name = "spacemit-p1-reboot", },
+ 	{ .name = "spacemit-p1-regulator", },
+ 	{ .name = "spacemit-p1-rtc", },
+ };

@@ -1,0 +1,43 @@
+From d229dde655431bdf000583fc5e5b2e7906163ebb Mon Sep 17 00:00:00 2001
+From: Troy Mitchell <troy.mitchell@linux.spacemit.com>
+Date: Thu, 23 Oct 2025 15:28:29 +0800
+Subject: [PATCH] dt-bindings: riscv: spacemit: add MusePi Pro board
+
+Document the compatible string for the MusePi Pro [1]. It is a 1.8-inch
+single board computer based on the SpacemiT K1/M1 RISC-V SoC [2].
+
+Here's a refined list of its core features:
+  - SoC: SpacemiT M1/K1, 8-core 64-bit RISC-V.
+  - Memory: LPDDR4X @ 2400MT/s, available in 8GB & 16GB options.
+  - Storage: Onboard eMMC 5.1 (64GB/128GB options), M.2 M-Key for NVMe
+             SSD (2230 size), and a microSD slot (UHS-II) for expansion.
+  - Display: HDMI 1.4 (1080P@60Hz) and 2-lane MIPI DSI FPC (1080P@60Hz).
+  - Connectivity: Onboard Wi-Fi 6 & Bluetooth 5.2, single Gigabit Ethernet
+                  port (RJ45).
+  - USB: 4x USB 3.0 Type-A (host) and 1x USB 2.0 Type-C (device/OTG).
+  - Expansion: Full-size miniPCIe slot and a second M.2 M-Key (2230).
+  - GPIO: Standard 40-pin GPIO interface.
+  - MIPI: 1x 4-lane MIPI CSI FPC and 2x MIPI DSI FPC interfaces.
+  - Clock: Onboard RTC with battery support.
+
+Link: https://developer.spacemit.com/documentation?token=YJtdwnvvViPVcmkoPDpcvwfVnrh&type=pdf [1]
+Link: https://www.spacemit.com/en/key-stone-k1 [2]
+Acked-by: Conor Dooley <conor.dooley@microchip.com>
+Signed-off-by: Troy Mitchell <troy.mitchell@linux.spacemit.com>
+Link: https://lore.kernel.org/r/20251023-k1-musepi-pro-dts-v4-1-01836303e10f@linux.spacemit.com
+Signed-off-by: Yixun Lan <dlan@gentoo.org>
+(cherry picked from commit 2cc22890635ded33856e2761b780688f54a49393)
+---
+ Documentation/devicetree/bindings/riscv/spacemit.yaml | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/Documentation/devicetree/bindings/riscv/spacemit.yaml
++++ b/Documentation/devicetree/bindings/riscv/spacemit.yaml
+@@ -22,6 +22,7 @@ properties:
+           - enum:
+               - bananapi,bpi-f3
+               - milkv,jupiter
++              - spacemit,musepi-pro
+               - xunlong,orangepi-rv2
+           - const: spacemit,k1
+ 

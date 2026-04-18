@@ -1,0 +1,30 @@
+From 53578a2fa39e0d515ed5b95ab1f07db7b708f252 Mon Sep 17 00:00:00 2001
+From: Junhui Liu <junhui.liu@pigmoral.tech>
+Date: Thu, 12 Mar 2026 16:42:43 +0800
+Subject: [PATCH] gpio: spacemit-k1: Add set_config callback support
+
+Assign gpiochip_generic_config() to the set_config() callback to support
+pin configuration through the GPIO subsystem. This allows users to
+configure GPIO pin attributes like pull-up/down when specifying a GPIO
+line in the Device Tree.
+
+Signed-off-by: Junhui Liu <junhui.liu@pigmoral.tech>
+Reviewed-by: Anand Moon <linux.amoon@gmail.com>
+Acked-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
+Reviewed-by: Yixun Lan <dlan@kernel.org>
+Signed-off-by: Linus Walleij <linusw@kernel.org>
+(cherry picked from commit 47a9050e678c7929ada33c3f1f28ac4403423181)
+---
+ drivers/gpio/gpio-spacemit-k1.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/gpio/gpio-spacemit-k1.c
++++ b/drivers/gpio/gpio-spacemit-k1.c
+@@ -228,6 +228,7 @@ static int spacemit_gpio_add_bank(struct
+ 	gc->label		= dev_name(dev);
+ 	gc->request		= gpiochip_generic_request;
+ 	gc->free		= gpiochip_generic_free;
++	gc->set_config		= gpiochip_generic_config;
+ 	gc->ngpio		= SPACEMIT_NR_GPIOS_PER_BANK;
+ 	gc->base		= -1;
+ 	gc->of_gpio_n_cells	= 3;

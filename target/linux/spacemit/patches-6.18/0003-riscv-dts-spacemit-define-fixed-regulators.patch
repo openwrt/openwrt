@@ -1,0 +1,44 @@
+From 71b6a27aded0275375a507abbcf8bb80c56215a1 Mon Sep 17 00:00:00 2001
+From: Alex Elder <elder@riscstar.com>
+Date: Mon, 25 Aug 2025 12:20:55 -0500
+Subject: [PATCH] riscv: dts: spacemit: define fixed regulators
+
+Define the DC power input and the 4v power as fixed supplies in the
+Banana Pi BPI-F3.
+
+Signed-off-by: Alex Elder <elder@riscstar.com>
+Link: https://lore.kernel.org/r/20250825172057.163883-7-elder@riscstar.com
+Signed-off-by: Yixun Lan <dlan@gentoo.org>
+(cherry picked from commit 1df07a40453fd652132051419140950d47941fe9)
+---
+ .../boot/dts/spacemit/k1-bananapi-f3.dts      | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts
+@@ -30,6 +30,25 @@
+ 			default-state = "on";
+ 		};
+ 	};
++
++	reg_dc_in: dc-in-12v {
++		compatible = "regulator-fixed";
++		regulator-name = "dc_in_12v";
++		regulator-min-microvolt = <12000000>;
++		regulator-max-microvolt = <12000000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++
++	reg_vcc_4v: vcc-4v {
++		compatible = "regulator-fixed";
++		regulator-name = "vcc_4v";
++		regulator-min-microvolt = <4000000>;
++		regulator-max-microvolt = <4000000>;
++		regulator-boot-on;
++		regulator-always-on;
++		vin-supply = <&reg_dc_in>;
++	};
+ };
+ 
+ &emmc {

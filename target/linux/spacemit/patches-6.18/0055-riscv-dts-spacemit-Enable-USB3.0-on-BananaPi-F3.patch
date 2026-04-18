@@ -1,0 +1,81 @@
+From 3d7a5d74169ce621cca80d3d2f30a78c54636272 Mon Sep 17 00:00:00 2001
+From: Ze Huang <huang.ze@linux.dev>
+Date: Sun, 11 Jan 2026 14:41:04 +0800
+Subject: [PATCH] riscv: dts: spacemit: Enable USB3.0 on BananaPi-F3
+
+Enable the DWC3 USB 3.0 controller and its associated usbphy2 on the
+Banana Pi F3 board.
+
+The board utilizes a VLI VL817 hub, which requires two separate power
+supplies: one VBUS and one for hub itself. Add two GPIO-controlled
+fixed-regulators to manage this.
+
+Tested-by: Aurelien Jarno <aurelien@aurel32.net>
+Signed-off-by: Ze Huang <huang.ze@linux.dev>
+Reviewed-by: Yixun Lan <dlan@gentoo.org>
+Link: https://lore.kernel.org/r/20260111-k1-usb3dts-v2-v3-3-f5ebd546e904@linux.dev
+Signed-off-by: Yixun Lan <dlan@gentoo.org>
+(cherry picked from commit c7e62c4eea026d42d192a0b86ce7313086ef2093)
+---
+ .../boot/dts/spacemit/k1-bananapi-f3.dts      | 46 +++++++++++++++++++
+ 1 file changed, 46 insertions(+)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts
+@@ -59,6 +59,25 @@
+ 		regulator-always-on;
+ 		vin-supply = <&reg_dc_in>;
+ 	};
++
++	usb3-vbus-5v {
++		compatible = "regulator-fixed";
++		regulator-name = "USB30_VBUS";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		regulator-always-on;
++		gpio = <&gpio K1_GPIO(97) GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
++
++	usb3_hub_5v: usb3-hub-5v {
++		compatible = "regulator-fixed";
++		regulator-name = "USB30_HUB";
++		regulator-min-microvolt = <5000000>;
++		regulator-max-microvolt = <5000000>;
++		gpio = <&gpio K1_GPIO(123) GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++	};
+ };
+ 
+ &combo_phy {
+@@ -313,3 +332,30 @@
+ 	pinctrl-0 = <&uart0_2_cfg>;
+ 	status = "okay";
+ };
++
++&usbphy2 {
++	status = "okay";
++};
++
++&usb_dwc3 {
++	dr_mode = "host";
++	#address-cells = <1>;
++	#size-cells = <0>;
++	status = "okay";
++
++	hub_2_0: hub@1 {
++		compatible = "usb2109,2817";
++		reg = <0x1>;
++		vdd-supply = <&usb3_hub_5v>;
++		peer-hub = <&hub_3_0>;
++		reset-gpios = <&gpio K1_GPIO(124) GPIO_ACTIVE_LOW>;
++	};
++
++	hub_3_0: hub@2 {
++		compatible = "usb2109,817";
++		reg = <0x2>;
++		vdd-supply = <&usb3_hub_5v>;
++		peer-hub = <&hub_2_0>;
++		reset-gpios = <&gpio K1_GPIO(124) GPIO_ACTIVE_LOW>;
++	};
++};

@@ -1,0 +1,38 @@
+From 95320a20f9110e6db22c1f75619474f3aef0dbb7 Mon Sep 17 00:00:00 2001
+From: Yixun Lan <dlan@kernel.org>
+Date: Thu, 26 Feb 2026 08:17:55 +0000
+Subject: [PATCH] riscv: dts: spacemit: pcie: fix missing power regulator
+
+The PCIe port require 3.3v power regulator for device to work properly, So
+explicitly add it to fix the DT warning:
+
+arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dtb: pcie@ca400000 (spacemit,k1-pcie): pcie@0: 'vpcie3v3-supply' is a required property
+        from schema $id: http://devicetree.org/schemas/pci/spacemit,k1-pcie-host.yaml
+
+Fixes: 0be016a4b5d1 ("riscv: dts: spacemit: PCIe and PHY-related updates")
+Reported-by: Conor Dooley <conor@kernel.org>
+Link: https://lore.kernel.org/r/20260226-k1-pcie-fix-pwr-v1-1-94b493cd27e5@kernel.org
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit 8a9071299dec817a544c0fb48f7302396fafdc4b)
+---
+ arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-bananapi-f3.dts
+@@ -305,6 +305,7 @@
+ 
+ &pcie1_port {
+ 	phys = <&pcie1_phy>;
++	vpcie3v3-supply = <&pcie_vcc_3v3>;
+ };
+ 
+ &pcie1 {
+@@ -320,6 +321,7 @@
+ 
+ &pcie2_port {
+ 	phys = <&pcie2_phy>;
++	vpcie3v3-supply = <&pcie_vcc_3v3>;
+ };
+ 
+ &pcie2 {

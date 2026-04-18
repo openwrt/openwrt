@@ -1,0 +1,66 @@
+From 8238820272fe9e619ec5e8df9fb70d76cd56de9f Mon Sep 17 00:00:00 2001
+From: Vivian Wang <wangruikang@iscas.ac.cn>
+Date: Tue, 27 Jan 2026 10:58:49 +0800
+Subject: [PATCH] gpio: spacemit-k1: Use PDR for pin direction, not SDR/CDR
+
+On the SpacemiT GPIO controller, the direction control register PDR is
+readable and writable [1]. Therefore, implement direction control by
+using PDR as dirout, and don't mark it as unreadable.
+
+The original implementation, using SDR as dirout and CDR as dirin, is
+not actually a supported configuration by gpio-mmio. The hardware
+supports changing the direction of some pins atomically by writing a
+value with the corresponding bits set to SDR (set as output) or to CDR
+(set as input). However, gpio-mmio does not actually handle this.
+
+Using only PDR as dirout to match the expectations of gpio-mmio. This
+also allows us to avoid clobbering potentially important GPIO direction
+configurations set by pre-Linux boot stages.
+
+Found while trying to add PCIe support to OrangePi RV2, where the
+regulator (controlled by GPIO 116) turns off on boot while some other
+GPIO pin in the same bank is touched, which is not desirable.
+
+Link: https://developer.spacemit.com/documentation?token=Rn9Kw3iFHirAMgkIpTAcV2Arnkf#18.4-gpio # [1]
+Fixes: d00553240ef8 ("gpio: spacemit: add support for K1 SoC")
+Signed-off-by: Vivian Wang <wangruikang@iscas.ac.cn>
+Reviewed-by: Troy Mitchell <troy.mitchell@linux.spacemit.com>
+Link: https://patch.msgid.link/20260127-gpio-spacemit-k1-pdr-v1-1-bb868a517dbc@iscas.ac.cn
+Signed-off-by: Bartosz Golaszewski <bartosz.golaszewski@oss.qualcomm.com>
+(cherry picked from commit aa7e37fd770bafaaf856ab77735296955b93e377)
+---
+ drivers/gpio/gpio-spacemit-k1.c | 9 +++------
+ 1 file changed, 3 insertions(+), 6 deletions(-)
+
+--- a/drivers/gpio/gpio-spacemit-k1.c
++++ b/drivers/gpio/gpio-spacemit-k1.c
+@@ -199,7 +199,7 @@ static int spacemit_gpio_add_bank(struct
+ 	struct gpio_chip *gc = &gb->chip.gc;
+ 	struct device *dev = sg->dev;
+ 	struct gpio_irq_chip *girq;
+-	void __iomem *dat, *set, *clr, *dirin, *dirout;
++	void __iomem *dat, *set, *clr, *dirout;
+ 	int ret;
+ 
+ 	gb->base = regs + sg->data->bank_offsets[index];
+@@ -208,8 +208,7 @@ static int spacemit_gpio_add_bank(struct
+ 	dat	= gb->base + to_spacemit_gpio_regs(gb)[SPACEMIT_GPLR];
+ 	set	= gb->base + to_spacemit_gpio_regs(gb)[SPACEMIT_GPSR];
+ 	clr	= gb->base + to_spacemit_gpio_regs(gb)[SPACEMIT_GPCR];
+-	dirin	= gb->base + to_spacemit_gpio_regs(gb)[SPACEMIT_GCDR];
+-	dirout	= gb->base + to_spacemit_gpio_regs(gb)[SPACEMIT_GSDR];
++	dirout	= gb->base + to_spacemit_gpio_regs(gb)[SPACEMIT_GPDR];
+ 
+ 	config = (struct gpio_generic_chip_config) {
+ 		.dev = dev,
+@@ -218,9 +217,7 @@ static int spacemit_gpio_add_bank(struct
+ 		.set = set,
+ 		.clr = clr,
+ 		.dirout = dirout,
+-		.dirin = dirin,
+-		.flags = GPIO_GENERIC_UNREADABLE_REG_SET |
+-			 GPIO_GENERIC_UNREADABLE_REG_DIR,
++		.flags = GPIO_GENERIC_UNREADABLE_REG_SET,
+ 	};
+ 
+ 	/* This registers 32 GPIO lines per bank */

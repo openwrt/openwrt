@@ -1,0 +1,61 @@
+From 441d9e15180bdcafe54ffa356fc695e70bfe1611 Mon Sep 17 00:00:00 2001
+From: "Gustavo A. R. Silva" <gustavoars@kernel.org>
+Date: Tue, 21 Oct 2025 12:54:10 +0100
+Subject: [PATCH] net: spacemit: Avoid -Wflex-array-member-not-at-end warnings
+
+-Wflex-array-member-not-at-end was introduced in GCC-14, and we are
+getting ready to enable it, globally.
+
+Use regular arrays instead of flexible-array members (they're not
+really needed in this case) in a couple of unions, and fix the
+following warnings:
+
+      1 drivers/net/ethernet/spacemit/k1_emac.c:122:42: warning: structure containing a flexible array member is not at the end of another structure [-Wflex-array-member-not-at-end]
+      1 drivers/net/ethernet/spacemit/k1_emac.c:122:32: warning: structure containing a flexible array member is not at the end of another structure [-Wflex-array-member-not-at-end]
+      1 drivers/net/ethernet/spacemit/k1_emac.c:121:42: warning: structure containing a flexible array member is not at the end of another structure [-Wflex-array-member-not-at-end]
+      1 drivers/net/ethernet/spacemit/k1_emac.c:121:32: warning: structure containing a flexible array member is not at the end of another structure [-Wflex-array-member-not-at-end]
+
+Signed-off-by: Gustavo A. R. Silva <gustavoars@kernel.org>
+Reviewed-by: Simon Horman <horms@kernel.org>
+Acked-by: Vivian Wang <wangruikang@iscas.ac.cn>
+Link: https://patch.msgid.link/aPd0YjO-oP60Lgvj@kspp
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+(cherry picked from commit 10e0378f05d2b89c4f88f04ec56b2a5b9a116648)
+---
+ drivers/net/ethernet/spacemit/k1_emac.h | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/drivers/net/ethernet/spacemit/k1_emac.h
++++ b/drivers/net/ethernet/spacemit/k1_emac.h
+@@ -363,7 +363,7 @@ struct emac_desc {
+ /* Keep stats in this order, index used for accessing hardware */
+ 
+ union emac_hw_tx_stats {
+-	struct {
++	struct individual_tx_stats {
+ 		u64 tx_ok_pkts;
+ 		u64 tx_total_pkts;
+ 		u64 tx_ok_bytes;
+@@ -378,11 +378,11 @@ union emac_hw_tx_stats {
+ 		u64 tx_pause_pkts;
+ 	} stats;
+ 
+-	DECLARE_FLEX_ARRAY(u64, array);
++	u64 array[sizeof(struct individual_tx_stats) / sizeof(u64)];
+ };
+ 
+ union emac_hw_rx_stats {
+-	struct {
++	struct individual_rx_stats {
+ 		u64 rx_ok_pkts;
+ 		u64 rx_total_pkts;
+ 		u64 rx_crc_err_pkts;
+@@ -410,7 +410,7 @@ union emac_hw_rx_stats {
+ 		u64 rx_truncate_fifo_full_pkts;
+ 	} stats;
+ 
+-	DECLARE_FLEX_ARRAY(u64, array);
++	u64 array[sizeof(struct individual_rx_stats) / sizeof(u64)];
+ };
+ 
+ #endif /* _K1_EMAC_H_ */

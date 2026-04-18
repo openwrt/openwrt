@@ -1,0 +1,54 @@
+From d79ac8af517d59bec1f7b76d677fd4b7b46a0f64 Mon Sep 17 00:00:00 2001
+From: Aurelien Jarno <aurelien@aurel32.net>
+Date: Thu, 26 Mar 2026 19:35:30 +0100
+Subject: [PATCH] riscv: dts: spacemit: add 24c04 eeprom on Milk-V Jupiter
+
+The Milk-V Jupiter board includes a 24c04 eeprom on the i2c2 bus. The
+eeprom contains an ONIE TLV table, which on the board I tested only
+provides a product-name entry. Expose it via an onie,tlv-layout nvmem
+layout.
+
+The eeprom is marked as read-only since its contents are not supposed to
+be modified.
+
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+Reviewed-by: Javier Martinez Canillas <javierm@redhat.com>
+Reviewed-by: Yixun Lan <dlan@kernel.org>
+Link: https://lore.kernel.org/r/20260326183745.1370642-3-aurelien@aurel32.net
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit 77156216f1d0f57e1cfce3452410db20468edca4)
+---
+ .../boot/dts/spacemit/k1-milkv-jupiter.dts    | 22 +++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts
+@@ -108,6 +108,28 @@
+ 	status = "okay";
+ };
+ 
++&i2c2 {
++	pinctrl-0 = <&i2c2_0_cfg>;
++	pinctrl-names = "default";
++	status = "okay";
++
++	eeprom@50 {
++		compatible = "atmel,24c04";
++		reg = <0x50>;
++		vcc-supply = <&buck3_1v8>; /* EEPROM_VCC18 */
++		pagesize = <16>;
++		read-only;
++		size = <512>;
++
++		nvmem-layout {
++			compatible = "onie,tlv-layout";
++
++			product-name {
++			};
++		};
++	};
++};
++
+ &i2c8 {
+ 	pinctrl-0 = <&i2c8_cfg>;
+ 	pinctrl-names = "default";

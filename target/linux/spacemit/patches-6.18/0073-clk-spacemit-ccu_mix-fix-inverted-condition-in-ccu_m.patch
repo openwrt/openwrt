@@ -1,0 +1,30 @@
+From bba0ccaf7c079a371de478b7e97c16d5f282242f Mon Sep 17 00:00:00 2001
+From: Shuwei Wu <shuwei.wu@mailbox.org>
+Date: Thu, 5 Mar 2026 20:46:08 +0800
+Subject: [PATCH] clk: spacemit: ccu_mix: fix inverted condition in
+ ccu_mix_trigger_fc()
+
+Fix inverted condition that skips frequency change trigger,
+causing kernel panics during cpufreq scaling.
+
+Fixes: 1b72c59db0ad ("clk: spacemit: Add clock support for SpacemiT K1 SoC")
+Signed-off-by: Shuwei Wu <shuwei.wu@mailbox.org>
+Reviewed-by: Yixun Lan <dlan@kernel.org>
+Link: https://lore.kernel.org/r/20260305-k1-clk-fix-v1-1-abca85d6e266@mailbox.org
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit 54e97360b44bed6b4399dd3be3d65f392df940fa)
+---
+ drivers/clk/spacemit/ccu_mix.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/clk/spacemit/ccu_mix.c
++++ b/drivers/clk/spacemit/ccu_mix.c
+@@ -69,7 +69,7 @@ static int ccu_mix_trigger_fc(struct clk
+ 	struct ccu_common *common = hw_to_ccu_common(hw);
+ 	unsigned int val;
+ 
+-	if (common->reg_fc)
++	if (!common->reg_fc)
+ 		return 0;
+ 
+ 	ccu_update(common, fc, common->mask_fc, common->mask_fc);

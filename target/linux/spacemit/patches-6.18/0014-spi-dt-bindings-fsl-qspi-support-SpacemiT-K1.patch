@@ -1,0 +1,29 @@
+From d572d028f5ac9cdbcdb6c0579f5af0a55b53de57 Mon Sep 17 00:00:00 2001
+From: Alex Elder <elder@riscstar.com>
+Date: Mon, 27 Oct 2025 08:29:59 -0500
+Subject: [PATCH] spi: dt-bindings: fsl-qspi: support SpacemiT K1
+
+Add the SpacemiT K1 SoC QSPI IP to the list of supported hardware.  This
+is the first non-Freescale device represented here.  It has a nearly
+identidal register set, and this binding correctly describes the hardware.
+
+Acked-by: Conor Dooley <conor.dooley@microchip.com>
+Reviewed-by: Frank Li <Frank.Li@nxp.com>
+Signed-off-by: Alex Elder <elder@riscstar.com>
+Link: https://patch.msgid.link/20251027133008.360237-2-elder@riscstar.com
+Signed-off-by: Mark Brown <broonie@kernel.org>
+(cherry picked from commit bd352547df647be8a1e6c9d4ca2b54b459f3abc1)
+---
+ Documentation/devicetree/bindings/spi/fsl,spi-fsl-qspi.yaml | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/Documentation/devicetree/bindings/spi/fsl,spi-fsl-qspi.yaml
++++ b/Documentation/devicetree/bindings/spi/fsl,spi-fsl-qspi.yaml
+@@ -22,6 +22,7 @@ properties:
+           - fsl,imx6ul-qspi
+           - fsl,ls1021a-qspi
+           - fsl,ls2080a-qspi
++          - spacemit,k1-qspi
+       - items:
+           - enum:
+               - fsl,ls1043a-qspi

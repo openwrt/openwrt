@@ -1,0 +1,31 @@
+From dfefbc81d277103cea006dda6129cef780094a3b Mon Sep 17 00:00:00 2001
+From: Javier Martinez Canillas <javierm@redhat.com>
+Date: Sat, 6 Dec 2025 14:44:53 +0100
+Subject: [PATCH] riscv: dts: spacemit: Enable i2c8 adapter for Milk-V Jupiter
+
+The adapter is used to access the SpacemiT P1 PMIC present in this board.
+
+Signed-off-by: Javier Martinez Canillas <javierm@redhat.com>
+Reviewed-by: Yixun Lan <dlan@gentoo.org>
+Link: https://lore.kernel.org/r/20251206134532.1741648-2-javierm@redhat.com
+Signed-off-by: Yixun Lan <dlan@gentoo.org>
+(cherry picked from commit f33ccc2316304f3a71e40e53f1568e75042b0a4b)
+---
+ arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-milkv-jupiter.dts
+@@ -72,6 +72,12 @@
+ 	status = "okay";
+ };
+ 
++&i2c8 {
++	pinctrl-0 = <&i2c8_cfg>;
++	pinctrl-names = "default";
++	status = "okay";
++};
++
+ &uart0 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&uart0_2_cfg>;

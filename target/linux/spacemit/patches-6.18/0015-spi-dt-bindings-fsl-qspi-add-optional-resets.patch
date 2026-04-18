@@ -1,0 +1,61 @@
+From bd4fdd5e44be1977acd6cd859f31c9d39f8a1e8d Mon Sep 17 00:00:00 2001
+From: Alex Elder <elder@riscstar.com>
+Date: Mon, 27 Oct 2025 08:30:00 -0500
+Subject: [PATCH] spi: dt-bindings: fsl-qspi: add optional resets
+
+Allow two resets to be defined to support the SpacemiT K1 SoC QSPI IP.
+Move the allOf block down, below the required section.
+
+Reviewed-by: Frank Li <Frank.Li@nxp.com>
+Acked-by: Conor Dooley <conor.dooley@microchip.com>
+Signed-off-by: Alex Elder <elder@riscstar.com>
+Link: https://patch.msgid.link/20251027133008.360237-3-elder@riscstar.com
+Signed-off-by: Mark Brown <broonie@kernel.org>
+(cherry picked from commit 873a46141460d209bb62eaa0dc9e7b67bff924a6)
+---
+ .../bindings/spi/fsl,spi-fsl-qspi.yaml        | 20 ++++++++++++++++---
+ 1 file changed, 17 insertions(+), 3 deletions(-)
+
+--- a/Documentation/devicetree/bindings/spi/fsl,spi-fsl-qspi.yaml
++++ b/Documentation/devicetree/bindings/spi/fsl,spi-fsl-qspi.yaml
+@@ -9,9 +9,6 @@ title: Freescale Quad Serial Peripheral
+ maintainers:
+   - Han Xu <han.xu@nxp.com>
+ 
+-allOf:
+-  - $ref: spi-controller.yaml#
+-
+ properties:
+   compatible:
+     oneOf:
+@@ -55,6 +52,11 @@ properties:
+       - const: qspi_en
+       - const: qspi
+ 
++  resets:
++    items:
++      - description: SoC QSPI reset
++      - description: SoC QSPI bus reset
++
+ required:
+   - compatible
+   - reg
+@@ -63,6 +65,18 @@ required:
+   - clocks
+   - clock-names
+ 
++allOf:
++  - $ref: spi-controller.yaml#
++  - if:
++      properties:
++        compatible:
++          not:
++            contains:
++              const: spacemit,k1-qspi
++    then:
++      properties:
++        resets: false
++
+ unevaluatedProperties: false
+ 
+ examples:
