@@ -128,6 +128,34 @@ endef
 $(eval $(call KernelPackage,spi-stm32))
 
 
+define KernelPackage/spi-stm32-ospi
+  SUBMENU=$(SPI_MENU)
+  TITLE:=STMicroelectronics STM32 OCTO SPI controller
+  DEPENDS:=@LINUX_6_18 \
+	   @TARGET_stm32
+  KCONFIG:=CONFIG_SPI_STM32_OSPI \
+	   CONFIG_SPI_MEM=y
+  FILES:=$(LINUX_DIR)/drivers/spi/spi-stm32-ospi.ko
+  AUTOLOAD:=$(call AutoProbe,spi-stm32-ospi)
+endef
+
+$(eval $(call KernelPackage,spi-stm32-ospi))
+
+
+define KernelPackage/spi-stm32-qspi
+  SUBMENU=$(SPI_MENU)
+  TITLE:=STMicroelectronics STM32 QUAD SPI controller
+  DEPENDS:=@LINUX_6_18 \
+	   @TARGET_stm32
+  KCONFIG:=CONFIG_SPI_STM32_QSPI \
+	   CONFIG_SPI_MEM=y
+  FILES:=$(LINUX_DIR)/drivers/spi/spi-stm32-qspi.ko
+  AUTOLOAD:=$(call AutoProbe,spi-stm32-qspi)
+endef
+
+$(eval $(call KernelPackage,spi-stm32-qspi))
+
+
 define KernelPackage/stm32-adc
   TITLE:=STM32 ADC
   KCONFIG:=CONFIG_STM32_ADC_CORE \
