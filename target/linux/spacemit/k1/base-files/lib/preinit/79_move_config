@@ -1,0 +1,35 @@
+export_partdevice_by_name() {
+	local var="$1" partname="$2"
+	local uevent line MAJOR MINOR DEVNAME DEVTYPE DISKSEQ PARTN PARTNAME PARTUUID
+
+	for uevent in /sys/class/block/*/uevent; do
+		while read line; do
+			export -n "$line"
+		done < "$uevent"
+		if [ "$BOOTDEV_DISKSEQ" = "$DISKSEQ" -a -b "/dev/$DEVNAME" ]; then
+			if [ "$PARTNAME" = "$partname" -a "$DEVTYPE" = "partition" ]; then
+				export "$var=$DEVNAME"
+				return 0
+			fi
+		fi
+	done
+
+	return 1
+}
+
+move_config() {
+	local diskdev partdev bootn
+
+	. /lib/upgrade/common.sh
+
+	if export_bootdevice && export_partdevice_by_name partdev "bootfs"; then
+		if mount -o rw,noatime "/dev/$partdev" /mnt; then
+			if [ -f "/mnt/$BACKUP_FILE" ]; then
+				mv -f "/mnt/$BACKUP_FILE" /
+			fi
+			umount /mnt
+		fi
+	fi
+}
+
+boot_hook_add preinit_mount_root move_config
