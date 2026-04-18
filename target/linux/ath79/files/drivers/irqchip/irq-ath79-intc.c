@@ -21,7 +21,7 @@ struct ath79_intc {
 	struct irq_chip chip;
 	u32 irq;
 	u32 num_irqs;
-	u32 pending_mask;
+	u32 enable_mask;
 	u32 int_status;
 	u32 irq_mask[ATH79_MAX_INTC_CASCADE];
 	u32 irq_wb_chan[ATH79_MAX_INTC_CASCADE];
@@ -34,7 +34,7 @@ static void ath79_intc_irq_handler(struct irq_desc *desc)
 	u32 pending;
 
 	pending = ath79_reset_rr(intc->int_status);
-	pending &= intc->pending_mask;
+	pending &= intc->enable_mask;
 
 	if (pending) {
 		int i;
@@ -109,7 +109,7 @@ static int __init ath79_intc_of_init(
 
 	of_property_read_u32_array(node, "qca,pending-bits", intc->irq_mask, cnt);
 	for (i = 0; i < cnt; i++) {
-		intc->pending_mask |= intc->irq_mask[i];
+		intc->enable_mask |= intc->irq_mask[i];
 		intc->irq_wb_chan[i] = 0xffffffff;
 	}
 
