@@ -1,0 +1,35 @@
+From 42908d64001ac8e3401c28b87472f26a06ecc306 Mon Sep 17 00:00:00 2001
+From: Troy Mitchell <troy.mitchell@linux.spacemit.com>
+Date: Tue, 18 Nov 2025 14:08:06 +0800
+Subject: [PATCH] rtc: spacemit: MFD_SPACEMIT_P1 as dependencies
+
+RTC_DRV_SPACEMIT_P1 is a subdevice of P1 and should depend on
+MFD_SPACEMIT_P1 rather than selecting it directly. Using 'select'
+does not always respect the parent's dependencies, so 'depends on'
+is the safer and more correct choice.
+
+Additionally, the default value depends on MFD_SPACEMIT_P1 rather
+than ARCH_SPACEMIT.
+
+Signed-off-by: Troy Mitchell <troy.mitchell@linux.spacemit.com>
+Acked-by: Alex Elder <elder@riscstar.com>
+Link: https://patch.msgid.link/20251118-p1-kconfig-fix-v3-2-8839c5ac5db3@linux.spacemit.com
+Signed-off-by: Alexandre Belloni <alexandre.belloni@bootlin.com>
+(cherry picked from commit 16bd954c93360145bc77cc601e350913fc28182d)
+---
+ drivers/rtc/Kconfig | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/rtc/Kconfig
++++ b/drivers/rtc/Kconfig
+@@ -409,8 +409,8 @@ config RTC_DRV_MAX77686
+ config RTC_DRV_SPACEMIT_P1
+ 	tristate "SpacemiT P1 RTC"
+ 	depends on ARCH_SPACEMIT || COMPILE_TEST
+-	select MFD_SPACEMIT_P1
+-	default ARCH_SPACEMIT
++	depends on MFD_SPACEMIT_P1
++	default MFD_SPACEMIT_P1
+ 	help
+ 	  Enable support for the RTC function in the SpacemiT P1 PMIC.
+ 	  This driver can also be built as a module, which will be called

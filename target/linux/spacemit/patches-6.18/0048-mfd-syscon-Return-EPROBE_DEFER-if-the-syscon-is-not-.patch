@@ -1,0 +1,32 @@
+From 5b53d038e55deb8d6a90ede920352c9ac57fba95 Mon Sep 17 00:00:00 2001
+From: Dan Carpenter <dan.carpenter@linaro.org>
+Date: Sun, 2 Nov 2025 14:59:22 +0300
+Subject: [PATCH] mfd: syscon: Return -EPROBE_DEFER if the syscon is not found
+
+These days we can register syscons with of_syscon_register_regmap() so
+when we can't find the syscon that probably means it hasn't been
+registered yet.  Return -EPROBE_DEFER so the driver will try probing
+again.
+
+Signed-off-by: Dan Carpenter <dan.carpenter@linaro.org>
+Reviewed-by: Arnd Bergmann <arnd@arndb.de>
+Reviewed-by: Chen-Yu Tsai <wens@kernel.org>
+Acked-by: Rob Herring (Arm) <robh@kernel.org>
+Link: https://patch.msgid.link/aQdHmrchkmOr34r3@stanley.mountain
+Signed-off-by: Lee Jones <lee@kernel.org>
+(cherry picked from commit b73d5593bfde6bf570d55bcff3576e35cdf4ec9a)
+---
+ drivers/mfd/syscon.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/mfd/syscon.c
++++ b/drivers/mfd/syscon.c
+@@ -183,7 +183,7 @@ static struct regmap *device_node_get_re
+ 		if (create_regmap)
+ 			syscon = of_syscon_register(np, check_res);
+ 		else
+-			syscon = ERR_PTR(-EINVAL);
++			syscon = ERR_PTR(-EPROBE_DEFER);
+ 	}
+ 	mutex_unlock(&syscon_list_lock);
+ 

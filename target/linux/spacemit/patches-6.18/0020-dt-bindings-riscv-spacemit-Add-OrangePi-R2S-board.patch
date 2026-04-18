@@ -1,0 +1,31 @@
+From e0aa25599013ae313258b9e76480a1ce799e3c5f Mon Sep 17 00:00:00 2001
+From: Michael Opdenacker <michael.opdenacker@rootcommit.com>
+Date: Wed, 12 Nov 2025 04:44:40 +0000
+Subject: [PATCH] dt-bindings: riscv: spacemit: Add OrangePi R2S board
+
+Document the compatible string for the OrangePi R2S board [1], which
+is marketed as using the Ky X1 SoC but is in fact identical in die
+and package to the SpacemiT K1 SoC [2].
+
+Link: http://www.orangepi.org/html/hardWare/computerAndMicrocontrollers/details/Orange-Pi-R2S.html [1]
+Link: https://www.spacemit.com/en/key-stone-k1 [2]
+Signed-off-by: Michael Opdenacker <michael.opdenacker@rootcommit.com>
+Acked-by: Krzysztof Kozlowski <krzysztof.kozlowski@linaro.org>
+Reviewed-by: Yixun Lan <dlan@gentoo.org>
+Link: https://lore.kernel.org/r/20251112044426.2351999-2-michael.opdenacker@rootcommit.com
+Signed-off-by: Yixun Lan <dlan@gentoo.org>
+(cherry picked from commit 323256d11e01d5ee2a0a2e7b682890498b90b212)
+---
+ Documentation/devicetree/bindings/riscv/spacemit.yaml | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/Documentation/devicetree/bindings/riscv/spacemit.yaml
++++ b/Documentation/devicetree/bindings/riscv/spacemit.yaml
+@@ -23,6 +23,7 @@ properties:
+               - bananapi,bpi-f3
+               - milkv,jupiter
+               - spacemit,musepi-pro
++              - xunlong,orangepi-r2s
+               - xunlong,orangepi-rv2
+           - const: spacemit,k1
+ 

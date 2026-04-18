@@ -1,0 +1,42 @@
+From f8859e056e28edd9bd96045851018497fbfb9add Mon Sep 17 00:00:00 2001
+From: Troy Mitchell <troy.mitchell@linux.spacemit.com>
+Date: Thu, 8 Jan 2026 14:42:38 +0800
+Subject: [PATCH] dt-bindings: pinctrl: spacemit: add syscon property
+
+In order to access the protected IO power domain registers, a valid
+unlock sequence must be performed by writing the required keys to the
+AIB Secure Access Register (ASAR).
+
+The ASAR register resides within the APBC register address space.
+A corresponding syscon property is added to allow the pinctrl driver
+to access this register.
+
+Signed-off-by: Troy Mitchell <troy.mitchell@linux.spacemit.com>
+Reviewed-by: Rob Herring (Arm) <robh@kernel.org>
+Signed-off-by: Linus Walleij <linusw@kernel.org>
+(cherry picked from commit e817f0223d78818cd6c0e3480355c9a9cfbc0096)
+---
+ .../devicetree/bindings/pinctrl/spacemit,k1-pinctrl.yaml     | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/Documentation/devicetree/bindings/pinctrl/spacemit,k1-pinctrl.yaml
++++ b/Documentation/devicetree/bindings/pinctrl/spacemit,k1-pinctrl.yaml
+@@ -30,6 +30,10 @@ properties:
+   resets:
+     maxItems: 1
+ 
++  spacemit,apbc:
++    $ref: /schemas/types.yaml#/definitions/phandle
++    description: Phandle to syscon that access the protected register
++
+ patternProperties:
+   '-cfg$':
+     type: object
+@@ -130,6 +134,7 @@ examples:
+             clocks = <&syscon_apbc 42>,
+                      <&syscon_apbc 94>;
+             clock-names = "func", "bus";
++            spacemit,apbc = <&syscon_apbc>;
+ 
+             uart0_2_cfg: uart0-2-cfg {
+                 uart0-2-pins {

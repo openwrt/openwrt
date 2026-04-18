@@ -1,0 +1,88 @@
+From e1053cc90e84e37994d7a9f782a5226bebe9003a Mon Sep 17 00:00:00 2001
+From: Michael Opdenacker <michael.opdenacker@rootcommit.com>
+Date: Wed, 22 Oct 2025 20:18:38 +0000
+Subject: [PATCH] riscv: dts: spacemit: add Ethernet and PDMA to OrangePi RV2
+
+The OrangePi RV2 board ships two RGMII ethernet ports.
+Each has an external Motorcomm YT8531C PHY attached, the PHY uses GPIO
+for reset pin control.
+
+Enable PDMA for the SpacemiT K1-based SoC in the OrangePi RV2 board.
+
+Signed-off-by: Michael Opdenacker <michael.opdenacker@rootcommit.com>
+Reviewed-by: Yixun Lan <dlan@gentoo.org>
+Link: https://lore.kernel.org/r/20251022201807.1474789-2-michael.opdenacker@rootcommit.com
+Signed-off-by: Yixun Lan <dlan@gentoo.org>
+(cherry picked from commit 9813395078352fed03c88742bd39b9c4a0e40c15)
+---
+ .../boot/dts/spacemit/k1-orangepi-rv2.dts     | 52 +++++++++++++++++++
+ 1 file changed, 52 insertions(+)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-orangepi-rv2.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-orangepi-rv2.dts
+@@ -15,6 +15,8 @@
+ 
+ 	aliases {
+ 		serial0 = &uart0;
++		ethernet0 = &eth0;
++		ethernet1 = &eth1;
+ 	};
+ 
+ 	chosen {
+@@ -33,6 +35,56 @@
+ 	};
+ };
+ 
++&eth0 {
++	phy-handle = <&rgmii0>;
++	phy-mode = "rgmii-id";
++	pinctrl-names = "default";
++	pinctrl-0 = <&gmac0_cfg>;
++	rx-internal-delay-ps = <0>;
++	tx-internal-delay-ps = <0>;
++	status = "okay";
++
++	mdio-bus {
++		#address-cells = <0x1>;
++		#size-cells = <0x0>;
++
++		reset-gpios = <&gpio K1_GPIO(110) GPIO_ACTIVE_LOW>;
++		reset-delay-us = <10000>;
++		reset-post-delay-us = <100000>;
++
++		rgmii0: phy@1 {
++			reg = <0x1>;
++		};
++	};
++};
++
++&eth1 {
++	phy-handle = <&rgmii1>;
++	phy-mode = "rgmii-id";
++	pinctrl-names = "default";
++	pinctrl-0 = <&gmac1_cfg>;
++	rx-internal-delay-ps = <0>;
++	tx-internal-delay-ps = <250>;
++	status = "okay";
++
++	mdio-bus {
++		#address-cells = <0x1>;
++		#size-cells = <0x0>;
++
++		reset-gpios = <&gpio K1_GPIO(115) GPIO_ACTIVE_LOW>;
++		reset-delay-us = <10000>;
++		reset-post-delay-us = <100000>;
++
++		rgmii1: phy@1 {
++			reg = <0x1>;
++		};
++	};
++};
++
++&pdma {
++	status = "okay";
++};
++
+ &uart0 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&uart0_2_cfg>;

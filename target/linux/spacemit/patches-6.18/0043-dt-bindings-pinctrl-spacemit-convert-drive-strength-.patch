@@ -1,0 +1,38 @@
+From 2cdca632a53d75567903f3e5c52efee9765920e2 Mon Sep 17 00:00:00 2001
+From: Yixun Lan <dlan@gentoo.org>
+Date: Fri, 2 Jan 2026 15:00:22 +0800
+Subject: [PATCH] dt-bindings: pinctrl: spacemit: convert drive strength to
+ schema format
+
+In order to better extend the pinctrl support for future new SoC, convert
+drive strength setting from free form text to more standard schema format.
+
+Signed-off-by: Yixun Lan <dlan@gentoo.org>
+Reviewed-by: Krzysztof Kozlowski <krzysztof.kozlowski@oss.qualcomm.com>
+Signed-off-by: Linus Walleij <linusw@kernel.org>
+(cherry picked from commit c3efac0592f88ab48c8eef028268e6514908be51)
+---
+ .../bindings/pinctrl/spacemit,k1-pinctrl.yaml        | 12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
+
+--- a/Documentation/devicetree/bindings/pinctrl/spacemit,k1-pinctrl.yaml
++++ b/Documentation/devicetree/bindings/pinctrl/spacemit,k1-pinctrl.yaml
+@@ -72,10 +72,14 @@ patternProperties:
+             enum: [ 0, 1 ]
+ 
+           drive-strength:
+-            description: |
+-              typical current when output high level.
+-              1.8V output: 11, 21, 32, 42 (mA)
+-              3.3V output: 7, 10, 13, 16, 19, 23, 26, 29 (mA)
++            description:
++              typical current (in mA) when the output at high level.
++            oneOf:
++              - enum: [ 11, 21, 32, 42 ]
++                description: For K1 SoC, 1.8V voltage output
++
++              - enum: [ 7, 10, 13, 16, 19, 23, 26, 29 ]
++                description: For K1 SoC, 3.3V voltage output
+ 
+           input-schmitt:
+             description: |

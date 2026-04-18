@@ -1,0 +1,35 @@
+From c3793a62f0d3aaff4bb05103c10d398920660438 Mon Sep 17 00:00:00 2001
+From: Troy Mitchell <troy.mitchell@linux.spacemit.com>
+Date: Mon, 27 Oct 2025 13:48:05 +0800
+Subject: [PATCH] mfd: simple-mfd-i2c: Remove select I2C_K1 from
+ MFD_SPACEMIT_P1
+
+select will force a symbol to a specific value without considering
+its dependencies. As a result, the i2c-k1 driver will fail to build
+when OF or COMMON_CLK are disabled.
+
+The reason for removing I2C_K1 instead of adding a depends on condition
+is to keep the possibility for other SoCs to use this PMIC.
+
+Reported-by: kernel test robot <lkp@intel.com>
+Closes: https://lore.kernel.org/oe-kbuild-all/202510211523.sSEVqPUQ-lkp@intel.com/
+Acked-by: Alex Elder <elder@riscstar.com>
+Signed-off-by: Troy Mitchell <troy.mitchell@linux.spacemit.com>
+Link: https://lore.kernel.org/all/20251022004830-GYB1522542@gentoo.org/ [1]
+Link: https://patch.msgid.link/20251027-p1-kconfig-fix-v2-1-49688f30bae8@linux.spacemit.com
+Signed-off-by: Lee Jones <lee@kernel.org>
+(cherry picked from commit ecf6bc474ae97c404e2125b413eb0ef3627b03c5)
+---
+ drivers/mfd/Kconfig | 1 -
+ 1 file changed, 1 deletion(-)
+
+--- a/drivers/mfd/Kconfig
++++ b/drivers/mfd/Kconfig
+@@ -1269,7 +1269,6 @@ config MFD_SPACEMIT_P1
+ 	tristate "SpacemiT P1 PMIC"
+ 	depends on ARCH_SPACEMIT || COMPILE_TEST
+ 	depends on I2C
+-	select I2C_K1
+ 	select MFD_SIMPLE_MFD_I2C
+ 	help
+ 	  This option supports the I2C-based SpacemiT P1 PMIC, which

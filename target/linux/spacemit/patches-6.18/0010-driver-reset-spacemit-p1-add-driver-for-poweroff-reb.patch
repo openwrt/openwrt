@@ -1,0 +1,143 @@
+From 294ba4e3d30d6d64b85966684624419806c00c5e Mon Sep 17 00:00:00 2001
+From: Aurelien Jarno <aurelien@aurel32.net>
+Date: Mon, 3 Nov 2025 00:01:59 +0100
+Subject: [PATCH] driver: reset: spacemit-p1: add driver for poweroff/reboot
+
+This driver implements poweroff/reboot support for the SpacemiT P1 PMIC
+chip, which is commonly paired with the SpacemiT K1 SoC.
+
+The SpacemiT P1 support is implemented as a MFD driver, so the access is
+done directly through the regmap interface. Reboot or poweroff is
+triggered by setting a specific bit in a control register, which is
+automatically cleared by the hardware afterwards.
+
+Signed-off-by: Aurelien Jarno <aurelien@aurel32.net>
+Link: https://patch.msgid.link/20251102230352.914421-2-aurelien@aurel32.net
+Signed-off-by: Sebastian Reichel <sebastian.reichel@collabora.com>
+(cherry picked from commit 28124cc0fb8c7dc01a6834d227351e25d9a92c58)
+---
+ drivers/power/reset/Kconfig              |  9 +++
+ drivers/power/reset/Makefile             |  1 +
+ drivers/power/reset/spacemit-p1-reboot.c | 88 ++++++++++++++++++++++++
+ 3 files changed, 98 insertions(+)
+ create mode 100644 drivers/power/reset/spacemit-p1-reboot.c
+
+--- a/drivers/power/reset/Kconfig
++++ b/drivers/power/reset/Kconfig
+@@ -283,6 +283,15 @@ config POWER_RESET_KEYSTONE
+ 	help
+ 	  Reboot support for the KEYSTONE SoCs.
+ 
++config POWER_RESET_SPACEMIT_P1
++	tristate "SpacemiT P1 poweroff and reset driver"
++	depends on ARCH_SPACEMIT || COMPILE_TEST
++	depends on MFD_SPACEMIT_P1
++	default MFD_SPACEMIT_P1
++	help
++	  This driver supports power-off and reset operations for the SpacemiT
++	  P1 PMIC.
++
+ config POWER_RESET_SYSCON
+ 	bool "Generic SYSCON regmap reset driver"
+ 	depends on OF
+--- a/drivers/power/reset/Makefile
++++ b/drivers/power/reset/Makefile
+@@ -24,6 +24,7 @@ obj-$(CONFIG_POWER_RESET_LTC2952) += ltc
+ obj-$(CONFIG_POWER_RESET_QNAP) += qnap-poweroff.o
+ obj-$(CONFIG_POWER_RESET_REGULATOR) += regulator-poweroff.o
+ obj-$(CONFIG_POWER_RESET_RESTART) += restart-poweroff.o
++obj-$(CONFIG_POWER_RESET_SPACEMIT_P1) += spacemit-p1-reboot.o
+ obj-$(CONFIG_POWER_RESET_ST) += st-poweroff.o
+ obj-$(CONFIG_POWER_RESET_TH1520_AON) += th1520-aon-reboot.o
+ obj-$(CONFIG_POWER_RESET_TORADEX_EC) += tdx-ec-poweroff.o
+--- /dev/null
++++ b/drivers/power/reset/spacemit-p1-reboot.c
+@@ -0,0 +1,88 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Copyright (C) 2025 by Aurelien Jarno
++ */
++
++#include <linux/bits.h>
++#include <linux/mod_devicetable.h>
++#include <linux/platform_device.h>
++#include <linux/regmap.h>
++#include <linux/reboot.h>
++
++/* Power Control Register 2 */
++#define PWR_CTRL2		0x7e
++#define PWR_CTRL2_SHUTDOWN	BIT(2)	/* Shutdown request */
++#define PWR_CTRL2_RST		BIT(1)	/* Reset request */
++
++static int spacemit_p1_pwroff_handler(struct sys_off_data *data)
++{
++	struct regmap *regmap = data->cb_data;
++	int ret;
++
++	/* Put the PMIC into shutdown state */
++	ret = regmap_set_bits(regmap, PWR_CTRL2, PWR_CTRL2_SHUTDOWN);
++	if (ret) {
++		dev_err(data->dev, "shutdown failed: %d\n", ret);
++		return notifier_from_errno(ret);
++	}
++
++	return NOTIFY_DONE;
++}
++
++static int spacemit_p1_restart_handler(struct sys_off_data *data)
++{
++	struct regmap *regmap = data->cb_data;
++	int ret;
++
++	/* Put the PMIC into reset state */
++	ret = regmap_set_bits(regmap, PWR_CTRL2, PWR_CTRL2_RST);
++	if (ret) {
++		dev_err(data->dev, "restart failed: %d\n", ret);
++		return notifier_from_errno(ret);
++	}
++
++	return NOTIFY_DONE;
++}
++
++static int spacemit_p1_reboot_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct regmap *regmap;
++	int ret;
++
++	regmap = dev_get_regmap(dev->parent, NULL);
++	if (!regmap)
++		return -ENODEV;
++
++	ret = devm_register_power_off_handler(dev, &spacemit_p1_pwroff_handler,
++					      regmap);
++	if (ret)
++		return dev_err_probe(dev, ret,
++				     "Failed to register power off handler\n");
++
++	ret = devm_register_restart_handler(dev, spacemit_p1_restart_handler,
++					    regmap);
++	if (ret)
++		return dev_err_probe(dev, ret,
++				     "Failed to register restart handler\n");
++
++	return 0;
++}
++
++static const struct platform_device_id spacemit_p1_reboot_id_table[] = {
++	{ "spacemit-p1-reboot", },
++	{ /* sentinel */ },
++};
++MODULE_DEVICE_TABLE(platform, spacemit_p1_reboot_id_table);
++
++static struct platform_driver spacemit_p1_reboot_driver = {
++	.driver = {
++		.name = "spacemit-p1-reboot",
++	},
++	.probe = spacemit_p1_reboot_probe,
++	.id_table = spacemit_p1_reboot_id_table,
++};
++module_platform_driver(spacemit_p1_reboot_driver);
++
++MODULE_DESCRIPTION("SpacemiT P1 reboot/poweroff driver");
++MODULE_LICENSE("GPL");
