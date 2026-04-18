@@ -1,0 +1,123 @@
+From 95f8bb2a9ec4cd5967ccb5726795c376160a9ba7 Mon Sep 17 00:00:00 2001
+From: Chukun Pan <amadeus@jmu.edu.cn>
+Date: Sun, 2 Aug 2026 18:01:01 +0800
+Subject: [PATCH] riscv: dts: spacemit: sort nodes on OrangePi RV2
+
+Sort the nodes for DT. Also reorder the properties of the sdhci0 node.
+
+Signed-off-by: Chukun Pan <amadeus@jmu.edu.cn>
+Acked-by: Yixun Lan <dlan@kernel.org>
+Link: https://patch.msgid.link/20260802100101.327815-1-amadeus@jmu.edu.cn
+Signed-off-by: Yixun Lan <dlan@kernel.org>
+(cherry picked from commit d4871c29f21dda76990cd3138c72ceb71c856b93)
+---
+ .../boot/dts/spacemit/k1-orangepi-rv2.dts     | 66 +++++++++----------
+ 1 file changed, 33 insertions(+), 33 deletions(-)
+
+--- a/arch/riscv/boot/dts/spacemit/k1-orangepi-rv2.dts
++++ b/arch/riscv/boot/dts/spacemit/k1-orangepi-rv2.dts
+@@ -25,6 +25,17 @@
+ 		stdout-path = "serial0";
+ 	};
+ 
++	leds {
++		compatible = "gpio-leds";
++
++		led-1 {
++			label = "sys-led";
++			gpios = <&gpio K1_GPIO(96) GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "heartbeat";
++			default-state = "on";
++		};
++	};
++
+ 	pcie_vcc3v3: regulator-pcie-vcc3v3 {
+ 		compatible = "regulator-fixed";
+ 		enable-active-high;
+@@ -63,17 +74,6 @@
+ 		regulator-max-microvolt = <5000000>;
+ 		vin-supply = <&vcc_5v0>;
+ 	};
+-
+-	leds {
+-		compatible = "gpio-leds";
+-
+-		led1 {
+-			label = "sys-led";
+-			gpios = <&gpio K1_GPIO(96) GPIO_ACTIVE_LOW>;
+-			linux,default-trigger = "heartbeat";
+-			default-state = "on";
+-		};
+-	};
+ };
+ 
+ &combo_phy {
+@@ -138,10 +138,6 @@
+ 	};
+ };
+ 
+-&pdma {
+-	status = "okay";
+-};
+-
+ &i2c8 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&i2c8_cfg>;
+@@ -290,6 +286,10 @@
+ 	status = "okay";
+ };
+ 
++&pdma {
++	status = "okay";
++};
++
+ &qspi {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&qspi_cfg>;
+@@ -335,6 +335,24 @@
+ 	};
+ };
+ 
++&sdhci0 {
++	bus-width = <4>;
++	cap-sd-highspeed;
++	cd-gpios = <&gpio K1_GPIO(80) GPIO_ACTIVE_LOW>;
++	disable-wp;
++	no-mmc;
++	no-sdio;
++	pinctrl-names = "default", "uhs";
++	pinctrl-0 = <&mmc1_cfg>;
++	pinctrl-1 = <&mmc1_uhs_cfg>;
++	sd-uhs-sdr25;
++	sd-uhs-sdr50;
++	sd-uhs-sdr104;
++	vmmc-supply = <&buck4_3v3>;
++	vqmmc-supply = <&aldo1>;
++	status = "okay";
++};
++
+ &uart0 {
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&uart0_2_cfg>;
+@@ -366,21 +384,3 @@
+ 		vdd-supply = <&vcc_5v0>;
+ 	};
+ };
+-
+-&sdhci0 {
+-	pinctrl-names = "default", "uhs";
+-	pinctrl-0 = <&mmc1_cfg>;
+-	pinctrl-1 = <&mmc1_uhs_cfg>;
+-	bus-width = <4>;
+-	cd-gpios = <&gpio K1_GPIO(80) GPIO_ACTIVE_LOW>;
+-	no-mmc;
+-	no-sdio;
+-	disable-wp;
+-	cap-sd-highspeed;
+-	vmmc-supply = <&buck4_3v3>;
+-	vqmmc-supply = <&aldo1>;
+-	sd-uhs-sdr25;
+-	sd-uhs-sdr50;
+-	sd-uhs-sdr104;
+-	status = "okay";
+-};
