@@ -356,11 +356,11 @@ struct ar8327_data {
 	u32 port0_status;
 	u32 port6_status;
 
-	struct ar8327_led **leds;
 	unsigned int num_leds;
 
-	/* all fields below are cleared on reset */
+	/* all fields below eee are cleared on reset */
 	bool eee[AR8XXX_NUM_PHYS];
+	struct ar8327_led *leds[];
 };
 
 #endif
