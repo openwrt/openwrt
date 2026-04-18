@@ -63,7 +63,7 @@ $(eval $(call KernelPackage,acpi-video))
 define KernelPackage/backlight
 	SUBMENU:=$(VIDEO_MENU)
 	TITLE:=Backlight support
-	DEPENDS:=@DISPLAY_SUPPORT +kmod-fb
+	DEPENDS:=@DISPLAY_SUPPORT +LINUX_6_12:kmod-fb
 	HIDDEN:=1
 	KCONFIG:=CONFIG_BACKLIGHT_CLASS_DEVICE \
 		CONFIG_BACKLIGHT_LCD_SUPPORT=y \
@@ -102,7 +102,7 @@ $(eval $(call KernelPackage,backlight-pwm))
 define KernelPackage/fb
   SUBMENU:=$(VIDEO_MENU)
   TITLE:=Framebuffer and framebuffer console support
-  DEPENDS:=@DISPLAY_SUPPORT
+  DEPENDS:=@DISPLAY_SUPPORT +!LINUX_6_12:kmod-backlight
   KCONFIG:= \
 	CONFIG_FB \
 	CONFIG_FB_DEVICE=y \
