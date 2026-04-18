@@ -12,8 +12,7 @@ PKG_VERSION:=2026.04
 PKG_SOURCE:=u-boot-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	https://mirror.cyberbits.eu/u-boot \
-	https://ftp.denx.de/pub/u-boot \
-	ftp://ftp.denx.de/pub/u-boot
+	https://ftp.denx.de/pub/u-boot
 PKG_HASH:=ac7c04b8b7004923b00a4e5d6699c5df4d21233bac9fda690d8cfbc209fff2fd
 
 HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/u-boot-$(PKG_VERSION)

@@ -9,7 +9,7 @@ PKG_VERSION:=2.4
 PKG_RELEASE:=1
 
 PKG_SOURCE:=IPL_ixp400NpeLibraryWithCrypto-2_4.zip
-PKG_SOURCE_URL:=http://downloads.openwrt.org/sources
+PKG_SOURCE_URL:=@OPENWRT
 PKG_HASH:=1b1170d0657847248589d946048c0aeaa9cd671966fc5bec5933283309485eaa
 
 PKG_FLAGS:=nonshared
