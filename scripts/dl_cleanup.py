@@ -257,8 +257,7 @@ def main(argv):
         if o in ("-d", "--dry-run"):
             opt_dryrun = True
         if o in ("-w", "--whitelist"):
-            for i in range(0, len(blacklist)):
-                (name, regex) = blacklist[i]
+            for i, (name, regex) in enumerate(blacklist):
                 if name == v:
                     del blacklist[i]
                     break
