@@ -20,6 +20,7 @@
 struct ath79_intc {
 	struct irq_chip chip;
 	u32 irq;
+	u32 num_irqs;
 	u32 pending_mask;
 	u32 int_status;
 	u32 irq_mask[ATH79_MAX_INTC_CASCADE];
@@ -38,7 +39,7 @@ static void ath79_intc_irq_handler(struct irq_desc *desc)
 	if (pending) {
 		int i;
 
-		for (i = 0; i < domain->hwirq_max; i++)
+		for (i = 0; i < intc->num_irqs; i++)
 			if (pending & intc->irq_mask[i]) {
 				if (intc->irq_wb_chan[i] != 0xffffffff)
 					ath79_ddr_wb_flush(intc->irq_wb_chan[i]);
@@ -98,6 +99,7 @@ static int __init ath79_intc_of_init(
 	intc->chip.name = "INTC";
 	intc->chip.irq_disable = ath79_intc_irq_disable;
 	intc->chip.irq_enable = ath79_intc_irq_enable;
+	intc->num_irqs = cnt;
 
 	if (of_property_read_u32(node, "qca,int-status-addr", &intc->int_status) < 0) {
 		pr_err("Missing address of interrupt status register\n");
