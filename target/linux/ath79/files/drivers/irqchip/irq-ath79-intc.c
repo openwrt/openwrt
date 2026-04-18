@@ -19,7 +19,6 @@
 #define ATH79_MAX_INTC_CASCADE	3
 
 struct ath79_intc {
-	struct irq_chip chip;
 	u32 irq;
 	u32 num_irqs;
 	u32 enable_mask;
@@ -69,12 +68,15 @@ static void ath79_intc_irq_disable(struct irq_data *d)
 	disable_irq(intc->irq);
 }
 
+static const struct irq_chip ath79_intc_irq_chip = {
+	.name = "INTC",
+	.irq_enable = ath79_intc_irq_enable,
+	.irq_disable = ath79_intc_irq_disable,
+};
+
 static int ath79_intc_map(struct irq_domain *d, unsigned int irq, irq_hw_number_t hw)
 {
-	struct ath79_intc *intc = d->host_data;
-
-	irq_set_chip_and_handler(irq, &intc->chip, handle_level_irq);
-
+	irq_set_chip_and_handler(irq, &ath79_intc_irq_chip, handle_level_irq);
 	return 0;
 }
 
@@ -91,21 +93,15 @@ static int __init ath79_intc_of_init(
 	int cnt, cntwb, i, err;
 
 	cnt = of_property_count_u32_elems(node, "qca,pending-bits");
-	if (cnt > ATH79_MAX_INTC_CASCADE) {
-		pr_err("Too many INTC pending bits\n");
-		return -ENOMEM;
-	}
-
-	intc = kzalloc(sizeof(*intc), GFP_KERNEL);
-	if (!intc) {
-		pr_err("Failed to allocate INTC memory\n");
+	if (cnt < 0 || cnt > ATH79_MAX_INTC_CASCADE) {
+		pr_err("Invalid number of INTC pending bits (%d)\n", cnt);
 		return -EINVAL;
 	}
 
-	intc->chip = dummy_irq_chip;
-	intc->chip.name = "INTC";
-	intc->chip.irq_disable = ath79_intc_irq_disable;
-	intc->chip.irq_enable = ath79_intc_irq_enable;
+	intc = kzalloc(sizeof(*intc), GFP_KERNEL);
+	if (!intc)
+		return -ENOMEM;
+
 	intc->num_irqs = cnt;
 
 	if (of_property_read_u32(node, "qca,int-status-addr", &intc->int_status) < 0) {
@@ -129,7 +125,7 @@ static int __init ath79_intc_of_init(
 
 		of_property_read_u32_index(
 			node, "qca,ddr-wb-channel-interrupts", i, &irq);
-		if (irq >= ATH79_MAX_INTC_CASCADE)
+		if (irq >= intc->num_irqs)
 			continue;
 
 		err = of_parse_phandle_with_args(
@@ -150,6 +146,11 @@ static int __init ath79_intc_of_init(
 	}
 
 	domain = irq_domain_create_linear(of_fwnode_handle(node), cnt, &ath79_irq_domain_ops, intc);
+	if (!domain) {
+		err = -EINVAL;
+		goto err;
+	}
+
 	irq_set_chained_handler_and_data(intc->irq, ath79_intc_irq_handler, domain);
 
 	return 0;
