@@ -80,6 +80,11 @@
 **Learning:** Legacy string manipulation functions (`strcpy`, `strcat`) easily introduce memory corruption bugs and are vulnerable to future modifications changing implicit bounds.
 **Prevention:** Always replace `strcat` and `strcpy` with explicitly bounded calls such as `strncpy` and `strncat`, and calculate remaining capacities properly (e.g. `sizeof(buf) - strlen(buf) - 1`). Explicit null-termination `buf[sizeof(buf) - 1] = '\0'` should also be added for safety.
 
+## 2025-05-24 - Buffer Overflow Prevention in trelay.c
+**Vulnerability:** In `package/kernel/trelay/src/trelay.c`, the function `trelay_do_add` used unbounded `strcpy` to copy strings to a dynamically allocated structure using a flexible array member. While the allocation size included `strlen(name) + 1`, a discrepancy between evaluation and usage could theoretically lead to overflows or TOCTOU issues.
+**Learning:** Separate calculation of bounds when dealing with variable length allocations combined with unbounded string routines can be fragile.
+**Prevention:** Always use safe bounded string copy mechanisms like `strscpy`, use variables to reuse the calculated `strlen` for the memory allocation size, and rely on this same value to constrain the subsequent copy operations to guarantee safety.
+
 ## 2026-04-13 - Prevent TOCTOU and Buffer Overflow in trelay
 **Vulnerability:** In `package/kernel/trelay/src/trelay.c`, the `trelay_do_add` function previously used `strlen(name) + 1` directly within `struct_size` for allocating memory with `kzalloc`, and later used an unbounded `strcpy` to copy the `name` string into the structure's flexible array member. If the `name` string was dynamically altered between the memory allocation size calculation and the string copy (Time-of-Check to Time-of-Use), it could result in an unbounded `strcpy` causing an out-of-bounds write buffer overflow.
 **Learning:** In Linux kernel modules (e.g., the `trelay` package), using `strcpy` is unsafe. Dynamically calculating length multiple times for flexible array member allocations and subsequent copies can lead to TOCTOU vulnerabilities if the source buffer contents change between checks.

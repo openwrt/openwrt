@@ -230,7 +230,7 @@ handle_cmd_data(void)
 	struct ead_msg_cmd_data *cmd = EAD_ENC_DATA(msg, cmd_data);
 	int datalen = ead_decrypt_message(msg) - sizeof(struct ead_msg_cmd_data);
 
-	if (datalen < 0)
+	if (datalen < 0 || datalen > sizeof(msgbuf) - sizeof(struct ead_msg) - sizeof(struct ead_msg_encrypted) - sizeof(struct ead_msg_cmd_data))
 		return false;
 
 	if (datalen > 0) {
