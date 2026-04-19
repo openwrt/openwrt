@@ -14,7 +14,7 @@ import struct
 MODEL_LEN = 20
 SIGNATURE_LEN = 16
 LINUXLOAD_LEN = 10
-BUFSIZE = 4096
+BUFSIZE = 65536
 
 parser = argparse.ArgumentParser(description='Generate Cameo firmware header.')
 parser.add_argument('source_file', type=argparse.FileType('rb'))

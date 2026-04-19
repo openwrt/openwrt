@@ -39,15 +39,17 @@
  *    of this copyright notice and list of conditions.
  */
 
+#include <stdlib.h>
+#include <string.h>
+
 #include "t_defines.h"
 
-#ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#endif /* HAVE_UNISTD_H */
 
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <fcntl.h>
 
 #include "t_sha.h"
@@ -124,7 +126,8 @@ t_fshash(out)
     SHA1Update(&ctxt, (unsigned char *) &st, sizeof(st));
     pinode = st.st_ino;
     pdev = st.st_dev;
-    strcpy(dotpath, "..");
+    strncpy(dotpath, "..", sizeof(dotpath) - 1);
+    dotpath[sizeof(dotpath) - 1] = '\0';
     for(i = 0; i < 40; ++i) {
       if(stat(dotpath, &st) < 0)
 	break;
@@ -133,17 +136,22 @@ t_fshash(out)
       SHA1Update(&ctxt, (unsigned char *) &st, sizeof(st));
       pinode = st.st_ino;
       pdev = st.st_dev;
-      strcat(dotpath, "/..");
+      strncat(dotpath, "/..", sizeof(dotpath) - strlen(dotpath) - 1);
     }
   }
 
   if(fstat(0, &st) >= 0)
     SHA1Update(&ctxt, (unsigned char *) &st, sizeof(st));
 
-  sprintf(dotpath, "/tmp/rnd.%d", getpid());
-  if(creat(dotpath, 0600) >= 0 && stat(dotpath, &st) >= 0)
-    SHA1Update(&ctxt, (unsigned char *) &st, sizeof(st));
-  unlink(dotpath);
+  strncpy(dotpath, "/tmp/rnd.XXXXXX", sizeof(dotpath) - 1);
+  dotpath[sizeof(dotpath) - 1] = '\0';
+  int fd = mkstemp(dotpath);
+  if(fd >= 0) {
+    if (fstat(fd, &st) >= 0)
+      SHA1Update(&ctxt, (unsigned char *) &st, sizeof(st));
+    close(fd);
+    unlink(dotpath);
+  }
 
   SHA1Final(out, &ctxt);
 }

@@ -16,7 +16,7 @@ permissions:
 jobs:
   build-macos-latest:
     if: github.event_name != 'push'
-    runs-on: self-hosted
+    runs-on: macos-latest
 
     steps:
       - name: Checkout
@@ -97,7 +97,7 @@ jobs:
           path: ${{ env.WORKPATH }}/openwrt/.config
 
   build-linux-buildbot:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     container: registry.gitlab.com/openwrt/buildbot/buildworker-3.4.1
 
     steps:
@@ -160,7 +160,7 @@ jobs:
 
   push-tools-container:
     needs: build-linux-buildbot
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     if: github.event_name == 'push'
 
     permissions:

@@ -1,0 +1,89 @@
+From 5e7365b5a1ac8f517a7a84442289d7de242deb76 Mon Sep 17 00:00:00 2001
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Sun, 14 Dec 2025 10:30:07 +0100
+Subject: [PATCH] net: airoha: Move net_devs registration in a dedicated
+ routine
+
+Since airoha_probe() is not executed under rtnl lock, there is small race
+where a given device is configured by user-space while the remaining ones
+are not completely loaded from the dts yet. This condition will allow a
+hw device misconfiguration since there are some conditions (e.g. GDM2 check
+in airoha_dev_init()) that require all device are properly loaded from the
+device tree. Fix the issue moving net_devices registration at the end of
+the airoha_probe routine.
+
+Fixes: 9cd451d414f6e ("net: airoha: Add loopback support for GDM2")
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Reviewed-by: Simon Horman <horms@kernel.org>
+Link: https://patch.msgid.link/20251214-airoha-fix-dev-registration-v1-1-860e027ad4c6@kernel.org
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+---
+ drivers/net/ethernet/airoha/airoha_eth.c | 39 ++++++++++++++++--------
+ 1 file changed, 26 insertions(+), 13 deletions(-)
+
+--- a/drivers/net/ethernet/airoha/airoha_eth.c
++++ b/drivers/net/ethernet/airoha/airoha_eth.c
+@@ -2924,19 +2924,26 @@ static int airoha_alloc_gdm_port(struct
+ 	port->id = id;
+ 	eth->ports[p] = port;
+ 
+-	err = airoha_metadata_dst_alloc(port);
+-	if (err)
+-		return err;
++	return airoha_metadata_dst_alloc(port);
++}
+ 
+-	err = register_netdev(dev);
+-	if (err)
+-		goto free_metadata_dst;
++static int airoha_register_gdm_devices(struct airoha_eth *eth)
++{
++	int i;
+ 
+-	return 0;
++	for (i = 0; i < ARRAY_SIZE(eth->ports); i++) {
++		struct airoha_gdm_port *port = eth->ports[i];
++		int err;
++
++		if (!port)
++			continue;
++
++		err = register_netdev(port->dev);
++		if (err)
++			return err;
++	}
+ 
+-free_metadata_dst:
+-	airoha_metadata_dst_free(port);
+-	return err;
++	return 0;
+ }
+ 
+ static int airoha_probe(struct platform_device *pdev)
+@@ -3027,6 +3034,10 @@ static int airoha_probe(struct platform_
+ 		}
+ 	}
+ 
++	err = airoha_register_gdm_devices(eth);
++	if (err)
++		goto error_napi_stop;
++
+ 	return 0;
+ 
+ error_napi_stop:
+@@ -3040,10 +3051,12 @@ error_hw_cleanup:
+ 	for (i = 0; i < ARRAY_SIZE(eth->ports); i++) {
+ 		struct airoha_gdm_port *port = eth->ports[i];
+ 
+-		if (port && port->dev->reg_state == NETREG_REGISTERED) {
++		if (!port)
++			continue;
++
++		if (port->dev->reg_state == NETREG_REGISTERED)
+ 			unregister_netdev(port->dev);
+-			airoha_metadata_dst_free(port);
+-		}
++		airoha_metadata_dst_free(port);
+ 	}
+ 	free_netdev(eth->napi_dev);
+ 	platform_set_drvdata(pdev, NULL);

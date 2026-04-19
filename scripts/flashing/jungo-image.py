@@ -29,7 +29,6 @@ import sys
 import getopt
 import getpass
 import telnetlib
-import string
 import binascii
 import socket
 import _thread
@@ -140,7 +139,8 @@ def image_dump(tn, dumpfile):
                     print("Format error: %x != %x"%(a,count))
                     sys.exit(2)
                 count += 16
-                f.write(binascii.a2b_hex(string.join(s[1:],'')))
+                # Optimization: Use native ''.join instead of deprecated string.join for better performance and Python 3 compatibility
+                f.write(binascii.a2b_hex("".join(s[1:])))
         tn.read_until(">",1)
 
     f.close()

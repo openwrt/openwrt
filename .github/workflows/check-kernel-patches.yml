@@ -15,7 +15,7 @@ permissions:
 jobs:
   setup_build:
     name: Setup build
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     outputs:
       owner_lc: ${{ steps.lower_owner.outputs.owner_lc }}
       container_tag: ${{ steps.determine_tools_container.outputs.container_tag }}
@@ -62,7 +62,7 @@ jobs:
   check-patch:
     name: Check Kernel patches
     needs: setup_build
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
 
     container: ghcr.io/${{ needs.setup_build.outputs.owner_lc }}/tools:${{ needs.setup_build.outputs.container_tag }}
 
@@ -86,6 +86,10 @@ jobs:
           SUBTARGET=$(echo ${{ inputs.target }} | cut -d "/" -f 2)
           echo "TARGET=$TARGET" >> "$GITHUB_ENV"
           echo "SUBTARGET=$SUBTARGET" >> "$GITHUB_ENV"
+          sed -i 's/deb.debian.org/archive.debian.org/g' /etc/apt/sources.list || true
+          sed -i 's|security.debian.org/debian-security|archive.debian.org/debian-security/|g' /etc/apt/sources.list || true
+          sed -i '/buster-updates/d' /etc/apt/sources.list || true
+          apt-get update -o Acquire::Check-Valid-Until=false && apt-get install -y zstd python3-pyelftools
 
       - name: Extract prebuilt tools
         shell: su buildbot -c "sh -e {0}"
