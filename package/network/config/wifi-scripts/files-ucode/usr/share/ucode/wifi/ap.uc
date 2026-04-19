@@ -100,8 +100,14 @@ function iface_auth_type(config, band) {
 			config.rsn_override_mfp_2 = 2;
 	}
 
+	if (config.auth_type == 'owe') {
+		set_default(config, 'owe_groups', '19 20 21');
+		set_default(config, 'owe_ptk_workaround', 1);
+	}
+
 	if (config.auth_type in [ 'sae', 'psk-sae', 'psk-sae-compat' ]) {
 		config.sae_require_mfp = 1;
+		set_default(config, 'sae_groups', '19 20 21');
 		if (!config.ppsk) {
 			if (band == '6g')
 				set_default(config, 'sae_pwe', 1);
@@ -193,11 +199,11 @@ function iface_auth_type(config, band) {
 	}
 
 	append_vars(config, [
-		'sae_require_mfp', 'sae_password_file', 'sae_pwe', 'sae_track_password', 'time_advertisement', 'time_zone',
+		'sae_require_mfp', 'sae_password_file', 'sae_pwe', 'sae_groups', 'sae_track_password', 'time_advertisement', 'time_zone',
 		'wpa_group_rekey', 'wpa_ptk_rekey', 'wpa_gmk_rekey', 'wpa_strict_rekey',
 		'macaddr_acl', 'wpa_psk_radius', 'wpa_psk', 'wpa_passphrase', 'wpa_psk_file',
 		'eapol_version', 'dynamic_vlan', 'radius_request_cui', 'eap_reauth_period',
-		'radius_das_client', 'radius_das_port', 'own_ip_addr', 'dynamic_own_ip_addr',
+		'radius_das_client', 'radius_das_port', 'owe_groups', 'owe_ptk_workaround', 'own_ip_addr', 'dynamic_own_ip_addr',
 		'wpa_disable_eapol_key_retries', 'auth_algs', 'wpa', 'wpa_pairwise',
 		'erp_domain', 'fils_realm', 'erp_send_reauth_start', 'fils_cache_id'
 	]);
