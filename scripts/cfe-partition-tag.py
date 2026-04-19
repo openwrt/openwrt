@@ -57,9 +57,9 @@ def create_output(args):
     in_st = os.stat(args.input_file)
     in_size = in_st.st_size
 
+    # Optimization: compute CRC32 in 64K chunks instead of loading entire file into memory
+    # This prevents O(N) memory allocation and improves performance for large files.
     crc = 0
-    # Optimization: Read file in chunks to compute CRC32 instead of reading
-    # the entire file into memory at once, reducing memory complexity to O(1).
     with open(args.input_file, "rb") as in_f:
         while True:
             chunk = in_f.read(65536)
@@ -69,7 +69,7 @@ def create_output(args):
 
     tag = create_tag(args, crc, in_size)
 
-    with open(args.output_file, "w+b") as out_f:
+    with open(args.output_file, "wb") as out_f:
         out_f.write(tag)
 
 

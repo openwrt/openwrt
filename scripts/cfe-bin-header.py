@@ -19,14 +19,11 @@ def create_output(args):
 	header = create_header(args, in_size)
 	print(header)
 
-	# Optimization: Use shutil.copyfileobj to stream the input file directly
-	# to the output file instead of reading the entire file into memory at once.
-	# This reduces memory complexity from O(N) to O(1).
-	out_f = open(args.output_file, 'w+b')
-	out_f.write(header)
-	with open(args.input_file, 'rb') as in_f:
-		shutil.copyfileobj(in_f, out_f)
-	out_f.close()
+	# Optimization: stream file contents with shutil.copyfileobj to avoid loading entire file in memory
+	with open(args.output_file, 'wb') as out_f:
+		out_f.write(header)
+		with open(args.input_file, 'rb') as in_f:
+			shutil.copyfileobj(in_f, out_f)
 
 def main():
 	global args

@@ -3,44 +3,34 @@
 import argparse
 import hashlib
 import os
+import shutil
 
 def create_output(args):
 	if (args.pid_file):
 		pid_st = os.stat(args.pid_file)
 		pid_size = pid_st.st_size
 
-		pid_f = open(args.pid_file, 'r+b')
+		pid_f = open(args.pid_file, 'rb')
 		pid_bytes = pid_f.read(pid_size)
 		pid_f.close()
 	else:
 		pid_bytes = bytes.fromhex(args.pid)
 
+	# Optimization: compute SHA256 in 64K chunks to avoid O(N) memory overhead for large files
 	sha256 = hashlib.sha256()
+	with open(args.input_file, 'rb') as in_f:
+		while True:
+			chunk = in_f.read(65536)
+			if not chunk:
+				break
+			sha256.update(chunk)
 
-	out_f = open(args.output_file, 'w+b')
-	# Write PID bytes first
-	out_f.write(pid_bytes)
-
-	# Save position and write placeholder for the 32-byte SHA256 digest
-	hash_pos = out_f.tell()
-	out_f.write(b'\0' * 32)
-
-	# Read input file in chunks to calculate hash and stream directly to output
-	# This avoids loading large firmware files into memory at once (O(1) memory usage)
-	in_f = open(args.input_file, 'rb')
-	while True:
-		chunk = in_f.read(65536)
-		if not chunk:
-			break
-		sha256.update(chunk)
-		out_f.write(chunk)
-	in_f.close()
-
-	# Seek back and write the actual hash digest
-	out_f.seek(hash_pos)
-	out_f.write(sha256.digest())
-
-	out_f.close()
+	# Optimization: stream the file contents with shutil.copyfileobj
+	with open(args.output_file, 'wb') as out_f:
+		out_f.write(pid_bytes)
+		out_f.write(sha256.digest())
+		with open(args.input_file, 'rb') as in_f:
+			shutil.copyfileobj(in_f, out_f)
 
 def main():
 	global args
