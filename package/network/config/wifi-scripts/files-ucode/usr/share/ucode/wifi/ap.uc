@@ -82,17 +82,16 @@ function iface_accounting_server(config) {
 }
 
 function iface_auth_type(config) {
-	if (config.auth_type in [ 'sae', 'owe', 'eap2', 'eap192' ]) {
+	if (config.auth_type in [ 'sae', 'owe', 'eap2', 'eap192' ])
 		config.ieee80211w = 2;
-		config.sae_require_mfp = 1;
-		if (!config.ppsk)
-			set_default(config, 'sae_pwe', 2);
-	}
 
 	if (config.auth_type in [ 'psk-sae', 'eap-eap2' ]) {
 		set_default(config, 'ieee80211w', 1);
 		if (config.rsn_override)
 			config.rsn_override_mfp = 2;
+	}
+
+	if (config.auth_type in [ 'sae', 'psk-sae' ]) {
 		config.sae_require_mfp = 1;
 		if (!config.ppsk)
 			set_default(config, 'sae_pwe', 2);
