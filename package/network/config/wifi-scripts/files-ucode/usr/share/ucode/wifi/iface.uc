@@ -53,6 +53,15 @@ export function parse_encryption(config, dev_config) {
 		config.auth_type = 'psk-sae';
 		break;
 
+	case 'sae-compat':
+		config.auth_type = 'psk-sae-compat';
+		config.wpa_pairwise = 'CCMP';
+		if (dev_config.band != '6g')
+			config.rsn_override_pairwise = 'CCMP';
+		if (wildcard(dev_config.htmode ?? '', 'EHT*'))
+			config.rsn_override_pairwise_2 = 'GCMP-256';
+		break;
+
 	case 'wpa':
 	case 'wpa2':
 	case 'wpa-mixed':
@@ -100,7 +109,7 @@ export function parse_encryption(config, dev_config) {
 		config.wpa_pairwise ??= 'CCMP';
 };
 
-export function wpa_key_mgmt(config) {
+export function wpa_key_mgmt(config, band) {
 	if (!config.wpa)
 		return;
 
@@ -168,6 +177,36 @@ export function wpa_key_mgmt(config) {
 			append_value(config, 'wpa_key_mgmt', 'WPA-PSK-SHA256');
 		if (config.ieee80211r)
 			append_value(config, 'wpa_key_mgmt', 'FT-PSK');
+		break;
+
+	case 'psk-sae-compat':
+		if (band == '6g') {
+			append_value(config, 'wpa_key_mgmt', 'SAE');
+			if (config.ieee80211r)
+				append_value(config, 'wpa_key_mgmt', 'FT-SAE');
+
+			if (config.sae_ext_key && config.rsn_override_pairwise_2) {
+				append_value(config, 'rsn_override_key_mgmt_2', 'SAE-EXT-KEY');
+				if (config.ieee80211r)
+					append_value(config, 'rsn_override_key_mgmt_2', 'FT-SAE-EXT-KEY');
+			}
+		} else {
+			append_value(config, 'wpa_key_mgmt', 'WPA-PSK');
+			if (config.ieee80211w)
+				append_value(config, 'wpa_key_mgmt', 'WPA-PSK-SHA256');
+			if (config.ieee80211r)
+				append_value(config, 'wpa_key_mgmt', 'FT-PSK');
+
+			append_value(config, 'rsn_override_key_mgmt', 'SAE');
+			if (config.ieee80211r)
+				append_value(config, 'rsn_override_key_mgmt', 'FT-SAE');
+
+			if (config.sae_ext_key && config.rsn_override_pairwise_2) {
+				append_value(config, 'rsn_override_key_mgmt_2', 'SAE-EXT-KEY');
+				if (config.ieee80211r)
+					append_value(config, 'rsn_override_key_mgmt_2', 'FT-SAE-EXT-KEY');
+			}
+		}
 		break;
 
 	case 'owe':

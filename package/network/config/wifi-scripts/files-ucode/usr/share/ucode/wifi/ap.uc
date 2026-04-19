@@ -81,14 +81,26 @@ function iface_accounting_server(config) {
 	append_vars(config, [ 'radius_acct_req_attr' ]);
 }
 
-function iface_auth_type(config) {
+function iface_auth_type(config, band) {
 	if (config.auth_type in [ 'sae', 'owe', 'eap2', 'eap192' ])
 		config.ieee80211w = 2;
 
 	if (config.auth_type in [ 'psk-sae', 'eap-eap2' ])
 		set_default(config, 'ieee80211w', 1);
 
-	if (config.auth_type in [ 'sae', 'psk-sae' ]) {
+	if (config.auth_type == 'psk-sae-compat') {
+		if (band == '6g') {
+			set_default(config, 'ieee80211w', 2);
+		} else {
+			set_default(config, 'ieee80211w', 0);
+			config.rsn_override_mfp = 2;
+			config.rsn_override_omit_rsnxe = 1;
+		}
+		if (config.rsn_override_pairwise_2)
+			config.rsn_override_mfp_2 = 2;
+	}
+
+	if (config.auth_type in [ 'sae', 'psk-sae', 'psk-sae-compat' ]) {
 		config.sae_require_mfp = 1;
 		if (!config.ppsk)
 			set_default(config, 'sae_pwe', 2);
@@ -116,6 +128,7 @@ function iface_auth_type(config) {
 	case 'psk2':
 	case 'sae':
 	case 'psk-sae':
+	case 'psk-sae-compat':
 		config.vlan_possible = 1;
 		config.wps_possible = 1;
 
@@ -131,12 +144,12 @@ function iface_auth_type(config) {
 			 netifd.setup_failed('INVALID_WPA_PSK');
 		}
 
-		if (config.auth_type in [ 'psk', 'psk-sae' ]) {
+		if (config.auth_type in [ 'psk', 'psk-sae', 'psk-sae-compat' ] && band != '6g') {
 			set_default(config, 'wpa_psk_file', `/var/run/hostapd-${config.ifname}.psk`);
 			touch_file(config.wpa_psk_file);
 		}
 
-		if (config.auth_type in [ 'sae', 'psk-sae' ]) {
+		if (config.auth_type in [ 'sae', 'psk-sae', 'psk-sae-compat' ]) {
 			set_default(config, 'sae_password_file', `/var/run/hostapd-${config.ifname}.sae`);
 			touch_file(config.sae_password_file);
 		}
@@ -187,7 +200,7 @@ function iface_auth_type(config) {
 }
 
 function iface_ppsk(config) {
-	if (!(config.auth_type in [ 'none', 'owe', 'psk', 'sae', 'psk-sae', 'wep' ]) || !config.auth_server_addr)
+	if (!(config.auth_type in [ 'none', 'owe', 'psk', 'sae', 'psk-sae', 'psk-sae-compat', 'wep' ]) || !config.auth_server_addr)
 		return;
 
 	iface_authentication_server(config);
@@ -391,7 +404,9 @@ function iface_roaming(config) {
 }
 
 function iface_mfp(config) {
-	if (!config.ieee80211w || config.wpa < 2) {
+	let override_mfp = config.rsn_override_mfp || config.rsn_override_mfp_2;
+
+	if ((!config.ieee80211w && !override_mfp) || config.wpa < 2) {
 		append('ieee80211w', 0);
 		return;
 	}
@@ -421,7 +436,7 @@ function iface_key_caching(config) {
 			'rsn_preauth', 'rsn_preauth_interfaces'
 		]);
 	} else {
-		set_default(config, 'okc', (config.auth_type in  [ 'sae', 'psk-sae', 'owe' ]));
+		set_default(config, 'okc', (config.auth_type in  [ 'sae', 'psk-sae', 'psk-sae-compat', 'owe' ]));
 	}
 
 	if (!config.okc && !config.fils)
@@ -476,12 +491,12 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 			config.auth_type = 'eap2';
 	}
 
-	if (config.auth_type in [ 'psk', 'psk-sae' ])
+	if (config.auth_type in [ 'psk', 'psk-sae', 'psk-sae-compat' ] && data.config.band != '6g')
 		iface_wpa_stations(config, stas);
-	if (config.auth_type in [ 'sae', 'psk-sae' ])
+	if (config.auth_type in [ 'sae', 'psk-sae', 'psk-sae-compat' ])
 		iface_sae_stations(config, stas);
 
-	iface_auth_type(config);
+	iface_auth_type(config, data.config.band);
 
 	iface_accounting_server(config);
 
@@ -509,7 +524,7 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 
 	iface_interworking(config);
 
-	iface.wpa_key_mgmt(config);
+	iface.wpa_key_mgmt(config, data.config.band);
 	append_vars(config, [
 		'wpa_key_mgmt',
 	]);
@@ -528,6 +543,10 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 			'rsn_override_pairwise_2',
 			'rsn_override_mfp_2'
 		]);
+	}
+
+	if (config.rsn_override_omit_rsnxe) {
+		append_vars(config, ['rsn_override_omit_rsnxe']);
 	}
 
 	/* raw options */
