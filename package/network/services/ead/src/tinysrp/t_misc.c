@@ -126,7 +126,8 @@ t_fshash(out)
     SHA1Update(&ctxt, (unsigned char *) &st, sizeof(st));
     pinode = st.st_ino;
     pdev = st.st_dev;
-    strcpy(dotpath, "..");
+    strncpy(dotpath, "..", sizeof(dotpath) - 1);
+    dotpath[sizeof(dotpath) - 1] = '\0';
     for(i = 0; i < 40; ++i) {
       if(stat(dotpath, &st) < 0)
 	break;
@@ -135,14 +136,15 @@ t_fshash(out)
       SHA1Update(&ctxt, (unsigned char *) &st, sizeof(st));
       pinode = st.st_ino;
       pdev = st.st_dev;
-      strcat(dotpath, "/..");
+      strncat(dotpath, "/..", sizeof(dotpath) - strlen(dotpath) - 1);
     }
   }
 
   if(fstat(0, &st) >= 0)
     SHA1Update(&ctxt, (unsigned char *) &st, sizeof(st));
 
-  strcpy(dotpath, "/tmp/rnd.XXXXXX");
+  strncpy(dotpath, "/tmp/rnd.XXXXXX", sizeof(dotpath) - 1);
+  dotpath[sizeof(dotpath) - 1] = '\0';
   int fd = mkstemp(dotpath);
   if(fd >= 0) {
     if (fstat(fd, &st) >= 0)

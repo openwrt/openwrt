@@ -42,6 +42,7 @@ Flags:
 
 import argparse
 import os
+import shutil
 import struct
 import binascii
 import shutil
@@ -66,26 +67,23 @@ def create_tag(args, crc):
 
 
 def create_output(args):
-    in_st = os.stat(args.input_file)
-    in_size = in_st.st_size
+    # If input and output are different, copy the file first.
+    # Otherwise, we can just read and append in place.
+    if os.path.abspath(args.input_file) != os.path.abspath(args.output_file):
+        shutil.copyfile(args.input_file, args.output_file)
 
-    # Optimization: compute CRC32 in 64K chunks instead of loading entire file into memory
-    # This prevents O(N) memory allocation and improves performance for large files.
     crc = 0
-    with open(args.input_file, "rb") as in_f:
+    # Optimization: read the file in 64KB chunks to calculate the CRC32
+    # avoiding loading the entire file into memory and reducing memory complexity to O(1).
+    with open(args.output_file, "r+b") as f:
         while True:
-            chunk = in_f.read(65536)
+            chunk = f.read(65536)
             if not chunk:
                 break
             crc = binascii.crc32(chunk, crc)
 
-    tag = create_tag(args, crc)
-
-    # Optimization: use shutil.copyfileobj to stream the file contents without O(N) memory overhead
-    with open(args.output_file, "wb") as out_f:
-        with open(args.input_file, "rb") as in_f:
-            shutil.copyfileobj(in_f, out_f)
-        out_f.write(tag)
+        tag = create_tag(args, crc)
+        f.write(tag)
 
 
 def main():

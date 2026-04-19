@@ -77,7 +77,8 @@ t_clientopen(u, n, g, s)
   if((tc = malloc(sizeof(struct t_client))) == 0)
     return 0;
 
-  strncpy(tc->username, u, MAXUSERLEN);
+  strncpy(tc->username, u, MAXUSERLEN - 1);
+  tc->username[MAXUSERLEN - 1] = '\0';
 
   SHA1Init(&tc->hash);
 

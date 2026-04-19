@@ -140,7 +140,8 @@ prepare_password(void)
 		break;
 	case EAD_AUTH_MD5:
 		md5_crypt(pw_md5, (unsigned char *) password, (unsigned char *) pw_salt);
-		strncpy(password, pw_md5, sizeof(password));
+		strncpy(password, pw_md5, sizeof(password) - 1);
+		password[sizeof(password) - 1] = '\0';
 		break;
 	}
 }
@@ -153,6 +154,9 @@ handle_pong(void)
 
 	if (len <= 0 || len >= 1024)
 		return false;
+
+	if (len >= 1024)
+		len = 1023;
 
 	pong->name[len] = 0;
 	auth_type = ntohs(pong->auth_type);
@@ -372,8 +376,8 @@ int main(int argc, char **argv)
 		if (st) {
 			*st = 0;
 			st++;
-			strncpy(password, st, sizeof(password));
-			password[sizeof(password) - 1] = 0;
+			strncpy(password, st, sizeof(password) - 1);
+			password[sizeof(password) - 1] = '\0';
 			/* hide command line password */
 			memset(st, 0, strlen(st));
 		}

@@ -39,8 +39,19 @@ def get_kernel_header(args):
 			rootfs_size = args.rootfs_checking_size
 		else:
 			rootfs_size = os.path.getsize(args.rootfs_file)
-		buf = open(args.rootfs_file,'rb').read(rootfs_size)
-		crc = binascii.crc32(buf) & 0xffffffff
+
+		# Optimization: Read file in 64KB chunks to compute CRC32 instead of reading
+		# the entire file into memory at once, reducing memory complexity from O(N) to O(1).
+		crc = 0
+		with open(args.rootfs_file, 'rb') as f:
+			bytes_left = rootfs_size
+			while bytes_left > 0:
+				chunk = f.read(min(65536, bytes_left))
+				if not chunk:
+					break
+				crc = binascii.crc32(chunk, crc)
+				bytes_left -= len(chunk)
+		crc &= 0xffffffff
 	else:
 		rootfs_size = len(ROOTFS_FAKE_HEADER)
 		crc = binascii.crc32(str.encode(ROOTFS_FAKE_HEADER)) & \
@@ -54,8 +65,16 @@ def get_kernel_header(args):
 	kernel_end_offset = args.kernel_offset + kernel_size
 	struct.pack_into('<L', header, 0x4, kernel_end_offset)
 
-	buf = open(args.kernel_file,'rb').read()
-	crc = binascii.crc32(buf) & 0xffffffff
+	# Optimization: Read file in 64KB chunks to compute CRC32 instead of reading
+	# the entire file into memory at once, reducing memory complexity from O(N) to O(1).
+	crc = 0
+	with open(args.kernel_file, 'rb') as f:
+		while True:
+			chunk = f.read(65536)
+			if not chunk:
+				break
+			crc = binascii.crc32(chunk, crc)
+	crc &= 0xffffffff
 	struct.pack_into('<L', header, 0x18, crc)
 
 	crc = binascii.crc32(header) & 0xffffffff
