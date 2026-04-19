@@ -1,0 +1,43 @@
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 20 Mar 2026 11:53:30 +0000
+Subject: [PATCH] nl80211: fix HE MCS set parsing
+
+The Channel Width Set bits occupy B1-B4 of byte 0 of he_cap_phy.
+Since this attribute is a byte array, not an integer, reading it via
+nla_get_u16() produces an endian-dependent result. The << 8 shift was
+correct on big-endian but wrong on little-endian.
+
+Fix this by reading byte 0 directly as a uint8_t, making the check
+endian-neutral.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+
+--- a/lib/nl80211.c
++++ b/lib/nl80211.c
+@@ -1575,21 +1575,22 @@ uc_nl_convert_rta_he_mcs(const uc_nl_att
+ 	uint8_t bw_support_mask[] = { (1 << 1) | (1 << 2), (1 << 3), (1 << 4) };
+ 	uc_value_t *mcs_set, *mcs_bw, *mcs_dir, *mcs_entry, *mcs_idx;
+ 	uint16_t bw[] = { 80, 160, 8080 }, mcs[6];
+-	uint16_t u16, phy_cap_0 = 0;
++	uint8_t phy_cap_0 = 0;
++	uint16_t u16;
+ 	size_t i, j, k, l, max_idx;
+ 
+ 	if (!nla_check_len(attr, sizeof(mcs)))
+ 		return NULL;
+ 
+ 	if (nla_check_len(phy_attr, sizeof(phy_cap_0)))
+-		phy_cap_0 = nla_get_u16(phy_attr);
++		phy_cap_0 = *(uint8_t *)nla_data(phy_attr);
+ 
+ 	memcpy(mcs, nla_data(attr), sizeof(mcs));
+ 
+ 	mcs_set = ucv_array_new_length(vm, 3);
+ 
+ 	for (i = 0; i < ARRAY_SIZE(bw); i++) {
+-		if (!(phy_cap_0 & (bw_support_mask[i] << 8)))
++		if (!(phy_cap_0 & bw_support_mask[i]))
+ 			continue;
+ 
+ 		mcs_bw = ucv_object_new(vm);

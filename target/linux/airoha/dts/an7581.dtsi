@@ -728,10 +728,7 @@
 
 			mediatek,pbus-csr = <&pbus_csr 0x0 0x4>;
 
-			airoha,chip-scu = <&chip_scu>;
 			airoha,np-scu = <&scuclk>;
-			airoha,x2-mode;
-			airoha,serdes-lanes-mask = <0x3>;
 
 			interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL_HIGH>;
 			bus-range = <0x00 0xff>;
@@ -819,8 +816,6 @@
 
 			mediatek,pbus-csr = <&pbus_csr 0x10 0x14>;
 
-			airoha,chip-scu = <&chip_scu>;
-			airoha,serdes-lanes-mask = <0x4>;
 			airoha,np-scu = <&scuclk>;
 
 			interrupts = <GIC_SPI 41 IRQ_TYPE_LEVEL_HIGH>;

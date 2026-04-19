@@ -1,3 +1,13 @@
+From 4dd35ca6747a57261f3b10982a4a8cc765d6549f Mon Sep 17 00:00:00 2001
+From: Lorenzo Bianconi <lorenzo@kernel.org>
+Date: Thu, 17 Jul 2025 18:45:48 +0200
+Subject: [PATCH] target: mediatek: Enable WED for MT7988 devices running 6.12.x kernels
+
+Add WED related nodes to the device tree of the MT7988 SoC family.
+
+Signed-off-by: Lorenzo Bianconi <lorenzo@kernel.org>
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
 --- a/arch/arm64/boot/dts/mediatek/mt7988a.dtsi
 +++ b/arch/arm64/boot/dts/mediatek/mt7988a.dtsi
 @@ -145,6 +145,32 @@

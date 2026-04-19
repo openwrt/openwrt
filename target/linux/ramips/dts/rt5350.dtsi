@@ -91,7 +91,7 @@
 			interrupts = <3>;
 		};
 
-		uart: uart@500 {
+		uart: serial@500 {
 			compatible = "ralink,rt3052-uart", "ralink,rt2880-uart", "ns16550a";
 			reg = <0x500 0x100>;
 
@@ -221,7 +221,7 @@
 			status = "disabled";
 		};
 
-		uartlite: uartlite@c00 {
+		uartlite: serial@c00 {
 			compatible = "ralink,rt3052-uart", "ralink,rt2880-uart", "ns16550a";
 			reg = <0xc00 0x100>;
 

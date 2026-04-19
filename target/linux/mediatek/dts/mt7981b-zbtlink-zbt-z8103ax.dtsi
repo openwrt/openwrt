@@ -84,7 +84,7 @@
 			linux,default-trigger = "phy1tpt";
 		};
 	};
-		
+
 };
 
 &eth {
@@ -253,6 +253,8 @@
 	status = "okay";
 	nvmem-cells = <&eeprom_factory>;
 	nvmem-cell-names = "eeprom";
+	#address-cells = <1>;
+	#size-cells = <0>;
 
 	band@0 {
 		reg = <0>;

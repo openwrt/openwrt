@@ -6,6 +6,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include "an7581.dtsi"
+#include "an7581-npu-mt7996.dtsi"
 
 / {
 	model = "Gemtek W1700K (OpenWrt U-Boot layout)";
@@ -252,6 +253,8 @@
 &pcie0 {
 	status = "okay";
 
+	airoha,x2-mode;
+
 	pinctrl-names = "default";
 	pinctrl-0 = <&pcie0_rst_pins>;
 	pcie@0,0 {
@@ -301,8 +304,6 @@
 };
 
 &npu {
-	firmware-name = "airoha/en7581_MT7996_npu_rv32.bin",
-		"airoha/en7581_MT7996_npu_data.bin";
 	status = "okay";
 };
 

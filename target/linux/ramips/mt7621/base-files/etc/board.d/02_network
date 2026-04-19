@@ -15,6 +15,7 @@ ramips_setup_interfaces()
 	confiabits,mt7621-v1|\
 	dlink,dir-x1860-b1|\
 	edup,ep-rt2960s|\
+	edup,ep-rt2983|\
 	gehua,ghl-r-001|\
 	h3c,tx1800-plus|\
 	h3c,tx1801-plus|\
@@ -33,6 +34,7 @@ ramips_setup_interfaces()
 	xiaomi,mi-router-cr6609|\
 	xiaomi,redmi-router-ac2100|\
 	z-router,zr-2660|\
+	z-router,zr-2662|\
 	zyxel,wsm20)
 		ucidef_set_interfaces_lan_wan "lan1 lan2 lan3" "wan"
 		;;
@@ -137,7 +139,8 @@ ramips_setup_interfaces()
 	zyxel,lte3301-plus)
 		ucidef_set_interface_lan "lan1 lan2 lan3 lan4"
 		;;
-	elecom,wsc-x1800gs)
+	elecom,wsc-x1800gs|\
+	wavlink,halo-base-pro)
 		ucidef_set_interface_lan "lan1 lan2"
 		;;
 	gnubee,gb-pc1)

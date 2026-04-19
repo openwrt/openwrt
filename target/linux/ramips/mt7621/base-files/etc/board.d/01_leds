@@ -62,6 +62,7 @@ cudy,ap1300-outdoor-v1)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "lan"
 	;;
 confiabits,mt7621-v1|\
+edup,ep-rt2983|\
 genexis,pulse-ex400|\
 netis,n6)
 	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan" "link tx rx"
@@ -274,6 +275,10 @@ yuncore,ax820)
 	;;
 z-router,zr-2660)
 	ucidef_set_led_netdev "lan" "lan" "green:lan" "br-lan" "link tx rx"
+	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan" "link tx rx"
+	ucidef_set_led_netdev "wan-off" "wan-off" "red:wan" "wan" "link"
+	;;
+z-router,zr-2662)
 	ucidef_set_led_netdev "wan" "wan" "green:wan" "wan" "link tx rx"
 	ucidef_set_led_netdev "wan-off" "wan-off" "red:wan" "wan" "link"
 	;;

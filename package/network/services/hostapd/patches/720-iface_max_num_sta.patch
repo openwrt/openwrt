@@ -47,7 +47,7 @@ full device, e.g. in order to deal with hardware/driver limitations
  			   " since no room for additional STA",
 --- a/src/ap/hostapd.c
 +++ b/src/ap/hostapd.c
-@@ -259,6 +259,29 @@ static int hostapd_iface_conf_changed(st
+@@ -255,6 +255,29 @@ static int hostapd_iface_conf_changed(st
  	return 0;
  }
  
@@ -79,7 +79,7 @@ full device, e.g. in order to deal with hardware/driver limitations
  {
 --- a/src/ap/hostapd.h
 +++ b/src/ap/hostapd.h
-@@ -838,6 +838,7 @@ void hostapd_periodic_iface(struct hosta
+@@ -848,6 +848,7 @@ void hostapd_periodic_iface(struct hosta
  int hostapd_owe_trans_get_info(struct hostapd_data *hapd);
  void hostapd_owe_update_trans(struct hostapd_iface *iface);;
  void hostapd_ocv_check_csa_sa_query(void *eloop_ctx, void *timeout_ctx);

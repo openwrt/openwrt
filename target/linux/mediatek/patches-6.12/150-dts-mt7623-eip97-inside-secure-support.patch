@@ -1,3 +1,16 @@
+From 127ad76311079a842578e788a8af364f3910c676 Mon Sep 17 00:00:00 2001
+From: John Crispin <john@phrozen.org>
+Date: Thu, 4 Jun 2020 14:20:34 +0200
+Subject: [PATCH] arm: dts: mediatek: mt7623: switch crypto to inside-secure,safexcel-eip97
+
+Switch the DTS compatible string of the crypto engine node from
+"mediatek,eip97-crypto" to "inside-secure,safexcel-eip97" to bind to
+the upstream Inside Secure SafeXcel driver. Update the interrupt list
+to match and add interrupt-names, and remove the now-unused power-domain
+and clock-names properties.
+
+Signed-off-by: John Crispin <john@phrozen.org>
+---
 --- a/arch/arm/boot/dts/mediatek/mt7623.dtsi
 +++ b/arch/arm/boot/dts/mediatek/mt7623.dtsi
 @@ -995,17 +995,15 @@

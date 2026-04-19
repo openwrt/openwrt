@@ -1836,6 +1836,7 @@ define Device/huawei_ap5030dn
   DEVICE_PACKAGES := ath10k-firmware-qca988x-ct kmod-ath10k-ct
   LOADER_TYPE := bin
   LOADER_FLASH_OFFS := 0x111DC0
+  LZMA_TEXT_START := 0x82800000
   KERNEL_SIZE := 15360k
   IMAGE_SIZE := 30720k
   COMPILE := loader-$(1).bin
@@ -1851,6 +1852,7 @@ define Device/huawei_ap6010dn
   DEVICE_MODEL := AP6010DN
   LOADER_TYPE := bin
   LOADER_FLASH_OFFS := 0x111DC0
+  LZMA_TEXT_START := 0x82800000
   KERNEL_SIZE := 15360k
   IMAGE_SIZE := 30720k
   COMPILE := loader-$(1).bin
@@ -2232,13 +2234,14 @@ define Device/netgear_wndap360
   $(Device/netgear_generic)
   SOC := ar7161
   DEVICE_MODEL := WNDAP360
+  DEVICE_PACKAGES := kmod-owl-loader
   IMAGE_SIZE := 7744k
-  BLOCKSIZE := 256k
-  KERNEL := kernel-bin | append-dtb | gzip | uImage gzip
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none
+  LOADER_TYPE := bin
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | uImage none
+  KERNEL_INITRAMFS := $$(KERNEL)
   IMAGES := sysupgrade.bin
-  IMAGE/sysupgrade.bin := append-kernel | pad-to 64k | append-rootfs | pad-rootfs | \
-	check-size | append-metadata
+  IMAGE/sysupgrade.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+	append-rootfs | pad-rootfs | check-size | append-metadata
 endef
 TARGET_DEVICES += netgear_wndap360
 

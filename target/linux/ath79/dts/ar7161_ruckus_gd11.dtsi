@@ -57,25 +57,25 @@
 		wlan2g-green {
 			label = "green:wlan2g";
 			gpios = <&gpio 2 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "phy0assoc";
+			linux,default-trigger = "phy1assoc";
 		};
 
 		wlan2g-yellow {
 			label = "yellow:wlan2g";
 			gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "phy0tpt";
+			linux,default-trigger = "phy1tpt";
 		};
 
 		wlan5g-green {
 			label = "green:wlan5g";
 			gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "phy1assoc";
+			linux,default-trigger = "phy0assoc";
 		};
 
 		wlan5g-yellow {
 			label = "yellow:wlan5g";
 			gpios = <&gpio 5 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "phy1tpt";
+			linux,default-trigger = "phy0tpt";
 		};
 	};
 
@@ -163,12 +163,12 @@
 
 &eth0 {
 	status = "okay";
-	nvmem-cells = <&macaddr_bdata_66>;
-	nvmem-cell-names = "mac-address";
 
-	pll-data = <0x00110000 0x00001099 0x00991099>;
 	phy-handle = <&phy0>;
 	phy-mode = "rgmii-id";
+
+	nvmem-cells = <&macaddr_bdata_66>;
+	nvmem-cell-names = "mac-address";
 };
 
 &spi {

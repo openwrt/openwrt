@@ -11,13 +11,11 @@
 	compatible = "glinet,gl-a1300", "qcom,ipq4019";
 
 	aliases {
-		// TODO: Verify if the ethernet0 alias is needed
-		ethernet0 = &gmac;
 		led-boot = &led_run;
 		led-failsafe = &led_run;
 		led-running = &led_run;
 		led-upgrade = &led_run;
-		label-mac-device = &swport4;
+		label-mac-device = &gmac;
 	};
 
 	chosen {
@@ -302,6 +300,9 @@
 
 &gmac {
 	status = "okay";
+
+	nvmem-cell-names = "mac-address";
+	nvmem-cells = <&macaddr_gmac0 0>;
 };
 
 &switch {
@@ -320,8 +321,6 @@
 	status = "okay";
 
 	label = "lan1";
-	nvmem-cell-names = "mac-address";
-	nvmem-cells = <&macaddr_gmac0 0>;
 };
 
 &swport5 {

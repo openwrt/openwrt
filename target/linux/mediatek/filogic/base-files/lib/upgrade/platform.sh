@@ -74,6 +74,41 @@ xiaomi_initial_setup()
 	esac
 }
 
+update_oem_ubi_volume() {
+	local oem_volume_name="$1"
+	local oem_volume_part="${2:-$CI_UBIPART}"
+	local oem_volume_size="$3"
+	local oem_volume_data="$4"
+	local oem_ubivol
+	local mtdnum
+	local ubidev
+
+	mtdnum=$(find_mtd_index "$oem_volume_part")
+	if [ ! "$mtdnum" ]; then
+		return
+	fi
+
+	ubidev=$(nand_find_ubi "$oem_volume_part")
+	if [ ! "$ubidev" ]; then
+		ubiattach --mtdn="$mtdnum"
+		ubidev=$(nand_find_ubi "$oem_volume_part")
+	fi
+	[ "$ubidev" ] || return
+
+	oem_ubivol=$(nand_find_volume "$ubidev" "$oem_volume_name")
+	[ "$oem_ubivol" ] || return
+
+	ubirmvol "/dev/$ubidev" -N "$oem_volume_name"
+
+	# return if no new size specified
+	[ "$oem_volume_size" ] || return
+	ubimkvol "/dev/$ubidev" -N "$oem_volume_name" -s "$oem_volume_size"
+
+	# return if no new data specified
+	[ "$oem_volume_data" ] || return
+	ubiupdatevol "/dev/$ubidev" -s "$oem_volume_size" "$oem_volume_data"
+}
+
 platform_do_upgrade() {
 	local board=$(board_name)
 
@@ -93,6 +128,10 @@ platform_do_upgrade() {
 	comfast,cf-wr632ax-ubootmod|\
 	cudy,tr3000-v1-ubootmod|\
 	cudy,wbr3000uax-v1-ubootmod|\
+	cudy,wr3000e-v1-ubootmod|\
+	cudy,wr3000s-v1-ubootmod|\
+	cudy,wr3000h-v1-ubootmod|\
+	cudy,wr3000p-v1-ubootmod|\
 	gatonetworks,gdsp|\
 	h3c,magic-nx30-pro|\
 	imou,hx21|\
@@ -135,7 +174,7 @@ platform_do_upgrade() {
 	glinet,gl-x3000|\
 	glinet,gl-xe3000|\
 	huasifei,wh3000|\
-	huasifei,wh3000-pro|\
+	huasifei,wh3000-pro-emmc|\
 	smartrg,sdg-8612|\
 	smartrg,sdg-8614|\
 	smartrg,sdg-8622|\
@@ -158,9 +197,18 @@ platform_do_upgrade() {
 		CI_KERNPART="linux"
 		nand_do_upgrade "$1"
 		;;
+	buffalo,wsr-3000ax4p|\
+	xiaomi,mi-router-ax3000t|\
+	xiaomi,mi-router-wr30u-stock|\
+	xiaomi,redmi-router-ax6000-stock)
+		CI_KERN_UBIPART="ubi_kernel"
+		CI_ROOT_UBIPART="ubi"
+		nand_do_upgrade "$1"
+		;;
 	buffalo,wsr-6000ax8|\
 	cudy,wr3000h-v1|\
-	cudy,wr3000p-v1)
+	cudy,wr3000p-v1|\
+	huasifei,wh3000-pro-nand)
 		CI_UBIPART="ubi"
 		nand_do_upgrade "$1"
 		;;
@@ -173,6 +221,7 @@ platform_do_upgrade() {
 	yuncore,ax835)
 		default_do_upgrade "$1"
 		;;
+	dlink,aquila-pro-ai-e30-a1|\
 	dlink,aquila-pro-ai-m30-a1|\
 	dlink,aquila-pro-ai-m60-a1)
 		fw_setenv sw_tryactive 0
@@ -252,13 +301,6 @@ platform_do_upgrade() {
 			;;
 		esac
 		;;
-	xiaomi,mi-router-ax3000t|\
-	xiaomi,mi-router-wr30u-stock|\
-	xiaomi,redmi-router-ax6000-stock)
-		CI_KERN_UBIPART=ubi_kernel
-		CI_ROOT_UBIPART=ubi
-		nand_do_upgrade "$1"
-		;;
 	*)
 		nand_do_upgrade "$1"
 		;;
@@ -288,6 +330,10 @@ platform_check_image() {
 	comfast,cf-wr632ax-ubootmod|\
 	cudy,tr3000-v1-ubootmod|\
 	cudy,wbr3000uax-v1-ubootmod|\
+	cudy,wr3000e-v1-ubootmod|\
+	cudy,wr3000s-v1-ubootmod|\
+	cudy,wr3000h-v1-ubootmod|\
+	cudy,wr3000p-v1-ubootmod|\
 	gatonetworks,gdsp|\
 	h3c,magic-nx30-pro|\
 	jcg,q30-pro|\
@@ -361,7 +407,7 @@ platform_copy_config() {
 	glinet,gl-x3000|\
 	glinet,gl-xe3000|\
 	huasifei,wh3000|\
-	huasifei,wh3000-pro|\
+	huasifei,wh3000-pro-emmc|\
 	jdcloud,re-cp-03|\
 	nradio,c8-668gl|\
 	smartrg,sdg-8612|\
@@ -389,6 +435,11 @@ platform_pre_upgrade() {
 	asus,tuf-ax6000|\
 	asus,zenwifi-bt8)
 		asus_initial_setup
+		;;
+	buffalo,wsr-3000ax4p)
+		update_oem_ubi_volume "rootfs"      "ubi_kernel" "4"
+		update_oem_ubi_volume "rootfs_data" "ubi_kernel"
+		update_oem_ubi_volume "dpi"         "ubi"
 		;;
 	buffalo,wsr-6000ax8)
 		buffalo_initial_setup

@@ -201,12 +201,17 @@ build_list_of_backup_overlay_files() {
 
 		# do not backup files from packages, except those listed
 		# in conffiles and keep.d
-		{
+		if [ -f /usr/lib/opkg/status ]; then
 			find /usr/lib/opkg/info -type f -name "*.list" -exec cat {} \;
 			find /usr/lib/opkg/info -type f -name "*.control" -exec sed \
 				-ne '/^Alternatives/{s/^Alternatives: //;s/, /\n/g;p}' {} \; |
 				cut -f2 -d:
-		} |  grep -v -x -F -f $conffiles |
+		elif [ -d /lib/apk/packages ]; then
+			find /lib/apk/packages -type f -name "*.list" -exec cat {} \;
+			find /lib/apk/packages -type f -name "*.alternatives" -exec cat {} \; |
+				tr ' ' '\n' |
+				cut -f2 -d:
+		fi |  grep -v -x -F -f $conffiles |
 		     grep -v -x -F -f $keepfiles | sort -u > "$packagesfiles"
 		rm -f "$keepfiles" "$conffiles"
 	fi
@@ -217,10 +222,16 @@ build_list_of_backup_overlay_files() {
 	( cd /overlay/upper/; find .$SAVE_OVERLAY_PATH \( -type f -o -type l \) $find_filter | sed \
 		-e 's,^\.,,' \
 		-e '\,^/etc/board.json$,d' \
+		-e '\,^/etc/luci-uploads/\.placeholder,d' \
 		-e '\,/[^/]*-opkg$,d' \
+		-e '\,/[^/]*\.apk-new$,d' \
 		-e '\,^/etc/urandom.seed$,d' \
+		-e '\,^/etc/apk/world$,d' \
+		-e '\,^/etc/apk/repositories\.d/distfeeds\.list$,d' \
 		-e "\,^$INSTALLED_PACKAGES$,d" \
 		-e '\,^/usr/lib/opkg/.*,d' \
+		-e '\,^/lib/apk/.*,d' \
+		-e '\,^/run$,d' \
 	) | grep -v -x -F -f $packagesfiles > "$file"
 
 	rm -f "$packagesfiles"
@@ -298,6 +309,9 @@ create_backup_archive() {
 						\( -exec test -f /overlay/upper/{} \; -exec echo {} overlay \; \) -o \
 						\( -exec echo {} unknown \; \) \
 						\) | sed -e 's,.*/,,;s/\.list /\t/')" || ret=1
+				else
+					echo "Failed to detect installed packages metadata files." >&2
+					ret=1
 				fi
 			fi
 		fi
@@ -395,7 +409,7 @@ json_get_var forceable "forceable"
 }
 
 if [ -n "$CONF_IMAGE" ]; then
-	case "$(get_magic_word $CONF_IMAGE cat)" in
+	case "$(get_magic_word "$CONF_IMAGE" cat)" in
 		# .gz files
 		1f8b) ;;
 		*)

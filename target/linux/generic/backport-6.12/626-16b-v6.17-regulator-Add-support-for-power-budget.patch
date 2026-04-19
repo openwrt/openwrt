@@ -59,7 +59,7 @@ Signed-off-by: Bevan Weiss <bevan.weiss@gmail.com>
  	if (!count)
  		count = scnprintf(buf, len, "no parameters");
  	else
-@@ -1631,6 +1655,9 @@ static int set_machine_constraints(struc
+@@ -1636,6 +1660,9 @@ static int set_machine_constraints(struc
  		rdev->last_off = ktime_get();
  	}
  
@@ -69,7 +69,7 @@ Signed-off-by: Bevan Weiss <bevan.weiss@gmail.com>
  	print_constraints(rdev);
  	return 0;
  }
-@@ -4646,6 +4673,87 @@ int regulator_get_current_limit(struct r
+@@ -4651,6 +4678,87 @@ int regulator_get_current_limit(struct r
  EXPORT_SYMBOL_GPL(regulator_get_current_limit);
  
  /**
@@ -157,7 +157,7 @@ Signed-off-by: Bevan Weiss <bevan.weiss@gmail.com>
   * regulator_set_mode - set regulator operating mode
   * @regulator: regulator source
   * @mode: operating mode - one of the REGULATOR_MODE constants
-@@ -5283,6 +5391,8 @@ static struct attribute *regulator_dev_a
+@@ -5288,6 +5396,8 @@ static struct attribute *regulator_dev_a
  	&dev_attr_suspend_standby_mode.attr,
  	&dev_attr_suspend_mem_mode.attr,
  	&dev_attr_suspend_disk_mode.attr,
@@ -166,7 +166,7 @@ Signed-off-by: Bevan Weiss <bevan.weiss@gmail.com>
  	NULL
  };
  
-@@ -5364,6 +5474,10 @@ static umode_t regulator_attr_is_visible
+@@ -5369,6 +5479,10 @@ static umode_t regulator_attr_is_visible
  	    attr == &dev_attr_suspend_disk_mode.attr)
  		return ops->set_suspend_mode ? mode : 0;
  

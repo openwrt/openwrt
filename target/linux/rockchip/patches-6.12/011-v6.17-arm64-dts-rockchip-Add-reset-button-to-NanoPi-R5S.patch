@@ -1,0 +1,52 @@
+From 954f07012794a3aa7ae89e56f070eaa1643af50b Mon Sep 17 00:00:00 2001
+From: Diederik de Haas <didi.debian@cknow.org>
+Date: Fri, 11 Jul 2025 16:20:37 +0200
+Subject: [PATCH] arm64: dts: rockchip: Add reset button to NanoPi R5S
+
+The NanoPi R5S LTS version has a reset button, which is connected via
+GPIO. Note that the non-LTS version does not have the reset button and
+therefore on page 19 of the schematic version 2204 it is marked 'NC',
+but it is connected on the LTS version.
+
+Link: https://lore.kernel.org/r/20250711142138.197445-1-didi.debian@cknow.org
+Signed-off-by: Diederik de Haas <didi.debian@cknow.org>
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+---
+ arch/arm64/boot/dts/rockchip/rk3568-nanopi-r5s.dts | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+--- a/arch/arm64/boot/dts/rockchip/rk3568-nanopi-r5s.dts
++++ b/arch/arm64/boot/dts/rockchip/rk3568-nanopi-r5s.dts
+@@ -17,6 +17,19 @@
+ 		ethernet0 = &gmac0;
+ 	};
+ 
++	gpio-keys {
++		compatible = "gpio-keys";
++		pinctrl-0 = <&gpio4_a0_k1_pin>;
++		pinctrl-names = "default";
++
++		button-reset {
++			debounce-interval = <50>;
++			gpios = <&gpio4 RK_PA0 GPIO_ACTIVE_LOW>;
++			label = "RESET";
++			linux,code = <KEY_RESTART>;
++		};
++	};
++
+ 	gpio-leds {
+ 		compatible = "gpio-leds";
+ 		pinctrl-names = "default";
+@@ -116,6 +129,12 @@
+ 		};
+ 	};
+ 
++	gpio-keys {
++		gpio4_a0_k1_pin: gpio4-a0-k1-pin {
++			rockchip,pins = <4 RK_PA0 RK_FUNC_GPIO &pcfg_pull_none>;
++		};
++	};
++
+ 	gpio-leds {
+ 		lan1_led_pin: lan1-led-pin {
+ 			rockchip,pins = <3 RK_PD6 RK_FUNC_GPIO &pcfg_pull_none>;

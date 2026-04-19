@@ -28,7 +28,7 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  
  static void airoha_set_macaddr(struct airoha_gdm_port *port, const u8 *addr)
  {
-@@ -1631,6 +1633,7 @@ static int airoha_dev_open(struct net_de
+@@ -1661,6 +1663,7 @@ static int airoha_dev_open(struct net_de
  	struct airoha_qdma *qdma = port->qdma;
  	u32 pse_port = FE_PSE_PORT_PPE1;
  
@@ -36,7 +36,7 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  	if (airhoa_is_phy_external(port)) {
  		err = phylink_of_phy_connect(port->phylink, dev->dev.of_node, 0);
  		if (err) {
-@@ -1641,6 +1644,7 @@ static int airoha_dev_open(struct net_de
+@@ -1671,6 +1674,7 @@ static int airoha_dev_open(struct net_de
  
  		phylink_start(port->phylink);
  	}
@@ -44,7 +44,7 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  
  	netif_tx_start_all_queues(dev);
  	err = airoha_set_vip_for_gdm_port(port, true);
-@@ -1706,10 +1710,12 @@ static int airoha_dev_stop(struct net_de
+@@ -1736,10 +1740,12 @@ static int airoha_dev_stop(struct net_de
  		}
  	}
  
@@ -57,7 +57,7 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  
  	return 0;
  }
-@@ -2858,6 +2864,7 @@ static const struct ethtool_ops airoha_e
+@@ -2871,6 +2877,7 @@ static const struct ethtool_ops airoha_e
  	.get_link		= ethtool_op_get_link,
  };
  
@@ -65,7 +65,7 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  static struct phylink_pcs *airoha_phylink_mac_select_pcs(struct phylink_config *config,
  							 phy_interface_t interface)
  {
-@@ -2871,6 +2878,7 @@ static void airoha_mac_config(struct phy
+@@ -2884,6 +2891,7 @@ static void airoha_mac_config(struct phy
  			      const struct phylink_link_state *state)
  {
  }
@@ -73,7 +73,7 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  
  static int airoha_metadata_dst_alloc(struct airoha_gdm_port *port)
  {
-@@ -2916,6 +2924,7 @@ bool airoha_is_valid_gdm_port(struct air
+@@ -2929,6 +2937,7 @@ bool airoha_is_valid_gdm_port(struct air
  	return false;
  }
  
@@ -81,7 +81,7 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  static void airoha_mac_link_up(struct phylink_config *config, struct phy_device *phy,
  			       unsigned int mode, phy_interface_t interface,
  			       int speed, int duplex, bool tx_pause, bool rx_pause)
-@@ -3008,6 +3017,7 @@ static int airoha_setup_phylink(struct n
+@@ -3021,6 +3030,7 @@ static int airoha_setup_phylink(struct n
  
  	return 0;
  }
@@ -89,8 +89,8 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  
  static int airoha_alloc_gdm_port(struct airoha_eth *eth,
  				 struct device_node *np)
-@@ -3080,11 +3090,13 @@ static int airoha_alloc_gdm_port(struct
- 	port->id = id;
+@@ -3095,11 +3105,13 @@ static int airoha_alloc_gdm_port(struct
+ 	port->nbq = id == AIROHA_GDM3_IDX && airoha_is_7581(eth) ? 4 : 0;
  	eth->ports[p] = port;
  
 +#if defined(CONFIG_PCS_AIROHA)
@@ -103,7 +103,7 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  
  	return airoha_metadata_dst_alloc(port);
  }
-@@ -3217,10 +3229,12 @@ error_hw_cleanup:
+@@ -3230,10 +3242,12 @@ error_napi_stop:
  
  		if (port->dev->reg_state == NETREG_REGISTERED)
  			unregister_netdev(port->dev);
@@ -115,8 +115,8 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
 +#endif
  		airoha_metadata_dst_free(port);
  	}
- 	free_netdev(eth->napi_dev);
-@@ -3247,10 +3261,12 @@ static void airoha_remove(struct platfor
+ 	airoha_hw_cleanup(eth);
+@@ -3260,10 +3274,12 @@ static void airoha_remove(struct platfor
  
  		unregister_netdev(port->dev);
  		airoha_metadata_dst_free(port);
@@ -127,13 +127,13 @@ Signed-off-by: Mikhail Kshevetskiy <mikhail.kshevetskiy@iopsys.eu>
  		}
 +#endif
  	}
- 	free_netdev(eth->napi_dev);
+ 	airoha_hw_cleanup(eth);
  
 --- a/drivers/net/ethernet/airoha/airoha_eth.h
 +++ b/drivers/net/ethernet/airoha/airoha_eth.h
-@@ -537,9 +537,11 @@ struct airoha_gdm_port {
- 	struct net_device *dev;
+@@ -539,9 +539,11 @@ struct airoha_gdm_port {
  	int id;
+ 	int nbq;
  
 +#if defined(CONFIG_PCS_AIROHA)
  	struct phylink *phylink;

@@ -13,9 +13,9 @@ PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL=https://github.com/mtk-openwrt/arm-trusted-firmware.git
-PKG_SOURCE_DATE:=2025-07-11
-PKG_SOURCE_VERSION:=78a0dfd927bb00ce973a1f8eb4079df0f755887a
-PKG_MIRROR_HASH:=72a5f3f00f9e368226bb779dc098aac6195a312b48cc22172987d494ccd135d1
+PKG_SOURCE_DATE:=2026-01-23
+PKG_SOURCE_VERSION:=e06f258664198a901ff1c7c0c87802a115179451
+PKG_MIRROR_HASH:=e094f5c2838f366e9b2d87e85e0c324ac3b955dd02a493adced843031cf6b517
 
 PKG_MAINTAINER:=Daniel Golle <daniel@makrotopia.org>
 
@@ -36,10 +36,10 @@ define Trusted-Firmware-A/Default
   BOARD_QFN:=
   DRAM_USE_COMB:=
   RAM_BOOT_UART_DL:=
+  USE_SPI2:=
   USE_UBI:=
   FIP_OFFSET:=
   FIP_SIZE:=
-  SPIM_CTRL:=
 endef
 
 define Trusted-Firmware-A/mt7622-nor-1ddr
@@ -272,6 +272,16 @@ define Trusted-Firmware-A/mt7981-cudy-ddr3
   FIP_SIZE:=0x200000
 endef
 
+define Trusted-Firmware-A/mt7981-cudy-ddr4
+  NAME:=Cudy (SPI-NAND via SPIM, DDR4)
+  BOOT_DEVICE:=spim-nand
+  BUILD_SUBTARGET:=filogic
+  PLAT:=mt7981
+  DDR_TYPE:=ddr4
+  FIP_OFFSET:=0x3c0000
+  FIP_SIZE:=0x200000
+endef
+
 define Trusted-Firmware-A/mt7986-ram-ddr4
   NAME:=MediaTek MT7986 (RAM, DDR4)
   BOOT_DEVICE:=ram
@@ -454,7 +464,6 @@ define Trusted-Firmware-A/mt7987-spim-nand0
   BOOT_DEVICE:=spim-nand
   BUILD_SUBTARGET:=filogic
   PLAT:=mt7987
-  SPIM_CTRL:=0
 endef
 
 define Trusted-Firmware-A/mt7987-spim-nand0-ubi-comb
@@ -463,7 +472,6 @@ define Trusted-Firmware-A/mt7987-spim-nand0-ubi-comb
   BUILD_SUBTARGET:=filogic
   PLAT:=mt7987
   USE_UBI:=1
-  SPIM_CTRL:=0
 endef
 
 define Trusted-Firmware-A/mt7987-spim-nand2-ubi-comb
@@ -471,8 +479,8 @@ define Trusted-Firmware-A/mt7987-spim-nand2-ubi-comb
   BOOT_DEVICE:=spim-nand
   BUILD_SUBTARGET:=filogic
   PLAT:=mt7987
+  USE_SPI2:=1
   USE_UBI:=1
-  SPIM_CTRL:=2
 endef
 
 define Trusted-Firmware-A/mt7987-ram-comb
@@ -710,6 +718,7 @@ TFA_TARGETS:= \
 	mt7981-sdmmc-ddr4 \
 	mt7981-spim-nand-ddr4 \
 	mt7981-cudy-ddr3 \
+	mt7981-cudy-ddr4 \
 	mt7986-ram-ddr3 \
 	mt7986-emmc-ddr3 \
 	mt7986-nor-ddr3 \
@@ -776,7 +785,7 @@ TFA_MAKE_FLAGS += \
 	$(if $(USE_UBI),UBI=1 $(if $(findstring mt7986,$(PLAT)),OVERRIDE_UBI_START_ADDR=0x200000)) \
 	$(if $(FIP_OFFSET),OVERRIDE_FIP_BASE=$(FIP_OFFSET)) \
 	$(if $(FIP_SIZE),OVERRIDE_FIP_SIZE=$(FIP_SIZE)) \
-	$(if $(SPIM_CTRL),SPIM_CTRL=$(SPIM_CTRL)) \
+	$(if $(USE_SPI2),SPIM_NAND_PREFER_SPI2=1) \
 	$(if $(RAM_BOOT_UART_DL),bl2,all)
 
 define Package/trusted-firmware-a-ram/install

@@ -14,6 +14,16 @@
 			gpios = <&gpio1 28 GPIO_ACTIVE_LOW>;
 		};
 	};
+
+	gpio-export {
+		compatible = "gpio-export";
+
+		poe_mcu_reset {
+			gpio-export,name = "poe_mcu_reset";
+			gpio-export,output = <1>;
+			gpios = <&gpio1 29 GPIO_ACTIVE_LOW>;
+		};
+	};
 };
 
 &i2c_mst1 {

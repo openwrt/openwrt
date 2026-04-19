@@ -51,6 +51,8 @@
 
 	i2c@0 {
 		reg = <0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 
 		temperature_sensor: temperature-sensor@48 {
 			compatible = "national,lm75";
@@ -128,54 +130,17 @@
 };
 
 &mdio_bus0 {
-	phy0: ethernet-phy@0 {
-		compatible = "ethernet-phy-ieee802.3-c45";
-		reg = <0>;
-	};
-
-	phy8: ethernet-phy@8 {
-		compatible = "ethernet-phy-ieee802.3-c45";
-		reg = <8>;
-		realtek,smi-address = <1>;
-	};
-
-	phy16: ethernet-phy@16 {
-		compatible = "ethernet-phy-ieee802.3-c45";
-		reg = <16>;
-		realtek,smi-address = <2>;
-	};
-
-	phy20: ethernet-phy@20 {
-		compatible = "ethernet-phy-ieee802.3-c45";
-		reg = <20>;
-		realtek,smi-address = <3>;
-	};
+	PHY_C45(0, 0)
+	PHY_C45(8, 1)
+	PHY_C45(16, 2)
+	PHY_C45(20, 3)
 };
 
 &mdio_bus1 {
-	phy24: ethernet-phy@24 {
-		compatible = "ethernet-phy-ieee802.3-c45";
-		reg = <24>;
-		realtek,smi-address = <0>;
-	};
-
-	phy25: ethernet-phy@25 {
-		compatible = "ethernet-phy-ieee802.3-c45";
-		reg = <25>;
-		realtek,smi-address = <1>;
-	};
-
-	phy26: ethernet-phy@26 {
-		compatible = "ethernet-phy-ieee802.3-c45";
-		reg = <26>;
-		realtek,smi-address = <2>;
-	};
-
-	phy27: ethernet-phy@27 {
-		compatible = "ethernet-phy-ieee802.3-c45";
-		reg = <27>;
-		realtek,smi-address = <3>;
-	};
+	PHY_C45(24, 0)
+	PHY_C45(25, 1)
+	PHY_C45(26, 2)
+	PHY_C45(27, 3)
 };
 
 &ethernet0 {
@@ -202,7 +167,7 @@
 			reg = <28>;
 			phy-mode = "internal";
 			fixed-link {
-				speed = <10000>;
+				speed = <1000>;
 				full-duplex;
 			};
 		};

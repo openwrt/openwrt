@@ -140,7 +140,7 @@
 				reg = <0x0 0x600000>;
 			};
 
-			partition@400000 {
+			partition@600000 {
 				label = "ubi";
 				reg = <0x600000 0x0>;
 			};
@@ -369,7 +369,6 @@
 	nvmem-cell-names = "mac-address";
 	label = "wan";
 	phy-mode = "internal";
-	phy-connection-type = "internal";
 	phy = <&int_2p5g_phy>;
 	status = "okay";
 };
@@ -398,9 +397,11 @@
 		compatible = "ethernet-phy-ieee802.3-c45";
 		reg = <0x1b>;
 
+		interrupt-parent = <&pio>;
+		interrupts = <2 IRQ_TYPE_LEVEL_LOW>;
 		reset-gpios = <&pio 4 GPIO_ACTIVE_LOW>;
 		reset-assert-us = <100000>;
-		reset-deassert-us = <100000>;
+		reset-deassert-us = <221000>;
 	};
 };
 
@@ -409,7 +410,6 @@
 	nvmem-cell-names = "mac-address";
 	label = "lan5";
 	phy-mode = "usxgmii";
-	phy-connection-type = "usxgmii";
 	phy = <&phy27>;
 	status = "okay";
 };
@@ -504,7 +504,7 @@
 		#address-cells = <3>;
 		#size-cells = <2>;
 
-		mt7996@0,0 {
+		mt7992@0,0 {
 			reg = <0x0000 0 0 0 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -539,7 +539,7 @@
 
 		conf {
 			groups = "mdc_mdio0";
-			drive-strength = <MTK_DRIVE_4mA>;
+			drive-strength = <MTK_DRIVE_10mA>;
 		};
 	};
 
@@ -606,5 +606,9 @@
 };
 
 &tphy {
+	status = "okay";
+};
+
+&xsphy {
 	status = "okay";
 };

@@ -159,10 +159,11 @@ function iface_auth_type(config) {
 		config.vlan_possible = 1;
 
 		if (config.fils) {
-			set_default(config, 'erp_domain', substr(md5(config.ssid), 0, 4));
+			set_default(config, 'erp_domain', config.mobility_domain);
+			set_default(config, 'erp_domain', substr(md5(config.ssid + '\n'), 0, 8));
 			set_default(config, 'fils_realm', config.erp_domain);
 			set_default(config, 'erp_send_reauth_start', 1);
-			set_default(config, 'fils_cache_id', substr(md5(config.fils_realm), 0, 4));
+			set_default(config, 'fils_cache_id', substr(md5(config.fils_realm + '\n'), 0, 4));
 		}
 
 		if (!config.eap_server) {
@@ -234,7 +235,7 @@ function iface_wps(config) {
 
 		append_vars(config, [
 			'wps_state', 'device_type', 'device_name', 'config_methods', 'wps_independent', 'eap_server',
-			'ap_pin', 'ap_setup_locked', 'upnp_iface'
+			'ap_pin', 'ap_setup_locked', 'upnp_iface', 'uuid'
 		]);
 	}
 }

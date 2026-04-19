@@ -1,3 +1,15 @@
+From 7a0ec001ff79b12beefb8f3773820bfedebbb340 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Sun, 4 Jun 2023 15:56:15 +0100
+Subject: [PATCH] arm64: dts: mediatek: mt7986a-bpi-r3: fix LED/LAN port naming and wire WiFi EEPROM
+
+Add led-boot/led-failsafe/led-running/led-upgrade aliases pointing to
+the green and blue system LEDs, renumber the switch LAN port labels from
+lan0/lan1/lan2 to lan1/lan2/lan3 to match the board silkscreen, and wire
+the built-in WiFi EEPROM from the factory partition.
+
+Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+---
 --- a/arch/arm64/boot/dts/mediatek/mt7986a-bananapi-bpi-r3.dts
 +++ b/arch/arm64/boot/dts/mediatek/mt7986a-bananapi-bpi-r3.dts
 @@ -23,6 +23,10 @@

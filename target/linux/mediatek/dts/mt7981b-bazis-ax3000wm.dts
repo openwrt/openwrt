@@ -53,7 +53,7 @@
 			gpios = <&pio 4 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
-		
+
 		led_warning: led_fault {
 			function = LED_FUNCTION_FAULT;
 			color = <LED_COLOR_ID_RED>;
@@ -78,7 +78,7 @@
 			gpios = <&pio 35 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy1tpt";
 		};
-		
+
 		led_lan_back {
 			function = LED_FUNCTION_LAN;
 			color = <LED_COLOR_ID_GREEN>;
@@ -130,7 +130,7 @@
 	phy5: phy@5 {
 		compatible = "ethernet-phy-ieee802.3-c45";
 		reg = <5>;
-		
+
 		leds {
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -203,11 +203,11 @@
 					eeprom_factory_0: eeprom@0 {
 						reg = <0x0 0x1000>;
 					};
-					
+
 					mac_lan: macaddr@4 {
 						reg = <0x4 0x6>;
 					};
-					
+
 					mac_wan: macaddr@a {
 						reg = <0xa 0x6>;
 					};
@@ -218,8 +218,8 @@
 
 					mac_wlan_5ghz: macaddr@24 {
 						reg = <0x24 0x6>;
-					};	
-					
+					};
+
 				};
 			};
 
@@ -233,12 +233,12 @@
 				label = "ubi";
 				reg = <0x580000 0x7a40000>;
 				compatible = "linux,ubi";
-			
+
 				volumes {
 					ubi_rootdisk: ubi-volume-fit {
 						volname = "fit";
 					};
-					
+
 					ubi_ubootenv: ubi-volume-ubootenv {
 						volname = "ubootenv";
 					};
@@ -277,7 +277,9 @@
 	status = "okay";
 	nvmem-cells = <&eeprom_factory_0>;
 	nvmem-cell-names = "eeprom";
-	
+	#address-cells = <1>;
+	#size-cells = <0>;
+
 	band@0 {
 		reg = <0>;
 		nvmem-cells = <&mac_wlan_2ghz>;

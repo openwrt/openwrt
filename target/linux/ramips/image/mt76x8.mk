@@ -199,6 +199,17 @@ define Device/creality_wb-01
 endef
 TARGET_DEVICES += creality_wb-01
 
+define Device/cudy_lt300-v3
+  IMAGE_SIZE := 15872k
+  DEVICE_VENDOR := Cudy
+  DEVICE_MODEL := LT300
+  DEVICE_VARIANT := v3
+  DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci kmod-usb-net-rndis \
+	kmod-usb-serial-option
+  SUPPORTED_DEVICES += R100
+endef
+TARGET_DEVICES += cudy_lt300-v3
+
 define Device/cudy_lt400e-v1
   IMAGE_SIZE := 7808k
   DEVICE_VENDOR := Cudy
@@ -472,6 +483,17 @@ define Device/keenetic_kn-1221
 	check-size 14720k | zyimage -d 0x801221 -v "KN-1221"
 endef
 TARGET_DEVICES += keenetic_kn-1221
+
+define Device/keenetic_kn-1510
+  IMAGE_SIZE := 15488k
+  DEVICE_VENDOR := Keenetic
+  DEVICE_MODEL := KN-1510
+  DEVICE_PACKAGES := kmod-mt76x0e
+  IMAGES += factory.bin
+  IMAGE/factory.bin := $$(sysupgrade_bin) | pad-to $$$$(BLOCKSIZE) | \
+	check-size | zyimage -d 0x801510 -v "KN-1510"
+endef
+TARGET_DEVICES += keenetic_kn-1510
 
 define Device/keenetic_kn-1613
   IMAGE_SIZE := 15073280

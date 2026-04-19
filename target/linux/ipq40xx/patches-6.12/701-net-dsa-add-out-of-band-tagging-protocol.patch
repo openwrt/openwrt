@@ -93,7 +93,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
 +#endif
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
-@@ -4818,6 +4818,9 @@ enum skb_ext_id {
+@@ -4850,6 +4850,9 @@ enum skb_ext_id {
  #if IS_ENABLED(CONFIG_MCTP_FLOWS)
  	SKB_EXT_MCTP,
  #endif
@@ -105,18 +105,18 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
  
 --- a/include/net/dsa.h
 +++ b/include/net/dsa.h
-@@ -55,6 +55,7 @@ struct tc_action;
- #define DSA_TAG_PROTO_LAN937X_VALUE		27
- #define DSA_TAG_PROTO_VSC73XX_8021Q_VALUE	28
+@@ -57,6 +57,7 @@ struct tc_action;
  #define DSA_TAG_PROTO_BRCM_LEGACY_FCS_VALUE	29
-+#define DSA_TAG_PROTO_OOB_VALUE			30
+ #define DSA_TAG_PROTO_MXL862_VALUE		30
+ #define DSA_TAG_PROTO_MXL862_8021Q_VALUE	31
++#define DSA_TAG_PROTO_OOB_VALUE			32
  
  enum dsa_tag_protocol {
  	DSA_TAG_PROTO_NONE		= DSA_TAG_PROTO_NONE_VALUE,
-@@ -87,6 +88,7 @@ enum dsa_tag_protocol {
- 	DSA_TAG_PROTO_RZN1_A5PSW	= DSA_TAG_PROTO_RZN1_A5PSW_VALUE,
- 	DSA_TAG_PROTO_LAN937X		= DSA_TAG_PROTO_LAN937X_VALUE,
+@@ -91,6 +92,7 @@ enum dsa_tag_protocol {
  	DSA_TAG_PROTO_VSC73XX_8021Q	= DSA_TAG_PROTO_VSC73XX_8021Q_VALUE,
+ 	DSA_TAG_PROTO_MXL862		= DSA_TAG_PROTO_MXL862_VALUE,
+ 	DSA_TAG_PROTO_MXL862_8021Q	= DSA_TAG_PROTO_MXL862_8021Q_VALUE,
 +	DSA_TAG_PROTO_OOB		= DSA_TAG_PROTO_OOB_VALUE,
  };
  
@@ -148,7 +148,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
  static __always_inline unsigned int skb_ext_total_length(void)
 --- a/net/dsa/Kconfig
 +++ b/net/dsa/Kconfig
-@@ -131,6 +131,15 @@ config NET_DSA_TAG_OCELOT_8021Q
+@@ -145,6 +145,15 @@ config NET_DSA_TAG_OCELOT_8021Q
  	  this mode, less TCAM resources (VCAP IS1, IS2, ES0) are available for
  	  use with tc-flower.
  
@@ -166,7 +166,7 @@ Signed-off-by: Maxime Chevallier <maxime.chevallier@bootlin.com>
  	help
 --- a/net/dsa/Makefile
 +++ b/net/dsa/Makefile
-@@ -31,6 +31,7 @@ obj-$(CONFIG_NET_DSA_TAG_MTK) += tag_mtk
+@@ -33,6 +33,7 @@ obj-$(CONFIG_NET_DSA_TAG_MXL_862XX_8021Q
  obj-$(CONFIG_NET_DSA_TAG_NONE) += tag_none.o
  obj-$(CONFIG_NET_DSA_TAG_OCELOT) += tag_ocelot.o
  obj-$(CONFIG_NET_DSA_TAG_OCELOT_8021Q) += tag_ocelot_8021q.o

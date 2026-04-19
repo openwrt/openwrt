@@ -1123,9 +1123,9 @@ hostapd_rrm_nr_set(struct ubus_context *ctx, struct ubus_object *obj,
 		if (strlen(s) == 0) {
 			/* Copy BSSID from neighbor report */
 			if (hwaddr_compact_aton(nr_s, bssid))
-				goto invalid;
+				goto invalid_free;
 		} else if (hwaddr_aton(s, bssid)) {
-			goto invalid;
+			goto invalid_free;
 		}
 
 		/* SSID */
@@ -1136,7 +1136,7 @@ hostapd_rrm_nr_set(struct ubus_context *ctx, struct ubus_object *obj,
 		} else {
 			ssid.ssid_len = strlen(s);
 			if (ssid.ssid_len > sizeof(ssid.ssid))
-				goto invalid;
+				goto invalid_free;
 
 			memcpy(&ssid, s, ssid.ssid_len);
 		}
@@ -1145,6 +1145,8 @@ hostapd_rrm_nr_set(struct ubus_context *ctx, struct ubus_object *obj,
 		wpabuf_free(data);
 		continue;
 
+invalid_free:
+		wpabuf_free(data);
 invalid:
 		return UBUS_STATUS_INVALID_ARGUMENT;
 	}
@@ -1252,6 +1254,7 @@ hostapd_rrm_beacon_req(struct ubus_context *ctx, struct ubus_object *obj,
 	}
 
 	ret = hostapd_send_beacon_req(hapd, addr, 0, req);
+	wpabuf_free(req);
 	if (ret < 0)
 		return -ret;
 

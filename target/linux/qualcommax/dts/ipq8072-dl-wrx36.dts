@@ -20,13 +20,6 @@
 		led-running = &led_system_blue;
 		led-upgrade = &led_system_red;
 		serial0 = &blsp1_uart5;
-		/* Aliases as required by u-boot to patch MAC addresses */
-		ethernet0 = &dp6_syn;
-		ethernet1 = &dp4;
-		ethernet2 = &dp3;
-		ethernet3 = &dp2;
-		ethernet4 = &dp1;
-		label-mac-device = &dp6_syn;
 	};
 
 	chosen {
@@ -106,6 +99,20 @@
 &qpic_nand {
 	status = "okay";
 
+	/*
+	 * Bootloader will find the NAND DT node by the compatible and
+	 * then "fixup" it by adding the partitions from the SMEM table
+	 * using the legacy bindings thus making it impossible for us
+	 * to change the partition table or utilize NVMEM for calibration.
+	 * So add a dummy partitions node that bootloader will populate
+	 * and set it as disabled so the kernel ignores it instead of
+	 * printing warnings due to the broken way bootloader adds the
+	 * partitions.
+	 */
+	partitions {
+		status = "disabled";
+	};
+
 	nand@0 {
 		reg = <0>;
 		nand-ecc-strength = <8>;
@@ -114,6 +121,37 @@
 
 		partitions {
 			compatible = "qcom,smem-part";
+
+			partition-0-art {
+				label = "0:art";
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_art_0: macaddr@0 {
+						reg = <0x0 0x6>;
+					};
+
+					macaddr_art_6: macaddr@6 {
+						reg = <0x6 0x6>;
+					};
+
+					macaddr_art_c: macaddr@c {
+						reg = <0xc 0x6>;
+					};
+
+					macaddr_art_12: macaddr@12 {
+						reg = <0x12 0x6>;
+					};
+
+					macaddr_art_18: macaddr@18 {
+						reg = <0x18 0x6>;
+					};
+				};
+			};
 		};
 	};
 };
@@ -236,6 +274,8 @@
 	phy-mode = "qsgmii";
 	phy-handle = <&qca8075_0>;
 	label = "lan4";
+	nvmem-cells = <&macaddr_art_18>;
+	nvmem-cell-names = "mac-address";
 };
 
 &dp2 {
@@ -243,6 +283,8 @@
 	phy-mode = "qsgmii";
 	phy-handle = <&qca8075_1>;
 	label = "lan3";
+	nvmem-cells = <&macaddr_art_12>;
+	nvmem-cell-names = "mac-address";
 };
 
 &dp3 {
@@ -250,6 +292,8 @@
 	phy-mode = "qsgmii";
 	phy-handle = <&qca8075_2>;
 	label = "lan2";
+	nvmem-cells = <&macaddr_art_c>;
+	nvmem-cell-names = "mac-address";
 };
 
 &dp4 {
@@ -257,12 +301,16 @@
 	phy-mode = "qsgmii";
 	phy-handle = <&qca8075_3>;
 	label = "lan1";
+	nvmem-cells = <&macaddr_art_6>;
+	nvmem-cell-names = "mac-address";
 };
 
 &dp6_syn {
 	status = "okay";
 	phy-handle = <&qca8081>;
 	label = "wan";
+	nvmem-cells = <&macaddr_art_0>;
+	nvmem-cell-names = "mac-address";
 };
 
 &wifi {

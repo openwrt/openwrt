@@ -143,7 +143,8 @@
 				read-only;
 
 				nvmem-layout {
-					compatible = "u-boot,env";
+					compatible = "u-boot,env-redundant-count";
+					env-size = <0x10000>;
 
 					macaddr_uboot_ethaddr: ethaddr {
 					};

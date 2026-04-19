@@ -47,7 +47,7 @@
  
  	ret = iei_wt61p803_puzzle_write_command(priv->mcu, led_power_cmd,
  						sizeof(led_power_cmd),
-@@ -90,39 +106,168 @@ static enum led_brightness iei_wt61p803_
+@@ -90,39 +106,166 @@ static enum led_brightness iei_wt61p803_
  	return led_state;
  }
  
@@ -143,7 +143,6 @@
  {
  	struct device *dev = &pdev->dev;
 +	struct device_node *np = dev_of_node(dev);
-+	struct device_node *child;
  	struct iei_wt61p803_puzzle *mcu = dev_get_drvdata(dev->parent);
  	struct iei_wt61p803_puzzle_led *priv;
 -	struct led_init_data init_data = {};
@@ -170,7 +169,7 @@
 -	priv->cdev.brightness_set_blocking = iei_wt61p803_puzzle_led_brightness_set_blocking;
 -	priv->cdev.brightness_get = iei_wt61p803_puzzle_led_brightness_get;
 -	priv->cdev.max_brightness = 1;
-+	for_each_available_child_of_node(np, child) {
++	for_each_available_child_of_node_scoped(np, child) {
 +		struct led_init_data init_data = {};
  
 -	ret = devm_led_classdev_register_ext(dev, &priv->cdev, &init_data);
@@ -207,7 +206,7 @@
 +		priv->id = reg;
 +		priv->led_power_state = 1;
 +		priv->blinking = 0;
-+		init_data.fwnode = of_fwnode_handle(child);
++		init_data.fwnode = of_fwnode_handle(of_node_get(child));
 +
 +		priv->cdev.brightness_set_blocking = iei_wt61p803_puzzle_led_brightness_set_blocking;
 +		priv->cdev.brightness_get = iei_wt61p803_puzzle_led_brightness_get;
@@ -234,7 +233,6 @@
  
 -	fwnode_handle_put(child);
 +put_child_node:
-+	of_node_put(child);
  	return ret;
  }
  

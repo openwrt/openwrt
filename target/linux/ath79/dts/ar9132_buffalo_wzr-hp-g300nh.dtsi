@@ -236,8 +236,7 @@
 	status = "disabled";
 
 	compatible = "qca,ar9130-eth", "syscon";
-	reg = <0x1a000000 0x200
-		0x18070004 0x4>;
+	reg = <0x1a000000 0x200>, <0x18070004 0x4>;
 
 	pll-reg = <0x4 0x18 22>;
 	pll-handle = <&pll>;

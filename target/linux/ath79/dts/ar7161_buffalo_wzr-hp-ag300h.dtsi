@@ -41,13 +41,13 @@
 		band2g_g {
 			label = "green:band2g";
 			gpios = <&ath9k0 5 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy0tpt";
+			linux,default-trigger = "phy1tpt";
 		};
 
 		band5g_g {
 			label = "green:band5g";
 			gpios = <&ath9k1 1 GPIO_ACTIVE_LOW>;
-			linux,default-trigger = "phy1tpt";
+			linux,default-trigger = "phy0tpt";
 		};
 
 		router {

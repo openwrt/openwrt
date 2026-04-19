@@ -115,8 +115,7 @@
 
 	L2C0: l2c {
 		compatible = "ibm,l2-cache-apm82181", "ibm,l2-cache";
-		dcr-reg = <0x020 0x008
-			   0x030 0x008>;
+		dcr-reg = <0x020 0x008>, <0x030 0x008>;
 		cache-line-size = <32>;
 		cache-size = <262144>;
 		interrupt-parent = <&UIC1>;

@@ -61,6 +61,15 @@ ifdef CONFIG_USE_MOLD
   endif
 endif
 
+# loongarch64 sets CONFIG_PAGE_SIZE_16KB, all other targets set CONFIG_PAGE_SIZE_4KB only.
+ifeq ($(ARCH),loongarch64)
+  TARGET_CFLAGS += -Wl,-z,max-page-size=16384
+  TARGET_LDFLAGS += -zmax-page-size=16384
+else
+  TARGET_CFLAGS += -Wl,-z,max-page-size=4096
+  TARGET_LDFLAGS += -zmax-page-size=4096
+endif
+
 include $(INCLUDE_DIR)/hardening.mk
 include $(INCLUDE_DIR)/prereq.mk
 include $(INCLUDE_DIR)/unpack.mk
