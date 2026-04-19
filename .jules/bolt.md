@@ -54,11 +54,3 @@
 ## 2026-04-18 - [Use enumerate instead of range(len) for list iteration]
 **Learning:** In Python, using `range(len(list))` or `range(0, len(list))` to iterate over a list and access its elements by index is an anti-pattern. Index lookups (`list[i]`) are slower than using `enumerate(list)` which yields the index and the item directly without the overhead of an extra lookup.
 **Action:** When an item must be found and removed from a list (or when both index and item are needed), use `for i, item in enumerate(list):` with `del list[i]` and `break` instead of `range(len(list))` to avoid unidiomatic index lookups, thereby improving performance and code readability.
-
-## 2025-01-20 - [Optimize parse_opkg in make-index-json.py]
-**Learning:** For extremely large text payloads like OPKG index files, the `splitlines()` function on each chunk is still relatively slow because it allocates many intermediate string objects in memory. Using `str.find` to pinpoint exactly where the lines start and end avoids allocating memory for the rest of the file contents.
-**Action:** When parsing well-structured, multi-line blocks where only a few lines are needed, prefer `str.find()` over splitting all lines to dramatically reduce memory allocation and increase performance (~2.8x speedup).
-
-## 2025-01-20 - [Avoid text.split() for chunking large files]
-**Learning:** In Python, splitting a very large text file into chunks using `text.split("\n\n")` allocates a massive list and thousands of new string objects in memory. By tracking chunk indices with `str.find("\n\n", start)` inside a `while` loop, you can avoid allocating these intermediate objects entirely, leading to significant memory savings and performance boosts (e.g. ~1.6x faster on large files).
-**Action:** When a script iterates over chunks of a large text payload, use manual `start` and `end` index tracking with `str.find` instead of creating an intermediate list of strings using `.split()`.
