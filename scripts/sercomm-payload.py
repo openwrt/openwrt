@@ -27,7 +27,7 @@ def create_output(args):
 
 	# Read input file in chunks to calculate hash and stream directly to output
 	# This avoids loading large firmware files into memory at once (O(1) memory usage)
-	in_f = open(args.input_file, 'r+b')
+	in_f = open(args.input_file, 'rb')
 	while True:
 		chunk = in_f.read(65536)
 		if not chunk:
