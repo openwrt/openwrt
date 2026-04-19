@@ -85,11 +85,8 @@ function iface_auth_type(config) {
 	if (config.auth_type in [ 'sae', 'owe', 'eap2', 'eap192' ])
 		config.ieee80211w = 2;
 
-	if (config.auth_type in [ 'psk-sae', 'eap-eap2' ]) {
+	if (config.auth_type in [ 'psk-sae', 'eap-eap2' ])
 		set_default(config, 'ieee80211w', 1);
-		if (config.rsn_override)
-			config.rsn_override_mfp = 2;
-	}
 
 	if (config.auth_type in [ 'sae', 'psk-sae' ]) {
 		config.sae_require_mfp = 1;
@@ -514,27 +511,20 @@ export function generate(interface, data, config, vlans, stas, phy_features) {
 		'wpa_key_mgmt',
 	]);
 
-	if (config.rsn_override_key_mgmt || config.rsn_override_pairwise) {
-		config.rsn_override_mfp ??= config.ieee80211w;
-		config.rsn_override_key_mgmt ??= config.wpa_key_mgmt;
-		config.rsn_override_pairwise ??= config.wpa_pairwise;
+	if (config.rsn_override_key_mgmt && config.rsn_override_pairwise && config.rsn_override_mfp) {
 		append_vars(config, [
 			'rsn_override_key_mgmt',
 			'rsn_override_pairwise',
 			'rsn_override_mfp'
 		]);
+	}
 
-		if (config.mlo) {
-			config.rsn_override_mfp_2 ??= config.rsn_override_mfp;
-			config.rsn_override_key_mgmt_2 ??= config.rsn_override_key_mgmt;
-			config.rsn_override_pairwise_2 ??= config.rsn_override_pairwise;
-
-			append_vars(config, [
-				'rsn_override_key_mgmt_2',
-				'rsn_override_pairwise_2',
-				'rsn_override_mfp_2'
-			]);
-		}
+	if (config.rsn_override_key_mgmt_2 && config.rsn_override_pairwise_2 && config.rsn_override_mfp_2) {
+		append_vars(config, [
+			'rsn_override_key_mgmt_2',
+			'rsn_override_pairwise_2',
+			'rsn_override_mfp_2'
+		]);
 	}
 
 	/* raw options */
