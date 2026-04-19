@@ -10,6 +10,10 @@
 **Learning:** Python's native `bytearray` generator expressions (`bytearray(a ^ b for a, b in zip(...))`) are notoriously slow for large binaries like firmware because they execute at the interpreter level per byte. Conversely, Python 3's arbitrary-precision integers allow for extremely fast, C-level bitwise operations (`int.from_bytes(data) ^ int.from_bytes(key)`) without overflow limits.
 **Action:** When implementing cryptographic or bitwise operations (like XOR) over large byte arrays in Python scripts, construct a full-length repeating key, convert both payload and key to large integers via `int.from_bytes()`, perform the bitwise operation natively, and convert back using `.to_bytes()`. This consistently yields ~8-10x performance improvements.
 
+## 2024-05-26 - [Python `sum(iter(buf))` vs `sum(buf)` Performance]
+**Learning:** `sum(iter(buf))` forces Python to create an iterator for the byte string and processes each byte individually inside the Python VM. By comparison, `sum(buf)` passes the entire byte sequence directly to the underlying C implementation, yielding faster and more memory-efficient execution without unnecessary type conversions.
+**Action:** When calculating a simple additive checksum in Python scripts for OpenWrt tools (like `cameo-imghdr.py`), prefer using `sum(buf)` directly rather than wrapping it in an iterator or using list comprehensions.
+
 ## 2024-05-26 - Removed unused email.parser import
 **Learning:** The `email.parser` library in Python adds significant startup overhead (over 1s in some environments) simply by being imported, pulling in a large chunk of standard library infrastructure. In utility scripts like `make-index-json.py`, which are invoked frequently and explicitly optimize away from using `email.parser` for performance reasons, leaving the unused import negates part of the performance win.
 **Action:** Always verify that optimized code paths also remove any unused heavy dependencies from the import block, as Python module loading can be a hidden bottleneck for frequently run CLI scripts.
@@ -31,6 +35,9 @@
 ## 2024-05-28 - [Python dict get with default vs `in` check for list iterations]
 **Learning:** When parsing large JSON index files containing lists of dictionaries (like APK package indexes), iterating over a list field by calling `package.get("tags", [])` forces the creation of a new empty list on every miss. A simple `if "tags" in package:` check avoids this allocation entirely and is measurably faster. Additionally, using string slicing (`tag[19:]`) instead of `tag.split("=")[-1]` for a known prefix is considerably faster.
 **Action:** In high-volume parsing loops over dictionaries (e.g., thousands of packages), avoid using `.get(key, [])` if the key is frequently missing. Use an explicit `if key in dict:` check instead. For extracting values past known string prefixes, use slicing (e.g., `s[len(prefix):]`) instead of `.split()`.
+## 2024-04-02 - [Make OPKG Parsing 2x Faster]
+**Learning:** In Python, string `.find()` followed by string slicing is significantly faster and more memory-efficient than calling `.split("\n")` within loops because it avoids repeated creation and teardown of list structures. Finding `\n` anchors correctly bypasses `.startswith` issues on inner chunks.
+**Action:** When extracting multiple text fields from a large multi-line string block, avoid `.splitlines()` or `.split("\n")` per block. Instead, use `str.find()` with slice indexing `str[start:end]` to extract targets in-place.
 
 ## 2024-05-30 - [Python Hashlib Streamed In-Place Prepending]
 **Learning:** Appending headers/hashes to a large file by reading the entire payload into a variable (e.g. `in_bytes = f.read()`) creates immense memory bloat (O(N) memory complexity), which can cause the process to hit OOM on systems building large firmware images.
