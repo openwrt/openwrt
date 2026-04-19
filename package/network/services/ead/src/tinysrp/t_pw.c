@@ -55,6 +55,8 @@
 #include <io.h>
 #endif
 
+#include <stdlib.h>
+#include <string.h>
 #include "t_pwd.h"
 #include "t_read.h"
 #include "t_sha.h"
@@ -152,7 +154,8 @@ savepwent(tpw, pwent)
   tpw->pebuf.name = tpw->userbuf;
   tpw->pebuf.password.data = tpw->pwbuf;
   tpw->pebuf.salt.data = tpw->saltbuf;
-  strcpy(tpw->pebuf.name, pwent->name);
+  strncpy(tpw->pebuf.name, pwent->name, MAXUSERLEN - 1);
+  tpw->pebuf.name[MAXUSERLEN - 1] = '\0';
   tpw->pebuf.password.len = pwent->password.len;
   memcpy(tpw->pebuf.password.data, pwent->password.data, pwent->password.len);
   tpw->pebuf.salt.len = pwent->salt.len;
@@ -195,7 +198,8 @@ t_getpwbyname(tpw, user)
 	 (tpw->pebuf.salt.len = t_fromb64(tpw->saltbuf, saltstr)) > 0 &&
 	 t_nextfield(tpw->instream, indexbuf, 16) > 0 &&
 	 (tpw->pebuf.index = atoi(indexbuf)) > 0) {
-	strcpy(tpw->userbuf, username);
+	strncpy(tpw->userbuf, username, MAXUSERLEN - 1);
+	tpw->userbuf[MAXUSERLEN - 1] = '\0';
 	tpw->pebuf.name = tpw->userbuf;
 	tpw->pebuf.password.data = tpw->pwbuf;
 	tpw->pebuf.salt.data = tpw->saltbuf;

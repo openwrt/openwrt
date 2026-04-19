@@ -150,9 +150,11 @@ static int trelay_do_add(char *name, char *devn1, char *devn2)
 {
 	struct net_device *dev1, *dev2;
 	struct trelay *tr, *tr1;
+	size_t name_len;
 	int ret;
 
-	tr = kzalloc(struct_size(tr, name, strlen(name) + 1), GFP_KERNEL);
+	name_len = strlen(name) + 1;
+	tr = kzalloc(struct_size(tr, name, name_len), GFP_KERNEL);
 	if (!tr)
 		return -ENOMEM;
 
@@ -184,7 +186,7 @@ static int trelay_do_add(char *name, char *devn1, char *devn2)
 	dev_hold(dev1);
 	dev_hold(dev2);
 
-	strcpy(tr->name, name);
+	strscpy(tr->name, name, name_len);
 	tr->dev1 = dev1;
 	tr->dev2 = dev2;
 	list_add_tail(&tr->list, &trelay_devs);

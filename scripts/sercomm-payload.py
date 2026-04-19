@@ -15,16 +15,19 @@ def create_output(args):
 	else:
 		pid_bytes = bytes.fromhex(args.pid)
 
-	out_f = open(args.output_file, 'w+b')
-	out_f.write(pid_bytes)
-	hash_pos = out_f.tell()
-	out_f.write(b'\x00' * 32) # Placeholder for SHA256
-
 	sha256 = hashlib.sha256()
-	in_f = open(args.input_file, 'rb')
 
-	# Optimization: A while True loop with explicit read and break is faster
-	# and chunking prevents large memory spikes and reduces execution time by ~60%
+	out_f = open(args.output_file, 'w+b')
+	# Write PID bytes first
+	out_f.write(pid_bytes)
+
+	# Save position and write placeholder for the 32-byte SHA256 digest
+	hash_pos = out_f.tell()
+	out_f.write(b'\0' * 32)
+
+	# Read input file in chunks to calculate hash and stream directly to output
+	# This avoids loading large firmware files into memory at once (O(1) memory usage)
+	in_f = open(args.input_file, 'rb')
 	while True:
 		chunk = in_f.read(65536)
 		if not chunk:
@@ -33,8 +36,10 @@ def create_output(args):
 		out_f.write(chunk)
 	in_f.close()
 
+	# Seek back and write the actual hash digest
 	out_f.seek(hash_pos)
 	out_f.write(sha256.digest())
+
 	out_f.close()
 
 def main():

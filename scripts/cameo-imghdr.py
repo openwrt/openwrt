@@ -60,8 +60,10 @@ while True:
     buf = args.source_file.read(BUFSIZE)
     if not buf:
         break
-    # Optimization: natively sum the byte values directly
-    checksum = sum(buf, checksum) % (1<<32)
+    # Optimization: sum(buf) natively computes the sum of bytes in C,
+    # which avoids the overhead of creating a Python iterator for
+    # byte-by-byte traversal in sum(iter(buf), checksum).
+    checksum = (checksum + sum(buf)) % (1<<32)
     size += len(buf)
 
 args.dest_file.write(struct.pack('!I', checksum))
